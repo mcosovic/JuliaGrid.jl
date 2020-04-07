@@ -10,9 +10,6 @@ using LinearAlgebra
 using Random
 using JuMP, GLPK, Gurobi
 
-GC.enable(true)
-# GC.enable(false)
-
 ##############
 #  Includes  #
 ##############
