@@ -1,4 +1,7 @@
-clearconsole()
+module JuliaGrid
+
+export runpf
+export runmg
 
 using SparseArrays
 using HDF5
@@ -48,3 +51,5 @@ function runmg(args...; max::Int64 = 100, stop::Float64 = 1.0e-8, reactive::Int6
 
     return settings, system
 end
+
+end # JuliaGrid
