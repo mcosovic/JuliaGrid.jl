@@ -79,7 +79,7 @@ function loadsystem(args)
 
     if path == ""
         package_dir = abspath(joinpath(dirname(Base.find_package("JuliaGrid")), ".."))
-        path = joinpath(package_dir, "src/data/")
+        path = joinpath(package_dir, "src/data/", data)
     end
 
     input_data = cd(readdir, path)
