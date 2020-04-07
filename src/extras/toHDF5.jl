@@ -2,7 +2,7 @@
 #  DC Power Flow  #
 ###################
 
-
+using HDF5
 #-------------------------------------------------------------------------------
 function toHDF5input()
     reference = "https://labs.ece.uw.edu/pstca/pf14/pg_tca14bus.htm"
@@ -52,6 +52,10 @@ function toHDF5input()
               10  11	0.08205	 0.19207	0	    0	0	0	0	   0	1	-360	360
               12  13	0.22092	 0.19988	0	    0	0	0	0	   0	1	-360	360
               13  14	0.17093	 0.34802	0	    0	0	0	0	   0	1	-360	360]
+
+    branchID = collect(1:size(branch, 1))
+
+    branch = [branchID branch]
 
     return reference, grid, bus, generator, branch, name
 end
@@ -131,4 +135,4 @@ end
 #-------------------------------------------------------------------------------
 
 reference, grid, bus, generator, branch, name = toHDF5input()
-toHDF5save(bus, generator, branch; reference = reference, grid = grid, name = name)
+toHDF5save(bus, generator, branch; reference = reference, grid = grid, name = name, path = "D:/Dropbox/")
