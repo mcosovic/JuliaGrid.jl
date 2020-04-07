@@ -105,6 +105,7 @@ function loadsystem(args)
         sheet = ["bus", "branch", "generator", "basePower"]
         for i in sheet
             try
+                display(XLSX.readtable(fullpath, i))
                 columns, labels  = XLSX.readtable(fullpath, i)
                 push!(read_data, i => hcat(columns...))
             catch
