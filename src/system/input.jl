@@ -105,9 +105,10 @@ function loadsystem(args)
         sheet = ["bus", "branch", "generator", "basePower"]
         for i in sheet
             try
-                display(XLSX.readtable(fullpath, i))
-                columns, labels  = XLSX.readtable(fullpath, i)
-                push!(read_data, i => hcat(columns...))
+                xf = XLSX.readxlsx(fullpath)
+                sh = xf[i]
+                table = sh[:]
+                push!(read_data, i => Float64.(table[3:end, :]))
             catch
             end
         end
