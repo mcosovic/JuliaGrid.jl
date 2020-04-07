@@ -102,7 +102,7 @@ function loadsystem(args)
 
     if extension == ".xlsx"
         read_data = Dict()
-        sheet = ["bus", "branch", "generator", "baseMVA"]
+        sheet = ["bus", "branch", "generator", "basePower"]
         for i in sheet
             try
                 columns, labels  = XLSX.readtable(fullpath, i)
@@ -115,7 +115,7 @@ function loadsystem(args)
     bus = Array{Float64}(undef, 0, 0)
     generator = Array{Float64}(undef, 0, 0)
     branch = Array{Float64}(undef, 0, 0)
-    if !any(keys(read_data) .== "baseMVA")
+    if !any(keys(read_data) .== "basePower")
         baseMVA = 100.0
         @info("The variable 'baseMVA' not found. The algorithm proceeds with default value: 100 MVA")
     end
@@ -137,7 +137,7 @@ function loadsystem(args)
         if i == "branch"
             branch = read_data[i]
         end
-        if i == "baseMVA"
+        if i == "basePower"
             baseMVA = read_data[i][1]
         end
     end
