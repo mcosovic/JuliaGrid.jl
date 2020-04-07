@@ -1,0 +1,53 @@
+clearconsole()
+
+using SparseArrays
+using HDF5
+using Printf
+using PrettyTables
+using CSV, DataFrames, XLSX
+using Dates
+using LinearAlgebra
+using Random
+using JuMP, GLPK, Gurobi
+
+GC.enable(true)
+# GC.enable(false)
+
+##############
+#  Includes  #
+##############
+include("system/input.jl")
+include("system/routine.jl")
+include("system/results.jl")
+include("system/service.jl")
+
+include("flow/flowdc.jl")
+include("flow/flowac.jl")
+include("flow/flowalgorithms.jl")
+include("flow/measurements.jl")
+
+include("estimation/estimationdc.jl")
+
+
+function runpf(args...; max::Int64 = 100, stop::Float64 = 1.0e-8, reactive::Int64 = 0, solve::String = "mldivide", save::String = "")
+    system = loadsystem(args)
+    settings = pfsettings(args, max, stop, reactive, solve, save)
+
+    if settings.algorithm == "dc"
+        bus, branch, generator = rundcpf(settings, system)
+    else
+        bus, branch, generator = runacpf(settings, system)
+    end
+
+    return bus, branch, generator
+end
+
+function runmg(args...; max::Int64 = 100, stop::Float64 = 1.0e-8, reactive::Int64 = 0, solve::String = "mldivide", save::String = "", pmuset = "all", pmuvariance = ["all" 1e-5], legacyset = "all", legacyvariance = ["all" 1e-4])
+    system = loadsystem(args)
+    settings = gesettings(args, max, stop, reactive, solve, save, pmuset, pmuvariance, legacyset, legacyvariance)
+    bus, branch, generator = runacpf(settings, system)
+
+    rungenerator(system, settings, bus, branch)
+
+    return settings, system
+end
