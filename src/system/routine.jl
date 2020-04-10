@@ -52,7 +52,7 @@ end
 #-------------------------------------------------------------------------------
 
 #-------------------------------------------------------------------------------
-function savedata(ARGS...; group, header1, header2, path, info = "")
+function savedata(ARGS...; group, header, path, info = "")
     extension = match(r"\.[A-Za-z0-9]+$", path).match
 
     if extension == ".h5"
@@ -60,7 +60,8 @@ function savedata(ARGS...; group, header1, header2, path, info = "")
             for i = 1:length(ARGS)
                 write(file, group[i], ARGS[i])
                 try
-                    atr = Dict(string("row", k) => if !isempty(header2[i][k]) string(s, ": ", header2[i][k]) else s end for (k, s) in enumerate(header1[i]))
+                    Nhead = size(header[group[i]], 2)
+                    atr = Dict(string("row", k) =>  string(header[group[i]][1, k], ": ", header[group[i]][2, k]) for k = 1:Nhead)
                     h5writeattr(path, group[i], atr)
                 catch
                 end
@@ -74,14 +75,12 @@ function savedata(ARGS...; group, header1, header2, path, info = "")
         XLSX.openxlsx(path, mode="w") do xf
             sheet = xf[1]
             XLSX.rename!(sheet, group[1])
-            sheet["A1"] = header1[1]
-            sheet["A2"] = header2[1]
+            sheet["A1"] = header[group[1]]
             sheet["A3"] = ARGS[1]
             for i = 2:length(ARGS)
                 XLSX.addsheet!(xf, group[i])
                 sheet = xf[i]
-                sheet["A1"] = header1[i]
-                sheet["A2"] = header2[i]
+                sheet["A1"] = header[group[i]]
                 sheet["A3"] = ARGS[i]
             end
             if !isempty(info)

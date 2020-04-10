@@ -5,9 +5,7 @@
 #-------------------------------------------------------------------------------
 function results_flowdc(settings, system, Nbus, Nbranch, Ngen, Ti, slack, algtime)
     println(string("  Execution time: ", (@sprintf "%.4f" algtime * 1000), " (ms)"))
-    read_data = h5read("/src/system/headers.h5","/flowdc")
-    display(read_data)
-    # header1, header2 = flowdc_headers()
+    header = h5read(joinpath(system.package, "src/system/header.h5"), "/flowdc")
 
     bus = fill(0.0, Nbus, 6)
     for i = 1:Nbus
@@ -21,7 +19,7 @@ function results_flowdc(settings, system, Nbus, Nbranch, Ngen, Ti, slack, algtim
     if settings.main
         h1 = Highlighter((data, i, j) -> (i == slack),  background = :blue)
         println("")
-        pretty_table(bus, [header1[1]; header2[1]], screen_size = (-1,-1), alignment = [:r,:r,:r,:r,:r,:r],
+        pretty_table(bus, header["bus"], screen_size = (-1,-1), alignment = [:r,:r,:r,:r,:r,:r],
             highlighters = h1, columns_width = [6, 18, 18, 18, 18, 18],
             formatter = ft_printf(["%1.0f","%1.4f","%1.2f","%1.2f","%1.2f","%1.2f"], collect(1:6)))
 
@@ -40,7 +38,7 @@ function results_flowdc(settings, system, Nbus, Nbranch, Ngen, Ti, slack, algtim
     end
     if settings.flow
         println("")
-        pretty_table(branch, [header1[2]; header2[2]], screen_size = (-1,-1), columns_width = [6, 8, 8, 18, 18],
+        pretty_table(branch, header["branch"], screen_size = (-1,-1), columns_width = [6, 8, 8, 18, 18],
         alignment=[:r,:r,:r,:r,:r], formatter = ft_printf(["%1.0f","%1.0f","%1.0f","%1.2f","%1.2f"], collect(1:5)))
     end
 
@@ -51,14 +49,14 @@ function results_flowdc(settings, system, Nbus, Nbranch, Ngen, Ti, slack, algtim
     end
     if settings.generator
         println("")
-        pretty_table(generator, [header1[3]; header2[3]], screen_size = (-1,-1), alignment=[:r,:r],
+        pretty_table(generator, header["generator"], screen_size = (-1,-1), alignment=[:r,:r],
             formatter = ft_printf(["%1.0f","%1.4f"], collect(1:2)))
     end
 
     if !isempty(settings.save)
         group = ["bus", "branch", "generator"]
-        info = info_flow(system, settings)
-        savedata(bus, branch, generator; info = info, group = group, header1 = header1, header2 = header2, path = settings.save)
+        info = info_flow(system, settings, Nbranch, Nbus, Ngen)
+        savedata(bus, branch, generator; info = info, group = group, header = header, path = settings.save)
     end
 
     return bus, branch, generator
@@ -66,9 +64,9 @@ end
 #-------------------------------------------------------------------------------
 
 #-------------------------------------------------------------------------------
-function results_flowac(settings, system, limit, Nbus, Nbranch, Ngen, slack, Vc, algtime)
+function results_flowac(settings, system, limit, Nbus, Nbranch, Ngen, slack, Vc, algtime, info)
     println(string("  Execution time: ", (@sprintf "%.4f" algtime * 1000), " (ms)"))
-    header1, header2 = flowac_headers()
+    header = h5read(joinpath(system.package, "src/system/header.h5"), "/flowac")
 
     if settings.reactive[1]
         min = findall(x -> x == 2, limit)
@@ -111,7 +109,7 @@ function results_flowac(settings, system, limit, Nbus, Nbranch, Ngen, slack, Vc,
     if settings.main
         h1 = Highlighter((data, i, j)-> (i == slack), background = :red)
         println("")
-        pretty_table(bus, [header1[1]; header2[1]],
+        pretty_table(bus, header["bus"],
              screen_size = (-1,-1), highlighters = h1, columns_width = [6, 16, 12, 17, 21, 17, 21, 17, 21, 17, 21],
              alignment = repeat([Symbol(:r)], outer = 11),
              formatter = ft_printf(["%1.0f", "%1.4f","%1.4f","%1.2f" ,"%1.2f","%1.2f","%1.2f","%1.2f","%1.2f","%1.2f","%1.2f"], collect(1:11)))
@@ -137,7 +135,7 @@ function results_flowac(settings, system, limit, Nbus, Nbranch, Ngen, slack, Vc,
 
     if settings.flow
         println("")
-        pretty_table(branch, [header1[2]; header2[2]],
+        pretty_table(branch, header["branch"],
              screen_size = (-1,-1), columns_width = [6, 8, 8, 17, 21, 17, 21, 21, 17, 21],
              alignment=[:r,:r,:r,:r,:r,:r,:r,:r,:r,:r],
              formatter = ft_printf(["%1.0f","%1.0f","%1.0f","%1.2f","%1.2f","%1.2f","%1.2f","%1.2f","%1.2f","%1.2f"], collect(1:10)))
@@ -155,14 +153,14 @@ function results_flowac(settings, system, limit, Nbus, Nbranch, Ngen, slack, Vc,
 
     if settings.generator
         println("")
-        pretty_table(generator, [header1[3]; header2[3]],
+        pretty_table(generator, header["generator"],
             screen_size = (-1,-1), alignment=[:r,:r,:r],
             formatter = ft_printf(["%1.0f", "%1.4f", "%1.4f"], collect(1:3)))
     end
 
     if !isempty(settings.save)
         group = ["bus", "branch", "generator"]
-        savedata(bus, branch, generator; group = group, header1 = header1, header2 = header2, path = settings.save)
+        savedata(bus, branch, generator; info = info, group = group, header = header, path = settings.save)
     end
 
     return bus, [branch system.branch[:, 4:7]], generator

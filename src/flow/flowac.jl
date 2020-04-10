@@ -9,13 +9,18 @@ function runacpf(settings, system)
     transShift, branchOn, Pshunt, Qshunt, Pbus, Qbus, Pinj, Qinj, Imij, Iaij, Imji, Iaji,
     Pij, Qij, Pji, Qji, Qcharging, Ploss, Qloss, limit, QminInf, QmaxInf = view_acsystem(system)
 
-  algtime = @elapsed begin
+    info = ""
     numbering = false
     Nbus = size(system.bus, 1)
     Ngen = size(system.generator, 1)
     Nbranch = size(system.branch, 1)
     bus = collect(1:Nbus)
 
+    if !isempty(settings.save)
+        info = info_flow(system, settings, Nbranch, Nbus, Ngen)
+    end
+
+  algtime = @elapsed begin
     slack = 0
     @inbounds for i = 1:Nbus
         if bus[i] != busi[i]
@@ -294,7 +299,7 @@ function runacpf(settings, system)
     end
   end
 
-    BUS, BRANCH, GENERATOR = results_flowac(settings, system, limit, Nbus, Nbranch, Ngen, slack, Vc, algtime)
+    BUS, BRANCH, GENERATOR = results_flowac(settings, system, limit, Nbus, Nbranch, Ngen, slack, Vc, algtime, info)
 
     return BUS, BRANCH, GENERATOR
 end

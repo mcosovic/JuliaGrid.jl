@@ -9,8 +9,10 @@ struct PowerSystem
     generator::Array{Float64,2}
     branch::Array{Float64,2}
     baseMVA::Float64
-    info::Array{String,1}
+    info::Array{String,2}
+    package::String
     path::String
+    data::String
     extension::String
 end
 
@@ -58,6 +60,7 @@ end
 
 #-------------------------------------------------------------------------------
 function loadsystem(args)
+    package_dir = abspath(joinpath(dirname(Base.find_package("JuliaGrid")), ".."))
     extension = ""
     path = ""
     data = ""
@@ -79,7 +82,6 @@ function loadsystem(args)
     end
 
     if path == ""
-        package_dir = abspath(joinpath(dirname(Base.find_package("JuliaGrid")), ".."))
         path = joinpath(package_dir, "src/data/")
         fullpath = joinpath(package_dir, "src/data/", data)
     end
@@ -149,7 +151,7 @@ function loadsystem(args)
         end
     end
 
-    return PowerSystem(bus, generator, branch, baseMVA, info, fullpath, extension)
+    return PowerSystem(bus, generator, branch, baseMVA, info, package_dir, fullpath, data, extension)
 end
 #-------------------------------------------------------------------------------
 
