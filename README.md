@@ -8,17 +8,17 @@ We have tested and verified simulation tool using different scenarios to the bes
 
 The software package provides the solution of the AC and DC power flow, non-linear and DC state estimation, as well as the state estimation with PMUs, with standalone measurement generator.
 
-<!-- <p align="middle"><a href="https://github.com/mcosovic/MATGRID/wiki/Power-Flow" itemprop="contentUrl" data-size="600x400"> <img src="/doc/figures/modulepf.png" width="110"></a> <a href="https://github.com/mcosovic/MATGRID/wiki/State-Estimation" itemprop="contentUrl" data-size="600x400"> <img src="/doc/figures/modulese.png" width="110"></a> <a href="https://github.com/mcosovic/MATGRID/wiki/Measurement-Generator" itemprop="contentUrl" data-size="600x400"> <img src="/doc/figures/modulemg.png" width="110"></a></p> -->
+<p align="middle"><a href="https://github.com/mcosovic/MATGRID/wiki/Power-Flow" itemprop="contentUrl" data-size="600x400"> <img src="/doc/figures/modulepf.png" width="110"></a> <a href="https://github.com/mcosovic/MATGRID/wiki/State-Estimation" itemprop="contentUrl" data-size="600x400"> <img src="/doc/figures/modulese.png" width="110"></a> <a href="https://github.com/mcosovic/MATGRID/wiki/Measurement-Generator" itemprop="contentUrl" data-size="600x400"> <img src="/doc/figures/modulemg.png" width="110"></a></p>
 
-<!-- MATGRID includes, inter alia, the weighted least-squares and least absolute values state estimation, optimal PMU placement, and bad data processing.  
+<!-- MATGRID includes, inter alia, the weighted least-squares and least absolute values state estimation, optimal PMU placement, and bad data processing.   -->
 
-###  Fast Run Power Flow
+###  Quickstart Power Flow
 ```
-runpf('ieee14_20', 'nr', 'main', 'flow');
-runpf('ieee14_20', 'dc', 'main', 'flow');
+bus, branch, generator = runpf("dc", "case14.h5, "main", "flow")
+bus, branch, generator = runpf("nr", "case14.h5, "main"; max = 20, stop = 1.0e-8)
 ```
 
-###  Fast Run State Estimation
+<!-- ###  Fast Run State Estimation
 ```
 runse('ieee118_186', 'nonlinear', 'estimate');
 runse('ieee118_186', 'dc', 'estimate');
