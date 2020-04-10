@@ -69,13 +69,12 @@ function rundcpf(settings, system)
     Ybus_reduce = Ybus[keep, keep]
     b = Pbus[keep] - Pshift[keep] - (Pload[keep] + Gshunt[keep]) ./ system.baseMVA
 
-    if settings.solve == "mldivide"
-        Ti = Ybus_reduce \ b
-    end
     if settings.solve == "lu"
         F = lu(Ybus_reduce)
         Ti = F.U \  (F.L \ ((F.Rs .* b)[F.p]))
         Ti = Ti[sortperm(F.q)]
+    else
+        Ti = Ybus_reduce \ b
     end
 
     insert!(Ti, slack, 0.0)

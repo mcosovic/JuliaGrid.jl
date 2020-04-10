@@ -5,7 +5,9 @@
 #-------------------------------------------------------------------------------
 function results_flowdc(settings, system, Nbus, Nbranch, Ngen, Ti, slack, algtime)
     println(string("  Execution time: ", (@sprintf "%.4f" algtime * 1000), " (ms)"))
-    header1, header2 = flowdc_headers()
+    read_data = h5read("/src/system/headers.h5","/flowdc")
+    display(read_data)
+    # header1, header2 = flowdc_headers()
 
     bus = fill(0.0, Nbus, 6)
     for i = 1:Nbus
@@ -55,7 +57,8 @@ function results_flowdc(settings, system, Nbus, Nbranch, Ngen, Ti, slack, algtim
 
     if !isempty(settings.save)
         group = ["bus", "branch", "generator"]
-        savedata(bus, branch, generator; group = group, header1 = header1, header2 = header2, path = settings.save)
+        info = info_flow(system, settings)
+        savedata(bus, branch, generator; info = info, group = group, header1 = header1, header2 = header2, path = settings.save)
     end
 
     return bus, branch, generator
@@ -186,22 +189,16 @@ function results_generator(system, settings, Nbranch, Nbus, measurements)
 
     header1, header2, group = generator_headers()
     system = loadsystem([system.path])
-
-    infosys = [string("Bus number: ", size(system.bus, 1));
-               string("Generator number: ", size(system.generator, 1));
-               string("Generator in-service: ", trunc(Int, sum(system.generator[:, 8])));
-               string("Branch number: ", size(system.branch, 1));
-               string("Branch in-service: ", trunc(Int, sum(system.branch[:, 12])));
-               string("")]
+    infosys = [read_data["info"]; "" "" ""]
 
     if settings.set["legacy"][1] == "all"
-        push!(infosys, string("Legacy set: all measurements in-service"))
+        push!(infosys, ["Legacy set setting" "all measurements in-service" ""])
     end
     if settings.set["legacy"][1] == "redundancy"
-        push!(infosys, string("Legacy set: redundancy [", settings.set["legacy"][2], "]"))
+        push!(infosys, ["Legacy set setting" "redundancy" string(settings.set["legacy"][2])])
     end
     if settings.set["legacy"][1] == "onebyone"
-        push!(infosys, string("Legacy set: measurements by type"))
+        push!(infosys, ["Legacy set setting" "measurements by type" "" ])
     end
     Pij_in = trunc(Int, sum(measurements["LegFlow"][:, 6]))
     Qij_in = trunc(Int, sum(measurements["LegFlow"][:, 9]))
@@ -209,49 +206,49 @@ function results_generator(system, settings, Nbranch, Nbus, measurements)
     Pi_in = trunc(Int, sum(measurements["LegInjection"][:, 4]))
     Qi_in = trunc(Int, sum(measurements["LegInjection"][:, 7]))
     Vi_in = trunc(Int, sum(measurements["LegVoltage"][:, 4]))
-    mstat = [string("Active power flow measurements: [", Pij_in, " in-service]", " [", 2 * Nbranch - Pij_in, " out-service]");
-             string("Reactive power flow measurements: [", Qij_in, " in-service]", " [", 2 * Nbranch - Qij_in, " out-service]");
-             string("Current magnitude measurements: [", Iij_in, " in-service]", " [", 2 * Nbranch - Iij_in, " out-service]");
-             string("Active power injection measurements: [", Pi_in, " in-service]", " [", Nbus - Pi_in, " out-service]");
-             string("Reactive power injection measurements: [", Qi_in, " in-service]", " [", Nbus - Qi_in, " out-service]");
-             string("Voltage magnitude measurements: [", Vi_in, " in-service]", " [", Nbus - Vi_in, " out-service]");
+    mstat = ["Active power flow measurements" string(Pij_in, " in-service") string(2 * Nbranch - Pij_in, " out-service");
+             "Reactive power flow measurements" string(Qij_in, " in-service") string(2 * Nbranch - Qij_in, " out-service");
+             "Current magnitude measurements" string(Iij_in, " in-service") string(2 * Nbranch - Iij_in, " out-service");
+             "Active power injection measurements" string(Pi_in, " in-service") string(Nbus - Pi_in, " out-service");
+             "Reactive power injection measurements" string(Qi_in, " in-service") string(Nbus - Qi_in, " out-service");
+             "Voltage magnitude measurements" string(Vi_in, " in-service") string(Nbus - Vi_in, " out-service");
              ""]
     infosys = [infosys; mstat]
 
     if settings.set["pmu"][1] == "all"
-        push!(infosys, string("PMU set: all measurements in-service"))
+        push!(infosys, ["PMU set setting" "all measurements in-service" ""])
     end
     if settings.set["pmu"][1] == "redundancy"
-        push!(infosys, string("PMU set: redundancy [", settings.set["pmu"][2], "]"))
+        push!(infosys, ["PMU set setting" "redundancy" string(settings.set["pmu"][2])])
     end
     if settings.set["pmu"][1] == "onebyone"
-        push!(infosys, string("PMU set: measurements by type"))
+        push!(infosys, ["PMU set setting" "measurements by type" ""])
     end
     if settings.set["pmu"][1] == "device"
-        push!(infosys, string("PMU set: in-service PMU devices [", settings.set["pmu"][2], "]"))
+        push!(infosys, ["PMU set setting" "devices in-service" string(settings.set["pmu"][2])])
     end
     if settings.set["pmu"][1] == "optimal"
-        push!(infosys, string("optimal PMU placement"))
+        push!(infosys, ["PMU set setting" "Optimal placement" ""])
     end
     Iij_in = trunc(Int, sum(measurements["PmuCurrent"][:, 6]))
     Dij_in = trunc(Int, sum(measurements["PmuCurrent"][:, 9]))
     Vi_in = trunc(Int, sum(measurements["PmuVoltage"][:, 4]))
     Ti_in = trunc(Int, sum(measurements["PmuVoltage"][:, 7]))
-    pstat = [string("Current magnitude measurements: [", Iij_in, " in-service]", " [", 2 * Nbranch - Iij_in, " out-service]");
-             string("Current angle measurements: [", Dij_in, " in-service]", " [", 2 * Nbranch - Dij_in, " out-service]");
-             string("Voltage magnitude measurements: [", Vi_in, " in-service]", " [", Nbus - Vi_in, " out-service]");
-             string("Voltage angle measurements: [", Ti_in, " in-service]", " [", Nbus - Ti_in, " out-service]");
+    pstat = ["Current magnitude measurements" string(Iij_in, " in-service") string(2 * Nbranch - Iij_in, " out-service");
+             "Current angle measurements" string(Dij_in, " in-service") string(2 * Nbranch - Dij_in, " out-service]");
+             "Voltage magnitude measurements" string(Vi_in, " in-service") string(Nbus - Vi_in, " out-service");
+             "Voltage angle measurements" string(Ti_in, " in-service") string(Nbus - Ti_in, " out-service");
              ""]
     infosys = [infosys; pstat]
 
     if settings.variance["legacy"][1] == "all"
-        push!(infosys, string("Legacy variance: all [", settings.variance["legacy"][2], "]"))
+        push!(infosys, ["Legacy variance setting" "all" string(settings.variance["legacy"][2])])
     end
     if settings.variance["legacy"][1] == "random"
-        push!(infosys, string("Legacy variance: randomized variances within limits [", settings.variance["legacy"][2], ", ", settings.variance["legacy"][3], "]"))
+        push!(infosys, ["Legacy variance setting" "randomized variances within limits" string(settings.variance["legacy"][2], ", ", settings.variance["legacy"][3])])
     end
     if settings.variance["legacy"][1] == "onebyone"
-        push!(infosys, string("Legacy variance: variance by type"))
+        push!(infosys, ["Legacy variance setting:" "variance by type" ""])
     end
     Pijex = extrema(measurements["LegFlow"][:, 5])
     Qijex = extrema(measurements["LegFlow"][:, 8])
@@ -259,38 +256,43 @@ function results_generator(system, settings, Nbranch, Nbus, measurements)
     Piex = extrema(measurements["LegInjection"][:, 3])
     Qiex = extrema(measurements["LegInjection"][:, 6])
     Viex = extrema(measurements["LegVoltage"][:, 3])
-    mstat = [string("Active power flow measurements: [", Pijex[1], " minimum]", " [", Pijex[2], " maximum]");
-             string("Reactive power flow measurements: [", Qijex[1], " minimum]", " [", Qijex[2], " maximum]");
-             string("Current magnitude measurements: [", Iijex[1], " minimum]", " [", Iijex[2], " maximum]");
-             string("Active power injection measurements: [", Piex[1], " minimum]", " [", Piex[2], " maximum]");
-             string("Reactive power injection measurements: [", Qiex[1], " minimum]", " [", Qiex[2], " maximum]");
-             string("Voltage magnitude measurements: [", Viex[1], " minimum]", " [", Viex[2], " maximum]");
+    mstat = ["Active power flow measurements" string(Pijex[1], " minimum") string(Pijex[2], " maximum");
+             "Reactive power flow measurements" string(Qijex[1], " minimum") string(Qijex[2], " maximum");
+             "Current magnitude measurements" string(Iijex[1], " minimum") string(Iijex[2], " maximum");
+             "Active power injection measurements" string(Piex[1], " minimum") string(Piex[2], " maximum");
+             "Reactive power injection measurements" string(Qiex[1], " minimum") string(Qiex[2], " maximum");
+             "Voltage magnitude measurements" string(Viex[1], " minimum") string(Viex[2], " maximum");
              ""]
     infosys = [infosys; mstat]
 
     if settings.variance["pmu"][1] == "all"
-        push!(infosys, string("PMU variance: all [", settings.variance["pmu"][2], "]"))
+        push!(infosys, ["PMU variance setting" "all" string(settings.variance["pmu"][2])])
     end
     if settings.variance["pmu"][1] == "random"
-        push!(infosys, string("PMU variance: randomized variances within limits [", settings.variance["pmu"][2], ", ", settings.variance["pmu"][3], "]"))
+        push!(infosys, ["PMU variance setting" "randomized variances within limits" string(settings.variance["pmu"][2], ", ", settings.variance["pmu"][3])])
     end
     if settings.variance["pmu"][1] == "onebyone"
-        push!(infosys, string("PMU variance: variance by type"))
+        push!(infosys, ["PMU variance setting" "variance by type" ""])
     end
     Iijex = extrema(measurements["PmuCurrent"][:, 5])
     Dijex = extrema(measurements["PmuCurrent"][:, 8])
     Viex = extrema(measurements["PmuVoltage"][:, 3])
     Tiex = extrema(measurements["PmuVoltage"][:, 3])
-    pstat = [string("Current magnitude measurements: [", Iijex[1], " minimum]", " [", Iijex[2], " maximum]");
-             string("Current angle measurements: [", Dijex[1], " minimum]", " [", Dijex[2], " maximum]");
-             string("Voltage magnitude measurements: [", Viex[1], " minimum]", " [", Viex[2], " maximum]");
-             string("Voltage angle measurements: [", Tiex[1], " minimum]", " [", Tiex[2], " maximum]")]
+    pstat = ["Current magnitude measurements" string(Iijex[1], " minimum") string(Iijex[2], " maximum");
+             "Current angle measurements" string(Dijex[1], " minimum") string(Dijex[2], " maximum");
+             "Voltage magnitude measurements" string(Viex[1], " minimum") string(Viex[2], " maximum");
+             "Voltage angle measurements" string(Tiex[1], " minimum") string(Tiex[2], " maximum")]
     infosys = [infosys; pstat]
+
+    if isempty(settings.path)
+        package_dir = abspath(joinpath(dirname(Base.find_package("JuliaGrid")), ".."))
+        path = joinpath(package_dir, string("new_juliagrid", system.extension))
+    else
+        path = settings.path
+    end
 
     savedata(measurements["PmuVoltage"], measurements["PmuCurrent"], measurements["LegFlow"], measurements["LegCurrent"],
         measurements["LegInjection"], measurements["LegVoltage"], system.bus, system.generator, system.branch, system.baseMVA;
-        group = group, header1 = header1, header2 = header2, path = settings.path, info = infosys)
-
-    println(string("  Measurement data is successfully generated: ", settings.path))
+        group = group, header1 = header1, header2 = header2, path = path, info = infosys)
 end
 #-------------------------------------------------------------------------------

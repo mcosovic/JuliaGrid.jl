@@ -69,7 +69,7 @@ function savedata(ARGS...; group, header1, header2, path, info = "")
                 write(file, "info", info)
             end
         end
-
+        println(string("  Data is successfully exported to ", path))
     elseif extension == ".xlsx"
         XLSX.openxlsx(path, mode="w") do xf
             sheet = xf[1]
@@ -87,11 +87,12 @@ function savedata(ARGS...; group, header1, header2, path, info = "")
             if !isempty(info)
                 XLSX.addsheet!(xf, "info")
                 sheet = xf[length(ARGS) + 1]
-                sheet["A1", dim = 1] = info
+                sheet["A1"] = info
             end
         end
+        println(string("  Data is successfully exported to ", path))
     else
-        @info("  The save data format is not supported.")
+        error("  The save data format is not supported.")
     end
 end
 #-------------------------------------------------------------------------------

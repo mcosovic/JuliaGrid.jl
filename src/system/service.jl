@@ -58,7 +58,7 @@ function generator_headers()
     legInjectionu = ["" "Active Power [p.u.]" "Variance [p.u.]" "" "Reactive Power [p.u.]" "Variance [p.u.]" "" "Active Power [p.u.]" "Reactive Power [p.u.]"]
     legVoltageu = ["" "Magnitude [p.u.]" "Variance [p.u.]" "" "Magnitude [p.u.]"]
     busu = ["" "" "Active Power [MW]" "Reactive Power [MVAr]" "Active Power [MW]" "Reactive Power [MVAr]" "" "Magnitude [p.u.]" "Angle [deg]" "Magnitude [kV]" "" "Magnitude [p.u.]" "Magnitude [p.u.]"]
-    generatoru = ["" "" "Active Power [MW]" "Reactive Power [MVAr]" "Reactive Power [MVAr]" "Reactive Power [MVAr]" "Magnitude [p.u.]" "Power [MVA]" "" "Active Power [MW]" "Active Power [MW]" "Active Power [MW]" "Active Power [MW]" "Reactive Power [MVAr]" "Reactive Power [MVAr]" "Reactive Power [MVAr]" "Reactive Power [MVAr]" "Load AGC [MW/min]" "10 minute reserves [MW]" "30 minute reserves [MW]" "Reactive Power (2 sec Timescale) [MVAr/min]" ""]
+    generatoru = ["" "" "Active Power [MW]" "Reactive Power [MVAr]" "Reactive Power [MVAr]" "Reactive Power [MVAr]" "Magnitude [p.u.]" "Power [MVA]" "" "Active Power [MW]" "Active Power [MW]" "Active Power [MW]" "Active Power [MW]" "Reactive Power [MVAr]" "Reactive Power [MVAr]" "Reactive Power [MVAr]" "Reactive Power [MVAr]" "Load AGC [MW/min]" "10 minute reserves [MW]" "30 minute reserves [MW]" "Reactive Power (2 sec Timescale) [MVAr/min]"]
     branchu = ["" "" "" "[p.u.]" "[p.u.]" "[p.u.]" "Long Term" "Short Term" "Emergency" "Turns Ratio" "Shift Angle [deg]" "" "Difference" "Difference"]
     baseu = ["Power [MVA]"]
 
@@ -67,5 +67,31 @@ function generator_headers()
     group = ["pmuVoltage", "pmuCurrent", "legacyFlow", "legacyCurrent", "legacyInjection", "legacyVoltage", "bus", "generator", "branch", "basePower"]
 
     return header1, header2, group
+end
+#-------------------------------------------------------------------------------
+
+#-------------------------------------------------------------------------------
+function info_flow(system, settings)
+    reference = "Reference: unknown"
+    grid = "Grid: unknown"
+    for i in system.info
+        if occursin("Reference", i)
+            reference = i
+        end
+        if occursin("Grid", i)
+            grid = i
+        end
+    end
+    info = [reference "";
+            grid "";
+            string("Algorithm: ", settings.algorithm) "";
+            "" "";
+            "Bus number" size(system.bus, 1);
+            "Generator number" size(system.generator, 1);
+            "Generator in-service" sum(system.generator[:, 8]);
+            "Branch number" size(system.branch, 1);
+            "Branch in-service" sum(system.branch[:, 12])]
+
+    return info
 end
 #-------------------------------------------------------------------------------

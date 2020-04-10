@@ -9,6 +9,7 @@ struct PowerSystem
     generator::Array{Float64,2}
     branch::Array{Float64,2}
     baseMVA::Float64
+    info::Array{String,1}
     path::String
     extension::String
 end
@@ -102,7 +103,7 @@ function loadsystem(args)
 
     if extension == ".xlsx"
         read_data = Dict()
-        sheet = ["bus", "branch", "generator", "basePower"]
+        sheet = ["bus", "branch", "generator", "basePower", "info"]
         for i in sheet
             try
                 xf = XLSX.readxlsx(fullpath)
@@ -117,6 +118,7 @@ function loadsystem(args)
     bus = Array{Float64}(undef, 0, 0)
     generator = Array{Float64}(undef, 0, 0)
     branch = Array{Float64}(undef, 0, 0)
+    info = Array{String}(undef, 0)
     if !any(keys(read_data) .== "basePower")
         baseMVA = 100.0
         @info("The variable 'baseMVA' not found. The algorithm proceeds with default value: 100 MVA")
@@ -142,14 +144,17 @@ function loadsystem(args)
         if i == "basePower"
             baseMVA = read_data[i][1]
         end
+        if i == "info"
+            info = read_data[i]
+        end
     end
 
-    return PowerSystem(bus, generator, branch, baseMVA, fullpath, extension)
+    return PowerSystem(bus, generator, branch, baseMVA, info, fullpath, extension)
 end
 #-------------------------------------------------------------------------------
 
 #-------------------------------------------------------------------------------
-function pfsettings(args, max, stop, react, solve, save)
+function pfsettings(args, max, stop, react, solve, save, system)
     algorithm = "false"
     algorithm_type = ["nr", "gs", "fnrxb", "fnrbx", "dc"]
     main = false
@@ -179,6 +184,15 @@ function pfsettings(args, max, stop, react, solve, save)
     if algorithm == "false"
         algorithm = "nr"
         @info("Invalid power flow algorithm key. The algorithm proceeds with the AC power flow.")
+    end
+
+    if !isempty(save)
+        path = dirname(save)
+        data = basename(save)
+        if isempty(data)
+            data = string("new_juliagrid", system.extension)
+        end
+        save = joinpath(path, data)
     end
 
     return FlowSettings(algorithm, solve, main, flow, generator, save, max, stop, reactive)

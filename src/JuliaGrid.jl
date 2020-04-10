@@ -29,9 +29,9 @@ include("flow/measurements.jl")
 include("estimation/estimationdc.jl")
 
 
-function runpf(args...; max::Int64 = 100, stop::Float64 = 1.0e-8, reactive::Int64 = 0, solve::String = "mldivide", save::String = "")
+function runpf(args...; max::Int64 = 100, stop::Float64 = 1.0e-8, reactive::Int64 = 0, solve::String = "", save::String = "")
     system = loadsystem(args)
-    settings = pfsettings(args, max, stop, reactive, solve, save)
+    settings = pfsettings(args, max, stop, reactive, solve, save, system)
 
     if settings.algorithm == "dc"
         bus, branch, generator = rundcpf(settings, system)
@@ -42,7 +42,7 @@ function runpf(args...; max::Int64 = 100, stop::Float64 = 1.0e-8, reactive::Int6
     return bus, branch, generator
 end
 
-function runmg(args...; max::Int64 = 100, stop::Float64 = 1.0e-8, reactive::Int64 = 0, solve::String = "mldivide", save::String = "", pmuset = "all", pmuvariance = ["all" 1e-5], legacyset = "all", legacyvariance = ["all" 1e-4])
+function runmg(args...; max::Int64 = 100, stop::Float64 = 1.0e-8, reactive::Int64 = 0, solve::String = "", save::String = "", pmuset = "all", pmuvariance = ["all" 1e-5], legacyset = "all", legacyvariance = ["all" 1e-4])
     system = loadsystem(args)
     settings = gesettings(args, max, stop, reactive, solve, save, pmuset, pmuvariance, legacyset, legacyvariance)
     bus, branch, generator = runacpf(settings, system)
@@ -51,5 +51,8 @@ function runmg(args...; max::Int64 = 100, stop::Float64 = 1.0e-8, reactive::Int6
 
     return settings, system
 end
+
+bus, branch, generator = runpf("dc", "case14.h5"; save = "D:/Dropbox/aaaa.xlsx")
+# runmg("case14.h5", "main"; stop = 1.0e-8, max = 25, reactive = 0, solve = "mldivide", save = "")
 
 end # JuliaGrid
