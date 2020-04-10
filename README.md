@@ -1,11 +1,8 @@
-# JuliaGrid
-
-## MATGRID
-
+## JuliaGrid
 
 <a href="https://github.com/mcosovic/MATGRID/wiki/MATGRID"><img align="right" width="145" src="/src/doc/logo_julia.png" /></a>
 
-JULIAGRID is an easy-to-use simulation tool for researchers and educators provided as a Julia package, with source code released under MIT License. JULIAGRID is inspired by Matpower and allows a variety of display and manipulation options.
+JuliaGrid is an easy-to-use simulation tool for researchers and educators provided as a Julia package, with source code released under MIT License. JuliaGrid is inspired by Matpower and allows a variety of display and manipulation options.
 
 We have tested and verified simulation tool using different scenarios to the best of our ability. As a user of this simulation tool, you can help us to improve future versions, we highly appreciate your feedback about any errors, inaccuracies, and bugs. For more information, please visit our [wiki](https://github.com/mcosovic/MATGRID/wiki/MATGRID) site.
 
