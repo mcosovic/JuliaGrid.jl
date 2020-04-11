@@ -1,6 +1,6 @@
 ## JuliaGrid
 
-<a href="https://github.com/mcosovic/JuliaGrid/wiki/JuliaGrid"><img align="right" width="145" src="/src/doc/logo_julia.png" /></a>
+<a href="https://github.com/mcosovic/JuliaGrid/wiki/JuliaGrid"><img align="right" width="145" src="/doc/logo_julia.png" /></a>
 
 JuliaGrid is an easy-to-use simulation tool for researchers and educators provided as a Julia package, with source code released under MIT License. JuliaGrid is inspired by Matpower and allows a variety of display and manipulation options.
 
@@ -8,7 +8,7 @@ We have tested and verified simulation tool using different scenarios to the bes
 
 The software package provides the solution of the AC and DC power flow, non-linear and DC state estimation, as well as the state estimation with PMUs, with standalone measurement generator.
 
-<p align="middle"><a href="https://github.com/mcosovic/JuliaGrid/wiki/Power-Flow" itemprop="contentUrl" data-size="600x400"> <img src="/src/doc/modulepf.png" width="110"></a> <a href="https://github.com/mcosovic/JuliaGrid/wiki/State-Estimation" itemprop="contentUrl" data-size="600x400"> <img src="/src/doc/modulese.png" width="110"></a> <a href="https://github.com/mcosovic/JuliaGrid/wiki/Measurement-Generator" itemprop="contentUrl" data-size="600x400"> <img src="/src/doc/modulemg.png" width="110"></a></p>
+<p align="middle"><a href="https://github.com/mcosovic/JuliaGrid/wiki/Power-Flow" itemprop="contentUrl" data-size="600x400"> <img src="/doc/modulepf.png" width="110"></a> <a href="https://github.com/mcosovic/JuliaGrid/wiki/State-Estimation" itemprop="contentUrl" data-size="600x400"> <img src="/doc/modulese.png" width="110"></a> <a href="https://github.com/mcosovic/JuliaGrid/wiki/Measurement-Generator" itemprop="contentUrl" data-size="600x400"> <img src="/doc/modulemg.png" width="110"></a></p>
 
 <!-- MATGRID includes, inter alia, the weighted least-squares and least absolute values state estimation, optimal PMU placement, and bad data processing.   -->
 
