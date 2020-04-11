@@ -52,7 +52,7 @@ function runmg(args...; max::Int64 = 100, stop::Float64 = 1.0e-8, reactive::Int6
     return settings, system
 end
 
-bus, branch, generator = runpf("nr", "case14.h5"; save = "D:/Dropbox/aaaa.h5")
+bus, branch, generator = runpf("nr", "case14.h5", "main", "flow", "generator"; save = "D:/Dropbox/aaaa.xlsx")
 # runmg("case14.h5", "main"; stop = 1.0e-8, max = 25, reactive = 0, solve = "mldivide", save = "")
 
 end # JuliaGrid
