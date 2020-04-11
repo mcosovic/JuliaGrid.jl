@@ -154,7 +154,13 @@ function newton_raphson(settings, baseMVA, Nbus, Nbranch, Ybus, YbusT, slack, Vc
             end
         end
 
-        dTV = J \ dPQ
+        if settings.solve == "lu"
+            F = lu(J)
+            dTV = F.U \  (F.L \ ((F.Rs .* dPQ)[F.p]))
+            dTV = dTV[sortperm(F.q)]
+        else
+            dTV = J \ dPQ
+        end
 
         @inbounds for i = 1:Nbus
             if type[i] == 1

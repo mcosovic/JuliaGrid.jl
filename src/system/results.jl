@@ -3,7 +3,7 @@
 ########################
 
 #-------------------------------------------------------------------------------
-function results_flowdc(settings, system, Nbus, Nbranch, Ngen, Ti, slack, algtime)
+function results_flowdc(settings, system, Nbus, Nbranch, Ngen, Ti, slack, algtime, info)
     println(string("  Execution time: ", (@sprintf "%.4f" algtime * 1000), " (ms)"))
     header = h5read(joinpath(system.package, "src/system/header.h5"), "/flowdc")
 
@@ -55,7 +55,6 @@ function results_flowdc(settings, system, Nbus, Nbranch, Ngen, Ti, slack, algtim
 
     if !isempty(settings.save)
         group = ["bus", "branch", "generator"]
-        info = info_flow(system, settings, Nbranch, Nbus, Ngen)
         savedata(bus, branch, generator; info = info, group = group, header = header, path = settings.save)
     end
 

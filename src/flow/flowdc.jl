@@ -9,14 +9,19 @@ function rundcpf(settings, system)
     resistance, reactance, charging, transTap, transShift, branchOn, Pbus, Pinj,
     Pshift, Ydiag, Pij, admitance = view_dcsystem(system)
 
-  algtime = @elapsed begin
+    info = ""
     numbering = false
     Nbus = size(system.bus, 1)
     Ngen = size(system.generator, 1)
     Nbranch = size(system.branch, 1)
     bus = collect(1:Nbus)
-    slack = 0
 
+    if !isempty(settings.save)
+        info = info_flow(system, settings, Nbranch, Nbus, Ngen)
+    end
+
+  algtime = @elapsed begin
+    slack = 0
     @inbounds for i = 1:Nbus
         if bus[i] != busi[i]
             numbering = true
@@ -110,7 +115,7 @@ function rundcpf(settings, system)
     end
   end
 
-    BUS, BRANCH, GENERATOR = results_flowdc(settings, system, Nbus, Nbranch, Ngen, Ti, slack, algtime)
+    BUS, BRANCH, GENERATOR = results_flowdc(settings, system, Nbus, Nbranch, Ngen, Ti, slack, algtime, info)
 
     return BUS, BRANCH, GENERATOR
 end
