@@ -10,7 +10,7 @@ path = abspath(joinpath(dirname(Base.find_package("JuliaGrid")), ".."), "test/pf
     accuracy = 1e-10
 
     results = h5read(path, "/DC")
-    bus, branch, generator = runpf("dc", "case14.h5")
+    bus, branch, generator, iterations = runpf("dc", "case14.h5")
 
     Ti = @view(bus[:, 2])
     Pinj = @view(bus[:, 3])
@@ -27,7 +27,7 @@ end
     accuracy = 1e-10
 
     results = h5read(path, "/AC")
-    bus, branch, generator, No = runpf("nr", "case14.h5")
+    bus, branch, generator, iterations = runpf("nr", "case14.h5")
 
     Vi = @view(bus[:, 2])
     Ti = @view(bus[:, 3])

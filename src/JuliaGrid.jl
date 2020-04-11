@@ -34,7 +34,7 @@ function runpf(args...; max::Int64 = 100, stop::Float64 = 1.0e-8, reactive::Int6
     settings = pfsettings(args, max, stop, reactive, solve, save, system)
 
     if settings.algorithm == "dc"
-        bus, branch, generator = rundcpf(settings, system)
+        bus, branch, generator, iterations = rundcpf(settings, system)
     else
         bus, branch, generator, iterations = runacpf(settings, system)
     end
