@@ -36,10 +36,10 @@ function runpf(args...; max::Int64 = 100, stop::Float64 = 1.0e-8, reactive::Int6
     if settings.algorithm == "dc"
         bus, branch, generator = rundcpf(settings, system)
     else
-        bus, branch, generator = runacpf(settings, system)
+        bus, branch, generator, iterations = runacpf(settings, system)
     end
 
-    return bus, branch, generator
+    return bus, branch, generator, iterations
 end
 
 function runmg(args...; max::Int64 = 100, stop::Float64 = 1.0e-8, reactive::Int64 = 0, solve::String = "", save::String = "", pmuset = "all", pmuvariance = ["all" 1e-5], legacyset = "all", legacyvariance = ["all" 1e-4])

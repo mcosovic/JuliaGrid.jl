@@ -1,29 +1,40 @@
-module pfTest
+module PowerFlowTest
 
 using JuliaGrid
 using HDF5
+using Test
 
-function dc_results_test()
+path = abspath(joinpath(dirname(Base.find_package("JuliaGrid")), ".."), "test/pfcase14.h5")
 
+@testset "DC Power Flow" begin
+    accuracy = 1e-10
 
-    results = h5read("pfcase14.h5", "/DC")
+    results = h5read(path, "/DC")
+    bus, branch, generator = runpf("dc", "case14.h5")
 
-    return results
-  end
+    Ti = @view(bus[:, 2])
+    Pinj = @view(bus[:, 3])
+    Pij = @view(branch[:, 4])
+    Pgen = @view(generator[:, 2])
 
-results = dc_results_test()
-bus, branch, generator, = runpf("dc", "case14.h5")
-
+    @test maximum(abs.(Ti  - results["Ti"])) < accuracy
+    @test maximum(abs.(Pinj  - results["Pi"])) < accuracy
+    @test maximum(abs.(Pij  - results["Pij"])) < accuracy
+    @test maximum(abs.(Pgen  - results["Pgen"])) < accuracy
 end
 
+@testset "Newton-Raphson Power Flow" begin
+    accuracy = 1e-10
 
-# errT = maximum(abs.(bus[:,2]  - (bus[:,9] )))
-# errPi = maximum(abs.(BUS[:,3]  - (bus[:,14] )))
-# errPij = maximum(abs.(BRANCH[:,2]  - (branch[:,14] )))
-# errPg = maximum(abs.(GENERATOR[:,2]  - (gen[:,2] )))
-#
-# @testset "SimplyBP" begin
-#     @test runpf("dc", "case14.h5") ≈ wls_mldivide(jacobian, observation, noise)
-#     @test bp("SimpleTest.h5", 1000, 50, 80, 0.0, 0.4, 0.0, 1e6, ALGORITHM = "sum", PATH = "test/") ≈ wls_mldivide(jacobian, observation, noise)
-#     @test bp("SimpleTest.h5", 1000, 10, 1000, 0.2, 0.3, 10.0, 1e8, ALGORITHM = "sum", PATH = "test/") ≈ wls_mldivide(jacobian, observation, noise)
-# end
+    results = h5read(path, "/AC")
+    bus, branch, generator, No = runpf("nr", "case14.h5")
+
+    Vi = @view(bus[:, 2])
+    Ti = @view(bus[:, 3])
+# display(results)
+    @test maximum(abs.(Vi  - results["Vi"])) < accuracy
+    @test maximum(abs.(Ti  - results["Ti"])) < accuracy
+    # @test No - results["iterNR"] = 0
+end
+
+end # PowerFlowTest

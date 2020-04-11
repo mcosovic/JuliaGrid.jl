@@ -99,6 +99,7 @@ function runacpf(settings, system)
     YbusT = sparse([bus; bus; to; from], [bus; bus; from; to], [Ydiag; shunt; Yft; Ytf], Nbus, Nbus)
 
     Vc = Vini .* exp.(im * (pi / 180)  * Tini)
+    iterations = 0
     while settings.reactive[2]
         if  settings.reactive[1] && settings.reactive[2]
             Vc = Vini .* exp.(im * (pi / 180)  * Tini)
@@ -108,7 +109,7 @@ function runacpf(settings, system)
             Vc = gauss_seidel(settings, system.baseMVA, Nbus, Ybus, YbusT, slack, Vc, Pbus, Qbus, Pload, Qload, Vini, type)
         end
         if settings.algorithm == "nr"
-            Vc = newton_raphson(settings, system.baseMVA, Nbus, Nbranch, Ybus, YbusT, slack, Vc, Pbus, Qbus, Pload, Qload, type)
+            Vc, iterations = newton_raphson(settings, system.baseMVA, Nbus, Nbranch, Ybus, YbusT, slack, Vc, Pbus, Qbus, Pload, Qload, type, iterations)
         end
         if settings.algorithm == "fnrbx" || settings.algorithm == "fnrxb"
             Vc = fast_newton_raphson(settings, system.baseMVA, Nbus, Nbranch, branchOn, Ybus, YbusT, slack, Vc, Pbus, Qbus,
@@ -301,7 +302,7 @@ function runacpf(settings, system)
 
     BUS, BRANCH, GENERATOR = results_flowac(settings, system, limit, Nbus, Nbranch, Ngen, slack, Vc, algtime, info)
 
-    return BUS, BRANCH, GENERATOR
+    return BUS, BRANCH, GENERATOR, iterations
 end
 #-------------------------------------------------------------------------------
 

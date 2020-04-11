@@ -6,10 +6,9 @@
 #-------------------------------------------------------------------------------
 # Newton-Raphson Algorithm
 #-------------------------------------------------------------------------------
-function newton_raphson(settings, baseMVA, Nbus, Nbranch, Ybus, YbusT, slack, Vc, Pbus, Qbus, Pload, Qload, type)
+function newton_raphson(settings, baseMVA, Nbus, Nbranch, Ybus, YbusT, slack, Vc, Pbus, Qbus, Pload, Qload, type, iterations)
     V = abs.(Vc)
     T = angle.(Vc)
-    No = 0
     converged = 1
 
     P = similar(Pbus)
@@ -106,8 +105,8 @@ function newton_raphson(settings, baseMVA, Nbus, Nbranch, Ybus, YbusT, slack, Vc
 
     J = sparse(iJ, jJ, zeros(Nnon), Nbus + Npq - 1, Nbus + Npq - 1)
 
-    while No < settings.maxIter
-        No = No + 1
+    while iterations < settings.maxIter
+        iterations = iterations + 1
         threshold = 0.0
 
         Threads.@threads for i = 1:Nbus
@@ -199,16 +198,16 @@ function newton_raphson(settings, baseMVA, Nbus, Nbranch, Ybus, YbusT, slack, Vc
     end
 
     if converged == 1
-        println(string("  AC power flow using Newton-Raphson algorithm converged in ", No, " iterations for stopping condition ", settings.stopping,"."))
+        println(string("  AC power flow using Newton-Raphson algorithm converged in ", iterations, " iterations for stopping condition ", settings.stopping,"."))
     else
-        @info(string("  AC power flow using Newton-Raphson algorithm did not converge in ", No, " iterations for stopping condition ", settings.stopping,"."))
+        @info(string("  AC power flow using Newton-Raphson algorithm did not converge in ", iterations, " iterations for stopping condition ", settings.stopping,"."))
     end
 
     @inbounds for i = 1:Nbus
         Vc[i] = V[i] * exp(im * T[i])
     end
 
-    return Vc
+    return Vc, iterations
 end
 #-------------------------------------------------------------------------------
 
