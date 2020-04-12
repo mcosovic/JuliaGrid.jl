@@ -69,7 +69,7 @@ end
 
     Vi = @view(bus[:, 2])
     Ti = @view(bus[:, 3])
-
+display(iterations)
     @test maximum(abs.(Vi  - results["Vi"])) < accuracy
     @test maximum(abs.(Ti  - results["Ti"])) < accuracy
     @test iterations - results["iterations"][1] == 0

@@ -442,9 +442,9 @@ function fast_newton_raphson(settings, baseMVA, Nbus, Nbranch, branchOn, Ybus, Y
     end
 
     if converged == 1
-        println(string("  AC power flow using fast Newton-Raphson algorithm converged in ", No, " iterations for stopping condition ", settings.stopping,"."))
+        println(string("  AC power flow using fast Newton-Raphson algorithm converged in ", iterations, " iterations for stopping condition ", settings.stopping,"."))
     else
-        println(string("  AC power flow using fast Newton-Raphson algorithm did not converge in ", No, " iterations for stopping condition ", settings.stopping,"."))
+        println(string("  AC power flow using fast Newton-Raphson algorithm did not converge in ", iterations, " iterations for stopping condition ", settings.stopping,"."))
     end
 
     @inbounds for i = 1:Nbus
@@ -528,9 +528,9 @@ function gauss_seidel(settings, baseMVA, Nbus, Ybus, YbusT, slack, Vc, Pbus, Qbu
         end
     end
     if converged == 1
-        println(string("  AC power flow using Gauss-Seidel algorithm converged in ", No, " iterations for stopping condition ", settings.stopping,"."))
+        println(string("  AC power flow using Gauss-Seidel algorithm converged in ", iterations, " iterations for stopping condition ", settings.stopping,"."))
     else
-        println(string("  AC power flow using Gauss-Seidel algorithm did not converge in ", No, " iterations for stopping condition ", settings.stopping,"."))
+        println(string("  AC power flow using Gauss-Seidel algorithm did not converge in ", iterations, " iterations for stopping condition ", settings.stopping,"."))
     end
 
     return Vc, iterations
