@@ -6,10 +6,10 @@ using Test
 
 data = "PowerFlowTest_case14.h5"
 path = abspath(joinpath(dirname(Base.find_package("JuliaGrid")), ".."), "test/", data)
+accuracy = 1e-10
+@info(string("Test: ", data))
 
 @testset "DC Power Flow" begin
-    accuracy = 1e-10
-
     results = h5read(path, "/DC")
     bus, branch, generator, iterations = runpf("dc", "case14.h5")
 
@@ -25,8 +25,6 @@ path = abspath(joinpath(dirname(Base.find_package("JuliaGrid")), ".."), "test/",
 end
 
 @testset "Newton-Raphson Power Flow" begin
-    accuracy = 1e-10
-
     results = h5read(path, "/AC")
     bus, branch, generator, iterations = runpf("nr", "case14.h5")
 
@@ -62,7 +60,7 @@ end
     @test maximum(abs.(Pgen  - results["Pgen"])) < accuracy
     @test maximum(abs.(Qgen  - results["Qgen"])) < accuracy
 
-    @test iterations - results["iteriterationsNR"][1] == 0
+    @test iterations - results["iterationsNR"][1] == 0
 end
 
 end # PowerFlowTest
