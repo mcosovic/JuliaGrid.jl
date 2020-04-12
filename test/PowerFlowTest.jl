@@ -10,7 +10,7 @@ accuracy = 1e-10
 @info(string("Test: ", data))
 
 @testset "DC Power Flow" begin
-    results = h5read(path, "/DC")
+    results = h5read(path, "/dc")
     bus, branch, generator, iterations = runpf("dc", "case14.h5")
 
     Ti = @view(bus[:, 2])
@@ -25,7 +25,7 @@ accuracy = 1e-10
 end
 
 @testset "Newton-Raphson Power Flow" begin
-    results = h5read(path, "/AC")
+    results = h5read(path, "/nr")
     bus, branch, generator, iterations = runpf("nr", "case14.h5")
 
     Vi = @view(bus[:, 2])
@@ -60,7 +60,21 @@ end
     @test maximum(abs.(Pgen  - results["Pgen"])) < accuracy
     @test maximum(abs.(Qgen  - results["Qgen"])) < accuracy
 
-    @test iterations - results["iterationsNR"][1] == 0
+    @test iterations - results["iterations"][1] == 0
 end
+
+@testset "Gauss-Seidel Power Flow" begin
+    results = h5read(path, "/gs")
+    bus, branch, generator, iterations = runpf("gs", "case14.h5"; max = 1000)
+
+    Vi = @view(bus[:, 2])
+    Ti = @view(bus[:, 3])
+
+    @test maximum(abs.(Vi  - results["Vi"])) < accuracy
+    @test maximum(abs.(Ti  - results["Ti"])) < accuracy
+    @test iterations - results["iterations"][1] == 0
+end
+
+
 
 end # PowerFlowTest

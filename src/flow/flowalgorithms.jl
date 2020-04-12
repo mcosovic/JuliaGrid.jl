@@ -214,10 +214,9 @@ end
 #-------------------------------------------------------------------------------
 # Fast Newton-Raphson Algorithm
 #-------------------------------------------------------------------------------
-function fast_newton_raphson(settings, baseMVA, Nbus, Nbranch, branchOn, Ybus, YbusT, slack, Vc, Pbus, Qbus, Pload, Qload, type, resistance, reactance, transShift, Gshunt, Bshunt, charging, transTap, from, to)
+function fast_newton_raphson(settings, baseMVA, Nbus, Nbranch, branchOn, Ybus, YbusT, slack, Vc, Pbus, Qbus, Pload, Qload, type, resistance, reactance, transShift, Gshunt, Bshunt, charging, transTap, from, to, iterations)
     V = abs.(Vc)
     T = angle.(Vc)
-    No = 0
     converged = 1
 
     P = similar(Pload)
@@ -368,8 +367,8 @@ function fast_newton_raphson(settings, baseMVA, Nbus, Nbranch, branchOn, Ybus, Y
     q1 = sortperm(F.q)
     q2 = sortperm(W.q)
 
-    while No < settings.maxIter
-        No = No + 1
+    while iterations < settings.maxIter
+        iterations = iterations + 1
         threshold = 0.0
 
         dT = F.U \  (F.L \ ((F.Rs .* dP)[F.p]))
@@ -452,14 +451,14 @@ function fast_newton_raphson(settings, baseMVA, Nbus, Nbranch, branchOn, Ybus, Y
         Vc[i] = V[i] * exp(im * T[i])
     end
 
-    return Vc
+    return Vc, iterations
 end
 #-------------------------------------------------------------------------------
 
 #-------------------------------------------------------------------------------
 # Gauss-Seidel Algorithm
 #-------------------------------------------------------------------------------
-function gauss_seidel(settings, baseMVA, Nbus, Ybus, YbusT, slack, Vc, Pbus, Qbus, Pload, Qload, Vini, type)
+function gauss_seidel(settings, baseMVA, Nbus, Ybus, YbusT, slack, Vc, Pbus, Qbus, Pload, Qload, Vini, type, iterations)
     P = similar(Pbus)
     Q = similar(Pbus)
     for i = 1:Nbus
@@ -467,14 +466,13 @@ function gauss_seidel(settings, baseMVA, Nbus, Ybus, YbusT, slack, Vc, Pbus, Qbu
         Q[i] = Qbus[i] - Qload[i] / baseMVA
     end
 
-    No = 0
     dPqv = 0.0
     dQqv = 0.0
     dPpv = 0.0
     converged = 0
-    while No < settings.maxIter
+    while iterations < settings.maxIter
         eps = 0.0
-        No = No + 1
+        iterations = iterations + 1
 
         @inbounds for i = 1:Nbus
             if type[i] == 1
@@ -535,6 +533,6 @@ function gauss_seidel(settings, baseMVA, Nbus, Ybus, YbusT, slack, Vc, Pbus, Qbu
         println(string("  AC power flow using Gauss-Seidel algorithm did not converge in ", No, " iterations for stopping condition ", settings.stopping,"."))
     end
 
-    return Vc
+    return Vc, iterations
 end
 #-------------------------------------------------------------------------------

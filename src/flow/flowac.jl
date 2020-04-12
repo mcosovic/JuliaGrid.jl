@@ -106,14 +106,14 @@ function runacpf(settings, system)
         end
 
         if settings.algorithm == "gs"
-            Vc = gauss_seidel(settings, system.baseMVA, Nbus, Ybus, YbusT, slack, Vc, Pbus, Qbus, Pload, Qload, Vini, type)
+            Vc, iterations = gauss_seidel(settings, system.baseMVA, Nbus, Ybus, YbusT, slack, Vc, Pbus, Qbus, Pload, Qload, Vini, type, iterations)
         end
         if settings.algorithm == "nr"
             Vc, iterations = newton_raphson(settings, system.baseMVA, Nbus, Nbranch, Ybus, YbusT, slack, Vc, Pbus, Qbus, Pload, Qload, type, iterations)
         end
         if settings.algorithm == "fnrbx" || settings.algorithm == "fnrxb"
-            Vc = fast_newton_raphson(settings, system.baseMVA, Nbus, Nbranch, branchOn, Ybus, YbusT, slack, Vc, Pbus, Qbus,
-            Pload, Qload, type, resistance, reactance, transShift, Gshunt, Bshunt, charging, transTap, from, to)
+            Vc, iterations = fast_newton_raphson(settings, system.baseMVA, Nbus, Nbranch, branchOn, Ybus, YbusT, slack, Vc, Pbus, Qbus,
+            Pload, Qload, type, resistance, reactance, transShift, Gshunt, Bshunt, charging, transTap, from, to, iterations)
         end
 
         @inbounds for i = 1:Nbus
