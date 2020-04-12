@@ -112,7 +112,7 @@ function runacpf(settings, system)
             Vc, iterations = newton_raphson(settings, system.baseMVA, Nbus, Nbranch, Ybus, YbusT, slack, Vc, Pbus, Qbus, Pload, Qload, type, iterations)
         end
         if settings.algorithm == "fnrbx" || settings.algorithm == "fnrxb"
-            Vc, iterations = fast_newton_raphson(settings, system.baseMVA, Nbus, Nbranch, branchOn, Ybus, YbusT, slack, Vc, Pbus, Qbus,
+            Vc, iterations = fast_newton_raphson(system, settings, system.baseMVA, Nbus, Nbranch, branchOn, Ybus, YbusT, slack, Vc, Pbus, Qbus,
             Pload, Qload, type, resistance, reactance, transShift, Gshunt, Bshunt, charging, transTap, from, to, iterations)
         end
 

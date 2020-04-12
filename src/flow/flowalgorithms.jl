@@ -214,7 +214,7 @@ end
 #-------------------------------------------------------------------------------
 # Fast Newton-Raphson Algorithm
 #-------------------------------------------------------------------------------
-function fast_newton_raphson(settings, baseMVA, Nbus, Nbranch, branchOn, Ybus, YbusT, slack, Vc, Pbus, Qbus, Pload, Qload, type, resistance, reactance, transShift, Gshunt, Bshunt, charging, transTap, from, to, iterations)
+function fast_newton_raphson(system, settings, baseMVA, Nbus, Nbranch, branchOn, Ybus, YbusT, slack, Vc, Pbus, Qbus, Pload, Qload, type, resistance, reactance, transShift, Gshunt, Bshunt, charging, transTap, from, to, iterations)
     V = abs.(Vc)
     T = angle.(Vc)
     converged = 1
