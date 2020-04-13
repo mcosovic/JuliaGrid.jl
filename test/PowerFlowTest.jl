@@ -5,8 +5,9 @@ using HDF5
 using Test
 
 data = "PowerFlowTest_case14.h5"
-path = abspath(joinpath(dirname(Base.find_package("JuliaGrid")), ".."), "test/", data)
 accuracy = 1e-10
+
+path = abspath(joinpath(dirname(Base.find_package("JuliaGrid")), ".."), "test/", data)
 @info(string("Test: ", data))
 
 @testset "DC Power Flow" begin
@@ -81,11 +82,36 @@ end
 
     Vi = @view(bus[:, 2])
     Ti = @view(bus[:, 3])
-display(iterations)
+
     @test maximum(abs.(Vi  - results["Vi"])) < accuracy
     @test maximum(abs.(Ti  - results["Ti"])) < accuracy
-    # @test iterations - results["iterations"][1] == 0
+    @test iterations - results["iterations"][1] == 0
 end
+
+@testset "Fast Newton-Raphson Power (FDBX) Flow" begin
+    results = h5read(path, "/fdbx")
+    bus, branch, generator, iterations = runpf("fnrbx", "case14.h5"; max = 1000)
+
+    Vi = @view(bus[:, 2])
+    Ti = @view(bus[:, 3])
+
+    @test maximum(abs.(Vi  - results["Vi"])) < accuracy
+    @test maximum(abs.(Ti  - results["Ti"])) < accuracy
+    @test iterations - results["iterations"][1] == 0
+end
+
+@testset "Newton-Raphson Power Flow with Limits" begin
+    results = h5read(path, "/nrLimit")
+    bus, branch, generator, iterations = runpf("nr", "case14.h5"; reactive = 1)
+
+    Vi = @view(bus[:, 2])
+    Ti = @view(bus[:, 3])
+
+    @test maximum(abs.(Vi  - results["Vi"])) < accuracy
+    @test maximum(abs.(Ti  - results["Ti"])) < accuracy
+    @test iterations - results["iterations"][1] == 0
+end
+
 
 
 

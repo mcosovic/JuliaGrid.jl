@@ -99,21 +99,21 @@ function runacpf(settings, system)
     YbusT = sparse([bus; bus; to; from], [bus; bus; from; to], [Ydiag; shunt; Yft; Ytf], Nbus, Nbus)
 
     Vc = Vini .* exp.(im * (pi / 180)  * Tini)
-    iterations = 0
+    iter = 0
     while settings.reactive[2]
         if  settings.reactive[1] && settings.reactive[2]
             Vc = Vini .* exp.(im * (pi / 180)  * Tini)
         end
 
         if settings.algorithm == "gs"
-            Vc, iterations = gauss_seidel(settings, system.baseMVA, Nbus, Ybus, YbusT, slack, Vc, Pbus, Qbus, Pload, Qload, Vini, type, iterations)
+            Vc, iter = gauss_seidel(settings, system.baseMVA, Nbus, Ybus, YbusT, slack, Vc, Pbus, Qbus, Pload, Qload, Vini, type, iter)
         end
         if settings.algorithm == "nr"
-            Vc, iterations = newton_raphson(settings, system.baseMVA, Nbus, Nbranch, Ybus, YbusT, slack, Vc, Pbus, Qbus, Pload, Qload, type, iterations)
+            Vc, iter = newton_raphson(settings, system.baseMVA, Nbus, Nbranch, Ybus, YbusT, slack, Vc, Pbus, Qbus, Pload, Qload, type, iter)
         end
         if settings.algorithm == "fnrbx" || settings.algorithm == "fnrxb"
-            Vc, iterations = fast_newton_raphson(system, settings, system.baseMVA, Nbus, Nbranch, branchOn, Ybus, YbusT, slack, Vc, Pbus, Qbus,
-            Pload, Qload, type, resistance, reactance, transShift, Gshunt, Bshunt, charging, transTap, from, to, iterations)
+            Vc, iter = fast_newton_raphson(system, settings, system.baseMVA, Nbus, Nbranch, branchOn, Ybus, YbusT, slack, Vc, Pbus, Qbus,
+            Pload, Qload, type, resistance, reactance, transShift, Gshunt, Bshunt, charging, transTap, from, to, iter)
         end
 
         @inbounds for i = 1:Nbus
