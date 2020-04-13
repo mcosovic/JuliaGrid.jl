@@ -184,6 +184,8 @@ function results_generator(system, settings, Nbranch, Nbus, measurements)
         measurements["PmuVoltage"][i, 5] = measurements["PmuVoltage"][i, 9] + measurements["PmuVoltage"][i, 6]^(1/2) * randn(1)[1]
     end
 
+
+    header = h5read(joinpath(system.package, "src/system/header.h5"), "/flowac")
     header1, header2, group = generator_headers()
     system = loadsystem([system.path])
     infosys = [read_data["info"]; "" "" ""]
