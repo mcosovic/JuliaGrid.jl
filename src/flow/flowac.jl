@@ -300,9 +300,9 @@ function runacpf(settings, system)
     end
   end
 
-    BUS, BRANCH, GENERATOR = results_flowac(settings, system, limit, Nbus, Nbranch, Ngen, slack, Vc, algtime, info)
+    bus, branch, generator = results_flowac(settings, system, limit, Nbus, Nbranch, Ngen, slack, Vc, algtime, info)
 
-    return BUS, BRANCH, GENERATOR, iterations
+    return bus, branch, generator, iter
 end
 #-------------------------------------------------------------------------------
 

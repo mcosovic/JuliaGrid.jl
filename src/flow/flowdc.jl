@@ -116,9 +116,9 @@ function rundcpf(settings, system)
     end
   end
 
-    BUS, BRANCH, GENERATOR = results_flowdc(settings, system, Nbus, Nbranch, Ngen, Ti, slack, algtime, info)
+    bus, branch, generator = results_flowdc(settings, system, Nbus, Nbranch, Ngen, Ti, slack, algtime, info)
 
-    return BUS, BRANCH, GENERATOR, iterations
+    return bus, branch, generator, iterations
 end
 #-------------------------------------------------------------------------------
 
