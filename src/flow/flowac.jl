@@ -263,7 +263,7 @@ function runacpf(settings, system)
     if settings.reactive[3]
         T = angle(Vc[slackLimit])
         for i = 1:Nbus
-            Vc[i] = abs(Vc[i]) * exp(im * (angle(Vc[i]) - T +  (pi / 180) * Tini[slack]))
+            Vc[i] = abs(Vc[i]) * exp(im * (angle(Vc[i]) - T +  (pi / 180) * Tini[slackLimit]))
         end
     end
 

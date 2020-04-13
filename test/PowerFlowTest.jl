@@ -64,6 +64,18 @@ end
     @test iterations - results["iterations"][1] == 0
 end
 
+@testset "Newton-Raphson Power Flow with Limits" begin
+    results = h5read(path, "/nrLimit")
+    bus, branch, generator, iterations = runpf("nr", "case14.h5", "main"; reactive = 1)
+
+    Vi = @view(bus[:, 2])
+    Ti = @view(bus[:, 3])
+
+    @test maximum(abs.(Vi  - results["Vi"])) < accuracy
+    @test maximum(abs.(Ti  - results["Ti"])) < accuracy
+    @test iterations - results["iterations"][1] == 0
+end
+
 @testset "Gauss-Seidel Power Flow" begin
     results = h5read(path, "/gs")
     bus, branch, generator, iterations = runpf("gs", "case14.h5"; max = 1000)
@@ -99,20 +111,5 @@ end
     @test maximum(abs.(Ti  - results["Ti"])) < accuracy
     @test iterations - results["iterations"][1] == 0
 end
-
-@testset "Newton-Raphson Power Flow with Limits" begin
-    results = h5read(path, "/nrLimit")
-    bus, branch, generator, iterations = runpf("nr", "case14.h5"; reactive = 1)
-
-    Vi = @view(bus[:, 2])
-    Ti = @view(bus[:, 3])
-
-    @test maximum(abs.(Vi  - results["Vi"])) < accuracy
-    @test maximum(abs.(Ti  - results["Ti"])) < accuracy
-    @test iterations - results["iterations"][1] == 0
-end
-
-
-
 
 end # PowerFlowTest
