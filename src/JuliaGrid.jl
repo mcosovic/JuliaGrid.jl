@@ -52,6 +52,4 @@ function runmg(args...; max::Int64 = 100, stop::Float64 = 1.0e-8, reactive::Int6
     return settings, system
 end
 
-bus, branch, generator, iterations = runpf("nr", "case14.h5", "main"; reactive = 1)
-
 end # JuliaGrid
