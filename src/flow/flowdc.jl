@@ -10,7 +10,7 @@ function rundcpf(settings, system)
     Pshift, Ydiag, Pij, admitance = view_dcsystem(system)
 
     info = ""
-    iterations = 0
+    iter = 0
     numbering = false
     Nbus = size(system.bus, 1)
     Ngen = size(system.generator, 1)
@@ -118,7 +118,7 @@ function rundcpf(settings, system)
 
     bus, branch, generator = results_flowdc(settings, system, Nbus, Nbranch, Ngen, Ti, slack, algtime, info)
 
-    return bus, branch, generator, iterations
+    return bus, branch, generator, iter
 end
 #-------------------------------------------------------------------------------
 
