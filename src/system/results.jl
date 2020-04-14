@@ -54,7 +54,7 @@ function results_flowdc(settings, system, Nbus, Nbranch, Ngen, Ti, slack, algtim
     end
 
     if !isempty(settings.save)
-        savedata(bus, branch, generator; info = info, group = group, header = header, path = settings.save)
+        savedata(bus, branch, generator; info = info, group = header["group"], header = header, path = settings.save)
     end
 
     return bus, branch, generator
@@ -221,14 +221,11 @@ function results_generator(system, settings, Nbranch, Nbus, Ngen, measurements)
     end
 
 
-    header_system = h5read(joinpath(system.package, "src/system/header.h5"), "/system")
-    header_measure = h5read(joinpath(system.package, "src/system/header.h5"), "/measurement")
-    header = merge!(header_system, header_measure)
-
+    header = h5read(joinpath(system.package, "src/system/header.h5"), "/measurement")
     system = loadsystem([system.path])
     info = info_flow(system, settings, Nbranch, Nbus, Ngen)
-    info = [info; "" "" ""]
 
+    info = [info; "" "" ""]
     if settings.set["legacy"][1] == "all"
         info = [info; "Legacy set setting" "all measurements in-service" ""]
     end
@@ -332,6 +329,6 @@ function results_generator(system, settings, Nbranch, Nbus, Ngen, measurements)
 
     savedata(measurements["PmuVoltage"], measurements["PmuCurrent"], measurements["LegFlow"], measurements["LegCurrent"],
         measurements["LegInjection"], measurements["LegVoltage"], system.bus, system.generator, system.branch, system.baseMVA;
-        group = group, header = header, path = path, info = info)
+        group = header["group"], header = header, path = path, info = info)
 end
 #-------------------------------------------------------------------------------
