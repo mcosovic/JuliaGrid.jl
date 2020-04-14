@@ -135,7 +135,7 @@ function loadsystem(args)
     generator = Array{Float64}(undef, 0, 0)
     branch = Array{Float64}(undef, 0, 0)
     baseMVA = 0.0
-    info = Array{Any}(undef, 0)
+    info = Array{String}(undef, 0)
 
     for i in keys(read_data)
         if i == "bus"

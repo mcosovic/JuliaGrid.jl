@@ -222,6 +222,7 @@ function results_generator(system, settings, Nbranch, Nbus, Ngen, measurements)
 
 
     header = h5read(joinpath(system.package, "src/system/header.h5"), "/measurement")
+    header["basePower"] = permutedims(header["basePower"])
     system = loadsystem([system.path])
     info = info_flow(system, settings, Nbranch, Nbus, Ngen)
 
