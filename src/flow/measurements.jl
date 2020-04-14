@@ -5,6 +5,7 @@ function rungenerator(system, settings, bus, branch)
     busi, Vi, Ti, Pinj, Qinj, branchi, fromi, toi, Pij, Qij, Pji, Qji, Iij, Dij, Iji, Dji = view_generator(bus, branch)
     Nbus = size(bus, 1)
     Nbranch = size(branch, 1)
+    Ngen = size(system.generator, 1)
 
     measurements = Dict("LegFlow" => fill(0.0, 2 * Nbranch, 11), "LegCurrent" =>  fill(0.0, 2 * Nbranch, 7),
                         "LegInjection" => fill(0.0, Nbus, 9), "LegVoltage" => fill(0.0, Nbus, 5),
@@ -205,7 +206,7 @@ function rungenerator(system, settings, bus, branch)
         end
     end
 
-    results_generator(system, settings, Nbranch, Nbus, measurements)
+    results_generator(system, settings, Nbranch, Nbus, Ngen, measurements)
 end
 #-------------------------------------------------------------------------------
 

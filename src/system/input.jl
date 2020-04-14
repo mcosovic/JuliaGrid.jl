@@ -7,9 +7,10 @@
 struct PowerSystem
     bus::Array{Float64,2}
     generator::Array{Float64,2}
+    isgenerator::Bool
     branch::Array{Float64,2}
     baseMVA::Float64
-    info::Array{String,2}
+    info::Union{Array{String,1}, Array{String,2}}
     package::String
     path::String
     data::String
@@ -61,6 +62,7 @@ end
 #-------------------------------------------------------------------------------
 function loadsystem(args)
     package_dir = abspath(joinpath(dirname(Base.find_package("JuliaGrid")), ".."))
+    isgenerator = true
     extension = ""
     path = ""
     data = ""
@@ -87,16 +89,10 @@ function loadsystem(args)
     end
 
     input_data = cd(readdir, path)
-    for i = 1:length(args)
-        if any(input_data .== args[i])
-            data = args[i]
-        end
-    end
-
-    if isempty(data)
-        error("The input power system data is not found.")
-    else
+    if any(input_data .== data)
         println(string("  Input Power System: ", data))
+    else
+        error("The input power system data is not found.")
     end
 
     if extension == ".h5"
@@ -104,6 +100,7 @@ function loadsystem(args)
     end
 
     if extension == ".xlsx"
+        start = 1
         read_data = Dict()
         sheet = ["bus", "branch", "generator", "basePower", "info"]
         for i in sheet
@@ -111,19 +108,20 @@ function loadsystem(args)
                 xf = XLSX.readxlsx(fullpath)
                 sh = xf[i]
                 table = sh[:]
-                push!(read_data, i => Float64.(table[3:end, :]))
+                for r in XLSX.eachrow(sh)
+                    if !isa(r[1], String) && i != "info"
+                        start = XLSX.row_number(r)
+                        break
+                    end
+                end
+                if i != "info"
+                    push!(read_data, i => Float64.(table[start:end, :]))
+                else
+                    push!(read_data, i => string.(coalesce.(table, "")))
+                end
             catch
             end
         end
-    end
-
-    bus = Array{Float64}(undef, 0, 0)
-    generator = Array{Float64}(undef, 0, 0)
-    branch = Array{Float64}(undef, 0, 0)
-    info = Array{String}(undef, 0)
-    if !any(keys(read_data) .== "basePower")
-        baseMVA = 100.0
-        @info("The variable 'baseMVA' not found. The algorithm proceeds with default value: 100 MVA")
     end
 
     if !any(keys(read_data) .== "bus")
@@ -132,6 +130,12 @@ function loadsystem(args)
     if !any(keys(read_data) .== "branch")
         error("Invalid power flow data structure, variable 'branch' not found.")
     end
+
+    bus = Array{Float64}(undef, 0, 0)
+    generator = Array{Float64}(undef, 0, 0)
+    branch = Array{Float64}(undef, 0, 0)
+    baseMVA = 0.0
+    info = Array{Any}(undef, 0)
 
     for i in keys(read_data)
         if i == "bus"
@@ -151,7 +155,17 @@ function loadsystem(args)
         end
     end
 
-    return PowerSystem(bus, generator, branch, baseMVA, info, package_dir, fullpath, data, extension)
+    if length(generator) == 0
+        generator = zeros(1, 21)
+        isgenerator = false
+    end
+
+    if baseMVA == 0
+        baseMVA = 100.0
+        @info("The variable 'basePower' not found. The algorithm proceeds with default value: 100 MVA")
+    end
+
+    return PowerSystem(bus, generator, isgenerator, branch, baseMVA, info, package_dir, fullpath, data, extension)
 end
 #-------------------------------------------------------------------------------
 
@@ -174,12 +188,12 @@ function pfsettings(args, max, stop, react, solve, save, system)
         if args[i] == "flow"
             flow = true
         end
-        if args[i] == "generator"
+        if args[i] == "generator" && system.isgenerator
             generator = true
         end
     end
 
-    if react == 1
+    if react == 1 && system.isgenerator
         reactive = [true; true; false]
     end
 

@@ -19,7 +19,6 @@ using JuMP, GLPK, Gurobi
 include("system/input.jl")
 include("system/routine.jl")
 include("system/results.jl")
-include("system/service.jl")
 
 include("flow/flowdc.jl")
 include("flow/flowac.jl")
@@ -51,5 +50,9 @@ function runmg(args...; max::Int64 = 100, stop::Float64 = 1.0e-8, reactive::Int6
 
     return settings, system
 end
+
+bus, branch, generator, iterations = runpf("dc", "case14.xlsx", "main", "flow", "generator"; save = "D/:Dropbox/dc.xlsx")
+
+# runmg("D:/Dropbox/a.xlsx"; save = "D:/Dropbox/case14.xlsx", pmuset = "all", pmuvariance = ["all" 1e-5], legacyset = "all", legacyvariance = ["all" 1e-4])
 
 end # JuliaGrid

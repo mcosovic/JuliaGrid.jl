@@ -37,16 +37,15 @@ function rundcpf(settings, system)
         println("  The slack bus is not found. Slack bus is the first bus.")
     end
 
-    if !isempty(system.generator)
-        gen_bus = numbering_generator(geni, busi, Nbus, bus, numbering)
-        Pbus .= 0.0
-        @inbounds for (k, i) in enumerate(gen_bus)
-            if genOn[k] == 1
-                Pbus[i] += Pgen[k] / system.baseMVA
-                Pgen[k] = Pgen[k] / system.baseMVA
-            end
+    gen_bus = numbering_generator(geni, busi, Nbus, bus, numbering)
+    Pbus .= 0.0
+    @inbounds for (k, i) in enumerate(gen_bus)
+        if genOn[k] == 1
+            Pbus[i] += Pgen[k] / system.baseMVA
+            Pgen[k] = Pgen[k] / system.baseMVA
         end
     end
+
 
     from, to = numbering_branch(fromi, toi, busi, Nbranch, Nbus, bus, numbering)
     Pshift .= 0.0

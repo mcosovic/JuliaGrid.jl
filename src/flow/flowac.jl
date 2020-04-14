@@ -43,24 +43,22 @@ function runacpf(settings, system)
     Pbus .= 0.0
     Qbus .= 0.0
     type .= 1.0
-    if !isempty(system.generator)
-        gen_bus = numbering_generator(geni, busi, Nbus, bus, numbering)
 
-        @inbounds for (k, i) in enumerate(gen_bus)
-            if genOn[k] == 1
-                Pbus[i] += Pgen[k] / system.baseMVA
-                Qbus[i] += Qgen[k] / system.baseMVA
-                Pgen[k] = Pgen[k] / system.baseMVA
-                Qgen[k] = Qgen[k] / system.baseMVA
-                Qmin[k] = Qmin[k] / system.baseMVA
-                Qmax[k] = Qmax[k] / system.baseMVA
-                Vini[i] = Vgen[k]
-                type[i] = 2.0
+    gen_bus = numbering_generator(geni, busi, Nbus, bus, numbering)
+    @inbounds for (k, i) in enumerate(gen_bus)
+        if genOn[k] == 1
+            Pbus[i] += Pgen[k] / system.baseMVA
+            Qbus[i] += Qgen[k] / system.baseMVA
+            Pgen[k] = Pgen[k] / system.baseMVA
+            Qgen[k] = Qgen[k] / system.baseMVA
+            Qmin[k] = Qmin[k] / system.baseMVA
+            Qmax[k] = Qmax[k] / system.baseMVA
+            Vini[i] = Vgen[k]
+            type[i] = 2.0
 
-                multiple[i] += 1
-                if multiple[i] != 1
-                    isMultiple = true
-                end
+            multiple[i] += 1
+            if multiple[i] != 1
+                isMultiple = true
             end
         end
     end
