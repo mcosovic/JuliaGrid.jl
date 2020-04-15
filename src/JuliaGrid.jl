@@ -2,6 +2,7 @@ module JuliaGrid
 
 export runpf
 export runmg
+export func
 
 using SparseArrays
 using HDF5
@@ -29,10 +30,11 @@ include("estimation/estimationdc.jl")
 
 
 """
-    runpf
+    func(x)
 
-Abstract type which new deployment configs should be subtypes of.
+Returns double the number `x` plus `1`.
 """
+func(x) = 2x + 1
 
 function runpf(args...; max::Int64 = 100, stop::Float64 = 1.0e-8, reactive::Int64 = 0, solve::String = "", save::String = "")
     system = loadsystem(args)

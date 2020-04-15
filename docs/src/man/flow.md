@@ -111,8 +111,9 @@ The predefined cases are located in the `src/data` as the **h5-file** or **xlsx-
 
 The power flow settings should be given as input arguments of the function `runpf`. Although the syntax is given in a certain order, for methodological reasons, only ``DATA`` must appear, and the order of other inputs is arbitrary, as well as their appearance.
 
+# JuliaGrid.jl Documentation
 ```@docs
-runpf
+func(x)
 ```
 
 !!! note
