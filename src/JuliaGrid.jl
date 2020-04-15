@@ -27,9 +27,10 @@ include("flow/measurements.jl")
 
 include("estimation/estimationdc.jl")
 
+
 """
-    DeployConfig
-    
+    runpf
+
 Abstract type which new deployment configs should be subtypes of.
 """
 
@@ -54,7 +55,7 @@ function runmg(args...; max::Int64 = 100, stop::Float64 = 1.0e-8, reactive::Int6
     rungenerator(system, settings, bus, branch)
 end
 
-# bus, branch, generator, iterations = runpf("nr", "case14.xlsx", "main", "flow", "generator"; save = "D:/Dropbox/dc.xlsx")
+ bus, branch, generator, iterations = runpf("nr", "case14.xlsx", "main", "flow", "generator")
 
 # runmg("case14.h5"; save = "D:/Dropbox/case14.xlsx", pmuset = ["Iij" 5 "Dij"])
 
