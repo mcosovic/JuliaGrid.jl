@@ -274,9 +274,6 @@ function gesettings(args, max, stop, react, solve, save, pmuset, pmuvariance, le
             set["legacy"][1] = i
         end
     end
-    if !isa(set["legacy"][1], String)
-        set["legacy"][1] = legacySetOptions[1]
-    end
     if any(set["legacy"][1] .== ["Pij", "Qij", "Iij", "Pi", "Qi", "Vi"])
         set["legacy"][1] = "onebyone"
     end

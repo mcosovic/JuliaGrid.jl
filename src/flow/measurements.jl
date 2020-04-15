@@ -114,14 +114,15 @@ function rungenerator(system, settings, bus, branch)
 
     if settings.set["pmu"][1] == "device" || settings.set["pmu"][1] == "optimal"
         if settings.set["pmu"][1] == "device"
-            if isa(settings.set["pmu"][2], Number) && settings.set["pmu"][2] <= bus.Nbus
-                idxn = randperm(bus.Nbus)
+            if isa(settings.set["pmu"][2], Number) && settings.set["pmu"][2] <= Nbus
+                idxn = randperm(Nbus)
                 on = trunc(Int, settings.set["pmu"][2])
                 idx = idxn[1:on]
             end
         end
         if settings.set["pmu"][1] == "optimal"
             bus = collect(1:Nbus)
+            numbering = false
             @inbounds for i = 1:Nbus
                 if bus[i] != busi[i]
                     numbering = true
@@ -130,14 +131,13 @@ function rungenerator(system, settings, bus, branch)
             from, to = numbering_branch(fromi, toi, busi, Nbranch, Nbus, bus, numbering)
 
             A = sparse([bus; from; to], [bus; to; from], fill(1, Nbus + 2 * Nbranch), Nbus, Nbus)
-            f  = fill(1, bus.Nbus);
-            lb = fill(0, bus.Nbus);
-            ub = fill(1, bus.Nbus);
+            f  = fill(1, Nbus);
+            lb = fill(0, Nbus);
+            ub = fill(1, Nbus);
 
             if settings.set["pmu"][2] == "Gurobi"
                 model = Model(with_optimizer(Gurobi.Optimizer))
-            end
-            if settings.set["pmu"][2] == "GLPK"
+            else
                 model = Model(with_optimizer(GLPK.Optimizer))
             end
 
@@ -149,19 +149,18 @@ function rungenerator(system, settings, bus, branch)
             optimize!(model)
             x = JuMP.value.(x)
             idx = findall(x->x == 1, x)
-            display(idx)
         end
         for i in idx
             measurements["PmuVoltage"][i, 4] = 1
             measurements["PmuVoltage"][i, 7] = 1
             for j = 1:Nbranch
-                if bus[i, 1] == branch[j, 1]
-                    measurements["PmuCurrent"][j, 5] = 1
-                    measurements["PmuCurrent"][j, 8] = 1
+                if busi[i] == fromi[j]
+                    measurements["PmuCurrent"][j, 6] = 1
+                    measurements["PmuCurrent"][j, 9] = 1
                 end
-                if bus[i, 1] == branch[j, 2]
-                    measurements["PmuCurrent"][j + Nbranch, 5] = 1
-                    measurements["PmuCurrent"][j + Nbranch, 8] = 1
+                if busi[i] == toi[j]
+                    measurements["PmuCurrent"][j + Nbranch, 6] = 1
+                    measurements["PmuCurrent"][j + Nbranch, 9] = 1
                 end
             end
         end
