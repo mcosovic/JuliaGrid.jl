@@ -5,7 +5,7 @@ makedocs(
     modules = [JuliaGrid],
     format = Documenter.HTML(
         prettyurls = !("local" in ARGS),
-        # canonical = "https://ronisbr.github.io/PrettyTables.jl/stable/",
+        canonical = "https://mcosovic.github.io/JuliaGrid.jl/stable/",
     ),
     sitename = "JuliaGrid",
     authors = "Mirsad Cosovic",
