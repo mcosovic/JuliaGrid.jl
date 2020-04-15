@@ -1,27 +1,18 @@
 using Documenter, JuliaGrid
 
-using Pkg
-pkg"activate .."
-push!(LOAD_PATH,"../src/")
-
-
-makedocs(;
-    modules=[JuliaGrid],
-	format = Documenter.HTML(
-        prettyurls = prettyurls = get(ENV, "CI", nothing) == "true",
+makedocs(
+    sitename = "JuliaGrid",
+    authors = "Mirsad Cosovic",
+    format = Documenter.HTML(
+        canonical = "a",
     ),
-    pages=[
-    "Home" => "index.md",
-    "Power Flow" => "man/flow.md"
-    ],
-    repo="https://github.com/mcosovic/JuliaGrid/{commit}{path}#L{line}",
-    sitename="JuliaGridd",
-    authors="Mirsad Cosovic",
+    pages = [
+        "Home" => "index.md",
+        "Power Flow" => "man/flow.md"
+    ]
 )
 
-# Documenter can also automatically deploy documentation to gh-pages.
-# See "Hosting Documentation" and deploydocs() in the Documenter manual
-# for more information.
-# deploydocs(;
-#     repo="github.com/juliamatlab/MatLang.git",
-# )
+deploydocs(
+    repo = "",
+    target = "build",
+)

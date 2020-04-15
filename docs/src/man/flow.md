@@ -1,5 +1,3 @@
-import JSON
-
 # Power Flow
 
 The function runs the AC and DC power flow analysis, where reactive power constraints can be used for the AC power flow analysis.
@@ -38,6 +36,7 @@ The bus data structure:
 
 
 The generator data structure:
+
 | Column   | Description        | Type                     | Unit     |
 |:--------:|:-------------------|:-------------------------|:---------|
 | 1        | bus number         | positive integer         |          |
@@ -111,17 +110,6 @@ The predefined cases are located in the `src/data` as the **h5-file** or **xlsx-
 
 The power flow settings should be given as input arguments of the function `runpf`. Although the syntax is given in a certain order, for methodological reasons, only ``DATA`` must appear, and the order of other inputs is arbitrary, as well as their appearance.
 
-# JuliaGrid.jl Documentation
-```@docs
-func(x)
-```
-
-!!! note
-    Implementations of this functions should accept trailing `kwargs...` for
-    compatibility with future Documenter releases which may pass additional
-    keyword arguments.
-
-
 
 ### Syntax
 ```
@@ -154,20 +142,18 @@ runpf("case14.h5", "gs", "main"; max = 500, stop = 1.0e-8, reactive = 1);
 runpf("case14.h5", "dc", "main"; solve = "lu", save = "D:/case14results.xlsx");
 ```
 
-<br>
 
 ### Input Variable Number of Arguments
-</br>
+
 DATA
 
-  | Example| Description
-  | --- | --- |
-  |`"case14.h5"`| loads the power system data from the package
- |`"case14.xlsx"`| loads the power system data from the package
- |`"C:/case14.xlsx"`| loads the power system data from a custom path
+| Example           | Description                                    |
+|:------------------|:------------------------------------------------|
+|`"case14.h5"`      | loads the power system data from the package   |
+|`"case14.xlsx"`    | loads the power system data from the package   |
+|`"C:/case14.xlsx"` | loads the power system data from a custom path |
 
-<br>
-</br>
+
 METHOD
 
   | Command | Description
@@ -178,8 +164,7 @@ METHOD
   |`"fnrbx"`| runs the AC power flow analysis using BX fast Newton-Raphson algorithm
   |`"dc"`| runs the DC power flow analysis
 
-<br>
-</br>
+
  DISPLAY
 
   | Command | Description
@@ -189,7 +174,7 @@ METHOD
   |`"generator"`| shows generator data display
 
 ### Input Keyword Arguments
-</br>
+
  ACCONTROL
 
   | Command | Description
@@ -198,8 +183,7 @@ METHOD
   |`stop = value`| specifies the stopping criteria for the AC power flow <br> `default setting: 1.0e-8`
   |`reactive = 1`| forces reactive power constraints <br>  `default setting: 0`
 
-<br>
-</br>
+
  SOLVE
 
   | Command | Description
@@ -207,8 +191,6 @@ METHOD
   |`solve = "mldivide"`| mldivide linear system solver, `default setting`
   |`solve = "lu"`| LU linear system solver
 
-<br>
-</br>
  SAVE
 
   | Command | Description
