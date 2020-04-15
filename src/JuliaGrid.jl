@@ -1,7 +1,7 @@
-# module JuliaGrid
-#
-# export runpf
-# export runmg
+module JuliaGrid
+
+export runpf
+export runmg
 
 using SparseArrays
 using HDF5
@@ -47,12 +47,10 @@ function runmg(args...; max::Int64 = 100, stop::Float64 = 1.0e-8, reactive::Int6
     bus, branch, generator = runacpf(settings, system)
 
     rungenerator(system, settings, bus, branch)
-
-    return settings, system
 end
 
 # bus, branch, generator, iterations = runpf("nr", "case14.xlsx", "main", "flow", "generator"; save = "D:/Dropbox/dc.xlsx")
 
-settings, system = runmg("case14.h5"; save = "D:/Dropbox/case14.xlsx", pmuset = ["Iij" 5 "Dij"])
+# runmg("case14.h5"; save = "D:/Dropbox/case14.xlsx", pmuset = ["Iij" 5 "Dij"])
 
-# end # JuliaGrid
+end # JuliaGrid
