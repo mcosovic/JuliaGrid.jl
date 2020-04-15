@@ -27,6 +27,11 @@ include("flow/measurements.jl")
 
 include("estimation/estimationdc.jl")
 
+"""
+    DeployConfig
+    
+Abstract type which new deployment configs should be subtypes of.
+"""
 
 function runpf(args...; max::Int64 = 100, stop::Float64 = 1.0e-8, reactive::Int64 = 0, solve::String = "", save::String = "")
     system = loadsystem(args)
