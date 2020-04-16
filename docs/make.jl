@@ -3,7 +3,7 @@ using Documenter, JuliaGrid
 makedocs(
     sitename = "JuliaGrid",
     modules = [ JuliaGrid ],
-    doctest = false, 
+    doctest = false,
     pages = [
         "Home" => "index.md",
         "Power Flow" => "man/flow.md"
@@ -13,5 +13,4 @@ makedocs(
 deploydocs(
     repo = "github.com/mcosovic/JuliaGrid.git",
     target = "build",
-    push_preview = true,
 )
