@@ -2,10 +2,7 @@ using Documenter, JuliaGrid
 
 makedocs(
     sitename = "JuliaGrid",
-    authors = "Mirsad Cosovic",
-    format = Documenter.HTML(
-        canonical = "a",
-    ),
+    modules = [ JuliaGrid ],
     pages = [
         "Home" => "index.md",
         "Power Flow" => "man/flow.md"
