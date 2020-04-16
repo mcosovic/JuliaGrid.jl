@@ -135,11 +135,11 @@ bus, branch, generator = runpf(...) returns results of the power flow analysis
 ```
 
 ###  Examples
-```
-runpf("case14.h5", "nr", "main", "flow", "generator");
-runpf("case14.xlsx", "nr", "main"; max = 10, stop = 1.0e-8);
-runpf("case14.h5", "gs", "main"; max = 500, stop = 1.0e-8, reactive = 1);
-runpf("case14.h5", "dc", "main"; solve = "lu", save = "D:/case14results.xlsx");
+```julia-repl
+julia> runpf("case14.h5", "nr", "main", "flow", "generator");
+julia> runpf("case14.xlsx", "nr", "main"; max = 10, stop = 1.0e-8);
+julia> runpf("case14.h5", "gs", "main"; max = 500, stop = 1.0e-8, reactive = 1);
+julia> runpf("case14.h5", "dc", "main"; solve = "lu", save = "D:/case14results.xlsx");
 ```
 
 
@@ -148,7 +148,7 @@ runpf("case14.h5", "dc", "main"; solve = "lu", save = "D:/case14results.xlsx");
 DATA
 
 | Example           | Description                                    |
-|:------------------|:------------------------------------------------|
+|:------------------|:-----------------------------------------------|
 |`"case14.h5"`      | loads the power system data from the package   |
 |`"case14.xlsx"`    | loads the power system data from the package   |
 |`"C:/case14.xlsx"` | loads the power system data from a custom path |
@@ -157,12 +157,12 @@ DATA
 METHOD
 
   | Command | Description
-  | --- | --- |
-  |`"nr"`| runs the AC power flow analysis using Newton-Raphson algorithm
-  |`"gs"`| runs the AC power flow analysis using Gauss-Seidel algorithm
-  |`"fnrxb"`| runs the AC power flow analysis using XB fast Newton-Raphson algorithm
-  |`"fnrbx"`| runs the AC power flow analysis using BX fast Newton-Raphson algorithm
-  |`"dc"`| runs the DC power flow analysis
+  |:--------|:-----------------------------------------------------------------------|
+  |`"nr"`   | runs the AC power flow analysis using Newton-Raphson algorithm         |
+  |`"gs"`   | runs the AC power flow analysis using Gauss-Seidel algorithm           |
+  |`"fnrxb"`| runs the AC power flow analysis using XB fast Newton-Raphson algorithm |
+  |`"fnrbx"`| runs the AC power flow analysis using BX fast Newton-Raphson algorithm |
+  |`"dc"`   | runs the DC power flow analysis                                        |
 
 
  DISPLAY
