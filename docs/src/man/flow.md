@@ -113,15 +113,15 @@ The power flow settings should be given as input arguments of the function `runp
 
 ### Syntax
 ```julia-repl
-runpf(DATA, METHOD);
-runpf(DATA, METHOD, DISPLAY);
-runpf(DATA, METHOD, DISPLAY; ACCONTROL);
-runpf(DATA, METHOD, DISPLAY; ACCONTROL, SOLVE);
-runpf(DATA, METHOD, DISPLAY; ACCONTROL, SOLVE, SAVE);
+runpf(DATA, METHOD)
+runpf(DATA, METHOD, DISPLAY)
+runpf(DATA, METHOD, DISPLAY; ACCONTROL)
+runpf(DATA, METHOD, DISPLAY; ACCONTROL, SOLVE)
+runpf(DATA, METHOD, DISPLAY; ACCONTROL, SOLVE, SAVE)
 ```
 
 ### Description
-```julia
+```julia-repl
 runpf(DATA, METHOD) computes power flow problem
 runpf(DATA, METHOD, DISPLAY) shows results in the terminal
 runpf(DATA, METHOD, DISPLAY; ACCONTROL) sets variables for the AC power flow
@@ -130,8 +130,8 @@ runpf(DATA, METHOD, DISPLAY; ACCONTROL, SOLVE, SAVE) exports results
 ```
 
 ### Output
-```julia
-julia> bus, branch, generator = runpf(...) returns results of the power flow analysis
+```julia-repl
+bus, branch, generator = runpf(...) returns results of the power flow analysis
 ```
 
 ###  Examples
@@ -167,37 +167,37 @@ METHOD
 
  DISPLAY
 
-  | Command | Description
-  | --- | --- |
-  |`"main"`| shows main bus data display
-  |`"flow"`| shows power flow data display
-  |`"generator"`| shows generator data display
+| Command     | Description                    |
+|:------------|:-------------------------------|
+|`"main"`     | shows main bus data display    |
+|`"flow"`     | shows power flow data display  |
+|`"generator"`| shows generator data display   |
 
 ### Input Keyword Arguments
 
  ACCONTROL
 
-  | Command | Description
-  | --- | --- |
-  |`max = value`| specifies the maximum number of iterations for the AC power flow <br>  `default setting: 100`
-  |`stop = value`| specifies the stopping criteria for the AC power flow <br> `default setting: 1.0e-8`
-  |`reactive = 1`| forces reactive power constraints <br>  `default setting: 0`
+| Command      | Description                                                                                   |
+|:-------------|:----------------------------------------------------------------------------------------------|
+|`max = value` | specifies the maximum number of iterations for the AC power flow <br>  `default setting: 100` |
+|`stop = value`| specifies the stopping criteria for the AC power flow <br> `default setting: 1.0e-8`          |
+|`reactive = 1`| forces reactive power constraints <br>  `default setting: 0`                                  |
 
 
  SOLVE
 
-  | Command | Description
-  | --- | --- |
-  |`solve = "mldivide"`| mldivide linear system solver, `default setting`
-  |`solve = "lu"`| LU linear system solver
+| Command            | Description                                      |
+|:-------------------|:-------------------------------------------------|
+|`solve = "mldivide"`| mldivide linear system solver, `default setting` |
+|`solve = "lu"`      | LU linear system solver
 
  SAVE
 
-  | Command | Description
-  | --- | --- |
-  |`save = "path/name.h5"`| saves results in the h5-file
-  |`save = "path/name.xlsx"`| saves results in the xlsx-file
+| Command                 | Description                    |
+|:------------------------|:-------------------------------|
+|`save = "path/name.h5"`  | saves results in the h5-file   |
+|`save = "path/name.xlsx"`| saves results in the xlsx-file |
 
 ### Flowchart
 The power flow flowchart depicts the algorithm process according to user settings.
-<img src="https://github.com/mcosovic/JuliaGrid/blob/master/doc/powerflow_chart.svg" width="550">
+<img src="https://github.com/mcosovic/JuliaGrid/docs/assets/powerflow_chart.svg" width="550">
