@@ -1,4 +1,15 @@
-# Power Flow
+Power Flow
+=============
+
+```@raw html
+<script language="javascript" type="text/javascript">
+ function resizeIframe(obj)
+ {
+   obj.style.height = obj.contentWindow.document.body.scrollHeight + 10 + 'px';
+   obj.style.width = obj.contentWindow.document.body.scrollWidth + 100 + 'px';
+ }
+</script>
+```
 
 The function runs the AC and DC power flow analysis, where reactive power constraints can be used for the AC power flow analysis.
 
@@ -18,22 +29,10 @@ First, the system base power is defined in (MVA) using `basePower`, and in the f
 
 The bus data structure:
 
-| Column   | Description        | Type                    | Unit      |
-|:--------:|:-------------------|:------------------------|:----------|
-| 1        | bus number         | positive integer        |           |
-| 2        | bus type           | pq(1), pv(2), slack(3)  |           |
-| 3        | demand             | active power            | MW        |
-| 4        | demand             | reactive power          | MVAr      |
-| 5        | shunt conductance  | active power            | MW        |
-| 6        | shunt susceptance  | reactive power          | MVAr      |
-| 7        | area               | positive integer        |           |
-| 8        | initial voltage    | magnitude               | per-unit  |
-| 9        | initial voltage    | angle                   | deg       |
-| 10       | base voltage       | magnitude               | kV        |
-| 11       | loss zone          | positive integer        |           |
-| 12       | minimum voltage    | magnitude               | per-unit  |
-| 13       | maximum voltage    | magnitude               | per-unit  |
-
+```@raw html
+<iframe src="html_table/html_format_dark.html" frameborder="0" scrolling="no" onload="javascript:resizeIframe(this)"><p>Your browser does not support iframes. Click <a href="html_table/html_format_dark.html>here</a> to see the table.</p>
+</iframe>
+```
 
 The generator data structure:
 
@@ -198,7 +197,10 @@ METHOD
 |`save = "path/name.h5"`  | saves results in the h5-file   |
 |`save = "path/name.xlsx"`| saves results in the xlsx-file |
 
+
+
+
 ### Flowchart
 The power flow flowchart depicts the algorithm process according to user settings.
 
-![](./assets/powerflow_chart.svg)
+![](../assets/powerflow_chart.svg)
