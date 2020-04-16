@@ -2,7 +2,7 @@ using Documenter, JuliaGrid
 
 makedocs(
     sitename = "JuliaGrid",
-    modules = [ JuliaGrid ],
+    modules = [JuliaGrid],
     doctest = false,
     pages = [
         "Home" => "index.md",
@@ -12,5 +12,4 @@ makedocs(
 
 deploydocs(
     repo = "github.com/mcosovic/JuliaGrid.git",
-    target = "build",
 )
