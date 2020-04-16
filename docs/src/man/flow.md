@@ -30,9 +30,11 @@ First, the system base power is defined in (MVA) using `basePower`, and in the f
 The bus data structure:
 
 ```@raw html
-<iframe src="html_table/html_format_dark.html" frameborder="0" scrolling="no" onload="javascript:resizeIframe(this)"><p>Your browser does not support iframes. Click <a href="html_table/html_format_dark.html>here</a> to see the table.</p>
+<iframe src="html_format_dark.html" frameborder="0" scrolling="no" onload="javascript:resizeIframe(this)"><p>Your browser does not support iframes. Click <a href="html_format_dark.html>here</a> to see the table.</p>
 </iframe>
 ```
+
+
 
 The generator data structure:
 
