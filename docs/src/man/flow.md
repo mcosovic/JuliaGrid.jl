@@ -108,11 +108,11 @@ The predefined cases are located in the `src/data` as the **h5-file** or **xlsx-
 
 ## Run Settings
 
-The power flow settings should be given as input arguments of the function `runpf`. Although the syntax is given in a certain order, for methodological reasons, only ``DATA`` must appear, and the order of other inputs is arbitrary, as well as their appearance.
+The power flow settings should be given as input arguments of the function `runpf(...)`. Although the syntax is given in a certain order, for methodological reasons, only DATA must appear, and the order of other inputs is arbitrary, as well as their appearance.
 
 
 ### Syntax
-```
+```julia-repl
 runpf(DATA, METHOD);
 runpf(DATA, METHOD, DISPLAY);
 runpf(DATA, METHOD, DISPLAY; ACCONTROL);
@@ -121,7 +121,7 @@ runpf(DATA, METHOD, DISPLAY; ACCONTROL, SOLVE, SAVE);
 ```
 
 ### Description
-```
+```julia
 runpf(DATA, METHOD) computes power flow problem
 runpf(DATA, METHOD, DISPLAY) shows results in the terminal
 runpf(DATA, METHOD, DISPLAY; ACCONTROL) sets variables for the AC power flow
@@ -130,8 +130,8 @@ runpf(DATA, METHOD, DISPLAY; ACCONTROL, SOLVE, SAVE) exports results
 ```
 
 ### Output
-```
-bus, branch, generator = runpf(...) returns results of the power flow analysis
+```julia
+julia> bus, branch, generator = runpf(...) returns results of the power flow analysis
 ```
 
 ###  Examples
@@ -156,13 +156,13 @@ DATA
 
 METHOD
 
-  | Command | Description
-  |:--------|:-----------------------------------------------------------------------|
-  |`"nr"`   | runs the AC power flow analysis using Newton-Raphson algorithm         |
-  |`"gs"`   | runs the AC power flow analysis using Gauss-Seidel algorithm           |
-  |`"fnrxb"`| runs the AC power flow analysis using XB fast Newton-Raphson algorithm |
-  |`"fnrbx"`| runs the AC power flow analysis using BX fast Newton-Raphson algorithm |
-  |`"dc"`   | runs the DC power flow analysis                                        |
+| Command | Description
+|:--------|:-----------------------------------------------------------------------|
+|`"nr"`   | runs the AC power flow analysis using Newton-Raphson algorithm         |
+|`"gs"`   | runs the AC power flow analysis using Gauss-Seidel algorithm           |
+|`"fnrxb"`| runs the AC power flow analysis using XB fast Newton-Raphson algorithm |
+|`"fnrbx"`| runs the AC power flow analysis using BX fast Newton-Raphson algorithm |
+|`"dc"`   | runs the DC power flow analysis                                        |
 
 
  DISPLAY

@@ -35,6 +35,5 @@ julia> using JuliaGrid
 ##  Quick Start Power Flow
 ```julia-repl
 julia> bus, branch, generator = runpf("dc", "case14.h5, "main", "flow")
-
 julia> bus, branch, generator = runpf("nr", "case14.h5, "main"; max = 20, stop = 1.0e-8)
 ```
