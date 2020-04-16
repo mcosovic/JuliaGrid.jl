@@ -11,7 +11,8 @@ using CSV, DataFrames, XLSX
 using Dates
 using LinearAlgebra
 using Random
-using JuMP, GLPK, Gurobi
+using JuMP, GLPK
+
 
 ##############
 #  Includes  #
