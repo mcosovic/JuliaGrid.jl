@@ -1,4 +1,4 @@
-using Documenter, JuliaGrid
+using Documenter
 
 makedocs(
     sitename = "JuliaGrid",
