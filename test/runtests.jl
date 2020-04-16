@@ -1,5 +1,3 @@
-module PowerFlowTest
-
 using JuliaGrid
 using HDF5
 using Test
@@ -117,6 +115,3 @@ end
     @test maximum(abs.(Ti  - results["Ti"])) < accuracy
     @test iterations - results["iterations"][1] == 0
 end
-
-
-end # PowerFlowTest
