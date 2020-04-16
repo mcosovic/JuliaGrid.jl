@@ -200,4 +200,5 @@ METHOD
 
 ### Flowchart
 The power flow flowchart depicts the algorithm process according to user settings.
-<img src="https://github.com/mcosovic/JuliaGrid/docs/assets/powerflow_chart.svg" width="550">
+
+![](./assets/powerflow_chart.svg)
