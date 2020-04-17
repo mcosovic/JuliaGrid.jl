@@ -1,15 +1,4 @@
-Power Flow
-=============
-
-```@raw html
-<script language="javascript" type="text/javascript">
- function resizeIframe(obj)
- {
-   obj.style.height = obj.contentWindow.document.body.scrollHeight + 10 + 'px';
-   obj.style.width = obj.contentWindow.document.body.scrollWidth + 100 + 'px';
- }
-</script>
-```
+## Power Flow
 
 The function runs the AC and DC power flow analysis, where reactive power constraints can be used for the AC power flow analysis.
 
@@ -18,6 +7,104 @@ The AC power flow analysis includes four different algorithms:
  - Gauss-Seidel,
  - XB fast decoupled Newton-Raphson,
  - BX fast decoupled Newton-Raphson.
+---
+
+## Run Settings
+
+The power flow settings should be given as input arguments of the function `runpf(...)`. Although the syntax is given in a certain order, for methodological reasons, only DATA must appear, and the order of other inputs is arbitrary, as well as their appearance.
+
+
+### Syntax
+```julia-repl
+runpf(DATA, METHOD)
+runpf(DATA, METHOD, DISPLAY)
+runpf(DATA, METHOD, DISPLAY; ACCONTROL)
+runpf(DATA, METHOD, DISPLAY; ACCONTROL, SOLVE)
+runpf(DATA, METHOD, DISPLAY; ACCONTROL, SOLVE, SAVE)
+```
+
+### Description
+```julia-repl
+runpf(DATA, METHOD) computes power flow problem
+runpf(DATA, METHOD, DISPLAY) shows results in the terminal
+runpf(DATA, METHOD, DISPLAY; ACCONTROL) sets variables for the AC power flow
+runpf(DATA, METHOD, DISPLAY; ACCONTROL, SOLVE) sets the linear system solver
+runpf(DATA, METHOD, DISPLAY; ACCONTROL, SOLVE, SAVE) exports results
+```
+
+### Output
+```julia-repl
+bus, branch, generator = runpf(...) returns results of the power flow analysis
+```
+
+###  Examples
+```julia-repl
+julia> runpf("case14.h5", "nr", "main", "flow", "generator");
+```
+```julia-repl
+julia> runpf("case14.xlsx", "nr", "main"; max = 10, stop = 1.0e-8);
+```
+```julia-repl
+julia> runpf("case14.h5", "gs", "main"; max = 500, stop = 1.0e-8, reactive = 1);
+```
+```julia-repl
+julia> runpf("case14.h5", "dc", "main"; solve = "lu", save = "D:/case14results.xlsx");
+```
+---
+
+## Input Variable Arguments
+
+**DATA**
+
+| Example           | Description                                    |
+|:------------------|:-----------------------------------------------|
+|`"case14.h5"`      | loads the power system data from the package   |
+|`"case14.xlsx"`    | loads the power system data from the package   |
+|`"C:/case14.xlsx"` | loads the power system data from a custom path |
+
+**METHOD**
+
+| Command | Description
+|:--------|:---------------------------------------------------------------------------------|
+|`"nr"`   | runs the AC power flow analysis using Newton-Raphson algorithm, `default setting`|
+|`"gs"`   | runs the AC power flow analysis using Gauss-Seidel algorithm                     |
+|`"fnrxb"`| runs the AC power flow analysis using XB fast Newton-Raphson algorithm           |
+|`"fnrbx"`| runs the AC power flow analysis using BX fast Newton-Raphson algorithm           |
+|`"dc"`   | runs the DC power flow analysis                                                  |
+
+**DISPLAY**
+
+| Command     | Description                    |
+|:------------|:-------------------------------|
+|`"main"`     | shows main bus data display    |
+|`"flow"`     | shows power flow data display  |
+|`"generator"`| shows generator data display   |
+----
+
+## Input Keyword Arguments
+
+**ACCONTROL**
+
+| Command      | Description                                                                              |
+|:-------------|:-----------------------------------------------------------------------------------------|
+|`max = value` | specifies the maximum number of iterations for the AC power flow, `default setting: 100` |
+|`stop = value`| specifies the stopping criteria for the AC power flow, `default setting: 1.0e-8`         |
+|`reactive = 1`| forces reactive power constraints, `default setting: 0`                                  |
+
+**SOLVE**
+
+| Command            | Description                                      |
+|:-------------------|:-------------------------------------------------|
+|`solve = "mldivide"`| mldivide linear system solver, `default setting` |
+|`solve = "lu"`      | LU linear system solver                          |
+
+**SAVE**
+
+| Command                 | Description                    |
+|:------------------------|:-------------------------------|
+|`save = "path/name.h5"`  | saves results in the h5-file   |
+|`save = "path/name.xlsx"`| saves results in the xlsx-file |
+---
 
 ## The Data Structure
 
@@ -29,11 +116,21 @@ First, the system base power is defined in (MVA) using `basePower`, and in the f
 
 The bus data structure:
 
-```@raw html
-<iframe src="html_format_dark.html" frameborder="0" scrolling="no" onload="javascript:resizeIframe(this)"><p>Your browser does not support iframes. Click <a href="html_format_dark.html>here</a> to see the table.</p>
-</iframe>
-```
-
+| Column   | Description        | Type                    | Unit      |
+|:--------:|:-------------------|:------------------------|:----------|	 
+| 1        | bus number         | positive integer        |           |
+| 2        | bus type           | pq(1), pv(2), slack(3)  |           |
+| 3        | demand             | active power            | MW        |
+| 4        | demand             | reactive power          | MVAr      |
+| 5        | shunt conductance  | active power            | MW        |
+| 6        | shunt susceptance  | reactive power          | MVAr      |
+| 7        | area               | positive integer        |           |
+| 8        | initial voltage    | magnitude               | per-unit  |
+| 9        | initial voltage    | angle                   | deg       |
+| 10       | base voltage       | magnitude               | kV        |
+| 11       | loss zone          | positive integer        |           |
+| 12       | minimum voltage    | magnitude               | per-unit  |
+| 13       | maximum voltage    | magnitude               | per-unit  |
 
 
 The generator data structure:
@@ -80,9 +177,9 @@ The branch data structure:
 | 12      | status                     | positive integer |          |
 | 13      | minimum voltage difference | angle            | deg      |
 | 14      | maximum voltage difference | angle            | deg      |
+---
 
-
-## Use Cases
+### Use Cases
 
 The predefined cases are located in the `src/data` as the **h5-file** or **xlsx-file**.
 
@@ -105,104 +202,9 @@ The predefined cases are located in the `src/data` as the **h5-file** or **xlsx-
 | case_ACTIVSg2000 | transmission | 2000  | 149    | 544        | 3206     |
 | case_ACTIVSg10k  | transmission | 10000 | 281    | 2485       | 12706    |
 | case_ACTIVSg70k  | transmission | 70000 | 3477   | 10390      | 88207    |
+---
 
-
-## Run Settings
-
-The power flow settings should be given as input arguments of the function `runpf(...)`. Although the syntax is given in a certain order, for methodological reasons, only DATA must appear, and the order of other inputs is arbitrary, as well as their appearance.
-
-
-### Syntax
-```julia-repl
-runpf(DATA, METHOD)
-runpf(DATA, METHOD, DISPLAY)
-runpf(DATA, METHOD, DISPLAY; ACCONTROL)
-runpf(DATA, METHOD, DISPLAY; ACCONTROL, SOLVE)
-runpf(DATA, METHOD, DISPLAY; ACCONTROL, SOLVE, SAVE)
-```
-
-### Description
-```julia-repl
-runpf(DATA, METHOD) computes power flow problem
-runpf(DATA, METHOD, DISPLAY) shows results in the terminal
-runpf(DATA, METHOD, DISPLAY; ACCONTROL) sets variables for the AC power flow
-runpf(DATA, METHOD, DISPLAY; ACCONTROL, SOLVE) sets the linear system solver
-runpf(DATA, METHOD, DISPLAY; ACCONTROL, SOLVE, SAVE) exports results
-```
-
-### Output
-```julia-repl
-bus, branch, generator = runpf(...) returns results of the power flow analysis
-```
-
-###  Examples
-```julia-repl
-julia> runpf("case14.h5", "nr", "main", "flow", "generator");
-julia> runpf("case14.xlsx", "nr", "main"; max = 10, stop = 1.0e-8);
-julia> runpf("case14.h5", "gs", "main"; max = 500, stop = 1.0e-8, reactive = 1);
-julia> runpf("case14.h5", "dc", "main"; solve = "lu", save = "D:/case14results.xlsx");
-```
-
-
-### Input Variable Number of Arguments
-
-DATA
-
-| Example           | Description                                    |
-|:------------------|:-----------------------------------------------|
-|`"case14.h5"`      | loads the power system data from the package   |
-|`"case14.xlsx"`    | loads the power system data from the package   |
-|`"C:/case14.xlsx"` | loads the power system data from a custom path |
-
-
-METHOD
-
-| Command | Description
-|:--------|:-----------------------------------------------------------------------|
-|`"nr"`   | runs the AC power flow analysis using Newton-Raphson algorithm         |
-|`"gs"`   | runs the AC power flow analysis using Gauss-Seidel algorithm           |
-|`"fnrxb"`| runs the AC power flow analysis using XB fast Newton-Raphson algorithm |
-|`"fnrbx"`| runs the AC power flow analysis using BX fast Newton-Raphson algorithm |
-|`"dc"`   | runs the DC power flow analysis                                        |
-
-
- DISPLAY
-
-| Command     | Description                    |
-|:------------|:-------------------------------|
-|`"main"`     | shows main bus data display    |
-|`"flow"`     | shows power flow data display  |
-|`"generator"`| shows generator data display   |
-
-### Input Keyword Arguments
-
- ACCONTROL
-
-| Command      | Description                                                                                   |
-|:-------------|:----------------------------------------------------------------------------------------------|
-|`max = value` | specifies the maximum number of iterations for the AC power flow <br>  `default setting: 100` |
-|`stop = value`| specifies the stopping criteria for the AC power flow <br> `default setting: 1.0e-8`          |
-|`reactive = 1`| forces reactive power constraints <br>  `default setting: 0`                                  |
-
-
- SOLVE
-
-| Command            | Description                                      |
-|:-------------------|:-------------------------------------------------|
-|`solve = "mldivide"`| mldivide linear system solver, `default setting` |
-|`solve = "lu"`      | LU linear system solver
-
- SAVE
-
-| Command                 | Description                    |
-|:------------------------|:-------------------------------|
-|`save = "path/name.h5"`  | saves results in the h5-file   |
-|`save = "path/name.xlsx"`| saves results in the xlsx-file |
-
-
-
-
-### Flowchart
+## Flowchart
 The power flow flowchart depicts the algorithm process according to user settings.
 
-![](../assets/powerflow_chart.svg)
+![](../assets/power_flow_chart.svg)

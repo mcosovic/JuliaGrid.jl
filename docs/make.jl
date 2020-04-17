@@ -5,9 +5,11 @@ makedocs(
     modules = [JuliaGrid],
     clean = false,
     doctest = false,
+    format = Documenter.HTML(assets=["assets/style.css"]),
     pages = [
         "Home" => "index.md",
-        "Power Flow" => "man/flow.md"
+        "Power Flow" => "man/flow.md",
+        "Measurement Generator" => "man/generator.md",
     ]
 )
 

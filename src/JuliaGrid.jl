@@ -39,7 +39,7 @@ function runpf(args...; max::Int64 = 100, stop::Float64 = 1.0e-8, reactive::Int6
     return bus, branch, generator, iterations
 end
 
-function runmg(args...; max::Int64 = 100, stop::Float64 = 1.0e-8, reactive::Int64 = 0, solve::String = "", save::String = "", pmuset = "", pmuvariance = ["all" 1e-5], legacyset = "", legacyvariance = ["all" 1e-4])
+function runmg(args...; max::Int64 = 100, stop::Float64 = 1.0e-8, reactive::Int64 = 0, solve::String = "", save::String = "", pmuset = "", pmuvariance = ["all" 1e-8], legacyset = "", legacyvariance = ["all" 1e-8])
     system = loadsystem(args)
     settings = gesettings(args, max, stop, reactive, solve, save, pmuset, pmuvariance, legacyset, legacyvariance)
     bus, branch, generator = runacpf(settings, system)

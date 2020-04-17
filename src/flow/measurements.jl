@@ -196,8 +196,13 @@ function rungenerator(system, settings, bus, branch)
 
         if settings.variance[i][1] == "onebyone"
             for (k, j) in enumerate(names[i])
-                if isa(settings.variance[i][k + 1], Number) && settings.variance[i][k + 1] > 0
-                    measurements[j][:, column[i][k]] .= settings.variance[i][k + 1]
+                if isa(settings.variance[i][k + 1], Number)
+                    if settings.variance[i][k + 1] > 0
+                        measurements[j][:, column[i][k]] .= settings.variance[i][k + 1]
+                    end
+                    if settings.variance[i][k + 1] == 0
+                        measurements[j][:, column[i][k]] .= 1e-8
+                    end
                 else
                     error("Invalid variance input.")
                 end
