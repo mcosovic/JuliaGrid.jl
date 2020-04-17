@@ -21,23 +21,21 @@ pkg> add https://github.com/mcosovic/JuliaGrid
 ```
 
 ###  Quick Start Power Flow
+```julia-repl
+julia> bus, branch, generator = runpf("dc", "case14.h5, "main", "flow")
 ```
-bus, branch, generator = runpf("dc", "case14.h5, "main", "flow")
-bus, branch, generator = runpf("nr", "case14.h5, "main"; max = 20, stop = 1.0e-8)
+```julia-repl
+julia> bus, branch, generator = runpf("nr", "case14.h5, "main"; max = 20, stop = 1.0e-8)
 ```
 
-<!-- ###  Fast Run State Estimation
+###  Quick Start Measurement Generator
+```julia-repl
+julia> runmg("case14.xlsx"; pmuset = "optimal")
 ```
-runse('ieee118_186', 'nonlinear', 'estimate');
-runse('ieee118_186', 'dc', 'estimate');
-runse('ieee14_20', 'pmu', 'pmuOptimal', 'estimate');
+```julia-repl
+julia> runmg("case14.h5"; legacyset = "all", pmuvariance = ["all" 1e-5])
 ```
 
 ###  Changelog
 Major changes:
-- 2019-04-21 the DC state estimation with observability analysis and bad data processing optimized for large-scale systems
-- 2019-04-08 Added the DC observability analysis with identification of observable islands
-- 2019-04-03 Added observability analysis (DC state estimation only , beta version, please treat the results with attention)
-- 2019-03-28 Added Gauss-Seidel, decoupled Newton-Raphson and fast decoupled Newton-Raphson algorithm
-- 2019-03-21 Added least absolute value (LAV) state estimation
-- 2019-03-19 Added bad data processing -->
+- 2020-04-17 Added power flow and measurement generator functions
