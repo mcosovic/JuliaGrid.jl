@@ -1,6 +1,6 @@
 ## JuliaGrid
 
-![Documentation](https://github.com/mcosovic/JuliaGrid/workflows/Documentation/badge.svg)
+![Documentation(https://github.com/mcosovic/JuliaGrid/workflows/Documentation/badge.svg)](https://mcosovic.github.io/JuliaGrid/dev/)
 
 <a href="https://mcosovic.github.io/JuliaGrid/dev/"><img align="right" width="145" src="/docs/src/assets/logo2.png" /></a>
 
