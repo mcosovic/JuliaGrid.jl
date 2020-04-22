@@ -1,12 +1,11 @@
-########################
-#  Power Flow Results  #
-########################
-
-#-------------------------------------------------------------------------------
+##############################################
+#  DC dower flow results and call save data  #
+##############################################
 function results_flowdc(settings, system, Nbus, Nbranch, Ngen, Ti, slack, algtime, info)
     println(string("  Execution time: ", (@sprintf "%.4f" algtime * 1000), " (ms)"))
     header = h5read(joinpath(system.package, "src/system/header.h5"), "/flowdc")
 
+    ################## DC Main Display ##################
     bus = fill(0.0, Nbus, 6)
     for i = 1:Nbus
         bus[i, 1] = system.bus[i, 1]
@@ -28,6 +27,7 @@ function results_flowdc(settings, system, Nbus, Nbranch, Ngen, Ti, slack, algtim
             alignment=[:l,:r,:r,:r,:r], formatter = ft_printf(["%-s","%15.2f","%11.2f","%11.2f","%13.2f"], collect(1:5)))
     end
 
+    ################## DC Flow Display ##################
     branch = fill(0.0, Nbranch, 5)
     for i = 1:Nbranch
         branch[i, 1] = system.branch[i, 1]
@@ -42,6 +42,7 @@ function results_flowdc(settings, system, Nbus, Nbranch, Ngen, Ti, slack, algtim
         alignment=[:r,:r,:r,:r,:r], formatter = ft_printf(["%1.0f","%1.0f","%1.0f","%1.2f","%1.2f"], collect(1:5)))
     end
 
+    ################## DC Generator Display ##################
     generator = fill(0.0, Ngen, 2)
     for i = 1:Ngen
         generator[i, 1] = system.generator[i, 1]
@@ -54,18 +55,22 @@ function results_flowdc(settings, system, Nbus, Nbranch, Ngen, Ti, slack, algtim
     end
 
     if !isempty(settings.save)
-        savedata(bus, branch, generator; info = info, group = header["group"], header = header, path = settings.save)
+        dict = Dict("bus" => bus, "branch" => branch, "generator" => generator)
+        savedata(dict; info = info, group = header["group"], header = header, path = settings.save)
     end
 
     return bus, branch, generator
 end
-#-------------------------------------------------------------------------------
 
-#-------------------------------------------------------------------------------
+
+##############################################
+#  AC dower flow results and call save data  #
+##############################################
 function results_flowac(settings, system, limit, Nbus, Nbranch, Ngen, slack, Vc, algtime, info)
     println(string("  Execution time: ", (@sprintf "%.4f" algtime * 1000), " (ms)"))
     header = h5read(joinpath(system.package, "src/system/header.h5"), "/flowac")
 
+    ################## AC Limit Display ##################
     if settings.reactive[1]
         min = findall(x -> x == 2, limit)
         max = findall(x -> x == 3, limit)
@@ -89,6 +94,7 @@ function results_flowac(settings, system, limit, Nbus, Nbranch, Ngen, slack, Vc,
         end
     end
 
+    ################## AC Main Display ##################
     bus = fill(0.0, Nbus, 11)
     for i = 1:Nbus
         bus[i, 1] = system.bus[i, 1]
@@ -117,6 +123,7 @@ function results_flowac(settings, system, limit, Nbus, Nbranch, Ngen, slack, Vc,
             formatter = ft_printf(["%-s","%15.2f","%15.2f","%11.2f","%15.2f","%11.2f","%15.2f","%13.2f","%15.2f"], collect(1:9)))
     end
 
+    ################## AC Flow Display ##################
     branch = fill(0.0, Nbranch, 10)
     for i = 1:Nbranch
         branch[i, 1] = system.branch[i, 1]
@@ -142,6 +149,7 @@ function results_flowac(settings, system, limit, Nbus, Nbranch, Ngen, slack, Vc,
                     formatter = ft_printf(["%-s","%15.2f","%11.2f","%15.2f"], collect(1:4)))
     end
 
+    ################## AC Generator Display ##################
     generator = fill(0.0, Ngen, 3)
     for i = 1:Ngen
         generator[i, 1] = system.generator[i, 1]
@@ -156,180 +164,186 @@ function results_flowac(settings, system, limit, Nbus, Nbranch, Ngen, slack, Vc,
             formatter = ft_printf(["%1.0f", "%1.4f", "%1.4f"], collect(1:3)))
     end
 
+    ################## Export Data ##################
     if !isempty(settings.save)
-        savedata(bus, branch, generator; info = info, group = header["group"], header = header, path = settings.save)
+        dict = Dict("bus" => bus, "branch" => branch, "generator" => generator)
+        savedata(dict; info = info, group = header["group"], header = header, path = settings.save)
     end
 
     return bus, [branch system.branch[:, 4:7]], generator
 end
-#-------------------------------------------------------------------------------
 
-#-------------------------------------------------------------------------------
-function info_flow(system, settings, Nbranch, Nbus, Ngen)
+
+############################
+#  Power system info data  #
+############################
+function info_flow(branch, bus, generator, info, settings, data, Nbranch, Nbus, Ngen)
     reference = "unknown"
     grid = "unknown"
-    for (k, i) in enumerate(system.info[:, 1])
+    for (k, i) in enumerate(info[:, 1])
         if occursin("Reference", i)
-            reference = system.info[k, 2]
+            reference = info[k, 2]
         end
         if occursin("Grid", i)
-            grid = system.info[k, 2]
+            grid = info[k, 2]
         end
     end
 
     Ntrain = 0
     Ntra = 0
     for i = 1:Nbranch
-        if system.branch[i, 12] == 1 && (system.branch[i, 10] != 0 || system.branch[i, 11] != 0)
+        if branch[i, 12] == 1 && (branch[i, 10] != 0 || branch[i, 11] != 0)
             Ntrain += 1
         end
-        if system.branch[i, 10] != 0 || system.branch[i, 11] != 0
+        if branch[i, 10] != 0 || branch[i, 11] != 0
             Ntra += 1
         end
     end
     info = ["Reference" string(reference) "";
-            "Data" string(system.data) "";
+            "Data" string(data) "";
             "Grid" string(grid) "";
             "" "" "";
             "Bus" string(Nbus) "";
-            "PV bus" string(length(unique(system.generator[:, 1]))) "";
-            "PQ bus" string(Nbus - length(unique(system.generator[:, 1])) - 1) "";
-            "Shunt element" string(count(x->x != 0, abs.(system.bus[:, 5]) + abs.(system.bus[:, 6]))) "";
-            "Generator" string(Ngen) string(trunc(Int, sum(system.generator[:, 8])), " in-service");
-            "Branch" string(Nbranch) string(trunc(Int, sum(system.branch[:, 12])), " in-service");
+            "PV bus" string(length(unique(generator[:, 1]))) "";
+            "PQ bus" string(Nbus - length(unique(generator[:, 1])) - 1) "";
+            "Shunt element" string(count(x->x != 0, abs.(bus[:, 5]) + abs.(bus[:, 6]))) "";
+            "Generator" string(Ngen) string(trunc(Int, sum(generator[:, 8])), " in-service");
+            "Branch" string(Nbranch) string(trunc(Int, sum(branch[:, 12])), " in-service");
             "Transformer" string(Ntra) string(Ntrain, " in-service")]
+
     return info
 end
-#-------------------------------------------------------------------------------
-
-#-------------------------------------------------------------------------------
-function results_generator(system, settings, Nbranch, Nbus, Ngen, measurements)
-    for i = 1:(2 * Nbranch)
-        measurements["LegFlow"][i, 4] = measurements["LegFlow"][i, 10] + measurements["LegFlow"][i, 5]^(1/2) * randn(1)[1]
-        measurements["LegFlow"][i, 7] = measurements["LegFlow"][i, 11] + measurements["LegFlow"][i, 8]^(1/2) * randn(1)[1]
-        measurements["LegCurrent"][i, 4] = measurements["LegCurrent"][i, 7] + measurements["LegCurrent"][i, 5]^(1/2) * randn(1)[1]
-        measurements["PmuCurrent"][i, 4] = measurements["PmuCurrent"][i, 10] + measurements["PmuCurrent"][i, 5]^(1/2) * randn(1)[1]
-        measurements["PmuCurrent"][i, 7] = measurements["PmuCurrent"][i, 11] + measurements["PmuCurrent"][i, 8]^(1/2) * randn(1)[1]
-    end
-
-    for i = 1:Nbus
-        measurements["LegInjection"][i, 2] = measurements["LegInjection"][i, 8] + measurements["LegInjection"][i, 3]^(1/2) * randn(1)[1]
-        measurements["LegInjection"][i, 5] = measurements["LegInjection"][i, 9] + measurements["LegInjection"][i, 6]^(1/2) * randn(1)[1]
-        measurements["LegVoltage"][i, 2] = measurements["LegVoltage"][i, 5] + measurements["LegVoltage"][i, 3]^(1/2) * randn(1)[1]
-        measurements["PmuVoltage"][i, 2] = measurements["PmuVoltage"][i, 8] + measurements["PmuVoltage"][i, 3]^(1/2) * randn(1)[1]
-        measurements["PmuVoltage"][i, 5] = measurements["PmuVoltage"][i, 9] + measurements["PmuVoltage"][i, 6]^(1/2) * randn(1)[1]
-    end
 
 
-    header = h5read(joinpath(system.package, "src/system/header.h5"), "/measurement")
-    header["basePower"] = permutedims(header["basePower"])
-    system = loadsystem([system.path])
-    info = info_flow(system, settings, Nbranch, Nbus, Ngen)
+###############################################
+#  Measurements info data and call save data  #
+###############################################
+function info_generator(system, settings, measurement, names, info, Nbus, Nbranch, Ngen)
+    setkeys = keys(settings.set)
+    varkeys = keys(settings.variance)
 
+    ################## PMU Set ##################
     info = [info; "" "" ""]
-    if settings.set["legacy"][1] == "all"
-        info = [info; "Legacy set setting" "all measurements in-service" ""]
-    end
-    if settings.set["legacy"][1] == "redundancy"
-        info = [info; "Legacy set setting" "redundancy" string(settings.set["legacy"][2])]
-    end
-    if settings.set["legacy"][1] == "onebyone"
-        info = [info; "Legacy set setting" "measurements by type" ""]
-    end
-
-    Pij_in = trunc(Int, sum(measurements["LegFlow"][:, 6]))
-    Qij_in = trunc(Int, sum(measurements["LegFlow"][:, 9]))
-    Iij_in = trunc(Int, sum(measurements["LegCurrent"][:, 6]))
-    Pi_in = trunc(Int, sum(measurements["LegInjection"][:, 4]))
-    Qi_in = trunc(Int, sum(measurements["LegInjection"][:, 7]))
-    Vi_in = trunc(Int, sum(measurements["LegVoltage"][:, 4]))
-    minfo = ["Active power flow measurements" string(Pij_in, " in-service") string(2 * Nbranch - Pij_in, " out-service");
-             "Reactive power flow measurements" string(Qij_in, " in-service") string(2 * Nbranch - Qij_in, " out-service");
-             "Current magnitude measurements" string(Iij_in, " in-service") string(2 * Nbranch - Iij_in, " out-service");
-             "Active power injection measurements" string(Pi_in, " in-service") string(Nbus - Pi_in, " out-service");
-             "Reactive power injection measurements" string(Qi_in, " in-service") string(Nbus - Qi_in, " out-service");
-             "Voltage magnitude measurements" string(Vi_in, " in-service") string(Nbus - Vi_in, " out-service");
-             "" "" ""]
-    info = [info; minfo]
-
-    if settings.set["pmu"][1] == "all"
-        info = [info; "PMU set setting" "all measurements in-service" ""]
-    end
-    if settings.set["pmu"][1] == "redundancy"
-        info = [info; "PMU set setting" "redundancy" string(settings.set["pmu"][2])]
-    end
-    if settings.set["pmu"][1] == "onebyone"
-        info = [info; "PMU set setting" "measurements by type" ""]
-    end
-    if settings.set["pmu"][1] == "device"
-        info = [info; "PMU set setting" "devices in-service" string(settings.set["pmu"][2])]
-    end
-    if settings.set["pmu"][1] == "optimal"
-        info = [info; "PMU set setting" "Optimal placement" ""]
-    end
-    Iij_in = trunc(Int, sum(measurements["PmuCurrent"][:, 6]))
-    Dij_in = trunc(Int, sum(measurements["PmuCurrent"][:, 9]))
-    Vi_in = trunc(Int, sum(measurements["PmuVoltage"][:, 4]))
-    Ti_in = trunc(Int, sum(measurements["PmuVoltage"][:, 7]))
-    mifno = ["Current magnitude measurements" string(Iij_in, " in-service") string(2 * Nbranch - Iij_in, " out-service");
-             "Current angle measurements" string(Dij_in, " in-service") string(2 * Nbranch - Dij_in, " out-service");
-             "Voltage magnitude measurements" string(Vi_in, " in-service") string(Nbus - Vi_in, " out-service");
-             "Voltage angle measurements" string(Ti_in, " in-service") string(Nbus - Ti_in, " out-service");
-             "" "" ""]
-    info = [info; mifno]
-
-    if settings.variance["legacy"][1] == "all"
-        info = [info; "Legacy variance setting" "all" string(settings.variance["legacy"][2])]
-    end
-    if settings.variance["legacy"][1] == "random"
-        info = [info; "Legacy variance setting" "randomized variances within limits" string(settings.variance["legacy"][2], ", ", settings.variance["legacy"][3])]
-    end
-    if settings.variance["legacy"][1] == "onebyone"
-        info = [info; "Legacy variance setting:" "variance by type" ""]
-    end
-    Pijex = extrema(measurements["LegFlow"][:, 5])
-    Qijex = extrema(measurements["LegFlow"][:, 8])
-    Iijex = extrema(measurements["LegCurrent"][:, 5])
-    Piex = extrema(measurements["LegInjection"][:, 3])
-    Qiex = extrema(measurements["LegInjection"][:, 6])
-    Viex = extrema(measurements["LegVoltage"][:, 3])
-    minfo = ["Active power flow measurements" string(Pijex[1], " minimum") string(Pijex[2], " maximum");
-             "Reactive power flow measurements" string(Qijex[1], " minimum") string(Qijex[2], " maximum");
-             "Current magnitude measurements" string(Iijex[1], " minimum") string(Iijex[2], " maximum");
-             "Active power injection measurements" string(Piex[1], " minimum") string(Piex[2], " maximum");
-             "Reactive power injection measurements" string(Qiex[1], " minimum") string(Qiex[2], " maximum");
-             "Voltage magnitude measurements" string(Viex[1], " minimum") string(Viex[2], " maximum");
-             "" "" ""]
-    info = [info; minfo]
-
-    if settings.variance["pmu"][1] == "all"
-        info = [info; "PMU variance setting" "all" string(settings.variance["pmu"][2])]
-    end
-    if settings.variance["pmu"][1] == "random"
-        info = [info; "PMU variance setting" "randomized variances within limits" string(settings.variance["pmu"][2], ", ", settings.variance["pmu"][3])]
-    end
-    if settings.variance["pmu"][1] == "onebyone"
-        info = [info; "PMU variance setting" "variance by type" ""]
-    end
-    Iijex = extrema(measurements["PmuCurrent"][:, 5])
-    Dijex = extrema(measurements["PmuCurrent"][:, 8])
-    Viex = extrema(measurements["PmuVoltage"][:, 3])
-    Tiex = extrema(measurements["PmuVoltage"][:, 3])
-    minfo = ["Current magnitude measurements" string(Iijex[1], " minimum") string(Iijex[2], " maximum");
-             "Current angle measurements" string(Dijex[1], " minimum") string(Dijex[2], " maximum");
-             "Voltage magnitude measurements" string(Viex[1], " minimum") string(Viex[2], " maximum");
-             "Voltage angle measurements" string(Tiex[1], " minimum") string(Tiex[2], " maximum")]
-    info = [info; minfo]
-
-    if isempty(settings.path)
-        package_dir = abspath(joinpath(dirname(Base.find_package("JuliaGrid")), ".."))
-        path = joinpath(package_dir, string("new_juliagrid", system.extension))
+    if any(setkeys .== "pmuall")
+        info = [info; "PMU set setting" "all measurements adjust in-service" ""]
+    elseif any(setkeys .== "pmuredundancy")
+        info = [info; "PMU set setting" "redundancy" string(settings.set["pmuredundancy"])]
+    elseif any(setkeys .== "pmudevice")
+        info = [info; "PMU set setting" "devices in-services" string(settings.set["pmudevice"])]
+    elseif any(setkeys .== "pmuoptimal")
+        info = [info; "PMU set setting" "optimal placement" ""]
+    elseif any(setkeys .== "pmuVoltage") || any(setkeys .== "pmuCurrent")
+        info = [info; "PMU set setting" "measurements by type adjust in-service" ""]
     else
-        path = settings.path
+        info = [info; "PMU set setting" "" ""]
+    end
+    read = Dict("pmuVoltage" => [4, 7], "pmuCurrent" => [6, 9])
+    title = Dict("pmuVoltage" => ["Bus voltage magnitude", "Bus voltage angle"],
+                "pmuCurrent" => ["Branch current magnitude", "Branch current angle"])
+    for i in names["pmu"]
+        cnt = 1
+        for k in read[i]
+            on = trunc(Int, sum(measurement[i][:, k]))
+            info = [info; title[i][cnt] string(on, " in-service") string(size(measurement[i], 1) - on, " out-service")]
+            cnt += 1
+        end
     end
 
-    savedata(measurements["PmuVoltage"], measurements["PmuCurrent"], measurements["LegFlow"], measurements["LegCurrent"],
-        measurements["LegInjection"], measurements["LegVoltage"], system.bus, system.generator, system.branch, system.baseMVA;
-        group = header["group"], header = header, path = path, info = info)
+    ################## Legacy Set ##################
+    info = [info; "" "" ""]
+    if any(setkeys .== "legacyall")
+        info = [info; "Legacy set setting" "all measurements adjust in-service" ""]
+    elseif any(setkeys .== "legacyredundancy")
+        info = [info; "Legacy set setting" "redundancy" string(settings.set["legacyredundancy"])]
+    elseif any(setkeys .== "legacyFlow") || any(setkeys .== "legacyCurrent") || any(setkeys .== "legacyInjection") || any(setkeys .== "legacyVoltage")
+        info = [info; "Legacy set setting" "measurements by type adjust in-service" ""]
+    else
+        info = [info; "Legacy set setting" "" ""]
+    end
+    read = Dict("legacyFlow" => [6, 9], "legacyCurrent" => 6,
+                 "legacyInjection" => [4, 7], "legacyVoltage" => 4)
+    title = Dict("legacyFlow" => ["Active power flow", "Reactive power flow"],
+                "legacyCurrent" => ["Branch current magnitude"],
+                "legacyInjection" => ["Active power injection", "Reactive power injection"],
+                "legacyVoltage" => ["Bus voltage magnitude"])
+    for i in names["legacy"]
+        cnt = 1
+        for k in read[i]
+            on = trunc(Int, sum(measurement[i][:, k]))
+            info = [info; title[i][cnt] string(on, " in-service") string(size(measurement[i], 1) - on, " out-service")]
+            cnt += 1
+        end
+    end
+
+    ################## PMU Variance ##################
+    info = [info; "" "" ""]
+    if any(varkeys .== "pmuall")
+        info = [info; "PMU variance setting" "all with same variances" string(settings.variance["pmuall"])]
+    elseif any(varkeys .== "pmurandom")
+        info = [info; "PMU variance setting" "randomized variances within limits" string(settings.variance["pmurandom"][1], ", ", settings.variance["pmurandom"][2])]
+    elseif any(varkeys .== "pmuVoltage") || any(varkeys .== "pmuCurrent")
+        info = [info; "PMU variance setting" "variances by measurement type" ""]
+    else
+        info = [info; "PMU variance set setting" "" ""]
+    end
+    read = Dict("pmuVoltage" => [3, 6], "pmuCurrent" => [5, 8])
+    title = Dict("pmuVoltage" => ["Bus voltage magnitude", "Bus voltage angle"],
+                "pmuCurrent" => ["Branch current magnitude", "Branch current angle"])
+    for i in names["pmu"]
+        cnt = 1
+        for k in read[i]
+            on = extrema(measurement[i][:, k])
+            info = [info; title[i][cnt] string(on[1], " minimum") string(on[2], " maximum")]
+            cnt += 1
+        end
+    end
+
+    ################## Legacy Variance ##################
+    info = [info; "" "" ""]
+    if any(varkeys .== "legacyall")
+        info = [info; "Legacy variance setting" "all with same variances" string(settings.variance["legacyall"])]
+    elseif any(varkeys .== "legacyrandom")
+        info = [info; "Legacy variance setting" "randomized variances within limits" string(settings.variance["legacyrandom"][1], ", ", settings.variance["legacyrandom"][2])]
+    elseif any(varkeys .== "legacyFlow") || any(varkeys .== "legacyCurrent") || any(varkeys .== "legacyInjection") || any(varkeys .== "legacyVoltage")
+        info = [info; "Legacy variance setting" "variances by measurement type" ""]
+    else
+        info = [info; "Legacy variance set setting" "" ""]
+    end
+    read = Dict("legacyFlow" => [5, 8], "legacyCurrent" => 5,
+                 "legacyInjection" => [3, 6], "legacyVoltage" => 3)
+    title = Dict("legacyFlow" => ["Active power flow", "Reactive power flow"],
+                "legacyCurrent" => ["Branch current magnitude"],
+                "legacyInjection" => ["Active power injection", "Reactive power injection"],
+                "legacyVoltage" => ["Bus voltage magnitude"])
+    for i in names["legacy"]
+        cnt = 1
+        for k in read[i]
+            on = extrema(measurement[i][:, k])
+            info = [info; title[i][cnt] string(on[1], " minimum") string(on[2], " maximum")]
+            cnt += 1
+        end
+    end
+
+    ################## Export Data ##################
+    if !isempty(settings.path)
+        header = h5read(joinpath(system.package, "src/system/header.h5"), "/measurement")
+        header["basePower"] = permutedims(header["basePower"])
+
+        group = ["pmuVoltage"; "pmuCurrent"; "legacyFlow"; "legacyCurrent"; "legacyInjection"; "legacyVoltage"]
+        for (k, i) in enumerate(group)
+            if !any(i .== keys(measurement))
+                deleteat!(group, k)
+            end
+        end
+        group = [group; "bus"; "generator"; "branch"; "basePower"]
+
+        push!(measurement, "bus" => system.bus)
+        push!(measurement, "generator" => system.generator)
+        push!(measurement, "branch" => system.branch)
+        push!(measurement, "basePower" => system.baseMVA)
+
+        savedata(measurement; group = group, header = header, path = settings.path, info = info)
+    end
+
+    return info
 end
-#-------------------------------------------------------------------------------

@@ -1,8 +1,6 @@
 ###################
 #  AC Power Flow  #
 ###################
-
-
 function runacpf(settings, system)
     busi, type, Pload, Qload, Gshunt, Bshunt, Vini, Tini, geni, Pgen, Qgen,
     Qmax, Qmin, Vgen, genOn, fromi, toi, resistance, reactance, charging, transTap,
@@ -17,7 +15,7 @@ function runacpf(settings, system)
     bus = collect(1:Nbus)
 
     if !isempty(settings.save)
-        info = info_flow(system, settings, Nbranch, Nbus, Ngen)
+        info = info_flow(system.branch, system.bus, system.generator, system.info, settings, system.data, Nbranch, Nbus, Ngen)
     end
 
   algtime = @elapsed begin
@@ -302,9 +300,11 @@ function runacpf(settings, system)
 
     return bus, branch, generator, iter
 end
-#-------------------------------------------------------------------------------
 
-#-------------------------------------------------------------------------------
+
+###############
+#  View data  #
+###############
 function view_acsystem(system)
     # Read Data
     busi = @view(system.bus[:, 1])
@@ -362,4 +362,3 @@ function view_acsystem(system)
     transShift, branchOn, Pshunt, Qshunt, Pbus, Qbus, Pinj, Qinj, Imij, Iaij, Imji, Iaji,
     Pij, Qij, Pji, Qji, Qcharging, Ploss, Qloss, limit, QminInf, QmaxInf
 end
-#-------------------------------------------------------------------------------

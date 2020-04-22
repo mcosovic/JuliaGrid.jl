@@ -1,11 +1,6 @@
-##############################
-#  AC Power Flow Algorithms  #
-##############################
-
-
-#-------------------------------------------------------------------------------
-# Newton-Raphson Algorithm
-#-------------------------------------------------------------------------------
+#########################################
+#  Newton-Raphson power flow algorithm  #
+#########################################
 function newton_raphson(settings, baseMVA, Nbus, Nbranch, Ybus, YbusT, slack, Vc, Pbus, Qbus, Pload, Qload, type, iter)
     V = abs.(Vc)
     T = angle.(Vc)
@@ -211,11 +206,11 @@ function newton_raphson(settings, baseMVA, Nbus, Nbranch, Ybus, YbusT, slack, Vc
 
     return Vc, iter
 end
-#-------------------------------------------------------------------------------
 
-#-------------------------------------------------------------------------------
-# Fast Newton-Raphson Algorithm
-#-------------------------------------------------------------------------------
+
+##############################################
+#  Fast Newton-Raphson power flow algorithm  #
+##############################################
 function fast_newton_raphson(system, settings, baseMVA, Nbus, Nbranch, branchOn, Ybus, YbusT, slack, Vc, Pbus, Qbus, Pload, Qload, type, resistance, reactance, transShift, Gshunt, Bshunt, charging, transTap, from, to, iter)
     V = abs.(Vc)
     T = angle.(Vc)
@@ -457,11 +452,11 @@ function fast_newton_raphson(system, settings, baseMVA, Nbus, Nbranch, branchOn,
 
     return Vc, iter
 end
-#-------------------------------------------------------------------------------
 
-#-------------------------------------------------------------------------------
-# Gauss-Seidel Algorithm
-#-------------------------------------------------------------------------------
+
+#######################################
+#  Gauss-Seidel power flow algorithm  #
+#######################################
 function gauss_seidel(settings, baseMVA, Nbus, Ybus, YbusT, slack, Vc, Pbus, Qbus, Pload, Qload, Vini, type, iter)
     P = similar(Pbus)
     Q = similar(Pbus)
@@ -541,4 +536,3 @@ function gauss_seidel(settings, baseMVA, Nbus, Ybus, YbusT, slack, Vc, Pbus, Qbu
 
     return Vc, iter
 end
-#-------------------------------------------------------------------------------

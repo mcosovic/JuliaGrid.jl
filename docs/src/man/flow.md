@@ -1,4 +1,4 @@
-## Power Flow
+##  Power Flow
 
 The function runs the AC and DC power flow analysis, where reactive power constraints can be used for the AC power flow analysis.
 
@@ -108,13 +108,13 @@ julia> runpf("case14.h5", "dc", "main"; solve = "lu", save = "D:/case14results.x
 
 ## The Data Structure
 
-The JuliaGrid works with **h5** or **xlsx** extensions as input files, with variables `bus`, `generator`, `branch`, and `basePower`. JuliaGrid is using the same data format as Matpower, with the exception of the first column in the `branch` data.
+The JuliaGrid works with **h5** or **xlsx** extensions as input files, with variables `bus`, `generator`, `branch`, and `basePower`. JuliaGrid is using the same data format as Matpower, except the first column in the `branch` data.
 
 The minimum amount of information within an instance of the data structure required to run the module requires a `bus` and `branch` data.
 
 First, the system base power is defined in (MVA) using `basePower`, and in the following, we describe the structure of other variables involved in the input file.
 
-The bus data structure:
+The `bus` data structure:
 
 | Column   | Description        | Type                    | Unit      |
 |:--------:|:-------------------|:------------------------|:----------|	 
@@ -133,7 +133,7 @@ The bus data structure:
 | 13       | maximum voltage    | magnitude               | per-unit  |
 
 
-The generator data structure:
+The `generator` data structure:
 
 | Column   | Description        | Type                     | Unit     |
 |:--------:|:-------------------|:-------------------------|:---------|
@@ -159,7 +159,7 @@ The generator data structure:
 | 20       | ramp rate Q        | reactive power per minut | MVAr/min |
 | 21       | area factor        | positive integer         |          |
 
-The branch data structure:
+The `branch` data structure:
 
 | Column  | Description                | Type             | Unit     |
 |:-------:|:---------------------------|:-----------------|:---------|

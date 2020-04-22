@@ -7,11 +7,11 @@ using SparseArrays
 using HDF5
 using Printf
 using PrettyTables
-using CSV, DataFrames, XLSX
-using Dates
+using CSV, XLSX
 using LinearAlgebra
 using Random
 using JuMP, GLPK
+using Suppressor
 
 
 ##############
@@ -26,7 +26,18 @@ include("flow/flowac.jl")
 include("flow/flowalgorithms.jl")
 include("flow/measurements.jl")
 
-function runpf(args...; max::Int64 = 100, stop::Float64 = 1.0e-8, reactive::Int64 = 0, solve::String = "", save::String = "")
+
+################
+#  Power Flow  #
+################
+function runpf(
+    args...;
+    max::Int64 = 100,
+    stop::Float64 = 1.0e-8,
+    reactive::Int64 = 0,
+    solve::String = "",
+    save::String = "",
+)
     system = loadsystem(args)
     settings = pfsettings(args, max, stop, reactive, solve, save, system)
 
@@ -39,12 +50,39 @@ function runpf(args...; max::Int64 = 100, stop::Float64 = 1.0e-8, reactive::Int6
     return bus, branch, generator, iterations
 end
 
-function runmg(args...; max::Int64 = 100, stop::Float64 = 1.0e-8, reactive::Int64 = 0, solve::String = "", save::String = "", pmuset = "", pmuvariance = ["all" 1e-8], legacyset = "", legacyvariance = ["all" 1e-8])
-    system = loadsystem(args)
-    settings = gesettings(args, max, stop, reactive, solve, save, pmuset, pmuvariance, legacyset, legacyvariance)
-    bus, branch, generator = runacpf(settings, system)
 
-    rungenerator(system, settings, bus, branch)
+###########################
+#  Measurement Generator  #
+###########################
+function runmg(
+    args...;
+    runflow::Int64 = 1,
+    max::Int64 = 100,
+    stop::Float64 = 1.0e-8,
+    reactive::Int64 = 0,
+    solve::String = "",
+    save::String = "",
+    pmuset = "",
+    pmuvariance = "",
+    legacyset = "",
+    legacyvariance = "",
+)
+    system = loadsystem(args)
+    measurement = loadmeasurement(system, runflow)
+    settings = gesettings(runflow, max, stop, reactive, solve, save, pmuset, pmuvariance, legacyset, legacyvariance, measurement)
+
+    if settings.runflow == 1
+        bus, branch = runacpf(settings, system)
+        measurement, system, info = rungenerator(system, settings, measurement; bus = bus, branch = branch)
+    else
+        measurement, system, info = rungenerator(system, settings, measurement)
+    end
+
+    return measurement, system, info
 end
+
+######################
+#  State Estimation  #
+######################
 
 end # JuliaGrid
