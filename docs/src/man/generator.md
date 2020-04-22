@@ -81,8 +81,8 @@ julia> runmg("case14.h5"; legacyset = "all", legacyvariance = ["Pij" 1e-4 "all" 
 |`pmuset = "all"`                                              | all phasor measurements are in-service                           |
 |`pmuset = "optimal"`                                          | deploys phasor measurements according to the optimal PMU location using `"GLPK"` solver, where the system is completely observable only by phasor measurements |
 |`pmuset = ["redundancy" value]`                              | deploys random angle and magnitude measurements measured by PMUs according to the corresponding redundancy |
-|`pmuset = ["device" value]`                                   | deploys voltage and current phasor measurements according to the random selection of PMUs placed on buses, to deploy all devices using `"all"` as value |
-|`pmuset = ["Iij" value "Dij" value "Vi" value "Ti" value]` | deploys phasor measurements according to the random selection of measurement types[^1] |
+|`pmuset = ["device" value]`                                   | deploys voltage and current phasor measurements according to the random selection of PMUs placed on buses, to deploy all devices use `"all"` as value |
+|`pmuset = ["Iij" value "Dij" value "Vi" value "Ti" value]` | deploys phasor measurements according to the random selection of measurement types[^1], to deploy all selected measurements use `"all"` as value |
 
 **SET** (legacy measurements)
 
@@ -90,7 +90,7 @@ julia> runmg("case14.h5"; legacyset = "all", legacyvariance = ["Pij" 1e-4 "all" 
 |:-----------------------------------------------------------------------------------------|:-------------------------------------------------|
 |`legacyset = "all"`                                                                       | all legacy measurements are in-service           |
 |`legacyset = ["redundancy " value]`                                                       | deploys random selection of legacy measurements according the corresponding redundancy |
-|`legacyset = ["Pij" value "Qij" value "Iij" value "Pi" value "Qi" value "Vi" value]`      | deploys legacy measurements according to the random selection of measurement types[^2] |
+|`legacyset = ["Pij" value "Qij" value "Iij" value "Pi" value "Qi" value "Vi" value]`      | deploys legacy measurements according to the random selection of measurement types[^2], to deploy all selected measurements use `"all"` as value |
 
 !!! note "Set"
     If `runpf = 0`, the function keeps sets as in the input data and changes only the sets that are called using keywords. For example, if the keywords `pmuset` and `legacyset` are omitted, the function will retain the measurement set as in the input data, which allows the same measurement set, while changing the measurement variances.
@@ -250,7 +250,7 @@ The `pmuVoltage` data structure:
 
 The measurement generator flowchart depicts the algorithm process according to user settings.
 
-![](../assets/generator_chart.svg)
+![](../assets/generatorm_chart.svg)
 
 
 [^1]: Complete phasor measurement set contains branch current magnitude Iij, branch current angle Dij, bus voltage magnitude Vi and bus voltage angle Ti measurements.

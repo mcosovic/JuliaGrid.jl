@@ -207,4 +207,4 @@ The predefined cases are located in the `src/data` as the **h5-file** or **xlsx-
 ## Flowchart
 The power flow flowchart depicts the algorithm process according to user settings.
 
-![](../assets/power_flow_chart.svg)
+![](../assets/powerflow_chart.svg)
