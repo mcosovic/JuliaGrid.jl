@@ -81,7 +81,6 @@ function runmg(
     return measurement, system, info
 end
 
-measurement, system, info = runmg("case14.h5"; runflow = 1, save = "D:/Dropbox/test.xlsx", pmuset = ["Vi" "all"], pmuvariance = ["Vi" 2 "Ti" 4 "all" 8], legacyset = ["all"])
 ######################
 #  State Estimation  #
 ######################
