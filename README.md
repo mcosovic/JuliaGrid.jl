@@ -1,8 +1,8 @@
 ## JuliaGrid
 
-[![Documentation](https://github.com/mcosovic/JuliaGrid/workflows/Documentation/badge.svg)](https://mcosovic.github.io/JuliaGrid/dev/)
+[![Documentation](https://github.com/mcosovic/JuliaGrid.jl/workflows/Documentation/badge.svg)](https://mcosovic.github.io/JuliaGrid/dev/)
 
-<a href="https://mcosovic.github.io/JuliaGrid/dev/"><img align="right" width="145" src="/docs/src/assets/logo2.png" /></a>
+<a href="https://mcosovic.github.io/JuliaGrid.jl/dev/"><img align="right" width="145" src="/docs/src/assets/logo2.png" /></a>
 
 JuliaGrid is an open-source, easy-to-use simulation tool/solver for researchers and educators provided as a Julia package, with source code released under MIT License. JuliaGrid is inspired by the Matpower, an open-source steady-state power system solver,  and allows a variety of display and manipulation options.
 
@@ -10,7 +10,7 @@ We have tested and verified simulation tool using different scenarios to the bes
 
 The software package provides the solution of the AC and DC power flow, non-linear and DC state estimation (work in progress), as well as the state estimation with PMUs (work in progress), with standalone measurement generator.
 
-<p align="middle"><a href="https://mcosovic.github.io/JuliaGrid/dev/man/flow/" itemprop="contentUrl" data-size="600x400"> <img src="/docs/src/assets/modulepf.png" width="110"></a> <a href="" itemprop="contentUrl" data-size="600x400"> <img src="/docs/src/assets/modulese.png" width="110"></a> <a href="https://mcosovic.github.io/JuliaGrid/dev/man/generator/" itemprop="contentUrl" data-size="600x400"> <img src="/docs/src/assets/modulemg.png" width="110"></a></p>
+<p align="middle"><a href="https://mcosovic.github.io/JuliaGrid.jl/dev/man/flow/" itemprop="contentUrl" data-size="600x400"> <img src="/docs/src/assets/modulepf.png" width="110"></a> <a href="" itemprop="contentUrl" data-size="600x400"> <img src="/docs/src/assets/modulese.png" width="110"></a> <a href="https://mcosovic.github.io/JuliaGrid.jl/dev/man/generator/" itemprop="contentUrl" data-size="600x400"> <img src="/docs/src/assets/modulemg.png" width="110"></a></p>
 
 <!-- MATGRID includes, inter alia, the weighted least-squares and least absolute values state estimation, optimal PMU placement, and bad data processing.   -->
 
