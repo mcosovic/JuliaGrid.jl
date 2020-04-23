@@ -14,6 +14,6 @@ makedocs(
 )
 
 deploydocs(
-    repo = "github.com/mcosovic/JuliaGrid.git",
+    repo = "github.com/mcosovic/JuliaGrid.jl.git",
     target = "build",
 )

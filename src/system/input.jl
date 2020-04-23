@@ -75,8 +75,11 @@ function loadsystem(args)
                 break
             end
         catch
-            error("The input DATA format is not supported.")
         end
+    end
+
+    if isempty(extension)
+        error("The input DATA format is not supported.")
     end
 
     if path == ""

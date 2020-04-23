@@ -10,7 +10,7 @@ The standalone measurement generator receives inputs for measurement variances, 
 
 The order of inputs and their appearance is arbitrary, with only DATA input required. Still, for the methodological reasons, the syntax examples follow a certain order.
 
-### Syntax
+#### Syntax
 ```julia-repl
 runmg(DATA)
 runmg(DATA; RUNPF)
@@ -35,7 +35,7 @@ runmg(DATA; RUNPF, SET, VARIANCE, ACCONTROL, SAVE) exports measurements and powe
 results = runmg(...) returns measurement and power system data with a summary
 ```
 
-####  Examples
+#### Examples
 ```julia-repl
 julia> results = runmg("case14.xlsx"; pmuset = "optimal")
 ```
@@ -83,7 +83,7 @@ SET (phasor measurements)
 | Command                                                      | Description                                                      |
 |:-------------------------------------------------------------|:-----------------------------------------------------------------|
 |`pmuset = "all"`                                              | all phasor measurements are in-service                           |
-|`pmuset = "optimal"`                                          | deploys phasor measurements according to the optimal PMU location using `"GLPK"` solver, where the system is completely observable only by phasor measurements |
+|`pmuset = "optimal"`                                          | deploys phasor measurements according to the optimal PMU location using GLPK solver, where the system is completely observable only by phasor measurements |
 |`pmuset = ["redundancy" value]`                              | deploys random angle and magnitude measurements measured by PMUs according to the corresponding redundancy |
 |`pmuset = ["device" value]`                                   | deploys voltage and current phasor measurements according to the random selection of PMUs placed on buses, to deploy all devices use `"all"` as value |
 |`pmuset = ["Iij" value "Dij" value "Vi" value "Ti" value]` | deploys phasor measurements according to the random selection of measurement types[^1], to deploy all selected measurements use `"all"` as value |
