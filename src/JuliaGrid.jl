@@ -1,5 +1,5 @@
-# module JuliaGrid
-#
+module JuliaGrid
+
 export runpf
 export runmg
 
@@ -81,10 +81,8 @@ function runmg(
     return results
 end
 
-# results = runpf("case14.h5", "nr"; max = 10, save = "D:/Dropbox/test.xlsx")
-results = runmg("case14.h5"; runflow = 1, legacyset = ["redundancy" 8], save = "D:/Dropbox/test.xlsx")
 ######################
 #  State Estimation  #
 ######################
 
-# end # JuliaGrid
+end # JuliaGrid
