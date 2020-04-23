@@ -1,5 +1,5 @@
-module JuliaGrid
-
+# module JuliaGrid
+#
 export runpf
 export runmg
 
@@ -42,12 +42,12 @@ function runpf(
     settings = pfsettings(args, max, stop, reactive, solve, save, system)
 
     if settings.algorithm == "dc"
-        bus, branch, generator, iterations = rundcpf(settings, system)
+        results = rundcpf(settings, system)
     else
-        bus, branch, generator, iterations = runacpf(settings, system)
+        results = runacpf(settings, system)
     end
 
-    return bus, branch, generator, iterations
+    return results
 end
 
 
@@ -72,17 +72,19 @@ function runmg(
     settings = gesettings(runflow, max, stop, reactive, solve, save, pmuset, pmuvariance, legacyset, legacyvariance, measurement)
 
     if settings.runflow == 1
-        bus, branch = runacpf(settings, system)
-        measurement, system, info = rungenerator(system, settings, measurement; bus = bus, branch = branch)
+        flow = runacpf(settings, system)
+        results = rungenerator(system, settings, measurement; flow = flow)
     else
-        measurement, system, info = rungenerator(system, settings, measurement)
+        results = rungenerator(system, settings, measurement)
     end
 
-    return measurement, system, info
+    return results
 end
 
+# results = runpf("case14.h5", "nr"; max = 10, save = "D:/Dropbox/test.xlsx")
+results = runmg("case14.h5"; runflow = 1, legacyset = ["redundancy" 8], save = "D:/Dropbox/test.xlsx")
 ######################
 #  State Estimation  #
 ######################
 
-end # JuliaGrid
+# end # JuliaGrid

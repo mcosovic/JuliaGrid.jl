@@ -1,14 +1,14 @@
 ## Measurement Generator
 
-The function uses the AC power flow analysis or predefined data to generate measurements. The standalone measurement generator produces measurement data in the form described earlier in the state estimation module.
+The function uses the AC power flow analysis or predefined user data to generate measurements. The standalone measurement generator produces measurement data in a form suitable for the state estimation function.
 
 ---
 
 ## Run Settings
 
-The standalone measurement generator receives inputs for measurement variances, and inputs for measurement sets, to produce measurement data and exports those in **h5-file** or **xlsx-file**. The settings should be given as input arguments of the function `runmg(...)`.
+The standalone measurement generator receives inputs for measurement variances, and inputs for measurement sets, to produce measurement data. There are two export formats supported for the measurement data, `.h5` or `.xlsx` file. The settings are provided as input arguments of the function `runmg(...)`.
 
-Although the syntax is given in a certain order, for methodological reasons, only `DATA` must appear, and the order of other inputs is arbitrary, as well as their appearance.
+The order of inputs and their appearance is arbitrary, with only DATA input required. Still, for the methodological reasons, the syntax examples follow a certain order.
 
 ### Syntax
 ```julia-repl
@@ -20,9 +20,9 @@ runmg(DATA; RUNPF, SET, VARIANCE, ACCONTROL)
 runmg(DATA; RUNPF, SET, VARIANCE, ACCONTROL, SAVE)
 ```
 
-### Description
+#### Description
 ```julia-repl
-runmg(DATA) computes the AC power flow problem and generates measurements using default settings
+runmg(DATA) computes the AC power flow problem and generates measurements
 runmg(DATA; RUNPF) sets AC power flow analysis
 runmg(DATA; RUNPF, SET) defines the measurement set (in-service and out-service)
 runmg(DATA; RUNPF, SET, VARIANCE) defines measurement values using predefined variances
@@ -30,33 +30,37 @@ runmg(DATA; RUNPF, SET, VARIANCE, ACCONTROL) sets variables for the AC power flo
 runmg(DATA; RUNPF, SET, VARIANCE, ACCONTROL, SAVE) exports measurements and power system data
 ```
 
-### Output
+#### Output
 ```julia-repl
-measurement, system, info = runmg(...) returns measurement and power system data with a summary
+results = runmg(...) returns measurement and power system data with a summary
 ```
 
-###  Examples
+####  Examples
 ```julia-repl
-julia> runmg("case14.xlsx"; pmuset = "optimal")
+julia> results = runmg("case14.xlsx"; pmuset = "optimal")
 ```
 ```julia-repl
-julia> runmg("case14.xlsx"; pmuset = ["Iij" 5 "Vi" 2])
+julia> results = runmg("case14.xlsx"; pmuset = ["Iij" 5 "Vi" 2])
 ```
 ```julia-repl
-julia> runmg("case14.xlsx"; pmuset = ["Iij" "all" "Vi" 2], legacyset = ["Pij" 4 "Qi" 8])
+julia> results = runmg("case14.xlsx"; pmuset = ["Iij" "all" "Vi" 2], legacyset = ["Pij" 4 "Qi" 8])
 ```
 ```julia-repl
-julia> runmg("case14.h5"; legacyset = ["redundancy" 3.1], legacyvariance = ["all" 1e-4])
+julia> results = runmg("case14.h5"; legacyset = ["redundancy" 3.1], legacyvariance = ["all" 1e-4])
 ```
 ```julia-repl
-julia> runmg("case14.h5"; legacyset = "all", legacyvariance = ["Pij" 1e-4 "all" 1e-5])
+julia> results = runmg("case14.h5"; legacyset = "all", legacyvariance = ["Pij" 1e-4 "all" 1e-5])
 ```
 ---
 
 
-## Input Variable Arguments
+## Input Arguments
 
-**DATA**
+The measurement generator function `runmg(...)` receives the variable number of argument DATA, and group of arguments by keyword: RUNPF, SET, VARIANCE, ACCONTROL and SAVE.
+
+#### Variable Arguments
+
+DATA
 
 | Example           | Description                                    |
 |:------------------|:-----------------------------------------------|
@@ -65,16 +69,16 @@ julia> runmg("case14.h5"; legacyset = "all", legacyvariance = ["Pij" 1e-4 "all" 
 |`"C:/case14.xlsx"` | loads the power system data from a custom path |
 ----
 
-## Input Keyword Arguments
+#### Keyword Arguments
 
-**RUNPF**
+RUNPF
 
 | Command    | Description                                                                   |
 |------------|:------------------------------------------------------------------------------|
 |`runpf = 1` | forces the AC power flow analysis to generate measurements, `default setting` |
-|`runpf = 0` | generates measurements directly from the input data                           |
+|`runpf = 0` | generates measurements directly from the input DATA                           |
 
-**SET** (phasor measurements)
+SET (phasor measurements)
 
 | Command                                                      | Description                                                      |
 |:-------------------------------------------------------------|:-----------------------------------------------------------------|
@@ -84,7 +88,7 @@ julia> runmg("case14.h5"; legacyset = "all", legacyvariance = ["Pij" 1e-4 "all" 
 |`pmuset = ["device" value]`                                   | deploys voltage and current phasor measurements according to the random selection of PMUs placed on buses, to deploy all devices use `"all"` as value |
 |`pmuset = ["Iij" value "Dij" value "Vi" value "Ti" value]` | deploys phasor measurements according to the random selection of measurement types[^1], to deploy all selected measurements use `"all"` as value |
 
-**SET** (legacy measurements)
+SET (legacy measurements)
 
 | Command                                                                                  | Description                                      |
 |:-----------------------------------------------------------------------------------------|:-------------------------------------------------|
@@ -93,42 +97,47 @@ julia> runmg("case14.h5"; legacyset = "all", legacyvariance = ["Pij" 1e-4 "all" 
 |`legacyset = ["Pij" value "Qij" value "Iij" value "Pi" value "Qi" value "Vi" value]`      | deploys legacy measurements according to the random selection of measurement types[^2], to deploy all selected measurements use `"all"` as value |
 
 !!! note "Set"
-    If `runpf = 0`, the function keeps sets as in the input data and changes only the sets that are called using keywords. For example, if the keywords `pmuset` and `legacyset` are omitted, the function will retain the measurement set as in the input data, which allows the same measurement set, while changing the measurement variances.
+    If `runpf = 0`, the function keeps sets as in the input DATA and changes only the sets that are called using keywords. For example, if the keywords `pmuset` and `legacyset` are omitted, the function will retain the measurement set as in the input data, which allows the same measurement set, while changing the measurement variances.
 
-    If `runpf = 1`, the function starts with sets where all the measurements are marked as out-service.  
+    If `runpf = 1`, the function starts with all the measurement sets marked as out-service.  
 
-    Further, the function accept any subset of phasor[^1] or legacy[^2] measurements, consequently, it is not necessary to define attributes for all measurements.  
+    Further, the function accept any subset of phasor[^1] or legacy[^2] measurements, and consequently, it is not necessary to define attributes for all measurements.  
     ```julia-repl
-    julia> runmg("case14.h5"; pmuset = ["Iij" "all" "Vi" 2], legacyset = ["Pij" 4 "Qi" 8])
+    julia> runmg("case14.h5"; pmuset = ["Iij" "all" "Vi" 2])
     ```
+    Thus, the measurement set will consist of two randomly selected bus voltage magnitude measurements, and all branch current magnitude measurements, both of them related with PMUs.  
 
-**VARIANCE** (phasor measurements)
+
+
+VARIANCE (phasor measurements)
 
 | Command                                                           | Description                                                                               |
 |:------------------------------------------------------------------|:------------------------------------------------------------------------------------------|
 |`pmuvariance = ["all" value]`                                      | applies fixed-value variance over all phasor measurements                                 |
 |`pmuvariance = ["random" min max]`                                 | selects variances uniformly at random within limits, applied over all phasor measurements |
-|`pmuvariance = ["Iij" value "Dij" value "Vi" value "Ti" value "all" value]` | predefines variances over a given subset of phasor measurements[^1], to define all variances, except for those individually defined use `"all"`                       |
+|`pmuvariance = ["Iij" value "Dij" value "Vi" value "Ti" value "all" value]` | predefines variances over a given subset of phasor measurements[^1]; to apply fixed-value variance over all, except for those individually defined use `"all" value`                       |
 
-**VARIANCE** (legacy measurements)
+VARIANCE (legacy measurements)
 
 | Command                                                      | Description                                                                       |
 |:-------------------------------------------------------------|:----------------------------------------------------------------------------------|
 |`legacyvariance = ["all" value]`                              | applies fixed-value variance over all phasor measurements |
 |`legacyvariance = ["random" min max]`                    | selects variances uniformly at random within limits, applied over all phasor measurements |
-|`legacyvariance = ["Pij" value "Qij" value "Iij" value "Pi" value "Qi" value "Vi" value "all" value]` | predefines variances over a given subset of phasor measurements[^2], to define all variances, except for those individually defined use `"all"`   |
+|`legacyvariance = ["Pij" value "Qij" value "Iij" value "Pi" value "Qi" value "Vi" value "all" value]` | predefines variances over a given subset of phasor measurements[^2], to apply fixed-value variance over all, except for those individually defined use `"all" value`    |
 
 !!! note "Variance"
-    If `runpf = 0`, the function keeps measurement values and measurement variances as in the input data, and changes only measurement values and variances that are called using keywords. For example, if the keywords `pmuvariance` and `legacyvariance` are omitted, the function will retain the measurement values and variances as in the input data, which allows the same measurement values and variances, while changing the measurement sets.
+    If `runpf = 0`, the function keeps measurement values and measurement variances as in the input DATA, and changes only measurement values and variances that are called using keywords. For example, if the keywords `pmuvariance` and `legacyvariance` are omitted, the function will retain the measurement values and variances as in the input data, allowing the same measurement values and variances, while changing the measurement sets.
 
-    If `runpf = 1`, the function starts with variances equal to zero, that is, zero has meant that measurement values are equal to the exact values.
+    If `runpf = 1`, the function starts with zero variances, meaning that measurement values are equal to the exact values.
 
-    Further, the function accept any subset of phasor[^1] or legacy[^2] measurements, consequently, it is not necessary to define attributes for all measurements, where keyword `"all"` generates measurement values according to defined variance for all measurements, except for those individually defined.   
+    Further, the function accepts any subset of phasor[^1] or legacy[^2] measurements, consequently, it is not necessary to define attributes for all measurements, where keyword `"all"` generates measurement values according to defined variance for all measurements, except for those individually defined.   
     ```julia-repl
     julia> runmg("case14.h5"; legacyvariance = ["Pij" 1e-4 "all" 1e-5])
     ```
+    The function applies variance value of 1e-5 over all legacy measurements, except for active power flow measurements which have variance equal to 1e-4.
 
-**ACCONTROL**
+
+ACCONTROL
 
 | Command             | Description                                                                             |
 |:--------------------|:----------------------------------------------------------------------------------------|
@@ -138,7 +147,7 @@ julia> runmg("case14.h5"; legacyset = "all", legacyvariance = ["Pij" 1e-4 "all" 
 |`solve = "mldivide"` |  mldivide linear system solver, `default setting`                                       |
 |`solve = "lu"`       | LU linear system solver                                                                 |
 
-**SAVE**
+SAVE
 
 | Command                 | Description                    |
 |:------------------------|:-------------------------------|
@@ -146,14 +155,14 @@ julia> runmg("case14.h5"; legacyset = "all", legacyvariance = ["Pij" 1e-4 "all" 
 |`save = "path/name.xlsx"`| saves results in the xlsx-file |
 ---
 
-## The Data Structure
-The function works with **h5** or **xlsx** extensions as input files, with variables `pmuVoltage` and `pmuCurrents` associated with phasor measurements, and `legacyFlow`, `"legacyCurrent"`, `"legacyInjection"` and `"legacyVoltage"` associated with legacy measurements. Further, the function requires knowledge about a power system using variables `bus`, `branch`, `generator` and `"basePower"` variables.
+## Data Structure
+The function supports the `.h5` or `.xlsx` file extensions, with variables `pmuVoltage` and `pmuCurrents` associated with phasor measurements, and `legacyFlow`, `"legacyCurrent"`, `"legacyInjection"` and `"legacyVoltage"` associated with legacy measurements. Further, the function requires knowledge about a power system using variables `bus`, `branch`, `generator` and `"basePower"` variables.
 
-The minimum amount of information within an instance of the data structure required to run the module requires one variable associated with measurements, and `bus` and `branch` variables.
+The minimum amount of information within an instance of the data structure required to run the module requires one variable associated with measurements if `runflow = 0`, and `bus` and `branch` variables.
 
-In the following, we describe the structure of measurement variables involved in the input file, while variables associated with a power system are described in [Power Flow](@ref) section.
+Next, we describe the structure of measurement variables involved in the input/output file, while variables associated with a power system are described in [Power Flow](@ref) section.
 
-The `pmuVoltage` data structure:
+The `pmuVoltage` data structure
 
 | Column   | Description        | Type                                    | Unit     |
 |:--------:|:-------------------|:----------------------------------------|:---------|	 
@@ -168,7 +177,7 @@ The `pmuVoltage` data structure:
 | 9        | exact              | bus voltage angle                       | radian   |
 | 10       | label              | optional column                         |          |
 
-The `pmuCurrent` data structure:
+The `pmuCurrent` data structure
 
 | Column  | Description        | Type                                       | Unit     |
 |:-------:|:-------------------|:-------------------------------------------|:---------|
@@ -186,10 +195,11 @@ The `pmuCurrent` data structure:
 | 12      | label              | optional column                            |          |
 
 !!! note "Optional column: label"
-    It is useful to use when several PMUs exist on a single bus, labels used in the variable `pmuCurrent` should be consistent with labels in the variable `pmuVoltage`.  
+    The optional column label is useful to use when several PMUs exist on a single bus, where labels used in the variable `pmuCurrent` should be consistent with labels in the variable `pmuVoltage`.  
+
 ---
 
-The `legacyFlow` data structure:
+The `legacyFlow` data structure
 
 | Column  | Description        | Type                                | Unit     |
 |:-------:|:-------------------|:------------------------------------|:---------|
@@ -205,7 +215,7 @@ The `legacyFlow` data structure:
 | 10      | exact              | active power flow                   | per-unit |
 | 11      | exact              | reactive power flow                 | per-unit |
 
-The `legacyCurrent` data structure:
+The `legacyCurrent` data structure
 
 | Column  | Description        | Type                                     | Unit     |
 |:-------:|:-------------------|:-----------------------------------------|:---------|
@@ -217,7 +227,7 @@ The `legacyCurrent` data structure:
 | 6       | status             | branch current magnitude in/out-service  |          |
 | 7      | exact               | branch current magnitude                 | per-unit |
 
-The `legacyInjection` data structure:
+The `legacyInjection` data structure
 
 | Column   | Description        | Type                                     | Unit     |
 |:--------:|:-------------------|:-----------------------------------------|:---------|	 
@@ -231,7 +241,7 @@ The `legacyInjection` data structure:
 | 8        | exact              | active power injection                   | per-unit |
 | 9        | exact              | reactive power injection                 | per-unit |
 
-The `pmuVoltage` data structure:
+The `pmuVoltage` data structure
 
 | Column   | Description        | Type                                    | Unit     |
 |:--------:|:-------------------|:----------------------------------------|:---------|	 
@@ -243,7 +253,7 @@ The `pmuVoltage` data structure:
 ---
 
 !!! tip "How many"
-    The input data need not contain a complete structure of measurement variables, and measurement data need not consistent with the total number of buses and branches, also if there is more than one measurement per the same bus or branch everything will be fine.
+    The input data needs not to contain a complete structure of measurement variables, and measurement data needs not to be consistent with the total number of buses and branches. Also, the function supports more than one measurement per the same bus or branch.
 ---
 
 ## Flowchart

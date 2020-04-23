@@ -7,20 +7,12 @@ function runacpf(settings, system)
     transShift, branchOn, Pshunt, Qshunt, Pbus, Qbus, Pinj, Qinj, Imij, Iaij, Imji, Iaji,
     Pij, Qij, Pji, Qji, Qcharging, Ploss, Qloss, limit, QminInf, QmaxInf = view_acsystem(system)
 
+  algtime = @elapsed begin
     info = ""
     numbering = false
-    Nbus = size(system.bus, 1)
-    Ngen = size(system.generator, 1)
-    Nbranch = size(system.branch, 1)
-    bus = collect(1:Nbus)
-
-    if !isempty(settings.save)
-        info = info_flow(system.branch, system.bus, system.generator, system.info, settings, system.data, Nbranch, Nbus, Ngen)
-    end
-
-  algtime = @elapsed begin
+    bus = collect(1:system.Nbus)
     slack = 0
-    @inbounds for i = 1:Nbus
+    @inbounds for i = 1:system.Nbus
         if bus[i] != busi[i]
             numbering = true
         end
@@ -31,18 +23,18 @@ function runacpf(settings, system)
 
     if slack == 0
         slack = 1
-        println("  The slack bus is not found. Slack bus is the first bus.")
+        println("The slack bus is not found. Slack bus is the first bus.")
     end
 
     slackLimit = copy(slack)
-    multiple = fill(0, Nbus)
+    multiple = fill(0, system.Nbus)
     isMultiple = false
     limit .= 1.0
     Pbus .= 0.0
     Qbus .= 0.0
     type .= 1.0
 
-    gen_bus = numbering_generator(geni, busi, Nbus, bus, numbering)
+    gen_bus = numbering_generator(geni, busi, system.Nbus, bus, numbering)
     @inbounds for (k, i) in enumerate(gen_bus)
         if genOn[k] == 1
             Pbus[i] += Pgen[k] / system.baseMVA
@@ -62,16 +54,16 @@ function runacpf(settings, system)
     end
     type[slack] = 3.0
 
-    from, to = numbering_branch(fromi, toi, busi, Nbranch, Nbus, bus, numbering)
-    tap = zeros(Complex, Nbranch)
-    admittance = zeros(Complex, Nbranch)
-    Ytt = zeros(Complex, Nbranch)
-    Yff = zeros(Complex, Nbranch)
-    Yft = zeros(Complex, Nbranch)
-    Ytf = zeros(Complex, Nbranch)
-    Ydiag = zeros(Complex, Nbus)
+    from, to = numbering_branch(fromi, toi, busi, system.Nbra, system.Nbus, bus, numbering)
+    tap = zeros(Complex, system.Nbra)
+    admittance = zeros(Complex, system.Nbra)
+    Ytt = zeros(Complex, system.Nbra)
+    Yff = zeros(Complex, system.Nbra)
+    Yft = zeros(Complex, system.Nbra)
+    Ytf = zeros(Complex, system.Nbra)
+    Ydiag = zeros(Complex, system.Nbus)
     shunt = complex.(Gshunt, Bshunt) ./ system.baseMVA
-    @inbounds for i = 1:Nbranch
+    @inbounds for i = 1:system.Nbra
         if branchOn[i] == 1
             admittance[i] = 1 / complex(resistance[i], reactance[i])
 
@@ -91,8 +83,8 @@ function runacpf(settings, system)
         end
     end
 
-    Ybus = sparse([bus; bus; from; to], [bus; bus; to; from], [Ydiag; shunt; Yft; Ytf], Nbus, Nbus)
-    YbusT = sparse([bus; bus; to; from], [bus; bus; from; to], [Ydiag; shunt; Yft; Ytf], Nbus, Nbus)
+    Ybus = sparse([bus; bus; from; to], [bus; bus; to; from], [Ydiag; shunt; Yft; Ytf], system.Nbus, system.Nbus)
+    YbusT = sparse([bus; bus; to; from], [bus; bus; from; to], [Ydiag; shunt; Yft; Ytf], system.Nbus, system.Nbus)
 
     Vc = Vini .* exp.(im * (pi / 180)  * Tini)
     iter = 0
@@ -102,17 +94,17 @@ function runacpf(settings, system)
         end
 
         if settings.algorithm == "gs"
-            Vc, iter = gauss_seidel(settings, system.baseMVA, Nbus, Ybus, YbusT, slack, Vc, Pbus, Qbus, Pload, Qload, Vini, type, iter)
+            Vc, iter = gauss_seidel(settings, system, Ybus, YbusT, slack, Vc, Pbus, Qbus, Pload, Qload, Vini, type, iter)
         end
         if settings.algorithm == "nr"
-            Vc, iter = newton_raphson(settings, system.baseMVA, Nbus, Nbranch, Ybus, YbusT, slack, Vc, Pbus, Qbus, Pload, Qload, type, iter)
+            Vc, iter = newton_raphson(settings, system, Ybus, YbusT, slack, Vc, Pbus, Qbus, Pload, Qload, type, iter)
         end
         if settings.algorithm == "fnrbx" || settings.algorithm == "fnrxb"
-            Vc, iter = fast_newton_raphson(system, settings, system.baseMVA, Nbus, Nbranch, branchOn, Ybus, YbusT, slack, Vc, Pbus, Qbus,
+            Vc, iter = fast_newton_raphson(system, settings, branchOn, Ybus, YbusT, slack, Vc, Pbus, Qbus,
             Pload, Qload, type, resistance, reactance, transShift, Gshunt, Bshunt, charging, transTap, from, to, iter)
         end
 
-        @inbounds for i = 1:Nbus
+        @inbounds for i = 1:system.Nbus
             Sshunt = Vc[i] * conj(Vc[i] * shunt[i])
             Pshunt[i] = real(Sshunt)
             Qshunt[i] = imag(Sshunt)
@@ -132,7 +124,7 @@ function runacpf(settings, system)
         Pbus[slack] = Pinj[slack] + Pload[slack] / system.baseMVA
 
         if !isMultiple
-            @inbounds for i = 1:Ngen
+            @inbounds for i = 1:system.Ngen
                 if genOn[i] == 1
                     Pgen[i] = Pbus[gen_bus[i]]
                     Qgen[i] = Qbus[gen_bus[i]]
@@ -142,12 +134,12 @@ function runacpf(settings, system)
                 end
             end
         else
-            Qmintotal = fill(0.0, Nbus)
-            Qmaxtotal = fill(0.0, Nbus)
-            Qgentotal = fill(0.0, Nbus)
+            Qmintotal = fill(0.0, system.Nbus)
+            Qmaxtotal = fill(0.0, system.Nbus)
+            Qgentotal = fill(0.0, system.Nbus)
             QminNew = copy(Qmin)
             QmaxNew = copy(Qmax)
-            @inbounds for i = 1:Ngen
+            @inbounds for i = 1:system.Ngen
                 if genOn[i] == 1
                     j = gen_bus[i]
                     if !isinf(Qmin[i])
@@ -159,7 +151,7 @@ function runacpf(settings, system)
                     Qgentotal[j] += (Qinj[j] + Qload[j] / system.baseMVA) / multiple[j]
                 end
             end
-            @inbounds for i = 1:Ngen
+            @inbounds for i = 1:system.Ngen
                 if genOn[i] == 1
                     j = gen_bus[i]
                     if Qmin[i] == Inf
@@ -177,7 +169,7 @@ function runacpf(settings, system)
                 end
             end
 
-            @inbounds for i = 1:Ngen
+            @inbounds for i = 1:system.Ngen
                 if genOn[i] == 1
                     j = gen_bus[i]
                     if isinf(Qmin[i])
@@ -192,7 +184,7 @@ function runacpf(settings, system)
             end
             flag = true
             tempslack = 0
-            @inbounds for i = 1:Ngen
+            @inbounds for i = 1:system.Ngen
                 if genOn[i] == 1
                     j = gen_bus[i]
                     if system.baseMVA * abs(Qmintotal[j] - Qmaxtotal[j]) > 10 * eps(Float64)
@@ -217,7 +209,7 @@ function runacpf(settings, system)
 
         if settings.reactive[1] && settings.reactive[2]
             settings.reactive[2] = false
-            @inbounds for i = 1:Ngen
+            @inbounds for i = 1:system.Ngen
                 if genOn[i] == 1
                     j = gen_bus[i]
                     if limit[i] == 1 && (Qgen[i] < Qmin[i] || Qgen[i] > Qmax[i])
@@ -238,9 +230,9 @@ function runacpf(settings, system)
 
                         type[j] = 1
                         if j == slack
-                            for k = 1:Nbus
+                            for k = 1:system.Nbus
                                 if type[k] == 2
-                                    println(string("  Bus ", trunc(Int, system.bus[k, 1]), " is the new slack bus."))
+                                    println(string("Bus ", trunc(Int, system.bus[k, 1]), " is the new slack bus."))
                                     slack = bus[k]
                                     type[k] = 3
                                     settings.reactive[3] = true
@@ -258,12 +250,12 @@ function runacpf(settings, system)
 
     if settings.reactive[3]
         T = angle(Vc[slackLimit])
-        for i = 1:Nbus
+        for i = 1:system.Nbus
             Vc[i] = abs(Vc[i]) * exp(im * (angle(Vc[i]) - T +  (pi / 180) * Tini[slackLimit]))
         end
     end
 
-    @inbounds for i = 1:Nbranch
+    @inbounds for i = 1:system.Nbra
         if branchOn[i] == 1
             f = from[i]
             t = to[i]
@@ -296,9 +288,9 @@ function runacpf(settings, system)
     end
   end
 
-    bus, branch, generator = results_flowac(settings, system, limit, Nbus, Nbranch, Ngen, slack, Vc, algtime, info)
+    results = results_flowac(settings, system, limit, slack, Vc, algtime, iter)
 
-    return bus, branch, generator, iter
+    return results
 end
 
 

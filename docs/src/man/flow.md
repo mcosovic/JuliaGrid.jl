@@ -14,7 +14,7 @@ The AC power flow analysis includes four different algorithms:
 The power flow settings should be given as input arguments of the function `runpf(...)`. Although the syntax is given in a certain order, for methodological reasons, only DATA must appear, and the order of other inputs is arbitrary, as well as their appearance.
 
 
-### Syntax
+#### Syntax
 ```julia-repl
 runpf(DATA, METHOD)
 runpf(DATA, METHOD, DISPLAY)
@@ -23,7 +23,7 @@ runpf(DATA, METHOD, DISPLAY; ACCONTROL, SOLVE)
 runpf(DATA, METHOD, DISPLAY; ACCONTROL, SOLVE, SAVE)
 ```
 
-### Description
+#### Description
 ```julia-repl
 runpf(DATA, METHOD) computes power flow problem
 runpf(DATA, METHOD, DISPLAY) shows results in the terminal
@@ -32,29 +32,33 @@ runpf(DATA, METHOD, DISPLAY; ACCONTROL, SOLVE) sets the linear system solver
 runpf(DATA, METHOD, DISPLAY; ACCONTROL, SOLVE, SAVE) exports results
 ```
 
-### Output
+#### Output
 ```julia-repl
-bus, branch, generator = runpf(...) returns results of the power flow analysis
+results = runpf(...) returns results of the power flow analysis
 ```
 
-###  Examples
+####  Examples
 ```julia-repl
-julia> runpf("case14.h5", "nr", "main", "flow", "generator");
+julia> results = runpf("case14.h5", "nr", "main", "flow", "generator")
 ```
 ```julia-repl
-julia> runpf("case14.xlsx", "nr", "main"; max = 10, stop = 1.0e-8);
+julia> results = runpf("case14.xlsx", "nr", "main"; max = 10, stop = 1.0e-8)
 ```
 ```julia-repl
-julia> runpf("case14.h5", "gs", "main"; max = 500, stop = 1.0e-8, reactive = 1);
+julia> results = runpf("case14.h5", "gs", "main"; max = 500, stop = 1.0e-8, reactive = 1)
 ```
 ```julia-repl
-julia> runpf("case14.h5", "dc", "main"; solve = "lu", save = "D:/case14results.xlsx");
+julia> results = runpf("case14.h5", "dc"; solve = "lu", save = "D:/case14results.xlsx")
 ```
 ---
 
-## Input Variable Arguments
+## Input Arguments
 
-**DATA**
+The power flow function `runpf(...)` receives a group of variable number of arguments: DATA, METHOD, DISPLAY, and group of arguments by keyword: ACCONTROL, SOLVE, SAVE.
+
+#### Variable Arguments
+
+DATA
 
 | Example           | Description                                    |
 |:------------------|:-----------------------------------------------|
@@ -62,7 +66,7 @@ julia> runpf("case14.h5", "dc", "main"; solve = "lu", save = "D:/case14results.x
 |`"case14.xlsx"`    | loads the power system data from the package   |
 |`"C:/case14.xlsx"` | loads the power system data from a custom path |
 
-**METHOD**
+METHOD
 
 | Command | Description
 |:--------|:---------------------------------------------------------------------------------|
@@ -72,7 +76,7 @@ julia> runpf("case14.h5", "dc", "main"; solve = "lu", save = "D:/case14results.x
 |`"fnrbx"`| runs the AC power flow analysis using BX fast Newton-Raphson algorithm           |
 |`"dc"`   | runs the DC power flow analysis                                                  |
 
-**DISPLAY**
+DISPLAY
 
 | Command     | Description                    |
 |:------------|:-------------------------------|
@@ -81,9 +85,9 @@ julia> runpf("case14.h5", "dc", "main"; solve = "lu", save = "D:/case14results.x
 |`"generator"`| shows generator data display   |
 ----
 
-## Input Keyword Arguments
+#### Keyword Arguments
 
-**ACCONTROL**
+ACCONTROL
 
 | Command      | Description                                                                              |
 |:-------------|:-----------------------------------------------------------------------------------------|
@@ -91,14 +95,14 @@ julia> runpf("case14.h5", "dc", "main"; solve = "lu", save = "D:/case14results.x
 |`stop = value`| specifies the stopping criteria for the AC power flow, `default setting: 1.0e-8`         |
 |`reactive = 1`| forces reactive power constraints, `default setting: 0`                                  |
 
-**SOLVE**
+SOLVE
 
 | Command            | Description                                      |
 |:-------------------|:-------------------------------------------------|
 |`solve = "mldivide"`| mldivide linear system solver, `default setting` |
 |`solve = "lu"`      | LU linear system solver                          |
 
-**SAVE**
+SAVE
 
 | Command                 | Description                    |
 |:------------------------|:-------------------------------|
@@ -106,15 +110,15 @@ julia> runpf("case14.h5", "dc", "main"; solve = "lu", save = "D:/case14results.x
 |`save = "path/name.xlsx"`| saves results in the xlsx-file |
 ---
 
-## The Data Structure
+## Input Data Structure
 
-The JuliaGrid works with **h5** or **xlsx** extensions as input files, with variables `bus`, `generator`, `branch`, and `basePower`. JuliaGrid is using the same data format as Matpower, except the first column in the `branch` data.
+The function works with input `.h5` or `.xlsx` file extensions, with variables `bus`, `generator`, `branch`, and `basePower`, and uses the same data format as Matpower, except the first column in the `branch` data.
 
 The minimum amount of information within an instance of the data structure required to run the module requires a `bus` and `branch` data.
 
 First, the system base power is defined in (MVA) using `basePower`, and in the following, we describe the structure of other variables involved in the input file.
 
-The `bus` data structure:
+The `bus` data structure
 
 | Column   | Description        | Type                    | Unit      |
 |:--------:|:-------------------|:------------------------|:----------|	 
@@ -133,7 +137,7 @@ The `bus` data structure:
 | 13       | maximum voltage    | magnitude               | per-unit  |
 
 
-The `generator` data structure:
+The `generator` data structure
 
 | Column   | Description        | Type                     | Unit     |
 |:--------:|:-------------------|:-------------------------|:---------|
@@ -159,7 +163,7 @@ The `generator` data structure:
 | 20       | ramp rate Q        | reactive power per minut | MVAr/min |
 | 21       | area factor        | positive integer         |          |
 
-The `branch` data structure:
+The `branch` data structure
 
 | Column  | Description                | Type             | Unit     |
 |:-------:|:---------------------------|:-----------------|:---------|
@@ -179,11 +183,11 @@ The `branch` data structure:
 | 14      | maximum voltage difference | angle            | deg      |
 ---
 
-### Use Cases
+#### Use Cases
 
-The predefined cases are located in the `src/data` as the **h5-file** or **xlsx-file**.
+The predefined cases are located in `src/data` as `.h5` or `.xlsx` files.
 
-| Case             | Grid         | Buses | Shunts | Generators | Branches |
+| Case             | Grid         | Bus   | Shunt  | Generator  | Branche  |
 |:-----------------|:-------------|------:|-------:|-----------:|---------:|
 | case3            | transmission | 3     | 0      | 1          | 3        |
 | case5            | transmission | 5     | 0      | 5          | 6        |
@@ -202,6 +206,86 @@ The predefined cases are located in the `src/data` as the **h5-file** or **xlsx-
 | case_ACTIVSg2000 | transmission | 2000  | 149    | 544        | 3206     |
 | case_ACTIVSg10k  | transmission | 10000 | 281    | 2485       | 12706    |
 | case_ACTIVSg70k  | transmission | 70000 | 3477   | 10390      | 88207    |
+---
+
+## Output Data Structure
+The power flow function `runpf(...)` returns a single dictionary variable with keys `bus`, `generator`, `branch`, and with the additional key `iterations` if the AC power flow is executed.
+
+#### DC Power Flow
+
+The `bus` data structure
+
+| Column   | Description        | Type                    | Unit      |
+|:--------:|:-------------------|:------------------------|:----------|	 
+| 1        | bus number         | positive integer        |           |
+| 2        | voltage            | angle                   | deg       |
+| 3        | injection          | active power            | MW        |
+| 4        | generation         | active power            | MW        |
+| 5        | demand             | active power            | MW        |
+| 6        | shunt conductance  | active power            | MW        |
+
+The `generator` data structure
+
+| Column   | Description        | Type                     | Unit     |
+|:--------:|:-------------------|:-------------------------|:---------|
+| 1        | bus number         | positive integer         |          |
+| 2        | generation         | active power             | MW       |
+
+The `branch` data structure
+
+| Column  | Description                | Type             | Unit     |
+|:-------:|:---------------------------|:-----------------|:---------|
+| 1       | branch number              | positive integer |          |
+| 2       | from bus number            | positive integer |          |
+| 3       | to bus number              | positive integer |          |
+| 4       | from bus flow              | active power     | MW       |
+| 5       | to bus flow                | active power     | MW       |
+---
+
+#### AC Power Flow
+
+The `bus` data structure
+
+| Column   | Description        | Type                    | Unit      |
+|:--------:|:-------------------|:------------------------|:----------|	 
+| 1        | bus number         | positive integer        |           |
+| 2        | voltage            | magnitude               | per-unit  |
+| 3        | voltage            | angle                   | deg       |
+| 4        | injection          | active power            | MW        |
+| 5        | injection          | reactive power          | MVAr      |
+| 6        | generation         | active power            | MW        |
+| 7        | generation         | reactive power          | MVAr      |
+| 8        | demand             | active power            | MW        |
+| 9        | demand             | reactive power          | MVAr      |
+| 10       | shunt conductance  | active power            | MW        |
+| 11       | shunt susceptance  | reactive power          | MVAr      |
+
+The `generator` data structure
+
+| Column   | Description        | Type                     | Unit     |
+|:--------:|:-------------------|:-------------------------|:---------|
+| 1        | bus number         | positive integer         |          |
+| 2        | generation         | active power             | MW       |
+| 3        | generation         | reactive power           | MVAr     |
+
+The `branch` data structure
+
+| Column  | Description                | Type             | Unit     |
+|:-------:|:---------------------------|:-----------------|:---------|
+| 1       | branch number              | positive integer |          |
+| 2       | from bus number            | positive integer |          |
+| 3       | to bus number              | positive integer |          |
+| 4       | from bus flow              | active power     | MW       |
+| 5       | from bus flow              | reactive power   | MVAr     |
+| 6       | to bus flow                | active power     | MW       |
+| 7       | to bus flow                | reactive power   | MVAr     |
+| 8       | branch injection           | reactive power   | MVAr     |
+| 9       | loss                       | active power     | MW       |
+| 10      | loss                       | reactive power   | MVAr     |
+| 11      | from bus current           | magnitude        | per-unit |
+| 12      | from bus current           | angle            | deg      |
+| 13      | to bus current             | magnitude        | per-unit |
+| 14      | to bus current             | angle            | deg      |
 ---
 
 ## Flowchart

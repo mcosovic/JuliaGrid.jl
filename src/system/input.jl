@@ -4,13 +4,15 @@
 struct PowerSystem
     bus::Array{Float64,2}
     generator::Array{Float64,2}
-    isgenerator::Bool
     branch::Array{Float64,2}
     baseMVA::Float64
     info::Union{Array{String,1}, Array{String,2}}
-    package::String
+    Nbus::Int64
+    Ngen::Int64
+    Nbra::Int64
+    packagepath::String
     path::String
-    data::String
+    dataname::String
     extension::String
 end
 
@@ -61,64 +63,62 @@ end
 #  Load power system data  #
 ############################
 function loadsystem(args)
-    package_dir = abspath(joinpath(dirname(Base.find_package("JuliaGrid")), ".."))
-    isgenerator = true
-    extension = ""
-    path = ""
-    data = ""
-    fullpath = ""
+    packagepath = abspath(joinpath(dirname(Base.find_package("JuliaGrid")), ".."))
+    extension = ""; path = ""; dataname = ""; fullpath = ""
     for i = 1:length(args)
         try
             extension = match(r"\.[A-Za-z0-9]+$", args[i]).match
             if extension == ".h5" || extension == ".xlsx"
                 fullpath = args[i]
                 path = dirname(args[i])
-                data = basename(args[i])
+                dataname = basename(args[i])
                 break
             end
         catch
+            error("The input DATA format is not supported.")
         end
-    end
-    if isempty(extension)
-       error("The input data format is not supported.")
     end
 
     if path == ""
-        path = joinpath(package_dir, "src/data/")
-        fullpath = joinpath(package_dir, "src/data/", data)
+        path = joinpath(packagepath, "src/data/")
+        fullpath = joinpath(packagepath, "src/data/", dataname)
     end
 
     input_data = cd(readdir, path)
-    if any(input_data .== data)
-        println(string("  Input Power System: ", data))
+    if any(input_data .== dataname)
+        println(string("The input power system: ", dataname))
     else
-        error("The input power system data is not found.")
+        error("The input DATA is not found.")
     end
 
     read_data = readdata(fullpath, extension; type = "pf")
 
     if !any(keys(read_data) .== "bus")
-        error("Invalid power flow data structure, variable 'bus' not found.")
+        error("Invalid DATA structure, variable bus not found.")
     end
     if !any(keys(read_data) .== "branch")
-        error("Invalid power flow data structure, variable 'branch' not found.")
+        error("Invalid DATA structure, variable branch not found.")
     end
 
     bus = Array{Float64}(undef, 0, 0)
-    generator = Array{Float64}(undef, 0, 0)
     branch = Array{Float64}(undef, 0, 0)
+    generator = zeros(1, 21)
     baseMVA = 0.0
     info = Array{String}(undef, 0)
+    Nbus = 0; Ngen = 0; Nbra = 0
 
     for i in keys(read_data)
         if i == "bus"
            bus = read_data[i]
+           Nbus = datastruct(bus, 13; var = i)
         end
         if i == "generator"
             generator = read_data[i]
+            Ngen = datastruct(generator, 21; var = i)
         end
         if i == "branch"
             branch = read_data[i]
+            Nbra = datastruct(branch, 14; var = i)
         end
         if i == "basePower"
             baseMVA = read_data[i][1]
@@ -128,17 +128,14 @@ function loadsystem(args)
         end
     end
 
-    if length(generator) == 0
-        generator = zeros(1, 21)
-        isgenerator = false
-    end
-
     if baseMVA == 0
         baseMVA = 100.0
-        @info("The variable 'basePower' not found. The algorithm proceeds with default value: 100 MVA")
+        @info("The variable basePower not found. The algorithm proceeds with default value: 100 MVA")
     end
 
-    return PowerSystem(bus, generator, isgenerator, branch, baseMVA, info, package_dir, fullpath, data, extension)
+    info = infogrid(bus, branch, generator, info, dataname, Nbra, Nbus, Ngen)
+
+    return PowerSystem(bus, generator, branch, baseMVA, info, Nbus, Ngen, Nbra, packagepath, fullpath, dataname, extension)
 end
 
 
@@ -163,12 +160,12 @@ function pfsettings(args, max, stop, react, solve, save, system)
         if args[i] == "flow"
             flow = true
         end
-        if args[i] == "generator" && system.isgenerator
+        if args[i] == "generator" && system.Ngen != 0
             generator = true
         end
     end
 
-    if react == 1 && system.isgenerator
+    if react == 1 && system.Ngen != 0
         reactive = [true; true; false]
     end
 
@@ -181,7 +178,8 @@ function pfsettings(args, max, stop, react, solve, save, system)
         path = dirname(save)
         data = basename(save)
         if isempty(data)
-            data = string("new_juliagrid", system.extension)
+            dataname = join(replace(split(system.dataname, ""), "."=>""))
+            data = string(dataname, "_results", system.extension)
         end
         save = joinpath(path, data)
     end
@@ -194,18 +192,14 @@ end
 #  Load measurement data  #
 ###########################
 function loadmeasurement(system, runflow)
-    Nbus = size(system.bus, 1)
-    Nbranch = size(system.branch, 1)
-    Ngen = size(system.generator, 1)
-
     if runflow == 1
         measurement = Dict()
-        push!(measurement, "pmuVoltage" => fill(0.0, Nbus, 9))
-        push!(measurement, "pmuCurrent" => fill(0.0, 2 * Nbranch, 11))
-        push!(measurement, "legacyFlow" => fill(0.0, 2 * Nbranch, 11))
-        push!(measurement, "legacyCurrent" => fill(0.0, 2 * Nbranch, 7))
-        push!(measurement, "legacyInjection" => fill(0.0, Nbus, 9))
-        push!(measurement, "legacyVoltage" => fill(0.0, Nbus, 5))
+        push!(measurement, "pmuVoltage" => fill(0.0, system.Nbus, 9))
+        push!(measurement, "pmuCurrent" => fill(0.0, 2 * system.Nbra, 11))
+        push!(measurement, "legacyFlow" => fill(0.0, 2 * system.Nbra, 11))
+        push!(measurement, "legacyCurrent" => fill(0.0, 2 * system.Nbra, 7))
+        push!(measurement, "legacyInjection" => fill(0.0, system.Nbus, 9))
+        push!(measurement, "legacyVoltage" => fill(0.0, system.Nbus, 5))
     else
         measurement = readdata(system.path, system.extension; type = "se")
     end
@@ -476,45 +470,6 @@ function gesettings(runflow, max, stop, react, solve, save, pmuset, pmuvariance,
     end
 
     return GeneratorSettings(algorithm, solve, main, flow, generator, savepf, save, runflow, max, stop, reactive, set, variance)
-end
-
-
-###########################
-#  Load measurement data  #
-###########################
-function loadmeasurement(system)
-    read_data = readdata(system.path, system.extension; type = "se")
-
-    pmuCurrent = Array{Float64}(undef, 0, 0)
-    pmuVoltage = Array{Float64}(undef, 0, 0)
-    legacyFlow = Array{Float64}(undef, 0, 0)
-    legacyCurrent = Array{Float64}(undef, 0, 0)
-    legacyInjection = Array{Float64}(undef, 0, 0)
-    legacyVoltage = Array{Float64}(undef, 0, 0)
-    type = convert(Array{String,1}, keys(read_data))
-    display(type)
-    for i in keys(read_data)
-        if i == "pmuVoltage"
-            pmuVoltage = read_data[i]
-        end
-        if i == "pmuCurrent"
-            pmuCurrent = read_data[i]
-        end
-        if i == "legacyFlow"
-            legacyFlow = read_data[i]
-        end
-        if i == "legacyCurrent"
-            legacyCurrent = read_data[i]
-        end
-        if i == "legacyInjection"
-            legacyInjection = read_data[i]
-        end
-        if i == "legacyVoltage"
-            legacyVoltage = read_data[i]
-        end
-    end
-
-    return StateEstimation(pmuCurrent, pmuVoltage, legacyFlow, legacyCurrent, legacyInjection, legacyVoltage, type)
 end
 
 

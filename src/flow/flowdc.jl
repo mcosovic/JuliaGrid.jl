@@ -2,25 +2,17 @@
 #  DC Power Flow  #
 ###################
 function rundcpf(settings, system)
+    println("Algorithm: DC power flow")
     busi, type, Pload, Gshunt, Tini, geni, Pgen, genOn, fromi, toi,
     resistance, reactance, charging, transTap, transShift, branchOn, Pbus, Pinj,
     Pshift, Ydiag, Pij, admitance = view_dcsystem(system)
 
-    info = ""
-    iter = 0
-    numbering = false
-    Nbus = size(system.bus, 1)
-    Ngen = size(system.generator, 1)
-    Nbranch = size(system.branch, 1)
-    bus = collect(1:Nbus)
-
-    if !isempty(settings.save)
-        info = info_flow(system.branch, system.bus, system.generator, system.info, settings, system.data, Nbranch, Nbus, Ngen)
-    end
-
   algtime = @elapsed begin
+    info = ""
+    numbering = false
+    bus = collect(1:system.Nbus)
     slack = 0
-    @inbounds for i = 1:Nbus
+    @inbounds for i = 1:system.Nbus
         if bus[i] != busi[i]
             numbering = true
         end
@@ -31,11 +23,11 @@ function rundcpf(settings, system)
 
     if slack == 0
         slack = 1
-        println("  The slack bus is not found. Slack bus is the first bus.")
+        println("The slack bus is not found. Slack bus is the first bus.")
     end
 
-    gen_bus = numbering_generator(geni, busi, Nbus, bus, numbering)
     Pbus .= 0.0
+    gen_bus = numbering_generator(geni, busi, system.Nbus, bus, numbering)
     @inbounds for (k, i) in enumerate(gen_bus)
         if genOn[k] == 1
             Pbus[i] += Pgen[k] / system.baseMVA
@@ -43,11 +35,10 @@ function rundcpf(settings, system)
         end
     end
 
-
-    from, to = numbering_branch(fromi, toi, busi, Nbranch, Nbus, bus, numbering)
+    from, to = numbering_branch(fromi, toi, busi, system.Nbra, system.Nbus, bus, numbering)
     Pshift .= 0.0
     Ydiag .= 0.0
-    @inbounds for i = 1:Nbranch
+    @inbounds for i = 1:system.Nbra
         if branchOn[i] == 1
             if transTap[i] == 0
                 admitance[i] = 1 / reactance[i]
@@ -66,8 +57,8 @@ function rundcpf(settings, system)
         end
     end
 
-    Ybus = sparse([bus; from; to], [bus; to; from], [Ydiag; -admitance; -admitance], Nbus, Nbus)
-    keep = [collect(1:slack - 1); collect(slack + 1:Nbus)]
+    Ybus = sparse([bus; from; to], [bus; to; from], [Ydiag; -admitance; -admitance], system.Nbus, system.Nbus)
+    keep = [collect(1:slack - 1); collect(slack + 1:system.Nbus)]
     Ybus_reduce = Ybus[keep, keep]
     b = Pbus[keep] - Pshift[keep] - (Pload[keep] + Gshunt[keep]) ./ system.baseMVA
 
@@ -81,9 +72,8 @@ function rundcpf(settings, system)
 
     insert!(Ti, slack, 0.0)
     Ti =  (pi / 180) * Tini[slack] .+ Ti
-    println("  Algorithm: DC power flow")
 
-    @inbounds for i = 1:Nbranch
+    @inbounds for i = 1:system.Nbra
         if branchOn[i] == 1
             Pij[i] = admitance[i] * (Ti[from[i]] - Ti[to[i]] - (pi / 180) * transShift[i])
         else
@@ -96,7 +86,7 @@ function rundcpf(settings, system)
 
     flag = true
     tempslack = 0
-    for i = 1:Ngen
+    for i = 1:system.Ngen
         if genOn[i] == 1
             if gen_bus[i] == slack && flag == false
                 Pgen[tempslack] -= Pgen[i]
@@ -110,11 +100,11 @@ function rundcpf(settings, system)
             Pgen[i] = 0.0
         end
     end
-  end
+ end # algtime
 
-    bus, branch, generator = results_flowdc(settings, system, Nbus, Nbranch, Ngen, Ti, slack, algtime, info)
+    results = results_flowdc(settings, system, Ti, slack, algtime)
 
-    return bus, branch, generator, iter
+    return results
 end
 
 
@@ -122,7 +112,7 @@ end
 #  View data  #
 ###############
 function view_dcsystem(system)
-    # Read Data
+    ################## Read Data ##################
     busi = @view(system.bus[:, 1])
     type = @view(system.bus[:, 2])
     Pload = @view(system.bus[:, 3])
@@ -142,7 +132,7 @@ function view_dcsystem(system)
     transShift = @view(system.branch[:, 11])
     branchOn = @view(system.branch[:, 12])
 
-    # Write Data
+    ################## Write Data ##################
     Pbus = @view(system.bus[:, 10])
     Pinj = @view(system.bus[:, 11])
     Pshift = @view(system.bus[:, 12])

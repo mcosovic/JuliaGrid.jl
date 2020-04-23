@@ -5,7 +5,7 @@ function numbering_generator(geni, busi, Nbus, bus, numbering)
     gen_bus = trunc.(Int, geni)
 
     if numbering
-        println("  The new bus numbering is run.")
+        println("The new bus numbering is running.")
         @inbounds for i = 1:length(gen_bus)
             for j = 1:Nbus
                 if gen_bus[i] == busi[j]
@@ -71,7 +71,7 @@ function savedata(args; group, header, path, info = "")
                 write(file, "info", info)
             end
         end
-        println(string("  Data is successfully exported to ", path))
+        println(string("Data is successfully exported to ", path))
     elseif extension == ".xlsx"
         XLSX.openxlsx(path, mode="w") do xf
             for (k, i) in enumerate(group)
@@ -87,13 +87,13 @@ function savedata(args; group, header, path, info = "")
             end
             if !isempty(info)
                 XLSX.addsheet!(xf, "info")
-                sheet = xf[length(keys(args)) + 1]
+                sheet = xf[length(group) + 1]
                 sheet["A1"] = info
             end
         end
-        println(string("  Data is successfully exported to ", path))
+        println(string("Data is successfully exported to ", path))
     else
-        error("  The save data format is not supported.")
+        error("The SAVE data format is not supported.")
     end
 
 end
@@ -163,4 +163,17 @@ function nextelement(set, current)
     end
 
     return value
+end
+
+
+####################
+#  Data Structure  #
+####################
+function datastruct(data, max; var = "")
+    Nrow, Ncol = size(data)
+    if Ncol < max
+        error(string("Invalid DATA structure, variable " , var, " has incorrect dimension."))
+    end
+
+    return Nrow
 end

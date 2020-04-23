@@ -1,48 +1,46 @@
 ############################
 #  Generate  measurements  #
 ############################
-function rungenerator(system, settings, measurement; bus = 0, branch = 0)
-    Nbus = size(system.bus, 1)
-    Nbranch = size(system.branch, 1)
-    Ngen = size(system.generator, 1)
-
+function rungenerator(system, settings, measurement; flow = 0)
     if settings.runflow == 1
+        branch = flow["branch"]
+        bus = flow["bus"]
         busi, Vi, Ti, Pinj, Qinj, branchi, fromi, toi, Pij, Qij, Pji, Qji, Iij, Dij, Iji, Dji = view_generator(bus, branch)
 
-        for i = 1:Nbranch
+        for i = 1:system.Nbra
             measurement["legacyFlow"][i, 1] = branchi[i]
-            measurement["legacyFlow"][i + Nbranch, 1] = branchi[i]
+            measurement["legacyFlow"][i + system.Nbra, 1] = branchi[i]
             measurement["legacyFlow"][i, 2] = fromi[i]
-            measurement["legacyFlow"][i + Nbranch, 2] = toi[i]
+            measurement["legacyFlow"][i + system.Nbra, 2] = toi[i]
             measurement["legacyFlow"][i, 3] = toi[i]
-            measurement["legacyFlow"][i + Nbranch, 3] = fromi[i]
+            measurement["legacyFlow"][i + system.Nbra, 3] = fromi[i]
             measurement["legacyFlow"][i, 10] = Pij[i] / system.baseMVA
-            measurement["legacyFlow"][i + Nbranch, 10] = Pji[i] / system.baseMVA
+            measurement["legacyFlow"][i + system.Nbra, 10] = Pji[i] / system.baseMVA
             measurement["legacyFlow"][i, 11] = Qij[i] / system.baseMVA
-            measurement["legacyFlow"][i + Nbranch, 11] = Qji[i] / system.baseMVA
+            measurement["legacyFlow"][i + system.Nbra, 11] = Qji[i] / system.baseMVA
 
             measurement["legacyCurrent"][i, 1] = branchi[i]
-            measurement["legacyCurrent"][i + Nbranch, 1] = branchi[i]
+            measurement["legacyCurrent"][i + system.Nbra, 1] = branchi[i]
             measurement["legacyCurrent"][i, 2] = fromi[i]
-            measurement["legacyCurrent"][i + Nbranch, 2] = toi[i]
+            measurement["legacyCurrent"][i + system.Nbra, 2] = toi[i]
             measurement["legacyCurrent"][i, 3] = toi[i]
-            measurement["legacyCurrent"][i + Nbranch, 3] = fromi[i]
+            measurement["legacyCurrent"][i + system.Nbra, 3] = fromi[i]
             measurement["legacyCurrent"][i, 7] = Iij[i]
-            measurement["legacyCurrent"][i + Nbranch, 7] = Iji[i]
+            measurement["legacyCurrent"][i + system.Nbra, 7] = Iji[i]
 
             measurement["pmuCurrent"][i, 1] = branchi[i]
-            measurement["pmuCurrent"][i + Nbranch, 1] = branchi[i]
+            measurement["pmuCurrent"][i + system.Nbra, 1] = branchi[i]
             measurement["pmuCurrent"][i, 2] = fromi[i]
-            measurement["pmuCurrent"][i + Nbranch, 2] = toi[i]
+            measurement["pmuCurrent"][i + system.Nbra, 2] = toi[i]
             measurement["pmuCurrent"][i, 3] = toi[i]
-            measurement["pmuCurrent"][i + Nbranch, 3] = fromi[i]
+            measurement["pmuCurrent"][i + system.Nbra, 3] = fromi[i]
             measurement["pmuCurrent"][i, 10] = Iij[i]
-            measurement["pmuCurrent"][i + Nbranch, 10] = Iji[i]
+            measurement["pmuCurrent"][i + system.Nbra, 10] = Iji[i]
             measurement["pmuCurrent"][i, 11] = Dij[i]
-            measurement["pmuCurrent"][i + Nbranch, 11] = Dji[i]
+            measurement["pmuCurrent"][i + system.Nbra, 11] = Dji[i]
         end
 
-        for i = 1:Nbus
+        for i = 1:system.Nbus
             measurement["legacyInjection"][i, 1] = busi[i]
             measurement["legacyInjection"][i, 8] = Pinj[i] / system.baseMVA
             measurement["legacyInjection"][i, 9] = Qinj[i] / system.baseMVA
@@ -65,8 +63,8 @@ function rungenerator(system, settings, measurement; bus = 0, branch = 0)
             push!(names["legacy"], type)
         end
     end
-    measurement = runset(system, settings, measurement, Nbus, Nbranch, Ngen, names)
-    measurement = runvariance(system, settings, measurement, Nbus, Nbranch, Ngen, names)
+    measurement = runset(system, settings, measurement, names)
+    measurement = runvariance(system, settings, measurement, names)
 
     write = Dict("pmuVoltage" => [2 8 3; 5 9 6], "pmuCurrent" => [4 10 5; 7 11 8],
                 "legacyFlow" => [4 10 5; 7 11 8], "legacyCurrent" => [4 7 5],
@@ -79,8 +77,7 @@ function rungenerator(system, settings, measurement; bus = 0, branch = 0)
     end
 
     grid = readdata(system.path, system.extension; type = "pf")
-    info = info_flow(grid["branch"], grid["bus"], grid["generator"], grid["info"], settings, system.data, Nbranch, Nbus, Ngen)
-    info = info_generator(system, settings, measurement, names, info, Nbus, Nbranch, Ngen)
+    info = infogenerator(system, settings, measurement, names)
 
     return measurement, grid, info
 end
@@ -89,7 +86,7 @@ end
 ##############################
 #  Produce  measurement set  #
 ##############################
-function runset(system, settings, measurement, Nbus, Nbranch, Ngen, names)
+function runset(system, settings, measurement, names)
     write = Dict("pmuVoltage" => [4, 7], "pmuCurrent" => [6, 9],
                  "legacyFlow" => [6, 9], "legacyCurrent" => 6,
                  "legacyInjection" => [4, 7], "legacyVoltage" => 4)
@@ -126,13 +123,13 @@ function runset(system, settings, measurement, Nbus, Nbranch, Ngen, names)
             end
             success = false
             howMany = settings.set[set]
-            if isa(howMany, Number) && howMany <= Nmax / (2 * Nbus - 1)
+            if isa(howMany, Number) && howMany <= Nmax / (2 * system.Nbus - 1)
                 success = true
                 idxn = randperm(Nmax)
-                idx = idxn[1:trunc(Int, round((2 * Nbus - 1) * howMany))]
+                idx = idxn[1:trunc(Int, round((2 * system.Nbus - 1) * howMany))]
                 total_set = fill(0, Nmax)
                 total_set[idx] .= 1
-            elseif isa(howMany, Number) && howMany > Nmax / (2 * Nbus - 1)
+            elseif isa(howMany, Number) && howMany > Nmax / (2 * system.Nbus - 1)
                 success = true
                 total_set = fill(1, Nmax)
             end
@@ -186,33 +183,33 @@ function runset(system, settings, measurement, Nbus, Nbranch, Ngen, names)
                     error("The name-value pair setting is incorect, deployment measurements according to device number failed.")
                 end
             else
-               error("The complete PMU measurement data is not found.")
+               error("The complete PMU measurement DATA is not found.")
            end
         end
         if set == "pmuoptimal"
             if any(names["pmu"] .== "pmuVoltage") && any(names["pmu"]  .== "pmuCurrent")
                 Nvol = size(measurement["pmuVoltage"], 1)
                 Ncurr = size(measurement["pmuCurrent"], 1)
-                if Nvol == Nbus && Ncurr == 2 * Nbranch
-                    bus = collect(1:Nbus)
+                if Nvol == system.Nbus && Ncurr == 2 * system.Nbra
+                    bus = collect(1:system.Nbus)
                     numbering = false
                     fromi = @view(system.branch[:, 2])
                     toi = @view(system.branch[:, 3])
                     busi = @view(system.bus[:, 4])
-                    @inbounds for i = 1:Nbus
+                    @inbounds for i = 1:system.Nbus
                         if bus[i] != busi[i]
                             numbering = true
                         end
                     end
-                    from, to = numbering_branch(fromi, toi, busi, Nbranch, Nbus, system.bus, numbering)
+                    from, to = numbering_branch(fromi, toi, busi, system.Nbra, system.Nbus, system.bus, numbering)
 
-                    A = sparse([bus; from; to], [bus; to; from], fill(1, Nbus + 2 * Nbranch), Nbus, Nbus)
-                    f  = fill(1, Nbus);
-                    lb = fill(0, Nbus);
-                    ub = fill(1, Nbus);
+                    A = sparse([bus; from; to], [bus; to; from], fill(1, system.Nbus + 2 * system.Nbra), system.Nbus, system.Nbus)
+                    f  = fill(1, system.Nbus);
+                    lb = fill(0, system.Nbus);
+                    ub = fill(1, system.Nbus);
                     model = Model(with_optimizer(GLPK.Optimizer))
 
-                    @variable(model, x[i = 1:Nbus], Int)
+                    @variable(model, x[i = 1:system.Nbus], Int)
                     @constraint(model, lb .<= x .<= ub)
                     @constraint(model, -A * x .<= -f)
                     @objective(model, Min, sum(x))
@@ -225,14 +222,14 @@ function runset(system, settings, measurement, Nbus, Nbranch, Ngen, names)
                     for i in idx
                         measurement["pmuVoltage"][i, 4] = 1
                         measurement["pmuVoltage"][i, 7] = 1
-                        for j = 1:Nbranch
+                        for j = 1:system.Nbra
                             if busi[i] == fromi[j]
                                 measurement["pmuCurrent"][j, 6] = 1
                                 measurement["pmuCurrent"][j, 9] = 1
                             end
                             if busi[i] == toi[j]
-                                measurement["pmuCurrent"][j + Nbranch, 6] = 1
-                                measurement["pmuCurrent"][j + Nbranch, 9] = 1
+                                measurement["pmuCurrent"][j + system.Nbra, 6] = 1
+                                measurement["pmuCurrent"][j + system.Nbra, 9] = 1
                             end
                         end
                     end
@@ -242,7 +239,7 @@ function runset(system, settings, measurement, Nbus, Nbranch, Ngen, names)
 
 
             else
-                error("The complete PMU measurement data is not found.")
+                error("The complete PMU measurement DATA is not found.")
             end
         end
     end
@@ -254,7 +251,7 @@ end
 ###################################
 #  Produce measurement variances  #
 ###################################
-function runvariance(system, settings, measurement, Nbus, Nbranch, Ngen, names)
+function runvariance(system, settings, measurement, names)
     write = Dict("pmuVoltage" => [3, 6], "pmuCurrent" => [5, 8],
                  "legacyFlow" => [5, 8], "legacyCurrent" => 5,
                  "legacyInjection" => [3, 6], "legacyVoltage" => 3)

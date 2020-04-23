@@ -1,74 +1,80 @@
 ##############################################
 #  DC dower flow results and call save data  #
 ##############################################
-function results_flowdc(settings, system, Nbus, Nbranch, Ngen, Ti, slack, algtime, info)
-    println(string("  Execution time: ", (@sprintf "%.4f" algtime * 1000), " (ms)"))
-    header = h5read(joinpath(system.package, "src/system/header.h5"), "/flowdc")
+function results_flowdc(settings, system, Ti, slack, algtime)
+    println(string("Execution time: ", (@sprintf "%.4f" algtime * 1000), " (ms)"))
+    header = h5read(joinpath(system.packagepath, "src/system/header.h5"), "/flowdc")
+
+    results = Dict("bus" => fill(0.0, system.Nbus, 6), "branch" => fill(0.0, system.Nbra, 5))
+    if system.Ngen != 0
+        push!(results, "generator" => fill(0.0, system.Ngen, 2))
+    end
 
     ################## DC Main Display ##################
-    bus = fill(0.0, Nbus, 6)
-    for i = 1:Nbus
-        bus[i, 1] = system.bus[i, 1]
-        bus[i, 2] = 180 * Ti[i] / pi
-        bus[i, 3] = system.baseMVA * system.bus[i, 11]
-        bus[i, 4] = system.baseMVA * system.bus[i, 10]
-        bus[i, 5] = system.bus[i, 3]
-        bus[i, 6] = system.bus[i, 5]
+    for i = 1:system.Nbus
+        results["bus"][i, 1] = system.bus[i, 1]
+        results["bus"][i, 2] = 180 * Ti[i] / pi
+        results["bus"][i, 3] = system.baseMVA * system.bus[i, 11]
+        results["bus"][i, 4] = system.baseMVA * system.bus[i, 10]
+        results["bus"][i, 5] = system.bus[i, 3]
+        results["bus"][i, 6] = system.bus[i, 5]
     end
     if settings.main
         h1 = Highlighter((data, i, j) -> (i == slack),  background = :blue)
         println("")
-        pretty_table(bus, header["bus"], screen_size = (-1,-1), alignment = [:r,:r,:r,:r,:r,:r],
+        pretty_table(results["bus"], header["bus"], screen_size = (-1,-1), alignment = [:r,:r,:r,:r,:r,:r],
             highlighters = h1, columns_width = [6, 18, 18, 18, 18, 18],
             formatter = ft_printf(["%1.0f","%1.4f","%1.2f","%1.2f","%1.2f","%1.2f"], collect(1:6)))
 
-        sum_data = Any["Sum" sum(bus[:, 3:6], dims = 1)]
+        sum_data = Any["Sum" sum(results["bus"][:, 3:6], dims = 1)]
         pretty_table(sum_data, noheader = true, screen_size = (-1,-1), columns_width = [27, 18, 18, 18, 18],
             alignment=[:l,:r,:r,:r,:r], formatter = ft_printf(["%-s","%15.2f","%11.2f","%11.2f","%13.2f"], collect(1:5)))
     end
 
     ################## DC Flow Display ##################
-    branch = fill(0.0, Nbranch, 5)
-    for i = 1:Nbranch
-        branch[i, 1] = system.branch[i, 1]
-        branch[i, 2] = system.branch[i, 2]
-        branch[i, 3] = system.branch[i, 3]
-        branch[i, 4] = system.baseMVA * system.branch[i, 4]
-        branch[i, 5] = -branch[i, 4]
+    for i = 1:system.Nbra
+        results["branch"][i, 1] = system.branch[i, 1]
+        results["branch"][i, 2] = system.branch[i, 2]
+        results["branch"][i, 3] = system.branch[i, 3]
+        results["branch"][i, 4] = system.baseMVA * system.branch[i, 4]
+        results["branch"][i, 5] = -system.baseMVA * system.branch[i, 4]
     end
     if settings.flow
         println("")
-        pretty_table(branch, header["branch"], screen_size = (-1,-1), columns_width = [6, 8, 8, 18, 18],
+        pretty_table(results["branch"], header["branch"], screen_size = (-1,-1), columns_width = [6, 8, 8, 18, 18],
         alignment=[:r,:r,:r,:r,:r], formatter = ft_printf(["%1.0f","%1.0f","%1.0f","%1.2f","%1.2f"], collect(1:5)))
     end
 
     ################## DC Generator Display ##################
-    generator = fill(0.0, Ngen, 2)
-    for i = 1:Ngen
-        generator[i, 1] = system.generator[i, 1]
-        generator[i, 2] = system.baseMVA * system.generator[i, 2]
+    for i = 1:system.Ngen
+        results["generator"][i, 1] = system.generator[i, 1]
+        results["generator"][i, 2] = system.baseMVA * system.generator[i, 2]
     end
     if settings.generator
         println("")
-        pretty_table(generator, header["generator"], screen_size = (-1,-1), alignment=[:r,:r],
+        pretty_table(results["generator"], header["generator"], screen_size = (-1,-1), alignment=[:r,:r],
             formatter = ft_printf(["%1.0f","%1.4f"], collect(1:2)))
     end
 
     if !isempty(settings.save)
-        dict = Dict("bus" => bus, "branch" => branch, "generator" => generator)
-        savedata(dict; info = info, group = header["group"], header = header, path = settings.save)
+        savedata(results; info = system.info, group = keys(results), header = header, path = settings.save)
     end
 
-    return bus, branch, generator
+    return results
 end
 
 
 ##############################################
 #  AC dower flow results and call save data  #
 ##############################################
-function results_flowac(settings, system, limit, Nbus, Nbranch, Ngen, slack, Vc, algtime, info)
+function results_flowac(settings, system, limit, slack, Vc, algtime, iter)
     println(string("  Execution time: ", (@sprintf "%.4f" algtime * 1000), " (ms)"))
-    header = h5read(joinpath(system.package, "src/system/header.h5"), "/flowac")
+    header = h5read(joinpath(system.packagepath, "src/system/header.h5"), "/flowac")
+
+    results = Dict("bus" => fill(0.0, system.Nbus, 11), "branch" => fill(0.0, system.Nbra, 14), "iterations" => iter)
+    if system.Ngen != 0
+        push!(results, "generator" => fill(0.0, system.Ngen, 3))
+    end
 
     ################## AC Limit Display ##################
     if settings.reactive[1]
@@ -76,7 +82,7 @@ function results_flowac(settings, system, limit, Nbus, Nbranch, Ngen, slack, Vc,
         max = findall(x -> x == 3, limit)
         println("")
         if !isempty(min)
-            println("  Generators that did not satisfy lower reactive power limits:")
+            println("Generators that did not satisfy lower reactive power limits:")
             Nl = length(min)
             table = ["Bus" system.generator[min, 1]'; "Generator" min']
             pretty_table(table,
@@ -85,7 +91,7 @@ function results_flowac(settings, system, limit, Nbus, Nbranch, Ngen, slack, Vc,
             println("")
         end
         if !isempty(max)
-            println("  Generators that did not satisfy upper reactive power limits:")
+            println("Generators that did not satisfy upper reactive power limits:")
             Nl = length(max)
             table = ["Bus" system.generator[max, 1]'; "Generator" max']
             pretty_table(table,
@@ -95,89 +101,94 @@ function results_flowac(settings, system, limit, Nbus, Nbranch, Ngen, slack, Vc,
     end
 
     ################## AC Main Display ##################
-    bus = fill(0.0, Nbus, 11)
-    for i = 1:Nbus
-        bus[i, 1] = system.bus[i, 1]
-        bus[i, 2] = abs(Vc[i])
-        bus[i, 3] = 180 * angle(Vc[i]) / pi
-        bus[i, 4] = system.baseMVA * system.bus[i, 12]
-        bus[i, 5] = system.baseMVA * system.bus[i, 13]
-        bus[i, 6] = system.baseMVA * system.bus[i, 10]
-        bus[i, 7] = system.baseMVA *  system.bus[i, 11]
-        bus[i, 8] = system.bus[i, 3]
-        bus[i, 9] = system.bus[i, 4]
-        bus[i, 10] = system.baseMVA *  system.bus[i, 5]
-        bus[i, 11] = system.baseMVA *  system.bus[i, 6]
+    for i = 1:system.Nbus
+        results["bus"][i, 1] = system.bus[i, 1]
+        results["bus"][i, 2] = abs(Vc[i])
+        results["bus"][i, 3] = 180 * angle(Vc[i]) / pi
+        results["bus"][i, 4] = system.baseMVA * system.bus[i, 12]
+        results["bus"][i, 5] = system.baseMVA * system.bus[i, 13]
+        results["bus"][i, 6] = system.baseMVA * system.bus[i, 10]
+        results["bus"][i, 7] = system.baseMVA *  system.bus[i, 11]
+        results["bus"][i, 8] = system.bus[i, 3]
+        results["bus"][i, 9] = system.bus[i, 4]
+        results["bus"][i, 10] = system.baseMVA *  system.bus[i, 5]
+        results["bus"][i, 11] = system.baseMVA *  system.bus[i, 6]
     end
 
     if settings.main
         h1 = Highlighter((data, i, j)-> (i == slack), background = :red)
         println("")
-        pretty_table(bus, header["bus"],
+        pretty_table(results["bus"], header["bus"],
              screen_size = (-1,-1), highlighters = h1, columns_width = [6, 16, 12, 17, 21, 17, 21, 17, 21, 17, 21],
              alignment = repeat([Symbol(:r)], outer = 11),
              formatter = ft_printf(["%1.0f", "%1.4f","%1.4f","%1.2f" ,"%1.2f","%1.2f","%1.2f","%1.2f","%1.2f","%1.2f","%1.2f"], collect(1:11)))
-        sum_data = Any["Sum" sum(bus[:, 4:11], dims = 1)]
+        sum_data = Any["Sum" sum(results["bus"][:, 4:11], dims = 1)]
         pretty_table(sum_data, noheader = true, screen_size = (-1,-1),
             alignment=[:l,:r,:r,:r,:r,:r,:r,:r,:r], columns_width = [40, 17, 21, 17, 21, 17, 21, 17, 21],
             formatter = ft_printf(["%-s","%15.2f","%15.2f","%11.2f","%15.2f","%11.2f","%15.2f","%13.2f","%15.2f"], collect(1:9)))
     end
 
     ################## AC Flow Display ##################
-    branch = fill(0.0, Nbranch, 10)
-    for i = 1:Nbranch
-        branch[i, 1] = system.branch[i, 1]
-        branch[i, 2] = system.branch[i, 2]
-        branch[i, 3] = system.branch[i, 3]
-        branch[i, 4] = system.baseMVA * system.branch[i, 8]
-        branch[i, 5] = system.baseMVA * system.branch[i, 9]
-        branch[i, 6] = system.baseMVA * system.branch[i, 10]
-        branch[i, 7] = system.baseMVA * system.branch[i, 11]
-        branch[i, 8] = system.baseMVA * system.branch[i, 12]
-        branch[i, 9] = system.baseMVA * system.branch[i, 13]
-        branch[i, 10] = system.baseMVA * system.branch[i, 14]
+    for i = 1:system.Nbra
+        results["branch"][i, 1] = system.branch[i, 1]
+        results["branch"][i, 2] = system.branch[i, 2]
+        results["branch"][i, 3] = system.branch[i, 3]
+        results["branch"][i, 4] = system.baseMVA * system.branch[i, 8]
+        results["branch"][i, 5] = system.baseMVA * system.branch[i, 9]
+        results["branch"][i, 6] = system.baseMVA * system.branch[i, 10]
+        results["branch"][i, 7] = system.baseMVA * system.branch[i, 11]
+        results["branch"][i, 8] = system.baseMVA * system.branch[i, 12]
+        results["branch"][i, 9] = system.baseMVA * system.branch[i, 13]
+        results["branch"][i, 10] = system.baseMVA * system.branch[i, 14]
+        results["branch"][i, 11] = system.branch[i, 4]
+        results["branch"][i, 12] = 180 * system.branch[i, 5] / pi
+        results["branch"][i, 13] = system.branch[i, 6]
+        results["branch"][i, 14] = 180 * system.branch[i, 7] / pi
     end
 
     if settings.flow
         println("")
-        pretty_table(branch, header["branch"],
+        pretty_table(results["branch"][:,1:10], header["branch"][:,1:10],
              screen_size = (-1,-1), columns_width = [6, 8, 8, 17, 21, 17, 21, 21, 17, 21],
              alignment=[:r,:r,:r,:r,:r,:r,:r,:r,:r,:r],
              formatter = ft_printf(["%1.0f","%1.0f","%1.0f","%1.2f","%1.2f","%1.2f","%1.2f","%1.2f","%1.2f","%1.2f"], collect(1:10)))
-        sum_data = Any["Sum" sum(branch[:, 7:9], dims = 1)]
+        sum_data = Any["Sum" sum(results["branch"][:, 7:9], dims = 1)]
         pretty_table(sum_data, noheader = true, screen_size = (-1,-1), alignment=[:l,:r,:r,:r], columns_width = [116, 21, 17, 21],
                     formatter = ft_printf(["%-s","%15.2f","%11.2f","%15.2f"], collect(1:4)))
     end
 
     ################## AC Generator Display ##################
-    generator = fill(0.0, Ngen, 3)
-    for i = 1:Ngen
-        generator[i, 1] = system.generator[i, 1]
-        generator[i, 2] = system.baseMVA * system.generator[i, 2]
-        generator[i, 3] = system.baseMVA * system.generator[i, 3]
+    for i = 1:system.Ngen
+        results["generator"][i, 1] = system.generator[i, 1]
+        results["generator"][i, 2] = system.baseMVA * system.generator[i, 2]
+        results["generator"][i, 3] = system.baseMVA * system.generator[i, 3]
     end
 
     if settings.generator
         println("")
-        pretty_table(generator, header["generator"],
+        pretty_table(results["generator"], header["generator"],
             screen_size = (-1,-1), alignment=[:r,:r,:r],
             formatter = ft_printf(["%1.0f", "%1.4f", "%1.4f"], collect(1:3)))
     end
 
+
     ################## Export Data ##################
     if !isempty(settings.save)
-        dict = Dict("bus" => bus, "branch" => branch, "generator" => generator)
-        savedata(dict; info = info, group = header["group"], header = header, path = settings.save)
+        group = ["bus" "branch"]
+        if system.Ngen != 0
+            group = [group "generator"]
+        end
+        savedata(results; info = system.info, group = group, header = header, path = settings.save)
     end
 
-    return bus, [branch system.branch[:, 4:7]], generator
+    return results
 end
 
 
 ############################
 #  Power system info data  #
 ############################
-function info_flow(branch, bus, generator, info, settings, data, Nbranch, Nbus, Ngen)
+function infogrid(bus, branch, generator, info, dataname, Nbra, Nbus, Ngen)
     reference = "unknown"
     grid = "unknown"
     for (k, i) in enumerate(info[:, 1])
@@ -191,7 +202,8 @@ function info_flow(branch, bus, generator, info, settings, data, Nbranch, Nbus, 
 
     Ntrain = 0
     Ntra = 0
-    for i = 1:Nbranch
+    pv = 0
+    for i = 1:Nbra
         if branch[i, 12] == 1 && (branch[i, 10] != 0 || branch[i, 11] != 0)
             Ntrain += 1
         end
@@ -199,16 +211,19 @@ function info_flow(branch, bus, generator, info, settings, data, Nbranch, Nbus, 
             Ntra += 1
         end
     end
+    if Ngen != 0
+        pv = length(unique(generator[:, 1]))
+    end
     info = ["Reference" string(reference) "";
-            "Data" string(data) "";
+            "Data" string(dataname) "";
             "Grid" string(grid) "";
             "" "" "";
             "Bus" string(Nbus) "";
-            "PV bus" string(length(unique(generator[:, 1]))) "";
-            "PQ bus" string(Nbus - length(unique(generator[:, 1])) - 1) "";
+            "PV bus" string(pv) "";
+            "PQ bus" string(Nbus - pv - 1) "";
             "Shunt element" string(count(x->x != 0, abs.(bus[:, 5]) + abs.(bus[:, 6]))) "";
             "Generator" string(Ngen) string(trunc(Int, sum(generator[:, 8])), " in-service");
-            "Branch" string(Nbranch) string(trunc(Int, sum(branch[:, 12])), " in-service");
+            "Branch" string(Nbra) string(trunc(Int, sum(branch[:, 12])), " in-service");
             "Transformer" string(Ntra) string(Ntrain, " in-service")]
 
     return info
@@ -218,12 +233,12 @@ end
 ###############################################
 #  Measurements info data and call save data  #
 ###############################################
-function info_generator(system, settings, measurement, names, info, Nbus, Nbranch, Ngen)
+function infogenerator(system, settings, measurement, names)
     setkeys = keys(settings.set)
     varkeys = keys(settings.variance)
 
     ################## PMU Set ##################
-    info = [info; "" "" ""]
+    info = [system.info; "" "" ""]
     if any(setkeys .== "pmuall")
         info = [info; "PMU set setting" "all measurements adjust in-service" ""]
     elseif any(setkeys .== "pmuredundancy")
@@ -326,8 +341,7 @@ function info_generator(system, settings, measurement, names, info, Nbus, Nbranc
 
     ################## Export Data ##################
     if !isempty(settings.path)
-        header = h5read(joinpath(system.package, "src/system/header.h5"), "/measurement")
-        header["basePower"] = permutedims(header["basePower"])
+        header = h5read(joinpath(system.packagepath, "src/system/header.h5"), "/measurement")
 
         group = ["pmuVoltage"; "pmuCurrent"; "legacyFlow"; "legacyCurrent"; "legacyInjection"; "legacyVoltage"]
         for (k, i) in enumerate(group)
@@ -335,10 +349,14 @@ function info_generator(system, settings, measurement, names, info, Nbus, Nbranc
                 deleteat!(group, k)
             end
         end
-        group = [group; "bus"; "generator"; "branch"; "basePower"]
+        if system.Ngen != 0
+            group = [group; "bus"; "generator"; "branch"; "basePower"]
+            push!(measurement, "generator" => system.generator)
+        else
+            group = [group; "bus"; "branch"; "basePower"]
+        end
 
         push!(measurement, "bus" => system.bus)
-        push!(measurement, "generator" => system.generator)
         push!(measurement, "branch" => system.branch)
         push!(measurement, "basePower" => system.baseMVA)
 
