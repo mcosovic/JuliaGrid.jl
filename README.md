@@ -1,8 +1,6 @@
 ## JuliaGrid
 
-[![Documentation](https://github.com/mcosovic/JuliaGrid.jl/workflows/Documentation/badge.svg)](https://mcosovic.github.io/JuliaGrid.jl/dev/)
-
-<a href="https://mcosovic.github.io/JuliaGrid.jl/dev/"><img align="right" width="145" src="/docs/src/assets/logo2.png" /></a>
+[![Documentation](https://github.com/mcosovic/JuliaGrid.jl/workflows/Documentation/badge.svg)](https://mcosovic.github.io/JuliaGrid.jl/dev/) ![Build](https://github.com/mcosovic/JuliaGrid.jl/workflows/Build/badge.svg)
 
 JuliaGrid is an open-source, easy-to-use simulation tool/solver for researchers and educators provided as a Julia package, with source code released under MIT License. JuliaGrid is inspired by the Matpower, an open-source steady-state power system solver,  and allows a variety of display and manipulation options.
 
@@ -15,7 +13,7 @@ The software package provides the solution of the AC and DC power flow, non-line
 <!-- MATGRID includes, inter alia, the weighted least-squares and least absolute values state estimation, optimal PMU placement, and bad data processing.   -->
 
 ### Installation
-The package requires Julia 1.3 and higher, to install `JuliaGrid` package, you can run the following:
+The package requires Julia 1.2 and higher, to install `JuliaGrid` package, you can run the following:
 ```
 pkg> add https://github.com/mcosovic/JuliaGrid
 ```
