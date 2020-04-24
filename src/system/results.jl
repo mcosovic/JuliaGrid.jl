@@ -68,7 +68,7 @@ end
 #  AC dower flow results and call save data  #
 ##############################################
 function results_flowac(settings, system, limit, slack, Vc, algtime, iter)
-    println(string("  Execution time: ", (@sprintf "%.4f" algtime * 1000), " (ms)"))
+    println(string("Execution time: ", (@sprintf "%.4f" algtime * 1000), " (ms)"))
     header = h5read(joinpath(system.packagepath, "src/system/header.h5"), "/flowac")
 
     results = Dict("bus" => fill(0.0, system.Nbus, 11), "branch" => fill(0.0, system.Nbra, 14), "iterations" => iter)

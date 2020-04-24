@@ -1,117 +1,127 @@
 using JuliaGrid
 using HDF5
 using Test
+using Suppressor
 
-testData = "PowerFlowTest_case30.h5"
-data = "case30.h5"
-accuracy = 1e-7
-path = abspath(joinpath(dirname(Base.find_package("JuliaGrid")), ".."), "test/", testData)
+path = abspath(joinpath(dirname(Base.find_package("JuliaGrid")), ".."), "test/")
 
 @testset "DC Power Flow" begin
-    resultsTest = h5read(path, "/dc")
-    results = runpf("dc", data)
-#
-#     Ti = @view(results["bus"][:, 2])
-#     # Pinj = @view(results["bus"][:, 3])
-#     # Pij = @view(results["branch"][:, 4])
-#     # Pgen = @view(results["generator"][:, 2])
-#
-#     # @test maximum(abs.(Ti  - resultsTest["Ti"])) < accuracy
-#     # @test maximum(abs.(Pinj  - results["Pinj"])) < accuracy
-#     # @test maximum(abs.(Pij  - results["Pij"])) < accuracy
-#     # @test maximum(abs.(Pgen  - results["Pgen"])) < accuracy
+    @suppress begin
+        results = runpf("case14.h5", "dc"; solve = "lu", save = string(path, "save.h5"))
+        results = runpf("case14.h5", "dc"; save = string(path, "save.xlsx"))
+
+        rm(string(path, "save.h5"))
+        rm(string(path, "save.xlsx"))
+        @test all(in(keys(results)).(["branch", "generator", "bus"]))
+        @test !any(cd(readdir, path) .== "save.h5")
+        @test !any(cd(readdir, path) .== "save.xlsx")
+
+        results = runpf("case84.h5", "dc")
+        @test all(in(keys(results)).(["branch", "bus"]))
+
+        accuracy = 1e-12
+        matpower = h5read(string(path, "PowerFlowTest_case30.h5"), "/dc")
+        results = runpf("dc", "case30.h5")
+        @test maximum(abs.(results["bus"][:, 2] - matpower["Ti"])) < accuracy
+        @test maximum(abs.(results["bus"][:, 3] - matpower["Pinj"])) < accuracy
+        @test maximum(abs.(results["branch"][:, 4] - matpower["Pij"])) < accuracy
+        @test maximum(abs.(results["generator"][:, 2] - matpower["Pgen"])) < accuracy
+    end
 end
-# #
-# # @testset "Newton-Raphson Power Flow" begin
-# #     results = h5read(path, "/nr")
-# #     bus, branch, generator, iterations = runpf("nr", data)
-# #     Vi = @view(bus[:, 2])
-# #     Ti = @view(bus[:, 3])
-# #     Pinj = @view(bus[:, 4])
-# #     Qinj = @view(bus[:, 5])
-# #     Pij = @view(branch[:, 4])
-# #     Qij = @view(branch[:, 5])
-# #     Pji = @view(branch[:, 6])
-# #     Qji = @view(branch[:, 7])
-# #     Qbranch = @view(branch[:, 8])
-# #     Ploss = @view(branch[:, 9])
-# #     Qloss = @view(branch[:, 10])
-# #     Pgen = @view(generator[:, 2])
-# #     Qgen = @view(generator[:, 3])
-# #     @test maximum(abs.(Vi  - results["Vi"])) < accuracy
-# #     @test maximum(abs.(Ti  - results["Ti"])) < accuracy
-# #     @test maximum(abs.(Pinj  - results["Pinj"])) < accuracy
-# #     @test maximum(abs.(Qinj  - results["Qinj"])) < accuracy
-# #     @test maximum(abs.(Pij  - results["Pij"])) < accuracy
-# #     @test maximum(abs.(Qij  - results["Qij"])) < accuracy
-# #     @test maximum(abs.(Pji  - results["Pji"])) < accuracy
-# #     @test maximum(abs.(Qji  - results["Qji"])) < accuracy
-# #     @test maximum(abs.(Qbranch  - results["Qbranch"])) < accuracy
-# #     @test maximum(abs.(Ploss  - results["Ploss"])) < accuracy
-# #     @test maximum(abs.(Qloss  - results["Qloss"])) < accuracy
-# #     @test maximum(abs.(Pgen  - results["Pgen"])) < accuracy
-# #     @test maximum(abs.(Qgen  - results["Qgen"])) < accuracy
-# #     @test iterations - results["iterations"][1] == 0
-# #
-# #     results = h5read(path, "/nrLimit")
-# #     bus, branch, generator, iterations = runpf("nr", data; reactive = 1)
-# #     Vi = @view(bus[:, 2])
-# #     Ti = @view(bus[:, 3])
-# #     @test maximum(abs.(Vi  - results["Vi"])) < accuracy
-# #     @test maximum(abs.(Ti  - results["Ti"])) < accuracy
-# #     @test iterations - results["iterations"][1] == 0
-# # end
-# #
-# # @testset "Gauss-Seidel Power Flow" begin
-# #     results = h5read(path, "/gs")
-# #     bus, branch, generator, iterations = runpf("gs", data; max = 1000)
-# #     Vi = @view(bus[:, 2])
-# #     Ti = @view(bus[:, 3])
-# #     @test maximum(abs.(Vi  - results["Vi"])) < accuracy
-# #     @test maximum(abs.(Ti  - results["Ti"])) < accuracy
-# #     @test iterations - results["iterations"][1] == 0
-# #
-# #     results = h5read(path, "/gsLimit")
-# #     bus, branch, generator, iterations = runpf("gs", data; max = 1000, reactive = 1)
-# #     Vi = @view(bus[:, 2])
-# #     Ti = @view(bus[:, 3])
-# #     @test maximum(abs.(Vi  - results["Vi"])) < accuracy
-# #     @test maximum(abs.(Ti  - results["Ti"])) < accuracy
-# #     @test iterations - results["iterations"][1] == 0
-# # end
-# #
-# # @testset "Fast Newton-Raphson Power (FDXB) Flow" begin
-# #     results = h5read(path, "/fdxb")
-# #     bus, branch, generator, iterations = runpf("fnrxb", data; max = 1000)
-# #     Vi = @view(bus[:, 2])
-# #     Ti = @view(bus[:, 3])
-# #     @test maximum(abs.(Vi  - results["Vi"])) < accuracy
-# #     @test maximum(abs.(Ti  - results["Ti"])) < accuracy
-# #     @test iterations - results["iterations"][1] == 0
-# #
-# #     results = h5read(path, "/fdxbLimit")
-# #     bus, branch, generator, iterations = runpf("fnrxb", data; max = 1000, reactive = 1)
-# #     Vi = @view(bus[:, 2])
-# #     Ti = @view(bus[:, 3])
-# #     @test maximum(abs.(Vi  - results["Vi"])) < accuracy
-# #     @test maximum(abs.(Ti  - results["Ti"])) < accuracy
-# #     @test iterations - results["iterations"][1] == 0
-# # end
-# #
-# # @testset "Fast Newton-Raphson Power (FDBX) Flow" begin
-# #     results = h5read(path, "/fdbx")
-# #     bus, branch, generator, iterations = runpf("fnrbx", data; max = 1000)
-# #     Vi = @view(bus[:, 2])
-# #     Ti = @view(bus[:, 3])
-# #     @test maximum(abs.(Vi  - results["Vi"])) < accuracy
-# #     @test maximum(abs.(Ti  - results["Ti"])) < accuracy
-# #     @test iterations - results["iterations"][1] == 0
-# #
-# #     results = h5read(path, "/fdbxLimit")
-# #     bus, branch, generator, iterations = runpf("fnrbx", data; max = 1000, reactive = 1)
-# #     Vi = @view(bus[:, 2])
-# #     Ti = @view(bus[:, 3])
-# #     @test maximum(abs.(Vi  - results["Vi"])) < accuracy
-# #     @test maximum(abs.(Ti  - results["Ti"])) < accuracy
-# #     @test iterations - results["iterations"][1] == 0
-# # end
+
+@testset "Newton-Raphson AC Power Flow" begin
+    @suppress begin
+        results = runpf("case14.h5", "nr"; solve = "lu", save = string(path, "save.h5"))
+        results = runpf("case14.h5", "nr"; save = string(path, "save.xlsx"))
+        rm(string(path, "save.h5"))
+        rm(string(path, "save.xlsx"))
+        @test all(in(keys(results)).(["branch", "generator", "bus", "iterations"]))
+        @test !any(cd(readdir, path) .== "save.h5")
+        @test !any(cd(readdir, path) .== "save.xlsx")
+
+        results = runpf("case84.h5", "nr")
+        @test all(in(keys(results)).(["branch", "bus", "iterations"]))
+
+        accuracy = 1e-11
+        matpower = h5read(string(path, "PowerFlowTest_case30.h5"), "/nr")
+        results = runpf("nr", "case30.h5")
+        @test maximum(abs.(results["bus"][:, 2] - matpower["Vi"])) < accuracy
+        @test maximum(abs.(results["bus"][:, 3] - matpower["Ti"])) < accuracy
+        @test maximum(abs.(results["bus"][:, 4] - matpower["Pinj"])) < accuracy
+        @test maximum(abs.(results["bus"][:, 5] - matpower["Qinj"])) < accuracy
+        @test maximum(abs.(results["branch"][:, 4] - matpower["Pij"])) < accuracy
+        @test maximum(abs.(results["branch"][:, 5] - matpower["Qij"])) < accuracy
+        @test maximum(abs.(results["branch"][:, 6] - matpower["Pji"])) < accuracy
+        @test maximum(abs.(results["branch"][:, 7] - matpower["Qji"])) < accuracy
+        @test maximum(abs.(results["branch"][:, 8] - matpower["Qbranch"])) < accuracy
+        @test maximum(abs.(results["branch"][:, 9] - matpower["Ploss"])) < accuracy
+        @test maximum(abs.(results["branch"][:, 10] - matpower["Qloss"])) < accuracy
+        @test maximum(abs.(results["generator"][:, 2] - matpower["Pgen"])) < accuracy
+        @test maximum(abs.(results["generator"][:, 3] - matpower["Qgen"])) < accuracy
+        @test results["iterations"] - matpower["iterations"][1] == 0
+
+        matpower = h5read(string(path, "PowerFlowTest_case30.h5"), "/nrLimit")
+        results = runpf("nr", "case30.h5"; reactive = 1)
+        @test maximum(abs.(results["bus"][:, 2] - matpower["Vi"])) < accuracy
+        @test maximum(abs.(results["bus"][:, 3] - matpower["Ti"])) < accuracy
+        @test results["iterations"] - matpower["iterations"][1] == 0
+    end
+end
+
+@testset "Gauss-Seidel AC Power Flow" begin
+    @suppress begin
+        accuracy = 1e-11
+        matpower = h5read(string(path, "PowerFlowTest_case30.h5"), "/gs")
+        results = runpf("gs", "case30.h5"; max = 1000)
+        @test maximum(abs.(results["bus"][:, 2] - matpower["Vi"])) < accuracy
+        @test maximum(abs.(results["bus"][:, 3] - matpower["Ti"])) < accuracy
+        @test results["iterations"] - matpower["iterations"][1] == 0
+
+        matpower = h5read(string(path, "PowerFlowTest_case30.h5"), "/gsLimit")
+        results = runpf("gs", "case30.h5"; max = 1000, reactive = 1)
+        @test maximum(abs.(results["bus"][:, 2] - matpower["Vi"])) < accuracy
+        @test maximum(abs.(results["bus"][:, 3] - matpower["Ti"])) < accuracy
+        @test results["iterations"] - matpower["iterations"][1] == 0
+    end
+end
+
+@testset "Fast Newton-Raphson (XB) AC Power Flow" begin
+    @suppress begin
+        accuracy = 1e-7
+        matpower = h5read(string(path, "PowerFlowTest_case30.h5"), "/fdxb")
+        results = runpf("fnrxb", "case30.h5"; max = 1000)
+        @test maximum(abs.(results["bus"][:, 2] - matpower["Vi"])) < accuracy
+        @test maximum(abs.(results["bus"][:, 3] - matpower["Ti"])) < accuracy
+        @test results["iterations"] - matpower["iterations"][1] == 0
+
+        matpower = h5read(string(path, "PowerFlowTest_case30.h5"), "/fdxbLimit")
+        results = runpf("fnrxb", "case30.h5"; max = 1000, reactive = 1)
+        @test maximum(abs.(results["bus"][:, 2] - matpower["Vi"])) < accuracy
+        @test maximum(abs.(results["bus"][:, 3] - matpower["Ti"])) < accuracy
+        @test results["iterations"] - matpower["iterations"][1] == 0
+    end
+end
+
+@testset "Fast Newton-Raphson (BX) AC Power Flow" begin
+    @suppress begin
+        accuracy = 1e-7
+        matpower = h5read(string(path, "PowerFlowTest_case30.h5"), "/fdbx")
+        results = runpf("fnrbx", "case30.h5"; max = 1000)
+        @test maximum(abs.(results["bus"][:, 2] - matpower["Vi"])) < accuracy
+        @test maximum(abs.(results["bus"][:, 3] - matpower["Ti"])) < accuracy
+        @test results["iterations"] - matpower["iterations"][1] == 0
+
+        matpower = h5read(string(path, "PowerFlowTest_case30.h5"), "/fdbxLimit")
+        results = runpf("fnrbx", "case30.h5"; max = 1000, reactive = 1)
+        @test maximum(abs.(results["bus"][:, 2] - matpower["Vi"])) < accuracy
+        @test maximum(abs.(results["bus"][:, 3] - matpower["Ti"])) < accuracy
+        @test results["iterations"] - matpower["iterations"][1] == 0
+    end
+end
+
+
+@testset "Generates PMU set" begin
+    @suppress begin
+        
+    end
+end
