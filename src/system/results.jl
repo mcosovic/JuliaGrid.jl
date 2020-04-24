@@ -340,28 +340,29 @@ function infogenerator(system, settings, measurement, names)
     end
 
     ################## Export Data ##################
+    group = ["pmuVoltage"; "pmuCurrent"; "legacyFlow"; "legacyCurrent"; "legacyInjection"; "legacyVoltage"]
+    for (k, i) in enumerate(group)
+        if !any(i .== keys(measurement))
+            deleteat!(group, k)
+        end
+    end
+
+    if system.Ngen != 0
+        group = [group; "bus"; "generator"; "branch"; "basePower"]
+        push!(measurement, "generator" => system.generator)
+    else
+        group = [group; "bus"; "branch"; "basePower"]
+    end
+
+    push!(measurement, "bus" => system.bus)
+    push!(measurement, "branch" => system.branch)
+    push!(measurement, "basePower" => system.baseMVA)
+    push!(measurement, "info" => info)
+
     if !isempty(settings.path)
         header = h5read(joinpath(system.packagepath, "src/system/header.h5"), "/measurement")
-
-        group = ["pmuVoltage"; "pmuCurrent"; "legacyFlow"; "legacyCurrent"; "legacyInjection"; "legacyVoltage"]
-        for (k, i) in enumerate(group)
-            if !any(i .== keys(measurement))
-                deleteat!(group, k)
-            end
-        end
-        if system.Ngen != 0
-            group = [group; "bus"; "generator"; "branch"; "basePower"]
-            push!(measurement, "generator" => system.generator)
-        else
-            group = [group; "bus"; "branch"; "basePower"]
-        end
-
-        push!(measurement, "bus" => system.bus)
-        push!(measurement, "branch" => system.branch)
-        push!(measurement, "basePower" => system.baseMVA)
-
         savedata(measurement; group = group, header = header, path = settings.path, info = info)
     end
 
-    return info
+    return measurement
 end

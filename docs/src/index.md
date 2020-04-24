@@ -24,7 +24,7 @@ Features supported by JuliaGrid can be categorised into three main groups:
 ---
 
 ### Installation
-JuliaGrid requires Julia 1.3 and higher. To install JuliaGrid package, run the following command:
+JuliaGrid requires Julia 1.2 and higher. To install JuliaGrid package, run the following command:
 ```julia-repl
 pkg> add https://github.com/mcosovic/JuliaGrid
 ```

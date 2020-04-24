@@ -1,6 +1,6 @@
 ##  Power Flow
 
-The function runs the AC and DC power flow analysis, where reactive power constraints can be used for the AC power flow analysis.
+The function runs the AC and DC power flow analysis, with support for the reactive power constraints.
 
 The AC power flow analysis includes four different algorithms:
  - Newton-Raphson,
@@ -11,8 +11,7 @@ The AC power flow analysis includes four different algorithms:
 
 ## Run Settings
 
-The power flow settings should be given as input arguments of the function `runpf(...)`. Although the syntax is given in a certain order, for methodological reasons, only DATA must appear, and the order of other inputs is arbitrary, as well as their appearance.
-
+Input arguments of the function `runpf(...)` describe the power flow settings. The order of inputs and their appearance is arbitrary, with only DATA input required. Still, for the methodological reasons, the syntax examples follow a certain order.
 
 #### Syntax
 ```julia-repl
@@ -25,7 +24,7 @@ runpf(DATA, METHOD, DISPLAY; ACCONTROL, SOLVE, SAVE)
 
 #### Description
 ```julia-repl
-runpf(DATA, METHOD) computes power flow problem
+runpf(DATA, METHOD) solves power flow problem
 runpf(DATA, METHOD, DISPLAY) shows results in the terminal
 runpf(DATA, METHOD, DISPLAY; ACCONTROL) sets variables for the AC power flow
 runpf(DATA, METHOD, DISPLAY; ACCONTROL, SOLVE) sets the linear system solver
@@ -99,7 +98,7 @@ SOLVE
 
 | Command            | Description                                      |
 |:-------------------|:-------------------------------------------------|
-|`solve = "mldivide"`| mldivide linear system solver, `default setting` |
+|`solve = "builtin"` | built-in linear system solver, `default setting` |
 |`solve = "lu"`      | LU linear system solver                          |
 
 SAVE
@@ -112,11 +111,11 @@ SAVE
 
 ## Input Data Structure
 
-The function works with input `.h5` or `.xlsx` file extensions, with variables `bus`, `generator`, `branch`, and `basePower`, and uses the same data format as Matpower, except the first column in the `branch` data.
+The function supports two input types `.h5` or `.xlsx` file extensions, with variables `bus`, `generator`, `branch`, and `basePower`, and uses the same data format as Matpower, except for the first column in the `branch` data.
 
-The minimum amount of information within an instance of the data structure required to run the module requires a `bus` and `branch` data.
+The instance of the data structure requires minimum a `bus` and `branch` data information to run the module.
 
-First, the system base power is defined in (MVA) using `basePower`, and in the following, we describe the structure of other variables involved in the input file.
+We define the system base power in MVA using `basePower`. Next, we describe the structure of other variables involved in the input DATA.
 
 The `bus` data structure
 
@@ -185,7 +184,7 @@ The `branch` data structure
 
 #### Use Cases
 
-The predefined cases are located in `src/data` as `.h5` or `.xlsx` files.
+The pre-defined cases are located in the `src/data` as the `.h5` or `.xlsx` files.
 
 | Case             | Grid         | Bus   | Shunt  | Generator  | Branche  |
 |:-----------------|:-------------|------:|-------:|-----------:|---------:|

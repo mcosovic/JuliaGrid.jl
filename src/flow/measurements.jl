@@ -77,9 +77,9 @@ function rungenerator(system, settings, measurement; flow = 0)
     end
 
     grid = readdata(system.path, system.extension; type = "pf")
-    info = infogenerator(system, settings, measurement, names)
+    measurement = infogenerator(system, settings, measurement, names)
 
-    return measurement, grid, info
+    return measurement
 end
 
 

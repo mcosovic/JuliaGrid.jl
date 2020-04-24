@@ -144,7 +144,7 @@ ACCONTROL
 |`max = value`        | specifies the maximum number of iterations for the AC power flow, `default setting: 100`|
 |`stop = value`       | specifies the stopping criteria for the AC power flow, `default setting: 1.0e-8`        |
 |`reactive = 1`       | forces reactive power constraints, `default setting: 0`                                 |
-|`solve = "mldivide"` |  mldivide linear system solver, `default setting`                                       |
+|`solve = "builtin"`  | built-in linear system solver, `default setting` |
 |`solve = "lu"`       | LU linear system solver                                                                 |
 
 SAVE

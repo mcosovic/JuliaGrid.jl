@@ -22,18 +22,18 @@ pkg> add https://github.com/mcosovic/JuliaGrid
 
 ###  Quick Start Power Flow
 ```julia-repl
-julia> bus, branch, generator = runpf("dc", "case14.h5, "main", "flow")
+julia> results = runpf("dc", "case14.h5, "main", "flow")
 ```
 ```julia-repl
-julia> bus, branch, generator = runpf("nr", "case14.h5, "main"; max = 20, stop = 1.0e-8)
+julia> results = runpf("nr", "case14.h5, "main"; max = 20, stop = 1.0e-8)
 ```
 
 ###  Quick Start Measurement Generator
 ```julia-repl
-julia> runmg("case14.xlsx"; pmuset = "optimal")
+julia> results = runmg("case14.xlsx"; pmuset = "optimal")
 ```
 ```julia-repl
-julia> runmg("case14.h5"; legacyset = "all", pmuvariance = ["all" 1e-5])
+julia> results = runmg("case14.h5"; legacyset = "all", pmuvariance = ["all" 1e-5])
 ```
 
 ###  Changelog
