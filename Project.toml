@@ -20,7 +20,7 @@ XLSX = "fdbf4ff8-1666-58a4-91e7-1b58723a45e0"
 [compat]
 CSV = "0.5.26, 0.6"
 GLPK = "0.12.1"
-HDF5 = "0.12.5"
+HDF5 = "0.12.5, 0.13"
 JuMP = "0.20.1"
 PrettyTables = "0.8.4, 0.9"
 Suppressor = "0.2.0"
