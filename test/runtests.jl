@@ -103,24 +103,21 @@ end
 end
 
 @testset "Fast Newton-Raphson (BX) AC Power Flow" begin
-    @suppress begin
-        accuracy = 1e-7
-        matpower = h5read(string(path, "PowerFlowTest_case30.h5"), "/fdbx")
-        results = runpf("fnrbx", "case30.h5"; max = 1000)
-        @test maximum(abs.(results["bus"][:, 2] - matpower["Vi"])) < accuracy
-        @test maximum(abs.(results["bus"][:, 3] - matpower["Ti"])) < accuracy
-        @test results["iterations"] - matpower["iterations"][1] == 0
+    accuracy = 1e-7
+    matpower = h5read(string(path, "PowerFlowTest_case30.h5"), "/fdbx")
+    results = runpf("fnrbx", "case30.h5"; max = 1000)
+    @test maximum(abs.(results["bus"][:, 2] - matpower["Vi"])) < accuracy
+    @test maximum(abs.(results["bus"][:, 3] - matpower["Ti"])) < accuracy
+    @test results["iterations"] - matpower["iterations"][1] == 0
 
-        matpower = h5read(string(path, "PowerFlowTest_case30.h5"), "/fdbxLimit")
-        results = runpf("fnrbx", "case30.h5"; max = 1000, reactive = 1)
-        @test maximum(abs.(results["bus"][:, 2] - matpower["Vi"])) < accuracy
-        @test maximum(abs.(results["bus"][:, 3] - matpower["Ti"])) < accuracy
-        @test results["iterations"] - matpower["iterations"][1] == 0
-    end
+    matpower = h5read(string(path, "PowerFlowTest_case30.h5"), "/fdbxLimit")
+    results = runpf("fnrbx", "case30.h5"; max = 1000, reactive = 1)
+    @test maximum(abs.(results["bus"][:, 2] - matpower["Vi"])) < accuracy
+    @test maximum(abs.(results["bus"][:, 3] - matpower["Ti"])) < accuracy
+    @test results["iterations"] - matpower["iterations"][1] == 0
 end
 
 @testset "Measurement Generator Write Read" begin
-    @suppress begin
         results = runmg(string(path, "GeneratorTest_case14.xlsx"); runflow = 0, pmuset = "all", legacyset = "all", save = string(path, "savenew.h5"))
         results = runmg(string(path, "GeneratorTest_case14.xlsx"); runflow = 0, pmuset = "all", legacyset = "all", save = string(path, "savenew.xlsx"))
         testkey = ["pmuVoltage", "pmuCurrent", "legacyFlow", "legacyCurrent", "legacyInjection", "legacyVoltage", "bus", "generator", "branch", "basePower", "info"]
@@ -131,13 +128,12 @@ end
         @test !any(cd(readdir, path) .== "savenew.xlsx")
 
         results = runmg(string(path, "GeneratorTest_case14incomplete.xlsx"); runflow = 0, pmuset = "all", legacyset = "all")
-        testkeys = ["legacyCurrent"; "legacyVoltage"; "bus"; "generator"; "branch"; "basePower"; "info"]
+        testkey = ["legacyCurrent"; "legacyVoltage"; "bus"; "generator"; "branch"; "basePower"; "info"]
         @test all(in(keys(results)).(testkey))
 
         results = runmg(string(path, "GeneratorTest_case14inconsistente.xlsx"); runflow = 0, pmuset = "all", legacyset = "all")
-        testkeys = ["pmuVoltage"; "pmuCurrent"; "legacyFlow"; "legacyInjection"; "legacyVoltage"; "bus"; "generator"; "branch"; "basePower"; "info"]
+        testkey = ["pmuVoltage"; "pmuCurrent"; "legacyFlow"; "legacyInjection"; "legacyVoltage"; "bus"; "generator"; "branch"; "basePower"; "info"]
         @test all(in(keys(results)).(testkey))
-    end
 end
 
 @testset "Measurement Generator PMU data" begin
