@@ -121,14 +121,14 @@ end
 
 @testset "Measurement Generator Write Read" begin
     @suppress begin
-        results = runmg(string(path, "GeneratorTest_case14.xlsx"); runflow = 0, pmuset = "all", legacyset = "all", save = string(path, "save.h5"))
-        results = runmg(string(path, "GeneratorTest_case14.xlsx"); runflow = 0, pmuset = "all", legacyset = "all", save = string(path, "save.xlsx"))
-        testkeys = ["pmuVoltage"; "pmuCurrent"; "legacyFlow"; "legacyCurrent"; "legacyInjection"; "legacyVoltage"; "bus"; "generator"; "branch"; "basePower"; "info"]
-        rm(string(path, "save.h5"))
-        rm(string(path, "save.xlsx"))
-        @test all(in(keys(results)).(testkeys))
-        @test !any(cd(readdir, path) .== "save.h5")
-        @test !any(cd(readdir, path) .== "save.xlsx")
+        results = runmg(string(path, "GeneratorTest_case14.xlsx"); runflow = 0, pmuset = "all", legacyset = "all", save = string(path, "savenew.h5"))
+        results = runmg(string(path, "GeneratorTest_case14.xlsx"); runflow = 0, pmuset = "all", legacyset = "all", save = string(path, "savenew.xlsx"))
+        testkey = ["pmuVoltage", "pmuCurrent", "legacyFlow", "legacyCurrent", "legacyInjection", "legacyVoltage", "bus", "generator", "branch", "basePower", "info"]
+        rm(string(path, "savenew.h5"))
+        rm(string(path, "savenew.xlsx"))
+        @test all(in(keys(results)).(testkey))
+        @test !any(cd(readdir, path) .== "savenew.h5")
+        @test !any(cd(readdir, path) .== "savenew.xlsx")
 
         results = runmg(string(path, "GeneratorTest_case14incomplete.xlsx"); runflow = 0, pmuset = "all", legacyset = "all")
         testkeys = ["legacyCurrent"; "legacyVoltage"; "bus"; "generator"; "branch"; "basePower"; "info"]
@@ -231,5 +231,4 @@ end
         @test all(results["legacyCurrent"][:, 4] .≈ results["legacyCurrent"][:, 7])
         @test all(results["legacyVoltage"][:, 2] .≈ results["legacyVoltage"][:, 5])
     end
-
 end
