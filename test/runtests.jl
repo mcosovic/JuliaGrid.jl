@@ -121,22 +121,22 @@ end
 
 @testset "Measurement Generator Write Read" begin
     @suppress begin
-        # results = runmg(string(path, "GeneratorTest_case14.xlsx"); runflow = 0, pmuset = "all", legacyset = "all", save = string(path, "savenew.h5"))
-        # results = runmg(string(path, "GeneratorTest_case14.xlsx"); runflow = 0, pmuset = "all", legacyset = "all", save = string(path, "savenew.xlsx"))
-        # testkey = ["pmuVoltage", "pmuCurrent", "legacyFlow", "legacyCurrent", "legacyInjection", "legacyVoltage", "bus", "generator", "branch", "basePower", "info"]
-        # rm(string(path, "savenew.h5"))
-        # rm(string(path, "savenew.xlsx"))
-        # @test all(in(keys(results)).(testkey))
-        # @test !any(cd(readdir, path) .== "savenew.h5")
-        # @test !any(cd(readdir, path) .== "savenew.xlsx")
+        results = runmg(string(path, "GeneratorTest_case14.xlsx"); runflow = 0, pmuset = "all", legacyset = "all", save = string(path, "savenew.h5"))
+        results = runmg(string(path, "GeneratorTest_case14.xlsx"); runflow = 0, pmuset = "all", legacyset = "all", save = string(path, "savenew.xlsx"))
+        testkey = ["pmuVoltage", "pmuCurrent", "legacyFlow", "legacyCurrent", "legacyInjection", "legacyVoltage", "bus", "generator", "branch", "basePower", "info"]
+        rm(string(path, "savenew.h5"))
+        rm(string(path, "savenew.xlsx"))
+        @test all(in(keys(results)).(testkey))
+        @test !any(cd(readdir, path) .== "savenew.h5")
+        @test !any(cd(readdir, path) .== "savenew.xlsx")
 
-        # results = runmg(string(path, "GeneratorTest_case14incomplete.xlsx"); runflow = 0, pmuset = "all", legacyset = "all")
-        # testkeys = ["legacyCurrent"; "legacyVoltage"; "bus"; "generator"; "branch"; "basePower"; "info"]
-        # @test all(in(keys(results)).(testkey))
-        #
-        # results = runmg(string(path, "GeneratorTest_case14inconsistente.xlsx"); runflow = 0, pmuset = "all", legacyset = "all")
-        # testkeys = ["pmuVoltage"; "pmuCurrent"; "legacyFlow"; "legacyInjection"; "legacyVoltage"; "bus"; "generator"; "branch"; "basePower"; "info"]
-        # @test all(in(keys(results)).(testkey))
+        results = runmg(string(path, "GeneratorTest_case14incomplete.xlsx"); runflow = 0, pmuset = "all", legacyset = "all")
+        testkeys = ["legacyCurrent"; "legacyVoltage"; "bus"; "generator"; "branch"; "basePower"; "info"]
+        @test all(in(keys(results)).(testkey))
+
+        results = runmg(string(path, "GeneratorTest_case14inconsistente.xlsx"); runflow = 0, pmuset = "all", legacyset = "all")
+        testkeys = ["pmuVoltage"; "pmuCurrent"; "legacyFlow"; "legacyInjection"; "legacyVoltage"; "bus"; "generator"; "branch"; "basePower"; "info"]
+        @test all(in(keys(results)).(testkey))
     end
 end
 

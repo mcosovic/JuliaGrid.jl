@@ -40,8 +40,8 @@ struct GeneratorSettings
     maxIter::Int64
     stopping::Float64
     reactive::Array{Bool,1}
-    set::Dict{String, Union{Array{Any,1}, Any}}
-    variance::Dict{String, Union{Array{Any,1}, Any}}
+    set::Dict{Any, Any}
+    variance::Dict{Any, Any}
 end
 
 struct StateEstimation
@@ -227,8 +227,8 @@ function gesettings(runflow, max, stop, react, solve, save, pmuset, pmuvariance,
     end
 
     names = keys(measurement)
-    set = Dict{String, Union{Array{Any,1}, Any}}()
-    variance = Dict{String, Union{Array{Any,1}, Any}}()
+    set = Dict()
+    variance = Dict()
 
     ################## PMU Set ##################
     if !isa(pmuset, Array)
