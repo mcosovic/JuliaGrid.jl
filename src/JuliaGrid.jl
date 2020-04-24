@@ -78,7 +78,7 @@ function runmg(
         results = rungenerator(system, settings, measurement)
     end
 
-    return results
+    return results, settings
 end
 
 ######################

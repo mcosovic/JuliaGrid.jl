@@ -297,13 +297,13 @@ function gesettings(runflow, max, stop, react, solve, save, pmuset, pmuvariance,
                 push!(set, "legacyFlow" => convert(Array{Any}, ["no"; "no"]))
             end
             if i .== "Iij" && any(names .== "legacyCurrent")
-                push!(set, "legacyCurrent" => convert(Any, "no"))
+                push!(set, "legacyCurrent" => convert(Array{Any}, ["no"]))
             end
             if any(i .== ["Pi", "Qi"]) && any(names .== "legacyInjection")
                 push!(set, "legacyInjection" => convert(Array{Any}, ["no"; "no"]))
             end
             if i .== "Vi" && any(names .== "legacyVoltage")
-                push!(set, "legacyVoltage" => convert(Any, "no"))
+                push!(set, "legacyVoltage" => convert(Array{Any}, ["no"]))
             end
         end
         for (k, i) in enumerate(legacyset)
@@ -420,7 +420,7 @@ function gesettings(runflow, max, stop, react, solve, save, pmuset, pmuvariance,
         end
         miss = setdiff(["Pij", "Qij", "Iij", "Pi", "Qi", "Vi"], legacyvariance)
         for i in miss
-            pmuvariance = [legacyvariance i valall]
+            legacyvariance = [legacyvariance i valall]
         end
     end
     if onebyone
@@ -429,13 +429,13 @@ function gesettings(runflow, max, stop, react, solve, save, pmuset, pmuvariance,
                 push!(variance, "legacyFlow" => convert(Array{Any}, ["no"; "no"]))
             end
             if i .== "Iij" && any(names .== "legacyCurrent")
-                push!(variance, "legacyCurrent" => convert(Any, "no"))
+                push!(variance, "legacyCurrent" => convert(Array{Any}, ["no"]))
             end
             if any(i .== ["Pi", "Qi"]) && any(names .== "legacyInjection")
                 push!(variance, "legacyInjection" => convert(Array{Any}, ["no"; "no"]))
             end
             if i .== "Vi" && any(names .== "legacyVoltage")
-                push!(variance, "legacyVoltage" => convert(Any, "no"))
+                push!(variance, "legacyVoltage" => convert(Array{Any}, ["no"]))
             end
         end
         for (k, i) in enumerate(legacyvariance)
