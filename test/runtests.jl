@@ -6,7 +6,7 @@ path = abspath(joinpath(dirname(Base.find_package("JuliaGrid")), ".."), "test/")
 
 @testset "DC Power Flow" begin
     results = runpf("case14.h5", "dc"; solve = "lu", save = string(path, "save.h5"))
-    results = runpf("case14.h5", "dc"; save = string(path, "save.xlsx"))
+    results = runpf("case14.h5", "dc", "main", "flow", "generator"; save = string(path, "save.xlsx"))
 
     rm(string(path, "save.h5"))
     rm(string(path, "save.xlsx"))
@@ -28,7 +28,7 @@ end
 
 @testset "Newton-Raphson AC Power Flow" begin
     results = runpf("case14.h5", "nr"; solve = "lu", save = string(path, "save.h5"))
-    results = runpf("case14.h5", "nr"; save = string(path, "save.xlsx"))
+    results = runpf("case14.h5", "nr", "main", "flow", "generator"; save = string(path, "save.xlsx"))
     rm(string(path, "save.h5"))
     rm(string(path, "save.xlsx"))
     @test issubset(["branch", "generator", "bus", "iterations"], keys(results))

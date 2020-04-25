@@ -24,11 +24,11 @@ function results_flowdc(settings, system, Ti, slack, algtime)
         println("")
         pretty_table(results["bus"], header["bus"], screen_size = (-1,-1), alignment = [:r,:r,:r,:r,:r,:r],
             highlighters = h1, columns_width = [6, 18, 18, 18, 18, 18],
-            formatter = ft_printf(["%1.0f","%1.4f","%1.2f","%1.2f","%1.2f","%1.2f"], collect(1:6)))
+            formatters = ft_printf(["%1.0f","%1.4f","%1.2f","%1.2f","%1.2f","%1.2f"], collect(1:6)))
 
         sum_data = Any["Sum" sum(results["bus"][:, 3:6], dims = 1)]
         pretty_table(sum_data, noheader = true, screen_size = (-1,-1), columns_width = [27, 18, 18, 18, 18],
-            alignment=[:l,:r,:r,:r,:r], formatter = ft_printf(["%-s","%15.2f","%11.2f","%11.2f","%13.2f"], collect(1:5)))
+            alignment=[:l,:r,:r,:r,:r], formatters = ft_printf(["%-s","%15.2f","%11.2f","%11.2f","%13.2f"], collect(1:5)))
     end
 
     ################## DC Flow Display ##################
@@ -42,7 +42,7 @@ function results_flowdc(settings, system, Ti, slack, algtime)
     if settings.flow
         println("")
         pretty_table(results["branch"], header["branch"], screen_size = (-1,-1), columns_width = [6, 8, 8, 18, 18],
-        alignment=[:r,:r,:r,:r,:r], formatter = ft_printf(["%1.0f","%1.0f","%1.0f","%1.2f","%1.2f"], collect(1:5)))
+        alignment=[:r,:r,:r,:r,:r], formatters = ft_printf(["%1.0f","%1.0f","%1.0f","%1.2f","%1.2f"], collect(1:5)))
     end
 
     ################## DC Generator Display ##################
@@ -53,7 +53,7 @@ function results_flowdc(settings, system, Ti, slack, algtime)
     if settings.generator
         println("")
         pretty_table(results["generator"], header["generator"], screen_size = (-1,-1), alignment=[:r,:r],
-            formatter = ft_printf(["%1.0f","%1.4f"], collect(1:2)))
+            formatters = ft_printf(["%1.0f","%1.4f"], collect(1:2)))
     end
 
     if !isempty(settings.save)
@@ -87,7 +87,7 @@ function results_flowac(settings, system, limit, slack, Vc, algtime, iter)
             table = ["Bus" system.generator[min, 1]'; "Generator" min']
             pretty_table(table,
             noheader = true, alignment = repeat([Symbol(:r)], outer = Nl + 1),
-            formatter = ft_printf(vcat("%s", repeat(["%1.0f"], outer = Nl)), collect(1:1 + Nl)))
+            formatters = ft_printf(vcat("%s", repeat(["%1.0f"], outer = Nl)), collect(1:1 + Nl)))
             println("")
         end
         if !isempty(max)
@@ -96,7 +96,7 @@ function results_flowac(settings, system, limit, slack, Vc, algtime, iter)
             table = ["Bus" system.generator[max, 1]'; "Generator" max']
             pretty_table(table,
             noheader = true, alignment = repeat([Symbol(:r)], outer = Nl + 1),
-            formatter = ft_printf(vcat("%s", repeat(["%1.0f"], outer = Nl)), collect(1:1 + Nl)))
+            formatters = ft_printf(vcat("%s", repeat(["%1.0f"], outer = Nl)), collect(1:1 + Nl)))
         end
     end
 
@@ -121,11 +121,11 @@ function results_flowac(settings, system, limit, slack, Vc, algtime, iter)
         pretty_table(results["bus"], header["bus"],
              screen_size = (-1,-1), highlighters = h1, columns_width = [6, 16, 12, 17, 21, 17, 21, 17, 21, 17, 21],
              alignment = repeat([Symbol(:r)], outer = 11),
-             formatter = ft_printf(["%1.0f", "%1.4f","%1.4f","%1.2f" ,"%1.2f","%1.2f","%1.2f","%1.2f","%1.2f","%1.2f","%1.2f"], collect(1:11)))
+             formatters = ft_printf(["%1.0f", "%1.4f","%1.4f","%1.2f" ,"%1.2f","%1.2f","%1.2f","%1.2f","%1.2f","%1.2f","%1.2f"], collect(1:11)))
         sum_data = Any["Sum" sum(results["bus"][:, 4:11], dims = 1)]
         pretty_table(sum_data, noheader = true, screen_size = (-1,-1),
             alignment=[:l,:r,:r,:r,:r,:r,:r,:r,:r], columns_width = [40, 17, 21, 17, 21, 17, 21, 17, 21],
-            formatter = ft_printf(["%-s","%15.2f","%15.2f","%11.2f","%15.2f","%11.2f","%15.2f","%13.2f","%15.2f"], collect(1:9)))
+            formatters = ft_printf(["%-s","%15.2f","%15.2f","%11.2f","%15.2f","%11.2f","%15.2f","%13.2f","%15.2f"], collect(1:9)))
     end
 
     ################## AC Flow Display ##################
@@ -151,10 +151,10 @@ function results_flowac(settings, system, limit, slack, Vc, algtime, iter)
         pretty_table(results["branch"][:,1:10], header["branch"][:,1:10],
              screen_size = (-1,-1), columns_width = [6, 8, 8, 17, 21, 17, 21, 21, 17, 21],
              alignment=[:r,:r,:r,:r,:r,:r,:r,:r,:r,:r],
-             formatter = ft_printf(["%1.0f","%1.0f","%1.0f","%1.2f","%1.2f","%1.2f","%1.2f","%1.2f","%1.2f","%1.2f"], collect(1:10)))
+             formatters = ft_printf(["%1.0f","%1.0f","%1.0f","%1.2f","%1.2f","%1.2f","%1.2f","%1.2f","%1.2f","%1.2f"], collect(1:10)))
         sum_data = Any["Sum" sum(results["branch"][:, 7:9], dims = 1)]
         pretty_table(sum_data, noheader = true, screen_size = (-1,-1), alignment=[:l,:r,:r,:r], columns_width = [116, 21, 17, 21],
-                    formatter = ft_printf(["%-s","%15.2f","%11.2f","%15.2f"], collect(1:4)))
+                    formatters = ft_printf(["%-s","%15.2f","%11.2f","%15.2f"], collect(1:4)))
     end
 
     ################## AC Generator Display ##################
@@ -168,7 +168,7 @@ function results_flowac(settings, system, limit, slack, Vc, algtime, iter)
         println("")
         pretty_table(results["generator"], header["generator"],
             screen_size = (-1,-1), alignment=[:r,:r,:r],
-            formatter = ft_printf(["%1.0f", "%1.4f", "%1.4f"], collect(1:3)))
+            formatters = ft_printf(["%1.0f", "%1.4f", "%1.4f"], collect(1:3)))
     end
 
 
