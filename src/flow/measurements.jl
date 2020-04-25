@@ -93,12 +93,12 @@ function runset(system, settings, measurement, names)
     type = Dict("pmuall" => "pmu",  "legacyall" => "legacy", "pmuredundancy" => "pmu",  "legacyredundancy" => "legacy")
 
     for set in keys(settings.set)
-        if any(set .== ["pmuall" "legacyall"])
+        if set in ["pmuall" "legacyall"]
             for i in names[type[set]]
                 measurement[i][:, write[i]] .= 1
             end
         end
-        if any(set .== ["pmuVoltage", "pmuCurrent", "legacyFlow", "legacyCurrent", "legacyInjection", "legacyVoltage"])
+        if set in ["pmuVoltage", "pmuCurrent", "legacyFlow", "legacyCurrent", "legacyInjection", "legacyVoltage"]
             for (pos, howMany) in enumerate(settings.set[set])
                 success = false
                 if isa(howMany, Number) && howMany <= size(measurement[set], 1)
@@ -116,7 +116,7 @@ function runset(system, settings, measurement, names)
                 end
             end
         end
-        if any(set .== ["pmuredundancy" "legacyredundancy"])
+        if set in ["pmuredundancy" "legacyredundancy"]
             Nmax = 0
             for i in names[type[set]]
                 Nmax += length(write[i]) * size(measurement[i], 1)
@@ -207,7 +207,7 @@ function runset(system, settings, measurement, names)
                     f  = fill(1, system.Nbus);
                     lb = fill(0, system.Nbus);
                     ub = fill(1, system.Nbus);
-                    model = Model(with_optimizer(GLPK.Optimizer))
+                    model = Model(GLPK.Optimizer)
 
                     @variable(model, x[i = 1:system.Nbus], Int)
                     @constraint(model, lb .<= x .<= ub)
@@ -236,8 +236,6 @@ function runset(system, settings, measurement, names)
                 else
                     error("The optimal algorithm requires the concordant number of buses and branches, and corresponding measurements.")
                 end
-
-
             else
                 error("The complete PMU measurement DATA is not found.")
             end
@@ -258,7 +256,7 @@ function runvariance(system, settings, measurement, names)
     type = Dict("pmuall" => "pmu",  "legacyall" => "legacy", "pmurandom" => "pmu",  "legacyrandom" => "legacy")
 
     for var in keys(settings.variance)
-        if any(var .== ["pmuall" "legacyall"])
+        if var in ["pmuall" "legacyall"]
             howMany = settings.variance[var]
             if isa(howMany, Number) && howMany > 0
                 for i in names[type[var]]
@@ -268,7 +266,7 @@ function runvariance(system, settings, measurement, names)
                 error("The variance must be positive number.")
             end
         end
-        if any(var .== ["pmurandom" "legacyrandom"])
+        if var in ["pmurandom" "legacyrandom"]
             howMany = settings.variance[var]
             if isa(howMany[1], Number) && isa(howMany[2], Number) && howMany[1] > 0 && howMany[2] > 0
                 min = minimum(howMany)
@@ -282,7 +280,7 @@ function runvariance(system, settings, measurement, names)
                 error("The variance must be positive number.")
             end
         end
-        if any(var .== ["pmuVoltage", "pmuCurrent", "legacyFlow", "legacyCurrent", "legacyInjection", "legacyVoltage"])
+        if var in ["pmuVoltage", "pmuCurrent", "legacyFlow", "legacyCurrent", "legacyInjection", "legacyVoltage"]
             for (pos, howMany) in enumerate(settings.variance[var])
                 if howMany != "no"
                     if isa(howMany, Number) && howMany > 0

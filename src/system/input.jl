@@ -88,7 +88,7 @@ function loadsystem(args)
     end
 
     input_data = cd(readdir, path)
-    if any(input_data .== dataname)
+    if dataname in input_data
         println(string("The input power system: ", dataname))
     else
         error("The input DATA is not found.")
@@ -96,10 +96,10 @@ function loadsystem(args)
 
     read_data = readdata(fullpath, extension; type = "pf")
 
-    if !any(keys(read_data) .== "bus")
+    if !("bus" in keys(read_data))
         error("Invalid DATA structure, variable bus not found.")
     end
-    if !any(keys(read_data) .== "branch")
+    if !("branch" in keys(read_data))
         error("Invalid DATA structure, variable branch not found.")
     end
 
@@ -154,7 +154,7 @@ function pfsettings(args, max, stop, react, solve, save, system)
     reactive = [false; true; false]
 
     for i = 1:length(args)
-        if any(algorithm_type .== args[i])
+        if args[i] in algorithm_type
             algorithm = args[i]
         end
         if args[i] == "main"
@@ -237,42 +237,42 @@ function gesettings(runflow, max, stop, react, solve, save, pmuset, pmuvariance,
 
     onebyone = false
     for i in pmuset
-        if any(i .== ["Vi", "Ti", "Iij", "Dij"])
+        if i in ["Vi", "Ti", "Iij", "Dij"]
             onebyone = true
             break
         end
     end
     if onebyone
         for i in pmuset
-            if any(i .== ["Vi", "Ti"]) && any(names .== "pmuVoltage")
+            if i in ["Vi", "Ti"] && "pmuVoltage" in names
                 push!(set, "pmuVoltage" => convert(Array{Any}, ["no"; "no"]))
             end
-            if any(i .== ["Iij", "Dij"]) && any(names .== "pmuCurrent")
+            if i in ["Iij", "Dij"] && "pmuCurrent" in names
                 push!(set, "pmuCurrent" => convert(Array{Any}, ["no"; "no"]))
             end
         end
         for (k, i) in enumerate(pmuset)
-            if i == "Vi" && any(names .== "pmuVoltage")
+            if i == "Vi" && "pmuVoltage" in names
                 set["pmuVoltage"][1] = nextelement(pmuset, k)
             end
-            if i == "Ti" && any(names .== "pmuVoltage")
+            if i == "Ti" && "pmuVoltage" in names
                 set["pmuVoltage"][2] = nextelement(pmuset, k)
             end
-            if i == "Iij" && any(names .== "pmuCurrent")
+            if i == "Iij" && "pmuCurrent" in names
                 set["pmuCurrent"][1] = nextelement(pmuset, k)
             end
-            if i == "Dij" && any(names .== "pmuCurrent")
+            if i == "Dij" && "pmuCurrent" in names
                 set["pmuCurrent"][2] = nextelement(pmuset, k)
             end
         end
     end
     if !onebyone && any(names .== ["pmuVoltage" "pmuCurrent"])
         for (k, i) in enumerate(pmuset)
-            if any(i .== ["redundancy" "device"])
+            if i in ["redundancy" "device"]
                 push!(set, string("pmu", i) => nextelement(pmuset, k))
                 break
             end
-            if any(i .== ["all" "optimal"])
+            if i in ["all" "optimal"]
                 push!(set, string("pmu", i) => i)
                 break
             end
@@ -286,43 +286,43 @@ function gesettings(runflow, max, stop, react, solve, save, pmuset, pmuvariance,
 
     onebyone = false
     for i in legacyset
-        if any(i .== ["Pij", "Qij", "Iij", "Pi", "Qi", "Vi"])
+        if i in ["Pij", "Qij", "Iij", "Pi", "Qi", "Vi"]
             onebyone = true
             break
         end
     end
     if onebyone
         for i in legacyset
-            if any(i .== ["Pij", "Qij"]) && any(names .== "legacyFlow")
+            if i in ["Pij", "Qij"] && "legacyFlow" in names
                 push!(set, "legacyFlow" => convert(Array{Any}, ["no"; "no"]))
             end
-            if i .== "Iij" && any(names .== "legacyCurrent")
+            if i == "Iij" && "legacyCurrent" in names
                 push!(set, "legacyCurrent" => convert(Array{Any}, ["no"]))
             end
-            if any(i .== ["Pi", "Qi"]) && any(names .== "legacyInjection")
+            if i in ["Pi", "Qi"] && "legacyInjection" in names
                 push!(set, "legacyInjection" => convert(Array{Any}, ["no"; "no"]))
             end
-            if i .== "Vi" && any(names .== "legacyVoltage")
+            if i == "Vi" && "legacyVoltage" in names
                 push!(set, "legacyVoltage" => convert(Array{Any}, ["no"]))
             end
         end
         for (k, i) in enumerate(legacyset)
-            if i == "Pij" && any(names .== "legacyFlow")
+            if i == "Pij" && "legacyFlow" in names
                 set["legacyFlow"][1] = nextelement(legacyset, k)
             end
-            if i == "Qij" && any(names .== "legacyFlow")
+            if i == "Qij" && "legacyFlow" in names
                 set["legacyFlow"][2] = nextelement(legacyset, k)
             end
-            if i == "Iij" && any(names .== "legacyCurrent")
+            if i == "Iij" && "legacyCurrent" in names
                 set["legacyCurrent"][1] = nextelement(legacyset, k)
             end
-            if i == "Pi" && any(names .== "legacyInjection")
+            if i == "Pi" && "legacyInjection" in names
                 set["legacyInjection"][1] = nextelement(legacyset, k)
             end
-            if i == "Qi" && any(names .== "legacyInjection")
+            if i == "Qi" && "legacyInjection" in names
                 set["legacyInjection"][2] = nextelement(legacyset, k)
             end
-            if i == "Vi" && any(names .== "legacyVoltage")
+            if i == "Vi" && "legacyVoltage" in names
                 set["legacyVoltage"][1] = nextelement(legacyset, k)
             end
         end
@@ -344,7 +344,7 @@ function gesettings(runflow, max, stop, react, solve, save, pmuset, pmuvariance,
     onebyone = false
     all = false
     for i in pmuvariance
-        if any(i .== ["Vi", "Ti", "Iij", "Dij"])
+        if i in ["Vi", "Ti", "Iij", "Dij"]
             onebyone = true
         end
         if i == "all"
@@ -365,24 +365,24 @@ function gesettings(runflow, max, stop, react, solve, save, pmuset, pmuvariance,
     end
     if onebyone
         for i in pmuvariance
-            if any(i .== ["Vi", "Ti"]) && any(names .== "pmuVoltage")
+            if i in ["Vi", "Ti"] && "pmuVoltage" in names
                 push!(variance, "pmuVoltage" => convert(Array{Any}, ["no"; "no"]))
             end
-            if any(i .== ["Iij", "Dij"]) && any(names .== "pmuCurrent")
+            if i in ["Iij", "Dij"] && "pmuCurrent" in names
                 push!(variance, "pmuCurrent" => convert(Array{Any}, ["no"; "no"]))
             end
         end
         for (k, i) in enumerate(pmuvariance)
-            if i == "Vi" && any(names .== "pmuVoltage")
+            if i == "Vi" && "pmuVoltage" in names
                 variance["pmuVoltage"][1] = nextelement(pmuvariance, k)
             end
-            if i == "Ti" && any(names .== "pmuVoltage")
+            if i == "Ti" && "pmuVoltage" in names
                 variance["pmuVoltage"][2] = nextelement(pmuvariance, k)
             end
-            if i == "Iij" && any(names .== "pmuCurrent")
+            if i == "Iij" && "pmuCurrent" in names
                 variance["pmuCurrent"][1] = nextelement(pmuvariance, k)
             end
-            if i == "Dij" && any(names .== "pmuCurrent")
+            if i == "Dij" && "pmuCurrent" in names
                 variance["pmuCurrent"][2] = nextelement(pmuvariance, k)
             end
         end
@@ -404,7 +404,7 @@ function gesettings(runflow, max, stop, react, solve, save, pmuset, pmuvariance,
     onebyone = false
     all = false
     for i in legacyvariance
-        if any(i .== ["Pij", "Qij", "Iij", "Pi", "Qi", "Vi"])
+        if i in ["Pij", "Qij", "Iij", "Pi", "Qi", "Vi"]
             onebyone = true
         end
         if i == "all"
@@ -425,36 +425,36 @@ function gesettings(runflow, max, stop, react, solve, save, pmuset, pmuvariance,
     end
     if onebyone
         for i in legacyvariance
-            if any(i .== ["Pij", "Qij"]) && any(names .== "legacyFlow")
+            if i in ["Pij", "Qij"] && "legacyFlow" in names
                 push!(variance, "legacyFlow" => convert(Array{Any}, ["no"; "no"]))
             end
-            if i .== "Iij" && any(names .== "legacyCurrent")
+            if i == "Iij" && "legacyCurrent" in names
                 push!(variance, "legacyCurrent" => convert(Array{Any}, ["no"]))
             end
-            if any(i .== ["Pi", "Qi"]) && any(names .== "legacyInjection")
+            if i in ["Pi", "Qi"] && "legacyInjection" in names
                 push!(variance, "legacyInjection" => convert(Array{Any}, ["no"; "no"]))
             end
-            if i .== "Vi" && any(names .== "legacyVoltage")
+            if i == "Vi" && "legacyVoltage" in names
                 push!(variance, "legacyVoltage" => convert(Array{Any}, ["no"]))
             end
         end
         for (k, i) in enumerate(legacyvariance)
-            if i == "Pij" && any(names .== "legacyFlow")
+            if i == "Pij" && "legacyFlow" in names
                 variance["legacyFlow"][1] = nextelement(legacyvariance, k)
             end
-            if i == "Qij" && any(names .== "legacyFlow")
+            if i == "Qij" && "legacyFlow" in names
                 variance["legacyFlow"][2] = nextelement(legacyvariance, k)
             end
-            if i == "Iij" && any(names .== "legacyCurrent")
+            if i == "Iij" && "legacyCurrent" in names
                 variance["legacyCurrent"][1] = nextelement(legacyvariance, k)
             end
-            if i == "Pi" && any(names .== "legacyInjection")
+            if i == "Pi" && "legacyInjection" in names
                 variance["legacyInjection"][1] = nextelement(legacyvariance, k)
             end
-            if i == "Qi" && any(names .== "legacyInjection")
+            if i == "Qi" && "legacyInjection" in names
                 variance["legacyInjection"][2] = nextelement(legacyvariance, k)
             end
-            if i == "Vi" && any(names .== "legacyVoltage")
+            if i == "Vi" && "legacyVoltage" in names
                 variance["legacyVoltage"][1] = nextelement(legacyvariance, k)
             end
         end

@@ -113,22 +113,22 @@ function readdata(fullpath, extension; type)
     end
 
     if extension == ".h5"
+        fid = h5open(fullpath, "r")
         for i in sheet
-            try
-                @suppress begin
-                    table = h5read(fullpath, string("/", i))
-                    push!(read_data, i => table)
-                end
-            catch
+            if exists(fid, i)
+                table = h5read(fullpath, string("/", i))
+                push!(read_data, i => table)
             end
         end
+        close(fid)
     end
 
     if extension == ".xlsx"
         start = 1
+        xf = XLSX.readxlsx(fullpath)
+        orginal = XLSX.sheetnames(xf)
         for i in sheet
-            try
-                xf = XLSX.readxlsx(fullpath)
+            if i in orginal
                 sh = xf[i]
                 table = sh[:]
                 for r in XLSX.eachrow(sh)
@@ -142,7 +142,6 @@ function readdata(fullpath, extension; type)
                 else
                     push!(read_data, i => string.(coalesce.(table, "")))
                 end
-            catch
             end
         end
     end
