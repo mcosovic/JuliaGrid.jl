@@ -102,7 +102,10 @@ function rundcpf(settings, system)
     end
  end # algtime
 
-    results = results_flowdc(settings, system, Ti, slack, algtime)
+    results, header = results_flowdc(settings, system, Ti, slack, algtime)
+    if !isempty(settings.save)
+        savedata(results; info = system.info, group = keys(results), header = header, path = settings.save)
+    end
 
     return results
 end

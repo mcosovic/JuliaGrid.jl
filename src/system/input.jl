@@ -87,14 +87,13 @@ function loadsystem(args)
         fullpath = joinpath(packagepath, "src/data/", dataname)
     end
 
-    input_data = cd(readdir, path)
-    if dataname in input_data
+    if dataname in cd(readdir, path)
         println(string("The input power system: ", dataname))
     else
         error("The input DATA is not found.")
     end
 
-    read_data = readdata(fullpath, extension; type = "pf")
+    read_data = readdata(fullpath, extension, "power system")
 
     if !("bus" in keys(read_data))
         error("Invalid DATA structure, variable bus not found.")
@@ -147,14 +146,13 @@ end
 ###############################
 function pfsettings(args, max, stop, react, solve, save, system)
     algorithm = "false"
-    algorithm_type = ["nr", "gs", "fnrxb", "fnrbx", "dc"]
     main = false
     flow = false
     generator = false
     reactive = [false; true; false]
 
     for i = 1:length(args)
-        if args[i] in algorithm_type
+        if args[i] in ["nr", "gs", "fnrxb", "fnrbx", "dc"]
             algorithm = args[i]
         end
         if args[i] == "main"
@@ -204,7 +202,7 @@ function loadmeasurement(system, runflow)
         push!(measurement, "legacyInjection" => fill(0.0, system.Nbus, 9))
         push!(measurement, "legacyVoltage" => fill(0.0, system.Nbus, 5))
     else
-        measurement = readdata(system.path, system.extension; type = "se")
+        measurement = readdata(system.path, system.extension, "measurements")
     end
 
     return measurement

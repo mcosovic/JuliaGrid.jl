@@ -1,6 +1,6 @@
-############################
-#  Generate  measurements  #
-############################
+###########################
+#  Generate measurements  #
+###########################
 function rungenerator(system, settings, measurement; flow = 0)
     if settings.runflow == 1
         branch = flow["branch"]
@@ -76,8 +76,33 @@ function rungenerator(system, settings, measurement; flow = 0)
         end
     end
 
-    grid = readdata(system.path, system.extension; type = "pf")
-    measurement = infogenerator(system, settings, measurement, names)
+    info = infogenerator(system, settings, measurement, names)
+    push!(measurement, "info" => info)
+
+    grid = readdata(system.path, system.extension, "power system")
+
+    group = ["pmuVoltage"; "pmuCurrent"; "legacyFlow"; "legacyCurrent"; "legacyInjection"; "legacyVoltage"]
+    for (k, i) in enumerate(group)
+        if !any(i .== keys(measurement))
+            deleteat!(group, k)
+        end
+    end
+
+    if system.Ngen != 0
+        group = [group; "bus"; "generator"; "branch"; "basePower"]
+        push!(measurement, "generator" => grid["generator"])
+    else
+        group = [group; "bus"; "branch"; "basePower"]
+    end
+
+    push!(measurement, "bus" => grid["bus"])
+    push!(measurement, "branch" => grid["branch"])
+    push!(measurement, "basePower" => grid["basePower"])
+
+    if !isempty(settings.path)
+        header = h5read(joinpath(system.packagepath, "src/system/header.h5"), "/measurement")
+        savedata(measurement; group = group, header = header, path = settings.path, info = info)
+    end
 
     return measurement
 end

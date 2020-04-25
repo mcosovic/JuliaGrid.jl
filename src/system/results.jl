@@ -1,6 +1,6 @@
-##############################################
-#  DC dower flow results and call save data  #
-##############################################
+##########################
+#  DC dower flow results #
+##########################
 function results_flowdc(settings, system, Ti, slack, algtime)
     println(string("Execution time: ", (@sprintf "%.4f" algtime * 1000), " (ms)"))
     header = h5read(joinpath(system.packagepath, "src/system/header.h5"), "/flowdc")
@@ -56,17 +56,13 @@ function results_flowdc(settings, system, Ti, slack, algtime)
             formatters = ft_printf(["%1.0f","%1.4f"], collect(1:2)))
     end
 
-    if !isempty(settings.save)
-        savedata(results; info = system.info, group = keys(results), header = header, path = settings.save)
-    end
-
-    return results
+    return results, header
 end
 
 
-##############################################
-#  AC dower flow results and call save data  #
-##############################################
+###########################
+#  AC dower flow results  #
+###########################
 function results_flowac(settings, system, limit, slack, Vc, algtime, iter)
     println(string("Execution time: ", (@sprintf "%.4f" algtime * 1000), " (ms)"))
     header = h5read(joinpath(system.packagepath, "src/system/header.h5"), "/flowac")
@@ -171,17 +167,7 @@ function results_flowac(settings, system, limit, slack, Vc, algtime, iter)
             formatters = ft_printf(["%1.0f", "%1.4f", "%1.4f"], collect(1:3)))
     end
 
-
-    ################## Export Data ##################
-    if !isempty(settings.save)
-        group = ["bus" "branch"]
-        if system.Ngen != 0
-            group = [group "generator"]
-        end
-        savedata(results; info = system.info, group = group, header = header, path = settings.save)
-    end
-
-    return results
+    return results, header
 end
 
 
@@ -230,24 +216,24 @@ function infogrid(bus, branch, generator, info, dataname, Nbra, Nbus, Ngen)
 end
 
 
-###############################################
-#  Measurements info data and call save data  #
-###############################################
+############################
+#  Measurements info data  #
+############################
 function infogenerator(system, settings, measurement, names)
     setkeys = keys(settings.set)
     varkeys = keys(settings.variance)
 
     ################## PMU Set ##################
     info = [system.info; "" "" ""]
-    if any(setkeys .== "pmuall")
+    if "pmuall" in setkeys
         info = [info; "PMU set setting" "all measurements adjust in-service" ""]
-    elseif any(setkeys .== "pmuredundancy")
+    elseif "pmuredundancy" in setkeys
         info = [info; "PMU set setting" "redundancy" string(settings.set["pmuredundancy"])]
-    elseif any(setkeys .== "pmudevice")
+    elseif "pmudevice" in setkeys
         info = [info; "PMU set setting" "devices in-services" string(settings.set["pmudevice"])]
-    elseif any(setkeys .== "pmuoptimal")
+    elseif "pmuoptimal" in setkeys
         info = [info; "PMU set setting" "optimal placement" ""]
-    elseif any(setkeys .== "pmuVoltage") || any(setkeys .== "pmuCurrent")
+    elseif "pmuVoltage" in setkeys || "pmuCurrent" in setkeys
         info = [info; "PMU set setting" "measurements by type adjust in-service" ""]
     else
         info = [info; "PMU set setting" "" ""]
@@ -266,11 +252,11 @@ function infogenerator(system, settings, measurement, names)
 
     ################## Legacy Set ##################
     info = [info; "" "" ""]
-    if any(setkeys .== "legacyall")
+    if "legacyall" in setkeys
         info = [info; "Legacy set setting" "all measurements adjust in-service" ""]
-    elseif any(setkeys .== "legacyredundancy")
+    elseif "legacyredundancy" in setkeys
         info = [info; "Legacy set setting" "redundancy" string(settings.set["legacyredundancy"])]
-    elseif any(setkeys .== "legacyFlow") || any(setkeys .== "legacyCurrent") || any(setkeys .== "legacyInjection") || any(setkeys .== "legacyVoltage")
+    elseif "legacyFlow" in setkeys || "legacyCurrent" in setkeys || "legacyInjection" in setkeys || "legacyVoltage" in setkeys
         info = [info; "Legacy set setting" "measurements by type adjust in-service" ""]
     else
         info = [info; "Legacy set setting" "" ""]
@@ -292,11 +278,11 @@ function infogenerator(system, settings, measurement, names)
 
     ################## PMU Variance ##################
     info = [info; "" "" ""]
-    if any(varkeys .== "pmuall")
+    if "pmuall" in varkeys
         info = [info; "PMU variance setting" "all with same variances" string(settings.variance["pmuall"])]
-    elseif any(varkeys .== "pmurandom")
+    elseif "pmurandom" in varkeys
         info = [info; "PMU variance setting" "randomized variances within limits" string(settings.variance["pmurandom"][1], ", ", settings.variance["pmurandom"][2])]
-    elseif any(varkeys .== "pmuVoltage") || any(varkeys .== "pmuCurrent")
+    elseif "pmuVoltage" in varkeys || "pmuCurrent" in varkeys
         info = [info; "PMU variance setting" "variances by measurement type" ""]
     else
         info = [info; "PMU variance set setting" "" ""]
@@ -315,11 +301,11 @@ function infogenerator(system, settings, measurement, names)
 
     ################## Legacy Variance ##################
     info = [info; "" "" ""]
-    if any(varkeys .== "legacyall")
+    if "legacyall" in varkeys
         info = [info; "Legacy variance setting" "all with same variances" string(settings.variance["legacyall"])]
-    elseif any(varkeys .== "legacyrandom")
+    elseif "legacyrandom" in varkeys
         info = [info; "Legacy variance setting" "randomized variances within limits" string(settings.variance["legacyrandom"][1], ", ", settings.variance["legacyrandom"][2])]
-    elseif any(varkeys .== "legacyFlow") || any(varkeys .== "legacyCurrent") || any(varkeys .== "legacyInjection") || any(varkeys .== "legacyVoltage")
+    elseif "legacyFlow" in varkeys || "legacyCurrent" in varkeys || "legacyInjection" in varkeys || "legacyVoltage" in varkeys
         info = [info; "Legacy variance setting" "variances by measurement type" ""]
     else
         info = [info; "Legacy variance set setting" "" ""]
@@ -339,30 +325,5 @@ function infogenerator(system, settings, measurement, names)
         end
     end
 
-    ################## Export Data ##################
-    group = ["pmuVoltage"; "pmuCurrent"; "legacyFlow"; "legacyCurrent"; "legacyInjection"; "legacyVoltage"]
-    for (k, i) in enumerate(group)
-        if !any(i .== keys(measurement))
-            deleteat!(group, k)
-        end
-    end
-
-    if system.Ngen != 0
-        group = [group; "bus"; "generator"; "branch"; "basePower"]
-        push!(measurement, "generator" => system.generator)
-    else
-        group = [group; "bus"; "branch"; "basePower"]
-    end
-
-    push!(measurement, "bus" => system.bus)
-    push!(measurement, "branch" => system.branch)
-    push!(measurement, "basePower" => system.baseMVA)
-    push!(measurement, "info" => info)
-
-    if !isempty(settings.path)
-        header = h5read(joinpath(system.packagepath, "src/system/header.h5"), "/measurement")
-        savedata(measurement; group = group, header = header, path = settings.path, info = info)
-    end
-
-    return measurement
+    return info
 end

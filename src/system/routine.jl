@@ -102,13 +102,13 @@ end
 ########################################
 #  Read data from h5-file or xlsx-file #
 ########################################
-function readdata(fullpath, extension; type)
+function readdata(fullpath, extension, type)
     read_data = Dict()
 
-    if type == "pf"
+    if type == "power system"
         sheet = ["bus", "branch", "generator", "basePower", "info"]
     end
-    if type == "se"
+    if type == "measurements"
         sheet = ["pmuVoltage", "pmuCurrent", "legacyFlow", "legacyCurrent", "legacyInjection", "legacyVoltage"]
     end
 

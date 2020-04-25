@@ -288,8 +288,14 @@ function runacpf(settings, system)
     end
   end
 
-    results = results_flowac(settings, system, limit, slack, Vc, algtime, iter)
-
+    results, header = results_flowac(settings, system, limit, slack, Vc, algtime, iter)
+    if !isempty(settings.save)
+        group = ["bus" "branch"]
+        if system.Ngen != 0
+            group = [group "generator"]
+        end
+        savedata(results; info = system.info, group = group, header = header, path = settings.save)
+    end
     return results
 end
 
