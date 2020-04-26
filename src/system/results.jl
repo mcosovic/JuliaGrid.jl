@@ -42,7 +42,7 @@ function results_flowdc(settings, system, Ti, slack, algtime)
     if settings.flow
         println("")
         pretty_table(results["branch"], header["branch"], screen_size = (-1,-1), columns_width = [6, 8, 8, 18, 18],
-        alignment=[:r,:r,:r,:r,:r], formatters = ft_printf(["%1.0f","%1.0f","%1.0f","%1.2f","%1.2f"], collect(1:5)))
+            alignment=[:r,:r,:r,:r,:r], formatters = ft_printf(["%1.0f","%1.0f","%1.0f","%1.2f","%1.2f"], collect(1:5)))
     end
 
     ################## DC Generator Display ##################
@@ -82,8 +82,8 @@ function results_flowac(settings, system, limit, slack, Vc, algtime, iter)
             Nl = length(min)
             table = ["Bus" system.generator[min, 1]'; "Generator" min']
             pretty_table(table,
-            noheader = true, alignment = repeat([Symbol(:r)], outer = Nl + 1),
-            formatters = ft_printf(vcat("%s", repeat(["%1.0f"], outer = Nl)), collect(1:1 + Nl)))
+                noheader = true, alignment = repeat([Symbol(:r)], outer = Nl + 1),
+                formatters = ft_printf(vcat("%s", repeat(["%1.0f"], outer = Nl)), collect(1:1 + Nl)))
             println("")
         end
         if !isempty(max)
@@ -91,8 +91,8 @@ function results_flowac(settings, system, limit, slack, Vc, algtime, iter)
             Nl = length(max)
             table = ["Bus" system.generator[max, 1]'; "Generator" max']
             pretty_table(table,
-            noheader = true, alignment = repeat([Symbol(:r)], outer = Nl + 1),
-            formatters = ft_printf(vcat("%s", repeat(["%1.0f"], outer = Nl)), collect(1:1 + Nl)))
+                noheader = true, alignment = repeat([Symbol(:r)], outer = Nl + 1),
+                formatters = ft_printf(vcat("%s", repeat(["%1.0f"], outer = Nl)), collect(1:1 + Nl)))
         end
     end
 
@@ -115,9 +115,9 @@ function results_flowac(settings, system, limit, slack, Vc, algtime, iter)
         h1 = Highlighter((data, i, j)-> (i == slack), background = :red)
         println("")
         pretty_table(results["bus"], header["bus"],
-             screen_size = (-1,-1), highlighters = h1, columns_width = [6, 16, 12, 17, 21, 17, 21, 17, 21, 17, 21],
-             alignment = repeat([Symbol(:r)], outer = 11),
-             formatters = ft_printf(["%1.0f", "%1.4f","%1.4f","%1.2f" ,"%1.2f","%1.2f","%1.2f","%1.2f","%1.2f","%1.2f","%1.2f"], collect(1:11)))
+            screen_size = (-1,-1), highlighters = h1, columns_width = [6, 16, 12, 17, 21, 17, 21, 17, 21, 17, 21],
+            alignment = repeat([Symbol(:r)], outer = 11),
+            formatters = ft_printf(["%1.0f", "%1.4f","%1.4f","%1.2f" ,"%1.2f","%1.2f","%1.2f","%1.2f","%1.2f","%1.2f","%1.2f"], collect(1:11)))
         sum_data = Any["Sum" sum(results["bus"][:, 4:11], dims = 1)]
         pretty_table(sum_data, noheader = true, screen_size = (-1,-1),
             alignment=[:l,:r,:r,:r,:r,:r,:r,:r,:r], columns_width = [40, 17, 21, 17, 21, 17, 21, 17, 21],
@@ -145,12 +145,12 @@ function results_flowac(settings, system, limit, slack, Vc, algtime, iter)
     if settings.flow
         println("")
         pretty_table(results["branch"][:,1:10], header["branch"][:,1:10],
-             screen_size = (-1,-1), columns_width = [6, 8, 8, 17, 21, 17, 21, 21, 17, 21],
-             alignment=[:r,:r,:r,:r,:r,:r,:r,:r,:r,:r],
-             formatters = ft_printf(["%1.0f","%1.0f","%1.0f","%1.2f","%1.2f","%1.2f","%1.2f","%1.2f","%1.2f","%1.2f"], collect(1:10)))
+            screen_size = (-1,-1), columns_width = [6, 8, 8, 17, 21, 17, 21, 21, 17, 21],
+            alignment=[:r,:r,:r,:r,:r,:r,:r,:r,:r,:r],
+            formatters = ft_printf(["%1.0f","%1.0f","%1.0f","%1.2f","%1.2f","%1.2f","%1.2f","%1.2f","%1.2f","%1.2f"], collect(1:10)))
         sum_data = Any["Sum" sum(results["branch"][:, 7:9], dims = 1)]
         pretty_table(sum_data, noheader = true, screen_size = (-1,-1), alignment=[:l,:r,:r,:r], columns_width = [116, 21, 17, 21],
-                    formatters = ft_printf(["%-s","%15.2f","%11.2f","%15.2f"], collect(1:4)))
+            formatters = ft_printf(["%-s","%15.2f","%11.2f","%15.2f"], collect(1:4)))
     end
 
     ################## AC Generator Display ##################
@@ -208,8 +208,8 @@ function infogrid(bus, branch, generator, info, dataname, Nbra, Nbus, Ngen)
             "PV bus" string(pv) "";
             "PQ bus" string(Nbus - pv - 1) "";
             "Shunt element" string(count(x->x != 0, abs.(bus[:, 5]) + abs.(bus[:, 6]))) "";
-            "Generator" string(Ngen) string(trunc(Int, sum(generator[:, 8])), " in-service");
-            "Branch" string(Nbra) string(trunc(Int, sum(branch[:, 12])), " in-service");
+            "Generator" string(Ngen) "$(trunc(Int, sum(generator[:, 8]))) in-service";
+            "Branch" string(Nbra) "$(trunc(Int, sum(branch[:, 12]))) in-service";
             "Transformer" string(Ntra) string(Ntrain, " in-service")]
 
     return info
@@ -245,7 +245,7 @@ function infogenerator(system, settings, measurement, names)
         cnt = 1
         for k in read[i]
             on = trunc(Int, sum(measurement[i][:, k]))
-            info = [info; title[i][cnt] string(on, " in-service") string(size(measurement[i], 1) - on, " out-service")]
+            info = [info; title[i][cnt] "$on in-service" "$(size(measurement[i], 1) - on), out-service"]
             cnt += 1
         end
     end
@@ -271,7 +271,7 @@ function infogenerator(system, settings, measurement, names)
         cnt = 1
         for k in read[i]
             on = trunc(Int, sum(measurement[i][:, k]))
-            info = [info; title[i][cnt] string(on, " in-service") string(size(measurement[i], 1) - on, " out-service")]
+            info = [info; title[i][cnt] "$on in-service" "$(size(measurement[i], 1) - on), out-service"]
             cnt += 1
         end
     end
@@ -281,7 +281,7 @@ function infogenerator(system, settings, measurement, names)
     if "pmuall" in varkeys
         info = [info; "PMU variance setting" "all with same variances" string(settings.variance["pmuall"])]
     elseif "pmurandom" in varkeys
-        info = [info; "PMU variance setting" "randomized variances within limits" string(settings.variance["pmurandom"][1], ", ", settings.variance["pmurandom"][2])]
+        info = [info; "PMU variance setting" "randomized variances within limits" "$(settings.variance["pmurandom"][1]), $(settings.variance["pmurandom"][2])"]
     elseif "pmuVoltage" in varkeys || "pmuCurrent" in varkeys
         info = [info; "PMU variance setting" "variances by measurement type" ""]
     else
@@ -294,7 +294,7 @@ function infogenerator(system, settings, measurement, names)
         cnt = 1
         for k in read[i]
             on = extrema(measurement[i][:, k])
-            info = [info; title[i][cnt] string(on[1], " minimum") string(on[2], " maximum")]
+            info = [info; title[i][cnt] "$(on[1]) minimum" "$(on[2]) maximum"]
             cnt += 1
         end
     end
@@ -320,7 +320,7 @@ function infogenerator(system, settings, measurement, names)
         cnt = 1
         for k in read[i]
             on = extrema(measurement[i][:, k])
-            info = [info; title[i][cnt] string(on[1], " minimum") string(on[2], " maximum")]
+            info = [info; title[i][cnt] "$(on[1]) minimum" "$(on[2]) maximum"]
             cnt += 1
         end
     end

@@ -215,3 +215,15 @@ end
     @test all(results["legacyCurrent"][:, 4] .≈ results["legacyCurrent"][:, 7])
     @test all(results["legacyVoltage"][:, 2] .≈ results["legacyVoltage"][:, 5])
 end
+
+@testset "Throws" begin
+    @test_throws DomainError runpf("case144.jl")
+    @test_throws ErrorException runpf("case14")
+    @test_throws DomainError runpf("case144.h5")
+    @test_throws ErrorException runmg("case14.h5"; runflow = 1, pmuset = ["device"])
+    @test_throws ErrorException runmg("case14.h5"; runflow = 1, pmuset = ["redundancy"])
+    @test_throws ErrorException runmg("case14.h5"; runflow = 1, pmuset = ["Iij" "Dij" 4])
+    @test_throws ErrorException runmg("case14.h5"; runflow = 1, pmuvariance = ["all" -4])
+    @test_throws ErrorException runmg("case14.h5"; runflow = 1, pmuvariance = ["all"])
+    @test_throws ErrorException runmg("case14.h5"; runflow = 1, pmuvariance = ["random" -1 2])
+end

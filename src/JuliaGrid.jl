@@ -67,11 +67,12 @@ function runmg(
     legacyvariance = "",
 )
     system = loadsystem(args)
-    measurement = loadmeasurement(system, runflow)
-    settings = gesettings(runflow, max, stop, reactive, solve, save, pmuset, pmuvariance, legacyset, legacyvariance, measurement)
+    measurement = loadmeasurement(system, pmuvariance, legacyvariance; runflow = runflow)
+    settings = gesettings(pmuset, pmuvariance, legacyset, legacyvariance, measurement; runflow = runflow, save = save)
 
     if settings.runflow == 1
-        flow = runacpf(settings, system)
+        pfsettings = gepfsettings(max, stop, reactive, solve)
+        flow = runacpf(pfsettings, system)
         results = rungenerator(system, settings, measurement; flow = flow)
     else
         results = rungenerator(system, settings, measurement)
@@ -80,8 +81,36 @@ function runmg(
     return results
 end
 
+
 ######################
 #  State Estimation  #
 #####################
+function runse(
+    args...;
+    max::Int64 = 100,
+    stop::Float64 = 1.0e-8,
+    start::String = "flat",
+    bad::Int64 = 0,
+    lav::Int64 = 0,
+    solve::String = "",
+    save::String = "",
+    pmuset = "",
+    pmuvariance = "",
+    legacyset = "",
+    legacyvariance = "",
+)
+
+    system = loadsystem(args)
+    measurement = loadmeasurement(system, pmuvariance, legacyvariance)
+    settings = sesettings(args, max, stop, start, bad, lav, solve, save)
+
+    if !isempty(pmuset) || !isempty(pmuvariance) || !isempty(legacyset) || !isempty(legacyvariance)
+        gensettings = gesettings(pmuset, pmuvariance, legacyset, legacyvariance, measurement)
+        rungenerator(system, gensettings, measurement)
+    end
+    measurement = loadestimation(measurement)
+
+    return measurement, settings
+end
 
 end # JuliaGrid

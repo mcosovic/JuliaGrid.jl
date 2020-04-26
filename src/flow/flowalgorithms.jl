@@ -5,7 +5,7 @@ function newton_raphson(settings, system, Ybus, YbusT, slack, Vc, Pbus, Qbus, Pl
     V = abs.(Vc)
     T = angle.(Vc)
     No = 0
-    converged = 1
+    converged = 0
 
     P = similar(Pbus)
     Q = similar(Pbus)
@@ -194,9 +194,9 @@ function newton_raphson(settings, system, Ybus, YbusT, slack, Vc, Pbus, Qbus, Pl
     end
 
     if converged == 1
-        println(string("AC power flow using Newton-Raphson algorithm converged in ", No, " iterations for stopping condition ", settings.stopping,"."))
+        println("AC power flow using Newton-Raphson algorithm converged in $No iterations with the stop condition $(settings.stopping).")
     else
-        @info(string("AC power flow using Newton-Raphson algorithm did not converge in ", No, " iterations for stopping condition ", settings.stopping,"."))
+        println("AC power flow using Newton-Raphson algorithm did not converge in $No iterations with the stop condition $(settings.stopping).")
     end
 
     @inbounds for i = 1:system.Nbus
@@ -215,7 +215,7 @@ function fast_newton_raphson(system, settings, branchOn, Ybus, YbusT, slack, Vc,
     V = abs.(Vc)
     T = angle.(Vc)
     No = 0
-    converged = 1
+    converged = 0
 
     P = similar(Pload)
     Q = similar(P)
@@ -440,9 +440,9 @@ function fast_newton_raphson(system, settings, branchOn, Ybus, YbusT, slack, Vc,
     end
 
     if converged == 1
-        println(string("AC power flow using fast Newton-Raphson algorithm converged in ", No, " iterations for stopping condition ", settings.stopping,"."))
+        println("AC power flow using fast Newton-Raphson algorithm converged in $No iterations with the stop condition $(settings.stopping).")
     else
-        println(string("AC power flow using fast Newton-Raphson algorithm did not converge in ", No, " iterations for stopping condition ", settings.stopping,"."))
+        println("AC power flow using fastNewton-Raphson algorithm did not converge in $No iterations with the stop condition $(settings.stopping).")
     end
 
     @inbounds for i = 1:system.Nbus
@@ -461,6 +461,7 @@ function gauss_seidel(settings, system, Ybus, YbusT, slack, Vc, Pbus, Qbus, Ploa
     P = similar(Pbus)
     Q = similar(Pbus)
     No = 0
+    converged = 0
     for i = 1:system.Nbus
         P[i] = Pbus[i] - Pload[i] / system.baseMVA
         Q[i] = Qbus[i] - Qload[i] / system.baseMVA
@@ -469,7 +470,6 @@ function gauss_seidel(settings, system, Ybus, YbusT, slack, Vc, Pbus, Qbus, Ploa
     dPqv = 0.0
     dQqv = 0.0
     dPpv = 0.0
-    converged = 0
     while No < settings.maxIter
         eps = 0.0
         No = No + 1
@@ -527,11 +527,13 @@ function gauss_seidel(settings, system, Ybus, YbusT, slack, Vc, Pbus, Qbus, Ploa
             break
         end
     end
+
     if converged == 1
-        println(string("AC power flow using Gauss-Seidel algorithm converged in ", No, " iterations for stopping condition ", settings.stopping,"."))
+        println("AC power flow using Gauss-Seidel algorithm converged in $No iterations with the stop condition $(settings.stopping).")
     else
-        println(string("AC power flow using Gauss-Seidel algorithm did not converge in ", No, " iterations for stopping condition ", settings.stopping,"."))
+        println("AC power flow using Gauss-Seidel algorithm did not converge in $No iterations with the stop condition $(settings.stopping).")
     end
+
     iter += No
 
     return Vc, iter

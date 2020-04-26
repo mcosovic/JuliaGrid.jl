@@ -232,7 +232,7 @@ function runacpf(settings, system)
                         if j == slack
                             for k = 1:system.Nbus
                                 if type[k] == 2
-                                    println(string("Bus ", trunc(Int, system.bus[k, 1]), " is the new slack bus."))
+                                    println("Bus $(trunc(Int, system.bus[k, 1])) is the new slack bus.")
                                     slack = bus[k]
                                     type[k] = 3
                                     settings.reactive[3] = true

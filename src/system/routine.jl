@@ -71,7 +71,7 @@ function savedata(args; group, header, path, info = "")
                 write(file, "info", info)
             end
         end
-        println(string("Data is successfully exported to ", path))
+        println("Data is successfully exported to $path")
     elseif extension == ".xlsx"
         XLSX.openxlsx(path, mode="w") do xf
             for (k, i) in enumerate(group)
@@ -91,9 +91,9 @@ function savedata(args; group, header, path, info = "")
                 sheet["A1"] = info
             end
         end
-        println(string("Data is successfully exported to ", path))
+        println("Data is successfully exported to $path")
     else
-        error("The SAVE data format is not supported.")
+        throw(ErrorException("the SAVE data format is not supported"))
     end
 
 end
@@ -158,7 +158,7 @@ function nextelement(set, current)
     try
         value = set[current + 1]
     catch
-        error("The name-value pair setting is missing.")
+        throw(ErrorException("the name-value pair setting is missing"))
     end
 
     return value
@@ -171,7 +171,7 @@ end
 function datastruct(data, max; var = "")
     Nrow, Ncol = size(data)
     if Ncol < max
-        error(string("Invalid DATA structure, variable " , var, " has incorrect dimension."))
+        throw(DomainError(var, "dimension mismatch"))
     end
 
     return Nrow

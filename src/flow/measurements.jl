@@ -99,9 +99,9 @@ function rungenerator(system, settings, measurement; flow = 0)
     push!(measurement, "branch" => grid["branch"])
     push!(measurement, "basePower" => grid["basePower"])
 
-    if !isempty(settings.path)
+    if !isempty(settings.save)
         header = h5read(joinpath(system.packagepath, "src/system/header.h5"), "/measurement")
-        savedata(measurement; group = group, header = header, path = settings.path, info = info)
+        savedata(measurement; group = group, header = header, path = settings.save, info = info)
     end
 
     return measurement
@@ -137,7 +137,7 @@ function runset(system, settings, measurement, names)
                     measurement[set][:, write[set][pos]] .= 0
                     measurement[set][:, write[set][pos]] .= 1
                 elseif !success && howMany != "no"
-                    error("The name-value pair setting is incorect, deployment measurements according to types failed.")
+                    throw(ErrorException("the name-value pair setting is incorect, deployment measurements according to TYPE failed"))
                 end
             end
         end
@@ -169,11 +169,11 @@ function runset(system, settings, measurement, names)
                     end
                 end
             else
-                error("The name-value pair setting is incorect, deployment measurements according to redundancy failed.")
+                throw(ErrorException("the name-value pair setting is incorect, deployment measurements according to REDUNDANCY failed"))
             end
         end
         if set == "pmudevice"
-            if any(names["pmu"] .== "pmuVoltage") && any(names["pmu"]  .== "pmuCurrent")
+            if "pmuVoltage" in names["pmu"] && "pmuCurrent" in names["pmu"]
                 success = false
                 howMany = settings.set[set]
                 if isa(howMany, Number) && howMany <= size(measurement["pmuVoltage"], 1)
@@ -205,14 +205,14 @@ function runset(system, settings, measurement, names)
                         end
                     end
                 else
-                    error("The name-value pair setting is incorect, deployment measurements according to device number failed.")
+                    throw(ErrorException("the name-value pair setting is incorect, deployment measurements according to DEVICE failed"))
                 end
             else
-               error("The complete PMU measurement DATA is not found.")
+                throw(ErrorException("the complete PMU measurement DATA is not found"))
            end
         end
         if set == "pmuoptimal"
-            if any(names["pmu"] .== "pmuVoltage") && any(names["pmu"]  .== "pmuCurrent")
+            if "pmuVoltage" in names["pmu"] && "pmuCurrent" in names["pmu"]
                 Nvol = size(measurement["pmuVoltage"], 1)
                 Ncurr = size(measurement["pmuCurrent"], 1)
                 if Nvol == system.Nbus && Ncurr == 2 * system.Nbra
@@ -259,10 +259,10 @@ function runset(system, settings, measurement, names)
                         end
                     end
                 else
-                    error("The optimal algorithm requires the concordant number of buses and branches, and corresponding measurements.")
+                    throw(ErrorException("the optimal algorithm requires the concordant number of buses and branches, and corresponding measurements"))
                 end
             else
-                error("The complete PMU measurement DATA is not found.")
+                throw(ErrorException("the complete PMU measurement DATA is not found"))
             end
         end
     end
@@ -302,7 +302,7 @@ function runvariance(system, settings, measurement, names)
                     end
                 end
             else
-                error("The variance must be positive number.")
+                throw(ErrorException("the variance value must be positive number"))
             end
         end
         if var in ["pmuVoltage", "pmuCurrent", "legacyFlow", "legacyCurrent", "legacyInjection", "legacyVoltage"]
@@ -311,7 +311,7 @@ function runvariance(system, settings, measurement, names)
                     if isa(howMany, Number) && howMany > 0
                         measurement[var][:, write[var][pos]] .= howMany
                     else
-                        error("The variance must be positive number.")
+                        throw(ErrorException("the variance value must be positive number"))
                     end
                 end
             end
