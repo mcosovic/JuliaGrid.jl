@@ -156,10 +156,9 @@ end
     @test all(results["pmuVoltage"][:, 4] .== 1) &&  all(results["pmuVoltage"][:, 7] .== 1) && all(results["pmuCurrent"][:, 6] .== 1) && all(results["pmuCurrent"][:, 9] .== 1)
 
     results = runmg("case14.h5"; runflow = 1, pmuset = ["Vi" 0 "Iij" "all" "Dij" 4])
-    @test all(results["pmuVoltage"][:, 4] .== 0) &&  all(results["pmuVoltage"][:, 7] .== 0)
+    @test all(results["pmuVoltage"][:, 2:7] .== 0) && all(results["pmuCurrent"][:, [4, 5, 7, 8]] .== 0)
     @test all(results["pmuCurrent"][:, 6] .== 1) && sum(results["pmuCurrent"][:, 9]) == 4
-    @test all(results["pmuVoltage"][:, 2] .== results["pmuVoltage"][:, 8]) && all(results["pmuVoltage"][:, 5] .== results["pmuVoltage"][:, 9])
-
+    
     results = runmg("case14.h5"; runflow = 1, pmuvariance = ["all" 1])
     @test all(results["pmuVoltage"][:, 3] .== 1) &&  all(results["pmuVoltage"][:, 6] .== 1) && all(results["pmuCurrent"][:, 5] .== 1) && all(results["pmuCurrent"][:, 8] .== 1)
 

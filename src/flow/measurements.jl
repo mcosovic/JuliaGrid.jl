@@ -36,8 +36,8 @@ function rungenerator(system, settings, measurement; flow = 0)
             measurement["pmuCurrent"][i + system.Nbra, 3] = fromi[i]
             measurement["pmuCurrent"][i, 10] = Iij[i]
             measurement["pmuCurrent"][i + system.Nbra, 10] = Iji[i]
-            measurement["pmuCurrent"][i, 11] = Dij[i]
-            measurement["pmuCurrent"][i + system.Nbra, 11] = Dji[i]
+            measurement["pmuCurrent"][i, 11] = (pi / 180) * Dij[i]
+            measurement["pmuCurrent"][i + system.Nbra, 11] = (pi / 180) * Dji[i]
         end
 
         for i = 1:system.Nbus
@@ -63,22 +63,12 @@ function rungenerator(system, settings, measurement; flow = 0)
             push!(names["legacy"], type)
         end
     end
+
     measurement = runset(system, settings, measurement, names)
     measurement = runvariance(system, settings, measurement, names)
-
-    write = Dict("pmuVoltage" => [2 8 3; 5 9 6], "pmuCurrent" => [4 10 5; 7 11 8],
-                "legacyFlow" => [4 10 5; 7 11 8], "legacyCurrent" => [4 7 5],
-                "legacyInjection" => [2 8 3; 5 9 6], "legacyVoltage" => [2 5 3])
-    for i in keys(measurement)
-        for row in eachrow(write[i])
-            dim = size(measurement[i], 1)
-            measurement[i][:, row[1]] .= measurement[i][:, row[2]] .+ measurement[i][:, row[3]].^(1/2) .* randn!(zeros(dim))
-        end
-    end
-
     info = infogenerator(system, settings, measurement, names)
-    push!(measurement, "info" => info)
 
+    push!(measurement, "info" => info)
     grid = readdata(system.path, system.extension, "power system")
 
     group = ["pmuVoltage"; "pmuCurrent"; "legacyFlow"; "legacyCurrent"; "legacyInjection"; "legacyVoltage"]
@@ -226,7 +216,8 @@ function runset(system, settings, measurement, names)
                             numbering = true
                         end
                     end
-                    from, to = numbering_branch(fromi, toi, busi, system.Nbra, system.Nbus, system.bus, numbering)
+                    from = renumber(fromi, system.Nbra, busi, bus, system.Nbus, numbering)
+                    to = renumber(toi, system.Nbra, busi, bus, system.Nbus, numbering)
 
                     A = sparse([bus; from; to], [bus; to; from], fill(1, system.Nbus + 2 * system.Nbra), system.Nbus, system.Nbus)
                     f  = fill(1, system.Nbus);
@@ -275,9 +266,9 @@ end
 #  Produce measurement variances  #
 ###################################
 function runvariance(system, settings, measurement, names)
-    write = Dict("pmuVoltage" => [3, 6], "pmuCurrent" => [5, 8],
-                 "legacyFlow" => [5, 8], "legacyCurrent" => 5,
-                 "legacyInjection" => [3, 6], "legacyVoltage" => 3)
+    write = Dict("pmuVoltage" => [2 8 3; 5 9 6], "pmuCurrent" => [4 10 5; 7 11 8],
+                    "legacyFlow" => [4 10 5; 7 11 8], "legacyCurrent" => [4 7 5],
+                    "legacyInjection" => [2 8 3; 5 9 6], "legacyVoltage" => [2 5 3])
     type = Dict("pmuall" => "pmu",  "legacyall" => "legacy", "pmurandom" => "pmu",  "legacyrandom" => "legacy")
 
     for var in keys(settings.variance)
@@ -285,7 +276,10 @@ function runvariance(system, settings, measurement, names)
             howMany = settings.variance[var]
             if isa(howMany, Number) && howMany > 0
                 for i in names[type[var]]
-                    measurement[i][:, write[i]] .= howMany
+                    for row in eachrow(write[i])
+                        measurement[i][:, row[3]] .= howMany
+                        measurement[i][:, row[1]] .= measurement[i][:, row[2]] .+ howMany.^(1/2) .* randn!(zeros(size(measurement[i], 1)))
+                    end
                 end
             else
                 error("The variance must be positive number.")
@@ -297,8 +291,10 @@ function runvariance(system, settings, measurement, names)
                 min = minimum(howMany)
                 max = maximum(howMany)
                 for i in names[type[var]]
-                    for k in write[i]
-                        measurement[i][:, k] .= min .+ (max - min) .* rand(size(measurement[i], 1))
+                    for row in eachrow(write[i])
+                        measurement[i][:, row[3]] .= min .+ (max - min) .* rand(size(measurement[i], 1))
+                        measurement[i][:, row[1]] .= measurement[i][:, row[2]] .+ measurement[i][:, row[3]].^(1/2) .* randn!(zeros(size(measurement[i], 1)))
+
                     end
                 end
             else
@@ -309,7 +305,8 @@ function runvariance(system, settings, measurement, names)
             for (pos, howMany) in enumerate(settings.variance[var])
                 if howMany != "no"
                     if isa(howMany, Number) && howMany > 0
-                        measurement[var][:, write[var][pos]] .= howMany
+                        measurement[var][:, write[var][pos, 3]] .= howMany
+                        measurement[var][:, write[var][pos, 1]] .= measurement[var][:, write[var][pos, 2]] .+ howMany.^(1/2) .* randn!(zeros(size(measurement[var], 1)))
                     else
                         throw(ErrorException("the variance value must be positive number"))
                     end
@@ -339,10 +336,10 @@ function view_generator(bus, branch)
     Qij = @view(branch[:, 5])
     Pji = @view(branch[:, 6])
     Qji = @view(branch[:, 7])
-    Iij = @view(branch[:, 10])
-    Dij = @view(branch[:, 11])
-    Iji = @view(branch[:, 12])
-    Dji = @view(branch[:, 13])
+    Iij = @view(branch[:, 11])
+    Dij = @view(branch[:, 12])
+    Iji = @view(branch[:, 13])
+    Dji = @view(branch[:, 14])
 
     return busi, Vi, Ti, Pinj, Qinj, branchi, fromi, toi, Pij, Qij, Pji, Qji, Iij, Dij, Iji, Dji
 end

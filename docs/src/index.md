@@ -7,11 +7,11 @@ The software package, among other things, includes:
  - AC power flow analysis,
  - DC power flow analysis,
  - non-linear state estimation (work in progress),
- - linear DC state estimation (work in progress),
+ - linear DC state estimation,
  - linear state estimation with PMUs only (work in progress),
- - least absolute value state estimation (work in progress),
+ - least absolute value state estimation (only for the DC state estimation),
  - optimal PMU placement,
- - bad data processing (work in progress).
+ - bad data processing (only for the DC state estimation).
 ---
 
 ### Main Features
@@ -26,7 +26,7 @@ Features supported by JuliaGrid can be categorised into three main groups:
 ### Installation
 JuliaGrid requires Julia 1.2 and higher. To install JuliaGrid package, run the following command:
 ```julia-repl
-pkg> add https://github.com/mcosovic/JuliaGrid
+pkg> add https://github.com/mcosovic/JuliaGrid.jl
 ```
 
 To load the package, use the command:
@@ -46,6 +46,14 @@ julia> results = runpf("nr", "case14.xlsx", "main"; max = 20, stop = 1.0e-8)
 ###  Quick Start Measurement Generator
 ```julia-repl
 julia> results = rungen("case14.h5"; pmuset = "optimal", pmuvariance = ["all" 1e-5])
+```
+```julia-repl
+julia> results = rungen("case14.h5"; legacyset = ["redundancy" 3.1], legacyvariance = ["all" 1e-4])
+```
+
+###  Quick State Estimation (only DC)
+```julia-repl
+julia> results = runse("case14.h5"; pmuset = "optimal", pmuvariance = ["all" 1e-5])
 ```
 ```julia-repl
 julia> results = rungen("case14.h5"; legacyset = ["redundancy" 3.1], legacyvariance = ["all" 1e-4])

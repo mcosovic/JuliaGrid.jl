@@ -2,6 +2,7 @@ module JuliaGrid
 
 export runpf
 export runmg
+export runse
 
 using SparseArrays
 using HDF5
@@ -10,7 +11,7 @@ using PrettyTables
 using CSV, XLSX
 using LinearAlgebra
 using Random
-using JuMP, GLPK
+using JuMP, GLPK, Ipopt
 
 
 ##############
@@ -24,6 +25,8 @@ include("flow/flowdc.jl")
 include("flow/flowac.jl")
 include("flow/flowalgorithms.jl")
 include("flow/measurements.jl")
+
+include("estimation/estimationdc.jl")
 
 
 ################
@@ -90,8 +93,8 @@ function runse(
     max::Int64 = 100,
     stop::Float64 = 1.0e-8,
     start::String = "flat",
-    bad::Int64 = 0,
-    lav::Int64 = 0,
+    bad = "",
+    lav = "",
     solve::String = "",
     save::String = "",
     pmuset = "",
@@ -104,13 +107,13 @@ function runse(
     measurement = loadmeasurement(system, pmuvariance, legacyvariance)
     settings = sesettings(args, max, stop, start, bad, lav, solve, save)
 
-    if !isempty(pmuset) || !isempty(pmuvariance) || !isempty(legacyset) || !isempty(legacyvariance)
-        gensettings = gesettings(pmuset, pmuvariance, legacyset, legacyvariance, measurement)
-        rungenerator(system, gensettings, measurement)
-    end
-    measurement = loadestimation(measurement)
+    gensettings = gesettings(pmuset, pmuvariance, legacyset, legacyvariance, measurement)
+    rungenerator(system, gensettings, measurement)
 
-    return measurement, settings
+    measurement = loadestimation(measurement)
+    results = rundcse(settings, system, measurement)
+
+    return results
 end
 
 end # JuliaGrid

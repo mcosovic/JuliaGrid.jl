@@ -1,5 +1,5 @@
 ######################
-#  Struct Variables  #
+#  Struct variables  #
 ######################
 struct PowerSystem
     bus::Array{Float64,2}
@@ -44,10 +44,16 @@ struct EstimationSettings
     maxIter::Int64
     stopping::Float64
     start::String
-    bad::Int64
-    lav::Int64
+    bad::Bool
+    badtreshold::Float64
+    badpass::Int64
+    badcritical::Float64
+    lav::Bool
+    lavoptimize::String
+    lavconstraint::String
     solve::String
     save::String
+    saveextension::String
 end
 
 struct StateEstimation
@@ -57,6 +63,13 @@ struct StateEstimation
     legacyCurrent::Array{Float64,2}
     legacyInjection::Array{Float64,2}
     legacyVoltage::Array{Float64,2}
+    pmuNv::Int64
+    pmuNc::Int64
+    legacyNf::Int64
+    legacyNc::Int64
+    legacyNi::Int64
+    legacyNv::Int64
+    info::Union{Array{String,1}, Array{String,2}}
 end
 
 
@@ -256,7 +269,7 @@ function gesettings(pmuset, pmuvariance, legacyset, legacyvariance, measurement;
     set = Dict()
     variance = Dict()
 
-    ################## PMU Set ##################
+    ################## PMU set ##################
     if !isa(pmuset, Array)
         pmuset = [pmuset]
     end
@@ -305,7 +318,7 @@ function gesettings(pmuset, pmuvariance, legacyset, legacyvariance, measurement;
         end
     end
 
-    ################## Legacy Set ##################
+    ################## Legacy set ##################
     if !isa(legacyset, Array)
         legacyset = [legacyset]
     end
@@ -366,7 +379,7 @@ function gesettings(pmuset, pmuvariance, legacyset, legacyvariance, measurement;
         end
     end
 
-    ################## PMU Variance ##################
+    ################## PMU variance ##################
     onebyone = false
     all = false
     for i in pmuvariance
@@ -426,7 +439,7 @@ function gesettings(pmuset, pmuvariance, legacyset, legacyvariance, measurement;
         end
     end
 
-    ################## Legacy Variance ##################
+    ################## Legacy variance ##################
     onebyone = false
     all = false
     for i in legacyvariance
@@ -505,13 +518,20 @@ end
 ###############################
 #  State estimation settings  #
 ###############################
-function sesettings(args, max, stop, start, bad, lav, solve, save)
+function sesettings(args, max, stop, start, badset, lavset, solve, save)
     algorithm = "false"
     main = false; flow = false; estimate = false; error = false
+    lav = false; bad = false
 
     for i in args
         if i in ["dc", "nonlinear"]
             algorithm = i
+        end
+        if i == "lav"
+            lav = true
+        end
+        if i == "bad"
+            bad = true
         end
         if i == "main"
             main = true
@@ -532,6 +552,36 @@ function sesettings(args, max, stop, start, bad, lav, solve, save)
         @info("Invalid state estimation METHOD key. The algorithm proceeds with the nonlinear state estimation.")
     end
 
+    badtreshold = 3.0; badpass = 1; badcritical = 1e-10
+    if !isempty(badset)
+        bad = true
+        for (k, i) in enumerate(badset)
+            if i == "treshold"
+                badtreshold = nextelement(badset, k)
+            end
+            if i == "pass"
+                badpass = nextelement(badset, k)
+            end
+            if i == "critical"
+                badcritical = nextelement(badset, k)
+            end
+        end
+    end
+
+    lavoptimize = "GLPK"; lavconstraint = "equality"
+    if !isempty(lavset)
+        lav = true
+        for i in lavset
+            if i == "Ipopt"
+                lavoptimize = "Ipopt"
+            end
+            if i == "inequality"
+                lavconstraint = "inequality"
+            end
+        end
+    end
+
+    saveextension = ""
     if !isempty(save)
         path = dirname(save)
         data = basename(save)
@@ -539,10 +589,12 @@ function sesettings(args, max, stop, start, bad, lav, solve, save)
             dataname = join(replace(split(system.dataname, ""), "."=>""))
             data = string(dataname, "_results", system.extension)
         end
+        saveextension = match(r"\.[A-Za-z0-9]+$", data).match
         save = joinpath(path, data)
     end
 
-    return EstimationSettings(algorithm, main, flow, estimate, error, max, stop, start, bad, lav, solve, save)
+    return EstimationSettings(algorithm, main, flow, estimate, error, max, stop, start,
+                bad, badtreshold, badpass, badcritical, lav, lavoptimize, lavconstraint, solve, save, saveextension)
 end
 
 
@@ -556,6 +608,8 @@ function loadestimation(measurement)
     legacyCurrent = zeros(1, 7)
     legacyInjection = zeros(1, 9)
     legacyVoltage = zeros(1, 5)
+    info = Array{String}(undef, 0)
+
     pmuNv = 0; pmuNc = 0; legacyNf = 0; legacyNc = 0; legacyNi = 0; legacyNv = 0
 
     if !any(keys(measurement) .== ["pmuVoltage" "pmuCurrent" "legacyFlow" "legacyCurrent" "legacyInjection" "legacyVoltage"])
@@ -565,23 +619,33 @@ function loadestimation(measurement)
     for i in keys(measurement)
         if i == "pmuVoltage"
            pmuVoltage = measurement[i]
+           pmuNv = size(pmuVoltage, 1)
         end
         if i == "pmuCurrent"
             pmuCurrent = measurement[i]
+            pmuNc = size(pmuCurrent, 1)
         end
         if i == "legacyFlow"
             legacyFlow = measurement[i]
+            legacyNf = size(legacyFlow, 1)
         end
         if i == "legacyCurrent"
             legacyCurrent = measurement[i]
+            legacyNc = size(legacyCurrent, 1)
         end
         if i == "legacyInjection"
             legacyInjection = measurement[i]
+            legacyNi = size(legacyInjection, 1)
         end
         if i == "legacyVoltage"
             legacyVoltage = measurement[i]
+            legacyNv = size(legacyVoltage, 1)
+        end
+        if i == "info"
+            info = measurement[i]
         end
     end
 
-    return StateEstimation(pmuVoltage, pmuCurrent, legacyFlow, legacyCurrent, legacyInjection, legacyVoltage)
+    return StateEstimation(pmuVoltage, pmuCurrent, legacyFlow, legacyCurrent, legacyInjection, legacyVoltage,
+        pmuNv, pmuNc, legacyNf, legacyNc, legacyNi, legacyNv, info)
 end

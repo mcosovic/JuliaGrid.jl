@@ -1,12 +1,12 @@
 ## JuliaGrid
 
-[![Documentation](https://github.com/mcosovic/JuliaGrid.jl/workflows/Documentation/badge.svg)](https://mcosovic.github.io/JuliaGrid.jl/dev/) ![Build](https://github.com/mcosovic/JuliaGrid.jl/workflows/Build/badge.svg)
+[![Documentation](https://github.com/mcosovic/JuliaGrid.jl/workflows/Documentation/badge.svg)](https://mcosovic.github.io/JuliaGrid.jl/stable/) ![Build](https://github.com/mcosovic/JuliaGrid.jl/workflows/Build/badge.svg)
 
-<a href="https://mcosovic.github.io/JuliaGrid.jl/dev/"><img align="right" width="145" src="/docs/src/assets/logo2.png" /></a>
+<a href="https://mcosovic.github.io/JuliaGrid.jl/stable/"><img align="right" width="145" src="/docs/src/assets/logo2.png" /></a>
 
 JuliaGrid is an open-source, easy-to-use simulation tool/solver for researchers and educators provided as a Julia package, with source code released under MIT License. JuliaGrid is inspired by the Matpower, an open-source steady-state power system solver,  and allows a variety of display and manipulation options.
 
-We have tested and verified simulation tool using different scenarios to the best of our ability. As a user of this simulation tool, you can help us to improve future versions, we highly appreciate your feedback about any errors, inaccuracies, and bugs. For more information, please visit [documentation](https://mcosovic.github.io/JuliaGrid.jl/dev/) site.
+We have tested and verified simulation tool using different scenarios to the best of our ability. As a user of this simulation tool, you can help us to improve future versions, we highly appreciate your feedback about any errors, inaccuracies, and bugs. For more information, please visit [documentation](https://mcosovic.github.io/JuliaGrid.jl/stable/) site.
 
 The software package provides the solution of the AC and DC power flow, non-linear and DC state estimation (work in progress), as well as the state estimation with PMUs (work in progress), with standalone measurement generator.
 
@@ -17,7 +17,7 @@ The software package provides the solution of the AC and DC power flow, non-line
 ### Installation
 The package requires Julia 1.2 and higher, to install `JuliaGrid` package, you can run the following:
 ```
-pkg> add https://github.com/mcosovic/JuliaGrid
+pkg> add https://github.com/mcosovic/JuliaGrid.jl
 ```
 
 ###  Quick Start Power Flow
@@ -34,6 +34,14 @@ julia> results = runmg("case14.xlsx"; pmuset = "optimal")
 ```
 ```julia-repl
 julia> results = runmg("case14.h5"; legacyset = "all", pmuvariance = ["all" 1e-5])
+```
+
+###  Quick Start State Estimation (DC only)
+```julia-repl
+julia> results = runse("case14se.xlsx", "dc", "main", "estimate", "error", "flow")
+```
+```julia-repl
+julia> results = runse("case14se.xlsx", "dc"; bad = ["pass" 3 "threshold" 2])
 ```
 
 ###  Changelog

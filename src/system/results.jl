@@ -1,5 +1,5 @@
 ##########################
-#  DC dower flow results #
+#  DC power flow results #
 ##########################
 function results_flowdc(settings, system, Ti, slack, algtime)
     println(string("Execution time: ", (@sprintf "%.4f" algtime * 1000), " (ms)"))
@@ -10,7 +10,7 @@ function results_flowdc(settings, system, Ti, slack, algtime)
         push!(results, "generator" => fill(0.0, system.Ngen, 2))
     end
 
-    ################## DC Main Display ##################
+    ################## DC main results ##################
     for i = 1:system.Nbus
         results["bus"][i, 1] = system.bus[i, 1]
         results["bus"][i, 2] = 180 * Ti[i] / pi
@@ -31,7 +31,7 @@ function results_flowdc(settings, system, Ti, slack, algtime)
             alignment=[:l,:r,:r,:r,:r], formatters = ft_printf(["%-s","%15.2f","%11.2f","%11.2f","%13.2f"], collect(1:5)))
     end
 
-    ################## DC Flow Display ##################
+    ################## DC flow results ##################
     for i = 1:system.Nbra
         results["branch"][i, 1] = system.branch[i, 1]
         results["branch"][i, 2] = system.branch[i, 2]
@@ -45,7 +45,7 @@ function results_flowdc(settings, system, Ti, slack, algtime)
             alignment=[:r,:r,:r,:r,:r], formatters = ft_printf(["%1.0f","%1.0f","%1.0f","%1.2f","%1.2f"], collect(1:5)))
     end
 
-    ################## DC Generator Display ##################
+    ################## DC generator results ##################
     for i = 1:system.Ngen
         results["generator"][i, 1] = system.generator[i, 1]
         results["generator"][i, 2] = system.baseMVA * system.generator[i, 2]
@@ -61,7 +61,7 @@ end
 
 
 ###########################
-#  AC dower flow results  #
+#  AC power flow results  #
 ###########################
 function results_flowac(settings, system, limit, slack, Vc, algtime, iter)
     println(string("Execution time: ", (@sprintf "%.4f" algtime * 1000), " (ms)"))
@@ -72,7 +72,7 @@ function results_flowac(settings, system, limit, slack, Vc, algtime, iter)
         push!(results, "generator" => fill(0.0, system.Ngen, 3))
     end
 
-    ################## AC Limit Display ##################
+    ################## AC limit results ##################
     if settings.reactive[1]
         min = findall(x -> x == 2, limit)
         max = findall(x -> x == 3, limit)
@@ -96,7 +96,7 @@ function results_flowac(settings, system, limit, slack, Vc, algtime, iter)
         end
     end
 
-    ################## AC Main Display ##################
+    ################## AC main results ##################
     for i = 1:system.Nbus
         results["bus"][i, 1] = system.bus[i, 1]
         results["bus"][i, 2] = abs(Vc[i])
@@ -124,7 +124,7 @@ function results_flowac(settings, system, limit, slack, Vc, algtime, iter)
             formatters = ft_printf(["%-s","%15.2f","%15.2f","%11.2f","%15.2f","%11.2f","%15.2f","%13.2f","%15.2f"], collect(1:9)))
     end
 
-    ################## AC Flow Display ##################
+    ################## AC flow results ##################
     for i = 1:system.Nbra
         results["branch"][i, 1] = system.branch[i, 1]
         results["branch"][i, 2] = system.branch[i, 2]
@@ -153,7 +153,7 @@ function results_flowac(settings, system, limit, slack, Vc, algtime, iter)
             formatters = ft_printf(["%-s","%15.2f","%11.2f","%15.2f"], collect(1:4)))
     end
 
-    ################## AC Generator Display ##################
+    ################## AC generator results ##################
     for i = 1:system.Ngen
         results["generator"][i, 1] = system.generator[i, 1]
         results["generator"][i, 2] = system.baseMVA * system.generator[i, 2]
@@ -223,7 +223,7 @@ function infogenerator(system, settings, measurement, names)
     setkeys = keys(settings.set)
     varkeys = keys(settings.variance)
 
-    ################## PMU Set ##################
+    ################## PMU set ##################
     info = [system.info; "" "" ""]
     if "pmuall" in setkeys
         info = [info; "PMU set setting" "all measurements adjust in-service" ""]
@@ -245,12 +245,12 @@ function infogenerator(system, settings, measurement, names)
         cnt = 1
         for k in read[i]
             on = trunc(Int, sum(measurement[i][:, k]))
-            info = [info; title[i][cnt] "$on in-service" "$(size(measurement[i], 1) - on), out-service"]
+            info = [info; title[i][cnt] "$on in-service" "$(size(measurement[i], 1) - on) out-service"]
             cnt += 1
         end
     end
 
-    ################## Legacy Set ##################
+    ################## Legacy set ##################
     info = [info; "" "" ""]
     if "legacyall" in setkeys
         info = [info; "Legacy set setting" "all measurements adjust in-service" ""]
@@ -271,12 +271,12 @@ function infogenerator(system, settings, measurement, names)
         cnt = 1
         for k in read[i]
             on = trunc(Int, sum(measurement[i][:, k]))
-            info = [info; title[i][cnt] "$on in-service" "$(size(measurement[i], 1) - on), out-service"]
+            info = [info; title[i][cnt] "$on in-service" "$(size(measurement[i], 1) - on) out-service"]
             cnt += 1
         end
     end
 
-    ################## PMU Variance ##################
+    ################## PMU variance ##################
     info = [info; "" "" ""]
     if "pmuall" in varkeys
         info = [info; "PMU variance setting" "all with same variances" string(settings.variance["pmuall"])]
@@ -299,7 +299,7 @@ function infogenerator(system, settings, measurement, names)
         end
     end
 
-    ################## Legacy Variance ##################
+    ################## Legacy variance ##################
     info = [info; "" "" ""]
     if "legacyall" in varkeys
         info = [info; "Legacy variance setting" "all with same variances" string(settings.variance["legacyall"])]
@@ -326,4 +326,257 @@ function infogenerator(system, settings, measurement, names)
     end
 
     return info
+end
+
+
+################################
+#  DC state estimation results #
+################################
+function results_estimationdc(settings, system, Ti, slack, algtime, measurement, Nmeasur, branchPij, busPi, busTi, savebad)
+    println(string("Execution time: ", (@sprintf "%.4f" algtime * 1000), " (ms)"))
+    header = h5read(joinpath(system.packagepath, "src/system/header.h5"), "/estimationdc")
+
+    dimension = [0, 0]
+    exact = false
+    if size(measurement.pmuVoltage, 2) == 9 && size(measurement.legacyFlow, 2) == 11 && size(measurement.legacyInjection, 2) == 9
+        exact = true
+        dimension = [6, 3, 3]
+        errordes = header["errordes"]
+    else
+        dimension = [4, 3, 1]
+        errordes = header["errordesno"]
+    end
+
+    ################## DC bad data results ##################
+    N = 0
+    labelbad = Array{String}(undef, size(savebad, 1), 2)
+    if settings.bad && !isempty(savebad)
+        for i = 1:measurement.legacyNv
+            if measurement.pmuVoltage[i, 7] == 1
+                N += 1
+                if N in savebad[:, 1]
+                    measurement.pmuVoltage[i, 7] = 0
+                    idx = findfirst(x->x==N, savebad[:, 1])
+                    labelbad[idx, 1] = "PMU"
+                    labelbad[idx, 2] = "T$(trunc(Int, measurement.legacyInjection[i, 1]))"
+                    Nmeasur -= 1
+                end
+            end
+        end
+        for i = 1:measurement.legacyNf
+            if measurement.legacyFlow[i, 6] == 1
+                N += 1
+                if N in savebad[:, 1]
+                    measurement.legacyFlow[i, 6] = 0
+                    idx = findfirst(x->x==N, savebad[:, 1])
+                    labelbad[idx, 1] = "Legacy"
+                    labelbad[idx, 2] = "P$(trunc(Int, measurement.legacyFlow[i, 2])),$(trunc(Int, measurement.legacyFlow[i, 3]))"
+                    Nmeasur -= 1
+                end
+            end
+        end
+        for i = 1:measurement.legacyNi
+            if measurement.legacyInjection[i, 4] == 1
+                N += 1
+                if N in savebad[:, 1]
+                    measurement.legacyInjection[i, 4] = 0
+                    idx = findfirst(x->x==N, savebad[:, 1])
+                    labelbad[idx, 1] = "Legacy"
+                    labelbad[idx, 2] = "P$(trunc(Int, measurement.legacyInjection[i, 1]))"
+                    Nmeasur -= 1
+                end
+            end
+        end
+
+        println("")
+        pass = collect(1:size(savebad, 1))
+        headerbad = ["Algorithm Pass" "Type" "Suspected Bad Data" "Normalized Residual" "Status"]
+        pretty_table([pass labelbad savebad[:, 2:end]], headerbad, screen_size = (-1,-1), columns_width = [15, 10, 20, 20, 10],
+            alignment=[:l,:l,:l,:r,:r], formatters = ft_printf(["%1.0f", "%-s","%-s","%1.4e","%-s"], collect(1:5)))
+    end
+
+    estimate = zeros(Nmeasur, dimension[1])
+    label = Array{String}(undef, Nmeasur, dimension[2])
+    error = zeros(dimension[3], 3)
+    bus = fill(0.0, system.Nbus, 3)
+    branch = fill(0.0, system.Nbra, 5)
+
+    ################## DC main results ##################
+    for i = 1:system.Nbus
+        bus[i, 1] = system.bus[i, 1]
+        bus[i, 2] = 180 * Ti[i] / pi
+        bus[i, 3] = system.baseMVA * system.bus[i, 11]
+    end
+    if settings.main
+        h1 = Highlighter((data, i, j) -> (i == slack),  background = :blue)
+        println("")
+        pretty_table(bus, header["bus"], screen_size = (-1,-1), alignment = [:r,:r,:r],
+            highlighters = h1, columns_width = [6, 18, 18],
+            formatters = ft_printf(["%1.0f","%1.4f","%1.2f"], collect(1:3)))
+
+        sum_data = Any["Sum" sum(bus[:, 3], dims = 1)]
+        pretty_table(sum_data, noheader = true, screen_size = (-1,-1), columns_width = [27, 18],
+            alignment=[:l,:r], formatters = ft_printf(["%-s","%15.2f"], [1, 2]))
+    end
+
+    ################## DC flow results ##################
+    for i = 1:system.Nbra
+        branch[i, 1] = system.branch[i, 1]
+        branch[i, 2] = system.branch[i, 2]
+        branch[i, 3] = system.branch[i, 3]
+        branch[i, 4] = system.baseMVA * system.branch[i, 4]
+        branch[i, 5] = -system.baseMVA * system.branch[i, 4]
+    end
+    if settings.flow
+        println("")
+        pretty_table(branch, header["branch"], screen_size = (-1,-1), columns_width = [6, 8, 8, 18, 18],
+            alignment=[:r,:r,:r,:r,:r], formatters = ft_printf(["%1.0f","%1.0f","%1.0f","%1.2f","%1.2f"], collect(1:5)))
+    end
+
+
+    ################## DC estimate and error results ##################
+    idx = 1
+    scaleTi = 180 / pi
+    for i = 1:measurement.pmuNv
+        if measurement.pmuVoltage[i, 7] == 1
+            label[idx, 1] = "PMU"
+            label[idx, 2] = "T$(trunc(Int, measurement.legacyInjection[i, 1]))"
+            label[idx, 3] = "deg"
+
+            estimate[idx, 1] = bus[busTi[i], 2]
+            estimate[idx, 2] = 180 * measurement.pmuVoltage[i, 5] / pi
+            estimate[idx, 3] = abs(estimate[idx, 1] - estimate[idx, 2])
+
+            error[1, 1] += estimate[idx, 3] / (Nmeasur * scaleTi)
+            error[1, 2] += estimate[idx, 3]^2 / (Nmeasur * scaleTi^2)
+            error[1, 3] += estimate[idx, 3]^2 / (measurement.pmuVoltage[i, 6] * scaleTi^2)
+
+            if exact
+                estimate[idx, 4] = 180 * measurement.pmuVoltage[i, 9] / pi
+                estimate[idx, 5] = abs(estimate[idx, 1] - estimate[idx, 4])
+                estimate[idx, 6] = 180 * measurement.pmuVoltage[i, 6]  / pi
+
+                error[2, 1] += estimate[idx, 5] / (Nmeasur * scaleTi)
+                error[2, 2] += estimate[idx, 5]^2 / (Nmeasur * scaleTi^2)
+                error[2, 3] += estimate[idx, 5]^2 / (measurement.pmuVoltage[i, 6] * scaleTi^2)
+            else
+                estimate[idx, 4] = 180 * measurement.pmuVoltage[i, 6] / pi
+            end
+            idx += 1
+        end
+    end
+    for i = 1:measurement.legacyNf
+        if measurement.legacyFlow[i, 6] == 1
+            label[idx, 1] = "Legacy"
+            label[idx, 2] = "P$(trunc(Int, measurement.legacyFlow[i, 2])),$(trunc(Int, measurement.legacyFlow[i, 3]))"
+            label[idx, 3] = "MW"
+
+            k = branchPij[i]
+            if measurement.legacyFlow[i, 2] == system.branch[k, 2] && measurement.legacyFlow[i, 3] == system.branch[k, 3]
+                estimate[idx, 1] = branch[k, 4]
+            else
+                estimate[idx, 1] = branch[k, 5]
+            end
+            estimate[idx, 2] = measurement.legacyFlow[i, 4] * system.baseMVA
+            estimate[idx, 3] = abs(estimate[idx, 1] - estimate[idx, 2])
+
+            error[1, 1] += estimate[idx, 3] / (Nmeasur * system.baseMVA)
+            error[1, 2] += estimate[idx, 3]^2 / (Nmeasur * system.baseMVA^2)
+            error[1, 3] += estimate[idx, 3]^2 / (measurement.legacyFlow[i, 5] * system.baseMVA^2)
+
+            if exact
+                estimate[idx, 4] = measurement.legacyFlow[i, 10] * system.baseMVA
+                estimate[idx, 5] = abs(estimate[idx, 1] - estimate[idx, 4])
+                estimate[idx, 6] = measurement.legacyFlow[i, 5] * system.baseMVA
+
+                error[2, 1] += estimate[idx, 5] / (Nmeasur * system.baseMVA)
+                error[2, 2] += estimate[idx, 5]^2 / (Nmeasur * system.baseMVA^2)
+                error[2, 3] += estimate[idx, 5]^2 / (measurement.legacyFlow[i, 5] * system.baseMVA^2)
+            else
+                estimate[idx, 4] = measurement.legacyFlow[i, 5] * system.baseMVA
+            end
+            idx += 1
+        end
+    end
+    for i = 1:measurement.legacyNi
+        if measurement.legacyInjection[i, 4] == 1
+            label[idx, 1] = "Legacy"
+            label[idx, 2] = "P$(trunc(Int, measurement.legacyInjection[i, 1]))"
+            label[idx, 3] = "MW"
+
+            estimate[idx, 1] = bus[busPi[i], 3]
+            estimate[idx, 2] = measurement.legacyInjection[i, 2] * system.baseMVA
+            estimate[idx, 3] = abs(estimate[idx, 1] - estimate[idx, 2])
+
+            error[1, 1] += estimate[idx, 3] / (Nmeasur * system.baseMVA)
+            error[1, 2] += estimate[idx, 3]^2 / (Nmeasur * system.baseMVA^2)
+            error[1, 3] += estimate[idx, 3]^2 / (measurement.legacyInjection[i, 3] * system.baseMVA^2)
+
+            if exact
+                estimate[idx, 4] = measurement.legacyInjection[i, 8] * system.baseMVA
+                estimate[idx, 5] = abs(estimate[idx, 1] - estimate[idx, 4])
+                estimate[idx, 6] = measurement.legacyInjection[i, 3] * system.baseMVA
+
+                error[2, 1] += estimate[idx, 5] / (Nmeasur * system.baseMVA)
+                error[2, 2] += estimate[idx, 5]^2 / (Nmeasur * system.baseMVA^2)
+                error[2, 3] += estimate[idx, 5]^2 / (measurement.legacyInjection[i, 3] * system.baseMVA^2)
+            else
+                estimate[idx, 4] = measurement.legacyInjection[i, 3] * system.baseMVA
+            end
+            idx += 1
+        end
+    end
+
+    if exact
+        for i = 1:system.Nbus
+            error[3, 1] += abs(pi * bus[i, 2] / 180 - measurement.pmuVoltage[i, 9]) / Nmeasur
+            error[3, 2] += (pi * bus[i, 2] / 180 - measurement.pmuVoltage[i, 9])^2 / Nmeasur
+        end
+    end
+    error[:, 2] = sqrt.(error[:, 2])
+
+    if settings.estimate
+        println("")
+        if exact
+            columns_width = [7, 9, 9, 9, 15, 15, 15, 15, 15, 15]
+            alignment = [:l, :l, :l, :l, :r, :r, :r, :r, :r, :r]
+            formatters = ["%1.0f", "%s", "%s", "%s", "%1.2f", "%1.2f", "%1.2e", "%1.2f", "%1.2e", "%1.2e"]
+            many = collect(1:10)
+            head = header["estimate"]
+        else
+            columns_width = [7, 9, 9, 9, 15, 15, 15, 15]
+            alignment = [:l, :l, :l, :l, :r, :r, :r, :r]
+            formatters = ["%1.0f", "%s", "%s", "%s", "%1.2f", "%1.2f", "%1.2e", "%1.2e"]
+            many = collect(1:8)
+            head = header["estimateno"]
+        end
+        pretty_table([collect(1:Nmeasur) label estimate], head, screen_size = (-1,-1), columns_width = columns_width,
+            alignment = alignment, formatters = ft_printf((formatters), many))
+    end
+
+    ################## DC error display ##################
+    if settings.error
+        println("")
+        pretty_table([errordes error], header["error"], screen_size = (-1,-1), columns_width = [55, 15, 15, 15],
+            alignment=[:l,:r,:r,:r], formatters = ft_printf(["%-s","%1.4e","%1.4e","%1.4e"], collect(1:4)))
+    end
+
+    ################## Export results ##################
+    results = Dict("bus" => bus, "branch" => branch, "estimate" => [collect(1:Nmeasur) label estimate], "error" => [errordes error])
+
+    labels = Dict()
+    savetoh5 = Dict()
+    if settings.saveextension == ".h5"
+        atr = [string(label[i, 1], ": ", label[i, 2], " [", label[i, 3], "]") for i=1:Nmeasur]
+        push!(labels, "estimate" => atr)
+        push!(labels, "error" => errordes)
+        savetoh5 = Dict("bus" => bus, "branch" => branch, "estimate" => [collect(1:Nmeasur) estimate], "error" => error)
+        if exact
+            header["estimate"] = header["estimateH5"]
+        else
+            header["estimate"] = header["estimateH5no"]
+        end
+    end
+
+    return results, header, labels, savetoh5
 end

@@ -1,5 +1,5 @@
 ###################
-#  DC Power Flow  #
+#  DC power flow  #
 ###################
 function rundcpf(settings, system)
     println("Algorithm: DC power flow")
@@ -15,6 +15,7 @@ function rundcpf(settings, system)
     @inbounds for i = 1:system.Nbus
         if bus[i] != busi[i]
             numbering = true
+            println("The new bus numbering is running.")
         end
         if type[i] == 3
             slack = bus[i]
@@ -27,7 +28,7 @@ function rundcpf(settings, system)
     end
 
     Pbus .= 0.0
-    gen_bus = numbering_generator(geni, busi, system.Nbus, bus, numbering)
+    gen_bus = renumber(geni, system.Ngen, busi, bus, system.Nbus, numbering)
     @inbounds for (k, i) in enumerate(gen_bus)
         if genOn[k] == 1
             Pbus[i] += Pgen[k] / system.baseMVA
@@ -35,40 +36,16 @@ function rundcpf(settings, system)
         end
     end
 
-    from, to = numbering_branch(fromi, toi, busi, system.Nbra, system.Nbus, bus, numbering)
-    Pshift .= 0.0
-    Ydiag .= 0.0
-    @inbounds for i = 1:system.Nbra
-        if branchOn[i] == 1
-            if transTap[i] == 0
-                admitance[i] = 1 / reactance[i]
-            else
-                admitance[i] = 1 / (transTap[i] * reactance[i])
-            end
+    from = renumber(fromi, system.Nbra, busi, bus, system.Nbus, numbering)
+    to = renumber(toi, system.Nbra, busi, bus, system.Nbus, numbering)
 
-            shift = (pi / 180) * transShift[i] * reactance[i]
-            Pshift[from[i]] -= shift
-            Pshift[to[i]] += shift
-
-            Ydiag[from[i]] += admitance[i]
-            Ydiag[to[i]] += admitance[i]
-        else
-            admitance[i] = 0.0
-        end
-    end
-
+    Ybus = ybusdc(system, Pshift, Ydiag, branchOn, transTap, admitance, reactance, transShift, bus, from, to)
     Ybus = sparse([bus; from; to], [bus; to; from], [Ydiag; -admitance; -admitance], system.Nbus, system.Nbus)
     keep = [collect(1:slack - 1); collect(slack + 1:system.Nbus)]
     Ybus_reduce = Ybus[keep, keep]
     b = Pbus[keep] - Pshift[keep] - (Pload[keep] + Gshunt[keep]) ./ system.baseMVA
 
-    if settings.solve == "lu"
-        F = lu(Ybus_reduce)
-        Ti = F.U \  (F.L \ ((F.Rs .* b)[F.p]))
-        Ti = Ti[sortperm(F.q)]
-    else
-        Ti = Ybus_reduce \ b
-    end
+    Ti = ls(Ybus_reduce, b, settings.solve)
 
     insert!(Ti, slack, 0.0)
     Ti =  (pi / 180) * Tini[slack] .+ Ti
@@ -111,11 +88,42 @@ function rundcpf(settings, system)
 end
 
 
+####################
+#  DC Ybus matrix  #
+####################
+function ybusdc(system, Pshift, Ydiag, branchOn, transTap, admitance, reactance, transShift, bus, from, to)
+    Pshift .= 0.0
+    Ydiag .= 0.0
+    @inbounds for i = 1:system.Nbra
+        if branchOn[i] == 1
+            if transTap[i] == 0
+                admitance[i] = 1 / reactance[i]
+            else
+                admitance[i] = 1 / (transTap[i] * reactance[i])
+            end
+
+            shift = (pi / 180) * transShift[i] * reactance[i]
+            Pshift[from[i]] -= shift
+            Pshift[to[i]] += shift
+
+            Ydiag[from[i]] += admitance[i]
+            Ydiag[to[i]] += admitance[i]
+        else
+            admitance[i] = 0.0
+        end
+    end
+
+    Ybus = sparse([bus; from; to], [bus; to; from], [Ydiag; -admitance; -admitance], system.Nbus, system.Nbus)
+
+    return Ybus
+end
+
+
 ###############
 #  View data  #
 ###############
 function view_dcsystem(system)
-    ################## Read Data ##################
+    ################## Read data ##################
     busi = @view(system.bus[:, 1])
     type = @view(system.bus[:, 2])
     Pload = @view(system.bus[:, 3])
@@ -135,7 +143,7 @@ function view_dcsystem(system)
     transShift = @view(system.branch[:, 11])
     branchOn = @view(system.branch[:, 12])
 
-    ################## Write Data ##################
+    ################## Write data ##################
     Pbus = @view(system.bus[:, 10])
     Pinj = @view(system.bus[:, 11])
     Pshift = @view(system.bus[:, 12])

@@ -107,8 +107,6 @@ SET (legacy measurements)
     ```
     Thus, the measurement set will consist of two randomly selected bus voltage magnitude measurements, and all branch current magnitude measurements, both of them related with PMUs.  
 
-
-
 VARIANCE (phasor measurements)
 
 | Command                                                           | Description                                                                               |
@@ -128,7 +126,7 @@ VARIANCE (legacy measurements)
 !!! note "Variance"
     If `runpf = 0`, the function keeps measurement values and measurement variances as in the input DATA, and changes only measurement values and variances that are called using keywords. For example, if the keywords `pmuvariance` and `legacyvariance` are omitted, the function will retain the measurement values and variances as in the input data, allowing the same measurement values and variances, while changing the measurement sets.
 
-    If `runpf = 1`, the function starts with zero variances, meaning that measurement values are equal to the exact values.
+    If `runpf = 1`, the function starts with zero variances, meaning that measurement values are equal to zero values.
 
     Further, the function accepts any subset of phasor[^1] or legacy[^2] measurements, consequently, it is not necessary to define attributes for all measurements, where keyword `"all"` generates measurement values according to defined variance for all measurements, except for those individually defined.   
     ```julia-repl
@@ -225,7 +223,7 @@ The `legacyCurrent` data structure
 | 4       | measurement        | branch current magnitude                 | per-unit |
 | 5       | variance           | branch current magnitude                 | per-unit |
 | 6       | status             | branch current magnitude in/out-service  |          |
-| 7      | exact               | branch current magnitude                 | per-unit |
+| 7       | exact              | branch current magnitude                 | per-unit |
 
 The `legacyInjection` data structure
 
@@ -253,7 +251,7 @@ The `pmuVoltage` data structure
 ---
 
 !!! tip "How many"
-    The input data needs not to contain a complete structure of measurement variables, and measurement data needs not to be consistent with the total number of buses and branches. Also, the function supports more than one measurement per the same bus or branch.
+    The input data needs not to contain a complete structure of measurement variables, and measurement data needs not to be consistent with the total number of buses and branches. Also, the function supports more than one same measurement per the same bus or branch.
 ---
 
 ## Flowchart

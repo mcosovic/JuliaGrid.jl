@@ -1,5 +1,5 @@
 ###################
-#  AC Power Flow  #
+#  AC power flow  #
 ###################
 function runacpf(settings, system)
     busi, type, Pload, Qload, Gshunt, Bshunt, Vini, Tini, geni, Pgen, Qgen,
@@ -15,6 +15,7 @@ function runacpf(settings, system)
     @inbounds for i = 1:system.Nbus
         if bus[i] != busi[i]
             numbering = true
+            println("The new bus numbering is running.")
         end
         if type[i] == 3
             slack = bus[i]
@@ -34,7 +35,7 @@ function runacpf(settings, system)
     Qbus .= 0.0
     type .= 1.0
 
-    gen_bus = numbering_generator(geni, busi, system.Nbus, bus, numbering)
+    gen_bus = renumber(geni, system.Ngen, busi, bus, system.Nbus, numbering)
     @inbounds for (k, i) in enumerate(gen_bus)
         if genOn[k] == 1
             Pbus[i] += Pgen[k] / system.baseMVA
@@ -54,7 +55,8 @@ function runacpf(settings, system)
     end
     type[slack] = 3.0
 
-    from, to = numbering_branch(fromi, toi, busi, system.Nbra, system.Nbus, bus, numbering)
+    from = renumber(fromi, system.Nbra, busi, bus, system.Nbus, numbering)
+    to = renumber(toi, system.Nbra, busi, bus, system.Nbus, numbering)
     tap = zeros(Complex, system.Nbra)
     admittance = zeros(Complex, system.Nbra)
     Ytt = zeros(Complex, system.Nbra)
@@ -304,7 +306,7 @@ end
 #  View data  #
 ###############
 function view_acsystem(system)
-    # Read Data
+    ################## Read data ##################
     busi = @view(system.bus[:, 1])
     type = @view(system.bus[:, 2])
     Pload = @view(system.bus[:, 3])
@@ -331,7 +333,7 @@ function view_acsystem(system)
     transShift = @view(system.branch[:, 11])
     branchOn = @view(system.branch[:, 12])
 
-    # Write Data
+    ################## Write data ##################
     Pshunt = @view(system.bus[:, 5])
     Qshunt = @view(system.bus[:, 6])
     Pbus = @view(system.bus[:, 10])
