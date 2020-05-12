@@ -1,7 +1,5 @@
-#########################################
-#  Newton-Raphson power flow algorithm  #
-#########################################
-function newton_raphson(settings, system, Ybus, YbusT, slack, Vc, Pbus, Qbus, Pload, Qload, type, iter)
+### Newton-Raphson power flow algorithm
+@inbounds function newton_raphson(system, num, settings, Ybus, YbusT, slack, Vc, Pbus, Qbus, Pload, Qload, type, iter)
     V = abs.(Vc)
     T = angle.(Vc)
     No = 0
@@ -9,24 +7,24 @@ function newton_raphson(settings, system, Ybus, YbusT, slack, Vc, Pbus, Qbus, Pl
 
     P = similar(Pbus)
     Q = similar(Pbus)
-    G = fill(0.0, system.Nbus + 2 * system.Nbra)
+    G = fill(0.0, num.Nbus + 2 * num.Nbranch)
     B = similar(G)
     BT = similar(G)
     GT = similar(G)
 
-    PQ = fill(0, system.Nbus)
+    PQ = fill(0, num.Nbus)
     PVPQ = similar(PQ)
     Nnon = 0
     Npvpq = 0
     Npq = 0
     cnt = 1
-    @inbounds for i = 1:system.Nbus
-        P[i] = Pbus[i] - Pload[i] / system.baseMVA
-        Q[i] = Qbus[i] - Qload[i] / system.baseMVA
+    for i = 1:num.Nbus
+        P[i] = Pbus[i] - Pload[i] / system.basePower
+        Q[i] = Qbus[i] - Qload[i] / system.basePower
 
         if type[i] == 1
             Npq += 1
-            PQ[i] = Npq + system.Nbus - 1
+            PQ[i] = Npq + num.Nbus - 1
         end
         if type[i] != 3
             Npvpq += 1
@@ -56,8 +54,8 @@ function newton_raphson(settings, system, Ybus, YbusT, slack, Vc, Pbus, Qbus, Pl
     iJ = fill(0, Nnon)
     jJ = similar(iJ)
     cnt1 = 1
-    dPQ = zeros(system.Nbus + Npq - 1)
-    @inbounds for i = 1:system.Nbus
+    dPQ = zeros(num.Nbus + Npq - 1)
+    for i = 1:num.Nbus
         if i != slack
             I = 0.0
             C = 0.0
@@ -99,15 +97,15 @@ function newton_raphson(settings, system, Ybus, YbusT, slack, Vc, Pbus, Qbus, Pl
         end
     end
 
-    J = sparse(iJ, jJ, zeros(Nnon), system.Nbus + Npq - 1, system.Nbus + Npq - 1)
+    J = sparse(iJ, jJ, zeros(Nnon), num.Nbus + Npq - 1, num.Nbus + Npq - 1)
 
     while No < settings.maxIter
         No = No + 1
         threshold = 0.0
 
-        Threads.@threads for i = 1:system.Nbus
+        Threads.@threads for i = 1:num.Nbus
             if i != slack
-                @inbounds for j in Ybus.colptr[i]:(Ybus.colptr[i + 1] - 1)
+                for j in Ybus.colptr[i]:(Ybus.colptr[i + 1] - 1)
                     row = Ybus.rowval[j]
                     type_row = type[row]
 
@@ -151,7 +149,7 @@ function newton_raphson(settings, system, Ybus, YbusT, slack, Vc, Pbus, Qbus, Pl
 
         dTV = ls(J, dPQ, settings.solve)
 
-        @inbounds for i = 1:system.Nbus
+        for i = 1:num.Nbus
             if type[i] == 1
                 V[i] = V[i] - dTV[PQ[i]]
             end
@@ -160,7 +158,7 @@ function newton_raphson(settings, system, Ybus, YbusT, slack, Vc, Pbus, Qbus, Pl
             end
         end
 
-        @inbounds for i = 1:system.Nbus
+        for i = 1:num.Nbus
             if i != slack
                 I = 0.0
                 C = 0.0
@@ -188,12 +186,12 @@ function newton_raphson(settings, system, Ybus, YbusT, slack, Vc, Pbus, Qbus, Pl
     end
 
     if converged == 1
-        println("AC power flow using Newton-Raphson algorithm converged in $No iterations with the stop condition $(settings.stopping).")
+        printstyled("Algorithm: AC power flow using Newton-Raphson algorithm converged in $No iterations with the stop condition $(settings.stopping)\n"; bold = true)
     else
-        println("AC power flow using Newton-Raphson algorithm did not converge in $No iterations with the stop condition $(settings.stopping).")
+        printstyled("Algorithm: AC power flow using Newton-Raphson algorithm did not converge in $No iterations with the stop condition $(settings.stopping)\n"; bold = true)
     end
 
-    @inbounds for i = 1:system.Nbus
+    for i = 1:num.Nbus
         Vc[i] = V[i] * exp(im * T[i])
     end
     iter += No
@@ -202,10 +200,8 @@ function newton_raphson(settings, system, Ybus, YbusT, slack, Vc, Pbus, Qbus, Pl
 end
 
 
-##############################################
-#  Fast Newton-Raphson power flow algorithm  #
-##############################################
-function fast_newton_raphson(system, settings, branchOn, Ybus, YbusT, slack, Vc, Pbus, Qbus, Pload, Qload, type, resistance, reactance, transShift, Gshunt, Bshunt, charging, transTap, from, to, iter)
+### Fast Newton-Raphson power flow algorithm
+@inbounds function fast_newton_raphson(system, num, settings, branchOn, Ybus, YbusT, slack, Vc, Pbus, Qbus, Pload, Qload, type, resistance, reactance, transShift, Gshunt, Bshunt, charging, transTap, from, to, iter)
     V = abs.(Vc)
     T = angle.(Vc)
     No = 0
@@ -213,12 +209,12 @@ function fast_newton_raphson(system, settings, branchOn, Ybus, YbusT, slack, Vc,
 
     P = similar(Pload)
     Q = similar(P)
-    G = fill(0.0, system.Nbus + 2 * system.Nbra)
+    G = fill(0.0, num.Nbus + 2 * num.Nbranch)
     B = similar(G)
     BT = similar(G)
     GT = similar(G)
 
-    PQ = fill(0, system.Nbus)
+    PQ = fill(0, num.Nbus)
     PVPQ = similar(PQ)
     Npvpq = 0
     Npq = 0
@@ -226,9 +222,9 @@ function fast_newton_raphson(system, settings, branchOn, Ybus, YbusT, slack, Vc,
     Nb2 = 0
     cnt = 1
 
-    @inbounds for i = 1:system.Nbus
-        P[i] = Pbus[i] - Pload[i] / system.baseMVA
-        Q[i] = Qbus[i] - Qload[i] / system.baseMVA
+    for i = 1:num.Nbus
+        P[i] = Pbus[i] - Pload[i] / system.basePower
+        Q[i] = Qbus[i] - Qload[i] / system.basePower
 
         if type[i] == 1
             Npq += 1
@@ -260,11 +256,11 @@ function fast_newton_raphson(system, settings, branchOn, Ybus, YbusT, slack, Vc,
     jB1 = similar(iB1)
     iB2 = fill(0, Nb2)
     jB2 = similar(iB2)
-    dP = zeros(system.Nbus - 1)
+    dP = zeros(num.Nbus - 1)
     dQ = zeros(Npq)
     cnt1 = 1
     cnt2 = 1
-    @inbounds for i = 1:system.Nbus
+    for i = 1:num.Nbus
         if i != slack
             I = 0.0
             C = 0.0
@@ -295,9 +291,9 @@ function fast_newton_raphson(system, settings, branchOn, Ybus, YbusT, slack, Vc,
         end
     end
 
-    B1 = sparse(iB1, jB1, zeros(Nb1), system.Nbus - 1, system.Nbus - 1)
+    B1 = sparse(iB1, jB1, zeros(Nb1), num.Nbus - 1, num.Nbus - 1)
     B2 = sparse(iB2, jB2, zeros(Nb2), Npq, Npq)
-    @inbounds for i = 1:system.Nbra
+    for i = 1:num.Nbranch
         if branchOn[i] == 1
             m = PVPQ[from[i]]
             n = PVPQ[to[i]]
@@ -348,9 +344,9 @@ function fast_newton_raphson(system, settings, branchOn, Ybus, YbusT, slack, Vc,
         end
     end
 
-    @inbounds for i = 1:system.Nbus
+    for i = 1:num.Nbus
         if type[i] == 1
-            B2[PQ[i], PQ[i]] += Bshunt[i] / system.baseMVA
+            B2[PQ[i], PQ[i]] += Bshunt[i] / system.basePower
         end
     end
 
@@ -366,12 +362,12 @@ function fast_newton_raphson(system, settings, branchOn, Ybus, YbusT, slack, Vc,
         dT = F.U \  (F.L \ ((F.Rs .* dP)[F.p]))
         dT = dT[q1]
 
-        @inbounds for i = 1:system.Nbus
+        for i = 1:num.Nbus
             if i != slack
                 T[i] = T[i] + dT[PVPQ[i]]
             end
         end
-        @inbounds for i = 1:system.Nbus
+        for i = 1:num.Nbus
             if i != slack
                 I = 0.0
                 C = 0.0
@@ -401,12 +397,12 @@ function fast_newton_raphson(system, settings, branchOn, Ybus, YbusT, slack, Vc,
         dV = W.U \  (W.L \ ((W.Rs .* dQ)[W.p]))
         dV = dV[q2]
 
-        @inbounds for i = 1:system.Nbus
+        for i = 1:num.Nbus
             if type[i] == 1
                 V[i] = V[i] + dV[PQ[i]]
             end
         end
-        @inbounds for i = 1:system.Nbus
+        for i = 1:num.Nbus
             if i != slack
                 I = 0.0
                 C = 0.0
@@ -434,12 +430,12 @@ function fast_newton_raphson(system, settings, branchOn, Ybus, YbusT, slack, Vc,
     end
 
     if converged == 1
-        println("AC power flow using fast Newton-Raphson algorithm converged in $No iterations with the stop condition $(settings.stopping).")
+        printstyled("Algorithm: AC power flow using fast Newton-Raphson algorithm converged in $No iterations with the stop condition $(settings.stopping)\n"; bold = true)
     else
-        println("AC power flow using fastNewton-Raphson algorithm did not converge in $No iterations with the stop condition $(settings.stopping).")
+        printstyled("Algorithm: AC power flow using fastNewton-Raphson algorithm did not converge in $No iterations with the stop condition $(settings.stopping)\n"; bold = true)
     end
 
-    @inbounds for i = 1:system.Nbus
+    for i = 1:num.Nbus
         Vc[i] = V[i] * exp(im * T[i])
     end
     iter += No
@@ -448,17 +444,15 @@ function fast_newton_raphson(system, settings, branchOn, Ybus, YbusT, slack, Vc,
 end
 
 
-#######################################
-#  Gauss-Seidel power flow algorithm  #
-#######################################
-function gauss_seidel(settings, system, Ybus, YbusT, slack, Vc, Pbus, Qbus, Pload, Qload, Vini, type, iter)
+### Gauss-Seidel power flow algorithm
+@inbounds function gauss_seidel(system, num, settings, Ybus, YbusT, slack, Vc, Pbus, Qbus, Pload, Qload, Vini, type, iter)
     P = similar(Pbus)
     Q = similar(Pbus)
     No = 0
     converged = 0
-    for i = 1:system.Nbus
-        P[i] = Pbus[i] - Pload[i] / system.baseMVA
-        Q[i] = Qbus[i] - Qload[i] / system.baseMVA
+    for i = 1:num.Nbus
+        P[i] = Pbus[i] - Pload[i] / system.basePower
+        Q[i] = Qbus[i] - Qload[i] / system.basePower
     end
 
     dPqv = 0.0
@@ -468,7 +462,7 @@ function gauss_seidel(settings, system, Ybus, YbusT, slack, Vc, Pbus, Qbus, Ploa
         eps = 0.0
         No = No + 1
 
-        @inbounds for i = 1:system.Nbus
+        for i = 1:num.Nbus
             if type[i] == 1
                 I = 0.0 + im * 0.0
                 for j in Ybus.colptr[i]:(Ybus.colptr[i + 1] - 1)
@@ -479,7 +473,7 @@ function gauss_seidel(settings, system, Ybus, YbusT, slack, Vc, Pbus, Qbus, Ploa
             end
         end
 
-        @inbounds for i = 1:system.Nbus
+        for i = 1:num.Nbus
             if type[i] == 2
                 I = 0.0 + im * 0.0
                 for j in Ybus.colptr[i]:(Ybus.colptr[i + 1] - 1)
@@ -491,13 +485,13 @@ function gauss_seidel(settings, system, Ybus, YbusT, slack, Vc, Pbus, Qbus, Ploa
             end
         end
 
-        @inbounds for i = 1:system.Nbus
+        for i = 1:num.Nbus
             if type[i] == 2
                 Vc[i] = Vini[i]  * Vc[i] / abs(Vc[i])
             end
         end
 
-        @inbounds for i = 1:system.Nbus
+        for i = 1:num.Nbus
             if i != slack
                 I = 0.0 + im * 0.0
                 for j in Ybus.colptr[i]:(Ybus.colptr[i + 1] - 1)
@@ -523,9 +517,9 @@ function gauss_seidel(settings, system, Ybus, YbusT, slack, Vc, Pbus, Qbus, Ploa
     end
 
     if converged == 1
-        println("AC power flow using Gauss-Seidel algorithm converged in $No iterations with the stop condition $(settings.stopping).")
+        printstyled("Algorithm: AC power flow using Gauss-Seidel algorithm converged in $No iterations with the stop condition $(settings.stopping)\n"; bold = true)
     else
-        println("AC power flow using Gauss-Seidel algorithm did not converge in $No iterations with the stop condition $(settings.stopping).")
+        printstyled("Algorithm: AC power flow using Gauss-Seidel algorithm did not converge in $No iterations with the stop condition $(settings.stopping)\n"; bold = true)
     end
 
     iter += No

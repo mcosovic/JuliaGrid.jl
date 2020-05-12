@@ -24,7 +24,7 @@ runpf(DATA, METHOD, DISPLAY; ACCONTROL, SOLVE, SAVE)
 
 #### Description
 ```julia-repl
-runpf(DATA, METHOD) solves power flow problem
+runpf(DATA, METHOD) solves the power flow problem
 runpf(DATA, METHOD, DISPLAY) shows results in the terminal
 runpf(DATA, METHOD, DISPLAY; ACCONTROL) sets variables for the AC power flow
 runpf(DATA, METHOD, DISPLAY; ACCONTROL, SOLVE) sets the linear system solver
@@ -33,21 +33,21 @@ runpf(DATA, METHOD, DISPLAY; ACCONTROL, SOLVE, SAVE) exports results
 
 #### Output
 ```julia-repl
-results = runpf(...) returns results of the power flow analysis
+results, system, info = runpf(...) returns results of the power flow analysis, power system and info data
 ```
 
 ####  Examples
 ```julia-repl
-julia> results = runpf("case14.h5", "nr", "main", "flow", "generator")
+julia> results, system, info = runpf("case14.h5", "nr", "main", "flow", "generation")
 ```
 ```julia-repl
-julia> results = runpf("case14.xlsx", "nr", "main"; max = 10, stop = 1.0e-8)
+julia> results, = runpf("case14.xlsx", "nr", "main"; max = 10, stop = 1.0e-8)
 ```
 ```julia-repl
-julia> results = runpf("case14.h5", "gs", "main"; max = 500, stop = 1.0e-8, reactive = 1)
+julia> results, = runpf("case14.h5", "gs", "main"; max = 500, stop = 1.0e-8, reactive = 1)
 ```
 ```julia-repl
-julia> results = runpf("case14.h5", "dc"; solve = "lu", save = "D:/case14results.xlsx")
+julia> results, = runpf("case14.h5", "dc"; solve = "lu", save = "D:/case14results.xlsx")
 ```
 ---
 
@@ -77,11 +77,11 @@ METHOD
 
 DISPLAY
 
-| Command     | Description                    |
-|:------------|:-------------------------------|
-|`"main"`     | shows main bus data display    |
-|`"flow"`     | shows power flow data display  |
-|`"generator"`| shows generator data display   |
+| Command      | Description                    |
+|:-------------|:-------------------------------|
+|`"main"`      | shows main bus data display    |
+|`"flow"`      | shows power flow data display  |
+|`"generation"`| shows generator data display   |
 ----
 
 #### Keyword Arguments
@@ -111,7 +111,7 @@ SAVE
 
 ## Input Data Structure
 
-The function supports two input types `.h5` or `.xlsx` file extensions, with variables `bus`, `generator`, `branch`, and `basePower`, and uses the same data format as Matpower, except for the first column in the `branch` data.
+The function supports two input types `.h5` or `.xlsx` file extensions, with variables `bus`, `generator`, `branch`, and `basePower`, and uses the same data format as Matpower, except for the first column in the `branch` data. In the case of large power systems, we strongly recommend to use `.h5` for the input and output data.
 
 The instance of the data structure requires minimum a `bus` and `branch` data information to run the module.
 
@@ -119,7 +119,7 @@ We define the system base power in MVA using `basePower`. Next, we describe the 
 
 The `bus` data structure
 
-| Column   | Description        | Type                    | Unit      |
+| Column   | Type               | Description             | Unit      |
 |:--------:|:-------------------|:------------------------|:----------|	 
 | 1        | bus number         | positive integer        |           |
 | 2        | bus type           | pq(1), pv(2), slack(3)  |           |
@@ -138,7 +138,7 @@ The `bus` data structure
 
 The `generator` data structure
 
-| Column   | Description        | Type                     | Unit     |
+| Column   | Type               | Description              | Unit     |
 |:--------:|:-------------------|:-------------------------|:---------|
 | 1        | bus number         | positive integer         |          |
 | 2        | generation         | active power             | MW       |
@@ -164,7 +164,7 @@ The `generator` data structure
 
 The `branch` data structure
 
-| Column  | Description                | Type             | Unit     |
+| Column  | Type                       | Description      | Unit     |
 |:-------:|:---------------------------|:-----------------|:---------|
 | 1       | branch number              | positive integer |          |
 | 2       | from bus number            | positive integer |          |
@@ -208,13 +208,13 @@ The pre-defined cases are located in the `src/data` as the `.h5` or `.xlsx` file
 ---
 
 ## Output Data Structure
-The power flow function `runpf(...)` returns a single dictionary variable with keys `bus`, `generator`, `branch`, and with the additional key `iterations` if the AC power flow is executed.
+The power flow function `runpf(...)` returns a struct variable `results` with fields `main`, `flow`, `generation` containing power flow analysis results, and the additional field `iterations` for the AC power flow. Further, the variable `system` contains the input data that describes the power system with fields `bus`, `branch`, `generator` and `basePower`, while the variable `info` contains basic information about the power system.
 
 #### DC Power Flow
 
-The `bus` data structure
+The `main` data structure
 
-| Column   | Description        | Type                    | Unit      |
+| Column   | Type               | Description             | Unit      |
 |:--------:|:-------------------|:------------------------|:----------|	 
 | 1        | bus number         | positive integer        |           |
 | 2        | voltage            | angle                   | deg       |
@@ -223,16 +223,17 @@ The `bus` data structure
 | 5        | demand             | active power            | MW        |
 | 6        | shunt conductance  | active power            | MW        |
 
-The `generator` data structure
 
-| Column   | Description        | Type                     | Unit     |
+The `generation` data structure
+
+| Column   | Type               | Description              | Unit     |
 |:--------:|:-------------------|:-------------------------|:---------|
 | 1        | bus number         | positive integer         |          |
 | 2        | generation         | active power             | MW       |
 
-The `branch` data structure
+The `flow` data structure
 
-| Column  | Description                | Type             | Unit     |
+| Column  | Type                       | Description      | Unit     |
 |:-------:|:---------------------------|:-----------------|:---------|
 | 1       | branch number              | positive integer |          |
 | 2       | from bus number            | positive integer |          |
@@ -243,9 +244,9 @@ The `branch` data structure
 
 #### AC Power Flow
 
-The `bus` data structure
+The `main` data structure
 
-| Column   | Description        | Type                    | Unit      |
+| Column   | Type               | Description             | Unit      |
 |:--------:|:-------------------|:------------------------|:----------|	 
 | 1        | bus number         | positive integer        |           |
 | 2        | voltage            | magnitude               | per-unit  |
@@ -259,17 +260,17 @@ The `bus` data structure
 | 10       | shunt conductance  | active power            | MW        |
 | 11       | shunt susceptance  | reactive power          | MVAr      |
 
-The `generator` data structure
+The `generation` data structure
 
-| Column   | Description        | Type                     | Unit     |
+| Column   | Type               | Description              | Unit     |
 |:--------:|:-------------------|:-------------------------|:---------|
 | 1        | bus number         | positive integer         |          |
 | 2        | generation         | active power             | MW       |
 | 3        | generation         | reactive power           | MVAr     |
 
-The `branch` data structure
+The `flow` data structure
 
-| Column  | Description                | Type             | Unit     |
+| Column  | Type                       | Description      | Unit     |
 |:-------:|:---------------------------|:-----------------|:---------|
 | 1       | branch number              | positive integer |          |
 | 2       | from bus number            | positive integer |          |

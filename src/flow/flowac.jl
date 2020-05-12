@@ -1,51 +1,57 @@
-###################
-#  AC power flow  #
-###################
-function runacpf(settings, system)
-    busi, type, Pload, Qload, Gshunt, Bshunt, Vini, Tini, geni, Pgen, Qgen,
-    Qmax, Qmin, Vgen, genOn, fromi, toi, resistance, reactance, charging, transTap,
-    transShift, branchOn, Pshunt, Qshunt, Pbus, Qbus, Pinj, Qinj, Imij, Iaij, Imji, Iaji,
-    Pij, Qij, Pji, Qji, Qcharging, Ploss, Qloss, limit, QminInf, QmaxInf = view_acsystem(system)
+### AC power flow
+@inbounds function runacpf(system, num, settings, info)
+    busi, typei, Pload, Qload, Gshunt, Bshunt, Vini, Tini, Pgeni, Qgeni,
+    Qmaxi, Qmini, Vgen, genOn, resistance, reactance, charging, transTap,
+    transShift, branchOn = view_acsystem(system)
 
   algtime = @elapsed begin
-    info = ""
+    ########## Pre-processing ##########
+    geni = convert(Array{Int64,1}, system.generator[:, 1])
+    fromi = convert(Array{Int64,1}, system.branch[:, 2])
+    toi = convert(Array{Int64,1}, system.branch[:, 3])
+
     numbering = false
-    bus = collect(1:system.Nbus)
+    bus = collect(1:num.Nbus)
     slack = 0
-    @inbounds for i = 1:system.Nbus
+    for i = 1:num.Nbus
         if bus[i] != busi[i]
             numbering = true
-            println("The new bus numbering is running.")
         end
-        if type[i] == 3
+        if typei[i] == 3
             slack = bus[i]
         end
     end
-
+    if numbering
+        println("The new bus numbering is running.")
+    end
     if slack == 0
         slack = 1
         println("The slack bus is not found. Slack bus is the first bus.")
     end
 
     slackLimit = copy(slack)
-    multiple = fill(0, system.Nbus)
+    multiple = fill(0, num.Nbus)
     isMultiple = false
-    limit .= 1.0
-    Pbus .= 0.0
-    Qbus .= 0.0
-    type .= 1.0
+    limit = fill(1, num.Ngen)
+    Pgen = fill(0.0, num.Ngen)
+    Qgen = fill(0.0, num.Ngen)
+    Qmin = fill(0.0, num.Ngen)
+    Qmax = fill(0.0, num.Ngen)
+    Pbus = fill(0.0, num.Nbus)
+    Qbus = fill(0.0, num.Nbus)
+    type = fill(1, num.Nbus)
 
-    gen_bus = renumber(geni, system.Ngen, busi, bus, system.Nbus, numbering)
-    @inbounds for (k, i) in enumerate(gen_bus)
+    gen_bus = renumber(geni, num.Ngen, busi, bus, num.Nbus, numbering)
+    for (k, i) in enumerate(gen_bus)
         if genOn[k] == 1
-            Pbus[i] += Pgen[k] / system.baseMVA
-            Qbus[i] += Qgen[k] / system.baseMVA
-            Pgen[k] = Pgen[k] / system.baseMVA
-            Qgen[k] = Qgen[k] / system.baseMVA
-            Qmin[k] = Qmin[k] / system.baseMVA
-            Qmax[k] = Qmax[k] / system.baseMVA
+            Pbus[i] += Pgeni[k] / system.basePower
+            Qbus[i] += Qgeni[k] / system.basePower
+            Pgen[k] = Pgeni[k] / system.basePower
+            Qgen[k] = Qgeni[k] / system.basePower
+            Qmin[k] = Qmini[k] / system.basePower
+            Qmax[k] = Qmaxi[k] / system.basePower
             Vini[i] = Vgen[k]
-            type[i] = 2.0
+            type[i] = 2
 
             multiple[i] += 1
             if multiple[i] != 1
@@ -53,19 +59,20 @@ function runacpf(settings, system)
             end
         end
     end
-    type[slack] = 3.0
+    type[slack] = 3
+    from = renumber(fromi, num.Nbranch, busi, bus, num.Nbus, numbering)
+    to = renumber(toi, num.Nbranch, busi, bus, num.Nbus, numbering)
 
-    from = renumber(fromi, system.Nbra, busi, bus, system.Nbus, numbering)
-    to = renumber(toi, system.Nbra, busi, bus, system.Nbus, numbering)
-    tap = zeros(Complex, system.Nbra)
-    admittance = zeros(Complex, system.Nbra)
-    Ytt = zeros(Complex, system.Nbra)
-    Yff = zeros(Complex, system.Nbra)
-    Yft = zeros(Complex, system.Nbra)
-    Ytf = zeros(Complex, system.Nbra)
-    Ydiag = zeros(Complex, system.Nbus)
-    shunt = complex.(Gshunt, Bshunt) ./ system.baseMVA
-    @inbounds for i = 1:system.Nbra
+    ########## Ybus matrix ##########
+    tap = zeros(ComplexF64, num.Nbranch)
+    admittance = zeros(ComplexF64, num.Nbranch)
+    Ytt = zeros(ComplexF64, num.Nbranch)
+    Yff = zeros(ComplexF64, num.Nbranch)
+    Yft = zeros(ComplexF64, num.Nbranch)
+    Ytf = zeros(ComplexF64, num.Nbranch)
+    Ydiag = zeros(ComplexF64, num.Nbus)
+    shunt = complex.(Gshunt, Bshunt) ./ system.basePower
+    for i = 1:num.Nbranch
         if branchOn[i] == 1
             admittance[i] = 1 / complex(resistance[i], reactance[i])
 
@@ -85,9 +92,13 @@ function runacpf(settings, system)
         end
     end
 
-    Ybus = sparse([bus; bus; from; to], [bus; bus; to; from], [Ydiag; shunt; Yft; Ytf], system.Nbus, system.Nbus)
-    YbusT = sparse([bus; bus; to; from], [bus; bus; from; to], [Ydiag; shunt; Yft; Ytf], system.Nbus, system.Nbus)
+    Ybus = sparse([bus; bus; from; to], [bus; bus; to; from], [Ydiag; shunt; Yft; Ytf], num.Nbus, num.Nbus)
+    YbusT = sparse([bus; bus; to; from], [bus; bus; from; to], [Ydiag; shunt; Yft; Ytf], num.Nbus, num.Nbus)
 
+    Pshunt = fill(0.0, num.Nbus); Qshunt = similar(Pshunt)
+    Pinj = similar(Pshunt); Qinj = similar(Pshunt)
+
+    ########## Solve the system ##########
     Vc = Vini .* exp.(im * (pi / 180)  * Tini)
     iter = 0
     while settings.reactive[2]
@@ -96,17 +107,17 @@ function runacpf(settings, system)
         end
 
         if settings.algorithm == "gs"
-            Vc, iter = gauss_seidel(settings, system, Ybus, YbusT, slack, Vc, Pbus, Qbus, Pload, Qload, Vini, type, iter)
+            Vc, iter = gauss_seidel(system, num, settings, Ybus, YbusT, slack, Vc, Pbus, Qbus, Pload, Qload, Vini, type, iter)
         end
         if settings.algorithm == "nr"
-            Vc, iter = newton_raphson(settings, system, Ybus, YbusT, slack, Vc, Pbus, Qbus, Pload, Qload, type, iter)
+            Vc, iter = newton_raphson(system, num, settings, Ybus, YbusT, slack, Vc, Pbus, Qbus, Pload, Qload, type, iter)
         end
         if settings.algorithm == "fnrbx" || settings.algorithm == "fnrxb"
-            Vc, iter = fast_newton_raphson(system, settings, branchOn, Ybus, YbusT, slack, Vc, Pbus, Qbus,
+            Vc, iter = fast_newton_raphson(system, num, settings, branchOn, Ybus, YbusT, slack, Vc, Pbus, Qbus,
             Pload, Qload, type, resistance, reactance, transShift, Gshunt, Bshunt, charging, transTap, from, to, iter)
         end
 
-        @inbounds for i = 1:system.Nbus
+        for i = 1:num.Nbus
             Sshunt = Vc[i] * conj(Vc[i] * shunt[i])
             Pshunt[i] = real(Sshunt)
             Qshunt[i] = imag(Sshunt)
@@ -116,32 +127,28 @@ function runacpf(settings, system)
                 row = Ybus.rowval[j]
                 I += conj(YbusT[row, i]) * conj(Vc[row])
             end
-            Si = I * Vc[i]
+            Si::ComplexF64 = I * Vc[i]
             Pinj[i] = real(Si)
             Qinj[i] = imag(Si)
             if type[i] != 1
-                Qbus[i] = Qinj[i] + Qload[i] / system.baseMVA
+                Qbus[i] = Qinj[i] + Qload[i] / system.basePower
             end
         end
-        Pbus[slack] = Pinj[slack] + Pload[slack] / system.baseMVA
+        Pbus[slack] = Pinj[slack] + Pload[slack] / system.basePower
 
         if !isMultiple
-            @inbounds for i = 1:system.Ngen
+            for i = 1:num.Ngen
                 if genOn[i] == 1
                     Pgen[i] = Pbus[gen_bus[i]]
                     Qgen[i] = Qbus[gen_bus[i]]
-                else
-                    Pgen[i] = 0.0
-                    Qgen[i] = 0.0
                 end
             end
         else
-            Qmintotal = fill(0.0, system.Nbus)
-            Qmaxtotal = fill(0.0, system.Nbus)
-            Qgentotal = fill(0.0, system.Nbus)
-            QminNew = copy(Qmin)
-            QmaxNew = copy(Qmax)
-            @inbounds for i = 1:system.Ngen
+            Qmintotal = fill(0.0, num.Nbus); Qmaxtotal = fill(0.0, num.Nbus)
+            QminInf = fill(0.0, num.Nbus); QmaxInf = fill(0.0, num.Nbus)
+            QminNew = copy(Qmin);  QmaxNew = copy(Qmax)
+            Qgentotal = fill(0.0, num.Nbus)
+            for i = 1:num.Ngen
                 if genOn[i] == 1
                     j = gen_bus[i]
                     if !isinf(Qmin[i])
@@ -150,10 +157,10 @@ function runacpf(settings, system)
                     if !isinf(Qmax[i])
                         Qmaxtotal[j] += Qmax[i]
                     end
-                    Qgentotal[j] += (Qinj[j] + Qload[j] / system.baseMVA) / multiple[j]
+                    Qgentotal[j] += (Qinj[j] + Qload[j] / system.basePower) / multiple[j]
                 end
             end
-            @inbounds for i = 1:system.Ngen
+            for i = 1:num.Ngen
                 if genOn[i] == 1
                     j = gen_bus[i]
                     if Qmin[i] == Inf
@@ -171,7 +178,7 @@ function runacpf(settings, system)
                 end
             end
 
-            @inbounds for i = 1:system.Ngen
+            for i = 1:num.Ngen
                 if genOn[i] == 1
                     j = gen_bus[i]
                     if isinf(Qmin[i])
@@ -186,10 +193,10 @@ function runacpf(settings, system)
             end
             flag = true
             tempslack = 0
-            @inbounds for i = 1:system.Ngen
+            for i = 1:num.Ngen
                 if genOn[i] == 1
                     j = gen_bus[i]
-                    if system.baseMVA * abs(Qmintotal[j] - Qmaxtotal[j]) > 10 * eps(Float64)
+                    if system.basePower * abs(Qmintotal[j] - Qmaxtotal[j]) > 10 * eps(Float64)
                         Qgen[i] = QminNew[i] + ((Qgentotal[j] - Qmintotal[j]) / (Qmaxtotal[j] - Qmintotal[j])) * (QmaxNew[i] - QminNew[i])
                     else
                         Qgen[i] = QminNew[i] + (Qgentotal[j] - Qmintotal[j]) / multiple[j]
@@ -202,16 +209,13 @@ function runacpf(settings, system)
                         tempslack = i
                         flag = false
                     end
-                else
-                    Pgen[i] = 0.0
-                    Qgen[i] = 0.0
                 end
             end
         end
 
         if settings.reactive[1] && settings.reactive[2]
             settings.reactive[2] = false
-            @inbounds for i = 1:system.Ngen
+            for i = 1:num.Ngen
                 if genOn[i] == 1
                     j = gen_bus[i]
                     if limit[i] == 1 && (Qgen[i] < Qmin[i] || Qgen[i] > Qmax[i])
@@ -232,7 +236,7 @@ function runacpf(settings, system)
 
                         type[j] = 1
                         if j == slack
-                            for k = 1:system.Nbus
+                            for k = 1:num.Nbus
                                 if type[k] == 2
                                     println("Bus $(trunc(Int, system.bus[k, 1])) is the new slack bus.")
                                     slack = bus[k]
@@ -252,25 +256,32 @@ function runacpf(settings, system)
 
     if settings.reactive[3]
         T = angle(Vc[slackLimit])
-        for i = 1:system.Nbus
+        for i = 1:num.Nbus
             Vc[i] = abs(Vc[i]) * exp(im * (angle(Vc[i]) - T +  (pi / 180) * Tini[slackLimit]))
         end
     end
 
-    @inbounds for i = 1:system.Nbra
+    ########## Post-processing ##########
+    Imij = fill(0.0, num.Nbranch); Iaij = fill(0.0, num.Nbranch)
+    Imji = fill(0.0, num.Nbranch); Iaji = fill(0.0, num.Nbranch)
+    Pij = fill(0.0, num.Nbranch); Qij = fill(0.0, num.Nbranch)
+    Pji = fill(0.0, num.Nbranch); Qji = fill(0.0, num.Nbranch)
+    Qcharging = fill(0.0, num.Nbranch); Ploss = fill(0.0, num.Nbranch)
+    Qloss = fill(0.0, num.Nbranch);
+    for i = 1:num.Nbranch
         if branchOn[i] == 1
             f = from[i]
             t = to[i]
 
-            Iij = Vc[f] * Yff[i] + Vc[t] * Yft[i]
-            Iji = Vc[f] * Ytf[i] + Vc[t] * Ytt[i]
-            Iijb = admittance[i] * (Vc[f] / tap[i] - Vc[t])
+            Iij::ComplexF64 = Vc[f] * Yff[i] + Vc[t] * Yft[i]
+            Iji::ComplexF64 = Vc[f] * Ytf[i] + Vc[t] * Ytt[i]
+            Iijb::ComplexF64 = admittance[i] * (Vc[f] / tap[i] - Vc[t])
 
-            Sij = Vc[f] * conj(Iij)
+            Sij::ComplexF64 = Vc[f] * conj(Iij)
             Pij[i] = real(Sij)
             Qij[i] = imag(Sij)
 
-            Sji = Vc[t] * conj(Iji)
+            Sji::ComplexF64 = Vc[t] * conj(Iji)
             Pji[i] = real(Sji)
             Qji[i] = imag(Sji)
 
@@ -282,33 +293,25 @@ function runacpf(settings, system)
             Iaij[i] = angle(Iij)
             Imji[i] = abs(Iji)
             Iaji[i] = angle(Iji)
-        else
-            Ploss[i] = 0.0
-            Qloss[i] = 0.0
-            Qcharging[i] = 0.0
         end
     end
   end
 
-    results, header = results_flowac(settings, system, limit, slack, Vc, algtime, iter)
+    ########## Results ##########
+    results, header, group = results_flowac(system, num, settings, Pinj, Qinj, Pbus, Qbus, Pshunt, Qshunt, Imij, Iaij,
+    Imji, Iaji, Pij, Qij, Pji, Qji, Qcharging, Ploss, Qloss, Pgen, Qgen, limit, slack, Vc, algtime, iter)
     if !isempty(settings.save)
-        group = ["bus" "branch"]
-        if system.Ngen != 0
-            group = [group "generator"]
-        end
-        savedata(results; info = system.info, group = group, header = header, path = settings.save)
+        savedata(results, system; info = info, group = group, header = header, path = settings.save)
     end
+
     return results
 end
 
 
-###############
-#  View data  #
-###############
+### View data
 function view_acsystem(system)
-    ################## Read data ##################
     busi = @view(system.bus[:, 1])
-    type = @view(system.bus[:, 2])
+    typei = @view(system.bus[:, 2])
     Pload = @view(system.bus[:, 3])
     Qload = @view(system.bus[:, 4])
     Gshunt = @view(system.bus[:, 5])
@@ -316,16 +319,13 @@ function view_acsystem(system)
     Vini =  @view(system.bus[:, 8])
     Tini = @view(system.bus[:, 9])
 
-    geni = @view(system.generator[:, 1])
-    Pgen = @view(system.generator[:, 2])
-    Qgen = @view(system.generator[:, 3])
-    Qmax = @view(system.generator[:, 4])
-    Qmin = @view(system.generator[:, 5])
+    Pgeni = @view(system.generator[:, 2])
+    Qgeni = @view(system.generator[:, 3])
+    Qmaxi = @view(system.generator[:, 4])
+    Qmini = @view(system.generator[:, 5])
     Vgen = @view(system.generator[:, 6])
     genOn = @view(system.generator[:, 8])
 
-    fromi = @view(system.branch[:, 2])
-    toi = @view(system.branch[:, 3])
     resistance = @view(system.branch[:, 4])
     reactance = @view(system.branch[:, 5])
     charging = @view(system.branch[:, 6])
@@ -333,32 +333,7 @@ function view_acsystem(system)
     transShift = @view(system.branch[:, 11])
     branchOn = @view(system.branch[:, 12])
 
-    ################## Write data ##################
-    Pshunt = @view(system.bus[:, 5])
-    Qshunt = @view(system.bus[:, 6])
-    Pbus = @view(system.bus[:, 10])
-    Qbus = @view(system.bus[:, 11])
-    Pinj = @view(system.bus[:, 12])
-    Qinj = @view(system.bus[:, 13])
-
-    QminInf = @view(system.generator[:, 10])
-    QmaxInf = @view(system.generator[:, 11])
-    limit = @view(system.generator[:, 14])
-
-    Imij = @view(system.branch[:, 4])
-    Iaij = @view(system.branch[:, 5])
-    Imji = @view(system.branch[:, 6])
-    Iaji = @view(system.branch[:, 7])
-    Pij = @view(system.branch[:, 8])
-    Qij = @view(system.branch[:, 9])
-    Pji = @view(system.branch[:, 10])
-    Qji = @view(system.branch[:, 11])
-    Qcharging = @view(system.branch[:, 12])
-    Ploss = @view(system.branch[:, 13])
-    Qloss = @view(system.branch[:, 14])
-
-    return busi, type, Pload, Qload, Gshunt, Bshunt, Vini, Tini, geni, Pgen, Qgen,
-    Qmax, Qmin, Vgen, genOn, fromi, toi, resistance, reactance, charging, transTap,
-    transShift, branchOn, Pshunt, Qshunt, Pbus, Qbus, Pinj, Qinj, Imij, Iaij, Imji, Iaji,
-    Pij, Qij, Pji, Qji, Qcharging, Ploss, Qloss, limit, QminInf, QmaxInf
+    return busi, typei, Pload, Qload, Gshunt, Bshunt, Vini, Tini, Pgeni, Qgeni,
+    Qmaxi, Qmini, Vgen, genOn, resistance, reactance, charging, transTap,
+    transShift, branchOn
 end

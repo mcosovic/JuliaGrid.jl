@@ -4,22 +4,19 @@ export runpf
 export runmg
 export runse
 
-using SparseArrays
-using HDF5
-using Printf
-using PrettyTables
-using CSV, XLSX
-using LinearAlgebra
+using SparseArrays, LinearAlgebra, SuiteSparse
+using PrettyTables, Printf
+using HDF5, CSV, XLSX
 using Random
 using JuMP, GLPK, Ipopt
+using LightGraphs
 
 
-##############
-#  Includes  #
-##############
+### Includes
 include("system/input.jl")
 include("system/routine.jl")
 include("system/results.jl")
+include("system/headers.jl")
 
 include("flow/flowdc.jl")
 include("flow/flowac.jl")
@@ -29,9 +26,7 @@ include("flow/measurements.jl")
 include("estimation/estimationdc.jl")
 
 
-################
-#  Power Flow  #
-################
+### Power Flow
 function runpf(
     args...;
     max::Int64 = 100,
@@ -40,22 +35,21 @@ function runpf(
     solve::String = "",
     save::String = "",
 )
-    system = loadsystem(args)
-    settings = pfsettings(args, max, stop, reactive, solve, save, system)
+    path = loadpath(args)
+    system, num, info = loadsystem(path)
+    settings = pfsettings(args, max, stop, reactive, solve, save, system, num)
 
     if settings.algorithm == "dc"
-        results = rundcpf(settings, system)
+        results = rundcpf(system, num, settings, info)
     else
-        results = runacpf(settings, system)
+        results = runacpf(system, num, settings, info)
     end
 
-    return results
+    return results, system, info
 end
 
 
-###########################
-#  Measurement Generator  #
-###########################
+### Measurement Generator
 function runmg(
     args...;
     runflow::Int64 = 1,
@@ -64,56 +58,56 @@ function runmg(
     reactive::Int64 = 0,
     solve::String = "",
     save::String = "",
-    pmuset = "",
-    pmuvariance = "",
-    legacyset = "",
-    legacyvariance = "",
+    pmuset = [],
+    pmuvariance = [],
+    legacyset = [],
+    legacyvariance = [],
 )
-    system = loadsystem(args)
-    measurement = loadmeasurement(system, pmuvariance, legacyvariance; runflow = runflow)
-    settings = gesettings(pmuset, pmuvariance, legacyset, legacyvariance, measurement; runflow = runflow, save = save)
+
+    path = loadpath(args)
+    system, numsys, info = loadsystem(path)
+    measurements, num = loadmeasurement(path, system, numsys, pmuvariance, legacyvariance; runflow = runflow)
+    settings = gesettings(num, pmuset, pmuvariance, legacyset, legacyvariance; runflow = runflow, save = save)
 
     if settings.runflow == 1
         pfsettings = gepfsettings(max, stop, reactive, solve)
-        flow = runacpf(pfsettings, system)
-        results = rungenerator(system, settings, measurement; flow = flow)
+        acflow = runacpf(system, numsys, pfsettings, info)
+        info = rungenerator(system, measurements, num, numsys, settings, info; flow = acflow)
     else
-        results = rungenerator(system, settings, measurement)
+        info = rungenerator(system, measurements, num, numsys, settings, info)
     end
 
-    return results
+    return measurements, system, info
 end
 
-
-######################
-#  State Estimation  #
-#####################
+### State Estimation
 function runse(
     args...;
     max::Int64 = 100,
     stop::Float64 = 1.0e-8,
     start::String = "flat",
-    bad = "",
-    lav = "",
+    bad = [],
+    lav = [],
+    observe = [],
     solve::String = "",
     save::String = "",
-    pmuset = "",
-    pmuvariance = "",
-    legacyset = "",
-    legacyvariance = "",
+    pmuset = [],
+    pmuvariance = [],
+    legacyset = [],
+    legacyvariance = [],
 )
 
-    system = loadsystem(args)
-    measurement = loadmeasurement(system, pmuvariance, legacyvariance)
-    settings = sesettings(args, max, stop, start, bad, lav, solve, save)
+    path = loadpath(args)
+    system, numsys, info = loadsystem(path)
+    measurements, num = loadmeasurement(path, system, numsys, pmuvariance, legacyvariance)
+    settings = sesettings(args, system, max, stop, start, bad, lav, observe, solve, save)
 
-    gensettings = gesettings(pmuset, pmuvariance, legacyset, legacyvariance, measurement)
-    rungenerator(system, gensettings, measurement)
+    gensettings = gesettings(num, pmuset, pmuvariance, legacyset, legacyvariance)
+    info = rungenerator(system, measurements, num, numsys, gensettings, info)
 
-    measurement = loadestimation(measurement)
-    results = rundcse(settings, system, measurement)
+    results = rundcse(system, measurements, num, numsys, settings, info)
 
-    return results
+    return results, measurements, system, info
 end
 
 end # JuliaGrid

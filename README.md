@@ -10,7 +10,7 @@ We have tested and verified simulation tool using different scenarios to the bes
 
 The software package provides the solution of the AC and DC power flow, non-linear and DC state estimation (work in progress), as well as the state estimation with PMUs (work in progress), with standalone measurement generator.
 
-<p align="middle"><a href="https://mcosovic.github.io/JuliaGrid.jl/dev/man/flow/" itemprop="contentUrl" data-size="600x400"> <img src="/docs/src/assets/modulepf.png" width="110"></a> <a href="" itemprop="contentUrl" data-size="600x400"> <img src="/docs/src/assets/modulese.png" width="110"></a> <a href="https://mcosovic.github.io/JuliaGrid.jl/dev/man/generator/" itemprop="contentUrl" data-size="600x400"> <img src="/docs/src/assets/modulemg.png" width="110"></a></p>
+<p align="middle"><a href="https://mcosovic.github.io/JuliaGrid.jl/dev/man/flow/" itemprop="contentUrl" data-size="600x400"> <img src="/docs/src/assets/modulepf.png" width="110"></a> <a href="https://mcosovic.github.io/JuliaGrid.jl/dev/man/estimation/" itemprop="contentUrl" data-size="600x400"> <img src="/docs/src/assets/modulese.png" width="110"></a> <a href="https://mcosovic.github.io/JuliaGrid.jl/dev/man/generator/" itemprop="contentUrl" data-size="600x400"> <img src="/docs/src/assets/modulemg.png" width="110"></a></p>
 
 <!-- MATGRID includes, inter alia, the weighted least-squares and least absolute values state estimation, optimal PMU placement, and bad data processing.   -->
 
@@ -22,28 +22,29 @@ pkg> add https://github.com/mcosovic/JuliaGrid.jl
 
 ###  Quick Start Power Flow
 ```julia-repl
-julia> results = runpf("dc", "case14.h5", "main", "flow")
+julia> results, system = runpf("dc", "case14.h5", "main", "flow")
 ```
 ```julia-repl
-julia> results = runpf("nr", "case14.h5", "main"; max = 20, stop = 1.0e-8)
+julia> results, = runpf("nr", "case14.h5", "main"; max = 20, stop = 1.0e-8)
 ```
 
 ###  Quick Start Measurement Generator
 ```julia-repl
-julia> results = runmg("case14.xlsx"; pmuset = "optimal")
+julia> measurements, system = runmg("case14.xlsx"; pmuset = "optimal")
 ```
 ```julia-repl
-julia> results = runmg("case14.h5"; legacyset = "all", pmuvariance = ["all" 1e-5])
+julia> measurements, = runmg("case14.h5"; legacyset = "all", pmuvariance = ["all" 1e-5])
 ```
 
 ###  Quick Start State Estimation (DC only)
 ```julia-repl
-julia> results = runse("case14se.xlsx", "dc", "main", "estimate", "error", "flow")
+julia> results, measurements = runse("case14se.xlsx", "dc", "main", "estimate", "error", "flow")
 ```
 ```julia-repl
-julia> results = runse("case14se.xlsx", "dc"; bad = ["pass" 3 "threshold" 2])
+julia> results, = runse("case14se.xlsx", "dc"; bad = ["pass" 3 "threshold" 2])
 ```
 
 ###  Changelog
 Major changes:
-- 2020-04-17 Added power flow and measurement generator functions
+- 2020-05-12 Added the DC state estimation with bad data and observability routines
+- 2020-04-17 Added the power flow and measurement generator functions

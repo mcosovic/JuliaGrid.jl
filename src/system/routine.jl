@@ -1,11 +1,7 @@
-###############
-#  Numbering  #
-###############
-function renumber(change, Nchange, old, new, Noldnew, numbering)
-    change = trunc.(Int, change)
-
+### Numbering
+@inbounds function renumber(change, Nchange, old, new, Noldnew, numbering)
     if numbering
-        @inbounds for i = 1:Nchange
+        for i = 1:Nchange
             for j = 1:Noldnew
                 if change[i] == old[j]
                     change[i] = new[j]
@@ -19,24 +15,25 @@ function renumber(change, Nchange, old, new, Noldnew, numbering)
 end
 
 
-#######################################
-#  Save data in h5-file or xlsx-file  #
-#######################################
-function savedata(args; group, header, path, info = "", label = Dict())
+### Save data in h5-file or xlsx-file
+@inbounds function savedata(args...; group, header, path, info = "", skip = [])
     extension = match(r"\.[A-Za-z0-9]+$", path).match
 
     if extension == ".h5"
         h5open(path, "w") do file
-            for i in group
-                write(file, i, args[i])
-                try
-                    atr = Dict(string("row", k) => string(header[i][1, k], ": ", header[i][2, k]) for k = 1:size(header[i], 2))
-                    if haskey(label, i)
-                        atr1 = Dict(string("column", k) => label[i][k] for k = 1:size(label[i], 1))
-                        merge!(atr, atr1)
+            for i in keys(group)
+                if group[i] != 0
+                    write(file, String(i), getfield(args[group[i]], i))
+                    try
+                        head = header[i]
+                        N = size(getfield(args[group[i]], i), 2)
+                        if N == 1
+                            N = size(getfield(args[group[i]], i), 1)
+                        end
+                        atr = Dict(string("row", k) => string(head[1, k], ": ", head[2, k]) for k = 1:N)
+                        h5writeattr(path, String(i), atr)
+                    catch
                     end
-                    h5writeattr(path, i, atr)
-                catch
                 end
             end
             if !isempty(info)
@@ -45,21 +42,29 @@ function savedata(args; group, header, path, info = "", label = Dict())
         end
         println("Data is successfully exported to $path")
     elseif extension == ".xlsx"
-        XLSX.openxlsx(path, mode="w") do xf
-            for (k, i) in enumerate(group)
-                if k == 1
-                    sheet = xf[k]
-                    XLSX.rename!(sheet, i)
-                else
-                    XLSX.addsheet!(xf, i)
-                    sheet = xf[k]
+        k = 1
+        XLSX.openxlsx(path, mode = "w") do xf
+            for i in keys(group)
+                if group[i] != 0
+                    if k == 1
+                        sheet = xf[k]
+                        XLSX.rename!(sheet, String(i))
+                    else
+                        XLSX.addsheet!(xf, String(i))
+                        sheet = xf[k]
+                    end
+                    N = size(getfield(args[group[i]], i), 2)
+                    if N == 1
+                        N = size(getfield(args[group[i]], i), 1)
+                    end
+                    sheet["A1"] = header[i][:, 1:N]
+                    sheet["A3"] = getfield(args[group[i]], i)
+                    k += 1
                 end
-                sheet["A1"] = header[i][:, 1:size(args[i], 2)]
-                sheet["A3"] = args[i]
             end
             if !isempty(info)
                 XLSX.addsheet!(xf, "info")
-                sheet = xf[length(group) + 1]
+                sheet = xf[k]
                 sheet["A1"] = info
             end
         end
@@ -71,61 +76,21 @@ function savedata(args; group, header, path, info = "", label = Dict())
 end
 
 
-########################################
-#  Read data from h5-file or xlsx-file #
-########################################
-function readdata(fullpath, extension, type)
-    read_data = Dict()
-
-    if type == "power system"
-        sheet = ["bus", "branch", "generator", "basePower", "info"]
-    end
-    if type == "measurements"
-        sheet = ["pmuVoltage", "pmuCurrent", "legacyFlow", "legacyCurrent", "legacyInjection", "legacyVoltage"]
-    end
-
-    if extension == ".h5"
-        fid = h5open(fullpath, "r")
-        for i in sheet
-            if exists(fid, i)
-                table = h5read(fullpath, string("/", i))
-                push!(read_data, i => table)
-            end
-        end
-        close(fid)
-    end
-
-    if extension == ".xlsx"
-        start = 1
-        xf = XLSX.readxlsx(fullpath)
-        orginal = XLSX.sheetnames(xf)
-        for i in sheet
-            if i in orginal
-                sh = xf[i]
-                table = sh[:]
-                for r in XLSX.eachrow(sh)
-                    if !isa(r[1], String) && i != "info"
-                        start = XLSX.row_number(r)
-                        break
-                    end
-                end
-                if i != "info"
-                    push!(read_data, i => Float64.(table[start:end, :]))
-                else
-                    push!(read_data, i => string.(coalesce.(table, "")))
-                end
-            end
+### Start row in xlsx-file
+function startxlsx(xf)
+    start = 1
+    for r in XLSX.eachrow(xf)
+        if !isa(r[1], String)
+            start = XLSX.row_number(r)
+            break
         end
     end
-
-    return read_data
+    return start
 end
 
 
-###################################
-#  Weighted least-squares method  #
-###################################
-function wls(A, G, H, W, b, method)
+### Weighted least-squares method
+@inbounds function wls(A, G, H, W, b, method)
     r = W * b
     if method == "lu"
         F = lu(G)
@@ -139,10 +104,8 @@ function wls(A, G, H, W, b, method)
 end
 
 
-##########################
-#  Least-squares method  #
-##########################
-function ls(A, b, method)
+### Least-squares method
+@inbounds function ls(A, b, method)
     if method == "lu"
         F = lu(A)
         x = F.U \  (F.L \ ((F.Rs .* b)[F.p]))
@@ -155,16 +118,14 @@ function ls(A, b, method)
 end
 
 
-##################################
-#  Least absolute value method  #
-##################################
-function lav(A, b, Nvar, Nequ, settings)
+### Least absolute value method
+@inbounds function lav(A, b, Nvar, Nequ, settings)
     c = [zeros(2 * Nvar); ones(2 * Nequ)]
     E = spdiagm(0 => ones(Nequ))
     Aeq = [A -A E -E]
     lb = zeros(2 * (Nvar + Nequ))
 
-    if settings.lavoptimize == "Ipopt"
+    if settings.lav[:optimize] == 2
         model = Model(Ipopt.Optimizer)
     else
         model = Model(GLPK.Optimizer)
@@ -172,10 +133,10 @@ function lav(A, b, Nvar, Nequ, settings)
 
     @variable(model, x[i = 1:(2 * (Nvar + Nequ))])
     @constraint(model, lb .<= x)
-    if settings.lavconstraint == "equality"
-        @constraint(model, Aeq * x .== b)
-    else
+    if settings.lav[:constraint] == 2
         @constraint(model, Aeq * x .<= b)
+    else
+        @constraint(model, Aeq * x .== b)
     end
     @objective(model, Min, sum(x))
     optimize!(model)
@@ -185,13 +146,15 @@ function lav(A, b, Nvar, Nequ, settings)
 end
 
 
-###########################
-#  Try-catch next element #
-###########################
+### Try-catch next element
 function nextelement(set, current)
-    value = 0
+    value = 0.0
     try
         value = set[current + 1]
+        if value == "all"
+            value = -200.0
+        end
+        value = Float64(value)
     catch
         throw(ErrorException("the name-value pair setting is missing"))
     end
@@ -200,9 +163,7 @@ function nextelement(set, current)
 end
 
 
-####################
-#  Data Structure  #
-####################
+### Data structure
 function datastruct(data, max; var = "")
     Nrow, Ncol = size(data)
     if Ncol < max
@@ -213,11 +174,9 @@ function datastruct(data, max; var = "")
 end
 
 
-##############################################################
-#  The sparse inverse subset of a real sparse square matrix  #
-#  Copyright (c) 2014, Tim Davis                             #
-#  Adopt the function SPARSEINV for Julia                    #
-##############################################################
+### The sparse inverse subset of a real sparse square matrix
+# Copyright (c) 2014, Tim Davis
+# Adopt the function SPARSEINV for Julia
 function sparseinv(A)
 
 end

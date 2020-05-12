@@ -1,6 +1,12 @@
 # JuliaGrid changelog
 
-![Maintenance][badge-maintenance] Change inversion of sparse matrix with sparse inverse subset in the bad data routine.
+## Version `v0.0.2`
+
+![Feature][badge-feature] Add the observability analysis in the DC state estimation framework.
+
+![Maintenance][badge-maintenance-yes] Type stability check.
+
+![Maintenance][badge-maintenance-no] Change inversion of sparse matrix with sparse inverse subset in the bad data routine.
 
 ![Feature][badge-feature] Add the DC state estimation with bad data detection and least absolute value estimation.
 
@@ -19,4 +25,5 @@
 [badge-feature]: https://img.shields.io/badge/feature-green.svg
 [badge-breaking]: https://img.shields.io/badge/BREAKING-red.svg
 [badge-bugfix]: https://img.shields.io/badge/bugfix-purple.svg
-[badge-maintenance]: https://img.shields.io/badge/Maintained%3F-no-red.svg
+[badge-maintenance-yes]: https://img.shields.io/badge/Maintained%3F-no-red.svg
+[badge-maintenance-no]: https://img.shields.io/badge/Maintained%3F-yes-green.svg

@@ -37,18 +37,18 @@ julia> using JuliaGrid
 
 ###  Quick Start Power Flow
 ```julia-repl
-julia> results = runpf("dc", "case14.h5", "main", "flow")
+julia> results, system, info = runpf("dc", "case14.h5", "main", "flow")
 ```
 ```julia-repl
-julia> results = runpf("nr", "case14.xlsx", "main"; max = 20, stop = 1.0e-8)
+julia> results, = runpf("nr", "case14.xlsx", "main"; max = 20, stop = 1.0e-8)
 ```
 
 ###  Quick Start Measurement Generator
 ```julia-repl
-julia> results = rungen("case14.h5"; pmuset = "optimal", pmuvariance = ["all" 1e-5])
+julia> measurements, system, info = rungen("case14.h5"; pmuset = "optimal", pmuvariance = ["complete" 1e-5])
 ```
 ```julia-repl
-julia> results = rungen("case14.h5"; legacyset = ["redundancy" 3.1], legacyvariance = ["all" 1e-4])
+julia> measurements, = rungen("case14.h5"; legacyset = ["redundancy" 3.1], legacyvariance = ["complete" 1e-4])
 ```
 
 ###  Quick State Estimation (only DC)
