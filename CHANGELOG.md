@@ -25,5 +25,5 @@
 [badge-feature]: https://img.shields.io/badge/feature-green.svg
 [badge-breaking]: https://img.shields.io/badge/BREAKING-red.svg
 [badge-bugfix]: https://img.shields.io/badge/bugfix-purple.svg
-[badge-maintenance-yes]: https://img.shields.io/badge/Maintained%3F-no-red.svg
-[badge-maintenance-no]: https://img.shields.io/badge/Maintained%3F-yes-green.svg
+[badge-maintenance-no]: https://img.shields.io/badge/Maintained%3F-no-red.svg
+[badge-maintenance-yes]: https://img.shields.io/badge/Maintained%3F-yes-green.svg

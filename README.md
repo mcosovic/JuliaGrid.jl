@@ -22,7 +22,7 @@ pkg> add https://github.com/mcosovic/JuliaGrid.jl
 
 ###  Quick Start Power Flow
 ```julia-repl
-julia> results, system = runpf("dc", "case14.h5", "main", "flow")
+julia> results, system, info = runpf("dc", "case14.h5", "main", "flow")
 ```
 ```julia-repl
 julia> results, = runpf("nr", "case14.h5", "main"; max = 20, stop = 1.0e-8)
@@ -30,7 +30,7 @@ julia> results, = runpf("nr", "case14.h5", "main"; max = 20, stop = 1.0e-8)
 
 ###  Quick Start Measurement Generator
 ```julia-repl
-julia> measurements, system = runmg("case14.xlsx"; pmuset = "optimal")
+julia> measurements, system, info = runmg("case14.xlsx"; pmuset = "optimal")
 ```
 ```julia-repl
 julia> measurements, = runmg("case14.h5"; legacyset = "all", pmuvariance = ["all" 1e-5])
@@ -38,7 +38,7 @@ julia> measurements, = runmg("case14.h5"; legacyset = "all", pmuvariance = ["all
 
 ###  Quick Start State Estimation (DC only)
 ```julia-repl
-julia> results, measurements = runse("case14se.xlsx", "dc", "main", "estimate", "error", "flow")
+julia> results, measurements, system, info = runse("case14se.xlsx", "dc", "main", "estimate", "error", "flow")
 ```
 ```julia-repl
 julia> results, = runse("case14se.xlsx", "dc"; bad = ["pass" 3 "threshold" 2])

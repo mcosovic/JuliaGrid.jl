@@ -73,11 +73,11 @@ function dcseheader()
            ["Integer" "Integer" "Integer" "Active Power [MW]" "Active Power [MW]"]]
 
     estimate = [["Device" "Device" "Device" "Device" "Device" "Device" "Algorithm" "Residual" "User" "Residual" ]
-                ["In-service(1), Bad Data(2), Pseudo(3)" "Legacy(1), PMU(2)" "Pij(1), Pi(4), Ti(8)" "Local Number" "Measure" "Variance" "Estimate" "Estimate to Measure" "Exact" "Estimate to Exact"]]
+                ["In-service(1), Bad Data(2), Pseudo(3)" "Legacy(1), PMU(2)" "Pij(1), Pi(4), Ti(8)" "Local Index" "Measure" "Variance" "Estimate" "Estimate to Measure" "Exact" "Estimate to Exact"]]
 
 
     estimatedisplay = [["Device" "Device" "Device" "Device" "Device" "Device" "Algorithm" "Residual" "User" "Residual" ]
-                       ["Status" "Class" "Type" "Local Number" "Measure" "Variance" "Estimate" "Estimate to Measure" "Exact" "Estimate to Exact"]]
+                       ["Status" "Class" "Type" "Local Index" "Measure" "Variance" "Estimate" "Estimate to Measure" "Exact" "Estimate to Exact"]]
 
     error = [["MAE" "RMS" "WRSSE" "MAE" "RMSE" "WRSSE"]
             ["estimates to measurements" "estimates to measurements" "estimates to measurements" "estimates to exacts"  "estimates to exacts"  "estimates to exacts"]]
