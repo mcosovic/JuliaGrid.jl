@@ -33,7 +33,7 @@ julia> results, = runpf("nr", "case14.h5", "main"; max = 20, stop = 1.0e-8)
 julia> measurements, system, info = runmg("case14.xlsx"; pmuset = "optimal")
 ```
 ```julia-repl
-julia> measurements, = runmg("case14.h5"; legacyset = "all", pmuvariance = ["all" 1e-5])
+julia> measurements, = runmg("case14.h5"; legacyset = "complete", pmuvariance = ["complete" 1e-5])
 ```
 
 ###  Quick Start State Estimation (DC only)
