@@ -1,6 +1,6 @@
 # JuliaGrid changelog
 
-![Maintenance][badge-maintenance-yes] changed inversion of sparse matrix with sparse inverse subset in the bad data routine, case_ACTIVSg10k -> bult-in inversion 43.105664 seconds; sparseinv 0.360591 seconds
+![Maintenance][badge-maintenance-yes] changed inversion of sparse matrix with sparse inverse subset in the bad data routine, case_ACTIVSg10k -> built-in inversion 43.105664 seconds; sparseinv 0.360591 seconds
 
 ## Version `v0.0.2`
 
