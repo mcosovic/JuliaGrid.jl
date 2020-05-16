@@ -1,20 +1,20 @@
 # JuliaGrid changelog
 
+![Maintenance][badge-maintenance-yes] changed inversion of sparse matrix with sparse inverse subset in the bad data routine, case_ACTIVSg10k inv(Matrix(G)) 43.105664 seconds (9 allocations: 1.495 GiB, 0.04% gc time); sparseinv 0.360591 seconds (20.28 k allocations: 73.570 MiB, 62.08% gc time)
+
 ## Version `v0.0.2`
 
-![Feature][badge-feature] Add the observability analysis in the DC state estimation framework.
+![Feature][badge-feature] added the observability analysis in the DC state estimation framework
 
-![Maintenance][badge-maintenance-yes] Type stability check.
+![Maintenance][badge-maintenance-yes] type stability checked
 
-![Maintenance][badge-maintenance-no] Change inversion of sparse matrix with sparse inverse subset in the bad data routine.
+![Feature][badge-feature] added the DC state estimation with bad data detection and least absolute value estimation
 
-![Feature][badge-feature] Add the DC state estimation with bad data detection and least absolute value estimation.
+![Bugfix][badge-bugfix] branch current exact values in measurement generator function `runmg(...)` are corrected
 
-![Bugfix][badge-bugfix] Branch current exact values in measurement generator function `runmg(...)` are corrected.
+![Bugfix][badge-bugfix] measurement generator now does not generate measurement values if keywords `legacyvariance` or/and `pmuvariance` are omitted
 
-![Bugfix][badge-bugfix] Measurement generator now does not generate measurement values if keywords `legacyvariance` or/and `pmuvariance` are omitted.
-
-![Bugfix][badge-bugfix] The output of the function `runmg(...)` related to the power system is correct now.
+![Bugfix][badge-bugfix] the output of the function `runmg(...)` related to the power system is correct now.
 
 
 ## Version `v0.0.1`

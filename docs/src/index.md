@@ -53,8 +53,8 @@ julia> measurements, = rungen("case14.h5"; legacyset = ["redundancy" 3.1], legac
 
 ###  Quick State Estimation (only DC)
 ```julia-repl
-julia> results = runse("case14.h5"; pmuset = "optimal", pmuvariance = ["all" 1e-5])
+julia> results = runse("case14.h5"; pmuset = "optimal", pmuvariance = ["complete" 1e-5])
 ```
 ```julia-repl
-julia> results = rungen("case14.h5"; legacyset = ["redundancy" 3.1], legacyvariance = ["all" 1e-4])
+julia> results = rungen("case14.h5"; legacyset = ["redundancy" 3.1], legacyvariance = ["complete" 1e-4])
 ```

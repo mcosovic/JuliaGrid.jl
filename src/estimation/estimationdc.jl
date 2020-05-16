@@ -1,10 +1,9 @@
 #### DC state estimation
 function rundcse(system, measurements, num, numsys, settings, info)
     printstyled("Algorithm: DC state estimation\n"; bold = true)
-    busi, type, Tini,
-    branchi, reactance, transTap, transShift, branchOn,
-    meanPij, variPij, onPij,
-    meanPi, variPi, onPi,
+
+    busi, type, Tini, branchi, reactance, transTap, transShift, branchOn,
+    meanPij, variPij, onPij, meanPi, variPi, onPi,
     meanTi, variTi, onTi  = view_dcsystem(system, measurements)
 
   algtime = @elapsed begin
@@ -147,12 +146,13 @@ function rundcse(system, measurements, num, numsys, settings, info)
     ########## Observability analysis ##########
     Npseudo = 0; islands = [Int64[], Int64[]]
     if settings.observe[:observe] == 1
-        jacobian, mean, weight, Npseudo, islands = observability_flow(settings, system, numsys, measurements, num, jacobian, jacobianflow, slack, branch, from, to,
-            busPi, onPi, onTi, Ybus, Nvol, Nflow, branchPij, onPij, busTi, fromPij, toPij, admitance, mean, weight, meanPij,
-            transShift, Pshift, meanPi, meanTi, Tslack, variPi, variTi, variPij, Npseudo, islands)
+        jacobian, mean, weight, Npseudo, islands = observability_flow(settings, system, numsys, measurements, num, jacobian,
+            jacobianflow, slack, branch, from, to, busPi, onPi, onTi, Ybus, Nvol, Nflow, branchPij,
+            onPij, busTi, fromPij, toPij, admitance, mean, weight, meanPij, transShift, Pshift, meanPi,
+            meanTi, Tslack, variPi, variTi, variPij, Npseudo, islands)
     end
 
-    ########## WLS ##########
+    ########## WLS and LAV ##########
     Nmeasur = Nmeasur + Npseudo
     W = spdiagm(0 => sqrt.(weight))
     keep = [collect(1:slack - 1); collect(slack + 1:numsys.Nbus)]
@@ -210,7 +210,10 @@ end
 function baddata(settings, numsys, G, jacobian, Ti, Nmeasur, mean, weight, W, savebad)
     pass = 1
     while settings.bad[:pass] >= pass
-        Gi = inv(Matrix(G))
+        S, L, U, d, p, q, Rs = constructfact(G)
+        parent = etree(S)
+        R = symbfact(S, parent)
+        Gi = sparseinv(L, U, d, p, q, Rs, R)
 
         meanest = jacobian * Ti
         jacobianGi = jacobian * Gi
