@@ -693,6 +693,19 @@ end
     return GeneratorSettings(runflow, set, variance, save)
 end
 
+### Load state estimation data from generator or input data
+function loadse(args)
+    data = true
+    for i in args
+        if typeof(i) == Tuple{Measurements, PowerSystem, Array{String,2}}
+            data = false
+            break
+        end
+    end
+
+    return data
+end
+
 
 ### State estimation settings
 @inbounds function sesettings(args, system, max, stop, start, badset, lavset, observeset, solve, save)
@@ -805,19 +818,8 @@ end
         start, bad, lav, observe, solve, save, saveextension)
 end
 
-function loadse(args)
-    data = true
-    for i in args
-        if typeof(i) == Tuple{Measurements, PowerSystem, Array{String,2}}
-            data = false
-            break
-        end
-    end
 
-    return data
-end
-
-
+### Load state estimation data from measurement generator
 function loadsedirect(args)
     idx = 0
     for (k, i) in enumerate(args)

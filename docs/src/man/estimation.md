@@ -29,18 +29,18 @@ Input arguments of the function `runse(...)` describe the state estimation setti
 #### Syntax
 ```julia-repl
 runse(DATA, METHOD)
-runse(DATA, METHOD, LAVBAD)
-runse(DATA, METHOD, LAVBAD, DISPLAY)
-runse(DATA, METHOD, LAVBAD, DISPLAY; ATTACH)
-runse(DATA, METHOD, LAVBAD, DISPLAY; ATTACH, SAVE)
+runse(DATA, METHOD, ROUTINE)
+runse(DATA, METHOD, ROUTINE, DISPLAY)
+runse(DATA, METHOD, ROUTINE, DISPLAY; ATTACH)
+runse(DATA, METHOD, ROUTINE, DISPLAY; ATTACH, SAVE)
 ```
 
 #### Description
 ```julia-repl
 runse(DATA, METHOD) solves state estimation problem
-runse(DATA, METHOD, LAVBAD) sets least absolute values estimation and bad data processing
+runse(DATA, METHOD, ROUTINE) sets least absolute values estimation, bad data processing and observability analysis
 runse(DATA, METHOD, LAVBAD, DISPLAY) shows results in the terminal
-runse(DATA, METHOD, LAVBAD, DISPLAY; ATTACH) sets various options related with algorithms
+runse(DATA, METHOD, LAVBAD, DISPLAY; ATTACH) sets various options mostly related with ROUTINE
 runse(DATA, METHOD, LAVBAD, DISPLAY; ATTACH, SAVE) exports results data
 ```
 
@@ -54,24 +54,25 @@ results, measurements, system, info = runse(...) returns results of the state es
 julia> results, = runse("case14se.xlsx", "dc", "main", "estimate", "error", "flow")
 ```
 ```julia-repl
-julia> mg = runmg("case14.h5"; runflow = 1, legacyset = "complete", legacyvariance = ["complete" 1e-4])
-julia> results, = runse(mg, "dc", "estimate"; bad = ["pass" 3 "threshold" 2])
+julia> data = runmg("case14.h5"; runflow = 1, legacyset = "complete", legacyvariance = ["complete" 1e-4])
+julia> results, = runse(data, "dc", "estimate"; bad = ["pass" 3 "threshold" 2])
 ```
 ---
 
 ## Input Arguments
 
-The state estimation function `runse(...)` receives a group of variable number of arguments: DATA, METHOD, LAVBAD and DISPLAY, and group of arguments by keyword: ATTACH and SAVE
+The state estimation function `runse(...)` receives a group of variable number of arguments: DATA, METHOD, ROUTINE and DISPLAY, and group of arguments by keyword: ATTACH and SAVE.
 
 #### Variable Arguments
 
 DATA
 
-| Example           | Description                                        |
-|:------------------|:---------------------------------------------------|
-|`"case14.h5"`      | loads the state estimation data from the package   |
-|`"case14.xlsx"`    | loads the state estimation data from the package   |
-|`"C:/case14.xlsx"` | loads the state estimation data from a custom path |
+| Example                 | Description                                                 |
+|:------------------------|:------------------------------------------------------------|
+|`"case14.h5"`            | loads the state estimation data from the package            |
+|`"case14.xlsx"`          | loads the state estimation data from the package            |
+|`"C:/case14.xlsx"`       | loads the state estimation data from a custom path          |
+|`output from runmg(...)` | loads the state estimation data from measurement generator  |
 
 METHOD
 
@@ -81,13 +82,13 @@ METHOD
 |`"pmu"`      | runs the linear weighted least-squares state estimation only with PMUs                      |
 |`"dc"`       | runs the linear weighted least-squares DC state estimation                                  |
 
-LAVBAD
+ROUTINE
 
 | Command      | Description                                                                              |
 |:-------------|:-----------------------------------------------------------------------------------------|
 |`"lav"`       | runs the non-linear or linear state estimation using the least absolute value estimation (replacing  weighted least-squares everywhere) with `"GLPK"` solver and `"equality"` constraints as `default settings` (see ATTACH to change `default settings`) |
 |`"bad"` | runs the bad data processing using the identification `"threshold" = 3`, with the maximum number of `"passes" = 1`, where critical measurement are marked according to `"critical" = 1e-10` (see ATTACH to change `default settings`) |
-|`"observe"` | runs the observability analysis using the identification `"pivot" = 1e-5` threshold, where to restore observability routine takes only power injection measurements with variances in per-unit `"Pij" = 1e5` (see ATTACH to change `default settings`) |
+|`"observe"` | runs the observability analysis using the `"pivot" = 1e-5` threshold, where to restore observability routine takes only power injection measurements with variances in per-unit `"Pi" = 1e5` (see ATTACH to change `default settings`) |
 
 DISPLAY
 
@@ -107,8 +108,8 @@ ATTACH
 | Command      | Description                                                                              |
 |:-------------|:-----------------------------------------------------------------------------------------|
 |`lav = [solver constraint]` | the least absolute value estimation can be run using `"GLPK"` or `"Ipopt"` optimization `solver` with `constraint` equal to `"equality"` or `"inequality"`, `default setting: lav = ["GLPK" "equality"]` |
-|`bad = ["pass" value "threshold" value "critical" value]`| bad data processing can be run using the identification `threshold`, with the maximum number of `passes`, where `critical` measurement are marked according defined value, `default setting: bad = ["pass" 1 "threshold" 3 "critical" 1e-10]` |
-|`observe = ["pivot" value "Pij" value "Pi" value "Ti" value]`| observability analysis can be run using the `pivot` identification `threshold`, where active power flow `"Pij" value`, active power injection `"Pi" value` or bus voltage angle `"Ti" value` can be forced to restore observability, with measurement variances equal to `values` |
+|`bad = ["pass" value "threshold" value "critical" value]`| bad data processing can be run using the bad data identification `threshold`, with the maximum number of `passes`, where `critical` measurement are marked according defined `value`, `default setting: bad = ["pass" 1 "threshold" 3 "critical" 1e-10]` |
+|`observe = ["pivot" value "Pij" value "Pi" value "Ti" value]`| observability analysis can be run using the `pivot` identification `threshold`, where active power flow `"Pij" value`, active power injection `"Pi" value` and/or bus voltage angle `"Ti" value` can be forced to restore observability, with measurement variances equal to `values`, `default setting: bad = ["pivot" 1e-5 "Pi" 1e5]` |
 |`solve = solver` | runs the linear system `solver` using built-in `solve = "builtin"` as `default setting` or LU linear system solver `solve = "lu"` |   
 
 SAVE
@@ -257,14 +258,14 @@ The `estimate` data structure contains summary of the state estimation analysis.
 
 The `error` data structure contains different error metrics which are calculated in the per-unit system. Note that only in-service measurement values are included, respectively bad data and pseudo-measurement are not included.
 
-| Row     | Type                                   | Description                                                                                | Unit     |
-|:-------:|:---------------------------------------|:-------------------------------------------------------------------------------------------|:---------|
-| 1       | mean absolute error                    | between estimate and corresponding measurement values in per-unit system                   | per-unit |
-| 2       | root mean square error                 | between estimate and corresponding measurement values in per-unit system                   | per-unit |
-| 2       | weighted residual sum of squares error | between estimate and corresponding measurement values in per-unit system                   | per-unit |
-| 1       | mean absolute error                    | between estimate and corresponding exact values in per-unit system (if exact values exist) | per-unit |
-| 2       | root mean square error                 | between estimate and corresponding exact values in per-unit system (if exact values exist) | per-unit |
-| 2       | weighted residual sum of squares error | between estimate and corresponding exact values in per-unit system (if exact values exist) | per-unit |
+| Row     | Type                                   | Description                                                             | Unit     |
+|:-------:|:---------------------------------------|:------------------------------------------------------------------------|:---------|
+| 1       | mean absolute error                    | between estimate and corresponding measurement values                   | per-unit |
+| 2       | root mean square error                 | between estimate and corresponding measurement values                   | per-unit |
+| 3       | weighted residual sum of squares error | between estimate and corresponding measurement values                   | per-unit |
+| 4       | mean absolute error                    | between estimate and corresponding exact values (if exact values exist) | per-unit |
+| 5       | root mean square error                 | between estimate and corresponding exact values (if exact values exist) | per-unit |
+| 6       | weighted residual sum of squares error | between estimate and corresponding exact values (if exact values exist) | per-unit |
 
 The `baddata` data structure contains information about bad data analysis. Note that if the bad data measurement corresponds with critical measurement,
 this measurement is skipped, and one of the next, with the highest normalized residual, is marked as the bad data in the same pass.
@@ -272,13 +273,13 @@ this measurement is skipped, and one of the next, with the highest normalized re
 | Column  | Type                       | Description                                             |
 |:-------:|:---------------------------|:--------------------------------------------------------|
 | 1       | algorithm                  | in each pass suspected bad data is eliminated           |
-| 3       | device                     | type, flow(1), injection(4) and angle(8)                |
-| 3       | device                     | local index of the measurement given in the input DATA  |
-| 4       | device                     | suspected bad data                                      |
+| 2       | device                     | type, legacy(1), pmu(2)                                 |
+| 3       | device                     | bad data, flow(1), injection(4) and angle(8)            |
+| 4       | device                     | local index of the measurement given in the input DATA  |
 | 5       | algorithm                  | normalized residual of the bad data measurement         |
 | 6       | device                     | status, bad-measurement(2)                              |
 
-The `observability` data structure contains information about flow islands, where each flow island is formed by buses. Pseudo-measurements are given in the `estimate` variable.  
+The `observability` data structure contains information about flow islands, where each flow island is formed by buses. Pseudo-measurements are marked in the `estimate` variable.  
 
 ## References
 [1] A. Abur and A. Exposito, “Power System State Estimation: Theory and Implementation,” ser. Power Engineering. Taylor & Francis, 2004.

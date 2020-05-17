@@ -22,10 +22,10 @@ pkg> add https://github.com/mcosovic/JuliaGrid.jl
 
 ###  Quick Start Power Flow
 ```julia-repl
-julia> results, system, info = runpf("dc", "case14.h5", "main", "flow")
+julia> results, system, info = runpf("nr", "case14.h5", "main", "flow"; max = 20, stop = 1.0e-8)
 ```
 ```julia-repl
-julia> results, = runpf("nr", "case14.h5", "main"; max = 20, stop = 1.0e-8)
+julia> results, = runpf("dc", "case14.h5", "main")
 ```
 
 ###  Quick Start Measurement Generator
@@ -41,8 +41,8 @@ julia> measurements, = runmg("case14.h5"; legacyset = "complete", pmuvariance = 
 julia> results, measurements, system, info = runse("case14se.xlsx", "dc", "main", "estimate", "error", "flow")
 ```
 ```julia-repl
-julia> mg = runmg("case14.h5"; runflow = 1, pmuset = "complete", pmuvariance = ["complete" 1e-30])
-julia> results, = runse(mg, "dc", "estimate")
+data = runmg("case14.h5"; runflow = 1, legacyset = ["Pij" 10 "Pi" 7], legacyvariance = ["complete" 1e-10])
+results, = runse(data, "dc", "estimate")
 ```
 
 ###  Changelog

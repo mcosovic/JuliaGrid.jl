@@ -94,8 +94,9 @@ end
     r = W * b
     if method == "lu"
         F = lu(G)
-        x = F.U \  (F.L \ ((F.Rs .* (transpose(H) * r))[F.p]))
-        x = x[sortperm(F.q)]
+        L, U, p, q, Rs = F.:(:)
+        x = U \  (L \ ((Rs .* (transpose(H) * r))[p]))
+        x = x[sortperm(q)]
     else
         x = G \ (transpose(H) * r)
     end
@@ -108,8 +109,9 @@ end
 @inbounds function ls(A, b, method)
     if method == "lu"
         F = lu(A)
-        x = F.U \  (F.L \ ((F.Rs .* b)[F.p]))
-        x = x[sortperm(F.q)]
+        L, U, p, q, Rs = F.:(:)
+        x = U \  (L \ ((Rs .* b)[p]))
+        x = x[sortperm(q)]
     else
         x = A \ b
     end

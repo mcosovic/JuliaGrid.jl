@@ -75,7 +75,7 @@
     end
     group = (pmuVoltage = pmuv, pmuCurrent = pmuc, legacyFlow = legf, legacyCurrent = legc, legacyInjection = legi, legacyVoltage = legv, bus = 2, branch = 2, generator = gen, basePower = 2)
 
-    println("Measurment data is successfully generated.")
+    println("Measurment data is successfully generated")
     if !isempty(settings.save)
         mheader = measureheader(); pheader = psheader(); header = merge(mheader, pheader)
         savedata(measurements, system; group = group, header = header, path = settings.save, info = info)

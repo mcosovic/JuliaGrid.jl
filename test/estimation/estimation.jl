@@ -44,8 +44,8 @@ case14seobsbad = string(path, "case14seobsbad.xlsx")
         @test maximum(abs.(results.error[3] - matrgrid["error"][3, 1])) < accuracy
         @test maximum(abs.(results.error[6] - matrgrid["error"][3, 2])) < accuracy
 
-    mg = runmg(estimation_incdc; runflow = 0, pmuset = "complete", pmuvariance = ["complete" 1e-30], legacyset = ["Pij" 0])
-    results, measurements, = runse(mg, "dc", "estimate"; bad = ["pass" 3])
+    data = runmg(estimation_incdc; runflow = 0, pmuset = "complete", pmuvariance = ["complete" 1e-30], legacyset = ["Pij" 0])
+    results, measurements, = runse(data, "dc", "estimate"; bad = ["pass" 3])
         @test maximum(abs.(results.estimate[:, 7] - results.estimate[:, 9])) < 1e-8
         @test all(measurements.pmuVoltage[:, 7] .== 1)
         @test all(measurements.pmuVoltage[:, 6] .== 1e-30)
@@ -83,4 +83,18 @@ case14seobsbad = string(path, "case14seobsbad.xlsx")
         results, = runse(case14seobsbad, "dc", "observe", "bad"; observe = ["pivot" 1e-8 "Ti" 1e-4 "Pi" 1e-4], bad = ["pass" 8])
         Tinew = results.main[:, 2]
         @test maximum(abs.(Ti - Tinew)) < 1.0
+
+    data = runmg("case_ACTIVSg70k.h5"; legacyset = "complete", legacyvariance = ["Pij" 1e-2 "Pi" 1e-3])
+        measure, = data
+        measure.legacyInjection[105,2] = 3000; measure.legacyInjection[105,4] = 1
+        measure.legacyInjection[5,2] = 1000; measure.legacyInjection[5,4] = 1
+        results, = runse(data, "dc"; bad = ["pass" 2 "treshold" 2])
+        @test results.baddata[1, 3] == 4 && results.baddata[1, 4] == 105
+        @test results.baddata[2, 3] == 4 && results.baddata[2, 4] == 5
+
+    results, = runse("case14se.xlsx", "dc", "lav", "main")
+        Tilav = results.main[:, 2]
+        results, = runse("case14se.xlsx", "dc", "main")
+        Tiwls = results.main[:, 2]
+        @test maximum(abs.(Tilav - Tiwls)) < 0.5
 end

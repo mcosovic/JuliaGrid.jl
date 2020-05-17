@@ -93,8 +93,7 @@ function runse(
     save::String = "",
 )
 
-    flag = loadse(args)
-    if flag
+    if loadse(args)
         path = loadpath(args)
         system, numsys, info = loadsystem(path)
         measurements, num = loadmeasurement(path, system, numsys)
