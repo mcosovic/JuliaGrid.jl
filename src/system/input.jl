@@ -236,7 +236,7 @@ end
 end
 
 ### Load measurement data
-@inbounds function loadmeasurement(path, system, numsys, pmuvariance, legacyvariance; runflow = 0)
+@inbounds function loadmeasurement(path, system, numsys; pmuvar = [], legvar = [], runflow = 0)
     if runflow == 1
         pmuNv = numsys.Nbus
         pmuNc = 2 * numsys.Nbranch
@@ -252,7 +252,7 @@ end
         legacyInjection = fill(0.0, legacyNi, 9)
         legacyVoltage = fill(0.0, legacyNv, 5)
     else
-        flag = isempty(pmuvariance) || isempty(legacyvariance)
+        flag = isempty(pmuvar) || isempty(legvar)
 
         if path.extension == ".h5"
             fid = h5open(path.fullpath, "r")
@@ -414,7 +414,7 @@ end
 
 
 #### Measurement generator settings
-@inbounds function gesettings(num, pmuset, pmuvariance, legacyset, legacyvariance; runflow = 0, save = "")
+@inbounds function gesettings(num, pmuset, pmuvariance, legacyset, legacyvariance, runflow, save)
     set = Dict{Symbol, Array{Float64,1}}()
     variance = Dict{Symbol, Array{Float64,1}}()
 
@@ -803,4 +803,62 @@ end
 
     return EstimationSettings(algorithm, main, flow, estimate, error, max, stop,
         start, bad, lav, observe, solve, save, saveextension)
+end
+
+function loadse(args)
+    data = true
+    for i in args
+        if typeof(i) == Tuple{Measurements, PowerSystem, Array{String,2}}
+            data = false
+            break
+        end
+    end
+
+    return data
+end
+
+
+function loadsedirect(args)
+    idx = 0
+    for (k, i) in enumerate(args)
+        if typeof(i) == Tuple{Measurements, PowerSystem, Array{String,2}}
+            idx = k
+            break
+        end
+    end
+    measurements::Measurements, system::PowerSystem, info::Array{String,2} = args[idx]
+
+    pmuNv = size(measurements.pmuVoltage, 1)
+    if pmuNv == 1 && measurements.pmuVoltage[1, 1] == 0
+        pmuNv = 0
+    end
+    pmuNc = size(measurements.pmuCurrent, 1)
+    if pmuNc == 1 && measurements.pmuCurrent[1, 1] == 0
+        pmuNc = 0
+    end
+    legacyNf = size(measurements.legacyFlow, 1)
+    if legacyNf == 1 && measurements.legacyFlow[1, 1] == 0
+        legacyNf = 0
+    end
+    legacyNc = size(measurements.legacyCurrent, 1)
+    if legacyNc == 1 && measurements.legacyCurrent[1, 1] == 0
+        legacyNc = 0
+    end
+    legacyNi = size(measurements.legacyInjection, 1)
+    if legacyNi == 1 && measurements.legacyInjection[1, 1] == 0
+        legacyNi = 0
+    end
+    legacyNv = size(measurements.legacyVoltage, 1)
+    if legacyNv == 1 && measurements.legacyVoltage[1, 1] == 0
+        legacyNv = 0
+    end
+    Nbus = size(system.bus, 1)
+    Nbranch = size(system.branch, 1)
+    Ngen = size(system.generator, 1)
+    if Ngen == 1 && system.generator[1, 1] == 0
+        Ngen = 0
+    end
+
+    return system, PowerSystemNum(Nbus, Nbranch, Ngen),
+        measurements, MeasurementsNum(pmuNv, pmuNc, legacyNf, legacyNc, legacyNi, legacyNv), info
 end

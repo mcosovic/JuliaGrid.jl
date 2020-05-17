@@ -41,7 +41,8 @@ julia> measurements, = runmg("case14.h5"; legacyset = "complete", pmuvariance = 
 julia> results, measurements, system, info = runse("case14se.xlsx", "dc", "main", "estimate", "error", "flow")
 ```
 ```julia-repl
-julia> results, = runse("case14se.xlsx", "dc"; bad = ["pass" 3 "threshold" 2])
+julia> mg = runmg("case14.h5"; runflow = 1, pmuset = "complete", pmuvariance = ["complete" 1e-30])
+julia> results, = runse(mg, "dc", "estimate")
 ```
 
 ###  Changelog

@@ -32,9 +32,7 @@ runse(DATA, METHOD)
 runse(DATA, METHOD, LAVBAD)
 runse(DATA, METHOD, LAVBAD, DISPLAY)
 runse(DATA, METHOD, LAVBAD, DISPLAY; ATTACH)
-runse(DATA, METHOD, LAVBAD, DISPLAY; ATTACH, SET)
-runse(DATA, METHOD, LAVBAD, DISPLAY; ATTACH, SET, VARIANCE)
-runse(DATA, METHOD, LAVBAD, DISPLAY; ATTACH, SET, VARIANCE, SAVE)
+runse(DATA, METHOD, LAVBAD, DISPLAY; ATTACH, SAVE)
 ```
 
 #### Description
@@ -43,9 +41,7 @@ runse(DATA, METHOD) solves state estimation problem
 runse(DATA, METHOD, LAVBAD) sets least absolute values estimation and bad data processing
 runse(DATA, METHOD, LAVBAD, DISPLAY) shows results in the terminal
 runse(DATA, METHOD, LAVBAD, DISPLAY; ATTACH) sets various options related with algorithms
-runse(DATA, METHOD, LAVBAD, DISPLAY; ATTACH, SET) defines the measurement set (in-service and out-service)
-runse(DATA, METHOD, LAVBAD, DISPLAY; ATTACH, SET, VARIANCE) defines measurement values using predefined variances
-runse(DATA, METHOD, LAVBAD, DISPLAY; ATTACH, SET, VARIANCE, SAVE) exports results data
+runse(DATA, METHOD, LAVBAD, DISPLAY; ATTACH, SAVE) exports results data
 ```
 
 #### Output
@@ -58,13 +54,14 @@ results, measurements, system, info = runse(...) returns results of the state es
 julia> results, = runse("case14se.xlsx", "dc", "main", "estimate", "error", "flow")
 ```
 ```julia-repl
-julia> results, = runse("case14se.xlsx", "dc"; bad = ["pass" 3 "threshold" 2])
+julia> mg = runmg("case14.h5"; runflow = 1, legacyset = "complete", legacyvariance = ["complete" 1e-4])
+julia> results, = runse(mg, "dc", "estimate"; bad = ["pass" 3 "threshold" 2])
 ```
 ---
 
 ## Input Arguments
 
-The state estimation function `runse(...)` receives a group of variable number of arguments: DATA, METHOD, LAVBAD and DISPLAY, and group of arguments by keyword: ATTACH, SET, VARIANCE and SAVE
+The state estimation function `runse(...)` receives a group of variable number of arguments: DATA, METHOD, LAVBAD and DISPLAY, and group of arguments by keyword: ATTACH and SAVE
 
 #### Variable Arguments
 
@@ -114,58 +111,6 @@ ATTACH
 |`observe = ["pivot" value "Pij" value "Pi" value "Ti" value]`| observability analysis can be run using the `pivot` identification `threshold`, where active power flow `"Pij" value`, active power injection `"Pi" value` or bus voltage angle `"Ti" value` can be forced to restore observability, with measurement variances equal to `values` |
 |`solve = solver` | runs the linear system `solver` using built-in `solve = "builtin"` as `default setting` or LU linear system solver `solve = "lu"` |   
 
-SET (phasor measurements)
-
-| Command                                                      | Description                                                      |
-|:-------------------------------------------------------------|:-----------------------------------------------------------------|
-|`pmuset = "all"`                                              | all phasor measurements are in-service                           |
-|`pmuset = "optimal"`                                          | deploys phasor measurements according to the optimal PMU location using GLPK solver, where the system is completely observable only by phasor measurements |
-|`pmuset = ["redundancy" value]`                              | deploys random angle and magnitude measurements measured by PMUs according to the corresponding redundancy |
-|`pmuset = ["device" value]`                                   | deploys voltage and current phasor measurements according to the random selection of PMUs placed on buses, to deploy all devices use `"all"` as value |
-|`pmuset = ["Iij" value "Dij" value "Vi" value "Ti" value]` | deploys phasor measurements according to the random selection of measurement types[^1], to deploy all selected measurements use `"all"` as value |
-
-SET (legacy measurements)
-
-| Command                                                                                  | Description                                      |
-|:-----------------------------------------------------------------------------------------|:-------------------------------------------------|
-|`legacyset = "all"`                                                                       | all legacy measurements are in-service           |
-|`legacyset = ["redundancy " value]`                                                       | deploys random selection of legacy measurements according the corresponding redundancy |
-|`legacyset = ["Pij" value "Qij" value "Iij" value "Pi" value "Qi" value "Vi" value]`      | deploys legacy measurements according to the random selection of measurement types[^2], to deploy all selected measurements use `"all"` as value |
-
-!!! note "Set"
-    The function keeps sets as in the input DATA and changes only the sets that are called using keywords. For example, if the keywords `pmuset` and `legacyset` are omitted, the function will retain the measurement set as in the input data, which allows the same measurement set, while changing the measurement variances.
-
-    Further, the function accept any subset of phasor[^1] or legacy[^2] measurements, and consequently, it is not necessary to define attributes for all measurements.  
-    ```julia-repl
-    julia> runmg("case14.h5"; pmuset = ["Iij" "all" "Vi" 2])
-    ```
-    Thus, the measurement set will be changed in the data for the bus voltage magnitude and branch current magnitude measurements, both of them related with PMUs.  
-
-VARIANCE (phasor measurements)
-
-| Command                                                           | Description                                                                               |
-|:------------------------------------------------------------------|:------------------------------------------------------------------------------------------|
-|`pmuvariance = ["all" value]`                                      | applies fixed-value variance over all phasor measurements                                 |
-|`pmuvariance = ["random" min max]`                                 | selects variances uniformly at random within limits, applied over all phasor measurements |
-|`pmuvariance = ["Iij" value "Dij" value "Vi" value "Ti" value "all" value]` | predefines variances over a given subset of phasor measurements[^1]; to apply fixed-value variance over all, except for those individually defined use `"all" value`                       |
-
-VARIANCE (legacy measurements)
-
-| Command                                                      | Description                                                                       |
-|:-------------------------------------------------------------|:----------------------------------------------------------------------------------|
-|`legacyvariance = ["all" value]`                              | applies fixed-value variance over all phasor measurements |
-|`legacyvariance = ["random" min max]`                    | selects variances uniformly at random within limits, applied over all phasor measurements |
-|`legacyvariance = ["Pij" value "Qij" value "Iij" value "Pi" value "Qi" value "Vi" value "all" value]` | predefines variances over a given subset of phasor measurements[^2], to apply fixed-value variance over all, except for those individually defined use `"all" value`    |
-
-!!! note "Variance"
-    The function keeps measurement values and measurement variances as in the input DATA, and changes only measurement values and variances that are called using keywords. For example, if the keywords `pmuvariance` and `legacyvariance` are omitted, the function will retain the measurement values and variances as in the input data, allowing the same measurement values and variances, while changing the measurement sets.
-
-    Further, the function accepts any subset of phasor[^1] or legacy[^2] measurements, consequently, it is not necessary to define attributes for all measurements, where keyword `"all"` generates measurement values according to defined variance for all measurements, except for those individually defined.   
-    ```julia-repl
-    julia> runmg("case14.h5"; legacyvariance = ["Pij" 1e-4 "all" 1e-5])
-    ```
-    The function applies variance value of 1e-5 over all legacy measurements, except for active power flow measurements which have variance equal to 1e-4, while measurement values and variances related with PMU remain the same as in the input DATA.
-
 SAVE
 
 | Command                 | Description                    |
@@ -175,7 +120,7 @@ SAVE
 ---
 
 ## Input Data Structure
-The function supports the `.h5` or `.xlsx` file extensions, with variables `pmuVoltage` and `pmuCurrents` associated with phasor measurements, and `legacyFlow`, `"legacyCurrent"`, `"legacyInjection"` and `"legacyVoltage"` associated with legacy measurements. Further, the function requires knowledge about a power system using variables `bus`, `branch`, `generator` and `"basePower"` variables.
+The function supports the `.h5` or `.xlsx` file extensions, with variables `pmuVoltage` and `pmuCurrent` associated with phasor measurements, and `legacyFlow`, `"legacyCurrent"`, `"legacyInjection"` and `"legacyVoltage"` associated with legacy measurements. Further, the function requires knowledge about a power system using variables `bus`, `branch`, `generator` and `"basePower"` variables.
 
 The minimum amount of information within an instance of the data structure required to run the module requires one variable associated with measurements, `bus` and `branch` variables.
 
@@ -265,11 +210,6 @@ The `pmuVoltage` data structure
 | 4        | status             | bus voltage magnitude in/out-service   |          |
 | 5        | exact              | optional column, bus voltage magnitude | per-unit |
 ---
-
-
-!!! warning "Optional columns"
-    The optional columns are mandatory when keywords `pmuvariance` and/or `legacyvariance` are used.  
-
 
 !!! tip "How many"
     The input data needs not to contain a complete structure of measurement variables, and measurement data needs not to be consistent with the total number of buses and branches. Also, the function supports more than one same measurement per the same bus or branch.

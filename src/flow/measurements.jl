@@ -1,15 +1,3 @@
-## Struct variables
-struct Measurement
-    pmuVoltage::Array{Float64,2}
-    pmuCurrent::Array{Float64,2}
-    legacyFlow::Array{Float64,2}
-    legacyCurrent::Array{Float64,2}
-    legacyInjection::Array{Float64,2}
-    legacyVoltage::Array{Float64,2}
-    info::Array{String,2}
-end
-
-
 ### Generate measurements
 @inbounds function rungenerator(system, measurements, num, numsys, settings, info; flow = 0)
     if settings.runflow == 1
@@ -87,7 +75,7 @@ end
     end
     group = (pmuVoltage = pmuv, pmuCurrent = pmuc, legacyFlow = legf, legacyCurrent = legc, legacyInjection = legi, legacyVoltage = legv, bus = 2, branch = 2, generator = gen, basePower = 2)
 
-
+    println("Measurment data is successfully generated.")
     if !isempty(settings.save)
         mheader = measureheader(); pheader = psheader(); header = merge(mheader, pheader)
         savedata(measurements, system; group = group, header = header, path = settings.save, info = info)

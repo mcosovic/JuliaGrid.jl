@@ -44,7 +44,8 @@ case14seobsbad = string(path, "case14seobsbad.xlsx")
         @test maximum(abs.(results.error[3] - matrgrid["error"][3, 1])) < accuracy
         @test maximum(abs.(results.error[6] - matrgrid["error"][3, 2])) < accuracy
 
-    results, measurements, = runse(estimation_incdc, "dc"; pmuset = "complete", pmuvariance = ["complete" 1e-30], legacyset = ["Pij" 0])
+    mg = runmg(estimation_incdc; runflow = 0, pmuset = "complete", pmuvariance = ["complete" 1e-30], legacyset = ["Pij" 0])
+    results, measurements, = runse(mg, "dc", "estimate"; bad = ["pass" 3])
         @test maximum(abs.(results.estimate[:, 7] - results.estimate[:, 9])) < 1e-8
         @test all(measurements.pmuVoltage[:, 7] .== 1)
         @test all(measurements.pmuVoltage[:, 6] .== 1e-30)
@@ -66,22 +67,20 @@ case14seobsbad = string(path, "case14seobsbad.xlsx")
         idx = findall(x->x==3, results.estimate[:,1])
         @test (all(isempty.(islands)))
         @test all(results.estimate[idx, 3] .== 4) && all(results.estimate[idx, 4] .== [9; 10])
-        results, = runse(manousakis2010, "dc", "observe"; observe = ["pivot" 1e-8 "Pij" 1e4])
-            idx = findall(x->x==3, results.estimate[:,1])
-            @test (all(isempty.(islands)))
-            @test all(results.estimate[idx, 3] .== 1) && all(results.estimate[idx, 4] .== [16; 17])
 
-        results, = runse(manousakis2010, "dc", "observe"; observe = ["pivot" 1e-8 "Ti" 1e4])
-            idx = findall(x->x==3, results.estimate[:,1])
-            @test (all(isempty.(islands)))
-            @test all(results.estimate[idx, 3] .== 8) && all(results.estimate[idx, 4] .== [10; 14])
+    results, = runse(manousakis2010, "dc", "observe"; observe = ["pivot" 1e-8 "Pij" 1e4])
+        idx = findall(x->x==3, results.estimate[:,1])
+        @test (all(isempty.(islands)))
+        @test all(results.estimate[idx, 3] .== 1) && all(results.estimate[idx, 4] .== [16; 17])
 
-        results, = runse("case14se.xlsx", "dc", "observe", "bad"; observe = ["pivot" 1e-8 "Ti" 1e-4 "Pi" 1e-4], bad = ["pass" 4])
+    results, = runse(manousakis2010, "dc", "observe"; observe = ["pivot" 1e-8 "Ti" 1e4])
+        idx = findall(x->x==3, results.estimate[:,1])
+        @test (all(isempty.(islands)))
+        @test all(results.estimate[idx, 3] .== 8) && all(results.estimate[idx, 4] .== [10; 14])
+
+    results, = runse("case14se.xlsx", "dc", "observe", "bad"; observe = ["pivot" 1e-8 "Ti" 1e-4 "Pi" 1e-4], bad = ["pass" 4])
         Ti = results.main[:, 2]
         results, = runse(case14seobsbad, "dc", "observe", "bad"; observe = ["pivot" 1e-8 "Ti" 1e-4 "Pi" 1e-4], bad = ["pass" 8])
         Tinew = results.main[:, 2]
         @test maximum(abs.(Ti - Tinew)) < 1.0
-
-
-
 end

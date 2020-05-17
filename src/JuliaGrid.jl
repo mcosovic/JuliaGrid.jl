@@ -66,8 +66,8 @@ function runmg(
 
     path = loadpath(args)
     system, numsys, info = loadsystem(path)
-    measurements, num = loadmeasurement(path, system, numsys, pmuvariance, legacyvariance; runflow = runflow)
-    settings = gesettings(num, pmuset, pmuvariance, legacyset, legacyvariance; runflow = runflow, save = save)
+    measurements, num = loadmeasurement(path, system, numsys; pmuvar = pmuvariance, legvar = legacyvariance, runflow = runflow)
+    settings = gesettings(num, pmuset, pmuvariance, legacyset, legacyvariance, runflow, save)
 
     if settings.runflow == 1
         pfsettings = gepfsettings(max, stop, reactive, solve)
@@ -91,19 +91,17 @@ function runse(
     observe = [],
     solve::String = "",
     save::String = "",
-    pmuset = [],
-    pmuvariance = [],
-    legacyset = [],
-    legacyvariance = [],
 )
 
-    path = loadpath(args)
-    system, numsys, info = loadsystem(path)
-    measurements, num = loadmeasurement(path, system, numsys, pmuvariance, legacyvariance)
+    flag = loadse(args)
+    if flag
+        path = loadpath(args)
+        system, numsys, info = loadsystem(path)
+        measurements, num = loadmeasurement(path, system, numsys)
+    else
+        system, numsys, measurements, num, info = loadsedirect(args)
+    end
     settings = sesettings(args, system, max, stop, start, bad, lav, observe, solve, save)
-
-    gensettings = gesettings(num, pmuset, pmuvariance, legacyset, legacyvariance)
-    info = rungenerator(system, measurements, num, numsys, gensettings, info)
 
     results = rundcse(system, measurements, num, numsys, settings, info)
 
