@@ -90,15 +90,14 @@ end
 
 
 ### Weighted least-squares method
-@inbounds function wls(A, G, H, W, b, method)
-    r = W * b
+@inbounds function wls(G, b, method)
     if method == "lu"
         F = lu(G)
         L, U, p, q, Rs = F.:(:)
-        x = U \  (L \ ((Rs .* (transpose(H) * r))[p]))
+        x = U \  (L \ ((Rs .* b)[p]))
         x = x[sortperm(q)]
     else
-        x = G \ (transpose(H) * r)
+        x = G \ b
     end
 
     return x

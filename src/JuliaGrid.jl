@@ -20,13 +20,16 @@ include("system/headers.jl")
 
 include("flow/flowdc.jl")
 include("flow/flowac.jl")
-include("flow/flowalgorithms.jl")
+include("flow/flowfunctions.jl")
 include("flow/measurements.jl")
 
-include("estimation/estimationdc.jl")
+include("estimation/estimatedc.jl")
+include("estimation/estimatepmu.jl")
+include("estimation/estimatefunctions.jl")
 
 
 ### Power Flow
+
 function runpf(
     args...;
     max::Int64 = 100,
@@ -89,6 +92,7 @@ function runse(
     bad = [],
     lav = [],
     observe = [],
+    covariance::Int64 = 0,
     solve::String = "",
     save::String = "",
 )
@@ -100,9 +104,13 @@ function runse(
     else
         system, numsys, measurements, num, info = loadsedirect(args)
     end
-    settings = sesettings(args, system, max, stop, start, bad, lav, observe, solve, save)
+    settings = sesettings(args, system, max, stop, start, bad, lav, observe, covariance, solve, save)
 
-    results = rundcse(system, measurements, num, numsys, settings, info)
+    if settings.algorithm == "dc"
+        results = rundcse(system, measurements, num, numsys, settings, info)
+    elseif settings.algorithm == "pmu"
+        results = runpmuse(system, measurements, num, numsys, settings, info)
+    end
 
     return results, measurements, system, info
 end

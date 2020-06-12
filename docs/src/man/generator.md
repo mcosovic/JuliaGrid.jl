@@ -1,12 +1,18 @@
-## Measurement Generator
+# [Measurement Generator](@id runmg)
+The function uses the [AC Power Flow](@ref acpowerflow) or predefined user data to generate measurements ``\{z_1, \dots, z_n\}`` by corrupting the exact solutions ``\{e_1, \dots, e_n\}`` using the additive white Gaussian noise with variances ``\{\sigma_1^{2}, \dots, \sigma_n^{2}\}``:
+```math
+ z_i = e_i + \epsilon_i  \\[5pt]
+ \epsilon_i \sim \mathcal{N}(0,\,\sigma_i^{2}).
+```
 
-The function uses the AC power flow analysis or predefined user data to generate measurements by corrupting the exact solutions with the additive white Gaussian noise. The standalone measurement generator produces measurement data in a form suitable for the state estimation function.
+The standalone measurement generator produces measurement data in a form suitable for the state estimation function.
+
+Also, to achieve global observability of the power system only with PMUs, we implemented the optimal placement algorithm given in [1].
 
 ---
 
 ## Run Settings
-
-The standalone measurement generator receives inputs for measurement variances, and inputs for measurement sets, to produce measurement data. There are two export formats supported for the measurement data, `.h5` or `.xlsx` file. The settings are provided as input arguments of the function `runmg(...)`.
+The standalone measurement generator receives inputs for measurement variances, and inputs for measurement sets, to produce measurement data. There are two export formats supported for the measurement data, `.h5` or `.xlsx` file. The settings are provided as input arguments of the function `runmg()`.
 
 The order of inputs and their appearance is arbitrary, with only DATA input required. Still, for the methodological reasons, the syntax examples follow a certain order.
 
@@ -19,7 +25,9 @@ runmg(DATA; RUNPF, SET, VARIANCE)
 runmg(DATA; RUNPF, SET, VARIANCE, ACCONTROL)
 runmg(DATA; RUNPF, SET, VARIANCE, ACCONTROL, SAVE)
 ```
-
+```@raw html
+&nbsp;
+```
 #### Description
 ```julia-repl
 runmg(DATA) computes the AC power flow problem and generates measurements
@@ -29,12 +37,16 @@ runmg(DATA; RUNPF, SET, VARIANCE) defines measurement values using predefined va
 runmg(DATA; RUNPF, SET, VARIANCE, ACCONTROL) sets variables for the AC power flow
 runmg(DATA; RUNPF, SET, VARIANCE, ACCONTROL, SAVE) exports measurements and power system data
 ```
-
+```@raw html
+&nbsp;
+```
 #### Output
 ```julia-repl
-measurements, system, info = runmg(...) returns measurement and power system data with a summary
+measurements, system, info = runmg() returns measurement and power system data with a summary
 ```
-
+```@raw html
+&nbsp;
+```
 #### Examples
 ```julia-repl
 julia> measurements, system, info = runmg("case14.xlsx"; pmuset = "optimal")
@@ -55,46 +67,77 @@ julia> measurements, = runmg("case14.h5"; legacyset = "complete", legacyvariance
 
 
 ## Input Arguments
+The measurement generator function `runmg()` receives the variable number of argument DATA, and group of arguments by keyword: RUNPF, SET, VARIANCE, ACCONTROL and SAVE.
 
-The measurement generator function `runmg(...)` receives the variable number of argument DATA, and group of arguments by keyword: RUNPF, SET, VARIANCE, ACCONTROL and SAVE.
-
-#### Variable Arguments
-
-DATA
+```@raw html
+&nbsp;
+```
+##### DATA - Variable Argument
 
 | Example           | Description                                    |
 |:------------------|:-----------------------------------------------|
 |`"case14.h5"`      | loads the power system data from the package   |
 |`"case14.xlsx"`    | loads the power system data from the package   |
 |`"C:/case14.xlsx"` | loads the power system data from a custom path |
-----
 
-#### Keyword Arguments
-
-RUNPF
+```@raw html
+&nbsp;
+```
+##### RUNPF - Keyword Argument
 
 | Command    | Description                                                                   |
 |------------|:------------------------------------------------------------------------------|
 |`runpf = 1` | forces the AC power flow analysis to generate measurements, `default setting` |
 |`runpf = 0` | generates measurements directly from the input DATA                           |
 
-SET (phasor measurements)
+```@raw html
+&nbsp;
+```
+##### SET - Keyword Argument
 
-| Command                                                      | Description                                                      |
-|:-------------------------------------------------------------|:-----------------------------------------------------------------|
-|`pmuset = "complete"`                                         | complete phasor measurement set in-service                    |
-|`pmuset = "optimal"`                                          | deploys phasor measurements according to the optimal PMU location using GLPK solver, where the system is completely observable only by phasor measurements |
-|`pmuset = ["redundancy" value]`                              | deploys random angle and magnitude measurements measured by PMUs according to the corresponding redundancy |
-|`pmuset = ["device" value]`                                   | deploys voltage and current phasor measurements according to the random selection of PMUs placed on buses, to deploy all devices use `"all"` as value |
-|`pmuset = ["Iij" value "Dij" value "Vi" value "Ti" value "complete"]` | deploys phasor measurements according to the random selection of measurement types[^1], to deploy all selected measurements use `"all"` as value, to deploys all measurements in-service, except for those individually defined use `"complete"` |
+| SET:            | Complete Phasor Measurement Set             |
+|:----------------|:--------------------------------------------|
+| **Command**     | `pmuset = "complete"`                       |                 
+| **Description** | complete phasor measurement set in-service  |
 
-SET (legacy measurements)
+| SET:            | Optimal Phasor Measurement Set                                                                                                                             |
+|:----------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Command**     | `pmuset = "optimal"`                                                                                                                                       |
+| **Description** | deploys phasor measurements according to the optimal PMU location using GLPK solver, where the system is completely observable only by phasor measurements |
 
-| Command                                                                                  | Description                                      |
-|:-----------------------------------------------------------------------------------------|:-------------------------------------------------|
-|`legacyset = "complete"`                                                                  | complete legacy measurement set in-service          |
-|`legacyset = ["redundancy " value]`                                                       | deploys random selection of legacy measurements according the corresponding redundancy |
-|`legacyset = ["Pij" value "Qij" value "Iij" value "Pi" value "Qi" value "Vi" value "complete"]` |    deploys legacy measurements according to the random selection of measurement types[^2], to deploy all selected measurements use `"all"` as value, to deploys all measurements in-service, except for those individually defined use `"complete"` |
+| SET:            | Phasor Measurement Set Using Redundancy                                                                     |
+|:----------------|:------------------------------------------------------------------------------------------------------------|
+| **Command**     | `pmuset = ["redundancy" value]`                                                                             |
+| **Description** | deploys random angle and magnitude measurements measured by PMUs according to the corresponding redundancy  |
+
+| SET:            | Phasor Measurement Set According to Devices                                                                                                           |
+|:----------------|:------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Command**     | `pmuset = ["device" value]`                                                                                                                           |
+| **Description** | deploys voltage and current phasor measurements according to the random selection of PMUs placed on buses, to deploy all devices use `"all"` as value |
+
+| SET:            | Phasor Measurement Set According to Types                                                                                                             |
+|:----------------|:------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Command**     | `pmuset = ["Iij" value "Dij" value "Vi" value "Ti" value "complete"]`                                                                                 |
+| **Description** | deploys phasor measurements according to the random selection of measurement types[^1], to deploy all selected measurements use `"all"` as value, to deploys all measurements in-service, except for those individually defined use `"complete"` |
+
+```@raw html
+&nbsp;
+```
+
+| SET:            | Complete Legacy Measurement Set             |
+|:----------------|:--------------------------------------------|
+| **Command**     | `legacyset = "complete"`                    |                 
+| **Description** | complete legacy measurement set in-service  |
+
+| SET:            | Legacy Measurement Set Using Redundancy                                                |
+|:----------------|:---------------------------------------------------------------------------------------|
+| **Command**     | `legacyset = ["redundancy " value]`                                                    |
+| **Description** | deploys random selection of legacy measurements according the corresponding redundancy |
+
+| SET:            | Legacy Measurement Set According to Types                                                                                                             |
+|:----------------|:------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Command**     | `legacyset = ["Pij" value "Qij" value "Iij" value "Pi" value "Qi" value "Vi" value "complete"]`                                                       |
+| **Description** | deploys legacy measurements according to the random selection of measurement types[^2], to deploy all selected measurements use `"all"` as value, to deploys all measurements in-service, except for those individually defined use `"complete"` |
 
 !!! note "Set"
     If `runpf = 0`, the function keeps sets as in the input DATA and changes only the sets that are called using keywords. For example, if the keywords `pmuset` and `legacyset` are omitted, the function will retain the measurement set as in the input DATA, which allows the same measurement set, while changing the measurement variances.
@@ -107,21 +150,44 @@ SET (legacy measurements)
     ```
     Thus, the measurement set will consist of two randomly selected bus voltage magnitude measurements, and all branch current magnitude measurements, both of them related with PMUs.  
 
-VARIANCE (phasor measurements)
+```@raw html
+&nbsp;
+```
+##### VARIANCE - Keyword Argument
 
-| Command                                                           | Description                                                                               |
-|:------------------------------------------------------------------|:------------------------------------------------------------------------------------------|
-|`pmuvariance = ["complete" value]`                                 | applies fixed-value variance over all phasor measurements                                 |
-|`pmuvariance = ["random" min max]`                                 | selects variances uniformly at random within limits, applied over all phasor measurements |
-|`pmuvariance = ["Iij" value "Dij" value "Vi" value "Ti" value "complete" value]` | predefines variances over a given subset of phasor measurements[^1]; to apply fixed-value variance over all, except for those individually defined use `"complete" value`                       |
+| VARIANCE:       | Unique Phasor Measurement Variances                       |
+|:----------------|:----------------------------------------------------------|
+| **Command**     | `pmuvariance = ["complete" value]`                        |                 
+| **Description** | applies fixed-value variance over all phasor measurements |
 
-VARIANCE (legacy measurements)
+| VARIANCE:       | Random Phasor Measurement Variances within Limits                                         |
+|:----------------|:------------------------------------------------------------------------------------------|
+| **Command**     | `pmuvariance = ["random" min max]`                                                        |                 
+| **Description** | selects variances uniformly at random within limits, applied over all phasor measurements |
 
-| Command                                                      | Description                                                                       |
-|:-------------------------------------------------------------|:----------------------------------------------------------------------------------|
-|`legacyvariance = ["complete" value]`                         | applies fixed-value variance over all phasor measurements |
-|`legacyvariance = ["random" min max]`                    | selects variances uniformly at random within limits, applied over all phasor measurements |
-|`legacyvariance = ["Pij" value "Qij" value "Iij" value "Pi" value "Qi" value "Vi" value "complete" value]` | predefines variances over a given subset of phasor measurements[^2], to apply fixed-value variance over all, except for those individually defined use `"complete" value`    |
+| VARIANCE:       | Unique Phasor Measurement Variances According to Types                                                                                                                    |
+|:----------------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Command**     | `pmuvariance = ["Iij" value "Dij" value "Vi" value "Ti" value "complete" value]`                                                                                          |
+| **Description** | predefines variances over a given subset of phasor measurements[^1]; to apply fixed-value variance over all, except for those individually defined use `"complete" value` |
+
+```@raw html
+&nbsp;
+```
+
+| VARIANCE:       | Unique Legacy Measurement Variances                       |
+|:----------------|:----------------------------------------------------------|
+| **Command**     | `legacyvariance = ["complete" value]`                     |                 
+| **Description** | applies fixed-value variance over all legacy measurements |
+
+| VARIANCE:       | Random Legacy Measurement Variances within Limits                                         |
+|:----------------|:------------------------------------------------------------------------------------------|
+| **Command**     | `legacyvariance = ["random" min max]`                                                     |                 
+| **Description** | selects variances uniformly at random within limits, applied over all legacy measurements |
+
+| VARIANCE:       | Unique Legacy Measurement Variances According to Types                                                                                                                    |
+|:----------------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Command**     | `legacyvariance = ["Pij" value "Qij" value "Iij" value "Pi" value "Qi" value "Vi" value "complete" value]`                                                                |
+| **Description** | predefines variances over a given subset of legacy measurements[^2], to apply fixed-value variance over all, except for those individually defined use `"complete" value` |
 
 !!! note "Variance"
     If `runpf = 0`, the function keeps measurement values and measurement variances as in the input DATA, and changes only measurement values and variances that are called using keywords. For example, if the keywords `pmuvariance` and `legacyvariance` are omitted, the function will retain the measurement values and variances as in the input DATA, allowing the same measurement values and variances, while changing the measurement sets.
@@ -134,8 +200,10 @@ VARIANCE (legacy measurements)
     ```
     The function applies variance value of 1e-5 over all legacy measurements, except for active power flow measurements which have variance equal to 1e-4.
 
-
-ACCONTROL
+```@raw html
+&nbsp;
+```
+##### ACCONTROL - Keyword Argument
 
 | Command             | Description                                                                             |
 |:--------------------|:----------------------------------------------------------------------------------------|
@@ -145,7 +213,10 @@ ACCONTROL
 |`solve = "builtin"`  | built-in linear system solver, `default setting` |
 |`solve = "lu"`       | LU linear system solver                                                                 |
 
-SAVE
+```@raw html
+&nbsp;
+```
+##### SAVE - Keyword Argument
 
 | Command                 | Description                    |
 |:------------------------|:-------------------------------|
@@ -154,104 +225,12 @@ SAVE
 ---
 
 ## Data Structure
-The function supports the `.h5` or `.xlsx` file extensions, with variables `pmuVoltage` and `pmuCurrents` associated with phasor measurements, and `legacyFlow`, `legacyCurrent`, `legacyInjection` and `legacyVoltage` associated with legacy measurements. Further, the function requires knowledge about a power system using variables `bus`, `branch`, `generator` and `basePower` variables.  In the case of large power systems, we strongly recommend to use `.h5` for the input and output data.
+The function supports two input types: `.h5` or `.xlsx` file extensions. The measurement data structure consists of variables `pmuVoltage` and `pmuCurrent` associated with phasor measurements, and `legacyFlow`, `legacyCurrent`, `legacyInjection` and `legacyVoltage` associated with legacy measurements. Further, the function requires knowledge about a power system using variables `bus`, `branch`, `generator` and `basePower`.
 
 The minimum amount of information within an instance of the data structure required to run the module requires one variable associated with measurements if `runflow = 0`, and `bus` and `branch` variables.
 
-Next, we describe the structure of measurement variables involved in the input/output file, while variables associated with a power system are described in [Power Flow](@ref) section.
+We advise the reader to read the sections [Power System Data Structure](@ref powersysteminputdata) and [Measurement Data Structure](@ref measurementinputdata) which provides the structure of the DATA.
 
-The `pmuVoltage` data structure
-
-| Column   | Type               | Description                             | Unit     |
-|:--------:|:-------------------|:----------------------------------------|:---------|	 
-| 1        | bus number         | positive integer                        |          |
-| 2        | measurement        | bus voltage magnitude                   | per-unit |
-| 3        | variance           | bus voltage magnitude                   | per-unit |
-| 4        | status             | bus voltage magnitude in/out-service    |          |
-| 5        | measurement        | bus voltage angle                       | radian   |
-| 6        | variance           | bus voltage angle                       | radian   |
-| 7        | status             | bus voltage angle in/out-service        |          |
-| 8        | exact              | bus voltage magnitude                   | per-unit |
-| 9        | exact              | bus voltage angle                       | radian   |
-| 10       | label              | optional column                         |          |
-
-The `pmuCurrent` data structure
-
-| Column  | Type               | Description                                | Unit     |
-|:-------:|:-------------------|:-------------------------------------------|:---------|
-| 1       | branch number      | positive integer                           |          |
-| 2       | from bus number    | positive integer                           |          |
-| 3       | to bus number      | positive integer                           |          |
-| 4       | measurement        | branch current magnitude                   | per-unit |
-| 5       | variance           | branch current magnitude                   | per-unit |
-| 6       | status             | branch current magnitude in/out-service    |          |
-| 7       | measurement        | branch current angle                       | radian   |
-| 8       | variance           | branch current angle                       | radian   |
-| 9       | status             | branch current in/out-service              |          |
-| 10      | exact              | branch current magnitude                   | per-unit |
-| 11      | exact              | branch current angle                       | radian   |
-| 12      | label              | optional column                            |          |
-
-!!! note "Optional column: label"
-    The optional column label is useful to use if several PMUs exist on a single bus, where labels used in the variable `pmuCurrent` should be consistent with labels in the variable `pmuVoltage`.  
-
----
-
-The `legacyFlow` data structure
-
-| Column  | Type               | Description                         | Unit     |
-|:-------:|:-------------------|:------------------------------------|:---------|
-| 1       | branch number      | positive integer                    |          |
-| 2       | from bus number    | positive integer                    |          |
-| 3       | to bus number      | positive integer                    |          |
-| 4       | measurement        | active power flow                   | per-unit |
-| 5       | variance           | active power flow                   | per-unit |
-| 6       | status             | active power flow in/out-service    |          |
-| 7       | measurement        | reactive power flow                 | per-unit |
-| 8       | variance           | reactive power flow                 | per-unit |
-| 9       | status             | reactive power flow in/out-service  |          |
-| 10      | exact              | active power flow                   | per-unit |
-| 11      | exact              | reactive power flow                 | per-unit |
-
-The `legacyCurrent` data structure
-
-| Column  | Type               | Description                              | Unit     |
-|:-------:|:-------------------|:-----------------------------------------|:---------|
-| 1       | branch number      | positive integer                         |          |
-| 2       | from bus number    | positive integer                         |          |
-| 3       | to bus number      | positive integer                         |          |
-| 4       | measurement        | branch current magnitude                 | per-unit |
-| 5       | variance           | branch current magnitude                 | per-unit |
-| 6       | status             | branch current magnitude in/out-service  |          |
-| 7       | exact              | branch current magnitude                 | per-unit |
-
-The `legacyInjection` data structure
-
-| Column   | Type               | Description                              | Unit     |
-|:--------:|:-------------------|:-----------------------------------------|:---------|	 
-| 1        | bus number         | positive integer                         |          |
-| 2        | measurement        | active power injection                   | per-unit |
-| 3        | variance           | active power injection                   | per-unit |
-| 4        | status             | active power injection in/out-service    |          |
-| 5        | measurement        | reactive power injection                 | per-unit |
-| 6        | variance           | reactive power injection                 | per-unit |
-| 7        | status             | reactive power injection  in/out-service |          |
-| 8        | exact              | active power injection                   | per-unit |
-| 9        | exact              | reactive power injection                 | per-unit |
-
-The `pmuVoltage` data structure
-
-| Column   | Type               | Description                             | Unit     |
-|:--------:|:-------------------|:----------------------------------------|:---------|	 
-| 1        | bus number         | positive integer                        |          |
-| 2        | measurement        | bus voltage magnitude                   | per-unit |
-| 3        | variance           | bus voltage magnitude                   | per-unit |
-| 4        | status             | bus voltage magnitude in/out-service    |          |
-| 5        | exact              | bus voltage magnitude                   | per-unit |
----
-
-!!! tip "How many"
-    The input data needs not to contain a complete structure of measurement variables, and measurement data needs not to be consistent with the total number of buses and branches. Also, the function supports more than one same measurement per the same bus or branch.
 ---
 
 ## Flowchart
@@ -260,6 +239,11 @@ The measurement generator flowchart depicts the algorithm process according to u
 
 ![](../assets/generatorm_chart.svg)
 
+---
+
+### References
+
+[1] B. Gou, “Optimal placement of PMUs by integer linear programming,” IEEE Trans. Power Syst., vol. 23, no. 3, pp. 1525–1526, Aug. 2008.
 
 [^1]: Complete phasor measurement set contains branch current magnitude Iij, branch current angle Dij, bus voltage magnitude Vi and bus voltage angle Ti measurements.
 [^2]: Complete legacy measurement set contains active power flow Pij, reactive power flow Qij, branch current magnitude Iij, active power injection Pi, reactive power injection Qi and bus voltage magnitude Vi measurements.

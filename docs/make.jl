@@ -10,7 +10,11 @@ makedocs(
         "Home" => "index.md",
         "Power Flow" => "man/flow.md",
         "Measurement Generator" => "man/generator.md",
-        "State Estimation" => "man/estimation.md",    
+        "State Estimation" => "man/estimation.md",
+        "Theoretical Background" => Any[
+            "Plotting" => "man/flow.md",
+            "Compositing" => "man/generator.md",
+        ],
     ]
 )
 

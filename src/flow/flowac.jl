@@ -1,15 +1,34 @@
+### Struct variable
+struct PowerFlowAC
+    main::Array{Float64,2}
+    flow::Array{Float64,2}
+    generation::Array{Float64,2}
+    iterations::Int64
+end
+
+
 ### AC power flow
 @inbounds function runacpf(system, num, settings, info)
-    busi, typei, Pload, Qload, Gshunt, Bshunt, Vini, Tini, Pgeni, Qgeni,
-    Qmaxi, Qmini, Vgen, genOn, resistance, reactance, charging, transTap,
-    transShift, branchOn = view_acsystem(system)
+
+    ########## Pre-processing ##########
+    busi, typei, Pload, Qload, Gshunt, Bshunt, Vini, Tini,
+    Pgeni, Qgeni, Qmaxi, Qmini, Vgen, genOn,
+    resistance, reactance, charging, transTap, transShift, branchOn = read_acsystem(system)
+
+    main = fill(0.0, num.Nbus, 11)
+    flow =  fill(0.0, num.Nbranch, 14)
+    gene = fill(0.0, num.Ngen, 3)
+    Va, Vm, Pinj, Qinj, Pbus, Qbus, Pshunt, Qshunt,
+    Pij, Qij, Pji, Qji, Qcharging, Ploss, Qloss, Imij, Iaij, Imji, Iaji,
+    Pgen, Qgen = write_acsystem(system, num, main, flow, gene)
 
   algtime = @elapsed begin
-    ########## Pre-processing ##########
+    ########## Convert in integers ##########
     geni = convert(Array{Int64,1}, system.generator[:, 1])
     fromi = convert(Array{Int64,1}, system.branch[:, 2])
     toi = convert(Array{Int64,1}, system.branch[:, 3])
 
+    ########## Numbering and slack bus ##########
     numbering = false
     bus = collect(1:num.Nbus)
     slack = 0
@@ -29,19 +48,19 @@
         println("The slack bus is not found. Slack bus is the first bus.")
     end
 
+    gen_bus = renumber(geni, num.Ngen, busi, bus, num.Nbus, numbering)
+    from = renumber(fromi, num.Nbranch, busi, bus, num.Nbus, numbering)
+    to = renumber(toi, num.Nbranch, busi, bus, num.Nbus, numbering)
+
+    ########## Generation ##########
     slackLimit = copy(slack)
     multiple = fill(0, num.Nbus)
     isMultiple = false
     limit = fill(1, num.Ngen)
-    Pgen = fill(0.0, num.Ngen)
-    Qgen = fill(0.0, num.Ngen)
     Qmin = fill(0.0, num.Ngen)
     Qmax = fill(0.0, num.Ngen)
-    Pbus = fill(0.0, num.Nbus)
-    Qbus = fill(0.0, num.Nbus)
     type = fill(1, num.Nbus)
 
-    gen_bus = renumber(geni, num.Ngen, busi, bus, num.Nbus, numbering)
     for (k, i) in enumerate(gen_bus)
         if genOn[k] == 1
             Pbus[i] += Pgeni[k] / system.basePower
@@ -60,43 +79,10 @@
         end
     end
     type[slack] = 3
-    from = renumber(fromi, num.Nbranch, busi, bus, num.Nbus, numbering)
-    to = renumber(toi, num.Nbranch, busi, bus, num.Nbus, numbering)
 
     ########## Ybus matrix ##########
-    tap = zeros(ComplexF64, num.Nbranch)
-    admittance = zeros(ComplexF64, num.Nbranch)
-    Ytt = zeros(ComplexF64, num.Nbranch)
-    Yff = zeros(ComplexF64, num.Nbranch)
-    Yft = zeros(ComplexF64, num.Nbranch)
-    Ytf = zeros(ComplexF64, num.Nbranch)
-    Ydiag = zeros(ComplexF64, num.Nbus)
-    shunt = complex.(Gshunt, Bshunt) ./ system.basePower
-    for i = 1:num.Nbranch
-        if branchOn[i] == 1
-            admittance[i] = 1 / complex(resistance[i], reactance[i])
-
-            if transTap[i] == 0
-                tap[i] = exp(im * (pi / 180) * transShift[i])
-            else
-                tap[i] = transTap[i] * exp(im * (pi / 180) * transShift[i])
-            end
-
-            Ytt[i] = admittance[i] + im * charging[i] / 2
-            Yff[i] = Ytt[i] / (conj(tap[i]) * tap[i])
-            Yft[i] = -admittance[i] / conj(tap[i])
-            Ytf[i] = -admittance[i] / tap[i]
-
-            Ydiag[from[i]] += Yff[i]
-            Ydiag[to[i]] += Ytt[i]
-        end
-    end
-
-    Ybus = sparse([bus; bus; from; to], [bus; bus; to; from], [Ydiag; shunt; Yft; Ytf], num.Nbus, num.Nbus)
-    YbusT = sparse([bus; bus; to; from], [bus; bus; from; to], [Ydiag; shunt; Yft; Ytf], num.Nbus, num.Nbus)
-
-    Pshunt = fill(0.0, num.Nbus); Qshunt = similar(Pshunt)
-    Pinj = similar(Pshunt); Qinj = similar(Pshunt)
+    Ybus, YbusT, Ytt, Yff, Yft, Ytf, admittance, tap, shunt = ybusac(system, num, bus, from, to, branchOn,
+        Gshunt, Bshunt, resistance, reactance, charging, transTap, transShift)
 
     ########## Solve the system ##########
     Vc = Vini .* exp.(im * (pi / 180)  * Tini)
@@ -114,13 +100,13 @@
         end
         if settings.algorithm == "fnrbx" || settings.algorithm == "fnrxb"
             Vc, iter = fast_newton_raphson(system, num, settings, branchOn, Ybus, YbusT, slack, Vc, Pbus, Qbus,
-            Pload, Qload, type, resistance, reactance, transShift, Gshunt, Bshunt, charging, transTap, from, to, iter)
+                Pload, Qload, type, resistance, reactance, transShift, Gshunt, Bshunt, charging, transTap, from, to, iter)
         end
 
         for i = 1:num.Nbus
             Sshunt = Vc[i] * conj(Vc[i] * shunt[i])
-            Pshunt[i] = real(Sshunt)
-            Qshunt[i] = imag(Sshunt)
+            Pshunt[i] = real(Sshunt) * system.basePower
+            Qshunt[i] = imag(Sshunt) * system.basePower
 
             I = 0.0 + im * 0.0
             for j in Ybus.colptr[i]:(Ybus.colptr[i + 1] - 1)
@@ -128,13 +114,13 @@
                 I += conj(YbusT[row, i]) * conj(Vc[row])
             end
             Si::ComplexF64 = I * Vc[i]
-            Pinj[i] = real(Si)
-            Qinj[i] = imag(Si)
+            Pinj[i] = real(Si) * system.basePower
+            Qinj[i] = imag(Si) * system.basePower
             if type[i] != 1
-                Qbus[i] = Qinj[i] + Qload[i] / system.basePower
+                Qbus[i] = (Qinj[i] + Qload[i]) / system.basePower
             end
         end
-        Pbus[slack] = Pinj[slack] + Pload[slack] / system.basePower
+        Pbus[slack] = (Pinj[slack] + Pload[slack]) / system.basePower
 
         if !isMultiple
             for i = 1:num.Ngen
@@ -157,7 +143,7 @@
                     if !isinf(Qmax[i])
                         Qmaxtotal[j] += Qmax[i]
                     end
-                    Qgentotal[j] += (Qinj[j] + Qload[j] / system.basePower) / multiple[j]
+                    Qgentotal[j] += ((Qinj[j] + Qload[j]) / system.basePower) / multiple[j]
                 end
             end
             for i = 1:num.Ngen
@@ -262,44 +248,26 @@
     end
 
     ########## Post-processing ##########
-    Imij = fill(0.0, num.Nbranch); Iaij = fill(0.0, num.Nbranch)
-    Imji = fill(0.0, num.Nbranch); Iaji = fill(0.0, num.Nbranch)
-    Pij = fill(0.0, num.Nbranch); Qij = fill(0.0, num.Nbranch)
-    Pji = fill(0.0, num.Nbranch); Qji = fill(0.0, num.Nbranch)
-    Qcharging = fill(0.0, num.Nbranch); Ploss = fill(0.0, num.Nbranch)
-    Qloss = fill(0.0, num.Nbranch);
-    for i = 1:num.Nbranch
-        if branchOn[i] == 1
-            f = from[i]
-            t = to[i]
-
-            Iij::ComplexF64 = Vc[f] * Yff[i] + Vc[t] * Yft[i]
-            Iji::ComplexF64 = Vc[f] * Ytf[i] + Vc[t] * Ytt[i]
-            Iijb::ComplexF64 = admittance[i] * (Vc[f] / tap[i] - Vc[t])
-
-            Sij::ComplexF64 = Vc[f] * conj(Iij)
-            Pij[i] = real(Sij)
-            Qij[i] = imag(Sij)
-
-            Sji::ComplexF64 = Vc[t] * conj(Iji)
-            Pji[i] = real(Sji)
-            Qji[i] = imag(Sji)
-
-            Qcharging[i] = charging[i] * (abs(Vc[f] / tap[i])^2 +  abs(Vc[t])^2) / 2
-            Ploss[i] = (abs(Iijb))^2 * resistance[i]
-            Qloss[i] = (abs(Iijb))^2 * reactance[i]
-
-            Imij[i] = abs(Iij)
-            Iaij[i] = angle(Iij)
-            Imji[i] = abs(Iji)
-            Iaji[i] = angle(Iji)
-        end
+    for i = 1:num.Nbus
+        Vm[i] = abs(Vc[i])
+        Va[i] = (180 / pi) * angle(Vc[i])
+        Pbus[i] = Pbus[i] * system.basePower
+        Qbus[i] = Qbus[i] * system.basePower
     end
-  end
+
+    for i = 1:num.Ngen
+        Pgen[i] = Pgen[i] * system.basePower
+        Qgen[i] = Qgen[i] * system.basePower
+    end
+
+    acflow(system.basePower, num, from, to, branchOn, Vc, Yff, Yft, Ytt, Ytf,
+        admittance, tap, resistance, reactance, charging,
+        Pij, Qij, Pji, Qji, Qcharging, Ploss, Qloss, Imij, Iaij, Imji, Iaji)
+  end #algtime
 
     ########## Results ##########
-    results, header, group = results_flowac(system, num, settings, Pinj, Qinj, Pbus, Qbus, Pshunt, Qshunt, Imij, Iaij,
-    Imji, Iaji, Pij, Qij, Pji, Qji, Qcharging, Ploss, Qloss, Pgen, Qgen, limit, slack, Vc, algtime, iter)
+    results = PowerFlowAC(main, flow, gene, iter)
+    header, group = results_flowac(system, num, settings, results, slack, limit, algtime)
     if !isempty(settings.save)
         savedata(results, system; info = info, group = group, header = header, path = settings.save)
     end
@@ -308,8 +276,8 @@
 end
 
 
-### View data
-function view_acsystem(system)
+### Read data
+function read_acsystem(system)
     busi = @view(system.bus[:, 1])
     typei = @view(system.bus[:, 2])
     Pload = @view(system.bus[:, 3])
@@ -333,7 +301,51 @@ function view_acsystem(system)
     transShift = @view(system.branch[:, 11])
     branchOn = @view(system.branch[:, 12])
 
-    return busi, typei, Pload, Qload, Gshunt, Bshunt, Vini, Tini, Pgeni, Qgeni,
-    Qmaxi, Qmini, Vgen, genOn, resistance, reactance, charging, transTap,
-    transShift, branchOn
+    return busi, typei, Pload, Qload, Gshunt, Bshunt, Vini, Tini,
+        Pgeni, Qgeni, Qmaxi, Qmini, Vgen, genOn,
+        resistance, reactance, charging, transTap, transShift, branchOn
+end
+
+### Write data
+function write_acsystem(system, num, main, flow, gene)
+    for i = 1:num.Nbus
+        main[i, 1] = system.bus[i, 1]
+        main[i, 8] = system.bus[i, 3]
+        main[i, 9] = system.bus[i, 4]
+    end
+    Vm = @view(main[:, 2])
+    Va = @view(main[:, 3])
+    Pinj = @view(main[:, 4])
+    Qinj = @view(main[:, 5])
+    Pbus = @view(main[:, 6])
+    Qbus = @view(main[:, 7])
+    Pshunt = @view(main[:, 10])
+    Qshunt = @view(main[:, 11])
+
+    for i = 1:num.Nbranch
+        flow[i, 1] = system.branch[i, 1]
+        flow[i, 2] = system.branch[i, 2]
+        flow[i, 3] = system.branch[i, 3]
+    end
+    Pij = @view(flow[:, 4])
+    Qij = @view(flow[:, 5])
+    Pji = @view(flow[:, 6])
+    Qji = @view(flow[:, 7])
+    Qcharging = @view(flow[:, 8])
+    Ploss = @view(flow[:, 9])
+    Qloss = @view(flow[:, 10])
+    Imij = @view(flow[:, 11])
+    Iaij = @view(flow[:, 12])
+    Imji = @view(flow[:, 13])
+    Iaji = @view(flow[:, 14])
+
+    for i = 1:num.Ngen
+        gene[i, 1] = system.generator[i, 1]
+    end
+    Pgen = @view(gene[:, 2])
+    Qgen = @view(gene[:, 3])
+
+    return Va, Vm, Pinj, Qinj, Pbus, Qbus, Pshunt, Qshunt,
+        Pij, Qij, Pji, Qji, Qcharging, Ploss, Qloss, Imij, Iaij, Imji, Iaji,
+        Pgen, Qgen
 end

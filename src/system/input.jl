@@ -68,6 +68,7 @@ struct EstimationSettings
     bad::Dict{Symbol,Float64}
     lav::Dict{Symbol,Float64}
     observe::Dict{Symbol,Float64}
+    covariance::Bool
     solve::String
     save::String
     saveextension::String
@@ -136,7 +137,7 @@ function loadsystem(path)
             basePower::Float64 = h5read(path.fullpath, "/basePower")[1]
         else
             basePower = 100.0
-            println("The variable basePower not found. The algorithm proceeds with default value: 100 MVA")
+            println("The variable basePower not found. The algorithm proceeds with default value: 100 MVA.")
         end
         if exists(fid, "info")
             info::Array{String,2} = h5read(path.fullpath, "/info")
@@ -175,13 +176,14 @@ function loadsystem(path)
             basePower = Float64(xf["basePower"][:][start])
         else
             basePower = 100.0
-            println("The variable basePower not found. The algorithm proceeds with default value: 100 MVA")
+            println("The variable basePower not found. The algorithm proceeds with default value: 100 MVA.")
         end
         if "info" in XLSX.sheetnames(xf)
             info = convert(Array{String,2}, coalesce.(xf["info"][:], ""))
         else
             info = Array{String}(undef, 0, 1)
         end
+        close(xf)
     end
 
     info = infogrid(bus, branch, generator, info, path.dataname, Nbranch, Nbus, Ngen)
@@ -316,7 +318,6 @@ end
             else
                 legacyVoltage = zeros(1, 9); legacyNv = 0
             end
-
             close(fid)
         end
 
@@ -388,6 +389,7 @@ end
             else
                 legacyVoltage = zeros(1, 9); legacyNv = 0
             end
+            close(xf)
         end
     end
 
@@ -708,13 +710,13 @@ end
 
 
 ### State estimation settings
-@inbounds function sesettings(args, system, max, stop, start, badset, lavset, observeset, solve, save)
+@inbounds function sesettings(args, system, max, stop, start, badset, lavset, observeset, covariance, solve, save)
     algorithm = "false"
     main = false; flow = false; estimate = false; error = false
     lavkey = 0.0; badkey = 0.0; observekey = 0.0
 
     for i in args
-        if i in ["dc", "nonlinear"]
+        if i in ["dc", "nonlinear", "pmu"]
             algorithm = i
         end
         if i == "lav"
@@ -802,6 +804,12 @@ end
     end
     observe = Dict(:observe => observekey, :pivot => pivot, :flow => oflow, :Pij => Pij, :Pi => Pi, :Ti => Ti)
 
+    covarinace = false
+    if algorithm == "pmu" && covariance == 1
+        covarinace = true
+    end
+
+
     saveextension = ""
     if !isempty(save)
         path = dirname(save)
@@ -815,7 +823,7 @@ end
     end
 
     return EstimationSettings(algorithm, main, flow, estimate, error, max, stop,
-        start, bad, lav, observe, solve, save, saveextension)
+        start, bad, lav, observe, covarinace, solve, save, saveextension)
 end
 
 

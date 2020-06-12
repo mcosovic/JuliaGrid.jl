@@ -36,7 +36,7 @@ julia> measurements, system, info = runmg("case14.xlsx"; pmuset = "optimal")
 julia> measurements, = runmg("case14.h5"; legacyset = "complete", pmuvariance = ["complete" 1e-5])
 ```
 
-###  Quick Start State Estimation (DC only)
+###  Quick Start State Estimation
 ```julia-repl
 julia> results, measurements, system, info = runse("case14se.xlsx", "dc", "main", "estimate", "error", "flow")
 ```

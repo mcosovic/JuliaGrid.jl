@@ -1,8 +1,7 @@
 ### State estimation tests
 path = abspath(joinpath(dirname(Base.find_package("JuliaGrid")), ".."), "test/estimation/")
-estimation_fulldc = string(path, "estimation_fulldc.xlsx")
+case14dc = string(path, "case14dc.xlsx")
 estimation_incdc = string(path, "estimation_incdc.xlsx")
-estimation_fulldcR = string(path, "estimation_fulldc.h5")
 manousakis2010 = string(path, "manousakis2010.xlsx")
 case14seobsbad = string(path, "case14seobsbad.xlsx")
 
@@ -21,31 +20,23 @@ case14seobsbad = string(path, "case14seobsbad.xlsx")
             @test !("save.h5" in cd(readdir, path))
             @test !("save.xlsx" in cd(readdir, path))
 
-    runpf(estimation_incdc, "dc")
+    runse(estimation_incdc, "dc")
         fieldsres = (:main, :flow, :estimate, :error, :baddata, :observability)
         @test all(fieldsres == fieldnames(JuliaGrid.StateEstimationDC))
 
-    matrgrid = h5read(estimation_fulldcR, "/")
-        accuracy = 1e-11
-        results, = runse(estimation_fulldc, "dc", "main", "flow", "estimate", "error")
-        @test maximum(abs.(results.main[:, 2] - matrgrid["bus"][:, 2])) < accuracy
-        @test maximum(abs.(results.main[:, 3] - matrgrid["bus"][:, 3])) < accuracy
-        @test maximum(abs.(results.flow[:, 4] - matrgrid["branch"][:, 3])) < accuracy
-        @test maximum(abs.(results.estimate[:, 7] - matrgrid["estimate"][:, 3])) < accuracy
-        @test maximum(abs.(results.estimate[:, 5] - matrgrid["estimate"][:, 1])) < accuracy
-        @test maximum(abs.(results.estimate[:, 8] - matrgrid["estimate"][:, 4])) < accuracy
-        @test maximum(abs.(results.estimate[:, 9] - matrgrid["estimate"][:, 5])) < accuracy
-        @test maximum(abs.(results.estimate[:, 10] - matrgrid["estimate"][:, 6])) < accuracy
-        @test maximum(abs.(results.estimate[:, 6] - matrgrid["estimate"][:, 2])) < accuracy
-        @test maximum(abs.(results.error[1] - matrgrid["error"][1, 1])) < accuracy
-        @test maximum(abs.(results.error[4] - matrgrid["error"][1, 2])) < accuracy
-        @test maximum(abs.(results.error[2] - matrgrid["error"][2, 1])) < accuracy
-        @test maximum(abs.(results.error[5] - matrgrid["error"][2, 2])) < accuracy
-        @test maximum(abs.(results.error[3] - matrgrid["error"][3, 1])) < accuracy
-        @test maximum(abs.(results.error[6] - matrgrid["error"][3, 2])) < accuracy
+    pf, = runpf(case14dc, "dc")
+    se, = runse(case14dc, "dc", "main", "flow", "estimate", "error")
+        accuracy = 1e-12
+        @test maximum(abs.(pf.main[:, 2] - se.main[:, 2])) < accuracy
+        @test maximum(abs.(pf.main[:, 3] - se.main[:, 3])) < accuracy
+        @test maximum(abs.(pf.flow[:, 4] - se.flow[:, 4])) < accuracy
+        @test maximum(abs.(pf.flow[:, 5] - se.flow[:, 5])) < accuracy
+        @test se.error[1] < 1e-14
+        @test se.error[2] < 1e-14
+        @test se.error[3] < 1e-14
 
     data = runmg(estimation_incdc; runflow = 0, pmuset = "complete", pmuvariance = ["complete" 1e-30], legacyset = ["Pij" 0])
-    results, measurements, = runse(data, "dc", "estimate"; bad = ["pass" 3])
+        results, measurements, = runse(data, "dc", "estimate"; bad = ["pass" 3])
         @test maximum(abs.(results.estimate[:, 7] - results.estimate[:, 9])) < 1e-8
         @test all(measurements.pmuVoltage[:, 7] .== 1)
         @test all(measurements.pmuVoltage[:, 6] .== 1e-30)

@@ -1,10 +1,9 @@
 ### Generate measurements
 @inbounds function rungenerator(system, measurements, num, numsys, settings, info; flow = 0)
     if settings.runflow == 1
-        branch = flow.flow
-        bus = flow.main
-        busi, Vi, Ti, Pinj, Qinj, branchi, fromi, toi, Pij, Qij, Pji, Qji,
-        Iij, Dij, Iji, Dji = view_generator(bus, branch)
+        branch = flow.flow; bus = flow.main
+        busi, Vi, Ti, Pinj, Qinj, branchi, fromi, toi, Pij,
+            Qij, Pji, Qji, Iij, Dij, Iji, Dji = read_generator(bus, branch)
 
         for i = 1:numsys.Nbranch
             measurements.legacyFlow[i, 1] = branchi[i]
@@ -75,7 +74,7 @@
     end
     group = (pmuVoltage = pmuv, pmuCurrent = pmuc, legacyFlow = legf, legacyCurrent = legc, legacyInjection = legi, legacyVoltage = legv, bus = 2, branch = 2, generator = gen, basePower = 2)
 
-    println("Measurment data is successfully generated")
+    println("Measurment data is successfully generated.")
     if !isempty(settings.save)
         mheader = measureheader(); pheader = psheader(); header = merge(mheader, pheader)
         savedata(measurements, system; group = group, header = header, path = settings.save, info = info)
@@ -268,7 +267,7 @@ end
                     end
                 end
             else
-                error("The variance must be positive number.")
+                error("the variance must be positive number")
             end
         end
         if var in [:pmurandom :legacyrandom]
@@ -306,8 +305,8 @@ end
 end
 
 
-### View data
-function view_generator(bus, branch)
+### Read data
+function read_generator(bus, branch)
     busi = @view(bus[:, 1])
     Vi = @view(bus[:, 2])
     Ti = @view(bus[:, 3])
@@ -326,5 +325,6 @@ function view_generator(bus, branch)
     Iji = @view(branch[:, 13])
     Dji = @view(branch[:, 14])
 
-    return busi, Vi, Ti, Pinj, Qinj, branchi, fromi, toi, Pij, Qij, Pji, Qji, Iij, Dij, Iji, Dji
+    return busi, Vi, Ti, Pinj, Qinj,
+        branchi, fromi, toi, Pij, Qij, Pji, Qji, Iij, Dij, Iji, Dji
 end

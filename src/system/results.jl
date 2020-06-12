@@ -1,100 +1,53 @@
-### Struct variables
-struct PowerFlowDC
-    main::Array{Float64,2}
-    flow::Array{Float64,2}
-    generation::Array{Float64,2}
-end
-
-struct PowerFlowAC
-    main::Array{Float64,2}
-    flow::Array{Float64,2}
-    generation::Array{Float64,2}
-    iterations::Int64
-end
-
-struct StateEstimationDC
-    main::Array{Float64,2}
-    flow::Array{Float64,2}
-    estimate::Array{Float64,2}
-    error::Array{Float64,1}
-    baddata::Array{Float64,2}
-    observability::Array{Array{Int64,1},1}
-end
-
 ### DC power flow results
-@inbounds function results_flowdc(system, num, settings, Ti, Pinj, Pbus, Pij, Pgen, slack, algtime)
+@inbounds function results_flowdc(system, num, settings, results, slack, algtime)
     dheader = dcpfheader(); pheader = psheader()
     header = merge(dheader, pheader)
 
-    ########## DC main results ##########
+    ########## DC main display ##########
     println(string("Execution time: ", (@sprintf "%.4f" algtime * 1000), " (ms)"))
-    main = fill(0.0, num.Nbus, 6)
-    for i = 1:num.Nbus
-        main[i, 1] = system.bus[i, 1]
-        main[i, 2] = 180 * Ti[i] / pi
-        main[i, 3] = system.basePower * Pinj[i]
-        main[i, 4] = system.basePower * Pbus[i]
-        main[i, 5] = system.bus[i, 3]
-        main[i, 6] = system.bus[i, 5]
-    end
     if settings.main
         h1 = Highlighter((data, i, j) -> (i == slack),  background = :blue)
         println("\n Main Data Display")
-        pretty_table(main, header[:main], screen_size = (-1,-1), alignment = [:r,:r,:r,:r,:r,:r],
+        pretty_table(results.main, header[:main], screen_size = (-1,-1), alignment = [:r,:r,:r,:r,:r,:r],
             highlighters = h1, columns_width = [7, 18, 18, 18, 18, 18],
             formatters = ft_printf(["%1.0f","%1.4f","%1.2f","%1.2f","%1.2f","%1.2f"], collect(1:6)))
 
-        pretty_table(["Sum" sum(main[:, 3:6], dims = 1)], noheader = true, screen_size = (-1,-1), columns_width = [28, 18, 18, 18, 18],
+        pretty_table(["Sum" sum(results.main[:, 3:6], dims = 1)], noheader = true, screen_size = (-1,-1), columns_width = [28, 18, 18, 18, 18],
             alignment = [:l,:r,:r,:r,:r], formatters = ft_printf(["%-s","%15.2f","%11.2f","%11.2f","%13.2f"], collect(1:5)))
     end
 
-    ########## DC flow results ##########
-    flow =  fill(0.0, num.Nbranch, 5)
-    for i = 1:num.Nbranch
-        flow[i, 1] = system.branch[i, 1]
-        flow[i, 2] = system.branch[i, 2]
-        flow[i, 3] = system.branch[i, 3]
-        flow[i, 4] = system.basePower * Pij[i]
-        flow[i, 5] = -system.basePower * Pij[i]
-    end
-    if settings.flow
+    ########## DC flow display ##########
+        if settings.flow
         println("\n Flow Data Display")
-        pretty_table(flow, header[:flow], screen_size = (-1,-1), columns_width = [7, 8, 8, 18, 18],
+        pretty_table(results.flow, header[:flow], screen_size = (-1,-1), columns_width = [7, 8, 8, 18, 18],
             alignment = [:r,:r,:r,:r,:r], formatters = ft_printf(["%1.0f","%1.0f","%1.0f","%1.2f","%1.2f"], collect(1:5)))
     end
 
-    ########## DC generator results ##########
+    ########## DC generation display ##########
     gen = 0; gent = 0
     if num.Ngen != 0
-        generation = fill(0.0, num.Ngen, 2)
         gen = 2; gent = 1
-    else
-        generation = Array{Float64}(undef, 0, 0)
     end
-    for i = 1:num.Ngen
-        generation[i, 1] = system.generator[i, 1]
-        generation[i, 2] = system.basePower * Pgen[i]
-    end
+
     if settings.generation
         println("\n Generation Data Display")
-        pretty_table(generation, header[:generation], screen_size = (-1,-1), alignment=[:r,:r],
+        pretty_table(results.generation, header[:generation], screen_size = (-1,-1), alignment=[:r,:r],
             formatters = ft_printf(["%1.0f","%1.4f"], collect(1:2)))
     end
 
     group = (main = 1, flow = 1, generation = gent, bus = 2, branch = 2, generator = gen, basePower = 2)
 
-    return PowerFlowDC(main, flow, generation), header, group
+    return header, group
 end
 
 
 ### AC power flow results
-@inbounds function results_flowac(system, num, settings, Pinj, Qinj, Pbus, Qbus, Pshunt, Qshunt, Imij, Iaij, Imji, Iaji,
-    Pij, Qij, Pji, Qji, Qcharging, Ploss, Qloss, Pgen, Qgen, limit, slack, Vc, algtime, iter)
+@inbounds function results_flowac(system, num, settings, results, slack, limit, algtime)
     println(string("Execution time: ", (@sprintf "%.4f" algtime * 1000), " (ms)"))
     aheader = acpfheader(); pheader = psheader()
     header = merge(aheader, pheader)
 
-    ########## AC limit results ##########
+    ########## AC limit display ##########
     if settings.reactive[1]
         min = findall(x -> x == 2, limit)
         max = findall(x -> x == 3, limit)
@@ -114,96 +67,54 @@ end
         end
     end
 
-    ########## AC main results ##########
-    main = fill(0.0, num.Nbus, 11)
-    for i = 1:num.Nbus
-        main[i, 1] = system.bus[i, 1]
-        main[i, 2] = abs(Vc[i])
-        main[i, 3] = 180 * angle(Vc[i]) / pi
-        main[i, 4] = system.basePower * Pinj[i]
-        main[i, 5] = system.basePower * Qinj[i]
-        main[i, 6] = system.basePower * Pbus[i]
-        main[i, 7] = system.basePower * Qbus[i]
-        main[i, 8] = system.bus[i, 3]
-        main[i, 9] = system.bus[i, 4]
-        main[i, 10] = system.basePower * Pshunt[i]
-        main[i, 11] = system.basePower * Qshunt[i]
-    end
-
+    ########## AC main display ##########
     if settings.main
         h1 = Highlighter((data, i, j)-> (i == slack), background = :red)
         println("\n Main Data Display")
-        pretty_table(main, header[:main],
+        pretty_table(results.main, header[:main],
             screen_size = (-1,-1), highlighters = h1, columns_width = [7, 16, 12, 17, 21, 17, 21, 17, 21, 17, 21],
             alignment = repeat([Symbol(:r)], outer = 11),
             formatters = ft_printf(["%1.0f", "%1.4f","%1.4f","%1.2f" ,"%1.2f","%1.2f","%1.2f","%1.2f","%1.2f","%1.2f","%1.2f"], collect(1:11)))
-        sum_data = Any["Sum" sum(main[:, 4:11], dims = 1)]
+        sum_data = Any["Sum" sum(results.main[:, 4:11], dims = 1)]
         pretty_table(sum_data, noheader = true, screen_size = (-1,-1),
             alignment=[:l,:r,:r,:r,:r,:r,:r,:r,:r], columns_width = [41, 17, 21, 17, 21, 17, 21, 17, 21],
             formatters = ft_printf(["%-s","%15.2f","%15.2f","%11.2f","%15.2f","%11.2f","%15.2f","%13.2f","%15.2f"], collect(1:9)))
     end
 
-    ########## AC flow results ##########
-    flow =  fill(0.0, num.Nbranch, 14)
-    for i = 1:num.Nbranch
-        flow[i, 1] = system.branch[i, 1]
-        flow[i, 2] = system.branch[i, 2]
-        flow[i, 3] = system.branch[i, 3]
-        flow[i, 4] = system.basePower * Pij[i]
-        flow[i, 5] = system.basePower * Qij[i]
-        flow[i, 6] = system.basePower * Pji[i]
-        flow[i, 7] = system.basePower * Qji[i]
-        flow[i, 8] = system.basePower * Qcharging[i]
-        flow[i, 9] = system.basePower * Ploss[i]
-        flow[i, 10] = system.basePower * Qloss[i]
-        flow[i, 11] = Imij[i]
-        flow[i, 12] = 180 * Iaij[i] / pi
-        flow[i, 13] = Imji[i]
-        flow[i, 14] = 180 * Iaji[i] / pi
-    end
-
+    ########## AC flow display ##########
     if settings.flow
         println("\n Flow Data Display")
-        pretty_table(flow[:,1:10], header[:flow][:,1:10],
+        pretty_table(results.flow[:,1:10], header[:flow][:,1:10],
             screen_size = (-1,-1), columns_width = [6, 8, 8, 17, 21, 17, 21, 21, 17, 21],
             alignment=[:r,:r,:r,:r,:r,:r,:r,:r,:r,:r],
             formatters = ft_printf(["%1.0f","%1.0f","%1.0f","%1.2f","%1.2f","%1.2f","%1.2f","%1.2f","%1.2f","%1.2f"], collect(1:10)))
-        sum_data = Any["Sum" sum(flow[:, 7:9], dims = 1)]
+        sum_data = Any["Sum" sum(results.flow[:, 8:10], dims = 1)]
         pretty_table(sum_data, noheader = true, screen_size = (-1,-1), alignment=[:l,:r,:r,:r], columns_width = [116, 21, 17, 21],
             formatters = ft_printf(["%-s","%15.2f","%11.2f","%15.2f"], collect(1:4)))
     end
 
-    ########## AC generator results ##########
+    ########## AC generation display ##########
     gen = 0; gent = 0
     if num.Ngen != 0
-        generation = fill(0.0, num.Ngen, 3)
         gen = 2; gent = 1
-    else
-        generation = Array{Float64}(undef, 0, 0)
-    end
-    for i = 1:num.Ngen
-        generation[i, 1] = system.generator[i, 1]
-        generation[i, 2] = system.basePower * Pgen[i]
-        generation[i, 3] = system.basePower * Qgen[i]
     end
 
     if settings.generation
         println("\n Generation Data Display")
-        pretty_table(generation, header[:generation],
+        pretty_table(results.generation, header[:generation],
             screen_size = (-1,-1), alignment=[:r,:r,:r],
             formatters = ft_printf(["%1.0f", "%1.4f", "%1.4f"], collect(1:3)))
     end
 
     group = (main = 1, flow = 1, generation = gent, bus = 2, branch = 2, generator = gen, basePower = 2)
 
-    return PowerFlowAC(main, flow, generation, iter), header, group
+    return header, group
 end
 
 
 ### Power system info data
 @inbounds function infogrid(bus, branch, generator, info, dataname, Nbranch, Nbus, Ngen)
-    reference = "unknown"
-    grid = "unknown"
+    reference = "unknown"; grid = "unknown"
     for (k, i) in enumerate(info[:, 1])
         if occursin("Reference", i)
             reference = info[k, 2]
@@ -213,9 +124,7 @@ end
         end
     end
 
-    Ntrain = 0
-    Ntra = 0
-    pv = 0
+    Ntrain = 0; Ntra = 0; pv = 0
     for i = 1:Nbranch
         if branch[i, 12] == 1 && (branch[i, 10] != 0 || branch[i, 11] != 0)
             Ntrain += 1
@@ -349,196 +258,43 @@ end
 
 
 ### DC state estimation results
-function results_estimationdc(system, numsys, measurements, num, settings, algtime, slack, Ti, Pij, Pinj,
-    Nmeasur, branchPij, busPi, busTi, onPij, onPi, onTi, savebad, Npseudo, islands, newnumbering)
+function results_estimatedc(system, numsys, measurements, num, settings, results, idxbad, Npseudo, algtime, slack)
     println(string("Execution time: ", (@sprintf "%.4f" algtime * 1000), " (ms)"))
     header = dcseheader()
 
-    dimension = [0, 0, 0]
-    exact = false
-    if size(measurements.pmuVoltage, 2) == 9 && size(measurements.legacyFlow, 2) == 11 && size(measurements.legacyInjection, 2) == 9
-        exact = true
-        dimension = [6, 6]
-    else
-        dimension = [4, 3]
-    end
-
-
-    ########## DC main results ##########
-    main = fill(0.0, numsys.Nbus, 3)
-    for i = 1:numsys.Nbus
-        main[i, 1] = system.bus[i, 1]
-        main[i, 2] = 180 * Ti[i] / pi
-        main[i, 3] = Pinj[i] * system.basePower
-    end
-
-    ########## DC flow results ##########
-    flow = fill(0.0, numsys.Nbranch, 5)
-    for i = 1:numsys.Nbranch
-        flow[i, 1] = system.branch[i, 1]
-        flow[i, 2] = system.branch[i, 2]
-        flow[i, 3] = system.branch[i, 3]
-        flow[i, 4] = Pij[i] * system.basePower
-        flow[i, 5] = -Pij[i] * system.basePower
-    end
-
     ########## DC estimate and error results ##########
-    estimate = zeros(Nmeasur, dimension[1])
-    label = Array{String}(undef, Nmeasur, 3)
-    code = zeros(Nmeasur, 4)
-    error = zeros(dimension[2])
-    Nmeasur = Nmeasur - size(savebad, 1) - Npseudo
-    idx = 1; scaleTi = 180 / pi
-    for (i, on) in enumerate(onPij)
-        if on != 0
-            label[idx, 1] = "in-service"
-            label[idx, 2] = "Legacy"
-            label[idx, 3] = "P$(trunc(Int, measurements.legacyFlow[i, 2])),$(trunc(Int, measurements.legacyFlow[i, 3])) [MW]"
-            code[idx, 1] = 1.0
-            code[idx, 2] = 1.0
-            code[idx, 3] = 1.0
-            code[idx, 4] = i
-            if idx in savebad[:, 1]
-                label[idx, 1] = "bad-measurement"
-                code[idx, 1] = 2.0
-            end
-            if on == 2
-                label[idx, 1] = "pseudo-measurement"
-                code[idx, 1] = 3.0
-                onPij[i] = 1
-            end
-
-            estimate[idx, 1] = measurements.legacyFlow[i, 4] * system.basePower
-            estimate[idx, 2] = measurements.legacyFlow[i, 5] * system.basePower
-            k = branchPij[i]
-            if measurements.legacyFlow[i, 2] == system.branch[k, 2] && measurements.legacyFlow[i, 3] == system.branch[k, 3]
-                estimate[idx, 3] = flow[k, 4]
-            else
-                estimate[idx, 3] = flow[k, 5]
-            end
-            estimate[idx, 4] = abs(estimate[idx, 1] - estimate[idx, 3])
-
-            if code[idx, 1] != 2.0 && code[idx, 1] != 3.0
-                error[1] += estimate[idx, 4] / (Nmeasur * system.basePower)
-                error[2] += estimate[idx, 4]^2 / (Nmeasur * system.basePower^2)
-                error[3] += estimate[idx, 4]^2 / (measurements.legacyFlow[i, 5] * system.basePower^2)
-            end
-
-            if exact
-                estimate[idx, 5] = measurements.legacyFlow[i, 10] * system.basePower
-                estimate[idx, 6] = abs(estimate[idx, 3] - estimate[idx, 5])
-
-                if code[idx, 1] != 2.0 && code[idx, 1] != 3.0
-                    error[4] += estimate[idx, 6] / (Nmeasur * system.basePower)
-                    error[5] += estimate[idx, 6]^2 / (Nmeasur * system.basePower^2)
-                    error[6] += estimate[idx, 6]^2 / (measurements.legacyFlow[i, 5] * system.basePower^2)
-                end
-            end
-            idx += 1
+    label = Array{String}(undef, size(results.estimate, 1), 3)
+    idex = 1
+    for (k, i) in enumerate(results.estimate[:, 1])
+        if i == 1.0
+            label[k, 1] = "in-service"
+        elseif i == 2.0
+            label[k, 1] = "bad-measurement"
+        elseif i == 3.0
+            label[k, 1] = "pseudo-measurement"
+        end
+        if results.estimate[k, 2] == 1.0
+            label[k, 2] = "Legacy"
+        else
+            label[k, 2] = "PMU"
+        end
+        j = convert(Int, results.estimate[k, 4])
+        if results.estimate[k, 3] == 1.0
+            label[k, 3] = "P$(trunc(Int, measurements.legacyFlow[j, 2])),$(trunc(Int, measurements.legacyFlow[j, 3])) [MW]"
+        elseif results.estimate[k, 3] == 4.0
+            label[k, 3] = "P$(trunc(Int, measurements.legacyInjection[j, 1])) [MW]"
+        elseif results.estimate[k, 3] == 8.0
+            label[k, 3] = "T$(trunc(Int, measurements.pmuVoltage[j, 1])) [deg]"
         end
     end
-    for (i, on) in enumerate(onPi)
-        if on != 0
-            label[idx, 1] = "in-service"
-            label[idx, 2] = "Legacy"
-            label[idx, 3] = "P$(trunc(Int, measurements.legacyInjection[i, 1])) [MW]"
-            code[idx, 1] = 1.0
-            code[idx, 2] = 1.0
-            code[idx, 3] = 4.0
-            code[idx, 4] = i
-            if idx in savebad[:, 1]
-                label[idx, 1] = "bad-measurement"
-                code[idx, 1] = 2.0
-            end
-            if on == 2
-                label[idx, 1] = "pseudo-measurement"
-                code[idx, 1] = 3.0
-                onPi[i] = 1
-            end
-
-            estimate[idx, 1] = measurements.legacyInjection[i, 2] * system.basePower
-            estimate[idx, 2] = measurements.legacyInjection[i, 3] * system.basePower
-            estimate[idx, 3] = main[busPi[i], 3]
-            estimate[idx, 4] = abs(estimate[idx, 1] - estimate[idx, 3])
-
-            if code[idx, 1] != 2.0 && code[idx, 1] != 3.0
-                error[1] += estimate[idx, 4] / (Nmeasur * system.basePower)
-                error[2] += estimate[idx, 4]^2 / (Nmeasur * system.basePower^2)
-                error[3] += estimate[idx, 4]^2 / (measurements.legacyInjection[i, 3] * system.basePower^2)
-            end
-
-            if exact
-                estimate[idx, 5] = measurements.legacyInjection[i, 8] * system.basePower
-                estimate[idx, 6] = abs(estimate[idx, 3] - estimate[idx, 5])
-
-                if code[idx, 1] != 2.0 && code[idx, 1] != 3.0
-                    error[4] += estimate[idx, 6] / (Nmeasur * system.basePower)
-                    error[5] += estimate[idx, 6]^2 / (Nmeasur * system.basePower^2)
-                    error[6] += estimate[idx, 6]^2 / (measurements.legacyInjection[i, 3] * system.basePower^2)
-                end
-            end
-            idx += 1
-        end
-    end
-    for (i, on) in enumerate(onTi)
-        if on != 0
-            label[idx, 1] = "in-service"
-            label[idx, 2] = "PMU"
-            label[idx, 3] = "T$(trunc(Int, measurements.pmuVoltage[i, 1])) [deg]"
-            code[idx, 1] = 1.0
-            code[idx, 2] = 2.0
-            code[idx, 3] = 8.0
-            code[idx, 4] = i
-            if idx in savebad[:, 1]
-                label[idx, 1] = "bad-measurement"
-                code[idx, 1] = 2.0
-            end
-            if on == 2
-                label[idx, 1] = "pseudo-measurement"
-                code[idx, 1] = 3.0
-                onTi[i] = 1
-            end
-
-            estimate[idx, 1] = 180 * measurements.pmuVoltage[i, 5] / pi
-            estimate[idx, 2] = 180 * measurements.pmuVoltage[i, 6] / pi
-            estimate[idx, 3] = main[busTi[i], 2]
-            estimate[idx, 4] = abs(estimate[idx, 1] - estimate[idx, 3])
-
-            if code[idx, 1] != 2.0 && code[idx, 1] != 3.0
-                error[1] += estimate[idx, 4] / (Nmeasur * scaleTi)
-                error[2] += estimate[idx, 4]^2 / (Nmeasur * scaleTi^2)
-                error[3] += estimate[idx, 4]^2 / (measurements.pmuVoltage[i, 6] * scaleTi^2)
-            end
-
-            if exact
-                estimate[idx, 5] = 180 * measurements.pmuVoltage[i, 9] / pi
-                estimate[idx, 6] = abs(estimate[idx, 3] - estimate[idx, 5])
-
-                if code[idx, 1] != 2.0 && code[idx, 1] != 3.0
-                    error[4] += estimate[idx, 6] / (Nmeasur * scaleTi)
-                    error[5] += estimate[idx, 6]^2 / (Nmeasur * scaleTi^2)
-                    error[6] += estimate[idx, 6]^2 / (measurements.pmuVoltage[i, 6] * scaleTi^2)
-                end
-            end
-            idx += 1
-        end
-    end
-    error[[2 5]] = sqrt.(error[[2 5]])
 
     ########## Observability display ##########
-    idxp = findall(x->x==3, code[:, 1])
-    pseudo = [label[idxp, 2:3] code[idxp, 4] estimate[idxp, 1:2]]
+    idxp = findall(x->x==3, results.estimate[:, 1])
+    pseudo = [label[idxp, 2:3] results.estimate[idxp, 4:6]]
     if settings.observe[:observe] == 1 && Npseudo != 0
-        if newnumbering
-            for k in islands
-                for i in k
-                    islands[k][i] = system.bus[i, 1]
-                end
-            end
-        end
-        Nisland = size(islands, 1)
+        Nisland = size(results.observability, 1)
         numer = collect(1:Nisland)
-        islanddisp = copy(islands)
+        islanddisp = copy(results.observability)
         if Nisland > Npseudo
             pseudo = [pseudo; repeat([""], Nisland - Npseudo, 5)]
         elseif Nisland < Npseudo
@@ -546,17 +302,15 @@ function results_estimationdc(system, numsys, measurements, num, settings, algti
             numer = [numer; repeat([""], Npseudo - Nisland)]
         end
         println("\n Observability Analysis Display")
-        pretty_table([numer islands pseudo], header[:observe], alignment=[:r,:r,:r,:r,:r,:r,:r],
-            formatters = ft_printf(["%1.0f", "%-s", "%-s", "%-s", "%-s", "%1.2f", "%1.2e"], collect(1:7)))
+        pretty_table([numer islanddisp pseudo], header[:observe], alignment=[:r,:r,:r,:r,:r,:r,:r],
+            formatters = ft_printf(["%1.0f", "%-s", "%-s", "%-s", "%1.0f", "%1.2f", "%1.2e"], collect(1:7)))
     end
 
     ########## DC bad data display ##########
-    pass = collect(1:size(savebad, 1))
-    idxb = trunc.(Int, savebad[:,1])
-    bad = [pass code[idxb, 2:4] savebad[:, 2] code[idxb, 1]]
-    if settings.bad[:bad] == 1 && !isempty(savebad)
+    if settings.bad[:bad] == 1 && !isempty(results.baddata)
         println("\n Bad Data Analysis Display")
-        pretty_table([pass label[idxb, 2:3] code[idxb, 4]  savebad[:, 2] label[idxb, 1]], header[:bad], screen_size = (-1,-1),
+        pretty_table([results.baddata[:,1] label[idxbad, 2:3] results.estimate[idxbad, 4] results.baddata[:,5] label[idxbad, 1]],
+            header[:bad], screen_size = (-1,-1),
             columns_width = [10, 10, 18, 13, 20, 18], alignment=[:l,:l,:l,:r,:r,:r],
             formatters = ft_printf(["%1.0f", "%-s","%-s","%1.0f","%1.4e","%-s"], collect(1:6)))
     end
@@ -565,19 +319,19 @@ function results_estimationdc(system, numsys, measurements, num, settings, algti
     if settings.main
         h1 = Highlighter((data, i, j) -> (i == slack),  background = :blue)
         println("\n Main Data Display")
-        pretty_table(main, header[:main], screen_size = (-1,-1), alignment = [:r,:r,:r],
-            highlighters = h1, columns_width = [6, 18, 18],
+        pretty_table(results.main, header[:main], screen_size = (-1,-1), alignment = [:r,:r,:r],
+            highlighters = h1, columns_width = [8, 18, 18],
             formatters = ft_printf(["%1.0f","%1.4f","%1.2f"], collect(1:3)))
 
-        sum_data = Any["Sum" sum(main[:, 3], dims = 1)]
-        pretty_table(sum_data, noheader = true, screen_size = (-1,-1), columns_width = [27, 18],
+        sum_data = Any["Sum" sum(results.main[:, 3], dims = 1)]
+        pretty_table(sum_data, noheader = true, screen_size = (-1,-1), columns_width = [29, 18],
             alignment = [:l,:r], formatters = ft_printf(["%-s","%15.2f"], [1, 2]))
     end
 
     ########## DC flow display ##########
     if settings.flow
         println("\n Flow Data Display")
-        pretty_table(flow, header[:flow], screen_size = (-1,-1), columns_width = [6, 8, 8, 18, 18],
+        pretty_table(results.flow, header[:flow], screen_size = (-1,-1), columns_width = [8, 8, 8, 18, 18],
             alignment=[:r,:r,:r,:r,:r], formatters = ft_printf(["%1.0f","%1.0f","%1.0f","%1.2f","%1.2f"], collect(1:5)))
     end
 
@@ -589,26 +343,26 @@ function results_estimationdc(system, numsys, measurements, num, settings, algti
         formatters = ["%s", "%s", "%s", "%1.0f", "%1.2f", "%1.2e", "%1.2f", "%1.2e", "%1.2f", "%1.2e"]
         many = collect(1:10)
         head = header[:estimatedisplay]
-        if !exact
+        if size(results.estimate, 2) == 8
             columns_width = columns_width[1:8]
             alignment = alignment[1:8]
             formatters = formatters[1:8]
             many = many[1:8]
             head = head[:, 1:8]
         end
-        pretty_table([label code[:, 4] estimate], head, screen_size = (-1,-1), columns_width = columns_width,
+        pretty_table([label results.estimate[:, 4:end]], head, screen_size = (-1,-1), columns_width = columns_width,
             show_row_number = true, alignment = alignment, formatters = ft_printf((formatters), many))
     end
 
     ########## DC error display ##########
     if settings.error
         println("\n Error Data Display\n")
-        if exact
+        if size(results.estimate, 2) == 10
             head = header[:errordisplay]
-            err = [""; error[1:3]; ""; ""; error[4:6]]
+            err = [""; results.error[1:3]; ""; ""; results.error[4:6]]
         else
             head = header[:errordisplay][1:4, :]
-            err = [""; error[1:3]]
+            err = [""; results.error[1:3]]
         end
         pretty_table([head err], screen_size = (-1,-1), tf = borderless,
             noheader = true, alignment = [:l, :l, :r], formatters = ft_printf("%1.4e", 3),
@@ -632,5 +386,98 @@ function results_estimationdc(system, numsys, measurements, num, settings, algti
 
     mheader = measureheader(); pheader = psheader(); headernew = merge(mheader, pheader, header)
 
-    return StateEstimationDC(main, flow, [code estimate], error, bad, islands), headernew, group
+    return headernew, group
+end
+
+
+### PMU state estimation results
+@inbounds function results_estimatepmu(system, numsys, measurements, settings, algtime, main, flow, estimate, error)
+    println(string("Execution time: ", (@sprintf "%.4f" algtime * 1000), " (ms)"))
+    aheader = pmuseheader(); pheader = psheader()
+    header = merge(aheader, pheader)
+
+    ########## DC estimate and error results ##########
+    label = Array{String}(undef, size(estimate, 1), 3)
+    idex = 1
+    for (k, i) in enumerate(estimate[:, 1])
+        if i == 1.0
+            label[k, 1] = "in-service"
+        elseif i == 2.0
+            label[k, 1] = "bad-measurement"
+        elseif i == 3.0
+            label[k, 1] = "pseudo-measurement"
+        end
+        label[k, 2] = "PMU"
+        j = convert(Int, estimate[k, 4])
+        if estimate[k, 3] == 9.0
+            label[k, 3] = "I$(trunc(Int, measurements.pmuCurrent[j, 2])),$(trunc(Int, measurements.pmuCurrent[j, 3])) [p.u.]"
+        elseif estimate[k, 3] == 10.0
+            label[k, 3] = "D$(trunc(Int, measurements.pmuCurrent[j, 2])),$(trunc(Int, measurements.pmuCurrent[j, 3])) [deg]"
+        elseif estimate[k, 3] == 7.0
+            label[k, 3] = "V$(trunc(Int, measurements.pmuVoltage[j, 1])) [p.u.]"
+        elseif estimate[k, 3] == 8.0
+            label[k, 3] = "T$(trunc(Int, measurements.pmuVoltage[j, 1])) [deg]"
+        end
+    end
+
+    ########## PMU main results ##########
+    if settings.main
+        println("\n Main Data Display")
+        pretty_table(main, header[:main],
+            screen_size = (-1,-1), columns_width = [7, 16, 12, 17, 21, 17, 21],
+            alignment = repeat([Symbol(:r)], outer = 7),
+            formatters = ft_printf(["%1.0f", "%1.4f","%1.4f","%1.2f" ,"%1.2f","%1.2f","%1.2f"], collect(1:7)))
+        sum_data = Any["Sum" sum(main[:, 4:7], dims = 1)]
+        pretty_table(sum_data, noheader = true, screen_size = (-1,-1),
+            alignment=[:l,:r,:r,:r,:r], columns_width = [41, 17, 21, 17, 21],
+            formatters = ft_printf(["%-s","%15.2f","%15.2f","%11.2f","%15.2f"], collect(1:5)))
+    end
+
+    ########## PMU flow results ##########
+    if settings.flow
+        println("\n Flow Data Display")
+        pretty_table(flow[:,1:10], header[:flow][:,1:10],
+            screen_size = (-1,-1), columns_width = [6, 8, 8, 17, 21, 17, 21, 21, 17, 21],
+            alignment=[:r,:r,:r,:r,:r,:r,:r,:r,:r,:r],
+            formatters = ft_printf(["%1.0f","%1.0f","%1.0f","%1.2f","%1.2f","%1.2f","%1.2f","%1.2f","%1.2f","%1.2f"], collect(1:10)))
+        sum_data = Any["Sum" sum(flow[:, 8:10], dims = 1)]
+        pretty_table(sum_data, noheader = true, screen_size = (-1,-1), alignment=[:l,:r,:r,:r], columns_width = [116, 21, 17, 21],
+            formatters = ft_printf(["%-s","%15.2f","%11.2f","%15.2f"], collect(1:4)))
+    end
+
+    ########## DC Estimate display ##########
+    if settings.estimate
+        println("\n Estimate Data Display")
+        columns_width = [18, 12, 12, 12, 12, 12, 12, 19, 12, 19]
+        alignment = [:l, :l, :l, :r, :r, :r, :r, :r, :r, :r]
+        formatters = ["%s", "%s", "%s", "%1.0f", "%1.2f", "%1.2e", "%1.2f", "%1.2e", "%1.2f", "%1.2e"]
+        many = collect(1:10)
+        head = header[:estimatedisplay]
+        if size(estimate, 2) == 8
+            columns_width = columns_width[1:8]
+            alignment = alignment[1:8]
+            formatters = formatters[1:8]
+            many = many[1:8]
+            head = head[:, 1:8]
+        end
+        pretty_table([label estimate[:, 4:end]], head, screen_size = (-1,-1), columns_width = columns_width,
+            show_row_number = true, alignment = alignment, formatters = ft_printf((formatters), many))
+    end
+
+    ########## DC error display ##########
+    if settings.error
+        println("\n Error Data Display\n")
+        if size(estimate, 2) == 10
+            head = header[:errordisplay]
+            err = [""; error[1:3]; ""; ""; error[4:6]]
+        else
+            head = header[:errordisplay][1:4, :]
+            err = [""; error[1:3]]
+        end
+        pretty_table([head err], screen_size = (-1,-1), tf = borderless,
+            noheader = true, alignment = [:l, :l, :r], formatters = ft_printf("%1.4e", 3),
+            highlighters = (hl_cell( [(1,1);(6,1)], crayon"bold"), hl_col(2, crayon"dark_gray")),
+            body_hlines = [1,6], body_hlines_format = Tuple('─' for _ = 1:4))
+    end
+
 end
