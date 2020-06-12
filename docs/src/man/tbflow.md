@@ -199,11 +199,11 @@ Thus, we reveal the root ``x^{(1)}`` of the equation ``f_{\text{a}}(x)``:
   x^{(1)} = x^{(0)} + \Delta x^{(0)}.
 ```
 ```@raw html
-<p align="center">
-  <img src="../assets/lin_fx.png" />
-   <figcaption>Figure 1: The linearized function of the non-linear function around a given point.</figcaption>
-</p>
+<img src="../assets/lin_fx.png" class="center"/>
+<figcaption>Figure 1: The linearized function of the non-linear function around a given point.</figcaption>
+&nbsp;
 ```
+
 In order to find the root ``x*`` of the function ``f(x)``, the process is repeated using the Taylor series expansion at the point ``x^{(1)}``, which reveals a new point ``x^{(2)}``, and so on, moving towards a global solution ``x^*``. Therefore, the Newton-Raphson is an iterative method, where we iteratively compute the increments and update solutions:
 ```math
   \begin{aligned}
@@ -768,10 +768,9 @@ As before, let us consider an example of the DC framework, given in Figure 2, th
 * set of buses: ``\mathcal{H} = \{p,k,q\}``;
 * set of branches: ``\mathcal{E} = \{(p,k), (k,q)\}``.
 ```@raw html
-<p align="center">
-  <img src="../assets/dc_model.png"/>
-   <figcaption>Figure 2: The example with three buses and two branches.</figcaption>
-</p>
+<img src="../assets/dc_model.png" class="center"/>
+<figcaption>Figure 2: The example with three buses and two branches.</figcaption>
+&nbsp;
 ```
 
 Each branch in the DC framework is described with system of equations as follows:

@@ -1,11 +1,11 @@
 # [State Estimation](@id stateestimation)
 The state estimation is used for describing the present state of the power system, unlike the power flow analysis which is used for defining load profiles, generator capabilities, voltage specification, contingency analysis, and planning.
 ```@raw html
-<p align="center">
-  <img src="../assets/ems.png" />
-   <figcaption>Figure 1: The energy management system configuration and state estimation routines.</figcaption>
-</p>
+<img src="../assets/ems.png" class="center"/>
+<figcaption>Figure 1: The energy management system configuration and state estimation routines.</figcaption>
+&nbsp;
 ```
+
 The state estimation is a part of the energy management systems and typically includes network topology processors, observability analysis, state estimation algorithm and bad data analysis, as shown in Figure 1. Data for the state estimation arrives from SCADA (Supervisory Control and Data Acquisition) and WAMS (Wide Area Measurement System) technology. SCADA provides legacy measurements with low sampling rates insufficient to capture system dynamics in real-time and provides a snapshot state estimation with order of seconds and minutes latency. In contrast, WAMS provides data from PMUs with high sampling rates (10 ms - 20 ms) enabling the real-time system monitoring.
 
 In a usual scenario, the state estimation model is described with the system of non-linear equations, where bus voltage magnitudes and bus voltage angles are state variables ``\mathbf{x}``. The core of the state estimation is the state estimation algorithm that provides an estimate of the system state ``\mathbf{x}`` based on the network topology and available measurements. State estimation is performed on a bus/branch model and used to reconstruct the state of the system. Conventional state estimation algorithms use the Gauss-Newton method to solve the non-linear weighted least-squares problem [[1, 2]](@ref refestimate). Besides the non-linear state estimation model, the DC model is obtained by linearization of the non-linear model, and it provides an approximate solution. The DC state estimate is obtained through non-iterative procedure by solving the linear weighted least-squares problem.

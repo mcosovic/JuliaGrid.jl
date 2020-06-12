@@ -12,3 +12,9 @@ table tr {
 table tr:nth-child(odd) {
 	background-color: #ffffff;
 }
+
+.center {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
