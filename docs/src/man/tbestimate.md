@@ -1,7 +1,7 @@
 # [State Estimation](@id stateestimation)
 The state estimation is used for describing the present state of the power system, unlike the power flow analysis which is used for defining load profiles, generator capabilities, voltage specification, contingency analysis, and planning.
 ```@raw html
-<img src="../assets/ems.png" class="center"/>
+<img src="../../assets/ems.png" class="center"/>
 <figcaption>Figure 1: The energy management system configuration and state estimation routines.</figcaption>
 &nbsp;
 ```

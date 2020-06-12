@@ -199,7 +199,7 @@ Thus, we reveal the root ``x^{(1)}`` of the equation ``f_{\text{a}}(x)``:
   x^{(1)} = x^{(0)} + \Delta x^{(0)}.
 ```
 ```@raw html
-<img src="../assets/lin_fx.png" class="center"/>
+<img src="../../assets/lin_fx.png" class="center"/>
 <figcaption>Figure 1: The linearized function of the non-linear function around a given point.</figcaption>
 &nbsp;
 ```
@@ -768,7 +768,7 @@ As before, let us consider an example of the DC framework, given in Figure 2, th
 * set of buses: ``\mathcal{H} = \{p,k,q\}``;
 * set of branches: ``\mathcal{E} = \{(p,k), (k,q)\}``.
 ```@raw html
-<img src="../assets/dc_model.png" class="center"/>
+<img src="../../assets/dc_model.png" class="center"/>
 <figcaption>Figure 2: The example with three buses and two branches.</figcaption>
 &nbsp;
 ```
