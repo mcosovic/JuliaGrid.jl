@@ -138,7 +138,7 @@ end
         @test all(measure.pmuCurrent[:, 5] .== 1e-5) && all(measure.pmuCurrent[:, 8] .== 1e-5)
         Nv = sum((measure.pmuVoltage[:, 2] - measure.pmuVoltage[:, 8]).^2) + sum((measure.pmuVoltage[:, 5] - measure.pmuVoltage[:, 9]).^2)
         Nc = sum((measure.pmuCurrent[:, 4] - measure.pmuCurrent[:, 10]).^2) + sum((measure.pmuCurrent[:, 7] - measure.pmuCurrent[:, 11]).^2)
-        @test 0.7 <= (((Nv + Nc) / 107) / 1e-5) <= 1.3
+        @test 0.4 <= (((Nv + Nc) / 107) / 1e-5) <= 1.6
 
     measure, = runmg(case14con; runflow = 0, pmuvariance = ["complete" 1e-3])
         @test all(measure.pmuVoltage[:, 3] .== 1e-3) && all(measure.pmuVoltage[:, 6] .== 1e-3)
@@ -178,7 +178,7 @@ end
         Nn = sum((measure.legacyInjection[:, 2] - measure.legacyInjection[:, 8]).^2) + sum((measure.legacyInjection[:, 5] - measure.legacyInjection[:,9]).^2)
         Ni = sum((measure.legacyCurrent[:, 4] - measure.legacyCurrent[:, 7]).^2)
         Nv = sum((measure.legacyVoltage[:, 2] - measure.legacyVoltage[:, 5]).^2)
-        @test 0.7 <= (((Nf + Nn + Ni + Nv) / 162) / 1e-2) <= 1.3
+        @test 0.4 <= (((Nf + Nn + Ni + Nv) / 162) / 1e-2) <= 1.6
 
     measure, = runmg(case14con; runflow = 0, legacyvariance = ["complete" 1e-2])
         @test all(measure.legacyFlow[:, 5] .== 1e-2) && all(measure.legacyFlow[:, 8] .== 1e-2)
