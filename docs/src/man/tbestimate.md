@@ -2,7 +2,7 @@
 The state estimation is used for describing the present state of the power system, unlike the power flow analysis which is used for defining load profiles, generator capabilities, voltage specification, contingency analysis, and planning.
 ```@raw html
 <p align="center">
-  <img src="/docs/src/assets/assets/ems.png" />
+  <img src="../assets/ems.png" />
    <figcaption>Figure 1: The energy management system configuration and state estimation routines.</figcaption>
 </p>
 ```
