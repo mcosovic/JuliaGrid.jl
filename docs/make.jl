@@ -8,12 +8,14 @@ makedocs(
     format = Documenter.HTML(assets=["assets/style.css"]),
     pages = [
         "Home" => "index.md",
+        "Input Data" => "man/input.md",
         "Power Flow" => "man/flow.md",
-        "Measurement Generator" => "man/generator.md",
         "State Estimation" => "man/estimation.md",
-        "Theoretical Background" => Any[
-            "Plotting" => "man/flow.md",
-            "Compositing" => "man/generator.md",
+        "Measurement Generator" => "man/generator.md",
+        "Theoretical Background" => [
+            "Network Equations" => "man/branch.md",
+            "Power Flow" => "man/tbflow.md",
+            "State Estimation" => "man/tbestimate.md",
         ],
     ]
 )
