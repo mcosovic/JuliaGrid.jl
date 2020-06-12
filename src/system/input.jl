@@ -183,7 +183,7 @@ function loadsystem(path)
         else
             info = Array{String}(undef, 0, 1)
         end
-        close(xf)
+        # close(xf)
     end
 
     info = infogrid(bus, branch, generator, info, path.dataname, Nbranch, Nbus, Ngen)
@@ -389,7 +389,7 @@ end
             else
                 legacyVoltage = zeros(1, 9); legacyNv = 0
             end
-            close(xf)
+            # close(xf)
         end
     end
 
