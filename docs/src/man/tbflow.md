@@ -200,7 +200,7 @@ Thus, we reveal the root ``x^{(1)}`` of the equation ``f_{\text{a}}(x)``:
 ```
 ```@raw html
 <p align="center">
-  <img src="../assets/lin_fx.png" />
+  <img src="/docs/src/assets/lin_fx.png" />
    <figcaption>Figure 1: The linearized function of the non-linear function around a given point.</figcaption>
 </p>
 ```
