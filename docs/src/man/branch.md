@@ -11,7 +11,7 @@ Network equations obtained using the unified branch model and defined below repr
 ## [Branch Model](@id branchmodel)
 The equivalent unified ``\pi``-model for a branch, shown in Figure 2, is sufficient to describe all main equations related to the power system.
 ```@raw html
-<img src="./assets/pi_model.png" class="center"/>
+<img src="../../assets/pi_model.png" class="center"/>
 <figcaption>Figure 2: The equivalent branch model, where transformer is located at "from bus end" of the branch.</figcaption>
 &nbsp;
 ```
@@ -68,7 +68,7 @@ Consequently, if ``\tau_{ij} = 1`` and ``\phi_{ij} = 0`` the model describes the
 ## [Nodal Admittance Matrix](@id injectionnodal)
 Let us consider an example, given in Figure 3, that will allow us an easy transition to the general case. We observe system with three buses and two branches, where the bus ``k`` is incident to the shunt element.
 ```@raw html
-<img src="./assets/pi_model_example.png" class="center"/>
+<img src="../../../assets/pi_model_example.png" class="center"/>
 <figcaption>Figure 3: The example with three buses and two branches.</figcaption>
 &nbsp;
 ```
