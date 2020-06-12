@@ -2,7 +2,7 @@
 Network equations obtained using the unified branch model and defined below represent the basic setup used for the power system analysis. The power system network topology is usually described by the bus/branch model, where branches of the network are defined using the two-port ``\pi``-model. The bus/branch model can be represented using a graph ``\mathcal{G} =(\mathcal{H},\mathcal{E})``, where the set of nodes ``\mathcal{H} = \{1,\dots,n  \}`` represents the set of buses, while the set of edges ``\mathcal{E} \subseteq \mathcal{H} \times \mathcal{H}`` represents the set of branches of the power network, shown in Figure 1.
 
 ```@raw html
-<img src="./assets/bus_branch.png" class="center"/>
+<img src="../figures/bus_branch.png" class="center"/>
 <figcaption>Figure 1: An example of the power system bus/branch model.</figcaption>
 ```
 
@@ -16,7 +16,7 @@ The equivalent unified ``\pi``-model for a branch, shown in Figure 2, is suffici
 &nbsp;
 ```
 
-In Figure 1, ``\{i,j\} \in \mathcal{H}`` denotes buses, where, in power networks the bus represents elements such as a generator, load, substation, etc. The branch series admittance ``y_{ij}`` is inversely proportional to the branch series impedance ``z_{ij}``:  
+In Figure 2, ``\{i,j\} \in \mathcal{H}`` denotes buses, where, in power networks the bus represents elements such as a generator, load, substation, etc. The branch series admittance ``y_{ij}`` is inversely proportional to the branch series impedance ``z_{ij}``:  
 ```math
     y_{ij} = \frac{1}{z_{ij}} =
     \frac{1}{{r_{ij}} + \text{j}x_{ij}} =
