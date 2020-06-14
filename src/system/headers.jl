@@ -72,8 +72,8 @@ function dcseheader()
     flow = [["Branch" "From Bus" "To Bus" "From Bus Flow" "To Bus Flow"]
            ["Integer" "Integer" "Integer" "Active Power [MW]" "Active Power [MW]"]]
 
-    estimate = [["Device" "Device" "Device" "Device" "Device" "Device" "Algorithm" "Residual" "User" "Residual" ]
-                ["In-service(1), Bad Data(2), Pseudo(3)" "Legacy(1), PMU(2)" "Pij(1), Pi(4), Ti(8)" "Local Index" "Measure" "Variance" "Estimate" "Estimate to Measure" "Exact" "Estimate to Exact"]]
+    estimate = [["Number" "Device" "Device" "Device" "Device" "Device" "Device" "Algorithm" "Residual" "User" "Residual" ]
+                ["Integer" "In-service(1), Bad Data(2), Pseudo(3)" "Legacy(1), PMU(2)" "Pij(1), Pi(4), Ti(8)" "Local Index" "Measure" "Variance" "Estimate" "Estimate to Measure" "Exact" "Estimate to Exact"]]
 
 
     estimatedisplay = [["Device" "Device" "Device" "Device" "Device" "Device" "Algorithm" "Residual" "User" "Residual" ]
@@ -109,8 +109,8 @@ function pmuseheader()
     flow = [["Branch" "From Bus" "To Bus" "From Bus Flow" "From Bus Flow" "To Bus Flow" "To Bus Flow" "Branch Injection" "Loss" "Loss" "From Bus Current" "From Bus Current" "To Bus Current" "To Bus Current"]
             ["Integer" "Integer" "Integer" "Active Power [MW]" "Reactive Power [MVAr]" "Active Power [MW]" "Reactive Power [MVAr]" "Reactive Power [MVAr]" "Active Power [MW]" "Reactive Power [MVAr]" "Magnitude [p.u.]" "Angle [deg]" "Magnitude [p.u.]" "Angle [deg]"]]
 
-    estimate = [["Device" "Device" "Device" "Device" "Device" "Device" "Algorithm" "Residual" "User" "Residual" ]
-                ["In-service(1), Bad Data(2), Pseudo(3)" "Legacy(1), PMU(2)" "Pij(1), Pi(4), Ti(8)" "Local Index" "Measure" "Variance" "Estimate" "Estimate to Measure" "Exact" "Estimate to Exact"]]
+    estimate = [["Number" "Device" "Device" "Device" "Device" "Device" "Device" "Algorithm" "Residual" "User" "Residual" ]
+                ["Integer" "In-service(1), Bad Data(2), Pseudo(3)" "Legacy(1), PMU(2)" "Pij(1), Pi(4), Ti(8)" "Local Index" "Measure" "Variance" "Estimate" "Estimate to Measure" "Exact" "Estimate to Exact"]]
 
     estimatedisplay = [["Device" "Device" "Device" "Device" "Device" "Device" "Algorithm" "Residual" "User" "Residual" ]
                        ["Status" "Class" "Type" "Local Index" "Measure" "Variance" "Estimate" "Estimate to Measure" "Exact" "Estimate to Exact"]]

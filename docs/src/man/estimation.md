@@ -3,7 +3,7 @@ To solve the state estimation problem three different modules are available:
 * [non-linear state estimation](@ref nonlinearse),
 * [linear DC state estimation](@ref lineardcse),
 * [linear state estimation with PMUs only](@ref linearpmuse).
-By default settings, the state estimation algorithms use the weighted least-squares estimation, but it is also possible to use the least absolute value estimation [1, Sec. 6.5].  
+By default settings, the state estimation algorithms use the weighted least-squares estimation, but it is also possible to use the [least absolute value estimation](@ref lav).  
 
 The non-linear state estimation is implemented using the following features:
  - the state vector is given in the polar coordinate system,
@@ -11,14 +11,13 @@ The non-linear state estimation is implemented using the following features:
  - measurement errors are uncorrelated,
  - the slack bus is included in the state estimation formulation.
 
-The linear state estimation with PMUs] is implemented using the following features:
+The linear state estimation with PMUs is implemented using the following features:
  - the state vector is given in the rectangular coordinate system,
  - phasor measurements are transformed from polar to rectangular coordinates,
  - the covariance matrix is transformed from polar to rectangular coordinates,
  - the slack bus is not included in the state estimation formulation.
 
-Besides state estimation algorithms, we have implemented the bad data processing using the largest normalized
-residual test [1, Sec. 5.7]. The routine proceeds with bad data analysis after the estimation process is finished, in the repetitive process of identifying and eliminating bad data measurements one after another.
+Besides state estimation algorithms, we have implemented [the bad data processing](@ref baddata) using the largest normalized residual test. The routine proceeds with bad data analysis after the estimation process is finished, in the repetitive process of identifying and eliminating bad data measurements one after another.
 
 The observability analysis with restore routine is based on the flow islands [2], [3], where pseudo-measurements are chosen between measurements that are marked as out-of-service in the input DATA.
 
@@ -91,11 +90,11 @@ The state estimation function `runse()` receives a group of variable number of a
 ```
 ##### METHOD - Variable Argument
 
-| Command     | Description                                                                                 |
-|:------------|:--------------------------------------------------------------------------------------------|
-|`"nonlinear"`| runs the non-linear state estimation based on the weighted least-squares, `default setting` |
-|`"pmu"`      | runs the linear weighted least-squares state estimation only with PMUs                      |
-|`"dc"`       | runs the linear weighted least-squares DC state estimation                                  |
+| Command     | Description                                                                                                        |
+|:------------|:-------------------------------------------------------------------------------------------------------------------|
+|`"nonlinear"`| runs the non-linear state estimation based on the weighted least-squares, `default setting`                        |
+|`"pmu"`      | runs the linear weighted least-squares state estimation only with PMUs where measurement covariances are neglected |
+|`"dc"`       | runs the linear weighted least-squares DC state estimation                                                         |
 
 ```@raw html
 &nbsp;
@@ -104,7 +103,7 @@ The state estimation function `runse()` receives a group of variable number of a
 
 | Command      | Description                                                                              |
 |:-------------|:-----------------------------------------------------------------------------------------|
-|`"lav"`       | runs the non-linear or linear state estimation using the least absolute value estimation with `"GLPK"` solver and `"equality"` constraints as `default settings` (see ATTACH to change `default settings`) |
+|`"lav"`       | runs the non-linear or linear state estimation using the least absolute value estimation with `"GLPK"` solver as `default settings` (see ATTACH to change `default settings`) |
 |`"bad"` | when using the weighted least-squares estimation method runs the bad data processing, where the identification is equal to `"threshold" = 3`, with the maximum number of `"passes" = 1`, where critical measurement are marked according to `"critical" = 1e-10` (see ATTACH to change `default settings`) |
 |`"observe"` | runs the observability analysis using the `"pivot" = 1e-5` threshold, where to restore observability routine takes only power injection measurements with variances in per-unit `"Pi" = 1e5` (see ATTACH to change `default settings`) |
 
@@ -125,10 +124,10 @@ The state estimation function `runse()` receives a group of variable number of a
 ```
 ##### ATTACH - Keyword Argument
 
-| ATTACH:         |  Least Absolute Value Estimation Method                                                  |
-|:----------------|:-----------------------------------------------------------------------------------------|
-| **Command**     | `lav = [solver constraint]`                                                              |
-| **Description** | the least absolute value estimation can be run using `"GLPK"` or `"Ipopt"` optimization `solver` with `constraint` equal to `"equality"` or `"inequality"`, `default setting: lav = ["GLPK" "equality"]` |
+| ATTACH:         |  Least Absolute Value Estimation Method                                                                                           |
+|:----------------|:----------------------------------------------------------------------------------------------------------------------------------|
+| **Command**     | `lav = solver`                                                                                                                    |
+| **Description** | the least absolute value estimation can be run using `"GLPK"` or `"Ipopt"` optimization `solver`, `default setting: lav = "GLPK"` |
 
 | ATTACH:         | Bad Data Processing                                                                      |
 |:----------------|:-----------------------------------------------------------------------------------------|
@@ -144,6 +143,12 @@ The state estimation function `runse()` receives a group of variable number of a
 |:----------------|:-----------------------------------------------------------------------------------------------------------------------------------|
 | **Command**     | `solve = solver`                                                                                                                   |
 | **Description** |  runs the linear system `solver` using built-in `solve = "builtin"` as `default setting` or LU linear system solver `solve = "lu"` |
+
+| ATTACH:         | Covariance Matrix for the Linear State Estimation with PMUs                                                                                 |
+|:----------------|:--------------------------------------------------------------------------------------------------------------------------------------------|
+| **Command**     | `covarinace = 1`                                                                                                                            |
+| **Description** |  sets the covariance matrix model for the linear state estimation with PMUs where the matrix contains measurement variances and covariances |
+
 
 ```@raw html
 &nbsp;
@@ -246,7 +251,7 @@ The `estimate` data structure contains summary of the state estimation analysis.
 | 1       | row number defined as positive integer                                               |
 | 2       | measurement status where in-service = 1, bad-measurement = 2, pseudo-measurement = 3 |
 | 3       | measurement class where legacy = 1, PMU = 2                                          |
-| 4       | measurement type where flow = 1, injection = 4, angle = 8                            |
+| 4       | measurement type where active power flow = 1, reactive power flow = 2, active power injection = 3, reactive power injection = 4, current magnitude = 5,  current angle = 6, voltage magnitude = 7, voltage angle = 8                                      |
 | 5       | local index of the measurement given in the input DATA                               |
 | 6       | measurement value                                                                    |
 | 7       | measurement variance value                                                           |
@@ -258,7 +263,7 @@ The `estimate` data structure contains summary of the state estimation analysis.
 ```@raw html
 &nbsp;
 ```
-The `error` data structure contains different error metrics which are calculated in the per-unit system. Note that only in-service measurement values are included, respectively bad data and pseudo-measurement are not included.
+The `error` data structure contains different error metrics which are calculated in the per-unit system. Note that only in-service and pseudo-measurement values are included, respectively bad-measurements are not included.
 
 | Column  | Description                                                                                                   |
 |:-------:|:--------------------------------------------------------------------------------------------------------------|
@@ -278,7 +283,7 @@ The `baddata` data structure contains information about bad data analysis. Note 
 |:-------:|:-------------------------------------------------------------------------------------------|
 | 1       | pass of weighted least-squares method, where in each pass suspected bad data is eliminated |
 | 2       | bad measurement class where legacy = 1, PMU = 2                                            |
-| 3       | bad measurement type where flow = 1, injection = 4, angle = 8                              |
+| 3       | measurement type where active power flow = 1, reactive power flow = 2, active power injection = 3, reactive power injection = 4, current magnitude = 5,  current angle = 6, voltage magnitude = 7, voltage angle = 8                                      |
 | 4       | local index of the bad measurement given in the input DATA                                 |
 | 5       | normalized residual value of the bad data measurement                                      |
 | 6       | measurement status where bad-measurement = 2                                               |
@@ -293,15 +298,13 @@ The `observability` data structure contains information about flow islands and p
 | 1       | flow island as positive integer                                  |
 | 2       | bus number in the corresponding island                           |
 | 3       | pseudo-measurement class where legacy = 1, PMU = 2               |
-| 4       | pseudo-measurement type where flow = 1, injection = 4, angle = 8 |
+| 4       | measurement type where active power flow = 1, reactive power flow = 2, active power injection = 3, reactive power injection = 4, current magnitude = 5,  current angle = 6, voltage magnitude = 7, voltage angle = 8                                      |
 | 5       | local index of the pseudo-measurement given in the input DATA    |
 | 6       | pseudo-measurement value                                         |
 | 7       | pseudo-measurement variance                                      |
 
 ---
 ### References
-
-[1] A. Abur and A. Exposito, “Power System State Estimation: Theory and Implementation,” ser. Power Engineering. Taylor & Francis, 2004.
 
 [2] G. C. Contaxis and G. N. Korres, “A Reduced Model for Power System Observability Analysis and Restoration,” IEEE Trans. Power Syst., vol.
 3, no. 4, pp. 1411-1417, Nov. 1988.

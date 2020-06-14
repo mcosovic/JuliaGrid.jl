@@ -44,6 +44,9 @@ julia> results, measurements, system, info = runse("case14se.xlsx", "dc", "main"
 data = runmg("case14.h5"; runflow = 1, legacyset = ["Pij" 10 "Pi" 7], legacyvariance = ["complete" 1e-10])
 results, = runse(data, "dc", "estimate")
 ```
+```julia-repl
+results, = runse("case14se.xlsx", "pmu", "bad"; covariance = 1)
+```
 
 ###  Changelog
 Major changes:

@@ -273,5 +273,3 @@ The pre-defined power system and measurement data are located in the `src/data` 
 |:-----------------|:-------------|------:|-------:|-----------:|--------:|-------------------:|-------------------:|
 | case14se         | transmission | 14    | 1      | 5          | 20      | 70                 | 81                 |
 | case30se         | transmission | 30    | 2      | 15         | 45      | 72                 | 206                |
-
----

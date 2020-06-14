@@ -1,5 +1,9 @@
 # JuliaGrid changelog
 
+![bugfix] pseudo-measurements are included in error metrics
+
+![bugfix] least absolute value objective function
+
 ![bugfix] active power flow and injection measurement values in the DC state estimation
 
 ![docs] theoretical background: state estimation
@@ -35,7 +39,7 @@
 
 ## Version `v0.0.1`
 
-* ![breaking] initial release with power flow and measurement generator
+![breaking] initial release with power flow and measurement generator
 
 
 [breaking]: https://img.shields.io/badge/breaking-red.svg

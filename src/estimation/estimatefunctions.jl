@@ -1,23 +1,28 @@
 ### Bad data processing
-function baddata(settings, numsys, G, jacobian, idx, state, Nmeasure, mean, weight, W, savebad, rbelow)
+function baddata(settings, numsys, x, z, v, W, G, J, Nmeasure, idx, badsave, rbelow)
+    ########## Sparse inverse ##########
     S, L, U, d, p, q, Rs = constructfact(G)
     parent = etree(S)
     R = symbfact(S, parent)
     Gi = sparseinv(L, U, d, p, q, Rs, R)
 
-    meanest = jacobian * state
-    jacobianGi = jacobian * Gi
-    p = fill(0.0, size(jacobian, 1))
+    ########## Diagonal entries of residual matrix ##########
+    JGi = J * Gi
+    c = fill(0.0, size(J, 1))
     for i in idx
-        p[i[1]] += jacobianGi[i] * jacobian[i]
+        c[i[1]] += JGi[i] * J[i]
     end
 
-    statecr = (transpose(jacobian) * jacobian) \ (transpose(jacobian) * mean)
-    meancr = jacobian * statecr
+    ########## Critical data ##########
+    xcr = (J' * J) \ (J' * z)
+    hcr = J * xcr
+
+    ########## Largest normalized residual ##########
+    h = J * x
     rmax = 0.0; idxr = 0
     for i = 1:Nmeasure
-        if abs(mean[i] - meancr[i]) > settings.bad[:critical]
-            rnor = abs((mean[i] - meanest[i])) / sqrt(abs(1 / weight[i] - p[i]))
+        if abs(z[i] - hcr[i]) > settings.bad[:critical]
+            rnor = abs(z[i] - h[i]) / sqrt(abs(v[i] - c[i]))
             if rnor > rmax
                 idxr = i
                 rmax = rnor
@@ -29,22 +34,28 @@ function baddata(settings, numsys, G, jacobian, idx, state, Nmeasure, mean, weig
         rbelow = false
     end
 
+    if idxr == 0
+        println("All measurements are marked as critical, the bad data processing is terminated.")
+        rbelow = false
+    end
+
+    ########## Remove measurement ##########
     if rbelow
         for i in idx
             if i[1] == idxr
-                jacobian[i] = 0.0
+                J[i] = 0.0
             end
         end
-        mean[idxr] = 0.0
+        z[idxr] = 0.0
         for i in W.rowval
             if i == idxr
                 W.nzval[i] = 0
             end
         end
-        savebad = [savebad; [idxr rmax]]
+        badsave = [badsave; [idxr rmax]]
     end
 
-    return jacobian, mean, W, savebad, rbelow
+    return J, z, W, badsave, rbelow
 end
 
 #

@@ -120,11 +120,11 @@ end
 
 
 ### Least absolute value method
-@inbounds function lav(A, b, Nvar, Nequ, settings)
-    c = [zeros(2 * Nvar); ones(2 * Nequ)]
-    E = spdiagm(0 => ones(Nequ))
-    Aeq = [A -A E -E]
-    lb = zeros(2 * (Nvar + Nequ))
+@inbounds function lav(J, z, Nvar, Nmeasure, settings)
+    t = [zeros(2 * Nvar); ones(2 * Nmeasure)]
+    E = spdiagm(0 => ones(Nmeasure))
+    A = [J -J E -E]
+    lb = zeros(2 * (Nvar + Nmeasure))
 
     if settings.lav[:optimize] == 2
         model = Model(Ipopt.Optimizer)
@@ -132,14 +132,10 @@ end
         model = Model(GLPK.Optimizer)
     end
 
-    @variable(model, x[i = 1:(2 * (Nvar + Nequ))])
+    @variable(model, x[i = 1:(2 * (Nvar + Nmeasure))])
     @constraint(model, lb .<= x)
-    if settings.lav[:constraint] == 2
-        @constraint(model, Aeq * x .<= b)
-    else
-        @constraint(model, Aeq * x .== b)
-    end
-    @objective(model, Min, sum(x))
+    @constraint(model, A * x .== z)
+    @objective(model, Min, t' * x)
     optimize!(model)
     println("Least Aabsolute value state estimation status: $(JuMP.termination_status(model))")
 

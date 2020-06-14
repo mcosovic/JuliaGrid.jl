@@ -105,7 +105,7 @@ Based on the available set of measurements ``\mathcal{M}``, the weighted least-s
 ```math
 		\mathbf x^{(\nu+1)} = \mathbf x^{(\nu)} + \Delta \mathbf x^{(\nu)},
 ```
-where ``\nu = \{0,1,2,\dots\} `` is the iteration index, ``\Delta \mathbf x \in \mathbb {R}^{s} `` is the vector of increments of the state variables, ``\mathbf J (\mathbf x)\in \mathbb {R}^{k \times s}`` is the Jacobian matrix of measurement functions ``\mathbf h (\mathbf x)$ at $\mathbf x=\mathbf x^{(\nu)}``, ``\mathbf{R}\in \mathbb {R}^{k \times k}`` is a measurement error covariance matrix, and ``\mathbf r (\mathbf x) = \mathbf{z} - \mathbf h (\mathbf x)`` is the vector of residuals [[4, Ch. 10]](@ref refestimate). Note that, assumption that measurement errors are uncorrelated leads to the diagonal covariance matrix ``\mathbf {R}`` that corresponds to measurement variances.
+where ``\nu = \{0,1,2,\dots\} `` is the iteration index, ``\Delta \mathbf x \in \mathbb {R}^{s} `` is the vector of increments of the state variables, ``\mathbf J (\mathbf x)\in \mathbb {R}^{k \times s}`` is the Jacobian matrix of measurement functions ``\mathbf h (\mathbf x)`` at ``\mathbf x=\mathbf x^{(\nu)}``, ``\mathbf{R}\in \mathbb {R}^{k \times k}`` is a measurement error covariance matrix, and ``\mathbf r (\mathbf x) = \mathbf{z} - \mathbf h (\mathbf x)`` is the vector of residuals [[4, Ch. 10]](@ref refestimate). Note that, assumption that measurement errors are uncorrelated leads to the diagonal covariance matrix ``\mathbf {R}`` that corresponds to measurement variances.
 
 The non-linear state estimation represents non-convex problem arising from the non-linear measurement functions [[7]](@ref refestimate). Due the fact that the values of state variables usually fluctuate in narrow boundaries, the non-linear model represents the mildly non-linear problem, where solutions are in a reasonable-sized neighborhood which enables the use of the Gauss-Newton method. The Gauss-Newton method can produce different rates of convergence, which can be anywhere from linear to quadratic [[8, Sec. 9.2]](@ref refestimate). The convergence rate in regards to power system state estimation depends of the topology and measurements, and if parameters are consistent (e.g., free bad data measurement set), the method shows near quadratic convergence rate [[4, Sec. 11.2]](@ref refestimate).
 
@@ -351,7 +351,7 @@ is associated with measurement function:
 ```math
    h_{V_{i}}(\cdot) \triangleq V_{i}.
 ```
-Jacobian expressions corresponding to the measurement function $h_{V_{i}}(\cdot)$ are defined:  
+Jacobian expressions corresponding to the measurement function ``h_{V_{i}}(\cdot)`` are defined:  
 ```math
   \begin{aligned}
    	\cfrac{\mathrm \partial{{h_{V_{i}}(\cdot)}}} {\mathrm \partial \theta_{i}}=0; \;\;\;

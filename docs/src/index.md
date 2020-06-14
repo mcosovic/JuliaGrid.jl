@@ -9,8 +9,8 @@ The software package, among other things, includes:
  - [non-linear state estimation](@ref nonlinearse) (work in progress),
  - [linear DC state estimation](@ref lineardcse),
  - [linear state estimation with PMUs](@ref linearpmuse) (work in progress),
- - least absolute value state estimation (beta version),
- - bad data processing (beta version),
+ - [least absolute value state estimation](@ref lav),
+ - [bad data processing](@ref baddata),
  - observability analysis (beta version),
  - optimal PMU placement.
 ---

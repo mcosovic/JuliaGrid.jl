@@ -162,7 +162,6 @@ function rundcse(system, measurements, num, numsys, settings, info)
     end
     J = sparse(row, col, jac, Nmeasure, numsys.Nbus)
 
-
     ########## Observability analysis ##########
     Npseudo = 0
     if settings.observe[:observe] == 1
@@ -174,13 +173,11 @@ function rundcse(system, measurements, num, numsys, settings, info)
     Nmeasure = Nmeasure + Npseudo
 
     ########## Remove column of the slack bus ##########
-    runWLS = true
     keep = [collect(1:slack - 1); collect(slack + 1:numsys.Nbus)]
     J = J[:, keep]
 
     ########## LAV ##########
     if settings.lav[:lav] == 1
-        runWLS = false
         Ti = Array{Float64}(undef, numsys.Nbus - 1)
         Nvar = numsys.Nbus - 1
         x = lav(J, mean, Nvar, Nmeasure, settings)
@@ -190,11 +187,12 @@ function rundcse(system, measurements, num, numsys, settings, info)
     end
 
     ########## WLS and bad data analysis ##########
-    if runWLS
+    if settings.lav[:lav] == 0
         W = spdiagm(0 => sqrt.(weight))
 
         if settings.bad[:bad] == 1
             idx = findall(!iszero, J)
+            v = 1 ./ weight
         end
 
         pass = 1; rbelow = true
@@ -209,7 +207,7 @@ function rundcse(system, measurements, num, numsys, settings, info)
             Ti = wls(G, b, settings.solve)
 
             if rbelow
-                J, mean, W, badsave, rbelow = baddata(settings, numsys, G, J, idx, Ti, Nmeasure, mean, weight, W, badsave, rbelow)
+                J, mean, W, badsave, rbelow = baddata(settings, numsys, Ti, mean, v, W, G, J, Nmeasure, idx, badsave, rbelow)
                 pass += 1
             end
         end
@@ -235,44 +233,44 @@ function rundcse(system, measurements, num, numsys, settings, info)
     if size(measurements.pmuVoltage, 2) == 9 && size(measurements.legacyFlow, 2) == 11 && size(measurements.legacyInjection, 2) == 9
         exact1 = 0; exact2 = 0
     end
-    estimate = zeros(Nmeasure, 10 - exact1)
+    estimate = zeros(Nmeasure, 11 - exact1)
     error = zeros(6 - exact2)
     Nmeasure = Nmeasure - size(badsave, 1) - Npseudo
     idx = 1; scaleTi = 180 / pi
     for (i, on) in enumerate(onPij)
         if on != 0
-            estimate[idx, 1:4] = [1.0 1.0 1.0 i]
+            estimate[idx, 1:5] = [idx 1.0 1.0 1.0 i]
             if idx in badsave[:, 1]
-                estimate[idx, 1] = 2.0; onPij[i] = 0
+                estimate[idx, 2] = 2.0; onPij[i] = 0
             end
             if on == 2
-                estimate[idx, 1] = 3.0; onPij[i] = 1
+                estimate[idx, 2] = 3.0; onPij[i] = 1
             end
 
-            estimate[idx, 5] = measurements.legacyFlow[i, 4] * system.basePower
-            estimate[idx, 6] = measurements.legacyFlow[i, 5] * system.basePower
+            estimate[idx, 6] = measurements.legacyFlow[i, 4] * system.basePower
+            estimate[idx, 7] = measurements.legacyFlow[i, 5] * system.basePower
             k = branchPij[i]
             if measurements.legacyFlow[i, 2] == system.branch[k, 2] && measurements.legacyFlow[i, 3] == system.branch[k, 3]
-                estimate[idx, 7] = flow[k, 4]
+                estimate[idx, 8] = flow[k, 4]
             else
-                estimate[idx, 7] = flow[k, 5]
+                estimate[idx, 8] = flow[k, 5]
             end
-            estimate[idx, 8] = abs(estimate[idx, 5] - estimate[idx, 7])
+            estimate[idx, 9] = abs(estimate[idx, 6] - estimate[idx, 8])
 
-            if estimate[idx, 1] == 1.0
-                error[1] += estimate[idx, 8] / (Nmeasure * system.basePower)
-                error[2] += estimate[idx, 8]^2 / (Nmeasure * system.basePower^2)
-                error[3] += estimate[idx, 8]^2 / (measurements.legacyFlow[i, 5] * system.basePower^2)
+            if estimate[idx, 1] != 2.0
+                error[1] += estimate[idx, 9] / (Nmeasure * system.basePower)
+                error[2] += estimate[idx, 9]^2 / (Nmeasure * system.basePower^2)
+                error[3] += estimate[idx, 9]^2 / (measurements.legacyFlow[i, 5] * system.basePower^2)
             end
 
             if exact1 == 0
-                estimate[idx, 9] = measurements.legacyFlow[i, 10] * system.basePower
-                estimate[idx, 10] = abs(estimate[idx, 7] - estimate[idx, 9])
+                estimate[idx, 10] = measurements.legacyFlow[i, 10] * system.basePower
+                estimate[idx, 11] = abs(estimate[idx, 8] - estimate[idx, 10])
 
-                if estimate[idx, 1] == 1.0
-                    error[4] += estimate[idx, 10] / (Nmeasure * system.basePower)
-                    error[5] += estimate[idx, 10]^2 / (Nmeasure * system.basePower^2)
-                    error[6] += estimate[idx, 10]^2 / (measurements.legacyFlow[i, 5] * system.basePower^2)
+                if estimate[idx, 1] != 2.0
+                    error[4] += estimate[idx, 11] / (Nmeasure * system.basePower)
+                    error[5] += estimate[idx, 11]^2 / (Nmeasure * system.basePower^2)
+                    error[6] += estimate[idx, 11]^2 / (measurements.legacyFlow[i, 5] * system.basePower^2)
                 end
             end
             idx += 1
@@ -280,33 +278,33 @@ function rundcse(system, measurements, num, numsys, settings, info)
     end
     for (i, on) in enumerate(onPi)
         if on != 0
-            estimate[idx, 1:4] = [1.0 1.0 4.0 i]
+            estimate[idx, 1:5] = [idx 1.0 1.0 3.0 i]
             if idx in badsave[:, 1]
-                estimate[idx, 1] = 2.0; onPi[i] = 0
+                estimate[idx, 2] = 2.0; onPi[i] = 0
             end
             if on == 2
-                estimate[idx, 1] = 3.0; onPi[i] = 1
+                estimate[idx, 2] = 3.0; onPi[i] = 1
             end
 
-            estimate[idx, 5] = measurements.legacyInjection[i, 2] * system.basePower
-            estimate[idx, 6] = measurements.legacyInjection[i, 3] * system.basePower
-            estimate[idx, 7] = main[busPi[i], 3]
-            estimate[idx, 8] = abs(estimate[idx, 5] - estimate[idx, 7])
+            estimate[idx, 6] = measurements.legacyInjection[i, 2] * system.basePower
+            estimate[idx, 7] = measurements.legacyInjection[i, 3] * system.basePower
+            estimate[idx, 8] = main[busPi[i], 3]
+            estimate[idx, 9] = abs(estimate[idx, 6] - estimate[idx, 8])
 
-            if estimate[idx, 1] == 1.0
-                error[1] += estimate[idx, 8] / (Nmeasure * system.basePower)
-                error[2] += estimate[idx, 8]^2 / (Nmeasure * system.basePower^2)
-                error[3] += estimate[idx, 8]^2 / (measurements.legacyInjection[i, 3] * system.basePower^2)
+            if estimate[idx, 1] != 2.0
+                error[1] += estimate[idx, 9] / (Nmeasure * system.basePower)
+                error[2] += estimate[idx, 9]^2 / (Nmeasure * system.basePower^2)
+                error[3] += estimate[idx, 9]^2 / (measurements.legacyInjection[i, 3] * system.basePower^2)
             end
 
             if exact1 == 0
-                estimate[idx, 9] = measurements.legacyInjection[i, 8] * system.basePower
-                estimate[idx, 10] = abs(estimate[idx, 7] - estimate[idx, 9])
+                estimate[idx, 10] = measurements.legacyInjection[i, 8] * system.basePower
+                estimate[idx, 11] = abs(estimate[idx, 8] - estimate[idx, 10])
 
-                if estimate[idx, 1] == 1.0
-                    error[4] += estimate[idx, 10] / (Nmeasure * system.basePower)
-                    error[5] += estimate[idx, 10]^2 / (Nmeasure * system.basePower^2)
-                    error[6] += estimate[idx, 10]^2 / (measurements.legacyInjection[i, 3] * system.basePower^2)
+                if estimate[idx, 1] != 2.0
+                    error[4] += estimate[idx, 11] / (Nmeasure * system.basePower)
+                    error[5] += estimate[idx, 11]^2 / (Nmeasure * system.basePower^2)
+                    error[6] += estimate[idx, 11]^2 / (measurements.legacyInjection[i, 3] * system.basePower^2)
                 end
             end
             idx += 1
@@ -314,33 +312,33 @@ function rundcse(system, measurements, num, numsys, settings, info)
     end
     for (i, on) in enumerate(onTi)
         if on != 0
-            estimate[idx, 1:4] = [1.0 2.0 8.0 i]
+            estimate[idx, 1:5] = [idx 1.0 2.0 8.0 i]
             if idx in badsave[:, 1]
-                estimate[idx, 1] = 2.0; onTi[i] = 0
+                estimate[idx, 2] = 2.0; onTi[i] = 0
             end
             if on == 2
-                estimate[idx, 1] = 3.0; onTi[i] = 1
+                estimate[idx, 2] = 3.0; onTi[i] = 1
             end
 
-            estimate[idx, 5] = measurements.pmuVoltage[i, 5] * scaleTi
-            estimate[idx, 6] = measurements.pmuVoltage[i, 6] * scaleTi
-            estimate[idx, 7] = main[busTi[i], 2]
-            estimate[idx, 8] = abs(estimate[idx, 5] - estimate[idx, 7])
+            estimate[idx, 6] = measurements.pmuVoltage[i, 5] * scaleTi
+            estimate[idx, 7] = measurements.pmuVoltage[i, 6] * scaleTi
+            estimate[idx, 8] = main[busTi[i], 2]
+            estimate[idx, 9] = abs(estimate[idx, 6] - estimate[idx, 8])
 
-            if estimate[idx, 1] == 1.0
-                error[1] += estimate[idx, 8] / (Nmeasure * scaleTi)
-                error[2] += estimate[idx, 8]^2 / (Nmeasure * scaleTi^2)
-                error[3] += estimate[idx, 8]^2 / (measurements.pmuVoltage[i, 6] * scaleTi^2)
+            if estimate[idx, 1] != 2.0
+                error[1] += estimate[idx, 9] / (Nmeasure * scaleTi)
+                error[2] += estimate[idx, 9]^2 / (Nmeasure * scaleTi^2)
+                error[3] += estimate[idx, 9]^2 / (measurements.pmuVoltage[i, 6] * scaleTi^2)
             end
 
             if exact1 == 0
-                estimate[idx, 9] = measurements.pmuVoltage[i, 9] * scaleTi
-                estimate[idx, 10] = abs(estimate[idx, 7] - estimate[idx, 9])
+                estimate[idx, 10] = measurements.pmuVoltage[i, 9] * scaleTi
+                estimate[idx, 11] = abs(estimate[idx, 8] - estimate[idx, 10])
 
-                if estimate[idx, 1] == 1.0
-                    error[4] += estimate[idx, 10] / (Nmeasure * scaleTi)
-                    error[5] += estimate[idx, 10]^2 / (Nmeasure * scaleTi^2)
-                    error[6] += estimate[idx, 10]^2 / (measurements.pmuVoltage[i, 6] * scaleTi^2)
+                if estimate[idx, 1] != 2.0
+                    error[4] += estimate[idx, 11] / (Nmeasure * scaleTi)
+                    error[5] += estimate[idx, 11]^2 / (Nmeasure * scaleTi^2)
+                    error[6] += estimate[idx, 11]^2 / (measurements.pmuVoltage[i, 6] * scaleTi^2)
                 end
             end
             idx += 1
@@ -353,7 +351,7 @@ function rundcse(system, measurements, num, numsys, settings, info)
 
     pass = collect(1:size(badsave, 1))
     idxbad = trunc.(Int, badsave[:, 1])
-    bad = [pass estimate[idxbad, 2:4] badsave[:, 2] estimate[idxbad, 1]]
+    bad = [pass estimate[idxbad, 3:5] badsave[:, 2] estimate[idxbad, 2]]
 
     if settings.observe[:observe] == 1 && Npseudo != 0 && newnumbering
         for k in islands

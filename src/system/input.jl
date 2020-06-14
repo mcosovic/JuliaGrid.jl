@@ -764,19 +764,16 @@ end
     end
     bad = Dict(:bad => badkey, :treshold => threshold, :pass => pass, :critical => critical)
 
-    optimize = 1.0; constraint = 1.0
+    optimize = 1.0
     if !isempty(lavset)
         lavkey = 1.0
         for i in lavset
             if i == "Ipopt"
                 optimize = 2.0
             end
-            if i == "inequality"
-                constraint = 2.0
-            end
         end
     end
-    lav = Dict(:lav => lavkey, :optimize => optimize, :constraint => constraint)
+    lav = Dict(:lav => lavkey, :optimize => optimize)
 
     pivot = 1e-5; oflow = 1e-5; Pij = 0.0; Pi = 0.0; Ti = 0.0
     if !isempty(observeset)

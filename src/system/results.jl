@@ -265,7 +265,7 @@ function results_estimatedc(system, numsys, measurements, num, settings, results
     ########## DC estimate and error results ##########
     label = Array{String}(undef, size(results.estimate, 1), 3)
     idex = 1
-    for (k, i) in enumerate(results.estimate[:, 1])
+    for (k, i) in enumerate(results.estimate[:, 2])
         if i == 1.0
             label[k, 1] = "in-service"
         elseif i == 2.0
@@ -273,24 +273,24 @@ function results_estimatedc(system, numsys, measurements, num, settings, results
         elseif i == 3.0
             label[k, 1] = "pseudo-measurement"
         end
-        if results.estimate[k, 2] == 1.0
+        if results.estimate[k, 3] == 1.0
             label[k, 2] = "Legacy"
         else
             label[k, 2] = "PMU"
         end
-        j = convert(Int, results.estimate[k, 4])
-        if results.estimate[k, 3] == 1.0
+        j = convert(Int, results.estimate[k, 5])
+        if results.estimate[k, 4] == 1.0
             label[k, 3] = "P$(trunc(Int, measurements.legacyFlow[j, 2])),$(trunc(Int, measurements.legacyFlow[j, 3])) [MW]"
-        elseif results.estimate[k, 3] == 4.0
+        elseif results.estimate[k, 4] == 3.0
             label[k, 3] = "P$(trunc(Int, measurements.legacyInjection[j, 1])) [MW]"
-        elseif results.estimate[k, 3] == 8.0
+        elseif results.estimate[k, 4] == 8.0
             label[k, 3] = "T$(trunc(Int, measurements.pmuVoltage[j, 1])) [deg]"
         end
     end
 
     ########## Observability display ##########
-    idxp = findall(x->x==3, results.estimate[:, 1])
-    pseudo = [label[idxp, 2:3] results.estimate[idxp, 4:6]]
+    idxp = findall(x->x==3, results.estimate[:, 2])
+    pseudo = [label[idxp, 2:3] results.estimate[idxp, 5:7]]
     if settings.observe[:observe] == 1 && Npseudo != 0
         Nisland = size(results.observability, 1)
         numer = collect(1:Nisland)
@@ -309,7 +309,7 @@ function results_estimatedc(system, numsys, measurements, num, settings, results
     ########## DC bad data display ##########
     if settings.bad[:bad] == 1 && !isempty(results.baddata)
         println("\n Bad Data Analysis Display")
-        pretty_table([results.baddata[:,1] label[idxbad, 2:3] results.estimate[idxbad, 4] results.baddata[:,5] label[idxbad, 1]],
+        pretty_table([results.baddata[:,1] label[idxbad, 2:3] results.estimate[idxbad, 5] results.baddata[:,5] label[idxbad, 1]],
             header[:bad], screen_size = (-1,-1),
             columns_width = [10, 10, 18, 13, 20, 18], alignment=[:l,:l,:l,:r,:r,:r],
             formatters = ft_printf(["%1.0f", "%-s","%-s","%1.0f","%1.4e","%-s"], collect(1:6)))
@@ -338,26 +338,26 @@ function results_estimatedc(system, numsys, measurements, num, settings, results
     ########## DC Estimate display ##########
     if settings.estimate
         println("\n Estimate Data Display")
-        columns_width = [18, 12, 12, 12, 12, 12, 12, 19, 12, 19]
+        columns_width = [18, 12, 15, 12, 12, 12, 12, 19, 12, 19]
         alignment = [:l, :l, :l, :r, :r, :r, :r, :r, :r, :r]
         formatters = ["%s", "%s", "%s", "%1.0f", "%1.2f", "%1.2e", "%1.2f", "%1.2e", "%1.2f", "%1.2e"]
         many = collect(1:10)
         head = header[:estimatedisplay]
-        if size(results.estimate, 2) == 8
+        if size(results.estimate, 2) == 9
             columns_width = columns_width[1:8]
             alignment = alignment[1:8]
             formatters = formatters[1:8]
             many = many[1:8]
             head = head[:, 1:8]
         end
-        pretty_table([label results.estimate[:, 4:end]], head, screen_size = (-1,-1), columns_width = columns_width,
+        pretty_table([label results.estimate[:, 5:end]], head, screen_size = (-1,-1), columns_width = columns_width,
             show_row_number = true, alignment = alignment, formatters = ft_printf((formatters), many))
     end
 
     ########## DC error display ##########
     if settings.error
         println("\n Error Data Display\n")
-        if size(results.estimate, 2) == 10
+        if size(results.estimate, 2) == 11
             head = header[:errordisplay]
             err = [""; results.error[1:3]; ""; ""; results.error[4:6]]
         else
@@ -391,15 +391,15 @@ end
 
 
 ### PMU state estimation results
-@inbounds function results_estimatepmu(system, numsys, measurements, settings, algtime, main, flow, estimate, error)
+@inbounds function results_estimatepmu(system, numsys, measurements, num, settings, results, idxbad, Npseudo, algtime)
     println(string("Execution time: ", (@sprintf "%.4f" algtime * 1000), " (ms)"))
     aheader = pmuseheader(); pheader = psheader()
     header = merge(aheader, pheader)
 
-    ########## DC estimate and error results ##########
-    label = Array{String}(undef, size(estimate, 1), 3)
+    ########## PMU estimate and error results ##########
+    label = Array{String}(undef, size(results.estimate, 1), 3)
     idex = 1
-    for (k, i) in enumerate(estimate[:, 1])
+    for (k, i) in enumerate(results.estimate[:, 2])
         if i == 1.0
             label[k, 1] = "in-service"
         elseif i == 2.0
@@ -408,26 +408,35 @@ end
             label[k, 1] = "pseudo-measurement"
         end
         label[k, 2] = "PMU"
-        j = convert(Int, estimate[k, 4])
-        if estimate[k, 3] == 9.0
+        j = convert(Int, results.estimate[k, 5])
+        if results.estimate[k, 4] == 5.0
             label[k, 3] = "I$(trunc(Int, measurements.pmuCurrent[j, 2])),$(trunc(Int, measurements.pmuCurrent[j, 3])) [p.u.]"
-        elseif estimate[k, 3] == 10.0
+        elseif results.estimate[k, 4] == 6.0
             label[k, 3] = "D$(trunc(Int, measurements.pmuCurrent[j, 2])),$(trunc(Int, measurements.pmuCurrent[j, 3])) [deg]"
-        elseif estimate[k, 3] == 7.0
+        elseif results.estimate[k, 4] == 7.0
             label[k, 3] = "V$(trunc(Int, measurements.pmuVoltage[j, 1])) [p.u.]"
-        elseif estimate[k, 3] == 8.0
+        elseif results.estimate[k, 4] == 8.0
             label[k, 3] = "T$(trunc(Int, measurements.pmuVoltage[j, 1])) [deg]"
         end
+    end
+
+    ########## PMU bad data display ##########
+    if settings.bad[:bad] == 1 && !isempty(results.baddata)
+        println("\n Bad Data Analysis Display")
+        pretty_table([results.baddata[:,1] label[idxbad, 2:3] results.estimate[idxbad, 5] results.baddata[:,5] label[idxbad, 1]],
+            header[:bad], screen_size = (-1,-1),
+            columns_width = [10, 10, 18, 13, 20, 18], alignment=[:l,:l,:l,:r,:r,:r],
+            formatters = ft_printf(["%1.0f", "%-s","%-s","%1.0f","%1.4e","%-s"], collect(1:6)))
     end
 
     ########## PMU main results ##########
     if settings.main
         println("\n Main Data Display")
-        pretty_table(main, header[:main],
+        pretty_table(results.main, header[:main],
             screen_size = (-1,-1), columns_width = [7, 16, 12, 17, 21, 17, 21],
             alignment = repeat([Symbol(:r)], outer = 7),
             formatters = ft_printf(["%1.0f", "%1.4f","%1.4f","%1.2f" ,"%1.2f","%1.2f","%1.2f"], collect(1:7)))
-        sum_data = Any["Sum" sum(main[:, 4:7], dims = 1)]
+        sum_data = Any["Sum" sum(results.main[:, 4:7], dims = 1)]
         pretty_table(sum_data, noheader = true, screen_size = (-1,-1),
             alignment=[:l,:r,:r,:r,:r], columns_width = [41, 17, 21, 17, 21],
             formatters = ft_printf(["%-s","%15.2f","%15.2f","%11.2f","%15.2f"], collect(1:5)))
@@ -436,43 +445,43 @@ end
     ########## PMU flow results ##########
     if settings.flow
         println("\n Flow Data Display")
-        pretty_table(flow[:,1:10], header[:flow][:,1:10],
+        pretty_table(results.flow[:,1:10], header[:flow][:,1:10],
             screen_size = (-1,-1), columns_width = [6, 8, 8, 17, 21, 17, 21, 21, 17, 21],
             alignment=[:r,:r,:r,:r,:r,:r,:r,:r,:r,:r],
             formatters = ft_printf(["%1.0f","%1.0f","%1.0f","%1.2f","%1.2f","%1.2f","%1.2f","%1.2f","%1.2f","%1.2f"], collect(1:10)))
-        sum_data = Any["Sum" sum(flow[:, 8:10], dims = 1)]
+        sum_data = Any["Sum" sum(results.flow[:, 8:10], dims = 1)]
         pretty_table(sum_data, noheader = true, screen_size = (-1,-1), alignment=[:l,:r,:r,:r], columns_width = [116, 21, 17, 21],
             formatters = ft_printf(["%-s","%15.2f","%11.2f","%15.2f"], collect(1:4)))
     end
 
-    ########## DC Estimate display ##########
+    ########## PMU Estimate display ##########
     if settings.estimate
         println("\n Estimate Data Display")
-        columns_width = [18, 12, 12, 12, 12, 12, 12, 19, 12, 19]
+        columns_width = [18, 12, 15, 12, 12, 12, 12, 19, 12, 19]
         alignment = [:l, :l, :l, :r, :r, :r, :r, :r, :r, :r]
         formatters = ["%s", "%s", "%s", "%1.0f", "%1.2f", "%1.2e", "%1.2f", "%1.2e", "%1.2f", "%1.2e"]
         many = collect(1:10)
         head = header[:estimatedisplay]
-        if size(estimate, 2) == 8
+        if size(results.estimate, 2) == 9
             columns_width = columns_width[1:8]
             alignment = alignment[1:8]
             formatters = formatters[1:8]
             many = many[1:8]
             head = head[:, 1:8]
         end
-        pretty_table([label estimate[:, 4:end]], head, screen_size = (-1,-1), columns_width = columns_width,
+        pretty_table([label results.estimate[:, 5:end]], head, screen_size = (-1,-1), columns_width = columns_width,
             show_row_number = true, alignment = alignment, formatters = ft_printf((formatters), many))
     end
 
     ########## DC error display ##########
     if settings.error
         println("\n Error Data Display\n")
-        if size(estimate, 2) == 10
+        if size(results.estimate, 2) == 11
             head = header[:errordisplay]
-            err = [""; error[1:3]; ""; ""; error[4:6]]
+            err = [""; results.error[1:3]; ""; ""; results.error[4:6]]
         else
             head = header[:errordisplay][1:4, :]
-            err = [""; error[1:3]]
+            err = [""; results.error[1:3]]
         end
         pretty_table([head err], screen_size = (-1,-1), tf = borderless,
             noheader = true, alignment = [:l, :l, :r], formatters = ft_printf("%1.4e", 3),
@@ -480,4 +489,21 @@ end
             body_hlines = [1,6], body_hlines_format = Tuple('─' for _ = 1:4))
     end
 
+    ########## Export results ##########
+    pmuv = 2; pmuc = 2; legf = 2; legc = 2; legi = 2; legv = 2; gen = 3;
+    if num.pmuNv == 0 pmuv = 0  end
+    if num.pmuNc == 0 pmuc = 0 end
+    if num.legacyNf == 0 legf = 0 end
+    if num.legacyNc == 0 legc = 0 end
+    if num.legacyNi == 0 legi = 0 end
+    if num.legacyNv == 0  legv = 0 end
+    if numsys.Ngen == 0  gen = 0 end
+
+    group = (main = 1, flow = 1, estimate = 1, error = 1,
+        pmuVoltage = pmuv, pmuCurrent = pmuc, legacyFlow = legf, legacyCurrent = legc, legacyInjection = legi, legacyVoltage = legv,
+        bus = 3, branch = 3, generator = gen, basePower = 3)
+
+    mheader = measureheader(); pheader = psheader(); headernew = merge(mheader, pheader, header)
+
+    return headernew, group
 end
