@@ -26,17 +26,17 @@ case14seobsbad = string(path, "case14seobsbad.xlsx")
     #
     pf, = runpf(case14dc, "dc")
     se, = runse(case14dc, "dc", "main", "flow", "estimate", "error")
-        accuracy = 1e-12
+        accuracy = 1e-8
         @test maximum(abs.(pf.main[:, 2] - se.main[:, 2])) < accuracy
         @test maximum(abs.(pf.main[:, 3] - se.main[:, 3])) < accuracy
         @test maximum(abs.(pf.flow[:, 4] - se.flow[:, 4])) < accuracy
         @test maximum(abs.(pf.flow[:, 5] - se.flow[:, 5])) < accuracy
-        @test se.error[1] < 1e-14
-        @test se.error[2] < 1e-14
-        @test se.error[3] < 1e-14
+        @test se.error[1] < 1e-10
+        @test se.error[2] < 1e-10
+        @test se.error[3] < 1e-10
 
     lav, = runse(case14dc, "dc", "lav", "main")
-        accuracy = 1e-13
+        accuracy = 1e-8
         @test maximum(abs.(pf.main[:, 2] - lav.main[:, 2])) < accuracy
 
     data = runmg(estimation_incdc; runflow = 0, pmuset = "complete", pmuvariance = ["complete" 1e-30], legacyset = ["Pij" 0])
@@ -103,14 +103,14 @@ end
     pf, = runpf("case30.h5", "nr")
     data = runmg("case30.h5"; runflow = 1, pmuset = "complete", pmuvariance = ["complete" 1e-120])
     se, = runse(data, "pmu", "main", "flow", "estimate", "error")
-            accuracy = 1e-10
+            accuracy = 1e-8
             @test maximum(abs.(pf.main[:, 2] - se.main[:, 2])) < accuracy
             @test maximum(abs.(pf.main[:, 3] - se.main[:, 3])) < accuracy
             @test se.error[1] < 1e-10
             @test se.error[2] < 1e-10
 
     lav, = runse(data, "pmu", "lav")
-        accuracy = 1e-13
+        accuracy = 1e-8
         @test maximum(abs.(pf.main[:, 2] - lav.main[:, 2])) < accuracy
         @test maximum(abs.(pf.main[:, 3] - lav.main[:, 3])) < accuracy
 end
