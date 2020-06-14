@@ -8,7 +8,7 @@ The software package, among other things, includes:
  - [DC power flow analysis](@ref dcpowerflow),
  - [non-linear state estimation](@ref nonlinearse) (work in progress),
  - [linear DC state estimation](@ref lineardcse),
- - [linear state estimation with PMUs](@ref linearpmuse) (work in progress),
+ - [linear state estimation with PMUs](@ref linearpmuse),
  - [least absolute value state estimation](@ref lav),
  - [bad data processing](@ref baddata),
  - observability analysis (beta version),
