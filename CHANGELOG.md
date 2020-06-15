@@ -1,5 +1,7 @@
 # JuliaGrid changelog
 
+![docs] bad data processing and least absolute value method
+
 ![bugfix] pseudo-measurements are included in error metrics
 
 ![bugfix] least absolute value objective function

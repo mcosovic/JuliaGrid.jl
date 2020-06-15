@@ -184,7 +184,7 @@ function constructfact(A)
         d[i] = U[i,i]
         U[i, i] = 0.0
         L[i, i] = 0.0
-        for j = U.colptr[i]:(U.colptr[i+1]-1)
+        for j = U.colptr[i]:(U.colptr[i + 1] - 1)
             if i != U.rowval[j]
                 U.nzval[j] = U.nzval[j] / d[i]
             end
@@ -207,7 +207,7 @@ function etree(A)
     n = size(A, 2)
     parent = fill(0, n)
     ancestor = fill(0, n)
-    for k in 1:n, p in A.colptr[k]:(A.colptr[k+1] - 1)
+    for k in 1:n, p in A.colptr[k]:(A.colptr[k + 1] - 1)
         i = A.rowval[p]
         while i != 0 && i < k
             inext = ancestor[i]
@@ -260,7 +260,7 @@ function symbfact(A, parent)
     for k = 1:m
         visited = falses(n)
         visited[k] = true
-        for p in Ap[k]:(Ap[k+1] - 1)
+        for p in Ap[k]:(Ap[k + 1] - 1)
             i = Ai[p]
             if i > k continue end
             while !visited[i]
@@ -296,7 +296,7 @@ end
     flag = true
     for j = 1:n
         pdiag = -1
-        for p = Zcolptr[j]:(Zcolptr[j+1]-1)
+        for p = Zcolptr[j]:(Zcolptr[j + 1] - 1)
             if pdiag == -1
                 if Zrowval[p] == j
                     pdiag = p

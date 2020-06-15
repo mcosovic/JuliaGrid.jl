@@ -281,114 +281,131 @@ function runpmuse(system, measurements, num, numsys, settings, info)
         admittance, tap, resistance, reactance, charging,
         Pij, Qij, Pji, Qji, Qcharging, Ploss, Qloss, Imij, Iaij, Imji, Iaji)
 
-    exact1 = 2; exact2 = 3
+    estimate_row = 9; error_row = 3; exact = false
     if size(measurements.pmuVoltage, 2) == 9 && size(measurements.pmuCurrent, 2) == 11
-        exact1 = 0; exact2 = 0
+        estimate_row = 11; error_row = 6; exact = true
     end
-    estimate = zeros(Nmeasure, 11 - exact1)
-    error = zeros(6 - exact2)
-    Nmeasure = Nmeasure - size(badsave, 1) - Npseudo
-    idxU = 1; scaleTi = 180 / pi
+    estimate = zeros(Nmeasure, estimate_row)
+    error = zeros(error_row)
+    Nm = Nmeasure - size(badsave, 1)
+    idx = 1; toRad = pi / 180
     for (i, on) in enumerate(onIij)
         if on != 0
-            idxD = idxU + Ncur; idx = [idxU idxD]
-            estimate[idx, [1 2 3 5]] = [[idxU 1.0 2.0 i]; [idxD 1.0 2.0 i]]
-            estimate[idx, 4] = [5.0 6.0]
-            if idxU in badsave[:, 1]
-                estimate[idxU, 2] = 2.0; onIij[i] = 0; onDij[i] = 0
+            idy = idx + 1
+            estimate[idx, 1:5] = [idx 1.0 2.0 9.0 i]
+            estimate[idy, 1:5] = [idx 1.0 2.0 10.0 i]
+
+            if idx in badsave[:, 1]
+                estimate[idx, 2] = 2.0; onIij[i] = 0; onDij[i] = 0
             end
-            if idxD in badsave[:, 1]
-                estimate[idxD, 2] = 2.0; onIij[i] = 0; onDij[i] = 0
+            if idy in badsave[:, 1]
+                estimate[idy, 2] = 2.0; onIij[i] = 0; onDij[i] = 0
             end
 
-            estimate[idx, 6] = [measurements.pmuCurrent[i, 4] measurements.pmuCurrent[i, 7] * scaleTi]
-            estimate[idx, 7] = [measurements.pmuCurrent[i, 5] measurements.pmuCurrent[i, 8] * scaleTi]
+            estimate[idx, 6] = meanIij[i] * cos(meanDij[i])
+            estimate[idy, 6] = meanIij[i] * sin(meanDij[i])
+            estimate[idx, 7] = variance[idx]
+            estimate[idy, 7] = variance[idy]
             k = branchC[i]
             if measurements.pmuCurrent[i, 2] == system.branch[k, 2] && measurements.pmuCurrent[i, 3] == system.branch[k, 3]
-                estimate[idx, 8] = [Imij[k] Iaij[k]]
+                estimate[idx, 8] = Imij[k] * cos(toRad * Iaij[k])
+                estimate[idy, 8] = Imij[k] * sin(toRad * Iaij[k])
             else
-                estimate[idx, 8] = [Imji[k] Iaji[k]]
+                estimate[idx, 8] = Imji[k] * cos(toRad * Iaji[k])
+                estimate[idy, 8] = Imji[k] * sin(toRad * Iaji[k])
             end
-            estimate[idx, 9] = [abs(estimate[idxU, 6] - estimate[idxU, 8]) abs(estimate[idxD, 6] - estimate[idxD, 8])]
+            estimate[idx, 9] = abs(estimate[idx, 6] - estimate[idx, 8])
+            estimate[idy, 9] = abs(estimate[idy, 6] - estimate[idy, 8])
 
-            if estimate[idxU, 2] != 2.0
-                error[1] += estimate[idxU, 9] ./ Nmeasure
-                error[2] += estimate[idxU, 9]^2 ./ Nmeasure
-                error[3] += estimate[idxU, 9]^2 ./ measurements.pmuCurrent[i, 5]
+            if estimate[idx, 2] != 2.0
+                error[1] += estimate[idx, 9] ./ Nm
+                error[2] += estimate[idx, 9]^2 ./ Nm
+                error[3] += estimate[idx, 9]^2 ./ variance[idx]
             end
-            if estimate[idxD, 2] != 2.0
-                error[1] += estimate[idxD, 9] ./ (Nmeasure * scaleTi)
-                error[2] += estimate[idxD, 9]^2 ./ (Nmeasure * scaleTi^2)
-                error[3] += estimate[idxD, 9]^2 ./ (measurements.pmuCurrent[i, 8] * scaleTi^2)
+            if estimate[idy, 2] != 2.0
+                error[1] += estimate[idy, 9] ./ Nm
+                error[2] += estimate[idy, 9]^2 ./ Nm
+                error[3] += estimate[idy, 9]^2 ./ variance[idy]
             end
 
-            if exact1 == 0
-                estimate[idx, 10] = [measurements.pmuCurrent[i, 10] measurements.pmuCurrent[i, 11] * scaleTi]
-                estimate[idx, 11] = [abs(estimate[idxU, 8] - estimate[idxU, 10]) abs(estimate[idxD, 8] - estimate[idxD, 10])]
+            if exact
+                estimate[idx, 10] = measurements.pmuCurrent[i, 10] * cos(measurements.pmuCurrent[i, 11])
+                estimate[idy, 10] = measurements.pmuCurrent[i, 10] * sin(measurements.pmuCurrent[i, 11])
 
-                if estimate[idxU, 2] != 2.0
-                    error[4] += estimate[idxU, 11] / Nmeasure
-                    error[5] += estimate[idxU, 11]^2 / Nmeasure
-                    error[6] += estimate[idxU, 11]^2 /  measurements.pmuCurrent[i, 5]
+                estimate[idx, 11] = abs(estimate[idx, 8] - estimate[idx, 10])
+                estimate[idy, 11] = abs(estimate[idy, 8] - estimate[idy, 10])
+
+                if estimate[idx, 2] != 2.0
+                    error[4] += estimate[idx, 11] / Nm
+                    error[5] += estimate[idx, 11]^2 / Nm
+                    error[6] += estimate[idx, 11]^2 / variance[idx]
                 end
-                if estimate[idxD, 2] != 2.0
-                    error[4] += estimate[idxD, 11] / (Nmeasure * scaleTi)
-                    error[5] += estimate[idxD, 11]^2 / (Nmeasure * scaleTi^2)
-                    error[6] += estimate[idxD, 11]^2 / (measurements.pmuCurrent[i, 8] * scaleTi^2)
+                if estimate[idy, 2] != 2.0
+                    error[4] += estimate[idy, 11] / Nm
+                    error[5] += estimate[idy, 11]^2 / Nm
+                    error[6] += estimate[idy, 11]^2 / variance[idy]
                 end
             end
-            idxU += 1
+            idx += 2
         end
     end
-    idxU += Ncur
     for (i, on) in enumerate(onVi)
         if on != 0
-            idxD = idxU + Nvol; idx = [idxU idxD]
-            estimate[idx, [1 2 3 5]] = [[idxU 1.0 2.0 i]; [idxD 1.0 2.0 i]]
-            estimate[idx, 4] = [7.0 8.0]
-            if idxU in badsave[:, 1]
-                estimate[idxU, 2] = 2.0; onVi[i] = 0; onTi[i] = 0
-            end
-            if idxD in badsave[:, 1]
-                estimate[idxD, 2] = 2.0; onVi[i] = 0; onTi[i] = 0
-            end
+            idy = idx + 1
+            estimate[idx, 1:5] = [idx 1.0 2.0 11.0 i]
+            estimate[idy, 1:5] = [idx 1.0 2.0 12.0 i]
 
-            estimate[idx, 6] = [measurements.pmuVoltage[i, 2] measurements.pmuVoltage[i, 5] * scaleTi]
-            estimate[idx, 7] = [measurements.pmuVoltage[i, 3] measurements.pmuVoltage[i, 6] * scaleTi]
-            estimate[idx, 8] = [main[busV[i], 2] main[busV[i], 3]]
-            estimate[idx, 9] = [abs(estimate[idxU, 6] - estimate[idxU, 8]) abs(estimate[idxD, 6] - estimate[idxD, 8])]
-
-            if estimate[idxU, 2] != 2.0
-                error[1] += estimate[idxU, 9] / Nmeasure
-                error[2] += estimate[idxU, 9]^2 / Nmeasure
-                error[3] += estimate[idxU, 9]^2 / measurements.pmuVoltage[i, 3]
+            if idx in badsave[:, 1]
+                estimate[idx, 2] = 2.0; onVi[i] = 0; onTi[i] = 0
             end
-            if estimate[idxD, 2] != 2.0
-                error[1] += estimate[idxD, 9] / (Nmeasure * scaleTi)
-                error[2] += estimate[idxD, 9]^2 / (Nmeasure * scaleTi^2)
-                error[3] += estimate[idxD, 9]^2 / (measurements.pmuVoltage[i, 6] * scaleTi^2)
+            if idy in badsave[:, 1]
+                estimate[idy, 2] = 2.0; onVi[i] = 0; onTi[i] = 0
             end
 
-            if exact1 == 0
-                estimate[idx, 10] = [measurements.pmuVoltage[i, 8] measurements.pmuVoltage[i, 9] * scaleTi]
-                estimate[idx, 11] = [abs(estimate[idxU, 8] - estimate[idxU, 10]) abs(estimate[idxD, 8] - estimate[idxD, 10])]
+            estimate[idx, 6] = meanVi[i] * cos(meanTi[i])
+            estimate[idy, 6] = meanVi[i] * sin(meanTi[i])
+            estimate[idx, 7] = variance[idx]
+            estimate[idy, 7] = variance[idy]
+            estimate[idx, 8] = Vm[busV[i]] * cos(toRad * Va[busV[i]])
+            estimate[idy, 8] = Vm[busV[i]] * sin(toRad * Va[busV[i]])
 
-                if estimate[idxU, 2] != 2.0
-                    error[4] += estimate[idxU, 11] / Nmeasure
-                    error[5] += estimate[idxU, 11]^2 / Nmeasure
-                    error[6] += estimate[idxU, 11]^2 / measurements.pmuVoltage[i, 3]
+            estimate[idx, 9] = abs(estimate[idx, 6] - estimate[idx, 8])
+            estimate[idy, 9] = abs(estimate[idy, 6] - estimate[idy, 8])
+
+            if estimate[idx, 2] != 2.0
+                error[1] += estimate[idx, 9] ./ Nm
+                error[2] += estimate[idx, 9]^2 ./ Nm
+                error[3] += estimate[idx, 9]^2 ./ variance[idx]
+            end
+            if estimate[idy, 2] != 2.0
+                error[1] += estimate[idy, 9] ./ Nm
+                error[2] += estimate[idy, 9]^2 ./ Nm
+                error[3] += estimate[idy, 9]^2 ./ variance[idy]
+            end
+
+            if exact
+                estimate[idx, 10] = measurements.pmuVoltage[i, 8] * cos(measurements.pmuVoltage[i, 9])
+                estimate[idy, 10] = measurements.pmuVoltage[i, 8] * sin(measurements.pmuVoltage[i, 9])
+
+                estimate[idx, 11] = abs(estimate[idx, 8] - estimate[idx, 10])
+                estimate[idy, 11] = abs(estimate[idy, 8] - estimate[idy, 10])
+
+                if estimate[idx, 2] != 2.0
+                    error[4] += estimate[idx, 11] / Nm
+                    error[5] += estimate[idx, 11]^2 / Nm
+                    error[6] += estimate[idx, 11]^2 / variance[idx]
                 end
-                if estimate[idxD, 2] != 2.0
-                    error[4] += estimate[idxD, 11] / (Nmeasure * scaleTi)
-                    error[5] += estimate[idxD, 11]^2 / (Nmeasure * scaleTi^2)
-                    error[6] += estimate[idxD, 11]^2 / (measurements.pmuVoltage[i, 6] * scaleTi^2)
+                if estimate[idy, 2] != 2.0
+                    error[4] += estimate[idy, 11] / Nm
+                    error[5] += estimate[idy, 11]^2 / Nm
+                    error[6] += estimate[idy, 11]^2 / variance[idy]
                 end
             end
-            idxU += 1
+            idx += 2
         end
     end
     error[2] = sqrt(error[2])
-    if exact1 == 0
+    if exact
         error[5] = sqrt(error[5])
     end
 

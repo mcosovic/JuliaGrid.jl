@@ -17,7 +17,7 @@ The linear state estimation with PMUs is implemented using the following feature
  - the covariance matrix is transformed from polar to rectangular coordinates,
  - the slack bus is not included in the state estimation formulation.
 
-Besides state estimation algorithms, we have implemented [the bad data processing](@ref baddata) using the largest normalized residual test. The routine proceeds with bad data analysis after the estimation process is finished, in the repetitive process of identifying and eliminating bad data measurements one after another.
+Besides state estimation algorithms, we have implemented the [bad data processing](@ref baddata) using the largest normalized residual test. The routine proceeds with bad data analysis after the estimation process is finished, in the repetitive process of identifying and eliminating bad data measurements one after another.
 
 The observability analysis with restore routine is based on the flow islands [2], [3], where pseudo-measurements are chosen between measurements that are marked as out-of-service in the input DATA.
 
@@ -251,7 +251,7 @@ The `estimate` data structure contains summary of the state estimation analysis.
 | 1       | row number defined as positive integer                                               |
 | 2       | measurement status where in-service = 1, bad-measurement = 2, pseudo-measurement = 3 |
 | 3       | measurement class where legacy = 1, PMU = 2                                          |
-| 4       | measurement type where active power flow = 1, reactive power flow = 2, active power injection = 3, reactive power injection = 4, current magnitude = 5,  current angle = 6, voltage magnitude = 7, voltage angle = 8                                      |
+| 4       | measurement type where active power flow = 1, reactive power flow = 2, active power injection = 3, reactive power injection = 4, current magnitude = 5,  current angle = 6, voltage magnitude = 7, voltage angle = 8, current real component = 9, current imaginary component = 10, voltage real component = 11, voltage imaginary component = 12                                |
 | 5       | local index of the measurement given in the input DATA                               |
 | 6       | measurement value                                                                    |
 | 7       | measurement variance value                                                           |
@@ -283,7 +283,7 @@ The `baddata` data structure contains information about bad data analysis. Note 
 |:-------:|:-------------------------------------------------------------------------------------------|
 | 1       | pass of weighted least-squares method, where in each pass suspected bad data is eliminated |
 | 2       | bad measurement class where legacy = 1, PMU = 2                                            |
-| 3       | measurement type where active power flow = 1, reactive power flow = 2, active power injection = 3, reactive power injection = 4, current magnitude = 5,  current angle = 6, voltage magnitude = 7, voltage angle = 8                                      |
+| 3       | measurement type where active power flow = 1, reactive power flow = 2, active power injection = 3, reactive power injection = 4, current magnitude = 5,  current angle = 6, voltage magnitude = 7, voltage angle = 8, current real component = 9, current imaginary component = 10, voltage real component = 11, voltage imaginary component = 12                                      |
 | 4       | local index of the bad measurement given in the input DATA                                 |
 | 5       | normalized residual value of the bad data measurement                                      |
 | 6       | measurement status where bad-measurement = 2                                               |
@@ -298,7 +298,7 @@ The `observability` data structure contains information about flow islands and p
 | 1       | flow island as positive integer                                  |
 | 2       | bus number in the corresponding island                           |
 | 3       | pseudo-measurement class where legacy = 1, PMU = 2               |
-| 4       | measurement type where active power flow = 1, reactive power flow = 2, active power injection = 3, reactive power injection = 4, current magnitude = 5,  current angle = 6, voltage magnitude = 7, voltage angle = 8                                      |
+| 4       | measurement type where active power flow = 1, reactive power flow = 2, active power injection = 3, reactive power injection = 4, current magnitude = 5,  current angle = 6, voltage magnitude = 7, voltage angle = 8, current real component = 9, current imaginary component = 10, voltage real component = 11, voltage imaginary component = 12            |
 | 5       | local index of the pseudo-measurement given in the input DATA    |
 | 6       | pseudo-measurement value                                         |
 | 7       | pseudo-measurement variance                                      |

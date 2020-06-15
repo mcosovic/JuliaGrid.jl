@@ -49,7 +49,7 @@ function baddata(settings, numsys, x, z, v, W, G, J, Nmeasure, idx, badsave, rbe
         z[idxr] = 0.0
         for i in W.rowval
             if i == idxr
-                W.nzval[i] = 0
+                W.nzval[i] = 0.0
             end
         end
         badsave = [badsave; [idxr rmax]]
@@ -58,13 +58,13 @@ function baddata(settings, numsys, x, z, v, W, G, J, Nmeasure, idx, badsave, rbe
     return J, z, W, badsave, rbelow
 end
 
-#
+
 ### Observability analysis
-function observability_flow(settings, system, numsys, measurements, num, jacobian, jacobianflow, slack,
+function observability_flow(settings, system, numsys, measurements, num, J, Jflow, slack,
         branch, from, to, busPi, onPi, onTi, Ybus, Nvol, Nflow, branchPij, onPij, busTi, fromPij, toPij, admitance,
         mean, weight, meanPij, transShift, Pshift, meanPi, meanTi, Tslack, variPi, variTi, variPij, Npseudo, islands)
 
-        G = transpose(jacobian) * jacobian
+        G = transpose(J) * J
         F = qr(Matrix(G))
         nonobserve = false
         if any(abs.(diag(F.R)) .< settings.observe[:pivot])
@@ -78,7 +78,7 @@ function observability_flow(settings, system, numsys, measurements, num, jacobia
 
     if nonobserve
         ########## Flow islands ##########
-        M = jacobianflow' * jacobianflow
+        M = Jflow' * Jflow
         islands = connected_components(SimpleGraph(M))
 
         islandsWhere = fill(0, numsys.Nbus)
@@ -184,7 +184,7 @@ function observability_flow(settings, system, numsys, measurements, num, jacobia
                 cnt += 1
             end
         end
-        Jt = copy(transpose(jacobian))
+        Jt = copy(transpose(J))
         col = fill(0, numsys.Nbus)
         for (k, island) in enumerate(islands)
             for j in island
@@ -209,7 +209,7 @@ function observability_flow(settings, system, numsys, measurements, num, jacobia
         end
         Wb = sparse(rown, coln, valn, length(idx), Nisland)
 
-       ########## Pseudo-measurements jacobian ##########
+       ########## Pseudo-measurements Jacobian ##########
        Nelement = 0; Nmeasuren = 0
        Nflown = 0; Ninjn = 0; Nvoln = 0;
        if settings.observe[:Pij] != 0
@@ -356,10 +356,10 @@ function observability_flow(settings, system, numsys, measurements, num, jacobia
         end
 
         Npseudo = length(pseudo)
-        jacobian = [jacobian; transpose(JpseudoT[:,pseudo])]
+        J = [J; transpose(JpseudoT[:,pseudo])]
         mean = [mean; meann[pseudo]]
         weight = [weight; weight[pseudo]]
     end # nonobserve
 
-    return jacobian, mean, weight, Npseudo, islands
+    return J, mean, weight, Npseudo, islands
 end

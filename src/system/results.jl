@@ -409,14 +409,14 @@ end
         end
         label[k, 2] = "PMU"
         j = convert(Int, results.estimate[k, 5])
-        if results.estimate[k, 4] == 5.0
-            label[k, 3] = "I$(trunc(Int, measurements.pmuCurrent[j, 2])),$(trunc(Int, measurements.pmuCurrent[j, 3])) [p.u.]"
-        elseif results.estimate[k, 4] == 6.0
-            label[k, 3] = "D$(trunc(Int, measurements.pmuCurrent[j, 2])),$(trunc(Int, measurements.pmuCurrent[j, 3])) [deg]"
-        elseif results.estimate[k, 4] == 7.0
-            label[k, 3] = "V$(trunc(Int, measurements.pmuVoltage[j, 1])) [p.u.]"
-        elseif results.estimate[k, 4] == 8.0
-            label[k, 3] = "T$(trunc(Int, measurements.pmuVoltage[j, 1])) [deg]"
+        if results.estimate[k, 4] == 9.0
+            label[k, 3] = "Ir$(trunc(Int, measurements.pmuCurrent[j, 2])),$(trunc(Int, measurements.pmuCurrent[j, 3])) [p.u.]"
+        elseif results.estimate[k, 4] == 10.0
+            label[k, 3] = "Ii$(trunc(Int, measurements.pmuCurrent[j, 2])),$(trunc(Int, measurements.pmuCurrent[j, 3])) [p.u.]"
+        elseif results.estimate[k, 4] == 11.0
+            label[k, 3] = "Vr$(trunc(Int, measurements.pmuVoltage[j, 1])) [p.u.]"
+        elseif results.estimate[k, 4] == 12.0
+            label[k, 3] = "Vi$(trunc(Int, measurements.pmuVoltage[j, 1])) [p.u.]"
         end
     end
 

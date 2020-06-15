@@ -29,7 +29,7 @@ then the ``j``-th measurement will be suspected as the bad data and removed from
 
 The elimination of measurements is possible only for the redundant measurements. Namely, removal of critical or non-redundant measurements from the measurement set will result in an unobservable system. Furthermore, the measurement residual of a critical measurement will be always approximately equal to zero [[1, Sec. 5.2]](@ref refbaddata). More precisely, if the measurement residual:
 ```math
-    r_{i} < \gamma, \;\;\; i \in \mathcal{M},
+    |r_{i}| \le \gamma, \;\;\; i \in \mathcal{M},
 ```
 JuliaGrid marked the corresponding measurement as the critical, where ``\gamma`` is a predetermined critical measurement criteria.
 
@@ -129,7 +129,7 @@ Here, the all-zero vector ``\mathbf 0_{s}`` is of dimension ``s``, the all-one v
 ```
 Note that the non-linear least absolute value state estimation is based on the successive set of linear programming problems, where we reveal state variables increments:
 ```math
-    \mathbf {\bm \Delta x} = \mathbf {\bm \Delta x_y} - \mathbf { \bm \Delta x_v}.
+    \mathbf {\mathbf \Delta x} = \mathbf {\mathbf \Delta x_y} - \mathbf {\mathbf \Delta x_v}.
 ```
 
 ---
