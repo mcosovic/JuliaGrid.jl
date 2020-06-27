@@ -52,11 +52,9 @@ function rundcse(system, measurements, num, numsys, settings, info)
         slack = 1
         println("The slack bus is not found. Slack bus is the first bus.")
     end
-
-    pseudoslack = false
-    if settings.observe[:observe] == 1 && onTi[slack] == 0
+    if settings.observe[:observe] == 1 && onTi[slack] == 0.0
+        println("The slack bus voltage angle measurement is in-service to perform the observability analysis correctly.")
         onTi[slack] = 1
-        pseudoslack = true
     end
 
     numlabel = false
@@ -165,9 +163,9 @@ function rundcse(system, measurements, num, numsys, settings, info)
     ########## Observability analysis ##########
     Npseudo = 0
     if settings.observe[:observe] == 1
-        J, mean, weight, Npseudo, islands = observability_flow(settings, system, numsys, measurements, num, J,
+    J, mean, weight, Npseudo, islands = observability_flow(settings, system, numsys, measurements, num, J,
             Jflow, slack, branch, from, to, busPi, onPi, onTi, Ybus, Nvol, Nflow, branchPij,
-            onPij, busTi, fromPij, toPij, admitance, mean, weight, meanPij, transShift, Pshift, meanPi,
+            onPij, busTi, fromPij, toPij, admitance, Gshunt, mean, weight, meanPij, transShift, Pshift, meanPi,
             meanTi, Tslack, variPi, variTi, variPij, Npseudo, islands)
     end
     Nmeasure = Nmeasure + Npseudo
@@ -358,9 +356,10 @@ function rundcse(system, measurements, num, numsys, settings, info)
     bad = [pass estimate[idxbad, 3:5] badsave[:, 2] estimate[idxbad, 2]]
 
     if settings.observe[:observe] == 1 && Npseudo != 0 && newnumbering
-        for k in islands
-            for i in k
-                islands[k][i] = system.bus[i, 1]
+        Nisland = size(islands, 1)
+        for k = 1:Nisland
+            for (n, i) in enumerate(k)
+                islands[k][n] = system.bus[i, 1]
             end
         end
     end

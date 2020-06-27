@@ -775,7 +775,7 @@ end
     end
     lav = Dict(:lav => lavkey, :optimize => optimize)
 
-    pivot = 1e-5; oflow = 1e-5; Pij = 0.0; Pi = 0.0; Ti = 0.0
+    pivot = 1e-10; oflow = 1e-5; Pij = 0.0; Pi = 0.0; Ti = 0.0
     if !isempty(observeset)
         observekey = 1.0
         for (k, i) in enumerate(observeset)

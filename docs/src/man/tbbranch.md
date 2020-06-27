@@ -75,10 +75,10 @@ Let us consider an example, given in Figure 3, that will allow us an easy transi
 
 JuliaGrid uses the input data where the bus incident to the transformer is always located at "from bus end", and accordingly, we denote other elements related to branches, as given in Table.
 
-| From Bus  | To Bus  | Admittance  | Shunt Admittance    | Transformer Ratio  |
-|:---------:|:-------:|:-----------:|:-------------------:|:------------------:|	 
-| ``p``     | ``k``   | ``y_{pk}``  | ``y_{\text{s}pk}``  | ``\alpha_{pk}``    |
-| ``k``     | ``q``   | ``y_{kq}``  | ``y_{\text{s}kq}``  | ``\alpha_{kq}``    |
+| From Bus  | To Bus  | Branch Admittance  | Branch Shunt Admittance | Transformer Ratio  |
+|:---------:|:-------:|:------------------:|:-----------------------:|:------------------:|	 
+| ``p``     | ``k``   | ``y_{pk}``         | ``y_{\text{s}pk}``      | ``\alpha_{pk}``    |
+| ``k``     | ``q``   | ``y_{kq}``         | ``y_{\text{s}kq}``      | ``\alpha_{kq}``    |
 
 Before we proceed further, it would be helpful to observe sets related to the system that we use in the rest of this part:
 * set of buses: ``\mathcal{H} = \{p,k,q\}``;
@@ -164,7 +164,7 @@ The **apparent power injection** ``S_i`` into the bus ``i`` is a function of the
 ```math
   {S}_{i} =\bar{V}_{i}\bar{I}_{i}^* = P_i + \text{j}Q_i,
 ```
-where ``P_i`` and ``Q_i`` represent active power and reactive power injection into the bus ``i``. Thus, apparent injection power ``S_i`` into the bus ``i`` is:
+where ``P_i`` and ``Q_i`` represent active and reactive power injection into the bus ``i``. Thus, apparent injection power ``S_i`` into the bus ``i`` is:
 ```math
   {S}_{i} = \bar{V}_{i}\sum\limits_{j \in \mathcal{H}_i} {Y}_{ij}^* \bar{V}_{j}^*,                  
 ```
@@ -186,6 +186,6 @@ These equations represent a hybrid form which is a common form for solving power
 ---
 
 ## [References](@id refsbranch)
-[1] J. Grainger and W. Stevenson, Power system analysis, ser. McGraw-Hill series in electrical and computer engineering: Power and energy. McGraw-Hill, 1994.
+[1] J. Grainger and W. Stevenson, *Power system analysis*, ser. McGraw-Hill series in electrical and computer engineering: Power and energy. McGraw-Hill, 1994.
 
-[2] A. Wood and B. Wollenberg, Power Generation, Operation, and Control, ser. A Wiley-Interscience publication. Wiley, 1996.
+[2] A. Wood and B. Wollenberg, *Power Generation, Operation, and Control*, ser. A Wiley-Interscience publication. Wiley, 1996.

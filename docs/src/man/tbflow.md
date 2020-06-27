@@ -168,7 +168,7 @@ where ``\epsilon`` is a predetermined stopping criteria.
 ---
 
 ### [Newton-Raphson Method](@id newtonraphson)
-The Newton-Raphson method is generally preferred in power flow calculations because this method has quadratic rate of convergence. The method can have difficulties with initial conditions (''flat start''). The Gauss-Seidel method convergence time increases significantly for large-scale systems and can exhibit convergence problems for systems with high active power transfers. Often, the two algorithms are used complementary, meaning that power flow programs implement both. Gauss-Seidel method is used to rapidly determine an approximate solution from a ''flat start'', and then the Newton-Raphson method is used to obtain the final accurate solution [[4]](@ref refs).
+The Newton-Raphson method is generally preferred in power flow calculations because this method has quadratic rate of convergence. The method can have difficulties with initial conditions ("flat start"). The Gauss-Seidel method convergence time increases significantly for large-scale systems and can exhibit convergence problems for systems with high active power transfers. Often, the two algorithms are used complementary, meaning that power flow programs implement both. Gauss-Seidel method is used to rapidly determine an approximate solution from a "flat start", and then the Newton-Raphson method is used to obtain the final accurate solution [[4]](@ref refs).
 
 #### General Properties
 Before we apply the Newton-Raphson method to the power flow equations, we review some of its general properties [[2]](@ref refs). First of all, let us consider a real-valued continuously differentiable function ``f(x)``. The Newton-Raphson method provides a good approximation for the root of the function ``f(x)``:
@@ -204,7 +204,7 @@ Thus, we reveal the root ``x^{(1)}`` of the equation ``f_{\text{a}}(x)``:
 &nbsp;
 ```
 
-In order to find the root ``x*`` of the function ``f(x)``, the process is repeated using the Taylor series expansion at the point ``x^{(1)}``, which reveals a new point ``x^{(2)}``, and so on, moving towards a global solution ``x^*``. Therefore, the Newton-Raphson is an iterative method, where we iteratively compute the increments and update solutions:
+In order to find the root ``x^*`` of the function ``f(x)``, the process is repeated using the Taylor series expansion at the point ``x^{(1)}``, which reveals a new point ``x^{(2)}``, and so on, moving towards a global solution ``x^*``. Therefore, the Newton-Raphson is an iterative method, where we iteratively compute the increments and update solutions:
 ```math
   \begin{aligned}
     \Delta x^{(\nu)} &= -\cfrac{f(x^{(\nu)})}{\cfrac{\mathrm d{f(x^{(\nu)})}}{\mathrm d x}}\\
@@ -248,11 +248,11 @@ Although somewhat trivial, the above example gives us a good intuition and provi
 
 The linearization of the function ``\mathbf f(\mathbf x)`` at the point ``\mathbf x^{(\nu)}`` is defined by the Taylor expansion:
 ```math
-  \mathbf {f}_{\text{a}}(\mathbf x)=\mathbf f(\mathbf x^{(\nu)})+\mathbf J(\mathbf x^{(\nu)}) \Delta \mathbf {x}^{(\nu)}.                                        
+  \mathbf {f}_{\text{a}}(\mathbf x)=\mathbf f(\mathbf x^{(\nu)})+\mathbf J(\mathbf x^{(\nu)}) \mathbf \Delta \mathbf {x}^{(\nu)}.                                        
 ```
 By taking ``\mathbf {f}_{\text{a}}(\mathbf x) = \mathbf 0``, the vector of increments can be obtained by solving:
 ```math
-   \Delta \mathbf {x}^{(\nu)} = -\mathbf J(\mathbf x^{(\nu)})^{-1} \mathbf f(\mathbf x^{(\nu)}),                                     
+   \mathbf \Delta \mathbf {x}^{(\nu)} = -\mathbf J(\mathbf x^{(\nu)})^{-1} \mathbf f(\mathbf x^{(\nu)}),                                     
 ```
 that is, written in the extended form:
 ```math
@@ -270,7 +270,7 @@ that is, written in the extended form:
 ```
 Then, we obtain the solution:
 ```math
-  \mathbf {x}^{(\nu + 1)}=   \mathbf {x}^{(\nu)} + \Delta \mathbf {x}^{(\nu)}.                                     
+  \mathbf {x}^{(\nu + 1)}=   \mathbf {x}^{(\nu)} + \mathbf \Delta \mathbf {x}^{(\nu)}.                                     
 ```
 
 #### Newton-Raphson Applied to the Power Flow Equations
@@ -309,7 +309,7 @@ where:
 ```math
   \begin{aligned}  	
     \bm \theta &= [\theta_2,\dots,\theta_n]^T; \;\;\;\;\;\; \mathbf \Delta \bm \theta = [\Delta \theta_2,\dots,\Delta \theta_n]^T \\
-    \mathbf V &= [V_2,\dots,V_{m}]^T; \;\;\; \mathbf \Delta V = [\Delta V_2,\dots,\Delta V_{m}]^T.
+    \mathbf V &= [V_2,\dots,V_{m}]^T; \;\;\; \mathbf \Delta \mathbf V = [\Delta V_2,\dots,\Delta V_{m}]^T.
   \end{aligned}  
 ```
 
@@ -348,9 +348,12 @@ where the first ``n - 1`` equations are defined for PV and PQ buses, while the l
 Applying the Newton-Raphson method over power flow equations we have:
 ```math
 	\mathbf{J(x^{(\nu)})}\mathbf{ \Delta x^{(\nu)}}+\mathbf{ f(x^{(\nu)})}=0 \;\;\; \to \;\;\;
-  \mathbf{ \Delta x^{(\nu)}} = -\mathbf{J(x^{(\nu)})}^{-1}\mathbf{ f(x^{(\nu)})}\\
-  \mathbf {x}^{(\nu + 1)}=   \mathbf {x}^{(\nu)} + \Delta \mathbf {x}^{(\nu)},
+  \mathbf{ \Delta x^{(\nu)}} = -\mathbf{J(x^{(\nu)})}^{-1}\mathbf{ f(x^{(\nu)})}
 ```
+```math
+  \mathbf {x}^{(\nu + 1)} = \mathbf {x}^{(\nu)} + \mathbf \Delta \mathbf {x}^{(\nu)},
+```
+
 where the Jacobian matrix ``\mathbf{J(x^{(\nu)})} \in \mathbb{R}^{n_{\text{u}} \times n_{\text{u}}}`` is:
 ```math
   \mathbf{J(x^{(\nu)})}=
@@ -581,7 +584,7 @@ Using ``V_j \approx 1``, wherein ``V_i^2 = V_iV_j, j=i``, the first part of the 
   \begin{aligned}
     {f}_{P_2}(\mathbf x) &= {V}_{2}B_{22} \Delta \theta_2 + \cdots + {V}_{2}B_{2n} \Delta \theta_n \\
     & \vdots \\
-    {f}_{P_n}(\mathbf x) &= {V}_{n}B_{n2} \Delta \theta_2 + \cdots + {V}_{n}B_{nn} \Delta \theta_n,
+    {f}_{P_n}(\mathbf x) &= {V}_{n}B_{n2} \Delta \theta_2 + \cdots + {V}_{n}B_{nn} \Delta \theta_n.
   \end{aligned}
 ```
 Simplifying the second part of the equations, we obtain:
@@ -615,7 +618,7 @@ which can be written as:
     \mathbf{h}_{Q}(\mathbf x) &= \mathbf{B}_2 \mathbf{\Delta V}.
   \end{aligned}
 ```
-True benefits from these equations is that Jacobian matrices ``\mathbf{B}_1`` and ``\mathbf{B}_2`` are constant and should be formed only once. Note that no approximations have been introduced to the functions ``\mathbf{f}_{P}(\mathbf x)`` or ``\mathbf{f}_{Q}(\mathbf x)``, only in the way we calculate the increments of the state variables [[2]](@ref refs). Consequently, we obtain:
+True benefits from these equations is that Jacobian matrices ``\mathbf{B}_1`` and ``\mathbf{B}_2`` are constant and should be formed only once. Note that no approximations have been introduced to the functions ``\mathbf{f}_{P}(\mathbf x)`` or ``\mathbf{f}_{Q}(\mathbf x)``, only in the way we calculate the increments of the state variables [[2]](@ref refs). Consequently, we still use:
 ```math
   \begin{aligned}
     f_{P_i}(\mathbf x) &= {V}_{i}\sum\limits_{j=1}^n {V}_{j}(G_{ij}\cos\theta_{ij}+B_{ij}\sin\theta_{ij}) - {P}_{i} = 0,
@@ -850,7 +853,7 @@ where:
   P_{\text{gs}i} = \sum_{e \in \mathcal{E},\; e(2)=i} T_e - \sum_{e \in \mathcal{E},\; e(1)=i} T_e,  
   \;\;\; i \in \mathcal{H},
 ```
-* ``\mathbf{G}_\text{sh} \in \mathbb{R}^{n}`` is the vector of active power consumed by shunt element  ``G_{\text{sh}i},\;i=1,\dots,n``;
+* ``\mathbf{G}_\text{sh} \in \mathbb{R}^{n}`` is the vector of active power consumed by shunt element  ``g_{\text{sh}i},\;i=1,\dots,n``;
 * ``\mathbf{B} \in \mathbb{C}^{n \times n}`` is the bus or nodal matrix in the DC framework, with diagonal and non-diagonal elements:
   * the diagonal elements are equal to:
     ```math
@@ -878,7 +881,7 @@ JuliaGrid uses the above equation to compute bus voltage angles and then calcula
 Electrical quantities related to the bus ``i \in \mathcal{H}``:
 * **Active power injection** can be simply obtained as:
 ```math
-   P_i = \sum_{j \in \mathcal{H}_i} {B}_{ij} \theta_j + P_{\text{gs}i} + G_{\text{sh}i}.
+   P_i = \sum_{j \in \mathcal{H}_i} {B}_{ij} \theta_j + P_{\text{gs}i} + g_{\text{sh}i}.
 ```
 * **Total active power generation** is determined using Tellegen's theorem:
 As for the AC model, for each bus ``i \in \mathcal{H}``, Tellegen's theorem, holds:
@@ -902,12 +905,12 @@ Electrical quantities related to the branch ``(i,j) \in \mathcal{E}``:
 ---
 
 ## [References](@id refs)
-[1] A. Wood and B. Wollenberg, Power Generation, Operation, and Control, ser. A Wiley-Interscience publication. Wiley, 1996.
+[1] A. Wood and B. Wollenberg, *Power Generation, Operation, and Control*, ser. A Wiley-Interscience publication. Wiley, 1996.
 
-[2] G. Andersson, "Modelling and analysis of electric power systems". EEH-Power Systems Laboratory, Swiss Federal Institute of Technology (ETH), Zürich, Switzerland (2008).
+[2] G. Andersson, *Modelling and analysis of electric power systems*, EEH-Power Systems Laboratory, Swiss Federal Institute of Technology (ETH), Zürich, Switzerland (2008).
 
-[3] R. D. Zimmerman, C. E. Murillo-Sanchez. MATPOWER User’s Manual, Version 7.0. 2019.
+[3] R. D. Zimmerman, C. E. Murillo-Sanchez, *MATPOWER User’s Manual*, Version 7.0. 2019.
 
-[4] D. P. Chassin, P. R. Armstrong, D. G. Chavarria-Miranda, and R. T. Guttromson, "Gauss-seidel accelerated: implementing flow solvers on field programmable gate arrays," in 2006 IEEE Power Engineering Society General Meeting, 2006, pp. 5.
+[4] D. P. Chassin, P. R. Armstrong, D. G. Chavarria-Miranda, and R. T. Guttromson, "Gauss-seidel accelerated: implementing flow solvers on field programmable gate arrays," *in Proc. IEEE PES General Meeting*, 2006, pp. 5.
 
-[5] R. A. M. van Amerongen, "A general-purpose version of the fast decoupled load flow," in IEEE Transactions on Power Systems, vol. 4, no. 2, pp. 760-770, May 1989.
+[5] R. A. M. van Amerongen, "A general-purpose version of the fast decoupled load flow," *IEEE Trans. Power Syst.*, vol. 4, no. 2, pp. 760-770, May 1989.

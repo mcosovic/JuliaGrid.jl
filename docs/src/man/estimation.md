@@ -19,7 +19,7 @@ The linear state estimation with PMUs is implemented using the following feature
 
 Besides state estimation algorithms, we have implemented the [bad data processing](@ref baddata) using the largest normalized residual test. The routine proceeds with bad data analysis after the estimation process is finished, in the repetitive process of identifying and eliminating bad data measurements one after another.
 
-The observability analysis with restore routine is based on the flow islands [2], [3], where pseudo-measurements are chosen between measurements that are marked as out-of-service in the input DATA.
+The [observability analysis](@ref observability) with the restore routine is based on the flow islands, where pseudo-measurements are chosen in place of measurements that are marked as out-of-service in the input DATA.
 
 ---
 
@@ -104,8 +104,8 @@ The state estimation function `runse()` receives a group of variable number of a
 | Command      | Description                                                                              |
 |:-------------|:-----------------------------------------------------------------------------------------|
 |`"lav"`       | runs the non-linear or linear state estimation using the least absolute value estimation with `"GLPK"` solver as `default settings` (see ATTACH to change `default settings`) |
-|`"bad"` | when using the weighted least-squares estimation method runs the bad data processing, where the identification is equal to `"threshold" = 3`, with the maximum number of `"passes" = 1`, where critical measurement are marked according to `"critical" = 1e-10` (see ATTACH to change `default settings`) |
-|`"observe"` | runs the observability analysis using the `"pivot" = 1e-5` threshold, where to restore observability routine takes only power injection measurements with variances in per-unit `"Pi" = 1e5` (see ATTACH to change `default settings`) |
+|`"bad"` | runs the bad data processing for the weighted least-squares method, where the bad data identification threshold is set to `"threshold" = 3`, with the maximum number of `"passes" = 1`, where the critical measurement criteria is equal to `"critical" = 1e-10` (see ATTACH to change `default settings`) |
+|`"observe"` | runs the observability analysis using the zero `"pivot" = 1e-10` threshold, where to restore observability routine takes only power injection measurements with variances in per-unit `"Pi" = 1e5` (see ATTACH to change `default settings`) |
 
 ```@raw html
 &nbsp;
@@ -132,12 +132,12 @@ The state estimation function `runse()` receives a group of variable number of a
 | ATTACH:         | Bad Data Processing                                                                      |
 |:----------------|:-----------------------------------------------------------------------------------------|
 | **Command**     | `bad = ["pass" value "threshold" value "critical" value]`                                |
-| **Description** | when using the weighted least-squares estimation method bad data processing can be run using the bad data identification `threshold`, with the maximum number of `passes`, where `critical` measurement are marked according defined `value`, `default setting: bad = ["pass" 1 "threshold" 3 "critical" 1e-10]` |
+| **Description** | when using the weighted least-squares method bad data processing can be run using the bad data identification `threshold`, with the maximum number of `passes`, where `critical` measurements are marked according to `value`, `default setting: bad = ["pass" 1 "threshold" 3 "critical" 1e-10]` |
 
 | ATTACH:         | Observability Analysis                                                                   |
 |:----------------|:-----------------------------------------------------------------------------------------|
 | **Command**     | `observe = ["pivot" value "Pij" value "Pi" value "Ti" value]` |
-| **Description** | observability analysis can be run using the `pivot` identification `threshold`, where active power flow `"Pij" value`, active power injection `"Pi" value` and/or bus voltage angle `"Ti" value` can be forced to restore observability, with measurement variances equal to `values`, `default setting: observe = ["pivot" 1e-5 "Pi" 1e5]` |
+| **Description** | observability analysis can be run using the zero `pivot` identification `threshold`, where active power flow `"Pij" value`, active power injection `"Pi" value` and/or bus voltage angle `"Ti" value` can be forced to restore observability, with measurement variances equal to `values`, `default setting: observe = ["pivot" 1e-10 "Pi" 1e5]` |
 
 | ATTACH:         | Linear System Solver                                                                                                               |
 |:----------------|:-----------------------------------------------------------------------------------------------------------------------------------|
@@ -302,11 +302,3 @@ The `observability` data structure contains information about flow islands and p
 | 5       | local index of the pseudo-measurement given in the input DATA    |
 | 6       | pseudo-measurement value                                         |
 | 7       | pseudo-measurement variance                                      |
-
----
-### References
-
-[2] G. C. Contaxis and G. N. Korres, “A Reduced Model for Power System Observability Analysis and Restoration,” IEEE Trans. Power Syst., vol.
-3, no. 4, pp. 1411-1417, Nov. 1988.
-
-[3] N. M. Manousakis and G. N. Korres, "Observability analysis for power systems including conventional and phasor measurements," 7th Mediterranean Conference and Exhibition on Power Generation, Transmission, Distribution and Energy Conversion (MedPower 2010), Agia Napa, 2010.

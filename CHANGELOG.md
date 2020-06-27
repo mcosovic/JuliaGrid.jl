@@ -1,5 +1,19 @@
 # JuliaGrid changelog
 
+## Version `v0.0.3`
+
+![featureadd] the linear state estimation with PMUs and bad data routine
+
+![breaking] the stable version of the DC state estimation with all routines
+
+![breaking] the stable version of the power flow
+
+![breaking] the stable version of the measurement generator
+
+![docs] the observability analysis
+
+![maintenanceyes] speed-up the observability analysis
+
 ![docs] bad data processing and least absolute value method
 
 ![bugfix] pseudo-measurements are included in error metrics
@@ -23,6 +37,7 @@
 ![maintenanceyes] `runse(...)` function accepts output variables from `runmg(...)`, and generating sets is now done exclusively using the function `runmg(...)`
 
 ![maintenanceyes] changed the inversion of a sparse matrix with the sparse inverse subset in the bad data routine, case_ACTIVSg10k -> built-in inversion 43.105664 seconds; sparseinv 0.360591 seconds
+
 
 ## Version `v0.0.2`
 

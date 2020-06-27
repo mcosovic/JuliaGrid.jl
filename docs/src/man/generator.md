@@ -7,7 +7,7 @@ The function uses the [AC Power Flow](@ref acpowerflow) or predefined user data 
 
 The standalone measurement generator produces measurement data in a form suitable for the state estimation function.
 
-Also, to achieve global observability of the power system only with PMUs, we implemented the optimal placement algorithm given in [1].
+Also, to achieve global observability of the power system only with PMUs, we implemented the [optimal placement algorithm](@ref optimalpmu).
 
 ---
 
@@ -239,11 +239,6 @@ The measurement generator flowchart depicts the algorithm process according to u
 
 ![](../assets/generatorm_chart.svg)
 
----
-
-### References
-
-[1] B. Gou, “Optimal placement of PMUs by integer linear programming,” IEEE Trans. Power Syst., vol. 23, no. 3, pp. 1525–1526, Aug. 2008.
 
 [^1]: Complete phasor measurement set contains branch current magnitude Iij, branch current angle Dij, bus voltage magnitude Vi and bus voltage angle Ti measurements.
 [^2]: Complete legacy measurement set contains active power flow Pij, reactive power flow Qij, branch current magnitude Iij, active power injection Pi, reactive power injection Qi and bus voltage magnitude Vi measurements.

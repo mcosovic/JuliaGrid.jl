@@ -302,7 +302,8 @@ function results_estimatedc(system, numsys, measurements, num, settings, results
             numer = [numer; repeat([""], Npseudo - Nisland)]
         end
         println("\n Observability Analysis Display")
-        pretty_table([numer islanddisp pseudo], header[:observe], alignment=[:r,:r,:r,:r,:r,:r,:r],
+        pretty_table([numer islanddisp pseudo], header[:observe], alignment=[:l,:l,:l,:l,:r,:r,:r],
+            columns_width = [11, 40, 10, 20, 11, 11, 11],
             formatters = ft_printf(["%1.0f", "%-s", "%-s", "%-s", "%1.0f", "%1.2f", "%1.2e"], collect(1:7)))
     end
 

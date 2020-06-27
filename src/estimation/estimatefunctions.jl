@@ -59,19 +59,16 @@ function baddata(settings, numsys, x, z, v, W, G, J, Nmeasure, idx, badsave, rbe
 end
 
 
-### Observability analysis
+### Observability analysis using flow islands
 function observability_flow(settings, system, numsys, measurements, num, J, Jflow, slack,
-        branch, from, to, busPi, onPi, onTi, Ybus, Nvol, Nflow, branchPij, onPij, busTi, fromPij, toPij, admitance,
+        branch, from, to, busPi, onPi, onTi, Ybus, Nvol, Nflow, branchPij, onPij, busTi, fromPij, toPij, admitance, Gshunt,
         mean, weight, meanPij, transShift, Pshift, meanPi, meanTi, Tslack, variPi, variTi, variPij, Npseudo, islands)
 
-        G = transpose(J) * J
-        F = qr(Matrix(G))
+        r = rank(J)
         nonobserve = false
-        if any(abs.(diag(F.R)) .< settings.observe[:pivot])
+        if r < numsys.Nbus
             nonobserve = true
-        end
-        if nonobserve
-            println("The power system is unobservable.")
+            println("The power system is unobservable, the column rank of the Jacobian matrix is $r." )
         else
             println("The power system is observable.")
         end
@@ -113,15 +110,17 @@ function observability_flow(settings, system, numsys, measurements, num, J, Jflo
         end
         filter!(x->x!=0, inj)
 
+        con = fill(false, numsys.Nbus)
         @inbounds while merge != 0
             merge = 1
             for (k, i) in enumerate(inj)
                 current = islandsWhere[i]
                 conection = Ybus.colptr[busPi[i]]:(Ybus.colptr[busPi[i] + 1] - 1)
-                conection = Ybus.rowval[conection]
-                conection = setdiff(conection, islands[current])
-                toOther = islandsWhere[conection]
-                if !(isempty(toOther)) && all(y->y==toOther[1], toOther)
+                con[Ybus.rowval[conection]] .= true
+                con[islands[current]] .= false
+                toOther = islandsWhere[con]
+                con[Ybus.rowval[conection]] .= false
+                if !(isempty(toOther)) && all(y -> y == toOther[1], toOther)
                     merge = 2
                     islands[current] = [islands[current]; islands[toOther[1]]]
                     islandsWhere[islands[toOther[1]]] .= current
@@ -144,7 +143,7 @@ function observability_flow(settings, system, numsys, measurements, num, J, Jflo
             end
         end
 
-        ########## New tie buses and branches ##########
+        ######### New tie buses and branches ##########
         tie_branch = copy(branch)
         for i = 1:numsys.Nbranch
             if islandsWhere[from[i]] == islandsWhere[to[i]]
@@ -159,7 +158,7 @@ function observability_flow(settings, system, numsys, measurements, num, J, Jflo
             end
         end
 
-        ########## Reduced Jacobian ##########
+        ########## Reduced Jacobian Wb ##########
         Nreduced = Nvol
         for i = 1:num.legacyNi
             if onPi[i] == 1 && tie_bus[busPi[i]] != 0
@@ -209,7 +208,7 @@ function observability_flow(settings, system, numsys, measurements, num, J, Jflo
         end
         Wb = sparse(rown, coln, valn, length(idx), Nisland)
 
-       ########## Pseudo-measurements Jacobian ##########
+       ########## Pseudo-measurements Jacobian Wp ##########
        Nelement = 0; Nmeasuren = 0
        Nflown = 0; Ninjn = 0; Nvoln = 0;
        if settings.observe[:Pij] != 0
@@ -237,13 +236,9 @@ function observability_flow(settings, system, numsys, measurements, num, J, Jflo
             end
         end
 
-        rown = fill(0, Nelement)
-        coln = similar(rown)
-        jacn = fill(0.0, Nelement)
-        idx = fill(0, Nmeasuren)
-        meann = fill(0.0, Nmeasuren)
-        weightn = similar(meann)
-        index = 1; rowindex = 1
+        rown = fill(0, Nelement); coln = similar(rown); jacn = fill(0.0, Nelement)
+        meann = fill(0.0, Nmeasuren); weightn = similar(meann)
+        idx = fill(0, Nmeasuren); index = 1; rowindex = 1
         Xflown = fill(0, Nflown, 2); Xinjn = fill(0, Ninjn, 2); Xvoln = fill(0, Nvoln, 2)
         if settings.observe[:Pij] != 0
             @inbounds for i = 1:num.legacyNf
@@ -256,7 +251,12 @@ function observability_flow(settings, system, numsys, measurements, num, J, Jflo
                     coln[index] = toPij[i]
                     jacn[index] = -admitance[branchPij[i]]
 
-                    meann[rowindex] = meanPij[i] - transShift[branchPij[i]] * (pi / 180)
+                    if fromPij[i] == from[branchPij[i]]
+                        meann[rowindex] = meanPij[i] + transShift[branchPij[i]] * (pi / 180)  * admitance[branchPij[i]]
+                    else
+                        meann[rowindex] = meanPij[i] - transShift[branchPij[i]] * (pi / 180) * admitance[branchPij[i]]
+                    end
+
                     weightn[rowindex] = 1 / settings.observe[:Pij]
                     idx[rowindex] = rowindex
 
@@ -277,7 +277,7 @@ function observability_flow(settings, system, numsys, measurements, num, J, Jflo
                         index += 1
                     end
 
-                    meann[rowindex] = meanPi[i] - Pshift[i]
+                    meann[rowindex] = meanPi[i] - Pshift[i] - Gshunt[i] / system.basePower
                     weightn[rowindex] = 1 / settings.observe[:Pi]
                     idx[rowindex] = rowindex
 
@@ -304,33 +304,35 @@ function observability_flow(settings, system, numsys, measurements, num, J, Jflo
                 end
             end
         end
-        JpseudoT = sparse(coln, rown, jacn, numsys.Nbus, Nmeasuren)
+        JpsT = sparse(coln, rown, jacn, numsys.Nbus, Nmeasuren)
 
-        ########## Reduced Jacobian ##########
+        ########## Reduced Jacobian Wc ##########
         N = 0
         for (k, i) in enumerate(idx)
-            for j in JpseudoT.colptr[i]:(JpseudoT.colptr[i + 1] - 1)
+            for j in JpsT.colptr[i]:(JpsT.colptr[i + 1] - 1)
                 N += 1
             end
         end
         rown = fill(0, N); coln = fill(0, N); valn = fill(0.0, N)
         cnt = 1
         for (k, i) in enumerate(idx)
-            for j in JpseudoT.colptr[i]:(JpseudoT.colptr[i + 1] - 1)
+            for j in JpsT.colptr[i]:(JpsT.colptr[i + 1] - 1)
                 rown[cnt] = k
-                coln[cnt] = col[JpseudoT.rowval[j]]
-                valn[cnt] = JpseudoT.nzval[j]
+                coln[cnt] = col[JpsT.rowval[j]]
+                valn[cnt] = JpsT.nzval[j]
                 cnt += 1
             end
         end
-        Wc = sparse(rown, coln, valn, length(idx), Nisland)
+        Wp = sparse(rown, coln, valn, length(idx), Nisland)
 
         ########## Restore observability ##########
-        M = [Wb; Wc] * transpose([Wb; Wc])
+        M = [Wb; Wp]
+        M = M * M'
         F = qr(Matrix(M))
+        R = F.R
         pseudo = Int64[]
         for i = (Nreduced + 1):(Nreduced + Nmeasuren)
-            if abs(F.R[i, i]) > settings.observe[:pivot]
+            if abs(R[i, i]) > settings.observe[:pivot]
                 push!(pseudo, i - Nreduced)
             end
         end
@@ -356,9 +358,9 @@ function observability_flow(settings, system, numsys, measurements, num, J, Jflo
         end
 
         Npseudo = length(pseudo)
-        J = [J; transpose(JpseudoT[:,pseudo])]
+        J = [J; transpose(JpsT[:, pseudo])]
         mean = [mean; meann[pseudo]]
-        weight = [weight; weight[pseudo]]
+        weight = [weight; weightn[pseudo]]
     end # nonobserve
 
     return J, mean, weight, Npseudo, islands

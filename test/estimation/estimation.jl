@@ -50,7 +50,7 @@ case14seobsbad = string(path, "case14seobsbad.xlsx")
         @test all(measurements.legacyInjection .== 0)
         @test all(measurements.legacyVoltage .== 0)
 
-    results, = runse(manousakis2010, "dc", "observe")
+    results, = runse(manousakis2010, "dc", "observe", "estimate")
         islands = [[5; 6; 11; 12; 13], [10], [14], [4; 7; 8; 9], [1], [2; 3]]
         for (k, i) in enumerate(islands)
             for j in results.observability
@@ -73,9 +73,9 @@ case14seobsbad = string(path, "case14seobsbad.xlsx")
         @test (all(isempty.(islands)))
         @test all(results.estimate[idx, 4] .== 8) && all(results.estimate[idx, 5] .== [10; 14])
 
-    results, = runse("case14se.xlsx", "dc", "observe", "bad"; observe = ["pivot" 1e-8 "Ti" 1e-4 "Pi" 1e-4], bad = ["pass" 4])
+    results, = runse("case14se.xlsx", "dc", "observe", "bad", "main"; observe = ["pivot" 1e-8 "Ti" 1e-4 "Pi" 1e-4], bad = ["pass" 4])
         Ti = results.main[:, 2]
-        results, = runse(case14seobsbad, "dc", "observe", "bad"; observe = ["pivot" 1e-8 "Ti" 1e-4 "Pi" 1e-4], bad = ["pass" 8])
+        results, = runse(case14seobsbad, "dc", "observe", "bad", "main"; observe = ["pivot" 1e-8 "Ti" 1e-4 "Pi" 1e-4], bad = ["pass" 2])
         Tinew = results.main[:, 2]
         @test maximum(abs.(Ti - Tinew)) < 1.0
 

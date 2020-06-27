@@ -22,11 +22,11 @@ Finally, the measurement model can be described as the system of equations [[1]]
 ```
 where ``\mathbf {x}=[x_1,\dots,x_{s}]^{T}`` is the vector of the state variables, ``\mathbf{h}(\mathbf{x})=`` ``[h_1(\mathbf{x})``, ``\dots``, ``h_k(\mathbf{x})]^{{T}}`` is the vector of measurement functions, ``\mathbf{z} = [z_1,\dots,z_k]^{\mathrm{T}}`` is the vector of measurement values, and ``\mathbf{u} = [u_1,\dots,u_k]^{\mathrm{T}}`` is the vector of uncorrelated measurement errors. The state estimation problem in transmission grids is commonly an overdetermined system of equations ``(k>s)`` [[4, Sec. 2.1]](@ref refestimate).
 
-Each measurement ``M_i \in \mathcal{M}`` is associated with measured value ``z_i``, measurement error ``u_i``, and measurement function ``h_i(\mathbf{x})``. Under the assumption that measurement errors ``u_i`` follow a zero-mean Gaussian distribution, the probability density function associated with the i-th measurement is proportional to:
+Each measurement ``M_i \in \mathcal{M}`` is associated with measured value ``z_i``, measurement error ``u_i``, and measurement function ``h_i(\mathbf{x})``. Under the assumption that measurement errors ``u_i`` follow a zero-mean Gaussian distribution, the probability density function associated with the ``i``-th measurement is proportional to:
 ```math
   \mathcal{N}(z_i|\mathbf{x},v_i) \propto \exp\Bigg\{\cfrac{[z_i-h_i(\mathbf{x})]^2}{2v_i}\Bigg\},
 ```
-where ``v_i`` is the measurement variance defined by the measurement error ``u_i``, and the measurement function ``h_i(\mathbf{x})`` connects the vector of state variables ``\mathbf{x}`` to the value of the i-th measurement.
+where ``v_i`` is the measurement variance defined by the measurement error ``u_i``, and the measurement function ``h_i(\mathbf{x})`` connects the vector of state variables ``\mathbf{x}`` to the value of the ``i``-th measurement.
 
 The state estimation in electric power systems deals with the problem of determining state variables ``\mathbf{x}`` according to the noisy observed data ``\mathbf{z}`` and a prior knowledge:
 ```math
@@ -99,13 +99,13 @@ represents the system of non-linear equations. The Gauss-Newton method is typica
 
 Based on the available set of measurements ``\mathcal{M}``, the weighted least-squares estimator ``\hat{\mathbf x}``, i.e., the solution of the weighted least-squares problem, can be found using the Gauss-Newton method:
 ```math
-		\Big[\mathbf J (\mathbf x^{(\nu)})^{T} \mathbf R^{-1} \mathbf J (\mathbf x^{(\nu)})\Big] \Delta \mathbf x^{(\nu)} =
+		\Big[\mathbf J (\mathbf x^{(\nu)})^{T} \mathbf R^{-1} \mathbf J (\mathbf x^{(\nu)})\Big] \mathbf \Delta \mathbf x^{(\nu)} =
 		\mathbf J (\mathbf x^{(\nu)})^{T} \mathbf R^{-1} \mathbf r (\mathbf x^{(\nu)})        
 ```
 ```math
-		\mathbf x^{(\nu+1)} = \mathbf x^{(\nu)} + \Delta \mathbf x^{(\nu)},
+		\mathbf x^{(\nu+1)} = \mathbf x^{(\nu)} + \mathbf \Delta \mathbf x^{(\nu)},
 ```
-where ``\nu = \{0,1,2,\dots\} `` is the iteration index, ``\Delta \mathbf x \in \mathbb {R}^{s} `` is the vector of increments of the state variables, ``\mathbf J (\mathbf x)\in \mathbb {R}^{k \times s}`` is the Jacobian matrix of measurement functions ``\mathbf h (\mathbf x)`` at ``\mathbf x=\mathbf x^{(\nu)}``, ``\mathbf{R}\in \mathbb {R}^{k \times k}`` is a measurement error covariance matrix, and ``\mathbf r (\mathbf x) = \mathbf{z} - \mathbf h (\mathbf x)`` is the vector of residuals [[4, Ch. 10]](@ref refestimate). Note that, assumption that measurement errors are uncorrelated leads to the diagonal covariance matrix ``\mathbf {R}`` that corresponds to measurement variances.
+where ``\nu = \{0,1,2,\dots\} `` is the iteration index, ``\mathbf \Delta \mathbf x \in \mathbb {R}^{s} `` is the vector of increments of the state variables, ``\mathbf J (\mathbf x)\in \mathbb {R}^{k \times s}`` is the Jacobian matrix of measurement functions ``\mathbf h (\mathbf x)`` at ``\mathbf x=\mathbf x^{(\nu)}``, ``\mathbf{R}\in \mathbb {R}^{k \times k}`` is a measurement error covariance matrix, and ``\mathbf r (\mathbf x) = \mathbf{z} - \mathbf h (\mathbf x)`` is the vector of residuals [[4, Ch. 10]](@ref refestimate). Note that, assumption that measurement errors are uncorrelated leads to the diagonal covariance matrix ``\mathbf {R}`` that corresponds to measurement variances.
 
 The non-linear state estimation represents non-convex problem arising from the non-linear measurement functions [[7]](@ref refestimate). Due the fact that the values of state variables usually fluctuate in narrow boundaries, the non-linear model represents the mildly non-linear problem, where solutions are in a reasonable-sized neighborhood which enables the use of the Gauss-Newton method. The Gauss-Newton method can produce different rates of convergence, which can be anywhere from linear to quadratic [[8, Sec. 9.2]](@ref refestimate). The convergence rate in regards to power system state estimation depends of the topology and measurements, and if parameters are consistent (e.g., free bad data measurement set), the method shows near quadratic convergence rate [[4, Sec. 11.2]](@ref refestimate).
 
@@ -288,7 +288,7 @@ Jacobian expressions corresponding to the measurement function ``h_{I_{ji}}(\cdo
     \cfrac{B_{\text{m}2}V_i - V_i[C_{\text{m}2}\cos(\theta_{ij} - \phi_{ij}) + D_{\text{m}2}\sin(\theta_{ij} - \phi_{ij})]}{h_{I_{ji}}(\cdot)} .
 	\end{aligned}    
 ```
-Note that, in deregulation environment current magnitude measurements can be found in significant numbers, especially in distribution grids. The use of line current magnitude measurements can lead to various problems (e.g., the ''flat start'' will cause undefined Jacobian elements), which in turn may seriously deteriorate the performance of the state estimators [[3, Sec. 9.3]](@ref refestimate).
+Note that, in deregulation environment current magnitude measurements can be found in significant numbers, especially in distribution grids. The use of line current magnitude measurements can lead to various problems (e.g., the "flat start" will cause undefined Jacobian elements), which in turn may seriously deteriorate the performance of the state estimators [[3, Sec. 9.3]](@ref refestimate).
 
 ```@raw html
 &nbsp;
@@ -311,7 +311,7 @@ Hence, measurements:
 ```
 are associated with measurement functions:
 ```math
-    h_{P_{i}}(\cdot) \triangleq P_{i}, \; h_{Q_{i}}(\cdot) \triangleq Q_{i}.
+    h_{P_{i}}(\cdot) \triangleq P_{i}; \;\;\; h_{Q_{i}}(\cdot) \triangleq Q_{i}.
 ```
 Jacobian expressions corresponding to the measurement function ``h_{P_{i}}(\cdot)`` are defined:
 ```math
@@ -362,7 +362,7 @@ Jacobian expressions corresponding to the measurement function ``h_{V_{i}}(\cdot
 ```
 
 ### Phasor Measurements
-In the majority of PMUs, the voltage and current phasors in polar coordinate system are regarded as ''direct'' measurements (i.e., output from the PMU). This representation delivers the more accurate state estimates in comparison to the rectangular measurement representation, but it requires larger computing time [[10]](@ref refestimate). This representation is called simultaneous state estimation formulation, where measurements provided by PMUs are handled in the same manner as legacy measurements [[11]](@ref refestimate). Measurement errors are uncorrelated, with measurement variances that correspond to each components of the phasor measurements (i.e., magnitude and angle).
+In the majority of PMUs, the voltage and current phasors in polar coordinate system are regarded as "direct" measurements (i.e., output from the PMU). This representation delivers the more accurate state estimates in comparison to the rectangular measurement representation, but it requires larger computing time [[10]](@ref refestimate). This representation is called simultaneous state estimation formulation, where measurements provided by PMUs are handled in the same manner as legacy measurements [[11]](@ref refestimate). Measurement errors are uncorrelated, with measurement variances that correspond to each components of the phasor measurements (i.e., magnitude and angle).
 ```@raw html
 &nbsp;
 ```
@@ -373,11 +373,11 @@ The bus voltage phasor on the bus ``i \in \mathcal{H}`` in the polar coordinate 
 ```
 and due the fact that the state vector is given in the polar coordinate system ``\mathbf x \equiv[\bm \theta, \mathbf V]``, measurements:
 ```math
-    \mathcal{M}_{\bar{V}_{i}} = \{{M}_{{V}_{i}}, \; {M}_{{\theta}_{i}}\}, \; i \in \mathcal{H}
+    \mathcal{M}_{\bar{V}_{i}} = \{{M}_{{V}_{i}}, \; {M}_{{\theta}_{i}}\}, \; i \in \mathcal{H},
 ```
 are associated with measurement functions:
 ```math
-   h_{V_{i}}(\cdot) \triangleq V_{i}; \; h_{\theta_{i}}(\cdot) \triangleq \theta_{i}.
+   h_{V_{i}}(\cdot) \triangleq V_{i}; \;\;\; h_{\theta_{i}}(\cdot) \triangleq \theta_{i}.
 ```
 Jacobian expressions corresponding to the measurement function ``h_{{V}_{i}}(\cdot)`` are defined:  
 ```math
@@ -425,12 +425,12 @@ where coefficients are as follows:
     A_{\text{a}1} &= \cfrac{g_{ij}}{\tau_{ij}^2}; \;\;\; B_{\text{a}1} = \cfrac{b_{ij}+b_{\text{s}i}}{\tau_{ij}^2}; \;\;\;
     C_{\text{a}1} = \cfrac{g_{ij}}{\tau_{ij}}; \;\;\; D_{\text{a}1} = \cfrac{b_{ij}}{\tau_{ij}} \\
     A_{\text{a}2} &= g_{ij}; \;\;\; B_{\text{a}2} = b_{ij} + b_{\mathrm{s}i}; \;\;\;
-    C_{\text{a}2} = \cfrac{g_{ij}}{\tau_{ij}}; \;\;\; D_{\text{a}2} = \cfrac{b_{ij}}{\tau_{ij}}
+    C_{\text{a}2} = \cfrac{g_{ij}}{\tau_{ij}}; \;\;\; D_{\text{a}2} = \cfrac{b_{ij}}{\tau_{ij}}.
   \end{aligned}
 ```
 Thus, measurements:
 ```math
-    \mathcal{M}_{\bar{I}_{ij}} = \{{M}_{{I}_{ij}}, \; {M}_{{\beta}_{ij}}\}, \; \mathcal{M}_{\bar{I}_{ji}} = \{{M}_{{I}_{ji}}, \; {M}_{{\beta}_{ji}}\},  \; (i,j) \in \mathcal{E},
+    \mathcal{M}_{\bar{I}_{ij}} = \{{M}_{{I}_{ij}}, \; {M}_{{\beta}_{ij}}\}, \;\;\; \mathcal{M}_{\bar{I}_{ji}} = \{{M}_{{I}_{ji}}, \; {M}_{{\beta}_{ji}}\},  \; (i,j) \in \mathcal{E},
 ```
 are associated with measurement functions:
 ```math
@@ -464,7 +464,7 @@ Jacobian expressions corresponding to the measurement function ``h_{\beta_{ji}}(
 ```
 
 #### State Estimation Model
-The non-linear state estimation model, used by JuliaGrid, implies the state vector in polar coordinates ``\mathbf x \equiv[\bm \theta,\mathbf V]``, where the vector of measurement functions ``\mathbf h (\mathbf x)`` and corresponding Jacobian elements of the matrix ``\mathbf J (\mathbf x)`` are expressed in the same coordinate system. Here, the vector of measurement values ``\mathbf z \in \mathbb {R}^{k}``, the vector of measurement functions ``\mathbf h(\mathbf x) \in \mathbb {R}^{k}`` and corresponding Jacobian matrix ``\mathbf {J}(\mathbf x) \in \mathbb {R}^{k \times n}`` are:
+The non-linear state estimation model, used by JuliaGrid, implies the state vector in polar coordinates ``\mathbf x \equiv[\bm \theta,\mathbf V]``, where the vector of measurement functions ``\mathbf h (\mathbf x)`` and corresponding Jacobian elements of the matrix ``\mathbf J (\mathbf x)`` are expressed in the same coordinate system. Here, the vector of measurement values ``\mathbf z \in \mathbb {R}^{k}``, the vector of measurement functions ``\mathbf h(\mathbf x) \in \mathbb {R}^{k}`` and corresponding Jacobian matrix ``\mathbf {J}(\mathbf x) \in \mathbb {R}^{k \times s}`` are:
 ```math
     \mathbf z =
     \begin{bmatrix}    	 
@@ -518,7 +518,7 @@ Due to assumption of uncorrelated measurement errors (i.e., usual assumption), t
 	\mathbf R_{P_{ij}},\; \mathbf R_{P_{ji}},\; \mathbf R_{Q_{ij}},\; \mathbf R_{Q_{ji}},\; \mathbf R_{I_{ij}},\; \mathbf R_{I_{ji}},\;
   \mathbf R_{P_{i}},\; \mathbf R_{Q_{i}},\; \mathbf R_{V_{i}},\; \mathbf R_{\theta_{i}},\; \mathbf R_{\beta_{ij}},\; \mathbf R_{\beta_{ji}}),
 ```
-and each covariance sub-matrix of is the diagonal matrix that contains measurement variances. The solution of the described state estimation model is obtained using the iterative Gauss-Newton method.
+and each covariance sub-matrix of ``\mathbf{R}`` is the diagonal matrix that contains measurement variances. The solution of the described state estimation model is obtained using the iterative Gauss-Newton method.
 
 JuliaGrid uses the above equation to compute bus voltage angles and magnitudes, where the slack bus is included in the formulation, where the angle of one reference bus is known. Consequently, the state vector ``\mathbf x \equiv[\bm \theta,\mathbf V]`` has ``s = 2n-1`` elements, while the corresponding column of the matrix ``\mathbf J(\mathbf x)`` is removed.
 
@@ -536,7 +536,7 @@ The bus voltage phasor on the bus ``i \in \mathcal{H}`` in the rectangular coord
 ```
 The state vector is given in the rectangular coordinate system ``\mathbf x \equiv[\mathbf{V}_\text{re},\mathbf{V}_\text{im}]`` and the real and imaginary components directly define measurement functions. Hence, phasor measurement:
 ```math
-    \mathcal{M}_{\bar{V}_{i}}, \; i \in \mathcal{H}
+    \mathcal{M}_{\bar{V}_{i}}, \; i \in \mathcal{H},
 ```
 is associated with measurement functions:
 ```math
@@ -595,7 +595,7 @@ Using the [unified branch model](@ref branchmodel), the real and imaginary compo
 ```
 Hence, measurements:
 ```math
-    \mathcal{M}_{\bar{I}_{ij}}, \; \mathcal{M}_{\bar{I}_{ji}},  \; (i,j) \in \mathcal{E},
+    \mathcal{M}_{\bar{I}_{ij}}; \;\;\; \mathcal{M}_{\bar{I}_{ji}},  \; (i,j) \in \mathcal{E},
 ```
 are associated with measurement functions:
 ```math
@@ -643,7 +643,7 @@ Presented model represents system of linear equations, where solution can be fou
 		\Big[\mathbf J^{T} \mathbf R^{-1} \mathbf J \Big] \mathbf x =
 		\mathbf J ^{T} \mathbf R^{-1} \mathbf z.       
 ```
-Here, the vector of measurement values ``\mathbf z \in \mathbb {R}^{k}`` and Jacobian matrix ``\mathbf {J} \in \mathbb {R}^{k \times n}`` are:
+Here, the vector of measurement values ``\mathbf z \in \mathbb {R}^{k}`` and Jacobian matrix ``\mathbf {J} \in \mathbb {R}^{k \times s}`` are:
 ```math
     \mathbf z =
     \begin{bmatrix}    	 
@@ -731,9 +731,9 @@ JuliaGrid supports two models related to the covariance matrix:
 * covariance matrix ``\mathbf R`` contains measurement variances and covariances;
 * measurement covariances are neglected, and covariance matrix ``\mathbf R`` has the diagonal structure.
 
-Note that, inverse of the full covariance matrix ``\mathbf R`` requires larger computing time and uses more memory compared to the case where measurement covariances are neglected.
+Note that the inverse of the full covariance matrix ``\mathbf R`` requires larger computing time and uses more memory compared to the case where measurement covariances are neglected.
 
-Further, in the absence of any angle measurement the number of state variables is ``s = 2n``. More precisely, linear state estimation with PMUs does not include the slack bus in the state estimation formulation.
+Further, in the absence of any angle measurement the number of state variables is ``s = 2n``. More precisely, linear state estimation with PMUs does not include the slack bus in the state estimation model.
 
 ---
 
@@ -764,7 +764,7 @@ Hence, measurements:
 ```
 are associated with measurement functions:
 ```math
-    h_{P_{ij}}(\cdot) \triangleq P_{ij}; \;\;\; h_{P_{ji}}(\cdot) \triangleq P_{ji}
+    h_{P_{ij}}(\cdot) \triangleq P_{ij}; \;\;\; h_{P_{ji}}(\cdot) \triangleq P_{ji}.
 ```
 Jacobians expressions corresponding to the measurement function ``h_{P_{ij}}(\cdot)`` and ``h_{P_{ji}}(\cdot)`` are defined:
 ```math
@@ -782,13 +782,13 @@ Jacobians expressions corresponding to the measurement function ``h_{P_{ij}}(\cd
 #### Active Power Injection Measurement Functions
 The active power injection into the bus ``i \in \mathcal{H} `` can be obtained using:
 ```math
-   P_i = B_{ii}\theta_i + \sum_{j \in \mathcal{H}_i \setminus i} {B}_{ij} \theta_j + P_{\text{gs}i} + G_{\text{sh}i},
+   P_i = B_{ii}\theta_i + \sum_{j \in \mathcal{H}_i \setminus i} {B}_{ij} \theta_j + P_{\text{gs}i} + g_{\text{sh}i},
 ```
-where ``\mathcal{H}_i \setminus i`` contains buses incident to the bus ``i``, excluding bus ``i``. Hence, measurement:
+where ``\mathcal{H}_i \setminus i`` contains buses incident to the bus ``i``, excluding bus ``i``. Hence, the measurement:
 ```math
     \mathcal{M}_{{P}_{i}},  \; i \in \mathcal{H},
 ```
-is associated with measurement function:
+is associated with the measurement function:
 ```math
     h_{P_{i}}(\cdot) \triangleq P_{i}.
 ```
@@ -808,7 +808,7 @@ The measurement:
 ```math
     \mathcal{M}_{\theta_{i}},  \; i \in \mathcal{H},
 ```
-is simply associated with measurement function:
+is simply associated with the measurement function:
 ```math
     h_{\theta_{i}}(\cdot) \triangleq \theta_{i},
 ```
@@ -833,12 +833,12 @@ where in the DC model constant terms exist on the right-hand side of ``\mathbf{h
   \mathbf{z}=\mathbf{h}(\mathbf{x}) + \mathbf{c} +\mathbf{u}.
 ```
 
-Presented model represents system of linear equations, where solution can be found by solving the linear weighted least-squares problem:
+Presented model represents the system of linear equations, where solution can be found by solving the linear weighted least-squares problem:
 ```math
 		\Big[\mathbf J^{T} \mathbf R^{-1} \mathbf J\Big] \mathbf x =
 		\mathbf J^{T} \mathbf R^{-1} (\mathbf z - \mathbf{c}).       
 ```
-Here, the vector of measurement values ``\mathbf z \in \mathbb {R}^{k}``, the vector of constant terms ``\mathbf c \in \mathbb {R}^{k}``, the Jacobian matrix ``\mathbf {J} \in \mathbb {R}^{k \times n}`` and measurement error covariance matrix ``\mathbf{R} \in \mathbb {R}^{k \times k}`` are:
+Here, the vector of measurement values ``\mathbf z \in \mathbb {R}^{k}``, the vector of constant terms ``\mathbf c \in \mathbb {R}^{k}``, the Jacobian matrix ``\mathbf {J} \in \mathbb {R}^{k \times s}`` and measurement error covariance matrix ``\mathbf{R} \in \mathbb {R}^{k \times k}`` are:
 ```math
     \mathbf z =
     \begin{bmatrix}    	 
@@ -860,10 +860,10 @@ Here, the vector of measurement values ``\mathbf z \in \mathbb {R}^{k}``, the ve
       \mathbf {J}_{P_{ji}} \\[3pt]
       \mathbf {J}_{P_{i}} \\[3pt]
       \mathbf {J}_{\theta_{i}}
-	\end{bmatrix} \;\;\;
+	\end{bmatrix}; \;\;\;
   \mathbf R = 	
     \begin{bmatrix}
-	   \mathbf R_{\mathrm{P_{ij}}}  & \mathbf{0} & \mathbf{0} & \mathbf{0} \\
+	   \mathbf R_{\mathrm{P_{ij}}} & \mathbf{0} & \mathbf{0} & \mathbf{0} \\
      \mathbf{0} & \mathbf R_{\mathrm{P_{ji}}}  & \mathbf{0}& \mathbf{0} \\
 	   \mathbf{0} & \mathbf{0} & \mathbf R_{\mathrm{P_{i}}} & \mathbf{0}  \\
 	   \mathbf{0} & \mathbf{0} &\mathbf{0} & \mathbf {R}_\mathrm{{\theta_{i}}}
@@ -873,7 +873,7 @@ where elements of the vector ``\mathbf c`` are equal to:
 ```math
   \begin{aligned}
     c_{P_{ij}} &= -\cfrac{\phi_{ij}}{\tau_{ij}}; \;\;\; c_{P_{ji}} = \cfrac{\phi_{ij}}{\tau_{ij}} \\
-    c_{P_{i}} &= P_{\text{gs}i} + G_{\text{sh}i}; \;\;\; c_{T_{i}} = T_{\text{ref}}.
+    c_{P_{i}} &= P_{\text{gs}i} + g_{\text{sh}i}; \;\;\; c_{T_{i}} = T_{\text{ref}}.
   \end{aligned}      
 ```
 In the DC state estimation method, the slack bus voltage angle ``T_{\text{ref}}`` is formulated as ``T_{\text{ref}} = 0``. If ``T_{\text{ref}} \neq 0`` then the bus voltage magnitude measurements must be shifted by ``T_{\text{ref}}`` value. Accordingly, the state estimator ``\mathbf x`` shifts by the same value ``T_{\text{ref}}`` as well. Finally, each sub-matrix of ``\mathbf R`` is the diagonal measurement error covariance matrix that contains measurement variances.
@@ -881,26 +881,26 @@ In the DC state estimation method, the slack bus voltage angle ``T_{\text{ref}}`
 ---
 
 ## [References](@id refestimate)
-[1] F. C. Schweppe and D. B. Rom, "Power system static-state estimation, part II: Approximate model," IEEE Trans. Power Syst., vol. PAS-89, no. 1, pp. 125-130, Jan. 1970.
+[1] F. C. Schweppe and D. B. Rom, "Power system static-state estimation, part II: Approximate model," *IEEE Trans. Power Syst.*, vol. PAS-89, no. 1, pp. 125-130, Jan. 1970.
 
-[2] A. Monticelli, "Electric power system state estimation," Proc. IEEE, vol. 88, no. 2, pp. 262-282, Feb. 2000.
+[2] A. Monticelli, "Electric power system state estimation," *in Proc. IEEE*, vol. 88, no. 2, pp. 262-282, Feb. 2000.
 
-[3] A. Abur and A. Exposito, Power System State Estimation: Theory and Implementation, ser. Power Engineering. Taylor & Francis, 2004.
+[3] A. Abur and A. Exposito, *Power System State Estimation: Theory and Implementation*, ser. Power Engineering. Taylor & Francis, 2004.
 
-[4] A. Monticelli, State Estimation in Electric Power Systems: A Generalized Approach, ser. Kluwer international series in engineering and computer science. Springer US, 1999.
+[4] A. Monticelli, *State Estimation in Electric Power Systems: A Generalized Approach*, ser. Kluwer international series in engineering and computer science. Springer US, 1999.
 
-[5] D. Barber, Bayesian Reasoning and Machine Learning. Cambridge University Press, 2012.
+[5] D. Barber, *Bayesian Reasoning and Machine Learning*, Cambridge University Press, 2012.
 
-[6] A. Wood and B. Wollenberg, Power Generation, Operation, and Control, ser. A Wiley-Interscience publication. Wiley, 1996.
+[6] A. Wood and B. Wollenberg, *Power Generation, Operation, and Control*, ser. A Wiley-Interscience publication. Wiley, 1996.
 
-[7] Y. Weng, Q. Li, R. Negi, and M. Ilic, Semidefinite programming for power system state estimation," in Proc. IEEE PES General Meeting, July 2012, pp. 1-8.
+[7] Y. Weng, Q. Li, R. Negi, and M. Ilic, "Semidefinite programming for power system state estimation," *in Proc. IEEE PES General Meeting*, July 2012, pp. 1-8.
 
-[8] P. C. Hansen, V. Pereyra, and G. Scherer, Least squares data fitting with applications. JHU Press, 2013.
+[8] P. C. Hansen, V. Pereyra, and G. Scherer, *Least squares data fitting with applications*, JHU Press, 2013.
 
-[9] A. G. Phadke and J. S. Thorp, Synchronized phasor measurements and their applications. Springer, 2008, vol. 1.
+[9] A. G. Phadke and J. S. Thorp, *Synchronized phasor measurements and their applications*, Springer, 2008, vol. 1.
 
-[10] G. N. Korres and N. M. Manousakis, State estimation and observability analysis for phasor measurement unit measured systems," IET Gener. Transm. Dis., vol. 6, no. 9, pp. 902-913, September 2012.
+[10] G. N. Korres and N. M. Manousakis, "State estimation and observability analysis for phasor measurement unit measured systems," *IET Gener. Transm. Dis.*, vol. 6, no. 9, pp. 902-913, September 2012.
 
-[11] A. Gomez-Exposito, A. Abur, P. Rousseaux, A. de la Villa Jaen, and C. Gomez-Quiles, On the use of PMUs in power system state estimation," Proc. IEEE PSCC, 2011.
+[11] A. Gomez-Exposito, A. Abur, P. Rousseaux, A. de la Villa Jaen, and C. Gomez-Quiles, "On the use of PMUs in power system state estimation," *in Proc. IEEE PSCC*, 2011.
 
-[12] ISO-IEC-OIML-BIPM: Guide to the expression of uncertainty in measurement, 1992.
+[12] ISO-IEC-OIML-BIPM: "Guide to the expression of uncertainty in measurement," 1992.

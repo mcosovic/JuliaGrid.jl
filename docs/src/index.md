@@ -11,8 +11,8 @@ The software package, among other things, includes:
  - [linear state estimation with PMUs](@ref linearpmuse),
  - [least absolute value state estimation](@ref lav),
  - [bad data processing](@ref baddata),
- - observability analysis (beta version),
- - optimal PMU placement.
+ - [observability analysis](@ref observability),
+ - [optimal PMU placement](@ref optimalpmu).
 ---
 
 ### Main Features
