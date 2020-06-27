@@ -1,0 +1,20 @@
+table {
+		border-collapse: collapse;
+    font-family: Tahoma, Geneva, sans-serif;
+    font-size: 14px;
+    width: 100%;
+}
+table th {background-color: #e3e3e3;}
+table tr {
+	background-color: #f9fafb;
+	border: 1px solid #dddfe1;
+}
+table tr:nth-child(odd) {
+	background-color: #ffffff;
+}
+
+.center {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
