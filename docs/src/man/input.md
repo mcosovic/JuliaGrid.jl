@@ -157,7 +157,7 @@ When the corresponding measurement is defined, then a bus number or branch numbe
 
 | Column  | Description                                                                      | Unit     |
 |:-------:|:---------------------------------------------------------------------------------|:---------| 	 
-| 1       | bus number defined as positive integer                                           |          |
+| 1       | branch number defined as positive integer                                        |          |
 | 2       | from bus number defined as positive integer                                      |          |
 | 3       | to bus number defined as positive integer                                        |          |
 | 4       | current magnitude measurement value                                              | per-unit |
@@ -178,7 +178,7 @@ When the corresponding measurement is defined, then a bus number or branch numbe
 
 | Column  | Description                                                                      | Unit     |
 |:-------:|:---------------------------------------------------------------------------------|:---------| 	 
-| 1       | bus number defined as positive integer                                           |          |
+| 1       | branch number defined as positive integer                                        |          |
 | 2       | from bus number defined as positive integer                                      |          |
 | 3       | to bus number defined as positive integer                                        |          |
 | 4       | active power flow measurement value                                              | per-unit |
@@ -198,7 +198,7 @@ When the corresponding measurement is defined, then a bus number or branch numbe
 
 | Column  | Description                                                                    | Unit     |
 |:-------:|:-------------------------------------------------------------------------------|:---------| 	 
-| 1       | bus number defined as positive integer                                         |          |
+| 1       | branch number defined as positive integer                                      |          |
 | 2       | from bus number defined as positive integer                                    |          |
 | 3       | to bus number defined as positive integer                                      |          |
 | 4       | current magnitude measurement value                                            | per-unit |
