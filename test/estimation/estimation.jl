@@ -60,17 +60,14 @@ case14seobsbad = string(path, "case14seobsbad.xlsx")
             end
         end
         idx = findall(x->x==3, results.estimate[:, 2])
-        @test (all(isempty.(islands)))
         @test all(results.estimate[idx, 4] .== 3) && all(results.estimate[idx, 5] .== [9; 10])
 
     results, = runse(manousakis2010, "dc", "observe"; observe = ["pivot" 1e-8 "Pij" 1e4])
         idx = findall(x->x==3, results.estimate[:, 2])
-        @test (all(isempty.(islands)))
         @test all(results.estimate[idx, 4] .== 1) && all(results.estimate[idx, 5] .== [16; 17])
 
     results, = runse(manousakis2010, "dc", "observe"; observe = ["pivot" 1e-8 "Ti" 1e4])
         idx = findall(x->x==3, results.estimate[:, 2])
-        @test (all(isempty.(islands)))
         @test all(results.estimate[idx, 4] .== 8) && all(results.estimate[idx, 5] .== [10; 14])
 
     results, = runse("case14se.xlsx", "dc", "observe", "bad", "main"; observe = ["pivot" 1e-8 "Ti" 1e-4 "Pi" 1e-4], bad = ["pass" 4])
