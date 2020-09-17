@@ -1,5 +1,11 @@
 # JuliaGrid changelog
 
+![sourceadd] the belief propagation observability method
+
+![featureadd] the topological island detection method based on the multi-stage procedure
+
+![maintenanceyes] the bus numbering
+
 ## Version `v0.0.3`
 
 ![featureadd] the linear state estimation with PMUs and bad data routine
@@ -64,3 +70,4 @@
 [maintenanceyes]: https://img.shields.io/badge/maintenance-yes-green.svg
 [bugfix]: https://img.shields.io/badge/bug-fix-red.svg
 [docs]: https://img.shields.io/badge/docs-update-blue.svg
+[sourceadd]: https://img.shields.io/badge/source%20code-add-brightgreen

@@ -87,8 +87,8 @@ The measurement generator function `runmg()` receives the variable number of arg
 
 | Command    | Description                                                                   |
 |------------|:------------------------------------------------------------------------------|
-|`runpf = 1` | forces the AC power flow analysis to generate measurements, `default setting` |
-|`runpf = 0` | generates measurements directly from the input DATA                           |
+|`runflow = 1` | forces the AC power flow analysis to generate measurements, `default setting` |
+|`runflow = 0` | generates measurements directly from the input DATA                           |
 
 ```@raw html
 &nbsp;
@@ -140,9 +140,9 @@ The measurement generator function `runmg()` receives the variable number of arg
 | **Description** | deploys legacy measurements according to the random selection of measurement types[^2], to deploy all selected measurements use `"all"` as value, to deploys all measurements in-service, except for those individually defined use `"complete"` |
 
 !!! note "Set"
-    If `runpf = 0`, the function keeps sets as in the input DATA and changes only the sets that are called using keywords. For example, if the keywords `pmuset` and `legacyset` are omitted, the function will retain the measurement set as in the input DATA, which allows the same measurement set, while changing the measurement variances.
+    If `runflow = 0`, the function keeps sets as in the input DATA and changes only the sets that are called using keywords. For example, if the keywords `pmuset` and `legacyset` are omitted, the function will retain the measurement set as in the input DATA, which allows the same measurement set, while changing the measurement variances.
 
-    If `runpf = 1`, the function starts with all the measurement sets marked as out-service.  
+    If `runflow = 1`, the function starts with all the measurement sets marked as out-service.  
 
     Further, the function accept any subset of phasor[^1] or legacy[^2] measurements, and consequently, it is not necessary to define attributes for all measurements.  
     ```julia-repl
@@ -190,9 +190,9 @@ The measurement generator function `runmg()` receives the variable number of arg
 | **Description** | predefines variances over a given subset of legacy measurements[^2], to apply fixed-value variance over all, except for those individually defined use `"complete" value` |
 
 !!! note "Variance"
-    If `runpf = 0`, the function keeps measurement values and measurement variances as in the input DATA, and changes only measurement values and variances that are called using keywords. For example, if the keywords `pmuvariance` and `legacyvariance` are omitted, the function will retain the measurement values and variances as in the input DATA, allowing the same measurement values and variances, while changing the measurement sets.
+    If `runflow = 0`, the function keeps measurement values and measurement variances as in the input DATA, and changes only measurement values and variances that are called using keywords. For example, if the keywords `pmuvariance` and `legacyvariance` are omitted, the function will retain the measurement values and variances as in the input DATA, allowing the same measurement values and variances, while changing the measurement sets.
 
-    If `runpf = 1`, the function starts with zero variances, meaning that measurement values are equal to zero values.
+    If `runflow = 1`, the function starts with zero variances, meaning that measurement values are equal to zero values.
 
     Further, the function accepts any subset of phasor[^1] or legacy[^2] measurements, consequently, it is not necessary to define attributes for all measurements, where keyword `"complete"` generates measurement values according to defined variance for all measurements, except for those individually defined.   
     ```julia-repl

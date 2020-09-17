@@ -140,7 +140,7 @@ that can be independently solved [[4]](@ref refrestestimate).
 
 The JuliaGrid uses the observability analysis with the restore routine proposed in the papers [[5]](@ref refrestestimate) and [[6]](@ref refrestestimate), where pseudo-measurements are chosen in place of measurements that are marked as out-of-service in the input data.
 
-#### Linear DC State Estimation
+### Linear DC State Estimation
 We observe the set of measurements ``\mathcal{M}`` in the DC framework:
 * Legacy measurements:
   * active power flow ``\{M_{P_{ij}}, M_{P_{ji}}\}, \; (i,j) \in \mathcal{E}``;
@@ -158,16 +158,22 @@ For observability purposes, we consider the Jacobian matrix ``\mathbf J``. The n
 ```math
   \text{rank}(\mathbf J) = s,
 ```
-where the slack bus is always included in the measurement model. Note that the condition provides a necessary but not sufficient condition for observability. For most power systems under normal operating conditions, observability condition will guarantee a reliable state estimate [[6]](@ref refrestestimate). More precisely, guaranteeing observability by the condition is not the same as guaranteeing a good estimation of the system state. This is so because numerical problems may deteriorate the estimation [[7]](@ref refrestestimate).
+where the slack bus is always included in the measurement model, as well as its equation. Note that the condition provides a necessary but not sufficient condition for observability. For most power systems under normal operating conditions, observability condition will guarantee a reliable state estimate [[6]](@ref refrestestimate). More precisely, guaranteeing observability by the condition is not the same as guaranteeing a good estimation of the system state. This is so because numerical problems may deteriorate the estimation [[7]](@ref refrestestimate).
 
 If the system is unobservable:
 ```math
   \text{rank}(\mathbf J) < s,
 ```
-we determine the flow islands as follows:
-* process all the active power flow measurements to identify the flow islands,
-* if an active power injection measurement affects only two flow islands, these islands are merged into a single island [[5]](@ref refrestestimate).
+the  observability  analysis  must  identify all  the  possible  observable  islands  that  can  be  independently solved, where an observable island is defined as follows: An observable island is a part of the power system for which the flows across all branches of the observable island can be calculated from the set of available measurements, independent of the values adopted for angular reference [3, Sec. 7.1.1]. Once the islands are determined, the observability analysis merges these islands in a way to protect previously-determined observable states from being altered by the new set of equations defined by the additional measurements. In general, this can be achieved by ensuring that the set of new measurements is a non-redundant set [[3, Sec. 7.3.2]](@ref refrestestimate),  i.e., the set of equations must be linearly independent with regard to the global system. The aim of the observability restoration is to find this non-redundant set.
 
+#### Determination of Observable Islands
+The JuliaGrid uses several island detection algorithms:
+* the topological method based on the multi-stage procedure [[11]](@ref refrestestimate),
+* the Gaussian belief propagation based method [[12]](@ref refrestestimate) (source code available, releases with v0.0.4).
+
+The topological method allows the identification of several types of islands, on the basis of which it will be executed observability restoration. The simplest structure of the observable islands is formed using all the active power flow measurements to identify the flow islands [[6]](@ref refrestestimate). Then, if an active power injection measurement affects only two flow islands, these islands can be merged into a single island. Finally, JuliaGrid allows the formation of maximal islands as the largest region in which an unobservable system is partitioned [[5]](@ref refrestestimate).
+
+#### Observability Restoration
 As a result, we obtain the power system divided into ``n_{\text{i}}`` flow islands. Next, we observe the set of measurements ``\mathcal{M}_\text{b}`` that includes:
 * active power injection measurements at boundary buses,
 * bus voltage angle measurements.
@@ -231,3 +237,7 @@ As a result, we observe the binary vector ``\mathbf x = [x_1,\dots,x_n]^T``, whe
 [9] B. Gou, "Optimal placement of PMUs by integer linear programming," *IEEE Trans. Power Syst.*, vol. 23, no. 3, pp. 1525–1526, Aug. 2008.
 
 [10] B. Xu and A. Abur, "Observability analysis and measurement placement for systems with PMUs," *in Proc. IEEE PES PSCE*, New York, NY, 2004, pp. 943-946 vol.2.
+
+[11] H. Horisberger, "Observability analysis for power systems with measurement deficiencies," *IFAC Proceedings Volumes*, vol. 18, no. 7, pp.51–58, 1985.
+
+[12] M. Cosovic and D. Vukobratovic, "Observability analysis for large-scale power systems using factor graphs", arXiv:1907.10338 (2019).

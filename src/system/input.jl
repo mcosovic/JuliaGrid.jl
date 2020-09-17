@@ -775,15 +775,21 @@ end
     end
     lav = Dict(:lav => lavkey, :optimize => optimize)
 
-    pivot = 1e-10; oflow = 1e-5; Pij = 0.0; Pi = 0.0; Ti = 0.0
+    pivot = 1e-10; islands = 1; restore = 1; Pij = 0.0; Pi = 0.0; Ti = 0.0
     if !isempty(observeset)
         observekey = 1.0
         for (k, i) in enumerate(observeset)
             if i == "pivot"
                 pivot = nextelement(observeset, k)
             end
-            if i == "oflow"
-                oflow = nextelement(observeset, k)
+            if i == "islandFlow"
+                islands = 2
+            end
+            if i == "islandBP"
+                islands = 3
+            end
+            if i == "restoreBP"
+                restore = 2
             end
             if i == "Pij"
                 Pij = nextelement(observeset, k)
@@ -799,7 +805,7 @@ end
     if Pij == 0.0 && Pi == 0.0 && Ti == 0.0
         Pi = 1e5
     end
-    observe = Dict(:observe => observekey, :pivot => pivot, :flow => oflow, :Pij => Pij, :Pi => Pi, :Ti => Ti)
+    observe = Dict(:observe => observekey, :pivot => pivot, :islands => islands, :restore => restore, :Pij => Pij, :Pi => Pi, :Ti => Ti)
 
     covarinace = false
     if algorithm == "pmu" && covariance == 1

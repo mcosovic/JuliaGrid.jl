@@ -95,7 +95,7 @@ function dcseheader()
     bad = [["Algorithm" "Device" "Device" "Device"  "Algorithm" "Device"]
            ["Pass" "Class" "Suspected Bad Data" "Local Index" "Normalized Residual" "Status"]]
 
-    observe  = [["Flow Island" "Bus in Island"  "Device" "Device" "Device" "Device" "Device"]
+    observe  = [["Island" "Bus in Island"  "Device" "Device" "Device" "Device" "Device"]
                 ["Integer" "Integer" "Class" "Pseudo-measurement" "Local Index" "Measure" "Variance"]]
 
     return (main = main, flow = flow, estimatedisplay = estimatedisplay, estimate = estimate, error = error, errordisplay = errordisplay, bad = bad, observe = observe)

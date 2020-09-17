@@ -163,18 +163,36 @@ function rundcse(system, measurements, num, numsys, settings, info)
     ########## Observability analysis ##########
     Npseudo = 0
     if settings.observe[:observe] == 1
-    J, mean, weight, Npseudo, islands = observability_flow(settings, system, numsys, measurements, num, J,
-            Jflow, slack, branch, from, to, busPi, onPi, onTi, Ybus, Nvol, Nflow, branchPij,
-            onPij, busTi, fromPij, toPij, admitance, Gshunt, mean, weight, meanPij, transShift, Pshift, meanPi,
-            meanTi, Tslack, variPi, variTi, variPij, Npseudo, islands)
+        r = rank(J)
+        if r < numsys.Nbus
+            println("The power system is unobservable, the column rank of the Jacobian matrix is $r." )
+
+            if settings.observe[:islands] in [1; 2]
+                islands, Nisland = islandstopological(settings, numsys, J, Jflow, Ybus, branch, from, to, busPi, onPi, islands)
+            elseif settings.observe[:islands] == 3
+                islands, Nisland = islandsbp(settings, numsys, J, Jflow, bus, islands)
+            end
+
+            if settings.observe[:restore] == 1
+                J, mean, weight, Npseudo = restorationgram(system, settings, numsys, num, measurements, islands, Nisland, J, mean, weight,
+                    Ybus, slack, Tslack, branch, from, to, fromPij, toPij, busPi, branchPij, busTi, onPi, onPij, onTi, Nvol, Nflow,
+                    meanPij, meanPi, meanTi, variPi, variTi, variPij, admitance, Gshunt, transShift, Pshift)
+
+            elseif settings.observe[:restore] == 2
+                J, mean, weight, Npseudo = restorationbp(system, settings, numsys, num, measurements, islands, Nisland, J, mean, weight,
+                    Ybus, branch, from, to, busPi, onPi, meanPi, variPi, Pshift, Gshunt)
+            end
+        else
+            println("The power system is observable.")
+        end
     end
     Nmeasure = Nmeasure + Npseudo
 
-    ########## Remove column of the slack bus ##########
+    ######### Remove column of the slack bus ##########
     keep = [collect(1:slack - 1); collect(slack + 1:numsys.Nbus)]
     J = J[:, keep]
 
-    ########## LAV ##########
+    ######### LAV ##########
     if settings.lav[:lav] == 1
         Nvar = numsys.Nbus - 1
         Ti = Array{Float64}(undef, Nvar)
@@ -184,7 +202,7 @@ function rundcse(system, measurements, num, numsys, settings, info)
         end
     end
 
-    ########## WLS and bad data analysis ##########
+    ######## WLS and bad data analysis ##########
     if settings.lav[:lav] == 0
         W = spdiagm(0 => sqrt.(weight))
 
@@ -365,7 +383,7 @@ function rundcse(system, measurements, num, numsys, settings, info)
     end
  end # algtime
 
-    ########## Results ##########
+    ######### Results ##########
     results = StateEstimationDC(main, flow, estimate, error, bad, islands)
     header, group = results_estimatedc(system, numsys, measurements, num, settings, results, idxbad, Npseudo, algtime, slack)
     if !isempty(settings.save)

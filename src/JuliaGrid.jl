@@ -8,7 +8,7 @@ using SparseArrays, LinearAlgebra, SuiteSparse
 using PrettyTables, Printf
 using HDF5, CSV, XLSX
 using Random
-using JuMP, GLPK, Ipopt
+using JuMP, Ipopt, GLPK
 using LightGraphs
 
 
@@ -29,7 +29,6 @@ include("estimation/estimatefunctions.jl")
 
 
 ### Power Flow
-
 function runpf(
     args...;
     max::Int64 = 100,

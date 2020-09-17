@@ -1,17 +1,17 @@
 ### Numbering
-@inbounds function renumber(change, Nchange, old, new, Noldnew, numbering)
+@inbounds function renumber(data, Nchange, original, new, Noldnew, numbering)
     if numbering
-        for i = 1:Nchange
-            for j = 1:Noldnew
-                if change[i] == old[j]
-                    change[i] = new[j]
-                    break
-                end
-            end
+        lookup = Dict{Int, Int}()
+        for (x, y) in zip(original, new)
+            lookup[x] = y
+        end
+
+        for i = 1:length(data)
+            data[i] = lookup[data[i]]
         end
     end
 
-    return change
+    return data
 end
 
 
@@ -361,4 +361,66 @@ end
     Zpattern = Zpattern[invperm(q), invperm(p)]
 
     return Zpattern
+end
+
+### Independent system of equations
+function independentset(Jt)
+    F = qr(Jt)
+    R = F.R
+    P = F.pcol
+
+    flag = (10^-5) * R[1,1]
+    r = 0
+    @inbounds for i = 1:size(R,1)
+        if abs(R[i,i]) >= flag
+            r = i
+        end
+    end
+    p = P[1:r]
+    Ht = Jt[:, p]
+    dropzeros!(Ht)
+
+    return Ht
+end
+
+### Make factor graph
+function factorgraph(Ht, Nvar, Nfac, Nlink, Nind)
+    ########## Define indirect factor nodes arrays ##########
+    row = fill(0, Nlink); col = similar(row)
+    rowptr = fill(0, Nind); colptr = fill(0, Nvar)
+    idxi = 1; idxr = 1
+    idxT = findall(!iszero, Ht)
+    @inbounds for i in idxT
+        if (Ht.colptr[i[2] + 1] - Ht.colptr[i[2]]) != 1
+            row[idxi] = idxr
+            col[idxi] = i[1]
+
+            idxi += 1
+
+            colptr[i[1]] += 1
+            rowptr[idxr] = idxi
+
+            if idxT[Ht.colptr[i[2] + 1] - 1] == i
+                idxr += 1
+            end
+        end
+    end
+    pushfirst!(colptr, 1)
+    pushfirst!(rowptr, 1)
+    colptr = cumsum(colptr)
+
+    ########## Initialize arrays for messages ##########
+    Vvar_fac = fill(1e-5, Nlink)
+    Wfac_var = similar(Vvar_fac)
+
+    ########## Indices for sending messages ##########
+    temp = collect(1:Nlink)
+    sort_col_idx = sortperm(col)
+    to_fac = temp[sort_col_idx]
+
+    new_row = row[sort_col_idx]
+    sort_row_idx = sortperm(new_row)
+    to_var = temp[sort_row_idx]
+
+    return Vvar_fac, Wfac_var, to_fac, to_var, colptr, rowptr, idxT, row, col
 end
