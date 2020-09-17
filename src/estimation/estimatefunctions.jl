@@ -78,7 +78,6 @@ function restorationgram(system, settings, numsys, num, measurements, islands, N
             tie_branch[i] = 0
         end
     end
-    filter!(x->x!=0, tie_branch)
 
     tie_bus = fill(0, numsys.Nbus)
     @inbounds for i in tie_branch

@@ -1,4 +1,4 @@
-module JuliaGrid
+# module JuliaGrid
 
 export runpf
 export runmg
@@ -114,4 +114,6 @@ function runse(
     return results, measurements, system, info
 end
 
-end # JuliaGrid
+# end # JuliaGrid
+
+results, = runse("D:/Google Drive/16. GitHub/JuliaGrid/test/estimation/manousakis2010.xlsx", "dc", "observe"; observe = ["pivot" 1e-8 "Pij" 1e4])
