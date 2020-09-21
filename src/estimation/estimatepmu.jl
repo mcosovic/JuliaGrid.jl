@@ -54,12 +54,12 @@ function runpmuse(system, measurements, num, numsys, settings, info)
     if numlabel
         println("The new branch label numbering is running.")
     end
-    from = renumber(fromi, numsys.Nbranch, busi, bus, numsys.Nbus, newnumbering)
-    to = renumber(toi, numsys.Nbranch, busi, bus, numsys.Nbus, newnumbering)
-    fromC = renumber(fromiC, num.pmuNc, busi, bus, numsys.Nbus, newnumbering)
-    toC = renumber(toiC, num.pmuNc, busi, bus, numsys.Nbus, newnumbering)
-    busV = renumber(busiV, num.pmuNv, busi, bus, numsys.Nbus, newnumbering)
-    branchC = renumber(branchiC, num.pmuNc, branchi, branch, numsys.Nbranch, newnumbering)
+    from = renumber(fromi, busi, bus, newnumbering)
+    to = renumber(toi, busi, bus, newnumbering)
+    fromC = renumber(fromiC, busi, bus, newnumbering)
+    toC = renumber(toiC, busi, bus, newnumbering)
+    busV = renumber(busiV, busi, bus, newnumbering)
+    branchC = renumber(branchiC, branchi, branch, newnumbering)
 
     ########## Jacobian ##########
     Nelement = 0; Nmeasure = 0; Ncur = 0; Nvol = 0;

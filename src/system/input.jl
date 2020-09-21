@@ -775,21 +775,37 @@ end
     end
     lav = Dict(:lav => lavkey, :optimize => optimize)
 
-    pivot = 1e-10; islands = 1; restore = 1; Pij = 0.0; Pi = 0.0; Ti = 0.0
+    islands = 1; flow = 0; islandMax = 2000; islandBreak = 10; islandStopping = 1.0; islandTreshold = 1e5
+    restoreMax = 100; pivot = 1e-10; restore = 1; Pij = 0.0; Pi = 0.0; Ti = 0.0
     if !isempty(observeset)
         observekey = 1.0
         for (k, i) in enumerate(observeset)
-            if i == "pivot"
-                pivot = nextelement(observeset, k)
-            end
-            if i == "islandFlow"
+            if i == "islandBP"
                 islands = 2
             end
-            if i == "islandBP"
-                islands = 3
+            if i == "flow"
+                flow = 1
+            end
+            if i == "islandMax"
+                islandMax = trunc(Int64, nextelement(observeset, k))
+            end
+            if i == "islandBreak"
+                islandBreak = trunc(Int64, nextelement(observeset, k))
+            end
+            if i == "islandStopping"
+                islandStopping = nextelement(observeset, k)
+            end
+            if i == "islandTreshold"
+                islandTreshold = nextelement(observeset, k)
             end
             if i == "restoreBP"
                 restore = 2
+            end
+            if i == "restoreMax"
+                restoreMax = trunc(Int64, nextelement(observeset, k))
+            end
+            if i == "pivot"
+                pivot = nextelement(observeset, k)
             end
             if i == "Pij"
                 Pij = nextelement(observeset, k)
@@ -805,7 +821,13 @@ end
     if Pij == 0.0 && Pi == 0.0 && Ti == 0.0
         Pi = 1e5
     end
-    observe = Dict(:observe => observekey, :pivot => pivot, :islands => islands, :restore => restore, :Pij => Pij, :Pi => Pi, :Ti => Ti)
+    if flow == 1
+        islands = 3
+    end
+
+    observe = Dict(:observe => observekey,
+                   :islands => islands, :islandMax => islandMax, :islandBreak => islandBreak, :islandStopping => islandStopping,  :islandTreshold => islandTreshold,
+                   :restore => restore, :restoreMax => restoreMax, :pivot => pivot, :Pij => Pij, :Pi => Pi, :Ti => Ti)
 
     covarinace = false
     if algorithm == "pmu" && covariance == 1

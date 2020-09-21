@@ -135,8 +135,7 @@ Note that the non-linear least absolute value state estimation is based on the s
 ---
 
 ## [Observability Analysis](@id observability)
-Observability analysis in power systems is commonly performed on the linear decoupled measurement model [[14, Ch. 7]](@ref refrestestimate). Its function is to decide if the given set of measurements ``\mathcal{M}`` is sufficient to solve the system. When the given set of measurements ``\mathcal{M}`` is not sufficient, it must identify all the possible observable islands
-that can be independently solved [[4]](@ref refrestestimate).
+Observability analysis in power systems is commonly performed on the linear decoupled measurement model [[14, Ch. 7]](@ref refrestestimate). Its function is to decide if the given set of measurements ``\mathcal{M}`` is sufficient to solve the system. When the given set of measurements ``\mathcal{M}`` is not sufficient, it must identify all the possible observable islands that can be independently solved [[4]](@ref refrestestimate).
 
 The JuliaGrid uses the observability analysis with the restore routine proposed in the papers [[5]](@ref refrestestimate) and [[6]](@ref refrestestimate), where pseudo-measurements are chosen in place of measurements that are marked as out-of-service in the input data.
 
@@ -164,14 +163,14 @@ If the system is unobservable:
 ```math
   \text{rank}(\mathbf J) < s,
 ```
-the  observability  analysis  must  identify all  the  possible  observable  islands  that  can  be  independently solved, where an observable island is defined as follows: An observable island is a part of the power system for which the flows across all branches of the observable island can be calculated from the set of available measurements, independent of the values adopted for angular reference [3, Sec. 7.1.1]. Once the islands are determined, the observability analysis merges these islands in a way to protect previously-determined observable states from being altered by the new set of equations defined by the additional measurements. In general, this can be achieved by ensuring that the set of new measurements is a non-redundant set [[3, Sec. 7.3.2]](@ref refrestestimate),  i.e., the set of equations must be linearly independent with regard to the global system. The aim of the observability restoration is to find this non-redundant set.
+the observability analysis must identify all the possible observable islands that can be independently solved, where an observable island is defined as follows: An observable island is a part of the power system for which the flows across all branches of the observable island can be calculated from the set of available measurements, independent of the values adopted for angular reference [[3, Sec. 7.1.1]](@ref refrestestimate). Once the islands are determined, the observability analysis merges these islands in a way to protect previously-determined observable states from being altered by the new set of equations defined by the additional measurements. In general, this can be achieved by ensuring that the set of new measurements is a non-redundant set [[3, Sec. 7.3.2]](@ref refrestestimate),  i.e., the set of equations must be linearly independent with regard to the global system. The aim of the observability restoration is to find this non-redundant set.
 
 #### Determination of Observable Islands
 The JuliaGrid uses several island detection algorithms:
 * the topological method based on the multi-stage procedure [[11]](@ref refrestestimate),
-* the Gaussian belief propagation based method [[12]](@ref refrestestimate) (source code available, releases with v0.0.4).
+* the Gaussian belief propagation based method [[12]](@ref refrestestimate).
 
-The topological method allows the identification of several types of islands, on the basis of which it will be executed observability restoration. The simplest structure of the observable islands is formed using all the active power flow measurements to identify the flow islands [[6]](@ref refrestestimate). Then, if an active power injection measurement affects only two flow islands, these islands can be merged into a single island. Finally, JuliaGrid allows the formation of maximal islands as the largest region in which an unobservable system is partitioned [[5]](@ref refrestestimate).
+The observable islands are defined only according to the power flow and the power injection measurement functions, whereby bus voltage angle measurements are ignored. The algorithms allow the identification of two types of islands on the basis of which it will be executed observability restoration. The simplest structure of the observable islands is formed using all the active power flow measurements to identify the flow islands [[6]](@ref refrestestimate). Then, these islands can be merged using the active power injection measurements to form maximal islands as the largest region in which an unobservable system is partitioned [[5]](@ref refrestestimate).
 
 #### Observability Restoration
 As a result, we obtain the power system divided into ``n_{\text{i}}`` flow islands. Next, we observe the set of measurements ``\mathcal{M}_\text{b}`` that includes:

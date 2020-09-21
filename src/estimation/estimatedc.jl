@@ -67,13 +67,13 @@ function rundcse(system, measurements, num, numsys, settings, info)
     if numlabel
         println("The new branch label numbering is running.")
     end
-    from = renumber(fromi, numsys.Nbranch, busi, bus, numsys.Nbus, newnumbering)
-    to = renumber(toi, numsys.Nbranch, busi, bus, numsys.Nbus, newnumbering)
-    fromPij = renumber(fromiPij, num.legacyNf, busi, bus, numsys.Nbus, newnumbering)
-    toPij = renumber(toiPij, num.legacyNf, busi, bus, numsys.Nbus, newnumbering)
-    busPi = renumber(busiPi, num.legacyNi, busi, bus, numsys.Nbus, newnumbering)
-    busTi = renumber(busiTi, num.pmuNv, busi, bus, numsys.Nbus, newnumbering)
-    branchPij = renumber(branchiPij, num.legacyNf, branchi, branch, numsys.Nbranch, newnumbering)
+    from = renumber(fromi, busi, bus, newnumbering)
+    to = renumber(toi, busi, bus, newnumbering)
+    fromPij = renumber(fromiPij, busi, bus, newnumbering)
+    toPij = renumber(toiPij, busi, bus, newnumbering)
+    busPi = renumber(busiPi, busi, bus, newnumbering)
+    busTi = renumber(busiTi, busi, bus, newnumbering)
+    branchPij = renumber(branchiPij, branchi, branch, newnumbering)
 
     ########## Ybus matrix ##########
     Ybus, admitance, Pshift = ybusdc(system, numsys, bus, from, to, branchOn, transTap, reactance, transShift)
@@ -167,17 +167,17 @@ function rundcse(system, measurements, num, numsys, settings, info)
         if r < numsys.Nbus
             println("The power system is unobservable, the column rank of the Jacobian matrix is $r." )
 
-            if settings.observe[:islands] in [1; 2]
+            islands, Nislands = islandsflow(Jflow)
+            if settings.observe[:islands] == 1
                 islands, Nisland = islandstopological(settings, numsys, J, Jflow, Ybus, branch, from, to, busPi, onPi, islands)
-            elseif settings.observe[:islands] == 3
-                islands, Nisland = islandsbp(settings, numsys, J, Jflow, bus, islands)
+            elseif settings.observe[:islands] == 2
+                islands, Nisland = islandsbp(settings, numsys, J, bus, islands, Nislands)
             end
 
             if settings.observe[:restore] == 1
                 J, mean, weight, Npseudo = restorationgram(system, settings, numsys, num, measurements, islands, Nisland, J, mean, weight,
                     Ybus, slack, Tslack, branch, from, to, fromPij, toPij, busPi, branchPij, busTi, onPi, onPij, onTi, Nvol, Nflow,
                     meanPij, meanPi, meanTi, variPi, variTi, variPij, admitance, Gshunt, transShift, Pshift)
-
             elseif settings.observe[:restore] == 2
                 J, mean, weight, Npseudo = restorationbp(system, settings, numsys, num, measurements, islands, Nisland, J, mean, weight,
                     Ybus, branch, from, to, busPi, onPi, meanPi, variPi, Pshift, Gshunt)

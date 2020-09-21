@@ -19,7 +19,7 @@ The linear state estimation with PMUs is implemented using the following feature
 
 Besides state estimation algorithms, we have implemented the [bad data processing](@ref baddata) using the largest normalized residual test. The routine proceeds with bad data analysis after the estimation process is finished, in the repetitive process of identifying and eliminating bad data measurements one after another.
 
-The [observability analysis](@ref observability) with the restore routine is based on the flow islands, where pseudo-measurements are chosen in place of measurements that are marked as out-of-service in the input DATA.
+The [observability analysis](@ref observability) with the identification of observable islands and observability restoration can be done using numerical or topological methods, where pseudo-measurements are chosen in place of measurements that are marked as out-of-service in the input DATA.
 
 ---
 
@@ -69,6 +69,10 @@ julia> results, = runse("case14se.xlsx", "pmu", "estimate", "lav")
 julia> data = runmg("case14.h5"; runflow = 1, pmuset = "complete", pmuvariance = ["complete" 1e-4])
 julia> results, = runse(data, "pmu", "estimate")
 ```
+```julia-repl
+julia> data = runmg("case14.h5"; runflow = 1, legacyset = ["redundancy" 1.4], legacyvariance = ["complete" 1e-4])
+julia> results = runse(data, "dc"; observe = ["islandBP" "pivot" 1e-6 "Pi" 1e4])
+```
 ---
 
 ## Input Arguments
@@ -105,7 +109,7 @@ The state estimation function `runse()` receives a group of variable number of a
 |:-------------|:-----------------------------------------------------------------------------------------|
 |`"lav"`       | runs the non-linear or linear state estimation using the least absolute value estimation with `"GLPK"` solver as `default settings` (see ATTACH to change `default settings`) |
 |`"bad"` | runs the bad data processing for the weighted least-squares method, where the bad data identification threshold is set to `"threshold" = 3`, with the maximum number of `"passes" = 1`, where the critical measurement criteria is equal to `"critical" = 1e-10` (see ATTACH to change `default settings`) |
-|`"observe"` | runs the observability analysis using the zero `"pivot" = 1e-10` threshold, where to restore observability routine takes only power injection measurements with variances in per-unit `"Pi" = 1e5` (see ATTACH to change `default settings`) |
+|`"observe"` | runs the observability analysis where identification of the observable islands is accomplished by the topological method, while the observability restoration is performed using numerical method with zero pivot threshold equal to `"pivot" = 1e-10`, where the restore routine takes only power injection measurements with variances in per-unit `"Pi" = 1e5` (see ATTACH to change `default settings`) |
 
 ```@raw html
 &nbsp;
@@ -134,10 +138,26 @@ The state estimation function `runse()` receives a group of variable number of a
 | **Command**     | `bad = ["pass" value "threshold" value "critical" value]`                                |
 | **Description** | when using the weighted least-squares method bad data processing can be run using the bad data identification `threshold`, with the maximum number of `passes`, where `critical` measurements are marked according to `value`, `default setting: bad = ["pass" 1 "threshold" 3 "critical" 1e-10]` |
 
+| ATTACH:         | Observability Analysis                                                                                            |
+|:----------------|:------------------------------------------------------------------------------------------------------------------|
+| **Command**     | `observe = [... "islandBP" "islandMax" value "islandBreak" value "islandStopping" value "islandTreshold" value ...]`    |
+| **Description** | determination of the maximal observable islands is done using the Gaussian belief propagation method, where the maximal number of iterations of the Gaussian belief propagation algorithm is equal to `"islandMax" value`, while the algorithm begins to apply `"islandStopping" value` criterion after `"islandBreak" value` iterations; if the state variable marginal variance is below `"islandTreshold" value`, the state variable is observable, otherwise the state variable is unobservable, `default setting: observe = ["islandMax" 2000 "islandBreak" 10 "islandStopping" 1.0 "islandTreshold" 1e5]` |
+
+| ATTACH:         | Observability Analysis                                                            |
+|:----------------|:----------------------------------------------------------------------------------|
+| **Command**     | `observe = [... "flow" ...]`                                                      |
+| **Description** | the keyword `"flow"` allows the determination of the flow observable islands only |
+
 | ATTACH:         | Observability Analysis                                                                   |
 |:----------------|:-----------------------------------------------------------------------------------------|
 | **Command**     | `observe = ["pivot" value "Pij" value "Pi" value "Ti" value]` |
-| **Description** | observability analysis can be run using the zero `pivot` identification `threshold`, where active power flow `"Pij" value`, active power injection `"Pi" value` and/or bus voltage angle `"Ti" value` can be forced to restore observability, with measurement variances equal to `values`, `default setting: observe = ["pivot" 1e-10 "Pi" 1e5]` |
+| **Description** | determination of the maximal observable islands is done using the topological method, while the observability restoration can be run using the zero `pivot` identification `threshold`, where active power flow `"Pij" value`, active power injection `"Pi" value` and/or bus voltage angle `"Ti" value` can be forced to restore observability, with measurement variances equal to `values`, `default setting: observe = ["pivot" 1e-10 "Pi" 1e5]` |
+
+| ATTACH:         | Observability Analysis                                                                   |
+|:----------------|:-----------------------------------------------------------------------------------------|
+| **Command**     | `observe = [... "restoreBP" "restoreMax" value "Pi" value ...]` |
+| **Description** | the observability restoration is done using the Gaussian belief propagation method, where the maximal number of iterations of the Gaussian belief propagation algorithm is equal to `"restoreMax" value`, and active power injection `"Pi" value` can be forced to restore observability, with measurement variances equal to `values`, `default setting: observe = ["restoreBP" "restoreMax" 100 "Pi" 1e5]` |
+
 
 | ATTACH:         | Linear System Solver                                                                                                               |
 |:----------------|:-----------------------------------------------------------------------------------------------------------------------------------|

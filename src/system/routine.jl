@@ -1,5 +1,5 @@
 ### Numbering
-@inbounds function renumber(data, Nchange, original, new, Noldnew, numbering)
+@inbounds function renumber(data, original, new, numbering)
     if numbering
         lookup = Dict{Int, Int}()
         for (x, y) in zip(original, new)
@@ -389,11 +389,12 @@ function factorgraph(Ht, Nvar, Nfac, Nlink, Nind)
     row = fill(0, Nlink); col = similar(row)
     rowptr = fill(0, Nind); colptr = fill(0, Nvar)
     idxi = 1; idxr = 1
-    idxT = findall(!iszero, Ht)
+    idxT = findall(!iszero, Ht); links = Dict(i => Int64[] for i = 1:Nfac)
     @inbounds for i in idxT
         if (Ht.colptr[i[2] + 1] - Ht.colptr[i[2]]) != 1
             row[idxi] = idxr
             col[idxi] = i[1]
+            push!(links[idxr], i[1])
 
             idxi += 1
 
@@ -422,5 +423,5 @@ function factorgraph(Ht, Nvar, Nfac, Nlink, Nind)
     sort_row_idx = sortperm(new_row)
     to_var = temp[sort_row_idx]
 
-    return Vvar_fac, Wfac_var, to_fac, to_var, colptr, rowptr, idxT, row, col
+    return Vvar_fac, Wfac_var, to_fac, to_var, colptr, rowptr, idxT, row, col, links
 end

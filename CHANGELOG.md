@@ -1,5 +1,9 @@
 # JuliaGrid changelog
 
+![featureadd] the belief propagation observability method
+
+![maintenanceyes] connected components of sparse matrices using SimpleWeightedGraph
+
 ![sourceadd] the belief propagation observability method
 
 ![featureadd] the topological island detection method based on the multi-stage procedure

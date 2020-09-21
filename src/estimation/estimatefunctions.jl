@@ -388,48 +388,8 @@ function restorationbp(system, settings, numsys, num, measurements, islands, Nis
 
     ########### Factor graph data ##########
     Nvar, Nfac = size(Mt); Nlink = nnz(Mt)
-
-    links = Dict(i => Int64[] for i = 1:Nfac)
-    row = fill(0, Nlink); col = similar(row)
-    rowptr = fill(0, Nfac); colptr = fill(0, Nvar)
-    idxi = 1; idxr = 1
-    idxT = findall(!iszero, Mt)
-    @inbounds for i in idxT
-        if (Mt.colptr[i[2] + 1] - Mt.colptr[i[2]]) != 1
-            row[idxi] = idxr
-            col[idxi] = i[1]
-            push!(links[idxr], i[1])
-
-            idxi += 1
-
-            colptr[i[1]] += 1
-            rowptr[idxr] = idxi
-
-            if idxT[Mt.colptr[i[2] + 1] - 1] == i
-                idxr += 1
-            end
-        end
-    end
-    pushfirst!(colptr, 1)
-    pushfirst!(rowptr, 1)
-    colptr = cumsum(colptr)
-
-    ########## Initialize arrays for messages ##########
-    Vvar_fac = fill(1e-5, Nlink)
-    Wfac_var = similar(Vvar_fac)
-
-    ########## Indices for sending messages ##########
-    temp = collect(1:Nlink)
-    sort_col_idx = sortperm(col)
-    to_fac = temp[sort_col_idx]
-
-    new_row = row[sort_col_idx]
-    sort_row_idx = sortperm(new_row)
-    to_var = temp[sort_row_idx]
-
-    Wdir = fill(1e-120, Nvar)
-    Vind = fill(1.0, Nfac)
-    Vind[pseudo] .= 1e120
+    Vvar_fac, Wfac_var, to_fac, to_var, colptr, rowptr, idxT, row, col, links = factorgraph(Mt, Nvar, Nfac, Nlink, Nfac)
+    Wdir = fill(1e-120, Nvar); Vind = fill(1.0, Nfac); Vind[pseudo] .= 1e120
 
     ######### Pass messages from singly-connected factor nodes to all indirect links ##########
     @inbounds for i = 1:Nvar
@@ -440,13 +400,13 @@ function restorationbp(system, settings, numsys, num, measurements, islands, Nis
     end
 
      ########## Inference ##########
-    need = Nisland - 1 - Nreal; pass = 1; iterations = 100; bppseudo = Int64[]; residual = 0.0; pre = 0.0; pseudom = Int64[]
+    need = Nisland - 1 - Nreal; pass = 1; bppseudo = Int64[]; residual = 0.0; pre = 0.0; pseudom = Int64[]
     while need > 0
         on = pseudo[pass]
         Wdir[links[on][1]] = 1e120
         Vind[on] = 1
 
-        for iter = 1:iterations
+        for iter = 1:settings.observe[:restoreMax]
             @inbounds for i = 1:Nfac
                 Vrow = 0.0
                 for j in rowptr[i]:(rowptr[i + 1] - 1)
@@ -484,6 +444,9 @@ function restorationbp(system, settings, numsys, num, measurements, islands, Nis
         pass += 1
     end
 
+    onPi[bppseudo] .= 2
+    variPi[bppseudo] .= settings.observe[:Pi]
+
     J = [J; transpose(JtieT[:, pseudom])]
     mean = [mean; meantie[pseudom]]
     weight = [weight; weighttie[pseudom]]
@@ -492,8 +455,18 @@ function restorationbp(system, settings, numsys, num, measurements, islands, Nis
 end # restorationbp
 
 
+### Flow islands defined by active power flow measurements
+function islandsflow(Jflow)
+    M = SimpleWeightedGraph(Jflow' * Jflow)
+    islandsFlow = connected_components(M)
+    NislandsFlow = size(islandsFlow, 1)
+
+    return islandsFlow, NislandsFlow
+end # islandsflow
+
+
 ### Gaussian belief propagation island detection
-function islandsbp(settings, numsys, J, Jflow, bus, islands)
+function islandsbp(settings, numsys, J, bus, islandsFlow, NislandsFlow)
     ########## Independent system of equations ##########
     Jt = copy(J')
     Ht = independentset(Jt)
@@ -520,10 +493,6 @@ function islandsbp(settings, numsys, J, Jflow, bus, islands)
     end
 
     ########## Set probe nodes ##########
-    M = Jflow' * Jflow
-    islandsFlow = connected_components(SimpleGraph(M))
-    NislandsFlow = size(islandsFlow, 1)
-
     islandsWhere = fill(0, numsys.Nbus)
     numvar = fill(0, NislandsFlow)
     @inbounds for (k, island) in enumerate(islandsFlow)
@@ -549,12 +518,15 @@ function islandsbp(settings, numsys, J, Jflow, bus, islands)
     end
 
     ########## Find Islands ##########
-    pass = 0; detection = true; iter_break = 10; iter_max = 50; previous = 0.0
+    detection = true; previous = 0.0; islands = [Int64[]]
+    iter_max = settings.observe[:islandMax]; breaks = settings.observe[:islandBreak]
+    stop = settings.observe[:islandStopping]; treshold = settings.observe[:islandTreshold];
     while detection
         ########## Factor graph data ##########
         Vvar_fac, Wfac_var, to_fac, to_var, colptr, rowptr, idxT, row, col = factorgraph(Ht, Nvar, Nfac, Nlink, Nind)
 
         ########## Inference ##########
+        Xbp = fill(0.0, Nvar)
         @inbounds for iter = 1:iter_max
             for i = 1:Nind
                 Vrow = 0.0
@@ -566,7 +538,7 @@ function islandsbp(settings, numsys, J, Jflow, bus, islands)
                 end
             end
 
-            Xbp = fill(0.0, Nvar); previous = 0.0
+            previous = 0.0
             for i = 1:Nvar
                 Wcol = 0.0
                 for j in colptr[i]:(colptr[i + 1] - 1)
@@ -582,7 +554,7 @@ function islandsbp(settings, numsys, J, Jflow, bus, islands)
                 Xbp[i] = temp
 
             end
-            if previous < 10.0 && iter > 5
+            if previous < stop && iter > breaks
                 break
             end
         end
@@ -590,7 +562,7 @@ function islandsbp(settings, numsys, J, Jflow, bus, islands)
         ########## Reduce Jacobian ##########
         row = fill(true, Nvar); col = fill(true, Nfac); bip = fill(false, Nvar)
         @inbounds for i in idxT
-            if Xbp[i[1]] < 1e5
+            if Xbp[i[1]] < treshold
                 row[i[1]] = false
                 col[i[2]] = false
                 bip[i[1]] = true
@@ -641,6 +613,7 @@ function islandsbp(settings, numsys, J, Jflow, bus, islands)
             end
         end
     end
+    deleteat!(islands, 1)
     Nisland = size(islands, 1)
 
     return islands, Nisland
@@ -649,23 +622,80 @@ end # islandsbp
 
 ### Topological island detection
 function islandstopological(settings, numsys, J, Jflow, Ybus, branch, from, to, busPi, onPi, islands)
-    ########## Flow islands ##########
-    M = Jflow' * Jflow
-    islands = connected_components(SimpleGraph(M))
+    islandsWhere = fill(0, numsys.Nbus)
+    @inbounds for (k, island) in enumerate(islands)
+        for i in island
+            islandsWhere[i] = k
+        end
+    end
 
-    if settings.observe[:islands] == 1
+    ########## Tie buses and branches ##########
+    tie_branch = copy(branch)
+    @inbounds for i = 1:numsys.Nbranch
+        if islandsWhere[from[i]] == islandsWhere[to[i]]
+            tie_branch[i] = 0
+        end
+    end
+    tie_bus = fill(0, numsys.Nbus)
+    @inbounds for i in tie_branch
+        if i != 0
+            tie_bus[from[i]] = from[i]
+            tie_bus[to[i]] = to[i]
+        end
+    end
+
+    ########## Boundary Injections ##########
+    inj = copy(busPi); inj = inj[tie_bus[busPi] .!= 0]
+    @inbounds for (k, i) in enumerate(inj)
+        if onPi[i] == 0
+            inj[k] = 0
+        end
+    end
+    filter!(x->x!=0, inj); filter!(x->x!=0, tie_branch)
+
+    ########## Stage 1: Processing of Individual Boundary Injections ##########
+    islands, islandsWhere, inj, tie_branch = topological_merge_pairs(numsys, Ybus, busPi, islands, inj, islandsWhere, tie_branch, from, to)
+
+    ########## Stage K: Processing of a Collection of K Boundary Injection Measurements ##########
+    Ninj = length(inj); merge = 1; con = fill(false, numsys.Nbus); island_inj = fill(Int[], Ninj, 1)
+    while merge != 0
+        for (k, i) in enumerate(inj)
+            conection = Ybus.colptr[busPi[i]]:(Ybus.colptr[busPi[i] + 1] - 1)
+            con[Ybus.rowval[conection]] .= true
+            island_inj[k] = sort(unique(islandsWhere[con]))
+            con[Ybus.rowval[conection]] .= false
+        end
+        merge_index = decision_tree(island_inj)
+
+        if merge_index != false
+            merge_islands = []
+            for i in merge_index
+                for j in island_inj[i]
+                    push!(merge_islands, j)
+                end
+            end
+            merge_islands = unique(merge_islands)
+            start = merge_islands[1]
+            for i = 2:length(merge_islands)
+                next = merge_islands[i]
+                islands[start] = [islands[start]; islands[next]]
+                islands[next] = []
+            end
+            empty = isempty.(islands)
+            deleteat!(islands, empty)
+        else
+            break
+        end
+
         islandsWhere = fill(0, numsys.Nbus)
         @inbounds for (k, island) in enumerate(islands)
             for i in island
                 islandsWhere[i] = k
             end
         end
-
-        ########## Tie buses and branches ##########
-        tie_branch = copy(branch)
-        @inbounds for i = 1:numsys.Nbranch
+        @inbounds for (k, i) in enumerate(tie_branch)
             if islandsWhere[from[i]] == islandsWhere[to[i]]
-                tie_branch[i] = 0
+                tie_branch[k] = 0
             end
         end
         tie_bus = fill(0, numsys.Nbus)
@@ -675,83 +705,14 @@ function islandstopological(settings, numsys, J, Jflow, Ybus, branch, from, to, 
                 tie_bus[to[i]] = to[i]
             end
         end
+        inj = tie_bus[inj]
+        filter!(x->x!=0, inj); filter!(x->x!=0, tie_branch)
 
-        ########## Boundary Injections ##########
-        inj = copy(busPi); inj = inj[tie_bus[busPi] .!= 0]
-        @inbounds for (k, i) in enumerate(inj)
-            if onPi[i] == 0
-                inj[k] = 0
-            end
-        end
-        filter!(x->x!=0, inj)
-        filter!(x->x!=0, tie_branch)
-
-        ########## Stage 1: Processing of Individual Boundary Injections ##########
         islands, islandsWhere, inj, tie_branch = topological_merge_pairs(numsys, Ybus, busPi, islands, inj, islandsWhere, tie_branch, from, to)
 
-        ########## Stage K: Processing of a Collection of K Boundary Injection Measurements ##########
         Ninj = length(inj)
-        merge = 1
         con = fill(false, numsys.Nbus)
         island_inj = fill(Int[], Ninj, 1)
-
-        while merge != 0
-            for (k, i) in enumerate(inj)
-                conection = Ybus.colptr[busPi[i]]:(Ybus.colptr[busPi[i] + 1] - 1)
-                con[Ybus.rowval[conection]] .= true
-                island_inj[k] = sort(unique(islandsWhere[con]))
-                con[Ybus.rowval[conection]] .= false
-            end
-            merge_index = decision_tree(island_inj)
-
-            if merge_index != false
-                merge_islands = []
-                for i in merge_index
-                    for j in island_inj[i]
-                        push!(merge_islands, j)
-                    end
-                end
-                merge_islands = unique(merge_islands)
-                start = merge_islands[1]
-                for i = 2:length(merge_islands)
-                    next = merge_islands[i]
-                    islands[start] = [islands[start]; islands[next]]
-                    islands[next] = []
-                end
-                empty = isempty.(islands)
-                deleteat!(islands, empty)
-            else
-                break
-            end
-
-            islandsWhere = fill(0, numsys.Nbus)
-            @inbounds for (k, island) in enumerate(islands)
-                for i in island
-                    islandsWhere[i] = k
-                end
-            end
-            @inbounds for (k, i) in enumerate(tie_branch)
-                if islandsWhere[from[i]] == islandsWhere[to[i]]
-                    tie_branch[k] = 0
-                end
-            end
-            tie_bus = fill(0, numsys.Nbus)
-            @inbounds for i in tie_branch
-                if i != 0
-                    tie_bus[from[i]] = from[i]
-                    tie_bus[to[i]] = to[i]
-                end
-            end
-            inj = tie_bus[inj]
-            filter!(x->x!=0, inj)
-            filter!(x->x!=0, tie_branch)
-
-            islands, islandsWhere, inj, tie_branch = topological_merge_pairs(numsys, Ybus, busPi, islands, inj, islandsWhere, tie_branch, from, to)
-
-            Ninj = length(inj)
-            con = fill(false, numsys.Nbus)
-            island_inj = fill(Int[], Ninj, 1)
-        end
     end
     empty = isempty.(islands)
     deleteat!(islands, empty)

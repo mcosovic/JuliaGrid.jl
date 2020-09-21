@@ -45,9 +45,9 @@ end
         println("The slack bus is not found. Slack bus is the first bus.")
     end
 
-    gen_bus = renumber(geni, num.Ngen, busi, bus, num.Nbus, numbering)
-    from = renumber(fromi, num.Nbranch, busi, bus, num.Nbus, numbering)
-    to = renumber(toi, num.Nbranch, busi, bus, num.Nbus, numbering)
+    gen_bus = renumber(geni, busi, bus, numbering)
+    from = renumber(fromi, busi, bus, numbering)
+    to = renumber(toi, busi, bus, numbering)
 
     ########## Generation ##########
     for (k, i) in enumerate(gen_bus)

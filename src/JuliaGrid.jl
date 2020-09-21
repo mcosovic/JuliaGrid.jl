@@ -9,7 +9,7 @@ using PrettyTables, Printf
 using HDF5, CSV, XLSX
 using Random
 using JuMP, Ipopt, GLPK
-using LightGraphs
+using LightGraphs, SimpleWeightedGraphs
 
 
 ### Includes
