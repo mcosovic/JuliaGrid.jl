@@ -204,8 +204,8 @@ end
                             numbering = true
                         end
                     end
-                    from = renumber(fromi, numsys.Nbranch, busi, bus, numsys.Nbus, numbering)
-                    to = renumber(toi, numsys.Nbranch, busi, bus, numsys.Nbus, numbering)
+                    from = renumber(fromi, busi, bus, numbering)
+                    to = renumber(toi, busi, bus, numbering)
 
                     A = sparse([bus; from; to], [bus; to; from], fill(1, numsys.Nbus + 2 * numsys.Nbranch), numsys.Nbus, numsys.Nbus)
                     f  = fill(1, numsys.Nbus);

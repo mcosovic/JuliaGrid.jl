@@ -15,7 +15,7 @@ The software package provides the solution of the AC and DC power flow, non-line
 <!-- MATGRID includes, inter alia, the weighted least-squares and least absolute values state estimation, optimal PMU placement, and bad data processing.   -->
 
 ### Installation
-The package requires Julia 1.2 and higher, to install `JuliaGrid` package, you can run the following:
+The package requires Julia 1.3 and higher, to install `JuliaGrid` package, you can run the following:
 ```
 pkg> add https://github.com/mcosovic/JuliaGrid.jl
 ```
