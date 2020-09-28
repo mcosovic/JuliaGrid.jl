@@ -10,6 +10,7 @@ struct PowerSystem
     bus::Array{Float64,2}
     branch::Array{Float64,2}
     generator::Array{Float64,2}
+    gencost::Array{Float64,2}
     basePower::Float64
 end
 
@@ -64,7 +65,7 @@ struct EstimationSettings
     error::Bool
     maxIter::Int64
     stopping::Float64
-    start::String
+    start::Dict{Symbol,Float64}
     bad::Dict{Symbol,Float64}
     lav::Dict{Symbol,Float64}
     observe::Dict{Symbol,Float64}
@@ -72,6 +73,14 @@ struct EstimationSettings
     solve::String
     save::String
     saveextension::String
+end
+
+struct OptimalFlowSettings
+    algorithm::String
+    main::Bool
+    flow::Bool
+    generation::Bool
+    save::String
 end
 
 
@@ -133,6 +142,12 @@ function loadsystem(path)
             generator = zeros(1, 21)
             Ngen = 0
         end
+        if exists(fid, "generatorcost")
+            gencost::Array{Float64,2} = h5read(path.fullpath, "/generatorcost")
+            datastruct(gencost, 5; var = "generatorcost")
+        else
+            gencost = zeros(1, 5)
+        end
         if exists(fid, "basePower")
             basePower::Float64 = h5read(path.fullpath, "/basePower")[1]
         else
@@ -171,6 +186,13 @@ function loadsystem(path)
             generator = zeros(1, 21)
             Ngen = 0
         end
+        if "generatorcost" in XLSX.sheetnames(xf)
+            start = startxlsx(xf["generatorcost"])
+            gencost = xf["generatorcost"][:][start:end, :]
+            datastruct(gencost, 5; var = "generatorcost")
+        else
+            gencost = zeros(1, 5)
+        end
         if "basePower" in XLSX.sheetnames(xf)
             start = startxlsx(xf["basePower"])
             basePower = Float64(xf["basePower"][:][start])
@@ -188,7 +210,7 @@ function loadsystem(path)
 
     info = infogrid(bus, branch, generator, info, path.dataname, Nbranch, Nbus, Ngen)
 
-    return PowerSystem(bus, branch, generator, basePower), PowerSystemNum(Nbus, Nbranch, Ngen), info
+    return PowerSystem(bus, branch, generator, gencost, basePower), PowerSystemNum(Nbus, Nbranch, Ngen), info
 end
 
 
@@ -747,6 +769,35 @@ end
         println("Invalid state estimation METHOD key. The algorithm proceeds with the nonlinear state estimation.")
     end
 
+    startkey = 1.0; Vmin = 0.98; Vmax = 1.02; Tmin = -0.5; Tmax = 0.5
+    if !isempty(start)
+        if isa(start, String)
+            if start == "warm"
+                startkey = 1.0
+            elseif start == "flat"
+                startkey = 2.0
+            elseif start == "random"
+                startkey = 3.0
+            else
+                println("Invalid state estimation START key. The algorithm proceeds with the warm initial point.")
+            end
+        else
+            for (k, i) in enumerate(start)
+                if i == "Vi"
+                    startV = minmax(nextelement(start, k), nextelement(start, k + 1))
+                    Vmin = startV[1]; Vmax = startV[2]
+                    startkey = 3.0
+                end
+                if i == "Ti"
+                    startT = minmax(nextelement(start, k), nextelement(start, k + 1))
+                    Tmin = startT[1]; Tmax = startT[2]
+                    startkey = 3.0
+                end
+            end
+        end
+    end
+    start = Dict(:start => startkey, :Vmin => Vmin, :Vmax => Vmax, :Tmin => Tmin, :Tmax => Tmax)
+
     threshold = 3.0; pass = 1.0; critical = 1e-10
     if !isempty(badset)
         badkey = 1.0
@@ -775,7 +826,7 @@ end
     end
     lav = Dict(:lav => lavkey, :optimize => optimize)
 
-    islands = 1; flow = 0; islandMax = 2000; islandBreak = 10; islandStopping = 1.0; islandTreshold = 1e5
+    islands = 1; islandflow = 0; islandMax = 2000; islandBreak = 10; islandStopping = 1.0; islandTreshold = 1e5
     restoreMax = 100; pivot = 1e-10; restore = 1; Pij = 0.0; Pi = 0.0; Ti = 0.0
     if !isempty(observeset)
         observekey = 1.0
@@ -784,7 +835,7 @@ end
                 islands = 2
             end
             if i == "flow"
-                flow = 1
+                islandflow = 1
             end
             if i == "islandMax"
                 islandMax = trunc(Int64, nextelement(observeset, k))
@@ -821,7 +872,7 @@ end
     if Pij == 0.0 && Pi == 0.0 && Ti == 0.0
         Pi = 1e5
     end
-    if flow == 1
+    if islandflow == 1
         islands = 3
     end
 
@@ -833,7 +884,6 @@ end
     if algorithm == "pmu" && covariance == 1
         covarinace = true
     end
-
 
     saveextension = ""
     if !isempty(save)
@@ -896,4 +946,46 @@ function loadsedirect(args)
 
     return system, PowerSystemNum(Nbus, Nbranch, Ngen),
         measurements, MeasurementsNum(pmuNv, pmuNc, legacyNf, legacyNc, legacyNi, legacyNv), info
+end
+
+
+### Optimal power flow settings
+@inbounds function opfsettings(args, save, system, num)
+    algorithm = "false"
+    main = false
+    flow = false
+    generation = false
+    reactive = [false; true; false]
+
+    for i = 1:length(args)
+        if args[i] in ["dc", "ac"]
+            algorithm = args[i]
+        end
+        if args[i] == "main"
+            main = true
+        end
+        if args[i] == "flow"
+            flow = true
+        end
+        if args[i] == "generation" && num.Ngen != 0
+            generation = true
+        end
+    end
+
+    if algorithm == "false"
+        algorithm = "ac"
+        println("Invalid optimal power flow METHOD key. The algorithm proceeds with the AC optimal power flow.")
+    end
+
+    if !isempty(save)
+        path = dirname(save)
+        data = basename(save)
+        if isempty(data)
+            dataname = join(replace(split(system.dataname, ""), "."=>""))
+            data = string(dataname, "_results", system.extension)
+        end
+        save = joinpath(path, data)
+    end
+
+    return OptimalFlowSettings(algorithm, main, flow, generation, save)
 end

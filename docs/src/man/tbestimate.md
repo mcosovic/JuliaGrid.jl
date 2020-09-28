@@ -273,7 +273,7 @@ Jacobian expressions corresponding to the measurement function ``h_{I_{ij}}(\cdo
     \cfrac{\mathrm \partial{h_{I_{ij}}(\cdot)}}{\mathrm \partial V_{i}} &=
     \cfrac{A_{\text{m}1}V_i - V_j[C_{\text{m}1}\cos(\theta_{ij} - \phi_{ij}) - D_{\text{m}1}\sin(\theta_{ij} - \phi_{ij})]}{h_{I_{ij}}(\cdot)} \\
     \cfrac{\mathrm \partial{h_{I_{ij}}(\cdot)}}{\mathrm \partial V_{j}} &=
-    \cfrac{B_{\text{m}1}V_i - V_i[C_{\text{m}1}\cos(\theta_{ij} - \phi_{ij}) - D_{\text{m}1}\sin(\theta_{ij} - \phi_{ij})]}{h_{I_{ij}}(\cdot)} .
+    \cfrac{B_{\text{m}1}V_j - V_i[C_{\text{m}1}\cos(\theta_{ij} - \phi_{ij}) - D_{\text{m}1}\sin(\theta_{ij} - \phi_{ij})]}{h_{I_{ij}}(\cdot)} .
 	\end{aligned}    
 ```
 Jacobian expressions corresponding to the measurement function ``h_{I_{ji}}(\cdot)`` are defined:
@@ -285,7 +285,7 @@ Jacobian expressions corresponding to the measurement function ``h_{I_{ji}}(\cdo
     \cfrac{\mathrm \partial{h_{I_{ji}}(\cdot)}}{\mathrm \partial V_{i}} &=
     \cfrac{A_{\text{m}2}V_i - V_j[C_{\text{m}2}\cos(\theta_{ij} - \phi_{ij}) + D_{\text{m}2}\sin(\theta_{ij} - \phi_{ij})]}{h_{I_{ji}}(\cdot)} \\
     \cfrac{\mathrm \partial{h_{I_{ji}}(\cdot)}}{\mathrm \partial V_{j}} &=
-    \cfrac{B_{\text{m}2}V_i - V_i[C_{\text{m}2}\cos(\theta_{ij} - \phi_{ij}) + D_{\text{m}2}\sin(\theta_{ij} - \phi_{ij})]}{h_{I_{ji}}(\cdot)} .
+    \cfrac{B_{\text{m}2}V_j - V_i[C_{\text{m}2}\cos(\theta_{ij} - \phi_{ij}) + D_{\text{m}2}\sin(\theta_{ij} - \phi_{ij})]}{h_{I_{ji}}(\cdot)} .
 	\end{aligned}    
 ```
 Note that, in deregulation environment current magnitude measurements can be found in significant numbers, especially in distribution grids. The use of line current magnitude measurements can lead to various problems (e.g., the "flat start" will cause undefined Jacobian elements), which in turn may seriously deteriorate the performance of the state estimators [[3, Sec. 9.3]](@ref refestimate).

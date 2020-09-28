@@ -135,5 +135,41 @@ function pmuseheader()
                 ["Integer" "Integer" "Class" "Pseudo-measurement" "Local Index" "Measure" "Variance"]]
 
     return (main = main, flow = flow, estimatedisplay = estimatedisplay, estimate = estimate, error = error, errordisplay = errordisplay, bad = bad, observe = observe)
+end
 
+### AC Power Flow
+function acseheader()
+    main = [["Bus" "Voltage" "Voltage" "Injection" "Injection" "Shunt" "Shunt"]
+            ["Integer" "Magnitude [p.u.]" "Angle [deg]" "Active Power [MW]" "Reactive Power [MVAr]" "Active Power [MW]" "Reactive Power [MVAr]"]]
+
+    flow = [["Branch" "From Bus" "To Bus" "From Bus Flow" "From Bus Flow" "To Bus Flow" "To Bus Flow" "Branch Injection" "Loss" "Loss" "From Bus Current" "From Bus Current" "To Bus Current" "To Bus Current"]
+            ["Integer" "Integer" "Integer" "Active Power [MW]" "Reactive Power [MVAr]" "Active Power [MW]" "Reactive Power [MVAr]" "Reactive Power [MVAr]" "Active Power [MW]" "Reactive Power [MVAr]" "Magnitude [p.u.]" "Angle [deg]" "Magnitude [p.u.]" "Angle [deg]"]]
+
+    estimate = [["Number" "Device" "Device" "Device" "Device" "Device" "Device" "Algorithm" "Residual" "User" "Residual" ]
+                ["Integer" "In-service(1), Bad Data(2), Pseudo(3)" "Legacy(1), PMU(2)" "Pij(1), Pi(4), Ti(8)" "Local Index" "Measure" "Variance" "Estimate" "Estimate to Measure" "Exact" "Estimate to Exact"]]
+
+
+    estimatedisplay = [["Device" "Device" "Device" "Device" "Device" "Device" "Algorithm" "Residual" "User" "Residual" ]
+                        ["Status" "Class" "Type" "Local Index" "Measure" "Variance" "Estimate" "Estimate to Measure" "Exact" "Estimate to Exact"]]
+
+    error = [["MAE" "RMS" "WRSSE" "MAE" "RMSE" "WRSSE"]
+            ["estimates to measurements" "estimates to measurements" "estimates to measurements" "estimates to exacts"  "estimates to exacts"  "estimates to exacts"]]
+
+    errordisplay = [["Estimate and corresponding measurement values in per-unit system" ""]
+                    ["Mean absolute error" "."^10]
+                    ["Root mean square error" "."^10]
+                    ["Weighted residual sum of squares error" "."^10]
+                    ["" ""]
+                    ["Estimate and corresponding exact values in per-unit system" ""]
+                    ["Mean absolute error" "."^10]
+                    ["Root mean square error" "."^10]
+                    ["Weighted residual sum of squares error" "."^10]]
+
+    bad = [["Algorithm" "Device" "Device" "Device"  "Algorithm" "Device"]
+            ["Pass" "Class" "Suspected Bad Data" "Local Index" "Normalized Residual" "Status"]]
+
+    observe  = [["Island" "Bus in Island"  "Device" "Device" "Device" "Device" "Device"]
+                ["Integer" "Integer" "Class" "Pseudo-measurement" "Local Index" "Measure" "Variance"]]
+
+    return (main = main, flow = flow, estimatedisplay = estimatedisplay, estimate = estimate, error = error, errordisplay = errordisplay, bad = bad, observe = observe)
 end

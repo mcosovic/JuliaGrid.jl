@@ -31,8 +31,9 @@ Input arguments of the function `runse()` describe the state estimation settings
 runse(DATA, METHOD)
 runse(DATA, METHOD, ROUTINE)
 runse(DATA, METHOD, ROUTINE, DISPLAY)
-runse(DATA, METHOD, ROUTINE, DISPLAY; ATTACH)
-runse(DATA, METHOD, ROUTINE, DISPLAY; ATTACH, SAVE)
+runse(DATA, METHOD, ROUTINE, DISPLAY; NONLINEAR)
+runse(DATA, METHOD, ROUTINE, DISPLAY; NONLINEAR, ATTACH)
+runse(DATA, METHOD, ROUTINE, DISPLAY; NONLINEAR, ATTACH, SAVE)
 ```
 ```@raw html
 &nbsp;
@@ -42,8 +43,9 @@ runse(DATA, METHOD, ROUTINE, DISPLAY; ATTACH, SAVE)
 runse(DATA, METHOD) solves the state estimation problem
 runse(DATA, METHOD, ROUTINE) sets the least absolute values estimation, bad data and observability analysis
 runse(DATA, METHOD, LAVBAD, DISPLAY) shows results in the terminal
-runse(DATA, METHOD, LAVBAD, DISPLAY; ATTACH) sets various options mostly related with ROUTINE
-runse(DATA, METHOD, LAVBAD, DISPLAY; ATTACH, SAVE) exports results data
+runse(DATA, METHOD, ROUTINE, DISPLAY; NONLINEAR) sets variables for the nonlinear state estimation
+runse(DATA, METHOD, LAVBAD, DISPLAY; NONLINEAR, ATTACH) sets various options mostly related with ROUTINE
+runse(DATA, METHOD, LAVBAD, DISPLAY; NONLINEAR, ATTACH, SAVE) exports results data
 ```
 ```@raw html
 &nbsp;
@@ -56,6 +58,12 @@ results, measurements, system, info = runse() returns results, measurements, pow
 &nbsp;
 ```
 ####  Examples
+```julia-repl
+julia> results, = runse("case14se.xlsx", "nonlinear", "main", "estimate")
+```
+```julia-repl
+julia> results, = runse("case14se.xlsx", "nonlinear", "estimate"; start = "flat")
+```
 ```julia-repl
 julia> results, = runse("case14se.xlsx", "dc", "main", "estimate", "error", "flow")
 ```
@@ -122,6 +130,27 @@ The state estimation function `runse()` receives a group of variable number of a
 |`"flow"`     | shows power flow data display  |
 |`"estimate"` | shows estimation data display  |
 |`"error"`    | shows evaluation data display  |
+
+
+```@raw html
+&nbsp;
+```
+##### NONLINEAR - Variable Argument
+
+| Command          | Description                                                                              |
+|:-----------------|:-----------------------------------------------------------------------------------------|
+|`max = value`     | specifies the maximum number of iterations, `default setting: 100` |
+|`stop = value`    | specifies the stopping criteria, `default setting: 1.0e-8`         |
+|`start = "warm"`  | the Gauss-Newton initial point defined as the one applied in the AC power flow, `default start setting` |
+|`start = "flat"`  | unique the Gauss-Newton initial point for voltage angles equal to 0 and magnitude equal to 1 |
+|`start = "random"`| the Gauss-Newton initial point defined using random perturbation between -0.5 and 0.5 of voltage angles in degrees, and 0.98 and 1.02 of voltage magnitudes in per-units |
+
+
+| NONLINEAR:      |  Start                                                          |
+|:----------------|:----------------------------------------------------------------|
+| **Command**     | `start = "["Vi" value1 value2 "Ti" value3 value4]"`             |
+| **Description** | change default options for `random` Gauss-Newton initial point  |
+
 
 ```@raw html
 &nbsp;

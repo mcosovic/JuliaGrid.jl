@@ -85,11 +85,11 @@ end
         Gshunt, Bshunt, resistance, reactance, charging, transTap, transShift)
 
     ########## Solve the system ##########
-    Vc = Vini .* exp.(im * (pi / 180)  * Tini)
+    Vc = Vini .* exp.(im * (pi / 180) * Tini)
     iter = 0
     while settings.reactive[2]
         if  settings.reactive[1] && settings.reactive[2]
-            Vc = Vini .* exp.(im * (pi / 180)  * Tini)
+            Vc = Vini .* exp.(im * (pi / 180) * Tini)
         end
 
         if settings.algorithm == "gs"

@@ -52,10 +52,6 @@ function rundcse(system, measurements, num, numsys, settings, info)
         slack = 1
         println("The slack bus is not found. Slack bus is the first bus.")
     end
-    if settings.observe[:observe] == 1 && onTi[slack] == 0.0
-        println("The slack bus voltage angle measurement is in-service to perform the observability analysis correctly.")
-        onTi[slack] = 1
-    end
 
     numlabel = false
     @inbounds for i = 1:numsys.Nbranch
@@ -65,7 +61,7 @@ function rundcse(system, measurements, num, numsys, settings, info)
         end
     end
     if numlabel
-        println("The new branch label numbering is running.")
+        println("The new branch numbering is running.")
     end
     from = renumber(fromi, busi, bus, newnumbering)
     to = renumber(toi, busi, bus, newnumbering)
@@ -78,7 +74,7 @@ function rundcse(system, measurements, num, numsys, settings, info)
     ########## Ybus matrix ##########
     Ybus, admitance, Pshift = ybusdc(system, numsys, bus, from, to, branchOn, transTap, reactance, transShift)
 
-    ########## Jacobian ##########
+    ########## Number of Jacobian elements and measurements ##########
     Nelement = 0; Nmeasure = 0; Nflow = 0; Nvol = 0; Ninj = 0
     @inbounds for i = 1:num.legacyNf
         if onPij[i] == 1
@@ -99,6 +95,7 @@ function rundcse(system, measurements, num, numsys, settings, info)
         end
     end
 
+    ########## Jacobian and measurement data ##########
     row = fill(0, Nelement); col = similar(row); jac = fill(0.0, Nelement)
     mean = fill(0.0, Nmeasure); weight = similar(mean)
     index = 1; rowindex = 1
@@ -188,17 +185,19 @@ function rundcse(system, measurements, num, numsys, settings, info)
     end
     Nmeasure = Nmeasure + Npseudo
 
-    ######### Remove column of the slack bus ##########
-    keep = [collect(1:slack - 1); collect(slack + 1:numsys.Nbus)]
-    J = J[:, keep]
+    ######### Remove column of the slack bus, but keep full column rank ##########
+    for i in J.colptr[slack]:(J.colptr[slack + 1] - 1)
+        J.nzval[i] = 0.0
+    end
+    J = [J; sparse([1], [slack], [1.0], 1, numsys.Nbus)]
+    push!(mean, 0.0); push!(weight, 1.0);
 
     ######### LAV ##########
     if settings.lav[:lav] == 1
-        Nvar = numsys.Nbus - 1
-        Ti = Array{Float64}(undef, Nvar)
-        x = lav(J, mean, Nvar, Nmeasure, settings)
-        for i = 1:Nvar
-            Ti[i] = x[i] - x[Nvar + i]
+        Ti = Array{Float64}(undef, numsys.Nbus)
+        x = lav(J, mean, numsys.Nbus, Nmeasure + 1, settings)
+        for i = 1:numsys.Nbus
+            Ti[i] = x[i] - x[numsys.Nbus + i]
         end
     end
 
@@ -230,7 +229,6 @@ function rundcse(system, measurements, num, numsys, settings, info)
     end
 
     ########## Post-processing ##########
-    insert!(Ti, slack, 0.0)
     Ti =  (pi / 180) * Tslack .+ Ti
 
     @inbounds for i = 1:numsys.Nbranch

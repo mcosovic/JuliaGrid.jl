@@ -24,7 +24,7 @@ function runpmuse(system, measurements, num, numsys, settings, info)
     Qloss, Imij, Iaij, Imji, Iaji, badsave, islands = write_pmusystem(system, numsys, main, flow)
 
   algtime = @elapsed begin
-    ########## Pre-processing ##########
+    ########## Convert in integers ##########
     fromi = convert(Array{Int64,1}, system.branch[:, 2])
     toi = convert(Array{Int64,1}, system.branch[:, 3])
     branchiC = convert(Array{Int64,1}, measurements.pmuCurrent[:, 1])

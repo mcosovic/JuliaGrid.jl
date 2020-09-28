@@ -60,14 +60,19 @@ end
     ########## Ybus matrix ##########
     Ybus, admitance, Pshift = ybusdc(system, num, bus, from, to, branchOn, transTap, reactance, transShift)
 
+    ######### Remove row/column of the slack bus, but keep column rank ##########
+    rowSlack = Ybus[:, slack]
+    for i in Ybus.colptr[slack]:(Ybus.colptr[slack + 1] - 1)
+        row = Ybus.rowval[i]
+        Ybus[row, slack] = 0.0; Ybus[slack, row] = 0.0
+    end
+    Ybus[slack, slack] = 1.0
+
     ########## Solve the system ##########
-    keep = [collect(1:slack - 1); collect(slack + 1:num.Nbus)]
-    Ybus_reduce = Ybus[keep, keep]
-    b = Pbus[keep] - Pshift[keep] - (Pload[keep] + Gshunt[keep]) ./ system.basePower
+    b = Pbus - Pshift - (Pload + Gshunt) ./ system.basePower
+    Ti = ls(Ybus, b, settings.solve)
 
-    Ti = ls(Ybus_reduce, b, settings.solve)
-
-    insert!(Ti, slack, 0.0)
+    Ti[slack] = 0.0
     Ti =  (pi / 180) * Tini[slack] .+ Ti
 
     ########## Post-processing ##########
@@ -86,7 +91,7 @@ end
             I = 0.0
             for j in Ybus.colptr[i]:(Ybus.colptr[i + 1] - 1)
                 row = Ybus.rowval[j]
-                I += Ybus[slack, row] * Ti[row]
+                I += rowSlack[row] * Ti[row]
             end
             Pinj[slack] = (I + Pshift[slack]) * system.basePower + Gshunt[slack]
             Pbus[slack] = Pinj[slack] + Pload[slack]

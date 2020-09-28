@@ -6,7 +6,7 @@ JuliaGrid is an open-source, easy-to-use simulation tool/solver for researchers 
 The software package, among other things, includes:
  - [AC power flow analysis](@ref acpowerflow),
  - [DC power flow analysis](@ref dcpowerflow),
- - [non-linear state estimation](@ref nonlinearse) (work in progress),
+ - [non-linear state estimation](@ref nonlinearse),
  - [linear DC state estimation](@ref lineardcse),
  - [linear state estimation with PMUs](@ref linearpmuse),
  - [least absolute value state estimation](@ref lav),
@@ -25,7 +25,7 @@ Features supported by JuliaGrid can be categorised into three main groups:
 ---
 
 ### Installation
-JuliaGrid requires Julia 1.2 and higher. To install JuliaGrid package, run the following command:
+JuliaGrid requires Julia 1.3 and higher. To install JuliaGrid package, run the following command:
 ```julia-repl
 pkg> add https://github.com/mcosovic/JuliaGrid.jl
 ```
@@ -45,6 +45,9 @@ julia> results, = runpf("nr", "case14.xlsx", "main"; max = 20, stop = 1.0e-8)
 ```
 
 ###  Quick Start State Estimation
+```julia-repl
+julia> results, = runse("case14se.xlsx", "nonlinear", "main", "estimate"; start = "warm")
+```
 ```julia-repl
 julia> results, = runse("case30se.h5", "dc", "estimate"; bad = ["pass" 2 "threshold" 3.5])
 ```

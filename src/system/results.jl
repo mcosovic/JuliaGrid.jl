@@ -508,3 +508,129 @@ end
 
     return headernew, group
 end
+
+### Nonlinear state estimation results
+@inbounds function results_estimateac(system, numsys, measurements, num, settings, results, slack, algtime)
+    println(string("Execution time: ", (@sprintf "%.4f" algtime * 1000), " (ms)"))
+    aheader = acseheader(); pheader = psheader()
+    header = merge(aheader, pheader)
+
+    ########## Nonlinear main display ##########
+    if settings.main
+        h1 = Highlighter((data, i, j)-> (i == slack), background = :red)
+        println("\n Main Data Display")
+        pretty_table(results.main, header[:main],
+            screen_size = (-1,-1), highlighters = h1, columns_width = [7, 16, 12, 17, 21, 17, 21],
+            alignment = repeat([Symbol(:r)], outer = 7),
+            formatters = ft_printf(["%1.0f", "%1.4f","%1.4f","%1.2f","%1.2f","%1.2f","%1.2f"], collect(1:7)))
+        sum_data = Any["Sum" sum(results.main[:, 4:7], dims = 1)]
+        pretty_table(sum_data, noheader = true, screen_size = (-1,-1),
+            alignment=[:l,:r,:r,:r,:r], columns_width = [41, 17, 21, 17, 21],
+            formatters = ft_printf(["%-s","%15.2f","%15.2f","%13.2f","%15.2f"], collect(1:5)))
+    end
+
+    ########## Nonlinear flow display ##########
+    if settings.flow
+        println("\n Flow Data Display")
+        pretty_table(results.flow[:,1:10], header[:flow][:,1:10],
+            screen_size = (-1,-1), columns_width = [6, 8, 8, 17, 21, 17, 21, 21, 17, 21],
+            alignment=[:r,:r,:r,:r,:r,:r,:r,:r,:r,:r],
+            formatters = ft_printf(["%1.0f","%1.0f","%1.0f","%1.2f","%1.2f","%1.2f","%1.2f","%1.2f","%1.2f","%1.2f"], collect(1:10)))
+        sum_data = Any["Sum" sum(results.flow[:, 8:10], dims = 1)]
+        pretty_table(sum_data, noheader = true, screen_size = (-1,-1), alignment=[:l,:r,:r,:r], columns_width = [116, 21, 17, 21],
+            formatters = ft_printf(["%-s","%15.2f","%11.2f","%15.2f"], collect(1:4)))
+    end
+
+    ########## Nonlinear estimate and error results ##########
+    label = Array{String}(undef, size(results.estimate, 1), 3)
+    idex = 1
+    for (k, i) in enumerate(results.estimate[:, 2])
+        if i == 1.0
+            label[k, 1] = "in-service"
+        elseif i == 2.0
+            label[k, 1] = "bad-measurement"
+        elseif i == 3.0
+            label[k, 1] = "pseudo-measurement"
+        end
+        if results.estimate[k, 3] == 1.0
+            label[k, 2] = "Legacy"
+        else
+            label[k, 2] = "PMU"
+        end
+        j = convert(Int, results.estimate[k, 5])
+        if results.estimate[k, 4] == 1.0
+            label[k, 3] = "P$(trunc(Int, measurements.legacyFlow[j, 2])),$(trunc(Int, measurements.legacyFlow[j, 3])) [MW]"
+        elseif results.estimate[k, 4] == 2.0
+            label[k, 3] = "Q$(trunc(Int, measurements.legacyFlow[j, 2])),$(trunc(Int, measurements.legacyFlow[j, 3])) [MVAr]"
+        elseif results.estimate[k, 4] == 3.0
+            label[k, 3] = "P$(trunc(Int, measurements.legacyInjection[j, 1])) [MW]"
+        elseif results.estimate[k, 4] == 4.0
+            label[k, 3] = "Q$(trunc(Int, measurements.legacyInjection[j, 1])) [MVAr]"
+        elseif results.estimate[k, 4] == 5.0 && results.estimate[k, 3] == 1.0
+            label[k, 3] = "I$(trunc(Int, measurements.legacyCurrent[j, 2])),$(trunc(Int, measurements.legacyCurrent[j, 3])) [p.u.]"
+        elseif results.estimate[k, 4] == 5.0 && results.estimate[k, 3] == 2.0
+            label[k, 3] = "I$(trunc(Int, measurements.pmuCurrent[j, 2])),$(trunc(Int, measurements.pmuCurrent[j, 3])) [p.u.]"
+        elseif results.estimate[k, 4] == 6.0
+            label[k, 3] = "D$(trunc(Int, measurements.pmuCurrent[j, 2])),$(trunc(Int, measurements.pmuCurrent[j, 3])) [deg]"
+        elseif results.estimate[k, 4] == 7.0 && results.estimate[k, 3] == 1.0
+            label[k, 3] = "V$(trunc(Int, measurements.legacyVoltage[j, 1])) [p.u.]"
+        elseif results.estimate[k, 4] == 7.0 && results.estimate[k, 3] == 2.0
+            label[k, 3] = "V$(trunc(Int, measurements.pmuVoltage[j, 1])) [p.u.]"
+        elseif results.estimate[k, 4] == 8.0
+            label[k, 3] = "T$(trunc(Int, measurements.pmuVoltage[j, 1])) [deg]"
+        end
+    end
+
+    ########## Nonlinear Estimate display ##########
+    if settings.estimate
+        println("\n Estimate Data Display")
+        columns_width = [18, 12, 15, 12, 12, 12, 12, 19, 12, 19]
+        alignment = [:l, :l, :l, :r, :r, :r, :r, :r, :r, :r]
+        formatters = ["%s", "%s", "%s", "%1.0f", "%1.2f", "%1.2e", "%1.2f", "%1.2e", "%1.2f", "%1.2e"]
+        many = collect(1:10)
+        head = header[:estimatedisplay]
+        if size(results.estimate, 2) == 9
+            columns_width = columns_width[1:8]
+            alignment = alignment[1:8]
+            formatters = formatters[1:8]
+            many = many[1:8]
+            head = head[:, 1:8]
+        end
+        pretty_table([label results.estimate[:, 5:end]], head, screen_size = (-1,-1), columns_width = columns_width,
+            show_row_number = true, alignment = alignment, formatters = ft_printf((formatters), many))
+    end
+
+    ########## Nonlinear error display ##########
+    if settings.error
+        println("\n Error Data Display\n")
+        if size(results.estimate, 2) == 11
+            head = header[:errordisplay]
+            err = [""; results.error[1:3]; ""; ""; results.error[4:6]]
+        else
+            head = header[:errordisplay][1:4, :]
+            err = [""; results.error[1:3]]
+        end
+        pretty_table([head err], screen_size = (-1,-1), tf = borderless,
+            noheader = true, alignment = [:l, :l, :r], formatters = ft_printf("%1.4e", 3),
+            highlighters = (hl_cell( [(1,1);(6,1)], crayon"bold"), hl_col(2, crayon"dark_gray")),
+            body_hlines = [1,6], body_hlines_format = Tuple('─' for _ = 1:4))
+    end
+
+    ########## Export results ##########
+    pmuv = 2; pmuc = 2; legf = 2; legc = 2; legi = 2; legv = 2; gen = 3;
+    if num.pmuNv == 0 pmuv = 0  end
+    if num.pmuNc == 0 pmuc = 0 end
+    if num.legacyNf == 0 legf = 0 end
+    if num.legacyNc == 0 legc = 0 end
+    if num.legacyNi == 0 legi = 0 end
+    if num.legacyNv == 0  legv = 0 end
+    if numsys.Ngen == 0  gen = 0 end
+
+    group = (main = 1, flow = 1, estimate = 1, error = 1,
+        pmuVoltage = pmuv, pmuCurrent = pmuc, legacyFlow = legf, legacyCurrent = legc, legacyInjection = legi, legacyVoltage = legv,
+        bus = 3, branch = 3, generator = gen, basePower = 3)
+
+    mheader = measureheader(); pheader = psheader(); headernew = merge(mheader, pheader, header)
+
+    return headernew, group
+end

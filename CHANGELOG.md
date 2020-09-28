@@ -1,5 +1,13 @@
 # JuliaGrid changelog
 
+## Version `v0.0.4`
+
+![featureadd] the nonlinear state estimation
+
+![maintenanceyes] the DC state estimation without remove slack column
+
+![maintenanceyes] the DC power flow without remove row/column from Ybus
+
 ![featureadd] the belief propagation observability method
 
 ![maintenanceyes] connected components of sparse matrices using SimpleWeightedGraph

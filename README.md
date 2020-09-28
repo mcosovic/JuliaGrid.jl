@@ -47,8 +47,12 @@ results, = runse(data, "dc", "estimate")
 ```julia-repl
 results, = runse("case14se.xlsx", "pmu", "bad"; covariance = 1)
 ```
+```julia-repl
+julia> results, measurements, system, info = runse("case14se.xlsx", "nonlinear", "main", "estimate", "error", "flow"; start = "warm")
+```
 
 ###  Changelog
 Major changes:
+- 2020-09-28 Added the nonlinear state estimation
 - 2020-05-12 Added the DC state estimation with bad data and observability routines
 - 2020-04-17 Added the power flow and measurement generator functions

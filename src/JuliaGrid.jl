@@ -22,9 +22,11 @@ include("flow/flowdc.jl")
 include("flow/flowac.jl")
 include("flow/flowfunctions.jl")
 include("flow/measurements.jl")
+include("flow/optimaldc.jl")
 
 include("estimation/estimatedc.jl")
 include("estimation/estimatepmu.jl")
+include("estimation/estimateac.jl")
 include("estimation/estimatefunctions.jl")
 
 
@@ -87,7 +89,7 @@ function runse(
     args...;
     max::Int64 = 100,
     stop::Float64 = 1.0e-8,
-    start::String = "flat",
+    start = [],
     bad = [],
     lav = [],
     observe = [],
@@ -109,9 +111,27 @@ function runse(
         results = rundcse(system, measurements, num, numsys, settings, info)
     elseif settings.algorithm == "pmu"
         results = runpmuse(system, measurements, num, numsys, settings, info)
+    elseif settings.algorithm == "nonlinear"
+        results = runacse(system, measurements, num, numsys, settings, info)
     end
 
     return results, measurements, system, info
 end
+
+# function runopf(
+#     args...;
+#     save::String = "",
+# )
+#
+#     path = loadpath(args)
+#     system, num, info = loadsystem(path)
+#     settings = opfsettings(args, save, system, num)
+#
+#     if settings.algorithm == "dc"
+#         results = rundcopf(system, num, settings, info)
+#     else
+#
+#     end
+# end
 
 end # JuliaGrid
