@@ -48,7 +48,7 @@ results, = runse(data, "dc", "estimate")
 results, = runse("case14se.xlsx", "pmu", "bad"; covariance = 1)
 ```
 ```julia-repl
-julia> results, measurements, system, info = runse("case14se.xlsx", "nonlinear", "main", "estimate", "error", "flow"; start = "warm")
+julia> results, = runse("case14se.xlsx", "nonlinear", "main", "estimate", "error", "flow"; start = "warm")
 ```
 
 ###  Changelog
