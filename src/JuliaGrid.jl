@@ -1,6 +1,7 @@
 module JuliaGrid
 
 export runpf
+export runopf
 export runmg
 export runse
 
@@ -118,20 +119,22 @@ function runse(
     return results, measurements, system, info
 end
 
-# function runopf(
-#     args...;
-#     save::String = "",
-# )
-#
-#     path = loadpath(args)
-#     system, num, info = loadsystem(path)
-#     settings = opfsettings(args, save, system, num)
-#
-#     if settings.algorithm == "dc"
-#         results = rundcopf(system, num, settings, info)
-#     else
-#
-#     end
-# end
+function runopf(
+    args...;
+    save::String = "",
+)
+
+    path = loadpath(args)
+    system, num, info = loadsystem(path)
+    settings = opfsettings(args, save, system, num)
+
+    if settings.algorithm == "dc"
+        results = rundcopf(system, num, settings, info)
+    else
+
+    end
+
+    return results, system, info
+end
 
 end # JuliaGrid

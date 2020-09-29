@@ -1,38 +1,65 @@
-### DC optimal power flow
+### Struct variable
+struct OptimalPowerFlowDC
+    main::Array{Float64,2}
+    flow::Array{Float64,2}
+    generation::Array{Float64,2}
+end
+
+
+### DC optimal power flow, created by Ognjen Kundacina
 function rundcopf(system, num, settings, info)
     printstyled("Algorithm: DC optimal power flow\n"; bold = true)
 
     ########## Pre-processing ##########
-    busi, Pload, Gshunt, Pmax, Pmin, reactance, transTap, transShift, branchOn, longTermRating, angleMin, angleMax,
+    busi, type, Pload, Gshunt, Tini, Pmax, Pmin, reactance, transTap, transShift, branchOn, longTermRating, angleMin, angleMax,
     costModel, numOfCoeffs, coeffs = read_opfdcsystem(system, num)
 
+    main = fill(0.0, num.Nbus, 6)
+    flow = fill(0.0, num.Nbranch, 5)
+    gene = fill(0.0, num.Ngen, 2)
+    Va, Pinj, Pbus, Pij, Pji, Pgen = write_dcsystem(system, num, main, flow, gene)
+
+  algtime = @elapsed begin
     ########## Convert in integers ##########
     geni = convert(Array{Int64,1}, system.generator[:, 1])
+    genOn = convert(Array{Int64,1}, system.generator[:, 8])
     fromi = convert(Array{Int64,1}, system.branch[:, 2])
     toi = convert(Array{Int64,1}, system.branch[:, 3])
 
-    ########## Numbering ##########
+    ########## Numbering and slack bus ##########
     numbering = false
     bus = collect(1:num.Nbus)
+    slack = 0
     for i = 1:num.Nbus
         if bus[i] != busi[i]
             numbering = true
-            break
+        end
+        if type[i] == 3
+            slack = bus[i]
         end
     end
     if numbering
         println("The new bus numbering is running.")
     end
+    if slack == 0
+        slack = 1
+        println("The slack bus is not found. Slack bus is the first bus.")
+    end
+    gen = renumber(geni, busi, bus, numbering)
     from = renumber(fromi, busi, bus, numbering)
     to = renumber(toi, busi, bus, numbering)
 
     ########## Optimization model ##########
     model = Model(Ipopt.Optimizer)
     @variable(model, thetas[bus])
-    @constraint(model, thetas[1] == 0.0)
+    @constraint(model, thetas[slack] == 0.0)
     @variable(model, Pmin[i] / system.basePower <= pGen[i = 1:num.Ngen] <= Pmax[i] / system.basePower)
     @inbounds for i = 1:num.Ngen
-        set_start_value(pGen[i], (Pmax[i] + Pmin[i]) / (2 * system.basePower))
+        if genOn[i] == 0
+            @constraint(model, pGen[i] == 0.0)
+        else
+            set_start_value(pGen[i], (Pmax[i] + Pmin[i]) / (2 * system.basePower))
+        end
     end
 
     ########## Ybus matrix ##########
@@ -57,7 +84,7 @@ function rundcopf(system, num, settings, info)
     end
 
     ########## Power mismatch constraints ##########
-    Amis = [Ybus sparse(geni, collect(1:num.Ngen), -1, num.Nbus, num.Ngen)]
+    Amis = [Ybus sparse(gen, collect(1:num.Ngen), -1, num.Nbus, num.Ngen)]
     bmis = - (Pload + Gshunt) / system.basePower - Pshift;
     @constraint(model, Amis * [thetas; pGen] .== bmis)
 
@@ -78,45 +105,45 @@ function rundcopf(system, num, settings, info)
     end
 
     optimize!(model)
+    Ti = value.(thetas) .+ (pi / 180) * Tini[slack]
 
-
-    @show objective_value(model)
-    println(value.(thetas) * 180/π)
-    println(value.(pGen))
-    if nPWL > 0
-        println(value.(pwlVars))
+    ########## Post-processing ##########
+    for i = 1:num.Nbranch
+        if branchOn[i] == 1
+            Pij[i] = admitance[i] * (Ti[from[i]] - Ti[to[i]] - (pi / 180) * transShift[i]) * system.basePower
+            Pji[i] = -Pij[i]
+        end
     end
 
-    # return
-end
+    for i = 1:num.Nbus
+        Va[i] = (180 / pi) * Ti[i]
+        Pinj[i] = Pbus[i] - Pload[i]
+        if i == slack
+            I = 0.0
+            for j in Ybus.colptr[i]:(Ybus.colptr[i + 1] - 1)
+                row = Ybus.rowval[j]
+                I += Ybus[slack, row] * Ti[row]
+            end
+            Pinj[slack] = (I + Pshift[slack]) * system.basePower + Gshunt[slack]
+        end
+    end
 
+    Pgen[:] = value.(pGen) .* system.basePower
+    for (k, i) in enumerate(gen)
+        if genOn[k] == 1
+            Pbus[i] += Pgen[k]
+        end
+    end
+ end # algtime
 
-### Read data
-function read_opfdcsystem(system, num)
-    busi = @view(system.bus[:, 1])
-    Pload = @view(system.bus[:, 3])
-    Gshunt = @view(system.bus[:, 5])
+    ########## Results ##########
+    results = OptimalPowerFlowDC(main, flow, gene)
+    header, group = results_flowdc(system, num, settings, results, slack, algtime)
+    if !isempty(settings.save)
+        savedata(results, system; info = info, group = group, header = header, path = settings.save)
+    end
 
-    Pmax = @view(system.generator[:, 9])
-    Pmin = @view(system.generator[:, 10])
-
-    reactance = @view(system.branch[:, 5])
-    transTap = @view(system.branch[:, 10])
-    transShift = @view(system.branch[:, 11])
-    branchOn = @view(system.branch[:, 12])
-    longTermRating = @view(system.branch[:, 7])
-    angleMin = @view(system.branch[:, 13])
-    angleMax = @view(system.branch[:, 14])
-
-    costModel = @view(system.gencost[:, 1])
-    numOfCoeffs = convert(Array{Int64,1}, system.gencost[:, 4])
-    maxNumOfCoeffs, ~ = findmax(numOfCoeffs)
-    coeffs = @view(system.gencost[1:num.Ngen, 5:4+maxNumOfCoeffs])
-
-    return busi, Pload, Gshunt,
-            Pmax, Pmin,
-            reactance, transTap, transShift, branchOn, longTermRating, angleMin, angleMax,
-            costModel, numOfCoeffs, coeffs
+    return results
 end
 
 
@@ -210,4 +237,35 @@ function makeApwl(system, num, nPWL, pwlIds, pgbas, qgbas, ybas, numOfCoeffs)
     end
 
     return Apwl, bpwl
+end
+
+
+### Read data
+function read_opfdcsystem(system, num)
+    busi = @view(system.bus[:, 1])
+    type = @view(system.bus[:, 2])
+    Pload = @view(system.bus[:, 3])
+    Gshunt = @view(system.bus[:, 5])
+    Tini = @view(system.bus[:, 9])
+
+    Pmax = @view(system.generator[:, 9])
+    Pmin = @view(system.generator[:, 10])
+
+    reactance = @view(system.branch[:, 5])
+    transTap = @view(system.branch[:, 10])
+    transShift = @view(system.branch[:, 11])
+    branchOn = @view(system.branch[:, 12])
+    longTermRating = @view(system.branch[:, 7])
+    angleMin = @view(system.branch[:, 13])
+    angleMax = @view(system.branch[:, 14])
+
+    costModel = @view(system.gencost[:, 1])
+    numOfCoeffs = convert(Array{Int64,1}, system.gencost[:, 4])
+    maxNumOfCoeffs, ~ = findmax(numOfCoeffs)
+    coeffs = @view(system.gencost[1:num.Ngen, 5:4+maxNumOfCoeffs])
+
+    return busi, type, Pload, Gshunt, Tini,
+            Pmax, Pmin,
+            reactance, transTap, transShift, branchOn, longTermRating, angleMin, angleMax,
+            costModel, numOfCoeffs, coeffs
 end

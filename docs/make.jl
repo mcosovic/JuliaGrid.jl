@@ -10,13 +10,14 @@ makedocs(
         "Home" => "index.md",
         "Input Data" => "man/input.md",
         "Power Flow" => "man/flow.md",
+        "Optimal Power Flow" => "man/optimalflow.md",
         "State Estimation" => "man/estimation.md",
         "Measurement Generator" => "man/generator.md",
         "Theoretical Background" => [
             "Network Equations" => "man/tbbranch.md",
             "Power Flow" => "man/tbflow.md",
             "State Estimation" => "man/tbestimate.md",
-            "State Estimation Routines" => "man/tbestimaterest.md",            
+            "State Estimation Routines" => "man/tbestimaterest.md",
         ],
     ]
 )

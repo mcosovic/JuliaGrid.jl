@@ -73,7 +73,7 @@ end
     Ti = ls(Ybus, b, settings.solve)
 
     Ti[slack] = 0.0
-    Ti =  (pi / 180) * Tini[slack] .+ Ti
+    Ti = (pi / 180) * Tini[slack] .+ Ti
 
     ########## Post-processing ##########
     for i = 1:num.Nbranch

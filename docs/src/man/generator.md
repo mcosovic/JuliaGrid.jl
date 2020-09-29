@@ -49,19 +49,19 @@ measurements, system, info = runmg() returns measurement and power system data w
 ```
 #### Examples
 ```julia-repl
-julia> measurements, system, info = runmg("case14.xlsx"; pmuset = "optimal")
+measurements, system, info = runmg("case14.xlsx"; pmuset = "optimal")
 ```
 ```julia-repl
-julia> measurements, = runmg("case14.xlsx"; pmuset = ["Iij" 5 "Vi" 2])
+measurements, = runmg("case14.xlsx"; pmuset = ["Iij" 5 "Vi" 2])
 ```
 ```julia-repl
-julia> measurements, = runmg("case14.xlsx"; pmuset = ["Iij" "all" "Vi" 2], legacyset = ["Pij" 4 "Qi" 8])
+measurements, = runmg("case14.xlsx"; pmuset = ["Iij" "all" "Vi" 2], legacyset = ["Pij" 4 "Qi" 8])
 ```
 ```julia-repl
-julia> measurements, = runmg("case14.h5"; legacyset = ["redundancy" 3.1], legacyvariance = ["complete" 1e-4])
+measurements, = runmg("case14.h5"; legacyset = ["redundancy" 3.1], legacyvariance = ["complete" 1e-4])
 ```
 ```julia-repl
-julia> measurements, = runmg("case14.h5"; legacyset = "complete", legacyvariance = ["Pij" 1e-4])
+measurements, = runmg("case14.h5"; legacyset = "complete", legacyvariance = ["Pij" 1e-4])
 ```
 ---
 
@@ -146,7 +146,7 @@ The measurement generator function `runmg()` receives the variable number of arg
 
     Further, the function accept any subset of phasor[^1] or legacy[^2] measurements, and consequently, it is not necessary to define attributes for all measurements.  
     ```julia-repl
-    julia> runmg("case14.h5"; pmuset = ["Iij" "all" "Vi" 2])
+    runmg("case14.h5"; pmuset = ["Iij" "all" "Vi" 2])
     ```
     Thus, the measurement set will consist of two randomly selected bus voltage magnitude measurements, and all branch current magnitude measurements, both of them related with PMUs.  
 
@@ -196,7 +196,7 @@ The measurement generator function `runmg()` receives the variable number of arg
 
     Further, the function accepts any subset of phasor[^1] or legacy[^2] measurements, consequently, it is not necessary to define attributes for all measurements, where keyword `"complete"` generates measurement values according to defined variance for all measurements, except for those individually defined.   
     ```julia-repl
-    julia> runmg("case14.h5"; legacyvariance = ["Pij" 1e-4 "complete" 1e-5])
+    runmg("case14.h5"; legacyvariance = ["Pij" 1e-4 "complete" 1e-5])
     ```
     The function applies variance value of 1e-5 over all legacy measurements, except for active power flow measurements which have variance equal to 1e-4.
 

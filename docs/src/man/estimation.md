@@ -59,27 +59,27 @@ results, measurements, system, info = runse() returns results, measurements, pow
 ```
 ####  Examples
 ```julia-repl
-julia> results, = runse("case14se.xlsx", "nonlinear", "main", "estimate")
+results, = runse("case14se.xlsx", "nonlinear", "main", "estimate")
 ```
 ```julia-repl
-julia> results, = runse("case14se.xlsx", "nonlinear", "estimate"; start = "flat")
+results, = runse("case14se.xlsx", "nonlinear", "estimate"; start = "flat")
 ```
 ```julia-repl
-julia> results, = runse("case14se.xlsx", "dc", "main", "estimate", "error", "flow")
+results, = runse("case14se.xlsx", "dc", "main", "estimate", "error", "flow")
 ```
 ```julia-repl
-julia> results, = runse("case30se.h5", "dc", "estimate"; bad = ["pass" 2])
+results, = runse("case30se.h5", "dc", "estimate"; bad = ["pass" 2])
 ```
 ```julia-repl
-julia> results, = runse("case14se.xlsx", "pmu", "estimate", "lav")
+results, = runse("case14se.xlsx", "pmu", "estimate", "lav")
 ```
 ```julia-repl
-julia> data = runmg("case14.h5"; runflow = 1, pmuset = "complete", pmuvariance = ["complete" 1e-4])
-julia> results, = runse(data, "pmu", "estimate")
+data = runmg("case14.h5"; runflow = 1, pmuset = "complete", pmuvariance = ["complete" 1e-4])
+results, = runse(data, "pmu", "estimate")
 ```
 ```julia-repl
-julia> data = runmg("case14.h5"; runflow = 1, legacyset = ["redundancy" 1.4], legacyvariance = ["complete" 1e-4])
-julia> results = runse(data, "dc"; observe = ["islandBP" "pivot" 1e-6 "Pi" 1e4])
+data = runmg("case14.h5"; runflow = 1, legacyset = ["redundancy" 1.4], legacyvariance = ["complete" 1e-4])
+results = runse(data, "dc"; observe = ["islandBP" "pivot" 1e-6 "Pi" 1e4])
 ```
 ---
 

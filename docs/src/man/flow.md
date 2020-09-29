@@ -47,16 +47,16 @@ results, system, info = runpf() returns results, power system and info data
 ```
 ####  Examples
 ```julia-repl
-julia> results, system, info = runpf("case14.h5", "nr", "main", "flow", "generation")
+results, system, info = runpf("case14.h5", "nr", "main", "flow", "generation")
 ```
 ```julia-repl
-julia> results, = runpf("case14.xlsx", "nr", "main"; max = 10, stop = 1.0e-8)
+results, = runpf("case14.xlsx", "nr", "main"; max = 10, stop = 1.0e-8)
 ```
 ```julia-repl
-julia> results, = runpf("case14.h5", "gs", "main"; max = 500, stop = 1.0e-8, reactive = 1)
+results, = runpf("case14.h5", "gs", "main"; max = 500, stop = 1.0e-8, reactive = 1)
 ```
 ```julia-repl
-julia> results, = runpf("case14.h5", "dc"; solve = "lu", save = "D:/case14results.xlsx")
+results, = runpf("case14.h5", "dc"; solve = "lu", save = "D:/case14results.xlsx")
 ```
 ---
 
@@ -80,12 +80,12 @@ The power flow function `runpf()` receives a group of variable number of argumen
 ##### METHOD - Variable Argument
 
 | Command | Description
-|:--------|:-------------------------------------------------------------------------------|
-|`"nr"`   | runs the AC power flow analysis using Newton-Raphson method, `default setting` |
-|`"gs"`   | runs the AC power flow analysis using Gauss-Seidel method                      |
-|`"fnrxb"`| runs the AC power flow analysis using XB fast Newton-Raphson method            |
-|`"fnrbx"`| runs the AC power flow analysis using BX fast Newton-Raphson method            |
-|`"dc"`   | runs the DC power flow analysis                                                |
+|:--------|:--------------------------------------------------------------------------------------|
+|`"nr"`   | runs the AC power flow analysis using Newton-Raphson method, `default METHOD setting` |
+|`"gs"`   | runs the AC power flow analysis using Gauss-Seidel method                             |
+|`"fnrxb"`| runs the AC power flow analysis using XB fast Newton-Raphson method                   |
+|`"fnrbx"`| runs the AC power flow analysis using BX fast Newton-Raphson method                   |
+|`"dc"`   | runs the DC power flow analysis                                                       |
 
 ```@raw html
 &nbsp;
@@ -114,10 +114,10 @@ The power flow function `runpf()` receives a group of variable number of argumen
 ```
 ##### SOLVE - Keyword Argument
 
-| Command            | Description                                      |
-|:-------------------|:-------------------------------------------------|
-|`solve = "builtin"` | built-in linear system solver, `default setting` |
-|`solve = "lu"`      | LU linear system solver                          |
+| Command            | Description                                            |
+|:-------------------|:-------------------------------------------------------|
+|`solve = "builtin"` | built-in linear system solver, `default SOLVE setting` |
+|`solve = "lu"`      | LU linear system solver                                |
 
 ```@raw html
 &nbsp;

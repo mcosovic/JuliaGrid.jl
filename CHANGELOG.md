@@ -1,5 +1,9 @@
 # JuliaGrid changelog
 
+![docs] the DC optimal power flow run settings
+
+![featureadd] the DC optimal power flow
+
 ## Version `v0.0.4`
 
 ![featureadd] the nonlinear state estimation
