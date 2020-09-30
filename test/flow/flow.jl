@@ -171,3 +171,25 @@ end
     @test_throws ErrorException runpf(nobus)
     @test_throws DomainError runpf(reducedbranch)
 end
+
+
+### Optimal Power flow tests
+case14test = string(path, "case14testdcopf.h5")
+case14test_results = string(path, "case14testdcopf_results.h5")
+case300_results = string(path, "case300dcopf_results.h5")
+
+@testset "Optimal DC Power Flow" begin
+    matpower = h5read(case14test_results, "/dc")
+        accuracy = 1e-4
+        results, = runopf(case14test, "dc", "main", "flow", "generation")
+        @test maximum(abs.(results.main[:, 2] - matpower["Ti"])) < accuracy
+        @test maximum(abs.(results.flow[:, 4] - matpower["Pij"])) < accuracy
+        @test maximum(abs.(results.generation[:, 2] - matpower["Pgen"])) < accuracy
+
+    matpower = h5read(case300_results, "/dc")
+        accuracy = 1e-4
+        results, = runopf("case300.h5", "dc")
+        @test maximum(abs.(results.main[:, 2] - matpower["Ti"])) < accuracy
+        @test maximum(abs.(results.flow[:, 4] - matpower["Pij"])) < accuracy
+        @test maximum(abs.(results.generation[:, 2] - matpower["Pgen"])) < accuracy
+end

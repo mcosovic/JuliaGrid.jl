@@ -77,8 +77,8 @@ function rundcopf(system, num, settings, info)
     ########## Branch angle constraints ##########
     @inbounds for i = 1:num.Nbranch
         if angleMin[i] > -360 && angleMax[i] < 360
-            angMinRad = angleMin[i] * π / 180
-            angMaxRad = angleMax[i] * π / 180
+            angMinRad = angleMin[i] * (pi / 180)
+            angMaxRad = angleMax[i] * (pi / 180)
             @constraint(model, angMinRad <= thetas[from[i]] - thetas[to[i]] <= angMaxRad)
         end
     end
@@ -115,6 +115,13 @@ function rundcopf(system, num, settings, info)
         end
     end
 
+    Pgen[:] = value.(pGen) .* system.basePower
+    for (k, i) in enumerate(gen)
+        if genOn[k] == 1
+            Pbus[i] += Pgen[k]
+        end
+    end
+
     for i = 1:num.Nbus
         Va[i] = (180 / pi) * Ti[i]
         Pinj[i] = Pbus[i] - Pload[i]
@@ -128,12 +135,7 @@ function rundcopf(system, num, settings, info)
         end
     end
 
-    Pgen[:] = value.(pGen) .* system.basePower
-    for (k, i) in enumerate(gen)
-        if genOn[k] == 1
-            Pbus[i] += Pgen[k]
-        end
-    end
+
  end # algtime
 
     ########## Results ##########
