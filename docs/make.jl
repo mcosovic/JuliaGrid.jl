@@ -16,6 +16,7 @@ makedocs(
         "Theoretical Background" => [
             "Network Equations" => "man/tbbranch.md",
             "Power Flow" => "man/tbflow.md",
+            "Optimal Power Flow" => "man/tboptimal.md",            
             "State Estimation" => "man/tbestimate.md",
             "State Estimation Routines" => "man/tbestimaterest.md",
         ],

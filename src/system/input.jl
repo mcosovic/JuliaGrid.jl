@@ -10,7 +10,7 @@ struct PowerSystem
     bus::Array{Float64,2}
     branch::Array{Float64,2}
     generator::Array{Float64,2}
-    gencost::Array{Float64,2}
+    generatorcost::Array{Float64,2}
     basePower::Float64
 end
 
@@ -18,6 +18,7 @@ struct PowerSystemNum
     Nbus::Int64
     Nbranch::Int64
     Ngen::Int64
+    Ncost::Int64
 end
 
 struct FlowSettings
@@ -143,10 +144,11 @@ function loadsystem(path)
             Ngen = 0
         end
         if exists(fid, "generatorcost")
-            gencost::Array{Float64,2} = h5read(path.fullpath, "/generatorcost")
-            datastruct(gencost, 5; var = "generatorcost")
+            generatorcost::Array{Float64,2} = h5read(path.fullpath, "/generatorcost")
+            Ncost = datastruct(generatorcost, 5; var = "generatorcost")
         else
-            gencost = zeros(1, 5)
+            generatorcost = zeros(1, 5)
+            Ncost = 0
         end
         if exists(fid, "basePower")
             basePower::Float64 = h5read(path.fullpath, "/basePower")[1]
@@ -188,10 +190,11 @@ function loadsystem(path)
         end
         if "generatorcost" in XLSX.sheetnames(xf)
             start = startxlsx(xf["generatorcost"])
-            gencost = xf["generatorcost"][:][start:end, :]
-            datastruct(gencost, 5; var = "generatorcost")
+            generatorcost = xf["generatorcost"][:][start:end, :]
+            Ncost = datastruct(generatorcost, 5; var = "generatorcost")
         else
-            gencost = zeros(1, 5)
+            generatorcost = zeros(1, 5)
+            Ncost = 0
         end
         if "basePower" in XLSX.sheetnames(xf)
             start = startxlsx(xf["basePower"])
@@ -210,7 +213,7 @@ function loadsystem(path)
 
     info = infogrid(bus, branch, generator, info, path.dataname, Nbranch, Nbus, Ngen)
 
-    return PowerSystem(bus, branch, generator, gencost, basePower), PowerSystemNum(Nbus, Nbranch, Ngen), info
+    return PowerSystem(bus, branch, generator, generatorcost, basePower), PowerSystemNum(Nbus, Nbranch, Ngen, Ncost), info
 end
 
 
@@ -943,19 +946,29 @@ function loadsedirect(args)
     if Ngen == 1 && system.generator[1, 1] == 0
         Ngen = 0
     end
+    Ncost = size(system.generatorcost, 1)
+    if Ncost == 1 && system.generatorcost[1, 1] == 0
+        Ncost = 0
+    end
 
-    return system, PowerSystemNum(Nbus, Nbranch, Ngen),
+    return system, PowerSystemNum(Nbus, Nbranch, Ngen, Ncost),
         measurements, MeasurementsNum(pmuNv, pmuNc, legacyNf, legacyNc, legacyNi, legacyNv), info
 end
 
 
 ### Optimal power flow settings
 @inbounds function opfsettings(args, save, system, num)
+    if num.Ncost == 0
+        throw(ErrorException("error opening generatorcost"))
+    end
+    if num.Ncost != num.Ngen
+        throw(ErrorException("generator and generatorcost dimensions mismatch"))
+    end
+
     algorithm = "false"
     main = false
     flow = false
     generation = false
-    reactive = [false; true; false]
 
     for i = 1:length(args)
         if args[i] in ["dc", "ac"]

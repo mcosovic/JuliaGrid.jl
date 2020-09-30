@@ -1,6 +1,6 @@
 ### DC power flow results
 @inbounds function results_flowdc(system, num, settings, results, slack, algtime)
-    dheader = dcpfheader(); pheader = psheader()
+    dheader = dcpfheader(); pheader = psheader(system)
     header = merge(dheader, pheader)
 
     ########## DC main display ##########
@@ -28,6 +28,10 @@
     if num.Ngen != 0
         gen = 2; gent = 1
     end
+    cost = 0
+    if num.Ncost != 0
+        cost = 2
+    end
 
     if settings.generation
         println("\n Generation Data Display")
@@ -35,7 +39,7 @@
             formatters = ft_printf(["%1.0f","%1.4f"], collect(1:2)))
     end
 
-    group = (main = 1, flow = 1, generation = gent, bus = 2, branch = 2, generator = gen, basePower = 2)
+    group = (main = 1, flow = 1, generation = gent, bus = 2, branch = 2, generator = gen, generatorcost = cost, basePower = 2)
 
     return header, group
 end
@@ -44,7 +48,7 @@ end
 ### AC power flow results
 @inbounds function results_flowac(system, num, settings, results, slack, limit, algtime)
     println(string("Execution time: ", (@sprintf "%.4f" algtime * 1000), " (ms)"))
-    aheader = acpfheader(); pheader = psheader()
+    aheader = acpfheader(); pheader = psheader(system)
     header = merge(aheader, pheader)
 
     ########## AC limit display ##########
@@ -98,6 +102,10 @@ end
     if num.Ngen != 0
         gen = 2; gent = 1
     end
+    cost = 0
+    if num.Ncost != 0
+        cost = 2
+    end
 
     if settings.generation
         println("\n Generation Data Display")
@@ -106,7 +114,7 @@ end
             formatters = ft_printf(["%1.0f", "%1.4f", "%1.4f"], collect(1:3)))
     end
 
-    group = (main = 1, flow = 1, generation = gent, bus = 2, branch = 2, generator = gen, basePower = 2)
+    group = (main = 1, flow = 1, generation = gent, bus = 2, branch = 2, generator = gen, generatorcost = cost, basePower = 2)
 
     return header, group
 end
@@ -372,20 +380,21 @@ function results_estimatedc(system, numsys, measurements, num, settings, results
     end
 
     ########## Export results ##########
-    pmuv = 2; pmuc = 2; legf = 2; legc = 2; legi = 2; legv = 2; gen = 3;
+    pmuv = 2; pmuc = 2; legf = 2; legc = 2; legi = 2; legv = 2; gen = 3; cost = 3;
     if num.pmuNv == 0 pmuv = 0  end
     if num.pmuNc == 0 pmuc = 0 end
     if num.legacyNf == 0 legf = 0 end
     if num.legacyNc == 0 legc = 0 end
     if num.legacyNi == 0 legi = 0 end
-    if num.legacyNv == 0  legv = 0 end
-    if numsys.Ngen == 0  gen = 0 end
+    if num.legacyNv == 0 legv = 0 end
+    if numsys.Ngen == 0 gen = 0 end
+    if numsys.Ncost == 0 cost = 0 end
 
     group = (main = 1, flow = 1, estimate = 1, error = 1,
         pmuVoltage = pmuv, pmuCurrent = pmuc, legacyFlow = legf, legacyCurrent = legc, legacyInjection = legi, legacyVoltage = legv,
-        bus = 3, branch = 3, generator = gen, basePower = 3)
+        bus = 3, branch = 3, generator = gen, generatorcost = cost, basePower = 3)
 
-    mheader = measureheader(); pheader = psheader(); headernew = merge(mheader, pheader, header)
+    mheader = measureheader(); pheader = psheader(system); headernew = merge(mheader, pheader, header)
 
     return headernew, group
 end
@@ -394,7 +403,7 @@ end
 ### PMU state estimation results
 @inbounds function results_estimatepmu(system, numsys, measurements, num, settings, results, idxbad, Npseudo, algtime)
     println(string("Execution time: ", (@sprintf "%.4f" algtime * 1000), " (ms)"))
-    aheader = pmuseheader(); pheader = psheader()
+    aheader = pmuseheader(); pheader = psheader(system)
     header = merge(aheader, pheader)
 
     ########## PMU estimate and error results ##########
@@ -491,20 +500,21 @@ end
     end
 
     ########## Export results ##########
-    pmuv = 2; pmuc = 2; legf = 2; legc = 2; legi = 2; legv = 2; gen = 3;
+    pmuv = 2; pmuc = 2; legf = 2; legc = 2; legi = 2; legv = 2; gen = 3; cost = 3
     if num.pmuNv == 0 pmuv = 0  end
     if num.pmuNc == 0 pmuc = 0 end
     if num.legacyNf == 0 legf = 0 end
     if num.legacyNc == 0 legc = 0 end
     if num.legacyNi == 0 legi = 0 end
-    if num.legacyNv == 0  legv = 0 end
-    if numsys.Ngen == 0  gen = 0 end
+    if num.legacyNv == 0 legv = 0 end
+    if numsys.Ngen == 0 gen = 0 end
+    if numsys.Ncost == 0 cost = 0 end
 
     group = (main = 1, flow = 1, estimate = 1, error = 1,
         pmuVoltage = pmuv, pmuCurrent = pmuc, legacyFlow = legf, legacyCurrent = legc, legacyInjection = legi, legacyVoltage = legv,
-        bus = 3, branch = 3, generator = gen, basePower = 3)
+        bus = 3, branch = 3, generator = gen, generatorcost = cost, basePower = 3)
 
-    mheader = measureheader(); pheader = psheader(); headernew = merge(mheader, pheader, header)
+    mheader = measureheader(); pheader = psheader(system); headernew = merge(mheader, pheader, header)
 
     return headernew, group
 end
@@ -512,7 +522,7 @@ end
 ### Nonlinear state estimation results
 @inbounds function results_estimateac(system, numsys, measurements, num, settings, results, slack, algtime)
     println(string("Execution time: ", (@sprintf "%.4f" algtime * 1000), " (ms)"))
-    aheader = acseheader(); pheader = psheader()
+    aheader = acseheader(); pheader = psheader(system)
     header = merge(aheader, pheader)
 
     ########## Nonlinear main display ##########
@@ -617,20 +627,21 @@ end
     end
 
     ########## Export results ##########
-    pmuv = 2; pmuc = 2; legf = 2; legc = 2; legi = 2; legv = 2; gen = 3;
+    pmuv = 2; pmuc = 2; legf = 2; legc = 2; legi = 2; legv = 2; gen = 3; cost = 3
     if num.pmuNv == 0 pmuv = 0  end
     if num.pmuNc == 0 pmuc = 0 end
     if num.legacyNf == 0 legf = 0 end
     if num.legacyNc == 0 legc = 0 end
     if num.legacyNi == 0 legi = 0 end
-    if num.legacyNv == 0  legv = 0 end
-    if numsys.Ngen == 0  gen = 0 end
+    if num.legacyNv == 0 legv = 0 end
+    if numsys.Ngen == 0 gen = 0 end
+    if numsys.Ncost == 0 cost = 0 end
 
     group = (main = 1, flow = 1, estimate = 1, error = 1,
         pmuVoltage = pmuv, pmuCurrent = pmuc, legacyFlow = legf, legacyCurrent = legc, legacyInjection = legi, legacyVoltage = legv,
-        bus = 3, branch = 3, generator = gen, basePower = 3)
+        bus = 3, branch = 3, generator = gen, generatorcost = cost, basePower = 3)
 
-    mheader = measureheader(); pheader = psheader(); headernew = merge(mheader, pheader, header)
+    mheader = measureheader(); pheader = psheader(system); headernew = merge(mheader, pheader, header)
 
     return headernew, group
 end

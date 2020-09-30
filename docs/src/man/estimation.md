@@ -113,11 +113,20 @@ The state estimation function `runse()` receives a group of variable number of a
 ```
 ##### ROUTINE - Variable Argument
 
-| Command      | Description                                                                              |
-|:-------------|:-----------------------------------------------------------------------------------------|
-|`"lav"`       | runs the non-linear or linear state estimation using the least absolute value estimation with `"GLPK"` solver as `default settings` (see ATTACH to change `default settings`) |
-|`"bad"` | runs the bad data processing for the weighted least-squares method, where the bad data identification threshold is set to `"threshold" = 3`, with the maximum number of `"passes" = 1`, where the critical measurement criteria is equal to `"critical" = 1e-10` (see ATTACH to change `default settings`) |
-|`"observe"` | runs the observability analysis where identification of the observable islands is accomplished by the topological method, while the observability restoration is performed using numerical method with zero pivot threshold equal to `"pivot" = 1e-10`, where the restore routine takes only power injection measurements with variances in per-unit `"Pi" = 1e5` (see ATTACH to change `default settings`) |
+| ROUTINE:        |  Least Absolute Value Estimation Method                                                                                           |
+|:----------------|:----------------------------------------------------------------------------------------------------------------------------------|
+| **Command**     | `lav`                                                                                                                             |
+| **Description** | runs the non-linear or linear state estimation using the least absolute value estimation with `"GLPK"` solver as `default settings` (see ATTACH to change `default settings`) |
+
+| ROUTINE:        | Bad Data Processing                                                                      |
+|:----------------|:-----------------------------------------------------------------------------------------|
+| **Command**     | `bad`                                                                                    |
+| **Description** | runs the bad data processing for the weighted least-squares method, where the bad data identification threshold is set to `"threshold" = 3`, with the maximum number of `"passes" = 1`, where the critical measurement criteria is equal to `"critical" = 1e-10` (see ATTACH to change `default settings`) |
+
+| ROUTINE:        | Observability Analysis                                                                                            |
+|:----------------|:------------------------------------------------------------------------------------------------------------------|
+| **Command**     | `observe`                                                                                                         |
+| **Description** | runs the observability analysis where identification of the observable islands is accomplished by the topological method, while the observability restoration is performed using numerical method with zero pivot threshold equal to `"pivot" = 1e-10`, where the restore routine takes only power injection measurements with variances in per-unit `"Pi" = 1e5` (see ATTACH to change `default settings`) |
 
 ```@raw html
 &nbsp;
@@ -135,21 +144,29 @@ The state estimation function `runse()` receives a group of variable number of a
 ```@raw html
 &nbsp;
 ```
-##### NONLINEAR - Variable Argument
+##### NONLINEAR - Keyword Argument
 
 | Command          | Description                                                                              |
 |:-----------------|:-----------------------------------------------------------------------------------------|
 |`max = value`     | specifies the maximum number of iterations, `default setting: 100` |
 |`stop = value`    | specifies the stopping criteria, `default setting: 1.0e-8`         |
-|`start = "warm"`  | the Gauss-Newton initial point defined as the one applied in the AC power flow, `default start setting` |
-|`start = "flat"`  | unique the Gauss-Newton initial point for voltage angles equal to 0 and magnitude equal to 1 |
-|`start = "random"`| the Gauss-Newton initial point defined using random perturbation between -0.5 and 0.5 of voltage angles in degrees, and 0.98 and 1.02 of voltage magnitudes in per-units |
 
+| NONLINEAR:      | The Gauss-Newton Initial Point                                                                          |
+|:----------------|:--------------------------------------------------------------------------------------------------------|
+| **Command**     | `start = "warm"`                                                                                        |
+| **Description** | the Gauss-Newton initial point defined as the one applied in the AC power flow, `default START setting` |
 
-| NONLINEAR:      |  Start                                                          |
-|:----------------|:----------------------------------------------------------------|
-| **Command**     | `start = "["Vi" value1 value2 "Ti" value3 value4]"`             |
-| **Description** | change default options for `random` Gauss-Newton initial point  |
+| NONLINEAR:      | The Gauss-Newton Initial Point                                                                          |
+|:----------------|:--------------------------------------------------------------------------------------------------------|
+| **Command**     | `start = "flat"`                                                                                        |
+| **Description** | unique the Gauss-Newton initial point for voltage angles equal to 0 and magnitude equal to 1            |
+
+| NONLINEAR:      | The Gauss-Newton Initial Point                                                                          |
+|:----------------|:--------------------------------------------------------------------------------------------------------|
+| **Command**     | `start = "random"`                                                                                      |
+| **Description** | the Gauss-Newton initial point defined using random perturbation between -0.5 and 0.5 of voltage angles in degrees, and 0.98 and 1.02 of voltage magnitudes in per-units  |
+| **Command**     | `start = "["Vi" value1 value2 "Ti" value3 value4]"`                                                     |
+| **Description** | change default options for `random` Gauss-Newton initial point                                          |
 
 
 ```@raw html

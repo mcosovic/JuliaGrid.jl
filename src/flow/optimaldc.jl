@@ -157,10 +157,10 @@ function process_cost_table(system, num, costModel, coeffs, numOfCoeffs)
             ########## PWL cost model ##########
             if numOfCoeffs[i] == 2
                 ########## Single block pwl cost, convert to polynomial ##########
-                x0 = system.gencost[i, 5]
-                y0 = system.gencost[i, 6]
-                x1 = system.gencost[i, 7]
-                y1 = system.gencost[i, 8]
+                x0 = system.generatorcost[i, 5]
+                y0 = system.generatorcost[i, 6]
+                x1 = system.generatorcost[i, 7]
+                y1 = system.generatorcost[i, 8]
                 m = (y1 - y0) / (x1 - x0)
                 b = y0 - m * x0
                 linTerm[i] = m
@@ -206,8 +206,8 @@ function makeApwl(system, num, nPWL, pwlIds, pgbas, qgbas, ybas, numOfCoeffs)
     k = 1
     @inbounds for i in pwlIds
         ns = numOfCoeffs[i]
-        p = @view(system.gencost[i, 5:2:(5 + 2 * ns - 1)]) / system.basePower
-        c = @view(system.gencost[i, 6:2:(5 + 2 * ns)])
+        p = @view(system.generatorcost[i, 5:2:(5 + 2 * ns - 1)]) / system.basePower
+        c = @view(system.generatorcost[i, 6:2:(5 + 2 * ns)])
         m = diff(c) ./ diff(p)
         if any(diff(p) == 0)
             println("makeApwl: Bad x axis data in the generator cost matrix, row: ", i)
@@ -259,10 +259,9 @@ function read_opfdcsystem(system, num)
     angleMin = @view(system.branch[:, 13])
     angleMax = @view(system.branch[:, 14])
 
-    costModel = @view(system.gencost[:, 1])
-    numOfCoeffs = convert(Array{Int64,1}, system.gencost[:, 4])
-    maxNumOfCoeffs, ~ = findmax(numOfCoeffs)
-    coeffs = @view(system.gencost[1:num.Ngen, 5:4+maxNumOfCoeffs])
+    costModel = @view(system.generatorcost[:, 1])
+    numOfCoeffs = convert(Array{Int64,1}, system.generatorcost[:, 4])
+    coeffs = @view(system.generatorcost[:, 5:end])
 
     return busi, type, Pload, Gshunt, Tini,
             Pmax, Pmin,

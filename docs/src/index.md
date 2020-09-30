@@ -6,7 +6,7 @@ JuliaGrid is an open-source, easy-to-use simulation tool/solver for researchers 
 The software package, among other things, includes:
  - [AC power flow analysis](@ref acpowerflow),
  - [DC power flow analysis](@ref dcpowerflow),
- - DC optimal power flow analysis,
+ - [DC optimal power flow analysis](@ref optimalpf),
  - [non-linear state estimation](@ref nonlinearse),
  - [linear DC state estimation](@ref lineardcse),
  - [linear state estimation with PMUs](@ref linearpmuse),
@@ -17,14 +17,14 @@ The software package, among other things, includes:
 ---
 
 ### Main Features
-Features supported by JuliaGrid can be categorised into three main groups:
- - [**Power Flow**](@ref runpf) - performs the AC and DC power flow analysis using the executive function `runpf()`,
+Features supported by JuliaGrid can be categorised into four main groups:
+ - [**Power Flow**](@ref runpf) - executive function `runpf()` - performs the AC and DC power flow analysis,
 
-  - [**Optimal Power Flow**](@ref runopf) - performs the DC and AC optimal power flow analysis using the executive function `runopf()`,
+ - [**Optimal Power Flow**](@ref runopf) - executive function `runopf()` - performs the DC and AC optimal power flow analysis,
 
- - [**State Estimation**](@ref runse) - performs non-linear, DC and PMU state estimation using the executive function `runse()`,
+ - [**State Estimation**](@ref runse) - executive function `runse()` - performs non-linear, DC and PMU state estimation,
 
- - [**Standalone Measurement Generator**](@ref runmg) - generates a set of measurements using the executive function `runmg()`.
+ - [**Standalone Measurement Generator**](@ref runmg) - executive function `runmg()` - generates a set of measurements.
 ---
 
 

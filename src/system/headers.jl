@@ -1,17 +1,21 @@
 ### Power System
-function psheader()
+function psheader(system)
     basePower = [["Base Power" ""]; ["Power [MVA]" ""]]
 
     bus = [["Bus" "Type" "Demand" "Demand" "Shunt Conductance" "Shunt Susceptance" "Area" "Voltage" "Voltage" "Base Voltage" "Loss Zone" "Maximum Voltage" "Minimum Voltage" "Lagrange multiplier" "Lagrange multiplier" "Kuhn-Tucker multiplier" "Kuhn-Tucker multiplier"]
            ["Integer" "PQ(1), PV(2), Slack(3)" "Active Power [MW]" "Reactive Power [MVAr]" "Active Power [MW]" "Reactive Power [MVAr]" "Integer" "Magnitude [p.u.]" "Angle [deg]" "Magnitude [kV]" "Integer" "Magnitude [p.u.]" "Magnitude [p.u.]" "Active Power Mismatch [u/MW]" "Reactive Power Mismatch [u/MVAr]" "Upper Voltage Magnitude Limit [u/p.u.]" "Lower Voltage Magnitude Limit [u/p.u.]"]]
 
+    branch = [["Branch" "From Bus" "To Bus" "Series Parameter" "Series Parameter" "Charging Parameter" "Long Term Rate" "Short Term Rate" "Emergency Rate" "Transformer" "Transformer" "Status" "Minimum Voltage Difference" "Maximum Voltage Difference" "Injected From Bus" "Injected From Bus" "Injected To Bus" "Injected To Bus" "Kuhn-Tucker Multiplier" "Kuhn-Tucker Multiplier" "Kuhn-Tucker Multiplier" "Kuhn-Tucker Multiplier"]
+              ["Integer" "Integer" "Integer" "Resistance [p.u.]" "Reactance [p.u.]" "Susceptance [p.u.]" "Power [MVA]" "Power [MVA]" "Power [MVA]" "Turns Ratio" "Shift Angle [deg]" "Integer" "Angle [deg]" "Angle [deg]" "Active Power [MW]" "Reactive Power [MVAr]" "Active Power [MW]" "Reactive Power [MVAr]" "Power From Bus Limit [u/MVA]" "Power To Bus Limit [u/MVA]" "Lower Angle Difference Limit [u/deg]" "Upper Angle Difference Limit [u/deg]"]]
+
     generator = [["Bus" "Generation" "Generation" "Maximum Generation" "Minimum Generation" "Voltage" "Base" "Status" "Maximum Generation" "Minimum Generation" "Lower of PQ Curve" "Upper of PQ Curve" "Minimum at PC1" "Maximum at PC1" "Minimum at PC2" "Maximum at PC2" "Ramp Rate ACG" "Ramp Rate 10" "Ramp Rate 30" "Ramp Rate Q" "Area Factor" "Kuhn-Tucker Multiplier" "Kuhn-Tucker Multiplier" "Kuhn-Tucker Multiplier" "Kuhn-Tucker Multiplier"]
                   ["Integer" "Active Power [MW]" "Reactive Power [MVAr]" "Reactive Power [MVAr]" "Reactive Power [MVAr]" "Magnitude [p.u.]" "Power [MVA]" "Integer" "Active Power [MW]" "Active Power [MW]" "Active Power [MW]" "Active Power [MW]" "Reactive Power [MVAr]" "Reactive Power [MVAr]" "Reactive Power [MVAr]" "Reactive Power [MVAr]" "Active Power per Minut [MW/min]" "Active Power [MW]" "Active Power [MW]" "Reactive Power per Minut [MVAr/min]" "Integer" "Upper Genration Active Power Limit [u/MW]" "Lower Genration Active Power Limit [u/MW]" "Upper Genration Reactive Power Limit [u/MVAr]" "Lower Genration Reactive Power Limit [u/MVAr]"]]
 
-    branch = [["Branch" "From Bus" "To Bus" "Series Parameter" "Series Parameter" "Charging Parameter" "Long Term Rate" "Short Term Rate" "Emergency Rate" "Transformer" "Transformer" "Status" "Minimum Voltage Difference" "Maximum Voltage Difference" "Injected From Bus" "Injected From Bus" "Injected To Bus" "Injected To Bus" "Kuhn-Tucker Multiplier" "Kuhn-Tucker Multiplier" "Kuhn-Tucker Multiplier" "Kuhn-Tucker Multiplier"]
-               ["Integer" "Integer" "Integer" "Resistance [p.u.]" "Reactance [p.u.]" "Susceptance [p.u.]" "Power [MVA]" "Power [MVA]" "Power [MVA]" "Turns Ratio" "Shift Angle [deg]" "Integer" "Angle [deg]" "Angle [deg]" "Active Power [MW]" "Reactive Power [MVAr]" "Active Power [MW]" "Reactive Power [MVAr]" "Power From Bus Limit [u/MVA]" "Power To Bus Limit [u/MVA]" "Lower Angle Difference Limit [u/deg]" "Upper Angle Difference Limit [u/deg]"]]
+    N = size(system.generatorcost, 2) - 4
+    generatorcost = [["Cost Model" "Cost" "Cost" "Cost Model" hcat(["Cost Model" for n = 1:N]...)]
+                     ["Piecewise(1), Polynomial(2)" "Startup [currency]" "Shutdown [currency]" "Number of Data Points" hcat(["Coefficient c$(trunc(Int, (n-1)))" for n = N:-1:1]...)]]
 
-    return (bus = bus, branch = branch, generator = generator, basePower = basePower)
+    return (bus = bus, branch = branch, generator = generator, generatorcost = generatorcost, basePower = basePower)
 end
 
 

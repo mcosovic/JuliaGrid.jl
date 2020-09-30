@@ -21,9 +21,9 @@ include("system/headers.jl")
 
 include("flow/flowdc.jl")
 include("flow/flowac.jl")
-include("flow/flowfunctions.jl")
-include("flow/measurements.jl")
 include("flow/optimaldc.jl")
+include("flow/measurements.jl")
+include("flow/flowfunctions.jl")
 
 include("estimation/estimatedc.jl")
 include("estimation/estimatepmu.jl")
@@ -48,6 +48,26 @@ function runpf(
         results = rundcpf(system, num, settings, info)
     else
         results = runacpf(system, num, settings, info)
+    end
+
+    return results, system, info
+end
+
+
+### Optimal Power Flow
+function runopf(
+    args...;
+    save::String = "",
+)
+
+    path = loadpath(args)
+    system, num, info = loadsystem(path)
+    settings = opfsettings(args, save, system, num)
+
+    if settings.algorithm == "dc"
+        results = rundcopf(system, num, settings, info)
+    else
+
     end
 
     return results, system, info
@@ -117,24 +137,6 @@ function runse(
     end
 
     return results, measurements, system, info
-end
-
-function runopf(
-    args...;
-    save::String = "",
-)
-
-    path = loadpath(args)
-    system, num, info = loadsystem(path)
-    settings = opfsettings(args, save, system, num)
-
-    if settings.algorithm == "dc"
-        results = rundcopf(system, num, settings, info)
-    else
-
-    end
-
-    return results, system, info
 end
 
 end # JuliaGrid

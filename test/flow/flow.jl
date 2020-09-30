@@ -23,8 +23,7 @@ reducedbranch = string(path, "reducedBranch.xlsx")
 
     runpf(nobasepower, "dc")
         fieldsres = (:main, :flow, :generation)
-        fieldssys = (:bus, :branch, :generator, :gencost, :basePower)
-        display( fieldnames(JuliaGrid.PowerSystem))
+        fieldssys = (:bus, :branch, :generator, :generatorcost, :basePower)
         @test all(fieldsres == fieldnames(JuliaGrid.PowerFlowDC))
         @test all(fieldssys == fieldnames(JuliaGrid.PowerSystem))
 
@@ -59,7 +58,7 @@ end
 
     runpf(nobasepower, "nr")
         fieldsres = (:main, :flow, :generation, :iterations)
-        fieldssys = (:bus, :branch, :generator, :gencost, :basePower)
+        fieldssys = (:bus, :branch, :generator, :generatorcost, :basePower)
         @test all(fieldsres == fieldnames(JuliaGrid.PowerFlowAC))
         @test all(fieldssys == fieldnames(JuliaGrid.PowerSystem))
 
