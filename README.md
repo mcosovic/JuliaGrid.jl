@@ -9,6 +9,7 @@ JuliaGrid is an open-source, easy-to-use simulation tool/solver for researchers 
 We have tested and verified simulation tool using different scenarios to the best of our ability. As a user of this simulation tool, you can help us to improve future versions, we highly appreciate your feedback about any errors, inaccuracies, and bugs. For more information, please visit [documentation][documentation] site.
 
 The software package provides the solution of the AC and DC power flow and optimal power flow, non-linear and DC state estimation, as well as the state estimation with PMUs, with standalone measurement generator.
+
 ---
 
 ### Installation
