@@ -1,5 +1,9 @@
 # JuliaGrid changelog
 
+## Version `v0.0.5`
+
+![bugfix] the nonlinear state estimation Jacobian slack column
+
 ![docs] maintenance run settings
 
 ![docs] the DC optimal power flow run settings

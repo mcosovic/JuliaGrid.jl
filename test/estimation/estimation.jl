@@ -114,14 +114,43 @@ end
     pf, = runpf("case30.h5", "nr")
     data = runmg("case30.h5"; runflow = 1, pmuset = "complete", pmuvariance = ["complete" 1e-120])
     se, = runse(data, "pmu", "main", "flow", "estimate", "error")
-            accuracy = 1e-8
-            @test maximum(abs.(pf.main[:, 2] - se.main[:, 2])) < accuracy
-            @test maximum(abs.(pf.main[:, 3] - se.main[:, 3])) < accuracy
-            @test se.error[1] < 1e-10
-            @test se.error[2] < 1e-10
+        accuracy = 1e-8
+        @test maximum(abs.(pf.main[:, 2] - se.main[:, 2])) < accuracy
+        @test maximum(abs.(pf.main[:, 3] - se.main[:, 3])) < accuracy
+        @test se.error[1] < 1e-10
+        @test se.error[2] < 1e-10
 
     lav, = runse(data, "pmu", "lav")
         accuracy = 1e-8
         @test maximum(abs.(pf.main[:, 2] - lav.main[:, 2])) < accuracy
         @test maximum(abs.(pf.main[:, 3] - lav.main[:, 3])) < accuracy
+end
+
+@testset "Nonlinear State Estimation" begin
+    pf, = runpf("case14.h5", "nr")
+    data = runmg("case14.h5"; runflow = 1, pmuset = "complete", pmuvariance = ["complete" 1e-30], legacyset = "complete", legacyvariance = ["complete" 1e-30])
+    se, = runse(data, "nonlinear", "main", "flow", "estimate", "error")
+        accuracy = 1e-8
+        @test maximum(abs.(pf.main[:, 2] - se.main[:, 2])) < accuracy
+        @test maximum(abs.(pf.main[:, 3] - se.main[:, 3])) < accuracy
+
+    pf, = runpf("case300.h5", "nr")
+    data = runmg("case300.h5"; runflow = 1, legacyset = ["Pij" "all" "Pi" "all" "Qij" "all" "Qi" "all"], legacyvariance = ["complete" 1e-120])
+    se, = runse(data, "nonlinear")
+        accuracy = 1e-8
+        @test maximum(abs.(pf.main[:, 2] - se.main[:, 2])) < accuracy
+        @test maximum(abs.(pf.main[:, 3] - se.main[:, 3])) < accuracy
+
+    data = runmg("case300.h5"; runflow = 1, pmuset = ["Ti" "all" "Vi" "all" "Iij" "all"], pmuvariance = ["complete" 1e-30])
+    se, = runse(data, "nonlinear")
+        accuracy = 1e-8
+        @test maximum(abs.(pf.main[:, 2] - se.main[:, 2])) < accuracy
+        @test maximum(abs.(pf.main[:, 3] - se.main[:, 3])) < accuracy
+
+    pf, = runpf("case_ieee30.h5", "nr")
+    data = runmg("case_ieee30.h5"; runflow = 1, pmuset = ["Ti" "all" "Vi" "all" "Dij" "all"], pmuvariance = ["complete" 1e-30])
+    se, = runse(data, "nonlinear")
+        accuracy = 1e-8
+        @test maximum(abs.(pf.main[:, 2] - se.main[:, 2])) < accuracy
+        @test maximum(abs.(pf.main[:, 3] - se.main[:, 3])) < accuracy
 end

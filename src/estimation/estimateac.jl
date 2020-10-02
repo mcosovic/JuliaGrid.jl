@@ -313,7 +313,7 @@ function runacse(system, measurements, num, numsys, settings, info)
     end
 
     ######### Slack bus and weighted matrix ##########
-    Jt = [Jt sparse([1], [slack], [1.0], 2 * numsys.Nbus, 1)]
+    Jt = [Jt sparse([slack], [1], [1.0], 2 * numsys.Nbus, 1)]
     push!(mean, 0.0); push!(weight, 1.0); push!(F, 0.0);
     W = spdiagm(0 => sqrt.(weight))
 
@@ -371,7 +371,7 @@ function runacse(system, measurements, num, numsys, settings, info)
                     Jt.nzval[pos[3]] = (Am * V[i] - V[j] * (Cm * ang[2] - Dm * ang[1])) / F[k]                      # ∂Iᵢⱼ / ∂Vᵢ
                     Jt.nzval[pos[4]] = (Bm * V[j] - V[i] * (Cm * ang[2] - Dm * ang[1])) / F[k]                      # ∂Iᵢⱼ / ∂Vⱼ
                 else
-                    Aa = gij; Ba = bij + bsi; Ca = tp * gij; Da = tp * bij
+                    Aa = copy(gij); Ba = copy(bij + bsi); Ca = tp * gij; Da = tp * bij
                     if fromto[k]
                         Aa = tp^2 * Aa; Ba = tp^2 * Ba
                     end
@@ -380,7 +380,7 @@ function runacse(system, measurements, num, numsys, settings, info)
                     Jt.nzval[pos[3]] = -(V[j] * (Cm * ang[1] + Dm * ang[2])) / (F[k]^2)                                         # ∂βᵢⱼ / ∂Vᵢ
                     Jt.nzval[pos[4]] = (V[i] * (Cm * ang[1] + Dm * ang[2])) / (F[k]^2)                                          # ∂βᵢⱼ / ∂Vⱼ
                     Icr = (Aa * cos(T[i]) - Ba * sin(T[i])) * V[i] - (Ca * cos(T[j] + Fi) - Da * sin(T[j] + Fi)) * V[j]
-                    Ici = (Aa * sin(T[i]) + Ba * cos(T[i])) * V[i] - (Ca * sin(T[j] + Fi) + Da * cos(T[j] + Fi)) * V[j]         # ∂Iᵢⱼ / ∂θⱼ
+                    Ici = (Aa * sin(T[i]) + Ba * cos(T[i])) * V[i] - (Ca * sin(T[j] + Fi) + Da * cos(T[j] + Fi)) * V[j]
                     F[k] = angle(complex(Icr, Ici))                                                                             # βᵢⱼ
                 end
             end
@@ -443,12 +443,12 @@ function runacse(system, measurements, num, numsys, settings, info)
             cnt1 += 1
         end
 
-        for i in Jt.colptr[slack]:(Jt.colptr[slack + 1] - 1) - 1
-            row = Jt.rowval[i]
-            Jt[slack, row] = 0.0
+        H = W * Jt'
+        for i in H.colptr[slack]:(H.colptr[slack + 1] - 1) - 1
+            row = H.rowval[i]
+            H[row, slack] = 0.0
         end
 
-        H = W * Jt'
         G = transpose(H) * H
         b = transpose(H) * W * (mean - F)
         dTV = wls(G, b, settings.solve)
