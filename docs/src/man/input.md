@@ -15,17 +15,17 @@ The basic input data structure used to describe a power system consists of varia
 
 | Column   | Description                                                                           | Unit      |
 |:--------:|:--------------------------------------------------------------------------------------|:----------| 	 
-| 1        | bus number defined as positive integer                                                |           |
-| 2        | bus type where PQ = 1, PV = 2, slack = 3                                              |           |
+| 1        | bus number defined as positive integer                                                | -         |
+| 2        | bus type where PQ = 1, PV = 2, slack = 3                                              | -         |
 | 3        | active power demand                                                                   | MW        |
 | 4        | reactive power demand                                                                 | MVAr      |
 | 5        | shunt conductance as active power demand at voltage magnitude equal to one per-unit   | MW        |
 | 6        | shunt susceptance as reactive power demand at voltage magnitude equal to one per-unit | MVAr      |
-| 7        | area number defined as positive integer                                               |           |
+| 7        | area number defined as positive integer                                               | -         |
 | 8        | initial voltage magnitude                                                             | per-unit  |
 | 9        | initial voltage angle                                                                 | deg       |
 | 10       | base voltage magnitude                                                                | kV        |
-| 11       | loss zone defined as positive integer                                                 |           |
+| 11       | loss zone defined as positive integer                                                 | -         |
 | 12       | minimum voltage magnitude                                                             | per-unit  |
 | 13       | maximum voltage magnitude                                                             | per-unit  |
 
@@ -37,18 +37,18 @@ The basic input data structure used to describe a power system consists of varia
 
 | Column  | Description                                                      | Unit     |
 |:-------:|:-----------------------------------------------------------------|:---------|
-| 1       | branch number defined as positive integer                        |          |
-| 2       | from bus number defined as positive integer                      |          |
-| 3       | to bus number defined as positive integer                        |          |
+| 1       | branch number defined as positive integer                        | -        |
+| 2       | from bus number defined as positive integer                      | -        |
+| 3       | to bus number defined as positive integer                        | -        |
 | 4       | series resistance                                                | per-unit |
 | 5       | series reactance                                                 | per-unit |
 | 6       | total line charging susceptance                                  | per-unit |
 | 7       | long term rating (equal to zero for unlimited)                   | MVA      |
 | 8       | short term rating (equal to zero for unlimited)                  | MVA      |
 | 9       | emergency rating (equal to zero for unlimited)                   | MVA      |
-| 10      | transformer off-nominal turns ratio, equal to zero for a line    |          |
+| 10      | transformer off-nominal turns ratio, equal to zero for a line    | -        |
 | 11      | transformer phase shift angle where positive value defines delay | deg      |
-| 12      | status where in-service = 1, out-of-service = 0                  |          |
+| 12      | status where in-service = 1, out-of-service = 0                  | -        |
 | 13      | minimum voltage angle difference between from and to buses       | deg      |
 | 14      | maximum voltage angle difference between from and to buses       | deg      |
 
@@ -60,14 +60,14 @@ The basic input data structure used to describe a power system consists of varia
 
 | Column   | Description                                           | Unit     |
 |:--------:|:------------------------------------------------------|:---------| 	 
-| 1        | bus number defined as positive integer                |          |
+| 1        | bus number defined as positive integer                | -        |
 | 2        | active power generation                               | MW       |
 | 3        | reactive power generation                             | MVAr     |
 | 4        | maximum reactive power generation                     | MVAr     |
 | 5        | minimum reactive power generation                     | MVAr     |
 | 6        | voltage magnitude setpoint                            | per-unit |
 | 7        | base power                                            | MVA      |
-| 8        | status where in-service = 1, out-of-service = 0       |          |
+| 8        | status where in-service = 1, out-of-service = 0       | -        |
 | 9        | maximum active power generation                       | MW       |
 | 10       | minimum active power generation                       | MW       |
 | 11       | lower active power output of PQ capability curve      | MW       |
@@ -80,7 +80,7 @@ The basic input data structure used to describe a power system consists of varia
 | 18       | ramp rate for 10-minute reserves                      | MW       |
 | 19       | ramp rate for 30-minute reserves                      | MW       |
 | 20       | ramp rate for reactive power (two seconds timescale)  | MVAr/min |
-| 21       | area participation factor defined as positive integer |          |
+| 21       | area participation factor defined as positive integer | -        |
 
 ```@raw html
 &nbsp;
@@ -100,10 +100,10 @@ JuliaGrid supports piecewise linear and polynomial generator cost functions:
 
 | Column   | Description                                                                                                 | Unit     |
 |:--------:|:------------------------------------------------------------------------------------------------------------|:---------|
-| 1        | active or reactive power cost model defined as piecewise linear = 1, polynomial = 2                         |          |
+| 1        | active or reactive power cost model defined as piecewise linear = 1, polynomial = 2                         | -        |
 | 2        | active or reactive power startup cost                                                                       | currency |
 | 3        | active or reactive power shutdown cost                                                                      | currency |
-| 4        | number of data points for a piecewise linear cost function, or coefficients for a polynomial cost function  |          |
+| 4        | number of data points for a piecewise linear cost function, or coefficients for a polynomial cost function  | -        |
 
 If the piecewise linear cost function is selected, then:
 
@@ -111,7 +111,7 @@ If the piecewise linear cost function is selected, then:
 |:--------:|:------------------------------------------------------------------------------------------------------------|:------------|
 | 5        | active output power ``P_{\text{min}}`` or reactive output power ``Q_{\text{min}}``                          | MW or MVAr  |
 | 6        | active input power  ``f(P_{\text{min}}) `` or reactive input power  ``f(Q_{\text{min}}) ``                  | currency/hr |
-| ...      |                                                                                                             |             |
+| ...      |  ...                                                                                                        | ...         |
 | n-1      | active output power ``P_{\text{max}}`` or reactive output power ``Q_{\text{max}}``                          | MW or MVAr  |
 | n        | active input power  ``f(P_{\text{max}}) `` or reactive input power  ``f(Q_{\text{max}}) ``                  | currency/hr |
 
@@ -119,10 +119,10 @@ If the polynomial cost function is selected, then:
 
 | Column   | Description                                                                                                 | Unit     |
 |:--------:|:------------------------------------------------------------------------------------------------------------|:---------|
-| 5        | active power cost function coefficient  ``a_n`` or reactive power cost function coefficient  ``b_n``        |          |
-| ...      |                                                                                                             |          |
-| n-1      | active power cost function coefficient  ``a_1`` or reactive power cost function coefficient  ``b_1``        |          |
-| n        | active power cost function coefficient  ``a_0`` or reactive power cost function coefficient  ``b_0``        |          |
+| 5        | active power cost function coefficient  ``a_n`` or reactive power cost function coefficient  ``b_n``        | -        |
+| ...      | ...                                                                                                         | ...      |
+| n-1      | active power cost function coefficient  ``a_1`` or reactive power cost function coefficient  ``b_1``        | -        |
+| n        | active power cost function coefficient  ``a_0`` or reactive power cost function coefficient  ``b_0``        | -        |
 
 ---
 
@@ -138,16 +138,16 @@ When the corresponding measurement is defined, then a bus number or branch numbe
 
 | Column   | Description                                                                      | Unit     |
 |:--------:|:---------------------------------------------------------------------------------|:---------| 	 
-| 1        | bus number defined as positive integer                                           |          |
+| 1        | bus number defined as positive integer                                           | -        |
 | 2        | voltage magnitude measurement value                                              | per-unit |
 | 3        | voltage magnitude measurement variance                                           | per-unit |
-| 4        | voltage magnitude measurement status where in-service = 1, out-of-service = 0    |          |
+| 4        | voltage magnitude measurement status where in-service = 1, out-of-service = 0    | -        |
 | 5        | bus voltage angle measurement value                                              | radian   |
 | 6        | bus voltage angle measurement variance                                           | radian   |
-| 7        | voltage angle measurement status where in-service = 1, out-of-service = 0        |          |
+| 7        | voltage angle measurement status where in-service = 1, out-of-service = 0        | -        |
 | 8        | voltage magnitude exact value, optional column for the state estimation          | per-unit |
 | 9        | voltage angle exact value, optional column for the state estimation              | radian   |
-| 10       | PMU number defined as positive integer, optional column for the state estimation |          |
+| 10       | PMU number defined as positive integer, optional column for the state estimation | -        |
 
 ```@raw html
 &nbsp;
@@ -157,18 +157,18 @@ When the corresponding measurement is defined, then a bus number or branch numbe
 
 | Column  | Description                                                                      | Unit     |
 |:-------:|:---------------------------------------------------------------------------------|:---------| 	 
-| 1       | branch number defined as positive integer                                        |          |
-| 2       | from bus number defined as positive integer                                      |          |
-| 3       | to bus number defined as positive integer                                        |          |
+| 1       | branch number defined as positive integer                                        | -        |
+| 2       | from bus number defined as positive integer                                      | -        |
+| 3       | to bus number defined as positive integer                                        | -        |
 | 4       | current magnitude measurement value                                              | per-unit |
 | 5       | current magnitude measurement variance                                           | per-unit |
-| 6       | current magnitude measurement status where in-service = 1, out-of-service = 0    |          |
+| 6       | current magnitude measurement status where in-service = 1, out-of-service = 0    | -        |
 | 7       | current angle measurement value                                                  | radian   |
 | 8       | current angle measurement variance                                               | radian   |
-| 9       | current angle measurement status where in-service = 1, out-of-service = 0        |          |
+| 9       | current angle measurement status where in-service = 1, out-of-service = 0        | -        |
 | 10      | current magnitude exact value, optional column for the state estimation          | per-unit |
 | 11      | current angle exact value, optional column for the state estimation              | radian   |
-| 12      | PMU number defined as positive integer, optional column for the state estimation |          |
+| 12      | PMU number defined as positive integer, optional column for the state estimation | -        |
 
 ```@raw html
 &nbsp;
@@ -178,15 +178,15 @@ When the corresponding measurement is defined, then a bus number or branch numbe
 
 | Column  | Description                                                                      | Unit     |
 |:-------:|:---------------------------------------------------------------------------------|:---------| 	 
-| 1       | branch number defined as positive integer                                        |          |
-| 2       | from bus number defined as positive integer                                      |          |
-| 3       | to bus number defined as positive integer                                        |          |
+| 1       | branch number defined as positive integer                                        | -        |
+| 2       | from bus number defined as positive integer                                      | -        |
+| 3       | to bus number defined as positive integer                                        | -        |
 | 4       | active power flow measurement value                                              | per-unit |
 | 5       | active power flow measurement variance                                           | per-unit |
-| 6       | active power flow measurement status where in-service = 1, out-of-service = 0    |          |
+| 6       | active power flow measurement status where in-service = 1, out-of-service = 0    | -        |
 | 7       | reactive power flow measurement value                                            | per-unit |
 | 8       | reactive power flow measurement variance                                         | per-unit |
-| 9       | reactive power flow measurement status where in-service = 1, out-of-service = 0  |          |
+| 9       | reactive power flow measurement status where in-service = 1, out-of-service = 0  | -        |
 | 10      | active power flow exact value, optional column for the state estimation          | per-unit |
 | 11      | reactive power flow exact value, optional column for the state estimation        | per-unit |
 
@@ -198,12 +198,12 @@ When the corresponding measurement is defined, then a bus number or branch numbe
 
 | Column  | Description                                                                    | Unit     |
 |:-------:|:-------------------------------------------------------------------------------|:---------| 	 
-| 1       | branch number defined as positive integer                                      |          |
-| 2       | from bus number defined as positive integer                                    |          |
-| 3       | to bus number defined as positive integer                                      |          |
+| 1       | branch number defined as positive integer                                      | -        |
+| 2       | from bus number defined as positive integer                                    | -        |
+| 3       | to bus number defined as positive integer                                      | -        |
 | 4       | current magnitude measurement value                                            | per-unit |
 | 5       | current magnitude measurement variance                                         | per-unit |
-| 6       | current magnitude measurement status where in-service = 1, out-of-service = 0  |          |
+| 6       | current magnitude measurement status where in-service = 1, out-of-service = 0  | -        |
 | 7       | current magnitude exact value, optional column for the state estimation        | per-unit |
 
 ```@raw html
@@ -214,13 +214,13 @@ When the corresponding measurement is defined, then a bus number or branch numbe
 
 | Column   | Description                                                                          | Unit     |
 |:--------:|:-------------------------------------------------------------------------------------|:---------| 	 
-| 1        | bus number defined as positive integer                                               |          |
+| 1        | bus number defined as positive integer                                               | -        |
 | 2        | active power injection measurement value                                             | per-unit |
 | 3        | active power injection measurement variance                                          | per-unit |
-| 4        | active power injection measurement status where in-service = 1, out-of-service = 0   |          |
+| 4        | active power injection measurement status where in-service = 1, out-of-service = 0   | -        |
 | 5        | reactive power injection measurement value                                           | per-unit |
 | 6        | reactive power injection measurement variance                                        | per-unit |
-| 7        | reactive power injection measurement status where in-service = 1, out-of-service = 0 |          |
+| 7        | reactive power injection measurement status where in-service = 1, out-of-service = 0 | -        |
 | 8        | active power injection exact value, optional column for the state estimation         | per-unit |
 | 9        | reactive power injection exact value, optional column for the state estimation       | per-unit |
 
@@ -232,10 +232,10 @@ When the corresponding measurement is defined, then a bus number or branch numbe
 
 | Column   | Description                                                                   | Unit     |
 |:--------:|:------------------------------------------------------------------------------|:---------| 	 
-| 1        | bus number defined as positive integer                                        |          |
+| 1        | bus number defined as positive integer                                        | -        |
 | 2        | voltage magnitude measurement value                                           | per-unit |
 | 3        | voltage magnitude measurement variance                                        | per-unit |
-| 4        | voltage magnitude measurement status where in-service = 1, out-of-service = 0 |          |
+| 4        | voltage magnitude measurement status where in-service = 1, out-of-service = 0 | -        |
 | 5        | voltage magnitude exact value, optional column for the state estimation       | per-unit |
 
 ---

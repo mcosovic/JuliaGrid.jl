@@ -829,7 +829,7 @@ end
     end
     lav = Dict(:lav => lavkey, :optimize => optimize)
 
-    islands = 1; islandflow = 0; islandMax = 2000; islandBreak = 10; islandStopping = 1.0; islandTreshold = 1e5
+    islands = 1; islandflow = 0; islandMax = 2000; islandBreak = 10; islandStop = 1.0; islandTreshold = 1e5
     restoreMax = 100; pivot = 1e-10; restore = 1; Pij = 0.0; Pi = 0.0; Ti = 0.0
     if !isempty(observeset)
         observekey = 1.0
@@ -846,8 +846,8 @@ end
             if i == "islandBreak"
                 islandBreak = trunc(Int64, nextelement(observeset, k))
             end
-            if i == "islandStopping"
-                islandStopping = nextelement(observeset, k)
+            if i == "islandStop"
+                islandStop = nextelement(observeset, k)
             end
             if i == "islandTreshold"
                 islandTreshold = nextelement(observeset, k)
@@ -880,7 +880,7 @@ end
     end
 
     observe = Dict(:observe => observekey,
-                   :islands => islands, :islandMax => islandMax, :islandBreak => islandBreak, :islandStopping => islandStopping,  :islandTreshold => islandTreshold,
+                   :islands => islands, :islandMax => islandMax, :islandBreak => islandBreak, :islandStop => islandStop,  :islandTreshold => islandTreshold,
                    :restore => restore, :restoreMax => restoreMax, :pivot => pivot, :Pij => Pij, :Pi => Pi, :Ti => Ti)
 
     covarinace = false

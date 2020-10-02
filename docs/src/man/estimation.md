@@ -45,7 +45,7 @@ runse(DATA, METHOD, ROUTINE) sets the least absolute values estimation, bad data
 runse(DATA, METHOD, LAVBAD, DISPLAY) shows results in the terminal
 runse(DATA, METHOD, ROUTINE, DISPLAY; NONLINEAR) sets variables for the nonlinear state estimation
 runse(DATA, METHOD, LAVBAD, DISPLAY; NONLINEAR, ATTACH) sets various options mostly related with ROUTINE
-runse(DATA, METHOD, LAVBAD, DISPLAY; NONLINEAR, ATTACH, SAVE) exports results data
+runse(DATA, METHOD, LAVBAD, DISPLAY; NONLINEAR, ATTACH, SAVE) exports results
 ```
 ```@raw html
 &nbsp;
@@ -78,153 +78,174 @@ data = runmg("case14.h5"; runflow = 1, pmuset = "complete", pmuvariance = ["comp
 results, = runse(data, "pmu", "estimate")
 ```
 ```julia-repl
-data = runmg("case14.h5"; runflow = 1, legacyset = ["redundancy" 1.4], legacyvariance = ["complete" 1e-4])
+data = runmg("case14.h5"; legacyset = ["redundancy" 1.4], legacyvariance = ["complete" 1e-4])
 results = runse(data, "dc"; observe = ["islandBP" "pivot" 1e-6 "Pi" 1e4])
 ```
 ---
 
-## Input Arguments
-The state estimation function `runse()` receives a group of variable number of arguments: DATA, METHOD, ROUTINE and DISPLAY, and group of arguments by keyword: ATTACH and SAVE.
-```@raw html
-&nbsp;
-```
-##### DATA - Variable Argument
+## Variable Arguments
+The state estimation function `runse()` receives a group of variable number of arguments: DATA, METHOD, ROUTINE and DISPLAY.
 
-| Example              | Description                                                              |
-|:---------------------|:-------------------------------------------------------------------------|
-|`"case30se.h5"`       | loads the state estimation data from the package                         |
-|`"case14se.xlsx"`     | loads the state estimation data from the package                         |
-|`"C:/case14.xlsx"`    | loads the state estimation data from a custom path                       |
-|`output from runmg()` | loads the state estimation data from the measurement generator function  |
-
-```@raw html
-&nbsp;
-```
-##### METHOD - Variable Argument
-
-| Command     | Description                                                                                                        |
-|:------------|:-------------------------------------------------------------------------------------------------------------------|
-|`"nonlinear"`| runs the non-linear state estimation based on the weighted least-squares, `default setting`                        |
-|`"pmu"`      | runs the linear weighted least-squares state estimation only with PMUs where measurement covariances are neglected |
-|`"dc"`       | runs the linear weighted least-squares DC state estimation                                                         |
+| DATA            | input power system with measurements data                                                 |
+|:----------------|:------------------------------------------------------------------------------------------|
+|                 |                                                                                           |
+| **Example**     | `"case30se.h5"`                                                                           |
+| **Description** |  loads the power system with measurements data using h5-file from the package             |
+|                 |                                                                                           |
+| **Example**     | `"case14se.xlsx"`                                                                         |
+| **Description** |  loads the power system with measurements data using xlsx-file from the package           |
+|                 |                                                                                           |
+| **Example**     | `"C:/case14se.h5"`                                                                        |
+| **Description** |  loads the power system with measurements data using h5-file from a custom path           |
+|                 |                                                                                           |
+| **Example**     | `"C:/case14se.xlsx"`                                                                      |                                     
+| **Description** |  loads the power system with measurements data using xlsx-file from a custom path         |
+|                 |                                                                                           |
+| **Example**     | `data = runmg()`                                                                          |                                     
+| **Description** |  loads the power system with measurements data using the measurement generator function   |
 
 ```@raw html
 &nbsp;
 ```
-##### ROUTINE - Variable Argument
 
-| ROUTINE:        |  Least Absolute Value Estimation Method                                                                                           |
-|:----------------|:----------------------------------------------------------------------------------------------------------------------------------|
-| **Command**     | `lav`                                                                                                                             |
+| METHOD          | solves the state estimation problem                                                                                 |
+|:----------------|:--------------------------------------------------------------------------------------------------------------------|
+|                 |                                                                                                                     |
+| **Command**     | `"nonlinear"`                                                                                                       |
+| **Description** | runs the non-linear state estimation based on the weighted least-squares, `default METHOD setting`                  |
+|                 |                                                                                                                     |
+| **Command**     | `"pmu"`                                                                                                             |
+| **Description** | runs the linear weighted least-squares state estimation only with PMUs where measurement covariances are neglected  |
+|                 |                                                                                                                     |
+| **Command**     | `"dc"`                                                                                                              |
+| **Description** | runs the linear weighted least-squares DC state estimation                                                          |
+
+```@raw html
+&nbsp;
+```
+
+| ROUTINE         | sets the least absolute values estimation, bad data and observability analysis                                      |
+|:----------------|:--------------------------------------------------------------------------------------------------------------------|
+|                 |                                                                                                                     |
+| **Command**     | `"lav"`                                                                                                             |
 | **Description** | runs the non-linear or linear state estimation using the least absolute value estimation with `"GLPK"` solver as `default settings` (see ATTACH to change `default settings`) |
-
-| ROUTINE:        | Bad Data Processing                                                                      |
-|:----------------|:-----------------------------------------------------------------------------------------|
-| **Command**     | `bad`                                                                                    |
+|                 |                                                                                                                     |
+| **Command**     | `"bad"`                                                                                                             |
 | **Description** | runs the bad data processing for the weighted least-squares method, where the bad data identification threshold is set to `"threshold" = 3`, with the maximum number of `"passes" = 1`, where the critical measurement criteria is equal to `"critical" = 1e-10` (see ATTACH to change `default settings`) |
-
-| ROUTINE:        | Observability Analysis                                                                                            |
-|:----------------|:------------------------------------------------------------------------------------------------------------------|
-| **Command**     | `observe`                                                                                                         |
+|                 |                                                                                                                     |
+| **Command**     | `"observe"`                                                                                                         |
 | **Description** | runs the observability analysis where identification of the observable islands is accomplished by the topological method, while the observability restoration is performed using numerical method with zero pivot threshold equal to `"pivot" = 1e-10`, where the restore routine takes only power injection measurements with variances in per-unit `"Pi" = 1e5` (see ATTACH to change `default settings`) |
 
 ```@raw html
 &nbsp;
 ```
-##### DISPLAY - Variable Argument
 
-| Command     | Description                    |
-|:------------|:-------------------------------|
-|`"main"`     | shows main bus data display    |
-|`"flow"`     | shows power flow data display  |
-|`"estimate"` | shows estimation data display  |
-|`"error"`    | shows evaluation data display  |
+| DISPLAY         | shows results in the terminal                     |
+|:----------------|:--------------------------------------------------|
+|                 |                                                   |
+| **Command**     | `"main"`                                          |
+| **Description** | shows main bus data display in the Julia REPL     |
+|                 |                                                   |
+| **Command**     | `"flow"`                                          |
+| **Description** | shows power flow data display in the Julia REPL   |
+|                 |                                                   |
+| **Command**     | `"estimate"`                                      |
+| **Description** | shows estimation data display in the Julia REPL   |
+|                 |                                                   |
+| **Command**     | `"error"`                                         |
+| **Description** | shows evaluation data display in the Julia REPL   |
 
+---
 
-```@raw html
-&nbsp;
-```
-##### NONLINEAR - Keyword Argument
+## Keyword Arguments
+The state estimation function `runse()` receives a group of arguments by keyword: ATTACH and SAVE.
 
-| Command          | Description                                                                              |
-|:-----------------|:-----------------------------------------------------------------------------------------|
-|`max = value`     | specifies the maximum number of iterations, `default setting: 100` |
-|`stop = value`    | specifies the stopping criteria, `default setting: 1.0e-8`         |
-
-| NONLINEAR:      | The Gauss-Newton Initial Point                                                                          |
+| NONLINEAR       | sets variables for the nonlinear state estimation                                                       |
 |:----------------|:--------------------------------------------------------------------------------------------------------|
-| **Command**     | `start = "warm"`                                                                                        |
-| **Description** | the Gauss-Newton initial point defined as the one applied in the AC power flow, `default START setting` |
-
-| NONLINEAR:      | The Gauss-Newton Initial Point                                                                          |
-|:----------------|:--------------------------------------------------------------------------------------------------------|
-| **Command**     | `start = "flat"`                                                                                        |
-| **Description** | unique the Gauss-Newton initial point for voltage angles equal to 0 and magnitude equal to 1            |
-
-| NONLINEAR:      | The Gauss-Newton Initial Point                                                                          |
-|:----------------|:--------------------------------------------------------------------------------------------------------|
-| **Command**     | `start = "random"`                                                                                      |
-| **Description** | the Gauss-Newton initial point defined using random perturbation between -0.5 and 0.5 of voltage angles in degrees, and 0.98 and 1.02 of voltage magnitudes in per-units  |
-| **Command**     | `start = "["Vi" value1 value2 "Ti" value3 value4]"`                                                     |
+|                 |                                                                                                         |
+| **Command**     | `max = value`                                                                                           |
+| **Description** | specifies the maximum number of the Gauss-Newton iterations, `default setting: max = 100`               |
+|                 |                                                                                                         |
+| **Command**     | `stop = value`                                                                                          |
+| **Description** | specifies the stopping criteria for the Gauss-Newton method, `default setting: stop = 1.0e-8`           |
+|                 |                                                                                                         |
+| **Command**     | `start = "warm"`                                                                                        |   
+| **Description** | the Gauss-Newton initial point defined as the one applied in the AC power flow, `default start setting` |
+|                 |                                                                                                         |
+| **Command**     | `start = "flat"`                                                                                        |   
+| **Description** | unique the Gauss-Newton initial point for voltage angles equal to 0 and magnitudes equal to 1           |
+|                 |                                                                                                         |
+| **Command**     | `start = "random"`                                                                                      |   
+| **Description** | the Gauss-Newton initial point defined using random perturbation between -0.5 and 0.5 of voltage angles in degrees, and 0.98 and 1.02 of voltage magnitudes in per-units |
+|                 |                                                                                                         |
+| **Command**     | `start = "["Vi" min max "Ti" min max]`                                                                  |   
 | **Description** | change default options for `random` Gauss-Newton initial point                                          |
 
-
 ```@raw html
 &nbsp;
 ```
-##### ATTACH - Keyword Argument
 
-| ATTACH:         |  Least Absolute Value Estimation Method                                                                                           |
-|:----------------|:----------------------------------------------------------------------------------------------------------------------------------|
-| **Command**     | `lav = solver`                                                                                                                    |
-| **Description** | the least absolute value estimation can be run using `"GLPK"` or `"Ipopt"` optimization `solver`, `default setting: lav = "GLPK"` |
-
-| ATTACH:         | Bad Data Processing                                                                      |
-|:----------------|:-----------------------------------------------------------------------------------------|
-| **Command**     | `bad = ["pass" value "threshold" value "critical" value]`                                |
-| **Description** | when using the weighted least-squares method bad data processing can be run using the bad data identification `threshold`, with the maximum number of `passes`, where `critical` measurements are marked according to `value`, `default setting: bad = ["pass" 1 "threshold" 3 "critical" 1e-10]` |
-
-| ATTACH:         | Observability Analysis                                                                                            |
-|:----------------|:------------------------------------------------------------------------------------------------------------------|
-| **Command**     | `observe = [... "islandBP" "islandMax" value "islandBreak" value "islandStopping" value "islandTreshold" value ...]`    |
-| **Description** | determination of the maximal observable islands is done using the Gaussian belief propagation method, where the maximal number of iterations of the Gaussian belief propagation algorithm is equal to `"islandMax" value`, while the algorithm begins to apply `"islandStopping" value` criterion after `"islandBreak" value` iterations; if the state variable marginal variance is below `"islandTreshold" value`, the state variable is observable, otherwise the state variable is unobservable, `default setting: observe = ["islandMax" 2000 "islandBreak" 10 "islandStopping" 1.0 "islandTreshold" 1e5]` |
-
-| ATTACH:         | Observability Analysis                                                            |
-|:----------------|:----------------------------------------------------------------------------------|
-| **Command**     | `observe = [... "flow" ...]`                                                      |
-| **Description** | the keyword `"flow"` allows the determination of the flow observable islands only |
-
-| ATTACH:         | Observability Analysis                                                                   |
-|:----------------|:-----------------------------------------------------------------------------------------|
-| **Command**     | `observe = ["pivot" value "Pij" value "Pi" value "Ti" value]` |
+| ATTACH          | sets various options mostly related with ROUTINE                                                                    |
+|:----------------|:--------------------------------------------------------------------------------------------------------------------|
+|                 |                                                                                                                     |
+| **Command**     | `lav = "Ipopt"`                                                                                                     |
+| **Description** | the least absolute value estimation can be run using `"Ipopt"` optimization solver, `default setting: lav = "GLPK"` |
+|                 |                                                                                                                     |
+| **Command**     | `bad = ["pass" value "threshold" value "critical" value]`                                                           |
+| **Description** | when using the weighted least-squares method bad data processing can be run using the bad data identification `threshold`, with the maximum number of `passes`, where `critical` measurements are marked according to the name-value pair setting `"critical" value`, `default setting: bad = ["pass" 1 "threshold" 3 "critical" 1e-10]` |
+|                 |                                                                                                                     |
+| **Command**     | `observe = ["flow"]`                                                                                                |
+| **Description** | the keyword `"flow"` allows the determination of the flow observable islands only                                   |
+|                 |                                                                                                                     |
+| **Command**     | `observe = ["islandBP" "islandMax" value "islandBreak" value "islandStop" value "islandTreshold" value]`            |
+| **Description** | determination of the maximal observable islands is done using the Gaussian belief propagation method, where the maximal number of iterations of the Gaussian belief propagation algorithm is equal to `"islandMax" value`, while the algorithm begins to apply `"islandStop" value` criterion after `"islandBreak" value` iterations; if the state variable marginal variance is below `"islandTreshold" value`, the state variable is observable, otherwise the state variable is unobservable, `default setting: observe = ["islandMax" 2000 "islandBreak" 10 "islandStop" 1.0 "islandTreshold" 1e5]` |
+|                 |                                                                                                                     |
+| **Command**     | `observe = ["pivot" value "Pij" value "Pi" value "Ti" value]`                                                       |
 | **Description** | determination of the maximal observable islands is done using the topological method, while the observability restoration can be run using the zero `pivot` identification `threshold`, where active power flow `"Pij" value`, active power injection `"Pi" value` and/or bus voltage angle `"Ti" value` can be forced to restore observability, with measurement variances equal to `values`, `default setting: observe = ["pivot" 1e-10 "Pi" 1e5]` |
-
-| ATTACH:         | Observability Analysis                                                                   |
-|:----------------|:-----------------------------------------------------------------------------------------|
-| **Command**     | `observe = [... "restoreBP" "restoreMax" value "Pi" value ...]` |
-| **Description** | the observability restoration is done using the Gaussian belief propagation method, where the maximal number of iterations of the Gaussian belief propagation algorithm is equal to `"restoreMax" value`, and active power injection `"Pi" value` can be forced to restore observability, with measurement variances equal to `values`, `default setting: observe = ["restoreBP" "restoreMax" 100 "Pi" 1e5]` |
-
-
-| ATTACH:         | Linear System Solver                                                                                                               |
-|:----------------|:-----------------------------------------------------------------------------------------------------------------------------------|
-| **Command**     | `solve = solver`                                                                                                                   |
-| **Description** |  runs the linear system `solver` using built-in `solve = "builtin"` as `default setting` or LU linear system solver `solve = "lu"` |
-
-| ATTACH:         | Covariance Matrix for the Linear State Estimation with PMUs                                                                                 |
-|:----------------|:--------------------------------------------------------------------------------------------------------------------------------------------|
-| **Command**     | `covarinace = 1`                                                                                                                            |
-| **Description** |  sets the covariance matrix model for the linear state estimation with PMUs where the matrix contains measurement variances and covariances |
-
+|                 |                                                                                                                     |
+| **Command**     | `observe = ["restoreBP" "restoreMax" value "Pi" value]`                                                             |
+| **Description** | the observability restoration is done using the Gaussian belief propagation method, where the maximal number of iterations of the Gaussian belief propagation algorithm is equal to `"restoreMax" value`, and active power injection `"Pi" value` can be forced to restore observability, with measurement variances equal to `value`, `default setting: observe = ["restoreBP" "restoreMax" 100 "Pi" 1e5]` |
+|                 |                                                                                                                     |
+| **Command**     | `solve = "builtin"`                                                                                                 |
+| **Description** |  built-in linear system solver, `default solve setting`                                                             |
+|                 |                                                                                                                     |
+| **Command**     | `solve = "lu"`                                                                                                      |
+| **Description** |  LU linear system solver                                                                                            |
+|                 |                                                                                                                     |
+| **Command**     | `covarinace = 1`                                                                                                    |
+| **Description** |  sets the covariance matrix model for the linear state estimation with PMUs only (METHOD `"pmu"`) where the matrix contains measurement variances and covariances `default setting: covarinace = 0` |
 
 ```@raw html
 &nbsp;
 ```
-##### SAVE - Keyword Argument
 
-| Command                 | Description                    |
-|:------------------------|:-------------------------------|
-|`save = "path/name.h5"`  | saves results in the h5-file   |
-|`save = "path/name.xlsx"`| saves results in the xlsx-file |
+!!! note "Observability Analysis"
+    The observability analysis consists of two parts: the identification of observable islands and observability restoration, and JuliaGrid allows combining different algorithms to perform the observability analysis.
+
+    For example, using the command:
+    ```julia-repl
+    observe = ["islandBP"]
+    ```
+    the identification of the maximal observable islands will be conducted using the Gaussian belief propagation method, while the observability restoration will be done using the numerical method. Similarly, using the command:
+    ```julia-repl
+    observe = ["restoreBP"]
+    ```
+    the identification of the maximal observable islands will be conducted using the topological method, while the observability restoration will be done using the Gaussian belief propagation method.
+
+    The keyword `"flow"` overwrite the identification of maximal observable islands method, and immediately passes to the observability restoration method according to the flow islands.
+
+```@raw html
+&nbsp;
+```
+
+| SAVE            | exports results                  |
+|:----------------|:---------------------------------|
+|                 |                                  |
+| **Command**     | `save = "path/name.h5"`          |
+| **Description** |  saves results in the h5-file    |
+|                 |                                  |
+| **Command**     | `save = "path/name.xlsx"`        |
+| **Description** |  saves results in the xlsx-file  |
 
 ---
 
@@ -249,7 +270,7 @@ The `main` data structure contains results related to the bus.
 
 | Column   | Description                                    | Unit |
 |:--------:|:-----------------------------------------------|:-----| 	 
-| 1        | bus number defined as positive integer         |      |
+| 1        | bus number defined as positive integer         | -    |
 | 2        | voltage angle                                  | deg  |
 | 3        | active power injection                         | MW   |
 
@@ -260,9 +281,9 @@ The `flow` data structure contains results related to the branch.
 
 | Column  | Description                                 | Unit |
 |:-------:|:--------------------------------------------|:-----|
-| 1       | branch number defined as positive integer   |      |
-| 2       | from bus number defined as positive integer |      |
-| 3       | to bus number defined as positive integer   |      |
+| 1       | branch number defined as positive integer   | -    |
+| 2       | from bus number defined as positive integer | -    |
+| 3       | to bus number defined as positive integer   | -    |
 | 4       | from bus active power flow                  | MW   |
 | 5       | to bus active power flow                    | MW   |
 
@@ -276,7 +297,7 @@ The `main` data structure contains results related to the bus.
 
 | Column   | Description                                      | Unit     |
 |:--------:|:-------------------------------------------------|:---------| 	 
-| 1        | bus number defined as positive integer           |          |
+| 1        | bus number defined as positive integer           | -        |
 | 2        | voltage magnitude                                | per-unit |
 | 3        | voltage angle                                    | deg      |
 | 4        | active power injection                           | MW       |
@@ -291,9 +312,9 @@ The `flow` data structure contains results related to the branch.
 
 | Column  | Description                                 | Unit     |
 |:-------:|:--------------------------------------------|:---------|
-| 1       | branch number defined as positive integer   |          |
-| 2       | from bus number defined as positive integer |          |
-| 3       | to bus number defined as positive integer   |          |
+| 1       | branch number defined as positive integer   | -        |
+| 2       | from bus number defined as positive integer | -        |
+| 3       | to bus number defined as positive integer   | -        |
 | 4       | from bus active power flow                  | MW       |
 | 5       | from bus reactive power flow                | MVAr     |
 | 6       | to bus active power flow                    | MW       |
@@ -364,7 +385,7 @@ The `observability` data structure contains information about flow islands and p
 | 1       | flow island as positive integer                                  |
 | 2       | bus number in the corresponding island                           |
 | 3       | pseudo-measurement class where legacy = 1, PMU = 2               |
-| 4       | measurement type where active power flow = 1, reactive power flow = 2, active power injection = 3, reactive power injection = 4, current magnitude = 5,  current angle = 6, voltage magnitude = 7, voltage angle = 8, current real component = 9, current imaginary component = 10, voltage real component = 11, voltage imaginary component = 12            |
+| 4       | measurement type where active power flow = 1, reactive power flow = 2, active power injection = 3, reactive power injection = 4, current magnitude = 5,  current angle = 6, voltage magnitude = 7, voltage angle = 8, current real component = 9, current imaginary component = 10, voltage real component = 11, voltage imaginary component = 12                             |
 | 5       | local index of the pseudo-measurement given in the input DATA    |
 | 6       | pseudo-measurement value                                         |
 | 7       | pseudo-measurement variance                                      |

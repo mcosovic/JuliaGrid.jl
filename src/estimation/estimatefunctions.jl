@@ -520,7 +520,7 @@ function islandsbp(settings, numsys, J, bus, islandsFlow, NislandsFlow)
     ########## Find Islands ##########
     detection = true; previous = 0.0; islands = [Int64[]]
     iter_max = settings.observe[:islandMax]; breaks = settings.observe[:islandBreak]
-    stop = settings.observe[:islandStopping]; treshold = settings.observe[:islandTreshold];
+    stop = settings.observe[:islandStop]; treshold = settings.observe[:islandTreshold];
     while detection
         ########## Factor graph data ##########
         Vvar_fac, Wfac_var, to_fac, to_var, colptr, rowptr, idxT, row, col = factorgraph(Ht, Nvar, Nfac, Nlink, Nind)

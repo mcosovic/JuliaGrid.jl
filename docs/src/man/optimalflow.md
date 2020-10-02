@@ -1,6 +1,6 @@
 # [Optimal Power Flow](@id runopf)
 
-JuliaGrid is based on common network elements and benefits the [unified branch model](@ref branchmodel) to perform the optimal power flow analysis. JuliaGrid supports the only the optimal DC power flow model, which is obtained by linearisation of the non-linear model.
+JuliaGrid is based on common network elements and benefits the [unified branch model](@ref branchmodel) to perform the optimal power flow analysis. JuliaGrid supports only the optimal DC power flow model, which is obtained by linearisation of the non-linear model.
 
 ---
 
@@ -41,50 +41,68 @@ results, system, info = runopf("case14.h5", "dc"; save = "D:/case14results.xlsx"
 ```
 ---
 
-## Input Arguments
-The optimal power flow function `runopf()` receives a group of variable number of arguments: DATA, METHOD, DISPLAY, and a keyword SAVE.
-```@raw html
-&nbsp;
-```
+## Variable Arguments
+The optimal power flow function `runopf()` receives a group of variable number of arguments: DATA, METHOD and DISPLAY.
 
-##### DATA - Variable Argument
+| DATA            | input power system data                                         |
+|:----------------|:----------------------------------------------------------------|
+|                 |                                                                 |
+| **Example**     | `"case14.h5"`                                                   |
+| **Description** | loads the power system data using h5-file from the package      |
+|                 |                                                                 |
+| **Example**     | `"case14.xlsx"`                                                 |
+| **Description** |  loads the power system data using xlsx-file from the package   |
+|                 |                                                                 |
+| **Example**     | `"C:/case14.h5"`                                                |
+| **Description** |  loads the power system data using h5-file from a custom path   |
+|                 |                                                                 |
+| **Example**     | `"C:/case14.xlsx"`                                              |                                     
+| **Description** |  loads the power system data using xlsx-file from a custom path |
 
-| Example           | Description                                    |
-|:------------------|:-----------------------------------------------|
-|`"case14.h5"`      | loads the power system data from the package   |
-|`"case14.xlsx"`    | loads the power system data from the package   |
-|`"C:/case14.xlsx"` | loads the power system data from a custom path |
-
-```@raw html
-&nbsp;
-```
-##### METHOD - Variable Argument
-
-| Command | Description
-|:--------|:-------------------------------------------------------------------------------|
-|`"dc"`   | runs the DC optimal power flow analysis                                        |
-
-```@raw html
-&nbsp;
-```
-##### DISPLAY - Variable Argument
-
-| Command      | Description                    |
-|:-------------|:-------------------------------|
-|`"main"`      | shows main bus data display    |
-|`"flow"`      | shows power flow data display  |
-|`"generation"`| shows generator data display   |
 
 ```@raw html
 &nbsp;
 ```
 
-##### SAVE - Keyword Argument
+```@raw html
+&nbsp;
+```
 
-| Command                 | Description                    |
-|:------------------------|:-------------------------------|
-|`save = "path/name.h5"`  | saves results in the h5-file   |
-|`save = "path/name.xlsx"`| saves results in the xlsx-file |
+| METHOD          | solves the optimal power flow problem                                                                             |
+|:----------------|:------------------------------------------------------------------------------------------------------------------|
+|                 |                                                                                                                   |
+| **Command**     | `"dc"`                                                                                                            |
+| **Description** |  runs the DC optimal power flow analysis                                                                          |
+
+```@raw html
+&nbsp;
+```
+
+| DISPLAY         | shows results in the terminal                     |
+|:----------------|:--------------------------------------------------|
+|                 |                                                   |
+| **Command**     | `"main"`                                          |
+| **Description** | shows main bus data display in the Julia REPL     |
+|                 |                                                   |
+| **Command**     | `"flow"`                                          |
+| **Description** | shows power flow data display in the Julia REPL   |
+|                 |                                                   |
+| **Command**     | `"generation"`                                    |
+| **Description** | shows generator data display in the Julia REPL    |
+
+---
+
+## Keyword Arguments
+The optimal power flow function `runopf()` receives a argument by keyword SAVE.
+
+| SAVE            | exports results                  |
+|:----------------|:---------------------------------|
+|                 |                                  |
+| **Command**     | `save = "path/name.h5"`          |
+| **Description** |  saves results in the h5-file    |
+|                 |                                  |
+| **Command**     | `save = "path/name.xlsx"`        |
+| **Description** |  saves results in the xlsx-file  |
 
 ---
 
@@ -107,7 +125,7 @@ The `main` data structure contains results related to the bus.
 
 | Column   | Description                                    | Unit |
 |:--------:|:-----------------------------------------------|:-----| 	 
-| 1        | bus number defined as positive integer         |      |
+| 1        | bus number defined as positive integer         | -    |
 | 2        | voltage angle                                  | deg  |
 | 3        | active power injection                         | MW   |
 | 4        | active power generation                        | MW   |
@@ -121,9 +139,9 @@ The `flow` data structure contains results related to the branch.
 
 | Column  | Description                                 | Unit |
 |:-------:|:--------------------------------------------|:-----|
-| 1       | branch number defined as positive integer   |      |
-| 2       | from bus number defined as positive integer |      |
-| 3       | to bus number defined as positive integer   |      |
+| 1       | branch number defined as positive integer   | -    |
+| 2       | from bus number defined as positive integer | -    |
+| 3       | to bus number defined as positive integer   | -    |
 | 4       | from bus active power flow                  | MW   |
 | 5       | to bus active power flow                    | MW   |
 
@@ -134,5 +152,5 @@ The `generation` data structure contains results related to the generator.
 
 | Column   | Description                            | Unit |
 |:--------:|:---------------------------------------|:-----| 	 
-| 1        | bus number defined as positive integer |      |
+| 1        | bus number defined as positive integer | -    |
 | 2        | active power generation                | MW   |

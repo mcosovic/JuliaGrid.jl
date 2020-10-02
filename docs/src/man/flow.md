@@ -60,74 +60,105 @@ results, = runpf("case14.h5", "dc"; solve = "lu", save = "D:/case14results.xlsx"
 ```
 ---
 
-## Input Arguments
-The power flow function `runpf()` receives a group of variable number of arguments: DATA, METHOD, DISPLAY, and group of arguments by keyword: ACCONTROL, SOLVE, SAVE.
-```@raw html
-&nbsp;
-```
+## Variable Arguments
+The power flow function `runpf()` receives a group of variable number of arguments: DATA, METHOD and DISPLAY.
 
-##### DATA - Variable Argument
-
-| Example           | Description                                    |
-|:------------------|:-----------------------------------------------|
-|`"case14.h5"`      | loads the power system data from the package   |
-|`"case14.xlsx"`    | loads the power system data from the package   |
-|`"C:/case14.xlsx"` | loads the power system data from a custom path |
-
-```@raw html
-&nbsp;
-```
-##### METHOD - Variable Argument
-
-| Command | Description
-|:--------|:--------------------------------------------------------------------------------------|
-|`"nr"`   | runs the AC power flow analysis using Newton-Raphson method, `default METHOD setting` |
-|`"gs"`   | runs the AC power flow analysis using Gauss-Seidel method                             |
-|`"fnrxb"`| runs the AC power flow analysis using XB fast Newton-Raphson method                   |
-|`"fnrbx"`| runs the AC power flow analysis using BX fast Newton-Raphson method                   |
-|`"dc"`   | runs the DC power flow analysis                                                       |
+| DATA            | input power system data                                         |
+|:----------------|:----------------------------------------------------------------|
+|                 |                                                                 |
+| **Example**     | `"case14.h5"`                                                   |
+| **Description** | loads the power system data using h5-file from the package      |
+|                 |                                                                 |
+| **Example**     | `"case14.xlsx"`                                                 |
+| **Description** |  loads the power system data using xlsx-file from the package   |
+|                 |                                                                 |
+| **Example**     | `"C:/case14.h5"`                                                |
+| **Description** |  loads the power system data using h5-file from a custom path   |
+|                 |                                                                 |
+| **Example**     | `"C:/case14.xlsx"`                                              |                                     
+| **Description** |  loads the power system data using xlsx-file from a custom path |
 
 ```@raw html
 &nbsp;
 ```
-##### DISPLAY - Variable Argument
 
-| Command      | Description                    |
-|:-------------|:-------------------------------|
-|`"main"`      | shows main bus data display    |
-|`"flow"`      | shows power flow data display  |
-|`"generation"`| shows generator data display   |
-
-```@raw html
-&nbsp;
-```
-##### ACCONTROL - Keyword Argument
-
-| Command      | Description                                                                              |
-|:-------------|:-----------------------------------------------------------------------------------------|
-|`max = value` | specifies the maximum number of iterations for the AC power flow, `default setting: 100` |
-|`stop = value`| specifies the stopping criteria for the AC power flow, `default setting: 1.0e-8`         |
-|`reactive = 1`| forces reactive power constraints, `default setting: 0`                                  |
-
-```@raw html
-&nbsp;
-```
-##### SOLVE - Keyword Argument
-
-| Command            | Description                                            |
-|:-------------------|:-------------------------------------------------------|
-|`solve = "builtin"` | built-in linear system solver, `default SOLVE setting` |
-|`solve = "lu"`      | LU linear system solver                                |
+| METHOD          | solves the power flow problem                                                                                     |
+|:----------------|:------------------------------------------------------------------------------------------------------------------|
+|                 |                                                                                                                   |
+| **Command**     | `"nr"`                                                                                                            |
+| **Description** |  runs the AC power flow analysis using Newton-Raphson method, `default METHOD setting`                            |
+|                 |                                                                                                                   |
+| **Command**     | `"gs"`                                                                                                            |
+| **Description** |  runs the AC power flow analysis using Gauss-Seidel method                                                        |
+|                 |                                                                                                                   |
+| **Command**     | `"fnrxb"`                                                                                                         |
+| **Description** |  runs the AC power flow analysis using XB fast Newton-Raphson method                                              |
+|                 |                                                                                                                   |
+| **Command**     | `"fnrbx"`                                                                                                         |
+| **Description** |  runs the AC power flow analysis using BX fast Newton-Raphson method                                              |
+|                 |                                                                                                                   |
+| **Command**     | `"dc"`                                                                                                            |
+| **Description** |   runs the DC power flow analysis                                                                                 |
 
 ```@raw html
 &nbsp;
 ```
-##### SAVE - Keyword Argument
 
-| Command                 | Description                    |
-|:------------------------|:-------------------------------|
-|`save = "path/name.h5"`  | saves results in the h5-file   |
-|`save = "path/name.xlsx"`| saves results in the xlsx-file |
+| DISPLAY         | shows results in the terminal                     |
+|:----------------|:--------------------------------------------------|
+|                 |                                                   |
+| **Command**     | `"main"`                                          |
+| **Description** | shows main bus data display in the Julia REPL     |
+|                 |                                                   |
+| **Command**     | `"flow"`                                          |
+| **Description** | shows power flow data display in the Julia REPL   |
+|                 |                                                   |
+| **Command**     | `"generation"`                                    |
+| **Description** | shows generator data display in the Julia REPL    |
+
+---
+
+## Keyword Arguments
+The power flow function `runpf()` receives a group of arguments by keyword: ACCONTROL, SOLVE and SAVE.
+
+| ACCONTROL       | sets variables for the AC power flow                                                           |
+|:----------------|:-----------------------------------------------------------------------------------------------|
+|                 |                                                                                                |
+| **Command**     | `max = value`                                                                                  |
+| **Description** | specifies the maximum number of iterations for the AC power flow, `default setting: max = 100` |
+|                 |                                                                                                |
+| **Command**     | `stop = value`                                                                                 |
+| **Description** | specifies the stopping criteria for the AC power flow, `default setting: stop = 1.0e-8`        |
+|                 |                                                                                                |
+| **Command**     | `reactive = 1`                                                                                 |
+| **Description** | forces reactive power constraints for the AC power flow, `default setting: reactive = 0`       |
+
+
+```@raw html
+&nbsp;
+```
+
+| SOLVE           | sets the linear system solver                               |
+|:----------------|:------------------------------------------------------------|
+|                 |                                                             |
+| **Command**     | `solve = "builtin"`                                         |
+| **Description** |  built-in linear system solver, `default SOLVE setting`     |
+|                 |                                                             |
+| **Command**     | `solve = "lu"`                                              |
+| **Description** |  LU linear system solver                                    |
+
+```@raw html
+&nbsp;
+```
+
+| SAVE            | exports results                  |
+|:----------------|:---------------------------------|
+|                 |                                  |
+| **Command**     | `save = "path/name.h5"`          |
+| **Description** |  saves results in the h5-file    |
+|                 |                                  |
+| **Command**     | `save = "path/name.xlsx"`        |
+| **Description** |  saves results in the xlsx-file  |
 
 ---
 
@@ -152,7 +183,7 @@ The `main` data structure contains results related to the bus.
 
 | Column   | Description                                    | Unit |
 |:--------:|:-----------------------------------------------|:-----| 	 
-| 1        | bus number defined as positive integer         |      |
+| 1        | bus number defined as positive integer         | -    |
 | 2        | voltage angle                                  | deg  |
 | 3        | active power injection                         | MW   |
 | 4        | active power generation                        | MW   |
@@ -166,9 +197,9 @@ The `flow` data structure contains results related to the branch.
 
 | Column  | Description                                 | Unit |
 |:-------:|:--------------------------------------------|:-----|
-| 1       | branch number defined as positive integer   |      |
-| 2       | from bus number defined as positive integer |      |
-| 3       | to bus number defined as positive integer   |      |
+| 1       | branch number defined as positive integer   | -    |
+| 2       | from bus number defined as positive integer | -    |
+| 3       | to bus number defined as positive integer   | -    |
 | 4       | from bus active power flow                  | MW   |
 | 5       | to bus active power flow                    | MW   |
 
@@ -179,7 +210,7 @@ The `generation` data structure contains results related to the generator.
 
 | Column   | Description                            | Unit |
 |:--------:|:---------------------------------------|:-----| 	 
-| 1        | bus number defined as positive integer |      |
+| 1        | bus number defined as positive integer | -    |
 | 2        | active power generation                | MW   |
 
 ```@raw html
@@ -193,7 +224,7 @@ The `main` data structure contains results related to the bus.
 
 | Column   | Description                                      | Unit     |
 |:--------:|:-------------------------------------------------|:---------| 	 
-| 1        | bus number defined as positive integer           |          |
+| 1        | bus number defined as positive integer           | -        |
 | 2        | voltage magnitude                                | per-unit |
 | 3        | voltage angle                                    | deg      |
 | 4        | active power injection                           | MW       |
@@ -212,9 +243,9 @@ The `flow` data structure contains results related to the branch.
 
 | Column  | Description                                 | Unit     |
 |:-------:|:--------------------------------------------|:---------|
-| 1       | branch number defined as positive integer   |          |
-| 2       | from bus number defined as positive integer |          |
-| 3       | to bus number defined as positive integer   |          |
+| 1       | branch number defined as positive integer   | -        |
+| 2       | from bus number defined as positive integer | -        |
+| 3       | to bus number defined as positive integer   | -        |
 | 4       | from bus active power flow                  | MW       |
 | 5       | from bus reactive power flow                | MVAr     |
 | 6       | to bus active power flow                    | MW       |
@@ -234,7 +265,7 @@ The `generation` data structure contains results related to the generator.
 
 | Column   | Description                            | Unit |
 |:--------:|:---------------------------------------|:-----| 	 
-| 1        | bus number defined as positive integer |      |
+| 1        | bus number defined as positive integer | -    |
 | 2        | active power generation                | MW   |
 | 3        | reactive power generation              | MVAr |
 
