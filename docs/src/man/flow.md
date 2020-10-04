@@ -174,6 +174,8 @@ The power flow function `runpf()` receives a group of arguments by keyword: ACCO
 ## Input Data Structure
 The function supports two input types: `.h5` or `.xlsx` file extensions, where to describe a power system using the same input data structure as Matpower, except for the first column in the `branch` data. Note that, in the case of large-scale systems, we strongly recommend to use the `.h5` extension for the input as well as the output data.  
 
+In addition, JuliaGrid has a built-in parser for Matpower input cases, allowing the use of `.m` file extensions.
+
 The minimum amount of information within an instance of the data structure required to run the module requires `bus` and `branch` variables.
 
 We advise the reader to read the section [Power System Data Structure](@ref powersysteminputdata) which provides the structure of the input DATA, with numerous examples given in the section [Use Cases](@ref usecases).

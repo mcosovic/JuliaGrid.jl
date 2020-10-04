@@ -148,7 +148,7 @@ end
         @test maximum(abs.(pf.main[:, 3] - se.main[:, 3])) < accuracy
 
     pf, = runpf("case_ieee30.h5", "nr")
-    data = runmg("case_ieee30.h5"; runflow = 1, pmuset = ["Ti" "all" "Vi" "all" "Dij" "all"], pmuvariance = ["complete" 1e-30])
+    data = runmg("case_ieee30.h5"; runflow = 1, pmuset = ["Ti" "all" "Vi" "all" "Dij" 10], pmuvariance = ["complete" 1e-120])
     se, = runse(data, "nonlinear")
         accuracy = 1e-8
         @test maximum(abs.(pf.main[:, 2] - se.main[:, 2])) < accuracy
