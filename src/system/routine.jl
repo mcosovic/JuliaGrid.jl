@@ -425,3 +425,31 @@ function factorgraph(Ht, Nvar, Nfac, Nlink, Nind)
 
     return Vvar_fac, Wfac_var, to_fac, to_var, colptr, rowptr, idxT, row, col, links
 end
+
+
+### Matpower parse lines
+@inline function parse_line(i, line, flag, str)
+    sublines = split(line, "[")[end]
+    sublines = split(sublines, ";")
+
+    for k = 1:length(sublines)
+        subline = strip(sublines[k])
+        if !isempty(subline)
+            push!(str, subline)
+        end
+    end
+
+    if occursin("]", line)
+        lastlines = split(line, "]")[1]
+        lastlines = split(lastlines, ";")
+        for k = 1:length(lastlines)
+            last = lastlines[k]
+            if isempty(strip(last))
+                pop!(str)
+            end
+        end
+        flag = false
+    end
+
+    return flag, str
+end

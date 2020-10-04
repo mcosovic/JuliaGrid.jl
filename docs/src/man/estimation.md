@@ -79,7 +79,7 @@ results, = runse(data, "pmu", "estimate")
 ```
 ```julia-repl
 data = runmg("case14.h5"; legacyset = ["redundancy" 1.4], legacyvariance = ["complete" 1e-4])
-results = runse(data, "dc"; observe = ["islandBP" "pivot" 1e-6 "Pi" 1e4])
+results, = runse(data, "dc"; observe = ["islandBP" "pivot" 1e-6 "Pi" 1e4])
 ```
 ---
 
@@ -178,7 +178,7 @@ The state estimation function `runse()` receives a group of arguments by keyword
 | **Command**     | `start = "random"`                                                                                      |   
 | **Description** | the Gauss-Newton initial point defined using random perturbation between -0.5 and 0.5 of voltage angles in degrees, and 0.98 and 1.02 of voltage magnitudes in per-units |
 |                 |                                                                                                         |
-| **Command**     | `start = "["Vi" min max "Ti" min max]`                                                                  |   
+| **Command**     | `start = ["Vi" min max "Ti" min max]`                                                                  |   
 | **Description** | change default options for `random` Gauss-Newton initial point                                          |
 
 ```@raw html

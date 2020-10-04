@@ -58,25 +58,34 @@ results, = runpf("case14.h5", "gs", "main"; max = 500, stop = 1.0e-8, reactive =
 ```julia-repl
 results, = runpf("case14.h5", "dc"; solve = "lu", save = "D:/case14results.xlsx")
 ```
+```julia-repl
+results, = runpf("case14.m", "dc", "main")
+```
 ---
 
 ## Variable Arguments
 The power flow function `runpf()` receives a group of variable number of arguments: DATA, METHOD and DISPLAY.
 
-| DATA            | input power system data                                         |
-|:----------------|:----------------------------------------------------------------|
-|                 |                                                                 |
-| **Example**     | `"case14.h5"`                                                   |
-| **Description** | loads the power system data using h5-file from the package      |
-|                 |                                                                 |
-| **Example**     | `"case14.xlsx"`                                                 |
-| **Description** |  loads the power system data using xlsx-file from the package   |
-|                 |                                                                 |
-| **Example**     | `"C:/case14.h5"`                                                |
-| **Description** |  loads the power system data using h5-file from a custom path   |
-|                 |                                                                 |
-| **Example**     | `"C:/case14.xlsx"`                                              |                                     
-| **Description** |  loads the power system data using xlsx-file from a custom path |
+| DATA            | input power system data                                                     |
+|:----------------|:----------------------------------------------------------------------------|
+|                 |                                                                             |
+| **Example**     | `"case14.h5"`                                                               |
+| **Description** | loads the power system data using h5-file from the package                  |
+|                 |                                                                             |
+| **Example**     | `"case14.xlsx"`                                                             |
+| **Description** |  loads the power system data using xlsx-file from the package               |
+|                 |                                                                             |
+| **Example**     | `"case14.m"`                                                                |
+| **Description** | loads the power system data using Matpower m-file format from the package   |
+|                 |                                                                             |
+| **Example**     | `"C:/case14.h5"`                                                            |
+| **Description** |  loads the power system data using h5-file from a custom path               |
+|                 |                                                                             |
+| **Example**     | `"C:/case14.xlsx"`                                                          |                                     
+| **Description** |  loads the power system data using xlsx-file from a custom path             |
+|                 |                                                                             |
+| **Example**     | `"C:/case14.m"`                                                             |
+| **Description** | loads the power system data using Matpower m-file format from a custom path |
 
 ```@raw html
 &nbsp;

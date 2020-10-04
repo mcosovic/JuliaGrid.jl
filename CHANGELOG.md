@@ -1,5 +1,7 @@
 # JuliaGrid changelog
 
+![featureadd] built-in parser for Matpower input cases
+
 ## Version `v0.0.5`
 
 ![bugfix] the nonlinear state estimation Jacobian slack column

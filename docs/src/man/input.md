@@ -6,6 +6,7 @@ To generate the power system input data in the `.h5` format, we provide two scri
 * convert the Matpower input data file: [MATLAB script](https://github.com/mcosovic/JuliaGrid.jl/tree/master/src/extras/matpower_to_hdf5.m);
 * convert a custom user input data: [Julia script](https://github.com/mcosovic/JuliaGrid.jl/tree/master/src/extras/julia_to_hdf5.jl).
 
+In addition, JuliaGrid has a built-in parser for Matpower input cases, allowing the use of `.m` file extensions that describe the power systems from Matpower.  
 ---
 
 ## [Power System Data Structure](@id powersysteminputdata)
@@ -242,7 +243,7 @@ When the corresponding measurement is defined, then a bus number or branch numbe
 
 ## [Use Cases](@id usecases)
 
-The pre-defined power system data are located in the `src/data` as the `.h5` or `.xlsx` files.
+The pre-defined power system data are located in the `src/data` as the `.h5`, `.xlsx` or `.m` files.
 
 | Case             | Grid         | Bus   | Shunt  | Generator  | Branch  |
 |:-----------------|:-------------|------:|-------:|-----------:|--------:|

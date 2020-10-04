@@ -114,7 +114,7 @@ The measurement generator function `runmg()` receives the group of arguments by 
 | **Description** |  deploys random angle and magnitude measurements measured by PMUs according to the corresponding redundancy |
 |                 |                                                                                        |
 | **Command**     | `pmuset = ["device" value]`                                                            |
-| **Description** | deploys voltage and current phasor measurements according to the random selection of PMUs placed on buses, to deploy all devices use `"all"` as value |
+| **Description** | deploys voltage and current phasor measurements according to the random selection of PMUs placed on buses, to deploy all devices use `"all"` as `value` |
 |                 |                                                                                        |
 | **Command**     | `pmuset = ["Iij" value "Dij" value "Vi" value "Ti" value "complete"]`                  |
 | **Description** | deploys phasor measurements according to the random selection of measurement types[^1], to deploy all selected measurements use `"all"` as `value`, to deploys all measurements in-service, except for those individually defined use the keyword `"complete"` |

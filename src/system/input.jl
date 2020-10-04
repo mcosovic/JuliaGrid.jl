@@ -99,7 +99,7 @@ function loadpath(args)
         catch
             extension = ""
         end
-        if extension == ".h5" || extension == ".xlsx"
+        if extension == ".h5" || extension == ".xlsx" || extension == ".m"
             fullpath = args[i]
             path = dirname(args[i])
             dataname = basename(args[i])
@@ -109,7 +109,7 @@ function loadpath(args)
 
     if isempty(extension)
         throw(ErrorException("the input DATA extension is not found"))
-    elseif extension != ".h5" && extension != ".xlsx"
+    elseif extension != ".h5" && extension != ".xlsx" && extension != ".m"
         throw(DomainError(extension, "the input DATA extension is not supported"))
     end
 
@@ -209,6 +209,94 @@ function loadsystem(path)
             info = Array{String}(undef, 0, 1)
         end
         # close(xf)
+    end
+
+    if path.extension == ".m"
+        busline = String[]; busflag = false
+        branchline = String[]; branchflag = false
+        genline = String[]; genflag = false
+        gencostline = String[]; gencostflag = false
+
+        datafile = open(path.fullpath, "r")
+        lines = readlines(datafile)
+        basePower = 0.0
+
+        for (i, line) in enumerate(lines)
+            if occursin("mpc.branch", line) && occursin("[", line)
+                branchflag = true
+            elseif occursin("mpc.bus", line) && occursin("[", line)
+                busflag = true
+            elseif occursin("mpc.gen", line) && occursin("[", line) && !occursin("mpc.gencost", line)
+                genflag = true
+            elseif occursin("mpc.gencost", line) && occursin("[", line)
+                gencostflag = true
+            elseif occursin("mpc.baseMVA", line)
+                line = split(line, "=")[end]
+                line = split(line, ";")[1]
+                basePower = parse(Float64, line)
+            end
+
+            if branchflag
+                branchflag, branchline = parse_line(i, line, branchflag, branchline)
+            elseif busflag
+                busflag, busline = parse_line(i, line, busflag, busline)
+            elseif genflag
+                genflag, genline = parse_line(i, line, genflag, genline)
+            elseif gencostflag
+                gencostflag, gencostline = parse_line(i, line, gencostflag, gencostline)
+            end
+        end
+
+        if basePower == 0
+            basePower = 100.0
+            println("The variable basePower not found. The algorithm proceeds with default value: 100 MVA.")
+        end
+        if isempty(busline)
+            throw(ErrorException("error opening variable mpc.bus"))
+        end
+        if isempty(branchline)
+            throw(ErrorException("error opening variable mpc.branch"))
+        end
+
+        Ncol = length(parse.(Float64, split(busline[1])))
+        Nbus = length(busline)
+        bus = zeros(Nbus, Ncol)
+        for (k, line) in enumerate(busline)
+            bus[k, :] = parse.(Float64, split(line))
+        end
+
+        Ncol = length(parse.(Float64, split(branchline[1]))) + 1
+        Nbranch = length(branchline)
+        branch = zeros(Nbranch, Ncol)
+        for (k, line) in enumerate(branchline)
+            branch[k, :] = [k; parse.(Float64, split(line))]
+        end
+
+        if !isempty(genline)
+            Ncol = length(parse.(Float64, split(genline[1])))
+            Ngen = length(genline)
+            generator = zeros(Ngen, Ncol)
+            for (k, line) in enumerate(genline)
+                generator[k, :] = parse.(Float64, split(line))
+            end
+        else
+            generator = zeros(1, 21)
+            Ngen = 0
+        end
+
+        if !isempty(gencostline)
+            Ncol = length(parse.(Float64, split(gencostline[1])))
+            Ncost = length(gencostline)
+            generatorcost = zeros(Ncost, Ncol)
+            for (k, line) in enumerate(gencostline)
+                generatorcost[k, :] = parse.(Float64, split(line))
+            end
+        else
+            generatorcost = zeros(1, 5)
+            Ncost = 0
+        end
+
+        info = Array{String}(undef, 0, 1)
     end
 
     info = infogrid(bus, branch, generator, info, path.dataname, Nbranch, Nbus, Ngen)
