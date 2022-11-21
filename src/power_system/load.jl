@@ -1,3 +1,5 @@
+using HDF5
+
 ######### Bus ##########
 mutable struct BusDemand
     active::Array{Float64,1}
@@ -195,7 +197,7 @@ function powerSystem(inputFile::String)
 end
 
 ######## Load Base Power from HDF5 File ##########
-function loadBasePower(system)
+function loadBasePower(system::HDF5File)
     if exists(system, "basePower")
         basePower::Float64 = read(system["basePower"])
     else
@@ -207,7 +209,7 @@ function loadBasePower(system)
 end
 
 ######## Load Bus Data from HDF5 File ##########
-function loadBus(system)
+function loadBus(system::HDF5File)
     if !exists(system, "bus")
         throw(ErrorException("The bus data is missing."))
     end
@@ -256,7 +258,7 @@ function loadBus(system)
 end
 
 ######## Load Branch Data from HDF5 File ##########
-function loadBranch(system, bus::Bus)
+function loadBranch(system::HDF5File, bus::Bus)
     if !exists(system, "branch")
         throw(ErrorException("The branch data is missing."))
     end
@@ -308,7 +310,7 @@ function loadBranch(system, bus::Bus)
 end
 
 ######## Load Generator Data from HDF5 File ##########
-function loadGenerator(system, bus::Bus)
+function loadGenerator(system::HDF5File, bus::Bus)
     if !exists(system, "generator")
         throw(ErrorException("The generator data is missing."))
     end
