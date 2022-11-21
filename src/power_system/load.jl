@@ -1,5 +1,3 @@
-using HDF5
-
 ######### Bus ##########
 mutable struct BusDemand
     active::Array{Float64,1}
