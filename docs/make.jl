@@ -5,7 +5,7 @@ makedocs(
     modules = [JuliaGrid],
     clean = false,
     doctest = false,
-    format = Documenter.HTML(assets=["assets/style.css"]),
+    format = Documenter.HTML(assets=["assets/tablestyle.css"]),
     pages = [
         "Home" => "index.md",
         "Power System" => "man/powerSystemModel.md",
