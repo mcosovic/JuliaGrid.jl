@@ -1,7 +1,7 @@
 module JuliaGrid
 
 using SparseArrays, LinearAlgebra, SuiteSparse
-import HDF5
+using HDF5
 
 ######### Utility ##########
 include("utility/routine.jl")
