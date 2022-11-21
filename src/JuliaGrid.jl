@@ -7,9 +7,9 @@ using HDF5
 include("utility/routine.jl")
 
 
-######### Power System ##########
-# include("power_system/load.jl")
-# export powerSystem
+######## Power System ##########
+include("power_system/load.jl")
+export powerSystem
 
 # include("power_system/assemble.jl")
 # export addBus!

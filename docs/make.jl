@@ -8,7 +8,8 @@ makedocs(
     format = Documenter.HTML(assets=["assets/tablestyle.css"]),
     pages = [
         "Home" => "index.md",
-        "Power System" => "man/powerSystemModel.md",
+        "Power System" =>
+            ["Power System Model" => "man/powerSystemModel.md"],
     ]
 )
 

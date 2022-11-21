@@ -195,7 +195,7 @@ function powerSystem(inputFile::String)
 end
 
 ######## Load Base Power from HDF5 File ##########
-function loadBasePower(system::HDF5.HDF5File)
+function loadBasePower(system::HDF5File)
     if exists(system, "basePower")
         basePower::Float64 = read(system["basePower"])
     else
@@ -207,7 +207,7 @@ function loadBasePower(system::HDF5.HDF5File)
 end
 
 ######## Load Bus Data from HDF5 File ##########
-function loadBus(system::HDF5.HDF5File)
+function loadBus(system::HDF5File)
     if !exists(system, "bus")
         throw(ErrorException("The bus data is missing."))
     end
@@ -308,7 +308,7 @@ function loadBranch(system::HDF5.HDF5File, bus::Bus)
 end
 
 ######## Load Generator Data from HDF5 File ##########
-function loadGenerator(system::HDF5.HDF5File, bus::Bus)
+function loadGenerator(system::HDF5File, bus::Bus)
     if !exists(system, "generator")
         throw(ErrorException("The generator data is missing."))
     end
