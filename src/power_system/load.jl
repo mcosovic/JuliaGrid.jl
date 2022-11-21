@@ -195,7 +195,7 @@ function powerSystem(inputFile::String)
 end
 
 ######## Load Base Power from HDF5 File ##########
-function loadBasePower(system::HDF5File)
+function loadBasePower(system)
     if exists(system, "basePower")
         basePower::Float64 = read(system["basePower"])
     else
@@ -207,7 +207,7 @@ function loadBasePower(system::HDF5File)
 end
 
 ######## Load Bus Data from HDF5 File ##########
-function loadBus(system::HDF5File)
+function loadBus(system)
     if !exists(system, "bus")
         throw(ErrorException("The bus data is missing."))
     end
@@ -256,7 +256,7 @@ function loadBus(system::HDF5File)
 end
 
 ######## Load Branch Data from HDF5 File ##########
-function loadBranch(system::HDF5File, bus::Bus)
+function loadBranch(system, bus::Bus)
     if !exists(system, "branch")
         throw(ErrorException("The branch data is missing."))
     end
@@ -308,7 +308,7 @@ function loadBranch(system::HDF5File, bus::Bus)
 end
 
 ######## Load Generator Data from HDF5 File ##########
-function loadGenerator(system::HDF5File, bus::Bus)
+function loadGenerator(system, bus::Bus)
     if !exists(system, "generator")
         throw(ErrorException("The generator data is missing."))
     end
@@ -750,7 +750,7 @@ function powerSystem()
 end
 
 ######## Check Array Float64 Data ##########
-@inline function arrayFloat(group::HDF5Group, key::String, number::Int64)
+@inline function arrayFloat(group, key::String, number::Int64)
     if length(group[key]) != 1
         data::Array{Base.Float64,1} = read(group[key])
     else
@@ -761,7 +761,7 @@ end
 end
 
 ######## Check Array Int64 Data ##########
-@inline function arrayInteger(group::HDF5Group, key::String, number::Int64)
+@inline function arrayInteger(group, key::String, number::Int64)
     if length(group[key]) != 1
         data::Array{Int64,1} = read(group[key])
     else
@@ -772,7 +772,7 @@ end
 end
 
 ######## Check Matrix Float64 Data ##########
-@inline function matrixFloat(group::HDF5Group, key::String, number::Int64)
+@inline function matrixFloat(group, key::String, number::Int64)
     if size(group[key], 2) != 1
         data::Array{Float64,2} = read(group[key])
     else
