@@ -1,3 +1,4 @@
 docs/build/
 docs/figures/
 docs/makeLocal.jl
+src/JuliaGrid.jl
