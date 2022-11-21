@@ -256,7 +256,7 @@ function loadBus(system::HDF5File)
 end
 
 ######## Load Branch Data from HDF5 File ##########
-function loadBranch(system::HDF5.HDF5File, bus::Bus)
+function loadBranch(system::HDF5File, bus::Bus)
     if !exists(system, "branch")
         throw(ErrorException("The branch data is missing."))
     end
