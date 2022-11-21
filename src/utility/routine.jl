@@ -1,6 +1,6 @@
 ######### Check Package Path ##########
 @inline function checkPackagePath()
-    pathtoJuliaGrid = pathof(JuliaGridTest)
+    pathtoJuliaGrid = pathof(JuliaGrid)
     if pathtoJuliaGrid === nothing
         throw(ErrorException("JuliaGrid not found in install packages."))
     end
