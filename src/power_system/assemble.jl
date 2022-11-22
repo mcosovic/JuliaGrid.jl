@@ -83,7 +83,7 @@ end
 """
 The function allows changing `conductance` and `susceptance` parameters of the shunt element connected to the bus.
 
-    shuntBus!(system::PowerSystem; user...)
+    shuntBus!(system::PowerSystem; label, conductance, susceptance)
 
 The keyword `label` should correspond to the already defined bus label. Keywords `conductance` or `susceptance`
 can be omitted, then the value of the omitted parameter remains unchanged. The function also updates the field `acModel`, if field exist.
@@ -120,7 +120,16 @@ function shuntBus!(system::PowerSystem; user...)
     end
 end
 
-######### Add Branch ##########
+"""
+The function add a new branch. Names, descriptions and units of keywords are given in the table [branch group](@ref branchGroup).
+A branch can be added between already defined buses.
+
+    addBranch!(system::PowerSystem; label, resistance = 0.0, reactance = 0.0, susceptance = 0.0,
+        turnsRatio = 0.0, shiftAngle = 0.0, longTerm = 0.0, shortTerm = 0.0, emergency = 0.0,
+        minAngleDifference = -2 * pi, maxAngleDifference = 2 * pi, from, to, status = 1)
+
+The keywords `label`, `from`, `to`, and one of the parameters `resistance` or `reactance` are mandatory.
+"""
 function addBranch!(system::PowerSystem; label::Int64,
     resistance::Float64 = 0.0, reactance::Float64 = 0.0, susceptance::Float64 = 0.0, turnsRatio::Float64 = 0.0, shiftAngle::Float64 = 0.0,
     longTerm::Float64 = 0.0, shortTerm::Float64 = 0.0, emergency::Float64 = 0.0,

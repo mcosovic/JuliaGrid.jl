@@ -55,17 +55,9 @@ shuntBus!
 ## Branch Functions
 Functions receives the main composite type `PowerSystem` and arguments by keyword to set or change branch parameters. Further, functions affect field `branch`, but also fields `acModel` and `dcModel`. More precisely, once `acModel` and `dcModel` are created, the execution of functions will automatically trigger the update of these fields.
 
----
-
-#### Adding Branch
-The function `addBranch!()` add the new branch. Names, descriptions and units of keywords are given in the table [branch group](@ref branchGroup). A branch can be added between already defined buses.
-```julia-repl
-addBranch!(system; label, from, to, status, resistance, reactance, susceptance, turnsRatio,
-    shiftAngle, minAngleDifference, maxAngleDifference, longTerm, shortTerm, emergency)
+```@docs
+addBranch!
 ```
-The keywords `label`, `from`, `to`, and one of the parameters `resistance` or `reactance` are mandatory. Default keyword values are set to zero, except for keywords `status = 1`, `minAngleDifference = -2pi`, `maxAngleDifference = 2pi`.
-
----
 
 #### Change Operating Status
 The function `statusBranch!()` allows changing the operating `status` of the branch, from in-service to out-of-service, and vice versa.
