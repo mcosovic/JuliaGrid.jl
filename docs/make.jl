@@ -9,7 +9,8 @@ makedocs(
     pages = [
         "Home" => "index.md",
         "Power System" =>
-            ["Power System Model" => "man/powerSystemModel.md"],
+            ["Power System Model" => "man/powerSystemModel.md",
+             "Build Power System Model" => "man/powerSystemModelBuild.md"],
     ]
 )
 

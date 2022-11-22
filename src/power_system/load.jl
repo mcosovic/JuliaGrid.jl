@@ -168,7 +168,14 @@ mutable struct PowerSystem
     basePower::Float64
 end
 
-######### Load Power System Model from External Data ##########
+
+"""
+    powerSystem(inputFile::String)
+
+The path to the HDF5 file with `.h5` extension should be passed to the function.  Similarly,
+the path to the Matpower file with `.m` extension should be passed to the same function.
+Then, it is possible to add new power system elements and manipulate the existing ones.
+"""
 function powerSystem(inputFile::String)
     packagePath = checkPackagePath()
     fullpath, extension = checkFileFormat(inputFile, packagePath)
@@ -195,7 +202,7 @@ function powerSystem(inputFile::String)
 end
 
 ######## Load Base Power from HDF5 File ##########
-function loadBasePower(system::HDF5File)
+function loadBasePower(system::HDF5.HDF5File)
     if exists(system, "basePower")
         basePower::Float64 = read(system["basePower"])
     else
