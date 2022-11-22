@@ -11,6 +11,8 @@ include("utility/routine.jl")
 include("power_system/load.jl")
 export powerSystem
 
+include("power_system/assemble.jl")
+export addBus!
 
 
 # include("power_system/assemble.jl")

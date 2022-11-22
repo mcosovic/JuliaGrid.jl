@@ -178,6 +178,12 @@ Similarly, the path to the Matpower file with `.m` extension should be passed to
     powerSystem("pathToExternalData/name.m")
 
 Then, it is possible to add new buses, branches or generators, and also change the parameters of the existing ones.
+
+By omitting the argument of the function `powerSystem()`, it is possible to initialize the main composite type `PowerSystem`:
+
+    powerSystem()
+
+After that, it is possible to build a model from scratch using functions `addBus!()`, `addBranch!()`, and `addGenerator!()`.
 """
 function powerSystem(inputFile::String)
     packagePath = checkPackagePath()
@@ -732,13 +738,6 @@ end
     return ACModel(copy(sp), copy(sp), ac, copy(ac), copy(ac), copy(ac), copy(ac), copy(ac)), DCModel(sp, copy(af), copy(af))
 end
 
-"""
-By omitting the argument of the function `powerSystem()`, it is possible to initialize the main composite type `PowerSystem`:
-
-    powerSystem()
-
-After that, it is possible to build a model from scratch using functions `addBus!()`, `addBranch!()`, and `addGenerator!()`.
-"""
 function powerSystem()
     af = Array{Float64,1}(undef, 0); ai = Array{Int64,1}(undef, 0); mf = Array{Float64,2}(undef, 0, 0); di = Dict{Int64, Int64}()
     acModel, dcModel = makeModel()

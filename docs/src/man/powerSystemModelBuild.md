@@ -28,15 +28,10 @@ The execution of these functions will automatically trigger the update of all su
 ## Build Model
 The method `powerSystem()` builds the main composite type `PowerSystem` and populate fields `bus`, `branch`, `generator` and `basePower`.
 
-#### External Files
 ```@docs
 powerSystem(inputFile::String)
 ```
 
-#### Empty Model
-```@docs
-powerSystem()
-```
 
 ```@raw html
 <hr style="border:1px solid #CBCDCD; opacity: 0.5">
@@ -45,9 +40,6 @@ powerSystem()
 ## Bus Functions
 Functions receives the main composite type `PowerSystem` and arguments by keyword to set or change bus parameters, and affect field `bus`.
 
----
-
-#### Adding Bus
 ```@docs
 addBus!(system::PowerSystem)
 ```
