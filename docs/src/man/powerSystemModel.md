@@ -10,7 +10,7 @@ The JuliaGrid supports the main composite type `PowerSystem` to preserve power s
 
 The fields `bus`, `branch`, `generator` hold the data related with buses, branches and generators, respectively. Subtypes `acModel` and `dcModel` store vectors and matrices obtained based on the power system topology and parameters. The base power of the system is kept in the field `basePower`, given in volt-ampere unit.
 
-The function `powerSystem()` returns the main composite type `PowerSystem` with all subtypes.
+The method `powerSystem()` returns the main composite type `PowerSystem` with all subtypes.
 
 JuliaGrid supports three modes of forming the power system model:
 * using built-in functions,

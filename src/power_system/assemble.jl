@@ -1,4 +1,15 @@
-######### Add Bus ##########
+"""
+The function add a new bus. Names, descriptions and units of keywords are given in the table [bus group](@ref busGroup).
+
+    addBus!(system; label, slackLabel, lossZone, area, active, reactive, conductance,
+        susceptance, magnitude, angle, minMagnitude, maxMagnitude, base)
+
+The keyword `label` is mandatory. Default keyword values are set to zero, except for keywords `lossZone = 1`, `area = 1`,
+`magnitude = 1.0`, `minMagnitude = 0.9`, and `maxMagnitude = 1.1`.
+The slack bus, using the keyword `slackLabel`, can be specified in each function call with the label of the bus being defined or already existing.
+If the bus is not defined as the slack, the function `addBus!()` automatically defines the bus as the demand bus (PQ).
+If a generator is connected to a bus, using the function `addGenerator!()`, the bus becomes a generator bus (PV).
+"""
 function addBus!(system::PowerSystem; label::Int64,
     active::Float64 = 0.0, reactive::Float64 = 0.0,
     conductance::Float64 = 0.0, susceptance::Float64 = 0.0,

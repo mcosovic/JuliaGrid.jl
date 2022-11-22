@@ -1,6 +1,6 @@
 # [Build Power System Model](@id inputdata)
 
-The main composite type `PowerSystem` with fields `bus`, `branch`, `generator`, `acModel`, `dcModel`, and `basePower` can be created using a function:
+The main composite type `PowerSystem` with fields `bus`, `branch`, `generator`, `acModel`, `dcModel`, and `basePower` can be created using a method:
 * `powerSystem()`.
 
 Once the model is created, it is possible to add buses, branches and generators using functions:
@@ -26,9 +26,7 @@ The execution of these functions will automatically trigger the update of all su
 ```
 
 ## Build Model
-The function `powerSystem()` builds the main composite type `PowerSystem` and populate fields `bus`, `branch`, `generator` and `basePower`.
-
----
+The method `powerSystem()` builds the main composite type `PowerSystem` and populate fields `bus`, `branch`, `generator` and `basePower`.
 
 #### External Files
 ```@docs
@@ -50,12 +48,9 @@ Functions receives the main composite type `PowerSystem` and arguments by keywor
 ---
 
 #### Adding Bus
-The function `addBus!()` add the new bus. Names, descriptions and units of keywords are given in the table [bus group](@ref busGroup).
-```julia-repl
-addBus!(system; label, slackLabel, lossZone, area, active, reactive, conductance,
-    susceptance, magnitude, angle, minMagnitude, maxMagnitude, base)
+```@docs
+addBus!(system::PowerSystem)
 ```
-The keyword `label` is mandatory. Default keyword values are set to zero, except for keywords `lossZone = 1`, `area = 1`, `magnitude = 1.0`, `minMagnitude = 0.9`, and `maxMagnitude = 1.1`. The slack bus, using the keyword `slackLabel()`, can be specified in each function call with the label of the bus being defined or already existing. If the bus is not defined as the slack, the function `addBus!()` automatically defines the bus as the demand bus (PQ). If a generator is connected to a bus, using the function `addGenerator!()`, the bus becomes a generator bus (PV).
 
 ---
 

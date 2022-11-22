@@ -168,7 +168,6 @@ mutable struct PowerSystem
     basePower::Float64
 end
 
-
 """
 The path to the HDF5 file with `.h5` extension should be passed to the function:
 
