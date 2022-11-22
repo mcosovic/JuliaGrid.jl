@@ -44,14 +44,9 @@ Functions receives the main composite type `PowerSystem` and arguments by keywor
 addBus!
 ```
 
----
-
-#### Change Parameters of the Shunt Element
-The function `shuntBus!()` allows changing `conductance` and `susceptance` parameters of the shunt element connected to the bus.
-```julia-repl
-shuntBus!(system; label, conductance, susceptance)
+```@docs
+shuntBus!
 ```
-The keywords `label` should correspond to the already defined bus label. Keywords `conductance` or `susceptance` can be omitted, then the value of the omitted parameter remains unchanged. The function also updates the field `acModel`, if field exist.
 
 ```@raw html
 <hr style="border:1px solid #CBCDCD; opacity: 0.5">

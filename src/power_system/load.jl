@@ -177,9 +177,7 @@ Similarly, the path to the Matpower file with `.m` extension should be passed to
 
     powerSystem("pathToExternalData/name.m")
 
-Omitting the method argument initializes an empty model
-
-By omitting the argument of the method `powerSystem()`, it is possible to initialize the main composite type `PowerSystem` and build the model from scratch:
+Ignoring the method argument initializes the main composite type `PowerSystem`, which enables building the model from scratch:
 
     powerSystem()
 
