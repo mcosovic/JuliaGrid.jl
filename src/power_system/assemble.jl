@@ -12,6 +12,10 @@ The slack bus, using the keyword `slackLabel`, can be specified in each function
 label of the bus being defined or already existing. If the bus is not defined as the slack, the
 function `addBus!()` automatically defines the bus as the demand bus (PQ). If a generator is
 connected to a bus, using the function `addGenerator!()`, the bus becomes a generator bus (PV).
+
+```@example
+system = powerSystem()
+```
 """
 function addBus!(system::PowerSystem; label::Int64, slackLabel::Int64 = 0, area::Int64 = 1, lossZone::Int64 = 1,
     active::Float64 = 0.0, reactive::Float64 = 0.0, conductance::Float64 = 0.0, susceptance::Float64 = 0.0,
@@ -127,8 +131,9 @@ end
 The function add a new branch. Names, descriptions and units of keywords are given in the
 table [branch group](@ref branchGroup). A branch can be added between already defined buses.
 
-    addBranch!(system::PowerSystem; label, from, to, status, resistance, reactance, susceptance,
-        turnsRatio, shiftAngle, longTerm, shortTerm, emergency, minAngleDifference, maxAngleDifference)
+    addBranch!(system::PowerSystem; label, from, to, status, resistance, reactance,
+        susceptance, turnsRatio, shiftAngle, longTerm, shortTerm, emergency,
+        minAngleDifference, maxAngleDifference)
 
 The keywords `label`, `from`, `to`, and one of the parameters `resistance` or `reactance` are
 mandatory. Default keyword values are set to zero, except for keywords `status = 1`,
@@ -268,7 +273,8 @@ end
 The function `parameterBranch!` allows changing `resistance`, `reactance`, `susceptance`,
 `turnsRatio` and `shiftAngle` parameters of the branch.
 
-    parameterBranch!(system::PowerSystem; label, resistance, reactance, susceptance, turnsRatio, shiftAngle)
+    parameterBranch!(system::PowerSystem; label, resistance, reactance, susceptance,
+        turnsRatio, shiftAngle)
 
 The keywords `label` should correspond to the already defined branch label. Keywords `resistance`,
 `reactance`, `susceptance`, `turnsRatio` or `shiftAngle` can be omitted, then the value of the omitted
