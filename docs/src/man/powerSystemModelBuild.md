@@ -93,17 +93,6 @@ dcModel!
 <hr style="border:1px solid #CBCDCD; opacity: 0.5">
 ```
 
-## Build DC Model
-The function `dcModel!()` receives the main composite type `PowerSystem` and forms vectors and matrices related with DC simulations:
-```julia-repl
-dcModel!(system)
-```
-The function affects field `acModel`. Once formed, the field will be automatically updated when using functions `addBranch!()`, `statusBranch!()` `parameterBranch!()`. We advise the reader to read the section [in-depth DC Model](@ref inDepthDCModel), that explains all the data involved in the field `dcModel`.
-
-```@raw html
-<hr style="border:1px solid #CBCDCD; opacity: 0.5">
-```
-
 ## Modifying Other Parameters
 Changing other parameters of the power system can be done by changing variables by accessing their values in fields `bus`, `branch` and `generator` of the main type `powerSystem`.
 

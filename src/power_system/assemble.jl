@@ -1,15 +1,17 @@
 """
-The function add a new bus. Names, descriptions and units of keywords are given in the table [bus group](@ref busGroup).
+The function add a new bus. Names, descriptions and units of keywords are given
+in the table [bus group](@ref busGroup).
 
-    addBus!(system::PowerSystem; label, slackLabel = 0, area = 1, lossZone = 1,
-        active = 0.0, reactive = 0.0, conductance = 0.0, susceptance = 0.0,
-        magnitude: = 1.0, angle: = 0.0, minMagnitude = 0.9, maxMagnitude = 1.1,
-        base = 0.0)
+    addBus!(system::PowerSystem; label, slackLabel, area, lossZone,
+        active, reactive, conductance, susceptance,
+        magnitude, angle, minMagnitude, maxMagnitude, base)
 
-The keyword `label` is mandatory.  The slack bus, using the keyword `slackLabel`, can be specified in each function call
-with the label of the bus being defined or already existing. If the bus is not defined as the slack, the function `addBus!()`
-automatically defines the bus as the demand bus (PQ). If a generator is connected to a bus, using the function `addGenerator!()`,
-the bus becomes a generator bus (PV).
+The keyword `label` is mandatory. Default keyword values are set to zero, except for keywords
+`lossZone = 1`, `area = 1`, `magnitude = 1.0`, `minMagnitude = 0.9`, and `maxMagnitude = 1.1`.
+The slack bus, using the keyword `slackLabel`, can be specified in each function call with the
+label of the bus being defined or already existing. If the bus is not defined as the slack, the
+function `addBus!()` automatically defines the bus as the demand bus (PQ). If a generator is
+connected to a bus, using the function `addGenerator!()`, the bus becomes a generator bus (PV).
 """
 function addBus!(system::PowerSystem; label::Int64, slackLabel::Int64 = 0, area::Int64 = 1, lossZone::Int64 = 1,
     active::Float64 = 0.0, reactive::Float64 = 0.0, conductance::Float64 = 0.0, susceptance::Float64 = 0.0,
@@ -80,12 +82,14 @@ function addBus!(system::PowerSystem; label::Int64, slackLabel::Int64 = 0, area:
 end
 
 """
-The function allows changing `conductance` and `susceptance` parameters of the shunt element connected to the bus.
+The function allows changing `conductance` and `susceptance` parameters of the shunt element
+connected to the bus.
 
     shuntBus!(system::PowerSystem; label, conductance, susceptance)
 
-The keyword `label` should correspond to the already defined bus label. Keywords `conductance` or `susceptance`
-can be omitted, then the value of the omitted parameter remains unchanged. The function also updates the field `acModel`, if field exist.
+The keyword `label` should correspond to the already defined bus label. Keywords `conductance`
+or `susceptance`can be omitted, then the value of the omitted parameter remains unchanged.
+The function also updates the field `acModel`, if field exist.
 """
 function shuntBus!(system::PowerSystem; user...)
     ac = system.acModel
@@ -120,15 +124,17 @@ function shuntBus!(system::PowerSystem; user...)
 end
 
 """
-The function add a new branch. Names, descriptions and units of keywords are given in the table [branch group](@ref branchGroup).
-A branch can be added between already defined buses.
+The function add a new branch. Names, descriptions and units of keywords are given in the
+table [branch group](@ref branchGroup). A branch can be added between already defined buses.
 
-    addBranch!(system::PowerSystem; label, from, to, status = 1,
-        resistance = 0.0, reactance = 0.0, susceptance = 0.0, turnsRatio = 0.0,
-        shiftAngle = 0.0, longTerm = 0.0, shortTerm = 0.0, emergency = 0.0,
-        minAngleDifference = -2*pi, maxAngleDifference = 2*pi)
+    addBranch!(system::PowerSystem; label, from, to, status,
+        resistance, reactance, susceptance, turnsRatio, shiftAngle,
+        longTerm, shortTerm, emergency,
+        minAngleDifference, maxAngleDifference)
 
-The keywords `label`, `from`, `to`, and one of the parameters `resistance` or `reactance` are mandatory.
+The keywords `label`, `from`, `to`, and one of the parameters `resistance` or `reactance` are
+mandatory. Default keyword values are set to zero, except for keywords `status = 1`,
+`minAngleDifference = -2*pi`, `maxAngleDifference = 2*pi`.
 """
 function addBranch!(system::PowerSystem; label::Int64, from::Int64, to::Int64, status::Int64 = 1,
     resistance::Float64 = 0.0, reactance::Float64 = 0.0, susceptance::Float64 = 0.0, turnsRatio::Float64 = 0.0, shiftAngle::Float64 = 0.0,
@@ -211,7 +217,8 @@ function addBranch!(system::PowerSystem; label::Int64, from::Int64, to::Int64, s
 end
 
 """
-The function allows changing the operating `status` of the branch, from in-service to out-of-service, and vice versa.
+The function allows changing the operating `status` of the branch, from in-service to
+out-of-service, and vice versa.
 
     statusBranch!(system::PowerSystem; label, status = 0)
 
@@ -260,12 +267,15 @@ function statusBranch!(system::PowerSystem; label::Int64, status::Int64 = 0)
 end
 
 """
-The function `parameterBranch!` allows changing `resistance`, `reactance`, `susceptance`, `turnsRatio` and `shiftAngle` parameters of the branch.
-    parameterBranch!(system; label, resistance, reactance,
-        susceptance, turnsRatio, shiftAngle)
+The function `parameterBranch!` allows changing `resistance`, `reactance`, `susceptance`,
+`turnsRatio` and `shiftAngle` parameters of the branch.
 
-The keywords `label` should correspond to the already defined branch label. Keywords `resistance`, `reactance`, `susceptance`, `turnsRatio` or `shiftAngle`
-can be omitted, then the value of the omitted parameter remains unchanged.
+    parameterBranch!(system; label, resistance, reactance, susceptance,
+        turnsRatio, shiftAngle)
+
+The keywords `label` should correspond to the already defined branch label. Keywords `resistance`,
+`reactance`, `susceptance`, `turnsRatio` or `shiftAngle` can be omitted, then the value of the omitted
+parameter remains unchanged.
 """
 function parameterBranch!(system::PowerSystem; user...)
     parameter = system.branch.parameter
@@ -322,21 +332,20 @@ function parameterBranch!(system::PowerSystem; user...)
 end
 
 """
-The function add a new generator. Names, descriptions and units of keywords are given in the table [generator group](@ref generatorGroup).
-A generator can be added at already defined bus.
+The function add a new generator. Names, descriptions and units of keywords are given in the
+table [generator group](@ref generatorGroup). A generator can be added at already defined bus.
 
-    addGenerator!(system::PowerSystem; label, bus, area::Float64 = 0.0, status = 1,
-        active::Float64 = 0.0, reactive = 0.0, magnitude = 1.0,
-        minActive = 0.0, maxActive = Inf64, minReactive = -Inf64, maxReactive = Inf64,
-        lowerActive = 0.0, minReactiveLower = 0.0, maxReactiveLower = 0.0,
-        upperActive = 0.0, minReactiveUpper = 0.0, maxReactiveUpper = 0.0,
-        loadFollowing = 0.0, reserve10minute = 0.0, reserve30minute = 0.0, reactiveTimescale = 0.0,
-        activeModel = 2, activeStartup = 0.0, activeShutdown = 0.0, activeDataPoint = 3,
-        activeCoefficient = Float64[],
-        reactiveModel = 2, reactiveStartup = 0.0, reactiveShutdown = 0.0, reactiveDataPoint = 3,
-        reactiveCoefficient = Float64[])
+    addGenerator!(system::PowerSystem; label, bus, area, status, active, reactive,
+        magnitude, minActive, maxActive, minReactive, maxReactive,
+        lowerActive, minReactiveLower, maxReactiveLower,
+        upperActive, minReactiveUpper, maxReactiveUpper,
+        loadFollowing, reserve10minute, reserve30minute, reactiveTimescale,
+        activeModel, activeStartup, activeShutdown, activeDataPoint, activeCoefficient,
+        reactiveModel, reactiveStartup, reactiveShutdown, reactiveDataPoint, reactiveCoefficient)
 
-The keywords `label` and `bus` are mandatory.
+The keywords `label` and `bus` are mandatory. Default keyword values are set to zero, except for keywords
+`status = 1`, `magnitude = 1.0`, `maxActive = Inf`, `minReactive = -Inf`, `maxReactive = Inf`, `activeModel = 2`,
+`activeDataPoint = 3`, `reactiveModel = 2`, and `reactiveDataPoint = 3`.
 """
 function addGenerator!(system::PowerSystem; label::Int64, bus::Int64, area::Float64 = 0.0, status::Int64 = 1,
     active::Float64 = 0.0, reactive::Float64 = 0.0, magnitude::Float64 = 1.0,
@@ -463,7 +472,8 @@ function addGenerator!(system::PowerSystem; label::Int64, bus::Int64, area::Floa
 end
 
 """
-The function allows changing the operating `status` of the generator, from in-service to out-of-service, and vice versa.
+The function allows changing the operating `status` of the generator, from in-service
+to out-of-service, and vice versa.
 
     statusGenerator!(system; label, status = 0)
 
@@ -504,10 +514,11 @@ end
 
 """
 The function allows changing `active` and `reactive` output power of the generator.
+
     outputGenerator!(system; label, active, reactive)
 
-The keywords `label` should correspond to the already defined generator label.
-Keywords `active` or `reactive` can be omitted, then the value of the omitted parameter remains unchanged.
+The keywords `label` should correspond to the already defined generator label. Keywords `active`
+or `reactive` can be omitted, then the value of the omitted parameter remains unchanged.
 """
 function outputGenerator!(system::PowerSystem; user...)
     layout = system.generator.layout
@@ -544,12 +555,13 @@ function outputGenerator!(system::PowerSystem; user...)
 end
 
 """
-We advise the reader to read the section [in-depth DC Model](@ref inDepthDCModel),  that explains all the data involved in the field `dcModel`.
+We advise the reader to read the section [in-depth DC Model](@ref inDepthDCModel),
+that explains all the data involved in the field `dcModel`.
 
     dcModel!(system::PowerSystem)
 
-The function affects field `dcModel`. Once formed, the field will be automatically updated when using functions `addBranch!()`, `statusBranch!()`,
-`parameterBranch!()`.
+The function affects field `dcModel`. Once formed, the field will be automatically updated
+when using functions `addBranch!()`, `statusBranch!()`, `parameterBranch!()`.
 """
 function dcModel!(system::PowerSystem)
     dc = system.dcModel
@@ -617,12 +629,13 @@ end
 end
 
 """
-We advise the reader to read the section [in-depth AC Model](@ref inDepthACModel), that explains all the data involved in the field `acModel`.
+We advise the reader to read the section [in-depth AC Model](@ref inDepthACModel),
+that explains all the data involved in the field `acModel`.
 
     acModel!(system::PowerSystem)
 
-The function affects field `acModel`. Once formed, the field will be automatically updated when using functions `addBranch!()`,
-`shuntBus!()`, `statusBranch!()` `parameterBranch!()`.
+The function affects field `acModel`. Once formed, the field will be automatically updated
+when using functions `addBranch!()`, `shuntBus!()`, `statusBranch!()` `parameterBranch!()`.
 """
 function acModel!(system::PowerSystem)
     ac = system.acModel
