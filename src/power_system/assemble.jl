@@ -12,6 +12,12 @@ The slack bus, using the keyword `slackLabel`, can be specified in each function
 label of the bus being defined or already existing. If the bus is not defined as the slack, the
 function `addBus!()` automatically defines the bus as the demand bus (PQ). If a generator is
 connected to a bus, using the function `addGenerator!()`, the bus becomes a generator bus (PV).
+
+**Example**
+```julia-repl
+addBus!(system; label = 1, slackLabel = 1, active = 0.25, reactive = 0.01)
+addBus!(system; label = 2, active = 0.12, susceptance = 0.002)
+```
 """
 function addBus!(system::PowerSystem; label::Int64, slackLabel::Int64 = 0, area::Int64 = 1, lossZone::Int64 = 1,
     active::Float64 = 0.0, reactive::Float64 = 0.0, conductance::Float64 = 0.0, susceptance::Float64 = 0.0,
