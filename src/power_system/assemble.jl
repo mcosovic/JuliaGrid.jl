@@ -11,7 +11,7 @@ with the label of the bus being defined or already existing. If the bus is not d
 automatically defines the bus as the demand bus (PQ). If a generator is connected to a bus, using the function `addGenerator!()`,
 the bus becomes a generator bus (PV).
 """
-function addBus!(system::PowerSystem; label::Int64, slackLabel::Int64 = 0, area::Int64 = 1, lossZone::Int64 = 1
+function addBus!(system::PowerSystem; label::Int64, slackLabel::Int64 = 0, area::Int64 = 1, lossZone::Int64 = 1,
     active::Float64 = 0.0, reactive::Float64 = 0.0, conductance::Float64 = 0.0, susceptance::Float64 = 0.0,
     magnitude::Float64 = 1.0, angle::Float64 = 0.0, minMagnitude::Float64 = 0.9, maxMagnitude::Float64 = 1.1, base::Float64 = 0.0)
 
@@ -130,7 +130,7 @@ A branch can be added between already defined buses.
 
 The keywords `label`, `from`, `to`, and one of the parameters `resistance` or `reactance` are mandatory.
 """
-function addBranch!(system::PowerSystem; label::Int64, from::Int64, to::Int64, status::Int64 = 1
+function addBranch!(system::PowerSystem; label::Int64, from::Int64, to::Int64, status::Int64 = 1,
     resistance::Float64 = 0.0, reactance::Float64 = 0.0, susceptance::Float64 = 0.0, turnsRatio::Float64 = 0.0, shiftAngle::Float64 = 0.0,
     longTerm::Float64 = 0.0, shortTerm::Float64 = 0.0, emergency::Float64 = 0.0,
     minAngleDifference::Float64 = -2 * pi, maxAngleDifference::Float64 = 2 * pi)
