@@ -195,7 +195,7 @@ function powerSystem(inputFile::String)
 end
 
 ######## Load Base Power from HDF5 File ##########
-function loadBasePower(system)
+function loadBasePower(system::HDF5File)
     if exists(system, "basePower")
         basePower::Float64 = read(system["basePower"])
     else
