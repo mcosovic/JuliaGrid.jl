@@ -41,7 +41,7 @@ powerSystem(inputFile::String)
 Functions receives the main composite type `PowerSystem` and arguments by keyword to set or change bus parameters, and affect field `bus`.
 
 ```@docs
-addBus!(system::PowerSystem)
+addBus!(system)
 ```
 
 ---
