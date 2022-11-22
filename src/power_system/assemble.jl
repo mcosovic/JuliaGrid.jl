@@ -126,7 +126,7 @@ A branch can be added between already defined buses.
 
     addBranch!(system::PowerSystem; label, resistance = 0.0, reactance = 0.0, susceptance = 0.0,
         turnsRatio = 0.0, shiftAngle = 0.0, longTerm = 0.0, shortTerm = 0.0, emergency = 0.0,
-        minAngleDifference = -2 * pi, maxAngleDifference = 2 * pi, from, to, status = 1)
+        minAngleDifference = -2*pi, maxAngleDifference = 2*pi, from, to, status = 1)
 
 The keywords `label`, `from`, `to`, and one of the parameters `resistance` or `reactance` are mandatory.
 """

@@ -12,7 +12,8 @@ include("power_system/load.jl")
 export powerSystem
 
 include("power_system/assemble.jl")
-export addBus!
+export addBus!, shuntBus!
+export addBranch!
 
 
 # include("power_system/assemble.jl")
