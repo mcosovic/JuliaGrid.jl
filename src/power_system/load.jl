@@ -170,7 +170,9 @@ end
 
 
 """
-    powerSystem(inputFile::String)
+The path to the HDF5 file with `.h5` extension should be passed to the function:
+
+    powerSystem("pathToExternalData/name.h5")
 
 The path to the HDF5 file with `.h5` extension should be passed to the function.  Similarly,
 the path to the Matpower file with `.m` extension should be passed to the same function.
