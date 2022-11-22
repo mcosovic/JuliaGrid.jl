@@ -35,24 +35,10 @@ The function `powerSystem()` builds the main composite type `PowerSystem` and po
 powerSystem(inputFile::String)
 ```
 
-The path to the HDF5 file with `.h5` extension should be passed to the function `powerSystem()`:
-```julia-repl
-system = powerSystem("pathToExternalData/name.h5")
-```
-Similarly, the path to the Matpower file with `.m` extension should be passed to the same function:
-```julia-repl
-system = powerSystem("pathToExternalData/name.m")
-```
-Then, it is possible to add new power system elements and manipulate the existing ones, using the functions given below.
-
----
-
 #### Empty Model
-By omitting the argument of the function `powerSystem()`, it is possible to initialize the main composite type `PowerSystem`:
-```julia-repl
-system = powerSystem()
+```@docs
+powerSystem()
 ```
-After that, it is possible to build a model from scratch using functions `addBus!()`, `addBranch!()`, and `addGenerator!()`.
 
 ```@raw html
 <hr style="border:1px solid #CBCDCD; opacity: 0.5">
