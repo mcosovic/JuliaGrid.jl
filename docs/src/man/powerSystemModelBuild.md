@@ -41,7 +41,11 @@ powerSystem(inputFile::String)
 Functions receives the main composite type `PowerSystem` and arguments by keyword to set or change bus parameters, and affect field `bus`.
 
 ```@docs
-addBus!(system::PowerSystem; label, active = 0.0, reactive = 0.0, conductance = 0.0, susceptance = 0.0, magnitude = 1.0, angle = 0.0, minMagnitude = 0.9, maxMagnitude = 1.1, base = 0.0, slackLabel = 0, area = 1, lossZone = 1)
+addBus!(system; label::Int64,
+    active::Float64 = 0.0, reactive::Float64 = 0.0,
+    conductance::Float64 = 0.0, susceptance::Float64 = 0.0,
+    magnitude::Float64 = 1.0, angle::Float64 = 0.0, minMagnitude::Float64 = 0.9, maxMagnitude::Float64 = 1.1, base::Float64 = 0.0,
+    slackLabel::Int64 = 0, area::Int64 = 1, lossZone::Int64 = 1)
 ```
 
 ---
