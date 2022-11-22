@@ -1,20 +1,19 @@
 """
 The function add a new bus. Names, descriptions and units of keywords are given in the table [bus group](@ref busGroup).
 
-    addBus!(system::PowerSystem; label, active = 0.0, reactive = 0.0, conductance = 0.0,
-        susceptance = 0.0, magnitude: = 1.0, angle: = 0.0, minMagnitude = 0.9,
-        maxMagnitude = 1.1, base = 0.0, slackLabel = 0, area = 1, lossZone = 1)
+    addBus!(system::PowerSystem; label, slackLabel = 0, area = 1, lossZone = 1,
+        active = 0.0, reactive = 0.0, conductance = 0.0, susceptance = 0.0,
+        magnitude: = 1.0, angle: = 0.0, minMagnitude = 0.9, maxMagnitude = 1.1,
+        base = 0.0)
 
 The keyword `label` is mandatory.  The slack bus, using the keyword `slackLabel`, can be specified in each function call
 with the label of the bus being defined or already existing. If the bus is not defined as the slack, the function `addBus!()`
 automatically defines the bus as the demand bus (PQ). If a generator is connected to a bus, using the function `addGenerator!()`,
 the bus becomes a generator bus (PV).
 """
-function addBus!(system::PowerSystem; label::Int64,
-    active::Float64 = 0.0, reactive::Float64 = 0.0,
-    conductance::Float64 = 0.0, susceptance::Float64 = 0.0,
-    magnitude::Float64 = 1.0, angle::Float64 = 0.0, minMagnitude::Float64 = 0.9, maxMagnitude::Float64 = 1.1, base::Float64 = 0.0,
-    slackLabel::Int64 = 0, area::Int64 = 1, lossZone::Int64 = 1)
+function addBus!(system::PowerSystem; label::Int64, slackLabel::Int64 = 0, area::Int64 = 1, lossZone::Int64 = 1
+    active::Float64 = 0.0, reactive::Float64 = 0.0, conductance::Float64 = 0.0, susceptance::Float64 = 0.0,
+    magnitude::Float64 = 1.0, angle::Float64 = 0.0, minMagnitude::Float64 = 0.9, maxMagnitude::Float64 = 1.1, base::Float64 = 0.0)
 
     demand = system.bus.demand
     shunt = system.bus.shunt
@@ -124,17 +123,17 @@ end
 The function add a new branch. Names, descriptions and units of keywords are given in the table [branch group](@ref branchGroup).
 A branch can be added between already defined buses.
 
-    addBranch!(system::PowerSystem; label, resistance = 0.0, reactance = 0.0, susceptance = 0.0,
-        turnsRatio = 0.0, shiftAngle = 0.0, longTerm = 0.0, shortTerm = 0.0, emergency = 0.0,
-        minAngleDifference = -2*pi, maxAngleDifference = 2*pi, from, to, status = 1)
+    addBranch!(system::PowerSystem; label, from, to, status = 1,
+        resistance = 0.0, reactance = 0.0, susceptance = 0.0, turnsRatio = 0.0,
+        shiftAngle = 0.0, longTerm = 0.0, shortTerm = 0.0, emergency = 0.0,
+        minAngleDifference = -2*pi, maxAngleDifference = 2*pi)
 
 The keywords `label`, `from`, `to`, and one of the parameters `resistance` or `reactance` are mandatory.
 """
-function addBranch!(system::PowerSystem; label::Int64,
+function addBranch!(system::PowerSystem; label::Int64, from::Int64, to::Int64, status::Int64 = 1
     resistance::Float64 = 0.0, reactance::Float64 = 0.0, susceptance::Float64 = 0.0, turnsRatio::Float64 = 0.0, shiftAngle::Float64 = 0.0,
     longTerm::Float64 = 0.0, shortTerm::Float64 = 0.0, emergency::Float64 = 0.0,
-    minAngleDifference::Float64 = -2 * pi, maxAngleDifference::Float64 = 2 * pi,
-    from::Int64, to::Int64, status::Int64 = 1)
+    minAngleDifference::Float64 = -2 * pi, maxAngleDifference::Float64 = 2 * pi)
 
     parameter = system.branch.parameter
     rating = system.branch.rating
@@ -211,7 +210,13 @@ function addBranch!(system::PowerSystem; label::Int64,
     end
 end
 
-######### Change Branch Status ##########
+"""
+The function allows changing the operating `status` of the branch, from in-service to out-of-service, and vice versa.
+
+    statusBranch!(system::PowerSystem; label, status = 0)
+
+The keywords `label` should correspond to the already defined branch label.
+"""
 function statusBranch!(system::PowerSystem; label::Int64, status::Int64 = 0)
     layout = system.branch.layout
 

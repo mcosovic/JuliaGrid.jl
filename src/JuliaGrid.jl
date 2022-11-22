@@ -13,7 +13,7 @@ export powerSystem
 
 include("power_system/assemble.jl")
 export addBus!, shuntBus!
-export addBranch!
+export addBranch!, statusBranch!
 
 
 # include("power_system/assemble.jl")

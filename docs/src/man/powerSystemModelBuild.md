@@ -59,14 +59,9 @@ Functions receives the main composite type `PowerSystem` and arguments by keywor
 addBranch!
 ```
 
-#### Change Operating Status
-The function `statusBranch!()` allows changing the operating `status` of the branch, from in-service to out-of-service, and vice versa.
-```julia-repl
-statusBranch!(system; label, status)
+```@docs
+statusBranch!
 ```
-The keywords `label` should correspond to the already defined branch label.
-
----
 
 #### Change Parameters
 The function `parameterBranch!` allows changing `resistance`, `reactance`, `susceptance`, `turnsRatio` and `shiftAngle` parameters of the branch.
