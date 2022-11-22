@@ -173,15 +173,23 @@ The path to the HDF5 file with `.h5` extension should be passed to the method:
 
     powerSystem("pathToExternalData/name.h5")
 
-Similarly, the path to the Matpower file with `.m` extension should be passed to the same method:
+Similarly, the path to the Matpower file with `.m` extension should be passed
+to the same method:
 
     powerSystem("pathToExternalData/name.m")
 
-Ignoring the method argument initializes the main composite type `PowerSystem`, which enables building the model from scratch:
+Ignoring the method argument initializes the main composite type `PowerSystem`,
+which enables building the model from scratch:
 
     powerSystem()
 
-Once the main composite type `PowerSystem` is created it is possible to add new buses, branches or generators, and also change the parameters of the existing ones.
+Once the main composite type `PowerSystem` is created it is possible to add new buses, branches or
+generators, and also change the parameters of the existing ones.
+
+**Example**
+```julia-repl
+system = powerSystem()
+```
 """
 function powerSystem(inputFile::String)
     packagePath = checkPackagePath()
