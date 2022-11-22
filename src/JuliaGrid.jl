@@ -13,14 +13,9 @@ export powerSystem
 
 include("power_system/assemble.jl")
 export addBus!, shuntBus!
-export addBranch!, statusBranch!
-
-
-# include("power_system/assemble.jl")
-# export addBus!
-# export addBranch!, statusBranch!, parameterBranch!
-# export addGenerator!, statusGenerator!, outputGenerator!
-# export dcModel!, acModel!
+export addBranch!, statusBranch!, parameterBranch!
+export addGenerator!, statusGenerator!, outputGenerator!
+export dcModel!, acModel!
 
 end # JuliaGrid
 

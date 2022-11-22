@@ -259,7 +259,14 @@ function statusBranch!(system::PowerSystem; label::Int64, status::Int64 = 0)
     layout.status[index] = status
 end
 
-######### Change Branch Parameters ##########
+"""
+The function `parameterBranch!` allows changing `resistance`, `reactance`, `susceptance`, `turnsRatio` and `shiftAngle` parameters of the branch.
+    parameterBranch!(system; label, resistance, reactance,
+        susceptance, turnsRatio, shiftAngle)
+
+The keywords `label` should correspond to the already defined branch label. Keywords `resistance`, `reactance`, `susceptance`, `turnsRatio` or `shiftAngle`
+can be omitted, then the value of the omitted parameter remains unchanged.
+"""
 function parameterBranch!(system::PowerSystem; user...)
     parameter = system.branch.parameter
     layout = system.branch.layout
@@ -314,9 +321,25 @@ function parameterBranch!(system::PowerSystem; user...)
     end
 end
 
-######### Add Generator ##########
-function addGenerator!(system::PowerSystem; label::Int64,
-    active::Float64 = 0.0, reactive::Float64 = 0.0,
+"""
+The function add a new generator. Names, descriptions and units of keywords are given in the table [generator group](@ref generatorGroup).
+A generator can be added at already defined bus.
+
+    addGenerator!(system::PowerSystem; label, bus, area::Float64 = 0.0, status = 1,
+        active::Float64 = 0.0, reactive = 0.0, magnitude = 1.0,
+        minActive = 0.0, maxActive = Inf64, minReactive = -Inf64, maxReactive = Inf64,
+        lowerActive = 0.0, minReactiveLower = 0.0, maxReactiveLower = 0.0,
+        upperActive = 0.0, minReactiveUpper = 0.0, maxReactiveUpper = 0.0,
+        loadFollowing = 0.0, reserve10minute = 0.0, reserve30minute = 0.0, reactiveTimescale = 0.0,
+        activeModel = 2, activeStartup = 0.0, activeShutdown = 0.0, activeDataPoint = 3,
+        activeCoefficient = Float64[],
+        reactiveModel = 2, reactiveStartup = 0.0, reactiveShutdown = 0.0, reactiveDataPoint = 3,
+        reactiveCoefficient = Float64[])
+
+The keywords `label` and `bus` are mandatory.
+"""
+function addGenerator!(system::PowerSystem; label::Int64, bus::Int64, area::Float64 = 0.0, status::Int64 = 1,
+    active::Float64 = 0.0, reactive::Float64 = 0.0, magnitude::Float64 = 1.0,
     minActive::Float64 = 0.0, maxActive::Float64 = Inf64, minReactive::Float64 = -Inf64, maxReactive::Float64 = Inf64,
     lowerActive::Float64 = 0.0, minReactiveLower::Float64 = 0.0, maxReactiveLower::Float64 = 0.0,
     upperActive::Float64 = 0.0, minReactiveUpper::Float64 = 0.0, maxReactiveUpper::Float64 = 0.0,
@@ -324,8 +347,7 @@ function addGenerator!(system::PowerSystem; label::Int64,
     activeModel::Int64 = 2, activeStartup::Float64 = 0.0, activeShutdown::Float64 = 0.0, activeDataPoint::Int64 = 3,
     activeCoefficient::Array{Float64,1} = Float64[],
     reactiveModel::Int64 = 2, reactiveStartup::Float64 = 0.0, reactiveShutdown::Float64 = 0.0, reactiveDataPoint::Int64 = 3,
-    reactiveCoefficient::Array{Float64,1} = Float64[],
-    magnitude::Float64 = 1.0, bus::Int64, area::Float64 = 0.0, status::Int64 = 1)
+    reactiveCoefficient::Array{Float64,1} = Float64[])
 
     output = system.generator.output
     capability = system.generator.capability
@@ -440,7 +462,13 @@ function addGenerator!(system::PowerSystem; label::Int64,
     end
 end
 
-######### Change Generator Status ##########
+"""
+The function allows changing the operating `status` of the generator, from in-service to out-of-service, and vice versa.
+
+    statusGenerator!(system; label, status = 0)
+
+The keywords `label` should correspond to the already defined generator label.
+"""
 function statusGenerator!(system::PowerSystem; label::Int64, status::Int64 = 0)
     layout = system.generator.layout
     output = system.generator.output
@@ -474,7 +502,13 @@ function statusGenerator!(system::PowerSystem; label::Int64, status::Int64 = 0)
     layout.status[index] = status
 end
 
-######### Change Generator Output ##########
+"""
+The function allows changing `active` and `reactive` output power of the generator.
+    outputGenerator!(system; label, active, reactive)
+
+The keywords `label` should correspond to the already defined generator label.
+Keywords `active` or `reactive` can be omitted, then the value of the omitted parameter remains unchanged.
+"""
 function outputGenerator!(system::PowerSystem; user...)
     layout = system.generator.layout
     output = system.generator.output
@@ -509,7 +543,14 @@ function outputGenerator!(system::PowerSystem; user...)
     end
 end
 
-######### Make DC Model ##########
+"""
+We advise the reader to read the section [in-depth DC Model](@ref inDepthDCModel),  that explains all the data involved in the field `dcModel`.
+
+    dcModel!(system::PowerSystem)
+
+The function affects field `dcModel`. Once formed, the field will be automatically updated when using functions `addBranch!()`, `statusBranch!()`,
+`parameterBranch!()`.
+"""
 function dcModel!(system::PowerSystem)
     dc = system.dcModel
     layout = system.branch.layout
@@ -575,7 +616,14 @@ end
     end
 end
 
-######### Make AC Model ##########
+"""
+We advise the reader to read the section [in-depth AC Model](@ref inDepthACModel), that explains all the data involved in the field `acModel`.
+
+    acModel!(system::PowerSystem)
+
+The function affects field `acModel`. Once formed, the field will be automatically updated when using functions `addBranch!()`,
+`shuntBus!()`, `statusBranch!()` `parameterBranch!()`.
+"""
 function acModel!(system::PowerSystem)
     ac = system.acModel
     layout = system.branch.layout
