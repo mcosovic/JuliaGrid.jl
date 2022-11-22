@@ -169,21 +169,21 @@ mutable struct PowerSystem
 end
 
 """
-The path to the HDF5 file with `.h5` extension should be passed to the function:
+The path to the HDF5 file with `.h5` extension should be passed to the method:
 
     powerSystem("pathToExternalData/name.h5")
 
-Similarly, the path to the Matpower file with `.m` extension should be passed to the same function:
+Similarly, the path to the Matpower file with `.m` extension should be passed to the same method:
 
     powerSystem("pathToExternalData/name.m")
 
-Then, it is possible to add new buses, branches or generators, and also change the parameters of the existing ones.
+Omitting the method argument initializes an empty model
 
-By omitting the argument of the function `powerSystem()`, it is possible to initialize the main composite type `PowerSystem`:
+By omitting the argument of the method `powerSystem()`, it is possible to initialize the main composite type `PowerSystem` and build the model from scratch:
 
     powerSystem()
 
-After that, it is possible to build a model from scratch using functions `addBus!()`, `addBranch!()`, and `addGenerator!()`.
+Once the main composite type `PowerSystem` is created it is possible to add new buses, branches or generators, and also change the parameters of the existing ones.
 """
 function powerSystem(inputFile::String)
     packagePath = checkPackagePath()
