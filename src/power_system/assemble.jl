@@ -1,7 +1,7 @@
 """
 The function add a new bus. Names, descriptions and units of keywords are given in the table [bus group](@ref busGroup).
 
-    addBus!(system::PowerSystem; label::Int64,
+    addBus!(system::PowerSystem; label,
         active::Float64 = 0.0, reactive::Float64 = 0.0,
         conductance::Float64 = 0.0, susceptance::Float64 = 0.0,
         magnitude::Float64 = 1.0, angle::Float64 = 0.0, minMagnitude::Float64 = 0.9, maxMagnitude::Float64 = 1.1, base::Float64 = 0.0,
