@@ -216,6 +216,32 @@ function powerSystem(inputFile::String)
     return PowerSystem(bus, branch, generator, acModel, dcModel, basePower)
 end
 
+function powerSystem()
+    af = Array{Float64,1}(undef, 0); ai = Array{Int64,1}(undef, 0); mf = Array{Float64,2}(undef, 0, 0); di = Dict{Int64, Int64}()
+    acModel, dcModel = makeModel()
+
+    return PowerSystem(
+        Bus(di,
+        BusDemand(af, copy(af)),
+        BusShunt(copy(af), copy(af)),
+        BusVoltage(copy(af), copy(af), copy(af), copy(af), copy(af)),
+        BusLayout(ai, copy(ai), copy(ai), 0, 0, false),
+        BusSupply(copy(af), copy(af), copy(af)), 0),
+        Branch(copy(di),
+        BranchParameter(copy(af), copy(af), copy(af), copy(af), copy(af)),
+        BranchRating(copy(af), copy(af), copy(af)),
+        BranchVoltage(copy(af), copy(af)),
+        BranchLayout(copy(ai), copy(ai), copy(ai), false), 0),
+        Generator(copy(di),
+        GeneratorOutput(copy(af), copy(af)),
+        GeneratorCapability(copy(af), copy(af), copy(af), copy(af), copy(af), copy(af), copy(af), copy(af), copy(af), copy(af)),
+        GeneratorRampRate(copy(af), copy(af), copy(af), copy(af)),
+        GeneratorCost(copy(ai), copy(af), copy(af), copy(ai), mf, copy(ai), copy(af), copy(af), copy(ai), copy(mf)),
+        GeneratorVoltage(copy(af)),
+        GeneratorLayout(copy(ai), copy(af), copy(ai), copy(ai)), 0),
+        acModel, dcModel, 1e8)
+end
+
 ######## Load Base Power from HDF5 File ##########
 function loadBasePower(system)
     if exists(system, "basePower")
@@ -742,32 +768,6 @@ end
     ac = Array{ComplexF64,1}(undef, 0); af = Array{Float64,1}(undef, 0); sp = spzeros(1, 1)
 
     return ACModel(copy(sp), copy(sp), ac, copy(ac), copy(ac), copy(ac), copy(ac), copy(ac)), DCModel(sp, copy(af), copy(af))
-end
-
-function powerSystem()
-    af = Array{Float64,1}(undef, 0); ai = Array{Int64,1}(undef, 0); mf = Array{Float64,2}(undef, 0, 0); di = Dict{Int64, Int64}()
-    acModel, dcModel = makeModel()
-
-    return PowerSystem(
-        Bus(di,
-        BusDemand(af, copy(af)),
-        BusShunt(copy(af), copy(af)),
-        BusVoltage(copy(af), copy(af), copy(af), copy(af), copy(af)),
-        BusLayout(ai, copy(ai), copy(ai), 0, 0, false),
-        BusSupply(copy(af), copy(af), copy(af)), 0),
-        Branch(copy(di),
-        BranchParameter(copy(af), copy(af), copy(af), copy(af), copy(af)),
-        BranchRating(copy(af), copy(af), copy(af)),
-        BranchVoltage(copy(af), copy(af)),
-        BranchLayout(copy(ai), copy(ai), copy(ai), false), 0),
-        Generator(copy(di),
-        GeneratorOutput(copy(af), copy(af)),
-        GeneratorCapability(copy(af), copy(af), copy(af), copy(af), copy(af), copy(af), copy(af), copy(af), copy(af), copy(af)),
-        GeneratorRampRate(copy(af), copy(af), copy(af), copy(af)),
-        GeneratorCost(copy(ai), copy(af), copy(af), copy(ai), mf, copy(ai), copy(af), copy(af), copy(ai), copy(mf)),
-        GeneratorVoltage(copy(af)),
-        GeneratorLayout(copy(ai), copy(af), copy(ai), copy(ai)), 0),
-        acModel, dcModel, 1e8)
 end
 
 ######## Check Array Float64 Data ##########

@@ -15,8 +15,9 @@ connected to a bus, using the function `addGenerator!()`, the bus becomes a gene
 
 **Example**
 ```julia-repl
-addBus!(system; label = 1, slackLabel = 1, active = 0.25, reactive = 0.01)
-addBus!(system; label = 2, active = 0.12, susceptance = 0.002)
+addBus!(system; label = 1, slackLabel = 1, active = 0.25, reactive = -0.04)
+addBus!(system; label = 2, active = 0.06, susceptance = 0.12)
+addBus!(system; label = 3, active = 0.12, conductance = 0.05)
 ```
 """
 function addBus!(system::PowerSystem; label::Int64, slackLabel::Int64 = 0, area::Int64 = 1, lossZone::Int64 = 1,
@@ -96,6 +97,11 @@ connected to the bus.
 The keyword `label` should correspond to the already defined bus label. Keywords `conductance`
 or `susceptance`can be omitted, then the value of the omitted parameter remains unchanged.
 The function also updates the field `acModel`, if field exist.
+
+**Example**
+```julia-repl
+shuntBus!(system; label = 1, conductance = 0.04)
+```
 """
 function shuntBus!(system::PowerSystem; user...)
     ac = system.acModel
@@ -140,6 +146,13 @@ table [branch group](@ref branchGroup). A branch can be added between already de
 The keywords `label`, `from`, `to`, and one of the parameters `resistance` or `reactance` are
 mandatory. Default keyword values are set to zero, except for keywords `status = 1`,
 `minAngleDifference = -2*pi`, `maxAngleDifference = 2*pi`.
+
+**Example**
+```julia-repl
+addBranch!(system; label = 1, from = 1, to = 2, resistance = 0.05, reactance = 0.12)
+addBranch!(system; label = 2, from = 1, to = 2, resistance = 0.03, reactance = 0.17)
+addBranch!(system; label = 3, from = 2, to = 3, reactance = 0.17, turnsRatio = 0.98)
+```
 """
 function addBranch!(system::PowerSystem; label::Int64, from::Int64, to::Int64, status::Int64 = 1,
     resistance::Float64 = 0.0, reactance::Float64 = 0.0, susceptance::Float64 = 0.0, turnsRatio::Float64 = 0.0, shiftAngle::Float64 = 0.0,
@@ -228,6 +241,11 @@ out-of-service, and vice versa.
     statusBranch!(system::PowerSystem; label, status)
 
 The keywords `label` should correspond to the already defined branch label.
+
+**Example**
+```julia-repl
+statusBranch!(system; label = 2, status = 0)
+```
 """
 function statusBranch!(system::PowerSystem; label::Int64, status::Int64 = 0)
     layout = system.branch.layout
@@ -281,6 +299,11 @@ The function `parameterBranch!` allows changing `resistance`, `reactance`, `susc
 The keywords `label` should correspond to the already defined branch label. Keywords `resistance`,
 `reactance`, `susceptance`, `turnsRatio` or `shiftAngle` can be omitted, then the value of the omitted
 parameter remains unchanged.
+
+**Example**
+```julia-repl
+parameterBranch!(system; label = 1, susceptance = 0.062)
+```
 """
 function parameterBranch!(system::PowerSystem; user...)
     parameter = system.branch.parameter
@@ -350,6 +373,12 @@ table [generator group](@ref generatorGroup). A generator can be added at alread
 The keywords `label` and `bus` are mandatory. Default keyword values are set to zero, except for keywords
 `status = 1`, `magnitude = 1.0`, `maxActive = Inf`, `minReactive = -Inf`, `maxReactive = Inf`, `activeModel = 2`,
 `activeDataPoint = 3`, `reactiveModel = 2`, and `reactiveDataPoint = 3`.
+
+**Example**
+```julia-repl
+addGenerator!(system; label = 1, bus = 1, active = 0.5 reactive = 0.1)
+addGenerator!(system; label = 2, bus = 3, active = 0.4 reactive = 0.2)
+```
 """
 function addGenerator!(system::PowerSystem; label::Int64, bus::Int64, area::Float64 = 0.0, status::Int64 = 1,
     active::Float64 = 0.0, reactive::Float64 = 0.0, magnitude::Float64 = 1.0,
@@ -482,6 +511,11 @@ to out-of-service, and vice versa.
     statusGenerator!(system::PowerSystem; label, status)
 
 The keywords `label` should correspond to the already defined generator label.
+
+**Example**
+```julia-repl
+statusGenerator!(system; label = 2, status = 0)
+```
 """
 function statusGenerator!(system::PowerSystem; label::Int64, status::Int64 = 0)
     layout = system.generator.layout
@@ -523,6 +557,11 @@ The function allows changing `active` and `reactive` output power of the generat
 
 The keywords `label` should correspond to the already defined generator label. Keywords `active`
 or `reactive` can be omitted, then the value of the omitted parameter remains unchanged.
+
+**Example**
+```julia-repl
+outputGenerator!(system; label = 1, active = 0.85)
+```
 """
 function outputGenerator!(system::PowerSystem; user...)
     layout = system.generator.layout
@@ -566,6 +605,11 @@ that explains all the data involved in the field `dcModel`.
 
 The function affects field `dcModel`. Once formed, the field will be automatically updated
 when using functions `addBranch!()`, `statusBranch!()`, `parameterBranch!()`.
+
+**Example**
+```julia-repl
+dcModel!(system)
+```
 """
 function dcModel!(system::PowerSystem)
     dc = system.dcModel
@@ -640,6 +684,11 @@ that explains all the data involved in the field `acModel`.
 
 The function affects field `acModel`. Once formed, the field will be automatically updated
 when using functions `addBranch!()`, `shuntBus!()`, `statusBranch!()` `parameterBranch!()`.
+
+**Example**
+```julia-repl
+acModel!(system)
+```
 """
 function acModel!(system::PowerSystem)
     ac = system.acModel
@@ -724,6 +773,7 @@ end
     ac.nodalToFrom[index] = -ac.admittance[index] / ac.transformerRatio[index]
 end
 
+######### Expelling Elements from the AC or DC Model ##########
 function nilModel!(system::PowerSystem, flag::Symbol; index::Int64 = 0)
     dc = system.dcModel
     ac = system.acModel
@@ -784,4 +834,3 @@ function nilModel!(system::PowerSystem, flag::Symbol; index::Int64 = 0)
         ac.transformerRatio[index] = -ac.transformerRatio[index]
     end
 end
-
