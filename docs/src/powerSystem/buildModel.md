@@ -26,7 +26,7 @@ The execution of these functions will automatically trigger the update of all su
 ## Build Model
 The method `powerSystem()` builds the main composite type `PowerSystem` and populate fields `bus`, `branch`, `generator` and `basePower`.
 ```@docs
-powerSystem(inputFile::String)
+powerSystem
 ```
 
 ---
@@ -44,11 +44,7 @@ shuntBus!
 Functions receives the main composite type `PowerSystem` and arguments by keyword to set or change branch parameters. Further, functions affect field `branch`, but also fields `acModel` and `dcModel`. More precisely, once `acModel` and `dcModel` are created, the execution of functions will automatically trigger the update of these fields.
 ```@docs
 addBranch!
-```
-```@docs
 statusBranch!
-```
-```@docs
 parameterBranch!
 ```
 
@@ -58,11 +54,7 @@ parameterBranch!
 Functions receives the main composite type `PowerSystem` and arguments by keyword to set or change generator parameters. Further, functions affect fields `generator` and `bus`.
 ```@docs
 addGenerator!
-```
-```@docs
 statusGenerator!
-```
-```@docs
 outputGenerator!
 ```
 
@@ -72,8 +64,6 @@ outputGenerator!
 The functions receives the main composite type `PowerSystem` and forms vectors and matrices related with AC or DC simulations.
 ```@docs
 acModel!
-```
-```@docs
 dcModel!
 ```
 

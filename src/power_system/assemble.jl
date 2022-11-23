@@ -13,8 +13,8 @@ label of the bus being defined or already existing. If the bus is not defined as
 function `addBus!()` automatically defines the bus as the demand bus (PQ). If a generator is
 connected to a bus, using the function `addGenerator!()`, the bus becomes a generator bus (PV).
 
-**Example**
-```julia-repl
+# Examples
+```jldoctest
 addBus!(system; label = 1, slackLabel = 1, active = 0.25, reactive = -0.04)
 addBus!(system; label = 2, active = 0.06, susceptance = 0.12)
 addBus!(system; label = 3, active = 0.12, conductance = 0.05)
