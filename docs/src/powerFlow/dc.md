@@ -25,9 +25,9 @@ dcPowerFlow
 ## Compute Powers
 The functions receive the composite types `PowerSystem` and `DCResult`.
 ```@docs
-bus!(system::PowerSystem, result::DCResult)
-branch!(system::PowerSystem, result::DCResult)
-generator!(system::PowerSystem, result::DCResult)
+bus!
+branch!
+generator!
 ```
 
 ---
