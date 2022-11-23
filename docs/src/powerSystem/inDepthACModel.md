@@ -18,10 +18,10 @@ The branch series admittance ``y_{ij}`` is inversely proportional to the branch 
     \frac{r_{ij}}{r_{ij}^2 + x_{ij}^2} - \text{j}\frac{x_{ij}}{r_{ij}^2 + x_{ij}^2} = g_{ij} + \text{j}b_{ij},
 ```
 where ``r_{ij}`` is a resistance, ``x_{ij}`` is a reactance, ``g_{ij}`` is a conductance and ``b_{ij}`` is a susceptance of the branch.
-```@repl
-system.branch.parameter.resistance; nothing
-system.branch.parameter.reactance; nothing
-system.acModel.admittance; nothing
+```julia-repl
+julia> system.branch.parameter.resistance
+julia> system.branch.parameter.reactance
+julia> system.acModel.admittance
 ```
 
 The branch shunt capacitive admittance (i.e. charging admittance) ``y_{\text{s}ij}`` at buses ``\{i,j\}`` is equal to:
@@ -30,7 +30,7 @@ y_{\text{s}ij} = \text{j} b_{\text{s}ij}.
 ```
 
 Note that JuliaGrid stores the total branch shunt capacitive susceptance ``2b_{\text{s}ij}``:
-```@repl
+```julia-repl
 julia> system.branch.parameter.susceptance
 ```
 
@@ -39,16 +39,10 @@ The transformer complex ratio ``\alpha_{ij}`` is defined:
     \alpha_{ij} = \cfrac{1}{\tau_{ij}}e^{-\text{j}\phi_{ij}},
 ```
 where ``\tau_{ij}`` is the transformer turns ratio, while ``\phi_{ij}`` is the transformer phase shift angle, always located "from bus end" of the branch.
-
-```@setup abc
-using JuliaGrid
-system = powerSystem()
-```
-
-```@repl abc
-system.branch.parameter.turnsRatio
-system.branch.parameter.shiftAngle
-system.acModel.transformerRatio
+```julia-repl
+julia> system.branch.parameter.turnsRatio
+julia> system.branch.parameter.shiftAngle
+julia> system.acModel.transformerRatio
 ```
 
 Using Kirchhoff's circuit laws, the unified branch model can be described by complex expressions:
@@ -67,7 +61,7 @@ Using Kirchhoff's circuit laws, the unified branch model can be described by com
 
 The values of the terms ``\left(({y}_{ij} + y_{\text{s}ij}) / \tau_{ij}^2\right)``, ``\left(-\alpha_{ij}^*{y}_{ij}\right)``, ``\left(-\alpha_{ij}{y}_{ij}\right)``, and ``\left({y}_{ij} + y_{\text{s}ij}\right)`` can be found stored in four separate arrays, respectively:
 
-```@repl
+```julia-repl
 julia> system.acModel.nodalFromFrom
 julia> system.acModel.nodalFromTo
 julia> system.acModel.nodalToFrom
@@ -159,7 +153,7 @@ The matrix ``\mathbf{Y} = \mathbf{G} + \text{j}\mathbf{B} \in \mathbb{C}^{n \tim
 
 When a branch is not incident (or adjacent) to a bus the corresponding element in the nodal admittance matrix ``\mathbf{Y}`` is equal to zero. The nodal admittance matrix ``\mathbf{Y}`` is a sparse matrix (i.e., a small number of elements are non-zeros) for real-world power systems. Although it is often assumed that the matrix ``\mathbf{Y}`` is symmetrical, it is not a general case, for example, in the presence of phase shifting transformers the matrix ``\mathbf{Y}`` is not symmetrical [[1, Sec. 9.6]](@ref inDepthACModelReference).
 
-```@repl
+```julia-repl
 julia> system.acModel.nodalMatrix
 julia> system.acModel.nodalMatrixTranspose
 ```
