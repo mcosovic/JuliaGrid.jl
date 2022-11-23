@@ -21,9 +21,7 @@ Then, it is possible to manipulate the parameters of buses, branches and generat
 * `outputGenerator!()`.
 The execution of these functions will automatically trigger the update of all subtypes affected by these functions.
 
-```@raw html
-<hr style="border:1px solid #CBCDCD; opacity: 0.5">
-```
+---
 
 ## Build Model
 The method `powerSystem()` builds the main composite type `PowerSystem` and populate fields `bus`, `branch`, `generator` and `basePower`.
@@ -31,22 +29,16 @@ The method `powerSystem()` builds the main composite type `PowerSystem` and popu
 powerSystem(inputFile::String)
 ```
 
-```@raw html
-<hr style="border:1px solid #CBCDCD; opacity: 0.5">
-```
+---
 
 ## Bus Functions
 Functions receives the main composite type `PowerSystem` and arguments by keyword to set or change bus parameters, and affect field `bus`.
 ```@docs
 addBus!
-```
-```@docs
 shuntBus!
 ```
 
-```@raw html
-<hr style="border:1px solid #CBCDCD; opacity: 0.5">
-```
+---
 
 ## Branch Functions
 Functions receives the main composite type `PowerSystem` and arguments by keyword to set or change branch parameters. Further, functions affect field `branch`, but also fields `acModel` and `dcModel`. More precisely, once `acModel` and `dcModel` are created, the execution of functions will automatically trigger the update of these fields.
@@ -60,9 +52,7 @@ statusBranch!
 parameterBranch!
 ```
 
-```@raw html
-<hr style="border:1px solid #CBCDCD; opacity: 0.5">
-```
+---
 
 ## Generator Functions
 Functions receives the main composite type `PowerSystem` and arguments by keyword to set or change generator parameters. Further, functions affect fields `generator` and `bus`.
@@ -76,9 +66,7 @@ statusGenerator!
 outputGenerator!
 ```
 
-```@raw html
-<hr style="border:1px solid #CBCDCD; opacity: 0.5">
-```
+---
 
 ## Build AC or DC Model
 The functions receives the main composite type `PowerSystem` and forms vectors and matrices related with AC or DC simulations.
@@ -89,9 +77,7 @@ acModel!
 dcModel!
 ```
 
-```@raw html
-<hr style="border:1px solid #CBCDCD; opacity: 0.5">
-```
+---
 
 ## Modifying Other Parameters
 Changing other parameters of the power system can be done by changing variables by accessing their values in fields `bus`, `branch` and `generator` of the main type `powerSystem`.

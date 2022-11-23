@@ -21,9 +21,7 @@ Note that, in the case of large-scale systems, we strongly recommend to use the 
 
 The HDF5 file format contains three groups: `bus`, `branch` and `generator`. In addition, the file contains `basePower` variable, given in volt-ampere. Each group is divided into subgroups that gather the same type of physical quantities, with the corresponding datasets. Note that, dataset names are identical to the keywords, which are used when the power system model is formed using built-in functions.
 
-```@raw html
-<hr style="border:1px solid #CBCDCD; opacity: 0.5">
-```
+---
 
 ## [Bus Group](@id busGroup)
 
@@ -46,9 +44,7 @@ The `bus` group is divided into four subgroups: `layout`, `demand`, `shunt`, and
 | voltage  | base         | base value of the voltage magnitude                                                   | volt     | float            |
 
 
-```@raw html
-<hr style="border:1px solid #CBCDCD; opacity: 0.5">
-```
+---
 
 ## [Branch Group](@id branchGroup)
 
@@ -71,9 +67,7 @@ The `branch` group is divided into four subgroups: `layout`, `parameter`, `volta
 | rating    | longTerm           | long term rating (equal to zero for unlimited)                         | per-unit | float            |
 | rating    | emergency          | emergency rating (equal to zero for unlimited)                         | per-unit | positive integer |
 
-```@raw html
-<hr style="border:1px solid #CBCDCD; opacity: 0.5">
-```
+---
 
 ## [Generator Group](@id generatorGroup)
 
@@ -113,7 +107,9 @@ The `generator` group is divided into six subgroups: `layout`, `output`, `voltag
 | cost       | reactiveDataPoint   | number of data points for reactive power cost model                   | -               | positive integer |
 | cost       | reactiveCoefficient | coefficients for forming the reactive power cost function             | (*)             | float            |
 
----
+```@raw html
+&nbsp;
+```
 
 The interpretation of the datasets activeCoefficient and reactiveCoefficient, given as matrices, depends on the activeModel and reactiveModel that is selected:
 * piecewise linear cost model is defined according to input-output points, where the ``i``-th row of the matrix is given as:
