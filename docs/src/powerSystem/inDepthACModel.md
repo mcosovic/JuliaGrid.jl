@@ -39,6 +39,12 @@ The transformer complex ratio ``\alpha_{ij}`` is defined:
     \alpha_{ij} = \cfrac{1}{\tau_{ij}}e^{-\text{j}\phi_{ij}},
 ```
 where ``\tau_{ij}`` is the transformer turns ratio, while ``\phi_{ij}`` is the transformer phase shift angle, always located "from bus end" of the branch.
+
+```@setup abc
+using JuliaGrid
+system = powerSystem()
+```
+
 ```@repl
 julia> system.branch.parameter.turnsRatio
 julia> system.branch.parameter.shiftAngle
