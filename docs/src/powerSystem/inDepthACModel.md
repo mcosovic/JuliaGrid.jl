@@ -45,10 +45,10 @@ using JuliaGrid
 system = powerSystem()
 ```
 
-```@repl
-julia> system.branch.parameter.turnsRatio
-julia> system.branch.parameter.shiftAngle
-julia> system.acModel.transformerRatio
+```@repl abc
+system.branch.parameter.turnsRatio
+system.branch.parameter.shiftAngle
+system.acModel.transformerRatio
 ```
 
 Using Kirchhoff's circuit laws, the unified branch model can be described by complex expressions:
