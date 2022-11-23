@@ -5,7 +5,10 @@ makedocs(
     modules = [JuliaGrid],
     clean = false,
     doctest = false,
-    format = Documenter.HTML(assets=["assets/tablestyle.css"]),
+    format = Documenter.HTML(
+        assets=["assets/tablestyle.css"],
+        collapselevel = 1
+        ),
     pages = [
         "Home" => "index.md",
         "Power System" =>
@@ -14,7 +17,8 @@ makedocs(
              "In-depth AC Model" => "powerSystem/inDepthACModel.md",
              "In-depth DC Model" => "powerSystem/inDepthDCModel.md"],
         "Power Flow" =>
-            ["DC Power Flow" => "powerFlow/dc.md"]
+            ["AC Power Flow" => "powerFlow/ac.md",
+            "DC Power Flow" => "powerFlow/dc.md"]
     ]
 )
 
