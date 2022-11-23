@@ -13,6 +13,8 @@ makedocs(
              "Build Power System Model" => "powerSystem/buildModel.md",
              "In-depth AC Model" => "powerSystem/inDepthACModel.md",
              "In-depth DC Model" => "powerSystem/inDepthDCModel.md"],
+        "Power Flow" =>
+            ["DC Power Flow" => "powerFlow/dc.md"]
     ]
 )
 
