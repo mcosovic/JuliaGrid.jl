@@ -13,7 +13,7 @@ label of the bus being defined or already existing. If the bus is not defined as
 function `addBus!()` automatically defines the bus as the demand bus (PQ). If a generator is
 connected to a bus, using the function `addGenerator!()`, the bus becomes a generator bus (PV).
 
-# Examples
+# Example
 ```jldoctest
 addBus!(system; label = 1, slackLabel = 1, active = 0.25, reactive = -0.04)
 addBus!(system; label = 2, active = 0.06, susceptance = 0.12)
@@ -98,8 +98,8 @@ The keyword `label` should correspond to the already defined bus label. Keywords
 or `susceptance`can be omitted, then the value of the omitted parameter remains unchanged.
 The function also updates the field `acModel`, if field exist.
 
-**Example**
-```julia-repl
+# Example
+```jldoctest
 shuntBus!(system; label = 1, conductance = 0.04)
 ```
 """
@@ -147,8 +147,8 @@ The keywords `label`, `from`, `to`, and one of the parameters `resistance` or `r
 mandatory. Default keyword values are set to zero, except for keywords `status = 1`,
 `minAngleDifference = -2*pi`, `maxAngleDifference = 2*pi`.
 
-**Example**
-```julia-repl
+# Example
+```jldoctest
 addBranch!(system; label = 1, from = 1, to = 2, resistance = 0.05, reactance = 0.12)
 addBranch!(system; label = 2, from = 1, to = 2, resistance = 0.03, reactance = 0.17)
 addBranch!(system; label = 3, from = 2, to = 3, reactance = 0.17, turnsRatio = 0.98)
@@ -242,8 +242,8 @@ out-of-service, and vice versa.
 
 The keywords `label` should correspond to the already defined branch label.
 
-**Example**
-```julia-repl
+# Example
+```jldoctest
 statusBranch!(system; label = 2, status = 0)
 ```
 """
@@ -300,8 +300,8 @@ The keywords `label` should correspond to the already defined branch label. Keyw
 `reactance`, `susceptance`, `turnsRatio` or `shiftAngle` can be omitted, then the value of the omitted
 parameter remains unchanged.
 
-**Example**
-```julia-repl
+# Example
+```jldoctest
 parameterBranch!(system; label = 1, susceptance = 0.062)
 ```
 """
@@ -374,8 +374,8 @@ The keywords `label` and `bus` are mandatory. Default keyword values are set to 
 `status = 1`, `magnitude = 1.0`, `maxActive = Inf`, `minReactive = -Inf`, `maxReactive = Inf`, `activeModel = 2`,
 `activeDataPoint = 3`, `reactiveModel = 2`, and `reactiveDataPoint = 3`.
 
-**Example**
-```julia-repl
+# Example
+```jldoctest
 addGenerator!(system; label = 1, bus = 1, active = 0.5 reactive = 0.1)
 addGenerator!(system; label = 2, bus = 3, active = 0.4 reactive = 0.2)
 ```
@@ -512,8 +512,8 @@ to out-of-service, and vice versa.
 
 The keywords `label` should correspond to the already defined generator label.
 
-**Example**
-```julia-repl
+# Example
+```jldoctest
 statusGenerator!(system; label = 2, status = 0)
 ```
 """
@@ -558,8 +558,8 @@ The function allows changing `active` and `reactive` output power of the generat
 The keywords `label` should correspond to the already defined generator label. Keywords `active`
 or `reactive` can be omitted, then the value of the omitted parameter remains unchanged.
 
-**Example**
-```julia-repl
+# Example
+```jldoctest
 outputGenerator!(system; label = 1, active = 0.85)
 ```
 """
@@ -606,8 +606,8 @@ that explains all the data involved in the field `dcModel`.
 The function affects field `dcModel`. Once formed, the field will be automatically updated
 when using functions `addBranch!()`, `statusBranch!()`, `parameterBranch!()`.
 
-**Example**
-```julia-repl
+# Example
+```jldoctest
 dcModel!(system)
 ```
 """
@@ -685,8 +685,8 @@ that explains all the data involved in the field `acModel`.
 The function affects field `acModel`. Once formed, the field will be automatically updated
 when using functions `addBranch!()`, `shuntBus!()`, `statusBranch!()` `parameterBranch!()`.
 
-**Example**
-```julia-repl
+# Example
+```jldoctest
 acModel!(system)
 ```
 """

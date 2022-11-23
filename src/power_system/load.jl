@@ -186,8 +186,8 @@ which enables building the model from scratch:
 Once the main composite type `PowerSystem` is created it is possible to add new buses, branches or
 generators, and also change the parameters of the existing ones.
 
-**Example**
-```julia-repl
+# Example
+```jldoctest
 system = powerSystem()
 ```
 """
