@@ -19,9 +19,9 @@ The branch series admittance ``y_{ij}`` is inversely proportional to the branch 
 ```
 where ``r_{ij}`` is a resistance, ``x_{ij}`` is a reactance, ``g_{ij}`` is a conductance and ``b_{ij}`` is a susceptance of the branch.
 ```@repl
-system.branch.parameter.resistance
-system.branch.parameter.reactance
-system.acModel.admittance
+system.branch.parameter.resistance; nothing
+system.branch.parameter.reactance; nothing
+system.acModel.admittance; nothing
 ```
 
 The branch shunt capacitive admittance (i.e. charging admittance) ``y_{\text{s}ij}`` at buses ``\{i,j\}`` is equal to:
