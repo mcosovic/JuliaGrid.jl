@@ -494,7 +494,7 @@ The function affects the field `algorithm` of the type `Result`.
 result = fastNewtonRaphsonBX(system)
 ```
 """
-@inbounds function fastNewtonRaphsonBX(system::PowerSystem)
+function fastNewtonRaphsonBX(system::PowerSystem)
     algorithmBX = 1
     result = fastNewtonRaphson(system, algorithmBX)
 
@@ -513,7 +513,7 @@ The function affects the field `algorithm` of the type `Result`.
 result = fastNewtonRaphsonXB(system)
 ```
 """
-@inbounds function fastNewtonRaphsonXB(system::PowerSystem)
+function fastNewtonRaphsonXB(system::PowerSystem)
     algorithmXB = 2
     result = fastNewtonRaphson(system, algorithmXB)
 
