@@ -28,21 +28,17 @@ Then, it is possible to calculate other quantities of interest using functions:
 
 ---
 
-## Gauss-Seidel Method
+## Newton-Raphson Method
 Functions receive the composite type `PowerSystem`.
 ```@docs
 newtonRaphson
 newtonRaphson!
 ```
 
-<!-- ---
-
-## Power Flow Solution
-The functions receive the composite types `PowerSystem` and `Result`.
+## Gauss-Seidel Method
+Functions receive the composite type `PowerSystem`.
 ```@docs
+gaussSeidel
 gaussSeidel!
-newtonRaphson!
-fastNewtonRaphson!
-dcPowerFlow
-``` -->
+```
 

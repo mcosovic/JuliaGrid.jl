@@ -128,11 +128,11 @@ mutable struct Result
 end
 
 """
-The function initializes the Gauss-Seidel method.
+The function initializes the Gauss-Seidel method, and returns the composite type `Result`.
 
     gaussSeidel(system::PowerSystem)
 
-The function affects the field `algorithm` of the type `Result`.
+The function affects the field `algorithm` of the composite type `Result`.
 """
 function gaussSeidel(system::PowerSystem)
     bus = system.bus
@@ -178,9 +178,10 @@ system = powerSystem("case14.h5")
 acModel!(system)
 
 result = gaussSeidel(system)
+stopping = result.algorithm.stopping
 for i = 1:1000
     gaussSeidel!(system, result)
-    if result.algorithm.stopping.active < 1e-8 && result.algorithm.stopping.reactive < 1e-8
+    if stopping.active < 1e-8 && stopping.reactive < 1e-8
         break
     end
 end
@@ -250,11 +251,11 @@ function gaussSeidel!(system::PowerSystem, result::Result)
 end
 
 """
-The function initializes the Newthon-Raphson method.
+The function initializes the Newthon-Raphson method, and returns the composite type `Result`.
 
     newtonRaphson(system::PowerSystem)
 
-The function affects the field `algorithm` of the type `Result`.
+The function affects the field `algorithm` of the composite type `Result`.
 """
 function newtonRaphson(system::PowerSystem)
     ac = system.acModel
@@ -357,7 +358,7 @@ The function solves the AC power flow problem using the Newthon-Raphson method.
 
     newtonRaphson!(system::PowerSystem, result::Result)
 
-The function affects fields `bus.voltage` and `algorithm` of the type `Result`.
+The function affects fields `bus.voltage` and `algorithm` of the composite type `Result`.
 
 # Example
 ```jldoctest
