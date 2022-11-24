@@ -6,7 +6,7 @@ JuliaGrid stores results in the composite type `Result` with fields:
 * `bus`
 * `branch`
 * `generator`
-* `algorithm`
+* `algorithm`.
 
 Once the composite type `PowerSystem` is created, it is possible to create the composite type `Result`. The composite type `Result` in the DC power flow analysis is created when determining the bus voltages using the function `dcPowerFlow()`. In contrast, the AC power flow analysis first requires the initialization of the iterative method, during which the composite type `Result` is created:
 * `newtonRaphson()`
@@ -18,7 +18,7 @@ The calculation of the bus voltages, depending on the type of analysis and the s
 * `newtonRaphson!()`
 * `fastNewtonRaphson!()`
 * `gaussSeidel!()`
-* `dcPowerFlow()`
+* `dcPowerFlow()`.
 Note that the methods for solving the AC power flow problem should be called inside a loop, thus simulating an iterative process.
 
 Then, it is possible to calculate other quantities of interest using functions:
@@ -57,7 +57,7 @@ gaussSeidel!
 ---
 
 ## DC Power Flow Solution
-Function receives the composite type `PowerSystem`, and returns the composite type `Result`.
+The function receives the composite type `PowerSystem`, and returns the composite type `Result`.
 ```@docs
 dcPowerFlow
 ```

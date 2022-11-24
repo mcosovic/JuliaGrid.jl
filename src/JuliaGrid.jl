@@ -20,7 +20,7 @@ export dcModel!, acModel!
 ######## Power Flow ##########
 include("algorithm/powerFlow.jl")
 export gaussSeidel, newtonRaphson, fastNewtonRaphsonBX, fastNewtonRaphsonXB
-export gaussSeidel!, newtonRaphson!, fastNewtonRaphson, dcPowerFlow
+export gaussSeidel!, newtonRaphson!, fastNewtonRaphson!, dcPowerFlow
 
 
 

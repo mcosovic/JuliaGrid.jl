@@ -165,7 +165,8 @@ function gaussSeidel(system::PowerSystem)
 end
 
 """
-The function solves the AC power flow problem using the Gauss-Seidel method.
+The function solves the AC power flow problem using the Gauss-Seidel method
+by determining bus voltage magnitudes and angles.
 
     gaussSeidel!(system::PowerSystem, result::Result)
 
@@ -353,7 +354,8 @@ function newtonRaphson(system::PowerSystem)
 end
 
 """
-The function solves the AC power flow problem using the Newthon-Raphson method.
+The function solves the AC power flow problem using the Newthon-Raphson method
+by determining bus voltage magnitudes and angles.
 
     newtonRaphson!(system::PowerSystem, result::Result)
 
@@ -669,7 +671,8 @@ end
 end
 
 """
-The function solves the AC power flow problem using the fast Newthon-Raphson BX or XB method.
+The function solves the AC power flow problem using the fast Newthon-Raphson
+BX or XB method by determining bus voltage magnitudes and angles.
 
     fastNewtonRaphson!(system::PowerSystem, result::Result)
 
@@ -760,8 +763,8 @@ function fastNewtonRaphson!(system::PowerSystem, result::Result)
 end
 
 """
-The function solves the DC power flow problem by determining the bus
-voltage angles, and returns the composite type `Result`.
+The function solves the DC power flow problem by determining bus voltage
+angles, and returns the composite type `Result`.
 
     dcPowerFlow(system::PowerSystem)
 
