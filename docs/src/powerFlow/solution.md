@@ -35,6 +35,18 @@ newtonRaphson
 newtonRaphson!
 ```
 
+---
+
+## Fast Newton-Raphson Method
+Functions receive the composite type `PowerSystem`.
+```@docs
+fastNewtonRaphsonBX
+fastNewtonRaphsonXB
+fastNewtonRaphson!
+```
+
+---
+
 ## Gauss-Seidel Method
 Functions receive the composite type `PowerSystem`.
 ```@docs
@@ -42,3 +54,10 @@ gaussSeidel
 gaussSeidel!
 ```
 
+---
+
+## DC Power Flow Solution
+Function receives the composite type `PowerSystem`, and returns the composite type `Result`.
+```@docs
+dcPowerFlow
+```

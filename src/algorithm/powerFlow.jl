@@ -477,16 +477,11 @@ function newtonRaphson!(system::PowerSystem, result::Result)
 end
 
 """
-The function initializes the Fast Newthon-Raphson BX method.
+The function initializes the fast Newthon-Raphson BX method, and returns the composite type `Result`.
 
     fastNewtonRaphsonBX(system::PowerSystem)
 
-The function affects the field `algorithm` of the type `Result`.
-
-# Example
-```jldoctest
-result = fastNewtonRaphsonBX(system)
-```
+The function affects the field `algorithm` of the composite type `Result`.
 """
 function fastNewtonRaphsonBX(system::PowerSystem)
     algorithmBX = 1
@@ -496,16 +491,11 @@ function fastNewtonRaphsonBX(system::PowerSystem)
 end
 
 """
-The function initializes the Fast Newthon-Raphson XB method.
+The function initializes the fast Newthon-Raphson XB method, and returns the composite type `Result`.
 
     fastNewtonRaphsonXB(system::PowerSystem)
 
-The function affects the field `algorithm` of the type `Result`.
-
-# Example
-```jldoctest
-result = fastNewtonRaphsonXB(system)
-```
+The function affects the field `algorithm` of the composite type `Result`.
 """
 function fastNewtonRaphsonXB(system::PowerSystem)
     algorithmXB = 2
@@ -514,26 +504,6 @@ function fastNewtonRaphsonXB(system::PowerSystem)
     return result
 end
 
-"""
-The function solves the AC power flow problem using the Fast Newthon-Raphson BX or XB method.
-
-    fastNewtonRaphson(system::PowerSystem, result::Result)
-
-The function affects fields `bus.voltage` and `algorithm` of the type `Result`.
-
-# Example
-```jldoctest
-maxIteration = 100
-stopping = result.algorithm.stopping
-
-for i = 1:maxIteration
-    fastNewtonRaphson(system, result)
-    if stopping.active < 1e-8 && stopping.reactive < 1e-8
-        break
-    end
-end
-```
-"""
 function fastNewtonRaphson(system::PowerSystem, algorithmFlag::Int64)
     ac = system.acModel
     bus = system.bus
@@ -697,7 +667,28 @@ function fastNewtonRaphson(system::PowerSystem, algorithmFlag::Int64)
         )
 end
 
-######### Fast Newton-Raphson Algorithm ##########
+"""
+The function solves the AC power flow problem using the fast Newthon-Raphson BX or XB method.
+
+    fastNewtonRaphson!(system::PowerSystem, result::Result)
+
+The function affects fields `bus.voltage` and `algorithm` of the composite type `Result`.
+
+# Example
+```jldoctest
+system = powerSystem("case14.h5")
+acModel!(system)
+
+result = fastNewtonRaphsonBX(system)
+stopping = result.algorithm.stopping
+for i = 1:100
+    fastNewtonRaphson!(system, result)
+    if stopping.active < 1e-8 && stopping.reactive < 1e-8
+        break
+    end
+end
+```
+"""
 @inline function fastNewtonRaphson!(system::PowerSystem, result::Result)
     ac = system.acModel
     bus = system.bus
@@ -768,7 +759,7 @@ end
 end
 
 """
-The function solves the DC power flow problemnby determining the bus voltage angles,
+The function solves the DC power flow problem determining the bus voltage angles,
 and returns the composite type `Result`.
 
     dcPowerFlow(system::PowerSystem)
@@ -777,6 +768,9 @@ The function affects field `result.bus.voltage.angle` and `algorithm` of the typ
 
 # Example
 ```jldoctest
+system = powerSystem("case14.h5")
+dcModel!(system)
+
 result = dcPowerFlow(system)
 ```
 """
