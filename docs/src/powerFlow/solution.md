@@ -8,18 +8,17 @@ JuliaGrid stores results in the main composite type `Result` with fields:
 * `generator`
 * `algorithm`
 
-Once the main composite type `PowerSystem` is created, it is possible to create main composite type `Result`. The AC power flow analysis requires the initialization of the algorithm, which creates the composite type `Result` also:
+Once the main composite type `PowerSystem` is created, it is possible to create main composite type `Result`. The composite type `Result` in the DC power flow analysis is created when determining the bus voltages using the function `dcPowerFlow()`. In contrast, the AC power flow analysis first requires the initialization of the iterative method, during which the composite type `Result` is created:
 * `newtonRaphson()`
 * `fastNewtonRaphsonBX()`
 * `fastNewtonRaphsonXB()`
 * `gaussSeidel()`.
-The composite type `Result` in DC power flow analysis is created when determining the bus voltages.
 
-The calculation of the bus voltages, depending on the type of analysis and the selected algorithm, can be performed using one of the functions:
-* `dcPowerFlow()`
+The calculation of the bus voltages, depending on the type of analysis and the selected method, can be performed using one of the functions:
 * `newtonRaphson!()`
 * `fastNewtonRaphson!()`
-* `gaussSeidel!()`.
+* `gaussSeidel!()`
+* `dcPowerFlow()`
 Note that the methods for solving AC power flow problem should be called inside a loop, thus simulating an iterative process.
 
 Then, it is possible to calculate other quantities of interest using functions:
@@ -32,8 +31,8 @@ Then, it is possible to calculate other quantities of interest using functions:
 ## Gauss-Seidel Method
 Functions receive the composite type `PowerSystem`.
 ```@docs
-gaussSeidel
-gaussSeidel!
+newtonRaphson
+newtonRaphson!
 ```
 
 <!-- ---

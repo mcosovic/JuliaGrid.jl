@@ -133,11 +133,6 @@ The function initializes the Gauss-Seidel method.
     gaussSeidel(system::PowerSystem)
 
 The function affects the field `algorithm` of the type `Result`.
-
-# Example
-```jldoctest
-result = gaussSeidel(system)
-```
 """
 function gaussSeidel(system::PowerSystem)
     bus = system.bus
@@ -179,12 +174,13 @@ The function affects fields `bus.voltage` and `algorithm` of the type `Result`.
 
 # Example
 ```jldoctest
-maxIteration = 1000
-stopping = result.algorithm.stopping
+system = powerSystem("case14.h5")
+acModel!(system)
 
-for i = 1:maxIteration
+result = gaussSeidel(system)
+for i = 1:1000
     gaussSeidel!(system, result)
-    if stopping.active < 1e-8 && stopping.reactive < 1e-8
+    if result.algorithm.stopping.active < 1e-8 && result.algorithm.stopping.reactive < 1e-8
         break
     end
 end
@@ -259,11 +255,6 @@ The function initializes the Newthon-Raphson method.
     newtonRaphson(system::PowerSystem)
 
 The function affects the field `algorithm` of the type `Result`.
-
-# Example
-```jldoctest
-result = newtonRaphson(system)
-```
 """
 function newtonRaphson(system::PowerSystem)
     ac = system.acModel
@@ -370,12 +361,13 @@ The function affects fields `bus.voltage` and `algorithm` of the type `Result`.
 
 # Example
 ```jldoctest
-maxIteration = 10
-stopping = result.algorithm.stopping
+system = powerSystem("case14.h5")
+acModel!(system)
 
-for i = 1:maxIteration
+result = newtonRaphson(system)
+for i = 1:10
     newtonRaphson!(system, result)
-    if stopping.active < 1e-8 && stopping.reactive < 1e-8
+    if result.algorithm.stopping.active < 1e-8 && result.algorithm.stopping.reactive < 1e-8
         break
     end
 end
