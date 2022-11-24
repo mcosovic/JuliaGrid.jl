@@ -18,14 +18,13 @@ export addGenerator!, statusGenerator!, outputGenerator!
 export dcModel!, acModel!
 
 ######## Power Flow ##########
-include("power_flow/dc.jl")
-export dcPowerFlow
-
-include("power_flow/ac.jl")
+include("algorithm/powerFlow.jl")
 export gaussSeidel, newtonRaphson, fastNewtonRaphsonBX, fastNewtonRaphsonXB
-export gaussSeidel!, newtonRaphson!, fastNewtonRaphson
+export gaussSeidel!, newtonRaphson!, fastNewtonRaphson, dcPowerFlow
 
-export bus!, branch!, generator!
+
+
+
 
 end # JuliaGrid
 

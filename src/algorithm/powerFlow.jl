@@ -19,39 +19,45 @@ mutable struct CartesianFloat
 end
 
 ######### Bus Struct ##########
-mutable struct ACBusPower
+mutable struct BusPower
     injection::Cartesian
     supply::Cartesian
     shunt::Cartesian
 end
 
-mutable struct ACBus
+mutable struct BusResult
     voltage::Polar
-    power::ACBusPower
+    power::BusPower
 end
 
 ######### Branch Struct ##########
-mutable struct ACBranchPower
+mutable struct BranchPower
     fromBus::Cartesian
     toBus::Cartesian
     shunt::CartesianImag
     loss::Cartesian
 end
 
-mutable struct ACBranchCurrent
+mutable struct BranchCurrent
     fromBus::Polar
     toBus::Polar
     impedance::Polar
 end
 
-mutable struct ACBranch
-    power::ACBranchPower
-    current::ACBranchCurrent
+mutable struct BranchResult
+    power::BranchPower
+    current::BranchCurrent
 end
 
 ######### Generator ##########
-mutable struct ACGenerator
+mutable struct GeneratorResult
     power::Cartesian
+end
+
+######### Iteration Loop ##########
+mutable struct IterationLoop
+    stopping::CartesianFloat
+    number::Int64
 end
 
 ######### Gauss-Seidel Struct ##########
@@ -68,6 +74,8 @@ end
 mutable struct GaussSeidel
     voltage::GaussSeidelVoltage
     index::GaussSeidelIndex
+    iteration::IterationLoop
+    method::String
 end
 
 ######### Newton-Raphson Struct ##########
@@ -81,6 +89,8 @@ mutable struct NewtonRaphson
     mismatch::Array{Float64,1}
     increment::Array{Float64,1}
     index::NewtonRaphsonIndex
+    iteration::IterationLoop
+    method::String
 end
 
 ######### Fast Newton-Raphson Struct ##########
@@ -99,18 +109,36 @@ mutable struct FastNewtonRaphson
     active::FastNewtonRaphsonModel
     reactive::FastNewtonRaphsonModel
     index::NewtonRaphsonIndex
+    iteration::IterationLoop
+    method::String
 end
 
-mutable struct ACPowerFlow
-    bus::ACBus
-    branch::ACBranch
-    generator::ACGenerator
-    algorithm::Union{GaussSeidel, NewtonRaphson, FastNewtonRaphson}
-    mismatch::CartesianFloat
-    iteration::Int64
+######### DC Power Flow Struct ##########
+mutable struct DCAlgorithm
+    method::String
 end
 
-######### Gauss-Seidel Model ##########
+
+######### Result Struct ##########
+mutable struct Result
+    bus::BusResult
+    branch::BranchResult
+    generator::GeneratorResult
+    algorithm::Union{GaussSeidel, NewtonRaphson, FastNewtonRaphson, DCAlgorithm}
+end
+
+"""
+The function initializes the Gauss-Seidel method.
+
+    gaussSeidel(system::PowerSystem)
+
+The function affects the field `algorithm` of the type `Result`.
+
+# Example
+```jldoctest
+result = gaussSeidel(system)
+```
+"""
 function gaussSeidel(system::PowerSystem)
     bus = system.bus
 
@@ -129,25 +157,47 @@ function gaussSeidel(system::PowerSystem)
         end
     end
 
-    return ACPowerFlow(
-        ACBus(Polar(voltageMagnitude, copy(bus.voltage.angle)),
-            ACBusPower(Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]))),
-        ACBranch(
-            ACBranchPower(Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), CartesianImag(Float64[]), Cartesian(Float64[], Float64[])),
-            ACBranchCurrent(Polar(Float64[], Float64[]), Polar(Float64[], Float64[]), Polar(Float64[], Float64[]))),
-        ACGenerator(Cartesian(Float64[], Float64[])),
-        GaussSeidel(GaussSeidelVoltage(voltage, copy(voltageMagnitude)), GaussSeidelIndex(pqIndex, pvIndex)),
-        CartesianFloat(0.0, 0.0), 0)
+    method = "Gauss-Seidel"
+
+    return Result(
+        BusResult(Polar(voltageMagnitude, copy(bus.voltage.angle)),
+            BusPower(Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]))),
+        BranchResult(
+            BranchPower(Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), CartesianImag(Float64[]), Cartesian(Float64[], Float64[])),
+            BranchCurrent(Polar(Float64[], Float64[]), Polar(Float64[], Float64[]), Polar(Float64[], Float64[]))),
+        GeneratorResult(Cartesian(Float64[], Float64[])),
+        GaussSeidel(GaussSeidelVoltage(voltage, copy(voltageMagnitude)), GaussSeidelIndex(pqIndex, pvIndex), IterationLoop(CartesianFloat(0.0, 0.0), 0), method)
+        )
 end
 
-######### Gauss-Seidel Algorithm ##########
-function gaussSeidel!(system::PowerSystem, result::ACPowerFlow)
+"""
+The function solves the AC power flow problem using the Gauss-Seidel method.
+
+    gaussSeidel!(system::PowerSystem, result::Result)
+
+The function affects fields `bus.voltage` and `algorithm` of the type `Result`.
+
+# Example
+```jldoctest
+maxIteration = 1000
+stopping = result.algorithm.stopping
+
+for i = 1:maxIteration
+    gaussSeidel!(system, result)
+    if stopping.active < 1e-8 && stopping.reactive < 1e-8
+        break
+    end
+end
+```
+"""
+function gaussSeidel!(system::PowerSystem, result::Result)
     ac = system.acModel
 
     voltage = result.algorithm.voltage
     index = result.algorithm.index
+    iteration = result.algorithm.iteration
 
-    result.iteration += 1
+    iteration.number += 1
 
     @inbounds for i in index.pq
         injection = system.bus.supply.active[i] - system.bus.demand.active[i] - im * (system.bus.supply.reactive[i] - system.bus.demand.reactive[i])
@@ -172,8 +222,8 @@ function gaussSeidel!(system::PowerSystem, result::ACPowerFlow)
         voltage.complex[i] = voltage.magnitude[i] * voltage.complex[i] / abs(voltage.complex[i])
     end
 
-    result.mismatch.active = 0.0
-    result.mismatch.reactive = 0.0
+    iteration.stopping.active = 0.0
+    iteration.stopping.reactive = 0.0
     @inbounds for i in index.pq
         I = 0.0 + im * 0.0
         for j in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
@@ -182,10 +232,10 @@ function gaussSeidel!(system::PowerSystem, result::ACPowerFlow)
         apparent = voltage.complex[i] * conj(I)
 
         mismatchActive = real(apparent) - system.bus.supply.active[i] + system.bus.demand.active[i]
-        result.mismatch.active = max(result.mismatch.active, abs(mismatchActive))
+        iteration.stopping.active = max(iteration.stopping.active, abs(mismatchActive))
 
         mismatchReactive = imag(apparent) - system.bus.supply.reactive[i] + system.bus.demand.reactive[i]
-        result.mismatch.reactive = max(result.mismatch.reactive, abs(mismatchReactive))
+        iteration.stopping.reactive = max(iteration.stopping.reactive, abs(mismatchReactive))
 
         result.bus.voltage.magnitude[i] = abs(voltage.complex[i])
         result.bus.voltage.angle[i] = angle(voltage.complex[i])
@@ -196,14 +246,25 @@ function gaussSeidel!(system::PowerSystem, result::ACPowerFlow)
             I += ac.nodalMatrixTranspose.nzval[j] * voltage.complex[ac.nodalMatrix.rowval[j]]
         end
         mismatchActive = real(voltage.complex[i] * conj(I)) - system.bus.supply.active[i] + system.bus.demand.active[i]
-        result.mismatch.active = max(result.mismatch.active, abs(mismatchActive))
+        iteration.stopping.active = max(iteration.stopping.active, abs(mismatchActive))
 
         result.bus.voltage.magnitude[i] = abs(voltage.complex[i])
         result.bus.voltage.angle[i] = angle(voltage.complex[i])
     end
 end
 
-######### Newton-Raphson Model ##########
+"""
+The function initializes the Newthon-Raphson method.
+
+    newtonRaphson(system::PowerSystem)
+
+The function affects the field `algorithm` of the type `Result`.
+
+# Example
+```jldoctest
+result = newtonRaphson(system)
+```
+"""
 function newtonRaphson(system::PowerSystem)
     ac = system.acModel
     bus = system.bus
@@ -287,19 +348,40 @@ function newtonRaphson(system::PowerSystem)
 
     jacobian = sparse(iIndex, jIndex, fill(0.0, nonZeroElement), bus.number + pqNumber - 1, bus.number + pqNumber - 1)
 
-    return ACPowerFlow(
-        ACBus(Polar(voltageMagnitude, voltageAngle),
-            ACBusPower(Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]))),
-        ACBranch(
-            ACBranchPower(Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), CartesianImag(Float64[]), Cartesian(Float64[], Float64[])),
-            ACBranchCurrent(Polar(Float64[], Float64[]), Polar(Float64[], Float64[]), Polar(Float64[], Float64[]))),
-        ACGenerator(Cartesian(Float64[], Float64[])),
-        NewtonRaphson(jacobian, mismatch, Float64[], NewtonRaphsonIndex(pqIndex, pvpqIndex)),
-        CartesianFloat(0.0, 0.0), 0)
+    method = "Newton-Raphson"
+
+    return Result(
+        BusResult(Polar(voltageMagnitude, voltageAngle),
+            BusPower(Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]))),
+        BranchResult(
+            BranchPower(Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), CartesianImag(Float64[]), Cartesian(Float64[], Float64[])),
+            BranchCurrent(Polar(Float64[], Float64[]), Polar(Float64[], Float64[]), Polar(Float64[], Float64[]))),
+        GeneratorResult(Cartesian(Float64[], Float64[])),
+        NewtonRaphson(jacobian, mismatch, Float64[], NewtonRaphsonIndex(pqIndex, pvpqIndex), IterationLoop(CartesianFloat(0.0, 0.0), 0), method)
+        )
 end
 
-######### Newton-Raphson Algorithm ##########
-function newtonRaphson!(system::PowerSystem, result::ACPowerFlow)
+"""
+The function solves the AC power flow problem using the Newthon-Raphson method.
+
+    newtonRaphson!(system::PowerSystem, result::Result)
+
+The function affects fields `bus.voltage` and `algorithm` of the type `Result`.
+
+# Example
+```jldoctest
+maxIteration = 10
+stopping = result.algorithm.stopping
+
+for i = 1:maxIteration
+    newtonRaphson!(system, result)
+    if stopping.active < 1e-8 && stopping.reactive < 1e-8
+        break
+    end
+end
+```
+"""
+function newtonRaphson!(system::PowerSystem, result::Result)
     ac = system.acModel
     bus = system.bus
 
@@ -308,8 +390,9 @@ function newtonRaphson!(system::PowerSystem, result::ACPowerFlow)
     mismatch = result.algorithm.mismatch
     increment = result.algorithm.increment
     index = result.algorithm.index
+    iteration = result.algorithm.iteration
 
-    result.iteration += 1
+    iteration.number += 1
 
     @inbounds for i = 1:bus.number
         if i != bus.layout.slackIndex
@@ -371,8 +454,8 @@ function newtonRaphson!(system::PowerSystem, result::ACPowerFlow)
         end
     end
 
-    result.mismatch.active = 0.0
-    result.mismatch.reactive = 0.0
+    iteration.stopping.active = 0.0
+    iteration.stopping.reactive = 0.0
     @inbounds for i = 1:bus.number
         if i != bus.layout.slackIndex
             I = 0.0
@@ -390,16 +473,27 @@ function newtonRaphson!(system::PowerSystem, result::ACPowerFlow)
             end
 
             mismatch[index.pvpq[i]] = voltage.magnitude[i] * I - bus.supply.active[i] + bus.demand.active[i]
-            result.mismatch.active = max(result.mismatch.active, abs(mismatch[index.pvpq[i]]))
+            iteration.stopping.active = max(iteration.stopping.active, abs(mismatch[index.pvpq[i]]))
             if bus.layout.type[i] == 1
                 mismatch[index.pq[i]] = voltage.magnitude[i] * C - bus.supply.reactive[i] + bus.demand.reactive[i]
-                result.mismatch.reactive = max(result.mismatch.reactive, abs(mismatch[index.pq[i]]))
+                iteration.stopping.reactive = max(iteration.stopping.reactive, abs(mismatch[index.pq[i]]))
             end
         end
     end
 end
 
-######### Fast Newton-Raphson Algorithm BX ##########
+"""
+The function initializes the Fast Newthon-Raphson BX method.
+
+    fastNewtonRaphsonBX(system::PowerSystem)
+
+The function affects the field `algorithm` of the type `Result`.
+
+# Example
+```jldoctest
+result = fastNewtonRaphsonBX(system)
+```
+"""
 @inbounds function fastNewtonRaphsonBX(system::PowerSystem)
     algorithmBX = 1
     result = fastNewtonRaphson(system, algorithmBX)
@@ -407,7 +501,18 @@ end
     return result
 end
 
-######### Fast Newton-Raphson Algorithm XB ##########
+"""
+The function initializes the Fast Newthon-Raphson XB method.
+
+    fastNewtonRaphsonXB(system::PowerSystem)
+
+The function affects the field `algorithm` of the type `Result`.
+
+# Example
+```jldoctest
+result = fastNewtonRaphsonXB(system)
+```
+"""
 @inbounds function fastNewtonRaphsonXB(system::PowerSystem)
     algorithmXB = 2
     result = fastNewtonRaphson(system, algorithmXB)
@@ -415,7 +520,26 @@ end
     return result
 end
 
-######### Fast Newton-Raphson Model ##########
+"""
+The function solves the AC power flow problem using the Fast Newthon-Raphson BX or XB method.
+
+    fastNewtonRaphson(system::PowerSystem, result::Result)
+
+The function affects fields `bus.voltage` and `algorithm` of the type `Result`.
+
+# Example
+```jldoctest
+maxIteration = 100
+stopping = result.algorithm.stopping
+
+for i = 1:maxIteration
+    fastNewtonRaphson(system, result)
+    if stopping.active < 1e-8 && stopping.reactive < 1e-8
+        break
+    end
+end
+```
+"""
 function fastNewtonRaphson(system::PowerSystem, algorithmFlag::Int64)
     ac = system.acModel
     bus = system.bus
@@ -557,22 +681,30 @@ function fastNewtonRaphson(system::PowerSystem, algorithmFlag::Int64)
     lowerReactive, upperReactive, rightReactive, leftReactive, scalingReactive = F2.:(:)
     leftReactive = sortperm(leftReactive)
 
-    return ACPowerFlow(
-        ACBus(Polar(voltageMagnitude, voltageAngle),
-            ACBusPower(Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]))),
-        ACBranch(
-            ACBranchPower(Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), CartesianImag(Float64[]), Cartesian(Float64[], Float64[])),
-            ACBranchCurrent(Polar(Float64[], Float64[]), Polar(Float64[], Float64[]), Polar(Float64[], Float64[]))),
-        ACGenerator(Cartesian(Float64[], Float64[])),
+    if algorithmFlag == 1
+        method = "Fast Newton-Raphson BX"
+    else
+        method = "Fast Newton-Raphson XB"
+    end
+
+
+    return Result(
+        BusResult(Polar(voltageMagnitude, voltageAngle),
+            BusPower(Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]))),
+        BranchResult(
+            BranchPower(Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), CartesianImag(Float64[]), Cartesian(Float64[], Float64[])),
+            BranchCurrent(Polar(Float64[], Float64[]), Polar(Float64[], Float64[]), Polar(Float64[], Float64[]))),
+        GeneratorResult(Cartesian(Float64[], Float64[])),
         FastNewtonRaphson(
             FastNewtonRaphsonModel(jacobianActive, mismatchActive, Float64[], lowerActive, upperActive, rightActive, leftActive, scalingActive),
             FastNewtonRaphsonModel(jacobianReactive, mismatchReactive, Float64[], lowerReactive, upperReactive, rightReactive, leftReactive, scalingReactive),
-            NewtonRaphsonIndex(pqIndex, pvpqIndex)),
-        CartesianFloat(0.0, 0.0), 0)
+            NewtonRaphsonIndex(pqIndex, pvpqIndex),
+            IterationLoop(CartesianFloat(0.0, 0.0), 0), method)
+        )
 end
 
 ######### Fast Newton-Raphson Algorithm ##########
-@inline function fastNewtonRaphson!(system::PowerSystem, result::ACPowerFlow)
+@inline function fastNewtonRaphson!(system::PowerSystem, result::Result)
     ac = system.acModel
     bus = system.bus
 
@@ -580,8 +712,9 @@ end
     active = result.algorithm.active
     reactive = result.algorithm.reactive
     index = result.algorithm.index
+    iteration = result.algorithm.iteration
 
-    result.iteration += 1
+    iteration.number += 1
 
     active.increment = active.upper \ (active.lower \ ((active.scaling .* active.mismatch)[active.right]))
     active.increment = active.increment[active.left]
@@ -613,8 +746,8 @@ end
         end
     end
 
-    result.mismatch.active = 0.0
-    result.mismatch.reactive = 0.0
+    iteration.stopping.active = 0.0
+    iteration.stopping.reactive = 0.0
     @inbounds for i = 1:bus.number
         if i != bus.layout.slackIndex
             active.mismatch[index.pvpq[i]] = - (bus.supply.active[i] - bus.demand.active[i]) / voltage.magnitude[i]
@@ -631,312 +764,71 @@ end
                 end
             end
 
-            result.mismatch.active = max(result.mismatch.active, abs(active.mismatch[index.pvpq[i]]))
+            iteration.stopping.active = max(iteration.stopping.active, abs(active.mismatch[index.pvpq[i]]))
             if bus.layout.type[i] == 1
                 reactive.mismatch[index.pq[i]] = C - (bus.supply.reactive[i] - bus.demand.reactive[i]) / voltage.magnitude[i]
-                result.mismatch.reactive = max(result.mismatch.reactive, abs(reactive.mismatch[index.pq[i]]))
+                iteration.stopping.reactive = max(iteration.stopping.reactive, abs(reactive.mismatch[index.pq[i]]))
             end
         end
     end
 end
 
-######### Branch Results ##########
-function branch!(system::PowerSystem, result::ACPowerFlow)
-    ac = system.acModel
+"""
+The function solves the DC power flow problemnby determining the bus voltage angles,
+and returns the composite type `Result`.
 
-    voltage = result.bus.voltage
-    current = result.branch.current
-    power = result.branch.power
-    errorVoltage(voltage.magnitude)
+    dcPowerFlow(system::PowerSystem)
 
-    power.fromBus.active = fill(0.0, system.branch.number)
-    power.fromBus.reactive = fill(0.0, system.branch.number)
-    power.toBus.active = fill(0.0, system.branch.number)
-    power.toBus.reactive = fill(0.0, system.branch.number)
-    power.shunt.reactive = fill(0.0, system.branch.number)
-    power.loss.active = fill(0.0, system.branch.number)
-    power.loss.reactive = fill(0.0, system.branch.number)
+The function affects field `result.bus.voltage.angle` and `algorithm` of the type `Result`.
 
-    current.fromBus.magnitude = fill(0.0, system.branch.number)
-    current.fromBus.angle = fill(0.0, system.branch.number)
-    current.toBus.magnitude = fill(0.0, system.branch.number)
-    current.toBus.angle = fill(0.0, system.branch.number)
-    current.impedance.magnitude = fill(0.0, system.branch.number)
-    current.impedance.angle = fill(0.0, system.branch.number)
-
-    @inbounds for i = 1:system.branch.number
-        if system.branch.layout.status[i] == 1
-            f = system.branch.layout.from[i]
-            t = system.branch.layout.to[i]
-
-            voltageFrom = voltage.magnitude[f] * exp(im * voltage.angle[f])
-            voltageTo = voltage.magnitude[t] * exp(im * voltage.angle[t])
-
-            currentFromBus = voltageFrom * ac.nodalFromFrom[i] + voltageTo * ac.nodalFromTo[i]
-            current.fromBus.magnitude[i] = abs(currentFromBus)
-            current.fromBus.angle[i] = angle(currentFromBus)
-
-            currentToBus = voltageFrom * ac.nodalToFrom[i] + voltageTo * ac.nodalToTo[i]
-            current.toBus.magnitude[i] = abs(currentToBus)
-            current.toBus.angle[i] = angle(currentToBus)
-
-            currentImpedance = ac.admittance[i] * (voltageFrom / ac.transformerRatio[i] - voltageTo)
-            current.impedance.magnitude[i] = abs(currentImpedance)
-            current.impedance.angle[i] = angle(currentImpedance)
-
-            powerFromBus = voltageFrom * conj(currentFromBus)
-            power.fromBus.active[i] = real(powerFromBus)
-            power.fromBus.reactive[i] = imag(powerFromBus)
-
-            powerToBus = voltageTo * conj(currentToBus)
-            power.toBus.active[i] = real(powerToBus)
-            power.toBus.reactive[i] = imag(powerToBus)
-
-            power.shunt.reactive[i] = 0.5 * system.branch.parameter.susceptance[i] * (abs(voltageFrom / ac.transformerRatio[i])^2 +  voltage.magnitude[t]^2)
-
-            power.loss.active[i] = current.impedance.magnitude[i]^2 * system.branch.parameter.resistance[i]
-            power.loss.reactive[i] = current.impedance.magnitude[i]^2 * system.branch.parameter.reactance[i]
-        end
-    end
-end
-
-######### Bus Results ##########
-function bus!(system::PowerSystem, result::ACPowerFlow)
-    ac = system.acModel
-    slack = system.bus.layout.slackIndex
-
-    voltage = result.bus.voltage
-    power = result.bus.power
-    errorVoltage(voltage.magnitude)
-
-    power.injection.active = fill(0.0, system.bus.number)
-    power.injection.reactive = fill(0.0, system.bus.number)
-
-    power.supply.active = fill(0.0, system.bus.number)
-    power.supply.reactive = fill(0.0, system.bus.number)
-
-    power.shunt.active = fill(0.0, system.bus.number)
-    power.shunt.reactive = fill(0.0, system.bus.number)
-
-    @inbounds for i = 1:system.bus.number
-        voltageBus = voltage.magnitude[i] * exp(im * voltage.angle[i])
-
-        powerShunt = voltageBus * conj(voltageBus * (system.bus.shunt.susceptance[i] + im * system.bus.shunt.susceptance[i]))
-        power.shunt.active[i] = real(powerShunt)
-        power.shunt.reactive[i] = imag(powerShunt)
-
-        I = 0.0 + im * 0.0
-        for j in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
-            k = ac.nodalMatrix.rowval[j]
-            I += conj(ac.nodalMatrixTranspose.nzval[j]) * conj(voltage.magnitude[k] * exp(im * voltage.angle[k]))
-        end
-        powerInjection = I * voltageBus
-        power.injection.active[i] = real(powerInjection)
-        power.injection.reactive[i] = imag(powerInjection)
-
-
-        power.supply.active[i] = system.bus.supply.active[i]
-        if system.bus.layout.type[i] != 1
-            power.supply.reactive[i] = system.bus.supply.reactive[i] + system.bus.demand.reactive[i] + power.injection.reactive[i]
-        else
-            power.supply.reactive[i] = system.bus.supply.reactive[i]
-        end
-    end
-    power.supply.active[slack] = power.injection.active[slack] + system.bus.demand.active[slack]
-end
-
-######### Generator Results ##########
-function generator!(system::PowerSystem, result::ACPowerFlow)
-        ac = system.acModel
-
-        voltage = result.bus.voltage
-        power = result.generator.power
-        errorVoltage(voltage.magnitude)
-
-        power.active = fill(0.0, system.generator.number)
-        power.reactive = fill(0.0, system.generator.number)
-        isMultiple = false
-        for i in system.generator.layout.bus
-            if system.bus.supply.inService[i] > 1
-                isMultiple = true
-                break
-            end
-        end
-
-        if isempty(result.bus.power.injection.active)
-            injectionActive = fill(0.0, system.bus.number)
-            injectionReactive = fill(0.0, system.bus.number)
-
-            @inbounds for i = 1:system.bus.number
-                voltageBus = voltage.magnitude[i] * exp(im * voltage.angle[i])
-
-                I = 0.0 + im * 0.0
-                for j in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
-                    k = ac.nodalMatrix.rowval[j]
-                    I += conj(ac.nodalMatrixTranspose.nzval[j]) * conj(voltage.magnitude[k] * exp(im * voltage.angle[k]))
-                end
-                powerInjection = I * voltageBus
-                injectionActive[i] = real(powerInjection)
-                injectionReactive[i] = imag(powerInjection)
-            end
-        else
-            injectionActive = result.bus.power.injection.active
-            injectionReactive = result.bus.power.injection.reactive
-        end
-
-        if !isMultiple
-            @inbounds for i = 1:system.generator.number
-                if system.generator.layout.status[i] == 1
-                    j = system.generator.layout.bus[i]
-                    power.active[i] = system.generator.output.active[i]
-                    power.reactive[i] = injectionReactive[j] + system.bus.demand.reactive[j]
-                    if j == system.bus.layout.slackIndex
-                        power.active[i] = injectionActive[j] + system.bus.demand.active[j]
-                    end
-                end
-            end
-        end
-
-        if isMultiple
-            Qmintotal = fill(0.0, system.bus.number)
-            Qmaxtotal = fill(0.0, system.bus.number)
-            QminInf = fill(0.0, system.bus.number)
-            QmaxInf = fill(0.0, system.bus.number)
-            QminNew = copy(system.generator.capability.minReactive)
-            QmaxNew = copy(system.generator.capability.maxReactive)
-            Qgentotal = fill(0.0, system.bus.number)
-
-            @inbounds for i = 1:system.generator.number
-                if system.generator.layout.status[i] == 1
-                    j = system.generator.layout.bus[i]
-                    if !isinf(system.generator.capability.minReactive[i])
-                        Qmintotal[j] += system.generator.capability.minReactive[i]
-                    end
-                    if !isinf(system.generator.capability.maxReactive[i])
-                        Qmaxtotal[j] += system.generator.capability.maxReactive[i]
-                    end
-                    Qgentotal[j] += (injectionReactive[j] + system.bus.demand.reactive[j]) / system.bus.supply.inService[j]
-                end
-            end
-            @inbounds for i = 1:system.generator.number
-                if system.generator.layout.status[i] == 1
-                    j = system.generator.layout.bus[i]
-                    if system.generator.capability.minReactive[i] == Inf
-                        QminInf[i] = abs(Qgentotal[j]) + abs(Qmintotal[j]) + abs(Qmaxtotal[j])
-                    end
-                    if system.generator.capability.minReactive[i] == -Inf
-                        QminInf[i] = -abs(Qgentotal[j]) - abs(Qmintotal[j]) - abs(Qmaxtotal[j])
-                    end
-                    if system.generator.capability.maxReactive[i] == Inf
-                        QmaxInf[i] = abs(Qgentotal[j]) + abs(Qmintotal[j]) + abs(Qmaxtotal[j])
-                    end
-                    if system.generator.capability.maxReactive[i] == -Inf
-                        QmaxInf[i] = -abs(Qgentotal[j]) - abs(Qmintotal[j]) - abs(Qmaxtotal[j])
-                    end
-                end
-            end
-            @inbounds for i = 1:system.generator.number
-                if system.generator.layout.status[i] == 1
-                    j = system.generator.layout.bus[i]
-                    if isinf(system.generator.capability.minReactive[i])
-                        Qmintotal[j] += QminInf[i]
-                        QminNew[i] = QminInf[i]
-                    end
-                    if isinf(system.generator.capability.maxReactive[i])
-                        Qmaxtotal[j] += QmaxInf[i]
-                        QmaxNew[i] =  QmaxInf[i]
-                    end
-                end
-            end
-
-            tempSlack = 0
-            @inbounds for i = 1:system.generator.number
-                if system.generator.layout.status[i] == 1
-                    j = system.generator.layout.bus[i]
-                    if 1e-6 * system.basePower * abs(Qmintotal[j] - Qmaxtotal[j]) > 10 * eps(Float64)
-                        power.reactive[i] = QminNew[i] + ((Qgentotal[j] - Qmintotal[j]) / (Qmaxtotal[j] - Qmintotal[j])) * (QmaxNew[i] - QminNew[i])
-                    else
-                        power.reactive[i] = QminNew[i] + (Qgentotal[j] - Qmintotal[j]) / system.bus.supply.inService[j]
-                    end
-
-                    power.active[i] = system.generator.output.active[i]
-                    if j == system.bus.layout.slackIndex
-                        if tempSlack != 0
-                            power.active[tempSlack] -= power.active[i]
-                        end
-                        if tempSlack == 0
-                            power.active[i] = injectionActive[j] + system.bus.demand.active[j]
-                            tempSlack = i
-                        end
-                    end
-                end
-            end
-        end
-    end
-
-######### Check Reactive Power Limits ##########
-function reactivePowerLimit!(system::PowerSystem, result::ACPowerFlow)
+# Example
+```jldoctest
+result = dcPowerFlow(system)
+```
+"""
+function dcPowerFlow(system::PowerSystem)
+    dc = system.dcModel
     bus = system.bus
-    generator = system.generator
+    slack = bus.layout.slackIndex
 
-    power = result.generator.power
-    errorVoltage(result.bus.voltage.magnitude)
+    slackRange = dc.nodalMatrix.colptr[slack]:(dc.nodalMatrix.colptr[slack + 1] - 1)
+    elementsRemove = dc.nodalMatrix.nzval[slackRange]
+    @inbounds for i in slackRange
+        dc.nodalMatrix[dc.nodalMatrix.rowval[i], slack] = 0.0
+        dc.nodalMatrix[slack, dc.nodalMatrix.rowval[i]] = 0.0
+    end
+    dc.nodalMatrix[slack, slack] = 1.0
 
-    generator.layout.violate = fill(0, generator.number)
-    if isempty(power.reactive)
-        generator!(system, result)
+    b = copy(bus.supply.active)
+    @inbounds for i = 1:bus.number
+        b[i] -= bus.demand.active[i] + bus.shunt.conductance[i] + dc.shiftActivePower[i]
     end
 
-    bus.supply.active = fill(0.0, bus.number)
-    bus.supply.reactive = fill(0.0, bus.number)
-    @inbounds for (k, i) in enumerate(generator.layout.bus)
-        if generator.layout.status[k] == 1
-            bus.supply.active[i] += power.active[k]
-            bus.supply.reactive[i] += power.reactive[k]
+    angle = dc.nodalMatrix \ b
+    angle[slack] = 0.0
+
+    if bus.voltage.angle[slack] != 0.0
+        @inbounds for i = 1:bus.number
+            angle[i] += bus.voltage.angle[slack]
         end
     end
 
-    @inbounds for i = 1:generator.number
-        if generator.layout.status[i] == 1
-            violateMinimum = power.reactive[i] < generator.capability.minReactive[i]
-            violateMaximum = power.reactive[i] > generator.capability.maxReactive[i]
-            if generator.layout.violate[i] == 0 && (violateMinimum || violateMaximum)
-                if violateMinimum
-                    generator.layout.violate[i] = -1
-                    newReactivePower = generator.capability.minReactive[i]
-                end
-                if violateMaximum
-                    generator.layout.violate[i] = 1
-                    newReactivePower = generator.capability.maxReactive[i]
-                end
-                j = generator.layout.bus[i]
-                bus.layout.type[j] = 1
-
-                bus.supply.reactive[j] -= result.generator.power.reactive[i]
-                generator.output.reactive[i] = newReactivePower
-                bus.supply.reactive[j] += newReactivePower
-
-                if j == bus.layout.slackIndex
-                    for k = 1:bus.number
-                        if bus.layout.type[k] == 2
-                            @info("The slack bus $(trunc(Int, bus.label[j])) is converted to PQ bus, bus $(trunc(Int, bus.label[k])) is the new slack bus.")
-                            bus.layout.slackIndex = bus.label[k]
-                            bus.layout.type[k] = 3
-                            break
-                        end
-                    end
-                end
-            end
-        end
+    @inbounds for (k, i) in enumerate(slackRange)
+        dc.nodalMatrix[dc.nodalMatrix.rowval[i], slack] = elementsRemove[k]
+        dc.nodalMatrix[slack, dc.nodalMatrix.rowval[i]] = elementsRemove[k]
     end
-end
 
-######### Adjust Voltage Angle According to Original Slack Bus ##########
-function adjustVoltageAngle!(system::PowerSystem, result::ACPowerFlow)
-    T = system.bus.voltage.angle[system.bus.layout.slackImmutable] - result.bus.voltage.angle[system.bus.layout.slackImmutable]
-    @inbounds for i = 1:system.bus.number
-        result.bus.voltage.angle[i] = result.bus.voltage.angle[i] + T
-    end
+    method = "DC Power Flow"
+
+    return Result(
+        BusResult(Polar(Float64[], angle),
+            BusPower(Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]))),
+        BranchResult(
+            BranchPower(Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), CartesianImag(Float64[]), Cartesian(Float64[], Float64[])),
+            BranchCurrent(Polar(Float64[], Float64[]), Polar(Float64[], Float64[]), Polar(Float64[], Float64[]))),
+        GeneratorResult(Cartesian(Float64[], Float64[])),
+        DCAlgorithm(method)
+        )
 end
 
 ######### Set Voltage Magnitude Values According to Generators ##########
