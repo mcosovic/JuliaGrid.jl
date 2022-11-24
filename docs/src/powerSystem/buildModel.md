@@ -51,7 +51,8 @@ parameterBranch!
 ---
 
 ## Generator Functions
-Functions receive the composite type `PowerSystem` and arguments by keyword to set or change generator parameters. Further, functions update fields `generator` and `bus`.```@docs
+Functions receive the composite type `PowerSystem` and arguments by keyword to set or change generator parameters. Further, functions update fields `generator` and `bus`.
+```@docs
 addGenerator!
 statusGenerator!
 outputGenerator!

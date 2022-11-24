@@ -61,3 +61,11 @@ The function receives the composite type `PowerSystem`, and returns the composit
 ```@docs
 dcPowerFlow
 ```
+
+---
+
+## Branch Electrical Quantities
+The function receives composite types `PowerSystem` and `Result`.
+```@docs
+branch!
+```

@@ -178,7 +178,7 @@ system = powerSystem("case14.h5")
 acModel!(system)
 
 result = gaussSeidel(system)
-stopping = result.algorithm.stopping
+stopping = result.algorithm.iteration.stopping
 for i = 1:1000
     gaussSeidel!(system, result)
     if stopping.active < 1e-8 && stopping.reactive < 1e-8
@@ -367,7 +367,7 @@ system = powerSystem("case14.h5")
 acModel!(system)
 
 result = newtonRaphson(system)
-stopping = result.algorithm.stopping
+stopping = result.algorithm.iteration.stopping
 for i = 1:10
     newtonRaphson!(system, result)
     if stopping.active < 1e-8 && stopping.reactive < 1e-8
@@ -684,7 +684,7 @@ system = powerSystem("case14.h5")
 acModel!(system)
 
 result = fastNewtonRaphsonBX(system)
-stopping = result.algorithm.stopping
+stopping = result.algorithm.iteration.stopping
 for i = 1:100
     fastNewtonRaphson!(system, result)
     if stopping.active < 1e-8 && stopping.reactive < 1e-8

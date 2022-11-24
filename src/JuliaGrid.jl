@@ -1,7 +1,8 @@
-module JuliaGrid
+module JuliaGridTest
 
 using SparseArrays, LinearAlgebra, SuiteSparse
 using HDF5
+using JuliaGrid
 
 ######### Utility ##########
 include("utility/routine.jl")
@@ -22,7 +23,9 @@ include("algorithm/powerFlow.jl")
 export gaussSeidel, newtonRaphson, fastNewtonRaphsonBX, fastNewtonRaphsonXB
 export gaussSeidel!, newtonRaphson!, fastNewtonRaphson!, dcPowerFlow
 
-
+######## Postprocessing ##########
+include("postprocessing/powerSystemState.jl")
+export branch!
 
 
 
