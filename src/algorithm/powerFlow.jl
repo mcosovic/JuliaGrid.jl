@@ -365,9 +365,10 @@ system = powerSystem("case14.h5")
 acModel!(system)
 
 result = newtonRaphson(system)
+stopping = result.algorithm.stopping
 for i = 1:10
     newtonRaphson!(system, result)
-    if result.algorithm.stopping.active < 1e-8 && result.algorithm.stopping.reactive < 1e-8
+    if stopping.active < 1e-8 && stopping.reactive < 1e-8
         break
     end
 end

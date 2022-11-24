@@ -15,9 +15,9 @@ connected to a bus, using the function `addGenerator!()`, the bus becomes a gene
 
 # Example
 ```jldoctest
+system = powerSystem()
+
 addBus!(system; label = 1, slackLabel = 1, active = 0.25, reactive = -0.04)
-addBus!(system; label = 2, active = 0.06, susceptance = 0.12)
-addBus!(system; label = 3, active = 0.12, conductance = 0.05)
 ```
 """
 function addBus!(system::PowerSystem; label::Int64, slackLabel::Int64 = 0, area::Int64 = 1, lossZone::Int64 = 1,
@@ -100,6 +100,9 @@ The function also updates the field `acModel`, if field exist.
 
 # Example
 ```jldoctest
+system = powerSystem()
+
+addBus!(system; label = 1, active = 0.25, reactive = -0.04)
 shuntBus!(system; label = 1, conductance = 0.04)
 ```
 """
@@ -149,9 +152,12 @@ mandatory. Default keyword values are set to zero, except for keywords `status =
 
 # Example
 ```jldoctest
+system = powerSystem()
+
+addBus!(system; label = 1, active = 0.25, reactive = -0.04)
+addBus!(system; label = 2, active = 0.15, reactive = 0.08)
+
 addBranch!(system; label = 1, from = 1, to = 2, resistance = 0.05, reactance = 0.12)
-addBranch!(system; label = 2, from = 1, to = 2, resistance = 0.03, reactance = 0.17)
-addBranch!(system; label = 3, from = 2, to = 3, reactance = 0.17, turnsRatio = 0.98)
 ```
 """
 function addBranch!(system::PowerSystem; label::Int64, from::Int64, to::Int64, status::Int64 = 1,
@@ -244,7 +250,13 @@ The keywords `label` should correspond to the already defined branch label.
 
 # Example
 ```jldoctest
-statusBranch!(system; label = 2, status = 0)
+system = powerSystem()
+
+addBus!(system; label = 1, active = 0.25, reactive = -0.04)
+addBus!(system; label = 2, active = 0.15, reactive = 0.08)
+
+addBranch!(system; label = 1, from = 1, to = 2, resistance = 0.05, reactance = 0.12)
+statusBranch!(system; label = 1, status = 0)
 ```
 """
 function statusBranch!(system::PowerSystem; label::Int64, status::Int64 = 0)
@@ -302,6 +314,12 @@ parameter remains unchanged.
 
 # Example
 ```jldoctest
+system = powerSystem()
+
+addBus!(system; label = 1, active = 0.25, reactive = -0.04)
+addBus!(system; label = 2, active = 0.15, reactive = 0.08)
+
+addBranch!(system; label = 1, from = 1, to = 2, resistance = 0.05, reactance = 0.12)
 parameterBranch!(system; label = 1, susceptance = 0.062)
 ```
 """
@@ -376,8 +394,11 @@ The keywords `label` and `bus` are mandatory. Default keyword values are set to 
 
 # Example
 ```jldoctest
+system = powerSystem()
+
+addBus!(system; label = 1, active = 0.25, reactive = -0.04)
+
 addGenerator!(system; label = 1, bus = 1, active = 0.5 reactive = 0.1)
-addGenerator!(system; label = 2, bus = 3, active = 0.4 reactive = 0.2)
 ```
 """
 function addGenerator!(system::PowerSystem; label::Int64, bus::Int64, area::Float64 = 0.0, status::Int64 = 1,
@@ -514,7 +535,12 @@ The keywords `label` should correspond to the already defined generator label.
 
 # Example
 ```jldoctest
-statusGenerator!(system; label = 2, status = 0)
+system = powerSystem()
+
+addBus!(system; label = 1, active = 0.25, reactive = -0.04)
+
+addGenerator!(system; label = 1, bus = 1, active = 0.5 reactive = 0.1)
+statusGenerator!(system; label = 1, status = 0)
 ```
 """
 function statusGenerator!(system::PowerSystem; label::Int64, status::Int64 = 0)
@@ -560,6 +586,11 @@ or `reactive` can be omitted, then the value of the omitted parameter remains un
 
 # Example
 ```jldoctest
+system = powerSystem()
+
+addBus!(system; label = 1, active = 0.25, reactive = -0.04)
+
+addGenerator!(system; label = 1, bus = 1, active = 0.5 reactive = 0.1)
 outputGenerator!(system; label = 1, active = 0.85)
 ```
 """
@@ -608,6 +639,7 @@ when using functions `addBranch!()`, `statusBranch!()`, `parameterBranch!()`.
 
 # Example
 ```jldoctest
+system = powerSystem("case14.h5")
 dcModel!(system)
 ```
 """
@@ -687,6 +719,7 @@ when using functions `addBranch!()`, `shuntBus!()`, `statusBranch!()` `parameter
 
 # Example
 ```jldoctest
+system = powerSystem("case14.h5")
 acModel!(system)
 ```
 """
