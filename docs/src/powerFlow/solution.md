@@ -1,14 +1,14 @@
 # [Power Flow Analysis](@id dcPowerFlowAnalysis)
 
-The power flow analysis requires the main composite type `PowerSystem` with fields `bus`, `branch`, `generator`. In addition, depending on whether AC or DC power flow analysis is used, `acModel` or `dcModel` is required.
+The power flow analysis requires the composite type `PowerSystem` with fields `bus`, `branch`, `generator`. In addition, depending on whether AC or DC power flow analysis is used, `acModel` or `dcModel` is required.
 
-JuliaGrid stores results in the main composite type `Result` with fields:
+JuliaGrid stores results in the composite type `Result` with fields:
 * `bus`
 * `branch`
 * `generator`
 * `algorithm`
 
-Once the main composite type `PowerSystem` is created, it is possible to create main composite type `Result`. The composite type `Result` in the DC power flow analysis is created when determining the bus voltages using the function `dcPowerFlow()`. In contrast, the AC power flow analysis first requires the initialization of the iterative method, during which the composite type `Result` is created:
+Once the composite type `PowerSystem` is created, it is possible to create the composite type `Result`. The composite type `Result` in the DC power flow analysis is created when determining the bus voltages using the function `dcPowerFlow()`. In contrast, the AC power flow analysis first requires the initialization of the iterative method, during which the composite type `Result` is created:
 * `newtonRaphson()`
 * `fastNewtonRaphsonBX()`
 * `fastNewtonRaphsonXB()`
@@ -19,12 +19,12 @@ The calculation of the bus voltages, depending on the type of analysis and the s
 * `fastNewtonRaphson!()`
 * `gaussSeidel!()`
 * `dcPowerFlow()`
-Note that the methods for solving AC power flow problem should be called inside a loop, thus simulating an iterative process.
+Note that the methods for solving the AC power flow problem should be called inside a loop, thus simulating an iterative process.
 
 Then, it is possible to calculate other quantities of interest using functions:
 * `bus!()`
 * `branch!()`
-* `generator!()`
+* `generator!()`.
 
 ---
 

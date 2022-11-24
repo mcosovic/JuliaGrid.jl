@@ -1,6 +1,6 @@
 # [Power System Model](@id powerSystemModel)
 
-The JuliaGrid supports the main composite type `PowerSystem` to preserve power system data, with fields:
+The JuliaGrid supports the composite type `PowerSystem` to preserve power system data, with fields:
 * `bus`
 * `branch`
 * `generator`
@@ -8,9 +8,9 @@ The JuliaGrid supports the main composite type `PowerSystem` to preserve power s
 * `dcModel`
 * `basePower`.
 
-The fields `bus`, `branch`, `generator` hold the data related with buses, branches and generators, respectively. Subtypes `acModel` and `dcModel` store vectors and matrices obtained based on the power system topology and parameters. The base power of the system is kept in the field `basePower`, given in volt-ampere unit.
+The fields `bus`, `branch`, `generator` hold the data related to buses, branches and generators, respectively. Subtypes `acModel` and `dcModel` store vectors and matrices obtained based on the power system topology and parameters. The base power of the system is kept in the field `basePower`, given in volt-ampere unit.
 
-The method `powerSystem()` returns the main composite type `PowerSystem` with all subtypes.
+The method `powerSystem()` returns the composite type `PowerSystem` with all subtypes.
 
 JuliaGrid supports three modes of forming the power system model:
 * using built-in functions,
@@ -25,7 +25,7 @@ The HDF5 file format contains three groups: `bus`, `branch` and `generator`. In 
 
 ## [Bus Group](@id busGroup)
 
-The `bus` group is divided into four subgroups: `layout`, `demand`, `shunt`, and `voltage`. Each of the subgroups contains datasets that define features of the buses.
+The `bus` group is divided into four subgroups: `layout`, `demand`, `shunt`, and `voltage`. Each of the subgroups contains datasets that define the features of the buses.
 
 | Subgroup | Dataset      | Description                                                                           | Unit     | Type             |
 |:---------|:-------------|:--------------------------------------------------------------------------------------|:---------|:-----------------|
@@ -48,7 +48,7 @@ The `bus` group is divided into four subgroups: `layout`, `demand`, `shunt`, and
 
 ## [Branch Group](@id branchGroup)
 
-The `branch` group is divided into four subgroups: `layout`, `parameter`, `voltage`, and `rating`. Each of the subgroups contains datasets that define features of the branches.
+The `branch` group is divided into four subgroups: `layout`, `parameter`, `voltage`, and `rating`. Each of the subgroups contains datasets that define the features of the branches.
 
 | Subgroup  | Dataset            | Description                                                            | Unit      | Type            |
 |:----------|:-------------------|:-----------------------------------------------------------------------|:----------|:----------------|
@@ -63,15 +63,15 @@ The `branch` group is divided into four subgroups: `layout`, `parameter`, `volta
 | parameter | shiftAngle         | transformer phase shift angle where positive value defines delay       | radian   | float            |
 | voltage   | minAngleDifference | minimum allowed voltage angle difference value between from and to bus | radian   | float            |
 | voltage   | maxAngleDifference | maximum allowed voltage angle difference value between from and to bus | radian   | float            |
-| rating    | shortTerm          | short term rating (equal to zero for unlimited)                        | per-unit | float            |
-| rating    | longTerm           | long term rating (equal to zero for unlimited)                         | per-unit | float            |
+| rating    | shortTerm          | short-term rating (equal to zero for unlimited)                        | per-unit | float            |
+| rating    | longTerm           | long-term rating (equal to zero for unlimited)                         | per-unit | float            |
 | rating    | emergency          | emergency rating (equal to zero for unlimited)                         | per-unit | positive integer |
 
 ---
 
 ## [Generator Group](@id generatorGroup)
 
-The `generator` group is divided into six subgroups: `layout`, `output`, `voltage`, `capability`, `ramRate`, and `cost`. Each of the subgroups contains datasets that define features of the generators.
+The `generator` group is divided into six subgroups: `layout`, `output`, `voltage`, `capability`, `ramRate`, and `cost`. Each of the subgroups contains datasets that define the features of the generators.
 
 | Subgroup   | Dataset             | Description                                                           | Unit            | Type             |
 |:-----------|:--------------------|:----------------------------------------------------------------------|:----------------|:-----------------|

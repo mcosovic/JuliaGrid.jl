@@ -118,7 +118,6 @@ mutable struct DCAlgorithm
     method::String
 end
 
-
 ######### Result Struct ##########
 mutable struct Result
     bus::BusResult
@@ -132,7 +131,7 @@ The function initializes the Gauss-Seidel method, and returns the composite type
 
     gaussSeidel(system::PowerSystem)
 
-The function affects the field `algorithm` of the composite type `Result`.
+The function updates the field `algorithm` of the composite type `Result`.
 """
 function gaussSeidel(system::PowerSystem)
     bus = system.bus
@@ -170,7 +169,7 @@ The function solves the AC power flow problem using the Gauss-Seidel method.
 
     gaussSeidel!(system::PowerSystem, result::Result)
 
-The function affects fields `bus.voltage` and `algorithm` of the type `Result`.
+The function updates fields `bus.voltage` and `algorithm` of the composite type `Result`.
 
 # Example
 ```jldoctest
@@ -255,7 +254,7 @@ The function initializes the Newthon-Raphson method, and returns the composite t
 
     newtonRaphson(system::PowerSystem)
 
-The function affects the field `algorithm` of the composite type `Result`.
+The function updates the field `algorithm` of the composite type `Result`.
 """
 function newtonRaphson(system::PowerSystem)
     ac = system.acModel
@@ -358,7 +357,7 @@ The function solves the AC power flow problem using the Newthon-Raphson method.
 
     newtonRaphson!(system::PowerSystem, result::Result)
 
-The function affects fields `bus.voltage` and `algorithm` of the composite type `Result`.
+The function updates fields `bus.voltage` and `algorithm` of the composite type `Result`.
 
 # Example
 ```jldoctest
@@ -477,11 +476,12 @@ function newtonRaphson!(system::PowerSystem, result::Result)
 end
 
 """
-The function initializes the fast Newthon-Raphson BX method, and returns the composite type `Result`.
+The function initializes the fast Newthon-Raphson BX method and returns
+the composite type `Result`.
 
     fastNewtonRaphsonBX(system::PowerSystem)
 
-The function affects the field `algorithm` of the composite type `Result`.
+The function updates the field `algorithm` of the composite type `Result`.
 """
 function fastNewtonRaphsonBX(system::PowerSystem)
     algorithmBX = 1
@@ -491,11 +491,12 @@ function fastNewtonRaphsonBX(system::PowerSystem)
 end
 
 """
-The function initializes the fast Newthon-Raphson XB method, and returns the composite type `Result`.
+The function initializes the fast Newthon-Raphson XB method and returns
+the composite type `Result`.
 
     fastNewtonRaphsonXB(system::PowerSystem)
 
-The function affects the field `algorithm` of the composite type `Result`.
+The function updates the field `algorithm` of the composite type `Result`.
 """
 function fastNewtonRaphsonXB(system::PowerSystem)
     algorithmXB = 2
@@ -504,7 +505,7 @@ function fastNewtonRaphsonXB(system::PowerSystem)
     return result
 end
 
-function fastNewtonRaphson(system::PowerSystem, algorithmFlag::Int64)
+@inline function fastNewtonRaphson(system::PowerSystem, algorithmFlag::Int64)
     ac = system.acModel
     bus = system.bus
     branch = system.branch
@@ -672,7 +673,7 @@ The function solves the AC power flow problem using the fast Newthon-Raphson BX 
 
     fastNewtonRaphson!(system::PowerSystem, result::Result)
 
-The function affects fields `bus.voltage` and `algorithm` of the composite type `Result`.
+The function updates fields `bus.voltage` and `algorithm` of the composite type `Result`.
 
 # Example
 ```jldoctest
@@ -689,7 +690,7 @@ for i = 1:100
 end
 ```
 """
-@inline function fastNewtonRaphson!(system::PowerSystem, result::Result)
+function fastNewtonRaphson!(system::PowerSystem, result::Result)
     ac = system.acModel
     bus = system.bus
 
@@ -759,12 +760,13 @@ end
 end
 
 """
-The function solves the DC power flow problem determining the bus voltage angles,
-and returns the composite type `Result`.
+The function solves the DC power flow problem by determining the bus
+voltage angles, and returns the composite type `Result`.
 
     dcPowerFlow(system::PowerSystem)
 
-The function affects field `result.bus.voltage.angle` and `algorithm` of the type `Result`.
+The function updates field `result.bus.voltage.angle` and `algorithm` of the
+composite type `Result`.
 
 # Example
 ```jldoctest

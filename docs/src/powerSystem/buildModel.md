@@ -1,9 +1,9 @@
 # [Build Power System Model](@id inputdata)
 
-The main composite type `PowerSystem` with fields `bus`, `branch`, `generator`, `acModel`, `dcModel`, and `basePower` can be created using a method:
+The composite type `PowerSystem` with fields `bus`, `branch`, `generator`, `acModel`, `dcModel`, and `basePower` can be created using a method:
 * `powerSystem()`.
 
-Once the model is created, it is possible to add buses, branches and generators using functions:
+Once the model is created, it is possible to add buses, branches and generators using the functions:
 * `addBus!()`
 * `addBranch!()`
 * `addGenerator!()`.
@@ -19,12 +19,12 @@ Then, it is possible to manipulate the parameters of buses, branches and generat
 * `parameterBranch!()`
 * `statusGenerator!()`
 * `outputGenerator!()`.
-The execution of these functions will automatically trigger the update of all subtypes affected by these functions.
+The execution of these functions will automatically trigger the update of all fields affected by these functions.
 
 ---
 
 ## Build Model
-The method `powerSystem()` builds the main composite type `PowerSystem` and populate fields `bus`, `branch`, `generator` and `basePower`.
+The method `powerSystem()` builds the composite type `PowerSystem` and populates fields `bus`, `branch`, `generator` and `basePower`.
 ```@docs
 powerSystem
 ```
@@ -32,7 +32,7 @@ powerSystem
 ---
 
 ## Bus Functions
-Functions receives the main composite type `PowerSystem` and arguments by keyword to set or change bus parameters, and affect field `bus`.
+Functions receive the composite type `PowerSystem` and arguments by keyword to set or change bus parameters and update the field `bus`.
 ```@docs
 addBus!
 shuntBus!
@@ -41,7 +41,7 @@ shuntBus!
 ---
 
 ## Branch Functions
-Functions receives the main composite type `PowerSystem` and arguments by keyword to set or change branch parameters. Further, functions affect field `branch`, but also fields `acModel` and `dcModel`. More precisely, once `acModel` and `dcModel` are created, the execution of functions will automatically trigger the update of these fields.
+Functions receive the composite type `PowerSystem` and arguments by keyword to set or change branch parameters. Further, functions update the field `branch`, but also fields `acModel` and `dcModel`. More precisely, once `acModel` and `dcModel` are created, the execution of functions will automatically trigger the update of these fields.
 ```@docs
 addBranch!
 statusBranch!
@@ -51,8 +51,7 @@ parameterBranch!
 ---
 
 ## Generator Functions
-Functions receives the main composite type `PowerSystem` and arguments by keyword to set or change generator parameters. Further, functions affect fields `generator` and `bus`.
-```@docs
+Functions receive the composite type `PowerSystem` and arguments by keyword to set or change generator parameters. Further, functions update fields `generator` and `bus`.```@docs
 addGenerator!
 statusGenerator!
 outputGenerator!
@@ -61,7 +60,7 @@ outputGenerator!
 ---
 
 ## Build AC or DC Model
-The functions receives the main composite type `PowerSystem` and forms vectors and matrices related with AC or DC simulations.
+The functions receive the composite type `PowerSystem` and form vectors and matrices related to AC or DC simulations.
 ```@docs
 acModel!
 dcModel!
@@ -70,5 +69,5 @@ dcModel!
 ---
 
 ## Modifying Other Parameters
-Changing other parameters of the power system can be done by changing variables by accessing their values in fields `bus`, `branch` and `generator` of the main type `powerSystem`.
+Changing other parameters of the power system can be done by changing variables by accessing their values in fields `bus`, `branch` and `generator` of the composite type `powerSystem`.
 

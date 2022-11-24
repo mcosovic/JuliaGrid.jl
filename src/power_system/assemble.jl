@@ -1,6 +1,6 @@
 """
-The function add a new bus. Names, descriptions and units of keywords are given
-in the table [bus group](@ref busGroup).
+The function adds a new bus, and updates the field `bus`. Names, descriptions and units of keywords
+are given in the table [bus group](@ref busGroup).
 
     addBus!(system::PowerSystem; label, slackLabel, area, lossZone, active, reactive,
         conductance, susceptance, magnitude, angle, minMagnitude, maxMagnitude, base)
@@ -9,7 +9,7 @@ The keyword `label` is mandatory. Default keyword values are set to zero, except
 `lossZone = 1`, `area = 1`, `magnitude = 1.0`, `minMagnitude = 0.9`, and `maxMagnitude = 1.1`.
 
 The slack bus, using the keyword `slackLabel`, can be specified in each function call with the
-label of the bus being defined or already existing. If the bus is not defined as the slack, the
+label of the bus being defined or already existing. If the bus is not defined as slack, the
 function `addBus!()` automatically defines the bus as the demand bus (PQ). If a generator is
 connected to a bus, using the function `addGenerator!()`, the bus becomes a generator bus (PV).
 
@@ -139,7 +139,7 @@ function shuntBus!(system::PowerSystem; user...)
 end
 
 """
-The function add a new branch. Names, descriptions and units of keywords are given in the
+The function adds a new branch. Names, descriptions and units of keywords are given in the
 table [branch group](@ref branchGroup). A branch can be added between already defined buses.
 
     addBranch!(system::PowerSystem; label, from, to, status, resistance, reactance,
@@ -309,8 +309,8 @@ The function `parameterBranch!` allows changing `resistance`, `reactance`, `susc
         turnsRatio, shiftAngle)
 
 The keywords `label` should correspond to the already defined branch label. Keywords `resistance`,
-`reactance`, `susceptance`, `turnsRatio` or `shiftAngle` can be omitted, then the value of the omitted
-parameter remains unchanged.
+`reactance`, `susceptance`, `turnsRatio` or `shiftAngle` can be omitted, and then the value of the
+omitted parameter remains unchanged.
 
 # Example
 ```jldoctest
@@ -378,8 +378,8 @@ function parameterBranch!(system::PowerSystem; user...)
 end
 
 """
-The function add a new generator. Names, descriptions and units of keywords are given in the
-table [generator group](@ref generatorGroup). A generator can be added at already defined bus.
+The function adds a new generator. Names, descriptions and units of keywords are given in the
+table [generator group](@ref generatorGroup). A generator can be added to an already-defined bus.
 
     addGenerator!(system::PowerSystem; label, bus, area, status, active, reactive, magnitude,
         minActive, maxActive, minReactive, maxReactive, lowerActive, minReactiveLower,
@@ -634,8 +634,8 @@ that explains all the data involved in the field `dcModel`.
 
     dcModel!(system::PowerSystem)
 
-The function affects field `dcModel`. Once formed, the field will be automatically updated
-when using functions `addBranch!()`, `statusBranch!()`, `parameterBranch!()`.
+The function updates the field `dcModel`. Once formed, the field will be automatically
+updated when using functions `addBranch!()`, `statusBranch!()`, `parameterBranch!()`.
 
 # Example
 ```jldoctest
@@ -714,8 +714,8 @@ that explains all the data involved in the field `acModel`.
 
     acModel!(system::PowerSystem)
 
-The function affects field `acModel`. Once formed, the field will be automatically updated
-when using functions `addBranch!()`, `shuntBus!()`, `statusBranch!()` `parameterBranch!()`.
+The function updates the field `acModel`. Once formed, the field will be automatically
+updated when using functions `addBranch!()`, `shuntBus!()`, `statusBranch!()` `parameterBranch!()`.
 
 # Example
 ```jldoctest
