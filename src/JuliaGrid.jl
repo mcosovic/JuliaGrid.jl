@@ -24,9 +24,7 @@ export gaussSeidel!, newtonRaphson!, fastNewtonRaphson!, dcPowerFlow
 
 ######## Postprocessing ##########
 include("postprocessing/powerSystemState.jl")
-export branch!
-
-
+export bus!, branch!, generator!
 
 end # JuliaGrid
 

@@ -64,8 +64,24 @@ dcPowerFlow
 
 ---
 
+## Bus Electrical Quantities
+The function receives composite types `PowerSystem` and `Result`.
+```@docs
+bus!
+```
+
+---
+
 ## Branch Electrical Quantities
 The function receives composite types `PowerSystem` and `Result`.
 ```@docs
 branch!
+```
+
+---
+
+## Generator Electrical Quantities
+The function receives composite types `PowerSystem` and `Result`.
+```@docs
+generator!
 ```
