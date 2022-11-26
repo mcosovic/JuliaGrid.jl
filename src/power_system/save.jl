@@ -2,7 +2,7 @@
 The function saves power system data in the HDF5 file using fields `bus`,
 `branch`, `generator` and `basePower` of the composite type `PowerSystem`.
 
-    savePowerSystem(system::PowerSystem; path, reference, note)
+    [savePowerSystem(system::PowerSystem; path, reference, note)](@id savePowerSystem)
 
 The keyword `path::String` is mandatory in the form `"path/name.h5"`, while
 keywords `reference::String` and `note::String` are optional.
