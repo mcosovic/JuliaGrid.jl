@@ -2,8 +2,8 @@
 The function adds a new bus, and updates the field `bus`. Names, descriptions and units of keywords
 are given in the table [bus group](@ref busGroup).
 
-    [addBus!(system::PowerSystem; label, slackLabel, area, lossZone, active, reactive,
-        conductance, susceptance, magnitude, angle, minMagnitude, maxMagnitude, base)](@id addBus!)
+    addBus!(system::PowerSystem; label, slackLabel, area, lossZone, active, reactive,
+        conductance, susceptance, magnitude, angle, minMagnitude, maxMagnitude, base)
 
 The keyword `label` is mandatory. Default keyword values are set to zero, except for keywords
 `lossZone = 1`, `area = 1`, `magnitude = 1.0`, `minMagnitude = 0.9`, and `maxMagnitude = 1.1`.
@@ -92,7 +92,7 @@ end
 The function allows changing `conductance` and `susceptance` parameters of the shunt element
 connected to the bus.
 
-    [shuntBus!(system::PowerSystem; label, conductance, susceptance)](@id shuntBus!)
+    shuntBus!(system::PowerSystem; label, conductance, susceptance)
 
 The keyword `label` should correspond to the already defined bus label. Keywords `conductance`
 or `susceptance`can be omitted, then the value of the omitted parameter remains unchanged.
@@ -142,9 +142,9 @@ end
 The function adds a new branch. Names, descriptions and units of keywords are given in the
 table [branch group](@ref branchGroup). A branch can be added between already defined buses.
 
-    [addBranch!(system::PowerSystem; label, from, to, status, resistance, reactance,
+    addBranch!(system::PowerSystem; label, from, to, status, resistance, reactance,
         susceptance, turnsRatio, shiftAngle, longTerm, shortTerm, emergency,
-        minAngleDifference, maxAngleDifference)](@id addBranch!)
+        minAngleDifference, maxAngleDifference)
 
 The keywords `label`, `from`, `to`, and one of the parameters `resistance` or `reactance` are
 mandatory. Default keyword values are set to zero, except for keywords `status = 1`,
@@ -244,7 +244,7 @@ end
 The function allows changing the operating `status` of the branch, from in-service to
 out-of-service, and vice versa.
 
-    [statusBranch!(system::PowerSystem; label, status)](@id statusBranch!)
+    statusBranch!(system::PowerSystem; label, status)
 
 The keywords `label` should correspond to the already defined branch label.
 
@@ -305,8 +305,8 @@ end
 The function `parameterBranch!` allows changing `resistance`, `reactance`, `susceptance`,
 `turnsRatio` and `shiftAngle` parameters of the branch.
 
-    [parameterBranch!(system::PowerSystem; label, resistance, reactance, susceptance,
-        turnsRatio, shiftAngle)](@id parameterBranch!)
+    parameterBranch!(system::PowerSystem; label, resistance, reactance, susceptance,
+        turnsRatio, shiftAngle)
 
 The keywords `label` should correspond to the already defined branch label. Keywords `resistance`,
 `reactance`, `susceptance`, `turnsRatio` or `shiftAngle` can be omitted, and then the value of the
@@ -381,12 +381,12 @@ end
 The function adds a new generator. Names, descriptions and units of keywords are given in the
 table [generator group](@ref generatorGroup). A generator can be added to an already-defined bus.
 
-    [addGenerator!(system::PowerSystem; label, bus, area, status, active, reactive, magnitude,
+    addGenerator!(system::PowerSystem; label, bus, area, status, active, reactive, magnitude,
         minActive, maxActive, minReactive, maxReactive, lowerActive, minReactiveLower,
         maxReactiveLower, upperActive, minReactiveUpper, maxReactiveUpper, loadFollowing,
         reserve10minute, reserve30minute, reactiveTimescale, activeModel, activeStartup,
         activeShutdown, activeDataPoint, activeCoefficient, reactiveModel, reactiveStartup,
-        reactiveShutdown, reactiveDataPoint, reactiveCoefficient)](@id addGenerator!)
+        reactiveShutdown, reactiveDataPoint, reactiveCoefficient)
 
 The keywords `label` and `bus` are mandatory. Default keyword values are set to zero, except for keywords
 `status = 1`, `magnitude = 1.0`, `maxActive = Inf`, `minReactive = -Inf`, `maxReactive = Inf`, `activeModel = 2`,
@@ -529,7 +529,7 @@ end
 The function allows changing the operating `status` of the generator, from in-service
 to out-of-service, and vice versa.
 
-    [statusGenerator!(system::PowerSystem; label, status)](@id statusGenerator!)
+    statusGenerator!(system::PowerSystem; label, status)
 
 The keywords `label` should correspond to the already defined generator label.
 
@@ -579,7 +579,7 @@ end
 """
 The function allows changing `active` and `reactive` output power of the generator.
 
-    [outputGenerator!(system::PowerSystem; label, active, reactive)](@id outputGenerator!)
+    outputGenerator!(system::PowerSystem; label, active, reactive)
 
 The keywords `label` should correspond to the already defined generator label. Keywords `active`
 or `reactive` can be omitted, then the value of the omitted parameter remains unchanged.

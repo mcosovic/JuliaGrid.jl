@@ -20,8 +20,8 @@ At any moment after the composite type `PowerSystem` is formed, it is possible t
 * `savePowerSystem()`
 
 To create vectors and matrices obtained based on the power system topology and parameters, following functions are used:
-* `acModel!()`
-* `dcModel!()`.
+* [`acModel!()`](@ref acModel!)
+* [`dcModel!()`](@ref dcModel!).
 Note that, functions can be executed at any time, and when all power system buses are defined. More precisely, once the field `acModel` and `dcModel` are formed, using function `addBranch!()`, will automatically trigger the update of these fields. In contrast, adding a new bus, using `addBus!()`, requires executing the functions `acModel!()` and `dcModel!()` again. Further, the execution of the functions related to parameter manipulation of buses and branches will automatically trigger the update of the fields `acModel` and `dcModel`.
 
 ---
