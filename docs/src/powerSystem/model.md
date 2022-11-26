@@ -8,7 +8,7 @@ The JuliaGrid supports the composite type `PowerSystem` to preserve power system
 * `dcModel`
 * `basePower`.
 
-The method [`powerSystem()`](@ref powerSystem) returns the composite type `PowerSystem` with all fields. The fields `bus`, `branch`, `generator` hold the data related to buses, branches and generators, respectively. Subtypes `acModel` and `dcModel` store vectors and matrices obtained based on the power system topology and parameters. The base power of the system is kept in the field `basePower`, given in volt-ampere unit. JuliaGrid supports three modes to build the composite type `PowerSystem`:
+The method [`powerSystem()`](@ref powerSystem) returns the composite type `PowerSystem` with all fields. The fields `bus`, `branch`, `generator` hold the data related to buses, branches and generators, respectively. Fields `acModel` and `dcModel` store vectors and matrices obtained based on the power system topology and parameters. The base power of the system is kept in the field `basePower`, given in volt-ampere unit. JuliaGrid supports three modes to build the composite type `PowerSystem`:
 * using built-in functions,
 * using HDF5 file format,
 * using [Matpower](https://matpower.org) case files.
