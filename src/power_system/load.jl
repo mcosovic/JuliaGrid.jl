@@ -171,7 +171,7 @@ end
 """
 The path to the HDF5 file with the `.h5` extension should be passed to the method:
 
-    [powerSystem("pathToExternalData/name.h5")](@id powerSystem!)
+    [powerSystem("pathToExternalData/name.h5")](@id powerSystem)
 
 Similarly, the path to the Matpower file with the `.m` extension should be passed
 to the same method:

@@ -244,7 +244,7 @@ end
 The function allows changing the operating `status` of the branch, from in-service to
 out-of-service, and vice versa.
 
-    statusBranch!(system::PowerSystem; label, status)
+    [statusBranch!(system::PowerSystem; label, status)](@id statusBranch!)
 
 The keywords `label` should correspond to the already defined branch label.
 

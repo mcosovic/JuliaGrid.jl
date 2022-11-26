@@ -10,7 +10,7 @@ Once the model is created, it is possible to add buses, branches and generators 
 
 In addition, it is possible to manipulate the parameters of buses, branches and generators using functions:
 * [`shuntBus!()`](@ref shuntBus!)
-* `statusBranch!()`
+* [`statusBranch!()`](@ref statusBranch!)
 * `parameterBranch!()`
 * `statusGenerator!()`
 * `outputGenerator!()`.
