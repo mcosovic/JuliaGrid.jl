@@ -1,4 +1,4 @@
-using Documenter, JuliaGrid, HDF5
+using Documenter, JuliaGrid
 
 makedocs(
     sitename = "JuliaGrid",

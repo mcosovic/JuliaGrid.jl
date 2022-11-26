@@ -18,14 +18,14 @@ function savePowerSystem(system::PowerSystem; path::String, reference::String = 
 end
 
 ######### Save Base Power ##########
-function saveBasePower(system::PowerSystem, file::HDF5.HDF5File)
+function saveBasePower(system::PowerSystem, file)
     write(file, "basePower", system.basePower)
     attrs(file["basePower"])["unit"] = "volt-ampere"
     attrs(file["basePower"])["format"] = "number"
 end
 
 ######### Save Bus Data ##########
-function saveBus(system::PowerSystem, file::HDF5.HDF5File)
+function saveBus(system::PowerSystem, file)
     demand = system.bus.demand
     shunt = system.bus.shunt
     voltage = system.bus.voltage
@@ -119,7 +119,7 @@ function saveBus(system::PowerSystem, file::HDF5.HDF5File)
 end
 
 ######### Save Branch Data ##########
-function saveBranch(system::PowerSystem, labelBus::Array{Int64,1}, file::HDF5.HDF5File)
+function saveBranch(system::PowerSystem, labelBus::Array{Int64,1}, file)
     parameter = system.branch.parameter
     rating = system.branch.rating
     voltage = system.branch.voltage
@@ -223,7 +223,7 @@ function saveBranch(system::PowerSystem, labelBus::Array{Int64,1}, file::HDF5.HD
 end
 
 ######### Save PGenerator Data ##########
-function saveGenerator(system::PowerSystem, labelBus::Array{Int64,1}, file::HDF5.HDF5File)
+function saveGenerator(system::PowerSystem, labelBus::Array{Int64,1}, file)
     output = system.generator.output
     capability = system.generator.capability
     rampRate = system.generator.rampRate
@@ -429,7 +429,7 @@ function saveGenerator(system::PowerSystem, labelBus::Array{Int64,1}, file::HDF5
 end
 
 ######### Save Main Attributes ##########
-function saveMainAttribute(system::PowerSystem, file::HDF5.HDF5File, reference::String, note::String, transformerNumber::Int64, shuntNumber::Int64)
+function saveMainAttribute(system::PowerSystem, file, reference::String, note::String, transformerNumber::Int64, shuntNumber::Int64)
     attrs(file)["number of buses"] = system.bus.number
     attrs(file)["number of shunt elements"] = shuntNumber
     attrs(file)["number of branches"] = system.branch.number
@@ -446,7 +446,7 @@ function saveMainAttribute(system::PowerSystem, file::HDF5.HDF5File, reference::
 end
 
 ######### Array Compression ##########
-function compresseArray(file::HDF5.HDF5File, data, name::String)
+function compresseArray(file, data, name::String)
     format = "compressed"
     anchor = data[1]
     @inbounds for i in eachindex(data)
@@ -466,7 +466,7 @@ function compresseArray(file::HDF5.HDF5File, data, name::String)
 end
 
 ######### Matrix Compression ##########
-function compresseMatrix(file::HDF5.HDF5File, data::Array{Float64,2}, name::String)
+function compresseMatrix(file, data::Array{Float64,2}, name::String)
     format = "compressed"
     anchor = data[1, :]
     Ncol, Nrow = size(data)
