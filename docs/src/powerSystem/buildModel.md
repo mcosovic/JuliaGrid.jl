@@ -13,10 +13,10 @@ In addition, it is possible to manipulate the parameters of buses, branches and 
 * [`statusBranch!()`](@ref statusBranch!)
 * [`parameterBranch!()`](@ref parameterBranch!)
 * [`statusGenerator!()`](@ref statusGenerator!)
-* [`outputGenerator!()`.](@ref outputGenerator!)
+* [`outputGenerator!()`](@ref outputGenerator!).
 The execution of these functions will automatically trigger the update of all fields affected by these functions. Changing other parameters of the power system can be done by changing variables by accessing their values in fields `bus`, `branch` and `generator` of the composite type `powerSystem`.
 
-At any moment after the composite type `PowerSystem` is formed, it is possible to save the data describing the power system in HDF5 format:
+At any moment after the composite type `PowerSystem` is formed, it is possible to save the data in HDF5 format that describe the power system:
 * [`savePowerSystem()`](@ref savePowerSystem)
 
 To create vectors and matrices obtained based on the power system topology and parameters, following functions are used:

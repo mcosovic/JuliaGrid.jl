@@ -8,28 +8,27 @@ JuliaGrid stores results in the composite type `Result` with fields:
 * `generator`
 * `algorithm`.
 
-Once the composite type `PowerSystem` is created, it is possible to create the composite type `Result`. The composite type `Result` in the DC power flow analysis is created when determining the bus voltages using the function `dcPowerFlow()`. In contrast, the AC power flow analysis first requires the initialization of the iterative method, during which the composite type `Result` is created:
-* `newtonRaphson()`
-* `fastNewtonRaphsonBX()`
-* `fastNewtonRaphsonXB()`
-* `gaussSeidel()`.
+Once the composite type `PowerSystem` is created, it is possible to create the composite type `Result`. The composite type `Result` in the DC power flow analysis is created when determining the bus voltage angle using the function [`dcPowerFlow()`](@ref dcPowerFlow). In contrast, the AC power flow analysis first requires the initialization of the iterative method, during which the composite type `Result` is created:
+* [`newtonRaphson()`](@ref newtonRaphson)
+* [`fastNewtonRaphsonBX()`](@ref fastNewtonRaphsonBX)
+* [`fastNewtonRaphsonXB()`](@ref fastNewtonRaphsonXB)
+* [`gaussSeidel()`](@ref gaussSeidel).
 
 The calculation of the bus voltages, depending on the type of analysis and the selected method, can be performed using one of the functions:
-* `newtonRaphson!()`
-* `fastNewtonRaphson!()`
-* `gaussSeidel!()`
-* `dcPowerFlow()`.
-Note that the methods for solving the AC power flow problem should be called inside a loop, thus simulating an iterative process.
+* [`newtonRaphson!()`](@ref newtonRaphson!)
+* [`fastNewtonRaphson!()`](@ref fastNewtonRaphson!)
+* [`gaussSeidel!()`](@ref gaussSeidel!)
+* [`dcPowerFlow()`](@ref dcPowerFlow).
+Note that methods for solving the AC power flow problem should be called inside a loop, thus simulating an iterative process.
 
-Then, it is possible to calculate [powers related to buses](@ref operatingStateBus), [powers and currents related to branches](@ref operatingStateBranch), and [powers related to generators](@ref operatingStateGenerator):
-* `bus!()`
-* `branch!()`
-* `generator!()`.
+Then, it is possible to calculate powers related to buses, powers and currents related to branches, and powers related to generators:
+* [`bus!()`](@ref bus!)
+* [`branch!()`](@ref branch!)
+* [`generator!()`](@ref generator!).
 
 ---
 
 ## Newton-Raphson Method
-Functions receive the composite type `PowerSystem`.
 ```@docs
 newtonRaphson
 newtonRaphson!
@@ -38,7 +37,6 @@ newtonRaphson!
 ---
 
 ## Fast Newton-Raphson Method
-Functions receive the composite type `PowerSystem`.
 ```@docs
 fastNewtonRaphsonBX
 fastNewtonRaphsonXB
@@ -48,7 +46,6 @@ fastNewtonRaphson!
 ---
 
 ## Gauss-Seidel Method
-Functions receive the composite type `PowerSystem`.
 ```@docs
 gaussSeidel
 gaussSeidel!
@@ -57,7 +54,6 @@ gaussSeidel!
 ---
 
 ## DC Power Flow Solution
-The function receives the composite type `PowerSystem`, and returns the composite type `Result`.
 ```@docs
 dcPowerFlow
 ```

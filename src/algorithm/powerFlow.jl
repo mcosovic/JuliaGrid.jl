@@ -127,7 +127,8 @@ mutable struct Result
 end
 
 """
-The function initializes the Gauss-Seidel method, and returns the composite type `Result`.
+The function receives the composite type `PowerSystem`, initializes
+the Gauss-Seidel method, and returns the composite type `Result`.
 
     gaussSeidel(system::PowerSystem)
 
@@ -165,8 +166,8 @@ function gaussSeidel(system::PowerSystem)
 end
 
 """
-The function solves the AC power flow problem using the Gauss-Seidel method
-by determining bus voltage magnitudes and angles.
+The function receives the composite type `PowerSystem` and `Result`. Using
+the Gauss-Seidel method, the function computes bus voltage magnitudes and angles.
 
     gaussSeidel!(system::PowerSystem, result::Result)
 
@@ -251,7 +252,8 @@ function gaussSeidel!(system::PowerSystem, result::Result)
 end
 
 """
-The function initializes the Newthon-Raphson method, and returns the composite type `Result`.
+The function receives the composite type `PowerSystem`, initializes the
+Newthon-Raphson method, and returns the composite type `Result`.
 
     newtonRaphson(system::PowerSystem)
 
@@ -354,8 +356,8 @@ function newtonRaphson(system::PowerSystem)
 end
 
 """
-The function solves the AC power flow problem using the Newthon-Raphson method
-by determining bus voltage magnitudes and angles.
+The function receives the composite type `PowerSystem` and `Result`. Using the
+Newthon-Raphson method, the function computes bus voltage magnitudes and angles.
 
     newtonRaphson!(system::PowerSystem, result::Result)
 
@@ -478,8 +480,8 @@ function newtonRaphson!(system::PowerSystem, result::Result)
 end
 
 """
-The function initializes the fast Newthon-Raphson BX method and returns
-the composite type `Result`.
+The function receives the composite type `PowerSystem`, initializes the fast
+Newthon-Raphson method of version BX, and returns the composite type `Result`.
 
     fastNewtonRaphsonBX(system::PowerSystem)
 
@@ -493,8 +495,8 @@ function fastNewtonRaphsonBX(system::PowerSystem)
 end
 
 """
-The function initializes the fast Newthon-Raphson XB method and returns
-the composite type `Result`.
+The function receives the composite type `PowerSystem`, initializes the fast
+Newthon-Raphson method of version XB, and returns the composite type `Result`.
 
     fastNewtonRaphsonXB(system::PowerSystem)
 
@@ -671,8 +673,8 @@ end
 end
 
 """
-The function solves the AC power flow problem using the fast Newthon-Raphson
-BX or XB method by determining bus voltage magnitudes and angles.
+The function receives the composite type `PowerSystem` and `Result`. Using the fast
+Newthon-Raphson method, the function computes bus voltage magnitudes and angles.
 
     fastNewtonRaphson!(system::PowerSystem, result::Result)
 
@@ -763,8 +765,8 @@ function fastNewtonRaphson!(system::PowerSystem, result::Result)
 end
 
 """
-The function solves the DC power flow problem by determining bus voltage
-angles, and returns the composite type `Result`.
+The function receives the composite type `PowerSystem`, solves the DC power flow
+problem by determining bus voltage angles, and returns the composite type `Result`.
 
     dcPowerFlow(system::PowerSystem)
 
