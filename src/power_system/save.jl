@@ -1,11 +1,17 @@
 """
-The function saves power system data using fields `bus`, `branch`, `generator`
-and `basePower` of the composite type `PowerSystem` in the HDF5 file.
+The function saves power system data in the HDF5 file using fields `bus`,
+`branch`, `generator` and `basePower` of the composite type `PowerSystem`.
 
     savePowerSystem(system::PowerSystem; path, reference, note)
 
 The keyword `path::String` is mandatory in the form `"path/name.h5"`, while
 keywords `reference::String` and `note::String` are optional.
+
+# Example
+```jldoctest
+system = powerSystem("case14.m")
+savePowerSystem(system; path = "C:/case14.h5")
+```
 """
 function savePowerSystem(system::PowerSystem; path::String, reference::String = "", note::String = "")
     file = h5open(path, "w")
