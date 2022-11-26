@@ -4,16 +4,16 @@ The composite type `PowerSystem` with fields `bus`, `branch`, `generator`, `acMo
 * `powerSystem()`.
 
 Once the model is created, it is possible to add buses, branches and generators using the functions:
-* `addBus!()`
-* `addBranch!()`
-* `addGenerator!()`.
+* [`addBus!()`](@ref addBus!)
+* [`addBranch!()`](@ref addBranch!)
+* [`addGenerator!()`](@ref addGenerator!).
 
 In addition, it is possible to manipulate the parameters of buses, branches and generators using functions:
 * [`shuntBus!()`](@ref shuntBus!)
 * [`statusBranch!()`](@ref statusBranch!)
-* `parameterBranch!()`
-* `statusGenerator!()`
-* `outputGenerator!()`.
+* [`parameterBranch!()`](@ref parameterBranch!)
+* [`statusGenerator!()`](@ref statusGenerator!)
+* [`outputGenerator!()`.](@ref outputGenerator!)
 The execution of these functions will automatically trigger the update of all fields affected by these functions. Changing other parameters of the power system can be done by changing variables by accessing their values in fields `bus`, `branch` and `generator` of the composite type `powerSystem`.
 
 At any moment after the composite type `PowerSystem` is formed, it is possible to save the data describing the power system in HDF5 format:
