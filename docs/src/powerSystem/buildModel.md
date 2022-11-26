@@ -1,4 +1,4 @@
-# [Build Power System Model](@id inputdata)
+# [Build Power System Model](@id buildPowerSystemModel)
 
 The composite type `PowerSystem` with fields `bus`, `branch`, `generator`, `acModel`, `dcModel`, and `basePower` can be created using a method:
 * `powerSystem()`.
@@ -8,18 +8,21 @@ Once the model is created, it is possible to add buses, branches and generators 
 * `addBranch!()`
 * `addGenerator!()`.
 
-The final step is the formation and saving of vectors and matrices obtained based on the power system topology and parameters using functions:
-* `acModel!()`
-* `dcModel!()`.
-Note that, once the field `acModel` and `dcModel` are formed, using function `addBranch!()`, will automatically trigger the update of these fields. In contrast, adding a new bus, using `addBus!()`, requires executing the functions `acModel!()` and `dcModel!()` again.
-
-Then, it is possible to manipulate the parameters of buses, branches and generators using functions:
+In addition, it is possible to manipulate the parameters of buses, branches and generators using functions:
 * `shuntBus!()`
 * `statusBranch!()`
 * `parameterBranch!()`
 * `statusGenerator!()`
 * `outputGenerator!()`.
-The execution of these functions will automatically trigger the update of all fields affected by these functions.
+The execution of these functions will automatically trigger the update of all fields affected by these functions. Changing other parameters of the power system can be done by changing variables by accessing their values in fields `bus`, `branch` and `generator` of the composite type `powerSystem`.
+
+At any moment after the composite type `PowerSystem` is formed, it is possible to save the data describing the power system in HDF5 format:
+* `savePowerSystem()`
+
+To create vectors and matrices obtained based on the power system topology and parameters, following functions are used:
+* `acModel!()`
+* `dcModel!()`.
+Note that, functions can be executed at any time, and when all power system buses are defined. More precisely, once the field `acModel` and `dcModel` are formed, using function `addBranch!()`, will automatically trigger the update of these fields. In contrast, adding a new bus, using `addBus!()`, requires executing the functions `acModel!()` and `dcModel!()` again. Further, the execution of the functions related to parameter manipulation of buses and branches will automatically trigger the update of the fields `acModel` and `dcModel`.
 
 ---
 
@@ -60,15 +63,16 @@ outputGenerator!
 
 ---
 
+## [Save Model](@id saveModel)
+```@docs
+savePowerSystem
+```
+
+---
+
 ## Build AC or DC Model
 The functions receive the composite type `PowerSystem` and form vectors and matrices related to AC or DC simulations.
 ```@docs
 acModel!
 dcModel!
 ```
-
----
-
-## Modifying Other Parameters
-Changing other parameters of the power system can be done by changing variables by accessing their values in fields `bus`, `branch` and `generator` of the composite type `powerSystem`.
-
