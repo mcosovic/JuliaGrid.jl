@@ -4,7 +4,7 @@ The composite type `PowerSystem` with fields `bus`, `branch`, `generator`, `acMo
 * `powerSystem()`.
 
 Once the model is created, it is possible to add buses, branches and generators using the functions:
-* `addBus!()`
+* [`addBus!()`](@ref shuntBus!)
 * `addBranch!()`
 * `addGenerator!()`.
 

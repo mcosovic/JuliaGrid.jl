@@ -92,7 +92,7 @@ end
 The function allows changing `conductance` and `susceptance` parameters of the shunt element
 connected to the bus.
 
-    shuntBus!(system::PowerSystem; label, conductance, susceptance)
+    [shuntBus!(system::PowerSystem; label, conductance, susceptance)](@id shuntBus!)
 
 The keyword `label` should correspond to the already defined bus label. Keywords `conductance`
 or `susceptance`can be omitted, then the value of the omitted parameter remains unchanged.
