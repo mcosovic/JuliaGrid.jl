@@ -14,8 +14,7 @@ makedocs(
         "Power System" =>
             ["Power System Model" => "powerSystem/model.md",
              "Build Power System Model" => "powerSystem/buildModel.md",
-             "In-depth AC Model" => "powerSystem/inDepthACModel.md",
-             "In-depth DC Model" => "powerSystem/inDepthDCModel.md"],
+             "In-depth AC and DC Model" => "powerSystem/inDepthACDCModel.md"],
         "Power Flow" =>
             ["Power Flow Solution" => "powerFlow/solution.md"],
         # "Operating State" =>

@@ -4,9 +4,14 @@ Network equations obtained using the unified branch model and defined below repr
 ---
 
 ## [In-depth AC Model](@id inDepthACModel)
-JuliaGrid is based on common network elements and benefits the unified branch model to perform various analyses based on the system of non-linear equations.
+JuliaGrid is based on common network elements and benefits the unified branch model to perform various analyses based on the system of non-linear equations. To create vectors and matrices related with AC analyses, JuliaGrid uses the function [`acModel!()`](@ref acModel!)::
+```julia-repl
+system = powerSystem("case14.h5")
+acModel!(system)
+```
 
-### [AC Branch Model](@id ACBranchModel)
+
+#### [AC Branch Model](@id ACBranchModel)
 The equivalent unified ``\pi``-model for a branch ``(i,j) \in \mathcal{E}`` incident to the buses ``\{i,j\} \in \mathcal{N}`` is shown in Figure 2.
 ```@raw html
 <img src="../../assets/pi_model.png" class="center"/>
@@ -75,7 +80,7 @@ Note, if ``\tau_{ij} = 1`` and ``\phi_{ij} = 0`` the model describes the line. I
 
 ---
 
-### [AC Equations and Nodal Matrix](@id ACNodalMatrix)
+#### [AC Equations and Nodal Matrix](@id ACNodalMatrix)
 Let us consider an example, given in Figure 3, that will allow us an easy transition to the general case. We observe system with three buses ``\mathcal{N} = \{p, k, q\}`` and two branches ``\mathcal{E} = \{(p, k), (k, q)\}``, where the bus ``k`` is incident to the shunt element with admittance ``{y}_{\text{sh}k}``.
 ```@raw html
 <img src="../../assets/pi_model_example.png" class="center"/>
@@ -164,11 +169,15 @@ julia> system.acModel.nodalMatrixTranspose
 ---
 
 ## [In-depth DC Model](@id inDepthDCModel)
-The DC model is obtained by linearisation of the non-linear model, and it provides an approximate solution. In the typical operating conditions, the difference of bus voltage angles between adjacent buses ``(i,j) \in \mathcal{E}`` is very small ``\theta_{i}-\theta_{j} \approx 0``, which implies ``\cos \theta_{ij}\approx 1`` and ``\sin \theta_{ij} \approx \theta_{ij}``. Further, all bus voltage magnitudes are ``V_i \approx 1``, ``i \in \mathcal{N}``, and all shunt susceptance elements and branch resistances can be neglected. This implies that the DC model ignores the reactive powers and transmission losses and takes into account only the active powers. Therefore, the DC power flow takes only bus voltage angles ``\bm \theta`` as state variables.
+The DC model is obtained by linearisation of the non-linear model, and it provides an approximate solution. In the typical operating conditions, the difference of bus voltage angles between adjacent buses ``(i,j) \in \mathcal{E}`` is very small ``\theta_{i}-\theta_{j} \approx 0``, which implies ``\cos \theta_{ij}\approx 1`` and ``\sin \theta_{ij} \approx \theta_{ij}``. Further, all bus voltage magnitudes are ``V_i \approx 1``, ``i \in \mathcal{N}``, and all shunt susceptance elements and branch resistances can be neglected. This implies that the DC model ignores the reactive powers and transmission losses and takes into account only the active powers. Therefore, the DC power flow takes only bus voltage angles ``\bm \theta`` as state variables. To create vectors and matrices related with DC analyses, JuliaGrid uses the function [`dcModel!()`](@ref dcModel!):
+```julia-repl
+system = powerSystem("case14.h5")
+dcModel!(system)
+```
 
 ---
 
-### [DC Branch Model](@id DCBranchModel)
+#### [DC Branch Model](@id DCBranchModel)
 According to the above assumptions, we start from the [unified branch model](@ref branchModelAC):
 ```math
     \begin{bmatrix}
@@ -232,7 +241,7 @@ We can conclude that ``P_{ij}=-P_{ji}`` holds. With the DC model, the linear net
 
 ---
 
-### [DC Equations and Nodal Matrix](@id DCNodalMatrix)
+#### [DC Equations and Nodal Matrix](@id DCNodalMatrix)
 As before, let us consider an example of the DC framework, given in Figure 2, that will allow us an easy transition to the general case. We observe system with three buses ``\mathcal{N} = \{p, k, q\}`` and two branches ``\mathcal{E} = \{(p, k), (k, q)\}``, where the bus ``k`` is incident to the shunt element with conductance ``{g}_{\text{sh}k}``.
 ```@raw html
 <img src="../../assets/dc_model.png" class="center"/>
