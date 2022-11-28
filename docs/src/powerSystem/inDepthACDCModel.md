@@ -10,6 +10,7 @@ system = powerSystem("case14.h5")
 acModel!(system)
 ```
 
+---
 
 #### [AC Branch Model](@id ACBranchModel)
 The equivalent unified ``\pi``-model for a branch ``(i,j) \in \mathcal{E}`` incident to the buses ``\{i,j\} \in \mathcal{N}`` is shown in Figure 2.
