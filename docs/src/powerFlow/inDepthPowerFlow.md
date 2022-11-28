@@ -6,19 +6,19 @@ To recall, we observe the bus/branch model as a graph ``\mathcal{G} = (\mathcal{
 ```math
     \mathbf{\bar {I}} = \mathbf{Y} \mathbf{\bar {V}},
 ```
-where the complex injection current into the bus ``i in \mathcal{N}`` is defined as:
+where the complex injection current into the bus ``i \in \mathcal{N}`` is defined as:
 ```math
-  	\bar{I}_{i} = \cfrac{S_{i}^*}{\bar{V}_{i}},
+  	\bar{I}_{i} = \cfrac{S_{i}^*}{\bar{V}_{i}^*},
 ```
-where ``\bar{V}_{i} = V_i \text{e}^{\text{j}\theta_{i}}``. Thus, for the bus ``i in \mathcal{N}`` we have:
+where ``\bar{V}_{i} = V_i \text{e}^{\text{j}\theta_{i}}``. Thus, for the bus ``i \in \mathcal{N}`` we have:
 ```math
-  	\cfrac{S_{i}^*}{\bar{V}_{i}} = \sum_{j = 1}^n Y_{ij} \bar {V}_j.
+  	\cfrac{S_{i}^*}{\bar{V}_{i}^*} = \sum_{j = 1}^n Y_{ij} \bar {V}_j.
 ```
 The apparent power injection ``S_i`` consists of the active power ``P_i`` and reactive power ``Q_i``, therefore we have:
 ```math
   	\cfrac{P_i - \text{j}Q_i}{\bar{V}_{i}} = \sum_{j = 1}^n Y_{ij} \bar {V}_j.
 ```
-According to the last equation, for the bus ``i in \mathcal{N}`` there are four unknown variables: active power injection ``{P}_{i}``, reactive power injection ``{Q}_{i}``, voltage magnitude ``{V}_{i}`` and voltage angle ``{\theta}_{i}``. To solve the system of equations, two variables for each equation need to be specified. Mathematically, any two variables may be selected, but the choice is dictated by the devices connected to a particular bus. Standard options are summarized in Table below and these options define bus types [[1]](@ref refs).
+According to the last equation, for the bus ``i \in \mathcal{N}`` there are four unknown variables: active power injection ``{P}_{i}``, reactive power injection ``{Q}_{i}``, voltage magnitude ``{V}_{i}`` and voltage angle ``{\theta}_{i}``. To solve the system of equations, two variables for each equation need to be specified. Mathematically, any two variables may be selected, but the choice is dictated by the devices connected to a particular bus. Standard options are summarized in Table below and these options define bus types [[1]](@ref refs).
 
 | Bus Type         | Label            | JuliaGrid | Known                       | Unknown                     |
 |:-----------------|-----------------:|----------:|----------------------------:|----------------------------:|
@@ -35,4 +35,4 @@ Finally, we note according to Tellegen's theorem, the bus active ``{P}_{i}`` and
     Q_{i} &= Q_{\text{g}i} - Q_{\text{d}i}
   \end{aligned}
 ```
-where ``{P}_{\text{g}i}`` and ``{Q}_{\text{g}i}`` denote the active and reactive powers of the generators that supply the bus ``i in \mathcal{N}``, while ``{P}_{\text{d}i}`` and ``{Q}_{\text{d}i}`` indicate active and reactive powers demanded by consumers at the bus ``i in \mathcal{N}``.
+where ``{P}_{\text{g}i}`` and ``{Q}_{\text{g}i}`` denote the active and reactive powers of the generators that supply the bus ``i \in \mathcal{N}``, while ``{P}_{\text{d}i}`` and ``{Q}_{\text{d}i}`` indicate active and reactive powers demanded by consumers at the bus ``i in \mathcal{N}``.
