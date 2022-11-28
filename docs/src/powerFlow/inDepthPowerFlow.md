@@ -49,19 +49,19 @@ julia> system.bus.supply.reactive - system.bus.demand.reactive
 
 ---
 
-## [In-depth Newton-Raphson Method](@id inDepthNewtonRaphson)
+## [Newton-Raphson Method](@id inDepthNewtonRaphson)
 The Newton-Raphson method is generally preferred in power flow calculations because this method has quadratic rate of convergence. The method can have difficulties with initial conditions ("flat start"). First of all, the Newton-Raphson method provides a good approximation for the roots of the system of non-linear equations:
 ```math
   \mathbf{f}(\mathbf{x}) = \mathbf{0}.
 ```
-The Newton-Raphson method or Newton's method is essentially based on the Taylor series expansion, neglecting the quadratic and high order terms. The Newton-Raphson is an iterative method, where we iteratively compute the increments ``\mathbf \Delta \mathbf {x}`` using Jacobian matrix ``J(\mathbf x)``, and update solutions:
+The Newton-Raphson method or Newton's method is essentially based on the Taylor series expansion, neglecting the quadratic and high order terms. The Newton-Raphson is an iterative method, where we iteratively compute the increments ``\mathbf \Delta \mathbf {x}`` using Jacobian matrix ``\mathbf{J}(\mathbf x)``, and update solutions:
 ```math
   \begin{aligned}
     \mathbf \Delta \mathbf {x}^{(\nu)} &= -\mathbf J(\mathbf x^{(\nu)})^{-1} \mathbf f(\mathbf x^{(\nu)}) \\
     \mathbf {x}^{(\nu + 1)} &= \mathbf {x}^{(\nu)} + \mathbf \Delta \mathbf {x}^{(\nu)},
   \end{aligned}
 ```
-where ``\nu = \{1,2,\dots, \}`` represents the iteration index. Let us observe the vector given in the polar coordinate system:
+where ``\nu = \{1,2,\dots \}`` represents the iteration index. Let us observe the vector given in the polar coordinate system:
 ```math
   \mathbf x_{\text{sv}} = [\theta_1,\dots,\theta_n,V_1,\dots,V_n]^T.
 ```
@@ -79,3 +79,49 @@ More precisely, the number of unknowns is ``n_{\text{u}} = 2n - n_{\text{pv}} - 
     \mathbf \Delta \bm \theta \\ \mathbf \Delta \mathbf V
   \end{bmatrix}.
 ```
+
+Without loss of generality, we assume that the slack bus is the first bus, followed by the set of PQ buses and the set of PV buses:
+```math
+  \begin{aligned}
+    \mathcal{N}_{\text{sb}} &= \{ 1 \} \\
+    \mathcal{N}_{\text{pq}} &= \{2, \dots, m\} \\
+    \mathcal{N}_{\text{pv}} &= \{m + 1,\dots, n\},
+  \end{aligned}
+```
+where ``\mathcal{N} = \mathcal{N}_{\text{sb}} \cup \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}}``. Hence, we have
+```math
+  \begin{aligned}
+    \bm \theta &= [\theta_2,\dots,\theta_n]^T; \;\;\;\;\;\; \mathbf \Delta \bm \theta = [\Delta \theta_2,\dots,\Delta \theta_n]^T \\
+    \mathbf V &= [V_2,\dots,V_{m}]^T; \;\;\; \mathbf \Delta \mathbf V = [\Delta V_2,\dots,\Delta V_{m}]^T.
+  \end{aligned}
+```
+
+The apparent power injection ``S_i`` into the bus ``i \in \mathcal{N}`` is a function of the complex bus voltages. Hence, the real and imaginary components of the apparent power define the active and reactive power injection expressions:
+```math
+  \begin{aligned}
+    {P}_{i} &={V}_{i}\sum\limits_{j=1}^n {V}_{j} (G_{ij}\cos\theta_{ij}+B_{ij}\sin\theta_{ij})\\
+    {Q}_{i} &={V}_{i}\sum\limits_{j=1}^n {V}_{j} (G_{ij}\sin\theta_{ij}-B_{ij}\cos\theta_{ij}).
+	\end{aligned}
+```
+Based on the above equations, it is possible to define the active power injection functions for PV and PQ buses:
+```math
+    f_{P_i}(\mathbf x) = {V}_{i}\sum\limits_{j=1}^n {V}_{j}(G_{ij}\cos\theta_{ij}+B_{ij}\sin\theta_{ij}) - {P}_{i} = 0,
+    \;\;\; i \in \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}},
+```
+and reactive power injection functions for PQ buses:
+```math
+    f_{Q_i}(\mathbf x) = {V}_{i}\sum\limits_{j=1}^n {V}_{j}(G_{ij}\sin\theta_{ij}-B_{ij}\cos\theta_{ij}) - {Q}_{i} = 0,
+    \;\;\; i \in \mathcal{N}_{\text{pq}}.
+```
+
+Functions ``f_{P_i}(\mathbf x)`` and ``f_{Q_i}(\mathbf x)`` are called active and reactive mismatch, respectively, and are often marked as ``\Delta P_i(\mathbf x)`` and ``\Delta Q_i(\mathbf x)``. The first terms on the right-hand side represents power injections into the bus ``i``, while the second term is constant and represents active and reactive powers from generators and loads connected to the bus ``i``. Thus, the power flow problem is described by the system of equations:
+```math
+  \mathbf{f(x)} =
+  \begin{bmatrix}
+      f_{P_2}(\mathbf x) \\ \vdots \\ f_{P_{n}}(\mathbf x) \\ f_{Q_2}(\mathbf x) \\ \vdots \\ f_{Q_{m}}(\mathbf x)
+  \end{bmatrix} =
+  \begin{bmatrix}
+    \mathbf{f}_{P}(\mathbf x) \\ \mathbf{f}_{Q}(\mathbf x)
+  \end{bmatrix} = \mathbf 0,
+```
+where the first ``n - 1`` equations are defined for PV and PQ buses, while the last ``m-1`` equations are defined only for PQ buses.

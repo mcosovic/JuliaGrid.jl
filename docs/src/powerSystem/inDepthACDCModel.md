@@ -3,7 +3,7 @@ Network equations obtained using the unified branch model and defined below repr
 
 ---
 
-## [In-depth AC Model](@id inDepthACModel)
+## [AC Model](@id inDepthACModel)
 JuliaGrid is based on common network elements and benefits the unified branch model to perform various analyses based on the system of non-linear equations. To create vectors and matrices related with AC or non-linear analyses, JuliaGrid uses the function [`acModel!()`](@ref acModel!), for example:
 ```julia-repl
 system = powerSystem("case14.h5")
@@ -169,7 +169,7 @@ julia> system.acModel.nodalMatrixTranspose
 
 ---
 
-## [In-depth DC Model](@id inDepthDCModel)
+## [DC Model](@id inDepthDCModel)
 The DC model is obtained by linearisation of the non-linear model, and it provides an approximate solution. In the typical operating conditions, the difference of bus voltage angles between adjacent buses ``(i,j) \in \mathcal{E}`` is very small ``\theta_{i}-\theta_{j} \approx 0``, which implies ``\cos \theta_{ij}\approx 1`` and ``\sin \theta_{ij} \approx \theta_{ij}``. Further, all bus voltage magnitudes are ``V_i \approx 1``, ``i \in \mathcal{N}``, and all shunt susceptance elements and branch resistances can be neglected. This implies that the DC model ignores the reactive powers and transmission losses and takes into account only the active powers. Therefore, the DC power flow takes only bus voltage angles ``\bm \theta`` as state variables. To create vectors and matrices related with DC or linear analyses, JuliaGrid uses the function [`dcModel!()`](@ref dcModel!), for example:
 ```julia-repl
 system = powerSystem("case14.h5")
