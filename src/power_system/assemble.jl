@@ -10,8 +10,9 @@ The keyword `label` is mandatory. Default keyword values are set to zero, except
 
 The slack bus, using the keyword `slackLabel`, can be specified in each function call with the
 label of the bus being defined or already existing. If the bus is not defined as slack, the
-function `addBus!()` automatically defines the bus as the demand bus (PQ). If a generator is
-connected to a bus, using the function `addGenerator!()`, the bus becomes a generator bus (PV).
+function [`addBus!()`](@ref addBus!) automatically defines the bus as the demand bus (PQ).
+If a generator is connected to a bus, using the function [`addGenerator!()`](@ref addGenerator!),
+the bus becomes a generator bus (PV).
 
 # Example
 ```jldoctest
@@ -635,7 +636,8 @@ that explains all the data involved in the field `dcModel`.
     dcModel!(system::PowerSystem)
 
 The function updates the field `dcModel`. Once formed, the field will be automatically
-updated when using functions `addBranch!()`, `statusBranch!()`, `parameterBranch!()`.
+updated when using functions [`addBranch!()`](@ref addBranch!), [`statusBranch!()`](@ref statusBranch!),
+[`parameterBranch!()`](@ref parameterBranch!).
 
 # Example
 ```jldoctest
@@ -715,7 +717,8 @@ that explains all the data involved in the field `acModel`.
     acModel!(system::PowerSystem)
 
 The function updates the field `acModel`. Once formed, the field will be automatically
-updated when using functions `addBranch!()`, `shuntBus!()`, `statusBranch!()` `parameterBranch!()`.
+updated when using functions [`addBranch!()`](@ref addBranch!), [`shuntBus!()`](@ref shuntBus!),
+[`statusBranch!()`](@ref statusBranch!), [`parameterBranch!()`](@ref parameterBranch!).
 
 # Example
 ```jldoctest

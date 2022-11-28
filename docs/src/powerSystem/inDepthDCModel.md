@@ -68,7 +68,7 @@ We can conclude that ``P_{ij}=-P_{ji}`` holds. With the DC model, the linear net
 
 ---
 
-## [System of Equations and Nodal Matrix](@id nodalMatrixDC)
+## [Equations and Nodal Matrix](@id nodalMatrixDC)
 As before, let us consider an example of the DC framework, given in Figure 2, that will allow us an easy transition to the general case. We observe system with three buses ``\mathcal{N} = \{p, k, q\}`` and two branches ``\mathcal{E} = \{(p, k), (k, q)\}``, where the bus ``k`` is incident to the shunt element with conductance ``{g}_{\text{sh}k}``.
 ```@raw html
 <img src="../../assets/dc_model.png" class="center"/>

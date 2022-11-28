@@ -169,16 +169,16 @@ mutable struct PowerSystem
 end
 
 """
-The path to the HDF5 file with the `.h5` extension should be passed to the method:
+The path to the HDF5 file with the `.h5` extension should be passed to the function:
 
     powerSystem("pathToExternalData/name.h5")
 
 Similarly, the path to the Matpower file with the `.m` extension should be passed
-to the same method:
+to the same function:
 
     powerSystem("pathToExternalData/name.m")
 
-Ignoring the method argument initializes the composite type `PowerSystem`,
+Ignoring the function argument initializes the composite type `PowerSystem`,
 which enables building the model from scratch:
 
     powerSystem()

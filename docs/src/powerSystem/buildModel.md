@@ -1,6 +1,6 @@
 # [Build Power System Model](@id buildPowerSystemModel)
 
-The composite type `PowerSystem` with fields `bus`, `branch`, `generator`, `acModel`, `dcModel`, and `basePower` can be created using a method:
+The composite type `PowerSystem` with fields `bus`, `branch`, `generator`, `acModel`, `dcModel`, and `basePower` can be created using a function:
 * [`powerSystem()`](@ref powerSystem).
 
 Once the model is created, it is possible to add buses, branches and generators using the functions:
@@ -17,7 +17,7 @@ In addition, it is possible to manipulate the parameters of buses, branches and 
 The execution of these functions will automatically trigger the update of all fields affected by these functions. Changing other parameters of the power system can be done by changing variables by accessing their values in fields `bus`, `branch` and `generator` of the composite type `powerSystem`.
 
 At any moment after the composite type `PowerSystem` is formed, it is possible to save the data in HDF5 format that describe the power system:
-* [`savePowerSystem()`](@ref savePowerSystem)
+* [`savePowerSystem()`](@ref savePowerSystem).
 
 To create vectors and matrices obtained based on the power system topology and parameters, following functions are used:
 * [`acModel!()`](@ref acModel!)
@@ -27,7 +27,7 @@ Note that, functions can be executed at any time, and when all power system buse
 ---
 
 ## Build Model
-The method builds the composite type `PowerSystem` and populates fields `bus`, `branch`, `generator` and `basePower`.
+The function builds the composite type `PowerSystem` and populates fields `bus`, `branch`, `generator` and `basePower`.
 ```@docs
 powerSystem
 ```
@@ -71,7 +71,7 @@ savePowerSystem
 
 ---
 
-## Build AC or DC Model
+## Build AC and DC Model
 The functions receive the composite type `PowerSystem` and form vectors and matrices related to AC or DC simulations.
 ```@docs
 acModel!
