@@ -1,6 +1,9 @@
 # [In-depth Power Flow Solution](@id inDepthPowerFlowSolution)
 
-JuliaGrid is based on common network elements and benefits the [unified branch model](@ref branchModelAC) to perform the power flow analysis, which is used for defining load profiles, generator capabilities, voltage specification, contingency analysis, and planning.
+JuliaGrid is based on common network elements and benefits the [unified branch model](@ref inDepthACModel) to perform the power flow analysis, which is used for defining load profiles, generator capabilities, voltage specification, contingency analysis, and planning. At the beginning, JuliaGrid requires the formation of the composite type `PowerSystem` using the function [`powerSystem()`](@ref powerSystem), for example:
+```julia-repl
+system = powerSystem("case14.h5")
+```
 
 To recall, we observe the bus/branch model as a graph ``\mathcal{G} = (\mathcal{N}, \mathcal{E})``, where the set of nodes ``\mathcal{N} = \{1, \dots, n\}`` represents the set of buses, while the set of edges ``\mathcal{E} \subseteq \mathcal{N} \times \mathcal{N}`` represents the set of branches of the power network. As shown in section [In-depth AC Model](@ref inDepthACModel), the power flow problem is described by the system of non-linear equations:
 ```math
@@ -27,12 +30,21 @@ According to the last equation, for the bus ``i \in \mathcal{N}`` there are four
 | Demand           | PQ               | 1         | ``P_{i}``, ``Q_{i}``        | ``V_{i}``, ``{\theta_{i}}`` |
 
 Consequently, JuliaGrid operates with sets ``\mathcal{N}_{\text{pv}}`` and ``\mathcal{N}_{\text{pq}}`` that contain PV and PQ buses, respectively, and exactly one slack bus ``\mathcal{N}_{\text{sb}}``. Note that JuliaGrid does not support systems with multiple slack buses.
+```julia-repl
+julia> system.bus.layout.type
+```
 
 Finally, we note according to Tellegen's theorem, the bus active ``{P}_{i}`` and reactive ``{Q}_{i}`` power injections are equal to:
 ```math
   \begin{aligned}
   	P_{i} &= P_{\text{g}i} - P_{\text{d}i} \\
-    Q_{i} &= Q_{\text{g}i} - Q_{\text{d}i}
+    Q_{i} &= Q_{\text{g}i} - Q_{\text{d}i},
   \end{aligned}
 ```
-where ``{P}_{\text{g}i}`` and ``{Q}_{\text{g}i}`` denote the active and reactive powers of the generators that supply the bus ``i \in \mathcal{N}``, while ``{P}_{\text{d}i}`` and ``{Q}_{\text{d}i}`` indicate active and reactive powers demanded by consumers at the bus ``i in \mathcal{N}``.
+where ``{P}_{\text{g}i}`` and ``{Q}_{\text{g}i}`` denote the active and reactive powers of the generators that supply the bus ``i \in \mathcal{N}``, while ``{P}_{\text{d}i}`` and ``{Q}_{\text{d}i}`` indicate active and reactive powers demanded by consumers at the bus ``i \in \mathcal{N}``.
+```julia-repl
+julia> system.bus.supply.active - system.bus.demand.active
+julia> system.bus.supply.reactive - system.bus.demand.reactive
+```
+
+---
