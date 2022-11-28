@@ -114,7 +114,7 @@ and reactive power injection functions for PQ buses:
     \;\;\; i \in \mathcal{N}_{\text{pq}}.
 ```
 
-Functions ``f_{P_i}(\mathbf x)`` and ``f_{Q_i}(\mathbf x)`` are called active and reactive mismatch, respectively, and are often marked as ``\Delta P_i(\mathbf x)`` and ``\Delta Q_i(\mathbf x)``. The first terms on the right-hand side represents power injections into the bus ``i``, while the second term is constant and represents active and reactive powers from generators and loads connected to the bus ``i``. Thus, the power flow problem is described by the system of equations:
+Functions ``f_{P_i}(\mathbf x)`` and ``f_{Q_i}(\mathbf x)`` are called active and reactive mismatch, respectively, and are often marked as ``\Delta P_i(\mathbf x)`` and ``\Delta Q_i(\mathbf x)``. The first terms on the right-hand side represents power injections into the bus ``i``, while the second term is constant and is obtained based on the active and reactive powers of the generators that supply the bus ``i`` and active and reactive powers demanded by consumers at the bus ``i``. Thus, the power flow problem is described by the system of equations:
 ```math
   \mathbf{f(x)} =
   \begin{bmatrix}
@@ -124,4 +124,99 @@ Functions ``f_{P_i}(\mathbf x)`` and ``f_{Q_i}(\mathbf x)`` are called active an
     \mathbf{f}_{P}(\mathbf x) \\ \mathbf{f}_{Q}(\mathbf x)
   \end{bmatrix} = \mathbf 0,
 ```
-where the first ``n - 1`` equations are defined for PV and PQ buses, while the last ``m-1`` equations are defined only for PQ buses.
+where the first ``n - 1`` equations are defined for PV and PQ buses, while the last ``m - 1`` equations are defined only for PQ buses.
+
+Applying the Newton-Raphson method over power flow equations we have:
+```math
+	\mathbf{J(x^{(\nu)})}\mathbf{ \Delta x^{(\nu)}}+\mathbf{ f(x^{(\nu)})}=0 \;\;\; \to \;\;\;
+  \mathbf{ \Delta x^{(\nu)}} = -\mathbf{J(x^{(\nu)})}^{-1}\mathbf{ f(x^{(\nu)})}
+```
+```math
+  \mathbf {x}^{(\nu + 1)} = \mathbf {x}^{(\nu)} + \mathbf \Delta \mathbf {x}^{(\nu)},
+```
+
+where the Jacobian matrix ``\mathbf{J(x^{(\nu)})} \in \mathbb{R}^{n_{\text{u}} \times n_{\text{u}}}`` is:
+```math
+  \mathbf{J(x^{(\nu)})}=
+  \left[
+  \begin{array}{ccc|ccc}
+  \cfrac{\mathrm \partial{{f_{P_2}}(\mathbf x^{(\nu)})}} {\mathrm \partial \theta_2} & \cdots &
+  \cfrac{\mathrm \partial{{f_{P_2}}(\mathbf x^{(\nu)})}}{\mathrm \partial \theta_{n}} &
+  \cfrac{\mathrm \partial{{f_{P_2}}(\mathbf x^{(\nu)})}}{\mathrm \partial V_{2}} &\cdots &
+  \cfrac{\mathrm \partial{{f_{P_2}}(\mathbf x^{(\nu)})}}{\mathrm \partial V_{m}}\\
+  \;\vdots  & \\
+  \cfrac{\mathrm \partial{{f_{P_n}}(\mathbf x^{(\nu)})}} {\mathrm \partial \theta_2} & \cdots &
+  \cfrac{\mathrm \partial{{f_{P_n}}(\mathbf x^{(\nu)})}}{\mathrm \partial \theta_{n}} &
+  \cfrac{\mathrm \partial{{f_{P_n}}(\mathbf x^{(\nu)})}}{\mathrm \partial V_{2}} &\cdots &
+  \cfrac{\mathrm \partial{{f_{P_n}}(\mathbf x^{(\nu)})}}{\mathrm \partial V_{m}} \\[10pt]
+  \hline \\
+  \cfrac{\mathrm \partial{{f_{Q_2}}(\mathbf x^{(\nu)})}} {\mathrm \partial \theta_2} & \cdots &
+  \cfrac{\mathrm \partial{{f_{Q_2}}(\mathbf x^{(\nu)})}}{\mathrm \partial \theta_{n}} &
+  \cfrac{\mathrm \partial{{f_{Q_2}}(\mathbf x^{(\nu)})}}{\mathrm \partial V_{2}} &\cdots &
+  \cfrac{\mathrm \partial{{f_{Q_2}}(\mathbf x^{(\nu)})}}{\mathrm \partial V_{m}}\\
+  \;\vdots  & \\
+  \cfrac{\mathrm \partial{{f_{Q_{m}}}(\mathbf x^{(\nu)})}} {\mathrm \partial \theta_2} & \cdots &
+  \cfrac{\mathrm \partial{{f_{Q_{m}}}(\mathbf x^{(\nu)})}}{\mathrm \partial \theta_{n}} &
+  \cfrac{\mathrm \partial{{f_{Q_{m}}}(\mathbf x^{(\nu)})}}{\mathrm \partial V_{2}} &\cdots &
+  \cfrac{\mathrm \partial{{f_{Q_{m}}}(\mathbf x^{(\nu)})}}{\mathrm \partial V_{m}}
+  \end{array}
+  \right].
+```
+As we can see, the Jacobian matrix can be written using four block matrices:
+```math
+	  \mathbf{J(x^{(\nu)})} =
+  \begin{bmatrix}
+    \mathbf{J_{11}(x^{(\nu)})} &\mathbf{J_{12}(x^{(\nu)})} \\ \mathbf{J_{21}(x^{(\nu)})} &
+	   \mathbf{J_{22}(x^{(\nu)})}
+  \end{bmatrix},
+```
+where diagonal elements of the Jacobian sub-matrices are defined according to:
+```math
+  \begin{aligned}
+  \cfrac{\mathrm \partial{{f_{P_i}}(\mathbf x^{(\nu)})}} {\mathrm \partial \theta_{i}} &=
+  {V}_{i}^{(\nu)}\sum\limits_{j=1}^n {V}_{j}^{(\nu)}(-G_{ij}
+  \sin\theta_{ij}^{(\nu)}+B_{ij}\cos\theta_{ij}^{(\nu)}) - ({V}_{i}^{(\nu)})^2B_{ii}\\
+  \cfrac{\mathrm \partial{{f_{P_i}}(\mathbf x^{(\nu)})}}
+  {\mathrm \partial V_{i}^{(\nu)}} &= \sum\limits_{
+  j=1}^n {V}_{j}^{(\nu)}(G_{ij}\cos
+  \theta_{ij}^{(\nu)}+B_{ij}\sin\theta_{ij}^{(\nu)})+{V}_{i}^{(\nu)} G_{ii}\\
+  \cfrac{\mathrm \partial{{f_{Q_i}}(\mathbf x^{(\nu)})}}
+  {\mathrm \partial \theta_{i}}&={V}_{i}^{(\nu)}
+  \sum\limits_{j=1}^n {V}_{j}^{(\nu)}
+  (G_{ij}\cos\theta_{ij}^{(\nu)}+B_{ij}\sin\theta_{ij}^{(\nu)})- ({V}_{i}^{(\nu)})^2G_{ii}\\
+  \cfrac{\mathrm \partial{{f_{Q_i}}(\mathbf x^{(\nu)})}}
+  {\mathrm \partial V_{i}}&=\sum\limits_{j=1
+  }^n {V}_{j}^{(\nu)}(G_{ij}\sin\theta_{ij}^{(\nu)}-
+  B_{ij}\cos\theta_{ij}^{(\nu)})-{V}_{i}^{(\nu)} B_{ii},
+  \end{aligned}
+```
+while non-diagonal elements of the Jacobian sub-matrices are:
+```math
+  \begin{aligned}
+  \cfrac{\mathrm \partial{{f_{P_i}}(\mathbf x^{(\nu)})}}
+  {\mathrm \partial \theta_{j}}&={V}_{i}^{(\nu)}{V}_{j}^{(\nu)}
+  (G_{ij}\sin\theta_{ij}^{(\nu)}-B_{ij}\cos\theta_{ij}^{(\nu)})\\
+  \cfrac{\mathrm \partial{{f_{P_i}}(\mathbf x^{(\nu)})}}
+  {\mathrm \partial V_{j}^{(\nu)}} &= {V}_{i}^{(\nu)}(G_{ij}\cos
+  \theta_{ij}^{(\nu)}+B_{ij}\sin\theta_{ij}^{(\nu)})\\
+  \cfrac{\mathrm \partial{{f_{Q_i}}(\mathbf x^{(\nu)})}}
+  {\mathrm \partial \theta_{j}}&={V}_{i}^{(\nu)}{V}_{j}^{(\nu)}
+  (-G_{ij}\cos\theta_{ij}^{(\nu)} -B_{ij}\sin\theta_{ij}^{(\nu)})\\
+  \cfrac{\mathrm \partial{{f_{Q_i}}(\mathbf x^{(\nu)})}}{\mathrm
+  \partial V_{j}}&={V}_{i}^{(\nu)}(G_{ij}\sin\theta_{ij}^{(\nu)}-
+  B_{ij}\cos\theta_{ij}^{(\nu)}).
+  \end{aligned}
+```
+To conclude, the Newton-Raphson method is based on the equations:
+```math
+  \begin{bmatrix}
+    \mathbf{J_{11}(x^{(\nu)})} &\mathbf{J_{12}(x^{(\nu)})} \\ \mathbf{J_{21}(x^{(\nu)})} &
+	   \mathbf{J_{22}(x^{(\nu)})}
+  \end{bmatrix}
+  \begin{bmatrix}
+    \mathbf{\Delta \theta^{(\nu)}} \\ \mathbf{\Delta V^{(\nu)}}
+  \end{bmatrix}	+
+  \begin{bmatrix}
+    \mathbf{f}_{P}(\mathbf x^{(\nu)}) \\ \mathbf{f}_{Q}(\mathbf x^{(\nu)})
+  \end{bmatrix} = \mathbf 0.
+```
