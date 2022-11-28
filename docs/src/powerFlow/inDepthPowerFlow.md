@@ -48,3 +48,34 @@ julia> system.bus.supply.reactive - system.bus.demand.reactive
 ```
 
 ---
+
+## [In-depth Newton-Raphson Method](@id inDepthNewtonRaphson)
+The Newton-Raphson method is generally preferred in power flow calculations because this method has quadratic rate of convergence. The method can have difficulties with initial conditions ("flat start"). First of all, the Newton-Raphson method provides a good approximation for the roots of the system of non-linear equations:
+```math
+  \mathbf{f}(\mathbf{x}) = \mathbf{0}.
+```
+The Newton-Raphson method or Newton's method is essentially based on the Taylor series expansion, neglecting the quadratic and high order terms. The Newton-Raphson is an iterative method, where we iteratively compute the increments ``\mathbf \Delta \mathbf {x}`` using Jacobian matrix ``J(\mathbf x)``, and update solutions:
+```math
+  \begin{aligned}
+    \mathbf \Delta \mathbf {x}^{(\nu)} &= -\mathbf J(\mathbf x^{(\nu)})^{-1} \mathbf f(\mathbf x^{(\nu)}) \\
+    \mathbf {x}^{(\nu + 1)} &= \mathbf {x}^{(\nu)} + \mathbf \Delta \mathbf {x}^{(\nu)},
+  \end{aligned}
+```
+where ``\nu = \{1,2,\dots, \}`` represents the iteration index. Let us observe the vector given in the polar coordinate system:
+```math
+  \mathbf x_{\text{sv}} = [\theta_1,\dots,\theta_n,V_1,\dots,V_n]^T.
+```
+In general, the vector ``\mathbf x_{\text{sv}} \in \mathbb{R}^{2n}`` contains elements whose values are known:
+* voltage angle ``\theta_i`` and magnitude ``V_i`` at the slack bus, ``i \in \mathcal{N}_{\text{sb}}``;
+* voltage magnitude ``V_i`` at PV buses, ``i \in \mathcal{N}_{\text{pv}}``.
+More precisely, the number of unknowns is ``n_{\text{u}} = 2n - n_{\text{pv}} - 2``, where ``n_{\text{pv}} = |\mathcal{N}_{\text{pv}}|`` is the number of PV buses. Thus, we observe the state vector ``\mathbf x \in \mathbb{R}^{n_{\text{u}}}`` and associated vector of increments ``\mathbf \Delta \mathbf x \in \mathbb{R}^{n_{\text{u}}}``:
+```math
+  \mathbf x =
+  \begin{bmatrix}
+    \bm \theta \\ \mathbf V
+  \end{bmatrix}; \;\;\;
+  \mathbf \Delta \mathbf x =
+  \begin{bmatrix}
+    \mathbf \Delta \bm \theta \\ \mathbf \Delta \mathbf V
+  \end{bmatrix}.
+```
