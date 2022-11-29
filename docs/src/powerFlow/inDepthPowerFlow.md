@@ -31,7 +31,7 @@ According to the last equation, for the bus ``i \in \mathcal{N}`` there are four
 
 Consequently, JuliaGrid operates with sets ``\mathcal{N}_{\text{pv}}`` and ``\mathcal{N}_{\text{pq}}`` that contain PV and PQ buses, respectively, and exactly one slack bus ``\mathcal{N}_{\text{sb}}``. Note that JuliaGrid does not support systems with multiple slack buses.
 ```julia-repl
-julia> system.bus.layout.type
+julia> system.bus.layout.{type}
 ```
 
 Finally, we note according to Tellegen's theorem, the bus active ``{P}_{i}`` and reactive ``{Q}_{i}`` power injections are equal to:
@@ -645,7 +645,7 @@ julia> result.stopping.reactive
 ## [DC Power Flow Solution](@id dcPowerFlowSolution)
 As shown in section [In-depth DC Model](@ref inDepthDCModel), the DC power flow problem is described by the system of linear equations:
 ```math
-  \mathbf {P} = \mathbf{B} \bm {\theta} + \mathbf{P_\text{gs}} + \mathbf{G}_\text{sh},
+  \mathbf {P} = \mathbf{B} \bm {\theta} + \mathbf{P_\text{gs}} + \mathbf{G}_\text{sh}.
 ```
 
 ---
@@ -663,7 +663,7 @@ The DC power flow solution is obtained through non-iterative procedure by solvin
 ```math
     \bm {\theta} = \mathbf{B}^{-1}(\mathbf {P} - \mathbf{P_\text{gs}} - \mathbf{P}_\text{sh}).
 ```
-Note that the slack bus voltage angle is excluded from ``\bm {\theta}``. Respectively, corresponding elements in vectors ``\mathbf {P}``, ``\mathbf{P_\text{gs}}``, ``\mathbf{P}_\text{sh}``, and corresponding column of the matrix ``\mathbf{B}`` will be removed, during the calculation process.
+Note that the slack bus voltage angle is excluded from ``\bm {\theta}``. Hence, corresponding elements in vectors ``\mathbf {P}``, ``\mathbf{P_\text{gs}}``, ``\mathbf{P}_\text{sh}``, and corresponding column of the matrix ``\mathbf{B}`` will be removed, during the calculation process.
 
 JuliaGrid saves the final result in vector that contain all bus voltage angles:
 ```julia-repl
