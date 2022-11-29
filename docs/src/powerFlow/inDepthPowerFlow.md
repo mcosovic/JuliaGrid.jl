@@ -88,7 +88,7 @@ where the first ``n - 1`` equations are defined according to PV and PQ buses, wh
 
 ---
 
-#### Implementation Aspects
+#### Method Implementation
 To solve the AC power flow analysis and find the bus voltage magnitudes and angles using Newton-Raphson method, JuliaGrid provides the following sequence of functions:
 ```julia-repl
 system = powerSystem("case14.h5")
@@ -248,7 +248,6 @@ while non-diagonal elements of the Jacobian sub-matrices are:
 ---
 
 ## [Fast Newton-Raphson Method](@id inDepthFastNewtonRaphson)
-
 The convergence of the fast Newton-Raphson method is in fact slower than the Newton-Raphson method, but often, shorter solution time for the updates compensates for slower convergence, resulting in overall shorter solution time. For not too heavily loaded systems a shorter overall solution time is almost always obtained. It should be noted that if the algorithm converges, it converges to a correct solution [[2]](@ref refs).
 
 The fast Newton-Raphson method is based on the decoupling of the power flow equations. Namely, the Newton-Raphson method is based on the equations:
@@ -458,7 +457,7 @@ result = fastNewtonRaphsonBX(system)
 
 ---
 
-#### Implementation Aspects
+#### Method Implementation
 In the beginning, we evaluate matrices ``\mathbf{B}_1`` and ``\mathbf{B}_2`` related with active and reactive power equations, respectively. These matrices can be accessed using commands:
 ```julia-repl
 julia> result.algorithm.active.jacobian
@@ -554,3 +553,89 @@ julia> result.stopping.reactive
 
 ---
 
+## [Gauss-Seidel Method](@id inDepthGaussSeidel)
+Defining the injected current into the bus ``i \in \mathcal{N}`` as:
+```math
+	\bar{I}_{i} = \frac{{P}_{i} - j{Q}_{i}}{\bar{V}_{i}^*},
+```
+the power flow problem which is described by the system of non-linear equations:
+```math
+    \mathbf {\bar {I}} = \mathbf{Y} \mathbf {\bar {V}},
+```
+can be written in the expanded form:
+```math
+  \begin{aligned}
+    Y_{11} & \bar{V}_{1}  + \cdots+ Y_{1n}\bar{V}_{n} = \frac{{P}_{1} - j{Q}_{1}}{\bar{V}_{1}^*} \\
+    \; \vdots & \\
+    Y_{n1} & \bar{V}_{1} + \cdots+ Y_{nn}\bar{V}_{n} = \frac{{P}_{n} - j{Q}_{n}}{\bar{V}_{n}^*}.
+	\end{aligned}
+```
+The Gauss-Seidel method directly solves the above system of equations, albeit with very slow convergence, almost linearly with the size of the system. Consequently, this method needs many iterations to achieve the desired solution [[3]](@ref refs). The Gauss-Seidel method convergence time increases significantly for large-scale systems and can exhibit convergence problems for systems with high active power transfers. However, the Newton-Raphson and Gauss-Seidel method are used complementary, meaning that power flow programs implement both. Gauss-Seidel method is used to rapidly determine an approximate solution from a "flat start", and then the Newton-Raphson method is used to obtain the final accurate solution [4].
+
+In general, the Gauss-Seidel method is based on the above system of equations, where the set of non-linear equations has ``n`` complex equations, and one of these equations describes the slack bus. Consequently, one of these equations can be removed resulting in the power flow problem with ``n-1`` equations.
+
+---
+
+#### Method Implementation
+To solve the AC power flow analysis and find the bus voltage magnitudes and angles using Gauss-Seidel method, JuliaGrid provides the following sequence of functions:
+```julia-repl
+system = powerSystem("case14.h5")
+acModel!(system)
+
+result = gaussSeidel(system)
+stopping = result.algorithm.iteration.stopping
+for i = 1:10
+    gaussSeidel!(system, result)
+    if stopping.active < 1e-8 && stopping.reactive < 1e-8
+        break
+    end
+end
+```
+
+The method starts with initial complex bus voltages ``\bar{V}_i^{(0)}, i \in \mathcal{N}``. The iteration scheme first computes complex bus voltages for PQ buses:
+```math
+    \bar{V}_{i}^{(\nu + 1)} =
+    \cfrac{1}{{Y}_{ii}} \Bigg(\cfrac{{P}_{i} - j{Q}_{i}}{\bar{V}_{i}^{*(\nu)}} -
+    \sum\limits_{\substack{j = 1}}^{i - 1} {Y}_{ij}\bar{V}_{j}^{(\nu + 1)} -
+    \sum\limits_{\substack{j = i + 1}}^{n} {Y}_{ij}\bar{V}_{j}^{(\nu)}\Bigg),
+    \;\;\; i \in \mathcal{N}_{\text{pq}}.
+```
+Then, the solution for PV buses are obtained in two steps: we first determine the reactive power injection, then the complex bus voltage is updated:
+```math
+  \begin{aligned}
+    Q_i^{(\nu+1)} &=
+    -\Im \left\{ \bar{V}_{i}^{*(\nu + 1)} \sum\limits_{j=1}^n {Y}_{ij}\bar{V}_{j}^{(\nu+1)}\right\}, \;\;\; i \in \mathcal{N}_{\text{pv}} \\
+    \bar{V}_{i}^{(\nu + 1)} &:=
+    \cfrac{1}{{Y}_{ii}} \Bigg(\cfrac{{P}_{i} - j{Q}_{i}^{(\nu + 1)}}{\bar{V}_{i}^{*(\nu + 1)}}-
+    \sum\limits_{\substack{j = 1,\;j \neq i}}^{n} {Y}_{ij}\bar{V}_{j}^{(\nu + 1)} \Bigg), \;\;\; i \in \mathcal{N}_{\text{pv}}.
+  \end{aligned}
+```
+Obtained voltage magnitude is not equal to the magnitude specified for the PV bus. Thus, it is necessary to perform the voltage correction:
+```math
+      \bar{V}_{i}^{(\nu+1)} := {V}_{i}^{(0)} \cfrac{\bar{V}_{i}^{(\nu+1)}}{{V}_{i}^{(\nu+1)}}, \;\;\; i \in \mathcal{N}_{\text{pv}}.
+```
+
+JuliaGrid saves the final results in vectors that contain all bus voltage magnitudes and angles:
+```julia-repl
+julia> result.bus.voltage.magnitude
+julia> result.bus.voltage.angle
+```
+
+The iteration loop is repeated until the stopping criteria is met. Namely, after one iteration loop is done, we compute active power injection mismatch for PQ and PV buses:
+```math
+    \Delta P_i^{(\nu + 1)} = \Re\{\bar{V}_i^{(\nu + 1)} \bar{I}_i^{*(\nu + 1)}\} - P_i, \;\;\; i \in \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}},
+```
+and reactive power injection mismatch for PQ buses:
+```math
+  \Delta Q_i^{(\nu + 1)} = \Im\{\bar{V}_i^{(\nu + 1)} \bar{I}_i^{*(\nu + 1)}\} - Q_i, \;\;\; i \in \mathcal{N}_{\text{pq}}.
+```
+The iteration loop is stopped when the following conditions are met:
+```math
+    \max \{|\Delta P_i^{(\nu + 1)}|, i \in \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}} \} < \epsilon \\
+    \max \{|\Delta Q_i^{(\nu + 1)}|, i \in \mathcal{N}_{\text{pq}} \} < \epsilon
+```
+where ``\epsilon`` is predetermined stopping criteria. JuliaGrid stores these values in order to break the iteration loop:
+```julia-repl
+julia> result.stopping.active
+julia> result.stopping.reactive
+```
