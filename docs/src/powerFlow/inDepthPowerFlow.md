@@ -54,6 +54,21 @@ The Newton-Raphson method is generally preferred in power flow calculations beca
 ```math
   \mathbf{f}(\mathbf{x}) = \mathbf{0}.
 ```
+To solve the AC power flow analysis and find the bus voltage magnitudes and angles, JuliaGrid provides the following sequence of functions:
+```julia-repl
+system = powerSystem("case14.h5")
+acModel!(system)
+
+result = newtonRaphson(system)
+stopping = result.algorithm.iteration.stopping
+for i = 1:10
+    newtonRaphson!(system, result)
+    if stopping.active < 1e-8 && stopping.reactive < 1e-8
+        break
+    end
+end
+```
+
 The Newton-Raphson method or Newton's method is essentially based on the Taylor series expansion, neglecting the quadratic and high order terms. The Newton-Raphson is an iterative method, where we iteratively compute the increments ``\mathbf \Delta \mathbf {x}`` using Jacobian matrix ``\mathbf{J}(\mathbf x)``, and update solutions:
 ```math
   \begin{aligned}
@@ -61,11 +76,22 @@ The Newton-Raphson method or Newton's method is essentially based on the Taylor 
     \mathbf {x}^{(\nu + 1)} &= \mathbf {x}^{(\nu)} + \mathbf \Delta \mathbf {x}^{(\nu)},
   \end{aligned}
 ```
-where ``\nu = \{1,2,\dots \}`` represents the iteration index. Let us observe the vector given in the polar coordinate system:
+where ``\nu = \{1,2,\dots \}`` represents the iteration index, and is stored as:
+```julia-repl
+julia> result.algorithm.iteration.number
+```
+
+Let us observe the vector ``\mathbf x_{\text{sv}} \in \mathbb{R}^{2n}`` given in the polar coordinate system:
 ```math
   \mathbf x_{\text{sv}} = [\theta_1,\dots,\theta_n,V_1,\dots,V_n]^T.
 ```
-In general, the vector ``\mathbf x_{\text{sv}} \in \mathbb{R}^{2n}`` contains elements whose values are known:
+The vector contains the voltage angles and magnitudes at all buses, and can be accessed after any iteration ``\nu``:
+```julia-repl
+julia> result.bus.voltage.angle
+julia> result.bus.voltage.magnitude
+```
+
+However, the Newton-Raphson method does not use the entire vector ``\mathbf x_{\text{sv}}``. Namely, the vector ``\mathbf x_{\text{sv}}`` contains elements whose values are known:
 * voltage angle ``\theta_i`` and magnitude ``V_i`` at the slack bus, ``i \in \mathcal{N}_{\text{sb}}``;
 * voltage magnitude ``V_i`` at PV buses, ``i \in \mathcal{N}_{\text{pv}}``.
 More precisely, the number of unknowns is ``n_{\text{u}} = 2n - n_{\text{pv}} - 2``, where ``n_{\text{pv}} = |\mathcal{N}_{\text{pv}}|`` is the number of PV buses. Thus, we observe the state vector ``\mathbf x \in \mathbb{R}^{n_{\text{u}}}`` and associated vector of increments ``\mathbf \Delta \mathbf x \in \mathbb{R}^{n_{\text{u}}}``:
@@ -125,17 +151,25 @@ Functions ``f_{P_i}(\mathbf x)`` and ``f_{Q_i}(\mathbf x)`` are called active an
   \end{bmatrix} = \mathbf 0,
 ```
 where the first ``n - 1`` equations are defined for PV and PQ buses, while the last ``m - 1`` equations are defined only for PQ buses.
+```julia-repl
+julia> result.algorithm.mismatch - system.bus.demand.active
+```
 
 Applying the Newton-Raphson method over power flow equations we have:
 ```math
-	\mathbf{J(x^{(\nu)})}\mathbf{ \Delta x^{(\nu)}}+\mathbf{ f(x^{(\nu)})}=0 \;\;\; \to \;\;\;
   \mathbf{ \Delta x^{(\nu)}} = -\mathbf{J(x^{(\nu)})}^{-1}\mathbf{ f(x^{(\nu)})}
 ```
 ```math
-  \mathbf {x}^{(\nu + 1)} = \mathbf {x}^{(\nu)} + \mathbf \Delta \mathbf {x}^{(\nu)},
+  \mathbf {x}^{(\nu + 1)} = \mathbf {x}^{(\nu)} + \mathbf \Delta \mathbf {x}^{(\nu)}.
+```
+```julia-repl
+julia> result.algorithm.jacobian
+julia> result.algorithm.increment
+julia> result.algorithm.mismatch
 ```
 
-where the Jacobian matrix ``\mathbf{J(x^{(\nu)})} \in \mathbb{R}^{n_{\text{u}} \times n_{\text{u}}}`` is:
+
+The Jacobian matrix ``\mathbf{J(x^{(\nu)})} \in \mathbb{R}^{n_{\text{u}} \times n_{\text{u}}}`` is:
 ```math
   \mathbf{J(x^{(\nu)})}=
   \left[
@@ -219,4 +253,28 @@ To conclude, the Newton-Raphson method is based on the equations:
   \begin{bmatrix}
     \mathbf{f}_{P}(\mathbf x^{(\nu)}) \\ \mathbf{f}_{Q}(\mathbf x^{(\nu)})
   \end{bmatrix} = \mathbf 0.
+```
+
+The iteration loop is repeated until the stopping criteria is met. Namely, after each iteration, we compute active power injection mismatch for PQ and PV buses:
+```math
+  f_{P_i}(\mathbf x^{(\nu)}) = {V}_{i}^{(\nu)}\sum\limits_{j=1}^n {V}_{j}^{(\nu)}(G_{ij}\cos\theta_{ij}^{(\nu)}+B_{ij}\sin\theta_{ij}^{(\nu)}) - {P}_{i},
+  \;\;\; i \in \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}},
+```
+and reactive power injection mismatch for PQ buses:
+```math
+    f_{Q_i}(\mathbf x^{(\nu)}) = {V}_{i}^{(\nu)}\sum\limits_{j=1}^n {V}_{j}^{(\nu)}(G_{ij}\sin\theta_{ij}^{(\nu)}-B_{ij}\cos\theta_{ij}^{(\nu)}) - {Q}_{i},
+    \;\;\; i \in \mathcal{N}_{\text{pq}}.
+```
+The iteration loop is stopped when the following conditions are met:
+```math
+  \begin{aligned}
+    \max \{|f_{P_i}(\mathbf x^{(\nu)})|, i \in \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}} \} < \epsilon
+    \max \{|f_{Q_i}(\mathbf x^{(\nu)})|, i \in \mathcal{N}_{\text{pq}} \} < \epsilon
+  \end{aligned}
+```
+where ``\epsilon`` is predetermined stopping criteria.
+```julia-repl
+julia> result.stopping.active
+julia> result.stopping.reactive
+
 ```
