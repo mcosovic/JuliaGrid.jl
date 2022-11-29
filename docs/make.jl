@@ -7,6 +7,7 @@ makedocs(
     doctest = false,
     format = Documenter.HTML(
         assets=["assets/tablestyle.css"],
+        prettyurls = prettyurls = get(ENV, "CI", nothing) == "true",
         collapselevel = 1
         ),
     pages = [
