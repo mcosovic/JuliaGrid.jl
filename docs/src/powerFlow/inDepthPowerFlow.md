@@ -55,35 +55,17 @@ The Newton-Raphson method is generally preferred in power flow calculations beca
   \mathbf{f}(\mathbf{x}) = \mathbf{0}.
 ```
 Hence, the Newton-Raphson method solves the system of non-linear equations ``\mathbf{f}(\mathbf{x})``, and reveals bus voltage magnitudes and angles ``\mathbf{x}``. According to bus types, some buses have known values of bus voltage magnitudes and angles:
-* At the slack bus ``i \in \mathcal{N}_{\text{sb}}`` voltage angle ``\theta_i`` and magnitude ``V_i`` are known.
-* At PV buses ``i \in \mathcal{N}_{\text{pv}}`` voltage magnitude ``V_i`` is known.
-Hence, the number of unknowns is ``n_{\text{u}} = 2n - n_{\text{pv}} - 2``, where ``n_{\text{pv}} = |\mathcal{N}_{\text{pv}}|`` is the number of PV buses. Thus, we observe the state vector ``\mathbf x \in \mathbb{R}^{n_{\text{u}}}`` and associated vector of increments ``\mathbf \Delta \mathbf x \in \mathbb{R}^{n_{\text{u}}}``:
+* at the slack bus ``i \in \mathcal{N}_{\text{sb}}`` voltage angle ``\theta_i`` and magnitude ``V_i`` are known;
+* at PV buses ``i \in \mathcal{N}_{\text{pv}}`` voltage magnitude ``V_i`` is known.
+Thus, we observe the state vector ``\mathbf x``:
 ```math
   \mathbf x =
   \begin{bmatrix}
     \bm \theta \\ \mathbf V
-  \end{bmatrix}; \;\;\;
-  \mathbf \Delta \mathbf x =
-  \begin{bmatrix}
-    \mathbf \Delta \bm \theta \\ \mathbf \Delta \mathbf V
-  \end{bmatrix}.
+  \end{bmatrix},
 ```
+where ``\bm \theta \in \mathbb{R}^{n-1}`` and ``\mathbf V \in \mathbb{R}^{n_{\text{pq}}}``, while ``n_{\text{pq}} = |\mathcal{N}_{\text{pq}}|`` is the number of PQ buses.
 
-Without loss of generality, we assume that the slack bus is the first bus, followed by the set of PQ buses and the set of PV buses:
-```math
-  \begin{aligned}
-    \mathcal{N}_{\text{sb}} &= \{ 1 \} \\
-    \mathcal{N}_{\text{pq}} &= \{2, \dots, m\} \\
-    \mathcal{N}_{\text{pv}} &= \{m + 1,\dots, n\},
-  \end{aligned}
-```
-where ``\mathcal{N} = \mathcal{N}_{\text{sb}} \cup \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}}``. Hence, we have
-```math
-  \begin{aligned}
-    \bm \theta &= [\theta_2,\dots,\theta_n]^T; \;\;\;\;\;\; \mathbf \Delta \bm \theta = [\Delta \theta_2,\dots,\Delta \theta_n]^T \\
-    \mathbf V &= [V_2,\dots,V_{m}]^T; \;\;\; \mathbf \Delta \mathbf V = [\Delta V_2,\dots,\Delta V_{m}]^T.
-  \end{aligned}
-```
 
 The apparent power injection ``S_i`` into the bus ``i \in \mathcal{N}`` is a function of the complex bus voltages. Hence, the real and imaginary components of the apparent power define the active and reactive power injection expressions:
 ```math
@@ -103,17 +85,7 @@ and reactive power injection functions for PQ buses:
     \;\;\; i \in \mathcal{N}_{\text{pq}}.
 ```
 
-Functions ``f_{P_i}(\mathbf x)`` and ``f_{Q_i}(\mathbf x)`` are called active and reactive mismatch, respectively, and are often marked as ``\Delta P_i(\mathbf x)`` and ``\Delta Q_i(\mathbf x)``. The first terms on the right-hand side represents power injections into the bus ``i``, while the second term is constant and is obtained based on the active and reactive powers of the generators that supply the bus ``i`` and active and reactive powers demanded by consumers at the bus ``i``. Thus, the power flow problem is described by the system of equations:
-```math
-  \mathbf{f(x)} =
-  \begin{bmatrix}
-      f_{P_2}(\mathbf x) \\ \vdots \\ f_{P_{n}}(\mathbf x) \\ f_{Q_2}(\mathbf x) \\ \vdots \\ f_{Q_{m}}(\mathbf x)
-  \end{bmatrix} =
-  \begin{bmatrix}
-    \mathbf{f}_{P}(\mathbf x) \\ \mathbf{f}_{Q}(\mathbf x)
-  \end{bmatrix} = \mathbf 0,
-```
-where the first ``n - 1`` equations are defined for PV and PQ buses, while the last ``m - 1`` equations are defined only for PQ buses.
+Functions ``f_{P_i}(\mathbf x)`` and ``f_{Q_i}(\mathbf x)`` are called active and reactive mismatch, respectively, and are often marked as ``\Delta P_i(\mathbf x)`` and ``\Delta Q_i(\mathbf x)``. The first terms on the right-hand side represents power injections into the bus ``i``, while the second term is constant and is obtained based on the active and reactive powers of the generators that supply the bus ``i`` and active and reactive powers demanded by consumers at the bus ``i``.
 
 ---
 
