@@ -111,8 +111,139 @@ julia&gt; result.algorithm.mismatch</code></pre><p>The Jacobian matrix <span>$\m
     \mathbf{f}_{P}(\mathbf x^{(\nu)}) \\ \mathbf{f}_{Q}(\mathbf x^{(\nu)})
   \end{bmatrix} = \mathbf 0.\]</p><p>The iteration loop is repeated until the stopping criteria is met. Namely, after each iteration, we compute active power injection mismatch for PQ and PV buses:</p><p class="math-container">\[  f_{P_i}(\mathbf x^{(\nu)}) = {V}_{i}^{(\nu)}\sum\limits_{j=1}^n {V}_{j}^{(\nu)}(G_{ij}\cos\theta_{ij}^{(\nu)}+B_{ij}\sin\theta_{ij}^{(\nu)}) - {P}_{i},
   \;\;\; i \in \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}},\]</p><p>and reactive power injection mismatch for PQ buses:</p><p class="math-container">\[    f_{Q_i}(\mathbf x^{(\nu)}) = {V}_{i}^{(\nu)}\sum\limits_{j=1}^n {V}_{j}^{(\nu)}(G_{ij}\sin\theta_{ij}^{(\nu)}-B_{ij}\cos\theta_{ij}^{(\nu)}) - {Q}_{i},
-    \;\;\; i \in \mathcal{N}_{\text{pq}}.\]</p><p>The iteration loop is stopped when the following conditions are met:</p><p class="math-container">\[  \begin{gather}
-    \max \{|f_{P_i}(\mathbf x^{(\nu)})|, i \in \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}} \} &lt; \epsilon \\
-    \max \{|f_{Q_i}(\mathbf x^{(\nu)})|, i \in \mathcal{N}_{\text{pq}} \} &lt; \epsilon
-  \end{gather}\]</p><p>where <span>$\epsilon$</span> is predetermined stopping criteria. JuliaGrid stores these values in order to break the iteration loop:</p><pre><code class="language-julia-repl">julia&gt; result.stopping.active
-julia&gt; result.stopping.reactive</code></pre><hr/><h2 id="inDepthFastNewtonRaphson"><a class="docs-heading-anchor" href="#inDepthFastNewtonRaphson">Fast Newton-Raphson Method</a><a id="inDepthFastNewtonRaphson-1"></a><a class="docs-heading-anchor-permalink" href="#inDepthFastNewtonRaphson" title="Permalink"></a></h2></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../solution/">« Power Flow Solution</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Tuesday 29 November 2022 10:11">Tuesday 29 November 2022</span>. Using Julia version 1.3.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+    \;\;\; i \in \mathcal{N}_{\text{pq}}.\]</p><p>The iteration loop is stopped when the following conditions are met:</p><p class="math-container">\[    \max \{|f_{P_i}(\mathbf x^{(\nu)})|, i \in \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}} \} &lt; \epsilon \\
+    \max \{|f_{Q_i}(\mathbf x^{(\nu)})|, i \in \mathcal{N}_{\text{pq}} \} &lt; \epsilon\]</p><p>where <span>$\epsilon$</span> is predetermined stopping criteria. JuliaGrid stores these values in order to break the iteration loop:</p><pre><code class="language-julia-repl">julia&gt; result.stopping.active
+julia&gt; result.stopping.reactive</code></pre><hr/><h2 id="inDepthFastNewtonRaphson"><a class="docs-heading-anchor" href="#inDepthFastNewtonRaphson">Fast Newton-Raphson Method</a><a id="inDepthFastNewtonRaphson-1"></a><a class="docs-heading-anchor-permalink" href="#inDepthFastNewtonRaphson" title="Permalink"></a></h2><p>The convergence of the fast Newton-Raphson method is in fact slower than the Newton-Raphson method, but often, shorter solution time for the updates compensates for slower convergence, resulting in overall shorter solution time. For not too heavily loaded systems a shorter overall solution time is almost always obtained. It should be noted that if the algorithm converges, it converges to a correct solution <a href="powerFlow/@ref refs">[2]</a>.</p><p>The fast Newton-Raphson method is based on the decoupling of the power flow equations. Namely, in transmission grids a strong coupling can be found between active powers and voltage angles, and between reactive powers and voltage magnitudes. In order to obtain decoupling, two conditions are assumed to have been satisfied: first, the resistances <span>$r_{ij}$</span> of the branches are small with respect to their respective reactances <span>$x_{ij}$</span> and, second, the angle differences are small <span>$\theta_{ij} \approx 0$</span> <a href="powerFlow/@ref refs">[5]</a>. Respectively, we start from the equation:</p><p class="math-container">\[  \begin{bmatrix}
+    \mathbf{J_{11}(x)} &amp; \mathbf{0} \\ \mathbf{0} &amp; \mathbf{J_{22}(x)}
+  \end{bmatrix}
+  \begin{bmatrix}
+    \mathbf{\Delta \bm \theta} \\ \mathbf{\Delta V}
+  \end{bmatrix}	+
+  \begin{bmatrix}
+    \mathbf{f}_{P}(\mathbf x) \\ \mathbf{f}_{Q}(\mathbf x)
+  \end{bmatrix} = \mathbf 0,\]</p><p>where, for simplicity, we drop the iteration index. Thus, decoupled system can be written as:</p><p class="math-container">\[  \begin{aligned}
+    \mathbf{f}_{P}(\mathbf x) &amp;= -\mathbf{J_{11}(x)} \mathbf{\Delta \bm  \theta} \\
+    \mathbf{f}_{Q}(\mathbf x) &amp;= -\mathbf{J_{22}(x)} \mathbf{\Delta V}.
+  \end{aligned}\]</p><p>Here, it would be useful to observe the problem in the form:</p><p class="math-container">\[  \begin{aligned}
+    {f}_{P_2}(\mathbf x) &amp;= -\Delta \theta_2\cfrac{\mathrm \partial{{f_{P_2}}(\mathbf x)}} {\mathrm \partial \theta_2} - \cdots -
+    \Delta \theta_n \cfrac{\mathrm \partial{{f_{P_2}}(\mathbf x)}}{\mathrm \partial \theta_{n}} \\
+    &amp; \vdots \\
+    {f}_{P_n}(\mathbf x) &amp;= -\Delta \theta_2\cfrac{\mathrm \partial{{f_{P_n}}(\mathbf x)}} {\mathrm \partial \theta_2} - \cdots -
+    \Delta \theta_n \cfrac{\mathrm \partial{{f_{P_i}}(\mathbf x)}}{\mathrm \partial \theta_{n}}\\
+    {f}_{Q_2}(\mathbf x) &amp;= - \Delta V_2 \cfrac{\mathrm \partial{{f_{Q_2}}(\mathbf x)}}{\mathrm \partial V_{2}} - \cdots -
+    \Delta V_{n_{\text{pq}}}  \cfrac{\mathrm \partial{{f_{Q_2}}(\mathbf x)}}{\mathrm \partial V_{m}}\\
+    &amp; \vdots \\
+    {f}_{Q_{m}}(\mathbf x) &amp;= - \Delta V_2 \cfrac{\mathrm \partial{{f_{Q_{m}}}(\mathbf x)}}{\mathrm \partial V_{2}} - \cdots -
+    \Delta V_{m}  \cfrac{\mathrm \partial{{f_{Q_{m}}}(\mathbf x)}}{\mathrm \partial V_{m}}.
+  \end{aligned}\]</p><p>First of all, we expand the second part of the expressions as follows:</p><p class="math-container">\[  \begin{aligned}
+  {f}_{Q_2}(\mathbf x) &amp;=
+  -\cfrac{\Delta V_2}{V_2}V_2 \cfrac{\mathrm \partial{{f_{Q_2}}(\mathbf x)}}{\mathrm \partial V_{2}} - \cdots -
+  \cfrac{\Delta V_{m}}{V_{m}} V_{m}
+  \cfrac{\mathrm \partial{{f_{Q_2}}(\mathbf x)}}{\mathrm \partial V_{m}}\\
+  &amp; \vdots \\
+  {f}_{Q_{m}}(\mathbf x) &amp;=
+  - \cfrac{\Delta V_2}{V_2}V_2 \cfrac{\mathrm \partial{{f_{Q_{m}}}(\mathbf x)}}{\mathrm \partial V_{2}} - \cdots -
+  \cfrac{\Delta V_{m}}{V_{m}} V_{m}
+  \cfrac{\mathrm \partial{{f_{Q_{m}}}(\mathbf x)}}{\mathrm \partial V_{m}}.
+  \end{aligned}\]</p><p>The next step is deriving the Jacobian elements. For this purpose, let us consider the expressions defined for the Newton-Raphson method, where we applied the above expansions for PQ buses:</p><p class="math-container">\[  \begin{aligned}
+  \cfrac{\mathrm \partial{{f_{P_i}}(\mathbf x)}} {\mathrm \partial \theta_{i}} &amp;=
+  {V}_{i}\sum\limits_{j=1}^n {V}_{j}(-G_{ij}
+  \sin\theta_{ij}+B_{ij}\cos\theta_{ij}) - {V}_{i}^2B_{ii}\\
+  \cfrac{\mathrm \partial{{f_{P_i}}(\mathbf x)}}
+  {\mathrm \partial \theta_{j}}&amp;={V}_{i}{V}_{j}
+  (G_{ij}\sin\theta_{ij}-B_{ij}\cos\theta_{ij})\\
+  V_i \cfrac{\mathrm \partial{{f_{Q_i}}(\mathbf x)}}
+  {\mathrm \partial V_{i}} &amp;= V_i\sum\limits_{j=1
+  }^n {V}_{j}(G_{ij}\sin\theta_{ij}-
+  B_{ij}\cos\theta_{ij})-{V}_{i}^2 B_{ii}\\
+  V_j \cfrac{\mathrm \partial{{f_{Q_i}}(\mathbf x)}}{\mathrm
+  \partial V_{j}} &amp;= {V}_{i}V_j (G_{ij}\sin\theta_{ij}-
+  B_{ij}\cos\theta_{ij}).
+  \end{aligned}\]</p><p>Since the reactive power is defined as:</p><p class="math-container">\[    {Q}_{i} ={V}_{i}\sum\limits_{j=1}^n {V}_{j}(G_{ij}\sin\theta_{ij}-B_{ij}\cos\theta_{ij}),\]</p><p>Jacobian elements can be written in the form:</p><p class="math-container">\[  \begin{aligned}
+  \cfrac{\mathrm \partial{{f_{P_i}}(\mathbf x)}} {\mathrm \partial \theta_{i}} &amp;=
+  -Q_i - {V}_{i}^2B_{ii}\\
+  \cfrac{\mathrm \partial{{f_{P_i}}(\mathbf x)}}
+  {\mathrm \partial \theta_{j}}&amp;={V}_{i}{V}_{j}
+  (G_{ij}\sin\theta_{ij}-B_{ij}\cos\theta_{ij})\\
+  V_i \cfrac{\mathrm \partial{{f_{Q_i}}(\mathbf x)}}
+  {\mathrm \partial V_{i}} &amp;= Q_i-{V}_{i}^2 B_{ii}\\
+  V_j \cfrac{\mathrm \partial{{f_{Q_i}}(\mathbf x)}}{\mathrm
+  \partial V_{j}} &amp;= {V}_{i}V_j (G_{ij}\sin\theta_{ij}-
+  B_{ij}\cos\theta_{ij}).
+  \end{aligned}\]</p><p>The decoupled model is based on the following approximations:</p><p class="math-container">\[  \begin{aligned}
+    \sin(\theta_{ij}) \approx 0 \\
+    \cos(\theta_{ij}) \approx 1 \\
+    Q_i &lt;&lt; B_{ii}V_i^2.
+  \end{aligned}\]</p><p>Consequently, Jacobian elements become:</p><p class="math-container">\[  \begin{aligned}
+  \cfrac{\mathrm \partial{{f_{P_i}}(\mathbf x)}} {\mathrm \partial \theta_{i}} &amp;= -{V}_{i}^2B_{ii}\\
+  \cfrac{\mathrm \partial{{f_{P_i}}(\mathbf x)}} {\mathrm \partial \theta_{j}} &amp;= -{V}_{i}{V}_{j}B_{ij}\\
+  V_i \cfrac{\mathrm \partial{{f_{Q_i}}(\mathbf x)}} {\mathrm \partial V_{i}} &amp;= -{V}_{i}^2B_{ii}\\
+  V_j \cfrac{\mathrm \partial{{f_{Q_i}}(\mathbf x)}}{\mathrm\partial V_{j}} &amp;=  -{V}_{i}{V}_{j}B_{ij}.
+  \end{aligned}\]</p><p>Then, the initial system of equations is:</p><p class="math-container">\[  \begin{aligned}
+    {f}_{P_2}(\mathbf x) &amp;= {V}_{2}^2B_{22} \Delta \theta_2 + \cdots + {V}_{2}{V}_{n}B_{2n} \Delta \theta_n \\
+    &amp; \vdots \\
+    {f}_{P_n}(\mathbf x) &amp;= {V}_{2}{V}_{n}B_{n2} \Delta \theta_2 + \cdots + {V}_{n}^2B_{nn} \Delta \theta_n \\
+    {f}_{Q_2}(\mathbf x) &amp;=  {V}_{2}^2B_{22} \cfrac{\Delta V_2}{V_2} + \cdots +
+     {V}_{2}V_{m}B_{2m} \cfrac{\Delta V_{m}}{V_{m}} \\
+    &amp; \vdots \\
+    {f}_{Q_{m}}(\mathbf x) &amp;= {V}_{2}V_{m}B_{m2} \cfrac{\Delta V_2}{V_2} + \cdots +
+    V_{m}^2 B_{mm} \cfrac{\Delta V_{m}}{V_{m}}.
+  \end{aligned}\]</p><p>Using <span>$V_j \approx 1$</span>, wherein <span>$V_i^2 = V_iV_j, j=i$</span>, the first part of the equations have a form:</p><p class="math-container">\[  \begin{aligned}
+    {f}_{P_2}(\mathbf x) &amp;= {V}_{2}B_{22} \Delta \theta_2 + \cdots + {V}_{2}B_{2n} \Delta \theta_n \\
+    &amp; \vdots \\
+    {f}_{P_n}(\mathbf x) &amp;= {V}_{n}B_{n2} \Delta \theta_2 + \cdots + {V}_{n}B_{nn} \Delta \theta_n.
+  \end{aligned}\]</p><p>Simplifying the second part of the equations, we obtain:</p><p class="math-container">\[  \begin{aligned}
+    {f}_{Q_2}(\mathbf x) &amp;=  {V}_{2}B_{22} \Delta V_2 + \cdots +
+     V_2 B_{2m} \Delta V_{m}
+    \\
+    &amp; \vdots \\
+    {f}_{Q_{m}}(\mathbf x) &amp;= V_{m}B_{m2} \Delta V_2 + \cdots +
+    V_{m} B_{mm} \Delta V_{m}.
+  \end{aligned}\]</p><p>Finally, the fast Newton-Raphson method is based on the following system of equations:</p><p class="math-container">\[  \begin{aligned}
+    \cfrac{{f}_{P_2}(\mathbf x)}{{V}_{2}} &amp;= B_{22} \Delta \theta_2 + \cdots + B_{2n} \Delta \theta_n \\
+    &amp; \vdots \\
+    \cfrac{{f}_{P_n}(\mathbf x)}{{V}_{n}} &amp;= B_{n2} \Delta \theta_2 + \cdots + B_{nn} \Delta \theta_n \\
+    \cfrac{{f}_{Q_2}(\mathbf x)}{{V}_{2}} &amp;=  B_{22} \Delta V_2 + \cdots + B_{2m} \Delta V_{m} \\
+    &amp; \vdots \\
+    \cfrac{{f}_{Q_{m}}(\mathbf x)}{V_{m}} &amp;= B_{m2} \Delta V_2 + \cdots +
+    B_{mm} \Delta V_{m},
+  \end{aligned}\]</p><p>which can be written as:</p><p class="math-container">\[  \begin{aligned}
+    \mathbf{h}_{P}(\mathbf x) &amp;= \mathbf{B}_1 \mathbf{\Delta \bm \theta} \\
+    \mathbf{h}_{Q}(\mathbf x) &amp;= \mathbf{B}_2 \mathbf{\Delta V}.
+  \end{aligned}\]</p><p>True benefits from these equations is that Jacobian matrices <span>$\mathbf{B}_1$</span> and <span>$\mathbf{B}_2$</span> are constant and should be formed only once. Note that no approximations have been introduced to the functions <span>$\mathbf{f}_{P}(\mathbf x)$</span> or <span>$\mathbf{f}_{Q}(\mathbf x)$</span>, only in the way we calculate the increments of the state variables <a href="powerFlow/@ref refs">[2]</a>. Consequently, we still use:</p><p class="math-container">\[  \begin{aligned}
+    f_{P_i}(\mathbf x) &amp;= {V}_{i}\sum\limits_{j=1}^n {V}_{j}(G_{ij}\cos\theta_{ij}+B_{ij}\sin\theta_{ij}) - {P}_{i} = 0,
+    \;\;\; i \in \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}}\\
+    f_{Q_i}(\mathbf x) &amp;= {V}_{i}\sum\limits_{j=1}^n {V}_{j} (G_{ij}\sin\theta_{ij}-B_{ij}\cos\theta_{ij}) - {Q}_{i} = 0,
+    \;\;\; i \in \mathcal{N}_{\text{pq}}.
+  \end{aligned}\]</p><p>It is now possible to define XB and BX versions of the fast Newton-Raphson method.</p><h4 id="XB-Version"><a class="docs-heading-anchor" href="#XB-Version">XB Version</a><a id="XB-Version-1"></a><a class="docs-heading-anchor-permalink" href="#XB-Version" title="Permalink"></a></h4><p>The resistance <span>$r_{ij}$</span>, shunt susceptance <span>$\Im \{ y_{\text{sh}i} \}$</span>, charging susceptance <span>$\Im \{ y_{\text{s}ij} \}$</span> and transformer tap ratio magnitude <span>$\tau_{ij}$</span> are ignored while forming the matrix <span>$\mathbf{B}_1$</span>. The transformer phase shift angle <span>$\phi_{ij}$</span> is ignored while building the matrix <span>$\mathbf{B}_2$</span>. This version is the standard fast Newton-Raphson method and has excellent convergence properties for usual cases.</p><p>To initialize the XB version of the fast Newton-Raphson method, we can use:</p><pre><code class="language-julia-repl">system = powerSystem(&quot;case14.h5&quot;)
+acModel!(system)
+
+result = fastNewtonRaphsonXB(system)</code></pre><h4 id="BX-Version"><a class="docs-heading-anchor" href="#BX-Version">BX Version</a><a id="BX-Version-1"></a><a class="docs-heading-anchor-permalink" href="#BX-Version" title="Permalink"></a></h4><p>The shunt susceptance <span>$\Im \{ y_{\text{sh}i} \}$</span>, charging susceptance <span>$\Im \{ y_{\text{s}ij} \}$</span> and transformer tap ratio magnitude <span>$\tau_{ij}$</span> are ignored while forming the matrix <span>$\mathbf{B}_1$</span>. The resistance <span>$r_{ij}$</span> and transformer phase shift angle <span>$\phi_{ij}$</span> are ignored while building the matrix <span>$\mathbf{B}_2$</span>. For usual cases, the iteration count will be similar to the XB scheme, but for systems with a few or with general high <span>$r_{ij}/x_{ij}$</span> ratios the number of iterations needed to solve the power flow is considerably smaller than the number of the XB scheme <a href="powerFlow/@ref refs">[5]</a>.</p><p>To initialize the BX version of the fast Newton-Raphson method, we can use:</p><pre><code class="language-julia-repl">system = powerSystem(&quot;case14.h5&quot;)
+acModel!(system)
+
+result = fastNewtonRaphsonBX(system)</code></pre><h4 id="Implementation-Aspects-of-the-Fast-Newton-Rapshson-Method"><a class="docs-heading-anchor" href="#Implementation-Aspects-of-the-Fast-Newton-Rapshson-Method">Implementation Aspects of the Fast Newton-Rapshson Method</a><a id="Implementation-Aspects-of-the-Fast-Newton-Rapshson-Method-1"></a><a class="docs-heading-anchor-permalink" href="#Implementation-Aspects-of-the-Fast-Newton-Rapshson-Method" title="Permalink"></a></h4><p>In the beginning, we evaluate matrices <span>$\mathbf{B}_1$</span> and <span>$\mathbf{B}_2$</span> related with active and reactive power equations, respectively. These matrices can be accessed using commands:</p><pre><code class="language-julia-repl">julia&gt; result.algorithm.active.jacobian
+julia&gt; result.algorithm.reactive.jacobian</code></pre><p>Then, JuliaGrid uses the L<a href="https://docs.julialang.org/en/v1/stdlib/LinearAlgebra/#LinearAlgebra.lu">U factorization</a> of matrices <span>$\mathbf{B}_1$</span> and <span>$\mathbf{B}_2$</span> to reveal solutions through iterations:</p><pre><code class="language-julia-repl">julia&gt; result.algorithm.active.lower
+julia&gt; result.algorithm.active.upper
+julia&gt; result.algorithm.active.right
+julia&gt; result.algorithm.active.left
+julia&gt; result.algorithm.active.scaling
+
+julia&gt; result.algorithm.reactive.lower
+julia&gt; result.algorithm.reactive.upper
+julia&gt; result.algorithm.reactive.right
+julia&gt; result.algorithm.reactive.left
+julia&gt; result.algorithm.reactive.scaling</code></pre><p>Finally, to solve the AC power flow analysis and find the bus voltage magnitudes and angles, JuliaGrid provides the following sequence of functions:</p><pre><code class="language-julia-repl">stopping = result.algorithm.iteration.stopping
+for i = 1:10
+    newtonRaphson!(system, result)
+    if stopping.active &lt; 1e-8 &amp;&amp; stopping.reactive &lt; 1e-8
+        break
+    end
+end</code></pre><p>The fast Newton-Raphson method first solves the equation:</p><p class="math-container">\[  \mathbf{\Delta \bm \theta}^{(\nu)} = \mathbf{B}_1^{-1} \mathbf{h}_{P}(\bm \theta^{(\nu)}, \mathbf V^{(\nu)}).\]</p><pre><code class="language-julia-repl">julia&gt; result.algorithm.active.increment
+julia&gt; result.algorithm.active.mismatch</code></pre><p>After that, we update the solution:</p><p class="math-container">\[  \bm{\theta}^{(\nu+1)} = \bm{\theta}^{(\nu)} + {\mathbf \Delta \bm \theta}^{(\nu)}.\]</p><pre><code class="language-julia-repl">julia&gt; result.bus.voltage.angle</code></pre><p>The fast Newton-Raphson method further solves the equation:</p><p class="math-container">\[  \mathbf{\Delta V}^{(\nu)} = \mathbf{B}_2^{-1} \mathbf{h}_{Q}(\bm \theta^{(\nu + 1)}, \mathbf V^{(\nu)}).\]</p><pre><code class="language-julia-repl">julia&gt; result.algorithm.reactive.increment
+julia&gt; result.algorithm.reactive.mismatch</code></pre><p>Finally, we update the solution:</p><p class="math-container">\[  \mathbf{V}^{(\nu+1)} = \mathbf{V}^{(\nu)} + \mathbf{\Delta V}^{(\nu)}.\]</p><pre><code class="language-julia-repl">julia&gt; result.bus.voltage.magnitude</code></pre><p>Then, we compute active power injection mismatch for PQ and PV buses:</p><p class="math-container">\[  {h}_{P_i}(\bm \theta^{(\nu+1)}, \mathbf V^{(\nu+1)}) =
+  \sum\limits_{j=1}^n {V}_{j}^{(\nu+1)}(G_{ij}\cos\theta_{ij}^{(\nu+1)}+B_{ij}\sin\theta_{ij}^{(\nu+1)}) - \cfrac{{P}_{i}}{{V}_{i}^{(\nu+1)}},
+  \;\;\;  i \in \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}},\]</p><p>and reactive power injection mismatch for PQ buses:</p><p class="math-container">\[    {h}_{Q_i}(\bm \theta^{(\nu+1)}, \mathbf V^{(\nu+1)}) =
+    \sum\limits_{j=1}^n {V}_{j}^{(\nu+1)} (G_{ij}\sin\theta_{ij}^{(\nu)}-B_{ij}\cos\theta_{ij}^{(\nu+1)}) - \cfrac{{Q}_{i}}{{V}_{i}^{(\nu+1)}},
+    \;\;\; i \in \mathcal{N}_{\text{pq}}.\]</p><p>The iteration loop is stopped when the following conditions are met:</p><p class="math-container">\[    \max \{|f_{P_i}(\mathbf x^{(\nu)})|, i \in \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}} \} &lt; \epsilon \\
+    \max \{|f_{Q_i}(\mathbf x^{(\nu)})|, i \in \mathcal{N}_{\text{pq}} \} &lt; \epsilon\]</p><p>where <span>$\epsilon$</span> is predetermined stopping criteria. JuliaGrid stores these values in order to break the iteration loop:</p><pre><code class="language-julia-repl">julia&gt; result.stopping.active
+julia&gt; result.stopping.reactive</code></pre><hr/></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../solution/">« Power Flow Solution</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Tuesday 29 November 2022 11:23">Tuesday 29 November 2022</span>. Using Julia version 1.3.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
