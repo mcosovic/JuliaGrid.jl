@@ -30,8 +30,8 @@ According to the last equation, for the bus ``i \in \mathcal{N}`` there are four
 | Demand           | PQ               | 1         | ``P_{i}``, ``Q_{i}``        | ``V_{i}``, ``{\theta_{i}}`` |
 
 Consequently, JuliaGrid operates with sets ``\mathcal{N}_{\text{pv}}`` and ``\mathcal{N}_{\text{pq}}`` that contain PV and PQ buses, respectively, and exactly one slack bus ``\mathcal{N}_{\text{sb}}``. Note that JuliaGrid does not support systems with multiple slack buses.
-```julia
-julia> system.bus.layout.type
+```@repl
+system.bus.layout.type
 ```
 
 Finally, we note according to Tellegen's theorem, the bus active ``{P}_{i}`` and reactive ``{Q}_{i}`` power injections are equal to:
