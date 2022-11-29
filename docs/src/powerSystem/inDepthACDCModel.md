@@ -81,7 +81,7 @@ Note, if ``\tau_{ij} = 1`` and ``\phi_{ij} = 0`` the model describes the line. I
 
 ---
 
-#### [AC Equations and Nodal Matrix](@id ACNodalMatrix)
+#### [AC System of Equations and Nodal Matrix](@id ACNodalMatrix)
 Let us consider an example, given in Figure 3, that will allow us an easy transition to the general case. We observe system with three buses ``\mathcal{N} = \{p, k, q\}`` and two branches ``\mathcal{E} = \{(p, k), (k, q)\}``, where the bus ``k`` is incident to the shunt element with admittance ``{y}_{\text{sh}k}``.
 ```@raw html
 <img src="../../assets/pi_model_example.png" class="center"/>
@@ -242,7 +242,7 @@ We can conclude that ``P_{ij}=-P_{ji}`` holds. With the DC model, the linear net
 
 ---
 
-#### [DC Equations and Nodal Matrix](@id DCNodalMatrix)
+#### [DC System of Equations and Nodal Matrix](@id DCNodalMatrix)
 As before, let us consider an example of the DC framework, given in Figure 2, that will allow us an easy transition to the general case. We observe system with three buses ``\mathcal{N} = \{p, k, q\}`` and two branches ``\mathcal{E} = \{(p, k), (k, q)\}``, where the bus ``k`` is incident to the shunt element with conductance ``{g}_{\text{sh}k}``.
 ```@raw html
 <img src="../../assets/dc_model.png" class="center"/>
