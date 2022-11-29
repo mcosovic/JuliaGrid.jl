@@ -85,7 +85,14 @@ and reactive power injection functions for PQ buses:
     \;\;\; i \in \mathcal{N}_{\text{pq}}.
 ```
 
-Functions ``f_{P_i}(\mathbf x)`` and ``f_{Q_i}(\mathbf x)`` are called active and reactive mismatch, respectively, and are often marked as ``\Delta P_i(\mathbf x)`` and ``\Delta Q_i(\mathbf x)``. The first terms on the right-hand side represents power injections into the bus ``i``, while the second term is constant and is obtained based on the active and reactive powers of the generators that supply the bus ``i`` and active and reactive powers demanded by consumers at the bus ``i``.
+Functions ``f_{P_i}(\mathbf x)`` and ``f_{Q_i}(\mathbf x)`` are called active and reactive mismatch, respectively, and are often marked as ``\Delta P_i(\mathbf x)`` and ``\Delta Q_i(\mathbf x)``. The first terms on the right-hand side represents power injections into a bus, while the second term is constant and is obtained based on the active and reactive powers of the generators that supply a bus and active and reactive powers demanded by consumers at the same bus. Thus, the Newton-Raphson method solves the system of non-linear equations:
+```math
+  \mathbf{f(x)} =
+  \begin{bmatrix}
+    \mathbf{f}_{P}(\mathbf x) \\ \mathbf{f}_{Q}(\mathbf x)
+  \end{bmatrix} = \mathbf 0,
+```
+where the first ``n - 1`` equations are defined according to PV and PQ buses, while the last ``n_{\text{pq}}`` equations are defined according to PQ buses.
 
 ---
 
@@ -105,19 +112,24 @@ for i = 1:10
 end
 ```
 
-That is, applying the Newton-Raphson method over power flow equations we have:
+The Newton-Raphson method or Newton's method is essentially based on the Taylor series expansion, neglecting the quadratic and high order terms. The Newton-Raphson is an iterative method, where we iteratively compute the increments:
 ```math
-  \mathbf{ \Delta x^{(\nu)}} = -\mathbf{J(x^{(\nu)})}^{-1}\mathbf{ f(x^{(\nu)})}.
+  \mathbf{ \Delta x^{(\nu)}} = -\mathbf{J(x^{(\nu)})}^{-1}\mathbf{ f(x^{(\nu)})},
 ```
+where ``\mathbf{ \Delta x^{(\nu)}} = [\mathbf \Delta \bm \theta, \mathbf \Delta \mathbf V]^T`` represents the vector of bus voltage angels ``\mathbf \Delta \bm \theta \in \mathbb{R}^{n-1}`` and magnitudes ``\mathbf \Delta \mathbf V \in \mathbb{R}^{n_{\text{pq}}}`` increments.
+
 ```julia-repl
 julia> result.algorithm.increment
 julia> result.algorithm.jacobian
 julia> result.algorithm.mismatch
 ```
+The increment ``\mathbf{ \Delta x^{(\nu)}}`` and mismatch ``\mathbf{f(x^{(\nu)})}`` vectors in JuliaGrid is stored identically as defined, the first ``n - 1`` elements are bus voltage angles increments and active mismatches defined according to PV and PQ buses, while the last ``n_{\text{pq}}`` elements are bus voltage magnitudes increments and and reactive mismatches defined according to PQ buses.
+
 After that, we update the solution:
 ```math
   \mathbf {x}^{(\nu + 1)} = \mathbf {x}^{(\nu)} + \mathbf \Delta \mathbf {x}^{(\nu)}.
 ```
+JuliaGrid saves the final results after updating in vectors that contain all bus voltage magnitudes and angles:
 ```julia-repl
 julia> result.bus.voltage.angle
 julia> result.bus.voltage.magnitude
@@ -125,6 +137,47 @@ julia> result.bus.voltage.magnitude
 The current number of iterations ``\nu`` can be accessed using the command:
 ```julia-repl
 julia> result.algorithm.iteration.number
+```
+
+The iteration loop is repeated until the stopping criteria is met. Namely, after each iteration, we compute active power injection mismatch for PQ and PV buses:
+```math
+  f_{P_i}(\mathbf x^{(\nu)}) = {V}_{i}^{(\nu)}\sum\limits_{j=1}^n {V}_{j}^{(\nu)}(G_{ij}\cos\theta_{ij}^{(\nu)}+B_{ij}\sin\theta_{ij}^{(\nu)}) - {P}_{i},
+  \;\;\; i \in \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}},
+```
+and reactive power injection mismatch for PQ buses:
+```math
+    f_{Q_i}(\mathbf x^{(\nu)}) = {V}_{i}^{(\nu)}\sum\limits_{j=1}^n {V}_{j}^{(\nu)}(G_{ij}\sin\theta_{ij}^{(\nu)}-B_{ij}\cos\theta_{ij}^{(\nu)}) - {Q}_{i},
+    \;\;\; i \in \mathcal{N}_{\text{pq}}.
+```
+The iteration loop is stopped when the following conditions are met:
+```math
+    \max \{|f_{P_i}(\mathbf x^{(\nu)})|, i \in \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}} \} < \epsilon \\
+    \max \{|f_{Q_i}(\mathbf x^{(\nu)})|, i \in \mathcal{N}_{\text{pq}} \} < \epsilon
+```
+where ``\epsilon`` is predetermined stopping criteria. JuliaGrid stores these values in order to break the iteration loop:
+```julia-repl
+julia> result.stopping.active
+julia> result.stopping.reactive
+```
+
+Note that the Newton-Raphson method can have difficulties with initial conditions under "flat start".
+----
+
+#### Jacobian Matrix
+Without loss of generality, we assume that the slack bus is the first bus, followed by the set of PQ buses and the set of PV buses:
+```math
+  \begin{aligned}
+    \mathcal{N}_{\text{sb}} &= \{ 1 \} \\
+    \mathcal{N}_{\text{pq}} &= \{2, \dots, m\} \\
+    \mathcal{N}_{\text{pv}} &= \{m + 1,\dots, n\},
+  \end{aligned}
+```
+where ``\mathcal{N} = \mathcal{N}_{\text{sb}} \cup \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}}``. Hence, we have
+```math
+  \begin{aligned}
+    \bm \theta &= [\theta_2,\dots,\theta_n]^T; \;\;\;\;\;\; \mathbf \Delta \bm \theta = [\Delta \theta_2,\dots,\Delta \theta_n]^T \\
+    \mathbf V &= [V_2,\dots,V_{m}]^T; \;\;\; \mathbf \Delta \mathbf V = [\Delta V_2,\dots,\Delta V_{m}]^T.
+  \end{aligned}
 ```
 
 The Jacobian matrix ``\mathbf{J(x^{(\nu)})} \in \mathbb{R}^{n_{\text{u}} \times n_{\text{u}}}`` is:
@@ -199,6 +252,7 @@ while non-diagonal elements of the Jacobian sub-matrices are:
   B_{ij}\cos\theta_{ij}^{(\nu)}).
   \end{aligned}
 ```
+
 To conclude, the Newton-Raphson method is based on the equations:
 ```math
   \begin{bmatrix}
@@ -211,27 +265,6 @@ To conclude, the Newton-Raphson method is based on the equations:
   \begin{bmatrix}
     \mathbf{f}_{P}(\mathbf x^{(\nu)}) \\ \mathbf{f}_{Q}(\mathbf x^{(\nu)})
   \end{bmatrix} = \mathbf 0.
-```
-
-The iteration loop is repeated until the stopping criteria is met. Namely, after each iteration, we compute active power injection mismatch for PQ and PV buses:
-```math
-  f_{P_i}(\mathbf x^{(\nu)}) = {V}_{i}^{(\nu)}\sum\limits_{j=1}^n {V}_{j}^{(\nu)}(G_{ij}\cos\theta_{ij}^{(\nu)}+B_{ij}\sin\theta_{ij}^{(\nu)}) - {P}_{i},
-  \;\;\; i \in \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}},
-```
-and reactive power injection mismatch for PQ buses:
-```math
-    f_{Q_i}(\mathbf x^{(\nu)}) = {V}_{i}^{(\nu)}\sum\limits_{j=1}^n {V}_{j}^{(\nu)}(G_{ij}\sin\theta_{ij}^{(\nu)}-B_{ij}\cos\theta_{ij}^{(\nu)}) - {Q}_{i},
-    \;\;\; i \in \mathcal{N}_{\text{pq}}.
-```
-The iteration loop is stopped when the following conditions are met:
-```math
-    \max \{|f_{P_i}(\mathbf x^{(\nu)})|, i \in \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}} \} < \epsilon \\
-    \max \{|f_{Q_i}(\mathbf x^{(\nu)})|, i \in \mathcal{N}_{\text{pq}} \} < \epsilon
-```
-where ``\epsilon`` is predetermined stopping criteria. JuliaGrid stores these values in order to break the iteration loop:
-```julia-repl
-julia> result.stopping.active
-julia> result.stopping.reactive
 ```
 
 ---
