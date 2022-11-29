@@ -151,9 +151,6 @@ Functions ``f_{P_i}(\mathbf x)`` and ``f_{Q_i}(\mathbf x)`` are called active an
   \end{bmatrix} = \mathbf 0,
 ```
 where the first ``n - 1`` equations are defined for PV and PQ buses, while the last ``m - 1`` equations are defined only for PQ buses.
-```julia-repl
-julia> result.algorithm.mismatch - system.bus.demand.active
-```
 
 Applying the Newton-Raphson method over power flow equations we have:
 ```math
@@ -268,7 +265,7 @@ and reactive power injection mismatch for PQ buses:
 The iteration loop is stopped when the following conditions are met:
 ```math
   \begin{aligned}
-    \max \{|f_{P_i}(\mathbf x^{(\nu)})|, i \in \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}} \} < \epsilon
+    \max \{|f_{P_i}(\mathbf x^{(\nu)})|, i \in \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}} \} < \epsilon \\
     \max \{|f_{Q_i}(\mathbf x^{(\nu)})|, i \in \mathcal{N}_{\text{pq}} \} < \epsilon
   \end{aligned}
 ```
@@ -276,5 +273,8 @@ where ``\epsilon`` is predetermined stopping criteria.
 ```julia-repl
 julia> result.stopping.active
 julia> result.stopping.reactive
-
 ```
+
+---
+
+## [Fast Newton-Raphson Method](@id inDepthFastNewtonRaphson)
