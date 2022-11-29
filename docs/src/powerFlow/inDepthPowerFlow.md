@@ -639,3 +639,35 @@ where ``\epsilon`` is predetermined stopping criteria. JuliaGrid stores these va
 julia> result.stopping.active
 julia> result.stopping.reactive
 ```
+
+---
+
+## [DC Power Flow Solution](@id dcPowerFlowSolution)
+As shown in section [In-depth DC Model](@ref inDepthDCModel), the DC power flow problem is described by the system of linear equations:
+```math
+  \mathbf {P} = \mathbf{B} \bm {\theta} + \mathbf{P_\text{gs}} + \mathbf{G}_\text{sh},
+```
+
+---
+
+#### Implementation
+To solve the DC power flow analysis and find the bus voltage angles, JuliaGrid provides the following sequence of functions:
+```julia-repl
+system = powerSystem("case14.h5")
+dcModel!(system)
+
+result = dcPowerFlow(system)
+```
+
+The DC power flow solution is obtained through non-iterative procedure by solving the linear problem:
+```math
+    \bm {\theta} = \mathbf{B}^{-1}(\mathbf {P} - \mathbf{P_\text{gs}} - \mathbf{P}_\text{sh}).
+```
+Note that the slack bus voltage angle is excluded from ``\bm {\theta}``. Respectively, corresponding elements in vectors ``\mathbf {P}``, ``\mathbf{P_\text{gs}}``, ``\mathbf{P}_\text{sh}``, and corresponding column of the matrix ``\mathbf{B}`` will be removed, during the calculation process.
+
+JuliaGrid saves the final result in vector that contain all bus voltage angles:
+```julia-repl
+julia> result.bus.voltage.angle
+```
+
+---
