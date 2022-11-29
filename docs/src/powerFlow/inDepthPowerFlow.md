@@ -54,20 +54,6 @@ The Newton-Raphson method is generally preferred in power flow calculations beca
 ```math
   \mathbf{f}(\mathbf{x}) = \mathbf{0}.
 ```
-To solve the AC power flow analysis and find the bus voltage magnitudes and angles, JuliaGrid provides the following sequence of functions:
-```julia-repl
-system = powerSystem("case14.h5")
-acModel!(system)
-
-result = newtonRaphson(system)
-stopping = result.algorithm.iteration.stopping
-for i = 1:10
-    newtonRaphson!(system, result)
-    if stopping.active < 1e-8 && stopping.reactive < 1e-8
-        break
-    end
-end
-```
 
 The Newton-Raphson method or Newton's method is essentially based on the Taylor series expansion, neglecting the quadratic and high order terms. The Newton-Raphson is an iterative method, where we iteratively compute the increments ``\mathbf \Delta \mathbf {x}`` using Jacobian matrix ``\mathbf{J}(\mathbf x)``, and update solutions:
 ```math
@@ -76,21 +62,12 @@ The Newton-Raphson method or Newton's method is essentially based on the Taylor 
     \mathbf {x}^{(\nu + 1)} &= \mathbf {x}^{(\nu)} + \mathbf \Delta \mathbf {x}^{(\nu)},
   \end{aligned}
 ```
-where ``\nu = \{1,2,\dots \}`` represents the iteration index, and is stored as:
-```julia-repl
-julia> result.algorithm.iteration.number
-```
+where ``\nu = \{1,2,\dots \}`` represents the iteration index.
 
 Let us observe the vector ``\mathbf x_{\text{sv}} \in \mathbb{R}^{2n}`` given in the polar coordinate system:
 ```math
   \mathbf x_{\text{sv}} = [\theta_1,\dots,\theta_n,V_1,\dots,V_n]^T.
 ```
-The vector contains the voltage angles and magnitudes at all buses, and can be accessed after any iteration ``\nu``:
-```julia-repl
-julia> result.bus.voltage.angle
-julia> result.bus.voltage.magnitude
-```
-
 However, the Newton-Raphson method does not use the entire vector ``\mathbf x_{\text{sv}}``. Namely, the vector ``\mathbf x_{\text{sv}}`` contains elements whose values are known:
 * voltage angle ``\theta_i`` and magnitude ``V_i`` at the slack bus, ``i \in \mathcal{N}_{\text{sb}}``;
 * voltage magnitude ``V_i`` at PV buses, ``i \in \mathcal{N}_{\text{pv}}``.
@@ -152,19 +129,45 @@ Functions ``f_{P_i}(\mathbf x)`` and ``f_{Q_i}(\mathbf x)`` are called active an
 ```
 where the first ``n - 1`` equations are defined for PV and PQ buses, while the last ``m - 1`` equations are defined only for PQ buses.
 
-Applying the Newton-Raphson method over power flow equations we have:
-```math
-  \mathbf{ \Delta x^{(\nu)}} = -\mathbf{J(x^{(\nu)})}^{-1}\mathbf{ f(x^{(\nu)})}
+---
+
+#### Implementation Aspects of the Newton-Raphson Method
+To solve the AC power flow analysis and find the bus voltage magnitudes and angles using Newton-Raphson method, JuliaGrid provides the following sequence of functions:
+```julia-repl
+system = powerSystem("case14.h5")
+acModel!(system)
+
+result = newtonRaphson(system)
+stopping = result.algorithm.iteration.stopping
+for i = 1:10
+    newtonRaphson!(system, result)
+    if stopping.active < 1e-8 && stopping.reactive < 1e-8
+        break
+    end
+end
 ```
+
+That is, applying the Newton-Raphson method over power flow equations we have:
+```math
+  \mathbf{ \Delta x^{(\nu)}} = -\mathbf{J(x^{(\nu)})}^{-1}\mathbf{ f(x^{(\nu)})}.
+```
+```julia-repl
+julia> result.algorithm.increment
+julia> result.algorithm.jacobian
+julia> result.algorithm.mismatch
+```
+After that, we update the solution:
 ```math
   \mathbf {x}^{(\nu + 1)} = \mathbf {x}^{(\nu)} + \mathbf \Delta \mathbf {x}^{(\nu)}.
 ```
 ```julia-repl
-julia> result.algorithm.jacobian
-julia> result.algorithm.increment
-julia> result.algorithm.mismatch
+julia> result.bus.voltage.angle
+julia> result.bus.voltage.magnitude
 ```
-
+The current number of iterations ``\nu`` can be accessed using the command:
+```julia-repl
+julia> result.algorithm.iteration.number
+```
 
 The Jacobian matrix ``\mathbf{J(x^{(\nu)})} \in \mathbb{R}^{n_{\text{u}} \times n_{\text{u}}}`` is:
 ```math
