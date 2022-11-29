@@ -417,17 +417,7 @@ which can be written as:
     \mathbf{h}_{Q}(\mathbf x) &= \mathbf{B}_2 \mathbf{\Delta V}.
   \end{aligned}
 ```
-True benefits from these equations is that Jacobian matrices ``\mathbf{B}_1`` and ``\mathbf{B}_2`` are constant and should be formed only once. Note that no approximations have been introduced to the functions ``\mathbf{f}_{P}(\mathbf x)`` or ``\mathbf{f}_{Q}(\mathbf x)``, only in the way we calculate the increments of the state variables [[2]](@ref inDepthPowerFlowSolutionReference). Consequently, we still use:
-```math
-  \begin{aligned}
-    f_{P_i}(\mathbf x) &= {V}_{i}\sum\limits_{j=1}^n {V}_{j}(G_{ij}\cos\theta_{ij}+B_{ij}\sin\theta_{ij}) - {P}_{i} = 0,
-    \;\;\; i \in \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}}\\
-    f_{Q_i}(\mathbf x) &= {V}_{i}\sum\limits_{j=1}^n {V}_{j} (G_{ij}\sin\theta_{ij}-B_{ij}\cos\theta_{ij}) - {Q}_{i} = 0,
-    \;\;\; i \in \mathcal{N}_{\text{pq}}.
-  \end{aligned}
-```
-
-It is now possible to define XB and BX versions of the fast Newton-Raphson method.
+True benefits from these equations is that Jacobian matrices ``\mathbf{B}_1`` and ``\mathbf{B}_2`` are constant and should be formed only once. Next, it is now possible to define XB and BX versions of the fast Newton-Raphson method.
 
 ---
 
@@ -528,7 +518,17 @@ JuliaGrid stores the final results after updating in the vector that contains al
 julia> result.bus.voltage.magnitude
 ```
 
-Then, we compute active power injection mismatch for PQ and PV buses:
+No approximations have been introduced to the functions ``\mathbf{f}_{P}(\mathbf x)`` or ``\mathbf{f}_{Q}(\mathbf x)``, only in the way we calculate the increments of the state variables [[2]](@ref inDepthPowerFlowSolutionReference). Consequently, we still use following equations to compute mismatches:
+```math
+  \begin{aligned}
+    f_{P_i}(\mathbf x) &= {V}_{i}\sum\limits_{j=1}^n {V}_{j}(G_{ij}\cos\theta_{ij}+B_{ij}\sin\theta_{ij}) - {P}_{i} = 0,
+    \;\;\; i \in \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}}\\
+    f_{Q_i}(\mathbf x) &= {V}_{i}\sum\limits_{j=1}^n {V}_{j} (G_{ij}\sin\theta_{ij}-B_{ij}\cos\theta_{ij}) - {Q}_{i} = 0,
+    \;\;\; i \in \mathcal{N}_{\text{pq}}.
+  \end{aligned}
+```
+
+Hence, we compute active power injection mismatch for PQ and PV buses:
 ```math
   {h}_{P_i}(\mathbf x^{(\nu+1)}) =
   \sum\limits_{j=1}^n {V}_{j}^{(\nu+1)}(G_{ij}\cos\theta_{ij}^{(\nu+1)}+B_{ij}\sin\theta_{ij}^{(\nu+1)}) - \cfrac{{P}_{i}}{{V}_{i}^{(\nu+1)}},
