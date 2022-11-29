@@ -88,7 +88,7 @@ where the first ``n - 1`` equations are defined according to PV and PQ buses, wh
 
 ---
 
-#### Implementation Aspects of the Newton-Raphson Method
+#### Implementation Aspects
 To solve the AC power flow analysis and find the bus voltage magnitudes and angles using Newton-Raphson method, JuliaGrid provides the following sequence of functions:
 ```julia-repl
 system = powerSystem("case14.h5")
@@ -115,7 +115,7 @@ julia> result.algorithm.increment
 julia> result.algorithm.jacobian
 julia> result.algorithm.mismatch
 ```
-The increment ``\mathbf{ \Delta x^{(\nu)}}`` and mismatch ``\mathbf{f(x^{(\nu)})}`` vectors in JuliaGrid is stored identically as defined, the first ``n - 1`` elements are bus voltage angles increments and active mismatches defined according to PV and PQ buses, while the last ``n_{\text{pq}}`` elements are bus voltage magnitudes increments and and reactive mismatches defined according to PQ buses. According to this arrangement, the Jacobian matrix ``\mathbf{J(x^{(\nu)})}`` was also formed.
+The increment ``\mathbf{ \Delta x^{(\nu)}}`` and mismatch ``\mathbf{f(x^{(\nu)})}`` vectors in JuliaGrid are stored identically as defined, the first ``n - 1`` elements are bus voltage angles increments and active mismatches defined according to PV and PQ buses, while the last ``n_{\text{pq}}`` elements are bus voltage magnitudes increments and and reactive mismatches defined according to PQ buses. According to this arrangement, the Jacobian matrix ``\mathbf{J(x^{(\nu)})}`` was also formed.
 
 After that, we update the solution:
 ```math
@@ -133,18 +133,18 @@ julia> result.algorithm.iteration.number
 
 The iteration loop is repeated until the stopping criteria is met. Namely, after each iteration, we compute active power injection mismatch for PQ and PV buses:
 ```math
-  f_{P_i}(\mathbf x^{(\nu)}) = {V}_{i}^{(\nu)}\sum\limits_{j=1}^n {V}_{j}^{(\nu)}(G_{ij}\cos\theta_{ij}^{(\nu)}+B_{ij}\sin\theta_{ij}^{(\nu)}) - {P}_{i},
+  f_{P_i}(\mathbf x^{(\nu+1)}) = {V}_{i}^{(\nu+1)}\sum\limits_{j=1}^n {V}_{j}^{(\nu+1)}(G_{ij}\cos\theta_{ij}^{(\nu+1)}+B_{ij}\sin\theta_{ij}^{(\nu+1)}) - {P}_{i},
   \;\;\; i \in \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}},
 ```
 and reactive power injection mismatch for PQ buses:
 ```math
-    f_{Q_i}(\mathbf x^{(\nu)}) = {V}_{i}^{(\nu)}\sum\limits_{j=1}^n {V}_{j}^{(\nu)}(G_{ij}\sin\theta_{ij}^{(\nu)}-B_{ij}\cos\theta_{ij}^{(\nu)}) - {Q}_{i},
+    f_{Q_i}(\mathbf x^{(\nu+1)}) = {V}_{i}^{(\nu+1)}\sum\limits_{j=1}^n {V}_{j}^{(\nu+1)}(G_{ij}\sin\theta_{ij}^{(\nu+1)}-B_{ij}\cos\theta_{ij}^{(\nu+1)}) - {Q}_{i},
     \;\;\; i \in \mathcal{N}_{\text{pq}}.
 ```
 The iteration loop is stopped when the following conditions are met:
 ```math
-    \max \{|f_{P_i}(\mathbf x^{(\nu)})|, i \in \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}} \} < \epsilon \\
-    \max \{|f_{Q_i}(\mathbf x^{(\nu)})|, i \in \mathcal{N}_{\text{pq}} \} < \epsilon
+    \max \{|f_{P_i}(\mathbf x^{(\nu+1)})|, i \in \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}} \} < \epsilon \\
+    \max \{|f_{Q_i}(\mathbf x^{(\nu+1)})|, i \in \mathcal{N}_{\text{pq}} \} < \epsilon
 ```
 where ``\epsilon`` is predetermined stopping criteria. JuliaGrid stores these values in order to break the iteration loop:
 ```julia-repl
@@ -254,14 +254,14 @@ The convergence of the fast Newton-Raphson method is in fact slower than the New
 The fast Newton-Raphson method is based on the decoupling of the power flow equations. Namely, the Newton-Raphson method is based on the equations:
 ```math
   \begin{bmatrix}
-    \mathbf{J_{11}(x} &\mathbf{J_{12}(x} \\ \mathbf{J_{21}(x} &
-	   \mathbf{J_{22}(x}
+    \mathbf{J_{11}(x)} &\mathbf{J_{12}(x)} \\ \mathbf{J_{21}(x)} &
+	   \mathbf{J_{22}(x)}
   \end{bmatrix}
   \begin{bmatrix}
-    \mathbf{\Delta \theta^{(\nu)}} \\ \mathbf{\Delta V^{(\nu)}}
+    \mathbf{\Delta \theta} \\ \mathbf{\Delta V}
   \end{bmatrix}	+
   \begin{bmatrix}
-    \mathbf{f}_{P}(\mathbf x \\ \mathbf{f}_{Q}(\mathbf x
+    \mathbf{f}_{P}(\mathbf x) \\ \mathbf{f}_{Q}(\mathbf x)
   \end{bmatrix} = \mathbf 0,
 ```
 where we dropped the iteration index for simplicity. In transmission grids a strong coupling can be found between active powers and voltage angles, and between reactive powers and voltage magnitudes. In order to obtain decoupling, two conditions are assumed to have been satisfied: first, the resistances ``r_{ij}`` of the branches are small with respect to their respective reactances ``x_{ij}`` and, second, the angle differences are small ``\theta_{ij} \approx 0`` [[5]](@ref refs). Respectively, we start from the equation:
@@ -430,6 +430,8 @@ True benefits from these equations is that Jacobian matrices ``\mathbf{B}_1`` an
 
 It is now possible to define XB and BX versions of the fast Newton-Raphson method.
 
+---
+
 #### XB Version
 The resistance ``r_{ij}``, shunt susceptance ``\Im \{ y_{\text{sh}i} \}``, charging susceptance ``\Im \{ y_{\text{s}ij} \}`` and transformer tap ratio magnitude ``\tau_{ij}`` are ignored while forming the matrix ``\mathbf{B}_1``. The transformer phase shift angle ``\phi_{ij}`` is ignored while building the matrix ``\mathbf{B}_2``. This version is the standard fast Newton-Raphson method and has excellent convergence properties for usual cases.
 
@@ -440,6 +442,8 @@ acModel!(system)
 
 result = fastNewtonRaphsonXB(system)
 ```
+
+---
 
 #### BX Version
 The shunt susceptance ``\Im \{ y_{\text{sh}i} \}``, charging susceptance ``\Im \{ y_{\text{s}ij} \}`` and transformer tap ratio magnitude ``\tau_{ij}`` are ignored while forming the matrix ``\mathbf{B}_1``. The resistance ``r_{ij}`` and transformer phase shift angle ``\phi_{ij}`` are ignored while building the matrix ``\mathbf{B}_2``. For usual cases, the iteration count will be similar to the XB scheme, but for systems with a few or with general high ``r_{ij}/x_{ij}`` ratios the number of iterations needed to solve the power flow is considerably smaller than the number of the XB scheme [[5]](@ref refs).
@@ -452,21 +456,25 @@ acModel!(system)
 result = fastNewtonRaphsonBX(system)
 ```
 
-#### Implementation Aspects of the Fast Newton-Rapshson Method
+---
+
+#### Implementation Aspects
 In the beginning, we evaluate matrices ``\mathbf{B}_1`` and ``\mathbf{B}_2`` related with active and reactive power equations, respectively. These matrices can be accessed using commands:
 ```julia-repl
 julia> result.algorithm.active.jacobian
 julia> result.algorithm.reactive.jacobian
 ```
 
-Then, JuliaGrid uses the L[U factorization](https://docs.julialang.org/en/v1/stdlib/LinearAlgebra/#LinearAlgebra.lu) of matrices ``\mathbf{B}_1`` and ``\mathbf{B}_2`` to reveal solutions through iterations:
+Then, JuliaGrid uses the [LU factorization](https://docs.julialang.org/en/v1/stdlib/LinearAlgebra/#LinearAlgebra.lu) of matrices ``\mathbf{B}_1`` and ``\mathbf{B}_2`` to reveal solutions through iterations:
 ```julia-repl
 julia> result.algorithm.active.lower
 julia> result.algorithm.active.upper
 julia> result.algorithm.active.right
 julia> result.algorithm.active.left
 julia> result.algorithm.active.scaling
+```
 
+```julia-repl
 julia> result.algorithm.reactive.lower
 julia> result.algorithm.reactive.upper
 julia> result.algorithm.reactive.right
@@ -498,6 +506,7 @@ After that, we update the solution:
 ```math
   \bm{\theta}^{(\nu+1)} = \bm{\theta}^{(\nu)} + {\mathbf \Delta \bm \theta}^{(\nu)}.
 ```
+JuliaGrid stores the final results after updating in vector that contains all bus voltage angles:
 ```julia-repl
 julia> result.bus.voltage.angle
 ```
@@ -515,6 +524,7 @@ Finally, we update the solution:
 ```math
   \mathbf{V}^{(\nu+1)} = \mathbf{V}^{(\nu)} + \mathbf{\Delta V}^{(\nu)}.
 ```
+JuliaGrid stores the final results after updating in vector that contains all bus voltage magnitudes:
 ```julia-repl
 julia> result.bus.voltage.magnitude
 ```
