@@ -57,15 +57,7 @@ The Newton-Raphson method is generally preferred in power flow calculations beca
 Hence, the Newton-Raphson method solves the system of non-linear equations ``\mathbf{f}(\mathbf{x})``, and reveals bus voltage magnitudes and angles ``\mathbf{x}``. According to bus types, some buses have known values of bus voltage magnitudes and angles:
 * at the slack bus ``i \in \mathcal{N}_{\text{sb}}`` voltage angle ``\theta_i`` and magnitude ``V_i`` are known;
 * at PV buses ``i \in \mathcal{N}_{\text{pv}}`` voltage magnitude ``V_i`` is known.
-Thus, we observe the state vector ``\mathbf x``:
-```math
-  \mathbf x =
-  \begin{bmatrix}
-    \bm \theta \\ \mathbf V
-  \end{bmatrix},
-```
-where ``\bm \theta \in \mathbb{R}^{n-1}`` and ``\mathbf V \in \mathbb{R}^{n_{\text{pq}}}``, while ``n_{\text{pq}} = |\mathcal{N}_{\text{pq}}|`` is the number of PQ buses.
-
+Thus, we observe the state vector ``\mathbf x = [\bm \theta, \mathbf V]^T``, where ``\bm \theta \in \mathbb{R}^{n-1}`` and ``\mathbf V \in \mathbb{R}^{n_{\text{pq}}}``, while ``n_{\text{pq}} = |\mathcal{N}_{\text{pq}}|`` is the number of PQ buses.
 
 The apparent power injection ``S_i`` into the bus ``i \in \mathcal{N}`` is a function of the complex bus voltages. Hence, the real and imaginary components of the apparent power define the active and reactive power injection expressions:
 ```math
@@ -114,16 +106,16 @@ end
 
 The Newton-Raphson method or Newton's method is essentially based on the Taylor series expansion, neglecting the quadratic and high order terms. The Newton-Raphson is an iterative method, where we iteratively compute the increments:
 ```math
-  \mathbf{ \Delta x^{(\nu)}} = -\mathbf{J(x^{(\nu)})}^{-1}\mathbf{ f(x^{(\nu)})},
+  \mathbf{\Delta x^{(\nu)}} = -\mathbf{J(x^{(\nu)})}^{-1}\mathbf{ f(x^{(\nu)})},
 ```
-where ``\mathbf{ \Delta x^{(\nu)}} = [\mathbf \Delta \bm \theta, \mathbf \Delta \mathbf V]^T`` represents the vector of bus voltage angels ``\mathbf \Delta \bm \theta \in \mathbb{R}^{n-1}`` and magnitudes ``\mathbf \Delta \mathbf V \in \mathbb{R}^{n_{\text{pq}}}`` increments.
+where ``\mathbf{\Delta x^{(\nu)}} = [\mathbf \Delta \bm \theta^{(\nu)}, \mathbf \Delta \mathbf V^{(\nu)}]^T`` represents the vector of bus voltage angels ``\mathbf \Delta \bm \theta^{(\nu)} \in \mathbb{R}^{n-1}`` and magnitudes ``\mathbf \Delta \mathbf V^{(\nu)} \in \mathbb{R}^{n_{\text{pq}}}`` increments, and ``\mathbf{J(x^{(\nu)})}\in \mathbb{R}^{n_{\text{u}} \times n_{\text{u}}}`` is the Jacobian matrix, ``n_{\text{u}} = n + n_{\text{pq}} - 1``.
 
 ```julia-repl
 julia> result.algorithm.increment
 julia> result.algorithm.jacobian
 julia> result.algorithm.mismatch
 ```
-The increment ``\mathbf{ \Delta x^{(\nu)}}`` and mismatch ``\mathbf{f(x^{(\nu)})}`` vectors in JuliaGrid is stored identically as defined, the first ``n - 1`` elements are bus voltage angles increments and active mismatches defined according to PV and PQ buses, while the last ``n_{\text{pq}}`` elements are bus voltage magnitudes increments and and reactive mismatches defined according to PQ buses.
+The increment ``\mathbf{ \Delta x^{(\nu)}}`` and mismatch ``\mathbf{f(x^{(\nu)})}`` vectors in JuliaGrid is stored identically as defined, the first ``n - 1`` elements are bus voltage angles increments and active mismatches defined according to PV and PQ buses, while the last ``n_{\text{pq}}`` elements are bus voltage magnitudes increments and and reactive mismatches defined according to PQ buses. According to this arrangement, the Jacobian matrix ``\mathbf{J(x^{(\nu)})}`` was also formed.
 
 After that, we update the solution:
 ```math
@@ -131,8 +123,8 @@ After that, we update the solution:
 ```
 JuliaGrid saves the final results after updating in vectors that contain all bus voltage magnitudes and angles:
 ```julia-repl
-julia> result.bus.voltage.angle
 julia> result.bus.voltage.magnitude
+julia> result.bus.voltage.angle
 ```
 The current number of iterations ``\nu`` can be accessed using the command:
 ```julia-repl
@@ -161,6 +153,7 @@ julia> result.stopping.reactive
 ```
 
 Note that the Newton-Raphson method can have difficulties with initial conditions under "flat start".
+
 ----
 
 #### Jacobian Matrix
@@ -252,28 +245,26 @@ while non-diagonal elements of the Jacobian sub-matrices are:
   B_{ij}\cos\theta_{ij}^{(\nu)}).
   \end{aligned}
 ```
-
-To conclude, the Newton-Raphson method is based on the equations:
-```math
-  \begin{bmatrix}
-    \mathbf{J_{11}(x^{(\nu)})} &\mathbf{J_{12}(x^{(\nu)})} \\ \mathbf{J_{21}(x^{(\nu)})} &
-	   \mathbf{J_{22}(x^{(\nu)})}
-  \end{bmatrix}
-  \begin{bmatrix}
-    \mathbf{\Delta \theta^{(\nu)}} \\ \mathbf{\Delta V^{(\nu)}}
-  \end{bmatrix}	+
-  \begin{bmatrix}
-    \mathbf{f}_{P}(\mathbf x^{(\nu)}) \\ \mathbf{f}_{Q}(\mathbf x^{(\nu)})
-  \end{bmatrix} = \mathbf 0.
-```
-
 ---
 
 ## [Fast Newton-Raphson Method](@id inDepthFastNewtonRaphson)
 
 The convergence of the fast Newton-Raphson method is in fact slower than the Newton-Raphson method, but often, shorter solution time for the updates compensates for slower convergence, resulting in overall shorter solution time. For not too heavily loaded systems a shorter overall solution time is almost always obtained. It should be noted that if the algorithm converges, it converges to a correct solution [[2]](@ref refs).
 
-The fast Newton-Raphson method is based on the decoupling of the power flow equations. Namely, in transmission grids a strong coupling can be found between active powers and voltage angles, and between reactive powers and voltage magnitudes. In order to obtain decoupling, two conditions are assumed to have been satisfied: first, the resistances ``r_{ij}`` of the branches are small with respect to their respective reactances ``x_{ij}`` and, second, the angle differences are small ``\theta_{ij} \approx 0`` [[5]](@ref refs). Respectively, we start from the equation:
+The fast Newton-Raphson method is based on the decoupling of the power flow equations. Namely, the Newton-Raphson method is based on the equations:
+```math
+  \begin{bmatrix}
+    \mathbf{J_{11}(x} &\mathbf{J_{12}(x} \\ \mathbf{J_{21}(x} &
+	   \mathbf{J_{22}(x}
+  \end{bmatrix}
+  \begin{bmatrix}
+    \mathbf{\Delta \theta^{(\nu)}} \\ \mathbf{\Delta V^{(\nu)}}
+  \end{bmatrix}	+
+  \begin{bmatrix}
+    \mathbf{f}_{P}(\mathbf x \\ \mathbf{f}_{Q}(\mathbf x
+  \end{bmatrix} = \mathbf 0,
+```
+where we dropped the iteration index for simplicity. In transmission grids a strong coupling can be found between active powers and voltage angles, and between reactive powers and voltage magnitudes. In order to obtain decoupling, two conditions are assumed to have been satisfied: first, the resistances ``r_{ij}`` of the branches are small with respect to their respective reactances ``x_{ij}`` and, second, the angle differences are small ``\theta_{ij} \approx 0`` [[5]](@ref refs). Respectively, we start from the equation:
 ```math
   \begin{bmatrix}
     \mathbf{J_{11}(x)} & \mathbf{0} \\ \mathbf{0} & \mathbf{J_{22}(x)}
