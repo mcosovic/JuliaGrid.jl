@@ -264,12 +264,12 @@ and reactive power injection mismatch for PQ buses:
 ```
 The iteration loop is stopped when the following conditions are met:
 ```math
-  \begin{aligned}
+  \begin{gather}
     \max \{|f_{P_i}(\mathbf x^{(\nu)})|, i \in \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}} \} < \epsilon \\
     \max \{|f_{Q_i}(\mathbf x^{(\nu)})|, i \in \mathcal{N}_{\text{pq}} \} < \epsilon
-  \end{aligned}
+  \end{gather}
 ```
-where ``\epsilon`` is predetermined stopping criteria.
+where ``\epsilon`` is predetermined stopping criteria. JuliaGrid stores these values in order to break the iteration loop:
 ```julia-repl
 julia> result.stopping.active
 julia> result.stopping.reactive
