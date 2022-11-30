@@ -25,22 +25,27 @@ mutable struct BusPower
     shunt::Cartesian
 end
 
+mutable struct BusCurrent
+    injection::Polar
+end
+
 mutable struct BusResult
     voltage::Polar
     power::BusPower
+    current::BusCurrent
 end
 
 ######### Branch Struct ##########
 mutable struct BranchPower
-    fromBus::Cartesian
-    toBus::Cartesian
+    from::Cartesian
+    to::Cartesian
     shunt::CartesianImag
     loss::Cartesian
 end
 
 mutable struct BranchCurrent
-    fromBus::Polar
-    toBus::Polar
+    from::Polar
+    to::Polar
     impedance::Polar
 end
 
@@ -156,7 +161,8 @@ function gaussSeidel(system::PowerSystem)
 
     return Result(
         BusResult(Polar(voltageMagnitude, copy(bus.voltage.angle)),
-            BusPower(Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]))),
+            BusPower(Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[])),
+            BusCurrent(Polar(Float64[], Float64[]))),
         BranchResult(
             BranchPower(Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), CartesianImag(Float64[]), Cartesian(Float64[], Float64[])),
             BranchCurrent(Polar(Float64[], Float64[]), Polar(Float64[], Float64[]), Polar(Float64[], Float64[]))),
@@ -346,7 +352,8 @@ function newtonRaphson(system::PowerSystem)
 
     return Result(
         BusResult(Polar(voltageMagnitude, voltageAngle),
-            BusPower(Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]))),
+            BusPower(Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[])),
+            BusCurrent(Polar(Float64[], Float64[]))),
         BranchResult(
             BranchPower(Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), CartesianImag(Float64[]), Cartesian(Float64[], Float64[])),
             BranchCurrent(Polar(Float64[], Float64[]), Polar(Float64[], Float64[]), Polar(Float64[], Float64[]))),
@@ -659,7 +666,8 @@ end
 
     return Result(
         BusResult(Polar(voltageMagnitude, voltageAngle),
-            BusPower(Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]))),
+            BusPower(Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[])),
+            BusCurrent(Polar(Float64[], Float64[]))),
         BranchResult(
             BranchPower(Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), CartesianImag(Float64[]), Cartesian(Float64[], Float64[])),
             BranchCurrent(Polar(Float64[], Float64[]), Polar(Float64[], Float64[]), Polar(Float64[], Float64[]))),
@@ -817,7 +825,8 @@ function dcPowerFlow(system::PowerSystem)
 
     return Result(
         BusResult(Polar(Float64[], angle),
-            BusPower(Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]))),
+            BusPower(Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[])),
+            BusCurrent(Polar(Float64[], Float64[]))),
         BranchResult(
             BranchPower(Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), CartesianImag(Float64[]), Cartesian(Float64[], Float64[])),
             BranchCurrent(Polar(Float64[], Float64[]), Polar(Float64[], Float64[]), Polar(Float64[], Float64[]))),

@@ -50,11 +50,11 @@ function dcBranch!(system::PowerSystem, result::Result)
     voltage = result.bus.voltage
     errorVoltage(voltage.angle)
 
-    power.fromBus.active = copy(dc.admittance)
-    power.toBus.active = similar(dc.admittance)
+    power.from.active = copy(dc.admittance)
+    power.to.active = similar(dc.admittance)
     @inbounds for i = 1:branch.number
-        power.fromBus.active[i] *= (voltage.angle[branch.layout.from[i]] - voltage.angle[branch.layout.to[i]] - branch.parameter.shiftAngle[i])
-        power.toBus.active[i] = -power.fromBus.active[i]
+        power.from.active[i] *= (voltage.angle[branch.layout.from[i]] - voltage.angle[branch.layout.to[i]] - branch.parameter.shiftAngle[i])
+        power.to.active[i] = -power.from.active[i]
     end
 end
 
@@ -66,18 +66,18 @@ function acBranch!(system::PowerSystem, result::Result)
     power = result.branch.power
     errorVoltage(voltage.magnitude)
 
-    power.fromBus.active = fill(0.0, system.branch.number)
-    power.fromBus.reactive = fill(0.0, system.branch.number)
-    power.toBus.active = fill(0.0, system.branch.number)
-    power.toBus.reactive = fill(0.0, system.branch.number)
+    power.from.active = fill(0.0, system.branch.number)
+    power.from.reactive = fill(0.0, system.branch.number)
+    power.to.active = fill(0.0, system.branch.number)
+    power.to.reactive = fill(0.0, system.branch.number)
     power.shunt.reactive = fill(0.0, system.branch.number)
     power.loss.active = fill(0.0, system.branch.number)
     power.loss.reactive = fill(0.0, system.branch.number)
 
-    current.fromBus.magnitude = fill(0.0, system.branch.number)
-    current.fromBus.angle = fill(0.0, system.branch.number)
-    current.toBus.magnitude = fill(0.0, system.branch.number)
-    current.toBus.angle = fill(0.0, system.branch.number)
+    current.from.magnitude = fill(0.0, system.branch.number)
+    current.from.angle = fill(0.0, system.branch.number)
+    current.to.magnitude = fill(0.0, system.branch.number)
+    current.to.angle = fill(0.0, system.branch.number)
     current.impedance.magnitude = fill(0.0, system.branch.number)
     current.impedance.angle = fill(0.0, system.branch.number)
 
@@ -89,25 +89,25 @@ function acBranch!(system::PowerSystem, result::Result)
             voltageFrom = voltage.magnitude[f] * exp(im * voltage.angle[f])
             voltageTo = voltage.magnitude[t] * exp(im * voltage.angle[t])
 
-            currentFromBus = voltageFrom * ac.nodalFromFrom[i] + voltageTo * ac.nodalFromTo[i]
-            current.fromBus.magnitude[i] = abs(currentFromBus)
-            current.fromBus.angle[i] = angle(currentFromBus)
+            currentFrom = voltageFrom * ac.nodalFromFrom[i] + voltageTo * ac.nodalFromTo[i]
+            current.from.magnitude[i] = abs(currentFrom)
+            current.from.angle[i] = angle(currentFrom)
 
-            currentToBus = voltageFrom * ac.nodalToFrom[i] + voltageTo * ac.nodalToTo[i]
-            current.toBus.magnitude[i] = abs(currentToBus)
-            current.toBus.angle[i] = angle(currentToBus)
+            currentTo = voltageFrom * ac.nodalToFrom[i] + voltageTo * ac.nodalToTo[i]
+            current.to.magnitude[i] = abs(currentTo)
+            current.to.angle[i] = angle(currentTo)
 
             currentImpedance = ac.admittance[i] * (voltageFrom / ac.transformerRatio[i] - voltageTo)
             current.impedance.magnitude[i] = abs(currentImpedance)
             current.impedance.angle[i] = angle(currentImpedance)
 
-            powerFromBus = voltageFrom * conj(currentFromBus)
-            power.fromBus.active[i] = real(powerFromBus)
-            power.fromBus.reactive[i] = imag(powerFromBus)
+            powerFrom = voltageFrom * conj(currentFrom)
+            power.from.active[i] = real(powerFrom)
+            power.from.reactive[i] = imag(powerFrom)
 
-            powerToBus = voltageTo * conj(currentToBus)
-            power.toBus.active[i] = real(powerToBus)
-            power.toBus.reactive[i] = imag(powerToBus)
+            powerTo = voltageTo * conj(currentTo)
+            power.to.active[i] = real(powerTo)
+            power.to.reactive[i] = imag(powerTo)
 
             power.shunt.reactive[i] = 0.5 * system.branch.parameter.susceptance[i] * (abs(voltageFrom / ac.transformerRatio[i])^2 +  voltage.magnitude[t]^2)
 
@@ -118,7 +118,7 @@ function acBranch!(system::PowerSystem, result::Result)
 end
 
 """
-The function computes powers related to buses.
+The function computes powers and currents related to buses.
 
     bus!(system::PowerSystem, result::Result)
 
@@ -189,6 +189,7 @@ function acBus!(system::PowerSystem, result::Result)
 
     voltage = result.bus.voltage
     power = result.bus.power
+    current = result.bus.current
     errorVoltage(voltage.magnitude)
 
     power.injection.active = fill(0.0, system.bus.number)
@@ -199,6 +200,9 @@ function acBus!(system::PowerSystem, result::Result)
 
     power.shunt.active = fill(0.0, system.bus.number)
     power.shunt.reactive = fill(0.0, system.bus.number)
+
+    current.injection.magnitude = fill(0.0, system.bus.number)
+    current.injection.angle = fill(0.0, system.bus.number)
 
     @inbounds for i = 1:system.bus.number
         voltageBus = voltage.magnitude[i] * exp(im * voltage.angle[i])
@@ -212,6 +216,10 @@ function acBus!(system::PowerSystem, result::Result)
             k = ac.nodalMatrix.rowval[j]
             I += ac.nodalMatrixTranspose.nzval[j] * voltage.magnitude[k] * exp(im * voltage.angle[k])
         end
+
+        current.injection.magnitude[i] = abs(I)
+        current.injection.angle[i] = angle(I)
+
         powerInjection = conj(I) * voltageBus
         power.injection.active[i] = real(powerInjection)
         power.injection.reactive[i] = imag(powerInjection)
