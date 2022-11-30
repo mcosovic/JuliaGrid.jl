@@ -1,17 +1,22 @@
 """
 The function checks reactive power limits of the generators. More precisely,
-after the AC power flow analysis is done, all generators that violated reactive
-power limits are placed at their limits, and corresponding PV buses or slack
-bus are converted to PQ.
+after the bus voltage magnitudes and angles have been determined, the function
+sets the reactive power of the generators within the limits if they are violated,
+and corresponding PV buses or slack bus will be converted to PQ buses.
 
     reactivePowerLimit!(system::PowerSystem, result::Result)
 
-The function updates fields `generator.layout.violate`, `generator.output.reactive`,
-`bus.supply.reactive`, and `bus.layout.type` of the composite type `System`. Also,
-for the case when the slack bus is converted the function updates field
-`bus.layout.slackIndex` of the composite type `System`. In addition, in case the function
-`generator!()` is not executed, the function `reactivePowerLimit!()` will trigger the execution
-of the function `generator!()` and updates field `generator` of the composite type `Result`.
+The function updates field `generator.layout.violate` of the composite type `System`
+to indicate on which buses  the limits are violated. If the minimum limits are violated,
+the mark -1 will appear in the appropriate place, the violation of the maximum limits is
+marked with 1.
+
+Further, the function updates fields `generator.output.reactive` `bus.supply.reactive`, and
+`bus.layout.type` of the composite type `System`. For the case when the slack bus is converted
+the function updates field `bus.layout.slackIndex` of the composite type `System`.
+
+In case the function [`generator!()`](@ref generator!) is not executed, the function will trigger
+the execution of this function and will update the field `generator` of the composite type `Result`.
 
 # Example
 ```jldoctest
@@ -96,11 +101,12 @@ function reactivePowerLimit!(system::PowerSystem, result::Result)
 end
 
 """
-The function adjust bus voltage angles according to the original slack bus.
-More precisely, if the function `reactivePowerLimit!()` converts the slack bus
-to PQ bus, a new slack bus will be defined during this conversion. Then, using
-this function, it is possible to adjust the voltage angles in relation to the
-original slack bus.
+The function adjust bus voltage angles according to the original slack bus. More precisely,
+in the case when the reactive power of the generator is beyond the limit on the slack bus,
+the function [`reactivePowerLimit!()`](@ref reactivePowerLimit!) will convert that bus into
+PQ bus, and declare the first PV bus in the list as the new slack bus. Then, after the new
+AC power flow solution is determined, it is possible to correct the voltage angles, so that
+their values are in accordance with the angle of the original slack bus.
 
     adjustVoltageAngle!(system::PowerSystem, result::Result)
 
