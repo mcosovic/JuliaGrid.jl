@@ -1,6 +1,6 @@
 # [In-depth Power Flow Analysis](@id inDepthPowerFlowAnalysis)
 
-After the bus voltages are determined, it is possible to determine other electrical quantities. In the rest of this part, we define electrical quantities evaluated by JuliaGrid.
+After the bus voltages are determined, it is possible to determine other electrical quantities. JuliaGrid stores complex currents in the polar coordinate system, while apparent powers are stored in the rectangle coordinate system. In the rest of this part, we define electrical quantities evaluated by JuliaGrid.
 
 ---
 
@@ -29,9 +29,7 @@ generator!(system, result)
 ### Bus
 The active and reactive powers injection into the bus ``i \in \mathcal{N}`` can be obtained using the expression for the complex apparent power:
 ```math
-    {S}_{i} =\bar{V}_{i}\bar{I}_{i}^* = \bar{V}_{i} \sum\limits_{j \in \mathcal{H}_i} {Y}_{ij}^* \bar{V}_{j}^*; \;\;\;
-    P_i = \Re{\{S}_{i}\}; \;\;\;
-    Q_i = \Im{\{S}_{i}\}.
+    {S}_{i} =\bar{V}_{i}\bar{I}_{i}^* = \bar{V}_{i} \sum\limits_{j \in \mathcal{H}_i} {Y}_{ij}^* \bar{V}_{j}^*.
 ```
 ```julia-repl
 julia> result.bus.injection.active
@@ -58,9 +56,7 @@ julia> result.bus.supply.reactive
 
 The active and reactive powers related to the shunt element at the bus ``i \in \mathcal{N}`` are obtained using the complex apparent power:
 ```math
-  {S}_{\text{sh}i} =\bar{V}_{i}\bar{I}_{\text{sh}i}^* = {y}_{\text{sh}i}^*|\bar{V}_{i}|^2; \;\;\;
-  {P}_{\text{sh}i} = \Re{\{S}_{\text{sh}i}\}; \;\;\;
-  {Q}_{\text{sh}i} = \Im{\{S}_{\text{sh}i}\}.
+  {S}_{\text{sh}i} =\bar{V}_{i}\bar{I}_{\text{sh}i}^* = {y}_{\text{sh}i}^*|\bar{V}_{i}|^2.
 ```
 ```julia-repl
 julia> result.bus.shunt.active
@@ -74,7 +70,6 @@ The complex current at the bus "from" ``i \in \mathcal{N}`` of the the branch ``
 ```math
     \bar{I}_{ij} = \cfrac{1}{\tau_{ij}^2}({y}_{ij} + y_{\text{s}ij}) \bar{V}_{i} - \alpha_{ij}^*{y}_{ij} \bar{V}_{j}
 ```
-JuliaGrid stores the values of these currents in the polar coordinate system.
 ```julia-repl
 julia> result.branch.current.fromBus.magnitude
 julia> result.branch.current.fromBus.angle
@@ -98,7 +93,7 @@ julia> result.branch.current.impedance.angle
 
 The active and reactive powers at the bus "from" ``i \in \mathcal{N}`` of the branch ``(i,j) \in \mathcal{E}`` are obtained as:
 ```math
-    {S}_{ij} &= \bar{V}_{i}\bar{I}_{ij}^*
+    {S}_{ij} = \bar{V}_{i}\bar{I}_{ij}^*
 ```
 ```julia-repl
 julia> result.branch.power.fromBus.active
@@ -106,7 +101,7 @@ julia> result.branch.power.fromBus.reactive
 ```
 The active and reactive powers at the bus "to" ``j \in \mathcal{N}`` of the branch ``(i,j) \in \mathcal{E}`` are obtained as:
 ```math
-    {S}_{ji} &= \bar{V}_{j}\bar{I}_{ji}^*
+    {S}_{ji} = \bar{V}_{j}\bar{I}_{ji}^*
 ```
 ```julia-repl
 julia> result.branch.power.toBus.active
@@ -115,8 +110,10 @@ julia> result.branch.power.toBus.reactive
 
 Active and reactive power losses at the branch ``(i,j) \in \mathcal{E}`` arise due to the existence of the series impedance ``z_{ij}``, and can be defined as:
 ```math
-  P_{\text{loss}ij} = r_{ij}|\bar{I}_{\text{b}ij}|^2; \;\;\;
-  Q_{\text{loss}ij} = x_{ij}|\bar{I}_{\text{b}ij}|^2.
+    \begin{aligned}
+        P_{\text{loss}ij} &= r_{ij}|\bar{I}_{\text{b}ij}|^2
+        Q_{\text{loss}ij} &= x_{ij}|\bar{I}_{\text{b}ij}|^2.
+    \end{aligned}
 ```
 ```julia-repl
 julia> result.branch.loss.active
