@@ -29,7 +29,7 @@ generator!(system, result)
 ### Bus
 The active and reactive powers injection into the bus ``i \in \mathcal{N}`` can be obtained using the expression for the complex apparent power:
 ```math
-    {S}_{i} =\bar{V}_{i}\bar{I}_{i}^* = \bar{V}_{i} \sum\limits_{j \in \mathcal{H}_i} {Y}_{ij}^* \bar{V}_{j}^*.
+    {S}_{i} =\bar{V}_{i}\bar{I}_{i}^* = \bar{V}_{i} \sum\limits_{j = 1}^n {Y}_{ij}^* \bar{V}_{j}^*.
 ```
 ```julia-repl
 julia> result.bus.injection.active
@@ -147,4 +147,69 @@ The output reactive power of the generator at the bus ``i \in \mathcal{N}_{\text
 In case there are several generators at the bus ``i \in \mathcal{N}_{\text{pv}}`` , the reactive power will be proportionally distributed between the generators based on their capabilities.
 ```julia-repl
 julia> result.generator.power.reactive
+```
+
+---
+
+## DC Power Flow Analysis
+The DC power flow analysis implies the calculation of active powers related to buses, branches, and generators. To perform the DC power flow analysis JuliaGrid provides the following sequence of functions:
+```julia-repl
+system = powerSystem("case14.h5")
+dcModel!(system)
+
+result = dcPowerFlow(system)
+
+bus!(system, result)
+branch!(system, result)
+generator!(system, result)
+```
+
+---
+
+### Bus
+The active power injection into the bus ``i \in \mathcal{N}`` can be obtained using the expression:
+```math
+   P_i = \sum_{j = 1}^n {B}_{ij} \theta_j + P_{\text{gs}i} + P_{\text{sh}i}.
+```
+```julia-repl
+julia> result.bus.injection.active
+```
+
+The active power of the generators that supply the bus ``i \in \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}}`` is equal to the given active power of the generators in the input data, except for the slack bus, which is determined as:
+```math
+    P_{\text{g}i} = P_i + P_{\text{d}i},\;\;\; i \in \mathcal{N}_{\text{sb}},
+```
+where ``{P}_{\text{d}i}`` represents the active power demanded by consumers at the slack bus.
+```julia-repl
+julia> result.bus.supply.active
+```
+
+---
+
+### Branch
+The active power at the bus "from" ``i \in \mathcal{N}`` of the branch ``(i,j) \in \mathcal{E}`` is obtained as:
+```math
+    P_{ij} = \cfrac{1}{\tau_{ij} x_{ij}} (\theta_{i} -\theta_{j}-\phi_{ij})
+```
+```julia-repl
+julia> result.branch.power.fromBus.active
+```
+The active power at the bus "to" ``j \in \mathcal{N}`` of the branch ``(i,j) \in \mathcal{E}`` is obtained as:
+```math
+    P_{ji} = - P_{ij}.
+```
+```julia-repl
+julia> result.branch.power.toBus.active
+```
+
+---
+
+### Generator
+The output active power of the generator at the bus ``i \in \mathcal{N}_{\text{pv}}`` is equal to the given active power of the generator in the input data. Moreover, if there are several generators at the bus ``i \in \mathcal{N}_{\text{pv}}`` their output active powers are still equal to the active powers given in the input data. The output active power of the generator at the slack bus ``i \in \mathcal{N}_{\text{sb}}`` is determined as:
+```math
+    P_{\text{g}i} = P_i + P_{\text{d}i},\;\;\; i \in \mathcal{N}_{\text{sb}}.
+```
+When there are several generators at the slack bus, the active power ``P_{\text{g}i}`` will be assigned to the first generator in the list of input data. After that this active power will be reduced by the output active power of the rest of the generators.
+```julia-repl
+julia> result.generator.power.active
 ```
