@@ -36,7 +36,7 @@ julia> result.bus.injection.active
 julia> result.bus.injection.reactive
 ```
 
-The active power of the generators that supply the bus ``i \in \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}}`` is equal to the given active power of the generators in the input data, except for the slack bus, which is determined as:
+The active power of the generators that supply the bus ``i \in \mathcal{N}_{\text{pv}}`` is equal to the given active power of the generators in the input data, except for the slack bus, which is determined as:
 ```math
     P_{\text{g}i} = P_i + P_{\text{d}i},\;\;\; i \in \mathcal{N}_{\text{sb}},
 ```
@@ -45,11 +45,11 @@ where ``{P}_{\text{d}i}`` represents the active power demanded by consumers at t
 julia> result.bus.supply.active
 ```
 
-The reactive power of the generators that supply the bus ``i \in \mathcal{N}_{\text{pv}} \cup \mathcal{N}_{\text{sb}}`` is equal to the given reactive power of the generators in the input data, except for PQ buses, which are determined as:
+The reactive power of the generators that supply the bus ``i \in \mathcal{N}_{\text{pv}} \cup \mathcal{N}_{\text{sb}}`` is equal to:
 ```math
-    Q_{\text{g}i} = Q_i + Q_{\text{d}i},\;\;\; i \in \mathcal{N}_{\text{pq}},
+    Q_{\text{g}i} = Q_i + Q_{\text{d}i},\;\;\; i \in \mathcal{N}_{\text{pv}} \cup \mathcal{N}_{\text{sb}},
 ```
-where ``{Q}_{\text{d}i}`` represents the reactive power demanded by consumers at the corresponding PQ bus.
+where ``{Q}_{\text{d}i}`` represents the reactive power demanded by consumers at the corresponding bus.
 ```julia-repl
 julia> result.bus.supply.reactive
 ```
