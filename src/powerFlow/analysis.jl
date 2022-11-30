@@ -210,16 +210,16 @@ function acBus!(system::PowerSystem, result::Result)
         I = 0.0 + im * 0.0
         for j in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
             k = ac.nodalMatrix.rowval[j]
-            I += conj(ac.nodalMatrixTranspose.nzval[j]) * conj(voltage.magnitude[k] * exp(im * voltage.angle[k]))
+            I += ac.nodalMatrixTranspose.nzval[j] * voltage.magnitude[k] * exp(im * voltage.angle[k])
         end
-        powerInjection = I * voltageBus
+        powerInjection = conj(I) * voltageBus
         power.injection.active[i] = real(powerInjection)
         power.injection.reactive[i] = imag(powerInjection)
 
 
         power.supply.active[i] = system.bus.supply.active[i]
         if system.bus.layout.type[i] != 1
-            power.supply.reactive[i] = system.bus.supply.reactive[i] + system.bus.demand.reactive[i] + power.injection.reactive[i]
+            power.supply.reactive[i] = power.injection.reactive[i] + system.bus.demand.reactive[i]
         else
             power.supply.reactive[i] = system.bus.supply.reactive[i]
         end

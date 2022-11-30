@@ -20,6 +20,7 @@ makedocs(
             ["Power Flow Solution" => "powerFlow/solution.md",
              "In-depth Power Flow Solution" => "powerFlow/inDepthSolution.md",
              "Power Flow Analysis" => "powerFlow/analysis.md",
+             "In-depth Power Flow Analysis" => "powerFlow/inDepthAnalysis.md",
              "Generator Reactive Power Limits" => "powerFlow/reactiveLimits.md",],
         # "Operating State" =>
         #     ["Operating State of Buses" => "operatingState/bus.md",
