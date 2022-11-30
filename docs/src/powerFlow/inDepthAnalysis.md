@@ -111,7 +111,7 @@ julia> result.branch.power.toBus.reactive
 Active and reactive power losses at the branch ``(i,j) \in \mathcal{E}`` arise due to the existence of the series impedance ``z_{ij}``, and can be defined as:
 ```math
     \begin{aligned}
-        P_{\text{loss}ij} &= r_{ij}|\bar{I}_{\text{b}ij}|^2
+        P_{\text{loss}ij} &= r_{ij}|\bar{I}_{\text{b}ij}|^2 \\
         Q_{\text{loss}ij} &= x_{ij}|\bar{I}_{\text{b}ij}|^2.
     \end{aligned}
 ```
@@ -131,4 +131,20 @@ julia> result.branch.shunt.reactive
 ---
 
 ### Generator
+The output active power of the generator at the bus ``i \in \mathcal{N}_{\text{pv}}`` is equal to the given active power of the generator in the input data. Moreover, if there are several generators at the bus ``i \in \mathcal{N}_{\text{pv}}`` their output active powers are still equal to the active powers given in the input data. The output active power of the generator at the slack bus ``i \in \mathcal{N}_{\text{sb}}`` is determined as:
+```math
+    P_{\text{g}i} = P_i + P_{\text{d}i},\;\;\; i \in \mathcal{N}_{\text{sb}}.
+```
+When there are several generators at the slack bus, the active power ``P_{\text{g}i}`` will be assigned to the first generator in the list of input data. After that this active power will be reduced by the output active power of the rest of the generators.
+```julia-repl
+julia> result.generator.power.active
+```
 
+The output reactive power of the generator at the bus ``i \in \mathcal{N}_{\text{pv}}`` is equal to:
+```math
+    Q_{\text{g}i} = Q_i + Q_{\text{d}i},\;\;\; i \in \mathcal{N}_{\text{pq}}.
+```
+In case there are several generators at the bus ``i \in \mathcal{N}_{\text{pv}}`` , the reactive power will be proportionally distributed between the generators based on their capabilities.
+```julia-repl
+julia> result.generator.power.reactive
+```
