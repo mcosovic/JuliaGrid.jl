@@ -5,7 +5,7 @@ Once the bus voltages are obtained, it is possible to calculate powers and curre
 * [`branch!()`](@ref branch!)
 * [`generator!()`](@ref generator!).
 
-Note that the JuliaGrid stores complex currents in the polar coordinate system, while apparent powers are stored in the rectangle coordinate system.
+Note that the JuliaGrid stores complex currents in the polar coordinate system, while complex powers are stored in the rectangle coordinate system.
 
 ---
 

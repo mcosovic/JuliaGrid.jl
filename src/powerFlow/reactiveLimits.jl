@@ -10,12 +10,12 @@ The function updates the field `system.generator.layout.violate` to indicate on 
 buses the limits are violated. If the minimum limits are violated, the mark -1 will
 appear in the appropriate place, the violation of the maximum limits is marked with 1.
 
-Further, the function updates fields `system.generator.output.reactive` `system.bus.supply.reactive`,
-and `system.bus.layout.type`. For the case when the slack bus is converted the function
-updates the field `system.bus.layout.slackIndex`.
+Further, the function updates fields `system.generator.output.reactive`,
+`system.bus.supply.reactive`,and `system.bus.layout.type`. For the case when the slack
+bus is converted the function updates the field `system.bus.layout.slackIndex`.
 
-In case the function [`generator!()`](@ref generator!) is not executed, the function will trigger
-the execution of this function and will update the field `result.generator`.
+In case the function [`generator!()`](@ref generator!) is not executed, the function will
+trigger the execution of this function and will update the field `result.generator`.
 
 # Example
 ```jldoctest

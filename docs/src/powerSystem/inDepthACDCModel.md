@@ -93,7 +93,7 @@ Let us consider an example, given in Figure 3, that will allow us an easy transi
 &nbsp;
 ```
 
-According to the [unified branch model](@ref branchModelAC) each branch is described using the system of equations as follows:
+According to the [unified branch model](@ref ACBranchModel) each branch is described using the system of equations as follows:
 ```math
   \begin{bmatrix}
     \bar{I}_{pk} \\ \bar{I}_{kp}
@@ -183,7 +183,7 @@ dcModel!(system)
 ---
 
 #### [DC Branch Model](@id DCBranchModel)
-According to the above assumptions, we start from the [unified branch model](@ref branchModelAC):
+According to the above assumptions, we start from the [unified branch model](@ref ACBranchModel):
 ```math
     \begin{bmatrix}
       \bar{I}_{ij} \\ \bar{I}_{ji}
@@ -227,7 +227,7 @@ where ``{1}/({\tau_{ij} x_{ij}})`` represents the branch admittance in the DC fr
 julia> system.dcModel.admittance
 ```
 
-We can conclude that ``P_{ij}=-P_{ji}`` holds. With the DC model, the linear network equations relate active powers to bus voltage angles, versus complex currents to complex bus voltages in the AC model [[2]](@ref inDepthACDCModelReference). Consequently, analogous to the [unified branch model](@ref branchModelAC) we can write:
+We can conclude that ``P_{ij}=-P_{ji}`` holds. With the DC model, the linear network equations relate active powers to bus voltage angles, versus complex currents to complex bus voltages in the AC model [[2]](@ref inDepthACDCModelReference). Consequently, analogous to the [unified branch model](@ref ACBranchModel) we can write:
 ```math
   \begin{bmatrix}
     P_{ij} \\ P_{ji}
