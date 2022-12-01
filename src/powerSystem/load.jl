@@ -193,7 +193,9 @@ function powerSystem(inputFile::String)
 
     if extension == ".h5"
         system = h5open(fullpath, "r")
-        basePower = loadBasePower(system)
+        keys = names(system)
+
+        basePower = loadBasePower(system, keys)
         bus = loadBus(system)
         branch = loadBranch(system, bus)
         generator = loadGenerator(system, bus)
@@ -241,8 +243,8 @@ function powerSystem()
 end
 
 ######## Load Base Power from HDF5 File ##########
-function loadBasePower(system)
-    if exists(system, "basePower")
+function loadBasePower(system, keys)
+    if "basePower" in keys
         basePower::Float64 = read(system["basePower"])
     else
         basePower = 1e8
