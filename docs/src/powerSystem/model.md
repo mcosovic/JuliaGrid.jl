@@ -8,7 +8,7 @@ The JuliaGrid supports the composite type `PowerSystem` to preserve power system
 * `dcModel`
 * `basePower`.
 
-The function [`powerSystem()`](@ref powerSystem) returns the composite type `PowerSystem` with all fields. The fields `bus`, `branch`, `generator` hold the data related to buses, branches and generators, respectively. Fields `acModel` and `dcModel` store vectors and matrices obtained based on the power system topology and parameters. The base power of the system is kept in the field `basePower`, given in volt-ampere unit. JuliaGrid supports three modes to build the composite type `PowerSystem`:
+The function [`powerSystem()`](@ref powerSystem) returns the composite type `PowerSystem` with all fields. The fields `bus`, `branch`, and `generator` hold the data related to buses, branches and generators, respectively. Fields `acModel` and `dcModel` store vectors and matrices obtained based on the power system topology and parameters. The base power of the system is kept in the field `basePower`, given in the volt-ampere unit. JuliaGrid supports three modes to build the composite type `PowerSystem`:
 * using built-in functions,
 * using HDF5 file format,
 * using [Matpower](https://matpower.org) case files.
@@ -114,4 +114,4 @@ The interpretation of the datasets activeCoefficient and reactiveCoefficient, gi
 * polynomial cost model is defined using the ``n``-th degree polynomial, where the ``i``-th row of the matrix is given as:
   * activeCoefficient: ``[a_n, \dots, a_1, a_0]`` to define ``f(p) = a_n p^n + \dots + a_1 p + a_0``,
   * reactiveCoefficient: ``[b_n, \dots, b_1, b_0]`` to define ``f(q) = b_n q^n + \dots + b_1 q + b_0``.
-(*) Thus, for the piecewise linear model ``p_i`` and ``q_i`` are given in per-unit, while ``f(p_i)`` and ``f(q_i)`` have a dimension of currency/hour. In the polynomial model coefficients are dimensionless.
+(*) Thus, for the piecewise linear model ``p_i`` and ``q_i`` are given in per-unit, while ``f(p_i)`` and ``f(q_i)`` have a dimension of currency/hour. In the polynomial model, coefficients are dimensionless.

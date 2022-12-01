@@ -14,12 +14,12 @@ In addition, it is possible to manipulate the parameters of buses, branches and 
 * [`parameterBranch!()`](@ref parameterBranch!)
 * [`statusGenerator!()`](@ref statusGenerator!)
 * [`outputGenerator!()`](@ref outputGenerator!).
-The execution of these functions will automatically trigger the update of all fields affected by these functions. Changing other parameters of the power system can be done by changing variables by accessing their values in fields `bus`, `branch` and `generator` of the composite type `powerSystem`.
+The execution of these functions will automatically trigger the update of all fields affected by these functions. Changing other parameters of the power system can be done by changing variables by accessing their values in fields `bus`, `branch`, `generator`, and `basePower` of the composite type `powerSystem`.
 
 At any moment after the composite type `PowerSystem` is formed, it is possible to save the data in HDF5 format that describe the power system:
 * [`savePowerSystem()`](@ref savePowerSystem).
 
-To create vectors and matrices obtained based on the power system topology and parameters, following functions are used:
+To create vectors and matrices obtained based on the power system topology and parameters, the following functions are used:
 * [`acModel!()`](@ref acModel!)
 * [`dcModel!()`](@ref dcModel!).
 Note that, functions can be executed at any time, and when all power system buses are defined. More precisely, once the field `acModel` and `dcModel` are formed, using function [`addBranch!()`](@ref addBranch!), will automatically trigger the update of these fields. In contrast, adding a new bus, using [`addBus!()`](@ref addBus!), requires executing the functions [`acModel!()`](@ref acModel!) and [`dcModel!()`](@ref dcModel!) again. Further, the execution of the functions related to parameter manipulation of buses and branches will automatically trigger the update of the fields `acModel` and `dcModel`.
@@ -64,7 +64,7 @@ outputGenerator!
 ---
 
 ## [Save Model](@id saveModel)
-Function receives the composite type `PowerSystem` and arguments by keyword to set the path, reference and note of the data set.
+The function receives the composite type `PowerSystem` and arguments by keyword to set the path, reference and note of the data set.
 ```@docs
 savePowerSystem
 ```
@@ -72,7 +72,7 @@ savePowerSystem
 ---
 
 ## Build AC and DC Model
-The functions receive the composite type `PowerSystem` and form vectors and matrices related to AC or DC simulations.
+Functions receive the composite type `PowerSystem` and form vectors and matrices related to AC or DC simulations.
 ```@docs
 acModel!
 dcModel!

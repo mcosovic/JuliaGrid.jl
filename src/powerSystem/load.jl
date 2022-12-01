@@ -33,7 +33,7 @@ mutable struct BusSupply
 end
 
 mutable struct Bus
-    label::Dict{Int64, Int64}
+    label::Dict{Int64,Int64}
     demand::BusDemand
     shunt::BusShunt
     voltage::BusVoltage
@@ -70,7 +70,7 @@ mutable struct BranchLayout
 end
 
 mutable struct Branch
-    label::Dict{Int64, Int64}
+    label::Dict{Int64,Int64}
     parameter::BranchParameter
     rating::BranchRating
     voltage::BranchVoltage
@@ -98,7 +98,7 @@ mutable struct GeneratorCapability
 end
 
 mutable struct GeneratorRampRate
-    loadFollowing ::Array{Float64,1}
+    loadFollowing::Array{Float64,1}
     reserve10minute::Array{Float64,1}
     reserve30minute::Array{Float64,1}
     reactiveTimescale::Array{Float64,1}
@@ -129,7 +129,7 @@ mutable struct GeneratorLayout
 end
 
 mutable struct Generator
-    label::Dict{Int64, Int64}
+    label::Dict{Int64,Int64}
     output::GeneratorOutput
     capability::GeneratorCapability
     rampRate::GeneratorRampRate
@@ -183,8 +183,8 @@ which enables building the model from scratch:
 
     powerSystem()
 
-Once the composite type `PowerSystem` is created it is possible to add new buses, branches or
-generators, and also change the parameters of the existing ones.
+Once the composite type `PowerSystem` is created it is possible to add new buses,
+branches or generators, and also change the parameters of the existing ones.
 """
 function powerSystem(inputFile::String)
     packagePath = checkPackagePath()
@@ -193,10 +193,10 @@ function powerSystem(inputFile::String)
 
     if extension == ".h5"
         system = h5open(fullpath, "r")
-            basePower = loadBasePower(system)
-            bus = loadBus(system)
-            branch = loadBranch(system, bus)
-            generator = loadGenerator(system, bus)
+        basePower = loadBasePower(system)
+        bus = loadBus(system)
+        branch = loadBranch(system, bus)
+        generator = loadGenerator(system, bus)
         close(system)
     end
 
@@ -212,28 +212,31 @@ function powerSystem(inputFile::String)
 end
 
 function powerSystem()
-    af = Array{Float64,1}(undef, 0); ai = Array{Int64,1}(undef, 0); mf = Array{Float64,2}(undef, 0, 0); di = Dict{Int64, Int64}()
+    af = Array{Float64,1}(undef, 0)
+    ai = Array{Int64,1}(undef, 0)
+    mf = Array{Float64,2}(undef, 0, 0)
+    di = Dict{Int64,Int64}()
     acModel, dcModel = makeModel()
 
     return PowerSystem(
         Bus(di,
-        BusDemand(af, copy(af)),
-        BusShunt(copy(af), copy(af)),
-        BusVoltage(copy(af), copy(af), copy(af), copy(af), copy(af)),
-        BusLayout(ai, copy(ai), copy(ai), 0, 0, false),
-        BusSupply(copy(af), copy(af), copy(af)), 0),
+            BusDemand(af, copy(af)),
+            BusShunt(copy(af), copy(af)),
+            BusVoltage(copy(af), copy(af), copy(af), copy(af), copy(af)),
+            BusLayout(ai, copy(ai), copy(ai), 0, 0, false),
+            BusSupply(copy(af), copy(af), copy(af)), 0),
         Branch(copy(di),
-        BranchParameter(copy(af), copy(af), copy(af), copy(af), copy(af)),
-        BranchRating(copy(af), copy(af), copy(af)),
-        BranchVoltage(copy(af), copy(af)),
-        BranchLayout(copy(ai), copy(ai), copy(ai), false), 0),
+            BranchParameter(copy(af), copy(af), copy(af), copy(af), copy(af)),
+            BranchRating(copy(af), copy(af), copy(af)),
+            BranchVoltage(copy(af), copy(af)),
+            BranchLayout(copy(ai), copy(ai), copy(ai), false), 0),
         Generator(copy(di),
-        GeneratorOutput(copy(af), copy(af)),
-        GeneratorCapability(copy(af), copy(af), copy(af), copy(af), copy(af), copy(af), copy(af), copy(af), copy(af), copy(af)),
-        GeneratorRampRate(copy(af), copy(af), copy(af), copy(af)),
-        GeneratorCost(copy(ai), copy(af), copy(af), copy(ai), mf, copy(ai), copy(af), copy(af), copy(ai), copy(mf)),
-        GeneratorVoltage(copy(af)),
-        GeneratorLayout(copy(ai), copy(af), copy(ai), copy(ai)), 0),
+            GeneratorOutput(copy(af), copy(af)),
+            GeneratorCapability(copy(af), copy(af), copy(af), copy(af), copy(af), copy(af), copy(af), copy(af), copy(af), copy(af)),
+            GeneratorRampRate(copy(af), copy(af), copy(af), copy(af)),
+            GeneratorCost(copy(ai), copy(af), copy(af), copy(ai), mf, copy(ai), copy(af), copy(af), copy(ai), copy(mf)),
+            GeneratorVoltage(copy(af)),
+            GeneratorLayout(copy(ai), copy(af), copy(ai), copy(ai)), 0),
         acModel, dcModel, 1e8)
 end
 
@@ -260,7 +263,8 @@ function loadBus(system)
     labelOriginal::Array{Int64,1} = readmmap(layout["label"])
 
     busNumber = length(labelOriginal)
-    label = Dict{Int64, Int64}(); sizehint!(label, busNumber)
+    label = Dict{Int64,Int64}()
+    sizehint!(label, busNumber)
     @inbounds for i = 1:busNumber
         j = labelOriginal[i]
         if !renumbering && i != j
@@ -309,7 +313,8 @@ function loadBranch(system, bus::Bus)
     labelOriginal::Array{Int64,1} = readmmap(layout["label"])
 
     branchNumber = length(labelOriginal)
-    label = Dict{Int64, Int64}(); sizehint!(label, branchNumber)
+    label = Dict{Int64,Int64}()
+    sizehint!(label, branchNumber)
     @inbounds for i = 1:branchNumber
         j = labelOriginal[i]
         if !renumbering && i != j
@@ -414,7 +419,8 @@ function loadGenerator(system, bus::Bus)
         reactiveModel, reactiveStartup, reactiveShutdown, reactiveDataPoint, reactiveCoefficient = generatorCostDataEmpty()
     end
 
-    label = Dict{Int64, Int64}(); sizehint!(label, generatorNumber)
+    label = Dict{Int64,Int64}()
+    sizehint!(label, generatorNumber)
     @inbounds for (k, i) in enumerate(busIndex)
         label[labelOriginal[k]] = k
         if status[k] == 1
@@ -429,23 +435,27 @@ function loadGenerator(system, bus::Bus)
     return Generator(label,
         GeneratorOutput(active, reactive),
         GeneratorCapability(minActive, maxActive, minReactive, maxReactive, lowerActive, minReactiveLower, maxReactiveLower,
-        upperActive, minReactiveUpper, maxReactiveUpper),
+            upperActive, minReactiveUpper, maxReactiveUpper),
         GeneratorRampRate(loadFollowing, reserve10minute, reserve30minute, reactiveTimescale),
         GeneratorCost(activeModel, activeStartup, activeShutdown, activeDataPoint, activeCoefficient,
-        reactiveModel, reactiveStartup, reactiveShutdown, reactiveDataPoint, reactiveCoefficient),
+            reactiveModel, reactiveStartup, reactiveShutdown, reactiveDataPoint, reactiveCoefficient),
         GeneratorVoltage(magnitude),
         GeneratorLayout(busIndex, area, status, Int64[]), generatorNumber)
 end
 
 ######### Load Power System Data from MATLAB File ##########
 @inline function readMATLAB(fullpath::String)
-    busLine = String[]; busFlag = false
-    branchLine = String[]; branchFlag = false
-    generatorLine = String[]; generatorFlag = false
-    generatorcostLine = String[]; generatorcostFlag = false
+    busLine = String[]
+    busFlag = false
+    branchLine = String[]
+    branchFlag = false
+    generatorLine = String[]
+    generatorFlag = false
+    generatorcostLine = String[]
+    generatorcostFlag = false
 
     datafile = open(fullpath, "r")
-        lines = readlines(datafile)
+    lines = readlines(datafile)
     close(datafile)
 
     basePower = 0.0
@@ -494,7 +504,8 @@ function loadBus(busLine::Array{String,1}, basePower::Float64)
     slackIndex = 0
     busNumber = length(busLine)
 
-    label = Dict{Int64, Int64}(); sizehint!(label, busNumber)
+    label = Dict{Int64,Int64}()
+    sizehint!(label, busNumber)
     type = fill(0, busNumber)
     area = similar(type)
     lossZone = similar(type)
@@ -564,7 +575,8 @@ function loadBranch(branchLine::Array{String,1}, bus::Bus, basePower::Float64)
     renumbering = false
     branchNumber = length(branchLine)
 
-    label = Dict{Int64, Int64}(); sizehint!(label, branchNumber)
+    label = Dict{Int64,Int64}()
+    sizehint!(label, branchNumber)
     from = fill(0, branchNumber)
     to = similar(from)
     status = similar(from)
@@ -622,7 +634,8 @@ function loadGenerator(generatorLine::Array{String,1}, generatorcostLine::Array{
     basePowerInv = 1 / basePower
     generatorNumber = length(generatorLine)
 
-    label = Dict{Int64, Int64}(); sizehint!(label, generatorNumber)
+    label = Dict{Int64,Int64}()
+    sizehint!(label, generatorNumber)
     busIndex = fill(0, generatorNumber)
 
     active = fill(0.0, generatorNumber)
@@ -697,7 +710,7 @@ function loadGenerator(generatorLine::Array{String,1}, generatorcostLine::Array{
     end
 
     if !isempty(generatorcostLine) && size(generatorcostLine) == 2 * generatorNumber
-        reactiveModel, reactiveStartup, reactiveShutdown, reactiveDataPoint, reactiveCoefficient = generatorCostData(generatorcostLine[generatorNumber + 1:end], generatorNumber)
+        reactiveModel, reactiveStartup, reactiveShutdown, reactiveDataPoint, reactiveCoefficient = generatorCostData(generatorcostLine[generatorNumber+1:end], generatorNumber)
     else
         reactiveModel, reactiveStartup, reactiveShutdown, reactiveDataPoint, reactiveCoefficient = generatorCostDataEmpty()
     end
@@ -705,16 +718,16 @@ function loadGenerator(generatorLine::Array{String,1}, generatorcostLine::Array{
     return Generator(label,
         GeneratorOutput(active, reactive),
         GeneratorCapability(minActive, maxActive, minReactive, maxReactive, lowerActive, minReactiveLower, maxReactiveLower,
-        upperActive, minReactiveUpper, maxReactiveUpper),
+            upperActive, minReactiveUpper, maxReactiveUpper),
         GeneratorRampRate(loadFollowing, reserve10minute, reserve30minute, reactiveTimescale),
         GeneratorCost(activeModel, activeStartup, activeShutdown, activeDataPoint, activeCoefficient,
-        reactiveModel, reactiveStartup, reactiveShutdown, reactiveDataPoint, reactiveCoefficient),
+            reactiveModel, reactiveStartup, reactiveShutdown, reactiveDataPoint, reactiveCoefficient),
         GeneratorVoltage(magnitude),
         GeneratorLayout(busIndex, area, status, Int64[]), generatorNumber)
 end
 
 ######## Load Generator Cost Data from MATLAB File ##########
-function generatorCostData(generatorCostLine::Array{String, 1}, generatorNumber::Int64)
+function generatorCostData(generatorCostLine::Array{String,1}, generatorNumber::Int64)
     pointNumber = length(split(generatorCostLine[1])) - 4
     costModel = fill(0, generatorNumber)
     startup = fill(0.0, generatorNumber)
@@ -750,9 +763,9 @@ end
 ######## Load Generator Cost Empty Model ##########
 @inline function generatorCostDataEmpty()
     costModel = Array{Int64,1}(undef, 0)
-    startup =  Array{Float64,1}(undef, 0)
+    startup = Array{Float64,1}(undef, 0)
     shutdown = Array{Float64,1}(undef, 0)
-    dataPoint =  Array{Int64,1}(undef, 0)
+    dataPoint = Array{Int64,1}(undef, 0)
     coefficient = Array{Float64,2}(undef, 0, 0)
 
     return costModel, startup, shutdown, dataPoint, coefficient
@@ -760,7 +773,9 @@ end
 
 ######### Initialize DC and AC Model #########
 @inline function makeModel()
-    ac = Array{ComplexF64,1}(undef, 0); af = Array{Float64,1}(undef, 0); sp = spzeros(1, 1)
+    ac = Array{ComplexF64,1}(undef, 0)
+    af = Array{Float64,1}(undef, 0)
+    sp = spzeros(1, 1)
 
     return ACModel(copy(sp), copy(sp), ac, copy(ac), copy(ac), copy(ac), copy(ac), copy(ac)), DCModel(sp, copy(af), copy(af))
 end
@@ -799,7 +814,7 @@ end
 end
 
 ######### Matpower Input Data Parse Lines #########
-@inline function parseLine(line::String, flag::Bool, str::Array{String, 1})
+@inline function parseLine(line::String, flag::Bool, str::Array{String,1})
     sublines = split(line, "[")[end]
     sublines = split(sublines, ";")
 

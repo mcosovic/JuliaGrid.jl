@@ -1,5 +1,5 @@
 """
-The function adds a new bus, and updates the field `bus`. Names, descriptions and units of keywords
+The function adds a new bus and updates the field `bus`. Names, descriptions and units of keywords
 are given in the table [bus group](@ref busGroup).
 
     addBus!(system::PowerSystem; label, slackLabel, area, lossZone, active, reactive,
@@ -96,7 +96,7 @@ connected to the bus.
     shuntBus!(system::PowerSystem; label, conductance, susceptance)
 
 The keyword `label` should correspond to the already defined bus label. Keywords `conductance`
-or `susceptance`can be omitted, then the value of the omitted parameter remains unchanged.
+or `susceptance` can be omitted, then the value of the omitted parameter remains unchanged.
 The function also updates the field `acModel`, if field exist.
 
 # Example
@@ -303,7 +303,7 @@ function statusBranch!(system::PowerSystem; label::Int64, status::Int64 = 0)
 end
 
 """
-The function `parameterBranch!` allows changing `resistance`, `reactance`, `susceptance`,
+The function allows changing `resistance`, `reactance`, `susceptance`,
 `turnsRatio` and `shiftAngle` parameters of the branch.
 
     parameterBranch!(system::PowerSystem; label, resistance, reactance, susceptance,
@@ -631,7 +631,7 @@ end
 
 """
 We advise the reader to read the section [in-depth DC Model](@ref inDepthDCModel),
-that explains all the data involved in the field `dcModel`.
+which explains all the data involved in the field `dcModel`.
 
     dcModel!(system::PowerSystem)
 
@@ -712,7 +712,7 @@ end
 
 """
 We advise the reader to read the section [in-depth AC Model](@ref inDepthACModel),
-that explains all the data involved in the field `acModel`.
+which explains all the data involved in the field `acModel`.
 
     acModel!(system::PowerSystem)
 

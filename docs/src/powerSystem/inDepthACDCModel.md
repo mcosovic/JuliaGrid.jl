@@ -4,7 +4,7 @@ Network equations obtained using the unified branch model and defined below repr
 ---
 
 ## [AC Model](@id inDepthACModel)
-JuliaGrid is based on common network elements and benefits the unified branch model to perform various analyses based on the system of non-linear equations. To create vectors and matrices related with AC or non-linear analyses, JuliaGrid uses the function [`acModel!()`](@ref acModel!), for example:
+JuliaGrid is based on common network elements and benefits the unified branch model to perform various analyses based on the system of non-linear equations. To create vectors and matrices related to AC or non-linear analyses, JuliaGrid uses the function [`acModel!()`](@ref acModel!), for example:
 ```julia-repl
 system = powerSystem("case14.h5")
 acModel!(system)
@@ -16,7 +16,7 @@ acModel!(system)
 The equivalent unified ``\pi``-model for a branch ``(i,j) \in \mathcal{E}`` incident to the buses ``\{i,j\} \in \mathcal{N}`` is shown in Figure 2.
 ```@raw html
 <img src="../../assets/pi_model.png" class="center"/>
-<figcaption>Figure 2: The equivalent branch model, where transformer is located at "from bus end" of the branch.</figcaption>
+<figcaption>Figure 2: The equivalent branch model, where the transformer is located at "from" bus end of the branch.</figcaption>
 &nbsp;
 ```
 
@@ -30,6 +30,8 @@ where ``r_{ij}`` is a resistance, ``x_{ij}`` is a reactance, ``g_{ij}`` is a con
 ```julia-repl
 julia> system.branch.parameter.resistance
 julia> system.branch.parameter.reactance
+```
+```julia-repl
 julia> system.acModel.admittance
 ```
 
@@ -47,10 +49,12 @@ The transformer complex ratio ``\alpha_{ij}`` is defined:
 ```math
     \alpha_{ij} = \cfrac{1}{\tau_{ij}}e^{-\text{j}\phi_{ij}},
 ```
-where ``\tau_{ij}`` is the transformer turns ratio, while ``\phi_{ij}`` is the transformer phase shift angle, always located "from bus end" of the branch.
+where ``\tau_{ij}`` is the transformer turns ratio, while ``\phi_{ij}`` is the transformer phase shift angle, always located "from" bus end of the branch.
 ```julia-repl
 julia> system.branch.parameter.turnsRatio
 julia> system.branch.parameter.shiftAngle
+```
+```julia-repl
 julia> system.acModel.transformerRatio
 ```
 
@@ -85,7 +89,7 @@ Note, if ``\tau_{ij} = 1`` and ``\phi_{ij} = 0`` the model describes the line. I
 Let us consider an example, given in Figure 3, that will allow us an easy transition to the general case. We observe system with three buses ``\mathcal{N} = \{p, k, q\}`` and two branches ``\mathcal{E} = \{(p, k), (k, q)\}``, where the bus ``k`` is incident to the shunt element with admittance ``{y}_{\text{sh}k}``.
 ```@raw html
 <img src="../../assets/pi_model_example.png" class="center"/>
-<figcaption>Figure 3: The example with three buses and two branches.</figcaption>
+<figcaption>Figure 3: The example of the system with three buses and two branches.</figcaption>
 &nbsp;
 ```
 
@@ -115,7 +119,7 @@ According to the [unified branch model](@ref branchModelAC) each branch is descr
   \end{bmatrix}.
 ```
 
-The injection complex currents into buses are:
+The complex current injections at buses are:
 ```math
   \begin{aligned}
     \bar{I}_{p} &= \bar{I}_{pk} = \cfrac{1}{\tau_{pk}^2}({y}_{pk} + y_{\text{s}pk}) \bar{V}_{p} -\alpha_{kq}^*{y}_{kq} \bar{V}_{k} \\
@@ -144,7 +148,7 @@ Next, the system of equations for buses ``i=1, \dots, n`` can be written in the 
 ```math
   \mathbf {\bar {I}} = \mathbf{Y} \mathbf {\bar {V}},
 ```
-where ``\mathbf {\bar {V}} \in \mathbb{C}^{n}`` is the vector of bus complex voltages, and ``\mathbf {\bar {I}} \in \mathbb{C}^{n}`` is the vector of injection complex currents.
+where ``\mathbf {\bar {V}} \in \mathbb{C}^{n}`` is the vector of bus complex voltages, and ``\mathbf {\bar {I}} \in \mathbb{C}^{n}`` is the vector of complex current injections at buses.
 
 The matrix ``\mathbf{Y} = \mathbf{G} + \text{j}\mathbf{B} \in \mathbb{C}^{n \times n}`` is the bus or nodal admittance matrix, with elements:
   * the diagonal elements, where ``i \in \mathcal{N}``,  are equal to:
@@ -160,7 +164,7 @@ The matrix ``\mathbf{Y} = \mathbf{G} + \text{j}\mathbf{B} \in \mathbb{C}^{n \tim
     Y_{ji} = G_{ji} + \text{j}B_{ji} =  -\alpha_{ij}{y}_{ij}.
     ```
 
-When a branch is not incident (or adjacent) to a bus the corresponding element in the nodal admittance matrix ``\mathbf{Y}`` is equal to zero. The nodal admittance matrix ``\mathbf{Y}`` is a sparse matrix (i.e., a small number of elements are non-zeros) for real-world power systems. Although it is often assumed that the matrix ``\mathbf{Y}`` is symmetrical, it is not a general case, for example, in the presence of phase shifting transformers the matrix ``\mathbf{Y}`` is not symmetrical [[1, Sec. 9.6]](@ref inDepthACDCModelReference).
+When a branch is not incident (or adjacent) to a bus the corresponding element in the nodal admittance matrix ``\mathbf{Y}`` is equal to zero. The nodal admittance matrix ``\mathbf{Y}`` is a sparse (i.e., a small number of elements are non-zeros) for real-world power systems. Although it is often assumed that the matrix ``\mathbf{Y}`` is symmetrical, it is not a general case, for example, in the presence of phase shifting transformers the matrix ``\mathbf{Y}`` is not symmetrical [[1, Sec. 9.6]](@ref inDepthACDCModelReference).
 
 ```julia-repl
 julia> system.acModel.nodalMatrix
@@ -170,7 +174,7 @@ julia> system.acModel.nodalMatrixTranspose
 ---
 
 ## [DC Model](@id inDepthDCModel)
-The DC model is obtained by linearisation of the non-linear model, and it provides an approximate solution. In the typical operating conditions, the difference of bus voltage angles between adjacent buses ``(i,j) \in \mathcal{E}`` is very small ``\theta_{i}-\theta_{j} \approx 0``, which implies ``\cos \theta_{ij}\approx 1`` and ``\sin \theta_{ij} \approx \theta_{ij}``. Further, all bus voltage magnitudes are ``V_i \approx 1``, ``i \in \mathcal{N}``, and all shunt susceptance elements and branch resistances can be neglected. This implies that the DC model ignores the reactive powers and transmission losses and takes into account only the active powers. Therefore, the DC power flow takes only bus voltage angles ``\bm \theta`` as state variables. To create vectors and matrices related with DC or linear analyses, JuliaGrid uses the function [`dcModel!()`](@ref dcModel!), for example:
+The DC model is obtained by linearisation of the non-linear model, and it provides an approximate solution. In the typical operating conditions, the difference of bus voltage angles between adjacent buses ``(i,j) \in \mathcal{E}`` is very small ``\theta_{i}-\theta_{j} \approx 0``, which implies ``\cos \theta_{ij}\approx 1`` and ``\sin \theta_{ij} \approx \theta_{ij}``. Further, all bus voltage magnitudes are ``V_i \approx 1``, ``i \in \mathcal{N}``, and all shunt susceptance elements and branch resistances can be neglected. This implies that the DC model ignores the reactive powers and transmission losses and takes into account only the active powers. Therefore, the DC power flow takes only bus voltage angles ``\bm \theta`` as state variables. To create vectors and matrices related to DC or linear analyses, JuliaGrid uses the function [`dcModel!()`](@ref dcModel!), for example:
 ```julia-repl
 system = powerSystem("case14.h5")
 dcModel!(system)
@@ -223,7 +227,7 @@ where ``{1}/({\tau_{ij} x_{ij}})`` represents the branch admittance in the DC fr
 julia> system.dcModel.admittance
 ```
 
-We can conclude that ``P_{ij}=-P_{ji}`` holds. With the DC model, the linear network equations relate active power to bus voltage angles, versus complex currents to complex bus voltages in the AC case [[2]](@ref inDepthACDCModelReference). Consequently, analogous to the [unified branch model](@ref branchModelAC) we can write:
+We can conclude that ``P_{ij}=-P_{ji}`` holds. With the DC model, the linear network equations relate active powers to bus voltage angles, versus complex currents to complex bus voltages in the AC model [[2]](@ref inDepthACDCModelReference). Consequently, analogous to the [unified branch model](@ref branchModelAC) we can write:
 ```math
   \begin{bmatrix}
     P_{ij} \\ P_{ji}
@@ -246,11 +250,11 @@ We can conclude that ``P_{ij}=-P_{ji}`` holds. With the DC model, the linear net
 As before, let us consider an example of the DC framework, given in Figure 2, that will allow us an easy transition to the general case. We observe system with three buses ``\mathcal{N} = \{p, k, q\}`` and two branches ``\mathcal{E} = \{(p, k), (k, q)\}``, where the bus ``k`` is incident to the shunt element with conductance ``{g}_{\text{sh}k}``.
 ```@raw html
 <img src="../../assets/dc_model.png" class="center"/>
-<figcaption>Figure 2: The example with three buses and two branches.</figcaption>
+<figcaption>Figure 2: The example of the system with three buses and two branches.</figcaption>
 &nbsp;
 ```
 
-Each branch in the DC framework is described with system of equations as follows:
+Each branch in the DC framework is described with a system of equations as follows:
 ```math
   \begin{bmatrix}
     P_{pk} \\ P_{kp}
@@ -282,7 +286,7 @@ Each branch in the DC framework is described with system of equations as follows
   \end{bmatrix}.
 ```
 
-The injection active powers into buses are:
+The active power injections at buses are:
 ```math
   \begin{aligned}
     P_{p} &= P_{pk} =\cfrac{1}{\tau_{pk}x_{pk}} \theta_{p} - \cfrac{1}{\tau_{pk}x_{pk}} \theta_{k} - \cfrac{\phi_{pk}}{\tau_{pk}x_{pk}} \\
@@ -291,7 +295,7 @@ The injection active powers into buses are:
     P_{q} &= {P}_{qk} = -\cfrac{1}{\tau_{kq}x_{kq}} \theta_{k} +\cfrac{1}{\tau_{kq}x_{kq}} \theta_{q} + \cfrac{\phi_{kq}}{\tau_{kq}x_{kq}}.
   \end{aligned}
 ```
-Note that the active power injected by the shunt element into the bus ``i \in \mathcal{N}`` is equal to:
+Note that the active power injected by the shunt element at the bus ``i \in \mathcal{N}`` is equal to:
 ```math
   P_{\text{sh}i} = \Re\{\bar{V}_{i}\bar{I}_{\text{sh}i}^*\} = \Re\{-\bar{V}_{i}{y}_{\text{sh}i}^*\bar{V}_{i}^*\} = - {g}_{\text{sh}i}.
 ```
@@ -323,12 +327,12 @@ Next, the system of equations for ``i=1,\dots,n`` can be written in the matrix f
 where ``\bm \theta \in \mathbb{R}^{n}`` is the vector of bus voltage angles.
 
 
-The vector ``\mathbf {P} \in \mathbb{R}^{n}`` contains injected active powers into buses caused by generators and demands. In JuliaGrid, the vector can be recovered using an expression:
+The vector ``\mathbf {P} \in \mathbb{R}^{n}`` contains active power injections at buses caused by generators and demands. In JuliaGrid, the vector can be recovered using a command:
 ```julia-repl
 julia> system.bus.supply.active - system.bus.demand.active
 ```
 
-The vector ``\mathbf{P_\text{gs}} \in \mathbb{R}^{n}`` represents active powers related with non-zero shift angle of transformers.
+The vector ``\mathbf{P_\text{gs}} \in \mathbb{R}^{n}`` represents active powers related to the non-zero shift angle of transformers.
 ```julia-repl
 julia> system.dcModel.shiftActivePower
 ```
