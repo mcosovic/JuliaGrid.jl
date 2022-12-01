@@ -3,7 +3,7 @@
 
     systemMat = powerSystem(string(pathData, "case5test.m"))
 
-    # savePowerSystem(systemMat; path = string(pathData, "case5test.h5"))
+    savePowerSystem(systemMat; path = string(pathData, "case5test.h5"))
     # systemH5 = powerSystem(string(pathData, "case5test.h5"))
 
     # systemIn = powerSystem()
