@@ -2,5 +2,4 @@ using HDF5
 using JuliaGrid
 using Test
 
-@test 2 == 2
-@test 1 == 1
+include("powerSystem/loadSaveAssemble.jl")

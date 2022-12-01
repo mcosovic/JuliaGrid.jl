@@ -6,7 +6,6 @@ using HDF5
 ######### Utility ##########
 include("utility/routine.jl")
 
-
 ######## Power System ##########
 include("powerSystem/load.jl")
 export powerSystem

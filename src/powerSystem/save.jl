@@ -132,7 +132,7 @@ function saveBranch(system::PowerSystem, labelBus::Array{Int64,1}, file)
     layout = system.branch.layout
 
     label = fill(0, system.branch.number)
-    @time @inbounds for (key, value) in system.branch.label
+    @inbounds for (key, value) in system.branch.label
         label[value] = key
     end
 

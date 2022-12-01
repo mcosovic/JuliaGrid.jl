@@ -462,7 +462,9 @@ function addGenerator!(system::PowerSystem; label::Int64, bus::Int64, area::Floa
 
     busIndex = system.bus.label[bus]
     if status == 1
-        system.bus.layout.type[busIndex] = 2
+        if system.bus.layout.type[busIndex] != 3
+            system.bus.layout.type[busIndex] = 2
+        end
         system.bus.supply.inService[busIndex] += 1
         system.bus.supply.active[busIndex] += active
         system.bus.supply.reactive[busIndex] += reactive
