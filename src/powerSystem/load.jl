@@ -193,6 +193,7 @@ function powerSystem(inputFile::String)
 
     if extension == ".h5"
         system = h5open(fullpath, "r")
+        display(system)
         keys = names(system)
 
         basePower = loadBasePower(system, keys)
