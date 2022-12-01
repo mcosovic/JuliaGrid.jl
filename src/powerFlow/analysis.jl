@@ -4,17 +4,17 @@ For the DC power flow analysis, the function computes only active powers.
 
     branch!(system::PowerSystem, result::Result)
 
-The function updates the field `result.branch` of the composite type `Result`.
+The function updates the field `result.branch`.
 
 # AC Power Flow Example
 ```jldoctest
 system = powerSystem("case14.h5")
 acModel!(system)
 
-result = gaussSeidel(system)
+result = newtonRaphson(system)
 stopping = result.algorithm.iteration.stopping
-for i = 1:200
-    gaussSeidel!(system, result)
+for i = 1:10
+    newtonRaphson!(system, result)
     if stopping.active < 1e-8 && stopping.reactive < 1e-8
         break
     end
@@ -122,17 +122,17 @@ The function computes powers and currents related to buses.
 
     bus!(system::PowerSystem, result::Result)
 
-The function updates the field `result.bus` of the composite type `Result`.
+The function updates the field `result.bus`.
 
 # AC Power Flow Example
 ```jldoctest
 system = powerSystem("case14.h5")
 acModel!(system)
 
-result = gaussSeidel(system)
+result = newtonRaphson(system)
 stopping = result.algorithm.iteration.stopping
-for i = 1:200
-    gaussSeidel!(system, result)
+for i = 1:10
+    newtonRaphson!(system, result)
     if stopping.active < 1e-8 && stopping.reactive < 1e-8
         break
     end
@@ -240,17 +240,17 @@ The function computes powers related to generators.
 
     generator!(system::PowerSystem, result::Result)
 
-The function updates the field `result.generator` of the composite type `Result`.
+The function updates the field `result.generator`.
 
 # AC Power Flow Example
 ```jldoctest
 system = powerSystem("case14.h5")
 acModel!(system)
 
-result = gaussSeidel(system)
+result = newtonRaphson(system)
 stopping = result.algorithm.iteration.stopping
-for i = 1:200
-    gaussSeidel!(system, result)
+for i = 1:10
+    newtonRaphson!(system, result)
     if stopping.active < 1e-8 && stopping.reactive < 1e-8
         break
     end

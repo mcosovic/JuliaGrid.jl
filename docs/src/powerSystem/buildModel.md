@@ -14,7 +14,7 @@ In addition, it is possible to manipulate the parameters of buses, branches and 
 * [`parameterBranch!()`](@ref parameterBranch!)
 * [`statusGenerator!()`](@ref statusGenerator!)
 * [`outputGenerator!()`](@ref outputGenerator!).
-The execution of these functions will automatically trigger the update of all fields affected by these functions. Changing other parameters of the power system can be done by changing variables by accessing their values in fields `bus`, `branch`, `generator`, and `basePower` of the composite type `powerSystem`.
+The execution of these functions will automatically trigger the update of all fields affected by these functions. Changing other parameters of the power system can be done by changing variables by accessing their values in fields `bus`, `branch`, `generator`, and `basePower` of the composite type `PowerSystem`.
 
 At any moment after the composite type `PowerSystem` is formed, it is possible to save the data in HDF5 format that describe the power system:
 * [`savePowerSystem()`](@ref savePowerSystem).

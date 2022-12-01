@@ -1,6 +1,6 @@
 # [Power Flow Solution](@id powerFlowSolution)
 
-The solution of the power flow implies the calculation of the bus voltages. To obtain a solution, the framework requires the composite type `PowerSystem` with fields `bus`, `branch`, `generator`. In addition, depending on whether AC or DC power flow is used, `acModel` or `dcModel` is required.
+The solution of the power flow implies the calculation of the bus voltages. To obtain a solution, the framework requires the composite type `PowerSystem` with fields `bus`, `branch`, and `generator`. In addition, depending on whether AC or DC power flow is used, `acModel` or `dcModel` is required.
 
 JuliaGrid stores results in the composite type `Result` with fields:
 * `bus`
@@ -8,13 +8,13 @@ JuliaGrid stores results in the composite type `Result` with fields:
 * `generator`
 * `algorithm`.
 
-Once the composite type `PowerSystem` is created, it is possible to create the composite type `Result`. The composite type `Result` in the DC power flow is created when determining the bus voltage angle using the function [`dcPowerFlow()`](@ref dcPowerFlow). In contrast, the AC power flow requires the initialization of the iterative method, during which the composite type `Result` is created:
+Once the composite type `PowerSystem` is created, it is possible to create the composite type `Result`. The composite type `Result` in the DC power flow is created when determining the bus voltage angles using the function [`dcPowerFlow()`](@ref dcPowerFlow). In contrast, the AC power flow requires the initialization of the iterative method, during which the composite type `Result` is created:
 * [`newtonRaphson()`](@ref newtonRaphson)
 * [`fastNewtonRaphsonBX()`](@ref fastNewtonRaphsonBX)
 * [`fastNewtonRaphsonXB()`](@ref fastNewtonRaphsonXB)
 * [`gaussSeidel()`](@ref gaussSeidel).
 
-The calculation of the bus voltages, depending on the type of the power flow and the selected method, can be performed using one of the functions:
+The calculation of the bus voltages, depending on the type of power flow and the selected method, can be performed using one of the functions:
 * [`newtonRaphson!()`](@ref newtonRaphson!)
 * [`fastNewtonRaphson!()`](@ref fastNewtonRaphson!)
 * [`gaussSeidel!()`](@ref gaussSeidel!)

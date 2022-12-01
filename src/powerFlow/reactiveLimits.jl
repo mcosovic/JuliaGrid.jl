@@ -6,27 +6,26 @@ and corresponding PV buses or slack bus will be converted to PQ buses.
 
     reactivePowerLimit!(system::PowerSystem, result::Result)
 
-The function updates field `generator.layout.violate` of the composite type `System`
-to indicate on which buses  the limits are violated. If the minimum limits are violated,
-the mark -1 will appear in the appropriate place, the violation of the maximum limits is
-marked with 1.
+The function updates the field `system.generator.layout.violate` to indicate on which
+buses the limits are violated. If the minimum limits are violated, the mark -1 will
+appear in the appropriate place, the violation of the maximum limits is marked with 1.
 
-Further, the function updates fields `generator.output.reactive` `bus.supply.reactive`, and
-`bus.layout.type` of the composite type `System`. For the case when the slack bus is converted
-the function updates field `bus.layout.slackIndex` of the composite type `System`.
+Further, the function updates fields `system.generator.output.reactive` `system.bus.supply.reactive`,
+and `system.bus.layout.type`. For the case when the slack bus is converted the function
+updates the field `system.bus.layout.slackIndex`.
 
 In case the function [`generator!()`](@ref generator!) is not executed, the function will trigger
-the execution of this function and will update the field `generator` of the composite type `Result`.
+the execution of this function and will update the field `result.generator`.
 
 # Example
 ```jldoctest
 system = powerSystem("case14.h5")
 acModel!(system)
 
-result = gaussSeidel(system)
+result = newtonRaphson(system)
 stopping = result.algorithm.iteration.stopping
 for i = 1:200
-    gaussSeidel!(system, result)
+    newtonRaphson!(system, result)
     if stopping.active < 1e-8 && stopping.reactive < 1e-8
         break
     end
@@ -34,10 +33,10 @@ end
 
 reactivePowerLimit!(system, result)
 
-result = gaussSeidel(system)
+result = newtonRaphson(system)
 stopping = result.algorithm.iteration.stopping
 for i = 1:200
-    gaussSeidel!(system, result)
+    newtonRaphson!(system, result)
     if stopping.active < 1e-8 && stopping.reactive < 1e-8
         break
     end
@@ -110,17 +109,17 @@ their values are in accordance with the angle of the original slack bus.
 
     adjustVoltageAngle!(system::PowerSystem, result::Result)
 
-The function updates field `bus.voltage.angle` of the composite type `Result`.
+The function updates field `result.bus.voltage.angle`.
 
 # Example
 ```jldoctest
 system = powerSystem("case14.h5")
 acModel!(system)
 
-result = gaussSeidel(system)
+result = newtonRaphson(system)
 stopping = result.algorithm.iteration.stopping
 for i = 1:200
-    gaussSeidel!(system, result)
+    newtonRaphson!(system, result)
     if stopping.active < 1e-8 && stopping.reactive < 1e-8
         break
     end
@@ -128,10 +127,10 @@ end
 
 reactivePowerLimit!(system, result)
 
-result = gaussSeidel(system)
+result = newtonRaphson(system)
 stopping = result.algorithm.iteration.stopping
 for i = 1:200
-    gaussSeidel!(system, result)
+    newtonRaphson!(system, result)
     if stopping.active < 1e-8 && stopping.reactive < 1e-8
         break
     end

@@ -177,7 +177,7 @@ the Gauss-Seidel method, the function computes bus voltage magnitudes and angles
 
     gaussSeidel!(system::PowerSystem, result::Result)
 
-The function updates fields `bus.voltage` and `algorithm` of the composite type `Result`.
+The function updates fields `result.bus.voltage` and `result.algorithm`.
 
 # Example
 ```jldoctest
@@ -259,7 +259,7 @@ end
 
 """
 The function receives the composite type `PowerSystem`, initializes the
-Newthon-Raphson method, and returns the composite type `Result`.
+Newton-Raphson method, and returns the composite type `Result`.
 
     newtonRaphson(system::PowerSystem)
 
@@ -364,11 +364,11 @@ end
 
 """
 The function receives the composite type `PowerSystem` and `Result`. Using the
-Newthon-Raphson method, the function computes bus voltage magnitudes and angles.
+Newton-Raphson method, the function computes bus voltage magnitudes and angles.
 
     newtonRaphson!(system::PowerSystem, result::Result)
 
-The function updates fields `bus.voltage` and `algorithm` of the composite type `Result`.
+The function updates fields `result.bus.voltage` and `result.algorithm`.
 
 # Example
 ```jldoctest
@@ -488,7 +488,7 @@ end
 
 """
 The function receives the composite type `PowerSystem`, initializes the fast
-Newthon-Raphson method of version BX, and returns the composite type `Result`.
+Newton-Raphson method of version BX, and returns the composite type `Result`.
 
     fastNewtonRaphsonBX(system::PowerSystem)
 
@@ -503,7 +503,7 @@ end
 
 """
 The function receives the composite type `PowerSystem`, initializes the fast
-Newthon-Raphson method of version XB, and returns the composite type `Result`.
+Newton-Raphson method of version XB, and returns the composite type `Result`.
 
     fastNewtonRaphsonXB(system::PowerSystem)
 
@@ -682,11 +682,11 @@ end
 
 """
 The function receives the composite type `PowerSystem` and `Result`. Using the fast
-Newthon-Raphson method, the function computes bus voltage magnitudes and angles.
+Newton-Raphson method, the function computes bus voltage magnitudes and angles.
 
     fastNewtonRaphson!(system::PowerSystem, result::Result)
 
-The function updates fields `bus.voltage` and `algorithm` of the composite type `Result`.
+The function updates fields `result.bus.voltage` and `result.algorithm`.
 
 # Example
 ```jldoctest
@@ -778,8 +778,7 @@ problem by determining bus voltage angles, and returns the composite type `Resul
 
     dcPowerFlow(system::PowerSystem)
 
-The function updates field `result.bus.voltage.angle` and `algorithm` of the
-composite type `Result`.
+The function updates fields `result.bus.voltage.angle` and `result.algorithm`.
 
 # Example
 ```jldoctest
