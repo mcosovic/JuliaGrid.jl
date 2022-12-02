@@ -2,5 +2,8 @@ using JuliaGrid
 using HDF5
 using Test
 
-include("powerSystem/loadSaveAssemble.jl")
+######## Power System ##########
+include("powerSystem/loadSave.jl")
+include("powerSystem/assemble.jl")
+
 include("powerSystem/manipulation.jl")
