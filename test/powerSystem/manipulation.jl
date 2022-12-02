@@ -81,11 +81,11 @@ end
 
     function testSet(system, system1)
         @test system.branch.layout.status == system1.branch.layout.status
-        @test system.branch.layout.resistance == system1.branch.layout.resistance
-        @test system.branch.layout.reactance == system1.branch.layout.reactance
-        @test system.branch.layout.susceptance == system1.branch.layout.susceptance
-        @test system.branch.layout.turnsRatio == system1.branch.layout.turnsRatio
-        @test system.branch.layout.shiftAngle == system1.branch.layout.shiftAngle
+        @test system.branch.parameter.resistance == system1.branch.parameter.resistance
+        @test system.branch.parameter.reactance == system1.branch.parameter.reactance
+        @test system.branch.parameter.susceptance == system1.branch.parameter.susceptance
+        @test system.branch.parameter.turnsRatio == system1.branch.parameter.turnsRatio
+        @test system.branch.parameter.shiftAngle == system1.branch.parameter.shiftAngle
         @test system.dcModel.nodalMatrix == system1.dcModel.nodalMatrix
         @test system.dcModel.admittance == system1.dcModel.admittance
         @test system.dcModel.shiftActivePower == system1.dcModel.shiftActivePower
