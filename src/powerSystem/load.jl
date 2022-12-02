@@ -241,7 +241,7 @@ function powerSystem()
 end
 
 ######## Load Base Power from HDF5 File ##########
-function loadBasePower(system)
+function loadBasePower(system::HDF5.File)
     if haskey(system, "basePower")
         basePower::Float64 = read(system["basePower"])
     else
@@ -253,7 +253,7 @@ function loadBasePower(system)
 end
 
 ######## Load Bus Data from HDF5 File ##########
-function loadBus(system)
+function loadBus(system::HDF5.File)
     if !haskey(system, "bus")
         throw(ErrorException("The bus data is missing."))
     end
