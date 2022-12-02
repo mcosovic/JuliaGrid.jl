@@ -1,4 +1,4 @@
-@testset "Load, Save, Assemble" begin
+@testset "powerSystem, savePowerSystem, addBus, addGenerator, addBranch" begin
     pathData = abspath(joinpath(dirname(Base.find_package("JuliaGrid")), ".."), "test/data/")
 
     systemMat = powerSystem(string(pathData, "case5test.m"))

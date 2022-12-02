@@ -565,7 +565,7 @@ function statusGenerator!(system::PowerSystem; label::Int64, status::Int64 = 0)
             system.bus.supply.inService[indexBus] -= 1
             system.bus.supply.active[indexBus] -= output.active[index]
             system.bus.supply.reactive[indexBus] -= output.reactive[index]
-            if system.bus.supply.inService[indexBus] == 0
+            if system.bus.supply.inService[indexBus] == 0 && system.bus.layout.type[indexBus] != 3
                 system.bus.layout.type[indexBus] = 1
             end
         end
@@ -573,7 +573,9 @@ function statusGenerator!(system::PowerSystem; label::Int64, status::Int64 = 0)
             system.bus.supply.inService[indexBus] += 1
             system.bus.supply.active[indexBus] += output.active[index]
             system.bus.supply.reactive[indexBus] += output.reactive[index]
-            system.bus.layout.type[indexBus] = 2
+            if system.bus.layout.type[indexBus] != 3
+                system.bus.layout.type[indexBus] = 2
+            end
         end
     end
     layout.status[index] = status

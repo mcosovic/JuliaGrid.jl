@@ -65,7 +65,7 @@
     testSet(system, system1)
 end
 
-@testset "statusBranch and parameterBranch" begin
+@testset "statusBranch, parameterBranch" begin
     function systemCreate()
         systemC = powerSystem()
         addBus!(systemC; label = 1)
@@ -81,6 +81,11 @@ end
 
     function testSet(system, system1)
         @test system.branch.layout.status == system1.branch.layout.status
+        @test system.branch.layout.resistance == system1.branch.layout.resistance
+        @test system.branch.layout.reactance == system1.branch.layout.reactance
+        @test system.branch.layout.susceptance == system1.branch.layout.susceptance
+        @test system.branch.layout.turnsRatio == system1.branch.layout.turnsRatio
+        @test system.branch.layout.shiftAngle == system1.branch.layout.shiftAngle
         @test system.dcModel.nodalMatrix == system1.dcModel.nodalMatrix
         @test system.dcModel.admittance == system1.dcModel.admittance
         @test system.dcModel.shiftActivePower == system1.dcModel.shiftActivePower
@@ -143,6 +148,90 @@ end
 
     ######## Empty Test ##########
     parameterBranch!(system; label = 4)
+
+    testSet(system, system1)
+end
+
+@testset "statusGenerator, outputGenerator" begin
+    function systemCreate()
+        systemC = powerSystem()
+
+        addBus!(systemC; label = 1)
+        addBus!(systemC; label = 2, active = 3.0, reactive = 0.9861)
+        addBus!(systemC; label = 3, slackLabel = 3, active = 3.0, reactive = 0.9861, conductance = 0.15, susceptance = -0.04)
+        addBranch!(systemC; label = 1, from = 1, to = 2, resistance = 0.00281, reactance = 0.0281, susceptance = 0.00712)
+        addBranch!(systemC; label = 3, from = 1, to = 2, resistance = 0.00064, reactance = 0.0064, susceptance = 0.03126, turnsRatio = 0.96, shiftAngle = -3*(pi/180))
+        addBranch!(systemC; label = 4, from = 2, to = 3, resistance = 0.00108, reactance = 0.0108, susceptance = 0.01852, turnsRatio = 0.98, shiftAngle = 2*(pi/180))
+        addGenerator!(systemC; label = 1, bus = 1, active = 0.4)
+
+        return systemC
+    end
+
+    function testSet(system, system1)
+        @test system.generator.layout.status == system1.generator.layout.status
+        @test system.generator.output.active ≈ system1.generator.output.active
+        @test system.generator.output.reactive ≈ system1.generator.output.reactive
+        @test system.bus.supply.active ≈ system1.bus.supply.active
+        @test system.bus.supply.reactive ≈ system1.bus.supply.reactive
+        @test system.bus.supply.inService == system1.bus.supply.inService
+        @test system.bus.layout.type == system1.bus.layout.type
+        @test system.bus.layout.slackIndex == system1.bus.layout.slackIndex
+        @test system.bus.layout.slackImmutable == system1.bus.layout.slackImmutable
+    end
+
+    ######## From In-service to Out-of-service ##########
+    system = systemCreate()
+    addGenerator!(system; label = 2, bus = 1, active = 1.7, reactive = 0.14)
+    statusGenerator!(system; label = 2, status = 0)
+
+    system1 = systemCreate()
+    addGenerator!(system1; label = 2, bus = 1, status = 0, active = 1.7, reactive = 0.14)
+
+    testSet(system, system1)
+
+    ######## From Out-of-service to In-service ##########
+    statusGenerator!(system; label = 2, status = 1)
+
+    system1 = systemCreate()
+    addGenerator!(system1; label = 2, bus = 1, active = 1.7, reactive = 0.14)
+
+    testSet(system, system1)
+
+    ######## In-service on the Slack Bus ##########
+    system = systemCreate()
+    addGenerator!(system; label = 2, bus = 3, status = 0, active = 1.7, reactive = 0.14)
+    statusGenerator!(system; label = 2, status = 1)
+
+    system1 = systemCreate()
+    addGenerator!(system1; label = 2, bus = 3, active = 1.7, reactive = 0.14)
+
+    testSet(system, system1)
+
+    ######## Out-of-service on the Slack Bus ##########
+    statusGenerator!(system; label = 2, status = 0)
+
+    system1 = systemCreate()
+    addGenerator!(system1; label = 2, status = 0, bus = 3, active = 1.7, reactive = 0.14)
+
+    testSet(system, system1)
+
+    ######## Change Output ##########
+    system = systemCreate()
+    addGenerator!(system; label = 2, bus = 1, active = 1.7, reactive = 0.14)
+    outputGenerator!(system; label = 2, active = 0.7, reactive = 0.15)
+
+    system1 = systemCreate()
+    addGenerator!(system1; label = 2, bus = 1, active = 0.7, reactive = 0.15)
+
+    testSet(system, system1)
+
+    ######## Empty Test ##########
+    system = systemCreate()
+    addGenerator!(system; label = 2, bus = 1, active = 1.7, reactive = 0.14)
+    outputGenerator!(system; label = 2)
+
+    system1 = systemCreate()
+    addGenerator!(system1; label = 2, bus = 1, active = 1.7, reactive = 0.14)
 
     testSet(system, system1)
 end
