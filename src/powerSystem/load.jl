@@ -193,13 +193,10 @@ function powerSystem(inputFile::String)
 
     if extension == ".h5"
         system = h5open(fullpath, "r")
-        display(system)
-        keys = names(system)
-
-        basePower = loadBasePower(system, keys)
-        bus = loadBus(system)
-        branch = loadBranch(system, bus)
-        generator = loadGenerator(system, bus)
+            basePower = loadBasePower(system)
+            bus = loadBus(system)
+            branch = loadBranch(system, bus)
+            generator = loadGenerator(system, bus)
         close(system)
     end
 
@@ -244,8 +241,8 @@ function powerSystem()
 end
 
 ######## Load Base Power from HDF5 File ##########
-function loadBasePower(system, keys)
-    if "basePower" in keys
+function loadBasePower(system)
+    if haskey(system, "basePower")
         basePower::Float64 = read(system["basePower"])
     else
         basePower = 1e8
@@ -257,13 +254,13 @@ end
 
 ######## Load Bus Data from HDF5 File ##########
 function loadBus(system)
-    if !exists(system, "bus")
+    if !haskey(system, "bus")
         throw(ErrorException("The bus data is missing."))
     end
     renumbering = false
 
     layout = system["bus/layout"]
-    labelOriginal::Array{Int64,1} = readmmap(layout["label"])
+    labelOriginal::Array{Int64,1} = HDF5.readmmap(layout["label"])
 
     busNumber = length(labelOriginal)
     label = Dict{Int64,Int64}()
@@ -307,13 +304,13 @@ end
 
 ######## Load Branch Data from HDF5 File ##########
 function loadBranch(system, bus::Bus)
-    if !exists(system, "branch")
+    if !haskey(system, "branch")
         throw(ErrorException("The branch data is missing."))
     end
     renumbering = false
 
     layout = system["branch/layout"]
-    labelOriginal::Array{Int64,1} = readmmap(layout["label"])
+    labelOriginal::Array{Int64,1} = HDF5.readmmap(layout["label"])
 
     branchNumber = length(labelOriginal)
     label = Dict{Int64,Int64}()
@@ -360,12 +357,12 @@ end
 
 ######## Load Generator Data from HDF5 File ##########
 function loadGenerator(system, bus::Bus)
-    if !exists(system, "generator")
+    if !haskey(system, "generator")
         throw(ErrorException("The generator data is missing."))
     end
 
     layout = system["generator/layout"]
-    labelOriginal::Array{Int64,1} = readmmap(layout["label"])
+    labelOriginal::Array{Int64,1} = HDF5.readmmap(layout["label"])
     busIndex::Array{Int64,1} = read(layout["bus"])
 
     generatorNumber = length(busIndex)
@@ -402,7 +399,7 @@ function loadGenerator(system, bus::Bus)
     magnitude = arrayFloat(voltage, "magnitude", generatorNumber)
 
     cost = system["generator/cost"]
-    if exists(cost, "activeModel")
+    if haskey(cost, "activeModel")
         activeModel = arrayInteger(cost, "activeModel", generatorNumber)
         activeStartup = arrayFloat(cost, "activeStartup", generatorNumber)
         activeShutdown = arrayFloat(cost, "activeShutdown", generatorNumber)
@@ -412,7 +409,7 @@ function loadGenerator(system, bus::Bus)
         activeModel, activeStartup, activeShutdown, activeDataPoint, activeCoefficient = generatorCostDataEmpty()
     end
 
-    if exists(cost, "reactiveModel")
+    if haskey(cost, "reactiveModel")
         reactiveModel = arrayInteger(cost, "reactiveModel", generatorNumber)
         reactiveStartup = arrayFloat(cost, "reactiveStartup", generatorNumber)
         reactiveShutdown = arrayFloat(cost, "reactiveShutdown", generatorNumber)
