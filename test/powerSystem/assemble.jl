@@ -91,7 +91,7 @@
    @test system.generator.capability.minActive == systemH5.generator.capability.minActive
    @test system.generator.capability.maxActive == systemH5.generator.capability.maxActive
    @test system.generator.capability.minReactive == systemH5.generator.capability.minReactive
-   @test system.generator.capability.maxReactive == systemH5.generator.capability.maxReactive
+   @test system.generator.capability.maxReactive ≈ systemH5.generator.capability.maxReactive
    @test system.generator.capability.lowerActive == systemH5.generator.capability.lowerActive
    @test system.generator.capability.minReactiveLower == systemH5.generator.capability.minReactiveLower
    @test system.generator.capability.maxReactiveLower == systemH5.generator.capability.maxReactiveLower
@@ -111,5 +111,5 @@
    @test system.generator.cost.activeCoefficient == systemH5.generator.cost.activeCoefficient
 
    ######## Base Power ##########
-   @test systemMat.basePower == systemH5.basePower
+   @test system.basePower == systemH5.basePower
 end
