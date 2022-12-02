@@ -303,7 +303,7 @@ function loadBus(system::HDF5.File)
 end
 
 ######## Load Branch Data from HDF5 File ##########
-function loadBranch(system, bus::Bus)
+function loadBranch(system::HDF5.File, bus::Bus)
     if !haskey(system, "branch")
         throw(ErrorException("The branch data is missing."))
     end
@@ -356,7 +356,7 @@ function loadBranch(system, bus::Bus)
 end
 
 ######## Load Generator Data from HDF5 File ##########
-function loadGenerator(system, bus::Bus)
+function loadGenerator(system::HDF5.File, bus::Bus)
     if !haskey(system, "generator")
         throw(ErrorException("The generator data is missing."))
     end

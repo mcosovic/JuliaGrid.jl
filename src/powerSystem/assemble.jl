@@ -128,7 +128,7 @@ function shuntBus!(system::PowerSystem; user...)
         if haskey(user, :conductance)
             shunt.conductance[index] = user[:conductance]::Float64
         end
-        if haskey(user, :reactance)
+        if haskey(user, :susceptance)
             shunt.susceptance[index] = user[:susceptance]::Float64
         end
 
@@ -260,7 +260,7 @@ addBranch!(system; label = 1, from = 1, to = 2, resistance = 0.05, reactance = 0
 statusBranch!(system; label = 1, status = 0)
 ```
 """
-function statusBranch!(system::PowerSystem; label::Int64, status::Int64 = 0)
+function statusBranch!(system::PowerSystem; label::Int64, status::Int64)
     layout = system.branch.layout
 
     if label <= 0
