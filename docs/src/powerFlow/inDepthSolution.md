@@ -148,8 +148,8 @@ The iteration loop is stopped when the following conditions are met:
 ```
 where ``\epsilon`` is the predetermined stopping criteria. JuliaGrid stores these values to break the iteration loop in variables:
 ```julia-repl
-julia> result.algorithm.stopping.active
-julia> result.algorithm.stopping.reactive
+julia> result.algorithm.iteration.stopping.active
+julia> result.algorithm.iteration.stopping.reactive
 ```
 
 Note that the Newton-Raphson method can have difficulties with initial conditions under "flat start".
@@ -547,8 +547,8 @@ The iteration loop is stopped when the following conditions are met:
 ```
 where ``\epsilon`` is the predetermined stopping criteria. JuliaGrid stores these values to break the iteration loop in variables:
 ```julia-repl
-julia> result.algorithm.stopping.active
-julia> result.algorithm.stopping.reactive
+julia> result.algorithm.iteration.stopping.active
+julia> result.algorithm.iteration.stopping.reactive
 ```
 
 ---
@@ -636,8 +636,8 @@ The iteration loop is stopped when the following conditions are met:
 ```
 where ``\epsilon`` is the predetermined stopping criteria. JuliaGrid stores these values to break the iteration loop:
 ```julia-repl
-julia> result.algorithm.stopping.active
-julia> result.algorithm.stopping.reactive
+julia> result.algorithm.iteration.stopping.active
+julia> result.algorithm.iteration.stopping.reactive
 ```
 
 ---

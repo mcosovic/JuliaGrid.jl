@@ -181,7 +181,7 @@ The active power injection at the bus ``i \in \mathcal{N}`` can be obtained usin
    P_i = \sum_{j = 1}^n {B}_{ij} \theta_j + P_{\text{gs}i} + P_{\text{sh}i}.
 ```
 ```julia-repl
-julia> result.bus.injection.active
+julia> result.bus.power.injection.active
 ```
 
 The active power of the generators that supply the bus ``i \in \mathcal{N}_{\text{pv}}`` is equal to the given active power of the generators in the input data, except for the slack bus, which is determined as:

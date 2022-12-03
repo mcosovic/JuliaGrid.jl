@@ -399,7 +399,7 @@ system = powerSystem()
 
 addBus!(system; label = 1, active = 0.25, reactive = -0.04)
 
-addGenerator!(system; label = 1, bus = 1, active = 0.5 reactive = 0.1)
+addGenerator!(system; label = 1, bus = 1, active = 0.5, reactive = 0.1)
 ```
 """
 function addGenerator!(system::PowerSystem; label::Int64, bus::Int64, area::Float64 = 0.0, status::Int64 = 1,
@@ -542,7 +542,7 @@ system = powerSystem()
 
 addBus!(system; label = 1, active = 0.25, reactive = -0.04)
 
-addGenerator!(system; label = 1, bus = 1, active = 0.5 reactive = 0.1)
+addGenerator!(system; label = 1, bus = 1, active = 0.5, reactive = 0.1)
 statusGenerator!(system; label = 1, status = 0)
 ```
 """
@@ -595,7 +595,7 @@ system = powerSystem()
 
 addBus!(system; label = 1, active = 0.25, reactive = -0.04)
 
-addGenerator!(system; label = 1, bus = 1, active = 0.5 reactive = 0.1)
+addGenerator!(system; label = 1, bus = 1, active = 0.5, reactive = 0.1)
 outputGenerator!(system; label = 1, active = 0.85)
 ```
 """

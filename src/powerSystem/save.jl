@@ -10,7 +10,7 @@ keywords `reference::String` and `note::String` are optional.
 # Example
 ```jldoctest
 system = powerSystem("case14.m")
-savePowerSystem(system; path = "C:/case14.h5")
+savePowerSystem(system; path = "D:/case14.h5")
 ```
 """
 function savePowerSystem(system::PowerSystem; path::String, reference::String = "", note::String = "")

@@ -392,7 +392,6 @@ function newtonRaphson!(system::PowerSystem, result::Result)
     voltage = result.bus.voltage
     jacobian = result.algorithm.jacobian
     mismatch = result.algorithm.mismatch
-    increment = result.algorithm.increment
     index = result.algorithm.index
     iteration = result.algorithm.iteration
 
@@ -447,14 +446,14 @@ function newtonRaphson!(system::PowerSystem, result::Result)
         end
     end
 
-    increment = jacobian \ mismatch
+    result.algorithm.increment = jacobian \ mismatch
 
     @inbounds for i = 1:bus.number
         if bus.layout.type[i] == 1
-            voltage.magnitude[i] = voltage.magnitude[i] - increment[index.pq[i]]
+            voltage.magnitude[i] = voltage.magnitude[i] - result.algorithm.increment[index.pq[i]]
         end
         if i != bus.layout.slackIndex
-            voltage.angle[i] = voltage.angle[i] - increment[index.pvpq[i]]
+            voltage.angle[i] = voltage.angle[i] - result.algorithm.increment[index.pvpq[i]]
         end
     end
 
