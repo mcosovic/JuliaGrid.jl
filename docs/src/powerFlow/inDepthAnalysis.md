@@ -27,25 +27,25 @@ generator!(system, result)
 ---
 
 ### Bus
-The complex current injection at the bus ``i \in \mathcal{N}`` can be obtained as:
+The complex current injection at the bus can be obtained as:
 ```math
-    \bar{I}_{i} = \sum\limits_{j = 1}^n {Y}_{ij} \bar{V}_{j}.
+    \bar{I}_{i} = \sum\limits_{j = 1}^n {Y}_{ij} \bar{V}_{j},\;\;\; i \in \mathcal{N}.
 ```
 ```julia-repl
 julia> result.bus.current.injection.magnitude
 julia> result.bus.current.injection.angle
 ```
 
-The active and reactive power injections at the bus ``i \in \mathcal{N}`` can be obtained using the expression:
+The active and reactive power injections at the bus can be obtained using the expression:
 ```math
-    {S}_{i} =\bar{V}_{i}\bar{I}_{i}^*.
+    {S}_{i} =\bar{V}_{i}\bar{I}_{i}^*,\;\;\; i \in \mathcal{N}.
 ```
 ```julia-repl
 julia> result.bus.power.injection.active
 julia> result.bus.power.injection.reactive
 ```
 
-The active power of the generators that supply the bus ``i \in \mathcal{N}_{\text{pv}}`` is equal to the given active power of the generators in the input data, except for the slack bus, which is determined as:
+The active power of the generators that supply the bus ``i \in \mathcal{N}_{\text{pv}}`` is equal to the sum of the given generator active powers in the input data, except for the slack bus, which is determined as:
 ```math
     P_{\text{s}i} = P_i + P_{\text{d}i},\;\;\; i \in \mathcal{N}_{\text{sb}},
 ```
@@ -63,9 +63,9 @@ where ``{Q}_{\text{d}i}`` represents the reactive power demanded by consumers at
 julia> result.bus.power.supply.reactive
 ```
 
-The active and reactive powers related to the shunt element at the bus ``i \in \mathcal{N}`` are obtained using:
+The active and reactive powers related to the shunt element at the bus are obtained using:
 ```math
-  {S}_{\text{sh}i} =\bar{V}_{i}\bar{I}_{\text{sh}i}^* = {y}_{\text{sh}i}^*|\bar{V}_{i}|^2.
+  {S}_{\text{sh}i} =\bar{V}_{i}\bar{I}_{\text{sh}i}^* = {y}_{\text{sh}i}^*|\bar{V}_{i}|^2,\;\;\; i \in \mathcal{N}.
 ```
 ```julia-repl
 julia> result.bus.power.shunt.active
@@ -75,63 +75,64 @@ julia> result.bus.power.shunt.reactive
 ---
 
 ### Branch
-The complex current flow at the bus "from" ``i \in \mathcal{N}`` of the the branch ``(i,j) \in \mathcal{E}`` can be obtained using the [unified branch model](@ref ACBranchModel):
+The complex current flow at the bus "from" ``i \in \mathcal{N}`` of the the branch can be obtained using the [unified branch model](@ref ACBranchModel):
 ```math
-    \bar{I}_{ij} = \cfrac{1}{\tau_{ij}^2}({y}_{ij} + y_{\text{s}ij}) \bar{V}_{i} - \alpha_{ij}^*{y}_{ij} \bar{V}_{j}
+    \bar{I}_{ij} = \cfrac{1}{\tau_{ij}^2}({y}_{ij} + y_{\text{s}ij}) \bar{V}_{i} - \alpha_{ij}^*{y}_{ij} \bar{V}_{j},\;\;\; (i,j) \in \mathcal{E}.
 ```
 ```julia-repl
 julia> result.branch.current.from.magnitude
 julia> result.branch.current.from.angle
 ```
-Similarly, the complex current flow at the bus "to" ``j \in \mathcal{N}`` of the branch ``(i,j) \in \mathcal{E}`` is equal to:
+Similarly, the complex current flow at the bus "to" ``j \in \mathcal{N}`` of the branch is equal to:
 ```math
-    \bar{I}_{ji} = -\alpha_{ij}{y}_{ij} \bar{V}_{i} + ({y}_{ij} + y_{\text{s}ij}) \bar{V}_{j}.
+    \bar{I}_{ji} = -\alpha_{ij}{y}_{ij} \bar{V}_{i} + ({y}_{ij} + y_{\text{s}ij}) \bar{V}_{j},\;\;\; (i,j) \in \mathcal{E}.
 ```
 ```julia-repl
 julia> result.branch.current.to.magnitude
 julia> result.branch.current.to.angle
 ```
-The complex current flow through the series impedance of the branch ``(i,j) \in \mathcal{E}`` in the direction from bus ``i \in \mathcal{N}`` to bus ``j \in \mathcal{N}`` is determined as:
+The complex current flow through the series impedance of the branch in the direction from bus ``i \in \mathcal{N}`` to bus ``j \in \mathcal{N}`` is determined as:
 ```math
-    \bar{I}_{\text{b}ij} =  y_{ij} (\alpha_{ij}\bar{V}_{i} - \bar{V}_{j}).
+    \bar{I}_{\text{b}ij} =  y_{ij} (\alpha_{ij}\bar{V}_{i} - \bar{V}_{j}),,\;\;\; (i,j) \in \mathcal{E}.
 ```
 ```julia-repl
 julia> result.branch.current.impedance.magnitude
 julia> result.branch.current.impedance.angle
 ```
 
-The active and reactive power flows at the bus "from" ``i \in \mathcal{N}`` of the branch ``(i,j) \in \mathcal{E}`` are obtained as:
+The active and reactive power flows at the bus "from" ``i \in \mathcal{N}`` of the branch are obtained as:
 ```math
-    {S}_{ij} = \bar{V}_{i}\bar{I}_{ij}^*
+    {S}_{ij} = \bar{V}_{i}\bar{I}_{ij}^*,\;\;\; (i,j) \in \mathcal{E}.
 ```
 ```julia-repl
 julia> result.branch.power.from.active
 julia> result.branch.power.from.reactive
 ```
-The active and reactive power flows at the bus "to" ``j \in \mathcal{N}`` of the branch ``(i,j) \in \mathcal{E}`` are obtained as:
+The active and reactive power flows at the bus "to" ``j \in \mathcal{N}`` of the branch are obtained as:
 ```math
-    {S}_{ji} = \bar{V}_{j}\bar{I}_{ji}^*
+    {S}_{ji} = \bar{V}_{j}\bar{I}_{ji}^*,\;\;\; (i,j) \in \mathcal{E}.
 ```
 ```julia-repl
 julia> result.branch.power.to.active
 julia> result.branch.power.to.reactive
 ```
 
-Active and reactive power losses of the branch ``(i,j) \in \mathcal{E}`` arise due to the existence of the series impedance ``z_{ij}``, and can be obtained as:
+Active and reactive power losses of the branch arise due to the existence of the series impedance ``z_{ij}``, and can be obtained as:
 ```math
     \begin{aligned}
         P_{\text{loss}ij} &= r_{ij}|\bar{I}_{\text{b}ij}|^2 \\
-        Q_{\text{loss}ij} &= x_{ij}|\bar{I}_{\text{b}ij}|^2.
+        Q_{\text{loss}ij} &= x_{ij}|\bar{I}_{\text{b}ij}|^2,
     \end{aligned}
 ```
+where ``(i,j) \in \mathcal{E}``.
 ```julia-repl
 julia> result.branch.power.loss.active
 julia> result.branch.power.loss.reactive
 ```
 
-Total reactive power injected by the branch ``(i,j) \in \mathcal{E}`` due to the existence of capacitive susceptances is obtained as:
+Total reactive power injected by the branch due to the existence of capacitive susceptances is obtained as:
 ```math
-    Q_{\text{ch}ij} = b_{\text{s}i} (|\alpha_{ij}\bar{V}_{i}|^2 - |\bar{V}_{j}|^2).
+    Q_{\text{ch}ij} = b_{\text{s}i} (|\alpha_{ij}\bar{V}_{i}|^2 - |\bar{V}_{j}|^2),\;\;\; (i,j) \in \mathcal{E}.
 ```
 ```julia-repl
 julia> result.branch.power.shunt.reactive
@@ -149,11 +150,11 @@ When there are several generators at the slack bus, the active power ``P_{\text{
 julia> result.generator.power.active
 ```
 
-The output reactive power of the generator at the bus ``i \in \mathcal{N}_{\text{pv}}`` is equal to:
+The output reactive power of the generator at the bus is equal to:
 ```math
-    Q_{\text{g}i} = Q_i + Q_{\text{d}i},\;\;\; i \in \mathcal{N}_{\text{pq}}.
+    Q_{\text{g}i} = Q_i + Q_{\text{d}i},\;\;\; i \in \mathcal{N}_{\text{pv}} \cup \mathcal{N}_{\text{sb}}.
 ```
-In case there are several generators at the bus ``i \in \mathcal{N}_{\text{pv}}`` , the reactive power will be proportionally distributed between the generators based on their capabilities.
+In case there are several generators, the reactive power will be proportionally distributed between the generators based on their capabilities.
 ```julia-repl
 julia> result.generator.power.reactive
 ```
@@ -176,9 +177,9 @@ generator!(system, result)
 ---
 
 ### Bus
-The active power injection at the bus ``i \in \mathcal{N}`` can be obtained using the expression:
+The active power injection at the bus can be obtained using the expression:
 ```math
-   P_i = \sum_{j = 1}^n {B}_{ij} \theta_j + P_{\text{gs}i} + P_{\text{sh}i}.
+   P_i = \sum_{j = 1}^n {B}_{ij} \theta_j + P_{\text{gs}i} + P_{\text{sh}i},\;\;\; i \in \mathcal{N}.
 ```
 ```julia-repl
 julia> result.bus.power.injection.active
@@ -196,16 +197,16 @@ julia> result.bus.power.supply.active
 ---
 
 ### Branch
-The active power flow at the bus "from" ``i \in \mathcal{N}`` of the branch ``(i,j) \in \mathcal{E}`` is obtained as:
+The active power flow at the bus "from" ``i \in \mathcal{N}`` of the branch is obtained as:
 ```math
-    P_{ij} = \cfrac{1}{\tau_{ij} x_{ij}} (\theta_{i} -\theta_{j}-\phi_{ij})
+    P_{ij} = \cfrac{1}{\tau_{ij} x_{ij}} (\theta_{i} -\theta_{j}-\phi_{ij}),\;\;\; (i,j) \in \mathcal{E}.
 ```
 ```julia-repl
 julia> result.branch.power.from.active
 ```
-The active power flow at the bus "to" ``j \in \mathcal{N}`` of the branch ``(i,j) \in \mathcal{E}`` is obtained as:
+The active power flow at the bus "to" ``j \in \mathcal{N}`` of the branch is obtained as:
 ```math
-    P_{ji} = - P_{ij}.
+    P_{ji} = - P_{ij},\;\;\; (i,j) \in \mathcal{E}.
 ```
 ```julia-repl
 julia> result.branch.power.to.active
