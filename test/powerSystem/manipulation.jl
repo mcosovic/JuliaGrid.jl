@@ -1,4 +1,4 @@
-@testset "shuntBus" begin
+@testset "shuntBus!" begin
     function systemCompletion(system)
         addGenerator!(system; label = 1, bus = 1, active = 0.4)
         addGenerator!(system; label = 2, bus = 1, active = 1.7, reactive = 0.14)
@@ -65,7 +65,7 @@
     testSet(system, system1)
 end
 
-@testset "statusBranch, parameterBranch" begin
+@testset "statusBranch!, parameterBranch!" begin
     function systemCreate()
         systemC = powerSystem()
         addBus!(systemC; label = 1)
@@ -152,7 +152,7 @@ end
     testSet(system, system1)
 end
 
-@testset "statusGenerator, outputGenerator" begin
+@testset "statusGenerator!, outputGenerator!" begin
     function systemCreate()
         systemC = powerSystem()
 
