@@ -47,7 +47,7 @@ julia> result.bus.power.injection.reactive
 
 The active power of the generators that supply the bus ``i \in \mathcal{N}_{\text{pv}}`` is equal to the given active power of the generators in the input data, except for the slack bus, which is determined as:
 ```math
-    P_{\text{g}i} = P_i + P_{\text{d}i},\;\;\; i \in \mathcal{N}_{\text{sb}},
+    P_{\text{s}i} = P_i + P_{\text{d}i},\;\;\; i \in \mathcal{N}_{\text{sb}},
 ```
 where ``{P}_{\text{d}i}`` represents the active power demanded by consumers at the slack bus.
 ```julia-repl
@@ -56,7 +56,7 @@ julia> result.bus.power.supply.active
 
 The reactive power of the generators that supply the bus is equal to:
 ```math
-    Q_{\text{g}i} = Q_i + Q_{\text{d}i},\;\;\; i \in \mathcal{N}_{\text{pv}} \cup \mathcal{N}_{\text{sb}},
+    Q_{\text{s}i} = Q_i + Q_{\text{d}i},\;\;\; i \in \mathcal{N}_{\text{pv}} \cup \mathcal{N}_{\text{sb}},
 ```
 where ``{Q}_{\text{d}i}`` represents the reactive power demanded by consumers at the corresponding bus.
 ```julia-repl
@@ -186,7 +186,7 @@ julia> result.bus.power.injection.active
 
 The active power of the generators that supply the bus ``i \in \mathcal{N}_{\text{pv}}`` is equal to the given active power of the generators in the input data, except for the slack bus, which is determined as:
 ```math
-    P_{\text{g}i} = P_i + P_{\text{d}i},\;\;\; i \in \mathcal{N}_{\text{sb}},
+    P_{\text{s}i} = P_i + P_{\text{d}i},\;\;\; i \in \mathcal{N}_{\text{sb}},
 ```
 where ``{P}_{\text{d}i}`` represents the active power demanded by consumers at the slack bus.
 ```julia-repl

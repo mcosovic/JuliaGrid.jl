@@ -29,7 +29,7 @@ According to the last equation, for the bus ``i \in \mathcal{N}`` there are four
 | Generator        | PV               | 2         | ``P_{i}``, ``V_{i}``        | ``Q_{i}``, ``{\theta_{i}}`` |
 | Demand           | PQ               | 1         | ``P_{i}``, ``Q_{i}``        | ``V_{i}``, ``{\theta_{i}}`` |
 
-Consequently, JuliaGrid operates with sets ``\mathcal{N}_{\text{pv}}`` and ``\mathcal{N}_{\text{pq}}`` that contain PV and PQ buses, respectively, and exactly one slack bus in the set ``\mathcal{N}_{\text{sb}}``. Note that JuliaGrid does not support systems with multiple slack buses.
+Consequently, JuliaGrid operates with sets ``\mathcal{N}_{\text{pv}}`` and ``\mathcal{N}_{\text{pq}}`` that contain PV and PQ buses, respectively, and exactly one slack bus in the set ``\mathcal{N}_{\text{sb}}``. Note that JuliaGrid does not support systems with multiple slack buses. Julia internally designates PV or PQ bus type. Namely, if the bus is not marked as a slack bus, it becomes the PV bus only if it has at least one in-service generator, otherwise the bus is PQ type.
 ```julia-repl
 julia> system.bus.layout.type
 ```
@@ -37,11 +37,11 @@ julia> system.bus.layout.type
 Finally, we note according to Tellegen's theorem, the active ``{P}_{i}`` and reactive ``{Q}_{i}`` power injections are equal to:
 ```math
   \begin{aligned}
-  	P_{i} &= P_{\text{g}i} - P_{\text{d}i} \\
-    Q_{i} &= Q_{\text{g}i} - Q_{\text{d}i},
+  	P_{i} &= P_{\text{s}i} - P_{\text{d}i} \\
+    Q_{i} &= Q_{\text{s}i} - Q_{\text{d}i},
   \end{aligned}
 ```
-where ``{P}_{\text{g}i}`` and ``{Q}_{\text{g}i}`` denote the active and reactive powers of the generators that supply the bus ``i \in \mathcal{N}``, while ``{P}_{\text{d}i}`` and ``{Q}_{\text{d}i}`` indicate active and reactive powers demanded by consumers at the bus ``i \in \mathcal{N}``.
+where ``{P}_{\text{s}i}`` and ``{Q}_{\text{s}i}`` denote the active and reactive powers of the generators that supply the bus ``i \in \mathcal{N}``, while ``{P}_{\text{d}i}`` and ``{Q}_{\text{d}i}`` indicate active and reactive powers demanded by consumers at the bus ``i \in \mathcal{N}``.
 ```julia-repl
 julia> system.bus.supply.active - system.bus.demand.active
 julia> system.bus.supply.reactive - system.bus.demand.reactive
@@ -645,7 +645,7 @@ julia> result.algorithm.iteration.stopping.reactive
 ## [DC Power Flow Solution](@id dcPowerFlowSolution)
 As shown in section [In-depth DC Model](@ref inDepthDCModel), the DC power flow problem is described by the system of linear equations:
 ```math
-  \mathbf {P} = \mathbf{B} \bm {\theta} + \mathbf{P_\text{gs}} + \mathbf{G}_\text{sh}.
+  \mathbf {P} = \mathbf{B} \bm {\theta} + \mathbf{P_\text{gs}} + \mathbf{P}_\text{sh}.
 ```
 
 ---
