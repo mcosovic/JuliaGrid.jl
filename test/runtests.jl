@@ -8,4 +8,4 @@ include("powerSystem/assemble.jl")
 include("powerSystem/manipulation.jl")
 
 ######## Power flow ##########
-include("powerSystem/solutionAnalysis.jl")
+include("powerFlow/solutionAnalysis.jl")
