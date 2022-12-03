@@ -1,6 +1,4 @@
 @testset "addBus!, addGenerator!, addBranch!" begin
-    pathData = abspath(joinpath(dirname(Base.find_package("JuliaGrid")), ".."), "test/data/")
-
     systemH5 = powerSystem(string(pathData, "case5test.h5"))
 
     system = powerSystem()

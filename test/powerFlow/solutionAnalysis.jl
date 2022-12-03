@@ -1,4 +1,3 @@
-pathData = abspath(joinpath(dirname(Base.find_package("JuliaGrid")), ".."), "test/data/")
 system14 = powerSystem(string(pathData, "case14test.h5"))
 system30 = powerSystem(string(pathData, "case30test.h5"))
 

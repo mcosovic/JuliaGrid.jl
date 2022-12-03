@@ -1,6 +1,4 @@
 @testset "powerSystem, savePowerSystem" begin
-    pathData = abspath(joinpath(dirname(Base.find_package("JuliaGrid")), ".."), "test/data/")
-
     systemMat = powerSystem(string(pathData, "case14test.m"))
     savePowerSystem(systemMat; path = string(pathData, "case14test.h5"))
     systemH5 = powerSystem(string(pathData, "case14test.h5"))
