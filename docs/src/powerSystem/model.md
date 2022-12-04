@@ -13,7 +13,7 @@ The function [`powerSystem()`](@ref powerSystem) returns the composite type `Pow
 * using HDF5 file format,
 * using [Matpower](https://matpower.org) case files.
 
-Note that, in the case of large-scale systems, we strongly recommend to use the HDF5 file format for the input. Therefore, JuliaGrid has the function [`savePowerSystem()`](@ref savePowerSystem) that any system loaded from Matpower case files or a system formed using built-in functions can be saved in the HDF5 format.
+Note that, in the case of large-scale systems, we strongly recommend to use the HDF5 file format for the input. Therefore, JuliaGrid has the function [`savePowerSystem()`](@ref savePowerSystem) that any power system loaded from Matpower case files or a system formed using built-in functions can be saved in the HDF5 format.
 
 The HDF5 file format contains three groups: `bus`, `branch` and `generator`. In addition, the file contains `basePower` variable, given in volt-ampere. Each group is divided into subgroups that gather the same type of physical quantities, with the corresponding datasets. Note that, dataset names are identical to the keywords, which are used when the power system model is formed using built-in functions.
 
