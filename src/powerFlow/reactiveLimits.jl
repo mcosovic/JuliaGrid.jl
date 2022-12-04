@@ -4,15 +4,15 @@ after the bus voltage magnitudes and angles have been determined, the function
 sets the reactive power of the generators within the limits if they are violated,
 and corresponding PV buses or slack bus will be converted to PQ buses.
 
+The function returns the variable `violate` to indicate on which buses the limits are
+violated. If the minimum limits are violated, the mark -1 will appear in the appropriate
+place, the violation of the maximum limits is marked with 1.
+
     reactivePowerLimit!(system::PowerSystem, result::Result)
 
-The function updates the field `system.generator.layout.violate` to indicate on which
-buses the limits are violated. If the minimum limits are violated, the mark -1 will
-appear in the appropriate place, the violation of the maximum limits is marked with 1.
-
-Further, the function updates fields `system.generator.output.reactive`,
-`system.bus.supply.reactive`,and `system.bus.layout.type`. For the case when the slack
-bus is converted the function updates the field `system.bus.layout.slackIndex`.
+The function updates fields `system.generator.output.reactive`, `system.bus.supply.reactive`,
+and `system.bus.layout.type`. For the case when the slack bus is converted the function updates
+the field `system.bus.layout.slackIndex`.
 
 In case the function [`generator!()`](@ref generator!) is not executed, the function will
 trigger the execution of this function and will update the field `result.generator`.
@@ -31,7 +31,7 @@ for i = 1:200
     end
 end
 
-reactivePowerLimit!(system, result)
+violate = reactivePowerLimit!(system, result)
 
 result = newtonRaphson(system)
 stopping = result.algorithm.iteration.stopping
@@ -50,7 +50,7 @@ function reactivePowerLimit!(system::PowerSystem, result::Result)
     power = result.generator.power
     errorVoltage(result.bus.voltage.magnitude)
 
-    generator.layout.violate = fill(0, generator.number)
+    violate = fill(0, generator.number)
     if isempty(power.reactive)
         generator!(system, result)
     end
@@ -66,18 +66,19 @@ function reactivePowerLimit!(system::PowerSystem, result::Result)
 
     @inbounds for i = 1:generator.number
         if generator.layout.status[i] == 1
+            j = generator.layout.bus[i]
+
             violateMinimum = power.reactive[i] < generator.capability.minReactive[i]
             violateMaximum = power.reactive[i] > generator.capability.maxReactive[i]
-            if generator.layout.violate[i] == 0 && (violateMinimum || violateMaximum)
+            if  bus.layout.type[j] != 1 && (violateMinimum || violateMaximum)
                 if violateMinimum
-                    generator.layout.violate[i] = -1
+                    violate[i] = -1
                     newReactivePower = generator.capability.minReactive[i]
                 end
                 if violateMaximum
-                    generator.layout.violate[i] = 1
+                    violate[i] = 1
                     newReactivePower = generator.capability.maxReactive[i]
                 end
-                j = generator.layout.bus[i]
                 bus.layout.type[j] = 1
 
                 bus.supply.reactive[j] -= result.generator.power.reactive[i]
@@ -97,6 +98,8 @@ function reactivePowerLimit!(system::PowerSystem, result::Result)
             end
         end
     end
+
+    return violate
 end
 
 """

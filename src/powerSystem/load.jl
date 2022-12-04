@@ -125,7 +125,6 @@ mutable struct GeneratorLayout
     bus::Array{Int64,1}
     area::Array{Float64,1}
     status::Array{Int64,1}
-    violate::Array{Int64,1}
 end
 
 mutable struct Generator
@@ -236,7 +235,7 @@ function powerSystem()
             GeneratorRampRate(copy(af), copy(af), copy(af), copy(af)),
             GeneratorCost(copy(ai), copy(af), copy(af), copy(ai), mf, copy(ai), copy(af), copy(af), copy(ai), copy(mf)),
             GeneratorVoltage(copy(af)),
-            GeneratorLayout(copy(ai), copy(af), copy(ai), copy(ai)), 0),
+            GeneratorLayout(copy(ai), copy(af), copy(ai)), 0),
         acModel, dcModel, 1e8)
 end
 
@@ -440,7 +439,7 @@ function loadGenerator(system::HDF5.File, bus::Bus)
         GeneratorCost(activeModel, activeStartup, activeShutdown, activeDataPoint, activeCoefficient,
             reactiveModel, reactiveStartup, reactiveShutdown, reactiveDataPoint, reactiveCoefficient),
         GeneratorVoltage(magnitude),
-        GeneratorLayout(busIndex, area, status, Int64[]), generatorNumber)
+        GeneratorLayout(busIndex, area, status), generatorNumber)
 end
 
 ######### Load Power System Data from MATLAB File ##########
@@ -723,7 +722,7 @@ function loadGenerator(generatorLine::Array{String,1}, generatorcostLine::Array{
         GeneratorCost(activeModel, activeStartup, activeShutdown, activeDataPoint, activeCoefficient,
             reactiveModel, reactiveStartup, reactiveShutdown, reactiveDataPoint, reactiveCoefficient),
         GeneratorVoltage(magnitude),
-        GeneratorLayout(busIndex, area, status, Int64[]), generatorNumber)
+        GeneratorLayout(busIndex, area, status), generatorNumber)
 end
 
 ######## Load Generator Cost Data from MATLAB File ##########
