@@ -59,7 +59,6 @@
     @test systemMat.generator.layout.bus == systemH5.generator.layout.bus
     @test systemMat.generator.layout.area == systemH5.generator.layout.area
     @test systemMat.generator.layout.status == systemH5.generator.layout.status
-    @test systemMat.generator.layout.violate == systemH5.generator.layout.violate
 
     @test systemMat.generator.output.active == systemH5.generator.output.active
     @test systemMat.generator.output.reactive == systemH5.generator.output.reactive
