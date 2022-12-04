@@ -534,7 +534,10 @@ to out-of-service, and vice versa.
 
     statusGenerator!(system::PowerSystem; label, status)
 
-The keywords `label` should correspond to the already defined generator label.
+The keywords `label` should correspond to the already defined generator label. The function
+also updates the variable `system.bus.layout.type`. Namely, if the bus is not slack, and if
+all generators are out-of-service, the bus will be declared PQ type. Otherwise, if at least
+one generator is in-service, the bus will be declared PV type.
 
 # Example
 ```jldoctest
