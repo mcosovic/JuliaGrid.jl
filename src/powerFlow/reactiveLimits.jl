@@ -1,21 +1,30 @@
 """
-The function checks reactive power limits of the generators. More precisely,
+The function checks the reactive power limits of the generators. More precisely,
 after the bus voltage magnitudes and angles have been determined, the function
 sets the reactive power of the generators within the limits if they are violated,
-and corresponding PV buses or slack bus will be converted to PQ buses.
+and corresponding PV buses or the slack bus will be converted to PQ buses.
 
-The function returns the variable `violate` to indicate on which buses the limits are
-violated. If the minimum limits are violated, the mark -1 will appear in the appropriate
-place, the violation of the maximum limits is marked with 1.
+The function returns the variable `violate` to indicate on which buses the limits
+are violated. If the minimum limits are violated, the mark -1 will appear in the
+appropriate place, and the violation of the maximum limits is marked with 1.
 
     reactivePowerLimit!(system::PowerSystem, result::Result)
 
-The function updates fields `system.generator.output.reactive`, `system.bus.supply.reactive`,
-and `system.bus.layout.type`. For the case when the slack bus is converted the function updates
-the field `system.bus.layout.slackIndex`.
+First, in case the function [`generator!()`](@ref generator!) is not executed, the
+function will trigger the execution of this function and will update the field
+`result.generator`.
 
-In case the function [`generator!()`](@ref generator!) is not executed, the function will
-trigger the execution of this function and will update the field `result.generator`.
+Then, the function sets variables `system.generator.output.active` and
+`system.bus.supply.active` based on the results obtained by the function
+[`generator!()`](@ref generator!).
+
+Finally, the function checks the generator reactive powers, and if they are violated,
+it sets them to maximum or minimum values, thus updating the variable
+`system.generator.output.reactive`. Based on this, the variable `system.bus.supply.reactive`
+is updated, and the bus types in the variable `system.bus.layout.type` is changed.
+
+For the case when the slack bus is converted the function updates the field
+`system.bus.layout.slackIndex`.
 
 # Example
 ```jldoctest
@@ -59,6 +68,7 @@ function reactivePowerLimit!(system::PowerSystem, result::Result)
     bus.supply.reactive = fill(0.0, bus.number)
     @inbounds for (k, i) in enumerate(generator.layout.bus)
         if generator.layout.status[k] == 1
+            generator.output.active[k] = power.active[k]
             bus.supply.active[i] += power.active[k]
             bus.supply.reactive[i] += power.reactive[k]
         end
