@@ -3,7 +3,6 @@ module JuliaGrid
 using SparseArrays, LinearAlgebra, SuiteSparse
 using HDF5
 using Test
-using Ipopt, JuMP
 
 ######### Utility ##########
 include("utility/routine.jl")
