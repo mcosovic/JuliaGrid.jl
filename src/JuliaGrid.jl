@@ -2,7 +2,6 @@ module JuliaGrid
 
 using SparseArrays, LinearAlgebra, SuiteSparse
 using HDF5
-using Test
 
 ######### Utility ##########
 include("utility/routine.jl")
@@ -32,9 +31,9 @@ export bus!, branch!, generator!
 include("powerFlow/reactiveLimits.jl")
 export reactivePowerLimit!, adjustVoltageAngle!
 
-######## Optimal Power Flow ##########
-include("optimalPowerFlow/solution.jl")
-export dcOptimalPowerFlow
+# ######## Optimal Power Flow ##########
+# include("optimalPowerFlow/solution.jl")
+# export dcOptimalPowerFlow
 
 unit = Unit("radian", "per-unit", "per-unit", "per-unit", "per-unit")
 
