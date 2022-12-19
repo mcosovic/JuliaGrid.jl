@@ -63,3 +63,11 @@ end
         error("The voltage values are missing.")
     end
 end
+
+mutable struct Unit
+    angle::String
+    impedance::String
+    voltage::String
+    power::String
+    current::String
+end
