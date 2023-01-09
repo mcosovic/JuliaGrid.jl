@@ -169,7 +169,6 @@ mutable struct ACModel
     transformerRatio::Array{ComplexF64,1}
 end
 
-
 ######### Power System ##########
 mutable struct PowerSystem
     bus::Bus

@@ -32,6 +32,7 @@ export reactivePowerLimit!, adjustVoltageAngle!
 
 ######### Unit ##########
 include("utility/unit.jl")
+export baseUnit!
 unit = defaultUnit()
 
 # ######## Optimal Power Flow ##########
