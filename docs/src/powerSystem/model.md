@@ -7,7 +7,7 @@ The JuliaGrid supports the composite type `PowerSystem` to preserve power system
 * `base`
 * `acModel`
 * `dcModel`.
-The fields `bus`, `branch`, and `generator` hold data related to buses, branches, and generators, respectively. The `base` field holds base values for power and voltage, with three-phase power as the default for power and line-to-line voltage for voltage. The `acModel` and `dcModel` fields store vectors and matrices calculated based on the power system's topology and parameters.
+The fields `bus`, `branch`, and `generator` hold data related to buses, branches, and generators, respectively. The `base` field holds base values for power and voltages, with three-phase power as the default for the base power and line-to-line voltages for base voltages. The `acModel` and `dcModel` fields store vectors and matrices calculated based on the power system's topology and parameters.
 
 The composite type `PowerSystem` can be created using a function:
 * [`powerSystem()`](@ref powerSystem).
@@ -34,6 +34,7 @@ To create vectors and matrices based on the power system topology and parameters
 * [`dcModel!()`](@ref dcModel!).
 Note that these functions can be executed at any time once all power system buses are defined. Specifically, using the [addBranch!()](@ref addBranch!) function to add a new branch will automatically update the `acModel` and `dcModel` fields. However, adding a new bus using [addBus!()](@ref addBus!) requires executing the [acModel!()](@ref acModel!) and [dcModel!()](@ref dcModel!) functions again. In addition, executing functions related to parameter manipulation of buses and branches will also automatically update the `acModel` and `dcModel` fields.
 
+---
 
 ## Build Model
 The function builds the composite type `PowerSystem` and populates `bus`, `branch`, `generator` and `base` fields.
@@ -41,7 +42,7 @@ The function builds the composite type `PowerSystem` and populates `bus`, `branc
 powerSystem
 ```
 
-The function modifies the units for base power and base voltage and updates the `base` field.
+The function modifies the units for base power and base voltages and updates the `base` field.
 ```@docs
 baseUnit!
 ```
