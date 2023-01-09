@@ -5,7 +5,6 @@ using HDF5
 
 ######### Utility ##########
 include("utility/routine.jl")
-export Unit
 
 ######## Power System ##########
 include("powerSystem/load.jl")
@@ -31,11 +30,14 @@ export bus!, branch!, generator!
 include("powerFlow/reactiveLimits.jl")
 export reactivePowerLimit!, adjustVoltageAngle!
 
+######### Unit ##########
+include("utility/unit.jl")
+unit = defaultUnit()
+
 # ######## Optimal Power Flow ##########
 # include("optimalPowerFlow/solution.jl")
 # export dcOptimalPowerFlow
 
-unit = Unit("radian", "per-unit", "per-unit", "per-unit", "per-unit")
 
 end # JuliaGrid
 

@@ -42,7 +42,7 @@ function saveBus(system::PowerSystem, file)
     shuntNumber = 0
     @inbounds for (key, value) in system.bus.label
         label[value] = key
-        if value == layout.slackImmutable
+        if value == layout.slackIndex
             slackLabel = key
         end
         if shunt.conductance[value] != 0 || shunt.susceptance[value] != 0
@@ -228,11 +228,11 @@ function saveBranch(system::PowerSystem, labelBus::Array{Int64,1}, file)
     return transformerNumber
 end
 
-######### Save PGenerator Data ##########
+######### Save Generator Data ##########
 function saveGenerator(system::PowerSystem, labelBus::Array{Int64,1}, file)
     output = system.generator.output
     capability = system.generator.capability
-    rampRate = system.generator.rampRate
+    ramping = system.generator.ramping
     cost = system.generator.cost
     voltage = system.generator.voltage
     layout = system.generator.layout
@@ -318,93 +318,67 @@ function saveGenerator(system::PowerSystem, labelBus::Array{Int64,1}, file)
     attrs(file["generator/capability/maxReactiveUpper"])["type"] = "float"
     attrs(file["generator/capability/maxReactiveUpper"])["format"] = format
 
-    format = compresseArray(file, rampRate.loadFollowing, "generator/rampRate/loadFollowing")
-    attrs(file["generator/rampRate/loadFollowing"])["unit"] = "per-unit per minute (p.u./min)"
-    attrs(file["generator/rampRate/loadFollowing"])["SI unit"] = "watt per minute (W/min)"
-    attrs(file["generator/rampRate/loadFollowing"])["type"] = "float"
-    attrs(file["generator/rampRate/loadFollowing"])["format"] = format
+    format = compresseArray(file, ramping.loadFollowing, "generator/ramping/loadFollowing")
+    attrs(file["generator/ramping/loadFollowing"])["unit"] = "per-unit per minute (p.u./min)"
+    attrs(file["generator/ramping/loadFollowing"])["SI unit"] = "watt per minute (W/min)"
+    attrs(file["generator/ramping/loadFollowing"])["type"] = "float"
+    attrs(file["generator/ramping/loadFollowing"])["format"] = format
 
-    format = compresseArray(file, rampRate.reserve10minute, "generator/rampRate/reserve10minute")
-    attrs(file["generator/rampRate/reserve10minute"])["unit"] = "per-unit (p.u.)"
-    attrs(file["generator/rampRate/reserve10minute"])["SI unit"] = "watt (W)"
-    attrs(file["generator/rampRate/reserve10minute"])["type"] = "float"
-    attrs(file["generator/rampRate/reserve10minute"])["format"] = format
+    format = compresseArray(file, ramping.reserve10minute, "generator/ramping/reserve10minute")
+    attrs(file["generator/ramping/reserve10minute"])["unit"] = "per-unit (p.u.)"
+    attrs(file["generator/ramping/reserve10minute"])["SI unit"] = "watt (W)"
+    attrs(file["generator/ramping/reserve10minute"])["type"] = "float"
+    attrs(file["generator/ramping/reserve10minute"])["format"] = format
 
-    format = compresseArray(file, rampRate.reserve30minute, "generator/rampRate/reserve30minute")
-    attrs(file["generator/rampRate/reserve30minute"])["unit"] = "per-unit (p.u.)"
-    attrs(file["generator/rampRate/reserve30minute"])["SI unit"] = "watt (W)"
-    attrs(file["generator/rampRate/reserve30minute"])["type"] = "float"
-    attrs(file["generator/rampRate/reserve30minute"])["format"] = format
+    format = compresseArray(file, ramping.reserve30minute, "generator/ramping/reserve30minute")
+    attrs(file["generator/ramping/reserve30minute"])["unit"] = "per-unit (p.u.)"
+    attrs(file["generator/ramping/reserve30minute"])["SI unit"] = "watt (W)"
+    attrs(file["generator/ramping/reserve30minute"])["type"] = "float"
+    attrs(file["generator/ramping/reserve30minute"])["format"] = format
 
-    format = compresseArray(file, rampRate.reactiveTimescale, "generator/rampRate/reactiveTimescale")
-    attrs(file["generator/rampRate/reactiveTimescale"])["unit"] = "per-unit per minute (p.u./min)"
-    attrs(file["generator/rampRate/reactiveTimescale"])["SI unit"] = "volt-ampere reactive per minute (VAr/min)"
-    attrs(file["generator/rampRate/reactiveTimescale"])["type"] = "float"
-    attrs(file["generator/rampRate/reactiveTimescale"])["format"] = format
+    format = compresseArray(file, ramping.reactiveTimescale, "generator/ramping/reactiveTimescale")
+    attrs(file["generator/ramping/reactiveTimescale"])["unit"] = "per-unit per minute (p.u./min)"
+    attrs(file["generator/ramping/reactiveTimescale"])["SI unit"] = "volt-ampere reactive per minute (VAr/min)"
+    attrs(file["generator/ramping/reactiveTimescale"])["type"] = "float"
+    attrs(file["generator/ramping/reactiveTimescale"])["format"] = format
 
-    if !isempty(cost.activeModel)
-        format = compresseArray(file, cost.activeModel, "generator/cost/activeModel")
-        attrs(file["generator/cost/activeModel"])["piecewise linear"] = 1
-        attrs(file["generator/cost/activeModel"])["polynomial"] = 2
-        attrs(file["generator/cost/activeModel"])["type"] = "one-two integer"
-        attrs(file["generator/cost/activeModel"])["unit"] = "dimensionless"
-        attrs(file["generator/cost/activeModel"])["format"] = format
+    format = compresseArray(file, cost.active.model, "generator/cost/active/model")
+    attrs(file["generator/cost/active/model"])["piecewise linear"] = 1
+    attrs(file["generator/cost/active/model"])["polynomial"] = 2
+    attrs(file["generator/cost/active/model"])["type"] = "one-two integer"
+    attrs(file["generator/cost/active/model"])["unit"] = "dimensionless"
+    attrs(file["generator/cost/active/model"])["format"] = format
 
-        format = compresseArray(file, cost.activeStartup, "generator/cost/activeStartup")
-        attrs(file["generator/cost/activeStartup"])["unit"] = "currency"
-        attrs(file["generator/cost/activeStartup"])["type"] = "float"
-        attrs(file["generator/cost/activeStartup"])["format"] = format
+    format = savePolynomial(file, cost.active.polynomial, "generator/cost/active/polynomial")
+    attrs(file["generator/cost/active/polynomial"])["unit"] = "determined at the output active power given in watt (W)"
+    attrs(file["generator/cost/active/polynomial"])["type"] = "float"
+    attrs(file["generator/cost/active/polynomial"])["format"] = format
 
-        format = compresseArray(file, cost.activeShutdown, "generator/cost/activeShutdown")
-        attrs(file["generator/cost/activeShutdown"])["unit"] = "currency"
-        attrs(file["generator/cost/activeShutdown"])["type"] = "float"
-        attrs(file["generator/cost/activeShutdown"])["format"] = format
+    format = savePiecewise(file, cost.active.piecewise, "generator/cost/active/piecewise")
+    attrs(file["generator/cost/active/piecewise"])["unit: even term"] = "currency per hour"
+    attrs(file["generator/cost/active/piecewise"])["unit: odd term"] = "per-unit (p.u.)"
+    attrs(file["generator/cost/active/piecewise"])["SI unit: odd term"] = "watt (W)"
+    attrs(file["generator/cost/active/piecewise"])["type"] = "float"
+    attrs(file["generator/cost/active/piecewise"])["format"] = format
 
-        format = compresseArray(file, cost.activeDataPoint, "generator/cost/activeDataPoint")
-        attrs(file["generator/cost/activeDataPoint"])["type"] = "positive integer"
-        attrs(file["generator/cost/activeDataPoint"])["unit"] = "dimensionless"
-        attrs(file["generator/cost/activeDataPoint"])["format"] = format
+    format = compresseArray(file, cost.reactive.model, "generator/cost/reactive/model")
+    attrs(file["generator/cost/reactive/model"])["piecewise linear"] = 1
+    attrs(file["generator/cost/reactive/model"])["polynomial"] = 2
+    attrs(file["generator/cost/reactive/model"])["type"] = "one-two integer"
+    attrs(file["generator/cost/reactive/model"])["unit"] = "dimensionless"
+    attrs(file["generator/cost/reactive/model"])["format"] = format
 
-        format = compresseMatrix(file, cost.activeCoefficient, "generator/cost/activeCoefficient")
-        attrs(file["generator/cost/activeCoefficient"])["(model = 2) unit: even coefficient"] = "currency per hour"
-        attrs(file["generator/cost/activeCoefficient"])["(model = 2) unit: odd coefficient"] = "per-unit (p.u.)"
-        attrs(file["generator/cost/activeCoefficient"])["(model = 2) SI unit: odd coefficient"] = "watt (W)"
-        attrs(file["generator/cost/activeCoefficient"])["(model = 1) unit"] = "dimensionless"
-        attrs(file["generator/cost/activeCoefficient"])["type"] = "float"
-        attrs(file["generator/cost/activeCoefficient"])["format"] = format
-    end
+    format = savePolynomial(file, cost.reactive.polynomial, "generator/cost/reactive/polynomial")
+    attrs(file["generator/cost/reactive/polynomial"])["unit"] = "determined at the output reactive power given in volt-ampere reactive (VAr)"
+    attrs(file["generator/cost/reactive/polynomial"])["type"] = "float"
+    attrs(file["generator/cost/reactive/polynomial"])["format"] = format
 
-    if !isempty(cost.reactiveModel)
-        format = compresseArray(file, cost.reactiveModel, "generator/cost/reactiveModel")
-        attrs(file["generator/cost/reactiveModel"])["piecewise linear"] = 1
-        attrs(file["generator/cost/reactiveModel"])["polynomial"] = 2
-        attrs(file["generator/cost/reactiveModel"])["unit"] = "dimensionless"
-        attrs(file["generator/cost/reactiveModel"])["type"] = "one-two integer"
-        attrs(file["generator/cost/reactiveModel"])["format"] = format
-
-        format = compresseArray(file, cost.reactiveStartup, "generator/cost/reactiveStartup")
-        attrs(file["generator/cost/reactiveStartup"])["unit"] = "currency"
-        attrs(file["generator/cost/reactiveStartup"])["type"] = "float"
-        attrs(file["generator/cost/reactiveStartup"])["format"] = format
-
-        format = compresseArray(file, cost.reactiveShutdown, "generator/cost/reactiveShutdown")
-        attrs(file["generator/cost/reactiveShutdown"])["unit"] = "currency"
-        attrs(file["generator/cost/reactiveShutdown"])["type"] = "float"
-        attrs(file["generator/cost/reactiveShutdown"])["format"] = format
-
-        format = compresseArray(file, cost.reactiveDataPoint, "generator/cost/reactiveDataPoint")
-        attrs(file["generator/cost/reactiveDataPoint"])["type"] = "positive integer"
-        attrs(file["generator/cost/reactiveDataPoint"])["unit"] = "dimensionless"
-        attrs(file["generator/cost/reactiveDataPoint"])["format"] = format
-
-        format = compresseMatrix(file, cost.reactiveCoefficient, "generator/cost/reactiveCoefficient")
-        attrs(file["generator/cost/reactiveCoefficient"])["(model = 2) unit: even coefficient"] = "currency per hour"
-        attrs(file["generator/cost/reactiveCoefficient"])["(model = 2) unit: odd coefficient"] = "per-unit (p.u.)"
-        attrs(file["generator/cost/reactiveCoefficient"])["(model = 2) SI unit: odd coefficient"] = "volt-ampere reactive (VAr)"
-        attrs(file["generator/cost/reactiveCoefficient"])["(model = 1) unit"] = "dimensionless"
-        attrs(file["generator/cost/reactiveCoefficient"])["type"] = "float"
-        attrs(file["generator/cost/reactiveCoefficient"])["format"] = format
-    end
+    format = savePiecewise(file, cost.reactive.piecewise, "generator/cost/reactive/piecewise")
+    attrs(file["generator/cost/reactive/piecewise"])["unit: even term"] = "currency per hour"
+    attrs(file["generator/cost/reactive/piecewise"])["unit: odd term"] = "per-unit (p.u.)"
+    attrs(file["generator/cost/reactive/piecewise"])["SI unit: odd term"] = "volt-ampere reactive (VAr)"
+    attrs(file["generator/cost/reactive/piecewise"])["type"] = "float"
+    attrs(file["generator/cost/reactive/piecewise"])["format"] = format
 
     format = compresseArray(file, voltage.magnitude, "generator/voltage/magnitude")
     attrs(file["generator/voltage/magnitude"])["unit"] = "per-unit (p.u.)"
@@ -471,27 +445,74 @@ function compresseArray(file, data, name::String)
     return format
 end
 
-######### Matrix Compression ##########
-function compresseMatrix(file, data::Array{Float64,2}, name::String)
-    format = "compressed"
-    anchor = data[1, :]
-    Ncol, Nrow = size(data)
-    @inbounds for col = 1:Ncol
-        for row = 1:Nrow
-            if data[col, row] != anchor[row]
-                format = "expand"
-                break
-            end
+######### Save Polynomial Cost Terms ##########
+function savePolynomial(file, data, name::String)
+    costNumber = size(data, 1)
+
+    format = "empty"
+    flag = true
+    anchor = data[1]
+    @inbounds for i = 1:costNumber
+        if !isempty(data[i])
+            format = "compressed"
         end
-        if format == "expand"
+        if anchor != data[i]
+            format = "expand"
             break
         end
     end
 
     if format == "expand"
-        write(file, name, data)
+        polynomial = zeros(3, costNumber)
+        @inbounds for i = 1:costNumber
+            if !isempty(data[i])
+                for k = 1:3
+                    polynomial[k, i] = data[i][k]
+                end
+            end
+        end
+        write(file, name, polynomial)
     else
-        write(file, name, anchor)
+        write(file, name, data[1])
+    end
+
+    return format
+end
+
+######### Save Piecewise Cost Terms ##########
+function savePiecewise(file, data, name::String)
+    costNumber = size(data, 1)
+
+    format = "compressed"
+    maxRows = 0
+    anchor = data[1]
+    @inbounds for i = 1:costNumber
+        maxRows = max(maxRows, size(data[i], 1))
+        if anchor != data[i]
+            format = "expand"
+        end
+    end
+    if maxRows == 0
+        format = "empty"
+    end
+
+    if format == "expand"
+        piecewise = zeros(maxRows, 2 * costNumber)
+        col = 1
+        @inbounds for i = 1:costNumber
+            if !isempty(data[i])
+                rowNumber = size(data[i], 1)
+                for coordinate = 1:2
+                    for row = 1:rowNumber
+                        piecewise[row, col] = data[i][row, coordinate]
+                    end
+                    col += 1
+                end
+            end
+        end
+        write(file, name, piecewise)
+    else
+        write(file, name, data[1])
     end
 
     return format
