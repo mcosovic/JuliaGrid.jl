@@ -1,11 +1,12 @@
 """
-The function saves power system data in the HDF5 file using fields `bus`,
-`branch`, `generator` and `basePower` of the composite type `PowerSystem`.
+The function `savePowerSystem`, saves the power system's data in the HDF5 file using the 
+fields 'bus', 'branch', 'generator', and 'base' from the composite type 'PowerSystem'. 
 
     savePowerSystem(system::PowerSystem; path, reference, note)
 
-The keyword `path::String` is mandatory in the form `"path/name.h5"`, while
-keywords `reference::String` and `note::String` are optional.
+The location and file name of the HDF5 file is specified by the mandatory keyword 
+'path::String' in the format of "path/name.h5". Additional information can be provided by 
+the optional keywords 'reference::String' and 'note::String'.
 
 # Example
 ```jldoctest
@@ -15,7 +16,7 @@ savePowerSystem(system; path = "D:/case14.h5")
 """
 function savePowerSystem(system::PowerSystem; path::String, reference::String = "", note::String = "")
     file = h5open(path, "w")
-        saveBasePower(system, file)
+        saveBase(system, file)
         label, shuntNumber = saveBus(system, file)
         transformerNumber = saveBranch(system, label, file)
         saveGenerator(system, label, file)
@@ -24,10 +25,16 @@ function savePowerSystem(system::PowerSystem; path::String, reference::String = 
 end
 
 ######### Save Base Power ##########
-function saveBasePower(system::PowerSystem, file)
-    write(file, "basePower", system.basePower)
-    attrs(file["basePower"])["unit"] = "volt-ampere"
-    attrs(file["basePower"])["format"] = "number"
+function saveBase(system::PowerSystem, file)
+    write(file, "base/power", system.base.power * unit.prefix["base power"])
+    attrs(file["base/power"])["unit"] = "volt-ampere"
+    attrs(file["base/power"])["format"] = "number"
+
+    format = compresseArray(file, system.base.voltage * unit.prefix["base voltage"], "base/voltage")
+    attrs(file["base/voltage"])["unit"] = "volt (V)"
+    attrs(file["base/voltage"])["type"] = "float"
+    attrs(file["base/voltage"])["format"] = format
+
 end
 
 ######### Save Bus Data ##########
@@ -38,12 +45,12 @@ function saveBus(system::PowerSystem, file)
     layout = system.bus.layout
 
     label = fill(0, system.bus.number)
-    slackLabel = 0
+    slack = 0
     shuntNumber = 0
     @inbounds for (key, value) in system.bus.label
         label[value] = key
-        if value == layout.slackIndex
-            slackLabel = key
+        if value == layout.slack
+            slack = key
         end
         if shunt.conductance[value] != 0 || shunt.susceptance[value] != 0
             shuntNumber += 1
@@ -54,10 +61,10 @@ function saveBus(system::PowerSystem, file)
     attrs(file["bus/layout/label"])["unit"] = "dimensionless"
     attrs(file["bus/layout/label"])["format"] = "expand"
 
-    write(file, "bus/layout/slackLabel", slackLabel)
-    attrs(file["bus/layout/slackLabel"])["type"] = "positive integer"
-    attrs(file["bus/layout/slackLabel"])["unit"] = "dimensionless"
-    attrs(file["bus/layout/slackLabel"])["format"] = "number"
+    write(file, "bus/layout/slack", slack)
+    attrs(file["bus/layout/slack"])["type"] = "positive integer"
+    attrs(file["bus/layout/slack"])["unit"] = "dimensionless"
+    attrs(file["bus/layout/slack"])["format"] = "number"
 
     format = compresseArray(file, demand.active, "bus/demand/active")
     attrs(file["bus/demand/active"])["unit"] = "per-unit (p.u.)"
@@ -105,11 +112,6 @@ function saveBus(system::PowerSystem, file)
     attrs(file["bus/voltage/maxMagnitude"])["SI unit"] = "volt (V)"
     attrs(file["bus/voltage/maxMagnitude"])["type"] = "float"
     attrs(file["bus/voltage/maxMagnitude"])["format"] = format
-
-    format = compresseArray(file, voltage.base, "bus/voltage/base")
-    attrs(file["bus/voltage/base"])["unit"] = "volt (V)"
-    attrs(file["bus/voltage/base"])["type"] = "float"
-    attrs(file["bus/voltage/base"])["format"] = format
 
     format = compresseArray(file, layout.area, "bus/layout/area")
     attrs(file["bus/layout/area"])["type"] = "positive integer"

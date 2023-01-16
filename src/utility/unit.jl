@@ -3,129 +3,121 @@ mutable struct Unit
     prefixSelect::Dict{String,Float64}
     suffixSelect::Dict{String,Array{String}}
     prefix::Dict{String,Float64}
-    scale::Dict{String,Float64}
+    suffix::Dict{String,String}
 end
 
 """
-By default, the units for base power and base voltage are set to volt-amperes (VA) and 
-volts (V). The function can be used to change these units by defining the appropriate 
-prefixes for the aforementioned units:
-   
-    baseUnit!(system::PowerSystem; power::Symbol, voltage::Symbol)
+JuliaGrid stores all data, with the exception of base values, in per-unit and radians, 
+and these cannot be altered. However, the units of the built-in functions can be modified 
+using the macro command:
+    
+    @unit(type; firstUnit, secondUnit)
+    
+The macro command modifies prefixes and units, where prefixes are defined in accordance 
+with the International System of Units. It is important to note that the macro changes 
+the unit system associated with the following built-in functions:
+* [`addBus!()`](@ref addBus!)
+* [`addBranch!()`](@ref addBranch!)
+* [`addGenerator!()`](@ref addGenerator!)
+* [`shuntBus!()`](@ref shuntBus!)
+* [`parameterBranch!()`](@ref parameterBranch!) 
+* [`outputGenerator!()`](@ref outputGenerator!).
 
-Note that the prefixes are defined as specified in the International System of Units.
+# Base power and base voltage units
+By default, the units for base power and base voltages are set to volt-ampere (VA) and 
+volt (V), but prefixes can be modified using the macro:
+```jldoctest
+@unit(base, MVA, kV)
+```
+The macro for setting base units must be executed prior to constructing the composite type 
+`PowerSystem`.
+
+# Active and reactive power units
+By default, the units for active and reactive powers are set to per-units, but these can 
+be altered using:
+```jldoctest
+@unit(power, MW, MVAr)
+```
+It is also possible to combine SI units with per-units:
+```jldoctest
+@unit(power, pu, MVAr)
+```
+
+# Voltage magnitude and angle units
+By default, the units for voltage magnitudes and angles are set to per-unit and radian, 
+but these can be modified using:
+```jldoctest
+@unit(voltage, kV, deg)
+```
+
+# Current magnitude and angle units
+Similar to the voltage, the units are set to per-unit and radian, and can be altered using:
+```jldoctest
+@unit(current, A, deg)
+```
+
+# Impedance and admitance units
+By default, the units for impedances and admitances are set to per-units, but these can be 
+modified using:
+```jldoctest
+@unit(parameter, Ω, kS)
+```
 
 # Example
+Using the macro, it is possible to define the system of units used in Matpower case files:
 ```jldoctest
-system = powerSystem("case14.h5")
-baseUnit!(system; power = :MVA, voltage = :kV)
+@unit(base, MVA, kV)
+@unit(power, MW, MVAr)
+@unit(voltage, pu, deg)
 ```
 """
-function baseUnit!(system::PowerSystem; power = Symbol(system.base.power.unit)::Symbol, voltage = Symbol(system.base.voltage.unit)::Symbol)
-    powerUnit = string(power)
-    suffix = parseSuffix(powerUnit, "base power")
-    prefix = parsePrefix(powerUnit, suffix)
+macro unit(type::Symbol, unitA::Symbol, unitB::Symbol)
+    if type == :base
+        unitPower = string(unitA)
+        suffixPower = parseSuffix(unitPower, "base power")
+        unit.prefix["base power"] = parsePrefix(unitPower, suffixPower)
 
-    system.base.power.threePhase *= unit.prefix["base power"] / prefix
-    unit.prefix["base power"] = prefix
-    system.base.power.unit = powerUnit
-
-    voltageUnit = string(voltage)
-    suffix = parseSuffix(voltageUnit, "base voltage")
-    prefix = parsePrefix(voltageUnit, suffix)
-
-    system.base.voltage.lineToLine *= unit.prefix["base voltage"] / prefix
-    unit.prefix["base voltage"] = prefix
-    system.base.voltage.unit = voltageUnit
-
-    if unit.prefix["active power"] != 1.0
-        unit.scale["active power"] = unit.prefix["active power"] / unit.prefix["base power"]
-    end
-    if unit.prefix["reactive power"] != 1.0
-        unit.scale["reactive power"] = unit.prefix["reactive power"] / unit.prefix["base power"]
-    end
-    if unit.prefix["voltage magnitude"] != 1.0
-        unit.scale["voltage magnitude"] = unit.prefix["voltage magnitude"] / unit.prefix["base voltage"]
-    end
-    if unit.prefix["current magnitude"] != 1.0
-        unit.scale["current magnitude"] = unit.prefix["current magnitude"] * unit.prefix["base voltage"] / unit.prefix["base power"]
-    end
-    if unit.prefix["impedance"] != 1.0
-        unit.scale["impedance"] = unit.prefix["impedance"] * unit.prefix["base power"] / (unit.prefix["base voltage"]^2)
-    end
-    if unit.prefix["admittance"] != 1.0
-        unit.scale["admittance"] = unit.prefix["admittance"] *(unit.prefix["base voltage"]^2) / unit.prefix["base power"]
-    end
-end
-
-######### User Unit Settings ##########
-macro unit(args...)
-    if args[1] == :power
-        activeUnit = string(args[2])
-        suffix = parseSuffix(activeUnit, "active power")
-        if suffix != "pu"
-            prefix =  parsePrefix(activeUnit, suffix)
-            unit.scale["active power"] = prefix / unit.prefix["base power"]
-            unit.prefix["active power"] = prefix
-        end
-
-        reactiveUnit = string(args[3])
-        suffix = parseSuffix(reactiveUnit, "reactive power")
-        if suffix != "pu"
-            prefix =  parsePrefix(reactiveUnit, suffix)
-            unit.scale["reactive power"] = prefix / unit.prefix["base power"]
-            unit.prefix["reactive power"] = prefix
-        end
+        unitVoltage = string(unitB)
+        suffixVoltage = parseSuffix(unitVoltage, "base voltage")
+        unit.prefix["base voltage"] = parsePrefix(unitVoltage, suffixVoltage)
     end
 
-    if args[1] == :voltage
-        magnitude = string(args[2])
-        suffix = parseSuffix(magnitude, "voltage magnitude")
-        if suffix != "pu"
-            prefix =  parsePrefix(magnitude, suffix)
-            unit.scale["voltage magnitude"] = prefix / unit.prefix["base voltage"]
-            unit.prefix["voltage magnitude"] = prefix
-        end
-
-        angle  = string(args[3])
-        suffix = parseSuffix(angle, "voltage angle")
-        if suffix == "deg"
-            unit.scale["voltage angle"] = pi / 180
-        end
+    if type == :power
+        unitInput = string(unitA)
+        unit.suffix["active power"] = parseSuffix(unitInput, "active power")
+        unit.prefix["active power"] =  parsePrefix(unitInput, unit.suffix["active power"])
+        
+        unitInput = string(unitB)
+        unit.suffix["reactive power"] = parseSuffix(unitInput, "reactive power")
+        unit.prefix["reactive power"] =  parsePrefix(unitInput, unit.suffix["reactive power"])
     end
 
-    if args[1] == :current
-        magnitude = string(args[2])
-        suffix = parseSuffix(magnitude, "current magnitude")
-        if suffix != "pu"
-            prefix =  parsePrefix(magnitude, suffix)
-            unit.scale["current magnitude"] = prefix * unit.prefix["base voltage"] / unit.prefix["base power"]
-            unit.prefix["current magnitude"] = prefix
-        end
-
-        angle  = string(args[3])
-        suffix = parseSuffix(angle, "current angle")
-        if suffix == "deg"
-            unit.scale["current angle"] = pi / 180
-        end
+    if type == :voltage
+        unitInput = string(unitA)
+        unit.suffix["voltage magnitude"] = parseSuffix(unitInput, "voltage magnitude")
+        unit.prefix["voltage magnitude"] =  parsePrefix(unitInput, unit.suffix["voltage magnitude"])
+        
+        unitInput = string(unitB)
+        unit.suffix["voltage angle"] = parseSuffix(unitInput, "voltage angle")
     end
 
-    if args[1] == :parameter
-        impedance = string(args[2])
-        suffix = parseSuffix(impedance, "impedance")
-        if suffix != "pu"
-            prefix =  parsePrefix(impedance, suffix)
-            unit.scale["impedance"] = prefix * unit.prefix["base power"] / (unit.prefix["base voltage"]^2)
-            unit.prefix["impedance"] = prefix
-        end
+    if type == :current
+        unitInput = string(unitA)
+        unit.suffix["current magnitude"] = parseSuffix(unitInput, "current magnitude")
+        unit.prefix["current magnitude"] =  parsePrefix(unitInput, unit.suffix["current magnitude"])
+        
+        unitInput = string(unitB)
+        unit.suffix["current angle"] = parseSuffix(unitInput, "current angle")
+    end
 
-        admittance = string(args[3])
-        suffix = parseSuffix(admittance, "admittance")
-        if suffix != "pu"
-            prefix =  parsePrefix(admittance, suffix)
-            unit.scale["admittance"] = prefix * (unit.prefix["base voltage"]^2) / unit.prefix["base power"]
-            unit.prefix["admittance"] = prefix
-        end
+    if type == :parameter
+        unitInput = string(unitA)
+        unit.suffix["impedance"] = parseSuffix(unitInput, "impedance")
+        unit.prefix["impedance"] =  parsePrefix(unitInput, unit.suffix["impedance"])
+        
+        unitInput = string(unitB)
+        unit.suffix["admittance"] = parseSuffix(unitInput, "admittance")
+        unit.prefix["admittance"] =  parsePrefix(unitInput, unit.suffix["admittance"])
     end
 end
 
@@ -147,18 +139,18 @@ function defaultUnit()
         "voltage magnitude" => 1.0, "current magnitude" => 1.0,
         "impedance" => 1.0, "admittance" => 1.0)
 
-    scale = Dict("active power" => 1.0, "reactive power" => 1.0,
-        "voltage magnitude" => 1.0, "voltage angle" => 1.0,
-        "current magnitude" => 1.0, "current angle" => 1.0,
-        "impedance" => 1.0, "admittance" => 1.0)
+    suffix = Dict("active power" => "pu", "reactive power" => "pu",
+        "voltage magnitude" => "pu", "voltage angle" => "rad",
+        "current magnitude" => "pu", "current angle" => "rad",
+        "impedance" => "pu", "admittance" => "pu")    
 
-    return Unit(prefixSelect, suffixSelect, prefix, scale)
+    return Unit(prefixSelect, suffixSelect, prefix, suffix)
 end
 
 ######### Parse Suffix (Unit) ##########
 function parseSuffix(inputUnit::String, inputType::String)
     suffix = ""
-    for i in unit.suffixSelect[inputType]
+    @inbounds for i in unit.suffixSelect[inputType]
         if endswith(inputUnit, i)
             suffix = i
         end
@@ -183,5 +175,30 @@ function parsePrefix(inputUnit::String, suffix::String)
     end
 
     return prefixFloat
+end
+
+######### Transform to per-unit system ##########
+function topu(unit::Unit, baseInv::Float64, type::String)
+    if unit.suffix[type] == "pu"
+        scale = 1.0
+    else
+        scale = unit.prefix[type] * baseInv
+        if scale == Inf
+            error("The illegal base value.")
+        end
+    end
+
+    return scale
+end
+
+######### Transform to radians ##########
+function torad(unit::Unit, type::String)
+    if unit.suffix[type] == "rad"
+        scale = 1.0
+    else
+        scale = pi / 180
+    end
+
+    return scale
 end
 

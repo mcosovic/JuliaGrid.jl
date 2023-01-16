@@ -20,7 +20,7 @@ mutable struct BusLayout
     type::Array{Int64,1}
     area::Array{Int64,1}
     lossZone::Array{Int64,1}
-    slackIndex::Int64
+    slack::Int64
     renumbering::Bool
 end
 
@@ -135,19 +135,9 @@ mutable struct Generator
 end
 
 ######### Base Data ##########
-mutable struct BasePower
-    threePhase::Float64
-    unit::String
-end
-
-mutable struct BaseVoltage
-    lineToLine::Array{Float64,1}
-    unit::String
-end
-
 mutable struct Base
-    power::BasePower
-    voltage::BaseVoltage
+    voltage::Array{Float64,1}
+    power::Float64
 end
 
 ######### DC Model ##########
@@ -180,15 +170,30 @@ mutable struct PowerSystem
 end
 
 """
+The function builds the composite type `PowerSystem` and populates `bus`, `branch`, 
+`generator` and `base` fields. In general, once the composite type `PowerSystem` has been 
+created, it is possible to add new buses, branches, or generators, or modify the parameters 
+of existing ones.
+
 To use the `powerSystem()` function, the path to the HDF5 file with the .h5 extension can 
 be passed as arguments. For example: 
     
     powerSystem("pathToExternalData/name.h5")
 
+## Example
+```jldoctest
+system = powerSystem("case14.h5")
+```
+
 Similarly, the path to the Matpower file with the `.m` extension can be passed to the same 
 function:
 
     powerSystem("pathToExternalData/name.m")
+
+## Example
+```jldoctest
+system = powerSystem("case14.m")
+```
 
 Alternatively, the `PowerSystem` composite type can be initialized by calling the function 
 without any arguments: 
@@ -197,11 +202,24 @@ without any arguments:
 
 This allows the model to be built from scratch and modified as needed.
 
-In general, once the composite type `PowerSystem` has been created, it is possible to add 
-new buses, branches, or generators, or modify the parameters of existing ones.
-
-# Example
+## Example
 ```jldoctest
+system = powerSystem()
+```
+
+# Units
+JuliaGrid stores all data, with the exception of base values, in per-unit and radians, 
+and these cannot be altered. By default, the units for base power and base voltages are 
+set to volt-ampere (VA) and volt (V), but prefixes can be modified using the macro:
+```jldoctest
+@unit(base, MVA, kV)
+```
+The macro for setting base units must be executed prior to constructing the composite type 
+`PowerSystem`.
+
+## Example
+```jldoctest
+@unit(base, MVA, kV)
 system = powerSystem("case14.h5")
 ```
 """
@@ -230,8 +248,7 @@ function powerSystem()
     voltageGenerator =  GeneratorVoltage(copy(af))
     layoutGenerator = GeneratorLayout(copy(ai), copy(af), copy(ai))
 
-    basePower = BasePower(1e8, "VA")
-    baseVoltage = BaseVoltage(copy(af), "V")
+    basePower = 1e8 / unit.prefix["base power"]
 
     acModel = ACModel(copy(sp), copy(sp), ac, copy(ac), copy(ac), copy(ac), copy(ac), copy(ac))
     dcModel = DCModel(sp, copy(af), copy(af))
@@ -240,7 +257,7 @@ function powerSystem()
         Bus(label, demand, supply, shunt, voltageBus, layoutBus, 0),
         Branch(copy(label), parameter, rating, voltageBranch, layoutBranch, 0),
         Generator(copy(label), output, capability, ramping, voltageGenerator, cost, layoutGenerator, 0),
-        Base(basePower, baseVoltage),
+        Base(copy(af), basePower),
         acModel, dcModel)
 end
 
@@ -249,14 +266,14 @@ function powerSystem(inputFile::String)
     fullpath, extension = checkFileFormat(inputFile, packagePath)
     system = powerSystem()
 
-    # if extension == ".h5"
-    #     system = h5open(fullpath, "r")
-    #         basePower = loadBasePower(system)
-    #         @time bus = loadBus(system)
-    #         @time branch = loadBranch(system, bus)
-    #         generator = loadGenerator(system, bus)
-    #     close(system)
-    # end
+    if extension == ".h5"
+        hdf5 = h5open(fullpath, "r")
+            loadBus(system, hdf5)
+            loadBranch(system, hdf5)
+            loadGenerator(system, hdf5)
+            loadBase(system, hdf5)
+        close(hdf5)
+    end
 
     if extension == ".m"
         busLine, branchLine, generatorLine, generatorcostLine = readMATLAB(system, fullpath)
@@ -268,193 +285,170 @@ function powerSystem(inputFile::String)
     return system
 end
 
-######## Load Base Power from HDF5 File ##########
-function loadBasePower(system::HDF5.File)
-    if haskey(system, "basePower")
-        basePower::Float64 = read(system["basePower"])
-    else
-        basePower = 1e8
-        @info("The variable basePower not found. The algorithm proceeds with default value of 1e8 VA.")
-    end
-
-    return basePower
-end
-
 ######## Load Bus Data from HDF5 File ##########
-function loadBus(system::HDF5.File)
-    if !haskey(system, "bus")
+function loadBus(system::PowerSystem, hdf5::HDF5.File)
+    if !haskey(hdf5, "bus")
         throw(ErrorException("The bus data is missing."))
     end
-    renumbering = false
+    bus = system.bus
 
-    layouth5 = system["bus/layout"]
-    labelOriginal::Array{Int64,1} = HDF5.readmmap(layouth5["label"])
+    layouth5 = hdf5["bus/layout"]
+    label::Array{Int64,1} = HDF5.readmmap(layouth5["label"])
 
-    busNumber = length(labelOriginal)
-    label = Dict{Int64,Int64}(); sizehint!(label, busNumber)
-    @inbounds for i = 1:busNumber
-        j = labelOriginal[i]
-        if !renumbering && i != j
-            renumbering = true
+    bus.number = length(label)
+    bus.label = Dict{Int64,Int64}(); sizehint!(bus.label, bus.number)
+    @inbounds for i = 1:bus.number
+        j = label[i]
+        if bus.layout.renumbering && i != j
+            bus.layout.renumbering = true
         end
-        label[j] = i
+        bus.label[j] = i
     end
 
-    demandh5 = system["bus/demand"]
-    active = arrayFloat(demandh5, "active", busNumber)
-    reactive = arrayFloat(demandh5, "reactive", busNumber)
-    demand = BusDemand(active, reactive)
+    demandh5 = hdf5["bus/demand"]
+    bus.demand.active = arrayFloat(demandh5, "active", bus.number)
+    bus.demand.reactive = arrayFloat(demandh5, "reactive", bus.number)
 
-    supply = BusSupply(fill(0.0, busNumber), fill(0.0, busNumber), fill(0, busNumber))
+    bus.supply.active = fill(0.0, bus.number)
+    bus.supply.reactive = fill(0.0, bus.number)
+    bus.supply.inService = fill(0, bus.number)
 
-    shunth5 = system["bus/shunt"]
-    conductance = arrayFloat(shunth5, "conductance", busNumber)
-    susceptance = arrayFloat(shunth5, "susceptance", busNumber)
-    shunt = BusShunt(conductance, susceptance)
+    shunth5 = hdf5["bus/shunt"]
+    bus.shunt.conductance = arrayFloat(shunth5, "conductance", bus.number)
+    bus.shunt.susceptance = arrayFloat(shunth5, "susceptance", bus.number)
 
-    voltageh5 = system["bus/voltage"]
-    magnitude = arrayFloat(voltageh5, "magnitude", busNumber)
-    angle = arrayFloat(voltageh5, "angle", busNumber)
-    minMagnitude = arrayFloat(voltageh5, "minMagnitude", busNumber)
-    maxMagnitude = arrayFloat(voltageh5, "maxMagnitude", busNumber)
-    base = arrayFloat(voltageh5, "base", busNumber)
-    voltage = BusVoltage(magnitude, angle, minMagnitude, maxMagnitude, base)
+    voltageh5 = hdf5["bus/voltage"]
+    bus.voltage.magnitude = arrayFloat(voltageh5, "magnitude", bus.number)
+    bus.voltage.angle = arrayFloat(voltageh5, "angle", bus.number)
+    bus.voltage.minMagnitude = arrayFloat(voltageh5, "minMagnitude", bus.number)
+    bus.voltage.maxMagnitude = arrayFloat(voltageh5, "maxMagnitude", bus.number)
 
-    type = fill(1, busNumber)
-    area = arrayInteger(layouth5, "area", busNumber)
-    lossZone = arrayInteger(layouth5, "lossZone", busNumber)
-    slackIndex = label[read(layouth5["slackLabel"])]
-    layout = BusLayout(type, area, lossZone, slackIndex, renumbering)
-
-    return Bus(label, demand, supply, shunt, voltage, layout, busNumber)
+    bus.layout.type = fill(1, bus.number)
+    bus.layout.area = arrayInteger(layouth5, "area", bus.number)
+    bus.layout.lossZone = arrayInteger(layouth5, "lossZone", bus.number)
+    bus.layout.slack = bus.label[read(layouth5["slack"])]
 end
 
 ######## Load Branch Data from HDF5 File ##########
-function loadBranch(system::HDF5.File, bus::Bus)
-    if !haskey(system, "branch")
+function loadBranch(system::PowerSystem, hdf5::HDF5.File)
+    if !haskey(hdf5, "branch")
         throw(ErrorException("The branch data is missing."))
     end
-    renumbering = false
+    branch = system.branch
 
-    layouth5 = system["branch/layout"]
+    layouth5 = hdf5["branch/layout"]
     labelOriginal::Array{Int64,1} = HDF5.readmmap(layouth5["label"])
 
-    branchNumber = length(labelOriginal)
-    label = Dict{Int64,Int64}(); sizehint!(label, branchNumber)
-    @inbounds for i = 1:branchNumber
+    branch.number = length(labelOriginal)
+    branch.label = Dict{Int64,Int64}(); sizehint!(branch.label, branch.number)
+    @inbounds for i = 1:branch.number
         j = labelOriginal[i]
-        if !renumbering && i != j
-            renumbering = true
+        if !branch.layout.renumbering && i != j
+            branch.layout.renumbering = true
         end
-        label[j] = i
+        branch.label[j] = i
     end
 
-    parameterh5 = system["branch/parameter"]
-    resistance = arrayFloat(parameterh5, "resistance", branchNumber)
-    reactance = arrayFloat(parameterh5, "reactance", branchNumber)
-    susceptance = arrayFloat(parameterh5, "susceptance", branchNumber)
-    turnsRatio = arrayFloat(parameterh5, "turnsRatio", branchNumber)
-    shiftAngle = arrayFloat(parameterh5, "shiftAngle", branchNumber)
-    parameter = BranchParameter(resistance, reactance, susceptance, turnsRatio, shiftAngle)
+    parameterh5 = hdf5["branch/parameter"]
+    branch.parameter.resistance = arrayFloat(parameterh5, "resistance", branch.number)
+    branch.parameter.reactance = arrayFloat(parameterh5, "reactance", branch.number)
+    branch.parameter.susceptance = arrayFloat(parameterh5, "susceptance", branch.number)
+    branch.parameter.turnsRatio = arrayFloat(parameterh5, "turnsRatio", branch.number)
+    branch.parameter.shiftAngle = arrayFloat(parameterh5, "shiftAngle", branch.number)
 
-    ratingh5 = system["branch/rating"]
-    longTerm = arrayFloat(ratingh5, "longTerm", branchNumber)
-    shortTerm = arrayFloat(ratingh5, "shortTerm", branchNumber)
-    emergency = arrayFloat(ratingh5, "emergency", branchNumber)
-    rating = BranchRating(longTerm, shortTerm, emergency)
+    ratingh5 = hdf5["branch/rating"]
+    branch.rating.longTerm = arrayFloat(ratingh5, "longTerm", branch.number)
+    branch.rating.shortTerm = arrayFloat(ratingh5, "shortTerm", branch.number)
+    branch.rating.emergency = arrayFloat(ratingh5, "emergency", branch.number)
 
-    voltageh5 = system["branch/voltage"]
-    minAngleDifference = arrayFloat(voltageh5, "minAngleDifference", branchNumber)
-    maxAngleDifference = arrayFloat(voltageh5, "maxAngleDifference", branchNumber)
-    voltage = BranchVoltage(minAngleDifference, maxAngleDifference)
+    voltageh5 = hdf5["branch/voltage"]
+    branch.voltage.minAngleDifference = arrayFloat(voltageh5, "minAngleDifference", branch.number)
+    branch.voltage.maxAngleDifference = arrayFloat(voltageh5, "maxAngleDifference", branch.number)
 
-    status = arrayInteger(layouth5, "status", branchNumber)
-    from::Array{Int64,1} = read(layouth5["from"])
-    to::Array{Int64,1} = read(layouth5["to"])
-    if bus.layout.renumbering
-        from = runRenumbering(from, branchNumber, bus.label)
-        to = runRenumbering(to, branchNumber, bus.label)
+    branch.layout.status = arrayInteger(layouth5, "status", branch.number)
+    branch.layout.from::Array{Int64,1} = read(layouth5["from"])
+    branch.layout.to::Array{Int64,1} = read(layouth5["to"])
+    if system.bus.layout.renumbering
+        from = runRenumbering(branch.layout.from, branch.number, system.bus.label)
+        to = runRenumbering(branch.layout.to, branch.number, system.bus.label)
     end
-    layout = BranchLayout(from, to, status, renumbering)
-
-    return Branch(label, parameter, rating, voltage, layout, branchNumber)
 end
 
 ######## Load Generator Data from HDF5 File ##########
-function loadGenerator(system::HDF5.File, bus::Bus)
-    if !haskey(system, "generator")
+function loadGenerator(system::PowerSystem, hdf5::HDF5.File)
+    if !haskey(hdf5, "generator")
         throw(ErrorException("The generator data is missing."))
     end
+    generator = system.generator
 
-    layouth5 = system["generator/layout"]
+    layouth5 = hdf5["generator/layout"]
     labelOriginal::Array{Int64,1} = HDF5.readmmap(layouth5["label"])
-    busIndex::Array{Int64,1} = read(layouth5["bus"])
-    generatorNumber = length(busIndex)
+    generator.number = length(labelOriginal)
 
-    outputh5 = system["generator/output"]
-    active = arrayFloat(outputh5, "active", generatorNumber)
-    reactive = arrayFloat(outputh5, "reactive", generatorNumber)
-    output = GeneratorOutput(active, reactive)
+    outputh5 = hdf5["generator/output"]
+    generator.output.active = arrayFloat(outputh5, "active", generator.number)
+    generator.output.reactive = arrayFloat(outputh5, "reactive", generator.number)
 
-    capabilityh5 = system["generator/capability"]
-    minActive = arrayFloat(capabilityh5, "minActive", generatorNumber)
-    maxActive = arrayFloat(capabilityh5, "maxActive", generatorNumber)
-    minReactive = arrayFloat(capabilityh5, "minReactive", generatorNumber)
-    maxReactive = arrayFloat(capabilityh5, "maxReactive", generatorNumber)
-    lowerActive = arrayFloat(capabilityh5, "lowerActive", generatorNumber)
-    minReactiveLower = arrayFloat(capabilityh5, "minReactiveLower", generatorNumber)
-    maxReactiveLower = arrayFloat(capabilityh5, "maxReactiveLower", generatorNumber)
-    upperActive = arrayFloat(capabilityh5, "upperActive", generatorNumber)
-    minReactiveUpper = arrayFloat(capabilityh5, "minReactiveUpper", generatorNumber)
-    maxReactiveUpper = arrayFloat(capabilityh5, "maxReactiveUpper", generatorNumber)
-    capability = GeneratorCapability(minActive, maxActive, minReactive, maxReactive, lowerActive, minReactiveLower, maxReactiveLower,
-        upperActive, minReactiveUpper, maxReactiveUpper)
+    capabilityh5 = hdf5["generator/capability"]
+    generator.capability.minActive = arrayFloat(capabilityh5, "minActive", generator.number)
+    generator.capability.maxActive = arrayFloat(capabilityh5, "maxActive", generator.number)
+    generator.capability.minReactive = arrayFloat(capabilityh5, "minReactive", generator.number)
+    generator.capability.maxReactive = arrayFloat(capabilityh5, "maxReactive", generator.number)
+    generator.capability.lowerActive = arrayFloat(capabilityh5, "lowerActive", generator.number)
+    generator.capability.minReactiveLower = arrayFloat(capabilityh5, "minReactiveLower", generator.number)
+    generator.capability.maxReactiveLower = arrayFloat(capabilityh5, "maxReactiveLower", generator.number)
+    generator.capability.upperActive = arrayFloat(capabilityh5, "upperActive", generator.number)
+    generator.capability.minReactiveUpper = arrayFloat(capabilityh5, "minReactiveUpper", generator.number)
+    generator.capability.maxReactiveUpper = arrayFloat(capabilityh5, "maxReactiveUpper", generator.number)
 
-    rampingh5 = system["generator/ramping"]
-    loadFollowing = arrayFloat(rampingh5, "loadFollowing", generatorNumber)
-    reserve10minute = arrayFloat(rampingh5, "reserve10minute", generatorNumber)
-    reserve30minute = arrayFloat(rampingh5, "reserve30minute", generatorNumber)
-    reactiveTimescale = arrayFloat(rampingh5, "reactiveTimescale", generatorNumber)
-    ramping = GeneratorRamping(loadFollowing, reserve10minute, reserve30minute, reactiveTimescale)
+    rampingh5 = hdf5["generator/ramping"]
+    generator.ramping.loadFollowing = arrayFloat(rampingh5, "loadFollowing", generator.number)
+    generator.ramping.reserve10minute = arrayFloat(rampingh5, "reserve10minute", generator.number)
+    generator.ramping.reserve30minute = arrayFloat(rampingh5, "reserve30minute", generator.number)
+    generator.ramping.reactiveTimescale = arrayFloat(rampingh5, "reactiveTimescale", generator.number)
 
-    magnitude = arrayFloat(system["generator/voltage"], "magnitude", generatorNumber)
-    voltage = GeneratorVoltage(magnitude)
+    generator.voltage.magnitude = arrayFloat(hdf5["generator/voltage"], "magnitude", generator.number)
 
-    costh5 = system["generator/cost/active"]
-    model = arrayInteger(costh5, "model", generatorNumber)
-    polynomial = loadPolynomial(costh5, "polynomial", generatorNumber)
-    piecewise = loadPiecewise(costh5, "piecewise", generatorNumber)
-    costActive = Cost(model, polynomial, piecewise)
+    costh5 = hdf5["generator/cost/active"]
+    generator.cost.active.model = arrayInteger(costh5, "model", generator.number)
+    generator.cost.active.polynomial = loadPolynomial(costh5, "polynomial", generator.number)
+    generator.cost.active.piecewise = loadPiecewise(costh5, "piecewise", generator.number)
 
-    costh5 = system["generator/cost/reactive"]
-    model = arrayInteger(costh5, "model", generatorNumber)
-    polynomial = loadPolynomial(costh5, "polynomial", generatorNumber)
-    piecewise = loadPiecewise(costh5, "piecewise", generatorNumber)
-    costReactive = Cost(model, polynomial, piecewise)
+    costh5 = hdf5["generator/cost/reactive"]
+    generator.cost.reactive.model = arrayInteger(costh5, "model", generator.number)
+    generator.cost.reactive.polynomial = loadPolynomial(costh5, "polynomial", generator.number)
+    generator.cost.reactive.piecewise = loadPiecewise(costh5, "piecewise", generator.number)
 
-    cost = GeneratorCost(costActive, costReactive)
-
-    if bus.layout.renumbering
-        busIndex = runRenumbering(busIndex, generatorNumber, bus.label)
+    generator.layout.bus::Array{Int64,1} = read(layouth5["bus"])
+    if system.bus.layout.renumbering
+        generator.layout.bus = runRenumbering(busIndex, generator.number, system.bus.label)
     end
-    area = arrayFloat(layouth5, "area", generatorNumber)
-    status = arrayInteger(layouth5, "status", generatorNumber)
-    layout = GeneratorLayout(busIndex, area, status)
+    generator.layout.area = arrayFloat(layouth5, "area", generator.number)
+    generator.layout.status = arrayInteger(layouth5, "status", generator.number)
 
-    label = Dict{Int64,Int64}()
-    sizehint!(label, generatorNumber)
-    @inbounds for (k, i) in enumerate(busIndex)
-        label[labelOriginal[k]] = k
-        if status[k] == 1
-            bus.layout.type[i] = 2
-            bus.supply.inService[i] += 1
-            bus.supply.active[i] += active[k]
-            bus.supply.reactive[i] += reactive[k]
+    generator.label = Dict{Int64,Int64}()
+    sizehint!(generator.label, generator.number)
+    @inbounds for (k, i) in enumerate(generator.layout.bus)
+        generator.label[labelOriginal[k]] = k
+        if generator.layout.status[k] == 1
+            system.bus.layout.type[i] = 2
+            system.bus.supply.inService[i] += 1
+            system.bus.supply.active[i] += generator.output.active[k]
+            system.bus.supply.reactive[i] += generator.output.reactive[k]
         end
     end
-    bus.layout.type[bus.layout.slackIndex] = 3
+    system.bus.layout.type[system.bus.layout.slack] = 3
+end
 
-    return Generator(label, output, capability, ramping, voltage, cost, layout, generatorNumber)
+######## Load Base Power from HDF5 File ##########
+function loadBase(system::PowerSystem, hdf5::HDF5.File)
+    if !haskey(hdf5, "base")
+        throw(ErrorException("The base data is missing."))
+    end
+
+    base = hdf5["base"]
+    system.base.power = read(base["power"]) / unit.prefix["base power"]
+    system.base.voltage = arrayFloat(base, "voltage", system.bus.number) / unit.prefix["base voltage"]  
 end
 
 ######### Load Power System Data from MATLAB File ##########
@@ -472,7 +466,7 @@ end
     lines = readlines(datafile)
     close(datafile)
 
-    system.base.power.threePhase = 0.0
+    system.base.power = 0.0
     @inbounds for (i, line) in enumerate(lines)
         if occursin("mpc.branch", line) && occursin("[", line)
             branchFlag = true
@@ -485,7 +479,7 @@ end
         elseif occursin("mpc.baseMVA", line)
             line = split(line, "=")[end]
             line = split(line, ";")[1]
-            system.base.power.threePhase = parse(Float64, line)
+            system.base.power = parse(Float64, line)
         end
 
         if branchFlag
@@ -499,9 +493,9 @@ end
         end
     end
 
-    if system.base.power.threePhase == 0
-        system.base.power.threePhase = 1e8
-        @info("The variable basePower not found. The algorithm proceeds with default value of 1e8 VA.")
+    if system.base.power == 0
+        system.base.power = 100
+        @info("The variable basePower not found. The algorithm proceeds with default value of 100 MVA.")
     end
 
     return busLine, branchLine, generatorLine, generatorcostLine
@@ -514,7 +508,7 @@ function loadBus(system::PowerSystem, busLine::Array{String,1})
     end
 
     bus = system.bus
-    basePowerInv = 1 / system.base.power.threePhase
+    basePowerInv = 1 / system.base.power
     deg2rad = pi / 180
 
     bus.number = length(busLine)
@@ -538,10 +532,10 @@ function loadBus(system::PowerSystem, busLine::Array{String,1})
     bus.layout.type = fill(0, bus.number)
     bus.layout.area = similar(bus.layout.type)
     bus.layout.lossZone = similar(bus.layout.type)
-    bus.layout.slackIndex = 0
+    bus.layout.slack = 0
     bus.layout.renumbering = false
 
-    system.base.voltage.lineToLine = similar(bus.demand.active)
+    system.base.voltage = similar(bus.demand.active)
     @inbounds for (k, line) in enumerate(busLine)
         data = split(line)
 
@@ -567,14 +561,14 @@ function loadBus(system::PowerSystem, busLine::Array{String,1})
         bus.layout.lossZone[k] = parse(Int64, data[11])
 
         if bus.layout.type[k] == 3
-            bus.layout.slackIndex = k
+            bus.layout.slack = k
         end
 
-        system.base.voltage.lineToLine[k] = parse(Float64, data[10]) * 1e3
+        system.base.voltage[k] = parse(Float64, data[10]) * 1e3 / unit.prefix["base voltage"]
     end
 
-    if bus.layout.slackIndex == 0
-        bus.layout.slackIndex = 1
+    if bus.layout.slack == 0
+        bus.layout.slack = 1
         @info("The slack bus is not found. The first bus is set to be the slack.")
     end
 end
@@ -586,7 +580,7 @@ function loadBranch(system::PowerSystem, branchLine::Array{String,1})
     end
 
     branch = system.branch
-    basePowerInv = 1 / system.base.power.threePhase
+    basePowerInv = 1 / system.base.power
     deg2rad = pi / 180
 
     branch.number = length(branchLine)
@@ -641,7 +635,7 @@ function loadGenerator(system::PowerSystem, generatorLine::Array{String,1}, gene
     end
 
     generator = system.generator
-    basePowerInv = 1 / system.base.power.threePhase
+    basePowerInv = 1 / system.base.power
 
     generator.number = length(generatorLine)
     generator.label = Dict{Int64,Int64}(); sizehint!(generator.label, generator.number)
@@ -710,7 +704,7 @@ function loadGenerator(system::PowerSystem, generatorLine::Array{String,1}, gene
             system.bus.supply.reactive[i] += generator.output.reactive[k]
         end
     end
-    system.bus.layout.type[system.bus.layout.slackIndex] = 3
+    system.bus.layout.type[system.bus.layout.slack] = 3
 
     generator.cost.active.model = fill(0, system.generator.number)
     generator.cost.active.polynomial = [Array{Float64}(undef, 0) for i = 1:system.generator.number]
@@ -728,12 +722,12 @@ function loadGenerator(system::PowerSystem, generatorLine::Array{String,1}, gene
         generatorCostParser(system, system.generator.cost.reactive, generatorCostLine, generator.number)
     end
 
-    system.base.power.threePhase *= 1e6
+    system.base.power *= (1e6 / unit.prefix["base power"])
 end
 
 ######## Parser Generator Cost Model ##########
 @inline function generatorCostParser(system::PowerSystem, cost::Cost, generatorCostLine::Array{String,1}, start::Int64)
-    basePowerInv = 1 / system.base.power.threePhase
+    basePowerInv = 1 / system.base.power
     pointNumber = length(split(generatorCostLine[1])) - 4
 
     @inbounds for i = 1:system.generator.number
@@ -753,11 +747,11 @@ end
         if cost.model[i] == 2
             cost.polynomial[i] = fill(0.0, 3)
             if pointNumber >= 3
-                cost.polynomial[i][1] = parse(Float64, data[5]) * system.base.power.threePhase^2
-                cost.polynomial[i][2] = parse(Float64, data[6]) * system.base.power.threePhase
+                cost.polynomial[i][1] = parse(Float64, data[5]) * system.base.power^2
+                cost.polynomial[i][2] = parse(Float64, data[6]) * system.base.power
                 cost.polynomial[i][3] = parse(Float64, data[7])
             elseif pointNumber == 2
-                cost.polynomial[i][2] = parse(Float64, data[5]) * system.base.power.threePhase
+                cost.polynomial[i][2] = parse(Float64, data[5]) * system.base.power
                 cost.polynomial[i][3] = parse(Float64, data[6])
             end
         end
@@ -767,7 +761,7 @@ end
 ######## Check Array Float64 Data ##########
 @inline function arrayFloat(group, key::String, number::Int64)
     if length(group[key]) != 1
-        data::Array{Base.Float64,1} = read(group[key])
+        data::Array{Float64,1} = read(group[key])
     else
         data = fill(read(group[key])::Float64, number)
     end

@@ -1,30 +1,29 @@
 """
-The function adds a new bus and updates the field `system.bus`.
+The function adds a new bus and updates the `bus` field.
 
-    addBus!(system::PowerSystem; label::Int64,
-        active::Float64, reactive::Float64,
-        conductance::Float64, susceptance::Float64,
-        magnitude::Float64, angle::Float64,
-        minMagnitude::Float64, maxMagnitude::Float64,
-        base::Float64, area::Int64, lossZone::Int64)
+    addBus!(system::PowerSystem; label, active, reactive, conductance, susceptance,
+        magnitude, angle, minMagnitude, maxMagnitude, base, area, lossZone)
 
 Descriptions, types and units of keywords are given below:
-* `label` - unique bus label
-* `active` - active power demand
-* `reactive` - reactive power demand
-* `conductance` - active power demanded of the shunt element
+* `label::Int64` - unique bus label
+* `active::Float64` - active power demand
+* `reactive::Float64` - reactive power demand
+* `conductance::Float64` - active power demanded of the shunt element
 * `susceptance` - reactive power injected of the shunt element
-* `magnitude` - initial value of the voltage magnitude
-* `angle` - initial value of the voltage angle
-* `minMagnitude` -  minimum voltage magnitude value
-* `maxMagnitude` - maximum voltage magnitude value
-* `base` - base value of the voltage magnitude
-* `area` - area number
-* `lossZone` - loss zone
+* `magnitude::Float64` -::Float64 initial value of the voltage magnitude
+* `angle::Float64` - initial value of the voltage angle
+* `minMagnitude::Float64` -  minimum voltage magnitude value
+* `maxMagnitude::Float64` - maximum voltage magnitude value
+* `base::Float64` - base value of the voltage magnitude
+* `area::Int64` - area number
+* `lossZone::Int64` - loss zone
 
 The function automatically defines the bus as the demand bus. The defined bus can become a
 generator bus by creating a generator using the function [`addGenerator!()`](@ref addGenerator!).
 That is, the slack bus using the function [`slackBus()`](@ref slackBus!).
+
+# Units
+
 
 # Example
 ```jldoctest
@@ -53,6 +52,8 @@ function addBus!(system::PowerSystem; label::Int64,
         throw(ErrorException("The value $label of the label keyword is not unique."))
     end
 
+    push!(system.base.voltage, base)
+
     system.bus.number += 1
     setindex!(system.bus.label, system.bus.number, label)
     push!(layout.type, 1)
@@ -61,16 +62,23 @@ function addBus!(system::PowerSystem; label::Int64,
         layout.renumbering = true
     end
 
-    push!(demand.active, active)
-    push!(demand.reactive, reactive)
+    basePowerInv = 1 / (unit.prefix["base power"] * system.base.power)
+    baseVoltageInv = 1 / (unit.prefix["base voltage"] * base)
 
-    push!(shunt.conductance, conductance)
-    push!(shunt.susceptance, susceptance)
+    activeScale = topu(unit, basePowerInv, "active power")
+    reactiveScale = topu(unit, basePowerInv, "reactive power")
+    voltageScale = topu(unit, baseVoltageInv, "voltage magnitude")
 
-    push!(voltage.magnitude, magnitude)
-    push!(voltage.angle, angle)
-    push!(voltage.maxMagnitude, maxMagnitude)
-    push!(voltage.minMagnitude, minMagnitude)
+    push!(demand.active, active * activeScale)
+    push!(demand.reactive, reactive * reactiveScale)
+
+    push!(shunt.conductance, conductance * activeScale)
+    push!(shunt.susceptance, susceptance * reactiveScale)
+
+    push!(voltage.magnitude, magnitude * voltageScale)
+    push!(voltage.angle, angle * torad(unit, "voltage angle"))
+    push!(voltage.maxMagnitude, maxMagnitude * voltageScale)
+    push!(voltage.minMagnitude, minMagnitude * voltageScale)
 
     push!(layout.area, area)
     push!(layout.lossZone, lossZone)
@@ -78,8 +86,6 @@ function addBus!(system::PowerSystem; label::Int64,
     push!(supply.inService, 0)
     push!(supply.active, 0.0)
     push!(supply.reactive, 0.0)
-
-    push!(system.base.voltage.lineToLine, base)
 
     if !isempty(system.dcModel.admittance)
         nilModel!(system, :dcModelEmpty)
@@ -164,11 +170,12 @@ function shuntBus!(system::PowerSystem; user...)
             ac.nodalMatrix[index, index] -= shunt.conductance[index] + im * shunt.susceptance[index]
         end
 
+        basePowerInv = 1 / (unit.prefix["base power"] * system.base.power)
         if haskey(user, :conductance)
-            shunt.conductance[index] = user[:conductance]::Float64
+            shunt.conductance[index] = user[:conductance]::Float64 * topu(unit, basePowerInv, "active power")
         end
         if haskey(user, :susceptance)
-            shunt.susceptance[index] = user[:susceptance]::Float64
+            shunt.susceptance[index] = user[:susceptance]::Float64 * topu(unit, basePowerInv, "reactive power")
         end
 
 
