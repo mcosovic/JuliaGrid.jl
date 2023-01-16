@@ -47,3 +47,9 @@ savePowerSystem
 ```@docs
 addBus!
 ```
+```@docs
+slackBus!
+```
+```@docs
+shuntBus!
+```

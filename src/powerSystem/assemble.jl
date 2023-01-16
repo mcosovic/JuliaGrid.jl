@@ -97,13 +97,13 @@ function addBus!(system::PowerSystem; label::Int64,
 end
 
 """
-The function sets a slack bus. The function can also be used to dynamically change the slack
-bus in the system. Namely, every time the function is executed, the previous slack bus becomes
-demenad or generator bus, depending on whether the bus has a generator.
+The function is used to set a slack bus, and it can also be used to dynamically change the 
+slack bus. Every time the function is executed, the previous slack bus becomes a demand or 
+generator bus, depending on whether the bus has a generator. 
 
-    slackBus!(system::PowerSystem; label::Int64)
+    slackBus!(system::PowerSystem; label)
 
-The keyword `label` should correspond to the already defined bus label.
+The `label::Int64` keyword argument should correspond to the already defined bus label.
 
 # Example
 ```jldoctest
@@ -133,16 +133,21 @@ function slackBus!(system::PowerSystem; label::Int64)
 end
 
 """
-The function allows changing `conductance` and `susceptance` parameters of the shunt element
-connected to the bus.
+The function allows changing `conductance` and `susceptance` parameters of the shunt 
+element connected to the bus.
 
-    shuntBus!(system::PowerSystem; label::Int64, conductance::Float64, susceptance::Float64)
+    shuntBus!(system::PowerSystem; label, conductance, susceptance)
 
-The keyword `label` should correspond to the already defined bus label. Keywords `conductance`
-or `susceptance` can be omitted, then the value of the omitted parameter remains unchanged.
+The keyword `label::Int64` should correspond to the already defined bus label. Keywords 
+`conductance::Float64` or `susceptance::Float64` can be omitted, then the value of the 
+omitted parameter remains unchanged.
 
-The usefulness of the function is that its execution automatically updates the field `acModel`.
-That is, when changing these parameters, it is not necessary to create this model from scratch.
+The usefulness of the function is that its execution automatically updates the field 
+`acModel`. That is, when changing these parameters, it is not necessary to create this
+model from scratch.
+
+The input units are in per-units by default, but they can be modified using the 
+[`@unit`](@ref @unit) macro.
 
 # Example
 ```jldoctest
