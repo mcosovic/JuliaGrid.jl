@@ -1,30 +1,30 @@
 """
-The function adds a new bus and updates the `bus` field.
-
+The function adds a new bus to the `PowerSystem` type and updates its bus field. 
+    
     addBus!(system::PowerSystem; label, active, reactive, conductance, susceptance,
         magnitude, angle, minMagnitude, maxMagnitude, base, area, lossZone)
+    
+The bus is defined with the following parameters:
+* `label::Int64`: a unique label for the bus
+* `active::Float64`: the active power demand at the bus
+* `reactive::Float64`: the reactive power demand at the bus
+* `conductance::Float64`: the active power demanded of the shunt element
+* `susceptance::Float64`: the reactive power injected of the shunt element
+* `magnitude::Float64`: the initial value of the voltage magnitude
+* `angle::Float64`: the initial value of the voltage angle
+* `minMagnitude::Float64`: the minimum voltage magnitude value
+* `maxMagnitude::Float64`: the maximum voltage magnitude value
+* `base::Float64`: the base value of the voltage magnitude
+* `area::Int64`: the area number
+* `lossZone::Int64`: the loss zone
 
-Descriptions, types and units of keywords are given below:
-* `label::Int64` - unique bus label
-* `active::Float64` - active power demand
-* `reactive::Float64` - reactive power demand
-* `conductance::Float64` - active power demanded of the shunt element
-* `susceptance` - reactive power injected of the shunt element
-* `magnitude::Float64` -::Float64 initial value of the voltage magnitude
-* `angle::Float64` - initial value of the voltage angle
-* `minMagnitude::Float64` -  minimum voltage magnitude value
-* `maxMagnitude::Float64` - maximum voltage magnitude value
-* `base::Float64` - base value of the voltage magnitude
-* `area::Int64` - area number
-* `lossZone::Int64` - loss zone
-
-The function automatically defines the bus as the demand bus. The defined bus can become a
-generator bus by creating a generator using the function [`addGenerator!()`](@ref addGenerator!).
-That is, the slack bus using the function [`slackBus()`](@ref slackBus!).
-
-# Units
-
-
+The function automatically defines the bus as a demand bus, but it will be converted to a
+generator bus by using the [`addGenerator!()`](@ref addGenerator!) function or to a slack 
+bus by using the [`slackBus!()`](@ref slackBus!) function.
+    
+The input units are in per-units and radians by default, but they can be modified using 
+the [`@unit`](@ref @unit) macro.
+    
 # Example
 ```jldoctest
 system = powerSystem()

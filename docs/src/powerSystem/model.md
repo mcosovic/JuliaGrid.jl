@@ -40,3 +40,10 @@ powerSystem
 ```@docs
 savePowerSystem
 ```
+
+---
+
+## Bus
+```@docs
+addBus!
+```
