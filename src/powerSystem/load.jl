@@ -180,20 +180,10 @@ be passed as arguments. For example:
     
     powerSystem("pathToExternalData/name.h5")
 
-## Example
-```jldoctest
-system = powerSystem("case14.h5")
-```
-
 Similarly, the path to the Matpower file with the `.m` extension can be passed to the same 
 function:
 
     powerSystem("pathToExternalData/name.m")
-
-## Example
-```jldoctest
-system = powerSystem("case14.m")
-```
 
 Alternatively, the `PowerSystem` composite type can be initialized by calling the function 
 without any arguments: 
@@ -202,22 +192,15 @@ without any arguments:
 
 This allows the model to be built from scratch and modified as needed.
 
-## Example
+# Example
 ```jldoctest
-system = powerSystem()
+system = powerSystem("case14.h5")
 ```
 
-# Units
-JuliaGrid stores all data, with the exception of base values, in per-unit and radians, 
-and these cannot be altered. By default, the units for base power and base voltages are 
-set to volt-ampere (VA) and volt (V), but prefixes can be modified using the macro:
-```jldoctest
-@unit(base, MVA, kV)
-```
-The macro for setting base units must be executed prior to constructing the composite type 
-`PowerSystem`.
+It is important to note that the prefixes of the base power and base voltage units can be 
+adjusted using the macro [`@unit`](@ref @unit).
 
-## Example
+# Example
 ```jldoctest
 @unit(base, MVA, kV)
 system = powerSystem("case14.h5")
