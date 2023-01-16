@@ -1,6 +1,6 @@
 # [Power System Model](@id powerSystemModel)
 
-The JuliaGrid supports the composite type `PowerSystem` to preserve power system data, with the following fields: `bus`, `branch`, `generator`, `base`, `acModel`, and `dcModel`. The fields `bus`, `branch`, and `generator` hold data related to buses, branches, and generators, respectively. The `base` field stores base values for power and voltages, with the default being three-phase power measured in volt-amperes (VA) for the base power and line-to-line voltages measured in volts (V) for base voltages. The default settings can be changed by utilizing the macro command before executing any function:
+The JuliaGrid supports the composite type `PowerSystem` to preserve power system data, with the following fields: `bus`, `branch`, `generator`, `base`, `acModel`, and `dcModel`. The fields `bus`, `branch`, and `generator` hold data related to buses, branches, and generators, respectively. The `base` field stores base values for power and voltages, with the default being three-phase power measured in volt-amperes (VA) for the base power and line-to-line voltages measured in volts (V) for base voltages. The macro command can be used to change the default unit settings for the base quantities of the composite type `PowerSystem` before it is created:
 * [`@unit`](@ref @unit)
 Finally, the `acModel` and `dcModel` fields store vectors and matrices calculated based on the power system's topology and parameters.
 
