@@ -328,8 +328,6 @@ out-of-service, and vice versa.
 
     statusBranch!(system::PowerSystem; label, status)
 
-The keywords `label` should correspond to the already defined branch label.
-
 One advantage of this function is that it automatically updates the `acModel` and `dcModel` 
 fields when the operating status of a branch is changed, eliminating the need to create a 
 new model from scratch.
@@ -389,20 +387,18 @@ end
 
 """
 The function allows for changing the `resistance`, `reactance`, `susceptance`, `turnsRatio` 
-and `shiftAngle` parameters of a branch, specified by its `label`, within the `PowerSystem` 
-system. Any of these parameters can be omitted, and their current values will remain 
-unchanged.
-
-The function allows changing `resistance`, `reactance`, `susceptance`, `turnsRatio` and
-`shiftAngle` parameters of the branch.
+and `shiftAngle` parameters of a branch, specified by its `label`, within the `PowerSystem`. 
+Any of these parameters can be omitted, and their current values will remain  unchanged.
 
     parameterBranch!(system::PowerSystem; label, resistance, reactance, susceptance, 
         turnsRatio, shiftAngle)
 
-The keywords `label` should correspond to the already defined branch label. 
-
 One advantage of this function is that it automatically updates the `acModel` and `dcModel` 
 fields, eliminating the need to create a new model from scratch.
+
+# Units
+The input units are in per-units by default, but they can be modified using the following 
+macros [`@parameter`](@ref @parameter) and [`@voltage`](@ref @voltage).
 
 # Example
 ```jldoctest
@@ -473,43 +469,40 @@ function parameterBranch!(system::PowerSystem; user...)
 end
 
 """
-The function adds a new generator and updates the field `system.generator`. A generator can be
-added to an already defined bus.
+The function is used to add a new generator to the `PowerSystem` type and update its 
+`generator` field. The generator can be added to an already defined bus. 
 
-    addGenerator!(system::PowerSystem; label::Int64, bus::Int64,
-        active::Float64 = 0.0, reactive::Float64 = 0.0, magnitude::Float64 = 0.0,
-        minActive::Float64 = 0.0, maxActive::Float64 = Inf,
-        minReactive::Float64 = -Inf, maxReactive::Float64 = Inf,
-        lowerActive::Float64 = 0.0,
-        minReactiveLower::Float64 = 0.0, maxReactiveLower::Float64 = 0.0,
-        upperActive::Float64 = 0.0,
-        minReactiveUpper::Float64 = 0.0, maxReactiveUpper::Float64 = 0.0,
-        loadFollowing::Float64 = 0.0, reactiveTimescale::Float64 = 0.0
-        reserve10minute::Float64 = 0.0, reserve30minute::Float64 = 0.0,
-        area::Float64 = 0.0, status::Int64 = 1)
+    addGenerator!(system::PowerSystem; label, bus, status, active, reactive, magnitude,
+        minActive, maxActive, minReactive, maxReactive, lowerActive, minReactiveLower, 
+        maxReactiveLower, upperActive, minReactiveUpper, maxReactiveUpper,
+        loadFollowing, reactiveTimescale, reserve10minute, reserve30minute, area)
 
-Descriptions, types and units of keywords are given below:
-* `label` - unique generator label (positive integer)
-* `bus` - bus label to which the generator is connected
-* `active` - output active power (per-unit)
-* `reactive` - output reactive power (per-unit)
-* `magnitude` - voltage magnitude setpoint (per-unit)
-* `minActive` - minimum allowed output active power value (per-unit)
-* `maxActive` - maximum allowed output active power value (per-unit)
-* `minReactive` - minimum allowed output reactive power value (per-unit)
-* `maxReactive` - maximum allowed output reactive power value (per-unit)
-* `lowerActive` - lower allowed active power output value of PQ capability curve (per-unit)
-* `minReactiveLower` - minimum allowed reactive power output value at lowerActive value (per-unit)
-* `maxReactiveLower` - maximum allowed reactive power output value at lowerActive value (per-unit)
-* `upperActive` - upper allowed active power output value of PQ capability curve (per-unit)
-* `minReactiveUpper` - minimum allowed reactive power output value at upperActive value (per-unit)
-* `maxReactiveUpper` - maximum allowed reactive power output value at upperActive value (per-unit)
-* `loadFollowing` - ramp rate for load following/AG (per-unit/minute)
-* `reserve10minute` - ramp rate for 10-minute reserves (per-unit)
-* `reserve30minute` - ramp rate for 30-minute reserves (per-unit)
-* `reactiveTimescale` - ramp rate for reactive power, two seconds timescale (per-unit/minute)
-* `area` - area participation factor
-* `status` - operating status, in-service = 1, out-of-service = 0
+The generator is defined with the following parameters:
+* `label`: a unique label for the generator 
+* `bus`: the label of the bus to which the generator is connected
+* `status`: the operating status of the generator, in-service = 1, out-of-service = 0
+* `active` (pu or W): output active power
+* `reactive` (pu or MVAr): output reactive power
+* `magnitude` (pu or V): voltage magnitude setpoint
+* `minActive` (pu or W): minimum allowed output active power value
+* `maxActive` (pu or W): maximum allowed output active power value
+* `minReactive` (pu or MVAr): minimum allowed output reactive power value
+* `maxReactive` (pu or MVAr): maximum allowed output reactive power value
+* `lowerActive (pu or W)`: lower allowed active power output value of PQ capability curve
+* `minReactiveLower` (pu or MVAr): minimum allowed reactive power output value at lowerActive value
+* `maxReactiveLower` (pu or MVAr): maximum allowed reactive power output value at lowerActive value
+* `upperActive` (pu or W): upper allowed active power output value of PQ capability curve
+* `minReactiveUpper` (pu or MVAr): minimum allowed reactive power output value at upperActive value
+* `maxReactiveUpper` (pu or MVAr): maximum allowed reactive power output value at upperActive value
+* `loadFollowing` (pu or W per min): ramp rate for load following/AG
+* `reserve10minute` (pu or W): ramp rate for 10-minute reserves
+* `reserve30minute` (pu or W): ramp rate for 30-minute reserves
+* `reactiveTimescale`  (pu or VAr per min): ramp rate for reactive power, two seconds timescale
+* `area`: area participation factor
+
+# Units
+The input units are realted to per-units by default, but they can be modified using macros 
+[`@power`](@ref @power), and [`@voltage`](@ref @voltage).
 
 # Example
 ```jldoctest
@@ -520,13 +513,13 @@ addBus!(system; label = 1, active = 0.25, reactive = -0.04)
 addGenerator!(system; label = 1, bus = 1, active = 0.5, reactive = 0.1)
 ```
 """
-function addGenerator!(system::PowerSystem; label::Int64, bus::Int64, area::Float64 = 0.0,
-    status::Int64 = 1, active::Float64 = 0.0, reactive::Float64 = 0.0, magnitude::Float64 = 1.0,
-    minActive::Float64 = 0.0, maxActive::Float64 = Inf64, minReactive::Float64 = -Inf64,
-    maxReactive::Float64 = Inf64, lowerActive::Float64 = 0.0, minReactiveLower::Float64 = 0.0,
-    maxReactiveLower::Float64 = 0.0, upperActive::Float64 = 0.0, minReactiveUpper::Float64 = 0.0,
-    maxReactiveUpper::Float64 = 0.0, loadFollowing::Float64 = 0.0, reserve10minute::Float64 = 0.0,
-    reserve30minute::Float64 = 0.0, reactiveTimescale::Float64 = 0.0)
+function addGenerator!(system::PowerSystem; label::T, bus::T, area::T = 0.0,
+    status::T = 1, active::T = 0.0, reactive::T = 0.0, magnitude::T = 1.0,
+    minActive::T = 0.0, maxActive::T = 0.0, minReactive::T = 0.0,
+    maxReactive::T = 0.0, lowerActive::T = 0.0, minReactiveLower::T = 0.0,
+    maxReactiveLower::T = 0.0, upperActive::T = 0.0, minReactiveUpper::T = 0.0,
+    maxReactiveUpper::T = 0.0, loadFollowing::T = 0.0, reserve10minute::T = 0.0,
+    reserve30minute::T = 0.0, reactiveTimescale::T = 0.0)
 
     output = system.generator.output
     capability = system.generator.capability
@@ -548,6 +541,13 @@ function addGenerator!(system::PowerSystem; label::Int64, bus::Int64, area::Floa
         throw(ErrorException("The value $bus of the bus keyword does not exist in bus labels."))
     end
 
+    basePowerInv = 1 / (unit.prefix["base power"] * system.base.power)
+    activeScale = topu(unit, basePowerInv, "active power")
+    reactiveScale = topu(unit, basePowerInv, "reactive power")
+
+    baseVoltageInv = 1 / (unit.prefix["base voltage"] * base)
+    voltageScale = topu(unit, baseVoltageInv, "voltage magnitude")
+
     system.generator.number += 1
     setindex!(system.generator.label, system.generator.number, label)
 
@@ -557,30 +557,30 @@ function addGenerator!(system::PowerSystem; label::Int64, bus::Int64, area::Floa
             system.bus.layout.type[busIndex] = 2
         end
         system.bus.supply.inService[busIndex] += 1
-        system.bus.supply.active[busIndex] += active
-        system.bus.supply.reactive[busIndex] += reactive
+        system.bus.supply.active[busIndex] += active * activeScale
+        system.bus.supply.reactive[busIndex] += reactive * reactiveScale
     end
 
-    push!(output.active, active)
-    push!(output.reactive, reactive)
+    push!(output.active, active * activeScale)
+    push!(output.reactive, reactive * reactiveScale)
 
-    push!(capability.minActive, minActive)
-    push!(capability.maxActive, maxActive)
-    push!(capability.minReactive, minReactive)
-    push!(capability.maxReactive, maxReactive)
-    push!(capability.lowerActive, lowerActive)
-    push!(capability.minReactiveLower, minReactiveLower)
-    push!(capability.maxReactiveLower, maxReactiveLower)
-    push!(capability.upperActive, upperActive)
-    push!(capability.minReactiveUpper, minReactiveUpper)
-    push!(capability.maxReactiveUpper, maxReactiveUpper)
+    push!(capability.minActive, minActive * activeScale)
+    push!(capability.maxActive, maxActive * activeScale)
+    push!(capability.minReactive, minReactive * reactiveScale)
+    push!(capability.maxReactive, maxReactive * reactiveScale)
+    push!(capability.lowerActive, lowerActive * activeScale)
+    push!(capability.minReactiveLower, minReactiveLower * reactiveScale)
+    push!(capability.maxReactiveLower, maxReactiveLower * reactiveScale)
+    push!(capability.upperActive, upperActive * activeScale)
+    push!(capability.minReactiveUpper, minReactiveUpper * reactiveScale)
+    push!(capability.maxReactiveUpper, maxReactiveUpper * reactiveScale)
 
-    push!(ramping.loadFollowing, loadFollowing)
-    push!(ramping.reserve10minute, reserve10minute)
-    push!(ramping.reserve30minute, reserve30minute)
-    push!(ramping.reactiveTimescale, reactiveTimescale)
+    push!(ramping.loadFollowing, loadFollowing * activeScale)
+    push!(ramping.reserve10minute, reserve10minute * activeScale)
+    push!(ramping.reserve30minute, reserve30minute * activeScale)
+    push!(ramping.reactiveTimescale, reactiveTimescale * reactiveScale)
 
-    push!(voltage.magnitude, magnitude)
+    push!(voltage.magnitude, magnitude * voltageScale)
 
     push!(layout.bus, busIndex)
     push!(layout.area, area)

@@ -65,3 +65,10 @@ statusBranch!
 ```@docs
 parameterBranch!
 ```
+
+---
+
+## Generator Functions
+```@docs
+addGenerator!
+```
