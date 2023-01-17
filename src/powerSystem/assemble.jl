@@ -25,10 +25,10 @@ generator bus by using the [`addGenerator!()`](@ref addGenerator!) function or t
 bus by using the [`slackBus!()`](@ref slackBus!) function.
 
 # Units
-The input units are in per-units and radians by default as shown, except for the keyword 
-`base` which is given by default in volt (V). The unit and prefix settings can be modified 
-using the macros [`@base`](@ref @base), [`@power`](@ref @power), [`@voltage`](@ref @voltage), 
-and [`@parameter`](@ref @parameter).
+The input units are in per-unit (pu) and radian (rad) by default as shown, except for the 
+keyword `base` which is given by default in volt (V). The unit and prefix settings can be 
+modified using the macros [`@base`](@ref @base), [`@power`](@ref @power), 
+[`@voltage`](@ref @voltage), and [`@parameter`](@ref @parameter).
  
 # Example
 ```jldoctest
@@ -141,8 +141,7 @@ end
 The function allows changing `conductance` and `susceptance` parameters of the shunt 
 element connected to the bus.
 
-    shuntBus!(system::PowerSystem; label::Int64, 
-        conductance::Float64, susceptance::Float64)
+    shuntBus!(system::PowerSystem; label::Int64, conductance::Float64, susceptance::Float64)
 
 The keyword `label` should correspond to the already defined bus label. Keywords `conductance` 
 or `susceptance` can be omitted, then the value of the omitted parameter remains unchanged.
@@ -327,6 +326,9 @@ function addBranch!(system::PowerSystem; label::Int64, from::Int64, to::Int64,
 end
 
 """
+The function allows for switching the operational `status` of a branch, designated by its 
+`label`, from in-service to out-of-service and vice versa within the `PowerSystem` system. 
+
 The function allows changing the operating `status` of the branch, from in-service to
 out-of-service, and vice versa.
 
@@ -334,9 +336,9 @@ out-of-service, and vice versa.
 
 The keywords `label` should correspond to the already defined branch label.
 
-The usefulness of the function is that its execution automatically updates the fields `acModel`
-and `dcModel`. That is, when changing the operating `status` of the branch, it is not necessary
-to create models from scratch.
+One advantage of this function is that it automatically updates the `acModel` and `dcModel` 
+fields when the operating status of a branch is changed, eliminating the need to create a 
+new model from scratch.
 
 # Example
 ```jldoctest
@@ -392,20 +394,21 @@ function statusBranch!(system::PowerSystem; label::Int64, status::Int64)
 end
 
 """
+The function allows for changing the `resistance`, `reactance`, `susceptance`, `turnsRatio` 
+and `shiftAngle` parameters of a branch, specified by its `label`, within the `PowerSystem` 
+system. Any of these parameters can be omitted, and their current values will remain 
+unchanged.
+
 The function allows changing `resistance`, `reactance`, `susceptance`, `turnsRatio` and
 `shiftAngle` parameters of the branch.
 
-    parameterBranch!(system::PowerSystem; label::Int64,
-        resistance::Float64, reactance::Float64, susceptance::Float64,
-        turnsRatio::Float64, shiftAngle::Float64)
+    parameterBranch!(system::PowerSystem; label::Int64, resistance::Float64, 
+        reactance::Float64, susceptance::Float64, turnsRatio::Float64, shiftAngle::Float64)
 
-The keywords `label` should correspond to the already defined branch label. Keywords `resistance`,
-`reactance`, `susceptance`, `turnsRatio` or `shiftAngle` can be omitted, and then the value of
-the omitted parameter remains unchanged.
+The keywords `label` should correspond to the already defined branch label. 
 
-The usefulness of the function is that its execution automatically updates the fields `acModel`
-and `dcModel`. That is, when changing these parameters, it is not necessary to create models
-from scratch.
+One advantage of this function is that it automatically updates the `acModel` and `dcModel` 
+fields, eliminating the need to create a new model from scratch.
 
 # Example
 ```jldoctest
@@ -442,20 +445,23 @@ function parameterBranch!(system::PowerSystem; user...)
             end
         end
 
+        baseImpedanceInv = (unit.prefix["base power"] * system.base.power) / ((unit.prefix["base voltage"] * system.base.voltage[layout.from[end]])^2)
+        impedanceScale = topu(unit, baseImpedanceInv, "impedance")
         if haskey(user, :resistance)
-            parameter.resistance[index] = user[:resistance]::Float64
+            parameter.resistance[index] = user[:resistance]::Float64 * impedanceScale
         end
         if haskey(user, :reactance)
-            parameter.reactance[index] = user[:reactance]::Float64
+            parameter.reactance[index] = user[:reactance]::Float64 * impedanceScale
         end
         if haskey(user, :susceptance)
-            parameter.susceptance[index] = user[:susceptance]::Float64
+            admittanceScale = topu(unit, 1 / baseImpedanceInv, "admittance")
+            parameter.susceptance[index] = user[:susceptance]::Float64 * admittanceScale
         end
         if haskey(user, :turnsRatio)
             parameter.turnsRatio[index] = user[:turnsRatio]::Float64
         end
         if haskey(user, :shiftAngle)
-            parameter.shiftAngle[index] = user[:shiftAngle]::Float64
+            parameter.shiftAngle[index] = user[:shiftAngle]::Float64 * torad(unit, "voltage angle")
         end
 
         if layout.status[index] == 1

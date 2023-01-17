@@ -59,3 +59,9 @@ shuntBus!
 ```@docs
 addBranch!
 ```
+```@docs
+statusBranch!
+```
+```@docs
+parameterBranch!
+```
