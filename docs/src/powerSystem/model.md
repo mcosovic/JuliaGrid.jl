@@ -1,8 +1,6 @@
 # [Power System Model](@id powerSystemModel)
 
-The JuliaGrid supports the composite type `PowerSystem` to preserve power system data, with the following fields: `bus`, `branch`, `generator`, `base`, `acModel`, and `dcModel`. The fields `bus`, `branch`, and `generator` hold data related to buses, branches, and generators, respectively. The `base` field stores base values for power and voltages, with the default being three-phase power measured in volt-amperes (VA) for the base power and line-to-line voltages measured in volts (V) for base voltages. The macro command can be used to change the default unit settings for the base quantities of the composite type `PowerSystem` before it is created:
-* [`@unit`](@ref @unit)
-Finally, the `acModel` and `dcModel` fields store vectors and matrices calculated based on the power system's topology and parameters.
+The JuliaGrid supports the composite type `PowerSystem` to preserve power system data, with the following fields: `bus`, `branch`, `generator`, `base`, `acModel`, and `dcModel`. The fields `bus`, `branch`, and `generator` hold data related to buses, branches, and generators, respectively. The `base` field stores base values for power and voltages, with the default being three-phase power measured in volt-amperes (VA) for the base power and line-to-line voltages measured in volts (V) for base voltages. The macro command [`@base`](@ref @base) can be used to change the default unit settings for the base quantities of the composite type `PowerSystem` before it is created. Finally, the `acModel` and `dcModel` fields store vectors and matrices calculated based on the power system's topology and parameters.
 
 The composite type `PowerSystem` can be created using a function:
 * [`powerSystem()`](@ref powerSystem).
@@ -15,12 +13,13 @@ Once the `PowerSystem` type is created, you can add buses, branches, and generat
 * [`addBranch!()`](@ref addBranch!)
 * [`addGenerator!()`](@ref addGenerator!).
 In addition, it is possible to manipulate the parameters of buses, branches, and generators using the following functions:
+* [`slackBus!()`](@ref slackBus!)
 * [`shuntBus!()`](@ref shuntBus!)
 * [`statusBranch!()`](@ref statusBranch!)
 * [`parameterBranch!()`](@ref parameterBranch!)
 * [`statusGenerator!()`](@ref statusGenerator!)
 * [`outputGenerator!()`](@ref outputGenerator!).
-Executing these functions will automatically update all fields affected by them. You can also change other parameters of the power system by accessing and modifying the values in the `bus`, `branch`, `generator`, and `base` fields of the `PowerSystem` composite type. The input electrical quantities should be entered in per-units or radians, but this default setting can be altered using the macro [`@unit`](@ref @unit).
+Executing these functions will automatically update all fields affected by them. You can also change other parameters of the power system by accessing and modifying the values in the `bus`, `branch`, `generator`, and `base` fields of the `PowerSystem` composite type. The input electrical quantities should be entered in per-units or radians, but this default setting can be altered using the following macros [`@power`](@ref @power), [`@voltage`](@ref @voltage), and [`@parameter`](@ref @parameter).
 
 To create vectors and matrices based on the power system topology and parameters, you can use the following functions:
 * [`acModel!()`](@ref acModel!)
@@ -43,7 +42,7 @@ savePowerSystem
 
 ---
 
-## Bus
+## Bus Functions
 ```@docs
 addBus!
 ```

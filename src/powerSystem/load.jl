@@ -198,11 +198,11 @@ system = powerSystem("case14.h5")
 ```
 
 It is important to note that the prefixes of the base power and base voltage units can be 
-adjusted using the macro [`@unit`](@ref @unit).
+adjusted using the macro [`@base`](@ref @base).
 
 # Example
 ```jldoctest
-@unit(base, MVA, kV)
+@base(MVA, kV)
 system = powerSystem("case14.h5")
 ```
 """

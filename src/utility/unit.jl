@@ -7,118 +7,154 @@ mutable struct Unit
 end
 
 """
-JuliaGrid stores all data, with the exception of base values, in per-unit and radians, 
-and these cannot be altered. However, the units of the built-in functions can be modified 
-using the macro command:
-    
-    @unit(type; firstUnit, secondUnit)
-    
-The macro command modifies prefixes and units, where prefixes are defined in accordance 
-with the International System of Units. It is important to note that the macro changes 
-the unit system associated with the following built-in functions:
-* [`addBus!()`](@ref addBus!)
-* [`addBranch!()`](@ref addBranch!)
-* [`addGenerator!()`](@ref addGenerator!)
-* [`shuntBus!()`](@ref shuntBus!)
-* [`parameterBranch!()`](@ref parameterBranch!) 
-* [`outputGenerator!()`](@ref outputGenerator!).
-
-# Base power and base voltage units
 By default, the units for base power and base voltages are set to volt-ampere (VA) and 
-volt (V), but prefixes can be modified using the macro:
-```jldoctest
-@unit(base, MVA, kV)
-```
-The macro for setting base units must be executed prior to constructing the composite type 
-`PowerSystem`.
-
-# Active and reactive power units
-By default, the units for active and reactive powers are set to per-units, but these can 
-be altered using:
-```jldoctest
-@unit(power, MW, MVAr)
-```
-It is also possible to combine SI units with per-units:
-```jldoctest
-@unit(power, pu, MVAr)
-```
-
-# Voltage magnitude and angle units
-By default, the units for voltage magnitudes and angles are set to per-unit and radian, 
-but these can be modified using:
-```jldoctest
-@unit(voltage, kV, deg)
-```
-
-# Current magnitude and angle units
-Similar to the voltage, the units are set to per-unit and radian, and can be altered using:
-```jldoctest
-@unit(current, A, deg)
-```
-
-# Impedance and admitance units
-By default, the units for impedances and admitances are set to per-units, but these can be 
-modified using:
-```jldoctest
-@unit(parameter, Ω, kS)
-```
+volt (V), but you can modify the prefixes using the macro:
+    
+    @base(powerUnit, voltageUnit)
+    
+Prefixes must be specified according to the International System of Units and should be 
+included with the unit of power (VA) or unit of voltage (V). Keep in mind that the macro 
+must be used before creating the composite type `PowerSystem`.
 
 # Example
-Using the macro, it is possible to define the system of units used in Matpower case files:
 ```jldoctest
-@unit(base, MVA, kV)
-@unit(power, MW, MVAr)
-@unit(voltage, pu, deg)
+@base(MVA, kV)
 ```
 """
-macro unit(type::Symbol, unitA::Symbol, unitB::Symbol)
-    if type == :base
-        unitPower = string(unitA)
-        suffixPower = parseSuffix(unitPower, "base power")
-        unit.prefix["base power"] = parsePrefix(unitPower, suffixPower)
+macro base(power::Symbol, voltage::Symbol)
+    power = string(power)
+    suffixPower = parseSuffix(power, "base power")
+    unit.prefix["base power"] = parsePrefix(power, suffixPower)
 
-        unitVoltage = string(unitB)
-        suffixVoltage = parseSuffix(unitVoltage, "base voltage")
-        unit.prefix["base voltage"] = parsePrefix(unitVoltage, suffixVoltage)
-    end
+    voltage = string(voltage)
+    suffixVoltage = parseSuffix(voltage, "base voltage")
+    unit.prefix["base voltage"] = parsePrefix(voltage, suffixVoltage)
+end
 
-    if type == :power
-        unitInput = string(unitA)
-        unit.suffix["active power"] = parseSuffix(unitInput, "active power")
-        unit.prefix["active power"] =  parsePrefix(unitInput, unit.suffix["active power"])
+"""
+JuliaGrid stores all data related with powers in per-units, and these cannot be altered. 
+However, the power units of the built-in functions used to add or modified power system 
+elements can be modified using the macro command:
+
+    @power(active, reactive, apparent)
+    
+Prefixes must be specified according to the International System of Units and should be 
+included with the unit of active power (W), reactive power (VAr), or apparent power (VA).  
+Also it ia possible to combine SI units with/without prefixes with per-units (pu).
+
+# Example
+```jldoctest
+@power(MW, kVAr, VA)
+```
+
+Changing the unit of active power is reflected in the following quantities in specific 
+functions:
+* [`addBus!()`](@ref addBus!): `active`, `conductance` 
+* [`shuntBus!()`](@ref shuntBus!): `conductance` 
+* [`addGenerator!()`](@ref addGenerator!): `active`, `minActive`, `maxActive`, `lowerActive`,
+`upperActive`, `loadFollowing`, `reserve10minute`, `reserve30minute`
+* [`addActiveCost!()`](@ref addActiveCost!): `piecewise`, `polynomial`.
+
+Changing the unit of reactive power unit is reflected in the following quantities in 
+specific functions:
+* [`addBus!()`](@ref addBus!): `reactive`, `susceptance` 
+* [`shuntBus!()`](@ref shuntBus!): `susceptance` 
+* [`addGenerator!()`](@ref addGenerator!): `reactive`, `minReactive`, `maxReactive`, 
+`minReactiveLower`, `maxReactiveLower`, `minReactiveUpper`, `maxReactiveUpper`, 
+`reactiveTimescale`
+* [`addReactiveCost!()`](@ref addReactiveCost!): `piecewise`, `polynomial`.
+
+Changing the unit of apparent power unit is reflected in the following quantities in 
+specific functions:
+* [`addBranch!()`](@ref addBranch!): `longTerm`, `shortTerm`, `emergency`.
+"""
+macro power(active::Symbol, reactive::Symbol, apparent::Symbol)
+    active = string(active)
+    unit.suffix["active power"] = parseSuffix(active, "active power")
+    unit.prefix["active power"] =  parsePrefix(active, unit.suffix["active power"])
+    
+    reactive = string(reactive)
+    unit.suffix["reactive power"] = parseSuffix(reactive, "reactive power")
+    unit.prefix["reactive power"] =  parsePrefix(reactive, unit.suffix["reactive power"])
+
+    apparent = string(apparent)
+    unit.suffix["apparent power"] = parseSuffix(apparent, "apparent power")
+    unit.prefix["apparent power"] =  parsePrefix(apparent, unit.suffix["apparent power"])
+end
+
+"""
+JuliaGrid stores all data related with voltages in per-units and radians, and these cannot 
+be altered. However, the voltage magnitude and angles units of the built-in functions used 
+to add or modified power system elements can be modified using the macro command:
+
+    @voltage(magnitude, angle)
+    
+Prefix must be specified according to the International System of Units and should be 
+included with the unit of voltage magnitude (V). The second option is to define the unit of
+voltage magnitude in per-unit (pu). The unit of the voltage angle should be given in radian 
+(rad) or degree (deg). 
+
+# Example
+```jldoctest
+@voltage(kV, deg)
+```
+
+Changing the unit of voltage magnitude is reflected in the following quantities in specific 
+functions:
+* [`addBus!()`](@ref addBus!): `magnitude`, `minMagnitude`, `maxMagnitude` 
+* [`addGenerator!()`](@ref addGenerator!): `magnitude`.
+
+Changing the unit of voltage angle is reflected in the following quantities in specific 
+functions:
+* [`addBus!()`](@ref addBus!): `angle`, `susceptance` 
+* [`addBranch!()`](@ref addBranch!): `shiftAngle`, `minAngleDifference`, `maxAngleDifference`
+* [`parameterBranch!()`](@ref parameterBranch!): `shiftAngle` 
+
+"""
+macro voltage(magnitude::Symbol, angle::Symbol)
+    magnitude = string(magnitude)
+    unit.suffix["voltage magnitude"] = parseSuffix(magnitude, "voltage magnitude")
+    unit.prefix["voltage magnitude"] =  parsePrefix(magnitude, unit.suffix["voltage magnitude"])
+    
+    angle = string(angle)
+    unit.suffix["voltage angle"] = parseSuffix(angle, "voltage angle")
+end
+
+"""
+JuliaGrid stores all data related with impedances and admittancies in per-units, and these 
+cannot be altered. However, units of impedance and admittance of the built-in functions 
+used to add or modified power system elements can be modified using the macro command:
+
+    @parameter(impedance, admittance)
+    
+Prefix must be specified according to the International System of Units and should be 
+included with the unit of impedance (Ω) or unit of admittance (S). The second option is to 
+define the units in per-unit (pu). 
+
+# Example
+```jldoctest
+@voltage(Ω, pu)
+```
+
+Changing the units of impedance is reflected in the following quantities in specific 
+functions:
+* [`addBranch!()`](@ref addBranch!): `resistance`, `reactance`
+* [`parameterBranch!()`](@ref parameterBranch!): `resistance`, `reactance`
+
+Changing the units of admittance is reflected in the following quantities in specific 
+functions:
+* [`addBranch!()`](@ref addBranch!): `susceptance`
+* [`parameterBranch!()`](@ref parameterBranch!): `susceptance`
+
+"""
+macro parameter(impedance::Symbol, admittance::Symbol)
+    impedance = string(impedance)
+    unit.suffix["impedance"] = parseSuffix(impedance, "impedance")
+    unit.prefix["impedance"] =  parsePrefix(impedance, unit.suffix["impedance"])
         
-        unitInput = string(unitB)
-        unit.suffix["reactive power"] = parseSuffix(unitInput, "reactive power")
-        unit.prefix["reactive power"] =  parsePrefix(unitInput, unit.suffix["reactive power"])
-    end
-
-    if type == :voltage
-        unitInput = string(unitA)
-        unit.suffix["voltage magnitude"] = parseSuffix(unitInput, "voltage magnitude")
-        unit.prefix["voltage magnitude"] =  parsePrefix(unitInput, unit.suffix["voltage magnitude"])
-        
-        unitInput = string(unitB)
-        unit.suffix["voltage angle"] = parseSuffix(unitInput, "voltage angle")
-    end
-
-    if type == :current
-        unitInput = string(unitA)
-        unit.suffix["current magnitude"] = parseSuffix(unitInput, "current magnitude")
-        unit.prefix["current magnitude"] =  parsePrefix(unitInput, unit.suffix["current magnitude"])
-        
-        unitInput = string(unitB)
-        unit.suffix["current angle"] = parseSuffix(unitInput, "current angle")
-    end
-
-    if type == :parameter
-        unitInput = string(unitA)
-        unit.suffix["impedance"] = parseSuffix(unitInput, "impedance")
-        unit.prefix["impedance"] =  parsePrefix(unitInput, unit.suffix["impedance"])
-        
-        unitInput = string(unitB)
-        unit.suffix["admittance"] = parseSuffix(unitInput, "admittance")
-        unit.prefix["admittance"] =  parsePrefix(unitInput, unit.suffix["admittance"])
-    end
+    admittance = string(admittance)
+    unit.suffix["admittance"] = parseSuffix(admittance, "admittance")
+    unit.prefix["admittance"] =  parsePrefix(admittance, unit.suffix["admittance"])
 end
 
 ######### Set Default Units ##########
@@ -129,17 +165,17 @@ function defaultUnit()
         "Y" => 1e24, "R" => 1e27, "Q" => 1e30)
 
     suffixSelect = Dict("base power" => ["VA"], "base voltage" => ["V"],
-        "active power" => ["W", "pu"], "reactive power" => ["VAr", "pu"],
+        "active power" => ["W", "pu"], "reactive power" => ["VAr", "pu"], "apparent power" => ["VA", "pu"],
         "voltage magnitude" => ["V", "pu"], "voltage angle" => ["deg", "rad"],
         "current magnitude" => ["A", "pu"], "current angle" => ["deg", "rad"],
         "impedance" => [string(:Ω), "pu"], "admittance" => ["S", "pu"])
 
     prefix = Dict("base power" => 1.0, "base voltage" => 1.0,
-        "active power" => 1.0, "reactive power" => 1.0,
+        "active power" => 1.0, "reactive power" => 1.0, "apparent power" => 1.0,
         "voltage magnitude" => 1.0, "current magnitude" => 1.0,
         "impedance" => 1.0, "admittance" => 1.0)
 
-    suffix = Dict("active power" => "pu", "reactive power" => "pu",
+    suffix = Dict("active power" => "pu", "reactive power" => "pu", "apparent power" => "pu",
         "voltage magnitude" => "pu", "voltage angle" => "rad",
         "current magnitude" => "pu", "current angle" => "rad",
         "impedance" => "pu", "admittance" => "pu")    

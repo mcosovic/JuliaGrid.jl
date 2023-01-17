@@ -1,30 +1,35 @@
 """
 The function adds a new bus to the `PowerSystem` type and updates its bus field. 
     
-    addBus!(system::PowerSystem; label, active, reactive, conductance, susceptance,
-        magnitude, angle, minMagnitude, maxMagnitude, base, area, lossZone)
+    addBus!(system::PowerSystem; label::Int64, active::Float64, reactive::Float64, 
+        conductance::Float64, susceptance::Float64, magnitude::Float64, angle::Float64, 
+        minMagnitude::Float64, maxMagnitude::Float64, base::Float64, 
+        area::Int64, lossZone::Int64)
     
 The bus is defined with the following parameters:
-* `label::Int64`: a unique label for the bus
-* `active::Float64`: the active power demand at the bus
-* `reactive::Float64`: the reactive power demand at the bus
-* `conductance::Float64`: the active power demanded of the shunt element
-* `susceptance::Float64`: the reactive power injected of the shunt element
-* `magnitude::Float64`: the initial value of the voltage magnitude
-* `angle::Float64`: the initial value of the voltage angle
-* `minMagnitude::Float64`: the minimum voltage magnitude value
-* `maxMagnitude::Float64`: the maximum voltage magnitude value
-* `base::Float64`: the base value of the voltage magnitude
-* `area::Int64`: the area number
-* `lossZone::Int64`: the loss zone
+* `label`: a unique label for the bus
+* `active`: the active power demand at the bus
+* `reactive`: the reactive power demand at the bus
+* `conductance`: the active power demanded of the shunt element
+* `susceptance`: the reactive power injected of the shunt element
+* `magnitude`: the initial value of the voltage magnitude
+* `angle`: the initial value of the voltage angle
+* `minMagnitude`: the minimum voltage magnitude value
+* `maxMagnitude`: the maximum voltage magnitude value
+* `base`: the base value of the voltage magnitude
+* `area`: the area number
+* `lossZone`: the loss zone
 
 The function automatically defines the bus as a demand bus, but it will be converted to a
 generator bus by using the [`addGenerator!()`](@ref addGenerator!) function or to a slack 
 bus by using the [`slackBus!()`](@ref slackBus!) function.
-    
-The input units are in per-units and radians by default, but they can be modified using 
-the [`@unit`](@ref @unit) macro.
-    
+
+# Units
+The input units are in per-units and radians by default for all electrical parameters, 
+except for the keyword `base` which is given by default in volt (V). The unit settings can 
+be modified using the macros [`@base`](@ref @base), [`@power`](@ref @power), 
+[`@voltage`](@ref @voltage), and [`@parameter`](@ref @parameter).
+ 
 # Example
 ```jldoctest
 system = powerSystem()
@@ -147,7 +152,7 @@ The usefulness of the function is that its execution automatically updates the f
 model from scratch.
 
 The input units are in per-units by default, but they can be modified using the 
-[`@unit`](@ref @unit) macro.
+[`@power`](@ref @power) macro.
 
 # Example
 ```jldoctest
@@ -191,32 +196,33 @@ function shuntBus!(system::PowerSystem; user...)
 end
 
 """
-The function adds a new branch and updates the field `system.branch`. A branch can be added
-between already defined buses.
-
-    addBranch!(system::PowerSystem; label::Int64, from::Int64, to::Int64,
-        resistance::Float64 = 0.0, reactance::Float64 = 0.0, susceptance::Float64 = 0.0,
-        turnsRatio::Float64 = 0.0, shiftAngle::Float64 = 0.0,
-        longTerm::Float64 = 0.0, shortTerm::Float64 = 0.0, emergency::Float64 = 0.0,
-        minAngleDifference::Float64 = -2*pi, maxAngleDifference::Float64 = 2*pi,
-        status::Int64 = 1)
-
-Descriptions, types and units of keywords are given below:
-* `label` - unique branch label (positive integer)
-* `from` - from bus label, corresponds to the bus label
-* `to` - to bus label, corresponds to the bus label
-* `resistance` - branch resistance (per-unit)
-* `reactance` - branch reactance (per-unit)
-* `susceptance` - total line charging susceptance (per-unit)
-* `turnsRatio` - transformer off-nominal turns ratio, equal to zero for a line
-* `shiftAngle` - transformer phase shift angle, where positive value defines delay (radian)
-* `longTerm` - short-term rating (equal to zero for unlimited)
-* `shortTerm` - long-term rating (equal to zero for unlimited)
-* `emergency` - emergency rating (equal to zero for unlimited)
-* `minAngleDifference` - minimum voltage angle difference value between from and to bus (radian)
-* `maxAngleDifference` - maximum voltage angle difference value between from and to bus (radian)
-* `status` -  operating status of the branch, in-service = 1, out-of-service = 0
-
+The function adds a new branch to the `PowerSystem` type and updates its branch field. 
+A branch can be added between already defined buses.
+    
+    addBranch!(system::PowerSystem; label, from, to, status,
+        resistance, reactance, susceptance, turnsRatio, shiftAngle,
+        longTerm, shortTerm, emergency, minAngleDifference, maxAngleDifference)
+    
+The branch is defined with the following parameters:
+* label::Int64 - unique branch label
+* from::Int64 - from bus label, corresponds to the bus label
+* to::Int64 - to bus label, corresponds to the bus label
+* status::Int64 - operating status of the branch, in-service = 1, out-of-service = 0
+* resistance::Float64 - branch resistance
+* reactance::Float64 - branch reactance
+* susceptance::Float64 - total line charging susceptance
+* turnsRatio::Float64 - transformer off-nominal turns ratio, equal to zero for a line
+* shiftAngle::Float64 - transformer phase shift angle, where positive value defines delay
+* longTerm::Float64 - short-term rating (equal to zero for unlimited)
+* shortTerm::Float64 - long-term rating (equal to zero for unlimited)
+* emergency::Float64 - emergency rating (equal to zero for unlimited)
+* minAngleDifference::Float64 - minimum voltage angle difference value between from and to bus
+* maxAngleDifference::Float64 - maximum voltage angle difference value between from and to bus
+ 
+The input units are in per-units and radians by default, but they can be modified using 
+the following macros [`@power`](@ref @power), [`@voltage`](@ref @voltage), and 
+[`@parameter`](@ref @parameter).
+    
 # Example
 ```jldoctest
 system = powerSystem()
@@ -274,22 +280,29 @@ function addBranch!(system::PowerSystem; label::Int64, from::Int64, to::Int64,
         layout.renumbering = true
     end
 
-    push!(parameter.resistance, resistance)
-    push!(parameter.reactance, reactance)
-    push!(parameter.susceptance, susceptance)
-    push!(parameter.turnsRatio, turnsRatio)
-    push!(parameter.shiftAngle, shiftAngle)
-
-    push!(rating.longTerm, longTerm)
-    push!(rating.shortTerm, shortTerm)
-    push!(rating.emergency, emergency)
-
-    push!(voltage.minAngleDifference, minAngleDifference)
-    push!(voltage.maxAngleDifference, maxAngleDifference)
-
     push!(layout.from, system.bus.label[from])
     push!(layout.to, system.bus.label[to])
     push!(layout.status, status)
+
+    basePowerInv = 1 / (unit.prefix["base power"] * system.base.power)
+    apparentScale = topu(unit, basePowerInv, "apparent power")
+
+    baseImpedanceInv = (unit.prefix["base power"] * system.base.power) / ((unit.prefix["base voltage"] * system.base.voltage[layout.from[end]])^2)
+    impedanceScale = topu(unit, baseImpedanceInv, "impedance")
+    admittanceScale = topu(unit, 1 / baseImpedanceInv, "admittance")
+
+    push!(parameter.resistance, resistance * impedanceScale)
+    push!(parameter.reactance, reactance * impedanceScale)
+    push!(parameter.susceptance, susceptance * admittanceScale)
+    push!(parameter.turnsRatio, turnsRatio)
+    push!(parameter.shiftAngle, shiftAngle * torad(unit, "voltage angle"))
+
+    push!(rating.longTerm, longTerm * apparentScale)
+    push!(rating.shortTerm, shortTerm * apparentScale)
+    push!(rating.emergency, emergency * apparentScale)
+
+    push!(voltage.minAngleDifference, minAngleDifference * torad(unit, "voltage angle"))
+    push!(voltage.maxAngleDifference, maxAngleDifference * torad(unit, "voltage angle"))
 
     index = system.branch.number
     if !isempty(system.dcModel.admittance)
