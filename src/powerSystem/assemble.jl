@@ -8,15 +8,15 @@ The function adds a new bus to the `PowerSystem` type and updates its bus field.
     
 The bus is defined with the following parameters:
 * `label`: a unique label for the bus
-* `active`: the active power demand at the bus
-* `reactive`: the reactive power demand at the bus
-* `conductance`: the active power demanded of the shunt element
-* `susceptance`: the reactive power injected of the shunt element
-* `magnitude`: the initial value of the voltage magnitude
-* `angle`: the initial value of the voltage angle
-* `minMagnitude`: the minimum voltage magnitude value
-* `maxMagnitude`: the maximum voltage magnitude value
-* `base`: the base value of the voltage magnitude
+* `active`: the active power demand at the bus (pu, W)
+* `reactive`: the reactive power demand at the bus (pu, VAr)
+* `conductance`: the active power demanded of the shunt element (pu, W)
+* `susceptance`: the reactive power injected of the shunt element (pu, VAr)
+* `magnitude`: the initial value of the voltage magnitude (pu, V)
+* `angle`: the initial value of the voltage angle (rad, deg)
+* `minMagnitude`: the minimum voltage magnitude value (pu, V)
+* `maxMagnitude`: the maximum voltage magnitude value (pu, V)
+* `base`: the base value of the voltage magnitude (V)
 * `area`: the area number
 * `lossZone`: the loss zone
 
@@ -25,10 +25,10 @@ generator bus by using the [`addGenerator!()`](@ref addGenerator!) function or t
 bus by using the [`slackBus!()`](@ref slackBus!) function.
 
 # Units
-The input units are in per-units and radians by default for all electrical parameters, 
-except for the keyword `base` which is given by default in volt (V). The unit settings can 
-be modified using the macros [`@base`](@ref @base), [`@power`](@ref @power), 
-[`@voltage`](@ref @voltage), and [`@parameter`](@ref @parameter).
+The input units are in per-units and radians by default as shown, except for the keyword 
+`base` which is given by default in volt (V). The unit and prefix settings can be modified 
+using the macros [`@base`](@ref @base), [`@power`](@ref @power), [`@voltage`](@ref @voltage), 
+and [`@parameter`](@ref @parameter).
  
 # Example
 ```jldoctest
@@ -106,9 +106,9 @@ The function is used to set a slack bus, and it can also be used to dynamically 
 slack bus. Every time the function is executed, the previous slack bus becomes a demand or 
 generator bus, depending on whether the bus has a generator. 
 
-    slackBus!(system::PowerSystem; label)
+    slackBus!(system::PowerSystem; label::Int64)
 
-The `label::Int64` keyword argument should correspond to the already defined bus label.
+The `label` keyword argument should correspond to the already defined bus label.
 
 # Example
 ```jldoctest
@@ -141,16 +141,17 @@ end
 The function allows changing `conductance` and `susceptance` parameters of the shunt 
 element connected to the bus.
 
-    shuntBus!(system::PowerSystem; label, conductance, susceptance)
+    shuntBus!(system::PowerSystem; label::Int64, 
+        conductance::Float64, susceptance::Float64)
 
-The keyword `label::Int64` should correspond to the already defined bus label. Keywords 
-`conductance::Float64` or `susceptance::Float64` can be omitted, then the value of the 
-omitted parameter remains unchanged.
+The keyword `label` should correspond to the already defined bus label. Keywords `conductance` 
+or `susceptance` can be omitted, then the value of the omitted parameter remains unchanged.
 
 The usefulness of the function is that its execution automatically updates the field 
 `acModel`. That is, when changing these parameters, it is not necessary to create this
 model from scratch.
 
+# Units
 The input units are in per-units by default, but they can be modified using the 
 [`@power`](@ref @power) macro.
 
