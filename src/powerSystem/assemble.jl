@@ -1,10 +1,10 @@
+const T = Union{Float64,Int64}
+
 """
 The function adds a new bus to the `PowerSystem` type and updates its bus field. 
     
-    addBus!(system::PowerSystem; label::Int64, active::Float64, reactive::Float64, 
-        conductance::Float64, susceptance::Float64, magnitude::Float64, angle::Float64, 
-        minMagnitude::Float64, maxMagnitude::Float64, base::Float64, 
-        area::Int64, lossZone::Int64)
+    addBus!(system::PowerSystem; label, active, reactive, conductance, susceptance, 
+        magnitude, angle, minMagnitude, maxMagnitude, base, area, lossZone)
     
 The bus is defined with the following parameters:
 * `label`: a unique label for the bus
@@ -37,12 +37,10 @@ system = powerSystem()
 addBus!(system; label = 1, active = 0.25, reactive = -0.04)
 ```
 """
-function addBus!(system::PowerSystem; label::Int64,
-    active::Float64 = 0.0, reactive::Float64 = 0.0,
-    conductance::Float64 = 0.0, susceptance::Float64 = 0.0,
-    magnitude::Float64 = 0.0, angle::Float64 = 0.0,
-    minMagnitude::Float64 = 0.0, maxMagnitude::Float64 = 0.0,
-    base::Float64 = 0.0, area::Int64 = 0, lossZone::Int64 = 0)
+function addBus!(system::PowerSystem; label::T, active::T = 0.0, reactive::T = 0.0,
+    conductance::T = 0.0, susceptance::T = 0.0, magnitude::T = 0.0, angle::T = 0.0,
+    minMagnitude::T = 0.0, maxMagnitude::T = 0.0, base::T = 0.0, area::T = 0, 
+    lossZone::T = 0) 
 
     demand = system.bus.demand
     shunt = system.bus.shunt
@@ -106,7 +104,7 @@ The function is used to set a slack bus, and it can also be used to dynamically 
 slack bus. Every time the function is executed, the previous slack bus becomes a demand or 
 generator bus, depending on whether the bus has a generator. 
 
-    slackBus!(system::PowerSystem; label::Int64)
+    slackBus!(system::PowerSystem; label)
 
 The `label` keyword argument should correspond to the already defined bus label.
 
@@ -118,7 +116,7 @@ addBus!(system; label = 1, active = 0.25, reactive = -0.04)
 slackBus!(system; label = 1)
 ```
 """
-function slackBus!(system::PowerSystem; label::Int64)
+function slackBus!(system::PowerSystem; label::T)
     if !haskey(system.bus.label, label)
         throw(ErrorException("The value $label of the label keyword does not exist in bus labels."))
     end
@@ -141,7 +139,7 @@ end
 The function allows changing `conductance` and `susceptance` parameters of the shunt 
 element connected to the bus.
 
-    shuntBus!(system::PowerSystem; label::Int64, conductance::Float64, susceptance::Float64)
+    shuntBus!(system::PowerSystem; label, conductance, susceptance)
 
 The keyword `label` should correspond to the already defined bus label. Keywords `conductance` 
 or `susceptance` can be omitted, then the value of the omitted parameter remains unchanged.
@@ -166,7 +164,7 @@ function shuntBus!(system::PowerSystem; user...)
     ac = system.acModel
     shunt = system.bus.shunt
 
-    if !haskey(user, :label) || user[:label]::Int64 <= 0
+    if !haskey(user, :label) || user[:label]::T <= 0
         throw(ErrorException("The value of the label keyword must be given as a positive integer."))
     end
     if !haskey(system.bus.label, user[:label])
@@ -182,10 +180,10 @@ function shuntBus!(system::PowerSystem; user...)
 
         basePowerInv = 1 / (unit.prefix["base power"] * system.base.power)
         if haskey(user, :conductance)
-            shunt.conductance[index] = user[:conductance]::Float64 * topu(unit, basePowerInv, "active power")
+            shunt.conductance[index] = user[:conductance]::T * topu(unit, basePowerInv, "active power")
         end
         if haskey(user, :susceptance)
-            shunt.susceptance[index] = user[:susceptance]::Float64 * topu(unit, basePowerInv, "reactive power")
+            shunt.susceptance[index] = user[:susceptance]::T * topu(unit, basePowerInv, "reactive power")
         end
 
 
@@ -199,11 +197,9 @@ end
 The function adds a new branch to the `PowerSystem` type and updates its branch field. 
 A branch can be added between already defined buses.
     
-    addBranch!(system::PowerSystem; label::Int64, from::Int64, to::Int64, status::Int64,
-        resistance::Float64, reactance::Float64, susceptance::Float64, 
-        turnsRatio::Float64, shiftAngle::Float64,
-        longTerm::Float64, shortTerm::Float64, emergency::Float64, 
-        minAngleDifference::Float64, maxAngleDifference::Float64)
+    addBranch!(system::PowerSystem; label, from, to, status, resistance, reactance, 
+        susceptance, turnsRatio, shiftAngle, longTerm, shortTerm, emergency, 
+        minAngleDifference, maxAngleDifference)
     
 The branch is defined with the following parameters:
 * `label`: unique branch label
@@ -236,12 +232,10 @@ addBus!(system; label = 2, active = 0.15, reactive = 0.08)
 addBranch!(system; label = 1, from = 1, to = 2, resistance = 0.05, reactance = 0.12)
 ```
 """
-function addBranch!(system::PowerSystem; label::Int64, from::Int64, to::Int64,
-    resistance::Float64 = 0.0, reactance::Float64 = 0.0, susceptance::Float64 = 0.0,
-    turnsRatio::Float64 = 0.0, shiftAngle::Float64 = 0.0,
-    longTerm::Float64 = 0.0, shortTerm::Float64 = 0.0, emergency::Float64 = 0.0,
-    minAngleDifference::Float64 = -2 * pi, maxAngleDifference::Float64 = 2 * pi,
-    status::Int64 = 1)
+function addBranch!(system::PowerSystem; label::T, from::T, to::T, status::T = 1, 
+    resistance::T = 0.0, reactance::T = 0.0, susceptance::T = 0.0, turnsRatio::T = 0.0, 
+    shiftAngle::T = 0.0, longTerm::T = 0.0, shortTerm::T = 0.0, emergency::T = 0.0, 
+    minAngleDifference::T = 0.0, maxAngleDifference::T = 0.0,)
 
     parameter = system.branch.parameter
     rating = system.branch.rating
@@ -332,7 +326,7 @@ The function allows for switching the operational `status` of a branch, designat
 The function allows changing the operating `status` of the branch, from in-service to
 out-of-service, and vice versa.
 
-    statusBranch!(system::PowerSystem; label::Int64, status::Int64)
+    statusBranch!(system::PowerSystem; label, status)
 
 The keywords `label` should correspond to the already defined branch label.
 
@@ -351,7 +345,7 @@ addBranch!(system; label = 1, from = 1, to = 2, resistance = 0.05, reactance = 0
 statusBranch!(system; label = 1, status = 0)
 ```
 """
-function statusBranch!(system::PowerSystem; label::Int64, status::Int64)
+function statusBranch!(system::PowerSystem; label::T, status::T)
     layout = system.branch.layout
 
     if label <= 0
@@ -402,8 +396,8 @@ unchanged.
 The function allows changing `resistance`, `reactance`, `susceptance`, `turnsRatio` and
 `shiftAngle` parameters of the branch.
 
-    parameterBranch!(system::PowerSystem; label::Int64, resistance::Float64, 
-        reactance::Float64, susceptance::Float64, turnsRatio::Float64, shiftAngle::Float64)
+    parameterBranch!(system::PowerSystem; label, resistance, reactance, susceptance, 
+        turnsRatio, shiftAngle)
 
 The keywords `label` should correspond to the already defined branch label. 
 
@@ -425,7 +419,7 @@ function parameterBranch!(system::PowerSystem; user...)
     parameter = system.branch.parameter
     layout = system.branch.layout
 
-    if !haskey(user, :label) || user[:label]::Int64 <= 0
+    if !haskey(user, :label) || user[:label]::T <= 0
         throw(ErrorException("The value of the from keyword must be given as a positive integer."))
     end
     if !haskey(system.branch.label, user[:label])
@@ -448,20 +442,20 @@ function parameterBranch!(system::PowerSystem; user...)
         baseImpedanceInv = (unit.prefix["base power"] * system.base.power) / ((unit.prefix["base voltage"] * system.base.voltage[layout.from[end]])^2)
         impedanceScale = topu(unit, baseImpedanceInv, "impedance")
         if haskey(user, :resistance)
-            parameter.resistance[index] = user[:resistance]::Float64 * impedanceScale
+            parameter.resistance[index] = user[:resistance]::T * impedanceScale
         end
         if haskey(user, :reactance)
-            parameter.reactance[index] = user[:reactance]::Float64 * impedanceScale
+            parameter.reactance[index] = user[:reactance]::T * impedanceScale
         end
         if haskey(user, :susceptance)
             admittanceScale = topu(unit, 1 / baseImpedanceInv, "admittance")
-            parameter.susceptance[index] = user[:susceptance]::Float64 * admittanceScale
+            parameter.susceptance[index] = user[:susceptance]::T * admittanceScale
         end
         if haskey(user, :turnsRatio)
-            parameter.turnsRatio[index] = user[:turnsRatio]::Float64
+            parameter.turnsRatio[index] = user[:turnsRatio]::T
         end
         if haskey(user, :shiftAngle)
-            parameter.shiftAngle[index] = user[:shiftAngle]::Float64 * torad(unit, "voltage angle")
+            parameter.shiftAngle[index] = user[:shiftAngle]::T * torad(unit, "voltage angle")
         end
 
         if layout.status[index] == 1
