@@ -52,3 +52,10 @@ slackBus!
 ```@docs
 shuntBus!
 ```
+
+---
+
+## Branch Functions
+```@docs
+addBranch!
+```

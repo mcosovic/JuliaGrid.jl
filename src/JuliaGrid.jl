@@ -16,7 +16,7 @@ export savePowerSystem
 
 include("powerSystem/assemble.jl")
 export addBus!, slackBus!, shuntBus!
-# export addBranch!, statusBranch!, parameterBranch!
+export addBranch!, statusBranch!, parameterBranch!
 # export addGenerator!, statusGenerator!, outputGenerator!
 # export dcModel!, acModel!
 
@@ -33,7 +33,7 @@ export addBus!, slackBus!, shuntBus!
 
 ######### Unit ##########
 include("utility/unit.jl")
-export @unit
+export @base, @power, @voltage, @parameter
 unit = defaultUnit()
 
 end # JuliaGrid

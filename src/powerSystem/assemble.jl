@@ -8,15 +8,15 @@ The function adds a new bus to the `PowerSystem` type and updates its bus field.
     
 The bus is defined with the following parameters:
 * `label`: a unique label for the bus
-* `active`: the active power demand at the bus (pu, W)
-* `reactive`: the reactive power demand at the bus (pu, VAr)
-* `conductance`: the active power demanded of the shunt element (pu, W)
-* `susceptance`: the reactive power injected of the shunt element (pu, VAr)
-* `magnitude`: the initial value of the voltage magnitude (pu, V)
-* `angle`: the initial value of the voltage angle (rad, deg)
-* `minMagnitude`: the minimum voltage magnitude value (pu, V)
-* `maxMagnitude`: the maximum voltage magnitude value (pu, V)
-* `base`: the base value of the voltage magnitude (V)
+* `active` (pu or W): the active power demand at the bus 
+* `reactive` (pu or VAr): the reactive power demand at the bus
+* `conductance` (pu or W): the active power demanded of the shunt element
+* `susceptance` (pu or VAr): the reactive power injected of the shunt element
+* `magnitude` (pu or V): the initial value of the voltage magnitude
+* `angle` (rad or deg): the initial value of the voltage angle given in rad or deg
+* `minMagnitude` (pu or V): the minimum voltage magnitude value
+* `maxMagnitude` (pu or V): the maximum voltage magnitude value
+* `base` (V): the base value of the voltage magnitude
 * `area`: the area number
 * `lossZone`: the loss zone
 
@@ -200,26 +200,29 @@ end
 The function adds a new branch to the `PowerSystem` type and updates its branch field. 
 A branch can be added between already defined buses.
     
-    addBranch!(system::PowerSystem; label, from, to, status,
-        resistance, reactance, susceptance, turnsRatio, shiftAngle,
-        longTerm, shortTerm, emergency, minAngleDifference, maxAngleDifference)
+    addBranch!(system::PowerSystem; label::Int64, from::Int64, to::Int64, status::Int64,
+        resistance::Float64, reactance::Float64, susceptance::Float64, 
+        turnsRatio::Float64, shiftAngle::Float64,
+        longTerm::Float64, shortTerm::Float64, emergency::Float64, 
+        minAngleDifference::Float64, maxAngleDifference::Float64)
     
 The branch is defined with the following parameters:
-* label::Int64 - unique branch label
-* from::Int64 - from bus label, corresponds to the bus label
-* to::Int64 - to bus label, corresponds to the bus label
-* status::Int64 - operating status of the branch, in-service = 1, out-of-service = 0
-* resistance::Float64 - branch resistance
-* reactance::Float64 - branch reactance
-* susceptance::Float64 - total line charging susceptance
-* turnsRatio::Float64 - transformer off-nominal turns ratio, equal to zero for a line
-* shiftAngle::Float64 - transformer phase shift angle, where positive value defines delay
-* longTerm::Float64 - short-term rating (equal to zero for unlimited)
-* shortTerm::Float64 - long-term rating (equal to zero for unlimited)
-* emergency::Float64 - emergency rating (equal to zero for unlimited)
-* minAngleDifference::Float64 - minimum voltage angle difference value between from and to bus
-* maxAngleDifference::Float64 - maximum voltage angle difference value between from and to bus
- 
+* `label`: unique branch label
+* `from`: from bus label, corresponds to the bus label
+* `to`: to bus label, corresponds to the bus label
+* `status`: operating status of the branch, in-service = 1, out-of-service = 0
+* `resistance` (pu or Ω): branch resistance
+* `reactance` (pu or Ω): branch reactance
+* `susceptance` (pu or S): total line charging susceptance
+* `turnsRatio`: transformer off-nominal turns ratio, equal to zero for a line
+* `shiftAngle` (rad or deg): transformer phase shift angle, where positive value defines delay
+* `longTerm` (pu or VA): short-term rating (equal to zero for unlimited)
+* `shortTerm` (pu or VA): long-term rating (equal to zero for unlimited)
+* `emergency` (pu or VA): emergency rating (equal to zero for unlimited)
+* `minAngleDifference` (rad or deg): minimum voltage angle difference value between from and to bus
+* `maxAngleDifference` (rad or deg): maximum voltage angle difference value between from and to bus
+
+# Units
 The input units are in per-units and radians by default, but they can be modified using 
 the following macros [`@power`](@ref @power), [`@voltage`](@ref @voltage), and 
 [`@parameter`](@ref @parameter).
