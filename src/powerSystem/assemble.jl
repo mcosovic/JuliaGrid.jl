@@ -1,8 +1,11 @@
 const T = Union{Float64,Int64}
 
 """
-The function adds a new bus to the `PowerSystem` type and updates its bus field. 
-    
+The function adds a new bus to the `PowerSystem` type, updating its bus field. It 
+automatically sets the bus as a demand bus, but it can be changed to a generator bus using 
+the [addGenerator!()](@ref addGenerator!) function or to a slack bus using the 
+[slackBus!()](@ref slackBus!) function.
+
     addBus!(system::PowerSystem; label, active, reactive, conductance, susceptance, 
         magnitude, angle, minMagnitude, maxMagnitude, base, area, lossZone)
     
@@ -20,10 +23,6 @@ The bus is defined with the following parameters:
 * `area`: the area number
 * `lossZone`: the loss zone
 
-The function automatically defines the bus as a demand bus, but it will be converted to a
-generator bus by using the [`addGenerator!()`](@ref addGenerator!) function or to a slack 
-bus by using the [`slackBus!()`](@ref slackBus!) function.
-
 # Units
 The input units are in per-unit (pu) and radian (rad) by default as shown, except for the 
 keyword `base` which is given by default in volt (V). The unit and prefix settings can be 
@@ -39,8 +38,8 @@ addBus!(system; label = 1, active = 0.25, reactive = -0.04)
 """
 function addBus!(system::PowerSystem; label::T, active::T = 0.0, reactive::T = 0.0,
     conductance::T = 0.0, susceptance::T = 0.0, magnitude::T = 0.0, angle::T = 0.0,
-    minMagnitude::T = 0.0, maxMagnitude::T = 0.0, base::T = 0.0, area::T = 0, 
-    lossZone::T = 0) 
+    minMagnitude::T = 0.0, maxMagnitude::T = 0.0, base::T = 0.0, area::T = 0,
+    lossZone::T = 0)
 
     demand = system.bus.demand
     shunt = system.bus.shunt
@@ -102,11 +101,10 @@ end
 """
 The function is used to set a slack bus, and it can also be used to dynamically change the 
 slack bus. Every time the function is executed, the previous slack bus becomes a demand or 
-generator bus, depending on whether the bus has a generator. 
+generator bus, depending on whether the bus has a generator. The bus label should be 
+specified using the `label` keyword argument and should match an already defined bus label.
 
     slackBus!(system::PowerSystem; label)
-
-The `label` keyword argument should correspond to the already defined bus label.
 
 # Example
 ```jldoctest
@@ -136,17 +134,14 @@ function slackBus!(system::PowerSystem; label::T)
 end
 
 """
-The function allows changing `conductance` and `susceptance` parameters of the shunt 
-element connected to the bus.
+This function enables the modification of the `conductance` and `susceptance` parameters 
+of a shunt element connected to a bus. The `label` keyword must match an existing bus 
+label. If either `conductance` or `susceptance` is left out, the corresponding value will 
+remain unchanged. Additionally, this function automatically updates the `acModel` field, 
+eliminating the need to rebuild the model from scratch when making changes to these 
+parameters.
 
     shuntBus!(system::PowerSystem; label, conductance, susceptance)
-
-The keyword `label` should correspond to the already defined bus label. Keywords `conductance` 
-or `susceptance` can be omitted, then the value of the omitted parameter remains unchanged.
-
-The usefulness of the function is that its execution automatically updates the field 
-`acModel`. That is, when changing these parameters, it is not necessary to create this
-model from scratch.
 
 # Units
 The input units are in per-units by default, but they can be modified using the 
@@ -232,10 +227,10 @@ addBus!(system; label = 2, active = 0.15, reactive = 0.08)
 addBranch!(system; label = 1, from = 1, to = 2, resistance = 0.05, reactance = 0.12)
 ```
 """
-function addBranch!(system::PowerSystem; label::T, from::T, to::T, status::T = 1, 
-    resistance::T = 0.0, reactance::T = 0.0, susceptance::T = 0.0, turnsRatio::T = 0.0, 
-    shiftAngle::T = 0.0, longTerm::T = 0.0, shortTerm::T = 0.0, emergency::T = 0.0, 
-    minAngleDifference::T = 0.0, maxAngleDifference::T = 0.0,)
+function addBranch!(system::PowerSystem; label::T, from::T, to::T, status::T = 1,
+    resistance::T = 0.0, reactance::T = 0.0, susceptance::T = 0.0, turnsRatio::T = 0.0,
+    shiftAngle::T = 0.0, longTerm::T = 0.0, shortTerm::T = 0.0, emergency::T = 0.0,
+    minAngleDifference::T = 0.0, maxAngleDifference::T = 0.0)
 
     parameter = system.branch.parameter
     rating = system.branch.rating
@@ -320,17 +315,12 @@ function addBranch!(system::PowerSystem; label::T, from::T, to::T, status::T = 1
 end
 
 """
-The function allows for switching the operational `status` of a branch, designated by its 
-`label`, from in-service to out-of-service and vice versa within the `PowerSystem` system. 
-
-The function allows changing the operating `status` of the branch, from in-service to
-out-of-service, and vice versa.
+The function enables the switching of the operational `status` of a branch, identified by 
+its `label`, within the `PowerSystem` system between in-service and out-of-service. 
+This function updates the `acModel` and `dcModel` fields automatically when the operating 
+status of a branch is changed, thus eliminating the need to rebuild the model from scratch.
 
     statusBranch!(system::PowerSystem; label, status)
-
-One advantage of this function is that it automatically updates the `acModel` and `dcModel` 
-fields when the operating status of a branch is changed, eliminating the need to create a 
-new model from scratch.
 
 # Example
 ```jldoctest
@@ -364,9 +354,9 @@ function statusBranch!(system::PowerSystem; label::T, status::T)
                 dcNodalShiftUpdate!(system, index)
             end
             if status == 0
-                nilModel!(system, :dcModelDeprive; index = index)
+                nilModel!(system, :dcModelDeprive; index=index)
                 dcNodalShiftUpdate!(system, index)
-                nilModel!(system, :dcModelZeros; index = index)
+                nilModel!(system, :dcModelZeros; index=index)
             end
         end
 
@@ -376,9 +366,9 @@ function statusBranch!(system::PowerSystem; label::T, status::T)
                 acNodalUpdate!(system, index)
             end
             if status == 0
-                nilModel!(system, :acModelDeprive; index = index)
+                nilModel!(system, :acModelDeprive; index=index)
                 acNodalUpdate!(system, index)
-                nilModel!(system, :acModelZeros; index = index)
+                nilModel!(system, :acModelZeros; index=index)
             end
         end
     end
@@ -386,15 +376,14 @@ function statusBranch!(system::PowerSystem; label::T, status::T)
 end
 
 """
-The function allows for changing the `resistance`, `reactance`, `susceptance`, `turnsRatio` 
-and `shiftAngle` parameters of a branch, specified by its `label`, within the `PowerSystem`. 
-Any of these parameters can be omitted, and their current values will remain  unchanged.
+This function enables the alteration of the `resistance`, `reactance`, `susceptance`, 
+`turnsRatio` and `shiftAngle` parameters of a branch, identified by its `label`, within 
+the `PowerSystem`. If any of these parameters are omitted, their current values will be 
+retained. Additionally, this function updates the `acModel` and `dcModel` fields 
+automatically, removing the need to rebuild the model from scratch.
 
     parameterBranch!(system::PowerSystem; label, resistance, reactance, susceptance, 
         turnsRatio, shiftAngle)
-
-One advantage of this function is that it automatically updates the `acModel` and `dcModel` 
-fields, eliminating the need to create a new model from scratch.
 
 # Units
 The input units are in per-units by default, but they can be modified using the following 
@@ -426,11 +415,11 @@ function parameterBranch!(system::PowerSystem; user...)
     if haskey(user, :resistance) || haskey(user, :reactance) || haskey(user, :susceptance) || haskey(user, :turnsRatio) || haskey(user, :shiftAngle)
         if layout.status[index] == 1
             if !isempty(system.dcModel.admittance)
-                nilModel!(system, :dcModelDeprive; index = index)
+                nilModel!(system, :dcModelDeprive; index=index)
                 dcNodalShiftUpdate!(system, index)
             end
             if !isempty(system.acModel.admittance)
-                nilModel!(system, :acModelDeprive; index = index)
+                nilModel!(system, :acModelDeprive; index=index)
                 acNodalUpdate!(system, index)
             end
         end
@@ -482,18 +471,18 @@ The generator is defined with the following parameters:
 * `bus`: the label of the bus to which the generator is connected
 * `status`: the operating status of the generator, in-service = 1, out-of-service = 0
 * `active` (pu or W): output active power
-* `reactive` (pu or MVAr): output reactive power
+* `reactive` (pu or VAr): output reactive power
 * `magnitude` (pu or V): voltage magnitude setpoint
 * `minActive` (pu or W): minimum allowed output active power value
 * `maxActive` (pu or W): maximum allowed output active power value
-* `minReactive` (pu or MVAr): minimum allowed output reactive power value
-* `maxReactive` (pu or MVAr): maximum allowed output reactive power value
-* `lowerActive (pu or W)`: lower allowed active power output value of PQ capability curve
-* `minReactiveLower` (pu or MVAr): minimum allowed reactive power output value at lowerActive value
-* `maxReactiveLower` (pu or MVAr): maximum allowed reactive power output value at lowerActive value
+* `minReactive` (pu or VAr): minimum allowed output reactive power value
+* `maxReactive` (pu or VAr): maximum allowed output reactive power value
+* `lowerActive` (pu or W): lower allowed active power output value of PQ capability curve
+* `minReactiveLower` (pu or VAr): minimum allowed reactive power output value at lowerActive value
+* `maxReactiveLower` (pu or VAr): maximum allowed reactive power output value at lowerActive value
 * `upperActive` (pu or W): upper allowed active power output value of PQ capability curve
-* `minReactiveUpper` (pu or MVAr): minimum allowed reactive power output value at upperActive value
-* `maxReactiveUpper` (pu or MVAr): maximum allowed reactive power output value at upperActive value
+* `minReactiveUpper` (pu or VAr): minimum allowed reactive power output value at upperActive value
+* `maxReactiveUpper` (pu or VAr): maximum allowed reactive power output value at upperActive value
 * `loadFollowing` (pu or W per min): ramp rate for load following/AG
 * `reserve10minute` (pu or W): ramp rate for 10-minute reserves
 * `reserve30minute` (pu or W): ramp rate for 30-minute reserves
@@ -502,7 +491,7 @@ The generator is defined with the following parameters:
 
 # Units
 The input units are realted to per-units by default, but they can be modified using macros 
-[`@power`](@ref @power), and [`@voltage`](@ref @voltage).
+[`@power`](@ref @power) and [`@voltage`](@ref @voltage).
 
 # Example
 ```jldoctest
@@ -513,13 +502,12 @@ addBus!(system; label = 1, active = 0.25, reactive = -0.04)
 addGenerator!(system; label = 1, bus = 1, active = 0.5, reactive = 0.1)
 ```
 """
-function addGenerator!(system::PowerSystem; label::T, bus::T, area::T = 0.0,
-    status::T = 1, active::T = 0.0, reactive::T = 0.0, magnitude::T = 1.0,
-    minActive::T = 0.0, maxActive::T = 0.0, minReactive::T = 0.0,
-    maxReactive::T = 0.0, lowerActive::T = 0.0, minReactiveLower::T = 0.0,
-    maxReactiveLower::T = 0.0, upperActive::T = 0.0, minReactiveUpper::T = 0.0,
-    maxReactiveUpper::T = 0.0, loadFollowing::T = 0.0, reserve10minute::T = 0.0,
-    reserve30minute::T = 0.0, reactiveTimescale::T = 0.0)
+function addGenerator!(system::PowerSystem; label::T, bus::T, area::T = 0.0, status::T = 1, 
+    active::T = 0.0, reactive::T = 0.0, magnitude::T = 0.0, minActive::T = 0.0, 
+    maxActive::T = 0.0, minReactive::T = 0.0, maxReactive::T = 0.0, lowerActive::T = 0.0, 
+    minReactiveLower::T = 0.0, maxReactiveLower::T = 0.0, upperActive::T = 0.0, 
+    minReactiveUpper::T = 0.0, maxReactiveUpper::T = 0.0, loadFollowing::T = 0.0,
+    reserve10minute::T = 0.0, reserve30minute::T = 0.0, reactiveTimescale::T = 0.0)
 
     output = system.generator.output
     capability = system.generator.capability
@@ -596,27 +584,25 @@ function addGenerator!(system::PowerSystem; label::T, bus::T, area::T = 0.0,
 end
 
 """
-The function adds costs for active power produced by the corresponding generators and updates
-the field `system.generator.cost.active`. A cost can be added to an already defined generator.
+The function updates the `generator` field of the `PowerSystem` type by adding costs for 
+the active power produced by the corresponding generators. It can add a cost to an already 
+defined generator.
 
-    addActiveCost!(system::PowerSystem; label::Int64, model::Int64 = 0,
-        piecewise:Array{Float64,2}, polynomial::Array{Float64,1})
+    addActiveCost!(system::PowerSystem; label, model, piecewise, polynomial)
 
-Descriptions, types and units of keywords are given below:
-* `label` - correspond to the already defined generator label
-* `model` - cost model, piecewise linear = 1, polynomial = 2
-* `piecewise` - cost model is defined according to input-output points, where the first column
-of the matrix corresponds to values of active powers (per-unit), while the second column
-corresponds to cost for supplying the indicated load (currency/hour)
-* `polynomial::Array{Float64,1}` - the second-degree polynomial coefficients, where the first
-element corresponds to the square term, the second element to a linear term, and third element
-is the constant term
+The function takes in four keywords as arguments:
+* `label`: corresponds to the already defined generator label
+* `model`: cost model, piecewise linear = 1, polynomial = 2
+* `piecewise`: cost model defined by input-output points (first column of matrix is values 
+of active power in per-unit (PU) or watt (W), second column is cost in currency/hour)
+* `polynomial`: second-degree polynomial coefficients (first element is square term, 
+second element is linear term, third element is constant term) in per-unit (PU) or watt (W) 
+depending on unit system used
 
-Note that the polynomial coefficients should be scaled to reflect the power change in per-unit
-values. More precisely, if the coefficients are known, and the active powers are given in MW,
-then the known square coefficient should be multiplied by the square of the base power given in
-MVA and passed as such to the variable `polynomial`. Likewise, the linear coefficient should
-be multiplied with base power given in MVA and and passed as such to the same variable.
+# Units
+By default, the input units of power are per-units, but they can be modified using the 
+macro [`@power`](@ref @power).
+
 
 # Example
 ```jldoctest
@@ -627,16 +613,15 @@ addBus!(system; label = 1, active = 0.25, reactive = -0.04)
 addGenerator!(system; label = 1, bus = 1, active = 0.5, reactive = 0.1)
 addActiveCost!(system; label = 1, model = 1, polynomial = [5601.0; 85.1; 43.2])
 ```
-
 """
-function addActiveCost!(system::PowerSystem; label::Int64, model::Int64 = 0,
+function addActiveCost!(system::PowerSystem; label::T, model::T = 0,
     polynomial::Array{Float64,1} = Array{Float64}(undef, 0),
     piecewise::Array{Float64,2} = Array{Float64}(undef, 0, 0))
 
     addCost!(system, label, model, polynomial, piecewise, system.generator.cost.active)
 end
 
-function addReactiveCost!(system::PowerSystem; label::Int64, model::Int64 = 0,
+function addReactiveCost!(system::PowerSystem; label::T, model::T = 0,
     polynomial::Array{Float64,1} = Array{Float64}(undef, 0),
     piecewise::Array{Float64,2} = Array{Float64}(undef, 0, 0))
 
@@ -661,6 +646,9 @@ function addCost!(system::PowerSystem, label, model, polynomial, piecewise, cost
         end
     end
 
+    basePowerInv = 1 / (unit.prefix["base power"] * system.base.power)
+    activeScale = topu(unit, basePowerInv, "active power")
+    
     index = system.generator.label[label]
     cost.model[index] = model
     cost.polynomial[index] = polynomial
