@@ -184,7 +184,32 @@ extension or a Matpower file with the .m extension as an argument. For example:
 ```jldoctest
 system = powerSystem("case14.h5")
 ```
+"""
+function powerSystem(inputFile::String)
+    packagePath = checkPackagePath()
+    fullpath, extension = checkFileFormat(inputFile, packagePath)
+    system = powerSystem()
 
+    if extension == ".h5"
+        hdf5 = h5open(fullpath, "r")
+            loadBus(system, hdf5)
+            loadBranch(system, hdf5)
+            loadGenerator(system, hdf5)
+            loadBase(system, hdf5)
+        close(hdf5)
+    end
+
+    if extension == ".m"
+        busLine, branchLine, generatorLine, generatorcostLine = readMATLAB(system, fullpath)
+        loadBus(system, busLine)
+        loadBranch(system, branchLine)
+        loadGenerator(system, generatorLine, generatorcostLine)
+    end
+
+    return system
+end
+
+"""
 Alternatively, the `PowerSystem` composite type can be initialized by calling the function 
 without any arguments. This allows the model to be built from scratch and modified as 
 needed. 
@@ -194,15 +219,6 @@ needed.
 # Example
 ```jldoctest
 system = powerSystem()
-```
-
-It is important to note that the prefixes of the base power and base voltage units can be 
-adjusted using the macro [`@base`](@ref @base).
-
-# Example
-```jldoctest
-@base(MVA, kV)
-system = powerSystem("case14.h5")
 ```
 """
 function powerSystem()
@@ -241,30 +257,6 @@ function powerSystem()
         Generator(copy(label), output, capability, ramping, voltageGenerator, cost, layoutGenerator, 0),
         Base(copy(af), basePower),
         acModel, dcModel)
-end
-
-function powerSystem(inputFile::String)
-    packagePath = checkPackagePath()
-    fullpath, extension = checkFileFormat(inputFile, packagePath)
-    system = powerSystem()
-
-    if extension == ".h5"
-        hdf5 = h5open(fullpath, "r")
-            loadBus(system, hdf5)
-            loadBranch(system, hdf5)
-            loadGenerator(system, hdf5)
-            loadBase(system, hdf5)
-        close(hdf5)
-    end
-
-    if extension == ".m"
-        busLine, branchLine, generatorLine, generatorcostLine = readMATLAB(system, fullpath)
-        loadBus(system, busLine)
-        loadBranch(system, branchLine)
-        loadGenerator(system, generatorLine, generatorcostLine)
-    end
-
-    return system
 end
 
 ######## Load Bus Data from HDF5 File ##########
