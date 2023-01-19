@@ -172,29 +172,28 @@ end
 """
 The function builds the composite type `PowerSystem` and populates `bus`, `branch`, 
 `generator` and `base` fields. In general, once the composite type `PowerSystem` has been 
-created, it is possible to add new buses, branches, or generators, or modify the parameters 
-of existing ones.
+created, it is possible to add new buses, branches, or generators, or modify the 
+parameters of existing ones.
 
-To use the `powerSystem()` function, the path to the HDF5 file with the .h5 extension can 
-be passed as arguments. For example: 
+The `powerSystem()` function can be used by passing the path to the HDF5 file with the .h5 
+extension or a Matpower file with the .m extension as an argument. For example: 
     
-    powerSystem("pathToExternalData/name.h5")
-
-Similarly, the path to the Matpower file with the `.m` extension can be passed to the same 
-function:
-
-    powerSystem("pathToExternalData/name.m")
-
-Alternatively, the `PowerSystem` composite type can be initialized by calling the function 
-without any arguments: 
-
-    powerSystem()
-
-This allows the model to be built from scratch and modified as needed.
+    powerSystem("pathToExternalData/name.extension")
 
 # Example
 ```jldoctest
 system = powerSystem("case14.h5")
+```
+
+Alternatively, the `PowerSystem` composite type can be initialized by calling the function 
+without any arguments. This allows the model to be built from scratch and modified as 
+needed. 
+
+    powerSystem()
+
+# Example
+```jldoctest
+system = powerSystem()
 ```
 
 It is important to note that the prefixes of the base power and base voltage units can be 
@@ -282,7 +281,7 @@ function loadBus(system::PowerSystem, hdf5::HDF5.File)
     bus.label = Dict{Int64,Int64}(); sizehint!(bus.label, bus.number)
     @inbounds for i = 1:bus.number
         j = label[i]
-        if bus.layout.renumbering && i != j
+        if !bus.layout.renumbering && i != j
             bus.layout.renumbering = true
         end
         bus.label[j] = i
@@ -404,14 +403,14 @@ function loadGenerator(system::PowerSystem, hdf5::HDF5.File)
 
     generator.layout.bus::Array{Int64,1} = read(layouth5["bus"])
     if system.bus.layout.renumbering
-        generator.layout.bus = runRenumbering(busIndex, generator.number, system.bus.label)
+        generator.layout.bus = runRenumbering(generator.layout.bus, generator.number, system.bus.label)
     end
     generator.layout.area = arrayFloat(layouth5, "area", generator.number)
     generator.layout.status = arrayInteger(layouth5, "status", generator.number)
 
     generator.label = Dict{Int64,Int64}()
     sizehint!(generator.label, generator.number)
-    @inbounds for (k, i) in enumerate(generator.layout.bus)
+    for (k, i) in enumerate(generator.layout.bus)
         generator.label[labelOriginal[k]] = k
         if generator.layout.status[k] == 1
             system.bus.layout.type[i] = 2
