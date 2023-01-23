@@ -35,39 +35,38 @@ end
 """
 JuliaGrid stores all data related with powers in per-units, and these cannot be altered. 
 However, the power units of the built-in functions used to add or modified power system 
-elements can be modified using the macro command:
+elements can be modified using the macro:
 
     @power(active, reactive, apparent)
     
-Prefixes must be specified according to the International System of Units and should be 
-included with the unit of active power (W), reactive power (VAr), or apparent power (VA).  
-Also it ia possible to combine SI units with/without prefixes with per-units (pu).
+Prefixes must be specified according to the 
+[SI prefixes](https://www.nist.gov/pml/owm/metric-si-prefixes) and should be included with 
+the unit of active power (W), reactive power (VAr), or apparent power (VA). Also it is a 
+possible to combine SI units with/without prefixes with per-units (pu).
+
+Changing the unit of active power is reflected in the following quantities:
+* [`addBus!()`](@ref addBus!): `active`, `conductance` 
+* [`shuntBus!()`](@ref shuntBus!): `conductance` 
+* [`addGenerator!()`](@ref addGenerator!): `active`, `minActive`, `maxActive`, `lowActive`,
+`upActive`, `loadFollowing`, `reserve10min`, `reserve30min`
+* [`addActiveCost!()`](@ref addActiveCost!): `piecewise`, `polynomial`.
+
+Changing the unit of reactive power unit is reflected in the following quantities:
+* [`addBus!()`](@ref addBus!): `reactive`, `susceptance` 
+* [`shuntBus!()`](@ref shuntBus!): `susceptance` 
+* [`addGenerator!()`](@ref addGenerator!): `reactive`, `minReactive`, `maxReactive`, 
+`minLowReactive`, `maxLowReactive`, `minUpReactive`, `maxUpReactive`, 
+`reactiveTimescale`
+* [`addReactiveCost!()`](@ref addReactiveCost!): `piecewise`, `polynomial`.
+
+Changing the unit of apparent power unit is reflected in the following quantities:
+* [`addBranch!()`](@ref addBranch!): `longTerm`, `shortTerm`, `emergency`.
 
 # Example
 ```jldoctest
 @power(MW, kVAr, VA)
 ```
 
-Changing the unit of active power is reflected in the following quantities in specific 
-functions:
-* [`addBus!()`](@ref addBus!): `active`, `conductance` 
-* [`shuntBus!()`](@ref shuntBus!): `conductance` 
-* [`addGenerator!()`](@ref addGenerator!): `active`, `minActive`, `maxActive`, `lowerActive`,
-`upperActive`, `loadFollowing`, `reserve10minute`, `reserve30minute`
-* [`addActiveCost!()`](@ref addActiveCost!): `piecewise`, `polynomial`.
-
-Changing the unit of reactive power unit is reflected in the following quantities in 
-specific functions:
-* [`addBus!()`](@ref addBus!): `reactive`, `susceptance` 
-* [`shuntBus!()`](@ref shuntBus!): `susceptance` 
-* [`addGenerator!()`](@ref addGenerator!): `reactive`, `minReactive`, `maxReactive`, 
-`minReactiveLower`, `maxReactiveLower`, `minReactiveUpper`, `maxReactiveUpper`, 
-`reactiveTimescale`
-* [`addReactiveCost!()`](@ref addReactiveCost!): `piecewise`, `polynomial`.
-
-Changing the unit of apparent power unit is reflected in the following quantities in 
-specific functions:
-* [`addBranch!()`](@ref addBranch!): `longTerm`, `shortTerm`, `emergency`.
 """
 macro power(active::Symbol, reactive::Symbol, apparent::Symbol)
     active = string(active)

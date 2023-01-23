@@ -79,3 +79,6 @@ addGenerator!
 ```@docs
 @base
 ```
+```@docs
+@power
+```
