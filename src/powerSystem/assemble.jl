@@ -3,8 +3,8 @@ const T = Union{Float64,Int64}
 """
 The function adds a new bus to the `PowerSystem` type, updating its bus field. It 
 automatically sets the bus as a demand bus, but it can be changed to a generator bus using 
-the [addGenerator!()](@ref addGenerator!) function or to a slack bus using the 
-[slackBus!()](@ref slackBus!) function.
+the [`addGenerator!()`](@ref addGenerator!) function or to a slack bus using the 
+[`slackBus!()`](@ref slackBus!) function.
 
     addBus!(system::PowerSystem; label, active, reactive, conductance, susceptance, 
         magnitude, angle, minMagnitude, maxMagnitude, base, area, lossZone)
