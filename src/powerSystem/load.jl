@@ -179,6 +179,11 @@ file with the .h5 extension or a Matpower file with the .m extension as an argum
 In general, once the composite type `PowerSystem` has been created, it is possible to add 
 new buses, branches, or generators, or modify the parameters of existing ones.
 
+# Units
+JuliaGrid stores all data in per-unit (pu) and radian (rad) format which are fixed, the 
+exceptions are base values in volt-ampere (VA) and volt (V) which can be changed using the 
+macro [@base](@ref @base).
+
 # Example
 ```jldoctest
 system = powerSystem("case14.h5")
@@ -215,11 +220,6 @@ without any arguments.
     powerSystem()
 
 This allows the model to be built from scratch and modified as needed.
-
-# Units
-JuliaGrid stores all data in per-unit (pu) and radian (rad) format which are fixed, the 
-exceptions are base values in volt-ampere (VA) and volt (V) which can be changed using the 
-macro [@base](@ref @base).
 """
 function powerSystem()
     af = Array{Float64,1}(undef, 0)

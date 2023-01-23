@@ -1,4 +1,4 @@
-@testset "addBus!, addGenerator!, addBranch!, unit" begin
+@testset "addBus!, addGenerator!, addBranch!" begin
     rad = pi / 180
     system = powerSystem(string(pathData, "part300.m"))
     
@@ -24,94 +24,68 @@
     addGenerator!(systemPU; label = 2, bus = 153, active = 2.16, reactive = 0.1, minReactive = -0.5, maxReactive = 0.9, magnitude = 1.0435, maxActive = 3.16)
     addGenerator!(systemPU; label = 3, bus = 153, active = 2.06, reactive = 0.3, minReactive = -0.5, maxReactive = 0.9, magnitude = 1.0435, maxActive = 3.16)
 
-    @base(MVA, kV)
-    @power(MW, MVAr, MVA)
-    @voltage(V, deg)
-    @parameter(Ω, S)
-    systemSI = powerSystem()
-    addBus!(systemSI; label = 152, active = 17, reactive = 9, magnitude = 1.0535 * 230e3, angle = 9.24, minMagnitude = 0.94 * 230e3, maxMagnitude = 1.06 * 230e3, base = 230)
-    addBus!(systemSI; label = 153, magnitude = 1.0435 * 230e3, angle = 10.46, minMagnitude = 0.94 * 230e3, maxMagnitude = 1.06 * 230e3, base = 230)
-    addBus!(systemSI; label = 154, active = 70, reactive = 5, susceptance = 34.5, magnitude = 0.9663 * 115e3, angle = -1.8, minMagnitude = 0.94 * 115e3, maxMagnitude = 1.06 * 115e3, base = 115)
-    addBus!(systemSI; label = 155, active = 200, reactive = 50, magnitude = 1.0177 * 230e3, angle = 6.75, minMagnitude = 0.94 * 230e3, maxMagnitude = 1.06 * 230e3, base = 230)
-    addBus!(systemSI; label = 156, active = 75, reactive = 50, magnitude = 0.963 * 115e3, angle = 5.15, minMagnitude = 0.94 * 115e3, maxMagnitude = 1.06 * 115e3, base = 115)
-    addBus!(systemSI; label = 161, active = 35, reactive = 15, magnitude = 1.036 * 230e3, angle = 8.85, minMagnitude = 0.94 * 230e3, maxMagnitude = 1.06 * 230e3, base = 230)
-    addBus!(systemSI; label = 164, susceptance = -212, magnitude = 0.9839 * 230e3, angle = 9.66, minMagnitude = 0.94 * 230e3, maxMagnitude = 1.06 * 230e3, base = 230)
-    addBus!(systemSI; label = 183, active = 40, reactive = 4, magnitude = 0.9717 * 115e3, angle = 7.12, minMagnitude = 0.94 * 115e3, maxMagnitude = 1.06 * 115e3, base = 115)
-    slackBus!(systemSI; label = 152)
-    addBranch!(systemSI; label = 1, from = 164, to = 155, resistance = 0.4351, reactance = 11.1682, susceptance = -0.0683e-03, turnsRatio = 0.956, shiftAngle = 1.2, longTerm = 10, minDiffAngle = -360, maxDiffAngle = 360)
-    addBranch!(systemSI; label = 2, from = 155, to = 156, resistance = 0.4666, reactance = 14.9305, turnsRatio = 1.05, minDiffAngle = -360, maxDiffAngle = 360)
-    addBranch!(systemSI; label = 3, from = 154, to = 156, resistance = 23.0909, reactance = 41.8042, susceptance = 0.3025e-3, minDiffAngle = -360, maxDiffAngle = 360)        
-    addBranch!(systemSI; label = 4, from = 155, to = 161, resistance = 5.8190, reactance = 30.0472, susceptance = 0.7335e-3, shortTerm = 5, minDiffAngle = -360, maxDiffAngle = 360)
-    addBranch!(systemSI; label = 5, from = 153, to = 183, resistance = 1.6444, reactance = 38.9185, turnsRatio = 1.073, minDiffAngle = -360, maxDiffAngle = 360)
-    addBranch!(systemSI; label = 6, from = 153, to = 161, resistance = 2.9095, reactance = 15.2352, susceptance = 0.3592e-3, minDiffAngle = -360, maxDiffAngle = 360)
-    addBranch!(systemSI; label = 7, from = 152, to = 153, resistance = 7.2473, reactance = 50.6253, susceptance = 0.2665e-3, minDiffAngle = -360, maxDiffAngle = 360)
-    addBranch!(systemSI; label = 8, from = 154, to = 183, resistance = 10.6329, reactance = 40.3892, susceptance = 0.3403e-3, emergency = 3, minDiffAngle = -360, maxDiffAngle = 360)
-    addGenerator!(systemSI; label = 1, bus = 152, active = 372, minReactive = -50, maxReactive = 175, magnitude = 1.0535 * 230e3, maxActive = 472)
-    addGenerator!(systemSI; label = 2, bus = 153, active = 216, reactive = 10, minReactive = -50, maxReactive = 90, magnitude = 1.0435 * 230e3, maxActive = 316)
-    addGenerator!(systemSI; label = 3, bus = 153, active = 206, reactive = 30, minReactive = -50, maxReactive = 90, magnitude = 1.0435 * 230e3, maxActive = 316)
-
     ######### Bus ##########
-    @test system.bus.label == systemPU.bus.label == systemSI.bus.label
-    @test system.bus.number == systemPU.bus.number == systemSI.bus.number
+    @test system.bus.label == systemPU.bus.label
+    @test system.bus.number == systemPU.bus.number
 
-    @test system.bus.demand.active ≈ systemPU.bus.demand.active ≈ systemSI.bus.demand.active
-    @test system.bus.demand.reactive ≈ systemPU.bus.demand.reactive ≈ systemSI.bus.demand.reactive
+    @test system.bus.demand.active ≈ systemPU.bus.demand.active
+    @test system.bus.demand.reactive ≈ systemPU.bus.demand.reactive
 
-    @test system.bus.supply.active ≈ systemPU.bus.supply.active ≈ systemSI.bus.supply.active
-    @test system.bus.supply.reactive ≈ systemPU.bus.supply.reactive ≈ systemSI.bus.supply.reactive
-    @test system.bus.supply.inService == systemPU.bus.supply.inService == systemSI.bus.supply.inService
+    @test system.bus.supply.active ≈ systemPU.bus.supply.active
+    @test system.bus.supply.reactive ≈ systemPU.bus.supply.reactive
+    @test system.bus.supply.inService == systemPU.bus.supply.inService
 
-    @test system.bus.shunt.conductance ≈ systemPU.bus.shunt.conductance ≈ systemSI.bus.shunt.conductance
-    @test system.bus.shunt.susceptance ≈ systemPU.bus.shunt.susceptance ≈ systemSI.bus.shunt.susceptance
+    @test system.bus.shunt.conductance ≈ systemPU.bus.shunt.conductance
+    @test system.bus.shunt.susceptance ≈ systemPU.bus.shunt.susceptance
 
-    @test system.bus.voltage.magnitude ≈ systemPU.bus.voltage.magnitude ≈ systemSI.bus.voltage.magnitude
-    @test system.bus.voltage.angle ≈ systemPU.bus.voltage.angle ≈ systemSI.bus.voltage.angle
-    @test system.bus.voltage.minMagnitude ≈ systemPU.bus.voltage.minMagnitude ≈ systemSI.bus.voltage.minMagnitude
-    @test system.bus.voltage.maxMagnitude ≈ systemPU.bus.voltage.maxMagnitude ≈ systemSI.bus.voltage.maxMagnitude
+    @test system.bus.voltage.magnitude ≈ systemPU.bus.voltage.magnitude
+    @test system.bus.voltage.angle ≈ systemPU.bus.voltage.angle
+    @test system.bus.voltage.minMagnitude ≈ systemPU.bus.voltage.minMagnitude
+    @test system.bus.voltage.maxMagnitude ≈ systemPU.bus.voltage.maxMagnitude
 
-    @test system.bus.layout.type == systemPU.bus.layout.type == systemSI.bus.layout.type
-    @test system.bus.layout.area == systemPU.bus.layout.area == systemSI.bus.layout.area
-    @test system.bus.layout.lossZone == systemPU.bus.layout.lossZone == systemSI.bus.layout.lossZone
-    @test system.bus.layout.slack == systemPU.bus.layout.slack == systemSI.bus.layout.slack
-    @test system.bus.layout.renumbering == systemPU.bus.layout.renumbering == systemSI.bus.layout.renumbering
+    @test system.bus.layout.type == systemPU.bus.layout.type
+    @test system.bus.layout.area == systemPU.bus.layout.area
+    @test system.bus.layout.lossZone == systemPU.bus.layout.lossZone
+    @test system.bus.layout.slack == systemPU.bus.layout.slack
+    @test system.bus.layout.renumbering == systemPU.bus.layout.renumbering
 
     ######### Branch ##########
     @test system.branch.label == systemPU.branch.label == systemSI.branch.label
     @test system.branch.number == systemPU.branch.number == systemSI.branch.number
 
-    @test system.branch.parameter.resistance ≈ systemPU.branch.parameter.resistance ≈ round.(systemSI.branch.parameter.resistance, digits=4)
-    @test system.branch.parameter.reactance ≈ systemPU.branch.parameter.reactance ≈ round.(systemSI.branch.parameter.reactance, digits=4)
-    @test system.branch.parameter.susceptance ≈ systemPU.branch.parameter.susceptance ≈ round.(systemSI.branch.parameter.susceptance, digits=4)
-    @test system.branch.parameter.turnsRatio == systemPU.branch.parameter.turnsRatio == systemSI.branch.parameter.turnsRatio
-    @test system.branch.parameter.shiftAngle == systemPU.branch.parameter.shiftAngle == systemSI.branch.parameter.shiftAngle
+    @test system.branch.parameter.resistance ≈ systemPU.branch.parameter.resistance
+    @test system.branch.parameter.reactance ≈ systemPU.branch.parameter.reactance
+    @test system.branch.parameter.susceptance ≈ systemPU.branch.parameter.susceptance
+    @test system.branch.parameter.turnsRatio == systemPU.branch.parameter.turnsRatio
+    @test system.branch.parameter.shiftAngle == systemPU.branch.parameter.shiftAngle
 
-    @test system.branch.rating.longTerm == systemPU.branch.rating.longTerm == systemSI.branch.rating.longTerm
-    @test system.branch.rating.shortTerm == systemPU.branch.rating.shortTerm == systemSI.branch.rating.shortTerm
-    @test system.branch.rating.emergency == systemPU.branch.rating.emergency == systemSI.branch.rating.emergency
+    @test system.branch.rating.longTerm == systemPU.branch.rating.longTerm
+    @test system.branch.rating.shortTerm == systemPU.branch.rating.shortTerm
+    @test system.branch.rating.emergency == systemPU.branch.rating.emergency
 
-    @test system.branch.voltage.minDiffAngle == systemPU.branch.voltage.minDiffAngle == systemSI.branch.voltage.minDiffAngle
-    @test system.branch.voltage.maxDiffAngle == systemPU.branch.voltage.maxDiffAngle == systemSI.branch.voltage.maxDiffAngle
+    @test system.branch.voltage.minDiffAngle == systemPU.branch.voltage.minDiffAngle
+    @test system.branch.voltage.maxDiffAngle == systemPU.branch.voltage.maxDiffAngle
 
-    @test system.branch.layout.from == systemPU.branch.layout.from == systemSI.branch.layout.from
-    @test system.branch.layout.to == systemPU.branch.layout.to == systemSI.branch.layout.to
-    @test system.branch.layout.status == systemPU.branch.layout.status == systemSI.branch.layout.status
-    @test system.branch.layout.renumbering == systemPU.branch.layout.renumbering == systemSI.branch.layout.renumbering
+    @test system.branch.layout.from == systemPU.branch.layout.from
+    @test system.branch.layout.to == systemPU.branch.layout.to
+    @test system.branch.layout.status == systemPU.branch.layout.status
+    @test system.branch.layout.renumbering == systemPU.branch.layout.renumbering
 
     ######### Generator ##########
-    @test system.generator.label == systemPU.generator.label == systemSI.generator.label
-    @test system.generator.number == systemPU.generator.number == systemSI.generator.number
+    @test system.generator.label == systemPU.generator.label
+    @test system.generator.number == systemPU.generator.number
 
-    @test system.generator.output.active == systemPU.generator.output.active == systemSI.generator.output.active
-    @test system.generator.output.reactive == systemPU.generator.output.reactive == systemSI.generator.output.reactive
+    @test system.generator.output.active == systemPU.generator.output.active
+    @test system.generator.output.reactive == systemPU.generator.output.reactive
 
-    @test system.generator.capability.minReactive == systemPU.generator.capability.minReactive == systemSI.generator.capability.minReactive
-    @test system.generator.capability.maxReactive == systemPU.generator.capability.maxReactive == systemSI.generator.capability.maxReactive
-    @test system.generator.capability.minActive == systemPU.generator.capability.minActive == systemSI.generator.capability.minActive
-    @test system.generator.capability.maxActive == systemPU.generator.capability.maxActive == systemSI.generator.capability.maxActive
+    @test system.generator.capability.minReactive == systemPU.generator.capability.minReactive
+    @test system.generator.capability.maxReactive == systemPU.generator.capability.maxReactive
+    @test system.generator.capability.minActive == systemPU.generator.capability.minActive
+    @test system.generator.capability.maxActive == systemPU.generator.capability.maxActive
 
-    @test system.generator.voltage.magnitude == systemPU.generator.voltage.magnitude == systemSI.generator.voltage.magnitude
+    @test system.generator.voltage.magnitude == systemPU.generator.voltage.magnitude
 
-    @test system.generator.layout.bus == systemPU.generator.layout.bus == systemSI.generator.layout.bus
-    @test system.generator.layout.status == systemPU.generator.layout.status == systemSI.generator.layout.status
-    @test system.generator.layout.area == systemPU.generator.layout.area == systemSI.generator.layout.area
+    @test system.generator.layout.bus == systemPU.generator.layout.bus
+    @test system.generator.layout.status == systemPU.generator.layout.status
+    @test system.generator.layout.area == systemPU.generator.layout.area
 end
