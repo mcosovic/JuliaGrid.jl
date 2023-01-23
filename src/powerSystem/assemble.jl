@@ -38,8 +38,8 @@ addBus!(system; label = 1, active = 0.25, reactive = -0.04)
 """
 function addBus!(system::PowerSystem; label::T, active::T = 0.0, reactive::T = 0.0,
     conductance::T = 0.0, susceptance::T = 0.0, magnitude::T = 0.0, angle::T = 0.0,
-    minMagnitude::T = 0.0, maxMagnitude::T = 0.0, base::T = 0.0, area::T = 0,
-    lossZone::T = 0)
+    minMagnitude::T = 0.0, maxMagnitude::T = 0.0, base::T = 0.0, area::T = 1,
+    lossZone::T = 1)
 
     demand = system.bus.demand
     shunt = system.bus.shunt
@@ -122,15 +122,15 @@ function slackBus!(system::PowerSystem; label::T)
     layout = system.bus.layout
     supply = system.bus.supply
 
-    if layout.slackIndex != 0
-        if !isempty(supply.inService) && supply.inService[layout.slackIndex] != 0
-            layout.type[layout.slackIndex] = 2
+    if layout.slack != 0
+        if !isempty(supply.inService) && supply.inService[layout.slack] != 0
+            layout.type[layout.slack] = 2
         else
-            layout.type[layout.slackIndex] = 1
+            layout.type[layout.slack] = 1
         end
     end
-    layout.slackIndex = system.bus.label[label]
-    layout.type[layout.slackIndex] = 3
+    layout.slack = system.bus.label[label]
+    layout.type[layout.slack] = 3
 end
 
 """
@@ -194,7 +194,7 @@ A branch can be added between already defined buses.
     
     addBranch!(system::PowerSystem; label, from, to, status, resistance, reactance, 
         susceptance, turnsRatio, shiftAngle, longTerm, shortTerm, emergency, 
-        minAngleDifference, maxAngleDifference)
+        minDiffAngle, maxDiffAngle)
     
 The branch is defined with the following parameters:
 * `label`: unique branch label
@@ -209,8 +209,8 @@ The branch is defined with the following parameters:
 * `longTerm` (pu or VA): short-term rating (equal to zero for unlimited)
 * `shortTerm` (pu or VA): long-term rating (equal to zero for unlimited)
 * `emergency` (pu or VA): emergency rating (equal to zero for unlimited)
-* `minAngleDifference` (rad or deg): minimum voltage angle difference value between from and to bus
-* `maxAngleDifference` (rad or deg): maximum voltage angle difference value between from and to bus
+* `minDiffAngle` (rad or deg): minimum voltage angle difference value between from and to bus
+* `maxDiffAngle` (rad or deg): maximum voltage angle difference value between from and to bus
 
 # Units
 The input units are in per-units and radians by default, but they can be modified using 
@@ -230,7 +230,7 @@ addBranch!(system; label = 1, from = 1, to = 2, resistance = 0.05, reactance = 0
 function addBranch!(system::PowerSystem; label::T, from::T, to::T, status::T = 1,
     resistance::T = 0.0, reactance::T = 0.0, susceptance::T = 0.0, turnsRatio::T = 0.0,
     shiftAngle::T = 0.0, longTerm::T = 0.0, shortTerm::T = 0.0, emergency::T = 0.0,
-    minAngleDifference::T = 0.0, maxAngleDifference::T = 0.0)
+    minDiffAngle::T = 0.0, maxDiffAngle::T = 0.0)
 
     parameter = system.branch.parameter
     rating = system.branch.rating
@@ -279,7 +279,12 @@ function addBranch!(system::PowerSystem; label::T, from::T, to::T, status::T = 1
     basePowerInv = 1 / (unit.prefix["base power"] * system.base.power)
     apparentScale = topu(unit, basePowerInv, "apparent power")
 
-    baseImpedanceInv = (unit.prefix["base power"] * system.base.power) / ((unit.prefix["base voltage"] * system.base.voltage[layout.from[end]])^2)
+    if turnsRatio != 0
+        turnsRatioInv = 1 / turnsRatio
+    else
+        turnsRatioInv = 1.0
+    end
+    baseImpedanceInv = turnsRatioInv^2 * (unit.prefix["base power"] * system.base.power) / ((unit.prefix["base voltage"] * system.base.voltage[layout.from[end]])^2)
     impedanceScale = topu(unit, baseImpedanceInv, "impedance")
     admittanceScale = topu(unit, 1 / baseImpedanceInv, "admittance")
 
@@ -293,8 +298,8 @@ function addBranch!(system::PowerSystem; label::T, from::T, to::T, status::T = 1
     push!(rating.shortTerm, shortTerm * apparentScale)
     push!(rating.emergency, emergency * apparentScale)
 
-    push!(voltage.minAngleDifference, minAngleDifference * torad(unit, "voltage angle"))
-    push!(voltage.maxAngleDifference, maxAngleDifference * torad(unit, "voltage angle"))
+    push!(voltage.minDiffAngle, minDiffAngle * torad(unit, "voltage angle"))
+    push!(voltage.maxDiffAngle, maxDiffAngle * torad(unit, "voltage angle"))
 
     index = system.branch.number
     if !isempty(system.dcModel.admittance)
@@ -424,8 +429,18 @@ function parameterBranch!(system::PowerSystem; user...)
             end
         end
 
-        baseImpedanceInv = (unit.prefix["base power"] * system.base.power) / ((unit.prefix["base voltage"] * system.base.voltage[layout.from[end]])^2)
+        if haskey(user, :turnsRatio)
+            parameter.turnsRatio[index] = user[:turnsRatio]::T
+        end
+
+        if parameter.turnsRatio[index] != 0
+            turnsRatioInv = 1 / parameter.turnsRatio[index]
+        else
+            turnsRatioInv = 1.0
+        end
+        baseImpedanceInv = turnsRatioInv^2 * (unit.prefix["base power"] * system.base.power) / ((unit.prefix["base voltage"] * system.base.voltage[layout.from[end]])^2)
         impedanceScale = topu(unit, baseImpedanceInv, "impedance")
+        
         if haskey(user, :resistance)
             parameter.resistance[index] = user[:resistance]::T * impedanceScale
         end
@@ -433,11 +448,7 @@ function parameterBranch!(system::PowerSystem; user...)
             parameter.reactance[index] = user[:reactance]::T * impedanceScale
         end
         if haskey(user, :susceptance)
-            admittanceScale = topu(unit, 1 / baseImpedanceInv, "admittance")
-            parameter.susceptance[index] = user[:susceptance]::T * admittanceScale
-        end
-        if haskey(user, :turnsRatio)
-            parameter.turnsRatio[index] = user[:turnsRatio]::T
+            parameter.susceptance[index] = user[:susceptance]::T * topu(unit, 1 / baseImpedanceInv, "admittance")
         end
         if haskey(user, :shiftAngle)
             parameter.shiftAngle[index] = user[:shiftAngle]::T * torad(unit, "voltage angle")
@@ -462,9 +473,9 @@ The function is used to add a new generator to the `PowerSystem` type and update
 `generator` field. The generator can be added to an already defined bus. 
 
     addGenerator!(system::PowerSystem; label, bus, status, active, reactive, magnitude,
-        minActive, maxActive, minReactive, maxReactive, lowerActive, minReactiveLower, 
-        maxReactiveLower, upperActive, minReactiveUpper, maxReactiveUpper,
-        loadFollowing, reactiveTimescale, reserve10minute, reserve30minute, area)
+        minActive, maxActive, minReactive, maxReactive, lowActive, minLowReactive, 
+        maxLowReactive, upActive, minUpReactive, maxUpReactive,
+        loadFollowing, reactiveTimescale, reserve10min, reserve30min, area)
 
 The generator is defined with the following parameters:
 * `label`: a unique label for the generator 
@@ -477,15 +488,15 @@ The generator is defined with the following parameters:
 * `maxActive` (pu or W): maximum allowed output active power value
 * `minReactive` (pu or VAr): minimum allowed output reactive power value
 * `maxReactive` (pu or VAr): maximum allowed output reactive power value
-* `lowerActive` (pu or W): lower allowed active power output value of PQ capability curve
-* `minReactiveLower` (pu or VAr): minimum allowed reactive power output value at lowerActive value
-* `maxReactiveLower` (pu or VAr): maximum allowed reactive power output value at lowerActive value
-* `upperActive` (pu or W): upper allowed active power output value of PQ capability curve
-* `minReactiveUpper` (pu or VAr): minimum allowed reactive power output value at upperActive value
-* `maxReactiveUpper` (pu or VAr): maximum allowed reactive power output value at upperActive value
+* `lowActive` (pu or W): lower allowed active power output value of PQ capability curve
+* `minLowReactive` (pu or VAr): minimum allowed reactive power output value at lowActive value
+* `maxLowReactive` (pu or VAr): maximum allowed reactive power output value at lowActive value
+* `upActive` (pu or W): upper allowed active power output value of PQ capability curve
+* `minUpReactive` (pu or VAr): minimum allowed reactive power output value at upActive value
+* `maxUpReactive` (pu or VAr): maximum allowed reactive power output value at upActive value
 * `loadFollowing` (pu or W per min): ramp rate for load following/AG
-* `reserve10minute` (pu or W): ramp rate for 10-minute reserves
-* `reserve30minute` (pu or W): ramp rate for 30-minute reserves
+* `reserve10min` (pu or W): ramp rate for 10-minute reserves
+* `reserve30min` (pu or W): ramp rate for 30-minute reserves
 * `reactiveTimescale`  (pu or VAr per min): ramp rate for reactive power, two seconds timescale
 * `area`: area participation factor
 
@@ -504,10 +515,10 @@ addGenerator!(system; label = 1, bus = 1, active = 0.5, reactive = 0.1)
 """
 function addGenerator!(system::PowerSystem; label::T, bus::T, area::T = 0.0, status::T = 1, 
     active::T = 0.0, reactive::T = 0.0, magnitude::T = 0.0, minActive::T = 0.0, 
-    maxActive::T = 0.0, minReactive::T = 0.0, maxReactive::T = 0.0, lowerActive::T = 0.0, 
-    minReactiveLower::T = 0.0, maxReactiveLower::T = 0.0, upperActive::T = 0.0, 
-    minReactiveUpper::T = 0.0, maxReactiveUpper::T = 0.0, loadFollowing::T = 0.0,
-    reserve10minute::T = 0.0, reserve30minute::T = 0.0, reactiveTimescale::T = 0.0)
+    maxActive::T = 0.0, minReactive::T = 0.0, maxReactive::T = 0.0, lowActive::T = 0.0, 
+    minLowReactive::T = 0.0, maxLowReactive::T = 0.0, upActive::T = 0.0, 
+    minUpReactive::T = 0.0, maxUpReactive::T = 0.0, loadFollowing::T = 0.0,
+    reserve10min::T = 0.0, reserve30min::T = 0.0, reactiveTimescale::T = 0.0)
 
     output = system.generator.output
     capability = system.generator.capability
@@ -529,11 +540,13 @@ function addGenerator!(system::PowerSystem; label::T, bus::T, area::T = 0.0, sta
         throw(ErrorException("The value $bus of the bus keyword does not exist in bus labels."))
     end
 
+    busIndex = system.bus.label[bus]
+
     basePowerInv = 1 / (unit.prefix["base power"] * system.base.power)
     activeScale = topu(unit, basePowerInv, "active power")
     reactiveScale = topu(unit, basePowerInv, "reactive power")
 
-    baseVoltageInv = 1 / (unit.prefix["base voltage"] * base)
+    baseVoltageInv = 1 / (unit.prefix["base voltage"] * system.base.voltage[busIndex])
     voltageScale = topu(unit, baseVoltageInv, "voltage magnitude")
 
     system.generator.number += 1
@@ -556,16 +569,16 @@ function addGenerator!(system::PowerSystem; label::T, bus::T, area::T = 0.0, sta
     push!(capability.maxActive, maxActive * activeScale)
     push!(capability.minReactive, minReactive * reactiveScale)
     push!(capability.maxReactive, maxReactive * reactiveScale)
-    push!(capability.lowerActive, lowerActive * activeScale)
-    push!(capability.minReactiveLower, minReactiveLower * reactiveScale)
-    push!(capability.maxReactiveLower, maxReactiveLower * reactiveScale)
-    push!(capability.upperActive, upperActive * activeScale)
-    push!(capability.minReactiveUpper, minReactiveUpper * reactiveScale)
-    push!(capability.maxReactiveUpper, maxReactiveUpper * reactiveScale)
+    push!(capability.lowActive, lowActive * activeScale)
+    push!(capability.minLowReactive, minLowReactive * reactiveScale)
+    push!(capability.maxLowReactive, maxLowReactive * reactiveScale)
+    push!(capability.upActive, upActive * activeScale)
+    push!(capability.minUpReactive, minUpReactive * reactiveScale)
+    push!(capability.maxUpReactive, maxUpReactive * reactiveScale)
 
     push!(ramping.loadFollowing, loadFollowing * activeScale)
-    push!(ramping.reserve10minute, reserve10minute * activeScale)
-    push!(ramping.reserve30minute, reserve30minute * activeScale)
+    push!(ramping.reserve10min, reserve10min * activeScale)
+    push!(ramping.reserve30min, reserve30min * activeScale)
     push!(ramping.reactiveTimescale, reactiveTimescale * reactiveScale)
 
     push!(voltage.magnitude, magnitude * voltageScale)

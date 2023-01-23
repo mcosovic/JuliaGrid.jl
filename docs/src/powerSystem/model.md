@@ -32,9 +32,6 @@ Note that these functions can be executed at any time once all power system buse
 ```@docs
 powerSystem
 ```
-```@docs
-@base
-```
 
 ---
 
@@ -74,4 +71,11 @@ parameterBranch!
 ## Generator Functions
 ```@docs
 addGenerator!
+```
+
+---
+
+## Units
+```@docs
+@base
 ```

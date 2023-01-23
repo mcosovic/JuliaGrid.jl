@@ -56,8 +56,8 @@ mutable struct BranchRating
 end
 
 mutable struct BranchVoltage
-    minAngleDifference::Array{Float64,1}
-    maxAngleDifference::Array{Float64,1}
+    minDiffAngle::Array{Float64,1}
+    maxDiffAngle::Array{Float64,1}
 end
 
 mutable struct BranchLayout
@@ -87,18 +87,18 @@ mutable struct GeneratorCapability
     maxActive::Array{Float64,1}
     minReactive::Array{Float64,1}
     maxReactive::Array{Float64,1}
-    lowerActive::Array{Float64,1}
-    minReactiveLower::Array{Float64,1}
-    maxReactiveLower::Array{Float64,1}
-    upperActive::Array{Float64,1}
-    minReactiveUpper::Array{Float64,1}
-    maxReactiveUpper::Array{Float64,1}
+    lowActive::Array{Float64,1}
+    minLowReactive::Array{Float64,1}
+    maxLowReactive::Array{Float64,1}
+    upActive::Array{Float64,1}
+    minUpReactive::Array{Float64,1}
+    maxUpReactive::Array{Float64,1}
 end
 
 mutable struct GeneratorRamping
     loadFollowing::Array{Float64,1}
-    reserve10minute::Array{Float64,1}
-    reserve30minute::Array{Float64,1}
+    reserve10min::Array{Float64,1}
+    reserve30min::Array{Float64,1}
     reactiveTimescale::Array{Float64,1}
 end
 
@@ -171,14 +171,13 @@ end
 
 """
 The function builds the composite type `PowerSystem` and populates `bus`, `branch`, 
-`generator` and `base` fields. In general, once the composite type `PowerSystem` has been 
-created, it is possible to add new buses, branches, or generators, or modify the 
-parameters of existing ones.
+`generator` and `base` fields. The function can be used by passing the path to the HDF5 
+file with the .h5 extension or a Matpower file with the .m extension as an argument.  
 
-The `powerSystem()` function can be used by passing the path to the HDF5 file with the .h5 
-extension or a Matpower file with the .m extension as an argument. For example: 
-    
     powerSystem("pathToExternalData/name.extension")
+
+In general, once the composite type `PowerSystem` has been created, it is possible to add 
+new buses, branches, or generators, or modify the parameters of existing ones.
 
 # Example
 ```jldoctest
@@ -211,15 +210,16 @@ end
 
 """
 Alternatively, the `PowerSystem` composite type can be initialized by calling the function 
-without any arguments. This allows the model to be built from scratch and modified as 
-needed. 
+without any arguments. 
 
     powerSystem()
 
-# Example
-```jldoctest
-system = powerSystem()
-```
+This allows the model to be built from scratch and modified as needed.
+
+# Units
+JuliaGrid stores all data in per-unit (pu) and radian (rad) format which are fixed, the 
+exceptions are base values in volt-ampere (VA) and volt (V) which can be changed using the 
+macro [@base](@ref @base).
 """
 function powerSystem()
     af = Array{Float64,1}(undef, 0)
@@ -336,8 +336,8 @@ function loadBranch(system::PowerSystem, hdf5::HDF5.File)
     branch.rating.emergency = arrayFloat(ratingh5, "emergency", branch.number)
 
     voltageh5 = hdf5["branch/voltage"]
-    branch.voltage.minAngleDifference = arrayFloat(voltageh5, "minAngleDifference", branch.number)
-    branch.voltage.maxAngleDifference = arrayFloat(voltageh5, "maxAngleDifference", branch.number)
+    branch.voltage.minDiffAngle = arrayFloat(voltageh5, "minDiffAngle", branch.number)
+    branch.voltage.maxDiffAngle = arrayFloat(voltageh5, "maxDiffAngle", branch.number)
 
     branch.layout.status = arrayInteger(layouth5, "status", branch.number)
     branch.layout.from::Array{Int64,1} = read(layouth5["from"])
@@ -368,17 +368,17 @@ function loadGenerator(system::PowerSystem, hdf5::HDF5.File)
     generator.capability.maxActive = arrayFloat(capabilityh5, "maxActive", generator.number)
     generator.capability.minReactive = arrayFloat(capabilityh5, "minReactive", generator.number)
     generator.capability.maxReactive = arrayFloat(capabilityh5, "maxReactive", generator.number)
-    generator.capability.lowerActive = arrayFloat(capabilityh5, "lowerActive", generator.number)
-    generator.capability.minReactiveLower = arrayFloat(capabilityh5, "minReactiveLower", generator.number)
-    generator.capability.maxReactiveLower = arrayFloat(capabilityh5, "maxReactiveLower", generator.number)
-    generator.capability.upperActive = arrayFloat(capabilityh5, "upperActive", generator.number)
-    generator.capability.minReactiveUpper = arrayFloat(capabilityh5, "minReactiveUpper", generator.number)
-    generator.capability.maxReactiveUpper = arrayFloat(capabilityh5, "maxReactiveUpper", generator.number)
+    generator.capability.lowActive = arrayFloat(capabilityh5, "lowActive", generator.number)
+    generator.capability.minLowReactive = arrayFloat(capabilityh5, "minLowReactive", generator.number)
+    generator.capability.maxLowReactive = arrayFloat(capabilityh5, "maxLowReactive", generator.number)
+    generator.capability.upActive = arrayFloat(capabilityh5, "upActive", generator.number)
+    generator.capability.minUpReactive = arrayFloat(capabilityh5, "minUpReactive", generator.number)
+    generator.capability.maxUpReactive = arrayFloat(capabilityh5, "maxUpReactive", generator.number)
 
     rampingh5 = hdf5["generator/ramping"]
     generator.ramping.loadFollowing = arrayFloat(rampingh5, "loadFollowing", generator.number)
-    generator.ramping.reserve10minute = arrayFloat(rampingh5, "reserve10minute", generator.number)
-    generator.ramping.reserve30minute = arrayFloat(rampingh5, "reserve30minute", generator.number)
+    generator.ramping.reserve10min = arrayFloat(rampingh5, "reserve10min", generator.number)
+    generator.ramping.reserve30min = arrayFloat(rampingh5, "reserve30min", generator.number)
     generator.ramping.reactiveTimescale = arrayFloat(rampingh5, "reactiveTimescale", generator.number)
 
     generator.voltage.magnitude = arrayFloat(hdf5["generator/voltage"], "magnitude", generator.number)
@@ -570,8 +570,8 @@ function loadBranch(system::PowerSystem, branchLine::Array{String,1})
     branch.rating.shortTerm = similar(branch.parameter.resistance)
     branch.rating.emergency = similar(branch.parameter.resistance)
 
-    branch.voltage.minAngleDifference = similar(branch.parameter.resistance)
-    branch.voltage.maxAngleDifference = similar(branch.parameter.resistance)
+    branch.voltage.minDiffAngle = similar(branch.parameter.resistance)
+    branch.voltage.maxDiffAngle = similar(branch.parameter.resistance)
 
     branch.layout.from = fill(0, branch.number)
     branch.layout.to = similar( branch.layout.from)
@@ -593,8 +593,8 @@ function loadBranch(system::PowerSystem, branchLine::Array{String,1})
         branch.rating.shortTerm[k] = parse(Float64, data[7]) * basePowerInv
         branch.rating.emergency[k] = parse(Float64, data[8]) * basePowerInv
 
-        branch.voltage.minAngleDifference[k] = parse(Float64, data[12]) * deg2rad
-        branch.voltage.maxAngleDifference[k] = parse(Float64, data[13]) * deg2rad
+        branch.voltage.minDiffAngle[k] = parse(Float64, data[12]) * deg2rad
+        branch.voltage.maxDiffAngle[k] = parse(Float64, data[13]) * deg2rad
 
         branch.layout.status[k] = parse(Int64, data[11])
         branch.layout.from[k] = system.bus.label[parse(Int64, data[1])]
@@ -621,16 +621,16 @@ function loadGenerator(system::PowerSystem, generatorLine::Array{String,1}, gene
     generator.capability.maxActive = similar(generator.output.active)
     generator.capability.minReactive = similar(generator.output.active)
     generator.capability.maxReactive = similar(generator.output.active)
-    generator.capability.lowerActive = similar(generator.output.active)
-    generator.capability.minReactiveLower = similar(generator.output.active)
-    generator.capability.maxReactiveLower = similar(generator.output.active)
-    generator.capability.upperActive = similar(generator.output.active)
-    generator.capability.minReactiveUpper = similar(generator.output.active)
-    generator.capability.maxReactiveUpper = similar(generator.output.active)
+    generator.capability.lowActive = similar(generator.output.active)
+    generator.capability.minLowReactive = similar(generator.output.active)
+    generator.capability.maxLowReactive = similar(generator.output.active)
+    generator.capability.upActive = similar(generator.output.active)
+    generator.capability.minUpReactive = similar(generator.output.active)
+    generator.capability.maxUpReactive = similar(generator.output.active)
 
     generator.ramping.loadFollowing = similar(generator.output.active)
-    generator.ramping.reserve10minute = similar(generator.output.active)
-    generator.ramping.reserve30minute = similar(generator.output.active)
+    generator.ramping.reserve10min = similar(generator.output.active)
+    generator.ramping.reserve30min = similar(generator.output.active)
     generator.ramping.reactiveTimescale = similar(generator.output.active)
 
     generator.voltage.magnitude = similar(generator.output.active)
@@ -651,16 +651,16 @@ function loadGenerator(system::PowerSystem, generatorLine::Array{String,1}, gene
         generator.capability.maxActive[k] = parse(Float64, data[9]) * basePowerInv
         generator.capability.minReactive[k] = parse(Float64, data[5]) * basePowerInv
         generator.capability.maxReactive[k] = parse(Float64, data[4]) * basePowerInv
-        generator.capability.lowerActive[k] = parse(Float64, data[11]) * basePowerInv
-        generator.capability.minReactiveLower[k] = parse(Float64, data[13]) * basePowerInv
-        generator.capability.maxReactiveLower[k] = parse(Float64, data[14]) * basePowerInv
-        generator.capability.upperActive[k] = parse(Float64, data[12]) * basePowerInv
-        generator.capability.minReactiveUpper[k] = parse(Float64, data[15]) * basePowerInv
-        generator.capability.maxReactiveUpper[k] = parse(Float64, data[16]) * basePowerInv
+        generator.capability.lowActive[k] = parse(Float64, data[11]) * basePowerInv
+        generator.capability.minLowReactive[k] = parse(Float64, data[13]) * basePowerInv
+        generator.capability.maxLowReactive[k] = parse(Float64, data[14]) * basePowerInv
+        generator.capability.upActive[k] = parse(Float64, data[12]) * basePowerInv
+        generator.capability.minUpReactive[k] = parse(Float64, data[15]) * basePowerInv
+        generator.capability.maxUpReactive[k] = parse(Float64, data[16]) * basePowerInv
 
         generator.ramping.loadFollowing[k] = parse(Float64, data[17]) * basePowerInv
-        generator.ramping.reserve10minute[k] = parse(Float64, data[18]) * basePowerInv
-        generator.ramping.reserve30minute[k] = parse(Float64, data[19]) * basePowerInv
+        generator.ramping.reserve10min[k] = parse(Float64, data[18]) * basePowerInv
+        generator.ramping.reserve30min[k] = parse(Float64, data[19]) * basePowerInv
         generator.ramping.reactiveTimescale[k] = parse(Float64, data[20]) * basePowerInv
 
         generator.voltage.magnitude[k] = parse(Float64, data[6])

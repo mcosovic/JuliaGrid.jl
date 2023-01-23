@@ -12,9 +12,9 @@ volt (V), but you can modify the prefixes using the macro:
     
     @base(power, voltage)
     
-Prefixes must be specified according to the International System of Units and should be 
-included with the unit of power (VA) or unit of voltage (V). Keep in mind that the macro 
-must be used before creating the composite type `PowerSystem`.
+Prefixes must be specified according to the [SI prefixes](nist.gov/pml/owm/metric-si-prefixes) 
+and should be included with the unit of power (VA) or unit of voltage (V). Keep in mind 
+that the macro must be used before creating the composite type `PowerSystem`.
 
 # Example
 ```jldoctest

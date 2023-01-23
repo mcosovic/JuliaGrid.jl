@@ -47,8 +47,8 @@
     @test systemMat.branch.rating.shortTerm == systemH5.branch.rating.shortTerm
     @test systemMat.branch.rating.emergency == systemH5.branch.rating.emergency
  
-    @test systemMat.branch.voltage.minAngleDifference == systemH5.branch.voltage.minAngleDifference
-    @test systemMat.branch.voltage.maxAngleDifference == systemH5.branch.voltage.maxAngleDifference
+    @test systemMat.branch.voltage.minDiffAngle == systemH5.branch.voltage.minDiffAngle
+    @test systemMat.branch.voltage.maxDiffAngle == systemH5.branch.voltage.maxDiffAngle
  
     ######## Generator Data ##########
     @test systemMat.generator.label == systemH5.generator.label
@@ -67,16 +67,16 @@
     @test systemMat.generator.capability.maxActive == systemH5.generator.capability.maxActive
     @test systemMat.generator.capability.minReactive == systemH5.generator.capability.minReactive
     @test systemMat.generator.capability.maxReactive == systemH5.generator.capability.maxReactive
-    @test systemMat.generator.capability.lowerActive == systemH5.generator.capability.lowerActive
-    @test systemMat.generator.capability.minReactiveLower == systemH5.generator.capability.minReactiveLower
-    @test systemMat.generator.capability.maxReactiveLower == systemH5.generator.capability.maxReactiveLower
-    @test systemMat.generator.capability.upperActive == systemH5.generator.capability.upperActive
-    @test systemMat.generator.capability.minReactiveUpper == systemH5.generator.capability.minReactiveUpper
-    @test systemMat.generator.capability.maxReactiveUpper == systemH5.generator.capability.maxReactiveUpper
+    @test systemMat.generator.capability.lowActive == systemH5.generator.capability.lowActive
+    @test systemMat.generator.capability.minLowReactive == systemH5.generator.capability.minLowReactive
+    @test systemMat.generator.capability.maxLowReactive == systemH5.generator.capability.maxLowReactive
+    @test systemMat.generator.capability.upActive == systemH5.generator.capability.upActive
+    @test systemMat.generator.capability.minUpReactive == systemH5.generator.capability.minUpReactive
+    @test systemMat.generator.capability.maxUpReactive == systemH5.generator.capability.maxUpReactive
  
     @test systemMat.generator.ramping.loadFollowing == systemH5.generator.ramping.loadFollowing
-    @test systemMat.generator.ramping.reserve10minute == systemH5.generator.ramping.reserve10minute
-    @test systemMat.generator.ramping.reserve30minute == systemH5.generator.ramping.reserve30minute
+    @test systemMat.generator.ramping.reserve10min == systemH5.generator.ramping.reserve10min
+    @test systemMat.generator.ramping.reserve30min == systemH5.generator.ramping.reserve30min
     @test systemMat.generator.ramping.reactiveTimescale == systemH5.generator.ramping.reactiveTimescale
  
     @test systemMat.generator.cost.active.model == systemH5.generator.cost.active.model

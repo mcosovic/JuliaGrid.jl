@@ -189,15 +189,15 @@ function saveBranch(system::PowerSystem, labelBus::Array{Int64,1}, file)
     attrs(file["branch/rating/emergency"])["type"] = "float"
     attrs(file["branch/rating/emergency"])["format"] = format
 
-    format = compresseArray(file, voltage.minAngleDifference, "branch/voltage/minAngleDifference")
-    attrs(file["branch/voltage/minAngleDifference"])["unit"] = "radian (rad)"
-    attrs(file["branch/voltage/minAngleDifference"])["type"] = "float"
-    attrs(file["branch/voltage/minAngleDifference"])["format"] = format
+    format = compresseArray(file, voltage.minDiffAngle, "branch/voltage/minDiffAngle")
+    attrs(file["branch/voltage/minDiffAngle"])["unit"] = "radian (rad)"
+    attrs(file["branch/voltage/minDiffAngle"])["type"] = "float"
+    attrs(file["branch/voltage/minDiffAngle"])["format"] = format
 
-    format = compresseArray(file, voltage.maxAngleDifference, "branch/voltage/maxAngleDifference")
-    attrs(file["branch/voltage/maxAngleDifference"])["unit"] = "radian (rad)"
-    attrs(file["branch/voltage/maxAngleDifference"])["type"] = "float"
-    attrs(file["branch/voltage/maxAngleDifference"])["format"] = format
+    format = compresseArray(file, voltage.maxDiffAngle, "branch/voltage/maxDiffAngle")
+    attrs(file["branch/voltage/maxDiffAngle"])["unit"] = "radian (rad)"
+    attrs(file["branch/voltage/maxDiffAngle"])["type"] = "float"
+    attrs(file["branch/voltage/maxDiffAngle"])["format"] = format
 
     format = compresseArray(file, layout.status, "branch/layout/status")
     attrs(file["branch/layout/status"])["in-service"] = 1
@@ -284,41 +284,41 @@ function saveGenerator(system::PowerSystem, labelBus::Array{Int64,1}, file)
     attrs(file["generator/capability/maxReactive"])["type"] = "float"
     attrs(file["generator/capability/maxReactive"])["format"] = format
 
-    format = compresseArray(file, capability.lowerActive, "generator/capability/lowerActive")
-    attrs(file["generator/capability/lowerActive"])["unit"] = "per-unit (p.u.)"
-    attrs(file["generator/capability/lowerActive"])["SI unit"] = "watt (W)"
-    attrs(file["generator/capability/lowerActive"])["type"] = "float"
-    attrs(file["generator/capability/lowerActive"])["format"] = format
+    format = compresseArray(file, capability.lowActive, "generator/capability/lowActive")
+    attrs(file["generator/capability/lowActive"])["unit"] = "per-unit (p.u.)"
+    attrs(file["generator/capability/lowActive"])["SI unit"] = "watt (W)"
+    attrs(file["generator/capability/lowActive"])["type"] = "float"
+    attrs(file["generator/capability/lowActive"])["format"] = format
 
-    format = compresseArray(file, capability.minReactiveLower, "generator/capability/minReactiveLower")
-    attrs(file["generator/capability/minReactiveLower"])["unit"] = "per-unit (p.u.)"
-    attrs(file["generator/capability/minReactiveLower"])["SI unit"] = "volt-ampere reactive (VAr)"
-    attrs(file["generator/capability/minReactiveLower"])["type"] = "float"
-    attrs(file["generator/capability/minReactiveLower"])["format"] = format
+    format = compresseArray(file, capability.minLowReactive, "generator/capability/minLowReactive")
+    attrs(file["generator/capability/minLowReactive"])["unit"] = "per-unit (p.u.)"
+    attrs(file["generator/capability/minLowReactive"])["SI unit"] = "volt-ampere reactive (VAr)"
+    attrs(file["generator/capability/minLowReactive"])["type"] = "float"
+    attrs(file["generator/capability/minLowReactive"])["format"] = format
 
-    format = compresseArray(file, capability.maxReactiveLower, "generator/capability/maxReactiveLower")
-    attrs(file["generator/capability/maxReactiveLower"])["unit"] = "per-unit (p.u.)"
-    attrs(file["generator/capability/maxReactiveLower"])["SI unit"] = "volt-ampere reactive (VAr)"
-    attrs(file["generator/capability/maxReactiveLower"])["type"] = "float"
-    attrs(file["generator/capability/maxReactiveLower"])["format"] = format
+    format = compresseArray(file, capability.maxLowReactive, "generator/capability/maxLowReactive")
+    attrs(file["generator/capability/maxLowReactive"])["unit"] = "per-unit (p.u.)"
+    attrs(file["generator/capability/maxLowReactive"])["SI unit"] = "volt-ampere reactive (VAr)"
+    attrs(file["generator/capability/maxLowReactive"])["type"] = "float"
+    attrs(file["generator/capability/maxLowReactive"])["format"] = format
 
-    format = compresseArray(file, capability.upperActive, "generator/capability/upperActive")
-    attrs(file["generator/capability/upperActive"])["unit"] = "per-unit (p.u.)"
-    attrs(file["generator/capability/upperActive"])["SI unit"] = "watt (W)"
-    attrs(file["generator/capability/upperActive"])["type"] = "float"
-    attrs(file["generator/capability/upperActive"])["format"] = format
+    format = compresseArray(file, capability.upActive, "generator/capability/upActive")
+    attrs(file["generator/capability/upActive"])["unit"] = "per-unit (p.u.)"
+    attrs(file["generator/capability/upActive"])["SI unit"] = "watt (W)"
+    attrs(file["generator/capability/upActive"])["type"] = "float"
+    attrs(file["generator/capability/upActive"])["format"] = format
 
-    format = compresseArray(file, capability.minReactiveUpper, "generator/capability/minReactiveUpper")
-    attrs(file["generator/capability/minReactiveUpper"])["unit"] = "per-unit (p.u.)"
-    attrs(file["generator/capability/minReactiveUpper"])["SI unit"] = "volt-ampere reactive (VAr)"
-    attrs(file["generator/capability/minReactiveUpper"])["type"] = "float"
-    attrs(file["generator/capability/minReactiveUpper"])["format"] = format
+    format = compresseArray(file, capability.minUpReactive, "generator/capability/minUpReactive")
+    attrs(file["generator/capability/minUpReactive"])["unit"] = "per-unit (p.u.)"
+    attrs(file["generator/capability/minUpReactive"])["SI unit"] = "volt-ampere reactive (VAr)"
+    attrs(file["generator/capability/minUpReactive"])["type"] = "float"
+    attrs(file["generator/capability/minUpReactive"])["format"] = format
 
-    format = compresseArray(file, capability.maxReactiveUpper, "generator/capability/maxReactiveUpper")
-    attrs(file["generator/capability/maxReactiveUpper"])["unit"] = "per-unit (p.u.)"
-    attrs(file["generator/capability/maxReactiveUpper"])["SI unit"] = "volt-ampere reactive (VAr)"
-    attrs(file["generator/capability/maxReactiveUpper"])["type"] = "float"
-    attrs(file["generator/capability/maxReactiveUpper"])["format"] = format
+    format = compresseArray(file, capability.maxUpReactive, "generator/capability/maxUpReactive")
+    attrs(file["generator/capability/maxUpReactive"])["unit"] = "per-unit (p.u.)"
+    attrs(file["generator/capability/maxUpReactive"])["SI unit"] = "volt-ampere reactive (VAr)"
+    attrs(file["generator/capability/maxUpReactive"])["type"] = "float"
+    attrs(file["generator/capability/maxUpReactive"])["format"] = format
 
     format = compresseArray(file, ramping.loadFollowing, "generator/ramping/loadFollowing")
     attrs(file["generator/ramping/loadFollowing"])["unit"] = "per-unit per minute (p.u./min)"
@@ -326,17 +326,17 @@ function saveGenerator(system::PowerSystem, labelBus::Array{Int64,1}, file)
     attrs(file["generator/ramping/loadFollowing"])["type"] = "float"
     attrs(file["generator/ramping/loadFollowing"])["format"] = format
 
-    format = compresseArray(file, ramping.reserve10minute, "generator/ramping/reserve10minute")
-    attrs(file["generator/ramping/reserve10minute"])["unit"] = "per-unit (p.u.)"
-    attrs(file["generator/ramping/reserve10minute"])["SI unit"] = "watt (W)"
-    attrs(file["generator/ramping/reserve10minute"])["type"] = "float"
-    attrs(file["generator/ramping/reserve10minute"])["format"] = format
+    format = compresseArray(file, ramping.reserve10min, "generator/ramping/reserve10min")
+    attrs(file["generator/ramping/reserve10min"])["unit"] = "per-unit (p.u.)"
+    attrs(file["generator/ramping/reserve10min"])["SI unit"] = "watt (W)"
+    attrs(file["generator/ramping/reserve10min"])["type"] = "float"
+    attrs(file["generator/ramping/reserve10min"])["format"] = format
 
-    format = compresseArray(file, ramping.reserve30minute, "generator/ramping/reserve30minute")
-    attrs(file["generator/ramping/reserve30minute"])["unit"] = "per-unit (p.u.)"
-    attrs(file["generator/ramping/reserve30minute"])["SI unit"] = "watt (W)"
-    attrs(file["generator/ramping/reserve30minute"])["type"] = "float"
-    attrs(file["generator/ramping/reserve30minute"])["format"] = format
+    format = compresseArray(file, ramping.reserve30min, "generator/ramping/reserve30min")
+    attrs(file["generator/ramping/reserve30min"])["unit"] = "per-unit (p.u.)"
+    attrs(file["generator/ramping/reserve30min"])["SI unit"] = "watt (W)"
+    attrs(file["generator/ramping/reserve30min"])["type"] = "float"
+    attrs(file["generator/ramping/reserve30min"])["format"] = format
 
     format = compresseArray(file, ramping.reactiveTimescale, "generator/ramping/reactiveTimescale")
     attrs(file["generator/ramping/reactiveTimescale"])["unit"] = "per-unit per minute (p.u./min)"
