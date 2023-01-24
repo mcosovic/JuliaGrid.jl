@@ -82,3 +82,9 @@ addGenerator!
 ```@docs
 @power
 ```
+```@docs
+@voltage
+```
+```@docs
+@parameter
+```

@@ -47,16 +47,13 @@ possible to combine SI units with/without prefixes with per-units (pu).
 Changing the unit of active power is reflected in the following quantities:
 * [`addBus!()`](@ref addBus!): `active`, `conductance` 
 * [`shuntBus!()`](@ref shuntBus!): `conductance` 
-* [`addGenerator!()`](@ref addGenerator!): `active`, `minActive`, `maxActive`, `lowActive`,
-`upActive`, `loadFollowing`, `reserve10min`, `reserve30min`
+* [`addGenerator!()`](@ref addGenerator!): `active`, `minActive`, `maxActive`, `lowActive`, `upActive`, `loadFollowing`, `reserve10min`, `reserve30min`
 * [`addActiveCost!()`](@ref addActiveCost!): `piecewise`, `polynomial`.
 
 Changing the unit of reactive power unit is reflected in the following quantities:
 * [`addBus!()`](@ref addBus!): `reactive`, `susceptance` 
 * [`shuntBus!()`](@ref shuntBus!): `susceptance` 
-* [`addGenerator!()`](@ref addGenerator!): `reactive`, `minReactive`, `maxReactive`, 
-`minLowReactive`, `maxLowReactive`, `minUpReactive`, `maxUpReactive`, 
-`reactiveTimescale`
+* [`addGenerator!()`](@ref addGenerator!): `reactive`, `minReactive`, `maxReactive`, `minLowReactive`, `maxLowReactive`, `minUpReactive`, `maxUpReactive`, `reactiveTimescale`
 * [`addReactiveCost!()`](@ref addReactiveCost!): `piecewise`, `polynomial`.
 
 Changing the unit of apparent power unit is reflected in the following quantities:
@@ -85,31 +82,29 @@ end
 """
 JuliaGrid stores all data related with voltages in per-units and radians, and these cannot 
 be altered. However, the voltage magnitude and angles units of the built-in functions used 
-to add or modified power system elements can be modified using the macro command:
+to add or modified power system elements can be modified using the macro:
 
     @voltage(magnitude, angle)
     
-Prefix must be specified according to the International System of Units and should be 
-included with the unit of voltage magnitude (V). The second option is to define the unit of
-voltage magnitude in per-unit (pu). The unit of the voltage angle should be given in radian 
+Prefixes must be specified according to the 
+[SI prefixes](https://www.nist.gov/pml/owm/metric-si-prefixes) and should be included with 
+the unit of voltage magnitude (V). The second option is to define the unit of voltage 
+magnitude in per-unit (pu). The unit of the voltage angle should be given in radian 
 (rad) or degree (deg). 
+
+Changing the unit of voltage magnitude is reflected in the following quantities:
+* [`addBus!()`](@ref addBus!): `magnitude`, `minMagnitude`, `maxMagnitude` 
+* [`addGenerator!()`](@ref addGenerator!): `magnitude`.
+
+Changing the unit of voltage angle is reflected in the following quantities:
+* [`addBus!()`](@ref addBus!): `angle`, `susceptance` 
+* [`addBranch!()`](@ref addBranch!): `shiftAngle`, `minDiffAngle`, `maxDiffAngle`
+* [`parameterBranch!()`](@ref parameterBranch!): `shiftAngle` 
 
 # Example
 ```jldoctest
 @voltage(kV, deg)
 ```
-
-Changing the unit of voltage magnitude is reflected in the following quantities in specific 
-functions:
-* [`addBus!()`](@ref addBus!): `magnitude`, `minMagnitude`, `maxMagnitude` 
-* [`addGenerator!()`](@ref addGenerator!): `magnitude`.
-
-Changing the unit of voltage angle is reflected in the following quantities in specific 
-functions:
-* [`addBus!()`](@ref addBus!): `angle`, `susceptance` 
-* [`addBranch!()`](@ref addBranch!): `shiftAngle`, `minAngleDifference`, `maxAngleDifference`
-* [`parameterBranch!()`](@ref parameterBranch!): `shiftAngle` 
-
 """
 macro voltage(magnitude::Symbol, angle::Symbol)
     magnitude = string(magnitude)
@@ -123,29 +118,32 @@ end
 """
 JuliaGrid stores all data related with impedances and admittancies in per-units, and these 
 cannot be altered. However, units of impedance and admittance of the built-in functions 
-used to add or modified power system elements can be modified using the macro command:
+used to add or modified power system elements can be modified using the macro:
 
     @parameter(impedance, admittance)
     
-Prefix must be specified according to the International System of Units and should be 
+Prefixes must be specified according to the 
+[SI prefixes](https://www.nist.gov/pml/owm/metric-si-prefixes) and should be 
 included with the unit of impedance (Ω) or unit of admittance (S). The second option is to 
 define the units in per-unit (pu). 
 
-# Example
-```jldoctest
-@voltage(Ω, pu)
-```
+In the case where impedance and admittance are being used in SI units (Ω and S) and these 
+units are related to the transformer, the assignment must be based on the primary side of 
+the transformer.
 
 Changing the units of impedance is reflected in the following quantities in specific 
 functions:
 * [`addBranch!()`](@ref addBranch!): `resistance`, `reactance`
 * [`parameterBranch!()`](@ref parameterBranch!): `resistance`, `reactance`
 
-Changing the units of admittance is reflected in the following quantities in specific 
-functions:
+Changing the units of admittance is reflected in the following quantities:
 * [`addBranch!()`](@ref addBranch!): `susceptance`
 * [`parameterBranch!()`](@ref parameterBranch!): `susceptance`
 
+# Example
+```jldoctest
+@voltage(Ω, pu)
+```
 """
 macro parameter(impedance::Symbol, admittance::Symbol)
     impedance = string(impedance)

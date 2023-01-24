@@ -100,11 +100,13 @@ end
 
 """
 The function is used to set a slack bus, and it can also be used to dynamically change the 
-slack bus. Every time the function is executed, the previous slack bus becomes a demand or 
-generator bus, depending on whether the bus has a generator. The bus label should be 
-specified using the `label` keyword argument and should match an already defined bus label.
+slack bus. 
 
     slackBus!(system::PowerSystem; label)
+
+Every time the function is executed, the previous slack bus becomes a demand or generator 
+bus, depending on whether the bus has a generator. The bus label should be specified using 
+the `label` keyword argument and should match an already defined bus label.
 
 # Example
 ```jldoctest
@@ -135,13 +137,14 @@ end
 
 """
 This function enables the modification of the `conductance` and `susceptance` parameters 
-of a shunt element connected to a bus. The `label` keyword must match an existing bus 
-label. If either `conductance` or `susceptance` is left out, the corresponding value will 
-remain unchanged. Additionally, this function automatically updates the `acModel` field, 
-eliminating the need to rebuild the model from scratch when making changes to these 
-parameters.
+of a shunt element connected to a bus. 
 
     shuntBus!(system::PowerSystem; label, conductance, susceptance)
+
+The `label` keyword must match an existing bus label. If either `conductance` or 
+`susceptance` is left out, the corresponding value will remain unchanged. Additionally, 
+this function automatically updates the `acModel` field, eliminating the need to rebuild 
+the model from scratch when making changes to these parameters.
 
 # Units
 The input units are in per-units by default, but they can be modified using the 
@@ -322,10 +325,11 @@ end
 """
 The function enables the switching of the operational `status` of a branch, identified by 
 its `label`, within the `PowerSystem` system between in-service and out-of-service. 
-This function updates the `acModel` and `dcModel` fields automatically when the operating 
-status of a branch is changed, thus eliminating the need to rebuild the model from scratch.
 
     statusBranch!(system::PowerSystem; label, status)
+
+This function updates the `acModel` and `dcModel` fields automatically when the operating 
+status of a branch is changed, thus eliminating the need to rebuild the model from scratch.
 
 # Example
 ```jldoctest
@@ -383,13 +387,15 @@ end
 """
 This function enables the alteration of the `resistance`, `reactance`, `susceptance`, 
 `turnsRatio` and `shiftAngle` parameters of a branch, identified by its `label`, within 
-the `PowerSystem`. If any of these parameters are omitted, their current values will be 
-retained. Additionally, this function updates the `acModel` and `dcModel` fields 
-automatically, removing the need to rebuild the model from scratch.
+the `PowerSystem`.
 
     parameterBranch!(system::PowerSystem; label, resistance, reactance, susceptance, 
         turnsRatio, shiftAngle)
 
+If any of these parameters are omitted, their current values will be retained. Additionally, 
+this function updates the `acModel` and `dcModel` fields automatically, removing the need 
+to rebuild the model from scratch.
+        
 # Units
 The input units are in per-units by default, but they can be modified using the following 
 macros [`@parameter`](@ref @parameter) and [`@voltage`](@ref @voltage).
