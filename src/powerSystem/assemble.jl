@@ -34,6 +34,7 @@ can be modified using macros [`@base`](@ref @base), [`@power`](@ref @power), and
 Creating a bus using the default unit system:
 ```jldoctest
 system = powerSystem()
+
 addBus!(system; label = 1, active = 0.25, reactive = -0.04, angle = 0.1745, base = 132e3)
 ```
 
@@ -44,6 +45,7 @@ Creating a bus using a custom unit system:
 @voltage(pu, deg)
 
 system = powerSystem()
+
 addBus!(system; label = 1, active = 25, reactive = -4, angle = 10, base = 132)
 ```
 """
@@ -161,12 +163,23 @@ the model from scratch when making changes to these parameters.
 The input units are in per-units by default, but they can be modified using the 
 [`@power`](@ref @power) macro.
 
-# Example
+# Examples
+To create a bus and modify its conductance using the default unit system:
 ```jldoctest
 system = powerSystem()
 
 addBus!(system; label = 1, active = 0.25, reactive = -0.04)
 shuntBus!(system; label = 1, conductance = 0.04)
+```
+
+To create a bus and modify its conductance using a custom unit system:
+```jldoctest
+@power(MW, MVAr, MVA)
+
+system = powerSystem()
+
+addBus!(system; label = 1, active = 25, reactive = -4)
+shuntBus!(system; label = 1, conductance = 4)
 ```
 """
 function shuntBus!(system::PowerSystem; user...)
@@ -209,7 +222,7 @@ A branch can be added between already defined buses.
     addBranch!(system::PowerSystem; label, from, to, status, resistance, reactance, 
         susceptance, turnsRatio, shiftAngle, longTerm, shortTerm, emergency, 
         minDiffAngle, maxDiffAngle)
-    
+
 The branch is defined with the following parameters:
 * `label`: unique branch label
 * `from`: from bus label, corresponds to the bus label
@@ -227,18 +240,33 @@ The branch is defined with the following parameters:
 * `maxDiffAngle` (rad or deg): maximum voltage angle difference value between from and to bus
 
 # Units
-The input units are in per-units and radians by default, but they can be modified using 
-the following macros [`@power`](@ref @power), [`@voltage`](@ref @voltage), and 
+The input units are in per-units and radians by default. The unit settings, such as the 
+selection between the per-unit system or the SI system with the appropriate prefixes, 
+can be modified using macros [`@power`](@ref @power), [`@voltage`](@ref @voltage), and
 [`@parameter`](@ref @parameter).
-    
-# Example
+  
+# Examples
+Creating a branch using the default unit system:
 ```jldoctest
 system = powerSystem()
 
 addBus!(system; label = 1, active = 0.25, reactive = -0.04)
 addBus!(system; label = 2, active = 0.15, reactive = 0.08)
 
-addBranch!(system; label = 1, from = 1, to = 2, resistance = 0.05, reactance = 0.12)
+addBranch!(system; label = 1, from = 1, to = 2, reactance = 0.12, shiftAngle = 0.1745)
+```
+
+# Examples
+Creating a branch using a custom unit system:
+```jldoctest
+@voltage(pu, deg)
+
+system = powerSystem()
+
+addBus!(system; label = 1, active = 0.25, reactive = -0.04)
+addBus!(system; label = 2, active = 0.15, reactive = 0.08)
+
+addBranch!(system; label = 1, from = 1, to = 2, reactance = 0.12, shiftAngle = 10)
 ```
 """
 function addBranch!(system::PowerSystem; label::T, from::T, to::T, status::T = 1,
