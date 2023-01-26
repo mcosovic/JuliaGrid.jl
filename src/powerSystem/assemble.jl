@@ -31,11 +31,13 @@ can be modified using macros [`@base`](@ref @base), [`@power`](@ref @power), and
 [`@voltage`](@ref @voltage).
  
 # Examples
+Creating a bus using the default unit system:
 ```jldoctest
 system = powerSystem()
 addBus!(system; label = 1, active = 0.25, reactive = -0.04, angle = 0.1745, base = 132e3)
 ```
 
+Creating a bus using a custom unit system:
 ```jldoctest
 @base(MVA, kV)
 @power(MW, MVAr, MVA)
