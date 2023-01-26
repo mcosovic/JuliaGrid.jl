@@ -72,6 +72,9 @@ parameterBranch!
 ```@docs
 addGenerator!
 ```
+```@docs
+statusGenerator!
+```
 
 ---
 

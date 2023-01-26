@@ -16,7 +16,7 @@ The bus is defined with the following parameters:
 * `conductance` (pu or W): the active power demanded of the shunt element
 * `susceptance` (pu or VAr): the reactive power injected of the shunt element
 * `magnitude` (pu or V): the initial value of the voltage magnitude
-* `angle` (rad or deg): the initial value of the voltage angle given in rad or deg
+* `angle` (rad or deg): the initial value of the voltage angle
 * `minMagnitude` (pu or V): the minimum voltage magnitude value
 * `maxMagnitude` (pu or V): the maximum voltage magnitude value
 * `base` (V): the base value of the voltage magnitude
@@ -25,15 +25,24 @@ The bus is defined with the following parameters:
 
 # Units
 The input units are in per-unit (pu) and radian (rad) by default as shown, except for the 
-keyword `base` which is given by default in volt (V). The unit and prefix settings can be 
-modified using the macros [`@base`](@ref @base), [`@power`](@ref @power), 
-[`@voltage`](@ref @voltage), and [`@parameter`](@ref @parameter).
+keyword `base` which is given by default in volt (V). The unit settings, such as the 
+selection between the per-unit system or the SI system with the appropriate prefixes, 
+can be modified using macros [`@base`](@ref @base), [`@power`](@ref @power), and 
+[`@voltage`](@ref @voltage).
  
-# Example
+# Examples
 ```jldoctest
 system = powerSystem()
+addBus!(system; label = 1, active = 0.25, reactive = -0.04, angle = 0.1745, base = 132e3)
+```
 
-addBus!(system; label = 1, active = 0.25, reactive = -0.04)
+```jldoctest
+@base(MVA, kV)
+@power(MW, MVAr, MVA)
+@voltage(pu, deg)
+
+system = powerSystem()
+addBus!(system; label = 1, active = 25, reactive = -4, angle = 10, base = 132)
 ```
 """
 function addBus!(system::PowerSystem; label::T, active::T = 0.0, reactive::T = 0.0,
@@ -612,16 +621,17 @@ defined generator.
 The function takes in four keywords as arguments:
 * `label`: corresponds to the already defined generator label
 * `model`: cost model, piecewise linear = 1, polynomial = 2
-* `piecewise`: cost model defined by input-output points (first column of matrix is values 
-of active power in per-unit (PU) or watt (W), second column is cost in currency/hour)
-* `polynomial`: second-degree polynomial coefficients (first element is square term, 
-second element is linear term, third element is constant term) in per-unit (PU) or watt (W) 
-depending on unit system used
+* `piecewise`: cost model defined by input-output points given as `Array{Float64,2}`:
+  * matrix first column holds the values of active power in per-unit (pu) or watt (W),
+  * matrix second column holds the cost, expressed in currency per hour, that is determined for the given active power. 
+* `polynomial`: second-degree polynomial coefficients given as `Array{Float64,1}`:
+  * the first element is a square term, given in units of ``(currency/pu)^2`` or ``(currency/W)^2``,  
+  * the second element is a linear term, given in units of ``(currency/pu)`` or ``(currency/W)``,
+  * the third element is a constant term, given in units of currency.
 
 # Units
-By default, the input units of power are per-units, but they can be modified using the 
-macro [`@power`](@ref @power).
-
+By default, the input units related with active powers are per-units, but they can be 
+modified using the macro [`@power`](@ref @power).
 
 # Example
 ```jldoctest
@@ -667,11 +677,12 @@ function addCost!(system::PowerSystem, label, model, polynomial, piecewise, cost
 
     basePowerInv = 1 / (unit.prefix["base power"] * system.base.power)
     activeScale = topu(unit, basePowerInv, "active power")
-    
+
     index = system.generator.label[label]
     cost.model[index] = model
-    cost.polynomial[index] = polynomial
-    cost.piecewise[index] = piecewise
+
+    cost.polynomial[index] = [polynomial[1] / activeScale^2, polynomial[2] / activeScale, polynomial[3]]
+    cost.piecewise[index] = [activeScale .* piecewise[:, 1] piecewise[:, 2]]
 end
 # """
 # The function allows changing the operating `status` of the generator, from in-service
@@ -781,54 +792,56 @@ end
 #     end
 # end
 
-# """
-# We advise the reader to read the section [in-depth DC Model](@ref inDepthDCModel),
-# which explains all the data involved in the field `dcModel`.
+"""
+The function generates vectors and matrices based on the power system topology and 
+parameters associated with DC analysis. We advise the reader to read the section 
+[in-depth DC Model](@ref inDepthDCModel), which explains all the data involved in the 
+field `dcModel`.
 
-#     dcModel!(system::PowerSystem)
+    dcModel!(system::PowerSystem)
 
-# The function updates the field `dcModel`. Once formed, the field will be automatically
-# updated when using functions [`addBranch!()`](@ref addBranch!), [`statusBranch!()`](@ref statusBranch!),
-# [`parameterBranch!()`](@ref parameterBranch!).
+The function updates the field `dcModel`. Once formed, the field will be automatically
+updated when using functions [`addBranch!()`](@ref addBranch!), 
+[`statusBranch!()`](@ref statusBranch!), [`parameterBranch!()`](@ref parameterBranch!).
 
-# # Example
-# ```jldoctest
-# system = powerSystem("case14.h5")
-# dcModel!(system)
-# ```
-# """
-# function dcModel!(system::PowerSystem)
-#     dc = system.dcModel
-#     layout = system.branch.layout
-#     parameter = system.branch.parameter
+# Example
+```jldoctest
+system = powerSystem("case14.h5")
+dcModel!(system)
+```
+"""
+function dcModel!(system::PowerSystem)
+    dc = system.dcModel
+    layout = system.branch.layout
+    parameter = system.branch.parameter
 
-#     dc.shiftActivePower = fill(0.0, system.bus.number)
-#     dc.admittance = fill(0.0, system.branch.number)
-#     nodalDiagonals = fill(0.0, system.bus.number)
-#     @inbounds for i = 1:system.branch.number
-#         if layout.status[i] == 1
-#             if parameter.turnsRatio[i] == 0
-#                 dc.admittance[i] = 1 / parameter.reactance[i]
-#             else
-#                 dc.admittance[i] = 1 / (parameter.turnsRatio[i] * parameter.reactance[i])
-#             end
+    dc.shiftActivePower = fill(0.0, system.bus.number)
+    dc.admittance = fill(0.0, system.branch.number)
+    nodalDiagonals = fill(0.0, system.bus.number)
+    @inbounds for i = 1:system.branch.number
+        if layout.status[i] == 1
+            if parameter.turnsRatio[i] == 0
+                dc.admittance[i] = 1 / parameter.reactance[i]
+            else
+                dc.admittance[i] = 1 / (parameter.turnsRatio[i] * parameter.reactance[i])
+            end
 
-#             from = layout.from[i]
-#             to = layout.to[i]
+            from = layout.from[i]
+            to = layout.to[i]
 
-#             shift = parameter.shiftAngle[i] * dc.admittance[i]
-#             dc.shiftActivePower[from] -= shift
-#             dc.shiftActivePower[to] += shift
+            shift = parameter.shiftAngle[i] * dc.admittance[i]
+            dc.shiftActivePower[from] -= shift
+            dc.shiftActivePower[to] += shift
 
-#             nodalDiagonals[from] += dc.admittance[i]
-#             nodalDiagonals[to] += dc.admittance[i]
-#         end
-#     end
+            nodalDiagonals[from] += dc.admittance[i]
+            nodalDiagonals[to] += dc.admittance[i]
+        end
+    end
 
-#     busIndex = collect(1:system.bus.number)
-#     dc.nodalMatrix = sparse([busIndex; layout.from; layout.to], [busIndex; layout.to; layout.from],
-#         [nodalDiagonals; -dc.admittance; -dc.admittance], system.bus.number, system.bus.number)
-# end
+    busIndex = collect(1:system.bus.number)
+    dc.nodalMatrix = sparse([busIndex; layout.from; layout.to], [busIndex; layout.to; layout.from],
+        [nodalDiagonals; -dc.admittance; -dc.admittance], system.bus.number, system.bus.number)
+end
 
 # ######### Update DC Nodal Matrix ##########
 # function dcNodalShiftUpdate!(system, index::Int64)
@@ -862,65 +875,67 @@ end
 #     end
 # end
 
-# """
-# We advise the reader to read the section [in-depth AC Model](@ref inDepthACModel),
-# which explains all the data involved in the field `acModel`.
+"""
+The function generates vectors and matrices based on the power system topology and 
+parameters associated with AC analysis. We advise the reader to read the section 
+[in-depth AC Model](@ref inDepthACModel), which explains all the data involved in the 
+field `acModel`.
 
-#     acModel!(system::PowerSystem)
+    acModel!(system::PowerSystem)
 
-# The function updates the field `acModel`. Once formed, the field will be automatically
-# updated when using functions [`addBranch!()`](@ref addBranch!), [`shuntBus!()`](@ref shuntBus!),
-# [`statusBranch!()`](@ref statusBranch!), [`parameterBranch!()`](@ref parameterBranch!).
+The function updates the field `acModel`. Once formed, the field will be automatically
+updated when using functions [`addBranch!()`](@ref addBranch!), [`shuntBus!()`](@ref shuntBus!),
+[`statusBranch!()`](@ref statusBranch!), [`parameterBranch!()`](@ref parameterBranch!).
 
-# # Example
-# ```jldoctest
-# system = powerSystem("case14.h5")
-# acModel!(system)
-# ```
-# """
-# function acModel!(system::PowerSystem)
-#     ac = system.acModel
-#     layout = system.branch.layout
-#     parameter = system.branch.parameter
+# Example
+```jldoctest
+system = powerSystem("case14.h5")
+acModel!(system)
+```
+"""
+function acModel!(system::PowerSystem)
+    ac = system.acModel
+    layout = system.branch.layout
+    parameter = system.branch.parameter
 
-#     ac.transformerRatio  = zeros(ComplexF64, system.branch.number)
-#     ac.admittance = zeros(ComplexF64, system.branch.number)
-#     ac.nodalToTo = zeros(ComplexF64, system.branch.number)
-#     ac.nodalFromFrom = zeros(ComplexF64, system.branch.number)
-#     ac.nodalFromTo = zeros(ComplexF64, system.branch.number)
-#     ac.nodalToFrom = zeros(ComplexF64, system.branch.number)
-#     nodalDiagonals = zeros(ComplexF64, system.bus.number)
-#     @inbounds for i = 1:system.branch.number
-#         if layout.status[i] == 1
-#             ac.admittance[i] = 1 / (parameter.resistance[i] + im * parameter.reactance[i])
+    ac.transformerRatio  = zeros(ComplexF64, system.branch.number)
+    ac.admittance = zeros(ComplexF64, system.branch.number)
+    ac.nodalToTo = zeros(ComplexF64, system.branch.number)
+    ac.nodalFromFrom = zeros(ComplexF64, system.branch.number)
+    ac.nodalFromTo = zeros(ComplexF64, system.branch.number)
+    ac.nodalToFrom = zeros(ComplexF64, system.branch.number)
+    nodalDiagonals = zeros(ComplexF64, system.bus.number)
+    @inbounds for i = 1:system.branch.number
+        if layout.status[i] == 1
+            ac.admittance[i] = 1 / (parameter.resistance[i] + im * parameter.reactance[i])
 
-#             if parameter.turnsRatio[i] == 0
-#                 ac.transformerRatio[i] = exp(im * parameter.shiftAngle[i])
-#             else
-#                 ac.transformerRatio[i] = parameter.turnsRatio[i] * exp(im * parameter.shiftAngle[i])
-#             end
+            if parameter.turnsRatio[i] == 0
+                ac.transformerRatio[i] = exp(im * parameter.shiftAngle[i])
+            else
+                ac.transformerRatio[i] = parameter.turnsRatio[i] * exp(im * parameter.shiftAngle[i])
+            end
 
-#             transformerRatioConj = conj(ac.transformerRatio[i])
-#             ac.nodalToTo[i] = ac.admittance[i] + im * 0.5 * parameter.susceptance[i]
-#             ac.nodalFromFrom[i] = ac.nodalToTo[i] / (transformerRatioConj * ac.transformerRatio[i])
-#             ac.nodalFromTo[i] = -ac.admittance[i] / transformerRatioConj
-#             ac.nodalToFrom[i] = -ac.admittance[i] / ac.transformerRatio[i]
+            transformerRatioConj = conj(ac.transformerRatio[i])
+            ac.nodalToTo[i] = ac.admittance[i] + im * 0.5 * parameter.susceptance[i]
+            ac.nodalFromFrom[i] = ac.nodalToTo[i] / (transformerRatioConj * ac.transformerRatio[i])
+            ac.nodalFromTo[i] = -ac.admittance[i] / transformerRatioConj
+            ac.nodalToFrom[i] = -ac.admittance[i] / ac.transformerRatio[i]
 
-#             nodalDiagonals[layout.from[i]] += ac.nodalFromFrom[i]
-#             nodalDiagonals[layout.to[i]] += ac.nodalToTo[i]
-#         end
-#     end
+            nodalDiagonals[layout.from[i]] += ac.nodalFromFrom[i]
+            nodalDiagonals[layout.to[i]] += ac.nodalToTo[i]
+        end
+    end
 
-#     for i = 1:system.bus.number
-#         nodalDiagonals[i] += system.bus.shunt.conductance[i] + im * system.bus.shunt.susceptance[i]
-#     end
+    for i = 1:system.bus.number
+        nodalDiagonals[i] += system.bus.shunt.conductance[i] + im * system.bus.shunt.susceptance[i]
+    end
 
-#     busIndex = collect(1:system.bus.number)
-#     ac.nodalMatrix = sparse([busIndex; layout.from; layout.to], [busIndex; layout.to; layout.from],
-#         [nodalDiagonals; ac.nodalFromTo; ac.nodalToFrom], system.bus.number, system.bus.number)
+    busIndex = collect(1:system.bus.number)
+    ac.nodalMatrix = sparse([busIndex; layout.from; layout.to], [busIndex; layout.to; layout.from],
+        [nodalDiagonals; ac.nodalFromTo; ac.nodalToFrom], system.bus.number, system.bus.number)
 
-#     ac.nodalMatrixTranspose = copy(transpose(ac.nodalMatrix))
-# end
+    ac.nodalMatrixTranspose = copy(transpose(ac.nodalMatrix))
+end
 
 # ######### Update AC Nodal Matrix ##########
 # @inline function acNodalUpdate!(system::PowerSystem, index::Int64)

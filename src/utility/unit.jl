@@ -97,9 +97,9 @@ Changing the unit of voltage magnitude is reflected in the following quantities:
 * [`addGenerator!()`](@ref addGenerator!): `magnitude`.
 
 Changing the unit of voltage angle is reflected in the following quantities:
-* [`addBus!()`](@ref addBus!): `angle`, `susceptance` 
+* [`addBus!()`](@ref addBus!): `angle` 
 * [`addBranch!()`](@ref addBranch!): `shiftAngle`, `minDiffAngle`, `maxDiffAngle`
-* [`parameterBranch!()`](@ref parameterBranch!): `shiftAngle` 
+* [`parameterBranch!()`](@ref parameterBranch!): `shiftAngle`. 
 
 # Example
 ```jldoctest
@@ -134,11 +134,11 @@ the transformer.
 Changing the units of impedance is reflected in the following quantities in specific 
 functions:
 * [`addBranch!()`](@ref addBranch!): `resistance`, `reactance`
-* [`parameterBranch!()`](@ref parameterBranch!): `resistance`, `reactance`
+* [`parameterBranch!()`](@ref parameterBranch!): `resistance`, `reactance`.
 
 Changing the units of admittance is reflected in the following quantities:
 * [`addBranch!()`](@ref addBranch!): `susceptance`
-* [`parameterBranch!()`](@ref parameterBranch!): `susceptance`
+* [`parameterBranch!()`](@ref parameterBranch!): `susceptance`.
 
 # Example
 ```jldoctest
