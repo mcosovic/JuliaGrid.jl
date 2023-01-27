@@ -639,11 +639,11 @@ The function takes in four keywords as arguments:
 * `model`: cost model, piecewise linear = 1, polynomial = 2
 * `piecewise`: cost model defined by input-output points given as `Array{Float64,2}`:
   * first column (pu or W): active power output of the generator
-  * second column ($/hr): cost for the specified active power output
+  * second column (currency/hr): cost for the specified active power output
 * `polynomial`: second-degree polynomial coefficients given as `Array{Float64,1}`:
-  * first element ($/pu²hr or $/W²hr): square polynomial term 
-  * second element ($/puhr or $/Whr): linear polynomial term
-  * third element ($): constant polynomial term.
+  * first element (currency/pu²hr or currency/W²hr): square polynomial term 
+  * second element (currency/puhr or currency/Whr): linear polynomial term
+  * third element (currency): constant polynomial term.
 
 # Units
 By default, the input units related with active powers are per-units (pu), but they can be 
@@ -687,11 +687,11 @@ The function takes in four keywords as arguments:
 * `model`: cost model, piecewise linear = 1, polynomial = 2
 * `piecewise`: cost model defined by input-output points given as `Array{Float64,2}`:
   * first column (pu or VAr): reactive power output of the generator
-  * second column ($/hr): cost for the specified reactive power output
+  * second column (currency/hr): cost for the specified reactive power output
 * `polynomial`: second-degree polynomial coefficients given as `Array{Float64,1}`:
-  * first element ($/pu²hr or $/VAr²hr): square polynomial term 
-  * second element ($/puhr or $/VArhr): linear polynomial term
-  * third element ($): constant polynomial term.
+  * first element (currency/pu²hr or currency/VAr²hr): square polynomial term 
+  * second element (currency/puhr or currency/VArhr): linear polynomial term
+  * third element (currency): constant polynomial term.
 
 # Units
 By default, the input units related with reactive powers are per-units (pu), but they can 
