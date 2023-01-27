@@ -34,7 +34,6 @@ can be modified using macros [`@base`](@ref @base), [`@power`](@ref @power), and
 Creating a bus using the default unit system:
 ```jldoctest
 system = powerSystem()
-
 addBus!(system; label = 1, active = 0.25, reactive = -0.04, angle = 0.1745, base = 132e3)
 ```
 
@@ -45,7 +44,6 @@ Creating a bus using a custom unit system:
 @voltage(pu, deg)
 
 system = powerSystem()
-
 addBus!(system; label = 1, active = 25, reactive = -4, angle = 10, base = 132)
 ```
 """
@@ -124,7 +122,6 @@ the `label` keyword argument and should match an already defined bus label.
 # Example
 ```jldoctest
 system = powerSystem()
-
 addBus!(system; label = 1, active = 0.25, reactive = -0.04)
 slackBus!(system; label = 1)
 ```
@@ -163,24 +160,11 @@ the model from scratch when making changes to these parameters.
 The input units are in per-units by default, but they can be modified using the 
 [`@power`](@ref @power) macro.
 
-# Examples
-To create a bus and modify its conductance using the default unit system:
+# Example
 ```jldoctest
 system = powerSystem()
-
 addBus!(system; label = 1, active = 0.25, reactive = -0.04)
 shuntBus!(system; label = 1, conductance = 0.04)
-```
-
-To create a bus and modify its conductance using a custom unit system:
-```jldoctest
-@power(MW, MVAr, MVA)
-
-system = powerSystem()
-
-addBus!(system; label = 1, active = 25, reactive = -4)
-shuntBus!(system; label = 1, conductance = 4)
-```
 """
 function shuntBus!(system::PowerSystem; user...)
     ac = system.acModel
@@ -240,8 +224,8 @@ The branch is defined with the following parameters:
 * `maxDiffAngle` (rad or deg): maximum voltage angle difference value between from and to bus
 
 # Units
-The input units are in per-units and radians by default. The unit settings, such as the 
-selection between the per-unit system or the SI system with the appropriate prefixes, 
+The input units are in per-units (pu) and radians (rad) by default. The unit settings, such 
+as the selection between the per-unit system or the SI system with the appropriate prefixes, 
 can be modified using macros [`@power`](@ref @power), [`@voltage`](@ref @voltage), and
 [`@parameter`](@ref @parameter).
   
@@ -249,23 +233,18 @@ can be modified using macros [`@power`](@ref @power), [`@voltage`](@ref @voltage
 Creating a branch using the default unit system:
 ```jldoctest
 system = powerSystem()
-
 addBus!(system; label = 1, active = 0.25, reactive = -0.04)
 addBus!(system; label = 2, active = 0.15, reactive = 0.08)
-
 addBranch!(system; label = 1, from = 1, to = 2, reactance = 0.12, shiftAngle = 0.1745)
 ```
 
-# Examples
 Creating a branch using a custom unit system:
 ```jldoctest
 @voltage(pu, deg)
 
 system = powerSystem()
-
 addBus!(system; label = 1, active = 0.25, reactive = -0.04)
 addBus!(system; label = 2, active = 0.15, reactive = 0.08)
-
 addBranch!(system; label = 1, from = 1, to = 2, reactance = 0.12, shiftAngle = 10)
 ```
 """
@@ -373,10 +352,8 @@ status of a branch is changed, thus eliminating the need to rebuild the model fr
 # Example
 ```jldoctest
 system = powerSystem()
-
 addBus!(system; label = 1, active = 0.25, reactive = -0.04)
 addBus!(system; label = 2, active = 0.15, reactive = 0.08)
-
 addBranch!(system; label = 1, from = 1, to = 2, resistance = 0.05, reactance = 0.12)
 statusBranch!(system; label = 1, status = 0)
 ```
@@ -436,16 +413,14 @@ this function updates the `acModel` and `dcModel` fields automatically, removing
 to rebuild the model from scratch.
         
 # Units
-The input units are in per-units by default, but they can be modified using the following 
-macros [`@parameter`](@ref @parameter) and [`@voltage`](@ref @voltage).
+The input units are in per-units (pu) by default, but they can be modified using the 
+following macros [`@voltage`](@ref @voltage) and [`@parameter`](@ref @parameter).
 
 # Example
 ```jldoctest
 system = powerSystem()
-
 addBus!(system; label = 1, active = 0.25, reactive = -0.04)
 addBus!(system; label = 2, active = 0.15, reactive = 0.08)
-
 addBranch!(system; label = 1, from = 1, to = 2, resistance = 0.05, reactance = 0.12)
 parameterBranch!(system; label = 1, susceptance = 0.062)
 ```
@@ -539,23 +514,34 @@ The generator is defined with the following parameters:
 * `upActive` (pu or W): upper allowed active power output value of PQ capability curve
 * `minUpReactive` (pu or VAr): minimum allowed reactive power output value at upActive value
 * `maxUpReactive` (pu or VAr): maximum allowed reactive power output value at upActive value
-* `loadFollowing` (pu or W per min): ramp rate for load following/AG
+* `loadFollowing` (pu/min or W/min): ramp rate for load following/AG
 * `reserve10min` (pu or W): ramp rate for 10-minute reserves
 * `reserve30min` (pu or W): ramp rate for 30-minute reserves
-* `reactiveTimescale`  (pu or VAr per min): ramp rate for reactive power, two seconds timescale
+* `reactiveTimescale` (pu/min or VAr/min): ramp rate for reactive power, two seconds timescale
 * `area`: area participation factor
 
 # Units
-The input units are realted to per-units by default, but they can be modified using macros 
-[`@power`](@ref @power) and [`@voltage`](@ref @voltage).
-
-# Example
+By default, the input units are associated with per-units (pu) as shown. The unit settings, 
+such as the selection between the per-unit system or the SI system with the appropriate 
+prefixes, can be modified using macros [`@power`](@ref @power) and [`@voltage`](@ref @voltage).
+ 
+# Examples
+Creating a bus using the default unit system:
 ```jldoctest
 system = powerSystem()
+addBus!(system; label = 1, active = 0.25, reactive = -0.04, base = 132)
+addGenerator!(system; label = 1, bus = 1, active = 0.5, reactive = 0.1, magnitude = 1.1)
+```
 
-addBus!(system; label = 1, active = 0.25, reactive = -0.04)
+Creating a bus using a custom unit system:
+```jldoctest
+@base(MVA, kV)
+@power(MW, MVAr, MVA)
+@voltage(kV, deg)
 
-addGenerator!(system; label = 1, bus = 1, active = 0.5, reactive = 0.1)
+ystem = powerSystem()
+addBus!(system; label = 1, active = 25, reactive = -4, base = 132)
+addGenerator!(system; label = 1, bus = 1, active = 50, reactive = 10, magnitude = 145.2)
 ```
 """
 function addGenerator!(system::PowerSystem; label::T, bus::T, area::T = 0.0, status::T = 1, 
@@ -643,7 +629,7 @@ end
 
 """
 The function updates the `generator` field of the `PowerSystem` type by adding costs for 
-the active power produced by the corresponding generators. It can add a cost to an already 
+the active power produced by the corresponding generator. It can add a cost to an already 
 defined generator.
 
     addActiveCost!(system::PowerSystem; label, model, piecewise, polynomial)
@@ -652,25 +638,34 @@ The function takes in four keywords as arguments:
 * `label`: corresponds to the already defined generator label
 * `model`: cost model, piecewise linear = 1, polynomial = 2
 * `piecewise`: cost model defined by input-output points given as `Array{Float64,2}`:
-  * matrix first column holds the values of active power in per-unit (pu) or watt (W),
-  * matrix second column holds the cost, expressed in currency per hour, that is determined for the given active power. 
+  * first column (pu or W): active power output of the generator
+  * second column ($/hr): cost for the specified active power output
 * `polynomial`: second-degree polynomial coefficients given as `Array{Float64,1}`:
-  * the first element is a square term, given in units of ``(currency/pu)^2`` or ``(currency/W)^2``,  
-  * the second element is a linear term, given in units of ``(currency/pu)`` or ``(currency/W)``,
-  * the third element is a constant term, given in units of currency.
+  * first element ($/pu²hr or $/W²hr): square polynomial term 
+  * second element ($/puhr or $/Whr): linear polynomial term
+  * third element ($): constant polynomial term.
 
 # Units
-By default, the input units related with active powers are per-units, but they can be 
+By default, the input units related with active powers are per-units (pu), but they can be 
 modified using the macro [`@power`](@ref @power).
 
-# Example
+# Examples
+Creating a bus using the default unit system:
 ```jldoctest
 system = powerSystem()
-
 addBus!(system; label = 1, active = 0.25, reactive = -0.04)
-
 addGenerator!(system; label = 1, bus = 1, active = 0.5, reactive = 0.1)
-addActiveCost!(system; label = 1, model = 1, polynomial = [5601.0; 85.1; 43.2])
+addActiveCost!(system; label = 1, model = 1, polynomial = [1100.0; 500.0; 150.0])
+```
+    
+Creating a bus using a custom unit system:
+```jldoctest
+@power(MW, MVAr, MVA)
+
+system = powerSystem()
+addBus!(system; label = 1, active = 25, reactive = -4)
+addGenerator!(system; label = 1, bus = 1, active = 50, reactive = 10)
+addActiveCost!(system; label = 1, model = 1, polynomial = [0.11; 5.0; 150.0])
 ```
 """
 function addActiveCost!(system::PowerSystem; label::T, model::T = 0,
@@ -680,6 +675,47 @@ function addActiveCost!(system::PowerSystem; label::T, model::T = 0,
     addCost!(system, label, model, polynomial, piecewise, system.generator.cost.active)
 end
 
+"""
+The function updates the `generator` field of the `PowerSystem` type by adding costs for 
+the reactive power produced by the corresponding generator. It can add a cost to an already 
+defined generator.
+
+    addReactiveCost!(system::PowerSystem; label, model, piecewise, polynomial)
+
+The function takes in four keywords as arguments:
+* `label`: corresponds to the already defined generator label
+* `model`: cost model, piecewise linear = 1, polynomial = 2
+* `piecewise`: cost model defined by input-output points given as `Array{Float64,2}`:
+  * first column (pu or VAr): reactive power output of the generator
+  * second column ($/hr): cost for the specified reactive power output
+* `polynomial`: second-degree polynomial coefficients given as `Array{Float64,1}`:
+  * first element ($/pu²hr or $/VAr²hr): square polynomial term 
+  * second element ($/puhr or $/VArhr): linear polynomial term
+  * third element ($): constant polynomial term.
+
+# Units
+By default, the input units related with reactive powers are per-units (pu), but they can 
+be modified using the macro [`@power`](@ref @power).
+
+# Examples
+Creating a bus using the default unit system:
+```jldoctest
+system = powerSystem()
+addBus!(system; label = 1, active = 0.25, reactive = -0.04)
+addGenerator!(system; label = 1, bus = 1, active = 0.5, reactive = 0.1)
+addReactiveCost!(system; label = 1, model = 2, piecewise = [0.1085 12; 0.1477 16])
+```
+    
+Creating a bus using a custom unit system:
+```jldoctest
+@power(MW, MVAr, MVA)
+
+system = powerSystem()
+addBus!(system; label = 1, active = 25, reactive = -4)
+addGenerator!(system; label = 1, bus = 1, active = 50, reactive = 10)
+addReactiveCost!(system; label = 1, model = 2, piecewise = [10.85 12; 14.77 16])
+```
+"""
 function addReactiveCost!(system::PowerSystem; label::T, model::T = 0,
     polynomial::Array{Float64,1} = Array{Float64}(undef, 0),
     piecewise::Array{Float64,2} = Array{Float64}(undef, 0, 0))
@@ -714,113 +750,118 @@ function addCost!(system::PowerSystem, label, model, polynomial, piecewise, cost
     cost.polynomial[index] = [polynomial[1] / activeScale^2, polynomial[2] / activeScale, polynomial[3]]
     cost.piecewise[index] = [activeScale .* piecewise[:, 1] piecewise[:, 2]]
 end
-# """
-# The function allows changing the operating `status` of the generator, from in-service
-# to out-of-service, and vice versa.
 
-#     statusGenerator!(system::PowerSystem; label, status)
+"""
+The function changes the operating `status` of a generator by switching it from in-service 
+to out-of-service, or vice versa. 
 
-# The keywords `label` should correspond to the already defined generator label. The function
-# also updates the variable `system.bus.layout.type`. Namely, if the bus is not slack, and if
-# all generators are out-of-service, the bus will be declared PQ type. Otherwise, if at least
-# one generator is in-service, the bus will be declared PV type.
+    statusGenerator!(system::PowerSystem; label, status)
 
-# # Example
-# ```jldoctest
-# system = powerSystem()
+It has two parameters, `label` and `status`, where the `label` corresponds to the generator 
+label that has already been defined. It updates the `bus.layout.type` field of the 
+`PowerSystem` type. More precisely, if the bus is not slack and all generators are 
+out-of-service, the bus will be designated as a PQ bus. On the other hand, if at least one 
+generator is in-service, the bus will be designated as a PV bus. The function also updates 
+the `bus.supply` field of the `PowerSystem` type.
 
-# addBus!(system; label = 1, active = 0.25, reactive = -0.04)
+# Example
+```jldoctest
+system = powerSystem()
+addBus!(system; label = 1, active = 0.25, reactive = -0.04)
+addGenerator!(system; label = 1, bus = 1, active = 0.5, reactive = 0.1)
+statusGenerator!(system; label = 1, status = 0)
+```
+"""
+function statusGenerator!(system::PowerSystem; label::Int64, status::Int64 = 0)
+    layout = system.generator.layout
+    output = system.generator.output
 
-# addGenerator!(system; label = 1, bus = 1, active = 0.5, reactive = 0.1)
-# statusGenerator!(system; label = 1, status = 0)
-# ```
-# """
-# function statusGenerator!(system::PowerSystem; label::Int64, status::Int64 = 0)
-#     layout = system.generator.layout
-#     output = system.generator.output
+    if label <= 0
+        throw(ErrorException("The value of the label keyword must be given as a positive integer."))
+    end
+    if !haskey(system.generator.label, label)
+        throw(ErrorException("The value $label of the label keyword does not exist in generator labels."))
+    end
 
-#     if label <= 0
-#         throw(ErrorException("The value of the label keyword must be given as a positive integer."))
-#     end
-#     if !haskey(system.generator.label, label)
-#         throw(ErrorException("The value $label of the label keyword does not exist in generator labels."))
-#     end
+    index = system.generator.label[label]
+    indexBus = layout.bus[index]
 
-#     index = system.generator.label[label]
-#     indexBus = layout.bus[index]
+    if layout.status[index] != status
+        if status == 0
+            system.bus.supply.inService[indexBus] -= 1
+            system.bus.supply.active[indexBus] -= output.active[index]
+            system.bus.supply.reactive[indexBus] -= output.reactive[index]
+            if system.bus.supply.inService[indexBus] == 0 && system.bus.layout.type[indexBus] != 3
+                system.bus.layout.type[indexBus] = 1
+            end
+        end
+        if status == 1
+            system.bus.supply.inService[indexBus] += 1
+            system.bus.supply.active[indexBus] += output.active[index]
+            system.bus.supply.reactive[indexBus] += output.reactive[index]
+            if system.bus.layout.type[indexBus] != 3
+                system.bus.layout.type[indexBus] = 2
+            end
+        end
+    end
+    layout.status[index] = status
+end
 
-#     if layout.status[index] != status
-#         if status == 0
-#             system.bus.supply.inService[indexBus] -= 1
-#             system.bus.supply.active[indexBus] -= output.active[index]
-#             system.bus.supply.reactive[indexBus] -= output.reactive[index]
-#             if system.bus.supply.inService[indexBus] == 0 && system.bus.layout.type[indexBus] != 3
-#                 system.bus.layout.type[indexBus] = 1
-#             end
-#         end
-#         if status == 1
-#             system.bus.supply.inService[indexBus] += 1
-#             system.bus.supply.active[indexBus] += output.active[index]
-#             system.bus.supply.reactive[indexBus] += output.reactive[index]
-#             if system.bus.layout.type[indexBus] != 3
-#                 system.bus.layout.type[indexBus] = 2
-#             end
-#         end
-#     end
-#     layout.status[index] = status
-# end
+"""
+The function modifies the `active` and `reactive` output power of a generator. 
 
-# """
-# The function allows changing `active` and `reactive` output power of the generator.
+    outputGenerator!(system::PowerSystem; label, active, reactive)
+    
+It has three parameters, `label`, `active`, and `reactive`, where the `label` corresponds 
+to the generator label that has already been defined. The `active` and `reactive` parameters 
+can be left, in which case their values will remain unchanged. The function also updates the 
+`bus.supply` field of the `PowerSystem` type.
 
-#     outputGenerator!(system::PowerSystem; label, active, reactive)
+# Example
+```jldoctest
+system = powerSystem()
+addBus!(system; label = 1, active = 0.25, reactive = -0.04)
+addGenerator!(system; label = 1, bus = 1, active = 0.5, reactive = 0.1)
+outputGenerator!(system; label = 1, active = 0.85)
+```
+"""
+function outputGenerator!(system::PowerSystem; user...)
+    layout = system.generator.layout
+    output = system.generator.output
 
-# The keywords `label` should correspond to the already defined generator label. Keywords `active`
-# or `reactive` can be omitted, then the value of the omitted parameter remains unchanged.
+    if !haskey(user, :label) || user[:label]::Int64 <= 0
+        throw(ErrorException("The value of the label keyword must be given as a positive integer."))
+    end
+    if !haskey(system.generator.label, user[:label])
+        throw(ErrorException("The value $(user[:label]) of the label keyword does not exist in generator labels."))
+    end
 
-# # Example
-# ```jldoctest
-# system = powerSystem()
+    basePowerInv = 1 / (unit.prefix["base power"] * system.base.power)
+    activeScale = topu(unit, basePowerInv, "active power")
+    reactiveScale = topu(unit, basePowerInv, "reactive power")
 
-# addBus!(system; label = 1, active = 0.25, reactive = -0.04)
+    index = system.generator.label[user[:label]]
+    indexBus = layout.bus[index]
 
-# addGenerator!(system; label = 1, bus = 1, active = 0.5, reactive = 0.1)
-# outputGenerator!(system; label = 1, active = 0.85)
-# ```
-# """
-# function outputGenerator!(system::PowerSystem; user...)
-#     layout = system.generator.layout
-#     output = system.generator.output
+    if haskey(user, :active) || haskey(user, :reactive)
+        if layout.status[index] == 1
+            system.bus.supply.active[indexBus] -= output.active[index] 
+            system.bus.supply.reactive[indexBus] -= output.reactive[index]
+        end
 
-#     if !haskey(user, :label) || user[:label]::Int64 <= 0
-#         throw(ErrorException("The value of the label keyword must be given as a positive integer."))
-#     end
-#     if !haskey(system.generator.label, user[:label])
-#         throw(ErrorException("The value $(user[:label]) of the label keyword does not exist in generator labels."))
-#     end
+        if haskey(user, :active)
+            output.active[index] = user[:active]::T * activeScale
+        end
+        if haskey(user, :reactive)
+            output.reactive[index] = user[:reactive]::T * reactiveScale
+        end
 
-#     index = system.generator.label[user[:label]]
-#     indexBus = layout.bus[index]
-
-#     if haskey(user, :active) || haskey(user, :reactive)
-#         if layout.status[index] == 1
-#             system.bus.supply.active[indexBus] -= output.active[index]
-#             system.bus.supply.reactive[indexBus] -= output.reactive[index]
-#         end
-
-#         if haskey(user, :active)
-#             output.active[index] = user[:active]::Float64
-#         end
-#         if haskey(user, :reactive)
-#             output.reactive[index] = user[:reactive]::Float64
-#         end
-
-#         if layout.status[index] == 1
-#             system.bus.supply.active[indexBus] += output.active[index]
-#             system.bus.supply.reactive[indexBus] += output.reactive[index]
-#         end
-#     end
-# end
+        if layout.status[index] == 1
+            system.bus.supply.active[indexBus] += output.active[index]
+            system.bus.supply.reactive[indexBus] += output.reactive[index]
+        end
+    end
+end
 
 """
 The function generates vectors and matrices based on the power system topology and 
@@ -873,37 +914,37 @@ function dcModel!(system::PowerSystem)
         [nodalDiagonals; -dc.admittance; -dc.admittance], system.bus.number, system.bus.number)
 end
 
-# ######### Update DC Nodal Matrix ##########
-# function dcNodalShiftUpdate!(system, index::Int64)
-#     dc = system.dcModel
-#     layout = system.branch.layout
-#     parameter = system.branch.parameter
+######### Update DC Nodal Matrix ##########
+function dcNodalShiftUpdate!(system, index::Int64)
+    dc = system.dcModel
+    layout = system.branch.layout
+    parameter = system.branch.parameter
 
-#     from = layout.from[index]
-#     to = layout.to[index]
-#     admittance = dc.admittance[index]
+    from = layout.from[index]
+    to = layout.to[index]
+    admittance = dc.admittance[index]
 
-#     shift = parameter.shiftAngle[index] * admittance
-#     dc.shiftActivePower[from] -= shift
-#     dc.shiftActivePower[to] += shift
+    shift = parameter.shiftAngle[index] * admittance
+    dc.shiftActivePower[from] -= shift
+    dc.shiftActivePower[to] += shift
 
-#     dc.nodalMatrix[from, from] += admittance
-#     dc.nodalMatrix[to, to] += admittance
-#     dc.nodalMatrix[from, to] -= admittance
-#     dc.nodalMatrix[to, from] -= admittance
-# end
+    dc.nodalMatrix[from, from] += admittance
+    dc.nodalMatrix[to, to] += admittance
+    dc.nodalMatrix[from, to] -= admittance
+    dc.nodalMatrix[to, from] -= admittance
+end
 
-# ######### Update DC Parameters ##########
-# @inline function dcParameterUpdate!(system::PowerSystem, index::Int64)
-#     dc = system.dcModel
-#     parameter = system.branch.parameter
+######### Update DC Parameters ##########
+@inline function dcParameterUpdate!(system::PowerSystem, index::Int64)
+    dc = system.dcModel
+    parameter = system.branch.parameter
 
-#     if parameter.turnsRatio[index] == 0
-#         dc.admittance[index] = 1 / parameter.reactance[index]
-#     else
-#         dc.admittance[index] = 1 / (parameter.turnsRatio[index] * parameter.reactance[index])
-#     end
-# end
+    if parameter.turnsRatio[index] == 0
+        dc.admittance[index] = 1 / parameter.reactance[index]
+    else
+        dc.admittance[index] = 1 / (parameter.turnsRatio[index] * parameter.reactance[index])
+    end
+end
 
 """
 The function generates vectors and matrices based on the power system topology and 
@@ -967,103 +1008,103 @@ function acModel!(system::PowerSystem)
     ac.nodalMatrixTranspose = copy(transpose(ac.nodalMatrix))
 end
 
-# ######### Update AC Nodal Matrix ##########
-# @inline function acNodalUpdate!(system::PowerSystem, index::Int64)
-#     ac = system.acModel
-#     layout = system.branch.layout
+######### Update AC Nodal Matrix ##########
+@inline function acNodalUpdate!(system::PowerSystem, index::Int64)
+    ac = system.acModel
+    layout = system.branch.layout
 
-#     from = layout.from[index]
-#     to = layout.to[index]
+    from = layout.from[index]
+    to = layout.to[index]
 
-#     ac.nodalMatrix[from, from] += ac.nodalFromFrom[index]
-#     ac.nodalMatrix[to, to] += ac.nodalToTo[index]
-#     ac.nodalMatrixTranspose[from, from] += ac.nodalFromFrom[index]
-#     ac.nodalMatrixTranspose[to, to] += ac.nodalToTo[index]
+    ac.nodalMatrix[from, from] += ac.nodalFromFrom[index]
+    ac.nodalMatrix[to, to] += ac.nodalToTo[index]
+    ac.nodalMatrixTranspose[from, from] += ac.nodalFromFrom[index]
+    ac.nodalMatrixTranspose[to, to] += ac.nodalToTo[index]
 
-#     ac.nodalMatrix[from, to] += ac.nodalFromTo[index]
-#     ac.nodalMatrix[to, from] += ac.nodalToFrom[index]
-#     ac.nodalMatrixTranspose[to, from] += ac.nodalFromTo[index]
-#     ac.nodalMatrixTranspose[from, to] += ac.nodalToFrom[index]
-# end
+    ac.nodalMatrix[from, to] += ac.nodalFromTo[index]
+    ac.nodalMatrix[to, from] += ac.nodalToFrom[index]
+    ac.nodalMatrixTranspose[to, from] += ac.nodalFromTo[index]
+    ac.nodalMatrixTranspose[from, to] += ac.nodalToFrom[index]
+end
 
-# ######### Update AC Parameters ##########
-# @inline function acParameterUpdate!(system::PowerSystem, index::Int64)
-#     ac = system.acModel
-#     parameter = system.branch.parameter
+######### Update AC Parameters ##########
+@inline function acParameterUpdate!(system::PowerSystem, index::Int64)
+    ac = system.acModel
+    parameter = system.branch.parameter
 
-#     ac.admittance[index] = 1 / (parameter.resistance[index] + im * parameter.reactance[index])
+    ac.admittance[index] = 1 / (parameter.resistance[index] + im * parameter.reactance[index])
 
-#     if parameter.turnsRatio[index] == 0
-#         ac.transformerRatio[index] = exp(im * parameter.shiftAngle[index])
-#     else
-#         ac.transformerRatio[index] = parameter.turnsRatio[index] * exp(im * parameter.shiftAngle[index])
-#     end
+    if parameter.turnsRatio[index] == 0
+        ac.transformerRatio[index] = exp(im * parameter.shiftAngle[index])
+    else
+        ac.transformerRatio[index] = parameter.turnsRatio[index] * exp(im * parameter.shiftAngle[index])
+    end
 
-#     transformerRatioConj = conj(ac.transformerRatio[index])
-#     ac.nodalToTo[index] = ac.admittance[index] + im * 0.5 * parameter.susceptance[index]
-#     ac.nodalFromFrom[index] = ac.nodalToTo[index] / (transformerRatioConj * ac.transformerRatio[index])
-#     ac.nodalFromTo[index] = -ac.admittance[index] / transformerRatioConj
-#     ac.nodalToFrom[index] = -ac.admittance[index] / ac.transformerRatio[index]
-# end
+    transformerRatioConj = conj(ac.transformerRatio[index])
+    ac.nodalToTo[index] = ac.admittance[index] + im * 0.5 * parameter.susceptance[index]
+    ac.nodalFromFrom[index] = ac.nodalToTo[index] / (transformerRatioConj * ac.transformerRatio[index])
+    ac.nodalFromTo[index] = -ac.admittance[index] / transformerRatioConj
+    ac.nodalToFrom[index] = -ac.admittance[index] / ac.transformerRatio[index]
+end
 
-# ######### Expelling Elements from the AC or DC Model ##########
-# function nilModel!(system::PowerSystem, flag::Symbol; index::Int64 = 0)
-#     dc = system.dcModel
-#     ac = system.acModel
+######### Expelling Elements from the AC or DC Model ##########
+function nilModel!(system::PowerSystem, flag::Symbol; index::Int64 = 0)
+    dc = system.dcModel
+    ac = system.acModel
 
-#     if flag == :dcModelEmpty
-#         dc.nodalMatrix = spzeros(1, 1)
-#         dc.admittance =  Array{Float64,1}(undef, 0)
-#         dc.shiftActivePower = Array{Float64,1}(undef, 0)
-#     end
+    if flag == :dcModelEmpty
+        dc.nodalMatrix = spzeros(1, 1)
+        dc.admittance =  Array{Float64,1}(undef, 0)
+        dc.shiftActivePower = Array{Float64,1}(undef, 0)
+    end
 
-#     if flag == :acModelEmpty
-#         ac.nodalMatrix = spzeros(1, 1)
-#         ac.nodalMatrixTranspose = spzeros(1, 1)
-#         ac.nodalToTo =  Array{ComplexF64,1}(undef, 0)
-#         ac.nodalFromFrom = Array{ComplexF64,1}(undef, 0)
-#         ac.nodalFromTo = Array{ComplexF64,1}(undef, 0)
-#         ac.nodalToFrom = Array{ComplexF64,1}(undef, 0)
-#         ac.admittance = Array{ComplexF64,1}(undef, 0)
-#         ac.transformerRatio = Array{ComplexF64,1}(undef, 0)
-#     end
+    if flag == :acModelEmpty
+        ac.nodalMatrix = spzeros(1, 1)
+        ac.nodalMatrixTranspose = spzeros(1, 1)
+        ac.nodalToTo =  Array{ComplexF64,1}(undef, 0)
+        ac.nodalFromFrom = Array{ComplexF64,1}(undef, 0)
+        ac.nodalFromTo = Array{ComplexF64,1}(undef, 0)
+        ac.nodalToFrom = Array{ComplexF64,1}(undef, 0)
+        ac.admittance = Array{ComplexF64,1}(undef, 0)
+        ac.transformerRatio = Array{ComplexF64,1}(undef, 0)
+    end
 
-#     if flag == :dcModelZeros
-#         dc.admittance[index] = 0.0
-#     end
+    if flag == :dcModelZeros
+        dc.admittance[index] = 0.0
+    end
 
-#     if flag == :acModelZeros
-#         ac.nodalFromFrom[index] = 0.0 + im * 0.0
-#         ac.nodalFromTo[index] = 0.0 + im * 0.0
-#         ac.nodalToTo[index] = 0.0 + im * 0.0
-#         ac.nodalToFrom[index] = 0.0 + im * 0.0
-#         ac.admittance[index] = 0.0 + im * 0.0
-#         ac.transformerRatio[index] = 0.0 + im * 0.0
-#     end
+    if flag == :acModelZeros
+        ac.nodalFromFrom[index] = 0.0 + im * 0.0
+        ac.nodalFromTo[index] = 0.0 + im * 0.0
+        ac.nodalToTo[index] = 0.0 + im * 0.0
+        ac.nodalToFrom[index] = 0.0 + im * 0.0
+        ac.admittance[index] = 0.0 + im * 0.0
+        ac.transformerRatio[index] = 0.0 + im * 0.0
+    end
 
-#     if flag == :dcModelPushZeros
-#         push!(dc.admittance, 0.0)
-#     end
+    if flag == :dcModelPushZeros
+        push!(dc.admittance, 0.0)
+    end
 
-#     if flag == :acModelPushZeros
-#         push!(ac.admittance, 0.0 + im * 0.0)
-#         push!(ac.nodalToTo, 0.0 + im * 0.0)
-#         push!(ac.nodalFromFrom, 0.0 + im * 0.0)
-#         push!(ac.nodalFromTo, 0.0 + im * 0.0)
-#         push!(ac.nodalToFrom, 0.0 + im * 0.0)
-#         push!(ac.transformerRatio, 0.0 + im * 0.0)
-#     end
+    if flag == :acModelPushZeros
+        push!(ac.admittance, 0.0 + im * 0.0)
+        push!(ac.nodalToTo, 0.0 + im * 0.0)
+        push!(ac.nodalFromFrom, 0.0 + im * 0.0)
+        push!(ac.nodalFromTo, 0.0 + im * 0.0)
+        push!(ac.nodalToFrom, 0.0 + im * 0.0)
+        push!(ac.transformerRatio, 0.0 + im * 0.0)
+    end
 
-#     if flag == :dcModelDeprive
-#         dc.admittance[index] = -dc.admittance[index]
-#     end
+    if flag == :dcModelDeprive
+        dc.admittance[index] = -dc.admittance[index]
+    end
 
-#     if flag == :acModelDeprive
-#         ac.nodalFromFrom[index] = -ac.nodalFromFrom[index]
-#         ac.nodalFromTo[index] = -ac.nodalFromTo[index]
-#         ac.nodalToTo[index] = -ac.nodalToTo[index]
-#         ac.nodalToFrom[index] =-ac.nodalToFrom[index]
-#         ac.admittance[index] = -ac.admittance[index]
-#         ac.transformerRatio[index] = -ac.transformerRatio[index]
-#     end
-# end
+    if flag == :acModelDeprive
+        ac.nodalFromFrom[index] = -ac.nodalFromFrom[index]
+        ac.nodalFromTo[index] = -ac.nodalFromTo[index]
+        ac.nodalToTo[index] = -ac.nodalToTo[index]
+        ac.nodalToFrom[index] =-ac.nodalToFrom[index]
+        ac.admittance[index] = -ac.admittance[index]
+        ac.transformerRatio[index] = -ac.transformerRatio[index]
+    end
+end

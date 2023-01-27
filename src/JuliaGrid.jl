@@ -2,7 +2,6 @@ module JuliaGrid
 
 using SparseArrays, LinearAlgebra, SuiteSparse
 using HDF5
-using JuliaGrid
 
 ######### Utility ##########
 include("utility/routine.jl")
@@ -17,7 +16,7 @@ export savePowerSystem
 include("powerSystem/assemble.jl")
 export addBus!, slackBus!, shuntBus!
 export addBranch!, statusBranch!, parameterBranch!
-export addGenerator!, statusGenerator!, outputGenerator!, addActiveCost!
+export addGenerator!, addActiveCost!, addReactiveCost!, statusGenerator!, outputGenerator!
 export dcModel!, acModel!
 
 # ######## Power Flow ##########

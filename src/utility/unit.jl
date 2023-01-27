@@ -48,13 +48,15 @@ Changing the unit of active power is reflected in the following quantities:
 * [`addBus!()`](@ref addBus!): `active`, `conductance` 
 * [`shuntBus!()`](@ref shuntBus!): `conductance` 
 * [`addGenerator!()`](@ref addGenerator!): `active`, `minActive`, `maxActive`, `lowActive`, `upActive`, `loadFollowing`, `reserve10min`, `reserve30min`
-* [`addActiveCost!()`](@ref addActiveCost!): `piecewise`, `polynomial`.
+* [`addActiveCost!()`](@ref addActiveCost!): `piecewise`, `polynomial`
+* [`outputGenerator!()`](@ref outputGenerator!): `active`.
 
 Changing the unit of reactive power unit is reflected in the following quantities:
 * [`addBus!()`](@ref addBus!): `reactive`, `susceptance` 
 * [`shuntBus!()`](@ref shuntBus!): `susceptance` 
 * [`addGenerator!()`](@ref addGenerator!): `reactive`, `minReactive`, `maxReactive`, `minLowReactive`, `maxLowReactive`, `minUpReactive`, `maxUpReactive`, `reactiveTimescale`
-* [`addReactiveCost!()`](@ref addReactiveCost!): `piecewise`, `polynomial`.
+* [`addReactiveCost!()`](@ref addReactiveCost!): `piecewise`, `polynomial`
+* [`outputGenerator!()`](@ref outputGenerator!): `reactive`.
 
 Changing the unit of apparent power unit is reflected in the following quantities:
 * [`addBranch!()`](@ref addBranch!): `longTerm`, `shortTerm`, `emergency`.

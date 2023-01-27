@@ -45,11 +45,7 @@ savePowerSystem
 ## Bus Functions
 ```@docs
 addBus!
-```
-```@docs
 slackBus!
-```
-```@docs
 shuntBus!
 ```
 
@@ -58,11 +54,7 @@ shuntBus!
 ## Branch Functions
 ```@docs
 addBranch!
-```
-```@docs
 statusBranch!
-```
-```@docs
 parameterBranch!
 ```
 
@@ -71,9 +63,18 @@ parameterBranch!
 ## Generator Functions
 ```@docs
 addGenerator!
-```
-```@docs
+addActiveCost!
+addReactiveCost!
 statusGenerator!
+outputGenerator!
+```
+
+---
+
+## AC and DC Model
+```@docs
+dcModel!
+acModel!
 ```
 
 ---
@@ -81,13 +82,7 @@ statusGenerator!
 ## Units
 ```@docs
 @base
-```
-```@docs
 @power
-```
-```@docs
 @voltage
-```
-```@docs
 @parameter
 ```
