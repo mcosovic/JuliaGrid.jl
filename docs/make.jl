@@ -13,9 +13,8 @@ makedocs(
     pages = [
         "Home" => "index.md",
         "Power System" =>
-            ["Power System Model" => "powerSystem/model.md"],
-            #  "Build Power System Model" => "powerSystem/buildModel.md",
-            #  "In-depth AC and DC Model" => "powerSystem/inDepthACDCModel.md"],
+            ["Power System Model" => "powerSystem/model.md",
+             "In-depth AC and DC Model" => "powerSystem/inDepthACDCModel.md"],
         # "Power Flow" =>
         #     ["Power Flow Solution" => "powerFlow/solution.md",
         #      "Power Flow Analysis" => "powerFlow/analysis.md",

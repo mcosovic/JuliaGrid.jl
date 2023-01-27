@@ -1,10 +1,10 @@
 # [In-depth AC and DC Model](@id inDepthACDCModel)
-Network equations obtained using the unified branch model and defined below represent the basic setup used for the power system analysis. The power system network topology is usually described by the bus/branch model, where branches of the network are defined using the two-port ``\pi``-model. The bus/branch model can be represented using a graph ``\mathcal{G} = (\mathcal{N}, \mathcal{E})``, where the set of nodes ``\mathcal{N} = \{1, \dots, n\}`` represents the set of buses, while the set of edges ``\mathcal{E} \subseteq \mathcal{N} \times \mathcal{N}`` represents the set of branches of the power network.
+Network equations obtained using the unified branch model and defined below represent the basic setup used for power system analysis. The power system network topology is usually described by the bus/branch model, where branches of the network are defined using the two-port ``\pi``-model. The bus/branch model can be represented using a graph ``\mathcal{G} = (\mathcal{N}, \mathcal{E})``, where the set of nodes ``\mathcal{N} = \{1, \dots, n\}`` represents the set of buses, while the set of edges ``\mathcal{E} \subseteq \mathcal{N} \times \mathcal{N}`` represents the set of branches of the power network.
 
 ---
 
 ## [AC Model](@id inDepthACModel)
-JuliaGrid is based on common network elements and benefits the unified branch model to perform various analyses based on the system of non-linear equations. To create vectors and matrices related to AC or non-linear analyses, JuliaGrid uses the function [`acModel!()`](@ref acModel!), for example:
+JuliaGrid is based on common network elements and benefits from the unified branch model to perform various analyses based on the system of non-linear equations. To create vectors and matrices related to AC or non-linear analyses, JuliaGrid uses the function [acModel!()](@ref acModel!), for example:
 ```julia-repl
 system = powerSystem("case14.h5")
 acModel!(system)

@@ -73,8 +73,8 @@ outputGenerator!
 
 ## AC and DC Model
 ```@docs
-dcModel!
 acModel!
+dcModel!
 ```
 
 ---
