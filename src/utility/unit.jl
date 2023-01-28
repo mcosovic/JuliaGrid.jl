@@ -7,13 +7,13 @@ mutable struct Unit
 end
 
 """
-By default, the units for base power and base voltages are set to volt-ampere (VA) and 
+By default, the units for base power and base voltages are set to volt-ampere (VA) and
 volt (V), but you can modify the prefixes using the macro:
-    
+
     @base(power, voltage)
-    
-Prefixes must be specified according to the [SI prefixes](https://www.nist.gov/pml/owm/metric-si-prefixes) 
-and should be included with the unit of power (VA) or unit of voltage (V). Keep in mind 
+
+Prefixes must be specified according to the [SI prefixes](https://www.nist.gov/pml/owm/metric-si-prefixes)
+and should be included with the unit of `power` (VA) or unit of `voltage` (V). Keep in mind
 that the macro must be used before creating the composite type `PowerSystem`.
 
 # Example
@@ -33,27 +33,27 @@ macro base(power::Symbol, voltage::Symbol)
 end
 
 """
-JuliaGrid stores all data related with powers in per-units, and these cannot be altered. 
-However, the power units of the built-in functions used to add or modified power system 
+JuliaGrid stores all data related with powers in per-units, and these cannot be altered.
+However, the power units of the built-in functions used to add or modified power system
 elements can be modified using the macro:
 
     @power(active, reactive, apparent)
-    
-Prefixes must be specified according to the 
-[SI prefixes](https://www.nist.gov/pml/owm/metric-si-prefixes) and should be included with 
-the unit of active power (W), reactive power (VAr), or apparent power (VA). Also it is a 
+
+Prefixes must be specified according to the
+[SI prefixes](https://www.nist.gov/pml/owm/metric-si-prefixes) and should be included with
+the unit of `active` power (W), `reactive` power (VAr), or `apparent` power (VA). Also it is a
 possible to combine SI units with/without prefixes with per-units (pu).
 
 Changing the unit of active power is reflected in the following quantities:
-* [`addBus!()`](@ref addBus!): `active`, `conductance` 
-* [`shuntBus!()`](@ref shuntBus!): `conductance` 
+* [`addBus!()`](@ref addBus!): `active`, `conductance`
+* [`shuntBus!()`](@ref shuntBus!): `conductance`
 * [`addGenerator!()`](@ref addGenerator!): `active`, `minActive`, `maxActive`, `lowActive`, `upActive`, `loadFollowing`, `reserve10min`, `reserve30min`
 * [`addActiveCost!()`](@ref addActiveCost!): `piecewise`, `polynomial`
 * [`outputGenerator!()`](@ref outputGenerator!): `active`.
 
 Changing the unit of reactive power unit is reflected in the following quantities:
-* [`addBus!()`](@ref addBus!): `reactive`, `susceptance` 
-* [`shuntBus!()`](@ref shuntBus!): `susceptance` 
+* [`addBus!()`](@ref addBus!): `reactive`, `susceptance`
+* [`shuntBus!()`](@ref shuntBus!): `susceptance`
 * [`addGenerator!()`](@ref addGenerator!): `reactive`, `minReactive`, `maxReactive`, `minLowReactive`, `maxLowReactive`, `minUpReactive`, `maxUpReactive`, `reactiveTimescale`
 * [`addReactiveCost!()`](@ref addReactiveCost!): `piecewise`, `polynomial`
 * [`outputGenerator!()`](@ref outputGenerator!): `reactive`.
@@ -71,7 +71,7 @@ macro power(active::Symbol, reactive::Symbol, apparent::Symbol)
     active = string(active)
     unit.suffix["active power"] = parseSuffix(active, "active power")
     unit.prefix["active power"] =  parsePrefix(active, unit.suffix["active power"])
-    
+
     reactive = string(reactive)
     unit.suffix["reactive power"] = parseSuffix(reactive, "reactive power")
     unit.prefix["reactive power"] =  parsePrefix(reactive, unit.suffix["reactive power"])
@@ -82,26 +82,26 @@ macro power(active::Symbol, reactive::Symbol, apparent::Symbol)
 end
 
 """
-JuliaGrid stores all data related with voltages in per-units and radians, and these cannot 
-be altered. However, the voltage magnitude and angles units of the built-in functions used 
+JuliaGrid stores all data related with voltages in per-units and radians, and these cannot
+be altered. However, the voltage magnitude and angle units of the built-in functions used
 to add or modified power system elements can be modified using the macro:
 
     @voltage(magnitude, angle)
-    
-Prefixes must be specified according to the 
-[SI prefixes](https://www.nist.gov/pml/owm/metric-si-prefixes) and should be included with 
-the unit of voltage magnitude (V). The second option is to define the unit of voltage 
-magnitude in per-unit (pu). The unit of the voltage angle should be given in radian 
-(rad) or degree (deg). 
+
+Prefixes must be specified according to the
+[SI prefixes](https://www.nist.gov/pml/owm/metric-si-prefixes) and should be included with
+the unit of voltage `magnitude` (V). The second option is to define the unit of voltage
+`magnitude` in per-unit (pu). The unit of the voltage `angle` should be given in radian
+(rad) or degree (deg).
 
 Changing the unit of voltage magnitude is reflected in the following quantities:
-* [`addBus!()`](@ref addBus!): `magnitude`, `minMagnitude`, `maxMagnitude` 
+* [`addBus!()`](@ref addBus!): `magnitude`, `minMagnitude`, `maxMagnitude`
 * [`addGenerator!()`](@ref addGenerator!): `magnitude`.
 
 Changing the unit of voltage angle is reflected in the following quantities:
-* [`addBus!()`](@ref addBus!): `angle` 
+* [`addBus!()`](@ref addBus!): `angle`
 * [`addBranch!()`](@ref addBranch!): `shiftAngle`, `minDiffAngle`, `maxDiffAngle`
-* [`parameterBranch!()`](@ref parameterBranch!): `shiftAngle`. 
+* [`parameterBranch!()`](@ref parameterBranch!): `shiftAngle`.
 
 # Example
 ```jldoctest
@@ -112,28 +112,28 @@ macro voltage(magnitude::Symbol, angle::Symbol)
     magnitude = string(magnitude)
     unit.suffix["voltage magnitude"] = parseSuffix(magnitude, "voltage magnitude")
     unit.prefix["voltage magnitude"] =  parsePrefix(magnitude, unit.suffix["voltage magnitude"])
-    
+
     angle = string(angle)
     unit.suffix["voltage angle"] = parseSuffix(angle, "voltage angle")
 end
 
 """
-JuliaGrid stores all data related with impedances and admittancies in per-units, and these 
-cannot be altered. However, units of impedance and admittance of the built-in functions 
+JuliaGrid stores all data related with impedances and admittancies in per-units, and these
+cannot be altered. However, units of impedance and admittance of the built-in functions
 used to add or modified power system elements can be modified using the macro:
 
     @parameter(impedance, admittance)
-    
-Prefixes must be specified according to the 
-[SI prefixes](https://www.nist.gov/pml/owm/metric-si-prefixes) and should be 
-included with the unit of impedance (Ω) or unit of admittance (S). The second option is to 
-define the units in per-unit (pu). 
 
-In the case where impedance and admittance are being used in SI units (Ω and S) and these 
-units are related to the transformer, the assignment must be based on the primary side of 
+Prefixes must be specified according to the
+[SI prefixes](https://www.nist.gov/pml/owm/metric-si-prefixes) and should be
+included with the unit of `impedance` (Ω) or unit of `admittance` (S). The second option is to
+define the units in per-unit (pu).
+
+In the case where impedance and admittance are being used in SI units (Ω and S) and these
+units are related to the transformer, the assignment must be based on the primary side of
 the transformer.
 
-Changing the units of impedance is reflected in the following quantities in specific 
+Changing the units of impedance is reflected in the following quantities in specific
 functions:
 * [`addBranch!()`](@ref addBranch!): `resistance`, `reactance`
 * [`parameterBranch!()`](@ref parameterBranch!): `resistance`, `reactance`.
@@ -151,7 +151,7 @@ macro parameter(impedance::Symbol, admittance::Symbol)
     impedance = string(impedance)
     unit.suffix["impedance"] = parseSuffix(impedance, "impedance")
     unit.prefix["impedance"] =  parsePrefix(impedance, unit.suffix["impedance"])
-        
+
     admittance = string(admittance)
     unit.suffix["admittance"] = parseSuffix(admittance, "admittance")
     unit.prefix["admittance"] =  parsePrefix(admittance, unit.suffix["admittance"])
@@ -178,7 +178,7 @@ function defaultUnit()
     suffix = Dict("active power" => "pu", "reactive power" => "pu", "apparent power" => "pu",
         "voltage magnitude" => "pu", "voltage angle" => "rad",
         "current magnitude" => "pu", "current angle" => "rad",
-        "impedance" => "pu", "admittance" => "pu")    
+        "impedance" => "pu", "admittance" => "pu")
 
     return Unit(prefixSelect, suffixSelect, prefix, suffix)
 end

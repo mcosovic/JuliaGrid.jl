@@ -4,7 +4,7 @@ Network equations obtained using the unified branch model and defined below repr
 ---
 
 ## [AC Model](@id inDepthACModel)
-JuliaGrid is based on common network elements and benefits from the unified branch model to perform various analyses based on the system of non-linear equations. To create vectors and matrices related to AC or non-linear analyses, JuliaGrid uses the function [acModel!()](@ref acModel!), for example:
+JuliaGrid is based on common network elements and benefits from the unified branch model to perform various analyses based on the system of non-linear equations. To create vectors and matrices related to AC or non-linear analyses, JuliaGrid uses the function [`acModel!()`](@ref acModel!), for example:
 ```julia-repl
 system = powerSystem("case14.h5")
 acModel!(system)

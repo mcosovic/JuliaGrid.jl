@@ -1,17 +1,17 @@
 const T = Union{Float64,Int64}
 
 """
-The function adds a new bus to the `PowerSystem` type, updating its bus field. It 
-automatically sets the bus as a demand bus, but it can be changed to a generator bus using 
-the [`addGenerator!()`](@ref addGenerator!) function or to a slack bus using the 
+The function adds a new bus to the `PowerSystem` type, updating its bus field. It
+automatically sets the bus as a demand bus, but it can be changed to a generator bus using
+the [`addGenerator!()`](@ref addGenerator!) function or to a slack bus using the
 [`slackBus!()`](@ref slackBus!) function.
 
-    addBus!(system::PowerSystem; label, active, reactive, conductance, susceptance, 
+    addBus!(system::PowerSystem; label, active, reactive, conductance, susceptance,
         magnitude, angle, minMagnitude, maxMagnitude, base, area, lossZone)
-    
+
 The bus is defined with the following parameters:
 * `label`: a unique label for the bus
-* `active` (pu or W): the active power demand at the bus 
+* `active` (pu or W): the active power demand at the bus
 * `reactive` (pu or VAr): the reactive power demand at the bus
 * `conductance` (pu or W): the active power demanded of the shunt element
 * `susceptance` (pu or VAr): the reactive power injected of the shunt element
@@ -24,12 +24,12 @@ The bus is defined with the following parameters:
 * `lossZone`: the loss zone
 
 # Units
-The input units are in per-unit (pu) and radian (rad) by default as shown, except for the 
-keyword `base` which is given by default in volt (V). The unit settings, such as the 
-selection between the per-unit system or the SI system with the appropriate prefixes, 
-can be modified using macros [`@base`](@ref @base), [`@power`](@ref @power), and 
+The input units are in per-units (pu) and radians (rad) by default as shown, except for the
+keyword `base` which is given by default in volt (V). The unit settings, such as the
+selection between the per-unit system or the SI system with the appropriate prefixes,
+can be modified using macros [`@base`](@ref @base), [`@power`](@ref @power), and
 [`@voltage`](@ref @voltage).
- 
+
 # Examples
 Creating a bus using the default unit system:
 ```jldoctest
@@ -110,13 +110,13 @@ function addBus!(system::PowerSystem; label::T, active::T = 0.0, reactive::T = 0
 end
 
 """
-The function is used to set a slack bus, and it can also be used to dynamically change the 
-slack bus. 
+The function is used to set a slack bus, and it can also be used to dynamically change the
+slack bus.
 
     slackBus!(system::PowerSystem; label)
 
-Every time the function is executed, the previous slack bus becomes a demand or generator 
-bus, depending on whether the bus has a generator. The bus label should be specified using 
+Every time the function is executed, the previous slack bus becomes a demand or generator
+bus, depending on whether the bus has a generator. The bus label should be specified using
 the `label` keyword argument and should match an already defined bus label.
 
 # Example
@@ -146,18 +146,18 @@ function slackBus!(system::PowerSystem; label::T)
 end
 
 """
-This function enables the modification of the `conductance` and `susceptance` parameters 
-of a shunt element connected to a bus. 
+This function enables the modification of the `conductance` and `susceptance` parameters
+of a shunt element connected to a bus.
 
     shuntBus!(system::PowerSystem; label, conductance, susceptance)
 
-The `label` keyword must match an existing bus label. If either `conductance` or 
-`susceptance` is left out, the corresponding value will remain unchanged. Additionally, 
-this function automatically updates the `acModel` field, eliminating the need to rebuild 
+The `label` keyword must match an existing bus label. If either `conductance` or
+`susceptance` is left out, the corresponding value will remain unchanged. Additionally,
+this function automatically updates the `acModel` field, eliminating the need to rebuild
 the model from scratch when making changes to these parameters.
 
 # Units
-The input units are in per-units by default, but they can be modified using the 
+The input units are in per-units by default, but they can be modified using the
 [`@power`](@ref @power) macro.
 
 # Example
@@ -165,6 +165,7 @@ The input units are in per-units by default, but they can be modified using the
 system = powerSystem()
 addBus!(system; label = 1, active = 0.25, reactive = -0.04)
 shuntBus!(system; label = 1, conductance = 0.04)
+```
 """
 function shuntBus!(system::PowerSystem; user...)
     ac = system.acModel
@@ -200,11 +201,11 @@ function shuntBus!(system::PowerSystem; user...)
 end
 
 """
-The function adds a new branch to the `PowerSystem` type and updates its branch field. 
+The function adds a new branch to the `PowerSystem` type and updates its branch field.
 A branch can be added between already defined buses.
-    
-    addBranch!(system::PowerSystem; label, from, to, status, resistance, reactance, 
-        susceptance, turnsRatio, shiftAngle, longTerm, shortTerm, emergency, 
+
+    addBranch!(system::PowerSystem; label, from, to, status, resistance, reactance,
+        susceptance, turnsRatio, shiftAngle, longTerm, shortTerm, emergency,
         minDiffAngle, maxDiffAngle)
 
 The branch is defined with the following parameters:
@@ -224,11 +225,11 @@ The branch is defined with the following parameters:
 * `maxDiffAngle` (rad or deg): maximum voltage angle difference value between from and to bus
 
 # Units
-The input units are in per-units (pu) and radians (rad) by default. The unit settings, such 
-as the selection between the per-unit system or the SI system with the appropriate prefixes, 
+The input units are in per-units (pu) and radians (rad) by default. The unit settings, such
+as the selection between the per-unit system or the SI system with the appropriate prefixes,
 can be modified using macros [`@power`](@ref @power), [`@voltage`](@ref @voltage), and
 [`@parameter`](@ref @parameter).
-  
+
 # Examples
 Creating a branch using the default unit system:
 ```jldoctest
@@ -341,12 +342,12 @@ function addBranch!(system::PowerSystem; label::T, from::T, to::T, status::T = 1
 end
 
 """
-The function enables the switching of the operational `status` of a branch, identified by 
-its `label`, within the `PowerSystem` system between in-service and out-of-service. 
+The function enables the switching of the operational `status` of a branch, identified by
+its `label`, within the `PowerSystem` system between in-service and out-of-service.
 
     statusBranch!(system::PowerSystem; label, status)
 
-This function updates the `acModel` and `dcModel` fields automatically when the operating 
+This function updates the `acModel` and `dcModel` fields automatically when the operating
 status of a branch is changed, thus eliminating the need to rebuild the model from scratch.
 
 # Example
@@ -401,19 +402,19 @@ function statusBranch!(system::PowerSystem; label::T, status::T)
 end
 
 """
-This function enables the alteration of the `resistance`, `reactance`, `susceptance`, 
-`turnsRatio` and `shiftAngle` parameters of a branch, identified by its `label`, within 
+This function enables the alteration of the `resistance`, `reactance`, `susceptance`,
+`turnsRatio` and `shiftAngle` parameters of a branch, identified by its `label`, within
 the `PowerSystem`.
 
-    parameterBranch!(system::PowerSystem; label, resistance, reactance, susceptance, 
+    parameterBranch!(system::PowerSystem; label, resistance, reactance, susceptance,
         turnsRatio, shiftAngle)
 
-If any of these parameters are omitted, their current values will be retained. Additionally, 
-this function updates the `acModel` and `dcModel` fields automatically, removing the need 
+If any of these parameters are omitted, their current values will be retained. Additionally,
+this function updates the `acModel` and `dcModel` fields automatically, removing the need
 to rebuild the model from scratch.
-        
+
 # Units
-The input units are in per-units (pu) by default, but they can be modified using the 
+The input units are in per-units (pu) by default, but they can be modified using the
 following macros [`@voltage`](@ref @voltage) and [`@parameter`](@ref @parameter).
 
 # Example
@@ -460,7 +461,7 @@ function parameterBranch!(system::PowerSystem; user...)
         end
         baseImpedanceInv = turnsRatioInv^2 * (unit.prefix["base power"] * system.base.power) / ((unit.prefix["base voltage"] * system.base.voltage[layout.from[end]])^2)
         impedanceScale = topu(unit, baseImpedanceInv, "impedance")
-        
+
         if haskey(user, :resistance)
             parameter.resistance[index] = user[:resistance]::T * impedanceScale
         end
@@ -489,16 +490,16 @@ function parameterBranch!(system::PowerSystem; user...)
 end
 
 """
-The function is used to add a new generator to the `PowerSystem` type and update its 
-`generator` field. The generator can be added to an already defined bus. 
+The function is used to add a new generator to the `PowerSystem` type and update its
+`generator` field. The generator can be added to an already defined bus.
 
     addGenerator!(system::PowerSystem; label, bus, status, active, reactive, magnitude,
-        minActive, maxActive, minReactive, maxReactive, lowActive, minLowReactive, 
+        minActive, maxActive, minReactive, maxReactive, lowActive, minLowReactive,
         maxLowReactive, upActive, minUpReactive, maxUpReactive,
         loadFollowing, reactiveTimescale, reserve10min, reserve30min, area)
 
 The generator is defined with the following parameters:
-* `label`: a unique label for the generator 
+* `label`: a unique label for the generator
 * `bus`: the label of the bus to which the generator is connected
 * `status`: the operating status of the generator, in-service = 1, out-of-service = 0
 * `active` (pu or W): output active power
@@ -521,15 +522,15 @@ The generator is defined with the following parameters:
 * `area`: area participation factor
 
 # Units
-By default, the input units are associated with per-units (pu) as shown. The unit settings, 
-such as the selection between the per-unit system or the SI system with the appropriate 
+By default, the input units are associated with per-units (pu) as shown. The unit settings,
+such as the selection between the per-unit system or the SI system with the appropriate
 prefixes, can be modified using macros [`@power`](@ref @power) and [`@voltage`](@ref @voltage).
- 
+
 # Examples
 Creating a bus using the default unit system:
 ```jldoctest
 system = powerSystem()
-addBus!(system; label = 1, active = 0.25, reactive = -0.04, base = 132)
+addBus!(system; label = 1, active = 0.25, reactive = -0.04, base = 132e3)
 addGenerator!(system; label = 1, bus = 1, active = 0.5, reactive = 0.1, magnitude = 1.1)
 ```
 
@@ -544,10 +545,10 @@ addBus!(system; label = 1, active = 25, reactive = -4, base = 132)
 addGenerator!(system; label = 1, bus = 1, active = 50, reactive = 10, magnitude = 145.2)
 ```
 """
-function addGenerator!(system::PowerSystem; label::T, bus::T, area::T = 0.0, status::T = 1, 
-    active::T = 0.0, reactive::T = 0.0, magnitude::T = 0.0, minActive::T = 0.0, 
-    maxActive::T = 0.0, minReactive::T = 0.0, maxReactive::T = 0.0, lowActive::T = 0.0, 
-    minLowReactive::T = 0.0, maxLowReactive::T = 0.0, upActive::T = 0.0, 
+function addGenerator!(system::PowerSystem; label::T, bus::T, area::T = 0.0, status::T = 1,
+    active::T = 0.0, reactive::T = 0.0, magnitude::T = 0.0, minActive::T = 0.0,
+    maxActive::T = 0.0, minReactive::T = 0.0, maxReactive::T = 0.0, lowActive::T = 0.0,
+    minLowReactive::T = 0.0, maxLowReactive::T = 0.0, upActive::T = 0.0,
     minUpReactive::T = 0.0, maxUpReactive::T = 0.0, loadFollowing::T = 0.0,
     reserve10min::T = 0.0, reserve30min::T = 0.0, reactiveTimescale::T = 0.0)
 
@@ -628,8 +629,8 @@ function addGenerator!(system::PowerSystem; label::T, bus::T, area::T = 0.0, sta
 end
 
 """
-The function updates the `generator` field of the `PowerSystem` type by adding costs for 
-the active power produced by the corresponding generator. It can add a cost to an already 
+The function updates the `generator` field of the `PowerSystem` type by adding costs for
+the active power produced by the corresponding generator. It can add a cost to an already
 defined generator.
 
     addActiveCost!(system::PowerSystem; label, model, piecewise, polynomial)
@@ -641,12 +642,12 @@ The function takes in four keywords as arguments:
   * first column (pu or W): active power output of the generator
   * second column (currency/hr): cost for the specified active power output
 * `polynomial`: second-degree polynomial coefficients given as `Array{Float64,1}`:
-  * first element (currency/pu²hr or currency/W²hr): square polynomial term 
+  * first element (currency/pu²hr or currency/W²hr): square polynomial term
   * second element (currency/puhr or currency/Whr): linear polynomial term
   * third element (currency): constant polynomial term.
 
 # Units
-By default, the input units related with active powers are per-units (pu), but they can be 
+By default, the input units related with active powers are per-units (pu), but they can be
 modified using the macro [`@power`](@ref @power).
 
 # Examples
@@ -657,7 +658,7 @@ addBus!(system; label = 1, active = 0.25, reactive = -0.04)
 addGenerator!(system; label = 1, bus = 1, active = 0.5, reactive = 0.1)
 addActiveCost!(system; label = 1, model = 1, polynomial = [1100.0; 500.0; 150.0])
 ```
-    
+
 Creating a bus using a custom unit system:
 ```jldoctest
 @power(MW, MVAr, MVA)
@@ -676,8 +677,8 @@ function addActiveCost!(system::PowerSystem; label::T, model::T = 0,
 end
 
 """
-The function updates the `generator` field of the `PowerSystem` type by adding costs for 
-the reactive power produced by the corresponding generator. It can add a cost to an already 
+The function updates the `generator` field of the `PowerSystem` type by adding costs for
+the reactive power produced by the corresponding generator. It can add a cost to an already
 defined generator.
 
     addReactiveCost!(system::PowerSystem; label, model, piecewise, polynomial)
@@ -689,12 +690,12 @@ The function takes in four keywords as arguments:
   * first column (pu or VAr): reactive power output of the generator
   * second column (currency/hr): cost for the specified reactive power output
 * `polynomial`: second-degree polynomial coefficients given as `Array{Float64,1}`:
-  * first element (currency/pu²hr or currency/VAr²hr): square polynomial term 
+  * first element (currency/pu²hr or currency/VAr²hr): square polynomial term
   * second element (currency/puhr or currency/VArhr): linear polynomial term
   * third element (currency): constant polynomial term.
 
 # Units
-By default, the input units related with reactive powers are per-units (pu), but they can 
+By default, the input units related with reactive powers are per-units (pu), but they can
 be modified using the macro [`@power`](@ref @power).
 
 # Examples
@@ -705,7 +706,7 @@ addBus!(system; label = 1, active = 0.25, reactive = -0.04)
 addGenerator!(system; label = 1, bus = 1, active = 0.5, reactive = 0.1)
 addReactiveCost!(system; label = 1, model = 2, piecewise = [0.1085 12; 0.1477 16])
 ```
-    
+
 Creating a bus using a custom unit system:
 ```jldoctest
 @power(MW, MVAr, MVA)
@@ -752,16 +753,16 @@ function addCost!(system::PowerSystem, label, model, polynomial, piecewise, cost
 end
 
 """
-The function changes the operating `status` of a generator by switching it from in-service 
-to out-of-service, or vice versa. 
+The function changes the operating `status` of a generator by switching it from in-service
+to out-of-service, or vice versa.
 
     statusGenerator!(system::PowerSystem; label, status)
 
-It has two parameters, `label` and `status`, where the `label` corresponds to the generator 
-label that has already been defined. It updates the `bus.layout.type` field of the 
-`PowerSystem` type. More precisely, if the bus is not slack and all generators are 
-out-of-service, the bus will be designated as a PQ bus. On the other hand, if at least one 
-generator is in-service, the bus will be designated as a PV bus. The function also updates 
+It has two parameters, `label` and `status`, where the `label` corresponds to the generator
+label that has already been defined. It updates the `bus.layout.type` field of the
+`PowerSystem` type. More precisely, if the bus is not slack and all generators are
+out-of-service, the bus will be designated as a PQ bus. On the other hand, if at least one
+generator is in-service, the bus will be designated as a PV bus. The function also updates
 the `bus.supply` field of the `PowerSystem` type.
 
 # Example
@@ -808,13 +809,13 @@ function statusGenerator!(system::PowerSystem; label::Int64, status::Int64 = 0)
 end
 
 """
-The function modifies the `active` and `reactive` output power of a generator. 
+The function modifies the `active` and `reactive` output power of a generator.
 
     outputGenerator!(system::PowerSystem; label, active, reactive)
-    
-It has three parameters, `label`, `active`, and `reactive`, where the `label` corresponds 
-to the generator label that has already been defined. The `active` and `reactive` parameters 
-can be left, in which case their values will remain unchanged. The function also updates the 
+
+It has three parameters, `label`, `active`, and `reactive`, where the `label` corresponds
+to the generator label that has already been defined. The `active` and `reactive` parameters
+can be left, in which case their values will remain unchanged. The function also updates the
 `bus.supply` field of the `PowerSystem` type.
 
 # Example
@@ -845,7 +846,7 @@ function outputGenerator!(system::PowerSystem; user...)
 
     if haskey(user, :active) || haskey(user, :reactive)
         if layout.status[index] == 1
-            system.bus.supply.active[indexBus] -= output.active[index] 
+            system.bus.supply.active[indexBus] -= output.active[index]
             system.bus.supply.reactive[indexBus] -= output.reactive[index]
         end
 
@@ -864,15 +865,15 @@ function outputGenerator!(system::PowerSystem; user...)
 end
 
 """
-The function generates vectors and matrices based on the power system topology and 
-parameters associated with DC analysis. We advise the reader to read the section 
-[in-depth DC Model](@ref inDepthDCModel), which explains all the data involved in the 
+The function generates vectors and matrices based on the power system topology and
+parameters associated with DC analysis. We advise the reader to read the section
+[in-depth DC Model](@ref inDepthDCModel), which explains all the data involved in the
 field `dcModel`.
 
     dcModel!(system::PowerSystem)
 
 The function updates the field `dcModel`. Once formed, the field will be automatically
-updated when using functions [`addBranch!()`](@ref addBranch!), 
+updated when using functions [`addBranch!()`](@ref addBranch!),
 [`statusBranch!()`](@ref statusBranch!), [`parameterBranch!()`](@ref parameterBranch!).
 
 # Example
@@ -947,9 +948,9 @@ end
 end
 
 """
-The function generates vectors and matrices based on the power system topology and 
-parameters associated with AC analysis. We advise the reader to read the section 
-[in-depth AC Model](@ref inDepthACModel), which explains all the data involved in the 
+The function generates vectors and matrices based on the power system topology and
+parameters associated with AC analysis. We advise the reader to read the section
+[in-depth AC Model](@ref inDepthACModel), which explains all the data involved in the
 field `acModel`.
 
     acModel!(system::PowerSystem)
