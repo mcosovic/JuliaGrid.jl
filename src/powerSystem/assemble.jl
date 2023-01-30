@@ -187,10 +187,10 @@ function shuntBus!(system::PowerSystem; user...)
 
         basePowerInv = 1 / (unit.prefix["base power"] * system.base.power)
         if haskey(user, :conductance)
-            shunt.conductance[index] = user[:conductance]::T * topu(unit, basePowerInv, "active power")
+            shunt.conductance[index] = user[:conductance] * topu(unit, basePowerInv, "active power")
         end
         if haskey(user, :susceptance)
-            shunt.susceptance[index] = user[:susceptance]::T * topu(unit, basePowerInv, "reactive power")
+            shunt.susceptance[index] = user[:susceptance] * topu(unit, basePowerInv, "reactive power")
         end
 
 
