@@ -11,6 +11,8 @@
 end
 
 @testset "shuntBus!" begin
+    @power(pu, pu, pu)
+
     manual = powerSystem(string(pathData, "part300.m"))
     assemble = deepcopy(manual)
 
@@ -33,8 +35,6 @@ end
     @base(MVA, kV)
     @power(kW, MVAr, pu)
 
-    display(unit.prefix)
-    
     manual = powerSystem(string(pathData, "part300.m"))
     assemble = deepcopy(manual)
 
