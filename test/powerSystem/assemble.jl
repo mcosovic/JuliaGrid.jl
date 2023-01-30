@@ -90,7 +90,7 @@
     @test system.generator.layout.area == systemPU.generator.layout.area
 end
 
-@testset "addBus!, addGenerator!, addBranch!, unit" begin
+@testset "addBus!, addGenerator!, addBranch!, SI unit" begin
     rad = pi / 180
     system = powerSystem(string(pathData, "part300.m"))
     
