@@ -24,7 +24,7 @@ end
     shuntBus!(assemble; label = 164, susceptance = 3.4)
     shuntBus!(assemble; label = 154)
 
-    # @test manual.bus.shunt.conductance == assemble.bus.shunt.conductance
+    @test manual.bus.shunt.conductance == assemble.bus.shunt.conductance
     @test manual.bus.shunt.susceptance == assemble.bus.shunt.susceptance
     @test manual.acModel.nodalMatrix == assemble.acModel.nodalMatrix
 end
@@ -33,6 +33,8 @@ end
     @base(MVA, kV)
     @power(kW, MVAr, pu)
 
+    display(unit.prefix)
+    
     manual = powerSystem(string(pathData, "part300.m"))
     assemble = deepcopy(manual)
 
