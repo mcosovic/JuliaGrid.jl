@@ -253,6 +253,7 @@ function parsePrefix(input::String, suffixUser::String)
     return scale
 end
 
+######### Scale Values to Transform SI to pu ##########
 function si2pu(prefix::Float64, base::T, type::String)
     if factor[type] == 0.0 
         scale = 1.0

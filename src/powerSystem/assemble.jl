@@ -454,7 +454,7 @@ function parameterBranch!(system::PowerSystem; user...)
             parameter.reactance[index] = user[:reactance]::T * impedanceScale
         end
         if haskey(user, :susceptance)
-            admittanceScale = si2pu(prefix, base, "admittance")
+            admittanceScale = si2pu(1 / prefix, 1 / base, "admittance")
             parameter.susceptance[index] = user[:susceptance]::T * admittanceScale
         end
         if haskey(user, :shiftAngle)
