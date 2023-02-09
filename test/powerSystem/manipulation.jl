@@ -79,6 +79,9 @@ end
 end
 
 @testset "parameterBranch!" begin
+    @voltage(pu, rad)
+    @parameter(pu, pu)
+
     manual = powerSystem(string(pathData, "part300.m"))
     assemble = deepcopy(manual)
     acModel!(assemble); dcModel!(assemble)
