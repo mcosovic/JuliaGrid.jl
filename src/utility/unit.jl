@@ -1,35 +1,94 @@
-######### Units ##########
-mutable struct Unit
-    prefixSelect::Dict{String,Float64}
-    suffixSelect::Dict{String,Array{String}}
-    prefix::Dict{String,Float64}
-    suffix::Dict{String,String}
-end
+const prefix = Dict(
+    "q" => 1e-30, 
+    "r" => 1e-27, 
+    "y" => 1e-24, 
+    "z" => 1e-21, 
+    "a" => 1e-18, 
+    "f" => 1e-15,
+    "p" => 1e-12, 
+    "n" => 1e-9, 
+    "μ" => 1e-6, 
+    "m" => 1e-3, 
+    "c" => 1e-2, 
+    "d" => 1e-1, 
+    "da" => 1e1,
+    "h" => 1e2, 
+    "k" => 1e3, 
+    "M" => 1e6, 
+    "G" => 1e9, 
+    "T" => 1e12, 
+    "P" => 1e15, 
+    "E" => 1e18, 
+    "Z" => 1e21,
+    "Y" => 1e24, 
+    "R" => 1e27, 
+    "Q" => 1e30
+    )
+
+const suffix = Dict(
+    "base power" => ["VA"], 
+    "base voltage" => ["V"],
+    "active power" => ["W", "pu"], 
+    "reactive power" => ["VAr", "pu"], 
+    "apparent power" => ["VA", "pu"],
+    "voltage magnitude" => ["V", "pu"], 
+    "voltage angle" => ["deg", "rad"],
+    "current magnitude" => ["A", "pu"], 
+    "current angle" => ["deg", "rad"],
+    "impedance" => [string(:Ω), "pu"], 
+    "admittance" => ["S", "pu"]
+    )
+
+const factor = Dict(
+    "active power" => 0.0, 
+    "reactive power" => 0.0, 
+    "apparent power" => 0.0,
+    "voltage magnitude" => 0.0,
+    "voltage angle" => 1.0, 
+    "current magnitude" => 0.0,
+    "current angle" => 1.0, 
+    "impedance" => 0.0, 
+    "admittance" => 0.0
+    )    
 
 """
 By default, the units for base power and base voltages are set to volt-ampere (VA) and
 volt (V), but you can modify the prefixes using the macro:
 
-    @base(power, voltage)
+    @base(system::PowerSystem, power, voltage)
 
 Prefixes must be specified according to the [SI prefixes](https://www.nist.gov/pml/owm/metric-si-prefixes)
 and should be included with the unit of `power` (VA) or unit of `voltage` (V). Keep in mind
-that the macro must be used before creating the composite type `PowerSystem`.
+that the macro must be used after creating the composite type `PowerSystem`.
 
 # Example
 ```jldoctest
-@base(MVA, kV)
 system = powerSystem("case14.h5")
+@base(system, MVA, kV)
 ```
 """
-macro base(power::Symbol, voltage::Symbol)
+macro base(system::Symbol, power::Symbol, voltage::Symbol)
     power = string(power)
     suffixPower = parseSuffix(power, "base power")
-    unit.prefix["base power"] = parsePrefix(power, suffixPower)
+    prefixPower = parsePrefix(power, suffixPower)
 
     voltage = string(voltage)
     suffixVoltage = parseSuffix(voltage, "base voltage")
-    unit.prefix["base voltage"] = parsePrefix(voltage, suffixVoltage)
+    prefixVoltage = parsePrefix(voltage, suffixVoltage)
+
+    return quote
+        system = $(esc(system))
+
+        prefixOld = system.base.power.prefix 
+        system.base.power.value = system.base.power.value * prefixOld / $prefixPower
+        system.base.power.prefix = $prefixPower
+        system.base.power.unit = $power
+
+        prefixOld = system.base.voltage.prefix 
+        system.base.voltage.value = system.base.voltage.value * prefixOld / $prefixVoltage
+        system.base.voltage.prefix = $prefixVoltage
+        system.base.voltage.unit = $voltage
+    end
 end
 
 """
@@ -69,16 +128,16 @@ Changing the unit of apparent power unit is reflected in the following quantitie
 """
 macro power(active::Symbol, reactive::Symbol, apparent::Symbol)
     active = string(active)
-    unit.suffix["active power"] = parseSuffix(active, "active power")
-    unit.prefix["active power"] =  parsePrefix(active, unit.suffix["active power"])
+    suffixUser = parseSuffix(active, "active power")
+    factor["active power"] = parsePrefix(active, suffixUser)
 
     reactive = string(reactive)
-    unit.suffix["reactive power"] = parseSuffix(reactive, "reactive power")
-    unit.prefix["reactive power"] =  parsePrefix(reactive, unit.suffix["reactive power"])
+    suffixUser = parseSuffix(reactive, "reactive power")
+    factor["reactive power"] = parsePrefix(reactive, suffixUser)
 
     apparent = string(apparent)
-    unit.suffix["apparent power"] = parseSuffix(apparent, "apparent power")
-    unit.prefix["apparent power"] =  parsePrefix(apparent, unit.suffix["apparent power"])
+    suffixUser = parseSuffix(apparent, "apparent power")
+    factor["apparent power"] = parsePrefix(apparent, suffixUser)
 end
 
 """
@@ -110,11 +169,12 @@ Changing the unit of voltage angle is reflected in the following quantities:
 """
 macro voltage(magnitude::Symbol, angle::Symbol)
     magnitude = string(magnitude)
-    unit.suffix["voltage magnitude"] = parseSuffix(magnitude, "voltage magnitude")
-    unit.prefix["voltage magnitude"] =  parsePrefix(magnitude, unit.suffix["voltage magnitude"])
+    suffixUser = parseSuffix(magnitude, "voltage magnitude")
+    factor["voltage magnitude"] = parsePrefix(magnitude, suffixUser)
 
     angle = string(angle)
-    unit.suffix["voltage angle"] = parseSuffix(angle, "voltage angle")
+    suffixUser = parseSuffix(angle, "voltage angle")
+    factor["voltage angle"] = parsePrefix(angle, suffixUser)
 end
 
 """
@@ -149,76 +209,55 @@ Changing the units of admittance is reflected in the following quantities:
 """
 macro parameter(impedance::Symbol, admittance::Symbol)
     impedance = string(impedance)
-    unit.suffix["impedance"] = parseSuffix(impedance, "impedance")
-    unit.prefix["impedance"] =  parsePrefix(impedance, unit.suffix["impedance"])
+    suffixUser = parseSuffix(impedance, "impedance")
+    factor["impedance"] = parsePrefix(impedance, suffixUser)
 
     admittance = string(admittance)
-    unit.suffix["admittance"] = parseSuffix(admittance, "admittance")
-    unit.prefix["admittance"] =  parsePrefix(admittance, unit.suffix["admittance"])
-end
-
-######### Set Default Units ##########
-function defaultUnit()
-    prefixSelect = Dict("q" => 1e-30, "r" => 1e-27, "y" => 1e-24, "z" => 1e-21, "a" => 1e-18, "f" => 1e-15,
-        "p" => 1e-12, "n" => 1e-9, "μ" => 1e-6, "m" => 1e-3, "c" => 1e-2, "d" => 1e-1, "da" => 1e1,
-        "h" => 1e2, "k" => 1e3, "M" => 1e6, "G" => 1e9, "T" => 1e12, "P" => 1e15, "E" => 1e18, "Z" => 1e21,
-        "Y" => 1e24, "R" => 1e27, "Q" => 1e30)
-
-    suffixSelect = Dict("base power" => ["VA"], "base voltage" => ["V"],
-        "active power" => ["W", "pu"], "reactive power" => ["VAr", "pu"], "apparent power" => ["VA", "pu"],
-        "voltage magnitude" => ["V", "pu"], "voltage angle" => ["deg", "rad"],
-        "current magnitude" => ["A", "pu"], "current angle" => ["deg", "rad"],
-        "impedance" => [string(:Ω), "pu"], "admittance" => ["S", "pu"])
-
-    prefix = Dict("base power" => 1.0, "base voltage" => 1.0,
-        "active power" => 1.0, "reactive power" => 1.0, "apparent power" => 1.0,
-        "voltage magnitude" => 1.0, "current magnitude" => 1.0,
-        "impedance" => 1.0, "admittance" => 1.0)
-
-    suffix = Dict("active power" => "pu", "reactive power" => "pu", "apparent power" => "pu",
-        "voltage magnitude" => "pu", "voltage angle" => "rad",
-        "current magnitude" => "pu", "current angle" => "rad",
-        "impedance" => "pu", "admittance" => "pu")
-
-    return Unit(prefixSelect, suffixSelect, prefix, suffix)
+    suffixUser = parseSuffix(admittance, "admittance")
+    factor["admittance"] = parsePrefix(admittance, suffixUser)
 end
 
 ######### Parse Suffix (Unit) ##########
-function parseSuffix(inputUnit::String, inputType::String)
-    suffix = ""
-    @inbounds for i in unit.suffixSelect[inputType]
-        if endswith(inputUnit, i)
-            suffix = i
+function parseSuffix(input::String, type::String)
+    sufixUser = ""
+    @inbounds for i in suffix[type]
+        if endswith(input, i)
+            sufixUser = i
         end
     end
-    if isempty(suffix) || ((suffix == "pu" || suffix == "rad") && suffix != inputUnit)
-        error("The unit $inputUnit of $inputType is illegal.")
+    if isempty(sufixUser) || (sufixUser in ["pu"; "rad"; "deg"] && sufixUser != input)
+        error("The unit $input of $type is illegal.")
     end
 
-    return suffix
+    return sufixUser
 end
 
 ######### Parse Prefix ##########
-function parsePrefix(inputUnit::String, suffix::String)
-    prefixFloat = 1.0
-    if suffix != inputUnit
-        prefix = split(inputUnit, suffix)[1]
-        if !(prefix in keys(unit.prefixSelect))
-            error("The unit prefix $prefix is illegal.")
-        else
-            prefixFloat = unit.prefixSelect[prefix]
+function parsePrefix(input::String, suffixUser::String)
+    if suffixUser == "pu"
+        scale = 0.0
+    elseif suffixUser == "deg"
+        scale = pi / 180
+    else
+        scale = 1.0
+        if suffixUser != input
+            prefixUser = split(input, suffixUser)[1]
+            if !(prefixUser in keys(prefix))
+                error("The unit prefix $prefixUser is illegal.")
+            else
+                scale = prefix[prefixUser]
+            end
         end
     end
 
-    return prefixFloat
+    return scale
 end
 
-######### Transform to per-unit system ##########
-function topu(unit::Unit, baseInv::Float64, type::String)
-    if unit.suffix[type] == "pu"
+function si2pu(prefix::Float64, base::T, type::String)
+    if factor[type] == 0.0 
         scale = 1.0
     else
-        scale = unit.prefix[type] * baseInv
+        scale = factor[type] / (prefix * base)
         if scale == Inf
             error("The illegal base value.")
         end
@@ -227,14 +266,18 @@ function topu(unit::Unit, baseInv::Float64, type::String)
     return scale
 end
 
-######### Transform to radians ##########
-function torad(unit::Unit, type::String)
-    if unit.suffix[type] == "rad"
-        scale = 1.0
-    else
-        scale = pi / 180
+######### Impedance Base Value ##########
+function baseImpedance(system::PowerSystem, baseVoltage::Float64, turnsRatio::Float64)
+    base = 1.0
+    prefix = 1.0
+    if factor["impedance"] != 0.0 || factor["admittance"] != 0.0 
+        if turnsRatio != 0
+            prefix = (turnsRatio * system.base.voltage.prefix )^2 / system.base.power.prefix 
+        else
+            prefix = system.base.voltage.prefix^2 / system.base.power.prefix
+        end
+        base = baseVoltage^2 / system.base.power.value
     end
 
-    return scale
+    return prefix, base
 end
-

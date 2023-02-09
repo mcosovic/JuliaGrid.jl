@@ -19,21 +19,9 @@ export addBranch!, statusBranch!, parameterBranch!
 export addGenerator!, addActiveCost!, addReactiveCost!, statusGenerator!, outputGenerator!
 export dcModel!, acModel!
 
-# ######## Power Flow ##########
-# include("powerFlow/solution.jl")
-# export gaussSeidel, newtonRaphson, fastNewtonRaphsonBX, fastNewtonRaphsonXB
-# export gaussSeidel!, newtonRaphson!, fastNewtonRaphson!, dcPowerFlow
-
-# include("powerFlow/analysis.jl")
-# export bus!, branch!, generator!
-
-# include("powerFlow/reactiveLimits.jl")
-# export reactivePowerLimit!, adjustVoltageAngle!
-
 ######### Unit ##########
 include("utility/unit.jl")
 export @base, @power, @voltage, @parameter
-unit = defaultUnit()
- 
+
 end # JuliaGrid
 

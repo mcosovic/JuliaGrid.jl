@@ -409,7 +409,7 @@ function newtonRaphson!(system::PowerSystem, result::Result)
                     Bij = imag(ac.nodalMatrix.nzval[j])
                     if row != i
                         Tij = voltage.angle[row] - voltage.angle[i]
-                        jacobian[index.pvpq[row], index.pvpq[i]] =  voltage.magnitude[row] * voltage.magnitude[i] * (Gij * sin(Tij) - Bij * cos(Tij))
+                        jacobian[index.pvpq[row], index.pvpq[i]] = voltage.magnitude[row] * voltage.magnitude[i] * (Gij * sin(Tij) - Bij * cos(Tij))
                         if typeRow == 1
                             jacobian[index.pq[row], index.pvpq[i]] = voltage.magnitude[row] * voltage.magnitude[i] * (-Gij * cos(Tij) - Bij * sin(Tij))
                         end

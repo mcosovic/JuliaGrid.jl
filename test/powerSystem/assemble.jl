@@ -94,12 +94,12 @@ end
     rad = pi / 180
     system = powerSystem(string(pathData, "part300.m"))
     
-    @base(MVA, kV)
     @power(MW, MVAr, MVA)
     @voltage(V, deg)
     @parameter(Ω, S)
     
     systemSI = powerSystem()
+    @base(systemSI, MVA, kV)
     addBus!(systemSI; label = 152, active = 17, reactive = 9, magnitude = 1.0535 * 230e3, angle = 9.24, minMagnitude = 0.94 * 230e3, maxMagnitude = 1.06 * 230e3, base = 230)
     addBus!(systemSI; label = 153, magnitude = 1.0435 * 230e3, angle = 10.46, minMagnitude = 0.94 * 230e3, maxMagnitude = 1.06 * 230e3, base = 230)
     addBus!(systemSI; label = 154, active = 70, reactive = 5, susceptance = 34.5, magnitude = 0.9663 * 115e3, angle = -1.8, minMagnitude = 0.94 * 115e3, maxMagnitude = 1.06 * 115e3, base = 115)

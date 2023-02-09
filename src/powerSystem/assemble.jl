@@ -65,7 +65,7 @@ function addBus!(system::PowerSystem; label::T, active::T = 0.0, reactive::T = 0
         throw(ErrorException("The value $label of the label keyword is not unique."))
     end
 
-    push!(system.base.voltage, base)
+    push!(system.base.voltage.value, base)
 
     system.bus.number += 1
     setindex!(system.bus.label, system.bus.number, label)
@@ -75,12 +75,9 @@ function addBus!(system::PowerSystem; label::T, active::T = 0.0, reactive::T = 0
         layout.renumbering = true
     end
 
-    basePowerInv = 1 / (unit.prefix["base power"] * system.base.power)
-    baseVoltageInv = 1 / (unit.prefix["base voltage"] * base)
-
-    activeScale = topu(unit, basePowerInv, "active power")
-    reactiveScale = topu(unit, basePowerInv, "reactive power")
-    voltageScale = topu(unit, baseVoltageInv, "voltage magnitude")
+    voltageScale = si2pu(system.base.voltage.prefix, base, "voltage magnitude")
+    activeScale = si2pu(system.base.power.prefix, system.base.power.value, "active power")
+    reactiveScale = si2pu(system.base.power.prefix, system.base.power.value, "reactive power")
 
     push!(demand.active, active * activeScale)
     push!(demand.reactive, reactive * reactiveScale)
@@ -89,7 +86,7 @@ function addBus!(system::PowerSystem; label::T, active::T = 0.0, reactive::T = 0
     push!(shunt.susceptance, susceptance * reactiveScale)
 
     push!(voltage.magnitude, magnitude * voltageScale)
-    push!(voltage.angle, angle * torad(unit, "voltage angle"))
+    push!(voltage.angle, angle * factor["voltage angle"])
     push!(voltage.maxMagnitude, maxMagnitude * voltageScale)
     push!(voltage.minMagnitude, minMagnitude * voltageScale)
 
@@ -185,14 +182,14 @@ function shuntBus!(system::PowerSystem; user...)
             ac.nodalMatrix[index, index] -= shunt.conductance[index] + im * shunt.susceptance[index]
         end
 
-        basePowerInv = 1 / (unit.prefix["base power"] * system.base.power)
         if haskey(user, :conductance)
-            shunt.conductance[index] = user[:conductance] * topu(unit, basePowerInv, "active power")
+            activeScale = si2pu(system.base.power.prefix, system.base.power.value, "active power")
+            shunt.conductance[index] = user[:conductance] * activeScale
         end
         if haskey(user, :susceptance)
-            shunt.susceptance[index] = user[:susceptance] * topu(unit, basePowerInv, "reactive power")
+            reactiveScale = si2pu(system.base.power.prefix, system.base.power.value, "reactive power")
+            shunt.susceptance[index] = user[:susceptance] * reactiveScale
         end
-
 
         if !isempty(system.acModel.admittance)
             ac.nodalMatrix[index, index] += shunt.conductance[index] + im * shunt.susceptance[index]
@@ -298,30 +295,24 @@ function addBranch!(system::PowerSystem; label::T, from::T, to::T, status::T = 1
     push!(layout.to, system.bus.label[to])
     push!(layout.status, status)
 
-    basePowerInv = 1 / (unit.prefix["base power"] * system.base.power)
-    apparentScale = topu(unit, basePowerInv, "apparent power")
+    apparentScale = si2pu(system.base.power.prefix, system.base.power.value, "apparent power")
 
-    if turnsRatio != 0
-        turnsRatioInv = 1 / turnsRatio
-    else
-        turnsRatioInv = 1.0
-    end
-    baseImpedanceInv = turnsRatioInv^2 * (unit.prefix["base power"] * system.base.power) / ((unit.prefix["base voltage"] * system.base.voltage[layout.from[end]])^2)
-    impedanceScale = topu(unit, baseImpedanceInv, "impedance")
-    admittanceScale = topu(unit, 1 / baseImpedanceInv, "admittance")
+    prefix, base = baseImpedance(system, system.base.voltage.value[layout.from[end]], turnsRatio)
+    impedanceScale = si2pu(prefix, base, "impedance")
+    admittanceScale = si2pu(1 / prefix, 1 / base, "admittance")
 
     push!(parameter.resistance, resistance * impedanceScale)
     push!(parameter.reactance, reactance * impedanceScale)
     push!(parameter.susceptance, susceptance * admittanceScale)
     push!(parameter.turnsRatio, turnsRatio)
-    push!(parameter.shiftAngle, shiftAngle * torad(unit, "voltage angle"))
+    push!(parameter.shiftAngle, shiftAngle * factor["voltage angle"])
 
     push!(rating.longTerm, longTerm * apparentScale)
     push!(rating.shortTerm, shortTerm * apparentScale)
     push!(rating.emergency, emergency * apparentScale)
 
-    push!(voltage.minDiffAngle, minDiffAngle * torad(unit, "voltage angle"))
-    push!(voltage.maxDiffAngle, maxDiffAngle * torad(unit, "voltage angle"))
+    push!(voltage.minDiffAngle, minDiffAngle * factor["voltage angle"])
+    push!(voltage.maxDiffAngle, maxDiffAngle * factor["voltage angle"])
 
     index = system.branch.number
     if !isempty(system.dcModel.admittance)
@@ -454,14 +445,8 @@ function parameterBranch!(system::PowerSystem; user...)
             parameter.turnsRatio[index] = user[:turnsRatio]::T
         end
 
-        if parameter.turnsRatio[index] != 0
-            turnsRatioInv = 1 / parameter.turnsRatio[index]
-        else
-            turnsRatioInv = 1.0
-        end
-        baseImpedanceInv = turnsRatioInv^2 * (unit.prefix["base power"] * system.base.power) / ((unit.prefix["base voltage"] * system.base.voltage[layout.from[end]])^2)
-        impedanceScale = topu(unit, baseImpedanceInv, "impedance")
-
+        prefix, base = baseImpedance(system, system.base.voltage.value[layout.from[index]], system.branch.parameter.turnsRatio[index])
+        impedanceScale = si2pu(prefix, base, "impedance")
         if haskey(user, :resistance)
             parameter.resistance[index] = user[:resistance]::T * impedanceScale
         end
@@ -469,10 +454,11 @@ function parameterBranch!(system::PowerSystem; user...)
             parameter.reactance[index] = user[:reactance]::T * impedanceScale
         end
         if haskey(user, :susceptance)
-            parameter.susceptance[index] = user[:susceptance]::T * topu(unit, 1 / baseImpedanceInv, "admittance")
+            admittanceScale = si2pu(prefix, base, "admittance")
+            parameter.susceptance[index] = user[:susceptance]::T * admittanceScale
         end
         if haskey(user, :shiftAngle)
-            parameter.shiftAngle[index] = user[:shiftAngle]::T * torad(unit, "voltage angle")
+            parameter.shiftAngle[index] = user[:shiftAngle]::T * factor["voltage angle"]
         end
 
         if layout.status[index] == 1
@@ -574,12 +560,9 @@ function addGenerator!(system::PowerSystem; label::T, bus::T, area::T = 0.0, sta
 
     busIndex = system.bus.label[bus]
 
-    basePowerInv = 1 / (unit.prefix["base power"] * system.base.power)
-    activeScale = topu(unit, basePowerInv, "active power")
-    reactiveScale = topu(unit, basePowerInv, "reactive power")
-
-    baseVoltageInv = 1 / (unit.prefix["base voltage"] * system.base.voltage[busIndex])
-    voltageScale = topu(unit, baseVoltageInv, "voltage magnitude")
+    voltageScale = si2pu(system.base.voltage.prefix, system.base.voltage.value[busIndex], "voltage magnitude")
+    activeScale = si2pu(system.base.power.prefix, system.base.power.value, "active power")
+    reactiveScale = si2pu(system.base.power.prefix, system.base.power.value, "reactive power")
 
     system.generator.number += 1
     setindex!(system.generator.label, system.generator.number, label)
@@ -672,8 +655,9 @@ addActiveCost!(system; label = 1, model = 1, polynomial = [0.11; 5.0; 150.0])
 function addActiveCost!(system::PowerSystem; label::T, model::T = 0,
     polynomial::Array{Float64,1} = Array{Float64}(undef, 0),
     piecewise::Array{Float64,2} = Array{Float64}(undef, 0, 0))
-
-    addCost!(system, label, model, polynomial, piecewise, system.generator.cost.active)
+    
+    activeScale = si2pu(system.base.power.prefix, system.base.power.value, "active power")
+    addCost!(system, label, model, polynomial, piecewise, system.generator.cost.active, activeScale)
 end
 
 """
@@ -721,10 +705,11 @@ function addReactiveCost!(system::PowerSystem; label::T, model::T = 0,
     polynomial::Array{Float64,1} = Array{Float64}(undef, 0),
     piecewise::Array{Float64,2} = Array{Float64}(undef, 0, 0))
 
-    addCost!(system, label, model, polynomial, piecewise, system.generator.cost.reactive)
+    reactiveScale = si2pu(system.base.power.prefix, system.base.power.value, "reactive power")
+    addCost!(system, label, model, polynomial, piecewise, system.generator.cost.reactive, reactiveScale)
 end
 
-function addCost!(system::PowerSystem, label, model, polynomial, piecewise, cost)
+function addCost!(system::PowerSystem, label, model, polynomial, piecewise, cost, scale)
 
     if label <= 0
         throw(ErrorException("The value of the label keyword must be given as a positive integer."))
@@ -742,14 +727,11 @@ function addCost!(system::PowerSystem, label, model, polynomial, piecewise, cost
         end
     end
 
-    basePowerInv = 1 / (unit.prefix["base power"] * system.base.power)
-    activeScale = topu(unit, basePowerInv, "active power")
-
     index = system.generator.label[label]
     cost.model[index] = model
 
-    cost.polynomial[index] = [polynomial[1] / activeScale^2, polynomial[2] / activeScale, polynomial[3]]
-    cost.piecewise[index] = [activeScale .* piecewise[:, 1] piecewise[:, 2]]
+    cost.polynomial[index] = [polynomial[1] / scale^2, polynomial[2] / scale, polynomial[3]]
+    cost.piecewise[index] = [scale .* piecewise[:, 1] piecewise[:, 2]]
 end
 
 """
@@ -837,9 +819,8 @@ function outputGenerator!(system::PowerSystem; user...)
         throw(ErrorException("The value $(user[:label]) of the label keyword does not exist in generator labels."))
     end
 
-    basePowerInv = 1 / (unit.prefix["base power"] * system.base.power)
-    activeScale = topu(unit, basePowerInv, "active power")
-    reactiveScale = topu(unit, basePowerInv, "reactive power")
+    activeScale = si2pu(system.base.power.prefix, system.base.power.value, "active power")
+    reactiveScale = si2pu(system.base.power.prefix, system.base.power.value, "reactive power")
 
     index = system.generator.label[user[:label]]
     indexBus = layout.bus[index]

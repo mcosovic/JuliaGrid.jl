@@ -87,19 +87,38 @@
     @test systemMat.generator.cost.reactive.piecewise == systemH5.generator.cost.reactive.piecewise
  
     ######## Base Power ##########
-    @test systemMat.base.power == systemH5.base.power
-    @test systemMat.base.voltage == systemH5.base.voltage
+    @test systemMat.base.power.value == systemH5.base.power.value
+    @test systemMat.base.power.unit == systemH5.base.power.unit
+    @test systemMat.base.power.prefix == systemH5.base.power.prefix
+    @test systemMat.base.voltage.value == systemH5.base.voltage.value
+    @test systemMat.base.voltage.unit == systemH5.base.voltage.unit
+    @test systemMat.base.voltage.prefix == systemH5.base.voltage.prefix
 end
 
 @testset "base" begin
-    @base(MVA, kV)
     systemMat = powerSystem(string(pathData, "case14test.m"))
+    @base(systemMat, MVA, kV)
+    
     savePowerSystem(systemMat; path = string(pathData, "case14test_temp.h5"))
     systemH5 = powerSystem(string(pathData, "case14test.h5"))
+    @base(systemH5, MVA, kV)
 
     ######## Base Power ##########
-    @test systemMat.base.power == 100.0 
-    @test systemH5.base.power == 100.0 
-    @test all(systemMat.base.voltage .== 138.0)
-    @test all(systemMat.base.voltage .== 138.0)
+    @test systemMat.base.power.value == 100.0 
+    @test systemH5.base.power.value == 100.0 
+
+    @test systemMat.base.power.unit == "MVA"
+    @test systemH5.base.power.unit == "MVA" 
+
+    @test systemMat.base.power.prefix == 1e6
+    @test systemH5.base.power.prefix == 1e6 
+
+    @test all(systemMat.base.voltage.value .== 138.0)
+    @test all(systemMat.base.voltage.value .== 138.0)
+
+    @test systemMat.base.voltage.unit == "kV"
+    @test systemH5.base.voltage.unit == "kV" 
+
+    @test systemMat.base.voltage.prefix == 1e3
+    @test systemH5.base.voltage.prefix == 1e3
 end

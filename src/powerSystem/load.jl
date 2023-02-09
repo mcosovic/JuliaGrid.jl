@@ -135,9 +135,21 @@ mutable struct Generator
 end
 
 ######### Base Data ##########
+mutable struct BasePower
+    value::Float64
+    unit::String
+    prefix::Float64
+end
+
+mutable struct BaseVoltage
+    value::Array{Float64,1}
+    unit::String
+    prefix::Float64
+end
+
 mutable struct Base
-    voltage::Array{Float64,1}
-    power::Float64
+    power::BasePower
+    voltage::BaseVoltage
 end
 
 ######### DC Model ##########
@@ -246,7 +258,8 @@ function powerSystem()
     voltageGenerator =  GeneratorVoltage(copy(af))
     layoutGenerator = GeneratorLayout(copy(ai), copy(af), copy(ai))
 
-    basePower = 1e8 / unit.prefix["base power"]
+    basePower = BasePower(1e8, "VA", 1.0)
+    baseVoltage = BaseVoltage(copy(af), "V", 1.0)
 
     acModel = ACModel(copy(sp), copy(sp), ac, copy(ac), copy(ac), copy(ac), copy(ac), copy(ac))
     dcModel = DCModel(sp, copy(af), copy(af))
@@ -255,7 +268,7 @@ function powerSystem()
         Bus(label, demand, supply, shunt, voltageBus, layoutBus, 0),
         Branch(copy(label), parameter, rating, voltageBranch, layoutBranch, 0),
         Generator(copy(label), output, capability, ramping, voltageGenerator, cost, layoutGenerator, 0),
-        Base(copy(af), basePower),
+        Base(basePower, baseVoltage),
         acModel, dcModel)
 end
 
@@ -421,8 +434,8 @@ function loadBase(system::PowerSystem, hdf5::HDF5.File)
     end
 
     base = hdf5["base"]
-    system.base.power = read(base["power"]) / unit.prefix["base power"]
-    system.base.voltage = arrayFloat(base, "voltage", system.bus.number) / unit.prefix["base voltage"]  
+    system.base.power.value = read(base["power"])
+    system.base.voltage.value = arrayFloat(base, "voltage", system.bus.number) 
 end
 
 ######### Load Power System Data from MATLAB File ##########
@@ -440,7 +453,7 @@ end
     lines = readlines(datafile)
     close(datafile)
 
-    system.base.power = 0.0
+    system.base.power.value = 0.0
     @inbounds for (i, line) in enumerate(lines)
         if occursin("mpc.branch", line) && occursin("[", line)
             branchFlag = true
@@ -453,7 +466,7 @@ end
         elseif occursin("mpc.baseMVA", line)
             line = split(line, "=")[end]
             line = split(line, ";")[1]
-            system.base.power = parse(Float64, line)
+            system.base.power.value = parse(Float64, line)
         end
 
         if branchFlag
@@ -468,8 +481,8 @@ end
     end
 
     if system.base.power == 0
-        system.base.power = 100
-        @info("The variable basePower not found. The algorithm proceeds with default value of 100 MVA.")
+        system.base.power.value = 100
+        @info("The variable basePower not found. The algorithm proceeds with default value of 1e8 VA.")
     end
 
     return busLine, branchLine, generatorLine, generatorcostLine
@@ -482,7 +495,7 @@ function loadBus(system::PowerSystem, busLine::Array{String,1})
     end
 
     bus = system.bus
-    basePowerInv = 1 / system.base.power
+    basePowerInv = 1 / system.base.power.value
     deg2rad = pi / 180
 
     bus.number = length(busLine)
@@ -509,7 +522,7 @@ function loadBus(system::PowerSystem, busLine::Array{String,1})
     bus.layout.slack = 0
     bus.layout.renumbering = false
 
-    system.base.voltage = similar(bus.demand.active)
+    system.base.voltage.value = similar(bus.demand.active)
     @inbounds for (k, line) in enumerate(busLine)
         data = split(line)
 
@@ -538,7 +551,7 @@ function loadBus(system::PowerSystem, busLine::Array{String,1})
             bus.layout.slack = k
         end
 
-        system.base.voltage[k] = parse(Float64, data[10]) * 1e3 / unit.prefix["base voltage"]
+        system.base.voltage.value[k] = parse(Float64, data[10]) * 1e3 
     end
 
     if bus.layout.slack == 0
@@ -554,7 +567,7 @@ function loadBranch(system::PowerSystem, branchLine::Array{String,1})
     end
 
     branch = system.branch
-    basePowerInv = 1 / system.base.power
+    basePowerInv = 1 / system.base.power.value
     deg2rad = pi / 180
 
     branch.number = length(branchLine)
@@ -609,7 +622,7 @@ function loadGenerator(system::PowerSystem, generatorLine::Array{String,1}, gene
     end
 
     generator = system.generator
-    basePowerInv = 1 / system.base.power
+    basePowerInv = 1 / system.base.power.value
 
     generator.number = length(generatorLine)
     generator.label = Dict{Int64,Int64}(); sizehint!(generator.label, generator.number)
@@ -696,12 +709,12 @@ function loadGenerator(system::PowerSystem, generatorLine::Array{String,1}, gene
         generatorCostParser(system, system.generator.cost.reactive, generatorCostLine, generator.number)
     end
 
-    system.base.power *= (1e6 / unit.prefix["base power"])
+    system.base.power.value *= 1e6
 end
 
 ######## Parser Generator Cost Model ##########
 @inline function generatorCostParser(system::PowerSystem, cost::Cost, generatorCostLine::Array{String,1}, start::Int64)
-    basePowerInv = 1 / system.base.power
+    basePowerInv = 1 / system.base.power.value
     pointNumber = length(split(generatorCostLine[1])) - 4
 
     @inbounds for i = 1:system.generator.number
@@ -721,11 +734,11 @@ end
         if cost.model[i] == 2
             cost.polynomial[i] = fill(0.0, 3)
             if pointNumber >= 3
-                cost.polynomial[i][1] = parse(Float64, data[5]) * system.base.power^2
-                cost.polynomial[i][2] = parse(Float64, data[6]) * system.base.power
+                cost.polynomial[i][1] = parse(Float64, data[5]) * system.base.power.value^2
+                cost.polynomial[i][2] = parse(Float64, data[6]) * system.base.power.value
                 cost.polynomial[i][3] = parse(Float64, data[7])
             elseif pointNumber == 2
-                cost.polynomial[i][2] = parse(Float64, data[5]) * system.base.power
+                cost.polynomial[i][2] = parse(Float64, data[5]) * system.base.power.value
                 cost.polynomial[i][3] = parse(Float64, data[6])
             end
         end
