@@ -11,7 +11,7 @@
 end
 
 @testset "shuntBus!" begin
-    default(all)
+    @default(all)
 
     manual = powerSystem(string(pathData, "part300.m"))
     assemble = deepcopy(manual)
