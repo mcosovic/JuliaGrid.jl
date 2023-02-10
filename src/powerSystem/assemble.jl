@@ -39,11 +39,12 @@ addBus!(system; label = 1, active = 0.25, reactive = -0.04, angle = 0.1745, base
 
 Creating a bus using a custom unit system:
 ```jldoctest
-@base(MVA, kV)
 @power(MW, MVAr, MVA)
 @voltage(pu, deg)
 
 system = powerSystem()
+@base(system, MVA, kV)
+
 addBus!(system; label = 1, active = 25, reactive = -4, angle = 10, base = 132)
 ```
 """
@@ -522,11 +523,12 @@ addGenerator!(system; label = 1, bus = 1, active = 0.5, reactive = 0.1, magnitud
 
 Creating a bus using a custom unit system:
 ```jldoctest
-@base(MVA, kV)
 @power(MW, MVAr, MVA)
 @voltage(kV, deg)
 
-ystem = powerSystem()
+system = powerSystem()
+@base(system, MVA, kV)
+
 addBus!(system; label = 1, active = 25, reactive = -4, base = 132)
 addGenerator!(system; label = 1, bus = 1, active = 50, reactive = 10, magnitude = 145.2)
 ```
