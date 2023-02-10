@@ -21,11 +21,11 @@ The bus is defined with the following parameters:
 * `maxMagnitude` (pu or V): the maximum voltage magnitude value
 * `base` (V): the base value of the voltage magnitude
 * `area`: the area number
-* `lossZone`: the loss zone
+* `lossZone`: the loss zone.
 
 # Units
-The input units are in per-units (pu) and radians (rad) by default as shown, except for the
-keyword `base` which is given by default in volt (V). The unit settings, such as the
+The input units are in per-units (pu) and radians (rad) by default as shown, except for 
+the keyword `base` which is given by default in volt (V). The unit settings, such as the
 selection between the per-unit system or the SI system with the appropriate prefixes,
 can be modified using macros [`@base`](@ref @base), [`@power`](@ref @power), and
 [`@voltage`](@ref @voltage).
@@ -39,12 +39,11 @@ addBus!(system; label = 1, active = 0.25, reactive = -0.04, angle = 0.1745, base
 
 Creating a bus using a custom unit system:
 ```jldoctest
-@power(MW, MVAr, MVA)
-@voltage(pu, deg)
-
 system = powerSystem()
 @base(system, MVA, kV)
 
+@power(MW, MVAr, MVA)
+@voltage(pu, deg)
 addBus!(system; label = 1, active = 25, reactive = -4, angle = 10, base = 132)
 ```
 """
@@ -120,6 +119,7 @@ the `label` keyword argument and should match an already defined bus label.
 # Example
 ```jldoctest
 system = powerSystem()
+
 addBus!(system; label = 1, active = 0.25, reactive = -0.04)
 slackBus!(system; label = 1)
 ```
@@ -161,6 +161,7 @@ The input units are in per-units by default, but they can be modified using the
 # Example
 ```jldoctest
 system = powerSystem()
+
 addBus!(system; label = 1, active = 0.25, reactive = -0.04)
 shuntBus!(system; label = 1, conductance = 0.04)
 ```
@@ -220,7 +221,7 @@ The branch is defined with the following parameters:
 * `shortTerm` (pu or VA): long-term rating (equal to zero for unlimited)
 * `emergency` (pu or VA): emergency rating (equal to zero for unlimited)
 * `minDiffAngle` (rad or deg): minimum voltage angle difference value between from and to bus
-* `maxDiffAngle` (rad or deg): maximum voltage angle difference value between from and to bus
+* `maxDiffAngle` (rad or deg): maximum voltage angle difference value between from and to bus.
 
 # Units
 The input units are in per-units (pu) and radians (rad) by default. The unit settings, such
@@ -232,6 +233,7 @@ can be modified using macros [`@power`](@ref @power), [`@voltage`](@ref @voltage
 Creating a branch using the default unit system:
 ```jldoctest
 system = powerSystem()
+
 addBus!(system; label = 1, active = 0.25, reactive = -0.04)
 addBus!(system; label = 2, active = 0.15, reactive = 0.08)
 addBranch!(system; label = 1, from = 1, to = 2, reactance = 0.12, shiftAngle = 0.1745)
@@ -239,9 +241,9 @@ addBranch!(system; label = 1, from = 1, to = 2, reactance = 0.12, shiftAngle = 0
 
 Creating a branch using a custom unit system:
 ```jldoctest
-@voltage(pu, deg)
-
 system = powerSystem()
+
+@voltage(pu, deg)
 addBus!(system; label = 1, active = 0.25, reactive = -0.04)
 addBus!(system; label = 2, active = 0.15, reactive = 0.08)
 addBranch!(system; label = 1, from = 1, to = 2, reactance = 0.12, shiftAngle = 10)
@@ -345,6 +347,7 @@ status of a branch is changed, thus eliminating the need to rebuild the model fr
 # Example
 ```jldoctest
 system = powerSystem()
+
 addBus!(system; label = 1, active = 0.25, reactive = -0.04)
 addBus!(system; label = 2, active = 0.15, reactive = 0.08)
 addBranch!(system; label = 1, from = 1, to = 2, resistance = 0.05, reactance = 0.12)
@@ -412,6 +415,7 @@ following macros [`@voltage`](@ref @voltage) and [`@parameter`](@ref @parameter)
 # Example
 ```jldoctest
 system = powerSystem()
+
 addBus!(system; label = 1, active = 0.25, reactive = -0.04)
 addBus!(system; label = 2, active = 0.15, reactive = 0.08)
 addBranch!(system; label = 1, from = 1, to = 2, resistance = 0.05, reactance = 0.12)
@@ -506,7 +510,7 @@ The generator is defined with the following parameters:
 * `reserve10min` (pu or W): ramp rate for 10-minute reserves
 * `reserve30min` (pu or W): ramp rate for 30-minute reserves
 * `reactiveTimescale` (pu/min or VAr/min): ramp rate for reactive power, two seconds timescale
-* `area`: area participation factor
+* `area`: area participation factor.
 
 # Units
 By default, the input units are associated with per-units (pu) as shown. The unit settings,
@@ -517,18 +521,18 @@ prefixes, can be modified using macros [`@power`](@ref @power) and [`@voltage`](
 Creating a bus using the default unit system:
 ```jldoctest
 system = powerSystem()
+
 addBus!(system; label = 1, active = 0.25, reactive = -0.04, base = 132e3)
 addGenerator!(system; label = 1, bus = 1, active = 0.5, reactive = 0.1, magnitude = 1.1)
 ```
 
 Creating a bus using a custom unit system:
 ```jldoctest
-@power(MW, MVAr, MVA)
-@voltage(kV, deg)
-
 system = powerSystem()
 @base(system, MVA, kV)
 
+@power(MW, MVAr, MVA)
+@voltage(kV, deg)
 addBus!(system; label = 1, active = 25, reactive = -4, base = 132)
 addGenerator!(system; label = 1, bus = 1, active = 50, reactive = 10, magnitude = 145.2)
 ```
@@ -639,6 +643,7 @@ modified using the macro [`@power`](@ref @power).
 Creating a bus using the default unit system:
 ```jldoctest
 system = powerSystem()
+
 addBus!(system; label = 1, active = 0.25, reactive = -0.04)
 addGenerator!(system; label = 1, bus = 1, active = 0.5, reactive = 0.1)
 addActiveCost!(system; label = 1, model = 1, polynomial = [1100.0; 500.0; 150.0])
@@ -646,9 +651,9 @@ addActiveCost!(system; label = 1, model = 1, polynomial = [1100.0; 500.0; 150.0]
 
 Creating a bus using a custom unit system:
 ```jldoctest
-@power(MW, MVAr, MVA)
-
 system = powerSystem()
+
+@power(MW, MVAr, MVA)
 addBus!(system; label = 1, active = 25, reactive = -4)
 addGenerator!(system; label = 1, bus = 1, active = 50, reactive = 10)
 addActiveCost!(system; label = 1, model = 1, polynomial = [0.11; 5.0; 150.0])
@@ -688,6 +693,7 @@ be modified using the macro [`@power`](@ref @power).
 Creating a bus using the default unit system:
 ```jldoctest
 system = powerSystem()
+
 addBus!(system; label = 1, active = 0.25, reactive = -0.04)
 addGenerator!(system; label = 1, bus = 1, active = 0.5, reactive = 0.1)
 addReactiveCost!(system; label = 1, model = 2, piecewise = [0.1085 12; 0.1477 16])
@@ -695,9 +701,9 @@ addReactiveCost!(system; label = 1, model = 2, piecewise = [0.1085 12; 0.1477 16
 
 Creating a bus using a custom unit system:
 ```jldoctest
-@power(MW, MVAr, MVA)
-
 system = powerSystem()
+
+@power(MW, MVAr, MVA)
 addBus!(system; label = 1, active = 25, reactive = -4)
 addGenerator!(system; label = 1, bus = 1, active = 50, reactive = 10)
 addReactiveCost!(system; label = 1, model = 2, piecewise = [10.85 12; 14.77 16])
@@ -757,6 +763,7 @@ the `bus.supply` field of the `PowerSystem` type.
 # Example
 ```jldoctest
 system = powerSystem()
+
 addBus!(system; label = 1, active = 0.25, reactive = -0.04)
 addGenerator!(system; label = 1, bus = 1, active = 0.5, reactive = 0.1)
 statusGenerator!(system; label = 1, status = 0)
@@ -810,6 +817,7 @@ can be left, in which case their values will remain unchanged. The function also
 # Example
 ```jldoctest
 system = powerSystem()
+
 addBus!(system; label = 1, active = 0.25, reactive = -0.04)
 addGenerator!(system; label = 1, bus = 1, active = 0.5, reactive = 0.1)
 outputGenerator!(system; label = 1, active = 0.85)
