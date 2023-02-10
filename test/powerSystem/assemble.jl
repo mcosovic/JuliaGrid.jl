@@ -132,9 +132,9 @@ end
     addGenerator!(systemSI; label = 2, bus = 153, active = 216, reactive = 10, minReactive = -50, maxReactive = 90, magnitude = 1.0435 * 230e3, maxActive = 316)
     addGenerator!(systemSI; label = 3, bus = 153, active = 206, reactive = 30, minReactive = -50, maxReactive = 90, magnitude = 1.0435 * 230e3, maxActive = 316)
 
-    addActiveCost!(systemPU; label = 1, model = 2, polynomial = [0.01; 40; 4])
-    addActiveCost!(systemPU; label = 2, model = 2, polynomial = [0.0266666667; 20; 3])
-    addActiveCost!(systemPU; label = 3, model = 2, polynomial = [0.0266666667; 20; 2])
+    addActiveCost!(systemSI; label = 1, model = 2, polynomial = [0.01; 40; 4])
+    addActiveCost!(systemSI; label = 2, model = 2, polynomial = [0.0266666667; 20; 3])
+    addActiveCost!(systemSI; label = 3, model = 2, polynomial = [0.0266666667; 20; 2])
 
     ######### Bus ##########
     @test system.bus.label == systemSI.bus.label
@@ -201,6 +201,6 @@ end
     @test system.generator.layout.status == systemSI.generator.layout.status
     @test system.generator.layout.area == systemSI.generator.layout.area
 
-    @test system.generator.cost.active.model == systemPU.generator.cost.active.model
-    @test system.generator.cost.active.polynomial == systemPU.generator.cost.active.polynomial
+    @test system.generator.cost.active.model == systemSI.generator.cost.active.model
+    @test system.generator.cost.active.polynomial == systemSI.generator.cost.active.polynomial
 end
