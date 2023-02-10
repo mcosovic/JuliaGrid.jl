@@ -218,7 +218,7 @@ macro parameter(impedance::Symbol, admittance::Symbol)
 end
 
 """
-We have a macro named that resets the units of the built-in functions to their default 
+We have a macro that resets the units of the built-in functions to their default 
 settings of per-units (pu) and radians (rad). 
 
     @default(mode)
