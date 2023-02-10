@@ -730,8 +730,13 @@ function addCost!(system::PowerSystem, label, model, polynomial, piecewise, cost
     index = system.generator.label[label]
     cost.model[index] = model
 
-    cost.polynomial[index] = [polynomial[1] / scale^2, polynomial[2] / scale, polynomial[3]]
-    cost.piecewise[index] = [scale .* piecewise[:, 1] piecewise[:, 2]]
+    if !isempty(polynomial)
+        cost.polynomial[index] = [polynomial[1] / scale^2, polynomial[2] / scale, polynomial[3]]
+    end
+    
+    if !isempty(piecewise)
+        cost.piecewise[index] = [scale .* piecewise[:, 1] piecewise[:, 2]]
+    end
 end
 
 """

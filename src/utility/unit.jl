@@ -217,6 +217,46 @@ macro parameter(impedance::Symbol, admittance::Symbol)
     factor["admittance"] = parsePrefix(admittance, suffixUser)
 end
 
+"""
+We have a macro named that resets the units of the built-in functions to their default 
+settings of per-units (pu) and radians (rad). 
+
+    @default(mode)
+
+The `mode` argument can take on the following values:
+* `all`: resets all units to their default settings
+* `power`: sets active, reactive, and apparent power to per-units (pu)
+* `voltage`: sets voltage magnitude to per-unit (pu) and voltage angle to radian (rad)
+* `parameter`: sets impedance and admittance to per-units (pu).
+
+# Example
+```jldoctest
+@default(all)
+```
+"""
+macro default(mode::Symbol)
+    if mode == :all || mode == :power
+        factor["active power"] = 0.0 
+        factor["reactive power"] = 0.0 
+        factor["apparent power"] = 0.0 
+    end
+
+    if mode == :all || mode == :voltage
+        factor["voltage magnitude"] = 0.0 
+        factor["voltage angle"] = 1.0 
+    end
+
+    if mode == :all || mode == :current
+        factor["current magnitude"] = 0.0 
+        factor["current angle"] = 1.0 
+    end
+
+    if mode == :all || mode == :parameter
+        factor["impedance"] = 0.0 
+        factor["admittance"] = 0.0 
+    end
+end
+
 ######### Parse Suffix (Unit) ##########
 function parseSuffix(input::String, type::String)
     sufixUser = ""

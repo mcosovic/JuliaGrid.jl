@@ -21,7 +21,7 @@ export dcModel!, acModel!
 
 ######### Unit ##########
 include("utility/unit.jl")
-export @base, @power, @voltage, @parameter
+export @base, @power, @voltage, @parameter, @default
 
 end # JuliaGrid
 

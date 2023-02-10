@@ -11,7 +11,7 @@
 end
 
 @testset "shuntBus!" begin
-    @power(pu, pu, pu)
+    default(all)
 
     manual = powerSystem(string(pathData, "part300.m"))
     assemble = deepcopy(manual)
@@ -31,7 +31,7 @@ end
     @test manual.acModel.nodalMatrix == assemble.acModel.nodalMatrix
 end
 
-@testset "shuntBus!, SI Units" begin
+@testset "SI Units: shuntBus!" begin
     @power(kW, MVAr, pu)
 
     manual = powerSystem(string(pathData, "part300.m"))
@@ -79,8 +79,7 @@ end
 end
 
 @testset "parameterBranch!" begin
-    @voltage(pu, rad)
-    @parameter(pu, pu)
+    @default(all)
 
     manual = powerSystem(string(pathData, "part300.m"))
     assemble = deepcopy(manual)
@@ -104,7 +103,7 @@ end
     @test manual.dcModel.nodalMatrix ≈ assemble.dcModel.nodalMatrix
 end
 
-@testset "parameterBranch!, SI Units" begin
+@testset "SI Units: parameterBranch!" begin
     manual = powerSystem(string(pathData, "part300.m"))
     assemble = deepcopy(manual)
     acModel!(assemble); dcModel!(assemble)
@@ -121,4 +120,55 @@ end
     @test manual.branch.parameter.shiftAngle ≈ assemble.branch.parameter.shiftAngle
     @test round.(manual.acModel.nodalMatrix, digits=2) ≈ round.(assemble.acModel.nodalMatrix, digits=2)
     @test round.(manual.dcModel.nodalMatrix, digits=2) ≈ round.(assemble.dcModel.nodalMatrix, digits=2)
+end
+
+@testset "statusGenerator!" begin
+    system1 = powerSystem(string(pathData, "part300Gen.m"))
+
+    system2 = powerSystem(string(pathData, "part300.m"))
+    system3 = deepcopy(system2)
+    statusGenerator!(system2; label = 3, status = 0)
+
+    @test system1.generator.layout.status == system2.generator.layout.status
+    @test system1.bus.supply.active ≈ system2.bus.supply.active
+    @test system1.bus.supply.reactive ≈ system2.bus.supply.reactive
+    @test system1.bus.supply.inService == system2.bus.supply.inService
+    @test system1.bus.layout.type == system2.bus.layout.type
+
+    statusGenerator!(system2; label = 3, status = 1)
+
+    @test system3.generator.layout.status == system2.generator.layout.status
+    @test system3.bus.supply.active ≈ system2.bus.supply.active
+    @test system3.bus.supply.reactive ≈ system2.bus.supply.reactive
+    @test system3.bus.supply.inService == system2.bus.supply.inService
+    @test system3.bus.layout.type == system2.bus.layout.type
+end
+
+@testset "outputGenerator!" begin
+    system1 = powerSystem(string(pathData, "part300Gen2.m"))
+
+    system2 = powerSystem(string(pathData, "part300.m"))
+    outputGenerator!(system2; label = 3, active = 1.1, reactive = 1)
+
+    @test system1.generator.output.active == system2.generator.output.active
+    @test system1.generator.output.reactive == system2.generator.output.reactive
+    @test system1.bus.supply.active ≈ system2.bus.supply.active
+    @test system1.bus.supply.reactive ≈ system2.bus.supply.reactive
+    @test system1.bus.supply.inService == system2.bus.supply.inService
+    @test system1.bus.layout.type == system2.bus.layout.type
+end
+
+@testset "SI Units: outputGenerator!" begin
+    system1 = powerSystem(string(pathData, "part300Gen2.m"))
+    system2 = powerSystem(string(pathData, "part300.m"))
+    
+    @power(MW, MVAr, MVA)
+    outputGenerator!(system2; label = 3, active = 110, reactive = 100)
+
+    @test system1.generator.output.active == system2.generator.output.active
+    @test system1.generator.output.reactive == system2.generator.output.reactive
+    @test system1.bus.supply.active ≈ system2.bus.supply.active
+    @test system1.bus.supply.reactive ≈ system2.bus.supply.reactive
+    @test system1.bus.supply.inService == system2.bus.supply.inService
+    @test system1.bus.layout.type == system2.bus.layout.type
 end

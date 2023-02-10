@@ -12,6 +12,7 @@
     addBus!(systemPU; label = 164, susceptance = -2.12, magnitude = 0.9839, angle = 9.66 * rad, minMagnitude = 0.94, maxMagnitude = 1.06, base = 230e3)
     addBus!(systemPU; label = 183, active = 0.4, reactive = 0.04, magnitude = 0.9717, angle = 7.12 * rad, minMagnitude = 0.94, maxMagnitude = 1.06, base = 115e3)
     slackBus!(systemPU; label = 152)
+    
     addBranch!(systemPU; label = 1, from = 164, to = 155, resistance = 0.0009, reactance = 0.0231, susceptance = -0.033, turnsRatio = 0.956, shiftAngle = 10.2 * rad, longTerm = 0.1, minDiffAngle = -360 * rad, maxDiffAngle = 360 * rad)
     addBranch!(systemPU; label = 2, from = 155, to = 156, resistance = 0.0008, reactance = 0.0256, turnsRatio = 1.05, minDiffAngle = -360 * rad, maxDiffAngle = 360 * rad)
     addBranch!(systemPU; label = 3, from = 154, to = 156, resistance = 0.1746, reactance = 0.3161, susceptance = 0.04, minDiffAngle = -360 * rad, maxDiffAngle = 360 * rad)
@@ -20,9 +21,14 @@
     addBranch!(systemPU; label = 6, from = 153, to = 161, resistance = 0.0055, reactance = 0.0288, susceptance = 0.19, minDiffAngle = -360 * rad, maxDiffAngle = 360 * rad)
     addBranch!(systemPU; label = 7, from = 152, to = 153, resistance = 0.0137, reactance = 0.0957, susceptance = 0.141, minDiffAngle = -360 * rad, maxDiffAngle = 360 * rad)
     addBranch!(systemPU; label = 8, from = 154, to = 183, resistance = 0.0804, reactance = 0.3054, susceptance = 0.045, emergency = 0.03, minDiffAngle = -360 * rad, maxDiffAngle = 360 * rad)
+   
     addGenerator!(systemPU; label = 1, bus = 152, active = 3.72, minReactive = -0.5, maxReactive = 1.75, magnitude = 1.0535, maxActive = 4.72)
     addGenerator!(systemPU; label = 2, bus = 153, active = 2.16, reactive = 0.1, minReactive = -0.5, maxReactive = 0.9, magnitude = 1.0435, maxActive = 3.16)
     addGenerator!(systemPU; label = 3, bus = 153, active = 2.06, reactive = 0.3, minReactive = -0.5, maxReactive = 0.9, magnitude = 1.0435, maxActive = 3.16)
+
+    addActiveCost!(systemPU; label = 1, model = 2, polynomial = [0.01 * 100^2; 40 * 100; 4])
+    addActiveCost!(systemPU; label = 2, model = 2, polynomial = [0.0266666667 * 100^2; 20 * 100; 3])
+    addActiveCost!(systemPU; label = 3, model = 2, polynomial = [0.0266666667 * 100^2; 20 * 100; 2])
 
     ######### Bus ##########
     @test system.bus.label == systemPU.bus.label
@@ -88,9 +94,12 @@
     @test system.generator.layout.bus == systemPU.generator.layout.bus
     @test system.generator.layout.status == systemPU.generator.layout.status
     @test system.generator.layout.area == systemPU.generator.layout.area
+
+    @test system.generator.cost.active.model == systemPU.generator.cost.active.model
+    @test system.generator.cost.active.polynomial == systemPU.generator.cost.active.polynomial
 end
 
-@testset "addBus!, addGenerator!, addBranch!, SI unit" begin
+@testset "SI Units: addBus!, addGenerator!, addBranch!" begin
     rad = pi / 180
     system = powerSystem(string(pathData, "part300.m"))
     
@@ -109,6 +118,7 @@ end
     addBus!(systemSI; label = 164, susceptance = -212, magnitude = 0.9839 * 230e3, angle = 9.66, minMagnitude = 0.94 * 230e3, maxMagnitude = 1.06 * 230e3, base = 230)
     addBus!(systemSI; label = 183, active = 40, reactive = 4, magnitude = 0.9717 * 115e3, angle = 7.12, minMagnitude = 0.94 * 115e3, maxMagnitude = 1.06 * 115e3, base = 115)
     slackBus!(systemSI; label = 152)
+   
     addBranch!(systemSI; label = 1, from = 164, to = 155, resistance = 0.4351, reactance = 11.1682, susceptance = -0.0683e-03, turnsRatio = 0.956, shiftAngle = 10.2, longTerm = 10, minDiffAngle = -360, maxDiffAngle = 360)
     addBranch!(systemSI; label = 2, from = 155, to = 156, resistance = 0.4666, reactance = 14.9305, turnsRatio = 1.05, minDiffAngle = -360, maxDiffAngle = 360)
     addBranch!(systemSI; label = 3, from = 154, to = 156, resistance = 23.0909, reactance = 41.8042, susceptance = 0.3025e-3, minDiffAngle = -360, maxDiffAngle = 360)        
@@ -117,9 +127,14 @@ end
     addBranch!(systemSI; label = 6, from = 153, to = 161, resistance = 2.9095, reactance = 15.2352, susceptance = 0.3592e-3, minDiffAngle = -360, maxDiffAngle = 360)
     addBranch!(systemSI; label = 7, from = 152, to = 153, resistance = 7.2473, reactance = 50.6253, susceptance = 0.2665e-3, minDiffAngle = -360, maxDiffAngle = 360)
     addBranch!(systemSI; label = 8, from = 154, to = 183, resistance = 10.6329, reactance = 40.3892, susceptance = 0.3403e-3, emergency = 3, minDiffAngle = -360, maxDiffAngle = 360)
+   
     addGenerator!(systemSI; label = 1, bus = 152, active = 372, minReactive = -50, maxReactive = 175, magnitude = 1.0535 * 230e3, maxActive = 472)
     addGenerator!(systemSI; label = 2, bus = 153, active = 216, reactive = 10, minReactive = -50, maxReactive = 90, magnitude = 1.0435 * 230e3, maxActive = 316)
     addGenerator!(systemSI; label = 3, bus = 153, active = 206, reactive = 30, minReactive = -50, maxReactive = 90, magnitude = 1.0435 * 230e3, maxActive = 316)
+
+    addActiveCost!(systemPU; label = 1, model = 2, polynomial = [0.01; 40; 4])
+    addActiveCost!(systemPU; label = 2, model = 2, polynomial = [0.0266666667; 20; 3])
+    addActiveCost!(systemPU; label = 3, model = 2, polynomial = [0.0266666667; 20; 2])
 
     ######### Bus ##########
     @test system.bus.label == systemSI.bus.label
@@ -185,4 +200,7 @@ end
     @test system.generator.layout.bus == systemSI.generator.layout.bus
     @test system.generator.layout.status == systemSI.generator.layout.status
     @test system.generator.layout.area == systemSI.generator.layout.area
+
+    @test system.generator.cost.active.model == systemPU.generator.cost.active.model
+    @test system.generator.cost.active.polynomial == systemPU.generator.cost.active.polynomial
 end
