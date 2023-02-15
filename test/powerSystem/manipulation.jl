@@ -1,15 +1,3 @@
-@testset "slackBus!" begin
-    manual = powerSystem(string(pathData, "part300.m"))
-
-    slackBus!(manual; label = 154)
-    @test manual.bus.layout.type[1] == 2
-    @test manual.bus.layout.type[3] == 3
-    
-    slackBus!(manual; label = 153)
-    @test manual.bus.layout.type[3] == 1 
-    @test manual.bus.layout.type[2] == 3 
-end
-
 @testset "shuntBus!" begin
     @default(all)
 

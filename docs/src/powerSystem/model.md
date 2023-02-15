@@ -13,7 +13,6 @@ Once the `PowerSystem` type is created, you can add buses, branches, and generat
 * [`addBranch!()`](@ref addBranch!)
 * [`addGenerator!()`](@ref addGenerator!).
 In addition, it is possible to manipulate the parameters of buses, branches, and generators using the following functions:
-* [`slackBus!()`](@ref slackBus!)
 * [`shuntBus!()`](@ref shuntBus!)
 * [`statusBranch!()`](@ref statusBranch!)
 * [`parameterBranch!()`](@ref parameterBranch!)
@@ -45,7 +44,6 @@ savePowerSystem
 ## Bus Functions
 ```@docs
 addBus!
-slackBus!
 shuntBus!
 ```
 

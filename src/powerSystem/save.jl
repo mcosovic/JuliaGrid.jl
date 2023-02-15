@@ -45,13 +45,9 @@ function saveBus(system::PowerSystem, file)
     layout = system.bus.layout
 
     label = fill(0, system.bus.number)
-    slack = 0
     shuntNumber = 0
     @inbounds for (key, value) in system.bus.label
         label[value] = key
-        if value == layout.slack
-            slack = key
-        end
         if shunt.conductance[value] != 0 || shunt.susceptance[value] != 0
             shuntNumber += 1
         end
@@ -61,10 +57,13 @@ function saveBus(system::PowerSystem, file)
     attrs(file["bus/layout/label"])["unit"] = "dimensionless"
     attrs(file["bus/layout/label"])["format"] = "expand"
 
-    write(file, "bus/layout/slack", slack)
-    attrs(file["bus/layout/slack"])["type"] = "positive integer"
-    attrs(file["bus/layout/slack"])["unit"] = "dimensionless"
-    attrs(file["bus/layout/slack"])["format"] = "number"
+    write(file, "bus/layout/type", layout.type)
+    attrs(file["bus/layout/type"])["demand bus (PQ)"] = 1
+    attrs(file["bus/layout/type"])["generator bus (PV)"] = 2
+    attrs(file["bus/layout/type"])["slack bus"] = 3
+    attrs(file["bus/layout/type"])["type"] = "positive integer"
+    attrs(file["bus/layout/type"])["unit"] = "dimensionless"
+    attrs(file["bus/layout/type"])["format"] = "expand"
 
     format = compresseArray(file, demand.active, "bus/demand/active")
     attrs(file["bus/demand/active"])["unit"] = "per-unit (pu)"

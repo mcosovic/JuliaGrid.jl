@@ -1,7 +1,9 @@
-module JuliaGrid
+module JuliaGridTest
 
 using SparseArrays, LinearAlgebra, SuiteSparse
 using HDF5
+using JuliaGrid
+using Test
 
 ######### Utility ##########
 include("utility/routine.jl")
@@ -18,6 +20,9 @@ export addBus!, slackBus!, shuntBus!
 export addBranch!, statusBranch!, parameterBranch!
 export addGenerator!, addActiveCost!, addReactiveCost!, statusGenerator!, outputGenerator!
 export dcModel!, acModel!
+
+include("powerFlow/solution.jl")
+export gaussSeidel, gaussSeidel!
 
 ######### Unit ##########
 include("utility/unit.jl")

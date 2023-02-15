@@ -132,12 +132,20 @@ mutable struct Result
 end
 
 """
-The function receives the composite type `PowerSystem`, initializes
-the Gauss-Seidel method, and returns the composite type `Result`.
+The input of the function is the composite type `PowerSystem` and it performs the 
+Gauss-Seidel method initialization. 
 
     gaussSeidel(system::PowerSystem)
 
-The function updates the field `algorithm` of the composite type `Result`.
+The output of the function is the composite type `Result`.
+
+# Example
+```jldoctest
+system = powerSystem("case14.h5")
+acModel!(system)
+    
+result = gaussSeidel(system)
+```    
 """
 function gaussSeidel(system::PowerSystem)
     bus = system.bus
@@ -149,6 +157,9 @@ function gaussSeidel(system::PowerSystem)
     @inbounds for i = 1:bus.number
         voltage[i] = voltageMagnitude[i] * exp(im * bus.voltage.angle[i])
 
+        if bus.supply.inService[i] == 0 && bus.layout.type[i] != 3
+            bus.layout.type[i] = 1
+        end
         if bus.layout.type[i] == 1
             push!(pqIndex, i)
         end
@@ -172,12 +183,14 @@ function gaussSeidel(system::PowerSystem)
 end
 
 """
-The function receives the composite type `PowerSystem` and `Result`. Using
-the Gauss-Seidel method, the function computes bus voltage magnitudes and angles.
+The function updates the `bus.voltage` and `algorithm` fields of the `Result` type by 
+utilizing the Gauss-Seidel method to calculate the bus voltage magnitudes and angles for 
+a `PowerSystem` composite type.
 
     gaussSeidel!(system::PowerSystem, result::Result)
 
-The function updates fields `result.bus.voltage` and `result.algorithm`.
+The function performs a single iteration of the Gauss-Seidel method and is designed to be 
+incorporated into a for loop.
 
 # Example
 ```jldoctest
@@ -303,7 +316,7 @@ function newtonRaphson(system::PowerSystem)
     jIndex = similar(iIndex)
     count = 1
     @inbounds for i = 1:bus.number
-        if i != bus.layout.slackIndex
+        if i != bus.layout.slack
             I = 0.0; C = 0.0
 
             for j in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
@@ -398,7 +411,7 @@ function newtonRaphson!(system::PowerSystem, result::Result)
     iteration.number += 1
 
     @inbounds for i = 1:bus.number
-        if i != bus.layout.slackIndex
+        if i != bus.layout.slack
             for j in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
                 row = ac.nodalMatrix.rowval[j]
                 typeRow = bus.layout.type[row]
@@ -452,7 +465,7 @@ function newtonRaphson!(system::PowerSystem, result::Result)
         if bus.layout.type[i] == 1
             voltage.magnitude[i] = voltage.magnitude[i] - result.algorithm.increment[index.pq[i]]
         end
-        if i != bus.layout.slackIndex
+        if i != bus.layout.slack
             voltage.angle[i] = voltage.angle[i] - result.algorithm.increment[index.pvpq[i]]
         end
     end
@@ -460,7 +473,7 @@ function newtonRaphson!(system::PowerSystem, result::Result)
     iteration.stopping.active = 0.0
     iteration.stopping.reactive = 0.0
     @inbounds for i = 1:bus.number
-        if i != bus.layout.slackIndex
+        if i != bus.layout.slack
             I = 0.0
             C = 0.0
             for j in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
@@ -790,15 +803,15 @@ result = dcPowerFlow(system)
 function dcPowerFlow(system::PowerSystem)
     dc = system.dcModel
     bus = system.bus
-    slack = bus.layout.slackIndex
+    slack = bus.layout.slack
 
-    slackRange = dc.nodalMatrix.colptr[slack]:(dc.nodalMatrix.colptr[slack + 1] - 1)
+    slackRange = dc.nodalMatrix.colptr[bus.layout.slack]:(dc.nodalMatrix.colptr[bus.layout.slack + 1] - 1)
     elementsRemove = dc.nodalMatrix.nzval[slackRange]
     @inbounds for i in slackRange
-        dc.nodalMatrix[dc.nodalMatrix.rowval[i], slack] = 0.0
-        dc.nodalMatrix[slack, dc.nodalMatrix.rowval[i]] = 0.0
+        dc.nodalMatrix[dc.nodalMatrix.rowval[i], bus.layout.slack] = 0.0
+        dc.nodalMatrix[bus.layout.slack, dc.nodalMatrix.rowval[i]] = 0.0
     end
-    dc.nodalMatrix[slack, slack] = 1.0
+    dc.nodalMatrix[bus.layout.slack, bus.layout.slack] = 1.0
 
     b = copy(bus.supply.active)
     @inbounds for i = 1:bus.number
@@ -806,17 +819,17 @@ function dcPowerFlow(system::PowerSystem)
     end
 
     angle = dc.nodalMatrix \ b
-    angle[slack] = 0.0
+    angle[bus.layout.slack] = 0.0
 
-    if bus.voltage.angle[slack] != 0.0
+    if bus.voltage.angle[bus.layout.slack] != 0.0
         @inbounds for i = 1:bus.number
-            angle[i] += bus.voltage.angle[slack]
+            angle[i] += bus.voltage.angle[bus.layout.slack]
         end
     end
 
     @inbounds for (k, i) in enumerate(slackRange)
-        dc.nodalMatrix[dc.nodalMatrix.rowval[i], slack] = elementsRemove[k]
-        dc.nodalMatrix[slack, dc.nodalMatrix.rowval[i]] = elementsRemove[k]
+        dc.nodalMatrix[dc.nodalMatrix.rowval[i], bus.layout.slack] = elementsRemove[k]
+        dc.nodalMatrix[bus.layout.slack, dc.nodalMatrix.rowval[i]] = elementsRemove[k]
     end
 
     method = "DC Power Flow"
@@ -836,6 +849,7 @@ end
 ######### Set Voltage Magnitude Values According to Generators ##########
 function generatorVoltageMagnitude(system::PowerSystem)
     magnitude = copy(system.bus.voltage.magnitude)
+    
     @inbounds for (k, i) in enumerate(system.generator.layout.bus)
         if system.generator.layout.status[k] == 1
             magnitude[i] = system.generator.voltage.magnitude[k]

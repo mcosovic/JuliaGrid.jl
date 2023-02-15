@@ -281,6 +281,7 @@ function loadBus(system::PowerSystem, hdf5::HDF5.File)
 
     layouth5 = hdf5["bus/layout"]
     label::Array{Int64,1} = HDF5.readmmap(layouth5["label"])
+    bus.layout.type = read(layouth5["type"])
 
     bus.number = length(label)
     bus.label = Dict{Int64,Int64}(); sizehint!(bus.label, bus.number)
@@ -290,6 +291,10 @@ function loadBus(system::PowerSystem, hdf5::HDF5.File)
             bus.layout.renumbering = true
         end
         bus.label[j] = i
+
+        if bus.layout.type[i] == 3
+            bus.layout.slack = i
+        end
     end
 
     demandh5 = hdf5["bus/demand"]
@@ -310,10 +315,8 @@ function loadBus(system::PowerSystem, hdf5::HDF5.File)
     bus.voltage.minMagnitude = arrayFloat(voltageh5, "minMagnitude", bus.number)
     bus.voltage.maxMagnitude = arrayFloat(voltageh5, "maxMagnitude", bus.number)
 
-    bus.layout.type = fill(1, bus.number)
     bus.layout.area = arrayInteger(layouth5, "area", bus.number)
     bus.layout.lossZone = arrayInteger(layouth5, "lossZone", bus.number)
-    bus.layout.slack = bus.label[read(layouth5["slack"])]
 end
 
 ######## Load Branch Data from HDF5 File ##########
@@ -415,16 +418,14 @@ function loadGenerator(system::PowerSystem, hdf5::HDF5.File)
 
     generator.label = Dict{Int64,Int64}()
     sizehint!(generator.label, generator.number)
-    for (k, i) in enumerate(generator.layout.bus)
+    @inbounds for (k, i) in enumerate(generator.layout.bus)
         generator.label[labelOriginal[k]] = k
         if generator.layout.status[k] == 1
-            system.bus.layout.type[i] = 2
             system.bus.supply.inService[i] += 1
             system.bus.supply.active[i] += generator.output.active[k]
             system.bus.supply.reactive[i] += generator.output.reactive[k]
         end
     end
-    system.bus.layout.type[system.bus.layout.slack] = 3
 end
 
 ######## Load Base Power from HDF5 File ##########
@@ -685,13 +686,11 @@ function loadGenerator(system::PowerSystem, generatorLine::Array{String,1}, gene
         if generator.layout.status[k] == 1
             i = generator.layout.bus[k]
 
-            system.bus.layout.type[i] = 2
             system.bus.supply.inService[i] += 1
             system.bus.supply.active[i] += generator.output.active[k]
             system.bus.supply.reactive[i] += generator.output.reactive[k]
         end
     end
-    system.bus.layout.type[system.bus.layout.slack] = 3
 
     generator.cost.active.model = fill(0, system.generator.number)
     generator.cost.active.polynomial = [Array{Float64}(undef, 0) for i = 1:system.generator.number]

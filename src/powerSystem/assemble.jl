@@ -1,16 +1,14 @@
 const T = Union{Float64,Int64}
 
 """
-The function adds a new bus to the `PowerSystem` type, updating its bus field. It
-automatically sets the bus as a demand bus, but it can be changed to a generator bus using
-the [`addGenerator!()`](@ref addGenerator!) function or to a slack bus using the
-[`slackBus!()`](@ref slackBus!) function.
+The function adds a new bus to the `PowerSystem` type, updating its bus field.
 
-    addBus!(system::PowerSystem; label, active, reactive, conductance, susceptance,
+    addBus!(system::PowerSystem; label, type, active, reactive, conductance, susceptance,
         magnitude, angle, minMagnitude, maxMagnitude, base, area, lossZone)
 
 The bus is defined with the following parameters:
 * `label`: a unique label for the bus
+* `type`: the bus type, demand (PQ) = 1, generator (PV) = 2, slack (Vθ) = 3
 * `active` (pu or W): the active power demand at the bus
 * `reactive` (pu or VAr): the reactive power demand at the bus
 * `conductance` (pu or W): the active power demanded of the shunt element
@@ -47,10 +45,10 @@ system = powerSystem()
 addBus!(system; label = 1, active = 25, reactive = -4, angle = 10, base = 132)
 ```
 """
-function addBus!(system::PowerSystem; label::T, active::T = 0.0, reactive::T = 0.0,
-    conductance::T = 0.0, susceptance::T = 0.0, magnitude::T = 0.0, angle::T = 0.0,
-    minMagnitude::T = 0.0, maxMagnitude::T = 0.0, base::T = 0.0, area::T = 1,
-    lossZone::T = 1)
+function addBus!(system::PowerSystem; label::T, type::T = 1, 
+    active::T = 0.0, reactive::T = 0.0, conductance::T = 0.0, susceptance::T = 0.0, 
+    magnitude::T = 0.0, angle::T = 0.0, minMagnitude::T = 0.0, maxMagnitude::T = 0.0, 
+    base::T = 0.0, area::T = 1, lossZone::T = 1)
 
     demand = system.bus.demand
     shunt = system.bus.shunt
@@ -64,17 +62,24 @@ function addBus!(system::PowerSystem; label::T, active::T = 0.0, reactive::T = 0
     if haskey(system.bus.label, label)
         throw(ErrorException("The value $label of the label keyword is not unique."))
     end
-
-    push!(system.base.voltage.value, base)
-
+    if !(type in [1, 2, 3])
+        throw(ErrorException("The value $type of the type keyword is illegal."))
+    end
     system.bus.number += 1
-    setindex!(system.bus.label, system.bus.number, label)
-    push!(layout.type, 1)
+    
+    if type == 3
+        if layout.slack != 0
+            throw(ErrorException("The slack bus has already been designated."))
+        end
+        layout.slack = system.bus.number
+    end
 
+    setindex!(system.bus.label, system.bus.number, label)
     if system.bus.number != label
         layout.renumbering = true
     end
 
+    push!(system.base.voltage.value, base)
     voltageScale = si2pu(system.base.voltage.prefix, base, "voltage magnitude")
     activeScale = si2pu(system.base.power.prefix, system.base.power.value, "active power")
     reactiveScale = si2pu(system.base.power.prefix, system.base.power.value, "reactive power")
@@ -90,6 +95,7 @@ function addBus!(system::PowerSystem; label::T, active::T = 0.0, reactive::T = 0
     push!(voltage.maxMagnitude, maxMagnitude * voltageScale)
     push!(voltage.minMagnitude, minMagnitude * voltageScale)
 
+    push!(layout.type, type)
     push!(layout.area, area)
     push!(layout.lossZone, lossZone)
 
@@ -104,43 +110,6 @@ function addBus!(system::PowerSystem; label::T, active::T = 0.0, reactive::T = 0
     if !isempty(system.acModel.admittance)
         nilModel!(system, :acModelEmpty)
     end
-end
-
-"""
-The function is used to set a slack bus, and it can also be used to dynamically change the
-slack bus.
-
-    slackBus!(system::PowerSystem; label)
-
-Every time the function is executed, the previous slack bus becomes a demand or generator
-bus, depending on whether the bus has a generator. The bus label should be specified using
-the `label` keyword argument and should match an already defined bus label.
-
-# Example
-```jldoctest
-system = powerSystem()
-
-addBus!(system; label = 1, active = 0.25, reactive = -0.04)
-slackBus!(system; label = 1)
-```
-"""
-function slackBus!(system::PowerSystem; label::T)
-    if !haskey(system.bus.label, label)
-        throw(ErrorException("The value $label of the label keyword does not exist in bus labels."))
-    end
-
-    layout = system.bus.layout
-    supply = system.bus.supply
-
-    if layout.slack != 0
-        if !isempty(supply.inService) && supply.inService[layout.slack] != 0
-            layout.type[layout.slack] = 2
-        else
-            layout.type[layout.slack] = 1
-        end
-    end
-    layout.slack = system.bus.label[label]
-    layout.type[layout.slack] = 3
 end
 
 """
@@ -162,7 +131,7 @@ The input units are in per-units by default, but they can be modified using the
 ```jldoctest
 system = powerSystem()
 
-addBus!(system; label = 1, active = 0.25, reactive = -0.04)
+addBus!(system; label = 1, type = 3, active = 0.25, reactive = -0.04)
 shuntBus!(system; label = 1, conductance = 0.04)
 ```
 """
@@ -234,8 +203,8 @@ Creating a branch using the default unit system:
 ```jldoctest
 system = powerSystem()
 
-addBus!(system; label = 1, active = 0.25, reactive = -0.04)
-addBus!(system; label = 2, active = 0.15, reactive = 0.08)
+addBus!(system; label = 1, type = 3, active = 0.25, reactive = -0.04)
+addBus!(system; label = 2, type = 1, active = 0.15, reactive = 0.08)
 addBranch!(system; label = 1, from = 1, to = 2, reactance = 0.12, shiftAngle = 0.1745)
 ```
 
@@ -244,8 +213,8 @@ Creating a branch using a custom unit system:
 system = powerSystem()
 
 @voltage(pu, deg)
-addBus!(system; label = 1, active = 0.25, reactive = -0.04)
-addBus!(system; label = 2, active = 0.15, reactive = 0.08)
+addBus!(system; label = 1, type = 3, active = 0.25, reactive = -0.04)
+addBus!(system; label = 2, type = 1,  active = 0.15, reactive = 0.08)
 addBranch!(system; label = 1, from = 1, to = 2, reactance = 0.12, shiftAngle = 10)
 ```
 """
@@ -348,8 +317,8 @@ status of a branch is changed, thus eliminating the need to rebuild the model fr
 ```jldoctest
 system = powerSystem()
 
-addBus!(system; label = 1, active = 0.25, reactive = -0.04)
-addBus!(system; label = 2, active = 0.15, reactive = 0.08)
+addBus!(system; label = 1, type = 3, active = 0.25, reactive = -0.04)
+addBus!(system; label = 2, type = 1, active = 0.15, reactive = 0.08)
 addBranch!(system; label = 1, from = 1, to = 2, resistance = 0.05, reactance = 0.12)
 statusBranch!(system; label = 1, status = 0)
 ```
@@ -416,8 +385,8 @@ following macros [`@voltage`](@ref @voltage) and [`@parameter`](@ref @parameter)
 ```jldoctest
 system = powerSystem()
 
-addBus!(system; label = 1, active = 0.25, reactive = -0.04)
-addBus!(system; label = 2, active = 0.15, reactive = 0.08)
+addBus!(system; label = 1, type = 3, active = 0.25, reactive = -0.04)
+addBus!(system; label = 2, type = 1, active = 0.15, reactive = 0.08)
 addBranch!(system; label = 1, from = 1, to = 2, resistance = 0.05, reactance = 0.12)
 parameterBranch!(system; label = 1, susceptance = 0.062)
 ```
@@ -522,7 +491,7 @@ Creating a bus using the default unit system:
 ```jldoctest
 system = powerSystem()
 
-addBus!(system; label = 1, active = 0.25, reactive = -0.04, base = 132e3)
+addBus!(system; label = 1, type = 2, active = 0.25, reactive = -0.04, base = 132e3)
 addGenerator!(system; label = 1, bus = 1, active = 0.5, reactive = 0.1, magnitude = 1.1)
 ```
 
@@ -533,7 +502,7 @@ system = powerSystem()
 
 @power(MW, MVAr, MVA)
 @voltage(kV, deg)
-addBus!(system; label = 1, active = 25, reactive = -4, base = 132)
+addBus!(system; label = 1, type = 2, active = 25, reactive = -4, base = 132)
 addGenerator!(system; label = 1, bus = 1, active = 50, reactive = 10, magnitude = 145.2)
 ```
 """
@@ -575,9 +544,6 @@ function addGenerator!(system::PowerSystem; label::T, bus::T, area::T = 0.0, sta
 
     busIndex = system.bus.label[bus]
     if status == 1
-        if system.bus.layout.type[busIndex] != 3
-            system.bus.layout.type[busIndex] = 2
-        end
         system.bus.supply.inService[busIndex] += 1
         system.bus.supply.active[busIndex] += active * activeScale
         system.bus.supply.reactive[busIndex] += reactive * reactiveScale
@@ -788,17 +754,11 @@ function statusGenerator!(system::PowerSystem; label::Int64, status::Int64 = 0)
             system.bus.supply.inService[indexBus] -= 1
             system.bus.supply.active[indexBus] -= output.active[index]
             system.bus.supply.reactive[indexBus] -= output.reactive[index]
-            if system.bus.supply.inService[indexBus] == 0 && system.bus.layout.type[indexBus] != 3
-                system.bus.layout.type[indexBus] = 1
-            end
         end
         if status == 1
             system.bus.supply.inService[indexBus] += 1
             system.bus.supply.active[indexBus] += output.active[index]
             system.bus.supply.reactive[indexBus] += output.reactive[index]
-            if system.bus.layout.type[indexBus] != 3
-                system.bus.layout.type[indexBus] = 2
-            end
         end
     end
     layout.status[index] = status
