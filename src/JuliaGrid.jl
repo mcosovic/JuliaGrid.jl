@@ -1,9 +1,7 @@
-module JuliaGridTest
+module JuliaGrid
 
 using SparseArrays, LinearAlgebra, SuiteSparse
 using HDF5
-using JuliaGrid
-using Test
 
 ######### Utility ##########
 include("utility/routine.jl")
