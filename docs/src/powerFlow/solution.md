@@ -1,32 +1,26 @@
 # [Power Flow Solution](@id powerFlowSolution)
 
-The solution of the power flow implies the calculation of the bus voltages. To obtain a solution, the framework requires the composite type `PowerSystem` with fields `bus`, `branch`, and `generator`. In addition, depending on whether AC or DC power flow is used, `acModel` or `dcModel` is required.
+The calculation of bus voltages is essential to solving the power flow problem. The composite type `PowerSystem`, which includes `bus`, `branch`, and `generator` fields, is required to obtain a solution. Additionally, depending on the type of power flow used, either `acModel` or `dcModel` must be used.
 
-JuliaGrid stores results in the composite type `Result` with fields:
-* `bus`
-* `branch`
-* `generator`
-* `algorithm`.
-
-Once the composite type `PowerSystem` is created, it is possible to create the composite type `Result`. The composite type `Result` in the DC power flow is created when determining the bus voltage angles using the function [`dcPowerFlow()`](@ref dcPowerFlow). In contrast, the AC power flow requires the initialization of the iterative method, during which the composite type `Result` is created:
+After creating the composite type `PowerSystem`, the next step is to create the composite type `Result`, which has fields `bus`, `branch`, `generator`, and `algorithm`. In the DC power flow, `Result` is created when determining the bus voltage angles using the [`dcPowerFlow()`](@ref dcPowerFlow) function. On the other hand, the AC power flow requires the iterative method to be initialized, which is when the composite type `Result` is created using one of the following functions:
 * [`newtonRaphson()`](@ref newtonRaphson)
 * [`fastNewtonRaphsonBX()`](@ref fastNewtonRaphsonBX)
 * [`fastNewtonRaphsonXB()`](@ref fastNewtonRaphsonXB)
 * [`gaussSeidel()`](@ref gaussSeidel).
 
-The calculation of the bus voltages, depending on the type of power flow and the selected method, can be performed using one of the functions:
+To calculate bus voltages, the appropriate function can be used depending on the type of power flow and method selected. The following functions are available:
 * [`newtonRaphson!()`](@ref newtonRaphson!)
 * [`fastNewtonRaphson!()`](@ref fastNewtonRaphson!)
 * [`gaussSeidel!()`](@ref gaussSeidel!)
 * [`dcPowerFlow()`](@ref dcPowerFlow).
-Note that methods for solving the AC power flow problem should be called inside a loop, thus simulating an iterative process.
+Note that when solving the AC power flow problem, the methods should be called inside a loop to simulate an iterative process.
 
-In addition, JuliaGrid has an additional set of functions for [power flow analysis](@ref powerFlowAnalysis), which includes determining the powers and currents related to buses, branches or generators:
+Additionally, JuliaGrid offers a range of functions for conducting [power flow analysis](@ref powerFlowAnalysis), which involves calculating the powers and currents associated with buses, branches, or generators. These functions include:
 * [`bus!()`](@ref bus!)
 * [`branch!()`](@ref branch!)
 * [`generator!()`](@ref generator!).
 
-JuliaGrid also provides the function that checks [reactive power limits of the generators](@ref generatorReactivePowerLimits), once the solution of the AC power flow is obtained:
+The JuliaGrid package also includes a function for verifying the reactive power limits of generators after the AC power flow solution has been obtained:
 * [`reactivePowerLimit!()`](@ref reactivePowerLimit!)
 
 ---

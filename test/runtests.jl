@@ -11,5 +11,5 @@ include("powerSystem/assemble.jl")
 include("powerSystem/manipulation.jl")
 
 # ######## Power flow ##########
-# include("powerFlow/solutionAnalysis.jl")
+include("powerFlow/solution.jl")
 # include("powerFlow/reactiveLimits.jl")

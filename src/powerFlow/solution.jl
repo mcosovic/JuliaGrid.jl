@@ -132,151 +132,12 @@ mutable struct Result
 end
 
 """
-The input of the function is the composite type `PowerSystem` and it performs the 
-Gauss-Seidel method initialization. 
-
-    gaussSeidel(system::PowerSystem)
-
-The output of the function is the composite type `Result`.
-
-# Example
-```jldoctest
-system = powerSystem("case14.h5")
-acModel!(system)
+The function accepts the `PowerSystem` composite type as input, uses it to set up the 
+Newton-Raphson method, and then produces the `Result` composite type as output.
     
-result = gaussSeidel(system)
-```    
-"""
-function gaussSeidel(system::PowerSystem)
-    bus = system.bus
-
-    voltageMagnitude = generatorVoltageMagnitude(system)
-    voltage = zeros(ComplexF64, bus.number)
-    pqIndex = Int64[]
-    pvIndex = Int64[]
-    @inbounds for i = 1:bus.number
-        voltage[i] = voltageMagnitude[i] * exp(im * bus.voltage.angle[i])
-
-        if bus.supply.inService[i] == 0 && bus.layout.type[i] != 3
-            bus.layout.type[i] = 1
-        end
-        if bus.layout.type[i] == 1
-            push!(pqIndex, i)
-        end
-        if bus.layout.type[i] == 2
-            push!(pvIndex, i)
-        end
-    end
-
-    method = "Gauss-Seidel"
-
-    return Result(
-        BusResult(Polar(voltageMagnitude, copy(bus.voltage.angle)),
-            BusPower(Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[])),
-            BusCurrent(Polar(Float64[], Float64[]))),
-        BranchResult(
-            BranchPower(Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), CartesianImag(Float64[]), Cartesian(Float64[], Float64[])),
-            BranchCurrent(Polar(Float64[], Float64[]), Polar(Float64[], Float64[]), Polar(Float64[], Float64[]))),
-        GeneratorResult(Cartesian(Float64[], Float64[])),
-        GaussSeidel(GaussSeidelVoltage(voltage, copy(voltageMagnitude)), GaussSeidelIndex(pqIndex, pvIndex), IterationLoop(CartesianFloat(0.0, 0.0), 0), method)
-        )
-end
-
-"""
-The function updates the `bus.voltage` and `algorithm` fields of the `Result` type by 
-utilizing the Gauss-Seidel method to calculate the bus voltage magnitudes and angles for 
-a `PowerSystem` composite type.
-
-    gaussSeidel!(system::PowerSystem, result::Result)
-
-The function performs a single iteration of the Gauss-Seidel method and is designed to be 
-incorporated into a for loop.
-
-# Example
-```jldoctest
-system = powerSystem("case14.h5")
-acModel!(system)
-
-result = gaussSeidel(system)
-stopping = result.algorithm.iteration.stopping
-for i = 1:1000
-    gaussSeidel!(system, result)
-    if stopping.active < 1e-8 && stopping.reactive < 1e-8
-        break
-    end
-end
-```
-"""
-function gaussSeidel!(system::PowerSystem, result::Result)
-    ac = system.acModel
-
-    voltage = result.algorithm.voltage
-    index = result.algorithm.index
-    iteration = result.algorithm.iteration
-
-    iteration.number += 1
-
-    @inbounds for i in index.pq
-        injection = system.bus.supply.active[i] - system.bus.demand.active[i] - im * (system.bus.supply.reactive[i] - system.bus.demand.reactive[i])
-        I = injection / conj(voltage.complex[i])
-        for j in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
-            I -= ac.nodalMatrixTranspose.nzval[j] * voltage.complex[ac.nodalMatrix.rowval[j]]
-        end
-        voltage.complex[i] += I / ac.nodalMatrix[i, i]
-    end
-
-    @inbounds for i in index.pv
-        I = 0.0 + im * 0.0
-        for j in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
-            I += ac.nodalMatrixTranspose.nzval[j] * voltage.complex[ac.nodalMatrix.rowval[j]]
-        end
-        conjVoltage = conj(voltage.complex[i])
-        injection = system.bus.supply.active[i] - system.bus.demand.active[i] + im * imag(conjVoltage * I)
-        voltage.complex[i] += ((injection / conjVoltage) - I) / ac.nodalMatrix[i, i]
-    end
-
-    @inbounds for i in index.pv
-        voltage.complex[i] = voltage.magnitude[i] * voltage.complex[i] / abs(voltage.complex[i])
-    end
-
-    iteration.stopping.active = 0.0
-    iteration.stopping.reactive = 0.0
-    @inbounds for i in index.pq
-        I = 0.0 + im * 0.0
-        for j in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
-            I += ac.nodalMatrixTranspose.nzval[j] * voltage.complex[ac.nodalMatrix.rowval[j]]
-        end
-        apparent = voltage.complex[i] * conj(I)
-
-        mismatchActive = real(apparent) - system.bus.supply.active[i] + system.bus.demand.active[i]
-        iteration.stopping.active = max(iteration.stopping.active, abs(mismatchActive))
-
-        mismatchReactive = imag(apparent) - system.bus.supply.reactive[i] + system.bus.demand.reactive[i]
-        iteration.stopping.reactive = max(iteration.stopping.reactive, abs(mismatchReactive))
-
-        result.bus.voltage.magnitude[i] = abs(voltage.complex[i])
-        result.bus.voltage.angle[i] = angle(voltage.complex[i])
-    end
-    @inbounds for i in index.pv
-        I = 0.0 + im * 0.0
-        for j in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
-            I += ac.nodalMatrixTranspose.nzval[j] * voltage.complex[ac.nodalMatrix.rowval[j]]
-        end
-        mismatchActive = real(voltage.complex[i] * conj(I)) - system.bus.supply.active[i] + system.bus.demand.active[i]
-        iteration.stopping.active = max(iteration.stopping.active, abs(mismatchActive))
-
-        result.bus.voltage.magnitude[i] = abs(voltage.complex[i])
-        result.bus.voltage.angle[i] = angle(voltage.complex[i])
-    end
-end
-
-"""
-The function receives the composite type `PowerSystem`, initializes the
-Newton-Raphson method, and returns the composite type `Result`.
-
     newtonRaphson(system::PowerSystem)
-
-The function updates the field `algorithm` of the composite type `Result`.
+    
+The `algorithm` field of the `Result` type is updated during the function's execution.
 """
 function newtonRaphson(system::PowerSystem)
     ac = system.acModel
@@ -286,6 +147,10 @@ function newtonRaphson(system::PowerSystem)
     pvpqIndex = similar(pqIndex)
     nonZeroElement = 0; pvpqNumber = 0; pqNumber = 0
     @inbounds for i = 1:bus.number
+        if bus.supply.inService[i] == 0 && bus.layout.type[i] != 3
+            bus.layout.type[i] = 1
+        end
+
         if bus.layout.type[i] == 1
             pqNumber += 1
             pqIndex[i] = pqNumber + bus.number - 1
@@ -309,7 +174,7 @@ function newtonRaphson(system::PowerSystem)
         end
     end
 
-    voltageMagnitude = generatorVoltageMagnitude(system)
+    voltageMagnitude = setGeneratorVoltageMagnitude(system)
     voltageAngle = copy(bus.voltage.angle)
     mismatch = fill(0.0, bus.number + pqNumber - 1)
     iIndex = fill(0, nonZeroElement)
@@ -376,12 +241,14 @@ function newtonRaphson(system::PowerSystem)
 end
 
 """
-The function receives the composite type `PowerSystem` and `Result`. Using the
-Newton-Raphson method, the function computes bus voltage magnitudes and angles.
-
+The function updates the `bus.voltage` and `algorithm` fields of the `Result` composite 
+type by computing the magnitudes and angles of bus voltages using the Newton-Raphson 
+method.
+    
     newtonRaphson!(system::PowerSystem, result::Result)
-
-The function updates fields `result.bus.voltage` and `result.algorithm`.
+    
+It is intended to be used within a for loop as it performs only one iteration of the 
+Newton-Raphson method.
 
 # Example
 ```jldoctest
@@ -499,12 +366,13 @@ function newtonRaphson!(system::PowerSystem, result::Result)
 end
 
 """
-The function receives the composite type `PowerSystem`, initializes the fast
-Newton-Raphson method of version BX, and returns the composite type `Result`.
-
+The function accepts the `PowerSystem` composite type as input, uses it to set up the 
+fast Newton-Raphson method of version BX, and then produces the `Result` composite type as 
+output.
+        
     fastNewtonRaphsonBX(system::PowerSystem)
-
-The function updates the field `algorithm` of the composite type `Result`.
+        
+The `algorithm` field of the `Result` type is updated during the function's execution.
 """
 function fastNewtonRaphsonBX(system::PowerSystem)
     algorithmBX = 1
@@ -514,12 +382,13 @@ function fastNewtonRaphsonBX(system::PowerSystem)
 end
 
 """
-The function receives the composite type `PowerSystem`, initializes the fast
-Newton-Raphson method of version XB, and returns the composite type `Result`.
-
+The function accepts the `PowerSystem` composite type as input, uses it to set up the 
+fast Newton-Raphson method of version XB, and then produces the `Result` composite type as 
+output.
+            
     fastNewtonRaphsonXB(system::PowerSystem)
-
-The function updates the field `algorithm` of the composite type `Result`.
+            
+The `algorithm` field of the `Result` type is updated during the function's execution.
 """
 function fastNewtonRaphsonXB(system::PowerSystem)
     algorithmXB = 2
@@ -537,6 +406,10 @@ end
     pvpqIndex = similar(pqIndex)
     nonZeroElementActive = 0; nonZeroElementReactive = 0; pvpqNumber = 0; pqNumber = 0
     @inbounds for i = 1:bus.number
+        if bus.supply.inService[i] == 0 && bus.layout.type[i] != 3
+            bus.layout.type[i] = 1
+        end
+
         if bus.layout.type[i] == 1
             pqNumber += 1
             pqIndex[i] = pqNumber
@@ -557,7 +430,7 @@ end
         end
     end
 
-    voltageMagnitude = generatorVoltageMagnitude(system)
+    voltageMagnitude = setGeneratorVoltageMagnitude(system)
     voltageAngle = copy(bus.voltage.angle)
 
     mismatchActive = fill(0.0, bus.number - 1)
@@ -565,7 +438,7 @@ end
     iIndexReactive = fill(0, nonZeroElementReactive); jIndexReactive = similar(iIndexReactive)
     countActive = 1; countReactive = 1
     @inbounds for i = 1:bus.number
-        if i != bus.layout.slackIndex
+        if i != bus.layout.slack
             mismatchActive[pvpqIndex[i]] = - (bus.supply.active[i] - bus.demand.active[i]) / voltageMagnitude[i]
             for j in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
                 row = ac.nodalMatrix.rowval[j]
@@ -617,14 +490,14 @@ end
                 gmk = 0.0
                 bmk = -1 / reactance
             end
-            if from != bus.layout.slackIndex && to != bus.layout.slackIndex
+            if from != bus.layout.slack && to != bus.layout.slack
                 jacobianActive[m, n] += (-gmk * shiftsin - bmk * shiftcos) / (shiftcos^2 + shiftsin^2)
                 jacobianActive[n, m] += (gmk * shiftsin - bmk * shiftcos) / (shiftcos^2 + shiftsin^2)
             end
-            if from != bus.layout.slackIndex
+            if from != bus.layout.slack
                 jacobianActive[m, m] += bmk / (shiftcos^2 + shiftsin^2)
             end
-            if to != bus.layout.slackIndex
+            if to != bus.layout.slack
                 jacobianActive[n, n] += bmk
             end
 
@@ -675,7 +548,6 @@ end
         method = "Fast Newton-Raphson XB"
     end
 
-
     return Result(
         BusResult(Polar(voltageMagnitude, voltageAngle),
             BusPower(Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[])),
@@ -693,12 +565,14 @@ end
 end
 
 """
-The function receives the composite type `PowerSystem` and `Result`. Using the fast
-Newton-Raphson method, the function computes bus voltage magnitudes and angles.
+The function updates the `bus.voltage` and `algorithm` fields of the `Result` composite 
+type by computing the magnitudes and angles of bus voltages using the fast Newton-Raphson 
+method.
 
     fastNewtonRaphson!(system::PowerSystem, result::Result)
 
-The function updates fields `result.bus.voltage` and `result.algorithm`.
+It is intended to be used within a for loop as it performs only one iteration of the 
+fast Newton-Raphson method.
 
 # Example
 ```jldoctest
@@ -730,7 +604,7 @@ function fastNewtonRaphson!(system::PowerSystem, result::Result)
     active.increment = active.upper \ (active.lower \ ((active.scaling .* active.mismatch)[active.right]))
     active.increment = active.increment[active.left]
     @inbounds for i = 1:bus.number
-        if i != bus.layout.slackIndex
+        if i != bus.layout.slack
             voltage.angle[i] += active.increment[index.pvpq[i]]
         end
     end
@@ -760,7 +634,7 @@ function fastNewtonRaphson!(system::PowerSystem, result::Result)
     iteration.stopping.active = 0.0
     iteration.stopping.reactive = 0.0
     @inbounds for i = 1:bus.number
-        if i != bus.layout.slackIndex
+        if i != bus.layout.slack
             active.mismatch[index.pvpq[i]] = - (bus.supply.active[i] - bus.demand.active[i]) / voltage.magnitude[i]
             C = 0.0
             for j in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
@@ -785,12 +659,144 @@ function fastNewtonRaphson!(system::PowerSystem, result::Result)
 end
 
 """
-The function receives the composite type `PowerSystem`, solves the DC power flow
-problem by determining bus voltage angles, and returns the composite type `Result`.
+The function accepts the `PowerSystem` composite type as input, uses it to set up the 
+Gauss-Seidel method, and then produces the `Result` composite type as output.
+        
+    gaussSeidel(system::PowerSystem)
+        
+The `algorithm` field of the `Result` type is updated during the function's execution.  
+"""
+function gaussSeidel(system::PowerSystem)
+    bus = system.bus
 
+    voltageMagnitude = setGeneratorVoltageMagnitude(system)
+    voltage = zeros(ComplexF64, bus.number)
+    pqIndex = Int64[]
+    pvIndex = Int64[]
+    @inbounds for i = 1:bus.number
+        voltage[i] = voltageMagnitude[i] * exp(im * bus.voltage.angle[i])
+
+        if bus.supply.inService[i] == 0 && bus.layout.type[i] != 3
+            bus.layout.type[i] = 1
+        end
+        if bus.layout.type[i] == 1
+            push!(pqIndex, i)
+        end
+        if bus.layout.type[i] == 2
+            push!(pvIndex, i)
+        end
+    end
+
+    method = "Gauss-Seidel"
+
+    return Result(
+        BusResult(Polar(voltageMagnitude, copy(bus.voltage.angle)),
+            BusPower(Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[])),
+            BusCurrent(Polar(Float64[], Float64[]))),
+        BranchResult(
+            BranchPower(Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), CartesianImag(Float64[]), Cartesian(Float64[], Float64[])),
+            BranchCurrent(Polar(Float64[], Float64[]), Polar(Float64[], Float64[]), Polar(Float64[], Float64[]))),
+        GeneratorResult(Cartesian(Float64[], Float64[])),
+        GaussSeidel(GaussSeidelVoltage(voltage, copy(voltageMagnitude)), GaussSeidelIndex(pqIndex, pvIndex), IterationLoop(CartesianFloat(0.0, 0.0), 0), method)
+        )
+end
+
+"""
+The function updates the `bus.voltage` and `algorithm` fields of the `Result` composite 
+type by computing the magnitudes and angles of bus voltages using the Gauss-Seidel method.
+
+    gaussSeidel!(system::PowerSystem, result::Result)
+
+It is intended to be used within a for loop as it performs only one iteration of the 
+Gauss-Seidel method.
+
+# Example
+```jldoctest
+system = powerSystem("case14.h5")
+acModel!(system)
+
+result = gaussSeidel(system)
+stopping = result.algorithm.iteration.stopping
+for i = 1:1000
+    gaussSeidel!(system, result)
+    if stopping.active < 1e-8 && stopping.reactive < 1e-8
+        break
+    end
+end
+```
+"""
+function gaussSeidel!(system::PowerSystem, result::Result)
+    ac = system.acModel
+
+    voltage = result.algorithm.voltage
+    index = result.algorithm.index
+    iteration = result.algorithm.iteration
+
+    iteration.number += 1
+
+    @inbounds for i in index.pq
+        injection = system.bus.supply.active[i] - system.bus.demand.active[i] - im * (system.bus.supply.reactive[i] - system.bus.demand.reactive[i])
+        I = injection / conj(voltage.complex[i])
+        for j in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
+            I -= ac.nodalMatrixTranspose.nzval[j] * voltage.complex[ac.nodalMatrix.rowval[j]]
+        end
+        voltage.complex[i] += I / ac.nodalMatrix[i, i]
+    end
+
+    @inbounds for i in index.pv
+        I = 0.0 + im * 0.0
+        for j in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
+            I += ac.nodalMatrixTranspose.nzval[j] * voltage.complex[ac.nodalMatrix.rowval[j]]
+        end
+        conjVoltage = conj(voltage.complex[i])
+        injection = system.bus.supply.active[i] - system.bus.demand.active[i] + im * imag(conjVoltage * I)
+        voltage.complex[i] += ((injection / conjVoltage) - I) / ac.nodalMatrix[i, i]
+    end
+
+    @inbounds for i in index.pv
+        voltage.complex[i] = voltage.magnitude[i] * voltage.complex[i] / abs(voltage.complex[i])
+    end
+
+    iteration.stopping.active = 0.0
+    iteration.stopping.reactive = 0.0
+    @inbounds for i in index.pq
+        I = 0.0 + im * 0.0
+        for j in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
+            I += ac.nodalMatrixTranspose.nzval[j] * voltage.complex[ac.nodalMatrix.rowval[j]]
+        end
+        apparent = voltage.complex[i] * conj(I)
+
+        mismatchActive = real(apparent) - system.bus.supply.active[i] + system.bus.demand.active[i]
+        iteration.stopping.active = max(iteration.stopping.active, abs(mismatchActive))
+
+        mismatchReactive = imag(apparent) - system.bus.supply.reactive[i] + system.bus.demand.reactive[i]
+        iteration.stopping.reactive = max(iteration.stopping.reactive, abs(mismatchReactive))
+
+        result.bus.voltage.magnitude[i] = abs(voltage.complex[i])
+        result.bus.voltage.angle[i] = angle(voltage.complex[i])
+    end
+    @inbounds for i in index.pv
+        I = 0.0 + im * 0.0
+        for j in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
+            I += ac.nodalMatrixTranspose.nzval[j] * voltage.complex[ac.nodalMatrix.rowval[j]]
+        end
+        mismatchActive = real(voltage.complex[i] * conj(I)) - system.bus.supply.active[i] + system.bus.demand.active[i]
+        iteration.stopping.active = max(iteration.stopping.active, abs(mismatchActive))
+
+        result.bus.voltage.magnitude[i] = abs(voltage.complex[i])
+        result.bus.voltage.angle[i] = angle(voltage.complex[i])
+    end
+end
+
+"""
+The function takes a `PowerSystem` composite type as input and uses it to solve the DC 
+power flow problem by calculating the voltage angles for each bus. 
+    
     dcPowerFlow(system::PowerSystem)
-
-The function updates fields `result.bus.voltage.angle` and `result.algorithm`.
+    
+The function returns a composite type `Result` as output, which includes updated 
+`bus.voltage.angle` and `algorithm` fields. These fields are modified during the execution 
+of the function.
 
 # Example
 ```jldoctest
@@ -847,7 +853,7 @@ function dcPowerFlow(system::PowerSystem)
 end
 
 ######### Set Voltage Magnitude Values According to Generators ##########
-function generatorVoltageMagnitude(system::PowerSystem)
+function setGeneratorVoltageMagnitude(system::PowerSystem)
     magnitude = copy(system.bus.voltage.magnitude)
     
     @inbounds for (k, i) in enumerate(system.generator.layout.bus)
