@@ -16,10 +16,11 @@ makedocs(
             ["Power System Model" => "powerSystem/model.md",
              "In-depth AC and DC Model" => "powerSystem/inDepthACDCModel.md"],
         "Power Flow" =>
-            ["Power Flow Solution" => "powerFlow/solution.md"],
+            ["Power Flow Solution" => "powerFlow/solution.md",
+            "In-depth Power Flow Solution" => "powerFlow/inDepthSolution.md"],
         #      "Power Flow Analysis" => "powerFlow/analysis.md",
         #      "Generator Reactive Power Limits" => "powerFlow/reactiveLimits.md",
-        #      "In-depth Power Flow Solution" => "powerFlow/inDepthSolution.md",
+        #      
         #      "In-depth Power Flow Analysis" => "powerFlow/inDepthAnalysis.md"],
         # "Operating State" =>
         #     ["Operating State of Buses" => "operatingState/bus.md",

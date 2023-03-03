@@ -21,7 +21,7 @@ Additionally, JuliaGrid offers a range of functions for conducting [power flow a
 * [`generator!()`](@ref generator!).
 
 The JuliaGrid package also includes a function for verifying the reactive power limits of generators after the AC power flow solution has been obtained:
-* [`reactivePowerLimit!()`](@ref reactivePowerLimit!)
+* [`reactivePowerLimit!()`](@ref reactivePowerLimit!).
 
 ---
 
