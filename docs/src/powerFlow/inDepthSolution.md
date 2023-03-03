@@ -5,7 +5,7 @@ JuliaGrid utilizes standard network components and leverages the [unified branch
 system = powerSystem("case14.h5")
 ```
 
-To review, we can conceptualize the bus/branch model as a graph denoted by ``\mathcal{G} = (\mathcal{N}, \mathcal{E})``, where the collection of nodes ``\mathcal{N} = \{1, \dots, n\}`` signifies the buses of the power network, and the set of edges ``\mathcal{E} \subseteq \mathcal{N} \times \mathcal{N}`` represents the branches within the network. As previously demonstrated in the section on the [In-depth AC Model](@ref inDepthACModel), we can express the network as a system of non-linear equations:
+To review, we can conceptualize the bus/branch model as a graph denoted by ``\mathcal{G} = (\mathcal{N}, \mathcal{E})``, where the collection of nodes ``\mathcal{N} = \{1, \dots, n\}`` signifies the buses of the power network, and the set of edges ``\mathcal{E} \subseteq \mathcal{N} \times \mathcal{N}`` represents the branches within the network. As previously demonstrated in the section on the [In-depth AC Model](@ref inDepthACModel), we can express the network as a system of nonlinear equations:
 ```math
     \mathbf{\bar {I}} = \mathbf{Y} \mathbf{\bar {V}}.
 ```
@@ -17,7 +17,7 @@ where ``\bar{V}_{i} = V_i \text{e}^{\text{j}\theta_{i}}``. Thus, for any given b
 ```math
   	\cfrac{S_{i}^*}{\bar{V}_{i}^*} = \sum_{j = 1}^n Y_{ij} \bar {V}_j.
 ```
-The complex power injection denoted by ``S_i`` comprises of both the active power `P_i` and reactive power `Q_i`. This relationship can be represented as follows:
+The complex power injection denoted by ``S_i`` comprises of both the active power ``P_i`` and reactive power ``Q_i``. This relationship can be represented as follows:
 ```math
   	\cfrac{P_i - \text{j}Q_i}{\bar{V}_{i}} = \sum_{j = 1}^n Y_{ij} \bar {V}_j.
 ```
@@ -51,7 +51,7 @@ julia> system.bus.supply.reactive - system.bus.demand.reactive
 ---
 
 ## [Newton-Raphson Method](@id inDepthNewtonRaphson)
-The Newton-Raphson method is commonly used in power flow calculations due to its quadratic rate of convergence. It provides an accurate approximation of the roots of the system of non-linear equations:
+The Newton-Raphson method is commonly used in power flow calculations due to its quadratic rate of convergence. It provides an accurate approximation of the roots of the system of nonlinear equations:
 ```math
   \mathbf{f}(\mathbf{x}) = \mathbf{0},
 ```
@@ -77,7 +77,7 @@ and the reactive power injection function for PQ buses as follows:
     \;\;\; i \in \mathcal{N}_{\text{pq}}.
 ```
 
-The active and reactive mismatches, often denoted as ``\Delta P_i(\mathbf x)`` and ``\Delta Q_i(\mathbf x)``, respectively, are defined as the functions ``f_{P_i}(\mathbf x)`` and ``f_{Q_i}(\mathbf x)``. The first terms on the right-hand side represent power injections at a bus, while the second term is constant and is obtained based on the active and reactive powers of the generators that supply a bus and active and reactive powers demanded by consumers at the same bus. Therefore, the Newton-Raphson method solves the system of non-linear equations:
+The active and reactive mismatches, often denoted as ``\Delta P_i(\mathbf x)`` and ``\Delta Q_i(\mathbf x)``, respectively, are defined as the functions ``f_{P_i}(\mathbf x)`` and ``f_{Q_i}(\mathbf x)``. The first terms on the right-hand side represent power injections at a bus, while the second term is constant and is obtained based on the active and reactive powers of the generators that supply a bus and active and reactive powers demanded by consumers at the same bus. Therefore, the Newton-Raphson method solves the system of nonlinear equations:
 ```math
   \mathbf{f(x)} =
   \begin{bmatrix}
@@ -143,8 +143,8 @@ as well as the reactive power injection mismatch for PQ buses:
 ```
 The iteration stops when the following criteria are satisfied:
 ```math
-    \max \{|f_{P_i}(\mathbf x^{(\nu+1)})|, i \in \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}} \} < \epsilon \\
-    \max \{|f_{Q_i}(\mathbf x^{(\nu+1)})|, i \in \mathcal{N}_{\text{pq}} \} < \epsilon.
+    \max \{|f_{P_i}(\mathbf x^{(\nu+1)})|,\; i \in \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}} \} < \epsilon \\
+    \max \{|f_{Q_i}(\mathbf x^{(\nu+1)})|,\; i \in \mathcal{N}_{\text{pq}} \} < \epsilon.
 ```
 Here, ``\epsilon`` is a predefined stopping criterion. These values are stored in JuliaGrid's variables, which can be used to terminate the iteration loop:
 ```julia-repl
@@ -546,8 +546,8 @@ and in reactive power injection for PQ buses as:
 ```
 The iteration loop is terminated when the following conditions are met:
 ```math
-    \max \{|h_{P_i}(\mathbf x^{(\nu)})|, i \in \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}} \} < \epsilon \\
-    \max \{|h_{Q_i}(\mathbf x^{(\nu)})|, i \in \mathcal{N}_{\text{pq}} \} < \epsilon.
+    \max \{|h_{P_i}(\mathbf x^{(\nu)})|,\; i \in \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}} \} < \epsilon \\
+    \max \{|h_{Q_i}(\mathbf x^{(\nu)})|,\; i \in \mathcal{N}_{\text{pq}} \} < \epsilon.
 ```
 Here, ``\epsilon`` refers to the pre-defined stopping criteria. JuliaGrid stores these values to break the iteration loop in the following variables:
 ```julia-repl
@@ -562,7 +562,7 @@ By defining the complex current injection at bus ``i \in \mathcal{N}`` as:
 ```math
 	\bar{I}_{i} = \frac{{P}_{i} - j{Q}_{i}}{\bar{V}_{i}^*},
 ```
-the power flow problem can be represented as a system of nonlinear equations
+the power flow problem can be represented as a system of nonlinear equations:
 ```math
     \mathbf {\bar {I}} = \mathbf{Y} \mathbf {\bar {V}}.
 ```
@@ -588,7 +588,7 @@ acModel!(system)
 
 result = gaussSeidel(system)
 stopping = result.algorithm.iteration.stopping
-for i = 1:10
+for i = 1:1000
     gaussSeidel!(system, result)
     if stopping.active < 1e-8 && stopping.reactive < 1e-8
         break
@@ -635,8 +635,8 @@ and the reactive power injection mismatch for PQ buses as:
 ```
 The iteration loop is terminated when the following conditions are satisfied:
 ```math
-    \max \{|{f}_{P_i}(\mathbf x^{(\nu+1)})|, i \in \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}} \} < \epsilon \\
-    \max \{|{f}_{Q_i}(\mathbf x^{(\nu+1)})|, i \in \mathcal{N}_{\text{pq}} \} < \epsilon
+    \max \{|{f}_{P_i}(\mathbf x^{(\nu+1)})|,\; i \in \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}} \} < \epsilon \\
+    \max \{|{f}_{Q_i}(\mathbf x^{(\nu+1)})|,\; i \in \mathcal{N}_{\text{pq}} \} < \epsilon
 ```
 where ``\epsilon`` is a pre-determined stopping criterion. JuliaGrid stores these values in order to break the iteration loop:
 ```julia-repl
@@ -659,14 +659,16 @@ JuliaGrid offers a set of functions to solve the DC power flow problem and obtai
 ```julia-repl
 system = powerSystem("case14.h5")
 dcModel!(system)
-
-result = dcPowerFlow(system)
 ```
 
 Next, the DC power flow solution is obtained through a non-iterative approach by solving the linear equation:
 ```math
     \bm {\theta} = \mathbf{B}^{-1}(\mathbf {P} - \mathbf{P_\text{gs}} - \mathbf{P}_\text{sh}).
 ```
+```julia-repl
+result = dcPowerFlow(system)
+```
+
 It is worth noting that the slack bus voltage angle is excluded from the vector ``\bm{\theta}``. Therefore, the corresponding elements in the vectors ``\mathbf {P}``, ``\mathbf{P_\text{gs}}``, ``\mathbf{P}_\text{sh}``, and the corresponding column of the matrix ``\mathbf{B}`` are removed during the calculation process.
 
 Finally, the resulting bus voltage angles are saved in a vector as follows:
