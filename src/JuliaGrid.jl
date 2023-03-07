@@ -27,7 +27,7 @@ export gaussSeidel, gaussSeidel!
 export dcPowerFlow
 export reactivePowerLimit!, adjustVoltageAngle!
 
-include("postprocessing/analysis.jl")
+include("powerFlow/analysis.jl")
 export bus!, branch!, generator!
 
 ######### Unit ##########
