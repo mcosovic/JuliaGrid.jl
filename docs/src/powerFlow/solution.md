@@ -15,13 +15,14 @@ To calculate bus voltages, the appropriate function can be used depending on the
 * [`dcPowerFlow()`](@ref dcPowerFlow).
 Note that when solving the AC power flow problem, the methods should be called inside a loop to simulate an iterative process.
 
-Additionally, JuliaGrid offers a range of functions for conducting [power flow analysis](@ref powerFlowAnalysis), which involves calculating the powers and currents associated with buses, branches, or generators. These functions include:
+The JuliaGrid package provides two additional functions. One function validates the reactive power limits of generators once the AC power flow solution has been computed. The other function adjusts the voltage angles to match the angle of an arbitrary slack bus:
+* [`reactivePowerLimit!()`](@ref reactivePowerLimit!)
+* [`adjustVoltageAngle!()`](@ref adjustVoltageAngle!).
+
+JuliaGrid offers a set of post-processing analysis functions for calculating powers, losses, and currents associated with buses, branches, or generators after obtaining AC or DC power flow solutions. These functions are commonly associated with [power flow analysis](@ref powerFlowAnalysis) and include:
 * [`bus!()`](@ref bus!)
 * [`branch!()`](@ref branch!)
 * [`generator!()`](@ref generator!).
-
-The JuliaGrid package also includes a function for verifying the reactive power limits of generators after the AC power flow solution has been obtained:
-* [`reactivePowerLimit!()`](@ref reactivePowerLimit!).
 
 ---
 
@@ -53,4 +54,12 @@ gaussSeidel!
 ## DC Power Flow Solution
 ```@docs
 dcPowerFlow
+```
+
+---
+
+## Additional Functions
+```@docs
+reactivePowerLimit!
+adjustVoltageAngle!
 ```

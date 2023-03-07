@@ -18,6 +18,8 @@ makedocs(
         "Power Flow" =>
             ["Power Flow Solution" => "powerFlow/solution.md",
             "In-depth Power Flow Solution" => "powerFlow/inDepthSolution.md"],
+        "Post-processing" =>
+            ["Power Flow Analysis" => "postprocessing/analysis.md"],    
         #      "Power Flow Analysis" => "powerFlow/analysis.md",
         #      "Generator Reactive Power Limits" => "powerFlow/reactiveLimits.md",
         #      

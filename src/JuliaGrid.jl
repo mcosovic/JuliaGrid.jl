@@ -19,11 +19,16 @@ export addBranch!, statusBranch!, parameterBranch!
 export addGenerator!, addActiveCost!, addReactiveCost!, statusGenerator!, outputGenerator!
 export dcModel!, acModel!
 
+######## Power Flow ##########
 include("powerFlow/solution.jl")
 export newtonRaphson, newtonRaphson!
 export fastNewtonRaphsonBX, fastNewtonRaphsonXB, fastNewtonRaphson!
 export gaussSeidel, gaussSeidel!
 export dcPowerFlow
+export reactivePowerLimit!, adjustVoltageAngle!
+
+include("postprocessing/analysis.jl")
+export bus!, branch!, generator!
 
 ######### Unit ##########
 include("utility/unit.jl")

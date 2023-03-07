@@ -476,7 +476,7 @@ julia> result.algorithm.reactive.scaling
 To solve the AC power flow and obtain bus voltage magnitudes and angles, JuliaGrid provides the following function sequence:
 ```julia-repl
 stopping = result.algorithm.iteration.stopping
-for i = 1:10
+for i = 1:100
     fastNewtonRaphson!(system, result)
     if stopping.active < 1e-8 && stopping.reactive < 1e-8
         break

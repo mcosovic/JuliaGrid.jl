@@ -852,6 +852,167 @@ function dcPowerFlow(system::PowerSystem)
         )
 end
 
+"""
+The function verifies whether the generators in a power system exceed their reactive power 
+limits. This is done by setting the reactive power of the generators to within the limits 
+if they are violated, after determining the bus voltage magnitudes and angles. If the 
+limits are violated, the corresponding PV buses or the slack bus are converted to PQ buses. 
+
+The function returns the `violate` variable to indicate which buses violate the limits, 
+with -1 indicating a violation of the minimum limits and 1 indicating a violation of the 
+maximum limits.
+
+    reactivePowerLimit!(system::PowerSystem, result::Result)
+
+First, if the [`generator!()`](@ref generator!) function has not been executed, 
+[`reactivePowerLimit!()`](@ref reactivePowerLimit!) will execute it and update the 
+`result.generator` field. 
+
+Next, the function sets the `system.generator.output.active` and `system.bus.supply.active` 
+variables based on the results obtained by [`generator!()`](@ref generator!) function. 
+
+Finally, the function then checks the generator reactive powers and updates them to their 
+maximum or minimum values if they are violated, updating the 
+`system.generator.output.reactive` variable. Based on this, the `system.bus.supply.reactive` 
+variable is updated, and the bus types in the `system.bus.layout.type` variable are changed. 
+If the slack bus is converted, the `system.bus.layout.slack` field is updated accordingly.
+
+# Example
+```jldoctest
+system = powerSystem("case14.h5")
+acModel!(system)
+
+result = newtonRaphson(system)
+stopping = result.algorithm.iteration.stopping
+for i = 1:200
+    newtonRaphson!(system, result)
+    if stopping.active < 1e-8 && stopping.reactive < 1e-8
+        break
+    end
+end
+
+violate = reactivePowerLimit!(system, result)
+
+result = newtonRaphson(system)
+stopping = result.algorithm.iteration.stopping
+for i = 1:200
+    newtonRaphson!(system, result)
+    if stopping.active < 1e-8 && stopping.reactive < 1e-8
+        break
+    end
+end
+```
+"""
+function reactivePowerLimit!(system::PowerSystem, result::Result)
+    bus = system.bus
+    generator = system.generator
+
+    power = result.generator.power
+    errorVoltage(result.bus.voltage.magnitude)
+
+    violate = fill(0, generator.number)
+    if isempty(power.reactive)
+        generator!(system, result)
+    end
+
+    bus.supply.active = fill(0.0, bus.number)
+    bus.supply.reactive = fill(0.0, bus.number)
+    @inbounds for (k, i) in enumerate(generator.layout.bus)
+        if generator.layout.status[k] == 1
+            generator.output.active[k] = power.active[k]
+            bus.supply.active[i] += power.active[k]
+            bus.supply.reactive[i] += power.reactive[k]
+        end
+    end
+
+    @inbounds for i = 1:generator.number
+        if generator.layout.status[i] == 1
+            j = generator.layout.bus[i]
+
+            violateMinimum = power.reactive[i] < generator.capability.minReactive[i]
+            violateMaximum = power.reactive[i] > generator.capability.maxReactive[i]
+            if  bus.layout.type[j] != 1 && (violateMinimum || violateMaximum)
+                if violateMinimum
+                    violate[i] = -1
+                    newReactivePower = generator.capability.minReactive[i]
+                end
+                if violateMaximum
+                    violate[i] = 1
+                    newReactivePower = generator.capability.maxReactive[i]
+                end
+                bus.layout.type[j] = 1
+
+                bus.supply.reactive[j] -= result.generator.power.reactive[i]
+                generator.output.reactive[i] = newReactivePower
+                bus.supply.reactive[j] += newReactivePower
+
+                if j == bus.layout.slackIndex
+                    for k = 1:bus.number
+                        if bus.layout.type[k] == 2
+                            @info("The slack bus $(trunc(Int, bus.label[j])) is converted to PQ bus, bus $(trunc(Int, bus.label[k])) is the new slack bus.")
+                            bus.layout.slackIndex = bus.label[k]
+                            bus.layout.type[k] = 3
+                            break
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    return violate
+end
+
+"""
+The function modifies the bus voltage angles based on a different slack bus than the one 
+identified by the `system.bus.layout.slack` variable. This function only updates the 
+`result.bus.voltage.angle` variable.
+
+    adjustVoltageAngle!(system::PowerSystem, result::Result; slack)
+
+For instance, if the reactive power of the generator exceeds the limit on the slack bus, 
+the [`reactivePowerLimit!()`](@ref reactivePowerLimit!) function will change that bus to a 
+PQ bus and designate the first PV bus in the sequence as the new slack bus. After 
+obtaining the updated AC power flow solution based on the new slack bus, it is possible to 
+adjust the voltage angles to align with the angle of the original slack bus. The `slack` 
+keyword specifies the bus label of the original slack bus.
+
+# Example
+```jldoctest
+system = powerSystem("case14.h5")
+acModel!(system)
+
+result = newtonRaphson(system)
+stopping = result.algorithm.iteration.stopping
+for i = 1:200
+    newtonRaphson!(system, result)
+    if stopping.active < 1e-8 && stopping.reactive < 1e-8
+        break
+    end
+end
+
+reactivePowerLimit!(system, result)
+
+result = newtonRaphson(system)
+stopping = result.algorithm.iteration.stopping
+for i = 1:200
+    newtonRaphson!(system, result)
+    if stopping.active < 1e-8 && stopping.reactive < 1e-8
+        break
+    end
+end
+
+adjustVoltageAngle!(system, result; slack = 1)
+```
+"""
+function adjustVoltageAngle!(system::PowerSystem, result::Result; slack::T = system.bus.layout.slack)
+    index = system.bus.label[slack]
+    T = system.bus.voltage.angle[index] - result.bus.voltage.angle[index]
+    @inbounds for i = 1:system.bus.number
+        result.bus.voltage.angle[i] = result.bus.voltage.angle[i] + T
+    end
+end
+
 ######### Set Voltage Magnitude Values According to Generators ##########
 function setGeneratorVoltageMagnitude(system::PowerSystem)
     magnitude = copy(system.bus.voltage.magnitude)
@@ -864,3 +1025,4 @@ function setGeneratorVoltageMagnitude(system::PowerSystem)
 
     return magnitude
 end
+

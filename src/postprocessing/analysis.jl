@@ -1,10 +1,130 @@
 """
-The function computes powers and currents related to branches for the AC power flow analysis.
-For the DC power flow analysis, the function computes only active powers.
+This function calculates the powers and currents associated with buses.
+
+    bus!(system::PowerSystem, result::Result)
+
+After the function is executed, the `bus` field within the `Result` type gets updated.
+
+# AC Power Flow Example
+```jldoctest
+system = powerSystem("case14.h5")
+acModel!(system)
+
+result = newtonRaphson(system)
+stopping = result.algorithm.iteration.stopping
+for i = 1:10
+    newtonRaphson!(system, result)
+    if stopping.active < 1e-8 && stopping.reactive < 1e-8
+        break
+    end
+end
+
+bus!(system, result)
+```
+
+# DC Power Flow Example
+```jldoctest
+system = powerSystem("case14.h5")
+dcModel!(system)
+
+result = dcPowerFlow(system)
+bus!(system, result)
+```
+"""
+function bus!(system::PowerSystem, result::Result)
+    if result.algorithm.method == "DC Power Flow"
+        dcBus!(system, result)
+    end
+
+    if result.algorithm.method in ["Gauss-Seidel", "Newton-Raphson", "Fast Newton-Raphson BX", "Fast Newton-Raphson XB"]
+        acBus!(system, result)
+    end
+end
+
+function dcBus!(system::PowerSystem, result::Result)
+    dc = system.dcModel
+    bus = system.bus
+    slack = bus.layout.slack
+
+    power = result.bus.power
+    voltage = result.bus.voltage
+    errorVoltage(voltage.angle)
+
+    power.supply.active = copy(bus.supply.active)
+    power.injection.active = copy(bus.supply.active)
+    @inbounds for i = 1:bus.number
+        power.injection.active[i] -= bus.demand.active[i]
+    end
+
+    power.injection.active[slack] = bus.shunt.conductance[slack] + dc.shiftActivePower[slack]
+    @inbounds for j in dc.nodalMatrix.colptr[slack]:(dc.nodalMatrix.colptr[slack + 1] - 1)
+        row = dc.nodalMatrix.rowval[j]
+        power.injection.active[slack] += dc.nodalMatrix[row, slack] * voltage.angle[row]
+    end
+    power.supply.active[slack] = bus.demand.active[slack] + power.injection.active[slack]
+end
+
+function acBus!(system::PowerSystem, result::Result)
+    ac = system.acModel
+    slack = system.bus.layout.slack
+
+    voltage = result.bus.voltage
+    power = result.bus.power
+    current = result.bus.current
+    errorVoltage(voltage.magnitude)
+
+    power.injection.active = fill(0.0, system.bus.number)
+    power.injection.reactive = fill(0.0, system.bus.number)
+
+    power.supply.active = fill(0.0, system.bus.number)
+    power.supply.reactive = fill(0.0, system.bus.number)
+
+    power.shunt.active = fill(0.0, system.bus.number)
+    power.shunt.reactive = fill(0.0, system.bus.number)
+
+    current.injection.magnitude = fill(0.0, system.bus.number)
+    current.injection.angle = fill(0.0, system.bus.number)
+
+    @inbounds for i = 1:system.bus.number
+        voltageBus = voltage.magnitude[i] * exp(im * voltage.angle[i])
+
+        powerShunt = voltageBus * conj(voltageBus * (system.bus.shunt.susceptance[i] + im * system.bus.shunt.susceptance[i]))
+        power.shunt.active[i] = real(powerShunt)
+        power.shunt.reactive[i] = imag(powerShunt)
+
+        I = 0.0 + im * 0.0
+        for j in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
+            k = ac.nodalMatrix.rowval[j]
+            I += ac.nodalMatrixTranspose.nzval[j] * voltage.magnitude[k] * exp(im * voltage.angle[k])
+        end
+
+        current.injection.magnitude[i] = abs(I)
+        current.injection.angle[i] = angle(I)
+
+        powerInjection = conj(I) * voltageBus
+        power.injection.active[i] = real(powerInjection)
+        power.injection.reactive[i] = imag(powerInjection)
+
+
+        power.supply.active[i] = system.bus.supply.active[i]
+        if system.bus.layout.type[i] != 1
+            power.supply.reactive[i] = power.injection.reactive[i] + system.bus.demand.reactive[i]
+        else
+            power.supply.reactive[i] = system.bus.supply.reactive[i]
+        end
+    end
+    power.supply.active[slack] = power.injection.active[slack] + system.bus.demand.active[slack]
+end
+
+"""
+The function is used to calculate the powers and currents associated with branches for AC 
+power flow analysis and, in relation to DC power flow analysis, it only calculates active 
+powers. 
 
     branch!(system::PowerSystem, result::Result)
 
-The function updates the field `result.branch`.
+The function is responsible for updating the `branch` field within the `Result` type after 
+it has been executed.
 
 # AC Power Flow Example
 ```jldoctest
@@ -117,130 +237,15 @@ function acBranch!(system::PowerSystem, result::Result)
     end
 end
 
-"""
-The function computes powers and currents related to buses.
-
-    bus!(system::PowerSystem, result::Result)
-
-The function updates the field `result.bus`.
-
-# AC Power Flow Example
-```jldoctest
-system = powerSystem("case14.h5")
-acModel!(system)
-
-result = newtonRaphson(system)
-stopping = result.algorithm.iteration.stopping
-for i = 1:10
-    newtonRaphson!(system, result)
-    if stopping.active < 1e-8 && stopping.reactive < 1e-8
-        break
-    end
-end
-
-bus!(system, result)
-```
-
-# DC Power Flow Example
-```jldoctest
-system = powerSystem("case14.h5")
-dcModel!(system)
-
-result = dcPowerFlow(system)
-bus!(system, result)
-```
-"""
-function bus!(system::PowerSystem, result::Result)
-    if result.algorithm.method == "DC Power Flow"
-        dcBus!(system, result)
-    end
-
-    if result.algorithm.method in ["Gauss-Seidel", "Newton-Raphson", "Fast Newton-Raphson BX", "Fast Newton-Raphson XB"]
-        acBus!(system, result)
-    end
-end
-
-function dcBus!(system::PowerSystem, result::Result)
-    dc = system.dcModel
-    bus = system.bus
-    slack = bus.layout.slackIndex
-
-    power = result.bus.power
-    voltage = result.bus.voltage
-    errorVoltage(voltage.angle)
-
-    power.supply.active = copy(bus.supply.active)
-    power.injection.active = copy(bus.supply.active)
-    @inbounds for i = 1:bus.number
-        power.injection.active[i] -= bus.demand.active[i]
-    end
-
-    power.injection.active[slack] = bus.shunt.conductance[slack] + dc.shiftActivePower[slack]
-    @inbounds for j in dc.nodalMatrix.colptr[slack]:(dc.nodalMatrix.colptr[slack + 1] - 1)
-        row = dc.nodalMatrix.rowval[j]
-        power.injection.active[slack] += dc.nodalMatrix[row, slack] * voltage.angle[row]
-    end
-    power.supply.active[slack] = bus.demand.active[slack] + power.injection.active[slack]
-end
-
-function acBus!(system::PowerSystem, result::Result)
-    ac = system.acModel
-    slack = system.bus.layout.slackIndex
-
-    voltage = result.bus.voltage
-    power = result.bus.power
-    current = result.bus.current
-    errorVoltage(voltage.magnitude)
-
-    power.injection.active = fill(0.0, system.bus.number)
-    power.injection.reactive = fill(0.0, system.bus.number)
-
-    power.supply.active = fill(0.0, system.bus.number)
-    power.supply.reactive = fill(0.0, system.bus.number)
-
-    power.shunt.active = fill(0.0, system.bus.number)
-    power.shunt.reactive = fill(0.0, system.bus.number)
-
-    current.injection.magnitude = fill(0.0, system.bus.number)
-    current.injection.angle = fill(0.0, system.bus.number)
-
-    @inbounds for i = 1:system.bus.number
-        voltageBus = voltage.magnitude[i] * exp(im * voltage.angle[i])
-
-        powerShunt = voltageBus * conj(voltageBus * (system.bus.shunt.susceptance[i] + im * system.bus.shunt.susceptance[i]))
-        power.shunt.active[i] = real(powerShunt)
-        power.shunt.reactive[i] = imag(powerShunt)
-
-        I = 0.0 + im * 0.0
-        for j in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
-            k = ac.nodalMatrix.rowval[j]
-            I += ac.nodalMatrixTranspose.nzval[j] * voltage.magnitude[k] * exp(im * voltage.angle[k])
-        end
-
-        current.injection.magnitude[i] = abs(I)
-        current.injection.angle[i] = angle(I)
-
-        powerInjection = conj(I) * voltageBus
-        power.injection.active[i] = real(powerInjection)
-        power.injection.reactive[i] = imag(powerInjection)
-
-
-        power.supply.active[i] = system.bus.supply.active[i]
-        if system.bus.layout.type[i] != 1
-            power.supply.reactive[i] = power.injection.reactive[i] + system.bus.demand.reactive[i]
-        else
-            power.supply.reactive[i] = system.bus.supply.reactive[i]
-        end
-    end
-    power.supply.active[slack] = power.injection.active[slack] + system.bus.demand.active[slack]
-end
 
 """
+The function calculates the powers related to generators. 
+
 The function computes powers related to generators.
 
     generator!(system::PowerSystem, result::Result)
 
-The function updates the field `result.generator`.
+Once executed, the `generator` field within the `Result` type is updated accordingly.
 
 # AC Power Flow Example
 ```jldoctest
@@ -282,7 +287,7 @@ function dcGenerator!(system::PowerSystem, result::Result)
     dc = system.dcModel
     generator = system.generator
     bus = system.bus
-    slack = bus.layout.slackIndex
+    slack = bus.layout.slack
 
     power = result.generator.power
     voltage = result.bus.voltage
@@ -421,17 +426,18 @@ function acGenerator!(system::PowerSystem, result::Result)
         end
 
         tempSlack = 0
+        basePowerMVA = system.base.power.value * system.base.power.prefix * 1e-6
         @inbounds for i = 1:system.generator.number
             if system.generator.layout.status[i] == 1
                 j = system.generator.layout.bus[i]
-                if 1e-6 * system.basePower * abs(Qmintotal[j] - Qmaxtotal[j]) > 10 * eps(Float64)
+                if basePowerMVA * abs(Qmintotal[j] - Qmaxtotal[j]) > 10 * eps(Float64)
                     power.reactive[i] = QminNew[i] + ((Qgentotal[j] - Qmintotal[j]) / (Qmaxtotal[j] - Qmintotal[j])) * (QmaxNew[i] - QminNew[i])
                 else
                     power.reactive[i] = QminNew[i] + (Qgentotal[j] - Qmintotal[j]) / system.bus.supply.inService[j]
                 end
 
                 power.active[i] = system.generator.output.active[i]
-                if j == system.bus.layout.slackIndex
+                if j == system.bus.layout.slack
                     if tempSlack != 0
                         power.active[tempSlack] -= power.active[i]
                     end

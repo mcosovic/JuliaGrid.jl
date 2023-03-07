@@ -38,8 +38,6 @@ function dcOptimalPowerFlow!(system::PowerSystem, model::JuMP.Model)
     @constraint(model, dc.nodalMatrix * angle - generatorIncidence * output .== - bus.demand.active - bus.shunt.conductance - dc.shiftActivePower)
 
     dcObjective!(system::PowerSystem, model::JuMP.Model)
-
-
 end
 
 function dcOptimalPowerFlow(model::JuMP.Model)
