@@ -57,19 +57,19 @@ topu = 1 / 100
     @test result.bus.voltage.angle ≈ matpower30["Ti"] * torad
     @test result.algorithm.iteration.number == matpower30["iterations"][1]
 
-    @test result.bus.power.injection.active ≈ matpower14["Pinj"] * topu
-    @test result.bus.power.injection.reactive ≈ matpower14["Qinj"] * topu
+    @test result.bus.power.injection.active ≈ matpower30["Pinj"] * topu
+    @test result.bus.power.injection.reactive ≈ matpower30["Qinj"] * topu
 
-    @test result.branch.power.from.active ≈ matpower14["Pij"] * topu
-    @test result.branch.power.from.reactive ≈ matpower14["Qij"] * topu
-    @test result.branch.power.to.active ≈ matpower14["Pji"] * topu
-    @test result.branch.power.to.reactive ≈ matpower14["Qji"] * topu
-    @test result.branch.power.shunt.reactive ≈ matpower14["Qbranch"] * topu
-    @test result.branch.power.loss.active ≈ matpower14["Ploss"] * topu
-    @test result.branch.power.loss.reactive ≈ matpower14["Qloss"] * topu
+    @test result.branch.power.from.active ≈ matpower30["Pij"] * topu
+    @test result.branch.power.from.reactive ≈ matpower30["Qij"] * topu
+    @test result.branch.power.to.active ≈ matpower30["Pji"] * topu
+    @test result.branch.power.to.reactive ≈ matpower30["Qji"] * topu
+    @test result.branch.power.shunt.reactive ≈ matpower30["Qbranch"] * topu
+    @test result.branch.power.loss.active ≈ matpower30["Ploss"] * topu
+    @test result.branch.power.loss.reactive ≈ matpower30["Qloss"] * topu
 
-    @test result.generator.power.active ≈ matpower14["Pgen"] * topu
-    @test result.generator.power.reactive ≈ matpower14["Qgen"] * topu
+    @test result.generator.power.active ≈ matpower30["Pgen"] * topu
+    @test result.generator.power.reactive ≈ matpower30["Qgen"] * topu
 end
 
 @testset "fastNewtonRaphsonBX, fastNewtonRaphson!" begin
