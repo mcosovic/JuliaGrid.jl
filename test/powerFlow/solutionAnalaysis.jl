@@ -19,7 +19,7 @@ topu = 1 / 100
     end
     bus!(system14, result)
     branch!(system14, result)
-    generator!(system14, result)``
+    generator!(system14, result)
 
     @test result.bus.voltage.magnitude ≈ matpower14["Vi"]
     @test result.bus.voltage.angle ≈ matpower14["Ti"] * torad
