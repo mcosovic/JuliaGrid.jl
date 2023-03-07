@@ -188,10 +188,10 @@ end
     branch!(system14, result)
     generator!(system14, result)
     
-    @test result.bus.voltage.angle ≈ system14["Ti"] * torad
-    @test result.bus.power.injection.active ≈ system14["Pinj"] * topu
-    @test result.branch.power.from.active ≈ system14["Pij"] * topu
-    @test result.generator.power.active ≈ system14["Pgen"] * topu
+    @test result.bus.voltage.angle ≈ matpower14["Ti"] * torad
+    @test result.bus.power.injection.active ≈ matpower14["Pinj"] * topu
+    @test result.branch.power.from.active ≈ matpower14["Pij"] * topu
+    @test result.generator.power.active ≈ matpower14["Pgen"] * topu
     
 
     ######## Modified IEEE 30-bus Test Case ##########

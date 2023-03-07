@@ -2,9 +2,8 @@ system14 = powerSystem(string(pathData, "case14test.h5"))
 system30 = powerSystem(string(pathData, "case30test.h5"))
 
 torad = pi / 180
-topu = 1 / (1e-6 * system14.basePower)
 
-@testset "newtonRaphson, newtonRaphson!, reactivePowerLimit!, adjustVoltageAngle!" begin
+@testset "reactivePowerLimit!, adjustVoltageAngle!" begin
     matpower14 = h5read(string(pathData, "case14testPowerFlowResult.h5"), "/nrLimit")
     matpower30 = h5read(string(pathData, "case30testPowerFlowResult.h5"), "/nrLimit")
 

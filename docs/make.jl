@@ -16,7 +16,7 @@ makedocs(
             ["Power System Model" => "powerSystem/model.md",
              "In-depth AC and DC Model" => "powerSystem/inDepthACDCModel.md"],
         "Power Flow" =>
-            ["Power Flow Analysis" => "powerFlow/solution.md",
+            ["Power Flow Analysis" => "powerFlow/analysis.md",
             "In-depth Power Flow Solution" => "powerFlow/inDepthSolution.md"],
         # "Post-processing" =>
         #     ["Power Flow Analysis" => "postprocessing/analysis.md"],    
