@@ -954,11 +954,11 @@ function reactivePowerLimit!(system::PowerSystem, result::Result)
                 generator.output.reactive[i] = newReactivePower
                 bus.supply.reactive[j] += newReactivePower
 
-                if j == bus.layout.slackIndex
+                if j == bus.layout.slack
                     for k = 1:bus.number
                         if bus.layout.type[k] == 2
                             @info("The slack bus $(trunc(Int, bus.label[j])) is converted to PQ bus, bus $(trunc(Int, bus.label[k])) is the new slack bus.")
-                            bus.layout.slackIndex = bus.label[k]
+                            bus.layout.slack = bus.label[k]
                             bus.layout.type[k] = 3
                             break
                         end

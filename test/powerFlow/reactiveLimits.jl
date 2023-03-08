@@ -1,5 +1,5 @@
-system14 = powerSystem(string(pathData, "case14test.h5"))
-system30 = powerSystem(string(pathData, "case30test.h5"))
+system14 = powerSystem(string(pathData, "case14test.m"))
+system30 = powerSystem(string(pathData, "case30test.m"))
 
 torad = pi / 180
 
@@ -31,7 +31,7 @@ torad = pi / 180
     end
     iterations += result.algorithm.iteration.number
 
-    adjustVoltageAngle!(system14, result)
+    adjustVoltageAngle!(system14, result; slack = 1)
 
     @test result.bus.voltage.magnitude ≈ matpower14["Vi"]
     @test result.bus.voltage.angle ≈ matpower14["Ti"] * torad
@@ -61,7 +61,7 @@ torad = pi / 180
     end
     iterations += result.algorithm.iteration.number
 
-    adjustVoltageAngle!(system30, result)
+    adjustVoltageAngle!(system30, result; slack = 1)
 
     @test result.bus.voltage.magnitude ≈ matpower30["Vi"]
     @test result.bus.voltage.angle ≈ matpower30["Ti"] * torad
