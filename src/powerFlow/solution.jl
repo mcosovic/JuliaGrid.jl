@@ -999,6 +999,7 @@ for i = 1:200
     end
 end
 
+originalSlack = copy(system.bus.layout.slack)
 reactivePowerLimit!(system, result)
 
 result = newtonRaphson(system)
@@ -1010,7 +1011,7 @@ for i = 1:200
     end
 end
 
-adjustVoltageAngle!(system, result; slack = 1)
+adjustVoltageAngle!(system, result; slack = originalSlack)
 ```
 """
 function adjustVoltageAngle!(system::PowerSystem, result::Result; slack::T = system.bus.layout.slack)
