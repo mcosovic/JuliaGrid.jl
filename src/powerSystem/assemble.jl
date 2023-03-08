@@ -610,7 +610,7 @@ Creating a bus using the default unit system:
 ```jldoctest
 system = powerSystem()
 
-addBus!(system; label = 1, active = 0.25, reactive = -0.04)
+addBus!(system; label = 1, active = 0.25, reactive = -0.04, base = 132e3)
 addGenerator!(system; label = 1, bus = 1, active = 0.5, reactive = 0.1)
 addActiveCost!(system; label = 1, model = 1, polynomial = [1100.0; 500.0; 150.0])
 ```
@@ -620,7 +620,7 @@ Creating a bus using a custom unit system:
 system = powerSystem()
 
 @power(MW, MVAr, MVA)
-addBus!(system; label = 1, active = 25, reactive = -4)
+addBus!(system; label = 1, active = 25, reactive = -4, base = 132e3)
 addGenerator!(system; label = 1, bus = 1, active = 50, reactive = 10)
 addActiveCost!(system; label = 1, model = 1, polynomial = [0.11; 5.0; 150.0])
 ```
@@ -660,7 +660,7 @@ Creating a bus using the default unit system:
 ```jldoctest
 system = powerSystem()
 
-addBus!(system; label = 1, active = 0.25, reactive = -0.04)
+addBus!(system; label = 1, active = 0.25, reactive = -0.04, base = 132e3)
 addGenerator!(system; label = 1, bus = 1, active = 0.5, reactive = 0.1)
 addReactiveCost!(system; label = 1, model = 2, piecewise = [0.1085 12; 0.1477 16])
 ```
@@ -670,7 +670,7 @@ Creating a bus using a custom unit system:
 system = powerSystem()
 
 @power(MW, MVAr, MVA)
-addBus!(system; label = 1, active = 25, reactive = -4)
+addBus!(system; label = 1, active = 25, reactive = -4, base = 132e3)
 addGenerator!(system; label = 1, bus = 1, active = 50, reactive = 10)
 addReactiveCost!(system; label = 1, model = 2, piecewise = [10.85 12; 14.77 16])
 ```
@@ -730,7 +730,7 @@ the `bus.supply` field of the `PowerSystem` type.
 ```jldoctest
 system = powerSystem()
 
-addBus!(system; label = 1, active = 0.25, reactive = -0.04)
+addBus!(system; label = 1, active = 0.25, reactive = -0.04, base = 132e3)
 addGenerator!(system; label = 1, bus = 1, active = 0.5, reactive = 0.1)
 statusGenerator!(system; label = 1, status = 0)
 ```
@@ -778,7 +778,7 @@ can be left, in which case their values will remain unchanged. The function also
 ```jldoctest
 system = powerSystem()
 
-addBus!(system; label = 1, active = 0.25, reactive = -0.04)
+addBus!(system; label = 1, active = 0.25, reactive = -0.04, base = 132e3)
 addGenerator!(system; label = 1, bus = 1, active = 0.5, reactive = 0.1)
 outputGenerator!(system; label = 1, active = 0.85)
 ```

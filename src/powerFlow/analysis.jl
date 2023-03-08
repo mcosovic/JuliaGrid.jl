@@ -375,7 +375,7 @@ function acGenerator!(system::PowerSystem, result::Result)
                 j = system.generator.layout.bus[i]
                 power.active[i] = system.generator.output.active[i]
                 power.reactive[i] = injectionReactive[j] + system.bus.demand.reactive[j]
-                if j == system.bus.layout.slackIndex
+                if j == system.bus.layout.slack
                     power.active[i] = injectionActive[j] + system.bus.demand.active[j]
                 end
             end

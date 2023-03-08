@@ -204,7 +204,7 @@ Changing the units of admittance is reflected in the following quantities:
 
 # Example
 ```jldoctest
-@voltage(Ω, pu)
+@parameter(Ω, pu)
 ```
 """
 macro parameter(impedance::Symbol, admittance::Symbol)
