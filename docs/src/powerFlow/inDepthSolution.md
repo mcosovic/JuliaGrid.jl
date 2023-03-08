@@ -1,6 +1,6 @@
-# [In-depth Power Flow Solution](@id inDepthPowerFlowSolution)
+# [In-depth Power Flow Analysis](@id inDepthPowerFlowAnalysis)
 
-JuliaGrid utilizes standard network components and leverages the [unified branch model](@ref inDepthACModel) to achieve power flow solution, enabling the definition of load profiles, generator capacities, voltage specifications, contingency analysis, and planning. To begin, the `PowerSystem` composite type must be provided to JuliaGrid through the use of the [`powerSystem()`](@ref powerSystem) function, as illustrated by the following example:
+JuliaGrid utilizes standard network components and leverages the [unified branch model](@ref inDepthACModel) to achieve power flow analysis, enabling the definition of load profiles, generator capacities, voltage specifications, contingency analysis, and planning. To begin, the `PowerSystem` composite type must be provided to JuliaGrid through the use of the [`powerSystem()`](@ref powerSystem) function, as illustrated by the following example:
 ```julia-repl
 system = powerSystem("case14.h5")
 ```
@@ -676,7 +676,239 @@ Finally, the resulting bus voltage angles are saved in a vector as follows:
 julia> result.bus.voltage.angle
 ```
 
+## [AC Power Flow Anylsis](@id acPowerFlowAnalysis)
+To perform the AC power flow analysis using JuliaGrid, a sequence of functions is provided to calculate the powers and currents associated with buses and branches, as well as powers related to generators: 
+```julia-repl
+system = powerSystem("case14.h5")
+acModel!(system)
+
+result = newtonRaphson(system)
+stopping = result.algorithm.iteration.stopping
+for i = 1:10
+    newtonRaphson!(system, result)
+    if stopping.active < 1e-8 && stopping.reactive < 1e-8
+        break
+    end
+end
+
+bus!(system, result)
+branch!(system, result)
+generator!(system, result)
+```
+
 ---
+
+#### Bus
+To obtain the complex current injection at a particular bus, the following expression can be used:
+```math
+    \bar{I}_{i} = \sum\limits_{j = 1}^n {Y}_{ij} \bar{V}_{j},\;\;\; i \in \mathcal{N}.
+```
+In JuliaGrid, the magnitude and angle of the complex current injection at each bus can be obtained using:
+```julia-repl
+julia> result.bus.current.injection.magnitude
+julia> result.bus.current.injection.angle
+```
+
+The active and reactive power injections at the bus can be computed as:
+```math
+    {S}_{i} =\bar{V}_{i}\bar{I}_{i}^*,\;\;\; i \in \mathcal{N}.
+```
+You can retrieve the active and reactive power injections using:
+```julia-repl
+julia> result.bus.power.injection.active
+julia> result.bus.power.injection.reactive
+```
+
+For generators that supply bus ``i \in \mathcal{N}_{\text{pv}}``, the active power is equal to the sum of the given generator active powers in the input data, except for the slack bus, which can be determined as:
+```math
+    P_{\text{s}i} = P_i + P_{\text{d}i},\;\;\; i \in \mathcal{N}_{\text{sb}},
+```
+where ``{P}_{\text{d}i}`` represents the active power demanded by consumers at the slack bus. You can retrieve the active power using:
+```julia-repl
+julia> result.bus.power.supply.active
+```
+
+The reactive power of the generators that supply the bus can be computed using the equation:
+```math
+    Q_{\text{s}i} = Q_i + Q_{\text{d}i},\;\;\; i \in \mathcal{N}_{\text{pv}} \cup \mathcal{N}_{\text{sb}},
+```
+where ``{Q}_{\text{d}i}`` represents the reactive power demanded by consumers at the corresponding bus. You can retrieve the reactive power using: 
+```julia-repl
+julia> result.bus.power.supply.reactive
+```
+
+To obtain the active and reactive powers related to the shunt element at the bus, use the equations:
+```math
+  {S}_{\text{sh}i} =\bar{V}_{i}\bar{I}_{\text{sh}i}^* = {y}_{\text{sh}i}^*|\bar{V}_{i}|^2,\;\;\; i \in \mathcal{N}.
+```
+You can retrieve the active and reactive powers using:
+```julia-repl
+julia> result.bus.power.shunt.active
+julia> result.bus.power.shunt.reactive
+```
+
+---
+
+#### Branch
+To obtain the complex current flow at bus "from" ``i \in \mathcal{N}`` of the branch, the [unified branch model](@ref ACBranchModel) can be used:
+```math
+    \bar{I}_{ij} = \cfrac{1}{\tau_{ij}^2}({y}_{ij} + y_{\text{s}ij}) \bar{V}_{i} - \alpha_{ij}^*{y}_{ij} \bar{V}_{j},\;\;\; (i,j) \in \mathcal{E}.
+```
+The magnitude and angle of the resulting complex current flow at the "from" bus can be obtained using the following Julia code:
+```julia-repl
+julia> result.branch.current.from.magnitude
+julia> result.branch.current.from.angle
+```
+Similarly, the complex current flow at the bus "to" ``j \in \mathcal{N}`` of the branch can be obtained using the same unified branch model:
+```math
+    \bar{I}_{ji} = -\alpha_{ij}{y}_{ij} \bar{V}_{i} + ({y}_{ij} + y_{\text{s}ij}) \bar{V}_{j},\;\;\; (i,j) \in \mathcal{E}.
+```
+The magnitude and angle of the resulting complex current flow at the "to" bus can be obtained using the following Julia code:
+```julia-repl
+julia> result.branch.current.to.magnitude
+julia> result.branch.current.to.angle
+```
+Finally, the complex current flow through the series impedance of the branch in the direction from bus ``i \in \mathcal{N}`` to bus ``j \in \mathcal{N}`` can be determined as:
+```math
+    \bar{I}_{\text{b}ij} =  y_{ij} (\alpha_{ij}\bar{V}_{i} - \bar{V}_{j}),,\;\;\; (i,j) \in \mathcal{E}.
+```
+The magnitude and angle of the resulting complex current flow through the series impedance can be obtained using the following Julia code:
+```julia-repl
+julia> result.branch.current.impedance.magnitude
+julia> result.branch.current.impedance.angle
+```
+
+To obtain the active and reactive power flows at the bus "from" ``i \in \mathcal{N}`` of the branch, we use the following equations, based on the [unified branch model](@ref ACBranchModel):
+```math
+    {S}_{ij} = \bar{V}_{i}\bar{I}_{ij}^*,\;\;\; (i,j) \in \mathcal{E}.
+```
+We can retrieve the active and reactive power flows using the following Julia commands:
+```julia-repl
+julia> result.branch.power.from.active
+julia> result.branch.power.from.reactive
+```
+Similarly, to obtain the active and reactive power flows at the bus "to" ``j \in \mathcal{N}`` of the branch, we use the following equations:
+```math
+    {S}_{ji} = \bar{V}_{j}\bar{I}_{ji}^*,\;\;\; (i,j) \in \mathcal{E}.
+```
+We can retrieve the active and reactive power flows using the following Julia commands:
+```julia-repl
+julia> result.branch.power.to.active
+julia> result.branch.power.to.reactive
+```
+
+The series impedance ``z_{ij}`` of the branch causes active and reactive power losses. We can obtain these losses using the following equations:
+```math
+    \begin{aligned}
+        P_{\text{loss}ij} &= r_{ij}|\bar{I}_{\text{b}ij}|^2 \\
+        Q_{\text{loss}ij} &= x_{ij}|\bar{I}_{\text{b}ij}|^2,
+    \end{aligned}
+```
+where ``(i,j) \in \mathcal{E}``. We can retrieve the active and reactive power losses using the following Julia commands:
+```julia-repl
+julia> result.branch.power.loss.active
+julia> result.branch.power.loss.reactive
+```
+
+The capacitive susceptances of the branch lead to reactive power injection. We can obtain the total reactive power injected by the branch using the following equation:
+```math
+    Q_{\text{ch}ij} = b_{\text{s}i} (|\alpha_{ij}\bar{V}_{i}|^2 - |\bar{V}_{j}|^2),\;\;\; (i,j) \in \mathcal{E}.
+```
+We can retrieve the injected reactive power using the following Julia command:
+```julia-repl
+julia> result.branch.power.shunt.reactive
+```
+
+---
+
+#### Generator
+To obtain the output active power of a generator located at bus ``i \in \mathcal{N}_{\text{pv}}``, the given active power in the input data is used. If there are multiple generators at the same bus, their output active powers are also equal to the active powers specified in the input data. The output active power of the generator at the slack bus is determined as:
+```math
+    P_{\text{g}i} = P_i + P_{\text{d}i},\;\;\; i \in \mathcal{N}_{\text{sb}}.
+```
+If there are several generators at the slack bus, the active power ``P_{\text{g}i}`` assigned to the first generator in the list of input data is reduced by the output active power of the other generators.
+
+The output reactive power of a generator at the bus is given by:
+```math
+    Q_{\text{g}i} = Q_i + Q_{\text{d}i},\;\;\; i \in \mathcal{N}_{\text{pv}} \cup \mathcal{N}_{\text{sb}}.
+```
+If multiple generators are present, the reactive power is distributed proportionally between the generators based on their capabilities. 
+
+To retrieve the output active and reactive powers of the generators in the solved power flow, the following Julia code can be used:
+```julia-repl
+julia> result.generator.power.active
+julia> result.generator.power.reactive
+```
+
+---
+
+## [DC Power Flow Anylsis](@id dcPowerFlowAnalysis)
+Performing the DC power flow analysis involves computing active powers associated with buses, branches, and generators. JuliaGrid offers a sequence of functions to carry out this analysis:
+```julia-repl
+system = powerSystem("case14.h5")
+dcModel!(system)
+
+result = dcPowerFlow(system)
+
+bus!(system, result)
+branch!(system, result)
+generator!(system, result)
+```
+
+---
+
+#### Bus
+The expression for obtaining the active power injection at bus i \in \mathcal{N} is:
+```math
+   P_i = \sum_{j = 1}^n {B}_{ij} \theta_j + P_{\text{gs}i} + P_{\text{sh}i},\;\;\; i \in \mathcal{N}.
+```
+This value can be obtained using the following code:
+```julia-repl
+julia> result.bus.power.injection.active
+```
+
+For the generators that supply bus`` i \in \mathcal{N}_{\text{pv}}``, their output active power is equal to the given active power in the input data. However, for the slack bus, its output active power is determined as:
+
+```math
+    P_{\text{s}i} = P_i + P_{\text{d}i},\;\;\; i \in \mathcal{N}_{\text{sb}},
+```
+where ``{P}_{\text{d}i}`` represents the active power demanded by consumers at the slack bus. This information can be obtained using the following code:
+```julia-repl
+julia> result.bus.power.supply.active
+```
+
+---
+
+#### Branch
+The active power flowing from bus ``i \in \mathcal{N}`` of the branch can be obtained using the following equation:
+```math
+    P_{ij} = \cfrac{1}{\tau_{ij} x_{ij}} (\theta_{i} -\theta_{j}-\phi_{ij}),\;\;\; (i,j) \in \mathcal{E}.
+```
+The corresponding JuliaGrid function to obtain these values are:
+```julia-repl
+julia> result.branch.power.from.active
+```
+Similarly, the active power flowing to bus ``j \in \mathcal{N}`` of the branch can be obtained as:
+```math
+    P_{ji} = - P_{ij},\;\;\; (i,j) \in \mathcal{E}.
+```
+The corresponding JuliaGrid function to obtain these values are:
+```julia-repl
+julia> result.branch.power.to.active
+```
+
+---
+
+#### Generator
+The active power output of a generator located at bus ``i \in \mathcal{N}_{\text{pv}}`` is equal to the active power specified in the input data. If there are multiple generators at bus ``i \in \mathcal{N}_{\text{pv}}``, their active power outputs are also equal to the active power specified in the input data. However, the active power output of a generator located at the slack bus is determined as:
+```math
+    P_{\text{g}i} = P_i + P_{\text{d}i},\;\;\; i \in \mathcal{N}_{\text{sb}}.
+```
+If there are multiple generators at the slack bus, the active power output of the first generator in the input data is assigned to ``P_{\text{g}i}``, and the output active power of the remaining generators is subtracted from it. This information can be obtained using the following Julia command:
+```julia-repl
+julia> result.generator.power.active
+```
+
 
 ## [References](@id inDepthPowerFlowSolutionReference)
 [1] A. Wood and B. Wollenberg, *Power Generation, Operation, and Control*, ser. A Wiley-Interscience publication. Wiley, 1996.

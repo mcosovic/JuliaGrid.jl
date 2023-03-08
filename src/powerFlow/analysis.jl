@@ -239,8 +239,6 @@ end
 
 
 """
-The function calculates the powers related to generators. 
-
 The function computes powers related to generators.
 
     generator!(system::PowerSystem, result::Result)
