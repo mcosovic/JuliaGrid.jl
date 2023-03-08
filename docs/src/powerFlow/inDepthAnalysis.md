@@ -668,7 +668,7 @@ generator!(system, result)
 
 ---
 
-#### Bus
+#### [Bus](@id acPostprocessingAnalysisBus)
 To obtain the complex current injection at a particular bus, the following expression can be used:
 ```math
     \bar{I}_{i} = \sum\limits_{j = 1}^n {Y}_{ij} \bar{V}_{j},\;\;\; i \in \mathcal{N}.
@@ -719,7 +719,7 @@ julia> result.bus.power.shunt.reactive
 
 ---
 
-#### Branch
+#### [Branch](@id acPostprocessingAnalysisBranch)
 To obtain the complex current flow at from bus end ``i \in \mathcal{N}``, the [unified branch model](@ref ACBranchModel) can be used:
 ```math
     \bar{I}_{ij} = \cfrac{1}{\tau_{ij}^2}({y}_{ij} + y_{\text{s}ij}) \bar{V}_{i} - \alpha_{ij}^*{y}_{ij} \bar{V}_{j},\;\;\; (i,j) \in \mathcal{E}.
@@ -791,7 +791,7 @@ julia> result.branch.power.shunt.reactive
 
 ---
 
-#### Generator
+#### [Generator](@id acPostprocessingAnalysisGenerator)
 To obtain the output active power of a generator located at bus ``i \in \mathcal{N}_{\text{pv}}``, the given active power in the input data is used. If there are multiple generators at the same bus, their output active powers are also equal to the active powers specified in the input data. The output active power of the generator at the slack bus is determined as:
 ```math
     P_{\text{g}i} = P_i + P_{\text{d}i},\;\;\; i \in \mathcal{N}_{\text{sb}}.
@@ -812,7 +812,7 @@ julia> result.generator.power.reactive
 
 ---
 
-## [DC Power Flow Solution](@id dcPowerFlowSolution)
+## [DC Power Flow Solution](@id inDepthDCPowerFlowSolution)
 As discussed in section [In-depth DC Model](@ref inDepthDCModel), the DC power flow problem can be represented by a set of linear equations given by:
 ```math
   \mathbf {P} = \mathbf{B} \bm {\theta} + \mathbf{P_\text{gs}} + \mathbf{P}_\text{sh}.
@@ -859,7 +859,7 @@ generator!(system, result)
 
 ---
 
-#### Bus
+#### [Bus](@id dcPostprocessingAnalysisBus)
 The expression for obtaining the active power injection at bus ``i \in \mathcal{N}`` is:
 ```math
    P_i = \sum_{j = 1}^n {B}_{ij} \theta_j + P_{\text{gs}i} + P_{\text{sh}i},\;\;\; i \in \mathcal{N}.
@@ -880,7 +880,7 @@ julia> result.bus.power.supply.active
 
 ---
 
-#### Branch
+#### [Branch](@id dcPostprocessingAnalysisBranch)
 The active power flowing from bus ``i \in \mathcal{N}`` of the branch can be obtained using the following equation:
 ```math
     P_{ij} = \cfrac{1}{\tau_{ij} x_{ij}} (\theta_{i} -\theta_{j}-\phi_{ij}),\;\;\; (i,j) \in \mathcal{E}.
@@ -900,7 +900,7 @@ julia> result.branch.power.to.active
 
 ---
 
-#### Generator
+#### [Generator](@id dcPostprocessingAnalysisGenerator)
 The active power output of a generator located at bus ``i \in \mathcal{N}_{\text{pv}}`` is equal to the active power specified in the input data. If there are multiple generators at bus ``i \in \mathcal{N}_{\text{pv}}``, their active power outputs are also equal to the active power specified in the input data. However, the active power output of a generator located at the slack bus is determined as:
 ```math
     P_{\text{g}i} = P_i + P_{\text{d}i},\;\;\; i \in \mathcal{N}_{\text{sb}}.

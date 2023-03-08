@@ -248,7 +248,9 @@ method.
     newtonRaphson!(system::PowerSystem, result::Result)
     
 It is intended to be used within a for loop as it performs only one iteration of the 
-Newton-Raphson method.
+Newton-Raphson method. It is recommended that the reader peruses the section on the 
+[Newton-Raphson Method](@ref inDepthNewtonRaphson) to gain a comprehensive understanding 
+of its implementation, including all relevant data.
 
 # Example
 ```jldoctest
@@ -572,7 +574,9 @@ method.
     fastNewtonRaphson!(system::PowerSystem, result::Result)
 
 It is intended to be used within a for loop as it performs only one iteration of the 
-fast Newton-Raphson method.
+fast Newton-Raphson method. It is recommended that the reader peruses the section on the 
+[Fast Newton-Raphson Method](@ref inDepthFastNewtonRaphson) to gain a comprehensive 
+understanding of its implementation, including all relevant data.
 
 # Example
 ```jldoctest
@@ -708,7 +712,9 @@ type by computing the magnitudes and angles of bus voltages using the Gauss-Seid
     gaussSeidel!(system::PowerSystem, result::Result)
 
 It is intended to be used within a for loop as it performs only one iteration of the 
-Gauss-Seidel method.
+Gauss-Seidel method. It is recommended that the reader peruses the section on the 
+[Gauss-Seidel Method](@ref inDepthGaussSeidel) to gain a comprehensive understanding of 
+its implementation, including all relevant data.
 
 # Example
 ```jldoctest
@@ -796,7 +802,9 @@ power flow problem by calculating the voltage angles for each bus.
     
 The function returns a composite type `Result` as output, which includes updated 
 `bus.voltage.angle` and `algorithm` fields. These fields are modified during the execution 
-of the function.
+of the function. It is recommended that the reader peruses the section on the 
+[DC Power Flow Solution](@ref inDepthDCPowerFlowSolution) to gain a comprehensive 
+understanding of its implementation, including all relevant data.
 
 # Example
 ```jldoctest

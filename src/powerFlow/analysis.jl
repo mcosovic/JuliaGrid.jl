@@ -3,7 +3,11 @@ This function calculates the powers and currents associated with buses.
 
     bus!(system::PowerSystem, result::Result)
 
-After the function is executed, the `bus` field within the `Result` type gets updated.
+After the function is executed, the `bus` field within the `Result` type gets updated. To 
+gain a comprehensive understanding of the equations used, along with all relevant data, it 
+is recommended that the reader examines either the section on 
+[AC Bus Post-processing Analysis](@ref acPostprocessingAnalysisBus) or the section on 
+[DC Bus Post-processing Analysis](@ref dcPostprocessingAnalysisBus).
 
 # AC Power Flow Example
 ```jldoctest
@@ -124,7 +128,10 @@ powers.
     branch!(system::PowerSystem, result::Result)
 
 The function is responsible for updating the `branch` field within the `Result` type after 
-it has been executed.
+it has been executed. To gain a comprehensive understanding of the equations used, along 
+with all relevant data, it is recommended that the reader examines either the section on 
+[AC Branch Post-processing Analysis](@ref acPostprocessingAnalysisBranch) or the section 
+on [DC Branch Post-processing Analysis](@ref dcPostprocessingAnalysisBranch).
 
 # AC Power Flow Example
 ```jldoctest
@@ -243,7 +250,11 @@ The function computes powers related to generators.
 
     generator!(system::PowerSystem, result::Result)
 
-Once executed, the `generator` field within the `Result` type is updated accordingly.
+Once executed, the `generator` field within the `Result` type is updated accordingly. To 
+gain a comprehensive understanding of the equations used, along with all relevant data, it 
+is recommended that the reader examines either the section on 
+[AC Generator Post-processing Analysis](@ref acPostprocessingAnalysisGenerator) or the 
+section on [DC Generator Post-processing Analysis](@ref dcPostprocessingAnalysisGenerator).
 
 # AC Power Flow Example
 ```jldoctest
