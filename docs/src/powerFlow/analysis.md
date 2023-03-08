@@ -15,7 +15,7 @@ To calculate bus voltages, the appropriate function can be used depending on the
 * [`dcPowerFlow()`](@ref dcPowerFlow).
 Note that when solving the AC power flow problem, the methods should be called inside a loop to simulate an iterative process.
 
-JuliaGrid offers a set of post-processing analysis functions for calculating powers, losses, and currents associated with buses, branches, or generators after obtaining AC or DC power flow solutions. These functions are commonly associated with power flow analysis and include:
+JuliaGrid offers a set of post-processing analysis functions for calculating powers, losses, and currents associated with buses, branches, or generators after obtaining AC or DC power flow solutions:
 * [`bus!()`](@ref bus!)
 * [`branch!()`](@ref branch!)
 * [`generator!()`](@ref generator!).
@@ -59,7 +59,7 @@ dcPowerFlow
 
 ---
 
-## Power Flow Analysis
+## Post-processing Analysis
 ```@docs
 bus!
 branch!

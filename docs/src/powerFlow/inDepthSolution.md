@@ -646,7 +646,7 @@ julia> result.algorithm.iteration.stopping.reactive
 
 ---
 
-## [AC Power Flow Anylsis](@id acPowerFlowAnalysis)
+## [AC Post-processing Analysis](@id acPostprocessingAnalysis)
 After calculating the complex values of bus voltages, it becomes possible to determine various other electrical quantities of significance. For instance, JuliaGrid provides a set of functions to execute AC power flow analysis and compute powers and currents associated with buses and branches, as well as powers linked to generators:
 ```julia-repl
 system = powerSystem("case14.h5")
@@ -844,7 +844,7 @@ julia> result.bus.voltage.angle
 
 ---
 
-## [DC Power Flow Anylsis](@id dcPowerFlowAnalysis)
+## [DC Post-processing Analysis](@id dcPostprocessingAnalysis)
 Performing the DC power flow analysis involves computing active powers associated with buses, branches, and generators. JuliaGrid offers a sequence of functions to carry out this analysis:
 ```julia-repl
 system = powerSystem("case14.h5")
