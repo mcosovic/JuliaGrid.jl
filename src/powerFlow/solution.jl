@@ -874,16 +874,18 @@ maximum limits.
 
 First, if the [`generator!()`](@ref generator!) function has not been executed, 
 [`reactivePowerLimit!()`](@ref reactivePowerLimit!) will execute it and update the 
-`result.generator` field. 
+`generator` field of the `Result` type. 
 
-Next, the function sets the `system.generator.output.active` and `system.bus.supply.active` 
-variables based on the results obtained by [`generator!()`](@ref generator!) function. 
+Afterward, the function uses the results from [`generator!()`](@ref generator!) to assign 
+values to the `generator.output.active` and `bus.supply.active` fields of the `System` 
+type.
 
-Finally, the function then checks the generator reactive powers and updates them to their 
-maximum or minimum values if they are violated, updating the 
-`system.generator.output.reactive` variable. Based on this, the `system.bus.supply.reactive` 
-variable is updated, and the bus types in the `system.bus.layout.type` variable are changed. 
-If the slack bus is converted, the `system.bus.layout.slack` field is updated accordingly.
+At the end of the process, the function inspects the reactive powers of the generator and 
+adjusts them to their maximum or minimum values if they violate the threshold. The 
+`generator.output.reactive` field of the `System` type is then modified accordingly. In 
+light of this modification, the `bus.supply.reactive` field of the `System` type is also 
+updated, and the bus types in `bus.layout.type` are adjusted. If the slack bus is 
+converted, the `bus.layout.slack` field is modified accordingly.
 
 # Example
 ```jldoctest
@@ -973,8 +975,8 @@ end
 
 """
 The function modifies the bus voltage angles based on a different slack bus than the one 
-identified by the `system.bus.layout.slack` variable. This function only updates the 
-`result.bus.voltage.angle` variable.
+identified by the `bus.layout.slack` field. This function only updates the 
+`bus.voltage.angle` field of the `Result` type.
 
     adjustVoltageAngle!(system::PowerSystem, result::Result; slack)
 
@@ -999,7 +1001,6 @@ for i = 1:200
     end
 end
 
-originalSlack = copy(system.bus.layout.slack)
 reactivePowerLimit!(system, result)
 
 result = newtonRaphson(system)
@@ -1011,7 +1012,7 @@ for i = 1:200
     end
 end
 
-adjustVoltageAngle!(system, result; slack = originalSlack)
+adjustVoltageAngle!(system, result; slack = 1)
 ```
 """
 function adjustVoltageAngle!(system::PowerSystem, result::Result; slack::T = system.bus.layout.slack)
