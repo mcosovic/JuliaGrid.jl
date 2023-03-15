@@ -771,12 +771,8 @@ end
     data = [Array{Float64}(undef, 0) for i = 1:number]
     if !isempty(group[key])
         datah5 = HDF5.readmmap(group[key])
-        if size(datah5, 2) == 1
-            data = [datah5 for i = 1:number]
-        else
-            for i = 1:number
-                data[i] = datah5[:, i]
-            end
+        for col = 1:size(datah5, 2)
+            data[trunc(Int64, datah5[1, col])] = datah5[2:end, col] 
         end
     end
 
@@ -788,12 +784,13 @@ end
     data = [Array{Float64}(undef, 0, 0) for i = 1:number]
     if !isempty(group[key])
         datah5 = HDF5.readmmap(group[key])
-        display(datah5)
-        if size(datah5, 2) == 2
-            data = [datah5 for i = 1:number]
-        else
-            for (k, i) in enumerate(collect(1:2:2*number))
-                data[k] = datah5[:, i:i+1]
+
+        for i = 1:size(datah5, 1)
+            gen = trunc(Int64, datah5[i, 1])
+            if !isempty(data[gen])
+                data[gen] = vcat(data[gen], datah5[i, 2:3]')
+            else
+                data[gen] = datah5[i, 2:3]'
             end
         end
     end

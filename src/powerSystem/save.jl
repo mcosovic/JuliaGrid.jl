@@ -449,33 +449,31 @@ end
 ######### Save Polynomial Cost Terms ##########
 function savePolynomial(file, data, name::String)
     costNumber = size(data, 1)
-
     format = "empty"
-    flag = true
-    anchor = data[1]
+
+    maxNumberCoefficient = 0
+    numberPolynomial = 0
     @inbounds for i = 1:costNumber
+        maxNumberCoefficient = max(maxNumberCoefficient, length(data[i]))
         if !isempty(data[i])
-            format = "compressed"
-        end
-        if anchor != data[i]
             format = "expand"
-            break
+            numberPolynomial += 1
         end
     end
 
-    if format == "expand"
-        polynomial = zeros(3, costNumber)
-        @inbounds for i = 1:costNumber
-            if !isempty(data[i])
-                for k = 1:3
-                    polynomial[k, i] = data[i][k]
-                end
+    polynomial = zeros(maxNumberCoefficient + 1, numberPolynomial)
+    point = 1
+    for i = 1:costNumber
+        if !isempty(data[i])
+            polynomial[1, point] = i
+            for k = 1:length(data[i])
+                polynomial[k + 1, point] = data[i][k]
             end
+            point += 1
         end
-        write(file, name, polynomial)
-    else
-        write(file, name, data[1])
     end
+
+    write(file, name, polynomial)
 
     return format
 end
@@ -483,38 +481,32 @@ end
 ######### Save Piecewise Cost Terms ##########
 function savePiecewise(file, data, name::String)
     costNumber = size(data, 1)
+    format = "empty"
 
-    format = "compressed"
-    maxRows = 0
-    anchor = data[1]
+    numberPiecewise = 0
     @inbounds for i = 1:costNumber
-        maxRows = max(maxRows, size(data[i], 1))
-        if anchor != data[i]
+        if !isempty(data[i])
             format = "expand"
+            numberPiecewise += size(data[i], 1)
         end
     end
-    if maxRows == 0
-        format = "empty"
-    end
-
-    if format == "expand"
-        piecewise = zeros(maxRows, 2 * costNumber)
-        col = 1
-        @inbounds for i = 1:costNumber
-            if !isempty(data[i])
-                rowNumber = size(data[i], 1)
-                for coordinate = 1:2
-                    for row = 1:rowNumber
-                        piecewise[row, col] = data[i][row, coordinate]
-                    end
-                    col += 1
-                end
+    
+    piecewise = zeros(numberPiecewise, 3)
+    
+    point = 1
+    for i = 1:costNumber
+        if !isempty(data[i])
+            for j = 1:size(data[i], 1)
+                piecewise[point, 1] = i
+                piecewise[point, 2] = data[i][j, 1]
+                piecewise[point, 3] = data[i][j, 2]
+                point += 1
             end
+            
         end
-        write(file, name, piecewise)
-    else
-        write(file, name, data[1])
     end
-
+    
+    write(file, name, piecewise)
+  
     return format
 end
