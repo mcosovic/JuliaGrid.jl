@@ -2,6 +2,7 @@ module JuliaGrid
 
 using SparseArrays, LinearAlgebra, SuiteSparse
 using HDF5
+# using JuMP, Ipopt, HiGHS
 
 ######### Utility ##########
 include("utility/routine.jl")
@@ -32,7 +33,8 @@ export bus!, branch!, generator!
 
 ######## Optimal Power Flow ##########
 include("optimalPowerFlow/solution.jl")
-export dcOptimalPowerFlow!, optimizePowerFlow!
+export dcOptimalPowerFlow!
+# optimizePowerFlow!
 
 ######### Unit ##########
 include("utility/unit.jl")
