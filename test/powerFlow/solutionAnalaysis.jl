@@ -143,8 +143,8 @@ end
 end
 
 @testset "gaussSeidel, gaussSeidel!" begin
-    matpower14 = h5read(string(pathData, "case14testPowerFlowResult.h5"), "/gs")
-    matpower30 = h5read(string(pathData, "case30testPowerFlowResult.h5"), "/gs")
+    matpower14 = h5read(string(pathData, "case14testResult.h5"), "/gs")
+    matpower30 = h5read(string(pathData, "case30testResult.h5"), "/gs")
 
     ######## Modified IEEE 14-bus Test Case ##########
     acModel!(system14)
