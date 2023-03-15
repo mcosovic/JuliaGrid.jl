@@ -30,6 +30,10 @@ export reactivePowerLimit!, adjustVoltageAngle!
 include("powerFlow/analysis.jl")
 export bus!, branch!, generator!
 
+######## Optimal Power Flow ##########
+include("optimalPowerFlow/solution.jl")
+export dcOptimalPowerFlow!, optimizePowerFlow!
+
 ######### Unit ##########
 include("utility/unit.jl")
 export @base, @power, @voltage, @parameter, @default

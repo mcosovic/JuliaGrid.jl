@@ -4,8 +4,8 @@ torad = pi / 180
 topu = 1 / 100
 
 @testset "newtonRaphson, newtonRaphson!" begin
-    matpower14 = h5read(string(pathData, "case14testPowerFlowResult.h5"), "/nr")
-    matpower30 = h5read(string(pathData, "case30testPowerFlowResult.h5"), "/nr")
+    matpower14 = h5read(string(pathData, "case14testResult.h5"), "/nr")
+    matpower30 = h5read(string(pathData, "case30testResult.h5"), "/nr")
 
     ######## Modified IEEE 14-bus Test Case ##########
     acModel!(system14)
@@ -73,8 +73,8 @@ topu = 1 / 100
 end
 
 @testset "fastNewtonRaphsonBX, fastNewtonRaphson!" begin
-    matpower14 = h5read(string(pathData, "case14testPowerFlowResult.h5"), "/fdbx")
-    matpower30 = h5read(string(pathData, "case30testPowerFlowResult.h5"), "/fdbx")
+    matpower14 = h5read(string(pathData, "case14testResult.h5"), "/fdbx")
+    matpower30 = h5read(string(pathData, "case30testResult.h5"), "/fdbx")
 
     ######## Modified IEEE 14-bus Test Case ##########
     acModel!(system14)
@@ -108,8 +108,8 @@ end
 end
 
 @testset "fastNewtonRaphsonXB, fastNewtonRaphson!" begin
-    matpower14 = h5read(string(pathData, "case14testPowerFlowResult.h5"), "/fdxb")
-    matpower30 = h5read(string(pathData, "case30testPowerFlowResult.h5"), "/fdxb")
+    matpower14 = h5read(string(pathData, "case14testResult.h5"), "/fdxb")
+    matpower30 = h5read(string(pathData, "case30testResult.h5"), "/fdxb")
 
     ######## Modified IEEE 14-bus Test Case ##########
     acModel!(system14)
@@ -178,8 +178,8 @@ end
 end
 
 @testset "dcPowerFlow" begin
-    matpower14 = h5read(string(pathData, "case14testPowerFlowResult.h5"), "/dc")
-    matpower30 = h5read(string(pathData, "case30testPowerFlowResult.h5"), "/dc")
+    matpower14 = h5read(string(pathData, "case14testResult.h5"), "/dc")
+    matpower30 = h5read(string(pathData, "case30testResult.h5"), "/dc")
 
     ######## Modified IEEE 14-bus Test Case ##########
     dcModel!(system14)

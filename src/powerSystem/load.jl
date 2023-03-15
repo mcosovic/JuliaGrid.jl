@@ -714,18 +714,18 @@ end
 ######## Parser Generator Cost Model ##########
 @inline function generatorCostParser(system::PowerSystem, cost::Cost, generatorCostLine::Array{String,1}, start::Int64)
     basePowerInv = 1 / system.base.power.value
-    pointNumber = length(split(generatorCostLine[1])) - 4
 
     @inbounds for i = 1:system.generator.number
         data = split(generatorCostLine[i + start])
+        pointNumber = parse(Int64, data[4])
         cost.model[i] = parse(Int64, data[1])
 
         if cost.model[i] == 1
-            cost.piecewise[i] = zeros(Int64(pointNumber / 2), 2)
-            for (k, p) in enumerate(1:2:pointNumber)
+            cost.piecewise[i] = zeros(pointNumber, 2)
+            for (k, p) in enumerate(1:2:(2 * pointNumber))
                 cost.piecewise[i][k, 1] = parse(Float64, data[4 + p]) * basePowerInv
             end
-            for (k, p) in enumerate(2:2:pointNumber)
+            for (k, p) in enumerate(2:2:(2 * pointNumber))
                 cost.piecewise[i][k, 2] = parse(Float64, data[4 + p])
             end
         end

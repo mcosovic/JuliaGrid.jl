@@ -4,8 +4,8 @@ system30 = powerSystem(string(pathData, "case30test.m"))
 torad = pi / 180
 
 @testset "reactivePowerLimit!, adjustVoltageAngle!" begin
-    matpower14 = h5read(string(pathData, "case14testPowerFlowResult.h5"), "/nrLimit")
-    matpower30 = h5read(string(pathData, "case30testPowerFlowResult.h5"), "/nrLimit")
+    matpower14 = h5read(string(pathData, "case14testResult.h5"), "/nrLimit")
+    matpower30 = h5read(string(pathData, "case30testResult.h5"), "/nrLimit")
 
     ######## Modified IEEE 14-bus Test Case ##########
     acModel!(system14)
