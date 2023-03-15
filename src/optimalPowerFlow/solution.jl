@@ -7,7 +7,7 @@ function dcOptimalPowerFlow!(system::PowerSystem, model::JuMP.Model)
     polynomial = generator.cost.active.polynomial
     piecewise = generator.cost.active.piecewise
     
-    Jump.@variable(model, angle[i = 1:bus.number], start = bus.voltage.angle[i])
+    JuMP.@variable(model, angle[i = 1:bus.number], start = bus.voltage.angle[i])
     JuMP.@variable(model, generator.capability.minActive[i] <= output[i = 1:generator.number] <= generator.capability.maxActive[i])
 
     # @constraint(model, angle[bus.layout.slack] == 0.0)
