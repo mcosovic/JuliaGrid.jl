@@ -1,5 +1,3 @@
-import Pkg; Pkg.add("Pkg"); Pkg.add("Ipopt"); Pkg.add("HiGHS")
-
 using JuliaGrid
 using HDF5
 using Test
