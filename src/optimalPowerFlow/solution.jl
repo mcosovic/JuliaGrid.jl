@@ -14,12 +14,17 @@ function dcOptimalPowerFlow!(system::PowerSystem, model::JuMP.Model)
     
     indexPiecewise = Array{Int64,1}(undef, 0)
     indexPiecewiseLinear = Array{Int64,1}(undef, 0)
-    indexPolynomial = Array{Int64,1}(undef, 0)
+    indexPolynomialSecond = Array{Int64,1}(undef, 0)
+    indexPolynomialFirst = Array{Int64,1}(undef, 0)
     @inbounds for i = 1:generator.number
         if generator.layout.status[i] == 1
             set_start_value(output[i], (generator.capability.minActive[i] + generator.capability.maxActive[i]) / 2)
             if generator.cost.active.model[i] == 2
-                push!(indexPolynomial, i)
+                if length(polynomial[i]) == 3
+                    push!(indexPolynomialSecond, i)
+                elseif length(polynomial[i]) == 2
+                    push!(indexPolynomialFirst, i)
+                end
             elseif generator.cost.active.model[i] == 1
                 if size(generator.cost.active.piecewise[i], 1) == 2
                     push!(indexPiecewiseLinear, i)
@@ -67,7 +72,8 @@ function dcOptimalPowerFlow!(system::PowerSystem, model::JuMP.Model)
         end
     end
 
-    @objective(model, Min, sum(polynomial[i][1] * output[i]^2 + polynomial[i][2] * output[i] + polynomial[i][3] for i in indexPolynomial) + 
+    @objective(model, Min, sum(polynomial[i][1] * output[i]^2 + polynomial[i][2] * output[i] + polynomial[i][3] for i in indexPolynomialSecond) + 
+        sum(polynomial[i][1] * output[i] + polynomial[i][2] for i in indexPolynomialFirst) + 
         sum((piecewise[i][2, 2] - piecewise[i][1, 2]) / (piecewise[i][2, 1] - piecewise[i][1, 1]) * output[i] + 
             piecewise[i][1, 2] - piecewise[i][1, 1] * (piecewise[i][2, 2] - piecewise[i][1, 2]) / (piecewise[i][2, 1] - piecewise[i][1, 1]) for i in indexPiecewiseLinear) + 
         sum(cost[i] for i = 1:length(indexPiecewise)))

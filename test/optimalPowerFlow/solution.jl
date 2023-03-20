@@ -21,7 +21,6 @@ torad = pi / 180
 
     dcOptimalPowerFlow!(system30, model)
     result = optimizePowerFlow!(system30, model)
-    result.bus.voltage.angle[1] = 0.0
     
     @test result.bus.voltage.angle ≈ matpower30["Ti"] * torad
 end

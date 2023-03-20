@@ -731,14 +731,9 @@ end
         end
 
         if cost.model[i] == 2
-            cost.polynomial[i] = fill(0.0, 3)
-            if pointNumber >= 3
-                cost.polynomial[i][1] = parse(Float64, data[5]) * system.base.power.value^2
-                cost.polynomial[i][2] = parse(Float64, data[6]) * system.base.power.value
-                cost.polynomial[i][3] = parse(Float64, data[7])
-            elseif pointNumber == 2
-                cost.polynomial[i][2] = parse(Float64, data[5]) * system.base.power.value
-                cost.polynomial[i][3] = parse(Float64, data[6])
+            cost.polynomial[i] = fill(0.0, pointNumber)
+            for k = 1:pointNumber
+                cost.polynomial[i][k] = parse(Float64, data[4 + k]) * system.base.power.value^(pointNumber - k)
             end
         end
     end
@@ -769,10 +764,14 @@ end
 ######## Check Matrix Float64 Data ##########
 @inline function loadPolynomial(group, key::String, number::Int64)
     data = [Array{Float64}(undef, 0) for i = 1:number]
+    
     if !isempty(group[key])
         datah5 = HDF5.readmmap(group[key])
-        for col = 1:size(datah5, 2)
-            data[trunc(Int64, datah5[1, col])] = datah5[2:end, col] 
+        @inbounds for polynomial in eachcol(datah5)
+            index = trunc(Int64, polynomial[1])
+            indexCoeff = 2 + trunc(Int64, polynomial[2])
+           
+            data[index] = polynomial[3:indexCoeff] 
         end
     end
 
@@ -782,17 +781,23 @@ end
 ######## Check Matrix Float64 Data ##########
 @inline function loadPiecewise(group, key::String, number::Int64)
     data = [Array{Float64}(undef, 0, 0) for i = 1:number]
+    
     if !isempty(group[key])
         datah5 = HDF5.readmmap(group[key])
 
-        for i = 1:size(datah5, 1)
-            gen = trunc(Int64, datah5[i, 1])
-            if !isempty(data[gen])
-                data[gen] = vcat(data[gen], datah5[i, 2:3]')
-            else
-                data[gen] = datah5[i, 2:3]'
+        Nrow = size(datah5, 1)
+        current_index = 1
+        indexBus = 0
+        @inbounds for i = 2:Nrow
+            if datah5[i, 1] != datah5[i - 1, 1]
+                indexBus = trunc(Int64, datah5[i - 1, 1])
+                data[indexBus] = datah5[current_index:(i - 1), 2:3]
+                
+                current_index = i
             end
         end
+        indexBus = trunc(Int64, datah5[current_index, 1])
+        data[indexBus] = datah5[current_index:end, 2:3]
     end
 
     return data

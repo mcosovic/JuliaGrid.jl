@@ -596,10 +596,11 @@ The function takes in four keywords as arguments:
 * `piecewise`: cost model defined by input-output points given as `Array{Float64,2}`:
   * first column (pu or W): active power output of the generator
   * second column (currency/hr): cost for the specified active power output
-* `polynomial`: second-degree polynomial coefficients given as `Array{Float64,1}`:
-  * first element (currency/pu²hr or currency/W²hr): square polynomial term
-  * second element (currency/puhr or currency/Whr): linear polynomial term
-  * third element (currency): constant polynomial term.
+* `polynomial`: n-th degree polynomial coefficients given as `Array{Float64,1}`:
+  * first element (currency/puⁿhr or currency/Wⁿhr): coefficient of the n-degree term
+  * ... 
+  * penultimate element (currency/puhr or currency/Whr): coefficient of the first-degree term
+  * last element (currency): constant coefficient.
 
 # Units
 By default, the input units related with active powers are per-units (pu), but they can be
@@ -646,10 +647,11 @@ The function takes in four keywords as arguments:
 * `piecewise`: cost model defined by input-output points given as `Array{Float64,2}`:
   * first column (pu or VAr): reactive power output of the generator
   * second column (currency/hr): cost for the specified reactive power output
-* `polynomial`: second-degree polynomial coefficients given as `Array{Float64,1}`:
-  * first element (currency/pu²hr or currency/VAr²hr): square polynomial term
-  * second element (currency/puhr or currency/VArhr): linear polynomial term
-  * third element (currency): constant polynomial term.
+* `polynomial`: n-th degree polynomial coefficients given as `Array{Float64,1}`:
+  * first element (currency/puⁿhr or currency/VArⁿhr): coefficient of the n-degree term
+  * ... 
+  * penultimate element (currency/puhr or currency/VArhr): coefficient of the first-degree term
+  * last element (currency): constant coefficient.
 
 # Units
 By default, the input units related with reactive powers are per-units (pu), but they can
@@ -705,7 +707,11 @@ function addCost!(system::PowerSystem, label, model, polynomial, piecewise, cost
     cost.model[index] = model
 
     if !isempty(polynomial)
-        cost.polynomial[index] = [polynomial[1] / scale^2, polynomial[2] / scale, polynomial[3]]
+        numberCoefficient = length(polynomial) 
+        cost.polynomial[index] = fill(0.0, numberCoefficient)
+        @inbounds for i = 1:numberCoefficient
+            cost.polynomial[index][i] = polynomial[i] / (scale^(numberCoefficient - i))
+        end
     end
     
     if !isempty(piecewise)

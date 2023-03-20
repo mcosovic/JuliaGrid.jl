@@ -448,29 +448,28 @@ end
 
 ######### Save Polynomial Cost Terms ##########
 function savePolynomial(file, data, name::String)
-    costNumber = size(data, 1)
     format = "empty"
 
-    maxNumberCoefficient = 0
-    numberPolynomial = 0
-    @inbounds for i = 1:costNumber
-        maxNumberCoefficient = max(maxNumberCoefficient, length(data[i]))
+    highestPolynomial  = 0  
+    index = Array{Int64,1}(undef, 0)
+    @inbounds for i in eachindex(data)
         if !isempty(data[i])
-            format = "expand"
-            numberPolynomial += 1
+            highestPolynomial = max(highestPolynomial, length(data[i]))
+            push!(index, i)
         end
     end
 
-    polynomial = zeros(maxNumberCoefficient + 1, numberPolynomial)
-    point = 1
-    for i = 1:costNumber
-        if !isempty(data[i])
-            polynomial[1, point] = i
-            for k = 1:length(data[i])
-                polynomial[k + 1, point] = data[i][k]
-            end
-            point += 1
+    polynomial = zeros(highestPolynomial + 2, length(index))
+    @inbounds for (k, i) in enumerate(index)
+        polynomial[1, k] = i
+        polynomial[2, k] = length(data[i])
+        for j = 1:length(data[i])
+            polynomial[j + 2, k] = data[i][j]
         end
+    end
+
+    if highestPolynomial > 0
+        format = "expand"
     end
 
     write(file, name, polynomial)
@@ -494,7 +493,7 @@ function savePiecewise(file, data, name::String)
     piecewise = zeros(numberPiecewise, 3)
     
     point = 1
-    for i = 1:costNumber
+    @inbounds for i = 1:costNumber
         if !isempty(data[i])
             for j = 1:size(data[i], 1)
                 piecewise[point, 1] = i
@@ -502,7 +501,6 @@ function savePiecewise(file, data, name::String)
                 piecewise[point, 3] = data[i][j, 2]
                 point += 1
             end
-            
         end
     end
     
