@@ -591,15 +591,14 @@ defined generator.
     addActiveCost!(system::PowerSystem; label, model, piecewise, polynomial)
 
 The function takes in four keywords as arguments:
-* `label`: corresponds to the already defined generator label
-* `model`: cost model, piecewise linear = 1, polynomial = 2
+* `label`: corresponds to the already defined generator label;
+* `model`: cost model, piecewise linear = 1, polynomial = 2;
 * `piecewise`: cost model defined by input-output points given as `Array{Float64,2}`:
-  * first column (pu or W): active power output of the generator
-  * second column (currency/hr): cost for the specified active power output
+  * first column (pu or W): active power output of the generator;
+  * second column (currency/hr): cost for the specified active power output;
 * `polynomial`: n-th degree polynomial coefficients given as `Array{Float64,1}`:
-  * first element (currency/puⁿhr or currency/Wⁿhr): coefficient of the n-degree term
-  * ... 
-  * penultimate element (currency/puhr or currency/Whr): coefficient of the first-degree term
+  * first element (currency/puⁿhr or currency/Wⁿhr): coefficient of the n-degree term, ...;
+  * penultimate element (currency/puhr or currency/Whr): coefficient of the first-degree term;
   * last element (currency): constant coefficient.
 
 # Units
@@ -642,15 +641,14 @@ defined generator.
     addReactiveCost!(system::PowerSystem; label, model, piecewise, polynomial)
 
 The function takes in four keywords as arguments:
-* `label`: corresponds to the already defined generator label
-* `model`: cost model, piecewise linear = 1, polynomial = 2
+* `label`: corresponds to the already defined generator label;
+* `model`: cost model, piecewise linear = 1, polynomial = 2;
 * `piecewise`: cost model defined by input-output points given as `Array{Float64,2}`:
-  * first column (pu or VAr): reactive power output of the generator
-  * second column (currency/hr): cost for the specified reactive power output
+  * first column (pu or VAr): reactive power output of the generator;
+  * second column (currency/hr): cost for the specified reactive power output;
 * `polynomial`: n-th degree polynomial coefficients given as `Array{Float64,1}`:
-  * first element (currency/puⁿhr or currency/VArⁿhr): coefficient of the n-degree term
-  * ... 
-  * penultimate element (currency/puhr or currency/VArhr): coefficient of the first-degree term
+  * first element (currency/puⁿhr or currency/VArⁿhr): coefficient of the n-degree term, ...;
+  * penultimate element (currency/puhr or currency/VArhr): coefficient of the first-degree term;
   * last element (currency): constant coefficient.
 
 # Units
