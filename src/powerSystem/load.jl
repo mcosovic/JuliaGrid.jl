@@ -53,6 +53,7 @@ mutable struct BranchRating
     longTerm::Array{Float64,1}
     shortTerm::Array{Float64,1}
     emergency::Array{Float64,1}
+    type::Array{Int64,1}
 end
 
 mutable struct BranchVoltage
@@ -247,7 +248,7 @@ function powerSystem()
     layoutBus = BusLayout(ai, copy(ai), copy(ai), 0, false)
 
     parameter = BranchParameter(copy(af), copy(af), copy(af), copy(af), copy(af))
-    rating = BranchRating(copy(af), copy(af), copy(af))
+    rating = BranchRating(copy(af), copy(af), copy(af), copy(ai))
     voltageBranch = BranchVoltage(copy(af), copy(af))
     layoutBranch = BranchLayout(copy(ai), copy(ai), copy(ai), false)
 
@@ -346,14 +347,15 @@ function loadBranch(system::PowerSystem, hdf5::HDF5.File)
     branch.parameter.turnsRatio = arrayFloat(parameterh5, "turnsRatio", branch.number)
     branch.parameter.shiftAngle = arrayFloat(parameterh5, "shiftAngle", branch.number)
 
+    voltageh5 = hdf5["branch/voltage"]
+    branch.voltage.minDiffAngle = arrayFloat(voltageh5, "minDiffAngle", branch.number)
+    branch.voltage.maxDiffAngle = arrayFloat(voltageh5, "maxDiffAngle", branch.number)
+
     ratingh5 = hdf5["branch/rating"]
     branch.rating.longTerm = arrayFloat(ratingh5, "longTerm", branch.number)
     branch.rating.shortTerm = arrayFloat(ratingh5, "shortTerm", branch.number)
     branch.rating.emergency = arrayFloat(ratingh5, "emergency", branch.number)
-
-    voltageh5 = hdf5["branch/voltage"]
-    branch.voltage.minDiffAngle = arrayFloat(voltageh5, "minDiffAngle", branch.number)
-    branch.voltage.maxDiffAngle = arrayFloat(voltageh5, "maxDiffAngle", branch.number)
+    branch.rating.type = arrayInteger(ratingh5, "type", branch.number)
 
     branch.layout.status = arrayInteger(layouth5, "status", branch.number)
     branch.layout.from::Array{Int64,1} = read(layouth5["from"])
@@ -580,12 +582,13 @@ function loadBranch(system::PowerSystem, branchLine::Array{String,1})
     branch.parameter.turnsRatio = similar(branch.parameter.resistance)
     branch.parameter.shiftAngle = similar(branch.parameter.resistance)
 
+    branch.voltage.minDiffAngle = similar(branch.parameter.resistance)
+    branch.voltage.maxDiffAngle = similar(branch.parameter.resistance)
+
     branch.rating.longTerm = similar(branch.parameter.resistance)
     branch.rating.shortTerm = similar(branch.parameter.resistance)
     branch.rating.emergency = similar(branch.parameter.resistance)
-
-    branch.voltage.minDiffAngle = similar(branch.parameter.resistance)
-    branch.voltage.maxDiffAngle = similar(branch.parameter.resistance)
+    branch.rating.type = fill(1, branch.number)
 
     branch.layout.from = fill(0, branch.number)
     branch.layout.to = similar( branch.layout.from)

@@ -43,12 +43,13 @@
     @test systemMat.branch.parameter.turnsRatio == systemH5.branch.parameter.turnsRatio
     @test systemMat.branch.parameter.shiftAngle == systemH5.branch.parameter.shiftAngle
  
+    @test systemMat.branch.voltage.minDiffAngle == systemH5.branch.voltage.minDiffAngle
+    @test systemMat.branch.voltage.maxDiffAngle == systemH5.branch.voltage.maxDiffAngle
+
     @test systemMat.branch.rating.longTerm == systemH5.branch.rating.longTerm
     @test systemMat.branch.rating.shortTerm == systemH5.branch.rating.shortTerm
     @test systemMat.branch.rating.emergency == systemH5.branch.rating.emergency
- 
-    @test systemMat.branch.voltage.minDiffAngle == systemH5.branch.voltage.minDiffAngle
-    @test systemMat.branch.voltage.maxDiffAngle == systemH5.branch.voltage.maxDiffAngle
+    @test systemMat.branch.rating.type == systemH5.branch.rating.type
  
     ######## Generator Data ##########
     @test systemMat.generator.label == systemH5.generator.label

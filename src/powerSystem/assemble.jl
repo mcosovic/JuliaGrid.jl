@@ -173,8 +173,8 @@ The function adds a new branch to the `PowerSystem` type and updates its branch 
 A branch can be added between already defined buses.
 
     addBranch!(system::PowerSystem; label, from, to, status, resistance, reactance,
-        susceptance, turnsRatio, shiftAngle, longTerm, shortTerm, emergency,
-        minDiffAngle, maxDiffAngle)
+        susceptance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle,
+        longTerm, shortTerm, emergency, type)
 
 The branch is defined with the following parameters:
 * `label`: unique branch label
@@ -186,12 +186,16 @@ The branch is defined with the following parameters:
 * `susceptance` (pu or S): total line charging susceptance
 * `turnsRatio`: transformer off-nominal turns ratio, equal to zero for a line
 * `shiftAngle` (rad or deg): transformer phase shift angle, where positive value defines delay
-* `longTerm` (pu or VA): short-term rating (equal to zero for unlimited)
-* `shortTerm` (pu or VA): long-term rating (equal to zero for unlimited)
-* `emergency` (pu or VA): emergency rating (equal to zero for unlimited)
 * `minDiffAngle` (rad or deg): minimum voltage angle difference value between from and to bus
 * `maxDiffAngle` (rad or deg): maximum voltage angle difference value between from and to bus.
-
+* `longTerm` (pu or VA, W): short-term rating (equal to zero for unlimited)
+* `shortTerm` (pu or VA, W): long-term rating (equal to zero for unlimited)
+* `emergency` (pu or VA, W): emergency rating (equal to zero for unlimited)
+* `type`: types of longTerm, shortTerm, and emergency ratings:
+  * `type = 1`: apparent power flow (pu or VA) 
+  * `type = 2`: active power flow (pu or W)  
+  * `type = 3`: current magnitude (pu or VA at 1 pu voltage).
+  
 # Units
 The input units are in per-units (pu) and radians (rad) by default. The unit settings, such
 as the selection between the per-unit system or the SI system with the appropriate prefixes,
@@ -220,8 +224,8 @@ addBranch!(system; label = 1, from = 1, to = 2, reactance = 0.12, shiftAngle = 1
 """
 function addBranch!(system::PowerSystem; label::T, from::T, to::T, status::T = 1,
     resistance::T = 0.0, reactance::T = 0.0, susceptance::T = 0.0, turnsRatio::T = 0.0,
-    shiftAngle::T = 0.0, longTerm::T = 0.0, shortTerm::T = 0.0, emergency::T = 0.0,
-    minDiffAngle::T = 0.0, maxDiffAngle::T = 0.0)
+    shiftAngle::T = 0.0, minDiffAngle::T = 0.0, maxDiffAngle::T = 0.0,
+    longTerm::T = 0.0, shortTerm::T = 0.0, emergency::T = 0.0, type::T = 1)
 
     parameter = system.branch.parameter
     rating = system.branch.rating
@@ -268,7 +272,7 @@ function addBranch!(system::PowerSystem; label::T, from::T, to::T, status::T = 1
     push!(layout.status, status)
 
     apparentScale = si2pu(system.base.power.prefix, system.base.power.value, "apparent power")
-
+    
     prefix, base = baseImpedance(system, system.base.voltage.value[layout.from[end]], turnsRatio)
     impedanceScale = si2pu(prefix, base, "impedance")
     admittanceScale = si2pu(1 / prefix, 1 / base, "admittance")
@@ -279,12 +283,17 @@ function addBranch!(system::PowerSystem; label::T, from::T, to::T, status::T = 1
     push!(parameter.turnsRatio, turnsRatio)
     push!(parameter.shiftAngle, shiftAngle * factor["voltage angle"])
 
-    push!(rating.longTerm, longTerm * apparentScale)
-    push!(rating.shortTerm, shortTerm * apparentScale)
-    push!(rating.emergency, emergency * apparentScale)
-
     push!(voltage.minDiffAngle, minDiffAngle * factor["voltage angle"])
     push!(voltage.maxDiffAngle, maxDiffAngle * factor["voltage angle"])
+
+    ratingScale = apparentScale
+    if type == 2
+        ratingScale = si2pu(system.base.power.prefix, system.base.power.value, "active power") 
+    end
+    push!(rating.shortTerm, shortTerm * ratingScale)
+    push!(rating.emergency, emergency * ratingScale)
+    push!(rating.longTerm, longTerm * ratingScale)
+    push!(rating.type, type)
 
     index = system.branch.number
     if !isempty(system.dcModel.admittance)

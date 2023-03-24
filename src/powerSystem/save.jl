@@ -170,24 +170,6 @@ function saveBranch(system::PowerSystem, labelBus::Array{Int64,1}, file)
     attrs(file["branch/parameter/shiftAngle"])["type"] = "float"
     attrs(file["branch/parameter/shiftAngle"])["format"] = format
 
-    format = compresseArray(file, rating.longTerm, "branch/rating/longTerm")
-    attrs(file["branch/rating/longTerm"])["unit"] = "per-unit (pu)"
-    attrs(file["branch/rating/longTerm"])["SI unit"] = "volt-ampere (VA)"
-    attrs(file["branch/rating/longTerm"])["type"] = "float"
-    attrs(file["branch/rating/longTerm"])["format"] = format
-
-    format = compresseArray(file, rating.shortTerm, "branch/rating/shortTerm")
-    attrs(file["branch/rating/shortTerm"])["unit"] = "per-unit (pu)"
-    attrs(file["branch/rating/shortTerm"])["SI unit"] = "volt-ampere (VA)"
-    attrs(file["branch/rating/shortTerm"])["type"] = "float"
-    attrs(file["branch/rating/shortTerm"])["format"] = format
-
-    format = compresseArray(file, rating.emergency, "branch/rating/emergency")
-    attrs(file["branch/rating/emergency"])["unit"] = "per-unit (pu)"
-    attrs(file["branch/rating/emergency"])["SI unit"] = "volt-ampere (VA)"
-    attrs(file["branch/rating/emergency"])["type"] = "float"
-    attrs(file["branch/rating/emergency"])["format"] = format
-
     format = compresseArray(file, voltage.minDiffAngle, "branch/voltage/minDiffAngle")
     attrs(file["branch/voltage/minDiffAngle"])["unit"] = "radian (rad)"
     attrs(file["branch/voltage/minDiffAngle"])["type"] = "float"
@@ -197,6 +179,32 @@ function saveBranch(system::PowerSystem, labelBus::Array{Int64,1}, file)
     attrs(file["branch/voltage/maxDiffAngle"])["unit"] = "radian (rad)"
     attrs(file["branch/voltage/maxDiffAngle"])["type"] = "float"
     attrs(file["branch/voltage/maxDiffAngle"])["format"] = format
+
+    format = compresseArray(file, rating.longTerm, "branch/rating/longTerm")
+    attrs(file["branch/rating/longTerm"])["unit"] = "per-unit (pu)"
+    attrs(file["branch/rating/longTerm"])["SI unit"] = "volt-ampere (VA) or watt (W)"
+    attrs(file["branch/rating/longTerm"])["type"] = "float"
+    attrs(file["branch/rating/longTerm"])["format"] = format
+
+    format = compresseArray(file, rating.shortTerm, "branch/rating/shortTerm")
+    attrs(file["branch/rating/shortTerm"])["unit"] = "per-unit (pu)"
+    attrs(file["branch/rating/shortTerm"])["SI unit"] = "volt-ampere (VA) or watt (W)"
+    attrs(file["branch/rating/shortTerm"])["type"] = "float"
+    attrs(file["branch/rating/shortTerm"])["format"] = format
+
+    format = compresseArray(file, rating.emergency, "branch/rating/emergency")
+    attrs(file["branch/rating/emergency"])["unit"] = "per-unit (pu)"
+    attrs(file["branch/rating/emergency"])["SI unit"] = "volt-ampere (VA) or watt (W)"
+    attrs(file["branch/rating/emergency"])["type"] = "float"
+    attrs(file["branch/rating/emergency"])["format"] = format
+
+    format = compresseArray(file, rating.type, "branch/rating/type")
+    attrs(file["branch/rating/type"])["apparent power flow"] = 1
+    attrs(file["branch/rating/type"])["active power flow"] = 2
+    attrs(file["branch/rating/type"])["current magnitude"] = 3
+    attrs(file["branch/rating/type"])["unit"] = "dimensionless"
+    attrs(file["branch/rating/type"])["type"] = "one-two-three integer"
+    attrs(file["branch/rating/type"])["format"] = format
 
     format = compresseArray(file, layout.status, "branch/layout/status")
     attrs(file["branch/layout/status"])["in-service"] = 1

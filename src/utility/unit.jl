@@ -108,7 +108,8 @@ Changing the unit of active power is reflected in the following quantities:
 * [`shuntBus!()`](@ref shuntBus!): `conductance`
 * [`addGenerator!()`](@ref addGenerator!): `active`, `minActive`, `maxActive`, `lowActive`, `upActive`, `loadFollowing`, `reserve10min`, `reserve30min`
 * [`addActiveCost!()`](@ref addActiveCost!): `piecewise`, `polynomial`
-* [`outputGenerator!()`](@ref outputGenerator!): `active`.
+* [`outputGenerator!()`](@ref outputGenerator!): `active`
+* [`addBranch!()`](@ref addBranch!): `longTerm`, `shortTerm`, `emergency` if rating `type = 2`.
 
 Changing the unit of reactive power unit is reflected in the following quantities:
 * [`addBus!()`](@ref addBus!): `reactive`, `susceptance`
@@ -118,7 +119,7 @@ Changing the unit of reactive power unit is reflected in the following quantitie
 * [`outputGenerator!()`](@ref outputGenerator!): `reactive`.
 
 Changing the unit of apparent power unit is reflected in the following quantities:
-* [`addBranch!()`](@ref addBranch!): `longTerm`, `shortTerm`, `emergency`.
+* [`addBranch!()`](@ref addBranch!): `longTerm`, `shortTerm`, `emergency` if rating `type = 1` or `type = 3`.
 
 # Example
 ```jldoctest

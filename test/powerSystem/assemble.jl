@@ -64,12 +64,13 @@
     @test system.branch.parameter.turnsRatio == systemPU.branch.parameter.turnsRatio
     @test system.branch.parameter.shiftAngle == systemPU.branch.parameter.shiftAngle
 
+    @test system.branch.voltage.minDiffAngle == systemPU.branch.voltage.minDiffAngle
+    @test system.branch.voltage.maxDiffAngle == systemPU.branch.voltage.maxDiffAngle
+
     @test system.branch.rating.longTerm == systemPU.branch.rating.longTerm
     @test system.branch.rating.shortTerm == systemPU.branch.rating.shortTerm
     @test system.branch.rating.emergency == systemPU.branch.rating.emergency
-
-    @test system.branch.voltage.minDiffAngle == systemPU.branch.voltage.minDiffAngle
-    @test system.branch.voltage.maxDiffAngle == systemPU.branch.voltage.maxDiffAngle
+    @test system.branch.rating.type == systemPU.branch.rating.type
 
     @test system.branch.layout.from == systemPU.branch.layout.from
     @test system.branch.layout.to == systemPU.branch.layout.to
@@ -169,12 +170,13 @@ end
     @test system.branch.parameter.turnsRatio ≈ systemSI.branch.parameter.turnsRatio
     @test system.branch.parameter.shiftAngle ≈ systemSI.branch.parameter.shiftAngle
  
+    @test system.branch.voltage.minDiffAngle ≈ systemSI.branch.voltage.minDiffAngle
+    @test system.branch.voltage.maxDiffAngle ≈ systemSI.branch.voltage.maxDiffAngle
+
     @test system.branch.rating.longTerm ≈ systemSI.branch.rating.longTerm
     @test system.branch.rating.shortTerm ≈ systemSI.branch.rating.shortTerm
     @test system.branch.rating.emergency ≈ systemSI.branch.rating.emergency
- 
-    @test system.branch.voltage.minDiffAngle ≈ systemSI.branch.voltage.minDiffAngle
-    @test system.branch.voltage.maxDiffAngle ≈ systemSI.branch.voltage.maxDiffAngle
+    @test system.branch.rating.type == systemSI.branch.rating.type
  
     @test system.branch.layout.from == systemSI.branch.layout.from
     @test system.branch.layout.to == systemSI.branch.layout.to
