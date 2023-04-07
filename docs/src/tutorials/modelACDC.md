@@ -224,7 +224,8 @@ The real components are:
     P_{ji} &=\cfrac{1}{\tau_{ij}x_{ij}} \sin(\theta_{j} -\theta_{i}+\phi_{ij}) \approx -\cfrac{1}{\tau_{ij} x_{ij}} (\theta_{i} - \theta_{j}-\phi_{ij}),
   \end{aligned}
 ```
-where ``{1}/({\tau_{ij} x_{ij}})`` represents the branch admittance in the DC framework. To recall, the `PowerSystem` composite type stores the reactances as vectors in the `branch` variable: ```julia-repl
+where ``{1}/({\tau_{ij} x_{ij}})`` represents the branch admittance in the DC framework. To recall, the `PowerSystem` composite type stores the reactances as vectors in the `branch` variable: 
+```julia-repl
 julia> system.branch.parameter.reactance
 ```
 
@@ -361,7 +362,7 @@ The bus or nodal matrix in the DC framework is given as ``\mathbf{B} \in \mathbb
     B_{ji} = -\cfrac{1}{\tau_{ij}x_{ij}}.
     ```
 
-The nodal matrix ``\mathbf{B}`` is stored in sparse format in the `dcModel` variable, and we can access it using:
+The sparse nodal matrix ``\mathbf{B}`` is stored in the `dcModel` variable, and we can access it using:
 ```julia-repl
 julia> system.dcModel.nodalMatrix
 ```
