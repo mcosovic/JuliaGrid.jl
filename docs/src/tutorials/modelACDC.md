@@ -167,7 +167,7 @@ The matrix ``\mathbf{Y} = \mathbf{G} + \text{j}\mathbf{B} \in \mathbb{C}^{n \tim
     Y_{ji} = G_{ji} + \text{j}B_{ji} =  -\alpha_{ij}{y}_{ij}.
     ```
 
-When a branch is not incident (or adjacent) to a bus the corresponding element in the nodal admittance matrix ``\mathbf{Y}`` is equal to zero. The nodal admittance matrix ``\mathbf{Y}`` is a sparse (i.e., a small number of elements are non-zeros) for real-world power systems. Although it is often assumed that the matrix ``\mathbf{Y}`` is symmetrical, it is not a general case, for example, in the presence of phase shifting transformers the matrix ``\mathbf{Y}`` is not symmetrical [[2, Sec. 9.6]](@ref ACandDCModelReference). JuliaGrid stores both the matrix ``\mathbf{Y}`` and its transpose`` \mathbf{Y}^T`` in the `acModel` variable of the `PowerSystem` composite type: 
+When a branch is not incident (or adjacent) to a bus the corresponding element in the nodal admittance matrix ``\mathbf{Y}`` is equal to zero. The nodal admittance matrix ``\mathbf{Y}`` is a sparse (i.e., a small number of elements are non-zeros) for real-world power systems. Although it is often assumed that the matrix ``\mathbf{Y}`` is symmetrical, it is not a general case, for example, in the presence of phase shifting transformers the matrix ``\mathbf{Y}`` is not symmetrical [[2, Sec. 9.6]](@ref ACandDCModelReference). JuliaGrid stores both the matrix ``\mathbf{Y}`` and its transpose ``\mathbf{Y}^T`` in the `acModel` variable of the `PowerSystem` composite type: 
 ```julia-repl
 julia> system.acModel.nodalMatrix
 julia> system.acModel.nodalMatrixTranspose
@@ -227,6 +227,7 @@ The real components are:
 where ``{1}/({\tau_{ij} x_{ij}})`` represents the branch admittance in the DC framework. To recall, the `PowerSystem` composite type stores the reactances as vectors in the `branch` variable: ```julia-repl
 julia> system.branch.parameter.reactance
 ```
+
 Furthermore, the computed branch admittances in the DC framework are stored in:
 ```julia-repl
 julia> system.dcModel.admittance
