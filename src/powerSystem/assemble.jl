@@ -8,7 +8,10 @@ The function adds a new bus to the `PowerSystem` type, updating its bus field.
 
 The bus is defined with the following parameters:
 * `label`: a unique label for the bus
-* `type`: the bus type, demand (PQ) = 1, generator (PV) = 2, slack (Vθ) = 3
+* `type`: the bus type:
+  * `type = 1`: demand bus (PQ)
+  * `type = 2`: generator bus (PV)
+  * `type = 3`: slack bus (Vθ)  
 * `active` (pu or W): the active power demand at the bus
 * `reactive` (pu or VAr): the reactive power demand at the bus
 * `conductance` (pu or W): the active power demanded of the shunt element
@@ -180,7 +183,9 @@ The branch is defined with the following parameters:
 * `label`: unique branch label
 * `from`: from bus label, corresponds to the bus label
 * `to`: to bus label, corresponds to the bus label
-* `status`: operating status of the branch, in-service = 1, out-of-service = 0
+* `status`: operating status of the branch:
+  * `status = 1`: in-service
+  * `status = 0`: out-of-service 
 * `resistance` (pu or Ω): branch resistance
 * `reactance` (pu or Ω): branch reactance
 * `susceptance` (pu or S): total line charging susceptance
@@ -191,7 +196,7 @@ The branch is defined with the following parameters:
 * `longTerm` (pu or VA, W): short-term rating (equal to zero for unlimited)
 * `shortTerm` (pu or VA, W): long-term rating (equal to zero for unlimited)
 * `emergency` (pu or VA, W): emergency rating (equal to zero for unlimited)
-* `type`: types of longTerm, shortTerm, and emergency ratings:
+* `type`: types of `longTerm`, `shortTerm`, and `emergency` ratings:
   * `type = 1`: apparent power flow (pu or VA) 
   * `type = 2`: active power flow (pu or W)  
   * `type = 3`: current magnitude (pu or VA at 1 pu voltage).

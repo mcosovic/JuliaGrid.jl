@@ -11,23 +11,11 @@ makedocs(
         collapselevel = 1
         ),
     pages = [
-        "Home" => "index.md",
-        "Power System" =>
-            ["Power System Model" => "powerSystem/model.md",
-             "In-depth AC and DC Model" => "powerSystem/inDepthACDCModel.md"],
-        "Power Flow" =>
-            ["Power Flow Analysis" => "powerFlow/analysis.md",
-            "In-depth Power Flow Analysis" => "powerFlow/inDepthAnalysis.md"],
-        # "Post-processing" =>
-        #     ["Power Flow Analysis" => "postprocessing/analysis.md"],    
-        #      "Power Flow Analysis" => "powerFlow/analysis.md",
-        #      "Generator Reactive Power Limits" => "powerFlow/reactiveLimits.md",
-        #      
-        #      "In-depth Power Flow Analysis" => "powerFlow/inDepthAnalysis.md"],
-        # "Operating State" =>
-        #     ["Operating State of Buses" => "operatingState/bus.md",
-        #      "Operating State of Branches" => "operatingState/branch.md",
-        #      "Operating State of Generators" => "operatingState/generator.md"]
+        "Introduction" => "index.md",
+        "Manual" => ["index.md"],
+        "Tutorials" =>
+            ["AC and DC Model" => "tutorials/modelACDC.md"],
+        "API Reference" => ["index.md"]
     ]
 )
 

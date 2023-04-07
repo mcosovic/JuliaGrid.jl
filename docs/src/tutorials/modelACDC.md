@@ -1,10 +1,12 @@
-# [In-depth AC and DC Model](@id inDepthACDCModel)
-Network equations obtained using the unified branch model and defined below represent the basic setup used for power system analysis. The power system network topology is usually described by the bus/branch model, where branches of the network are defined using the two-port ``\pi``-model. The bus/branch model can be represented using a graph ``\mathcal{G} = (\mathcal{N}, \mathcal{E})``, where the set of nodes ``\mathcal{N} = \{1, \dots, n\}`` represents the set of buses, while the set of edges ``\mathcal{E} \subseteq \mathcal{N} \times \mathcal{N}`` represents the set of branches of the power network.
+# [AC and DC Model](@id ACandDCModel)
+Under steady state conditions, the unified branch model is used for power system analysis, which is linear in terms of the relationship between voltages and currents. However, since power calculations are of more interest than current calculations, the resulting equations are nonlinear, leading to complications in solving them. This model is known as the AC model and is essential for accurate power system analysis without any approximations. To solve the equations quickly, approximations are made in the unified branch model, resulting in the DC model, which is a linear system of equations used in various DC analyses [[1]](@ref ACandDCModelReference).
+
+A common way to describe the power system network topology is through the bus/branch model, which employs the two-port ``\pi``-model, also known as the unified branch model. The bus/branch model can be represented by a graph denoted by ``\mathcal{G} = (\mathcal{N}, \mathcal{E})``, where the set of nodes ``\mathcal{N} = \{1, \dots, n\}`` corresponds to buses, and the set of edges ``\mathcal{E} \subseteq \mathcal{N} \times \mathcal{N}`` represents the branches of the power network.
 
 ---
 
-## [AC Model](@id inDepthACModel)
-JuliaGrid is based on common network elements and benefits from the unified branch model to perform various analyses based on the system of non-linear equations. To create vectors and matrices related to AC or non-linear analyses, JuliaGrid uses the function [`acModel!()`](@ref acModel!), for example:
+## [AC Model](@id ACModel)
+JuliaGrid is based on common network elements and benefits from the unified branch model to perform various analyses based on the system of nonlinear equations. To generate matrices and vectors for AC or nonlinear analysis, JuliaGrid employs the [acModel!()](@ref acModel!) function. For instance, to apply the [acModel!()](@ref acModel!) function to a power system stored in the `case14.h5` file, the following Julia code can be executed:
 ```julia-repl
 system = powerSystem("case14.h5")
 acModel!(system)
@@ -26,11 +28,12 @@ The branch series admittance ``y_{ij}`` is inversely proportional to the branch 
     \frac{1}{{r_{ij}} + \text{j}x_{ij}} =
     \frac{r_{ij}}{r_{ij}^2 + x_{ij}^2} - \text{j}\frac{x_{ij}}{r_{ij}^2 + x_{ij}^2} = g_{ij} + \text{j}b_{ij},
 ```
-where ``r_{ij}`` is a resistance, ``x_{ij}`` is a reactance, ``g_{ij}`` is a conductance and ``b_{ij}`` is a susceptance of the branch.
+where ``r_{ij}`` is a resistance, ``x_{ij}`` is a reactance, ``g_{ij}`` is a conductance and ``b_{ij}`` is a susceptance of the branch. In the composite type `PowerSystem`, the resistances and reactances are stored as vectors in the `branch` variable:
 ```julia-repl
 julia> system.branch.parameter.resistance
 julia> system.branch.parameter.reactance
 ```
+Moreover, the `acModel` stores the computed branch series admittances in the `PowerSystem` composite type. You can access them using:
 ```julia-repl
 julia> system.acModel.admittance
 ```
@@ -39,7 +42,6 @@ The branch shunt capacitive admittance (i.e. charging admittance) ``y_{\text{s}i
 ```math
 y_{\text{s}ij} = \text{j} b_{\text{s}ij}.
 ```
-
 Note that JuliaGrid stores the total branch shunt capacitive susceptance ``2b_{\text{s}ij}``:
 ```julia-repl
 julia> system.branch.parameter.susceptance
@@ -72,7 +74,7 @@ Using Kirchhoff's circuit laws, the unified branch model can be described by com
   \end{bmatrix}.
 ```
 
-The values of the terms ``\left(({y}_{ij} + y_{\text{s}ij}) / \tau_{ij}^2\right)``, ``\left(-\alpha_{ij}^*{y}_{ij}\right)``, ``\left(-\alpha_{ij}{y}_{ij}\right)``, and ``\left({y}_{ij} + y_{\text{s}ij}\right)`` can be found stored in four separate arrays, respectively:
+The values of the terms ``\left(({y}_{ij} + y_{\text{s}ij}) / \tau_{ij}^2\right)``, ``\left(-\alpha_{ij}^*{y}_{ij}\right)``, ``\left(-\alpha_{ij}{y}_{ij}\right)``, and ``\left({y}_{ij} + y_{\text{s}ij}\right)`` can be found stored in four separate vectors, respectively:
 
 ```julia-repl
 julia> system.acModel.nodalFromFrom
@@ -164,7 +166,7 @@ The matrix ``\mathbf{Y} = \mathbf{G} + \text{j}\mathbf{B} \in \mathbb{C}^{n \tim
     Y_{ji} = G_{ji} + \text{j}B_{ji} =  -\alpha_{ij}{y}_{ij}.
     ```
 
-When a branch is not incident (or adjacent) to a bus the corresponding element in the nodal admittance matrix ``\mathbf{Y}`` is equal to zero. The nodal admittance matrix ``\mathbf{Y}`` is a sparse (i.e., a small number of elements are non-zeros) for real-world power systems. Although it is often assumed that the matrix ``\mathbf{Y}`` is symmetrical, it is not a general case, for example, in the presence of phase shifting transformers the matrix ``\mathbf{Y}`` is not symmetrical [[1, Sec. 9.6]](@ref inDepthACDCModelReference).
+When a branch is not incident (or adjacent) to a bus the corresponding element in the nodal admittance matrix ``\mathbf{Y}`` is equal to zero. The nodal admittance matrix ``\mathbf{Y}`` is a sparse (i.e., a small number of elements are non-zeros) for real-world power systems. Although it is often assumed that the matrix ``\mathbf{Y}`` is symmetrical, it is not a general case, for example, in the presence of phase shifting transformers the matrix ``\mathbf{Y}`` is not symmetrical [[2, Sec. 9.6]](@ref ACandDCModelReference).
 
 ```julia-repl
 julia> system.acModel.nodalMatrix
@@ -227,7 +229,7 @@ where ``{1}/({\tau_{ij} x_{ij}})`` represents the branch admittance in the DC fr
 julia> system.dcModel.admittance
 ```
 
-We can conclude that ``P_{ij}=-P_{ji}`` holds. With the DC model, the linear network equations relate active powers to bus voltage angles, versus complex currents to complex bus voltages in the AC model [[2]](@ref inDepthACDCModelReference). Consequently, analogous to the [unified branch model](@ref ACBranchModel) we can write:
+We can conclude that ``P_{ij}=-P_{ji}`` holds. With the DC model, the linear network equations relate active powers to bus voltage angles, versus complex currents to complex bus voltages in the AC model [[3]](@ref ACandDCModelReference). Consequently, analogous to the [unified branch model](@ref ACBranchModel) we can write:
 ```math
   \begin{bmatrix}
     P_{ij} \\ P_{ji}
@@ -360,7 +362,9 @@ julia> system.dcModel.nodalMatrix
 
 ---
 
-## [References](@id inDepthACDCModelReference)
-[1] J. Grainger and W. Stevenson, *Power system analysis*, ser. McGraw-Hill series in electrical and computer engineering: Power and energy. McGraw-Hill, 1994.
+## [References](@id ACandDCModelReference)
+[1] G. Andersson, *Power system analysis*, EEH-Power Systems Laboratory, ETH Zurich, Lecture Notes 2012.
 
-[2] R. D. Zimmerman, C. E. Murillo-Sanchez, *MATPOWER User’s Manual*, Version 7.0. 2019.
+[2] J. Grainger and W. Stevenson, *Power system analysis*, ser. McGraw-Hill series in electrical and computer engineering: Power and energy. McGraw-Hill, 1994.
+
+[3] R. D. Zimmerman, C. E. Murillo-Sanchez, *MATPOWER User’s Manual*, Version 7.0. 2019.
