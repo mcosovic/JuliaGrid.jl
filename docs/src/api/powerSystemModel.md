@@ -4,14 +4,14 @@ More information can be found in the [Power System Model](@ref powerSystemModelM
 
 ---
 
-## Build Power System Model
+## Build Model
 ```@docs
 powerSystem
 ```
 
 ---
 
-## Save Power System Model
+## Save Model
 ```@docs
 savePowerSystem
 ```
@@ -42,6 +42,14 @@ addActiveCost!
 addReactiveCost!
 statusGenerator!
 outputGenerator!
+```
+
+---
+
+## AC and DC Model
+```@docs
+acModel!
+dcModel!
 ```
 
 ---

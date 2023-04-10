@@ -12,13 +12,15 @@ makedocs(
         ),
     pages = [
         "Introduction" => "index.md",
-        "Manual" => ["index.md"],
+        "Manual" => 
+            ["Power System Model" => "manual/powerSystemModel.md",
+            "Power System Analysis" => "manual/powerFlowAnalysis.md"],
         "Tutorials" =>
             ["AC and DC Model" => "tutorials/modelACDC.md",
             "Power Flow Solution" => "tutorials/powerFlowSolution.md"],
         "API Reference" => 
             ["Power System Model" => "api/powerSystemModel.md",
-            "AC and DC Model" => "api/modelACDC.md"]
+            "Power Flow Solution" => "api/powerFlowSolution.md"]
     ]
 )
 
