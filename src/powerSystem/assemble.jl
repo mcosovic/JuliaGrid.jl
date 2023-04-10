@@ -843,14 +843,14 @@ end
 """
 The function generates vectors and matrices based on the power system topology and
 parameters associated with DC analysis. We advise the reader to read the section
-[in-depth DC Model](@ref inDepthDCModel), which explains all the data involved in the
+[DC Model](@ref DCModel), which explains all the data involved in the
 field `dcModel`.
 
     dcModel!(system::PowerSystem)
 
 The function updates the field `dcModel`. Once formed, the field will be automatically
-updated when using functions [`addBranch!()`](@ref addBranch!),
-[`statusBranch!()`](@ref statusBranch!), [`parameterBranch!()`](@ref parameterBranch!).
+updated when using functions [`addBranch!`](@ref addBranch!),
+[`statusBranch!`](@ref statusBranch!), [`parameterBranch!`](@ref parameterBranch!).
 
 # Example
 ```jldoctest
@@ -926,14 +926,14 @@ end
 """
 The function generates vectors and matrices based on the power system topology and
 parameters associated with AC analysis. We advise the reader to read the section
-[in-depth AC Model](@ref inDepthACModel), which explains all the data involved in the
+[AC Model](@ref ACModel), which explains all the data involved in the
 field `acModel`.
 
     acModel!(system::PowerSystem)
 
 The function updates the field `acModel`. Once formed, the field will be automatically
-updated when using functions [`addBranch!()`](@ref addBranch!), [`shuntBus!()`](@ref shuntBus!),
-[`statusBranch!()`](@ref statusBranch!), [`parameterBranch!()`](@ref parameterBranch!).
+updated when using functions [`addBranch!`](@ref addBranch!), [`shuntBus!`](@ref shuntBus!),
+[`statusBranch!`](@ref statusBranch!), [`parameterBranch!`](@ref parameterBranch!).
 
 # Example
 ```jldoctest
