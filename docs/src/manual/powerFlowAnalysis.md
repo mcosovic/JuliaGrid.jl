@@ -1,4 +1,4 @@
-# [Power Flow Analysis](@id powerFlowAnalysis)
+# [Power Flow Analysis](@id powerFlowAnalysisManual)
 
 The calculation of bus voltages is essential to solving the power flow problem. The composite type `PowerSystem`, which includes `bus`, `branch`, and `generator` fields, is required to obtain a solution. Additionally, depending on the type of power flow used, either `acModel` or `dcModel` must be used.
 

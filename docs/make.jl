@@ -14,7 +14,7 @@ makedocs(
         "Introduction" => "index.md",
         "Manual" => 
             ["Power System Model" => "manual/powerSystemModel.md",
-            "Power System Analysis" => "manual/powerFlowAnalysis.md"],
+            "Power Flow Analysis" => "manual/powerFlowAnalysis.md"],
         "Tutorials" =>
             ["AC and DC Model" => "tutorials/modelACDC.md",
             "Power Flow Solution" => "tutorials/powerFlowSolution.md"],
