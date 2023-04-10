@@ -31,4 +31,21 @@ Note that these functions can be executed at any time once all power system buse
 
 ---
 
+# Build and Save Model
+The function called [`powerSystem`](@ref powerSystem) is used to create a composite type named `PowerSystem`. This function accepts a path in the form of a string to either HDF5 files or [Matpower](https://matpower.org) case files. To illustrate, suppose we want to create a `PowerSystem` type using the Matpower case file for the IEEE 14-bus test case, named `case14`, which is stored in the folder `C:\matpower`. We can do so with the following code in Julia:
+```julia-repl
+system = powerSystem("C:/matpower/case14.m")
+```
+
+Once we have created the `system` variable, we can save the current data in the `system` variable to an HDF5 file by running the following Julia code:
+```julia-repl
+savePowerSystem(system; path = "C:/matpower/case14.h5", reference = "IEEE 14-bus test case")
+```
+
+If performance is a critical factor, we strongly recommend loading the input power system from the HDF5 file. After saving the data of the power system, we can load it as follows:  
+```julia-repl
+system = powerSystem("C:/matpower/case14.h5")
+```
+
+
 
