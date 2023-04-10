@@ -27,7 +27,7 @@ After adding the generator, JualiGrid provides the following functions to incorp
 To create vectors and matrices based on the power system topology and parameters, you can use the following functions:
 * [`acModel!`](@ref acModel!)
 * [`dcModel!`](@ref dcModel!).
-Note that these functions can be executed at any time once all power system buses are defined. Specifically, using the [`addBranch!()`](@ref addBranch!) function to add a new branch will automatically update the `acModel` and `dcModel` fields. However, adding a new bus using [`addBus!()`](@ref addBus!) requires executing the [`acModel!()`](@ref acModel!) and [`dcModel!()`](@ref dcModel!) functions again. In addition, executing functions related to parameter manipulation of buses and branches will also automatically update the `acModel` and `dcModel` fields.
+Note that these functions can be executed at any time once all power system buses are defined. Specifically, using the [`addBranch!`](@ref addBranch!) function to add a new branch will automatically update the `acModel` and `dcModel` fields. However, adding a new bus using [`addBus!`](@ref addBus!) requires executing the [`acModel!`](@ref acModel!) and [`dcModel!`](@ref dcModel!) functions again. In addition, executing functions related to parameter manipulation of buses and branches will also automatically update the `acModel` and `dcModel` fields.
 
 ---
 
