@@ -14,7 +14,8 @@ makedocs(
         "Introduction" => "index.md",
         "Manual" => ["index.md"],
         "Tutorials" =>
-            ["AC and DC Model" => "tutorials/modelACDC.md"],
+            ["AC and DC Model" => "tutorials/modelACDC.md",
+            "Power Flow Solution" => "tutorials/powerFlowSolution.md"],
         "API Reference" => ["index.md"]
     ]
 )

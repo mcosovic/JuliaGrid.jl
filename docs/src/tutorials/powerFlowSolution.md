@@ -1,11 +1,11 @@
-# [In-depth Power Flow Analysis](@id inDepthPowerFlowAnalysis)
+# [Power Flow Solution](@id powerFlowSolution)
 
-JuliaGrid utilizes standard network components and leverages the [unified branch model](@ref inDepthACModel) to achieve power flow analysis, enabling the definition of load profiles, generator capacities, voltage specifications, contingency analysis, and planning. To begin, the `PowerSystem` composite type must be provided to JuliaGrid through the use of the [`powerSystem()`](@ref powerSystem) function, as illustrated by the following example:
+JuliaGrid utilizes standard network components and leverages the [unified branch model](@ref ACUnifiedBranchModel) to obtained power flow solution, enabling the definition of load profiles, generator capacities, voltage specifications, contingency analysis, and planning. To begin, the `PowerSystem` composite type must be provided to JuliaGrid through the use of the [`powerSystem`](@ref powerSystem) function, as illustrated by the following example:
 ```julia-repl
 system = powerSystem("case14.h5")
 ```
 
-To review, we can conceptualize the bus/branch model as a graph denoted by ``\mathcal{G} = (\mathcal{N}, \mathcal{E})``, where the collection of nodes ``\mathcal{N} = \{1, \dots, n\}`` signifies the buses of the power network, and the set of edges ``\mathcal{E} \subseteq \mathcal{N} \times \mathcal{N}`` represents the branches within the network. As previously demonstrated in the section on the [In-depth AC Model](@ref inDepthACModel), we can express the network as a system of nonlinear equations:
+To review, we can conceptualize the bus/branch model as a graph denoted by ``\mathcal{G} = (\mathcal{N}, \mathcal{E})``, where the collection of nodes ``\mathcal{N} = \{1, \dots, n\}`` signifies the buses of the power network, and the set of edges ``\mathcal{E} \subseteq \mathcal{N} \times \mathcal{N}`` represents the branches within the network. As previously demonstrated in the section on the [AC Model](@ref ACModel), we can express the network as the system of equations:
 ```math
     \mathbf{\bar {I}} = \mathbf{Y} \mathbf{\bar {V}}.
 ```
@@ -21,7 +21,7 @@ The complex power injection denoted by ``S_i`` comprises of both the active powe
 ```math
   	\cfrac{P_i - \text{j}Q_i}{\bar{V}_{i}} = \sum_{j = 1}^n Y_{ij} \bar {V}_j.
 ```
-As demonstrated by the above equation, the bus ``i \in \mathcal{N}`` contains four unknown variables, namely the active power injection ``{P}_{i}``, reactive power injection ``{Q}_{i}``, bus voltage magnitude ``{V}_{i}``, and bus voltage angle ``{\theta}_{i}``. To solve the system of equations, two variables must be specified for each equation. Although any two variables can be selected mathematically, the choice is determined by the devices that are connected to a particular bus. The standard options are listed in the table below, and these options are used to define the bus types [[1]](@ref inDepthPowerFlowSolutionReference).
+As demonstrated by the above equation, the bus ``i \in \mathcal{N}`` contains four unknown variables, namely the active power injection ``{P}_{i}``, reactive power injection ``{Q}_{i}``, bus voltage magnitude ``{V}_{i}``, and bus voltage angle ``{\theta}_{i}``. To solve the system of equations, two variables must be specified for each equation. Although any two variables can be selected mathematically, the choice is determined by the devices that are connected to a particular bus. The standard options are listed in the table below, and these options are used to define the bus types [[1]](@ref powerFlowSolutionReference).
 
 | Bus Type         | Label            | JuliaGrid | Known                       | Unknown                     |
 |:-----------------|-----------------:|----------:|----------------------------:|----------------------------:|
@@ -33,7 +33,7 @@ Consequently, JuliaGrid operates with sets ``\mathcal{N}_{\text{pv}}`` and ``\ma
 ```julia-repl
 julia> system.bus.layout.type
 ```
-It should be noted that JuliaGrid cannot handle systems with multiple slack buses. Additionally, when using functions such as [`newtonRaphson()`](@ref newtonRaphson), [`fastNewtonRaphsonBX()`](@ref fastNewtonRaphsonBX), [`fastNewtonRaphsonXB()`](@ref fastNewtonRaphsonXB), and [`gaussSeidel()`](@ref gaussSeidel), the bus type can be modified in the following manner: If a bus was originally classified as a PV bus but does not have any in-service generators, it will be converted to a PQ bus.
+It should be noted that JuliaGrid cannot handle systems with multiple slack buses. Additionally, when using functions such as [`newtonRaphson`](@ref newtonRaphson), [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX), [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB), and [`gaussSeidel`](@ref gaussSeidel), the bus type can be modified in the following manner: If a bus was originally classified as a PV bus, but does not have any in-service generators, it will be converted to a PQ bus.
 
 Furthermore, the active power injections ``{P}_{i}`` and reactive power injections ``{Q}_{i}`` can be expressed as:
 ```math
@@ -50,12 +50,12 @@ julia> system.bus.supply.reactive - system.bus.demand.reactive
 
 ---
 
-## [Newton-Raphson Method](@id inDepthNewtonRaphson)
+## [Newton-Raphson Method](@id newtonRaphson)
 The Newton-Raphson method is commonly used in power flow calculations due to its quadratic rate of convergence. It provides an accurate approximation of the roots of the system of nonlinear equations:
 ```math
   \mathbf{f}(\mathbf{x}) = \mathbf{0},
 ```
-which in turn allows for the determination of the voltage magnitudes and angles of each bus, denoted as the state vector ``\mathbf x = [\bm \theta, \mathbf V]^T``. The state vector comprises of ``\bm \theta \in \mathbb{R}^{n-1}`` and ``\mathbf V \in \mathbb{R}^{n_{\text{pq}}}``, where ``n_{\text{pq}} = |\mathcal{N}_{\text{pq}}|`` is the total number of PQ buses. The voltage magnitudes and angles are known for certain types of buses, including:
+which in turn allows for the determination of the voltage magnitudes and angles of each bus, denoted as the state vector ``\mathbf x = [\bm \theta, \mathbf V]^T``. The state vector comprises of ``\bm \theta \in \mathbb{R}^{n-1}`` and ``\mathbf V \in \mathbb{R}^{n_{\text{pq}}}``, where ``n_{\text{pq}} = |\mathcal{N}_{\text{pq}}|`` is the total number of PQ buses. These dimensions result in the knowledge of voltage magnitudes and angles for certain types of buses: 
 * The voltage magnitude ``V_i`` and angle ``\theta_i`` at the slack bus ``i \in \mathcal{N}_{\text{sb}}`` are known.
 * The voltage magnitude ``V_i`` at PV buses ``i \in \mathcal{N}_{\text{pv}}`` is known.
 
@@ -89,12 +89,15 @@ where the first ``n - 1`` equations correspond to PV and PQ buses, and the last 
 ---
 
 #### Method Implementation
-To apply the Newton-Raphson method and determine the bus voltage magnitudes and angles for AC power flow in JuliaGrid, execute the following sequence of functions:
+To obtain the voltage magnitudes and angles of buses using the Newton-Raphson method in JuliaGrid, the [acModel!](@ref acModel!) function must first be executed to set up the system, followed by initializing the Newton-Raphson method using the [newtonRaphson](@ref newtonRaphson) function. The following code snippet illustrates this process:
 ```julia-repl
 system = powerSystem("case14.h5")
 acModel!(system)
-
 result = newtonRaphson(system)
+```
+
+The Newton-Raphson method, which is an iterative technique based on the Taylor series expansion, can be implemented in JuliaGrid using the [newtonRaphson!](@ref newtonRaphson!) function. This function is used to execute the Newton-Raphson method iteratively until a stopping criterion is met, as illustrated in the following code snippet:
+```julia-repl 
 stopping = result.algorithm.iteration.stopping
 for i = 1:10
     newtonRaphson!(system, result)
@@ -104,24 +107,24 @@ for i = 1:10
 end
 ```
 
-The Newton-Raphson method, also known as Newton's method, is an iterative approach based on the Taylor series expansion, where higher-order terms are neglected. In each iteration, the increments of bus voltage angle and magnitude are computed as: 
+In each iteration, the increments of bus voltage angle and magnitude are computed as: 
 ```math
   \mathbf{\Delta x^{(\nu)}} = -\mathbf{J(x^{(\nu)})}^{-1}\mathbf{ f(x^{(\nu)})},
 ```
-where ``\mathbf{\Delta x^{(\nu)}} = [\mathbf \Delta \bm \theta^{(\nu)}, \mathbf \Delta \mathbf V^{(\nu)}]^T`` consists of the vector of bus voltage angle increments ``\mathbf \Delta \bm \theta^{(\nu)} \in \mathbb{R}^{n-1}`` and bus voltage magnitude increments ``\mathbf \Delta \mathbf V^{(\nu)} \in \mathbb{R}^{n_{\text{pq}}}``, and ``\mathbf{J(x^{(\nu)})}\in \mathbb{R}^{n_{\text{u}} \times n_{\text{u}}}`` is the Jacobian matrix, ``n_{\text{u}} = n + n_{\text{pq}} - 1``.
-
+where ``\mathbf{\Delta x^{(\nu)}} = [\mathbf \Delta \bm \theta^{(\nu)}, \mathbf \Delta \mathbf V^{(\nu)}]^T`` consists of the vector of bus voltage angle increments ``\mathbf \Delta \bm \theta^{(\nu)} \in \mathbb{R}^{n-1}`` and bus voltage magnitude increments ``\mathbf \Delta \mathbf V^{(\nu)} \in \mathbb{R}^{n_{\text{pq}}}``, and ``\mathbf{J(x^{(\nu)})}\in \mathbb{R}^{n_{\text{u}} \times n_{\text{u}}}`` is the Jacobian matrix, ``n_{\text{u}} = n + n_{\text{pq}} - 1``. These values are stored in the `algorithm` variable of the `Result` composite type and can be accessed after each iteration using the following commands:
 ```julia-repl
 julia> result.algorithm.increment
 julia> result.algorithm.jacobian
 julia> result.algorithm.mismatch
 ```
+
 The JuliaGrid implementation stores the increment vector ``\mathbf{ \Delta x^{(\nu)}}`` and mismatch vector ``\mathbf{f(x^{(\nu)})}`` follows the same order as the one defined previously. The first ``n - 1`` elements represent bus voltage angle increments and active mismatches defined based on PV and PQ buses, in the same order as they appear in the input data. The last ``n_{\text{pq}}`` elements represent bus voltage magnitude increments and reactive mismatches defined based on PQ buses. Consequently, the Jacobian matrix ``\mathbf{J(x^{(\nu)})}`` is also constructed accordingly.
 
 Subsequently, we modify the solution by adding an increment term:
 ```math
   \mathbf {x}^{(\nu + 1)} = \mathbf {x}^{(\nu)} + \mathbf \Delta \mathbf {x}^{(\nu)}.
 ```
-The final outcomes of JuliaGrid are stored in arrays that hold the magnitudes and angles of the bus voltages:
+The final outcomes of JuliaGrid are stored in vectors that hold the magnitudes and angles of the bus voltages:
 ```julia-repl
 julia> result.bus.voltage.magnitude
 julia> result.bus.voltage.angle
@@ -146,7 +149,7 @@ The iteration stops when the following criteria are satisfied:
     \max \{|f_{P_i}(\mathbf x^{(\nu+1)})|,\; i \in \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}} \} < \epsilon \\
     \max \{|f_{Q_i}(\mathbf x^{(\nu+1)})|,\; i \in \mathcal{N}_{\text{pq}} \} < \epsilon.
 ```
-Here, ``\epsilon`` is a predefined stopping criterion. These values are stored in JuliaGrid's variables, which can be used to terminate the iteration loop:
+Here, ``\epsilon`` is a predefined stopping criterion. These maximum values are stored in JuliaGrid's variables, which can be used to terminate the iteration loop:
 ```julia-repl
 julia> result.algorithm.iteration.stopping.active
 julia> result.algorithm.iteration.stopping.reactive
@@ -246,10 +249,15 @@ while non-diagonal elements of the Jacobian sub-matrices are:
   \end{aligned}
 ```
 
+To recall, the Jacobian matrix evaluated at iteration ``\nu`` is stored in the following variable:
+```julia-repl
+julia> result.algorithm.jacobian
+```
+
 ---
 
-## [Fast Newton-Raphson Method](@id inDepthFastNewtonRaphson)
-Although the fast Newton-Raphson method may converge more slowly than the traditional Newton-Raphson method, the shorter solution time for the updates often compensates for this slower convergence, resulting in a shorter overall solution time. This is particularly true for systems that are not heavily loaded, where a shorter overall solution time is almost always achieved. It is important to note that if the algorithm converges, it will converge to a correct solution [[2]](@ref inDepthPowerFlowSolutionReference).
+## [Fast Newton-Raphson Method](@id fastNewtonRaphson)
+Although the fast Newton-Raphson method may converge more slowly than the traditional Newton-Raphson method, the shorter solution time for the updates often compensates for this slower convergence, resulting in a shorter overall solution time. This is particularly true for systems that are not heavily loaded, where a shorter overall solution time is almost always achieved. It is important to note that if the algorithm converges, it will converge to a correct solution [[2]](@ref powerFlowSolutionReference).
 
 The fast Newton-Raphson method involves decoupling the power flow equations. Namely, the Newton-Raphson method is based on the equations:
 ```math
@@ -264,7 +272,7 @@ The fast Newton-Raphson method involves decoupling the power flow equations. Nam
     \mathbf{f}_{P}(\mathbf x) \\ \mathbf{f}_{Q}(\mathbf x)
   \end{bmatrix} = \mathbf 0,
 ```
-where the iteration index has been omitted for simplicity. However, in transmission grids, there exists a strong coupling between active powers and voltage angles, as well as between reactive powers and voltage magnitudes. To achieve decoupling, two conditions must be satisfied: first, the resistance values ``r_{ij}`` of the branches must be small compared to their reactance values ``x_{ij}``, and second, the angle differences must be small, i.e., ``\theta_{ij} \approx 0`` [[3]](@ref inDepthPowerFlowSolutionReference). Therefore, starting from the above equation, we have:
+where the iteration index has been omitted for simplicity. However, in transmission grids, there exists a strong coupling between active powers and voltage angles, as well as between reactive powers and voltage magnitudes. To achieve decoupling, two conditions must be satisfied: first, the resistance values ``r_{ij}`` of the branches must be small compared to their reactance values ``x_{ij}``, and second, the angle differences must be small, i.e., ``\theta_{ij} \approx 0`` [[3]](@ref powerFlowSolutionReference). Therefore, starting from the above equation, we have:
 ```math
   \begin{bmatrix}
     \mathbf{J_{11}(x)} & \mathbf{0} \\ \mathbf{0} & \mathbf{J_{22}(x)}
@@ -425,7 +433,7 @@ One of the main advantages of this approach is that the Jacobian matrices ``\mat
 ---
 
 #### XB Version
-The matrix ``\mathbf{B}_1`` is formed by neglecting the resistance ``r_{ij}``, shunt susceptance ``\Im \{ y_{\text{sh}i} \}``, charging susceptance ``\Im \{ y_{\text{s}ij} \}``, and transformer tap ratio magnitude``\tau_{ij}``. The matrix ``\mathbf{B}_2`` is constructed by disregarding the transformer phase shift angle ``\phi_{ij}``. This approach corresponds to the standard fast Newton-Raphson method and is known to exhibit exceptional convergence properties in typical scenarios [[3]](@ref inDepthPowerFlowSolutionReference).
+The matrix ``\mathbf{B}_1`` is formed by neglecting the resistance ``r_{ij}``, shunt susceptance ``\Im \{ y_{\text{sh}i} \}``, charging susceptance ``\Im \{ y_{\text{s}ij} \}``, and transformer tap ratio magnitude``\tau_{ij}``. The matrix ``\mathbf{B}_2`` is constructed by disregarding the transformer phase shift angle ``\phi_{ij}``. This approach corresponds to the standard fast Newton-Raphson method and is known to exhibit exceptional convergence properties in typical scenarios [[3]](@ref powerFlowSolutionReference).
 
 To initialize the XB version of the fast Newton-Raphson method, one can utilize the following code snippet:
 ```julia-repl
@@ -438,7 +446,7 @@ result = fastNewtonRaphsonXB(system)
 ---
 
 #### BX Version
-The matrix ``\mathbf{B}_1`` ignores the shunt susceptance``\Im \{ y_{\text{sh}i} \}``, charging susceptance ``\Im \{ y_{\text{s}ij} \}``, and transformer tap ratio magnitude ``\tau_{ij}``. The matrix ``\mathbf{B}_2`` ignores the resistance ``r_{ij}`` and transformer phase shift angle ``\phi_{ij}``. In usual cases, the iteration count for the BX version is comparable to the XB scheme. However, for systems with high ``r_{ij}/x_{ij}`` ratios, the BX scheme requires considerably fewer iterations than the XB scheme to solve the power flow [[3]](@ref inDepthPowerFlowSolutionReference).
+The matrix ``\mathbf{B}_1`` ignores the shunt susceptance``\Im \{ y_{\text{sh}i} \}``, charging susceptance ``\Im \{ y_{\text{s}ij} \}``, and transformer tap ratio magnitude ``\tau_{ij}``. The matrix ``\mathbf{B}_2`` ignores the resistance ``r_{ij}`` and transformer phase shift angle ``\phi_{ij}``. In usual cases, the iteration count for the BX version is comparable to the XB scheme. However, for systems with high ``r_{ij}/x_{ij}`` ratios, the BX scheme requires considerably fewer iterations than the XB scheme to solve the power flow [[3]](@ref powerFlowSolutionReference).
 
 To initialize the BX version of the fast Newton-Raphson method, you can use the following code:
 ```julia-repl
@@ -473,7 +481,7 @@ julia> result.algorithm.reactive.left
 julia> result.algorithm.reactive.scaling
 ```
 
-To solve the AC power flow and obtain bus voltage magnitudes and angles, JuliaGrid provides the following function sequence:
+To solve the AC power flow and obtain bus voltage magnitudes and angles, JuliaGrid provides the following sequence of functions:
 ```julia-repl
 stopping = result.algorithm.iteration.stopping
 for i = 1:100
@@ -483,6 +491,7 @@ for i = 1:100
     end
 end
 ```
+The code iteratively calls the [`fastNewtonRaphson!`](@ref fastNewtonRaphson!) function and checks whether the stopping criteria for both active and reactive power have been met.
 
 The fast Newton-Raphson method first solves the equation:
 ```math
@@ -522,7 +531,7 @@ The final results are stored in the vector that contains all bus voltage magnitu
 julia> result.bus.voltage.magnitude
 ```
 
-The functions ``\mathbf{f}_{P}(\mathbf x)`` and ``\mathbf{f}_{Q}(\mathbf x)`` remain free of approximations, with only the calculation of the state variable increments affected [[2]](@ref inDepthPowerFlowSolutionReference). As a result, we still use the following equations to compute the mismatches:
+The functions ``\mathbf{f}_{P}(\mathbf x)`` and ``\mathbf{f}_{Q}(\mathbf x)`` remain free of approximations, with only the calculation of the state variable increments affected [[2]](@ref powerFlowSolutionReference). As a result, we still use the following equations to compute the mismatches:
 ```math
   \begin{aligned}
     f_{P_i}(\mathbf x) &= {V}_{i}\sum\limits_{j=1}^n {V}_{j}(G_{ij}\cos\theta_{ij}+B_{ij}\sin\theta_{ij}) - {P}_{i} = 0,
@@ -549,7 +558,7 @@ The iteration loop is terminated when the following conditions are met:
     \max \{|h_{P_i}(\mathbf x^{(\nu)})|,\; i \in \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}} \} < \epsilon \\
     \max \{|h_{Q_i}(\mathbf x^{(\nu)})|,\; i \in \mathcal{N}_{\text{pq}} \} < \epsilon.
 ```
-Here, ``\epsilon`` refers to the pre-defined stopping criteria. JuliaGrid stores these values to break the iteration loop in the following variables:
+Here, ``\epsilon`` refers to the pre-defined stopping criteria. JuliaGrid stores these maximum values to break the iteration loop in the following variables:
 ```julia-repl
 julia> result.algorithm.iteration.stopping.active
 julia> result.algorithm.iteration.stopping.reactive
@@ -557,12 +566,12 @@ julia> result.algorithm.iteration.stopping.reactive
 
 ---
 
-## [Gauss-Seidel Method](@id inDepthGaussSeidel)
+## [Gauss-Seidel Method](@id gaussSeidel)
 By defining the complex current injection at bus ``i \in \mathcal{N}`` as:
 ```math
 	\bar{I}_{i} = \frac{{P}_{i} - j{Q}_{i}}{\bar{V}_{i}^*},
 ```
-the power flow problem can be represented as a system of nonlinear equations:
+the power flow problem can be represented as the system of equations:
 ```math
     \mathbf {\bar {I}} = \mathbf{Y} \mathbf {\bar {V}}.
 ```
@@ -574,19 +583,21 @@ This system of equations can be expanded to ``n`` complex equations:
     Y_{n1} & \bar{V}_{1} + \cdots+ Y_{nn}\bar{V}_{n} = \frac{{P}_{n} - j{Q}_{n}}{\bar{V}_{n}^*}.
 	\end{aligned}
 ```
-While the Gauss-Seidel method directly solves the system of equations, it suffers from very slow convergence, which increases almost linearly with the system size, necessitating numerous iterations to obtain the desired solution [[4]](@ref inDepthPowerFlowSolutionReference). Moreover, the convergence time of the Gauss-Seidel method increases significantly for large-scale systems and can face convergence issues for systems with high active power transfers. Nevertheless, power flow programs utilize both the Gauss-Seidel and Newton-Raphson methods in a complementary manner. Specifically, the Gauss-Seidel method is employed to obtain a quick approximate solution from a "flat start", while the Newton-Raphson method is utilized to obtain the final accurate solution [[5]](@ref inDepthPowerFlowSolutionReference).
+While the Gauss-Seidel method directly solves the system of equations, it suffers from very slow convergence, which increases almost linearly with the system size, necessitating numerous iterations to obtain the desired solution [[4]](@ref powerFlowSolutionReference). Moreover, the convergence time of the Gauss-Seidel method increases significantly for large-scale systems and can face convergence issues for systems with high active power transfers. Nevertheless, power flow programs utilize both the Gauss-Seidel and Newton-Raphson methods in a complementary manner. Specifically, the Gauss-Seidel method is employed to obtain a quick approximate solution from a "flat start", while the Newton-Raphson method is utilized to obtain the final accurate solution [[5]](@ref powerFlowSolutionReference).
 
 The Gauss-Seidel method is typically based on the system of equations with ``n`` complex equations, one of which represents the slack bus. As a result, one equation can be eliminated, resulting in a power flow problem with ``n-1`` equations.
 
 ---
 
 #### Method Implementation
-To solve the AC power flow and determine the bus voltage magnitudes and angles, the Gauss-Seidel method can be used with the help of JuliaGrid. The sequence of functions provided by JuliaGrid for this purpose is shown below:
+JuliaGrid provides a way to utilize the Gauss-Seidel method for solving the AC power flow problem and determining the magnitudes and angles of bus voltages. To use this method, we need to execute the  [acModel!](@ref acModel!) function first to set up the system and then initialize the Gauss-Seidel method using the [gaussSeidel](@ref gaussSeidel) function. The code snippet below demonstrates this process:
 ```julia-repl
 system = powerSystem("case14.h5")
 acModel!(system)
-
 result = gaussSeidel(system)
+```
+To iteratively apply the Gauss-Seidel method in JuliaGrid, you can use the [gaussSeidel!](@ref gaussSeidel!) function. This function updates the state of the power system until a stopping criterion is satisfied. Here is an example code snippet that demonstrates this process:
+```julia-repl
 stopping = result.algorithm.iteration.stopping
 for i = 1:1000
     gaussSeidel!(system, result)
@@ -638,7 +649,7 @@ The iteration loop is terminated when the following conditions are satisfied:
     \max \{|{f}_{P_i}(\mathbf x^{(\nu+1)})|,\; i \in \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}} \} < \epsilon \\
     \max \{|{f}_{Q_i}(\mathbf x^{(\nu+1)})|,\; i \in \mathcal{N}_{\text{pq}} \} < \epsilon
 ```
-where ``\epsilon`` is a pre-determined stopping criterion. JuliaGrid stores these values in order to break the iteration loop:
+where ``\epsilon`` is a pre-determined stopping criterion. JuliaGrid stores these maximum values in order to break the iteration loop:
 ```julia-repl
 julia> result.algorithm.iteration.stopping.active
 julia> result.algorithm.iteration.stopping.reactive
@@ -646,174 +657,8 @@ julia> result.algorithm.iteration.stopping.reactive
 
 ---
 
-## [AC Post-processing Analysis](@id acPostprocessingAnalysis)
-After calculating the complex values of bus voltages, it becomes possible to determine various other electrical quantities of significance. For instance, JuliaGrid provides a set of functions to execute AC power flow analysis and compute powers and currents associated with buses and branches, as well as powers linked to generators:
-```julia-repl
-system = powerSystem("case14.h5")
-acModel!(system)
-
-result = newtonRaphson(system)
-stopping = result.algorithm.iteration.stopping
-for i = 1:10
-    newtonRaphson!(system, result)
-    if stopping.active < 1e-8 && stopping.reactive < 1e-8
-        break
-    end
-end
-
-bus!(system, result)
-branch!(system, result)
-generator!(system, result)
-```
-
----
-
-#### [Bus](@id acPostprocessingAnalysisBus)
-To obtain the complex current injection at a particular bus, the following expression can be used:
-```math
-    \bar{I}_{i} = \sum\limits_{j = 1}^n {Y}_{ij} \bar{V}_{j},\;\;\; i \in \mathcal{N}.
-```
-In JuliaGrid, the magnitude and angle of the complex current injection at each bus can be obtained using:
-```julia-repl
-julia> result.bus.current.injection.magnitude
-julia> result.bus.current.injection.angle
-```
-
-The active and reactive power injections at the bus can be computed as:
-```math
-    {S}_{i} =\bar{V}_{i}\bar{I}_{i}^*,\;\;\; i \in \mathcal{N}.
-```
-You can retrieve the active and reactive power injections using:
-```julia-repl
-julia> result.bus.power.injection.active
-julia> result.bus.power.injection.reactive
-```
-
-For generators that supply bus ``i \in \mathcal{N}_{\text{pv}}``, the active power is equal to the sum of the given generator active powers in the input data, except for the slack bus, which can be determined as:
-```math
-    P_{\text{s}i} = P_i + P_{\text{d}i},\;\;\; i \in \mathcal{N}_{\text{sb}},
-```
-where ``{P}_{\text{d}i}`` represents the active power demanded by consumers at the slack bus. You can retrieve the active powers using:
-```julia-repl
-julia> result.bus.power.supply.active
-```
-
-The reactive power of the generators that supply the bus can be computed using the equation:
-```math
-    Q_{\text{s}i} = Q_i + Q_{\text{d}i},\;\;\; i \in \mathcal{N}_{\text{pv}} \cup \mathcal{N}_{\text{sb}},
-```
-where ``{Q}_{\text{d}i}`` represents the reactive power demanded by consumers at the corresponding bus. You can retrieve the reactive powers using: 
-```julia-repl
-julia> result.bus.power.supply.reactive
-```
-
-To obtain the active and reactive powers related to the shunt element at the bus, use the equation:
-```math
-  {S}_{\text{sh}i} =\bar{V}_{i}\bar{I}_{\text{sh}i}^* = {y}_{\text{sh}i}^*|\bar{V}_{i}|^2,\;\;\; i \in \mathcal{N}.
-```
-You can retrieve the active and reactive powers using:
-```julia-repl
-julia> result.bus.power.shunt.active
-julia> result.bus.power.shunt.reactive
-```
-
----
-
-#### [Branch](@id acPostprocessingAnalysisBranch)
-To obtain the complex current flow at from bus end ``i \in \mathcal{N}``, the [unified branch model](@ref ACBranchModel) can be used:
-```math
-    \bar{I}_{ij} = \cfrac{1}{\tau_{ij}^2}({y}_{ij} + y_{\text{s}ij}) \bar{V}_{i} - \alpha_{ij}^*{y}_{ij} \bar{V}_{j},\;\;\; (i,j) \in \mathcal{E}.
-```
-The magnitude and angle of the resulting complex current flows at the from bus end can be obtained using the following Julia code:
-```julia-repl
-julia> result.branch.current.from.magnitude
-julia> result.branch.current.from.angle
-```
-Similarly, the complex current flow at to bus end ``j \in \mathcal{N}`` can be obtained using the same unified branch model:
-```math
-    \bar{I}_{ji} = -\alpha_{ij}{y}_{ij} \bar{V}_{i} + ({y}_{ij} + y_{\text{s}ij}) \bar{V}_{j},\;\;\; (i,j) \in \mathcal{E}.
-```
-The magnitude and angle of the resulting complex current flows at to bus end can be obtained using the following Julia code:
-```julia-repl
-julia> result.branch.current.to.magnitude
-julia> result.branch.current.to.angle
-```
-Finally, the complex current flow through the series impedance of the branch in the direction from bus ``i \in \mathcal{N}`` to bus ``j \in \mathcal{N}`` can be determined as:
-```math
-    \bar{I}_{\text{b}ij} =  y_{ij} (\alpha_{ij}\bar{V}_{i} - \bar{V}_{j}),,\;\;\; (i,j) \in \mathcal{E}.
-```
-The magnitude and angle of the resulting complex current flows through the series impedances can be obtained using the following Julia code:
-```julia-repl
-julia> result.branch.current.impedance.magnitude
-julia> result.branch.current.impedance.angle
-```
-
-To obtain the active and reactive power flows at from bus end ``i \in \mathcal{N}``, we use the following equations, based on the [unified branch model](@ref ACBranchModel):
-```math
-    {S}_{ij} = \bar{V}_{i}\bar{I}_{ij}^*,\;\;\; (i,j) \in \mathcal{E}.
-```
-We can retrieve the active and reactive power flows using the following Julia commands:
-```julia-repl
-julia> result.branch.power.from.active
-julia> result.branch.power.from.reactive
-```
-Similarly, to obtain the active and reactive power flows at to bus end ``j \in \mathcal{N}``, we use the following equations:
-```math
-    {S}_{ji} = \bar{V}_{j}\bar{I}_{ji}^*,\;\;\; (i,j) \in \mathcal{E}.
-```
-We can retrieve the active and reactive power flows using the following Julia commands:
-```julia-repl
-julia> result.branch.power.to.active
-julia> result.branch.power.to.reactive
-```
-
-The series impedance ``z_{ij}`` of the branch causes active and reactive power losses. We can obtain these losses using the following equations:
-```math
-    \begin{aligned}
-        P_{\text{loss}ij} &= r_{ij}|\bar{I}_{\text{b}ij}|^2 \\
-        Q_{\text{loss}ij} &= x_{ij}|\bar{I}_{\text{b}ij}|^2,
-    \end{aligned}
-```
-where ``(i,j) \in \mathcal{E}``. We can retrieve the active and reactive power losses using the following Julia commands:
-```julia-repl
-julia> result.branch.power.loss.active
-julia> result.branch.power.loss.reactive
-```
-
-The capacitive susceptances of the branch lead to reactive power injection. We can obtain the total reactive power injected by the branch using the following equation:
-```math
-    Q_{\text{ch}ij} = b_{\text{s}i} (|\alpha_{ij}\bar{V}_{i}|^2 - |\bar{V}_{j}|^2),\;\;\; (i,j) \in \mathcal{E}.
-```
-We can retrieve the injected reactive powers using the following Julia command:
-```julia-repl
-julia> result.branch.power.shunt.reactive
-```
-
----
-
-#### [Generator](@id acPostprocessingAnalysisGenerator)
-To obtain the output active power of a generator located at bus ``i \in \mathcal{N}_{\text{pv}}``, the given active power in the input data is used. If there are multiple generators at the same bus, their output active powers are also equal to the active powers specified in the input data. The output active power of the generator at the slack bus is determined as:
-```math
-    P_{\text{g}i} = P_i + P_{\text{d}i},\;\;\; i \in \mathcal{N}_{\text{sb}}.
-```
-If there are several generators at the slack bus, the active power ``P_{\text{g}i}`` assigned to the first generator in the list of input data is reduced by the output active power of the other generators.
-
-The output reactive power of a generator at the bus is given by:
-```math
-    Q_{\text{g}i} = Q_i + Q_{\text{d}i},\;\;\; i \in \mathcal{N}_{\text{pv}} \cup \mathcal{N}_{\text{sb}}.
-```
-If multiple generators are present, the reactive power is distributed proportionally between the generators based on their capabilities. 
-
-To retrieve the output active and reactive powers of the generators in the solved power flow, the following Julia code can be used:
-```julia-repl
-julia> result.generator.power.active
-julia> result.generator.power.reactive
-```
-
----
-
-## [DC Power Flow Solution](@id inDepthDCPowerFlowSolution)
-As discussed in section [In-depth DC Model](@ref inDepthDCModel), the DC power flow problem can be represented by a set of linear equations given by:
+## [DC Power Flow Solution](@id DCPowerFlowSolution)
+As discussed in section [DC Model](@ref DCModel), the DC power flow problem can be represented by a set of linear equations given by:
 ```math
   \mathbf {P} = \mathbf{B} \bm {\theta} + \mathbf{P_\text{gs}} + \mathbf{P}_\text{sh}.
 ```
@@ -827,15 +672,16 @@ system = powerSystem("case14.h5")
 dcModel!(system)
 ```
 
-Next, the DC power flow solution is obtained through a non-iterative approach by solving the linear equation:
+Next, the DC power flow solution is obtained through a non-iterative approach by solving the system of linear equations:
 ```math
     \bm {\theta} = \mathbf{B}^{-1}(\mathbf {P} - \mathbf{P_\text{gs}} - \mathbf{P}_\text{sh}).
 ```
+This can be accomplished with the following code in JuliaGrid:
 ```julia-repl
 result = dcPowerFlow(system)
 ```
 
-It is worth noting that the slack bus voltage angle is excluded from the vector ``\bm{\theta}``. Therefore, the corresponding elements in the vectors ``\mathbf {P}``, ``\mathbf{P_\text{gs}}``, ``\mathbf{P}_\text{sh}``, and the corresponding column of the matrix ``\mathbf{B}`` are removed during the calculation process.
+It is worth noting that the slack bus voltage angle is excluded from the vector ``\bm{\theta}``. Therefore, the corresponding elements in the vectors ``\mathbf {P}``, ``\mathbf{P_\text{gs}}``, ``\mathbf{P}_\text{sh}``, and the corresponding column of the matrix ``\mathbf{B}`` are removed only during the calculation process.
 
 Finally, the resulting bus voltage angles are saved in a vector as follows:
 ```julia-repl
@@ -844,75 +690,7 @@ julia> result.bus.voltage.angle
 
 ---
 
-## [DC Post-processing Analysis](@id dcPostprocessingAnalysis)
-Performing the DC power flow analysis involves computing active powers associated with buses, branches, and generators. JuliaGrid offers a sequence of functions to carry out this analysis:
-```julia-repl
-system = powerSystem("case14.h5")
-dcModel!(system)
-
-result = dcPowerFlow(system)
-
-bus!(system, result)
-branch!(system, result)
-generator!(system, result)
-```
-
----
-
-#### [Bus](@id dcPostprocessingAnalysisBus)
-The expression for obtaining the active power injection at bus ``i \in \mathcal{N}`` is:
-```math
-   P_i = \sum_{j = 1}^n {B}_{ij} \theta_j + P_{\text{gs}i} + P_{\text{sh}i},\;\;\; i \in \mathcal{N}.
-```
-These values can be obtained using the following code:
-```julia-repl
-julia> result.bus.power.injection.active
-```
-
-For the generators that supply bus ``i \in \mathcal{N}_{\text{pv}}``, their output active power is equal to the given active power in the input data. However, for the slack bus, its output active power is determined as:
-```math
-    P_{\text{s}i} = P_i + P_{\text{d}i},\;\;\; i \in \mathcal{N}_{\text{sb}},
-```
-where ``{P}_{\text{d}i}`` represents the active power demanded by consumers at the slack bus. The following code can be used to obtain the active power output of a generators that supplies buses:
-```julia-repl
-julia> result.bus.power.supply.active
-```
-
----
-
-#### [Branch](@id dcPostprocessingAnalysisBranch)
-The active power flowing from bus ``i \in \mathcal{N}`` of the branch can be obtained using the following equation:
-```math
-    P_{ij} = \cfrac{1}{\tau_{ij} x_{ij}} (\theta_{i} -\theta_{j}-\phi_{ij}),\;\;\; (i,j) \in \mathcal{E}.
-```
-The corresponding JuliaGrid function to obtain these values are:
-```julia-repl
-julia> result.branch.power.from.active
-```
-Similarly, the active power flowing to bus ``j \in \mathcal{N}`` of the branch can be obtained as:
-```math
-    P_{ji} = - P_{ij},\;\;\; (i,j) \in \mathcal{E}.
-```
-The corresponding JuliaGrid function to obtain these values are:
-```julia-repl
-julia> result.branch.power.to.active
-```
-
----
-
-#### [Generator](@id dcPostprocessingAnalysisGenerator)
-The active power output of a generator located at bus ``i \in \mathcal{N}_{\text{pv}}`` is equal to the active power specified in the input data. If there are multiple generators at bus ``i \in \mathcal{N}_{\text{pv}}``, their active power outputs are also equal to the active power specified in the input data. However, the active power output of a generator located at the slack bus is determined as:
-```math
-    P_{\text{g}i} = P_i + P_{\text{d}i},\;\;\; i \in \mathcal{N}_{\text{sb}}.
-```
-If there are multiple generators at the slack bus, the active power output of the first generator in the input data is assigned to ``P_{\text{g}i}``, and the output active power of the remaining generators is subtracted from it. The following Julia command can be used to acquire these values:
-```julia-repl
-julia> result.generator.power.active
-```
-
----
-
-## [References](@id inDepthPowerFlowSolutionReference)
+## [References](@id powerFlowSolutionReference)
 [1] A. Wood and B. Wollenberg, *Power Generation, Operation, and Control*, ser. A Wiley-Interscience publication. Wiley, 1996.
 
 [2] G. Andersson, *Modelling and analysis of electric power systems*, EEH-Power Systems Laboratory, Swiss Federal Institute of Technology (ETH), Zürich, Switzerland (2008).
