@@ -475,7 +475,9 @@ The function is used to add a new generator to the `PowerSystem` type and update
 The generator is defined with the following parameters:
 * `label`: a unique label for the generator
 * `bus`: the label of the bus to which the generator is connected
-* `status`: the operating status of the generator, in-service = 1, out-of-service = 0
+* `status`: the operating status of the generator:
+  * `status = 1`: in-service
+  * `status = 0`: out-of-service 
 * `active` (pu or W): output active power
 * `reactive` (pu or VAr): output reactive power
 * `magnitude` (pu or V): voltage magnitude setpoint

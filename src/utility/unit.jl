@@ -104,22 +104,22 @@ the unit of `active` power (W), `reactive` power (VAr), or `apparent` power (VA)
 possible to combine SI units with/without prefixes with per-units (pu).
 
 Changing the unit of active power is reflected in the following quantities:
-* [`addBus!()`](@ref addBus!): `active`, `conductance`
-* [`shuntBus!()`](@ref shuntBus!): `conductance`
-* [`addGenerator!()`](@ref addGenerator!): `active`, `minActive`, `maxActive`, `lowActive`, `upActive`, `loadFollowing`, `reserve10min`, `reserve30min`
-* [`addActiveCost!()`](@ref addActiveCost!): `piecewise`, `polynomial`
-* [`outputGenerator!()`](@ref outputGenerator!): `active`
-* [`addBranch!()`](@ref addBranch!): `longTerm`, `shortTerm`, `emergency` if rating `type = 2`.
+* [`addBus!`](@ref addBus!): `active`, `conductance`
+* [`shuntBus!`](@ref shuntBus!): `conductance`
+* [`addGenerator!`](@ref addGenerator!): `active`, `minActive`, `maxActive`, `lowActive`, `upActive`, `loadFollowing`, `reserve10min`, `reserve30min`
+* [`addActiveCost!`](@ref addActiveCost!): `piecewise`, `polynomial`
+* [`outputGenerator!`](@ref outputGenerator!): `active`
+* [`addBranch!`](@ref addBranch!): `longTerm`, `shortTerm`, `emergency` if rating `type = 2`.
 
 Changing the unit of reactive power unit is reflected in the following quantities:
-* [`addBus!()`](@ref addBus!): `reactive`, `susceptance`
-* [`shuntBus!()`](@ref shuntBus!): `susceptance`
-* [`addGenerator!()`](@ref addGenerator!): `reactive`, `minReactive`, `maxReactive`, `minLowReactive`, `maxLowReactive`, `minUpReactive`, `maxUpReactive`, `reactiveTimescale`
-* [`addReactiveCost!()`](@ref addReactiveCost!): `piecewise`, `polynomial`
-* [`outputGenerator!()`](@ref outputGenerator!): `reactive`.
+* [`addBus!`](@ref addBus!): `reactive`, `susceptance`
+* [`shuntBus!`](@ref shuntBus!): `susceptance`
+* [`addGenerator!`](@ref addGenerator!): `reactive`, `minReactive`, `maxReactive`, `minLowReactive`, `maxLowReactive`, `minUpReactive`, `maxUpReactive`, `reactiveTimescale`
+* [`addReactiveCost!`](@ref addReactiveCost!): `piecewise`, `polynomial`
+* [`outputGenerator!`](@ref outputGenerator!): `reactive`.
 
 Changing the unit of apparent power unit is reflected in the following quantities:
-* [`addBranch!()`](@ref addBranch!): `longTerm`, `shortTerm`, `emergency` if rating `type = 1` or `type = 3`.
+* [`addBranch!`](@ref addBranch!): `longTerm`, `shortTerm`, `emergency` if rating `type = 1` or `type = 3`.
 
 # Example
 ```jldoctest
@@ -155,13 +155,13 @@ the unit of voltage `magnitude` (V). The second option is to define the unit of 
 (rad) or degree (deg).
 
 Changing the unit of voltage magnitude is reflected in the following quantities:
-* [`addBus!()`](@ref addBus!): `magnitude`, `minMagnitude`, `maxMagnitude`
-* [`addGenerator!()`](@ref addGenerator!): `magnitude`.
+* [`addBus!`](@ref addBus!): `magnitude`, `minMagnitude`, `maxMagnitude`
+* [`addGenerator!`](@ref addGenerator!): `magnitude`.
 
 Changing the unit of voltage angle is reflected in the following quantities:
-* [`addBus!()`](@ref addBus!): `angle`
-* [`addBranch!()`](@ref addBranch!): `shiftAngle`, `minDiffAngle`, `maxDiffAngle`
-* [`parameterBranch!()`](@ref parameterBranch!): `shiftAngle`.
+* [`addBus!`](@ref addBus!): `angle`
+* [`addBranch!`](@ref addBranch!): `shiftAngle`, `minDiffAngle`, `maxDiffAngle`
+* [`parameterBranch!`](@ref parameterBranch!): `shiftAngle`.
 
 # Example
 ```jldoctest
@@ -196,12 +196,12 @@ the transformer.
 
 Changing the units of impedance is reflected in the following quantities in specific
 functions:
-* [`addBranch!()`](@ref addBranch!): `resistance`, `reactance`
-* [`parameterBranch!()`](@ref parameterBranch!): `resistance`, `reactance`.
+* [`addBranch!`](@ref addBranch!): `resistance`, `reactance`
+* [`parameterBranch!`](@ref parameterBranch!): `resistance`, `reactance`.
 
 Changing the units of admittance is reflected in the following quantities:
-* [`addBranch!()`](@ref addBranch!): `susceptance`
-* [`parameterBranch!()`](@ref parameterBranch!): `susceptance`.
+* [`addBranch!`](@ref addBranch!): `susceptance`
+* [`parameterBranch!`](@ref parameterBranch!): `susceptance`.
 
 # Example
 ```jldoctest

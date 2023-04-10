@@ -46,14 +46,6 @@ outputGenerator!
 
 ---
 
-## AC and DC Model
-```@docs
-acModel!
-dcModel!
-```
-
----
-
 ## Units
 ```@docs
 @base
