@@ -6,7 +6,7 @@ A common way to describe the power system network topology is through the bus/br
 ---
 
 ## [AC Model](@id ACModel)
-JuliaGrid is based on common network elements and benefits from the unified branch model to perform various analyses based on the system of nonlinear equations. To generate matrices and vectors for AC or nonlinear analysis, JuliaGrid employs the [acModel!](@ref acModel!) function. For instance, to apply the [acModel!](@ref acModel!) function to a power system stored in the `case14.h5` file, the following Julia code can be executed:
+JuliaGrid is based on common network elements and benefits from the unified branch model to perform various analyses based on the system of nonlinear equations. To generate matrices and vectors for AC or nonlinear analysis, JuliaGrid employs the [`acModel!`](@ref acModel!) function. For instance, to apply the [`acModel!`](@ref acModel!) function to a power system stored in the `case14.h5` file, the following Julia code can be executed:
 ```julia-repl
 system = powerSystem("case14.h5")
 acModel!(system)

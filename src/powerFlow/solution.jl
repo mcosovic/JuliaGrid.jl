@@ -123,12 +123,17 @@ mutable struct DCAlgorithm
     method::String
 end
 
+######### AC Power Flow Struct ##########
+mutable struct ACAlgorithm
+    method::String
+end
+
 ######### Result Struct ##########
 mutable struct Result
     bus::BusResult
     branch::BranchResult
     generator::GeneratorResult
-    algorithm::Union{GaussSeidel, NewtonRaphson, FastNewtonRaphson, DCAlgorithm}
+    algorithm::Union{GaussSeidel, NewtonRaphson, FastNewtonRaphson, DCAlgorithm, ACAlgorithm}
 end
 
 """
@@ -249,7 +254,7 @@ method.
     
 It is intended to be used within a for loop as it performs only one iteration of the 
 Newton-Raphson method. It is recommended that the reader peruses the section on the 
-[Newton-Raphson Method](@ref inDepthNewtonRaphson) to gain a comprehensive understanding 
+[Newton-Raphson Method](@ref NewtonRaphson) to gain a comprehensive understanding 
 of its implementation, including all relevant data.
 
 # Example
@@ -575,7 +580,7 @@ method.
 
 It is intended to be used within a for loop as it performs only one iteration of the 
 fast Newton-Raphson method. It is recommended that the reader peruses the section on the 
-[Fast Newton-Raphson Method](@ref inDepthFastNewtonRaphson) to gain a comprehensive 
+[Fast Newton-Raphson Method](@ref fastNewtonRaphson) to gain a comprehensive 
 understanding of its implementation, including all relevant data.
 
 # Example
@@ -713,7 +718,7 @@ type by computing the magnitudes and angles of bus voltages using the Gauss-Seid
 
 It is intended to be used within a for loop as it performs only one iteration of the 
 Gauss-Seidel method. It is recommended that the reader peruses the section on the 
-[Gauss-Seidel Method](@ref inDepthGaussSeidel) to gain a comprehensive understanding of 
+[Gauss-Seidel Method](@ref gaussSeidel) to gain a comprehensive understanding of 
 its implementation, including all relevant data.
 
 # Example
@@ -803,7 +808,7 @@ power flow problem by calculating the voltage angles for each bus.
 The function returns a composite type `Result` as output, which includes updated 
 `bus.voltage.angle` and `algorithm` fields. These fields are modified during the execution 
 of the function. It is recommended that the reader peruses the section on the 
-[DC Power Flow Solution](@ref inDepthDCPowerFlowSolution) to gain a comprehensive 
+[DC Power Flow Solution](@ref DCPowerFlowSolution) to gain a comprehensive 
 understanding of its implementation, including all relevant data.
 
 # Example
@@ -872,11 +877,11 @@ maximum limits.
 
     reactivePowerLimit!(system::PowerSystem, result::Result)
 
-First, if the [`generator!()`](@ref generator!) function has not been executed, 
-[`reactivePowerLimit!()`](@ref reactivePowerLimit!) will execute it and update the 
+First, if the [`generator!`](@ref generator!) function has not been executed, 
+[`reactivePowerLimit!`](@ref reactivePowerLimit!) will execute it and update the 
 `generator` field of the `Result` type. 
 
-Afterward, the function uses the results from [`generator!()`](@ref generator!) to assign 
+Afterward, the function uses the results from [`generator!`](@ref generator!) to assign 
 values to the `generator.output.active` and `bus.supply.active` fields of the `System` 
 type.
 
@@ -981,7 +986,7 @@ identified by the `bus.layout.slack` field. This function only updates the
     adjustVoltageAngle!(system::PowerSystem, result::Result; slack)
 
 For instance, if the reactive power of the generator exceeds the limit on the slack bus, 
-the [`reactivePowerLimit!()`](@ref reactivePowerLimit!) function will change that bus to a 
+the [`reactivePowerLimit!`](@ref reactivePowerLimit!) function will change that bus to a 
 PQ bus and designate the first PV bus in the sequence as the new slack bus. After 
 obtaining the updated AC power flow solution based on the new slack bus, it is possible to 
 adjust the voltage angles to align with the angle of the original slack bus. The `slack` 
