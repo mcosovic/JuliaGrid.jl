@@ -31,21 +31,181 @@ Note that these functions can be executed at any time once all power system buse
 
 ---
 
-## Build and Save Model
-The function called [`powerSystem`](@ref powerSystem) is used to create a composite type named `PowerSystem`. This function accepts a path in the form of a string to either HDF5 files or [Matpower](https://matpower.org) case files. To illustrate, suppose we want to create a `PowerSystem` type using the Matpower case file for the IEEE 14-bus test case, named `case14`, which is stored in the folder `C:\matpower`. We can do so with the following code in Julia:
+## Build Model
+The [`powerSystem`](@ref powerSystem) function generates a `PowerSystem` composite type and requires a string-formatted path to either HDF5 or Matpower case files as input. To create a `PowerSystem` type using the Matpower case file for the IEEE 14-bus test case, which is named `case14` and located in the folder `C:\matpower`, the following Julia code can be used:
 ```julia-repl
 system = powerSystem("C:/matpower/case14.m")
 ```
 
-Once we have created the `system` variable, we can save the current data in the `system` variable to an HDF5 file by running the following Julia code:
+All electrical quantities stored in `system` are in per-units (pu) and radians (rad), except for base values for power and voltages, which are given in volt-amperes (VA) and volts (V), respectively:
+```julia-repl
+julia> system.base.power.value, system.base.power.unit
+(1.0e8, "VA")
+julia> system.base.voltage.value, system.base.voltage.unit
+([138000.0, 138000.0, 138000.0, ..., 138000.0, 138000.0, 138000.0], "V")
+```
+
+If the user is more familiar with megavolt-amperes (MVA) and kilovolts (kV), for instance, the units can be changed with the following command:
+```julia-repl
+@base(system, MVA, kV)
+```
+This macro results in the following values:
+```julia-repl
+julia> system.base.power.value, system.base.power.unit
+(100.0, "MVA")
+julia> system.base.voltage.value, system.base.voltage.unit
+([138.0, 138.0, 138.0, ..., 138.0, 138.0, 138.0], "kV")
+```
+
+By changing the base unit, the user can adjust the output data from various analyses to units other than per-units and radians.
+
+---
+
+## Save Model
+After creating the `system` variable using the following Julia code:
+```julia-repl
+system = powerSystem("C:/matpower/case14.m")
+```
+
+The current data in the `system` variable can be saved to the HDF5 file by running the following Julia code:
 ```julia-repl
 savePowerSystem(system; path = "C:/matpower/case14.h5", reference = "IEEE 14-bus test case")
 ```
+All electrical quantities saved in the HDF5 file are in per-units (pu) and radians (rad), except for base values for power and voltage, which are given in volt-amperes (VA) and volts (V). Note that even if the user changes the base units, the units will be saved in the default settings.
 
-If performance is a critical factor, we strongly recommend loading the input power system from the HDF5 file. After saving the data of the power system, we can load it as follows:  
+To minimize loading time, it is recommended to load the power system from the HDF5 file. Once the power system data is saved, it can be loaded using the following code snippet:
 ```julia-repl
 system = powerSystem("C:/matpower/case14.h5")
 ```
 
+---
 
+## Add Bus
+We have the option to add buses to a loaded power system or create a new one from scratch. To create an empty `PowerSystem` type, we can use the following code in Julia:
+```julia-repl
+system = powerSystem()
+```
+We can then add buses to this power system using the [`addBus!`](@ref addBus!) function:
+```julia-repl
+addBus!(system; label = 1, type = 3, active = 0.1, base = 138e3)
+addBus!(system; label = 2, type = 1, reactive = 0.05, angle = -0.03491, base = 138e3)
+```
+We recommend reading the documentation for the [`addBus!`](@ref addBus!) function, where all the keywords used in the function are explained in detail.
 
+By default, all keywords related to electrical quantities must be given in per-units (pu) and radians (rad). However, users may be more familiar with SI units, which can be set using the following macros:
+```julia-repl
+@power(MW, MVAr, MVA)
+@voltage(pu, deg)
+```
+We can create identical two buses as before using SI units as follows:
+```julia-repl
+system = powerSystem()
+
+addBus!(system; label = 1, type = 3, active = 10.0, base = 138e3)
+addBus!(system; label = 2, type = 1, reactive = 5.0, angle = -2.0, base = 138e3)
+```
+
+Note that the `base` keyword is related to base voltages, and the input unit can be changed using the [`@base`](@ref @base) macro. For example:
+```julia-repl
+@power(MW, MVAr, MVA)
+@voltage(pu, deg)
+
+system = powerSystem()
+@base(system, MVA, kV)
+
+addBus!(system; label = 1, type = 3, active = 10.0, base = 138)
+addBus!(system; label = 2, type = 1, reactive = 5.0, angle = -2.0, base = 138)
+```
+
+---
+
+## Add Branch
+After adding buses with unique labels, we can define branches between them. For instance:
+```julia-repl
+system = powerSystem()
+
+addBus!(system; label = 1, type = 3, active = 0.1, base = 138e3)
+addBus!(system; label = 3, type = 1, reactive = 0.05, angle = -0.03491, base = 138e3)
+
+addBranch!(system; label = 1, from = 1, to = 3, reactance = 0.12, shiftAngle = 0.1745)
+```
+It is recommended to consult the documentation for the [`addBranch!`](@ref addBranch!) function, which provides an explanation of all the keywords used in the function. Like for buses, the input units for branches can be changed from per-units (pu) and radians (rad) to SI units using different macros.
+
+It is important to note that the branch cannot be added unless the buses are already defined, and the `from` and `to` keywords should correspond to the already defined bus labels. Additionally, each branch should be labeled with its own unique label.
+
+---
+
+## Add Generator
+After defining the buses, generators can be added to the `system` as follows:
+```julia-repl
+system = powerSystem()
+
+addBus!(system; label = 1, type = 3, active = 0.1, base = 138e3)
+addBus!(system; label = 3, type = 1, reactive = 0.05, angle = -0.03491, base = 138e3)
+
+addGenerator!(system; label = 1, bus = 3, active = 0.5, reactive = 0.1)
+```
+It is recommended to refer to the documentation for the [`addGenerator!`](@ref addGenerator!) function, which explains all the keywords used in the function. Similar to buses and branches, the input units for generators can be changed from per-units (pu) and radians (rad) to SI units using different macros.
+
+It's important to note that each generator must have a unique label, and the `bus` keyword should correspond to the unique bus label.
+
+---
+
+## AC and DC Model
+When constructing the power system, we can create an AC and/or DC model, which include vectors and matrices related to the power system's topology and parameters. The following code snippet demonstrates this:
+```julia-repl
+system = powerSystem()
+
+addBus!(system; label = 1, type = 3, active = 0.1, base = 138e3)
+addBus!(system; label = 2, type = 1, reactive = 0.05, angle = -0.03491, base = 138e3)
+addBus!(system; label = 3, type = 1, susceptance = 0.05, base = 138e3)
+
+addBranch!(system; label = 1, from = 1, to = 2, reactance = 0.12, shiftAngle = 0.1745)
+addBranch!(system; label = 2, from = 2, to = 3, resistance = 0.008, reactance = 0.05)
+
+acModel!(system)
+dcModel!(system)
+```
+The AC model is used for AC power flow, AC optimal power flow, nonlinear state estimation or state estimation with PMUs. The DC model is essential for different DC or linear analysis. For example, the DC nodal matrix in the current example is as follows:
+```julia-repl
+julia> system.dcModel.nodalMatrix
+3×3 SparseArrays.SparseMatrixCSC{Float64, Int64} with 7 stored entries:
+  8.33333   -8.33333     ⋅
+ -8.33333   28.3333   -20.0
+   ⋅       -20.0       20.0
+```
+
+We can execute the [`acModel!`](@ref acModel!) and [`dcModel!`](@ref dcModel!) functions after defining the final number of buses, and each new branch added will trigger an update of the AC and DC vectors and matrices. Here's an example:
+```julia-repl
+system = powerSystem()
+
+addBus!(system; label = 1, type = 3, active = 0.1, base = 138e3)
+addBus!(system; label = 2, type = 1, reactive = 0.05, angle = -0.03491, base = 138e3)
+addBus!(system; label = 3, type = 1, susceptance = 0.05, base = 138e3)
+
+acModel!(system)
+dcModel!(system)
+
+addBranch!(system; label = 1, from = 1, to = 2, reactance = 0.12, shiftAngle = 0.1745)
+addBranch!(system; label = 2, from = 2, to = 3, resistance = 0.008, reactance = 0.05)
+```
+The DC nodal matrix has the same values as before:
+```julia-repl
+julia> system.dcModel.nodalMatrix
+3×3 SparseArrays.SparseMatrixCSC{Float64, Int64} with 7 stored entries:
+  8.33333   -8.33333     ⋅
+ -8.33333   28.3333   -20.0
+   ⋅       -20.0       20.0
+```
+It is not fully recommended to create AC and DC models before adding a large number of branches if the execution time of functions is important. Instead, triggering updates to the AC and DC models using the [`addBranch!`](@ref addBranch!) function is useful for power systems that require the addition of several branches. This update avoids the need to recreate vectors and matrices from scratch.
+
+It is important to note that the AC and DC models must be defined when a finite number of buses are defined, otherwise, adding a new bus will delete them. For example, if we attempt to add a new bus to the system, the current DC and AC models will be completely erased.
+```julia-repl
+julia> addBus!(system; label = 4, type = 2, base = 138e3)
+[ Info: The current DC model has been completely erased.
+[ Info: The current AC model has been completely erased.
+julia> system.dcModel.nodalMatrix
+0×0 SparseArrays.SparseMatrixCSC{Float64, Int64} with 0 stored entries
+```
+
+---

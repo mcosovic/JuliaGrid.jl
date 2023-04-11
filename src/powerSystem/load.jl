@@ -237,7 +237,7 @@ This allows the model to be built from scratch and modified as needed.
 function powerSystem()
     af = Array{Float64,1}(undef, 0)
     ai = Array{Int64,1}(undef, 0)
-    sp = spzeros(1, 1)
+    sp = spzeros(0, 0)
     ac = Array{ComplexF64,1}(undef, 0)
     label = Dict{Int64,Int64}()
 

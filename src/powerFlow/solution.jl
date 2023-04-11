@@ -254,7 +254,7 @@ method.
     
 It is intended to be used within a for loop as it performs only one iteration of the 
 Newton-Raphson method. It is recommended that the reader peruses the section on the 
-[Newton-Raphson Method](@ref NewtonRaphson) to gain a comprehensive understanding 
+[Newton-Raphson Method](@ref newtonRaphson) to gain a comprehensive understanding 
 of its implementation, including all relevant data.
 
 # Example

@@ -106,12 +106,14 @@ function addBus!(system::PowerSystem; label::T, type::T = 1,
     push!(supply.active, 0.0)
     push!(supply.reactive, 0.0)
 
-    if !isempty(system.dcModel.admittance)
+    if !isempty(system.dcModel.nodalMatrix)
         nilModel!(system, :dcModelEmpty)
+        @info("The current DC model has been completely erased.")
     end
 
-    if !isempty(system.acModel.admittance)
+    if !isempty(system.acModel.nodalMatrix)
         nilModel!(system, :acModelEmpty)
+        @info("The current AC model has been completely erased.")
     end
 end
 
@@ -151,8 +153,7 @@ function shuntBus!(system::PowerSystem; user...)
 
     index = system.bus.label[user[:label]]
     if haskey(user, :conductance) || haskey(user, :susceptance)
-        ac.nodalMatrix
-        if !isempty(system.acModel.admittance)
+        if !isempty(system.acModel.nodalMatrix)
             ac.nodalMatrix[index, index] -= shunt.conductance[index] + im * shunt.susceptance[index]
         end
 
@@ -165,7 +166,7 @@ function shuntBus!(system::PowerSystem; user...)
             shunt.susceptance[index] = user[:susceptance] * reactiveScale
         end
 
-        if !isempty(system.acModel.admittance)
+        if !isempty(system.acModel.nodalMatrix)
             ac.nodalMatrix[index, index] += shunt.conductance[index] + im * shunt.susceptance[index]
         end
     end
@@ -301,7 +302,7 @@ function addBranch!(system::PowerSystem; label::T, from::T, to::T, status::T = 1
     push!(rating.type, type)
 
     index = system.branch.number
-    if !isempty(system.dcModel.admittance)
+    if !isempty(system.dcModel.nodalMatrix)
         nilModel!(system, :dcModelPushZeros)
         if layout.status[index] == 1
             dcParameterUpdate!(system, index)
@@ -309,7 +310,7 @@ function addBranch!(system::PowerSystem; label::T, from::T, to::T, status::T = 1
         end
     end
 
-    if !isempty(system.acModel.admittance)
+    if !isempty(system.acModel.nodalMatrix)
         nilModel!(system, :acModelPushZeros)
         if layout.status[index] == 1
             acParameterUpdate!(system, index)
@@ -352,7 +353,7 @@ function statusBranch!(system::PowerSystem; label::T, status::T)
     index = system.branch.label[label]
 
     if layout.status[index] != status
-        if !isempty(system.dcModel.admittance)
+        if !isempty(system.dcModel.nodalMatrix)
             if status == 1
                 dcParameterUpdate!(system, index)
                 dcNodalShiftUpdate!(system, index)
@@ -364,7 +365,7 @@ function statusBranch!(system::PowerSystem; label::T, status::T)
             end
         end
 
-        if !isempty(system.acModel.admittance)
+        if !isempty(system.acModel.nodalMatrix)
             if status == 1
                 acParameterUpdate!(system, index)
                 acNodalUpdate!(system, index)
@@ -419,11 +420,11 @@ function parameterBranch!(system::PowerSystem; user...)
     index = system.branch.label[user[:label]]
     if haskey(user, :resistance) || haskey(user, :reactance) || haskey(user, :susceptance) || haskey(user, :turnsRatio) || haskey(user, :shiftAngle)
         if layout.status[index] == 1
-            if !isempty(system.dcModel.admittance)
+            if !isempty(system.dcModel.nodalMatrix)
                 nilModel!(system, :dcModelDeprive; index=index)
                 dcNodalShiftUpdate!(system, index)
             end
-            if !isempty(system.acModel.admittance)
+            if !isempty(system.acModel.nodalMatrix)
                 nilModel!(system, :acModelDeprive; index=index)
                 acNodalUpdate!(system, index)
             end
@@ -450,12 +451,12 @@ function parameterBranch!(system::PowerSystem; user...)
         end
 
         if layout.status[index] == 1
-            if !isempty(system.dcModel.admittance)
+            if !isempty(system.dcModel.nodalMatrix)
                 dcParameterUpdate!(system, index)
                 dcNodalShiftUpdate!(system, index)
             end
 
-            if !isempty(system.acModel.admittance)
+            if !isempty(system.acModel.nodalMatrix)
                 acParameterUpdate!(system, index)
                 acNodalUpdate!(system, index)
             end
@@ -1030,14 +1031,14 @@ function nilModel!(system::PowerSystem, flag::Symbol; index::Int64 = 0)
     ac = system.acModel
 
     if flag == :dcModelEmpty
-        dc.nodalMatrix = spzeros(1, 1)
+        dc.nodalMatrix = spzeros(0, 0)
         dc.admittance =  Array{Float64,1}(undef, 0)
         dc.shiftActivePower = Array{Float64,1}(undef, 0)
     end
 
     if flag == :acModelEmpty
-        ac.nodalMatrix = spzeros(1, 1)
-        ac.nodalMatrixTranspose = spzeros(1, 1)
+        ac.nodalMatrix = spzeros(0, 0)
+        ac.nodalMatrixTranspose = spzeros(0, 0)
         ac.nodalToTo =  Array{ComplexF64,1}(undef, 0)
         ac.nodalFromFrom = Array{ComplexF64,1}(undef, 0)
         ac.nodalFromTo = Array{ComplexF64,1}(undef, 0)
