@@ -245,7 +245,7 @@ system.dcModel.nodalMatrix
 
 ## Alter Shunt Elements 
 To modify or add new shunt element at bus in JuliaGrid, you can use the function [`shuntBus!`](@ref shuntBus!). If AC and DC models have not yet been created, you can directly access the `bus.shunt.conductance` and `bus.shunt.susceptance` variables to change their values. However, if AC and DC models have been created, using the [`shuntBus!`](@ref shuntBus!) function will automatically update all relevant fields, including nodal matrices, in these models. This avoids the need to recreate the models from scratch. Therefore, it is recommended to use this function after executing the [`acModel!`](@ref acModel!) and [`dcModel!`](@ref dcModel!) functions. Here's an example code that demonstrates the usage of [`shuntBus!`](@ref shuntBus!) function:
-```@example addSShunt
+```@example alterShunt
 system = powerSystem()
 
 addBus!(system; label = 1, type = 3, active = 0.1, base = 138e3)
@@ -288,13 +288,13 @@ nothing # hide
 ```
 
 This code sets the branch labeled with 1 to out-of-service. For example, the DC nodal matrix has the following form:
-@example statusBranch
+```@example statusBranch
 system.dcModel.nodalMatrix
 ```
 
 ##### Drop Zeros
 After the execution of the [`statusBranch!`](@ref statusBranch!) function, the DC nodal matrix will contain zeros, as demonstrated in the code example. If needed, the user can remove these zeros by using the `dropzeros!` function, as shown below:
-```julia-repl
+```@example statusBranch
 dropzeros!(system.dcModel.nodalMatrix)
 ```
 It should be noted that in simulations conducted with the JuliaGrid package, the accuracy of the results will not be affected by leaving zeros.
