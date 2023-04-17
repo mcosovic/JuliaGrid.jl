@@ -55,6 +55,10 @@ addBranch!(system; label = 2, from = 2, to = 3, resistance = 0.008, reactance = 
 a = 1
 b = 2
 a + b
+
+# output
+
+3
 ```
 
 All electrical quantities stored in `system` are in per-units (pu) and radians (rad), except for base values for power and voltages, which are given in volt-amperes (VA) and volts (V), respectively:
