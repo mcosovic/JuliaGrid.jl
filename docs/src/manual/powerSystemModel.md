@@ -220,6 +220,8 @@ dcModel!(system)
 
 addBranch!(system; label = 1, from = 1, to = 2, reactance = 0.12, shiftAngle = 0.1745)
 addBranch!(system; label = 2, from = 2, to = 3, resistance = 0.008, reactance = 0.05)
+
+nothing # hide
 ```
 The DC nodal matrix has the same values as before:
 ```@example ACDCModelUpdate
@@ -240,4 +242,63 @@ system.dcModel.nodalMatrix
 ```
 
 ---
+
+## Alter Shunt Elements 
+To modify or add new shunt element at bus in JuliaGrid, you can use the function [`shuntBus!`](@ref shuntBus!). If AC and DC models have not yet been created, you can directly access the `bus.shunt.conductance` and `bus.shunt.susceptance` variables to change their values. However, if AC and DC models have been created, using the [`shuntBus!`](@ref shuntBus!) function will automatically update all relevant fields, including nodal matrices, in these models. This avoids the need to recreate the models from scratch. Therefore, it is recommended to use this function after executing the [`acModel!`](@ref acModel!) and [`dcModel!`](@ref dcModel!) functions. Here's an example code that demonstrates the usage of [`shuntBus!`](@ref shuntBus!) function:
+```@example addSShunt
+system = powerSystem()
+
+addBus!(system; label = 1, type = 3, active = 0.1, base = 138e3)
+addBus!(system; label = 2, type = 1, reactive = 0.05, angle = -0.03491, base = 138e3)
+addBus!(system; label = 3, type = 1, susceptance = 0.05, base = 138e3)
+
+addBranch!(system; label = 1, from = 1, to = 2, reactance = 0.12, shiftAngle = 0.1745)
+addBranch!(system; label = 2, from = 2, to = 3, resistance = 0.008, reactance = 0.05)
+
+acModel!(system)
+dcModel!(system)
+
+shuntBus!(system; label = 1, conductance = 0.04)
+shuntBus!(system; label = 3, susceptance = 0.02)
+```
+In this example, we add the shunt element at bus 1 by setting its conductance, and change the susceptance value of the shunt element at bus 3.
+
+---
+
+## Change Branch Status
+We can use the [`statusBranch!`](@ref statusBranch!) function to switch the branch's status between in-service and out-of-service. If the AC and DC models are not created, the function will perform the same operation as accessing `branch.layout.status` and changing the value from 1 to 0 or vice versa. However, if the AC and DC models are created, the function will trigger updates to all affected vectors and matrices. Therefore, it's recommended to use this function after executing the [`acModel!`](@ref acModel!) and [`dcModel!`](@ref dcModel!) functions. The following code demonstrates the usage of the [`statusBranch!`](@ref statusBranch!) function:
+```@example statusBranch
+using JuliaGrid # hide
+
+system = powerSystem()
+
+addBus!(system; label = 1, type = 3, active = 0.1, base = 138e3)
+addBus!(system; label = 2, type = 1, reactive = 0.05, angle = -0.03491, base = 138e3)
+addBus!(system; label = 3, type = 1, susceptance = 0.05, base = 138e3)
+
+addBranch!(system; label = 1, from = 1, to = 2, reactance = 0.12, shiftAngle = 0.1745)
+addBranch!(system; label = 2, from = 2, to = 3, resistance = 0.008, reactance = 0.05)
+
+acModel!(system)
+dcModel!(system)
+
+statusBranch!(system; label = 1, status = 0)
+
+nothing # hide
+```
+
+This code sets the branch labeled with 1 to out-of-service. For example, the DC nodal matrix has the following form:
+@example statusBranch
+system.dcModel.nodalMatrix
+```
+
+##### Drop Zeros
+After the execution of the [`statusBranch!`](@ref statusBranch!) function, the DC nodal matrix will contain zeros, as demonstrated in the code example. If needed, the user can remove these zeros by using the `dropzeros!` function, as shown below:
+```julia-repl
+dropzeros!(system.dcModel.nodalMatrix)
+```
+It should be noted that in simulations conducted with the JuliaGrid package, the accuracy of the results will not be affected by leaving zeros.
+
+---
+
 
