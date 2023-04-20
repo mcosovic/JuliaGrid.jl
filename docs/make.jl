@@ -20,7 +20,8 @@ makedocs(
             "Power Flow Solution" => "tutorials/powerFlowSolution.md"],
         "API Reference" => 
             ["Power System Model" => "api/powerSystemModel.md",
-            "Power Flow Solution" => "api/powerFlowSolution.md"]
+            "Power Flow Solution" => "api/powerFlowSolution.md",
+            "Unit System" => "api/unit.md"]
     ]
 )
 

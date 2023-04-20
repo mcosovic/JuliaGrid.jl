@@ -38,10 +38,10 @@ parameterBranch!
 ## Generator Functions
 ```@docs
 addGenerator!
-addActiveCost!
-addReactiveCost!
 statusGenerator!
 outputGenerator!
+addActiveCost!
+addReactiveCost!
 ```
 
 ---
@@ -50,15 +50,4 @@ outputGenerator!
 ```@docs
 acModel!
 dcModel!
-```
-
----
-
-## Units
-```@docs
-@base
-@power
-@voltage
-@parameter
-@default
 ```

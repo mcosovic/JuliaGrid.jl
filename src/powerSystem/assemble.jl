@@ -616,7 +616,7 @@ The function takes in four keywords as arguments:
 * `polynomial`: n-th degree polynomial coefficients given as `Array{Float64,1}`:
   * first element (currency/puⁿhr or currency/Wⁿhr): coefficient of the n-th degree term, ...
   * penultimate element (currency/puhr or currency/Whr): coefficient of the first degree term
-  * last element (currency): constant coefficient.
+  * last element (currency/hr): constant coefficient.
 
 # Units
 By default, the input units related with active powers are per-units (pu), but they can be
@@ -666,7 +666,7 @@ The function takes in four keywords as arguments:
 * `polynomial`: n-th degree polynomial coefficients given as `Array{Float64,1}`:
   * first element (currency/puⁿhr or currency/VArⁿhr): coefficient of the n-th degree term, ...
   * penultimate element (currency/puhr or currency/VArhr): coefficient of the first degree term
-  * last element (currency): constant coefficient.
+  * last element (currency/hr): constant coefficient.
 
 # Units
 By default, the input units related with reactive powers are per-units (pu), but they can
@@ -1085,4 +1085,9 @@ function nilModel!(system::PowerSystem, flag::Symbol; index::Int64 = 0)
         ac.admittance[index] = -ac.admittance[index]
         ac.transformerRatio[index] = -ac.transformerRatio[index]
     end
+end
+
+######### Expelling Elements from the AC or DC Model ##########
+function dropzerosNodalMatrix(system::PowerSystem)
+
 end
