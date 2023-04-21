@@ -11,7 +11,7 @@ The bus is defined with the following parameters:
 * `type`: the bus type:
   * `type = 1`: demand bus (PQ)
   * `type = 2`: generator bus (PV)
-  * `type = 3`: slack bus (Vθ)  
+  * `type = 3`: slack bus (Vθ)
 * `active` (pu or W): the active power demand at the bus
 * `reactive` (pu or VAr): the reactive power demand at the bus
 * `conductance` (pu or W): the active power demanded of the shunt element
@@ -25,7 +25,7 @@ The bus is defined with the following parameters:
 * `lossZone`: the loss zone.
 
 # Units
-The input units are in per-units (pu) and radians (rad) by default as shown, except for 
+The input units are in per-units (pu) and radians (rad) by default as shown, except for
 the keyword `base` which is given by default in volt (V). The unit settings, such as the
 selection between the per-unit system or the SI system with the appropriate prefixes,
 can be modified using macros [`@base`](@ref @base), [`@power`](@ref @power), and
@@ -48,9 +48,9 @@ system = powerSystem()
 addBus!(system; label = 1, active = 25, reactive = -4, angle = 10, base = 132)
 ```
 """
-function addBus!(system::PowerSystem; label::T, type::T = 1, 
-    active::T = 0.0, reactive::T = 0.0, conductance::T = 0.0, susceptance::T = 0.0, 
-    magnitude::T = 0.0, angle::T = 0.0, minMagnitude::T = 0.0, maxMagnitude::T = 0.0, 
+function addBus!(system::PowerSystem; label::T, type::T = 1,
+    active::T = 0.0, reactive::T = 0.0, conductance::T = 0.0, susceptance::T = 0.0,
+    magnitude::T = 0.0, angle::T = 0.0, minMagnitude::T = 0.0, maxMagnitude::T = 0.0,
     base::T = 0.0, area::T = 1, lossZone::T = 1)
 
     demand = system.bus.demand
@@ -69,7 +69,7 @@ function addBus!(system::PowerSystem; label::T, type::T = 1,
         throw(ErrorException("The value $type of the type keyword is illegal."))
     end
     system.bus.number += 1
-    
+
     if type == 3
         if layout.slack != 0
             throw(ErrorException("The slack bus has already been designated."))
@@ -106,14 +106,14 @@ function addBus!(system::PowerSystem; label::T, type::T = 1,
     push!(supply.active, 0.0)
     push!(supply.reactive, 0.0)
 
-    if !isempty(system.dcModel.nodalMatrix)
-        nilModel!(system, :dcModelEmpty)
-        @info("The current DC model has been completely erased.")
-    end
-
     if !isempty(system.acModel.nodalMatrix)
         nilModel!(system, :acModelEmpty)
         @info("The current AC model has been completely erased.")
+    end
+
+    if !isempty(system.dcModel.nodalMatrix)
+        nilModel!(system, :dcModelEmpty)
+        @info("The current DC model has been completely erased.")
     end
 end
 
@@ -186,7 +186,7 @@ The branch is defined with the following parameters:
 * `to`: to bus label, corresponds to the bus label
 * `status`: operating status of the branch:
   * `status = 1`: in-service
-  * `status = 0`: out-of-service 
+  * `status = 0`: out-of-service
 * `resistance` (pu or Ω): branch resistance
 * `reactance` (pu or Ω): branch reactance
 * `susceptance` (pu or S): total line charging susceptance
@@ -198,10 +198,10 @@ The branch is defined with the following parameters:
 * `shortTerm` (pu or VA, W): long-term rating (equal to zero for unlimited)
 * `emergency` (pu or VA, W): emergency rating (equal to zero for unlimited)
 * `type`: types of `longTerm`, `shortTerm`, and `emergency` ratings:
-  * `type = 1`: apparent power flow (pu or VA) 
-  * `type = 2`: active power flow (pu or W)  
+  * `type = 1`: apparent power flow (pu or VA)
+  * `type = 2`: active power flow (pu or W)
   * `type = 3`: current magnitude (pu or VA at 1 pu voltage).
-  
+
 # Units
 The input units are in per-units (pu) and radians (rad) by default. The unit settings, such
 as the selection between the per-unit system or the SI system with the appropriate prefixes,
@@ -278,7 +278,7 @@ function addBranch!(system::PowerSystem; label::T, from::T, to::T, status::T = 1
     push!(layout.status, status)
 
     apparentScale = si2pu(system.base.power.prefix, system.base.power.value, "apparent power")
-    
+
     prefix, base = baseImpedance(system, system.base.voltage.value[layout.from[end]], turnsRatio)
     impedanceScale = si2pu(prefix, base, "impedance")
     admittanceScale = si2pu(1 / prefix, 1 / base, "admittance")
@@ -294,7 +294,7 @@ function addBranch!(system::PowerSystem; label::T, from::T, to::T, status::T = 1
 
     ratingScale = apparentScale
     if type == 2
-        ratingScale = si2pu(system.base.power.prefix, system.base.power.value, "active power") 
+        ratingScale = si2pu(system.base.power.prefix, system.base.power.value, "active power")
     end
     push!(rating.shortTerm, shortTerm * ratingScale)
     push!(rating.emergency, emergency * ratingScale)
@@ -478,7 +478,7 @@ The generator is defined with the following parameters:
 * `bus`: the label of the bus to which the generator is connected
 * `status`: the operating status of the generator:
   * `status = 1`: in-service
-  * `status = 0`: out-of-service 
+  * `status = 0`: out-of-service
 * `active` (pu or W): output active power
 * `reactive` (pu or VAr): output reactive power
 * `magnitude` (pu or V): voltage magnitude setpoint
@@ -645,7 +645,7 @@ addActiveCost!(system; label = 1, model = 1, polynomial = [0.11; 5.0; 150.0])
 function addActiveCost!(system::PowerSystem; label::T, model::T = 0,
     polynomial::Array{Float64,1} = Array{Float64}(undef, 0),
     piecewise::Array{Float64,2} = Array{Float64}(undef, 0, 0))
-    
+
     activeScale = si2pu(system.base.power.prefix, system.base.power.value, "active power")
     addCost!(system, label, model, polynomial, piecewise, system.generator.cost.active, activeScale)
 end
@@ -722,13 +722,13 @@ function addCost!(system::PowerSystem, label, model, polynomial, piecewise, cost
     cost.model[index] = model
 
     if !isempty(polynomial)
-        numberCoefficient = length(polynomial) 
+        numberCoefficient = length(polynomial)
         cost.polynomial[index] = fill(0.0, numberCoefficient)
         @inbounds for i = 1:numberCoefficient
             cost.polynomial[index][i] = polynomial[i] / (scale^(numberCoefficient - i))
         end
     end
-    
+
     if !isempty(piecewise)
         cost.piecewise[index] = [scale .* piecewise[:, 1] piecewise[:, 2]]
     end
