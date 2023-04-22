@@ -9,7 +9,7 @@ torad = pi / 180
     ######## Modified IEEE 14-bus Test Case ##########
     dcModel!(system14)
 
-    model = Model(Ipopt.Optimizer)
+    model = Model(HiGHS.Optimizer)
     dcOptimalPowerFlow!(system14, model)
     result = optimizePowerFlow!(system14, model)
     

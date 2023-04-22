@@ -609,7 +609,9 @@ defined generator.
 
 The function takes in four keywords as arguments:
 * `label`: corresponds to the already defined generator label
-* `model`: cost model, piecewise linear = 1, polynomial = 2
+* `model`: cost model:
+  * piecewise linear = 1
+  * polynomial = 2
 * `piecewise`: cost model defined by input-output points given as `Array{Float64,2}`:
   * first column (pu or W): active power output of the generator
   * second column (currency/hr): cost for the specified active power output
@@ -659,7 +661,9 @@ defined generator.
 
 The function takes in four keywords as arguments:
 * `label`: corresponds to the already defined generator label
-* `model`: cost model, piecewise linear = 1, polynomial = 2
+* `model`: cost model:
+  * piecewise linear = 1
+  * polynomial = 2
 * `piecewise`: cost model defined by input-output points given as `Array{Float64,2}`:
   * first column (pu or VAr): reactive power output of the generator
   * second column (currency/hr): cost for the specified reactive power output
@@ -1085,9 +1089,4 @@ function nilModel!(system::PowerSystem, flag::Symbol; index::Int64 = 0)
         ac.admittance[index] = -ac.admittance[index]
         ac.transformerRatio[index] = -ac.transformerRatio[index]
     end
-end
-
-######### Expelling Elements from the AC or DC Model ##########
-function dropzerosNodalMatrix(system::PowerSystem)
-
 end

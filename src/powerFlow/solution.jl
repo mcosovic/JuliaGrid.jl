@@ -137,11 +137,11 @@ mutable struct Result
 end
 
 """
-The function accepts the `PowerSystem` composite type as input, uses it to set up the 
+The function accepts the `PowerSystem` composite type as input, uses it to set up the
 Newton-Raphson method, and then produces the `Result` composite type as output.
-    
+
     newtonRaphson(system::PowerSystem)
-    
+
 The `algorithm` field of the `Result` type is updated during the function's execution.
 """
 function newtonRaphson(system::PowerSystem)
@@ -179,7 +179,7 @@ function newtonRaphson(system::PowerSystem)
         end
     end
 
-    voltageMagnitude = setGeneratorVoltageMagnitude(system)
+    voltageMagnitude = setVoltageMagnitude(system)
     voltageAngle = copy(bus.voltage.angle)
     mismatch = fill(0.0, bus.number + pqNumber - 1)
     iIndex = fill(0, nonZeroElement)
@@ -246,15 +246,15 @@ function newtonRaphson(system::PowerSystem)
 end
 
 """
-The function updates the `bus.voltage` and `algorithm` fields of the `Result` composite 
-type by computing the magnitudes and angles of bus voltages using the Newton-Raphson 
+The function updates the `bus.voltage` and `algorithm` fields of the `Result` composite
+type by computing the magnitudes and angles of bus voltages using the Newton-Raphson
 method.
-    
+
     newtonRaphson!(system::PowerSystem, result::Result)
-    
-It is intended to be used within a for loop as it performs only one iteration of the 
-Newton-Raphson method. It is recommended that the reader peruses the section on the 
-[Newton-Raphson Method](@ref newtonRaphson) to gain a comprehensive understanding 
+
+It is intended to be used within a for loop as it performs only one iteration of the
+Newton-Raphson method. It is recommended that the reader peruses the section on the
+[Newton-Raphson Method](@ref newtonRaphson) to gain a comprehensive understanding
 of its implementation, including all relevant data.
 
 # Example
@@ -373,12 +373,12 @@ function newtonRaphson!(system::PowerSystem, result::Result)
 end
 
 """
-The function accepts the `PowerSystem` composite type as input, uses it to set up the 
-fast Newton-Raphson method of version BX, and then produces the `Result` composite type as 
+The function accepts the `PowerSystem` composite type as input, uses it to set up the
+fast Newton-Raphson method of version BX, and then produces the `Result` composite type as
 output.
-        
+
     fastNewtonRaphsonBX(system::PowerSystem)
-        
+
 The `algorithm` field of the `Result` type is updated during the function's execution.
 """
 function fastNewtonRaphsonBX(system::PowerSystem)
@@ -389,12 +389,12 @@ function fastNewtonRaphsonBX(system::PowerSystem)
 end
 
 """
-The function accepts the `PowerSystem` composite type as input, uses it to set up the 
-fast Newton-Raphson method of version XB, and then produces the `Result` composite type as 
+The function accepts the `PowerSystem` composite type as input, uses it to set up the
+fast Newton-Raphson method of version XB, and then produces the `Result` composite type as
 output.
-            
+
     fastNewtonRaphsonXB(system::PowerSystem)
-            
+
 The `algorithm` field of the `Result` type is updated during the function's execution.
 """
 function fastNewtonRaphsonXB(system::PowerSystem)
@@ -437,7 +437,7 @@ end
         end
     end
 
-    voltageMagnitude = setGeneratorVoltageMagnitude(system)
+    voltageMagnitude = setVoltageMagnitude(system)
     voltageAngle = copy(bus.voltage.angle)
 
     mismatchActive = fill(0.0, bus.number - 1)
@@ -572,15 +572,15 @@ end
 end
 
 """
-The function updates the `bus.voltage` and `algorithm` fields of the `Result` composite 
-type by computing the magnitudes and angles of bus voltages using the fast Newton-Raphson 
+The function updates the `bus.voltage` and `algorithm` fields of the `Result` composite
+type by computing the magnitudes and angles of bus voltages using the fast Newton-Raphson
 method.
 
     fastNewtonRaphson!(system::PowerSystem, result::Result)
 
-It is intended to be used within a for loop as it performs only one iteration of the 
-fast Newton-Raphson method. It is recommended that the reader peruses the section on the 
-[Fast Newton-Raphson Method](@ref fastNewtonRaphson) to gain a comprehensive 
+It is intended to be used within a for loop as it performs only one iteration of the
+fast Newton-Raphson method. It is recommended that the reader peruses the section on the
+[Fast Newton-Raphson Method](@ref fastNewtonRaphson) to gain a comprehensive
 understanding of its implementation, including all relevant data.
 
 # Example
@@ -668,17 +668,17 @@ function fastNewtonRaphson!(system::PowerSystem, result::Result)
 end
 
 """
-The function accepts the `PowerSystem` composite type as input, uses it to set up the 
+The function accepts the `PowerSystem` composite type as input, uses it to set up the
 Gauss-Seidel method, and then produces the `Result` composite type as output.
-        
+
     gaussSeidel(system::PowerSystem)
-        
-The `algorithm` field of the `Result` type is updated during the function's execution.  
+
+The `algorithm` field of the `Result` type is updated during the function's execution.
 """
 function gaussSeidel(system::PowerSystem)
     bus = system.bus
 
-    voltageMagnitude = setGeneratorVoltageMagnitude(system)
+    voltageMagnitude = setVoltageMagnitude(system)
     voltage = zeros(ComplexF64, bus.number)
     pqIndex = Int64[]
     pvIndex = Int64[]
@@ -711,14 +711,14 @@ function gaussSeidel(system::PowerSystem)
 end
 
 """
-The function updates the `bus.voltage` and `algorithm` fields of the `Result` composite 
+The function updates the `bus.voltage` and `algorithm` fields of the `Result` composite
 type by computing the magnitudes and angles of bus voltages using the Gauss-Seidel method.
 
     gaussSeidel!(system::PowerSystem, result::Result)
 
-It is intended to be used within a for loop as it performs only one iteration of the 
-Gauss-Seidel method. It is recommended that the reader peruses the section on the 
-[Gauss-Seidel Method](@ref gaussSeidel) to gain a comprehensive understanding of 
+It is intended to be used within a for loop as it performs only one iteration of the
+Gauss-Seidel method. It is recommended that the reader peruses the section on the
+[Gauss-Seidel Method](@ref gaussSeidel) to gain a comprehensive understanding of
 its implementation, including all relevant data.
 
 # Example
@@ -800,15 +800,15 @@ function gaussSeidel!(system::PowerSystem, result::Result)
 end
 
 """
-The function takes a `PowerSystem` composite type as input and uses it to solve the DC 
-power flow problem by calculating the voltage angles for each bus. 
-    
+The function takes a `PowerSystem` composite type as input and uses it to solve the DC
+power flow problem by calculating the voltage angles for each bus.
+
     dcPowerFlow(system::PowerSystem)
-    
-The function returns a composite type `Result` as output, which includes updated 
-`bus.voltage.angle` and `algorithm` fields. These fields are modified during the execution 
-of the function. It is recommended that the reader peruses the section on the 
-[DC Power Flow Solution](@ref DCPowerFlowSolution) to gain a comprehensive 
+
+The function returns a composite type `Result` as output, which includes updated
+`bus.voltage.angle` and `algorithm` fields. These fields are modified during the execution
+of the function. It is recommended that the reader peruses the section on the
+[DC Power Flow Solution](@ref DCPowerFlowSolution) to gain a comprehensive
 understanding of its implementation, including all relevant data.
 
 # Example
@@ -866,30 +866,30 @@ function dcPowerFlow(system::PowerSystem)
 end
 
 """
-The function verifies whether the generators in a power system exceed their reactive power 
-limits. This is done by setting the reactive power of the generators to within the limits 
-if they are violated, after determining the bus voltage magnitudes and angles. If the 
-limits are violated, the corresponding PV buses or the slack bus are converted to PQ buses. 
+The function verifies whether the generators in a power system exceed their reactive power
+limits. This is done by setting the reactive power of the generators to within the limits
+if they are violated, after determining the bus voltage magnitudes and angles. If the
+limits are violated, the corresponding PV buses or the slack bus are converted to PQ buses.
 
-The function returns the `violate` variable to indicate which buses violate the limits, 
-with -1 indicating a violation of the minimum limits and 1 indicating a violation of the 
+The function returns the `violate` variable to indicate which buses violate the limits,
+with -1 indicating a violation of the minimum limits and 1 indicating a violation of the
 maximum limits.
 
     reactivePowerLimit!(system::PowerSystem, result::Result)
 
-First, if the [`generator!`](@ref generator!) function has not been executed, 
-[`reactivePowerLimit!`](@ref reactivePowerLimit!) will execute it and update the 
-`generator` field of the `Result` type. 
+First, if the [`generator!`](@ref generator!) function has not been executed,
+[`reactivePowerLimit!`](@ref reactivePowerLimit!) will execute it and update the
+`generator` field of the `Result` type.
 
-Afterward, the function uses the results from [`generator!`](@ref generator!) to assign 
-values to the `generator.output.active` and `bus.supply.active` fields of the `System` 
+Afterward, the function uses the results from [`generator!`](@ref generator!) to assign
+values to the `generator.output.active` and `bus.supply.active` fields of the `System`
 type.
 
-At the end of the process, the function inspects the reactive powers of the generator and 
-adjusts them to their maximum or minimum values if they violate the threshold. The 
-`generator.output.reactive` field of the `System` type is then modified accordingly. In 
-light of this modification, the `bus.supply.reactive` field of the `System` type is also 
-updated, and the bus types in `bus.layout.type` are adjusted. If the slack bus is 
+At the end of the process, the function inspects the reactive powers of the generator and
+adjusts them to their maximum or minimum values if they violate the threshold. The
+`generator.output.reactive` field of the `System` type is then modified accordingly. In
+light of this modification, the `bus.supply.reactive` field of the `System` type is also
+updated, and the bus types in `bus.layout.type` are adjusted. If the slack bus is
 converted, the `bus.layout.slack` field is modified accordingly.
 
 # Example
@@ -979,17 +979,17 @@ function reactivePowerLimit!(system::PowerSystem, result::Result)
 end
 
 """
-The function modifies the bus voltage angles based on a different slack bus than the one 
-identified by the `bus.layout.slack` field. This function only updates the 
+The function modifies the bus voltage angles based on a different slack bus than the one
+identified by the `bus.layout.slack` field. This function only updates the
 `bus.voltage.angle` field of the `Result` type.
 
     adjustVoltageAngle!(system::PowerSystem, result::Result; slack)
 
-For instance, if the reactive power of the generator exceeds the limit on the slack bus, 
-the [`reactivePowerLimit!`](@ref reactivePowerLimit!) function will change that bus to a 
-PQ bus and designate the first PV bus in the sequence as the new slack bus. After 
-obtaining the updated AC power flow solution based on the new slack bus, it is possible to 
-adjust the voltage angles to align with the angle of the original slack bus. The `slack` 
+For instance, if the reactive power of the generator exceeds the limit on the slack bus,
+the [`reactivePowerLimit!`](@ref reactivePowerLimit!) function will change that bus to a
+PQ bus and designate the first PV bus in the sequence as the new slack bus. After
+obtaining the updated AC power flow solution based on the new slack bus, it is possible to
+adjust the voltage angles to align with the angle of the original slack bus. The `slack`
 keyword specifies the bus label of the original slack bus.
 
 # Example
@@ -1029,12 +1029,14 @@ function adjustVoltageAngle!(system::PowerSystem, result::Result; slack::T = sys
 end
 
 ######### Set Voltage Magnitude Values According to Generators ##########
-function setGeneratorVoltageMagnitude(system::PowerSystem)
+function setVoltageMagnitude(system::PowerSystem)
     magnitude = copy(system.bus.voltage.magnitude)
-    
-    @inbounds for (k, i) in enumerate(system.generator.layout.bus)
-        if system.generator.layout.status[k] == 1
-            magnitude[i] = system.generator.voltage.magnitude[k]
+
+    if settings[:generatorVoltage]
+        @inbounds for (k, i) in enumerate(system.generator.layout.bus)
+            if system.generator.layout.status[k] == 1
+                magnitude[i] = system.generator.voltage.magnitude[k]
+            end
         end
     end
 

@@ -1,3 +1,15 @@
+const settings = Dict(
+    :generatorVoltage => false,
+    :piecewiseObjective => true,
+    :polynomialObjective => true,
+    :slackConstraint => true,
+    :capabilityConstraint => true,
+    :flowConstraint => true,
+    :differenceConstraint => true,
+    :balanceConstraint => true,
+    :voltageConstraint => true
+    )
+
 ######### Check Package Path ##########
 @inline function checkPackagePath()
     pathtoJuliaGrid = pathof(JuliaGrid)
@@ -61,5 +73,65 @@ end
 @inline function errorVoltage(voltage)
     if isempty(voltage)
         error("The voltage values are missing.")
+    end
+end
+
+"""
+The macro allows for the activation of various features that are relevant to the analysis
+performed.
+
+    @enable(feature)
+
+These features are associated with different aspects of the analysis, and can be specified
+using the feature parameter:
+* `generatorVoltage`: includes generator magnitude setpoints that are used during voltage initialization
+* `piecewiseObjective`: incorporates linear piecewise costs into the optimal power flow objective.
+
+# Examples
+To activate a single feature, the macro can be called as follows:
+```jldoctest
+@enable(generatorVoltage)
+```
+
+To activate multiple features, the macro can be called as follows:
+```jldoctest
+@enable(generatorVoltage, piecewiseObjective)
+```
+"""
+macro enable(args...)
+    @inbounds for key in args
+        if haskey(settings, key)
+            settings[key] = true
+        end
+    end
+end
+
+"""
+The macro allows for the deactivation of various features that are relevant to the analysis
+performed.
+
+    @disable(feature)
+
+These features are associated with different aspects of the analysis, and can be specified
+using the feature parameter:
+* `generatorVoltage`: excludes generator magnitude setpoints that are used during voltage initialization
+* `piecewiseObjective`: excludes linear piecewise costs from the optimal power flow objective.
+
+# Examples
+To deactivate a single feature, the macro can be called as follows:
+```jldoctest
+@disable(generatorVoltage)
+```
+
+To deactivate multiple features, the macro can be called as follows:
+```jldoctest
+@disable(generatorVoltage, piecewiseObjective)
+```
+"""
+macro disable(args...)
+    @inbounds for key in args
+        if haskey(settings, key)
+            settings[key] = false
+        end
     end
 end
