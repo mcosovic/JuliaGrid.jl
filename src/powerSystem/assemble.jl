@@ -1,5 +1,3 @@
-const T = Union{Float64,Int64}
-
 """
 The function adds a new bus to the `PowerSystem` type, updating its bus field.
 

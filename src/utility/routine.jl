@@ -1,3 +1,5 @@
+const T = Union{Float64,Int64}
+
 const settings = Dict(
     :generatorVoltage => false,
     :piecewiseObjective => true,
