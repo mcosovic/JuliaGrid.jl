@@ -1,4 +1,4 @@
-# [Unit System](@id unitSystemAPI)
+# [Configuration Setup](@id configurationSetupAPI)
 
 For further information on this topic, please see the [Power System Model](@ref powerSystemModelManual) section of the Manual.
 

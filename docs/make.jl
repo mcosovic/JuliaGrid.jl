@@ -22,7 +22,7 @@ makedocs(
             ["Power System Model" => "api/powerSystemModel.md",
             "Power Flow Solution" => "api/powerFlowSolution.md",
             "Unit System" => "api/unit.md",
-            "Utility" => "api/utility.md"]
+            "Configuration Setup" => "api/configuration.md"]
     ]
 )
 

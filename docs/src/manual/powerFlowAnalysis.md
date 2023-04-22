@@ -89,6 +89,8 @@ To initialize the AC power flow analysis, the user can utilize generator voltage
 @enable(generatorVoltage)
 
 result = newtonRaphson(system)
+
+nothing # hide
 ```
 
 After running the above code, the initial voltage magnitudes and angles will be:
@@ -96,6 +98,8 @@ After running the above code, the initial voltage magnitudes and angles will be:
 result.bus.voltage.magnitude
 result.bus.voltage.angle
 ```
+We can observe that the initial voltage magnitude at bus 2 is updated to the magnitude setpoint defined during generator construction, deviating from its previously defined value.
+
 Additionally, we also provide the [`@disable`](@ref @disable) macro to turn off the usage of voltage magnitudes of generators in the initialization process.
 
 !!! note "Info"
