@@ -1,7 +1,7 @@
 const T = Union{Float64,Int64}
 
 const settings = Dict(
-    :generatorVoltage => false,
+    :generatorVoltage => true,
     :piecewiseObjective => true,
     :polynomialObjective => true,
     :slackConstraint => true,

@@ -1034,7 +1034,7 @@ function setVoltageMagnitude(system::PowerSystem)
 
     if settings[:generatorVoltage]
         @inbounds for (k, i) in enumerate(system.generator.layout.bus)
-            if system.generator.layout.status[k] == 1
+            if system.generator.layout.status[k] == 1 && system.bus.layout.type[i] == 2 && system.bus.layout.type[i] == 3
                 magnitude[i] = system.generator.voltage.magnitude[k]
             end
         end
