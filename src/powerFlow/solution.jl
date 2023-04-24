@@ -1016,11 +1016,13 @@ function initializeACPowerFlow(system::PowerSystem)
     magnitude = copy(system.bus.voltage.magnitude)
     angle = copy(system.bus.voltage.angle)
 
-    @inbounds for (k, i) in enumerate(system.generator.layout.bus)
-        if system.generator.layout.status[k] == 0 && system.bus.layout.type[i] == 2
+    @inbounds for i = 1:system.bus.number
+        if system.bus.supply.inService[i] == 0 && system.bus.layout.type[i] == 2
             system.bus.layout.type[i] == 1
         end
+    end
 
+    @inbounds for (k, i) in enumerate(system.generator.layout.bus)
         if system.generator.layout.status[k] == 1 && system.bus.layout.type[i] != 1
             magnitude[i] = system.generator.voltage.magnitude[k]
         end
