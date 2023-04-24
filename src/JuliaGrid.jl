@@ -24,7 +24,7 @@ export dcModel!, acModel!
 ######## Power Flow ##########
 include("powerFlow/solution.jl")
 export newtonRaphson, fastNewtonRaphsonBX, fastNewtonRaphsonXB, gaussSeidel
-export mismatchPowerFlow!, solvePowerFlow!, solvePowerFlow
+export mismatch!, solvePowerFlow!, solvePowerFlow
 export reactivePowerLimit!, adjustVoltageAngle!
 
 include("powerFlow/analysis.jl")
