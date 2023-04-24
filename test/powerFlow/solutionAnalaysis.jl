@@ -10,20 +10,24 @@ topu = 1 / 100
     ######## Modified IEEE 14-bus Test Case ##########
     acModel!(system14)
     result = newtonRaphson(system14)
-    stopping = result.algorithm.iteration.stopping
+
+    iteration = 0
     for i = 1:1000
-        newtonRaphson!(system14, result)
-        if stopping.active < 1e-8 && stopping.reactive < 1e-8
+        stopping = mismatch!(system14, result)
+        if all(stopping .< 1e-8)
             break
         end
+        solve!(system14, result)
+        iteration += 1
     end
+
     bus!(system14, result)
     branch!(system14, result)
     generator!(system14, result)
 
     @test result.bus.voltage.magnitude ≈ matpower14["Vi"]
     @test result.bus.voltage.angle ≈ matpower14["Ti"] * torad
-    @test result.algorithm.iteration.number == matpower14["iterations"][1]
+    @test iteration == matpower14["iterations"][1]
 
     @test result.bus.power.injection.active ≈ matpower14["Pinj"] * topu
     @test result.bus.power.injection.reactive ≈ matpower14["Qinj"] * topu
@@ -42,13 +46,17 @@ topu = 1 / 100
     ######## Modified IEEE 30-bus Test Case ##########
     acModel!(system30)
     result = newtonRaphson(system30)
-    stopping = result.algorithm.iteration.stopping
+    
+    iteration = 0
     for i = 1:1000
-        newtonRaphson!(system30, result)
-        if stopping.active < 1e-8 && stopping.reactive < 1e-8
+        stopping = mismatch!(system30, result)
+        if all(stopping .< 1e-8)
             break
         end
+        solve!(system30, result)
+        iteration += 1
     end
+
     bus!(system30, result)
     branch!(system30, result)
     generator!(system30, result)

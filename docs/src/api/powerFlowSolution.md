@@ -7,7 +7,6 @@ For further information on this topic, please see the [Power System Analysis](@r
 ## Newton-Raphson Method
 ```@docs
 newtonRaphson
-newtonRaphson!
 ```
 
 ---
@@ -16,7 +15,6 @@ newtonRaphson!
 ```@docs
 fastNewtonRaphsonBX
 fastNewtonRaphsonXB
-fastNewtonRaphson!
 ```
 
 ---
@@ -24,14 +22,21 @@ fastNewtonRaphson!
 ## Gauss-Seidel Method
 ```@docs
 gaussSeidel
-gaussSeidel!
+```
+
+---
+
+## AC Power Flow Solution
+```@docs
+mismatchPowerFlow!
+solvePowerFlow!
 ```
 
 ---
 
 ## DC Power Flow Solution
 ```@docs
-dcPowerFlow
+solvePowerFlow
 ```
 
 ---

@@ -2,17 +2,18 @@
 
 The calculation of bus voltages is essential to solving the power flow problem. The composite type `PowerSystem`, which includes `bus`, `branch`, and `generator` fields, is required to obtain a solution. Additionally, depending on the type of power flow used, either `acModel` or `dcModel` must be used.
 
-After creating the composite type `PowerSystem`, the next step is to create the composite type `Result`, which has fields `bus`, `branch`, `generator`, and `algorithm`. In the DC power flow, `Result` is created when determining the bus voltage angles using the [`dcPowerFlow`](@ref dcPowerFlow) function. On the other hand, the AC power flow requires the iterative method to be initialized, which is when the composite type `Result` is created using one of the following functions:
+After creating the composite type `PowerSystem`, the next step is to create the composite type `Result`, which has fields `bus`, `branch`, `generator`, and `algorithm`. To initialize the iterative method for the AC power flow, the `Result` composite type must be created using any of the following functions:
 * [`newtonRaphson`](@ref newtonRaphson)
 * [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX)
 * [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB)
 * [`gaussSeidel`](@ref gaussSeidel).
 
-To calculate bus voltages, the appropriate function can be used depending on the type of power flow and method selected. The following functions are available:
-* [`newtonRaphson!`](@ref newtonRaphson!)
-* [`fastNewtonRaphson!`](@ref fastNewtonRaphson!)
-* [`gaussSeidel!`](@ref gaussSeidel!)
-* [`dcPowerFlow`](@ref dcPowerFlow).
+To solve the AC power flow problem and obtain bus voltages, the following functions can be employed:
+* [`mismatchPowerFlow!`](@ref mismatchPowerFlow!)
+* [`solvePowerFlow!`](@ref solvePowerFlow!).
+
+ On the other hand, for the DC power flow, the `Result` composite type is created when determining the bus voltage angles through the use of the function:
+* [`solvePowerFlow`](@ref solvePowerFlow).
 
 JuliaGrid offers a set of post-processing analysis functions for calculating powers, losses, and currents associated with buses, branches, or generators after obtaining AC or DC power flow solutions:
 * [`bus!`](@ref bus!)
@@ -84,12 +85,12 @@ using JuliaGrid # hide
 
 system = powerSystem()
 
-addBus!(system; label = 1, type = 3, magnitude = 0.9, angle = -0.2)
-addBus!(system; label = 2, type = 1, magnitude = 1.1, angle = -0.1)
+addBus!(system; label = 1, type = 3, magnitude = 1.0, angle = 0)
+addBus!(system; label = 2, type = 1, magnitude = 0.9, angle = -0.1)
 addBus!(system; label = 3, type = 2, magnitude = 0.8, angle = -0.2)
 
-addGenerator!(system; label = 1, bus = 2, magnitude = 1.2)
-addGenerator!(system; label = 2, bus = 3, magnitude = 1.3)
+addGenerator!(system; label = 1, bus = 2, magnitude = 1.1)
+addGenerator!(system; label = 2, bus = 3, magnitude = 1.2)
 
 acModel!(system)
 
@@ -112,7 +113,8 @@ On the other hand, the initial voltage magnitudes are determined by a combinatio
 system.bus.voltage.magnitude
 system.generator.voltage.magnitude
 ```
-The rule governing the specification of initial voltage magnitudes is simple. If a bus has an in-service generator and is declared as a generator bus (`type = 2`), then the initial voltage magnitudes are specified using the setpoints provided within the generators. This is because the generator bus has known values of voltage magnitude that are specified within the generator, and this initial value also represents the solution for the corresponding bus.
+!!! note "Info"
+    The rule governing the specification of initial voltage magnitudes is simple. If a bus has an in-service generator and is declared as a generator bus (`type = 2`), then the initial voltage magnitudes are specified using the setpoint provided within the generator. This is because the generator bus has known values of voltage magnitude that are specified within the generator, and this initial value also represents the solution for the corresponding bus.
 
 Finally, let us add the generator at the slack bus using the following code snippet:
 ```@example initializeACPowerFlowSlack
@@ -120,13 +122,13 @@ using JuliaGrid # hide
 
 system = powerSystem()
 
-addBus!(system; label = 1, type = 3, magnitude = 0.9, angle = -0.2)
-addBus!(system; label = 2, type = 1, magnitude = 1.1, angle = -0.1)
+addBus!(system; label = 1, type = 3, magnitude = 1.0, angle = 0)
+addBus!(system; label = 2, type = 1, magnitude = 0.9, angle = -0.1)
 addBus!(system; label = 3, type = 2, magnitude = 0.8, angle = -0.2)
 
-addGenerator!(system; label = 1, bus = 2, magnitude = 1.2)
-addGenerator!(system; label = 2, bus = 3, magnitude = 1.3)
-addGenerator!(system; label = 3, bus = 1, magnitude = 1.4)
+addGenerator!(system; label = 1, bus = 2, magnitude = 1.1)
+addGenerator!(system; label = 2, bus = 3, magnitude = 1.2)
+addGenerator!(system; label = 3, bus = 1, magnitude = 1.3)
 
 acModel!(system)
 
@@ -138,7 +140,8 @@ The initial voltages are now as follows:
 ```@repl initializeACPowerFlowSlack
 result.bus.voltage.magnitude
 ```
-Thus, if an in-service generator exists on the slack bus, the initial value of the voltage magnitude is specified using the setpoints provided within the generators, and this initial value represents the solution for the slack bus. This is a consequence of the fact that the slack bus has a known voltage magnitude. If a generator exists on the slack bus, its value is used, otherwise, the value is defined based on the voltage magnitude specified within the bus.
+!!! note "Info"
+    Thus, if an in-service generator exists on the slack bus, the initial value of the voltage magnitude is specified using the setpoints provided within the generators, and this initial value represents the solution for the slack bus. This is a consequence of the fact that the slack bus has a known voltage magnitude. If a generator exists on the slack bus, its value is used, otherwise, the value is defined based on the voltage magnitude specified within the bus.
 
 ---
 
@@ -149,12 +152,11 @@ using JuliaGrid # hide
 
 system = powerSystem()
 
-addBus!(system; label = 1, type = 3, magnitude = 0.9, angle = -0.2)
-addBus!(system; label = 2, type = 1, magnitude = 1.1, angle = -0.1)
+addBus!(system; label = 1, type = 3, magnitude = 1.0, angle = 0)
+addBus!(system; label = 2, type = 1, magnitude = 0.9, angle = -0.1)
 addBus!(system; label = 3, type = 2, magnitude = 0.8, angle = -0.2)
 
-addGenerator!(system; label = 2, bus = 3, magnitude = 1.3)
-addGenerator!(system; label = 3, bus = 1, magnitude = 1.4)
+addGenerator!(system; label = 2, bus = 3, magnitude = 1.2)
 
 acModel!(system)
 
@@ -174,36 +176,5 @@ result.bus.voltage.magnitude
 result.bus.voltage.angle
 ```
 Thus, we start with a set of voltage magnitude values that are constant throughout iteration, and the rest of the values correspond to the "flat start".
-
----
-
-##### Deactivate Generator Voltage Magnitude Setpoints
-In case the user wishes to avoid using generator voltage magnitude setpoints and rely solely on the values specified within buses, they can achieve this by using the [`@disable`](@ref @disable) macro. For instance:
-```@example initializeACPowerFlowDisable
-using JuliaGrid # hide
-
-system = powerSystem()
-
-addBus!(system; label = 1, type = 3, magnitude = 0.9, angle = -0.2)
-addBus!(system; label = 2, type = 1, magnitude = 1.1, angle = -0.1)
-addBus!(system; label = 3, type = 2, magnitude = 0.8, angle = -0.2)
-
-addGenerator!(system; label = 1, bus = 2, magnitude = 1.2)
-addGenerator!(system; label = 2, bus = 3, magnitude = 1.3)
-
-acModel!(system)
-
-@disable(generatorVoltage)
-result = newtonRaphson(system)
-
-nothing # hide
-```
-With this configuration, all initial values are now specified based on the values provided within buses:
-```@repl initializeACPowerFlowDisable
-result.bus.voltage.magnitude
-result.bus.voltage.angle
-```
-
-It is worth noting that this option can be enabled again at any time using the [`@enable`](@ref @enable) macro.
 
 ---
