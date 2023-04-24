@@ -1018,7 +1018,7 @@ function initializeACPowerFlow(system::PowerSystem)
 
     @inbounds for i = 1:system.bus.number
         if system.bus.supply.inService[i] == 0 && system.bus.layout.type[i] == 2
-            system.bus.layout.type[i] == 1
+            system.bus.layout.type[i] = 1
         end
     end
 
