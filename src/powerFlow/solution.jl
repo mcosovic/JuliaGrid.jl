@@ -463,7 +463,7 @@ end
 The function calculates both active and reactive power injection mismatches and returns
 their maximum values. These maximum values can be used to terminate the iteration loop.
 
-    mismatchPowerFlow!(system::PowerSystem, result::Result)
+    mismatch!(system::PowerSystem, result::Result)
 
 This function is designed to be used within the iteration loop before calling the
 [`solvePowerFlow!`](@ref solvePowerFlow!) function. When using either the Newton-Raphson or
@@ -471,16 +471,16 @@ fast Newton-Raphson methods, the function updates the mismatch fields within the
 composite type. When using the Gauss-Seidel method, the function does not store any data
 and is only used to terminate the iteration loop.
 """
-function mismatchPowerFlow!(system::PowerSystem, result::Result)
+function mismatch!(system::PowerSystem, result::Result)
     if result.algorithm.method == "Newton-Raphson"
-        stoppingActive, stoppingReactive = mismatchNewtonRaphson!(system, result)
+        stopActive, stopReactive = mismatchNewtonRaphson!(system, result)
     elseif result.algorithm.method == "Fast Newton-Raphson BX" || result.algorithm.method == "Fast Newton-Raphson XB"
-        stoppingActive, stoppingReactive = mismatchFastNewtonRaphson!(system, result)
+        stopActive, stopReactive = mismatchFastNewtonRaphson!(system, result)
     elseif result.algorithm.method == "Gauss-Seidel"
-        stoppingActive, stoppingReactive = mismatchGaussSeidel!(system, result)
+        stopActive, stopReactive = mismatchGaussSeidel!(system, result)
     end
 
-    return stoppingActive, stoppingReactive
+    return stopActive, stopReactive
 end
 
 function mismatchNewtonRaphson!(system::PowerSystem, result::Result)
@@ -491,8 +491,8 @@ function mismatchNewtonRaphson!(system::PowerSystem, result::Result)
     mismatch = result.algorithm.mismatch
     index = result.algorithm.index
 
-    stoppingActive = 0.0
-    stoppingReactive = 0.0
+    stopActive = 0.0
+    stopReactive = 0.0
     @inbounds for i = 1:bus.number
         if i != bus.layout.slack
             I = 0.0
@@ -510,15 +510,15 @@ function mismatchNewtonRaphson!(system::PowerSystem, result::Result)
             end
 
             mismatch[index.pvpq[i]] = voltage.magnitude[i] * I - bus.supply.active[i] + bus.demand.active[i]
-            stoppingActive = max(stoppingActive, abs(mismatch[index.pvpq[i]]))
+            stopActive = max(stopActive, abs(mismatch[index.pvpq[i]]))
             if bus.layout.type[i] == 1
                 mismatch[index.pq[i]] = voltage.magnitude[i] * C - bus.supply.reactive[i] + bus.demand.reactive[i]
-                stoppingReactive = max(stoppingReactive, abs(mismatch[index.pq[i]]))
+                stopReactive = max(stopReactive, abs(mismatch[index.pq[i]]))
             end
         end
     end
 
-    return stoppingActive, stoppingReactive
+    return stopActive, stopReactive
 end
 
 function mismatchFastNewtonRaphson!(system::PowerSystem, result::Result)
@@ -530,8 +530,8 @@ function mismatchFastNewtonRaphson!(system::PowerSystem, result::Result)
     reactive = result.algorithm.reactive
     index = result.algorithm.index
 
-    stoppingActive = 0.0
-    stoppingReactive = 0.0
+    stopActive = 0.0
+    stopReactive = 0.0
     @inbounds for i = 1:bus.number
         if i != bus.layout.slack
             active.mismatch[index.pvpq[i]] = - (bus.supply.active[i] - bus.demand.active[i]) / voltage.magnitude[i]
@@ -548,15 +548,15 @@ function mismatchFastNewtonRaphson!(system::PowerSystem, result::Result)
                 end
             end
 
-            stoppingActive = max(stoppingActive, abs(active.mismatch[index.pvpq[i]]))
+            stopActive = max(stopActive, abs(active.mismatch[index.pvpq[i]]))
             if bus.layout.type[i] == 1
                 reactive.mismatch[index.pq[i]] = C - (bus.supply.reactive[i] - bus.demand.reactive[i]) / voltage.magnitude[i]
-                stoppingReactive = max(stoppingReactive, abs(reactive.mismatch[index.pq[i]]))
+                stopReactive = max(stopReactive, abs(reactive.mismatch[index.pq[i]]))
             end
         end
     end
 
-    return stoppingActive, stoppingReactive
+    return stopActive, stopReactive
 end
 
 function mismatchGaussSeidel!(system::PowerSystem, result::Result)
@@ -565,8 +565,8 @@ function mismatchGaussSeidel!(system::PowerSystem, result::Result)
     voltage = result.algorithm.voltage
     index = result.algorithm.index
 
-    stoppingActive = 0.0
-    stoppingReactive = 0.0
+    stopActive = 0.0
+    stopReactive = 0.0
     @inbounds for i in index.pq
         I = 0.0 + im * 0.0
         for j in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
@@ -575,10 +575,10 @@ function mismatchGaussSeidel!(system::PowerSystem, result::Result)
         apparent = voltage.complex[i] * conj(I)
 
         mismatchActive = real(apparent) - system.bus.supply.active[i] + system.bus.demand.active[i]
-        stoppingActive = max(stoppingActive, abs(mismatchActive))
+        stopActive = max(stopActive, abs(mismatchActive))
 
         mismatchReactive = imag(apparent) - system.bus.supply.reactive[i] + system.bus.demand.reactive[i]
-        stoppingReactive = max(stoppingReactive, abs(mismatchReactive))
+        stopReactive = max(stopReactive, abs(mismatchReactive))
     end
 
     @inbounds for i in index.pv
@@ -587,10 +587,10 @@ function mismatchGaussSeidel!(system::PowerSystem, result::Result)
             I += ac.nodalMatrixTranspose.nzval[j] * voltage.complex[ac.nodalMatrix.rowval[j]]
         end
         mismatchActive = real(voltage.complex[i] * conj(I)) - system.bus.supply.active[i] + system.bus.demand.active[i]
-        stoppingActive = max(stoppingActive, abs(mismatchActive))
+        stopActive = max(stopActive, abs(mismatchActive))
     end
 
-    return stoppingActive, stoppingReactive
+    return stopActive, stopReactive
 end
 
 """
@@ -601,9 +601,9 @@ and `algorithm` fields of the `Result` composite type accordingly.
     solvePowerFlow!(system::PowerSystem, result::Result)
 
 This function should be used within the iteration loop that follows the
-[`mismatchPowerFlow!`](@ref mismatchPowerFlow!) function, as they together perform a single
-iteration of the Newton-Raphson or fast Newton-Raphson method. If you arere using the
-Gauss-Seidel method, this function alone performs a single iteration loop.
+[`mismatch!`](@ref mismatch!) function, as they together perform a single iteration of the
+Newton-Raphson or fast Newton-Raphson method. If you arere using the Gauss-Seidel method, this
+function alone performs a single iteration loop.
 
 It is recommended that you read through the sections on the
 [Newton-Raphson](@ref newtonRaphson), Fast Newton-Raphson](@ref fastNewtonRaphson), or

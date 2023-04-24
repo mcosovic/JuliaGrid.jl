@@ -28,7 +28,7 @@ gaussSeidel
 
 ## AC Power Flow Solution
 ```@docs
-mismatchPowerFlow!
+mismatch!
 solvePowerFlow!
 ```
 
