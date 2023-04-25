@@ -1,4 +1,4 @@
-# [Power Flow Analysis](@id powerFlowAnalysisManual)
+# [Power Flow Analysis](@id PowerFlowAnalysisManual)
 
 The calculation of bus voltages is essential to solving the power flow problem. The composite type `PowerSystem`, which includes `bus`, `branch`, and `generator` fields, is required to obtain a solution. Additionally, depending on the type of power flow used, either `acModel` or `dcModel` must be used.
 
@@ -78,7 +78,7 @@ system.bus.layout.type
 
 ---
 
-## Establish Starting Voltages
+## [Setup Starting Voltages](@id SetupStartingVoltagesManual)
 To begin analysing the AC power flow in JuliaGrid, we must first establish the `PowerSystem` composite type and define the AC model by calling the [`acModel!`](@ref acModel!) function. Once the power system is set up, we can select one of the available methods for solving the AC power flow problem, such as [`newtonRaphson`](@ref newtonRaphson), [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX), [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB), or [`gaussSeidel`](@ref gaussSeidel). Assuming we have selected the Newton-Raphson method, we can use the following code snippet:
 ```@example initializeACPowerFlow
 using JuliaGrid # hide
@@ -181,7 +181,7 @@ Thus, we start with a set of voltage magnitude values that are constant througho
 
 ---
 
-## AC Power Flow Solution
+## [AC Power Flow Solution](@id ACPowerFlowSolutionManual)
 To solve the AC power flow problem using JuliaGrid, we first need to create the `PowerSystem` composite type and define the AC model by calling the [`acModel!`](@ref acModel!) function. Here is an example:
 ```@example ACPowerFlowSolution
 using JuliaGrid # hide
@@ -200,7 +200,7 @@ addGenerator!(system; label = 1, bus = 2, active = 3.2, magnitude = 1.2)
 acModel!(system)
 
 nothing # hide
-``` 
+```
 
 Once the AC model is defined, we can choose the method to solve the power flow problem. JuliaGrid provides four methods: [`newtonRaphson`](@ref newtonRaphson), [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX), [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB), and [`gaussSeidel`](@ref gaussSeidel). For example, to use the Newton-Raphson method to solve the power flow problem, we can call the newtonRaphson [`newtonRaphson`](@ref newtonRaphson) as follows:
 ```@example ACPowerFlowSolution
@@ -256,7 +256,7 @@ The [mismatch!](@ref mismatch!) function returns the maximum values of active an
 
 ---
 
-## DC Power Flow Solution
+## [DC Power Flow Solution](@id DCPowerFlowSolutionManual)
 To solve the DC power flow problem using JuliaGrid, we start by creating the `PowerSystem` composite type and defining the DC model with the [dcModel!](@ref dcModel!) function. Here's an example:
 ```@example DCPowerFlowSolution
 using JuliaGrid # hide
@@ -275,7 +275,7 @@ addGenerator!(system; label = 1, bus = 2, active = 3.2, magnitude = 1.2)
 dcModel!(system)
 
 nothing # hide
-``` 
+```
 Next, we can solve the DC problem by calling the [`solvePowerFlow`](@ref solvePowerFlow) function, which also returns the `Result` composite type:
 ```@example DCPowerFlowSolution
 result = solvePowerFlow(system)
@@ -289,7 +289,7 @@ nothing # hide
 
 ---
 
-## Reusable Power System Model
+## [Reusable Power System Model](@id ReusablePowerSystemModel)
 After creating the power system, the AC and/or DC models can be generated for it, and they can then be reused for different types of power flow analysis, as demonstrated by creating the power system and its models once again:
 ```@example ReusablePowerSystemType
 using JuliaGrid # hide
@@ -310,7 +310,7 @@ acModel!(system)
 dcModel!(system)
 
 nothing # hide
-``` 
+```
 
 Applying different methods sequentially can be beneficial. For example, the Gauss-Seidel method is often used to obtain a quick approximate solution, while the Newton-Raphson method is typically used to obtain the final accurate solution. Therefore, we can run the Gauss-Seidel method for just a few iterations, as shown below:
 ```@example ReusablePowerSystemType
@@ -340,7 +340,7 @@ for iteration = 1:100
     end
     solvePowerFlow!(system, result)
 end
-``` 
+```
 The final solutions are:
 ```@repl ReusablePowerSystemType
 result.bus.voltage.magnitude
@@ -361,8 +361,8 @@ resultDC.bus.voltage.angle
 
 ---
 
-## Post-Processing Analysis
-Once we obtained solution from AC power flow or DC power flow, we can compute rest of the electrical quantities realted bith buses, branches, and generators by usin functions: [`bus!`](@ref bus!), [`branch!`](@ref branch!), and [`generator!`](@ref generator!). Let us set up AC power flow analaysis:  
+## [Post-Processing Analysis](@id PostProcessingAnalysisModel)
+After obtaining the solution from the AC or DC power flow analysis, we can calculate various electrical quantities related to buses, branches, and generators using the [`bus!`](@ref bus!), [`branch!`](@ref branch!), and [`generator!`](@ref generator!) functions. Let us set up an AC power flow analysis:
 ```@example ComputationPowersCurrentsLosses
 using JuliaGrid # hide
 
@@ -390,12 +390,13 @@ for iteration = 1:100
 end
 
 nothing # hide
-``` 
-Then we can compute all relavante data using ebove mentiond functions:
+```
+
+Once the power flow analysis is completed using the Newton-Raphson method, we can use the above-mentioned functions to compute the relevant data for buses, branches, and generators. Here is an example code snippet that demonstrates this process:
 ```@example ComputationPowersCurrentsLosses
 bus!(system, result)
 branch!(system, result)
 generator!(system, result)
 
 nothing # hide
-``` 
+```
