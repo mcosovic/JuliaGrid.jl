@@ -21,6 +21,7 @@ makedocs(
         "API Reference" =>
             ["Power System Model" => "api/powerSystemModel.md",
             "Power Flow Solution" => "api/powerFlowSolution.md",
+            "Post-processing Analysis" => "api/postprocessing.md",
             "Unit System" => "api/unit.md",
             "Configuration Setup" => "api/configuration.md"]
     ]

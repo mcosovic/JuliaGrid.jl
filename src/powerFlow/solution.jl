@@ -285,21 +285,14 @@ end
         end
     end
 
-    mismatchActive = fill(0.0, bus.number - 1)
     iIndexActive = fill(0, nonZeroElementActive); jIndexActive = similar(iIndexActive)
     iIndexReactive = fill(0, nonZeroElementReactive); jIndexReactive = similar(iIndexReactive)
     countActive = 1; countReactive = 1
     @inbounds for i = 1:bus.number
         if i != bus.layout.slack
-            mismatchActive[pvpqIndex[i]] = - (bus.supply.active[i] - bus.demand.active[i]) / voltageMagnitude[i]
             for j in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
                 row = ac.nodalMatrix.rowval[j]
                 typeRow = bus.layout.type[row]
-                Gij = real(ac.nodalMatrixTranspose.nzval[j])
-                Bij = imag(ac.nodalMatrixTranspose.nzval[j])
-                Tij = voltageAngle[i] - voltageAngle[row]
-
-                mismatchActive[pvpqIndex[i]] += voltageMagnitude[row] * (Gij * cos(Tij) + Bij * sin(Tij))
 
                 if typeRow != 3
                     iIndexActive[countActive] = pvpqIndex[row]
@@ -392,6 +385,7 @@ end
     lowerReactive, upperReactive, rightReactive, leftReactive, scalingReactive = F2.:(:)
     leftReactive = sortperm(leftReactive)
 
+    mismatchActive = fill(0.0, bus.number - 1)
     mismatchReactive = fill(0.0, pqNumber)
     icrementReactive = fill(0.0, pqNumber)
     icrementActive = fill(0.0, bus.number - 1)

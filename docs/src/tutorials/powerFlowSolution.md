@@ -596,7 +596,7 @@ system = powerSystem("case14.h5")
 acModel!(system)
 result = gaussSeidel(system)
 ```
-To iteratively apply the Gauss-Seidel method in JuliaGrid, you can use the [gaussSeidel!](@ref gaussSeidel!) function. This function updates the state of the power system until a stopping criterion is satisfied. Here is an example code snippet that demonstrates this process:
+To iteratively apply the Gauss-Seidel method in JuliaGrid, you can use the [`gaussSeidel!`](@ref gaussSeidel!) function. This function updates the state of the power system until a stopping criterion is satisfied. Here is an example code snippet that demonstrates this process:
 ```julia-repl
 stopping = result.algorithm.iteration.stopping
 for i = 1:1000

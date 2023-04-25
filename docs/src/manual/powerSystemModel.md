@@ -103,7 +103,7 @@ Once the `PowerSystem` type has been created using one of the methods outlined i
 ```julia
 savePowerSystem(system; path = "C:/matpower/case14.h5", reference = "IEEE 14-bus test case")
 ```
-All electrical quantities saved in the HDF5 file are in per-units and radians, except for base values for power and voltages, which are given in volt-amperes and volts. It is important to note that even if the user modifies the base units using the [@base](@ref @base) macro, the units will still be saved in the default settings.
+All electrical quantities saved in the HDF5 file are in per-units and radians, except for base values for power and voltages, which are given in volt-amperes and volts. It is important to note that even if the user modifies the base units using the [`@base`](@ref @base) macro, the units will still be saved in the default settings.
 
 ---
 
@@ -183,6 +183,34 @@ system.base.voltage.value, system.base.voltage.unit
 
 ---
 
+## [Access to Bus Labels](@id AccessBusLabels)
+In JuliaGrid, if the labels assigned to buses are not in the increasing ordered set of integers, the system internally renumbers all labels to satisfy the requirement of the increasing ordered set of integers. For instance, suppose we have a power system with buses labeled as:
+```@example AccessBusLabels
+using JuliaGrid # hide
+
+system = powerSystem()
+
+addBus!(system; label = 1, active = 1.0)
+addBus!(system; label = 20, active = 2.0)
+addBus!(system; label = 10, active = 3.0)
+addBus!(system; label = 2, active = 4.0)
+
+nothing # hide
+```
+
+These labels, along with their internally assigned labels, are stored in the variable:
+```@repl AccessBusLabels
+system.bus.label
+```
+
+If a user needs to retrieve the original labels and match them with other parameters related to the buses, they can do so using the following code:
+```@repl AccessBusLabels
+label = sort(collect(keys(system.bus.label)), by = x->system.bus.label[x])
+
+[label system.bus.demand.active]
+```
+
+---
 
 ## Add Branch
 After adding buses with unique labels, we can define branches between them. The branch cannot be added unless the buses are already defined, and the `from` and `to` keywords should correspond to the already defined bus labels. Additionally, each branch should be labelled with its own unique label. For instance:
@@ -232,6 +260,49 @@ It is important to note that, when working with impedance and admittance values 
 
 ---
 
+## [Access to Branch Labels](@id AccessBranchLabels)
+If the branch labels are not in an ordered set of increasing integers, the system will internally renumber all labels, similar to how [bus lables](@ref AccessBusLabels) are handled. For example, consider a power system with non-ordered bus and branch labels as shown below:
+```@example AccessBranchLabels
+using JuliaGrid # hide
+@default(all) # hide
+
+system = powerSystem()
+
+addBus!(system; label = 1, active = 1.0)
+addBus!(system; label = 20, active = 2.0)
+addBus!(system; label = 10, active = 3.0)
+
+addBranch!(system; label = 8, from = 1, to = 20, reactance = 0.8)
+addBranch!(system; label = 5, from = 20, to = 10, reactance = 0.5)
+
+nothing # hide
+```
+
+The system stores the original branch labels along with their internally assigned labels:
+```@repl AccessBranchLabels
+system.branch.label
+```
+To retrieve the original labels and match them with other branch parameters, users can use the following code:
+```@repl AccessBranchLabels
+label = sort(collect(keys(system.branch.label)), by = x->system.branch.label[x])
+[label system.branch.parameter.reactance]
+```
+
+Furthermore, the `from` and `to` keywords are saved based on the internally assigned numerical values, which are derived from the increasing ordered set of integers based on bus labels:
+```@repl AccessBranchLabels
+[system.branch.layout.from system.branch.layout.to]
+system.bus.label
+```
+To retrieve the original `from` and `to` labels, the following approach can be used:
+```@repl AccessBranchLabels
+from = [k for v in system.branch.layout.from for (k, d) in system.bus.label if v == d]
+to = [k for v in system.branch.layout.to for (k, d) in system.bus.label if v == d]
+
+[label from to system.branch.parameter.reactance]
+```
+
+---
+
 ## Add Generator
 After defining the buses, generators can be added to the power system. Each generator must have a unique label assigned to it, and the `bus` keyword should correspond to the unique label of the bus it is connected to. For instance:
 ```@example addGenerator
@@ -257,6 +328,47 @@ Similar to buses and branches, the input units can be changed to units other tha
 
 !!! note "Info"
     It is recommended to refer to the documentation for the [`addGenerator!`](@ref addGenerator!) function, which explains all the keywords used in the function.
+
+---
+
+## Access to Generator Labels
+Similar to how the system handles [bus labels](@ref AccessBusLabels) and [branch labels](@ref AccessBranchLabels), the system will internally renumber all generator labels if they are not in an ordered set of increasing integers. As an example, let us take the power system with non-ordered bus and generator labels, as illustrated below:
+```@example AccessGeneratorLabels
+using JuliaGrid # hide
+
+system = powerSystem()
+
+addBus!(system; label = 1, active = 1.0)
+addBus!(system; label = 20, active = 2.0)
+addBus!(system; label = 10, active = 3.0)
+
+addGenerator!(system; label = 5, bus = 20, active = 0.2)
+addGenerator!(system; label = 2, bus = 1, active = 0.1)
+
+nothing # hide
+```
+
+The JuliaGrid stores both the original generator labels and their corresponding internally assigned labels.
+```@repl AccessGeneratorLabels
+system.generator.label
+```
+To retrieve the original labels and match them with other generator parameters, users can utilize the following code:
+```@repl AccessGeneratorLabels
+label = sort(collect(keys(system.generator.label)), by = x->system.generator.label[x])
+[label system.generator.output.active]
+```
+
+Additionally, the `bus` keyword is saved based on the internally assigned numerical values, which are derived from the ordered set of integers based on bus labels:
+```@repl AccessGeneratorLabels
+system.generator.layout.bus
+system.bus.label
+```
+To retrieve the original `bus` labels, the following method can be used:
+```@repl AccessGeneratorLabels
+bus = [k for v in system.generator.layout.bus for (k, d) in system.bus.label if v == d]
+
+[label bus system.generator.output.active]
+```
 
 ---
 
@@ -598,3 +710,4 @@ Upon inspection, we can see that the stored data is the same as before:
 system.generator.cost.active.piecewise
 ```
 
+---
