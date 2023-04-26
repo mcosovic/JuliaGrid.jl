@@ -188,6 +188,7 @@ The [`addBus!`](@ref addBus!) function adds a bus and assigns default values to 
 However, in JuliaGrid, users have the flexibility to modify the default values and set non-zero values for other keywords using the [`@addBus`](@ref @addBus) macro. This macro creates a bus template that is used each time the [`addBus!`](@ref addBus!) function is called. For example:
 ```@example CreateBusTemplate
 using JuliaGrid # hide
+@default(all) # hide
 
 system = powerSystem()
 
@@ -220,7 +221,7 @@ addBus!(system; label = 2, magnitude = 1.1)
 
 @power(pu, pu, pu)
 
-addBus!(system; label = 2, type = 2, active = 1.0, reactive = 1.0)
+addBus!(system; label = 3, type = 2, active = 1.0, reactive = 1.0)
 
 nothing # hide
 ```
@@ -244,8 +245,8 @@ system2 = powerSystem()
 
 @addBus(type = 2, active = 1.0, reactive = 2.0, base = 138e3)
 
-addBus!(system; label = 1)
-addBus!(system; label = 2, magnitude = 1.1)
+addBus!(system1; label = 1)
+addBus!(system2; label = 2, magnitude = 1.1)
 
 nothing # hide
 ```
