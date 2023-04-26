@@ -182,7 +182,7 @@ system.base.voltage.value, system.base.voltage.unit
 
 ---
 
-## [Create Bus Template](@id CreateBusTemplate)
+## [Add Bus Template](@id AddBusTemplate)
 The [`addBus!`](@ref addBus!) function adds a bus and assigns default values to certain parameters if the corresponding keywords are not specified. If the `type` keyword is not specified, the bus type is set to a demand bus with `type = 1`, the initial bus voltage magnitude is set to `magnitude = 1` per-unit, and the base voltage is set to `base = 138e3` volts. These default values are crucial to prevent algorithm execution issues such as a singular Jacobian when `magnitude = 0`. The other parameters are set to 0 by default.
 
 However, in JuliaGrid, users have the flexibility to modify the default values and set non-zero values for other keywords using the [`@addBus`](@ref @addBus) macro. This macro creates a bus template that is used each time the [`addBus!`](@ref addBus!) function is called. For example:
