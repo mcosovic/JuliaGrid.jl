@@ -1,16 +1,33 @@
-const T = Union{Float64,Int64}
+const T = Union{Float64, Int64, Missing}
 
-const settings = Dict(
-    :generatorVoltage => true,
-    :piecewiseObjective => true,
-    :polynomialObjective => true,
-    :slackConstraint => true,
-    :capabilityConstraint => true,
-    :flowConstraint => true,
-    :differenceConstraint => true,
-    :balanceConstraint => true,
-    :voltageConstraint => true
+const bus = Dict(
+    :default => Dict(
+        :type => 1,
+        :active => 0.0,
+        :reactive => 0.0,
+        :conductance => 0.0,
+        :susceptance => 0.0,
+        :magnitude => 1.0,
+        :angle => 0.0,
+        :minMagnitude => 0.0,
+        :maxMagnitude => 0.0,
+        :base => 138e3,
+        :area => 0,
+        :lossZone => 0,
+    ),
+    :factor => Dict(
+        :activePower => 0.0,
+        :reactivePower => 0.0,
+        :apparentPower => 0.0,
+        :voltageMagnitude => 0.0,
+        :voltageAngle => 1.0,
+        :baseVoltage => 1.0,
+        :currentMagnitude => 0.0,
+        :currentAngle => 1.0,
+        :impedance => 0.0,
+        :admittance => 0.0
     )
+)
 
 ######### Check Package Path ##########
 @inline function checkPackagePath()

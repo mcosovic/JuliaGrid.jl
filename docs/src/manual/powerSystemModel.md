@@ -112,7 +112,6 @@ We have the option to add buses to a loaded power system or to one created from 
 ```@example addBus
 using JuliaGrid # hide
 
-
 system = powerSystem()
 
 addBus!(system; label = 1, type = 3, active = 0.1, base = 138e3)
@@ -180,6 +179,77 @@ Unlike the preceding examples where base voltages are given in volts, the curren
 ```@repl addBusBase
 system.base.voltage.value, system.base.voltage.unit
 ```
+
+---
+
+## [Create Bus Template](@id CreateBusTemplate)
+The [`addBus!`](@ref addBus!) function adds a bus and assigns default values to certain parameters if the corresponding keywords are not specified. If the `type` keyword is not specified, the bus type is set to a demand bus with `type = 1`, the initial bus voltage magnitude is set to `magnitude = 1` per-unit, and the base voltage is set to `base = 138e3` volts. These default values are crucial to prevent algorithm execution issues such as a singular Jacobian when `magnitude = 0`. The other parameters are set to 0 by default.
+
+However, in JuliaGrid, users have the flexibility to modify the default values and set non-zero values for other keywords using the [`@addBus`](@ref @addBus) macro. This macro creates a bus template that is used each time the [`addBus!`](@ref addBus!) function is called. For example:
+```@example CreateBusTemplate
+using JuliaGrid # hide
+
+system = powerSystem()
+
+@addBus(type = 2, active = 0.1)
+
+addBus!(system; label = 1, reactive = 0.2)
+addBus!(system; label = 2, type = 1, active = 0.5, reactive = 0.3)
+```
+
+In this example, the [`addBus!`](@ref addBus!) function is used twice. The first bus adopts the values specified in the bus template, while the second bus has its own specific values that correspond to the template keywords, meaning that the template is disregarded:
+```@repl CreateBusTemplate
+system.bus.layout.type
+system.bus.demand.active
+```
+
+---
+
+##### Change Input Units
+The JuliaGrid requires users to specify electrical quantity-related keywords in per-units (pu) and radians (rad) by default. However, it provides macros, such as [`@power`](@ref @power), that allow users to specify other units:
+```@example CreateBusTemplateUnits
+using JuliaGrid # hide
+
+system = powerSystem()
+
+@power(MW, MVAr, MVA)
+@addBus(type = 2, active = 100, reactive = 200)
+
+addBus!(system; label = 1)
+addBus!(system; label = 2, magnitude = 1.1)
+
+@power(pu, pu, pu)
+
+addBus!(system; label = 2, type = 2, active = 1.0, reactive = 1.0)
+
+nothing # hide
+```
+
+In this example, we create the bus template and two buses using SI power units, and then we switch to per-units and add a third bus. It is important to note that once the template is defined in any unit system, it remains valid regardless of subsequent unit system changes. The resulting power values are:
+```@repl CreateBusTemplateUnits
+system.bus.demand.active
+system.bus.demand.reactive
+```
+Thus, JuliaGrid automatically tracks the unit system used to create templates and provides the appropriate conversion to per-units. Even if the user switches to a different unit system later on, the previously defined template will still be valid.
+
+Finally, it is worth noting that the unit of base voltage for the bus template is determined by the last call of the [`@base`](@ref @base) macro before calling the [`@addBus`](@ref @addBus) macro. For example:
+```@example CreateBusTemplateBase
+using JuliaGrid # hide
+
+system1 = powerSystem()
+system2 = powerSystem()
+
+@base(system1, MVA, kV)
+@base(system2, MVA, V)
+
+@addBus(type = 2, active = 1.0, reactive = 2.0, base = 138e3)
+
+addBus!(system; label = 1)
+addBus!(system; label = 2, magnitude = 1.1)
+
+nothing # hide
+```
+In this case, since the last execution of the [`@base`](@ref @base) macro before creating the bus template specified volt (V) units, the `base` keyword value must be given in volts.
 
 ---
 

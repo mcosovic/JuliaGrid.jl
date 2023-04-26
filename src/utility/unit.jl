@@ -26,29 +26,30 @@ const prefix = Dict(
     )
 
 const suffix = Dict(
-    "base power" => ["VA"], 
-    "base voltage" => ["V"],
-    "active power" => ["W", "pu"], 
-    "reactive power" => ["VAr", "pu"], 
-    "apparent power" => ["VA", "pu"],
-    "voltage magnitude" => ["V", "pu"], 
-    "voltage angle" => ["deg", "rad"],
-    "current magnitude" => ["A", "pu"], 
-    "current angle" => ["deg", "rad"],
-    "impedance" => [string(:Ω), "pu"], 
-    "admittance" => ["S", "pu"]
+    :basePower => ["VA"], 
+    :baseVoltage => ["V"],
+    :activePower => ["W", "pu"], 
+    :reactivePower => ["VAr", "pu"], 
+    :apparentPower => ["VA", "pu"],
+    :voltageMagnitude => ["V", "pu"], 
+    :voltageAngle => ["deg", "rad"],
+    :currentMagnitude => ["A", "pu"], 
+    :currentAngle => ["deg", "rad"],
+    :impedance => [string(:Ω), "pu"], 
+    :admittance => ["S", "pu"]
     )
 
 const factor = Dict(
-    "active power" => 0.0, 
-    "reactive power" => 0.0, 
-    "apparent power" => 0.0,
-    "voltage magnitude" => 0.0,
-    "voltage angle" => 1.0, 
-    "current magnitude" => 0.0,
-    "current angle" => 1.0, 
-    "impedance" => 0.0, 
-    "admittance" => 0.0
+    :activePower => 0.0, 
+    :reactivePower => 0.0, 
+    :apparentPower => 0.0,
+    :voltageMagnitude => 0.0,
+    :voltageAngle => 1.0, 
+    :currentMagnitude => 0.0,
+    :currentAngle => 1.0, 
+    :impedance => 0.0, 
+    :admittance => 0.0,
+    :baseVoltage => 1.0
     )    
 
 """
@@ -69,11 +70,11 @@ system = powerSystem("case14.h5")
 """
 macro base(system::Symbol, power::Symbol, voltage::Symbol)
     power = string(power)
-    suffixPower = parseSuffix(power, "base power")
+    suffixPower = parseSuffix(power, :basePower)
     prefixPower = parsePrefix(power, suffixPower)
 
     voltage = string(voltage)
-    suffixVoltage = parseSuffix(voltage, "base voltage")
+    suffixVoltage = parseSuffix(voltage, :baseVoltage)
     prefixVoltage = parsePrefix(voltage, suffixVoltage)
 
     return quote
@@ -88,6 +89,7 @@ macro base(system::Symbol, power::Symbol, voltage::Symbol)
         system.base.voltage.value = system.base.voltage.value * prefixOld / $prefixVoltage
         system.base.voltage.prefix = $prefixVoltage
         system.base.voltage.unit = $voltage
+        factor[:baseVoltage] = $prefixVoltage
     end
 end
 
@@ -129,16 +131,16 @@ Changing the unit of apparent power unit is reflected in the following quantitie
 """
 macro power(active::Symbol, reactive::Symbol, apparent::Symbol)
     active = string(active)
-    suffixUser = parseSuffix(active, "active power")
-    factor["active power"] = parsePrefix(active, suffixUser)
+    suffixUser = parseSuffix(active, :activePower)
+    factor[:activePower] = parsePrefix(active, suffixUser)
 
     reactive = string(reactive)
-    suffixUser = parseSuffix(reactive, "reactive power")
-    factor["reactive power"] = parsePrefix(reactive, suffixUser)
+    suffixUser = parseSuffix(reactive, :reactivePower)
+    factor[:reactivePower] = parsePrefix(reactive, suffixUser)
 
     apparent = string(apparent)
-    suffixUser = parseSuffix(apparent, "apparent power")
-    factor["apparent power"] = parsePrefix(apparent, suffixUser)
+    suffixUser = parseSuffix(apparent, :apparentPower)
+    factor[:apparentPower] = parsePrefix(apparent, suffixUser)
 end
 
 """
@@ -170,12 +172,12 @@ Changing the unit of voltage angle is reflected in the following quantities:
 """
 macro voltage(magnitude::Symbol, angle::Symbol)
     magnitude = string(magnitude)
-    suffixUser = parseSuffix(magnitude, "voltage magnitude")
-    factor["voltage magnitude"] = parsePrefix(magnitude, suffixUser)
+    suffixUser = parseSuffix(magnitude, :voltageMagnitude)
+    factor[:voltageMagnitude] = parsePrefix(magnitude, suffixUser)
 
     angle = string(angle)
-    suffixUser = parseSuffix(angle, "voltage angle")
-    factor["voltage angle"] = parsePrefix(angle, suffixUser)
+    suffixUser = parseSuffix(angle, :voltageAngle)
+    factor[:voltageAngle] = parsePrefix(angle, suffixUser)
 end
 
 """
@@ -210,12 +212,12 @@ Changing the units of admittance is reflected in the following quantities:
 """
 macro parameter(impedance::Symbol, admittance::Symbol)
     impedance = string(impedance)
-    suffixUser = parseSuffix(impedance, "impedance")
-    factor["impedance"] = parsePrefix(impedance, suffixUser)
+    suffixUser = parseSuffix(impedance, :impedance)
+    factor[:impedance] = parsePrefix(impedance, suffixUser)
 
     admittance = string(admittance)
-    suffixUser = parseSuffix(admittance, "admittance")
-    factor["admittance"] = parsePrefix(admittance, suffixUser)
+    suffixUser = parseSuffix(admittance, :admittance)
+    factor[:admittance] = parsePrefix(admittance, suffixUser)
 end
 
 """
@@ -237,29 +239,29 @@ The `mode` argument can take on the following values:
 """
 macro default(mode::Symbol)
     if mode == :all || mode == :power
-        factor["active power"] = 0.0 
-        factor["reactive power"] = 0.0 
-        factor["apparent power"] = 0.0 
+        factor[:activePower] = 0.0 
+        factor[:reactivePower] = 0.0 
+        factor[:apparentPower] = 0.0 
     end
 
     if mode == :all || mode == :voltage
-        factor["voltage magnitude"] = 0.0 
-        factor["voltage angle"] = 1.0 
+        factor[:voltageMagnitude] = 0.0 
+        factor[:voltageAngle] = 1.0 
     end
 
     if mode == :all || mode == :current
-        factor["current magnitude"] = 0.0 
-        factor["current angle"] = 1.0 
+        factor[:currentMagnitude] = 0.0 
+        factor[:currentAngle] = 1.0 
     end
 
     if mode == :all || mode == :parameter
-        factor["impedance"] = 0.0 
-        factor["admittance"] = 0.0 
+        factor[:impedance] = 0.0 
+        factor[:admittance] = 0.0 
     end
 end
 
 ######### Parse Suffix (Unit) ##########
-function parseSuffix(input::String, type::String)
+function parseSuffix(input::String, type::Symbol)
     sufixUser = ""
     @inbounds for i in suffix[type]
         if endswith(input, i)
@@ -295,11 +297,11 @@ function parsePrefix(input::String, suffixUser::String)
 end
 
 ######### Scale Values to Transform SI to pu ##########
-function si2pu(prefix::Float64, base::T, type::String)
-    if factor[type] == 0.0 
+function si2pu(prefix::Float64, base::T, factor::Float64)
+    if factor == 0.0 
         scale = 1.0
     else
-        scale = factor[type] / (prefix * base)
+        scale = factor / (prefix * base)
         if scale == Inf
             error("The illegal base value.")
         end
@@ -312,7 +314,7 @@ end
 function baseImpedance(system::PowerSystem, baseVoltage::Float64, turnsRatio::Float64)
     base = 1.0
     prefix = 1.0
-    if factor["impedance"] != 0.0 || factor["admittance"] != 0.0 
+    if factor[:impedance] != 0.0 || factor[:admittance] != 0.0 
         if turnsRatio != 0
             prefix = (turnsRatio * system.base.voltage.prefix )^2 / system.base.power.prefix 
         else

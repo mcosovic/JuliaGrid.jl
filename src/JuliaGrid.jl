@@ -16,7 +16,7 @@ include("powerSystem/save.jl")
 export savePowerSystem
 
 include("powerSystem/assemble.jl")
-export addBus!, shuntBus!
+export addBus!, @addBus, shuntBus!
 export addBranch!, statusBranch!, parameterBranch!
 export addGenerator!, addActiveCost!, addReactiveCost!, statusGenerator!, outputGenerator!
 export dcModel!, acModel!

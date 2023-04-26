@@ -189,7 +189,7 @@ using JuliaGrid # hide
 system = powerSystem()
 
 addBus!(system; label = 1, type = 3, active = 0.5, magnitude = 0.9, angle = 0.0)
-addBus!(system; label = 2, type = 1, reactive = 0.5, magnitude = 1.1, angle = -0.1)
+addBus!(system; label = 2, type = 1, reactive = 0.05, magnitude = 1.1, angle = -0.1)
 addBus!(system; label = 3, type = 1, active = 0.5, magnitude = 1.0, angle = -0.2)
 
 addBranch!(system; label = 1, from = 1, to = 2, resistance = 0.01, reactance = 0.05)
@@ -252,7 +252,7 @@ nothing # hide
 The [mismatch!](@ref mismatch!) function returns the maximum values of active and reactive power injection mismatches, which are commonly used as a convergence criterion in iterative AC power flow algorithms. Note that the [`mismatch!`](@ref mismatch!) function can also be used to terminate the loop when using the Gauss-Seidel method, even though it is not required.
 
 !!! tip "Tip"
-    To ensure an accurate count of iterations, it is important for the user to place the iteration counter after the condition expressions within the if construct. Counting the iterations before this point can result in an incorrect number of iterations, as it may lead to an additional iteration being performed.
+    To ensure an accurate count of iterations, it is important for the user to place the iteration counter after the condition expressions within the if construct. Counting the iterations before this point can result in an incorrect number of iterations, as it leads to an additional iteration being performed.
 
 ---
 
@@ -264,7 +264,7 @@ using JuliaGrid # hide
 system = powerSystem()
 
 addBus!(system; label = 1, type = 3, active = 0.5, magnitude = 0.9, angle = 0.0)
-addBus!(system; label = 2, type = 1, reactive = 0.5, magnitude = 1.1, angle = -0.1)
+addBus!(system; label = 2, type = 1, reactive = 0.05, magnitude = 1.1, angle = -0.1)
 addBus!(system; label = 3, type = 1, active = 0.5, magnitude = 1.0, angle = -0.2)
 
 addBranch!(system; label = 1, from = 1, to = 2, resistance = 0.01, reactance = 0.05)
@@ -297,7 +297,7 @@ using JuliaGrid # hide
 system = powerSystem()
 
 addBus!(system; label = 1, type = 3, active = 0.5, magnitude = 1.0)
-addBus!(system; label = 2, type = 1, reactive = 0.5, magnitude = 1.0)
+addBus!(system; label = 2, type = 1, reactive = 0.05, magnitude = 1.0)
 addBus!(system; label = 3, type = 1, active = 0.5, magnitude = 1.0)
 
 addBranch!(system; label = 1, from = 1, to = 2, resistance = 0.01, reactance = 0.05)
@@ -369,7 +369,7 @@ using JuliaGrid # hide
 system = powerSystem()
 
 addBus!(system; label = 1, type = 3, active = 0.5, magnitude = 1.0)
-addBus!(system; label = 2, type = 1, reactive = 0.5, magnitude = 1.0)
+addBus!(system; label = 2, type = 1, reactive = 0.05, magnitude = 1.0)
 addBus!(system; label = 3, type = 1, active = 0.5, magnitude = 1.0)
 
 addBranch!(system; label = 1, from = 1, to = 2, resistance = 0.01, reactance = 0.05)
@@ -400,3 +400,46 @@ generator!(system, result)
 
 nothing # hide
 ```
+
+Each of these functions is responsible for populating the corresponding fields of the `Result` type, such as `bus`, `branch`, or `generator`. For instance, we can compute the active and reactive power injections in megawatts (MW) and megavolt-ampere reactive (MVAr) using the code snippet below:
+```@repl ComputationPowersCurrentsLosses
+@base(system, MVA, V);
+system.base.power.value * result.bus.power.injection.active
+system.base.power.value * result.bus.power.injection.reactive
+```
+
+---
+
+## [Generator Reactive Power Limits](@id GeneratorReactivePowerLimitsManual)
+After obtaining the solution from the AC power flow analysis, user can check whether the output of reactive power of the generators is within the defined limits using function [`reactivePowerLimit!`](@ref reactivePowerLimit!):
+```@example GeneratorReactivePowerLimits
+using JuliaGrid # hide
+
+system = powerSystem()
+
+addBus!(system; label = 1, type = 3, active = 0.5, magnitude = 1.0)
+addBus!(system; label = 2, type = 1, reactive = 0.05, magnitude = 1.0)
+addBus!(system; label = 3, type = 1, active = 0.5, magnitude = 1.0)
+
+addBranch!(system; label = 1, from = 1, to = 2, resistance = 0.01, reactance = 0.05)
+addBranch!(system; label = 2, from = 1, to = 2, resistance = 0.02, reactance = 0.01)
+addBranch!(system; label = 3, from = 2, to = 3, resistance = 0.03, reactance = 0.04)
+
+addGenerator!(system; label = 1, bus = 2, active = 3.2, magnitude = 1.0)
+
+acModel!(system)
+
+result = newtonRaphson(system)
+for iteration = 1:100
+    stopping = mismatch!(system, result)
+    if all(stopping .< 1e-8)
+        break
+    end
+    solvePowerFlow!(system, result)
+end
+
+violate = reactivePowerLimit!(system, result)
+
+nothing # hide
+```
+

@@ -46,16 +46,26 @@ system = powerSystem()
 addBus!(system; label = 1, active = 25, reactive = -4, angle = 10, base = 132)
 ```
 """
-function addBus!(system::PowerSystem; label::T, type::T = 1,
-    active::T = 0.0, reactive::T = 0.0, conductance::T = 0.0, susceptance::T = 0.0,
-    magnitude::T = 0.0, angle::T = 0.0, minMagnitude::T = 0.0, maxMagnitude::T = 0.0,
-    base::T = 0.0, area::T = 1, lossZone::T = 1)
+function addBus!(system::PowerSystem;
+    label::T,
+    type::T = bus[:default][:type],
+    active::T = missing, reactive::T = missing,
+    conductance::T = missing, susceptance::T = missing,
+    magnitude::T = missing, angle::T = missing,
+    minMagnitude::T = missing, maxMagnitude::T = missing,
+    base::T = bus[:default][:base] * bus[:factor][:baseVoltage] / factor[:baseVoltage],
+    area::T = bus[:default][:area], lossZone::T = bus[:default][:lossZone])
 
     demand = system.bus.demand
     shunt = system.bus.shunt
     voltage = system.bus.voltage
     layout = system.bus.layout
     supply = system.bus.supply
+    default = bus[:default]
+
+    prefixPower = system.base.power.prefix
+    basePower = system.base.power.value
+    prefixVoltage = system.base.voltage.prefix
 
     if label <= 0
         throw(ErrorException("The value of the label keyword must be given as a positive integer."))
@@ -74,6 +84,7 @@ function addBus!(system::PowerSystem; label::T, type::T = 1,
         end
         layout.slack = system.bus.number
     end
+    push!(layout.type, type)
 
     setindex!(system.bus.label, system.bus.number, label)
     if system.bus.number != label
@@ -81,22 +92,27 @@ function addBus!(system::PowerSystem; label::T, type::T = 1,
     end
 
     push!(system.base.voltage.value, base)
-    voltageScale = si2pu(system.base.voltage.prefix, base, "voltage magnitude")
-    activeScale = si2pu(system.base.power.prefix, system.base.power.value, "active power")
-    reactiveScale = si2pu(system.base.power.prefix, system.base.power.value, "reactive power")
 
-    push!(demand.active, active * activeScale)
-    push!(demand.reactive, reactive * reactiveScale)
+    voltageScale = si2pu(prefixVoltage, base, factor[:voltageMagnitude])
+    activeScale = si2pu(prefixPower, basePower, factor[:activePower])
+    reactiveScale = si2pu(prefixPower, basePower, factor[:reactivePower])
 
-    push!(shunt.conductance, conductance * activeScale)
-    push!(shunt.susceptance, susceptance * reactiveScale)
+    voltageScaleDef = si2pu(prefixVoltage, base, bus[:factor][:voltageMagnitude])
+    activeScaleDef = si2pu(prefixPower, basePower, bus[:factor][:activePower])
+    reactiveScaleDef = si2pu(prefixPower, basePower, bus[:factor][:reactivePower])
 
-    push!(voltage.magnitude, magnitude * voltageScale)
-    push!(voltage.angle, angle * factor["voltage angle"])
-    push!(voltage.maxMagnitude, maxMagnitude * voltageScale)
-    push!(voltage.minMagnitude, minMagnitude * voltageScale)
+    pushData!(demand.active, active, activeScale, default[:active], activeScaleDef)
+    pushData!(demand.reactive, reactive, reactiveScale, default[:reactive], reactiveScaleDef)
 
-    push!(layout.type, type)
+    pushData!(shunt.conductance, conductance, activeScale, default[:conductance], activeScaleDef)
+    pushData!(shunt.susceptance, susceptance, reactiveScaleDef, default[:susceptance], reactiveScaleDef)
+
+    pushData!(voltage.magnitude, magnitude, voltageScale, default[:magnitude], voltageScaleDef)
+    pushData!(voltage.minMagnitude, minMagnitude, voltageScale, default[:minMagnitude], voltageScaleDef)
+    pushData!(voltage.maxMagnitude, maxMagnitude, voltageScale, default[:maxMagnitude], voltageScaleDef)
+
+    pushData!(voltage.angle, angle, factor[:voltageAngle], default[:angle], bus[:factor][:voltageAngle])
+
     push!(layout.area, area)
     push!(layout.lossZone, lossZone)
 
@@ -112,6 +128,71 @@ function addBus!(system::PowerSystem; label::T, type::T = 1,
     if !isempty(system.dcModel.nodalMatrix)
         nilModel!(system, :dcModelEmpty)
         @info("The current DC model has been completely erased.")
+    end
+end
+
+"""
+The macro generates a template for a bus, which can be utilized to define a bus using the
+[`@addBus!`](@ref @addBus!) function.
+
+    @addBus(kwargs...)
+
+To define the bus template, the kwargs input arguments must be provided in
+accordance with the keywords specified within the [`@addBus!`](@ref @addBus!) function, along
+with their corresponding values.
+
+# Units
+The input units are in per-units (pu) and radians (rad) by default, except for
+the keyword `base` which is given by default in volt (V). The unit settings, such as the
+selection between the per-unit system or the SI system with the appropriate prefixes,
+can be modified using macros [`@base`](@ref @base), [`@power`](@ref @power), and
+[`@voltage`](@ref @voltage).
+
+# Examples
+Creating a bus template using the default unit system:
+```jldoctest
+system = powerSystem()
+@addBus(type = 2, active = 0.25, angle = 0.1745)
+addBus!(system; label = 1, reactive = -0.04, base = 132e3)
+```
+
+Creating a bus template using a custom unit system:
+```jldoctest
+system = powerSystem()
+@base(system, MVA, kV)
+
+@power(MW, MVAr, MVA)
+@voltage(pu, deg)
+@addBus(type = 2, active = 25, angle = 10, base = 132)
+addBus!(system; label = 1, reactive = -4)
+```
+"""
+macro addBus(kwargs...)
+    for kwarg in kwargs
+        parameter = kwarg.args[1]
+
+        if haskey(bus[:default], parameter)
+            value = kwarg.args[2]
+            bus[:default][parameter] = eval(value)
+
+            if parameter in (:active, :conductance)
+            bus[:factor][:activePower] = factor[:activePower]
+            end
+            if parameter in (:reactive, :susceptance)
+                bus[:factor][:reactivePower] = factor[:reactivePower]
+            end
+            if parameter in (:magnitude, :minMagnitude, :maxMagnitude)
+                bus[:factor][:voltageMagnitude] = factor[:voltageMagnitude]
+            end
+            if parameter == :angle
+                bus[:factor][:voltageAngle] = factor[:voltageAngle]
+            end
+            if parameter == :base
+                bus[:factor][:baseVoltage] = factor[:baseVoltage]
+            end
+        else
+            throw(ErrorException("The keyword $parameter is illegal."))
+        end
     end
 end
 
@@ -1088,3 +1169,13 @@ function nilModel!(system::PowerSystem, flag::Symbol; index::Int64 = 0)
         ac.transformerRatio[index] = -ac.transformerRatio[index]
     end
 end
+
+######### Push Data ##########
+function pushData!(data, keyword, scale, default, scaleDefault)
+    if !ismissing(keyword)
+        push!(data, keyword * scale)
+    else
+        push!(data, default * scaleDefault)
+    end
+end
+

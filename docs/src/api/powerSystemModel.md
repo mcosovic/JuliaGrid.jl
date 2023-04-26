@@ -21,6 +21,7 @@ savePowerSystem
 ## Bus Functions
 ```@docs
 addBus!
+@addBus
 shuntBus!
 ```
 
