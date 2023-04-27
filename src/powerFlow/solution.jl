@@ -918,7 +918,7 @@ function reactivePowerLimit!(system::PowerSystem, result::Result)
     end
 
     @inbounds for i = 1:generator.number
-        if generator.layout.status[i] == 1
+        if generator.layout.status[i] == 1 && (generator.capability.minReactive[i] < generator.capability.maxReactive[i])
             j = generator.layout.bus[i]
 
             violateMinimum = power.reactive[i] < generator.capability.minReactive[i]
@@ -941,7 +941,7 @@ function reactivePowerLimit!(system::PowerSystem, result::Result)
                 if j == bus.layout.slack
                     for k = 1:bus.number
                         if bus.layout.type[k] == 2
-                            @info("The slack bus $(trunc(Int, bus.label[j])) is converted to PQ bus, bus $(trunc(Int, bus.label[k])) is the new slack bus.")
+                            @info("The slack bus $(trunc(Int, bus.label[j])) is converted to generator bus (PQ), bus $(trunc(Int, bus.label[k])) is the new slack bus.")
                             bus.layout.slack = bus.label[k]
                             bus.layout.type[k] = 3
                             break
@@ -950,6 +950,12 @@ function reactivePowerLimit!(system::PowerSystem, result::Result)
                 end
             end
         end
+    end
+
+    if bus.layout.type[bus.layout.slack] != 3
+        throw(ErrorException("In the iterative process, a generator bus is chosen as the new slack bus. 
+        However, if the reactive power limits are violated, the new slack bus is converted to a demand bus. 
+        As a result, there are no more generator buses left that can be considered as the new slack bus for the system."))
     end
 
     return violate

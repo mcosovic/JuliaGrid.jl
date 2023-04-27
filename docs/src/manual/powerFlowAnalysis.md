@@ -296,15 +296,15 @@ using JuliaGrid # hide
 
 system = powerSystem()
 
-addBus!(system; label = 1, type = 3, active = 0.5, magnitude = 1.0)
-addBus!(system; label = 2, type = 1, reactive = 0.05, magnitude = 1.0)
-addBus!(system; label = 3, type = 1, active = 0.5, magnitude = 1.0)
+addBus!(system; label = 1, type = 3, active = 0.5)
+addBus!(system; label = 2, type = 1, reactive = 0.05)
+addBus!(system; label = 3, type = 1, active = 0.5)
 
 addBranch!(system; label = 1, from = 1, to = 2, resistance = 0.01, reactance = 0.05)
 addBranch!(system; label = 2, from = 1, to = 3, resistance = 0.02, reactance = 0.01)
 addBranch!(system; label = 3, from = 2, to = 3, resistance = 0.03, reactance = 0.04)
 
-addGenerator!(system; label = 1, bus = 2, active = 3.2, magnitude = 1.0)
+addGenerator!(system; label = 1, bus = 2, active = 3.2)
 
 acModel!(system)
 dcModel!(system)
@@ -368,15 +368,15 @@ using JuliaGrid # hide
 
 system = powerSystem()
 
-addBus!(system; label = 1, type = 3, active = 0.5, magnitude = 1.0)
-addBus!(system; label = 2, type = 1, reactive = 0.05, magnitude = 1.0)
-addBus!(system; label = 3, type = 1, active = 0.5, magnitude = 1.0)
+addBus!(system; label = 1, type = 3, active = 0.5)
+addBus!(system; label = 2, type = 1, reactive = 0.05)
+addBus!(system; label = 3, type = 1, active = 0.5)
 
 addBranch!(system; label = 1, from = 1, to = 2, resistance = 0.01, reactance = 0.05)
 addBranch!(system; label = 2, from = 1, to = 2, resistance = 0.02, reactance = 0.01)
 addBranch!(system; label = 3, from = 2, to = 3, resistance = 0.03, reactance = 0.04)
 
-addGenerator!(system; label = 1, bus = 2, active = 3.2, magnitude = 1.0)
+addGenerator!(system; label = 1, bus = 2, active = 3.2)
 
 acModel!(system)
 
@@ -411,21 +411,26 @@ system.base.power.value * result.bus.power.injection.reactive
 ---
 
 ## [Generator Reactive Power Limits](@id GeneratorReactivePowerLimitsManual)
-After obtaining the solution from the AC power flow analysis, user can check whether the output of reactive power of the generators is within the defined limits using function [`reactivePowerLimit!`](@ref reactivePowerLimit!):
+The function [reactivePowerLimit!](@ref reactivePowerLimit!) can be used by the user to check if the generators' output of reactive power is within the defined limits after obtaining the solution from the AC power flow analysis. This can be done by using the example code provided:
 ```@example GeneratorReactivePowerLimits
 using JuliaGrid # hide
+@default(all) # hide
 
 system = powerSystem()
 
-addBus!(system; label = 1, type = 3, active = 0.5, magnitude = 1.0)
-addBus!(system; label = 2, type = 1, reactive = 0.05, magnitude = 1.0)
-addBus!(system; label = 3, type = 1, active = 0.5, magnitude = 1.0)
+addBus!(system; label = 1, type = 3, active = 0.5, reactive = 0.05)
+addBus!(system; label = 2, type = 1, active = 0.5)
+addBus!(system; label = 3, type = 2)
+addBus!(system; label = 4, type = 2)
 
 addBranch!(system; label = 1, from = 1, to = 2, resistance = 0.01, reactance = 0.05)
-addBranch!(system; label = 2, from = 1, to = 2, resistance = 0.02, reactance = 0.01)
+addBranch!(system; label = 2, from = 1, to = 3, resistance = 0.02, reactance = 0.01)
 addBranch!(system; label = 3, from = 2, to = 3, resistance = 0.03, reactance = 0.04)
+addBranch!(system; label = 4, from = 2, to = 4, resistance = 0.03, reactance = 0.004)
 
-addGenerator!(system; label = 1, bus = 2, active = 3.2, magnitude = 1.0)
+@addGenerator(minReactive = 0.0, maxReactive = 0.2)
+addGenerator!(system; label = 1, bus = 3, active = 0.8, reactive = 0.1)
+addGenerator!(system; label = 2, bus = 4, reactive = 0.3)
 
 acModel!(system)
 
@@ -442,4 +447,103 @@ violate = reactivePowerLimit!(system, result)
 
 nothing # hide
 ```
+The output reactive power of the observed generators is subject to limits which are defined as follows:
+```@repl GeneratorReactivePowerLimits
+[system.generator.capability.minReactive system.generator.capability.maxReactive]
+```
 
+Once the solution of the AC power flow analysis is obtained, calling the function [`reactivePowerLimit!`](@ref reactivePowerLimit!) will execute the [`generator!`](@ref generator!) function if it has not been executed before. This will then give us the output of the generators' reactive power as follows:
+```@repl GeneratorReactivePowerLimits
+result.generator.power.reactive
+``` 
+The variable violate indicates the violation of limits, where the first generator violates the minimum limit and the second generator violates the maximum limit, as shown below:
+```@repl GeneratorReactivePowerLimits
+violate
+``` 
+As a result of these limit violations, the `PowerSystem` type is changed, and the output reactive powers at the violated limits are set as follows:
+```@repl GeneratorReactivePowerLimits
+system.generator.output.reactive
+```
+To ensure that these values stay within the limits, the bus type must be changed from the generator bus (`type = 2`) to the demand bus (`type = 1`), as shown below: 
+```@repl GeneratorReactivePowerLimits
+system.bus.layout.type
+```
+
+After modifying the `PowerSystem` type as described earlier, we can run the simulation again with the following code:
+```@example GeneratorReactivePowerLimits 
+result = newtonRaphson(system)
+for iteration = 1:100
+    stopping = mismatch!(system, result)
+    if all(stopping .< 1e-8)
+        break
+    end
+    solvePowerFlow!(system, result)
+end
+```
+Once the simulation is complete, we can verify that all generator reactive power outputs now satisfy the limits by checking the violate variable again:
+```@repl GeneratorReactivePowerLimits
+violate = reactivePowerLimit!(system, result)
+```
+
+---
+
+##### New Slack Bus
+Looking at the following code example, we can see that the output limits of the generator are set only for the first generator that is connected to the slack bus:
+```@example NewSlackBus
+using JuliaGrid # hide
+
+system = powerSystem()
+
+addBus!(system; label = 1, type = 3, active = 0.5, reactive = 0.05)
+addBus!(system; label = 2, type = 1, active = 0.5)
+addBus!(system; label = 3, type = 2)
+addBus!(system; label = 4, type = 2)
+
+addBranch!(system; label = 1, from = 1, to = 2, resistance = 0.01, reactance = 0.05)
+addBranch!(system; label = 2, from = 1, to = 3, resistance = 0.02, reactance = 0.01)
+addBranch!(system; label = 3, from = 2, to = 3, resistance = 0.03, reactance = 0.04)
+addBranch!(system; label = 4, from = 2, to = 4, resistance = 0.03, reactance = 0.004)
+
+addGenerator!(system; label = 1, bus = 1, minReactive = 0.0, maxReactive = 0.2)
+addGenerator!(system; label = 2, bus = 4, reactive = 0.3)
+
+acModel!(system)
+
+result = newtonRaphson(system)
+for iteration = 1:100
+    stopping = mismatch!(system, result)
+    if all(stopping .< 1e-8)
+        break
+    end
+    solvePowerFlow!(system, result)
+end
+```
+
+Upon checking the limits, we can observe that the slack bus has been transformed by executing the following code:
+```@repl NewSlackBus
+violate = reactivePowerLimit!(system, result)
+```
+It is important to note that the new slack bus can be created only from the generator bus (`type = 2`). We will now perform another AC power flow analysis on the modified system using the following code:
+```@example NewSlackBus
+result = newtonRaphson(system)
+for iteration = 1:100
+    stopping = mismatch!(system, result)
+    if all(stopping .< 1e-8)
+        break
+    end
+    solvePowerFlow!(system, result)
+end
+```
+
+After examining the bus voltages, we will focus on the angles by executing the code below:
+```@repl NewSlackBus
+result.bus.voltage.angle
+```
+We can observe that the angles have been calculated based on the new slack bus. JuliaGrid offers a function to adjust these angles to match the original slack bus as follows:
+```@example NewSlackBus
+adjustVoltageAngle!(system, result; slack = 1)
+```
+Here, the `slack` keyword should correspond to the label of the slack bus. After executing the above code, the updated results can be viewed using the following code:
+```@repl NewSlackBus
+result.bus.voltage.angle
+```

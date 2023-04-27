@@ -13,6 +13,7 @@ Once the `PowerSystem` type is created, you can add buses, branches, and generat
 * [`addBus!`](@ref addBus!)
 * [`addBranch!`](@ref addBranch!)
 * [`addGenerator!`](@ref addGenerator!).
+Additionally, JuliaGrid provides macros [`@addBus`](@ref @addBus), [`@addBranch`](@ref @addBranch), and [`@addGenerator`](@ref @addGenerator) to define templates that aid in creating buses, branches, and generators. These templates help avoid entering the same parameters repeatedly.
 
 To create vectors and matrices based on the power system topology and parameters, you can use the following functions:
 * [`acModel!`](@ref acModel!)
@@ -193,7 +194,6 @@ using JuliaGrid # hide
 system = powerSystem()
 
 @addBus(type = 2, active = 0.1)
-
 addBus!(system; label = 1, reactive = 0.2)
 addBus!(system; label = 2, type = 1, active = 0.5, reactive = 0.3)
 ```
@@ -214,8 +214,8 @@ using JuliaGrid # hide
 system = powerSystem()
 
 @power(MW, MVAr, MVA)
-@addBus(type = 2, active = 100, reactive = 200)
 
+@addBus(type = 2, active = 100, reactive = 200)
 addBus!(system; label = 1)
 addBus!(system; label = 2, magnitude = 1.1)
 
@@ -244,7 +244,6 @@ system2 = powerSystem()
 @base(system2, MVA, V)
 
 @addBus(type = 2, active = 1.0, reactive = 2.0, base = 138e3)
-
 addBus!(system1; label = 1)
 addBus!(system2; label = 2, magnitude = 1.1)
 
@@ -289,8 +288,8 @@ using JuliaGrid # hide
 
 system = powerSystem()
 
-addBus!(system; label = 1, type = 3, active = 0.1, base = 138e3)
-addBus!(system; label = 2, type = 1, reactive = 0.05, angle = -0.034907, base = 138e3)
+addBus!(system; label = 1, type = 3, active = 0.1)
+addBus!(system; label = 2, type = 1, reactive = 0.05, angle = -0.034907)
 
 addBranch!(system; label = 1, from = 1, to = 2, reactance = 0.12, shiftAngle = 0.1745)
 ```
@@ -314,8 +313,8 @@ using JuliaGrid # hide
 
 system = powerSystem()
 
-addBus!(system; label = 1, type = 3, active = 0.1, base = 138e3)
-addBus!(system; label = 2, type = 1, reactive = 0.05, angle = -2.0, base = 138e3)
+addBus!(system; label = 1, type = 3, active = 0.1)
+addBus!(system; label = 2, type = 1, reactive = 0.05, angle = -2.0)
 
 addBranch!(system; label = 1, from = 1, to = 2, reactance = 22.8528, shiftAngle = 10.0)
 ```
@@ -339,13 +338,12 @@ using JuliaGrid # hide
 
 system = powerSystem()
 
-@addBranch(reactance = 0.12, susceptance = 0.002)
-
 addBus!(system; label = 1)
 addBus!(system; label = 2)
 
+@addBranch(reactance = 0.12, susceptance = 0.002)
 addBranch!(system; label = 1, from = 1, to = 2)
-addBranch!(system; label = 2, from = 1, to = 2, reactance = 0.12, susceptance = 0.005)
+addBranch!(system; label = 2, from = 1, to = 2, reactance = 0.06, susceptance = 0.005)
 
 nothing # hide
 ```
@@ -356,7 +354,7 @@ system.branch.parameter.reactance
 system.branch.parameter.susceptance
 ```
 
-JuliaGrid defaults to specifying electrical quantity-related keywords in per-units (pu) and radians (rad). However, it offers various macros that allow users to specify other units, as described in the section on [adding bus templates](@id AddBusTemplateManual).
+JuliaGrid defaults to specifying electrical quantity-related keywords in per-units (pu) and radians (rad). However, it offers various macros that allow users to specify other units, as described in the section on [adding bus templates](@ref AddBusTemplateManual).
 
 ---
 
@@ -408,8 +406,8 @@ using JuliaGrid # hide
 
 system = powerSystem()
 
-addBus!(system; label = 1, type = 3, active = 0.1, base = 138e3)
-addBus!(system; label = 2, type = 1, reactive = 0.05, base = 138e3)
+addBus!(system; label = 1)
+addBus!(system; label = 2)
 
 addGenerator!(system; label = 1, bus = 2, active = 0.5, reactive = 0.1)
 
@@ -438,10 +436,9 @@ using JuliaGrid # hide
 
 system = powerSystem()
 
-@addGenerator(magnitude = 1.1)
-
 addBus!(system; label = 1)
 
+@addGenerator(magnitude = 1.1)
 addGenerator!(system; label = 1, bus = 1, active = 50, reactive = 10)
 addGenerator!(system; label = 2, bus = 1, active = 20, reactive = 30)
 
@@ -453,7 +450,7 @@ In the provided example, instead of repeatedly setting the `magnitude` keyword u
 system.generator.voltage.magnitude
 ```
 
-JuliaGrid defaults to specifying electrical quantity-related keywords in per-units (pu) and radians (rad). However, it offers various macros that allow users to specify other units, as described in the section on [adding bus templates](@id AddBusTemplateManual).
+JuliaGrid defaults to specifying electrical quantity-related keywords in per-units (pu) and radians (rad). However, it offers various macros that allow users to specify other units, as described in the section on [adding bus templates](@ref AddBusTemplateManual).
 
 ---
 
@@ -504,9 +501,9 @@ using JuliaGrid # hide
 
 system = powerSystem()
 
-addBus!(system; label = 1, type = 3, active = 0.1, base = 138e3)
-addBus!(system; label = 2, type = 1, reactive = 0.05, base = 138e3)
-addBus!(system; label = 3, type = 1, susceptance = 0.05, base = 138e3)
+addBus!(system; label = 1, type = 3, active = 0.1)
+addBus!(system; label = 2, type = 1, reactive = 0.05)
+addBus!(system; label = 3, type = 1, susceptance = 0.05)
 
 addBranch!(system; label = 1, from = 1, to = 2, reactance = 0.12, shiftAngle = 0.1745)
 addBranch!(system; label = 2, from = 2, to = 3, resistance = 0.008, reactance = 0.05)
@@ -534,9 +531,9 @@ using JuliaGrid # hide
 
 system = powerSystem()
 
-addBus!(system; label = 1, type = 3, active = 0.1, base = 138e3)
-addBus!(system; label = 2, type = 1, reactive = 0.05, base = 138e3)
-addBus!(system; label = 3, type = 1, susceptance = 0.05, base = 138e3)
+addBus!(system; label = 1, type = 3, active = 0.1)
+addBus!(system; label = 2, type = 1, reactive = 0.05)
+addBus!(system; label = 3, type = 1, susceptance = 0.05)
 
 acModel!(system)
 dcModel!(system)
@@ -575,8 +572,8 @@ using JuliaGrid # hide
 
 system = powerSystem()
 
-addBus!(system; label = 1, type = 3, active = 0.1, base = 138e3)
-addBus!(system; label = 2, type = 1, reactive = 0.05, base = 138e3)
+addBus!(system; label = 1, type = 3, active = 0.1)
+addBus!(system; label = 2, type = 1, reactive = 0.05)
 
 addBranch!(system; label = 1, from = 1, to = 2, reactance = 0.12, shiftAngle = 0.1745)
 
@@ -612,9 +609,9 @@ using JuliaGrid # hide
 
 system = powerSystem()
 
-addBus!(system; label = 1, type = 3, active = 0.1, base = 138e3)
-addBus!(system; label = 2, type = 1, reactive = 0.05, base = 138e3)
-addBus!(system; label = 3, type = 1, susceptance = 0.05, base = 138e3)
+addBus!(system; label = 1)
+addBus!(system; label = 2)
+addBus!(system; label = 3)
 
 addBranch!(system; label = 1, from = 1, to = 2, reactance = 0.12, shiftAngle = 0.1745)
 addBranch!(system; label = 2, from = 2, to = 3, resistance = 0.008, reactance = 0.05)
@@ -655,8 +652,8 @@ using JuliaGrid # hide
 
 system = powerSystem()
 
-addBus!(system; label = 1, type = 3, active = 0.1, base = 138e3)
-addBus!(system; label = 2, type = 1, reactive = 0.05, base = 138e3)
+addBus!(system; label = 1)
+addBus!(system; label = 2)
 
 addBranch!(system; label = 1, from = 1, to = 2, reactance = 0.12, shiftAngle = 0.1745)
 
@@ -692,8 +689,8 @@ using JuliaGrid # hide
 
 system = powerSystem()
 
-addBus!(system; label = 1, type = 3, active = 0.1, base = 138e3)
-addBus!(system; label = 2, type = 1, reactive = 0.05, base = 138e3)
+addBus!(system; label = 1)
+addBus!(system; label = 2)
 
 addGenerator!(system; label = 1, bus = 2, active = 0.4)
 addGenerator!(system; label = 2, bus = 2, active = 0.6)
@@ -731,8 +728,8 @@ using JuliaGrid # hide
 
 system = powerSystem()
 
-addBus!(system; label = 1, type = 3, active = 0.1, base = 138e3)
-addBus!(system; label = 2, type = 1, reactive = 0.05, base = 138e3)
+addBus!(system; label = 1)
+addBus!(system; label = 2)
 
 addGenerator!(system; label = 1, bus = 2, active = 0.5, reactive = 0.1)
 addGenerator!(system; label = 2, bus = 2, active = 0.5, reactive = 0.1)
@@ -763,8 +760,8 @@ using JuliaGrid # hide
 
 system = powerSystem()
 
-addBus!(system; label = 1, type = 3, active = 0.1, base = 138e3)
-addBus!(system; label = 2, type = 1, reactive = 0.05, base = 138e3)
+addBus!(system; label = 1)
+addBus!(system; label = 2)
 
 addGenerator!(system; label = 1, bus = 2, active = 0.5, reactive = 0.1)
 
@@ -808,8 +805,8 @@ using JuliaGrid # hide
 
 system = powerSystem()
 
-addBus!(system; label = 1, type = 3, active = 10, base = 138e3)
-addBus!(system; label = 2, type = 1, reactive = 0.05, base = 138e3)
+addBus!(system; label = 1)
+addBus!(system; label = 2)
 
 addGenerator!(system; label = 1, bus = 2, active = 50, reactive = 0.1)
 
