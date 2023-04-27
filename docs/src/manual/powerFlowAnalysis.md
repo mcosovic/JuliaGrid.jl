@@ -30,6 +30,8 @@ Finally, the package provides two additional functions. One function validates t
 Depending on how the system is constructed, the types of buses that are initially set are checked and can be changed during the initialization process, using one of the available functions such as [`newtonRaphson`](@ref newtonRaphson), [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX), [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB), or [`gaussSeidel`](@ref gaussSeidel). Assuming the Newton-Raphson method has been chosen, to explain the details, we can observe a power system with only buses and generators. The following code snippet can be used:
 ```@example busType
 using JuliaGrid # hide
+@default(unit) # hide 
+@default(template) # hide
 
 system = powerSystem()
 
@@ -414,7 +416,7 @@ system.base.power.value * result.bus.power.injection.reactive
 The function [reactivePowerLimit!](@ref reactivePowerLimit!) can be used by the user to check if the generators' output of reactive power is within the defined limits after obtaining the solution from the AC power flow analysis. This can be done by using the example code provided:
 ```@example GeneratorReactivePowerLimits
 using JuliaGrid # hide
-@default(all) # hide
+@default(unit) # hide
 
 system = powerSystem()
 
@@ -491,6 +493,7 @@ violate = reactivePowerLimit!(system, result)
 Looking at the following code example, we can see that the output limits of the generator are set only for the first generator that is connected to the slack bus:
 ```@example NewSlackBus
 using JuliaGrid # hide
+@default(template) # hide
 
 system = powerSystem()
 
@@ -504,7 +507,6 @@ addBranch!(system; label = 2, from = 1, to = 3, resistance = 0.02, reactance = 0
 addBranch!(system; label = 3, from = 2, to = 3, resistance = 0.03, reactance = 0.04)
 addBranch!(system; label = 4, from = 2, to = 4, resistance = 0.03, reactance = 0.004)
 
-@addGenerator(minReactive = 0.0, maxReactive = 0.0) # hide
 addGenerator!(system; label = 1, bus = 1, minReactive = 0.0, maxReactive = 0.2)
 addGenerator!(system; label = 2, bus = 4, reactive = 0.3)
 

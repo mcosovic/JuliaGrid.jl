@@ -7,9 +7,26 @@ A common way to describe the power system network topology is through the bus/br
 
 ## [AC Model](@id ACModel)
 JuliaGrid is based on common network elements and benefits from the unified branch model to perform various analyses based on the system of nonlinear equations. To generate matrices and vectors for AC or nonlinear analysis, JuliaGrid employs the [`acModel!`](@ref acModel!) function. For instance, to apply the [`acModel!`](@ref acModel!) function to a power system stored in the `case14.h5` file, the following Julia code can be executed:
-```julia-repl
-system = powerSystem("case14.h5")
+```@example ACDCModel
+using JuliaGrid # hide
+@default(unit) # hide
+@default(template) # hide
+
+@power(MW, MVAr, MVA)
+
+system = powerSystem()
+
+addBus!(system; label = 1, type = 3)
+addBus!(system; label = 2, type = 2, active = 21.7, reactive = 12.7)
+addBus!(system; label = 3, type = 1, active = 47.8, reactive = -3.9)
+
+addBranch!(system; label = 1, from = 1, to = 2, resistance = 0.02, reactance = 0.06)
+addBranch!(system; label = 2, from = 1, to = 3, reactance = 0.22, susceptance = 0.05)
+addBranch!(system; label = 3, from = 2, to = 3, resistance = 0.06, reactance = 0.17)
+
 acModel!(system)
+
+nothing #hide
 ```
 
 ---
@@ -29,13 +46,13 @@ The branch series admittance ``y_{ij}`` is inversely proportional to the branch 
     \frac{r_{ij}}{r_{ij}^2 + x_{ij}^2} - \text{j}\frac{x_{ij}}{r_{ij}^2 + x_{ij}^2} = g_{ij} + \text{j}b_{ij},
 ```
 where ``r_{ij}`` is a resistance, ``x_{ij}`` is a reactance, ``g_{ij}`` is a conductance and ``b_{ij}`` is a susceptance of the branch. In the composite type `PowerSystem`, the resistances and reactances are stored as vectors in the `branch` variable:
-```julia-repl
-julia> system.branch.parameter.resistance
-julia> system.branch.parameter.reactance
+```@repl ACDCModel
+system.branch.parameter.resistance
+system.branch.parameter.reactance
 ```
 Moreover, the `acModel` stores the computed branch series admittances in the `PowerSystem` composite type. We can access them using:
-```julia-repl
-julia> system.acModel.admittance
+```@repl ACDCModel
+system.acModel.admittance
 ```
 
 The branch shunt capacitive admittance (i.e. charging admittance) ``y_{\text{s}ij}`` at buses ``\{i,j\}`` is equal to:
@@ -43,8 +60,8 @@ The branch shunt capacitive admittance (i.e. charging admittance) ``y_{\text{s}i
 y_{\text{s}ij} = \text{j} b_{\text{s}ij}.
 ```
 Note that JuliaGrid stores the total branch shunt capacitive susceptance ``2b_{\text{s}ij}``:
-```julia-repl
-julia> system.branch.parameter.susceptance
+```@repl ACDCModel
+system.branch.parameter.susceptance
 ```
 
 The transformer complex ratio ``\alpha_{ij}`` is defined:

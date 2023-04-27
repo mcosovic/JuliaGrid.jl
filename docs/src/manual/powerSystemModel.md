@@ -189,7 +189,7 @@ The [`addBus!`](@ref addBus!) function adds a bus and assigns default values to 
 However, in JuliaGrid, users have the flexibility to modify the default values and set non-zero values for other keywords using the [`@addBus`](@ref @addBus) macro. This macro creates a bus template that is used each time the [`addBus!`](@ref addBus!) function is called. For example:
 ```@example CreateBusTemplate
 using JuliaGrid # hide
-@default(all) # hide
+@default(unit) # hide
 
 system = powerSystem()
 
@@ -247,9 +247,22 @@ system2 = powerSystem()
 addBus!(system1; label = 1)
 addBus!(system2; label = 2, magnitude = 1.1)
 
+@default(template) # hide
 nothing # hide
 ```
 In this case, since the last execution of the [`@base`](@ref @base) macro before creating the bus template specified volt (V) units, the `base` keyword value must be given in volts.
+
+---
+
+##### Multiple Bus Templates
+If the [`@addBus`](@ref @addBus) macro is called multiple times, the keywords and values will be combined into a single bus template, which will be used to create the bus. To clear the bus template, the user can use the macro:
+```@example MultipleBusTemplates
+@default(bus)
+```
+Additionally, the user can reset all templates for bus, branch, and generators by using the macro:
+```@example MultipleBusTemplates
+@default(template)
+```
 
 ---
 
@@ -284,7 +297,7 @@ label = collect(keys(sort(system.bus.label; byvalue = true)))
 After adding buses with unique labels, we can define branches between them. The branch cannot be added unless the buses are already defined, and the `from` and `to` keywords should correspond to the already defined bus labels. Additionally, each branch should be labelled with its own unique label. For instance:
 ```@example addBranch
 using JuliaGrid # hide
-@default(all)  # hide
+@default(unit)  # hide
 
 system = powerSystem()
 
@@ -334,7 +347,7 @@ The [`addBranch!`](@ref addBranch!) function assigns default values to certain p
 In JuliaGrid, users have the ability to modify the default values and assign non-zero values to other keywords using the [`@addBranch`](@ref @addBranch) macro, similar to the [bus templates](@ref AddBusTemplateManual). This macro creates a branch template that is used every time the [`addBranch!`](@ref addBranch!) function is called. For example, consider the following code:
 ```@example AddBranchTemplate
 using JuliaGrid # hide
-@default(all) # hide
+@default(unit) # hide
 
 system = powerSystem()
 
@@ -354,7 +367,10 @@ system.branch.parameter.reactance
 system.branch.parameter.susceptance
 ```
 
-JuliaGrid defaults to specifying electrical quantity-related keywords in per-units (pu) and radians (rad). However, it offers various macros that allow users to specify other units, as described in the section on [adding bus templates](@ref AddBusTemplateManual).
+JuliaGrid defaults to specifying electrical quantity-related keywords in per-units (pu) and radians (rad). However, it offers various macros that allow users to specify other units, as described in the section on [adding bus templates](@ref AddBusTemplateManual). If the macro is called multiple times, the keywords and values will be combined into a single branch template. To clear the branch template, the user can use the macro:
+```@example AddBranchTemplate
+@default(branch)
+```
 
 ---
 
@@ -362,7 +378,7 @@ JuliaGrid defaults to specifying electrical quantity-related keywords in per-uni
 If the branch labels are not in an ordered set of increasing integers, the system will internally renumber all labels, similar to how [bus lables](@ref BusLabelsManual) are handled. For example, consider a power system with non-ordered bus and branch labels as shown below:
 ```@example AccessBranchLabels
 using JuliaGrid # hide
-@default(all) # hide
+@default(unit) # hide
 
 system = powerSystem()
 
@@ -402,7 +418,7 @@ labelBus = collect(keys(sort(system.bus.label; byvalue = true)))
 After defining the buses, generators can be added to the power system. Each generator must have a unique label assigned to it, and the `bus` keyword should correspond to the unique label of the bus it is connected to. For instance:
 ```@example addGenerator
 using JuliaGrid # hide
-@default(all) # hide
+@default(unit) # hide
 
 system = powerSystem()
 
@@ -432,7 +448,7 @@ By default, the [`addGenerator!`](@ref addGenerator!) function assigns default v
 Users of JuliaGrid can modify the default values and specify non-zero values for other keywords using the [`@addGenerator`](@ref @addGenerator) macro. This macro works similarly to the [bus templates](@ref AddBusTemplateManual) and [branch templates](@ref AddBranchTemplateManual), creating a generator template that is utilized every time the [`addGenerator!`](@ref addGenerator!) function is called. For example, consider the following code:
 ```@example AddGeneratorTemplate
 using JuliaGrid # hide
-@default(all) # hide
+@default(unit) # hide
 
 system = powerSystem()
 
@@ -450,7 +466,10 @@ In the provided example, instead of repeatedly setting the `magnitude` keyword u
 system.generator.voltage.magnitude
 ```
 
-JuliaGrid defaults to specifying electrical quantity-related keywords in per-units (pu) and radians (rad). However, it offers various macros that allow users to specify other units, as described in the section on [adding bus templates](@ref AddBusTemplateManual).
+JuliaGrid defaults to specifying electrical quantity-related keywords in per-units (pu) and radians (rad). However, it offers various macros that allow users to specify other units, as described in the section on [adding bus templates](@ref AddBusTemplateManual). If the macro is called multiple times, the keywords and values will be combined into a single generator template. To clear the generator template, the user can use the macro:
+```@example AddGeneratorTemplate
+@default(generator)
+```
 
 ---
 
@@ -497,7 +516,7 @@ label = labelBus[system.generator.layout.bus]
 When we constructed the power system, we can create an AC and/or DC model, which include vectors and matrices related to the power system's topology and parameters. The following code snippet demonstrates this:
 ```@example ACDCModel
 using JuliaGrid # hide
-@default(all) # hide
+@default(unit) # hide
 
 system = powerSystem()
 
@@ -685,7 +704,7 @@ The [`statusGenerator!`](@ref statusGenerator!) function can be used to change t
 Let us create the power system with two generators connected to the same bus labelled with 2:
 ```@example statusGenerator
 using JuliaGrid # hide
-@default(all) # hide
+@default(unit) # hide
 
 system = powerSystem()
 
@@ -724,7 +743,7 @@ The function [`outputGenerator!`](@ref outputGenerator!) can be utilized to chan
 To demonstrate how to use this function, we can use the example:
 ```@example outputGenerator
 using JuliaGrid # hide
-@default(all) # hide
+@default(unit) # hide
 
 system = powerSystem()
 

@@ -1,4 +1,5 @@
 const T = Union{Float64, Int64, Missing}
+const A = Union{Float64, Int64}
 
 const bus = Dict(
     :default => Dict(

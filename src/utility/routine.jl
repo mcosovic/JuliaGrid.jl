@@ -65,6 +65,97 @@ end
 end
 
 """
+The macro is designed to reset various settings to their default values.
+
+    @default(mode)
+
+The `mode` argument can take on the following values:
+* `unit`: resets all units to their default settings
+* `power`: sets active, reactive, and apparent power to per-units (pu)
+* `voltage`: sets voltage magnitude to per-unit (pu) and voltage angle to radian (rad)
+* `parameter`: sets impedance and admittance to per-units (pu)
+* `template`: resets bus, branch and generator templates to their default settings
+* `bus`: resets the bus template to its default settings
+* `branch`: resets the branch template to its default settings
+* `generator`: resets the generator template to its default settings.
+
+# Example
+```jldoctest
+@default(unit)
+```
+"""
+macro default(mode::Symbol)
+    if mode == :all || mode == :power
+        factor[:activePower] = 0.0
+        factor[:reactivePower] = 0.0
+        factor[:apparentPower] = 0.0
+    end
+
+    if mode == :all || mode == :voltage
+        factor[:voltageMagnitude] = 0.0
+        factor[:voltageAngle] = 1.0
+    end
+
+    if mode == :all || mode == :current
+        factor[:currentMagnitude] = 0.0
+        factor[:currentAngle] = 1.0
+    end
+
+    if mode == :all || mode == :parameter
+        factor[:impedance] = 0.0
+        factor[:admittance] = 0.0
+    end
+
+    if mode == :template || mode == :bus
+        for key in keys(bus[:default])
+            bus[:default][key] = 0.0
+        end
+        bus[:default][:type] = 1
+        bus[:default][:magnitude] = 1.0
+        bus[:default][:base] = 138e3
+    
+        for key in keys(bus[:factor])
+            bus[:factor][key] = 0.0
+        end
+        bus[:factor][:voltageAngle] = 1.0
+        bus[:factor][:baseVoltage] = 1.0
+        bus[:factor][:currentAngle] = 1.0
+    end
+
+    if mode == :template || mode == :branch
+        for key in keys(branch[:default])
+            branch[:default][key] = 0.0
+        end
+        branch[:default][:status] = 1
+        branch[:default][:type] = 1
+
+        for key in keys(branch[:factor])
+            branch[:factor][key] = 0.0
+        end
+        branch[:factor][:voltageAngle] = 1.0
+        branch[:factor][:baseVoltage] = 1.0
+        branch[:factor][:currentAngle] = 1.0
+    end
+
+    if mode == :template || mode == :generator
+        for key in keys(generator[:default])
+            generator[:default][key] = 0.0
+        end
+        generator[:default][:status] = 1
+        generator[:default][:magnitude] = 1.0
+
+        for key in keys(generator[:factor])
+            generator[:factor][key] = 0.0
+        end
+        generator[:factor][:voltageAngle] = 1.0
+        generator[:factor][:baseVoltage] = 1.0
+        generator[:factor][:currentAngle] = 1.0
+    end
+end
+
+
+
+"""
 The macro allows for the activation of various features that are relevant to the analysis
 performed.
 

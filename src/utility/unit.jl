@@ -220,88 +220,6 @@ macro parameter(impedance::Symbol, admittance::Symbol)
     factor[:admittance] = parsePrefix(admittance, suffixUser)
 end
 
-"""
-We have a macro that resets the units of the built-in functions to their default
-settings of per-units (pu) and radians (rad).
-
-    @default(mode)
-
-The `mode` argument can take on the following values:
-* `all`: resets all units to their default settings
-* `power`: sets active, reactive, and apparent power to per-units (pu)
-* `voltage`: sets voltage magnitude to per-unit (pu) and voltage angle to radian (rad)
-* `parameter`: sets impedance and admittance to per-units (pu).
-
-# Example
-```jldoctest
-@default(all)
-```
-"""
-macro default(mode::Symbol)
-    if mode == :all || mode == :power
-        factor[:activePower] = 0.0
-        factor[:reactivePower] = 0.0
-        factor[:apparentPower] = 0.0
-    end
-
-    if mode == :all || mode == :voltage
-        factor[:voltageMagnitude] = 0.0
-        factor[:voltageAngle] = 1.0
-    end
-
-    if mode == :all || mode == :current
-        factor[:currentMagnitude] = 0.0
-        factor[:currentAngle] = 1.0
-    end
-
-    if mode == :all || mode == :parameter
-        factor[:impedance] = 0.0
-        factor[:admittance] = 0.0
-    end
-
-    if mode == :template
-        for key in keys(bus[:default])
-            bus[:default][key] = 0
-        end
-        bus[:default][:type] = 1
-        bus[:default][:magnitude] = 1
-        bus[:default][:base] = 138e3
-
-        for key in keys(bus[:factor])
-            bus[:factor][key] = 0
-        end
-        bus[:factor][:voltageAngle] = 1
-        bus[:factor][:baseVoltage] = 1
-        bus[:factor][:currentAngle] = 1
-
-        for key in keys(branch[:default])
-            branch[:default][key] = 0
-        end
-        branch[:default][:status] = 1
-        branch[:default][:type] = 1
-
-        for key in keys(branch[:factor])
-            branch[:factor][key] = 0
-        end
-        branch[:factor][:voltageAngle] = 1
-        branch[:factor][:baseVoltage] = 1
-        branch[:factor][:currentAngle] = 1
-
-        for key in keys(generator[:default])
-            generator[:default][key] = 0
-        end
-        generator[:default][:status] = 1
-        generator[:default][:magnitude] = 1
-
-        for key in keys(generator[:factor])
-            generator[:factor][key] = 0
-        end
-        generator[:factor][:voltageAngle] = 1
-        generator[:factor][:baseVoltage] = 1
-        generator[:factor][:currentAngle] = 1
-    end
-end
-
 ######### Parse Suffix (Unit) ##########
 function parseSuffix(input::String, type::Symbol)
     sufixUser = ""
@@ -339,7 +257,7 @@ function parsePrefix(input::String, suffixUser::String)
 end
 
 ######### Scale Values to Transform SI to pu ##########
-function si2pu(prefix::Float64, base::T, factor::Float64)
+function si2pu(prefix::Float64, base::A, factor::A)
     if factor == 0.0
         scale = 1.0
     else
@@ -353,7 +271,7 @@ function si2pu(prefix::Float64, base::T, factor::Float64)
 end
 
 ######### Impedance Base Value ##########
-function baseImpedance(system::PowerSystem, baseVoltage::Float64, turnsRatio::Float64)
+function baseImpedance(system::PowerSystem, baseVoltage::A, turnsRatio::A)
     base = 1.0
     prefix = 1.0
     if factor[:impedance] != 0.0 || factor[:admittance] != 0.0
