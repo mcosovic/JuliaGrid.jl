@@ -258,6 +258,48 @@ macro default(mode::Symbol)
         factor[:impedance] = 0.0
         factor[:admittance] = 0.0
     end
+
+    if mode == :template
+        for key in keys(bus[:default])
+            bus[:default][key] = 0
+        end
+        bus[:default][:type] = 1
+        bus[:default][:magnitude] = 1
+        bus[:default][:base] = 138e3
+
+        for key in keys(bus[:factor])
+            bus[:factor][key] = 0
+        end
+        bus[:factor][:voltageAngle] = 1
+        bus[:factor][:baseVoltage] = 1
+        bus[:factor][:currentAngle] = 1
+
+        for key in keys(branch[:default])
+            branch[:default][key] = 0
+        end
+        branch[:default][:status] = 1
+        branch[:default][:type] = 1
+
+        for key in keys(branch[:factor])
+            branch[:factor][key] = 0
+        end
+        branch[:factor][:voltageAngle] = 1
+        branch[:factor][:baseVoltage] = 1
+        branch[:factor][:currentAngle] = 1
+
+        for key in keys(generator[:default])
+            generator[:default][key] = 0
+        end
+        generator[:default][:status] = 1
+        generator[:default][:magnitude] = 1
+
+        for key in keys(generator[:factor])
+            generator[:factor][key] = 0
+        end
+        generator[:factor][:voltageAngle] = 1
+        generator[:factor][:baseVoltage] = 1
+        generator[:factor][:currentAngle] = 1
+    end
 end
 
 ######### Parse Suffix (Unit) ##########
