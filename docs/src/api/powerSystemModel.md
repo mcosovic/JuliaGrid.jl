@@ -30,6 +30,7 @@ shuntBus!
 ## Branch Functions
 ```@docs
 addBranch!
+@addBranch
 statusBranch!
 parameterBranch!
 ```
@@ -39,6 +40,7 @@ parameterBranch!
 ## Generator Functions
 ```@docs
 addGenerator!
+@addGenerator
 statusGenerator!
 outputGenerator!
 addActiveCost!

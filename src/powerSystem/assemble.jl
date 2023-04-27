@@ -133,12 +133,12 @@ end
 
 """
 The macro generates a template for a bus, which can be utilized to define a bus using the
-[`@addBus!`](@ref @addBus!) function.
+[`addBus!`](@ref addBus!) function.
 
     @addBus(kwargs...)
 
 To define the bus template, the kwargs input arguments must be provided in
-accordance with the keywords specified within the [`@addBus!`](@ref @addBus!) function, along
+accordance with the keywords specified within the [`addBus!`](@ref addBus!) function, along
 with their corresponding values.
 
 # Units
@@ -168,28 +168,16 @@ addBus!(system; label = 1, reactive = -4)
 ```
 """
 macro addBus(kwargs...)
+    for key in keys(bus[:factor])
+        bus[:factor][key] = factor[key]
+    end
+
     for kwarg in kwargs
         parameter = kwarg.args[1]
 
         if haskey(bus[:default], parameter)
             value = kwarg.args[2]
             bus[:default][parameter] = eval(value)
-
-            if parameter in (:active, :conductance)
-            bus[:factor][:activePower] = factor[:activePower]
-            end
-            if parameter in (:reactive, :susceptance)
-                bus[:factor][:reactivePower] = factor[:reactivePower]
-            end
-            if parameter in (:magnitude, :minMagnitude, :maxMagnitude)
-                bus[:factor][:voltageMagnitude] = factor[:voltageMagnitude]
-            end
-            if parameter == :angle
-                bus[:factor][:voltageAngle] = factor[:voltageAngle]
-            end
-            if parameter == :base
-                bus[:factor][:baseVoltage] = factor[:baseVoltage]
-            end
         else
             throw(ErrorException("The keyword $parameter is illegal."))
         end
@@ -307,15 +295,22 @@ addBus!(system; label = 2, type = 1,  active = 0.15, reactive = 0.08)
 addBranch!(system; label = 1, from = 1, to = 2, reactance = 0.12, shiftAngle = 10)
 ```
 """
-function addBranch!(system::PowerSystem; label::T, from::T, to::T, status::T = 1,
-    resistance::T = 0.0, reactance::T = 0.0, susceptance::T = 0.0, turnsRatio::T = 0.0,
-    shiftAngle::T = 0.0, minDiffAngle::T = 0.0, maxDiffAngle::T = 0.0,
-    longTerm::T = 0.0, shortTerm::T = 0.0, emergency::T = 0.0, type::T = 1)
+function addBranch!(system::PowerSystem;
+    label::T, from::T, to::T, status::T = branch[:default][:status],
+    resistance::T = missing, reactance::T = missing, susceptance::T = missing,
+    turnsRatio::T = branch[:default][:turnsRatio], shiftAngle::T = missing,
+    minDiffAngle::T = missing, maxDiffAngle::T = missing,
+    longTerm::T = missing, shortTerm::T = missing, emergency::T = missing,
+    type::T = branch[:default][:type])
 
     parameter = system.branch.parameter
     rating = system.branch.rating
     voltage = system.branch.voltage
     layout = system.branch.layout
+    default = branch[:default]
+
+    prefixPower = system.base.power.prefix
+    basePower = system.base.power.value
 
     if label <= 0
         throw(ErrorException("The value of the label keyword must be given as a positive integer."))
@@ -325,9 +320,6 @@ function addBranch!(system::PowerSystem; label::T, from::T, to::T, status::T = 1
     end
     if to <= 0
         throw(ErrorException("The value of the to keyword must be given as a positive integer."))
-    end
-    if resistance == 0.0 && reactance == 0.0
-        throw(ErrorException("At least one of the keywords resistance and reactance must be defined."))
     end
     if from == to
         throw(ErrorException("Keywords from and to cannot contain the same positive integer."))
@@ -356,28 +348,36 @@ function addBranch!(system::PowerSystem; label::T, from::T, to::T, status::T = 1
     push!(layout.to, system.bus.label[to])
     push!(layout.status, status)
 
-    apparentScale = si2pu(system.base.power.prefix, system.base.power.value, factor[:apparentPower])
+    apparentScale = si2pu(prefixPower, basePower, factor[:apparentPower])
+    apparentScaleDef = si2pu(prefixPower, basePower, branch[:factor][:apparentPower])
 
     prefix, base = baseImpedance(system, system.base.voltage.value[layout.from[end]], turnsRatio)
     impedanceScale = si2pu(prefix, base, factor[:impedance])
+    impedanceScaleDef = si2pu(prefix, base, branch[:factor][:impedance])
     admittanceScale = si2pu(1 / prefix, 1 / base, factor[:admittance])
+    admittanceScaleDef = si2pu(1 / prefix, 1 / base, branch[:factor][:admittance])
 
-    push!(parameter.resistance, resistance * impedanceScale)
-    push!(parameter.reactance, reactance * impedanceScale)
-    push!(parameter.susceptance, susceptance * admittanceScale)
+    pushData!(parameter.resistance, resistance, impedanceScale, default[:resistance], impedanceScaleDef)
+    pushData!(parameter.reactance, reactance, impedanceScale, default[:reactance], impedanceScaleDef)
+    if parameter.resistance[end] == 0.0 && parameter.reactance[end] == 0.0
+        throw(ErrorException("At least one of the keywords resistance and reactance must be defined."))
+    end
+    pushData!(parameter.susceptance, susceptance, admittanceScale, default[:susceptance], admittanceScaleDef)
+    pushData!(parameter.shiftAngle, shiftAngle, factor[:voltageAngle], default[:shiftAngle], branch[:factor][:voltageAngle])
     push!(parameter.turnsRatio, turnsRatio)
-    push!(parameter.shiftAngle, shiftAngle * factor[:voltageAngle])
 
-    push!(voltage.minDiffAngle, minDiffAngle * factor[:voltageAngle])
-    push!(voltage.maxDiffAngle, maxDiffAngle * factor[:voltageAngle])
+    pushData!(voltage.minDiffAngle, minDiffAngle, factor[:voltageAngle], default[:minDiffAngle], branch[:factor][:voltageAngle])
+    pushData!(voltage.maxDiffAngle, maxDiffAngle, factor[:voltageAngle], default[:maxDiffAngle], branch[:factor][:voltageAngle])
 
     ratingScale = apparentScale
+    ratingScaleDef = apparentScaleDef
     if type == 2
-        ratingScale = si2pu(system.base.power.prefix, system.base.power.value, factor[:activePower])
+        ratingScale = si2pu(prefixPower, basePower, factor[:activePower])
+        ratingScaleDef = si2pu(prefixPower, basePower, branch[:factor][:activePower])
     end
-    push!(rating.shortTerm, shortTerm * ratingScale)
-    push!(rating.emergency, emergency * ratingScale)
-    push!(rating.longTerm, longTerm * ratingScale)
+    pushData!(rating.shortTerm, shortTerm, ratingScale, default[:shortTerm], ratingScaleDef)
+    pushData!(rating.emergency, emergency, ratingScale, default[:emergency], ratingScaleDef)
+    pushData!(rating.longTerm, longTerm, ratingScale, default[:longTerm], ratingScaleDef)
     push!(rating.type, type)
 
     index = system.branch.number
@@ -394,6 +394,61 @@ function addBranch!(system::PowerSystem; label::T, from::T, to::T, status::T = 1
         if layout.status[index] == 1
             acParameterUpdate!(system, index)
             acNodalUpdate!(system, index)
+        end
+    end
+end
+
+"""
+The macro generates a template for a branch, which can be utilized to define a branch using the
+[`addBranch!`](@ref addBranch!) function.
+
+    @addBranch(kwargs...)
+
+To define the branch template, the kwargs input arguments must be provided in
+accordance with the keywords specified within the [`addBranch!`](@ref addBranch!) function,
+along with their corresponding values.
+
+# Units
+The input units are in per-units (pu) and radians (rad) by default. The unit settings, such
+as the selection between the per-unit system or the SI system with the appropriate prefixes,
+can be modified using macros [`@power`](@ref @power), [`@voltage`](@ref @voltage), and
+[`@parameter`](@ref @parameter).
+
+# Examples
+Creating a branch template using the default unit system:
+```jldoctest
+system = powerSystem()
+
+@addBranch(reactance = 0.12, shiftAngle = 0.1745)
+addBus!(system; label = 1, type = 3, active = 0.25, reactive = -0.04)
+addBus!(system; label = 2, type = 1, active = 0.15, reactive = 0.08)
+addBranch!(system; label = 1, from = 1, to = 2)
+```
+
+Creating a branch template using a custom unit system:
+```jldoctest
+system = powerSystem()
+
+@voltage(pu, deg)
+@addBranch(shiftAngle = 10)
+addBus!(system; label = 1, type = 3, active = 0.25, reactive = -0.04)
+addBus!(system; label = 2, type = 1,  active = 0.15, reactive = 0.08)
+addBranch!(system; label = 1, from = 1, to = 2, reactance = 0.12)
+```
+"""
+macro addBranch(kwargs...)
+    for key in keys(branch[:factor])
+        branch[:factor][key] = factor[key]
+    end
+
+    for kwarg in kwargs
+        parameter = kwarg.args[1]
+
+        if haskey(branch[:default], parameter)
+            value = kwarg.args[2]
+            branch[:default][parameter] = eval(value)
+        else
+            throw(ErrorException("The keyword $parameter is illegal."))
         end
     end
 end
@@ -602,12 +657,15 @@ addBus!(system; label = 1, type = 2, active = 25, reactive = -4, base = 132)
 addGenerator!(system; label = 1, bus = 1, active = 50, reactive = 10, magnitude = 145.2)
 ```
 """
-function addGenerator!(system::PowerSystem; label::T, bus::T, area::T = 0.0, status::T = 1,
-    active::T = 0.0, reactive::T = 0.0, magnitude::T = 0.0, minActive::T = 0.0,
-    maxActive::T = 0.0, minReactive::T = 0.0, maxReactive::T = 0.0, lowActive::T = 0.0,
-    minLowReactive::T = 0.0, maxLowReactive::T = 0.0, upActive::T = 0.0,
-    minUpReactive::T = 0.0, maxUpReactive::T = 0.0, loadFollowing::T = 0.0,
-    reserve10min::T = 0.0, reserve30min::T = 0.0, reactiveTimescale::T = 0.0)
+function addGenerator!(system::PowerSystem;
+    label::T, bus::T,
+    area::T = generator[:default][:area], status::T = generator[:default][:status],
+    active::T = missing, reactive::T = missing, magnitude::T = missing,
+    minActive::T = missing, maxActive::T = missing, minReactive::T = missing,
+    maxReactive::T = missing, lowActive::T = missing, minLowReactive::T = missing,
+    maxLowReactive::T = missing, upActive::T = missing, minUpReactive::T = missing,
+    maxUpReactive::T = missing, loadFollowing::T = missing, reserve10min::T = missing,
+    reserve30min::T = missing, reactiveTimescale::T = missing)
 
     output = system.generator.output
     capability = system.generator.capability
@@ -615,6 +673,11 @@ function addGenerator!(system::PowerSystem; label::T, bus::T, area::T = 0.0, sta
     cost = system.generator.cost
     voltage = system.generator.voltage
     layout = system.generator.layout
+    default = generator[:default]
+
+    prefixPower = system.base.power.prefix
+    basePower = system.base.power.value
+    prefixVoltage = system.base.voltage.prefix
 
     if label <= 0
         throw(ErrorException("The value of the label keyword must be given as a positive integer."))
@@ -635,36 +698,43 @@ function addGenerator!(system::PowerSystem; label::T, bus::T, area::T = 0.0, sta
     activeScale = si2pu(system.base.power.prefix, system.base.power.value, factor[:activePower])
     reactiveScale = si2pu(system.base.power.prefix, system.base.power.value, factor[:reactivePower])
 
+    voltageScaleDef = si2pu(prefixVoltage, system.base.voltage.value[busIndex], generator[:factor][:voltageMagnitude])
+    activeScaleDef = si2pu(prefixPower, basePower, generator[:factor][:activePower])
+    reactiveScaleDef = si2pu(prefixPower, basePower, generator[:factor][:reactivePower])
+
     system.generator.number += 1
     setindex!(system.generator.label, system.generator.number, label)
+
+    pushData!(output.active, active, activeScale, default[:active], activeScaleDef)
+    pushData!(output.reactive, reactive, reactiveScale, default[:reactive], reactiveScaleDef)
 
     busIndex = system.bus.label[bus]
     if status == 1
         system.bus.supply.inService[busIndex] += 1
-        system.bus.supply.active[busIndex] += active * activeScale
-        system.bus.supply.reactive[busIndex] += reactive * reactiveScale
+        system.bus.supply.active[busIndex] += output.active[end]
+        system.bus.supply.reactive[busIndex] += output.reactive[end]
     end
 
-    push!(output.active, active * activeScale)
-    push!(output.reactive, reactive * reactiveScale)
+    pushData!(capability.minActive, minActive, activeScale, default[:minActive], activeScaleDef)
+    pushData!(capability.maxActive, maxActive, activeScale, default[:maxActive], activeScaleDef)
 
-    push!(capability.minActive, minActive * activeScale)
-    push!(capability.maxActive, maxActive * activeScale)
-    push!(capability.minReactive, minReactive * reactiveScale)
-    push!(capability.maxReactive, maxReactive * reactiveScale)
-    push!(capability.lowActive, lowActive * activeScale)
-    push!(capability.minLowReactive, minLowReactive * reactiveScale)
-    push!(capability.maxLowReactive, maxLowReactive * reactiveScale)
-    push!(capability.upActive, upActive * activeScale)
-    push!(capability.minUpReactive, minUpReactive * reactiveScale)
-    push!(capability.maxUpReactive, maxUpReactive * reactiveScale)
+    pushData!(capability.minReactive, minReactive, reactiveScale, default[:minReactive], reactiveScaleDef)
+    pushData!(capability.maxReactive, maxReactive, reactiveScale, default[:maxReactive], reactiveScaleDef)
 
-    push!(ramping.loadFollowing, loadFollowing * activeScale)
-    push!(ramping.reserve10min, reserve10min * activeScale)
-    push!(ramping.reserve30min, reserve30min * activeScale)
-    push!(ramping.reactiveTimescale, reactiveTimescale * reactiveScale)
+    pushData!(capability.lowActive, lowActive, activeScale, default[:lowActive], activeScaleDef)
+    pushData!(capability.minLowReactive, minLowReactive, reactiveScale, default[:minLowReactive], reactiveScaleDef)
+    pushData!(capability.maxLowReactive, maxLowReactive, reactiveScale, default[:maxLowReactive], reactiveScaleDef)
 
-    push!(voltage.magnitude, magnitude * voltageScale)
+    pushData!(capability.upActive, upActive, activeScale, default[:upActive], activeScaleDef)
+    pushData!(capability.minUpReactive, minUpReactive, reactiveScale, default[:minUpReactive], reactiveScaleDef)
+    pushData!(capability.maxUpReactive, maxUpReactive, reactiveScale, default[:maxUpReactive], reactiveScaleDef)
+
+    pushData!(ramping.loadFollowing, loadFollowing, activeScale, default[:loadFollowing], activeScaleDef)
+    pushData!(ramping.reserve10min, reserve10min, activeScale, default[:reserve10min], activeScaleDef)
+    pushData!(ramping.reserve30min, reserve30min, activeScale, default[:reserve30min], activeScaleDef)
+    pushData!(ramping.reactiveTimescale, reactiveTimescale, reactiveScale, default[:reactiveTimescale], reactiveScaleDef)
+
+    pushData!(voltage.magnitude, magnitude, voltageScale, default[:magnitude], voltageScaleDef)
 
     push!(layout.bus, busIndex)
     push!(layout.area, area)
@@ -677,6 +747,60 @@ function addGenerator!(system::PowerSystem; label::T, bus::T, area::T = 0.0, sta
     push!(cost.reactive.model, 0)
     push!(cost.reactive.polynomial, Array{Float64}(undef, 0))
     push!(cost.reactive.piecewise, Array{Float64}(undef, 0, 0))
+end
+
+"""
+The macro generates a template for a generator, which can be utilized to define a generator
+using the [`addGenerator!`](@ref addGenerator!) function.
+
+    @addGenerator(kwargs...)
+
+To define the generator template, the kwargs input arguments must be provided in accordance
+with the keywords specified within the [`addGenerator!`](@ref addGenerator!) function,
+along with their corresponding values.
+
+# Units
+By default, the input units are associated with per-units (pu) as shown. The unit settings,
+such as the selection between the per-unit system or the SI system with the appropriate
+prefixes, can be modified using macros [`@power`](@ref @power) and [`@voltage`](@ref @voltage).
+
+# Examples
+Creating a bus using the default unit system:
+```jldoctest
+system = powerSystem()
+
+@addGenerator(magnitude = 1.1)
+addBus!(system; label = 1, type = 2, active = 0.25, reactive = -0.04, base = 132e3)
+addGenerator!(system; label = 1, bus = 1, active = 0.5, reactive = 0.1)
+```
+
+Creating a bus using a custom unit system:
+```jldoctest
+system = powerSystem()
+@base(system, MVA, kV)
+
+@power(MW, MVAr, MVA)
+@voltage(kV, deg)
+@addGenerator(magnitude = 145.2)
+addBus!(system; label = 1, type = 2, active = 25, reactive = -4, base = 132)
+addGenerator!(system; label = 1, bus = 1, active = 50, reactive = 10)
+```
+"""
+macro addGenerator(kwargs...)
+    for key in keys(generator[:factor])
+        generator[:factor][key] = factor[key]
+    end
+
+    for kwarg in kwargs
+        parameter = kwarg.args[1]
+
+        if haskey(generator[:default], parameter)
+            value = kwarg.args[2]
+            generator[:default][parameter] = eval(value)
+        else
+            throw(ErrorException("The keyword $parameter is illegal."))
+        end
+    end
 end
 
 """

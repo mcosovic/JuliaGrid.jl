@@ -1,56 +1,56 @@
 const prefix = Dict(
-    "q" => 1e-30, 
-    "r" => 1e-27, 
-    "y" => 1e-24, 
-    "z" => 1e-21, 
-    "a" => 1e-18, 
+    "q" => 1e-30,
+    "r" => 1e-27,
+    "y" => 1e-24,
+    "z" => 1e-21,
+    "a" => 1e-18,
     "f" => 1e-15,
-    "p" => 1e-12, 
-    "n" => 1e-9, 
-    "μ" => 1e-6, 
-    "m" => 1e-3, 
-    "c" => 1e-2, 
-    "d" => 1e-1, 
+    "p" => 1e-12,
+    "n" => 1e-9,
+    "μ" => 1e-6,
+    "m" => 1e-3,
+    "c" => 1e-2,
+    "d" => 1e-1,
     "da" => 1e1,
-    "h" => 1e2, 
-    "k" => 1e3, 
-    "M" => 1e6, 
-    "G" => 1e9, 
-    "T" => 1e12, 
-    "P" => 1e15, 
-    "E" => 1e18, 
+    "h" => 1e2,
+    "k" => 1e3,
+    "M" => 1e6,
+    "G" => 1e9,
+    "T" => 1e12,
+    "P" => 1e15,
+    "E" => 1e18,
     "Z" => 1e21,
-    "Y" => 1e24, 
-    "R" => 1e27, 
+    "Y" => 1e24,
+    "R" => 1e27,
     "Q" => 1e30
     )
 
 const suffix = Dict(
-    :basePower => ["VA"], 
+    :basePower => ["VA"],
     :baseVoltage => ["V"],
-    :activePower => ["W", "pu"], 
-    :reactivePower => ["VAr", "pu"], 
+    :activePower => ["W", "pu"],
+    :reactivePower => ["VAr", "pu"],
     :apparentPower => ["VA", "pu"],
-    :voltageMagnitude => ["V", "pu"], 
+    :voltageMagnitude => ["V", "pu"],
     :voltageAngle => ["deg", "rad"],
-    :currentMagnitude => ["A", "pu"], 
+    :currentMagnitude => ["A", "pu"],
     :currentAngle => ["deg", "rad"],
-    :impedance => [string(:Ω), "pu"], 
+    :impedance => [string(:Ω), "pu"],
     :admittance => ["S", "pu"]
     )
 
 const factor = Dict(
-    :activePower => 0.0, 
-    :reactivePower => 0.0, 
+    :activePower => 0.0,
+    :reactivePower => 0.0,
     :apparentPower => 0.0,
     :voltageMagnitude => 0.0,
-    :voltageAngle => 1.0, 
+    :voltageAngle => 1.0,
     :currentMagnitude => 0.0,
-    :currentAngle => 1.0, 
-    :impedance => 0.0, 
+    :currentAngle => 1.0,
+    :impedance => 0.0,
     :admittance => 0.0,
     :baseVoltage => 1.0
-    )    
+    )
 
 """
 By default, the units for base power and base voltages are set to volt-ampere (VA) and
@@ -80,12 +80,12 @@ macro base(system::Symbol, power::Symbol, voltage::Symbol)
     return quote
         system = $(esc(system))
 
-        prefixOld = system.base.power.prefix 
+        prefixOld = system.base.power.prefix
         system.base.power.value = system.base.power.value * prefixOld / $prefixPower
         system.base.power.prefix = $prefixPower
         system.base.power.unit = $power
 
-        prefixOld = system.base.voltage.prefix 
+        prefixOld = system.base.voltage.prefix
         system.base.voltage.value = system.base.voltage.value * prefixOld / $prefixVoltage
         system.base.voltage.prefix = $prefixVoltage
         system.base.voltage.unit = $voltage
@@ -221,8 +221,8 @@ macro parameter(impedance::Symbol, admittance::Symbol)
 end
 
 """
-We have a macro that resets the units of the built-in functions to their default 
-settings of per-units (pu) and radians (rad). 
+We have a macro that resets the units of the built-in functions to their default
+settings of per-units (pu) and radians (rad).
 
     @default(mode)
 
@@ -239,24 +239,24 @@ The `mode` argument can take on the following values:
 """
 macro default(mode::Symbol)
     if mode == :all || mode == :power
-        factor[:activePower] = 0.0 
-        factor[:reactivePower] = 0.0 
-        factor[:apparentPower] = 0.0 
+        factor[:activePower] = 0.0
+        factor[:reactivePower] = 0.0
+        factor[:apparentPower] = 0.0
     end
 
     if mode == :all || mode == :voltage
-        factor[:voltageMagnitude] = 0.0 
-        factor[:voltageAngle] = 1.0 
+        factor[:voltageMagnitude] = 0.0
+        factor[:voltageAngle] = 1.0
     end
 
     if mode == :all || mode == :current
-        factor[:currentMagnitude] = 0.0 
-        factor[:currentAngle] = 1.0 
+        factor[:currentMagnitude] = 0.0
+        factor[:currentAngle] = 1.0
     end
 
     if mode == :all || mode == :parameter
-        factor[:impedance] = 0.0 
-        factor[:admittance] = 0.0 
+        factor[:impedance] = 0.0
+        factor[:admittance] = 0.0
     end
 end
 
@@ -298,7 +298,7 @@ end
 
 ######### Scale Values to Transform SI to pu ##########
 function si2pu(prefix::Float64, base::T, factor::Float64)
-    if factor == 0.0 
+    if factor == 0.0
         scale = 1.0
     else
         scale = factor / (prefix * base)
@@ -314,9 +314,9 @@ end
 function baseImpedance(system::PowerSystem, baseVoltage::Float64, turnsRatio::Float64)
     base = 1.0
     prefix = 1.0
-    if factor[:impedance] != 0.0 || factor[:admittance] != 0.0 
+    if factor[:impedance] != 0.0 || factor[:admittance] != 0.0
         if turnsRatio != 0
-            prefix = (turnsRatio * system.base.voltage.prefix )^2 / system.base.power.prefix 
+            prefix = (turnsRatio * system.base.voltage.prefix)^2 / system.base.power.prefix
         else
             prefix = system.base.voltage.prefix^2 / system.base.power.prefix
         end

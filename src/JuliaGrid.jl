@@ -4,6 +4,9 @@ using SparseArrays, LinearAlgebra, SuiteSparse
 using HDF5
 using JuMP
 
+######### Setting Variables ##########
+include("utility/setting.jl")
+
 ######### Utility ##########
 include("utility/routine.jl")
 export @enable, @disable
@@ -16,9 +19,10 @@ include("powerSystem/save.jl")
 export savePowerSystem
 
 include("powerSystem/assemble.jl")
-export addBus!, @addBus, shuntBus!
+export addBus!, shuntBus!
 export addBranch!, statusBranch!, parameterBranch!
 export addGenerator!, addActiveCost!, addReactiveCost!, statusGenerator!, outputGenerator!
+export @addBus, @addBranch, @addGenerator
 export dcModel!, acModel!
 
 ######## Power Flow ##########
