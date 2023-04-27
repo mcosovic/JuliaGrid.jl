@@ -504,6 +504,7 @@ addBranch!(system; label = 2, from = 1, to = 3, resistance = 0.02, reactance = 0
 addBranch!(system; label = 3, from = 2, to = 3, resistance = 0.03, reactance = 0.04)
 addBranch!(system; label = 4, from = 2, to = 4, resistance = 0.03, reactance = 0.004)
 
+@addGenerator(minReactive = 0.0, maxReactive = 0.0) # hide
 addGenerator!(system; label = 1, bus = 1, minReactive = 0.0, maxReactive = 0.2)
 addGenerator!(system; label = 2, bus = 4, reactive = 0.3)
 
