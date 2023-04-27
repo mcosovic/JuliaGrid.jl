@@ -85,23 +85,23 @@ The `mode` argument can take on the following values:
 ```
 """
 macro default(mode::Symbol)
-    if mode == :all || mode == :power
+    if mode == :unit || mode == :power
         factor[:activePower] = 0.0
         factor[:reactivePower] = 0.0
         factor[:apparentPower] = 0.0
     end
 
-    if mode == :all || mode == :voltage
+    if mode == :unit || mode == :voltage
         factor[:voltageMagnitude] = 0.0
         factor[:voltageAngle] = 1.0
     end
 
-    if mode == :all || mode == :current
+    if mode == :unit || mode == :current
         factor[:currentMagnitude] = 0.0
         factor[:currentAngle] = 1.0
     end
 
-    if mode == :all || mode == :parameter
+    if mode == :unit || mode == :parameter
         factor[:impedance] = 0.0
         factor[:admittance] = 0.0
     end
