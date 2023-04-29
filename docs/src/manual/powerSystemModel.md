@@ -13,7 +13,7 @@ Once the `PowerSystem` type is created, you can add buses, branches, and generat
 * [`addBus!`](@ref addBus!)
 * [`addBranch!`](@ref addBranch!)
 * [`addGenerator!`](@ref addGenerator!).
-Additionally, JuliaGrid provides macros [`@addBus`](@ref @addBus), [`@addBranch`](@ref @addBranch), and [`@addGenerator`](@ref @addGenerator) to define templates that aid in creating buses, branches, and generators. These templates help avoid entering the same parameters repeatedly.
+Additionally, JuliaGrid provides macros [`@bus`](@ref @bus), [`@branch`](@ref @branch), and [`@generator`](@ref @generator) to define templates that aid in creating buses, branches, and generators. These templates help avoid entering the same parameters repeatedly.
 
 To create vectors and matrices based on the power system topology and parameters, you can use the following functions:
 * [`acModel!`](@ref acModel!)
@@ -376,22 +376,22 @@ Similarly, the [`addGenerator!`](@ref addGenerator!) function assigns default va
 
 The remaining parameters are initialized with default values of zero.
 
-In JuliaGrid, users are allowed to modify default values and assign non-zero values to other keywords using the [`@addBus`](@ref @addBus), [`@addBranch`](@ref @addBranch), and [`@addGenerator`](@ref @addGenerator) macros. These macros create bus, branch, and generator templates that are used every time the [`addBus!`](@ref addBus!), [`addBranch!`](@ref addBranch!), and [`addGenerator!`](@ref addGenerator!) functions are called. For instance, the code block shows an example of creating bus, branch, and generator templates with customized default values:
+In JuliaGrid, users are allowed to modify default values and assign non-zero values to other keywords using the [`@bus`](@ref @bus), [`@branch`](@ref @branch), and [`@generator`](@ref @generator) macros. These macros create bus, branch, and generator templates that are used every time the [`addBus!`](@ref addBus!), [`addBranch!`](@ref addBranch!), and [`addGenerator!`](@ref addGenerator!) functions are called. For instance, the code block shows an example of creating bus, branch, and generator templates with customized default values:
 ```@example CreateBusTemplate
 using JuliaGrid # hide
 @default(unit) # hide
 
 system = powerSystem()
 
-@addBus(type = 2, active = 0.1)
+@bus(type = 2, active = 0.1)
 addBus!(system; label = 1, reactive = 0.2)
 addBus!(system; label = 2, type = 1, active = 0.5, reactive = 0.3)
 
-@addBranch(reactance = 0.12)
+@branch(reactance = 0.12)
 addBranch!(system; label = 1, from = 1, to = 2)
 addBranch!(system; label = 2, from = 1, to = 2, reactance = 0.06)
 
-@addGenerator(magnitude = 1.1)
+@generator(magnitude = 1.1)
 addGenerator!(system; label = 1, bus = 1, active = 50, reactive = 10)
 addGenerator!(system; label = 2, bus = 1, active = 20, reactive = 30)
 
@@ -405,7 +405,7 @@ system.bus.demand.active
 system.branch.parameter.reactance
 ```
 
-In the given example, the [`@addGenerator`](@ref @addGenerator) macro is utilized instead of repeatedly specifying the `magnitude` keyword in the [`addGenerator!`](@ref addGenerator!) function. This macro creates a generator template with a default value for `magnitude`, which is automatically applied every time the [`addGenerator!`](@ref addGenerator!) function is called. Therefore, it eliminates the requirement to set the magnitude value for each individual generator:
+In the given example, the [`@generator`](@ref @generator) macro is utilized instead of repeatedly specifying the `magnitude` keyword in the [`addGenerator!`](@ref addGenerator!) function. This macro creates a generator template with a default value for `magnitude`, which is automatically applied every time the [`addGenerator!`](@ref addGenerator!) function is called. Therefore, it eliminates the requirement to set the magnitude value for each individual generator:
 ```@repl CreateBusTemplate
 system.generator.voltage.magnitude
 ```
@@ -420,7 +420,7 @@ system = powerSystem()
 
 @power(MW, MVAr, MVA)
 
-@addBus(type = 2, active = 100, reactive = 200)
+@bus(type = 2, active = 100, reactive = 200)
 addBus!(system; label = 1)
 addBus!(system; label = 2, magnitude = 1.1)
 
@@ -438,7 +438,7 @@ system.bus.demand.reactive
 ```
 Thus, JuliaGrid automatically tracks the unit system used to create templates and provides the appropriate conversion to per-units. Even if the user switches to a different unit system later on, the previously defined template will still be valid.
 
-Finally, it is worth noting that the unit of base voltage for the bus template is determined by the last call of the [`@base`](@ref @base) macro before calling the [`@addBus`](@ref @addBus) macro. For example:
+Finally, it is worth noting that the unit of base voltage for the bus template is determined by the last call of the [`@base`](@ref @base) macro before calling the [`@bus`](@ref @bus) macro. For example:
 ```@example CreateBusTemplateBase
 using JuliaGrid # hide
 
@@ -448,7 +448,7 @@ system2 = powerSystem()
 @base(system1, MVA, kV)
 @base(system2, MVA, V)
 
-@addBus(type = 2, active = 1.0, reactive = 2.0, base = 138e3)
+@bus(type = 2, active = 1.0, reactive = 2.0, base = 138e3)
 addBus!(system1; label = 1)
 addBus!(system2; label = 2, magnitude = 1.1)
 
@@ -460,7 +460,7 @@ In this case, since the last execution of the [`@base`](@ref @base) macro before
 ---
 
 ##### Multiple Bus Templates
-In the case of calling the [`@addBus`](@ref @addBus), [`@addBranch`](@ref @addBranch), or [`@addGenerator`](@ref @addGenerator) macros multiple times, the provided keywords and values will be combined into a single template for the corresponding component (bus, branch, or generator), which will be used for generating the component.
+In the case of calling the [`@bus`](@ref @bus), [`@branch`](@ref @branch), or [`@generator`](@ref @generator) macros multiple times, the provided keywords and values will be combined into a single template for the corresponding component (bus, branch, or generator), which will be used for generating the component.
 
 ---
 

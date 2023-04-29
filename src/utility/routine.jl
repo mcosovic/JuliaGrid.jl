@@ -113,7 +113,7 @@ macro default(mode::Symbol)
         bus[:default][:type] = 1
         bus[:default][:magnitude] = 1.0
         bus[:default][:base] = 138e3
-    
+
         for key in keys(bus[:factor])
             bus[:factor][key] = 0.0
         end
@@ -152,8 +152,6 @@ macro default(mode::Symbol)
         generator[:factor][:currentAngle] = 1.0
     end
 end
-
-
 
 """
 The macro allows for the activation of various features that are relevant to the analysis

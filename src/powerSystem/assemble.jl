@@ -135,7 +135,7 @@ end
 The macro generates a template for a bus, which can be utilized to define a bus using the
 [`addBus!`](@ref addBus!) function.
 
-    @addBus(kwargs...)
+    @bus(kwargs...)
 
 To define the bus template, the kwargs input arguments must be provided in
 accordance with the keywords specified within the [`addBus!`](@ref addBus!) function, along
@@ -152,7 +152,7 @@ can be modified using macros [`@base`](@ref @base), [`@power`](@ref @power), and
 Creating a bus template using the default unit system:
 ```jldoctest
 system = powerSystem()
-@addBus(type = 2, active = 0.25, angle = 0.1745)
+@bus(type = 2, active = 0.25, angle = 0.1745)
 addBus!(system; label = 1, reactive = -0.04, base = 132e3)
 ```
 
@@ -163,11 +163,11 @@ system = powerSystem()
 
 @power(MW, MVAr, MVA)
 @voltage(pu, deg)
-@addBus(type = 2, active = 25, angle = 10, base = 132)
+@bus(type = 2, active = 25, angle = 10, base = 132)
 addBus!(system; label = 1, reactive = -4)
 ```
 """
-macro addBus(kwargs...)
+macro bus(kwargs...)
     for key in keys(bus[:factor])
         bus[:factor][key] = factor[key]
     end
@@ -402,7 +402,7 @@ end
 The macro generates a template for a branch, which can be utilized to define a branch using the
 [`addBranch!`](@ref addBranch!) function.
 
-    @addBranch(kwargs...)
+    @branch(kwargs...)
 
 To define the branch template, the kwargs input arguments must be provided in
 accordance with the keywords specified within the [`addBranch!`](@ref addBranch!) function,
@@ -419,7 +419,7 @@ Creating a branch template using the default unit system:
 ```jldoctest
 system = powerSystem()
 
-@addBranch(reactance = 0.12, shiftAngle = 0.1745)
+@branch(reactance = 0.12, shiftAngle = 0.1745)
 addBus!(system; label = 1, type = 3, active = 0.25, reactive = -0.04)
 addBus!(system; label = 2, type = 1, active = 0.15, reactive = 0.08)
 addBranch!(system; label = 1, from = 1, to = 2)
@@ -430,13 +430,13 @@ Creating a branch template using a custom unit system:
 system = powerSystem()
 
 @voltage(pu, deg)
-@addBranch(shiftAngle = 10)
+@branch(shiftAngle = 10)
 addBus!(system; label = 1, type = 3, active = 0.25, reactive = -0.04)
 addBus!(system; label = 2, type = 1,  active = 0.15, reactive = 0.08)
 addBranch!(system; label = 1, from = 1, to = 2, reactance = 0.12)
 ```
 """
-macro addBranch(kwargs...)
+macro branch(kwargs...)
     for key in keys(branch[:factor])
         branch[:factor][key] = factor[key]
     end
@@ -753,7 +753,7 @@ end
 The macro generates a template for a generator, which can be utilized to define a generator
 using the [`addGenerator!`](@ref addGenerator!) function.
 
-    @addGenerator(kwargs...)
+    @generator(kwargs...)
 
 To define the generator template, the kwargs input arguments must be provided in accordance
 with the keywords specified within the [`addGenerator!`](@ref addGenerator!) function,
@@ -769,7 +769,7 @@ Creating a bus using the default unit system:
 ```jldoctest
 system = powerSystem()
 
-@addGenerator(magnitude = 1.1)
+@generator(magnitude = 1.1)
 addBus!(system; label = 1, type = 2, active = 0.25, reactive = -0.04, base = 132e3)
 addGenerator!(system; label = 1, bus = 1, active = 0.5, reactive = 0.1)
 ```
@@ -781,7 +781,7 @@ system = powerSystem()
 
 @power(MW, MVAr, MVA)
 @voltage(kV, deg)
-@addGenerator(magnitude = 145.2)
+@generator(magnitude = 145.2)
 addBus!(system; label = 1, type = 2, active = 25, reactive = -4, base = 132)
 addGenerator!(system; label = 1, bus = 1, active = 50, reactive = 10)
 ```

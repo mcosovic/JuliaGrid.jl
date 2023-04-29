@@ -9,7 +9,7 @@ include("utility/setting.jl")
 
 ######### Utility ##########
 include("utility/routine.jl")
-export @enable, @disable
+export @enable, @disable, @default
 
 ######## Power System ##########
 include("powerSystem/load.jl")
@@ -22,7 +22,7 @@ include("powerSystem/assemble.jl")
 export addBus!, shuntBus!
 export addBranch!, statusBranch!, parameterBranch!
 export addGenerator!, addActiveCost!, addReactiveCost!, statusGenerator!, outputGenerator!
-export @addBus, @addBranch, @addGenerator
+export @bus, @branch, @generator
 export dcModel!, acModel!
 
 ######## Power Flow ##########
@@ -40,7 +40,7 @@ export dcOptimalPowerFlow!, optimizePowerFlow!
 
 ######### Unit ##########
 include("utility/unit.jl")
-export @base, @power, @voltage, @parameter, @default
+export @base, @power, @voltage, @parameter
 
 end # JuliaGrid
 

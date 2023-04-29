@@ -21,7 +21,7 @@ savePowerSystem
 ## Bus Functions
 ```@docs
 addBus!
-@addBus
+@bus
 shuntBus!
 ```
 
@@ -30,7 +30,7 @@ shuntBus!
 ## Branch Functions
 ```@docs
 addBranch!
-@addBranch
+@branch
 statusBranch!
 parameterBranch!
 ```
@@ -40,7 +40,7 @@ parameterBranch!
 ## Generator Functions
 ```@docs
 addGenerator!
-@addGenerator
+@generator
 statusGenerator!
 outputGenerator!
 addActiveCost!

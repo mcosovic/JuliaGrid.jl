@@ -138,7 +138,7 @@ Here, we utilize a "flat start" approach in our method. It is important to keep 
 
 ---
 
-##### Iterative Proces
+##### Iterative Process
 To implement the Newton-Raphson method, the iterative approach based on the Taylor series expansion, JuliaGrid provides the [`mismatch!`](@ref mismatch!) and [`solvePowerFlow!`](@ref solvePowerFlow!) functions. These functions are utilized to carry out the Newton-Raphson method iteratively until a stopping criterion is reached, as demonstrated in the following code snippet:
 ```@example PowerFlowSolution
 for iteration = 1:100

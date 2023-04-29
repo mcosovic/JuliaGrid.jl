@@ -363,7 +363,7 @@ resultDC.bus.voltage.angle
 
 ---
 
-## [Compute Powers and Currents](@id ComputePowersCurrentsManual)
+## [Power and Current Analysis](@id PowerCurrentAnalysisManual)
 After obtaining the solution from the AC or DC power flow analysis, we can calculate various electrical quantities related to buses, branches, and generators using the [`bus!`](@ref bus!), [`branch!`](@ref branch!), and [`generator!`](@ref generator!) functions. Let us set up an AC power flow analysis:
 ```@example ComputationPowersCurrentsLosses
 using JuliaGrid # hide
@@ -430,7 +430,7 @@ addBranch!(system; label = 2, from = 1, to = 3, resistance = 0.02, reactance = 0
 addBranch!(system; label = 3, from = 2, to = 3, resistance = 0.03, reactance = 0.04)
 addBranch!(system; label = 4, from = 2, to = 4, resistance = 0.03, reactance = 0.004)
 
-@addGenerator(minReactive = 0.0, maxReactive = 0.2)
+@generator(minReactive = 0.0, maxReactive = 0.2)
 addGenerator!(system; label = 1, bus = 3, active = 0.8, reactive = 0.1)
 addGenerator!(system; label = 2, bus = 4, reactive = 0.3)
 
