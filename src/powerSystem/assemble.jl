@@ -786,7 +786,7 @@ addBus!(system; label = 1, type = 2, active = 25, reactive = -4, base = 132)
 addGenerator!(system; label = 1, bus = 1, active = 50, reactive = 10)
 ```
 """
-macro addGenerator(kwargs...)
+macro generator(kwargs...)
     for key in keys(generator[:factor])
         generator[:factor][key] = factor[key]
     end
