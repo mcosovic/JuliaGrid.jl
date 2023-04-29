@@ -1050,9 +1050,7 @@ end
 
 """
 The function generates vectors and matrices based on the power system topology and
-parameters associated with DC analysis. We advise the reader to read the section
-[DC Model](@ref DCModel), which explains all the data involved in the
-field `dcModel`.
+parameters associated with DC analysis.
 
     dcModel!(system::PowerSystem)
 
@@ -1133,9 +1131,7 @@ end
 
 """
 The function generates vectors and matrices based on the power system topology and
-parameters associated with AC analysis. We advise the reader to read the section
-[AC Model](@ref ACModel), which explains all the data involved in the
-field `acModel`.
+parameters associated with AC analysis.
 
     acModel!(system::PowerSystem)
 

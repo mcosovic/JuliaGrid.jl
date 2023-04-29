@@ -1,6 +1,6 @@
 # [Power Flow Solution](@id powerFlowSolutionAPI)
 
-For further information on this topic, please see the [Power System Analysis](@ref powerFlowAnalysisManual) section of the Manual.
+For further information on this topic, please see the [Power System Analysis](@ref PowerSystemModelManual) section of the Manual.
 
 ---
 

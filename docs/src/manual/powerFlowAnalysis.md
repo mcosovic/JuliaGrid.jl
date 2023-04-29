@@ -30,7 +30,7 @@ Finally, the package provides two additional functions. One function validates t
 Depending on how the system is constructed, the types of buses that are initially set are checked and can be changed during the initialization process, using one of the available functions such as [`newtonRaphson`](@ref newtonRaphson), [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX), [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB), or [`gaussSeidel`](@ref gaussSeidel). Assuming the Newton-Raphson method has been chosen, to explain the details, we can observe a power system with only buses and generators. The following code snippet can be used:
 ```@example busType
 using JuliaGrid # hide
-@default(unit) # hide 
+@default(unit) # hide
 @default(template) # hide
 
 system = powerSystem()
@@ -209,7 +209,7 @@ Once the AC model is defined, we can choose the method to solve the power flow p
 result = newtonRaphson(system)
 nothing # hide
 ```
-This function sets up the desired method for an iterative process based on two functions: [mismatch!](@ref mismatch!) and [solvePowerFlow!](@ref solvePowerFlow!). The [mismatch!](@ref mismatch!) function calculates the active and reactive power injection mismatches using the given voltage magnitudes and angles, while [solvePowerFlow!](@ref solvePowerFlow!) computes the new voltage magnitudes and angles.
+This function sets up the desired method for an iterative process based on two functions: [`mismatch!`](@ref mismatch!) and [`solvePowerFlow!`](@ref solvePowerFlow!). The [`mismatch!`](@ref mismatch!) function calculates the active and reactive power injection mismatches using the given voltage magnitudes and angles, while [`solvePowerFlow!`](@ref solvePowerFlow!) computes the new voltage magnitudes and angles.
 
 To perform an iterative process with the Newton-Raphson or Fast Newton-Raphson methods in JuliaGrid, the [`mismatch!`](@ref mismatch!) function must be included inside the iteration loop. For instance:
 ```@example ACPowerFlowSolution
@@ -251,7 +251,7 @@ for iteration = 1:100
 end
 nothing # hide
 ```
-The [mismatch!](@ref mismatch!) function returns the maximum values of active and reactive power injection mismatches, which are commonly used as a convergence criterion in iterative AC power flow algorithms. Note that the [`mismatch!`](@ref mismatch!) function can also be used to terminate the loop when using the Gauss-Seidel method, even though it is not required.
+The [`mismatch!`](@ref mismatch!) function returns the maximum values of active and reactive power injection mismatches, which are commonly used as a convergence criterion in iterative AC power flow algorithms. Note that the [`mismatch!`](@ref mismatch!) function can also be used to terminate the loop when using the Gauss-Seidel method, even though it is not required.
 
 !!! tip "Tip"
     To ensure an accurate count of iterations, it is important for the user to place the iteration counter after the condition expressions within the if construct. Counting the iterations before this point can result in an incorrect number of iterations, as it leads to an additional iteration being performed.
@@ -259,7 +259,7 @@ The [mismatch!](@ref mismatch!) function returns the maximum values of active an
 ---
 
 ## [DC Power Flow Solution](@id DCPowerFlowSolutionManual)
-To solve the DC power flow problem using JuliaGrid, we start by creating the `PowerSystem` composite type and defining the DC model with the [dcModel!](@ref dcModel!) function. Here's an example:
+To solve the DC power flow problem using JuliaGrid, we start by creating the `PowerSystem` composite type and defining the DC model with the [`dcModel!`](@ref dcModel!) function. Here's an example:
 ```@example DCPowerFlowSolution
 using JuliaGrid # hide
 
@@ -363,7 +363,7 @@ resultDC.bus.voltage.angle
 
 ---
 
-## [Post-Processing Analysis](@id PostProcessingAnalysisModel)
+## [Compute Powers and Currents](@id ComputePowersCurrentsManual)
 After obtaining the solution from the AC or DC power flow analysis, we can calculate various electrical quantities related to buses, branches, and generators using the [`bus!`](@ref bus!), [`branch!`](@ref branch!), and [`generator!`](@ref generator!) functions. Let us set up an AC power flow analysis:
 ```@example ComputationPowersCurrentsLosses
 using JuliaGrid # hide
@@ -413,7 +413,7 @@ system.base.power.value * result.bus.power.injection.reactive
 ---
 
 ## [Generator Reactive Power Limits](@id GeneratorReactivePowerLimitsManual)
-The function [reactivePowerLimit!](@ref reactivePowerLimit!) can be used by the user to check if the generators' output of reactive power is within the defined limits after obtaining the solution from the AC power flow analysis. This can be done by using the example code provided:
+The function [`reactivePowerLimit!`](@ref reactivePowerLimit!) can be used by the user to check if the generators' output of reactive power is within the defined limits after obtaining the solution from the AC power flow analysis. This can be done by using the example code provided:
 ```@example GeneratorReactivePowerLimits
 using JuliaGrid # hide
 @default(unit) # hide
@@ -457,22 +457,22 @@ The output reactive power of the observed generators is subject to limits which 
 Once the solution of the AC power flow analysis is obtained, calling the function [`reactivePowerLimit!`](@ref reactivePowerLimit!) will execute the [`generator!`](@ref generator!) function if it has not been executed before. This will then give us the output of the generators' reactive power as follows:
 ```@repl GeneratorReactivePowerLimits
 result.generator.power.reactive
-``` 
+```
 The variable violate indicates the violation of limits, where the first generator violates the minimum limit and the second generator violates the maximum limit, as shown below:
 ```@repl GeneratorReactivePowerLimits
 violate
-``` 
+```
 As a result of these limit violations, the `PowerSystem` type is changed, and the output reactive powers at the violated limits are set as follows:
 ```@repl GeneratorReactivePowerLimits
 system.generator.output.reactive
 ```
-To ensure that these values stay within the limits, the bus type must be changed from the generator bus (`type = 2`) to the demand bus (`type = 1`), as shown below: 
+To ensure that these values stay within the limits, the bus type must be changed from the generator bus (`type = 2`) to the demand bus (`type = 1`), as shown below:
 ```@repl GeneratorReactivePowerLimits
 system.bus.layout.type
 ```
 
 After modifying the `PowerSystem` type as described earlier, we can run the simulation again with the following code:
-```@example GeneratorReactivePowerLimits 
+```@example GeneratorReactivePowerLimits
 result = newtonRaphson(system)
 for iteration = 1:100
     stopping = mismatch!(system, result)
@@ -526,7 +526,7 @@ Upon checking the limits, we can observe that the slack bus has been transformed
 ```@repl NewSlackBus
 violate = reactivePowerLimit!(system, result)
 ```
-It is important to note that the new slack bus can be created only from the generator bus (`type = 2`). We will now perform another AC power flow analysis on the modified system using the following code:
+Here, the generator connected to the slack bus is violating the minimum reactive power limit, which indicates the need to convert the slack bus. It is important to note that the new slack bus can be created only from the generator bus (`type = 2`). We will now perform another AC power flow analysis on the modified system using the following code:
 ```@example NewSlackBus
 result = newtonRaphson(system)
 for iteration = 1:100

@@ -3,11 +3,7 @@ This function calculates the powers and currents associated with buses.
 
     bus!(system::PowerSystem, result::Result)
 
-After the function is executed, the `bus` field within the `Result` type gets updated. To 
-gain a comprehensive understanding of the equations used, along with all relevant data, it 
-is recommended that the reader examines either the section on 
-[AC Bus Post-processing Analysis](@ref acPostprocessingAnalysisBus) or the section on 
-[DC Bus Post-processing Analysis](@ref dcPostprocessingAnalysisBus).
+After the function is executed, the `bus` field within the `Result` type gets updated.
 
 # AC Power Flow Example
 ```jldoctest
@@ -109,7 +105,6 @@ function acBus!(system::PowerSystem, result::Result)
         power.injection.active[i] = real(powerInjection)
         power.injection.reactive[i] = imag(powerInjection)
 
-
         power.supply.active[i] = system.bus.supply.active[i]
         if system.bus.layout.type[i] != 1
             power.supply.reactive[i] = power.injection.reactive[i] + system.bus.demand.reactive[i]
@@ -121,17 +116,14 @@ function acBus!(system::PowerSystem, result::Result)
 end
 
 """
-The function is used to calculate the powers and currents associated with branches for AC 
-power flow analysis and, in relation to DC power flow analysis, it only calculates active 
-powers. 
+The function is used to calculate the powers and currents associated with branches for AC
+power flow analysis and, in relation to DC power flow analysis, it only calculates active
+powers.
 
     branch!(system::PowerSystem, result::Result)
 
-The function is responsible for updating the `branch` field within the `Result` type after 
-it has been executed. To gain a comprehensive understanding of the equations used, along 
-with all relevant data, it is recommended that the reader examines either the section on 
-[AC Branch Post-processing Analysis](@ref acPostprocessingAnalysisBranch) or the section 
-on [DC Branch Post-processing Analysis](@ref dcPostprocessingAnalysisBranch).
+The function is responsible for updating the `branch` field within the `Result` type after
+it has been executed.
 
 # AC Power Flow Example
 ```jldoctest
@@ -250,11 +242,7 @@ The function computes powers related to generators.
 
     generator!(system::PowerSystem, result::Result)
 
-Once executed, the `generator` field within the `Result` type is updated accordingly. To 
-gain a comprehensive understanding of the equations used, along with all relevant data, it 
-is recommended that the reader examines either the section on 
-[AC Generator Post-processing Analysis](@ref acPostprocessingAnalysisGenerator) or the 
-section on [DC Generator Post-processing Analysis](@ref dcPostprocessingAnalysisGenerator).
+Once executed, the `generator` field within the `Result` type is updated accordingly.
 
 # AC Power Flow Example
 ```jldoctest

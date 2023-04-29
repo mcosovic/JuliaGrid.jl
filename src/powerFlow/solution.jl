@@ -599,11 +599,6 @@ This function should be used within the iteration loop that follows the
 Newton-Raphson or fast Newton-Raphson method. If you arere using the Gauss-Seidel method, this
 function alone performs a single iteration loop.
 
-It is recommended that you read through the sections on the
-[Newton-Raphson](@ref newtonRaphson), Fast Newton-Raphson](@ref fastNewtonRaphson), or
-[Gauss-Seidel](@ref gaussSeidel) method to gain a comprehensive understanding of their
-implementation, including all relevant data.
-
 # Example
 ```jldoctest
 system = powerSystem("case14.h5")
@@ -784,9 +779,7 @@ power flow problem by calculating the voltage angles for each bus.
 
 The function returns a composite type `Result` as output, which includes updated
 `bus.voltage.angle` and `algorithm` fields. These fields are modified during the execution
-of the function. It is recommended that the reader peruses the section on the
-[DC Power Flow Solution](@ref DCPowerFlowSolution) to gain a comprehensive
-understanding of its implementation, including all relevant data.
+of the function.
 
 # Example
 ```jldoctest
@@ -953,8 +946,8 @@ function reactivePowerLimit!(system::PowerSystem, result::Result)
     end
 
     if bus.layout.type[bus.layout.slack] != 3
-        throw(ErrorException("In the iterative process, a generator bus is chosen as the new slack bus. 
-        However, if the reactive power limits are violated, the new slack bus is converted to a demand bus. 
+        throw(ErrorException("In the iterative process, a generator bus is chosen as the new slack bus.
+        However, if the reactive power limits are violated, the new slack bus is converted to a demand bus.
         As a result, there are no more generator buses left that can be considered as the new slack bus for the system."))
     end
 

@@ -17,7 +17,8 @@ makedocs(
             "Power Flow Analysis" => "manual/powerFlowAnalysis.md"],
         "Tutorials" =>
             ["AC and DC Model" => "tutorials/modelACDC.md",
-            "Power Flow Solution" => "tutorials/powerFlowSolution.md"],
+            "Power Flow Solution" => "tutorials/powerFlowSolution.md",
+            "Power and Current Analysis" => "tutorials/powerCurrentAnalysis.md",],
         "API Reference" =>
             ["Power System Model" => "api/powerSystemModel.md",
             "Power Flow Solution" => "api/powerFlowSolution.md",

@@ -1,6 +1,6 @@
 # [Power System Model](@id powerSystemModelAPI)
 
-For further information on this topic, please see the [Power System Model](@ref powerSystemModelManual) section of the Manual.
+For further information on this topic, please see the [Power System Model](@ref PowerSystemModelManual) section of the Manual.
 
 ---
 
