@@ -53,7 +53,7 @@ function addBus!(system::PowerSystem;
     conductance::T = missing, susceptance::T = missing,
     magnitude::T = missing, angle::T = missing,
     minMagnitude::T = missing, maxMagnitude::T = missing,
-    base::T = bus[:default][:base],
+    base::T = missing,
     area::T = bus[:default][:area], lossZone::T = bus[:default][:lossZone])
 
     demand = system.bus.demand
@@ -91,7 +91,11 @@ function addBus!(system::PowerSystem;
         layout.renumbering = true
     end
 
-    base = base / prefixVoltage
+    if ismissing(base)
+        base = bus[:default][:base] * bus[:factor][:baseVoltage] / prefixVoltage
+    else
+        base = base * factor[:baseVoltage] / prefixVoltage
+    end
     push!(system.base.voltage.value, base)
 
     voltageScale = si2pu(prefixVoltage, base, factor[:voltageMagnitude])

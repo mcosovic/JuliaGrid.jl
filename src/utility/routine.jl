@@ -119,6 +119,7 @@ macro default(mode::Symbol)
         end
         bus[:factor][:voltageAngle] = 1.0
         bus[:factor][:currentAngle] = 1.0
+        bus[:factor][:baseVoltage] = 1.0
     end
 
     if mode == :template || mode == :branch

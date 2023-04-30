@@ -25,7 +25,8 @@ const bus = Dict(
         :currentMagnitude => 0.0,
         :currentAngle => 1.0,
         :impedance => 0.0,
-        :admittance => 0.0
+        :admittance => 0.0,
+        :baseVoltage => 1.0
     )
 )
 

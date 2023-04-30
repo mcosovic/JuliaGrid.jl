@@ -49,6 +49,7 @@ const factor = Dict(
     :currentAngle => 1.0,
     :impedance => 0.0,
     :admittance => 0.0,
+    :baseVoltage => 1.0,
     )
 
 """
@@ -146,7 +147,7 @@ JuliaGrid stores all data related with voltages in per-units and radians, and th
 be altered. However, the voltage magnitude and angle units of the built-in functions used
 to add or modified power system elements can be modified using the macro:
 
-    @voltage(magnitude, angle)
+    @voltage(magnitude, angle, base)
 
 Prefixes must be specified according to the
 [SI prefixes](https://www.nist.gov/pml/owm/metric-si-prefixes) and should be included with
@@ -165,10 +166,10 @@ Changing the unit of voltage angle is reflected in the following quantities:
 
 # Example
 ```jldoctest
-@voltage(kV, deg)
+@voltage(pu, deg, kV)
 ```
 """
-macro voltage(magnitude::Symbol, angle::Symbol)
+macro voltage(magnitude::Symbol, angle::Symbol, base::Symbol)
     magnitude = string(magnitude)
     suffixUser = parseSuffix(magnitude, :voltageMagnitude)
     factor[:voltageMagnitude] = parsePrefix(magnitude, suffixUser)
@@ -176,6 +177,10 @@ macro voltage(magnitude::Symbol, angle::Symbol)
     angle = string(angle)
     suffixUser = parseSuffix(angle, :voltageAngle)
     factor[:voltageAngle] = parsePrefix(angle, suffixUser)
+
+    base = string(base)
+    suffixUser = parseSuffix(base, :baseVoltage)
+    factor[:baseVoltage] = parsePrefix(base, suffixUser)
 end
 
 """
