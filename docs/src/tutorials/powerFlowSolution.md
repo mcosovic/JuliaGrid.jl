@@ -7,7 +7,7 @@ using JuliaGrid # hide
 @default(template) # hide
 
 @power(MW, MVAr, MVA)
-@voltage(pu, deg)
+@voltage(pu, deg, V)
 
 system = powerSystem()
 

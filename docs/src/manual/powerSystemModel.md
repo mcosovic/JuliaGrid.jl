@@ -69,32 +69,29 @@ addBranch!(system; label = 1, from = 1, to = 2, resistance = 0.008, reactance = 
 
 ---
 
-##### Base Units
-The `PowerSystem` composite type stores all electrical quantities in per-units (pu) and radians (rad), except for the base values of power and voltages. The base power value is expressed in volt-amperes (VA), while the base voltages are given in volts (V). For instance, if you run the previous example, the base power can be obtained as follows:
-```@repl buildModelScratch
-system.base.power.value, system.base.power.unit
-```
-Likewise, the base voltages are specified as:
-```@repl buildModelScratch
-system.base.voltage.value, system.base.voltage.unit
-```
+##### Internal Unit System
+The `PowerSystem` composite type stores all electrical quantities in per-units and radians, except for the base values of power and voltages. The base power value is expressed in volt-amperes, while the base voltages are given in volts.
 
 ---
 
-##### Change Base Units
+##### Change Internal Base Unit Prefixes
+As an example, if you execute the previous code snippet, you can retrieve the base power and base voltage values and units as shown below:
+```@repl buildModelScratch
+system.base.power.value, system.base.power.unit
+system.base.voltage.value, system.base.voltage.unit
+```
+
 By using the [`@base`](@ref @base) macro, users can change the prefixes of the base units. For instance, if the user wishes to convert base power and base voltage values to megavolt-amperes (MVA) and kilovolts (kV) respectively, they can execute the following command:
 ```@example buildModelScratch
 @base(system, MVA, kV)
 nothing # hide
 ```
-After executing the macro, the updated base power is:
+Once the macro has been executed, the updated base power and base voltage values and units can be obtained using the following commands:
 ```@repl buildModelScratch
 system.base.power.value, system.base.power.unit
-```
-Likewise, the updated base voltage values can be retrieved using the following command:
-```@repl buildModelScratch
 system.base.voltage.value, system.base.voltage.unit
 ```
+
 Therefore, by using the [`@base`](@ref @base) macro to modify the prefixes of the base units, users can convert the output data from various analyses to specific units with the desired prefixes.
 
 ---
@@ -125,7 +122,7 @@ system.bus.demand.active
 system.bus.demand.reactive
 ```
 
-Furthermore, it is important to note that the `base` keyword pertains to base voltages, and its default input unit is fixed at volts (V).
+In addition, it is worth noting that the `base` keyword is used to specify the base voltages, and its default input unit is in volts (V).
 ```@repl addBus
 system.base.voltage.value, system.base.voltage.unit
 ```
@@ -141,21 +138,23 @@ system.bus.voltage.angle
 ---
 
 ##### Change Input Units
-Typically, all keywords associated with electrical quantities are expected to be provided in per-units (pu) and radians (rad) by default, with the exception of base voltages, which should be specified in volts (V). However, if users wish to specify different units than the default per-units and radians, they can make use of macros like the following:
+Typically, all keywords associated with electrical quantities are expected to be provided in per-units (pu) and radians (rad) by default, with the exception of base voltages, which should be specified in volts (V). However, users can choose to use different units than the default per-units and radians or modify the prefix of the base voltage unit by using macros such as the following:
 ```@example addBusUnit
 using JuliaGrid # hide
 
 @power(MW, MVAr, MVA)
-@voltage(pu, deg)
+@voltage(pu, deg, kV)
 nothing # hide
 ```
+
 We can create identical two buses as before using new system of units as follows:
 ```@example addBusUnit
 system = powerSystem()
 
-addBus!(system; label = 1, type = 3, active = 10.0, base = 345e3)
-addBus!(system; label = 2, type = 1, reactive = 5.0, angle = -2.0, base = 345e3)
+addBus!(system; label = 1, type = 3, active = 10.0, base = 345)
+addBus!(system; label = 2, type = 1, reactive = 5.0, angle = -2.0, base = 345)
 ```
+
 As can be observed, electrical quantities will continue to be stored in per-units and radians format:
 ```@repl addBusUnit
 system.bus.demand.active
@@ -163,24 +162,18 @@ system.bus.demand.reactive
 system.bus.voltage.angle
 ```
 
-It is worth noting that the `base` keyword's input unit cannot be changed and must be given in volts, even if the user employs the [`@base`](@ref @base) macro. For example:
-```@example addBusBase
-using JuliaGrid # hide
-
-@power(MW, MVAr, MVA)
-@voltage(pu, deg)
-
-system = powerSystem()
-@base(system, MVA, kV)
-
-addBus!(system; label = 1, type = 3, active = 10.0, base = 345e3)
-addBus!(system; label = 2, type = 1, reactive = 5.0, angle = -2.0, base = 345e3)
-```
-To check the value and unit of the base voltage, we can use the commands:
+The base voltage values will still be stored in volts (V) since we only changed the input unit prefix, and did not modify the internal unit prefix, as shown below:
 ```@repl addBusBase
 system.base.voltage.value, system.base.voltage.unit
 ```
-As we can see from the example above, the [`@base`](@ref @base) macro simply adopts the input volts of the `base` keyword, and the macro does not interfere with the input units.
+To modify the internal unit prefix, the following command can be used:
+```@example addBusBase
+@base(system, VA, kV)
+```
+After executing this command, the base voltage values will be stored in kilovolts (kV):
+```@repl addBusBase
+system.base.voltage.value, system.base.voltage.unit
+```
 
 ---
 
@@ -239,7 +232,7 @@ To use units other than per-units (pu) and radians (rad), macros can be employed
 ```@example addBranchUnit
 using JuliaGrid # hide
 @parameter(Ω, pu)
-@voltage(pu, deg)
+@voltage(pu, deg, V)
 
 system = powerSystem()
 
@@ -357,7 +350,7 @@ Additionally, the `bus` keyword is saved based on the internally assigned numeri
 system.bus.label
 system.generator.layout.bus
 ```
-To retrieve the original `bus` labels, the following method can be used:
+To obtain the original labels of the `bus` keyword, you can use the following code:
 ```@repl AccessGeneratorLabels
 labelBus = collect(keys(sort(system.bus.label; byvalue = true)))
 label = labelBus[system.generator.layout.bus]
@@ -398,7 +391,7 @@ addGenerator!(system; label = 2, bus = 1, active = 20, reactive = 30)
 nothing # hide
 ```
 
-This code example involves two uses of the [`addBus!`](@ref addBus!) and [`addBranch!`](@ref addBranch!) functions. In the first use, the functions rely on the default values set by the templates created with the [`addBus!`](@ref addBus!) and[`addBranch!`](@ref addBranch!) macros. In contrast, the second use passes specific values that match the keywords used in the templates. As a result, the templates are overridden:
+This code example involves two uses of the [`addBus!`](@ref addBus!) and [`addBranch!`](@ref addBranch!) functions. In the first use, the functions rely on the default values set by the templates created with the [`@bus`](@ref @bus) and [`@branch`](@ref @branch) macros. In contrast, the second use passes specific values that match the keywords used in the templates. As a result, the templates are overridden:
 ```@repl CreateBusTemplate
 system.bus.layout.type
 system.bus.demand.active
@@ -438,24 +431,8 @@ system.bus.demand.reactive
 ```
 Thus, JuliaGrid automatically tracks the unit system used to create templates and provides the appropriate conversion to per-units. Even if the user switches to a different unit system later on, the previously defined template will still be valid.
 
-Finally, it is worth noting that the unit of base voltage for the bus template is determined by the last call of the [`@base`](@ref @base) macro before calling the [`@bus`](@ref @bus) macro. For example:
-```@example CreateBusTemplateBase
-using JuliaGrid # hide
-
-system1 = powerSystem()
-system2 = powerSystem()
-
-@base(system1, MVA, kV)
-@base(system2, MVA, V)
-
-@bus(type = 2, active = 1.0, reactive = 2.0, base = 138e3)
-addBus!(system1; label = 1)
-addBus!(system2; label = 2, magnitude = 1.1)
-
-@default(template) # hide
-nothing # hide
-```
-In this case, since the last execution of the [`@base`](@ref @base) macro before creating the bus template specified volt (V) units, the `base` keyword value must be given in volts.
+!!! note "Info"
+    It should be noted that the unit of base voltage for the bus template specified by the `base` keyword is fixed to volts and cannot be altered.
 
 ---
 
