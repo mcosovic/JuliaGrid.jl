@@ -183,19 +183,18 @@ mutable struct PowerSystem
 end
 
 """
-The function builds the composite type `PowerSystem` and populates `bus`, `branch`, 
-`generator` and `base` fields. The function can be used by passing the path to the HDF5 
-file with the .h5 extension or a Matpower file with the .m extension as an argument.  
+The function builds the composite type `PowerSystem` and populates `bus`, `branch`,
+`generator` and `base` fields. The function can be used by passing the path to the HDF5
+file with the .h5 extension or a Matpower file with the .m extension as an argument.
 
     powerSystem("pathToExternalData/name.extension")
 
-In general, once the composite type `PowerSystem` has been created, it is possible to add 
+In general, once the composite type `PowerSystem` has been created, it is possible to add
 new buses, branches, or generators, or modify the parameters of existing ones.
 
 # Units
-JuliaGrid stores all data in per-unit (pu) and radian (rad) format which are fixed, the 
-exceptions are base values in volt-ampere (VA) and volt (V) which can be changed using the 
-macro [`@base`](@ref @base).
+JuliaGrid stores all data in per-units and radians format which are fixed, the exceptions are
+base values in volt-amperes and volts which can be changed using the macro [`@base`](@ref @base).
 
 # Example
 ```jldoctest
@@ -227,12 +226,13 @@ function powerSystem(inputFile::String)
 end
 
 """
-Alternatively, the `PowerSystem` composite type can be initialized by calling the function 
-without any arguments. 
+Alternatively, the `PowerSystem` composite type can be initialized by calling the function
+without any arguments.
 
     powerSystem()
 
-This allows the model to be built from scratch and modified as needed.
+This allows the model to be built from scratch and modified as needed. This generates an empty
+`PowerSystem` type, with only the base power initialized to 1.0e8 volt-amperes (VA).
 """
 function powerSystem()
     af = Array{Float64,1}(undef, 0)
@@ -438,7 +438,7 @@ function loadBase(system::PowerSystem, hdf5::HDF5.File)
 
     base = hdf5["base"]
     system.base.power.value = read(base["power"])
-    system.base.voltage.value = arrayFloat(base, "voltage", system.bus.number) 
+    system.base.voltage.value = arrayFloat(base, "voltage", system.bus.number)
 end
 
 ######### Load Power System Data from MATLAB File ##########
@@ -554,7 +554,7 @@ function loadBus(system::PowerSystem, busLine::Array{String,1})
             bus.layout.slack = k
         end
 
-        system.base.voltage.value[k] = parse(Float64, data[10]) * 1e3 
+        system.base.voltage.value[k] = parse(Float64, data[10]) * 1e3
     end
 
     if bus.layout.slack == 0
@@ -767,14 +767,14 @@ end
 ######## Check Matrix Float64 Data ##########
 @inline function loadPolynomial(group, key::String, number::Int64)
     data = [Array{Float64}(undef, 0) for i = 1:number]
-    
+
     if !isempty(group[key])
         datah5 = HDF5.readmmap(group[key])
         @inbounds for polynomial in eachcol(datah5)
             index = trunc(Int64, polynomial[1])
             indexCoeff = 2 + trunc(Int64, polynomial[2])
-           
-            data[index] = polynomial[3:indexCoeff] 
+
+            data[index] = polynomial[3:indexCoeff]
         end
     end
 
@@ -784,7 +784,7 @@ end
 ######## Check Matrix Float64 Data ##########
 @inline function loadPiecewise(group, key::String, number::Int64)
     data = [Array{Float64}(undef, 0, 0) for i = 1:number]
-    
+
     if !isempty(group[key])
         datah5 = HDF5.readmmap(group[key])
 
@@ -795,7 +795,7 @@ end
             if datah5[i, 1] != datah5[i - 1, 1]
                 indexBus = trunc(Int64, datah5[i - 1, 1])
                 data[indexBus] = datah5[current_index:(i - 1), 2:3]
-                
+
                 current_index = i
             end
         end

@@ -1,33 +1,33 @@
 """
-The function adds a new bus to the `PowerSystem` type, updating its bus field.
+The function adds a new bus to the `PowerSystem` type, updating its `bus` field.
 
     addBus!(system::PowerSystem; label, type, active, reactive, conductance, susceptance,
         magnitude, angle, minMagnitude, maxMagnitude, base, area, lossZone)
 
 The bus is defined with the following parameters:
-* `label`: a unique label for the bus
+* `label`: unique label for the bus
 * `type`: the bus type:
-  * `type = 1`: demand bus (PQ)
-  * `type = 2`: generator bus (PV)
-  * `type = 3`: slack bus (Vθ)
+  * `type = 1`: demand bus - PQ (default)
+  * `type = 2`: generator bus - PV
+  * `type = 3`: slack bus - Vθ
 * `active` (pu or W): the active power demand at the bus
 * `reactive` (pu or VAr): the reactive power demand at the bus
 * `conductance` (pu or W): the active power demanded of the shunt element
 * `susceptance` (pu or VAr): the reactive power injected of the shunt element
-* `magnitude` (pu or V): the initial value of the voltage magnitude
+* `magnitude` (pu or V): the initial value of the voltage magnitude (default is 1.0 pu)
 * `angle` (rad or deg): the initial value of the voltage angle
 * `minMagnitude` (pu or V): the minimum voltage magnitude value
 * `maxMagnitude` (pu or V): the maximum voltage magnitude value
-* `base` (V): the base value of the voltage magnitude
+* `base` (V): the base value of the voltage magnitude (default value is 138e3 V)
 * `area`: the area number
 * `lossZone`: the loss zone.
 
 # Units
-The input units are in per-units (pu) and radians (rad) by default as shown, except for
-the keyword `base` which is given by default in volt (V). The unit settings, such as the
-selection between the per-unit system or the SI system with the appropriate prefixes,
-can be modified using macros [`@base`](@ref @base), [`@power`](@ref @power), and
-[`@voltage`](@ref @voltage).
+The default units for the input parameters are per-units (pu) and radians (rad), except for the
+`base` keyword argument, which is given in volts (V) by default. However, the user can choose to
+use other units besides per-units and radians by utilizing macros such as [`@power`](@ref @power),
+and [`@voltage`](@ref @voltage). Further, the user has the option to define appropriate prefixes
+for `base` voltages using the [`@base`](@ref @base) macro.
 
 # Examples
 Creating a bus using the default unit system:
@@ -53,7 +53,7 @@ function addBus!(system::PowerSystem;
     conductance::T = missing, susceptance::T = missing,
     magnitude::T = missing, angle::T = missing,
     minMagnitude::T = missing, maxMagnitude::T = missing,
-    base::T = bus[:default][:base] * bus[:factor][:baseVoltage] / factor[:baseVoltage],
+    base::T = bus[:default][:base],
     area::T = bus[:default][:area], lossZone::T = bus[:default][:lossZone])
 
     demand = system.bus.demand
@@ -91,6 +91,7 @@ function addBus!(system::PowerSystem;
         layout.renumbering = true
     end
 
+    base = base / prefixVoltage
     push!(system.base.voltage.value, base)
 
     voltageScale = si2pu(prefixVoltage, base, factor[:voltageMagnitude])
@@ -142,11 +143,11 @@ accordance with the keywords specified within the [`addBus!`](@ref addBus!) func
 with their corresponding values.
 
 # Units
-The input units are in per-units (pu) and radians (rad) by default, except for
-the keyword `base` which is given by default in volt (V). The unit settings, such as the
-selection between the per-unit system or the SI system with the appropriate prefixes,
-can be modified using macros [`@base`](@ref @base), [`@power`](@ref @power), and
-[`@voltage`](@ref @voltage).
+The default units for the input parameters are per-units and radians, except for the `base`
+keyword argument, which is given in volts by default. However, the user can choose to use other
+units besides per-units and radians by utilizing macros such as [`@power`](@ref @power),
+and [`@voltage`](@ref @voltage). Further, the user has the option to define appropriate prefixes
+for base voltages using the [`@base`](@ref @base) macro.
 
 # Examples
 Creating a bus template using the default unit system:
@@ -191,9 +192,10 @@ of a shunt element connected to a bus.
     shuntBus!(system::PowerSystem; label, conductance, susceptance)
 
 The `label` keyword must match an existing bus label. If either `conductance` or
-`susceptance` is left out, the corresponding value will remain unchanged. Additionally,
-this function automatically updates the `acModel` field, eliminating the need to rebuild
-the model from scratch when making changes to these parameters.
+`susceptance` is left out, the corresponding value will remain unchanged. It updates the
+`bus.shunt` field of the `PowerSystem` composite type. Additionally, this function automatically
+updates the `acModel` field of the `PowerSystem` type, eliminating the need to rebuild the model
+from scratch when making changes to these parameters.
 
 # Units
 The input units are in per-units by default, but they can be modified using the
@@ -240,7 +242,7 @@ function shuntBus!(system::PowerSystem; user...)
 end
 
 """
-The function adds a new branch to the `PowerSystem` type and updates its branch field.
+The function adds a new branch to the `PowerSystem` type and updates its `branch` field.
 A branch can be added between already defined buses.
 
     addBranch!(system::PowerSystem; label, from, to, status, resistance, reactance,
@@ -248,11 +250,11 @@ A branch can be added between already defined buses.
         longTerm, shortTerm, emergency, type)
 
 The branch is defined with the following parameters:
-* `label`: unique branch label
+* `label`: unique label for the branch
 * `from`: from bus label, corresponds to the bus label
 * `to`: to bus label, corresponds to the bus label
 * `status`: operating status of the branch:
-  * `status = 1`: in-service
+  * `status = 1`: in-service (default)
   * `status = 0`: out-of-service
 * `resistance` (pu or Ω): branch resistance
 * `reactance` (pu or Ω): branch reactance
@@ -265,15 +267,14 @@ The branch is defined with the following parameters:
 * `shortTerm` (pu or VA, W): long-term rating (equal to zero for unlimited)
 * `emergency` (pu or VA, W): emergency rating (equal to zero for unlimited)
 * `type`: types of `longTerm`, `shortTerm`, and `emergency` ratings:
-  * `type = 1`: apparent power flow (pu or VA)
+  * `type = 1`: apparent power flow (pu or VA) (default)
   * `type = 2`: active power flow (pu or W)
   * `type = 3`: current magnitude (pu or VA at 1 pu voltage).
 
 # Units
-The input units are in per-units (pu) and radians (rad) by default. The unit settings, such
-as the selection between the per-unit system or the SI system with the appropriate prefixes,
-can be modified using macros [`@power`](@ref @power), [`@voltage`](@ref @voltage), and
-[`@parameter`](@ref @parameter).
+The default units for the input parameters are per-units (pu) and radians (rad). However, the
+user can choose to use other units besides per-units and radians by utilizing macros such as
+[`@power`](@ref @power), [`@voltage`](@ref @voltage), and [`@parameter`](@ref @parameter).
 
 # Examples
 Creating a branch using the default unit system:
@@ -404,15 +405,14 @@ The macro generates a template for a branch, which can be utilized to define a b
 
     @branch(kwargs...)
 
-To define the branch template, the kwargs input arguments must be provided in
-accordance with the keywords specified within the [`addBranch!`](@ref addBranch!) function,
-along with their corresponding values.
+To define the branch template, the kwargs input arguments must be provided in accordance with
+the keywords specified within the [`addBranch!`](@ref addBranch!) function, along with their
+corresponding values.
 
 # Units
-The input units are in per-units (pu) and radians (rad) by default. The unit settings, such
-as the selection between the per-unit system or the SI system with the appropriate prefixes,
-can be modified using macros [`@power`](@ref @power), [`@voltage`](@ref @voltage), and
-[`@parameter`](@ref @parameter).
+The default units for the input parameters are per-units and radians. However, the user can
+choose to use other units besides per-units and radians by utilizing macros such as
+[`@power`](@ref @power), [`@voltage`](@ref @voltage), and [`@parameter`](@ref @parameter).
 
 # Examples
 Creating a branch template using the default unit system:
@@ -516,19 +516,20 @@ end
 
 """
 This function enables the alteration of the `resistance`, `reactance`, `susceptance`,
-`turnsRatio` and `shiftAngle` parameters of a branch, identified by its `label`, within
-the `PowerSystem`.
+`turnsRatio` and `shiftAngle` parameters of a branch, identified by its `label`.
 
     parameterBranch!(system::PowerSystem; label, resistance, reactance, susceptance,
         turnsRatio, shiftAngle)
 
-If any of these parameters are omitted, their current values will be retained. Additionally,
-this function updates the `acModel` and `dcModel` fields automatically, removing the need
-to rebuild the model from scratch.
+If any of these parameters are omitted, their current values will be retained. It updates
+the `branch.parameter` field of the `PowerSystem` composite type. Additionally, this function
+updates the `acModel` and `dcModel` fields automatically, removing the need to rebuild the
+model from scratch.
 
 # Units
-The input units are in per-units (pu) by default, but they can be modified using the
-following macros [`@voltage`](@ref @voltage) and [`@parameter`](@ref @parameter).
+The default units for the input parameters are per-units and radians. However, the user can
+choose to use other units besides per-units and radians by utilizing macros such as
+[`@voltage`](@ref @voltage) and [`@parameter`](@ref @parameter).
 
 # Example
 ```jldoctest

@@ -49,7 +49,6 @@ const factor = Dict(
     :currentAngle => 1.0,
     :impedance => 0.0,
     :admittance => 0.0,
-    :baseVoltage => 1.0
     )
 
 """
@@ -89,7 +88,6 @@ macro base(system::Symbol, power::Symbol, voltage::Symbol)
         system.base.voltage.value = system.base.voltage.value * prefixOld / $prefixVoltage
         system.base.voltage.prefix = $prefixVoltage
         system.base.voltage.unit = $voltage
-        factor[:baseVoltage] = $prefixVoltage
     end
 end
 
