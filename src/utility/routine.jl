@@ -118,7 +118,6 @@ macro default(mode::Symbol)
             bus[:factor][key] = 0.0
         end
         bus[:factor][:voltageAngle] = 1.0
-        bus[:factor][:baseVoltage] = 1.0
         bus[:factor][:currentAngle] = 1.0
     end
 
@@ -133,7 +132,6 @@ macro default(mode::Symbol)
             branch[:factor][key] = 0.0
         end
         branch[:factor][:voltageAngle] = 1.0
-        branch[:factor][:baseVoltage] = 1.0
         branch[:factor][:currentAngle] = 1.0
     end
 
@@ -148,7 +146,6 @@ macro default(mode::Symbol)
             generator[:factor][key] = 0.0
         end
         generator[:factor][:voltageAngle] = 1.0
-        generator[:factor][:baseVoltage] = 1.0
         generator[:factor][:currentAngle] = 1.0
     end
 end
