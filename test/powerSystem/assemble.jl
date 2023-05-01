@@ -1,5 +1,4 @@
 @testset "addBus!, addGenerator!, addBranch!" begin
-    rad = pi / 180
     system = powerSystem(string(pathData, "part300.m"))
 
     systemPU = powerSystem()
@@ -102,7 +101,6 @@
 end
 
 @testset "SI Units: addBus!, addGenerator!, addBranch!" begin
-    rad = pi / 180
     system = powerSystem(string(pathData, "part300.m"))
 
     @power(MW, MVAr, MVA)
