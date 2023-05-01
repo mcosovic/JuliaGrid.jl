@@ -461,7 +461,7 @@ their maximum values. These maximum values can be used to terminate the iteratio
 
 This function is designed to be used within the iteration loop before calling the
 [`solvePowerFlow!`](@ref solvePowerFlow!) function. When using either the Newton-Raphson or
-fast Newton-Raphson methods, the function updates the mismatch fields within the `Result`
+fast Newton-Raphson methods, the function updates the `mismatch` fields within the `Result`
 composite type. When using the Gauss-Seidel method, the function does not store any data
 and is only used to terminate the iteration loop.
 """
@@ -589,15 +589,15 @@ end
 
 """
 The function calculates the magnitudes and angles of bus voltages using either the
-Newton-Raphson, fast Newton-Raphson, or Gauss-Seidel method. It updates the `bus.voltage`
-and `algorithm` fields of the `Result` composite type accordingly.
+Newton-Raphson, fast Newton-Raphson, or Gauss-Seidel method. It updates the `bus.voltage` and
+`algorithm` fields of the `Result` composite type accordingly.
 
     solvePowerFlow!(system::PowerSystem, result::Result)
 
 This function should be used within the iteration loop that follows the
 [`mismatch!`](@ref mismatch!) function, as they together perform a single iteration of the
-Newton-Raphson or fast Newton-Raphson method. If you arere using the Gauss-Seidel method, this
-function alone performs a single iteration loop.
+Newton-Raphson or fast Newton-Raphson method. If you utilize the Gauss-Seidel method, this
+function alone will calculate the bus voltages.
 
 # Example
 ```jldoctest
@@ -606,7 +606,7 @@ acModel!(system)
 
 result = newtonRaphson(system)
 for i = 1:10
-    stopping = mismatchPowerFlow!(system, result)
+    stopping = mismatch!(system, result)
     if all(stopping .< 1e-8)
         break
     end
@@ -772,12 +772,12 @@ function solveGaussSeidel!(system::PowerSystem, result::Result)
 end
 
 """
-The function takes a `PowerSystem` composite type as input and uses it to solve the DC
-power flow problem by calculating the voltage angles for each bus.
+The function takes a `PowerSystem` composite type as input and uses it to solve the DC power
+flow problem by calculating the voltage angles for each bus.
 
     solvePowerFlow(system::PowerSystem)
 
-The function returns a composite type `Result` as output, which includes updated
+The function returns the composite type `Result` as output, which includes updated
 `bus.voltage.angle` and `algorithm` fields. These fields are modified during the execution
 of the function.
 
@@ -837,9 +837,9 @@ end
 
 """
 The function verifies whether the generators in a power system exceed their reactive power
-limits. This is done by setting the reactive power of the generators to within the limits
-if they are violated, after determining the bus voltage magnitudes and angles. If the
-limits are violated, the corresponding PV buses or the slack bus are converted to PQ buses.
+limits. This is done by setting the reactive power of the generators to within the limits if
+they are violated, after determining the bus voltage magnitudes and angles. If the limits are
+violated, the corresponding generator buses or the slack bus are converted to demand buses.
 
 The function returns the `violate` variable to indicate which buses violate the limits,
 with -1 indicating a violation of the minimum limits and 1 indicating a violation of the
@@ -847,13 +847,11 @@ maximum limits.
 
     reactivePowerLimit!(system::PowerSystem, result::Result)
 
-First, if the [`generator!`](@ref generator!) function has not been executed,
-[`reactivePowerLimit!`](@ref reactivePowerLimit!) will execute it and update the
-`generator` field of the `Result` type.
+Initially, if the [`generator!`](@ref generator!) function has not been run, it will be executed
+to update the `generator` field of the `Result` type.
 
-Afterward, the function uses the results from [`generator!`](@ref generator!) to assign
-values to the `generator.output.active` and `bus.supply.active` fields of the `System`
-type.
+Afterward, the function uses the results from the `generator` field to assign values to the
+`generator.output.active` and `bus.supply.active` fields of the `System` type.
 
 At the end of the process, the function inspects the reactive powers of the generator and
 adjusts them to their maximum or minimum values if they violate the threshold. The
@@ -868,23 +866,23 @@ system = powerSystem("case14.h5")
 acModel!(system)
 
 result = newtonRaphson(system)
-stopping = result.algorithm.iteration.stopping
-for i = 1:200
-    newtonRaphson!(system, result)
-    if stopping.active < 1e-8 && stopping.reactive < 1e-8
+for i = 1:10
+    stopping = mismatch!(system, result)
+    if all(stopping .< 1e-8)
         break
     end
+    solvePowerFlow!(system, result)
 end
 
 violate = reactivePowerLimit!(system, result)
 
 result = newtonRaphson(system)
-stopping = result.algorithm.iteration.stopping
-for i = 1:200
-    newtonRaphson!(system, result)
-    if stopping.active < 1e-8 && stopping.reactive < 1e-8
+for i = 1:10
+    stopping = mismatch!(system, result)
+    if all(stopping .< 1e-8)
         break
     end
+    solvePowerFlow!(system, result)
 end
 ```
 """
@@ -963,7 +961,7 @@ identified by the `bus.layout.slack` field. This function only updates the
 
 For instance, if the reactive power of the generator exceeds the limit on the slack bus,
 the [`reactivePowerLimit!`](@ref reactivePowerLimit!) function will change that bus to a
-PQ bus and designate the first PV bus in the sequence as the new slack bus. After
+demand bus and designate the first generator bus in the sequence as the new slack bus. After
 obtaining the updated AC power flow solution based on the new slack bus, it is possible to
 adjust the voltage angles to align with the angle of the original slack bus. The `slack`
 keyword specifies the bus label of the original slack bus.
@@ -974,23 +972,23 @@ system = powerSystem("case14.h5")
 acModel!(system)
 
 result = newtonRaphson(system)
-stopping = result.algorithm.iteration.stopping
-for i = 1:200
-    newtonRaphson!(system, result)
-    if stopping.active < 1e-8 && stopping.reactive < 1e-8
+for i = 1:10
+    stopping = mismatch!(system, result)
+    if all(stopping .< 1e-8)
         break
     end
+    solvePowerFlow!(system, result)
 end
 
 reactivePowerLimit!(system, result)
 
 result = newtonRaphson(system)
-stopping = result.algorithm.iteration.stopping
-for i = 1:200
-    newtonRaphson!(system, result)
-    if stopping.active < 1e-8 && stopping.reactive < 1e-8
+for i = 1:10
+    stopping = mismatch!(system, result)
+    if all(stopping .< 1e-8)
         break
     end
+    solvePowerFlow!(system, result)
 end
 
 adjustVoltageAngle!(system, result; slack = 1)

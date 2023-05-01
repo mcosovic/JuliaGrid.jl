@@ -1,8 +1,7 @@
 # [Power Flow Analysis](@id PowerFlowAnalysisManual)
+To perform AC or DC power flow analysis, the composite type `PowerSystem` with created `acModel` or `dcModel` is required. The next step is to create the composite type `Result`, which has fields `bus`, `branch`, `generator`, and `algorithm`.
 
-The calculation of bus voltages is essential to solving the power flow problem. The composite type `PowerSystem`, which includes `bus`, `branch`, and `generator` fields, is required to obtain a solution. Additionally, depending on the type of power flow used, either `acModel` or `dcModel` must be used.
-
-After creating the composite type `PowerSystem`, the next step is to create the composite type `Result`, which has fields `bus`, `branch`, `generator`, and `algorithm`. To initialize the iterative method for the AC power flow, the `Result` composite type must be created using any of the following functions:
+To initialize the method for solving the AC power flow and create the `Result` composite, use any of the following functions:
 * [`newtonRaphson`](@ref newtonRaphson)
 * [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX)
 * [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB)
@@ -20,7 +19,7 @@ JuliaGrid offers a set of post-processing analysis functions for calculating pow
 * [`branch!`](@ref branch!)
 * [`generator!`](@ref generator!).
 
-Finally, the package provides two additional functions. One function validates the reactive power limits of generators once the AC power flow solution has been computed. The other function adjusts the voltage angles to match the angle of an arbitrary slack bus:
+Finally, the package provides two additional functions. One function validates the reactive power limits of generators once the AC power flow solution has been computed. The other function adjusts the voltage angles to match the angle of an arbitrary bus:
 * [`reactivePowerLimit!`](@ref reactivePowerLimit!)
 * [`adjustVoltageAngle!`](@ref adjustVoltageAngle!).
 
@@ -76,7 +75,7 @@ In this example, the bus labelled with 2 remains a demand bus (`type = 1`) even 
 system.bus.layout.type
 ```
 !!! note "Info"
-    Only buses that are defined as generator buses (`type = 2`) but do not have a in-service generator connected to them will have their type changed to a demand bus (`type = 1`).
+    The type of only those buses that are defined as generator buses (`type = 2`) but do not have a connected in-service generator will be changed to demand buses (`type = 1`).
 
 ---
 
@@ -118,28 +117,15 @@ system.generator.voltage.magnitude
 !!! note "Info"
     The rule governing the specification of starting voltage magnitudes is simple. If a bus has an in-service generator and is declared the generator bus (`type = 2`), then the starting voltage magnitudes are specified using the setpoint provided within the generator. This is because the generator bus has known values of voltage magnitude that are specified within the generator.
 
-Finally, let us add the generator at the slack bus using the following code snippet:
-```@example initializeACPowerFlowSlack
-using JuliaGrid # hide
-
-system = powerSystem()
-
-addBus!(system; label = 1, type = 3, magnitude = 1.0, angle = 0.0)
-addBus!(system; label = 2, type = 1, magnitude = 0.9, angle = -0.1)
-addBus!(system; label = 3, type = 2, magnitude = 0.8, angle = -0.2)
-
-addGenerator!(system; label = 1, bus = 2, magnitude = 1.1)
-addGenerator!(system; label = 2, bus = 3, magnitude = 1.2)
+Finally, we can add a generator to the slack bus of the previously created power system and then reinitialize the Newton-Raphson method:
+```@example initializeACPowerFlow
 addGenerator!(system; label = 3, bus = 1, magnitude = 1.3)
 
-acModel!(system)
-
 result = newtonRaphson(system)
-
 nothing # hide
 ```
 The starting voltages are now as follows:
-```@repl initializeACPowerFlowSlack
+```@repl initializeACPowerFlow
 result.bus.voltage.magnitude
 ```
 !!! note "Info"
@@ -179,7 +165,7 @@ The starting voltage values are:
 result.bus.voltage.magnitude
 result.bus.voltage.angle
 ```
-Thus, we start with a set of voltage magnitude values that are constant throughout iteration, and the rest of the values correspond to the "flat start".
+Thus, we start with the set of voltage magnitude values that are constant throughout iteration, and the rest of the values correspond to the "flat start".
 
 ---
 
@@ -204,7 +190,7 @@ acModel!(system)
 nothing # hide
 ```
 
-Once the AC model is defined, we can choose the method to solve the power flow problem. JuliaGrid provides four methods: [`newtonRaphson`](@ref newtonRaphson), [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX), [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB), and [`gaussSeidel`](@ref gaussSeidel). For example, to use the Newton-Raphson method to solve the power flow problem, we can call the newtonRaphson [`newtonRaphson`](@ref newtonRaphson) as follows:
+Once the AC model is defined, we can choose the method to solve the power flow problem. JuliaGrid provides four methods: [`newtonRaphson`](@ref newtonRaphson), [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX), [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB), and [`gaussSeidel`](@ref gaussSeidel). For example, to use the Newton-Raphson method to solve the power flow problem, we can call the [`newtonRaphson`](@ref newtonRaphson) function as follows:
 ```@example ACPowerFlowSolution
 result = newtonRaphson(system)
 nothing # hide
@@ -213,7 +199,6 @@ This function sets up the desired method for an iterative process based on two f
 
 To perform an iterative process with the Newton-Raphson or Fast Newton-Raphson methods in JuliaGrid, the [`mismatch!`](@ref mismatch!) function must be included inside the iteration loop. For instance:
 ```@example ACPowerFlowSolution
-result = newtonRaphson(system)
 for iteration = 1:100
     mismatch!(system, result)
     solvePowerFlow!(system, result)
@@ -236,6 +221,9 @@ nothing # hide
 ```
 In these examples, the algorithms run until the specified number of iterations is reached.
 
+!!! note "Info"
+    We recommend that the reader refer to the tutorial on [AC power flow analysis](@ref ACPowerFlowAnalysisTutorials), where we explain the implementation of the methods and algorithm structures in detail.
+
 ---
 
 ##### Breaking the Iterative Process
@@ -251,7 +239,7 @@ for iteration = 1:100
 end
 nothing # hide
 ```
-The [`mismatch!`](@ref mismatch!) function returns the maximum values of active and reactive power injection mismatches, which are commonly used as a convergence criterion in iterative AC power flow algorithms. Note that the [`mismatch!`](@ref mismatch!) function can also be used to terminate the loop when using the Gauss-Seidel method, even though it is not required.
+The [`mismatch!`](@ref mismatch!) function returns the maximum absolute values of active and reactive power injection mismatches, which are commonly used as a convergence criterion in iterative AC power flow algorithms. Note that the [`mismatch!`](@ref mismatch!) function can also be used to terminate the loop when using the Gauss-Seidel method, even though it is not required.
 
 !!! tip "Tip"
     To ensure an accurate count of iterations, it is important for the user to place the iteration counter after the condition expressions within the if construct. Counting the iterations before this point can result in an incorrect number of iterations, as it leads to an additional iteration being performed.
@@ -259,7 +247,7 @@ The [`mismatch!`](@ref mismatch!) function returns the maximum values of active 
 ---
 
 ## [DC Power Flow Solution](@id DCPowerFlowSolutionManual)
-To solve the DC power flow problem using JuliaGrid, we start by creating the `PowerSystem` composite type and defining the DC model with the [`dcModel!`](@ref dcModel!) function. Here's an example:
+To solve the DC power flow problem using JuliaGrid, we start by creating the `PowerSystem` composite type and defining the DC model with the [`dcModel!`](@ref dcModel!) function. Here is an example:
 ```@example DCPowerFlowSolution
 using JuliaGrid # hide
 
@@ -288,6 +276,9 @@ The bus voltage angles obtained can be accessed as follows:
 result.bus.voltage.angle
 nothing # hide
 ```
+
+!!! note "Info"
+    We recommend that readers refer to the tutorial on [DC power flow analysis](@ref DCPowerFlowAnalysisTutorials) for insights into the implementation.
 
 ---
 
@@ -330,6 +321,7 @@ resultGS.bus.voltage.angle
 Next, we can initialize the Newton-Raphson method with the voltages obtained from the Gauss-Seidel method and start the algorithm from that point:
 ```@example ReusablePowerSystemType
 result = newtonRaphson(system)
+
 for i = 1:system.bus.number
     result.bus.voltage.magnitude[i] = resultGS.bus.voltage.magnitude[i]
     result.bus.voltage.angle[i] = resultGS.bus.voltage.angle[i]
@@ -359,12 +351,12 @@ The bus voltage angles are:
 resultDC.bus.voltage.angle
 ```
 !!! note "Info"
-    The functions [`newtonRaphson`](@ref newtonRaphson), [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX), [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB), or [`gaussSeidel`](@ref gaussSeidel) only modify the `PowerSystem` type to eliminate mistakes in the bus types as explained in the section [Bus Type Modification](@ref BusTypeModificationManual). Further, the functions [`mismatch!`](@ref mismatch!), [`solvePowerFlow!`](@ref solvePowerFlow!), and [`solvePowerFlow`](@ref solvePowerFlow) do not modify the `PowerSystem` type at all.
+    The functions [`newtonRaphson`](@ref newtonRaphson), [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX), [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB), or [`gaussSeidel`](@ref gaussSeidel) only modify the `PowerSystem` type to eliminate mistakes in the bus types as explained in the section [Bus Type Modification](@ref BusTypeModificationManual). Further, the functions [`mismatch!`](@ref mismatch!), [`solvePowerFlow!`](@ref solvePowerFlow!), and [`solvePowerFlow`](@ref solvePowerFlow) do not modify the `PowerSystem` type at all. Therefore, it is safe to use the same `PowerSystem` type for multiple analyses once it has been created.
 
 ---
 
 ## [Power and Current Analysis](@id PowerCurrentAnalysisManual)
-After obtaining the solution from the AC or DC power flow analysis, we can calculate various electrical quantities related to buses, branches, and generators using the [`bus!`](@ref bus!), [`branch!`](@ref branch!), and [`generator!`](@ref generator!) functions. Let us set up an AC power flow analysis:
+After obtaining the solution from the AC or DC power flow, we can calculate various electrical quantities related to buses, branches, and generators using the [`bus!`](@ref bus!), [`branch!`](@ref branch!), and [`generator!`](@ref generator!) functions. For instance, let us consider the power system for which we obtained the AC power flow solution:
 ```@example ComputationPowersCurrentsLosses
 using JuliaGrid # hide
 
@@ -394,7 +386,7 @@ end
 nothing # hide
 ```
 
-Once the power flow analysis is completed using the Newton-Raphson method, we can use the above-mentioned functions to compute the relevant data for buses, branches, and generators. Here is an example code snippet that demonstrates this process:
+Next, we can use the above-mentioned functions to compute the relevant data for buses, branches, and generators. Here is an example code snippet that demonstrates this process:
 ```@example ComputationPowersCurrentsLosses
 bus!(system, result)
 branch!(system, result)
@@ -403,12 +395,15 @@ generator!(system, result)
 nothing # hide
 ```
 
-Each of these functions is responsible for populating the corresponding fields of the `Result` type, such as `bus`, `branch`, or `generator`. For instance, we can compute the active and reactive power injections in megawatts (MW) and megavolt-ampere reactive (MVAr) using the code snippet below:
+Each of these functions is responsible for populating the corresponding fields of the `Result` type, such as `bus`, `branch`, or `generator`. For instance, we can now observe the active and reactive power injections in megawatts (MW) and megavolt-ampere reactive (MVAr) using the code snippet below:
 ```@repl ComputationPowersCurrentsLosses
 @base(system, MVA, V);
 system.base.power.value * result.bus.power.injection.active
 system.base.power.value * result.bus.power.injection.reactive
 ```
+
+!!! note "Info"
+    We recommend that readers refer to the tutorials on [AC power flow analysis](@ref ACPowerFlowAnalysisTutorials) and [DC power flow analysis](@ref DCPowerFlowAnalysisTutorials) for a detailed explanation of all the electrical quantities related to buses, branches, and generators that are computed by the functions [bus!](@ref bus!), [branch!](@ref branch!), and [generator!](@ref generator!) in the context of power flow analysis.
 
 ---
 
@@ -458,7 +453,7 @@ Once the solution of the AC power flow analysis is obtained, calling the functio
 ```@repl GeneratorReactivePowerLimits
 result.generator.power.reactive
 ```
-The variable violate indicates the violation of limits, where the first generator violates the minimum limit and the second generator violates the maximum limit, as shown below:
+The variable `violate` indicates the violation of limits, where the first generator violates the minimum limit and the second generator violates the maximum limit, as shown below:
 ```@repl GeneratorReactivePowerLimits
 violate
 ```
@@ -486,6 +481,9 @@ Once the simulation is complete, we can verify that all generator reactive power
 ```@repl GeneratorReactivePowerLimits
 violate = reactivePowerLimit!(system, result)
 ```
+
+!!! note "Info"
+    The [`reactivePowerLimit!`](@ref reactivePowerLimit!) function changes the `PowerSystem` composite type deliberately because it is intended to help users create the power system where all reactive power outputs of the generators are within limits.
 
 ---
 
@@ -538,15 +536,15 @@ for iteration = 1:100
 end
 ```
 
-After examining the bus voltages, we will focus on the angles by executing the code below:
+After examining the bus voltages, we will focus on the angles:
 ```@repl NewSlackBus
 result.bus.voltage.angle
 ```
-We can observe that the angles have been calculated based on the new slack bus. JuliaGrid offers a function to adjust these angles to match the original slack bus as follows:
+We can observe that the angles have been calculated based on the new slack bus. JuliaGrid offers the function to adjust these angles to match the original slack bus as follows:
 ```@example NewSlackBus
 adjustVoltageAngle!(system, result; slack = 1)
 ```
-Here, the `slack` keyword should correspond to the label of the slack bus. After executing the above code, the updated results can be viewed using the following code:
+Here, the `slack` keyword should correspond to the label of the slack bus. After executing the above code, the updated results can be viewed:
 ```@repl NewSlackBus
 result.bus.voltage.angle
 ```

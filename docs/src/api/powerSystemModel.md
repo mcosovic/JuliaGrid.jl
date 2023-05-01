@@ -4,6 +4,32 @@ For further information on this topic, please see the [Power System Model](@ref 
 
 ---
 
+## API Index
+
+* [`powerSystem`](@ref powerSystem)
+* [`savePowerSystem`](@ref savePowerSystem)
+
+* [`addBus!`](@ref addBus!)
+* [`shuntBus!`](@ref shuntBus!)
+* [`@bus`](@ref @bus)
+
+* [`addBranch!`](@ref addBranch!)
+* [`statusBranch!`](@ref statusBranch!)
+* [`parameterBranch!`](@ref parameterBranch!)
+* [`@branch`](@ref @branch)
+
+* [`addGenerator!`](@ref addGenerator!)
+* [`statusGenerator!`](@ref statusGenerator!)
+* [`outputGenerator!`](@ref outputGenerator!)
+* [`addActiveCost!`](@ref addActiveCost!)
+* [`addReactiveCost!`](@ref addReactiveCost!)
+* [`@generator`](@ref @generator)
+
+* [`acModel!`](@ref acModel!)
+* [`dcModel!`](@ref dcModel!)
+
+---
+
 ## Build Model
 ```@docs
 powerSystem
@@ -21,8 +47,8 @@ savePowerSystem
 ## Bus Functions
 ```@docs
 addBus!
-@bus
 shuntBus!
+@bus
 ```
 
 ---
@@ -30,9 +56,9 @@ shuntBus!
 ## Branch Functions
 ```@docs
 addBranch!
-@branch
 statusBranch!
 parameterBranch!
+@branch
 ```
 
 ---
@@ -40,11 +66,11 @@ parameterBranch!
 ## Generator Functions
 ```@docs
 addGenerator!
-@generator
 statusGenerator!
 outputGenerator!
 addActiveCost!
 addReactiveCost!
+@generator
 ```
 
 ---

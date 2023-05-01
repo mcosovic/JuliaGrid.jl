@@ -4,6 +4,14 @@ For further information on this topic, please see the [Power System Model](@ref 
 
 ---
 
+## API Index
+
+* [`bus!`](@ref bus!)
+* [`branch!`](@ref branch!)
+* [`generator!`](@ref generator!)
+
+---
+
 ## Bus Function
 ```@docs
 bus!

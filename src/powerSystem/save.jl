@@ -1,6 +1,6 @@
 """
-The function saves the power system's data in the HDF5 file using the fields `bus`,
-`branch`, `generator`, and `base` from the `PowerSystem` composite type.
+The function saves the power system's data in the HDF5 file using the fields `bus`, `branch`,
+`generator`, and `base` from the `PowerSystem` composite type.
 
     savePowerSystem(system::PowerSystem; path, reference, note)
 

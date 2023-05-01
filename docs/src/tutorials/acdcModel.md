@@ -1,9 +1,9 @@
 # [AC and DC Model](@id ACDCModelTutorials)
-The power system analysis commonly utilizes the unified branch model that provides linear relationships between voltages and currents. However, as the focus is on power calculations rather than current calculations, the resulting equations become nonlinear, posing challenges in solving them. Hence, to accurately analyze power systems without any approximations, we use the AC model, which is a crucial component of our framework. In contrast, to obtain a linear system of equations for various DC analyses, we introduce approximations in the unified branch model, resulting in the DC model [[1]](@ref ACDCModelReferenceTutorials).
+The power system analyses commonly utilize the unified branch model that provides linear relationships between voltages and currents. However, as the focus is on power calculations rather than current calculations, the resulting equations become nonlinear, posing challenges in solving them. Hence, to accurately analyze power systems without any approximations, we use the AC model, which is a crucial component of our framework. In contrast, to obtain a linear system of equations for various DC analyses, we introduce approximations in the unified branch model, resulting in the DC model [[1]](@ref ACDCModelReferenceTutorials).
 
 A common way to describe the power system network topology is through the bus/branch model, which employs the two-port ``\pi``-model, which results in the unified branch model. The bus/branch model can be represented by a graph denoted by ``\mathcal{G} = (\mathcal{N}, \mathcal{E})``, where the set of nodes ``\mathcal{N} = \{1, \dots, n\}`` corresponds to buses, and the set of edges ``\mathcal{E} \subseteq \mathcal{N} \times \mathcal{N}`` represents the branches of the power network.
 
-Let us now construct the power system, where all data will be preserved in the variable `system::PowerSystem`. To do this, we can use the following code:
+Let us now construct the power system:
 ```@example ACDCModel
 using JuliaGrid # hide
 @default(unit) # hide
@@ -29,18 +29,19 @@ addGenerator!(system; label = 1, bus = 3, active = 40.0, reactive = 42.4)
 nothing #hide
 ```
 
-The given example provides a set of buses and branches:
+The given example provides the set of buses and branches:
 ```@repl ACDCModel
 𝒩 = collect(keys(sort(system.bus.label)))
 ℰ = [system.branch.layout.from system.branch.layout.to]
 ```
 
-In this section, when referring to a vector ``\mathbf{a}``, we use the notation ``\mathbf{a} = [a_{ij}]``, where ``a_{ij}`` represents the generic element associated with the branch ``(i,j) \in \mathcal{E}``.
+!!! ukw "Notation"
+    In this section, when referring to a vector ``\mathbf{a}``, we use the notation ``\mathbf{a} = [a_{ij}]``, where ``a_{ij}`` represents the generic element associated with the branch ``(i,j) \in \mathcal{E}``.
 
 ---
 
 ## [AC Model](@id ACModelTutorials)
-JuliaGrid is based on common network elements and benefits from the unified branch model to perform various analyses based on the system of nonlinear equations. To generate matrices and vectors for AC or nonlinear analysis, JuliaGrid employs the [`acModel!`](@ref acModel!) function. To demonstrate the usage of this function, consider the power system defined in the previous example. In order to apply the [`acModel!`](@ref acModel!) function to this power system, the following Julia code can be executed:
+JuliaGrid is based on common network elements and benefits from the unified branch model to perform various analyses based on the system of nonlinear equations. To generate matrices and vectors for AC or nonlinear analysis, JuliaGrid employs the [`acModel!`](@ref acModel!) function. To demonstrate the usage of this function, consider the power system defined in the previous example. In order to apply the [`acModel!`](@ref acModel!) function to this power system, the following code can be executed:
 ```@example ACDCModel
 acModel!(system)
 nothing #hide
@@ -62,17 +63,19 @@ The branch series admittance ``y_{ij}`` is inversely proportional to the branch 
     \frac{1}{{r_{ij}} + \text{j}x_{ij}} =
     \frac{r_{ij}}{r_{ij}^2 + x_{ij}^2} - \text{j}\frac{x_{ij}}{r_{ij}^2 + x_{ij}^2} = g_{ij} + \text{j}b_{ij},
 ```
-where ``r_{ij}`` is a resistance, ``x_{ij}`` is a reactance, ``g_{ij}`` is a conductance and ``b_{ij}`` is a susceptance of the branch. The `branch` field in the composite type `PowerSystem` stores the vectors of resistances ``\mathbf{r} = [r_{ij}]`` and reactances ``\mathbf{x} = [x_{ij}]`` in the variables:
+where ``r_{ij}`` is a resistance, ``x_{ij}`` is a reactance, ``g_{ij}`` is a conductance and ``b_{ij}`` is a susceptance of the branch.
+
+The vectors of resistances, denoted by ``\mathbf{r} = [r_{ij}]``, and reactances, denoted by ``\mathbf{x} = [x_{ij}]``, are stored in the variables:
 ```@repl ACDCModel
 𝐫 = system.branch.parameter.resistance
 𝐱 = system.branch.parameter.reactance
 ```
-Moreover, the `acModel` stores the computed vector of branch series admittances ``\mathbf{y} = [y_{ij}]`` in the `PowerSystem` composite type. We can access them using:
+Moreover, the `acModel` stores the computed vector of branch series admittances ``\mathbf{y} = [y_{ij}]``:
 ```@repl ACDCModel
 𝐲 = system.acModel.admittance
 ```
 
-The branch shunt capacitive admittance (i.e. charging admittance) ``y_{\text{s}ij}`` at buses ``\{i,j\}`` is equal to:
+The branch shunt capacitive admittance (i.e. charging admittance) ``y_{\text{s}ij}`` is equal to:
 ```math
 y_{\text{s}ij} = \text{j} b_{\text{s}ij}.
 ```
@@ -85,12 +88,12 @@ The transformer complex ratio ``\alpha_{ij}`` is defined:
 ```math
     \alpha_{ij} = \cfrac{1}{\tau_{ij}}e^{-\text{j}\phi_{ij}},
 ```
-where ``\tau_{ij}`` is the transformer turns ratio, while ``\phi_{ij}`` is the transformer phase shift angle, always located "from" bus end of the branch. These transformer parameters are stored in the vectors ``\bm{\tau} = [\tau_{ij}]`` and ``\bm{\phi} = [\phi_{ij}]``, respectively:
+where ``\tau_{ij}`` is a transformer turns ratio, while ``\phi_{ij}`` is a transformer phase shift angle, always located "from" bus end of the branch. These transformer parameters are stored in the vectors ``\bm{\tau} = [\tau_{ij}]`` and ``\bm{\phi} = [\phi_{ij}]``, respectively:
 ```@repl ACDCModel
 𝛕 = system.branch.parameter.turnsRatio
 𝚽 = system.branch.parameter.shiftAngle
 ```
-The `acModel` within the `PowerSystem` composite type contains the computed transformer complex ratios ``\bm{\alpha} = [\alpha_{ij}]``. These values can be accessed using the following code:
+The `acModel` within the `PowerSystem` composite type contains the computed transformer complex ratios ``\bm{\alpha} = [\alpha_{ij}]``. These values can be accessed using the following command:
 ```@repl ACDCModel
 𝛂 = system.acModel.transformerRatio
 ```
@@ -109,7 +112,7 @@ Using Kirchhoff's circuit laws, the unified branch model can be described by com
   \end{bmatrix}.
 ```
 
-The values of the vectors ``\mathbf{y}_{ii} = [({y}_{ij} + y_{\text{s}ij}) / \tau_{ij}^2]``, ``\mathbf{y}_{ij} = [-\alpha_{ij}^*{y}_{ij}]``, ``\mathbf{y}_{ji} = [-\alpha_{ij}{y}_{ij}]``, and ``\mathbf{y}_{jj} = [{y}_{ij} + y_{\text{s}ij}]`` can be found stored in the variables:
+The values of the vectors ``\mathbf{y}_{\text{ii}} = [({y}_{ij} + y_{\text{s}ij}) / \tau_{ij}^2]``, ``\mathbf{y}_{\text{ij}} = [-\alpha_{ij}^*{y}_{ij}]``, ``\mathbf{y}_{\text{ji}} = [-\alpha_{ij}{y}_{ij}]``, and ``\mathbf{y}_{\text{jj}} = [{y}_{ij} + y_{\text{s}ij}]`` can be found stored in the variables:
 
 ```@repl ACDCModel
 𝐲ᵢᵢ = system.acModel.nodalFromFrom
@@ -258,7 +261,7 @@ The real components are:
     P_{ji} &=\cfrac{1}{\tau_{ij}x_{ij}} \sin(\theta_{j} -\theta_{i}+\phi_{ij}) \approx -\cfrac{1}{\tau_{ij} x_{ij}} (\theta_{i} - \theta_{j}-\phi_{ij}),
   \end{aligned}
 ```
-where ``{1}/({\tau_{ij} x_{ij}})`` represents the branch admittance in the DC framework. To recall, the `PowerSystem` composite type stores the reactances as vector ``\mathbf{x} = [x_{ij}]`` in the `branch` variable:
+where ``{1}/({\tau_{ij} x_{ij}})`` represents the branch admittance in the DC framework. To recall, the `PowerSystem` composite type stores the reactances as vector ``\mathbf{x} = [x_{ij}]`` in the variable:
 ```@repl ACDCModel
 𝐱 = system.branch.parameter.reactance
 ```

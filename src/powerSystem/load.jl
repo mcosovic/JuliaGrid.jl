@@ -194,7 +194,8 @@ new buses, branches, or generators, or modify the parameters of existing ones.
 
 # Units
 JuliaGrid stores all data in per-units and radians format which are fixed, the exceptions are
-base values in volt-amperes and volts which can be changed using the macro [`@base`](@ref @base).
+base values in volt-amperes and volts. The prefixes for these base values can be changed using
+the [`@base`](@ref @base) macro.
 
 # Example
 ```jldoctest

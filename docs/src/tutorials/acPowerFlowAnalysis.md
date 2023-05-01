@@ -1,6 +1,8 @@
-# [Power Flow Solution](@id PowerFlowSolutionTutorials)
+# [AC Power Flow Analysis](@id ACPowerFlowAnalysisTutorials)
 
-JuliaGrid utilizes standard network components and leverages the [unified branch model](@ref UnifiedBranchModelTutorials) to obtained power flow solution, enabling the definition of load profiles, generator capacities, voltage specifications, contingency analysis, and planning. To begin, the `PowerSystem` composite type must be provided to JuliaGrid through the use of the [`powerSystem`](@ref powerSystem) function, as illustrated by the following example:
+JuliaGrid utilizes standard network components and leverages the [unified branch model](@ref UnifiedBranchModelTutorials) to perform power flow analysis, enabling the definition of load profiles, generator capacities, voltage specifications, contingency analysis, and planning.
+
+To begin, the `PowerSystem` composite type must be provided to JuliaGrid through the use of the [`powerSystem`](@ref powerSystem) function, as illustrated by the following example:
 ```@example PowerFlowSolution
 using JuliaGrid # hide
 @default(unit) # hide
@@ -19,19 +21,20 @@ addBus!(system; label = 4, type = 2, conductance = 2.1, susceptance = 1.2)
 addBranch!(system; label = 1, from = 1, to = 2, resistance = 0.02, reactance = 0.06)
 addBranch!(system; label = 2, from = 1, to = 3, resistance = 0.05, reactance = 0.21)
 addBranch!(system; label = 3, from = 2, to = 3, resistance = 0.13, reactance = 0.26)
-addBranch!(system; label = 4, from = 3, to = 4, reactance = 0.17)
+addBranch!(system; label = 4, from = 3, to = 4, reactance = 0.17, susceptance = 0.2)
 
 addGenerator!(system; label = 1, bus = 3, active = 40.0, reactive = 42.4)
 nothing #hide
 ```
 
-To review, we can conceptualize the bus/branch model as a graph denoted by ``\mathcal{G} = (\mathcal{N}, \mathcal{E})``, where the collection of nodes ``\mathcal{N} = \{1, \dots, n\}`` signifies the buses of the power network, and the set of edges ``\mathcal{E} \subseteq \mathcal{N} \times \mathcal{N}`` represents the branches within the network:
+To review, we can conceptualize the bus/branch model as the graph denoted by ``\mathcal{G} = (\mathcal{N}, \mathcal{E})``, where we have the set of buses ``\mathcal{N} = \{1, \dots, n\}``, and the set of branches ``\mathcal{E} \subseteq \mathcal{N} \times \mathcal{N}`` within the power system:
 ```@repl PowerFlowSolution
 𝒩 = collect(keys(sort(system.bus.label)))
 ℰ = [system.branch.layout.from system.branch.layout.to]
 ```
 
-In this section, when referring to a vector ``\mathbf{a}``, we use the notation ``\mathbf{a} = [a_{i}]``, where ``a_{i}`` represents the generic element associated with the bus ``i \in \mathcal{N}``.
+!!! ukw "Notation"
+    In this section, when referring to a vector ``\mathbf{a}``, we use the notation ``\mathbf{a} = [a_{i}]`` or ``\mathbf{a} = [a_{ij}]``, where ``a_i`` denotes the generic element associated with bus ``i \in \mathcal{N}``, and ``a_{ij}`` denotes the generic element associated with branch ``(i,j) \in \mathcal{E}``.
 
 ---
 
@@ -60,12 +63,12 @@ As demonstrated by the above equation, the bus ``i \in \mathcal{N}`` contains fo
 | Generator        | PV               | 2         | ``P_{i}``, ``V_{i}``        | ``Q_{i}``, ``{\theta_{i}}`` |
 | Slack            | ``V \theta``     | 3         | ``V_{i}``, ``{\theta_{i}}`` | ``P_{i}``, ``Q_{i}``        |
 
-Consequently, JuliaGrid operates with sets ``\mathcal{N}_{\text{pv}}`` and ``\mathcal{N}_{\text{pq}}`` that contain PV and PQ buses, respectively, and exactly one slack bus in the set ``\mathcal{N}_{\text{sb}}``. The bus types are stored in the variable:
+Consequently, JuliaGrid operates with sets ``\mathcal{N}_{\text{pq}}`` and ``\mathcal{N}_{\text{pv}}`` that contain demand and generator buses, respectively, and exactly one slack bus in the set ``\mathcal{N}_{\text{sb}}``. The bus types are stored in the variable:
 ```@repl PowerFlowSolution
 system.bus.layout.type
 ```
 
-It should be noted that JuliaGrid cannot handle systems with multiple slack buses. Additionally, when using functions such as [`newtonRaphson`](@ref newtonRaphson), [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX), [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB), and [`gaussSeidel`](@ref gaussSeidel), the bus type can be modified in the following manner: If a bus was originally classified as a PV bus, but does not have any in-service generators, it will be converted to a PQ bus, as discussed in the section on [Bus Type Modification](@ref BusTypeModificationManual).
+It should be noted that JuliaGrid cannot handle systems with multiple slack buses. Additionally, when using functions such as [`newtonRaphson`](@ref newtonRaphson), [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX), [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB), and [`gaussSeidel`](@ref gaussSeidel), the bus type can be modified in the following manner: If a bus was originally classified as the generator bus, but does not have any in-service generators, it will be converted to the demand bus, as discussed in the section on [Bus Type Modification](@ref BusTypeModificationManual).
 
 Furthermore, the active power injections ``{P}_{i}`` and reactive power injections ``{Q}_{i}`` can be expressed as:
 ```math
@@ -74,7 +77,7 @@ Furthermore, the active power injections ``{P}_{i}`` and reactive power injectio
     Q_{i} &= Q_{\text{s}i} - Q_{\text{d}i},
   \end{aligned}
 ```
-where ``{P}_{\text{s}i}`` and ``{Q}_{\text{s}i}`` correspond to the active and reactive power injected by the generators at the bus ``i \in \mathcal{N}``, while ``{P}_{\text{d}i}`` and ``{Q}_{\text{d}i}`` denote the active and reactive power demanded at the bus ``i \in \mathcal{N}``. We can calculate the vectors ``\mathbf{P} = [P_i] `` and ``\mathbf{Q} = [Q_i]`` in JuliaGrid using the following code:
+where ``{P}_{\text{s}i}`` and ``{Q}_{\text{s}i}`` correspond to the active and reactive power injected by the generators at the bus ``i \in \mathcal{N}``, while ``{P}_{\text{d}i}`` and ``{Q}_{\text{d}i}`` denote the active and reactive power demanded at the bus ``i \in \mathcal{N}``. We can calculate the vectors ``\mathbf{P} = [P_i] `` and ``\mathbf{Q} = [Q_i]`` using the following code:
 ```@repl PowerFlowSolution
 𝐏 = system.bus.supply.active - system.bus.demand.active
 𝐐 = system.bus.supply.reactive - system.bus.demand.reactive
@@ -83,15 +86,15 @@ where ``{P}_{\text{s}i}`` and ``{Q}_{\text{s}i}`` correspond to the active and r
 ---
 
 ## [Newton-Raphson Method](@id NewtonRaphsonMethodTutorials)
-The Newton-Raphson method is commonly used in power flow calculations due to its quadratic rate of convergence. It provides an accurate approximation of the roots of the system of nonlinear equations:
+The Newton-Raphson method is commonly used in AC power flow calculations due to its quadratic rate of convergence. It provides an accurate approximation of the roots of the system of nonlinear equations:
 ```math
   \mathbf{f}(\mathbf{x}) = \mathbf{0}.
 ```
 This, in turn, allows for the determination of the unknown voltage magnitudes and angles of buses, represented by the state vector ``\mathbf x = [\mathbf x_a, \mathbf x_m]^T``. The state vector comprises two components:
-* ``\mathbf x_a \in \mathbb{R}^{n-1}``, which holds the bus voltage angles of PQ and PV buses, represented by ``\mathbf x_a = [\theta_i]``, where ``i \in \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}}``;
-* ``\mathbf x_m \in \mathbb{R}^{n_{\text{pq}}}``, which holds the bus voltage magnitudes of PQ buses, represented by ``\mathbf x_m = [V_i]``, where ``i \in \mathcal{N}_{\text{pq}}``, and ``n_{\text{pq}} = |\mathcal{N}_{\text{pq}}|``.
+* ``\mathbf x_a \in \mathbb{R}^{n-1}``, which holds the bus voltage angles of demand and generator buses, represented by ``\mathbf x_a = [\theta_i]``, where ``i \in \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}}``;
+* ``\mathbf x_m \in \mathbb{R}^{n_{\text{pq}}}``, which holds the bus voltage magnitudes of demand buses, represented by ``\mathbf x_m = [V_i]``, where ``i \in \mathcal{N}_{\text{pq}}``, and ``n_{\text{pq}} = |\mathcal{N}_{\text{pq}}|``.
 
-Knowing the voltage magnitudes and angles for certain types of buses is a consequence of the structure of the state vector ``\mathbf x``. Specifically, the voltage magnitude and angle at the slack bus are known, as well as the voltage magnitude at PV buses.
+Knowing the voltage magnitudes and angles for certain types of buses is a consequence of the structure of the state vector ``\mathbf x``. Specifically, the voltage magnitude and angle at the slack bus are known, as well as the voltage magnitude at generator buses.
 
 The complex power injection ``S_i`` at a bus ``i \in \mathcal{N}`` is a function of the complex bus voltages. Therefore, the active and reactive power injection expressions can be defined based on the real and imaginary components of the complex power as follows:
 ```math
@@ -100,12 +103,12 @@ The complex power injection ``S_i`` at a bus ``i \in \mathcal{N}`` is a function
     {Q}_{i} &={V}_{i}\sum\limits_{j=1}^n {V}_{j} (G_{ij}\sin\theta_{ij}-B_{ij}\cos\theta_{ij}).
 	\end{aligned}
 ```
-Using the above equations, we can define the active power injection function for PV and PQ buses as follows:
+Using the above equations, we can define the active power injection function for demand and generator buses as follows:
 ```math
     f_{P_i}(\mathbf x) = {V}_{i}\sum\limits_{j=1}^n {V}_{j}(G_{ij}\cos\theta_{ij}+B_{ij}\sin\theta_{ij}) - {P}_{i} = 0,
     \;\;\; i \in \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}},
 ```
-and the reactive power injection function for PQ buses as follows:
+and the reactive power injection function for demand buses as follows:
 ```math
     f_{Q_i}(\mathbf x) = {V}_{i}\sum\limits_{j=1}^n {V}_{j}(G_{ij}\sin\theta_{ij}-B_{ij}\cos\theta_{ij}) - {Q}_{i} = 0,
     \;\;\; i \in \mathcal{N}_{\text{pq}}.
@@ -118,7 +121,7 @@ The active and reactive mismatches, often denoted as ``\Delta P_i(\mathbf x)`` a
     \mathbf{f}_{P}(\mathbf x) \\ \mathbf{f}_{Q}(\mathbf x)
   \end{bmatrix} = \mathbf 0,
 ```
-where the first ``n - 1`` equations correspond to PV and PQ buses, and the last ``n_{\text{pq}}`` equations correspond to PQ buses.
+where the first ``n - 1`` equations correspond to demand and generator buses, and the last ``n_{\text{pq}}`` equations correspond to demand buses.
 
 ---
 
@@ -150,12 +153,12 @@ for iteration = 1:100
 end
 ```
 
-The [`mismatch!`](@ref mismatch!) function calculates the mismatch in active power injection for PV and PQ buses and the mismatch in reactive power injection for PQ buses at each iteration ``\nu = \{1, 2, \dots\}``. The equations used for these computations are:
+The [`mismatch!`](@ref mismatch!) function calculates the mismatch in active power injection for demand and generator buses and the mismatch in reactive power injection for demand buses at each iteration ``\nu = \{1, 2, \dots\}``. The equations used for these computations are:
 ```math
   f_{P_i}(\mathbf x^{(\nu-1)}) = {V}_{i}^{(\nu-1)}\sum\limits_{j=1}^n {V}_{j}^{(\nu-1)}(G_{ij}\cos\theta_{ij}^{(\nu-1)}+B_{ij}\sin\theta_{ij}^{(\nu-1)}) - {P}_{i},
   \;\;\; i \in \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}},
 ```
-as well as the reactive power injection mismatch for PQ buses:
+as well as the reactive power injection mismatch for demand buses:
 ```math
     f_{Q_i}(\mathbf x^{(\nu-1)}) = {V}_{i}^{(\nu)}\sum\limits_{j=1}^n {V}_{j}^{(\nu-1)}(G_{ij}\sin\theta_{ij}^{(\nu-1)}-B_{ij}\cos\theta_{ij}^{(\nu-1)}) - {Q}_{i},
     \;\;\; i \in \mathcal{N}_{\text{pq}}.
@@ -170,7 +173,6 @@ In addition to computing the mismatches in active and reactive power injection, 
     \max \{|f_{P_i}(\mathbf x^{(\nu-1)})|,\; i \in \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}} \} < \epsilon \\
     \max \{|f_{Q_i}(\mathbf x^{(\nu-1)})|,\; i \in \mathcal{N}_{\text{pq}} \} < \epsilon.
 ```
-If both of these conditions are met, the iteration loop is terminated.
 
 Next, the function [`solvePowerFlow!`](@ref solvePowerFlow!) computes the increments of bus voltage angle and magnitude at each iteration using the equation:
 ```math
@@ -182,13 +184,17 @@ where ``\mathbf{\Delta} \mathbf{x} = [\mathbf \Delta \mathbf x_a, \mathbf \Delta
 𝐉 = result.algorithm.jacobian
 ```
 
-The JuliaGrid implementation of the power flow algorithm stores the increment and mismatch vectors in a specific order. The first ``n-1`` elements of both vectors correspond to the bus voltage angle increments and active mismatches, respectively, based on the PV and PQ buses in the order they appear in the input data. The last ``n_{\text{pq}}`` elements of both vectors correspond to the bus voltage magnitude increments and reactive mismatches, respectively, based on the PQ buses. Therefore, the Jacobian matrix ``\mathbf{J}(\mathbf{x})`` follows the same order for its rows and columns.
+The JuliaGrid implementation of the AC power flow algorithm follows a specific order to store the increment and mismatch vectors. The first ``n-1`` elements of both vectors correspond to the demand and generator buses in the same order as they appear in the input data. This order is not obtained by first extracting the demand and then generator buses but by excluding the slack bus in the input data. The first `n-1` elements of the increment vector correspond to the voltage angle increments, while the first ``n-1`` elements of the mismatch vector correspond to the mismatch in active power injections.
+
+The last ``n_{\text{pq}}`` elements of the increment and mismatch vectors correspond to the demand buses in the order they appear in the input data. For the increment vector, it matches the bus voltage magnitude increments, while for the mismatch vector, it matches the mismatch in reactive power injections.
+
+As a result, this order defines the row and column order of the Jacobian matrix ``\mathbf{J}(\mathbf{x})``.
 
 Finally, the function [`solvePowerFlow!`](@ref solvePowerFlow!) adds the computed increment term to the previous solution to obtain a new solution:
 ```math
   \mathbf {x}^{(\nu)} = \mathbf {x}^{(\nu-1)} + \mathbf \Delta \mathbf {x}^{(\nu-1)}.
 ```
-The bus voltage magnitudes ``\mathbf{V}`` and angles ``\bm{\theta}`` are then updated based on the obtained solution ``\mathbf {x}``. It is important to note that only the voltage magnitudes related to PQ buses and angles related to PV and PQ buses are updated; not all values are updated. Therefore, the final solution obtained by JuliaGrid is stored in the following vectors:
+The bus voltage magnitudes ``\mathbf{V} = [V_i]`` and angles ``\bm{\theta} = [\theta_i]`` are then updated based on the obtained solution ``\mathbf {x}``. It is important to note that only the voltage magnitudes related to demand buses and angles related to demand and generator buses are updated; not all values are updated. Therefore, the final solution obtained by JuliaGrid is stored in the following vectors:
 ```@repl PowerFlowSolution
 𝐕 = result.bus.voltage.magnitude
 𝛉 = result.bus.voltage.angle
@@ -197,7 +203,7 @@ The bus voltage magnitudes ``\mathbf{V}`` and angles ``\bm{\theta}`` are then up
 ----
 
 ##### Jacobian Matrix
-To complete the tutorial on the Newton-Raphson method, we will now describe the Jacobian matrix and provide the equations involved in its evolution. Without loss of generality, we assume that the slack bus is the first bus, followed by the set of PQ buses and the set of PV buses:
+To complete the tutorial on the Newton-Raphson method, we will now describe the Jacobian matrix and provide the equations involved in its evolution. Without loss of generality, we assume that the slack bus is the first bus, followed by the set of demand buses and the set of generator buses:
 ```math
   \begin{aligned}
     \mathcal{N}_{\text{sb}} &= \{ 1 \} \\
@@ -495,7 +501,7 @@ One of the versions of the algorithm mentioned earlier is used to initialize the
 𝐁₂ = result.algorithm.reactive.jacobian
 ```
 
-Next, JuliaGrid utilizes the [LU factorization](https://docs.julialang.org/en/v1/stdlib/LinearAlgebra/#LinearAlgebra.lu) of matrices ``\mathbf{B}_1`` and ``\mathbf{B}_1`` to compute solutions through iterations. The LU factorization of the matrix ``\mathbf{B}_1`` produces the lower and upper triangular matrices, as well as the right and left permutation matrices, and the diagonal scaling matrix, which can be accessed using the following commands:
+Next, JuliaGrid utilizes the [LU factorization](https://docs.julialang.org/en/v1/stdlib/LinearAlgebra/#LinearAlgebra.lu) of matrices ``\mathbf{B}_1`` and ``\mathbf{B}_2`` to compute solutions through iterations. The LU factorization of the matrix ``\mathbf{B}_1`` produces the lower and upper triangular matrices, as well as the right and left permutation matrices, and the diagonal scaling matrix, which can be accessed using the following commands:
 ```@repl PowerFlowSolution
 result.algorithm.active.lower
 result.algorithm.active.upper
@@ -541,7 +547,7 @@ The functions ``\mathbf{f}_{P}(\mathbf x)`` and ``\mathbf{f}_{Q}(\mathbf x)`` re
     \;\;\; i \in \mathcal{N}_{\text{pq}}.
   \end{aligned}
 ```
-Therefore, the [`mismatch!`](@ref mismatch!) function calculates the mismatch in active power injection for PV and PQ buses and the mismatch in reactive power injection for PQ buses at each iteration ``\nu = \{1, 2, \dots\}``:
+Therefore, the [`mismatch!`](@ref mismatch!) function calculates the mismatch in active power injection for demand and generator buses and the mismatch in reactive power injection for demand buses at each iteration ``\nu = \{1, 2, \dots\}``:
 ```math
   {h}_{P_i}(\mathbf {x}^{(\nu-1)}) =
   \sum\limits_{j=1}^n {V}_{j}^{(\nu-1)}(G_{ij}\cos\theta_{ij}^{(\nu-1)}+B_{ij}\sin\theta_{ij}^{(\nu-1)}) - \cfrac{{P}_{i}}{{V}_{i}^{(\nu-1)}},
@@ -553,7 +559,7 @@ and in reactive power injection for PQ buses as:
     \sum\limits_{j=1}^n {V}_{j}^{(\nu-1)} (G_{ij}\sin\theta_{ij}^{(\nu-1)}-B_{ij}\cos\theta_{ij}^{(\nu-1)}) - \cfrac{{Q}_{i}}{{V}_{i}^{(\nu-1)}},
     \;\;\; i \in \mathcal{N}_{\text{pq}}.
 ```
-The resulting vectors from these calculations is stored in the `algorithm` variable of the `Result` composite type and can be accessed through the following line of code:
+The resulting vectors from these calculations are stored in the `algorithm` variable of the `Result` composite type and can be accessed through the following:
 ```@repl PowerFlowSolution
 𝐡ₚ = result.algorithm.active.increment
 𝐡ₒ = result.algorithm.reactive.increment
@@ -564,7 +570,6 @@ In addition to computing the mismatches in active and reactive power injection, 
     \max \{|h_{P_i}(\mathbf x^{(\nu)})|,\; i \in \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}} \} < \epsilon \\
     \max \{|h_{Q_i}(\mathbf x^{(\nu)})|,\; i \in \mathcal{N}_{\text{pq}} \} < \epsilon.
 ```
-If both of these conditions are met, the iteration loop is terminated.
 
 Next, the function [`solvePowerFlow!`](@ref solvePowerFlow!) computes the bus voltage angle increments:
 ```math
@@ -579,7 +584,7 @@ The solution is then updated as follows:
 ```math
   \mathbf x_a^{(\nu)} = \mathbf x_a^{(\nu-1)} + \mathbf \Delta \mathbf x_a^{(\nu-1)}.
 ```
-It is important to note that only the voltage angles related to PV and PQ buses are updated, while the vector of bus voltage angles of all buses is stored:
+It is important to note that only the voltage angles related to demand and generator buses are updated, while the vector of bus voltage angles of all buses is stored:
 ```@repl PowerFlowSolution
 𝛉 = result.bus.voltage.angle
 ```
@@ -597,13 +602,12 @@ Finally, the solution is updated as follows:
 ```math
   \mathbf x_m^{(\nu)} = \mathbf x_m^{(\nu-1)} + \mathbf \Delta \mathbf x_m^{(\nu-1)}.
 ```
-Again, it is important to note that only the the voltage magnitudes of PQ buses are updated, while the vector of bus voltage magnitude for all buses is stored:
+Again, it is important to note that only the the voltage magnitudes of demand buses are updated, while the vector of bus voltage magnitude for all buses is stored:
 ```@repl PowerFlowSolution
 𝐕 = result.bus.voltage.magnitude
 ```
 
 ---
-
 
 ## [Gauss-Seidel Method](@id gaussSeidel)
 By defining the complex current injection at bus ``i \in \mathcal{N}`` as:
@@ -645,7 +649,7 @@ This results in the creation of the starting vectors of bus voltage magnitudes `
 ---
 
 ##### Iterative Process
-JuliaGrid offers the [`mismatch!`](@ref mismatch!) and [`solvePowerFlow!`](@ref solvePowerFlow!) functions to implement the fast Newton-Raphson method iterations. These functions are used iteratively until a stopping criterion is met, as shown in the code snippet below:
+JuliaGrid offers the [`mismatch!`](@ref mismatch!) and [`solvePowerFlow!`](@ref solvePowerFlow!) functions to implement the Gauss-Seidel method iterations. These functions are used iteratively until a stopping criterion is met, as shown in the code snippet below:
 ```@example PowerFlowSolution
 for iteration = 1:300
     stopping = mismatch!(system, result)
@@ -656,23 +660,22 @@ for iteration = 1:300
 end
 ```
 
-In contrast to the Newton-Raphson and Fast Newton-Raphson methods, the Gauss-Seidel method does not require the calculation of the mismatch in active and reactive power injection at each iteration. Instead, the [`mismatch!`](@ref mismatch!) function is used solely to verify the convergence criteria. At each iteration ``\nu = {1, 2, \dots}``, we calculate the active power injection mismatch for PV and PQ buses, as shown below:
+In contrast to the Newton-Raphson and Fast Newton-Raphson methods, the Gauss-Seidel method does not require the calculation of the mismatch in active and reactive power injection at each iteration. Instead, the [`mismatch!`](@ref mismatch!) function is used solely to verify the convergence criteria. At each iteration ``\nu = \{1, 2, \dots\}``, we calculate the active power injection mismatch for demand and generator buses, as shown below:
 ```math
     {f}_{P_i}(\mathbf x^{(\nu-1)}) = \Re\{\bar{V}_i^{(\nu - 1)} \bar{I}_i^{*(\nu - 1)}\} - P_i, \;\;\; i \in \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}},
 ```
-We also compute the reactive power injection mismatch for PQ buses, given by:
+We also compute the reactive power injection mismatch for demand buses, given by:
 ```math
   {f}_{Q_i}(\mathbf x^{(\nu-1)}) = \Im\{\bar{V}_i^{(\nu - 1)} \bar{I}_i^{*(\nu - 1)}\} - Q_i, \;\;\; i \in \mathcal{N}_{\text{pq}}.
 ```
 
-However, these mismatches are not stored as they are only used to obtaine the maximum absolute values of these mismatches. The maximum values of these mismatches are used as termination criteria for the iteration loop if both are less than a predefined stopping criterion ``\epsilon``, as shown below:
+However, these mismatches are not stored as they are only used to obtain the maximum absolute values of these mismatches. The maximum values of these mismatches are used as termination criteria for the iteration loop if both are less than a predefined stopping criterion ``\epsilon``, as shown below:
 ```math
     \max \{|{f}_{P_i}(\mathbf x^{(\nu-1)})|,\; i \in \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}} \} < \epsilon \\
     \max \{|{f}_{Q_i}(\mathbf x^{(\nu-1)})|,\; i \in \mathcal{N}_{\text{pq}} \} < \epsilon
 ```
-If both of these conditions are satisfied, the iteration loop is terminated.
 
-After initializing complex bus voltages ``\bar{V}_i^{(0)}`` for all buses in the power system, the function [`solvePowerFlow!`](@ref solvePowerFlow!) proceeds to compute the voltages for PQ buses using the Gauss-Seidel method:
+After initializing complex bus voltages ``\bar{V}_i^{(0)}`` for all buses in the power system, the function [`solvePowerFlow!`](@ref solvePowerFlow!) proceeds to compute the voltages for demand buses using the Gauss-Seidel method:
 ```math
     \bar{V}_{i}^{(\nu)} =
     \cfrac{1}{{Y}_{ii}} \Bigg(\cfrac{{P}_{i} - j{Q}_{i}}{\bar{V}_{i}^{*(\nu-1)}} -
@@ -680,7 +683,7 @@ After initializing complex bus voltages ``\bar{V}_i^{(0)}`` for all buses in the
     \sum\limits_{\substack{j = i + 1}}^{n} {Y}_{ij}\bar{V}_{j}^{(\nu-1)}\Bigg),
     \;\;\; i \in \mathcal{N}_{\text{pq}}.
 ```
-The next step is to determine the solution for PV buses in two stages: first, the reactive power injection is calculated, and then the bus complex voltage is updated using the following equations:
+The next step is to determine the solution for generator buses in two stages: first, the reactive power injection is calculated, and then the bus complex voltage is updated using the following equations:
 ```math
   \begin{aligned}
     Q_i^{(\nu)} &=
@@ -690,7 +693,7 @@ The next step is to determine the solution for PV buses in two stages: first, th
     \sum\limits_{\substack{j = 1,\;j \neq i}}^{n} {Y}_{ij}\bar{V}_{j}^{(\nu)} \Bigg), \;\;\; i \in \mathcal{N}_{\text{pv}}.
   \end{aligned}
 ```
-The obtained voltage magnitude may not be equal to the magnitude specified for the PV bus, so a voltage correction step is necessary:
+The obtained voltage magnitude may not be equal to the magnitude specified for the generator bus, so a voltage correction step is necessary:
 ```math
       \bar{V}_{i}^{(\nu)} := {V}_{i}^{(0)} \cfrac{\bar{V}_{i}^{(\nu)}}{{V}_{i}^{(\nu)}}, \;\;\; i \in \mathcal{N}_{\text{pv}}.
 ```
@@ -701,36 +704,221 @@ JuliaGrid stores the final results in vectors that contain all bus voltage magni
 𝛉 = result.bus.voltage.angle
 ```
 
-## [DC Power Flow Solution](@id DCPowerFlowSolutionTutorials)
-As discussed in section [DC Model](@ref DCModelTutorials), the DC power flow problem can be represented by a set of linear equations given by:
+---
+
+## [Bus Powers and Currents](@id BusPowersCurrentsTutorials)
+After the computation of voltage magnitudes and angles at each bus, various electrical quantities can be determined. JuliaGrid provides the [`bus!`](@ref bus!) function to compute powers and currents linked to buses, which populates the `bus` field of the `Result` type. Here is an example code snippet:
+```@example PowerFlowSolution
+bus!(system, result)
+nothing # hide
+```
+
+This function stores the computed currents in the polar coordinate system, while the powers are stored in the rectangular coordinate system. It calculates the following quantities:
+* current injections: ``\mathbf{I} = [I_i]``, ``\bm{\psi} = [\psi_i]``
+* power injections: ``\mathbf{P} = [P_i]``, ``\mathbf{Q} = [Q_i]``
+* power injected by the generators:  ``\mathbf{P}_{\text{s}} = [P_{\text{s}i}]``, ``\mathbf{Q}_{\text{s}} = [Q_{\text{s}i}]``
+* power associated with shunt elements: ``\mathbf{P}_{\text{sh}} = [{P}_{\text{sh}i}]``, ``\mathbf{Q}_{\text{sh}} = [{Q}_{\text{sh}i}]``.
+
+---
+
+##### Current Injections
+To obtain the complex current injection at the specific bus, we use the following equation:
 ```math
-  \mathbf {P} = \mathbf{B} \bm {\theta} + \mathbf{P_\text{tr}} + \mathbf{P}_\text{sh}.
+    \bar{I}_{i} = I_i \text{e}^{\text{j}\psi_i} = \sum\limits_{j = 1}^n {Y}_{ij} \bar{V}_{j},\;\;\; i \in \mathcal{N}.
+```
+In JuliaGrid, these complex current injections are stored in the vector of magnitudes denoted as ``\mathbf{I} = [I_i]`` and the vector of angles represented as ``\bm{\psi} = [\psi_i]``. You can retrieve them using the following commands:
+```@repl PowerFlowSolution
+𝐈 = result.bus.current.injection.magnitude
+𝛙 = result.bus.current.injection.angle
 ```
 
 ---
 
-##### Implementation
-JuliaGrid offers a set of functions to solve the DC power flow problem and obtain the bus voltage angles. Firstly, the power system is loaded and the DC model is built using the following code sequence:
-```@example PowerFlowSolution
-dcModel!(system)
-nothing # hide
-```
-
-Next, the DC power flow solution is obtained through a non-iterative approach by solving the system of linear equations:
+##### Power Injections
+The computation of active and reactive power injections at the bus is expressed by the following equation:
 ```math
-    \bm {\theta} = \mathbf{B}^{-1}(\mathbf {P} - \mathbf{P_\text{tr}} - \mathbf{P}_\text{sh}).
+    {S}_{i} = P_i + \text{j}Q_i = \bar{V}_{i}\bar{I}_{i}^*,\;\;\; i \in \mathcal{N}.
 ```
-This can be accomplished with the following code in JuliaGrid:
+Active and reactive power injections are stored as the vectors ``\mathbf{P} = [P_i]`` and ``\mathbf{Q} = [Q_i]``, respectively, and can be retrieved using the following commands:
+```@repl PowerFlowSolution
+𝐏 = result.bus.power.injection.active
+𝐐 = result.bus.power.injection.reactive
+```
+
+----
+
+##### Power Injected by the Generators
+The [`bus!`](@ref bus!) function in JuliaGrid also computes the active and reactive powers that generators inject to the buses. The active power supplied by the generators to the buses can be calculated by summing the given generator active powers in the input data, except for the slack bus, which can be determined as:
+```math
+    P_{\text{s}i} = P_i + P_{\text{d}i},\;\;\; i \in \mathcal{N}_{\text{sb}},
+```
+where ``P_{\text{d}i}`` represents the active power demanded by consumers at the slack bus. The vector of active power injected by generators to the buses, denoted by ``\mathbf{P}_{\text{s}} = [P_{\text{s}i}]``, can be obtained using the following command:
+```@repl PowerFlowSolution
+𝐏ₛ = result.bus.power.supply.active
+```
+
+Similarly, the reactive power injected by the generators to the buses can be obtained using the following equation:
+```math
+    Q_{\text{s}i} = Q_i + Q_{\text{d}i},\;\;\; i \in \mathcal{N}_{\text{pv}} \cup \mathcal{N}_{\text{sb}},
+```
+where ``Q_{\text{d}i}`` represents the reactive power demanded by consumers at the corresponding bus. Further, the reactive power injected by the generators at buses from ``\mathcal{N}_{\text{pq}}`` can be calculated by summing the given generator reactive powers in the input data. The vector of these reactive power injections by the generators to the buses, denoted by ``\mathbf{Q}_{\text{s}} = [Q_{\text{s}i}]``, can be retrieved using the following command:
+```@repl PowerFlowSolution
+𝐐ₛ = result.bus.power.supply.reactive
+```
+
+---
+
+##### Power Associated with Shunt Elements
+To obtain the active and reactive powers associated with the shunt element at each bus, you can use the following equation:
+```math
+  {S}_{\text{sh}i} = {P}_{\text{sh}i} + \text{j}{Q}_{\text{sh}i} = \bar{V}_{i}\bar{I}_{\text{sh}i}^* = {y}_{\text{sh}i}^*|\bar{V}_{i}|^2,\;\;\; i \in \mathcal{N}.
+```
+The active power demanded by the shunt element at each bus is represented by the vector ``\mathbf{P}_{\text{sh}} = [{P}_{\text{sh}i}]``, while the reactive power injected or demanded by the shunt element at each bus is represented by the vector ``\mathbf{Q}_{\text{sh}} = [{Q}_{\text{sh}i}]``. To retrieve these powers in JuliaGrid, use the following commands:
+```@repl PowerFlowSolution
+𝐏ₛₕ = result.bus.power.shunt.active
+𝐐ₛₕ = result.bus.power.shunt.reactive
+```
+
+---
+
+
+## [Branch Powers and Currents](@id BranchPowersCurrentsTutorials)
+JuliaGrid provides the [`branch!`](@ref branch!) function to compute powers and currents linked to branches, which populates the `branch` field of the `Result` type. Here is an example code snippet:
 ```@example PowerFlowSolution
-result = solvePowerFlow(system)
+branch!(system, result)
 nothing # hide
 ```
 
-It is worth noting that the slack bus voltage angle is excluded from the vector ``\bm{\theta}``. Therefore, the corresponding elements in the vectors ``\mathbf {P}``, ``\mathbf{P_\text{tr}}``, ``\mathbf{P}_\text{sh}``, and the corresponding column of the matrix ``\mathbf{B}`` are removed only during the calculation process.
+The function stores the currents in the polar coordinate system and the powers in the rectangular coordinate system. It calculates the following quantities:
+* current flow at from bus ends: ``\mathbf{I}_{\text{i}} = [I_{ij}]``, ``\bm{\psi}_{\text{i}} = [\psi_{ij}]``
+* current flow at to bus ends: ``\mathbf{I}_{\text{j}} = [I_{ji}]``, ``\bm{\psi}_{\text{j}} = [\psi_{ji}]``
+* current flow through series impedances: ``\mathbf{I}_{\text{s}} = [I_{\text{s}ij}]``, ``\bm{\psi}_{\text{s}} = [\psi_{\text{s}ij}]``
+* power flow at from bus ends: ``\mathbf{P}_{\text{i}} = [P_{ij}]``, ``\mathbf{Q}_{\text{i}} = [Q_{ij}]``
+* power flow at to bus ends: ``\mathbf{P}_{\text{j}} = [P_{ji}]``, ``\mathbf{Q}_{\text{j}} = [Q_{ji}]``
+* power losses: ``\mathbf{P}_{\text{l}} = [P_{\text{l}ij}]``, ``\mathbf{Q}_{\text{l}} = [Q_{\text{l}ij}]``
+* reactive power injections: ``\mathbf{Q}_{\text{r}} = [ Q_{\text{r}ij}]``.
 
-Finally, the resulting bus voltage angles are saved in the vector as follows:
+---
+
+##### Current Flow at From Bus Ends
+To calculate the complex current flow at from bus end ``i \in \mathcal{N}``, the [unified branch model](@ref UnifiedBranchModelTutorials) can be utilized:
+```math
+    \bar{I}_{ij} = I_{ij} \text{e}^{\text{j}\psi_{ij}} = \cfrac{1}{\tau_{ij}^2}({y}_{ij} + y_{\text{s}ij}) \bar{V}_{i} - \alpha_{ij}^*{y}_{ij} \bar{V}_{j},\;\;\; (i,j) \in \mathcal{E}.
+```
+To obtain the vectors of magnitudes ``\mathbf{I}_{\text{i}} = [I_{ij}]`` and angles ``\bm{\psi}_{\text{i}} = [\psi_{ij}]`` for the resulting complex current flows at the from bus end, you can use the following commands:
 ```@repl PowerFlowSolution
-𝛉 = result.bus.voltage.angle
+𝐈ᵢ = result.branch.current.from.magnitude
+𝛙ᵢ = result.branch.current.from.angle
+```
+
+---
+
+##### Current Flow at To Bus Ends
+Similarly, we can obtain the complex current flow at the to bus end ``j \in \mathcal{N}`` using the unified branch model, given by:
+```math
+    \bar{I}_{ji} = I_{ji} \text{e}^{\text{j}\psi_{ji}} = -\alpha_{ij}{y}_{ij} \bar{V}_{i} + ({y}_{ij} + y_{\text{s}ij}) \bar{V}_{j},\;\;\; (i,j) \in \mathcal{E}.
+```
+We can obtain the vectors of magnitudes ``\mathbf{I}_{\text{j}} = [I_{ji}]`` and angles ``\bm{\psi}_{\text{j}} = [\psi_{ji}]`` of the resulting complex current flows at the to bus end using the following code:
+```@repl PowerFlowSolution
+𝐈ⱼ = result.branch.current.to.magnitude
+𝛙ⱼ = result.branch.current.to.angle
+```
+
+---
+
+##### Current Flow Through Series Impedances
+To obtain the complex current flow through the series impedance of a branch in the direction from bus ``i \in \mathcal{N}`` to bus ``j \in \mathcal{N}``, one can use the expression:
+```math
+    \bar{I}_{\text{s}ij} = I_{\text{s}ij} \text{e}^{\psi_{\text{s}ij}} =  y_{ij} (\alpha_{ij}\bar{V}_{i} - \bar{V}_{j}), \;\;\; (i,j) \in \mathcal{E}.
+```
+To obtain the vectors of magnitudes ``\mathbf{I}_{\text{s}} = [I_{\text{s}ij}]`` and angles ``\bm{\psi}_{\text{s}} = [\psi_{\text{s}ij}]`` of the resulting complex current flow through the series impedance, one can use the following code:
+```@repl PowerFlowSolution
+𝐈ₛ = result.branch.current.impedance.magnitude
+𝛙ₛ = result.branch.current.impedance.angle
+```
+
+---
+
+##### Power Flow at From Bus Ends
+The active and reactive power flows at from bus end ``i \in \mathcal{N}`` can be obtained using the following equations based on the [unified branch model](@ref UnifiedBranchModelTutorials):
+```math
+    S_{ij} = P_{ij} + \text{j}Q_{ij} = \bar{V}_{i}\bar{I}_{ij}^*,\;\;\; (i,j) \in \mathcal{E}.
+```
+The resulting active and reactive power flows at from bus end are stored as the vectors ``\mathbf{P}_{\text{i}} = [P_{ij}]`` and ``\mathbf{Q}_{\text{i}} = [Q_{ij}]``, respectively, and can be retrieved using the following commands:
+```@repl PowerFlowSolution
+𝐏ᵢ = result.branch.power.from.active
+𝐐ᵢ = result.branch.power.from.reactive
+```
+
+---
+
+##### Power Flow at To Bus Ends
+Similarly, we can determine the active and reactive power flows at the to bus end ``j \in \mathcal{N}`` using the equations:
+```math
+    {S}_{ji} = P_{ji} + \text{j}Q_{ji} = \bar{V}_{j}\bar{I}_{ji}^*,\;\;\; (i,j) \in \mathcal{E}.
+```
+The vectors of active and reactive power flows at the to bus end are stored as ``\mathbf{P}_{\text{j}} = [P_{ji}]`` and ``\mathbf{Q}_{\text{j}} = [Q_{ji}]``, respectively, and can be retrieved using the following code:
+```@repl PowerFlowSolution
+𝐏ⱼ = result.branch.power.to.active
+𝐐ⱼ = result.branch.power.to.reactive
+```
+
+---
+
+##### Power Losses
+The active and reactive power losses in the branch are caused by its series impedance ``z_{ij}``. These losses can be obtained using the following equations:
+```math
+    \begin{aligned}
+        P_{\text{l}ij} &= r_{ij}|\bar{I}_{\text{b}ij}|^2 \\
+        Q_{\text{l}ij} &= x_{ij}|\bar{I}_{\text{b}ij}|^2,
+    \end{aligned}
+```
+where ``(i,j) \in \mathcal{E}``. We can retrieve the vectors of active and reactive power losses, ``\mathbf{P}_{\text{l}} = [P_{\text{l}ij}]`` and ``\mathbf{Q}_{\text{l}} = [Q_{\text{l}ij}]``, respectively, using the following commands:
+```@repl PowerFlowSolution
+𝐏ₗ = result.branch.power.loss.active
+𝐐ₗ = result.branch.power.loss.reactive
+```
+
+---
+
+##### Reactive Power Injections
+The branch's capacitive susceptances cause reactive power injection. We can calculate the total reactive power injected by the branch using the following equation:
+```math
+    Q_{\text{r}ij} = b_{\text{s}ij} (|\alpha_{ij}\bar{V}_{i}|^2 - |\bar{V}_{j}|^2),\;\;\; (i,j) \in \mathcal{E}.
+```
+To retrieve the vector of injected reactive powers ``\mathbf{Q}_{\text{r}} = [Q_{\text{r}ij}]``, use the following Julia command:
+```@repl PowerFlowSolution
+𝐐ᵣ = result.branch.power.shunt.reactive
+```
+
+---
+
+
+## [Generator Powers](@id GeneratorPowersTutorials)
+The [`generator!`](@ref generator!) function provided by JuliaGrid can be used to compute powers associated with generators. This function populates the `generator` field of the `Result` type. Here is an example code snippet:
+```@example PowerFlowSolution
+generator!(system, result)
+nothing # hide
+```
+
+The powers are stored in the rectangular coordinate system, and only the output power of the generators is calculated. The output powers are stored in vectors as ``\mathbf{P}_{\text{g}} = [P_{\text{g}i}]`` and ``\mathbf{Q}_{\text{g}} = [Q_{\text{g}i}]``.
+
+To obtain the output active power of generators connected to bus ``i \in \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}}``, the given active power in the input data is utilized. For the generator connected to the slack bus, the output active power is determined using the equation:
+```math
+    P_{\text{g}i} = P_i + P_{\text{d}i},\;\;\; i \in \mathcal{N}_{\text{sb}}.
+```
+In the case of multiple generators connected to the slack bus, the first generator in the input data is assigned the obtained value of ``P_{\text{g}i}``. Then, this amount of power is reduced by the output active power of the other generators. Therefore, to get the vector of output active power of generators, i.e., ``\mathbf{P}_{\text{g}} = [P_{\text{g}i}]``, you can use the following command:
+```@repl PowerFlowSolution
+𝐏ₒ = result.generator.power.active
+```
+
+The output reactive power of the generator located at the bus is obtained as:
+```math
+    Q_{\text{g}i} = Q_i + Q_{\text{d}i},\;\;\; i \in \mathcal{N}.
+```
+If there are multiple generators at the same bus, the reactive power is allocated proportionally among the generators based on their reactive power capabilities. To obtain the vector of output reactive power of generators`` \mathbf{Q}_{\text{g}} = [Q_{\text{g}i}]``, the following command can be used:
+```@repl PowerFlowSolution
+𝐐ₒ = result.generator.power.reactive
 ```
 
 ---

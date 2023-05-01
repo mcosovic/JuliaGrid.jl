@@ -81,12 +81,12 @@ system.base.power.value, system.base.power.unit
 system.base.voltage.value, system.base.voltage.unit
 ```
 
-By using the [`@base`](@ref @base) macro, users can change the prefixes of the base units. For instance, if the user wishes to convert base power and base voltage values to megavolt-amperes (MVA) and kilovolts (kV) respectively, they can execute the following command:
+By using the [`@base`](@ref @base) macro, users can change the prefixes of the base units. For instance, if the user wishes to convert base power and base voltage values to megavolt-amperes (MVA) and kilovolts (kV) respectively, they can execute the following macro:
 ```@example buildModelScratch
 @base(system, MVA, kV)
 nothing # hide
 ```
-Once the macro has been executed, the updated base power and base voltage values and units can be obtained using the following commands:
+Upon execution of the macro, the base power and voltage values and units will be modified accordingly:
 ```@repl buildModelScratch
 system.base.power.value, system.base.power.unit
 system.base.voltage.value, system.base.voltage.unit
@@ -113,13 +113,12 @@ using JuliaGrid # hide
 system = powerSystem()
 
 addBus!(system; label = 1, type = 3, active = 0.1, base = 345e3)
-addBus!(system; label = 2, type = 1, reactive = 0.05, angle = -0.034907, base = 345e3)
+addBus!(system; label = 2, type = 1, angle = -0.034907, base = 345e3)
 ```
 
-In this case, we have created two buses, where the active and reactive powers demanded by consumers at buses labelled with 1 and 2 are specified in per-units, which are the same units used to store electrical quantities:
+In this case, we have created two buses where the active power demanded by the consumer at buses labelled with 1 is specified in per-units, which are the same units used to store electrical quantities:
 ```@repl addBus
 system.bus.demand.active
-system.bus.demand.reactive
 ```
 
 In addition, it is worth noting that the `base` keyword is used to specify the base voltages, and its default input unit is in volts (V).
@@ -137,7 +136,7 @@ system.bus.voltage.angle
 
 ---
 
-##### Change Input Units
+##### Change Input Unit System
 Typically, all keywords associated with electrical quantities are expected to be provided in per-units (pu) and radians (rad) by default, with the exception of base voltages, which should be specified in volts (V). However, users can choose to use different units than the default per-units and radians or modify the prefix of the base voltage unit by using macros such as the following:
 ```@example addBusUnit
 using JuliaGrid # hide
@@ -151,34 +150,36 @@ We can create identical two buses as before using new system of units as follows
 ```@example addBusUnit
 system = powerSystem()
 
-addBus!(system; label = 1, type = 3, active = 10.0, base = 345)
-addBus!(system; label = 2, type = 1, reactive = 5.0, angle = -2.0, base = 345)
+addBus!(system; label = 1, type = 3, active = 10.0, base = 345.0)
+addBus!(system; label = 2, type = 1, angle = -2.0, base = 345.0)
 ```
 
 As can be observed, electrical quantities will continue to be stored in per-units and radians format:
 ```@repl addBusUnit
 system.bus.demand.active
-system.bus.demand.reactive
 system.bus.voltage.angle
 ```
 
 The base voltage values will still be stored in volts (V) since we only changed the input unit prefix, and did not modify the internal unit prefix, as shown below:
-```@repl addBusBase
+```@repl addBusUnit
 system.base.voltage.value, system.base.voltage.unit
 ```
-To modify the internal unit prefix, the following command can be used:
-```@example addBusBase
+To modify the internal unit prefix, the following macro can be used:
+```@example addBusUnit
 @base(system, VA, kV)
+nothing # hide
 ```
-After executing this command, the base voltage values will be stored in kilovolts (kV):
-```@repl addBusBase
+After executing this macro, the base voltage values will be stored in kilovolts (kV):
+```@repl addBusUnit
 system.base.voltage.value, system.base.voltage.unit
 ```
 
 ---
 
 ## [Bus Labels](@id BusLabelsManual)
-In JuliaGrid, if the labels assigned to buses are not in the increasing ordered set of integers, the system internally renumbers all labels to satisfy the requirement of the increasing ordered set of integers. For instance, suppose we have a power system with buses labelled as:
+In JuliaGrid, the set of bus labels is always internally assigned and stored in a dictionary, even if the labels assigned to the buses are in an increasing ordered set of integers. In this case, each bus label value corresponds to the same internally assigned value.
+
+However, if the labels assigned to the buses are not in an increasing ordered set of integers, the system will always internally renumber all labels to satisfy the requirement of an increasing ordered set of integers. For example, suppose we have a power system with buses labelled as:
 ```@example AccessBusLabels
 using JuliaGrid # hide
 
@@ -213,7 +214,7 @@ using JuliaGrid # hide
 system = powerSystem()
 
 addBus!(system; label = 1, type = 3, active = 0.1)
-addBus!(system; label = 2, type = 1, reactive = 0.05, angle = -0.034907)
+addBus!(system; label = 2, type = 1, angle = -0.034907)
 
 addBranch!(system; label = 1, from = 1, to = 2, reactance = 0.12, shiftAngle = 0.1745)
 ```
@@ -227,7 +228,7 @@ system.branch.parameter.shiftAngle
 
 ---
 
-##### Change Input Units
+##### Change Input Unit System
 To use units other than per-units (pu) and radians (rad), macros can be employed to change the input units. For example, if the need arises to use ohms (Ω) and degrees (deg), the macros below can be employed:
 ```@example addBranchUnit
 using JuliaGrid # hide
@@ -237,7 +238,7 @@ using JuliaGrid # hide
 system = powerSystem()
 
 addBus!(system; label = 1, type = 3, active = 0.1)
-addBus!(system; label = 2, type = 1, reactive = 0.05, angle = -2.0)
+addBus!(system; label = 2, type = 1, angle = -2.0)
 
 addBranch!(system; label = 1, from = 1, to = 2, reactance = 22.8528, shiftAngle = 10.0)
 ```
@@ -312,7 +313,7 @@ In the above code, we add the generator to the bus labelled 2, with active and r
 system.generator.output.active
 system.generator.output.reactive
 ```
-Similar to buses and branches, the input units can be changed to units other than per-units and radians using different macros.
+Similar to buses and branches, the input units can be changed to units other than per-units using different macros.
 
 !!! note "Info"
     It is recommended to refer to the documentation for the [`addGenerator!`](@ref addGenerator!) function, which explains all the keywords used in the function.
@@ -361,6 +362,9 @@ label = labelBus[system.generator.layout.bus]
 ## [Add Templates](@id AddTemplatesManual)
 The functions [`addBus!`](@ref addBus!), [`addBranch!`](@ref addBranch!), and [`addGenerator!`](@ref addGenerator!) are used to add bus, branch, and generator to the power system, respectively. If certain keywords are not specified, default values are assigned to some parameters.
 
+---
+
+##### Default Keyword Values
 For the [`addBus!`](@ref addBus!) function, if the `type` keyword is not provided, the bus type is automatically set to a demand bus with a value of 1 for `type`. The initial bus voltage `magnitude` is set to 1.0 per-unit, and the `base` voltage is set to 138e3 volts. These default values are important to prevent issues with algorithm execution, such as a singular Jacobian when `magnitude = 0.0`.
 
 The [`addBranch!`](@ref addBranch!) function assigns default values of 1 for `status`, indicating that the branch is in-service, and 1 for `type`, representing the type of ratings.
@@ -369,6 +373,9 @@ Similarly, the [`addGenerator!`](@ref addGenerator!) function assigns default va
 
 The remaining parameters are initialized with default values of zero.
 
+---
+
+##### Change Default Keyword Values
 In JuliaGrid, users are allowed to modify default values and assign non-zero values to other keywords using the [`@bus`](@ref @bus), [`@branch`](@ref @branch), and [`@generator`](@ref @generator) macros. These macros create bus, branch, and generator templates that are used every time the [`addBus!`](@ref addBus!), [`addBranch!`](@ref addBranch!), and [`addGenerator!`](@ref addGenerator!) functions are called. For instance, the code block shows an example of creating bus, branch, and generator templates with customized default values:
 ```@example CreateBusTemplate
 using JuliaGrid # hide
@@ -377,16 +384,16 @@ using JuliaGrid # hide
 system = powerSystem()
 
 @bus(type = 2, active = 0.1)
-addBus!(system; label = 1, reactive = 0.2)
-addBus!(system; label = 2, type = 1, active = 0.5, reactive = 0.3)
+addBus!(system; label = 1)
+addBus!(system; label = 2, type = 1, active = 0.5)
 
 @branch(reactance = 0.12)
 addBranch!(system; label = 1, from = 1, to = 2)
 addBranch!(system; label = 2, from = 1, to = 2, reactance = 0.06)
 
 @generator(magnitude = 1.1)
-addGenerator!(system; label = 1, bus = 1, active = 50, reactive = 10)
-addGenerator!(system; label = 2, bus = 1, active = 20, reactive = 30)
+addGenerator!(system; label = 1, bus = 1, active = 50)
+addGenerator!(system; label = 2, bus = 1, active = 20)
 
 nothing # hide
 ```
@@ -404,7 +411,7 @@ system.generator.voltage.magnitude
 ```
 ---
 
-##### Change Input Units
+##### Change Input Unit System
 The JuliaGrid requires users to specify electrical quantity-related keywords in per-units (pu) and radians (rad) by default. However, it provides macros, such as [`@power`](@ref @power), that allow users to specify other units:
 ```@example CreateBusTemplateUnits
 using JuliaGrid # hide
@@ -413,26 +420,22 @@ system = powerSystem()
 
 @power(MW, MVAr, MVA)
 
-@bus(type = 2, active = 100, reactive = 200)
+@bus(active = 100, reactive = 200)
 addBus!(system; label = 1)
-addBus!(system; label = 2, magnitude = 1.1)
 
 @power(pu, pu, pu)
 
-addBus!(system; label = 3, type = 2, active = 1.0, reactive = 1.0)
+addBus!(system; label = 2, active = 1.0, reactive = 2.0)
 
 nothing # hide
 ```
 
-In this example, we create the bus template and two buses using SI power units, and then we switch to per-units and add a third bus. It is important to note that once the template is defined in any unit system, it remains valid regardless of subsequent unit system changes. The resulting power values are:
+In this example, we create the bus template and one bus using SI power units, and then we switch to per-units and add the second bus. It is important to note that once the template is defined in any unit system, it remains valid regardless of subsequent unit system changes. The resulting power values are:
 ```@repl CreateBusTemplateUnits
 system.bus.demand.active
 system.bus.demand.reactive
 ```
-Thus, JuliaGrid automatically tracks the unit system used to create templates and provides the appropriate conversion to per-units. Even if the user switches to a different unit system later on, the previously defined template will still be valid.
-
-!!! note "Info"
-    It should be noted that the unit of base voltage for the bus template specified by the `base` keyword is fixed to volts and cannot be altered.
+Thus, JuliaGrid automatically tracks the unit system used to create templates and provides the appropriate conversion to per-units and radians. Even if the user switches to a different unit system later on, the previously defined template will still be valid.
 
 ---
 
@@ -443,14 +446,16 @@ In the case of calling the [`@bus`](@ref @bus), [`@branch`](@ref @branch), or [`
 
 ##### Reset Templates
 To reset the bus, branch, and generator templates to their default settings, users can utilize the following macros:
-```julia
+```@example CreateBusTemplateUnits
 @default(bus)
 @default(branch)
 @default(generator)
+nothing # hide
 ```
 Additionally, users can reset all templates for the bus, branch, and generator components using the macro:
-```julia
+```@example CreateBusTemplateUnits
 @default(template)
+nothing # hide
 ```
 
 ---
@@ -475,7 +480,7 @@ dcModel!(system)
 
 nothing # hide
 ```
-One of the components of the AC and DC models are nodal matrices, which can be accessed through the following code:
+The nodal matrices are one of the components of both the AC and DC models and are stored in the variables:
 ```@repl ACDCModel
 system.dcModel.nodalMatrix
 system.acModel.nodalMatrix
@@ -487,7 +492,7 @@ system.acModel.nodalMatrix
 ---
 
 ##### New Branch Triggers Model Update
-We can execute the [`acModel!`](@ref acModel!) and [`dcModel!`](@ref dcModel!) functions after defining the final number of buses, and each new branch added will trigger an update of the AC and DC vectors and matrices. Here's an example:
+We can execute the [`acModel!`](@ref acModel!) and [`dcModel!`](@ref dcModel!) functions after defining the final number of buses, and each new branch added will trigger an update of the AC and DC vectors and matrices. Here is an example:
 ```@example ACDCModelUpdate
 using JuliaGrid # hide
 
@@ -505,7 +510,7 @@ addBranch!(system; label = 2, from = 2, to = 3, resistance = 0.008, reactance = 
 
 nothing # hide
 ```
-The DC nodal matrix has the same values as before:
+For example, the nodal matrix in the DC framework has the same values as before:
 ```@repl ACDCModelUpdate
 system.dcModel.nodalMatrix
 ```
@@ -516,9 +521,9 @@ system.dcModel.nodalMatrix
 ---
 
 ##### New Bus Triggers Model Erasure
-The AC and DC models must be defined when a finite number of buses are defined, otherwise, adding a new bus will delete them. For example, if we attempt to add a new bus to the `system` variable, the current AC and DC models will be completely erased:
+The AC and DC models must be defined when a finite number of buses are defined, otherwise, adding a new bus will delete them. For example, if we attempt to add a new bus to the `PowerSystem` type that was previously created, the current AC and DC models will be completely erased:
 ```@repl ACDCModelUpdate
-addBus!(system; label = 4, type = 2, base = 138e3)
+addBus!(system; label = 4, type = 2)
 system.dcModel.nodalMatrix
 system.acModel.nodalMatrix
 ```
@@ -526,7 +531,7 @@ system.acModel.nodalMatrix
 ---
 
 ## [Alter Shunt Elements](@id AlterShuntElementsManual)
-To modify or add new shunt element at bus, you can use the [`shuntBus!`](@ref shuntBus!) function. If AC and DC models have not yet been created, you can directly access the `bus.shunt.conductance` and `bus.shunt.susceptance` variables to change their values. However, if AC and DC models have been created, using the [`shuntBus!`](@ref shuntBus!) function will automatically update all relevant fields in these models. This avoids the need to recreate the AC and DC models from scratch.
+To modify or add new shunt element at bus, you can use the [`shuntBus!`](@ref shuntBus!) function. If the AC and DC models have not yet been created, you can directly modify the `bus.shunt` field of the `PowerSystem` type to change their values. However, if AC and DC models have been created, using the [`shuntBus!`](@ref shuntBus!) function will automatically update all relevant fields in these models. This avoids the need to recreate the AC and DC models from scratch.
 
 Therefore, it is recommended to use this function after executing the [`acModel!`](@ref acModel!) and [`dcModel!`](@ref dcModel!) functions. For example, let us start by creating the AC model:
 ```@example shuntBus
@@ -534,16 +539,16 @@ using JuliaGrid # hide
 
 system = powerSystem()
 
-addBus!(system; label = 1, type = 3, active = 0.1)
-addBus!(system; label = 2, type = 1, reactive = 0.05)
+addBus!(system; label = 1, type = 3)
+addBus!(system; label = 2, type = 1, susceptance = 2.1)
 
-addBranch!(system; label = 1, from = 1, to = 2, reactance = 0.12, shiftAngle = 0.1745)
+addBranch!(system; label = 1, from = 1, to = 2, reactance = 0.12)
 
 acModel!(system)
 
 nothing # hide
 ```
-Then, the AC nodal matrix is given as:
+Then, the nodal matrix is given as:
 ```@repl shuntBus
 system.acModel.nodalMatrix
 ```
@@ -555,7 +560,7 @@ shuntBus!(system; label = 2, susceptance = 0.25)
 
 nothing # hide
 ```
-Upon examining the AC nodal matrix, it can be inferred that the [`shuntBus!`](@ref shuntBus!) function automatically updates this matrix:
+Upon examining the nodal matrix, it can be inferred that the [`shuntBus!`](@ref shuntBus!) function automatically updates this matrix:
 ```@repl shuntBus
 system.acModel.nodalMatrix
 ```
@@ -563,7 +568,7 @@ system.acModel.nodalMatrix
 ---
 
 ## [Change Branch Status](@id ChangeBranchStatusManual)
-We can use the [`statusBranch!`](@ref statusBranch!) function to switch the branch's status between in-service and out-of-service. If the AC and DC models are not created, the function will perform the same operation as accessing `branch.layout.status` and changing the value from 1 to 0 or vice versa. However, if the AC and DC models are created, the function will trigger updates to all affected vectors and matrices.
+We can use the [`statusBranch!`](@ref statusBranch!) function to switch the branch's status between in-service and out-of-service. If the AC and DC models are not created, the function will perform the same operation as accessing the `status` variable of the `branch.layout` field and changing the value from 1 to 0 or vice versa. However, if the AC and DC models are created, the function will trigger updates to all affected vectors and matrices.
 
 Therefore, it is recommended to use this function after executing the [`acModel!`](@ref acModel!) and [`dcModel!`](@ref dcModel!) functions. The following code demonstrates the usage of the [`statusBranch!`](@ref statusBranch!) function:
 ```@example statusBranch
@@ -586,7 +591,7 @@ statusBranch!(system; label = 1, status = 0)
 nothing # hide
 ```
 
-This code sets the branch labelled with 1 to out-of-service. For example, the DC nodal matrix has the following form:
+This code sets the branch labelled with 1 to out-of-service. For example, the nodal matrix in the DC framework has the following form:
 ```@repl statusBranch
 system.dcModel.nodalMatrix
 ```
@@ -623,18 +628,18 @@ acModel!(system)
 
 nothing # hide
 ```
-Then the AC nodal matrix is:
+Then the nodal matrix is:
 ```@repl parameterBranch
 system.acModel.nodalMatrix
 ```
 
-We can modify the reactance value of branch 1 and add resistance to it while keeping the shift angle constant using the [`parameterBranch!`](@ref parameterBranch!) function as shown below:
+We can modify the reactance value of the branch and add resistance to it while keeping the shift angle constant, as shown below:
 ```@example parameterBranch
 parameterBranch!(system; label = 1, reactance = 0.10, resistance = 0.02)
 
 nothing # hide
 ```
-After executing this code, we can observe that the nodal matrix of the AC model is automatically updated by the function:
+Next, we can observe that the nodal matrix is updated automatically by the function:
 ```@repl parameterBranch
 system.acModel.nodalMatrix
 ```
@@ -642,9 +647,9 @@ system.acModel.nodalMatrix
 ---
 
 ## [Change Generator Status](@id ChangeGeneratorStatusManual)
-The [`statusGenerator!`](@ref statusGenerator!) function can be used to change the status of a generator between in-service and out-of-service. It is important to always use this function when changing the status of a previously defined generator. Directly accessing the corresponding variable to change the status can result in incorrect results because it will not affect the variable that holds the active and reactive powers generated by the generators that supply buses. Therefore, using the [`statusGenerator!`](@ref statusGenerator!) function is a safe way to put a generator in or out of service.
+The [`statusGenerator!`](@ref statusGenerator!) function can be used to change the status of a generator between in-service and out-of-service. It is important to always use this function when changing the status of a previously defined generator. Directly accessing the corresponding variable to change the status can result in incorrect results because it will not affect the variable that holds the active and reactive powers generated by the generators that supply buses.
 
-Let us create the power system with two generators connected to the same bus labelled with 2:
+Therefore, using the function is the safe way to put a generator in or out of service. Let us create the power system with two generators connected to the same bus:
 ```@example statusGenerator
 using JuliaGrid # hide
 @default(unit) # hide
@@ -666,7 +671,7 @@ system.bus.supply.active
 system.generator.output.active
 ```
 
-To put the second generator out of service, you can use the [`statusGenerator!`](@ref statusGenerator!) function:
+To put the second generator out-of-service, you can use the function:
 ```@example statusGenerator
 statusGenerator!(system; label = 2, status = 0)
 nothing # hide
@@ -676,12 +681,12 @@ Here, we can see the updated variables, where the second generator has been take
 system.bus.supply.active
 system.generator.output.active
 ```
-It is worth noting that even if the generator is out-of-service, the `generator.output.active` variable still reflects its production. This is because it allows the same generator to be put back in-service with the same output power as before.
+It is worth noting that even if the generator is out-of-service, the `output.active` variable still reflects its production. This is because it allows the same generator to be put back in-service with the same output power as before.
 
 ---
 
 ## [Change Generator Outputs](@id ChangeGeneratorOutputsManual)
-The function [`outputGenerator!`](@ref outputGenerator!) can be utilized to change the output of a generator. Similar to the [Change Generator Status](@ref ChangeGeneratorStatusManual), this function provides a safe way to modify the active and reactive powers produced by the previously defined generator.
+The function [`outputGenerator!`](@ref outputGenerator!) can be utilized to change the output of a generator. Similar to the [Change Generator Status](@ref ChangeGeneratorStatusManual), this function provides the safe way to modify the active and reactive powers produced by the previously defined generator.
 
 To demonstrate how to use this function, we can use the example:
 ```@example outputGenerator
@@ -705,7 +710,7 @@ system.generator.output.active
 system.bus.supply.active
 ```
 
-It is worth noting that the output reactive power of the generators remains the same, as shown in the following code snippet:
+It is worth noting that the output reactive power of the generators remains the same:
 ```@repl outputGenerator
 system.generator.output.reactive
 system.bus.supply.reactive
@@ -714,9 +719,9 @@ system.bus.supply.reactive
 ---
 
 ## [Add Active and Reactive Costs](@id AddActiveReactiveCostsManual)
-The [`addActiveCost!`](@ref addActiveCost!) and [`addReactiveCost!`](@ref addReactiveCost!) functions are responsible for adding costs for the active and reactive power produced by the corresponding generator. These costs are added only if the corresponding generator is defined. We will be using the [`addActiveCost!`](@ref addActiveCost!) function throughout this manual. The same steps can be applied for the [`addReactiveCost!`](@ref addReactiveCost!) function.
+The [`addActiveCost!`](@ref addActiveCost!) and [`addReactiveCost!`](@ref addReactiveCost!) functions are responsible for adding costs for the active and reactive power produced by the corresponding generator. These costs are added only if the corresponding generator is defined.
 
-To begin, let us create an example of the power system using the following code:
+The [`addActiveCost!`](@ref addActiveCost!) function will be used consistently throughout this manual. The same steps can be applied for the [`addReactiveCost!`](@ref addReactiveCost!) function. To begin, let us create an example of the power system using the following code:
 ```@example addActiveCost
 using JuliaGrid # hide
 
@@ -741,12 +746,12 @@ As previously, the default input units are related with per-units (pu), and the 
 ```@repl addActiveCost
 system.generator.cost.active.polynomial
 ```
-By setting `model = 2` in the [`addActiveCost!`](@ref addActiveCost!) function, we specify that the quadratic polynomial cost is being used for the corresponding generator. This can be particularly useful if we have also defined a piecewise linear cost function for the same generator. In such cases, we can choose between these two cost functions depending on our simulation requirements.
+By setting `model = 2` in the function, we specify that the quadratic polynomial cost is being used for the corresponding generator. This can be particularly useful if we have also defined a piecewise linear cost function for the same generator. In such cases, we can choose between these two cost functions depending on our simulation requirements.
 
 ---
 
 ##### Piecewise Linear Cost
-We can also create a piecewise linear cost function for the active power of the same generator by using the following code:
+We can also create a piecewise linear cost function for the active power of the same generator by using:
 ```@example addActiveCost
 addActiveCost!(system; label = 1, piecewise =  [0.1085 12.3; 0.1477 16.8; 0.18 18.1])
 nothing # hide
@@ -759,7 +764,7 @@ If we want to use this piecewise linear cost function instead of the polynomial 
 
 ---
 
-##### Change Input Units
+##### Change Input Unit System
 Changing input units from per-units (pu) can be particularly useful since cost functions are usually related to SI units of powers. To demonstrate this, let us set active powers in megawatts (MW) while keeping the rest of the units in per-units:
 ```@example addActiveCostUnit
 using JuliaGrid # hide

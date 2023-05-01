@@ -11,12 +11,12 @@ system = powerSystem("case14.h5")
 acModel!(system)
 
 result = newtonRaphson(system)
-stopping = result.algorithm.iteration.stopping
 for i = 1:10
-    newtonRaphson!(system, result)
-    if stopping.active < 1e-8 && stopping.reactive < 1e-8
+    stopping = mismatch!(system, result)
+    if all(stopping .< 1e-8)
         break
     end
+    solvePowerFlow!(system, result)
 end
 
 bus!(system, result)
@@ -27,7 +27,7 @@ bus!(system, result)
 system = powerSystem("case14.h5")
 dcModel!(system)
 
-result = dcPowerFlow(system)
+result = solvePowerFlow(system)
 bus!(system, result)
 ```
 """
@@ -131,12 +131,12 @@ system = powerSystem("case14.h5")
 acModel!(system)
 
 result = newtonRaphson(system)
-stopping = result.algorithm.iteration.stopping
 for i = 1:10
-    newtonRaphson!(system, result)
-    if stopping.active < 1e-8 && stopping.reactive < 1e-8
+    stopping = mismatch!(system, result)
+    if all(stopping .< 1e-8)
         break
     end
+    solvePowerFlow!(system, result)
 end
 
 branch!(system, result)
@@ -147,7 +147,7 @@ branch!(system, result)
 system = powerSystem("case14.h5")
 dcModel!(system)
 
-result = dcPowerFlow(system)
+result = solvePowerFlow(system)
 branch!(system, result)
 ```
 """
@@ -250,12 +250,12 @@ system = powerSystem("case14.h5")
 acModel!(system)
 
 result = newtonRaphson(system)
-stopping = result.algorithm.iteration.stopping
 for i = 1:10
-    newtonRaphson!(system, result)
-    if stopping.active < 1e-8 && stopping.reactive < 1e-8
+    stopping = mismatch!(system, result)
+    if all(stopping .< 1e-8)
         break
     end
+    solvePowerFlow!(system, result)
 end
 
 generator!(system, result)
@@ -266,7 +266,7 @@ generator!(system, result)
 system = powerSystem("case14.h5")
 dcModel!(system)
 
-result = dcPowerFlow(system)
+result = solvePowerFlow(system)
 generator!(system, result)
 ```
 """

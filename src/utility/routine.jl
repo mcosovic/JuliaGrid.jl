@@ -71,9 +71,9 @@ The macro is designed to reset various settings to their default values.
 
 The `mode` argument can take on the following values:
 * `unit`: resets all units to their default settings
-* `power`: sets active, reactive, and apparent power to per-units (pu)
-* `voltage`: sets voltage magnitude to per-unit (pu) and voltage angle to radian (rad)
-* `parameter`: sets impedance and admittance to per-units (pu)
+* `power`: sets active, reactive, and apparent power to per-units
+* `voltage`: sets voltage magnitude to per-unit and voltage angle to radian
+* `parameter`: sets impedance and admittance to per-units
 * `template`: resets bus, branch and generator templates to their default settings
 * `bus`: resets the bus template to its default settings
 * `branch`: resets the branch template to its default settings

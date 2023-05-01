@@ -53,8 +53,8 @@ const factor = Dict(
     )
 
 """
-By default, the units for base power and base voltages are set to volt-ampere (VA) and
-volt (V), but you can modify the prefixes using the macro:
+By default, the units for base power and base voltages are set to volt-ampere (VA) and volt (V),
+but you can modify the prefixes using the macro:
 
     @base(system::PowerSystem, power, voltage)
 
@@ -149,11 +149,10 @@ to add or modified power system elements can be modified using the macro:
 
     @voltage(magnitude, angle, base)
 
-Prefixes must be specified according to the
-[SI prefixes](https://www.nist.gov/pml/owm/metric-si-prefixes) and should be included with
-the unit of voltage `magnitude` (V). The second option is to define the unit of voltage
-`magnitude` in per-unit (pu). The unit of the voltage `angle` should be given in radian
-(rad) or degree (deg).
+The prefixes must adhere to the [SI prefixes](https://www.nist.gov/pml/owm/metric-si-prefixes)
+and should be specified along with the unit of voltage, either `magnitude` (V) or `base` (V).
+Alternatively, the unit of voltage `magnitude` can be expressed in per-unit (pu). The unit of
+voltage angle should be in radians (rad) or degrees (deg).
 
 Changing the unit of voltage magnitude is reflected in the following quantities:
 * [`addBus!`](@ref addBus!): `magnitude`, `minMagnitude`, `maxMagnitude`
@@ -163,6 +162,9 @@ Changing the unit of voltage angle is reflected in the following quantities:
 * [`addBus!`](@ref addBus!): `angle`
 * [`addBranch!`](@ref addBranch!): `shiftAngle`, `minDiffAngle`, `maxDiffAngle`
 * [`parameterBranch!`](@ref parameterBranch!): `shiftAngle`.
+
+Changing the unit prefix of voltage base is reflected in the following quantity:
+* [`addBus!`](@ref addBus!): `base`.
 
 # Example
 ```jldoctest
