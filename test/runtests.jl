@@ -7,9 +7,9 @@ using JuMP, Ipopt, HiGHS
 pathData = abspath(joinpath(dirname(Base.find_package("JuliaGrid")), ".."), "test/data/")
 
 ######## Power System ##########
-# include("powerSystem/loadSave.jl")
-# include("powerSystem/assemble.jl")
-# include("powerSystem/manipulation.jl")
+include("powerSystem/loadSave.jl")
+include("powerSystem/assemble.jl")
+include("powerSystem/manipulation.jl")
 
 # ######## Power flow ##########
 # include("powerFlow/solutionAnalaysis.jl")

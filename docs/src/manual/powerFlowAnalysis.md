@@ -403,7 +403,7 @@ system.base.power.value * result.bus.power.injection.reactive
 ```
 
 !!! note "Info"
-    We recommend that readers refer to the tutorials on [AC power flow analysis](@ref ACPowerFlowAnalysisTutorials) and [DC power flow analysis](@ref DCPowerFlowAnalysisTutorials) for a detailed explanation of all the electrical quantities related to buses, branches, and generators that are computed by the functions [bus!](@ref bus!), [branch!](@ref branch!), and [generator!](@ref generator!) in the context of power flow analysis.
+    We recommend that readers refer to the tutorials on [AC power flow analysis](@ref ACPowerFlowAnalysisTutorials) and [DC power flow analysis](@ref DCPowerFlowAnalysisTutorials) for a detailed explanation of all the electrical quantities related to buses, branches, and generators that are computed by the functions [`bus!`](@ref bus!), [`branch!`](@ref branch!), and [`generator!`](@ref generator!) in the context of power flow analysis.
 
 ---
 

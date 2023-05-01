@@ -1,5 +1,6 @@
 @testset "shuntBus!" begin
-    @default(all)
+    @default(unit)
+    @default(template)
 
     manual = powerSystem(string(pathData, "part300.m"))
     assemble = deepcopy(manual)
@@ -49,7 +50,7 @@ end
 
     manual.branch.layout.status[3] = 0
     acModel!(manual); dcModel!(manual)
-    
+
     acModel!(assemble); dcModel!(assemble)
     statusBranch!(assemble; label = 3, status = 0)
 
@@ -67,7 +68,7 @@ end
 end
 
 @testset "parameterBranch!" begin
-    @default(all)
+    @default(unit)
 
     manual = powerSystem(string(pathData, "part300.m"))
     assemble = deepcopy(manual)
@@ -97,17 +98,17 @@ end
     acModel!(assemble); dcModel!(assemble)
     acModel!(manual); dcModel!(manual)
 
-    @voltage(V, deg)
+    @voltage(V, deg, kV)
     @parameter(kΩ, S)
     parameterBranch!(assemble; label = 1, resistance = 0.0004351, reactance = 0.0111682, susceptance = -0.0683e-03, turnsRatio = 0.956, shiftAngle = 10.2)
 
-    @test manual.branch.parameter.resistance ≈ round.(assemble.branch.parameter.resistance, digits=4)
-    @test manual.branch.parameter.reactance ≈ round.(assemble.branch.parameter.reactance, digits=4)
-    @test manual.branch.parameter.susceptance ≈ round.(assemble.branch.parameter.susceptance, digits=4)
+    @test manual.branch.parameter.resistance ≈ assemble.branch.parameter.resistance atol=1.0e-6
+    @test manual.branch.parameter.reactance ≈ assemble.branch.parameter.reactance atol=1.0e-6
+    @test manual.branch.parameter.susceptance ≈ assemble.branch.parameter.susceptance atol=1.0e-4
     @test manual.branch.parameter.turnsRatio ≈ assemble.branch.parameter.turnsRatio
     @test manual.branch.parameter.shiftAngle ≈ assemble.branch.parameter.shiftAngle
-    @test round.(manual.acModel.nodalMatrix, digits=2) ≈ round.(assemble.acModel.nodalMatrix, digits=2)
-    @test round.(manual.dcModel.nodalMatrix, digits=2) ≈ round.(assemble.dcModel.nodalMatrix, digits=2)
+    @test manual.acModel.nodalMatrix ≈ assemble.acModel.nodalMatrix atol=1.0e-3
+    @test manual.dcModel.nodalMatrix ≈ assemble.dcModel.nodalMatrix atol=1.0e-3
 end
 
 @testset "statusGenerator!" begin
@@ -147,9 +148,11 @@ end
 end
 
 @testset "SI Units: outputGenerator!" begin
+    @default(unit)
+
     system1 = powerSystem(string(pathData, "part300Gen2.m"))
     system2 = powerSystem(string(pathData, "part300.m"))
-    
+
     @power(MW, MVAr, MVA)
     outputGenerator!(system2; label = 3, active = 110, reactive = 100)
 

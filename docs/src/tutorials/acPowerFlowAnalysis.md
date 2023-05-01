@@ -184,11 +184,7 @@ where ``\mathbf{\Delta} \mathbf{x} = [\mathbf \Delta \mathbf x_a, \mathbf \Delta
 𝐉 = result.algorithm.jacobian
 ```
 
-The JuliaGrid implementation of the AC power flow algorithm follows a specific order to store the increment and mismatch vectors. The first ``n-1`` elements of both vectors correspond to the demand and generator buses in the same order as they appear in the input data. This order is not obtained by first extracting the demand and then generator buses but by excluding the slack bus in the input data. The first `n-1` elements of the increment vector correspond to the voltage angle increments, while the first ``n-1`` elements of the mismatch vector correspond to the mismatch in active power injections.
-
-The last ``n_{\text{pq}}`` elements of the increment and mismatch vectors correspond to the demand buses in the order they appear in the input data. For the increment vector, it matches the bus voltage magnitude increments, while for the mismatch vector, it matches the mismatch in reactive power injections.
-
-As a result, this order defines the row and column order of the Jacobian matrix ``\mathbf{J}(\mathbf{x})``.
+The JuliaGrid implementation of the AC power flow algorithm follows a specific order to store the increment and mismatch vectors. The first ``n-1`` elements of both vectors correspond to the demand and generator buses in the same order as they appear in the input data. This order is not obtained by first extracting the demand and then generator buses but by excluding the slack bus in the input data. The first ``n-1`` elements of the increment vector correspond to the voltage angle increments, while the first ``n-1`` elements of the mismatch vector correspond to the mismatch in active power injections. The last ``n_{\text{pq}}`` elements of the increment and mismatch vectors correspond to the demand buses in the order they appear in the input data. For the increment vector, it matches the bus voltage magnitude increments, while for the mismatch vector, it matches the mismatch in reactive power injections. As a result, this order defines the row and column order of the Jacobian matrix ``\mathbf{J}(\mathbf{x})``.
 
 Finally, the function [`solvePowerFlow!`](@ref solvePowerFlow!) adds the computed increment term to the previous solution to obtain a new solution:
 ```math
