@@ -1,6 +1,5 @@
 system14 = powerSystem(string(pathData, "case14test.m"))
 system30 = powerSystem(string(pathData, "case30test.m"))
-torad = pi / 180
 topu = 1 / 100
 
 @testset "newtonRaphson, newtonRaphson!" begin
@@ -17,7 +16,7 @@ topu = 1 / 100
         if all(stopping .< 1e-8)
             break
         end
-        solve!(system14, result)
+        solvePowerFlow!(system14, result)
         iteration += 1
     end
 
@@ -46,14 +45,14 @@ topu = 1 / 100
     ######## Modified IEEE 30-bus Test Case ##########
     acModel!(system30)
     result = newtonRaphson(system30)
-    
+
     iteration = 0
     for i = 1:1000
         stopping = mismatch!(system30, result)
         if all(stopping .< 1e-8)
             break
         end
-        solve!(system30, result)
+        solvePowerFlow!(system30, result)
         iteration += 1
     end
 
@@ -63,7 +62,7 @@ topu = 1 / 100
 
     @test result.bus.voltage.magnitude ≈ matpower30["Vi"]
     @test result.bus.voltage.angle ≈ matpower30["Ti"] * torad
-    @test result.algorithm.iteration.number == matpower30["iterations"][1]
+    @test iteration == matpower30["iterations"][1]
 
     @test result.bus.power.injection.active ≈ matpower30["Pinj"] * topu
     @test result.bus.power.injection.reactive ≈ matpower30["Qinj"] * topu
@@ -87,32 +86,36 @@ end
     ######## Modified IEEE 14-bus Test Case ##########
     acModel!(system14)
     result = fastNewtonRaphsonBX(system14)
-    stopping = result.algorithm.iteration.stopping
+    iteration = 0
     for i = 1:1000
-        fastNewtonRaphson!(system14, result)
-        if stopping.active < 1e-8 && stopping.reactive < 1e-8
+        stopping = mismatch!(system14, result)
+        if all(stopping .< 1e-8)
             break
         end
+        solvePowerFlow!(system14, result)
+        iteration += 1
     end
 
     @test result.bus.voltage.magnitude ≈ matpower14["Vi"]
     @test result.bus.voltage.angle ≈ matpower14["Ti"] * torad
-    @test result.algorithm.iteration.number == matpower14["iterations"][1]
+    @test iteration == matpower14["iterations"][1]
 
     ######## Modified IEEE 30-bus Test Case ##########
     acModel!(system30)
     result = fastNewtonRaphsonBX(system30)
-    stopping = result.algorithm.iteration.stopping
+    iteration = 0
     for i = 1:1000
-        fastNewtonRaphson!(system30, result)
-        if stopping.active < 1e-8 && stopping.reactive < 1e-8
+        stopping = mismatch!(system30, result)
+        if all(stopping .< 1e-8)
             break
         end
+        solvePowerFlow!(system30, result)
+        iteration += 1
     end
 
     @test result.bus.voltage.magnitude ≈ matpower30["Vi"]
     @test result.bus.voltage.angle ≈ matpower30["Ti"] * torad
-    @test result.algorithm.iteration.number == matpower30["iterations"][1]
+    @test iteration == matpower30["iterations"][1]
 end
 
 @testset "fastNewtonRaphsonXB, fastNewtonRaphson!" begin
@@ -122,32 +125,36 @@ end
     ######## Modified IEEE 14-bus Test Case ##########
     acModel!(system14)
     result = fastNewtonRaphsonXB(system14)
-    stopping = result.algorithm.iteration.stopping
+    iteration = 0
     for i = 1:1000
-        fastNewtonRaphson!(system14, result)
-        if stopping.active < 1e-8 && stopping.reactive < 1e-8
+        stopping = mismatch!(system14, result)
+        if all(stopping .< 1e-8)
             break
         end
+        solvePowerFlow!(system14, result)
+        iteration += 1
     end
 
     @test result.bus.voltage.magnitude ≈ matpower14["Vi"]
     @test result.bus.voltage.angle ≈ matpower14["Ti"] * torad
-    @test result.algorithm.iteration.number == matpower14["iterations"][1]
+    @test iteration == matpower14["iterations"][1]
 
     ######## Modified IEEE 30-bus Test Case ##########
     acModel!(system30)
     result = fastNewtonRaphsonXB(system30)
-    stopping = result.algorithm.iteration.stopping
+    iteration = 0
     for i = 1:1000
-        fastNewtonRaphson!(system30, result)
-        if stopping.active < 1e-8 && stopping.reactive < 1e-8
+        stopping = mismatch!(system30, result)
+        if all(stopping .< 1e-8)
             break
         end
+        solvePowerFlow!(system30, result)
+        iteration += 1
     end
 
     @test result.bus.voltage.magnitude ≈ matpower30["Vi"]
     @test result.bus.voltage.angle ≈ matpower30["Ti"] * torad
-    @test result.algorithm.iteration.number == matpower30["iterations"][1]
+    @test iteration == matpower30["iterations"][1]
 end
 
 @testset "gaussSeidel, gaussSeidel!" begin
@@ -157,32 +164,36 @@ end
     ######## Modified IEEE 14-bus Test Case ##########
     acModel!(system14)
     result = gaussSeidel(system14)
-    stopping = result.algorithm.iteration.stopping
+    iteration = 0
     for i = 1:1000
-        gaussSeidel!(system14, result)
-        if stopping.active < 1e-8 && stopping.reactive < 1e-8
+        stopping = mismatch!(system14, result)
+        if all(stopping .< 1e-8)
             break
         end
+        solvePowerFlow!(system14, result)
+        iteration += 1
     end
 
     @test result.bus.voltage.magnitude ≈ matpower14["Vi"]
     @test result.bus.voltage.angle ≈ matpower14["Ti"] * torad
-    @test result.algorithm.iteration.number == matpower14["iterations"][1]
+    @test iteration == matpower14["iterations"][1]
 
     ######## Modified IEEE 30-bus Test Case ##########
     acModel!(system30)
     result = gaussSeidel(system30)
-    stopping = result.algorithm.iteration.stopping
+    iteration = 0
     for i = 1:1000
-        gaussSeidel!(system30, result)
-        if stopping.active < 1e-8 && stopping.reactive < 1e-8
+        stopping = mismatch!(system30, result)
+        if all(stopping .< 1e-8)
             break
         end
+        solvePowerFlow!(system30, result)
+        iteration += 1
     end
 
     @test result.bus.voltage.magnitude ≈ matpower30["Vi"]
     @test result.bus.voltage.angle ≈ matpower30["Ti"] * torad
-    @test result.algorithm.iteration.number == matpower30["iterations"][1]
+    @test iteration == matpower30["iterations"][1]
 end
 
 @testset "dcPowerFlow" begin
@@ -191,24 +202,24 @@ end
 
     ######## Modified IEEE 14-bus Test Case ##########
     dcModel!(system14)
-    result = dcPowerFlow(system14)
+    result = solvePowerFlow(system14)
     bus!(system14, result)
     branch!(system14, result)
     generator!(system14, result)
-    
+
     @test result.bus.voltage.angle ≈ matpower14["Ti"] * torad
     @test result.bus.power.injection.active ≈ matpower14["Pinj"] * topu
     @test result.branch.power.from.active ≈ matpower14["Pij"] * topu
     @test result.generator.power.active ≈ matpower14["Pgen"] * topu
-    
+
 
     ######## Modified IEEE 30-bus Test Case ##########
     dcModel!(system30)
-    result = dcPowerFlow(system30)
+    result = solvePowerFlow(system30)
     bus!(system30, result)
     branch!(system30, result)
     generator!(system30, result)
-    
+
     @test result.bus.voltage.angle ≈ matpower30["Ti"] * torad
     @test result.bus.power.injection.active ≈ matpower30["Pinj"] * topu
     @test result.branch.power.from.active ≈ matpower30["Pij"] * topu
