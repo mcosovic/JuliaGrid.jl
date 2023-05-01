@@ -10,7 +10,7 @@ rad = pi / 180
 ######## Power System ##########
 include("powerSystem/loadSave.jl")
 include("powerSystem/assemble.jl")
-# include("powerSystem/manipulation.jl")
+include("powerSystem/manipulation.jl")
 
 # ######## Power flow ##########
 # include("powerFlow/solutionAnalaysis.jl")

@@ -12,7 +12,7 @@
     addBus!(systemPU; label = 164, type = 1, susceptance = -2.12, magnitude = 0.9839, angle = 9.66 * rad, base = 230e3)
     addBus!(systemPU; label = 183, type = 1, active = 0.4, reactive = 0.04, magnitude = 0.9717, angle = 7.12 * rad, base = 115e3)
 
-    @branch(minDiffAngle = -360 * rad, maxDiffAngle = 360 * rad)
+    @branch(minDiffAngle = -360 * pi / 180, maxDiffAngle = 360 * pi / 180)
     addBranch!(systemPU; label = 1, from = 164, to = 155, resistance = 0.0009, reactance = 0.0231, susceptance = -0.033, turnsRatio = 0.956, shiftAngle = 10.2 * rad, longTerm = 0.1)
     addBranch!(systemPU; label = 2, from = 155, to = 156, resistance = 0.0008, reactance = 0.0256, turnsRatio = 1.05)
     addBranch!(systemPU; label = 3, from = 154, to = 156, resistance = 0.1746, reactance = 0.3161, susceptance = 0.04)
@@ -168,9 +168,9 @@ end
     @test system.branch.label == systemSI.branch.label
     @test system.branch.number == systemSI.branch.number
 
-    @test system.branch.parameter.resistance ≈ round.(systemSI.branch.parameter.resistance, digits=4)
-    @test system.branch.parameter.reactance ≈ round.(systemSI.branch.parameter.reactance, digits=4)
-    @test system.branch.parameter.susceptance ≈ round.(systemSI.branch.parameter.susceptance, digits=4)
+    @test system.branch.parameter.resistance ≈ systemSI.branch.parameter.resistance atol = 1e-4
+    @test system.branch.parameter.reactance ≈ systemSI.branch.parameter.reactance atol = 1e-4
+    @test system.branch.parameter.susceptance ≈ systemSI.branch.parameter.susceptance atol = 1e-4
     @test system.branch.parameter.turnsRatio ≈ systemSI.branch.parameter.turnsRatio
     @test system.branch.parameter.shiftAngle ≈ systemSI.branch.parameter.shiftAngle
 
