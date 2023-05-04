@@ -8,75 +8,75 @@ topu = 1 / 100
 
     ######## Modified IEEE 14-bus Test Case ##########
     acModel!(system14)
-    result = newtonRaphson(system14)
+    analysis = newtonRaphson(system14)
 
     iteration = 0
     for i = 1:1000
-        stopping = mismatch!(system14, result)
+        stopping = mismatch!(system14, analysis)
         if all(stopping .< 1e-8)
             break
         end
-        solve!(system14, result)
+        solve!(system14, analysis)
         iteration += 1
     end
 
-    bus!(system14, result)
-    branch!(system14, result)
-    generator!(system14, result)
+    bus!(system14, analysis)
+    branch!(system14, analysis)
+    generator!(system14, analysis)
 
-    @test result.bus.voltage.magnitude ≈ matpower14["Vi"]
-    @test result.bus.voltage.angle ≈ matpower14["Ti"] * torad
+    @test analysis.bus.voltage.magnitude ≈ matpower14["Vi"]
+    @test analysis.bus.voltage.angle ≈ matpower14["Ti"] * torad
     @test iteration == matpower14["iterations"][1]
 
-    @test result.bus.power.injection.active ≈ matpower14["Pinj"] * topu
-    @test result.bus.power.injection.reactive ≈ matpower14["Qinj"] * topu
+    @test analysis.bus.power.injection.active ≈ matpower14["Pinj"] * topu
+    @test analysis.bus.power.injection.reactive ≈ matpower14["Qinj"] * topu
 
-    @test result.branch.power.from.active ≈ matpower14["Pij"] * topu
-    @test result.branch.power.from.reactive ≈ matpower14["Qij"] * topu
-    @test result.branch.power.to.active ≈ matpower14["Pji"] * topu
-    @test result.branch.power.to.reactive ≈ matpower14["Qji"] * topu
-    @test result.branch.power.shunt.reactive ≈ matpower14["Qbranch"] * topu
-    @test result.branch.power.loss.active ≈ matpower14["Ploss"] * topu
-    @test result.branch.power.loss.reactive ≈ matpower14["Qloss"] * topu
+    @test analysis.branch.power.from.active ≈ matpower14["Pij"] * topu
+    @test analysis.branch.power.from.reactive ≈ matpower14["Qij"] * topu
+    @test analysis.branch.power.to.active ≈ matpower14["Pji"] * topu
+    @test analysis.branch.power.to.reactive ≈ matpower14["Qji"] * topu
+    @test analysis.branch.power.shunt.reactive ≈ matpower14["Qbranch"] * topu
+    @test analysis.branch.power.loss.active ≈ matpower14["Ploss"] * topu
+    @test analysis.branch.power.loss.reactive ≈ matpower14["Qloss"] * topu
 
-    @test result.generator.power.active ≈ matpower14["Pgen"] * topu
-    @test result.generator.power.reactive ≈ matpower14["Qgen"] * topu
+    @test analysis.generator.power.active ≈ matpower14["Pgen"] * topu
+    @test analysis.generator.power.reactive ≈ matpower14["Qgen"] * topu
 
     ######## Modified IEEE 30-bus Test Case ##########
     acModel!(system30)
-    result = newtonRaphson(system30)
+    analysis = newtonRaphson(system30)
 
     iteration = 0
     for i = 1:1000
-        stopping = mismatch!(system30, result)
+        stopping = mismatch!(system30, analysis)
         if all(stopping .< 1e-8)
             break
         end
-        solve!(system30, result)
+        solve!(system30, analysis)
         iteration += 1
     end
 
-    bus!(system30, result)
-    branch!(system30, result)
-    generator!(system30, result)
+    bus!(system30, analysis)
+    branch!(system30, analysis)
+    generator!(system30, analysis)
 
-    @test result.bus.voltage.magnitude ≈ matpower30["Vi"]
-    @test result.bus.voltage.angle ≈ matpower30["Ti"] * torad
+    @test analysis.bus.voltage.magnitude ≈ matpower30["Vi"]
+    @test analysis.bus.voltage.angle ≈ matpower30["Ti"] * torad
     @test iteration == matpower30["iterations"][1]
 
-    @test result.bus.power.injection.active ≈ matpower30["Pinj"] * topu
-    @test result.bus.power.injection.reactive ≈ matpower30["Qinj"] * topu
+    @test analysis.bus.power.injection.active ≈ matpower30["Pinj"] * topu
+    @test analysis.bus.power.injection.reactive ≈ matpower30["Qinj"] * topu
 
-    @test result.branch.power.from.active ≈ matpower30["Pij"] * topu
-    @test result.branch.power.from.reactive ≈ matpower30["Qij"] * topu
-    @test result.branch.power.to.active ≈ matpower30["Pji"] * topu
-    @test result.branch.power.to.reactive ≈ matpower30["Qji"] * topu
-    @test result.branch.power.shunt.reactive ≈ matpower30["Qbranch"] * topu
-    @test result.branch.power.loss.active ≈ matpower30["Ploss"] * topu
-    @test result.branch.power.loss.reactive ≈ matpower30["Qloss"] * topu
+    @test analysis.branch.power.from.active ≈ matpower30["Pij"] * topu
+    @test analysis.branch.power.from.reactive ≈ matpower30["Qij"] * topu
+    @test analysis.branch.power.to.active ≈ matpower30["Pji"] * topu
+    @test analysis.branch.power.to.reactive ≈ matpower30["Qji"] * topu
+    @test analysis.branch.power.shunt.reactive ≈ matpower30["Qbranch"] * topu
+    @test analysis.branch.power.loss.active ≈ matpower30["Ploss"] * topu
+    @test analysis.branch.power.loss.reactive ≈ matpower30["Qloss"] * topu
 
-    @test result.generator.power.active ≈ matpower30["Pgen"] * topu
-    @test result.generator.power.reactive ≈ matpower30["Qgen"] * topu
+    @test analysis.generator.power.active ≈ matpower30["Pgen"] * topu
+    @test analysis.generator.power.reactive ≈ matpower30["Qgen"] * topu
 end
 
 @testset "fastNewtonRaphsonBX, fastNewtonRaphson!" begin
@@ -85,36 +85,36 @@ end
 
     ######## Modified IEEE 14-bus Test Case ##########
     acModel!(system14)
-    result = fastNewtonRaphsonBX(system14)
+    analysis = fastNewtonRaphsonBX(system14)
     iteration = 0
     for i = 1:1000
-        stopping = mismatch!(system14, result)
+        stopping = mismatch!(system14, analysis)
         if all(stopping .< 1e-8)
             break
         end
-        solve!(system14, result)
+        solve!(system14, analysis)
         iteration += 1
     end
 
-    @test result.bus.voltage.magnitude ≈ matpower14["Vi"]
-    @test result.bus.voltage.angle ≈ matpower14["Ti"] * torad
+    @test analysis.bus.voltage.magnitude ≈ matpower14["Vi"]
+    @test analysis.bus.voltage.angle ≈ matpower14["Ti"] * torad
     @test iteration == matpower14["iterations"][1]
 
     ######## Modified IEEE 30-bus Test Case ##########
     acModel!(system30)
-    result = fastNewtonRaphsonBX(system30)
+    analysis = fastNewtonRaphsonBX(system30)
     iteration = 0
     for i = 1:1000
-        stopping = mismatch!(system30, result)
+        stopping = mismatch!(system30, analysis)
         if all(stopping .< 1e-8)
             break
         end
-        solve!(system30, result)
+        solve!(system30, analysis)
         iteration += 1
     end
 
-    @test result.bus.voltage.magnitude ≈ matpower30["Vi"]
-    @test result.bus.voltage.angle ≈ matpower30["Ti"] * torad
+    @test analysis.bus.voltage.magnitude ≈ matpower30["Vi"]
+    @test analysis.bus.voltage.angle ≈ matpower30["Ti"] * torad
     @test iteration == matpower30["iterations"][1]
 end
 
@@ -124,36 +124,36 @@ end
 
     ######## Modified IEEE 14-bus Test Case ##########
     acModel!(system14)
-    result = fastNewtonRaphsonXB(system14)
+    analysis = fastNewtonRaphsonXB(system14)
     iteration = 0
     for i = 1:1000
-        stopping = mismatch!(system14, result)
+        stopping = mismatch!(system14, analysis)
         if all(stopping .< 1e-8)
             break
         end
-        solve!(system14, result)
+        solve!(system14, analysis)
         iteration += 1
     end
 
-    @test result.bus.voltage.magnitude ≈ matpower14["Vi"]
-    @test result.bus.voltage.angle ≈ matpower14["Ti"] * torad
+    @test analysis.bus.voltage.magnitude ≈ matpower14["Vi"]
+    @test analysis.bus.voltage.angle ≈ matpower14["Ti"] * torad
     @test iteration == matpower14["iterations"][1]
 
     ######## Modified IEEE 30-bus Test Case ##########
     acModel!(system30)
-    result = fastNewtonRaphsonXB(system30)
+    analysis = fastNewtonRaphsonXB(system30)
     iteration = 0
     for i = 1:1000
-        stopping = mismatch!(system30, result)
+        stopping = mismatch!(system30, analysis)
         if all(stopping .< 1e-8)
             break
         end
-        solve!(system30, result)
+        solve!(system30, analysis)
         iteration += 1
     end
 
-    @test result.bus.voltage.magnitude ≈ matpower30["Vi"]
-    @test result.bus.voltage.angle ≈ matpower30["Ti"] * torad
+    @test analysis.bus.voltage.magnitude ≈ matpower30["Vi"]
+    @test analysis.bus.voltage.angle ≈ matpower30["Ti"] * torad
     @test iteration == matpower30["iterations"][1]
 end
 
@@ -163,36 +163,36 @@ end
 
     ######## Modified IEEE 14-bus Test Case ##########
     acModel!(system14)
-    result = gaussSeidel(system14)
+    analysis = gaussSeidel(system14)
     iteration = 0
     for i = 1:1000
-        stopping = mismatch!(system14, result)
+        stopping = mismatch!(system14, analysis)
         if all(stopping .< 1e-8)
             break
         end
-        solve!(system14, result)
+        solve!(system14, analysis)
         iteration += 1
     end
 
-    @test result.bus.voltage.magnitude ≈ matpower14["Vi"]
-    @test result.bus.voltage.angle ≈ matpower14["Ti"] * torad
+    @test analysis.bus.voltage.magnitude ≈ matpower14["Vi"]
+    @test analysis.bus.voltage.angle ≈ matpower14["Ti"] * torad
     @test iteration == matpower14["iterations"][1]
 
     ######## Modified IEEE 30-bus Test Case ##########
     acModel!(system30)
-    result = gaussSeidel(system30)
+    analysis = gaussSeidel(system30)
     iteration = 0
     for i = 1:1000
-        stopping = mismatch!(system30, result)
+        stopping = mismatch!(system30, analysis)
         if all(stopping .< 1e-8)
             break
         end
-        solve!(system30, result)
+        solve!(system30, analysis)
         iteration += 1
     end
 
-    @test result.bus.voltage.magnitude ≈ matpower30["Vi"]
-    @test result.bus.voltage.angle ≈ matpower30["Ti"] * torad
+    @test analysis.bus.voltage.magnitude ≈ matpower30["Vi"]
+    @test analysis.bus.voltage.angle ≈ matpower30["Ti"] * torad
     @test iteration == matpower30["iterations"][1]
 end
 
@@ -202,30 +202,30 @@ end
 
     ######## Modified IEEE 14-bus Test Case ##########
     dcModel!(system14)
-    result = dcPowerFlow(system14)
-    solve!(system14, result)
+    analysis = dcPowerFlow(system14)
+    solve!(system14, analysis)
 
-    bus!(system14, result)
-    branch!(system14, result)
-    generator!(system14, result)
+    bus!(system14, analysis)
+    branch!(system14, analysis)
+    generator!(system14, analysis)
 
-    @test result.bus.voltage.angle ≈ matpower14["Ti"] * torad
-    @test result.bus.power.injection.active ≈ matpower14["Pinj"] * topu
-    @test result.branch.power.from.active ≈ matpower14["Pij"] * topu
-    @test result.generator.power.active ≈ matpower14["Pgen"] * topu
+    @test analysis.bus.voltage.angle ≈ matpower14["Ti"] * torad
+    @test analysis.bus.power.injection.active ≈ matpower14["Pinj"] * topu
+    @test analysis.branch.power.from.active ≈ matpower14["Pij"] * topu
+    @test analysis.generator.power.active ≈ matpower14["Pgen"] * topu
 
 
     ######## Modified IEEE 30-bus Test Case ##########
     dcModel!(system30)
-    result = dcPowerFlow(system30)
-    solve!(system30, result)
+    analysis = dcPowerFlow(system30)
+    solve!(system30, analysis)
 
-    bus!(system30, result)
-    branch!(system30, result)
-    generator!(system30, result)
+    bus!(system30, analysis)
+    branch!(system30, analysis)
+    generator!(system30, analysis)
 
-    @test result.bus.voltage.angle ≈ matpower30["Ti"] * torad
-    @test result.bus.power.injection.active ≈ matpower30["Pinj"] * topu
-    @test result.branch.power.from.active ≈ matpower30["Pij"] * topu
-    @test result.generator.power.active ≈ matpower30["Pgen"] * topu
+    @test analysis.bus.voltage.angle ≈ matpower30["Ti"] * torad
+    @test analysis.bus.power.injection.active ≈ matpower30["Pinj"] * topu
+    @test analysis.branch.power.from.active ≈ matpower30["Pij"] * topu
+    @test analysis.generator.power.active ≈ matpower30["Pgen"] * topu
 end

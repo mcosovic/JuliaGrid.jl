@@ -6,18 +6,22 @@ For further information on this topic, please see the [Power System Model](@ref 
 
 ## API Index
 
+##### Power System Data
 * [`powerSystem`](@ref powerSystem)
 * [`savePowerSystem`](@ref savePowerSystem)
 
+##### Bus Functions
 * [`addBus!`](@ref addBus!)
 * [`shuntBus!`](@ref shuntBus!)
 * [`@bus`](@ref @bus)
 
+##### Branch Functions
 * [`addBranch!`](@ref addBranch!)
 * [`statusBranch!`](@ref statusBranch!)
 * [`parameterBranch!`](@ref parameterBranch!)
 * [`@branch`](@ref @branch)
 
+##### Generator Functions
 * [`addGenerator!`](@ref addGenerator!)
 * [`statusGenerator!`](@ref statusGenerator!)
 * [`outputGenerator!`](@ref outputGenerator!)
@@ -25,20 +29,15 @@ For further information on this topic, please see the [Power System Model](@ref 
 * [`addReactiveCost!`](@ref addReactiveCost!)
 * [`@generator`](@ref @generator)
 
+##### AC and DC Model
 * [`acModel!`](@ref acModel!)
 * [`dcModel!`](@ref dcModel!)
 
 ---
 
-## Build Model
+## Power System Data
 ```@docs
 powerSystem
-```
-
----
-
-## Save Model
-```@docs
 savePowerSystem
 ```
 

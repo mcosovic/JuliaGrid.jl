@@ -6,22 +6,27 @@ For further information on this topic, please see the [Power System Analysis](@r
 
 ## API Index
 
-
+##### Newton-Raphson Method
 * [`newtonRaphson`](@ref newtonRaphson)
+* [`mismatchNewtonRaphson!`](@ref mismatchNewtonRaphson!)
+* [`solveNewtonRaphson!`](@ref solveNewtonRaphson!)
+
+##### Fast Newton-Raphson Method
 * [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX)
 * [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB)
-* [`gaussSeidel`](@ref gaussSeidel)
-* [`dcPowerFlow`](@ref dcPowerFlow)
-
-* [`mismatchNewtonRaphson!`](@ref mismatchNewtonRaphson!)
 * [`mismatchFastNewtonRaphson!`](@ref mismatchFastNewtonRaphson!)
-* [`mismatchGaussSeidel!`](@ref mismatchGaussSeidel!)
-
-* [`solveNewtonRaphson!`](@ref solveNewtonRaphson!)
 * [`solveFastNewtonRaphson!`](@ref solveFastNewtonRaphson!)
+
+##### Gauss-Seidel Method
+* [`gaussSeidel`](@ref gaussSeidel)
+* [`mismatchGaussSeidel!`](@ref mismatchGaussSeidel!)
 * [`solveGaussSeidel!`](@ref solveGaussSeidel!)
+
+##### DC Power Flow
+* [`dcPowerFlow`](@ref dcPowerFlow)
 * [`solveDCPowerFlow!`](@ref solveDCPowerFlow!)
 
+##### Additional Functions
 * [`reactivePowerLimit!`](@ref reactivePowerLimit!)
 * [`adjustVoltageAngle!`](@ref adjustVoltageAngle!)
 

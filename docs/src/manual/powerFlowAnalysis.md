@@ -1,7 +1,7 @@
 # [Power Flow Analysis](@id PowerFlowAnalysisManual)
-To perform AC or DC power flow analysis, the composite type `PowerSystem` with created `acModel` or `dcModel` is required. The next step is to create the composite type `Result`, which has fields `bus`, `branch`, `generator`, and `model`.
+To perform AC or DC power flow analysis, the composite type `PowerSystem` with created `acModel` or `dcModel` is required. The next step is to create the composite type `Analysis`, which has fields `bus`, `branch`, `generator`, and `model`.
 
-To create the `Result` composite type and set up a framework for solving AC or DC power flow, utilize one of the functions listed below:
+To create the `Analysis` composite type and set up a framework for solving AC or DC power flow, utilize one of the functions listed below:
 * [`newtonRaphson`](@ref newtonRaphson)
 * [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX)
 * [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB)
@@ -40,7 +40,7 @@ addGenerator!(system; label = 1, bus = 2)
 
 acModel!(system)
 
-result = newtonRaphson(system)
+analysis = newtonRaphson(system)
 
 nothing # hide
 ```
@@ -63,7 +63,7 @@ addGenerator!(system; label = 1, bus = 2)
 
 acModel!(system)
 
-result = newtonRaphson(system)
+analysis = newtonRaphson(system)
 
 nothing # hide
 ```
@@ -93,15 +93,15 @@ addGenerator!(system; label = 2, bus = 3, magnitude = 1.2)
 
 acModel!(system)
 
-result = newtonRaphson(system)
+analysis = newtonRaphson(system)
 
 nothing # hide
 ```
 
 Here, in this code snippet, the function [`newtonRaphson`](@ref newtonRaphson) generates starting voltage vectors in polar coordinates, where the magnitudes and angles are constructed as:
 ```@repl initializeACPowerFlow
-result.bus.voltage.magnitude
-result.bus.voltage.angle
+analysis.bus.voltage.magnitude
+analysis.bus.voltage.angle
 ```
 The starting values for the voltage angles are defined based on the initial values given within the buses:
 ```@repl initializeACPowerFlow
@@ -119,12 +119,12 @@ Finally, we can add a generator to the slack bus of the previously created power
 ```@example initializeACPowerFlow
 addGenerator!(system; label = 3, bus = 1, magnitude = 1.3)
 
-result = newtonRaphson(system)
+analysis = newtonRaphson(system)
 nothing # hide
 ```
 The starting voltages are now as follows:
 ```@repl initializeACPowerFlow
-result.bus.voltage.magnitude
+analysis.bus.voltage.magnitude
 ```
 !!! note "Info"
     Thus, if an in-service generator exists on the slack bus, the starting value of the voltage magnitude is specified using the setpoints provided within the generators. This is a consequence of the fact that the slack bus has a known voltage magnitude. If a generator exists on the slack bus, its value is used, otherwise, the value is defined based on the initial voltage magnitude specified within the bus.
@@ -155,13 +155,13 @@ for i = 1:system.bus.number
     system.bus.voltage.angle[i] = 0.0
 end
 
-result = newtonRaphson(system)
+analysis = newtonRaphson(system)
 nothing # hide
 ```
 The starting voltage values are:
 ```@repl initializeACPowerFlowFlat
-result.bus.voltage.magnitude
-result.bus.voltage.angle
+analysis.bus.voltage.magnitude
+analysis.bus.voltage.angle
 ```
 Thus, we start with the set of voltage magnitude values that are constant throughout iteration, and the rest of the values correspond to the "flat start".
 
@@ -191,7 +191,7 @@ nothing # hide
 
 Once the AC model is defined, we can choose the method to solve the power flow problem. JuliaGrid provides four methods: [`newtonRaphson`](@ref newtonRaphson), [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX), [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB), and [`gaussSeidel`](@ref gaussSeidel). For example, to use the Newton-Raphson method to solve the power flow problem, we can call the [`newtonRaphson`](@ref newtonRaphson) function as follows:
 ```@example ACPowerFlowSolution
-result = newtonRaphson(system)
+analysis = newtonRaphson(system)
 nothing # hide
 ```
 This function sets up the desired method for an iterative process based on two functions: [`mismatch!`](@ref mismatch!) and [`solve!`](@ref solve!). The [`mismatch!`](@ref mismatch!) function calculates the active and reactive power injection mismatches using the given voltage magnitudes and angles, while [`solve!`](@ref solve!) computes the new voltage magnitudes and angles.
@@ -199,22 +199,22 @@ This function sets up the desired method for an iterative process based on two f
 To perform an iterative process with the Newton-Raphson or Fast Newton-Raphson methods in JuliaGrid, the [`mismatch!`](@ref mismatch!) function must be included inside the iteration loop. For instance:
 ```@example ACPowerFlowSolution
 for iteration = 1:100
-    mismatch!(system, result)
-    solve!(system, result)
+    mismatch!(system, analysis)
+    solve!(system, analysis)
 end
 nothing # hide
 ```
 After the process is completed, the solution to the AC power flow problem can be accessed as follows:
 ```@repl ACPowerFlowSolution
-result.bus.voltage.magnitude
-result.bus.voltage.angle
+analysis.bus.voltage.magnitude
+analysis.bus.voltage.angle
 ```
 
 In contrast, the iterative loop of the Gauss-Seidel method does not require the [`mismatch!`](@ref mismatch!) function:
 ```@example ACPowerFlowSolution
-result = gaussSeidel(system)
+analysis = gaussSeidel(system)
 for iteration = 1:100
-    solve!(system, result)
+    solve!(system, analysis)
 end
 nothing # hide
 ```
@@ -228,13 +228,13 @@ In these examples, the algorithms run until the specified number of iterations i
 ##### Breaking the Iterative Process
 You can terminate the iterative process using the [`mismatch!`](@ref mismatch!) function, which is why mismatches are computed separately. The following code shows an example of how to use the [`mismatch!`](@ref mismatch!) function to break out of the iteration loop:
 ```@example ACPowerFlowSolution
-result = newtonRaphson(system)
+analysis = newtonRaphson(system)
 for iteration = 1:100
-    stopping = mismatch!(system, result)
+    stopping = mismatch!(system, analysis)
     if all(stopping .< 1e-8)
         break
     end
-    solve!(system, result)
+    solve!(system, analysis)
 end
 nothing # hide
 ```
@@ -245,8 +245,12 @@ The [`mismatch!`](@ref mismatch!) function returns the maximum absolute values o
 
 ---
 
-## [Reusable AC Models](@id ReusableModelsModel)
-After creating the power system and AC model, these can be reused for different types of power flow analysis, as demonstrated by creating the power system and its models once again:
+## [Reusable Types for AC Power Flow](@id ReusableTypesACPowerFlowModel)
+The `PowerSystem` composite type with its `acModel` field can be used without limitations, and can be modified automatically using functions like [`shuntBus!`](@ref shuntBus!), [`statusBranch!`](@ref statusBranch!), [`parameterBranch!`](@ref parameterBranch!), [`statusGenerator!`](@ref statusGenerator!), and [`outputGenerator!`](@ref outputGenerator!) functions. This allows the `PowerSystem` type to be shared across different analyses.
+
+Additionally, the `Analysis` composite type can also be reused within the same method that solves the AC power flow problem.
+
+Let us create the power system with its existing model once again:
 ```@example ReusablePowerSystemType
 using JuliaGrid # hide
 
@@ -267,35 +271,52 @@ acModel!(system)
 nothing # hide
 ```
 
-Applying different methods sequentially can be beneficial. For example, the Gauss-Seidel method is often used to obtain a quick approximate solution, while the Newton-Raphson method is typically used to obtain the final accurate solution. Therefore, we can run the Gauss-Seidel method for just a few iterations, as shown below:
+---
+
+##### Reusable PowerSystem Type
+The initial application of the reusable `PowerSystem` type is simple: it can be shared among various methods, which can yield benefits. For example, the Gauss-Seidel method is commonly used for a speedy approximate solution, whereas the Newton-Raphson method is typically utilized for the precise final solution. Thus, we can execute the Gauss-Seidel method for a limited number of iterations, as exemplified below:
 ```@example ReusablePowerSystemType
-resultGS = gaussSeidel(system)
+analysisGS = gaussSeidel(system)
 for iteration = 1:3
-    solve!(system, resultGS)
+    solve!(system, analysisGS)
 end
 ```
 
 Next, we can initialize the Newton-Raphson method with the voltages obtained from the Gauss-Seidel method and start the algorithm from that point:
 ```@example ReusablePowerSystemType
-result = newtonRaphson(system)
+analysis = newtonRaphson(system)
 
 for i = 1:system.bus.number
-    result.bus.voltage.magnitude[i] = resultGS.bus.voltage.magnitude[i]
-    result.bus.voltage.angle[i] = resultGS.bus.voltage.angle[i]
+    analysis.bus.voltage.magnitude[i] = analysisGS.bus.voltage.magnitude[i]
+    analysis.bus.voltage.angle[i] = analysisGS.bus.voltage.angle[i]
 end
 
 for iteration = 1:100
-    stopping = mismatch!(system, result)
+    stopping = mismatch!(system, analysis)
     if all(stopping .< 1e-8)
         break
     end
-    solve!(system, result)
+    solve!(system, analysis)
 end
 ```
 The final solutions are:
 ```@repl ReusablePowerSystemType
-result.bus.voltage.magnitude
-result.bus.voltage.angle
+analysis.bus.voltage.magnitude
+analysis.bus.voltage.angle
+```
+
+Another way to utilize the reusable `PowerSystem` type is to make modifications to the power system parameters using built-in functions. For instance, we can alter the resistance of the branch labelled as 3, while still using the `PowerSystem` that was created earlier:
+```@example ReusablePowerSystemType
+parameterBranch!(system; label = 1, resistance = 0.06)
+
+analysis = newtonRaphson(system)
+for iteration = 1:100
+    stopping = mismatch!(system, analysis)
+    if all(stopping .< 1e-8)
+        break
+    end
+    solve!(system, analysis)
+end
 ```
 
 !!! note "Info"
@@ -303,23 +324,25 @@ result.bus.voltage.angle
 
 ---
 
-##### Change the Power System Structure
-After creating the composite types `PowerSystem` and `Result`, users can modify the structure of the power system using functions [`shuntBus!`](@ref shuntBus!), [`statusBranch!`](@ref statusBranch!), [`parameterBranch!`](@ref parameterBranch!), and [`outputGenerator!`](@ref outputGenerator!), without having to recreate them from scratch. For instance, if the branch labeled 3 needs to be put out-of-service in the previously mentioned example, the AC power flow can be executed again by running the following code snippet:
+##### Reusable Analysis Type
+As we have seen, the `PowerSystem` type can be reused and modified using various functions, and the question now is whether we can do the same with the `Analysis` composite type. In fact, in the previous code snippet, we did not need to recreate the `Analysis` type after changing the resistance of the branch labelled 3. Thus, once the `Analysis` type is created, users can modify the power system's structure using functions [`shuntBus!`](@ref shuntBus!), [`statusBranch!`](@ref statusBranch!), [`parameterBranch!`](@ref parameterBranch!), and [`outputGenerator!`](@ref outputGenerator!), without having to recreate the `Analysis` type from scratch.
+
+For instance, if the branch labelled 3 needs to be put out-of-service in the previously mentioned example, the AC power flow can be executed again by running the following code snippet:
 ```@example ReusablePowerSystemType
 statusBranch!(system; label = 3, status = 0)
 
 for iteration = 1:100
-    stopping = mismatch!(system, result)
-    if all(stopping .< 1e-12)
+    stopping = mismatch!(system, analysis)
+    if all(stopping .< 1e-8)
         break
     end
-    solve!(system, result)
+    solve!(system, analysis)
 end
-``` 
-Here, the previously created `PowerSystem` and `Result` types are reused. This approach ensures that the algorithm has the "warm start" since the Newton-Raphson method starts with voltages obtained from the step where the branch was in-service.
+```
+Here, the previously created `PowerSystem` and `Analysis` types are reused. This approach ensures that the algorithm has the "warm start" since the Newton-Raphson method starts with voltages obtained from the step where the branch was in-service.
 
-!!! note "Info"
-    It is important to note that this approach is only possible with the Newton-Raphson and Gauss-Seidel methods since these methods involve the power system structure inside the iteration loop. On the other hand, the fast Newton-Raphson algorithm has constant Jacobian matrices created when the `Result` type is created, which means that any modifications to the power system require creating the `Result` type again.
+!!! warning "Warning"
+    It is important to note that this approach is only possible with the Newton-Raphson and Gauss-Seidel methods since these methods involve the power system structure inside the iteration loop. On the other hand, the fast Newton-Raphson algorithm has constant Jacobian matrices created when the `Analysis` type is created, which means that any modifications to the power system require creating the `Analysis` type again.
 
 ---
 
@@ -345,51 +368,61 @@ dcModel!(system)
 nothing # hide
 ```
 
-Next, we can setup the DC power flow problem by calling the [`dcPowerFlow`](@ref dcPowerFlow):
+We can set up the DC power flow problem by invoking the [`dcPowerFlow`](@ref dcPowerFlow) function, like so:
 ```@example DCPowerFlowSolution
-result = dcPowerFlow(system)
+analysis = dcPowerFlow(system)
 nothing # hide
 ```
-Here the nodal matrix is just factorize to prepired it for finding bus voltage angles:
+The nodal matrix is then factorized in preparation for finding the bus voltage angles:
 ```@repl DCPowerFlowSolution
-result.model.factorization
+analysis.model.factorization
 ```
-To obtaine bus voltage angles, we execute the functio: 
+To obtain the bus voltage angles, we can call the [`solve!`](@ref solve!) function as follows:
 ```@example DCPowerFlowSolution
-solve!(system, result)
+solve!(system, analysis)
 nothing # hide
 ```
-The bus voltage angles obtained can be accessed as follows:
+Once the solution is obtained, the bus voltage angles can be accessed using:
 ```@repl DCPowerFlowSolution
-result.bus.voltage.angle
+analysis.bus.voltage.angle
 nothing # hide
 ```
 
 !!! note "Info"
-    We recommend that readers refer to the tutorial on [DC power flow analysis](@ref DCPowerFlowAnalysisTutorials) for insights into the implementation.    
+    We recommend that readers refer to the tutorial on [DC power flow analysis](@ref DCPowerFlowAnalysisTutorials) for insights into the implementation.
 
 ---
 
-## [Reusable DC Models](@id ReusableModelsModel) 
-Once you have created the power system and DC model, you can reuse them for multiple DC power flow analyses. Specifically, you can modify the structure of the power system using the [`statusBranch!`](@ref statusBranch!) and [`parameterBranch!`](@ref parameterBranch!) functions without having to recreate the system from scratch. For instance, suppose we want to put the branch labeled 3 out-of-service and perform the DC power flow again: 
+## [Reusable Types for DC Power Flow](@id ReusableTypesDCPowerFlowModel)
+The `PowerSystem` composite type with its `dcModel` field can be utilized without restrictions and can be modified automatically using functions such as [`shuntBus!`](@ref shuntBus!), [`statusBranch!`](@ref statusBranch!), [`parameterBranch!`](@ref parameterBranch!), [`statusGenerator!`](@ref statusGenerator!), and [`outputGenerator!`](@ref outputGenerator!). This facilitates sharing the `PowerSystem` type across various DC power flow analyses.
+
+Furthermore, the `Analysis` composite type can be reused within the same method used to solve the DC power flow problem.
+
+---
+
+##### Reusable PowerSystem Type
+Once you have created the power system and DC model, you can reuse them for multiple DC power flow analyses. Specifically, you can modify the structure of the power system using the [`statusBranch!`](@ref statusBranch!) and [`parameterBranch!`](@ref parameterBranch!) functions without having to recreate the system from scratch. As an example, let us say we wish to take the branch labelled 3 out-of-service from the previous example and conduct the DC power flow again:
 ```@example DCPowerFlowSolution
 statusBranch!(system; label = 3, status = 0)
 
-result = dcPowerFlow(system)
-solve!(system, result)
+analysis = dcPowerFlow(system)
+solve!(system, analysis)
 nothing # hide
 ```
 
 ---
 
-##### Change the Shunt and Generator Parameters
-In contrast, you can change the shunt parameters using the [`shuntBus!`](@ref shuntBus!) function or change the generator parameters using the [`statusGenerator!`](@ref statusGenerator!) and [`outputGenerator!`](@ref outputGenerator!) functions without having to recreate the `Result` composite type. For example, to change the output of the generator and compute the bus voltage angles again, you can use the following code:
+##### Reusable Analysis Type
+The `Analysis` composite type contains a factorized nodal matrix, which means that users can reuse it when only modifying shunt or generator parameters and keeping the power system's branch parameters the same. This allows for more efficient computations as the factorization step is not repeated.
+
+Therefore, by using only the functions [`shuntBus!`](@ref shuntBus!), [`statusGenerator!`](@ref statusGenerator!) and [`outputGenerator!`](@ref outputGenerator!), the `Analysis` composite type can be reused. For example, to change the output of the generator and compute the bus voltage angles again, one can use the following code:
 ```@example DCPowerFlowSolution
 outputGenerator!(system; label = 1, active = 0.5)
 
-solve!(system, result)
+solve!(system, analysis)
 nothing # hide
 ```
+Here, the previously factorized nodal matrix is utilized to obtain the new solution, which is more efficient than repeating the factorization step.
 
 ---
 
@@ -412,13 +445,13 @@ addGenerator!(system; label = 1, bus = 2, active = 3.2)
 
 acModel!(system)
 
-result = newtonRaphson(system)
+analysis = newtonRaphson(system)
 for iteration = 1:100
-    stopping = mismatch!(system, result)
+    stopping = mismatch!(system, analysis)
     if all(stopping .< 1e-8)
         break
     end
-    solve!(system, result)
+    solve!(system, analysis)
 end
 
 nothing # hide
@@ -426,18 +459,18 @@ nothing # hide
 
 Next, we can use the above-mentioned functions to compute the relevant data for buses, branches, and generators. Here is an example code snippet that demonstrates this process:
 ```@example ComputationPowersCurrentsLosses
-bus!(system, result)
-branch!(system, result)
-generator!(system, result)
+bus!(system, analysis)
+branch!(system, analysis)
+generator!(system, analysis)
 
 nothing # hide
 ```
 
-Each of these functions is responsible for populating the corresponding fields of the `Result` type, such as `bus`, `branch`, or `generator`. For instance, we can now observe the active and reactive power injections in megawatts (MW) and megavolt-ampere reactive (MVAr) using the code snippet below:
+Each of these functions is responsible for populating the corresponding fields of the `Analysis` type, such as `bus`, `branch`, or `generator`. For instance, we can now observe the active and reactive power injections in megawatts (MW) and megavolt-ampere reactive (MVAr) using the code snippet below:
 ```@repl ComputationPowersCurrentsLosses
 @base(system, MVA, V);
-system.base.power.value * result.bus.power.injection.active
-system.base.power.value * result.bus.power.injection.reactive
+system.base.power.value * analysis.bus.power.injection.active
+system.base.power.value * analysis.bus.power.injection.reactive
 ```
 
 !!! note "Info"
@@ -469,16 +502,16 @@ addGenerator!(system; label = 2, bus = 4, reactive = 0.3)
 
 acModel!(system)
 
-result = newtonRaphson(system)
+analysis = newtonRaphson(system)
 for iteration = 1:100
-    stopping = mismatch!(system, result)
+    stopping = mismatch!(system, analysis)
     if all(stopping .< 1e-8)
         break
     end
-    solve!(system, result)
+    solve!(system, analysis)
 end
 
-violate = reactivePowerLimit!(system, result)
+violate = reactivePowerLimit!(system, analysis)
 
 nothing # hide
 ```
@@ -489,7 +522,7 @@ The output reactive power of the observed generators is subject to limits which 
 
 Once the solution of the AC power flow analysis is obtained, calling the function [`reactivePowerLimit!`](@ref reactivePowerLimit!) will execute the [`generator!`](@ref generator!) function if it has not been executed before. This will then give us the output of the generators' reactive power as follows:
 ```@repl GeneratorReactivePowerLimits
-result.generator.power.reactive
+analysis.generator.power.reactive
 ```
 The variable `violate` indicates the violation of limits, where the first generator violates the minimum limit and the second generator violates the maximum limit, as shown below:
 ```@repl GeneratorReactivePowerLimits
@@ -506,18 +539,18 @@ system.bus.layout.type
 
 After modifying the `PowerSystem` type as described earlier, we can run the simulation again with the following code:
 ```@example GeneratorReactivePowerLimits
-result = newtonRaphson(system)
+analysis = newtonRaphson(system)
 for iteration = 1:100
-    stopping = mismatch!(system, result)
+    stopping = mismatch!(system, analysis)
     if all(stopping .< 1e-8)
         break
     end
-    solve!(system, result)
+    solve!(system, analysis)
 end
 ```
 Once the simulation is complete, we can verify that all generator reactive power outputs now satisfy the limits by checking the violate variable again:
 ```@repl GeneratorReactivePowerLimits
-violate = reactivePowerLimit!(system, result)
+violate = reactivePowerLimit!(system, analysis)
 ```
 
 !!! note "Info"
@@ -548,41 +581,41 @@ addGenerator!(system; label = 2, bus = 4, reactive = 0.3)
 
 acModel!(system)
 
-result = newtonRaphson(system)
+analysis = newtonRaphson(system)
 for iteration = 1:100
-    stopping = mismatch!(system, result)
+    stopping = mismatch!(system, analysis)
     if all(stopping .< 1e-8)
         break
     end
-    solve!(system, result)
+    solve!(system, analysis)
 end
 ```
 
 Upon checking the limits, we can observe that the slack bus has been transformed by executing the following code:
 ```@repl NewSlackBus
-violate = reactivePowerLimit!(system, result)
+violate = reactivePowerLimit!(system, analysis)
 ```
 Here, the generator connected to the slack bus is violating the minimum reactive power limit, which indicates the need to convert the slack bus. It is important to note that the new slack bus can be created only from the generator bus (`type = 2`). We will now perform another AC power flow analysis on the modified system using the following code:
 ```@example NewSlackBus
-result = newtonRaphson(system)
+analysis = newtonRaphson(system)
 for iteration = 1:100
-    stopping = mismatch!(system, result)
+    stopping = mismatch!(system, analysis)
     if all(stopping .< 1e-8)
         break
     end
-    solve!(system, result)
+    solve!(system, analysis)
 end
 ```
 
 After examining the bus voltages, we will focus on the angles:
 ```@repl NewSlackBus
-result.bus.voltage.angle
+analysis.bus.voltage.angle
 ```
 We can observe that the angles have been calculated based on the new slack bus. JuliaGrid offers the function to adjust these angles to match the original slack bus as follows:
 ```@example NewSlackBus
-adjustVoltageAngle!(system, result; slack = 1)
+adjustVoltageAngle!(system, analysis; slack = 1)
 ```
 Here, the `slack` keyword should correspond to the label of the slack bus. After executing the above code, the updated results can be viewed:
 ```@repl NewSlackBus
-result.bus.voltage.angle
+analysis.bus.voltage.angle
 ```

@@ -23,8 +23,8 @@ include("powerSystem/assemble.jl")
 export addBus!, shuntBus!
 export addBranch!, statusBranch!, parameterBranch!
 export addGenerator!, addActiveCost!, addReactiveCost!, statusGenerator!, outputGenerator!
-export @bus, @branch, @generator
 export dcModel!, acModel!
+export @bus, @branch, @generator
 
 ######## Power Flow ##########
 include("powerFlow/solution.jl")
@@ -39,12 +39,13 @@ include("powerFlow/analysis.jl")
 export bus!, branch!, generator!
 
 ######## Optimal Power Flow ##########
-include("optimalPowerFlow/solution.jl")
-export dcOptimalPowerFlow!, optimizePowerFlow!
+# include("optimalPowerFlow/solution.jl")
+# export dcOptimalPowerFlow!, optimizePowerFlow!
 
 ######### Unit ##########
 include("utility/unit.jl")
 export @base, @power, @voltage, @parameter
+
 
 end # JuliaGrid
 

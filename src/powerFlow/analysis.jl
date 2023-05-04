@@ -1,25 +1,25 @@
 """
 This function calculates the powers and currents associated with buses.
 
-    bus!(system::PowerSystem, result::Result)
+    bus!(system::PowerSystem, analysis::Analysis)
 
-After the function is executed, the `bus` field within the `Result` type gets updated.
+After the function is executed, the `bus` field within the `Analysis` type gets updated.
 
 # AC Power Flow Example
 ```jldoctest
 system = powerSystem("case14.h5")
 acModel!(system)
 
-result = newtonRaphson(system)
+analysis = newtonRaphson(system)
 for i = 1:10
-    stopping = mismatch!(system, result)
+    stopping = mismatch!(system, analysis)
     if all(stopping .< 1e-8)
         break
     end
-    solvePowerFlow!(system, result)
+    solvePowerFlow!(system, analysis)
 end
 
-bus!(system, result)
+bus!(system, analysis)
 ```
 
 # DC Power Flow Example
@@ -27,27 +27,27 @@ bus!(system, result)
 system = powerSystem("case14.h5")
 dcModel!(system)
 
-result = solvePowerFlow(system)
-bus!(system, result)
+analysis = solvePowerFlow(system)
+bus!(system, analysis)
 ```
 """
-function bus!(system::PowerSystem, result::Result)
-    if result.model.method == "DC Power Flow"
-        dcBus!(system, result)
+function bus!(system::PowerSystem, analysis::Analysis)
+    if analysis.model.method == "DC Power Flow"
+        dcBus!(system, analysis)
     end
 
-    if result.model.method in ["Gauss-Seidel", "Newton-Raphson", "Fast Newton-Raphson BX", "Fast Newton-Raphson XB"]
-        acBus!(system, result)
+    if analysis.model.method in ["Gauss-Seidel", "Newton-Raphson", "Fast Newton-Raphson BX", "Fast Newton-Raphson XB"]
+        acBus!(system, analysis)
     end
 end
 
-function dcBus!(system::PowerSystem, result::Result)
+function dcBus!(system::PowerSystem, analysis::Analysis)
     dc = system.dcModel
     bus = system.bus
     slack = bus.layout.slack
 
-    power = result.bus.power
-    voltage = result.bus.voltage
+    power = analysis.bus.power
+    voltage = analysis.bus.voltage
     errorVoltage(voltage.angle)
 
     power.supply.active = copy(bus.supply.active)
@@ -64,13 +64,13 @@ function dcBus!(system::PowerSystem, result::Result)
     power.supply.active[slack] = bus.demand.active[slack] + power.injection.active[slack]
 end
 
-function acBus!(system::PowerSystem, result::Result)
+function acBus!(system::PowerSystem, analysis::Analysis)
     ac = system.acModel
     slack = system.bus.layout.slack
 
-    voltage = result.bus.voltage
-    power = result.bus.power
-    current = result.bus.current
+    voltage = analysis.bus.voltage
+    power = analysis.bus.power
+    current = analysis.bus.current
     errorVoltage(voltage.magnitude)
 
     power.injection.active = fill(0.0, system.bus.number)
@@ -120,9 +120,9 @@ The function is used to calculate the powers and currents associated with branch
 power flow analysis and, in relation to DC power flow analysis, it only calculates active
 powers.
 
-    branch!(system::PowerSystem, result::Result)
+    branch!(system::PowerSystem, analysis::Analysis)
 
-The function is responsible for updating the `branch` field within the `Result` type after
+The function is responsible for updating the `branch` field within the `Analysis` type after
 it has been executed.
 
 # AC Power Flow Example
@@ -130,16 +130,16 @@ it has been executed.
 system = powerSystem("case14.h5")
 acModel!(system)
 
-result = newtonRaphson(system)
+analysis = newtonRaphson(system)
 for i = 1:10
-    stopping = mismatch!(system, result)
+    stopping = mismatch!(system, analysis)
     if all(stopping .< 1e-8)
         break
     end
-    solvePowerFlow!(system, result)
+    solvePowerFlow!(system, analysis)
 end
 
-branch!(system, result)
+branch!(system, analysis)
 ```
 
 # DC Power Flow Example
@@ -147,26 +147,26 @@ branch!(system, result)
 system = powerSystem("case14.h5")
 dcModel!(system)
 
-result = solvePowerFlow(system)
-branch!(system, result)
+analysis = solvePowerFlow(system)
+branch!(system, analysis)
 ```
 """
-function branch!(system::PowerSystem, result::Result)
-    if result.model.method == "DC Power Flow"
-        dcBranch!(system, result)
+function branch!(system::PowerSystem, analysis::Analysis)
+    if analysis.model.method == "DC Power Flow"
+        dcBranch!(system, analysis)
     end
 
-    if result.model.method in ["Gauss-Seidel", "Newton-Raphson", "Fast Newton-Raphson BX", "Fast Newton-Raphson XB"]
-        acBranch!(system, result)
+    if analysis.model.method in ["Gauss-Seidel", "Newton-Raphson", "Fast Newton-Raphson BX", "Fast Newton-Raphson XB"]
+        acBranch!(system, analysis)
     end
 end
 
-function dcBranch!(system::PowerSystem, result::Result)
+function dcBranch!(system::PowerSystem, analysis::Analysis)
     dc = system.dcModel
     branch = system.branch
 
-    power = result.branch.power
-    voltage = result.bus.voltage
+    power = analysis.branch.power
+    voltage = analysis.bus.voltage
     errorVoltage(voltage.angle)
 
     power.from.active = copy(dc.admittance)
@@ -177,12 +177,12 @@ function dcBranch!(system::PowerSystem, result::Result)
     end
 end
 
-function acBranch!(system::PowerSystem, result::Result)
+function acBranch!(system::PowerSystem, analysis::Analysis)
     ac = system.acModel
 
-    voltage = result.bus.voltage
-    current = result.branch.current
-    power = result.branch.power
+    voltage = analysis.bus.voltage
+    current = analysis.branch.current
+    power = analysis.branch.power
     errorVoltage(voltage.magnitude)
 
     power.from.active = fill(0.0, system.branch.number)
@@ -240,25 +240,25 @@ end
 """
 The function computes powers related to generators.
 
-    generator!(system::PowerSystem, result::Result)
+    generator!(system::PowerSystem, analysis::Analysis)
 
-Once executed, the `generator` field within the `Result` type is updated accordingly.
+Once executed, the `generator` field within the `Analysis` type is updated accordingly.
 
 # AC Power Flow Example
 ```jldoctest
 system = powerSystem("case14.h5")
 acModel!(system)
 
-result = newtonRaphson(system)
+analysis = newtonRaphson(system)
 for i = 1:10
-    stopping = mismatch!(system, result)
+    stopping = mismatch!(system, analysis)
     if all(stopping .< 1e-8)
         break
     end
-    solvePowerFlow!(system, result)
+    solvePowerFlow!(system, analysis)
 end
 
-generator!(system, result)
+generator!(system, analysis)
 ```
 
 # DC Power Flow Example
@@ -266,38 +266,38 @@ generator!(system, result)
 system = powerSystem("case14.h5")
 dcModel!(system)
 
-result = solvePowerFlow(system)
-generator!(system, result)
+analysis = solvePowerFlow(system)
+generator!(system, analysis)
 ```
 """
-function generator!(system::PowerSystem, result::Result)
-    if result.model.method == "DC Power Flow"
-        dcGenerator!(system, result)
+function generator!(system::PowerSystem, analysis::Analysis)
+    if analysis.model.method == "DC Power Flow"
+        dcGenerator!(system, analysis)
     end
 
-    if result.model.method in ["Gauss-Seidel", "Newton-Raphson", "Fast Newton-Raphson BX", "Fast Newton-Raphson XB"]
-        acGenerator!(system, result)
+    if analysis.model.method in ["Gauss-Seidel", "Newton-Raphson", "Fast Newton-Raphson BX", "Fast Newton-Raphson XB"]
+        acGenerator!(system, analysis)
     end
 end
 
-function dcGenerator!(system::PowerSystem, result::Result)
+function dcGenerator!(system::PowerSystem, analysis::Analysis)
     dc = system.dcModel
     generator = system.generator
     bus = system.bus
     slack = bus.layout.slack
 
-    power = result.generator.power
-    voltage = result.bus.voltage
+    power = analysis.generator.power
+    voltage = analysis.bus.voltage
     errorVoltage(voltage.angle)
 
-    if isempty(result.bus.power.supply.active)
+    if isempty(analysis.bus.power.supply.active)
         supplySlack = bus.demand.active[slack] + bus.shunt.conductance[slack] + dc.shiftActivePower[slack]
         @inbounds for j in dc.nodalMatrix.colptr[slack]:(dc.nodalMatrix.colptr[slack + 1] - 1)
             row = dc.nodalMatrix.rowval[j]
             supplySlack += dc.nodalMatrix[row, slack] * voltage.angle[row]
         end
     else
-        supplySlack = result.bus.power.supply.active[slack]
+        supplySlack = analysis.bus.power.supply.active[slack]
     end
 
     power.active = fill(0.0, generator.number)
@@ -319,11 +319,11 @@ function dcGenerator!(system::PowerSystem, result::Result)
     end
 end
 
-function acGenerator!(system::PowerSystem, result::Result)
+function acGenerator!(system::PowerSystem, analysis::Analysis)
     ac = system.acModel
 
-    voltage = result.bus.voltage
-    power = result.generator.power
+    voltage = analysis.bus.voltage
+    power = analysis.generator.power
     errorVoltage(voltage.magnitude)
 
     power.active = fill(0.0, system.generator.number)
@@ -336,7 +336,7 @@ function acGenerator!(system::PowerSystem, result::Result)
         end
     end
 
-    if isempty(result.bus.power.injection.active)
+    if isempty(analysis.bus.power.injection.active)
         injectionActive = fill(0.0, system.bus.number)
         injectionReactive = fill(0.0, system.bus.number)
 
@@ -353,8 +353,8 @@ function acGenerator!(system::PowerSystem, result::Result)
             injectionReactive[i] = imag(powerInjection)
         end
     else
-        injectionActive = result.bus.power.injection.active
-        injectionReactive = result.bus.power.injection.reactive
+        injectionActive = analysis.bus.power.injection.active
+        injectionReactive = analysis.bus.power.injection.reactive
     end
 
     if !isMultiple

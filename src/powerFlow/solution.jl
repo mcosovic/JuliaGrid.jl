@@ -91,8 +91,8 @@ struct DCPowerFlow
     method::String
 end
 
-######### Result Struct ##########
-mutable struct Result
+######### Analysis Struct ##########
+mutable struct Analysis
     bus::BusResult
     branch::BranchResult
     generator::GeneratorResult
@@ -101,11 +101,11 @@ end
 
 """
 The function accepts the `PowerSystem` composite type as input and uses it to set up the
-Newton-Raphson method to solve AC power flow. Its output is the `Result` composite type.
+Newton-Raphson method to solve AC power flow. Its output is the `Analysis` composite type.
 
     newtonRaphson(system::PowerSystem)
 
-The `model` field of the `Result` type is updated during the function's execution. Furthermore,
+The `model` field of the `Analysis` type is updated during the function's execution. Furthermore,
 if the AC model was not created, the function will automatically initiate an update of the
 `acModel` field within the `PowerSystem` composite type.
 
@@ -114,7 +114,7 @@ if the AC model was not created, the function will automatically initiate an upd
 system = powerSystem("case14.h5")
 acModel!(system)
 
-result = newtonRaphson(system)
+analysis = newtonRaphson(system)
 ```
 """
 function newtonRaphson(system::PowerSystem)
@@ -200,7 +200,7 @@ function newtonRaphson(system::PowerSystem)
     increment = fill(0.0, bus.number + pqNumber - 1)
     method = "Newton-Raphson"
 
-    return Result(
+    return Analysis(
         BusResult(Polar(voltageMagnitude, voltageAngle),
             BusPower(Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[])),
             BusCurrent(Polar(Float64[], Float64[]))),
@@ -214,12 +214,12 @@ end
 
 """
 The function accepts the `PowerSystem` composite type as input and uses it to set up the
-Fast Newton-Raphson method of version BX to solve AC power flow. Its output is the `Result`
+Fast Newton-Raphson method of version BX to solve AC power flow. Its output is the `Analysis`
 composite type.
 
     fastNewtonRaphsonBX(system::PowerSystem)
 
-The `model` field of the `Result` type is updated during the function's execution. Furthermore,
+The `model` field of the `Analysis` type is updated during the function's execution. Furthermore,
 if the AC model was not created, the function will automatically initiate an update of the
 `acModel` field within the `PowerSystem` composite type.
 
@@ -228,24 +228,24 @@ if the AC model was not created, the function will automatically initiate an upd
 system = powerSystem("case14.h5")
 acModel!(system)
 
-result = fastNewtonRaphsonBX(system)
+analysis = fastNewtonRaphsonBX(system)
 ```
 """
 function fastNewtonRaphsonBX(system::PowerSystem)
     algorithmBX = 1
-    result = fastNewtonRaphson(system, algorithmBX)
+    analysis = fastNewtonRaphson(system, algorithmBX)
 
-    return result
+    return analysis
 end
 
 """
 The function accepts the `PowerSystem` composite type as input and uses it to set up the
-Fast Newton-Raphson method of version XB to solve AC power flow. Its output is the `Result`
+Fast Newton-Raphson method of version XB to solve AC power flow. Its output is the `Analysis`
 composite type.
 
     fastNewtonRaphsonXB(system::PowerSystem)
 
-The `model` field of the `Result` type is updated during the function's execution. Furthermore,
+The `model` field of the `Analysis` type is updated during the function's execution. Furthermore,
 if the AC model was not created, the function will automatically initiate an update of the
 `acModel` field within the `PowerSystem` composite type.
 
@@ -254,14 +254,14 @@ if the AC model was not created, the function will automatically initiate an upd
 system = powerSystem("case14.h5")
 acModel!(system)
 
-result = fastNewtonRaphsonXB(system)
+analysis = fastNewtonRaphsonXB(system)
 ```
 """
 function fastNewtonRaphsonXB(system::PowerSystem)
     algorithmXB = 2
-    result = fastNewtonRaphson(system, algorithmXB)
+    analysis = fastNewtonRaphson(system, algorithmXB)
 
-    return result
+    return analysis
 end
 
 @inline function fastNewtonRaphson(system::PowerSystem, algorithmFlag::Int64)
@@ -404,7 +404,7 @@ end
         method = "Fast Newton-Raphson XB"
     end
 
-    return Result(
+    return Analysis(
         BusResult(Polar(voltageMagnitude, voltageAngle),
             BusPower(Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[])),
             BusCurrent(Polar(Float64[], Float64[]))),
@@ -421,11 +421,11 @@ end
 
 """
 The function accepts the `PowerSystem` composite type as input and uses it to set up the
-Gauss-Seidel method to solve AC power flow. Its output is the `Result` composite type.
+Gauss-Seidel method to solve AC power flow. Its output is the `Analysis` composite type.
 
     gaussSeidel(system::PowerSystem)
 
-The `model` field of the `Result` type is updated during the function's execution. Furthermore,
+The `model` field of the `Analysis` type is updated during the function's execution. Furthermore,
 if the AC model was not created, the function will automatically initiate an update of the
 `acModel` field within the `PowerSystem` composite type.
 
@@ -434,7 +434,7 @@ if the AC model was not created, the function will automatically initiate an upd
 system = powerSystem("case14.h5")
 acModel!(system)
 
-result = gaussSeidel(system)
+analysis = gaussSeidel(system)
 ```
 """
 function gaussSeidel(system::PowerSystem)
@@ -461,7 +461,7 @@ function gaussSeidel(system::PowerSystem)
 
     method = "Gauss-Seidel"
 
-    return Result(
+    return Analysis(
         BusResult(Polar(voltageMagnitude, voltageAngle),
             BusPower(Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[])),
             BusCurrent(Polar(Float64[], Float64[]))),
@@ -475,11 +475,11 @@ end
 
 """
 The function accepts the `PowerSystem` composite type as input, which is utilized to establish
-the structure for solving the DC power flow. Its output is the `Result` composite type.
+the structure for solving the DC power flow. Its output is the `Analysis` composite type.
 
     dcPowerFlow(system::PowerSystem)
 
-The `model` field of the `Result` type is updated during the function's execution. Furthermore,
+The `model` field of the `Analysis` type is updated during the function's execution. Furthermore,
 if the DC model was not created, the function will automatically initiate an update of the
 `dcModel` field within the `PowerSystem` composite type.
 
@@ -488,7 +488,7 @@ if the DC model was not created, the function will automatically initiate an upd
 system = powerSystem("case14.h5")
 dcModel!(system)
 
-result = dcPowerFlow(system)
+analysis = dcPowerFlow(system)
 ```
 """
 function dcPowerFlow(system::PowerSystem)
@@ -515,7 +515,7 @@ function dcPowerFlow(system::PowerSystem)
 
     method = "DC Power Flow"
 
-    return Result(
+    return Analysis(
         BusResult(Polar(Float64[], Float64[]),
             BusPower(Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[])),
             BusCurrent(Polar(Float64[], Float64[]))),
@@ -532,7 +532,7 @@ The function calculates both active and reactive power injection mismatches and 
 maximum absolute values. These maximum values are useful for stopping the iteration loop of the
 AC power flow problem-solving method.
 
-    mismatch!(system::PowerSystem, result::Result)
+    mismatch!(system::PowerSystem, analysis::Analysis)
 
 This function is designed to be used within the iteration loop before calling the
 [`solve!`](@ref solve!) function.
@@ -548,17 +548,17 @@ problem. Depending on the selected method, the function calls one of these funct
 system = powerSystem("case14.h5")
 acModel!(system)
 
-result = newtonRaphson(system)
-mismatch!(system, result)
+analysis = newtonRaphson(system)
+mismatch!(system, analysis)
 ```
 """
-function mismatch!(system::PowerSystem, result::Result)
-    if result.model.method == "Newton-Raphson"
-        stopActive, stopReactive = mismatchNewtonRaphson!(system, result)
-    elseif result.model.method == "Fast Newton-Raphson BX" || result.model.method == "Fast Newton-Raphson XB"
-        stopActive, stopReactive = mismatchFastNewtonRaphson!(system, result)
-    elseif result.model.method == "Gauss-Seidel"
-        stopActive, stopReactive = mismatchGaussSeidel!(system, result)
+function mismatch!(system::PowerSystem, analysis::Analysis)
+    if analysis.model.method == "Newton-Raphson"
+        stopActive, stopReactive = mismatchNewtonRaphson!(system, analysis)
+    elseif analysis.model.method == "Fast Newton-Raphson BX" || analysis.model.method == "Fast Newton-Raphson XB"
+        stopActive, stopReactive = mismatchFastNewtonRaphson!(system, analysis)
+    elseif analysis.model.method == "Gauss-Seidel"
+        stopActive, stopReactive = mismatchGaussSeidel!(system, analysis)
     end
 
     return stopActive, stopReactive
@@ -569,9 +569,9 @@ The function calculates both active and reactive power injection mismatches and 
 maximum absolute values, which can be utilized to terminate the iteration loop of the
 Newton-Raphson method that is employed to solve the AC power flow problem.
 
-    mismatchNewtonRaphson!(system::PowerSystem, result::Result)
+    mismatchNewtonRaphson!(system::PowerSystem, analysis::Analysis)
 
-This function updates the `mismatch` field in the `Result` composite type and should be employed
+This function updates the `mismatch` field in the `Analysis` composite type and should be employed
 during the iteration loop before invoking the [`solveNewtonRaphson!`](@ref solveNewtonRaphson!)
 function.
 
@@ -580,17 +580,17 @@ function.
 system = powerSystem("case14.h5")
 acModel!(system)
 
-result = newtonRaphson(system)
-mismatchNewtonRaphson!(system, result)
+analysis = newtonRaphson(system)
+mismatchNewtonRaphson!(system, analysis)
 ```
 """
-function mismatchNewtonRaphson!(system::PowerSystem, result::Result)
+function mismatchNewtonRaphson!(system::PowerSystem, analysis::Analysis)
     ac = system.acModel
     bus = system.bus
 
-    voltage = result.bus.voltage
-    mismatch = result.model.mismatch
-    index = result.model.index
+    voltage = analysis.bus.voltage
+    mismatch = analysis.model.mismatch
+    index = analysis.model.index
 
     stopActive = 0.0
     stopReactive = 0.0
@@ -627,9 +627,9 @@ The function calculates both active and reactive power injection mismatches and 
 maximum absolute values, which can be utilized to terminate the iteration loop of the fast
 Newton-Raphson method that is employed to solve the AC power flow problem.
 
-    mismatchFastNewtonRaphson!(system::PowerSystem, result::Result)
+    mismatchFastNewtonRaphson!(system::PowerSystem, analysis::Analysis)
 
-This function updates the `mismatch` field in the `Result` composite type and should be
+This function updates the `mismatch` field in the `Analysis` composite type and should be
 employed during the iteration loop before invoking the
 [`solveFastNewtonRaphson!`](@ref solveFastNewtonRaphson!) function.
 
@@ -638,18 +638,18 @@ employed during the iteration loop before invoking the
 system = powerSystem("case14.h5")
 acModel!(system)
 
-result = fastNewtonRaphson(system)
-mismatchFastNewtonRaphson!(system, result)
+analysis = fastNewtonRaphson(system)
+mismatchFastNewtonRaphson!(system, analysis)
 ```
 """
-function mismatchFastNewtonRaphson!(system::PowerSystem, result::Result)
+function mismatchFastNewtonRaphson!(system::PowerSystem, analysis::Analysis)
     ac = system.acModel
     bus = system.bus
 
-    voltage = result.bus.voltage
-    active = result.model.active
-    reactive = result.model.reactive
-    index = result.model.index
+    voltage = analysis.bus.voltage
+    active = analysis.model.active
+    reactive = analysis.model.reactive
+    index = analysis.model.index
 
     stopActive = 0.0
     stopReactive = 0.0
@@ -685,10 +685,10 @@ The function calculates both active and reactive power injection mismatches and 
 maximum absolute values, which can be utilized to terminate the iteration loop of the
 Gauss-Seidel method that is employed to solve the AC power flow problem.
 
-    mismatchGaussSeidel!(system::PowerSystem, result::Result)
+    mismatchGaussSeidel!(system::PowerSystem, analysis::Analysis)
 
 The Gauss-Seidel method does not need mismatches to obtain bus voltages, but the maximum absolute
-values are commonly employed to stop the iteration loop. As a result, the function does not save
+values are commonly employed to stop the iteration loop. As a analysis, the function does not save
 any data and should be utilized during the iteration loop before invoking the
 [`solveGaussSeidel!`](@ref solveGaussSeidel!) function.
 
@@ -697,15 +697,15 @@ any data and should be utilized during the iteration loop before invoking the
 system = powerSystem("case14.h5")
 acModel!(system)
 
-result = gaussSeidel(system)
-mismatchGaussSeidel!(system, result)
+analysis = gaussSeidel(system)
+mismatchGaussSeidel!(system, analysis)
 ```
 """
-function mismatchGaussSeidel!(system::PowerSystem, result::Result)
+function mismatchGaussSeidel!(system::PowerSystem, analysis::Analysis)
     ac = system.acModel
 
-    voltage = result.model.voltage
-    index = result.model.index
+    voltage = analysis.model.voltage
+    index = analysis.model.index
 
     stopActive = 0.0
     stopReactive = 0.0
@@ -739,9 +739,9 @@ end
 The function serves as a wrapper that integrates multiple functions to solve AC or DC power
 flow problems.
 
-    solve!(system::PowerSystem, result::Result)
+    solve!(system::PowerSystem, analysis::Analysis)
 
-It then updates the `bus.voltage` and `model` fields of the `Result` composite type accordingly.
+It then updates the `bus.voltage` and `model` fields of the `Analysis` composite type accordingly.
 
 To use this function in the AC power flow framework, it should be employed within the iteration
 loop following the [`mismatch!`](@ref mismatch!) function. Together, these functions execute a
@@ -761,13 +761,13 @@ AC Power Flow:
 system = powerSystem("case14.h5")
 acModel!(system)
 
-result = newtonRaphson(system)
+analysis = newtonRaphson(system)
 for i = 1:10
-    stopping = mismatch!(system, result)
+    stopping = mismatch!(system, analysis)
     if all(stopping .< 1e-8)
         break
     end
-    solve!(system, result)
+    solve!(system, analysis)
 end
 ```
 
@@ -776,19 +776,19 @@ DC Power Flow:
 system = powerSystem("case14.h5")
 dcModel!(system)
 
-result = dcPowerFlow(system)
-solve!(system, result)
+analysis = dcPowerFlow(system)
+solve!(system, analysis)
 ```
 """
-function solve!(system::PowerSystem, result::Result)
-    if result.model.method == "Newton-Raphson"
-        solveNewtonRaphson!(system, result)
-    elseif result.model.method == "DC Power Flow"
-        solveDCPowerFlow!(system, result)
-    elseif result.model.method == "Fast Newton-Raphson BX" || result.model.method == "Fast Newton-Raphson XB"
-        solveFastNewtonRaphson!(system, result)
-    elseif result.model.method == "Gauss-Seidel"
-        solveGaussSeidel!(system, result)
+function solve!(system::PowerSystem, analysis::Analysis)
+    if analysis.model.method == "Newton-Raphson"
+        solveNewtonRaphson!(system, analysis)
+    elseif analysis.model.method == "DC Power Flow"
+        solveDCPowerFlow!(system, analysis)
+    elseif analysis.model.method == "Fast Newton-Raphson BX" || analysis.model.method == "Fast Newton-Raphson XB"
+        solveFastNewtonRaphson!(system, analysis)
+    elseif analysis.model.method == "Gauss-Seidel"
+        solveGaussSeidel!(system, analysis)
     end
 end
 
@@ -796,9 +796,9 @@ end
 The function employs the Newton-Raphson method to determine the magnitudes and angles of bus
 voltages, which is used to solve the AC power flow problem.
 
-    solveNewtonRaphson!(system, result)
+    solveNewtonRaphson!(system, analysis)
 
-This function updates the `bus.voltage` and `model` fields of the `Result` composite type during
+This function updates the `bus.voltage` and `model` fields of the `Analysis` composite type during
 the iteration loop, which should follow the [`mismatchNewtonRaphson!`](@ref mismatchNewtonRaphson!)
 function. Together, these functions collaborate to execute one iteration of the Newton-Raphson
 algorithm.
@@ -808,23 +808,23 @@ algorithm.
 system = powerSystem("case14.h5")
 acModel!(system)
 
-result = newtonRaphson(system)
+analysis = newtonRaphson(system)
 for i = 1:10
-    stopping = mismatchNewtonRaphson!(system, result)
+    stopping = mismatchNewtonRaphson!(system, analysis)
     if all(stopping .< 1e-8)
         break
     end
-    solveNewtonRaphson!(system, result)
+    solveNewtonRaphson!(system, analysis)
 end
 ```
 """
-function solveNewtonRaphson!(system::PowerSystem, result::Result)
+function solveNewtonRaphson!(system::PowerSystem, analysis::Analysis)
     ac = system.acModel
     bus = system.bus
 
-    voltage = result.bus.voltage
-    jacobian = result.model.jacobian
-    index = result.model.index
+    voltage = analysis.bus.voltage
+    jacobian = analysis.model.jacobian
+    index = analysis.model.index
 
     @inbounds for i = 1:bus.number
         if i != bus.layout.slack
@@ -875,14 +875,14 @@ function solveNewtonRaphson!(system::PowerSystem, result::Result)
         end
     end
 
-    ldiv!(result.model.increment, lu(jacobian), result.model.mismatch)
+    ldiv!(analysis.model.increment, lu(jacobian), analysis.model.mismatch)
 
     @inbounds for i = 1:bus.number
         if bus.layout.type[i] == 1
-            voltage.magnitude[i] = voltage.magnitude[i] - result.model.increment[index.pq[i]]
+            voltage.magnitude[i] = voltage.magnitude[i] - analysis.model.increment[index.pq[i]]
         end
         if i != bus.layout.slack
-            voltage.angle[i] = voltage.angle[i] - result.model.increment[index.pvpq[i]]
+            voltage.angle[i] = voltage.angle[i] - analysis.model.increment[index.pvpq[i]]
         end
     end
 end
@@ -891,9 +891,9 @@ end
 The function employs the fast Newton-Raphson method to determine the magnitudes and angles of bus
 voltages, which is used to solve the AC power flow problem.
 
-    solveFastNewtonRaphson!(system, result)
+    solveFastNewtonRaphson!(system, analysis)
 
-This function updates the `bus.voltage` and `model` fields of the `Result` composite type during
+This function updates the `bus.voltage` and `model` fields of the `Analysis` composite type during
 the iteration loop, which should follow the [`mismatchFastNewtonRaphson!`](@ref mismatchFastNewtonRaphson!)
 function. Together, these functions collaborate to execute one iteration of the fast Newton-Raphson
 algorithm.
@@ -903,24 +903,24 @@ algorithm.
 system = powerSystem("case14.h5")
 acModel!(system)
 
-result = fastNewtonRaphsonBX(system)
+analysis = fastNewtonRaphsonBX(system)
 for i = 1:10
-    stopping = mismatchFastNewtonRaphson!(system, result)
+    stopping = mismatchFastNewtonRaphson!(system, analysis)
     if all(stopping .< 1e-8)
         break
     end
-    solveFastNewtonRaphson!(system, result)
+    solveFastNewtonRaphson!(system, analysis)
 end
 ```
 """
-function solveFastNewtonRaphson!(system::PowerSystem, result::Result)
+function solveFastNewtonRaphson!(system::PowerSystem, analysis::Analysis)
     ac = system.acModel
     bus = system.bus
 
-    voltage = result.bus.voltage
-    active = result.model.active
-    reactive = result.model.reactive
-    index = result.model.index
+    voltage = analysis.bus.voltage
+    active = analysis.model.active
+    reactive = analysis.model.reactive
+    index = analysis.model.index
 
     ldiv!(active.increment, active.factorization, active.mismatch)
 
@@ -957,9 +957,9 @@ end
 The function employs the Gauss-Seidel method to determine the magnitudes and angles of bus
 voltages, which is used to solve the AC power flow problem.
 
-    solveGaussSeidel!(system, result)
+    solveGaussSeidel!(system, analysis)
 
-This function updates the `bus.voltage` and `model` fields of the `Result` composite type during
+This function updates the `bus.voltage` and `model` fields of the `Analysis` composite type during
 the iteration loop. The [`mismatchGaussSeidel!`](@ref mismatchGaussSeidel!) function can also be
 used in conjunction with this function to terminate the iteration loop.
 
@@ -968,21 +968,21 @@ used in conjunction with this function to terminate the iteration loop.
 system = powerSystem("case14.h5")
 acModel!(system)
 
-result = gaussSeidel(system)
+analysis = gaussSeidel(system)
 for i = 1:10
-    stopping = mismatchGaussSeidel!(system, result)
+    stopping = mismatchGaussSeidel!(system, analysis)
     if all(stopping .< 1e-8)
         break
     end
-    solveGaussSeidel!(system, result)
+    solveGaussSeidel!(system, analysis)
 end
 ```
 """
-function solveGaussSeidel!(system::PowerSystem, result::Result)
+function solveGaussSeidel!(system::PowerSystem, analysis::Analysis)
     ac = system.acModel
 
-    voltage = result.model.voltage
-    index = result.model.index
+    voltage = analysis.model.voltage
+    index = analysis.model.index
 
     @inbounds for i in index.pq
         injection = system.bus.supply.active[i] - system.bus.demand.active[i] - im * (system.bus.supply.reactive[i] - system.bus.demand.reactive[i])
@@ -992,8 +992,8 @@ function solveGaussSeidel!(system::PowerSystem, result::Result)
         end
         voltage.complex[i] += I / ac.nodalMatrix[i, i]
 
-        result.bus.voltage.magnitude[i] = abs(voltage.complex[i])
-        result.bus.voltage.angle[i] = angle(voltage.complex[i])
+        analysis.bus.voltage.magnitude[i] = abs(voltage.complex[i])
+        analysis.bus.voltage.angle[i] = angle(voltage.complex[i])
     end
 
     @inbounds for i in index.pv
@@ -1009,28 +1009,28 @@ function solveGaussSeidel!(system::PowerSystem, result::Result)
     @inbounds for i in index.pv
         voltage.complex[i] = voltage.magnitude[i] * voltage.complex[i] / abs(voltage.complex[i])
 
-        result.bus.voltage.magnitude[i] = abs(voltage.complex[i])
-        result.bus.voltage.angle[i] = angle(voltage.complex[i])
+        analysis.bus.voltage.magnitude[i] = abs(voltage.complex[i])
+        analysis.bus.voltage.angle[i] = angle(voltage.complex[i])
     end
 end
 
 """
 By computing the voltage angles for each bus, the function solves the DC power flow problem.
 
-    solveDCPowerFlow!(system, result)
+    solveDCPowerFlow!(system, analysis)
 
-The `voltage.angle` field of the composite type `Result` is modified by the function.
+The `voltage.angle` field of the composite type `Analysis` is modified by the function.
 
 # Example
 ```jldoctest
 system = powerSystem("case14.h5")
 dcModel!(system)
 
-result = dcPowerFlow(system)
-solveDCPowerFlow!(system, result)
+analysis = dcPowerFlow(system)
+solveDCPowerFlow!(system, analysis)
 ```
 """
-function solveDCPowerFlow!(system::PowerSystem, result::Result)
+function solveDCPowerFlow!(system::PowerSystem, analysis::Analysis)
     bus = system.bus
 
     b = copy(bus.supply.active)
@@ -1038,12 +1038,12 @@ function solveDCPowerFlow!(system::PowerSystem, result::Result)
         b[i] -= bus.demand.active[i] + bus.shunt.conductance[i] + system.dcModel.shiftActivePower[i]
     end
 
-    result.bus.voltage.angle = result.model.factorization \ b
-    result.bus.voltage.angle[bus.layout.slack] = 0.0
+    analysis.bus.voltage.angle = analysis.model.factorization \ b
+    analysis.bus.voltage.angle[bus.layout.slack] = 0.0
 
     if bus.voltage.angle[bus.layout.slack] != 0.0
         @inbounds for i = 1:bus.number
-            result.bus.voltage.angle[i] += bus.voltage.angle[bus.layout.slack]
+            analysis.bus.voltage.angle[i] += bus.voltage.angle[bus.layout.slack]
         end
     end
 end
@@ -1058,10 +1058,10 @@ The function returns the `violate` variable to indicate which buses violate the 
 with -1 indicating a violation of the minimum limits and 1 indicating a violation of the
 maximum limits.
 
-    reactivePowerLimit!(system::PowerSystem, result::Result)
+    reactivePowerLimit!(system::PowerSystem, analysis::Analysis)
 
 Initially, if the [`generator!`](@ref generator!) function has not been run, it will be executed
-to update the `generator` field of the `Result` type.
+to update the `generator` field of the `Analysis` type.
 
 Afterward, the function uses the results from the `generator` field to assign values to the
 `generator.output.active` and `bus.supply.active` fields of the `System` type.
@@ -1078,37 +1078,37 @@ converted, the `bus.layout.slack` field is modified accordingly.
 system = powerSystem("case14.h5")
 acModel!(system)
 
-result = newtonRaphson(system)
+analysis = newtonRaphson(system)
 for i = 1:10
-    stopping = mismatch!(system, result)
+    stopping = mismatch!(system, analysis)
     if all(stopping .< 1e-8)
         break
     end
-    solve!(system, result)
+    solve!(system, analysis)
 end
 
-violate = reactivePowerLimit!(system, result)
+violate = reactivePowerLimit!(system, analysis)
 
-result = newtonRaphson(system)
+analysis = newtonRaphson(system)
 for i = 1:10
-    stopping = mismatch!(system, result)
+    stopping = mismatch!(system, analysis)
     if all(stopping .< 1e-8)
         break
     end
-    solve!(system, result)
+    solve!(system, analysis)
 end
 ```
 """
-function reactivePowerLimit!(system::PowerSystem, result::Result)
+function reactivePowerLimit!(system::PowerSystem, analysis::Analysis)
     bus = system.bus
     generator = system.generator
 
-    power = result.generator.power
-    errorVoltage(result.bus.voltage.magnitude)
+    power = analysis.generator.power
+    errorVoltage(analysis.bus.voltage.magnitude)
 
     violate = fill(0, generator.number)
     if isempty(power.reactive)
-        generator!(system, result)
+        generator!(system, analysis)
     end
 
     bus.supply.active = fill(0.0, bus.number)
@@ -1138,7 +1138,7 @@ function reactivePowerLimit!(system::PowerSystem, result::Result)
                 end
                 bus.layout.type[j] = 1
 
-                bus.supply.reactive[j] -= result.generator.power.reactive[i]
+                bus.supply.reactive[j] -= analysis.generator.power.reactive[i]
                 generator.output.reactive[i] = newReactivePower
                 bus.supply.reactive[j] += newReactivePower
 
@@ -1159,7 +1159,7 @@ function reactivePowerLimit!(system::PowerSystem, result::Result)
     if bus.layout.type[bus.layout.slack] != 3
         throw(ErrorException("In the iterative process, a generator bus is chosen as the new slack bus.
         However, if the reactive power limits are violated, the new slack bus is converted to a demand bus.
-        As a result, there are no more generator buses left that can be considered as the new slack bus for the system."))
+        As a analysis, there are no more generator buses left that can be considered as the new slack bus for the system."))
     end
 
     return violate
@@ -1168,9 +1168,9 @@ end
 """
 The function modifies the bus voltage angles based on a different slack bus than the one
 identified by the `bus.layout.slack` field. This function only updates the
-`bus.voltage.angle` field of the `Result` type.
+`bus.voltage.angle` field of the `Analysis` type.
 
-    adjustVoltageAngle!(system::PowerSystem, result::Result; slack)
+    adjustVoltageAngle!(system::PowerSystem, analysis::Analysis; slack)
 
 For instance, if the reactive power of the generator exceeds the limit on the slack bus,
 the [`reactivePowerLimit!`](@ref reactivePowerLimit!) function will change that bus to a
@@ -1184,34 +1184,34 @@ keyword specifies the bus label of the original slack bus.
 system = powerSystem("case14.h5")
 acModel!(system)
 
-result = newtonRaphson(system)
+analysis = newtonRaphson(system)
 for i = 1:10
-    stopping = mismatch!(system, result)
+    stopping = mismatch!(system, analysis)
     if all(stopping .< 1e-8)
         break
     end
-    solve!(system, result)
+    solve!(system, analysis)
 end
 
-reactivePowerLimit!(system, result)
+reactivePowerLimit!(system, analysis)
 
-result = newtonRaphson(system)
+analysis = newtonRaphson(system)
 for i = 1:10
-    stopping = mismatch!(system, result)
+    stopping = mismatch!(system, analysis)
     if all(stopping .< 1e-8)
         break
     end
-    solve!(system, result)
+    solve!(system, analysis)
 end
 
-adjustVoltageAngle!(system, result; slack = 1)
+adjustVoltageAngle!(system, analysis; slack = 1)
 ```
 """
-function adjustVoltageAngle!(system::PowerSystem, result::Result; slack::T = system.bus.layout.slack)
+function adjustVoltageAngle!(system::PowerSystem, analysis::Analysis; slack::T = system.bus.layout.slack)
     index = system.bus.label[slack]
-    T = system.bus.voltage.angle[index] - result.bus.voltage.angle[index]
+    T = system.bus.voltage.angle[index] - analysis.bus.voltage.angle[index]
     @inbounds for i = 1:system.bus.number
-        result.bus.voltage.angle[i] = result.bus.voltage.angle[i] + T
+        analysis.bus.voltage.angle[i] = analysis.bus.voltage.angle[i] + T
     end
 end
 
