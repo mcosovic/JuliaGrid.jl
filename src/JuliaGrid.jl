@@ -4,6 +4,7 @@ using SparseArrays, LinearAlgebra, SuiteSparse
 using HDF5
 using JuMP
 
+
 ######### Setting Variables ##########
 include("utility/setting.jl")
 
@@ -27,8 +28,11 @@ export dcModel!, acModel!
 
 ######## Power Flow ##########
 include("powerFlow/solution.jl")
-export newtonRaphson, fastNewtonRaphsonBX, fastNewtonRaphsonXB, gaussSeidel
-export mismatch!, solvePowerFlow!, solvePowerFlow
+export newtonRaphson, mismatchNewtonRaphson!, solveNewtonRaphson!
+export fastNewtonRaphsonBX, fastNewtonRaphsonXB, mismatchFastNewtonRaphson!, solveFastNewtonRaphson!
+export gaussSeidel, mismatchGaussSeidel!, solveGaussSeidel!
+export dcPowerFlow, solveDCPowerFlow!
+export mismatch!, solve!
 export reactivePowerLimit!, adjustVoltageAngle!
 
 include("powerFlow/analysis.jl")

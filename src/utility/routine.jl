@@ -173,10 +173,14 @@ To activate multiple features, the macro can be called as follows:
 @enable(generatorVoltage, piecewiseObjective)
 ```
 """
-macro enable(args...)
+macro enable(type, args...)
+    if !haskey(settings, type)
+        error("It is not possible to configure the settings for the $type type.")
+    end
+
     @inbounds for key in args
-        if haskey(settings, key)
-            settings[key] = true
+        if haskey(settings[type], key)
+            settings[type][key] = true
         end
     end
 end
@@ -203,10 +207,14 @@ To deactivate multiple features, the macro can be called as follows:
 @disable(generatorVoltage, piecewiseObjective)
 ```
 """
-macro disable(args...)
+macro disable(type, args...)
+    if !haskey(settings, type)
+        error("It is not possible to configure the settings for the $type type.")
+    end
+
     @inbounds for key in args
-        if haskey(settings, key)
-            settings[key] = false
+        if haskey(settings[type], key)
+            settings[type][key] = false
         end
     end
 end

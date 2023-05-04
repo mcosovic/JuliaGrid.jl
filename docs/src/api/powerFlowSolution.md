@@ -10,10 +10,16 @@ For further information on this topic, please see the [Power System Analysis](@r
 * [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX)
 * [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB)
 * [`gaussSeidel`](@ref gaussSeidel)
+* [`dcPowerFlow`](@ref dcPowerFlow)
 
-* [`mismatch!`](@ref mismatch!)
-* [`solvePowerFlow!`](@ref solvePowerFlow!)
-* [`solvePowerFlow`](@ref solvePowerFlow)
+* [`mismatchNewtonRaphson!`](@ref mismatchNewtonRaphson!)
+* [`mismatchFastNewtonRaphson!`](@ref mismatchFastNewtonRaphson!)
+* [`mismatchGaussSeidel!`](@ref mismatchGaussSeidel!)
+
+* [`solveNewtonRaphson!`](@ref solveNewtonRaphson!)
+* [`solveFastNewtonRaphson!`](@ref solveFastNewtonRaphson!)
+* [`solveGaussSeidel!`](@ref solveGaussSeidel!)
+* [`solveDCPowerFlow!`](@ref solveDCPowerFlow!)
 
 * [`reactivePowerLimit!`](@ref reactivePowerLimit!)
 * [`adjustVoltageAngle!`](@ref adjustVoltageAngle!)
@@ -23,6 +29,8 @@ For further information on this topic, please see the [Power System Analysis](@r
 ## Newton-Raphson Method
 ```@docs
 newtonRaphson
+mismatchNewtonRaphson!
+solveNewtonRaphson!
 ```
 
 ---
@@ -31,6 +39,8 @@ newtonRaphson
 ```@docs
 fastNewtonRaphsonBX
 fastNewtonRaphsonXB
+mismatchFastNewtonRaphson!
+solveFastNewtonRaphson!
 ```
 
 ---
@@ -38,21 +48,16 @@ fastNewtonRaphsonXB
 ## Gauss-Seidel Method
 ```@docs
 gaussSeidel
+mismatchGaussSeidel!
+solveGaussSeidel!
 ```
 
 ---
 
-## AC Power Flow Solution
+## DC Power Flow
 ```@docs
-mismatch!
-solvePowerFlow!
-```
-
----
-
-## DC Power Flow Solution
-```@docs
-solvePowerFlow
+dcPowerFlow
+solveDCPowerFlow!
 ```
 
 ---

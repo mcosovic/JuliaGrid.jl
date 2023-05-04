@@ -16,7 +16,7 @@ topu = 1 / 100
         if all(stopping .< 1e-8)
             break
         end
-        solvePowerFlow!(system14, result)
+        solve!(system14, result)
         iteration += 1
     end
 
@@ -52,7 +52,7 @@ topu = 1 / 100
         if all(stopping .< 1e-8)
             break
         end
-        solvePowerFlow!(system30, result)
+        solve!(system30, result)
         iteration += 1
     end
 
@@ -92,7 +92,7 @@ end
         if all(stopping .< 1e-8)
             break
         end
-        solvePowerFlow!(system14, result)
+        solve!(system14, result)
         iteration += 1
     end
 
@@ -109,7 +109,7 @@ end
         if all(stopping .< 1e-8)
             break
         end
-        solvePowerFlow!(system30, result)
+        solve!(system30, result)
         iteration += 1
     end
 
@@ -131,7 +131,7 @@ end
         if all(stopping .< 1e-8)
             break
         end
-        solvePowerFlow!(system14, result)
+        solve!(system14, result)
         iteration += 1
     end
 
@@ -148,7 +148,7 @@ end
         if all(stopping .< 1e-8)
             break
         end
-        solvePowerFlow!(system30, result)
+        solve!(system30, result)
         iteration += 1
     end
 
@@ -170,7 +170,7 @@ end
         if all(stopping .< 1e-8)
             break
         end
-        solvePowerFlow!(system14, result)
+        solve!(system14, result)
         iteration += 1
     end
 
@@ -187,7 +187,7 @@ end
         if all(stopping .< 1e-8)
             break
         end
-        solvePowerFlow!(system30, result)
+        solve!(system30, result)
         iteration += 1
     end
 
@@ -202,7 +202,9 @@ end
 
     ######## Modified IEEE 14-bus Test Case ##########
     dcModel!(system14)
-    result = solvePowerFlow(system14)
+    result = dcPowerFlow(system14)
+    solve!(system14, result)
+
     bus!(system14, result)
     branch!(system14, result)
     generator!(system14, result)
@@ -215,7 +217,9 @@ end
 
     ######## Modified IEEE 30-bus Test Case ##########
     dcModel!(system30)
-    result = solvePowerFlow(system30)
+    result = dcPowerFlow(system30)
+    solve!(system30, result)
+
     bus!(system30, result)
     branch!(system30, result)
     generator!(system30, result)

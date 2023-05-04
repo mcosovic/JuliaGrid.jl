@@ -32,11 +32,11 @@ bus!(system, result)
 ```
 """
 function bus!(system::PowerSystem, result::Result)
-    if result.algorithm.method == "DC Power Flow"
+    if result.model.method == "DC Power Flow"
         dcBus!(system, result)
     end
 
-    if result.algorithm.method in ["Gauss-Seidel", "Newton-Raphson", "Fast Newton-Raphson BX", "Fast Newton-Raphson XB"]
+    if result.model.method in ["Gauss-Seidel", "Newton-Raphson", "Fast Newton-Raphson BX", "Fast Newton-Raphson XB"]
         acBus!(system, result)
     end
 end
@@ -152,11 +152,11 @@ branch!(system, result)
 ```
 """
 function branch!(system::PowerSystem, result::Result)
-    if result.algorithm.method == "DC Power Flow"
+    if result.model.method == "DC Power Flow"
         dcBranch!(system, result)
     end
 
-    if result.algorithm.method in ["Gauss-Seidel", "Newton-Raphson", "Fast Newton-Raphson BX", "Fast Newton-Raphson XB"]
+    if result.model.method in ["Gauss-Seidel", "Newton-Raphson", "Fast Newton-Raphson BX", "Fast Newton-Raphson XB"]
         acBranch!(system, result)
     end
 end
@@ -271,11 +271,11 @@ generator!(system, result)
 ```
 """
 function generator!(system::PowerSystem, result::Result)
-    if result.algorithm.method == "DC Power Flow"
+    if result.model.method == "DC Power Flow"
         dcGenerator!(system, result)
     end
 
-    if result.algorithm.method in ["Gauss-Seidel", "Newton-Raphson", "Fast Newton-Raphson BX", "Fast Newton-Raphson XB"]
+    if result.model.method in ["Gauss-Seidel", "Newton-Raphson", "Fast Newton-Raphson BX", "Fast Newton-Raphson XB"]
         acGenerator!(system, result)
     end
 end

@@ -142,14 +142,14 @@ Here, we utilize a "flat start" approach in our method. It is important to keep 
 ---
 
 ##### Iterative Process
-To implement the Newton-Raphson method, the iterative approach based on the Taylor series expansion, JuliaGrid provides the [`mismatch!`](@ref mismatch!) and [`solvePowerFlow!`](@ref solvePowerFlow!) functions. These functions are utilized to carry out the Newton-Raphson method iteratively until a stopping criterion is reached, as demonstrated in the following code snippet:
+To implement the Newton-Raphson method, the iterative approach based on the Taylor series expansion, JuliaGrid provides the [`mismatch!`](@ref mismatch!) and [`solve!`](@ref solve!) functions. These functions are utilized to carry out the Newton-Raphson method iteratively until a stopping criterion is reached, as demonstrated in the following code snippet:
 ```@example PowerFlowSolution
 for iteration = 1:100
     stopping = mismatch!(system, result)
     if all(stopping .< 1e-8)
         break
     end
-    solvePowerFlow!(system, result)
+    solve!(system, result)
 end
 ```
 
@@ -174,7 +174,7 @@ In addition to computing the mismatches in active and reactive power injection, 
     \max \{|f_{Q_i}(\mathbf x^{(\nu-1)})|,\; i \in \mathcal{N}_{\text{pq}} \} < \epsilon.
 ```
 
-Next, the function [`solvePowerFlow!`](@ref solvePowerFlow!) computes the increments of bus voltage angle and magnitude at each iteration using the equation:
+Next, the function [`solve!`](@ref solve!) computes the increments of bus voltage angle and magnitude at each iteration using the equation:
 ```math
   \mathbf{\Delta} \mathbf{x}^{(\nu-1)} = -\mathbf{J}(\mathbf{x}^{(\nu-1)})^{-1} \mathbf{f}(\mathbf{x}^{(\nu-1)}),
 ```
@@ -186,7 +186,7 @@ where ``\mathbf{\Delta} \mathbf{x} = [\mathbf \Delta \mathbf x_a, \mathbf \Delta
 
 The JuliaGrid implementation of the AC power flow algorithm follows a specific order to store the increment and mismatch vectors. The first ``n-1`` elements of both vectors correspond to the demand and generator buses in the same order as they appear in the input data. This order is not obtained by first extracting the demand and then generator buses but by excluding the slack bus in the input data. The first ``n-1`` elements of the increment vector correspond to the voltage angle increments, while the first ``n-1`` elements of the mismatch vector correspond to the mismatch in active power injections. The last ``n_{\text{pq}}`` elements of the increment and mismatch vectors correspond to the demand buses in the order they appear in the input data. For the increment vector, it matches the bus voltage magnitude increments, while for the mismatch vector, it matches the mismatch in reactive power injections. As a result, this order defines the row and column order of the Jacobian matrix ``\mathbf{J}(\mathbf{x})``.
 
-Finally, the function [`solvePowerFlow!`](@ref solvePowerFlow!) adds the computed increment term to the previous solution to obtain a new solution:
+Finally, the function [`solve!`](@ref solve!) adds the computed increment term to the previous solution to obtain a new solution:
 ```math
   \mathbf {x}^{(\nu)} = \mathbf {x}^{(\nu-1)} + \mathbf \Delta \mathbf {x}^{(\nu-1)}.
 ```
@@ -523,14 +523,14 @@ Additionally, during this stage, JuliaGrid generates the starting vectors for bu
 ---
 
 ##### Iterative Process
-JuliaGrid offers the [`mismatch!`](@ref mismatch!) and [`solvePowerFlow!`](@ref solvePowerFlow!) functions to implement the fast Newton-Raphson method iterations. These functions are used iteratively until a stopping criterion is met, as shown in the code snippet below:
+JuliaGrid offers the [`mismatch!`](@ref mismatch!) and [`solve!`](@ref solve!) functions to implement the fast Newton-Raphson method iterations. These functions are used iteratively until a stopping criterion is met, as shown in the code snippet below:
 ```@example PowerFlowSolution
 for iteration = 1:100
     stopping = mismatch!(system, result)
     if all(stopping .< 1e-8)
         break
     end
-    solvePowerFlow!(system, result)
+    solve!(system, result)
 end
 ```
 
@@ -567,7 +567,7 @@ In addition to computing the mismatches in active and reactive power injection, 
     \max \{|h_{Q_i}(\mathbf x^{(\nu)})|,\; i \in \mathcal{N}_{\text{pq}} \} < \epsilon.
 ```
 
-Next, the function [`solvePowerFlow!`](@ref solvePowerFlow!) computes the bus voltage angle increments:
+Next, the function [`solve!`](@ref solve!) computes the bus voltage angle increments:
 ```math
   \mathbf \Delta \mathbf x_a^{(\nu-1)} = \mathbf{B}_1^{-1} \mathbf{h}_{P}(\mathbf x_a^{(\nu-1)}, \mathbf x_m^{(\nu-1)}).
 ```
@@ -645,14 +645,14 @@ This results in the creation of the starting vectors of bus voltage magnitudes `
 ---
 
 ##### Iterative Process
-JuliaGrid offers the [`mismatch!`](@ref mismatch!) and [`solvePowerFlow!`](@ref solvePowerFlow!) functions to implement the Gauss-Seidel method iterations. These functions are used iteratively until a stopping criterion is met, as shown in the code snippet below:
+JuliaGrid offers the [`mismatch!`](@ref mismatch!) and [`solve!`](@ref solve!) functions to implement the Gauss-Seidel method iterations. These functions are used iteratively until a stopping criterion is met, as shown in the code snippet below:
 ```@example PowerFlowSolution
 for iteration = 1:300
     stopping = mismatch!(system, result)
     if all(stopping .< 1e-8)
         break
     end
-    solvePowerFlow!(system, result)
+    solve!(system, result)
 end
 ```
 
@@ -671,7 +671,7 @@ However, these mismatches are not stored as they are only used to obtain the max
     \max \{|{f}_{Q_i}(\mathbf x^{(\nu-1)})|,\; i \in \mathcal{N}_{\text{pq}} \} < \epsilon
 ```
 
-After initializing complex bus voltages ``\bar{V}_i^{(0)}`` for all buses in the power system, the function [`solvePowerFlow!`](@ref solvePowerFlow!) proceeds to compute the voltages for demand buses using the Gauss-Seidel method:
+After initializing complex bus voltages ``\bar{V}_i^{(0)}`` for all buses in the power system, the function [`solve!`](@ref solve!) proceeds to compute the voltages for demand buses using the Gauss-Seidel method:
 ```math
     \bar{V}_{i}^{(\nu)} =
     \cfrac{1}{{Y}_{ii}} \Bigg(\cfrac{{P}_{i} - j{Q}_{i}}{\bar{V}_{i}^{*(\nu-1)}} -

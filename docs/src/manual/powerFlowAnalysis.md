@@ -1,18 +1,16 @@
 # [Power Flow Analysis](@id PowerFlowAnalysisManual)
-To perform AC or DC power flow analysis, the composite type `PowerSystem` with created `acModel` or `dcModel` is required. The next step is to create the composite type `Result`, which has fields `bus`, `branch`, `generator`, and `algorithm`.
+To perform AC or DC power flow analysis, the composite type `PowerSystem` with created `acModel` or `dcModel` is required. The next step is to create the composite type `Result`, which has fields `bus`, `branch`, `generator`, and `model`.
 
-To initialize the method for solving the AC power flow and create the `Result` composite, use any of the following functions:
+To create the `Result` composite type and set up a framework for solving AC or DC power flow, utilize one of the functions listed below:
 * [`newtonRaphson`](@ref newtonRaphson)
 * [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX)
 * [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB)
-* [`gaussSeidel`](@ref gaussSeidel).
+* [`gaussSeidel`](@ref gaussSeidel)
+* [`dcPowerFlow`](@ref dcPowerFlow).
 
-To solve the AC power flow problem and obtain bus voltages, the following functions can be employed:
+To solve the power flow problem and obtain bus voltages, the following wrapper functions can be employed:
 * [`mismatch!`](@ref mismatch!)
-* [`solvePowerFlow!`](@ref solvePowerFlow!).
-
- On the other hand, for the DC power flow, the `Result` composite type is created when determining the bus voltage angles through the use of the function:
-* [`solvePowerFlow`](@ref solvePowerFlow).
+* [`solve!`](@ref solve!).
 
 JuliaGrid offers a set of post-processing analysis functions for calculating powers, losses, and currents associated with buses, branches, or generators after obtaining AC or DC power flow solutions:
 * [`bus!`](@ref bus!)
@@ -195,13 +193,13 @@ Once the AC model is defined, we can choose the method to solve the power flow p
 result = newtonRaphson(system)
 nothing # hide
 ```
-This function sets up the desired method for an iterative process based on two functions: [`mismatch!`](@ref mismatch!) and [`solvePowerFlow!`](@ref solvePowerFlow!). The [`mismatch!`](@ref mismatch!) function calculates the active and reactive power injection mismatches using the given voltage magnitudes and angles, while [`solvePowerFlow!`](@ref solvePowerFlow!) computes the new voltage magnitudes and angles.
+This function sets up the desired method for an iterative process based on two functions: [`mismatch!`](@ref mismatch!) and [`solve!`](@ref solve!). The [`mismatch!`](@ref mismatch!) function calculates the active and reactive power injection mismatches using the given voltage magnitudes and angles, while [`solve!`](@ref solve!) computes the new voltage magnitudes and angles.
 
 To perform an iterative process with the Newton-Raphson or Fast Newton-Raphson methods in JuliaGrid, the [`mismatch!`](@ref mismatch!) function must be included inside the iteration loop. For instance:
 ```@example ACPowerFlowSolution
 for iteration = 1:100
     mismatch!(system, result)
-    solvePowerFlow!(system, result)
+    solve!(system, result)
 end
 nothing # hide
 ```
@@ -215,7 +213,7 @@ In contrast, the iterative loop of the Gauss-Seidel method does not require the 
 ```@example ACPowerFlowSolution
 result = gaussSeidel(system)
 for iteration = 1:100
-    solvePowerFlow!(system, result)
+    solve!(system, result)
 end
 nothing # hide
 ```
@@ -235,7 +233,7 @@ for iteration = 1:100
     if all(stopping .< 1e-8)
         break
     end
-    solvePowerFlow!(system, result)
+    solve!(system, result)
 end
 nothing # hide
 ```
@@ -266,9 +264,10 @@ dcModel!(system)
 
 nothing # hide
 ```
-Next, we can solve the DC problem by calling the [`solvePowerFlow`](@ref solvePowerFlow) function, which also returns the `Result` composite type:
+Next, we can solve the DC problem by calling the [`dcPowerFlow`](@ref dcPowerFlow) function, which also returns the `Result` composite type:
 ```@example DCPowerFlowSolution
-result = solvePowerFlow(system)
+result = dcPowerFlow(system)
+solve!(system, result)
 nothing # hide
 ```
 The bus voltage angles obtained can be accessed as follows:
@@ -309,7 +308,7 @@ Applying different methods sequentially can be beneficial. For example, the Gaus
 ```@example ReusablePowerSystemType
 resultGS = gaussSeidel(system)
 for iteration = 1:3
-    solvePowerFlow!(system, resultGS)
+    solve!(system, resultGS)
 end
 ```
 The resulting voltages are:
@@ -332,7 +331,7 @@ for iteration = 1:100
     if all(stopping .< 1e-8)
         break
     end
-    solvePowerFlow!(system, result)
+    solve!(system, result)
 end
 ```
 The final solutions are:
@@ -343,7 +342,8 @@ result.bus.voltage.angle
 
 It can be noted that in the given example, the same `PowerSystem` composite type is repeatedly utilized. Additionally, the same type can also be employed in the context of DC power flow analysis:
 ```@example ReusablePowerSystemType
-resultDC = solvePowerFlow(system)
+resultDC = dcPowerFlow(system)
+solve!(system, resultDC)
 nothing # hide
 ```
 The bus voltage angles are:
@@ -351,7 +351,7 @@ The bus voltage angles are:
 resultDC.bus.voltage.angle
 ```
 !!! note "Info"
-    The functions [`newtonRaphson`](@ref newtonRaphson), [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX), [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB), or [`gaussSeidel`](@ref gaussSeidel) only modify the `PowerSystem` type to eliminate mistakes in the bus types as explained in the section [Bus Type Modification](@ref BusTypeModificationManual). Further, the functions [`mismatch!`](@ref mismatch!), [`solvePowerFlow!`](@ref solvePowerFlow!), and [`solvePowerFlow`](@ref solvePowerFlow) do not modify the `PowerSystem` type at all. Therefore, it is safe to use the same `PowerSystem` type for multiple analyses once it has been created.
+    The functions [`newtonRaphson`](@ref newtonRaphson), [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX), [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB), or [`gaussSeidel`](@ref gaussSeidel) only modify the `PowerSystem` type to eliminate mistakes in the bus types as explained in the section [Bus Type Modification](@ref BusTypeModificationManual). Further, the functions [`mismatch!`](@ref mismatch!) and [`solve!`](@ref solve!) do not modify the `PowerSystem` type at all. Therefore, it is safe to use the same `PowerSystem` type for multiple analyses once it has been created.
 
 ---
 
@@ -380,7 +380,7 @@ for iteration = 1:100
     if all(stopping .< 1e-8)
         break
     end
-    solvePowerFlow!(system, result)
+    solve!(system, result)
 end
 
 nothing # hide
@@ -437,7 +437,7 @@ for iteration = 1:100
     if all(stopping .< 1e-8)
         break
     end
-    solvePowerFlow!(system, result)
+    solve!(system, result)
 end
 
 violate = reactivePowerLimit!(system, result)
@@ -474,7 +474,7 @@ for iteration = 1:100
     if all(stopping .< 1e-8)
         break
     end
-    solvePowerFlow!(system, result)
+    solve!(system, result)
 end
 ```
 Once the simulation is complete, we can verify that all generator reactive power outputs now satisfy the limits by checking the violate variable again:
@@ -516,7 +516,7 @@ for iteration = 1:100
     if all(stopping .< 1e-8)
         break
     end
-    solvePowerFlow!(system, result)
+    solve!(system, result)
 end
 ```
 
@@ -532,7 +532,7 @@ for iteration = 1:100
     if all(stopping .< 1e-8)
         break
     end
-    solvePowerFlow!(system, result)
+    solve!(system, result)
 end
 ```
 

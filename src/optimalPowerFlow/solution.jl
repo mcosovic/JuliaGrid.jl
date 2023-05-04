@@ -1,106 +1,120 @@
-function dcOptimalPowerFlow!(system::PowerSystem, model::JuMP.Model; startAngle = system.bus.voltage.angle, startActive = system.generator.output.active)
+function dcOptimalPowerFlow(system)
+    return Result(
+        BusResult(Polar(Float64[], Float64[]),
+            BusPower(Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[])),
+            BusCurrent(Polar(Float64[], Float64[]))),
+        BranchResult(
+            BranchPower(Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), CartesianImag(Float64[]), Cartesian(Float64[], Float64[])),
+            BranchCurrent(Polar(Float64[], Float64[]), Polar(Float64[], Float64[]), Polar(Float64[], Float64[]))),
+        GeneratorResult(Cartesian(Float64[], Float64[])),
+        DcPowerFlow("DC Optimal Power Flow")
+        )
+end
+
+
+function optimizePowerFlow!(system::PowerSystem, model::JuMP.Model, result::Result)
     bus = system.bus
     branch = system.branch
     generator = system.generator
     polynomial = generator.cost.active.polynomial
     piecewise = generator.cost.active.piecewise
 
-    @time @variable(model, angle[i = 1:bus.number], start = startAngle[i])
-    @time @variable(model, active[i = 1:generator.number], start = startActive[i])
+    @variable(model, angle[i = 1:bus.number], start = result.bus.voltage.angle[i])
+    @variable(model, active[i = 1:generator.number], start = result.generator.power.active[i])
 
-    if optimization[:slack]
+    if settings[:optimization][:slack]
         @constraint(model, angle[bus.layout.slack] == 0.0, base_name = "slack")
     end
 
-    idxPiecewise = Array{Int64,1}(undef, 0); sizehint!(idxPiecewise, generator.number)
-    objExpression = QuadExpr()
-    supplyActive = zeros(AffExpr, system.bus.number)
-    @time @inbounds for i = 1:generator.number
-        if generator.layout.status[i] == 1
-            busIndex = generator.layout.bus[i]
-            supplyActive[busIndex] += active[i]
+    # idxPiecewise = Array{Int64,1}(undef, 0); sizehint!(idxPiecewise, generator.number)
+    # objExpression = QuadExpr()
+    # supplyActive = zeros(AffExpr, system.bus.number)
+    # @time @inbounds for i = 1:generator.number
+    #     if generator.layout.status[i] == 1
+    #         busIndex = generator.layout.bus[i]
+    #         supplyActive[busIndex] += active[i]
 
-            if generator.cost.active.model[i] == 2 && optimization[:polynomial]
-                cost = polynomial[i]
-                if length(cost) == 3
-                    add_to_expression!(objExpression, cost[1], active[i], active[i])
-                    add_to_expression!(objExpression, cost[2], active[i])
-                    add_to_expression!(objExpression, cost[3])
-                elseif length(cost) == 2
-                    add_to_expression!(objExpression, cost[1], active[i])
-                    add_to_expression!(objExpression, cost[2])
-                end
-            elseif generator.cost.active.model[i] == 1 && optimization[:piecewise]
-                cost = piecewise[i]
-                if size(cost, 1) == 2
-                    slope = (cost[2, 2] - cost[1, 2]) / (cost[2, 1] - cost[1, 1])
-                    add_to_expression!(objExpression, slope, active[i])
-                    add_to_expression!(objExpression, cost[1, 2] - cost[1, 1] * slope)
-                else
-                    push!(idxPiecewise, i)
-                end
-            end
+    #         if generator.cost.active.model[i] == 2 && optimization[:polynomial]
+    #             cost = polynomial[i]
+    #             if length(cost) == 3
+    #                 add_to_expression!(objExpression, cost[1], active[i], active[i])
+    #                 add_to_expression!(objExpression, cost[2], active[i])
+    #                 add_to_expression!(objExpression, cost[3])
+    #             elseif length(cost) == 2
+    #                 add_to_expression!(objExpression, cost[1], active[i])
+    #                 add_to_expression!(objExpression, cost[2])
+    #             end
+    #         elseif generator.cost.active.model[i] == 1 && optimization[:piecewise]
+    #             cost = piecewise[i]
+    #             if size(cost, 1) == 2
+    #                 slope = (cost[2, 2] - cost[1, 2]) / (cost[2, 1] - cost[1, 1])
+    #                 add_to_expression!(objExpression, slope, active[i])
+    #                 add_to_expression!(objExpression, cost[1, 2] - cost[1, 1] * slope)
+    #             else
+    #                 push!(idxPiecewise, i)
+    #             end
+    #         end
 
-            if optimization[:capability]
-                @constraint(model, generator.capability.minActive[i] <= active[i] <= generator.capability.maxActive[i], base_name = "capability[$i]")
-            end
-        else
-            fix(active[i], 0.0)
-        end
-    end
+    #         if optimization[:capability]
+    #             @constraint(model, generator.capability.minActive[i] <= active[i] <= generator.capability.maxActive[i], base_name = "capability[$i]")
+    #         end
+    #     else
+    #         fix(active[i], 0.0)
+    #     end
+    # end
 
-    if !isempty(idxPiecewise)
-        @variable(model, helper[i = 1:length(idxPiecewise)])
-    end
+    # if !isempty(idxPiecewise)
+    #     @variable(model, helper[i = 1:length(idxPiecewise)])
+    # end
 
-    @inbounds for (k, i) in enumerate(idxPiecewise)
-        add_to_expression!(objExpression, helper[k])
+    # @inbounds for (k, i) in enumerate(idxPiecewise)
+    #     add_to_expression!(objExpression, helper[k])
 
-        activePower = @view piecewise[i][:, 1]
-        activePowerCost = @view piecewise[i][:, 2]
-        for j = 2:size(piecewise[i], 1)
-            slope = (activePowerCost[j] - activePowerCost[j-1]) / (activePower[j] - activePower[j-1])
-            if slope == Inf
-                error("The piecewise linear cost function's slope for active power of the generator labeled as $(generator.label[i]) has infinite value.")
-            end
+    #     activePower = @view piecewise[i][:, 1]
+    #     activePowerCost = @view piecewise[i][:, 2]
+    #     for j = 2:size(piecewise[i], 1)
+    #         slope = (activePowerCost[j] - activePowerCost[j-1]) / (activePower[j] - activePower[j-1])
+    #         if slope == Inf
+    #             error("The piecewise linear cost function's slope for active power of the generator labeled as $(generator.label[i]) has infinite value.")
+    #         end
 
-            @constraint(model, slope * active[i] - helper[k] <= slope * activePower[j-1] - activePowerCost[j-1], base_name = "piecewise[$i][$(j-1)]")
-        end
-    end
+    #         @constraint(model, slope * active[i] - helper[k] <= slope * activePower[j-1] - activePowerCost[j-1], base_name = "piecewise[$i][$(j-1)]")
+    #     end
+    # end
 
-    @objective(model, Min, objExpression)
+    # @objective(model, Min, objExpression)
 
-    @time if optimization[:flow] || optimization[:difference]
-        @inbounds for i = 1:branch.number
-            if branch.layout.status[i] == 1
-                θij = angle[branch.layout.from[i]] - angle[branch.layout.to[i]]
+    # @time if optimization[:flow] || optimization[:difference]
+    #     @inbounds for i = 1:branch.number
+    #         if branch.layout.status[i] == 1
+    #             θij = angle[branch.layout.from[i]] - angle[branch.layout.to[i]]
 
-                if branch.rating.longTerm[i] ≉  0 && branch.rating.longTerm[i] < 10^16 && optimization[:flow]
-                    limit = branch.rating.longTerm[i] / system.dcModel.admittance[i]
-                    @constraint(model, - limit + branch.parameter.shiftAngle[i] <= θij <= limit + branch.parameter.shiftAngle[i], base_name = "flow[$i]")
-                end
-                if branch.voltage.minDiffAngle[i] > -2*pi && branch.voltage.maxDiffAngle[i] < 2*pi && optimization[:difference]
-                    @constraint(model, branch.voltage.minDiffAngle[i] <= θij <= branch.voltage.maxDiffAngle[i], base_name = "difference[$i]")
-                end
-            end
-        end
-    end
-
-    @time if optimization[:balance]
-        @inbounds for i = 1:bus.number
-            expression = AffExpr(bus.demand.active[i] + bus.shunt.conductance[i] + system.dcModel.shiftActivePower[i])
-            for j in system.dcModel.nodalMatrix.colptr[i]:(system.dcModel.nodalMatrix.colptr[i + 1] - 1)
-                row = system.dcModel.nodalMatrix.rowval[j]
-                add_to_expression!(expression, system.dcModel.nodalMatrix.nzval[j], angle[row])
-            end
-            @constraint(model, expression - supplyActive[i] == 0.0, base_name = "balance[$i]")
-        end
-    end
+    #             if branch.rating.longTerm[i] ≉  0 && branch.rating.longTerm[i] < 10^16 && optimization[:flow]
+    #                 limit = branch.rating.longTerm[i] / system.dcModel.admittance[i]
+    #                 @constraint(model, - limit + branch.parameter.shiftAngle[i] <= θij <= limit + branch.parameter.shiftAngle[i], base_name = "flow[$i]")
+    #             end
+    #             if branch.voltage.minDiffAngle[i] > -2*pi && branch.voltage.maxDiffAngle[i] < 2*pi && optimization[:difference]
+    #                 @constraint(model, branch.voltage.minDiffAngle[i] <= θij <= branch.voltage.maxDiffAngle[i], base_name = "difference[$i]")
+    #             end
+    #         end
+    #     end
+    # end
 
     # @time if optimization[:balance]
-    #     generatorIncidence = sparse(generator.layout.bus, collect(1:generator.number), 1, bus.number, generator.number)
-    #     @constraint(model, system.dcModel.nodalMatrix * angle - generatorIncidence * active .== - bus.demand.active - bus.shunt.conductance - system.dcModel.shiftActivePower, base_name = "balance")
+    #     @inbounds for i = 1:bus.number
+    #         expression = AffExpr(bus.demand.active[i] + bus.shunt.conductance[i] + system.dcModel.shiftActivePower[i])
+    #         for j in system.dcModel.nodalMatrix.colptr[i]:(system.dcModel.nodalMatrix.colptr[i + 1] - 1)
+    #             row = system.dcModel.nodalMatrix.rowval[j]
+    #             add_to_expression!(expression, system.dcModel.nodalMatrix.nzval[j], angle[row])
+    #         end
+    #         @constraint(model, expression - supplyActive[i] == 0.0, base_name = "balance[$i]")
+    #     end
     # end
+
+    # # @time if optimization[:balance]
+    # #     generatorIncidence = sparse(generator.layout.bus, collect(1:generator.number), 1, bus.number, generator.number)
+    # #     @constraint(model, system.dcModel.nodalMatrix * angle - generatorIncidence * active .== - bus.demand.active - bus.shunt.conductance - system.dcModel.shiftActivePower, base_name = "balance")
+    # # end
 end
 
 function acOptimalPowerFlow!(system::PowerSystem, model::JuMP.Model; startAngle = system.bus.voltage.angle, startMagnitude = system.bus.voltage.magnitude,
@@ -325,73 +339,56 @@ function acOptimalPowerFlow!(system::PowerSystem, model::JuMP.Model; startAngle 
     # display(magnitude)
 end
 
-function optimizePowerFlow!(system::PowerSystem, model::JuMP.Model)
-    display(model[:magnitude])
+# function optimizePowerFlow!(system::PowerSystem, model::JuMP.Model)
+#     display(model[:magnitude])
 
 
-end
+# end
 
 
-function acOptimizePowerFlow!(system::PowerSystem, model::JuMP.Model)
-    bus = system.bus
+# function acOptimizePowerFlow!(system::PowerSystem, model::JuMP.Model)
+#     bus = system.bus
 
-    optimize!(model)
+#     optimize!(model)
 
-    method = "AC Optimal Power Flow"
+#     method = "AC Optimal Power Flow"
 
-    return Result(
-        BusResult(Polar(JuMP.value.(model[:magnitude]), JuMP.value.(model[:angle])),
-            BusPower(Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[])),
-            BusCurrent(Polar(Float64[], Float64[]))),
-        BranchResult(
-            BranchPower(Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), CartesianImag(Float64[]), Cartesian(Float64[], Float64[])),
-            BranchCurrent(Polar(Float64[], Float64[]), Polar(Float64[], Float64[]), Polar(Float64[], Float64[]))),
-        GeneratorResult(Cartesian(Float64[], Float64[])),
-        ACAlgorithm(method)
-        )
-end
+#     return Result(
+#         BusResult(Polar(JuMP.value.(model[:magnitude]), JuMP.value.(model[:angle])),
+#             BusPower(Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[])),
+#             BusCurrent(Polar(Float64[], Float64[]))),
+#         BranchResult(
+#             BranchPower(Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), CartesianImag(Float64[]), Cartesian(Float64[], Float64[])),
+#             BranchCurrent(Polar(Float64[], Float64[]), Polar(Float64[], Float64[]), Polar(Float64[], Float64[]))),
+#         GeneratorResult(Cartesian(Float64[], Float64[])),
+#         ACAlgorithm(method)
+#         )
+# end
 
-function dcOptimizePowerFlow!(system::PowerSystem, model::JuMP.Model)
-    bus = system.bus
+# function dcOptimizePowerFlow!(system::PowerSystem, model::JuMP.Model)
+#     bus = system.bus
 
-    optimize!(model)
-    angle = JuMP.value.(model[:angle])
+#     optimize!(model)
+#     angle = JuMP.value.(model[:angle])
 
-    if bus.voltage.angle[bus.layout.slack] != 0.0
-        @inbounds for i = 1:bus.number
-            angle[i] += bus.voltage.angle[bus.layout.slack]
-        end
-    end
+#     if bus.voltage.angle[bus.layout.slack] != 0.0
+#         @inbounds for i = 1:bus.number
+#             angle[i] += bus.voltage.angle[bus.layout.slack]
+#         end
+#     end
 
-    method = "DC Optimal Power Flow"
+#     method = "DC Optimal Power Flow"
 
-    return Result(
-        BusResult(Polar(Float64[], angle),
-            BusPower(Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[])),
-            BusCurrent(Polar(Float64[], Float64[]))),
-        BranchResult(
-            BranchPower(Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), CartesianImag(Float64[]), Cartesian(Float64[], Float64[])),
-            BranchCurrent(Polar(Float64[], Float64[]), Polar(Float64[], Float64[]), Polar(Float64[], Float64[]))),
-        GeneratorResult(Cartesian(Float64[], Float64[])),
-        DCAlgorithm(method)
-        )
-end
+#     return Result(
+#         BusResult(Polar(Float64[], angle),
+#             BusPower(Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[])),
+#             BusCurrent(Polar(Float64[], Float64[]))),
+#         BranchResult(
+#             BranchPower(Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), CartesianImag(Float64[]), Cartesian(Float64[], Float64[])),
+#             BranchCurrent(Polar(Float64[], Float64[]), Polar(Float64[], Float64[]), Polar(Float64[], Float64[]))),
+#         GeneratorResult(Cartesian(Float64[], Float64[])),
+#         DCAlgorithm(method)
+#         )
+# end
 
-
-
-macro skip(args...)
-    @inbounds for key in args
-        if haskey(optimization, key)
-            optimization[key] = false
-        end
-    end
-end
-
-macro add(args...)
-    @inbounds for key in args
-        if haskey(optimization, key)
-            optimization[key] = true
-        end
-    end
-end
 

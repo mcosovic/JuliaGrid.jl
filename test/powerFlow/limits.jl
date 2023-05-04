@@ -14,7 +14,7 @@ system30 = powerSystem(string(pathData, "case30test.m"))
         if all(stopping .< 1e-8)
             break
         end
-        solvePowerFlow!(system14, result)
+        solve!(system14, result)
         iterations += 1
     end
 
@@ -26,7 +26,7 @@ system30 = powerSystem(string(pathData, "case30test.m"))
         if all(stopping .< 1e-8)
             break
         end
-        solvePowerFlow!(system14, result)
+        solve!(system14, result)
         iterations += 1
     end
 
@@ -45,7 +45,7 @@ system30 = powerSystem(string(pathData, "case30test.m"))
         if all(stopping .< 1e-8)
             break
         end
-        solvePowerFlow!(system30, result)
+        solve!(system30, result)
         iterations += 1
     end
 
@@ -57,7 +57,7 @@ system30 = powerSystem(string(pathData, "case30test.m"))
         if all(stopping .< 1e-8)
             break
         end
-        solvePowerFlow!(system30, result)
+        solve!(system30, result)
         iterations += 1
     end
 

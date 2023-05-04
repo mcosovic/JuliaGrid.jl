@@ -1,3 +1,18 @@
+######### General Struct ##########
+mutable struct Polar
+    magnitude::Array{Float64,1}
+    angle::Array{Float64,1}
+end
+
+mutable struct Cartesian
+    active::Array{Float64,1}
+    reactive::Array{Float64,1}
+end
+
+mutable struct CartesianImag
+    reactive::Array{Float64,1}
+end
+
 const T = Union{Float64, Int64, Missing}
 const A = Union{Float64, Int64}
 
@@ -90,5 +105,13 @@ const generator = Dict(
         :currentAngle => 1.0,
         :impedance => 0.0,
         :admittance => 0.0
+    )
+)
+
+const settings = Dict(
+    :optimization => Dict(
+        :slack => true
+    ),
+    :estimation => Dict(
     )
 )

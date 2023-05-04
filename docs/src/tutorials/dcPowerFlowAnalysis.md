@@ -13,13 +13,15 @@ system = powerSystem()
 
 addBus!(system; label = 1, type = 3)
 addBus!(system; label = 2, type = 1, active = 21.7)
-addBus!(system; label = 3, type = 2, conductance = 2.1)
+addBus!(system; label = 3, type = 2, conductance = 0.07)
 
-addBranch!(system; label = 1, from = 1, to = 2, reactance = 0.06)
-addBranch!(system; label = 2, from = 1, to = 3, reactance = 0.21)
-addBranch!(system; label = 3, from = 2, to = 3, reactance = 0.17, turnsRatio = 0.96)
+addBranch!(system; label = 1, from = 1, to = 2, reactance = 0.26)
+addBranch!(system; label = 2, from = 1, to = 3, reactance = 0.38)
+addBranch!(system; label = 3, from = 2, to = 3, reactance = 0.17, turnsRatio = 0.97)
 
-addGenerator!(system; label = 1, bus = 3, active = 40.0)
+addGenerator!(system; label = 1, bus = 1, active = 2.0)
+addGenerator!(system; label = 2, bus = 1, active = 4.0)
+addGenerator!(system; label = 3, bus = 3, active = 5.0)
 nothing #hide
 ```
 
@@ -55,7 +57,8 @@ Next, the DC power flow solution is obtained through a non-iterative approach by
 ```
 This can be accomplished with the following code in JuliaGrid:
 ```@example PowerFlowSolutionDC
-result = solvePowerFlow(system)
+result = dcPowerFlow(system)
+solve!(system, result)
 nothing # hide
 ```
 
