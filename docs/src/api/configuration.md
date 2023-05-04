@@ -6,15 +6,15 @@ For further information on this topic, please see the [Power System Model](@ref 
 
 ## API Index
 
-##### Base Unit Prefixes
+###### Base Unit Prefixes
 * [`@base`](@ref @base)
 
-##### Input Unit System
+###### Input Unit System
 * [`@power`](@ref @power)
 * [`@voltage`](@ref @voltage)
 * [`@parameter`](@ref @parameter)
 
-##### Default Settings
+###### Default Settings
 * [`@default`](@ref @default)
 
 ---

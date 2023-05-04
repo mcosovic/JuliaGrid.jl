@@ -299,11 +299,6 @@ for iteration = 1:100
     solve!(system, analysis)
 end
 ```
-The final solutions are:
-```@repl ReusablePowerSystemType
-analysis.bus.voltage.magnitude
-analysis.bus.voltage.angle
-```
 
 Another way to utilize the reusable `PowerSystem` type is to make modifications to the power system parameters using built-in functions. For instance, we can alter the resistance of the branch labelled as 3, while still using the `PowerSystem` that was created earlier:
 ```@example ReusablePowerSystemType
@@ -368,15 +363,12 @@ dcModel!(system)
 nothing # hide
 ```
 
-We can set up the DC power flow problem by invoking the [`dcPowerFlow`](@ref dcPowerFlow) function, like so:
+The [`dcPowerFlow`](@ref dcPowerFlow) function can be used to establish the DC power flow problem. It factorizes the nodal matrix to prepare for determining the bus voltage angles:
 ```@example DCPowerFlowSolution
 analysis = dcPowerFlow(system)
 nothing # hide
 ```
-The nodal matrix is then factorized in preparation for finding the bus voltage angles:
-```@repl DCPowerFlowSolution
-analysis.model.factorization
-```
+
 To obtain the bus voltage angles, we can call the [`solve!`](@ref solve!) function as follows:
 ```@example DCPowerFlowSolution
 solve!(system, analysis)

@@ -1,17 +1,3 @@
-function dcOptimalPowerFlow(system)
-    return Result(
-        BusResult(Polar(Float64[], Float64[]),
-            BusPower(Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[])),
-            BusCurrent(Polar(Float64[], Float64[]))),
-        BranchResult(
-            BranchPower(Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), CartesianImag(Float64[]), Cartesian(Float64[], Float64[])),
-            BranchCurrent(Polar(Float64[], Float64[]), Polar(Float64[], Float64[]), Polar(Float64[], Float64[]))),
-        GeneratorResult(Cartesian(Float64[], Float64[])),
-        DcPowerFlow("DC Optimal Power Flow")
-        )
-end
-
-
 function optimizePowerFlow!(system::PowerSystem, model::JuMP.Model, result::Result)
     bus = system.bus
     branch = system.branch

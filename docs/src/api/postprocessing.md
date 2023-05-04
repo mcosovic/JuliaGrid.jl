@@ -1,4 +1,4 @@
-# [Post-processing Analysis](@id postprocessingAnalysisAPI)
+# [Postprocessing Analysis](@id postprocessingAnalysisAPI)
 
 For further information on this topic, please see the [Power System Model](@ref PowerSystemModelManual) section of the Manual.
 

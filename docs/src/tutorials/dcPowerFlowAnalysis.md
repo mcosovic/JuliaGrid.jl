@@ -51,13 +51,28 @@ dcModel!(system)
 nothing # hide
 ```
 
-Next, the DC power flow solution is obtained through a non-iterative approach by solving the system of linear equations:
+The DC power flow solution is obtained through a non-iterative approach by solving the system of linear equations:
 ```math
     \bm {\theta} = \mathbf{B}^{-1}(\mathbf {P} - \mathbf{P_\text{tr}} - \mathbf{P}_\text{sh}).
 ```
-This can be accomplished with the following code in JuliaGrid:
+
+The initial step taken by JuliaGrid is to factorize the nodal matrix ``\mathbf{B}`` using the function:
 ```@example PowerFlowSolutionDC
 analysis = dcPowerFlow(system)
+nothing # hide
+```
+
+The factorization of the nodal matrix can be accessed using:
+```@repl PowerFlowSolutionDC
+analysis.model.factorization
+using SparseArrays
+sparse(analysis.model.factorization.L)
+```
+
+This enables the user to modify any of the vectors ``\mathbf {P}``, ``\mathbf{P_\text{tr}}``, and ``\mathbf{P}_\text{sh}`` and reuse the factorization. This approach is more efficient compared to solving the system of equations from the beginning, as it saves computation time.
+
+To acquire the bus voltage angles, the user must invoke the function:
+```@example PowerFlowSolutionDC
 solve!(system, analysis)
 nothing # hide
 ```
