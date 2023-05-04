@@ -6,6 +6,7 @@ For further information on this topic, please see the [Power System Analysis](@r
 
 ## API Index
 
+
 * [`newtonRaphson`](@ref newtonRaphson)
 * [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX)
 * [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB)

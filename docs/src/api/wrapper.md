@@ -7,8 +7,7 @@ For further information on this topic, please see the [Power System Model](@ref 
 ## API Index
 
 * [`mismatch!`](@ref mismatch!)
-
-* [solve!](@ref solve!)
+* [`solve!`](@ref solve!)
 
 
 ---

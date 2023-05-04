@@ -499,8 +499,8 @@ One of the versions of the algorithm mentioned earlier is used to initialize the
 
 Next, JuliaGrid utilizes the [LU factorization](https://docs.julialang.org/en/v1/stdlib/LinearAlgebra/#LinearAlgebra.lu) of matrices ``\mathbf{B}_1`` and ``\mathbf{B}_2`` to compute solutions through iterations, which can be accessed using the following commands:
 ```@repl PowerFlowSolution
-result.model.active.factorisation
-result.model.reactive.factorisation
+result.model.active.factorization
+result.model.reactive.factorization
 ```
 
 Additionally, during this stage, JuliaGrid generates the starting vectors for bus voltage magnitudes ``\mathbf{V}^{(0)}`` and angles ``\bm{\theta}^{(0)}`` as demonstrated below:

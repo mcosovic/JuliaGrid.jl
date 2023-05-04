@@ -507,10 +507,7 @@ function dcPowerFlow(system::PowerSystem)
     end
     dc.nodalMatrix[bus.layout.slack, bus.layout.slack] = 1.0
 
-    display(Matrix(dc.nodalMatrix))
-
     factorization = factorize(dc.nodalMatrix)
-    display(factorization)
     @inbounds for (k, i) in enumerate(slackRange)
         dc.nodalMatrix[dc.nodalMatrix.rowval[i], bus.layout.slack] = elementsRemove[k]
         dc.nodalMatrix[bus.layout.slack, dc.nodalMatrix.rowval[i]] = elementsRemove[k]
@@ -747,7 +744,7 @@ flow problems.
 It then updates the `bus.voltage` and `model` fields of the `Result` composite type accordingly.
 
 To use this function in the AC power flow framework, it should be employed within the iteration
-loop following the [mismatch!](@ref mismatch!) function. Together, these functions execute a
+loop following the [`mismatch!`](@ref mismatch!) function. Together, these functions execute a
 single iteration of the Newton-Raphson or fast Newton-Raphson method. If the Gauss-Seidel method
 is used, this function alone is sufficient to calculate the bus voltages.
 
@@ -802,7 +799,7 @@ voltages, which is used to solve the AC power flow problem.
     solveNewtonRaphson!(system, result)
 
 This function updates the `bus.voltage` and `model` fields of the `Result` composite type during
-the iteration loop, which should follow the [mismatchNewtonRaphson!](@ref mismatchNewtonRaphson!)
+the iteration loop, which should follow the [`mismatchNewtonRaphson!`](@ref mismatchNewtonRaphson!)
 function. Together, these functions collaborate to execute one iteration of the Newton-Raphson
 algorithm.
 
@@ -897,7 +894,7 @@ voltages, which is used to solve the AC power flow problem.
     solveFastNewtonRaphson!(system, result)
 
 This function updates the `bus.voltage` and `model` fields of the `Result` composite type during
-the iteration loop, which should follow the [mismatchFastNewtonRaphson!](@ref mismatchFastNewtonRaphson!)
+the iteration loop, which should follow the [`mismatchFastNewtonRaphson!`](@ref mismatchFastNewtonRaphson!)
 function. Together, these functions collaborate to execute one iteration of the fast Newton-Raphson
 algorithm.
 
@@ -963,7 +960,7 @@ voltages, which is used to solve the AC power flow problem.
     solveGaussSeidel!(system, result)
 
 This function updates the `bus.voltage` and `model` fields of the `Result` composite type during
-the iteration loop. The [mismatchGaussSeidel!](@ref mismatchGaussSeidel!) function can also be
+the iteration loop. The [`mismatchGaussSeidel!`](@ref mismatchGaussSeidel!) function can also be
 used in conjunction with this function to terminate the iteration loop.
 
 # Example
