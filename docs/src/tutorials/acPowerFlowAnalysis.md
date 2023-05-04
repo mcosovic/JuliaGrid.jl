@@ -163,9 +163,9 @@ as well as the reactive power injection mismatch for demand buses:
     f_{Q_i}(\mathbf x^{(\nu-1)}) = {V}_{i}^{(\nu)}\sum\limits_{j=1}^n {V}_{j}^{(\nu-1)}(G_{ij}\sin\theta_{ij}^{(\nu-1)}-B_{ij}\cos\theta_{ij}^{(\nu-1)}) - {Q}_{i},
     \;\;\; i \in \mathcal{N}_{\text{pq}}.
 ```
-The resulting vector from these calculations is stored in the `algorithm` variable of the `Result` composite type and can be accessed through the following line of code:
+The resulting vector from these calculations is stored in the `model` variable of the `Result` composite type and can be accessed through the following line of code:
 ```@repl PowerFlowSolution
-𝐟 = result.algorithm.mismatch
+𝐟 = result.model.mismatch
 ```
 
 In addition to computing the mismatches in active and reactive power injection, the [`mismatch!`](@ref mismatch!) function also returns the maximum absolute values of these mismatches. These maximum values are used as termination criteria for the iteration loop if both are less than a predefined stopping criterion ``\epsilon``:
@@ -178,13 +178,13 @@ Next, the function [`solve!`](@ref solve!) computes the increments of bus voltag
 ```math
   \mathbf{\Delta} \mathbf{x}^{(\nu-1)} = -\mathbf{J}(\mathbf{x}^{(\nu-1)})^{-1} \mathbf{f}(\mathbf{x}^{(\nu-1)}),
 ```
-where ``\mathbf{\Delta} \mathbf{x} = [\mathbf \Delta \mathbf x_a, \mathbf \Delta \mathbf x_m]^T`` consists of the vector of bus voltage angle increments ``\mathbf \Delta \mathbf x_a \in \mathbb{R}^{n-1}`` and bus voltage magnitude increments ``\mathbf \Delta \mathbf x_m \in \mathbb{R}^{n_{\text{pq}}}``, and ``\mathbf{J}(\mathbf{x}) \in \mathbb{R}^{n_{\text{u}} \times n_{\text{u}}}`` is the Jacobian matrix, ``n_{\text{u}} = n + n_{\text{pq}} - 1``.  These values are stored in the `algorithm` variable of the `Result` composite type and can be accessed after each iteration using the following commands:
+where ``\mathbf{\Delta} \mathbf{x} = [\mathbf \Delta \mathbf x_a, \mathbf \Delta \mathbf x_m]^T`` consists of the vector of bus voltage angle increments ``\mathbf \Delta \mathbf x_a \in \mathbb{R}^{n-1}`` and bus voltage magnitude increments ``\mathbf \Delta \mathbf x_m \in \mathbb{R}^{n_{\text{pq}}}``, and ``\mathbf{J}(\mathbf{x}) \in \mathbb{R}^{n_{\text{u}} \times n_{\text{u}}}`` is the Jacobian matrix, ``n_{\text{u}} = n + n_{\text{pq}} - 1``.  These values are stored in the `model` variable of the `Result` composite type and can be accessed after each iteration using the following commands:
 ```@repl PowerFlowSolution
-𝚫𝐱 = result.algorithm.increment
-𝐉 = result.algorithm.jacobian
+𝚫𝐱 = result.model.increment
+𝐉 = result.model.jacobian
 ```
 
-The JuliaGrid implementation of the AC power flow algorithm follows a specific order to store the increment and mismatch vectors. The first ``n-1`` elements of both vectors correspond to the demand and generator buses in the same order as they appear in the input data. This order is not obtained by first extracting the demand and then generator buses but by excluding the slack bus in the input data. The first ``n-1`` elements of the increment vector correspond to the voltage angle increments, while the first ``n-1`` elements of the mismatch vector correspond to the mismatch in active power injections. The last ``n_{\text{pq}}`` elements of the increment and mismatch vectors correspond to the demand buses in the order they appear in the input data. For the increment vector, it matches the bus voltage magnitude increments, while for the mismatch vector, it matches the mismatch in reactive power injections. As a result, this order defines the row and column order of the Jacobian matrix ``\mathbf{J}(\mathbf{x})``.
+The JuliaGrid implementation of the AC power flow follows a specific order to store the increment and mismatch vectors. The first ``n-1`` elements of both vectors correspond to the demand and generator buses in the same order as they appear in the input data. This order is not obtained by first extracting the demand and then generator buses but by excluding the slack bus in the input data. The first ``n-1`` elements of the increment vector correspond to the voltage angle increments, while the first ``n-1`` elements of the mismatch vector correspond to the mismatch in active power injections. The last ``n_{\text{pq}}`` elements of the increment and mismatch vectors correspond to the demand buses in the order they appear in the input data. For the increment vector, it matches the bus voltage magnitude increments, while for the mismatch vector, it matches the mismatch in reactive power injections. As a result, this order defines the row and column order of the Jacobian matrix ``\mathbf{J}(\mathbf{x})``.
 
 Finally, the function [`solve!`](@ref solve!) adds the computed increment term to the previous solution to obtain a new solution:
 ```math
@@ -462,7 +462,7 @@ This system can be rewritten as:
     \mathbf{h}_{Q}(\mathbf x) &= \mathbf{B}_2 \mathbf \Delta \mathbf x_m.
   \end{aligned}
 ```
-One of the main advantages of this approach is that the Jacobian matrices ``\mathbf{B}_1`` and ``\mathbf{B}_2`` are constant and need only be formed once. Furthermore, this method can be used to define both the XB and BX versions of the fast Newton-Raphson algorithm.
+One of the main advantages of this approach is that the Jacobian matrices ``\mathbf{B}_1`` and ``\mathbf{B}_2`` are constant and need only be formed once. Furthermore, this method can be used to define both the XB and BX versions of the fast Newton-Raphson method.
 
 ---
 
@@ -493,25 +493,14 @@ nothing # hide
 ##### Initialization
 One of the versions of the algorithm mentioned earlier is used to initialize the fast Newton-Raphson method. This means that the algorithm computes the Jacobian matrices ``\mathbf{B}_1`` and ``\mathbf{B}_2`` that correspond to the active and reactive power equations, respectively. These matrices can be accessed using the following commands:
 ```@repl PowerFlowSolution
-𝐁₁ = result.algorithm.active.jacobian
-𝐁₂ = result.algorithm.reactive.jacobian
+𝐁₁ = result.model.active.jacobian
+𝐁₂ = result.model.reactive.jacobian
 ```
 
-Next, JuliaGrid utilizes the [LU factorization](https://docs.julialang.org/en/v1/stdlib/LinearAlgebra/#LinearAlgebra.lu) of matrices ``\mathbf{B}_1`` and ``\mathbf{B}_2`` to compute solutions through iterations. The LU factorization of the matrix ``\mathbf{B}_1`` produces the lower and upper triangular matrices, as well as the right and left permutation matrices, and the diagonal scaling matrix, which can be accessed using the following commands:
+Next, JuliaGrid utilizes the [LU factorization](https://docs.julialang.org/en/v1/stdlib/LinearAlgebra/#LinearAlgebra.lu) of matrices ``\mathbf{B}_1`` and ``\mathbf{B}_2`` to compute solutions through iterations, which can be accessed using the following commands:
 ```@repl PowerFlowSolution
-result.algorithm.active.lower
-result.algorithm.active.upper
-result.algorithm.active.right
-result.algorithm.active.left
-result.algorithm.active.scaling
-```
-Similarly, the LU factorisation of the matrix ``\mathbf{B}_2`` yields the following matrices and vectors:
-```@repl PowerFlowSolution
-result.algorithm.reactive.lower
-result.algorithm.reactive.upper
-result.algorithm.reactive.right
-result.algorithm.reactive.left
-result.algorithm.reactive.scaling
+result.model.active.factorisation
+result.model.reactive.factorisation
 ```
 
 Additionally, during this stage, JuliaGrid generates the starting vectors for bus voltage magnitudes ``\mathbf{V}^{(0)}`` and angles ``\bm{\theta}^{(0)}`` as demonstrated below:
@@ -555,10 +544,10 @@ and in reactive power injection for PQ buses as:
     \sum\limits_{j=1}^n {V}_{j}^{(\nu-1)} (G_{ij}\sin\theta_{ij}^{(\nu-1)}-B_{ij}\cos\theta_{ij}^{(\nu-1)}) - \cfrac{{Q}_{i}}{{V}_{i}^{(\nu-1)}},
     \;\;\; i \in \mathcal{N}_{\text{pq}}.
 ```
-The resulting vectors from these calculations are stored in the `algorithm` variable of the `Result` composite type and can be accessed through the following:
+The resulting vectors from these calculations are stored in the `model` variable of the `Result` composite type and can be accessed through the following:
 ```@repl PowerFlowSolution
-𝐡ₚ = result.algorithm.active.increment
-𝐡ₒ = result.algorithm.reactive.increment
+𝐡ₚ = result.model.active.increment
+𝐡ₒ = result.model.reactive.increment
 ```
 
 In addition to computing the mismatches in active and reactive power injection, the [`mismatch!`](@ref mismatch!) function also returns the maximum absolute values of these mismatches. These maximum values are used as termination criteria for the iteration loop if both are less than a predefined stopping criterion ``\epsilon``:
@@ -573,7 +562,7 @@ Next, the function [`solve!`](@ref solve!) computes the bus voltage angle increm
 ```
 The vector of increments that corresponds to the active power equations can be accessed using the following command:
 ```@repl PowerFlowSolution
-𝚫𝐱ₐ = result.algorithm.active.increment
+𝚫𝐱ₐ = result.model.active.increment
 ```
 
 The solution is then updated as follows:
@@ -591,7 +580,7 @@ The fast Newton-Raphson method then solves the equation:
 ```
 The vector of increments that corresponds to the reactive power equations can be accessed using the following command:
 ```@repl PowerFlowSolution
-𝚫𝐱ₘ = result.algorithm.active.increment
+𝚫𝐱ₘ = result.model.active.increment
 ```
 
 Finally, the solution is updated as follows:

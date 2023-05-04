@@ -180,6 +180,7 @@ addBus!(system; label = 3, type = 1, active = 0.5, magnitude = 1.0, angle = -0.2
 
 addBranch!(system; label = 1, from = 1, to = 2, resistance = 0.01, reactance = 0.05)
 addBranch!(system; label = 2, from = 1, to = 3, resistance = 0.02, reactance = 0.01)
+addBranch!(system; label = 3, from = 2, to = 3, resistance = 0.01, reactance = 0.20)
 
 addGenerator!(system; label = 1, bus = 2, active = 3.2, magnitude = 1.2)
 
@@ -244,9 +245,9 @@ The [`mismatch!`](@ref mismatch!) function returns the maximum absolute values o
 
 ---
 
-## [DC Power Flow Solution](@id DCPowerFlowSolutionManual)
-To solve the DC power flow problem using JuliaGrid, we start by creating the `PowerSystem` composite type and defining the DC model with the [`dcModel!`](@ref dcModel!) function. Here is an example:
-```@example DCPowerFlowSolution
+## [Reusable AC Models](@id ReusableModelsModel)
+After creating the power system and AC model, these can be reused for different types of power flow analysis, as demonstrated by creating the power system and its models once again:
+```@example ReusablePowerSystemType
 using JuliaGrid # hide
 
 system = powerSystem()
@@ -257,49 +258,11 @@ addBus!(system; label = 3, type = 1, active = 0.5, magnitude = 1.0, angle = -0.2
 
 addBranch!(system; label = 1, from = 1, to = 2, resistance = 0.01, reactance = 0.05)
 addBranch!(system; label = 2, from = 1, to = 3, resistance = 0.02, reactance = 0.01)
+addBranch!(system; label = 3, from = 2, to = 3, resistance = 0.01, reactance = 0.20)
 
 addGenerator!(system; label = 1, bus = 2, active = 3.2, magnitude = 1.2)
 
-dcModel!(system)
-
-nothing # hide
-```
-Next, we can solve the DC problem by calling the [`dcPowerFlow`](@ref dcPowerFlow) function, which also returns the `Result` composite type:
-```@example DCPowerFlowSolution
-result = dcPowerFlow(system)
-solve!(system, result)
-nothing # hide
-```
-The bus voltage angles obtained can be accessed as follows:
-```@repl DCPowerFlowSolution
-result.bus.voltage.angle
-nothing # hide
-```
-
-!!! note "Info"
-    We recommend that readers refer to the tutorial on [DC power flow analysis](@ref DCPowerFlowAnalysisTutorials) for insights into the implementation.
-
----
-
-## [Reusable Power System Model](@id ReusablePowerSystemModel)
-After creating the power system, the AC and/or DC models can be generated for it, and they can then be reused for different types of power flow analysis, as demonstrated by creating the power system and its models once again:
-```@example ReusablePowerSystemType
-using JuliaGrid # hide
-
-system = powerSystem()
-
-addBus!(system; label = 1, type = 3, active = 0.5)
-addBus!(system; label = 2, type = 1, reactive = 0.05)
-addBus!(system; label = 3, type = 1, active = 0.5)
-
-addBranch!(system; label = 1, from = 1, to = 2, resistance = 0.01, reactance = 0.05)
-addBranch!(system; label = 2, from = 1, to = 3, resistance = 0.02, reactance = 0.01)
-addBranch!(system; label = 3, from = 2, to = 3, resistance = 0.03, reactance = 0.04)
-
-addGenerator!(system; label = 1, bus = 2, active = 3.2)
-
 acModel!(system)
-dcModel!(system)
 
 nothing # hide
 ```
@@ -310,11 +273,6 @@ resultGS = gaussSeidel(system)
 for iteration = 1:3
     solve!(system, resultGS)
 end
-```
-The resulting voltages are:
-```@repl ReusablePowerSystemType
-resultGS.bus.voltage.magnitude
-resultGS.bus.voltage.angle
 ```
 
 Next, we can initialize the Newton-Raphson method with the voltages obtained from the Gauss-Seidel method and start the algorithm from that point:
@@ -340,18 +298,98 @@ result.bus.voltage.magnitude
 result.bus.voltage.angle
 ```
 
-It can be noted that in the given example, the same `PowerSystem` composite type is repeatedly utilized. Additionally, the same type can also be employed in the context of DC power flow analysis:
-```@example ReusablePowerSystemType
-resultDC = dcPowerFlow(system)
-solve!(system, resultDC)
-nothing # hide
-```
-The bus voltage angles are:
-```@repl ReusablePowerSystemType
-resultDC.bus.voltage.angle
-```
 !!! note "Info"
     The functions [`newtonRaphson`](@ref newtonRaphson), [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX), [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB), or [`gaussSeidel`](@ref gaussSeidel) only modify the `PowerSystem` type to eliminate mistakes in the bus types as explained in the section [Bus Type Modification](@ref BusTypeModificationManual). Further, the functions [`mismatch!`](@ref mismatch!) and [`solve!`](@ref solve!) do not modify the `PowerSystem` type at all. Therefore, it is safe to use the same `PowerSystem` type for multiple analyses once it has been created.
+
+---
+
+##### Change the Power System Structure
+After creating the composite types `PowerSystem` and `Result`, users can modify the structure of the power system using functions [`shuntBus!`](@ref shuntBus!), [`statusBranch!`](@ref statusBranch!), [`parameterBranch!`](@ref parameterBranch!), and [`outputGenerator!`](@ref outputGenerator!), without having to recreate them from scratch. For instance, if the branch labeled 3 needs to be put out-of-service in the previously mentioned example, the AC power flow can be executed again by running the following code snippet:
+```@example ReusablePowerSystemType
+statusBranch!(system; label = 3, status = 0)
+
+for iteration = 1:100
+    stopping = mismatch!(system, result)
+    if all(stopping .< 1e-12)
+        break
+    end
+    solve!(system, result)
+end
+``` 
+Here, the previously created `PowerSystem` and `Result` types are reused. This approach ensures that the algorithm has the "warm start" since the Newton-Raphson method starts with voltages obtained from the step where the branch was in-service.
+
+!!! note "Info"
+    It is important to note that this approach is only possible with the Newton-Raphson and Gauss-Seidel methods since these methods involve the power system structure inside the iteration loop. On the other hand, the fast Newton-Raphson algorithm has constant Jacobian matrices created when the `Result` type is created, which means that any modifications to the power system require creating the `Result` type again.
+
+---
+
+## [DC Power Flow Solution](@id DCPowerFlowSolutionManual)
+To solve the DC power flow problem using JuliaGrid, we start by creating the `PowerSystem` composite type and defining the DC model with the [`dcModel!`](@ref dcModel!) function. Here is an example:
+```@example DCPowerFlowSolution
+using JuliaGrid # hide
+
+system = powerSystem()
+
+addBus!(system; label = 1, type = 3)
+addBus!(system; label = 2, type = 1, active = 0.1)
+addBus!(system; label = 3, type = 1, active = 0.05)
+
+addBranch!(system; label = 1, from = 1, to = 2, reactance = 0.05)
+addBranch!(system; label = 2, from = 1, to = 3, reactance = 0.01)
+addBranch!(system; label = 3, from = 2, to = 3, reactance = 0.01)
+
+addGenerator!(system; label = 1, bus = 2, active = 3.2)
+
+dcModel!(system)
+
+nothing # hide
+```
+
+Next, we can setup the DC power flow problem by calling the [`dcPowerFlow`](@ref dcPowerFlow):
+```@example DCPowerFlowSolution
+result = dcPowerFlow(system)
+nothing # hide
+```
+Here the nodal matrix is just factorize to prepired it for finding bus voltage angles:
+```@repl DCPowerFlowSolution
+result.model.factorization
+```
+To obtaine bus voltage angles, we execute the functio: 
+```@example DCPowerFlowSolution
+solve!(system, result)
+nothing # hide
+```
+The bus voltage angles obtained can be accessed as follows:
+```@repl DCPowerFlowSolution
+result.bus.voltage.angle
+nothing # hide
+```
+
+!!! note "Info"
+    We recommend that readers refer to the tutorial on [DC power flow analysis](@ref DCPowerFlowAnalysisTutorials) for insights into the implementation.    
+
+---
+
+## [Reusable DC Models](@id ReusableModelsModel) 
+Once you have created the power system and DC model, you can reuse them for multiple DC power flow analyses. Specifically, you can modify the structure of the power system using the [`statusBranch!`](@ref statusBranch!) and [`parameterBranch!`](@ref parameterBranch!) functions without having to recreate the system from scratch. For instance, suppose we want to put the branch labeled 3 out-of-service and perform the DC power flow again: 
+```@example DCPowerFlowSolution
+statusBranch!(system; label = 3, status = 0)
+
+result = dcPowerFlow(system)
+solve!(system, result)
+nothing # hide
+```
+
+---
+
+##### Change the Shunt and Generator Parameters
+In contrast, you can change the shunt parameters using the [`shuntBus!`](@ref shuntBus!) function or change the generator parameters using the [`statusGenerator!`](@ref statusGenerator!) and [`outputGenerator!`](@ref outputGenerator!) functions without having to recreate the `Result` composite type. For example, to change the output of the generator and compute the bus voltage angles again, you can use the following code:
+```@example DCPowerFlowSolution
+outputGenerator!(system; label = 1, active = 0.5)
+
+solve!(system, result)
+nothing # hide
+```
 
 ---
 

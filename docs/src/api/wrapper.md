@@ -8,7 +8,7 @@ For further information on this topic, please see the [Power System Model](@ref 
 
 * [`mismatch!`](@ref mismatch!)
 
-* [solve!](@ref @solve!)
+* [solve!](@ref solve!)
 
 
 ---

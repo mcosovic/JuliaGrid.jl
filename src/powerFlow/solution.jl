@@ -58,7 +58,7 @@ struct FastNewtonRaphsonModel
     jacobian::SparseMatrixCSC{Float64,Int64}
     mismatch::Array{Float64,1}
     increment::Array{Float64,1}
-    factorization::SuiteSparse.UMFPACK.UmfpackLU{Float64, Int64}
+    factorization::Factorization
 end
 
 struct FastNewtonRaphson
@@ -87,7 +87,7 @@ end
 
 ######### DC Power Flow Struct ##########
 struct DCPowerFlow
-    factorization::Union{SuiteSparse.CHOLMOD.Factor{Float64}, SuiteSparse.UMFPACK.UmfpackLU{Float64, Int64}}
+    factorization::Union{Factorization, Diagonal}
     method::String
 end
 
@@ -507,8 +507,10 @@ function dcPowerFlow(system::PowerSystem)
     end
     dc.nodalMatrix[bus.layout.slack, bus.layout.slack] = 1.0
 
-    factorization = factorize(dc.nodalMatrix)
+    display(Matrix(dc.nodalMatrix))
 
+    factorization = factorize(dc.nodalMatrix)
+    display(factorization)
     @inbounds for (k, i) in enumerate(slackRange)
         dc.nodalMatrix[dc.nodalMatrix.rowval[i], bus.layout.slack] = elementsRemove[k]
         dc.nodalMatrix[bus.layout.slack, dc.nodalMatrix.rowval[i]] = elementsRemove[k]
