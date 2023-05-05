@@ -12,7 +12,7 @@ struct NewtonRaphson <: ACPowerFlow
 end
 
 ######### Fast Newton-Raphson Struct ##########
-struct FastNewtonRaphsonModel 
+struct FastNewtonRaphsonModel
     jacobian::SparseMatrixCSC{Float64,Int64}
     mismatch::Array{Float64,1}
     increment::Array{Float64,1}
@@ -82,7 +82,7 @@ Newton-Raphson method to solve AC power flow. Its output is the `NewtonRaphson` 
 
     newtonRaphson(system::PowerSystem)
 
-Additionally, if the AC model was not created, the function will automatically initiate an 
+Additionally, if the AC model was not created, the function will automatically initiate an
 update of the `acModel` field within the `PowerSystem` composite type.
 
 # Example
@@ -177,28 +177,30 @@ function newtonRaphson(system::PowerSystem)
     method = "Newton-Raphson"
 
     return NewtonRaphson(
-        Polar(voltageMagnitude, voltageAngle), 
+        Polar(voltageMagnitude, voltageAngle),
         jacobian, mismatch, increment, pqIndex, pvpqIndex, method)
 end
 
 """
-The function calculates both active and reactive power injection mismatches and returns 
-their maximum absolute values, which can be utilized to terminate the iteration loop of 
-the Newton-Raphson method that is employed to solve the AC power flow problem.
+    mismatch!(system::PowerSystem, model::Method) where Method<:ACPowerFlow
 
-    mismatch!(system::PowerSystem, model::NewtonRaphson)
+Compute the power mismatch for the given power flow model and update the power system.
 
-This function updates the `mismatch` variable in the `NewtonRaphson` type and should be 
-employed during the iteration loop before invoking the [`solve!`](@ref solve!) function.
+# Arguments
+- `system::PowerSystem`: The power system to update.
+- `model::T`: The power flow model to use. Must be a subtype of `ACPowerFlow`.
+
+For each subtype of `ACPowerFlow`, this function computes the power mismatch differently:
+
+- `NewtonRaphson`: Computes the power mismatch using the Newton-Raphson method.
+- `FastNewtonRaphson`: Computes the power mismatch using a faster version of the Newton-Raphson method.
+- `GaussSeidel`: Computes the power mismatch using the Gauss-Seidel method.
 
 # Example
-```jldoctest
-system = powerSystem("case14.h5")
-acModel!(system)
-
-model = newtonRaphson(system)
+```julia
+system = PowerSystem(...)
+model = NewtonRaphson(...)
 mismatch!(system, model)
-```
 """
 function mismatch!(system::PowerSystem, model::NewtonRaphson)
     ac = system.acModel
@@ -235,14 +237,14 @@ function mismatch!(system::PowerSystem, model::NewtonRaphson)
 end
 
 """
-The function utilizes the Newton-Raphson method to solve the AC power flow problem and 
+The function utilizes the Newton-Raphson method to solve the AC power flow problem and
 determine the magnitudes and angles of bus voltages.
 
     solve!(system::PowerSystem, model::NewtonRaphson)
 
-After the [`mismatch!`](@ref mismatch!) function is executed, this function should be 
-called. The two functions work together to perform a single iteration of the Newton-Raphson 
-method. The calculated voltages are then stored in the `voltage` field of the `NewtonRaphson` 
+After the [`mismatch!`](@ref mismatch!) function is executed, this function should be
+called. The two functions work together to perform a single iteration of the Newton-Raphson
+method. The calculated voltages are then stored in the `voltage` field of the `NewtonRaphson`
 type.
 
 # Example
@@ -329,12 +331,12 @@ end
 
 """
 The function accepts the `PowerSystem` composite type as input and uses it to set up the
-Fast Newton-Raphson method of version BX to solve AC power flow. Its output is the 
+Fast Newton-Raphson method of version BX to solve AC power flow. Its output is the
 `FastNewtonRaphson` type.
 
     fastNewtonRaphsonBX(system::PowerSystem)
 
-Additionally, if the AC model was not created, the function will automatically initiate an 
+Additionally, if the AC model was not created, the function will automatically initiate an
 update of the `acModel` field within the `PowerSystem` composite type.
 
 # Example
@@ -354,12 +356,12 @@ end
 
 """
 The function accepts the `PowerSystem` composite type as input and uses it to set up the
-Fast Newton-Raphson method of version XB to solve AC power flow. Its output is the 
+Fast Newton-Raphson method of version XB to solve AC power flow. Its output is the
 `FastNewtonRaphson` composite type.
 
     fastNewtonRaphsonXB(system::PowerSystem)
 
-Additionally, if the AC model was not created, the function will automatically initiate an 
+Additionally, if the AC model was not created, the function will automatically initiate an
 update of the `acModel` field within the `PowerSystem` composite type.
 
 # Example
@@ -518,31 +520,13 @@ end
     end
 
     return FastNewtonRaphson(
-        Polar(voltageMagnitude, voltageAngle), 
+        Polar(voltageMagnitude, voltageAngle),
         FastNewtonRaphsonModel(jacobianActive, mismatchActive, icrementActive, factorisationActive),
         FastNewtonRaphsonModel(jacobianReactive, mismatchReactive, icrementReactive, factorisationReactive),
         pqIndex, pvpqIndex, method)
 end
 
-"""
-The function calculates both active and reactive power injection mismatches and returns their
-maximum absolute values, which can be utilized to terminate the iteration loop of the fast
-Newton-Raphson method that is employed to solve the AC power flow problem.
 
-    mismatch!(system::PowerSystem, model::FastNewtonRaphson)
-
-This function updates the `mismatch` variables in the `FastNewtonRaphson` type and should 
-be employed during the iteration loop before invoking the [`solve!`](@ref solve!) function.
-
-# Example
-```jldoctest
-system = powerSystem("case14.h5")
-acModel!(system)
-
-model = fastNewtonRaphson(system)
-mismatch!(system, model)
-```
-"""
 function mismatch!(system::PowerSystem, model::FastNewtonRaphson)
     ac = system.acModel
     bus = system.bus
@@ -581,14 +565,14 @@ function mismatch!(system::PowerSystem, model::FastNewtonRaphson)
 end
 
 """
-The function utilizes the fast Newton-Raphson method to solve the AC power flow problem 
+The function utilizes the fast Newton-Raphson method to solve the AC power flow problem
 and determine the magnitudes and angles of bus voltages.
 
     solve!(system::PowerSystem, model::FastNewtonRaphson)
 
-After the [`mismatch!`](@ref mismatch!) function is executed, this function should be 
-called. The two functions work together to perform a single iteration of the fast 
-Newton-Raphson method. The calculated voltages are then stored in the `voltage` field of 
+After the [`mismatch!`](@ref mismatch!) function is executed, this function should be
+called. The two functions work together to perform a single iteration of the fast
+Newton-Raphson method. The calculated voltages are then stored in the `voltage` field of
 the `NewtonRaphson` type.
 
 # Example
@@ -651,7 +635,7 @@ Gauss-Seidel method to solve AC power flow. Its output is the `GaussSeidel` type
 
     gaussSeidel(system::PowerSystem)
 
-Additionally, if the AC model was not created, the function will automatically initiate an 
+Additionally, if the AC model was not created, the function will automatically initiate an
 update of the `acModel` field within the `PowerSystem` composite type.
 
 # Example
@@ -687,31 +671,11 @@ function gaussSeidel(system::PowerSystem)
     method = "Gauss-Seidel"
 
     return GaussSeidel(
-        Polar(voltageMagnitude, voltageAngle), 
+        Polar(voltageMagnitude, voltageAngle),
         voltage, copy(voltageMagnitude), pqIndex, pvIndex, method)
 end
 
-"""
-The function calculates both active and reactive power injection mismatches and returns 
-their maximum absolute values, which can be utilized to terminate the iteration loop of 
-the Gauss-Seidel method that is employed to solve the AC power flow problem.
 
-    mismatch!(system::PowerSystem, model::GaussSeidel)
-
-The Gauss-Seidel method does not need mismatches to obtain bus voltages, but the maximum 
-absolute values are commonly employed to stop the iteration loop. The function does not 
-save any data and should be utilized during the iteration loop before invoking the
-[`solve!`](@ref solve!) function.
-
-# Example
-```jldoctest
-system = powerSystem("case14.h5")
-acModel!(system)
-
-model = gaussSeidel(system)
-mismatch!(system, model)
-```
-"""
 function mismatch!(system::PowerSystem, model::GaussSeidel)
     ac = system.acModel
 
@@ -744,16 +708,16 @@ function mismatch!(system::PowerSystem, model::GaussSeidel)
 end
 
 """
-The function utilizes the Gauss-Seidel method to solve the AC power flow problem and 
+The function utilizes the Gauss-Seidel method to solve the AC power flow problem and
 determine the magnitudes and angles of bus voltages.
 
     solve!(system::PowerSystem, model::GaussSeidel)
 
-After the [`mismatch!`](@ref mismatch!) function is executed, this function should be 
-called. The two functions work together to perform a single iteration of the Gauss-Seidel 
-method. The calculated voltages are then stored in the `voltage` field of the `GaussSeidel` 
+After the [`mismatch!`](@ref mismatch!) function is executed, this function should be
+called. The two functions work together to perform a single iteration of the Gauss-Seidel
+method. The calculated voltages are then stored in the `voltage` field of the `GaussSeidel`
 type.
-    
+
 
 # Example
 ```jldoctest
@@ -810,7 +774,7 @@ the structure for solving the DC power flow. Its output is the `DCPowerFlow` typ
 
     dcPowerFlow(system::PowerSystem)
 
-Additionally, if the DC model was not created, the function will automatically initiate an 
+Additionally, if the DC model was not created, the function will automatically initiate an
 update of the `dcModel` field within the `PowerSystem` composite type.
 
 # Example
@@ -853,7 +817,7 @@ By computing the voltage angles for each bus, the function solves the DC power f
 
     solve!(system::PowerSystem, model::DCPowerFlow)
 
-The resulting voltage angles are stored in the `voltage` field of the `DCPowerFlow` type.    
+The resulting voltage angles are stored in the `voltage` field of the `DCPowerFlow` type.
 
 # Example
 ```jldoctest
@@ -884,9 +848,9 @@ end
 
 """
 The function verifies whether the generators in a power system exceed their reactive power
-limits. This is done by setting the reactive power of the generators to within the limits 
-if they are violated, after determining the bus voltage magnitudes and angles. If the 
-limits are violated, the corresponding generator buses or the slack bus are converted to 
+limits. This is done by setting the reactive power of the generators to within the limits
+if they are violated, after determining the bus voltage magnitudes and angles. If the
+limits are violated, the corresponding generator buses or the slack bus are converted to
 demand buses.
 
 The function returns the `violate` variable to indicate which buses violate the limits,
@@ -895,7 +859,7 @@ maximum limits.
 
     reactiveLimit!(system::PowerSystem, model::ACPowerFlow, power::PowerGenerator)
 
-Initially, the [`analysisGenerator`](@ref analysisGenerator) function must be executed. 
+Initially, the [`analysisGenerator`](@ref analysisGenerator) function must be executed.
 Afterward, the function uses the results from this function to assign values to the
 `generator.output.active` and `bus.supply.active` fields of the `System` type.
 
@@ -940,7 +904,7 @@ function reactiveLimit!(system::PowerSystem, model::ACPowerFlow, power::PowerGen
     errorVoltage(model.voltage.magnitude)
 
     violate = fill(0, generator.number)
- 
+
     bus.supply.active = fill(0.0, bus.number)
     bus.supply.reactive = fill(0.0, bus.number)
     @inbounds for (k, i) in enumerate(generator.layout.bus)
@@ -997,16 +961,16 @@ end
 
 """
 The function modifies the bus voltage angles based on a different slack bus than the one
-identified by the `bus.layout.slack` field. This function only updates the `voltage.angle` 
+identified by the `bus.layout.slack` field. This function only updates the `voltage.angle`
 variable of the `Model` composite type.
 
     adjustAngle!(system::PowerSystem, model::ACPowerFlow; slack)
 
 For instance, if the reactive power of the generator exceeds the limit on the slack bus,
-the [`reactiveLimit!`](@ref reactiveLimit!) function will change that bus to the demand bus 
-and designate the first generator bus in the sequence as the new slack bus. After obtaining 
-the updated AC power flow solution based on the new slack bus, it is possible to adjust the 
-voltage angles to align with the angle of the original slack bus. The `slack` keyword 
+the [`reactiveLimit!`](@ref reactiveLimit!) function will change that bus to the demand bus
+and designate the first generator bus in the sequence as the new slack bus. After obtaining
+the updated AC power flow solution based on the new slack bus, it is possible to adjust the
+voltage angles to align with the angle of the original slack bus. The `slack` keyword
 specifies the bus label of the original slack bus.
 
 # Example

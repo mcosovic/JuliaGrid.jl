@@ -119,7 +119,7 @@ Finally, we can add a generator to the slack bus of the previously created power
 ```@example initializeACPowerFlow
 addGenerator!(system; label = 3, bus = 1, magnitude = 1.3)
 
-analysis = newtonRaphson(system)
+model = newtonRaphson(system)
 nothing # hide
 ```
 The starting voltages are now as follows:
@@ -471,7 +471,7 @@ system.base.power.value * busPower.injection.reactive
 ---
 
 ## [Generator Reactive Power Limits](@id GeneratorReactivePowerLimitsManual)
-The function [`reactivePowerLimit!`](@ref reactivePowerLimit!) can be used by the user to check if the generators' output of reactive power is within the defined limits after obtaining the solution from the AC power flow analysis. This can be done by using the example code provided:
+The function [`reactiveLimit!`](@ref reactiveLimit!) can be used by the user to check if the generators' output of reactive power is within the defined limits after obtaining the solution from the AC power flow analysis. This can be done by using the example code provided:
 ```@example GeneratorReactivePowerLimits
 using JuliaGrid # hide
 @default(unit) # hide
@@ -533,13 +533,13 @@ system.bus.layout.type
 
 After modifying the `PowerSystem` type as described earlier, we can run the simulation again with the following code:
 ```@example GeneratorReactivePowerLimits
-analysis = newtonRaphson(system)
+model = newtonRaphson(system)
 for iteration = 1:100
-    stopping = mismatch!(system, analysis)
+    stopping = mismatch!(system, model)
     if all(stopping .< 1e-8)
         break
     end
-    solve!(system, analysis)
+    solve!(system, model)
 end
 
 power = analysisGenerator(system, model)
@@ -547,7 +547,7 @@ nothing # hide
 ```
 Once the simulation is complete, we can verify that all generator reactive power outputs now satisfy the limits by checking the violate variable again:
 ```@repl GeneratorReactivePowerLimits
-violate = reactiveLimit!(system, analysis, power)
+violate = reactiveLimit!(system, model, power)
 ```
 
 !!! note "Info"
@@ -613,7 +613,7 @@ model.voltage.angle
 ```
 We can observe that the angles have been calculated based on the new slack bus. JuliaGrid offers the function to adjust these angles to match the original slack bus as follows:
 ```@example NewSlackBus
-adjustAngle!(system, analysis; slack = 1)
+adjustAngle!(system, model; slack = 1)
 ```
 Here, the `slack` keyword should correspond to the label of the slack bus. After executing the above code, the updated results can be viewed:
 ```@repl NewSlackBus
