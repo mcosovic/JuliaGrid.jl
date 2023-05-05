@@ -1,4 +1,6 @@
 """
+    PowerFlow
+
 Abstract type representing the power flow model for yhe power systems. This type serves as the
 base type for a hierarchy of power flow models.
 
