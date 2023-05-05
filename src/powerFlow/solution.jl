@@ -1,22 +1,14 @@
 """
-Abstract type representing the power flow model for yhe power systems. This type serves as the
-base type for a hierarchy of power flow models.
+Abstract type representing the AC power flow methods. This type serves as the base type for a
+hierarchy of AC power flow methods.
 
 # Subtypes
-- `ACPowerFlow`: Abstract type representing an AC power flow model
-- `DCPowerFlow`: Struct representing the DC power flow model.
-"""
-abstract type PowerFlow end
-
-"""
-Abstract type representing the AC power flow method. This type serves as ther base type for a
-hierarchy of AC power flow methods.
-- `NewtonRaphson`: Struct representing the Newton-Raphson method
-- `FastNewtonRaphson`: Struct representing the fast Newton-Raphson method
+- `NewtonRaphson`: Struct representing the Newton-Raphson method.
+- `FastNewtonRaphson`: Struct representing the fast Newton-Raphson method.
 - `GaussSeidel`: Struct representing the Gauss-Seidel method.
 
 """
-abstract type ACPowerFlow <: PowerFlow end
+abstract type ACPowerFlow end
 
 ######### Newton-Raphson Struct ##########
 struct NewtonRaphson <: ACPowerFlow
@@ -57,7 +49,7 @@ struct GaussSeidel <: ACPowerFlow
 end
 
 ######### DC Power Flow Struct ##########
-struct DCPowerFlow <: PowerFlow
+struct DCPowerFlow
     voltage::Polar
     factorization::Union{Factorization, Diagonal}
     method::String
@@ -197,154 +189,6 @@ function newtonRaphson(system::PowerSystem)
     return NewtonRaphson(
         Polar(voltageMagnitude, voltageAngle),
         jacobian, mismatch, increment, pqIndex, pvpqIndex, method)
-end
-
-"""
-    mismatch!(system::PowerSystem, model::Method) where Method<:ACPowerFlow
-
-Compute the power mismatch for the given power flow model and update the power system.
-
-# Arguments
-- `system::PowerSystem`: The power system to update.
-- `model::T`: The power flow model to use. Must be a subtype of `ACPowerFlow`.
-
-For each subtype of `ACPowerFlow`, this function computes the power mismatch differently:
-
-- `NewtonRaphson`: Computes the power mismatch using the Newton-Raphson method.
-- `FastNewtonRaphson`: Computes the power mismatch using a faster version of the Newton-Raphson method.
-- `GaussSeidel`: Computes the power mismatch using the Gauss-Seidel method.
-
-# Example
-```julia
-system = PowerSystem(...)
-model = NewtonRaphson(...)
-mismatch!(system, model)
-"""
-function mismatch!(system::PowerSystem, model::NewtonRaphson)
-    ac = system.acModel
-    bus = system.bus
-
-    stopActive = 0.0
-    stopReactive = 0.0
-    @inbounds for i = 1:bus.number
-        if i != bus.layout.slack
-            I = 0.0
-            C = 0.0
-            for j in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
-                row = ac.nodalMatrix.rowval[j]
-                Gij = real(ac.nodalMatrixTranspose.nzval[j])
-                Bij = imag(ac.nodalMatrixTranspose.nzval[j])
-                Tij = model.voltage.angle[i] - model.voltage.angle[row]
-
-                I += model.voltage.magnitude[row] * (Gij * cos(Tij) + Bij * sin(Tij))
-                if bus.layout.type[i] == 1
-                    C += model.voltage.magnitude[row] * (Gij * sin(Tij) - Bij * cos(Tij))
-                end
-            end
-
-            model.mismatch[model.pvpq[i]] = model.voltage.magnitude[i] * I - bus.supply.active[i] + bus.demand.active[i]
-            stopActive = max(stopActive, abs(model.mismatch[model.pvpq[i]]))
-            if bus.layout.type[i] == 1
-                model.mismatch[model.pq[i]] = model.voltage.magnitude[i] * C - bus.supply.reactive[i] + bus.demand.reactive[i]
-                stopReactive = max(stopReactive, abs(model.mismatch[model.pq[i]]))
-            end
-        end
-    end
-
-    return stopActive, stopReactive
-end
-
-"""
-The function utilizes the Newton-Raphson method to solve the AC power flow problem and
-determine the magnitudes and angles of bus voltages.
-
-    solve!(system::PowerSystem, model::NewtonRaphson)
-
-After the [`mismatch!`](@ref mismatch!) function is executed, this function should be
-called. The two functions work together to perform a single iteration of the Newton-Raphson
-method. The calculated voltages are then stored in the `voltage` field of the `NewtonRaphson`
-type.
-
-# Example
-```jldoctest
-system = powerSystem("case14.h5")
-acModel!(system)
-
-model = newtonRaphson(system)
-for i = 1:10
-    stopping = mismatch!(system, model)
-    if all(stopping .< 1e-8)
-        break
-    end
-    solve!(system, model)
-end
-```
-"""
-function solve!(system::PowerSystem, model::NewtonRaphson)
-    ac = system.acModel
-    bus = system.bus
-
-    voltage = model.voltage
-    jacobian = model.jacobian
-    @inbounds for i = 1:bus.number
-        if i != bus.layout.slack
-            for j in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
-                row = ac.nodalMatrix.rowval[j]
-                typeRow = bus.layout.type[row]
-
-                if typeRow != 3
-                    I1 = 0.0; I2 = 0.0
-                    Gij = real(ac.nodalMatrix.nzval[j])
-                    Bij = imag(ac.nodalMatrix.nzval[j])
-                    if row != i
-                        Tij = voltage.angle[row] - voltage.angle[i]
-                        jacobian[model.pvpq[row], model.pvpq[i]] = voltage.magnitude[row] * voltage.magnitude[i] * (Gij * sin(Tij) - Bij * cos(Tij))
-                        if typeRow == 1
-                            jacobian[model.pq[row], model.pvpq[i]] = voltage.magnitude[row] * voltage.magnitude[i] * (-Gij * cos(Tij) - Bij * sin(Tij))
-                        end
-                        if bus.layout.type[i] == 1
-                            jacobian[model.pvpq[row], model.pq[i]] = voltage.magnitude[row] * (Gij * cos(Tij) + Bij * sin(Tij))
-                        end
-                        if bus.layout.type[i] == 1 && typeRow == 1
-                            jacobian[model.pq[row], model.pq[i]] = voltage.magnitude[row] * (Gij * sin(Tij) - Bij * cos(Tij))
-                        end
-                    else
-                        for k in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
-                            q = ac.nodalMatrix.rowval[k]
-                            Gik = real(ac.nodalMatrixTranspose.nzval[k])
-                            Bik = imag(ac.nodalMatrixTranspose.nzval[k])
-                            Tij = voltage.angle[row] - voltage.angle[q]
-                            I1 -= voltage.magnitude[q] * (Gik * sin(Tij) - Bik * cos(Tij))
-                            if bus.layout.type[i] == 1 || typeRow == 1
-                                I2 += voltage.magnitude[q] * (Gik * cos(Tij) + Bik * sin(Tij))
-                            end
-                        end
-                        jacobian[model.pvpq[row], model.pvpq[i]] = voltage.magnitude[row] * I1 - Bij * voltage.magnitude[row]^2
-                        if typeRow == 1
-                            jacobian[model.pq[row], model.pvpq[i]] = voltage.magnitude[row] * I2 - Gij * voltage.magnitude[row]^2
-                        end
-                        if bus.layout.type[i] == 1
-                            jacobian[model.pvpq[row], model.pq[i]] = I2 + Gij * voltage.magnitude[row]
-                        end
-                        if bus.layout.type[i] == 1 && typeRow == 1
-                            jacobian[model.pq[row], model.pq[i]] = -I1 - Bij * voltage.magnitude[row]
-                        end
-                    end
-                end
-            end
-        end
-    end
-
-    ldiv!(model.increment, lu(jacobian), model.mismatch)
-
-    @inbounds for i = 1:bus.number
-        if bus.layout.type[i] == 1
-            voltage.magnitude[i] = voltage.magnitude[i] - model.increment[model.pq[i]]
-        end
-        if i != bus.layout.slack
-            voltage.angle[i] = voltage.angle[i] - model.increment[model.pvpq[i]]
-        end
-    end
 end
 
 """
@@ -544,109 +388,6 @@ end
         pqIndex, pvpqIndex, method)
 end
 
-
-function mismatch!(system::PowerSystem, model::FastNewtonRaphson)
-    ac = system.acModel
-    bus = system.bus
-
-    voltage = model.voltage
-    active = model.active
-    reactive = model.reactive
-
-    stopActive = 0.0
-    stopReactive = 0.0
-    @inbounds for i = 1:bus.number
-        if i != bus.layout.slack
-            active.mismatch[model.pvpq[i]] = - (bus.supply.active[i] - bus.demand.active[i]) / voltage.magnitude[i]
-            C = 0.0
-            for j in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
-                row = ac.nodalMatrix.rowval[j]
-                Gij = real(ac.nodalMatrixTranspose.nzval[j])
-                Bij = imag(ac.nodalMatrixTranspose.nzval[j])
-                Tij = voltage.angle[i] - voltage.angle[row]
-
-                active.mismatch[model.pvpq[i]] += voltage.magnitude[row] * (Gij * cos(Tij) + Bij * sin(Tij))
-                if bus.layout.type[i] == 1
-                    C += voltage.magnitude[row] * (Gij * sin(Tij) - Bij * cos(Tij))
-                end
-            end
-
-            stopActive = max(stopActive, abs(active.mismatch[model.pvpq[i]]))
-            if bus.layout.type[i] == 1
-                reactive.mismatch[model.pq[i]] = C - (bus.supply.reactive[i] - bus.demand.reactive[i]) / voltage.magnitude[i]
-                stopReactive = max(stopReactive, abs(reactive.mismatch[model.pq[i]]))
-            end
-        end
-    end
-
-    return stopActive, stopReactive
-end
-
-"""
-The function utilizes the fast Newton-Raphson method to solve the AC power flow problem
-and determine the magnitudes and angles of bus voltages.
-
-    solve!(system::PowerSystem, model::FastNewtonRaphson)
-
-After the [`mismatch!`](@ref mismatch!) function is executed, this function should be
-called. The two functions work together to perform a single iteration of the fast
-Newton-Raphson method. The calculated voltages are then stored in the `voltage` field of
-the `NewtonRaphson` type.
-
-# Example
-```jldoctest
-system = powerSystem("case14.h5")
-acModel!(system)
-
-model = fastNewtonRaphsonBX(system)
-for i = 1:10
-    stopping = mismatch!(system, model)
-    if all(stopping .< 1e-8)
-        break
-    end
-    solve!(system, model)
-end
-```
-"""
-function solve!(system::PowerSystem, model::FastNewtonRaphson)
-    ac = system.acModel
-    bus = system.bus
-
-    voltage = model.voltage
-    active = model.active
-    reactive = model.reactive
-
-    ldiv!(active.increment, active.factorization, active.mismatch)
-
-    @inbounds for i = 1:bus.number
-        if i != bus.layout.slack
-            voltage.angle[i] += active.increment[model.pvpq[i]]
-        end
-    end
-
-    @inbounds for i = 1:bus.number
-        if bus.layout.type[i] == 1
-            reactive.mismatch[model.pq[i]] = - (bus.supply.reactive[i] - bus.demand.reactive[i]) / voltage.magnitude[i]
-            for j in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
-                row = ac.nodalMatrix.rowval[j]
-                Gij = real(ac.nodalMatrixTranspose.nzval[j])
-                Bij = imag(ac.nodalMatrixTranspose.nzval[j])
-                Tij = voltage.angle[i] - voltage.angle[row]
-
-                reactive.mismatch[model.pq[i]] += voltage.magnitude[row] * (Gij * sin(Tij) - Bij * cos(Tij))
-            end
-        end
-    end
-
-    ldiv!(reactive.increment, reactive.factorization, reactive.mismatch)
-
-    @inbounds for i = 1:bus.number
-        if bus.layout.type[i] == 1
-            voltage.magnitude[i] += reactive.increment[model.pq[i]]
-        end
-    end
-end
-
 """
 The function accepts the `PowerSystem` composite type as input and uses it to set up the
 Gauss-Seidel method to solve AC power flow. Its output is the `GaussSeidel` type.
@@ -693,6 +434,106 @@ function gaussSeidel(system::PowerSystem)
         voltage, copy(voltageMagnitude), pqIndex, pvIndex, method)
 end
 
+"""
+The function calculates both active and reactive power injection mismatches and returns their
+maximum absolute values, which can be utilized to terminate the iteration loop of methods
+employed to solve the AC power flow problem.
+
+    mismatch!(system::PowerSystem, model::Method) where Method<:ACPowerFlow
+
+This function updates the mismatch variables in the Newton-Raphson and fast Newton-Raphson
+methods. It should be employed during the iteration loop before invoking the
+[`solve!`](@ref solve!) function.
+
+In contrast, the Gauss-Seidel method does not need mismatches to obtain bus voltages, but the
+maximum absolute values are commonly employed to stop the iteration loop. The function does not
+save any data and should be utilized during the iteration loop before invoking the
+[`solve!`](@ref solve!) function.
+
+# Subtype of `ACPowerFlow` type:
+- `NewtonRaphson`: Computes the power mismatches within the Newton-Raphson method.
+- `FastNewtonRaphson`: Computes the power mismatches within the fast Newton-Raphson method.
+- `GaussSeidel`: Computes the power mismatches within the Gauss-Seidel method.
+
+# Example
+```jldoctest
+system = powerSystem("case14.h5")
+acModel!(system)
+
+model = newtonRaphson(system)
+mismatch!(system, model)
+```
+"""
+function mismatch!(system::PowerSystem, model::NewtonRaphson)
+    ac = system.acModel
+    bus = system.bus
+
+    stopActive = 0.0
+    stopReactive = 0.0
+    @inbounds for i = 1:bus.number
+        if i != bus.layout.slack
+            I = 0.0
+            C = 0.0
+            for j in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
+                row = ac.nodalMatrix.rowval[j]
+                Gij = real(ac.nodalMatrixTranspose.nzval[j])
+                Bij = imag(ac.nodalMatrixTranspose.nzval[j])
+                Tij = model.voltage.angle[i] - model.voltage.angle[row]
+
+                I += model.voltage.magnitude[row] * (Gij * cos(Tij) + Bij * sin(Tij))
+                if bus.layout.type[i] == 1
+                    C += model.voltage.magnitude[row] * (Gij * sin(Tij) - Bij * cos(Tij))
+                end
+            end
+
+            model.mismatch[model.pvpq[i]] = model.voltage.magnitude[i] * I - bus.supply.active[i] + bus.demand.active[i]
+            stopActive = max(stopActive, abs(model.mismatch[model.pvpq[i]]))
+            if bus.layout.type[i] == 1
+                model.mismatch[model.pq[i]] = model.voltage.magnitude[i] * C - bus.supply.reactive[i] + bus.demand.reactive[i]
+                stopReactive = max(stopReactive, abs(model.mismatch[model.pq[i]]))
+            end
+        end
+    end
+
+    return stopActive, stopReactive
+end
+
+function mismatch!(system::PowerSystem, model::FastNewtonRaphson)
+    ac = system.acModel
+    bus = system.bus
+
+    voltage = model.voltage
+    active = model.active
+    reactive = model.reactive
+
+    stopActive = 0.0
+    stopReactive = 0.0
+    @inbounds for i = 1:bus.number
+        if i != bus.layout.slack
+            active.mismatch[model.pvpq[i]] = - (bus.supply.active[i] - bus.demand.active[i]) / voltage.magnitude[i]
+            C = 0.0
+            for j in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
+                row = ac.nodalMatrix.rowval[j]
+                Gij = real(ac.nodalMatrixTranspose.nzval[j])
+                Bij = imag(ac.nodalMatrixTranspose.nzval[j])
+                Tij = voltage.angle[i] - voltage.angle[row]
+
+                active.mismatch[model.pvpq[i]] += voltage.magnitude[row] * (Gij * cos(Tij) + Bij * sin(Tij))
+                if bus.layout.type[i] == 1
+                    C += voltage.magnitude[row] * (Gij * sin(Tij) - Bij * cos(Tij))
+                end
+            end
+
+            stopActive = max(stopActive, abs(active.mismatch[model.pvpq[i]]))
+            if bus.layout.type[i] == 1
+                reactive.mismatch[model.pq[i]] = C - (bus.supply.reactive[i] - bus.demand.reactive[i]) / voltage.magnitude[i]
+                stopReactive = max(stopReactive, abs(reactive.mismatch[model.pq[i]]))
+            end
+        end
+    end
+
+    return stopActive, stopReactive
+end
 
 function mismatch!(system::PowerSystem, model::GaussSeidel)
     ac = system.acModel
@@ -725,24 +566,28 @@ function mismatch!(system::PowerSystem, model::GaussSeidel)
     return stopActive, stopReactive
 end
 
+
 """
-The function utilizes the Gauss-Seidel method to solve the AC power flow problem and
-determine the magnitudes and angles of bus voltages.
+The function employs the Newton-Raphson, fast Newton-Raphson, or Gauss-Seidel method to solve
+the AC power flow problem and calculate the magnitudes and angles of bus voltages.
 
-    solve!(system::PowerSystem, model::GaussSeidel)
+    solve!(system::PowerSystem, model::Method) where Method<:ACPowerFlow
 
-After the [`mismatch!`](@ref mismatch!) function is executed, this function should be
-called. The two functions work together to perform a single iteration of the Gauss-Seidel
-method. The calculated voltages are then stored in the `voltage` field of the `GaussSeidel`
-type.
+After the [`mismatch!`](@ref mismatch!) function is called, [`solve!`](@ref solve!) should be
+executed to perform a single iteration of the method. The calculated voltages are stored in the
+`voltage` field of the respective struct type.
 
+# Subtype of `ACPowerFlow` type:
+- `NewtonRaphson`: Computes the bus voltages within the Newton-Raphson method.
+- `FastNewtonRaphson`: Computes the bus voltages within the fast Newton-Raphson method.
+- `GaussSeidel`: Computes the bus voltages within the Gauss-Seidel method.
 
 # Example
 ```jldoctest
 system = powerSystem("case14.h5")
 acModel!(system)
 
-model = gaussSeidel(system)
+model = newtonRaphson(system)
 for i = 1:10
     stopping = mismatch!(system, model)
     if all(stopping .< 1e-8)
@@ -752,6 +597,112 @@ for i = 1:10
 end
 ```
 """
+function solve!(system::PowerSystem, model::NewtonRaphson)
+    ac = system.acModel
+    bus = system.bus
+
+    voltage = model.voltage
+    jacobian = model.jacobian
+    @inbounds for i = 1:bus.number
+        if i != bus.layout.slack
+            for j in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
+                row = ac.nodalMatrix.rowval[j]
+                typeRow = bus.layout.type[row]
+
+                if typeRow != 3
+                    I1 = 0.0; I2 = 0.0
+                    Gij = real(ac.nodalMatrix.nzval[j])
+                    Bij = imag(ac.nodalMatrix.nzval[j])
+                    if row != i
+                        Tij = voltage.angle[row] - voltage.angle[i]
+                        jacobian[model.pvpq[row], model.pvpq[i]] = voltage.magnitude[row] * voltage.magnitude[i] * (Gij * sin(Tij) - Bij * cos(Tij))
+                        if typeRow == 1
+                            jacobian[model.pq[row], model.pvpq[i]] = voltage.magnitude[row] * voltage.magnitude[i] * (-Gij * cos(Tij) - Bij * sin(Tij))
+                        end
+                        if bus.layout.type[i] == 1
+                            jacobian[model.pvpq[row], model.pq[i]] = voltage.magnitude[row] * (Gij * cos(Tij) + Bij * sin(Tij))
+                        end
+                        if bus.layout.type[i] == 1 && typeRow == 1
+                            jacobian[model.pq[row], model.pq[i]] = voltage.magnitude[row] * (Gij * sin(Tij) - Bij * cos(Tij))
+                        end
+                    else
+                        for k in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
+                            q = ac.nodalMatrix.rowval[k]
+                            Gik = real(ac.nodalMatrixTranspose.nzval[k])
+                            Bik = imag(ac.nodalMatrixTranspose.nzval[k])
+                            Tij = voltage.angle[row] - voltage.angle[q]
+                            I1 -= voltage.magnitude[q] * (Gik * sin(Tij) - Bik * cos(Tij))
+                            if bus.layout.type[i] == 1 || typeRow == 1
+                                I2 += voltage.magnitude[q] * (Gik * cos(Tij) + Bik * sin(Tij))
+                            end
+                        end
+                        jacobian[model.pvpq[row], model.pvpq[i]] = voltage.magnitude[row] * I1 - Bij * voltage.magnitude[row]^2
+                        if typeRow == 1
+                            jacobian[model.pq[row], model.pvpq[i]] = voltage.magnitude[row] * I2 - Gij * voltage.magnitude[row]^2
+                        end
+                        if bus.layout.type[i] == 1
+                            jacobian[model.pvpq[row], model.pq[i]] = I2 + Gij * voltage.magnitude[row]
+                        end
+                        if bus.layout.type[i] == 1 && typeRow == 1
+                            jacobian[model.pq[row], model.pq[i]] = -I1 - Bij * voltage.magnitude[row]
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    ldiv!(model.increment, lu(jacobian), model.mismatch)
+
+    @inbounds for i = 1:bus.number
+        if bus.layout.type[i] == 1
+            voltage.magnitude[i] = voltage.magnitude[i] - model.increment[model.pq[i]]
+        end
+        if i != bus.layout.slack
+            voltage.angle[i] = voltage.angle[i] - model.increment[model.pvpq[i]]
+        end
+    end
+end
+
+function solve!(system::PowerSystem, model::FastNewtonRaphson)
+    ac = system.acModel
+    bus = system.bus
+
+    voltage = model.voltage
+    active = model.active
+    reactive = model.reactive
+
+    ldiv!(active.increment, active.factorization, active.mismatch)
+
+    @inbounds for i = 1:bus.number
+        if i != bus.layout.slack
+            voltage.angle[i] += active.increment[model.pvpq[i]]
+        end
+    end
+
+    @inbounds for i = 1:bus.number
+        if bus.layout.type[i] == 1
+            reactive.mismatch[model.pq[i]] = - (bus.supply.reactive[i] - bus.demand.reactive[i]) / voltage.magnitude[i]
+            for j in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
+                row = ac.nodalMatrix.rowval[j]
+                Gij = real(ac.nodalMatrixTranspose.nzval[j])
+                Bij = imag(ac.nodalMatrixTranspose.nzval[j])
+                Tij = voltage.angle[i] - voltage.angle[row]
+
+                reactive.mismatch[model.pq[i]] += voltage.magnitude[row] * (Gij * sin(Tij) - Bij * cos(Tij))
+            end
+        end
+    end
+
+    ldiv!(reactive.increment, reactive.factorization, reactive.mismatch)
+
+    @inbounds for i = 1:bus.number
+        if bus.layout.type[i] == 1
+            voltage.magnitude[i] += reactive.increment[model.pq[i]]
+        end
+    end
+end
+
 function solve!(system::PowerSystem, model::GaussSeidel)
     ac = system.acModel
 
@@ -782,85 +733,6 @@ function solve!(system::PowerSystem, model::GaussSeidel)
 
         model.voltage.magnitude[i] = abs(model.complex[i])
         model.voltage.angle[i] = angle(model.complex[i])
-    end
-end
-
-
-"""
-The function accepts the `PowerSystem` composite type as input, which is utilized to establish
-the structure for solving the DC power flow. Its output is the `DCPowerFlow` type.
-
-    dcPowerFlow(system::PowerSystem)
-
-Additionally, if the DC model was not created, the function will automatically initiate an
-update of the `dcModel` field within the `PowerSystem` composite type.
-
-# Example
-```jldoctest
-system = powerSystem("case14.h5")
-dcModel!(system)
-
-model = dcPowerFlow(system)
-```
-"""
-function dcPowerFlow(system::PowerSystem)
-    dc = system.dcModel
-    bus = system.bus
-
-    if isempty(dc.nodalMatrix)
-        dcModel!(system)
-    end
-
-    slackRange = dc.nodalMatrix.colptr[bus.layout.slack]:(dc.nodalMatrix.colptr[bus.layout.slack + 1] - 1)
-    elementsRemove = dc.nodalMatrix.nzval[slackRange]
-    @inbounds for i in slackRange
-        dc.nodalMatrix[dc.nodalMatrix.rowval[i], bus.layout.slack] = 0.0
-        dc.nodalMatrix[bus.layout.slack, dc.nodalMatrix.rowval[i]] = 0.0
-    end
-    dc.nodalMatrix[bus.layout.slack, bus.layout.slack] = 1.0
-
-    factorization = factorize(dc.nodalMatrix)
-    @inbounds for (k, i) in enumerate(slackRange)
-        dc.nodalMatrix[dc.nodalMatrix.rowval[i], bus.layout.slack] = elementsRemove[k]
-        dc.nodalMatrix[bus.layout.slack, dc.nodalMatrix.rowval[i]] = elementsRemove[k]
-    end
-
-    method = "DC Power Flow"
-
-    return DCPowerFlow(Polar(Float64[], Float64[]), factorization, method)
-end
-
-"""
-By computing the voltage angles for each bus, the function solves the DC power flow problem.
-
-    solve!(system::PowerSystem, model::DCPowerFlow)
-
-The resulting voltage angles are stored in the `voltage` field of the `DCPowerFlow` type.
-
-# Example
-```jldoctest
-system = powerSystem("case14.h5")
-dcModel!(system)
-
-model = dcPowerFlow(system)
-solve!(system, model)
-```
-"""
-function solve!(system::PowerSystem, model::DCPowerFlow)
-    bus = system.bus
-
-    b = copy(bus.supply.active)
-    @inbounds for i = 1:bus.number
-        b[i] -= bus.demand.active[i] + bus.shunt.conductance[i] + system.dcModel.shiftActivePower[i]
-    end
-
-    model.voltage.angle = model.factorization \ b
-    model.voltage.angle[bus.layout.slack] = 0.0
-
-    if bus.voltage.angle[bus.layout.slack] != 0.0
-        @inbounds for i = 1:bus.number
-            model.voltage.angle[i] += bus.voltage.angle[bus.layout.slack]
-        end
     end
 end
 
@@ -1045,4 +917,82 @@ function initializeACPowerFlow(system::PowerSystem)
     end
 
     return magnitude, angle
+end
+
+"""
+The function accepts the `PowerSystem` composite type as input, which is utilized to establish
+the structure for solving the DC power flow. Its output is the `DCPowerFlow` type.
+
+    dcPowerFlow(system::PowerSystem)
+
+Additionally, if the DC model was not created, the function will automatically initiate an
+update of the `dcModel` field within the `PowerSystem` composite type.
+
+# Example
+```jldoctest
+system = powerSystem("case14.h5")
+dcModel!(system)
+
+model = dcPowerFlow(system)
+```
+"""
+function dcPowerFlow(system::PowerSystem)
+    dc = system.dcModel
+    bus = system.bus
+
+    if isempty(dc.nodalMatrix)
+        dcModel!(system)
+    end
+
+    slackRange = dc.nodalMatrix.colptr[bus.layout.slack]:(dc.nodalMatrix.colptr[bus.layout.slack + 1] - 1)
+    elementsRemove = dc.nodalMatrix.nzval[slackRange]
+    @inbounds for i in slackRange
+        dc.nodalMatrix[dc.nodalMatrix.rowval[i], bus.layout.slack] = 0.0
+        dc.nodalMatrix[bus.layout.slack, dc.nodalMatrix.rowval[i]] = 0.0
+    end
+    dc.nodalMatrix[bus.layout.slack, bus.layout.slack] = 1.0
+
+    factorization = factorize(dc.nodalMatrix)
+    @inbounds for (k, i) in enumerate(slackRange)
+        dc.nodalMatrix[dc.nodalMatrix.rowval[i], bus.layout.slack] = elementsRemove[k]
+        dc.nodalMatrix[bus.layout.slack, dc.nodalMatrix.rowval[i]] = elementsRemove[k]
+    end
+
+    method = "DC Power Flow"
+
+    return DCPowerFlow(Polar(Float64[], Float64[]), factorization, method)
+end
+
+"""
+By computing the voltage angles for each bus, the function solves the DC power flow problem.
+
+    solve!(system::PowerSystem, model::DCPowerFlow)
+
+The resulting voltage angles are stored in the `voltage` field of the `DCPowerFlow` type.
+
+# Example
+```jldoctest
+system = powerSystem("case14.h5")
+dcModel!(system)
+
+model = dcPowerFlow(system)
+solve!(system, model)
+```
+"""
+function solve!(system::PowerSystem, model::DCPowerFlow)
+    bus = system.bus
+
+    b = copy(bus.supply.active)
+    @inbounds for i = 1:bus.number
+        b[i] -= bus.demand.active[i] + bus.shunt.conductance[i] + system.dcModel.shiftActivePower[i]
+    end
+
+    model.voltage.angle = model.factorization \ b
+    model.voltage.angle[bus.layout.slack] = 0.0
+
+    if bus.voltage.angle[bus.layout.slack] != 0.0
+        @inbounds for i = 1:bus.number
+            model.voltage.angle[i] += bus.voltage.angle[bus.layout.slack]
+        end
+    end
 end

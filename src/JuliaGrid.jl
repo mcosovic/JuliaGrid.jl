@@ -31,7 +31,7 @@ include("powerFlow/solution.jl")
 export newtonRaphson, fastNewtonRaphsonBX, fastNewtonRaphsonXB, gaussSeidel, dcPowerFlow
 export mismatch!, solve!
 export reactiveLimit!, adjustAngle!
-export PowerFlow
+export ACPowerFlow
 
 include("powerFlow/analysis.jl")
 export analysisBus, analysisBranch, analysisGenerator

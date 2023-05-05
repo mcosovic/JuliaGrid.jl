@@ -6,6 +6,9 @@ For further information on this topic, please see the [Power System Analysis](@r
 
 ## API Index
 
+###### Abstract Types
+* [`ACPowerFlow`](@ref ACPowerFlow)
+
 ###### Build Model
 * [`newtonRaphson`](@ref newtonRaphson)
 * [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX)
@@ -23,9 +26,13 @@ For further information on this topic, please see the [Power System Analysis](@r
 
 ---
 
+## Abstract Types
+```@docs
+ACPowerFlow
+```
+
 ## Build Model
 ```@docs
-PowerFlow
 newtonRaphson
 fastNewtonRaphsonBX
 fastNewtonRaphsonXB
