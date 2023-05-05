@@ -23,8 +23,7 @@ makedocs(
             ["Power System Model" => "api/powerSystemModel.md",
             "Power Flow Solution" => "api/powerFlowSolution.md",
             "Postprocessing Analysis" => "api/postprocessing.md",
-            "Configuration Setup" => "api/configuration.md",
-            "Wrapper Functions" => "api/wrapper.md"]
+            "Configuration Setup" => "api/configuration.md"]
     ]
 )
 
