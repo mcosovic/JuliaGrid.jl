@@ -1,4 +1,4 @@
-function optimizePowerFlow!(system::PowerSystem, model::JuMP.Model, result::Result)
+function dcOptimalPowerFlow(system::PowerSystem, analisys::Analisys)
     bus = system.bus
     branch = system.branch
     generator = system.generator

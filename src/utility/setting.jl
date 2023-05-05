@@ -1,4 +1,3 @@
-######### General Struct ##########
 mutable struct Polar
     magnitude::Array{Float64,1}
     angle::Array{Float64,1}
@@ -13,8 +12,8 @@ mutable struct CartesianImag
     reactive::Array{Float64,1}
 end
 
+const N = Union{Float64, Int64}
 const T = Union{Float64, Int64, Missing}
-const A = Union{Float64, Int64}
 
 const bus = Dict(
     :default => Dict(

@@ -4,7 +4,6 @@ using SparseArrays, LinearAlgebra, SuiteSparse
 using HDF5
 using JuMP
 
-
 ######### Setting Variables ##########
 include("utility/setting.jl")
 
@@ -26,26 +25,22 @@ export addGenerator!, addActiveCost!, addReactiveCost!, statusGenerator!, output
 export dcModel!, acModel!
 export @bus, @branch, @generator
 
-######## Power Flow ##########
+# ######## Power Flow ##########
 include("powerFlow/solution.jl")
-export newtonRaphson, mismatchNewtonRaphson!, solveNewtonRaphson!
-export fastNewtonRaphsonBX, fastNewtonRaphsonXB, mismatchFastNewtonRaphson!, solveFastNewtonRaphson!
-export gaussSeidel, mismatchGaussSeidel!, solveGaussSeidel!
-export dcPowerFlow, solveDCPowerFlow!
+export newtonRaphson, fastNewtonRaphsonBX, fastNewtonRaphsonXB, gaussSeidel, dcPowerFlow  
 export mismatch!, solve!
 export reactivePowerLimit!, adjustVoltageAngle!
 
 include("powerFlow/analysis.jl")
-export bus!, branch!, generator!
+export analysisBus, analysisBranch, analysisGenerator
 
 ######## Optimal Power Flow ##########
 # include("optimalPowerFlow/solution.jl")
 # export dcOptimalPowerFlow!, optimizePowerFlow!
 
-######### Unit ##########
+####### Unit ##########
 include("utility/unit.jl")
 export @base, @power, @voltage, @parameter
-
 
 end # JuliaGrid
 

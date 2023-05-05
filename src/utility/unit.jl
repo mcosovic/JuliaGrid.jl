@@ -262,7 +262,7 @@ function parsePrefix(input::String, suffixUser::String)
 end
 
 ######### Scale Values to Transform SI to pu ##########
-function si2pu(prefix::Float64, base::A, factor::A)
+function si2pu(prefix::Float64, base::N, factor::N)
     if factor == 0.0
         scale = 1.0
     else
@@ -276,7 +276,7 @@ function si2pu(prefix::Float64, base::A, factor::A)
 end
 
 ######### Impedance Base Value ##########
-function baseImpedance(system::PowerSystem, baseVoltage::A, turnsRatio::A)
+function baseImpedance(system::PowerSystem, baseVoltage::N, turnsRatio::N)
     base = 1.0
     prefix = 1.0
     if factor[:impedance] != 0.0 || factor[:admittance] != 0.0

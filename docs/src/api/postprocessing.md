@@ -6,27 +6,27 @@ For further information on this topic, please see the [Power System Model](@ref 
 
 ## API Index
 
-* [`bus!`](@ref bus!)
-* [`branch!`](@ref branch!)
-* [`generator!`](@ref generator!)
+* [`analysisBus`](@ref analysisBus)
+* [`analysisBranch`](@ref analysisBranch)
+* [`analysisGenerator`](@ref analysisGenerator)
 
 ---
 
 ## Bus Function
 ```@docs
-bus!
+analysisBus
 ```
 
 ---
 
 ## Branch Function
 ```@docs
-branch!
+analysisBranch
 ```
 
 ---
 
 ## Generator Function
 ```@docs
-generator!
+analysisGenerator
 ```

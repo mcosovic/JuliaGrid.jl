@@ -1,96 +1,95 @@
 """
-This function calculates the powers and currents associated with buses.
+The function returns the active powers associated with buses in the DC power flow framework.
 
-    bus!(system::PowerSystem, analysis::Analysis)
+    analysisBus(system::PowerSystem, model::DCPowerFlow)
 
-After the function is executed, the `bus` field within the `Analysis` type gets updated.
+In particular, it computes the active power injections and active power injected by generators.    
 
-# AC Power Flow Example
-```jldoctest
-system = powerSystem("case14.h5")
-acModel!(system)
-
-analysis = newtonRaphson(system)
-for i = 1:10
-    stopping = mismatch!(system, analysis)
-    if all(stopping .< 1e-8)
-        break
-    end
-    solvePowerFlow!(system, analysis)
-end
-
-bus!(system, analysis)
-```
-
-# DC Power Flow Example
+# Example
 ```jldoctest
 system = powerSystem("case14.h5")
 dcModel!(system)
 
-analysis = solvePowerFlow(system)
-bus!(system, analysis)
+model = dcPowerFlow(system)
+solve!(system, model)
+
+power = analysisBus(system, model)
 ```
 """
-function bus!(system::PowerSystem, analysis::Analysis)
-    if analysis.model.method == "DC Power Flow"
-        dcBus!(system, analysis)
-    end
-
-    if analysis.model.method in ["Gauss-Seidel", "Newton-Raphson", "Fast Newton-Raphson BX", "Fast Newton-Raphson XB"]
-        acBus!(system, analysis)
-    end
-end
-
-function dcBus!(system::PowerSystem, analysis::Analysis)
+function analysisBus(system::PowerSystem, model::DCPowerFlow)
     dc = system.dcModel
     bus = system.bus
     slack = bus.layout.slack
 
-    power = analysis.bus.power
-    voltage = analysis.bus.voltage
-    errorVoltage(voltage.angle)
+    errorVoltage(model.voltage.angle)
 
-    power.supply.active = copy(bus.supply.active)
-    power.injection.active = copy(bus.supply.active)
+    powerSupply = copy(bus.supply.active)
+    powerInjection = copy(bus.supply.active)
     @inbounds for i = 1:bus.number
-        power.injection.active[i] -= bus.demand.active[i]
+        powerInjection[i] -= bus.demand.active[i]
     end
 
-    power.injection.active[slack] = bus.shunt.conductance[slack] + dc.shiftActivePower[slack]
+    powerInjection[slack] = bus.shunt.conductance[slack] + dc.shiftActivePower[slack]
     @inbounds for j in dc.nodalMatrix.colptr[slack]:(dc.nodalMatrix.colptr[slack + 1] - 1)
         row = dc.nodalMatrix.rowval[j]
-        power.injection.active[slack] += dc.nodalMatrix[row, slack] * voltage.angle[row]
+        powerInjection[slack] += dc.nodalMatrix[row, slack] * model.voltage.angle[row]
     end
-    power.supply.active[slack] = bus.demand.active[slack] + power.injection.active[slack]
+    powerSupply[slack] = bus.demand.active[slack] + powerInjection[slack]
+
+    return PowerBus(Cartesian(powerInjection, Float64[]), Cartesian(powerSupply, Float64[]), Cartesian(Float64[], Float64[]))
 end
 
-function acBus!(system::PowerSystem, analysis::Analysis)
+"""
+The function returns the powers and currents associated with buses in the AC power flow 
+framework.
+
+    analysisBus(system::PowerSystem, model::ACPowerFlow)
+
+In particular, it computes the power injections, power injected by the generators, power 
+associated with shunt elements, and current injections.  
+
+# Example
+```jldoctest
+system = powerSystem("case14.h5")
+acModel!(system)
+
+model = newtonRaphson(system)
+for i = 1:10
+    stopping = mismatch!(system, model)
+    if all(stopping .< 1e-8)
+        break
+    end
+    solve!(system, model)
+end
+
+power, current = analysisBus(system, model)
+```
+"""
+function analysisBus(system::PowerSystem, model::ACPowerFlow)
     ac = system.acModel
     slack = system.bus.layout.slack
 
-    voltage = analysis.bus.voltage
-    power = analysis.bus.power
-    current = analysis.bus.current
+    voltage = model.voltage
     errorVoltage(voltage.magnitude)
 
-    power.injection.active = fill(0.0, system.bus.number)
-    power.injection.reactive = fill(0.0, system.bus.number)
+    powerInjectionActive = fill(0.0, system.bus.number)
+    powerInjectionReactive = fill(0.0, system.bus.number)
 
-    power.supply.active = fill(0.0, system.bus.number)
-    power.supply.reactive = fill(0.0, system.bus.number)
+    supplyActive = fill(0.0, system.bus.number)
+    supplyReactive = fill(0.0, system.bus.number)
 
-    power.shunt.active = fill(0.0, system.bus.number)
-    power.shunt.reactive = fill(0.0, system.bus.number)
+    shuntActive = fill(0.0, system.bus.number)
+    shuntReactive = fill(0.0, system.bus.number)
 
-    current.injection.magnitude = fill(0.0, system.bus.number)
-    current.injection.angle = fill(0.0, system.bus.number)
+    currentInjectionMagnitude = fill(0.0, system.bus.number)
+    currentInjectionAngle = fill(0.0, system.bus.number)
 
     @inbounds for i = 1:system.bus.number
         voltageBus = voltage.magnitude[i] * exp(im * voltage.angle[i])
 
         powerShunt = voltageBus * conj(voltageBus * (system.bus.shunt.susceptance[i] + im * system.bus.shunt.susceptance[i]))
-        power.shunt.active[i] = real(powerShunt)
-        power.shunt.reactive[i] = imag(powerShunt)
+        shuntActive[i] = real(powerShunt)
+        shuntReactive[i] = imag(powerShunt)
 
         I = 0.0 + im * 0.0
         for j in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
@@ -98,107 +97,109 @@ function acBus!(system::PowerSystem, analysis::Analysis)
             I += ac.nodalMatrixTranspose.nzval[j] * voltage.magnitude[k] * exp(im * voltage.angle[k])
         end
 
-        current.injection.magnitude[i] = abs(I)
-        current.injection.angle[i] = angle(I)
+        currentInjectionMagnitude[i] = abs(I)
+        currentInjectionAngle[i] = angle(I)
 
         powerInjection = conj(I) * voltageBus
-        power.injection.active[i] = real(powerInjection)
-        power.injection.reactive[i] = imag(powerInjection)
+        powerInjectionActive[i] = real(powerInjection)
+        powerInjectionReactive[i] = imag(powerInjection)
 
-        power.supply.active[i] = system.bus.supply.active[i]
+        supplyActive[i] = system.bus.supply.active[i]
         if system.bus.layout.type[i] != 1
-            power.supply.reactive[i] = power.injection.reactive[i] + system.bus.demand.reactive[i]
+            supplyReactive[i] = powerInjectionReactive[i] + system.bus.demand.reactive[i]
         else
-            power.supply.reactive[i] = system.bus.supply.reactive[i]
+            supplyReactive[i] = system.bus.supply.reactive[i]
         end
     end
-    power.supply.active[slack] = power.injection.active[slack] + system.bus.demand.active[slack]
+    supplyActive[slack] = powerInjectionActive[slack] + system.bus.demand.active[slack]
+
+    return PowerBus(Cartesian(powerInjectionActive, powerInjectionReactive), Cartesian(supplyActive, supplyReactive), Cartesian(shuntActive, shuntReactive)),
+        CurrentBus(Polar(currentInjectionMagnitude, currentInjectionAngle))
 end
 
 """
-The function is used to calculate the powers and currents associated with branches for AC
-power flow analysis and, in relation to DC power flow analysis, it only calculates active
-powers.
+The function returns the active powers associated with branches in the DC power flow 
+framework.
 
-    branch!(system::PowerSystem, analysis::Analysis)
+    analysisBranch(system::PowerSystem, model::DCPowerFlow)
 
-The function is responsible for updating the `branch` field within the `Analysis` type after
-it has been executed.
+In particular, it computes the active power flows at from and to bus ends. 
 
-# AC Power Flow Example
-```jldoctest
-system = powerSystem("case14.h5")
-acModel!(system)
-
-analysis = newtonRaphson(system)
-for i = 1:10
-    stopping = mismatch!(system, analysis)
-    if all(stopping .< 1e-8)
-        break
-    end
-    solvePowerFlow!(system, analysis)
-end
-
-branch!(system, analysis)
-```
-
-# DC Power Flow Example
+# Example
 ```jldoctest
 system = powerSystem("case14.h5")
 dcModel!(system)
 
-analysis = solvePowerFlow(system)
-branch!(system, analysis)
+model = dcPowerFlow(system)
+solve!(system, model)
+
+power = analysisBranch(system, model)
 ```
 """
-function branch!(system::PowerSystem, analysis::Analysis)
-    if analysis.model.method == "DC Power Flow"
-        dcBranch!(system, analysis)
-    end
-
-    if analysis.model.method in ["Gauss-Seidel", "Newton-Raphson", "Fast Newton-Raphson BX", "Fast Newton-Raphson XB"]
-        acBranch!(system, analysis)
-    end
-end
-
-function dcBranch!(system::PowerSystem, analysis::Analysis)
+function analysisBranch(system::PowerSystem, model::DCPowerFlow)
     dc = system.dcModel
     branch = system.branch
 
-    power = analysis.branch.power
-    voltage = analysis.bus.voltage
+    voltage = model.voltage
     errorVoltage(voltage.angle)
 
-    power.from.active = copy(dc.admittance)
-    power.to.active = similar(dc.admittance)
+    powerFrom = copy(dc.admittance)
+    powerTo = similar(dc.admittance)
     @inbounds for i = 1:branch.number
-        power.from.active[i] *= (voltage.angle[branch.layout.from[i]] - voltage.angle[branch.layout.to[i]] - branch.parameter.shiftAngle[i])
-        power.to.active[i] = -power.from.active[i]
+        powerFrom[i] *= (voltage.angle[branch.layout.from[i]] - voltage.angle[branch.layout.to[i]] - branch.parameter.shiftAngle[i])
+        powerTo[i] = -powerFrom[i]
     end
+
+    return PowerBranch(Cartesian(powerFrom, Float64[]), Cartesian(powerTo, Float64[]), CartesianImag(Float64[]), Cartesian(Float64[], Float64[]))
 end
 
-function acBranch!(system::PowerSystem, analysis::Analysis)
+"""
+The function returns the powers and currents associated with branches in the AC power flow 
+framework.
+
+    analysisBranch(system::PowerSystem, model::ACPowerFlow)
+
+In particular, it computes the power flows at from and to bus ends, power losses, reactive 
+power injections, current flows at from and to bus ends, and current flow through series 
+impedances.
+
+# Example
+```jldoctest
+system = powerSystem("case14.h5")
+acModel!(system)
+
+model = newtonRaphson(system)
+for i = 1:10
+    stopping = mismatch!(system, model)
+    if all(stopping .< 1e-8)
+        break
+    end
+    solve!(system, model)
+end
+
+power, current = analysisBranch(system, model)
+```
+"""
+function analysisBranch(system::PowerSystem, model::ACPowerFlow)
     ac = system.acModel
 
-    voltage = analysis.bus.voltage
-    current = analysis.branch.current
-    power = analysis.branch.power
+    voltage = model.voltage
     errorVoltage(voltage.magnitude)
 
-    power.from.active = fill(0.0, system.branch.number)
-    power.from.reactive = fill(0.0, system.branch.number)
-    power.to.active = fill(0.0, system.branch.number)
-    power.to.reactive = fill(0.0, system.branch.number)
-    power.shunt.reactive = fill(0.0, system.branch.number)
-    power.loss.active = fill(0.0, system.branch.number)
-    power.loss.reactive = fill(0.0, system.branch.number)
+    fromActive = fill(0.0, system.branch.number)
+    fromReactive = fill(0.0, system.branch.number)
+    toActive = fill(0.0, system.branch.number)
+    toReactive = fill(0.0, system.branch.number)
+    shuntReactive = fill(0.0, system.branch.number)
+    lossActive = fill(0.0, system.branch.number)
+    lossReactive = fill(0.0, system.branch.number)
 
-    current.from.magnitude = fill(0.0, system.branch.number)
-    current.from.angle = fill(0.0, system.branch.number)
-    current.to.magnitude = fill(0.0, system.branch.number)
-    current.to.angle = fill(0.0, system.branch.number)
-    current.impedance.magnitude = fill(0.0, system.branch.number)
-    current.impedance.angle = fill(0.0, system.branch.number)
+    fromMagnitude = fill(0.0, system.branch.number)
+    fromAngle = fill(0.0, system.branch.number)
+    toMagnitude = fill(0.0, system.branch.number)
+    toAngle = fill(0.0, system.branch.number)
+    impedanceMagnitude = fill(0.0, system.branch.number)
+    impedanceAngle = fill(0.0, system.branch.number)
 
     @inbounds for i = 1:system.branch.number
         if system.branch.layout.status[i] == 1
@@ -209,125 +210,123 @@ function acBranch!(system::PowerSystem, analysis::Analysis)
             voltageTo = voltage.magnitude[t] * exp(im * voltage.angle[t])
 
             currentFrom = voltageFrom * ac.nodalFromFrom[i] + voltageTo * ac.nodalFromTo[i]
-            current.from.magnitude[i] = abs(currentFrom)
-            current.from.angle[i] = angle(currentFrom)
+            fromMagnitude[i] = abs(currentFrom)
+            fromAngle[i] = angle(currentFrom)
 
             currentTo = voltageFrom * ac.nodalToFrom[i] + voltageTo * ac.nodalToTo[i]
-            current.to.magnitude[i] = abs(currentTo)
-            current.to.angle[i] = angle(currentTo)
+            toMagnitude[i] = abs(currentTo)
+            toAngle[i] = angle(currentTo)
 
             currentImpedance = ac.admittance[i] * (voltageFrom / ac.transformerRatio[i] - voltageTo)
-            current.impedance.magnitude[i] = abs(currentImpedance)
-            current.impedance.angle[i] = angle(currentImpedance)
+            impedanceMagnitude[i] = abs(currentImpedance)
+            impedanceAngle[i] = angle(currentImpedance)
 
             powerFrom = voltageFrom * conj(currentFrom)
-            power.from.active[i] = real(powerFrom)
-            power.from.reactive[i] = imag(powerFrom)
+            fromActive[i] = real(powerFrom)
+            fromReactive[i] = imag(powerFrom)
 
             powerTo = voltageTo * conj(currentTo)
-            power.to.active[i] = real(powerTo)
-            power.to.reactive[i] = imag(powerTo)
+            toActive[i] = real(powerTo)
+            toReactive[i] = imag(powerTo)
 
-            power.shunt.reactive[i] = 0.5 * system.branch.parameter.susceptance[i] * (abs(voltageFrom / ac.transformerRatio[i])^2 +  voltage.magnitude[t]^2)
+            shuntReactive[i] = 0.5 * system.branch.parameter.susceptance[i] * (abs(voltageFrom / ac.transformerRatio[i])^2 +  voltage.magnitude[t]^2)
 
-            power.loss.active[i] = current.impedance.magnitude[i]^2 * system.branch.parameter.resistance[i]
-            power.loss.reactive[i] = current.impedance.magnitude[i]^2 * system.branch.parameter.reactance[i]
+            lossActive[i] = impedanceMagnitude[i]^2 * system.branch.parameter.resistance[i]
+            lossReactive[i] = impedanceMagnitude[i]^2 * system.branch.parameter.reactance[i]
         end
     end
-end
 
+    return PowerBranch(Cartesian(fromActive, fromReactive), Cartesian(toActive, toReactive), CartesianImag(shuntReactive), Cartesian(lossActive, lossReactive)),
+        CurrentBranch(Polar(fromMagnitude, fromAngle), Polar(toMagnitude, toAngle), Polar(impedanceMagnitude, impedanceAngle))
+end
 
 """
-The function computes powers related to generators.
+The function returns powers related to generators in the DC power flow framework.
 
-    generator!(system::PowerSystem, analysis::Analysis)
+    analysisGenerator(system::PowerSystem, model::DCPowerFlow)
 
-Once executed, the `generator` field within the `Analysis` type is updated accordingly.
+In particular, it computes the active power output of the generators.
 
-# AC Power Flow Example
-```jldoctest
-system = powerSystem("case14.h5")
-acModel!(system)
-
-analysis = newtonRaphson(system)
-for i = 1:10
-    stopping = mismatch!(system, analysis)
-    if all(stopping .< 1e-8)
-        break
-    end
-    solvePowerFlow!(system, analysis)
-end
-
-generator!(system, analysis)
-```
-
-# DC Power Flow Example
+# Example
 ```jldoctest
 system = powerSystem("case14.h5")
 dcModel!(system)
 
-analysis = solvePowerFlow(system)
-generator!(system, analysis)
+model = dcPowerFlow(system)
+solve!(system, model)
+
+power = analysisGenerator(system, model)
 ```
 """
-function generator!(system::PowerSystem, analysis::Analysis)
-    if analysis.model.method == "DC Power Flow"
-        dcGenerator!(system, analysis)
-    end
-
-    if analysis.model.method in ["Gauss-Seidel", "Newton-Raphson", "Fast Newton-Raphson BX", "Fast Newton-Raphson XB"]
-        acGenerator!(system, analysis)
-    end
-end
-
-function dcGenerator!(system::PowerSystem, analysis::Analysis)
+function analysisGenerator(system::PowerSystem, model::DCPowerFlow)
     dc = system.dcModel
     generator = system.generator
     bus = system.bus
     slack = bus.layout.slack
 
-    power = analysis.generator.power
-    voltage = analysis.bus.voltage
+    voltage = model.voltage
     errorVoltage(voltage.angle)
 
-    if isempty(analysis.bus.power.supply.active)
-        supplySlack = bus.demand.active[slack] + bus.shunt.conductance[slack] + dc.shiftActivePower[slack]
-        @inbounds for j in dc.nodalMatrix.colptr[slack]:(dc.nodalMatrix.colptr[slack + 1] - 1)
-            row = dc.nodalMatrix.rowval[j]
-            supplySlack += dc.nodalMatrix[row, slack] * voltage.angle[row]
-        end
-    else
-        supplySlack = analysis.bus.power.supply.active[slack]
+    supplySlack = bus.demand.active[slack] + bus.shunt.conductance[slack] + dc.shiftActivePower[slack]
+    @inbounds for j in dc.nodalMatrix.colptr[slack]:(dc.nodalMatrix.colptr[slack + 1] - 1)
+        row = dc.nodalMatrix.rowval[j]
+        supplySlack += dc.nodalMatrix[row, slack] * voltage.angle[row]
     end
 
-    power.active = fill(0.0, generator.number)
+    powerActive = fill(0.0, generator.number)
     tempSlack = 0
     @inbounds for i = 1:generator.number
         if generator.layout.status[i] == 1
-            power.active[i] = generator.output.active[i]
+            powerActive[i] = generator.output.active[i]
 
             if generator.layout.bus[i] == slack
                 if tempSlack != 0
-                    power.active[tempSlack] -= power.active[i]
+                    powerActive[tempSlack] -= powerActive[i]
                 end
                 if tempSlack == 0
-                    power.active[i] = supplySlack
+                    powerActive[i] = supplySlack
                     tempSlack = i
                 end
             end
         end
     end
+
+    return PowerGenerator(powerActive, Float64[])
 end
 
-function acGenerator!(system::PowerSystem, analysis::Analysis)
+
+"""
+The function return powers related to generators for the AC power flow analysis.
+
+    analysisGenerator(system::PowerSystem, model::ACPowerFlow)
+
+In particular, it computes the power output of the generators.
+
+# Example
+```jldoctest
+system = powerSystem("case14.h5")
+acModel!(system)
+
+model = newtonRaphson(system)
+for i = 1:10
+    stopping = mismatch!(system, model)
+    if all(stopping .< 1e-8)
+        break
+    end
+    solve!(system, model)
+end
+
+power = analysisGenerator(system, model)
+```
+"""
+function analysisGenerator(system::PowerSystem, model::ACPowerFlow)
     ac = system.acModel
 
-    voltage = analysis.bus.voltage
-    power = analysis.generator.power
+    voltage = model.voltage
     errorVoltage(voltage.magnitude)
 
-    power.active = fill(0.0, system.generator.number)
-    power.reactive = fill(0.0, system.generator.number)
+    powerActive = fill(0.0, system.generator.number)
+    powerReactive = fill(0.0, system.generator.number)
     isMultiple = false
     for i in system.generator.layout.bus
         if system.bus.supply.inService[i] > 1
@@ -336,35 +335,29 @@ function acGenerator!(system::PowerSystem, analysis::Analysis)
         end
     end
 
-    if isempty(analysis.bus.power.injection.active)
-        injectionActive = fill(0.0, system.bus.number)
-        injectionReactive = fill(0.0, system.bus.number)
+    injectionActive = fill(0.0, system.bus.number)
+    injectionReactive = fill(0.0, system.bus.number)
+    @inbounds for i = 1:system.bus.number
+        voltageBus = voltage.magnitude[i] * exp(im * voltage.angle[i])
 
-        @inbounds for i = 1:system.bus.number
-            voltageBus = voltage.magnitude[i] * exp(im * voltage.angle[i])
-
-            I = 0.0 + im * 0.0
-            for j in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
-                k = ac.nodalMatrix.rowval[j]
-                I += conj(ac.nodalMatrixTranspose.nzval[j]) * conj(voltage.magnitude[k] * exp(im * voltage.angle[k]))
-            end
-            powerInjection = I * voltageBus
-            injectionActive[i] = real(powerInjection)
-            injectionReactive[i] = imag(powerInjection)
+        I = 0.0 + im * 0.0
+        for j in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
+            k = ac.nodalMatrix.rowval[j]
+            I += conj(ac.nodalMatrixTranspose.nzval[j]) * conj(voltage.magnitude[k] * exp(im * voltage.angle[k]))
         end
-    else
-        injectionActive = analysis.bus.power.injection.active
-        injectionReactive = analysis.bus.power.injection.reactive
+        powerInjection = I * voltageBus
+        injectionActive[i] = real(powerInjection)
+        injectionReactive[i] = imag(powerInjection)
     end
 
     if !isMultiple
         @inbounds for i = 1:system.generator.number
             if system.generator.layout.status[i] == 1
                 j = system.generator.layout.bus[i]
-                power.active[i] = system.generator.output.active[i]
-                power.reactive[i] = injectionReactive[j] + system.bus.demand.reactive[j]
+                powerActive[i] = system.generator.output.active[i]
+                powerReactive[i] = injectionReactive[j] + system.bus.demand.reactive[j]
                 if j == system.bus.layout.slack
-                    power.active[i] = injectionActive[j] + system.bus.demand.active[j]
+                    powerActive[i] = injectionActive[j] + system.bus.demand.active[j]
                 end
             end
         end
@@ -428,22 +421,24 @@ function acGenerator!(system::PowerSystem, analysis::Analysis)
             if system.generator.layout.status[i] == 1
                 j = system.generator.layout.bus[i]
                 if basePowerMVA * abs(Qmintotal[j] - Qmaxtotal[j]) > 10 * eps(Float64)
-                    power.reactive[i] = QminNew[i] + ((Qgentotal[j] - Qmintotal[j]) / (Qmaxtotal[j] - Qmintotal[j])) * (QmaxNew[i] - QminNew[i])
+                    powerReactive[i] = QminNew[i] + ((Qgentotal[j] - Qmintotal[j]) / (Qmaxtotal[j] - Qmintotal[j])) * (QmaxNew[i] - QminNew[i])
                 else
-                    power.reactive[i] = QminNew[i] + (Qgentotal[j] - Qmintotal[j]) / system.bus.supply.inService[j]
+                    powerReactive[i] = QminNew[i] + (Qgentotal[j] - Qmintotal[j]) / system.bus.supply.inService[j]
                 end
 
-                power.active[i] = system.generator.output.active[i]
+                powerActive[i] = system.generator.output.active[i]
                 if j == system.bus.layout.slack
                     if tempSlack != 0
-                        power.active[tempSlack] -= power.active[i]
+                        powerActive[tempSlack] -= powerActive[i]
                     end
                     if tempSlack == 0
-                        power.active[i] = injectionActive[j] + system.bus.demand.active[j]
+                        powerActive[i] = injectionActive[j] + system.bus.demand.active[j]
                         tempSlack = i
                     end
                 end
             end
         end
     end
+
+    return PowerGenerator(powerActive, powerReactive)
 end

@@ -6,70 +6,44 @@ For further information on this topic, please see the [Power System Analysis](@r
 
 ## API Index
 
-###### Newton-Raphson Method
+###### Build Model
 * [`newtonRaphson`](@ref newtonRaphson)
-* [`mismatchNewtonRaphson!`](@ref mismatchNewtonRaphson!)
-* [`solveNewtonRaphson!`](@ref solveNewtonRaphson!)
-
-###### Fast Newton-Raphson Method
 * [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX)
 * [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB)
-* [`mismatchFastNewtonRaphson!`](@ref mismatchFastNewtonRaphson!)
-* [`solveFastNewtonRaphson!`](@ref solveFastNewtonRaphson!)
-
-###### Gauss-Seidel Method
 * [`gaussSeidel`](@ref gaussSeidel)
-* [`mismatchGaussSeidel!`](@ref mismatchGaussSeidel!)
-* [`solveGaussSeidel!`](@ref solveGaussSeidel!)
-
-###### DC Power Flow
 * [`dcPowerFlow`](@ref dcPowerFlow)
-* [`solveDCPowerFlow!`](@ref solveDCPowerFlow!)
+
+###### Solve Power Flow
+* [`mismatch!`](@ref mismatch!)
+* [`solve!`](@ref solve!)
 
 ###### Additional Functions
-* [`reactivePowerLimit!`](@ref reactivePowerLimit!)
-* [`adjustVoltageAngle!`](@ref adjustVoltageAngle!)
+* [`reactiveLimit!`](@ref reactiveLimit!)
+* [`adjustAngle!`](@ref adjustAngle!)
 
 ---
 
-## Newton-Raphson Method
+## Build Model
 ```@docs
 newtonRaphson
-mismatchNewtonRaphson!
-solveNewtonRaphson!
-```
-
----
-
-## Fast Newton-Raphson Method
-```@docs
 fastNewtonRaphsonBX
 fastNewtonRaphsonXB
-mismatchFastNewtonRaphson!
-solveFastNewtonRaphson!
-```
-
----
-
-## Gauss-Seidel Method
-```@docs
 gaussSeidel
-mismatchGaussSeidel!
-solveGaussSeidel!
+dcPowerFlow
 ```
 
 ---
 
-## DC Power Flow
+## Solve Power Flow
 ```@docs
-dcPowerFlow
-solveDCPowerFlow!
+mismatch!
+solve!
 ```
 
 ---
 
 ## Additional Functions
 ```@docs
-reactivePowerLimit!
-adjustVoltageAngle!
+reactiveLimit!
+adjustAngle!
 ```
