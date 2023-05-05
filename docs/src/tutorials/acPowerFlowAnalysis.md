@@ -882,7 +882,7 @@ To retrieve the vector of injected reactive powers ``\mathbf{Q}_{\text{r}} = [Q_
 ## [Generator Powers](@id GeneratorPowersTutorials)
 The [`analysisGenerator`](@ref analysisGenerator) function provided by JuliaGrid can be used to compute powers associated with generators. Here is an example code snippet:
 ```@example PowerFlowSolution
-power = analysisGenerator(system, analysis)
+power = analysisGenerator(system, model)
 nothing # hide
 ```
 

@@ -278,7 +278,7 @@ The initial application of the reusable `PowerSystem` type is simple: it can be 
 ```@example ReusablePowerSystemType
 gsModel = gaussSeidel(system)
 for iteration = 1:3
-    solve!(system, modelGS)
+    solve!(system, gsModel)
 end
 ```
 
@@ -319,7 +319,7 @@ end
 
 ---
 
-##### Reusable Analysis Type
+##### Reusable Model Type
 As we have seen, the `PowerSystem` type can be reused and modified using various functions, and the question now is whether we can do the same with the `Model` composite type. In fact, in the previous code snippet, we did not need to recreate the `Model` type after changing the resistance of the branch labelled 3. Thus, once the `Model` type is created, users can modify the power system's structure using functions [`shuntBus!`](@ref shuntBus!), [`statusBranch!`](@ref statusBranch!), [`parameterBranch!`](@ref parameterBranch!), and [`outputGenerator!`](@ref outputGenerator!), without having to recreate the `Model` type from scratch.
 
 For instance, if the branch labelled 3 needs to be put out-of-service in the previously mentioned example, the AC power flow can be executed again by running the following code snippet:
@@ -404,7 +404,7 @@ nothing # hide
 
 ---
 
-##### Reusable Analysis Type
+##### Reusable Model Type
 The `Model` composite type contains a factorized nodal matrix, which means that users can reuse it when only modifying shunt or generator parameters and keeping the power system's branch parameters the same. This allows for more efficient computations as the factorization step is not repeated.
 
 Therefore, by using only the functions [`shuntBus!`](@ref shuntBus!), [`statusGenerator!`](@ref statusGenerator!) and [`outputGenerator!`](@ref outputGenerator!), the `Model` composite type can be reused. For example, to change the output of the generator and compute the bus voltage angles again, one can use the following code:
@@ -504,7 +504,7 @@ for iteration = 1:100
 end
 
 power = analysisGenerator(system, model)
-violate = reactivePowerLimit!(system, model, power)
+violate = reactiveLimit!(system, model, power)
 
 nothing # hide
 ```
@@ -543,6 +543,7 @@ for iteration = 1:100
 end
 
 power = analysisGenerator(system, model)
+nothing # hide
 ```
 Once the simulation is complete, we can verify that all generator reactive power outputs now satisfy the limits by checking the violate variable again:
 ```@repl GeneratorReactivePowerLimits
@@ -587,11 +588,12 @@ for iteration = 1:100
 end
 
 power = analysisGenerator(system, model)
+nothing # hide
 ```
 
 Upon checking the limits, we can observe that the slack bus has been transformed by executing the following code:
 ```@repl NewSlackBus
-violate = reactivePowerLimit!(system, model, power)
+violate = reactiveLimit!(system, model, power)
 ```
 Here, the generator connected to the slack bus is violating the minimum reactive power limit, which indicates the need to convert the slack bus. It is important to note that the new slack bus can be created only from the generator bus (`type = 2`). We will now perform another AC power flow analysis on the modified system using the following code:
 ```@example NewSlackBus

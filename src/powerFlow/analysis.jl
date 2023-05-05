@@ -1,45 +1,4 @@
 """
-The function returns the active powers associated with buses in the DC power flow framework.
-
-    analysisBus(system::PowerSystem, model::DCPowerFlow)
-
-In particular, it computes the active power injections and active power injected by generators.    
-
-# Example
-```jldoctest
-system = powerSystem("case14.h5")
-dcModel!(system)
-
-model = dcPowerFlow(system)
-solve!(system, model)
-
-power = analysisBus(system, model)
-```
-"""
-function analysisBus(system::PowerSystem, model::DCPowerFlow)
-    dc = system.dcModel
-    bus = system.bus
-    slack = bus.layout.slack
-
-    errorVoltage(model.voltage.angle)
-
-    powerSupply = copy(bus.supply.active)
-    powerInjection = copy(bus.supply.active)
-    @inbounds for i = 1:bus.number
-        powerInjection[i] -= bus.demand.active[i]
-    end
-
-    powerInjection[slack] = bus.shunt.conductance[slack] + dc.shiftActivePower[slack]
-    @inbounds for j in dc.nodalMatrix.colptr[slack]:(dc.nodalMatrix.colptr[slack + 1] - 1)
-        row = dc.nodalMatrix.rowval[j]
-        powerInjection[slack] += dc.nodalMatrix[row, slack] * model.voltage.angle[row]
-    end
-    powerSupply[slack] = bus.demand.active[slack] + powerInjection[slack]
-
-    return PowerBus(Cartesian(powerInjection, Float64[]), Cartesian(powerSupply, Float64[]), Cartesian(Float64[], Float64[]))
-end
-
-"""
 The function returns the powers and currents associated with buses in the AC power flow 
 framework.
 
@@ -118,12 +77,11 @@ function analysisBus(system::PowerSystem, model::ACPowerFlow)
 end
 
 """
-The function returns the active powers associated with branches in the DC power flow 
-framework.
+The function returns the active powers associated with buses in the DC power flow framework.
 
-    analysisBranch(system::PowerSystem, model::DCPowerFlow)
+    analysisBus(system::PowerSystem, model::DCPowerFlow)
 
-In particular, it computes the active power flows at from and to bus ends. 
+In particular, it computes the active power injections and active power injected by generators.    
 
 # Example
 ```jldoctest
@@ -133,24 +91,30 @@ dcModel!(system)
 model = dcPowerFlow(system)
 solve!(system, model)
 
-power = analysisBranch(system, model)
+power = analysisBus(system, model)
 ```
 """
-function analysisBranch(system::PowerSystem, model::DCPowerFlow)
+function analysisBus(system::PowerSystem, model::DCPowerFlow)
     dc = system.dcModel
-    branch = system.branch
+    bus = system.bus
+    slack = bus.layout.slack
 
-    voltage = model.voltage
-    errorVoltage(voltage.angle)
+    errorVoltage(model.voltage.angle)
 
-    powerFrom = copy(dc.admittance)
-    powerTo = similar(dc.admittance)
-    @inbounds for i = 1:branch.number
-        powerFrom[i] *= (voltage.angle[branch.layout.from[i]] - voltage.angle[branch.layout.to[i]] - branch.parameter.shiftAngle[i])
-        powerTo[i] = -powerFrom[i]
+    powerSupply = copy(bus.supply.active)
+    powerInjection = copy(bus.supply.active)
+    @inbounds for i = 1:bus.number
+        powerInjection[i] -= bus.demand.active[i]
     end
 
-    return PowerBranch(Cartesian(powerFrom, Float64[]), Cartesian(powerTo, Float64[]), CartesianImag(Float64[]), Cartesian(Float64[], Float64[]))
+    powerInjection[slack] = bus.shunt.conductance[slack] + dc.shiftActivePower[slack]
+    @inbounds for j in dc.nodalMatrix.colptr[slack]:(dc.nodalMatrix.colptr[slack + 1] - 1)
+        row = dc.nodalMatrix.rowval[j]
+        powerInjection[slack] += dc.nodalMatrix[row, slack] * model.voltage.angle[row]
+    end
+    powerSupply[slack] = bus.demand.active[slack] + powerInjection[slack]
+
+    return PowerBus(Cartesian(powerInjection, Float64[]), Cartesian(powerSupply, Float64[]), Cartesian(Float64[], Float64[]))
 end
 
 """
@@ -240,12 +204,14 @@ function analysisBranch(system::PowerSystem, model::ACPowerFlow)
         CurrentBranch(Polar(fromMagnitude, fromAngle), Polar(toMagnitude, toAngle), Polar(impedanceMagnitude, impedanceAngle))
 end
 
+
 """
-The function returns powers related to generators in the DC power flow framework.
+The function returns the active powers associated with branches in the DC power flow 
+framework.
 
-    analysisGenerator(system::PowerSystem, model::DCPowerFlow)
+    analysisBranch(system::PowerSystem, model::DCPowerFlow)
 
-In particular, it computes the active power output of the generators.
+In particular, it computes the active power flows at from and to bus ends. 
 
 # Example
 ```jldoctest
@@ -255,45 +221,25 @@ dcModel!(system)
 model = dcPowerFlow(system)
 solve!(system, model)
 
-power = analysisGenerator(system, model)
+power = analysisBranch(system, model)
 ```
 """
-function analysisGenerator(system::PowerSystem, model::DCPowerFlow)
+function analysisBranch(system::PowerSystem, model::DCPowerFlow)
     dc = system.dcModel
-    generator = system.generator
-    bus = system.bus
-    slack = bus.layout.slack
+    branch = system.branch
 
     voltage = model.voltage
     errorVoltage(voltage.angle)
 
-    supplySlack = bus.demand.active[slack] + bus.shunt.conductance[slack] + dc.shiftActivePower[slack]
-    @inbounds for j in dc.nodalMatrix.colptr[slack]:(dc.nodalMatrix.colptr[slack + 1] - 1)
-        row = dc.nodalMatrix.rowval[j]
-        supplySlack += dc.nodalMatrix[row, slack] * voltage.angle[row]
+    powerFrom = copy(dc.admittance)
+    powerTo = similar(dc.admittance)
+    @inbounds for i = 1:branch.number
+        powerFrom[i] *= (voltage.angle[branch.layout.from[i]] - voltage.angle[branch.layout.to[i]] - branch.parameter.shiftAngle[i])
+        powerTo[i] = -powerFrom[i]
     end
 
-    powerActive = fill(0.0, generator.number)
-    tempSlack = 0
-    @inbounds for i = 1:generator.number
-        if generator.layout.status[i] == 1
-            powerActive[i] = generator.output.active[i]
-
-            if generator.layout.bus[i] == slack
-                if tempSlack != 0
-                    powerActive[tempSlack] -= powerActive[i]
-                end
-                if tempSlack == 0
-                    powerActive[i] = supplySlack
-                    tempSlack = i
-                end
-            end
-        end
-    end
-
-    return PowerGenerator(powerActive, Float64[])
+    return PowerBranch(Cartesian(powerFrom, Float64[]), Cartesian(powerTo, Float64[]), CartesianImag(Float64[]), Cartesian(Float64[], Float64[]))
 end
-
 
 """
 The function return powers related to generators for the AC power flow analysis.
@@ -441,4 +387,58 @@ function analysisGenerator(system::PowerSystem, model::ACPowerFlow)
     end
 
     return PowerGenerator(powerActive, powerReactive)
+end
+
+"""
+The function returns powers related to generators in the DC power flow framework.
+
+    analysisGenerator(system::PowerSystem, model::DCPowerFlow)
+
+In particular, it computes the active power output of the generators.
+
+# Example
+```jldoctest
+system = powerSystem("case14.h5")
+dcModel!(system)
+
+model = dcPowerFlow(system)
+solve!(system, model)
+
+power = analysisGenerator(system, model)
+```
+"""
+function analysisGenerator(system::PowerSystem, model::DCPowerFlow)
+    dc = system.dcModel
+    generator = system.generator
+    bus = system.bus
+    slack = bus.layout.slack
+
+    voltage = model.voltage
+    errorVoltage(voltage.angle)
+
+    supplySlack = bus.demand.active[slack] + bus.shunt.conductance[slack] + dc.shiftActivePower[slack]
+    @inbounds for j in dc.nodalMatrix.colptr[slack]:(dc.nodalMatrix.colptr[slack + 1] - 1)
+        row = dc.nodalMatrix.rowval[j]
+        supplySlack += dc.nodalMatrix[row, slack] * voltage.angle[row]
+    end
+
+    powerActive = fill(0.0, generator.number)
+    tempSlack = 0
+    @inbounds for i = 1:generator.number
+        if generator.layout.status[i] == 1
+            powerActive[i] = generator.output.active[i]
+
+            if generator.layout.bus[i] == slack
+                if tempSlack != 0
+                    powerActive[tempSlack] -= powerActive[i]
+                end
+                if tempSlack == 0
+                    powerActive[i] = supplySlack
+                    tempSlack = i
+                end
+            end
+        end
+    end
+
+    return PowerGenerator(powerActive, Float64[])
 end
