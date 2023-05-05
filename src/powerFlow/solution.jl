@@ -1,4 +1,22 @@
-abstract type ACPowerFlow end
+"""
+Abstract type representing the power flow model for yhe power systems. This type serves as the
+base type for a hierarchy of power flow models.
+
+# Subtypes
+- `ACPowerFlow`: Abstract type representing an AC power flow model
+- `DCPowerFlow`: Struct representing the DC power flow model.
+"""
+abstract type PowerFlow end
+
+"""
+Abstract type representing the AC power flow method. This type serves as ther base type for a
+hierarchy of AC power flow methods.
+- `NewtonRaphson`: Struct representing the Newton-Raphson method
+- `FastNewtonRaphson`: Struct representing the fast Newton-Raphson method
+- `GaussSeidel`: Struct representing the Gauss-Seidel method.
+
+"""
+abstract type ACPowerFlow <: PowerFlow end
 
 ######### Newton-Raphson Struct ##########
 struct NewtonRaphson <: ACPowerFlow
@@ -39,7 +57,7 @@ struct GaussSeidel <: ACPowerFlow
 end
 
 ######### DC Power Flow Struct ##########
-struct DCPowerFlow
+struct DCPowerFlow <: PowerFlow
     voltage::Polar
     factorization::Union{Factorization, Diagonal}
     method::String

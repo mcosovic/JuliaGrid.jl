@@ -25,6 +25,7 @@ For further information on this topic, please see the [Power System Analysis](@r
 
 ## Build Model
 ```@docs
+PowerFlow
 newtonRaphson
 fastNewtonRaphsonBX
 fastNewtonRaphsonXB
