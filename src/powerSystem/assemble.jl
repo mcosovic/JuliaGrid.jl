@@ -1,9 +1,10 @@
 """
-The function adds a new bus to the `PowerSystem` type, updating its `bus` field.
-
     addBus!(system::PowerSystem; label, type, active, reactive, conductance, susceptance,
         magnitude, angle, minMagnitude, maxMagnitude, base, area, lossZone)
 
+The function adds a new bus to the `PowerSystem` type, updating its `bus` field.
+
+# Keywords
 The bus is defined with the following keywords:
 * `label`: unique label for the bus
 * `type`: the bus type:
@@ -142,10 +143,10 @@ function addBus!(system::PowerSystem;
 end
 
 """
+    @bus(kwargs...)
+
 The macro generates a template for a bus, which can be utilized to define a bus using the
 [`addBus!`](@ref addBus!) function.
-
-    @bus(kwargs...)
 
 To define the bus template, the `kwargs` input arguments must be provided in accordance with
 the keywords specified within the [`addBus!`](@ref addBus!) function, along with their
@@ -194,16 +195,16 @@ macro bus(kwargs...)
 end
 
 """
+    shuntBus!(system::PowerSystem; label, conductance, susceptance)
+
 This function enables the modification of the `conductance` and `susceptance` parameters of a
 shunt element connected to a bus.
-
-    shuntBus!(system::PowerSystem; label, conductance, susceptance)
 
 The keyword `label` must match an existing bus label. If either `conductance` or `susceptance`
 is left out, the corresponding value will remain unchanged. It updates the `bus.shunt` field of
 the `PowerSystem` composite type.
 
-Additionally, this function automatically nupdates the `acModel` field of the `PowerSystem`
+Additionally, this function automatically updates the `acModel` field of the `PowerSystem`
 type, eliminating the need to rebuild the model from scratch when making changes to these
 parameters.
 
@@ -252,13 +253,14 @@ function shuntBus!(system::PowerSystem; user...)
 end
 
 """
-The function adds a new branch to the `PowerSystem` type and updates its `branch` field.
-A branch can be added between already defined buses.
-
     addBranch!(system::PowerSystem; label, from, to, status, resistance, reactance,
         susceptance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle,
         longTerm, shortTerm, emergency, type)
 
+The function adds a new branch to the `PowerSystem` type and updates its `branch` field.
+A branch can be added between already defined buses.
+
+# Keywords
 The branch is defined with the following keywords:
 * `label`: unique label for the branch
 * `from`: from bus label, corresponds to the bus label
@@ -416,10 +418,10 @@ function addBranch!(system::PowerSystem;
 end
 
 """
+    @branch(kwargs...)
+
 The macro generates a template for a branch, which can be utilized to define a branch using the
 [`addBranch!`](@ref addBranch!) function.
-
-    @branch(kwargs...)
 
 To define the branch template, the `kwargs` input arguments must be provided in accordance with
 the keywords specified within the [`addBranch!`](@ref addBranch!) function, along with their
@@ -471,10 +473,10 @@ macro branch(kwargs...)
 end
 
 """
+    statusBranch!(system::PowerSystem; label, status)
+
 The function enables the switching of the operational `status` of a branch, identified by its
 `label`, within the `PowerSystem` system between in-service and out-of-service.
-
-    statusBranch!(system::PowerSystem; label, status)
 
 This function updates the `acModel` and `dcModel` fields automatically when the operating
 status of a branch is changed, thus eliminating the need to rebuild the model from scratch.
@@ -532,11 +534,11 @@ function statusBranch!(system::PowerSystem; label::T, status::T)
 end
 
 """
-This function enables the alteration of the `resistance`, `reactance`, `susceptance`,
-`turnsRatio` and `shiftAngle` parameters of a branch, identified by its `label`.
-
     parameterBranch!(system::PowerSystem; label, resistance, reactance, susceptance,
         turnsRatio, shiftAngle)
+
+This function enables the alteration of the `resistance`, `reactance`, `susceptance`,
+`turnsRatio` and `shiftAngle` parameters of a branch, identified by its `label`.
 
 If any of these parameters are omitted, their current values will be retained. It updates
 the `branch.parameter` field of the `PowerSystem` composite type.
@@ -618,14 +620,15 @@ function parameterBranch!(system::PowerSystem; user...)
 end
 
 """
-The function is used to add a new generator to the `PowerSystem` type and update its `generator`
-field. The generator can be added to an already defined bus.
-
     addGenerator!(system::PowerSystem; label, bus, status, active, reactive, magnitude,
         minActive, maxActive, minReactive, maxReactive, lowActive, minLowReactive,
         maxLowReactive, upActive, minUpReactive, maxUpReactive,
         loadFollowing, reactiveTimescale, reserve10min, reserve30min, area)
 
+The function is used to add a new generator to the `PowerSystem` type and update its `generator`
+field. The generator can be added to an already defined bus.
+
+# Keywords
 The generator is defined with the following keywords:
 * `label`: a unique label for the generator
 * `bus`: the label of the bus to which the generator is connected
@@ -774,10 +777,10 @@ function addGenerator!(system::PowerSystem;
 end
 
 """
+    @generator(kwargs...)
+
 The macro generates a template for a generator, which can be utilized to define a generator
 using the [`addGenerator!`](@ref addGenerator!) function.
-
-    @generator(kwargs...)
 
 To define the generator template, the `kwargs` input arguments must be provided in accordance
 with the keywords specified within the [`addGenerator!`](@ref addGenerator!) function, along
@@ -828,12 +831,13 @@ macro generator(kwargs...)
 end
 
 """
+    addActiveCost!(system::PowerSystem; label, model, piecewise, polynomial)
+
 The function updates the `generator.cost` field of the `PowerSystem` type by adding costs for
 the active power produced by the corresponding generator. It can add a cost to an already
 defined generator.
 
-    addActiveCost!(system::PowerSystem; label, model, piecewise, polynomial)
-
+# Keywords
 The function takes in four keywords as arguments:
 * `label`: corresponds to the already defined generator label
 * `model`: cost model:
@@ -881,12 +885,13 @@ function addActiveCost!(system::PowerSystem; label::T, model::T = 0,
 end
 
 """
+    addReactiveCost!(system::PowerSystem; label, model, piecewise, polynomial)
+
 The function updates the `generator` field of the `PowerSystem` type by adding costs for
 the reactive power produced by the corresponding generator. It can add a cost to an already
 defined generator.
 
-    addReactiveCost!(system::PowerSystem; label, model, piecewise, polynomial)
-
+# Keywords
 The function takes in four keywords as arguments:
 * `label`: corresponds to the already defined generator label
 * `model`: cost model:
@@ -968,10 +973,10 @@ function addCost!(system::PowerSystem, label, model, polynomial, piecewise, cost
 end
 
 """
+    statusGenerator!(system::PowerSystem; label, status)
+
 The function changes the operating `status` of a generator by switching it from in-service to
 out-of-service, or vice versa.
-
-    statusGenerator!(system::PowerSystem; label, status)
 
 It has two parameters, `label` and `status`, where the `label` corresponds to the generator
 label that has already been defined. It updates the `bus.layout.type` field of the `PowerSystem`
@@ -1016,9 +1021,9 @@ function statusGenerator!(system::PowerSystem; label::Int64, status::Int64 = 0)
 end
 
 """
-The function modifies the `active` and `reactive` output powers of a generator.
-
     outputGenerator!(system::PowerSystem; label, active, reactive)
+
+The function modifies the `active` and `reactive` output powers of a generator.
 
 It has three parameters, `label`, `active`, and `reactive`, where the `label` corresponds
 to the generator label that has already been defined. The `active` and `reactive` parameters
@@ -1072,14 +1077,20 @@ function outputGenerator!(system::PowerSystem; user...)
 end
 
 """
+    dcModel!(system::PowerSystem)
+
 The function generates vectors and matrices based on the power system topology and parameters
 associated with DC analysis.
-
-    dcModel!(system::PowerSystem)
 
 The function updates the field `dcModel`. Once formed, the field will be automatically updated
 when using functions [`addBranch!`](@ref addBranch!), [`statusBranch!`](@ref statusBranch!), and
 [`parameterBranch!`](@ref parameterBranch!).
+
+# Variables
+The following variables are formed once the function is executed:
+- nodalMatrix: the nodal matrix
+- admittance: the vector of branch admittances
+- shiftActivePower: the vector of active powers related to phase-shifting transformers.
 
 # Example
 ```jldoctest
@@ -1153,14 +1164,25 @@ end
 end
 
 """
+    acModel!(system::PowerSystem)
+
 The function generates vectors and matrices based on the power system topology and parameters
 associated with AC analysis.
-
-    acModel!(system::PowerSystem)
 
 The function updates the field `acModel`. Once formed, the field will be automatically updated
 when using functions [`shuntBus!`](@ref shuntBus!), [`addBranch!`](@ref addBranch!),
 [`statusBranch!`](@ref statusBranch!), and [`parameterBranch!`](@ref parameterBranch!).
+
+# Variables
+The following variables are formed once the function is executed:
+- nodalMatrix: the nodal matrix
+- nodalMatrixTranspose: the transpose of the nodal matrix
+- nodalFromFrom: the Y-parameters of the two-port branches
+- nodalFromTo: the Y-parameters of the two-port branches
+- nodalToTo: the Y-parameters of the two-port branches
+- nodalToFrom: the Y-parameters of the two-port branches
+- admittance: the vector of branch admittances
+- transformerRatio: the vector of complex ratios of transformers.
 
 # Example
 ```jldoctest

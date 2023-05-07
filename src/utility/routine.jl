@@ -174,13 +174,13 @@ To activate multiple features, the macro can be called as follows:
 ```
 """
 macro enable(type, args...)
-    if !haskey(settings, type)
+    if !haskey(setting, type)
         error("It is not possible to configure the settings for the $type type.")
     end
 
     @inbounds for key in args
-        if haskey(settings[type], key)
-            settings[type][key] = true
+        if haskey(setting[type], key)
+            setting[type][key] = true
         end
     end
 end
@@ -208,13 +208,13 @@ To deactivate multiple features, the macro can be called as follows:
 ```
 """
 macro disable(type, args...)
-    if !haskey(settings, type)
+    if !haskey(setting, type)
         error("It is not possible to configure the settings for the $type type.")
     end
 
     @inbounds for key in args
-        if haskey(settings[type], key)
-            settings[type][key] = false
+        if haskey(setting[type], key)
+            setting[type][key] = false
         end
     end
 end
