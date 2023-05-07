@@ -8,12 +8,12 @@ framework.
 The function returns two instances of composite types.
 
 The `PowerBus` composite type contains the following fields:
-- injection: the active and reactive power injections
-- supply: the active and reactive power injected by the generators
-- shunt: the active and reactive power associated with shunt elements.
+- `injection`: the active and reactive power injections
+- `supply`: the active and reactive power injected by the generators
+- `shunt`: the active and reactive power associated with shunt elements.
 
 The `CurrentBus` composite type contains the following field:
-- injection: the magnitude and angle of current injections.
+- `injection`: the magnitude and angle of current injections.
 
 # Example
 ```jldoctest
@@ -91,8 +91,8 @@ The function returns the active powers associated with buses in the DC power flo
 
 # Returns
 The `PowerBus` composite type contains the following populated fields:
-- injection: the active power injections
-- supply: the active power injected by the generators.
+- `injection`: the active power injections
+- `supply`: the active power injected by the generators.
 
 # Example
 ```jldoctest
@@ -138,15 +138,15 @@ framework.
 The function returns two instances of composite types.
 
 The `PowerBranch` composite type contains the following fields:
-- from: the active and reactive power flows at the from ends
-- to: the active and reactive power flows at the to ends
-- shunt: the reactive power injections
-- loss: the active and reactive power losses.
+- `from`: the active and reactive power flows at the from ends
+- `to`: the active and reactive power flows at the to ends
+- `shunt`: the reactive power injections
+- `loss`: the active and reactive power losses.
 
 The `CurrentBranch` composite type contains the following field:
-- from: the magnitude and angle of current flows at from bus ends
-- to: the magnitude and angle of current flows at to bus ends
-- impedance: the magnitude and angle of current flows through series impedances.
+- `from`: the magnitude and angle of current flows at from bus ends
+- `to`: the magnitude and angle of current flows at to bus ends
+- `impedance`: the magnitude and angle of current flows through series impedances.
 
 # Example
 ```jldoctest
@@ -233,8 +233,8 @@ The function returns the active powers associated with branches in the DC power 
 
 # Returns
 The `PowerBus` composite type contains the following populated fields:
-- from: the active power flows at the from ends
-- to: the active power flows at the to ends
+- `from`: the active power flows at the from ends
+- `to`: the active power flows at the to ends
 
 # Example
 ```jldoctest
@@ -271,8 +271,8 @@ The function return powers related to generators for the AC power flow analysis.
 
 # Returns
 The `PowerGenerator` composite type contains the following variables:
-- active: the active power output of the generators
-- reactive: the reactive power output of the generators.
+- `active`: the active power output of the generators
+- `reactive`: the reactive power output of the generators.
 
 # Example
 ```jldoctest
@@ -422,7 +422,7 @@ The function returns powers related to generators in the DC power flow framework
 
 # Returns
 The `PowerGenerator` composite type contains the following populated variable:
-- active: the active power output of the generators.
+- `active`: the active power output of the generators.
 
 # Example
 ```jldoctest

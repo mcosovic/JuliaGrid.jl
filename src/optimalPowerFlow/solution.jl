@@ -20,16 +20,16 @@ used solvers. For more information, refer to the
 # Returns
 The function returns an instance of the `DCOptimalPowerFlow` type, which includes the following
 fields:
-- voltage: the magnitudes and angles of bus voltages
-- power: the active and reactive power output of the generators
-- jump: the JuMP model.
+- `voltage`: the magnitudes and angles of bus voltages
+- `power`: the active and reactive power output of the generators
+- `jump`: the JuMP model.
 
 # Note
 In JuliaGrid, you can manipulate the `jump` model according to the
 [JuMP documentation](https://jump.dev/JuMP.jl/stable/reference/models/). However, some settings
 may need to be called slightly differently.
 
-For example, to disable adding bridges, use the macro @disable(addBridges), instead of
+For example, to disable adding bridges, use the macro `@disable(addBridges)`, instead of
 `add_bridges = false`. Also, to turn off string creations, instead of calling the
 `set_string_names_on_creation(model, false)` function, you can use the macro
 `@disable(stringNames)`.

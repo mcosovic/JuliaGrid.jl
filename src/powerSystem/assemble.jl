@@ -1088,9 +1088,9 @@ when using functions [`addBranch!`](@ref addBranch!), [`statusBranch!`](@ref sta
 
 # Variables
 The following variables are formed once the function is executed:
-- nodalMatrix: the nodal matrix
-- admittance: the vector of branch admittances
-- shiftActivePower: the vector of active powers related to phase-shifting transformers.
+- `nodalMatrix`: the nodal matrix
+- `admittance`: the branch admittances
+- `shiftActivePower`: the active powers related to phase-shifting transformers.
 
 # Example
 ```jldoctest
@@ -1175,14 +1175,14 @@ when using functions [`shuntBus!`](@ref shuntBus!), [`addBranch!`](@ref addBranc
 
 # Variables
 The following variables are formed once the function is executed:
-- nodalMatrix: the nodal matrix
-- nodalMatrixTranspose: the transpose of the nodal matrix
-- nodalFromFrom: the Y-parameters of the two-port branches
-- nodalFromTo: the Y-parameters of the two-port branches
-- nodalToTo: the Y-parameters of the two-port branches
-- nodalToFrom: the Y-parameters of the two-port branches
-- admittance: the vector of branch admittances
-- transformerRatio: the vector of complex ratios of transformers.
+- `nodalMatrix`: the nodal matrix
+- `nodalMatrixTranspose`: the transpose of the nodal matrix
+- `nodalFromFrom`: the Y-parameters of the two-port branches
+- `nodalFromTo`: the Y-parameters of the two-port branches
+- `nodalToTo`: the Y-parameters of the two-port branches
+- `nodalToFrom`: the Y-parameters of the two-port branches
+- `admittance`: the branch admittances
+- `transformerRatio`: the complex ratios of transformers.
 
 # Example
 ```jldoctest

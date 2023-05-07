@@ -107,9 +107,17 @@ const generator = Dict(
     )
 )
 
-const settings = Dict(
+const setting = Dict(
     :optimization => Dict(
-        :slack => true
+        :slack => true,
+        :polynomial => true,
+        :piecewise => true,
+        :capability => true,
+        :flow => true,
+        :difference => true,
+        :balance => true,
+        :addBridges => true,
+        :stringNames => true,
     ),
     :estimation => Dict(
     )

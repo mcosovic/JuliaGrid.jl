@@ -83,12 +83,12 @@ composite type.
 # Returns
 The function returns an instance of the `NewtonRaphson` subtype of the abstract `ACPowerFlow`
 type, which includes the following fields:
-- voltage: the magnitudes and angles of bus voltages
-- jacobian: the Jacobian matrix
-- mismatch: the active and reactive power injection mismatches
-- increment: the magnitudes and angles of bus voltage increments
-- pq: indices of demand buses
-- pvpq: indices of demand and generator buses.
+- `voltage`: the magnitudes and angles of bus voltages
+- `jacobian`: the Jacobian matrix
+- `mismatch`: the active and reactive power injection mismatches
+- `increment`: the magnitudes and angles of bus voltage increments
+- `pq`: indices of demand buses
+- `pvpq`: indices of demand and generator buses.
 
 # Example
 ```jldoctest
@@ -197,19 +197,19 @@ the `PowerSystem` composite type.
 # Returns
 The function returns an instance of the `FastNewtonRaphson` subtype of the abstract `ACPowerFlow`
 type, which includes the following fields:
-- voltage: the magnitudes and angles of bus voltages
-- active:
-  - jacobian: the Jacobian matrix associated with active power equations
-  - mismatch: the active power injection mismatches
-  - increment: the angles of bus voltage increments
-  - factorization: the factorized Jacobian matrix
-- reactive:
-  - jacobian: the Jacobian matrix associated with reactive power equations
-  - mismatch: the reative power injection mismatches
-  - increment: the magnitudes of bus voltage increments
-  - factorization: the factorized Jacobian matrix
-- pq: indices of demand buses
-- pvpq: indices of demand and generator buses.
+- `voltage`: the magnitudes and angles of bus voltages
+- `active`:
+  - `jacobian`: the Jacobian matrix associated with active power equations
+  - `mismatch`: the active power injection mismatches
+  - `increment`: the angles of bus voltage increments
+  - `factorization`: the factorized Jacobian matrix
+- `reactive`:
+  - `jacobian`: the Jacobian matrix associated with reactive power equations
+  - `mismatch`: the reative power injection mismatches
+  - `increment`: the magnitudes of bus voltage increments
+  - `factorization`: the factorized Jacobian matrix
+- `pq`: indices of demand buses
+- `pvpq`: indices of demand and generator buses.
 
 # Example
 ```jldoctest
@@ -237,19 +237,19 @@ the `PowerSystem` composite type.
 # Returns
 The function returns an instance of the `FastNewtonRaphson` subtype of the abstract `ACPowerFlow`
 type, which includes the following fields:
-- voltage: the magnitudes and angles of bus voltages
-- active:
-  - jacobian: the Jacobian matrix associated with active power equations
-  - mismatch: the active power injection mismatches
-  - increment: the angles of bus voltage increments
-  - factorization: the factorized Jacobian matrix
-- reactive:
-  - jacobian: the Jacobian matrix associated with reactive power equations
-  - mismatch: the reative power injection mismatches
-  - increment: the magnitudes of bus voltage increments
-  - factorization: the factorized Jacobian matrix
-- pq: indices of demand buses
-- pvpq: indices of demand and generator buses.
+- `voltage`: the magnitudes and angles of bus voltages
+- `active`:
+  - `jacobian`: the Jacobian matrix associated with active power equations
+  - `mismatch`: the active power injection mismatches
+  - `increment`: the angles of bus voltage increments
+  - `factorization`: the factorized Jacobian matrix
+- `reactive`:
+  - `jacobian`: the Jacobian matrix associated with reactive power equations
+  - `mismatch`: the reative power injection mismatches
+  - `increment`: the magnitudes of bus voltage increments
+  - `factorization`: the factorized Jacobian matrix
+- `pq`: indices of demand buses
+- `pvpq`: indices of demand and generator buses.
 
 # Example
 ```jldoctest
@@ -424,11 +424,11 @@ composite type.
 # Returns
 The function returns an instance of the `GaussSeidel` subtype of the abstract `ACPowerFlow`
 type, which includes the following fields:
-- voltage: the magnitudes and angles of bus voltages
-- complex: the complex voltages
-- magnitude: the bus voltage magnitudes for corrections
-- pq: indices of demand buses
-- pv: indices of generator buses.
+- `voltage`: the magnitudes and angles of bus voltages
+- `complex`: the complex voltages
+- `magnitude`: the bus voltage magnitudes for corrections
+- `pq`: indices of demand buses
+- `pv`: indices of generator buses.
 
 # Example
 ```jldoctest
@@ -468,7 +468,7 @@ function gaussSeidel(system::PowerSystem)
 end
 
 """
-    mismatch!(system::PowerSystem, model::Method) where Method<:ACPowerFlow
+    mismatch!(system::PowerSystem, model::Method) where Method <: ACPowerFlow
 
 The function calculates both active and reactive power injection mismatches and returns their
 maximum absolute values, which can be utilized to terminate the iteration loop of methods
@@ -602,7 +602,7 @@ end
 
 
 """
-    solve!(system::PowerSystem, model::Method) where Method<:ACPowerFlow
+    solve!(system::PowerSystem, model::Method) where Method <: ACPowerFlow
 
 The function employs the Newton-Raphson, fast Newton-Raphson, or Gauss-Seidel method to solve
 the AC power flow problem and calculate the magnitudes and angles of bus voltages.
