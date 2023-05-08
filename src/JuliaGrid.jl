@@ -27,16 +27,18 @@ export @bus, @branch, @generator
 
 # ######## Power Flow ##########
 include("powerFlow/solution.jl")
-export newtonRaphson, fastNewtonRaphsonBX, fastNewtonRaphsonXB, gaussSeidel, dcPowerFlow  
+export newtonRaphson, fastNewtonRaphsonBX, fastNewtonRaphsonXB, gaussSeidel, dcPowerFlow
 export mismatch!, solve!
 export reactiveLimit!, adjustAngle!
+export ACPowerFlow
 
 include("powerFlow/analysis.jl")
 export analysisBus, analysisBranch, analysisGenerator
 
-######## Optimal Power Flow ##########
-# include("optimalPowerFlow/solution.jl")
-# export dcOptimalPowerFlow!, optimizePowerFlow!
+####### Optimal Power Flow ##########
+include("optimalPowerFlow/solution.jl")
+export dcOptimalPowerFlow
+export optimize!
 
 ####### Unit ##########
 include("utility/unit.jl")
