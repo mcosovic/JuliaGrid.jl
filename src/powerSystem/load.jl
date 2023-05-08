@@ -208,12 +208,12 @@ base values in volt-amperes and volts. The prefixes for these base values can be
 the [`@base`](@ref @base) macro.
 
 # Examples
-Load power system data
+Load power system data:
 ```jldoctest
 system = powerSystem("case14.h5")
 ```
 
-Load power system data and build AC and DC models
+Load power system data and build AC and DC models:
 ```jldoctest
 system = powerSystem("case14.h5")
 acModel!(system)

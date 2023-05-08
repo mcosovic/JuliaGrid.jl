@@ -6,7 +6,8 @@ struct DCOptimalPowerFlow
 end
 
 """
-    dcOptimalPowerFlow(system::PowerSystem, optimizer; kwargs...)
+    dcOptimalPowerFlow(system::PowerSystem, optimizer; bridges, names, slack, capability, 
+        rating, difference, balance)
 
 The function takes the `PowerSystem` composite type as input to establish the structure for
 solving the DC optimal power flow. The `optimizer` argument is also required to create and 
@@ -17,17 +18,17 @@ type has not been created, the function will initiate an update automatically.
 JuliaGrid offers the ability to manipulate the `jump` model based on the guidelines provided 
 in the [JuMP documentation](https://jump.dev/JuMP.jl/stable/reference/models/). However, 
 certain configurations may require different method calls, such as:
-- `addBridges::Bool`: used to manage the bridging mechanism
-- `stringNames::Bool`: used to manage the creation of string names.
+- `bridges`: used to manage the bridging mechanism
+- `names`: used to manage the creation of string names.
 
 Moreover, we have included keywords that regulate the usage of different types of constraints:
-- `slack::Bool`: controls the equality constraint associated with the slack bus
-- `capability::Bool`: controls the inequality constraints that relate to the active power generator outputs
-- `rating::Bool`: controls the inequality constraints that relate to the long-term rating of branches
-- `difference::Bool`: controls the inequality constraints that relate to the voltage angle differences between buses
-- `balance::Bool`: controls the equality constraints that relate to the power balance equations.
+- `slack`: controls the equality constraint associated with the slack bus
+- `capability`: controls the inequality constraints that relate to the active power generator outputs
+- `rating`: controls the inequality constraints that relate to the long-term rating of branches
+- `difference`: controls the inequality constraints that relate to the voltage angle differences between buses
+- `balance`: controls the equality constraints that relate to the power balance equations.
 
-All of the aforementioned keywords are set to `true` by default.
+By default, all of these keywords are set to `true` and are of the `Bool` type.
 
 # JuMP
 The JuliaGrid builds the DC optimal power flow around the JuMP package and supports commonly
