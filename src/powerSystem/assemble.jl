@@ -54,20 +54,21 @@ addBus!(system; label = 1, active = 25, reactive = -4, angle = 10, base = 132)
 """
 function addBus!(system::PowerSystem;
     label::T,
-    type::T = bus[:default][:type],
+    type::T = template[:bus][:type],
     active::T = missing, reactive::T = missing,
     conductance::T = missing, susceptance::T = missing,
     magnitude::T = missing, angle::T = missing,
     minMagnitude::T = missing, maxMagnitude::T = missing,
     base::T = missing,
-    area::T = bus[:default][:area], lossZone::T = bus[:default][:lossZone])
+    area::T = template[:bus][:area],
+    lossZone::T = template[:bus][:lossZone])
 
     demand = system.bus.demand
     shunt = system.bus.shunt
     voltage = system.bus.voltage
     layout = system.bus.layout
     supply = system.bus.supply
-    default = bus[:default]
+    default = template[:bus]
 
     prefixPower = system.base.power.prefix
     basePower = system.base.power.value
@@ -98,7 +99,7 @@ function addBus!(system::PowerSystem;
     end
 
     if ismissing(base)
-        base = bus[:default][:base] * bus[:factor][:baseVoltage] / prefixVoltage
+        base = default[:base] * default[:baseVoltage] / prefixVoltage
     else
         base = base * factor[:baseVoltage] / prefixVoltage
     end
@@ -108,9 +109,9 @@ function addBus!(system::PowerSystem;
     activeScale = si2pu(prefixPower, basePower, factor[:activePower])
     reactiveScale = si2pu(prefixPower, basePower, factor[:reactivePower])
 
-    voltageScaleDef = si2pu(prefixVoltage, base, bus[:factor][:voltageMagnitude])
-    activeScaleDef = si2pu(prefixPower, basePower, bus[:factor][:activePower])
-    reactiveScaleDef = si2pu(prefixPower, basePower, bus[:factor][:reactivePower])
+    voltageScaleDef = si2pu(prefixVoltage, base, default[:voltageMagnitude])
+    activeScaleDef = si2pu(prefixPower, basePower, default[:activePower])
+    reactiveScaleDef = si2pu(prefixPower, basePower, default[:reactivePower])
 
     pushData!(demand.active, active, activeScale, default[:active], activeScaleDef)
     pushData!(demand.reactive, reactive, reactiveScale, default[:reactive], reactiveScaleDef)
@@ -122,7 +123,7 @@ function addBus!(system::PowerSystem;
     pushData!(voltage.minMagnitude, minMagnitude, voltageScale, default[:minMagnitude], voltageScaleDef)
     pushData!(voltage.maxMagnitude, maxMagnitude, voltageScale, default[:maxMagnitude], voltageScaleDef)
 
-    pushData!(voltage.angle, angle, factor[:voltageAngle], default[:angle], bus[:factor][:voltageAngle])
+    pushData!(voltage.angle, angle, factor[:voltageAngle], default[:angle], default[:voltageAngle])
 
     push!(layout.area, area)
     push!(layout.lossZone, lossZone)
@@ -178,16 +179,16 @@ addBus!(system; label = 1, reactive = -4)
 ```
 """
 macro bus(kwargs...)
-    for key in keys(bus[:factor])
-        bus[:factor][key] = factor[key]
+    for key in keys(factor)
+        template[:bus][key] = factor[key]
     end
 
     for kwarg in kwargs
         parameter = kwarg.args[1]
 
-        if haskey(bus[:default], parameter)
+        if haskey(template[:bus], parameter)
             value = kwarg.args[2]
-            bus[:default][parameter] = eval(value)
+            template[:bus][parameter] = eval(value)
         else
             throw(ErrorException("The keyword $parameter is illegal."))
         end
@@ -275,8 +276,8 @@ The branch is defined with the following keywords:
 * `shiftAngle` (rad or deg): transformer phase shift angle, where positive value defines delay
 * `minDiffAngle` (rad or deg): minimum voltage angle difference value between from and to bus
 * `maxDiffAngle` (rad or deg): maximum voltage angle difference value between from and to bus.
-* `longTerm` (pu or VA, W): short-term rating (equal to zero for unlimited)
-* `shortTerm` (pu or VA, W): long-term rating (equal to zero for unlimited)
+* `longTerm` (pu or VA, W): long-term rating (equal to zero for unlimited)
+* `shortTerm` (pu or VA, W): short-term rating (equal to zero for unlimited)
 * `emergency` (pu or VA, W): emergency rating (equal to zero for unlimited)
 * `type`: types of `longTerm`, `shortTerm`, and `emergency` ratings:
   * `type = 1`: apparent power flow (pu or VA)
@@ -315,18 +316,18 @@ addBranch!(system; label = 1, from = 1, to = 2, reactance = 0.12, shiftAngle = 1
 ```
 """
 function addBranch!(system::PowerSystem;
-    label::T, from::T, to::T, status::T = branch[:default][:status],
+    label::T, from::T, to::T, status::T = template[:branch][:status],
     resistance::T = missing, reactance::T = missing, susceptance::T = missing,
-    turnsRatio::T = branch[:default][:turnsRatio], shiftAngle::T = missing,
+    turnsRatio::T = template[:branch][:turnsRatio], shiftAngle::T = missing,
     minDiffAngle::T = missing, maxDiffAngle::T = missing,
     longTerm::T = missing, shortTerm::T = missing, emergency::T = missing,
-    type::T = branch[:default][:type])
+    type::T = template[:branch][:type])
 
     parameter = system.branch.parameter
     rating = system.branch.rating
     voltage = system.branch.voltage
     layout = system.branch.layout
-    default = branch[:default]
+    default = template[:branch]
 
     prefixPower = system.base.power.prefix
     basePower = system.base.power.value
@@ -368,13 +369,13 @@ function addBranch!(system::PowerSystem;
     push!(layout.status, status)
 
     apparentScale = si2pu(prefixPower, basePower, factor[:apparentPower])
-    apparentScaleDef = si2pu(prefixPower, basePower, branch[:factor][:apparentPower])
+    apparentScaleDef = si2pu(prefixPower, basePower, default[:apparentPower])
 
     prefix, base = baseImpedance(system, system.base.voltage.value[layout.from[end]], turnsRatio)
     impedanceScale = si2pu(prefix, base, factor[:impedance])
-    impedanceScaleDef = si2pu(prefix, base, branch[:factor][:impedance])
+    impedanceScaleDef = si2pu(prefix, base, default[:impedance])
     admittanceScale = si2pu(1 / prefix, 1 / base, factor[:admittance])
-    admittanceScaleDef = si2pu(1 / prefix, 1 / base, branch[:factor][:admittance])
+    admittanceScaleDef = si2pu(1 / prefix, 1 / base, default[:admittance])
 
     pushData!(parameter.resistance, resistance, impedanceScale, default[:resistance], impedanceScaleDef)
     pushData!(parameter.reactance, reactance, impedanceScale, default[:reactance], impedanceScaleDef)
@@ -382,17 +383,17 @@ function addBranch!(system::PowerSystem;
         throw(ErrorException("At least one of the keywords resistance and reactance must be defined."))
     end
     pushData!(parameter.susceptance, susceptance, admittanceScale, default[:susceptance], admittanceScaleDef)
-    pushData!(parameter.shiftAngle, shiftAngle, factor[:voltageAngle], default[:shiftAngle], branch[:factor][:voltageAngle])
+    pushData!(parameter.shiftAngle, shiftAngle, factor[:voltageAngle], default[:shiftAngle], default[:voltageAngle])
     push!(parameter.turnsRatio, turnsRatio)
 
-    pushData!(voltage.minDiffAngle, minDiffAngle, factor[:voltageAngle], default[:minDiffAngle], branch[:factor][:voltageAngle])
-    pushData!(voltage.maxDiffAngle, maxDiffAngle, factor[:voltageAngle], default[:maxDiffAngle], branch[:factor][:voltageAngle])
+    pushData!(voltage.minDiffAngle, minDiffAngle, factor[:voltageAngle], default[:minDiffAngle], default[:voltageAngle])
+    pushData!(voltage.maxDiffAngle, maxDiffAngle, factor[:voltageAngle], default[:maxDiffAngle], default[:voltageAngle])
 
     ratingScale = apparentScale
     ratingScaleDef = apparentScaleDef
     if type == 2
         ratingScale = si2pu(prefixPower, basePower, factor[:activePower])
-        ratingScaleDef = si2pu(prefixPower, basePower, branch[:factor][:activePower])
+        ratingScaleDef = si2pu(prefixPower, basePower, default[:activePower])
     end
     pushData!(rating.shortTerm, shortTerm, ratingScale, default[:shortTerm], ratingScaleDef)
     pushData!(rating.emergency, emergency, ratingScale, default[:emergency], ratingScaleDef)
@@ -456,16 +457,16 @@ addBranch!(system; label = 1, from = 1, to = 2, reactance = 0.12)
 ```
 """
 macro branch(kwargs...)
-    for key in keys(branch[:factor])
-        branch[:factor][key] = factor[key]
+    for key in keys(factor)
+        template[:branch][key] = factor[key]
     end
 
     for kwarg in kwargs
         parameter = kwarg.args[1]
 
-        if haskey(branch[:default], parameter)
+        if haskey(template[:branch], parameter)
             value = kwarg.args[2]
-            branch[:default][parameter] = eval(value)
+            template[:branch][parameter] = eval(value)
         else
             throw(ErrorException("The keyword $parameter is illegal."))
         end
@@ -686,7 +687,7 @@ addGenerator!(system; label = 1, bus = 1, active = 50, reactive = 10, magnitude 
 """
 function addGenerator!(system::PowerSystem;
     label::T, bus::T,
-    area::T = generator[:default][:area], status::T = generator[:default][:status],
+    area::T = template[:generator][:area], status::T = template[:generator][:status],
     active::T = missing, reactive::T = missing, magnitude::T = missing,
     minActive::T = missing, maxActive::T = missing, minReactive::T = missing,
     maxReactive::T = missing, lowActive::T = missing, minLowReactive::T = missing,
@@ -700,7 +701,7 @@ function addGenerator!(system::PowerSystem;
     cost = system.generator.cost
     voltage = system.generator.voltage
     layout = system.generator.layout
-    default = generator[:default]
+    default = template[:generator]
 
     prefixPower = system.base.power.prefix
     basePower = system.base.power.value
@@ -725,9 +726,9 @@ function addGenerator!(system::PowerSystem;
     activeScale = si2pu(system.base.power.prefix, system.base.power.value, factor[:activePower])
     reactiveScale = si2pu(system.base.power.prefix, system.base.power.value, factor[:reactivePower])
 
-    voltageScaleDef = si2pu(prefixVoltage, system.base.voltage.value[busIndex], generator[:factor][:voltageMagnitude])
-    activeScaleDef = si2pu(prefixPower, basePower, generator[:factor][:activePower])
-    reactiveScaleDef = si2pu(prefixPower, basePower, generator[:factor][:reactivePower])
+    voltageScaleDef = si2pu(prefixVoltage, system.base.voltage.value[busIndex], default[:voltageMagnitude])
+    activeScaleDef = si2pu(prefixPower, basePower, default[:activePower])
+    reactiveScaleDef = si2pu(prefixPower, basePower, default[:reactivePower])
 
     system.generator.number += 1
     setindex!(system.generator.label, system.generator.number, label)
@@ -814,16 +815,16 @@ addGenerator!(system; label = 1, bus = 1, active = 50, reactive = 10)
 ```
 """
 macro generator(kwargs...)
-    for key in keys(generator[:factor])
-        generator[:factor][key] = factor[key]
+    for key in keys(factor)
+        template[:generator][key] = factor[key]
     end
 
     for kwarg in kwargs
         parameter = kwarg.args[1]
 
-        if haskey(generator[:default], parameter)
+        if haskey(template[:generator], parameter)
             value = kwarg.args[2]
-            generator[:default][parameter] = eval(value)
+            template[:generator][parameter] = eval(value)
         else
             throw(ErrorException("The keyword $parameter is illegal."))
         end

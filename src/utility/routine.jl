@@ -107,47 +107,35 @@ macro default(mode::Symbol)
     end
 
     if mode == :template || mode == :bus
-        for key in keys(bus[:default])
-            bus[:default][key] = 0.0
+        for key in keys(template[:bus])
+            template[:bus][key] = 0.0
         end
-        bus[:default][:type] = 1
-        bus[:default][:magnitude] = 1.0
-        bus[:default][:base] = 138e3
-
-        for key in keys(bus[:factor])
-            bus[:factor][key] = 0.0
-        end
-        bus[:factor][:voltageAngle] = 1.0
-        bus[:factor][:currentAngle] = 1.0
-        bus[:factor][:baseVoltage] = 1.0
+        template[:bus][:type] = 1
+        template[:bus][:magnitude] = 1.0
+        template[:bus][:base] = 138e3
+        template[:bus][:voltageAngle] = 1.0
+        template[:bus][:currentAngle] = 1.0
+        template[:bus][:baseVoltage] = 1.0
     end
 
     if mode == :template || mode == :branch
-        for key in keys(branch[:default])
-            branch[:default][key] = 0.0
+        for key in keys(template[:branch])
+            template[:branch][key] = 0.0
         end
-        branch[:default][:status] = 1
-        branch[:default][:type] = 1
-
-        for key in keys(branch[:factor])
-            branch[:factor][key] = 0.0
-        end
-        branch[:factor][:voltageAngle] = 1.0
-        branch[:factor][:currentAngle] = 1.0
+        template[:branch][:status] = 1
+        template[:branch][:type] = 1
+        template[:branch][:voltageAngle] = 1.0
+        template[:branch][:currentAngle] = 1.0
     end
 
     if mode == :template || mode == :generator
-        for key in keys(generator[:default])
-            generator[:default][key] = 0.0
+        for key in keys(template[:generator])
+           template[:generator][key] = 0.0
         end
-        generator[:default][:status] = 1
-        generator[:default][:magnitude] = 1.0
-
-        for key in keys(generator[:factor])
-            generator[:factor][key] = 0.0
-        end
-        generator[:factor][:voltageAngle] = 1.0
-        generator[:factor][:currentAngle] = 1.0
+       template[:generator][:status] = 1
+       template[:generator][:magnitude] = 1.0
+       template[:generator][:voltageAngle] = 1.0
+       template[:generator][:currentAngle] = 1.0
     end
 end
 

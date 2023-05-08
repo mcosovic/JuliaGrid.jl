@@ -1,22 +1,82 @@
+######### Polar Coordinate ##########
 mutable struct Polar
     magnitude::Array{Float64,1}
     angle::Array{Float64,1}
 end
 
+######### Polar Angle Coordinate ##########
+mutable struct PolarAngle
+    angle::Array{Float64,1}
+end
+
+######### Cartesian Coordinate ##########
 mutable struct Cartesian
     active::Array{Float64,1}
     reactive::Array{Float64,1}
 end
 
+######### Cartesian Real Coordinate ##########
+mutable struct CartesianReal
+    active::Array{Float64,1}
+end
+
+######### Cartesian Imaginary Coordinate ##########
 mutable struct CartesianImag
     reactive::Array{Float64,1}
 end
 
+######### Bus ##########
+mutable struct PowerBus
+    injection::Cartesian
+    supply::Cartesian
+    shunt::Cartesian
+end
+
+mutable struct CurrentBus
+    injection::Polar
+end
+
+mutable struct DCPowerBus
+    injection::CartesianReal
+    supply::CartesianReal
+end
+
+######### Branch ##########
+mutable struct PowerBranch
+    from::Cartesian
+    to::Cartesian
+    shunt::CartesianImag
+    loss::Cartesian
+end
+
+mutable struct CurrentBranch
+    from::Polar
+    to::Polar
+    impedance::Polar
+end
+
+mutable struct DCPowerBranch
+    from::CartesianReal
+    to::CartesianReal
+end
+
+######### Generator ##########
+mutable struct PowerGenerator
+    active::Array{Float64,1}
+    reactive::Array{Float64,1}
+end
+
+mutable struct DCPowerGenerator
+    active::Array{Float64,1}
+end
+
+######### Types ##########
 const N = Union{Float64, Int64}
 const T = Union{Float64, Int64, Missing}
 
-const bus = Dict(
-    :default => Dict(
+######### Template ##########
+const template = Dict(
+    :bus => Dict(
         :type => 1,
         :active => 0.0,
         :reactive => 0.0,
@@ -29,8 +89,6 @@ const bus = Dict(
         :base => 138e3,
         :area => 0,
         :lossZone => 0,
-    ),
-    :factor => Dict(
         :activePower => 0.0,
         :reactivePower => 0.0,
         :apparentPower => 0.0,
@@ -41,11 +99,8 @@ const bus = Dict(
         :impedance => 0.0,
         :admittance => 0.0,
         :baseVoltage => 1.0
-    )
-)
-
-const branch = Dict(
-    :default => Dict(
+    ),
+    :branch => Dict(
         :status => 1,
         :resistance => 0.0,
         :reactance => 0.0,
@@ -57,9 +112,7 @@ const branch = Dict(
         :longTerm => 0.0,
         :shortTerm => 0.0,
         :emergency => 0.0,
-        :type => 1
-    ),
-    :factor => Dict(
+        :type => 1,
         :activePower => 0.0,
         :reactivePower => 0.0,
         :apparentPower => 0.0,
@@ -68,12 +121,10 @@ const branch = Dict(
         :currentMagnitude => 0.0,
         :currentAngle => 1.0,
         :impedance => 0.0,
-        :admittance => 0.0
-    )
-)
-
-const generator = Dict(
-    :default => Dict(
+        :admittance => 0.0,
+        :baseVoltage => 1.0
+    ),
+    :generator => Dict(
         :status => 1,
         :active => 0.0,
         :reactive => 0.0,
@@ -92,9 +143,7 @@ const generator = Dict(
         :reactiveTimescale => 0.0,
         :reserve10min => 0.0,
         :reserve30min => 0.0,
-        :area => 0
-    ),
-    :factor => Dict(
+        :area => 0,
         :activePower => 0.0,
         :reactivePower => 0.0,
         :apparentPower => 0.0,
@@ -103,22 +152,7 @@ const generator = Dict(
         :currentMagnitude => 0.0,
         :currentAngle => 1.0,
         :impedance => 0.0,
-        :admittance => 0.0
-    )
-)
-
-const setting = Dict(
-    :optimization => Dict(
-        :slack => true,
-        :polynomial => true,
-        :piecewise => true,
-        :capability => true,
-        :flow => true,
-        :difference => true,
-        :balance => true,
-        :addBridges => true,
-        :stringNames => true,
-    ),
-    :estimation => Dict(
+        :admittance => 0.0,
+        :baseVoltage => 1.0
     )
 )

@@ -1,6 +1,6 @@
 abstract type ACPowerFlow end
 
-######### Newton-Raphson Struct ##########
+######### Newton-Raphson ##########
 struct NewtonRaphson <: ACPowerFlow
     voltage::Polar
     jacobian::SparseMatrixCSC{Float64,Int64}
@@ -10,7 +10,7 @@ struct NewtonRaphson <: ACPowerFlow
     pvpq::Array{Int64,1}
 end
 
-######### Fast Newton-Raphson Struct ##########
+######### Fast Newton-Raphson ##########
 struct FastNewtonRaphsonModel
     jacobian::SparseMatrixCSC{Float64,Int64}
     mismatch::Array{Float64,1}
@@ -26,7 +26,7 @@ struct FastNewtonRaphson <: ACPowerFlow
     pvpq::Array{Int64,1}
 end
 
-######### Gauss-Seidel Struct ##########
+######### Gauss-Seidel ##########
 struct GaussSeidel <: ACPowerFlow
     voltage::Polar
     complex::Array{ComplexF64,1}
@@ -35,41 +35,10 @@ struct GaussSeidel <: ACPowerFlow
     pv::Array{Int64,1}
 end
 
-######### DC Power Flow Struct ##########
+######### DC Power Flow ##########
 struct DCPowerFlow
-    voltage::Polar
+    voltage::PolarAngle
     factorization::Union{Factorization, Diagonal}
-end
-
-######### Bus Struct ##########
-mutable struct PowerBus
-    injection::Cartesian
-    supply::Cartesian
-    shunt::Cartesian
-end
-
-mutable struct CurrentBus
-    injection::Polar
-end
-
-######### Branch Struct ##########
-mutable struct PowerBranch
-    from::Cartesian
-    to::Cartesian
-    shunt::CartesianImag
-    loss::Cartesian
-end
-
-mutable struct CurrentBranch
-    from::Polar
-    to::Polar
-    impedance::Polar
-end
-
-######### Generator ##########
-mutable struct PowerGenerator
-    active::Array{Float64,1}
-    reactive::Array{Float64,1}
 end
 
 """
@@ -968,8 +937,8 @@ composite type.
 # Returns
 The function returns an instance of the `DCPowerFlow` type, which includes the following filled
 fields:
-- voltage: the angles of bus voltages
-- factorization: the factorized nodal matrix.
+- `voltage`: the angles of bus voltages
+- `factorization`: the factorized nodal matrix.
 
 # Example
 ```jldoctest
@@ -1001,9 +970,7 @@ function dcPowerFlow(system::PowerSystem)
         dc.nodalMatrix[bus.layout.slack, dc.nodalMatrix.rowval[i]] = elementsRemove[k]
     end
 
-    method = "DC Power Flow"
-
-    return DCPowerFlow(Polar(Float64[], Float64[]), factorization)
+    return DCPowerFlow(PolarAngle(Float64[]), factorization)
 end
 
 """

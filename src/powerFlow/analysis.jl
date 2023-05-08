@@ -5,14 +5,14 @@ The function computes the powers and currents associated with buses in the AC po
 framework.
 
 # Returns
-The function returns two instances of composite types.
+The function returns two instances of types.
 
-The `PowerBus` composite type contains the following fields:
+The `PowerBus` type contains the following fields:
 - `injection`: the active and reactive power injections
 - `supply`: the active and reactive power injected by the generators
 - `shunt`: the active and reactive power associated with shunt elements.
 
-The `CurrentBus` composite type contains the following field:
+The `CurrentBus` type contains the following field:
 - `injection`: the magnitude and angle of current injections.
 
 # Example
@@ -90,7 +90,7 @@ end
 The function returns the active powers associated with buses in the DC power flow framework.
 
 # Returns
-The `PowerBus` composite type contains the following populated fields:
+The `DCPowerBus` type contains the following fields:
 - `injection`: the active power injections
 - `supply`: the active power injected by the generators.
 
@@ -125,7 +125,7 @@ function analysisBus(system::PowerSystem, model::DCPowerFlow)
     end
     powerSupply[slack] = bus.demand.active[slack] + powerInjection[slack]
 
-    return PowerBus(Cartesian(powerInjection, Float64[]), Cartesian(powerSupply, Float64[]), Cartesian(Float64[], Float64[]))
+    return DCPowerBus(CartesianReal(powerInjection), CartesianReal(powerSupply))
 end
 
 """
@@ -135,15 +135,15 @@ The function returns the powers and currents associated with branches in the AC 
 framework.
 
 # Returns
-The function returns two instances of composite types.
+The function returns two instances of types.
 
-The `PowerBranch` composite type contains the following fields:
+The `PowerBranch` type contains the following fields:
 - `from`: the active and reactive power flows at the from ends
 - `to`: the active and reactive power flows at the to ends
 - `shunt`: the reactive power injections
 - `loss`: the active and reactive power losses.
 
-The `CurrentBranch` composite type contains the following field:
+The `CurrentBranch` type contains the following field:
 - `from`: the magnitude and angle of current flows at from bus ends
 - `to`: the magnitude and angle of current flows at to bus ends
 - `impedance`: the magnitude and angle of current flows through series impedances.
@@ -232,7 +232,7 @@ end
 The function returns the active powers associated with branches in the DC power flow framework.
 
 # Returns
-The `PowerBus` composite type contains the following populated fields:
+The `DCPowerBranch` type contains the following fields:
 - `from`: the active power flows at the from ends
 - `to`: the active power flows at the to ends
 
@@ -261,7 +261,7 @@ function analysisBranch(system::PowerSystem, model::DCPowerFlow)
         powerTo[i] = -powerFrom[i]
     end
 
-    return PowerBranch(Cartesian(powerFrom, Float64[]), Cartesian(powerTo, Float64[]), CartesianImag(Float64[]), Cartesian(Float64[], Float64[]))
+    return DCPowerBranch(CartesianReal(powerFrom), CartesianReal(powerTo))
 end
 
 """
@@ -270,7 +270,7 @@ end
 The function return powers related to generators for the AC power flow analysis.
 
 # Returns
-The `PowerGenerator` composite type contains the following variables:
+The `PowerGenerator` type contains the following variables:
 - `active`: the active power output of the generators
 - `reactive`: the reactive power output of the generators.
 
@@ -421,7 +421,7 @@ end
 The function returns powers related to generators in the DC power flow framework.
 
 # Returns
-The `PowerGenerator` composite type contains the following populated variable:
+The `DCPowerGenerator` type contains the following field:
 - `active`: the active power output of the generators.
 
 # Example
@@ -468,5 +468,5 @@ function analysisGenerator(system::PowerSystem, model::DCPowerFlow)
         end
     end
 
-    return PowerGenerator(powerActive, Float64[])
+    return DCPowerGenerator(powerActive)
 end
