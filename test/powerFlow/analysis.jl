@@ -1,10 +1,10 @@
 system14 = powerSystem(string(pathData, "case14test.m"))
 system30 = powerSystem(string(pathData, "case30test.m"))
-topu = 1 / 100
 
-@testset "newtonRaphson, newtonRaphson!" begin
-    matpower14 = h5read(string(pathData, "case14testResult.h5"), "/nr")
-    matpower30 = h5read(string(pathData, "case30testResult.h5"), "/nr")
+@testset "Newton-Raphson Method" begin
+    field = "/acPowerFlow/newtonRaphson"
+    matpower14 = h5read(string(pathData, "case14testResult.h5"), field)
+    matpower30 = h5read(string(pathData, "case30testResult.h5"), field)
 
     ######## Modified IEEE 14-bus Test Case ##########
     acModel!(system14)
@@ -24,22 +24,22 @@ topu = 1 / 100
     generatorPower = analysisGenerator(system14, model)
 
     @test model.voltage.magnitude ≈ matpower14["Vi"]
-    @test model.voltage.angle ≈ matpower14["Ti"] * torad
+    @test model.voltage.angle ≈ matpower14["Ti"] 
     @test iteration == matpower14["iterations"][1]
 
-    @test busPower.injection.active ≈ matpower14["Pinj"] * topu
-    @test busPower.injection.reactive ≈ matpower14["Qinj"] * topu
+    @test busPower.injection.active ≈ matpower14["Pinj"] 
+    @test busPower.injection.reactive ≈ matpower14["Qinj"] 
 
-    @test branchPower.from.active ≈ matpower14["Pij"] * topu
-    @test branchPower.from.reactive ≈ matpower14["Qij"] * topu
-    @test branchPower.to.active ≈ matpower14["Pji"] * topu
-    @test branchPower.to.reactive ≈ matpower14["Qji"] * topu
-    @test branchPower.shunt.reactive ≈ matpower14["Qbranch"] * topu
-    @test branchPower.loss.active ≈ matpower14["Ploss"] * topu
-    @test branchPower.loss.reactive ≈ matpower14["Qloss"] * topu
+    @test branchPower.from.active ≈ matpower14["Pij"] 
+    @test branchPower.from.reactive ≈ matpower14["Qij"] 
+    @test branchPower.to.active ≈ matpower14["Pji"] 
+    @test branchPower.to.reactive ≈ matpower14["Qji"] 
+    @test branchPower.shunt.reactive ≈ matpower14["Qbranch"] 
+    @test branchPower.loss.active ≈ matpower14["Ploss"] 
+    @test branchPower.loss.reactive ≈ matpower14["Qloss"] 
 
-    @test generatorPower.active ≈ matpower14["Pgen"] * topu
-    @test generatorPower.reactive ≈ matpower14["Qgen"] * topu
+    @test generatorPower.active ≈ matpower14["Pgen"] 
+    @test generatorPower.reactive ≈ matpower14["Qgen"] 
 
     ######## Modified IEEE 30-bus Test Case ##########
     acModel!(system30)
@@ -59,27 +59,28 @@ topu = 1 / 100
     generatorPower = analysisGenerator(system30, model)
 
     @test model.voltage.magnitude ≈ matpower30["Vi"]
-    @test model.voltage.angle ≈ matpower30["Ti"] * torad
+    @test model.voltage.angle ≈ matpower30["Ti"]
     @test iteration == matpower30["iterations"][1]
 
-    @test busPower.injection.active ≈ matpower30["Pinj"] * topu
-    @test busPower.injection.reactive ≈ matpower30["Qinj"] * topu
+    @test busPower.injection.active ≈ matpower30["Pinj"]
+    @test busPower.injection.reactive ≈ matpower30["Qinj"]
 
-    @test branchPower.from.active ≈ matpower30["Pij"] * topu
-    @test branchPower.from.reactive ≈ matpower30["Qij"] * topu
-    @test branchPower.to.active ≈ matpower30["Pji"] * topu
-    @test branchPower.to.reactive ≈ matpower30["Qji"] * topu
-    @test branchPower.shunt.reactive ≈ matpower30["Qbranch"] * topu
-    @test branchPower.loss.active ≈ matpower30["Ploss"] * topu
-    @test branchPower.loss.reactive ≈ matpower30["Qloss"] * topu
+    @test branchPower.from.active ≈ matpower30["Pij"]
+    @test branchPower.from.reactive ≈ matpower30["Qij"]
+    @test branchPower.to.active ≈ matpower30["Pji"]
+    @test branchPower.to.reactive ≈ matpower30["Qji"]
+    @test branchPower.shunt.reactive ≈ matpower30["Qbranch"]
+    @test branchPower.loss.active ≈ matpower30["Ploss"]
+    @test branchPower.loss.reactive ≈ matpower30["Qloss"]
 
-    @test generatorPower.active ≈ matpower30["Pgen"] * topu
-    @test generatorPower.reactive ≈ matpower30["Qgen"] * topu
+    @test generatorPower.active ≈ matpower30["Pgen"]
+    @test generatorPower.reactive ≈ matpower30["Qgen"]
 end
 
-@testset "fastNewtonRaphsonBX, fastNewtonRaphson!" begin
-    matpower14 = h5read(string(pathData, "case14testResult.h5"), "/fdbx")
-    matpower30 = h5read(string(pathData, "case30testResult.h5"), "/fdbx")
+@testset "Fast Newton-Raphson BX Method" begin
+    field = "/acPowerFlow/fastNewtonRaphson/BX"
+    matpower14 = h5read(string(pathData, "case14testResult.h5"), field)
+    matpower30 = h5read(string(pathData, "case30testResult.h5"), field)
 
     ######## Modified IEEE 14-bus Test Case ##########
     acModel!(system14)
@@ -95,7 +96,7 @@ end
     end
 
     @test model.voltage.magnitude ≈ matpower14["Vi"]
-    @test model.voltage.angle ≈ matpower14["Ti"] * torad
+    @test model.voltage.angle ≈ matpower14["Ti"]
     @test iteration == matpower14["iterations"][1]
 
     ######## Modified IEEE 30-bus Test Case ##########
@@ -112,13 +113,14 @@ end
     end
 
     @test model.voltage.magnitude ≈ matpower30["Vi"]
-    @test model.voltage.angle ≈ matpower30["Ti"] * torad
+    @test model.voltage.angle ≈ matpower30["Ti"]
     @test iteration == matpower30["iterations"][1]
 end
 
-@testset "fastNewtonRaphsonXB, fastNewtonRaphson!" begin
-    matpower14 = h5read(string(pathData, "case14testResult.h5"), "/fdxb")
-    matpower30 = h5read(string(pathData, "case30testResult.h5"), "/fdxb")
+@testset "Fast Newton-Raphson XB Method" begin
+    field = "/acPowerFlow/fastNewtonRaphson/XB"
+    matpower14 = h5read(string(pathData, "case14testResult.h5"), field)
+    matpower30 = h5read(string(pathData, "case30testResult.h5"), field)
 
     ######## Modified IEEE 14-bus Test Case ##########
     acModel!(system14)
@@ -134,7 +136,7 @@ end
     end
 
     @test model.voltage.magnitude ≈ matpower14["Vi"]
-    @test model.voltage.angle ≈ matpower14["Ti"] * torad
+    @test model.voltage.angle ≈ matpower14["Ti"] 
     @test iteration == matpower14["iterations"][1]
 
     ######## Modified IEEE 30-bus Test Case ##########
@@ -151,13 +153,14 @@ end
     end
 
     @test model.voltage.magnitude ≈ matpower30["Vi"]
-    @test model.voltage.angle ≈ matpower30["Ti"] * torad
+    @test model.voltage.angle ≈ matpower30["Ti"] 
     @test iteration == matpower30["iterations"][1]
 end
 
-@testset "gaussSeidel, gaussSeidel!" begin
-    matpower14 = h5read(string(pathData, "case14testResult.h5"), "/gs")
-    matpower30 = h5read(string(pathData, "case30testResult.h5"), "/gs")
+@testset "Gauss-Seidel Method" begin
+    field = "/acPowerFlow/gaussSeidel"
+    matpower14 = h5read(string(pathData, "case14testResult.h5"), field)
+    matpower30 = h5read(string(pathData, "case30testResult.h5"), field)
 
     ######## Modified IEEE 14-bus Test Case ##########
     acModel!(system14)
@@ -173,7 +176,7 @@ end
     end
 
     @test model.voltage.magnitude ≈ matpower14["Vi"]
-    @test model.voltage.angle ≈ matpower14["Ti"] * torad
+    @test model.voltage.angle ≈ matpower14["Ti"]
     @test iteration == matpower14["iterations"][1]
 
     ######## Modified IEEE 30-bus Test Case ##########
@@ -190,13 +193,14 @@ end
     end
 
     @test model.voltage.magnitude ≈ matpower30["Vi"]
-    @test model.voltage.angle ≈ matpower30["Ti"] * torad
+    @test model.voltage.angle ≈ matpower30["Ti"]
     @test iteration == matpower30["iterations"][1]
 end
 
-@testset "dcPowerFlow" begin
-    matpower14 = h5read(string(pathData, "case14testResult.h5"), "/dc")
-    matpower30 = h5read(string(pathData, "case30testResult.h5"), "/dc")
+@testset "DC Power Flow" begin
+    field = "/dcPowerFlow"
+    matpower14 = h5read(string(pathData, "case14testResult.h5"), field)
+    matpower30 = h5read(string(pathData, "case30testResult.h5"), field)
 
     ######## Modified IEEE 14-bus Test Case ##########
     dcModel!(system14)
@@ -207,10 +211,10 @@ end
     branchPower = analysisBranch(system14, model)
     generatorPower = analysisGenerator(system14, model)
 
-    @test model.voltage.angle ≈ matpower14["Ti"] * torad
-    @test busPower.injection.active ≈ matpower14["Pinj"] * topu
-    @test branchPower.from.active ≈ matpower14["Pij"] * topu
-    @test generatorPower.active ≈ matpower14["Pgen"] * topu
+    @test model.voltage.angle ≈ matpower14["Ti"] 
+    @test busPower.injection.active ≈ matpower14["Pinj"]
+    @test branchPower.from.active ≈ matpower14["Pij"]
+    @test generatorPower.active ≈ matpower14["Pgen"]
 
     ######## Modified IEEE 30-bus Test Case ##########
     dcModel!(system30)
@@ -221,8 +225,8 @@ end
     branchPower = analysisBranch(system30, model)
     generatorPower = analysisGenerator(system30, model)
 
-    @test model.voltage.angle ≈ matpower30["Ti"] * torad
-    @test busPower.injection.active ≈ matpower30["Pinj"] * topu
-    @test branchPower.from.active ≈ matpower30["Pij"] * topu
-    @test generatorPower.active ≈ matpower30["Pgen"] * topu
+    @test model.voltage.angle ≈ matpower30["Ti"]
+    @test busPower.injection.active ≈ matpower30["Pinj"]
+    @test branchPower.from.active ≈ matpower30["Pij"]
+    @test generatorPower.active ≈ matpower30["Pgen"]
 end

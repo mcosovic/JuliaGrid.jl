@@ -1,26 +1,24 @@
 system14 = powerSystem(string(pathData, "case14test.m"))
 system30 = powerSystem(string(pathData, "case30test.m"))
-torad = pi / 180
 
-@testset "dcOptimalPowerFlow" begin
-    matpower14 = h5read(string(pathData, "case14testResult.h5"), "/dcOptimal")
-    matpower30 = h5read(string(pathData, "case30testResult.h5"), "/dcOptimal")
+@testset "DC Optimal Power Flow" begin
+    field = "/dcOptimalPowerFlow"
+    matpower14 = h5read(string(pathData, "case14testResult.h5"), field)
+    matpower30 = h5read(string(pathData, "case30testResult.h5"), field)
 
     ######## Modified IEEE 14-bus Test Case ##########
     dcModel!(system14)
+    model = dcOptimalPowerFlow(system14, HiGHS.Optimizer)
+    optimize!(system14, model)
 
-    model = Model(HiGHS.Optimizer)
-    dcOptimalPowerFlow!(system14, model)
-    result = optimizePowerFlow!(system14, model)
-    
-    @test result.bus.voltage.angle ≈ matpower14["Ti"] * torad
+    @test model.voltage.angle ≈ matpower14["Ti"] atol = 1e-10
+    @test model.output.active ≈ matpower14["Pgen"] atol = 1e-10
 
     ######## Modified IEEE 30-bus Test Case ##########
     dcModel!(system30)
-    model = Model(HiGHS.Optimizer)
+    model = dcOptimalPowerFlow(system30, HiGHS.Optimizer)
+    optimize!(system30, model)
 
-    dcOptimalPowerFlow!(system30, model)
-    result = optimizePowerFlow!(system30, model)
-    
-    @test result.bus.voltage.angle ≈ matpower30["Ti"] * torad
+    @test model.voltage.angle ≈ matpower30["Ti"] atol = 1e-10
+    @test model.output.active ≈ matpower30["Pgen"] atol = 1e-10
 end

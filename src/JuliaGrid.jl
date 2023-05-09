@@ -9,7 +9,7 @@ include("utility/setting.jl")
 
 ######### Utility ##########
 include("utility/routine.jl")
-export @enable, @disable, @default
+export @default
 
 ######## Power System ##########
 include("powerSystem/load.jl")

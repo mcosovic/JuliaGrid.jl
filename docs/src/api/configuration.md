@@ -39,10 +39,3 @@ For further information on this topic, please see the [Power System Model](@ref 
 ```@docs
 @default
 ```
----
-
-## Enable or Disable Features
-```@docs
-@enable
-@disable
-```

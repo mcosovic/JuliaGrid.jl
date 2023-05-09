@@ -6,17 +6,17 @@ struct DCOptimalPowerFlow
 end
 
 """
-    dcOptimalPowerFlow(system::PowerSystem, optimizer; bridges, names, slack, capability, 
+    dcOptimalPowerFlow(system::PowerSystem, optimizer; bridges, names, slack, capability,
         rating, difference, balance)
 
 The function takes the `PowerSystem` composite type as input to establish the structure for
-solving the DC optimal power flow. The `optimizer` argument is also required to create and 
-solve the optimization problem. If the `dcModel` field within the `PowerSystem` composite 
-type has not been created, the function will initiate an update automatically. 
+solving the DC optimal power flow. The `optimizer` argument is also required to create and
+solve the optimization problem. If the `dcModel` field within the `PowerSystem` composite
+type has not been created, the function will initiate an update automatically.
 
 # Keywords
-JuliaGrid offers the ability to manipulate the `jump` model based on the guidelines provided 
-in the [JuMP documentation](https://jump.dev/JuMP.jl/stable/reference/models/). However, 
+JuliaGrid offers the ability to manipulate the `jump` model based on the guidelines provided
+in the [JuMP documentation](https://jump.dev/JuMP.jl/stable/reference/models/). However,
 certain configurations may require different method calls, such as:
 - `bridges`: used to manage the bridging mechanism
 - `names`: used to manage the creation of string names.
@@ -59,14 +59,10 @@ dcModel!(system)
 model = dcOptimalPowerFlow(system, HiGHS.Optimizer; rating = false)
 ```
 """
-function dcOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizer_factory); 
-    addBridges::Bool = true, 
-    stringNames::Bool = true, 
-    slack::Bool = true,
-    capability::Bool = true,
-    rating::Bool = true,
-    difference::Bool = true,
-    balance::Bool = true)
+function dcOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizer_factory);
+    bridges::Bool = true, names::Bool = true,
+    slack::Bool = true, capability::Bool = true, rating::Bool = true,
+    difference::Bool = true, balance::Bool = true)
 
     bus = system.bus
     branch = system.branch
@@ -76,8 +72,9 @@ function dcOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizer_factor
         dcModel!(system)
     end
 
-    model = Model(optimizer_factory; add_bridges = addBridges)
-    set_string_names_on_creation(model, stringNames)
+    model = Model(optimizer_factory; add_bridges = bridges)
+    set_string_names_on_creation(model, names)
+
 
     @variable(model, angle[i = 1:bus.number])
     @variable(model, active[i = 1:generator.number])
@@ -153,7 +150,7 @@ function dcOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizer_factor
                     limit = branch.rating.longTerm[i] / system.dcModel.admittance[i]
                     @constraint(model, - limit + branch.parameter.shiftAngle[i] <= θij <= limit + branch.parameter.shiftAngle[i], base_name = "rating[$i]")
                 end
-                if difference && branch.voltage.minDiffAngle[i] > -2*pi && branch.voltage.maxDiffAngle[i] < 2*pi 
+                if difference && branch.voltage.minDiffAngle[i] > -2*pi && branch.voltage.maxDiffAngle[i] < 2*pi
                     @constraint(model, branch.voltage.minDiffAngle[i] <= θij <= branch.voltage.maxDiffAngle[i], base_name = "difference[$i]")
                 end
             end
@@ -177,10 +174,10 @@ end
 """
     optimize!(system::PowerSystem, model::DCOptimalPowerFlow)
 
-The function finds the DC optimal power flow solution and calculate the angles of bus 
+The function finds the DC optimal power flow solution and calculate the angles of bus
 voltages and active power output of the generators.
 
-The calculated voltage angles and active powers are then stored in the `angle` variable of 
+The calculated voltage angles and active powers are then stored in the `angle` variable of
 the `voltage` field and the `active` variable of the `power` field.
 
 # Example

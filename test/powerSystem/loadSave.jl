@@ -1,4 +1,4 @@
-@testset "powerSystem, savePowerSystem" begin
+@testset "Load and Save Power System" begin
     systemMat = powerSystem(string(pathData, "case14test.m"))
     savePowerSystem(systemMat; path = string(pathData, "case14test.h5"))
     systemH5 = powerSystem(string(pathData, "case14test.h5"))
@@ -97,7 +97,7 @@
     @test systemMat.base.voltage.prefix == systemH5.base.voltage.prefix
 end
 
-@testset "base" begin
+@testset "Base Values" begin
     systemMat = powerSystem(string(pathData, "case14test.m"))
     @base(systemMat, MVA, kV)
 
