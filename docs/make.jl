@@ -21,9 +21,8 @@ makedocs(
             "DC Power Flow" => "tutorials/dcPowerFlow.md"],
         "API Reference" =>
             ["Power System Model" => "api/powerSystemModel.md",
-            "Power Flow Solution" => "api/powerFlowSolution.md",
+            "Power Flow" => "api/powerFlow.md",
             "Optimal Power Flow Solution" => "api/optimaPowerFlowSolution.md",
-            "Postprocessing Analysis" => "api/postprocessing.md",
             "Configuration Setup" => "api/configuration.md"]
     ]
 )
