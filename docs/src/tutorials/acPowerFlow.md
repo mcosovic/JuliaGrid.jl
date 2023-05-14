@@ -142,7 +142,7 @@ Here, we utilize a "flat start" approach in our method. It is important to keep 
 ---
 
 ##### Iterative Process
-To implement the Newton-Raphson method, the iterative approach based on the Taylor series expansion, JuliaGrid provides the [`mismatch!`](@ref mismatch!) and [`solve!`](@ref solve!) functions. These functions are utilized to carry out the Newton-Raphson method iteratively until a stopping criterion is reached, as demonstrated in the following code snippet:
+To implement the Newton-Raphson method, the iterative approach based on the Taylor series expansion, JuliaGrid provides the [`mismatch!`](@ref mismatch!(::PowerSystem, ::NewtonRaphson)) and [`solve!`](@ref solve!(::PowerSystem, ::NewtonRaphson)) functions. These functions are utilized to carry out the Newton-Raphson method iteratively until a stopping criterion is reached, as demonstrated in the following code snippet:
 ```@example PowerFlowSolution
 for iteration = 1:100
     stopping = mismatch!(system, model)
@@ -153,7 +153,7 @@ for iteration = 1:100
 end
 ```
 
-The [`mismatch!`](@ref mismatch!) function calculates the mismatch in active power injection for demand and generator buses and the mismatch in reactive power injection for demand buses at each iteration ``\nu = \{1, 2, \dots\}``. The equations used for these computations are:
+The [`mismatch!`](@ref mismatch!(::PowerSystem, ::NewtonRaphson)) function calculates the mismatch in active power injection for demand and generator buses and the mismatch in reactive power injection for demand buses at each iteration ``\nu = \{1, 2, \dots\}``. The equations used for these computations are:
 ```math
   f_{P_i}(\mathbf x^{(\nu-1)}) = {V}_{i}^{(\nu-1)}\sum\limits_{j=1}^n {V}_{j}^{(\nu-1)}(G_{ij}\cos\theta_{ij}^{(\nu-1)}+B_{ij}\sin\theta_{ij}^{(\nu-1)}) - {P}_{i},
   \;\;\; i \in \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}},
@@ -168,13 +168,13 @@ The resulting vector from these calculations is stored in the `mismatch` variabl
 𝐟 = model.mismatch
 ```
 
-In addition to computing the mismatches in active and reactive power injection, the [`mismatch!`](@ref mismatch!) function also returns the maximum absolute values of these mismatches. These maximum values are used as termination criteria for the iteration loop if both are less than a predefined stopping criterion ``\epsilon``:
+In addition to computing the mismatches in active and reactive power injection, the [`mismatch!`](@ref mismatch!(::PowerSystem, ::NewtonRaphson)) function also returns the maximum absolute values of these mismatches. These maximum values are used as termination criteria for the iteration loop if both are less than a predefined stopping criterion ``\epsilon``:
 ```math
     \max \{|f_{P_i}(\mathbf x^{(\nu-1)})|,\; i \in \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}} \} < \epsilon \\
     \max \{|f_{Q_i}(\mathbf x^{(\nu-1)})|,\; i \in \mathcal{N}_{\text{pq}} \} < \epsilon.
 ```
 
-Next, the function [`solve!`](@ref solve!) computes the increments of bus voltage angle and magnitude at each iteration using the equation:
+Next, the function [`solve!`](@ref solve!(::PowerSystem, ::NewtonRaphson)) computes the increments of bus voltage angle and magnitude at each iteration using the equation:
 ```math
   \mathbf{\Delta} \mathbf{x}^{(\nu-1)} = -\mathbf{J}(\mathbf{x}^{(\nu-1)})^{-1} \mathbf{f}(\mathbf{x}^{(\nu-1)}),
 ```
@@ -186,7 +186,7 @@ where ``\mathbf{\Delta} \mathbf{x} = [\mathbf \Delta \mathbf x_a, \mathbf \Delta
 
 The JuliaGrid implementation of the AC power flow follows a specific order to store the increment and mismatch vectors. The first ``n-1`` elements of both vectors correspond to the demand and generator buses in the same order as they appear in the input data. This order is not obtained by first extracting the demand and then generator buses but by excluding the slack bus in the input data. The first ``n-1`` elements of the increment vector correspond to the voltage angle increments, while the first ``n-1`` elements of the mismatch vector correspond to the mismatch in active power injections. The last ``n_{\text{pq}}`` elements of the increment and mismatch vectors correspond to the demand buses in the order they appear in the input data. For the increment vector, it matches the bus voltage magnitude increments, while for the mismatch vector, it matches the mismatch in reactive power injections. As a analysis, this order defines the row and column order of the Jacobian matrix ``\mathbf{J}(\mathbf{x})``.
 
-Finally, the function [`solve!`](@ref solve!) adds the computed increment term to the previous solution to obtain a new solution:
+Finally, the function [`solve!`](@ref solve!(::PowerSystem, ::NewtonRaphson)) adds the computed increment term to the previous solution to obtain a new solution:
 ```math
   \mathbf {x}^{(\nu)} = \mathbf {x}^{(\nu-1)} + \mathbf \Delta \mathbf {x}^{(\nu-1)}.
 ```
@@ -512,7 +512,7 @@ Additionally, during this stage, JuliaGrid generates the starting vectors for bu
 ---
 
 ##### Iterative Process
-JuliaGrid offers the [`mismatch!`](@ref mismatch!) and [`solve!`](@ref solve!) functions to implement the fast Newton-Raphson method iterations. These functions are used iteratively until a stopping criterion is met, as shown in the code snippet below:
+JuliaGrid offers the [`mismatch!`](@ref mismatch!(::PowerSystem, ::FastNewtonRaphson)) and [`solve!`](@ref solve!(::PowerSystem, ::FastNewtonRaphson)) functions to implement the fast Newton-Raphson method iterations. These functions are used iteratively until a stopping criterion is met, as shown in the code snippet below:
 ```@example PowerFlowSolution
 for iteration = 1:100
     stopping = mismatch!(system, model)
@@ -532,7 +532,7 @@ The functions ``\mathbf{f}_{P}(\mathbf x)`` and ``\mathbf{f}_{Q}(\mathbf x)`` re
     \;\;\; i \in \mathcal{N}_{\text{pq}}.
   \end{aligned}
 ```
-Therefore, the [`mismatch!`](@ref mismatch!) function calculates the mismatch in active power injection for demand and generator buses and the mismatch in reactive power injection for demand buses at each iteration ``\nu = \{1, 2, \dots\}``:
+Therefore, the [`mismatch!`](@ref mismatch!(::PowerSystem, ::FastNewtonRaphson)) function calculates the mismatch in active power injection for demand and generator buses and the mismatch in reactive power injection for demand buses at each iteration ``\nu = \{1, 2, \dots\}``:
 ```math
   {h}_{P_i}(\mathbf {x}^{(\nu-1)}) =
   \sum\limits_{j=1}^n {V}_{j}^{(\nu-1)}(G_{ij}\cos\theta_{ij}^{(\nu-1)}+B_{ij}\sin\theta_{ij}^{(\nu-1)}) - \cfrac{{P}_{i}}{{V}_{i}^{(\nu-1)}},
@@ -550,13 +550,13 @@ The resulting vectors from these calculations are stored in the `Model` composit
 𝐡ₒ = model.reactive.increment
 ```
 
-In addition to computing the mismatches in active and reactive power injection, the [`mismatch!`](@ref mismatch!) function also returns the maximum absolute values of these mismatches. These maximum values are used as termination criteria for the iteration loop if both are less than a predefined stopping criterion ``\epsilon``:
+In addition to computing the mismatches in active and reactive power injection, the [`mismatch!`](@ref mismatch!(::PowerSystem, ::FastNewtonRaphson)) function also returns the maximum absolute values of these mismatches. These maximum values are used as termination criteria for the iteration loop if both are less than a predefined stopping criterion ``\epsilon``:
 ```math
     \max \{|h_{P_i}(\mathbf x^{(\nu)})|,\; i \in \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}} \} < \epsilon \\
     \max \{|h_{Q_i}(\mathbf x^{(\nu)})|,\; i \in \mathcal{N}_{\text{pq}} \} < \epsilon.
 ```
 
-Next, the function [`solve!`](@ref solve!) computes the bus voltage angle increments:
+Next, the function [`solve!`](@ref solve!(::PowerSystem, ::FastNewtonRaphson)) computes the bus voltage angle increments:
 ```math
   \mathbf \Delta \mathbf x_a^{(\nu-1)} = \mathbf{B}_1^{-1} \mathbf{h}_{P}(\mathbf x_a^{(\nu-1)}, \mathbf x_m^{(\nu-1)}).
 ```
@@ -634,7 +634,7 @@ This results in the creation of the starting vectors of bus voltage magnitudes `
 ---
 
 ##### Iterative Process
-JuliaGrid offers the [`mismatch!`](@ref mismatch!) and [`solve!`](@ref solve!) functions to implement the Gauss-Seidel method iterations. These functions are used iteratively until a stopping criterion is met, as shown in the code snippet below:
+JuliaGrid offers the [`mismatch!`](@ref mismatch!(::PowerSystem, ::GaussSeidel)) and [`solve!`](@ref solve!(::PowerSystem, ::GaussSeidel)) functions to implement the Gauss-Seidel method iterations. These functions are used iteratively until a stopping criterion is met, as shown in the code snippet below:
 ```@example PowerFlowSolution
 for iteration = 1:300
     stopping = mismatch!(system, model)
@@ -645,7 +645,7 @@ for iteration = 1:300
 end
 ```
 
-In contrast to the Newton-Raphson and Fast Newton-Raphson methods, the Gauss-Seidel method does not require the calculation of the mismatch in active and reactive power injection at each iteration. Instead, the [`mismatch!`](@ref mismatch!) function is used solely to verify the convergence criteria. At each iteration ``\nu = \{1, 2, \dots\}``, we calculate the active power injection mismatch for demand and generator buses, as shown below:
+In contrast to the Newton-Raphson and Fast Newton-Raphson methods, the Gauss-Seidel method does not require the calculation of the mismatch in active and reactive power injection at each iteration. Instead, the [`mismatch!`](@ref mismatch!(::PowerSystem, ::GaussSeidel)) function is used solely to verify the convergence criteria. At each iteration ``\nu = \{1, 2, \dots\}``, we calculate the active power injection mismatch for demand and generator buses, as shown below:
 ```math
     {f}_{P_i}(\mathbf x^{(\nu-1)}) = \Re\{\bar{V}_i^{(\nu - 1)} \bar{I}_i^{*(\nu - 1)}\} - P_i, \;\;\; i \in \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}},
 ```
@@ -660,7 +660,7 @@ However, these mismatches are not stored as they are only used to obtain the max
     \max \{|{f}_{Q_i}(\mathbf x^{(\nu-1)})|,\; i \in \mathcal{N}_{\text{pq}} \} < \epsilon
 ```
 
-After initializing complex bus voltages ``\bar{V}_i^{(0)}`` for all buses in the power system, the function [`solve!`](@ref solve!) proceeds to compute the voltages for demand buses using the Gauss-Seidel method:
+After initializing complex bus voltages ``\bar{V}_i^{(0)}`` for all buses in the power system, the function [`solve!`](@ref solve!(::PowerSystem, ::GaussSeidel)) proceeds to compute the voltages for demand buses using the Gauss-Seidel method:
 ```math
     \bar{V}_{i}^{(\nu)} =
     \cfrac{1}{{Y}_{ii}} \Bigg(\cfrac{{P}_{i} - j{Q}_{i}}{\bar{V}_{i}^{*(\nu-1)}} -
@@ -692,7 +692,7 @@ JuliaGrid stores the final results in vectors that contain all bus voltage magni
 ---
 
 ## [Bus Powers and Currents](@id BusPowersCurrentsTutorials)
-After the computation of voltage magnitudes and angles at each bus, various electrical quantities can be determined. JuliaGrid provides the [`analysisBus`](@ref analysisBus) function to compute powers and currents linked to buses. Here is an example code snippet:
+After the computation of voltage magnitudes and angles at each bus, various electrical quantities can be determined. JuliaGrid provides the [`analysisBus`](@ref analysisBus(::PowerSystem, ::ACPowerFlow)) function to compute powers and currents linked to buses. Here is an example code snippet:
 ```@example PowerFlowSolution
 power, current = analysisBus(system, model)
 nothing # hide
@@ -733,7 +733,7 @@ Active and reactive power injections are stored as the vectors ``\mathbf{P} = [P
 ----
 
 ##### Power Injected by the Generators
-The [`analysisBus`](@ref analysisBus) function in JuliaGrid also computes the active and reactive powers that generators inject to the buses. The active power supplied by the generators to the buses can be calculated by summing the given generator active powers in the input data, except for the slack bus, which can be determined as:
+The [`analysisBus`](@ref analysisBus(::PowerSystem, ::ACPowerFlow)) function in JuliaGrid also computes the active and reactive powers that generators inject to the buses. The active power supplied by the generators to the buses can be calculated by summing the given generator active powers in the input data, except for the slack bus, which can be determined as:
 ```math
     P_{\text{s}i} = P_i + P_{\text{d}i},\;\;\; i \in \mathcal{N}_{\text{sb}},
 ```
@@ -768,7 +768,7 @@ The active power demanded by the shunt element at each bus is represented by the
 
 
 ## [Branch Powers and Currents](@id BranchPowersCurrentsTutorials)
-JuliaGrid provides the [`analysisBranch`](@ref analysisBranch) function to compute powers and currents linked to branches. Here is an example code snippet:
+JuliaGrid provides the [`analysisBranch`](@ref analysisBranch(::PowerSystem, ::ACPowerFlow)) function to compute powers and currents linked to branches. Here is an example code snippet:
 ```@example PowerFlowSolution
 power, current = analysisBranch(system, model)
 nothing # hide
@@ -880,7 +880,7 @@ To retrieve the vector of injected reactive powers ``\mathbf{Q}_{\text{r}} = [Q_
 
 
 ## [Generator Powers](@id GeneratorPowersTutorials)
-The [`analysisGenerator`](@ref analysisGenerator) function provided by JuliaGrid can be used to compute powers associated with generators. Here is an example code snippet:
+The [`analysisGenerator`](@ref analysisGenerator(::PowerSystem, ::ACPowerFlow)) function provided by JuliaGrid can be used to compute powers associated with generators. Here is an example code snippet:
 ```@example PowerFlowSolution
 power = analysisGenerator(system, model)
 nothing # hide

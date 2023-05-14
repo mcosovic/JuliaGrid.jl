@@ -9,13 +9,13 @@ To create the `Model` composite type and set up a framework for solving AC or DC
 * [`dcPowerFlow`](@ref dcPowerFlow).
 
 To solve the power flow problem and obtain bus voltages, the following functions can be employed:
-* [`mismatch!`](@ref mismatch!)
-* [`solve!`](@ref solve!).
+* [`mismatch!`](@ref mismatch!(::PowerSystem, ::NewtonRaphson))
+* [`solve!`](@ref solve!(::PowerSystem, ::NewtonRaphson)).
 
 JuliaGrid offers a set of postprocessing analysis functions for calculating powers, losses, and currents associated with buses, branches, or generators after obtaining AC or DC power flow solutions:
-* [`analysisBus`](@ref analysisBus)
-* [`analysisBranch`](@ref analysisBranch)
-* [`analysisGenerator`](@ref analysisGenerator).
+* [`analysisBus`](@ref analysisBus(::PowerSystem, ::ACPowerFlow))
+* [`analysisBranch`](@ref analysisBranch(::PowerSystem, ::ACPowerFlow))
+* [`analysisGenerator`](@ref analysisGenerator(::PowerSystem, ::ACPowerFlow)).
 
 Finally, the package provides two additional functions. One function validates the reactive power limits of generators once the AC power flow solution has been computed. The other function adjusts the voltage angles to match the angle of an arbitrary bus:
 * [`reactiveLimit!`](@ref reactiveLimit!)
@@ -194,9 +194,9 @@ Once the AC model is defined, we can choose the method to solve the power flow p
 model = newtonRaphson(system)
 nothing # hide
 ```
-This function sets up the desired method for an iterative process based on two functions: [`mismatch!`](@ref mismatch!) and [`solve!`](@ref solve!). The [`mismatch!`](@ref mismatch!) function calculates the active and reactive power injection mismatches using the given voltage magnitudes and angles, while [`solve!`](@ref solve!) computes the new voltage magnitudes and angles.
+This function sets up the desired method for an iterative process based on two functions: [`mismatch!`](@ref mismatch!(::PowerSystem, ::NewtonRaphson)) and [`solve!`](@ref solve!(::PowerSystem, ::NewtonRaphson)). The [`mismatch!`](@ref mismatch!) function calculates the active and reactive power injection mismatches using the given voltage magnitudes and angles, while [`solve!`](@ref solve!(::PowerSystem, ::NewtonRaphson)) computes the new voltage magnitudes and angles.
 
-To perform an iterative process with the Newton-Raphson or Fast Newton-Raphson methods in JuliaGrid, the [`mismatch!`](@ref mismatch!) function must be included inside the iteration loop. For instance:
+To perform an iterative process with the Newton-Raphson or Fast Newton-Raphson methods in JuliaGrid, the [`mismatch!`](@ref mismatch!(::PowerSystem, ::NewtonRaphson)) function must be included inside the iteration loop. For instance:
 ```@example ACPowerFlowSolution
 for iteration = 1:100
     mismatch!(system, model)
@@ -315,7 +315,7 @@ end
 ```
 
 !!! note "Info"
-    The functions [`newtonRaphson`](@ref newtonRaphson), [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX), [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB), or [`gaussSeidel`](@ref gaussSeidel) only modify the `PowerSystem` type to eliminate mistakes in the bus types as explained in the section [Bus Type Modification](@ref BusTypeModificationManual). Further, the functions [`mismatch!`](@ref mismatch!) and [`solve!`](@ref solve!) do not modify the `PowerSystem` type at all. Therefore, it is safe to use the same `PowerSystem` type for multiple analyses once it has been created.
+    The functions [`newtonRaphson`](@ref newtonRaphson), [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX), [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB), or [`gaussSeidel`](@ref gaussSeidel) only modify the `PowerSystem` type to eliminate mistakes in the bus types as explained in the section [Bus Type Modification](@ref BusTypeModificationManual). Further, the functions [`mismatch!`](@ref mismatch!(::PowerSystem, ::NewtonRaphson)) and [`solve!`](@ref solve!(::PowerSystem, ::NewtonRaphson)) do not modify the `PowerSystem` type at all. Therefore, it is safe to use the same `PowerSystem` type for multiple analyses once it has been created.
 
 ---
 
@@ -369,7 +369,7 @@ model = dcPowerFlow(system)
 nothing # hide
 ```
 
-To obtain the bus voltage angles, we can call the [`solve!`](@ref solve!) function as follows:
+To obtain the bus voltage angles, we can call the [`solve!`](@ref solve!(::PowerSystem, ::DCPowerFlow)) function as follows:
 ```@example DCPowerFlowSolution
 solve!(system, model)
 nothing # hide
@@ -419,7 +419,7 @@ Here, the previously factorized nodal matrix is utilized to obtain the new solut
 ---
 
 ## [Power and Current Analysis](@id PowerCurrentAnalysisManual)
-After obtaining the solution from the AC or DC power flow, we can calculate various electrical quantities related to buses, branches, and generators using the [`analysisBus`](@ref analysisBus), [`analysisBranch`](@ref analysisBranch), and [`analysisGenerator`](@ref analysisGenerator) functions. For instance, let us consider the power system for which we obtained the AC power flow solution:
+After obtaining the solution from the AC or DC power flow, we can calculate various electrical quantities related to buses, branches, and generators using the [`analysisBus`](@ref analysisBus(::PowerSystem, ::ACPowerFlow)), [`analysisBranch`](@ref analysisBranch(::PowerSystem, ::ACPowerFlow)), and [`analysisGenerator`](@ref analysisGenerator(::PowerSystem, ::ACPowerFlow)) functions. For instance, let us consider the power system for which we obtained the AC power flow solution:
 ```@example ComputationPowersCurrentsLosses
 using JuliaGrid # hide
 
@@ -466,7 +466,7 @@ system.base.power.value * busPower.injection.reactive
 ```
 
 !!! note "Info"
-    We recommend that readers refer to the tutorials on [AC power flow](@ref ACPowerFlowTutorials) and [DC power flow](@ref DCPowerFlowTutorials) for a detailed explanation of all the electrical quantities related to buses, branches, and generators that are computed by the functions [`analysisBus`](@ref analysisBus), [`analysisBranch`](@ref analysisBranch), and [`analysisGenerator`](@ref analysisGenerator) in the context of power flow analysis.
+    We recommend that readers refer to the tutorials on [AC power flow](@ref ACPowerFlowTutorials) and [DC power flow](@ref DCPowerFlowTutorials) for a detailed explanation of all the electrical quantities related to buses, branches, and generators that are computed by the functions [`analysisBus`](@ref analysisBus(::PowerSystem, ::ACPowerFlow)), [`analysisBranch`](@ref analysisBranch(::PowerSystem, ::ACPowerFlow)), and [`analysisGenerator`](@ref analysisGenerator(::PowerSystem, ::ACPowerFlow)) in the context of power flow analysis.
 
 ---
 
@@ -513,7 +513,7 @@ The output reactive power of the observed generators is subject to limits which 
 [system.generator.capability.minReactive system.generator.capability.maxReactive]
 ```
 
-Once the solution of the AC power flow analysis is obtained, the [`analysisGenerator`](@ref analysisGenerator) function can be called to compute the reactive power output of generators:
+Once the solution of the AC power flow analysis is obtained, the [`analysisGenerator`](@ref analysisGenerator(::PowerSystem, ::ACPowerFlow)) function can be called to compute the reactive power output of generators:
 ```@repl GeneratorReactivePowerLimits
 power.reactive
 ```

@@ -88,7 +88,7 @@ Finally, the resulting bus voltage angles are saved in the vector as follows:
 
 
 ## [Bus Powers](@id DCBusPowersTutorials)
-JuliaGrid's [`analysisBus`](@ref analysisBus) function can be used to compute powers associated with buses. Here is an example code snippet:
+JuliaGrid's [`analysisBus`](@ref analysisBus(::PowerSystem, ::DCPowerFlow)) function can be used to compute powers associated with buses. Here is an example code snippet:
 ```@example PowerFlowSolutionDC
 power = analysisBus(system, model)
 nothing # hide
@@ -115,7 +115,7 @@ where ``P_{\text{d}i}`` represents the active power demanded by consumers at the
 ---
 
 ## [Branch Powers](@id DCBranchPowersTutorials)
-To compute powers associated with branches, JuliaGrid provides the [`analysisBranch`](@ref analysisBranch) function. Here is an example code snippet:
+To compute powers associated with branches, JuliaGrid provides the [`analysisBranch`](@ref analysisBranch(::PowerSystem, ::DCPowerFlow)) function. Here is an example code snippet:
 ```@example PowerFlowSolutionDC
 power = analysisBranch(system, model)
 nothing # hide
@@ -142,7 +142,7 @@ The resulting active power flows at to bus end are stored as the vector ``\mathb
 ---
 
 ## [Generator Powers](@id DCGeneratorPowersTutorials)
-To compute powers associated with generators, JuliaGrid provides the [`analysisGenerator`](@ref analysisGenerator) function. Here is an example code snippet:
+To compute powers associated with generators, JuliaGrid provides the [`analysisGenerator`](@ref analysisGenerator(::PowerSystem, ::DCPowerFlow)) function. Here is an example code snippet:
 ```@example PowerFlowSolutionDC
 power = analysisGenerator(system, model)
 nothing # hide

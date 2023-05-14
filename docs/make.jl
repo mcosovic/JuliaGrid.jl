@@ -22,7 +22,7 @@ makedocs(
         "API Reference" =>
             ["Power System Model" => "api/powerSystemModel.md",
             "Power Flow" => "api/powerFlow.md",
-            "Optimal Power Flow Solution" => "api/optimaPowerFlowSolution.md",
+            "Optimal Power Flow Solution" => "api/optimaPowerFlow.md",
             "Configuration Setup" => "api/configuration.md"]
     ]
 )
