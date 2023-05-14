@@ -68,7 +68,7 @@ solve!(::PowerSystem, ::GaussSeidel)
 
 ---
 
-###### Power and Current Analysis
+## Power and Current Analysis
 ```@docs
 analysisBus(::PowerSystem, ::ACPowerFlow)
 analysisBranch(::PowerSystem, ::ACPowerFlow)

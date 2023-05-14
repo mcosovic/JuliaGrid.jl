@@ -534,7 +534,7 @@ end
 
 
 """
-    mismatch!(system::PowerSystem, model::NewtonRaphson)
+    mismatch!(system::PowerSystem, model::FastNewtonRaphson)
 
 The function calculates both active and reactive power injection mismatches and returns 
 their maximum absolute values. These values can be used to terminate the iteration loop of 
