@@ -41,6 +41,10 @@ struct DCPowerFlow
     factorization::Union{Factorization, Diagonal}
 end
 
+######### Export ##########
+export NewtonRaphson, FastNewtonRaphson, GaussSeidel, ACPowerFlow
+export DCPowerFlow
+
 """
     newtonRaphson(system::PowerSystem)
 

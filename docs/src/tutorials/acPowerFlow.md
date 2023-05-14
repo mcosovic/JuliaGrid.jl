@@ -1,4 +1,4 @@
-# [AC Power Flow Analysis](@id ACPowerFlowAnalysisTutorials)
+# [AC Power Flow](@id ACPowerFlowTutorials)
 
 JuliaGrid utilizes standard network components and leverages the [unified branch model](@ref UnifiedBranchModelTutorials) to perform power flow analysis, enabling the definition of load profiles, generator capacities, voltage specifications, contingency analysis, and planning.
 

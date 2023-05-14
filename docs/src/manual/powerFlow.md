@@ -1,5 +1,5 @@
-# [Power Flow Analysis](@id PowerFlowAnalysisManual)
-In order to conduct an AC or DC power flow analysis, you will need the `PowerSystem` composite type that has been created with either the `acModel` or `dcModel`. Following this, you will need to create the `Model` composite type to establish the AC or DC power flow analysis.
+# [Power Flow](@id PowerFlowManual)
+In order to conduct an AC or DC power flow, you will need the `PowerSystem` composite type that has been created with either the `acModel` or `dcModel`. Following this, you will need to create the `Model` composite type to establish the AC or DC power flow framework.
 
 To create the `Model` composite type and set up a framework for solving AC or DC power flow, utilize one of the functions listed below:
 * [`newtonRaphson`](@ref newtonRaphson)
@@ -221,7 +221,7 @@ nothing # hide
 In these examples, the algorithms run until the specified number of iterations is reached.
 
 !!! note "Info"
-    We recommend that the reader refer to the tutorial on [AC power flow analysis](@ref ACPowerFlowAnalysisTutorials), where we explain the implementation of the methods and algorithm structures in detail.
+    We recommend that the reader refer to the tutorial on [AC power flow analysis](@ref ACPowerFlowTutorials), where we explain the implementation of the methods and algorithm structures in detail.
 
 ---
 
@@ -381,7 +381,7 @@ nothing # hide
 ```
 
 !!! note "Info"
-    We recommend that readers refer to the tutorial on [DC power flow analysis](@ref DCPowerFlowAnalysisTutorials) for insights into the implementation.
+    We recommend that readers refer to the tutorial on [DC power flow](@ref DCPowerFlowTutorials) for insights into the implementation.
 
 ---
 
@@ -466,7 +466,7 @@ system.base.power.value * busPower.injection.reactive
 ```
 
 !!! note "Info"
-    We recommend that readers refer to the tutorials on [AC power flow analysis](@ref ACPowerFlowAnalysisTutorials) and [DC power flow analysis](@ref DCPowerFlowAnalysisTutorials) for a detailed explanation of all the electrical quantities related to buses, branches, and generators that are computed by the functions [`analysisBus`](@ref analysisBus), [`analysisBranch`](@ref analysisBranch), and [`analysisGenerator`](@ref analysisGenerator) in the context of power flow analysis.
+    We recommend that readers refer to the tutorials on [AC power flow](@ref ACPowerFlowTutorials) and [DC power flow](@ref DCPowerFlowTutorials) for a detailed explanation of all the electrical quantities related to buses, branches, and generators that are computed by the functions [`analysisBus`](@ref analysisBus), [`analysisBranch`](@ref analysisBranch), and [`analysisGenerator`](@ref analysisGenerator) in the context of power flow analysis.
 
 ---
 

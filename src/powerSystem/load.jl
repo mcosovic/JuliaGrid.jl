@@ -182,6 +182,8 @@ mutable struct PowerSystem
     dcModel::DCModel
 end
 
+export PowerSystem
+
 """
     powerSystem(file::String)
 

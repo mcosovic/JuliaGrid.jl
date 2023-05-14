@@ -25,7 +25,7 @@ For further information on this topic, please see the [Power System Analysis](@r
 
 ## Build Model
 ```@docs
-newtonRaphson
+newtonRaphson(::PowerSystem)
 fastNewtonRaphsonBX
 fastNewtonRaphsonXB
 gaussSeidel
