@@ -441,7 +441,7 @@ function gaussSeidel(system::PowerSystem)
 end
 
 """
-    mismatch!(system::PowerSystem, model::Method) where Method <: ACPowerFlow
+    mismatch!(system::PowerSystem, model::NewtonRaphson)
 
 The function calculates both active and reactive power injection mismatches and returns their
 maximum absolute values, which can be utilized to terminate the iteration loop of methods
@@ -505,6 +505,39 @@ function mismatch!(system::PowerSystem, model::NewtonRaphson)
     return stopActive, stopReactive
 end
 
+
+
+"""
+    mismatch!(system::PowerSystem, model::FastNewtonRaphson)
+
+The function calculates both active and reactive power injection mismatches and returns their
+maximum absolute values, which can be utilized to terminate the iteration loop of methods
+employed to solve the AC power flow problem.
+
+This function updates the mismatch variables in the Newton-Raphson and fast Newton-Raphson
+methods. It should be employed during the iteration loop before invoking the
+[`solve!`](@ref solve!) function.
+
+In contrast, the Gauss-Seidel method does not need mismatches to obtain bus voltages, but the
+maximum absolute values are commonly employed to stop the iteration loop. The function does not
+save any data and should be utilized during the iteration loop before invoking the
+[`solve!`](@ref solve!) function.
+
+# Subtypes
+The `ACPowerFlow` abstract type can take the following subtypes:
+- `NewtonRaphson`: computes the power mismatches within the Newton-Raphson method
+- `FastNewtonRaphson`: computes the power mismatches within the fast Newton-Raphson method
+- `GaussSeidel`: computes the power mismatches within the Gauss-Seidel method.
+
+# Example
+```jldoctest
+system = powerSystem("case14.h5")
+acModel!(system)
+
+model = newtonRaphson(system)
+mismatch!(system, model)
+```
+"""
 function mismatch!(system::PowerSystem, model::FastNewtonRaphson)
     ac = system.acModel
     bus = system.bus

@@ -25,9 +25,11 @@ For further information on this topic, please see the [Power System Analysis](@r
 
 ## Build Model
 ```@docs
-newtonRaphson(::PowerSystem)
+newtonRaphson
+mismatch!(::PowerSystem, ::NewtonRaphson)
 fastNewtonRaphsonBX
 fastNewtonRaphsonXB
+mismatch!(::PowerSystem, ::FastNewtonRaphson)
 gaussSeidel
 dcPowerFlow
 ```
