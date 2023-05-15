@@ -14,14 +14,16 @@ makedocs(
         "Introduction" => "index.md",
         "Manual" =>
             ["Power System Model" => "manual/powerSystemModel.md",
-            "Power Flow" => "manual/powerFlow.md"],
+            "AC Power Flow" => "manual/acPowerFlow.md",
+            "DC Power Flow" => "manual/dcPowerFlow.md"],
         "Tutorials" =>
             ["AC and DC Model" => "tutorials/acdcModel.md",
             "AC Power Flow" => "tutorials/acPowerFlow.md",
             "DC Power Flow" => "tutorials/dcPowerFlow.md"],
         "API Reference" =>
             ["Power System Model" => "api/powerSystemModel.md",
-            "Power Flow" => "api/powerFlow.md",
+            "AC Power Flow" => "api/acPowerFlow.md",
+            "DC Power Flow" => "api/dcPowerFlow.md",
             "Optimal Power Flow" => "api/optimaPowerFlow.md",
             "Configuration Setup" => "api/configuration.md"]
     ]
