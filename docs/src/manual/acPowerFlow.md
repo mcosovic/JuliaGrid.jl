@@ -1,23 +1,20 @@
-# [Power Flow](@id PowerFlowManual)
-In order to conduct an AC or DC power flow, you will need the `PowerSystem` composite type that has been created with either the `acModel` or `dcModel`. Following this, you will need to create the `Model` composite type to establish the AC or DC power flow framework.
-
-To create the `Model` composite type and set up a framework for solving AC or DC power flow, utilize one of the functions listed below:
+# [AC Power Flow](@id ACPowerFlowManual)
+To conduct an AC power flow analysis, you will first need the `PowerSystem` composite type that has been created with the `acModel`. Then, you can create the `Model` composite type using one of the following functions:
 * [`newtonRaphson`](@ref newtonRaphson)
 * [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX)
 * [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB)
 * [`gaussSeidel`](@ref gaussSeidel)
-* [`dcPowerFlow`](@ref dcPowerFlow).
 
-To solve the power flow problem and obtain bus voltages, the following functions can be employed:
+These functions will set up the AC power flow framework. To obtain bus voltages and solve the power flow problem, you can use the following functions:
 * [`mismatch!`](@ref mismatch!(::PowerSystem, ::NewtonRaphson))
 * [`solve!`](@ref solve!(::PowerSystem, ::NewtonRaphson)).
 
-JuliaGrid offers a set of postprocessing analysis functions for calculating powers, losses, and currents associated with buses, branches, or generators after obtaining AC or DC power flow solutions:
+After obtaining the AC power flow solution, JuliaGrid offers post-processing analysis functions for calculating powers, losses, and currents associated with buses, branches, or generators:
 * [`analysisBus`](@ref analysisBus(::PowerSystem, ::ACPowerFlow))
 * [`analysisBranch`](@ref analysisBranch(::PowerSystem, ::ACPowerFlow))
 * [`analysisGenerator`](@ref analysisGenerator(::PowerSystem, ::ACPowerFlow)).
 
-Finally, the package provides two additional functions. One function validates the reactive power limits of generators once the AC power flow solution has been computed. The other function adjusts the voltage angles to match the angle of an arbitrary bus:
+Additionally, the package provides two functions for reactive power limit validation of generators and adjusting the voltage angles to match an arbitrary bus angle:
 * [`reactiveLimit!`](@ref reactiveLimit!)
 * [`adjustAngle!`](@ref adjustAngle!).
 
@@ -167,7 +164,7 @@ Thus, we start with the set of voltage magnitude values that are constant throug
 
 ---
 
-## [AC Power Flow Solution](@id ACPowerFlowSolutionManual)
+## [Power Flow Solution](@id ACPowerFlowSolutionManual)
 To solve the AC power flow problem using JuliaGrid, we first need to create the `PowerSystem` composite type and define the AC model by calling the [`acModel!`](@ref acModel!) function. Here is an example:
 ```@example ACPowerFlowSolution
 using JuliaGrid # hide
@@ -194,7 +191,7 @@ Once the AC model is defined, we can choose the method to solve the power flow p
 model = newtonRaphson(system)
 nothing # hide
 ```
-This function sets up the desired method for an iterative process based on two functions: [`mismatch!`](@ref mismatch!(::PowerSystem, ::NewtonRaphson)) and [`solve!`](@ref solve!(::PowerSystem, ::NewtonRaphson)). The [`mismatch!`](@ref mismatch!) function calculates the active and reactive power injection mismatches using the given voltage magnitudes and angles, while [`solve!`](@ref solve!(::PowerSystem, ::NewtonRaphson)) computes the new voltage magnitudes and angles.
+This function sets up the desired method for an iterative process based on two functions: [`mismatch!`](@ref mismatch!(::PowerSystem, ::NewtonRaphson)) and [`solve!`](@ref solve!(::PowerSystem, ::NewtonRaphson)). The [`mismatch!`](@ref mismatch!(::PowerSystem, ::NewtonRaphson)) function calculates the active and reactive power injection mismatches using the given voltage magnitudes and angles, while [`solve!`](@ref solve!(::PowerSystem, ::NewtonRaphson)) computes the new voltage magnitudes and angles.
 
 To perform an iterative process with the Newton-Raphson or Fast Newton-Raphson methods in JuliaGrid, the [`mismatch!`](@ref mismatch!(::PowerSystem, ::NewtonRaphson)) function must be included inside the iteration loop. For instance:
 ```@example ACPowerFlowSolution
@@ -210,7 +207,7 @@ model.voltage.magnitude
 model.voltage.angle
 ```
 
-In contrast, the iterative loop of the Gauss-Seidel method does not require the [`mismatch!`](@ref mismatch!) function:
+In contrast, the iterative loop of the Gauss-Seidel method does not require the [`mismatch!`](@ref mismatch!(::PowerSystem, ::NewtonRaphson))) function:
 ```@example ACPowerFlowSolution
 model = gaussSeidel(system)
 for iteration = 1:100
@@ -226,7 +223,7 @@ In these examples, the algorithms run until the specified number of iterations i
 ---
 
 ##### Breaking the Iterative Process
-You can terminate the iterative process using the [`mismatch!`](@ref mismatch!) function, which is why mismatches are computed separately. The following code shows an example of how to use the [`mismatch!`](@ref mismatch!) function to break out of the iteration loop:
+You can terminate the iterative process using the [`mismatch!`](@ref mismatch!(::PowerSystem, ::NewtonRaphson)) function, which is why mismatches are computed separately. The following code shows an example of how to use the the function to break out of the iteration loop:
 ```@example ACPowerFlowSolution
 model = newtonRaphson(system)
 for iteration = 1:100
@@ -238,14 +235,14 @@ for iteration = 1:100
 end
 nothing # hide
 ```
-The [`mismatch!`](@ref mismatch!) function returns the maximum absolute values of active and reactive power injection mismatches, which are commonly used as a convergence criterion in iterative AC power flow algorithms. Note that the [`mismatch!`](@ref mismatch!) function can also be used to terminate the loop when using the Gauss-Seidel method, even though it is not required.
+The [`mismatch!`](@ref mismatch!(::PowerSystem, ::NewtonRaphson)) function returns the maximum absolute values of active and reactive power injection mismatches, which are commonly used as a convergence criterion in iterative AC power flow algorithms. Note that the function can also be used to terminate the loop when using the Gauss-Seidel method, even though it is not required.
 
 !!! tip "Tip"
     To ensure an accurate count of iterations, it is important for the user to place the iteration counter after the condition expressions within the if construct. Counting the iterations before this point can result in an incorrect number of iterations, as it leads to an additional iteration being performed.
 
 ---
 
-## [Reusable Types for AC Power Flow](@id ReusableTypesACPowerFlowModel)
+## [Reusable Power Flow Types](@id ACReusablePowerFlowTypesManual)
 The `PowerSystem` composite type with its `acModel` field can be used without limitations, and can be modified automatically using functions like [`shuntBus!`](@ref shuntBus!), [`statusBranch!`](@ref statusBranch!), [`parameterBranch!`](@ref parameterBranch!), [`statusGenerator!`](@ref statusGenerator!), and [`outputGenerator!`](@ref outputGenerator!) functions. This allows the `PowerSystem` type to be shared across different analyses.
 
 Additionally, the `Model` composite type can also be reused within the same method that solves the AC power flow problem.
@@ -341,85 +338,8 @@ Here, the previously created `PowerSystem` and `Model` types are reused. This ap
 
 ---
 
-## [DC Power Flow Solution](@id DCPowerFlowSolutionManual)
-To solve the DC power flow problem using JuliaGrid, we start by creating the `PowerSystem` composite type and defining the DC model with the [`dcModel!`](@ref dcModel!) function. Here is an example:
-```@example DCPowerFlowSolution
-using JuliaGrid # hide
-
-system = powerSystem()
-
-addBus!(system; label = 1, type = 3)
-addBus!(system; label = 2, type = 1, active = 0.1)
-addBus!(system; label = 3, type = 1, active = 0.05)
-
-addBranch!(system; label = 1, from = 1, to = 2, reactance = 0.05)
-addBranch!(system; label = 2, from = 1, to = 3, reactance = 0.01)
-addBranch!(system; label = 3, from = 2, to = 3, reactance = 0.01)
-
-addGenerator!(system; label = 1, bus = 2, active = 3.2)
-
-dcModel!(system)
-
-nothing # hide
-```
-
-The [`dcPowerFlow`](@ref dcPowerFlow) function can be used to establish the DC power flow problem. It factorizes the nodal matrix to prepare for determining the bus voltage angles:
-```@example DCPowerFlowSolution
-model = dcPowerFlow(system)
-nothing # hide
-```
-
-To obtain the bus voltage angles, we can call the [`solve!`](@ref solve!(::PowerSystem, ::DCPowerFlow)) function as follows:
-```@example DCPowerFlowSolution
-solve!(system, model)
-nothing # hide
-```
-Once the solution is obtained, the bus voltage angles can be accessed using:
-```@repl DCPowerFlowSolution
-model.voltage.angle
-nothing # hide
-```
-
-!!! note "Info"
-    We recommend that readers refer to the tutorial on [DC power flow](@ref DCPowerFlowTutorials) for insights into the implementation.
-
----
-
-## [Reusable Types for DC Power Flow](@id ReusableTypesDCPowerFlowModel)
-The `PowerSystem` composite type with its `dcModel` field can be utilized without restrictions and can be modified automatically using functions such as [`shuntBus!`](@ref shuntBus!), [`statusBranch!`](@ref statusBranch!), [`parameterBranch!`](@ref parameterBranch!), [`statusGenerator!`](@ref statusGenerator!), and [`outputGenerator!`](@ref outputGenerator!). This facilitates sharing the `PowerSystem` type across various DC power flow analyses.
-
-Furthermore, the `Model` composite type can be reused within the same method used to solve the DC power flow problem.
-
----
-
-##### Reusable PowerSystem Type
-Once you have created the power system and DC model, you can reuse them for multiple DC power flow analyses. Specifically, you can modify the structure of the power system using the [`statusBranch!`](@ref statusBranch!) and [`parameterBranch!`](@ref parameterBranch!) functions without having to recreate the system from scratch. As an example, let us say we wish to take the branch labelled 3 out-of-service from the previous example and conduct the DC power flow again:
-```@example DCPowerFlowSolution
-statusBranch!(system; label = 3, status = 0)
-
-model = dcPowerFlow(system)
-solve!(system, model)
-nothing # hide
-```
-
----
-
-##### Reusable Model Type
-The `Model` composite type contains a factorized nodal matrix, which means that users can reuse it when only modifying shunt or generator parameters and keeping the power system's branch parameters the same. This allows for more efficient computations as the factorization step is not repeated.
-
-Therefore, by using only the functions [`shuntBus!`](@ref shuntBus!), [`statusGenerator!`](@ref statusGenerator!) and [`outputGenerator!`](@ref outputGenerator!), the `Model` composite type can be reused. For example, to change the output of the generator and compute the bus voltage angles again, one can use the following code:
-```@example DCPowerFlowSolution
-outputGenerator!(system; label = 1, active = 0.5)
-
-solve!(system, model)
-nothing # hide
-```
-Here, the previously factorized nodal matrix is utilized to obtain the new solution, which is more efficient than repeating the factorization step.
-
----
-
-## [Power and Current Analysis](@id PowerCurrentAnalysisManual)
-After obtaining the solution from the AC or DC power flow, we can calculate various electrical quantities related to buses, branches, and generators using the [`analysisBus`](@ref analysisBus(::PowerSystem, ::ACPowerFlow)), [`analysisBranch`](@ref analysisBranch(::PowerSystem, ::ACPowerFlow)), and [`analysisGenerator`](@ref analysisGenerator(::PowerSystem, ::ACPowerFlow)) functions. For instance, let us consider the power system for which we obtained the AC power flow solution:
+## [Power and Current Analysis](@id ACPowerCurrentAnalysisManual)
+After obtaining the solution from the AC power flow, we can calculate various electrical quantities related to buses, branches, and generators using the [`analysisBus`](@ref analysisBus(::PowerSystem, ::ACPowerFlow)), [`analysisBranch`](@ref analysisBranch(::PowerSystem, ::ACPowerFlow)), and [`analysisGenerator`](@ref analysisGenerator(::PowerSystem, ::ACPowerFlow)) functions. For instance, let us consider the power system for which we obtained the AC power flow solution:
 ```@example ComputationPowersCurrentsLosses
 using JuliaGrid # hide
 
@@ -449,24 +369,65 @@ end
 nothing # hide
 ```
 
-Next, we can use the above-mentioned functions to compute the relevant data for buses, branches, and generators. Here is an example code snippet that demonstrates this process:
+After that, we can convert the base power unit to megavolt-amperes (MVA) to display the results in that unit as follows:
 ```@example ComputationPowersCurrentsLosses
-busPower, busCurrent = analysisBus(system, model)
-branchPower, branchCurrent = analysisBranch(system, model)
-generatorPower = analysisGenerator(system, model)
+@base(system, MVA, V)
 
 nothing # hide
 ```
 
-For instance, we can now observe the active and reactive power injections in megawatts (MW) and megavolt-ampere reactive (MVAr) using the code snippet below:
+---
+
+##### Bus Powers and Currents
+Now we can calculate the powers and currents related to buses using the following function:
+```@example ComputationPowersCurrentsLosses
+power, current = analysisBus(system, model)
+
+nothing # hide
+```
+For example, to display the active and reactive power injections in megawatts (MW) and megavolt-ampere reactive (MVAr), we can use the following code:
 ```@repl ComputationPowersCurrentsLosses
-@base(system, MVA, V);
-system.base.power.value * busPower.injection.active
-system.base.power.value * busPower.injection.reactive
+system.base.power.value * power.injection.active
+system.base.power.value * power.injection.reactive
 ```
 
 !!! note "Info"
-    We recommend that readers refer to the tutorials on [AC power flow](@ref ACPowerFlowTutorials) and [DC power flow](@ref DCPowerFlowTutorials) for a detailed explanation of all the electrical quantities related to buses, branches, and generators that are computed by the functions [`analysisBus`](@ref analysisBus(::PowerSystem, ::ACPowerFlow)), [`analysisBranch`](@ref analysisBranch(::PowerSystem, ::ACPowerFlow)), and [`analysisGenerator`](@ref analysisGenerator(::PowerSystem, ::ACPowerFlow)) in the context of power flow analysis.
+    We note that for a detailed explanation of all the electrical quantities related to buses computed by the [`analysisBus`](@ref analysisBus(::PowerSystem, ::ACPowerFlow)) function, we recommend referring to the tutorials on [AC power flow analysis](@ref BusPowersCurrentsTutorials).
+
+---
+
+##### Branch Powers and Currents
+Similarly, we can compute the powers and currents related to branches using the following function:
+```@example ComputationPowersCurrentsLosses
+power, current = analysisBranch(system, model)
+
+nothing # hide
+```
+For instance, to display the active power flows at branches in megawatts (MW), we can use the following code:
+```@repl ComputationPowersCurrentsLosses
+system.base.power.value * power.from.active
+system.base.power.value * power.to.active
+```
+
+!!! note "Info"
+    We note that for a detailed explanation of all the electrical quantities related to branches computed by the [`analysisBranch`](@ref analysisBranch(::PowerSystem, ::ACPowerFlow)) function, we recommend referring to the tutorials on [AC power flow analysis](@ref BranchPowersCurrentsTutorials).
+
+---
+
+##### Generator Powers
+Finally, we can compute the output powers of the generators using the function:
+```@example ComputationPowersCurrentsLosses
+power = analysisGenerator(system, model)
+
+nothing # hide
+```
+For example, to display the active power produced by generators in megawatts (MW), we can use the following code:
+```@repl ComputationPowersCurrentsLosses
+system.base.power.value * power.active
+```
+
+!!! note "Info"
+    We note that for a detailed explanation of all the electrical quantities related to generators computed by the [`analysisGenerator`](@ref analysisGenerator(::PowerSystem, ::ACPowerFlow)) function, we recommend referring to the tutorials on [AC power flow analysis](@ref GeneratorPowersTutorials).
 
 ---
 
