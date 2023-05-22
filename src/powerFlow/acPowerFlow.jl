@@ -430,7 +430,7 @@ end
 
 
 """
-    mismatch!(system::PowerSystem, model::ACPowerFlow)
+    mismatch!(system::PowerSystem, model::Method) where Method<:ACPowerFlow
 
 The function calculates both active and reactive power injection mismatches and returns 
 their maximum absolute values, which can be utilized to terminate the iteration loop of 
@@ -563,7 +563,7 @@ function mismatch!(system::PowerSystem, model::GaussSeidel)
 end
 
 """
-    solve!(system::PowerSystem, model::ACPowerFlow) 
+    solve!(system::PowerSystem, model::Method) where Method<:ACPowerFlow
 
 The function employs the Newton-Raphson, fast Newton-Raphson, or Gauss-Seidel method to 
 solve the AC power flow problem and calculate the magnitudes and angles of bus voltages.
@@ -660,8 +660,6 @@ function solve!(system::PowerSystem, model::NewtonRaphson)
     end
 end
 
-
-
 function solve!(system::PowerSystem, model::FastNewtonRaphson)
     ac = system.acModel
     bus = system.bus
@@ -700,7 +698,6 @@ function solve!(system::PowerSystem, model::FastNewtonRaphson)
         end
     end
 end
-
 
 function solve!(system::PowerSystem, model::GaussSeidel)
     ac = system.acModel

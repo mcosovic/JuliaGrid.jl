@@ -14,7 +14,7 @@ For further information on this topic, please see the [Power System Analysis](@r
 
 ###### Solve AC Power Flow
 * [`mismatch!`](@ref mismatch!)
-* [`solve!`](@ref solve!(::PowerSystem, ::ACPowerFlow))
+* [`solve!`](@ref solve!)
 
 ###### Additional AC Power Flow Functions
 * [`reactiveLimit!`](@ref reactiveLimit!)
