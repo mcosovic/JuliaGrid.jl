@@ -30,7 +30,7 @@ dcModel!(system)
 model = dcPowerFlow(system)
 solve!(system, model)
 
-power = power(system, model)
+powers = power(system, model)
 ```
 
 Compute powers after obtaining the DC optimal power flow solution:
@@ -41,7 +41,7 @@ dcModel!(system)
 model = dcOptimalPowerFlow(system)
 optimize!(system, model)
 
-power = power(system, model)
+powers = power(system, model)
 ```
 """
 function power(system::PowerSystem, model::DCPowerFlow)
@@ -161,7 +161,7 @@ dcModel!(system)
 model = dcPowerFlow(system)
 solve!(system, model)
     
-power = powerBus(system, model; label = 2)
+powers = powerBus(system, model; label = 2)
 ```
     
 Compute the powers of a specific bus after obtaining the DC optimal power flow solution:
@@ -172,7 +172,7 @@ dcModel!(system)
 model = dcOptimalPowerFlow(system)
 optimize!(system, model)
     
-power = powerBus(system, model; label = 2)
+powers = powerBus(system, model; label = 2)
 ```
 """
 function powerBus(system::PowerSystem, model::DCPowerFlow; label)
@@ -254,7 +254,7 @@ dcModel!(system)
 model = dcPowerFlow(system)
 solve!(system, model)
             
-power = powerBranch(system, model; label = 2)
+powers = powerBranch(system, model; label = 2)
 ```
             
 Compute the powers of a specific branch after obtaining the DC optimal power flow solution:
@@ -265,7 +265,7 @@ dcModel!(system)
 model = dcOptimalPowerFlow(system)
 optimize!(system, model)
             
-power = powerBranch(system, model; label = 2)
+powers = powerBranch(system, model; label = 2)
 ```
 """
 function powerBranch(system::PowerSystem, model::DCAnalysis; label)
@@ -313,7 +313,7 @@ dcModel!(system)
 model = dcPowerFlow(system)
 solve!(system, model)
     
-power = powerGenerator(system, model; label = 1)
+powers = powerGenerator(system, model; label = 1)
 ```
     
 Compute the powers of a specific generator after obtaining the DC optimal power flow 
@@ -325,7 +325,7 @@ dcModel!(system)
 model = dcOptimalPowerFlow(system)
 optimize!(system, model)
     
-power = powerGenerator(system, model; label = 1)
+powers = powerGenerator(system, model; label = 1)
 ```
 """
 function powerGenerator(system::PowerSystem, model::DCPowerFlow; label)
@@ -355,7 +355,6 @@ function powerGenerator(system::PowerSystem, model::DCPowerFlow; label)
 
                 for i = 2:numberGenerator
                     k = bus.supply.inService[busIndex][i]
-                    display(generator.output.active[k])
                     generatorActive -= generator.output.active[k]
                 end 
             else
