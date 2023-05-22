@@ -39,7 +39,7 @@ gaussSeidel
 ## Solve AC Power Flow Model
 ```@docs
 mismatch!
-solve!(::PowerSystem, ::ACPowerFlow)
+solve!(::PowerSystem, ::NewtonRaphson)
 ```
 
 ---
