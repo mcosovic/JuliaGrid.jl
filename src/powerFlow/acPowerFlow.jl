@@ -1,4 +1,4 @@
-abstract type ACPowerFlow end
+export NewtonRaphson, FastNewtonRaphson, GaussSeidel
 
 ######### Newton-Raphson ##########
 struct NewtonRaphson <: ACPowerFlow
@@ -35,22 +35,12 @@ struct GaussSeidel <: ACPowerFlow
     pv::Array{Int64,1}
 end
 
-######### DC Power Flow ##########
-struct DCPowerFlow
-    voltage::PolarAngle
-    factorization::Union{Factorization, Diagonal}
-end
-
-######### Export ##########
-export NewtonRaphson, FastNewtonRaphson, GaussSeidel, ACPowerFlow
-export DCPowerFlow
-
 """
     newtonRaphson(system::PowerSystem)
 
 The function accepts the `PowerSystem` composite type as input and uses it to set up the
 Newton-Raphson method to solve AC power flow. Additionally, if the AC model was not created,
-the function will automatically initiate an update of the `acModel` field within the 
+the function will automatically initiate an update of the `acModel` field within the
 `PowerSystem` composite type.
 
 # Returns
@@ -162,12 +152,12 @@ end
 """
     mismatch!(system::PowerSystem, model::NewtonRaphson)
 
-The function calculates both active and reactive power injection mismatches and returns 
-their maximum absolute values. These values can be used to terminate the iteration loop of 
+The function calculates both active and reactive power injection mismatches and returns
+their maximum absolute values. These values can be used to terminate the iteration loop of
 the Newton-Raphson method, which is utilized to solve the AC power flow problem.
 
-This function updates the `mismatch` variables in the Newton-Raphson method and should be 
-called during the iteration loop before invoking the 
+This function updates the `mismatch` variables in the Newton-Raphson method and should be
+called during the iteration loop before invoking the
 [`solve!`](@ref solve!(::PowerSystem, ::NewtonRaphson)) function.
 
 # Example
@@ -214,13 +204,13 @@ function mismatch!(system::PowerSystem, model::NewtonRaphson)
 end
 
 """
-    solve!(system::PowerSystem, model::NewtonRaphson) 
+    solve!(system::PowerSystem, model::NewtonRaphson)
 
-The function solves the AC power flow problem and computes the magnitudes and angles of 
+The function solves the AC power flow problem and computes the magnitudes and angles of
 bus voltages using the Newton-Raphson method.
 
-Before calling this function, the [`mismatch!`](@ref mismatch!(::PowerSystem, ::NewtonRaphson)) 
-function should be executed to update the `mismatch` variables. The computed voltages are 
+Before calling this function, the [`mismatch!`](@ref mismatch!(::PowerSystem, ::NewtonRaphson))
+function should be executed to update the `mismatch` variables. The computed voltages are
 stored in the `voltage` field of the respective struct type.
 
 # Example
@@ -536,12 +526,12 @@ end
 """
     mismatch!(system::PowerSystem, model::FastNewtonRaphson)
 
-The function calculates both active and reactive power injection mismatches and returns 
-their maximum absolute values. These values can be used to terminate the iteration loop of 
+The function calculates both active and reactive power injection mismatches and returns
+their maximum absolute values. These values can be used to terminate the iteration loop of
 the fast Newton-Raphson method, which is utilized to solve the AC power flow problem.
 
-This function updates the `mismatch` variables in the fast Newton-Raphson method and should 
-be called during the iteration loop before invoking the 
+This function updates the `mismatch` variables in the fast Newton-Raphson method and should
+be called during the iteration loop before invoking the
 [`solve!`](@ref solve!(::PowerSystem, ::FastNewtonRaphson)) function.
 
 # Example
@@ -591,13 +581,13 @@ function mismatch!(system::PowerSystem, model::FastNewtonRaphson)
 end
 
 """
-    solve!(system::PowerSystem, model::FastNewtonRaphson) 
+    solve!(system::PowerSystem, model::FastNewtonRaphson)
 
-The function solves the AC power flow problem and computes the magnitudes and angles of 
+The function solves the AC power flow problem and computes the magnitudes and angles of
 bus voltages using the fast Newton-Raphson method.
 
-Before calling this function, the [`mismatch!`](@ref mismatch!(::PowerSystem, ::FastNewtonRaphson)) 
-function should be executed to update the `mismatch` variables. The computed voltages are 
+Before calling this function, the [`mismatch!`](@ref mismatch!(::PowerSystem, ::FastNewtonRaphson))
+function should be executed to update the `mismatch` variables. The computed voltages are
 stored in the `voltage` field of the respective struct type.
 
 # Example
@@ -711,7 +701,7 @@ end
 """
     mismatch!(system::PowerSystem, model::GaussSeidel)
 
-The Gauss-Seidel method does not need mismatches to obtain bus voltages, but the maximum 
+The Gauss-Seidel method does not need mismatches to obtain bus voltages, but the maximum
 absolute values are commonly employed to stop the iteration loop. The function does not
 save any data and should be utilized during the iteration loop before invoking the
 [`solve!`](@ref solve!(::PowerSystem, ::GaussSeidel)) function.
@@ -757,9 +747,9 @@ function mismatch!(system::PowerSystem, model::GaussSeidel)
 end
 
 """
-    solve!(system::PowerSystem, model::GaussSeidel) 
+    solve!(system::PowerSystem, model::GaussSeidel)
 
-The function solves the AC power flow problem and computes the magnitudes and angles of 
+The function solves the AC power flow problem and computes the magnitudes and angles of
 bus voltages using the Gauss-Seidel method.
 
 The computed voltages are stored in the `voltage` field of the respective struct type.
@@ -865,7 +855,7 @@ for i = 1:10
 end
 ```
 """
-function reactiveLimit!(system::PowerSystem, model::ACPowerFlow, power::PowerGenerator)
+function reactiveLimit!(system::PowerSystem, model::ACPowerFlow, power::PowerBus)
     bus = system.bus
     generator = system.generator
 
@@ -978,7 +968,7 @@ function adjustAngle!(system::PowerSystem, model::ACPowerFlow; slack::T = system
     end
 end
 
-######### Initialize AC Power Flow ##########
+########## Initialize AC Power Flow ##########
 function initializeACPowerFlow(system::PowerSystem)
     magnitude = copy(system.bus.voltage.magnitude)
     angle = copy(system.bus.voltage.angle)
@@ -996,84 +986,4 @@ function initializeACPowerFlow(system::PowerSystem)
     end
 
     return magnitude, angle
-end
-
-"""
-    dcPowerFlow(system::PowerSystem)
-
-The function accepts the `PowerSystem` composite type as input, which is utilized to establish
-the structure for solving the DC power flow. Additionally, if the DC model was not created, the
-function will automatically initiate an update of the `dcModel` field within the `PowerSystem`
-composite type.
-
-# Returns
-The function returns an instance of the `DCPowerFlow` type, which includes the following filled
-fields:
-- `voltage`: the angles of bus voltages
-- `factorization`: the factorized nodal matrix.
-
-# Example
-```jldoctest
-system = powerSystem("case14.h5")
-dcModel!(system)
-
-model = dcPowerFlow(system)
-```
-"""
-function dcPowerFlow(system::PowerSystem)
-    dc = system.dcModel
-    bus = system.bus
-
-    if isempty(dc.nodalMatrix)
-        dcModel!(system)
-    end
-
-    slackRange = dc.nodalMatrix.colptr[bus.layout.slack]:(dc.nodalMatrix.colptr[bus.layout.slack + 1] - 1)
-    elementsRemove = dc.nodalMatrix.nzval[slackRange]
-    @inbounds for i in slackRange
-        dc.nodalMatrix[dc.nodalMatrix.rowval[i], bus.layout.slack] = 0.0
-        dc.nodalMatrix[bus.layout.slack, dc.nodalMatrix.rowval[i]] = 0.0
-    end
-    dc.nodalMatrix[bus.layout.slack, bus.layout.slack] = 1.0
-
-    factorization = factorize(dc.nodalMatrix)
-    @inbounds for (k, i) in enumerate(slackRange)
-        dc.nodalMatrix[dc.nodalMatrix.rowval[i], bus.layout.slack] = elementsRemove[k]
-        dc.nodalMatrix[bus.layout.slack, dc.nodalMatrix.rowval[i]] = elementsRemove[k]
-    end
-
-    return DCPowerFlow(PolarAngle(Float64[]), factorization)
-end
-
-"""
-    solve!(system::PowerSystem, model::DCPowerFlow)
-
-By computing the voltage angles for each bus, the function solves the DC power flow problem.
-The resulting voltage angles are stored in the `voltage` field of the `DCPowerFlow` type.
-
-# Example
-```jldoctest
-system = powerSystem("case14.h5")
-dcModel!(system)
-
-model = dcPowerFlow(system)
-solve!(system, model)
-```
-"""
-function solve!(system::PowerSystem, model::DCPowerFlow)
-    bus = system.bus
-
-    b = copy(bus.supply.active)
-    @inbounds for i = 1:bus.number
-        b[i] -= bus.demand.active[i] + bus.shunt.conductance[i] + system.dcModel.shiftActivePower[i]
-    end
-
-    model.voltage.angle = model.factorization \ b
-    model.voltage.angle[bus.layout.slack] = 0.0
-
-    if bus.voltage.angle[bus.layout.slack] != 0.0
-        @inbounds for i = 1:bus.number
-            model.voltage.angle[i] += bus.voltage.angle[bus.layout.slack]
-        end
-    end
 end

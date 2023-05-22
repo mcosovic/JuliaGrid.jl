@@ -1,0 +1,111 @@
+export DCPowerFlow
+
+######### DC Power Flow ##########
+struct DCPowerFlow <: DCAnalysis
+    voltage::PolarAngle
+    factorization::Union{Factorization, Diagonal}
+end
+
+"""
+    dcPowerFlow(system::PowerSystem)
+
+The function accepts the `PowerSystem` composite type as input, which is utilized to establish
+the structure for solving the DC power flow.
+
+If the DC model was not created, the function will automatically initiate an update of the
+`dcModel` field within the `PowerSystem` composite type. Additionally, if the slack bus lacks
+an in-service generator, JuliaGrid considers it a mistake and defines a new slack bus as the
+first generator bus with an in-service generator in the bus type list.
+
+# Returns
+The function returns an instance of the `DCPowerFlow` type, which includes the following filled
+fields:
+- `voltage`: the variable allocated to store the angles of bus voltages,
+- `factorization`: the factorized nodal matrix.
+
+# Example
+```jldoctest
+system = powerSystem("case14.h5")
+dcModel!(system)
+
+model = dcPowerFlow(system)
+```
+"""
+function dcPowerFlow(system::PowerSystem)
+    dc = system.dcModel
+    bus = system.bus
+
+    if isempty(dc.nodalMatrix)
+        dcModel!(system)
+    end
+
+    if isempty(bus.supply.inService[bus.layout.slack])
+        changeSlackBus!(system)
+    end
+
+    slackRange = dc.nodalMatrix.colptr[bus.layout.slack]:(dc.nodalMatrix.colptr[bus.layout.slack + 1] - 1)
+    elementsRemove = dc.nodalMatrix.nzval[slackRange]
+    @inbounds for i in slackRange
+        dc.nodalMatrix[dc.nodalMatrix.rowval[i], bus.layout.slack] = 0.0
+        dc.nodalMatrix[bus.layout.slack, dc.nodalMatrix.rowval[i]] = 0.0
+    end
+    dc.nodalMatrix[bus.layout.slack, bus.layout.slack] = 1.0
+
+    factorization = factorize(dc.nodalMatrix)
+    @inbounds for (k, i) in enumerate(slackRange)
+        dc.nodalMatrix[dc.nodalMatrix.rowval[i], bus.layout.slack] = elementsRemove[k]
+        dc.nodalMatrix[bus.layout.slack, dc.nodalMatrix.rowval[i]] = elementsRemove[k]
+    end
+
+    return DCPowerFlow(PolarAngle(Float64[]), factorization)
+end
+
+"""
+    solve!(system::PowerSystem, model::DCPowerFlow)
+
+By computing the voltage angles for each bus, the function solves the DC power flow problem.
+The resulting voltage angles are stored in the `voltage` field of the `DCPowerFlow` type.
+
+# Example
+```jldoctest
+system = powerSystem("case14.h5")
+dcModel!(system)
+
+model = dcPowerFlow(system)
+solve!(system, model)
+```
+"""
+function solve!(system::PowerSystem, model::DCPowerFlow)
+    bus = system.bus
+
+    b = copy(bus.supply.active)
+    @inbounds for i = 1:bus.number
+        b[i] -= bus.demand.active[i] + bus.shunt.conductance[i] + system.dcModel.shiftActivePower[i]
+    end
+
+    model.voltage.angle = model.factorization \ b
+    model.voltage.angle[bus.layout.slack] = 0.0
+
+    if bus.voltage.angle[bus.layout.slack] != 0.0
+        @inbounds for i = 1:bus.number
+            model.voltage.angle[i] += bus.voltage.angle[bus.layout.slack]
+        end
+    end
+end
+
+########## Change Slack Bus ##########
+function changeSlackBus!(system::PowerSystem)
+    system.bus.layout.type[system.bus.layout.slack] = 1
+    @inbounds for i = 1:system.bus.number
+        if system.bus.layout.type[i] == 2 && !isempty(system.bus.supply.inService[i])
+            system.bus.layout.type[i] = 3
+            system.bus.layout.slack = i
+            @info("The initial slack bus did not have an in-service generator. The bus labelled as $(trunc(Int, system.bus.label[i])) is the new slack bus.")
+            break
+        end
+    end
+
+    if system.bus.layout.type[system.bus.layout.slack] == 1
+        throw(ErrorException("No generator buses with an in-service generator found in the power system. Slack bus definition not possible."))
+    end
+end

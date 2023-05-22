@@ -4,14 +4,14 @@ using SparseArrays, LinearAlgebra, SuiteSparse
 using HDF5
 using JuMP
 
-######### Setting Variables ##########
+########## Setting Variables ##########
 include("utility/setting.jl")
 
-######### Utility ##########
+########## Utility ##########
 include("utility/routine.jl")
 export @default
 
-######## Power System ##########
+########## Power System ##########
 include("powerSystem/load.jl")
 export powerSystem
 
@@ -25,22 +25,28 @@ export addGenerator!, addActiveCost!, addReactiveCost!, statusGenerator!, output
 export dcModel!, acModel!
 export @bus, @branch, @generator
 
-# ######## Power Flow ##########
-include("powerFlow/solution.jl")
-export newtonRaphson, fastNewtonRaphsonBX, fastNewtonRaphsonXB, gaussSeidel, dcPowerFlow
+########## Power Flow ##########
+include("powerFlow/acPowerFlow.jl")
+export newtonRaphson, fastNewtonRaphsonBX, fastNewtonRaphsonXB, gaussSeidel
 export mismatch!, solve!
 export reactiveLimit!, adjustAngle!
-export ACPowerFlow
 
-include("powerFlow/analysis.jl")
-export analysisBus, analysisBranch, analysisGenerator
+include("powerFlow/dcPowerFlow.jl")
+export dcPowerFlow
 
-####### Optimal Power Flow ##########
-include("optimalPowerFlow/solution.jl")
+########## Optimal Power Flow ##########
+include("optimalPowerFlow/acOptimalPowerFlow.jl")
+# export acOptimalPowerFlow, optimize!
+
+include("optimalPowerFlow/dcOptimalPowerFlow.jl")
 export dcOptimalPowerFlow
-export optimize!
 
-####### Unit ##########
+########## Optimal Power Flow ##########
+include("postprocessing/dcAnalysis.jl")
+export power
+export powerBus, powerBranch, powerGenerator
+
+########## Unit ##########
 include("utility/unit.jl")
 export @base, @power, @voltage, @parameter
 

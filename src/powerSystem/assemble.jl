@@ -128,7 +128,7 @@ function addBus!(system::PowerSystem;
     push!(layout.area, area)
     push!(layout.lossZone, lossZone)
 
-    push!(supply.inService, 0)
+    push!(supply.inService, Array{Int64}(undef, 0))
     push!(supply.active, 0.0)
     push!(supply.reactive, 0.0)
 
@@ -738,7 +738,7 @@ function addGenerator!(system::PowerSystem;
 
     busIndex = system.bus.label[bus]
     if status == 1
-        system.bus.supply.inService[busIndex] += 1
+        push!(system.bus.supply.inService[busIndex], system.generator.number)
         system.bus.supply.active[busIndex] += output.active[end]
         system.bus.supply.reactive[busIndex] += output.reactive[end]
     end
@@ -1008,12 +1008,17 @@ function statusGenerator!(system::PowerSystem; label::Int64, status::Int64 = 0)
 
     if layout.status[index] != status
         if status == 0
-            system.bus.supply.inService[indexBus] -= 1
+            for (k, i) in enumerate(system.bus.supply.inService[indexBus])
+                if i == index
+                    deleteat!(system.bus.supply.inService[indexBus], k)
+                    break
+                end
+            end
             system.bus.supply.active[indexBus] -= output.active[index]
             system.bus.supply.reactive[indexBus] -= output.reactive[index]
         end
         if status == 1
-            system.bus.supply.inService[indexBus] += 1
+            push!(system.bus.supply.inService[indexBus], index)
             system.bus.supply.active[indexBus] += output.active[index]
             system.bus.supply.reactive[indexBus] += output.reactive[index]
         end

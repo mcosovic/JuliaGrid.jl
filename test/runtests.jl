@@ -8,11 +8,11 @@ pathData = abspath(joinpath(dirname(Base.find_package("JuliaGrid")), ".."), "tes
 torad = pi / 180
 
 ######## Power System ##########
-include("powerSystem/loadSave.jl")
-include("powerSystem/assemble.jl")
-include("powerSystem/manipulation.jl")
+# include("powerSystem/loadSave.jl")
+# include("powerSystem/assemble.jl")
+# include("powerSystem/manipulation.jl")
 
 # ######## Power flow ##########
-include("powerFlow/analysis.jl")
-include("powerFlow/limits.jl")
+# include("powerFlow/analysis.jl")
+# include("powerFlow/limits.jl")
 # include("optimalPowerFlow/solution.jl")

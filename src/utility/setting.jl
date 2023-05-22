@@ -1,52 +1,79 @@
+export ACPowerFlow, DCAnalysis
+
 ######### Polar Coordinate ##########
 mutable struct Polar
     magnitude::Array{Float64,1}
     angle::Array{Float64,1}
 end
 
-######### Polar Angle Coordinate ##########
 mutable struct PolarAngle
     angle::Array{Float64,1}
 end
 
+mutable struct PolarRef
+    magnitude::Union{Array{JuMP.ConstraintRef,1}, JuMP.ConstraintRef}
+    angle::Union{Array{JuMP.ConstraintRef,1}, JuMP.ConstraintRef}
+end
+
+mutable struct PolarAngleRef
+    angle::Union{Array{JuMP.ConstraintRef,1}, JuMP.ConstraintRef}
+end
+
 ######### Cartesian Coordinate ##########
 mutable struct Cartesian
-    active::Array{Float64,1}
-    reactive::Array{Float64,1}
+    active::Union{Array{Float64,1}, Float64}
+    reactive::Union{Array{Float64,1}, Float64}
 end
 
-######### Cartesian Real Coordinate ##########
 mutable struct CartesianReal
-    active::Array{Float64,1}
+    active::Union{Array{Float64,1}, Float64}
 end
 
-######### Cartesian Imaginary Coordinate ##########
 mutable struct CartesianImag
-    reactive::Array{Float64,1}
+    reactive::Union{Array{Float64,1}, Float64}
 end
 
-######### Bus ##########
+mutable struct CartesianRef
+    active::Union{Array{JuMP.ConstraintRef,1}, Array{Array{JuMP.ConstraintRef,1}}}
+    reactive::Union{Array{JuMP.ConstraintRef,1}, Array{Array{JuMP.ConstraintRef,1}}}
+end
+
+mutable struct CartesianRealRef
+    active::Union{Array{JuMP.ConstraintRef,1}, Array{Array{JuMP.ConstraintRef,1}}}
+end
+
+mutable struct CartesianImagRef
+    reactive::Union{Array{JuMP.ConstraintRef,1}, Array{Array{JuMP.ConstraintRef,1}}}
+end
+
+######### Power ##########
 mutable struct PowerBus
     injection::Cartesian
     supply::Cartesian
     shunt::Cartesian
 end
 
-mutable struct CurrentBus
-    injection::Polar
-end
-
-mutable struct DCPowerBus
-    injection::CartesianReal
-    supply::CartesianReal
-end
-
-######### Branch ##########
 mutable struct PowerBranch
     from::Cartesian
     to::Cartesian
     shunt::CartesianImag
     loss::Cartesian
+end
+
+mutable struct PowerGenerator
+    output::Cartesian
+end
+
+mutable struct Power
+    bus::PowerBus
+    branch::PowerBranch
+    generator::PowerGenerator
+end
+
+
+######### Power ##########
+mutable struct CurrentBus
+    injection::Polar
 end
 
 mutable struct CurrentBranch
@@ -55,24 +82,38 @@ mutable struct CurrentBranch
     impedance::Polar
 end
 
+mutable struct Current
+    bus::CurrentBus
+    branch::CurrentBranch
+end
+
+######### Branch ##########
+mutable struct DCPowerBus
+    injection::CartesianReal
+    supply::CartesianReal
+end
+
 mutable struct DCPowerBranch
     from::CartesianReal
     to::CartesianReal
 end
 
-######### Generator ##########
-mutable struct PowerGenerator
-    active::Array{Float64,1}
-    reactive::Array{Float64,1}
+mutable struct DCPowerGenerator
+    output::CartesianReal
 end
 
-mutable struct DCPowerGenerator
-    active::Array{Float64,1}
+mutable struct DCPower
+    bus::DCPowerBus
+    branch::DCPowerBranch
+    generator::DCPowerGenerator
 end
+
 
 ######### Types ##########
 const N = Union{Float64, Int64}
 const T = Union{Float64, Int64, Missing}
+abstract type DCAnalysis end
+abstract type ACPowerFlow end
 
 ######### Template ##########
 const template = Dict(
