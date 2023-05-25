@@ -23,7 +23,8 @@ makedocs(
         "API Reference" =>
             ["Power System Model" => "api/powerSystemModel.md",
             "Power Flow Solution" => "api/powerFlowSolution.md",
-            "DC Power Analysis" => "api/dcPowerAnalysis.md",
+            "AC Power and Current Analysis" => "api/acAnalysis.md",
+            "DC Power Analysis" => "api/dcAnalysis.md",
             "Configuration Setup" => "api/configuration.md"]
     ]
 )

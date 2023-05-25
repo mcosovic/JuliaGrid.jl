@@ -39,7 +39,7 @@ function dcPowerFlow(system::PowerSystem)
         dcModel!(system)
     end
 
-    if isempty(bus.supply.inService[bus.layout.slack])
+    if bus.supply.inService[bus.layout.slack] == 0
         changeSlackBus!(system)
     end
 
@@ -90,22 +90,5 @@ function solve!(system::PowerSystem, model::DCPowerFlow)
         @inbounds for i = 1:bus.number
             model.voltage.angle[i] += bus.voltage.angle[bus.layout.slack]
         end
-    end
-end
-
-########## Change Slack Bus ##########
-function changeSlackBus!(system::PowerSystem)
-    system.bus.layout.type[system.bus.layout.slack] = 1
-    @inbounds for i = 1:system.bus.number
-        if system.bus.layout.type[i] == 2 && !isempty(system.bus.supply.inService[i])
-            system.bus.layout.type[i] = 3
-            system.bus.layout.slack = i
-            @info("The initial slack bus did not have an in-service generator. The bus labelled as $(trunc(Int, system.bus.label[i])) is the new slack bus.")
-            break
-        end
-    end
-
-    if system.bus.layout.type[system.bus.layout.slack] == 1
-        throw(ErrorException("No generator buses with an in-service generator found in the power system. Slack bus definition not possible."))
     end
 end

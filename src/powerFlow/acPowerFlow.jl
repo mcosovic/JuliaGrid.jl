@@ -736,7 +736,7 @@ end
 
 
 """
-    reactiveLimit!(system::PowerSystem, model::ACPowerFlow, power::PowerGenerator)
+    reactiveLimit!(system::PowerSystem, model::ACPowerFlow)
 
 The function verifies whether the generators in a power system exceed their reactive power
 limits. This is done by setting the reactive power of the generators to within the limits
@@ -744,17 +744,14 @@ if they are violated, after determining the bus voltage magnitudes and angles. I
 limits are violated, the corresponding generator buses or the slack bus are converted to
 demand buses.
 
-# Arguments
-Initially, the [`analysisGenerator`](@ref analysisGenerator) function must be executed.
-Afterward, the function uses the results from this function to assign values to the
-`generator.output.active` and `bus.supply.active` fields of the `PowerSystem` type.
-
-At the end of the process, the function inspects the reactive powers of the generator and
-adjusts them to their maximum or minimum values if they violate the threshold. The
-`generator.output.reactive` field of the `PowerSystem` type is then modified accordingly. In
-light of this modification, the `bus.supply.reactive` field of the `PowerSystem` type is also
-updated, and the bus types in `bus.layout.type` are adjusted. If the slack bus is
-converted, the `bus.layout.slack` field is modified accordingly.
+The function assigns values to the `generator.output.active` and `bus.supply.active` 
+variables of the `PowerSystem` type. Additionally, it examines the reactive powers of the 
+generator and adjusts them to their maximum or minimum values if they exceed the specified 
+threshold. Subsequently, the `generator.output.reactive` variable of the `PowerSystem` type 
+is modified accordingly. As a result of this adjustment, the `bus.supply.reactive` variable
+of the `PowerSystem` type is also updated, and the bus types specified in `bus.layout.type` 
+are modified. If the slack bus is converted, the `bus.layout.slack` field is correspondingly 
+adjusted.
 
 # Returns
 The function returns the `violate` variable to indicate which buses violate the limits,
@@ -774,9 +771,8 @@ for i = 1:10
     end
     solve!(system, model)
 end
-power = analysisGenerator(system, model)
 
-violate = reactiveLimit!(system, model, power)
+violate = reactiveLimit!(system, model)
 
 model = newtonRaphson(system)
 for i = 1:10
@@ -788,7 +784,7 @@ for i = 1:10
 end
 ```
 """
-function reactiveLimit!(system::PowerSystem, model::ACPowerFlow, power::PowerBus)
+function reactiveLimit!(system::PowerSystem, model::ACPowerFlow)
     bus = system.bus
     generator = system.generator
 
@@ -798,11 +794,16 @@ function reactiveLimit!(system::PowerSystem, model::ACPowerFlow, power::PowerBus
 
     bus.supply.active = fill(0.0, bus.number)
     bus.supply.reactive = fill(0.0, bus.number)
+    outputReactive = fill(0.0, generator.number)
+    labels = collect(keys(sort(system.generator.label; byvalue = true)))
     @inbounds for (k, i) in enumerate(generator.layout.bus)
         if generator.layout.status[k] == 1
-            generator.output.active[k] = power.active[k]
-            bus.supply.active[i] += power.active[k]
-            bus.supply.reactive[i] += power.reactive[k]
+            powers = powerGenerator(system, model; label = labels[k])
+
+            generator.output.active[k] = powers.output.active
+            bus.supply.active[i] += powers.output.active
+            bus.supply.reactive[i] += powers.output.reactive
+            outputReactive[k] = powers.output.reactive
         end
     end
 
@@ -810,8 +811,8 @@ function reactiveLimit!(system::PowerSystem, model::ACPowerFlow, power::PowerBus
         if generator.layout.status[i] == 1 && (generator.capability.minReactive[i] < generator.capability.maxReactive[i])
             j = generator.layout.bus[i]
 
-            violateMinimum = power.reactive[i] < generator.capability.minReactive[i]
-            violateMaximum = power.reactive[i] > generator.capability.maxReactive[i]
+            violateMinimum = outputReactive[i] < generator.capability.minReactive[i]
+            violateMaximum = outputReactive[i] > generator.capability.maxReactive[i]
             if  bus.layout.type[j] != 1 && (violateMinimum || violateMaximum)
                 if violateMinimum
                     violate[i] = -1
@@ -823,7 +824,7 @@ function reactiveLimit!(system::PowerSystem, model::ACPowerFlow, power::PowerBus
                 end
                 bus.layout.type[j] = 1
 
-                bus.supply.reactive[j] -= power.reactive[i]
+                bus.supply.reactive[j] -= outputReactive[i]
                 generator.output.reactive[i] = newReactivePower
                 bus.supply.reactive[j] += newReactivePower
 
@@ -918,5 +919,26 @@ function initializeACPowerFlow(system::PowerSystem)
         end
     end
 
+    if system.bus.supply.inService[system.bus.layout.slack] == 0
+        changeSlackBus!(system)
+    end
+
     return magnitude, angle
+end
+
+########## Change Slack Bus ##########
+function changeSlackBus!(system::PowerSystem)
+    system.bus.layout.type[system.bus.layout.slack] = 1
+    @inbounds for i = 1:system.bus.number
+        if system.bus.layout.type[i] == 2 && system.bus.supply.inService[i] != 0
+            system.bus.layout.type[i] = 3
+            system.bus.layout.slack = i
+            @info("The initial slack bus did not have an in-service generator. The bus $(trunc(Int, system.bus.label[i])) is the new slack bus.")
+            break
+        end
+    end
+
+    if system.bus.layout.type[system.bus.layout.slack] == 1
+        throw(ErrorException("No generator buses with an in-service generator found in the power system. Slack bus definition not possible."))
+    end
 end

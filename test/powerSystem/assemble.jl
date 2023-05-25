@@ -40,6 +40,7 @@
     @test system.bus.supply.active ≈ systemPU.bus.supply.active
     @test system.bus.supply.reactive ≈ systemPU.bus.supply.reactive
     @test system.bus.supply.inService == systemPU.bus.supply.inService
+    @test system.bus.supply.generator == systemPU.bus.supply.generator
 
     @test system.bus.shunt.conductance ≈ systemPU.bus.shunt.conductance
     @test system.bus.shunt.susceptance ≈ systemPU.bus.shunt.susceptance
@@ -149,6 +150,7 @@ end
     @test system.bus.supply.active ≈ systemSI.bus.supply.active
     @test system.bus.supply.reactive ≈ systemSI.bus.supply.reactive
     @test system.bus.supply.inService == systemSI.bus.supply.inService
+    @test system.bus.supply.generator == systemSI.bus.supply.generator
 
     @test system.bus.shunt.conductance ≈ systemSI.bus.shunt.conductance
     @test system.bus.shunt.susceptance ≈ systemSI.bus.shunt.susceptance

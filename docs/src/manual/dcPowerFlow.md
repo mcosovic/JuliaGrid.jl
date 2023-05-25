@@ -31,7 +31,7 @@ dcModel!(system)
 model = dcPowerFlow(system)
 ```
 
-In this example, the slack bus (`type = 3`) corresponds to the bus labelled as 1. However, this bus does not have an in-service generator connected to it. Consequently, JuliaGrid recognizes this as an error and attempts to assign a new slack bus from the available generator buses (`type = 2`) that have connected in-service generators. In this particular example, the bus labeled as 3 will become the new slack bus.
+In this example, the slack bus (`type = 3`) corresponds to the bus labelled as 1. However, this bus does not have an in-service generator connected to it. Consequently, JuliaGrid recognizes this as an error and attempts to assign a new slack bus from the available generator buses (`type = 2`) that have connected in-service generators. In this particular example, the bus labelled as 3 will become the new slack bus.
 
 !!! note "Info"
     The bus that is defined as the slack bus (`type = 3`) but lacks a connected in-service generator will have its type changed to the demand bus (`type = 1`). Meanwhile, the first generator bus (`type = 2`) with an active generator connected to it will be assigned as the new slack bus `(type = 3`).
@@ -113,7 +113,7 @@ solve!(system, model)
 nothing # hide
 ```
 Here, the previously factorized nodal matrix is utilized to obtain the new solution, which is more efficient than repeating the factorization step.
- 
+
 Additionally, users can change the active power demand at the buses by directly accessing the `PowerSystem` type. They can again reuse the `Model` composite type and factorized nodal matrix, as demonstrated below:
 ```@example DCPowerFlowSolution
 system.bus.demand.active[2] = 0.15
@@ -173,46 +173,46 @@ system.base.power.value * powers.branch.from.active
 ```
 
 !!! note "Info"
-    To better understand the powers associated with buses, branches and generators that are calculated by the [`power`](@ref power(::PowerSystem, ::DCAnalysis)) function, we suggest referring to the tutorials on [DC power flow analysis](@ref DCBusPowersTutorials).
+    To better understand the powers associated with buses, branches and generators that are calculated by the [`power`](@ref power(::PowerSystem, ::DCAnalysis)) function, we suggest referring to the tutorials on [DC power flow analysis](@ref DCPowerAnalysisTutorials).
 
 ---
 
-##### Bus Powers
+##### Powers Related to Bus
 Instead of calculating powers for all components, users have the option to compute specific quantities for particular components. In this regard, the following function can be utilized to calculate active powers associated with a specific bus:
 ```@example ComputationPowersCurrentsLosses
 powers = powerBus(system, model; label = 1)
 
 nothing # hide
 ```
-For instance, to display the active power injections in megawatts (MW), the following code can be used:
+For instance, to display the active power injections in megawatts, the following code can be used:
 ```@repl ComputationPowersCurrentsLosses
 system.base.power.value * powers.injection.active
 ```
 
 ---
 
-##### Branch Powers
+##### Powers Related to Branch
 Similarly, we can compute the active powers related to a particular branch using the following function:
 ```@example ComputationPowersCurrentsLosses
 powers = powerBranch(system, model; label = 2)
 
 nothing # hide
 ```
-For instance, to display the active power flows at branches in megawatts (MW), we can use the following code:
+For instance, to display the active power flows at branches in megawatts, we can use the following code:
 ```@repl ComputationPowersCurrentsLosses
 system.base.power.value * powers.from.active
 ```
 
 ---
 
-##### Generator Power
+##### Power Related to Generator
 Finally, we can compute the active output power of a particular generator using the function:
 ```@example ComputationPowersCurrentsLosses
 powers = powerGenerator(system, model; label = 1)
 
 nothing # hide
 ```
-To display the active power produced by generators in megawatts (MW), we can use the following code:
+To display the active power produced by generators in megawatts, we can use the following code:
 ```@repl ComputationPowersCurrentsLosses
 system.base.power.value * powers.output.active
 ```

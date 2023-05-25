@@ -13,6 +13,7 @@
     @test systemMat.bus.supply.active == systemH5.bus.supply.active
     @test systemMat.bus.supply.reactive == systemH5.bus.supply.reactive
     @test systemMat.bus.supply.inService == systemH5.bus.supply.inService
+    @test systemMat.bus.supply.generator == systemH5.bus.supply.generator
 
     @test systemMat.bus.shunt.conductance == systemH5.bus.shunt.conductance
     @test systemMat.bus.shunt.susceptance == systemH5.bus.shunt.susceptance

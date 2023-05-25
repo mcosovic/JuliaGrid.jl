@@ -1,9 +1,9 @@
-export ACPowerFlow, DCAnalysis
+export ACAnalysis, DCAnalysis, ACPowerFlow
 
 ######### Polar Coordinate ##########
 mutable struct Polar
-    magnitude::Array{Float64,1}
-    angle::Array{Float64,1}
+    magnitude::Union{Array{Float64,1}, Float64}
+    angle::Union{Array{Float64,1}, Float64}
 end
 
 mutable struct PolarAngle
@@ -79,7 +79,7 @@ end
 mutable struct CurrentBranch
     from::Polar
     to::Polar
-    impedance::Polar
+    branch::Polar
 end
 
 mutable struct Current
@@ -113,7 +113,9 @@ end
 const N = Union{Float64, Int64}
 const T = Union{Float64, Int64, Missing}
 abstract type DCAnalysis end
-abstract type ACPowerFlow end
+abstract type ACAnalysis end
+abstract type ACPowerFlow <: ACAnalysis end
+
 
 ######### Template ##########
 const template = Dict(

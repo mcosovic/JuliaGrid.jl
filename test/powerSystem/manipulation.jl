@@ -122,6 +122,7 @@ end
     @test system1.bus.supply.active ≈ system2.bus.supply.active
     @test system1.bus.supply.reactive ≈ system2.bus.supply.reactive
     @test system1.bus.supply.inService == system2.bus.supply.inService
+    @test system1.bus.supply.generator == system2.bus.supply.generator
     @test system1.bus.layout.type == system2.bus.layout.type
 
     statusGenerator!(system2; label = 3, status = 1)
@@ -130,6 +131,7 @@ end
     @test system3.bus.supply.active ≈ system2.bus.supply.active
     @test system3.bus.supply.reactive ≈ system2.bus.supply.reactive
     @test system3.bus.supply.inService == system2.bus.supply.inService
+    @test system3.bus.supply.generator == system2.bus.supply.generator
     @test system3.bus.layout.type == system2.bus.layout.type
 end
 
@@ -144,6 +146,7 @@ end
     @test system1.bus.supply.active ≈ system2.bus.supply.active
     @test system1.bus.supply.reactive ≈ system2.bus.supply.reactive
     @test system1.bus.supply.inService == system2.bus.supply.inService
+    @test system1.bus.supply.generator == system2.bus.supply.generator
     @test system1.bus.layout.type == system2.bus.layout.type
 end
 
@@ -161,5 +164,6 @@ end
     @test system1.bus.supply.active ≈ system2.bus.supply.active
     @test system1.bus.supply.reactive ≈ system2.bus.supply.reactive
     @test system1.bus.supply.inService == system2.bus.supply.inService
+    @test system1.bus.supply.generator == system2.bus.supply.generator
     @test system1.bus.layout.type == system2.bus.layout.type
 end

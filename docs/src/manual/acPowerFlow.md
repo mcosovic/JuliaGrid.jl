@@ -9,10 +9,16 @@ These functions will set up the AC power flow framework. To obtain bus voltages 
 * [`mismatch!`](@ref mismatch!(::PowerSystem, ::NewtonRaphson))
 * [`solve!`](@ref solve!(::PowerSystem, ::NewtonRaphson)).
 
-After obtaining the AC power flow solution, JuliaGrid offers post-processing analysis functions for calculating powers, losses, and currents associated with buses, branches, or generators:
-* [`analysisBus`](@ref analysisBus(::PowerSystem, ::ACPowerFlow))
-* [`analysisBranch`](@ref analysisBranch(::PowerSystem, ::ACPowerFlow))
-* [`analysisGenerator`](@ref analysisGenerator(::PowerSystem, ::ACPowerFlow)).
+After obtaining the AC power flow solution, JuliaGrid offers post-processing analysis functions for calculating powers and currents associated with buses, branches, or generators:
+* [`power`](@ref power(::PowerSystem, ::ACPowerFlow))
+* [`current`](@ref current(::PowerSystem, ::ACPowerFlow))
+
+Moreover, there exist specific functions dedicated to calculating powers and currents related to a particular bus, branch, or generator:
+* [`powerBus`](@ref powerBus(::PowerSystem, ::ACPowerFlow))
+* [`currentBus`](@ref currentBus(::PowerSystem, ::ACPowerFlow))
+* [`powerBranch`](@ref powerBranch(::PowerSystem, ::ACPowerFlow))
+* [`currentBranch`](@ref current(::PowerSystem, ::ACPowerFlow))
+* [`powerGenerator`](@ref powerBranch(::PowerSystem, ::ACPowerFlow)).
 
 Additionally, the package provides two functions for reactive power limit validation of generators and adjusting the voltage angles to match an arbitrary bus angle:
 * [`reactiveLimit!`](@ref reactiveLimit!)
@@ -41,36 +47,22 @@ model = newtonRaphson(system)
 
 nothing # hide
 ```
-Initially, the bus labelled with 1 is set as the slack bus (`type = 3`), and the buses with labels 2 and 3 are generator buses (`type = 2`). However, the bus labelled with 3 does not have a generator, and JuliaGrid considers this a mistake and changes the corresponding bus to a demand bus (`type = 1`):
+
+Initially, the bus labelled with 1 is set as the slack bus (`type = 3`), and the buses with labels 2 and 3 are generator buses (`type = 2`). However, the bus labelled with 3 does not have a generator, and JuliaGrid considers this a mistake and changes the corresponding bus to a demand bus (`type = 1`).
+
+After this step, JuliaGrid verifies the slack bus. Initially, the slack bus (`type = 3`) corresponds to bus 1, but since it does not have an in-service generator connected to it, JuliaGrid recognizes it as an error. Therefore, JuliaGrid assigns a new slack bus from the available generator buses (`type = 2`) that have connected in-service generators. In this specific example, bus 2 becomes the new slack bus.
+
+The resulting bus types are:
 ```@repl busType
 system.bus.layout.type
 ```
 
-In contrast, if a bus is initially defined as the demand bus (`type = 1`) and later a generator is added to it, the bus type will not be changed to the generator bus (`type = 2`). Instead, it will remain as a demand bus:
-```@example busTypeStay
-using JuliaGrid # hide
+Note that, if a bus is initially defined as the demand bus (`type = 1`) and later a generator is added to it, the bus type will not be changed to the generator bus (`type = 2`). Instead, it will remain as a demand bus.
 
-system = powerSystem()
-
-addBus!(system; label = 1, type = 3)
-addBus!(system; label = 2, type = 1)
-addBus!(system; label = 3, type = 2)
-
-addGenerator!(system; label = 1, bus = 2)
-
-acModel!(system)
-
-model = newtonRaphson(system)
-
-nothing # hide
-```
-
-In this example, the bus labelled with 2 remains the demand bus (`type = 1`) even though it has the generator:
-```@repl busTypeStay
-system.bus.layout.type
-```
 !!! note "Info"
     The type of only those buses that are defined as generator buses (`type = 2`) but do not have a connected in-service generator will be changed to demand buses (`type = 1`).
+
+    The bus that is defined as the slack bus (`type = 3`) but lacks a connected in-service generator will have its type changed to the demand bus (`type = 1`). Meanwhile, the first generator bus (`type = 2`) with an active generator connected to it will be assigned as the new slack bus `(type = 3`).
 
 ---
 
@@ -85,8 +77,9 @@ addBus!(system; label = 1, type = 3, magnitude = 1.0, angle = 0.0)
 addBus!(system; label = 2, type = 1, magnitude = 0.9, angle = -0.1)
 addBus!(system; label = 3, type = 2, magnitude = 0.8, angle = -0.2)
 
-addGenerator!(system; label = 1, bus = 2, magnitude = 1.1)
-addGenerator!(system; label = 2, bus = 3, magnitude = 1.2)
+addGenerator!(system; label = 1, bus = 1, magnitude = 1.3)
+addGenerator!(system; label = 2, bus = 2, magnitude = 1.1)
+addGenerator!(system; label = 3, bus = 3, magnitude = 1.2)
 
 acModel!(system)
 
@@ -106,25 +99,13 @@ system.bus.voltage.angle
 ```
 On the other hand, the starting voltage magnitudes are determined by a combination of the initial values specified within the buses and the setpoints provided within the generators:
 ```@repl initializeACPowerFlow
-system.bus.voltage.magnitude
-system.generator.voltage.magnitude
+[system.bus.voltage.magnitude system.generator.voltage.magnitude]
+
 ```
 !!! note "Info"
     The rule governing the specification of starting voltage magnitudes is simple. If a bus has an in-service generator and is declared the generator bus (`type = 2`), then the starting voltage magnitudes are specified using the setpoint provided within the generator. This is because the generator bus has known values of voltage magnitude that are specified within the generator.
 
-Finally, we can add a generator to the slack bus of the previously created power system and then reinitialize the Newton-Raphson method:
-```@example initializeACPowerFlow
-addGenerator!(system; label = 3, bus = 1, magnitude = 1.3)
-
-model = newtonRaphson(system)
-nothing # hide
-```
-The starting voltages are now as follows:
-```@repl initializeACPowerFlow
-model.voltage.magnitude
-```
-!!! note "Info"
-    Thus, if an in-service generator exists on the slack bus, the starting value of the voltage magnitude is specified using the setpoints provided within the generators. This is a consequence of the fact that the slack bus has a known voltage magnitude. If a generator exists on the slack bus, its value is used, otherwise, the value is defined based on the initial voltage magnitude specified within the bus.
+    On the other hand, the slack bus (`type = 3`) always requires an in-service generator. The starting value of the voltage magnitude at the slack bus is determined exclusively by the setpoints provided within the generators connected to it. This is a result of the slack bus having a known voltage magnitude that must be maintained.
 
 ---
 
@@ -139,6 +120,7 @@ addBus!(system; label = 1, type = 3, magnitude = 1.0, angle = 0.0)
 addBus!(system; label = 2, type = 1, magnitude = 0.9, angle = -0.1)
 addBus!(system; label = 3, type = 2, magnitude = 0.8, angle = -0.2)
 
+addGenerator!(system; label = 1, bus = 1, magnitude = 1.1)
 addGenerator!(system; label = 2, bus = 3, magnitude = 1.2)
 
 acModel!(system)
@@ -179,7 +161,8 @@ addBranch!(system; label = 1, from = 1, to = 2, resistance = 0.01, reactance = 0
 addBranch!(system; label = 2, from = 1, to = 3, resistance = 0.02, reactance = 0.01)
 addBranch!(system; label = 3, from = 2, to = 3, resistance = 0.01, reactance = 0.20)
 
-addGenerator!(system; label = 1, bus = 2, active = 3.2, magnitude = 1.2)
+addGenerator!(system; label = 1, bus = 1, active = 3.2, magnitude = 1.1)
+addGenerator!(system; label = 2, bus = 2, active = 3.2, magnitude = 1.2)
 
 acModel!(system)
 
@@ -242,7 +225,7 @@ The [`mismatch!`](@ref mismatch!(::PowerSystem, ::NewtonRaphson)) function retur
 
 ---
 
-## [Reusable Power Flow Types](@id ACReusablePowerFlowTypesManual)
+## [Reusing Created Types](@id ACReusingCreatedTypesManual)
 The `PowerSystem` composite type with its `acModel` field can be used without limitations, and can be modified automatically using functions like [`shuntBus!`](@ref shuntBus!), [`statusBranch!`](@ref statusBranch!), [`parameterBranch!`](@ref parameterBranch!), [`statusGenerator!`](@ref statusGenerator!), and [`outputGenerator!`](@ref outputGenerator!) functions. This allows the `PowerSystem` type to be shared across different analyses.
 
 Additionally, the `Model` composite type can also be reused within the same method that solves the AC power flow problem.
@@ -270,7 +253,7 @@ nothing # hide
 
 ---
 
-##### Reusable PowerSystem Type
+##### PowerSystem Composite Type
 The initial application of the reusable `PowerSystem` type is simple: it can be shared among various methods, which can yield benefits. For example, the Gauss-Seidel method is commonly used for a speedy approximate solution, whereas the Newton-Raphson method is typically utilized for the precise final solution. Thus, we can execute the Gauss-Seidel method for a limited number of iterations, as exemplified below:
 ```@example ReusablePowerSystemType
 gsModel = gaussSeidel(system)
@@ -316,7 +299,7 @@ end
 
 ---
 
-##### Reusable Model Type
+##### Model Composite Type
 As we have seen, the `PowerSystem` type can be reused and modified using various functions, and the question now is whether we can do the same with the `Model` composite type. In fact, in the previous code snippet, we did not need to recreate the `Model` type after changing the resistance of the branch labelled 3. Thus, once the `Model` type is created, users can modify the power system's structure using functions [`shuntBus!`](@ref shuntBus!), [`statusBranch!`](@ref statusBranch!), [`parameterBranch!`](@ref parameterBranch!), and [`outputGenerator!`](@ref outputGenerator!), without having to recreate the `Model` type from scratch.
 
 For instance, if the branch labelled 3 needs to be put out-of-service in the previously mentioned example, the AC power flow can be executed again by running the following code snippet:
@@ -339,7 +322,7 @@ Here, the previously created `PowerSystem` and `Model` types are reused. This ap
 ---
 
 ## [Power and Current Analysis](@id ACPowerCurrentAnalysisManual)
-After obtaining the solution from the AC power flow, we can calculate various electrical quantities related to buses, branches, and generators using the [`analysisBus`](@ref analysisBus(::PowerSystem, ::ACPowerFlow)), [`analysisBranch`](@ref analysisBranch(::PowerSystem, ::ACPowerFlow)), and [`analysisGenerator`](@ref analysisGenerator(::PowerSystem, ::ACPowerFlow)) functions. For instance, let us consider the power system for which we obtained the AC power flow solution:
+After obtaining the solution from the AC power flow, we can calculate various electrical quantities related to buses, branches, and generators using the [`power`](@ref power(::PowerSystem, ::ACPowerFlow)) and [`current`](@ref current(::PowerSystem, ::ACPowerFlow)) functions. For instance, let us consider the power system for which we obtained the AC power flow solution:
 ```@example ComputationPowersCurrentsLosses
 using JuliaGrid # hide
 

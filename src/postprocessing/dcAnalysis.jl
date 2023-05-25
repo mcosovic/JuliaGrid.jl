@@ -6,11 +6,11 @@ the DC framework.
 
 # Abstract type
 Subtypes of the abstract type `DCAnalysis` include:
-- `DCPowerFlow`: computes the powers within the DC power flow,    
-- `DCOptimalPowerFlow`: computes the powers within the DC optimal power flow. 
+- `DCPowerFlow`: computes the powers within the DC power flow,
+- `DCOptimalPowerFlow`: computes the powers within the DC optimal power flow.
 
 # Returns
-The function returns the instance of the `DCPower` type, which contains the following 
+The function returns the instance of the `DCPower` type, which contains the following
 fields:
 - The `bus` field contains powers related to buses:
   - `injection`: the active power injection at buses,
@@ -64,22 +64,26 @@ function power(system::PowerSystem, model::DCPowerFlow)
         row = dc.nodalMatrix.rowval[j]
         injectionActive[slack] += dc.nodalMatrix[row, slack] * voltage.angle[row]
     end
+
     supplyActive[slack] = bus.demand.active[slack] + injectionActive[slack]
 
-    tempSlack = 0
     generatorActive = fill(0.0, generator.number)
     @inbounds for i = 1:generator.number
         if generator.layout.status[i] == 1
-            generatorActive[i] = generator.output.active[i]
+            busIndex = system.generator.layout.bus[i]
 
-            if generator.layout.bus[i] == slack
-                if tempSlack != 0
-                    generatorActive[tempSlack] -= generatorActive[i]
+            if busIndex == bus.layout.slack && bus.supply.generator[busIndex][1] == i
+                generatorActive[i] = bus.shunt.conductance[busIndex] + dc.shiftActivePower[busIndex] + bus.demand.active[busIndex]
+                for j in dc.nodalMatrix.colptr[busIndex]:(dc.nodalMatrix.colptr[busIndex + 1] - 1)
+                    row = dc.nodalMatrix.rowval[j]
+                    generatorActive[i] += dc.nodalMatrix[row, busIndex] * voltage.angle[row]
                 end
-                if tempSlack == 0
-                    generatorActive[i] = supplyActive[slack]
-                    tempSlack = i
+
+                for j = 2:bus.supply.inService[busIndex]
+                    generatorActive[i] -= generator.output.active[bus.supply.generator[busIndex][j]]
                 end
+            else
+                generatorActive[i] = generator.output.active[i]
             end
         end
     end
@@ -100,6 +104,7 @@ function power(system::PowerSystem, model::DCPowerFlow)
         )
     )
 end
+
 
 # function power(system::PowerSystem, model::DCOptimalPowerFlow)
 #     errorVoltage(model.voltage.angle)
@@ -138,16 +143,16 @@ end
 """
     powerBus(system::PowerSystem, model::DCAnalysis; label)
 
-This function calculates the active powers associated with a specific bus in the DC 
+This function calculates the active powers associated with a specific bus in the DC
 framework. The `label` keyword argument must match an existing bus label.
-  
+
 # Abstract type
 Subtypes of the abstract type `DCAnalysis` include:
-- `DCPowerFlow`: computes the powers within the DC power flow,    
-- `DCOptimalPowerFlow`: computes the powers within the DC optimal power flow. 
-    
+- `DCPowerFlow`: computes the powers within the DC power flow,
+- `DCOptimalPowerFlow`: computes the powers within the DC optimal power flow.
+
 # Returns
-The function returns an instance of the `DCPowerBus` type, which contains the following 
+The function returns an instance of the `DCPowerBus` type, which contains the following
 fields:
 - `injection`: the active power injection at buses,
 - `supply`: the active power injected at buses by the generators.
@@ -157,21 +162,21 @@ Compute the powers of a specific bus after obtaining the DC power flow solution:
 ```jldoctest
 system = powerSystem("case14.h5")
 dcModel!(system)
-    
+
 model = dcPowerFlow(system)
 solve!(system, model)
-    
+
 powers = powerBus(system, model; label = 2)
 ```
-    
+
 Compute the powers of a specific bus after obtaining the DC optimal power flow solution:
 ```jldoctest
 system = powerSystem("case14.h5")
 dcModel!(system)
-    
+
 model = dcOptimalPowerFlow(system)
 optimize!(system, model)
-    
+
 powers = powerBus(system, model; label = 2)
 ```
 """
@@ -231,40 +236,40 @@ end
 """
     powerBranch(system::PowerSystem, model::DCAnalysis; label)
 
-This function calculates the active powers associated with a specific branch in the DC 
+This function calculates the active powers associated with a specific branch in the DC
 framework. The `label` keyword argument must match an existing branch label.
-          
+
 # Abstract type
 Subtypes of the abstract type `DCAnalysis` include:
-- `DCPowerFlow`: computes the powers within the DC power flow,    
-- `DCOptimalPowerFlow`: computes the powers within the DC optimal power flow. 
-            
+- `DCPowerFlow`: computes the powers within the DC power flow,
+- `DCOptimalPowerFlow`: computes the powers within the DC optimal power flow.
+
 # Returns
-The function returns an instance of the `DCPowerBranch` type, which contains the following 
+The function returns an instance of the `DCPowerBranch` type, which contains the following
 fields:
 - `from`: the active power flows at the "from" ends,
 - `to`: the active power flows at the "to" ends.
-        
+
 # Examples
 Compute the powers of a specific branch after obtaining the DC power flow solution:
 ```jldoctest
 system = powerSystem("case14.h5")
 dcModel!(system)
-            
+
 model = dcPowerFlow(system)
 solve!(system, model)
-            
+
 powers = powerBranch(system, model; label = 2)
 ```
-            
+
 Compute the powers of a specific branch after obtaining the DC optimal power flow solution:
 ```jldoctest
 system = powerSystem("case14.h5")
 dcModel!(system)
-            
+
 model = dcOptimalPowerFlow(system)
 optimize!(system, model)
-            
+
 powers = powerBranch(system, model; label = 2)
 ```
 """
@@ -291,16 +296,16 @@ end
 """
     powerGenerator(system::PowerSystem, model::DCAnalysis; label)
 
-This function calculates the active powers associated with a specific generator in the DC 
+This function calculates the active powers associated with a specific generator in the DC
 framework. The `label` keyword argument must match an existing generator label.
-  
+
 # Abstract type
 Subtypes of the abstract type `DCAnalysis` include:
-- `DCPowerFlow`: computes the powers within the DC power flow,    
-- `DCOptimalPowerFlow`: computes the powers within the DC optimal power flow. 
-    
+- `DCPowerFlow`: computes the powers within the DC power flow,
+- `DCOptimalPowerFlow`: computes the powers within the DC optimal power flow.
+
 # Returns
-The function returns an instance of the `DCPowerGenerator` type, which has the following 
+The function returns an instance of the `DCPowerGenerator` type, which has the following
 field:
 - `output`: the active power output of the generators.
 
@@ -309,22 +314,22 @@ Compute the powers of a specific generator after obtaining the DC power flow sol
 ```jldoctest
 system = powerSystem("case14.h5")
 dcModel!(system)
-    
+
 model = dcPowerFlow(system)
 solve!(system, model)
-    
+
 powers = powerGenerator(system, model; label = 1)
 ```
-    
-Compute the powers of a specific generator after obtaining the DC optimal power flow 
+
+Compute the powers of a specific generator after obtaining the DC optimal power flow
 solution:
 ```jldoctest
 system = powerSystem("case14.h5")
 dcModel!(system)
-    
+
 model = dcOptimalPowerFlow(system)
 optimize!(system, model)
-    
+
 powers = powerGenerator(system, model; label = 1)
 ```
 """
@@ -343,22 +348,15 @@ function powerGenerator(system::PowerSystem, model::DCPowerFlow; label)
     busIndex = generator.layout.bus[index]
 
     if generator.layout.status[index] == 1
-        if busIndex == bus.layout.slack
-            numberGenerator = length(bus.supply.inService[busIndex])
+        if busIndex == bus.layout.slack && bus.supply.generator[busIndex][1] == index
+            generatorActive = bus.shunt.conductance[busIndex] + dc.shiftActivePower[busIndex] + bus.demand.active[busIndex]
+            for j in dc.nodalMatrix.colptr[busIndex]:(dc.nodalMatrix.colptr[busIndex + 1] - 1)
+                row = dc.nodalMatrix.rowval[j]
+                generatorActive += dc.nodalMatrix[row, busIndex] * voltage.angle[row]
+            end
 
-            if bus.supply.inService[busIndex][1] == index
-                generatorActive = bus.shunt.conductance[busIndex] + dc.shiftActivePower[busIndex] + bus.demand.active[busIndex]
-                for j in dc.nodalMatrix.colptr[busIndex]:(dc.nodalMatrix.colptr[busIndex + 1] - 1)
-                    row = dc.nodalMatrix.rowval[j]
-                    generatorActive += dc.nodalMatrix[row, busIndex] * voltage.angle[row]
-                end
-
-                for i = 2:numberGenerator
-                    k = bus.supply.inService[busIndex][i]
-                    generatorActive -= generator.output.active[k]
-                end 
-            else
-                generatorActive = generator.output.active[index] 
+            for i = 2:bus.supply.inService[busIndex]
+                generatorActive -= generator.output.active[bus.supply.generator[busIndex][i]]
             end
         else
             generatorActive = generator.output.active[index]
@@ -386,3 +384,5 @@ function allPowerBranch(system::PowerSystem, model::Union{DCPowerFlow, DCOptimal
 
     return powerFrom, powerTo
 end
+
+

@@ -18,9 +18,8 @@ system30 = powerSystem(string(pathData, "case30test.m"))
         solve!(system14, model)
         iterations += 1
     end
-    power = analysisGenerator(system14, model)
 
-    reactiveLimit!(system14, model, power)
+    reactiveLimit!(system14, model)
 
     model = newtonRaphson(system14)
     for i = 1:1000
@@ -50,9 +49,8 @@ system30 = powerSystem(string(pathData, "case30test.m"))
         solve!(system30, model)
         iterations += 1
     end
-    power = analysisGenerator(system30, model)
 
-    reactiveLimit!(system30, model, power)
+    reactiveLimit!(system30, model)
 
     model = newtonRaphson(system30)
     for i = 1:1000

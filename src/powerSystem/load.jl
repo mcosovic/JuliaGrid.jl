@@ -27,7 +27,8 @@ end
 mutable struct BusSupply
     active::Array{Float64,1}
     reactive::Array{Float64,1}
-    inService::Array{Array{Int64,1}}
+    generator::Array{Array{Int64,1}}
+    inService::Array{Int64,1}
 end
 
 mutable struct Bus
@@ -268,7 +269,7 @@ function powerSystem()
     label = Dict{Int64,Int64}()
 
     demand = BusDemand(af, copy(af))
-    supply = BusSupply(copy(af), copy(af), copy(af))
+    supply = BusSupply(copy(af), copy(af), copy(af), copy(af))
     shunt = BusShunt(copy(af), copy(af))
     voltageBus = BusVoltage(copy(af), copy(af), copy(af), copy(af))
     layoutBus = BusLayout(ai, copy(ai), copy(ai), 0, false)
@@ -330,7 +331,8 @@ function loadBus(system::PowerSystem, hdf5::HDF5.File)
 
     bus.supply.active = fill(0.0, bus.number)
     bus.supply.reactive = fill(0.0, bus.number)
-    bus.supply.inService = [Array{Int64}(undef, 0) for i = 1:bus.number]
+    bus.supply.generator = [Array{Int64}(undef, 0) for i = 1:bus.number]
+    bus.supply.inService = fill(0, bus.number)
 
     shunth5 = hdf5["bus/shunt"]
     bus.shunt.conductance = arrayFloat(shunth5, "conductance", bus.number)
@@ -449,7 +451,8 @@ function loadGenerator(system::PowerSystem, hdf5::HDF5.File)
     @inbounds for (k, i) in enumerate(generator.layout.bus)
         generator.label[labelOriginal[k]] = k
         if generator.layout.status[k] == 1
-            push!(system.bus.supply.inService[i], k)
+            push!(system.bus.supply.generator[i], k)
+            system.bus.supply.inService[i] += 1
             system.bus.supply.active[i] += generator.output.active[k]
             system.bus.supply.reactive[i] += generator.output.reactive[k]
         end
@@ -535,7 +538,8 @@ function loadBus(system::PowerSystem, busLine::Array{String,1})
 
     bus.supply.active = fill(0.0, bus.number)
     bus.supply.reactive = fill(0.0, bus.number)
-    bus.supply.inService = [Array{Int64}(undef, 0) for i = 1:bus.number]
+    bus.supply.generator = [Array{Int64}(undef, 0) for i = 1:bus.number]
+    bus.supply.inService = fill(0, bus.number)
 
     bus.shunt.conductance = similar(bus.demand.active)
     bus.shunt.susceptance = similar(bus.demand.active)
@@ -715,7 +719,8 @@ function loadGenerator(system::PowerSystem, generatorLine::Array{String,1}, gene
         if generator.layout.status[k] == 1
             i = generator.layout.bus[k]
 
-            push!(system.bus.supply.inService[i], k)
+            push!(system.bus.supply.generator[i], k)
+            system.bus.supply.inService[i] += 1
             system.bus.supply.active[i] += generator.output.active[k]
             system.bus.supply.reactive[i] += generator.output.reactive[k]
         end

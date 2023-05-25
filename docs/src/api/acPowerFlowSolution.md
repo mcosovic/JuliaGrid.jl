@@ -1,4 +1,4 @@
-# [Power Flow Solution](@id PowerFlowSolutionAPI)
+# [AC Power Flow Solution](@id ACPowerFlowSolutionAPI)
 
 For further information on this topic, please see the [Power System Analysis](@ref PowerSystemModelManual) section of the Manual.
 
@@ -6,27 +6,23 @@ For further information on this topic, please see the [Power System Analysis](@r
 
 ## API Index
 
-###### Build AC Power Flow Model
+###### Build Model
 * [`newtonRaphson`](@ref newtonRaphson)
 * [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX)
 * [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB)
 * [`gaussSeidel`](@ref gaussSeidel)
 
-###### Solve AC Power Flow
-* [`mismatch!`](@ref mismatch!)
-* [`solve!`](@ref solve!)
+###### Solve Power Flow
+* [`mismatch!`](@ref mismatch!(::PowerSystem, ::NewtonRaphson))
+* [`solve!`](@ref solve!(::PowerSystem, ::NewtonRaphson))
 
-###### Additional AC Power Flow Functions
+###### Additional Functions
 * [`reactiveLimit!`](@ref reactiveLimit!)
 * [`adjustAngle!`](@ref adjustAngle!)
 
-###### DC Power Flow
-* [`dcPowerFlow`](@ref dcPowerFlow)
-* [`solve!`](@ref solve!(::PowerSystem, ::DCPowerFlow))
-
 ---
 
-## Build AC Power Flow Model
+## Build Model
 ```@docs
 newtonRaphson
 fastNewtonRaphsonBX
@@ -36,24 +32,16 @@ gaussSeidel
 
 ---
 
-## Solve AC Power Flow Model
+## Solve Power Flow
 ```@docs
-mismatch!
+mismatch!(::PowerSystem, ::NewtonRaphson)
 solve!(::PowerSystem, ::NewtonRaphson)
 ```
 
 ---
 
-## Additional AC Power Flow Functions
+## Additional Functions
 ```@docs
 reactiveLimit!
 adjustAngle!
-```
-
----
-
-## DC Power Flow
-```@docs
-dcPowerFlow
-solve!(::PowerSystem, ::DCPowerFlow)
 ```
