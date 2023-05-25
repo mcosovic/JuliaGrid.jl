@@ -831,7 +831,7 @@ function reactiveLimit!(system::PowerSystem, model::ACPowerFlow)
                 if j == bus.layout.slack
                     for k = 1:bus.number
                         if bus.layout.type[k] == 2
-                            @info("The slack bus $(trunc(Int, bus.label[j])) is converted to generator bus, bus $(trunc(Int, bus.label[k])) is the new slack bus.")
+                            @info("The slack bus $(trunc(Int, bus.label[j])) is converted to generator bus, the bus $(trunc(Int, bus.label[k])) is the new slack bus.")
                             bus.layout.slack = bus.label[k]
                             bus.layout.type[k] = 3
                             break
@@ -933,7 +933,7 @@ function changeSlackBus!(system::PowerSystem)
         if system.bus.layout.type[i] == 2 && system.bus.supply.inService[i] != 0
             system.bus.layout.type[i] = 3
             system.bus.layout.slack = i
-            @info("The initial slack bus did not have an in-service generator. The bus $(trunc(Int, system.bus.label[i])) is the new slack bus.")
+            @info("The slack bus did not have an in-service generator. The bus $(trunc(Int, system.bus.label[i])) is the new slack bus.")
             break
         end
     end

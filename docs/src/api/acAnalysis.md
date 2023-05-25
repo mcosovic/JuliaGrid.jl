@@ -8,16 +8,12 @@ For further information on this topic, please see the [Power System Analysis](@r
 
 ###### Power Analysis
 * [`power`](@ref power(::PowerSystem, ::ACPowerFlow))
-
-###### Component Power Analysis 
 * [`powerBus`](@ref powerBus(::PowerSystem, ::ACPowerFlow))
 * [`powerBranch`](@ref powerBranch(::PowerSystem, ::ACPowerFlow))
 * [`powerGenerator`](@ref powerGenerator(::PowerSystem, ::ACPowerFlow))
 
 ###### Current Analysis
 * [`current`](@ref current(::PowerSystem, ::ACPowerFlow))
-
-###### Component Current Analysis 
 * [`currentBus`](@ref currentBus(::PowerSystem, ::ACPowerFlow))
 * [`currentBranch`](@ref currentBranch(::PowerSystem, ::ACPowerFlow))
 
@@ -27,12 +23,6 @@ For further information on this topic, please see the [Power System Analysis](@r
 ## Power Analysis
 ```@docs
 power(::PowerSystem, ::ACPowerFlow)
-```
-
----
-
-## Component Power Analysis 
-```@docs
 powerBus(::PowerSystem, ::ACPowerFlow)
 powerBranch(::PowerSystem, ::ACPowerFlow)
 powerGenerator(::PowerSystem, ::ACPowerFlow)
@@ -43,12 +33,6 @@ powerGenerator(::PowerSystem, ::ACPowerFlow)
 ## Current Analysis
 ```@docs
 current(::PowerSystem, ::ACPowerFlow)
-```
-
----
-
-## Component Current Analysis 
-```@docs
 currentBus(::PowerSystem, ::ACPowerFlow)
 currentBranch(::PowerSystem, ::ACPowerFlow)
 ```

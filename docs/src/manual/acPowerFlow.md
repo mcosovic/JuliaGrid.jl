@@ -1,5 +1,5 @@
 # [AC Power Flow](@id ACPowerFlowManual)
-To conduct an AC power flow analysis, you will first need the `PowerSystem` composite type that has been created with the `acModel`. Then, you can create the `Model` composite type using one of the following functions:
+To performe the AC power flow analysis, you will first need the `PowerSystem` composite type that has been created with the `acModel`. Then, you can create the `Model` composite type using one of the following functions:
 * [`newtonRaphson`](@ref newtonRaphson)
 * [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX)
 * [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB)
@@ -11,14 +11,14 @@ These functions will set up the AC power flow framework. To obtain bus voltages 
 
 After obtaining the AC power flow solution, JuliaGrid offers post-processing analysis functions for calculating powers and currents associated with buses, branches, or generators:
 * [`power`](@ref power(::PowerSystem, ::ACPowerFlow))
-* [`current`](@ref current(::PowerSystem, ::ACPowerFlow))
+* [`current`](@ref current(::PowerSystem, ::ACPowerFlow)).
 
 Moreover, there exist specific functions dedicated to calculating powers and currents related to a particular bus, branch, or generator:
 * [`powerBus`](@ref powerBus(::PowerSystem, ::ACPowerFlow))
-* [`currentBus`](@ref currentBus(::PowerSystem, ::ACPowerFlow))
 * [`powerBranch`](@ref powerBranch(::PowerSystem, ::ACPowerFlow))
-* [`currentBranch`](@ref current(::PowerSystem, ::ACPowerFlow))
-* [`powerGenerator`](@ref powerBranch(::PowerSystem, ::ACPowerFlow)).
+* [`powerGenerator`](@ref powerGenerator(::PowerSystem, ::ACPowerFlow))
+* [`currentBus`](@ref currentBus(::PowerSystem, ::ACPowerFlow))
+* [`currentBranch`](@ref currentBranch(::PowerSystem, ::ACPowerFlow)).
 
 Additionally, the package provides two functions for reactive power limit validation of generators and adjusting the voltage angles to match an arbitrary bus angle:
 * [`reactiveLimit!`](@ref reactiveLimit!)
@@ -28,10 +28,28 @@ Additionally, the package provides two functions for reactive power limit valida
 
 ## [Bus Type Modification](@id BusTypeModificationManual)
 Depending on how the system is constructed, the types of buses that are initially set are checked and can be changed during the initialization process, using one of the available functions such as [`newtonRaphson`](@ref newtonRaphson), [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX), [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB), or [`gaussSeidel`](@ref gaussSeidel). Assuming the Newton-Raphson method has been chosen, to explain the details, we can observe a power system with only buses and generators. The following code snippet can be used:
-```@example busType
-using JuliaGrid # hide
-@default(unit) # hide
-@default(template) # hide
+```julia 
+system = powerSystem()
+
+addBus!(system; label = 1, type = 3)
+addBus!(system; label = 2, type = 2)
+addBus!(system; label = 3, type = 2)
+
+addGenerator!(system; label = 1, bus = 2)
+
+acModel!(system)
+
+model = newtonRaphson(system)
+```
+
+Initially, the bus labelled with 1 is set as the slack bus (`type = 3`), and the buses with labels 2 and 3 are generator buses (`type = 2`). However, the bus labelled with 3 does not have a generator, and JuliaGrid considers this a mistake and changes the corresponding bus to a demand bus (`type = 1`).
+
+After this step, JuliaGrid verifies the slack bus. Initially, the slack bus (`type = 3`) corresponds to bus 1, but since it does not have an in-service generator connected to it, JuliaGrid recognizes it as an error. Therefore, JuliaGrid assigns a new slack bus from the available generator buses (`type = 2`) that have connected in-service generators. In this specific example, bus 2 becomes the new slack bus.
+
+```@setup busType
+using JuliaGrid 
+@default(unit)
+@default(template)
 
 system = powerSystem()
 
@@ -44,13 +62,7 @@ addGenerator!(system; label = 1, bus = 2)
 acModel!(system)
 
 model = newtonRaphson(system)
-
-nothing # hide
 ```
-
-Initially, the bus labelled with 1 is set as the slack bus (`type = 3`), and the buses with labels 2 and 3 are generator buses (`type = 2`). However, the bus labelled with 3 does not have a generator, and JuliaGrid considers this a mistake and changes the corresponding bus to a demand bus (`type = 1`).
-
-After this step, JuliaGrid verifies the slack bus. Initially, the slack bus (`type = 3`) corresponds to bus 1, but since it does not have an in-service generator connected to it, JuliaGrid recognizes it as an error. Therefore, JuliaGrid assigns a new slack bus from the available generator buses (`type = 2`) that have connected in-service generators. In this specific example, bus 2 becomes the new slack bus.
 
 The resulting bus types are:
 ```@repl busType
@@ -88,10 +100,10 @@ model = newtonRaphson(system)
 nothing # hide
 ```
 
-Here, in this code snippet, the function [`newtonRaphson`](@ref newtonRaphson) generates starting voltage vectors in polar coordinates, where the magnitudes and angles are constructed as:
+Here, in this code snippet, the function [`newtonRaphson`](@ref newtonRaphson) generates starting voltage vectors in polar coordinates, where the angles and magnitudes are constructed as:
 ```@repl initializeACPowerFlow
-model.voltage.magnitude
 model.voltage.angle
+model.voltage.magnitude
 ```
 The starting values for the voltage angles are defined based on the initial values given within the buses:
 ```@repl initializeACPowerFlow
@@ -142,7 +154,8 @@ The starting voltage values are:
 model.voltage.magnitude
 model.voltage.angle
 ```
-Thus, we start with the set of voltage magnitude values that are constant throughout iteration, and the rest of the values correspond to the "flat start".
+
+Consequently, when using the Newton-Raphson method, the iteration begins with a fixed set of voltage magnitude values that remain constant throughout the process. The remaining values are initialized as part of the "flat start" approach.
 
 ---
 
@@ -174,7 +187,7 @@ Once the AC model is defined, we can choose the method to solve the power flow p
 model = newtonRaphson(system)
 nothing # hide
 ```
-This function sets up the desired method for an iterative process based on two functions: [`mismatch!`](@ref mismatch!(::PowerSystem, ::NewtonRaphson)) and [`solve!`](@ref solve!(::PowerSystem, ::NewtonRaphson)). The [`mismatch!`](@ref mismatch!(::PowerSystem, ::NewtonRaphson)) function calculates the active and reactive power injection mismatches using the given voltage magnitudes and angles, while [`solve!`](@ref solve!(::PowerSystem, ::NewtonRaphson)) computes the new voltage magnitudes and angles.
+This function sets up the desired method for an iterative process based on two functions: [`mismatch!`](@ref mismatch!(::PowerSystem, ::NewtonRaphson)) and [`solve!`](@ref solve!(::PowerSystem, ::NewtonRaphson)). The [`mismatch!`](@ref mismatch!(::PowerSystem, ::NewtonRaphson)) function calculates the active and reactive power injection mismatches using the given voltage magnitudes and angles, while [`solve!`](@ref solve!(::PowerSystem, ::NewtonRaphson)) computes the voltage magnitudes and angles.
 
 To perform an iterative process with the Newton-Raphson or Fast Newton-Raphson methods in JuliaGrid, the [`mismatch!`](@ref mismatch!(::PowerSystem, ::NewtonRaphson)) function must be included inside the iteration loop. For instance:
 ```@example ACPowerFlowSolution
@@ -190,7 +203,7 @@ model.voltage.magnitude
 model.voltage.angle
 ```
 
-In contrast, the iterative loop of the Gauss-Seidel method does not require the [`mismatch!`](@ref mismatch!(::PowerSystem, ::NewtonRaphson))) function:
+In contrast, the iterative loop of the Gauss-Seidel method does not require the [`mismatch!`](@ref mismatch!(::PowerSystem, ::NewtonRaphson)) function:
 ```@example ACPowerFlowSolution
 model = gaussSeidel(system)
 for iteration = 1:100
@@ -244,7 +257,7 @@ addBranch!(system; label = 1, from = 1, to = 2, resistance = 0.01, reactance = 0
 addBranch!(system; label = 2, from = 1, to = 3, resistance = 0.02, reactance = 0.01)
 addBranch!(system; label = 3, from = 2, to = 3, resistance = 0.01, reactance = 0.20)
 
-addGenerator!(system; label = 1, bus = 2, active = 3.2, magnitude = 1.2)
+addGenerator!(system; label = 1, bus = 1, active = 3.2, magnitude = 1.2)
 
 acModel!(system)
 
@@ -336,7 +349,7 @@ addBranch!(system; label = 1, from = 1, to = 2, resistance = 0.01, reactance = 0
 addBranch!(system; label = 2, from = 1, to = 2, resistance = 0.02, reactance = 0.01)
 addBranch!(system; label = 3, from = 2, to = 3, resistance = 0.03, reactance = 0.04)
 
-addGenerator!(system; label = 1, bus = 2, active = 3.2)
+addGenerator!(system; label = 1, bus = 1, active = 3.2)
 
 acModel!(system)
 
@@ -352,65 +365,91 @@ end
 nothing # hide
 ```
 
-After that, we can convert the base power unit to megavolt-amperes (MVA) to display the results in that unit as follows:
+We can now utilize the provided functions to compute powers and currents. The following functions can be used for this purpose:
 ```@example ComputationPowersCurrentsLosses
-@base(system, MVA, V)
+powers = power(system, model)
+currents = current(system, model)
+nothing # hide
+```
+
+For instance, if we want to show the active power injections and the magnitude of the current flow at the "from" bus ends, we can employ the following code:
+```@repl ComputationPowersCurrentsLosses
+powers.bus.injection.active
+currents.branch.from.magnitude
+```
+
+!!! note "Info"
+    To better understand the powers associated with buses, branches and generators that are calculated by the [`power`](@ref power(::PowerSystem, ::DCPowerFlow)) function, we suggest referring to the tutorials on [AC power flow analysis](@ref ACPowerAnalysisTutorials).
+
+---
+
+##### Powers and Currents Related to Bus
+To calculate specific quantities for particular components rather than calculating powers or currents for all components, users can utilize the following functions.
+
+To calculate powers associated with a specific bus, the function can be used:
+```@example ComputationPowersCurrentsLosses
+powers = powerBus(system, model; label = 1)
 
 nothing # hide
+```
+
+For instance, to display the active power injections, the following code can be used:
+```@repl ComputationPowersCurrentsLosses
+powers.injection.active
+```
+
+To calculate currents associated with a specific bus, the function can be used:
+```@example ComputationPowersCurrentsLosses
+currents = currentBus(system, model; label = 1)
+
+nothing # hide
+```
+
+For instance, to display the magnitude of the current injection, the following code can be used:
+```@repl ComputationPowersCurrentsLosses
+currents.injection.magnitude
 ```
 
 ---
 
-##### Bus Powers and Currents
-Now we can calculate the powers and currents related to buses using the following function:
+##### Powers and Currents Related to Branch
+Similarly, we can compute the powers related to a particular branch using the following function:
 ```@example ComputationPowersCurrentsLosses
-power, current = analysisBus(system, model)
+powers = powerBranch(system, model; label = 2)
 
 nothing # hide
 ```
-For example, to display the active and reactive power injections in megawatts (MW) and megavolt-ampere reactive (MVAr), we can use the following code:
+
+For instance, to display the reactive power flow at the "from" bus end, we can use the following code:
 ```@repl ComputationPowersCurrentsLosses
-system.base.power.value * power.injection.active
-system.base.power.value * power.injection.reactive
+powers.from.reactive
 ```
 
-!!! note "Info"
-    We note that for a detailed explanation of all the electrical quantities related to buses computed by the [`analysisBus`](@ref analysisBus(::PowerSystem, ::ACPowerFlow)) function, we recommend referring to the tutorials on [AC power flow analysis](@ref BusPowersCurrentsTutorials).
+Further, we can compute the currents related to a particular branch using the following function:
+```@example ComputationPowersCurrentsLosses
+currents = currentBranch(system, model; label = 2)
+
+nothing # hide
+```
+
+For instance, to display the magnitude of the current flow at the "from" bus end, we can use the following code:
+```@repl ComputationPowersCurrentsLosses
+currents.from.magnitude
+```
 
 ---
 
-##### Branch Powers and Currents
-Similarly, we can compute the powers and currents related to branches using the following function:
+##### Powers Related to Generator
+Finally, we can compute the output powers of a particular generator using the function:
 ```@example ComputationPowersCurrentsLosses
-power, current = analysisBranch(system, model)
+powers = powerGenerator(system, model; label = 1)
 
 nothing # hide
 ```
-For instance, to display the active power flows at branches in megawatts (MW), we can use the following code:
+To display the active power produced by the generator, we can use the following code:
 ```@repl ComputationPowersCurrentsLosses
-system.base.power.value * power.from.active
-system.base.power.value * power.to.active
+powers.output.active
 ```
-
-!!! note "Info"
-    We note that for a detailed explanation of all the electrical quantities related to branches computed by the [`analysisBranch`](@ref analysisBranch(::PowerSystem, ::ACPowerFlow)) function, we recommend referring to the tutorials on [AC power flow analysis](@ref BranchPowersCurrentsTutorials).
-
----
-
-##### Generator Powers
-Finally, we can compute the output powers of the generators using the function:
-```@example ComputationPowersCurrentsLosses
-power = analysisGenerator(system, model)
-
-nothing # hide
-```
-For example, to display the active power produced by generators in megawatts (MW), we can use the following code:
-```@repl ComputationPowersCurrentsLosses
-system.base.power.value * power.active
-```
-
-!!! note "Info"
-    We note that for a detailed explanation of all the electrical quantities related to generators computed by the [`analysisGenerator`](@ref analysisGenerator(::PowerSystem, ::ACPowerFlow)) function, we recommend referring to the tutorials on [AC power flow analysis](@ref GeneratorPowersTutorials).
 
 ---
 
@@ -422,19 +461,20 @@ using JuliaGrid # hide
 
 system = powerSystem()
 
-addBus!(system; label = 1, type = 3, active = 0.5, reactive = 0.05)
+addBus!(system; label = 1, type = 3)
 addBus!(system; label = 2, type = 1, active = 0.5)
-addBus!(system; label = 3, type = 2)
-addBus!(system; label = 4, type = 2)
+addBus!(system; label = 3, type = 2, reactive = 0.05)
+addBus!(system; label = 4, type = 2, reactive = 0.05)
 
 addBranch!(system; label = 1, from = 1, to = 2, resistance = 0.01, reactance = 0.05)
 addBranch!(system; label = 2, from = 1, to = 3, resistance = 0.02, reactance = 0.01)
 addBranch!(system; label = 3, from = 2, to = 3, resistance = 0.03, reactance = 0.04)
 addBranch!(system; label = 4, from = 2, to = 4, resistance = 0.03, reactance = 0.004)
 
-@generator(minReactive = 0.0, maxReactive = 0.2)
-addGenerator!(system; label = 1, bus = 3, active = 0.8, reactive = 0.1)
-addGenerator!(system; label = 2, bus = 4, reactive = 0.3)
+@generator(minReactive = -0.4, maxReactive = 0.2)
+addGenerator!(system; label = 1, bus = 1)
+addGenerator!(system; label = 2, bus = 3, reactive = 0.8)
+addGenerator!(system; label = 3, bus = 4, reactive = 0.9)
 
 acModel!(system)
 
@@ -447,8 +487,7 @@ for iteration = 1:100
     solve!(system, model)
 end
 
-power = analysisGenerator(system, model)
-violate = reactiveLimit!(system, model, power)
+violate = reactiveLimit!(system, model)
 
 nothing # hide
 ```
@@ -457,19 +496,16 @@ The output reactive power of the observed generators is subject to limits which 
 [system.generator.capability.minReactive system.generator.capability.maxReactive]
 ```
 
-Once the solution of the AC power flow analysis is obtained, the [`analysisGenerator`](@ref analysisGenerator(::PowerSystem, ::ACPowerFlow)) function can be called to compute the reactive power output of generators:
-```@repl GeneratorReactivePowerLimits
-power.reactive
-```
-
-The variable `violate` indicates the violation of limits, where the first generator violates the minimum limit and the second generator violates the maximum limit, as shown below:
+After obtaining the solution of the AC power flow analysis, the [`reactiveLimit!`](@ref reactiveLimit!) function is used to internally calculate the output powers of the generators and verify if these values exceed the defined limits. Consequently, the variable `violate` indicates whether there is a violation of limits. In the provided example, it can be observed that the second and third generators violate the maximum limit:
 ```@repl GeneratorReactivePowerLimits
 violate
 ```
-As a result of these limit violations, the `PowerSystem` type is changed, and the output reactive powers at the violated limits are set as follows:
+
+Due to these violations of limits, the `PowerSystem` type undergoes modifications, and the output reactive power at the limit-violating generators is adjusted as follows:
 ```@repl GeneratorReactivePowerLimits
 system.generator.output.reactive
 ```
+
 To ensure that these values stay within the limits, the bus type must be changed from the generator bus (`type = 2`) to the demand bus (`type = 1`), as shown below:
 ```@repl GeneratorReactivePowerLimits
 system.bus.layout.type
@@ -486,12 +522,11 @@ for iteration = 1:100
     solve!(system, model)
 end
 
-power = analysisGenerator(system, model)
 nothing # hide
 ```
 Once the simulation is complete, we can verify that all generator reactive power outputs now satisfy the limits by checking the violate variable again:
 ```@repl GeneratorReactivePowerLimits
-violate = reactiveLimit!(system, model, power)
+violate = reactiveLimit!(system, model)
 ```
 
 !!! note "Info"
@@ -531,13 +566,12 @@ for iteration = 1:100
     solve!(system, model)
 end
 
-power = analysisGenerator(system, model)
 nothing # hide
 ```
 
 Upon checking the limits, we can observe that the slack bus has been transformed by executing the following code:
 ```@repl NewSlackBus
-violate = reactiveLimit!(system, model, power)
+violate = reactiveLimit!(system, model)
 ```
 Here, the generator connected to the slack bus is violating the minimum reactive power limit, which indicates the need to convert the slack bus. It is important to note that the new slack bus can be created only from the generator bus (`type = 2`). We will now perform another AC power flow analysis on the modified system using the following code:
 ```@example NewSlackBus

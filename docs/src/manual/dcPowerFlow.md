@@ -6,12 +6,12 @@ To solve the DC power flow problem and acquire bus voltage angles, make use of t
 * [`solve!`](@ref solve!(::PowerSystem, ::DCPowerFlow)).
 
 After obtaining the solution for DC power flow, JuliaGrid offers a post-processing analysis function to compute powers associated with buses, branches, and generators:
-* [`power`](@ref power(::PowerSystem, ::DCAnalysis)).
+* [`power`](@ref power(::PowerSystem, ::DCPowerFlow)).
 
 Moreover, there exist specific functions dedicated to calculating powers related to a particular bus, branch, or generator:
-* [`powerBus`](@ref powerBus(::PowerSystem, ::DCAnalysis))
-* [`powerBranch`](@ref powerBranch(::PowerSystem, ::DCAnalysis))
-* [`powerGenerator`](@ref powerBranch(::PowerSystem, ::DCAnalysis)).
+* [`powerBus`](@ref powerBus(::PowerSystem, ::DCPowerFlow))
+* [`powerBranch`](@ref powerBranch(::PowerSystem, ::DCPowerFlow))
+* [`powerGenerator`](@ref powerBranch(::PowerSystem, ::DCPowerFlow)).
 
 ---
 
@@ -91,7 +91,7 @@ Additionally, the `Model` composite type can be reused to solve the DC power flo
 ---
 
 ##### PowerSystem Composite Type
-Once you have created the power system and DC model, you can reuse them for multiple DC power flow analyses. Specifically, you can modify the structure of the power system using the [`statusBranch!`](@ref statusBranch!) and [`parameterBranch!`](@ref parameterBranch!) functions without having to recreate the system from scratch. As an example, let us say we wish to take the branch labelled 3 out-of-service from the previous example and conduct the DC power flow again:
+Once you have created the `PowerSystem` type with its `dcModel` field, you can reuse them for multiple DC power flow analyses. Specifically, you can modify the structure of the power system using the [`statusBranch!`](@ref statusBranch!) and [`parameterBranch!`](@ref parameterBranch!) functions without having to recreate the system from scratch. As an example, let us say we wish to take the branch labelled 3 out-of-service from the previous example and conduct the DC power flow again:
 ```@example DCPowerFlowSolution
 statusBranch!(system; label = 3, status = 0)
 
@@ -128,7 +128,7 @@ nothing # hide
 ---
 
 ## [Power Analysis](@id DCPowerAnalysisManual)
-After obtaining the solution from the DC power flow, we can calculate powers related to buses, branches, and generators using the [`power`](@ref power(::PowerSystem, ::DCAnalysis)) function. For instance, let us consider the power system for which we obtained the DC power flow solution:
+After obtaining the solution from the DC power flow, we can calculate powers related to buses, branches, and generators using the [`power`](@ref power(::PowerSystem, ::DCPowerFlow)) function. For instance, let us consider the power system for which we obtained the DC power flow solution:
 ```@example ComputationPowersCurrentsLosses
 using JuliaGrid # hide
 
@@ -173,7 +173,7 @@ system.base.power.value * powers.branch.from.active
 ```
 
 !!! note "Info"
-    To better understand the powers associated with buses, branches and generators that are calculated by the [`power`](@ref power(::PowerSystem, ::DCAnalysis)) function, we suggest referring to the tutorials on [DC power flow analysis](@ref DCPowerAnalysisTutorials).
+    To better understand the powers associated with buses, branches and generators that are calculated by the [`power`](@ref power(::PowerSystem, ::DCPowerFlow)) function, we suggest referring to the tutorials on [DC power flow analysis](@ref DCPowerAnalysisTutorials).
 
 ---
 
@@ -184,6 +184,7 @@ powers = powerBus(system, model; label = 1)
 
 nothing # hide
 ```
+
 For instance, to display the active power injections in megawatts, the following code can be used:
 ```@repl ComputationPowersCurrentsLosses
 system.base.power.value * powers.injection.active
@@ -212,7 +213,7 @@ powers = powerGenerator(system, model; label = 1)
 
 nothing # hide
 ```
-To display the active power produced by generators in megawatts, we can use the following code:
+To display the active power produced by the generator in megawatts, we can use the following code:
 ```@repl ComputationPowersCurrentsLosses
 system.base.power.value * powers.output.active
 ```
