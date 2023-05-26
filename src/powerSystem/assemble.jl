@@ -96,8 +96,9 @@ function addBus!(system::PowerSystem;
     push!(layout.type, type)
 
     if ismissing(label)
-        label = system.bus.number
+        label = maxLabel[:bus] + 1
     end
+    maxLabel[:bus] = max(maxLabel[:bus], label)
     setindex!(system.bus.label, system.bus.number, label)
     
     if system.bus.number != label
@@ -369,9 +370,11 @@ function addBranch!(system::PowerSystem;
     system.branch.number += 1
 
     if ismissing(label)
-        label = system.branch.number
+        label = maxLabel[:branch] + 1
     end
+    maxLabel[:branch] = max(maxLabel[:branch], label)
     setindex!(system.branch.label, system.branch.number, label)
+
     if system.branch.number != label
         layout.renumbering = true
     end
@@ -745,9 +748,12 @@ function addGenerator!(system::PowerSystem;
     reactiveScaleDef = si2pu(prefixPower, basePower, default[:reactivePower])
 
     system.generator.number += 1
+
     if ismissing(label)
-        label = system.generator.number
+        label = maxLabel[:generator] + 1
     end
+    maxLabel[:generator] = max(maxLabel[:generator], label)
+
     setindex!(system.generator.label, system.generator.number, label)
 
     pushData!(output.active, active, activeScale, default[:active], activeScaleDef)

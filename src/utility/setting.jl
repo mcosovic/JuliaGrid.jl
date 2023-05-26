@@ -116,7 +116,6 @@ abstract type DCAnalysis end
 abstract type ACAnalysis end
 abstract type ACPowerFlow <: ACAnalysis end
 
-
 ######### Template ##########
 const template = Dict(
     :bus => Dict(
@@ -199,3 +198,9 @@ const template = Dict(
         :baseVoltage => 1.0
     )
 )
+
+######### Labels ##########
+const maxLabel = Dict(
+    :bus => 0,
+    :branch => 0,
+    :generator => 0)
