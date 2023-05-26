@@ -96,9 +96,8 @@ function addBus!(system::PowerSystem;
     push!(layout.type, type)
 
     if ismissing(label)
-        label = maxLabel[:bus] + 1
+        label = maximum(keys(system.bus.label)) + 1
     end
-    maxLabel[:bus] = max(maxLabel[:bus], label)
     setindex!(system.bus.label, system.bus.number, label)
     
     if system.bus.number != label
@@ -370,9 +369,8 @@ function addBranch!(system::PowerSystem;
     system.branch.number += 1
 
     if ismissing(label)
-        label = maxLabel[:branch] + 1
+        label = maximum(keys(system.branch.label)) + 1
     end
-    maxLabel[:branch] = max(maxLabel[:branch], label)
     setindex!(system.branch.label, system.branch.number, label)
 
     if system.branch.number != label
@@ -750,10 +748,8 @@ function addGenerator!(system::PowerSystem;
     system.generator.number += 1
 
     if ismissing(label)
-        label = maxLabel[:generator] + 1
+        label = maximum(keys(system.generator.label)) + 1
     end
-    maxLabel[:generator] = max(maxLabel[:generator], label)
-
     setindex!(system.generator.label, system.generator.number, label)
 
     pushData!(output.active, active, activeScale, default[:active], activeScaleDef)

@@ -198,9 +198,3 @@ const template = Dict(
         :baseVoltage => 1.0
     )
 )
-
-######### Labels ##########
-const maxLabel = Dict(
-    :bus => 0,
-    :branch => 0,
-    :generator => 0)
