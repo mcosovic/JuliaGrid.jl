@@ -53,7 +53,7 @@ addBus!(system; label = 1, active = 25, reactive = -4, angle = 10, base = 132)
 ```
 """
 function addBus!(system::PowerSystem;
-    label::T,
+    label::T = missing,
     type::T = template[:bus][:type],
     active::T = missing, reactive::T = missing,
     conductance::T = missing, susceptance::T = missing,
@@ -74,11 +74,13 @@ function addBus!(system::PowerSystem;
     basePower = system.base.power.value
     prefixVoltage = system.base.voltage.prefix
 
-    if label <= 0
-        throw(ErrorException("The value of the label keyword must be given as a positive integer."))
-    end
-    if haskey(system.bus.label, label)
-        throw(ErrorException("The value $label of the label keyword is not unique."))
+    if !ismissing(label)
+        if label <= 0
+            throw(ErrorException("The value of the label keyword must be given as a positive integer."))
+        end
+        if haskey(system.bus.label, label)
+            throw(ErrorException("The value $label of the label keyword is not unique."))
+        end
     end
     if !(type in [1, 2, 3])
         throw(ErrorException("The value $type of the type keyword is illegal."))
@@ -93,7 +95,11 @@ function addBus!(system::PowerSystem;
     end
     push!(layout.type, type)
 
+    if ismissing(label)
+        label = system.bus.number
+    end
     setindex!(system.bus.label, system.bus.number, label)
+    
     if system.bus.number != label
         layout.renumbering = true
     end
@@ -317,7 +323,7 @@ addBranch!(system; label = 1, from = 1, to = 2, reactance = 0.12, shiftAngle = 1
 ```
 """
 function addBranch!(system::PowerSystem;
-    label::T, from::T, to::T, status::T = template[:branch][:status],
+    label::T = missing, from::N, to::N, status::N = template[:branch][:status],
     resistance::T = missing, reactance::T = missing, susceptance::T = missing,
     turnsRatio::T = template[:branch][:turnsRatio], shiftAngle::T = missing,
     minDiffAngle::T = missing, maxDiffAngle::T = missing,
@@ -333,8 +339,13 @@ function addBranch!(system::PowerSystem;
     prefixPower = system.base.power.prefix
     basePower = system.base.power.value
 
-    if label <= 0
-        throw(ErrorException("The value of the label keyword must be given as a positive integer."))
+    if !ismissing(label)
+        if label <= 0
+            throw(ErrorException("The value of the label keyword must be given as a positive integer."))
+        end
+        if haskey(system.branch.label, label)
+            throw(ErrorException("The branch label $label is not unique."))
+        end
     end
     if from <= 0
         throw(ErrorException("The value of the from keyword must be given as a positive integer."))
@@ -344,9 +355,6 @@ function addBranch!(system::PowerSystem;
     end
     if from == to
         throw(ErrorException("Keywords from and to cannot contain the same positive integer."))
-    end
-    if haskey(system.branch.label, label)
-        throw(ErrorException("The branch label $label is not unique."))
     end
     if !haskey(system.bus.label, from)
         throw(ErrorException("The value $from of the from keyword is not unique."))
@@ -360,6 +368,9 @@ function addBranch!(system::PowerSystem;
 
     system.branch.number += 1
 
+    if ismissing(label)
+        label = system.branch.number
+    end
     setindex!(system.branch.label, system.branch.number, label)
     if system.branch.number != label
         layout.renumbering = true
@@ -687,7 +698,7 @@ addGenerator!(system; label = 1, bus = 1, active = 50, reactive = 10, magnitude 
 ```
 """
 function addGenerator!(system::PowerSystem;
-    label::T, bus::T,
+    label::T = missing, bus::N,
     area::T = template[:generator][:area], status::T = template[:generator][:status],
     active::T = missing, reactive::T = missing, magnitude::T = missing,
     minActive::T = missing, maxActive::T = missing, minReactive::T = missing,
@@ -708,14 +719,16 @@ function addGenerator!(system::PowerSystem;
     basePower = system.base.power.value
     prefixVoltage = system.base.voltage.prefix
 
-    if label <= 0
-        throw(ErrorException("The value of the label keyword must be given as a positive integer."))
+    if !ismissing(label)
+        if label <= 0
+            throw(ErrorException("The value of the label keyword must be given as a positive integer."))
+        end
+        if haskey(system.generator.label, label)
+            throw(ErrorException("The value $label of the label keyword is not unique."))
+        end
     end
     if bus <= 0
         throw(ErrorException("The value of the bus keyword must be given as a positive integer."))
-    end
-    if haskey(system.generator.label, label)
-        throw(ErrorException("The value $label of the label keyword is not unique."))
     end
     if !haskey(system.bus.label, bus)
         throw(ErrorException("The value $bus of the bus keyword does not exist in bus labels."))
@@ -732,6 +745,9 @@ function addGenerator!(system::PowerSystem;
     reactiveScaleDef = si2pu(prefixPower, basePower, default[:reactivePower])
 
     system.generator.number += 1
+    if ismissing(label)
+        label = system.generator.number
+    end
     setindex!(system.generator.label, system.generator.number, label)
 
     pushData!(output.active, active, activeScale, default[:active], activeScaleDef)

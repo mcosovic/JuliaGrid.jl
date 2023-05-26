@@ -57,6 +57,7 @@ function saveBus(system::PowerSystem, file)
             shuntNumber += 1
         end
     end
+    
     write(file, "bus/layout/label", label)
     attrs(file["bus/layout/label"])["type"] = "positive integer"
     attrs(file["bus/layout/label"])["unit"] = "dimensionless"
@@ -442,12 +443,17 @@ end
 ######### Array Compression ##########
 function compresseArray(file, data, name::String)
     format = "compressed"
-    anchor = data[1]
-    @inbounds for i in eachindex(data)
-        if data[i] != anchor
-            format = "expand"
-            break
+
+    if !isempty(data)
+        anchor = data[1]
+        @inbounds for i in eachindex(data)
+            if data[i] != anchor
+                format = "expand"
+                break
+            end
         end
+    else
+        anchor = data
     end
 
     if format == "expand"

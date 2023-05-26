@@ -79,7 +79,7 @@ end
 mutable struct CurrentBranch
     from::Polar
     to::Polar
-    branch::Polar
+    line::Polar
 end
 
 mutable struct Current
