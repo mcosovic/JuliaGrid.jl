@@ -9,8 +9,8 @@ After obtaining the solution for DC power flow, JuliaGrid offers a post-processi
 * [`power`](@ref power(::PowerSystem, ::DCPowerFlow)).
 
 Moreover, there exist specific functions dedicated to calculating powers related to a particular bus, branch, or generator:
-* [`powerBus`](@ref powerBus(::PowerSystem, ::DCPowerFlow))
-* [`powerBranch`](@ref powerBranch(::PowerSystem, ::DCPowerFlow))
+* [`powerBus`](@ref powerBus(::PowerSystem, ::DCPowerFlow)),
+* [`powerBranch`](@ref powerBranch(::PowerSystem, ::DCPowerFlow)),
 * [`powerGenerator`](@ref powerBranch(::PowerSystem, ::DCPowerFlow)).
 
 ---

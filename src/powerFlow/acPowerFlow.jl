@@ -744,13 +744,13 @@ if they are violated, after determining the bus voltage magnitudes and angles. I
 limits are violated, the corresponding generator buses or the slack bus are converted to
 demand buses.
 
-The function assigns values to the `generator.output.active` and `bus.supply.active` 
-variables of the `PowerSystem` type. Additionally, it examines the reactive powers of the 
-generator and adjusts them to their maximum or minimum values if they exceed the specified 
-threshold. Subsequently, the `generator.output.reactive` variable of the `PowerSystem` type 
+The function assigns values to the `generator.output.active` and `bus.supply.active`
+variables of the `PowerSystem` type. Additionally, it examines the reactive powers of the
+generator and adjusts them to their maximum or minimum values if they exceed the specified
+threshold. Subsequently, the `generator.output.reactive` variable of the `PowerSystem` type
 is modified accordingly. As a result of this adjustment, the `bus.supply.reactive` variable
-of the `PowerSystem` type is also updated, and the bus types specified in `bus.layout.type` 
-are modified. If the slack bus is converted, the `bus.layout.slack` field is correspondingly 
+of the `PowerSystem` type is also updated, and the bus types specified in `bus.layout.type`
+are modified. If the slack bus is converted, the `bus.layout.slack` field is correspondingly
 adjusted.
 
 # Returns
@@ -878,9 +878,8 @@ for i = 1:10
     end
     solve!(system, model)
 end
-power = analysisGenerator(system, model)
 
-reactiveLimit!(system, model, power)
+reactiveLimit!(system, model)
 
 model = newtonRaphson(system)
 for i = 1:10

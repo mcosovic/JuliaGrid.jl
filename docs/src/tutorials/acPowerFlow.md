@@ -513,7 +513,7 @@ Additionally, during this stage, JuliaGrid generates the starting vectors for bu
 ---
 
 ##### Iterative Process
-JuliaGrid offers the [`mismatch!`](@ref mismatch!(::PowerSystem, ::FastNewtonRaphson)) and [`solve!`](@ref solve!(::PowerSystem, ::FastNewtonRaphson)) functions to implement the fast Newton-Raphson method iterations. These functions are used iteratively until a stopping criterion is met, as shown in the code snippet below:
+JuliaGrid offers the [`mismatch!`](@ref mismatch!(::PowerSystem, ::NewtonRaphson)) and [`solve!`](@ref solve!(::PowerSystem, ::NewtonRaphson)) functions to implement the fast Newton-Raphson method iterations. These functions are used iteratively until a stopping criterion is met, as shown in the code snippet below:
 ```@example PowerFlowSolution
 for iteration = 1:100
     stopping = mismatch!(system, model)
@@ -533,7 +533,7 @@ The functions ``\mathbf{f}_{P}(\mathbf x)`` and ``\mathbf{f}_{Q}(\mathbf x)`` re
     \;\;\; i \in \mathcal{N}_{\text{pq}}.
   \end{aligned}
 ```
-Therefore, the [`mismatch!`](@ref mismatch!(::PowerSystem, ::FastNewtonRaphson)) function calculates the mismatch in active power injection for demand and generator buses and the mismatch in reactive power injection for demand buses at each iteration ``\nu = \{1, 2, \dots\}``:
+Therefore, the [`mismatch!`](@ref mismatch!(::PowerSystem, ::NewtonRaphson)) function calculates the mismatch in active power injection for demand and generator buses and the mismatch in reactive power injection for demand buses at each iteration ``\nu = \{1, 2, \dots\}``:
 ```math
   {h}_{P_i}(\mathbf {x}^{(\nu-1)}) =
   \sum\limits_{j=1}^n {V}_{j}^{(\nu-1)}(G_{ij}\cos\theta_{ij}^{(\nu-1)}+B_{ij}\sin\theta_{ij}^{(\nu-1)}) - \cfrac{{P}_{i}}{{V}_{i}^{(\nu-1)}},
@@ -551,13 +551,13 @@ The resulting vectors from these calculations are stored in the `Model` composit
 𝐡ₒ = model.reactive.increment
 ```
 
-In addition to computing the mismatches in active and reactive power injection, the [`mismatch!`](@ref mismatch!(::PowerSystem, ::FastNewtonRaphson)) function also returns the maximum absolute values of these mismatches. These maximum values are used as termination criteria for the iteration loop if both are less than a predefined stopping criterion ``\epsilon``:
+In addition to computing the mismatches in active and reactive power injection, the [`mismatch!`](@ref mismatch!(::PowerSystem, ::NewtonRaphson)) function also returns the maximum absolute values of these mismatches. These maximum values are used as termination criteria for the iteration loop if both are less than a predefined stopping criterion ``\epsilon``:
 ```math
     \max \{|h_{P_i}(\mathbf x^{(\nu)})|,\; i \in \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}} \} < \epsilon \\
     \max \{|h_{Q_i}(\mathbf x^{(\nu)})|,\; i \in \mathcal{N}_{\text{pq}} \} < \epsilon.
 ```
 
-Next, the function [`solve!`](@ref solve!(::PowerSystem, ::FastNewtonRaphson)) computes the bus voltage angle increments:
+Next, the function [`solve!`](@ref solve!(::PowerSystem, ::NewtonRaphson)) computes the bus voltage angle increments:
 ```math
   \mathbf \Delta \mathbf x_a^{(\nu-1)} = \mathbf{B}_1^{-1} \mathbf{h}_{P}(\mathbf x_a^{(\nu-1)}, \mathbf x_m^{(\nu-1)}).
 ```
@@ -635,7 +635,7 @@ This results in the creation of the starting vectors of bus voltage magnitudes `
 ---
 
 ##### Iterative Process
-JuliaGrid offers the [`mismatch!`](@ref mismatch!(::PowerSystem, ::GaussSeidel)) and [`solve!`](@ref solve!(::PowerSystem, ::GaussSeidel)) functions to implement the Gauss-Seidel method iterations. These functions are used iteratively until a stopping criterion is met, as shown in the code snippet below:
+JuliaGrid offers the [`mismatch!`](@ref mismatch!(::PowerSystem, ::NewtonRaphson)) and [`solve!`](@ref solve!(::PowerSystem, ::NewtonRaphson)) functions to implement the Gauss-Seidel method iterations. These functions are used iteratively until a stopping criterion is met, as shown in the code snippet below:
 ```@example PowerFlowSolution
 for iteration = 1:300
     stopping = mismatch!(system, model)
@@ -646,7 +646,7 @@ for iteration = 1:300
 end
 ```
 
-In contrast to the Newton-Raphson and Fast Newton-Raphson methods, the Gauss-Seidel method does not require the calculation of the mismatch in active and reactive power injection at each iteration. Instead, the [`mismatch!`](@ref mismatch!(::PowerSystem, ::GaussSeidel)) function is used solely to verify the convergence criteria. At each iteration ``\nu = \{1, 2, \dots\}``, we calculate the active power injection mismatch for demand and generator buses, as shown below:
+In contrast to the Newton-Raphson and Fast Newton-Raphson methods, the Gauss-Seidel method does not require the calculation of the mismatch in active and reactive power injection at each iteration. Instead, the [`mismatch!`](@ref mismatch!(::PowerSystem, ::NewtonRaphson)) function is used solely to verify the convergence criteria. At each iteration ``\nu = \{1, 2, \dots\}``, we calculate the active power injection mismatch for demand and generator buses, as shown below:
 ```math
     {f}_{P_i}(\mathbf x^{(\nu-1)}) = \Re\{\bar{V}_i^{(\nu - 1)} \bar{I}_i^{*(\nu - 1)}\} - P_i, \;\;\; i \in \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}},
 ```
@@ -661,7 +661,7 @@ However, these mismatches are not stored as they are only used to obtain the max
     \max \{|{f}_{Q_i}(\mathbf x^{(\nu-1)})|,\; i \in \mathcal{N}_{\text{pq}} \} < \epsilon
 ```
 
-After initializing complex bus voltages ``\bar{V}_i^{(0)}`` for all buses in the power system, the function [`solve!`](@ref solve!(::PowerSystem, ::GaussSeidel)) proceeds to compute the voltages for demand buses using the Gauss-Seidel method:
+After initializing complex bus voltages ``\bar{V}_i^{(0)}`` for all buses in the power system, the function [`solve!`](@ref solve!(::PowerSystem, ::NewtonRaphson)) proceeds to compute the voltages for demand buses using the Gauss-Seidel method:
 ```math
     \bar{V}_{i}^{(\nu)} =
     \cfrac{1}{{Y}_{ii}} \Bigg(\cfrac{{P}_{i} - j{Q}_{i}}{\bar{V}_{i}^{*(\nu-1)}} -
@@ -700,18 +700,18 @@ nothing # hide
 ```
 
 The function stores the computed powers in the rectangular coordinate system. It calculates the following powers related to buses:
-* active and reactive power injections: ``\mathbf{P} = [P_i]``, ``\mathbf{Q} = [Q_i]``
-* active and reactive power injections from the generators:  ``\mathbf{P}_{\text{s}} = [P_{\text{s}i}]``, ``\mathbf{Q}_{\text{s}} = [Q_{\text{s}i}]``.
-* active and reactive powers associated with shunt elements: ``\mathbf{P}_{\text{sh}} = [{P}_{\text{sh}i}]``, ``\mathbf{Q}_{\text{sh}} = [{Q}_{\text{sh}i}]``
+* active and reactive power injections: ``\mathbf{P} = [P_i]``, ``\mathbf{Q} = [Q_i]``,
+* active and reactive power injections from the generators:  ``\mathbf{P}_{\text{s}} = [P_{\text{s}i}]``, ``\mathbf{Q}_{\text{s}} = [Q_{\text{s}i}]``,
+* active and reactive powers associated with shunt elements: ``\mathbf{P}_{\text{sh}} = [{P}_{\text{sh}i}]``, ``\mathbf{Q}_{\text{sh}} = [{Q}_{\text{sh}i}]``.
 
 It also calculates the following powers related to branches:
-* active and reactive power flows at each "from" bus end: ``\mathbf{P}_{\text{i}} = [P_{ij}]``, ``\mathbf{Q}_{\text{i}} = [Q_{ij}]``
-* active and reactive power flows at each "to" bus end: ``\mathbf{P}_{\text{j}} = [P_{ji}]``, ``\mathbf{Q}_{\text{j}} = [Q_{ji}]``
-* active and reactive power losses: ``\mathbf{P}_{\text{l}} = [P_{\text{l}ij}]``, ``\mathbf{Q}_{\text{l}} = [Q_{\text{l}ij}]``
+* active and reactive power flows at each "from" bus end: ``\mathbf{P}_{\text{i}} = [P_{ij}]``, ``\mathbf{Q}_{\text{i}} = [Q_{ij}]``,
+* active and reactive power flows at each "to" bus end: ``\mathbf{P}_{\text{j}} = [P_{ji}]``, ``\mathbf{Q}_{\text{j}} = [Q_{ji}]``,
+* active and reactive power losses: ``\mathbf{P}_{\text{l}} = [P_{\text{l}ij}]``, ``\mathbf{Q}_{\text{l}} = [Q_{\text{l}ij}]``,
 * reactive power injections: ``\mathbf{Q}_{\text{r}} = [ Q_{\text{r}ij}]``.
 
 Lastly, it calculates the following powers related to generators:
-* output active and reactive powers: ``\mathbf{P}_{\text{g}} = [P_{\text{g}i}]`` and ``\mathbf{Q}_{\text{g}} = [Q_{\text{g}i}]``.
+* output active and reactive powers: ``\mathbf{P}_{\text{g}} = [P_{\text{g}i}]``, ``\mathbf{Q}_{\text{g}} = [Q_{\text{g}i}]``.
 
 ---
 
@@ -728,7 +728,7 @@ Active and reactive power injections are stored as the vectors ``\mathbf{P} = [P
 
 ----
 
-##### Active and Reactive Power Injections from the Generators at Each Bus 
+##### Active and Reactive Power Injections from the Generators at Each Bus
 The [`power`](@ref power(::PowerSystem, ::ACPowerFlow)) function in JuliaGrid also computes the active and reactive power injections from the generators at each bus. The active power supplied by the generators to the buses can be calculated by summing the given generator active powers in the input data, except for the slack bus, which can be determined as:
 ```math
     P_{\text{s}i} = P_i + P_{\text{d}i},\;\;\; i \in \mathcal{N}_{\text{sb}},
@@ -749,7 +749,7 @@ where ``Q_{\text{d}i}`` represents the reactive power demanded by consumers at t
 
 ---
 
-##### Active and Reactive Powers Associated with Shunt Elements at Each Bus 
+##### Active and Reactive Powers Associated with Shunt Elements at Each Bus
 To obtain the active and reactive powers associated with the shunt elements at each bus, you can use the following equation:
 ```math
   {S}_{\text{sh}i} = {P}_{\text{sh}i} + \text{j}{Q}_{\text{sh}i} = \bar{V}_{i}\bar{I}_{\text{sh}i}^* = {y}_{\text{sh}i}^*|\bar{V}_{i}|^2,\;\;\; i \in \mathcal{N}.
@@ -848,8 +848,8 @@ The function stores the computed currents in the polar coordinate system. It cal
 * current injection magnitudes and angles: ``\mathbf{I} = [I_i]``, ``\bm{\psi} = [\psi_i]``.
 
 It also calculates the following currents related to branches:
-* current flow magnitudes and angles at each "from" bus end: ``\mathbf{I}_{\text{i}} = [I_{ij}]``, ``\bm{\psi}_{\text{i}} = [\psi_{ij}]``
-* current flow magnitudes and angles at each "to" bus end: ``\mathbf{I}_{\text{j}} = [I_{ji}]``, ``\bm{\psi}_{\text{j}} = [\psi_{ji}]``
+* current flow magnitudes and angles at each "from" bus end: ``\mathbf{I}_{\text{i}} = [I_{ij}]``, ``\bm{\psi}_{\text{i}} = [\psi_{ij}]``,
+* current flow magnitudes and angles at each "to" bus end: ``\mathbf{I}_{\text{j}} = [I_{ji}]``, ``\bm{\psi}_{\text{j}} = [\psi_{ji}]``,
 * current flow magnitudes and angles through series impedances: ``\mathbf{I}_{\text{s}} = [I_{\text{s}ij}]``, ``\bm{\psi}_{\text{s}} = [\psi_{\text{s}ij}]``.
 
 ---

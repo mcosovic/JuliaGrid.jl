@@ -393,7 +393,7 @@ for i = 1:10
     solve!(system, model)
 end
 
-powers = powerGenerator(system, model)
+powers = powerGenerator(system, model; label = 1)
 ```
 """
 function powerGenerator(system::PowerSystem, model::ACPowerFlow; label)
@@ -485,7 +485,7 @@ function powerGenerator(system::PowerSystem, model::ACPowerFlow; label)
                 end
             else
                     powerActive = system.generator.output.active[index]
-            end  
+            end
         end
     else
         powerActive = 0.0
@@ -500,7 +500,7 @@ end
 """
     current(system::PowerSystem, model::ACAnalysis)
 
-The function returns the currents in the polar coordinate system associated with buses and 
+The function returns the currents in the polar coordinate system associated with buses and
 branches in the AC framework.
 
 # Abstract type
@@ -586,7 +586,7 @@ function current(system::PowerSystem, model::ACPowerFlow)
 
     return Current(
         CurrentBus(
-            Polar(injectionMagnitude, injectionAngle), 
+            Polar(injectionMagnitude, injectionAngle),
         ),
         CurrentBranch(
             Polar(fromMagnitude, fromAngle),
@@ -600,7 +600,7 @@ end
     currentBus(system::PowerSystem, model::ACAnalysis; label)
 
 The function returns the currents in the polar coordinate system associated with a specific
-bus in the AC framework. The `label` keyword argument must match an existing bus label.    
+bus in the AC framework. The `label` keyword argument must match an existing bus label.
 
 # Abstract type
 Subtypes of the abstract type `ACAnalysis` include:
@@ -608,7 +608,7 @@ Subtypes of the abstract type `ACAnalysis` include:
 - `ACOptimalPowerFlow`: computes the currents within the AC optimal power flow.
 
 # Returns
-The function returns the instance of the `CurrentBus` type, which contains the following 
+The function returns the instance of the `CurrentBus` type, which contains the following
 field:
 - `injection`: current injection magnitude and angle at the bus.
 
@@ -634,7 +634,7 @@ function currentBus(system::PowerSystem, model::ACPowerFlow; label)
         throw(ErrorException("The value $label of the label keyword does not exist in bus labels."))
     end
     errorVoltage(model.voltage.magnitude)
-        
+
     ac = system.acModel
     voltage = model.voltage
     index = system.bus.label[label]
@@ -646,7 +646,7 @@ function currentBus(system::PowerSystem, model::ACPowerFlow; label)
     end
 
     return CurrentBus(
-            Polar(abs(I), angle(I)) 
+            Polar(abs(I), angle(I))
         )
 end
 
@@ -654,7 +654,7 @@ end
     currentBranch(system::PowerSystem, model::ACAnalysis; label)
 
 The function returns the currents in the polar coordinate system associated with a specific
-branch in the AC framework. The `label` keyword argument must match an existing branch label.  
+branch in the AC framework. The `label` keyword argument must match an existing branch label.
 
 # Abstract type
 Subtypes of the abstract type `ACAnalysis` include:
@@ -662,7 +662,7 @@ Subtypes of the abstract type `ACAnalysis` include:
 - `ACOptimalPowerFlow`: computes the currents within the AC optimal power flow.
 
 # Returns
-The function returns the instance of the `CurrentBranch` type, which contains the following 
+The function returns the instance of the `CurrentBranch` type, which contains the following
 fields:
 - `from`: current flow magnitude and angle at the "from" bus end of the branch,
 - `to`: current flow magnitudes and angles at the "to" bus end of the branch,

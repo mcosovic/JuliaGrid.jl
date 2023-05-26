@@ -1,34 +1,34 @@
 # [AC Power Flow](@id ACPowerFlowManual)
 To performe the AC power flow analysis, you will first need the `PowerSystem` composite type that has been created with the `acModel`. Then, you can create the `Model` composite type using one of the following functions:
-* [`newtonRaphson`](@ref newtonRaphson)
-* [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX)
-* [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB)
-* [`gaussSeidel`](@ref gaussSeidel)
+* [`newtonRaphson`](@ref newtonRaphson),
+* [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX),
+* [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB),
+* [`gaussSeidel`](@ref gaussSeidel).
 
 These functions will set up the AC power flow framework. To obtain bus voltages and solve the power flow problem, you can use the following functions:
-* [`mismatch!`](@ref mismatch!(::PowerSystem, ::NewtonRaphson))
+* [`mismatch!`](@ref mismatch!(::PowerSystem, ::NewtonRaphson)),
 * [`solve!`](@ref solve!(::PowerSystem, ::NewtonRaphson)).
 
 After obtaining the AC power flow solution, JuliaGrid offers post-processing analysis functions for calculating powers and currents associated with buses, branches, or generators:
-* [`power`](@ref power(::PowerSystem, ::ACPowerFlow))
+* [`power`](@ref power(::PowerSystem, ::ACPowerFlow)),
 * [`current`](@ref current(::PowerSystem, ::ACPowerFlow)).
 
 Moreover, there exist specific functions dedicated to calculating powers and currents related to a particular bus, branch, or generator:
-* [`powerBus`](@ref powerBus(::PowerSystem, ::ACPowerFlow))
-* [`powerBranch`](@ref powerBranch(::PowerSystem, ::ACPowerFlow))
-* [`powerGenerator`](@ref powerGenerator(::PowerSystem, ::ACPowerFlow))
-* [`currentBus`](@ref currentBus(::PowerSystem, ::ACPowerFlow))
+* [`powerBus`](@ref powerBus(::PowerSystem, ::ACPowerFlow)),
+* [`powerBranch`](@ref powerBranch(::PowerSystem, ::ACPowerFlow)),
+* [`powerGenerator`](@ref powerGenerator(::PowerSystem, ::ACPowerFlow)),
+* [`currentBus`](@ref currentBus(::PowerSystem, ::ACPowerFlow)),
 * [`currentBranch`](@ref currentBranch(::PowerSystem, ::ACPowerFlow)).
 
 Additionally, the package provides two functions for reactive power limit validation of generators and adjusting the voltage angles to match an arbitrary bus angle:
-* [`reactiveLimit!`](@ref reactiveLimit!)
+* [`reactiveLimit!`](@ref reactiveLimit!),
 * [`adjustAngle!`](@ref adjustAngle!).
 
 ---
 
 ## [Bus Type Modification](@id BusTypeModificationManual)
 Depending on how the system is constructed, the types of buses that are initially set are checked and can be changed during the initialization process, using one of the available functions such as [`newtonRaphson`](@ref newtonRaphson), [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX), [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB), or [`gaussSeidel`](@ref gaussSeidel). Assuming the Newton-Raphson method has been chosen, to explain the details, we can observe a power system with only buses and generators. The following code snippet can be used:
-```julia 
+```julia
 system = powerSystem()
 
 addBus!(system; label = 1, type = 3)
@@ -47,7 +47,7 @@ Initially, the bus labelled with 1 is set as the slack bus (`type = 3`), and the
 After this step, JuliaGrid verifies the slack bus. Initially, the slack bus (`type = 3`) corresponds to bus 1, but since it does not have an in-service generator connected to it, JuliaGrid recognizes it as an error. Therefore, JuliaGrid assigns a new slack bus from the available generator buses (`type = 2`) that have connected in-service generators. In this specific example, bus 2 becomes the new slack bus.
 
 ```@setup busType
-using JuliaGrid 
+using JuliaGrid
 @default(unit)
 @default(template)
 
