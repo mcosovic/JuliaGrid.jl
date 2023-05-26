@@ -177,7 +177,21 @@ system.base.voltage.value, system.base.voltage.unit
 ---
 
 ## [Bus Labels](@id BusLabelsManual)
-In JuliaGrid, the set of bus labels is always internally assigned and stored in a dictionary, even if the labels assigned to the buses are in an increasing ordered set of integers. In this case, each bus label value corresponds to the same internally assigned value.
+In JuliaGrid, the set of bus labels is always internally assigned and stored in a dictionary, even if the labels assigned to the buses are in an increasing ordered set of integers. In this scenario, each bus label value corresponds to the same internally assigned value. As a result, the user can omit the `label` keyword. For instance:
+```@example BusLabels
+using JuliaGrid # hide
+
+system = powerSystem()
+
+addBus!(system)
+addBus!(system)
+
+nothing # hide
+```
+These bus labels, which are also internally assigned, are stored in the variable:
+```@repl BusLabels
+system.bus.label
+```
 
 However, if the labels assigned to the buses are not in an increasing ordered set of integers, the system will always internally renumber all labels to satisfy the requirement of an increasing ordered set of integers. For example, suppose we have a power system with buses labelled as:
 ```@example AccessBusLabels
@@ -187,8 +201,6 @@ system = powerSystem()
 
 addBus!(system; label = 30)
 addBus!(system; label = 20)
-addBus!(system; label = 40)
-addBus!(system; label = 10)
 
 nothing # hide
 ```
@@ -206,7 +218,7 @@ label = collect(keys(sort(system.bus.label; byvalue = true)))
 ---
 
 ## [Add Branch](@id AddBranchManual)
-After adding buses with unique labels, we can define branches between them. The branch cannot be added unless the buses are already defined, and the `from` and `to` keywords should correspond to the already defined bus labels. Additionally, each branch should be labelled with its own unique label. For instance:
+After adding buses with unique labels, we can define branches between them. The branch cannot be added unless the buses are already defined, and the `from` and `to` keywords should correspond to the already defined bus labels. For instance:
 ```@example addBranch
 using JuliaGrid # hide
 @default(unit)  # hide
@@ -290,10 +302,12 @@ labelBus = collect(keys(sort(system.bus.label; byvalue = true)))
 [labelBus[system.branch.layout.from] labelBus[system.branch.layout.to]]
 ```
 
+Also, users have the option to omit the `label` keyword when using the [`addBranch!`](@ref addBranch!) function. In this case, the system internally assigns labels in an increasing order.
+
 ---
 
 ## [Add Generator](@id AddGeneratorManual)
-After defining the buses, generators can be added to the power system. Each generator must have a unique label assigned to it, and the `bus` keyword should correspond to the unique label of the bus it is connected to. For instance:
+After defining the buses, generators can be added to the power system. Each generator must have a unique label, and the `bus` keyword should correspond to the unique label of the bus it is connected to. For instance:
 ```@example addGenerator
 using JuliaGrid # hide
 @default(unit) # hide
@@ -356,6 +370,8 @@ To obtain the original labels of the `bus` keyword, you can use the following co
 labelBus = collect(keys(sort(system.bus.label; byvalue = true)))
 label = labelBus[system.generator.layout.bus]
 ```
+
+Also, users have the option to omit the `label` keyword when using the [`addGenerator!`](@ref addGenerator!) function. In this case, the system internally assigns labels in an increasing order.
 
 ---
 
@@ -472,8 +488,8 @@ addBus!(system; label = 1, type = 3, active = 0.1)
 addBus!(system; label = 2, type = 1, reactive = 0.05)
 addBus!(system; label = 3, type = 1, susceptance = 0.05)
 
-addBranch!(system; label = 1, from = 1, to = 2, reactance = 0.12, shiftAngle = 0.1745)
-addBranch!(system; label = 2, from = 2, to = 3, resistance = 0.008, reactance = 0.05)
+addBranch!(system; from = 1, to = 2, reactance = 0.12, shiftAngle = 0.1745)
+addBranch!(system; from = 2, to = 3, resistance = 0.008, reactance = 0.05)
 
 acModel!(system)
 dcModel!(system)
@@ -505,8 +521,8 @@ addBus!(system; label = 3, type = 1, susceptance = 0.05)
 acModel!(system)
 dcModel!(system)
 
-addBranch!(system; label = 1, from = 1, to = 2, reactance = 0.12, shiftAngle = 0.1745)
-addBranch!(system; label = 2, from = 2, to = 3, resistance = 0.008, reactance = 0.05)
+addBranch!(system; from = 1, to = 2, reactance = 0.12, shiftAngle = 0.1745)
+addBranch!(system; from = 2, to = 3, resistance = 0.008, reactance = 0.05)
 
 nothing # hide
 ```
@@ -542,7 +558,7 @@ system = powerSystem()
 addBus!(system; label = 1, type = 3)
 addBus!(system; label = 2, type = 1, susceptance = 2.1)
 
-addBranch!(system; label = 1, from = 1, to = 2, reactance = 0.12)
+addBranch!(system; from = 1, to = 2, reactance = 0.12)
 
 acModel!(system)
 

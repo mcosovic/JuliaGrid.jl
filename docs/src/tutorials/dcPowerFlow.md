@@ -15,13 +15,13 @@ addBus!(system; label = 1, type = 3)
 addBus!(system; label = 2, type = 1, active = 21.7)
 addBus!(system; label = 3, type = 2, conductance = 0.07)
 
-addBranch!(system; label = 1, from = 1, to = 2, reactance = 0.26)
-addBranch!(system; label = 2, from = 1, to = 3, reactance = 0.38)
-addBranch!(system; label = 3, from = 2, to = 3, reactance = 0.17, turnsRatio = 0.97)
+addBranch!(system; from = 1, to = 2, reactance = 0.26)
+addBranch!(system; from = 1, to = 3, reactance = 0.38)
+addBranch!(system; from = 2, to = 3, reactance = 0.17, turnsRatio = 0.97)
 
-addGenerator!(system; label = 1, bus = 1, active = 2.0)
-addGenerator!(system; label = 2, bus = 1, active = 4.0)
-addGenerator!(system; label = 3, bus = 3, active = 5.0)
+addGenerator!(system; bus = 1, active = 2.0)
+addGenerator!(system; bus = 1, active = 4.0)
+addGenerator!(system; bus = 3, active = 5.0)
 nothing #hide
 ```
 
@@ -96,7 +96,7 @@ nothing # hide
 ---
 
 ##### Powers Related to Buses
-To obtain the active power injection at bus ``i \in \mathcal{N}``, we can refer to section [DC Model](@ref DCModelTutorials), which provides the following expression:
+To obtain the active power injections at each bus ``i \in \mathcal{N}``, we can refer to section [DC Model](@ref DCModelTutorials), which provides the following expression:
 ```math
    P_i = \sum_{j = 1}^n {B}_{ij} \theta_j + P_{\text{tr}i} + P_{\text{sh}i},\;\;\; i \in \mathcal{N}.
 ```
@@ -117,20 +117,20 @@ where ``P_{\text{d}i}`` represents the active power demanded by consumers at the
 ---
 
 ##### Powers Related to Branches
-The active power flows at from bus end ``i \in \mathcal{N}`` can be obtained using the following equations:
+The active power flows at each "from" bus end ``i \in \mathcal{N}`` of the branch can be obtained using the following equations:
 ```math
     P_{ij} = \cfrac{1}{\tau_{ij} x_{ij}} (\theta_{i} -\theta_{j}-\phi_{ij}),\;\;\; (i,j) \in \mathcal{E}.
 ```
-The resulting active power flows at from bus end are stored as the vector ``\mathbf{P}_{\text{i}} = [P_{ij}]``, which can be retrieved using the following command:
+The resulting active power flows are stored as the vector ``\mathbf{P}_{\text{i}} = [P_{ij}]``, which can be retrieved using the following command:
 ```@repl PowerFlowSolutionDC
 𝐏ᵢ = powers.branch.from.active
 ```
 
-Similarly, the active power flows at to bus end ``j \in \mathcal{N}`` can be obtained as:
+Similarly, the active power flows at each "to" bus end ``j \in \mathcal{N}`` of the branch can be obtained as:
 ```math
     P_{ji} = - P_{ij},\;\;\; (i,j) \in \mathcal{E}.
 ```
-The resulting active power flows at to bus end are stored as the vector ``\mathbf{P}_{\text{j}} = [P_{ji}]``, which can be retrieved using the following command:
+The resulting active power flows are stored as the vector ``\mathbf{P}_{\text{j}} = [P_{ji}]``, which can be retrieved using the following command:
 ```@repl PowerFlowSolutionDC
 𝐏ⱼ = powers.branch.to.active
 ```
@@ -138,7 +138,7 @@ The resulting active power flows at to bus end are stored as the vector ``\mathb
 ---
 
 ##### Powers Related to Generators
-The active power output of a generator located at bus ``i \in \mathcal{N}_{\text{pv}} \cup \mathcal{N}_{\text{pq}}`` is equal to the active power specified in the input data. If there are multiple generators, their active power outputs are also equal to the active power specified in the input data. However, the active power output of a generator located at the slack bus is determined as:
+The output active power of each generator located at bus ``i \in \mathcal{N}_{\text{pv}} \cup \mathcal{N}_{\text{pq}}`` is equal to the active power specified in the input data. If there are multiple generators, their output active powers are also equal to the active powers specified in the input data. However, the output active power of a generator located at the slack bus is determined as:
 ```math
     P_{\text{g}i} = P_i + P_{\text{d}i},\;\;\; i \in \mathcal{N}_{\text{sb}}.
 ```

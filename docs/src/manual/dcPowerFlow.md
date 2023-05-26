@@ -24,7 +24,7 @@ addBus!(system; label = 1, type = 3)
 addBus!(system; label = 2, type = 2, active = 0.1)
 addBus!(system; label = 3, type = 2, active = 0.05)
 
-addGenerator!(system; label = 1, bus = 3, active = 3.2)
+addGenerator!(system; bus = 3, active = 3.2)
 
 dcModel!(system)
 
@@ -166,7 +166,7 @@ powers = power(system, model)
 nothing # hide
 ```
 
-For example, to display the active power injections and flows in megawatts (MW), we can use the following code:
+For example, to display the active power injections at each bus and active power flows at each "from" bus end of the branch in megawatts (MW), we can use the following code:
 ```@repl ComputationPowersCurrentsLosses
 system.base.power.value * powers.bus.injection.active
 system.base.power.value * powers.branch.from.active
@@ -185,7 +185,7 @@ powers = powerBus(system, model; label = 1)
 nothing # hide
 ```
 
-For instance, to display the active power injections in megawatts, the following code can be used:
+For instance, to display the active power injection at the bus in megawatts, the following code can be used:
 ```@repl ComputationPowersCurrentsLosses
 system.base.power.value * powers.injection.active
 ```
@@ -199,7 +199,7 @@ powers = powerBranch(system, model; label = 2)
 
 nothing # hide
 ```
-For instance, to display the active power flows at branches in megawatts, we can use the following code:
+For instance, to display the active power flow at the "from" bus end of the branch in megawatts, we can use the following code:
 ```@repl ComputationPowersCurrentsLosses
 system.base.power.value * powers.from.active
 ```
@@ -213,7 +213,7 @@ powers = powerGenerator(system, model; label = 1)
 
 nothing # hide
 ```
-To display the active power produced by the generator in megawatts, we can use the following code:
+To display the output active power of the generator in megawatts, we can use the following code:
 ```@repl ComputationPowersCurrentsLosses
 system.base.power.value * powers.output.active
 ```

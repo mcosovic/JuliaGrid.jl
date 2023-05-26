@@ -18,12 +18,13 @@ addBus!(system; label = 2, type = 1, active = 21.7, reactive = 12.7)
 addBus!(system; label = 3, type = 1, active = 11.2, reactive = -3.0)
 addBus!(system; label = 4, type = 2, conductance = 2.1, susceptance = 1.2)
 
-addBranch!(system; label = 1, from = 1, to = 2, resistance = 0.02, reactance = 0.06)
-addBranch!(system; label = 2, from = 1, to = 3, resistance = 0.05, reactance = 0.21)
-addBranch!(system; label = 3, from = 2, to = 3, resistance = 0.13, reactance = 0.26)
-addBranch!(system; label = 4, from = 3, to = 4, reactance = 0.17, susceptance = 0.2)
+addBranch!(system; from = 1, to = 2, resistance = 0.02, reactance = 0.06)
+addBranch!(system; from = 1, to = 3, resistance = 0.05, reactance = 0.21)
+addBranch!(system; from = 2, to = 3, resistance = 0.13, reactance = 0.26)
+addBranch!(system; from = 3, to = 4, reactance = 0.17, susceptance = 0.2)
 
-addGenerator!(system; label = 1, bus = 3, active = 40.0, reactive = 42.4)
+addGenerator!(system; bus = 1)
+addGenerator!(system; bus = 3, active = 40.0, reactive = 42.4)
 nothing #hide
 ```
 
@@ -68,7 +69,7 @@ Consequently, JuliaGrid operates with sets ``\mathcal{N}_{\text{pq}}`` and ``\ma
 system.bus.layout.type
 ```
 
-It should be noted that JuliaGrid cannot handle systems with multiple slack buses. Additionally, when using functions such as [`newtonRaphson`](@ref newtonRaphson), [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX), [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB), and [`gaussSeidel`](@ref gaussSeidel), the bus type can be modified in the following manner: If a bus was originally classified as the generator bus, but does not have any in-service generators, it will be converted to the demand bus, as discussed in the section on [Bus Type Modification](@ref BusTypeModificationManual).
+It should be noted that JuliaGrid cannot handle systems with multiple slack buses. Additionally, when using functions such as [`newtonRaphson`](@ref newtonRaphson), [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX), [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB), and [`gaussSeidel`](@ref gaussSeidel), the bus type can be modified as discussed in the section on [Bus Type Modification](@ref BusTypeModificationManual).
 
 Furthermore, the active power injections ``{P}_{i}`` and reactive power injections ``{Q}_{i}`` can be expressed as:
 ```math
@@ -691,219 +692,217 @@ JuliaGrid stores the final results in vectors that contain all bus voltage magni
 
 ---
 
-## [Bus Powers and Currents](@id BusPowersCurrentsTutorials)
-After the computation of voltage magnitudes and angles at each bus, various electrical quantities can be determined. JuliaGrid provides the [`analysisBus`](@ref analysisBus(::PowerSystem, ::ACPowerFlow)) function to compute powers and currents linked to buses. Here is an example code snippet:
+## [Power Analysis](@id ACPowerAnalysisTutorials)
+Once the computation of voltage magnitudes and angles at each bus is completed, various electrical quantities can be determined. JuliaGrid offers the [`power`](@ref power(::PowerSystem, ::ACPowerFlow)) function, which enables the calculation of powers associated with buses, branches, and generators. Here is an example code snippet demonstrating its usage:
 ```@example PowerFlowSolution
-power, current = analysisBus(system, model)
+powers = power(system, model)
 nothing # hide
 ```
 
-This function stores the computed currents in the polar coordinate system, while the powers are stored in the rectangular coordinate system. It calculates the following quantities:
-* current injections: ``\mathbf{I} = [I_i]``, ``\bm{\psi} = [\psi_i]``
-* power injections: ``\mathbf{P} = [P_i]``, ``\mathbf{Q} = [Q_i]``
-* power injected by the generators:  ``\mathbf{P}_{\text{s}} = [P_{\text{s}i}]``, ``\mathbf{Q}_{\text{s}} = [Q_{\text{s}i}]``
-* power associated with shunt elements: ``\mathbf{P}_{\text{sh}} = [{P}_{\text{sh}i}]``, ``\mathbf{Q}_{\text{sh}} = [{Q}_{\text{sh}i}]``.
+The function stores the computed powers in the rectangular coordinate system. It calculates the following powers related to buses:
+* active and reactive power injections: ``\mathbf{P} = [P_i]``, ``\mathbf{Q} = [Q_i]``
+* active and reactive power injections from the generators:  ``\mathbf{P}_{\text{s}} = [P_{\text{s}i}]``, ``\mathbf{Q}_{\text{s}} = [Q_{\text{s}i}]``.
+* active and reactive powers associated with shunt elements: ``\mathbf{P}_{\text{sh}} = [{P}_{\text{sh}i}]``, ``\mathbf{Q}_{\text{sh}} = [{Q}_{\text{sh}i}]``
+
+It also calculates the following powers related to branches:
+* active and reactive power flows at each "from" bus end: ``\mathbf{P}_{\text{i}} = [P_{ij}]``, ``\mathbf{Q}_{\text{i}} = [Q_{ij}]``
+* active and reactive power flows at each "to" bus end: ``\mathbf{P}_{\text{j}} = [P_{ji}]``, ``\mathbf{Q}_{\text{j}} = [Q_{ji}]``
+* active and reactive power losses: ``\mathbf{P}_{\text{l}} = [P_{\text{l}ij}]``, ``\mathbf{Q}_{\text{l}} = [Q_{\text{l}ij}]``
+* reactive power injections: ``\mathbf{Q}_{\text{r}} = [ Q_{\text{r}ij}]``.
+
+Lastly, it calculates the following powers related to generators:
+* output active and reactive powers: ``\mathbf{P}_{\text{g}} = [P_{\text{g}i}]`` and ``\mathbf{Q}_{\text{g}} = [Q_{\text{g}i}]``.
 
 ---
 
-##### Current Injections
-To obtain the complex current injection at the specific bus, we use the following equation:
+##### Active and Reactive Power Injections at Each Bus
+The computation of active and reactive power injections at each bus is expressed by the following equation:
 ```math
-    \bar{I}_{i} = I_i \text{e}^{\text{j}\psi_i} = \sum\limits_{j = 1}^n {Y}_{ij} \bar{V}_{j},\;\;\; i \in \mathcal{N}.
-```
-In JuliaGrid, these complex current injections are stored in the vector of magnitudes denoted as ``\mathbf{I} = [I_i]`` and the vector of angles represented as ``\bm{\psi} = [\psi_i]``. You can retrieve them using the following commands:
-```@repl PowerFlowSolution
-𝐈 = current.injection.magnitude
-𝛙 = current.injection.angle
-```
-
----
-
-##### Power Injections
-The computation of active and reactive power injections at the bus is expressed by the following equation:
-```math
-    {S}_{i} = P_i + \text{j}Q_i = \bar{V}_{i}\bar{I}_{i}^*,\;\;\; i \in \mathcal{N}.
+    {S}_{i} = P_i + \text{j}Q_i = \bar{V}_{i}\sum\limits_{j = 1}^n {Y}_{ij}^* \bar{V}_{j}^*,\;\;\; i \in \mathcal{N}.
 ```
 Active and reactive power injections are stored as the vectors ``\mathbf{P} = [P_i]`` and ``\mathbf{Q} = [Q_i]``, respectively, and can be retrieved using the following commands:
 ```@repl PowerFlowSolution
-𝐏 = power.injection.active
-𝐐 = power.injection.reactive
+𝐏 = powers.bus.injection.active
+𝐐 = powers.bus.injection.reactive
 ```
 
 ----
 
-##### Power Injected by the Generators
-The [`analysisBus`](@ref analysisBus(::PowerSystem, ::ACPowerFlow)) function in JuliaGrid also computes the active and reactive powers that generators inject to the buses. The active power supplied by the generators to the buses can be calculated by summing the given generator active powers in the input data, except for the slack bus, which can be determined as:
+##### Active and Reactive Power Injections from the Generators at Each Bus 
+The [`power`](@ref power(::PowerSystem, ::ACPowerFlow)) function in JuliaGrid also computes the active and reactive power injections from the generators at each bus. The active power supplied by the generators to the buses can be calculated by summing the given generator active powers in the input data, except for the slack bus, which can be determined as:
 ```math
     P_{\text{s}i} = P_i + P_{\text{d}i},\;\;\; i \in \mathcal{N}_{\text{sb}},
 ```
-where ``P_{\text{d}i}`` represents the active power demanded by consumers at the slack bus. The vector of active power injected by generators to the buses, denoted by ``\mathbf{P}_{\text{s}} = [P_{\text{s}i}]``, can be obtained using the following command:
+where ``P_{\text{d}i}`` represents the active power demanded by consumers at the slack bus. The active power injections from the generators at each bus are stored as the vector, denoted by ``\mathbf{P}_{\text{s}} = [P_{\text{s}i}]``, can be obtained using the following command:
 ```@repl PowerFlowSolution
-𝐏ₛ = power.supply.active
+𝐏ₛ = powers.bus.supply.active
 ```
 
-Similarly, the reactive power injected by the generators to the buses can be obtained using the following equation:
+Similarly, the reactive power injections from the generators at each bus can be obtained using the following equation:
 ```math
     Q_{\text{s}i} = Q_i + Q_{\text{d}i},\;\;\; i \in \mathcal{N}_{\text{pv}} \cup \mathcal{N}_{\text{sb}},
 ```
 where ``Q_{\text{d}i}`` represents the reactive power demanded by consumers at the corresponding bus. Further, the reactive power injected by the generators at buses from ``\mathcal{N}_{\text{pq}}`` can be calculated by summing the given generator reactive powers in the input data. The vector of these reactive power injections by the generators to the buses, denoted by ``\mathbf{Q}_{\text{s}} = [Q_{\text{s}i}]``, can be retrieved using the following command:
 ```@repl PowerFlowSolution
-𝐐ₛ = power.supply.reactive
+𝐐ₛ = powers.bus.supply.reactive
 ```
 
 ---
 
-##### Power Associated with Shunt Elements
-To obtain the active and reactive powers associated with the shunt element at each bus, you can use the following equation:
+##### Active and Reactive Powers Associated with Shunt Elements at Each Bus 
+To obtain the active and reactive powers associated with the shunt elements at each bus, you can use the following equation:
 ```math
   {S}_{\text{sh}i} = {P}_{\text{sh}i} + \text{j}{Q}_{\text{sh}i} = \bar{V}_{i}\bar{I}_{\text{sh}i}^* = {y}_{\text{sh}i}^*|\bar{V}_{i}|^2,\;\;\; i \in \mathcal{N}.
 ```
 The active power demanded by the shunt element at each bus is represented by the vector ``\mathbf{P}_{\text{sh}} = [{P}_{\text{sh}i}]``, while the reactive power injected or demanded by the shunt element at each bus is represented by the vector ``\mathbf{Q}_{\text{sh}} = [{Q}_{\text{sh}i}]``. To retrieve these powers in JuliaGrid, use the following commands:
 ```@repl PowerFlowSolution
-𝐏ₛₕ = power.shunt.active
-𝐐ₛₕ = power.shunt.reactive
+𝐏ₛₕ = powers.bus.shunt.active
+𝐐ₛₕ = powers.bus.shunt.reactive
 ```
 
 ---
 
-
-## [Branch Powers and Currents](@id BranchPowersCurrentsTutorials)
-JuliaGrid provides the [`analysisBranch`](@ref analysisBranch(::PowerSystem, ::ACPowerFlow)) function to compute powers and currents linked to branches. Here is an example code snippet:
-```@example PowerFlowSolution
-power, current = analysisBranch(system, model)
-nothing # hide
-```
-
-The function stores the currents in the polar coordinate system and the powers in the rectangular coordinate system. It calculates the following quantities:
-* current flow at from bus ends: ``\mathbf{I}_{\text{i}} = [I_{ij}]``, ``\bm{\psi}_{\text{i}} = [\psi_{ij}]``
-* current flow at to bus ends: ``\mathbf{I}_{\text{j}} = [I_{ji}]``, ``\bm{\psi}_{\text{j}} = [\psi_{ji}]``
-* current flow through series impedances: ``\mathbf{I}_{\text{s}} = [I_{\text{s}ij}]``, ``\bm{\psi}_{\text{s}} = [\psi_{\text{s}ij}]``
-* power flow at from bus ends: ``\mathbf{P}_{\text{i}} = [P_{ij}]``, ``\mathbf{Q}_{\text{i}} = [Q_{ij}]``
-* power flow at to bus ends: ``\mathbf{P}_{\text{j}} = [P_{ji}]``, ``\mathbf{Q}_{\text{j}} = [Q_{ji}]``
-* power losses: ``\mathbf{P}_{\text{l}} = [P_{\text{l}ij}]``, ``\mathbf{Q}_{\text{l}} = [Q_{\text{l}ij}]``
-* reactive power injections: ``\mathbf{Q}_{\text{r}} = [ Q_{\text{r}ij}]``.
-
----
-
-##### Current Flow at From Bus Ends
-To calculate the complex current flow at from bus end ``i \in \mathcal{N}``, the [unified branch model](@ref UnifiedBranchModelTutorials) can be utilized:
+##### Active and Reactive Power Flows at Each "From" Bus End of the Branch
+The active and reactive power flows at "from" bus end ``i \in \mathcal{N}`` of the branch can be obtained using the following equation based on the [unified branch model](@ref UnifiedBranchModelTutorials):
 ```math
-    \bar{I}_{ij} = I_{ij} \text{e}^{\text{j}\psi_{ij}} = \cfrac{1}{\tau_{ij}^2}({y}_{ij} + y_{\text{s}ij}) \bar{V}_{i} - \alpha_{ij}^*{y}_{ij} \bar{V}_{j},\;\;\; (i,j) \in \mathcal{E}.
+    S_{ij} = P_{ij} + \text{j}Q_{ij} = \bar{V}_{i}\left[\cfrac{1}{\tau_{ij}^2}({y}_{ij} + y_{\text{s}ij}) \bar{V}_{i} - \alpha_{ij}^*{y}_{ij} \bar{V}_{j}\right]^*,\;\;\; (i,j) \in \mathcal{E}.
 ```
-To obtain the vectors of magnitudes ``\mathbf{I}_{\text{i}} = [I_{ij}]`` and angles ``\bm{\psi}_{\text{i}} = [\psi_{ij}]`` for the resulting complex current flows at the from bus end, you can use the following commands:
+The resulting active and reactive power flows at each "from" bus end are stored as the vectors ``\mathbf{P}_{\text{i}} = [P_{ij}]`` and ``\mathbf{Q}_{\text{i}} = [Q_{ij}],`` respectively, and can be retrieved using the following commands:
 ```@repl PowerFlowSolution
-𝐈ᵢ = current.from.magnitude
-𝛙ᵢ = current.from.angle
+𝐏ᵢ = powers.branch.from.active
+𝐐ᵢ = powers.branch.from.reactive
 ```
 
 ---
 
-##### Current Flow at To Bus Ends
-Similarly, we can obtain the complex current flow at the to bus end ``j \in \mathcal{N}`` using the unified branch model, given by:
+##### Active and Reactive Power Flows at Each "To" Bus End of the Branch
+Similarly, we can determine the active and reactive power flows at the "to" bus end ``j \in \mathcal{N}`` of the branch using the equation:
 ```math
-    \bar{I}_{ji} = I_{ji} \text{e}^{\text{j}\psi_{ji}} = -\alpha_{ij}{y}_{ij} \bar{V}_{i} + ({y}_{ij} + y_{\text{s}ij}) \bar{V}_{j},\;\;\; (i,j) \in \mathcal{E}.
+    {S}_{ji} = P_{ji} + \text{j}Q_{ji} = \bar{V}_{j} \left[-\alpha_{ij}{y}_{ij} \bar{V}_{i} + ({y}_{ij} + y_{\text{s}ij}) \bar{V}_{j}\right]^*,\;\;\; (i,j) \in \mathcal{E}.
 ```
-We can obtain the vectors of magnitudes ``\mathbf{I}_{\text{j}} = [I_{ji}]`` and angles ``\bm{\psi}_{\text{j}} = [\psi_{ji}]`` of the resulting complex current flows at the to bus end using the following code:
+The vectors of active and reactive power flows at the "to" bus end are stored as ``\mathbf{P}_{\text{j}} = [P_{ji}]`` and ``\mathbf{Q}_{\text{j}} = [Q_{ji}]``, respectively, and can be retrieved using the following code:
 ```@repl PowerFlowSolution
-𝐈ⱼ = current.to.magnitude
-𝛙ⱼ = current.to.angle
+𝐏ⱼ = powers.branch.to.active
+𝐐ⱼ = powers.branch.to.reactive
 ```
 
 ---
 
-##### Current Flow Through Series Impedances
-To obtain the complex current flow through the series impedance of a branch in the direction from bus ``i \in \mathcal{N}`` to bus ``j \in \mathcal{N}``, one can use the expression:
-```math
-    \bar{I}_{\text{s}ij} = I_{\text{s}ij} \text{e}^{\psi_{\text{s}ij}} =  y_{ij} (\alpha_{ij}\bar{V}_{i} - \bar{V}_{j}), \;\;\; (i,j) \in \mathcal{E}.
-```
-To obtain the vectors of magnitudes ``\mathbf{I}_{\text{s}} = [I_{\text{s}ij}]`` and angles ``\bm{\psi}_{\text{s}} = [\psi_{\text{s}ij}]`` of the resulting complex current flow through the series impedance, one can use the following code:
-```@repl PowerFlowSolution
-𝐈ₛ = current.impedance.magnitude
-𝛙ₛ = current.impedance.angle
-```
-
----
-
-##### Power Flow at From Bus Ends
-The active and reactive power flows at from bus end ``i \in \mathcal{N}`` can be obtained using the following equations based on the [unified branch model](@ref UnifiedBranchModelTutorials):
-```math
-    S_{ij} = P_{ij} + \text{j}Q_{ij} = \bar{V}_{i}\bar{I}_{ij}^*,\;\;\; (i,j) \in \mathcal{E}.
-```
-The resulting active and reactive power flows at from bus end are stored as the vectors ``\mathbf{P}_{\text{i}} = [P_{ij}]`` and ``\mathbf{Q}_{\text{i}} = [Q_{ij}]``, respectively, and can be retrieved using the following commands:
-```@repl PowerFlowSolution
-𝐏ᵢ = power.from.active
-𝐐ᵢ = power.from.reactive
-```
-
----
-
-##### Power Flow at To Bus Ends
-Similarly, we can determine the active and reactive power flows at the to bus end ``j \in \mathcal{N}`` using the equations:
-```math
-    {S}_{ji} = P_{ji} + \text{j}Q_{ji} = \bar{V}_{j}\bar{I}_{ji}^*,\;\;\; (i,j) \in \mathcal{E}.
-```
-The vectors of active and reactive power flows at the to bus end are stored as ``\mathbf{P}_{\text{j}} = [P_{ji}]`` and ``\mathbf{Q}_{\text{j}} = [Q_{ji}]``, respectively, and can be retrieved using the following code:
-```@repl PowerFlowSolution
-𝐏ⱼ = power.to.active
-𝐐ⱼ = power.to.reactive
-```
-
----
-
-##### Power Losses
-The active and reactive power losses in the branch are caused by its series impedance ``z_{ij}``. These losses can be obtained using the following equations:
+##### Active and Reactive Power Losses at Each Branch
+The active and reactive power losses of the branch are caused by its series impedance ``z_{ij}``. These losses can be obtained using the following equations:
 ```math
     \begin{aligned}
-        P_{\text{l}ij} &= r_{ij}|\bar{I}_{\text{b}ij}|^2 \\
-        Q_{\text{l}ij} &= x_{ij}|\bar{I}_{\text{b}ij}|^2,
+        P_{\text{l}ij} &= r_{ij}|y_{ij} (\alpha_{ij}\bar{V}_{i} - \bar{V}_{j})|^2 \\
+        Q_{\text{l}ij} &= x_{ij}|y_{ij} (\alpha_{ij}\bar{V}_{i} - \bar{V}_{j})|^2,
     \end{aligned}
 ```
 where ``(i,j) \in \mathcal{E}``. We can retrieve the vectors of active and reactive power losses, ``\mathbf{P}_{\text{l}} = [P_{\text{l}ij}]`` and ``\mathbf{Q}_{\text{l}} = [Q_{\text{l}ij}]``, respectively, using the following commands:
 ```@repl PowerFlowSolution
-𝐏ₗ = power.loss.active
-𝐐ₗ = power.loss.reactive
+𝐏ₗ = powers.branch.loss.active
+𝐐ₗ = powers.branch.loss.reactive
 ```
 
 ---
 
-##### Reactive Power Injections
-The branch's capacitive susceptances cause reactive power injection. We can calculate the total reactive power injected by the branch using the following equation:
+##### Reactive Power Injections by Each Branch
+The branch's capacitive susceptances cause reactive power injections. We can calculate the total reactive power injected by the branch using the following equation:
 ```math
     Q_{\text{r}ij} = b_{\text{s}ij} (|\alpha_{ij}\bar{V}_{i}|^2 - |\bar{V}_{j}|^2),\;\;\; (i,j) \in \mathcal{E}.
 ```
 To retrieve the vector of injected reactive powers ``\mathbf{Q}_{\text{r}} = [Q_{\text{r}ij}]``, use the following Julia command:
 ```@repl PowerFlowSolution
-𝐐ᵣ = power.shunt.reactive
+𝐐ᵣ = powers.branch.shunt.reactive
 ```
 
 ---
 
-
-## [Generator Powers](@id GeneratorPowersTutorials)
-The [`analysisGenerator`](@ref analysisGenerator(::PowerSystem, ::ACPowerFlow)) function provided by JuliaGrid can be used to compute powers associated with generators. Here is an example code snippet:
-```@example PowerFlowSolution
-power = analysisGenerator(system, model)
-nothing # hide
-```
-
-The powers are stored in the rectangular coordinate system, and only the output power of the generators is calculated. The output powers are stored in vectors as ``\mathbf{P}_{\text{g}} = [P_{\text{g}i}]`` and ``\mathbf{Q}_{\text{g}} = [Q_{\text{g}i}]``.
-
-To obtain the output active power of generators connected to bus ``i \in \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}}``, the given active power in the input data is utilized. For the generator connected to the slack bus, the output active power is determined using the equation:
+##### Output Active and Reactive Powers of Each Generator
+To obtain the output active powers of each generator connected to bus ``i \in \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}}``, the given active power in the input data is utilized. For the generator connected to the slack bus, the output active power is determined using the equation:
 ```math
     P_{\text{g}i} = P_i + P_{\text{d}i},\;\;\; i \in \mathcal{N}_{\text{sb}}.
 ```
 In the case of multiple generators connected to the slack bus, the first generator in the input data is assigned the obtained value of ``P_{\text{g}i}``. Then, this amount of power is reduced by the output active power of the other generators. Therefore, to get the vector of output active power of generators, i.e., ``\mathbf{P}_{\text{g}} = [P_{\text{g}i}]``, you can use the following command:
 ```@repl PowerFlowSolution
-𝐏ₒ = power.active
+𝐏ₒ = powers.generator.output.active
 ```
 
-The output reactive power of the generator located at the bus is obtained as:
+The output reactive powers of each generator located at the bus is obtained as:
 ```math
     Q_{\text{g}i} = Q_i + Q_{\text{d}i},\;\;\; i \in \mathcal{N}.
 ```
 If there are multiple generators at the same bus, the reactive power is allocated proportionally among the generators based on their reactive power capabilities. To obtain the vector of output reactive power of generators`` \mathbf{Q}_{\text{g}} = [Q_{\text{g}i}]``, the following command can be used:
 ```@repl PowerFlowSolution
-𝐐ₒ = power.reactive
+𝐐ₒ =powers.generator.output.reactive
+```
+
+---
+
+## [Current Analysis](@id ACCurrentAnalysisTutorials)
+JuliaGrid offers the [`current`](@ref current(::PowerSystem, ::ACPowerFlow)) function, which enables the calculation of currents associated with buses and branches. Here is an example code snippet demonstrating its usage:
+```@example PowerFlowSolution
+currents = current(system, model)
+nothing # hide
+```
+
+The function stores the computed currents in the polar coordinate system. It calculates the following currents related to buses:
+* current injection magnitudes and angles: ``\mathbf{I} = [I_i]``, ``\bm{\psi} = [\psi_i]``.
+
+It also calculates the following currents related to branches:
+* current flow magnitudes and angles at each "from" bus end: ``\mathbf{I}_{\text{i}} = [I_{ij}]``, ``\bm{\psi}_{\text{i}} = [\psi_{ij}]``
+* current flow magnitudes and angles at each "to" bus end: ``\mathbf{I}_{\text{j}} = [I_{ji}]``, ``\bm{\psi}_{\text{j}} = [\psi_{ji}]``
+* current flow magnitudes and angles through series impedances: ``\mathbf{I}_{\text{s}} = [I_{\text{s}ij}]``, ``\bm{\psi}_{\text{s}} = [\psi_{\text{s}ij}]``.
+
+---
+
+##### Current Injection Magnitudes and Angles at Each Bus
+To obtain the complex current injections at each bus, we use the following equation:
+```math
+    \bar{I}_{i} = I_i \text{e}^{\text{j}\psi_i} = \sum\limits_{j = 1}^n {Y}_{ij} \bar{V}_{j},\;\;\; i \in \mathcal{N}.
+```
+In JuliaGrid, these complex current injections are stored in the vector of magnitudes denoted as ``\mathbf{I} = [I_i]`` and the vector of angles represented as ``\bm{\psi} = [\psi_i]``. You can retrieve them using the following commands:
+```@repl PowerFlowSolution
+𝐈 = currents.bus.injection.magnitude
+𝛙 = currents.bus.injection.angle
+```
+
+
+---
+
+##### Current Flow Magnitudes and Angles at Each "From" Bus End of the Branch
+To calculate the complex current flows at each "from" bus end ``i \in \mathcal{N}`` of the branch, the [unified branch model](@ref UnifiedBranchModelTutorials) can be utilized:
+```math
+    \bar{I}_{ij} = I_{ij} \text{e}^{\text{j}\psi_{ij}} = \cfrac{1}{\tau_{ij}^2}({y}_{ij} + y_{\text{s}ij}) \bar{V}_{i} - \alpha_{ij}^*{y}_{ij} \bar{V}_{j},\;\;\; (i,j) \in \mathcal{E}.
+```
+To obtain the vectors of magnitudes ``\mathbf{I}_{\text{i}} = [I_{ij}]`` and angles ``\bm{\psi}_{\text{i}} = [\psi_{ij}]`` for the resulting complex current flows, you can use the following commands:
+```@repl PowerFlowSolution
+𝐈ᵢ = currents.branch.from.magnitude
+𝛙ᵢ = currents.branch.from.angle
+```
+
+---
+
+##### Current Flow Magnitudes and Angles at Each "To" Bus End of the Branch
+Similarly, we can obtain the complex current flows at each "to" bus end ``j \in \mathcal{N}`` of the branch using the unified branch model, given by:
+```math
+    \bar{I}_{ji} = I_{ji} \text{e}^{\text{j}\psi_{ji}} = -\alpha_{ij}{y}_{ij} \bar{V}_{i} + ({y}_{ij} + y_{\text{s}ij}) \bar{V}_{j},\;\;\; (i,j) \in \mathcal{E}.
+```
+We can obtain the vectors of magnitudes ``\mathbf{I}_{\text{j}} = [I_{ji}]`` and angles ``\bm{\psi}_{\text{j}} = [\psi_{ji}]`` of the resulting complex current flows using the following code:
+```@repl PowerFlowSolution
+𝐈ⱼ = currents.branch.to.magnitude
+𝛙ⱼ = currents.branch.to.angle
+```
+
+---
+
+##### Current Flow Magnitudes and Angles at Each Branch Series Impedance
+To obtain the complex current flows through each series impedance of a branch in the direction from bus ``i \in \mathcal{N}`` to bus ``j \in \mathcal{N}``, one can use the expression:
+```math
+    \bar{I}_{\text{s}ij} = I_{\text{s}ij} \text{e}^{\psi_{\text{s}ij}} =  y_{ij} (\alpha_{ij}\bar{V}_{i} - \bar{V}_{j}), \;\;\; (i,j) \in \mathcal{E}.
+```
+To obtain the vectors of magnitudes ``\mathbf{I}_{\text{s}} = [I_{\text{s}ij}]`` and angles ``\bm{\psi}_{\text{s}} = [\psi_{\text{s}ij}]`` of the resulting complex current flows, one can use the following code:
+```@repl PowerFlowSolution
+𝐈ₛ = currents.branch.line.magnitude
+𝛙ₛ = currents.branch.line.angle
 ```
 
 ---
@@ -918,5 +917,4 @@ If there are multiple generators at the same bus, the reactive power is allocate
 [4] D. P. Chassin, P. R. Armstrong, D. G. Chavarria-Miranda, and R. T. Guttromson, "Gauss-seidel accelerated: implementing flow solvers on field programmable gate arrays," *in Proc. IEEE PES General Meeting*, 2006, pp. 5.
 
 [5] R. D. Zimmerman, C. E. Murillo-Sanchez, *MATPOWER User’s Manual*, Version 7.0. 2019.
-
 

@@ -12,16 +12,16 @@ Subtypes of the abstract type `ACAnalysis` include:
 # Returns
 The function returns the instance of the `Power` type, which contains the following fields:
 - The `bus` field contains powers related to buses:
-  - `injection`: active and reactive power injected at buses,
-  - `supply`: active and reactive power injected at buses by generators,
-  - `shunt`: active and reactive power associated with shunt elements.
+  - `injection`: active and reactive power injections,
+  - `supply`: active and reactive power injections from the generators,
+  - `shunt`: active and reactive powers associated with shunt elements.
 - The `branch` field contains powers related to branches:
-  - `from`: active and reactive power flows at the "from" ends,
-  - `to`: active and reactive power flows at the "to" ends,
-  - `shunt`: total reactive power injected by branches,
+  - `from`: active and reactive power flows at each "from" bus end,
+  - `to`: active and reactive power flows at each "to" bus end,
+  - `shunt`: reactive power injections by each branch,
   - `loss`: active and reactive power losses.
 - The `generator` field contains powers related to generators:
- - `output`: active and reactive power output of the generators.
+ - `output`: output active and reactive powers.
 
 
 # Example
@@ -220,9 +220,10 @@ Subtypes of the abstract type `ACAnalysis` include:
 # Returns
 The function returns the instance of the `PowerBus` type, which contains the following
 fields:
-- `injection`: active and reactive power injected at the bus,
-- `supply`: active and reactive power injected at the bus by generators,
-- `shunt`: active and reactive power associated with the shunt element.
+- `injection`: active and reactive power injections at the bus,
+- `supply`: active and reactive power injections from the generators at the bus,
+- `shunt`: active and reactive powers associated with shunt element at the bus.
+
 
 # Example
 ```jldoctest
@@ -297,10 +298,10 @@ Subtypes of the abstract type `ACAnalysis` include:
 # Returns
 The function returns the instance of the `PowerBranch` type, which contains the following
 fields:
-- `from`: active and reactive power flows at the "from" end,
-- `to`: active and reactive power flows at the "to" end,
-- `shunt`: total reactive power injected by the branch,
-- `loss`: active and reactive power losses.
+- `from`: active and reactive power flows at the "from" bus end of the branch,
+- `to`: active and reactive power flows at the "to" bus end of the branch,
+- `shunt`: reactive power injection by the branch,
+- `loss`: active and reactive power losses at the branch.
 
 # Example
 ```jldoctest
@@ -375,7 +376,7 @@ Subtypes of the abstract type `ACAnalysis` include:
 # Returns
 The function returns the instance of the `PowerGenerator` type, which contains the following
 field:
- - `output`: active and reactive power output of the generator.
+- `output`: output active and reactive powers of the generator.
 
 
 # Example
@@ -510,11 +511,11 @@ Subtypes of the abstract type `ACAnalysis` include:
 # Returns
 The function returns the instance of the `Current` type, which contains the following fields:
 - The `bus` field contains currents related to buses:
-  - `injection`: current injected at buses.
+  - `injection`: current injection magnitudes and angles.
 - The `branch` field contains powers related to branches:
-  - `from`: current flow at the "from" ends,
-  - `to`: current flow at the "to" ends,
-  - `branch`: current flow through series impedances.
+  - `from`: current flow magnitudes and angles at each "from" bus end,
+  - `to`: current flow magnitudes and angles at each "to" bus end,
+  - `branch`: current flow magnitudes and angles through series impedances.
 
 
 # Example
@@ -609,7 +610,7 @@ Subtypes of the abstract type `ACAnalysis` include:
 # Returns
 The function returns the instance of the `CurrentBus` type, which contains the following 
 field:
-- `injection`: current injected at the bus.
+- `injection`: current injection magnitude and angle at the bus.
 
 # Example
 ```jldoctest
@@ -663,9 +664,9 @@ Subtypes of the abstract type `ACAnalysis` include:
 # Returns
 The function returns the instance of the `CurrentBranch` type, which contains the following 
 fields:
-- `from`: current flow at the "from" end,
-- `to`: current flow at the "to" end,
-- `branch`: current flow through the series impedance.
+- `from`: current flow magnitude and angle at the "from" bus end of the branch,
+- `to`: current flow magnitudes and angles at the "to" bus end of the branch,
+- `branch`: current flow magnitude and angle through series impedance of the branch.
 
 
 # Example

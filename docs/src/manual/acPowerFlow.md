@@ -35,7 +35,7 @@ addBus!(system; label = 1, type = 3)
 addBus!(system; label = 2, type = 2)
 addBus!(system; label = 3, type = 2)
 
-addGenerator!(system; label = 1, bus = 2)
+addGenerator!(system; bus = 2)
 
 acModel!(system)
 
@@ -57,7 +57,7 @@ addBus!(system; label = 1, type = 3)
 addBus!(system; label = 2, type = 2)
 addBus!(system; label = 3, type = 2)
 
-addGenerator!(system; label = 1, bus = 2)
+addGenerator!(system; bus = 2)
 
 acModel!(system)
 
@@ -89,9 +89,9 @@ addBus!(system; label = 1, type = 3, magnitude = 1.0, angle = 0.0)
 addBus!(system; label = 2, type = 1, magnitude = 0.9, angle = -0.1)
 addBus!(system; label = 3, type = 2, magnitude = 0.8, angle = -0.2)
 
-addGenerator!(system; label = 1, bus = 1, magnitude = 1.3)
-addGenerator!(system; label = 2, bus = 2, magnitude = 1.1)
-addGenerator!(system; label = 3, bus = 3, magnitude = 1.2)
+addGenerator!(system; bus = 1, magnitude = 1.3)
+addGenerator!(system; bus = 2, magnitude = 1.1)
+addGenerator!(system; bus = 3, magnitude = 1.2)
 
 acModel!(system)
 
@@ -132,8 +132,8 @@ addBus!(system; label = 1, type = 3, magnitude = 1.0, angle = 0.0)
 addBus!(system; label = 2, type = 1, magnitude = 0.9, angle = -0.1)
 addBus!(system; label = 3, type = 2, magnitude = 0.8, angle = -0.2)
 
-addGenerator!(system; label = 1, bus = 1, magnitude = 1.1)
-addGenerator!(system; label = 2, bus = 3, magnitude = 1.2)
+addGenerator!(system; bus = 1, magnitude = 1.1)
+addGenerator!(system; bus = 3, magnitude = 1.2)
 
 acModel!(system)
 
@@ -170,12 +170,12 @@ addBus!(system; label = 1, type = 3, active = 0.5, magnitude = 0.9, angle = 0.0)
 addBus!(system; label = 2, type = 1, reactive = 0.05, magnitude = 1.1, angle = -0.1)
 addBus!(system; label = 3, type = 1, active = 0.5, magnitude = 1.0, angle = -0.2)
 
-addBranch!(system; label = 1, from = 1, to = 2, resistance = 0.01, reactance = 0.05)
-addBranch!(system; label = 2, from = 1, to = 3, resistance = 0.02, reactance = 0.01)
-addBranch!(system; label = 3, from = 2, to = 3, resistance = 0.01, reactance = 0.20)
+addBranch!(system; from = 1, to = 2, resistance = 0.01, reactance = 0.05)
+addBranch!(system; from = 1, to = 3, resistance = 0.02, reactance = 0.01)
+addBranch!(system; from = 2, to = 3, resistance = 0.01, reactance = 0.20)
 
-addGenerator!(system; label = 1, bus = 1, active = 3.2, magnitude = 1.1)
-addGenerator!(system; label = 2, bus = 2, active = 3.2, magnitude = 1.2)
+addGenerator!(system; bus = 1, active = 3.2, magnitude = 1.1)
+addGenerator!(system; bus = 2, active = 3.2, magnitude = 1.2)
 
 acModel!(system)
 
@@ -257,7 +257,7 @@ addBranch!(system; label = 1, from = 1, to = 2, resistance = 0.01, reactance = 0
 addBranch!(system; label = 2, from = 1, to = 3, resistance = 0.02, reactance = 0.01)
 addBranch!(system; label = 3, from = 2, to = 3, resistance = 0.01, reactance = 0.20)
 
-addGenerator!(system; label = 1, bus = 1, active = 3.2, magnitude = 1.2)
+addGenerator!(system; bus = 1, active = 3.2, magnitude = 1.2)
 
 acModel!(system)
 
@@ -372,7 +372,7 @@ currents = current(system, model)
 nothing # hide
 ```
 
-For instance, if we want to show the active power injections and the magnitude of the current flow at the "from" bus ends, we can employ the following code:
+For instance, if we want to show the active power injections at each bus and the current flow magnitudes at each "from" bus end of the branch, we can employ the following code:
 ```@repl ComputationPowersCurrentsLosses
 powers.bus.injection.active
 currents.branch.from.magnitude
@@ -393,7 +393,7 @@ powers = powerBus(system, model; label = 1)
 nothing # hide
 ```
 
-For instance, to display the active power injections, the following code can be used:
+For instance, to display the active power injection at the bus, the following code can be used:
 ```@repl ComputationPowersCurrentsLosses
 powers.injection.active
 ```
@@ -405,7 +405,7 @@ currents = currentBus(system, model; label = 1)
 nothing # hide
 ```
 
-For instance, to display the magnitude of the current injection, the following code can be used:
+For instance, to display the current injection magnitude at the bus, the following code can be used:
 ```@repl ComputationPowersCurrentsLosses
 currents.injection.magnitude
 ```
@@ -420,7 +420,7 @@ powers = powerBranch(system, model; label = 2)
 nothing # hide
 ```
 
-For instance, to display the reactive power flow at the "from" bus end, we can use the following code:
+For instance, to display the reactive power flow at the "from" bus end of the branch, we can use the following code:
 ```@repl ComputationPowersCurrentsLosses
 powers.from.reactive
 ```
@@ -432,7 +432,7 @@ currents = currentBranch(system, model; label = 2)
 nothing # hide
 ```
 
-For instance, to display the magnitude of the current flow at the "from" bus end, we can use the following code:
+For instance, to display the current flow magnitude at the "from" bus end of the branch, we can use the following code:
 ```@repl ComputationPowersCurrentsLosses
 currents.from.magnitude
 ```
@@ -446,7 +446,7 @@ powers = powerGenerator(system, model; label = 1)
 
 nothing # hide
 ```
-To display the active power produced by the generator, we can use the following code:
+To display the output active power of the generator, we can use the following code:
 ```@repl ComputationPowersCurrentsLosses
 powers.output.active
 ```
@@ -466,15 +466,15 @@ addBus!(system; label = 2, type = 1, active = 0.5)
 addBus!(system; label = 3, type = 2, reactive = 0.05)
 addBus!(system; label = 4, type = 2, reactive = 0.05)
 
-addBranch!(system; label = 1, from = 1, to = 2, resistance = 0.01, reactance = 0.05)
-addBranch!(system; label = 2, from = 1, to = 3, resistance = 0.02, reactance = 0.01)
-addBranch!(system; label = 3, from = 2, to = 3, resistance = 0.03, reactance = 0.04)
-addBranch!(system; label = 4, from = 2, to = 4, resistance = 0.03, reactance = 0.004)
+addBranch!(system; from = 1, to = 2, resistance = 0.01, reactance = 0.05)
+addBranch!(system; from = 1, to = 3, resistance = 0.02, reactance = 0.01)
+addBranch!(system; from = 2, to = 3, resistance = 0.03, reactance = 0.04)
+addBranch!(system; from = 2, to = 4, resistance = 0.03, reactance = 0.004)
 
 @generator(minReactive = -0.4, maxReactive = 0.2)
-addGenerator!(system; label = 1, bus = 1)
-addGenerator!(system; label = 2, bus = 3, reactive = 0.8)
-addGenerator!(system; label = 3, bus = 4, reactive = 0.9)
+addGenerator!(system; bus = 1)
+addGenerator!(system; bus = 3, reactive = 0.8)
+addGenerator!(system; bus = 4, reactive = 0.9)
 
 acModel!(system)
 
@@ -547,13 +547,13 @@ addBus!(system; label = 2, type = 1, active = 0.5)
 addBus!(system; label = 3, type = 2)
 addBus!(system; label = 4, type = 2)
 
-addBranch!(system; label = 1, from = 1, to = 2, resistance = 0.01, reactance = 0.05)
-addBranch!(system; label = 2, from = 1, to = 3, resistance = 0.02, reactance = 0.01)
-addBranch!(system; label = 3, from = 2, to = 3, resistance = 0.03, reactance = 0.04)
-addBranch!(system; label = 4, from = 2, to = 4, resistance = 0.03, reactance = 0.004)
+addBranch!(system; from = 1, to = 2, resistance = 0.01, reactance = 0.05)
+addBranch!(system; from = 1, to = 3, resistance = 0.02, reactance = 0.01)
+addBranch!(system; from = 2, to = 3, resistance = 0.03, reactance = 0.04)
+addBranch!(system; from = 2, to = 4, resistance = 0.03, reactance = 0.004)
 
-addGenerator!(system; label = 1, bus = 1, minReactive = 0.0, maxReactive = 0.2)
-addGenerator!(system; label = 2, bus = 4, reactive = 0.3)
+addGenerator!(system; bus = 1, minReactive = 0.0, maxReactive = 0.2)
+addGenerator!(system; bus = 4, reactive = 0.3)
 
 acModel!(system)
 

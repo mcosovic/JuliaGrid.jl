@@ -18,14 +18,11 @@ addBus!(system; label = 1, type = 3)
 addBus!(system; label = 2, type = 1, active = 21.7, reactive = 12.7)
 addBus!(system; label = 3, type = 2, conductance = 2.1, susceptance = 1.2)
 
-addBranch!(system; label = 1, from = 1, to = 2,
-    resistance = 0.02, reactance = 0.06, susceptance = 0.05)
-addBranch!(system; label = 2, from = 1, to = 3,
-    reactance = 0.21, turnsRatio = 0.98, shiftAngle = 1.2)
-addBranch!(system; label = 3, from = 2, to = 3,
-    resistance = 0.13, reactance = 0.26)
+addBranch!(system; from = 1, to = 2, resistance = 0.02, reactance = 0.06, susceptance = 0.05)
+addBranch!(system; from = 1, to = 3, reactance = 0.21, turnsRatio = 0.98, shiftAngle = 1.2)
+addBranch!(system; from = 2, to = 3, resistance = 0.13, reactance = 0.26)
 
-addGenerator!(system; label = 1, bus = 3, active = 40.0, reactive = 42.4)
+addGenerator!(system; bus = 1, active = 40.0, reactive = 42.4)
 nothing #hide
 ```
 

@@ -13,13 +13,13 @@ Subtypes of the abstract type `DCAnalysis` include:
 The function returns the instance of the `DCPower` type, which contains the following
 fields:
 - The `bus` field contains powers related to buses:
-  - `injection`: the active power injection at buses,
-  - `supply`: the active power injected at buses by the generators.
+  - `injection`: active power injections,
+  - `supply`: active power injections from the generators.
 - The `branch` field contains powers related to branches:
-  - `from`: the active power flows at the "from" ends,
-  - `to`: the active power flows at the "to" ends.
+  - `from`: active power flows at each "from" bus end,
+  - `to`: active power flows at each "to" bus end.
 - The `generator` field contains powers related to generators:
-  - `output`: the active power output of the generators.
+  - `output`: output active powers.
 
 # Examples
 Compute powers after obtaining the DC power flow solution:
@@ -154,8 +154,9 @@ Subtypes of the abstract type `DCAnalysis` include:
 # Returns
 The function returns an instance of the `DCPowerBus` type, which contains the following
 fields:
-- `injection`: the active power injection at buses,
-- `supply`: the active power injected at buses by the generators.
+- `injection`: active power injection at the bus,
+- `supply`: active power injection from the generators at the bus.
+
 
 # Examples
 Compute the powers of a specific bus after obtaining the DC power flow solution:
@@ -247,8 +248,9 @@ Subtypes of the abstract type `DCAnalysis` include:
 # Returns
 The function returns an instance of the `DCPowerBranch` type, which contains the following
 fields:
-- `from`: the active power flows at the "from" ends,
-- `to`: the active power flows at the "to" ends.
+- `from`: active power flow at the "from" bus end of the branch,
+- `to`: active power flow at the "to" bus end of the branch.
+
 
 # Examples
 Compute the powers of a specific branch after obtaining the DC power flow solution:
@@ -307,7 +309,7 @@ Subtypes of the abstract type `DCAnalysis` include:
 # Returns
 The function returns an instance of the `DCPowerGenerator` type, which has the following
 field:
-- `output`: the active power output of the generators.
+- `output`: output active power of the generator.
 
 # Examples
 Compute the powers of a specific generator after obtaining the DC power flow solution:
