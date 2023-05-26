@@ -5,7 +5,7 @@ addBus!(system; label = 1, type = 3)
 addBus!(system; label = 2, type = 2)
 addBus!(system; label = 3, type = 2)
 
-addGenerator!(system; label = 1, bus = 2)
+addGenerator!(system; bus = 2)
 
 acModel!(system)
 
@@ -18,9 +18,9 @@ addBus!(system; label = 1, type = 3, magnitude = 1.0, angle = 0.0)
 addBus!(system; label = 2, type = 1, magnitude = 0.9, angle = -0.1)
 addBus!(system; label = 3, type = 2, magnitude = 0.8, angle = -0.2)
 
-addGenerator!(system; label = 1, bus = 1, magnitude = 1.3)
-addGenerator!(system; label = 2, bus = 2, magnitude = 1.1)
-addGenerator!(system; label = 3, bus = 3, magnitude = 1.2)
+addGenerator!(system; bus = 1, magnitude = 1.3)
+addGenerator!(system; bus = 2, magnitude = 1.1)
+addGenerator!(system; bus = 3, magnitude = 1.2)
 
 acModel!(system)
 
@@ -42,8 +42,8 @@ addBus!(system; label = 1, type = 3, magnitude = 1.0, angle = 0.0)
 addBus!(system; label = 2, type = 1, magnitude = 0.9, angle = -0.1)
 addBus!(system; label = 3, type = 2, magnitude = 0.8, angle = -0.2)
 
-addGenerator!(system; label = 1, bus = 1, magnitude = 1.1)
-addGenerator!(system; label = 2, bus = 3, magnitude = 1.2)
+addGenerator!(system; bus = 1, magnitude = 1.1)
+addGenerator!(system; bus = 3, magnitude = 1.2)
 
 acModel!(system)</code></pre><p>Now, the user can initiate a &quot;flat start&quot; without interfering with the input data. This can be easily done as follows:</p><pre><code class="language-julia hljs">for i = 1:system.bus.number
     system.bus.voltage.magnitude[i] = 1.0
@@ -62,12 +62,12 @@ addBus!(system; label = 1, type = 3, active = 0.5, magnitude = 0.9, angle = 0.0)
 addBus!(system; label = 2, type = 1, reactive = 0.05, magnitude = 1.1, angle = -0.1)
 addBus!(system; label = 3, type = 1, active = 0.5, magnitude = 1.0, angle = -0.2)
 
-addBranch!(system; label = 1, from = 1, to = 2, resistance = 0.01, reactance = 0.05)
-addBranch!(system; label = 2, from = 1, to = 3, resistance = 0.02, reactance = 0.01)
-addBranch!(system; label = 3, from = 2, to = 3, resistance = 0.01, reactance = 0.20)
+addBranch!(system; from = 1, to = 2, resistance = 0.01, reactance = 0.05)
+addBranch!(system; from = 1, to = 3, resistance = 0.02, reactance = 0.01)
+addBranch!(system; from = 2, to = 3, resistance = 0.01, reactance = 0.20)
 
-addGenerator!(system; label = 1, bus = 1, active = 3.2, magnitude = 1.1)
-addGenerator!(system; label = 2, bus = 2, active = 3.2, magnitude = 1.2)
+addGenerator!(system; bus = 1, active = 3.2, magnitude = 1.1)
+addGenerator!(system; bus = 2, active = 3.2, magnitude = 1.2)
 
 acModel!(system)</code></pre><p>Once the AC model is defined, we can choose the method to solve the power flow problem. JuliaGrid provides four methods: <a href="../../api/acPowerFlowSolution/#JuliaGrid.newtonRaphson"><code>newtonRaphson</code></a>, <a href="../../api/acPowerFlowSolution/#JuliaGrid.fastNewtonRaphsonBX"><code>fastNewtonRaphsonBX</code></a>, <a href="../../api/acPowerFlowSolution/#JuliaGrid.fastNewtonRaphsonXB"><code>fastNewtonRaphsonXB</code></a>, and <a href="../../tutorials/acPowerFlow/#gaussSeidel"><code>gaussSeidel</code></a>. For example, to use the Newton-Raphson method to solve the power flow problem, we can call the <a href="../../api/acPowerFlowSolution/#JuliaGrid.newtonRaphson"><code>newtonRaphson</code></a> function as follows:</p><pre><code class="language-julia hljs">model = newtonRaphson(system)</code></pre><p>This function sets up the desired method for an iterative process based on two functions: <a href="../../api/acPowerFlowSolution/#JuliaGrid.mismatch!-Tuple{PowerSystem, NewtonRaphson}"><code>mismatch!</code></a> and <a href="../../api/acPowerFlowSolution/#JuliaGrid.solve!-Tuple{PowerSystem, NewtonRaphson}"><code>solve!</code></a>. The <a href="../../api/acPowerFlowSolution/#JuliaGrid.mismatch!-Tuple{PowerSystem, NewtonRaphson}"><code>mismatch!</code></a> function calculates the active and reactive power injection mismatches using the given voltage magnitudes and angles, while <a href="../../api/acPowerFlowSolution/#JuliaGrid.solve!-Tuple{PowerSystem, NewtonRaphson}"><code>solve!</code></a> computes the voltage magnitudes and angles.</p><p>To perform an iterative process with the Newton-Raphson or Fast Newton-Raphson methods in JuliaGrid, the <a href="../../api/acPowerFlowSolution/#JuliaGrid.mismatch!-Tuple{PowerSystem, NewtonRaphson}"><code>mismatch!</code></a> function must be included inside the iteration loop. For instance:</p><pre><code class="language-julia hljs">for iteration = 1:100
     mismatch!(system, model)
@@ -78,7 +78,7 @@ end</code></pre><p>After the process is completed, the solution to the AC power 
  1.1023935965796963</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; model.voltage.angle</code><code class="nohighlight hljs ansi" style="display:block;">3-element Vector{Float64}:
  0.0
  0.10564447007892576
- 0.0013258070359979165</code></pre><p>In contrast, the iterative loop of the Gauss-Seidel method does not require the <a href="../../api/acPowerFlowSolution/#JuliaGrid.mismatch!-Tuple{PowerSystem, NewtonRaphson}"><code>mismatch!</code></a> function:</p><pre><code class="language-julia hljs">model = gaussSeidel(system)
+ 0.001325807035997916</code></pre><p>In contrast, the iterative loop of the Gauss-Seidel method does not require the <a href="../../api/acPowerFlowSolution/#JuliaGrid.mismatch!-Tuple{PowerSystem, NewtonRaphson}"><code>mismatch!</code></a> function:</p><pre><code class="language-julia hljs">model = gaussSeidel(system)
 for iteration = 1:100
     solve!(system, model)
 end</code></pre><p>In these examples, the algorithms run until the specified number of iterations is reached.</p><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p>We recommend that the reader refer to the tutorial on <a href="../../tutorials/acPowerFlow/#ACPowerFlowTutorials">AC power flow analysis</a>, where we explain the implementation of the methods and algorithm structures in detail.</p></div></div><hr/><h5 id="Breaking-the-Iterative-Process"><a class="docs-heading-anchor" href="#Breaking-the-Iterative-Process">Breaking the Iterative Process</a><a id="Breaking-the-Iterative-Process-1"></a><a class="docs-heading-anchor-permalink" href="#Breaking-the-Iterative-Process" title="Permalink"></a></h5><p>You can terminate the iterative process using the <a href="../../api/acPowerFlowSolution/#JuliaGrid.mismatch!-Tuple{PowerSystem, NewtonRaphson}"><code>mismatch!</code></a> function, which is why mismatches are computed separately. The following code shows an example of how to use the the function to break out of the iteration loop:</p><pre><code class="language-julia hljs">model = newtonRaphson(system)
@@ -98,7 +98,7 @@ addBranch!(system; label = 1, from = 1, to = 2, resistance = 0.01, reactance = 0
 addBranch!(system; label = 2, from = 1, to = 3, resistance = 0.02, reactance = 0.01)
 addBranch!(system; label = 3, from = 2, to = 3, resistance = 0.01, reactance = 0.20)
 
-addGenerator!(system; label = 1, bus = 1, active = 3.2, magnitude = 1.2)
+addGenerator!(system; bus = 1, active = 3.2, magnitude = 1.2)
 
 acModel!(system)</code></pre><hr/><h5 id="PowerSystem-Composite-Type"><a class="docs-heading-anchor" href="#PowerSystem-Composite-Type">PowerSystem Composite Type</a><a id="PowerSystem-Composite-Type-1"></a><a class="docs-heading-anchor-permalink" href="#PowerSystem-Composite-Type" title="Permalink"></a></h5><p>The initial application of the reusable <code>PowerSystem</code> type is simple: it can be shared among various methods, which can yield benefits. For example, the Gauss-Seidel method is commonly used for a speedy approximate solution, whereas the Newton-Raphson method is typically utilized for the precise final solution. Thus, we can execute the Gauss-Seidel method for a limited number of iterations, as exemplified below:</p><pre><code class="language-julia hljs">gsModel = gaussSeidel(system)
 for iteration = 1:3
@@ -155,28 +155,28 @@ for iteration = 1:100
     end
     solve!(system, model)
 end</code></pre><p>We can now utilize the provided functions to compute powers and currents. The following functions can be used for this purpose:</p><pre><code class="language-julia hljs">powers = power(system, model)
-currents = current(system, model)</code></pre><p>For instance, if we want to show the active power injections and the magnitude of the current flow at the &quot;from&quot; bus ends, we can employ the following code:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; powers.bus.injection.active</code><code class="nohighlight hljs ansi" style="display:block;">3-element Vector{Float64}:
+currents = current(system, model)</code></pre><p>For instance, if we want to show the active power injections at each bus and the current flow magnitudes at each &quot;from&quot; bus end of the branch, we can employ the following code:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; powers.bus.injection.active</code><code class="nohighlight hljs ansi" style="display:block;">3-element Vector{Float64}:
   0.5112144850561862
  -1.110118897848511e-11
  -0.49999999997364364</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; currents.branch.from.magnitude</code><code class="nohighlight hljs ansi" style="display:block;">3-element Vector{Float64}:
  0.17171350598265073
  0.39156703935806414
- 0.5116357709622857</code></pre><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p>To better understand the powers associated with buses, branches and generators that are calculated by the <a href="../../api/dcAnalysis/#JuliaGrid.power-Tuple{PowerSystem, DCPowerFlow}"><code>power</code></a> function, we suggest referring to the tutorials on <a href="manual/@ref ACPowerAnalysisTutorials">AC power flow analysis</a>.</p></div></div><hr/><h5 id="Powers-and-Currents-Related-to-Bus"><a class="docs-heading-anchor" href="#Powers-and-Currents-Related-to-Bus">Powers and Currents Related to Bus</a><a id="Powers-and-Currents-Related-to-Bus-1"></a><a class="docs-heading-anchor-permalink" href="#Powers-and-Currents-Related-to-Bus" title="Permalink"></a></h5><p>To calculate specific quantities for particular components rather than calculating powers or currents for all components, users can utilize the following functions.</p><p>To calculate powers associated with a specific bus, the function can be used:</p><pre><code class="language-julia hljs">powers = powerBus(system, model; label = 1)</code></pre><p>For instance, to display the active power injections, the following code can be used:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; powers.injection.active</code><code class="nohighlight hljs ansi" style="display:block;">0.5112144850561862</code></pre><p>To calculate currents associated with a specific bus, the function can be used:</p><pre><code class="language-julia hljs">currents = currentBus(system, model; label = 1)</code></pre><p>For instance, to display the magnitude of the current injection, the following code can be used:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; currents.injection.magnitude</code><code class="nohighlight hljs ansi" style="display:block;">0.5151405179479499</code></pre><hr/><h5 id="Powers-and-Currents-Related-to-Branch"><a class="docs-heading-anchor" href="#Powers-and-Currents-Related-to-Branch">Powers and Currents Related to Branch</a><a id="Powers-and-Currents-Related-to-Branch-1"></a><a class="docs-heading-anchor-permalink" href="#Powers-and-Currents-Related-to-Branch" title="Permalink"></a></h5><p>Similarly, we can compute the powers related to a particular branch using the following function:</p><pre><code class="language-julia hljs">powers = powerBranch(system, model; label = 2)</code></pre><p>For instance, to display the reactive power flow at the &quot;from&quot; bus end, we can use the following code:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; powers.from.reactive</code><code class="nohighlight hljs ansi" style="display:block;">-0.055692092098713175</code></pre><p>Further, we can compute the currents related to a particular branch using the following function:</p><pre><code class="language-julia hljs">currents = currentBranch(system, model; label = 2)</code></pre><p>For instance, to display the magnitude of the current flow at the &quot;from&quot; bus end, we can use the following code:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; currents.from.magnitude</code><code class="nohighlight hljs ansi" style="display:block;">0.39156703935806414</code></pre><hr/><h5 id="Powers-Related-to-Generator"><a class="docs-heading-anchor" href="#Powers-Related-to-Generator">Powers Related to Generator</a><a id="Powers-Related-to-Generator-1"></a><a class="docs-heading-anchor-permalink" href="#Powers-Related-to-Generator" title="Permalink"></a></h5><p>Finally, we can compute the output powers of a particular generator using the function:</p><pre><code class="language-julia hljs">powers = powerGenerator(system, model; label = 1)</code></pre><p>To display the active power produced by the generator, we can use the following code:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; powers.output.active</code><code class="nohighlight hljs ansi" style="display:block;">1.0112144850561862</code></pre><hr/><h2 id="GeneratorReactivePowerLimitsManual"><a class="docs-heading-anchor" href="#GeneratorReactivePowerLimitsManual">Generator Reactive Power Limits</a><a id="GeneratorReactivePowerLimitsManual-1"></a><a class="docs-heading-anchor-permalink" href="#GeneratorReactivePowerLimitsManual" title="Permalink"></a></h2><p>The function <a href="../../api/acPowerFlowSolution/#JuliaGrid.reactiveLimit!"><code>reactiveLimit!</code></a> can be used by the user to check if the generators&#39; output of reactive power is within the defined limits after obtaining the solution from the AC power flow analysis. This can be done by using the example code provided:</p><pre><code class="language-julia hljs">system = powerSystem()
+ 0.5116357709622857</code></pre><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p>To better understand the powers associated with buses, branches and generators that are calculated by the <a href="../../api/dcAnalysis/#JuliaGrid.power-Tuple{PowerSystem, DCPowerFlow}"><code>power</code></a> function, we suggest referring to the tutorials on <a href="../../tutorials/acPowerFlow/#ACPowerAnalysisTutorials">AC power flow analysis</a>.</p></div></div><hr/><h5 id="Powers-and-Currents-Related-to-Bus"><a class="docs-heading-anchor" href="#Powers-and-Currents-Related-to-Bus">Powers and Currents Related to Bus</a><a id="Powers-and-Currents-Related-to-Bus-1"></a><a class="docs-heading-anchor-permalink" href="#Powers-and-Currents-Related-to-Bus" title="Permalink"></a></h5><p>To calculate specific quantities for particular components rather than calculating powers or currents for all components, users can utilize the following functions.</p><p>To calculate powers associated with a specific bus, the function can be used:</p><pre><code class="language-julia hljs">powers = powerBus(system, model; label = 1)</code></pre><p>For instance, to display the active power injection at the bus, the following code can be used:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; powers.injection.active</code><code class="nohighlight hljs ansi" style="display:block;">0.5112144850561862</code></pre><p>To calculate currents associated with a specific bus, the function can be used:</p><pre><code class="language-julia hljs">currents = currentBus(system, model; label = 1)</code></pre><p>For instance, to display the current injection magnitude at the bus, the following code can be used:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; currents.injection.magnitude</code><code class="nohighlight hljs ansi" style="display:block;">0.5151405179479499</code></pre><hr/><h5 id="Powers-and-Currents-Related-to-Branch"><a class="docs-heading-anchor" href="#Powers-and-Currents-Related-to-Branch">Powers and Currents Related to Branch</a><a id="Powers-and-Currents-Related-to-Branch-1"></a><a class="docs-heading-anchor-permalink" href="#Powers-and-Currents-Related-to-Branch" title="Permalink"></a></h5><p>Similarly, we can compute the powers related to a particular branch using the following function:</p><pre><code class="language-julia hljs">powers = powerBranch(system, model; label = 2)</code></pre><p>For instance, to display the reactive power flow at the &quot;from&quot; bus end of the branch, we can use the following code:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; powers.from.reactive</code><code class="nohighlight hljs ansi" style="display:block;">-0.055692092098713175</code></pre><p>Further, we can compute the currents related to a particular branch using the following function:</p><pre><code class="language-julia hljs">currents = currentBranch(system, model; label = 2)</code></pre><p>For instance, to display the current flow magnitude at the &quot;from&quot; bus end of the branch, we can use the following code:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; currents.from.magnitude</code><code class="nohighlight hljs ansi" style="display:block;">0.39156703935806414</code></pre><hr/><h5 id="Powers-Related-to-Generator"><a class="docs-heading-anchor" href="#Powers-Related-to-Generator">Powers Related to Generator</a><a id="Powers-Related-to-Generator-1"></a><a class="docs-heading-anchor-permalink" href="#Powers-Related-to-Generator" title="Permalink"></a></h5><p>Finally, we can compute the output powers of a particular generator using the function:</p><pre><code class="language-julia hljs">powers = powerGenerator(system, model; label = 1)</code></pre><p>To display the output active power of the generator, we can use the following code:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; powers.output.active</code><code class="nohighlight hljs ansi" style="display:block;">1.0112144850561862</code></pre><hr/><h2 id="GeneratorReactivePowerLimitsManual"><a class="docs-heading-anchor" href="#GeneratorReactivePowerLimitsManual">Generator Reactive Power Limits</a><a id="GeneratorReactivePowerLimitsManual-1"></a><a class="docs-heading-anchor-permalink" href="#GeneratorReactivePowerLimitsManual" title="Permalink"></a></h2><p>The function <a href="../../api/acPowerFlowSolution/#JuliaGrid.reactiveLimit!"><code>reactiveLimit!</code></a> can be used by the user to check if the generators&#39; output of reactive power is within the defined limits after obtaining the solution from the AC power flow analysis. This can be done by using the example code provided:</p><pre><code class="language-julia hljs">system = powerSystem()
 
 addBus!(system; label = 1, type = 3)
 addBus!(system; label = 2, type = 1, active = 0.5)
 addBus!(system; label = 3, type = 2, reactive = 0.05)
 addBus!(system; label = 4, type = 2, reactive = 0.05)
 
-addBranch!(system; label = 1, from = 1, to = 2, resistance = 0.01, reactance = 0.05)
-addBranch!(system; label = 2, from = 1, to = 3, resistance = 0.02, reactance = 0.01)
-addBranch!(system; label = 3, from = 2, to = 3, resistance = 0.03, reactance = 0.04)
-addBranch!(system; label = 4, from = 2, to = 4, resistance = 0.03, reactance = 0.004)
+addBranch!(system; from = 1, to = 2, resistance = 0.01, reactance = 0.05)
+addBranch!(system; from = 1, to = 3, resistance = 0.02, reactance = 0.01)
+addBranch!(system; from = 2, to = 3, resistance = 0.03, reactance = 0.04)
+addBranch!(system; from = 2, to = 4, resistance = 0.03, reactance = 0.004)
 
 @generator(minReactive = -0.4, maxReactive = 0.2)
-addGenerator!(system; label = 1, bus = 1)
-addGenerator!(system; label = 2, bus = 3, reactive = 0.8)
-addGenerator!(system; label = 3, bus = 4, reactive = 0.9)
+addGenerator!(system; bus = 1)
+addGenerator!(system; bus = 3, reactive = 0.8)
+addGenerator!(system; bus = 4, reactive = 0.9)
 
 acModel!(system)
 
@@ -219,13 +219,13 @@ addBus!(system; label = 2, type = 1, active = 0.5)
 addBus!(system; label = 3, type = 2)
 addBus!(system; label = 4, type = 2)
 
-addBranch!(system; label = 1, from = 1, to = 2, resistance = 0.01, reactance = 0.05)
-addBranch!(system; label = 2, from = 1, to = 3, resistance = 0.02, reactance = 0.01)
-addBranch!(system; label = 3, from = 2, to = 3, resistance = 0.03, reactance = 0.04)
-addBranch!(system; label = 4, from = 2, to = 4, resistance = 0.03, reactance = 0.004)
+addBranch!(system; from = 1, to = 2, resistance = 0.01, reactance = 0.05)
+addBranch!(system; from = 1, to = 3, resistance = 0.02, reactance = 0.01)
+addBranch!(system; from = 2, to = 3, resistance = 0.03, reactance = 0.04)
+addBranch!(system; from = 2, to = 4, resistance = 0.03, reactance = 0.004)
 
-addGenerator!(system; label = 1, bus = 1, minReactive = 0.0, maxReactive = 0.2)
-addGenerator!(system; label = 2, bus = 4, reactive = 0.3)
+addGenerator!(system; bus = 1, minReactive = 0.0, maxReactive = 0.2)
+addGenerator!(system; bus = 4, reactive = 0.3)
 
 acModel!(system)
 
@@ -247,11 +247,11 @@ for iteration = 1:100
     end
     solve!(system, model)
 end</code></pre><p>After examining the bus voltages, we will focus on the angles:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; model.voltage.angle</code><code class="nohighlight hljs ansi" style="display:block;">4-element Vector{Float64}:
- 0.01643198358018372
- 0.0017219368709079324
- 0.012553850614193491
+ 0.016431983580183503
+ 0.001721936870907767
+ 0.012553850614193215
  0.0</code></pre><p>We can observe that the angles have been calculated based on the new slack bus. JuliaGrid offers the function to adjust these angles to match the original slack bus as follows:</p><pre><code class="language-julia hljs">adjustAngle!(system, model; slack = 1)</code></pre><p>Here, the <code>slack</code> keyword should correspond to the label of the slack bus. After executing the above code, the updated results can be viewed:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; model.voltage.angle</code><code class="nohighlight hljs ansi" style="display:block;">4-element Vector{Float64}:
   0.0
- -0.014710046709275788
- -0.00387813296599023
- -0.01643198358018372</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../powerSystemModel/">« Power System Model</a><a class="docs-footer-nextpage" href="../dcPowerFlow/">DC Power Flow »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.24 on <span class="colophon-date" title="Friday 26 May 2023 12:12">Friday 26 May 2023</span>. Using Julia version 1.8.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+ -0.014710046709275736
+ -0.003878132965990287
+ -0.016431983580183503</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../powerSystemModel/">« Power System Model</a><a class="docs-footer-nextpage" href="../dcPowerFlow/">DC Power Flow »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.24 on <span class="colophon-date" title="Friday 26 May 2023 14:34">Friday 26 May 2023</span>. Using Julia version 1.8.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
