@@ -1,4 +1,5 @@
 using Documenter, JuliaGrid
+using JuMP, HiGHS
 
 makedocs(
     sitename = "JuliaGrid",
