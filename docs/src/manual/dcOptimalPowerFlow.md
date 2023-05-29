@@ -21,8 +21,7 @@ Moreover, there exist specific functions dedicated to calculating powers related
 To set up the DC optimal power flow, we begin by creating the model. To illustrate this, consider the following example:
 ```@example DCOptimalPowerFlowConstraint
 using JuliaGrid # hide
-using HiGHS # hide
-using JuMP # hide
+using JuMP, HiGHS # hide
 
 system = powerSystem()
 
@@ -90,7 +89,7 @@ model.constraint.limit.angle
 
 Please note that if the limit constraints are set to `minDiffAngle = -2π` and `maxDiffAngle = 2π` for the corresponding branch, JuliGrid will omit the corresponding inequality constraint.
 
---- 
+---
 
 ##### Active Power Rating Constraints
 The `rating` field contains references to the inequality constraints associated with the active power flow limits at the "from" and "to" bus ends of each branch. These limits are specified using the `longTerm` keyword within the [`addBranch!`](@ref addBranch!) function:
@@ -98,7 +97,7 @@ The `rating` field contains references to the inequality constraints associated 
 model.constraint.rating.active
 ```
 
---- 
+---
 
 ##### Active Power Capability Constraints
 The `capability` field contains references to the inequality constraints associated with the minimum and maximum active power outputs of the generators. These limits are specified using the `minActive` and `maxActive` keywords within the [`addGenerator!`](@ref addGenerator!) function:
@@ -106,7 +105,7 @@ The `capability` field contains references to the inequality constraints associa
 model.constraint.capability.active
 ```
 
---- 
+---
 
 ##### Active Power Piecewise Constraints
 The `piecewise` field contains references to the inequality constraints associated with the linear piecewise cost function. In this case, the cost function is replaced by the helper variable and the set of linear constraints. These constraints are generated using the [`addActiveCost!`](@ref addActiveCost!) function with `model = 1` specified:
