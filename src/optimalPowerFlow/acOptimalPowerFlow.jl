@@ -6,15 +6,11 @@ struct CartesianFlowRef
     to::ArrayRef
 end
 
-struct CartesianRealFlowRef
-    from::ArrayRef
-end
-
 struct Constraint
     slack::Union{PolarRef, PolarAngleRef}
     balance::Union{CartesianRef, CartesianRealRef}
     limit::Union{PolarRef, PolarAngleRef} 
-    rating::Union{CartesianFlowRef, CartesianRealFlowRef}
+    rating::Union{CartesianFlowRef, CartesianRealRef}
     capability::Union{CartesianRef, CartesianRealRef}
     piecewise::Union{CartesianRef, CartesianRealRef}
 end

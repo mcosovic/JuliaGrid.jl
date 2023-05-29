@@ -15,7 +15,8 @@ makedocs(
         "Manual" =>
             ["Power System Model" => "manual/powerSystemModel.md",
             "AC Power Flow" => "manual/acPowerFlow.md",
-            "DC Power Flow" => "manual/dcPowerFlow.md"],
+            "DC Power Flow" => "manual/dcPowerFlow.md",
+            "DC Optimal Power Flow" => "manual/dcOptimalPowerFlow.md"],
         "Tutorials" =>
             ["AC and DC Model" => "tutorials/acdcModel.md",
             "AC Power Flow" => "tutorials/acPowerFlow.md",

@@ -193,7 +193,7 @@ function dcOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
             PolarAngleRef(slackRef),
             CartesianRealRef(balanceRef),
             PolarAngleRef(limitRef),
-            CartesianRealFlowRef(ratingRef),
+            CartesianRealRef(ratingRef),
             CartesianRealRef(capabilityRef),
             CartesianRealRef(piecewiseRef)
         )
