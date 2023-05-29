@@ -7,7 +7,7 @@ struct DCOptimalPowerFlow <: DCAnalysis
 end
 
 """
-    dcOptimalPowerFlow(system::PowerSystem, optimizer; bridges, names, balance, limit,
+    dcOptimalPowerFlow(system::PowerSystem, optimizer; bridge, name, balance, limit,
         rating, capability)
 
 The function takes the `PowerSystem` composite type as input to establish the structure for
@@ -19,8 +19,8 @@ type has not been created, the function will initiate an update automatically.
 JuliaGrid offers the ability to manipulate the `jump` model based on the guidelines provided
 in the [JuMP documentation](https://jump.dev/JuMP.jl/stable/reference/models/). However,
 certain configurations may require different method calls, such as:
-- `bridges`: used to manage the bridging mechanism
-- `names`: used to manage the creation of string names.
+- `bridge`: used to manage the bridging mechanism
+- `name`: used to manage the creation of string names.
 
 Moreover, we have included keywords that regulate the usage of different types of constraints:
 - `balance`: controls the equality constraints that relate to the active power balance equations
@@ -39,7 +39,7 @@ used solvers. For more information, refer to the
 The function returns an instance of the `DCOptimalPowerFlow` type, which includes the following
 fields:
 - `voltage`: the angles of bus voltages
-- `output`: the active power output of the generators
+- `output`: the output active powers of the generators
 - `jump`: the JuMP model
 - `constraint`: holds the constraint references to the JuMP model.
 
@@ -61,7 +61,7 @@ model = dcOptimalPowerFlow(system, HiGHS.Optimizer; rating = false)
 ```
 """
 function dcOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory);
-    bridges::Bool = true, names::Bool = true,
+    bridge::Bool = true, name::Bool = true,
     balance::Bool = true, limit::Bool = true,
     rating::Bool = true,  capability::Bool = true)
 
@@ -73,12 +73,12 @@ function dcOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
         dcModel!(system)
     end
 
-    model = Model(optimizerFactory; add_bridges = bridges)
-    set_string_names_on_creation(model, names)
+    model = Model(optimizerFactory; add_bridges = bridge)
+    set_string_names_on_creation(model, name)
 
-    @variable(model, angle[i = 1:bus.number])
     @variable(model, active[i = 1:generator.number])
-
+    @variable(model, angle[i = 1:bus.number])
+    
     slackRef = @constraint(model, angle[bus.layout.slack] == system.bus.voltage.angle[bus.layout.slack])
 
     capabilityRef = Array{JuMP.ConstraintRef}(undef, generator.number)
@@ -157,7 +157,7 @@ function dcOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
 
     balanceRef = Array{JuMP.ConstraintRef}(undef, bus.number)
     if balance
-        @time @inbounds for i = 1:bus.number
+        @inbounds for i = 1:bus.number
             expression = AffExpr(bus.demand.active[i] + bus.shunt.conductance[i] + system.dcModel.shiftActivePower[i])
             for j in system.dcModel.nodalMatrix.colptr[i]:(system.dcModel.nodalMatrix.colptr[i + 1] - 1)
                 add_to_expression!(expression, system.dcModel.nodalMatrix.nzval[j], angle[system.dcModel.nodalMatrix.rowval[j]])
@@ -186,15 +186,15 @@ function dcOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
     end
 
     return DCOptimalPowerFlow(
-        PolarAngle(copy(system.bus.voltage.angle)), 
-        CartesianReal(copy(system.generator.output.active)), 
+        PolarAngle(copy(system.bus.voltage.angle)),
+        CartesianReal(copy(system.generator.output.active)),
         model,
         Constraint(
-            PolarAngleRef(slackRef), 
-            CartesianRealRef(balanceRef), 
-            PolarAngleRef(limitRef), 
+            PolarAngleRef(slackRef),
+            CartesianRealRef(balanceRef),
+            PolarAngleRef(limitRef),
             CartesianRealFlowRef(ratingRef),
-            CartesianRealRef(capabilityRef), 
+            CartesianRealRef(capabilityRef),
             CartesianRealRef(piecewiseRef)
         )
     )
@@ -203,8 +203,8 @@ end
 """
     optimize!(system::PowerSystem, model::DCOptimalPowerFlow)
 
-The function finds the DC optimal power flow solution and calculate the angles of bus
-voltages and active power output of the generators.
+The function finds the DC optimal power flow solution and calculate the angles of bus voltages
+and output active powers of the generators.
 
 The calculated voltage angles and active powers are then stored in the `angle` variable of
 the `voltage` field and the `active` variable of the `power` field.

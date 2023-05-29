@@ -1,4 +1,9 @@
-export NewtonRaphson
+export NewtonRaphson, ACPowerFlow
+
+######### AC Power Flow ##########
+abstract type
+    ACPowerFlow <: Analysis
+end
 
 ######### Newton-Raphson ##########
 struct NewtonRaphson <: ACPowerFlow
@@ -448,7 +453,7 @@ does not save any data and should be utilized during the iteration loop before i
 [`solve!`](@ref solve!) function.
 
 # Abstract type
-The `ACPowerFlow` abstract type can take the following subtypes:
+The abstract type `ACPowerFlow` can have the following subtypes:
 - `NewtonRaphson`: computes the power mismatches within the Newton-Raphson method,
 - `FastNewtonRaphson`: computes the power mismatches within the fast Newton-Raphson method,
 - `GaussSeidel`: computes the power mismatches within the Gauss-Seidel method.
@@ -575,7 +580,7 @@ be executed to perform a single iteration of the method. The calculated voltages
 in the `voltage` field of the respective struct type.
 
 # Abstract type
-The `ACPowerFlow` abstract type can take the following subtypes:
+The abstract type `ACPowerFlow` can have the following subtypes:
 - `NewtonRaphson`: computes the bus voltages within the Newton-Raphson method
 - `FastNewtonRaphson`: computes the bus voltages within the fast Newton-Raphson method
 - `GaussSeidel`: computes the bus voltages within the Gauss-Seidel method.
@@ -753,6 +758,12 @@ of the `PowerSystem` type is also updated, and the bus types specified in `bus.l
 are modified. If the slack bus is converted, the `bus.layout.slack` field is correspondingly
 adjusted.
 
+# Abstract type
+The abstract type `ACPowerFlow` can have the following subtypes:
+- `NewtonRaphson`: computes the bus voltages within the Newton-Raphson method
+- `FastNewtonRaphson`: computes the bus voltages within the fast Newton-Raphson method
+- `GaussSeidel`: computes the bus voltages within the Gauss-Seidel method.
+
 # Returns
 The function returns the `violate` variable to indicate which buses violate the limits,
 with -1 indicating a violation of the minimum limits and 1 indicating a violation of the
@@ -864,6 +875,12 @@ and designate the first generator bus in the sequence as the new slack bus. Afte
 the updated AC power flow solution based on the new slack bus, it is possible to adjust the
 voltage angles to align with the angle of the original slack bus. The `slack` keyword
 specifies the bus label of the original slack bus.
+
+# Abstract type
+The abstract type `ACPowerFlow` can have the following subtypes:
+- `NewtonRaphson`: computes the bus voltages within the Newton-Raphson method
+- `FastNewtonRaphson`: computes the bus voltages within the fast Newton-Raphson method
+- `GaussSeidel`: computes the bus voltages within the Gauss-Seidel method.
 
 # Example
 ```jldoctest

@@ -1,4 +1,4 @@
-export ACAnalysis, DCAnalysis, ACPowerFlow
+export Analysis, DCAnalysis
 
 ######### Polar Coordinate ##########
 mutable struct Polar
@@ -112,9 +112,13 @@ end
 ######### Types ##########
 const N = Union{Float64, Int64}
 const T = Union{Float64, Int64, Missing}
-abstract type DCAnalysis end
-abstract type ACAnalysis end
-abstract type ACPowerFlow <: ACAnalysis end
+
+abstract type
+    DCAnalysis
+end
+abstract type
+    Analysis
+end
 
 ######### Template ##########
 const template = Dict(

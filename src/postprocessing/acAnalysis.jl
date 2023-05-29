@@ -1,11 +1,11 @@
 """
-    power(system::PowerSystem, model::ACAnalysis)
+    power(system::PowerSystem, model::Analysis)
 
 The function returns the active and reactive powers associated with buses, branches, and
 generators in the AC framework.
 
 # Abstract type
-Subtypes of the abstract type `ACAnalysis` include:
+The abstract type `Analysis` can have the following subtypes:
 - `ACPowerFlow`: computes the powers within the AC power flow,
 - `ACOptimalPowerFlow`: computes the powers within the AC optimal power flow.
 
@@ -207,13 +207,13 @@ function power(system::PowerSystem, model::ACPowerFlow)
 end
 
 """
-    powerBus(system::PowerSystem, model::ACAnalysis, label)
+    powerBus(system::PowerSystem, model::Analysis, label)
 
 The function returns the active and reactive powers associated associated with a specific
 bus in the AC framework. The `label` keyword argument must match an existing bus label.
 
 # Abstract type
-Subtypes of the abstract type `ACAnalysis` include:
+The abstract type `Analysis` can have the following subtypes:
 - `ACPowerFlow`: computes the powers within the AC power flow,
 - `ACOptimalPowerFlow`: computes the powers within the AC optimal power flow.
 
@@ -285,13 +285,13 @@ function powerBus(system::PowerSystem, model::ACPowerFlow; label)
 end
 
 """
-    powerBranch(system::PowerSystem, model::ACAnalysis; label)
+    powerBranch(system::PowerSystem, model::Analysis; label)
 
 The function returns the active and reactive powers associated with a specific branch in
 the AC framework. The `label` keyword argument must match an existing branch label.
 
 # Abstract type
-Subtypes of the abstract type `ACAnalysis` include:
+The abstract type `Analysis` can have the following subtypes:
 - `ACPowerFlow`: computes the powers within the AC power flow,
 - `ACOptimalPowerFlow`: computes the powers within the AC optimal power flow.
 
@@ -363,13 +363,13 @@ function powerBranch(system::PowerSystem, model::ACPowerFlow; label)
 end
 
 """
-    powerGenerator(system::PowerSystem, model::ACAnalysis)
+    powerGenerator(system::PowerSystem, model::Analysis)
 
 The function returns the active and reactive powers associated with a specific generator in
 the AC framework. The `label` keyword argument must match an existing generator label.
 
 # Abstract type
-Subtypes of the abstract type `ACAnalysis` include:
+The abstract type `Analysis` can have the following subtypes:
 - `ACPowerFlow`: computes the powers within the AC power flow,
 - `ACOptimalPowerFlow`: computes the powers within the AC optimal power flow.
 
@@ -498,13 +498,13 @@ function powerGenerator(system::PowerSystem, model::ACPowerFlow; label)
 end
 
 """
-    current(system::PowerSystem, model::ACAnalysis)
+    current(system::PowerSystem, model::Analysis)
 
 The function returns the currents in the polar coordinate system associated with buses and
 branches in the AC framework.
 
 # Abstract type
-Subtypes of the abstract type `ACAnalysis` include:
+The abstract type `Analysis` can have the following subtypes:
 - `ACPowerFlow`: computes the currents within the AC power flow,
 - `ACOptimalPowerFlow`: computes the currents within the AC optimal power flow.
 
@@ -597,13 +597,13 @@ function current(system::PowerSystem, model::ACPowerFlow)
 end
 
 """
-    currentBus(system::PowerSystem, model::ACAnalysis; label)
+    currentBus(system::PowerSystem, model::Analysis; label)
 
 The function returns the currents in the polar coordinate system associated with a specific
 bus in the AC framework. The `label` keyword argument must match an existing bus label.
 
 # Abstract type
-Subtypes of the abstract type `ACAnalysis` include:
+The abstract type `Analysis` can have the following subtypes:
 - `ACPowerFlow`: computes the currents within the AC power flow,
 - `ACOptimalPowerFlow`: computes the currents within the AC optimal power flow.
 
@@ -651,13 +651,13 @@ function currentBus(system::PowerSystem, model::ACPowerFlow; label)
 end
 
 """
-    currentBranch(system::PowerSystem, model::ACAnalysis; label)
+    currentBranch(system::PowerSystem, model::Analysis; label)
 
 The function returns the currents in the polar coordinate system associated with a specific
 branch in the AC framework. The `label` keyword argument must match an existing branch label.
 
 # Abstract type
-Subtypes of the abstract type `ACAnalysis` include:
+The abstract type `Analysis` can have the following subtypes:
 - `ACPowerFlow`: computes the currents within the AC power flow,
 - `ACOptimalPowerFlow`: computes the currents within the AC optimal power flow.
 

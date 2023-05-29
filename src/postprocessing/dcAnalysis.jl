@@ -5,7 +5,7 @@ The function returns the active powers associated with buses, branches, and gene
 the DC framework.
 
 # Abstract type
-Subtypes of the abstract type `DCAnalysis` include:
+The abstract type `DCAnalysis` can have the following subtypes:
 - `DCPowerFlow`: computes the powers within the DC power flow,
 - `DCOptimalPowerFlow`: computes the powers within the DC optimal power flow.
 
@@ -147,7 +147,7 @@ This function calculates the active powers associated with a specific bus in the
 framework. The `label` keyword argument must match an existing bus label.
 
 # Abstract type
-Subtypes of the abstract type `DCAnalysis` include:
+The abstract type `DCAnalysis` can have the following subtypes:
 - `DCPowerFlow`: computes the powers within the DC power flow,
 - `DCOptimalPowerFlow`: computes the powers within the DC optimal power flow.
 
@@ -241,7 +241,7 @@ This function calculates the active powers associated with a specific branch in 
 framework. The `label` keyword argument must match an existing branch label.
 
 # Abstract type
-Subtypes of the abstract type `DCAnalysis` include:
+The abstract type `DCAnalysis` can have the following subtypes:
 - `DCPowerFlow`: computes the powers within the DC power flow,
 - `DCOptimalPowerFlow`: computes the powers within the DC optimal power flow.
 
@@ -302,7 +302,7 @@ This function calculates the active powers associated with a specific generator 
 framework. The `label` keyword argument must match an existing generator label.
 
 # Abstract type
-Subtypes of the abstract type `DCAnalysis` include:
+The abstract type `DCAnalysis` can have the following subtypes:
 - `DCPowerFlow`: computes the powers within the DC power flow,
 - `DCOptimalPowerFlow`: computes the powers within the DC optimal power flow.
 
