@@ -40,6 +40,7 @@ include("optimalPowerFlow/acOptimalPowerFlow.jl")
 
 include("optimalPowerFlow/dcOptimalPowerFlow.jl")
 export dcOptimalPowerFlow
+export deleteBalance!, deleteLimit!, deleteRating!, deleteCapability!
 
 ########## Postprocessing ##########
 include("postprocessing/dcAnalysis.jl")

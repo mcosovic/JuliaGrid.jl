@@ -56,6 +56,78 @@ Furthermore, if there are linear piecewise cost functions with more than one seg
 
 ---
 
+## [Constraint Functions](@id DCConstraintFunctionsManual)
+JuliGrid keeps track of all the references to internally formed constraints in the `constraint` field of the `Model` composite type. These constraints are divided into six fields:
+```@repl DCOptimalPowerFlowConstraint
+fieldnames(typeof(model.constraint))
+```
+
+---
+
+##### Slack Bus Constraint
+The `slack` field contains a reference to the equality constraint associated with the fixed bus voltage angle value of the slack bus. This constraint is set within the [`addBus!`](@ref addBus!) function using the `angle` keyword:
+```@repl DCOptimalPowerFlowConstraint
+model.constraint.slack.angle
+```
+
+---
+
+##### Active Power Balance Constraints
+The `balance` field contains references to the equality constraints associated with the active power balance equations defined for each bus. The constant terms in these equations are determined by the `active` and `conductance` keywords within the [`addBus!`](@ref addBus!) function. Additionally, if there are phase shift transformers in the system, the constant terms can also be affected by the `shiftAngle` keyword within the [`addBranch!`](@ref addBranch!) function:
+```@repl DCOptimalPowerFlowConstraint
+model.constraint.balance.active
+```
+If you want to exclude these constraints and skip their formation, you can utilize the `balance = false` keyword within the [`dcOptimalPowerFlow`](@ref dcOptimalPowerFlow) function. By specifying this keyword, you indicate that the problem does not involve active power balance constraints.
+
+---
+
+##### Voltage Angle Difference Limit Constraints
+The `limit` field contains references to the inequality constraints associated with the minimum and maximum bus voltage angle difference between the "from" and "to" bus ends of each branch. These values are specified using the `minDiffAngle` and `maxDiffAngle` keywords within the [`addBranch!`](@ref addBranch!) function:
+```@repl DCOptimalPowerFlowConstraint
+model.constraint.limit.angle
+```
+
+Please note that if the limit constraints are set to `minDiffAngle = -2π` and `maxDiffAngle = 2π` for the corresponding branch, JuliGrid will omit the corresponding inequality constraint. Additionally, if you want to exclude all voltage angle limit constraints and skip their formation, you can use the `limit = false` keyword within the [`dcOptimalPowerFlow`](@ref dcOptimalPowerFlow) function.
+
+---
+
+##### Active Power Rating Constraints
+The `rating` field contains references to the inequality constraints associated with the active power flow limits at the "from" and "to" bus ends of each branch. These limits are specified using the `longTerm` keyword within the [`addBranch!`](@ref addBranch!) function:
+```@repl DCOptimalPowerFlowConstraint
+model.constraint.rating.active
+```
+If you want to exclude these constraints and skip their formation, you can use the `rating = false` keyword within the  [`dcOptimalPowerFlow`](@ref dcOptimalPowerFlow) function. By specifying this keyword, you indicate that the problem does not involve active power rating constraints.
+
+---
+
+##### Active Power Capability Constraints
+The `capability` field contains references to the inequality constraints associated with the minimum and maximum active power outputs of the generators. These limits are specified using the `minActive` and `maxActive` keywords within the [`addGenerator!`](@ref addGenerator!) function:
+```@repl DCOptimalPowerFlowConstraint
+model.constraint.capability.active
+```
+If you want to exclude these constraints and skip their formation, you can use the `capability = false` keyword within the  [`dcOptimalPowerFlow`](@ref dcOptimalPowerFlow) function. By specifying this keyword, you indicate that the problem does not involve active power capability constraints.
+
+---
+
+##### Active Power Piecewise Constraints
+The `piecewise` field contains references to the inequality constraints associated with the linear piecewise cost function. In this case, the cost function is replaced by the helper variable and the set of linear constraints. These constraints are generated using the [`addActiveCost!`](@ref addActiveCost!) function with `model = 1` specified:
+```@repl DCOptimalPowerFlowConstraint
+model.constraint.piecewise.active[2]
+```
+Therefore, for the generator labelled as 2, there is the linear piecewise cost function with two segments. JuliaGrid sets the corresponding inequality constraints for each segment.
+
+---
+
+## [Objective Function](@id DCObjectiveFunctionManual)
+The objective function of the DC optimal power flow is constructed using polynomial and linear piecewise cost functions of the generators, which are defined using the [`addActiveCost!`](@ref addActiveCost!) functions. It is important to note that only polynomial cost functions up to the second degree are included in the objective. If there are polynomials of higher degrees, JuliaGrid will exclude them from the objective function.
+
+In the provided example, the objective function that needs to be minimized to obtain the optimal values of the active power outputs of the generators and the bus voltage angles is as follows:
+```@repl DCOptimalPowerFlowConstraint
+JuMP.objective_function(model.jump)
+```
+
+---
+
 ## [Setup Primal Starting Values](@id SetupPrimalStartingValuesManual)
 There are two methods available to specify primal starting values for each variable: using the built-in function provided by JuMP or accessing and modifying values directly within the `voltage` and `power` fields of the `Model` type.
 
@@ -89,77 +161,8 @@ You can modify these values, and they will be used as primal starting values dur
 
 ---
 
-## [Constraint Functions](@id DCConstraintFunctionsManual)
-JuliGrid keeps track of all the references to internally formed constraints in the `constraint` field of the `Model` composite type. These constraints are divided into six fields:
-```@repl DCOptimalPowerFlowConstraint
-fieldnames(typeof(model.constraint))
-```
-
----
-
-##### Slack Bus Constraint
-The `slack` field contains a reference to the equality constraint associated with the fixed bus voltage angle value of the slack bus. This constraint is set within the [`addBus!`](@ref addBus!) function using the `angle` keyword:
-```@repl DCOptimalPowerFlowConstraint
-model.constraint.slack.angle
-```
-
----
-
-##### Active Power Balance Constraints
-The `balance` field contains references to the equality constraints associated with the active power balance equations defined for each bus. The constant terms in these equations are determined by the `active` and `conductance` keywords within the [`addBus!`](@ref addBus!) function. Additionally, if there are phase shift transformers in the system, the constant terms can also be affected by the `shiftAngle` keyword within the [`addBranch!`](@ref addBranch!) function:
-```@repl DCOptimalPowerFlowConstraint
-model.constraint.balance.active
-```
-
----
-
-##### Voltage Angle Limit Constraints
-The `limit` field contains references to the inequality constraints associated with the minimum and maximum bus voltage angle difference between the "from" and "to" bus ends of each branch. These values are specified using the `minDiffAngle` and `maxDiffAngle` keywords within the [`addBranch!`](@ref addBranch!) function:
-```@repl DCOptimalPowerFlowConstraint
-model.constraint.limit.angle
-```
-
-Please note that if the limit constraints are set to `minDiffAngle = -2π` and `maxDiffAngle = 2π` for the corresponding branch, JuliGrid will omit the corresponding inequality constraint.
-
----
-
-##### Active Power Rating Constraints
-The `rating` field contains references to the inequality constraints associated with the active power flow limits at the "from" and "to" bus ends of each branch. These limits are specified using the `longTerm` keyword within the [`addBranch!`](@ref addBranch!) function:
-```@repl DCOptimalPowerFlowConstraint
-model.constraint.rating.active
-```
-
----
-
-##### Active Power Capability Constraints
-The `capability` field contains references to the inequality constraints associated with the minimum and maximum active power outputs of the generators. These limits are specified using the `minActive` and `maxActive` keywords within the [`addGenerator!`](@ref addGenerator!) function:
-```@repl DCOptimalPowerFlowConstraint
-model.constraint.capability.active
-```
-
----
-
-##### Active Power Piecewise Constraints
-The `piecewise` field contains references to the inequality constraints associated with the linear piecewise cost function. In this case, the cost function is replaced by the helper variable and the set of linear constraints. These constraints are generated using the [`addActiveCost!`](@ref addActiveCost!) function with `model = 1` specified:
-```@repl DCOptimalPowerFlowConstraint
-model.constraint.piecewise.active[2]
-```
-Therefore, for the generator labelled as 2, there is the linear piecewise cost function with two segments. JuliaGrid sets the corresponding inequality constraints for each segment.
-
----
-
-## [Objective Function](@id DCObjectiveFunctionManual)
-The objective function of the DC optimal power flow is constructed using polynomial and linear piecewise cost functions of the generators, which are defined using the [`addActiveCost!`](@ref addActiveCost!) functions. It is important to note that only polynomial cost functions up to the second degree are included in the objective. If there are polynomials of higher degrees, JuliaGrid will exclude them from the objective function.
-
-In the provided example, the objective function that needs to be minimized to obtain the optimal values of the active power outputs of the generators and the bus voltage angles is as follows:
-```@repl DCOptimalPowerFlowConstraint
-JuMP.objective_function(model.jump)
-```
-
----
-
 ## [Optimal Power Flow Solution](@id DCOptimalPowerFlowSolutionManual)
-To establish the DC optimal power flow problem, you can utilize the [`dcOptimalPowerFlow`](@ref dcPowerFlow) function. After setting up the problem, you can use the [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow)) function to compute the optimal values for the active power outputs of the generators and the bus voltage angles. Here is an example:
+To establish the DC optimal power flow problem, you can utilize the [`dcOptimalPowerFlow`](@ref dcOptimalPowerFlow) function. After setting up the problem, you can use the [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow)) function to compute the optimal values for the active power outputs of the generators and the bus voltage angles. Here is an example:
 ```@example DCOptimalPowerFlowConstraint
 solve!(system, model)
 nothing # hide
@@ -170,3 +173,37 @@ By executing this function, you will obtain the solution with the optimal values
 model.power.active
 model.voltage.angle
 ```
+
+---
+
+## [Add Constraint](@id DCAddConstraintManual)
+Users can effortlessly incorporate additional constraints into the defined DC optimal power flow model using the `@constraint` macro. For instance, a new constraint related to the active power outputs of the generators can be added as follows:
+```@example DCOptimalPowerFlowConstraint
+active = model.jump[:active]
+
+JuMP.@constraint(model.jump, 0.5 * active[1] + 0.25 * active[2] <= 0.1)
+nothing # hide
+```
+
+---
+
+## [Delete Constraint](@id DCDeleteConstraintManual)
+To delete a constraint, users can utilize the `delete` function from the JuMP package, using the constraint references stored in the `constraint` field of the `Model` type. For instance, to delete the active power balance constraint related to the first bus, the following code can be used:
+```@example DCOptimalPowerFlowConstraint
+JuMP.delete(model.jump, model.constraint.balance.active[1])
+nothing # hide
+```
+We can observe that the balance equation related to the first bus no longer exists within the optimization problem:
+```@repl DCOptimalPowerFlowConstraint
+model.constraint.balance.active
+```
+
+Additionally, the JuliaGrid package provides a set of functions to delete specific constraints, which accept the `DCOptimalPowerFlow` type as an argument, along with the `label` keyword. For example, if we want to delete the active power balance constraint related to the second bus, we can use the method mentioned earlier, or we can use:
+```@example DCOptimalPowerFlowConstraint
+deleteBalance!(model; label = 2)
+nothing # hide
+```
+
+We also have functions [`deleteLimit!`](@ref deleteLimit!), [ `deleteRating!`](@ref deleteRating!), and [`deleteCapability!`](@ref deleteCapability!) that can be used to delete the corresponding constraints within the `label` keyword. The `label` keyword should correspond to the bus, branch, or generator label, depending on the type of constraint we want to delete.
+
+---

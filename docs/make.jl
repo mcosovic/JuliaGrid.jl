@@ -26,6 +26,7 @@ makedocs(
             ["Power System Model" => "api/powerSystemModel.md",
             "AC Power Flow Solution" => "api/acPowerFlowSolution.md",
             "DC Power Flow Solution" => "api/dcPowerFlowSolution.md",
+            "DC Optimal Power Flow Solution" => "api/dcOptimalPowerFlowSolution.md",
             "AC Power and Current Analysis" => "api/acAnalysis.md",
             "DC Power Analysis" => "api/dcAnalysis.md",
             "Configuration Setup" => "api/configuration.md"]

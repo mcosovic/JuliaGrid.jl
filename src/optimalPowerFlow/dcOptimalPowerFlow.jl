@@ -1,3 +1,5 @@
+export DCOptimalPowerFlow
+
 ######### DC Optimal Power Flow ##########
 struct DCOptimalPowerFlow <: DCAnalysis
     voltage::PolarAngle
@@ -78,7 +80,7 @@ function dcOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
 
     @variable(model, active[i = 1:generator.number])
     @variable(model, angle[i = 1:bus.number])
-    
+
     slackRef = @constraint(model, angle[bus.layout.slack] == system.bus.voltage.angle[bus.layout.slack])
 
     capabilityRef = Array{JuMP.ConstraintRef}(undef, generator.number)
@@ -235,4 +237,116 @@ function solve!(system::PowerSystem, model::DCOptimalPowerFlow)
     @inbounds for i = 1:system.generator.number
         model.power.active[i] = value(model.jump[:active][i])
     end
+end
+
+"""
+    deleteBalance!(model::DCOptimalPowerFlow; label::Int64)
+
+The function removes the active power balance constraint associated with the bus designated by
+the `label` in the DC optimal power flow framework.
+
+# Example
+```jldoctest
+system = powerSystem("case14.h5")
+dcModel!(system)
+
+model = dcOptimalPowerFlow(system, HiGHS.Optimizer)
+
+deleteBalance!(model; label = 1)
+```
+"""
+function deleteBalance!(model::DCOptimalPowerFlow; label::Int64)
+    if label <= 0
+        throw(ErrorException("The value of the label keyword must be given as a positive integer."))
+    end
+    if !haskey(system.bus.label, label)
+        throw(ErrorException("The value $label of the label keyword does not exist in bus labels."))
+    end
+
+    index = system.bus.label[label]
+    JuMP.delete(model.jump, model.constraint.balance.active[index])
+end
+
+"""
+    deleteLimit!(model::DCOptimalPowerFlow; label::Int64)
+
+The function removes the voltage angle difference limit constraint associated with the branch
+designated by the `label` in the DC optimal power flow framework.
+
+# Example
+```jldoctest
+system = powerSystem("case14.h5")
+dcModel!(system)
+
+model = dcOptimalPowerFlow(system, HiGHS.Optimizer)
+
+deleteLimit!(model; label = 1)
+```
+"""
+function deleteLimit!(model::DCOptimalPowerFlow; label::Int64)
+    if label <= 0
+        throw(ErrorException("The value of the label keyword must be given as a positive integer."))
+    end
+    if !haskey(system.branch.label, label)
+        throw(ErrorException("The value $label of the label keyword does not exist in branch labels."))
+    end
+
+    index = system.branch.label[label]
+    JuMP.delete(model.jump, model.constraint.limit.angle[index])
+end
+
+"""
+    deleteRating!(model::DCOptimalPowerFlow; label::Int64)
+
+The function removes the active power rating constraint associated with the branch designated
+by the `label` in the DC optimal power flow framework.
+
+# Example
+```jldoctest
+system = powerSystem("case14.h5")
+dcModel!(system)
+
+model = dcOptimalPowerFlow(system, HiGHS.Optimizer)
+
+deleteRating!(model; label = 1)
+```
+"""
+function deleteRating!(model::DCOptimalPowerFlow; label::Int64)
+    if label <= 0
+        throw(ErrorException("The value of the label keyword must be given as a positive integer."))
+    end
+    if !haskey(system.branch.label, label)
+        throw(ErrorException("The value $label of the label keyword does not exist in branch labels."))
+    end
+
+    index = system.branch.label[label]
+    JuMP.delete(model.jump, model.constraint.rating.active[index])
+end
+
+"""
+    deleteCapability!(model::DCOptimalPowerFlow; label::Int64)
+
+The function removes the active power capability constraint associated with the generator designated
+by the `label` in the DC optimal power flow framework.
+
+# Example
+```jldoctest
+system = powerSystem("case14.h5")
+dcModel!(system)
+
+model = dcOptimalPowerFlow(system, HiGHS.Optimizer)
+
+deleteCapability!(model; label = 1)
+```
+"""
+function deleteCapability!(model::DCOptimalPowerFlow; label::Int64)
+    if label <= 0
+        throw(ErrorException("The value of the label keyword must be given as a positive integer."))
+    end
+    if !haskey(system.generator.label, label)
+        throw(ErrorException("The value $label of the label keyword does not exist in generator labels."))
+    end
+
+    index = system.generator.label[label]
+    JuMP.delete(model.jump, model.constraint.capability.active[index])
 end

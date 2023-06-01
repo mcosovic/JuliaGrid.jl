@@ -21,7 +21,7 @@ dcPowerFlow
 
 ---
 
-## Solve Power Flow 
+## Solve Power Flow
 ```@docs
 solve!(::PowerSystem, ::DCPowerFlow)
 ```
