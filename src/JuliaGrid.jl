@@ -28,7 +28,7 @@ export @bus, @branch, @generator
 ########## Power Flow ##########
 include("powerFlow/acPowerFlow.jl")
 export newtonRaphson, fastNewtonRaphsonBX, fastNewtonRaphsonXB, gaussSeidel
-export mismatch!, solve!
+export mismatch!
 export reactiveLimit!, adjustAngle!
 
 include("powerFlow/dcPowerFlow.jl")
@@ -39,9 +39,9 @@ include("optimalPowerFlow/acOptimalPowerFlow.jl")
 # export acOptimalPowerFlow, optimize!
 
 include("optimalPowerFlow/dcOptimalPowerFlow.jl")
-export dcOptimalPowerFlow, optimize!
+export dcOptimalPowerFlow
 
-########## Optimal Power Flow ##########
+########## Postprocessing ##########
 include("postprocessing/dcAnalysis.jl")
 include("postprocessing/acAnalysis.jl")
 export power, powerBus, powerBranch, powerGenerator
@@ -50,6 +50,9 @@ export current, currentBus, currentBranch
 ########## Unit ##########
 include("utility/unit.jl")
 export @base, @power, @voltage, @parameter
+
+########## Solve Function ##########
+export solve!
 
 end # JuliaGrid
 

@@ -201,7 +201,7 @@ function dcOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
 end
 
 """
-    optimize!(system::PowerSystem, model::DCOptimalPowerFlow)
+    solve!(system::PowerSystem, model::DCOptimalPowerFlow)
 
 The function finds the DC optimal power flow solution and calculate the angles of bus voltages
 and output active powers of the generators.
@@ -215,10 +215,10 @@ system = powerSystem("case14.h5")
 dcModel!(system)
 
 model = dcOptimalPowerFlow(system, HiGHS.Optimizer)
-optimize!(system, model)
+solve!(system, model)
 ```
 """
-function optimize!(system::PowerSystem, model::DCOptimalPowerFlow)
+function solve!(system::PowerSystem, model::DCOptimalPowerFlow)
     if isnothing(start_value(model.jump[:angle][1]))
         set_start_value.(model.jump[:angle], model.voltage.angle)
     end

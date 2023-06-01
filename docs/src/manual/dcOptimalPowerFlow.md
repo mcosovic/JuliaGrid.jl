@@ -5,7 +5,7 @@ To perform the DC optimal power flow, you first need to have the `PowerSystem` c
 * [`dcOptimalPowerFlow`](@ref dcOptimalPowerFlow).
 
 To solve the DC optimal power flow problem and acquire bus voltage angles and generator active power outputs, make use of the following function:
-* [`optimize!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow)).
+* [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow)).
 
 After obtaining the solution for DC optimal power flow, JuliaGrid offers a post-processing analysis function to compute powers associated with buses, branches, and generators:
 * [`power`](@ref power(::PowerSystem, ::DCOptimalPowerFlow)).
@@ -64,8 +64,8 @@ There are two methods available to specify primal starting values for each varia
 ##### Using JuMP Functions
 One approach is to utilize the `set_start_value` function from the JuMP package. This allows us to set primal starting values for the active power outputs of the generators and the bus voltage angles. Here is an example:
 ```@example DCOptimalPowerFlowConstraint
-JuMP.set_start_value.(model.jump[:active], [0.0, 0.19])
-JuMP.set_start_value.(model.jump[:angle], [0.17, 0.15, 0.16])
+JuMP.set_start_value.(model.jump[:active], [0.0, 0.18])
+JuMP.set_start_value.(model.jump[:angle], [0.17, 0.13, 0.14])
 nothing # hide
 ```
 To inspect the primal starting values that have been set, you can use the `start_value` function from JuMP. Here is an example of how you can inspect the starting values for the active power outputs:
@@ -77,15 +77,15 @@ JuMP.start_value.(model.jump[:active])
 ---
 
 ##### Using JuliaGrid Variables
-Alternatively, you can rely on the [`optimize!`](@ref optimize!) function to assign starting values based on the `voltage` and `power` fields. By default, these values are initially defined according to the active power outputs of the generators and the initial bus voltage angles:
+Alternatively, you can rely on the [`solve!`](@ref solve!) function to assign starting values based on the `voltage` and `power` fields. By default, these values are initially defined according to the active power outputs of the generators and the initial bus voltage angles:
 ```@repl DCOptimalPowerFlowConstraint
 model.power.active
 model.voltage.angle
 ```
-You can modify these values, and they will be used as primal starting values during the execution of the [`optimize!`](@ref optimize!) function.
+You can modify these values, and they will be used as primal starting values during the execution of the [`solve!`](@ref solve!) function.
 
 !!! warning "Warning"
-    Please note that if primal starting values are set using the `set_start_value` function or any other method prior to executing the [`optimize!`](@ref optimize!) function, the values in the `voltage` and `power` fields will be ignored. This is because the starting point will be considered already defined.
+    Please note that if primal starting values are set using the `set_start_value` function or any other method prior to executing the [`solve!`](@ref solve!) function, the values in the `voltage` and `power` fields will be ignored. This is because the starting point will be considered already defined.
 
 ---
 
@@ -159,13 +159,13 @@ JuMP.objective_function(model.jump)
 ---
 
 ## [Optimal Power Flow Solution](@id DCOptimalPowerFlowSolutionManual)
-To establish the DC optimal power flow problem, you can utilize the [`dcOptimalPowerFlow`](@ref dcPowerFlow) function. After setting up the problem, you can use the [`optimize!`](@ref optimize!(::PowerSystem, ::DCOptimalPowerFlow)) function to compute the optimal values for the active power outputs of the generators and the bus voltage angles. Here is an example:
+To establish the DC optimal power flow problem, you can utilize the [`dcOptimalPowerFlow`](@ref dcPowerFlow) function. After setting up the problem, you can use the [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow)) function to compute the optimal values for the active power outputs of the generators and the bus voltage angles. Here is an example:
 ```@example DCOptimalPowerFlowConstraint
-optimize!(system, model)
+solve!(system, model)
 nothing # hide
 ```
 
-By executing this code, you will obtain the solution with the optimal values for the active power outputs of the generators and the bus voltage angles:
+By executing this function, you will obtain the solution with the optimal values for the active power outputs of the generators and the bus voltage angles:
 ```@repl DCOptimalPowerFlowConstraint
 model.power.active
 model.voltage.angle
