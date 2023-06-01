@@ -56,6 +56,38 @@ Furthermore, if there are linear piecewise cost functions with more than one seg
 
 ---
 
+## [Setup Primal Starting Values](@id SetupPrimalStartingValuesManual)
+There are two methods available to specify primal starting values for each variable: using the built-in function provided by JuMP or accessing and modifying values directly within the `voltage` and `power` fields of the `Model` type.
+
+---
+
+##### Using JuMP Functions
+One approach is to utilize the `set_start_value` function from the JuMP package. This allows us to set primal starting values for the active power outputs of the generators and the bus voltage angles. Here is an example:
+```@example DCOptimalPowerFlowConstraint
+JuMP.set_start_value.(model.jump[:active], [0.0, 0.19])
+JuMP.set_start_value.(model.jump[:angle], [0.17, 0.15, 0.16])
+nothing # hide
+```
+To inspect the primal starting values that have been set, you can use the `start_value` function from JuMP. Here is an example of how you can inspect the starting values for the active power outputs:
+We can inspect that starting values are set:
+```@repl DCOptimalPowerFlowConstraint
+JuMP.start_value.(model.jump[:active])
+```
+
+---
+
+##### Using JuliaGrid Variables
+Alternatively, you can rely on the [`optimize!`](@ref optimize!) function to assign starting values based on the `voltage` and `power` fields. By default, these values are initially defined according to the active power outputs of the generators and the initial bus voltage angles:
+```@repl DCOptimalPowerFlowConstraint
+model.power.active
+model.voltage.angle
+```
+You can modify these values, and they will be used as primal starting values during the execution of the [`optimize!`](@ref optimize!) function.
+
+!!! warning "Warning"
+    Please note that if primal starting values are set using the `set_start_value` function or any other method prior to executing the [`optimize!`](@ref optimize!) function, the values in the `voltage` and `power` fields will be ignored. This is because the starting point will be considered already defined.
+
+---
 
 ## [Constraint Functions](@id DCConstraintFunctionsManual)
 JuliGrid keeps track of all the references to internally formed constraints in the `constraint` field of the `Model` composite type. These constraints are divided into six fields:
@@ -122,4 +154,19 @@ The objective function of the DC optimal power flow is constructed using polynom
 In the provided example, the objective function that needs to be minimized to obtain the optimal values of the active power outputs of the generators and the bus voltage angles is as follows:
 ```@repl DCOptimalPowerFlowConstraint
 JuMP.objective_function(model.jump)
+```
+
+---
+
+## [Optimal Power Flow Solution](@id DCOptimalPowerFlowSolutionManual)
+To establish the DC optimal power flow problem, you can utilize the [`dcOptimalPowerFlow`](@ref dcPowerFlow) function. After setting up the problem, you can use the [`optimize!`](@ref optimize!(::PowerSystem, ::DCOptimalPowerFlow)) function to compute the optimal values for the active power outputs of the generators and the bus voltage angles. Here is an example:
+```@example DCOptimalPowerFlowConstraint
+optimize!(system, model)
+nothing # hide
+```
+
+By executing this code, you will obtain the solution with the optimal values for the active power outputs of the generators and the bus voltage angles:
+```@repl DCOptimalPowerFlowConstraint
+model.power.active
+model.voltage.angle
 ```
