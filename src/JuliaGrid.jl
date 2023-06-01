@@ -4,7 +4,6 @@ using SparseArrays, LinearAlgebra, SuiteSparse
 using HDF5
 using JuMP
 
-
 ########## Setting Variables ##########
 include("utility/setting.jl")
 
@@ -40,7 +39,7 @@ include("optimalPowerFlow/acOptimalPowerFlow.jl")
 # export acOptimalPowerFlow, optimize!
 
 include("optimalPowerFlow/dcOptimalPowerFlow.jl")
-export dcOptimalPowerFlow
+export dcOptimalPowerFlow, optimize!
 
 ########## Optimal Power Flow ##########
 include("postprocessing/dcAnalysis.jl")
