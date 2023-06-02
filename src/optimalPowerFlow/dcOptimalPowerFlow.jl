@@ -240,7 +240,7 @@ function solve!(system::PowerSystem, model::DCOptimalPowerFlow)
 end
 
 """
-    deleteBalance!(model::DCOptimalPowerFlow; label::Int64)
+    deleteBalance!(system::PowerSystem, model::DCOptimalPowerFlow; label::Int64)
 
 The function removes the active power balance constraint associated with the bus designated by
 the `label` in the DC optimal power flow framework.
@@ -255,7 +255,7 @@ model = dcOptimalPowerFlow(system, HiGHS.Optimizer)
 deleteBalance!(model; label = 1)
 ```
 """
-function deleteBalance!(model::DCOptimalPowerFlow; label::Int64)
+function deleteBalance!(system::PowerSystem, model::DCOptimalPowerFlow; label::Int64)
     if label <= 0
         throw(ErrorException("The value of the label keyword must be given as a positive integer."))
     end
@@ -268,7 +268,7 @@ function deleteBalance!(model::DCOptimalPowerFlow; label::Int64)
 end
 
 """
-    deleteLimit!(model::DCOptimalPowerFlow; label::Int64)
+    deleteLimit!(system::PowerSystem, model::DCOptimalPowerFlow; label::Int64)
 
 The function removes the voltage angle difference limit constraint associated with the branch
 designated by the `label` in the DC optimal power flow framework.
@@ -283,7 +283,7 @@ model = dcOptimalPowerFlow(system, HiGHS.Optimizer)
 deleteLimit!(model; label = 1)
 ```
 """
-function deleteLimit!(model::DCOptimalPowerFlow; label::Int64)
+function deleteLimit!(system::PowerSystem, model::DCOptimalPowerFlow; label::Int64)
     if label <= 0
         throw(ErrorException("The value of the label keyword must be given as a positive integer."))
     end
@@ -296,7 +296,7 @@ function deleteLimit!(model::DCOptimalPowerFlow; label::Int64)
 end
 
 """
-    deleteRating!(model::DCOptimalPowerFlow; label::Int64)
+    deleteRating!(system::PowerSystem, model::DCOptimalPowerFlow; label::Int64)
 
 The function removes the active power rating constraint associated with the branch designated
 by the `label` in the DC optimal power flow framework.
@@ -311,7 +311,7 @@ model = dcOptimalPowerFlow(system, HiGHS.Optimizer)
 deleteRating!(model; label = 1)
 ```
 """
-function deleteRating!(model::DCOptimalPowerFlow; label::Int64)
+function deleteRating!(system::PowerSystem, model::DCOptimalPowerFlow; label::Int64)
     if label <= 0
         throw(ErrorException("The value of the label keyword must be given as a positive integer."))
     end
@@ -324,7 +324,7 @@ function deleteRating!(model::DCOptimalPowerFlow; label::Int64)
 end
 
 """
-    deleteCapability!(model::DCOptimalPowerFlow; label::Int64)
+    deleteCapability!(system::PowerSystem, model::DCOptimalPowerFlow; label::Int64)
 
 The function removes the active power capability constraint associated with the generator designated
 by the `label` in the DC optimal power flow framework.
@@ -339,7 +339,7 @@ model = dcOptimalPowerFlow(system, HiGHS.Optimizer)
 deleteCapability!(model; label = 1)
 ```
 """
-function deleteCapability!(model::DCOptimalPowerFlow; label::Int64)
+function deleteCapability!(system::PowerSystem, model::DCOptimalPowerFlow; label::Int64)
     if label <= 0
         throw(ErrorException("The value of the label keyword must be given as a positive integer."))
     end

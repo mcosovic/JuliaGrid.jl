@@ -52,7 +52,31 @@ In the DC optimal power flow, the active power outputs of the generators are rep
 JuMP.all_variables(model.jump)
 ```
 
-Furthermore, if there are linear piecewise cost functions with more than one segment, JuliaGrid automatically generates a helper variable for each linear piecewise cost function. Specifically, this cost function is modeled using a constrained cost variable method, where the cost function is replaced by thr helper variable and the set of linear constraints.
+Furthermore, if there are linear piecewise cost functions with more than one segment, JuliaGrid automatically generates a helper variable for each linear piecewise cost function. Specifically, this cost function is modelled using a constrained cost variable method, where the cost function is replaced by thr helper variable and the set of linear constraints.
+
+---
+
+## Add and Delete Variables
+The user has the ability to easily add new variables to the defined DC optimal power flow model by using the [`@variable`](https://jump.dev/JuMP.jl/stable/reference/variables/#JuMP.@variable) macro from the JuMP package. Here is an example:
+```@example DCOptimalPowerFlowConstraint
+JuMP.@variable(model.jump, new)
+nothing # hide
+```
+
+We can verify that the new variable is included in the defined model by using the function:
+```@repl DCOptimalPowerFlowConstraint
+JuMP.is_valid(model.jump, new)
+```
+
+To delete a variable, the [`delete`](https://jump.dev/JuMP.jl/stable/reference/constraints/#JuMP.delete) function from the JuMP package can be used:
+```@example DCOptimalPowerFlowConstraint
+JuMP.delete(model.jump, new)
+```
+
+After deletion, the variable is no longer part of the model:
+```@repl DCOptimalPowerFlowConstraint
+JuMP.is_valid(model.jump, new)
+```
 
 ---
 
@@ -79,6 +103,8 @@ model.constraint.balance.active
 ```
 If you want to exclude these constraints and skip their formation, you can utilize the `balance = false` keyword within the [`dcOptimalPowerFlow`](@ref dcOptimalPowerFlow) function. By specifying this keyword, you indicate that the problem does not involve active power balance constraints.
 
+Additionally, we provide the [`deleteBalance!`](@ref deleteBalance!) function to delete the active power balance constraint associated with a specific bus.
+
 ---
 
 ##### Voltage Angle Difference Limit Constraints
@@ -89,6 +115,8 @@ model.constraint.limit.angle
 
 Please note that if the limit constraints are set to `minDiffAngle = -2π` and `maxDiffAngle = 2π` for the corresponding branch, JuliGrid will omit the corresponding inequality constraint. Additionally, if you want to exclude all voltage angle limit constraints and skip their formation, you can use the `limit = false` keyword within the [`dcOptimalPowerFlow`](@ref dcOptimalPowerFlow) function.
 
+Also, we provide the [`deleteLimit!`](@ref deleteLimit!) function to delete the voltage angle difference limit constraint associated with a specific branch.
+
 ---
 
 ##### Active Power Rating Constraints
@@ -97,6 +125,8 @@ The `rating` field contains references to the inequality constraints associated 
 model.constraint.rating.active
 ```
 If you want to exclude these constraints and skip their formation, you can use the `rating = false` keyword within the  [`dcOptimalPowerFlow`](@ref dcOptimalPowerFlow) function. By specifying this keyword, you indicate that the problem does not involve active power rating constraints.
+
+Also, we provide the [`deleteRating!`](@ref deleteRating!) function to delete the active power rating constraint associated with a specific branch.
 
 ---
 
@@ -107,6 +137,8 @@ model.constraint.capability.active
 ```
 If you want to exclude these constraints and skip their formation, you can use the `capability = false` keyword within the  [`dcOptimalPowerFlow`](@ref dcOptimalPowerFlow) function. By specifying this keyword, you indicate that the problem does not involve active power capability constraints.
 
+Finally, we provide the [`deleteCapability!`](@ref deleteCapability!) function to delete the active power capability constraint associated with a specific generator.
+
 ---
 
 ##### Active Power Piecewise Constraints
@@ -115,6 +147,34 @@ The `piecewise` field contains references to the inequality constraints associat
 model.constraint.piecewise.active[2]
 ```
 Therefore, for the generator labelled as 2, there is the linear piecewise cost function with two segments. JuliaGrid sets the corresponding inequality constraints for each segment.
+
+---
+
+
+## [Add and Delete Constraints](@id DCAddDeleteConstraintsManual)
+Users can effortlessly incorporate additional constraints into the defined DC optimal power flow model using the [`@constraint`](https://jump.dev/JuMP.jl/stable/reference/constraints/#JuMP.@constraint) macro. For instance, a new constraint related to the active power outputs of the generators can be added as follows:
+```@example DCOptimalPowerFlowConstraint
+angle = model.jump[:angle]
+
+JuMP.@constraint(model.jump, -2.1 <= angle[1] - angle[2] <= 2.1)
+nothing # hide
+```
+
+---
+
+To delete a constraint, users can utilize the [`delete`](https://jump.dev/JuMP.jl/stable/reference/constraints/#JuMP.delete) function from the JuMP package, using the constraint references stored in the `constraint` field of the `Model` type. For instance, to delete the voltage angle difference limit constraint related to the first branch, the following code can be used:
+```@example DCOptimalPowerFlowConstraint
+JuMP.delete(model.jump, model.constraint.limit.angle[1])
+nothing # hide
+```
+
+Additionally, the JuliaGrid package provides a set of functions to delete specific constraints, which accept the `DCOptimalPowerFlow` type as an argument, along with the `label` keyword. For example, if we want to delete the active power balance constraint related to the second bus, we can use the method mentioned earlier, or we can use:
+```@example DCOptimalPowerFlowConstraint
+deleteBalance!(system, model; label = 2)
+nothing # hide
+```
+
+We also have functions [`deleteLimit!`](@ref deleteLimit!), [ `deleteRating!`](@ref deleteRating!), and [`deleteCapability!`](@ref deleteCapability!) that can be used to delete the corresponding constraints within the `label` keyword. The `label` keyword should correspond to the bus, branch, or generator label, depending on the type of constraint we want to delete.
 
 ---
 
@@ -134,13 +194,13 @@ There are two methods available to specify primal starting values for each varia
 ---
 
 ##### Using JuMP Functions
-One approach is to utilize the `set_start_value` function from the JuMP package. This allows us to set primal starting values for the active power outputs of the generators and the bus voltage angles. Here is an example:
+One approach is to utilize the [`set_start_value`](https://jump.dev/JuMP.jl/stable/reference/variables/#JuMP.set_start_value) function from the JuMP package. This allows us to set primal starting values for the active power outputs of the generators and the bus voltage angles. Here is an example:
 ```@example DCOptimalPowerFlowConstraint
 JuMP.set_start_value.(model.jump[:active], [0.0, 0.18])
 JuMP.set_start_value.(model.jump[:angle], [0.17, 0.13, 0.14])
 nothing # hide
 ```
-To inspect the primal starting values that have been set, you can use the `start_value` function from JuMP. Here is an example of how you can inspect the starting values for the active power outputs:
+To inspect the primal starting values that have been set, you can use the [`start_value`](https://jump.dev/JuMP.jl/stable/reference/variables/#JuMP.start_value) function from JuMP. Here is an example of how you can inspect the starting values for the active power outputs:
 We can inspect that starting values are set:
 ```@repl DCOptimalPowerFlowConstraint
 JuMP.start_value.(model.jump[:active])
@@ -174,16 +234,4 @@ model.power.active
 model.voltage.angle
 ```
 
----
-
-## [Add Constraint](@id DCAddConstraintManual)
-Users can effortlessly incorporate additional constraints into the defined DC optimal power flow model using the `@constraint` macro. For instance, a new constraint related to the active power outputs of the generators can be added as follows:
-```@example DCOptimalPowerFlowConstraint
-active = model.jump[:active]
-
-JuMP.@constraint(model.jump, 0.5 * active[1] + 0.25 * active[2] <= 0.1)
-nothing # hide
-```
-
----
 
