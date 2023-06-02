@@ -187,23 +187,3 @@ nothing # hide
 
 ---
 
-## [Delete Constraint](@id DCDeleteConstraintManual)
-To delete a constraint, users can utilize the `delete` function from the JuMP package, using the constraint references stored in the `constraint` field of the `Model` type. For instance, to delete the active power balance constraint related to the first bus, the following code can be used:
-```@example DCOptimalPowerFlowConstraint
-JuMP.delete(model.jump, model.constraint.balance.active[1])
-nothing # hide
-```
-We can observe that the balance equation related to the first bus no longer exists within the optimization problem:
-```@repl DCOptimalPowerFlowConstraint
-model.constraint.balance.active
-```
-
-Additionally, the JuliaGrid package provides a set of functions to delete specific constraints, which accept the `DCOptimalPowerFlow` type as an argument, along with the `label` keyword. For example, if we want to delete the active power balance constraint related to the second bus, we can use the method mentioned earlier, or we can use:
-```@example DCOptimalPowerFlowConstraint
-deleteBalance!(model; label = 2)
-nothing # hide
-```
-
-We also have functions [`deleteLimit!`](@ref deleteLimit!), [ `deleteRating!`](@ref deleteRating!), and [`deleteCapability!`](@ref deleteCapability!) that can be used to delete the corresponding constraints within the `label` keyword. The `label` keyword should correspond to the bus, branch, or generator label, depending on the type of constraint we want to delete.
-
----
