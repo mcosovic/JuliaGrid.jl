@@ -176,19 +176,19 @@ system.base.voltage.value, system.base.voltage.unit
 
 ---
 
-## [Bus Labels](@id BusLabelsManual)
-In JuliaGrid, the set of bus labels is always internally assigned and stored in a dictionary, even if the labels assigned to the buses are in an increasing ordered set of integers. In this scenario, each bus label value corresponds to the same internally assigned value. As a result, the user can omit the `label` keyword. For instance:
+##### Bus Labels
+In JuliaGrid, the set of bus labels is always internally assigned and stored in a dictionary, even if the labels assigned to the buses are in an increasing ordered set of integers. In the previous example, each bus label value corresponds to the same internally assigned value. As a result, the user can omit the `label` keyword. For instance:
 ```@example BusLabels
 using JuliaGrid # hide
 
 system = powerSystem()
 
-addBus!(system)
-addBus!(system)
+addBus!(system; type = 3, active = 10.0, base = 345.0)
+addBus!(system; type = 1, angle = -2.0, base = 345.0)
 
 nothing # hide
 ```
-These bus labels, which are also internally assigned, are stored in the variable:
+These bus labels are stored in the variable:
 ```@repl BusLabels
 system.bus.label
 ```
@@ -199,8 +199,8 @@ using JuliaGrid # hide
 
 system = powerSystem()
 
-addBus!(system; label = 30)
-addBus!(system; label = 20)
+addBus!(system; label = 30, type = 3, active = 10.0, base = 345.0)
+addBus!(system; label = 20, type = 1, angle = -2.0, base = 345.0)
 
 nothing # hide
 ```
@@ -264,8 +264,10 @@ It is important to note that, when working with impedance and admittance values 
 
 ---
 
-## [Branch Labels](@id BranchLabelsManual)
-If the branch labels are not in an ordered set of increasing integers, the system will internally renumber all labels, similar to how [bus lables](@ref BusLabelsManual) are handled. For example, consider a power system with non-ordered bus and branch labels as shown below:
+##### Branch Labels
+Similar to how bus labels are handled, the set of branch labels is always internally assigned and stored in a dictionary, even if the labels assigned to the branches are in an increasing ordered set of integers. In this case, users have the option to omit the `label` keyword when using the [`addBranch!`](@ref addBranch!) function.
+
+If the branch labels are not in an ordered set of increasing integers, the system will internally renumber all labels. For example, consider a power system with non-ordered bus and branch labels as shown below:
 ```@example AccessBranchLabels
 using JuliaGrid # hide
 @default(unit) # hide
@@ -302,8 +304,6 @@ labelBus = collect(keys(sort(system.bus.label; byvalue = true)))
 [labelBus[system.branch.layout.from] labelBus[system.branch.layout.to]]
 ```
 
-Also, users have the option to omit the `label` keyword when using the [`addBranch!`](@ref addBranch!) function. In this case, the system internally assigns labels in an increasing order.
-
 ---
 
 ## [Add Generator](@id AddGeneratorManual)
@@ -334,8 +334,10 @@ Similar to buses and branches, the input units can be changed to units other tha
 
 ---
 
-## [Generator Labels](@id GeneratorLabelsManual)
-Similar to how the system handles [bus labels](@ref BusLabelsManual) and [branch labels](@ref BranchLabelsManual), the system will internally renumber all generator labels if they are not in an ordered set of increasing integers. As an example, let us take the power system with non-ordered bus and generator labels, as illustrated below:
+##### Generator Labels
+Similar to how the system handles bus labels and branch labels, the set of generator labels is always internally assigned and stored in a dictionary, even if the labels assigned to the generators are in an increasing ordered set of integers. In this case, users have the option to omit the `label` keyword when using the [`addGenerator!`](@ref addGenerator!) function.
+
+If the generator labels are not in an ordered set of increasing integers, the system will internally renumber all labels. For example, consider a power system with non-ordered bus and generator labels, as illustrated below:
 ```@example AccessGeneratorLabels
 using JuliaGrid # hide
 
@@ -370,8 +372,6 @@ To obtain the original labels of the `bus` keyword, you can use the following co
 labelBus = collect(keys(sort(system.bus.label; byvalue = true)))
 label = labelBus[system.generator.layout.bus]
 ```
-
-Also, users have the option to omit the `label` keyword when using the [`addGenerator!`](@ref addGenerator!) function. In this case, the system internally assigns labels in an increasing order.
 
 ---
 

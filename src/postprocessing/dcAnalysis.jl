@@ -105,40 +105,35 @@ function power(system::PowerSystem, model::DCPowerFlow)
     )
 end
 
+function power(system::PowerSystem, model::DCOptimalPowerFlow)
+    errorVoltage(model.voltage.angle)
 
-# function power(system::PowerSystem, model::DCOptimalPowerFlow)
-#     errorVoltage(model.voltage.angle)
+    supplyActive = fill(0.0, system.bus.number)
+    @inbounds for i = 1:system.generator.number
+        supplyActive[system.generator.layout.bus[i]] += model.power.active[i]
+    end
 
-#     dc = system.dcModel
-#     bus = system.bus
-#     slack = bus.layout.slack
+    injectionActive = copy(supplyActive)
+    @inbounds for i = 1:system.bus.number
+        injectionActive[i] -= system.bus.demand.active[i]
+    end
 
-#     supplyActive = fill(0.0, system.bus.number)
-#     @inbounds for i = 1:system.generator.number
-#         supplyActive[system.generator.layout.bus[i]] += model.power.active[i]
-#     end
+    powerFrom, powerTo = allPowerBranch(system, model)
 
-#     injectionActive = copy(supplyActive)
-#     @inbounds for i = 1:bus.number
-#         injectionActive[i] -= bus.demand.active[i]
-#     end
-
-#     powerFrom, powerTo = allPowerBranch(system, model)
-
-#     return DCPower(
-#         DCPowerBus(
-#             CartesianReal(injectionActive),
-#             CartesianReal(supplyActive)
-#         ),
-#         DCPowerBranch(
-#             CartesianReal(powerFrom),
-#             CartesianReal(powerTo)
-#         ),
-#         DCPowerGenerator(
-#             CartesianReal(copy(model.power.active))
-#         )
-#     )
-# end
+    return DCPower(
+        DCPowerBus(
+            CartesianReal(injectionActive),
+            CartesianReal(supplyActive)
+        ),
+        DCPowerBranch(
+            CartesianReal(powerFrom),
+            CartesianReal(powerTo)
+        ),
+        DCPowerGenerator(
+            CartesianReal(model.power.active)
+        )
+    )
+end
 
 """
     powerBus(system::PowerSystem, model::DCAnalysis; label)
@@ -212,27 +207,25 @@ function powerBus(system::PowerSystem, model::DCPowerFlow; label)
     )
 end
 
-# function powerBus(system::PowerSystem, model::DCOptimalPowerFlow; label)
-#     if !haskey(system.bus.label, label)
-#         throw(ErrorException("The value $label of the label keyword does not exist in bus labels."))
-#     end
+function powerBus(system::PowerSystem, model::DCOptimalPowerFlow; label)
+    if !haskey(system.bus.label, label)
+        throw(ErrorException("The value $label of the label keyword does not exist in bus labels."))
+    end
 
-#     bus = system.bus
+    index = system.bus.label[label]
 
-#     index = system.bus.label[label]
+    supplyActive = 0.0
+    @inbounds for i in system.bus.supply.generator[index]
+        supplyActive += model.power.active[i]
+    end
 
-#     supplyActive = 0.0
-#     @inbounds for i in bus.supply.inService[index]
-#         supplyActive += model.power.active[i]
-#     end
+    injectionActive = supplyActive - system.bus.demand.active[index]
 
-#     injectionActive = supplyActive - bus.demand.active[index]
-
-#     return DCPowerBus(
-#             CartesianReal(injectionActive),
-#             CartesianReal(supplyActive)
-#     )
-# end
+    return DCPowerBus(
+            CartesianReal(injectionActive),
+            CartesianReal(supplyActive)
+    )
+end
 
 """
     powerBranch(system::PowerSystem, model::DCAnalysis; label)
@@ -280,13 +273,12 @@ function powerBranch(system::PowerSystem, model::DCAnalysis; label)
         throw(ErrorException("The value $label of the label keyword does not exist in branch labels."))
     end
 
-    dc = system.dcModel
     branch = system.branch
     angle = model.voltage.angle
 
     index = system.branch.label[label]
 
-    powerFrom = dc.admittance[index] * (angle[branch.layout.from[index]] - angle[branch.layout.to[index]] - branch.parameter.shiftAngle[index])
+    powerFrom = system.dcModel.admittance[index] * (angle[branch.layout.from[index]] - angle[branch.layout.to[index]] - branch.parameter.shiftAngle[index])
     powerTo = -powerFrom
 
     return DCPowerBranch(
@@ -367,8 +359,21 @@ function powerGenerator(system::PowerSystem, model::DCPowerFlow; label)
         generatorActive = 0.0
     end
 
-    DCPowerGenerator(
+    return DCPowerGenerator(
         CartesianReal(generatorActive)
+    )
+end
+
+function powerGenerator(system::PowerSystem, model::DCOptimalPowerFlow; label)
+    if !haskey(system.generator.label, label)
+        throw(ErrorException("The value $label of the label keyword does not exist in generator labels."))
+    end
+    errorVoltage(model.voltage.angle)
+
+    index = system.generator.label[label]
+
+    return DCPowerGenerator(
+        CartesianReal(model.power.active[index])
     )
 end
 
