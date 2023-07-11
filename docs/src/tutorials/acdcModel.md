@@ -76,7 +76,7 @@ The branch shunt capacitive admittance (i.e. charging admittance) ``y_{\text{s}i
 ```math
 y_{\text{s}ij} = \text{j} b_{\text{s}ij}.
 ```
-JuliaGrid stores the total branch shunt capacitive susceptances, so to obtain the vector ``\mathbf{b}_s = [b_{\text{s}ij}]``, the susceptances must be split according to the ends of branches:
+JuliaGrid stores the total branch shunt capacitive susceptances, so to obtain the vector ``\mathbf{b}_\text{s} = [b_{\text{s}ij}]``, the susceptances must be split according to the ends of branches:
 ```@repl ACDCModel
 𝐛ₛ = system.branch.parameter.susceptance / 2
 ```

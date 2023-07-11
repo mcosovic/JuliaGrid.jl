@@ -52,11 +52,11 @@ In the DC optimal power flow, the active power outputs of the generators are rep
 JuMP.all_variables(model.jump)
 ```
 
-Furthermore, if there are linear piecewise cost functions with more than one segment, JuliaGrid automatically generates a helper variable for each linear piecewise cost function. Specifically, this cost function is modelled using a constrained cost variable method, where the cost function is replaced by thr helper variable and the set of linear constraints.
+Furthermore, if there are linear piecewise cost functions with more than one segment, JuliaGrid automatically generates a helper variable for each linear piecewise cost function. Specifically, this cost function is modelled using a constrained cost variable method, where the cost function is replaced by the helper variable and the set of linear constraints.
 
 ---
 
-## Add and Delete Variables
+##### Add Variables
 The user has the ability to easily add new variables to the defined DC optimal power flow model by using the [`@variable`](https://jump.dev/JuMP.jl/stable/reference/variables/#JuMP.@variable) macro from the JuMP package. Here is an example:
 ```@example DCOptimalPowerFlow
 JuMP.@variable(model.jump, new)
@@ -68,6 +68,9 @@ We can verify that the new variable is included in the defined model by using th
 JuMP.is_valid(model.jump, new)
 ```
 
+---
+
+##### Delete Variables
 To delete a variable, the [`delete`](https://jump.dev/JuMP.jl/stable/reference/constraints/#JuMP.delete) function from the JuMP package can be used:
 ```@example DCOptimalPowerFlow
 JuMP.delete(model.jump, new)
@@ -80,7 +83,7 @@ JuMP.is_valid(model.jump, new)
 
 ---
 
-## [Constraints](@id DCConstraintsManual)
+## [Constraint Functions](@id DCConstraintFunctionsManual)
 JuliGrid keeps track of all the references to internally formed constraints in the `constraint` field of the `Model` composite type. These constraints are divided into six fields:
 ```@repl DCOptimalPowerFlow
 fieldnames(typeof(model.constraint))
@@ -150,8 +153,7 @@ Therefore, for the generator labelled as 2, there is the linear piecewise cost f
 
 ---
 
-
-## [Add and Delete Constraints](@id DCAddDeleteConstraintsManual)
+##### Add Constraints
 Users can effortlessly incorporate additional constraints into the defined DC optimal power flow model using the [`@constraint`](https://jump.dev/JuMP.jl/stable/reference/constraints/#JuMP.@constraint) macro. For instance, a new constraint can be added as follows:
 ```@example DCOptimalPowerFlow
 angle = model.jump[:angle]
@@ -162,23 +164,24 @@ nothing # hide
 
 ---
 
+##### Delete Constraints
 To delete a constraint, users can utilize the [`delete`](https://jump.dev/JuMP.jl/stable/reference/constraints/#JuMP.delete) function from the JuMP package. When dealing with constraints created internally, users can utilize the constraint references stored in the `constraint` field of the `Model` type. For instance, to delete the constraint that limits the voltage angle difference for the first branch, the following code snippet can be employed:
 ```@example DCOptimalPowerFlow
 JuMP.delete(model.jump, model.constraint.limit.angle[1])
 nothing # hide
 ```
 
-Furthermore, the JuliaGrid package offers a range of functions for deleting specific internally created constraints. These functions require the `DCOptimalPowerFlow` type as an argument, along with the `label` keyword. For example, if we want to delete the voltage angle difference limit constraint related to the second bus, we can use the method mentioned earlier, or we can use:
+Furthermore, the JuliaGrid package offers a range of functions for deleting specific internally created constraints. These functions require the `PowerSystem` and `DCOptimalPowerFlow` types as arguments, along with the `label` keyword. For example, if we want to delete the voltage angle difference limit constraint related to the second bus, we can use the method mentioned earlier, or we can use:
 ```@example DCOptimalPowerFlow
 deleteLimit!(system, model; label = 2)
 nothing # hide
 ```
 
-We also have functions [`deleteLimit!`](@ref deleteLimit!), [ `deleteRating!`](@ref deleteRating!), and [`deleteCapability!`](@ref deleteCapability!) that can be used to delete the corresponding constraints within the `label` keyword. The `label` keyword should correspond to the bus, branch, or generator label, depending on the type of constraint we want to delete.
+We also have functions [`deleteLimit!`](@ref deleteLimit!), [`deleteRating!`](@ref deleteRating!), and [`deleteCapability!`](@ref deleteCapability!) that can be used to delete the corresponding constraints within the `label` keyword. The `label` keyword should correspond to the bus, branch, or generator label, depending on the type of constraint we want to delete.
 
 ---
 
-## [Objective](@id DCObjectiveManual)
+## [Objective Function](@id DCObjectiveFunctionManual)
 The objective function of the DC optimal power flow is constructed using polynomial and linear piecewise cost functions of the generators, which are defined using the [`addActiveCost!`](@ref addActiveCost!) functions. It is important to note that only polynomial cost functions up to the second degree are included in the objective. If there are polynomials of higher degrees, JuliaGrid will exclude them from the objective function.
 
 In the provided example, the objective function that needs to be minimized to obtain the optimal values of the active power outputs of the generators and the bus voltage angles is as follows:
@@ -347,7 +350,7 @@ nothing # hide
 ```
 
 For instance, to display the active power injection at the bus, the following code can be used:
-```@repl ComputationPowersCurrentsLosses
+```@repl DCOptimalPowerFlowPower
 powers.injection.active
 ```
 

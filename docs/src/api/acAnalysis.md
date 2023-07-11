@@ -1,4 +1,4 @@
-# [AC Power and Current Analysis](@id ACPowerCurrentAnalysisAPI)
+# [AC Analysis](@id ACAnalysisAPI)
 
 For further information on this topic, please see the [Power System Analysis](@ref PowerSystemModelManual) section of the Manual.
 

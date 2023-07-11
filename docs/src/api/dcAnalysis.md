@@ -1,6 +1,6 @@
-# [DC Power Analysis](@id DCPowerAnalysisAPI)
+# [DC Analysis](@id DCAnalysisAPI)
 
-For further information on this topic, please see the [Power System Analysis](@ref PowerSystemModelManual) section of the Manual.
+For further information on this topic, please see the [DC Power Flow](@ref DCPowerFlowManual) or [DC Optimal Power Flow](@ref DCOptimalPowerFlowManual) section of the Manual, depending on the specific problem you are solving.
 
 ---
 

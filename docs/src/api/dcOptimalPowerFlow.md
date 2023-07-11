@@ -1,6 +1,6 @@
 # [DC Optimal Power Flow Solution](@id DCOptimalPowerFlowSolutionAPI)
 
-For further information on this topic, please see the [Power System Analysis](@ref PowerSystemModelManual) section of the Manual.
+For further information on this topic, please see the [DC Optimal Power Flow](@ref DCOptimalPowerFlowManual) section of the Manual.
 
 ---
 
@@ -13,10 +13,13 @@ For further information on this topic, please see the [Power System Analysis](@r
 * [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow))
 
 ###### Delete Constraints
-* [`deleteBalance!`](@ref deleteBalance!(::DCOptimalPowerFlow))
-* [`deleteLimit!`](@ref deleteLimit!(::DCOptimalPowerFlow))
-* [`deleteRating!`](@ref deleteRating!(::DCOptimalPowerFlow))
-* [`deleteCapability!`](@ref deleteCapability!(::DCOptimalPowerFlow))
+* [`deleteBalance!`](@ref deleteBalance!(::PowerSystem, ::DCOptimalPowerFlow))
+* [`deleteLimit!`](@ref deleteLimit!(::PowerSystem, ::DCOptimalPowerFlow))
+* [`deleteRating!`](@ref deleteRating!(::PowerSystem, ::DCOptimalPowerFlow))
+* [`deleteCapability!`](@ref deleteCapability!(::PowerSystem, ::DCOptimalPowerFlow))
+
+###### Power Analysis
+Please refer to the [DC Analysis](@ref DCAnalysisAPI) section of the API.
 
 ---
 

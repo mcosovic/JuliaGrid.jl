@@ -1,6 +1,6 @@
 # [AC Power Flow Solution](@id ACPowerFlowSolutionAPI)
 
-For further information on this topic, please see the [Power System Analysis](@ref PowerSystemModelManual) section of the Manual.
+For further information on this topic, please see the [AC Power Flow](@ref ACPowerFlowManual) section of the Manual.
 
 ---
 
@@ -19,6 +19,9 @@ For further information on this topic, please see the [Power System Analysis](@r
 ###### Additional Functions
 * [`reactiveLimit!`](@ref reactiveLimit!)
 * [`adjustAngle!`](@ref adjustAngle!)
+
+###### Power and Current Analysis
+Please refer to the [AC Analysis](@ref ACAnalysisAPI) section of the API.
 
 ---
 
