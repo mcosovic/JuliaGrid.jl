@@ -15,21 +15,22 @@ makedocs(
         "Introduction" => "index.md",
         "Manual" =>
             ["Power System Model" => "manual/powerSystemModel.md",
-            "AC Power Flow" => "manual/acPowerFlow.md",
-            "DC Power Flow" => "manual/dcPowerFlow.md",
-            "DC Optimal Power Flow" => "manual/dcOptimalPowerFlow.md"],
+             "AC Power Flow" => "manual/acPowerFlow.md",
+             "DC Power Flow" => "manual/dcPowerFlow.md",
+             "DC Optimal Power Flow" => "manual/dcOptimalPowerFlow.md"],
         "Tutorials" =>
             ["AC and DC Model" => "tutorials/acdcModel.md",
             "AC Power Flow" => "tutorials/acPowerFlow.md",
-            "DC Power Flow" => "tutorials/dcPowerFlow.md"],
+            "DC Power Flow" => "tutorials/dcPowerFlow.md",
+            "DC Optimal Power Flow" => "tutorials/dcOptimalPowerFlow.md"],
         "API Reference" =>
             ["Power System Model" => "api/powerSystemModel.md",
-            "AC Power Flow Solution" => "api/acPowerFlowSolution.md",
-            "DC Power Flow Solution" => "api/dcPowerFlowSolution.md",
-            "DC Optimal Power Flow Solution" => "api/dcOptimalPowerFlowSolution.md",
-            "AC Power and Current Analysis" => "api/acAnalysis.md",
-            "DC Power Analysis" => "api/dcAnalysis.md",
-            "Configuration Setup" => "api/configuration.md"]
+             "AC Power Flow" => "api/acPowerFlow.md",
+             "DC Power Flow" => "api/dcPowerFlow.md",
+             "DC Optimal Power Flow" => "api/dcOptimalPowerFlow.md",
+             "AC Analysis" => "api/acAnalysis.md",
+             "DC Analysis" => "api/dcAnalysis.md",
+             "Configuration Setup" => "api/configuration.md"]
     ]
 )
 
