@@ -18,6 +18,7 @@ For further information on this topic, please see the [DC Optimal Power Flow](@r
 * [`deleteRating!`](@ref deleteRating!(::PowerSystem, ::DCOptimalPowerFlow))
 * [`deleteCapability!`](@ref deleteCapability!(::PowerSystem, ::DCOptimalPowerFlow))
 
+
 ###### Power Analysis
 Please refer to the [DC Analysis](@ref DCAnalysisAPI) section of the API.
 
@@ -39,8 +40,8 @@ solve!(::PowerSystem, ::DCOptimalPowerFlow)
 
 ## Delete Constraints
 ```@docs
-deleteBalance!(::DCOptimalPowerFlow)
-deleteLimit!(::DCOptimalPowerFlow)
-deleteRating!(::DCOptimalPowerFlow)
-deleteCapability!(::DCOptimalPowerFlow)
+deleteBalance!(::PowerSystem, ::DCOptimalPowerFlow)
+deleteLimit!(::PowerSystem, ::DCOptimalPowerFlow)
+deleteRating!(::PowerSystem, ::DCOptimalPowerFlow)
+deleteCapability!(::PowerSystem, ::DCOptimalPowerFlow)
 ```
