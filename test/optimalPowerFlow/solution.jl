@@ -12,7 +12,7 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     optimize!(system14, model)
 
     @test model.voltage.angle ≈ matpower14["Ti"] atol = 1e-10
-    @test model.output.active ≈ matpower14["Pgen"] atol = 1e-10
+    @test model.power.active ≈ matpower14["Pgen"] atol = 1e-10
 
     ######## Modified IEEE 30-bus Test Case ##########
     dcModel!(system30)
@@ -20,5 +20,5 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     optimize!(system30, model)
 
     @test model.voltage.angle ≈ matpower30["Ti"] atol = 1e-10
-    @test model.output.active ≈ matpower30["Pgen"] atol = 1e-10
+    @test model.power.active ≈ matpower30["Pgen"] atol = 1e-10
 end

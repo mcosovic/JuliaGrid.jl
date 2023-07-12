@@ -1,4 +1,4 @@
-@testset "addBus!, addGenerator!, addBranch!" begin
+@testset "Build Power System in Per-Units" begin
     system = powerSystem(string(pathData, "part300.m"))
 
     systemPU = powerSystem()
@@ -101,7 +101,7 @@
     @test system.generator.cost.active.polynomial == systemPU.generator.cost.active.polynomial
 end
 
-@testset "SI Units: addBus!, addGenerator!, addBranch!" begin
+@testset "Build Power System in SI Units" begin
     system = powerSystem(string(pathData, "part300.m"))
 
     @power(MW, MVAr, MVA)

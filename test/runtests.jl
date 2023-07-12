@@ -3,7 +3,7 @@ using HDF5
 using Test
 using Ipopt, HiGHS
 
-# ######## Path to Test Data ##########
+######## Path to Test Data ##########
 pathData = abspath(joinpath(dirname(Base.find_package("JuliaGrid")), ".."), "test/data/")
 torad = pi / 180
 
@@ -15,4 +15,4 @@ include("powerSystem/manipulation.jl")
 # ######## Power flow ##########
 include("powerFlow/analysis.jl")
 include("powerFlow/limits.jl")
-# include("optimalPowerFlow/solution.jl")
+include("optimalPowerFlow/solution.jl")
