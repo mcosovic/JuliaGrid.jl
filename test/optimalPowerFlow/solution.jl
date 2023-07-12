@@ -8,11 +8,11 @@ system30 = powerSystem(string(pathData, "case30test.m"))
 
     ######## Modified IEEE 14-bus Test Case ##########
     dcModel!(system14)
-    model = dcOptimalPowerFlow(system14, HiGHS.Optimizer)
+    model = dcOptimalPowerFlow(system14, Ipopt.Optimizer)
     solve!(system14, model)
 
-    @test model.voltage.angle ≈ matpower14["Ti"] atol = 1e-10
-    @test model.power.active ≈ matpower14["Pgen"] atol = 1e-10
+    @test model.voltage.angle ≈ matpower14["Ti"] atol = 1e-6
+    @test model.power.active ≈ matpower14["Pgen"] atol = 1e-6
 
     ######## Modified IEEE 30-bus Test Case ##########
     dcModel!(system30)
