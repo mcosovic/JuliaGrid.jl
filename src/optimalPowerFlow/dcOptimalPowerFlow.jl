@@ -40,8 +40,8 @@ used solvers. For more information, refer to the
 # Returns
 The function returns an instance of the `DCOptimalPowerFlow` type, which includes the following
 fields:
-- `voltage`: the angles of bus voltages
-- `output`: the output active powers of the generators
+- `voltage`: the bus voltage angles
+- `output`: the output active powers of each generator
 - `jump`: the JuMP model
 - `constraint`: holds the constraint references to the JuMP model.
 
@@ -240,22 +240,22 @@ function solve!(system::PowerSystem, model::DCOptimalPowerFlow)
 end
 
 """
-    deleteBalance!(system::PowerSystem, model::DCOptimalPowerFlow; label::Int64)
+    deleteBalanceActive!(system::PowerSystem, model::OptimalPowerFlow; label::Int64)
 
-The function removes the active power balance constraint associated with the bus designated by
-the `label` in the DC optimal power flow framework.
+The function deletes the active power balance constraint associated with the bus designated 
+by the `label` in the AC or DC optimal power flow framework.
 
 # Example
 ```jldoctest
 system = powerSystem("case14.h5")
 dcModel!(system)
 
-model = dcOptimalPowerFlow(system, HiGHS.Optimizer)
+model = acOptimalPowerFlow(system, HiGHS.Optimizer)
 
-deleteBalance!(model; label = 1)
+deleteBalanceActive!(system, model; label = 1)
 ```
 """
-function deleteBalance!(system::PowerSystem, model::DCOptimalPowerFlow; label::Int64)
+function deleteBalanceActive!(system::PowerSystem, model::Union{ACOptimalPowerFlow, DCOptimalPowerFlow}; label::Int64)
     if label <= 0
         throw(ErrorException("The value of the label keyword must be given as a positive integer."))
     end
@@ -268,10 +268,38 @@ function deleteBalance!(system::PowerSystem, model::DCOptimalPowerFlow; label::I
 end
 
 """
-    deleteLimit!(system::PowerSystem, model::DCOptimalPowerFlow; label::Int64)
+    deleteBalanceReactive!(system::PowerSystem, model::OptimalPowerFlow; label::Int64)
 
-The function removes the voltage angle difference limit constraint associated with the branch
-designated by the `label` in the DC optimal power flow framework.
+The function deletes the reactive power balance constraint associated with the bus designated 
+by the `label` in the AC optimal power flow framework.
+
+# Example
+```jldoctest
+system = powerSystem("case14.h5")
+dcModel!(system)
+
+model = acOptimalPowerFlow(system, HiGHS.Optimizer)
+
+deleteBalanceReactive!(system, model; label = 1)
+```
+"""
+function deleteBalanceReactive!(system::PowerSystem, model::ACOptimalPowerFlow; label::Int64)
+    if label <= 0
+        throw(ErrorException("The value of the label keyword must be given as a positive integer."))
+    end
+    if !haskey(system.bus.label, label)
+        throw(ErrorException("The value $label of the label keyword does not exist in bus labels."))
+    end
+
+    index = system.bus.label[label]
+    JuMP.delete(model.jump, model.constraint.balance.reactive[index])
+end
+
+"""
+    deleteLimitAngle!(system::PowerSystem, model::OptimalPowerFlow; label::Int64)
+
+The function deletes the voltage angle difference limit constraint associated with the branch
+designated by the `label` in the AC or DC optimal power flow framework.
 
 # Example
 ```jldoctest
@@ -280,10 +308,10 @@ dcModel!(system)
 
 model = dcOptimalPowerFlow(system, HiGHS.Optimizer)
 
-deleteLimit!(model; label = 1)
+deleteLimitAngle!(system, model; label = 1)
 ```
 """
-function deleteLimit!(system::PowerSystem, model::DCOptimalPowerFlow; label::Int64)
+function deleteLimitAngle!(system::PowerSystem, model::Union{ACOptimalPowerFlow, DCOptimalPowerFlow}; label::Int64)
     if label <= 0
         throw(ErrorException("The value of the label keyword must be given as a positive integer."))
     end
@@ -296,9 +324,37 @@ function deleteLimit!(system::PowerSystem, model::DCOptimalPowerFlow; label::Int
 end
 
 """
-    deleteRating!(system::PowerSystem, model::DCOptimalPowerFlow; label::Int64)
+    deleteLimitMagnitude!(system::PowerSystem, model::ACOptimalPowerFlow; label::Int64)
 
-The function removes the active power rating constraint associated with the branch designated
+The function deletes the voltage magnitude constraint associated with the bus designated by 
+the `label` in the AC optimal power flow framework.
+
+# Example
+```jldoctest
+system = powerSystem("case14.h5")
+dcModel!(system)
+
+model = dcOptimalPowerFlow(system, HiGHS.Optimizer)
+
+deleteLimitMagnitude!(system, model; label = 1)
+```
+"""
+function deleteLimitMagnitude!(system::PowerSystem, model::ACOptimalPowerFlow; label::Int64)
+    if label <= 0
+        throw(ErrorException("The value of the label keyword must be given as a positive integer."))
+    end
+    if !haskey(system.bus.label, label)
+        throw(ErrorException("The value $label of the label keyword does not exist in bus labels."))
+    end
+
+    index = system.bus.label[label]
+    JuMP.delete(model.jump, model.constraint.limit.magnitude[index])
+end
+
+"""
+    deleteRatingActive!(system::PowerSystem, model::DCOptimalPowerFlow; label::Int64)
+
+The function deletes the active power rating constraint associated with the branch designated
 by the `label` in the DC optimal power flow framework.
 
 # Example
@@ -308,10 +364,10 @@ dcModel!(system)
 
 model = dcOptimalPowerFlow(system, HiGHS.Optimizer)
 
-deleteRating!(model; label = 1)
+deleteRatingActive!(system, model; label = 1)
 ```
 """
-function deleteRating!(system::PowerSystem, model::DCOptimalPowerFlow; label::Int64)
+function deleteRatingActive!(system::PowerSystem, model::DCOptimalPowerFlow; label::Int64)
     if label <= 0
         throw(ErrorException("The value of the label keyword must be given as a positive integer."))
     end
@@ -324,10 +380,69 @@ function deleteRating!(system::PowerSystem, model::DCOptimalPowerFlow; label::In
 end
 
 """
-    deleteCapability!(system::PowerSystem, model::DCOptimalPowerFlow; label::Int64)
+    deleteRatingFrom!(system::PowerSystem, model::ACOptimalPowerFlow; label::Int64)
 
-The function removes the active power capability constraint associated with the generator designated
-by the `label` in the DC optimal power flow framework.
+The function allows for the delete of rating constraint associated with the branch specified 
+by the `label` parameter at the "from" bus end within the AC optimal power flow framework. 
+This deletion can include apparent or active power flow, as well as current magnitude. 
+
+# Example
+```jldoctest
+system = powerSystem("case14.h5")
+dcModel!(system)
+
+model = acOptimalPowerFlow(system, HiGHS.Optimizer)
+
+deleteRatingFrom!(system, model; label = 1)
+```
+"""
+function deleteRatingFrom!(system::PowerSystem, model::ACOptimalPowerFlow; label::Int64)
+    if label <= 0
+        throw(ErrorException("The value of the label keyword must be given as a positive integer."))
+    end
+    if !haskey(system.branch.label, label)
+        throw(ErrorException("The value $label of the label keyword does not exist in branch labels."))
+    end
+
+    index = system.branch.label[label]
+    JuMP.delete(model.jump, model.constraint.rating.from[index])
+end
+
+
+"""
+    deleteRatingTo!(system::PowerSystem, model::ACOptimalPowerFlow; label::Int64)
+
+The function allows for the delete of rating constraint associated with the branch specified 
+by the `label` parameter at the "to" bus end within the AC optimal power flow framework. 
+This deletion can include apparent or active power flow, as well as current magnitude. 
+
+# Example
+```jldoctest
+system = powerSystem("case14.h5")
+dcModel!(system)
+
+model = acOptimalPowerFlow(system, HiGHS.Optimizer)
+
+deleteRatingTo!(system, model; label = 1)
+```
+"""
+function deleteRatingTo!(system::PowerSystem, model::ACOptimalPowerFlow; label::Int64)
+    if label <= 0
+        throw(ErrorException("The value of the label keyword must be given as a positive integer."))
+    end
+    if !haskey(system.branch.label, label)
+        throw(ErrorException("The value $label of the label keyword does not exist in branch labels."))
+    end
+
+    index = system.branch.label[label]
+    JuMP.delete(model.jump, model.constraint.rating.to[index])
+end
+
+"""
+    deleteCapabilityActive!(system::PowerSystem, model::OptimalPowerFlow; label::Int64)
+
+The function deletes the active power capability constraint associated with the generator 
+designated by the `label` in the AC or DC optimal power flow framework.
 
 # Example
 ```jldoctest
@@ -336,10 +451,10 @@ dcModel!(system)
 
 model = dcOptimalPowerFlow(system, HiGHS.Optimizer)
 
-deleteCapability!(model; label = 1)
+deleteCapabilityActive!(system, model; label = 1)
 ```
 """
-function deleteCapability!(system::PowerSystem, model::DCOptimalPowerFlow; label::Int64)
+function deleteCapabilityActive!(system::PowerSystem, model::Union{ACOptimalPowerFlow, DCOptimalPowerFlow}; label::Int64)
     if label <= 0
         throw(ErrorException("The value of the label keyword must be given as a positive integer."))
     end
@@ -349,4 +464,32 @@ function deleteCapability!(system::PowerSystem, model::DCOptimalPowerFlow; label
 
     index = system.generator.label[label]
     JuMP.delete(model.jump, model.constraint.capability.active[index])
+end
+
+"""
+    deleteCapabilityReactive!(system::PowerSystem, model::ACOptimalPowerFlow; label::Int64)
+
+The function deletes the reactive power capability constraint associated with the generator 
+designated by the `label` in the AC optimal power flow framework.
+
+# Example
+```jldoctest
+system = powerSystem("case14.h5")
+dcModel!(system)
+
+model = acOptimalPowerFlow(system, HiGHS.Optimizer)
+
+deleteCapabilityReactive!(system, model; label = 1)
+```
+"""
+function deleteCapabilityReactive!(system::PowerSystem, model::ACOptimalPowerFlow; label::Int64)
+    if label <= 0
+        throw(ErrorException("The value of the label keyword must be given as a positive integer."))
+    end
+    if !haskey(system.generator.label, label)
+        throw(ErrorException("The value $label of the label keyword does not exist in generator labels."))
+    end
+
+    index = system.generator.label[label]
+    JuMP.delete(model.jump, model.constraint.capability.reactive[index])
 end

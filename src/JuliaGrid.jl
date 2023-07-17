@@ -1,8 +1,10 @@
 module JuliaGrid
 
+# using BenchmarkTools
 using SparseArrays, LinearAlgebra, SuiteSparse
 using HDF5
 using JuMP
+
 
 ########## Setting Variables ##########
 include("utility/setting.jl")
@@ -34,13 +36,16 @@ export reactiveLimit!, adjustAngle!
 include("powerFlow/dcPowerFlow.jl")
 export dcPowerFlow
 
-########## Optimal Power Flow ##########
+######### Optimal Power Flow ##########
 include("optimalPowerFlow/acOptimalPowerFlow.jl")
-# export acOptimalPowerFlow, optimize!
+export acOptimalPowerFlow
 
 include("optimalPowerFlow/dcOptimalPowerFlow.jl")
 export dcOptimalPowerFlow
-export deleteBalance!, deleteLimit!, deleteRating!, deleteCapability!
+export deleteBalanceActive!, deleteBalanceReactive!
+export deleteLimitAngle!, deleteLimitMagnitude!
+export deleteRatingActive!, deleteRatingFrom!, deleteRatingTo!
+export deleteCapabilityActive!, deleteCapabilityReactive!
 
 ########## Postprocessing ##########
 include("postprocessing/dcAnalysis.jl")
@@ -52,8 +57,9 @@ export current, currentBus, currentBranch
 include("utility/unit.jl")
 export @base, @power, @voltage, @parameter
 
-########## Solve Function ##########
+######### Solve Function ##########
 export solve!
 
 end # JuliaGrid
+
 

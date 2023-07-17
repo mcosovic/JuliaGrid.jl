@@ -89,6 +89,9 @@ JuliGrid keeps track of all the references to internally formed constraints in t
 fieldnames(typeof(model.constraint))
 ```
 
+!!! note "Info"
+    We recommend that readers refer to the tutorial on [DC optimal power flow](@ref DCOptimalPowerFlowTutorials) for insights into the implementation.
+
 ---
 
 ##### Slack Bus Constraint
@@ -106,7 +109,7 @@ model.constraint.balance.active
 ```
 If you want to exclude these constraints and skip their formation, you can utilize the `balance = false` keyword within the [`dcOptimalPowerFlow`](@ref dcOptimalPowerFlow) function. By specifying this keyword, you indicate that the problem does not involve active power balance constraints.
 
-Additionally, we provide the [`deleteBalance!`](@ref deleteBalance!) function to delete the active power balance constraint associated with a specific bus.
+Additionally, we provide the [`deleteBalanceActive!`](@ref deleteBalanceActive!) function to delete the active power balance constraint associated with a specific bus.
 
 ---
 
@@ -118,7 +121,7 @@ model.constraint.limit.angle
 
 Please note that if the limit constraints are set to `minDiffAngle = -2π` and `maxDiffAngle = 2π` for the corresponding branch, JuliGrid will omit the corresponding inequality constraint. Additionally, if you want to exclude all voltage angle limit constraints and skip their formation, you can use the `limit = false` keyword within the [`dcOptimalPowerFlow`](@ref dcOptimalPowerFlow) function.
 
-Also, we provide the [`deleteLimit!`](@ref deleteLimit!) function to delete the voltage angle difference limit constraint associated with a specific branch.
+Also, we provide the [`deleteLimitAngle!`](@ref deleteLimitAngle!) function to delete the voltage angle difference limit constraint associated with a specific branch.
 
 ---
 
@@ -129,7 +132,7 @@ model.constraint.rating.active
 ```
 If you want to exclude these constraints and skip their formation, you can use the `rating = false` keyword within the  [`dcOptimalPowerFlow`](@ref dcOptimalPowerFlow) function. By specifying this keyword, you indicate that the problem does not involve active power rating constraints.
 
-Also, we provide the [`deleteRating!`](@ref deleteRating!) function to delete the active power rating constraint associated with a specific branch.
+Also, we provide the [`deleteRatingActive!`](@ref deleteRatingActive!) function to delete the active power rating constraint associated with a specific branch.
 
 ---
 
@@ -140,7 +143,7 @@ model.constraint.capability.active
 ```
 If you want to exclude these constraints and skip their formation, you can use the `capability = false` keyword within the  [`dcOptimalPowerFlow`](@ref dcOptimalPowerFlow) function. By specifying this keyword, you indicate that the problem does not involve active power capability constraints.
 
-Finally, we provide the [`deleteCapability!`](@ref deleteCapability!) function to delete the active power capability constraint associated with a specific generator.
+Finally, we provide the [`deleteCapabilityActive!`](@ref deleteCapabilityActive!) function to delete the active power capability constraint associated with a specific generator.
 
 ---
 
@@ -173,11 +176,11 @@ nothing # hide
 
 Furthermore, the JuliaGrid package offers a range of functions for deleting specific internally created constraints. These functions require the `PowerSystem` and `DCOptimalPowerFlow` types as arguments, along with the `label` keyword. For example, if we want to delete the voltage angle difference limit constraint related to the second bus, we can use the method mentioned earlier, or we can use:
 ```@example DCOptimalPowerFlow
-deleteLimit!(system, model; label = 2)
+deleteLimitAngle!(system, model; label = 2)
 nothing # hide
 ```
 
-We also have functions [`deleteLimit!`](@ref deleteLimit!), [`deleteRating!`](@ref deleteRating!), and [`deleteCapability!`](@ref deleteCapability!) that can be used to delete the corresponding constraints within the `label` keyword. The `label` keyword should correspond to the bus, branch, or generator label, depending on the type of constraint we want to delete.
+We also have functions [`deleteBalanceActive!`](@ref deleteBalanceActive!), [`deleteRatingActive!`](@ref deleteRatingActive!), and [`deleteCapabilityActive!`](@ref deleteCapabilityActive!) that can be used to delete the corresponding constraints within the `label` keyword. The `label` keyword should correspond to the bus, branch, or generator label, depending on the type of constraint we want to delete.
 
 ---
 

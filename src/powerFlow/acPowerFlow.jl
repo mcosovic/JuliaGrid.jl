@@ -2,7 +2,7 @@ export NewtonRaphson, ACPowerFlow
 
 ######### AC Power Flow ##########
 abstract type
-    ACPowerFlow <: Analysis
+    ACPowerFlow <: ACAnalysis
 end
 
 ######### Newton-Raphson ##########

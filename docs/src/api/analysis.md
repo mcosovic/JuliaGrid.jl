@@ -1,10 +1,7 @@
-# [AC Analysis](@id ACAnalysisAPI)
+# [Power and Current Analysis](@id PowerCurrentAnalysisAPI)
 
-For further information on this topic, please see the [Power System Analysis](@ref PowerSystemModelManual) section of the Manual.
+In the following section, we have provided a list of functions that can be utilized for post-processing analysis. Once the voltage values are obtained through power flow analysis or optimal power flow analysis, these functions can be used to calculate power or current values. The specific procedures for computing these values depend on the chosen analysis, which are described in separate manuals for further information.
 
----
-
-## API Index
 
 ###### Power Analysis
 * [`power`](@ref power(::PowerSystem, ::ACPowerFlow))
@@ -20,17 +17,21 @@ For further information on this topic, please see the [Power System Analysis](@r
 
 ---
 
-## Power Analysis
+## [Power Analysis](@id PowerAnalysisAPI)
 ```@docs
 power(::PowerSystem, ::ACPowerFlow)
+power(::PowerSystem, ::DCPowerFlow)
 powerBus(::PowerSystem, ::ACPowerFlow)
+powerBus(::PowerSystem, ::DCPowerFlow)
 powerBranch(::PowerSystem, ::ACPowerFlow)
+powerBranch(::PowerSystem, ::DCAnalysis)
 powerGenerator(::PowerSystem, ::ACPowerFlow)
+powerGenerator(::PowerSystem, ::DCPowerFlow)
 ```
 
 ---
 
-## Current Analysis
+## [Current Analysis](@id CurrentAnalysisAPI)
 ```@docs
 current(::PowerSystem, ::ACPowerFlow)
 currentBus(::PowerSystem, ::ACPowerFlow)

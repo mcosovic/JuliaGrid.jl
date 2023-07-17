@@ -1,4 +1,4 @@
-export Analysis, DCAnalysis
+export ACAnalysis, DCAnalysis, OptimalPowerFlow
 
 ######### Polar Coordinate ##########
 mutable struct Polar
@@ -117,7 +117,10 @@ abstract type
     DCAnalysis
 end
 abstract type
-    Analysis
+    ACAnalysis
+end
+abstract type
+    OptimalPowerFlow
 end
 
 ######### Template ##########

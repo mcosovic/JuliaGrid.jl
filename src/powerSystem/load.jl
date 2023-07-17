@@ -149,7 +149,7 @@ mutable struct BaseVoltage
     prefix::Float64
 end
 
-mutable struct Base
+mutable struct BaseData
     power::BasePower
     voltage::BaseVoltage
 end
@@ -180,7 +180,7 @@ mutable struct PowerSystem
     bus::Bus
     branch::Branch
     generator::Generator
-    base::Base
+    base::BaseData
     acModel::ACModel
     dcModel::DCModel
 end
@@ -296,7 +296,7 @@ function powerSystem()
         Bus(label, demand, supply, shunt, voltageBus, layoutBus, 0),
         Branch(copy(label), parameter, rating, voltageBranch, layoutBranch, 0),
         Generator(copy(label), output, capability, ramping, voltageGenerator, cost, layoutGenerator, 0),
-        Base(basePower, baseVoltage),
+        BaseData(basePower, baseVoltage),
         acModel, dcModel)
 end
 
