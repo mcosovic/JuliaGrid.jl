@@ -206,6 +206,92 @@ function power(system::PowerSystem, model::ACPowerFlow)
     )
 end
 
+function power(system::PowerSystem, model::ACOptimalPowerFlow)
+    ac = system.acModel
+    voltage = model.voltage
+    errorVoltage(voltage.magnitude)
+
+    injectionActive = fill(0.0, system.bus.number)
+    injectionReactive = fill(0.0, system.bus.number)
+    shuntActive = fill(0.0, system.bus.number)
+    shuntReactive = fill(0.0, system.bus.number)
+    @inbounds for i = 1:system.bus.number
+        voltageBus = voltage.magnitude[i] * exp(im * voltage.angle[i])
+
+        powerShunt = voltageBus * conj(voltageBus * (system.bus.shunt.susceptance[i] + im * system.bus.shunt.susceptance[i]))
+        shuntActive[i] = real(powerShunt)
+        shuntReactive[i] = imag(powerShunt)
+
+        I = 0.0 + im * 0.0
+        for j in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
+            k = ac.nodalMatrix.rowval[j]
+            I += ac.nodalMatrixTranspose.nzval[j] * voltage.magnitude[k] * exp(im * voltage.angle[k])
+        end
+
+        powerInjection = conj(I) * voltageBus
+        injectionActive[i] = real(powerInjection)
+        injectionReactive[i] = imag(powerInjection)
+    end
+
+    fromActive = fill(0.0, system.branch.number)
+    fromReactive = fill(0.0, system.branch.number)
+    toActive = fill(0.0, system.branch.number)
+    toReactive = fill(0.0, system.branch.number)
+    shuntReactive = fill(0.0, system.branch.number)
+    lossActive = fill(0.0, system.branch.number)
+    lossReactive = fill(0.0, system.branch.number)
+    @inbounds for i = 1:system.branch.number
+        if system.branch.layout.status[i] == 1
+            from = system.branch.layout.from[i]
+            to = system.branch.layout.to[i]
+
+            voltageFrom = voltage.magnitude[from] * exp(im * voltage.angle[from])
+            voltageTo = voltage.magnitude[to] * exp(im * voltage.angle[to])
+
+            powerFrom = voltageFrom * conj(voltageFrom * ac.nodalFromFrom[i] + voltageTo * ac.nodalFromTo[i])
+            fromActive[i] = real(powerFrom)
+            fromReactive[i] = imag(powerFrom)
+
+            powerTo = voltageTo * conj(voltageFrom * ac.nodalToFrom[i] + voltageTo * ac.nodalToTo[i])
+            toActive[i] = real(powerTo)
+            toReactive[i] = imag(powerTo)
+
+            shuntReactive[i] = 0.5 * system.branch.parameter.susceptance[i] * (abs(voltageFrom / ac.transformerRatio[i])^2 +  voltage.magnitude[to]^2)
+
+            currentBranch = abs(ac.admittance[i] * (voltageFrom / ac.transformerRatio[i] - voltageTo))
+            lossActive[i] = currentBranch^2 * system.branch.parameter.resistance[i]
+            lossReactive[i] = currentBranch^2 * system.branch.parameter.reactance[i]
+        end
+    end
+
+    supplyActive = fill(0.0, system.bus.number)
+    supplyReactive = fill(0.0, system.bus.number)
+    @inbounds for i = 1:system.generator.number
+        busIndex = system.generator.layout.bus[i]
+
+        supplyActive[busIndex] += model.power.active[i]
+        supplyReactive[busIndex] += model.power.reactive[i]
+    end
+
+    return Power(
+        PowerBus(
+            Cartesian(injectionActive, injectionReactive),
+            Cartesian(supplyActive, supplyReactive),
+            Cartesian(shuntActive, shuntReactive)
+        ),
+        PowerBranch(
+            Cartesian(fromActive, fromReactive),
+            Cartesian(toActive, toReactive),
+            CartesianImag(shuntReactive),
+            Cartesian(lossActive, lossReactive)
+        ),
+        PowerGenerator(
+            Cartesian(model.power.active, model.power.reactive)
+        )
+    )
+end
+
+
 """
     powerBus(system::PowerSystem, model::ACAnalysis, label)
 
@@ -284,6 +370,43 @@ function powerBus(system::PowerSystem, model::ACPowerFlow; label)
     )
 end
 
+function powerBus(system::PowerSystem, model::ACOptimalPowerFlow; label)
+    if !haskey(system.bus.label, label)
+        throw(ErrorException("The value $label of the label keyword does not exist in bus labels."))
+    end
+    errorVoltage(model.voltage.magnitude)
+
+    ac = system.acModel
+    voltage = model.voltage
+
+    index = system.bus.label[label]
+    voltageBus = voltage.magnitude[index] * exp(im * voltage.angle[index])
+
+    powerShunt = voltageBus * conj(voltageBus * (system.bus.shunt.susceptance[index] + im * system.bus.shunt.susceptance[index]))
+
+    I = 0.0 + im * 0.0
+    for j in ac.nodalMatrix.colptr[index]:(ac.nodalMatrix.colptr[index + 1] - 1)
+        k = ac.nodalMatrix.rowval[j]
+        I += ac.nodalMatrixTranspose.nzval[j] * voltage.magnitude[k] * exp(im * voltage.angle[k])
+    end
+    powerInjection = conj(I) * voltageBus
+    injectionActive = real(powerInjection)
+    injectionReactive = imag(powerInjection)
+
+    supplyActive = 0.0
+    supplyReactive = 0.0
+    @inbounds for i in system.bus.supply.generator[index]
+        supplyActive += model.power.active[i]
+        supplyReactive += model.power.reactive[i]
+    end
+
+    return PowerBus(
+        Cartesian(injectionActive, injectionReactive),
+        Cartesian(supplyActive, supplyReactive),
+        Cartesian(real(powerShunt), imag(powerShunt))
+    )
+end
+
 """
     powerBranch(system::PowerSystem, model::ACAnalysis; label)
 
@@ -320,7 +443,7 @@ end
 powers = powerBranch(system, model; label = 2)
 ```
 """
-function powerBranch(system::PowerSystem, model::ACPowerFlow; label)
+function powerBranch(system::PowerSystem, model::ACAnalysis; label)
     if !haskey(system.branch.label, label)
         throw(ErrorException("The value $label of the label keyword does not exist in branch labels."))
     end
@@ -497,6 +620,19 @@ function powerGenerator(system::PowerSystem, model::ACPowerFlow; label)
     )
 end
 
+function powerGenerator(system::PowerSystem, model::ACOptimalPowerFlow; label)
+    if !haskey(system.generator.label, label)
+        throw(ErrorException("The value $label of the label keyword does not exist in generator labels."))
+    end
+    errorVoltage(model.voltage.angle)
+
+    index = system.generator.label[label]
+
+    return DCPowerGenerator(
+        Cartesian(model.power.active[index], model.power.reactive[index])
+    )
+end
+
 """
     current(system::PowerSystem, model::ACAnalysis)
 
@@ -535,9 +671,8 @@ end
 currents = current(system, model)
 ```
 """
-function current(system::PowerSystem, model::ACPowerFlow)
+function current(system::PowerSystem, model::ACAnalysis)
     ac = system.acModel
-    slack = system.bus.layout.slack
 
     voltage = model.voltage
     errorVoltage(voltage.magnitude)
@@ -629,7 +764,7 @@ end
 currents = currentBus(system, model; label = 1)
 ```
 """
-function currentBus(system::PowerSystem, model::ACPowerFlow; label)
+function currentBus(system::PowerSystem, model::ACAnalysis; label)
     if !haskey(system.bus.label, label)
         throw(ErrorException("The value $label of the label keyword does not exist in bus labels."))
     end
@@ -686,7 +821,7 @@ end
 currents = currentBranch(system, model; label = 2)
 ```
 """
-function currentBranch(system::PowerSystem, model::ACPowerFlow; label)
+function currentBranch(system::PowerSystem, model::ACAnalysis; label)
     if !haskey(system.branch.label, label)
         throw(ErrorException("The value $label of the label keyword does not exist in branch labels."))
     end

@@ -29,7 +29,7 @@ For further information on this topic, please see the [AC Optimal Power Flow](@r
 * [`deleteLimitMagnitude!`](@ref deleteLimitMagnitude!)
 * [`deleteRatingActive!`](@ref deleteRatingActive!)
 * [`deleteRatingFrom!`](@ref deleteRatingFrom!)
-* [`deleteRatingTo!`](@ref deleteRatingFrom!)
+* [`deleteRatingTo!`](@ref deleteRatingTo!)
 
 ---
 

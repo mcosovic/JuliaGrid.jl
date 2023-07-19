@@ -44,7 +44,7 @@ optimize!(system, model)
 powers = power(system, model)
 ```
 """
-function power(system::PowerSystem, model::DCPowerFlow)
+function power(system::PowerSystem, model::DCAnalysis) where {DCAnalysis <: DCPowerFlow}
     errorVoltage(model.voltage.angle)
 
     dc = system.dcModel
@@ -105,7 +105,7 @@ function power(system::PowerSystem, model::DCPowerFlow)
     )
 end
 
-function power(system::PowerSystem, model::DCOptimalPowerFlow)
+function power(system::PowerSystem, model::DCAnalysis) where {DCAnalysis <: DCOptimalPowerFlow}
     errorVoltage(model.voltage.angle)
 
     supplyActive = fill(0.0, system.bus.number)

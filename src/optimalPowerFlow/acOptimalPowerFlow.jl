@@ -1,3 +1,5 @@
+export ACOptimalPowerFlow
+
 ######### Constraints ##########
 ArrayRef = Array{JuMP.ConstraintRef,1}
 
