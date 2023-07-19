@@ -7,7 +7,7 @@ For further information on this topic, please see the [AC Optimal Power Flow](@r
 * [`dcOptimalPowerFlow`](@ref dcOptimalPowerFlow)
 
 ###### Solve Optimal Power Flow
-* [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow))
+* [`solve!`](@ref solve!(::PowerSystem, ::ACOptimalPowerFlow))
 
 ###### Power Analysis
 * [`power`](@ref power(::PowerSystem, ::ACPowerFlow))
@@ -20,21 +20,11 @@ For further information on this topic, please see the [AC Optimal Power Flow](@r
 * [`currentBus`](@ref currentBus(::PowerSystem, ::ACPowerFlow))
 * [`currentBranch`](@ref currentBranch(::PowerSystem, ::ACPowerFlow))
 
-###### Delete Constraints
-* [`deleteBalanceActive!`](@ref deleteBalanceActive!)
-* [`deleteBalanceReactive!`](@ref deleteBalanceReactive!)
-* [`deleteCapabilityActive!`](@ref deleteCapabilityActive!)
-* [`deleteCapabilityReactive!`](@ref deleteCapabilityReactive!)
-* [`deleteLimitAngle!`](@ref deleteLimitAngle!)
-* [`deleteLimitMagnitude!`](@ref deleteLimitMagnitude!)
-* [`deleteRatingActive!`](@ref deleteRatingActive!)
-* [`deleteRatingFrom!`](@ref deleteRatingFrom!)
-* [`deleteRatingTo!`](@ref deleteRatingTo!)
-
 ---
 
 ## Build Model
 ```@docs
+acOptimalPowerFlow
 dcOptimalPowerFlow
 ```
 
@@ -42,20 +32,7 @@ dcOptimalPowerFlow
 
 ## Solve Optimal Power Flow
 ```@docs
+solve!(::PowerSystem, ::ACOptimalPowerFlow)
 solve!(::PowerSystem, ::DCOptimalPowerFlow)
 ```
 
----
-
-## Delete Constraints
-```@docs
-deleteBalanceActive!
-deleteBalanceReactive!
-deleteCapabilityActive!
-deleteCapabilityReactive!
-deleteLimitAngle!
-deleteLimitMagnitude!
-deleteRatingActive!
-deleteRatingFrom!
-deleteRatingFrom!
-```

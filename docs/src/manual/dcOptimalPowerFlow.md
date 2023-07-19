@@ -8,12 +8,12 @@ To solve the DC optimal power flow problem and acquire bus voltage angles and ge
 * [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow)).
 
 After obtaining the solution for DC optimal power flow, JuliaGrid offers a post-processing analysis function to compute powers associated with buses, branches, and generators:
-* [`power`](@ref power(::PowerSystem, ::DCOptimalPowerFlow)).
+* [`power`](@ref power(::PowerSystem, ::DCPowerFlow)).
 
 Moreover, there exist specific functions dedicated to calculating powers related to a particular bus, branch, or generator:
-* [`powerBus`](@ref powerBus(::PowerSystem, ::DCOptimalPowerFlow)),
-* [`powerBranch`](@ref powerBranch(::PowerSystem, ::DCOptimalPowerFlow)),
-* [`powerGenerator`](@ref powerBranch(::PowerSystem, ::DCOptimalPowerFlow)).
+* [`powerBus`](@ref powerBus(::PowerSystem, ::DCPowerFlow)),
+* [`powerBranch`](@ref powerBranch(::PowerSystem, ::DCPowerFlow)),
+* [`powerGenerator`](@ref powerBranch(::PowerSystem, ::DCPowerFlow)).
 
 ---
 
@@ -109,8 +109,6 @@ model.constraint.balance.active
 ```
 If you want to exclude these constraints and skip their formation, you can utilize the `balance = false` keyword within the [`dcOptimalPowerFlow`](@ref dcOptimalPowerFlow) function. By specifying this keyword, you indicate that the problem does not involve active power balance constraints.
 
-Additionally, we provide the [`deleteBalanceActive!`](@ref deleteBalanceActive!) function to delete the active power balance constraint associated with a specific bus.
-
 ---
 
 ##### Voltage Angle Difference Limit Constraints
@@ -121,8 +119,6 @@ model.constraint.limit.angle
 
 Please note that if the limit constraints are set to `minDiffAngle = -2π` and `maxDiffAngle = 2π` for the corresponding branch, JuliGrid will omit the corresponding inequality constraint. Additionally, if you want to exclude all voltage angle limit constraints and skip their formation, you can use the `limit = false` keyword within the [`dcOptimalPowerFlow`](@ref dcOptimalPowerFlow) function.
 
-Also, we provide the [`deleteLimitAngle!`](@ref deleteLimitAngle!) function to delete the voltage angle difference limit constraint associated with a specific branch.
-
 ---
 
 ##### Active Power Rating Constraints
@@ -132,8 +128,6 @@ model.constraint.rating.active
 ```
 If you want to exclude these constraints and skip their formation, you can use the `rating = false` keyword within the  [`dcOptimalPowerFlow`](@ref dcOptimalPowerFlow) function. By specifying this keyword, you indicate that the problem does not involve active power rating constraints.
 
-Also, we provide the [`deleteRatingActive!`](@ref deleteRatingActive!) function to delete the active power rating constraint associated with a specific branch.
-
 ---
 
 ##### Active Power Capability Constraints
@@ -142,8 +136,6 @@ The `capability` field contains references to the inequality constraints associa
 model.constraint.capability.active
 ```
 If you want to exclude these constraints and skip their formation, you can use the `capability = false` keyword within the  [`dcOptimalPowerFlow`](@ref dcOptimalPowerFlow) function. By specifying this keyword, you indicate that the problem does not involve active power capability constraints.
-
-Finally, we provide the [`deleteCapabilityActive!`](@ref deleteCapabilityActive!) function to delete the active power capability constraint associated with a specific generator.
 
 ---
 
@@ -168,19 +160,20 @@ nothing # hide
 ---
 
 ##### Delete Constraints
-To delete a constraint, users can utilize the [`delete`](https://jump.dev/JuMP.jl/stable/reference/constraints/#JuMP.delete) function from the JuMP package. When dealing with constraints created internally, users can utilize the constraint references stored in the `constraint` field of the `Model` type. For instance, to delete the constraint that limits the voltage angle difference for the first branch, the following code snippet can be employed:
+To delete a constraint, users can utilize the [`delete`](https://jump.dev/JuMP.jl/stable/reference/constraints/#JuMP.delete) function from the JuMP package. When dealing with constraints created internally, users can utilize the constraint references stored in the `constraint` field of the `Model` type. For instance, to delete the first constraint that limits the voltage angle difference, the following code snippet can be employed:
 ```@example DCOptimalPowerFlow
 JuMP.delete(model.jump, model.constraint.limit.angle[1])
 nothing # hide
 ```
 
-Furthermore, the JuliaGrid package offers a range of functions for deleting specific internally created constraints. These functions require the `PowerSystem` and `DCOptimalPowerFlow` types as arguments, along with the `label` keyword. For example, if we want to delete the voltage angle difference limit constraint related to the second bus, we can use the method mentioned earlier, or we can use:
+Additionally, if you need to delete constraints based on labels associated with buses, branches, or generators, you can easily define an index for the constraint using the labels stored in a dictionary. For example, let us say you want to delete the voltage angle difference limit constraint related to the second branch:
 ```@example DCOptimalPowerFlow
-deleteLimitAngle!(system, model; label = 2)
+index = system.branch.label[2]
+JuMP.delete(model.jump, model.constraint.limit.angle[index])
 nothing # hide
 ```
 
-We also have functions [`deleteBalanceActive!`](@ref deleteBalanceActive!), [`deleteRatingActive!`](@ref deleteRatingActive!), and [`deleteCapabilityActive!`](@ref deleteCapabilityActive!) that can be used to delete the corresponding constraints within the `label` keyword. The `label` keyword should correspond to the bus, branch, or generator label, depending on the type of constraint we want to delete.
+It is worth noting that if the labels assigned to the buses, branches, or generators follow an increasing ordered set of integers, both approaches to deleting constraints are equivalent.
 
 ---
 

@@ -9,15 +9,15 @@ To solve the AC optimal power flow problem and acquire bus voltage magnitudes an
 * [`solve!`](@ref solve!(::PowerSystem, ::ACOptimalPowerFlow)).
 
 After obtaining the AC optimal power flow solution, JuliaGrid offers post-processing analysis functions for calculating powers and currents associated with buses, branches, or generators:
-* [`power`](@ref power(::PowerSystem, ::ACOptimalPowerFlow)),
-* [`current`](@ref current(::PowerSystem, ::ACOptimalPowerFlow)).
+* [`power`](@ref power(::PowerSystem, ::ACPowerFlow)),
+* [`current`](@ref current(::PowerSystem, ::ACPowerFlow)).
 
 Moreover, there exist specific functions dedicated to calculating powers and currents related to a particular bus, branch, or generator:
-* [`powerBus`](@ref powerBus(::PowerSystem, ::ACOptimalPowerFlow)),
-* [`powerBranch`](@ref powerBranch(::PowerSystem, ::ACOptimalPowerFlow)),
-* [`powerGenerator`](@ref powerGenerator(::PowerSystem, ::ACOptimalPowerFlow)),
-* [`currentBus`](@ref currentBus(::PowerSystem, ::ACOptimalPowerFlow)),
-* [`currentBranch`](@ref currentBranch(::PowerSystem, ::ACOptimalPowerFlow)).
+* [`powerBus`](@ref powerBus(::PowerSystem, ::ACPowerFlow)),
+* [`powerBranch`](@ref powerBranch(::PowerSystem, ::ACPowerFlow)),
+* [`powerGenerator`](@ref powerGenerator(::PowerSystem, ::ACPowerFlow)),
+* [`currentBus`](@ref currentBus(::PowerSystem, ::ACPowerFlow)),
+* [`currentBranch`](@ref currentBranch(::PowerSystem, ::ACPowerFlow)).
 
 ---
 

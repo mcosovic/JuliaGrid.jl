@@ -20,7 +20,7 @@ In the following section, we have provided a list of functions that can be utili
 ## [Power Analysis](@id PowerAnalysisAPI)
 ```@docs
 power(::PowerSystem, ::ACPowerFlow)
-power(::PowerSystem, ::DCAnalysis)
+power(::PowerSystem, ::DCPowerFlow)
 powerBus(::PowerSystem, ::ACPowerFlow)
 powerBus(::PowerSystem, ::DCPowerFlow)
 powerBranch(::PowerSystem, ::ACPowerFlow)

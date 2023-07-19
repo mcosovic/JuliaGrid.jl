@@ -298,7 +298,7 @@ function acOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
     balanceActiveRef = Array{JuMP.ConstraintRef}(undef, bus.number)
     balanceReactiveRef = Array{JuMP.ConstraintRef}(undef, bus.number)
     limitMagnitudeRef = Array{JuMP.ConstraintRef}(undef, bus.number)
-    @time @inbounds for i = 1:bus.number
+    @inbounds for i = 1:bus.number
         if balance
             n = system.acModel.nodalMatrix.colptr[i + 1] - system.acModel.nodalMatrix.colptr[i]
             Gij = Vector{AffExpr}(undef, n)

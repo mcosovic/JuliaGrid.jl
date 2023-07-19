@@ -5,15 +5,14 @@ using SparseArrays, LinearAlgebra, SuiteSparse
 using HDF5
 using JuMP
 
-
 ########## Setting Variables ##########
 include("utility/setting.jl")
 
-########## Utility ##########
+# ########## Utility ##########
 include("utility/routine.jl")
 export @default
 
-########## Power System ##########
+# ########## Power System ##########
 include("powerSystem/load.jl")
 export powerSystem
 
@@ -42,10 +41,6 @@ export acOptimalPowerFlow
 
 include("optimalPowerFlow/dcOptimalPowerFlow.jl")
 export dcOptimalPowerFlow
-export deleteBalanceActive!, deleteBalanceReactive!
-export deleteLimitAngle!, deleteLimitMagnitude!
-export deleteRatingActive!, deleteRatingFrom!, deleteRatingTo!
-export deleteCapabilityActive!, deleteCapabilityReactive!
 
 ########## Postprocessing ##########
 include("postprocessing/dcAnalysis.jl")
