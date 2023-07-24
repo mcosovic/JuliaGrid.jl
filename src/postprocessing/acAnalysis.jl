@@ -628,7 +628,7 @@ function powerGenerator(system::PowerSystem, model::ACOptimalPowerFlow; label)
 
     index = system.generator.label[label]
 
-    return DCPowerGenerator(
+    return PowerGenerator(
         Cartesian(model.power.active[index], model.power.reactive[index])
     )
 end

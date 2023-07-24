@@ -264,17 +264,16 @@ function acOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
                         B = βij^2 * (gij^2 + bij^2)
                         C = βij^3 * (gij^2 + bij * (bij + bsi))
                         D = βij^3 * gij * bsi
-
-                        ratingFromRef[i] = @NLconstraint(model, sqrt(A * Vi^4 + B * Vi^2 * Vj^2 - 2 * Vi^3 * Vj * (C * cos(θij) - D * sin(θij))) <= branch.rating.longTerm[i])
+                        ratingFromRef[i] = @NLconstraint(model, A * Vi^4 + B * Vi^2 * Vj^2 - 2 * Vi^3 * Vj * (C * cos(θij) - D * sin(θij)) <= branch.rating.longTerm[i]^2)
 
                         A = gij^2 + (bij + bsi)^2
                         C = βij * (gij^2 + bij * (bij + bsi))
                         D = βij * gij * bsi
-                        ratingToRef[i] = @NLconstraint(model, sqrt(A * Vj^4 + B * Vi^2 * Vj^2 - 2 * Vi * Vj^3 * (C * cos(θij) + D * sin(θij))) <= branch.rating.longTerm[i])
+                        ratingToRef[i] = @NLconstraint(model, A * Vj^4 + B * Vi^2 * Vj^2 - 2 * Vi * Vj^3 * (C * cos(θij) + D * sin(θij)) <= branch.rating.longTerm[i]^2)
                     end
 
                     if branch.rating.type[i] == 2
-                        ratingFromRef[i] = @NLconstraint(model, βij^2 * gij * Vi^2 - βij * Vi * Vj * (gij * cos(θij) + bij * sin(θij))  <= branch.rating.longTerm[i])
+                        ratingFromRef[i] = @NLconstraint(model, βij^2 * gij * Vi^2 - βij * Vi * Vj * (gij * cos(θij) + bij * sin(θij)) <= branch.rating.longTerm[i])
                         ratingToRef[i] = @NLconstraint(model, gij * Vj^2 - βij * Vi * Vj * (gij * cos(θij) - bij * sin(θij)) <= branch.rating.longTerm[i])
                     end
 
@@ -282,13 +281,13 @@ function acOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
                         A = βij^4 * (gij^2 + (bij + bsi)^2)
                         B = βij^2 * (gij^2 + bij^2)
                         C = βij^3 * (gij^2 + bij * (bij + bsi))
-                        D = βij^3 * gij * bij
-                        ratingFromRef[i] = @NLconstraint(model, sqrt(A * Vi^2 + B * Vj^2 - 2 * Vi * Vj * (C * cos(θij) - D * sin(θij))) <= branch.rating.longTerm[i])
+                        D = βij^3 * gij * bsi
+                        ratingFromRef[i] = @NLconstraint(model, A * Vi^2 + B * Vj^2 - 2 * Vi * Vj * (C * cos(θij) - D * sin(θij)) <= branch.rating.longTerm[i]^2)
 
                         A = gij^2 + (bij + bsi)^2
                         C = βij * (gij^2 + bij * (bij + bsi))
-                        D = βij * gij * bij
-                        ratingToRef[i] = @NLconstraint(model, sqrt(A * Vj^2 + B * Vi^2 - 2 * Vi * Vj * (C * cos(θij) + D * sin(θij))) <= branch.rating.longTerm[i])
+                        D = βij * gij * bsi
+                        ratingToRef[i] = @NLconstraint(model, A * Vj^2 + B * Vi^2 - 2 * Vi * Vj * (C * cos(θij) + D * sin(θij)) <= branch.rating.longTerm[i]^2)
                     end
                 end
             end
