@@ -1,5 +1,5 @@
 using Documenter, JuliaGrid
-using JuMP, HiGHS
+using JuMP, HiGHS, Ipopt
 
 makedocs(
     sitename = "JuliaGrid",
