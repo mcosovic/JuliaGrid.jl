@@ -7,13 +7,15 @@ To perform the DC optimal power flow, you first need to have the `PowerSystem` c
 To solve the DC optimal power flow problem and acquire bus voltage angles and generator active power outputs, make use of the following function:
 * [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow)).
 
-After obtaining the solution for DC optimal power flow, JuliaGrid offers a post-processing analysis function to compute powers associated with buses, branches, and generators:
-* [`power`](@ref power(::PowerSystem, ::DCPowerFlow)).
+After obtaining the solution for DC optimal power flow, JuliaGrid offers a post-processing analysis function to compute powers associated with buses and branches:
+* [`power!`](@ref power!(::PowerSystem, ::DCPowerFlow)).
 
-Moreover, there exist specific functions dedicated to calculating powers related to a particular bus, branch, or generator:
-* [`powerBus`](@ref powerBus(::PowerSystem, ::DCPowerFlow)),
-* [`powerBranch`](@ref powerBranch(::PowerSystem, ::DCPowerFlow)),
-* [`powerGenerator`](@ref powerBranch(::PowerSystem, ::DCPowerFlow)).
+Additionally, there are specialized functions dedicated to calculating specific types of active powers related to particular buses or branches:
+* [`powerInjection`](@ref powerInjection(::PowerSystem, ::DCPowerFlow)),
+* [`powerSupply`](@ref powerSupply(::PowerSystem, ::DCPowerFlow)),
+* [`powerFrom`](@ref powerFrom(::PowerSystem, ::DCPowerFlow)),
+* [`powerTo`](@ref powerTo(::PowerSystem, ::DCPowerFlow)).
+
 
 ---
 
@@ -223,7 +225,7 @@ JuMP.start_value.(model.jump[:active])
 ##### Using JuliaGrid Variables
 Alternatively, you can rely on the [`solve!`](@ref solve!) function to assign starting values based on the `power` and `voltage` fields. By default, these values are initially defined according to the active power outputs of the generators and the initial bus voltage angles:
 ```@repl DCOptimalPowerFlow
-model.power.active
+model.power.generator.active
 model.voltage.angle
 ```
 You can modify these values, and they will be used as primal starting values during the execution of the [`solve!`](@ref solve!) function.
@@ -243,8 +245,7 @@ solve!(system, flowModel)
 After obtaining the solution, we can calculate the active power outputs of the generators and utilize the bus voltage angles to set the starting values. In this case, the `power` and `voltage` fields of the `Model` type can be employed to store the new starting values:
 ```@example DCOptimalPowerFlow
 for (key, value) in system.generator.label
-    powers = powerGenerator(system, flowModel; label = key)
-    model.power.active[value] = powers.output.active
+    model.power.generator.active[value] = powerGenerator(system, flowModel; label = key)
 end
 
 for i = 1:system.bus.number
@@ -264,7 +265,7 @@ nothing # hide
 
 By executing this function, you will obtain the solution with the optimal values for the active power outputs of the generators and the bus voltage angles:
 ```@repl DCOptimalPowerFlow
-model.power.active
+model.power.generator.active
 model.voltage.angle
 ```
 
@@ -287,7 +288,7 @@ JuMP.set_silent(model.jump)
 ---
 
 ## [Power Analysis](@id DCOptimalPowerAnalysisManual)
-After obtaining the solution from the DC optimal power flow, we can calculate powers related to buses and branches using the [`power`](@ref power(::PowerSystem, ::DCPowerFlow)) function. For instance, let us consider the power system for which we obtained the DC optimal power flow solution:
+After obtaining the solution from the DC optimal power flow, we can calculate powers related to buses and branches using the [`power!`](@ref power!(::PowerSystem, ::DCPowerFlow)) function. For instance, let us consider the power system for which we obtained the DC optimal power flow solution:
 ```@example DCOptimalPowerFlowPower
 using JuliaGrid # hide
 using JuMP, HiGHS # hide
@@ -321,34 +322,27 @@ nothing # hide
 
 Now we can calculate the active powers using the following function:
 ```@example DCOptimalPowerFlowPower
-powers = power(system, model)
+power!(system, model)
 
 nothing # hide
 ```
-It is worth noting that we compute powers related to buses and branches. In addition, the `generator` field contains the active power outputs of the generators. The values in this field are references to the `power` field of the `Model` type.
 
 For example, to display the active power injections at each bus and active power flows at each "from" bus end of the branch, we can use the following code:
 ```@repl DCOptimalPowerFlowPower
-powers.bus.injection.active
-powers.branch.from.active
+model.power.injection.active
+model.power.from.active
 ```
 
 !!! note "Info"
-    To better understand the powers associated with buses and branches that are calculated by the [`power`](@ref power(::PowerSystem, ::DCPowerFlow)) function, we suggest referring to the tutorials on [DC optimal power flow analysis](@ref DCOptimalPowerAnalysisTutorials).
+    To better understand the powers associated with buses and branches that are calculated by the [`power!`](@ref power!(::PowerSystem, ::DCPowerFlow)) function, we suggest referring to the tutorials on [DC optimal power flow analysis](@ref DCOptimalPowerAnalysisTutorials).
 
 ---
 
 ##### Powers Related to Bus
 Instead of calculating powers for all components, users have the option to compute specific quantities for particular components. In this regard, the following function can be utilized to calculate active powers associated with a specific bus:
 ```@example DCOptimalPowerFlowPower
-powers = powerBus(system, model; label = 2)
-
-nothing # hide
-```
-
-For instance, to display the active power injection at the bus, the following code can be used:
-```@repl DCOptimalPowerFlowPower
-powers.injection.active
+injection = powerInjection(system, model; label = 1)
+supply = powerSupply(system, model; label = 1)
 ```
 
 ---
@@ -356,27 +350,7 @@ powers.injection.active
 ##### Powers Related to Branch
 Similarly, we can compute the active powers related to a particular branch using the following function:
 ```@example DCOptimalPowerFlowPower
-powers = powerBranch(system, model; label = 2)
-
-nothing # hide
+from = powerFrom(system, model; label = 2)
+to = powerTo(system, model; label = 2)
 ```
 
-For instance, to display the active power flow at the "from" bus end of the branch, we can use the following code:
-```@repl DCOptimalPowerFlowPower
-powers.from.active
-```
-
----
-
-##### Power Related to Generator
-To maintain consistency, users can utilize the [`powerGenerator`](@ref powerGenerator(::PowerSystem, ::DCPowerFlow)) function, which provides the active power output of the specified generator. This function retrieves the corresponding active power output from the `power` field of the `Model` type. For example:
-```@example DCOptimalPowerFlowPower
-powers = powerGenerator(system, model; label = 2)
-
-nothing # hide
-```
-
-To display the output active power of the generator, we can use the following code:
-```@repl DCOptimalPowerFlowPower
-powers.output.active
-```

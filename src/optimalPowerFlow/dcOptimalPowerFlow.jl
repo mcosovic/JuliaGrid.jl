@@ -3,7 +3,7 @@ export DCOptimalPowerFlow
 ######### DC Optimal Power Flow ##########
 struct DCOptimalPowerFlow <: DCAnalysis
     voltage::PolarAngle
-    power::CartesianReal
+    power::DCPower
     jump::JuMP.Model
     constraint::Constraint
 end
@@ -40,9 +40,9 @@ used solvers. For more information, refer to the
 # Returns
 The function returns an instance of the `DCOptimalPowerFlow` type, which includes the following
 fields:
-- `voltage`: the bus voltage angles
-- `output`: the output active powers of each generator
-- `jump`: the JuMP model
+- `voltage`: the variable allocated to store the angles of bus voltages,
+- `power`: the variable allocated to store the active powers,
+- `jump`: the JuMP model,
 - `constraint`: holds the constraint references to the JuMP model.
 
 # Examples
@@ -189,7 +189,13 @@ function dcOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
 
     return DCOptimalPowerFlow(
         PolarAngle(copy(system.bus.voltage.angle)),
-        CartesianReal(copy(system.generator.output.active)),
+        DCPower(
+            CartesianReal(Float64[]), 
+            CartesianReal(Float64[]),
+            CartesianReal(Float64[]),
+            CartesianReal(Float64[]),
+            CartesianReal(copy(system.generator.output.active))
+        ),
         model,
         Constraint(
             PolarAngleRef(slackRef),
@@ -209,7 +215,7 @@ The function finds the DC optimal power flow solution and calculate the angles o
 and output active powers of the generators.
 
 The calculated voltage angles and active powers are then stored in the `angle` variable of
-the `voltage` field and the `active` variable of the `power` field.
+the `voltage` field and the `generator` variable of the `power` field.
 
 # Example
 ```jldoctest
@@ -225,7 +231,7 @@ function solve!(system::PowerSystem, model::DCOptimalPowerFlow)
         set_start_value.(model.jump[:angle], model.voltage.angle)
     end
     if isnothing(start_value(model.jump[:active][1]))
-        set_start_value.(model.jump[:active], model.power.active)
+        set_start_value.(model.jump[:active], model.power.generator.active)
     end
 
     JuMP.optimize!(model.jump)
@@ -235,6 +241,6 @@ function solve!(system::PowerSystem, model::DCOptimalPowerFlow)
     end
 
     @inbounds for i = 1:system.generator.number
-        model.power.active[i] = value(model.jump[:active][i])
+        model.power.generator.active[i] = value(model.jump[:active][i])
     end
 end

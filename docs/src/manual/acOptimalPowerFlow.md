@@ -119,12 +119,12 @@ model.constraint.slack.angle
 ##### Active and Reactive Power Balance Constraints
 The `balance` field contains references to the equality constraints associated with the active and reactive power balance equations defined for each bus. These constraints ensure that the total active and reactive power injected by the generators matches the total active and reactive power demanded at each bus.
 
-The constant terms in the active power balance equations are determined by the `active` keyword within the [`addBus!`](@ref addBus!) function, which defines the active power demanded at the bus. Additionally, the `active` keyword within the [`addGenerator!`](@ref addGenerator!) function is used to specify the active power injected by the generators. You can access the references to the active power balance constraints using the following code snippet:
+The constant term in the active power balance equations is determined by the `active` keyword within the [`addBus!`](@ref addBus!) function, which defines the active power demanded at the bus. You can access the references to the active power balance constraints using the following code snippet:
 ```@repl ACOptimalPowerFlow
 model.constraint.balance.active
 ```
 
-Similarly, the constant terms in the reactive power balance equations are determined by the `reactive` keyword within the [`addBus!`](@ref addBus!) function, which defines the reactive power demanded at the bus. Additionally, the `reactive` keyword within the [`addGenerator!`](@ref addGenerator!) function is used to specify the reactive power injected by the generators. You can access the references to the reactive power balance constraints using the following code snippet:
+Similarly, the constant term in the reactive power balance equations is determined by the `reactive` keyword within the [`addBus!`](@ref addBus!) function, which defines the reactive power demanded at the bus. You can access the references to the reactive power balance constraints using the following code snippet:
 ```@repl ACOptimalPowerFlow
 model.constraint.balance.reactive
 ```

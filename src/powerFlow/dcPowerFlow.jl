@@ -3,6 +3,7 @@ export DCPowerFlow
 ######### DC Power Flow ##########
 struct DCPowerFlow <: DCAnalysis
     voltage::PolarAngle
+    power::DCPower
     factorization::Union{Factorization, Diagonal}
 end
 
@@ -21,6 +22,7 @@ first generator bus with an in-service generator in the bus type list.
 The function returns an instance of the `DCPowerFlow` type, which includes the following filled
 fields:
 - `voltage`: the variable allocated to store the angles of bus voltages,
+- `power`: the variable allocated to store the active powers,
 - `factorization`: the factorized nodal matrix.
 
 # Example
@@ -57,7 +59,17 @@ function dcPowerFlow(system::PowerSystem)
         dc.nodalMatrix[bus.layout.slack, dc.nodalMatrix.rowval[i]] = elementsRemove[k]
     end
 
-    return DCPowerFlow(PolarAngle(Float64[]), factorization)
+    return DCPowerFlow(
+        PolarAngle(Float64[]), 
+        DCPower(
+            CartesianReal(Float64[]), 
+            CartesianReal(Float64[]),
+            CartesianReal(Float64[]),
+            CartesianReal(Float64[]),
+            CartesianReal(Float64[])
+        ),
+        factorization
+    )
 end
 
 """

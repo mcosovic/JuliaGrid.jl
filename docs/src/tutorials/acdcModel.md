@@ -49,7 +49,7 @@ nothing #hide
 ##### [Unified Branch Model](@id UnifiedBranchModelTutorials)
 The equivalent unified ``\pi``-model for a branch ``(i,j) \in \mathcal{E}`` incident to the buses ``\{i,j\} \in \mathcal{N}`` is shown in Figure 1.
 ```@raw html
-<img src="../../assets/pi_model.png" class="center"/>
+<img src="../assets/pi_model.svg" class="center" width="600"/>
 <figcaption>Figure 1: The equivalent branch model, where the transformer is located at "from" bus end of the branch.</figcaption>
 &nbsp;
 ```
@@ -125,7 +125,7 @@ Note, if ``\tau_{ij} = 1`` and ``\phi_{ij} = 0`` the model describes the line. I
 ##### [System of Equations and Nodal Matrix](@id SystemEquationsNodalMatrixTutorials)
 Let us consider an example, given in Figure 2, that will allow us an easy transition to the general case. We observe system with three buses ``\mathcal{N} = \{p, k, q\}`` and two branches ``\mathcal{E} = \{(p, k), (k, q)\}``, where the bus ``k`` is incident to the shunt element with admittance ``{y}_{\text{sh}k}``.
 ```@raw html
-<img src="../../assets/pi_model_example.png" class="center"/>
+<img src="../assets/pi_model_example.svg" class="center" width="710"/>
 <figcaption>Figure 2: The example of the system with three buses and two branches.</figcaption>
 &nbsp;
 ```
@@ -290,7 +290,7 @@ We can conclude that ``P_{ij}=-P_{ji}`` holds. With the DC model, the linear net
 ##### [System of Equations and Nodal Matrix](@id SystemEquationsNodalMatrixTutorials)
 As before, let us consider an example of the DC framework, given in Figure 3, that will allow us an easy transition to the general case. We observe system with three buses ``\mathcal{N} = \{p, k, q\}`` and two branches ``\mathcal{E} = \{(p, k), (k, q)\}``, where the bus ``k`` is incident to the shunt element with conductance ``{g}_{\text{sh}k}``.
 ```@raw html
-<img src="../../assets/dc_model.png" class="center"/>
+<img src="../assets/dc_model.svg" class="center" width="600" />
 <figcaption>Figure 3: The example of the system with three buses and two branches.</figcaption>
 &nbsp;
 ```

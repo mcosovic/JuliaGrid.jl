@@ -87,25 +87,13 @@ mutable struct Current
     branch::CurrentBranch
 end
 
-######### Branch ##########
-mutable struct DCPowerBus
+######### Powers in the DC Framework ##########
+mutable struct DCPower
     injection::CartesianReal
     supply::CartesianReal
-end
-
-mutable struct DCPowerBranch
     from::CartesianReal
     to::CartesianReal
-end
-
-mutable struct DCPowerGenerator
-    output::CartesianReal
-end
-
-mutable struct DCPower
-    bus::DCPowerBus
-    branch::DCPowerBranch
-    generator::DCPowerGenerator
+    generator::CartesianReal
 end
 
 

@@ -5,12 +5,14 @@ To perform the DC power flow, you first need to have the `PowerSystem` composite
 To solve the DC power flow problem and acquire bus voltage angles, make use of the following function:
 * [`solve!`](@ref solve!(::PowerSystem, ::DCPowerFlow)).
 
-After obtaining the solution for DC power flow, JuliaGrid offers a post-processing analysis function to compute powers associated with buses, branches, and generators:
-* [`power`](@ref power(::PowerSystem, ::DCPowerFlow)).
+After obtaining the solution for DC power flow, JuliaGrid offers a post-processing analysis function to compute active powers associated with buses, branches, and generators:
+* [`power!`](@ref power!(::PowerSystem, ::DCPowerFlow)).
 
-Moreover, there exist specific functions dedicated to calculating powers related to a particular bus, branch, or generator:
-* [`powerBus`](@ref powerBus(::PowerSystem, ::DCPowerFlow)),
-* [`powerBranch`](@ref powerBranch(::PowerSystem, ::DCPowerFlow)),
+Additionally, there are specialized functions dedicated to calculating specific types of active powers related to particular buses, branches, or generators:
+* [`powerInjection`](@ref powerInjection(::PowerSystem, ::DCPowerFlow)),
+* [`powerSupply`](@ref powerSupply(::PowerSystem, ::DCPowerFlow)),
+* [`powerFrom`](@ref powerFrom(::PowerSystem, ::DCPowerFlow)),
+* [`powerTo`](@ref powerTo(::PowerSystem, ::DCPowerFlow)),
 * [`powerGenerator`](@ref powerBranch(::PowerSystem, ::DCPowerFlow)).
 
 ---
@@ -128,7 +130,7 @@ nothing # hide
 ---
 
 ## [Power Analysis](@id DCPowerAnalysisManual)
-After obtaining the solution from the DC power flow, we can calculate powers related to buses, branches, and generators using the [`power`](@ref power(::PowerSystem, ::DCPowerFlow)) function. For instance, let us consider the power system for which we obtained the DC power flow solution:
+After obtaining the solution from the DC power flow, we can calculate powers related to buses, branches, and generators using the [`power!`](@ref power!(::PowerSystem, ::DCPowerFlow)) function. For instance, let us consider the power system for which we obtained the DC power flow solution:
 ```@example ComputationPowersCurrentsLosses
 using JuliaGrid # hide
 
@@ -161,15 +163,15 @@ nothing # hide
 
 Now we can calculate the active powers using the following function:
 ```@example ComputationPowersCurrentsLosses
-powers = power(system, model)
+power!(system, model)
 
 nothing # hide
 ```
 
 For example, to display the active power injections at each bus and active power flows at each "from" bus end of the branch in megawatts (MW), we can use the following code:
 ```@repl ComputationPowersCurrentsLosses
-system.base.power.value * powers.bus.injection.active
-system.base.power.value * powers.branch.from.active
+system.base.power.value * model.power.injection.active
+system.base.power.value * model.power.from.active
 ```
 
 !!! note "Info"
@@ -180,14 +182,8 @@ system.base.power.value * powers.branch.from.active
 ##### Powers Related to Bus
 Instead of calculating powers for all components, users have the option to compute specific quantities for particular components. In this regard, the following function can be utilized to calculate active powers associated with a specific bus:
 ```@example ComputationPowersCurrentsLosses
-powers = powerBus(system, model; label = 1)
-
-nothing # hide
-```
-
-For instance, to display the active power injection at the bus in megawatts, the following code can be used:
-```@repl ComputationPowersCurrentsLosses
-system.base.power.value * powers.injection.active
+injection = powerInjection(system, model; label = 1)
+supply = powerSupply(system, model; label = 1)
 ```
 
 ---
@@ -195,13 +191,8 @@ system.base.power.value * powers.injection.active
 ##### Powers Related to Branch
 Similarly, we can compute the active powers related to a particular branch using the following function:
 ```@example ComputationPowersCurrentsLosses
-powers = powerBranch(system, model; label = 2)
-
-nothing # hide
-```
-For instance, to display the active power flow at the "from" bus end of the branch in megawatts, we can use the following code:
-```@repl ComputationPowersCurrentsLosses
-system.base.power.value * powers.from.active
+from = powerFrom(system, model; label = 2)
+to = powerTo(system, model; label = 2)
 ```
 
 ---
@@ -209,12 +200,6 @@ system.base.power.value * powers.from.active
 ##### Power Related to Generator
 Finally, we can compute the active output power of a particular generator using the function:
 ```@example ComputationPowersCurrentsLosses
-powers = powerGenerator(system, model; label = 1)
-
-nothing # hide
-```
-To display the output active power of the generator in megawatts, we can use the following code:
-```@repl ComputationPowersCurrentsLosses
-system.base.power.value * powers.output.active
+generator = powerGenerator(system, model; label = 1)
 ```
 

@@ -402,24 +402,24 @@ function capabilityCurve(system::PowerSystem, model::JuMP.Model, i)
             minReactiveMinActive = capability.minLowReactive[i] + minLowActive * deltaReactive * deltaActiveInv
             minReactiveMaxActive = capability.minLowReactive[i] + maxLowActive * deltaReactive * deltaActiveInv
             if  minReactiveMinActive > capability.minReactive[i] || minReactiveMaxActive > capability.minReactive[i]
-                Q = capability.maxLowReactive[i] - capability.maxUpReactive[i]
-                P = capability.upActive[i] - capability.lowActive[i]
-                b = Q * capability.lowActive[i] + P * capability.maxLowReactive[i]
-                scale = 1 / sqrt(Q^2 + P^2)
+                deltaQ = capability.maxLowReactive[i] - capability.maxUpReactive[i]
+                deltaP = capability.upActive[i] - capability.lowActive[i]
+                b = deltaQ * capability.lowActive[i] + deltaP * capability.maxLowReactive[i]
+                scale = 1 / sqrt(deltaQ^2 + deltaP^2)
 
-                @constraint(model, scale * Q * model[:active][i] + scale * P * model[:reactive][i] <= scale * b)
+                @constraint(model, scale * deltaQ * model[:active][i] + scale * deltaP * model[:reactive][i] <= scale * b)
             end
 
             deltaReactive = capability.maxUpReactive[i] - capability.maxLowReactive[i]
             maxReactiveMinActive = capability.maxLowReactive[i] + minLowActive * deltaReactive * deltaActiveInv
             maxReactiveMaxActive = capability.minLowReactive[i] + maxLowActive * deltaReactive * deltaActiveInv
             if maxReactiveMinActive < capability.maxReactive[i] || maxReactiveMaxActive < capability.maxReactive[i]
-                Q = capability.minUpReactive[i] - capability.minLowReactive[i]
-                P = capability.lowActive[i] - capability.upActive[i]
-                b = Q * capability.lowActive[i] + P * capability.minLowReactive[i]
-                scale = 1 / sqrt(Q^2 + P^2)
+                deltaQ = capability.minUpReactive[i] - capability.minLowReactive[i]
+                deltaP = capability.lowActive[i] - capability.upActive[i]
+                b = deltaQ * capability.lowActive[i] + deltaP * capability.minLowReactive[i]
+                scale = 1 / sqrt(deltaQ^2 + deltaP^2)
 
-                @constraint(model, scale * Q * model[:active][i] + scale * P * model[:reactive][i] <= scale * b)
+                @constraint(model, scale * deltaQ * model[:active][i] + scale * deltaP * model[:reactive][i] <= scale * b)
             end
         end
     end

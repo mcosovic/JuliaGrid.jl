@@ -20,11 +20,13 @@ In the following section, we have provided a list of functions that can be utili
 ## [Power Analysis](@id PowerAnalysisAPI)
 ```@docs
 power(::PowerSystem, ::ACPowerFlow)
-power(::PowerSystem, ::DCPowerFlow)
+power!(::PowerSystem, ::DCPowerFlow)
 powerBus(::PowerSystem, ::ACPowerFlow)
-powerBus(::PowerSystem, ::DCPowerFlow)
+powerInjection(::PowerSystem, ::DCPowerFlow)
+powerSupply(::PowerSystem, ::DCPowerFlow)
 powerBranch(::PowerSystem, ::ACPowerFlow)
-powerBranch(::PowerSystem, ::DCAnalysis)
+powerFrom(::PowerSystem, ::DCAnalysis)
+powerTo(::PowerSystem, ::DCAnalysis)
 powerGenerator(::PowerSystem, ::ACPowerFlow)
 powerGenerator(::PowerSystem, ::DCPowerFlow)
 ```

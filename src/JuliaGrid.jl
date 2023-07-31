@@ -5,6 +5,7 @@ using SparseArrays, LinearAlgebra, SuiteSparse
 using HDF5
 using JuMP
 
+
 ########## Setting Variables ##########
 include("utility/setting.jl")
 
@@ -42,10 +43,12 @@ export acOptimalPowerFlow
 include("optimalPowerFlow/dcOptimalPowerFlow.jl")
 export dcOptimalPowerFlow
 
+
 ########## Postprocessing ##########
 include("postprocessing/dcAnalysis.jl")
 include("postprocessing/acAnalysis.jl")
-export power, powerBus, powerBranch, powerGenerator
+export power!, powerInjection, powerSupply, powerFrom, powerTo, powerGenerator
+export powerBus, powerBranch, powerGenerator, power
 export current, currentBus, currentBranch
 
 ########## Unit ##########

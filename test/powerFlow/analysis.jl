@@ -243,54 +243,50 @@ end
     ######## Modified IEEE 14-bus Test Case ##########
     dcModel!(system14)
     model = dcPowerFlow(system14)
+    
     solve!(system14, model)
-
-    powers = power(system14, model)
-
     @test model.voltage.angle ≈ matpower14["Ti"] 
-    @test powers.bus.injection.active ≈ matpower14["Pinj"]
-    @test powers.branch.from.active ≈ matpower14["Pij"]
-    @test powers.generator.output.active ≈ matpower14["Pgen"]
+
+    power!(system14, model)
+    @test model.power.injection.active ≈ matpower14["Pinj"]
+    @test model.power.from.active ≈ matpower14["Pij"]
+    @test model.power.generator.active ≈ matpower14["Pgen"]
 
     for (key, value) in system14.bus.label
-        powers = powerBus(system14, model; label = key)
-        @test powers.injection.active ≈ matpower14["Pinj"][value] atol = 1e-14
+        @test powerInjection(system14, model; label = key) ≈ matpower14["Pinj"][value] atol = 1e-14
     end
 
     for (key, value) in system14.branch.label
-        powers = powerBranch(system14, model; label = key)
-        @test powers.from.active ≈ matpower14["Pij"][value] atol = 1e-14
+        @test powerFrom(system14, model; label = key) ≈ matpower14["Pij"][value] atol = 1e-14
+        @test powerTo(system14, model; label = key) ≈ -matpower14["Pij"][value] atol = 1e-14
     end
 
     for (key, value) in system14.generator.label
-        powers = powerGenerator(system14, model; label = key)
-        @test powers.output.active ≈ matpower14["Pgen"][value] atol = 1e-14
+        @test powerGenerator(system14, model; label = key) ≈ matpower14["Pgen"][value] atol = 1e-14
     end
 
     ######## Modified IEEE 30-bus Test Case ##########
     dcModel!(system30)
     model = dcPowerFlow(system30)
+    
     solve!(system30, model)
-
-    powers = power(system30, model)
-
     @test model.voltage.angle ≈ matpower30["Ti"]
-    @test powers.bus.injection.active ≈ matpower30["Pinj"]
-    @test powers.branch.from.active ≈ matpower30["Pij"]
-    @test powers.generator.output.active ≈ matpower30["Pgen"]
+
+    power!(system30, model)
+    @test model.power.injection.active ≈ matpower30["Pinj"]
+    @test model.power.from.active ≈ matpower30["Pij"]
+    @test model.power.generator.active ≈ matpower30["Pgen"]
 
     for (key, value) in system30.bus.label
-        powers = powerBus(system30, model; label = key)
-        @test powers.injection.active ≈ matpower30["Pinj"][value] atol = 1e-14
+        @test powerInjection(system30, model; label = key) ≈ matpower30["Pinj"][value] atol = 1e-14
     end
 
     for (key, value) in system30.branch.label
-        powers = powerBranch(system30, model; label = key)
-        @test powers.from.active ≈ matpower30["Pij"][value] atol = 1e-14
+        @test powerFrom(system30, model; label = key) ≈ matpower30["Pij"][value] atol = 1e-14
+        @test powerTo(system30, model; label = key) ≈ -matpower30["Pij"][value] atol = 1e-14
     end
 
     for (key, value) in system30.generator.label
-        powers = powerGenerator(system30, model; label = key)
-        @test powers.output.active ≈ matpower30["Pgen"][value] atol = 1e-14
+        @test powerGenerator(system30, model; label = key) ≈ matpower30["Pgen"][value] atol = 1e-14
     end
 end
