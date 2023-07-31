@@ -174,7 +174,7 @@ function powerInjection(system::PowerSystem, model::DCOptimalPowerFlow; label)
 
     injectionActive = copy(-system.bus.demand.active[index])
     @inbounds for i in system.bus.supply.generator[index]
-        injectionActive += model.power.active[i]
+        injectionActive += model.power.generator.active[i]
     end
 
     return injectionActive
@@ -237,6 +237,8 @@ function powerSupply(system::PowerSystem, model::DCPowerFlow; label)
     else
         supplyActive = bus.supply.active[index]
     end
+
+    return supplyActive
 end
 
 function powerSupply(system::PowerSystem, model::DCOptimalPowerFlow; label)
@@ -248,7 +250,7 @@ function powerSupply(system::PowerSystem, model::DCOptimalPowerFlow; label)
 
     supplyActive = 0.0
     @inbounds for i in system.bus.supply.generator[index]
-        supplyActive += model.power.active[i]
+        supplyActive += model.power.generator.active[i]
     end
 
     return supplyActive

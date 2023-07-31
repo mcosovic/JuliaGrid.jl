@@ -340,17 +340,17 @@ model.power.from.active
 
 ##### Powers Related to Bus
 Instead of calculating powers for all components, users have the option to compute specific quantities for particular components. In this regard, the following function can be utilized to calculate active powers associated with a specific bus:
-```@example DCOptimalPowerFlowPower
-injection = powerInjection(system, model; label = 1)
-supply = powerSupply(system, model; label = 1)
+```@repl DCOptimalPowerFlowPower
+powerInjection(system, model; label = 1)
+powerSupply(system, model; label = 1)
 ```
 
 ---
 
 ##### Powers Related to Branch
 Similarly, we can compute the active powers related to a particular branch using the following function:
-```@example DCOptimalPowerFlowPower
-from = powerFrom(system, model; label = 2)
-to = powerTo(system, model; label = 2)
+```@repl DCOptimalPowerFlowPower
+powerFrom(system, model; label = 2)
+powerTo(system, model; label = 2)
 ```
 

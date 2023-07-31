@@ -175,31 +175,32 @@ system.base.power.value * model.power.from.active
 ```
 
 !!! note "Info"
-    To better understand the powers associated with buses, branches and generators that are calculated by the [`power`](@ref power(::PowerSystem, ::DCPowerFlow)) function, we suggest referring to the tutorials on [DC power flow analysis](@ref DCPowerAnalysisTutorials).
+    To better understand the powers associated with buses, branches and generators that are calculated by the [`power!`](@ref power!(::PowerSystem, ::DCPowerFlow)) function, we suggest referring to the tutorials on [DC power flow analysis](@ref DCPowerAnalysisTutorials).
 
 ---
 
 ##### Powers Related to Bus
 Instead of calculating powers for all components, users have the option to compute specific quantities for particular components. In this regard, the following function can be utilized to calculate active powers associated with a specific bus:
-```@example ComputationPowersCurrentsLosses
-injection = powerInjection(system, model; label = 1)
-supply = powerSupply(system, model; label = 1)
+```@repl ComputationPowersCurrentsLosses
+powerInjection(system, model; label = 1)
+
+powerSupply(system, model; label = 1)
 ```
 
 ---
 
 ##### Powers Related to Branch
 Similarly, we can compute the active powers related to a particular branch using the following function:
-```@example ComputationPowersCurrentsLosses
-from = powerFrom(system, model; label = 2)
-to = powerTo(system, model; label = 2)
+```@repl ComputationPowersCurrentsLosses
+powerFrom(system, model; label = 2)
+powerTo(system, model; label = 2)
 ```
 
 ---
 
 ##### Power Related to Generator
 Finally, we can compute the active output power of a particular generator using the function:
-```@example ComputationPowersCurrentsLosses
-generator = powerGenerator(system, model; label = 1)
+```@repl ComputationPowersCurrentsLosses
+powerGenerator(system, model; label = 1)
 ```
 

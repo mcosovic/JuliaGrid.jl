@@ -161,7 +161,7 @@ V_i - V_{\text{slack}} = 0,\;\;\; i \in \mathcal{N_{\text{sb}}}  \\
 \theta_i - \theta_{\text{slack}} = 0,\;\;\; i \in \mathcal{N_{\text{sb}}}.  \\
 \end{aligned}
 ```
-Here, the set ``\mathcal{N}_{\text{sb}}`` contains the index of the slack bus. These constraints are implemented using the `magnitude` and `angle` keywords within the [addBus!](@ref addBus!) function, where the bus is defined as a slack bus (`type = 3`).
+Here, the set ``\mathcal{N}_{\text{sb}}`` contains the index of the slack bus. These constraints are implemented using the `magnitude` and `angle` keywords within the [`addBus!`](@ref addBus!) function, where the bus is defined as a slack bus (`type = 3`).
 
 To retrieve the equality constraints from the model, you can access the corresponding variables using the following code:
 ```@repl ACOptimalPowerFlow
@@ -179,7 +179,7 @@ h_{P_i}(\mathbf {P}_{\text{g}}, \mathbf {V}, \boldsymbol{\theta}) = 0,\;\;\;  \f
 \end{aligned}
 ```
 
-The active power balance equation is derived using the [unified branch model](@ref ACUnifiedBranchModelTutorials) and can be represented as:
+The active power balance equation is derived using the [unified branch model](@ref UnifiedBranchModelTutorials) and can be represented as:
 ```math
 h_{P_i}(\mathbf {P}_{\text{g}}, \mathbf {V}, \boldsymbol{\theta}) = {V}_{i}\sum\limits_{j=1}^n {V}_{j} (G_{ij}\cos\theta_{ij}+B_{ij}\sin\theta_{ij}) - \sum_{k=1}^{n_{\text{g}i}} P_{\text{g}k} + P_{\text{d}i}
 ```
@@ -196,7 +196,7 @@ Similarly, the next constraint in the optimization problem is associated with th
 h_{Q_i}(\mathbf {Q}_{\text{g}}, \mathbf {V}, \boldsymbol{\theta}) = 0,\;\;\;  \forall i \in \mathcal{N} \\
 \end{aligned}
 ```
-The reactive power balance equation is derived using the [unified branch model](@ref ACUnifiedBranchModelTutorials) and can be represented as:
+The reactive power balance equation is derived using the [unified branch model](@ref UnifiedBranchModelTutorials) and can be represented as:
 ```math
 h_{Q_i}(\mathbf {Q}_{\text{g}}, \mathbf {V}, \boldsymbol{\theta}) = {V}_{i}\sum\limits_{j=1}^n {V}_{j} (G_{ij}\sin\theta_{ij}-B_{ij}\cos\theta_{ij}) - \sum_{k=1}^{n_{\text{g}i}} Q_{\text{g}k} + Q_{\text{d}i}
 ```
