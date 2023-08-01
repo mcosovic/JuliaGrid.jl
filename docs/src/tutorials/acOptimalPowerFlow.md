@@ -91,7 +91,7 @@ Typically, cost functions are represented as linear, quadratic, or cubic, as sho
 ```
 
 ```@raw html
-<img src="../assets/cost_function.svg" class="center" width="750"/>
+<img src="../../assets/cost_function.svg" class="center" width="750"/>
 <figcaption>Figure 1: The polynomial cost functions of generator active power output.</figcaption>
 &nbsp;
 ```
@@ -102,7 +102,7 @@ As depicted in Figure 1, typical scenarios involve linear, quadratic, or cubic c
 ##### Linear Piecewise Cost Function
 The second option for defining cost functions in the AC optimal power flow is to use linear piecewise functions as approximations of the polynomial functions, as illustrated in Figure 2.
 ```@raw html
-<img src="../assets/cost_function_piecewise.svg" class="center" width="750"/>
+<img src="../../assets/cost_function_piecewise.svg" class="center" width="750"/>
 <figcaption>Figure 2: The linear piecewise cost functions of active power output.</figcaption>
 &nbsp;
 ```
@@ -337,14 +337,14 @@ model.constraint.capability.reactive
 
 These capability limits of the generators define the feasible region, represented as a gray area in Figure 3, which forms the solution space for the active and reactive output powers of the generators.
 ```@raw html
-<img src="../assets/pq_curve.svg" class="center" width="350"/>
+<img src="../../assets/pq_curve.svg" class="center" width="350"/>
 <figcaption>Figure 3: The feasible region created by the active and reactive power capability constraints.</figcaption>
 &nbsp;
 ```
 
 However, this representation might not be the most accurate depiction of the generator's output power behavior. In reality, there exists a tradeoff between the active and reactive power outputs of the generators [[1]](@ref ACOptimalPowerFlowSolutionReferenceTutorials). Specifically, when a generator operates at its maximum active power ``P_{\text{g}i}^\text{max}``, ``i \in \mathcal{P}``, it may not be able to produce the maximum ``Q_{\text{g}i}^\text{max}`` or minimum ``Q_{\text{g}i}^\text{min}`` reactive power. To capture this tradeoff, we introduce the ability to include additional upper and lower constraints on the feasible region, leading to its reduction as shown in Figure 4.
 ```@raw html
-<img src="../assets/pq_curve_sloped.svg" class="center" width="350"/>
+<img src="../../assets/pq_curve_sloped.svg" class="center" width="350"/>
 <figcaption>Figure 4: The feasible region created by the active and reactive power capability constraints with additional upper and lower constraints.</figcaption>
 &nbsp;
 ```
@@ -430,7 +430,7 @@ Active and reactive power injections are stored as the vectors ``\mathbf{P} = [P
 ---
 
 ##### Active and Reactive Power Injections from the Generators at Each Bus
-The [`power`](@ref power(::PowerSystem, ::ACPowerFlow)) function in JuliaGrid also provides the computation of active and reactive power injections from the generators at each bus. To calculate the active power supplied by generators to the buses, one can simply sum the active power outputs of the generators obtained from the optimal AC power flow. This can be represented as follows:
+The [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)) function in JuliaGrid also provides the computation of active and reactive power injections from the generators at each bus. To calculate the active power supplied by generators to the buses, one can simply sum the active power outputs of the generators obtained from the optimal AC power flow. This can be represented as follows:
 ```math
     P_{\text{s}i} = \sum_{k=1}^{n_{\text{g}i}} P_{\text{g}k},\;\;\; i \in \mathcal{N}.
 ```

@@ -729,7 +729,7 @@ Active and reactive power injections are stored as the vectors ``\mathbf{P} = [P
 ----
 
 ##### Active and Reactive Power Injections from the Generators at Each Bus
-The [`power`](@ref power(::PowerSystem, ::ACPowerFlow)) function in JuliaGrid also computes the active and reactive power injections from the generators at each bus. The active power supplied by the generators to the buses can be calculated by summing the given generator active powers in the input data, except for the slack bus, which can be determined as:
+The [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)) function in JuliaGrid also computes the active and reactive power injections from the generators at each bus. The active power supplied by the generators to the buses can be calculated by summing the given generator active powers in the input data, except for the slack bus, which can be determined as:
 ```math
     P_{\text{s}i} = P_i + P_{\text{d}i},\;\;\; i \in \mathcal{N}_{\text{sb}},
 ```

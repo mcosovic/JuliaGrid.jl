@@ -13,7 +13,7 @@ Additionally, there are specialized functions dedicated to calculating specific 
 * [`powerSupply`](@ref powerSupply(::PowerSystem, ::DCPowerFlow)),
 * [`powerFrom`](@ref powerFrom(::PowerSystem, ::DCPowerFlow)),
 * [`powerTo`](@ref powerTo(::PowerSystem, ::DCPowerFlow)),
-* [`powerGenerator`](@ref powerBranch(::PowerSystem, ::DCPowerFlow)).
+* [`powerGenerator`](@ref powerGenerator(::PowerSystem, ::DCPowerFlow)).
 
 ---
 

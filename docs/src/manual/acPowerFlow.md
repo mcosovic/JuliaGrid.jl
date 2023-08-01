@@ -343,7 +343,7 @@ Here, the previously created `PowerSystem` and `Model` types are reused. This ap
 ---
 
 ## [Power and Current Analysis](@id ACPowerCurrentAnalysisManual)
-After obtaining the solution from the AC power flow, we can calculate various electrical quantities related to buses, branches, and generators using the [`power`](@ref power(::PowerSystem, ::ACPowerFlow)) and [`current`](@ref current(::PowerSystem, ::ACPowerFlow)) functions. For instance, let us consider the power system for which we obtained the AC power flow solution:
+After obtaining the solution from the AC power flow, we can calculate various electrical quantities related to buses, branches, and generators using the [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)) and [`current!`](@ref current!(::PowerSystem, ::ACPowerFlow)) functions. For instance, let us consider the power system for which we obtained the AC power flow solution:
 ```@example ComputationPowersCurrentsLosses
 using JuliaGrid # hide
 
@@ -387,7 +387,7 @@ model.current.from.magnitude
 ```
 
 !!! note "Info"
-    To better understand the powers associated with buses, branches and generators that are calculated by the [`power`](@ref power(::PowerSystem, ::DCPowerFlow)) function, we suggest referring to the tutorials on [AC power flow analysis](@ref ACPowerAnalysisTutorials).
+    To better understand the powers associated with buses, branches and generators that are calculated by the [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)) and [`current!`](@ref current!(::PowerSystem, ::ACAnalysis)) functions, we suggest referring to the tutorials on [AC power flow analysis](@ref ACPowerAnalysisTutorials).
 
 ---
 
