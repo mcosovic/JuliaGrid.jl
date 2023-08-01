@@ -20,7 +20,8 @@ end
 ######### AC Optimal Power Flow ##########
 struct ACOptimalPowerFlow <: ACAnalysis
     voltage::Polar
-    power::Cartesian
+    power::Power
+    current::Current
     jump::JuMP.Model
     constraint::Constraint
 end
@@ -57,9 +58,10 @@ used solvers. For more information, refer to the
 # Returns
 The function returns an instance of the `ACOptimalPowerFlow` type, which includes the following
 fields:
-- `voltage`: the bus voltage magnitudes and angles
-- `output`: the output active and reactive powers of each generator
-- `jump`: the JuMP model
+- `voltage`: the bus voltage magnitudes and angles,
+- `power`: the variable allocated to store the active and reactive powers,
+- `current`: the variable allocated to store the currents,
+- `jump`: the JuMP model,
 - `constraint`: holds the constraint references to the JuMP model.
 
 # Examples
@@ -321,8 +323,26 @@ function acOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
     end
 
     return ACOptimalPowerFlow(
-        Polar(copy(system.bus.voltage.magnitude), copy(system.bus.voltage.angle)),
-        Cartesian(copy(system.generator.output.active), copy(system.generator.output.reactive)),
+        Polar(
+            copy(system.bus.voltage.magnitude), 
+            copy(system.bus.voltage.angle)
+        ),
+        Power(
+            Cartesian(Float64[], Float64[]),
+            Cartesian(Float64[], Float64[]),
+            Cartesian(Float64[], Float64[]),
+            Cartesian(Float64[], Float64[]),
+            Cartesian(Float64[], Float64[]),
+            CartesianImag(Float64[]),
+            Cartesian(Float64[], Float64[]),
+            Cartesian(copy(system.generator.output.active), copy(system.generator.output.reactive))
+        ),
+        Current(
+            Polar(Float64[], Float64[]),
+            Polar(Float64[], Float64[]),
+            Polar(Float64[], Float64[]),
+            Polar(Float64[], Float64[])
+        ),
         model,
         Constraint(
             PolarRef(slackMagnitudeRef, slackAngleRef),
@@ -331,7 +351,7 @@ function acOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
             CartesianFlowRef(ratingFromRef, ratingToRef),
             CartesianRef(capabilityActiveRef, capabilityReactiveRef),
             CartesianRef(piecewiseActiveRef, piecewiseReactiveRef),
-            )
+        )
     )
 end
 
@@ -361,10 +381,10 @@ function solve!(system::PowerSystem, model::ACOptimalPowerFlow)
         set_start_value.(model.jump[:magnitude], model.voltage.magnitude)
     end
     if isnothing(start_value(model.jump[:active][1]))
-        set_start_value.(model.jump[:active], model.power.active)
+        set_start_value.(model.jump[:active], model.power.generator.active)
     end
     if isnothing(start_value(model.jump[:reactive][1]))
-        set_start_value.(model.jump[:reactive], model.power.reactive)
+        set_start_value.(model.jump[:reactive], model.power.generator.reactive)
     end
 
     JuMP.optimize!(model.jump)
@@ -375,8 +395,8 @@ function solve!(system::PowerSystem, model::ACOptimalPowerFlow)
     end
 
     @inbounds for i = 1:system.generator.number
-        model.power.active[i] = value(model.jump[:active][i])
-        model.power.reactive[i] = value(model.jump[:reactive][i])
+        model.power.generator.active[i] = value(model.jump[:active][i])
+        model.power.generator.reactive[i] = value(model.jump[:reactive][i])
     end
 end
 

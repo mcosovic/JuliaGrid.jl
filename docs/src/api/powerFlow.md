@@ -14,15 +14,22 @@ For further information on this topic, please see the [AC Power Flow](@ref ACPow
 * [`solve!`](@ref solve!(::PowerSystem, ::NewtonRaphson))
 
 ###### Power Analysis
-* [`power`](@ref power(::PowerSystem, ::ACPowerFlow))
-* [`powerBus`](@ref powerBus(::PowerSystem, ::ACPowerFlow))
-* [`powerBranch`](@ref powerBranch(::PowerSystem, ::ACPowerFlow))
+* [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow))
+* [`powerInjection`](@ref powerInjection(::PowerSystem, ::ACAnalysis))
+* [`powerSupply`](@ref powerSupply(::PowerSystem, ::ACPowerFlow))
+* [`powerShunt`](@ref powerShunt(::PowerSystem, ::ACAnalysis))
+* [`powerFrom`](@ref powerFrom(::PowerSystem, ::ACAnalysis))
+* [`powerTo`](@ref powerTo(::PowerSystem, ::ACAnalysis))
+* [`powerCharging`](@ref powerCharging(::PowerSystem, ::ACAnalysis))
+* [`powerLoss`](@ref powerLoss(::PowerSystem, ::ACAnalysis))
 * [`powerGenerator`](@ref powerGenerator(::PowerSystem, ::ACPowerFlow))
 
 ###### Current Analysis
-* [`current`](@ref current(::PowerSystem, ::ACPowerFlow))
-* [`currentBus`](@ref currentBus(::PowerSystem, ::ACPowerFlow))
-* [`currentBranch`](@ref currentBranch(::PowerSystem, ::ACPowerFlow))
+* [`current!`](@ref current!(::PowerSystem, ::ACAnalysis))
+* [`currentInjection`](@ref currentInjection(::PowerSystem, ::ACAnalysis))
+* [`currentFrom`](@ref currentFrom(::PowerSystem, ::ACAnalysis))
+* [`currentTo`](@ref currentTo(::PowerSystem, ::ACAnalysis))
+* [`currentLine`](@ref currentLine(::PowerSystem, ::ACAnalysis))
 
 ###### Additional Functions
 * [`reactiveLimit!`](@ref reactiveLimit!)

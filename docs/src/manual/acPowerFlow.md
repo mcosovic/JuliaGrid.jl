@@ -10,15 +10,23 @@ These functions will set up the AC power flow framework. To obtain bus voltages 
 * [`solve!`](@ref solve!(::PowerSystem, ::NewtonRaphson)).
 
 After obtaining the AC power flow solution, JuliaGrid offers post-processing analysis functions for calculating powers and currents associated with buses, branches, or generators:
-* [`power`](@ref power(::PowerSystem, ::ACPowerFlow)),
-* [`current`](@ref current(::PowerSystem, ::ACPowerFlow)).
+* [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)),
+* [`current!`](@ref current!(::PowerSystem, ::ACAnalysis)).
 
-Moreover, there exist specific functions dedicated to calculating powers and currents related to a particular bus, branch, or generator:
-* [`powerBus`](@ref powerBus(::PowerSystem, ::ACPowerFlow)),
-* [`powerBranch`](@ref powerBranch(::PowerSystem, ::ACPowerFlow)),
+
+Additionally, there are specialized functions dedicated to calculating specific types of powers and currents related to particular buses, branches, or generators:
+* [`powerInjection`](@ref powerInjection(::PowerSystem, ::ACAnalysis)),
+* [`powerSupply`](@ref powerSupply(::PowerSystem, ::ACPowerFlow)),
+* [`powerShunt`](@ref powerShunt(::PowerSystem, ::ACAnalysis)),
+* [`powerFrom`](@ref powerFrom(::PowerSystem, ::ACAnalysis)),
+* [`powerTo`](@ref powerTo(::PowerSystem, ::ACAnalysis)),
+* [`powerCharging`](@ref powerCharging(::PowerSystem, ::ACAnalysis)),
+* [`powerLoss`](@ref powerLoss(::PowerSystem, ::ACAnalysis)),
 * [`powerGenerator`](@ref powerGenerator(::PowerSystem, ::ACPowerFlow)),
-* [`currentBus`](@ref currentBus(::PowerSystem, ::ACPowerFlow)),
-* [`currentBranch`](@ref currentBranch(::PowerSystem, ::ACPowerFlow)).
+* [`currentInjection`](@ref currentInjection(::PowerSystem, ::ACAnalysis)),
+* [`currentFrom`](@ref currentFrom(::PowerSystem, ::ACAnalysis)),
+* [`currentTo`](@ref currentTo(::PowerSystem, ::ACAnalysis)),
+* [`currentLine`](@ref currentLine(::PowerSystem, ::ACAnalysis)).
 
 Additionally, the package provides two functions for reactive power limit validation of generators and adjusting the voltage angles to match an arbitrary bus angle:
 * [`reactiveLimit!`](@ref reactiveLimit!),
@@ -367,15 +375,15 @@ nothing # hide
 
 We can now utilize the provided functions to compute powers and currents. The following functions can be used for this purpose:
 ```@example ComputationPowersCurrentsLosses
-powers = power(system, model)
-currents = current(system, model)
+power!(system, model)
+current!(system, model)
 nothing # hide
 ```
 
 For instance, if we want to show the active power injections at each bus and the current flow magnitudes at each "from" bus end of the branch, we can employ the following code:
 ```@repl ComputationPowersCurrentsLosses
-powers.bus.injection.active
-currents.branch.from.magnitude
+model.power.injection.active
+model.current.from.magnitude
 ```
 
 !!! note "Info"
@@ -386,69 +394,70 @@ currents.branch.from.magnitude
 ##### Powers and Currents Related to Bus
 To calculate specific quantities for particular components rather than calculating powers or currents for all components, users can utilize the following functions.
 
-To calculate powers associated with a specific bus, the function can be used:
-```@example ComputationPowersCurrentsLosses
-powers = powerBus(system, model; label = 1)
-
-nothing # hide
-```
-
-For instance, to display the active power injection at the bus, the following code can be used:
+To calculate active and reactive power injections associated with a specific bus, the function can be used:
 ```@repl ComputationPowersCurrentsLosses
-powers.injection.active
+powerInjection(system, model; label = 1)
 ```
 
-To calculate currents associated with a specific bus, the function can be used:
-```@example ComputationPowersCurrentsLosses
-currents = currentBus(system, model; label = 1)
-
-nothing # hide
-```
-
-For instance, to display the current injection magnitude at the bus, the following code can be used:
+To calculate active and reactive power injections from the generators at a specific bus, the function can be used:
 ```@repl ComputationPowersCurrentsLosses
-currents.injection.magnitude
+powerSupply(system, model; label = 1)
+```
+
+To calculate active and reactive powers associated with shunt element at a specific bus, the function can be used:
+```@repl ComputationPowersCurrentsLosses
+powerShunt(system, model; label = 1)
+```
+
+To calculate current injection associated with a specific bus, the function can be used:
+```@repl ComputationPowersCurrentsLosses
+currentInjection(system, model; label = 1)
 ```
 
 ---
 
 ##### Powers and Currents Related to Branch
-Similarly, we can compute the powers related to a particular branch using the following function:
-```@example ComputationPowersCurrentsLosses
-powers = powerBranch(system, model; label = 2)
-
-nothing # hide
-```
-
-For instance, to display the reactive power flow at the "from" bus end of the branch, we can use the following code:
+Similarly, we can compute the active and reactive power flows at "from" bus end of the particular branch using the following function:
 ```@repl ComputationPowersCurrentsLosses
-powers.from.reactive
+powerFrom(system, model; label = 2)
 ```
 
-Further, we can compute the currents related to a particular branch using the following function:
-```@example ComputationPowersCurrentsLosses
-currents = currentBranch(system, model; label = 2)
-
-nothing # hide
-```
-
-For instance, to display the current flow magnitude at the "from" bus end of the branch, we can use the following code:
+Next, we can compute the active and reactive power flows at "to" bus end of the particular branch using the following function:
 ```@repl ComputationPowersCurrentsLosses
-currents.from.magnitude
+powerTo(system, model; label = 2)
+```
+
+To calculate the total reactive power injection by the particular branch, the function can be used:
+```@repl ComputationPowersCurrentsLosses
+powerCharging(system, model; label = 2)
+```
+
+To calculate active and reactive power losses at the particular branch, the function can be used:
+```@repl ComputationPowersCurrentsLosses
+powerLoss(system, model; label = 2)
+```
+
+Further, we can compute the current at "from" bus end of the particular branch using the following function:
+```@repl ComputationPowersCurrentsLosses
+currentFrom(system, model; label = 2)
+```
+
+To calculate the current at "to" bus end of the particular branch using the following function:
+```@repl ComputationPowersCurrentsLosses
+currentTo(system, model; label = 2)
+```
+
+To calculate the current through series impedance of the branch, the function can be used:
+```@repl ComputationPowersCurrentsLosses
+currentLine(system, model; label = 2)
 ```
 
 ---
 
 ##### Powers Related to Generator
 Finally, we can compute the output powers of a particular generator using the function:
-```@example ComputationPowersCurrentsLosses
-powers = powerGenerator(system, model; label = 1)
-
-nothing # hide
-```
-To display the output active power of the generator, we can use the following code:
 ```@repl ComputationPowersCurrentsLosses
-powers.output.active
+powerGenerator(system, model; label = 1)
 ```
 
 ---

@@ -46,45 +46,24 @@ mutable struct CartesianImagRef
     reactive::Union{Array{JuMP.ConstraintRef,1}, Array{Array{JuMP.ConstraintRef,1}}}
 end
 
-######### Power ##########
-mutable struct PowerBus
+######### Powers in the AC Framework ##########
+mutable struct Power
     injection::Cartesian
     supply::Cartesian
     shunt::Cartesian
-end
-
-mutable struct PowerBranch
     from::Cartesian
     to::Cartesian
-    shunt::CartesianImag
+    charging::CartesianImag
     loss::Cartesian
+    generator::Cartesian
 end
 
-mutable struct PowerGenerator
-    output::Cartesian
-end
-
-mutable struct Power
-    bus::PowerBus
-    branch::PowerBranch
-    generator::PowerGenerator
-end
-
-
-######### Power ##########
-mutable struct CurrentBus
+######### Currents in the AC Framework ##########
+mutable struct Current
     injection::Polar
-end
-
-mutable struct CurrentBranch
     from::Polar
     to::Polar
     line::Polar
-end
-
-mutable struct Current
-    bus::CurrentBus
-    branch::CurrentBranch
 end
 
 ######### Powers in the DC Framework ##########
@@ -95,7 +74,6 @@ mutable struct DCPower
     to::CartesianReal
     generator::CartesianReal
 end
-
 
 ######### Types ##########
 const N = Union{Float64, Int64}

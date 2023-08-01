@@ -8,6 +8,8 @@ end
 ######### Newton-Raphson ##########
 struct NewtonRaphson <: ACPowerFlow
     voltage::Polar
+    power::Power
+    current::Current
     jacobian::SparseMatrixCSC{Float64,Int64}
     mismatch::Array{Float64,1}
     increment::Array{Float64,1}
@@ -25,6 +27,8 @@ end
 
 struct FastNewtonRaphson <: ACPowerFlow
     voltage::Polar
+    power::Power
+    current::Current
     active::FastNewtonRaphsonModel
     reactive::FastNewtonRaphsonModel
     pq::Array{Int64,1}
@@ -34,6 +38,8 @@ end
 ######### Gauss-Seidel ##########
 struct GaussSeidel <: ACPowerFlow
     voltage::Polar
+    power::Power
+    current::Current
     complex::Array{ComplexF64,1}
     magnitude::Array{Float64,1}
     pq::Array{Int64,1}
@@ -52,6 +58,8 @@ the function will automatically initiate an update of the `acModel` field within
 The function returns an instance of the `NewtonRaphson` subtype of the abstract `ACPowerFlow`
 type, which includes the following fields:
 - `voltage`: the magnitudes and angles of bus voltages
+- `power`: the variable allocated to store the active and reactive powers,
+- `current`: the variable allocated to store the currents,
 - `jacobian`: the Jacobian matrix
 - `mismatch`: the active and reactive power injection mismatches
 - `increment`: the magnitudes and angles of bus voltage increments
@@ -150,8 +158,28 @@ function newtonRaphson(system::PowerSystem)
     method = "Newton-Raphson"
 
     return NewtonRaphson(
-        Polar(voltageMagnitude, voltageAngle),
-        jacobian, mismatch, increment, pqIndex, pvpqIndex)
+        Polar(
+            voltageMagnitude, 
+            voltageAngle
+        ),
+        Power(
+            Cartesian(Float64[], Float64[]),
+            Cartesian(Float64[], Float64[]),
+            Cartesian(Float64[], Float64[]),
+            Cartesian(Float64[], Float64[]),
+            Cartesian(Float64[], Float64[]),
+            CartesianImag(Float64[]),
+            Cartesian(Float64[], Float64[]),
+            Cartesian(Float64[], Float64[])
+        ),
+        Current(
+            Polar(Float64[], Float64[]),
+            Polar(Float64[], Float64[]),
+            Polar(Float64[], Float64[]),
+            Polar(Float64[], Float64[])
+        ),
+        jacobian, mismatch, increment, pqIndex, pvpqIndex
+    )
 end
 
 """
@@ -166,6 +194,8 @@ the `PowerSystem` composite type.
 The function returns an instance of the `FastNewtonRaphson` subtype of the abstract `ACPowerFlow`
 type, which includes the following fields:
 - `voltage`: the magnitudes and angles of bus voltages
+- `power`: the variable allocated to store the active and reactive powers,
+- `current`: the variable allocated to store the currents,
 - `active`:
   - `jacobian`: the Jacobian matrix associated with active power equations
   - `mismatch`: the active power injection mismatches
@@ -375,7 +405,23 @@ end
     end
 
     return FastNewtonRaphson(
-        Polar(voltageMagnitude, voltageAngle),
+        Polar(voltageMagnitude,voltageAngle),
+        Power(
+            Cartesian(Float64[], Float64[]),
+            Cartesian(Float64[], Float64[]),
+            Cartesian(Float64[], Float64[]),
+            Cartesian(Float64[], Float64[]),
+            Cartesian(Float64[], Float64[]),
+            CartesianImag(Float64[]),
+            Cartesian(Float64[], Float64[]),
+            Cartesian(Float64[], Float64[])
+        ),
+        Current(
+            Polar(Float64[], Float64[]),
+            Polar(Float64[], Float64[]),
+            Polar(Float64[], Float64[]),
+            Polar(Float64[], Float64[])
+        ),
         FastNewtonRaphsonModel(jacobianActive, mismatchActive, icrementActive, factorisationActive),
         FastNewtonRaphsonModel(jacobianReactive, mismatchReactive, icrementReactive, factorisationReactive),
         pqIndex, pvpqIndex)
@@ -432,6 +478,22 @@ function gaussSeidel(system::PowerSystem)
 
     return GaussSeidel(
         Polar(voltageMagnitude, voltageAngle),
+        Power(
+            Cartesian(Float64[], Float64[]),
+            Cartesian(Float64[], Float64[]),
+            Cartesian(Float64[], Float64[]),
+            Cartesian(Float64[], Float64[]),
+            Cartesian(Float64[], Float64[]),
+            CartesianImag(Float64[]),
+            Cartesian(Float64[], Float64[]),
+            Cartesian(Float64[], Float64[])
+        ),
+        Current(
+            Polar(Float64[], Float64[]),
+            Polar(Float64[], Float64[]),
+            Polar(Float64[], Float64[]),
+            Polar(Float64[], Float64[])
+        ),
         voltage, copy(voltageMagnitude), pqIndex, pvIndex)
 end
 
@@ -809,12 +871,12 @@ function reactiveLimit!(system::PowerSystem, model::ACPowerFlow)
     labels = collect(keys(sort(system.generator.label; byvalue = true)))
     @inbounds for (k, i) in enumerate(generator.layout.bus)
         if generator.layout.status[k] == 1
-            powers = powerGenerator(system, model; label = labels[k])
+            power = powerGenerator(system, model; label = labels[k])
 
-            generator.output.active[k] = powers.output.active
-            bus.supply.active[i] += powers.output.active
-            bus.supply.reactive[i] += powers.output.reactive
-            outputReactive[k] = powers.output.reactive
+            generator.output.active[k] = power.active
+            bus.supply.active[i] += power.active
+            bus.supply.reactive[i] += power.reactive
+            outputReactive[k] = power.reactive
         end
     end
 

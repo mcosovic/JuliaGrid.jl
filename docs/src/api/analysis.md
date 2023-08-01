@@ -4,29 +4,40 @@ In the following section, we have provided a list of functions that can be utili
 
 
 ###### Power Analysis
-* [`power`](@ref power(::PowerSystem, ::ACPowerFlow))
-* [`powerBus`](@ref powerBus(::PowerSystem, ::ACPowerFlow))
-* [`powerBranch`](@ref powerBranch(::PowerSystem, ::ACPowerFlow))
+* [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow))
+* [`powerInjection`](@ref powerInjection(::PowerSystem, ::ACAnalysis))
+* [`powerSupply`](@ref powerSupply(::PowerSystem, ::ACPowerFlow))
+* [`powerShunt`](@ref powerShunt(::PowerSystem, ::ACAnalysis))
+* [`powerFrom`](@ref powerFrom(::PowerSystem, ::ACAnalysis))
+* [`powerTo`](@ref powerTo(::PowerSystem, ::ACAnalysis))
+* [`powerCharging`](@ref powerCharging(::PowerSystem, ::ACAnalysis))
+* [`powerLoss`](@ref powerLoss(::PowerSystem, ::ACAnalysis))
 * [`powerGenerator`](@ref powerGenerator(::PowerSystem, ::ACPowerFlow))
 
 ###### Current Analysis
-* [`current`](@ref current(::PowerSystem, ::ACPowerFlow))
-* [`currentBus`](@ref currentBus(::PowerSystem, ::ACPowerFlow))
-* [`currentBranch`](@ref currentBranch(::PowerSystem, ::ACPowerFlow))
-
+* [`current!`](@ref current!(::PowerSystem, ::ACAnalysis))
+* [`currentInjection`](@ref currentInjection(::PowerSystem, ::ACAnalysis))
+* [`currentFrom`](@ref currentFrom(::PowerSystem, ::ACAnalysis))
+* [`currentTo`](@ref currentTo(::PowerSystem, ::ACAnalysis))
+* [`currentLine`](@ref currentLine(::PowerSystem, ::ACAnalysis))
 
 ---
 
 ## [Power Analysis](@id PowerAnalysisAPI)
 ```@docs
-power(::PowerSystem, ::ACPowerFlow)
+power!(::PowerSystem, ::ACPowerFlow)
 power!(::PowerSystem, ::DCPowerFlow)
-powerBus(::PowerSystem, ::ACPowerFlow)
+powerInjection(::PowerSystem, ::ACAnalysis)
 powerInjection(::PowerSystem, ::DCPowerFlow)
+powerSupply(::PowerSystem, ::ACPowerFlow)
 powerSupply(::PowerSystem, ::DCPowerFlow)
-powerBranch(::PowerSystem, ::ACPowerFlow)
+powerShunt(::PowerSystem, ::ACAnalysis)
+powerFrom(::PowerSystem, ::ACAnalysis)
 powerFrom(::PowerSystem, ::DCAnalysis)
+powerTo(::PowerSystem, ::ACAnalysis)
 powerTo(::PowerSystem, ::DCAnalysis)
+powerCharging(::PowerSystem, ::ACAnalysis)
+powerLoss(::PowerSystem, ::ACAnalysis)
 powerGenerator(::PowerSystem, ::ACPowerFlow)
 powerGenerator(::PowerSystem, ::DCPowerFlow)
 ```
@@ -35,7 +46,9 @@ powerGenerator(::PowerSystem, ::DCPowerFlow)
 
 ## [Current Analysis](@id CurrentAnalysisAPI)
 ```@docs
-current(::PowerSystem, ::ACPowerFlow)
-currentBus(::PowerSystem, ::ACPowerFlow)
-currentBranch(::PowerSystem, ::ACPowerFlow)
+current!(::PowerSystem, ::ACAnalysis)
+currentInjection(::PowerSystem, ::ACAnalysis)
+currentFrom(::PowerSystem, ::ACAnalysis)
+currentTo(::PowerSystem, ::ACAnalysis)
+currentLine(::PowerSystem, ::ACAnalysis)
 ```

@@ -399,9 +399,9 @@ By accessing these vectors, you can analyze and utilize the optimal power flow s
 ---
 
 ## [Power Analysis](@id ACOptimalPowerAnalysisTutorials)
-Once the computation of voltage magnitudes and angles at each bus is completed, various electrical quantities can be determined. JuliaGrid offers the [`power`](@ref power(::PowerSystem, ::ACPowerFlow)) function, which enables the calculation of powers associated with buses and branches. Here is an example code snippet demonstrating its usage:
+Once the computation of voltage magnitudes and angles at each bus is completed, various electrical quantities can be determined. JuliaGrid offers the [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)) function, which enables the calculation of powers associated with buses and branches. Here is an example code snippet demonstrating its usage:
 ```@example ACOptimalPowerFlow
-powers = power(system, model)
+power!(system, model)
 nothing # hide
 ```
 
@@ -416,8 +416,6 @@ It also calculates the following powers related to branches:
 * active and reactive power losses: ``\mathbf{P}_{\text{l}} = [P_{\text{l}ij}]``, ``\mathbf{Q}_{\text{l}} = [Q_{\text{l}ij}]``,
 * reactive power injections: ``\mathbf{Q}_{\text{r}} = [ Q_{\text{r}ij}]``.
 
-Finally, it is important to note that the output variable of the function [`power`](@ref power(::PowerSystem, ::ACPowerFlow)) contains the active and reactive power outputs of the generators. However, these values are merely references to the `power` field of the `Model` composite type. 
-
 ##### Active and Reactive Power Injections at Each Bus
 The computation of active and reactive power injections at each bus is expressed by the following equation:
 ```math
@@ -425,8 +423,8 @@ The computation of active and reactive power injections at each bus is expressed
 ```
 Active and reactive power injections are stored as the vectors ``\mathbf{P} = [P_i]`` and ``\mathbf{Q} = [Q_i]``, respectively, and can be retrieved using the following commands:
 ```@repl ACOptimalPowerFlow
-𝐏 = powers.bus.injection.active
-𝐐 = powers.bus.injection.reactive
+𝐏 = model.power.injection.active
+𝐐 = model.power.injection.reactive
 ```
 
 ---
@@ -438,7 +436,7 @@ The [`power`](@ref power(::PowerSystem, ::ACPowerFlow)) function in JuliaGrid al
 ```
 The active power injections from the generators at each bus are stored as a vector denoted by ``\mathbf{P}_{\text{s}} = [P_{\text{s}i}]``, and can be obtained using the following command:
 ```@repl ACOptimalPowerFlow
-𝐏ₛ = powers.bus.supply.active
+𝐏ₛ = model.power.supply.active
 ```
 
 Similarly, we can obtain the reactive power supplied by generators to the buses:
@@ -447,7 +445,7 @@ Similarly, we can obtain the reactive power supplied by generators to the buses:
 ```
 The vector of these reactive power injections by the generators to the buses, denoted by ``\mathbf{Q}_{\text{s}} = [Q_{\text{s}i}]``, can be retrieved using the following command:
 ```@repl ACOptimalPowerFlow
-𝐐ₛ = powers.bus.supply.reactive
+𝐐ₛ = model.power.supply.reactive
 ```
 
 ---
@@ -459,8 +457,8 @@ To obtain the active and reactive powers associated with the shunt elements at e
 ```
 The active power demanded by the shunt element at each bus is represented by the vector ``\mathbf{P}_{\text{sh}} = [{P}_{\text{sh}i}]``, while the reactive power injected or demanded by the shunt element at each bus is represented by the vector ``\mathbf{Q}_{\text{sh}} = [{Q}_{\text{sh}i}]``. To retrieve these powers in JuliaGrid, use the following commands:
 ```@repl ACOptimalPowerFlow
-𝐏ₛₕ = powers.bus.shunt.active
-𝐐ₛₕ = powers.bus.shunt.reactive
+𝐏ₛₕ = model.power.shunt.active
+𝐐ₛₕ = model.power.shunt.reactive
 ```
 
 ---
@@ -472,8 +470,8 @@ The active and reactive power flows at "from" bus end ``i \in \mathcal{N}`` of t
 ```
 The resulting active and reactive power flows at each "from" bus end are stored as the vectors ``\mathbf{P}_{\text{i}} = [P_{ij}]`` and ``\mathbf{Q}_{\text{i}} = [Q_{ij}],`` respectively, and can be retrieved using the following commands:
 ```@repl ACOptimalPowerFlow
-𝐏ᵢ = powers.branch.from.active
-𝐐ᵢ = powers.branch.from.reactive
+𝐏ᵢ = model.power.from.active
+𝐐ᵢ = model.power.from.reactive
 ```
 
 ---
@@ -485,8 +483,8 @@ Similarly, we can determine the active and reactive power flows at the "to" bus 
 ```
 The vectors of active and reactive power flows at the "to" bus end are stored as ``\mathbf{P}_{\text{j}} = [P_{ji}]`` and ``\mathbf{Q}_{\text{j}} = [Q_{ji}]``, respectively, and can be retrieved using the following code:
 ```@repl ACOptimalPowerFlow
-𝐏ⱼ = powers.branch.to.active
-𝐐ⱼ = powers.branch.to.reactive
+𝐏ⱼ = model.power.to.active
+𝐐ⱼ = model.power.to.reactive
 ```
 
 ---
@@ -501,8 +499,8 @@ The active and reactive power losses of the branch are caused by its series impe
 ```
 where ``(i,j) \in \mathcal{E}``. We can retrieve the vectors of active and reactive power losses, ``\mathbf{P}_{\text{l}} = [P_{\text{l}ij}]`` and ``\mathbf{Q}_{\text{l}} = [Q_{\text{l}ij}]``, respectively, using the following commands:
 ```@repl ACOptimalPowerFlow
-𝐏ₗ = powers.branch.loss.active
-𝐐ₗ = powers.branch.loss.reactive
+𝐏ₗ = model.power.loss.active
+𝐐ₗ = model.power.loss.reactive
 ```
 
 ---
@@ -514,15 +512,15 @@ The branch's capacitive susceptances cause reactive power injections. We can cal
 ```
 To retrieve the vector of injected reactive powers ``\mathbf{Q}_{\text{r}} = [Q_{\text{r}ij}]``, use the following Julia command:
 ```@repl ACOptimalPowerFlow
-𝐐ᵣ = powers.branch.shunt.reactive
+𝐐ᵣ = model.power.charging.reactive
 ```
 
 ---
 
 ## Current Analysis
-JuliaGrid offers the [`current`](@ref current(::PowerSystem, ::ACPowerFlow)) function, which enables the calculation of currents associated with buses and branches. Here is an example code snippet demonstrating its usage:
+JuliaGrid offers the [`current!`](@ref current!(::PowerSystem, ::ACAnalysis)) function, which enables the calculation of currents associated with buses and branches. Here is an example code snippet demonstrating its usage:
 ```@example ACOptimalPowerFlow
-currents = current(system, model)
+current!(system, model)
 nothing # hide
 ```
 
@@ -543,8 +541,8 @@ To obtain the complex current injections at each bus, we use the following equat
 ```
 In JuliaGrid, these complex current injections are stored in the vector of magnitudes denoted as ``\mathbf{I} = [I_i]`` and the vector of angles represented as ``\bm{\psi} = [\psi_i]``. You can retrieve them using the following commands:
 ```@repl ACOptimalPowerFlow
-𝐈 = currents.bus.injection.magnitude
-𝛙 = currents.bus.injection.angle
+𝐈 = model.current.injection.magnitude
+𝛙 = model.current.injection.angle
 ```
 
 
@@ -557,8 +555,8 @@ To calculate the complex current flows at each "from" bus end ``i \in \mathcal{N
 ```
 To obtain the vectors of magnitudes ``\mathbf{I}_{\text{i}} = [I_{ij}]`` and angles ``\bm{\psi}_{\text{i}} = [\psi_{ij}]`` for the resulting complex current flows, you can use the following commands:
 ```@repl ACOptimalPowerFlow
-𝐈ᵢ = currents.branch.from.magnitude
-𝛙ᵢ = currents.branch.from.angle
+𝐈ᵢ = model.current.from.magnitude
+𝛙ᵢ = model.current.from.angle
 ```
 
 ---
@@ -570,8 +568,8 @@ Similarly, we can obtain the complex current flows at each "to" bus end ``j \in 
 ```
 We can obtain the vectors of magnitudes ``\mathbf{I}_{\text{j}} = [I_{ji}]`` and angles ``\bm{\psi}_{\text{j}} = [\psi_{ji}]`` of the resulting complex current flows using the following code:
 ```@repl ACOptimalPowerFlow
-𝐈ⱼ = currents.branch.to.magnitude
-𝛙ⱼ = currents.branch.to.angle
+𝐈ⱼ = model.current.to.magnitude
+𝛙ⱼ = model.current.to.angle
 ```
 
 ---
@@ -583,8 +581,8 @@ To obtain the complex current flows through each series impedance of a branch in
 ```
 To obtain the vectors of magnitudes ``\mathbf{I}_{\text{s}} = [I_{\text{s}ij}]`` and angles ``\bm{\psi}_{\text{s}} = [\psi_{\text{s}ij}]`` of the resulting complex current flows, one can use the following code:
 ```@repl ACOptimalPowerFlow
-𝐈ₛ = currents.branch.line.magnitude
-𝛙ₛ = currents.branch.line.angle
+𝐈ₛ = model.current.line.magnitude
+𝛙ₛ = model.current.line.angle
 ```
 
 ---

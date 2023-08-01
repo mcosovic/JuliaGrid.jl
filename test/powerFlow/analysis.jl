@@ -23,41 +23,47 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     @test model.voltage.angle ≈ matpower14["Ti"]
     @test iteration == matpower14["iterations"][1]
 
-    powers = power(system14, model)   
+    power!(system14, model)   
 
-    @test powers.bus.injection.active ≈ matpower14["Pinj"] 
-    @test powers.bus.injection.reactive ≈ matpower14["Qinj"] 
-    @test powers.branch.from.active ≈ matpower14["Pij"] 
-    @test powers.branch.from.reactive ≈ matpower14["Qij"] 
-    @test powers.branch.to.active ≈ matpower14["Pji"] 
-    @test powers.branch.to.reactive ≈ matpower14["Qji"] 
-    @test powers.branch.shunt.reactive ≈ matpower14["Qbranch"] 
-    @test powers.branch.loss.active ≈ matpower14["Ploss"] 
-    @test powers.branch.loss.reactive ≈ matpower14["Qloss"] 
-    @test powers.generator.output.active ≈ matpower14["Pgen"] 
-    @test powers.generator.output.reactive ≈ matpower14["Qgen"] 
+    @test model.power.injection.active ≈ matpower14["Pinj"] 
+    @test model.power.injection.reactive ≈ matpower14["Qinj"] 
+    @test model.power.from.active ≈ matpower14["Pij"] 
+    @test model.power.from.reactive ≈ matpower14["Qij"] 
+    @test model.power.to.active ≈ matpower14["Pji"] 
+    @test model.power.to.reactive ≈ matpower14["Qji"] 
+    @test model.power.charging.reactive ≈ matpower14["Qbranch"] 
+    @test model.power.loss.active ≈ matpower14["Ploss"] 
+    @test model.power.loss.reactive ≈ matpower14["Qloss"] 
+    @test model.power.generator.active ≈ matpower14["Pgen"] 
+    @test model.power.generator.reactive ≈ matpower14["Qgen"] 
 
     for (key, value) in system14.bus.label
-        powers = powerBus(system14, model; label = key)
-        @test powers.injection.active ≈ matpower14["Pinj"][value] atol = 1e-13
-        @test powers.injection.reactive ≈ matpower14["Qinj"][value] atol = 1e-13
+        injection = powerInjection(system14, model; label = key)
+        @test injection.active ≈ matpower14["Pinj"][value] atol = 1e-13
+        @test injection.reactive ≈ matpower14["Qinj"][value] atol = 1e-13
     end
 
     for (key, value) in system14.branch.label
-        powers = powerBranch(system14, model; label = key)
-        @test powers.from.active ≈ matpower14["Pij"][value] atol = 1e-13
-        @test powers.from.reactive ≈ matpower14["Qij"][value] atol = 1e-13
-        @test powers.to.active ≈ matpower14["Pji"][value] atol = 1e-13
-        @test powers.to.reactive ≈ matpower14["Qji"][value] atol = 1e-13
-        @test powers.shunt.reactive ≈ matpower14["Qbranch"][value] atol = 1e-13
-        @test powers.loss.active ≈ matpower14["Ploss"][value] atol = 1e-13
-        @test powers.loss.reactive ≈ matpower14["Qloss"][value] atol = 1e-13
+        from = powerFrom(system14, model; label = key)
+        @test from.active ≈ matpower14["Pij"][value] atol = 1e-13
+        @test from.reactive ≈ matpower14["Qij"][value] atol = 1e-13
+    
+        to = powerTo(system14, model; label = key)
+        @test to.active ≈ matpower14["Pji"][value] atol = 1e-13
+        @test to.reactive ≈ matpower14["Qji"][value] atol = 1e-13
+    
+        charging = powerCharging(system14, model; label = key)
+        @test charging ≈ matpower14["Qbranch"][value] atol = 1e-13
+    
+        loss = powerLoss(system14, model; label = key)
+        @test loss.active ≈ matpower14["Ploss"][value] atol = 1e-13
+        @test loss.reactive ≈ matpower14["Qloss"][value] atol = 1e-13
     end
 
     for (key, value) in system14.generator.label
-        powers = powerGenerator(system14, model; label = key)
-        @test powers.output.active ≈ matpower14["Pgen"][value] atol = 1e-13 
-        @test powers.output.reactive ≈ matpower14["Qgen"][value] atol = 1e-13 
+        output = powerGenerator(system14, model; label = key)
+        @test output.active ≈ matpower14["Pgen"][value] atol = 1e-13 
+        @test output.reactive ≈ matpower14["Qgen"][value] atol = 1e-13 
     end
 
     ######## Modified IEEE 30-bus Test Case ##########
@@ -77,41 +83,47 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     @test model.voltage.angle ≈ matpower30["Ti"]
     @test iteration == matpower30["iterations"][1]
 
-    powers = power(system30, model)   
+    power!(system30, model)   
 
-    @test powers.bus.injection.active ≈ matpower30["Pinj"] 
-    @test powers.bus.injection.reactive ≈ matpower30["Qinj"] 
-    @test powers.branch.from.active ≈ matpower30["Pij"] 
-    @test powers.branch.from.reactive ≈ matpower30["Qij"] 
-    @test powers.branch.to.active ≈ matpower30["Pji"] 
-    @test powers.branch.to.reactive ≈ matpower30["Qji"] 
-    @test powers.branch.shunt.reactive ≈ matpower30["Qbranch"] 
-    @test powers.branch.loss.active ≈ matpower30["Ploss"] 
-    @test powers.branch.loss.reactive ≈ matpower30["Qloss"] 
-    @test powers.generator.output.active ≈ matpower30["Pgen"] 
-    @test powers.generator.output.reactive ≈ matpower30["Qgen"] 
+    @test model.power.injection.active ≈ matpower30["Pinj"] 
+    @test model.power.injection.reactive ≈ matpower30["Qinj"] 
+    @test model.power.from.active ≈ matpower30["Pij"] 
+    @test model.power.from.reactive ≈ matpower30["Qij"] 
+    @test model.power.to.active ≈ matpower30["Pji"] 
+    @test model.power.to.reactive ≈ matpower30["Qji"] 
+    @test model.power.charging.reactive ≈ matpower30["Qbranch"] 
+    @test model.power.loss.active ≈ matpower30["Ploss"] 
+    @test model.power.loss.reactive ≈ matpower30["Qloss"] 
+    @test model.power.generator.active ≈ matpower30["Pgen"] 
+    @test model.power.generator.reactive ≈ matpower30["Qgen"] 
 
     for (key, value) in system30.bus.label
-        powers = powerBus(system30, model; label = key)
-        @test powers.injection.active ≈ matpower30["Pinj"][value] atol = 1e-13
-        @test powers.injection.reactive ≈ matpower30["Qinj"][value] atol = 1e-13
+        injection = powerInjection(system30, model; label = key)
+        @test injection.active ≈ matpower30["Pinj"][value] atol = 1e-13
+        @test injection.reactive ≈ matpower30["Qinj"][value] atol = 1e-13
     end
 
     for (key, value) in system30.branch.label
-        powers = powerBranch(system30, model; label = key)
-        @test powers.from.active ≈ matpower30["Pij"][value] atol = 1e-13
-        @test powers.from.reactive ≈ matpower30["Qij"][value] atol = 1e-13
-        @test powers.to.active ≈ matpower30["Pji"][value] atol = 1e-13
-        @test powers.to.reactive ≈ matpower30["Qji"][value] atol = 1e-13
-        @test powers.shunt.reactive ≈ matpower30["Qbranch"][value] atol = 1e-13
-        @test powers.loss.active ≈ matpower30["Ploss"][value] atol = 1e-13
-        @test powers.loss.reactive ≈ matpower30["Qloss"][value] atol = 1e-13
+        from = powerFrom(system30, model; label = key)
+        @test from.active ≈ matpower30["Pij"][value] atol = 1e-13
+        @test from.reactive ≈ matpower30["Qij"][value] atol = 1e-13
+    
+        to = powerTo(system30, model; label = key)
+        @test to.active ≈ matpower30["Pji"][value] atol = 1e-13
+        @test to.reactive ≈ matpower30["Qji"][value] atol = 1e-13
+    
+        charging = powerCharging(system30, model; label = key)
+        @test charging ≈ matpower30["Qbranch"][value] atol = 1e-13
+    
+        loss = powerLoss(system30, model; label = key)
+        @test loss.active ≈ matpower30["Ploss"][value] atol = 1e-13
+        @test loss.reactive ≈ matpower30["Qloss"][value] atol = 1e-13
     end
 
     for (key, value) in system30.generator.label
-        powers = powerGenerator(system30, model; label = key)
-        @test powers.output.active ≈ matpower30["Pgen"][value] atol = 1e-13 
-        @test powers.output.reactive ≈ matpower30["Qgen"][value] atol = 1e-13 
+        output = powerGenerator(system30, model; label = key)
+        @test output.active ≈ matpower30["Pgen"][value] atol = 1e-13 
+        @test output.reactive ≈ matpower30["Qgen"][value] atol = 1e-13 
     end
 end
 

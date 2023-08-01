@@ -8,16 +8,22 @@ To perform the AC optimal power flow, you first need to have the `PowerSystem` c
 To solve the AC optimal power flow problem and acquire bus voltage magnitudes and angles, and generator active and reactive power outputs, make use of the following function:
 * [`solve!`](@ref solve!(::PowerSystem, ::ACOptimalPowerFlow)).
 
-After obtaining the AC optimal power flow solution, JuliaGrid offers post-processing analysis functions for calculating powers and currents associated with buses, branches, or generators:
-* [`power`](@ref power(::PowerSystem, ::ACPowerFlow)),
-* [`current`](@ref current(::PowerSystem, ::ACPowerFlow)).
+After obtaining the AC optimal power flow solution, JuliaGrid offers post-processing analysis functions for calculating powers and currents associated with buses and branches:
+* [`power!`](@ref power(::PowerSystem, ::ACPowerFlow)),
+* [`current!`](@ref current(::PowerSystem, ::ACPowerFlow)).
 
-Moreover, there exist specific functions dedicated to calculating powers and currents related to a particular bus, branch, or generator:
-* [`powerBus`](@ref powerBus(::PowerSystem, ::ACPowerFlow)),
-* [`powerBranch`](@ref powerBranch(::PowerSystem, ::ACPowerFlow)),
-* [`powerGenerator`](@ref powerGenerator(::PowerSystem, ::ACPowerFlow)),
-* [`currentBus`](@ref currentBus(::PowerSystem, ::ACPowerFlow)),
-* [`currentBranch`](@ref currentBranch(::PowerSystem, ::ACPowerFlow)).
+Additionally, there are specialized functions dedicated to calculating specific types of powers and currents related to to particular buses or branches:
+* [`powerInjection`](@ref powerInjection(::PowerSystem, ::ACAnalysis)),
+* [`powerSupply`](@ref powerSupply(::PowerSystem, ::ACPowerFlow)),
+* [`powerShunt`](@ref powerShunt(::PowerSystem, ::ACAnalysis)),
+* [`powerFrom`](@ref powerFrom(::PowerSystem, ::ACAnalysis)),
+* [`powerTo`](@ref powerTo(::PowerSystem, ::ACAnalysis)),
+* [`powerCharging`](@ref powerCharging(::PowerSystem, ::ACAnalysis)),
+* [`powerLoss`](@ref powerLoss(::PowerSystem, ::ACAnalysis)),
+* [`currentInjection`](@ref currentInjection(::PowerSystem, ::ACAnalysis)),
+* [`currentFrom`](@ref currentFrom(::PowerSystem, ::ACAnalysis)),
+* [`currentTo`](@ref currentTo(::PowerSystem, ::ACAnalysis)),
+* [`currentLine`](@ref currentLine(::PowerSystem, ::ACAnalysis)).
 
 ---
 
@@ -298,9 +304,9 @@ end
 After obtaining the solution, we can calculate the active and reactive power outputs of the generators and utilize the bus voltage magnitudes and angles to set the starting values. In this case, the `power` and `voltage` fields of the `Model` type can be employed to store the new starting values:
 ```@example ACOptimalPowerFlow
 for (key, value) in system.generator.label
-    powers = powerGenerator(system, powerFlow; label = key)
-    model.power.active[value] = powers.output.active
-    model.power.reactive[value] = powers.output.reactive
+    output = powerGenerator(system, powerFlow; label = key)
+    model.power.generator.active[value] = output.active
+    model.power.generator.reactive[value] = output.reactive
 end
 
 for i = 1:system.bus.number
@@ -344,7 +350,7 @@ JuMP.set_silent(model.jump)
 ---
 
 ## [Power and Current Analysis](@id ACOptimalPowerCurrentAnalysisManual)
-After obtaining the solution from the AC optimal power flow, we can calculate various electrical quantities related to buses, branches, and generators using the [`power`](@ref power(::PowerSystem, ::ACPowerFlow)) and [`current`](@ref current(::PowerSystem, ::ACPowerFlow)) functions. For instance, let us consider the power system for which we obtained the AC optimal power flow solution:
+After obtaining the solution from the AC optimal power flow, we can calculate various electrical quantities related to buses, branches, and generators using the [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)) and [`current!`](@ref current!(::PowerSystem, ::ACAnalysis)) functions. For instance, let us consider the power system for which we obtained the AC optimal power flow solution:
 ```@example ACOptimalPowerFlowPower
 using JuliaGrid # hide
 using JuMP, Ipopt # hide
@@ -383,89 +389,83 @@ nothing # hide
 
 We can now utilize the provided functions to compute powers and currents. The following functions can be used for this purpose:
 ```@example ACOptimalPowerFlowPower
-powers = power(system, model)
-currents = current(system, model)
+power!(system, model)
+current!(system, model)
 nothing # hide
 ```
-It is worth noting that we compute powers related to buses and branches. In addition, the `generator` field contains the active and reactive power outputs of the generators. The values in this field are references to the `power` field of the `Model` type.
 
 For instance, if we want to show the active power injections at each bus and the current flow magnitudes at each "from" bus end of the branch, we can employ the following code:
 ```@repl ACOptimalPowerFlowPower
-powers.bus.injection.active
-currents.branch.from.magnitude
+model.power.injection.active
+model.current.from.magnitude
 ```
 
 !!! note "Info"
-    To better understand the powers associated with buses and branches that are calculated by the [`power`](@ref power(::PowerSystem, ::ACPowerFlow)) function, we suggest referring to the tutorials on [AC optimal power flow analysis](@ref ACOptimalPowerAnalysisTutorials).
+    To better understand the powers and current associated with buses and branches that are calculated by the [`power!`](@ref power(::PowerSystem, ::ACPowerFlow)) and [`current!`](@ref current!(::PowerSystem, ::ACAnalysis)) functions, we suggest referring to the tutorials on [AC optimal power flow analysis](@ref ACOptimalPowerAnalysisTutorials).
 
 ---
 
 ##### Powers and Currents Related to Bus
 To calculate specific quantities for particular components rather than calculating powers or currents for all components, users can utilize the following functions.
 
-To calculate powers associated with a specific bus, the function can be used:
-```@example ACOptimalPowerFlowPower
-powers = powerBus(system, model; label = 1)
-
-nothing # hide
-```
-
-For instance, to display the active power injection at the bus, the following code can be used:
+To calculate active and reactive power injections associated with a specific bus, the function can be used:
 ```@repl ACOptimalPowerFlowPower
-powers.injection.active
+powerInjection(system, model; label = 1)
 ```
 
-To calculate currents associated with a specific bus, the function can be used:
-```@example ACOptimalPowerFlowPower
-currents = currentBus(system, model; label = 1)
-
-nothing # hide
-```
-
-For instance, to display the current injection magnitude at the bus, the following code can be used:
+To calculate active and reactive power injections from the generators at a specific bus, the function can be used:
 ```@repl ACOptimalPowerFlowPower
-currents.injection.magnitude
+powerSupply(system, model; label = 1)
+```
+
+To calculate active and reactive powers associated with shunt element at a specific bus, the function can be used:
+```@repl ACOptimalPowerFlowPower
+powerShunt(system, model; label = 1)
+```
+
+To calculate current injection associated with a specific bus, the function can be used:
+```@repl ACOptimalPowerFlowPower
+currentInjection(system, model; label = 1)
 ```
 
 ---
 
 ##### Powers and Currents Related to Branch
-Similarly, we can compute the powers related to a particular branch using the following function:
-```@example ACOptimalPowerFlowPower
-powers = powerBranch(system, model; label = 2)
-
-nothing # hide
-```
-
-For instance, to display the reactive power flow at the "from" bus end of the branch, we can use the following code:
+Similarly, we can compute the active and reactive power flows at "from" bus end of the particular branch using the following function:
 ```@repl ACOptimalPowerFlowPower
-powers.from.reactive
+powerFrom(system, model; label = 2)
 ```
 
-Further, we can compute the currents related to a particular branch using the following function:
-```@example ACOptimalPowerFlowPower
-currents = currentBranch(system, model; label = 2)
-
-nothing # hide
-```
-
-For instance, to display the current flow magnitude at the "from" bus end of the branch, we can use the following code:
+Next, we can compute the active and reactive power flows at "to" bus end of the particular branch using the following function:
 ```@repl ACOptimalPowerFlowPower
-currents.from.magnitude
+powerTo(system, model; label = 2)
+```
+
+To calculate the total reactive power injection by the particular branch, the function can be used:
+```@repl ACOptimalPowerFlowPower
+powerCharging(system, model; label = 2)
+```
+
+To calculate active and reactive power losses at the particular branch, the function can be used:
+```@repl ACOptimalPowerFlowPower
+powerLoss(system, model; label = 2)
+```
+
+Further, we can compute the current at "from" bus end of the particular branch using the following function:
+```@repl ACOptimalPowerFlowPower
+currentFrom(system, model; label = 2)
+```
+
+To calculate the current at "to" bus end of the particular branch using the following function:
+```@repl ACOptimalPowerFlowPower
+currentTo(system, model; label = 2)
+```
+
+To calculate the current through series impedance of the branch, the function can be used:
+```@repl ACOptimalPowerFlowPower
+currentLine(system, model; label = 2)
 ```
 
 ---
-
-##### Powers Related to Generator
-To maintain consistency, users can utilize the [`powerGenerator`](@ref powerGenerator(::PowerSystem, ::ACPowerFlow)) function, which provides the active and reactive power output of the specified generator. This function retrieves the corresponding active and reactive power output from the `power` field of the `Model` type. For example:
-```@example ACOptimalPowerFlowPower
-powers = powerGenerator(system, model; label = 1)
-
-nothing # hide
-```
-To display the output active power of the generator, we can use the following code:
-```@repl ACOptimalPowerFlowPower
-powers.output.active
-```
 
 ---
