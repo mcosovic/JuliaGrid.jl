@@ -198,11 +198,11 @@ possible to add new buses, branches, or generators, or modify the parameters of 
 
 # Returns
 The `PowerSystem` composite type with the following fields:
-- `bus`: data related to buses
-- `branch`: data related to branches
-- `generator`: data related to generators
-- `base`: base power and base voltages
-- `acModel`: variables associated with AC or nonlinear analyses
+- `bus`: data related to buses,
+- `branch`: data related to branches,
+- `generator`: data related to generators,
+- `base`: base power and base voltages,
+- `acModel`: variables associated with AC or nonlinear analyses,
 - `dcModel`: variables associated with DC or linear analyses.
 
 # Units

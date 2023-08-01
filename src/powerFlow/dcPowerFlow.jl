@@ -19,9 +19,9 @@ an in-service generator, JuliaGrid considers it a mistake and defines a new slac
 first generator bus with an in-service generator in the bus type list.
 
 # Returns
-The function returns an instance of the `DCPowerFlow` type, which includes the following filled
-fields:
-- `voltage`: the variable allocated to store the angles of bus voltages,
+The function returns an instance of the `DCPowerFlow` type, which includes the following 
+filled fields:
+- `voltage`: the variable allocated to store the bus voltage angles,
 - `power`: the variable allocated to store the active powers,
 - `factorization`: the factorized nodal matrix.
 
@@ -75,8 +75,9 @@ end
 """
     solve!(system::PowerSystem, model::DCPowerFlow)
 
-By computing the voltage angles for each bus, the function solves the DC power flow problem.
-The resulting voltage angles are stored in the `voltage` field of the `DCPowerFlow` type.
+By computing the bus voltage angles, the function solves the DC power flow problem.
+The resulting bus voltage angles are stored in the `voltage` field of the `DCPowerFlow` 
+type.
 
 # Example
 ```jldoctest

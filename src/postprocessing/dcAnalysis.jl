@@ -5,6 +5,7 @@ The function calculates the active power values related to buses, branches, and 
 within the DC analysis framework. It modifies the `power` field of the abstract type 
 `DCAnalysis`.
 
+# Updates
 This function computes the following electrical quantities: 
 - `injection`: active power injections at each bus,
 - `supply`: active power injections from the generators at each bus,
@@ -25,7 +26,6 @@ dcModel!(system)
 
 model = dcPowerFlow(system)
 solve!(system, model)
-
 power!(system, model)
 ```
 
@@ -36,7 +36,6 @@ dcModel!(system)
 
 model = dcOptimalPowerFlow(system)
 optimize!(system, model)
-
 power!(system, model)
 ```
 """
@@ -113,8 +112,8 @@ framework. The `label` keyword argument must match an existing bus label.
 
 # Abstract type
 The abstract type `DCAnalysis` can have the following subtypes:
-- `DCPowerFlow`: computes the powers within the DC power flow,
-- `DCOptimalPowerFlow`: computes the powers within the DC optimal power flow.
+- `DCPowerFlow`: computes the power within the DC power flow,
+- `DCOptimalPowerFlow`: computes the power within the DC optimal power flow.
 
 # Examples
 Compute the active power of a specific bus after obtaining the DC power flow solution:
@@ -124,7 +123,6 @@ dcModel!(system)
 
 model = dcPowerFlow(system)
 solve!(system, model)
-
 injection = powerInjection(system, model; label = 2)
 ```
 
@@ -135,7 +133,6 @@ dcModel!(system)
 
 model = dcOptimalPowerFlow(system)
 optimize!(system, model)
-
 injection = powerInjection(system, model; label = 2)
 ```
 """
@@ -189,8 +186,8 @@ label.
 
 # Abstract type
 The abstract type `DCAnalysis` can have the following subtypes:
-- `DCPowerFlow`: computes the powers within the DC power flow,
-- `DCOptimalPowerFlow`: computes the powers within the DC optimal power flow.
+- `DCPowerFlow`: computes the power within the DC power flow,
+- `DCOptimalPowerFlow`: computes the power within the DC optimal power flow.
 
 # Examples
 Compute the active power of a specific bus after obtaining the DC power flow solution:
@@ -200,7 +197,6 @@ dcModel!(system)
 
 model = dcPowerFlow(system)
 solve!(system, model)
-
 supply = powerSupply(system, model; label = 2)
 ```
 
@@ -211,7 +207,6 @@ dcModel!(system)
 
 model = dcOptimalPowerFlow(system)
 optimize!(system, model)
-
 supply = powerSupply(system, model; label = 2)
 ```
 """
@@ -264,8 +259,8 @@ branch in the DC framework. The `label` keyword argument must match an existing 
 
 # Abstract type
 The abstract type `DCAnalysis` can have the following subtypes:
-- `DCPowerFlow`: computes the powers within the DC power flow,
-- `DCOptimalPowerFlow`: computes the powers within the DC optimal power flow.
+- `DCPowerFlow`: computes the power within the DC power flow,
+- `DCOptimalPowerFlow`: computes the power within the DC optimal power flow.
 
 # Examples
 Compute the active power of a specific branch after obtaining the DC power flow solution:
@@ -275,7 +270,6 @@ dcModel!(system)
 
 model = dcPowerFlow(system)
 solve!(system, model)
-
 from = powerFrom(system, model; label = 2)
 ```
 
@@ -286,7 +280,6 @@ dcModel!(system)
 
 model = dcOptimalPowerFlow(system)
 optimize!(system, model)
-
 from = powerFrom(system, model; label = 2)
 ```
 """
@@ -311,8 +304,8 @@ branch in the DC framework. The `label` keyword argument must match an existing 
 
 # Abstract type
 The abstract type `DCAnalysis` can have the following subtypes:
-- `DCPowerFlow`: computes the powers within the DC power flow,
-- `DCOptimalPowerFlow`: computes the powers within the DC optimal power flow.
+- `DCPowerFlow`: computes the power within the DC power flow,
+- `DCOptimalPowerFlow`: computes the power within the DC optimal power flow.
 
 # Examples
 Compute the active power of a specific branch after obtaining the DC power flow solution:
@@ -322,7 +315,6 @@ dcModel!(system)
 
 model = dcPowerFlow(system)
 solve!(system, model)
-
 to = powerTo(system, model; label = 2)
 ```
 
@@ -333,7 +325,6 @@ dcModel!(system)
 
 model = dcOptimalPowerFlow(system)
 optimize!(system, model)
-
 to = powerTo(system, model; label = 2)
 ```
 """
@@ -358,8 +349,8 @@ DC framework. The `label` keyword argument must match an existing generator labe
 
 # Abstract type
 The abstract type `DCAnalysis` can have the following subtypes:
-- `DCPowerFlow`: computes the powers within the DC power flow,
-- `DCOptimalPowerFlow`: computes the powers within the DC optimal power flow.
+- `DCPowerFlow`: computes the power within the DC power flow,
+- `DCOptimalPowerFlow`: computes the power within the DC optimal power flow.
 
 # Examples
 Compute the active power of a specific generator after obtaining the DC power flow solution:
@@ -369,7 +360,6 @@ dcModel!(system)
 
 model = dcPowerFlow(system)
 solve!(system, model)
-
 generator = powerGenerator(system, model; label = 1)
 ```
 
@@ -381,7 +371,6 @@ dcModel!(system)
 
 model = dcOptimalPowerFlow(system)
 optimize!(system, model)
-
 generator = powerGenerator(system, model; label = 1)
 ```
 """

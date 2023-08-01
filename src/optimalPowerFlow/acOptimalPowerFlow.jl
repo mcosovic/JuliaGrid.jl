@@ -39,13 +39,13 @@ type has not been created, the function will initiate an update automatically.
 JuliaGrid offers the ability to manipulate the `jump` model based on the guidelines provided
 in the [JuMP documentation](https://jump.dev/JuMP.jl/stable/reference/models/). However,
 certain configurations may require different method calls, such as:
-- `bridge`: used to manage the bridging mechanism
+- `bridge`: used to manage the bridging mechanism,
 - `name`: used to manage the creation of string names.
 
 Moreover, we have included keywords that regulate the usage of different types of constraints:
-- `balance`: controls the equality constraints that relate to the active and reactive power balance equations
-- `limit`: controls the inequality constraints that relate to the voltage magnitude and angle differences between buses
-- `rating`: controls the inequality constraints that relate to the long-term rating of branches
+- `balance`: controls the equality constraints that relate to the active and reactive power balance equations,
+- `limit`: controls the inequality constraints that relate to the voltage magnitude and angle differences between buses,
+- `rating`: controls the inequality constraints that relate to the long-term rating of branches,
 - `capability`: controls the inequality constraints that relate to the active and reactive power generator outputs.
 
 By default, all of these keywords are set to `true` and are of the `Bool` type.

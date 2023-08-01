@@ -21,13 +21,13 @@ type has not been created, the function will initiate an update automatically.
 JuliaGrid offers the ability to manipulate the `jump` model based on the guidelines provided
 in the [JuMP documentation](https://jump.dev/JuMP.jl/stable/reference/models/). However,
 certain configurations may require different method calls, such as:
-- `bridge`: used to manage the bridging mechanism
+- `bridge`: used to manage the bridging mechanism,
 - `name`: used to manage the creation of string names.
 
 Moreover, we have included keywords that regulate the usage of different types of constraints:
-- `balance`: controls the equality constraints that relate to the active power balance equations
-- `limit`: controls the inequality constraints that relate to the voltage angle differences between buses
-- `rating`: controls the inequality constraints that relate to the long-term rating of branches
+- `balance`: controls the equality constraints that relate to the active power balance equations,
+- `limit`: controls the inequality constraints that relate to the voltage angle differences between buses,
+- `rating`: controls the inequality constraints that relate to the long-term rating of branches,
 - `capability`: controls the inequality constraints that relate to the active power generator outputs.
 
 By default, all of these keywords are set to `true` and are of the `Bool` type.
@@ -40,7 +40,7 @@ used solvers. For more information, refer to the
 # Returns
 The function returns an instance of the `DCOptimalPowerFlow` type, which includes the following
 fields:
-- `voltage`: the variable allocated to store the angles of bus voltages,
+- `voltage`: the variable allocated to store the bus voltage angle,
 - `power`: the variable allocated to store the active powers,
 - `jump`: the JuMP model,
 - `constraint`: holds the constraint references to the JuMP model.
@@ -211,7 +211,7 @@ end
 """
     solve!(system::PowerSystem, model::DCOptimalPowerFlow)
 
-The function finds the DC optimal power flow solution and calculate the angles of bus voltages
+The function finds the DC optimal power flow solution and calculate the bus voltage angles
 and output active powers of the generators.
 
 The calculated voltage angles and active powers are then stored in the `angle` variable of

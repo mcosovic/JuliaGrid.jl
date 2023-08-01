@@ -2,25 +2,25 @@
     addBus!(system::PowerSystem; label, type, active, reactive, conductance, susceptance,
         magnitude, angle, minMagnitude, maxMagnitude, base, area, lossZone)
 
-The function adds a new bus to the `PowerSystem` type, updating its `bus` field.
+The function adds a new bus to the `PowerSystem` composite type, updating its `bus` field.
 
 # Keywords
 The bus is defined with the following keywords:
-* `label`: unique label for the bus
+* `label`: unique label for the bus,
 * `type`: the bus type:
-  * `type = 1`: demand bus (PQ)
-  * `type = 2`: generator bus (PV)
-  * `type = 3`: slack bus (Vθ)
-* `active` (pu or W): the active power demand at the bus
-* `reactive` (pu or VAr): the reactive power demand at the bus
-* `conductance` (pu or W): the active power demanded of the shunt element
-* `susceptance` (pu or VAr): the reactive power injected of the shunt element
-* `magnitude` (pu or V): the initial value of the voltage magnitude
-* `angle` (rad or deg): the initial value of the voltage angle
-* `minMagnitude` (pu or V): the minimum voltage magnitude value
-* `maxMagnitude` (pu or V): the maximum voltage magnitude value
-* `base` (V): the base value of the voltage magnitude
-* `area`: the area number
+  * `type = 1`: demand bus (PQ),
+  * `type = 2`: generator bus (PV),
+  * `type = 3`: slack bus (Vθ),
+* `active` (pu or W): the active power demand at the bus,
+* `reactive` (pu or VAr): the reactive power demand at the bus,
+* `conductance` (pu or W): the active power demanded of the shunt element,
+* `susceptance` (pu or VAr): the reactive power injected of the shunt element,
+* `magnitude` (pu or V): the initial value of the voltage magnitude,
+* `angle` (rad or deg): the initial value of the voltage angle,
+* `minMagnitude` (pu or V): the minimum voltage magnitude value,
+* `maxMagnitude` (pu or V): the maximum voltage magnitude value,
+* `base` (V): the base value of the voltage magnitude,
+* `area`: the area number,
 * `lossZone`: the loss zone.
 
 # Default Settings
@@ -39,6 +39,7 @@ using the [`@power`](@ref @power) and [`@voltage`](@ref @voltage) macros.
 Creating a bus using the default unit system:
 ```jldoctest
 system = powerSystem()
+
 addBus!(system; label = 1, active = 0.25, reactive = -0.04, angle = 0.1745, base = 132e3)
 ```
 
@@ -46,7 +47,6 @@ Creating a bus using a custom unit system:
 ```jldoctest
 @power(MW, MVAr, MVA)
 @voltage(pu, deg, kV)
-
 system = powerSystem()
 
 addBus!(system; label = 1, active = 25, reactive = -4, angle = 10, base = 132)
@@ -166,14 +166,15 @@ corresponding values.
 
 # Units
 By default, the keyword parameters use per-units (pu) and radians (rad) as units, with the
-exception of the `base` keyword argument, which is in volts (V). However, users have the option
-to use other units instead of per-units and radians, or to specify prefixes for base voltage by
-using the [`@power`](@ref @power) and [`@voltage`](@ref @voltage) macros.
+exception of the `base` keyword argument, which is in volts (V). However, users have the 
+option to use other units instead of per-units and radians, or to specify prefixes for base 
+voltage by using the [`@power`](@ref @power) and [`@voltage`](@ref @voltage) macros.
 
 # Examples
 Creating a bus template using the default unit system:
 ```jldoctest
 system = powerSystem()
+
 @bus(type = 2, active = 0.25, angle = 0.1745)
 addBus!(system; label = 1, reactive = -0.04, base = 132e3)
 ```
@@ -182,7 +183,6 @@ Creating a bus template using a custom unit system:
 ```jldoctest
 @power(MW, MVAr, MVA)
 @voltage(pu, deg, kV)
-
 system = powerSystem()
 
 @bus(type = 2, active = 25, angle = 10, base = 132)
@@ -209,13 +209,15 @@ end
 """
     shuntBus!(system::PowerSystem; label, conductance, susceptance)
 
-This function enables the modification of the `conductance` and `susceptance` parameters of a
-shunt element connected to a bus.
+This function enables the modification of the `conductance` and `susceptance` parameters 
+of a shunt element connected to a bus.
 
+# Keywords
 The keyword `label` must match an existing bus label. If either `conductance` or `susceptance`
-is left out, the corresponding value will remain unchanged. It updates the `bus.shunt` field of
-the `PowerSystem` composite type.
+is left out, the corresponding value will remain unchanged. 
 
+# Updates
+The function updates the `bus.shunt` field of the `PowerSystem` composite type.
 Additionally, this function automatically updates the `acModel` field of the `PowerSystem`
 type, eliminating the need to rebuild the model from scratch when making changes to these
 parameters.
@@ -274,36 +276,36 @@ A branch can be added between already defined buses.
 
 # Keywords
 The branch is defined with the following keywords:
-* `label`: unique label for the branch
-* `from`: from bus label, corresponds to the bus label
-* `to`: to bus label, corresponds to the bus label
+* `label`: unique label for the branch,
+* `from`: from bus label, corresponds to the bus label,
+* `to`: to bus label, corresponds to the bus label,
 * `status`: operating status of the branch:
-  * `status = 1`: in-service
-  * `status = 0`: out-of-service
-* `resistance` (pu or Ω): branch resistance
-* `reactance` (pu or Ω): branch reactance
-* `susceptance` (pu or S): total line charging susceptance
-* `turnsRatio`: transformer off-nominal turns ratio, equal to zero for a line
-* `shiftAngle` (rad or deg): transformer phase shift angle, where positive value defines delay
-* `minDiffAngle` (rad or deg): minimum voltage angle difference value between from and to bus
-* `maxDiffAngle` (rad or deg): maximum voltage angle difference value between from and to bus.
-* `longTerm` (pu or VA, W): long-term rating (equal to zero for unlimited)
-* `shortTerm` (pu or VA, W): short-term rating (equal to zero for unlimited)
-* `emergency` (pu or VA, W): emergency rating (equal to zero for unlimited)
+  * `status = 1`: in-service,
+  * `status = 0`: out-of-service,
+* `resistance` (pu or Ω): branch resistance,
+* `reactance` (pu or Ω): branch reactance,
+* `susceptance` (pu or S): total line charging susceptance,
+* `turnsRatio`: transformer off-nominal turns ratio, equal to zero for a line,
+* `shiftAngle` (rad or deg): transformer phase shift angle, where positive value defines delay,
+* `minDiffAngle` (rad or deg): minimum voltage angle difference value between from and to bus,
+* `maxDiffAngle` (rad or deg): maximum voltage angle difference value between from and to bus,
+* `longTerm` (pu or VA, W): long-term rating (equal to zero for unlimited),
+* `shortTerm` (pu or VA, W): short-term rating (equal to zero for unlimited),
+* `emergency` (pu or VA, W): emergency rating (equal to zero for unlimited),
 * `type`: types of `longTerm`, `shortTerm`, and `emergency` ratings:
-  * `type = 1`: apparent power flow (pu or VA)
-  * `type = 2`: active power flow (pu or W)
+  * `type = 1`: apparent power flow (pu or VA),
+  * `type = 2`: active power flow (pu or W),
   * `type = 3`: current magnitude (pu or VA at 1 pu voltage).
 
 # Default Settings
-By default, certain keywords are assigned default values: `status = 1` and `type = 1`. The rest
-of the keywords are initialized with a value of zero. However, the user can modify these default
-settings by utilizing the [`@branch`](@ref @branch) macro.
+By default, certain keywords are assigned default values: `status = 1` and `type = 1`. The 
+rest of the keywords are initialized with a value of zero. However, the user can modify 
+these default settings by utilizing the [`@branch`](@ref @branch) macro.
 
 # Units
-The default units for the keyword parameters are per-units (pu) and radians (rad). However, the
-user can choose to use other units besides per-units and radians by utilizing macros such as
-[`@power`](@ref @power), [`@voltage`](@ref @voltage), and [`@parameter`](@ref @parameter).
+The default units for the keyword parameters are per-units (pu) and radians (rad). However, 
+the user can choose to use other units besides per-units and radians by utilizing macros such 
+as [`@power`](@ref @power), [`@voltage`](@ref @voltage), and [`@parameter`](@ref @parameter).
 
 # Examples
 Creating a branch using the default unit system:
@@ -318,7 +320,6 @@ addBranch!(system; label = 1, from = 1, to = 2, reactance = 0.12, shiftAngle = 0
 Creating a branch using a custom unit system:
 ```jldoctest
 @voltage(pu, deg, kV)
-
 system = powerSystem()
 
 addBus!(system; label = 1, type = 3, active = 0.25, reactive = -0.04)
@@ -442,16 +443,16 @@ end
 """
     @branch(kwargs...)
 
-The macro generates a template for a branch, which can be utilized to define a branch using the
-[`addBranch!`](@ref addBranch!) function.
+The macro generates a template for a branch, which can be utilized to define a branch using 
+the [`addBranch!`](@ref addBranch!) function.
 
-To define the branch template, the `kwargs` input arguments must be provided in accordance with
-the keywords specified within the [`addBranch!`](@ref addBranch!) function, along with their
-corresponding values.
+To define the branch template, the `kwargs` input arguments must be provided in accordance 
+with the keywords specified within the [`addBranch!`](@ref addBranch!) function, along with 
+their corresponding values.
 
 # Units
-The default units for the keyword parameters are per-units and radians. However, the user can
-choose to use other units besides per-units and radians by utilizing macros such as
+The default units for the keyword parameters are per-units and radians. However, the user 
+can choose to use other units besides per-units and radians by utilizing macros such as
 [`@power`](@ref @power), [`@voltage`](@ref @voltage), and [`@parameter`](@ref @parameter).
 
 # Examples
@@ -468,7 +469,6 @@ addBranch!(system; label = 1, from = 1, to = 2)
 Creating a branch template using a custom unit system:
 ```jldoctest
 @voltage(pu, deg, kV)
-
 system = powerSystem()
 
 @branch(shiftAngle = 10)
@@ -497,9 +497,10 @@ end
 """
     statusBranch!(system::PowerSystem; label, status)
 
-The function enables the switching of the operational `status` of a branch, identified by its
-`label`, within the `PowerSystem` system between in-service and out-of-service.
+The function enables the switching of the operational `status` of a branch, identified by 
+its `label`, within the `PowerSystem` composite type between in-service and out-of-service.
 
+# Updates
 This function updates the `acModel` and `dcModel` fields automatically when the operating
 status of a branch is changed, thus eliminating the need to rebuild the model from scratch.
 
@@ -560,17 +561,17 @@ end
         turnsRatio, shiftAngle)
 
 This function enables the alteration of the `resistance`, `reactance`, `susceptance`,
-`turnsRatio` and `shiftAngle` parameters of a branch, identified by its `label`.
+`turnsRatio` and `shiftAngle` parameters of a branch, identified by its `label`. If any of
+these parameters are omitted, their current values will be retained. 
 
-If any of these parameters are omitted, their current values will be retained. It updates
-the `branch.parameter` field of the `PowerSystem` composite type.
-
-Additionally, this function updates the `acModel` and `dcModel` fields automatically, removing
-the need to rebuild the model from scratch.
+# Updates
+It updates the `branch.parameter` field of the `PowerSystem` composite type. Additionally, 
+this function updates the `acModel` and `dcModel` fields automatically, removing the need 
+to rebuild the model from scratch.
 
 # Units
-By default, the keyword parameters use per-units (pu) and radians (rad) as units. However, users
-have the option to use other units instead of per-units and radians using the
+By default, the keyword parameters use per-units (pu) and radians (rad) as units. However, 
+users have the option to use other units instead of per-units and radians using the
 [`@voltage`](@ref @voltage) and [`@parameter`](@ref @parameter) macros.
 
 # Example
@@ -647,44 +648,44 @@ end
         maxLowReactive, upActive, minUpReactive, maxUpReactive,
         loadFollowing, reactiveTimescale, reserve10min, reserve30min, area)
 
-The function is used to add a new generator to the `PowerSystem` type and update its `generator`
-field. The generator can be added to an already defined bus.
+The function is used to add a new generator to the `PowerSystem` composite type and update 
+its `generator` field. The generator can be added to an already defined bus.
 
 # Keywords
 The generator is defined with the following keywords:
-* `label`: a unique label for the generator
-* `bus`: the label of the bus to which the generator is connected
+* `label`: a unique label for the generator,
+* `bus`: the label of the bus to which the generator is connected,
 * `status`: the operating status of the generator:
-  * `status = 1`: in-service
-  * `status = 0`: out-of-service
-* `active` (pu or W): output active power
-* `reactive` (pu or VAr): output reactive power
-* `magnitude` (pu or V): voltage magnitude setpoint
-* `minActive` (pu or W): minimum allowed output active power value
-* `maxActive` (pu or W): maximum allowed output active power value
-* `minReactive` (pu or VAr): minimum allowed output reactive power value
-* `maxReactive` (pu or VAr): maximum allowed output reactive power value
-* `lowActive` (pu or W): lower allowed active power output value of PQ capability curve
-* `minLowReactive` (pu or VAr): minimum allowed reactive power output value at lowActive value
-* `maxLowReactive` (pu or VAr): maximum allowed reactive power output value at lowActive value
-* `upActive` (pu or W): upper allowed active power output value of PQ capability curve
-* `minUpReactive` (pu or VAr): minimum allowed reactive power output value at upActive value
-* `maxUpReactive` (pu or VAr): maximum allowed reactive power output value at upActive value
-* `loadFollowing` (pu/min or W/min): ramp rate for load following/AG
-* `reserve10min` (pu or W): ramp rate for 10-minute reserves
-* `reserve30min` (pu or W): ramp rate for 30-minute reserves
-* `reactiveTimescale` (pu/min or VAr/min): ramp rate for reactive power, two seconds timescale
+  * `status = 1`: in-service,
+  * `status = 0`: out-of-service,
+* `active` (pu or W): output active power,
+* `reactive` (pu or VAr): output reactive power,
+* `magnitude` (pu or V): voltage magnitude setpoint,
+* `minActive` (pu or W): minimum allowed output active power value,
+* `maxActive` (pu or W): maximum allowed output active power value,
+* `minReactive` (pu or VAr): minimum allowed output reactive power value,
+* `maxReactive` (pu or VAr): maximum allowed output reactive power value,
+* `lowActive` (pu or W): lower allowed active power output value of PQ capability curve,
+* `minLowReactive` (pu or VAr): minimum allowed reactive power output value at lowActive value,
+* `maxLowReactive` (pu or VAr): maximum allowed reactive power output value at lowActive value,
+* `upActive` (pu or W): upper allowed active power output value of PQ capability curve,
+* `minUpReactive` (pu or VAr): minimum allowed reactive power output value at upActive value,
+* `maxUpReactive` (pu or VAr): maximum allowed reactive power output value at upActive value,
+* `loadFollowing` (pu/min or W/min): ramp rate for load following/AG,
+* `reserve10min` (pu or W): ramp rate for 10-minute reserves,
+* `reserve30min` (pu or W): ramp rate for 30-minute reserves,
+* `reactiveTimescale` (pu/min or VAr/min): ramp rate for reactive power, two seconds timescale,
 * `area`: area participation factor.
 
 # Default Settings
 By default, certain keywords are assigned default values: `status = 1` and `magnitude = 1.0`
-per-unit. The rest of the keywords are initialized with a value of zero. However, the user can
-modify these default settings by utilizing the [`@generator`](@ref @generator) macro.
+per-unit. The rest of the keywords are initialized with a value of zero. However, the user 
+can modify these default settings by utilizing the [`@generator`](@ref @generator) macro.
 
 # Units
-By default, the input units are associated with per-units (pu) as shown. However, users have
-the option to use other units instead of per-units using the [`@power`](@ref @power) and
-[`@voltage`](@ref @voltage) macros.
+By default, the input units are associated with per-units (pu) as shown. However, users 
+have the option to use other units instead of per-units using the [`@power`](@ref @power) 
+and [`@voltage`](@ref @voltage) macros.
 
 # Examples
 Creating a bus using the default unit system:
@@ -699,7 +700,6 @@ Creating a bus using a custom unit system:
 ```jldoctest
 @power(MW, MVAr, MVA)
 @voltage(kV, deg, kV)
-
 system = powerSystem()
 
 addBus!(system; label = 1, type = 2, active = 25, reactive = -4, base = 132)
@@ -838,7 +838,6 @@ Creating a bus using a custom unit system:
 ```jldoctest
 @power(MW, MVAr, MVA)
 @voltage(kV, deg, kV)
-
 system = powerSystem()
 
 @generator(magnitude = 145.2)
@@ -866,22 +865,22 @@ end
 """
     addActiveCost!(system::PowerSystem; label, model, piecewise, polynomial)
 
-The function updates the `generator.cost` field of the `PowerSystem` type by adding costs for
-the active power produced by the corresponding generator. It can add a cost to an already
+The function updates the `generator.cost` field of the `PowerSystem` type by adding costs 
+for the active power produced by the corresponding generator. It can add a cost to an already
 defined generator.
 
 # Keywords
-The function takes in four keywords as arguments:
-* `label`: corresponds to the already defined generator label
+The function accepts four keywords:
+* `label`: corresponds to the already defined generator label,
 * `model`: cost model:
-  * `model = 1`: piecewise linear is being used
-  * `model = 2`: polynomial is being used
+  * `model = 1`: piecewise linear is being used,
+  * `model = 2`: polynomial is being used,
 * `piecewise`: cost model defined by input-output points given as `Array{Float64,2}`:
-  * first column (pu or W): active power output of the generator
-  * second column (currency/hr): cost for the specified active power output
+  * first column (pu or W): active power output of the generator,
+  * second column (currency/hr): cost for the specified active power output,
 * `polynomial`: n-th degree polynomial coefficients given as `Array{Float64,1}`:
-  * first element (currency/puⁿhr or currency/Wⁿhr): coefficient of the n-th degree term, ...
-  * penultimate element (currency/puhr or currency/Whr): coefficient of the first degree term
+  * first element (currency/puⁿhr or currency/Wⁿhr): coefficient of the n-th degree term, ...,
+  * penultimate element (currency/puhr or currency/Whr): coefficient of the first degree term,
   * last element (currency/hr): constant coefficient.
 
 # Units
@@ -901,7 +900,6 @@ addActiveCost!(system; label = 1, model = 1, polynomial = [1100.0; 500.0; 150.0]
 Creating a bus using a custom unit system:
 ```jldoctest
 @power(MW, MVAr, MVA)
-
 system = powerSystem()
 
 addBus!(system; label = 1, active = 25, reactive = -4, base = 132e3)
@@ -925,17 +923,17 @@ the reactive power produced by the corresponding generator. It can add a cost to
 defined generator.
 
 # Keywords
-The function takes in four keywords as arguments:
-* `label`: corresponds to the already defined generator label
+The function accepts four keywords:
+* `label`: corresponds to the already defined generator label,
 * `model`: cost model:
-  * `model = 1`: piecewise linear is being used
-  * `model = 2`: polynomial is being used
+  * `model = 1`: piecewise linear is being used,
+  * `model = 2`: polynomial is being used,
 * `piecewise`: cost model defined by input-output points given as `Array{Float64,2}`:
-  * first column (pu or VAr): reactive power output of the generator
-  * second column (currency/hr): cost for the specified reactive power output
+  * first column (pu or VAr): reactive power output of the generator,
+  * second column (currency/hr): cost for the specified reactive power output,
 * `polynomial`: n-th degree polynomial coefficients given as `Array{Float64,1}`:
-  * first element (currency/puⁿhr or currency/VArⁿhr): coefficient of the n-th degree term, ...
-  * penultimate element (currency/puhr or currency/VArhr): coefficient of the first degree term
+  * first element (currency/puⁿhr or currency/VArⁿhr): coefficient of the n-th degree term, ...,
+  * penultimate element (currency/puhr or currency/VArhr): coefficient of the first degree term,
   * last element (currency/hr): constant coefficient.
 
 # Units
@@ -955,7 +953,6 @@ addReactiveCost!(system; label = 1, model = 2, piecewise = [0.1085 12; 0.1477 16
 Creating a bus using a custom unit system:
 ```jldoctest
 @power(MW, MVAr, MVA)
-
 system = powerSystem()
 
 addBus!(system; label = 1, active = 25, reactive = -4, base = 132e3)
@@ -1008,12 +1005,15 @@ end
 """
     statusGenerator!(system::PowerSystem; label, status)
 
-The function changes the operating `status` of a generator by switching it from in-service to
-out-of-service, or vice versa.
+The function changes the operating `status` of a generator by switching it from in-service 
+to out-of-service, or vice versa.
 
+# Keywords
 It has two parameters, `label` and `status`, where the `label` corresponds to the generator
-label that has already been defined. It updates the `bus.layout.type` field of the `PowerSystem`
-type.
+label that has already been defined. 
+
+# Updates
+It updates the `bus.layout.type` field of the `PowerSystem` type.
 
 # Example
 ```jldoctest
@@ -1065,10 +1065,13 @@ end
 
 The function modifies the `active` and `reactive` output powers of a generator.
 
+# Keywords 
 It has three parameters, `label`, `active`, and `reactive`, where the `label` corresponds
 to the generator label that has already been defined. The `active` and `reactive` parameters
-can be left, in which case their values will remain unchanged. The function also updates the
-`bus.supply` field of the `PowerSystem` type.
+can be left, in which case their values will remain unchanged. 
+
+# Updates
+The function also updates the `bus.supply` field of the `PowerSystem` type.
 
 # Example
 ```jldoctest
@@ -1122,14 +1125,17 @@ end
 The function generates vectors and matrices based on the power system topology and parameters
 associated with DC analysis.
 
+# Updates
 The function updates the field `dcModel`. Once formed, the field will be automatically updated
-when using functions [`addBranch!`](@ref addBranch!), [`statusBranch!`](@ref statusBranch!), and
-[`parameterBranch!`](@ref parameterBranch!).
+when using functions:
+* [`addBranch!`](@ref addBranch!), 
+* [`statusBranch!`](@ref statusBranch!), 
+* [`parameterBranch!`](@ref parameterBranch!).
 
 # Variables
 The following variables are formed once the function is executed:
-- `nodalMatrix`: the nodal matrix
-- `admittance`: the branch admittances
+- `nodalMatrix`: the nodal matrix,
+- `admittance`: the branch admittances,
 - `shiftActivePower`: the active powers related to phase-shifting transformers.
 
 # Example
@@ -1209,19 +1215,23 @@ end
 The function generates vectors and matrices based on the power system topology and parameters
 associated with AC analysis.
 
+# Updates
 The function updates the field `acModel`. Once formed, the field will be automatically updated
-when using functions [`shuntBus!`](@ref shuntBus!), [`addBranch!`](@ref addBranch!),
-[`statusBranch!`](@ref statusBranch!), and [`parameterBranch!`](@ref parameterBranch!).
+when using functions:
+* [`shuntBus!`](@ref shuntBus!), 
+* [`addBranch!`](@ref addBranch!),
+* [`statusBranch!`](@ref statusBranch!), 
+* [`parameterBranch!`](@ref parameterBranch!).
 
 # Variables
 The following variables are formed once the function is executed:
-- `nodalMatrix`: the nodal matrix
-- `nodalMatrixTranspose`: the transpose of the nodal matrix
-- `nodalFromFrom`: the Y-parameters of the two-port branches
-- `nodalFromTo`: the Y-parameters of the two-port branches
-- `nodalToTo`: the Y-parameters of the two-port branches
-- `nodalToFrom`: the Y-parameters of the two-port branches
-- `admittance`: the branch admittances
+- `nodalMatrix`: the nodal matrix,
+- `nodalMatrixTranspose`: the transpose of the nodal matrix,
+- `nodalFromFrom`: the Y-parameters of the two-port branches,
+- `nodalFromTo`: the Y-parameters of the two-port branches,
+- `nodalToTo`: the Y-parameters of the two-port branches,
+- `nodalToFrom`: the Y-parameters of the two-port branches,
+- `admittance`: the branch admittances,
 - `transformerRatio`: the complex ratios of transformers.
 
 # Example

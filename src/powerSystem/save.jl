@@ -5,9 +5,9 @@ The function saves the power system's data in the HDF5 file using the fields `bu
 `generator`, and `base` from the `PowerSystem` composite type.
 
 # Keywords
-The location and file name of the HDF5 file is specified by the mandatory keyword `path` in the
-format of `"path/name.h5"`. Additional information can be provided by the optional keywords
-`reference` and `note`, which can be saved along with the power system data.
+The location and file name of the HDF5 file is specified by the mandatory keyword `path` in 
+the format of `"path/name.h5"`. Additional information can be provided by the optional 
+keywords `reference` and `note`, which can be saved along with the power system data.
 
 # View HDF5 File
 To view the saved HDF5 file, you can use the [HDFView](https://www.hdfgroup.org/downloads/hdfview/)

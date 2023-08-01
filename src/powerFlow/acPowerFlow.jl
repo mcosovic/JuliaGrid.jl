@@ -57,13 +57,13 @@ the function will automatically initiate an update of the `acModel` field within
 # Returns
 The function returns an instance of the `NewtonRaphson` subtype of the abstract `ACPowerFlow`
 type, which includes the following fields:
-- `voltage`: the magnitudes and angles of bus voltages
+- `voltage`: the bus voltage magnitudes and angles,
 - `power`: the variable allocated to store the active and reactive powers,
 - `current`: the variable allocated to store the currents,
-- `jacobian`: the Jacobian matrix
-- `mismatch`: the active and reactive power injection mismatches
-- `increment`: the magnitudes and angles of bus voltage increments
-- `pq`: indices of demand buses
+- `jacobian`: the Jacobian matrix,
+- `mismatch`: the active and reactive power injection mismatches,
+- `increment`: the bus voltage magnitude and angle increments,
+- `pq`: indices of demand buses,
 - `pvpq`: indices of demand and generator buses.
 
 # Example
@@ -185,28 +185,28 @@ end
 """
     fastNewtonRaphsonBX(system::PowerSystem)
 
-The function accepts the `PowerSystem` composite type as input and uses it to set up the Fast
-Newton-Raphson method of version BX to solve AC power flow. Additionally, if the AC model was
-not created, the function will automatically initiate an update of the `acModel` field within
-the `PowerSystem` composite type.
+The function accepts the `PowerSystem` composite type as input and uses it to set up the 
+fast Newton-Raphson method of version BX to solve AC power flow. Additionally, if the AC 
+model was not created, the function will automatically initiate an update of the `acModel` 
+field within the `PowerSystem` composite type.
 
 # Returns
-The function returns an instance of the `FastNewtonRaphson` subtype of the abstract `ACPowerFlow`
-type, which includes the following fields:
-- `voltage`: the magnitudes and angles of bus voltages
+The function returns an instance of the `FastNewtonRaphson` subtype of the abstract 
+`ACPowerFlow` type, which includes the following fields:
+- `voltage`: the bus voltage magnitudes and angles,
 - `power`: the variable allocated to store the active and reactive powers,
 - `current`: the variable allocated to store the currents,
 - `active`:
-  - `jacobian`: the Jacobian matrix associated with active power equations
-  - `mismatch`: the active power injection mismatches
-  - `increment`: the angles of bus voltage increments
-  - `factorization`: the factorized Jacobian matrix
+  - `jacobian`: the Jacobian matrix associated with active power equations,
+  - `mismatch`: the active power injection mismatches,
+  - `increment`: the bus voltage angle increments,
+  - `factorization`: the factorized Jacobian matrix,
 - `reactive`:
-  - `jacobian`: the Jacobian matrix associated with reactive power equations
-  - `mismatch`: the reative power injection mismatches
-  - `increment`: the magnitudes of bus voltage increments
-  - `factorization`: the factorized Jacobian matrix
-- `pq`: indices of demand buses
+  - `jacobian`: the Jacobian matrix associated with reactive power equations,
+  - `mismatch`: the reative power injection mismatches,
+  - `increment`: the bus voltage magnitude increments,
+  - `factorization`: the factorized Jacobian matrix,
+- `pq`: indices of demand buses,
 - `pvpq`: indices of demand and generator buses.
 
 # Example
@@ -227,26 +227,28 @@ end
 """
     fastNewtonRaphsonXB(system::PowerSystem)
 
-The function accepts the `PowerSystem` composite type as input and uses it to set up the Fast
-Newton-Raphson method of version XB to solve AC power flow. Additionally, if the AC model was
-not created, the function will automatically initiate an update of the `acModel` field within
-the `PowerSystem` composite type.
+The function accepts the `PowerSystem` composite type as input and uses it to set up the 
+fast Newton-Raphson method of version XB to solve AC power flow. Additionally, if the AC 
+model was not created, the function will automatically initiate an update of the `acModel` 
+field within the `PowerSystem` composite type.
 
 # Returns
-The function returns an instance of the `FastNewtonRaphson` subtype of the abstract `ACPowerFlow`
-type, which includes the following fields:
-- `voltage`: the magnitudes and angles of bus voltages
+The function returns an instance of the `FastNewtonRaphson` subtype of the abstract 
+`ACPowerFlow` type, which includes the following fields:
+- `voltage`: the bus voltage magnitudes and angles,
+- `power`: the variable allocated to store the active and reactive powers,
+- `current`: the variable allocated to store the currents,
 - `active`:
-  - `jacobian`: the Jacobian matrix associated with active power equations
+  - `jacobian`: the Jacobian matrix associated with active power equations,
   - `mismatch`: the active power injection mismatches
-  - `increment`: the angles of bus voltage increments
-  - `factorization`: the factorized Jacobian matrix
+  - `increment`: the bus voltage angle increments,
+  - `factorization`: the factorized Jacobian matrix,
 - `reactive`:
-  - `jacobian`: the Jacobian matrix associated with reactive power equations
-  - `mismatch`: the reative power injection mismatches
-  - `increment`: the magnitudes of bus voltage increments
-  - `factorization`: the factorized Jacobian matrix
-- `pq`: indices of demand buses
+  - `jacobian`: the Jacobian matrix associated with reactive power equations,
+  - `mismatch`: the reative power injection mismatches,
+  - `increment`: the bus voltage magnitude increments,
+  - `factorization`: the factorized Jacobian matrix,
+- `pq`: indices of demand buses,
 - `pvpq`: indices of demand and generator buses.
 
 # Example
@@ -431,17 +433,19 @@ end
     gaussSeidel(system::PowerSystem)
 
 The function accepts the `PowerSystem` composite type as input and uses it to set up the
-Gauss-Seidel method to solve AC power flow. Additionally, if the AC model was not created, the
-function will automatically initiate an update of the `acModel` field within the `PowerSystem`
-composite type.
+Gauss-Seidel method to solve AC power flow. Additionally, if the AC model was not created, 
+the function will automatically initiate an update of the `acModel` field within the 
+`PowerSystem` composite type.
 
 # Returns
 The function returns an instance of the `GaussSeidel` subtype of the abstract `ACPowerFlow`
 type, which includes the following fields:
-- `voltage`: the magnitudes and angles of bus voltages
-- `complex`: the complex voltages
-- `magnitude`: the bus voltage magnitudes for corrections
-- `pq`: indices of demand buses
+- `voltage`: the bus voltage magnitudes and angles,
+- `power`: the variable allocated to store the active and reactive powers,
+- `current`: the variable allocated to store the currents,
+- `complex`: the bus complex voltages,
+- `magnitude`: the bus voltage magnitudes for correction setp,
+- `pq`: indices of demand buses,
 - `pv`: indices of generator buses.
 
 # Example
@@ -635,7 +639,7 @@ end
     solve!(system::PowerSystem, model::ACPowerFlow)
 
 The function employs the Newton-Raphson, fast Newton-Raphson, or Gauss-Seidel method to
-solve the AC power flow problem and calculate the magnitudes and angles of bus voltages.
+solve the AC power flow problem and calculate bus voltage magnitudes and angles.
 
 After the [`mismatch!`](@ref mismatch!) function is called, [`solve!`](@ref solve!) should
 be executed to perform a single iteration of the method. The calculated voltages are stored
@@ -643,8 +647,8 @@ in the `voltage` field of the respective struct type.
 
 # Abstract type
 The abstract type `ACPowerFlow` can have the following subtypes:
-- `NewtonRaphson`: computes the bus voltages within the Newton-Raphson method
-- `FastNewtonRaphson`: computes the bus voltages within the fast Newton-Raphson method
+- `NewtonRaphson`: computes the bus voltages within the Newton-Raphson method,
+- `FastNewtonRaphson`: computes the bus voltages within the fast Newton-Raphson method,
 - `GaussSeidel`: computes the bus voltages within the Gauss-Seidel method.
 
 # Example
@@ -822,8 +826,8 @@ adjusted.
 
 # Abstract type
 The abstract type `ACPowerFlow` can have the following subtypes:
-- `NewtonRaphson`: computes the bus voltages within the Newton-Raphson method
-- `FastNewtonRaphson`: computes the bus voltages within the fast Newton-Raphson method
+- `NewtonRaphson`: computes the bus voltages within the Newton-Raphson method,
+- `FastNewtonRaphson`: computes the bus voltages within the fast Newton-Raphson method,
 - `GaussSeidel`: computes the bus voltages within the Gauss-Seidel method.
 
 # Returns
@@ -940,8 +944,8 @@ specifies the bus label of the original slack bus.
 
 # Abstract type
 The abstract type `ACPowerFlow` can have the following subtypes:
-- `NewtonRaphson`: computes the bus voltages within the Newton-Raphson method
-- `FastNewtonRaphson`: computes the bus voltages within the fast Newton-Raphson method
+- `NewtonRaphson`: computes the bus voltages within the Newton-Raphson method,
+- `FastNewtonRaphson`: computes the bus voltages within the fast Newton-Raphson method,
 - `GaussSeidel`: computes the bus voltages within the Gauss-Seidel method.
 
 # Example
