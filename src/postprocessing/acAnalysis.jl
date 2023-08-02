@@ -64,7 +64,7 @@ function power!(system::PowerSystem, model::ACPowerFlow)
     @inbounds for i = 1:system.bus.number
         voltageBus = voltage.magnitude[i] * exp(im * voltage.angle[i])
 
-        powerShunt = voltageBus * conj(voltageBus * (system.bus.shunt.susceptance[i] + im * system.bus.shunt.susceptance[i]))
+        powerShunt = voltage.magnitude[i]^2 * conj(system.bus.shunt.conductance[i] + im * system.bus.shunt.susceptance[i])
         power.shunt.active[i] = real(powerShunt)
         power.shunt.reactive[i] = imag(powerShunt)
 
@@ -458,13 +458,10 @@ function powerShunt(system::PowerSystem, model::ACAnalysis; label)
         throw(ErrorException("The value $label of the label keyword does not exist in bus labels."))
     end
     errorVoltage(model.voltage.magnitude)
-
     voltage = model.voltage
 
     index = system.bus.label[label]
-    voltageBus = voltage.magnitude[index] * exp(im * voltage.angle[index])
-
-    powerShunt = voltageBus * conj(voltageBus * (system.bus.shunt.susceptance[index] + im * system.bus.shunt.susceptance[index]))
+    powerShunt = voltage.magnitude[index]^2 * conj(system.bus.shunt.conductance[index] + im * system.bus.shunt.susceptance[index])
 
     return Cartesian(real(powerShunt), imag(powerShunt))
 end

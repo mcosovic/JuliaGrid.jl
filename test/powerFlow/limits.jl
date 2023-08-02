@@ -2,9 +2,8 @@ system14 = powerSystem(string(pathData, "case14test.m"))
 system30 = powerSystem(string(pathData, "case30test.m"))
 
 @testset "Reactive Power Limits" begin
-    field = "/acPowerFlow/reactiveLimit/newtonRaphson"
-    matpower14 = h5read(string(pathData, "case14testResult.h5"), field)
-    matpower30 = h5read(string(pathData, "case30testResult.h5"), field)
+    matpower14 = h5read(string(pathData, "results.h5"), "case14test/reactiveLimit/newtonRaphson")
+    matpower30 = h5read(string(pathData, "results.h5"), "case30test/reactiveLimit/newtonRaphson")
 
     ######## Modified IEEE 14-bus Test Case ##########
     acModel!(system14)
@@ -33,8 +32,8 @@ system30 = powerSystem(string(pathData, "case30test.m"))
 
     adjustAngle!(system14, model; slack = 1)
 
-    @test model.voltage.magnitude ≈ matpower14["Vi"]
-    @test model.voltage.angle ≈ matpower14["Ti"] 
+    @test model.voltage.magnitude ≈ matpower14["voltageMagnitude"]
+    @test model.voltage.angle ≈ matpower14["voltageAngle"] 
     @test iterations == matpower14["iterations"][1]
 
     ######## Modified IEEE 30-bus Test Case ##########
@@ -64,7 +63,7 @@ system30 = powerSystem(string(pathData, "case30test.m"))
 
     adjustAngle!(system30, model; slack = 1)
 
-    @test model.voltage.magnitude ≈ matpower30["Vi"]
-    @test model.voltage.angle ≈ matpower30["Ti"] 
+    @test model.voltage.magnitude ≈ matpower30["voltageMagnitude"]
+    @test model.voltage.angle ≈ matpower30["voltageAngle"] 
     @test iterations == matpower30["iterations"][1]
 end

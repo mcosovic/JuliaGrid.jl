@@ -415,7 +415,7 @@ function powerGenerator(system::PowerSystem, model::DCOptimalPowerFlow; label)
     end
     errorVoltage(model.voltage.angle)
 
-    return model.power.active[system.generator.label[label]]
+    return model.power.generator.active[system.generator.label[label]]
 end
 
 ######### Powers at Branches ##########
