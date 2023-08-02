@@ -8,14 +8,14 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     ######## Modified IEEE 14-bus Test Case ##########
     acModel!(system14)
     model = newtonRaphson(system14)
-    iterations = 0
+    iteration = 0
     for i = 1:1000
         stopping = mismatch!(system14, model)
         if all(stopping .< 1e-8)
             break
         end
         solve!(system14, model)
-        iterations += 1
+        iteration += 1
     end
 
     reactiveLimit!(system14, model)
@@ -27,26 +27,26 @@ system30 = powerSystem(string(pathData, "case30test.m"))
             break
         end
         solve!(system14, model)
-        iterations += 1
+        iteration += 1
     end
 
     adjustAngle!(system14, model; slack = 1)
 
     @test model.voltage.magnitude ≈ matpower14["voltageMagnitude"]
     @test model.voltage.angle ≈ matpower14["voltageAngle"] 
-    @test iterations == matpower14["iterations"][1]
+    @test iteration == matpower14["iteration"][1]
 
     ######## Modified IEEE 30-bus Test Case ##########
     acModel!(system30)
     model = newtonRaphson(system30)
-    iterations = 0
+    iteration = 0
     for i = 1:1000
         stopping = mismatch!(system30, model)
         if all(stopping .< 1e-8)
             break
         end
         solve!(system30, model)
-        iterations += 1
+        iteration += 1
     end
 
     reactiveLimit!(system30, model)
@@ -58,12 +58,12 @@ system30 = powerSystem(string(pathData, "case30test.m"))
             break
         end
         solve!(system30, model)
-        iterations += 1
+        iteration += 1
     end
 
     adjustAngle!(system30, model; slack = 1)
 
     @test model.voltage.magnitude ≈ matpower30["voltageMagnitude"]
     @test model.voltage.angle ≈ matpower30["voltageAngle"] 
-    @test iterations == matpower30["iterations"][1]
+    @test iteration == matpower30["iteration"][1]
 end

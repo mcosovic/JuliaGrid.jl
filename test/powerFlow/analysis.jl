@@ -221,7 +221,7 @@ end
 
     @test model.voltage.magnitude ≈ matpower30["voltageMagnitude"]
     @test model.voltage.angle ≈ matpower30["voltageAngle"] 
-    @test iteration == matpower30["iterations"][1]
+    @test iteration == matpower30["iteration"][1]
 end
 
 @testset "Gauss-Seidel Method" begin
