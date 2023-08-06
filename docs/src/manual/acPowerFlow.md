@@ -350,11 +350,11 @@ using JuliaGrid # hide
 
 system = powerSystem()
 
-addBus!(system; label = 1, type = 3, active = 0.5, conductance = 0.02, susceptance = 0.03)
+addBus!(system; label = 1, type = 3, active = 0.5)
 addBus!(system; label = 2, type = 1, reactive = 0.05)
-addBus!(system; label = 3, type = 1, active = 0.5)
+addBus!(system; label = 3, type = 1, active = 0.5, conductance = 0.02, susceptance = 0.03)
 
-@branch(conductance = 1e-6)
+@branch(conductance = 1e-4)
 addBranch!(system; label = 1, from = 1, to = 2, reactance = 0.05, susceptance = 0.04)
 addBranch!(system; label = 2, from = 1, to = 2, resistance = 0.02, reactance = 0.01)
 addBranch!(system; label = 3, from = 2, to = 3, resistance = 0.03, reactance = 0.04)
@@ -391,75 +391,180 @@ model.current.from.magnitude
 !!! note "Info"
     To better understand the powers associated with buses, branches and generators that are calculated by the [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)) and [`current!`](@ref current!(::PowerSystem, ::ACAnalysis)) functions, we suggest referring to the tutorials on [AC power flow analysis](@ref ACPowerAnalysisTutorials).
 
+To calculate specific quantities for particular components rather than calculating powers or currents for all components, users can make use of the provided functions below.
+
 ---
 
-##### Powers and Currents Related to Bus
-To calculate specific quantities for particular components rather than calculating powers or currents for all components, users can utilize the following functions.
-
+##### Active and Reactive Power Injections
 To calculate active and reactive power injections associated with a specific bus, the function can be used:
-```@repl ComputationPowersCurrentsLosses
-powerInjection(system, model; label = 1)
+```@example ComputationPowersCurrentsLosses
+injection = powerInjection(system, model; label = 1)
+nothing # hide
 ```
 
+Consequently, the outcomes will be as follows:
+```@repl ComputationPowersCurrentsLosses
+injection.active
+injection.reactive
+```
+
+---
+
+##### Generators Active and Reactive Power Injections
 To calculate active and reactive power injections from the generators at a specific bus, the function can be used:
-```@repl ComputationPowersCurrentsLosses
-powerSupply(system, model; label = 1)
+```@example ComputationPowersCurrentsLosses
+supply = powerSupply(system, model; label = 1)
+nothing # hide
 ```
 
+The outcomes will be as follows:
+```@repl ComputationPowersCurrentsLosses
+supply.active
+supply.reactive
+```
+
+---
+
+##### Shunt Active and Reactive Powers
 To calculate active and reactive powers associated with shunt element at a specific bus, the function can be used:
-```@repl ComputationPowersCurrentsLosses
-powerShunt(system, model; label = 1)
+```@example ComputationPowersCurrentsLosses
+shunt = powerShunt(system, model; label = 3)
+nothing # hide
 ```
 
-To calculate current injection associated with a specific bus, the function can be used:
+The outcomes will be as follows:
 ```@repl ComputationPowersCurrentsLosses
-currentInjection(system, model; label = 1)
+shunt.active
+shunt.reactive
 ```
 
 ---
 
-##### Powers and Currents Related to Branch
-Similarly, we can compute the active and reactive power flows at "from" bus end of the particular branch using the following function:
-```@repl ComputationPowersCurrentsLosses
-powerFrom(system, model; label = 2)
+##### Active and Reactive Power Flows
+Similarly, we can compute the active and reactive power flows at both the "from" and "to" bus ends of the specific branch by utilizing the provided functions below:
+```@example ComputationPowersCurrentsLosses
+from = powerFrom(system, model; label = 2)
+to = powerTo(system, model; label = 2)
+nothing # hide
 ```
 
-Next, we can compute the active and reactive power flows at "to" bus end of the particular branch using the following function:
+The results at the "from" bus end are as follows:
 ```@repl ComputationPowersCurrentsLosses
-powerTo(system, model; label = 2)
+from.active
+from.reactive
 ```
 
+Similarly, the results at "to" bus end will be as follows:
+```@repl ComputationPowersCurrentsLosses
+to.active
+to.reactive
+```
+
+---
+
+##### Charging Admittance Active and Reactive Powers 
 To calculate the active and reactive power values linked with branch charging admittances of the particular branch, the function can be used:
-```@repl ComputationPowersCurrentsLosses
-powerCharging(system, model; label = 2)
+```@example ComputationPowersCurrentsLosses
+charging = powerCharging(system, model; label = 1)
+nothing # hide
 ```
 
-To calculate active and reactive power losses across the series impedance of the particular branch, the function can be used:
+The outcomes for the charging admittance at the "from" bus end are provided below:
 ```@repl ComputationPowersCurrentsLosses
-powerSeries(system, model; label = 2)
+charging.from.active
+charging.from.reactive
 ```
 
-Further, we can compute the current at "from" bus end of the particular branch using the following function:
+Likewise, the outcomes for the charging admittance at the "to" bus end are as follows:
 ```@repl ComputationPowersCurrentsLosses
-currentFrom(system, model; label = 2)
+charging.to.active
+charging.to.reactive
 ```
 
-To calculate the current at "to" bus end of the particular branch using the following function:
-```@repl ComputationPowersCurrentsLosses
-currentTo(system, model; label = 2)
+Active powers signify losses within the branch's charging or shunt admittances, whereas reactive powers denote the injected reactive powers from admittances into the power system, indicated by a negative sign.
+
+---
+
+##### Series Impedance Active and Reactive Powers 
+To calculate active and reactive power values across the series impedance of the particular branch, the function can be used:
+```@example ComputationPowersCurrentsLosses
+series = powerSeries(system, model; label = 2)
+nothing # hide
 ```
 
-To calculate the current through series impedance of the branch, the function can be used:
+The outcomes will be as follows:
 ```@repl ComputationPowersCurrentsLosses
-currentLine(system, model; label = 2)
+series.active
+series.reactive
+```
+
+The active powers additionally account for active losses stemming from the branch's series resistances, while the reactive powers signify reactive losses due to the inductive nature of the impedance.
+
+---
+
+##### Generator Active and Reactive Power Outputs
+We can compute the output powers of a particular generator using the function:
+```@example ComputationPowersCurrentsLosses
+generator = powerGenerator(system, model; label = 1)
+nothing # hide
+```
+
+The outcomes will be as follows:
+```@repl ComputationPowersCurrentsLosses
+generator.active
+generator.reactive
 ```
 
 ---
 
-##### Powers Related to Generator
-Finally, we can compute the output powers of a particular generator using the function:
+##### Current Injections
+To calculate current injection associated with a specific bus, the function can be used:
+```@example ComputationPowersCurrentsLosses
+injection = currentInjection(system, model; label = 1)
+nothing # hide
+```
+
+Consequently, the outcomes will be as follows:
 ```@repl ComputationPowersCurrentsLosses
-powerGenerator(system, model; label = 1)
+injection.magnitude
+injection.angle
+```
+
+---
+
+##### Current Flows
+We can compute the current flows at both the "from" and "to" bus ends of the specific branch by utilizing the provided functions below:
+```@example ComputationPowersCurrentsLosses
+from = currentFrom(system, model; label = 2)
+to = currentTo(system, model; label = 2)
+nothing # hide
+```
+
+The results at the "from" bus end are as follows:
+```@repl ComputationPowersCurrentsLosses
+from.magnitude
+from.angle
+```
+
+Similarly, the results at "to" bus end will be as follows:
+```@repl ComputationPowersCurrentsLosses
+to.magnitude
+to.angle
+```
+
+---
+
+##### Current through Series Impedance
+To calculate the current passing through the series impedance of the branch in the direction from the "from" bus end to the "to" bus end, you can use the following function:
+```@example ComputationPowersCurrentsLosses
+series = currentSeries(system, model; label = 2)
+nothing # hide
+```
+
+The results are as follows:
+```@repl ComputationPowersCurrentsLosses
+series.magnitude
+series.angle
 ```
 
 ---

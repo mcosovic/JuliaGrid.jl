@@ -754,11 +754,12 @@ function powerSeries(system::PowerSystem, model::ACAnalysis; label)
 
         voltageFrom = voltage.magnitude[from] * exp(im * voltage.angle[from])
         voltageTo = voltage.magnitude[to] * exp(im * voltage.angle[to])
-        transformerRatio = exp(-im * parameter.shiftAngle[index] / parameter.turnsRatio[index])
+        transformerRatio = exp(-im * parameter.shiftAngle[index]) / parameter.turnsRatio[index]
 
-        currentBranch = abs(ac.admittance[index] * (voltageFrom * transformerRatio - voltageTo))
-        seriesActive = currentBranch^2 * parameter.resistance[index]
-        seriesReactive = currentBranch^2 * parameter.reactance[index]
+        voltageSeries = transformerRatio * voltageFrom - voltageTo
+        series = voltageSeries * conj(ac.admittance[index] * voltageSeries)
+        seriesActive = real(series)
+        seriesReactive = imag(series)
     else
         seriesActive = 0.0
         seriesReactive = 0.0
@@ -893,7 +894,7 @@ function powerGenerator(system::PowerSystem, model::ACPowerFlow; label)
                     powerActive -= system.generator.output.active[generatorIndex[i]]
                 end
             else
-                    powerActive = system.generator.output.active[index]
+                powerActive = system.generator.output.active[index]
             end
         end
     else
