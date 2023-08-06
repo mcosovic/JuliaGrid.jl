@@ -7,14 +7,14 @@ generators in the AC framework.
 # Updates
 This function updates the `power` field of the `Model` composite type by computing the 
 following electrical quantities:  
-- `injection`: vectors representing active and reactive power injections at each bus,
-- `supply`: vectors representing active and reactive power injections from the generators at each bus,
-- `shunt`: vectors representing active and reactive power values associated with shunt element at each bus,
-- `from`: vectors representing active and reactive power flows at the "from" end of each branch,
-- `to`: vectors representing active and reactive power flows at the "to" end of each branch,
-- `charging`: vectors representing active and reactive power values linked with branch charging admittances for each branch,
-- `series` vectors representing active and reactive power losses through each branch series impedance,
-- `generator`: vectors representing produced active and reactive power values of each generator.
+- `injection`: active and reactive power injections at each bus,
+- `supply`: active and reactive power injections from the generators at each bus,
+- `shunt`: active and reactive power values associated with shunt element at each bus,
+- `from`: active and reactive power flows at the "from" end of each branch,
+- `to`: active and reactive power flows at the "to" end of each branch,
+- `charging`: active and reactive power values linked with branch charging admittances for each branch,
+- `series` active and reactive power losses through each branch series impedance,
+- `generator`: produced active and reactive power outputs of each generator.
 
 # Abstract type
 The abstract type `ACAnalysis` can have the following subtypes:
@@ -122,11 +122,12 @@ function power!(system::PowerSystem, model::ACPowerFlow)
             power.series.active[i] = currentBranch^2 * system.branch.parameter.resistance[i]
             power.series.reactive[i] = currentBranch^2 * system.branch.parameter.reactance[i]
 
-            fromShunt = 0.5 * (turnsRatioInv * voltage.magnitude[from])^2 * conj(system.branch.parameter.conductance[i] + im * system.branch.parameter.susceptance[i])
+            admittanceConj = 0.5 * conj(system.branch.parameter.conductance[i] + im * system.branch.parameter.susceptance[i])
+            fromShunt = (turnsRatioInv * voltage.magnitude[from])^2 * admittanceConj
             power.charging.from.active[i] = real(fromShunt)
             power.charging.from.reactive[i] = imag(fromShunt)
 
-            toShunt = 0.5 * voltage.magnitude[to]^2 * conj(system.branch.parameter.conductance[i] + im * system.branch.parameter.susceptance[i])
+            toShunt = voltage.magnitude[to]^2 * admittanceConj
             power.charging.to.active[i] = real(toShunt)
             power.charging.to.reactive[i] = imag(toShunt)
         end
@@ -675,18 +676,13 @@ function powerCharging(system::PowerSystem, model::ACAnalysis; label)
     if system.branch.layout.status[index] == 1
         from = system.branch.layout.from[index]
         to = system.branch.layout.to[index]
+        admittanceConj = 0.5 * conj(system.branch.parameter.conductance[index] + im * system.branch.parameter.susceptance[index])
 
-        voltageFrom = voltage.magnitude[from] * exp(im * voltage.angle[from])
-        voltageTo = voltage.magnitude[to] * exp(im * voltage.angle[to])
-
-        turnsRatioInv = 1 / parameter.turnsRatio[index]
-        transformerRatio = turnsRatioInv * exp(-im * parameter.shiftAngle[index])
-
-        fromShunt = 0.5 * (turnsRatioInv * voltage.magnitude[from])^2 * conj(parameter.conductance[index] + im * parameter.susceptance[index])
+        fromShunt = (voltage.magnitude[from] / parameter.turnsRatio[index])^2 * admittanceConj
         fromActive = real(fromShunt)
         fromReactive = imag(fromShunt)
 
-        toShunt = 0.5 * voltage.magnitude[to]^2 * conj(parameter.conductance[index] + im * parameter.susceptance[index])
+        toShunt = voltage.magnitude[to]^2 * admittanceConj
         toActive = real(toShunt)
         toeRactive = imag(toShunt)
     else
@@ -705,7 +701,7 @@ end
 """
     powerSeries(system::PowerSystem, model::ACAnalysis; label)
 
-The function returns the active and reactive power losses through the series impedance of 
+The function returns the active and reactive power losses across the series impedance of 
 a specific branch within the AC framework. The `label` keyword argument should correspond 
 to an existing branch label.
 
@@ -758,9 +754,7 @@ function powerSeries(system::PowerSystem, model::ACAnalysis; label)
 
         voltageFrom = voltage.magnitude[from] * exp(im * voltage.angle[from])
         voltageTo = voltage.magnitude[to] * exp(im * voltage.angle[to])
-
-        turnsRatioInv = 1 / parameter.turnsRatio[index]
-        transformerRatio = turnsRatioInv * exp(-im * parameter.shiftAngle[index])
+        transformerRatio = exp(-im * parameter.shiftAngle[index] / parameter.turnsRatio[index])
 
         currentBranch = abs(ac.admittance[index] * (voltageFrom * transformerRatio - voltageTo))
         seriesActive = currentBranch^2 * parameter.resistance[index]
@@ -990,10 +984,6 @@ function current!(system::PowerSystem, model::ACAnalysis)
     current.from.angle = fill(0.0, system.branch.number)
     current.to.magnitude = fill(0.0, system.branch.number)
     current.to.angle = fill(0.0, system.branch.number)
-    current.charging.from.magnitude = fill(0.0, system.branch.number)
-    current.charging.from.angle = fill(0.0, system.branch.number)
-    current.charging.to.magnitude = fill(0.0, system.branch.number)
-    current.charging.to.angle = fill(0.0, system.branch.number)
     current.series.magnitude = fill(0.0, system.branch.number)
     current.series.angle = fill(0.0, system.branch.number)
     @inbounds for i = 1:system.branch.number
@@ -1012,11 +1002,10 @@ function current!(system::PowerSystem, model::ACAnalysis)
             current.to.magnitude[i] = abs(currentTo)
             current.to.angle[i] = angle(currentTo)
 
-            transformerRatio = (1 / parameter.turnsRatio[i]) * exp(-im * parameter.shiftAngle[i])
+            transformerRatio = (1 / system.branch.parameter.turnsRatio[i]) * exp(-im * system.branch.parameter.shiftAngle[i])
             currentBranch = ac.admittance[i] * (transformerRatio * voltageFrom - voltageTo)
-            current.line.magnitude[i] = abs(currentBranch)
-            current.line.angle[i] = angle(currentBranch)
-
+            current.series.magnitude[i] = abs(currentBranch)
+            current.series.angle[i] = angle(currentBranch)
         end
     end
 end
@@ -1262,7 +1251,7 @@ function currentSeries(system::PowerSystem, model::ACAnalysis; label)
 
         voltageFrom = voltage.magnitude[from] * exp(im * voltage.angle[from])
         voltageTo = voltage.magnitude[to] * exp(im * voltage.angle[to])
-        transformerRatio = (1 / parameter.turnsRatio[index]) * exp(-im * parameter.shiftAngle[index])
+        transformerRatio = (1 / system.branch.parameter.turnsRatio[index]) * exp(-im * system.branch.parameter.shiftAngle[index])
         
         currentSeries = ac.admittance[index] * (transformerRatio * voltageFrom - voltageTo)
     else

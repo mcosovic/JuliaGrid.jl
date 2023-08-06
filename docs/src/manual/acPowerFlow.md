@@ -350,11 +350,12 @@ using JuliaGrid # hide
 
 system = powerSystem()
 
-addBus!(system; label = 1, type = 3, active = 0.5)
+addBus!(system; label = 1, type = 3, active = 0.5, conductance = 0.02, susceptance = 0.03)
 addBus!(system; label = 2, type = 1, reactive = 0.05)
 addBus!(system; label = 3, type = 1, active = 0.5)
 
-addBranch!(system; label = 1, from = 1, to = 2, resistance = 0.01, reactance = 0.05)
+@branch(conductance = 1e-6)
+addBranch!(system; label = 1, from = 1, to = 2, reactance = 0.05, susceptance = 0.04)
 addBranch!(system; label = 2, from = 1, to = 2, resistance = 0.02, reactance = 0.01)
 addBranch!(system; label = 3, from = 2, to = 3, resistance = 0.03, reactance = 0.04)
 
