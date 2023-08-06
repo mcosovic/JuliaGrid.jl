@@ -17,15 +17,14 @@ For further information on this topic, please see the [AC Optimal Power Flow](@r
 * [`powerFrom`](@ref powerFrom(::PowerSystem, ::ACAnalysis))
 * [`powerTo`](@ref powerTo(::PowerSystem, ::ACAnalysis))
 * [`powerCharging`](@ref powerCharging(::PowerSystem, ::ACAnalysis))
-* [`powerLoss`](@ref powerLoss(::PowerSystem, ::ACAnalysis))
-* [`powerGenerator`](@ref powerGenerator(::PowerSystem, ::ACPowerFlow))
+* [`powerSeries`](@ref powerSeries(::PowerSystem, ::ACAnalysis))
 
 ###### Current Analysis
 * [`current!`](@ref current!(::PowerSystem, ::ACAnalysis))
 * [`currentInjection`](@ref currentInjection(::PowerSystem, ::ACAnalysis))
 * [`currentFrom`](@ref currentFrom(::PowerSystem, ::ACAnalysis))
 * [`currentTo`](@ref currentTo(::PowerSystem, ::ACAnalysis))
-* [`currentLine`](@ref currentLine(::PowerSystem, ::ACAnalysis))
+* [`currentSeries`](@ref currentSeries(::PowerSystem, ::ACAnalysis))
 
 ---
 

@@ -45,6 +45,7 @@ end
 mutable struct BranchParameter
     resistance::Array{Float64,1}
     reactance::Array{Float64,1}
+    conductance::Array{Float64,1}
     susceptance::Array{Float64,1}
     turnsRatio::Array{Float64,1}
     shiftAngle::Array{Float64,1}
@@ -170,7 +171,6 @@ mutable struct ACModel
     nodalToTo::Array{ComplexF64,1}
     nodalToFrom::Array{ComplexF64,1}
     admittance::Array{ComplexF64,1}
-    transformerRatio::Array{ComplexF64,1}
 end
 
 ######### Power System ##########
@@ -274,7 +274,7 @@ function powerSystem()
     voltageBus = BusVoltage(copy(af), copy(af), copy(af), copy(af))
     layoutBus = BusLayout(ai, copy(ai), copy(ai), 0, false)
 
-    parameter = BranchParameter(copy(af), copy(af), copy(af), copy(af), copy(af))
+    parameter = BranchParameter(copy(af), copy(af), copy(af), copy(af), copy(af), copy(af))
     rating = BranchRating(copy(af), copy(af), copy(af), copy(ai))
     voltageBranch = BranchVoltage(copy(af), copy(af))
     layoutBranch = BranchLayout(copy(ai), copy(ai), copy(ai), false)
@@ -289,7 +289,7 @@ function powerSystem()
     basePower = BasePower(1e8, "VA", 1.0)
     baseVoltage = BaseVoltage(copy(af), "V", 1.0)
 
-    acModel = ACModel(copy(sp), copy(sp), ac, copy(ac), copy(ac), copy(ac), copy(ac), copy(ac))
+    acModel = ACModel(copy(sp), copy(sp), ac, copy(ac), copy(ac), copy(ac), copy(ac))
     dcModel = DCModel(sp, copy(af), copy(af))
 
     return PowerSystem(
@@ -371,6 +371,7 @@ function loadBranch(system::PowerSystem, hdf5::HDF5.File)
     parameterh5 = hdf5["branch/parameter"]
     branch.parameter.resistance = arrayFloat(parameterh5, "resistance", branch.number)
     branch.parameter.reactance = arrayFloat(parameterh5, "reactance", branch.number)
+    branch.parameter.conductance = arrayFloat(parameterh5, "conductance", branch.number)
     branch.parameter.susceptance = arrayFloat(parameterh5, "susceptance", branch.number)
     branch.parameter.turnsRatio = arrayFloat(parameterh5, "turnsRatio", branch.number)
     branch.parameter.shiftAngle = arrayFloat(parameterh5, "shiftAngle", branch.number)
@@ -606,18 +607,19 @@ function loadBranch(system::PowerSystem, branchLine::Array{String,1})
     branch.number = length(branchLine)
     branch.label = Dict{Int64,Int64}(); sizehint!(branch.label, branch.number)
 
-    branch.parameter.resistance = fill(0.0, branch.number)
-    branch.parameter.reactance = similar(branch.parameter.resistance)
-    branch.parameter.susceptance = similar(branch.parameter.resistance)
-    branch.parameter.turnsRatio = similar(branch.parameter.resistance)
-    branch.parameter.shiftAngle = similar(branch.parameter.resistance)
+    branch.parameter.conductance = fill(0.0, branch.number)
+    branch.parameter.resistance = similar(branch.parameter.conductance)
+    branch.parameter.reactance = similar(branch.parameter.conductance)
+    branch.parameter.susceptance = similar(branch.parameter.conductance)
+    branch.parameter.turnsRatio = similar(branch.parameter.conductance)
+    branch.parameter.shiftAngle = similar(branch.parameter.conductance)
 
-    branch.voltage.minDiffAngle = similar(branch.parameter.resistance)
+    branch.voltage.minDiffAngle = similar(branch.parameter.conductance)
     branch.voltage.maxDiffAngle = similar(branch.parameter.resistance)
 
-    branch.rating.longTerm = similar(branch.parameter.resistance)
-    branch.rating.shortTerm = similar(branch.parameter.resistance)
-    branch.rating.emergency = similar(branch.parameter.resistance)
+    branch.rating.longTerm = similar(branch.parameter.conductance)
+    branch.rating.shortTerm = similar(branch.parameter.conductance)
+    branch.rating.emergency = similar(branch.parameter.conductance)
     branch.rating.type = fill(1, branch.number)
 
     branch.layout.from = fill(0, branch.number)
@@ -633,7 +635,13 @@ function loadBranch(system::PowerSystem, branchLine::Array{String,1})
         branch.parameter.resistance[k] = parse(Float64, data[3])
         branch.parameter.reactance[k] = parse(Float64, data[4])
         branch.parameter.susceptance[k] = parse(Float64, data[5])
-        branch.parameter.turnsRatio[k] = parse(Float64, data[9])
+        
+        turnsRatio = parse(Float64, data[9])
+        if turnsRatio == 0
+            branch.parameter.turnsRatio[k] = 1.0
+        else
+            branch.parameter.turnsRatio[k] = turnsRatio
+        end
         branch.parameter.shiftAngle[k] = parse(Float64, data[10]) * deg2rad
 
         branch.rating.longTerm[k] = parse(Float64, data[6]) * basePowerInv

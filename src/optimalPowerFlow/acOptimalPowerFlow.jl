@@ -333,8 +333,10 @@ function acOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
             Cartesian(Float64[], Float64[]),
             Cartesian(Float64[], Float64[]),
             Cartesian(Float64[], Float64[]),
-            CartesianImag(Float64[]),
-            Cartesian(Float64[], Float64[]),
+            PiModel(
+                Cartesian(Float64[], Float64[]),
+                Cartesian(Float64[], Float64[]),
+                Cartesian(Float64[], Float64[])),
             Cartesian(copy(system.generator.output.active), copy(system.generator.output.reactive))
         ),
         Current(

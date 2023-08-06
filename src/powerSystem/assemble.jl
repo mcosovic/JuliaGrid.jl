@@ -268,7 +268,7 @@ end
 
 """
     addBranch!(system::PowerSystem; label, from, to, status, resistance, reactance,
-        susceptance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle,
+        conductance, susceptance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle,
         longTerm, shortTerm, emergency, type)
 
 The function adds a new branch to the `PowerSystem` type and updates its `branch` field.
@@ -282,10 +282,11 @@ The branch is defined with the following keywords:
 * `status`: operating status of the branch:
   * `status = 1`: in-service,
   * `status = 0`: out-of-service,
-* `resistance` (pu or Ω): branch resistance,
-* `reactance` (pu or Ω): branch reactance,
-* `susceptance` (pu or S): total line charging susceptance,
-* `turnsRatio`: transformer off-nominal turns ratio, equal to zero for a line,
+* `resistance` (pu or Ω): series resistance,
+* `reactance` (pu or Ω): series reactance,
+* `conductance` (pu or S): total shunt conductance,
+* `susceptance` (pu or S): total shunt susceptance,
+* `turnsRatio`: transformer off-nominal turns ratio, equal to one for a line,
 * `shiftAngle` (rad or deg): transformer phase shift angle, where positive value defines delay,
 * `minDiffAngle` (rad or deg): minimum voltage angle difference value between from and to bus,
 * `maxDiffAngle` (rad or deg): maximum voltage angle difference value between from and to bus,
@@ -298,9 +299,9 @@ The branch is defined with the following keywords:
   * `type = 3`: current magnitude (pu or VA at 1 pu voltage).
 
 # Default Settings
-By default, certain keywords are assigned default values: `status = 1` and `type = 1`. The 
-rest of the keywords are initialized with a value of zero. However, the user can modify 
-these default settings by utilizing the [`@branch`](@ref @branch) macro.
+By default, certain keywords are assigned default values: `status = 1`, `turnsRatio` = 1.0, 
+and `type = 1`. The  rest of the keywords are initialized with a value of zero. However,
+the user can modify these default settings by utilizing the [`@branch`](@ref @branch) macro.
 
 # Units
 The default units for the keyword parameters are per-units (pu) and radians (rad). However, 
@@ -330,8 +331,8 @@ addBranch!(system; label = 1, from = 1, to = 2, reactance = 0.12, shiftAngle = 1
 function addBranch!(system::PowerSystem;
     label::T = missing, from::N, to::N, status::N = template[:branch][:status],
     resistance::T = missing, reactance::T = missing, susceptance::T = missing,
-    turnsRatio::T = template[:branch][:turnsRatio], shiftAngle::T = missing,
-    minDiffAngle::T = missing, maxDiffAngle::T = missing,
+    conductance::T = missing, turnsRatio::T = template[:branch][:turnsRatio], 
+    shiftAngle::T = missing, minDiffAngle::T = missing, maxDiffAngle::T = missing,
     longTerm::T = missing, shortTerm::T = missing, emergency::T = missing,
     type::T = template[:branch][:type])
 
@@ -404,6 +405,7 @@ function addBranch!(system::PowerSystem;
     if parameter.resistance[end] == 0.0 && parameter.reactance[end] == 0.0
         throw(ErrorException("At least one of the keywords resistance and reactance must be defined."))
     end
+    pushData!(parameter.conductance, conductance, admittanceScale, default[:conductance], admittanceScaleDef)
     pushData!(parameter.susceptance, susceptance, admittanceScale, default[:susceptance], admittanceScaleDef)
     pushData!(parameter.shiftAngle, shiftAngle, factor[:voltageAngle], default[:shiftAngle], default[:voltageAngle])
     push!(parameter.turnsRatio, turnsRatio)
@@ -557,12 +559,12 @@ function statusBranch!(system::PowerSystem; label::T, status::T)
 end
 
 """
-    parameterBranch!(system::PowerSystem; label, resistance, reactance, susceptance,
-        turnsRatio, shiftAngle)
+    parameterBranch!(system::PowerSystem; label, resistance, reactance, conductance, 
+        susceptance, turnsRatio, shiftAngle)
 
-This function enables the alteration of the `resistance`, `reactance`, `susceptance`,
-`turnsRatio` and `shiftAngle` parameters of a branch, identified by its `label`. If any of
-these parameters are omitted, their current values will be retained. 
+This function enables the alteration of the `resistance`, `reactance`, `conductance`, 
+`susceptance`, `turnsRatio` and `shiftAngle` parameters of a branch, identified by its 
+`label`. If any of these parameters are omitted, their current values will be retained. 
 
 # Updates
 It updates the `branch.parameter` field of the `PowerSystem` composite type. Additionally, 
@@ -596,7 +598,7 @@ function parameterBranch!(system::PowerSystem; user...)
     end
 
     index = system.branch.label[user[:label]]
-    if haskey(user, :resistance) || haskey(user, :reactance) || haskey(user, :susceptance) || haskey(user, :turnsRatio) || haskey(user, :shiftAngle)
+    if haskey(user, :resistance) || haskey(user, :reactance) || haskey(user, :conductance) || haskey(user, :susceptance) || haskey(user, :turnsRatio) || haskey(user, :shiftAngle)
         if layout.status[index] == 1
             if !isempty(system.dcModel.nodalMatrix)
                 nilModel!(system, :dcModelDeprive; index=index)
@@ -614,14 +616,17 @@ function parameterBranch!(system::PowerSystem; user...)
 
         prefix, base = baseImpedance(system, system.base.voltage.value[layout.from[index]], system.branch.parameter.turnsRatio[index])
         impedanceScale = si2pu(prefix, base, factor[:impedance])
+        admittanceScale = si2pu(1 / prefix, 1 / base, factor[:admittance])
         if haskey(user, :resistance)
             parameter.resistance[index] = user[:resistance]::T * impedanceScale
         end
         if haskey(user, :reactance)
             parameter.reactance[index] = user[:reactance]::T * impedanceScale
         end
+        if haskey(user, :conductance)
+            parameter.conductance[index] = user[:conductance]::T * admittanceScale
+        end
         if haskey(user, :susceptance)
-            admittanceScale = si2pu(1 / prefix, 1 / base, factor[:admittance])
             parameter.susceptance[index] = user[:susceptance]::T * admittanceScale
         end
         if haskey(user, :shiftAngle)
@@ -1154,11 +1159,7 @@ function dcModel!(system::PowerSystem)
     nodalDiagonals = fill(0.0, system.bus.number)
     @inbounds for i = 1:system.branch.number
         if layout.status[i] == 1
-            if parameter.turnsRatio[i] == 0
-                dc.admittance[i] = 1 / parameter.reactance[i]
-            else
-                dc.admittance[i] = 1 / (parameter.turnsRatio[i] * parameter.reactance[i])
-            end
+            dc.admittance[i] = 1 / (parameter.turnsRatio[i] * parameter.reactance[i])
 
             from = layout.from[i]
             to = layout.to[i]
@@ -1202,11 +1203,7 @@ end
     dc = system.dcModel
     parameter = system.branch.parameter
 
-    if parameter.turnsRatio[index] == 0
-        dc.admittance[index] = 1 / parameter.reactance[index]
-    else
-        dc.admittance[index] = 1 / (parameter.turnsRatio[index] * parameter.reactance[index])
-    end
+    dc.admittance[index] = 1 / (parameter.turnsRatio[index] * parameter.reactance[index])
 end
 
 """
@@ -1231,8 +1228,7 @@ The following variables are formed once the function is executed:
 - `nodalFromTo`: the Y-parameters of the two-port branches,
 - `nodalToTo`: the Y-parameters of the two-port branches,
 - `nodalToFrom`: the Y-parameters of the two-port branches,
-- `admittance`: the branch admittances,
-- `transformerRatio`: the complex ratios of transformers.
+- `admittance`: the branch admittances.
 
 # Example
 ```jldoctest
@@ -1245,36 +1241,26 @@ function acModel!(system::PowerSystem)
     layout = system.branch.layout
     parameter = system.branch.parameter
 
-    ac.transformerRatio  = zeros(ComplexF64, system.branch.number)
     ac.admittance = zeros(ComplexF64, system.branch.number)
     ac.nodalToTo = zeros(ComplexF64, system.branch.number)
     ac.nodalFromFrom = zeros(ComplexF64, system.branch.number)
     ac.nodalFromTo = zeros(ComplexF64, system.branch.number)
     ac.nodalToFrom = zeros(ComplexF64, system.branch.number)
-    nodalDiagonals = zeros(ComplexF64, system.bus.number)
+    nodalDiagonals = complex.(system.bus.shunt.conductance, system.bus.shunt.susceptance)
     @inbounds for i = 1:system.branch.number
         if layout.status[i] == 1
             ac.admittance[i] = 1 / (parameter.resistance[i] + im * parameter.reactance[i])
+            turnsRatioInv = 1 / parameter.turnsRatio[i]
+            transformerRatio = turnsRatioInv * exp(-im * parameter.shiftAngle[i])
 
-            if parameter.turnsRatio[i] == 0
-                ac.transformerRatio[i] = exp(im * parameter.shiftAngle[i])
-            else
-                ac.transformerRatio[i] = parameter.turnsRatio[i] * exp(im * parameter.shiftAngle[i])
-            end
-
-            transformerRatioConj = conj(ac.transformerRatio[i])
-            ac.nodalToTo[i] = ac.admittance[i] + im * 0.5 * parameter.susceptance[i]
-            ac.nodalFromFrom[i] = ac.nodalToTo[i] / (transformerRatioConj * ac.transformerRatio[i])
-            ac.nodalFromTo[i] = -ac.admittance[i] / transformerRatioConj
-            ac.nodalToFrom[i] = -ac.admittance[i] / ac.transformerRatio[i]
+            ac.nodalToTo[i] = ac.admittance[i] + 0.5 * complex(parameter.conductance[i], parameter.susceptance[i])
+            ac.nodalFromFrom[i] = turnsRatioInv^2 * ac.nodalToTo[i]
+            ac.nodalFromTo[i] = -conj(transformerRatio) * ac.admittance[i] 
+            ac.nodalToFrom[i] = -transformerRatio * ac.admittance[i] 
 
             nodalDiagonals[layout.from[i]] += ac.nodalFromFrom[i]
             nodalDiagonals[layout.to[i]] += ac.nodalToTo[i]
         end
-    end
-
-    for i = 1:system.bus.number
-        nodalDiagonals[i] += system.bus.shunt.conductance[i] + im * system.bus.shunt.susceptance[i]
     end
 
     busIndex = collect(1:system.bus.number)
@@ -1309,18 +1295,13 @@ end
     parameter = system.branch.parameter
 
     ac.admittance[index] = 1 / (parameter.resistance[index] + im * parameter.reactance[index])
+    turnsRatioInv = 1 / parameter.turnsRatio[index]
+    transformerRatio = turnsRatioInv * exp(-im * parameter.shiftAngle[index])
 
-    if parameter.turnsRatio[index] == 0
-        ac.transformerRatio[index] = exp(im * parameter.shiftAngle[index])
-    else
-        ac.transformerRatio[index] = parameter.turnsRatio[index] * exp(im * parameter.shiftAngle[index])
-    end
-
-    transformerRatioConj = conj(ac.transformerRatio[index])
-    ac.nodalToTo[index] = ac.admittance[index] + im * 0.5 * parameter.susceptance[index]
-    ac.nodalFromFrom[index] = ac.nodalToTo[index] / (transformerRatioConj * ac.transformerRatio[index])
-    ac.nodalFromTo[index] = -ac.admittance[index] / transformerRatioConj
-    ac.nodalToFrom[index] = -ac.admittance[index] / ac.transformerRatio[index]
+    ac.nodalToTo[index] = ac.admittance[index] + 0.5 * complex(parameter.conductance[index], parameter.susceptance[index])
+    ac.nodalFromFrom[index] = turnsRatioInv^2 * ac.nodalToTo[index]
+    ac.nodalFromTo[index] = -conj(transformerRatio) * ac.admittance[index]
+    ac.nodalToFrom[index] = -transformerRatio * ac.admittance[index]
 end
 
 ######### Expelling Elements from the AC or DC Model ##########
@@ -1342,7 +1323,6 @@ function nilModel!(system::PowerSystem, flag::Symbol; index::Int64 = 0)
         ac.nodalFromTo = Array{ComplexF64,1}(undef, 0)
         ac.nodalToFrom = Array{ComplexF64,1}(undef, 0)
         ac.admittance = Array{ComplexF64,1}(undef, 0)
-        ac.transformerRatio = Array{ComplexF64,1}(undef, 0)
     end
 
     if flag == :dcModelZeros
@@ -1355,7 +1335,6 @@ function nilModel!(system::PowerSystem, flag::Symbol; index::Int64 = 0)
         ac.nodalToTo[index] = 0.0 + im * 0.0
         ac.nodalToFrom[index] = 0.0 + im * 0.0
         ac.admittance[index] = 0.0 + im * 0.0
-        ac.transformerRatio[index] = 0.0 + im * 0.0
     end
 
     if flag == :dcModelPushZeros
@@ -1368,7 +1347,6 @@ function nilModel!(system::PowerSystem, flag::Symbol; index::Int64 = 0)
         push!(ac.nodalFromFrom, 0.0 + im * 0.0)
         push!(ac.nodalFromTo, 0.0 + im * 0.0)
         push!(ac.nodalToFrom, 0.0 + im * 0.0)
-        push!(ac.transformerRatio, 0.0 + im * 0.0)
     end
 
     if flag == :dcModelDeprive
@@ -1381,7 +1359,6 @@ function nilModel!(system::PowerSystem, flag::Symbol; index::Int64 = 0)
         ac.nodalToTo[index] = -ac.nodalToTo[index]
         ac.nodalToFrom[index] =-ac.nodalToFrom[index]
         ac.admittance[index] = -ac.admittance[index]
-        ac.transformerRatio[index] = -ac.transformerRatio[index]
     end
 end
 

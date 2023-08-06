@@ -1,19 +1,17 @@
 module JuliaGrid
 
-# using BenchmarkTools
 using SparseArrays, LinearAlgebra, SuiteSparse
 using HDF5
 using JuMP
 
-
 ########## Setting Variables ##########
 include("utility/setting.jl")
 
-# ########## Utility ##########
+########## Utility ##########
 include("utility/routine.jl")
 export @default
 
-# ########## Power System ##########
+########## Power System ##########
 include("powerSystem/load.jl")
 export powerSystem
 
@@ -47,8 +45,8 @@ export dcOptimalPowerFlow
 include("postprocessing/dcAnalysis.jl")
 include("postprocessing/acAnalysis.jl")
 export power!, current!
-export powerInjection, powerSupply, powerShunt, powerFrom, powerTo, powerCharging, powerLoss, powerGenerator
-export currentInjection, currentFrom, currentTo, currentLine 
+export powerInjection, powerSupply, powerShunt, powerFrom, powerTo, powerCharging, powerSeries, powerGenerator
+export currentInjection, currentFrom, currentTo, currentSeries
 
 ########## Unit ##########
 include("utility/unit.jl")

@@ -11,7 +11,7 @@ In the following section, we have provided a list of functions that can be utili
 * [`powerFrom`](@ref powerFrom(::PowerSystem, ::ACAnalysis))
 * [`powerTo`](@ref powerTo(::PowerSystem, ::ACAnalysis))
 * [`powerCharging`](@ref powerCharging(::PowerSystem, ::ACAnalysis))
-* [`powerLoss`](@ref powerLoss(::PowerSystem, ::ACAnalysis))
+* [`powerSeries`](@ref powerSeries(::PowerSystem, ::ACAnalysis))
 * [`powerGenerator`](@ref powerGenerator(::PowerSystem, ::ACPowerFlow))
 
 ###### Current Analysis
@@ -19,7 +19,7 @@ In the following section, we have provided a list of functions that can be utili
 * [`currentInjection`](@ref currentInjection(::PowerSystem, ::ACAnalysis))
 * [`currentFrom`](@ref currentFrom(::PowerSystem, ::ACAnalysis))
 * [`currentTo`](@ref currentTo(::PowerSystem, ::ACAnalysis))
-* [`currentLine`](@ref currentLine(::PowerSystem, ::ACAnalysis))
+* [`currentSeries`](@ref currentSeries(::PowerSystem, ::ACAnalysis))
 
 ---
 
@@ -37,7 +37,7 @@ powerFrom(::PowerSystem, ::DCAnalysis)
 powerTo(::PowerSystem, ::ACAnalysis)
 powerTo(::PowerSystem, ::DCAnalysis)
 powerCharging(::PowerSystem, ::ACAnalysis)
-powerLoss(::PowerSystem, ::ACAnalysis)
+powerSeries(::PowerSystem, ::ACAnalysis)
 powerGenerator(::PowerSystem, ::ACPowerFlow)
 powerGenerator(::PowerSystem, ::DCPowerFlow)
 ```

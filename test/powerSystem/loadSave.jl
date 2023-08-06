@@ -35,6 +35,7 @@
 
     @test systemMat.branch.parameter.resistance == systemH5.branch.parameter.resistance
     @test systemMat.branch.parameter.reactance == systemH5.branch.parameter.reactance
+    @test systemMat.branch.parameter.conductance == systemH5.branch.parameter.conductance
     @test systemMat.branch.parameter.susceptance == systemH5.branch.parameter.susceptance
     @test systemMat.branch.parameter.turnsRatio == systemH5.branch.parameter.turnsRatio
     @test systemMat.branch.parameter.shiftAngle == systemH5.branch.parameter.shiftAngle

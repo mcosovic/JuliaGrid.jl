@@ -160,6 +160,12 @@ function saveBranch(system::PowerSystem, labelBus::Array{Int64,1}, file)
     attrs(file["branch/parameter/reactance"])["type"] = "float"
     attrs(file["branch/parameter/reactance"])["format"] = format
 
+    format = compresseArray(file, parameter.conductance, "branch/parameter/conductance")
+    attrs(file["branch/parameter/conductance"])["unit"] = "per-unit (pu)"
+    attrs(file["branch/parameter/conductance"])["SI unit"] = "siemens (S)"
+    attrs(file["branch/parameter/conductance"])["type"] = "float"
+    attrs(file["branch/parameter/conductance"])["format"] = format
+
     format = compresseArray(file, parameter.susceptance, "branch/parameter/susceptance")
     attrs(file["branch/parameter/susceptance"])["unit"] = "per-unit (pu)"
     attrs(file["branch/parameter/susceptance"])["SI unit"] = "siemens (S)"

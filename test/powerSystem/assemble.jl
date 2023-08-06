@@ -1,5 +1,6 @@
 @testset "Build Power System in Per-Units" begin
     system = powerSystem(string(pathData, "part300.m"))
+    torad = pi / 180
 
     systemPU = powerSystem()
     @bus(minMagnitude = 0.94, maxMagnitude = 1.06, area = 1, lossZone = 1)

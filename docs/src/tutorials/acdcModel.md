@@ -20,7 +20,7 @@ addBus!(system; label = 3, type = 2, conductance = 2.1, susceptance = 1.2)
 
 addBranch!(system; from = 1, to = 2, resistance = 0.02, reactance = 0.06, susceptance = 0.05)
 addBranch!(system; from = 1, to = 3, reactance = 0.21, turnsRatio = 0.98, shiftAngle = 1.2)
-addBranch!(system; from = 2, to = 3, resistance = 0.13, reactance = 0.26)
+addBranch!(system; from = 2, to = 3, resistance = 0.13, reactance = 0.26, conductance = 1e-3)
 
 addGenerator!(system; bus = 1, active = 40.0, reactive = 42.4)
 nothing #hide
@@ -49,7 +49,7 @@ nothing #hide
 ##### [Unified Branch Model](@id UnifiedBranchModelTutorials)
 The equivalent unified ``\pi``-model for a branch ``(i,j) \in \mathcal{E}`` incident to the buses ``\{i,j\} \in \mathcal{N}`` is shown in Figure 1.
 ```@raw html
-<img src="../../assets/pi_model.svg" class="center" width="600"/>
+<img src="../assets/pi_model.svg" class="center" width="600"/>
 <figcaption>Figure 1: The equivalent branch model, where the transformer is located at "from" bus end of the branch.</figcaption>
 &nbsp;
 ```
@@ -72,12 +72,15 @@ Moreover, the `acModel` stores the computed vector of branch series admittances 
 𝐲 = system.acModel.admittance
 ```
 
-The branch shunt capacitive admittance (i.e. charging admittance) ``y_{\text{s}ij}`` is equal to:
+The branch shunt admittance ``y_{\text{s}ij}`` is equal to:
 ```math
-y_{\text{s}ij} = \text{j} b_{\text{s}ij}.
+y_{\text{s}ij} = g_{\text{s}ij} + \text{j} b_{\text{s}ij},
 ```
-JuliaGrid stores the total branch shunt capacitive susceptances, so to obtain the vector ``\mathbf{b}_\text{s} = [b_{\text{s}ij}]``, the susceptances must be split according to the ends of branches:
+where ``g_{\text{s}ij}`` represents the shunt conductance of the branch, and ``b_{\text{s}ij}`` represents the shunt susceptance. Both of these values are positive for real line sections. It is worth noting that while the shunt conductance ``g_{\text{s}ij}`` is often insignificantly small and can be ignored in many cases, it is included in the analyses to ensure comprehensive consideration of all potential scenarios.
+
+Within JuliaGrid, the total shunt conductances and susceptances of branches are stored. In order to obtain the vectors ``\mathbf{g}_\text{s} = [g_{\text{s}ij}]`` and ``\mathbf{b}_\text{s} = [b_{\text{s}ij}]``, the conductances and susceptances must be distributed by considering the ends of the branches:
 ```@repl ACDCModel
+𝐠ₛ = system.branch.parameter.conductance / 2
 𝐛ₛ = system.branch.parameter.susceptance / 2
 ```
 
@@ -85,14 +88,12 @@ The transformer complex ratio ``\alpha_{ij}`` is defined:
 ```math
     \alpha_{ij} = \cfrac{1}{\tau_{ij}}e^{-\text{j}\phi_{ij}},
 ```
-where ``\tau_{ij}`` is a transformer turns ratio, while ``\phi_{ij}`` is a transformer phase shift angle, always located "from" bus end of the branch. These transformer parameters are stored in the vectors ``\bm{\tau} = [\tau_{ij}]`` and ``\bm{\phi} = [\phi_{ij}]``, respectively:
+where ``\tau_{ij} \neq 0`` is a transformer turns ratio, while ``\phi_{ij}`` is a transformer phase shift angle, always located "from" bus end of the branch. Note, if ``\tau_{ij} = 1`` and ``\phi_{ij} = 0`` the model describes the line. In-phase transformers are defined if ``\tau_{ij} \neq 1``, ``\phi_{ij} = 0``, and ``y_{\text{s}ij} = 0``, while phase-shifting transformers are obtained if ``\tau_{ij} \neq 1``, ``\phi_{ij} \neq 0``, and ``y_{\text{s}ij} = 0``.
+
+These transformer parameters are stored in the vectors ``\bm{\tau} = [\tau_{ij}]`` and ``\bm{\phi} = [\phi_{ij}]``, respectively:
 ```@repl ACDCModel
 𝛕 = system.branch.parameter.turnsRatio
 𝚽 = system.branch.parameter.shiftAngle
-```
-The `acModel` within the `PowerSystem` composite type contains the computed transformer complex ratios ``\bm{\alpha} = [\alpha_{ij}]``. These values can be accessed using the following command:
-```@repl ACDCModel
-𝛂 = system.acModel.transformerRatio
 ```
 
 Using Kirchhoff's circuit laws, the unified branch model can be described by complex expressions:
@@ -118,7 +119,8 @@ The values of the vectors ``\mathbf{y}_{\text{ii}} = [({y}_{ij} + y_{\text{s}ij}
 𝐲ⱼⱼ = system.acModel.nodalToTo
 ```
 
-Note, if ``\tau_{ij} = 1`` and ``\phi_{ij} = 0`` the model describes the line. In-phase transformers are defined if ``\phi_{ij} = 0`` and ``y_{\text{s}ij} = 0``, while phase-shifting transformers are obtained if ``y_{\text{s}ij} = 0``.
+!!! note "Info"
+    The directions of the currents ``\bar{I}_{ij}``, ``\bar{I}_{ji}``, ``\bar{I}_{\text{s}i}``, and ``\bar{I}_{\text{s}j}`` are initially defined to emanate from the nodes or buses. This convention proves particularly valuable during power flow analyses. In cases where active or reactive power is positive, it signifies alignment with the assumed current direction, flowing away from the bus. Conversely, when power is negative, the direction is reversed, indicating a flow towards the bus.
 
 ---
 
@@ -160,7 +162,7 @@ The complex current injections at buses are:
 ```math
   \begin{aligned}
     \bar{I}_{p} &= \bar{I}_{pk} = \cfrac{1}{\tau_{pk}^2}({y}_{pk} + y_{\text{s}pk}) \bar{V}_{p} -\alpha_{kq}^*{y}_{kq} \bar{V}_{k} \\
-    \bar{I}_{k} &= \bar{I}_{kp} + \bar{I}_{kq} - \bar{I}_{\text{sh}k} =
+    \bar{I}_{k} &= \bar{I}_{kp} + \bar{I}_{kq} + \bar{I}_{\text{sh}k} =
     -\alpha_{kq}{y}_{kq} \bar{V}_{p} + ({y}_{kq} + y_{\text{s}kq}) \bar{V}_{k} +
     \cfrac{1}{\tau_{kq}^2}({y}_{kq} + y_{\text{s}kq}) \bar{V}_{k} -\alpha_{kq}^*{y}_{kq} \bar{V}_{q} + {y}_{\text{sh}k} \bar{V}_k \\
     \bar{I}_{q} &= \bar{I}_{qk} = -\alpha_{kq}{y}_{kq} \bar{V}_{k} + ({y}_{kq} + y_{\text{s}kq}) \bar{V}_{q}.
@@ -210,7 +212,7 @@ When a branch is not incident (or adjacent) to a bus the corresponding element i
 ---
 
 ## [DC Model](@id DCModelTutorials)
-The DC model is obtained by linearisation of the nonlinear model, and it provides an approximate solution. In the typical operating conditions, the difference of bus voltage angles between adjacent buses ``(i,j) \in \mathcal{E}`` is very small ``\theta_{i}-\theta_{j} \approx 0``, which implies ``\cos \theta_{ij}\approx 1`` and ``\sin \theta_{ij} \approx \theta_{ij}``. Further, all bus voltage magnitudes are ``V_i \approx 1``, ``i \in \mathcal{N}``, and all shunt susceptance elements and branch resistances can be neglected. This implies that the DC model ignores the reactive powers and transmission losses and takes into account only the active powers. Therefore, the DC power flow takes only bus voltage angles ``\bm \theta`` as variables. To create vectors and matrices related to DC or linear analyses, JuliaGrid uses the function [`dcModel!`](@ref dcModel!). Therefore, we can continue with the previous example:
+The DC model is obtained by linearisation of the nonlinear model, and it provides an approximate solution. In the typical operating conditions, the difference of bus voltage angles between adjacent buses ``(i,j) \in \mathcal{E}`` is very small ``\theta_{i}-\theta_{j} \approx 0``, which implies ``\cos \theta_{ij}\approx 1`` and ``\sin \theta_{ij} \approx \theta_{ij}``. Further, all bus voltage magnitudes are ``V_i \approx 1``, ``i \in \mathcal{N}``, and all branch shunt admittances and branch resistances can be neglected. This implies that the DC model ignores the reactive powers and transmission losses and takes into account only the active powers. Therefore, the DC power flow takes only bus voltage angles ``\bm \theta`` as variables. To create vectors and matrices related to DC or linear analyses, JuliaGrid uses the function [`dcModel!`](@ref dcModel!). Therefore, we can continue with the previous example:
 ```@example ACDCModel
 dcModel!(system)
 nothing # hide
@@ -331,14 +333,14 @@ The active power injections at buses are:
 ```math
   \begin{aligned}
     P_{p} &= P_{pk} =\cfrac{1}{\tau_{pk}x_{pk}} \theta_{p} - \cfrac{1}{\tau_{pk}x_{pk}} \theta_{k} - \cfrac{\phi_{pk}}{\tau_{pk}x_{pk}} \\
-    P_{k} &= P_{kp} + P_{kq} - P_{\text{sh}k} = -\cfrac{1}{\tau_{pk}x_{pk}} \theta_{p} + \cfrac{1}{\tau_{pk}x_{pk}} \theta_{k} + \cfrac{\phi_{pk}}{\tau_{pk}x_{pk}} +
+    P_{k} &= P_{kp} + P_{kq} + P_{\text{sh}k} = -\cfrac{1}{\tau_{pk}x_{pk}} \theta_{p} + \cfrac{1}{\tau_{pk}x_{pk}} \theta_{k} + \cfrac{\phi_{pk}}{\tau_{pk}x_{pk}} +
     \cfrac{1}{\tau_{kq}x_{kq}} \theta_{k} - \cfrac{1}{\tau_{kq}x_{kq}} \theta_{q} - \cfrac{\phi_{kq}}{\tau_{kq}x_{kq}} + {g}_{\text{sh}k} \\
     P_{q} &= {P}_{qk} = -\cfrac{1}{\tau_{kq}x_{kq}} \theta_{k} +\cfrac{1}{\tau_{kq}x_{kq}} \theta_{q} + \cfrac{\phi_{kq}}{\tau_{kq}x_{kq}},
   \end{aligned}
 ```
 where the active power injected by the shunt element at the bus ``k`` is equal to:
 ```math
-  P_{\text{sh}k} = \Re\{\bar{V}_{k}\bar{I}_{\text{sh}k}^*\} = \Re\{-\bar{V}_{k}{y}_{\text{sh}k}^*\bar{V}_{k}^*\} = - {g}_{\text{sh}k}.
+  P_{\text{sh}k} = \Re\{\bar{V}_{k}\bar{I}_{\text{sh}k}^*\} = \Re\{\bar{V}_{k}{y}_{\text{sh}k}^*\bar{V}_{k}^*\} = V_k^2 {g}_{\text{sh}k} = {g}_{\text{sh}k}.
 ```
 The system of equations can be written in the matrix form:
 ```math

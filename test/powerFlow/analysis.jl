@@ -32,9 +32,10 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     @test model.power.from.reactive ≈ matpower14["fromReactive"] 
     @test model.power.to.active ≈ matpower14["toActive"] 
     @test model.power.to.reactive ≈ matpower14["toReactive"] 
-    @test model.power.charging.reactive ≈ matpower14["chargingReactive"] 
-    @test model.power.loss.active ≈ matpower14["lossActive"] 
-    @test model.power.loss.reactive ≈ matpower14["lossReactive"] 
+    @test model.power.charging.from.reactive ≈ matpower14["chargingFrom"]
+    @test model.power.charging.to.reactive ≈ matpower14["chargingTo"] 
+    @test model.power.series.active ≈ matpower14["lossActive"] 
+    @test model.power.series.reactive ≈ matpower14["lossReactive"] 
     @test model.power.generator.active ≈ matpower14["generatorActive"] 
     @test model.power.generator.reactive ≈ matpower14["generatorReactive"] 
 
@@ -62,11 +63,12 @@ system30 = powerSystem(string(pathData, "case30test.m"))
         @test to.reactive ≈ matpower14["toReactive"][value] atol = 1e-13
     
         charging = powerCharging(system14, model; label = key)
-        @test charging ≈ matpower14["chargingReactive"][value] atol = 1e-13
-    
-        loss = powerLoss(system14, model; label = key)
-        @test loss.active ≈ matpower14["lossActive"][value] atol = 1e-13
-        @test loss.reactive ≈ matpower14["lossReactive"][value] atol = 1e-13
+        @test charging.from.reactive ≈ matpower14["chargingFrom"][value] atol = 1e-13
+        @test charging.to.reactive ≈ matpower14["chargingTo"][value] atol = 1e-13
+
+        series = powerSeries(system14, model; label = key)
+        @test series.active ≈ matpower14["lossActive"][value] atol = 1e-13
+        @test series.reactive ≈ matpower14["lossReactive"][value] atol = 1e-13
     end
 
     for (key, value) in system14.generator.label
@@ -102,9 +104,10 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     @test model.power.from.reactive ≈ matpower30["fromReactive"] 
     @test model.power.to.active ≈ matpower30["toActive"] 
     @test model.power.to.reactive ≈ matpower30["toReactive"] 
-    @test model.power.charging.reactive ≈ matpower30["chargingReactive"] 
-    @test model.power.loss.active ≈ matpower30["lossActive"] 
-    @test model.power.loss.reactive ≈ matpower30["lossReactive"] 
+    @test model.power.charging.from.reactive ≈ matpower30["chargingFrom"]
+    @test model.power.charging.to.reactive ≈ matpower30["chargingTo"] 
+    @test model.power.series.active ≈ matpower30["lossActive"] 
+    @test model.power.series.reactive ≈ matpower30["lossReactive"] 
     @test model.power.generator.active ≈ matpower30["generatorActive"] 
     @test model.power.generator.reactive ≈ matpower30["generatorReactive"] 
 
@@ -132,11 +135,12 @@ system30 = powerSystem(string(pathData, "case30test.m"))
         @test to.reactive ≈ matpower30["toReactive"][value] atol = 1e-13
     
         charging = powerCharging(system30, model; label = key)
-        @test charging ≈ matpower30["chargingReactive"][value] atol = 1e-13
-    
-        loss = powerLoss(system30, model; label = key)
-        @test loss.active ≈ matpower30["lossActive"][value] atol = 1e-13
-        @test loss.reactive ≈ matpower30["lossReactive"][value] atol = 1e-13
+        @test charging.from.reactive ≈ matpower30["chargingFrom"][value] atol = 1e-13
+        @test charging.to.reactive ≈ matpower30["chargingTo"][value] atol = 1e-13
+
+        series = powerSeries(system30, model; label = key)
+        @test series.active ≈ matpower30["lossActive"][value] atol = 1e-13
+        @test series.reactive ≈ matpower30["lossReactive"][value] atol = 1e-13
     end
 
     for (key, value) in system30.generator.label
@@ -262,6 +266,58 @@ end
     @test model.voltage.angle ≈ matpower30["voltageAngle"]
     @test iteration == matpower30["iteration"][1]
 end
+
+@testset "AC Power Flow" begin
+    system14.branch.parameter.conductance[14] = 0.052
+    system14.branch.parameter.conductance[7] = 0.083
+    system14.branch.parameter.conductance[1] = 0.58
+    
+    ######## Modified IEEE 14-bus Test Case ##########
+    acModel!(system14)
+    nr = newtonRaphson(system14)
+    for i = 1:1000
+        stopping = mismatch!(system14, nr)
+        if all(stopping .< 1e-8)
+            break
+        end
+        solve!(system14, nr)
+    end
+    
+    fnrBX = fastNewtonRaphsonBX(system14)
+    for i = 1:1000
+        stopping = mismatch!(system14, fnrBX)
+        if all(stopping .< 1e-8)
+            break
+        end
+        solve!(system14, fnrBX)
+    end
+    
+    fnrXB = fastNewtonRaphsonXB(system14)
+    for i = 1:1000
+        stopping = mismatch!(system14, fnrXB)
+        if all(stopping .< 1e-8)
+            break
+        end
+        solve!(system14, fnrXB)
+    end
+    
+    gs = gaussSeidel(system14)
+    for i = 1:3000
+        stopping = mismatch!(system14, gs)
+        if all(stopping .< 1e-9)
+            break
+        end
+        solve!(system14, gs)
+    end
+    
+    @test nr.voltage.magnitude ≈ fnrBX.voltage.magnitude
+    @test nr.voltage.angle ≈ fnrBX.voltage.angle
+    @test nr.voltage.magnitude ≈ fnrXB.voltage.magnitude
+    @test nr.voltage.angle ≈ fnrXB.voltage.angle
+    @test nr.voltage.magnitude ≈ gs.voltage.magnitude
+    @test nr.voltage.angle ≈ gs.voltage.angle
+end
+
 
 @testset "DC Power Flow" begin
     matpower14 = h5read(string(pathData, "results.h5"), "case14test/dcPowerFlow")

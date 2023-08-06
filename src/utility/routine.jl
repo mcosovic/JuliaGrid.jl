@@ -124,6 +124,7 @@ macro default(mode::Symbol)
         end
         template[:branch][:status] = 1
         template[:branch][:type] = 1
+        template[:branch][:turnsRatio] = 1.0
         template[:branch][:voltageAngle] = 1.0
         template[:branch][:currentAngle] = 1.0
     end

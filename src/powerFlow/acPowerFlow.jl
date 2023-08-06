@@ -168,7 +168,9 @@ function newtonRaphson(system::PowerSystem)
             Cartesian(Float64[], Float64[]),
             Cartesian(Float64[], Float64[]),
             Cartesian(Float64[], Float64[]),
-            CartesianImag(Float64[]),
+            Charging(
+                Cartesian(Float64[], Float64[]),
+                Cartesian(Float64[], Float64[])),
             Cartesian(Float64[], Float64[]),
             Cartesian(Float64[], Float64[])
         ),
@@ -414,7 +416,9 @@ end
             Cartesian(Float64[], Float64[]),
             Cartesian(Float64[], Float64[]),
             Cartesian(Float64[], Float64[]),
-            CartesianImag(Float64[]),
+            Charging(
+                Cartesian(Float64[], Float64[]),
+                Cartesian(Float64[], Float64[])),
             Cartesian(Float64[], Float64[]),
             Cartesian(Float64[], Float64[])
         ),
@@ -488,7 +492,9 @@ function gaussSeidel(system::PowerSystem)
             Cartesian(Float64[], Float64[]),
             Cartesian(Float64[], Float64[]),
             Cartesian(Float64[], Float64[]),
-            CartesianImag(Float64[]),
+            Charging(
+                Cartesian(Float64[], Float64[]),
+                Cartesian(Float64[], Float64[])),
             Cartesian(Float64[], Float64[]),
             Cartesian(Float64[], Float64[])
         ),

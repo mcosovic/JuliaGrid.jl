@@ -13,20 +13,21 @@ After obtaining the AC power flow solution, JuliaGrid offers post-processing ana
 * [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)),
 * [`current!`](@ref current!(::PowerSystem, ::ACAnalysis)).
 
-
-Additionally, there are specialized functions dedicated to calculating specific types of powers and currents related to particular buses, branches, or generators:
+Furthermore, there are specialized functions dedicated to calculating specific types of powers related to particular buses, branches, or generators:
 * [`powerInjection`](@ref powerInjection(::PowerSystem, ::ACAnalysis)),
 * [`powerSupply`](@ref powerSupply(::PowerSystem, ::ACPowerFlow)),
 * [`powerShunt`](@ref powerShunt(::PowerSystem, ::ACAnalysis)),
 * [`powerFrom`](@ref powerFrom(::PowerSystem, ::ACAnalysis)),
 * [`powerTo`](@ref powerTo(::PowerSystem, ::ACAnalysis)),
 * [`powerCharging`](@ref powerCharging(::PowerSystem, ::ACAnalysis)),
-* [`powerLoss`](@ref powerLoss(::PowerSystem, ::ACAnalysis)),
-* [`powerGenerator`](@ref powerGenerator(::PowerSystem, ::ACPowerFlow)),
+* [`powerSeries`](@ref powerSeries(::PowerSystem, ::ACAnalysis)),
+* [`powerGenerator`](@ref powerGenerator(::PowerSystem, ::ACPowerFlow)).
+
+Likewise, there are specialized functions dedicated to calculating specific types of currents related to particular buses or branches:
 * [`currentInjection`](@ref currentInjection(::PowerSystem, ::ACAnalysis)),
 * [`currentFrom`](@ref currentFrom(::PowerSystem, ::ACAnalysis)),
 * [`currentTo`](@ref currentTo(::PowerSystem, ::ACAnalysis)),
-* [`currentLine`](@ref currentLine(::PowerSystem, ::ACAnalysis)).
+* [`currentSeries`](@ref currentSeries(::PowerSystem, ::ACAnalysis)).
 
 Additionally, the package provides two functions for reactive power limit validation of generators and adjusting the voltage angles to match an arbitrary bus angle:
 * [`reactiveLimit!`](@ref reactiveLimit!),
@@ -427,14 +428,14 @@ Next, we can compute the active and reactive power flows at "to" bus end of the 
 powerTo(system, model; label = 2)
 ```
 
-To calculate the total reactive power injection by the particular branch, the function can be used:
+To calculate the active and reactive power values linked with branch charging admittances of the particular branch, the function can be used:
 ```@repl ComputationPowersCurrentsLosses
 powerCharging(system, model; label = 2)
 ```
 
-To calculate active and reactive power losses at the particular branch, the function can be used:
+To calculate active and reactive power losses across the series impedance of the particular branch, the function can be used:
 ```@repl ComputationPowersCurrentsLosses
-powerLoss(system, model; label = 2)
+powerSeries(system, model; label = 2)
 ```
 
 Further, we can compute the current at "from" bus end of the particular branch using the following function:

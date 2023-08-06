@@ -5,15 +5,16 @@ The function computes the active and reactive powers associated with buses, bran
 generators in the AC framework.
 
 # Updates
-This function computes the following electrical quantities: 
-- `injection`: active and reactive power injections at each bus,
-- `supply`: active and reactive power injections from the generators at each bus,
-- `shunt`: active and reactive powers associated with the shunt element at each bus,
-- `from`: active and reactive power flows at each "from" bus end of the branch,
-- `to`: active and reactive power flows at each "to" bus end of the branch,
-- `charging`: reactive power injections by each branch,
-- `loss`: active and reactive power losses at each branch,
-- `generator`: output active and reactive powers of each generator.
+This function updates the `power` field of the `Model` composite type by computing the 
+following electrical quantities:  
+- `injection`: vectors representing active and reactive power injections at each bus,
+- `supply`: vectors representing active and reactive power injections from the generators at each bus,
+- `shunt`: vectors representing active and reactive power values associated with shunt element at each bus,
+- `from`: vectors representing active and reactive power flows at the "from" end of each branch,
+- `to`: vectors representing active and reactive power flows at the "to" end of each branch,
+- `charging`: vectors representing active and reactive power values linked with branch charging admittances for each branch,
+- `series` vectors representing active and reactive power losses through each branch series impedance,
+- `generator`: vectors representing produced active and reactive power values of each generator.
 
 # Abstract type
 The abstract type `ACAnalysis` can have the following subtypes:
@@ -50,6 +51,7 @@ power!(system, model)
 function power!(system::PowerSystem, model::ACPowerFlow)
     ac = system.acModel
     slack = system.bus.layout.slack
+    parameter = system.branch.parameter
 
     voltage = model.voltage
     power = model.power
@@ -91,9 +93,12 @@ function power!(system::PowerSystem, model::ACPowerFlow)
     power.from.reactive = fill(0.0, system.branch.number)
     power.to.active = fill(0.0, system.branch.number)
     power.to.reactive = fill(0.0, system.branch.number)
-    power.charging.reactive = fill(0.0, system.branch.number)
-    power.loss.active = fill(0.0, system.branch.number)
-    power.loss.reactive = fill(0.0, system.branch.number)
+    power.charging.from.active = fill(0.0, system.branch.number)
+    power.charging.from.reactive = fill(0.0, system.branch.number)
+    power.charging.to.active = fill(0.0, system.branch.number)
+    power.charging.to.reactive = fill(0.0, system.branch.number)
+    power.series.active = fill(0.0, system.branch.number)
+    power.series.reactive = fill(0.0, system.branch.number)
     @inbounds for i = 1:system.branch.number
         if system.branch.layout.status[i] == 1
             from = system.branch.layout.from[i]
@@ -110,11 +115,20 @@ function power!(system::PowerSystem, model::ACPowerFlow)
             power.to.active[i] = real(powerTo)
             power.to.reactive[i] = imag(powerTo)
 
-            power.charging.reactive[i] = 0.5 * system.branch.parameter.susceptance[i] * (abs(voltageFrom / ac.transformerRatio[i])^2 +  voltage.magnitude[to]^2)
+            turnsRatioInv = 1 / parameter.turnsRatio[i]
+            transformerRatio = turnsRatioInv * exp(-im * parameter.shiftAngle[i])
 
-            currentBranch = abs(ac.admittance[i] * (voltageFrom / ac.transformerRatio[i] - voltageTo))
-            power.loss.active[i] = currentBranch^2 * system.branch.parameter.resistance[i]
-            power.loss.reactive[i] = currentBranch^2 * system.branch.parameter.reactance[i]
+            currentBranch = abs(ac.admittance[i] * (voltageFrom * transformerRatio - voltageTo))
+            power.series.active[i] = currentBranch^2 * system.branch.parameter.resistance[i]
+            power.series.reactive[i] = currentBranch^2 * system.branch.parameter.reactance[i]
+
+            fromShunt = 0.5 * (turnsRatioInv * voltage.magnitude[from])^2 * conj(system.branch.parameter.conductance[i] + im * system.branch.parameter.susceptance[i])
+            power.charging.from.active[i] = real(fromShunt)
+            power.charging.from.reactive[i] = imag(fromShunt)
+
+            toShunt = 0.5 * voltage.magnitude[to]^2 * conj(system.branch.parameter.conductance[i] + im * system.branch.parameter.susceptance[i])
+            power.charging.to.active[i] = real(toShunt)
+            power.charging.to.reactive[i] = imag(toShunt)
         end
     end
 
@@ -228,9 +242,12 @@ function power!(system::PowerSystem, model::ACOptimalPowerFlow)
     power.from.reactive = fill(0.0, system.branch.number)
     power.to.active = fill(0.0, system.branch.number)
     power.to.reactive = fill(0.0, system.branch.number)
-    power.charging.reactive = fill(0.0, system.branch.number)
-    power.loss.active = fill(0.0, system.branch.number)
-    power.loss.reactive = fill(0.0, system.branch.number)
+    power.pimodel.series.active = fill(0.0, system.branch.number)
+    power.pimodel.series.reactive = fill(0.0, system.branch.number)
+    power.pimodel.from.active = fill(0.0, system.branch.number)
+    power.pimodel.from.reactive = fill(0.0, system.branch.number)
+    power.pimodel.to.active = fill(0.0, system.branch.number)
+    power.pimodel.to.reactive = fill(0.0, system.branch.number)
     @inbounds for i = 1:system.branch.number
         if system.branch.layout.status[i] == 1
             from = system.branch.layout.from[i]
@@ -247,11 +264,20 @@ function power!(system::PowerSystem, model::ACOptimalPowerFlow)
             power.to.active[i] = real(powerTo)
             power.to.reactive[i] = imag(powerTo)
 
-            power.charging.reactive[i] = 0.5 * system.branch.parameter.susceptance[i] * (abs(voltageFrom / ac.transformerRatio[i])^2 +  voltage.magnitude[to]^2)
+            turnsRatioInv = 1 / parameter.turnsRatio[i]
+            transformerRatio = turnsRatioInv * exp(-im * parameter.shiftAngle[i])
 
-            currentBranch = abs(ac.admittance[i] * (voltageFrom / ac.transformerRatio[i] - voltageTo))
-            power.loss.active[i] = currentBranch^2 * system.branch.parameter.resistance[i]
-            power.loss.reactive[i] = currentBranch^2 * system.branch.parameter.reactance[i]
+            currentBranch = abs(ac.admittance[i] * (voltageFrom * transformerRatio - voltageTo))
+            power.pimodel.series.active[i] = currentBranch^2 * system.branch.parameter.resistance[i]
+            power.pimodel.series.reactive[i] = currentBranch^2 * system.branch.parameter.reactance[i]
+
+            fromShunt = 0.5 * (turnsRatioInv * voltage.magnitude[from])^2 * conj(system.branch.parameter.conductance[i] + im * system.branch.parameter.susceptance[i])
+            power.pimodel.from.active[i] = real(fromShunt)
+            power.pimodel.from.reactive[i] = imag(fromShunt)
+
+            toShunt = 0.5 * voltage.magnitude[to]^2 * conj(system.branch.parameter.conductance[i] + im * system.branch.parameter.susceptance[i])
+            power.pimodel.to.active[i] = real(toShunt)
+            power.pimodel.to.reactive[i] = imag(toShunt)
         end
     end
 
@@ -417,8 +443,8 @@ end
 """
     powerShunt(system::PowerSystem, model::ACAnalysis, label)
 
-The function returns the active and reactive power of the shunt element associated with a 
-specific bus in the AC framework. The `label` keyword argument must match an existing 
+The function returns the active and reactive power values of the shunt element associated 
+with a specific bus in the AC framework. The `label` keyword argument must match an existing 
 bus label.
 
 # Abstract type
@@ -599,8 +625,9 @@ end
 """
     powerCharging(system::PowerSystem, model::ACAnalysis; label)
 
-The function returns the reactive power injection associated with a specific branch in 
-the AC framework. The `label` keyword argument must match an existing branch label.
+The function returns the active and reactive power values associated with the charging 
+admittances of a specific branch in the AC framework. The 'label' keyword argument must 
+correspond to an existing branch label.
 
 # Abstract type
 The abstract type `ACAnalysis` can have the following subtypes:
@@ -642,7 +669,7 @@ function powerCharging(system::PowerSystem, model::ACAnalysis; label)
 
     ac = system.acModel
     voltage = model.voltage
-
+    parameter = system.branch.parameter
     index = system.branch.label[label]
 
     if system.branch.layout.status[index] == 1
@@ -650,29 +677,46 @@ function powerCharging(system::PowerSystem, model::ACAnalysis; label)
         to = system.branch.layout.to[index]
 
         voltageFrom = voltage.magnitude[from] * exp(im * voltage.angle[from])
+        voltageTo = voltage.magnitude[to] * exp(im * voltage.angle[to])
 
-        charging = 0.5 * system.branch.parameter.susceptance[index] * (abs(voltageFrom / ac.transformerRatio[index])^2 +  voltage.magnitude[to]^2)
+        turnsRatioInv = 1 / parameter.turnsRatio[index]
+        transformerRatio = turnsRatioInv * exp(-im * parameter.shiftAngle[index])
+
+        fromShunt = 0.5 * (turnsRatioInv * voltage.magnitude[from])^2 * conj(parameter.conductance[index] + im * parameter.susceptance[index])
+        fromActive = real(fromShunt)
+        fromReactive = imag(fromShunt)
+
+        toShunt = 0.5 * voltage.magnitude[to]^2 * conj(parameter.conductance[index] + im * parameter.susceptance[index])
+        toActive = real(toShunt)
+        toeRactive = imag(toShunt)
     else
-        charging = 0.0
+        fromActive = 0.0
+        fromReactive = 0.0
+        toActive = 0.0
+        toeRactive = 0.0
     end
 
-    return charging
+    return Charging(
+        Cartesian(fromActive, fromReactive),
+        Cartesian(toActive, toeRactive)
+    )
 end
 
 """
-    powerLoss(system::PowerSystem, model::ACAnalysis; label)
+    powerSeries(system::PowerSystem, model::ACAnalysis; label)
 
-The function returns the active and reactive power losses associated with a specific 
-branch in the AC framework. The `label` keyword argument must match an existing branch label.
+The function returns the active and reactive power losses through the series impedance of 
+a specific branch within the AC framework. The `label` keyword argument should correspond 
+to an existing branch label.
 
 # Abstract type
 The abstract type `ACAnalysis` can have the following subtypes:
-- `ACPowerFlow`: computes the powers within the AC power flow,
-- `ACOptimalPowerFlow`: computes the powers within the AC optimal power flow.
+- `ACPowerFlow`: computes the power within the AC power flow,
+- `ACOptimalPowerFlow`: computes the power within the AC optimal power flow.
 
 # Examples
+Compute the reactive power after obtaining the AC power flow solution:
 ```jldoctest
-Compute powers after obtaining the AC power flow solution
 system = powerSystem("case14.h5")
 acModel!(system)
 
@@ -684,20 +728,20 @@ for i = 1:10
     end
     solve!(system, model)
 end
-loss = powerLoss(system, model; label = 2)
+series = powerSeries(system, model; label = 2)
 ```
 
-Compute powers after obtaining the AC optimal power flow solution:
+Compute the reactive power after obtaining the AC optimal power flow solution:
 ```jldoctest
 system = powerSystem("case14.h5")
 acModel!(system)
 
 model = acOptimalPowerFlow(system, Ipopt.Optimizer)
 solve!(system, model)
-loss = powerLoss(system, model; label = 2)
+series = powerSeries(system, model; label = 2)
 ```
 """
-function powerLoss(system::PowerSystem, model::ACAnalysis; label)
+function powerSeries(system::PowerSystem, model::ACAnalysis; label)
     if !haskey(system.branch.label, label)
         throw(ErrorException("The value $label of the label keyword does not exist in branch labels."))
     end
@@ -705,7 +749,7 @@ function powerLoss(system::PowerSystem, model::ACAnalysis; label)
 
     ac = system.acModel
     voltage = model.voltage
-
+    parameter = system.branch.parameter
     index = system.branch.label[label]
 
     if system.branch.layout.status[index] == 1
@@ -715,22 +759,25 @@ function powerLoss(system::PowerSystem, model::ACAnalysis; label)
         voltageFrom = voltage.magnitude[from] * exp(im * voltage.angle[from])
         voltageTo = voltage.magnitude[to] * exp(im * voltage.angle[to])
 
-        currentMagnitude = (abs(ac.admittance[index] * (voltageFrom / ac.transformerRatio[index] - voltageTo)))^2
-        lossActive = currentMagnitude * system.branch.parameter.resistance[index]
-        lossReactive = currentMagnitude * system.branch.parameter.reactance[index]
+        turnsRatioInv = 1 / parameter.turnsRatio[index]
+        transformerRatio = turnsRatioInv * exp(-im * parameter.shiftAngle[index])
+
+        currentBranch = abs(ac.admittance[index] * (voltageFrom * transformerRatio - voltageTo))
+        seriesActive = currentBranch^2 * parameter.resistance[index]
+        seriesReactive = currentBranch^2 * parameter.reactance[index]
     else
-        lossActive = 0.0
-        lossReactive = 0.0
+        seriesActive = 0.0
+        seriesReactive = 0.0
     end
 
-    return Cartesian(lossActive, lossReactive)
+    return Cartesian(seriesActive,seriesReactive)
 end
 
 """
     powerGenerator(system::PowerSystem, model::ACAnalysis)
 
-The function returns the active and reactive powers associated with a specific generator in
-the AC framework. The `label` keyword argument must match an existing generator label.
+The function returns the active and reactive powers associated with a specific generator 
+in the AC framework. The `label` keyword argument must match an existing generator label.
 
 # Abstract type
 The abstract type `ACAnalysis` can have the following subtypes:
@@ -943,8 +990,12 @@ function current!(system::PowerSystem, model::ACAnalysis)
     current.from.angle = fill(0.0, system.branch.number)
     current.to.magnitude = fill(0.0, system.branch.number)
     current.to.angle = fill(0.0, system.branch.number)
-    current.line.magnitude = fill(0.0, system.branch.number)
-    current.line.angle = fill(0.0, system.branch.number)
+    current.charging.from.magnitude = fill(0.0, system.branch.number)
+    current.charging.from.angle = fill(0.0, system.branch.number)
+    current.charging.to.magnitude = fill(0.0, system.branch.number)
+    current.charging.to.angle = fill(0.0, system.branch.number)
+    current.series.magnitude = fill(0.0, system.branch.number)
+    current.series.angle = fill(0.0, system.branch.number)
     @inbounds for i = 1:system.branch.number
         if system.branch.layout.status[i] == 1
             from = system.branch.layout.from[i]
@@ -961,7 +1012,8 @@ function current!(system::PowerSystem, model::ACAnalysis)
             current.to.magnitude[i] = abs(currentTo)
             current.to.angle[i] = angle(currentTo)
 
-            currentBranch = ac.admittance[i] * (voltageFrom / ac.transformerRatio[i] - voltageTo)
+            transformerRatio = (1 / parameter.turnsRatio[i]) * exp(-im * parameter.shiftAngle[i])
+            currentBranch = ac.admittance[i] * (transformerRatio * voltageFrom - voltageTo)
             current.line.magnitude[i] = abs(currentBranch)
             current.line.angle[i] = angle(currentBranch)
 
@@ -1154,9 +1206,8 @@ function currentTo(system::PowerSystem, model::ACAnalysis; label)
     return Polar(abs(currentTo), angle(currentTo))
 end
 
-
 """
-    currentLine(system::PowerSystem, model::ACAnalysis; label)
+    currentSeries(system::PowerSystem, model::ACAnalysis; label)
 
 The function returns the current in the polar coordinate system through series impedance 
 associated with a specific branch in the direction from the "from" bus end to the "to" bus 
@@ -1182,7 +1233,7 @@ for i = 1:10
     end
     solve!(system, model)
 end
-line = currentLine(system, model; label = 2)
+line = currentSeries(system, model; label = 2)
 ```
 
 Compute the current after obtaining the AC optimal power flow solution:
@@ -1192,10 +1243,10 @@ acModel!(system)
 
 model = acOptimalPowerFlow(system, Ipopt.Optimizer)
 solve!(system, model)
-line = currentLine(system, model; label = 2)
+line = currentSeries(system, model; label = 2)
 ```
 """
-function currentLine(system::PowerSystem, model::ACAnalysis; label)
+function currentSeries(system::PowerSystem, model::ACAnalysis; label)
     if !haskey(system.branch.label, label)
         throw(ErrorException("The value $label of the label keyword does not exist in branch labels."))
     end
@@ -1211,11 +1262,12 @@ function currentLine(system::PowerSystem, model::ACAnalysis; label)
 
         voltageFrom = voltage.magnitude[from] * exp(im * voltage.angle[from])
         voltageTo = voltage.magnitude[to] * exp(im * voltage.angle[to])
-
-        currentLine = ac.admittance[index] * (voltageFrom / ac.transformerRatio[index] - voltageTo)
+        transformerRatio = (1 / parameter.turnsRatio[index]) * exp(-im * parameter.shiftAngle[index])
+        
+        currentSeries = ac.admittance[index] * (transformerRatio * voltageFrom - voltageTo)
     else
-        currentLine = 0.0 + im * 0.0
+        currentSeries = 0.0 + im * 0.0
     end
 
-    return Polar(abs(currentLine), angle(currentLine))
+    return Polar(abs(currentSeries), angle(currentSeries))
 end

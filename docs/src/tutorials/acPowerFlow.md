@@ -40,7 +40,7 @@ To review, we can conceptualize the bus/branch model as the graph denoted by ``\
 ---
 
 ## [Bus Types and Power Injections](@id BusTypesPowerInjectionsTutorials)
-As previously demonstrated in the section on the [AC Model](@ref ACModelTutorials), we can express the network as the system of equations:
+As previously demonstrated in the section on the [AC Model](@ref ACModelTutorials), we observe the system of equations:
 ```math
     \mathbf{\bar {I}} = \mathbf{Y} \mathbf{\bar {V}}.
 ```
@@ -58,11 +58,11 @@ The complex power injection denoted by ``S_i`` comprises of both the active powe
 ```
 As demonstrated by the above equation, the bus ``i \in \mathcal{N}`` contains four unknown variables, namely the active power injection ``{P}_{i}``, reactive power injection ``{Q}_{i}``, bus voltage magnitude ``{V}_{i}``, and bus voltage angle ``{\theta}_{i}``. To solve the system of equations, two variables must be specified for each equation. Although any two variables can be selected mathematically, the choice is determined by the devices that are connected to a particular bus. The standard options are listed in the table below, and these options are used to define the bus types [[1]](@ref PowerFlowSolutionReferenceTutorials).
 
-| Bus Type         | Label            | JuliaGrid | Known                       | Unknown                     |
-|:-----------------|-----------------:|----------:|----------------------------:|----------------------------:|
-| Demand           | PQ               | 1         | ``P_{i}``, ``Q_{i}``        | ``V_{i}``, ``{\theta_{i}}`` |
-| Generator        | PV               | 2         | ``P_{i}``, ``V_{i}``        | ``Q_{i}``, ``{\theta_{i}}`` |
-| Slack            | ``V \theta``     | 3         | ``V_{i}``, ``{\theta_{i}}`` | ``P_{i}``, ``Q_{i}``        |
+| Bus Type         | Label     | Known                       | Unknown                     |
+|:-----------------|----------:|----------------------------:|----------------------------:|
+| Demand           | 1         | ``P_{i}``, ``Q_{i}``        | ``V_{i}``, ``{\theta_{i}}`` |
+| Generator        | 2         | ``P_{i}``, ``V_{i}``        | ``Q_{i}``, ``{\theta_{i}}`` |
+| Slack            | 3         | ``V_{i}``, ``{\theta_{i}}`` | ``P_{i}``, ``Q_{i}``        |
 
 Consequently, JuliaGrid operates with sets ``\mathcal{N}_{\text{pq}}`` and ``\mathcal{N}_{\text{pv}}`` that contain demand and generator buses, respectively, and exactly one slack bus in the set ``\mathcal{N}_{\text{sb}}``. The bus types are stored in the variable:
 ```@repl PowerFlowSolution
@@ -78,12 +78,20 @@ Furthermore, the active power injections ``{P}_{i}`` and reactive power injectio
     Q_{i} &= Q_{\text{s}i} - Q_{\text{d}i},
   \end{aligned}
 ```
-where ``{P}_{\text{s}i}`` and ``{Q}_{\text{s}i}`` correspond to the active and reactive power injected by the generators at the bus ``i \in \mathcal{N}``, while ``{P}_{\text{d}i}`` and ``{Q}_{\text{d}i}`` denote the active and reactive power demanded at the bus ``i \in \mathcal{N}``. We can calculate the vectors ``\mathbf{P} = [P_i] `` and ``\mathbf{Q} = [Q_i]`` using the following code:
+where ``{P}_{\text{d}i}`` and ``{Q}_{\text{d}i}`` denote the active and reactive power demanded at the bus ``i \in \mathcal{N}``, while ``{P}_{\text{s}i}`` and ``{Q}_{\text{s}i}`` correspond to the active and reactive power injected by the generators at the bus ``i \in \mathcal{N}``. Specifically, each bus can accommodate ``n_{\text{g}i}`` generators, if we denote the active and reactive power outputs of the ``k``-th generator as ``P_{\text{g}k}`` and ``Q_{\text{g}k}``, respectively, then ``{P}_{\text{s}i}`` and ``{Q}_{\text{s}i}`` can be computed as:
+```math
+  \begin{aligned}
+  	P_{\text{s}i} &= \sum_{k=1}^{n_{\text{g}i}} P_{\text{g}k}\\
+     Q_{\text{s}i} &= \sum_{k=1}^{n_{\text{g}i}} Q_{\text{g}k}.
+  \end{aligned}
+```
+We can calculate the vectors ``\mathbf{P} = [P_i] `` and ``\mathbf{Q} = [Q_i]`` using the following code:
 ```@repl PowerFlowSolution
 𝐏 = system.bus.supply.active - system.bus.demand.active
 𝐐 = system.bus.supply.reactive - system.bus.demand.reactive
 ```
-
+When the active or reactive power values are positive,  ``P_i > 0`` or ``Q_i > 0``, it signifies that power is being supplied into the power system from the specific bus. This indicates that the generators connected to this bus are producing more power than what the connected load is consuming. Conversely, negative values, ``P_i < 0`` or ``Q_i < 0``, indicate that the bus is drawing in active or reactive power from the power system. This suggests that the load's demand is exceeding the output from the generators.
+     
 ---
 
 ## [Newton-Raphson Method](@id NewtonRaphsonMethodTutorials)
@@ -707,15 +715,16 @@ The function stores the computed powers in the rectangular coordinate system. It
 It also calculates the following powers related to branches:
 * active and reactive power flows at each "from" bus end: ``\mathbf{P}_{\text{i}} = [P_{ij}]``, ``\mathbf{Q}_{\text{i}} = [Q_{ij}]``,
 * active and reactive power flows at each "to" bus end: ``\mathbf{P}_{\text{j}} = [P_{ji}]``, ``\mathbf{Q}_{\text{j}} = [Q_{ji}]``,
-* active and reactive power losses: ``\mathbf{P}_{\text{l}} = [P_{\text{l}ij}]``, ``\mathbf{Q}_{\text{l}} = [Q_{\text{l}ij}]``,
-* reactive power injections: ``\mathbf{Q}_{\text{r}} = [ Q_{\text{r}ij}]``.
+* active and reactive powers linked with charging admittance at each "from" bus end: ``\mathbf{P}_{\text{ci}} = [P_{\text{c}i}]``, ``\mathbf{Q}_{\text{ci}} = [Q_{\text{c}i}]``,
+* active and reactive powers linked with charging admittance at each "to" bus end: ``\mathbf{P}_{\text{cj}} = [P_{\text{c}j}]``, ``\mathbf{Q}_{\text{cj}} = [Q_{\text{c}j}]``,
+* active and reactive power losses across each series impedance: ``\mathbf{P}_{\text{l}} = [P_{\text{l}ij}]``, ``\mathbf{Q}_{\text{l}} = [Q_{\text{l}ij}]``.
 
 Lastly, it calculates the following powers related to generators:
 * output active and reactive powers: ``\mathbf{P}_{\text{g}} = [P_{\text{g}i}]``, ``\mathbf{Q}_{\text{g}} = [Q_{\text{g}i}]``.
 
 ---
 
-##### Active and Reactive Power Injections at Each Bus
+##### Active and Reactive Power Injections
 The computation of active and reactive power injections at each bus is expressed by the following equation:
 ```math
     {S}_{i} = P_i + \text{j}Q_i = \bar{V}_{i}\sum\limits_{j = 1}^n {Y}_{ij}^* \bar{V}_{j}^*,\;\;\; i \in \mathcal{N}.
@@ -725,10 +734,11 @@ Active and reactive power injections are stored as the vectors ``\mathbf{P} = [P
 𝐏 = model.power.injection.active
 𝐐 = model.power.injection.reactive
 ```
+To recall, when the active or reactive power values are positive, ``P_i > 0`` or ``Q_i > 0``, it signifies that power is being supplied into the power system from the specific bus. Conversely, negative values, ``P_i < 0`` or ``Q_i < 0``, indicate that the bus is drawing in active or reactive power from the power system. 
 
 ----
 
-##### Active and Reactive Power Injections from the Generators at Each Bus
+##### Active and Reactive Power Injections from the Generators
 The [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)) function in JuliaGrid also computes the active and reactive power injections from the generators at each bus. The active power supplied by the generators to the buses can be calculated by summing the given generator active powers in the input data, except for the slack bus, which can be determined as:
 ```math
     P_{\text{s}i} = P_i + P_{\text{d}i},\;\;\; i \in \mathcal{N}_{\text{sb}},
@@ -749,20 +759,21 @@ where ``Q_{\text{d}i}`` represents the reactive power demanded by consumers at t
 
 ---
 
-##### Active and Reactive Powers Associated with Shunt Elements at Each Bus
+##### Active and Reactive Powers Associated with Shunt Elements
 To obtain the active and reactive powers associated with the shunt elements at each bus, you can use the following equation:
 ```math
-  {S}_{\text{sh}i} = {P}_{\text{sh}i} + \text{j}{Q}_{\text{sh}i} = \bar{V}_{i}\bar{I}_{\text{sh}i}^* = {y}_{\text{sh}i}^*|\bar{V}_{i}|^2,\;\;\; i \in \mathcal{N}.
+  {S}_{\text{sh}i} = {P}_{\text{sh}i} + \text{j}{Q}_{\text{sh}i} = \bar{V}_{i}\bar{I}_{\text{sh}i}^* = {y}_{\text{sh}i}^*{V}_{i}^2,\;\;\; i \in \mathcal{N}.
 ```
 The active power demanded by the shunt element at each bus is represented by the vector ``\mathbf{P}_{\text{sh}} = [{P}_{\text{sh}i}]``, while the reactive power injected or demanded by the shunt element at each bus is represented by the vector ``\mathbf{Q}_{\text{sh}} = [{Q}_{\text{sh}i}]``. To retrieve these powers in JuliaGrid, use the following commands:
 ```@repl PowerFlowSolution
 𝐏ₛₕ = model.power.shunt.active
 𝐐ₛₕ = model.power.shunt.reactive
 ```
+The positive active power value ``{P}_{\text{sh}i} > 0`` indicates that the shunt element is consuming active power. In terms of power flow, this signifies that active power flows from bus ``i \in \mathcal{N}`` towards the ground. On the other hand, a negative reactive power value ``{Q}_{\text{sh}i} < 0`` suggests that the shunt element is injecting reactive power into the power system. This implies that the direction of reactive power is from the ground to bus ``i \in \mathcal{N}``, illustrating the capacitive nature of the shunt component. Conversely, if ``{Q}_{\text{sh}i} > 0``, it indicates an inductive characteristic, implying that the shunt component is absorbing reactive power. In this case, the reactive power flows from bus ``i \in \mathcal{N}`` towards the ground.
 
 ---
 
-##### Active and Reactive Power Flows at Each "From" Bus End of the Branch
+##### Active and Reactive Power Flows "From" Bus Ends
 The active and reactive power flows at "from" bus end ``i \in \mathcal{N}`` of the branch can be obtained using the following equation based on the [unified branch model](@ref UnifiedBranchModelTutorials):
 ```math
     S_{ij} = P_{ij} + \text{j}Q_{ij} = \bar{V}_{i}\left[\cfrac{1}{\tau_{ij}^2}({y}_{ij} + y_{\text{s}ij}) \bar{V}_{i} - \alpha_{ij}^*{y}_{ij} \bar{V}_{j}\right]^*,\;\;\; (i,j) \in \mathcal{E}.
@@ -772,10 +783,11 @@ The resulting active and reactive power flows at each "from" bus end are stored 
 𝐏ᵢ = model.power.from.active
 𝐐ᵢ = model.power.from.reactive
 ```
+Positive values of active or reactive power, ``P_{ij} > 0`` or ``Q_{ij} > 0``, indicate that the power flow originates from the "from" bus end and moves towards the "to" bus end. Conversely, negative values, ``P_{ij} < 0`` or ``Q_{ij} < 0``, indicate the oposite power flow direction. Specifically, a negative sign denotes that the power flow direction is opposite to the conventionally assumed direction defined by the current at the "from" bus end in the [unified branch model](@ref UnifiedBranchModelTutorials).
 
 ---
 
-##### Active and Reactive Power Flows at Each "To" Bus End of the Branch
+##### Active and Reactive Power Flows "To" Bus Ends
 Similarly, we can determine the active and reactive power flows at the "to" bus end ``j \in \mathcal{N}`` of the branch using the equation:
 ```math
     {S}_{ji} = P_{ji} + \text{j}Q_{ji} = \bar{V}_{j} \left[-\alpha_{ij}{y}_{ij} \bar{V}_{i} + ({y}_{ij} + y_{\text{s}ij}) \bar{V}_{j}\right]^*,\;\;\; (i,j) \in \mathcal{E}.
@@ -785,10 +797,24 @@ The vectors of active and reactive power flows at the "to" bus end are stored as
 𝐏ⱼ = model.power.to.active
 𝐐ⱼ = model.power.to.reactive
 ```
+Positive active or reactive power values, ``P_{ji} > 0`` or ``Q_{ji} > 0``,  signify that the power flow originates from the "to" bus end and moves in the direction of the "from" bus end. Conversely, negative values, ``P_{ji} < 0`` or ``Q_{ji} < 0``, indicate the opposite direction of power flow. Similar to the previous scenario, a negative sign indicates that the power flow direction contradicts the commonly assumed direction defined by the current at the "to" bus end in the [unified branch model](@ref UnifiedBranchModelTutorials).
 
 ---
 
-##### Active and Reactive Power Losses at Each Branch
+##### Active and Reactive Power Injections by Branchs
+The branch's capacitive or charging susceptances cause reactive power injections. We can calculate the total reactive power injected by the branch using the following equation:
+```math
+    Q_{\text{r}ij} = - b_{\text{s}ij} \left(\cfrac{V_i^2}{\tau_{ij}^2} + V_j^2 \right),\;\;\; (i,j) \in \mathcal{E}.
+```
+To retrieve the vector of injected reactive powers ``\mathbf{Q}_{\text{r}} = [Q_{\text{r}ij}]``, use the following Julia command:
+```@repl PowerFlowSolution
+𝐐ᵣ = model.power.charging.reactive
+```
+Negative values of reactive power ``Q_{\text{r}ij} < 0`` are indicative that the branch injects reactive power due to its charging susceptances. This implies that the flow direction originates from the ground. The negative sign, in this case, suggests that the power flow direction contradicts the commonly assumed direction established by the current through charging susceptances in the [unified branch model](@ref UnifiedBranchModelTutorials).
+
+---
+
+##### Active and Reactive Power Losses
 The active and reactive power losses of the branch are caused by its series impedance ``z_{ij}``. These losses can be obtained using the following equations:
 ```math
     \begin{aligned}
@@ -799,19 +825,7 @@ The active and reactive power losses of the branch are caused by its series impe
 where ``(i,j) \in \mathcal{E}``. We can retrieve the vectors of active and reactive power losses, ``\mathbf{P}_{\text{l}} = [P_{\text{l}ij}]`` and ``\mathbf{Q}_{\text{l}} = [Q_{\text{l}ij}]``, respectively, using the following commands:
 ```@repl PowerFlowSolution
 𝐏ₗ = model.power.loss.active
-𝐐ₗ = pmodel.power.loss.reactive
-```
-
----
-
-##### Reactive Power Injections by Each Branch
-The branch's capacitive susceptances cause reactive power injections. We can calculate the total reactive power injected by the branch using the following equation:
-```math
-    Q_{\text{r}ij} = b_{\text{s}ij} (|\alpha_{ij}\bar{V}_{i}|^2 - |\bar{V}_{j}|^2),\;\;\; (i,j) \in \mathcal{E}.
-```
-To retrieve the vector of injected reactive powers ``\mathbf{Q}_{\text{r}} = [Q_{\text{r}ij}]``, use the following Julia command:
-```@repl PowerFlowSolution
-𝐐ᵣ = model.power.charging.reactive
+𝐐ₗ = model.power.loss.reactive
 ```
 
 ---

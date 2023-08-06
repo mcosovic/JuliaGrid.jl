@@ -47,14 +47,19 @@ mutable struct CartesianImagRef
 end
 
 ######### Powers in the AC Framework ##########
+mutable struct Charging
+    from::Cartesian
+    to::Cartesian
+end
+    
 mutable struct Power
     injection::Cartesian
     supply::Cartesian
     shunt::Cartesian
     from::Cartesian
     to::Cartesian
-    charging::CartesianImag
-    loss::Cartesian
+    charging::Charging
+    series::Cartesian
     generator::Cartesian
 end
 
@@ -63,7 +68,7 @@ mutable struct Current
     injection::Polar
     from::Polar
     to::Polar
-    line::Polar
+    series::Polar
 end
 
 ######### Powers in the DC Framework ##########
@@ -119,8 +124,9 @@ const template = Dict(
         :status => 1,
         :resistance => 0.0,
         :reactance => 0.0,
+        :conductance => 0.0,
         :susceptance => 0.0,
-        :turnsRatio => 0.0,
+        :turnsRatio => 1.0,
         :shiftAngle => 0.0,
         :minDiffAngle => 0.0,
         :maxDiffAngle => 0.0,
