@@ -369,7 +369,6 @@ Next, the system of equations for ``i=1,\dots,n`` can be written in the matrix f
 ```
 where ``\bm \theta \in \mathbb{R}^{n}`` is the vector of bus voltage angles.
 
-
 The vector ``\mathbf {P} \in \mathbb{R}^{n}`` contains active power injections at buses caused by generators and demands. In JuliaGrid, the vector can be recovered using a command:
 ```@repl ACDCModel
 𝐏 = system.bus.supply.active - system.bus.demand.active

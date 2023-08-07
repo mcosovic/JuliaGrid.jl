@@ -177,20 +177,28 @@ system.base.power.value * model.power.from.active
 !!! note "Info"
     To better understand the powers associated with buses, branches and generators that are calculated by the [`power!`](@ref power!(::PowerSystem, ::DCPowerFlow)) function, we suggest referring to the tutorials on [DC power flow analysis](@ref DCPowerAnalysisTutorials).
 
+To calculate specific quantities for particular components rather than calculating active powers for all components, users can make use of the provided functions below.
+
 ---
 
-##### Powers Related to Bus
-Instead of calculating powers for all components, users have the option to compute specific quantities for particular components. In this regard, the following function can be utilized to calculate active powers associated with a specific bus:
+##### Active Power Injection
+To calculate active power injection associated with a specific bus, the function can be used:
 ```@repl ComputationPowersCurrentsLosses
 powerInjection(system, model; label = 1)
+```
 
+---
+
+##### Active Power Injection from Generators
+To calculate active power injection from the generators at a specific bus, the function can be used:
+```@repl ComputationPowersCurrentsLosses
 powerSupply(system, model; label = 1)
 ```
 
 ---
 
-##### Powers Related to Branch
-Similarly, we can compute the active powers related to a particular branch using the following function:
+##### Active Power Flow
+Similarly, we can compute the active power flow at both the "from" and "to" bus ends of the specific branch by utilizing the provided functions below:
 ```@repl ComputationPowersCurrentsLosses
 powerFrom(system, model; label = 2)
 powerTo(system, model; label = 2)
@@ -198,8 +206,8 @@ powerTo(system, model; label = 2)
 
 ---
 
-##### Power Related to Generator
-Finally, we can compute the active output power of a particular generator using the function:
+##### Generator Active Power Output
+Finally, we can compute the active power output of a particular generator using the function:
 ```@repl ComputationPowersCurrentsLosses
 powerGenerator(system, model; label = 1)
 ```

@@ -7,8 +7,8 @@ generators in the AC framework.
 # Updates
 This function updates the `power` field of the `Model` composite type by computing the 
 following electrical quantities:  
-- `injection`: active and reactive power injections at each bus,
-- `supply`: active and reactive power injections from the generators at each bus,
+- `injection`: active and reactive power bus injections,
+- `supply`: active and reactive power bus injections from the generators,
 - `shunt`: active and reactive power values associated with shunt element at each bus,
 - `from`: active and reactive power flows at the "from" end of each branch,
 - `to`: active and reactive power flows at the "to" end of each branch,

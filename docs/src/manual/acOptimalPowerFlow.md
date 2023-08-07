@@ -12,17 +12,20 @@ After obtaining the AC optimal power flow solution, JuliaGrid offers post-proces
 * [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)),
 * [`current!`](@ref current!(::PowerSystem, ::ACPowerFlow)).
 
-Additionally, there are specialized functions dedicated to calculating specific types of powers and currents related to to particular buses or branches:
+Furthermore, there are specialized functions dedicated to calculating specific types of powers related to particular buses or branches:
 * [`powerInjection`](@ref powerInjection(::PowerSystem, ::ACAnalysis)),
 * [`powerSupply`](@ref powerSupply(::PowerSystem, ::ACPowerFlow)),
 * [`powerShunt`](@ref powerShunt(::PowerSystem, ::ACAnalysis)),
 * [`powerFrom`](@ref powerFrom(::PowerSystem, ::ACAnalysis)),
 * [`powerTo`](@ref powerTo(::PowerSystem, ::ACAnalysis)),
-* [`powerPimodel`](@ref powerPimodel(::PowerSystem, ::ACAnalysis)),
+* [`powerCharging`](@ref powerCharging(::PowerSystem, ::ACAnalysis)),
+* [`powerSeries`](@ref powerSeries(::PowerSystem, ::ACAnalysis)),
+
+Likewise, there are specialized functions dedicated to calculating specific types of currents related to particular buses or branches:
 * [`currentInjection`](@ref currentInjection(::PowerSystem, ::ACAnalysis)),
 * [`currentFrom`](@ref currentFrom(::PowerSystem, ::ACAnalysis)),
 * [`currentTo`](@ref currentTo(::PowerSystem, ::ACAnalysis)),
-* [`currentLine`](@ref currentLine(::PowerSystem, ::ACAnalysis)).
+* [`currentSeries`](@ref currentSeries(::PowerSystem, ::ACAnalysis)).
 
 ---
 

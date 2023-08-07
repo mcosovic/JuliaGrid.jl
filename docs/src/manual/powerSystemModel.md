@@ -383,7 +383,7 @@ The functions [`addBus!`](@ref addBus!), [`addBranch!`](@ref addBranch!), and [`
 ##### Default Keyword Values
 For the [`addBus!`](@ref addBus!) function, if the `type` keyword is not provided, the bus type is automatically set to a demand bus with a value of 1 for `type`. The initial bus voltage `magnitude` is set to 1.0 per-unit, and the `base` voltage is set to 138e3 volts. These default values are important to prevent issues with algorithm execution, such as a singular Jacobian when `magnitude = 0.0`.
 
-Moving on to the [`addBranch!`](@ref addBranch!) function, default values of 1 are assigned to the `status` keyword, indicating that the branch is in-service. Additionally, the transformer's off-nominal turns ratio is set at `turnsRatio = 1.0`, accompanied by a `shiftAngle = 0.0`, indicating the configuration of a line using these default values. Lastly, the `type` keyword is automatically set to 1, which corresponds to a particular rating category.
+Moving on to the [`addBranch!`](@ref addBranch!) function, default values of 1 are assigned to the `status` keyword, indicating that the branch is in-service. Additionally, the transformer's off-nominal turns ratio is set at `turnsRatio = 1.0`, accompanied by a `shiftAngle = 0.0`, which signifies that we configure a line using these default values. Lastly, the `type` keyword is automatically set to 1, which corresponds to a particular rating category.
 
 Likewise, the [`addGenerator!`](@ref addGenerator!) function assigns default values of 1 for `status`, indicating that the generator is in-service, and 1.0 per-unit for `magnitude`, which represents the voltage magnitude setpoint.
 

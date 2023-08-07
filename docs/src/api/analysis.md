@@ -50,5 +50,5 @@ current!(::PowerSystem, ::ACAnalysis)
 currentInjection(::PowerSystem, ::ACAnalysis)
 currentFrom(::PowerSystem, ::ACAnalysis)
 currentTo(::PowerSystem, ::ACAnalysis)
-currentLine(::PowerSystem, ::ACAnalysis)
+currentSeries(::PowerSystem, ::ACAnalysis)
 ```
