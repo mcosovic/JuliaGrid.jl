@@ -36,7 +36,7 @@ analysis = dcPowerFlow(system)
 In this example, the slack bus (`type = 3`) corresponds to the bus labelled as 1. However, this bus does not have an in-service generator connected to it. Consequently, JuliaGrid recognizes this as an error and attempts to assign a new slack bus from the available generator buses (`type = 2`) that have connected in-service generators. In this particular example, the bus labelled as 3 will become the new slack bus.
 
 !!! note "Info"
-    The bus that is defined as the slack bus (`type = 3`) but lacks a connected in-service generator will have its type changed to the demand bus (`type = 1`). Meanwhile, the first generator bus (`type = 2`) with an active generator connected to it will be assigned as the new slack bus (`type = 3`).
+    The bus that is defined as the slack bus (`type = 3`) but lacks a connected in-service generator will have its type changed to the demand bus (`type = 1`). Meanwhile, the first generator bus (`type = 2`) with an in-service generator connected to it will be assigned as the new slack bus (`type = 3`).
 
 ---
 

@@ -78,7 +78,7 @@ Please note that in the given example, we include reactive cost functions for ea
 ---
 
 ##### Add Variables
-The user has the ability to easily add new variables to the defined DC optimal power flow model by using the [`@variable`](https://jump.dev/JuMP.jl/stable/reference/variables/#JuMP.@variable) macro from the JuMP package. Here is an example:
+The user has the ability to easily add new variables to the defined AC optimal power flow model by using the [`@variable`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.@variable) macro from the JuMP package. Here is an example:
 ```@example ACOptimalPowerFlow
 JuMP.@variable(analysis.jump, new)
 nothing # hide
@@ -92,7 +92,7 @@ JuMP.is_valid(analysis.jump, new)
 ---
 
 ##### Delete Variables
-To delete a variable, the [`delete`](https://jump.dev/JuMP.jl/stable/reference/constraints/#JuMP.delete) function from the JuMP package can be used:
+To delete a variable, the [`delete`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.delete) function from the JuMP package can be used:
 ```@example ACOptimalPowerFlow
 JuMP.delete(analysis.jump, new)
 ```
@@ -204,7 +204,7 @@ As a result, for the generator labeled as 2, there exists a linear piecewise cos
 ---
 
 ##### Add Constraints
-Users can effortlessly incorporate additional constraints into the defined AC optimal power flow model using the [`@constraint`](https://jump.dev/JuMP.jl/stable/reference/constraints/#JuMP.@constraint) macro. For instance, a new constraint can be added as follows:
+Users can effortlessly incorporate additional constraints into the defined AC optimal power flow model using the [`@constraint`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.@constraint) macro. For instance, a new constraint can be added as follows:
 ```@example ACOptimalPowerFlow
 angle = analysis.jump[:angle]
 
@@ -215,7 +215,7 @@ nothing # hide
 ---
 
 ##### Delete Constraints
-To delete a constraint, users can utilize the [`delete`](https://jump.dev/JuMP.jl/stable/reference/constraints/#JuMP.delete) function from the JuMP package. When dealing with constraints created internally, users can utilize the constraint references stored in the `constraint` field of the `ACOptimalPowerFlow` type. For instance, to delete the first constraint that limits the voltage angle difference, the following code snippet can be employed:
+To delete a constraint, users can utilize the [`delete`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.delete) function from the JuMP package. When dealing with constraints created internally, users can utilize the constraint references stored in the `constraint` field of the `ACOptimalPowerFlow` type. For instance, to delete the first constraint that limits the voltage angle difference, the following code snippet can be employed:
 ```@example ACOptimalPowerFlow
 JuMP.delete(analysis.jump, analysis.constraint.limit.angle[1])
 nothing # hide
@@ -243,7 +243,7 @@ JuMP.objective_function(analysis.jump)
 ---
 
 ##### Change Objective
-The objective can be modified by the user using the [`set_objective_function`](https://jump.dev/JuMP.jl/stable/reference/objectives/#JuMP.set_objective_function) function from the JuMP package. Here is an example of how it can be done:
+The objective can be modified by the user using the [`set_objective_function`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.set_objective_function) function from the JuMP package. Here is an example of how it can be done:
 ```@example ACOptimalPowerFlow
 active = analysis.jump[:active]
 helperActive = analysis.jump[:helperActive]
@@ -260,7 +260,7 @@ There are two methods available to specify primal starting values for each varia
 ---
 
 ##### Using JuMP Functions
-One approach is to utilize the [`set_start_value`](https://jump.dev/JuMP.jl/stable/reference/variables/#JuMP.set_start_value) function from the JuMP package. This allows us to set primal starting values for the active power outputs of the generators and the bus voltage angles. Here is an example:
+One approach is to utilize the [`set_start_value`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.set_start_value) function from the JuMP package. This allows us to set primal starting values for the active power outputs of the generators and the bus voltage angles. Here is an example:
 ```@example ACOptimalPowerFlow
 JuMP.set_start_value.(analysis.jump[:active], [0.0, 0.18])
 JuMP.set_start_value.(analysis.jump[:reactive], [0.5, 0.1])
@@ -269,7 +269,7 @@ JuMP.set_start_value.(analysis.jump[:angle], [0.17, 0.13, 0.14])
 nothing # hide
 ```
 
-To inspect the primal starting values that have been set, you can use the [`start_value`](https://jump.dev/JuMP.jl/stable/reference/variables/#JuMP.start_value) function from JuMP. Here is an example of how you can inspect the starting values for the active power outputs:
+To inspect the primal starting values that have been set, you can use the [`start_value`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.start_value) function from JuMP. Here is an example of how you can inspect the starting values for the active power outputs:
 We can inspect that starting values are set:
 ```@repl ACOptimalPowerFlow
 JuMP.start_value.(analysis.jump[:active])
@@ -316,7 +316,7 @@ for i = 1:system.bus.number
     analysis.voltage.angle[i] = powerFlow.voltage.angle[i]
 end
 ```
-Also, the user can make use of the [`set_start_value`](https://jump.dev/JuMP.jl/stable/reference/variables/#JuMP.set_start_value) function to set starting values from the AC power flow.
+Also, the user can make use of the [`set_start_value`](https://jump.dev/JuMP.jl/stable/api/JuMP/#set_start_value) function to set starting values from the AC power flow.
 
 ---
 
@@ -336,7 +336,7 @@ By executing this function, you will obtain the solution with the optimal values
 ---
 
 ##### Objective Value
-To obtain the objective value of the optimal power flow solution, you can use the [`objective_value`](https://jump.dev/JuMP.jl/stable/reference/solutions/#JuMP.objective_value) function:
+To obtain the objective value of the optimal power flow solution, you can use the [`objective_value`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.objective_value) function:
 ```@repl ACOptimalPowerFlow
 JuMP.objective_value(analysis.jump)
 ```
@@ -344,7 +344,7 @@ JuMP.objective_value(analysis.jump)
 ---
 
 ##### Silent Solver Output
-To turn off the solver output within the REPL, you can use the [`set_silent`](https://jump.dev/JuMP.jl/stable/reference/models/#JuMP.set_silent) function before calling [`solve!`](@ref solve!(::PowerSystem, ::ACOptimalPowerFlow)) function. This will suppress the solver's output:
+To turn off the solver output within the REPL, you can use the [`set_silent`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.set_silent) function before calling [`solve!`](@ref solve!(::PowerSystem, ::ACOptimalPowerFlow)) function. This will suppress the solver's output:
 ```@example ACOptimalPowerFlow
 JuMP.set_silent(analysis.jump)
 ```
@@ -442,7 +442,7 @@ supply.reactive
 ##### Active and Reactive Power at Shunt Element
 To calculate the active and reactive power associated with shunt element at a specific bus, the function can be used:
 ```@example ACOptimalPowerFlowPower
-shunt = powerShunt(system, analysis; label = 3)
+shunt = powerShunt(system, analysis; label = 2)
 nothing # hide
 ```
 

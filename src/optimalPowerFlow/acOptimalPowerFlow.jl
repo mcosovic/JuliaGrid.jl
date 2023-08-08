@@ -36,7 +36,7 @@ not been created, the function will initiate an update automatically.
 
 # Keywords
 JuliaGrid offers the ability to manipulate the `jump` model based on the guidelines provided
-in the [JuMP documentation](https://jump.dev/JuMP.jl/stable/reference/models/). However,
+in the [JuMP documentation](https://jump.dev/JuMP.jl/stable/manual/models/). However,
 certain configurations may require different method calls, such as:
 - `bridge`: used to manage the bridging mechanism,
 - `name`: used to manage the creation of string names.
@@ -99,10 +99,10 @@ function acOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
     model = JuMP.Model(optimizerFactory; add_bridges = bridge)
     set_string_names_on_creation(model, name)
 
-    @variable(model, angle[i = 1:bus.number])
-    @variable(model, magnitude[i = 1:bus.number])
     @variable(model, active[i = 1:generator.number])
     @variable(model, reactive[i = 1:generator.number])
+    @variable(model, magnitude[i = 1:bus.number])
+    @variable(model, angle[i = 1:bus.number])
 
     slackAngleRef = @constraint(model, angle[bus.layout.slack] == bus.voltage.angle[bus.layout.slack])
     slackMagnitudeRef = @constraint(model, magnitude[bus.layout.slack] == bus.voltage.magnitude[bus.layout.slack])

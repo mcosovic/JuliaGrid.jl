@@ -603,7 +603,7 @@ Again, it is important to note that only the the voltage magnitudes of demand bu
 
 ---
 
-## [Gauss-Seidel Method](@id gaussSeidel)
+## [Gauss-Seidel Method](@id GaussSeidelMethodTutorials)
 By defining the complex current injection at bus ``i \in \mathcal{N}`` as:
 ```math
 	\bar{I}_{i} = \frac{{P}_{i} - j{Q}_{i}}{\bar{V}_{i}^*},

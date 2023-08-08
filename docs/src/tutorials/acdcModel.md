@@ -1,5 +1,5 @@
 # [AC and DC Model](@id ACDCModelTutorials)
-The power system analyses commonly utilize the unified branch model that provides linear relationships between voltages and currents. However, as the focus is on power calculations rather than current calculations, the resulting equations become nonlinear, posing challenges in solving them. Hence, to accurately analyze power systems without any approximations, we use the AC model, which is a crucial component of our framework. In contrast, to obtain a linear system of equations for various DC analyses, we introduce approximations in the unified branch model, resulting in the DC model [[1]](@ref ACDCModelReferenceTutorials).
+The power system analyses commonly utilize the unified branch model that provides linear relationships between voltages and currents. However, as the focus is on power calculations rather than current calculations, the resulting equations become nonlinear, posing challenges in solving them [[1]](@ref ACDCModelReferenceTutorials). Hence, to accurately analyze power systems without any approximations, we use the AC model, which is a crucial component of our framework. In contrast, to obtain a linear system of equations for various DC analyses, we introduce approximations in the unified branch model, resulting in the DC model.
 
 A common way to describe the power system network topology is through the bus/branch model, which employs the two-port ``\pi``-model, which results in the unified branch model. The bus/branch model can be represented by a graph denoted by ``\mathcal{G} = (\mathcal{N}, \mathcal{E})``, where the set of nodes ``\mathcal{N} = \{1, \dots, n\}`` corresponds to buses, and the set of edges ``\mathcal{E} \subseteq \mathcal{N} \times \mathcal{N}`` represents the branches of the power network.
 
@@ -135,7 +135,7 @@ Let us consider an example, given in Figure 2, that will allow us an easy transi
 &nbsp;
 ```
 !!! note "Info"
-    The current ``\bar{I}_{\text{sh}k}`` follows the convention of coming out from the bus in terms of its direction. Just as before, when calculating powers related to shunt elements, this current direction is assumed. Therefore, in cases where power is positive, it signifies alignment with the assumed current direction, emerging away from the bus. Conversely, when power is negative, the direction is reversed, indicating a flow towards the bus.
+    The current ``\bar{I}_{\text{sh}k}`` follows the convention of coming out from the bus in terms of its direction. When calculating powers related to shunt elements, this current direction is assumed. Therefore, in cases where power is positive, it signifies alignment with the assumed current direction, emerging away from the bus. Conversely, when power is negative, the direction is reversed, indicating a flow towards the bus.
 
 According to the [unified branch model](@ref UnifiedBranchModelTutorials) each branch is described using the system of equations as follows:
 ```math

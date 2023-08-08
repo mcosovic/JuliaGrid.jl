@@ -83,7 +83,7 @@ Note that, if a bus is initially defined as the demand bus (`type = 1`) and late
 !!! note "Info"
     The type of only those buses that are defined as generator buses (`type = 2`) but do not have a connected in-service generator will be changed to demand buses (`type = 1`).
 
-    The bus that is defined as the slack bus (`type = 3`) but lacks a connected in-service generator will have its type changed to the demand bus (`type = 1`). Meanwhile, the first generator bus (`type = 2`) with an active generator connected to it will be assigned as the new slack bus `(type = 3`).
+    The bus that is defined as the slack bus (`type = 3`) but lacks a connected in-service generator will have its type changed to the demand bus (`type = 1`). Meanwhile, the first generator bus (`type = 2`) with an in-service generator connected to it will be assigned as the new slack bus (`type = 3`).
 
 ---
 
@@ -198,7 +198,7 @@ nothing # hide
 ```
 This function sets up the desired method for an iterative process based on two functions: [`mismatch!`](@ref mismatch!(::PowerSystem, ::NewtonRaphson)) and [`solve!`](@ref solve!(::PowerSystem, ::NewtonRaphson)). The [`mismatch!`](@ref mismatch!(::PowerSystem, ::NewtonRaphson)) function calculates the active and reactive power injection mismatches using the given voltage magnitudes and angles, while [`solve!`](@ref solve!(::PowerSystem, ::NewtonRaphson)) computes the voltage magnitudes and angles.
 
-To perform an iterative process with the Newton-Raphson or Fast Newton-Raphson methods in JuliaGrid, the [`mismatch!`](@ref mismatch!(::PowerSystem, ::NewtonRaphson)) function must be included inside the iteration loop. For instance:
+To perform an iterative process with the Newton-Raphson or fast Newton-Raphson methods in JuliaGrid, the [`mismatch!`](@ref mismatch!(::PowerSystem, ::NewtonRaphson)) function must be included inside the iteration loop. For instance:
 ```@example ACPowerFlowSolution
 for iteration = 1:100
     mismatch!(system, analysis)
@@ -286,19 +286,19 @@ end
 
 Next, we can initialize the Newton-Raphson method with the voltages obtained from the Gauss-Seidel method and start the algorithm from that point:
 ```@example ReusablePowerSystemType
-nr = newtonRaphson(system)
+analysis = newtonRaphson(system)
 
 for i = 1:system.bus.number
-    nr.voltage.magnitude[i] = gs.voltage.magnitude[i]
-    nr.voltage.angle[i] = gs.voltage.angle[i]
+    analysis.voltage.magnitude[i] = gs.voltage.magnitude[i]
+    analysis.voltage.angle[i] = gs.voltage.angle[i]
 end
 
 for iteration = 1:100
-    stopping = mismatch!(system, nr)
+    stopping = mismatch!(system, analysis)
     if all(stopping .< 1e-8)
         break
     end
-    solve!(system, nr)
+    solve!(system, analysis)
 end
 ```
 

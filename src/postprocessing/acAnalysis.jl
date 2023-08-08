@@ -631,7 +631,7 @@ end
     powerCharging(system::PowerSystem, analysis::AC; label)
 
 The function returns the active and reactive power values associated with the charging
-admittances of a specific branch in the AC framework. The 'label' keyword argument must
+admittances of a specific branch in the AC framework. The `label` keyword argument must
 correspond to an existing branch label.
 
 # Abstract type

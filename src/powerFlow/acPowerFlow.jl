@@ -510,12 +510,12 @@ methods employed to solve the AC power flow problem.
 # Updates
 This function updates the mismatch variables in the Newton-Raphson and fast Newton-Raphson
 methods. It should be employed during the iteration loop before invoking the
-[`solve!`](@ref solve!) function.
+[`solve!`](@ref solve!(::PowerSystem, ::NewtonRaphson)) function.
 
 In contrast, the Gauss-Seidel method does not need mismatches to obtain bus voltages, but
 the maximum absolute values are commonly employed to stop the iteration loop. The function
 does not save any data and should be utilized during the iteration loop before invoking the
-[`solve!`](@ref solve!) function.
+[`solve!`](@ref solve!(::PowerSystem, ::NewtonRaphson)) function.
 
 # Abstract type
 The abstract type `ACPowerFlow` can have the following subtypes:
@@ -640,8 +640,8 @@ end
 The function employs the Newton-Raphson, fast Newton-Raphson, or Gauss-Seidel method to solve
 the AC power flow problem and calculate bus voltage magnitudes and angles.
 
-After the [`mismatch!`](@ref mismatch!) function is called, [`solve!`](@ref solve!) should
-be executed to perform a single iteration of the method.
+After the [`mismatch!`](@ref mismatch!) function is called, this function should be executed to
+perform a single iteration of the method.
 
 # Updates
 The calculated voltages are stored in the `voltage` field of the respective struct type.

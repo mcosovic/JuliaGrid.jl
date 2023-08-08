@@ -60,7 +60,7 @@ Furthermore, if there are linear piecewise cost functions with more than one seg
 ---
 
 ##### Add Variables
-The user has the ability to easily add new variables to the defined DC optimal power flow model by using the [`@variable`](https://jump.dev/JuMP.jl/stable/reference/variables/#JuMP.@variable) macro from the JuMP package. Here is an example:
+The user has the ability to easily add new variables to the defined DC optimal power flow model by using the [`@variable`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.@variable) macro from the JuMP package. Here is an example:
 ```@example DCOptimalPowerFlow
 JuMP.@variable(analysis.jump, new)
 nothing # hide
@@ -74,7 +74,7 @@ JuMP.is_valid(analysis.jump, new)
 ---
 
 ##### Delete Variables
-To delete a variable, the [`delete`](https://jump.dev/JuMP.jl/stable/reference/constraints/#JuMP.delete) function from the JuMP package can be used:
+To delete a variable, the [`delete`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.delete) function from the JuMP package can be used:
 ```@example DCOptimalPowerFlow
 JuMP.delete(analysis.jump, new)
 ```
@@ -152,7 +152,7 @@ Therefore, for the generator labelled as 2, there is the linear piecewise cost f
 ---
 
 ##### Add Constraints
-Users can effortlessly incorporate additional constraints into the defined DC optimal power flow model using the [`@constraint`](https://jump.dev/JuMP.jl/stable/reference/constraints/#JuMP.@constraint) macro. For instance, a new constraint can be added as follows:
+Users can effortlessly incorporate additional constraints into the defined DC optimal power flow model using the [`@constraint`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.@constraint) macro. For instance, a new constraint can be added as follows:
 ```@example DCOptimalPowerFlow
 angle = analysis.jump[:angle]
 
@@ -163,7 +163,7 @@ nothing # hide
 ---
 
 ##### Delete Constraints
-To delete a constraint, users can utilize the [`delete`](https://jump.dev/JuMP.jl/stable/reference/constraints/#JuMP.delete) function from the JuMP package. When dealing with constraints created internally, users can utilize the constraint references stored in the `constraint` field of the `DCOptimalPowerFlow` type. For instance, to delete the first constraint that limits the voltage angle difference, the following code snippet can be employed:
+To delete a constraint, users can utilize the [`delete`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.delete) function from the JuMP package. When dealing with constraints created internally, users can utilize the constraint references stored in the `constraint` field of the `DCOptimalPowerFlow` type. For instance, to delete the first constraint that limits the voltage angle difference, the following code snippet can be employed:
 ```@example DCOptimalPowerFlow
 JuMP.delete(analysis.jump, analysis.constraint.limit.angle[1])
 nothing # hide
@@ -191,7 +191,7 @@ JuMP.objective_function(analysis.jump)
 ---
 
 ##### Change Objective
-The objective can be modified by the user using the [`set_objective_function`](https://jump.dev/JuMP.jl/stable/reference/objectives/#JuMP.set_objective_function) function from the JuMP package. Here is an example of how it can be done:
+The objective can be modified by the user using the [`set_objective_function`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.set_objective_function) function from the JuMP package. Here is an example of how it can be done:
 ```@example DCOptimalPowerFlow
 active = analysis.jump[:active]
 helper = analysis.jump[:helper]
@@ -208,13 +208,13 @@ There are two methods available to specify primal starting values for each varia
 ---
 
 ##### Using JuMP Functions
-One approach is to utilize the [`set_start_value`](https://jump.dev/JuMP.jl/stable/reference/variables/#JuMP.set_start_value) function from the JuMP package. This allows us to set primal starting values for the active power outputs of the generators and the bus voltage angles. Here is an example:
+One approach is to utilize the [`set_start_value`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.set_start_value) function from the JuMP package. This allows us to set primal starting values for the active power outputs of the generators and the bus voltage angles. Here is an example:
 ```@example DCOptimalPowerFlow
 JuMP.set_start_value.(analysis.jump[:active], [0.0, 0.18])
 JuMP.set_start_value.(analysis.jump[:angle], [0.17, 0.13, 0.14])
 nothing # hide
 ```
-To inspect the primal starting values that have been set, you can use the [`start_value`](https://jump.dev/JuMP.jl/stable/reference/variables/#JuMP.start_value) function from JuMP. Here is an example of how you can inspect the starting values for the active power outputs:
+To inspect the primal starting values that have been set, you can use the [`start_value`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.start_value) function from JuMP. Here is an example of how you can inspect the starting values for the active power outputs:
 We can inspect that starting values are set:
 ```@repl DCOptimalPowerFlow
 JuMP.start_value.(analysis.jump[:active])
@@ -223,15 +223,15 @@ JuMP.start_value.(analysis.jump[:active])
 ---
 
 ##### Using JuliaGrid Variables
-Alternatively, you can rely on the [`solve!`](@ref solve!) function to assign starting values based on the `power` and `voltage` fields. By default, these values are initially defined according to the active power outputs of the generators and the initial bus voltage angles:
+Alternatively, you can rely on the [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow)) function to assign starting values based on the `power` and `voltage` fields. By default, these values are initially defined according to the active power outputs of the generators and the initial bus voltage angles:
 ```@repl DCOptimalPowerFlow
 analysis.power.generator.active
 analysis.voltage.angle
 ```
-You can modify these values, and they will be used as primal starting values during the execution of the [`solve!`](@ref solve!) function.
+You can modify these values, and they will be used as primal starting values during the execution of the [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow)) function.
 
 !!! warning "Warning"
-    Please note that if primal starting values are set using the `set_start_value` function or any other method prior to executing the [`solve!`](@ref solve!) function, the values in the `power` and `voltage` fields will be ignored. This is because the starting point will be considered already defined.
+    Please note that if primal starting values are set using the `set_start_value` function or any other method prior to executing the [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow)) function, the values in the `power` and `voltage` fields will be ignored. This is because the starting point will be considered already defined.
 
 ---
 
@@ -252,7 +252,7 @@ for i = 1:system.bus.number
     analysis.voltage.angle[i] = flow.voltage.angle[i]
 end
 ```
-Also, the user can make use of the [`set_start_value`](https://jump.dev/JuMP.jl/stable/reference/variables/#JuMP.set_start_value) function to set starting values from the DC power flow.
+Also, the user can make use of the [`set_start_value`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.set_start_value) function to set starting values from the DC power flow.
 
 ---
 
@@ -272,7 +272,7 @@ analysis.voltage.angle
 ---
 
 ##### Objective Value
-To obtain the objective value of the optimal power flow solution, you can use the [`objective_value`](https://jump.dev/JuMP.jl/stable/reference/solutions/#JuMP.objective_value) function:
+To obtain the objective value of the optimal power flow solution, you can use the [`objective_value`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.objective_value) function:
 ```@repl DCOptimalPowerFlow
 JuMP.objective_value(analysis.jump)
 ```
@@ -280,7 +280,7 @@ JuMP.objective_value(analysis.jump)
 ---
 
 ##### Silent Solver Output
-To turn off the solver output within the REPL, you can use the [`set_silent`](https://jump.dev/JuMP.jl/stable/reference/models/#JuMP.set_silent) function before calling [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow)) function. This will suppress the solver's output:
+To turn off the solver output within the REPL, you can use the [`set_silent`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.set_silent) function before calling [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow)) function. This will suppress the solver's output:
 ```@example DCOptimalPowerFlow
 JuMP.set_silent(analysis.jump)
 ```

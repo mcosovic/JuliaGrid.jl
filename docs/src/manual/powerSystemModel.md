@@ -1,6 +1,6 @@
 # [Power System Model](@id PowerSystemModelManual)
 
-The JuliaGrid supports the composite type `PowerSystem` to preserve power system data, with the following fields: `bus`, `branch`, `generator`, `base`, `model`. The fields `bus`, `branch`, and `generator` hold data related to buses, branches, and generators, respectively. The `base` field stores base values for power and voltages, with the default being three-phase power measured in volt-amperes for the base power and line-to-line voltages measured in volts for base voltages. The `model` stores vectors and matrices that are related to the topology and parameters of the power system.
+The JuliaGrid supports the composite type `PowerSystem` to preserve power system data, with the following fields: `bus`, `branch`, `generator`, `base`, and `model`. The fields `bus`, `branch`, and `generator` hold data related to buses, branches, and generators, respectively. The `base` field stores base values for power and voltages, with the default being three-phase power measured in volt-amperes for the base power and line-to-line voltages measured in volts for base voltages. The `model` stores vectors and matrices that are related to the topology and parameters of the power system.
 
 The composite type `PowerSystem` can be created using a function:
 * [`powerSystem`](@ref powerSystem).
@@ -441,7 +441,7 @@ addBus!(system; label = 1)
 
 @power(pu, pu, pu)
 
-addBus!(system; label = 2, active = 1.0, reactive = 2.0)
+addBus!(system; label = 2, active = 0.5)
 
 nothing # hide
 ```
@@ -528,7 +528,7 @@ nothing # hide
 ```
 For example, the nodal matrix in the DC framework has the same values as before:
 ```@repl ACDCModelUpdate
-system.dcModel.nodalMatrix
+system.model.dc.nodalMatrix
 ```
 
 !!! tip "Tip"
@@ -609,7 +609,7 @@ nothing # hide
 
 This code sets the branch labelled with 1 to out-of-service. For example, the nodal matrix in the DC framework has the following form:
 ```@repl statusBranch
-system.dcModel.nodalMatrix
+system.model.dc.nodalMatrix
 ```
 
 ---
@@ -618,7 +618,7 @@ system.dcModel.nodalMatrix
 After the execution of the [`statusBranch!`](@ref statusBranch!) function, the nodal matrices will contain zeros, as demonstrated in the code example. If needed, the user can remove these zeros by using the `dropzeros!` function, as shown below:
 ```@repl statusBranch
 using SparseArrays
-dropzeros!(system.dcModel.nodalMatrix)
+dropzeros!(system.model.dc.nodalMatrix)
 ```
 
 !!! note "Info"
@@ -627,7 +627,7 @@ dropzeros!(system.dcModel.nodalMatrix)
 ---
 
 ## [Change Branch Parameters](@id ChangeBranchParametersManual)
-The [`parameterBranch!`](@ref parameterBranch!) function is used to modify the parameters of a branch, which include resistance, reactance, susceptance, turns ratio, and shift angle. Although one can modify these parameters by accessing the corresponding variables within the `branch.parameter` field, using the [`parameterBranch!`](@ref parameterBranch!) function will update all affected vectors and matrices, provided that the AC and DC models have been created.
+The [`parameterBranch!`](@ref parameterBranch!) function is used to modify the parameters of a branch, which include resistance, reactance, conductance, susceptance, turns ratio, and shift angle. Although one can modify these parameters by accessing the corresponding variables within the `branch.parameter` field, using the [`parameterBranch!`](@ref parameterBranch!) function will update all affected vectors and matrices, provided that the AC and DC models have been created.
 
 Therefore, this function is useful after executing the [`acModel!`](@ref acModel!) and [`dcModel!`](@ref dcModel!) functions. For example, let us start by creating the AC model:
 ```@example parameterBranch
@@ -702,7 +702,7 @@ It is worth noting that even if the generator is out-of-service, the `output.act
 ---
 
 ## [Change Generator Outputs](@id ChangeGeneratorOutputsManual)
-The function [`outputGenerator!`](@ref outputGenerator!) can be utilized to change the output of a generator. Similar to the [Change Generator Status](@ref ChangeGeneratorStatusManual), this function provides the safe way to modify the active and reactive powers produced by the previously defined generator.
+The function [`outputGenerator!`](@ref outputGenerator!) can be utilized to change the output of a generator. This function provides the safe way to modify the active and reactive powers produced by the previously defined generator.
 
 To demonstrate how to use this function, we can use the example:
 ```@example outputGenerator
@@ -754,10 +754,12 @@ nothing # hide
 ---
 
 ##### Polynomial Cost
-Let us define a quadratic polynomial cost function ``f(P_g) = 1100P^2_g + 500P_g + 150`` for the active power produced by the generator labelled with 1 using the following code:
+Let us define a quadratic polynomial cost function for the active power produced by the generator labelled with 1 using the following code:
 ```@example addActiveCost
 addActiveCost!(system; label = 1, model = 2, polynomial = [1100.0; 500.0; 150.0])
 ```
+In essence, what we have accomplished is the establishment of a cost function depicted as ``f(P_{\text{g}1}) = 1100 P_{\text{g}1}^2 + 500 P_{\text{g}1} + 150`` through the code provided.
+
 As previously, the default input units are related with per-units (pu), and the coefficients of the cost function have units of currency/pu²hr for 1100, currency/puhr for 500, and currency/hr for 150. Hence, the coefficients are stored exactly as entered:
 ```@repl addActiveCost
 system.generator.cost.active.polynomial
