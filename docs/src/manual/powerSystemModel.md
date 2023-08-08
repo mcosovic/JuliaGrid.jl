@@ -1,6 +1,6 @@
 # [Power System Model](@id PowerSystemModelManual)
 
-The JuliaGrid supports the composite type `PowerSystem` to preserve power system data, with the following fields: `bus`, `branch`, `generator`, `base`, `acModel`, and `dcModel`. The fields `bus`, `branch`, and `generator` hold data related to buses, branches, and generators, respectively. The `base` field stores base values for power and voltages, with the default being three-phase power measured in volt-amperes for the base power and line-to-line voltages measured in volts for base voltages. The `acModel` and `dcModel` store vectors and matrices that are related to the topology and parameters of the power system.
+The JuliaGrid supports the composite type `PowerSystem` to preserve power system data, with the following fields: `bus`, `branch`, `generator`, `base`, `model`. The fields `bus`, `branch`, and `generator` hold data related to buses, branches, and generators, respectively. The `base` field stores base values for power and voltages, with the default being three-phase power measured in volt-amperes for the base power and line-to-line voltages measured in volts for base voltages. The `model` stores vectors and matrices that are related to the topology and parameters of the power system.
 
 The composite type `PowerSystem` can be created using a function:
 * [`powerSystem`](@ref powerSystem).
@@ -498,8 +498,8 @@ nothing # hide
 ```
 The nodal matrices are one of the components of both the AC and DC models and are stored in the variables:
 ```@repl ACDCModel
-system.dcModel.nodalMatrix
-system.acModel.nodalMatrix
+system.model.dc.nodalMatrix
+system.model.ac.nodalMatrix
 ```
 
 !!! note "Info"
@@ -540,8 +540,8 @@ system.dcModel.nodalMatrix
 The AC and DC models must be defined when a finite number of buses are defined, otherwise, adding a new bus will delete them. For example, if we attempt to add a new bus to the `PowerSystem` type that was previously created, the current AC and DC models will be completely erased:
 ```@repl ACDCModelUpdate
 addBus!(system; label = 4, type = 2)
-system.dcModel.nodalMatrix
-system.acModel.nodalMatrix
+system.model.dc.nodalMatrix
+system.model.ac.nodalMatrix
 ```
 
 ---
@@ -566,7 +566,7 @@ nothing # hide
 ```
 Then, the nodal matrix is given as:
 ```@repl shuntBus
-system.acModel.nodalMatrix
+system.model.ac.nodalMatrix
 ```
 
 For example, to add a shunt element at bus 1 with a specified conductance value and modify the susceptance value of the shunt element at bus 2, we can execute the following code:
@@ -578,7 +578,7 @@ nothing # hide
 ```
 Upon examining the nodal matrix, it can be inferred that the [`shuntBus!`](@ref shuntBus!) function automatically updates this matrix:
 ```@repl shuntBus
-system.acModel.nodalMatrix
+system.model.ac.nodalMatrix
 ```
 
 ---
@@ -646,7 +646,7 @@ nothing # hide
 ```
 Then the nodal matrix is:
 ```@repl parameterBranch
-system.acModel.nodalMatrix
+system.model.ac.nodalMatrix
 ```
 
 We can modify the reactance value of the branch and add resistance to it while keeping the shift angle constant, as shown below:
@@ -657,7 +657,7 @@ nothing # hide
 ```
 Next, we can observe that the nodal matrix is updated automatically by the function:
 ```@repl parameterBranch
-system.acModel.nodalMatrix
+system.model.ac.nodalMatrix
 ```
 
 ---

@@ -91,7 +91,7 @@ We can calculate the vectors ``\mathbf{P} = [P_i] `` and ``\mathbf{Q} = [Q_i]`` 
 𝐐 = system.bus.supply.reactive - system.bus.demand.reactive
 ```
 When the active or reactive power values are positive,  ``P_i > 0`` or ``Q_i > 0``, it signifies that power is being supplied into the power system from the specific bus. This indicates that the generators connected to this bus are producing more power than what the connected load is consuming. Conversely, negative values, ``P_i < 0`` or ``Q_i < 0``, indicate that the bus is drawing in active or reactive power from the power system. This suggests that the load's demand is exceeding the output from the generators.
-     
+
 ---
 
 ## [Newton-Raphson Method](@id NewtonRaphsonMethodTutorials)
@@ -734,7 +734,7 @@ Active and reactive power injections are stored as the vectors ``\mathbf{P} = [P
 𝐏 = model.power.injection.active
 𝐐 = model.power.injection.reactive
 ```
-To recall, when the active or reactive power values are positive, ``P_i > 0`` or ``Q_i > 0``, it signifies that power is being supplied into the power system from the specific bus. Conversely, negative values, ``P_i < 0`` or ``Q_i < 0``, indicate that the bus is drawing in active or reactive power from the power system. 
+To recall, when the active or reactive power values are positive, ``P_i > 0`` or ``Q_i > 0``, it signifies that power is being supplied into the power system from the specific bus. Conversely, negative values, ``P_i < 0`` or ``Q_i < 0``, indicate that the bus is drawing in active or reactive power from the power system.
 
 ----
 

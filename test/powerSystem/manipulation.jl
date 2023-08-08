@@ -17,7 +17,7 @@
 
     @test manual.bus.shunt.conductance == assemble.bus.shunt.conductance
     @test manual.bus.shunt.susceptance == assemble.bus.shunt.susceptance
-    @test manual.acModel.nodalMatrix == assemble.acModel.nodalMatrix
+    @test manual.model.ac.nodalMatrix == assemble.model.ac.nodalMatrix
 end
 
 @testset "SI Units: shuntBus!" begin
@@ -40,7 +40,7 @@ end
 
     @test manual.bus.shunt.conductance == assemble.bus.shunt.conductance
     @test manual.bus.shunt.susceptance == assemble.bus.shunt.susceptance
-    @test manual.acModel.nodalMatrix == assemble.acModel.nodalMatrix
+    @test manual.model.ac.nodalMatrix == assemble.model.ac.nodalMatrix
 end
 
 @testset "statusBranch!" begin
@@ -55,16 +55,16 @@ end
     statusBranch!(assemble; label = 3, status = 0)
 
     @test manual.branch.layout.status == assemble.branch.layout.status
-    @test manual.acModel.nodalMatrix ≈ assemble.acModel.nodalMatrix
-    @test manual.dcModel.nodalMatrix ≈ assemble.dcModel.nodalMatrix
+    @test manual.model.ac.nodalMatrix ≈ assemble.model.ac.nodalMatrix
+    @test manual.model.dc.nodalMatrix ≈ assemble.model.dc.nodalMatrix
 
     manual.branch.layout.status[3] = 1
     acModel!(manual); dcModel!(manual)
 
     statusBranch!(assemble; label = 3, status = 1)
     @test manual.branch.layout.status == assemble.branch.layout.status
-    @test manual.acModel.nodalMatrix ≈ assemble.acModel.nodalMatrix
-    @test manual.dcModel.nodalMatrix ≈ assemble.dcModel.nodalMatrix
+    @test manual.model.ac.nodalMatrix ≈ assemble.model.ac.nodalMatrix
+    @test manual.model.dc.nodalMatrix ≈ assemble.model.dc.nodalMatrix
 end
 
 @testset "parameterBranch!" begin
@@ -88,8 +88,8 @@ end
     @test manual.branch.parameter.susceptance == assemble.branch.parameter.susceptance
     @test manual.branch.parameter.turnsRatio == assemble.branch.parameter.turnsRatio
     @test manual.branch.parameter.shiftAngle == assemble.branch.parameter.shiftAngle
-    @test manual.acModel.nodalMatrix ≈ assemble.acModel.nodalMatrix
-    @test manual.dcModel.nodalMatrix ≈ assemble.dcModel.nodalMatrix
+    @test manual.model.ac.nodalMatrix ≈ assemble.model.ac.nodalMatrix
+    @test manual.model.dc.nodalMatrix ≈ assemble.model.dc.nodalMatrix
 end
 
 @testset "SI Units: parameterBranch!" begin
@@ -107,8 +107,8 @@ end
     @test manual.branch.parameter.susceptance ≈ assemble.branch.parameter.susceptance atol=1.0e-4
     @test manual.branch.parameter.turnsRatio ≈ assemble.branch.parameter.turnsRatio
     @test manual.branch.parameter.shiftAngle ≈ assemble.branch.parameter.shiftAngle
-    @test manual.acModel.nodalMatrix ≈ assemble.acModel.nodalMatrix atol=1.0e-3
-    @test manual.dcModel.nodalMatrix ≈ assemble.dcModel.nodalMatrix atol=1.0e-3
+    @test manual.model.ac.nodalMatrix ≈ assemble.model.ac.nodalMatrix atol=1.0e-3
+    @test manual.model.dc.nodalMatrix ≈ assemble.model.dc.nodalMatrix atol=1.0e-3
 end
 
 @testset "statusGenerator!" begin

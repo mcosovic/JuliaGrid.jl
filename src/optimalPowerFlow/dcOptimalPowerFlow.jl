@@ -1,7 +1,5 @@
-export DCOptimalPowerFlow
-
 ######### DC Optimal Power Flow ##########
-struct DCOptimalPowerFlow <: DCAnalysis
+struct DCOptimalPowerFlow <: DC
     voltage::PolarAngle
     power::DCPower
     jump::JuMP.Model
@@ -14,8 +12,8 @@ end
 
 The function takes the `PowerSystem` composite type as input to establish the structure for
 solving the DC optimal power flow. The `optimizer` argument is also required to create and
-solve the optimization problem. If the `dcModel` field within the `PowerSystem` composite
-type has not been created, the function will initiate an update automatically.
+solve the optimization problem. If the `dc` field within the `PowerSystem` composite type has
+not been created, the function will initiate an update automatically.
 
 # Keywords
 JuliaGrid offers the ability to manipulate the `jump` model based on the guidelines provided
@@ -25,9 +23,9 @@ certain configurations may require different method calls, such as:
 - `name`: used to manage the creation of string names.
 
 Moreover, we have included keywords that regulate the usage of different types of constraints:
-- `balance`: controls the equality constraints that relate to the active power balance equations,
-- `limit`: controls the inequality constraints that relate to the voltage angle differences between buses,
-- `rating`: controls the inequality constraints that relate to the long-term rating of branches,
+- `balance`: controls the equality constraints that relate to the active power balance equations;
+- `limit`: controls the inequality constraints that relate to the voltage angle differences between buses;
+- `rating`: controls the inequality constraints that relate to the long-term rating of branches;
 - `capability`: controls the inequality constraints that relate to the active power generator outputs.
 
 By default, all of these keywords are set to `true` and are of the `Bool` type.
@@ -51,7 +49,7 @@ Create the complete DC optimal power flow model:
 system = powerSystem("case14.h5")
 dcModel!(system)
 
-model = dcOptimalPowerFlow(system, HiGHS.Optimizer)
+analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer)
 ```
 
 Create the DC optimal power flow model without `rating` constraints:
@@ -59,7 +57,7 @@ Create the DC optimal power flow model without `rating` constraints:
 system = powerSystem("case14.h5")
 dcModel!(system)
 
-model = dcOptimalPowerFlow(system, HiGHS.Optimizer; rating = false)
+analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer; rating = false)
 ```
 """
 function dcOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory);
@@ -71,11 +69,11 @@ function dcOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
     branch = system.branch
     generator = system.generator
 
-    if isempty(system.dcModel.nodalMatrix)
+    if isempty(system.model.dc.nodalMatrix)
         dcModel!(system)
     end
 
-    model = Model(optimizerFactory; add_bridges = bridge)
+    model = JuMP.Model(optimizerFactory; add_bridges = bridge)
     set_string_names_on_creation(model, name)
 
     @variable(model, active[i = 1:generator.number])
@@ -160,9 +158,9 @@ function dcOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
     balanceRef = Array{JuMP.ConstraintRef}(undef, bus.number)
     if balance
         @inbounds for i = 1:bus.number
-            expression = AffExpr(bus.demand.active[i] + bus.shunt.conductance[i] + system.dcModel.shiftActivePower[i])
-            for j in system.dcModel.nodalMatrix.colptr[i]:(system.dcModel.nodalMatrix.colptr[i + 1] - 1)
-                add_to_expression!(expression, system.dcModel.nodalMatrix.nzval[j], angle[system.dcModel.nodalMatrix.rowval[j]])
+            expression = AffExpr(bus.demand.active[i] + bus.shunt.conductance[i] + system.model.dc.shiftActivePower[i])
+            for j in system.model.dc.nodalMatrix.colptr[i]:(system.model.dc.nodalMatrix.colptr[i + 1] - 1)
+                add_to_expression!(expression, system.model.dc.nodalMatrix.nzval[j], angle[system.model.dc.nodalMatrix.rowval[j]])
             end
             balanceRef[i] = @constraint(model, expression - supplyActive[i] == 0.0)
         end
@@ -177,7 +175,7 @@ function dcOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
                 t = branch.layout.to[i]
 
                 if rating && branch.rating.longTerm[i] ≉  0 && branch.rating.longTerm[i] < 10^16
-                    restriction = branch.rating.longTerm[i] / system.dcModel.admittance[i]
+                    restriction = branch.rating.longTerm[i] / system.model.dc.admittance[i]
                     ratingRef[i] = @constraint(model, - restriction + branch.parameter.shiftAngle[i] <= angle[f] - angle[t] <= restriction + branch.parameter.shiftAngle[i])
                 end
                 if limit && branch.voltage.minDiffAngle[i] > -2*pi && branch.voltage.maxDiffAngle[i] < 2*pi
@@ -190,7 +188,7 @@ function dcOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
     return DCOptimalPowerFlow(
         PolarAngle(copy(system.bus.voltage.angle)),
         DCPower(
-            CartesianReal(Float64[]), 
+            CartesianReal(Float64[]),
             CartesianReal(Float64[]),
             CartesianReal(Float64[]),
             CartesianReal(Float64[]),
@@ -209,7 +207,7 @@ function dcOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
 end
 
 """
-    solve!(system::PowerSystem, model::DCOptimalPowerFlow)
+    solve!(system::PowerSystem, analysis::DCOptimalPowerFlow)
 
 The function finds the DC optimal power flow solution and calculate the bus voltage angles
 and output active powers of the generators.
@@ -222,25 +220,25 @@ the `voltage` field and the `generator` variable of the `power` field.
 system = powerSystem("case14.h5")
 dcModel!(system)
 
-model = dcOptimalPowerFlow(system, HiGHS.Optimizer)
-solve!(system, model)
+analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer)
+solve!(system, analysis)
 ```
 """
-function solve!(system::PowerSystem, model::DCOptimalPowerFlow)
-    if isnothing(start_value(model.jump[:angle][1]))
-        set_start_value.(model.jump[:angle], model.voltage.angle)
+function solve!(system::PowerSystem, analysis::DCOptimalPowerFlow)
+    if isnothing(start_value(analysis.jump[:angle][1]))
+        set_start_value.(analysis.jump[:angle], analysis.voltage.angle)
     end
-    if isnothing(start_value(model.jump[:active][1]))
-        set_start_value.(model.jump[:active], model.power.generator.active)
+    if isnothing(start_value(analysis.jump[:active][1]))
+        set_start_value.(analysis.jump[:active], analysis.power.generator.active)
     end
 
-    JuMP.optimize!(model.jump)
+    JuMP.optimize!(analysis.jump)
 
     @inbounds for i = 1:system.bus.number
-        model.voltage.angle[i] = value(model.jump[:angle][i])
+        analysis.voltage.angle[i] = value(analysis.jump[:angle][i])
     end
 
     @inbounds for i = 1:system.generator.number
-        model.power.generator.active[i] = value(model.jump[:active][i])
+        analysis.power.generator.active[i] = value(analysis.jump[:active][i])
     end
 end

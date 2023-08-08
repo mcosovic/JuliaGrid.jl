@@ -173,16 +173,18 @@ mutable struct ACModel
     admittance::Array{ComplexF64,1}
 end
 
-######### Power System ##########
-export PowerSystem
+mutable struct Model
+    ac::ACModel
+    dc::DCModel
+end
 
+######### Power System ##########
 mutable struct PowerSystem
     bus::Bus
     branch::Branch
     generator::Generator
     base::BaseData
-    acModel::ACModel
-    dcModel::DCModel
+    model::Model
 end
 
 """
@@ -193,17 +195,16 @@ and `base` fields. In general, once the composite type `PowerSystem` has been cr
 possible to add new buses, branches, or generators, or modify the parameters of existing ones.
 
 # Argument
-- passing the path to the HDF5 file with the `.h5` extension
-- passing the path to Matpower file with the `.m` extension
+- passing the path to the HDF5 file with the `.h5` extension,
+- passing the path to Matpower file with the `.m` extension.
 
 # Returns
 The `PowerSystem` composite type with the following fields:
-- `bus`: data related to buses,
-- `branch`: data related to branches,
-- `generator`: data related to generators,
-- `base`: base power and base voltages,
-- `acModel`: variables associated with AC or nonlinear analyses,
-- `dcModel`: variables associated with DC or linear analyses.
+- `bus`: data related to buses;
+- `branch`: data related to branches;
+- `generator`: data related to generators;
+- `base`: base power and base voltages;
+- `model`: data associated with AC (nonlinear) or DC (linear) analyses.
 
 # Units
 JuliaGrid stores all data in per-units and radians format which are fixed, the exceptions are
@@ -297,7 +298,7 @@ function powerSystem()
         Branch(copy(label), parameter, rating, voltageBranch, layoutBranch, 0),
         Generator(copy(label), output, capability, ramping, voltageGenerator, cost, layoutGenerator, 0),
         BaseData(basePower, baseVoltage),
-        acModel, dcModel)
+        Model(acModel, dcModel))
 end
 
 ######## Load Bus Data from HDF5 File ##########
@@ -635,7 +636,7 @@ function loadBranch(system::PowerSystem, branchLine::Array{String,1})
         branch.parameter.resistance[k] = parse(Float64, data[3])
         branch.parameter.reactance[k] = parse(Float64, data[4])
         branch.parameter.susceptance[k] = parse(Float64, data[5])
-        
+
         turnsRatio = parse(Float64, data[9])
         if turnsRatio == 0
             branch.parameter.turnsRatio[k] = 1.0

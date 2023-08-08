@@ -37,22 +37,28 @@ The given example provides the set of buses and branches:
 
 ---
 
-## [AC Model](@id ACModelTutorials)
+## [AC Analysis](@id ACModelTutorials)
 JuliaGrid is based on common network elements and benefits from the unified branch model to perform various analyses based on the system of nonlinear equations. To generate matrices and vectors for AC or nonlinear analysis, JuliaGrid employs the [`acModel!`](@ref acModel!) function. To demonstrate the usage of this function, consider the power system defined in the previous example. In order to apply the [`acModel!`](@ref acModel!) function to this power system, the following code can be executed:
 ```@example ACDCModel
 acModel!(system)
 nothing #hide
 ```
 
+!!! tip "Tip"
+    In all instances within the documentation, we explicitly refer to this function by name, although it is not obligatory to do so. When a user initiates any of the various AC analyses, and if the AC model has not been created using the [`acModel!`](@ref acModel!) function, the AC model will be generated automatically during initiation, and all its fields will be filled.
+
 ---
 
 ##### [Unified Branch Model](@id UnifiedBranchModelTutorials)
 The equivalent unified ``\pi``-model for a branch ``(i,j) \in \mathcal{E}`` incident to the buses ``\{i,j\} \in \mathcal{N}`` is shown in Figure 1.
 ```@raw html
-<img src="../assets/pi_model.svg" class="center" width="600"/>
+<img src="../../assets/pi_model.svg" class="center" width="600"/>
 <figcaption>Figure 1: The equivalent branch model, where the transformer is located at "from" bus end of the branch.</figcaption>
 &nbsp;
 ```
+
+!!! note "Info"
+    The directions of the currents ``\bar{I}_{ij}``, ``\bar{I}_{ji}``, ``\bar{I}_{\text{s}i}``, and ``\bar{I}_{\text{s}j}`` are initially defined to come out from the nodes or buses. This convention proves particularly valuable during power flow analyses. In cases where active or reactive power is positive, it signifies alignment with the assumed current direction, flowing away from the bus. Conversely, when power is negative, the direction is reversed, indicating a flow towards the bus. These current directions, in conjunction with ``\bar{I}_{\text{s}ij}``, are consistently employed by JuliaGrid in its calculations of powers or currents.
 
 The branch series admittance ``y_{ij}`` is inversely proportional to the branch series impedance ``z_{ij}``:
 ```math
@@ -69,7 +75,7 @@ The vectors of resistances, denoted by ``\mathbf{r} = [r_{ij}]``, and reactances
 ```
 Moreover, the `acModel` stores the computed vector of branch series admittances ``\mathbf{y} = [y_{ij}]``:
 ```@repl ACDCModel
-𝐲 = system.acModel.admittance
+𝐲 = system.model.ac.admittance
 ```
 
 The branch shunt admittance ``y_{\text{s}ij}`` is equal to:
@@ -80,8 +86,8 @@ where ``g_{\text{s}ij}`` represents the shunt conductance of the branch, and ``b
 
 Within JuliaGrid, the total shunt conductances and susceptances of branches are stored. In order to obtain the vectors ``\mathbf{g}_\text{s} = [g_{\text{s}ij}]`` and ``\mathbf{b}_\text{s} = [b_{\text{s}ij}]``, the conductances and susceptances must be distributed by considering the ends of the branches:
 ```@repl ACDCModel
-𝐠ₛ = system.branch.parameter.conductance / 2
-𝐛ₛ = system.branch.parameter.susceptance / 2
+𝐠ₛ = 0.5 * system.branch.parameter.conductance
+𝐛ₛ = 0.5 * system.branch.parameter.susceptance
 ```
 
 The transformer complex ratio ``\alpha_{ij}`` is defined:
@@ -113,14 +119,11 @@ Using Kirchhoff's circuit laws, the unified branch model can be described by com
 The values of the vectors ``\mathbf{y}_{\text{ii}} = [({y}_{ij} + y_{\text{s}ij}) / \tau_{ij}^2]``, ``\mathbf{y}_{\text{ij}} = [-\alpha_{ij}^*{y}_{ij}]``, ``\mathbf{y}_{\text{ji}} = [-\alpha_{ij}{y}_{ij}]``, and ``\mathbf{y}_{\text{jj}} = [{y}_{ij} + y_{\text{s}ij}]`` can be found stored in the variables:
 
 ```@repl ACDCModel
-𝐲ᵢᵢ = system.acModel.nodalFromFrom
-𝐲ᵢⱼ = system.acModel.nodalFromTo
-𝐲ⱼᵢ = system.acModel.nodalToFrom
-𝐲ⱼⱼ = system.acModel.nodalToTo
+𝐲ᵢᵢ = system.model.ac.nodalFromFrom
+𝐲ᵢⱼ = system.model.ac.nodalFromTo
+𝐲ⱼᵢ = system.model.ac.nodalToFrom
+𝐲ⱼⱼ = system.model.ac.nodalToTo
 ```
-
-!!! note "Info"
-    The directions of the currents ``\bar{I}_{ij}``, ``\bar{I}_{ji}``, ``\bar{I}_{\text{s}i}``, and ``\bar{I}_{\text{s}j}`` are initially defined to emanate from the nodes or buses. This convention proves particularly valuable during power flow analyses. In cases where active or reactive power is positive, it signifies alignment with the assumed current direction, flowing away from the bus. Conversely, when power is negative, the direction is reversed, indicating a flow towards the bus.
 
 ---
 
@@ -131,6 +134,8 @@ Let us consider an example, given in Figure 2, that will allow us an easy transi
 <figcaption>Figure 2: The example of the system with three buses and two branches.</figcaption>
 &nbsp;
 ```
+!!! note "Info"
+    The current ``\bar{I}_{\text{sh}k}`` follows the convention of coming out from the bus in terms of its direction. Just as before, when calculating powers related to shunt elements, this current direction is assumed. Therefore, in cases where power is positive, it signifies alignment with the assumed current direction, emerging away from the bus. Conversely, when power is negative, the direction is reversed, indicating a flow towards the bus.
 
 According to the [unified branch model](@ref UnifiedBranchModelTutorials) each branch is described using the system of equations as follows:
 ```math
@@ -205,8 +210,8 @@ The matrix ``\mathbf{Y} = \mathbf{G} + \text{j}\mathbf{B} \in \mathbb{C}^{n \tim
 
 When a branch is not incident (or adjacent) to a bus the corresponding element in the nodal admittance matrix ``\mathbf{Y}`` is equal to zero. The nodal admittance matrix ``\mathbf{Y}`` is a sparse (i.e., a small number of elements are non-zeros) for real-world power systems. Although it is often assumed that the matrix ``\mathbf{Y}`` is symmetrical, it is not a general case, for example, in the presence of phase shifting transformers the matrix ``\mathbf{Y}`` is not symmetrical [[2, Sec. 9.6]](@ref ACDCModelReferenceTutorials). JuliaGrid stores both the matrix ``\mathbf{Y}`` and its transpose ``\mathbf{Y}^T`` in the `acModel` variable of the `PowerSystem` composite type:
 ```@repl ACDCModel
-𝐘 = system.acModel.nodalMatrix
-𝐘ᵀ = system.acModel.nodalMatrixTranspose
+𝐘 = system.model.ac.nodalMatrix
+𝐘ᵀ = system.model.ac.nodalMatrixTranspose
 ```
 
 ---
@@ -217,6 +222,9 @@ The DC model is obtained by linearisation of the nonlinear model, and it provide
 dcModel!(system)
 nothing # hide
 ```
+
+!!! tip "Tip"
+    Similar to our explanation regarding the AC model, within the documentation, we consistently mention this function by its name. However, in the case of a user initializing any of the diverse DC analyses, if the DC model has not been established through the [`dcModel!`](@ref dcModel!) function, the DC model will be automatically generated during initiation. This process will ensure that all the relevant fields of the DC model are populated.
 
 ---
 
@@ -267,7 +275,7 @@ where ``{1}/({\tau_{ij} x_{ij}})`` represents the branch admittance in the DC fr
 
 Furthermore, the computed branch admittances in the DC framework are stored in the vector ``\mathbf{y} = [{1}/({\tau_{ij} x_{ij}})]``:
 ```@repl ACDCModel
-𝐲 = system.dcModel.admittance
+𝐲 = system.model.dc.admittance
 ```
 
 We can conclude that ``P_{ij}=-P_{ji}`` holds. With the DC model, the linear network equations relate active powers to bus voltage angles, versus complex currents to complex bus voltages in the AC model [[3]](@ref ACDCModelReferenceTutorials). Consequently, analogous to the [unified branch model](@ref UnifiedBranchModelTutorials) we can write:
@@ -376,7 +384,7 @@ The vector ``\mathbf {P} \in \mathbb{R}^{n}`` contains active power injections a
 
 The vector ``\mathbf{P_\text{tr}} \in \mathbb{R}^{n}`` represents active powers related to the non-zero shift angle of transformers. This vector is stored in the `dcModel` variable, and we can access it using:
 ```@repl ACDCModel
-𝐏ₜᵣ = system.dcModel.shiftActivePower
+𝐏ₜᵣ = system.model.dc.shiftActivePower
 ```
 
 The vector ``\mathbf{P}_\text{sh} \in \mathbb{R}^{n}`` represents active powers consumed by shunt elements. We can access this vector using:
@@ -399,7 +407,7 @@ The bus or nodal matrix in the DC framework is given as ``\mathbf{B} \in \mathbb
 
 The sparse nodal matrix ``\mathbf{B}`` is stored in the `dcModel` variable, and we can access it using:
 ```@repl ACDCModel
-𝐁 = system.dcModel.nodalMatrix
+𝐁 = system.model.dc.nodalMatrix
 ```
 
 ---

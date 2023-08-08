@@ -1,24 +1,24 @@
 """
-    power!(system::PowerSystem, model::ACAnalysis)
+    power!(system::PowerSystem, analysis::AC)
 
 The function computes the active and reactive powers associated with buses, branches, and
 generators in the AC framework.
 
 # Updates
-This function updates the `power` field of the `Model` composite type by computing the 
-following electrical quantities:  
-- `injection`: active and reactive power bus injections,
-- `supply`: active and reactive power bus injections from the generators,
-- `shunt`: active and reactive power values associated with shunt element at each bus,
-- `from`: active and reactive power flows at the "from" end of each branch,
-- `to`: active and reactive power flows at the "to" end of each branch,
-- `charging`: active and reactive power values linked with branch charging admittances for each branch,
-- `series` active and reactive power losses through each branch series impedance,
+This function updates the `power` field of the `AC` abstract type by computing the following
+electrical quantities:
+- `injection`: active and reactive power bus injections;
+- `supply`: active and reactive power bus injections from the generators;
+- `shunt`: active and reactive power values associated with shunt element at each bus;
+- `from`: active and reactive power flows at the "from" end of each branch;
+- `to`: active and reactive power flows at the "to" end of each branch;
+- `charging`: active and reactive power values linked with branch charging admittances for each branch;
+- `series` active and reactive power losses through each branch series impedance;
 - `generator`: produced active and reactive power outputs of each generator.
 
 # Abstract type
-The abstract type `ACAnalysis` can have the following subtypes:
-- `ACPowerFlow`: computes the powers within the AC power flow,
+The abstract type `AC` can have the following subtypes:
+- `ACPowerFlow`: computes the powers within the AC power flow;
 - `ACOptimalPowerFlow`: computes the powers within the AC optimal power flow.
 
 # Examples
@@ -27,15 +27,15 @@ Compute powers after obtaining the AC power flow solution:
 system = powerSystem("case14.h5")
 acModel!(system)
 
-model = newtonRaphson(system)
+analysis = newtonRaphson(system)
 for i = 1:10
-    stopping = mismatch!(system, model)
+    stopping = mismatch!(system, analysis)
     if all(stopping .< 1e-8)
         break
     end
-    solve!(system, model)
+    solve!(system, analysis)
 end
-power!(system, model)
+power!(system, analysis)
 ```
 
 Compute powers after obtaining the AC optimal power flow solution:
@@ -43,18 +43,18 @@ Compute powers after obtaining the AC optimal power flow solution:
 system = powerSystem("case14.h5")
 acModel!(system)
 
-model = acOptimalPowerFlow(system, Ipopt.Optimizer)
-solve!(system, model)
-power!(system, model)
+analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
+solve!(system, analysis)
+power!(system, analysis)
 ```
 """
-function power!(system::PowerSystem, model::ACPowerFlow)
-    ac = system.acModel
+function power!(system::PowerSystem, analysis::ACPowerFlow)
+    ac = system.model.ac
     slack = system.bus.layout.slack
     parameter = system.branch.parameter
 
-    voltage = model.voltage
-    power = model.power
+    voltage = analysis.voltage
+    power = analysis.power
     errorVoltage(voltage.magnitude)
 
     power.injection.active = fill(0.0, system.bus.number)
@@ -118,9 +118,10 @@ function power!(system::PowerSystem, model::ACPowerFlow)
             turnsRatioInv = 1 / parameter.turnsRatio[i]
             transformerRatio = turnsRatioInv * exp(-im * parameter.shiftAngle[i])
 
-            currentBranch = abs(ac.admittance[i] * (voltageFrom * transformerRatio - voltageTo))
-            power.series.active[i] = currentBranch^2 * system.branch.parameter.resistance[i]
-            power.series.reactive[i] = currentBranch^2 * system.branch.parameter.reactance[i]
+            voltageSeries = transformerRatio * voltageFrom - voltageTo
+            series = voltageSeries * conj(ac.admittance[i] * voltageSeries)
+            power.series.active[i] = real(series)
+            power.series.reactive[i] = imag(series)
 
             admittanceConj = 0.5 * conj(system.branch.parameter.conductance[i] + im * system.branch.parameter.susceptance[i])
             fromShunt = (turnsRatioInv * voltage.magnitude[from])^2 * admittanceConj
@@ -211,10 +212,11 @@ function power!(system::PowerSystem, model::ACPowerFlow)
     end
 end
 
-function power!(system::PowerSystem, model::ACOptimalPowerFlow)
-    ac = system.acModel
-    voltage = model.voltage
-    power = model.power
+function power!(system::PowerSystem, analysis::ACOptimalPowerFlow)
+    ac = system.model.ac
+    voltage = analysis.voltage
+    power = analysis.power
+    parameter = system.branch.parameter
     errorVoltage(voltage.magnitude)
 
     power.injection.active = fill(0.0, system.bus.number)
@@ -243,12 +245,12 @@ function power!(system::PowerSystem, model::ACOptimalPowerFlow)
     power.from.reactive = fill(0.0, system.branch.number)
     power.to.active = fill(0.0, system.branch.number)
     power.to.reactive = fill(0.0, system.branch.number)
-    power.pimodel.series.active = fill(0.0, system.branch.number)
-    power.pimodel.series.reactive = fill(0.0, system.branch.number)
-    power.pimodel.from.active = fill(0.0, system.branch.number)
-    power.pimodel.from.reactive = fill(0.0, system.branch.number)
-    power.pimodel.to.active = fill(0.0, system.branch.number)
-    power.pimodel.to.reactive = fill(0.0, system.branch.number)
+    power.charging.from.active = fill(0.0, system.branch.number)
+    power.charging.from.reactive = fill(0.0, system.branch.number)
+    power.charging.to.active = fill(0.0, system.branch.number)
+    power.charging.to.reactive = fill(0.0, system.branch.number)
+    power.series.active = fill(0.0, system.branch.number)
+    power.series.reactive = fill(0.0, system.branch.number)
     @inbounds for i = 1:system.branch.number
         if system.branch.layout.status[i] == 1
             from = system.branch.layout.from[i]
@@ -268,17 +270,19 @@ function power!(system::PowerSystem, model::ACOptimalPowerFlow)
             turnsRatioInv = 1 / parameter.turnsRatio[i]
             transformerRatio = turnsRatioInv * exp(-im * parameter.shiftAngle[i])
 
-            currentBranch = abs(ac.admittance[i] * (voltageFrom * transformerRatio - voltageTo))
-            power.pimodel.series.active[i] = currentBranch^2 * system.branch.parameter.resistance[i]
-            power.pimodel.series.reactive[i] = currentBranch^2 * system.branch.parameter.reactance[i]
+            voltageSeries = transformerRatio * voltageFrom - voltageTo
+            series = voltageSeries * conj(ac.admittance[i] * voltageSeries)
+            power.series.active[i] = real(series)
+            power.series.reactive[i] = imag(series)
 
-            fromShunt = 0.5 * (turnsRatioInv * voltage.magnitude[from])^2 * conj(system.branch.parameter.conductance[i] + im * system.branch.parameter.susceptance[i])
-            power.pimodel.from.active[i] = real(fromShunt)
-            power.pimodel.from.reactive[i] = imag(fromShunt)
+            admittanceConj = 0.5 * conj(system.branch.parameter.conductance[i] + im * system.branch.parameter.susceptance[i])
+            fromShunt = (turnsRatioInv * voltage.magnitude[from])^2 * admittanceConj
+            power.charging.from.active[i] = real(fromShunt)
+            power.charging.from.reactive[i] = imag(fromShunt)
 
-            toShunt = 0.5 * voltage.magnitude[to]^2 * conj(system.branch.parameter.conductance[i] + im * system.branch.parameter.susceptance[i])
-            power.pimodel.to.active[i] = real(toShunt)
-            power.pimodel.to.reactive[i] = imag(toShunt)
+            toShunt = voltage.magnitude[to]^2 * admittanceConj
+            power.charging.to.active[i] = real(toShunt)
+            power.charging.to.reactive[i] = imag(toShunt)
         end
     end
 
@@ -287,20 +291,20 @@ function power!(system::PowerSystem, model::ACOptimalPowerFlow)
     @inbounds for i = 1:system.generator.number
         busIndex = system.generator.layout.bus[i]
 
-        power.supply.active[busIndex] += model.power.generator.active[i]
-        power.supply.reactive[busIndex] += model.power.generator.reactive[i]
+        power.supply.active[busIndex] += analysis.power.generator.active[i]
+        power.supply.reactive[busIndex] += analysis.power.generator.reactive[i]
     end
 end
 
 """
-    powerInjection(system::PowerSystem, model::ACAnalysis, label)
+    powerInjection(system::PowerSystem, analysis::AC, label)
 
 The function returns the active and reactive power injections associated with a specific
 bus in the AC framework. The `label` keyword argument must match an existing bus label.
 
 # Abstract type
-The abstract type `ACAnalysis` can have the following subtypes:
-- `ACPowerFlow`: computes the powers within the AC power flow,
+The abstract type `AC` can have the following subtypes:
+- `ACPowerFlow`: computes the powers within the AC power flow;
 - `ACOptimalPowerFlow`: computes the powers within the AC optimal power flow.
 
 # Examples
@@ -309,15 +313,15 @@ Compute powers after obtaining the AC power flow solution:
 system = powerSystem("case14.h5")
 acModel!(system)
 
-model = newtonRaphson(system)
+analysis = newtonRaphson(system)
 for i = 1:10
-    stopping = mismatch!(system, model)
+    stopping = mismatch!(system, analysis)
     if all(stopping .< 1e-8)
         break
     end
-    solve!(system, model)
+    solve!(system, analysis)
 end
-injection = powerInjection(system, model; label = 1)
+injection = powerInjection(system, analysis; label = 1)
 ```
 
 Compute powers after obtaining the AC optimal power flow solution:
@@ -325,19 +329,19 @@ Compute powers after obtaining the AC optimal power flow solution:
 system = powerSystem("case14.h5")
 acModel!(system)
 
-model = acOptimalPowerFlow(system, Ipopt.Optimizer)
-solve!(system, model)
-injection = powerInjection(system, model; label = 1)
+analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
+solve!(system, analysis)
+injection = powerInjection(system, analysis; label = 1)
 ```
 """
-function powerInjection(system::PowerSystem, model::ACAnalysis; label)
+function powerInjection(system::PowerSystem, analysis::AC; label)
     if !haskey(system.bus.label, label)
         throw(ErrorException("The value $label of the label keyword does not exist in bus labels."))
     end
-    errorVoltage(model.voltage.magnitude)
+    errorVoltage(analysis.voltage.magnitude)
 
-    ac = system.acModel
-    voltage = model.voltage
+    ac = system.model.ac
+    voltage = analysis.voltage
     index = system.bus.label[label]
 
     I = 0.0 + im * 0.0
@@ -351,15 +355,15 @@ function powerInjection(system::PowerSystem, model::ACAnalysis; label)
 end
 
 """
-    powerSupply(system::PowerSystem, model::ACAnalysis, label)
+    powerSupply(system::PowerSystem, analysis::AC, label)
 
 The function returns the active and reactive power injections from the generators associated
-with a specific bus in the AC framework. The `label` keyword argument must match an existing 
+with a specific bus in the AC framework. The `label` keyword argument must match an existing
 bus label.
 
 # Abstract type
-The abstract type `ACAnalysis` can have the following subtypes:
-- `ACPowerFlow`: computes the powers within the AC power flow,
+The abstract type `AC` can have the following subtypes:
+- `ACPowerFlow`: computes the powers within the AC power flow;
 - `ACOptimalPowerFlow`: computes the powers within the AC optimal power flow.
 
 # Examples
@@ -368,15 +372,15 @@ Compute powers after obtaining the AC power flow solution:
 system = powerSystem("case14.h5")
 acModel!(system)
 
-model = newtonRaphson(system)
+analysis = newtonRaphson(system)
 for i = 1:10
-    stopping = mismatch!(system, model)
+    stopping = mismatch!(system, analysis)
     if all(stopping .< 1e-8)
         break
     end
-    solve!(system, model)
+    solve!(system, analysis)
 end
-supply = powerSupply(system, model; label = 1)
+supply = powerSupply(system, analysis; label = 1)
 ```
 
 Compute powers after obtaining the AC optimal power flow solution:
@@ -384,19 +388,19 @@ Compute powers after obtaining the AC optimal power flow solution:
 system = powerSystem("case14.h5")
 acModel!(system)
 
-model = acOptimalPowerFlow(system, Ipopt.Optimizer)
-solve!(system, model)
-supply = powerSupply(system, model; label = 1)
+analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
+solve!(system, analysis)
+supply = powerSupply(system, analysis; label = 1)
 ```
 """
-function powerSupply(system::PowerSystem, model::ACPowerFlow; label)
+function powerSupply(system::PowerSystem, analysis::ACPowerFlow; label)
     if !haskey(system.bus.label, label)
         throw(ErrorException("The value $label of the label keyword does not exist in bus labels."))
     end
-    errorVoltage(model.voltage.magnitude)
+    errorVoltage(analysis.voltage.magnitude)
 
-    ac = system.acModel
-    voltage = model.voltage
+    ac = system.model.ac
+    voltage = analysis.voltage
 
     index = system.bus.label[label]
 
@@ -419,38 +423,38 @@ function powerSupply(system::PowerSystem, model::ACPowerFlow; label)
         supplyReactive = imag(powerInjection) + system.bus.demand.reactive[index]
     else
         supplyReactive = system.bus.supply.reactive[index]
-    end 
-    
+    end
+
     return Cartesian(supplyActive, supplyReactive)
 end
 
-function powerSupply(system::PowerSystem, model::ACOptimalPowerFlow; label)
+function powerSupply(system::PowerSystem, analysis::ACOptimalPowerFlow; label)
     if !haskey(system.bus.label, label)
         throw(ErrorException("The value $label of the label keyword does not exist in bus labels."))
     end
-    errorVoltage(model.voltage.magnitude)
+    errorVoltage(analysis.voltage.magnitude)
     index = system.bus.label[label]
 
     supplyActive = 0.0
     supplyReactive = 0.0
     @inbounds for i in system.bus.supply.generator[index]
-        supplyActive += model.power.generator.active[i]
-        supplyReactive += model.power.generator.reactive[i]
+        supplyActive += analysis.power.generator.active[i]
+        supplyReactive += analysis.power.generator.reactive[i]
     end
 
     return Cartesian(supplyActive, supplyReactive)
 end
 
 """
-    powerShunt(system::PowerSystem, model::ACAnalysis, label)
+    powerShunt(system::PowerSystem, analysis::AC, label)
 
-The function returns the active and reactive power values of the shunt element associated 
-with a specific bus in the AC framework. The `label` keyword argument must match an existing 
+The function returns the active and reactive power values of the shunt element associated
+with a specific bus in the AC framework. The `label` keyword argument must match an existing
 bus label.
 
 # Abstract type
-The abstract type `ACAnalysis` can have the following subtypes:
-- `ACPowerFlow`: computes the powers within the AC power flow,
+The abstract type `AC` can have the following subtypes:
+- `ACPowerFlow`: computes the powers within the AC power flow;
 - `ACOptimalPowerFlow`: computes the powers within the AC optimal power flow.
 
 # Examples
@@ -459,15 +463,15 @@ Compute powers after obtaining the AC power flow solution:
 system = powerSystem("case14.h5")
 acModel!(system)
 
-model = newtonRaphson(system)
+analysis = newtonRaphson(system)
 for i = 1:10
-    stopping = mismatch!(system, model)
+    stopping = mismatch!(system, analysis)
     if all(stopping .< 1e-8)
         break
     end
-    solve!(system, model)
+    solve!(system, analysis)
 end
-supply = powerShunt(system, model; label = 1)
+supply = powerShunt(system, analysis; label = 1)
 ```
 
 Compute powers after obtaining the AC optimal power flow solution:
@@ -475,17 +479,17 @@ Compute powers after obtaining the AC optimal power flow solution:
 system = powerSystem("case14.h5")
 acModel!(system)
 
-model = acOptimalPowerFlow(system, Ipopt.Optimizer)
-solve!(system, model)
-supply = powerShunt(system, model; label = 1)
+analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
+solve!(system, analysis)
+supply = powerShunt(system, analysis; label = 1)
 ```
 """
-function powerShunt(system::PowerSystem, model::ACAnalysis; label)
+function powerShunt(system::PowerSystem, analysis::AC; label)
     if !haskey(system.bus.label, label)
         throw(ErrorException("The value $label of the label keyword does not exist in bus labels."))
     end
-    errorVoltage(model.voltage.magnitude)
-    voltage = model.voltage
+    errorVoltage(analysis.voltage.magnitude)
+    voltage = analysis.voltage
 
     index = system.bus.label[label]
     powerShunt = voltage.magnitude[index]^2 * conj(system.bus.shunt.conductance[index] + im * system.bus.shunt.susceptance[index])
@@ -494,15 +498,15 @@ function powerShunt(system::PowerSystem, model::ACAnalysis; label)
 end
 
 """
-    powerFrom(system::PowerSystem, model::ACAnalysis; label)
+    powerFrom(system::PowerSystem, analysis::AC; label)
 
-The function returns the active and reactive power flows at the "from" bus end associated 
-with a specific branch in the AC framework. The `label` keyword argument must match an 
+The function returns the active and reactive power flows at the "from" bus end associated
+with a specific branch in the AC framework. The `label` keyword argument must match an
 existing branch label.
 
 # Abstract type
-The abstract type `ACAnalysis` can have the following subtypes:
-- `ACPowerFlow`: computes the powers within the AC power flow,
+The abstract type `AC` can have the following subtypes:
+- `ACPowerFlow`: computes the powers within the AC power flow;
 - `ACOptimalPowerFlow`: computes the powers within the AC optimal power flow.
 
 # Examples
@@ -511,15 +515,15 @@ Compute powers after obtaining the AC power flow solution:
 system = powerSystem("case14.h5")
 acModel!(system)
 
-model = newtonRaphson(system)
+analysis = newtonRaphson(system)
 for i = 1:10
-    stopping = mismatch!(system, model)
+    stopping = mismatch!(system, analysis)
     if all(stopping .< 1e-8)
         break
     end
-    solve!(system, model)
+    solve!(system, analysis)
 end
-from = powerFrom(system, model; label = 2)
+from = powerFrom(system, analysis; label = 2)
 ```
 
 Compute powers after obtaining the AC optimal power flow solution:
@@ -527,19 +531,19 @@ Compute powers after obtaining the AC optimal power flow solution:
 system = powerSystem("case14.h5")
 acModel!(system)
 
-model = acOptimalPowerFlow(system, Ipopt.Optimizer)
-solve!(system, model)
-from = powerFrom(system, model; label = 2)
+analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
+solve!(system, analysis)
+from = powerFrom(system, analysis; label = 2)
 ```
 """
-function powerFrom(system::PowerSystem, model::ACAnalysis; label)
+function powerFrom(system::PowerSystem, analysis::AC; label)
     if !haskey(system.branch.label, label)
         throw(ErrorException("The value $label of the label keyword does not exist in branch labels."))
     end
-    errorVoltage(model.voltage.magnitude)
+    errorVoltage(analysis.voltage.magnitude)
 
-    ac = system.acModel
-    voltage = model.voltage
+    ac = system.model.ac
+    voltage = analysis.voltage
 
     index = system.branch.label[label]
 
@@ -559,15 +563,15 @@ function powerFrom(system::PowerSystem, model::ACAnalysis; label)
 end
 
 """
-    powerTo(system::PowerSystem, model::ACAnalysis; label)
+    powerTo(system::PowerSystem, analysis::AC; label)
 
-The function returns the active and reactive power flows at the "to" bus end associated 
-with a specific branch in the AC framework. The `label` keyword argument must match an 
+The function returns the active and reactive power flows at the "to" bus end associated
+with a specific branch in the AC framework. The `label` keyword argument must match an
 existing branch label.
 
 # Abstract type
-The abstract type `ACAnalysis` can have the following subtypes:
-- `ACPowerFlow`: computes the powers within the AC power flow,
+The abstract type `AC` can have the following subtypes:
+- `ACPowerFlow`: computes the powers within the AC power flow;
 - `ACOptimalPowerFlow`: computes the powers within the AC optimal power flow.
 
 # Examples
@@ -576,15 +580,15 @@ Compute powers after obtaining the AC power flow solution:
 system = powerSystem("case14.h5")
 acModel!(system)
 
-model = newtonRaphson(system)
+analysis = newtonRaphson(system)
 for i = 1:10
-    stopping = mismatch!(system, model)
+    stopping = mismatch!(system, analysis)
     if all(stopping .< 1e-8)
         break
     end
-    solve!(system, model)
+    solve!(system, analysis)
 end
-to = powerTo(system, model; label = 2)
+to = powerTo(system, analysis; label = 2)
 ```
 
 Compute powers after obtaining the AC optimal power flow solution:
@@ -592,19 +596,19 @@ Compute powers after obtaining the AC optimal power flow solution:
 system = powerSystem("case14.h5")
 acModel!(system)
 
-model = acOptimalPowerFlow(system, Ipopt.Optimizer)
-solve!(system, model)
-to = powerTo(system, model; label = 2)
+analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
+solve!(system, analysis)
+to = powerTo(system, analysis; label = 2)
 ```
 """
-function powerTo(system::PowerSystem, model::ACAnalysis; label)
+function powerTo(system::PowerSystem, analysis::AC; label)
     if !haskey(system.branch.label, label)
         throw(ErrorException("The value $label of the label keyword does not exist in branch labels."))
     end
-    errorVoltage(model.voltage.magnitude)
+    errorVoltage(analysis.voltage.magnitude)
 
-    ac = system.acModel
-    voltage = model.voltage
+    ac = system.model.ac
+    voltage = analysis.voltage
 
     index = system.branch.label[label]
 
@@ -624,15 +628,15 @@ function powerTo(system::PowerSystem, model::ACAnalysis; label)
 end
 
 """
-    powerCharging(system::PowerSystem, model::ACAnalysis; label)
+    powerCharging(system::PowerSystem, analysis::AC; label)
 
-The function returns the active and reactive power values associated with the charging 
-admittances of a specific branch in the AC framework. The 'label' keyword argument must 
+The function returns the active and reactive power values associated with the charging
+admittances of a specific branch in the AC framework. The 'label' keyword argument must
 correspond to an existing branch label.
 
 # Abstract type
-The abstract type `ACAnalysis` can have the following subtypes:
-- `ACPowerFlow`: computes the power within the AC power flow,
+The abstract type `AC` can have the following subtypes:
+- `ACPowerFlow`: computes the power within the AC power flow;
 - `ACOptimalPowerFlow`: computes the power within the AC optimal power flow.
 
 # Examples
@@ -641,15 +645,15 @@ Compute the reactive power after obtaining the AC power flow solution:
 system = powerSystem("case14.h5")
 acModel!(system)
 
-model = newtonRaphson(system)
+analysis = newtonRaphson(system)
 for i = 1:10
-    stopping = mismatch!(system, model)
+    stopping = mismatch!(system, analysis)
     if all(stopping .< 1e-8)
         break
     end
-    solve!(system, model)
+    solve!(system, analysis)
 end
-charging = powerCharging(system, model; label = 2)
+charging = powerCharging(system, analysis; label = 2)
 ```
 
 Compute the reactive power after obtaining the AC optimal power flow solution:
@@ -657,19 +661,19 @@ Compute the reactive power after obtaining the AC optimal power flow solution:
 system = powerSystem("case14.h5")
 acModel!(system)
 
-model = acOptimalPowerFlow(system, Ipopt.Optimizer)
-solve!(system, model)
-charging = powerCharging(system, model; label = 2)
+analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
+solve!(system, analysis)
+charging = powerCharging(system, analysis; label = 2)
 ```
 """
-function powerCharging(system::PowerSystem, model::ACAnalysis; label)
+function powerCharging(system::PowerSystem, analysis::AC; label)
     if !haskey(system.branch.label, label)
         throw(ErrorException("The value $label of the label keyword does not exist in branch labels."))
     end
-    errorVoltage(model.voltage.magnitude)
+    errorVoltage(analysis.voltage.magnitude)
 
-    ac = system.acModel
-    voltage = model.voltage
+    ac = system.model.ac
+    voltage = analysis.voltage
     parameter = system.branch.parameter
     index = system.branch.label[label]
 
@@ -699,15 +703,15 @@ function powerCharging(system::PowerSystem, model::ACAnalysis; label)
 end
 
 """
-    powerSeries(system::PowerSystem, model::ACAnalysis; label)
+    powerSeries(system::PowerSystem, analysis::AC; label)
 
-The function returns the active and reactive power losses across the series impedance of 
-a specific branch within the AC framework. The `label` keyword argument should correspond 
+The function returns the active and reactive power losses across the series impedance of
+a specific branch within the AC framework. The `label` keyword argument should correspond
 to an existing branch label.
 
 # Abstract type
-The abstract type `ACAnalysis` can have the following subtypes:
-- `ACPowerFlow`: computes the power within the AC power flow,
+The abstract type `AC` can have the following subtypes:
+- `ACPowerFlow`: computes the power within the AC power flow;
 - `ACOptimalPowerFlow`: computes the power within the AC optimal power flow.
 
 # Examples
@@ -716,15 +720,15 @@ Compute the reactive power after obtaining the AC power flow solution:
 system = powerSystem("case14.h5")
 acModel!(system)
 
-model = newtonRaphson(system)
+analysis = newtonRaphson(system)
 for i = 1:10
-    stopping = mismatch!(system, model)
+    stopping = mismatch!(system, analysis)
     if all(stopping .< 1e-8)
         break
     end
-    solve!(system, model)
+    solve!(system, analysis)
 end
-series = powerSeries(system, model; label = 2)
+series = powerSeries(system, analysis; label = 2)
 ```
 
 Compute the reactive power after obtaining the AC optimal power flow solution:
@@ -732,19 +736,19 @@ Compute the reactive power after obtaining the AC optimal power flow solution:
 system = powerSystem("case14.h5")
 acModel!(system)
 
-model = acOptimalPowerFlow(system, Ipopt.Optimizer)
-solve!(system, model)
-series = powerSeries(system, model; label = 2)
+analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
+solve!(system, analysis)
+series = powerSeries(system, analysis; label = 2)
 ```
 """
-function powerSeries(system::PowerSystem, model::ACAnalysis; label)
+function powerSeries(system::PowerSystem, analysis::AC; label)
     if !haskey(system.branch.label, label)
         throw(ErrorException("The value $label of the label keyword does not exist in branch labels."))
     end
-    errorVoltage(model.voltage.magnitude)
+    errorVoltage(analysis.voltage.magnitude)
 
-    ac = system.acModel
-    voltage = model.voltage
+    ac = system.model.ac
+    voltage = analysis.voltage
     parameter = system.branch.parameter
     index = system.branch.label[label]
 
@@ -769,14 +773,14 @@ function powerSeries(system::PowerSystem, model::ACAnalysis; label)
 end
 
 """
-    powerGenerator(system::PowerSystem, model::ACAnalysis)
+    powerGenerator(system::PowerSystem, analysis::AC)
 
-The function returns the active and reactive powers associated with a specific generator 
+The function returns the active and reactive powers associated with a specific generator
 in the AC framework. The `label` keyword argument must match an existing generator label.
 
 # Abstract type
-The abstract type `ACAnalysis` can have the following subtypes:
-- `ACPowerFlow`: computes the powers within the AC power flow,
+The abstract type `AC` can have the following subtypes:
+- `ACPowerFlow`: computes the powers within the AC power flow;
 - `ACOptimalPowerFlow`: computes the powers within the AC optimal power flow.
 
 # Examples
@@ -785,15 +789,15 @@ Compute powers after obtaining the AC power flow solution
 system = powerSystem("case14.h5")
 acModel!(system)
 
-model = newtonRaphson(system)
+analysis = newtonRaphson(system)
 for i = 1:10
-    stopping = mismatch!(system, model)
+    stopping = mismatch!(system, analysis)
     if all(stopping .< 1e-8)
         break
     end
-    solve!(system, model)
+    solve!(system, analysis)
 end
-output = powerGenerator(system, model; label = 1)
+output = powerGenerator(system, analysis; label = 1)
 ```
 
 Compute powers after obtaining the AC optimal power flow solution:
@@ -801,19 +805,19 @@ Compute powers after obtaining the AC optimal power flow solution:
 system = powerSystem("case14.h5")
 acModel!(system)
 
-model = acOptimalPowerFlow(system, Ipopt.Optimizer)
-solve!(system, model)
-output = powerGenerator(system, model; label = 1)
+analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
+solve!(system, analysis)
+output = powerGenerator(system, analysis; label = 1)
 ```
 """
-function powerGenerator(system::PowerSystem, model::ACPowerFlow; label)
+function powerGenerator(system::PowerSystem, analysis::ACPowerFlow; label)
     if !haskey(system.generator.label, label)
         throw(ErrorException("The value $label of the label keyword does not exist in generator labels."))
     end
-    errorVoltage(model.voltage.magnitude)
+    errorVoltage(analysis.voltage.magnitude)
 
-    ac = system.acModel
-    voltage = model.voltage
+    ac = system.model.ac
+    voltage = analysis.voltage
 
     index = system.generator.label[label]
     busIndex = system.generator.layout.bus[index]
@@ -905,33 +909,33 @@ function powerGenerator(system::PowerSystem, model::ACPowerFlow; label)
     return Cartesian(powerActive, powerReactive)
 end
 
-function powerGenerator(system::PowerSystem, model::ACOptimalPowerFlow; label)
+function powerGenerator(system::PowerSystem, analysis::ACOptimalPowerFlow; label)
     if !haskey(system.generator.label, label)
         throw(ErrorException("The value $label of the label keyword does not exist in generator labels."))
     end
-    errorVoltage(model.voltage.angle)
+    errorVoltage(analysis.voltage.angle)
 
     index = system.generator.label[label]
 
-    return Cartesian(model.power.generator.active[index], model.power.generator.reactive[index])
+    return Cartesian(analysis.power.generator.active[index], analysis.power.generator.reactive[index])
 end
 
 """
-    current!(system::PowerSystem, model::ACAnalysis)
+    current!(system::PowerSystem, analysis::AC)
 
 The function computes the currents in the polar coordinate system associated with buses and
 branches in the AC framework.
 
 # Updates
 This function calculates various electrical quantities in the polar coordinate system:
-- `injection`: current injections at each bus,
-- `from`: current flows at each "from" bus end of the branch,
-- `to`: current flows at each "to" bus end of the branch,
-- `line`: current flows through the series impedance of the branch in the direction from the "from" bus end to the "to" bus end of the branch.     
+- `injection`: current injections at each bus;
+- `from`: current flows at each "from" bus end of the branch;
+- `to`: current flows at each "to" bus end of the branch;
+- `series`: current flows through the series impedance of the branch in the direction from the "from" bus end to the "to" bus end of the branch.
 
 # Abstract type
-The abstract type `ACAnalysis` can have the following subtypes:
-- `ACPowerFlow`: computes the currents within the AC power flow,
+The abstract type `AC` can have the following subtypes:
+- `ACPowerFlow`: computes the currents within the AC power flow;
 - `ACOptimalPowerFlow`: computes the currents within the AC optimal power flow.
 
 # Examples
@@ -940,15 +944,15 @@ Compute currents after obtaining the AC power flow solution:
 system = powerSystem("case14.h5")
 acModel!(system)
 
-model = newtonRaphson(system)
+analysis = newtonRaphson(system)
 for i = 1:10
-    stopping = mismatch!(system, model)
+    stopping = mismatch!(system, analysis)
     if all(stopping .< 1e-8)
         break
     end
-    solve!(system, model)
+    solve!(system, analysis)
 end
-current!(system, model)
+current!(system, analysis)
 ```
 
 Compute currents after obtaining the AC optimal power flow solution:
@@ -956,16 +960,16 @@ Compute currents after obtaining the AC optimal power flow solution:
 system = powerSystem("case14.h5")
 acModel!(system)
 
-model = acOptimalPowerFlow(system, Ipopt.Optimizer)
-solve!(system, model)
-current!(system, model)
+analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
+solve!(system, analysis)
+current!(system, analysis)
 ```
 """
-function current!(system::PowerSystem, model::ACAnalysis)
-    ac = system.acModel
+function current!(system::PowerSystem, analysis::AC)
+    ac = system.model.ac
 
-    voltage = model.voltage
-    current = model.current
+    voltage = analysis.voltage
+    current = analysis.current
     errorVoltage(voltage.magnitude)
 
     current.injection.magnitude = fill(0.0, system.bus.number)
@@ -1012,14 +1016,14 @@ function current!(system::PowerSystem, model::ACAnalysis)
 end
 
 """
-    currentInjection(system::PowerSystem, model::ACAnalysis; label)
+    currentInjection(system::PowerSystem, analysis::AC; label)
 
 The function returns the current in the polar coordinate system associated with a specific
 bus in the AC framework. The `label` keyword argument must match an existing bus label.
 
 # Abstract type
-The abstract type `ACAnalysis` can have the following subtypes:
-- `ACPowerFlow`: computes the current within the AC power flow,
+The abstract type `AC` can have the following subtypes:
+- `ACPowerFlow`: computes the current within the AC power flow;
 - `ACOptimalPowerFlow`: computes the current within the AC optimal power flow.
 
 # Examples
@@ -1028,15 +1032,15 @@ Compute the current after obtaining the AC power flow solution:
 system = powerSystem("case14.h5")
 acModel!(system)
 
-model = newtonRaphson(system)
+analysis = newtonRaphson(system)
 for i = 1:10
-    stopping = mismatch!(system, model)
+    stopping = mismatch!(system, analysis)
     if all(stopping .< 1e-8)
         break
     end
-    solve!(system, model)
+    solve!(system, analysis)
 end
-injection = currentInjection(system, model; label = 1)
+injection = currentInjection(system, analysis; label = 1)
 ```
 
 Compute the current after obtaining the AC optimal power flow solution:
@@ -1044,19 +1048,19 @@ Compute the current after obtaining the AC optimal power flow solution:
 system = powerSystem("case14.h5")
 acModel!(system)
 
-model = acOptimalPowerFlow(system, Ipopt.Optimizer)
-solve!(system, model)
-injection = currentInjection(system, model; label = 1)
+analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
+solve!(system, analysis)
+injection = currentInjection(system, analysis; label = 1)
 ```
 """
-function currentInjection(system::PowerSystem, model::ACAnalysis; label)
+function currentInjection(system::PowerSystem, analysis::AC; label)
     if !haskey(system.bus.label, label)
         throw(ErrorException("The value $label of the label keyword does not exist in bus labels."))
     end
-    errorVoltage(model.voltage.magnitude)
+    errorVoltage(analysis.voltage.magnitude)
 
-    ac = system.acModel
-    voltage = model.voltage
+    ac = system.model.ac
+    voltage = analysis.voltage
     index = system.bus.label[label]
 
     I = 0.0 + im * 0.0
@@ -1069,15 +1073,15 @@ function currentInjection(system::PowerSystem, model::ACAnalysis; label)
 end
 
 """
-    currentFrom(system::PowerSystem, model::ACAnalysis; label)
+    currentFrom(system::PowerSystem, analysis::AC; label)
 
-The function returns the current in the polar coordinate system at the "from" bus end 
-associated with a specific branch in the AC framework. The `label` keyword argument must 
+The function returns the current in the polar coordinate system at the "from" bus end
+associated with a specific branch in the AC framework. The `label` keyword argument must
 match an existing branch label.
 
 # Abstract type
-The abstract type `ACAnalysis` can have the following subtypes:
-- `ACPowerFlow`: computes the current within the AC power flow,
+The abstract type `AC` can have the following subtypes:
+- `ACPowerFlow`: computes the current within the AC power flow;
 - `ACOptimalPowerFlow`: computes the current within the AC optimal power flow.
 
 # Examples
@@ -1086,15 +1090,15 @@ Compute the current after obtaining the AC power flow solution:
 system = powerSystem("case14.h5")
 acModel!(system)
 
-model = newtonRaphson(system)
+analysis = newtonRaphson(system)
 for i = 1:10
-    stopping = mismatch!(system, model)
+    stopping = mismatch!(system, analysis)
     if all(stopping .< 1e-8)
         break
     end
-    solve!(system, model)
+    solve!(system, analysis)
 end
-from = currentFrom(system, model; label = 2)
+from = currentFrom(system, analysis; label = 2)
 ```
 
 Compute the current after obtaining the AC optimal power flow solution:
@@ -1102,19 +1106,19 @@ Compute the current after obtaining the AC optimal power flow solution:
 system = powerSystem("case14.h5")
 acModel!(system)
 
-model = acOptimalPowerFlow(system, Ipopt.Optimizer)
-solve!(system, model)
-from = currentFrom(system, model; label = 2)
+analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
+solve!(system, analysis)
+from = currentFrom(system, analysis; label = 2)
 ```
 """
-function currentFrom(system::PowerSystem, model::ACAnalysis; label)
+function currentFrom(system::PowerSystem, analysis::AC; label)
     if !haskey(system.branch.label, label)
         throw(ErrorException("The value $label of the label keyword does not exist in branch labels."))
     end
-    errorVoltage(model.voltage.magnitude)
+    errorVoltage(analysis.voltage.magnitude)
 
-    ac = system.acModel
-    voltage = model.voltage
+    ac = system.model.ac
+    voltage = analysis.voltage
 
     index = system.branch.label[label]
     if system.branch.layout.status[index] == 1
@@ -1133,15 +1137,15 @@ function currentFrom(system::PowerSystem, model::ACAnalysis; label)
 end
 
 """
-    currentTo(system::PowerSystem, model::ACAnalysis; label)
+    currentTo(system::PowerSystem, analysis::AC; label)
 
-The function returns the current in the polar coordinate system at the "to" bus end 
-associated with a specific branch in the AC framework. The `label` keyword argument must 
+The function returns the current in the polar coordinate system at the "to" bus end
+associated with a specific branch in the AC framework. The `label` keyword argument must
 match an existing branch label.
 
 # Abstract type
-The abstract type `ACAnalysis` can have the following subtypes:
-- `ACPowerFlow`: computes the current within the AC power flow,
+The abstract type `AC` can have the following subtypes:
+- `ACPowerFlow`: computes the current within the AC power flow;
 - `ACOptimalPowerFlow`: computes the current within the AC optimal power flow.
 
 # Examples
@@ -1150,15 +1154,15 @@ Compute the current after obtaining the AC power flow solution:
 system = powerSystem("case14.h5")
 acModel!(system)
 
-model = newtonRaphson(system)
+analysis = newtonRaphson(system)
 for i = 1:10
-    stopping = mismatch!(system, model)
+    stopping = mismatch!(system, analysis)
     if all(stopping .< 1e-8)
         break
     end
-    solve!(system, model)
+    solve!(system, analysis)
 end
-to = currentTo(system, model; label = 2)
+to = currentTo(system, analysis; label = 2)
 ```
 
 Compute the current after obtaining the AC optimal power flow solution:
@@ -1166,19 +1170,19 @@ Compute the current after obtaining the AC optimal power flow solution:
 system = powerSystem("case14.h5")
 acModel!(system)
 
-model = acOptimalPowerFlow(system, Ipopt.Optimizer)
-solve!(system, model)
-to = currentTo(system, model; label = 2)
+analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
+solve!(system, analysis)
+to = currentTo(system, analysis; label = 2)
 ```
 """
-function currentTo(system::PowerSystem, model::ACAnalysis; label)
+function currentTo(system::PowerSystem, analysis::AC; label)
     if !haskey(system.branch.label, label)
         throw(ErrorException("The value $label of the label keyword does not exist in branch labels."))
     end
-    errorVoltage(model.voltage.magnitude)
+    errorVoltage(analysis.voltage.magnitude)
 
-    ac = system.acModel
-    voltage = model.voltage
+    ac = system.model.ac
+    voltage = analysis.voltage
 
     index = system.branch.label[label]
     if system.branch.layout.status[index] == 1
@@ -1197,16 +1201,16 @@ function currentTo(system::PowerSystem, model::ACAnalysis; label)
 end
 
 """
-    currentSeries(system::PowerSystem, model::ACAnalysis; label)
+    currentSeries(system::PowerSystem, analysis::AC; label)
 
-The function returns the current in the polar coordinate system through series impedance 
-associated with a specific branch in the direction from the "from" bus end to the "to" bus 
-end of the branch within the AC framework. The `label` keyword argument must  match an 
+The function returns the current in the polar coordinate system through series impedance
+associated with a specific branch in the direction from the "from" bus end to the "to" bus
+end of the branch within the AC framework. The `label` keyword argument must  match an
 existing branch label.
 
 # Abstract type
-The abstract type `ACAnalysis` can have the following subtypes:
-- `ACPowerFlow`: computes the current within the AC power flow,
+The abstract type `AC` can have the following subtypes:
+- `ACPowerFlow`: computes the current within the AC power flow;
 - `ACOptimalPowerFlow`: computes the current within the AC optimal power flow.
 
 # Examples
@@ -1215,15 +1219,15 @@ Compute the current after obtaining the AC power flow solution:
 system = powerSystem("case14.h5")
 acModel!(system)
 
-model = newtonRaphson(system)
+analysis = newtonRaphson(system)
 for i = 1:10
-    stopping = mismatch!(system, model)
+    stopping = mismatch!(system, analysis)
     if all(stopping .< 1e-8)
         break
     end
-    solve!(system, model)
+    solve!(system, analysis)
 end
-line = currentSeries(system, model; label = 2)
+line = currentSeries(system, analysis; label = 2)
 ```
 
 Compute the current after obtaining the AC optimal power flow solution:
@@ -1231,19 +1235,19 @@ Compute the current after obtaining the AC optimal power flow solution:
 system = powerSystem("case14.h5")
 acModel!(system)
 
-model = acOptimalPowerFlow(system, Ipopt.Optimizer)
-solve!(system, model)
-line = currentSeries(system, model; label = 2)
+analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
+solve!(system, analysis)
+line = currentSeries(system, analysis; label = 2)
 ```
 """
-function currentSeries(system::PowerSystem, model::ACAnalysis; label)
+function currentSeries(system::PowerSystem, analysis::AC; label)
     if !haskey(system.branch.label, label)
         throw(ErrorException("The value $label of the label keyword does not exist in branch labels."))
     end
-    errorVoltage(model.voltage.magnitude)
+    errorVoltage(analysis.voltage.magnitude)
 
-    ac = system.acModel
-    voltage = model.voltage
+    ac = system.model.ac
+    voltage = analysis.voltage
 
     index = system.branch.label[label]
     if system.branch.layout.status[index] == 1
@@ -1253,7 +1257,7 @@ function currentSeries(system::PowerSystem, model::ACAnalysis; label)
         voltageFrom = voltage.magnitude[from] * exp(im * voltage.angle[from])
         voltageTo = voltage.magnitude[to] * exp(im * voltage.angle[to])
         transformerRatio = (1 / system.branch.parameter.turnsRatio[index]) * exp(-im * system.branch.parameter.shiftAngle[index])
-        
+
         currentSeries = ac.admittance[index] * (transformerRatio * voltageFrom - voltageTo)
     else
         currentSeries = 0.0 + im * 0.0

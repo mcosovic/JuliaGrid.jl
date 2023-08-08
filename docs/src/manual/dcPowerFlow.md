@@ -1,5 +1,5 @@
 # [DC Power Flow](@id DCPowerFlowManual)
-To perform the DC power flow, you first need to have the `PowerSystem` composite type that has been created with the `dcModel`. After that, create the `Model` composite type to establish the DC power flow framework using the function:
+To perform the DC power flow, you first need to have the `PowerSystem` composite type that has been created with the `dc` model. After that, create the `DCPowerFlow` composite type to establish the DC power flow framework using the function:
 * [`dcPowerFlow`](@ref dcPowerFlow).
 
 To solve the DC power flow problem and acquire bus voltage angles, make use of the following function:
@@ -30,13 +30,13 @@ addGenerator!(system; bus = 3, active = 3.2)
 
 dcModel!(system)
 
-model = dcPowerFlow(system)
+analysis = dcPowerFlow(system)
 ```
 
 In this example, the slack bus (`type = 3`) corresponds to the bus labelled as 1. However, this bus does not have an in-service generator connected to it. Consequently, JuliaGrid recognizes this as an error and attempts to assign a new slack bus from the available generator buses (`type = 2`) that have connected in-service generators. In this particular example, the bus labelled as 3 will become the new slack bus.
 
 !!! note "Info"
-    The bus that is defined as the slack bus (`type = 3`) but lacks a connected in-service generator will have its type changed to the demand bus (`type = 1`). Meanwhile, the first generator bus (`type = 2`) with an active generator connected to it will be assigned as the new slack bus `(type = 3`).
+    The bus that is defined as the slack bus (`type = 3`) but lacks a connected in-service generator will have its type changed to the demand bus (`type = 1`). Meanwhile, the first generator bus (`type = 2`) with an active generator connected to it will be assigned as the new slack bus (`type = 3`).
 
 ---
 
@@ -64,19 +64,19 @@ nothing # hide
 
 The [`dcPowerFlow`](@ref dcPowerFlow) function can be used to establish the DC power flow problem. It factorizes the nodal matrix to prepare for determining the bus voltage angles:
 ```@example DCPowerFlowSolution
-model = dcPowerFlow(system)
+analysis = dcPowerFlow(system)
 nothing # hide
 ```
 
 To obtain the bus voltage angles, we can call the [`solve!`](@ref solve!(::PowerSystem, ::DCPowerFlow)) function as follows:
 ```@example DCPowerFlowSolution
-solve!(system, model)
+solve!(system, analysis)
 nothing # hide
 ```
 
 Once the solution is obtained, the bus voltage angles can be accessed using:
 ```@repl DCPowerFlowSolution
-model.voltage.angle
+analysis.voltage.angle
 nothing # hide
 ```
 
@@ -86,46 +86,46 @@ nothing # hide
 ---
 
 ## [Reusing Created Types](@id DCReusingCreatedTypesManual)
-The `PowerSystem` composite type with its `dcModel` field can be utilized without restrictions and can be modified automatically using functions such as [`shuntBus!`](@ref shuntBus!), [`statusBranch!`](@ref statusBranch!), [`parameterBranch!`](@ref parameterBranch!), [`statusGenerator!`](@ref statusGenerator!), and [`outputGenerator!`](@ref outputGenerator!). This facilitates sharing the `PowerSystem` type across various DC power flow analyses.
+The `PowerSystem` composite type with its `dc` field can be utilized without restrictions and can be modified automatically using functions such as [`shuntBus!`](@ref shuntBus!), [`statusBranch!`](@ref statusBranch!), [`parameterBranch!`](@ref parameterBranch!), [`statusGenerator!`](@ref statusGenerator!), and [`outputGenerator!`](@ref outputGenerator!). This facilitates sharing the `PowerSystem` type across various DC power flow analyses.
 
-Additionally, the `Model` composite type can be reused to solve the DC power flow problem again in scenarios involving functions such as [`shuntBus!`](@ref shuntBus!), [`statusGenerator!`](@ref statusGenerator!), and [`outputGenerator!`](@ref outputGenerator!), or when there is a need to modify the demand throughout the system.
+Additionally, the `DCPowerFlow` composite type can be reused to solve the DC power flow problem again in scenarios involving functions such as [`shuntBus!`](@ref shuntBus!), [`statusGenerator!`](@ref statusGenerator!), and [`outputGenerator!`](@ref outputGenerator!), or when there is a need to modify the demand throughout the system.
 
 ---
 
 ##### PowerSystem Composite Type
-Once you have created the `PowerSystem` type with its `dcModel` field, you can reuse them for multiple DC power flow analyses. Specifically, you can modify the structure of the power system using the [`statusBranch!`](@ref statusBranch!) and [`parameterBranch!`](@ref parameterBranch!) functions without having to recreate the system from scratch. As an example, let us say we wish to take the branch labelled 3 out-of-service from the previous example and conduct the DC power flow again:
+Once you have created the `PowerSystem` type with its `dc` field, you can reuse them for multiple DC power flow analyses. Specifically, you can modify the structure of the power system using the [`statusBranch!`](@ref statusBranch!) and [`parameterBranch!`](@ref parameterBranch!) functions without having to recreate the system from scratch. As an example, let us say we wish to take the branch labelled 3 out-of-service from the previous example and conduct the DC power flow again:
 ```@example DCPowerFlowSolution
 statusBranch!(system; label = 3, status = 0)
 
-model = dcPowerFlow(system)
-solve!(system, model)
+analysis = dcPowerFlow(system)
+solve!(system, analysis)
 nothing # hide
 ```
 
 ---
 
-##### Model Composite Type
-The `Model` composite type contains a factorized nodal matrix, which means that users can reuse it when only modifying shunt or generator parameters and keeping the power system's branch parameters the same. This allows for more efficient computations as the factorization step is not repeated.
+##### DCPowerFlow Composite Type
+The `DCPowerFlow` composite type contains a factorized nodal matrix, which means that users can reuse it when only modifying shunt or generator parameters and keeping the power system's branch parameters the same. This allows for more efficient computations as the factorization step is not repeated.
 
-Therefore, by using only the functions [`shuntBus!`](@ref shuntBus!), [`statusGenerator!`](@ref statusGenerator!) and [`outputGenerator!`](@ref outputGenerator!), the `Model` composite type can be reused. For example, to change the output of the generator and compute the bus voltage angles again, one can use the following code:
+Therefore, by using only the functions [`shuntBus!`](@ref shuntBus!), [`statusGenerator!`](@ref statusGenerator!) and [`outputGenerator!`](@ref outputGenerator!), the `DCPowerFlow` composite type can be reused. For example, to change the output of the generator and compute the bus voltage angles again, one can use the following code:
 ```@example DCPowerFlowSolution
 outputGenerator!(system; label = 1, active = 0.5)
 
-solve!(system, model)
+solve!(system, analysis)
 nothing # hide
 ```
 Here, the previously factorized nodal matrix is utilized to obtain the new solution, which is more efficient than repeating the factorization step.
 
-Additionally, users can change the active power demand at the buses by directly accessing the `PowerSystem` type. They can again reuse the `Model` composite type and factorized nodal matrix, as demonstrated below:
+Additionally, users can change the active power demand at the buses by directly accessing the `PowerSystem` type. They can again reuse the `DCPowerFlow` composite type and factorized nodal matrix, as demonstrated below:
 ```@example DCPowerFlowSolution
 system.bus.demand.active[2] = 0.15
 
-solve!(system, model)
+solve!(system, analysis)
 nothing # hide
 ```
 
 !!! warning "Warning"
-    Please be aware that you should not leave the slack bus without generators by using the [`statusGenerator!`](@ref statusGenerator!) function, as it can lead to incorrect results when reusing the `Model` composite type. In such cases, it is necessary to create the new `Model` type where the new slack bus is designated.
+    Please be aware that you should not leave the slack bus without generators by using the [`statusGenerator!`](@ref statusGenerator!) function, as it can lead to incorrect results when reusing the `DCPowerFlow` composite type. In such cases, it is necessary to create the new `DCPowerFlow` type where the new slack bus is designated.
 
 ---
 
@@ -148,8 +148,8 @@ addGenerator!(system; label = 1, bus = 1, active = 3.2)
 
 dcModel!(system)
 
-model = dcPowerFlow(system)
-solve!(system, model)
+analysis = dcPowerFlow(system)
+solve!(system, analysis)
 
 nothing # hide
 ```
@@ -163,15 +163,15 @@ nothing # hide
 
 Now we can calculate the active powers using the following function:
 ```@example ComputationPowersCurrentsLosses
-power!(system, model)
+power!(system, analysis)
 
 nothing # hide
 ```
 
 For example, to display the active power injections at each bus and active power flows at each "from" bus end of the branch in megawatts (MW), we can use the following code:
 ```@repl ComputationPowersCurrentsLosses
-system.base.power.value * model.power.injection.active
-system.base.power.value * model.power.from.active
+system.base.power.value * analysis.power.injection.active
+system.base.power.value * analysis.power.from.active
 ```
 
 !!! note "Info"
@@ -184,7 +184,7 @@ To calculate specific quantities for particular components rather than calculati
 ##### Active Power Injection
 To calculate active power injection associated with a specific bus, the function can be used:
 ```@repl ComputationPowersCurrentsLosses
-powerInjection(system, model; label = 1)
+powerInjection(system, analysis; label = 1)
 ```
 
 ---
@@ -192,7 +192,7 @@ powerInjection(system, model; label = 1)
 ##### Active Power Injection from Generators
 To calculate active power injection from the generators at a specific bus, the function can be used:
 ```@repl ComputationPowersCurrentsLosses
-powerSupply(system, model; label = 1)
+powerSupply(system, analysis; label = 1)
 ```
 
 ---
@@ -200,8 +200,8 @@ powerSupply(system, model; label = 1)
 ##### Active Power Flow
 Similarly, we can compute the active power flow at both the "from" and "to" bus ends of the specific branch by utilizing the provided functions below:
 ```@repl ComputationPowersCurrentsLosses
-powerFrom(system, model; label = 2)
-powerTo(system, model; label = 2)
+powerFrom(system, analysis; label = 2)
+powerTo(system, analysis; label = 2)
 ```
 
 ---
@@ -209,6 +209,6 @@ powerTo(system, model; label = 2)
 ##### Generator Active Power Output
 Finally, we can compute the active power output of a particular generator using the function:
 ```@repl ComputationPowersCurrentsLosses
-powerGenerator(system, model; label = 1)
+powerGenerator(system, analysis; label = 1)
 ```
 

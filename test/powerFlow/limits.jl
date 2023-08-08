@@ -7,63 +7,63 @@ system30 = powerSystem(string(pathData, "case30test.m"))
 
     ######## Modified IEEE 14-bus Test Case ##########
     acModel!(system14)
-    model = newtonRaphson(system14)
+    analysis = newtonRaphson(system14)
     iteration = 0
     for i = 1:1000
-        stopping = mismatch!(system14, model)
+        stopping = mismatch!(system14, analysis)
         if all(stopping .< 1e-8)
             break
         end
-        solve!(system14, model)
+        solve!(system14, analysis)
         iteration += 1
     end
 
-    reactiveLimit!(system14, model)
+    reactiveLimit!(system14, analysis)
 
-    model = newtonRaphson(system14)
+    analysis = newtonRaphson(system14)
     for i = 1:1000
-        stopping = mismatch!(system14, model)
+        stopping = mismatch!(system14, analysis)
         if all(stopping .< 1e-8)
             break
         end
-        solve!(system14, model)
+        solve!(system14, analysis)
         iteration += 1
     end
 
-    adjustAngle!(system14, model; slack = 1)
+    adjustAngle!(system14, analysis; slack = 1)
 
-    @test model.voltage.magnitude ≈ matpower14["voltageMagnitude"]
-    @test model.voltage.angle ≈ matpower14["voltageAngle"] 
+    @test analysis.voltage.magnitude ≈ matpower14["voltageMagnitude"]
+    @test analysis.voltage.angle ≈ matpower14["voltageAngle"]
     @test iteration == matpower14["iteration"][1]
 
     ######## Modified IEEE 30-bus Test Case ##########
     acModel!(system30)
-    model = newtonRaphson(system30)
+    analysis = newtonRaphson(system30)
     iteration = 0
     for i = 1:1000
-        stopping = mismatch!(system30, model)
+        stopping = mismatch!(system30, analysis)
         if all(stopping .< 1e-8)
             break
         end
-        solve!(system30, model)
+        solve!(system30, analysis)
         iteration += 1
     end
 
-    reactiveLimit!(system30, model)
+    reactiveLimit!(system30, analysis)
 
-    model = newtonRaphson(system30)
+    analysis = newtonRaphson(system30)
     for i = 1:1000
-        stopping = mismatch!(system30, model)
+        stopping = mismatch!(system30, analysis)
         if all(stopping .< 1e-8)
             break
         end
-        solve!(system30, model)
+        solve!(system30, analysis)
         iteration += 1
     end
 
-    adjustAngle!(system30, model; slack = 1)
+    adjustAngle!(system30, analysis; slack = 1)
 
-    @test model.voltage.magnitude ≈ matpower30["voltageMagnitude"]
-    @test model.voltage.angle ≈ matpower30["voltageAngle"] 
+    @test analysis.voltage.magnitude ≈ matpower30["voltageMagnitude"]
+    @test analysis.voltage.angle ≈ matpower30["voltageAngle"]
     @test iteration == matpower30["iteration"][1]
 end

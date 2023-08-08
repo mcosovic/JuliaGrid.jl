@@ -1,4 +1,11 @@
-export ACAnalysis, DCAnalysis, OptimalPowerFlow
+export PowerSystem
+export NewtonRaphson, DCPowerFlow, DCOptimalPowerFlow, ACOptimalPowerFlow
+export AC, DC, ACPowerFlow, OptimalPowerFlow
+
+abstract type AC end
+abstract type DC end
+abstract type ACPowerFlow <: AC end
+abstract type OptimalPowerFlow end
 
 ######### Polar Coordinate ##########
 mutable struct Polar
@@ -51,7 +58,7 @@ mutable struct Charging
     from::Cartesian
     to::Cartesian
 end
-    
+
 mutable struct Power
     injection::Cartesian
     supply::Cartesian
@@ -83,16 +90,6 @@ end
 ######### Types ##########
 const N = Union{Float64, Int64}
 const T = Union{Float64, Int64, Missing}
-
-abstract type
-    DCAnalysis
-end
-abstract type
-    ACAnalysis
-end
-abstract type
-    OptimalPowerFlow
-end
 
 ######### Template ##########
 const template = Dict(

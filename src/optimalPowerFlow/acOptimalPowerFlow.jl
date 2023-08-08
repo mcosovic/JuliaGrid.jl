@@ -1,4 +1,3 @@
-export ACOptimalPowerFlow
 
 ######### Constraints ##########
 ArrayRef = Array{JuMP.ConstraintRef,1}
@@ -18,7 +17,7 @@ struct Constraint
 end
 
 ######### AC Optimal Power Flow ##########
-struct ACOptimalPowerFlow <: ACAnalysis
+struct ACOptimalPowerFlow <: AC
     voltage::Polar
     power::Power
     current::Current
@@ -32,8 +31,8 @@ end
 
 The function takes the `PowerSystem` composite type as input to establish the structure for
 solving the AC optimal power flow. The `optimizer` argument is also required to create and
-solve the optimization problem. If the `acModel` field within the `PowerSystem` composite
-type has not been created, the function will initiate an update automatically.
+solve the optimization problem. If the `ac` field within the `PowerSystem` composite type has
+not been created, the function will initiate an update automatically.
 
 # Keywords
 JuliaGrid offers the ability to manipulate the `jump` model based on the guidelines provided
@@ -43,9 +42,9 @@ certain configurations may require different method calls, such as:
 - `name`: used to manage the creation of string names.
 
 Moreover, we have included keywords that regulate the usage of different types of constraints:
-- `balance`: controls the equality constraints that relate to the active and reactive power balance equations,
-- `limit`: controls the inequality constraints that relate to the voltage magnitude and angle differences between buses,
-- `rating`: controls the inequality constraints that relate to the long-term rating of branches,
+- `balance`: controls the equality constraints that relate to the active and reactive power balance equations;
+- `limit`: controls the inequality constraints that relate to the voltage magnitude and angle differences between buses;
+- `rating`: controls the inequality constraints that relate to the long-term rating of branches;
 - `capability`: controls the inequality constraints that relate to the active and reactive power generator outputs.
 
 By default, all of these keywords are set to `true` and are of the `Bool` type.
@@ -58,10 +57,10 @@ used solvers. For more information, refer to the
 # Returns
 The function returns an instance of the `ACOptimalPowerFlow` type, which includes the following
 fields:
-- `voltage`: the bus voltage magnitudes and angles,
-- `power`: the variable allocated to store the active and reactive powers,
-- `current`: the variable allocated to store the currents,
-- `jump`: the JuMP model,
+- `voltage`: the bus voltage magnitudes and angles;
+- `power`: the variable allocated to store the active and reactive powers;
+- `current`: the variable allocated to store the currents;
+- `jump`: the JuMP model;
 - `constraint`: holds the constraint references to the JuMP model.
 
 # Examples
@@ -70,7 +69,7 @@ Create the complete DC optimal power flow model:
 system = powerSystem("case14.h5")
 dcModel!(system)
 
-model = acOptimalPowerFlow(system, HiGHS.Optimizer)
+analysis = acOptimalPowerFlow(system, HiGHS.Optimizer)
 ```
 
 Create the DC optimal power flow model without `rating` constraints:
@@ -78,7 +77,7 @@ Create the DC optimal power flow model without `rating` constraints:
 system = powerSystem("case14.h5")
 dcModel!(system)
 
-model = acOptimalPowerFlow(system, HiGHS.Optimizer; rating = false)
+analysis = acOptimalPowerFlow(system, HiGHS.Optimizer; rating = false)
 ```
 """
 function acOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory);
@@ -86,7 +85,7 @@ function acOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
     balance::Bool = true, limit::Bool = true,
     rating::Bool = true,  capability::Bool = true)
 
-    if isempty(system.acModel.nodalMatrix)
+    if isempty(system.model.ac.nodalMatrix)
         acModel!(system)
     end
 
@@ -97,7 +96,7 @@ function acOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
     costActive = generator.cost.active
     costReactive = generator.cost.reactive
 
-    model = Model(optimizerFactory; add_bridges = bridge)
+    model = JuMP.Model(optimizerFactory; add_bridges = bridge)
     set_string_names_on_creation(model, name)
 
     @variable(model, angle[i = 1:bus.number])
@@ -250,45 +249,41 @@ function acOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
                     Vi = magnitude[f]
                     Vj = magnitude[t]
 
-                    gij = real(system.acModel.admittance[i])
-                    bij = imag(system.acModel.admittance[i])
+                    gij = real(system.model.ac.admittance[i])
+                    bij = imag(system.model.ac.admittance[i])
+                    gsi = 0.5 * branch.parameter.conductance[i]
                     bsi = 0.5 * branch.parameter.susceptance[i]
                     add_to_expression!(θij, -branch.parameter.shiftAngle[i])
-
-                    if branch.parameter.turnsRatio[i] == 0
-                        βij = 1.0
-                    else
-                        βij = 1 / branch.parameter.turnsRatio[i]
-                    end
+                    βij = 1 / branch.parameter.turnsRatio[i]
 
                     if branch.rating.type[i] == 1
-                        A = βij^4 * (gij^2 + (bij + bsi)^2)
+                        A = βij^4 * ((gij + gsi)^2 + (bij + bsi)^2)
                         B = βij^2 * (gij^2 + bij^2)
-                        C = βij^3 * (gij^2 + bij * (bij + bsi))
-                        D = βij^3 * gij * bsi
+                        C = βij^3 * (gij * (gij + gsi) + bij * (bij + bsi))
+                        D = βij^3 * (bij * (gij + gsi) - gij * (bij + bsi))
                         ratingFromRef[i] = @NLconstraint(model, A * Vi^4 + B * Vi^2 * Vj^2 - 2 * Vi^3 * Vj * (C * cos(θij) - D * sin(θij)) <= branch.rating.longTerm[i]^2)
 
-                        A = gij^2 + (bij + bsi)^2
-                        C = βij * (gij^2 + bij * (bij + bsi))
-                        D = βij * gij * bsi
+                        A = (gij + gsi)^2 + (bij + bsi)^2
+                        C = βij * (gij * (gij + gsi) + bij * (bij + bsi))
+                        D = βij * (gij * (bij + bsi) - bij * (gij + gsi))
                         ratingToRef[i] = @NLconstraint(model, A * Vj^4 + B * Vi^2 * Vj^2 - 2 * Vi * Vj^3 * (C * cos(θij) + D * sin(θij)) <= branch.rating.longTerm[i]^2)
                     end
 
                     if branch.rating.type[i] == 2
-                        ratingFromRef[i] = @NLconstraint(model, βij^2 * gij * Vi^2 - βij * Vi * Vj * (gij * cos(θij) + bij * sin(θij)) <= branch.rating.longTerm[i])
-                        ratingToRef[i] = @NLconstraint(model, gij * Vj^2 - βij * Vi * Vj * (gij * cos(θij) - bij * sin(θij)) <= branch.rating.longTerm[i])
+                        ratingFromRef[i] = @NLconstraint(model, βij^2 * (gij + gsi) * Vi^2 - βij * Vi * Vj * (gij * cos(θij) + bij * sin(θij)) <= branch.rating.longTerm[i])
+                        ratingToRef[i] = @NLconstraint(model, (gij + gsi) * Vj^2 - βij * Vi * Vj * (gij * cos(θij) - bij * sin(θij)) <= branch.rating.longTerm[i])
                     end
 
                     if branch.rating.type[i] == 3
-                        A = βij^4 * (gij^2 + (bij + bsi)^2)
+                        A = βij^4 * ((gij + gsi)^2 + (bij + bsi)^2)
                         B = βij^2 * (gij^2 + bij^2)
-                        C = βij^3 * (gij^2 + bij * (bij + bsi))
-                        D = βij^3 * gij * bsi
+                        C = βij^3 * (gij * (gij + gsi) + bij * (bij + bsi))
+                        D = βij^3 * (bij * (gij + gsi) - gij * (bij + bsi))
                         ratingFromRef[i] = @NLconstraint(model, A * Vi^2 + B * Vj^2 - 2 * Vi * Vj * (C * cos(θij) - D * sin(θij)) <= branch.rating.longTerm[i]^2)
 
-                        A = gij^2 + (bij + bsi)^2
-                        C = βij * (gij^2 + bij * (bij + bsi))
-                        D = βij * gij * bsi
+                        A = (gij + gsi)^2 + (bij + bsi)^2
+                        C = βij * (gij * (gij + gsi) + bij * (bij + bsi))
+                        D = βij * (gij * (bij + bsi) - bij * (gij + gsi))
                         ratingToRef[i] = @NLconstraint(model, A * Vj^2 + B * Vi^2 - 2 * Vi * Vj * (C * cos(θij) + D * sin(θij)) <= branch.rating.longTerm[i]^2)
                     end
                 end
@@ -301,15 +296,15 @@ function acOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
     limitMagnitudeRef = Array{JuMP.ConstraintRef}(undef, bus.number)
     @inbounds for i = 1:bus.number
         if balance
-            n = system.acModel.nodalMatrix.colptr[i + 1] - system.acModel.nodalMatrix.colptr[i]
+            n = system.model.ac.nodalMatrix.colptr[i + 1] - system.model.ac.nodalMatrix.colptr[i]
             Gij = Vector{AffExpr}(undef, n)
             Bij = Vector{AffExpr}(undef, n)
             θij = Vector{AffExpr}(undef, n)
 
-            for (k, j) in enumerate(system.acModel.nodalMatrix.colptr[i]:(system.acModel.nodalMatrix.colptr[i + 1] - 1))
-                row = system.acModel.nodalMatrix.rowval[j]
-                Gij[k] = magnitude[row] * real(system.acModel.nodalMatrixTranspose.nzval[j])
-                Bij[k] = magnitude[row] * imag(system.acModel.nodalMatrixTranspose.nzval[j])
+            for (k, j) in enumerate(system.model.ac.nodalMatrix.colptr[i]:(system.model.ac.nodalMatrix.colptr[i + 1] - 1))
+                row = system.model.ac.nodalMatrix.rowval[j]
+                Gij[k] = magnitude[row] * real(system.model.ac.nodalMatrixTranspose.nzval[j])
+                Bij[k] = magnitude[row] * imag(system.model.ac.nodalMatrixTranspose.nzval[j])
                 θij[k] = angle[i] - angle[row]
             end
 
@@ -324,7 +319,7 @@ function acOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
 
     return ACOptimalPowerFlow(
         Polar(
-            copy(system.bus.voltage.magnitude), 
+            copy(system.bus.voltage.magnitude),
             copy(system.bus.voltage.angle)
         ),
         Power(
@@ -337,7 +332,7 @@ function acOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
                 Cartesian(Float64[], Float64[]),
                 Cartesian(Float64[], Float64[])),
             Cartesian(Float64[], Float64[]),
-            Cartesian(Float64[], Float64[])
+            Cartesian(copy(system.generator.output.active), copy(system.generator.output.reactive))
         ),
         Current(
             Polar(Float64[], Float64[]),
@@ -358,47 +353,47 @@ function acOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
 end
 
 """
-    solve!(system::PowerSystem, model::ACOptimalPowerFlow)
+    solve!(system::PowerSystem, analysis::ACOptimalPowerFlow)
 
 The function finds the AC optimal power flow solution and calculate the bus voltage
 magnitudes and angles, and output active and reactive powers of each generators.
 
 The calculated voltage magnitudes and angles and active and reactive powers are then stored
-in the variables of the `voltage` and `power` fields of the `Model` composite type.
+in the variables of the `voltage` and `power` fields of the `ACOptimalPowerFlow` composite type.
 
 # Example
 ```jldoctest
 system = powerSystem("case14.h5")
 acModel!(system)
 
-model = acOptimalPowerFlow(system, HiGHS.Optimizer)
-solve!(system, model)
+analysis = acOptimalPowerFlow(system, HiGHS.Optimizer)
+solve!(system, analysis)
 ```
 """
-function solve!(system::PowerSystem, model::ACOptimalPowerFlow)
-    if isnothing(start_value(model.jump[:angle][1]))
-        set_start_value.(model.jump[:angle], model.voltage.angle)
+function solve!(system::PowerSystem, analysis::ACOptimalPowerFlow)
+    if isnothing(start_value(analysis.jump[:angle][1]))
+        set_start_value.(analysis.jump[:angle], analysis.voltage.angle)
     end
-    if isnothing(start_value(model.jump[:magnitude][1]))
-        set_start_value.(model.jump[:magnitude], model.voltage.magnitude)
+    if isnothing(start_value(analysis.jump[:magnitude][1]))
+        set_start_value.(analysis.jump[:magnitude], analysis.voltage.magnitude)
     end
-    if isnothing(start_value(model.jump[:active][1]))
-        set_start_value.(model.jump[:active], model.power.generator.active)
+    if isnothing(start_value(analysis.jump[:active][1]))
+        set_start_value.(analysis.jump[:active], analysis.power.generator.active)
     end
-    if isnothing(start_value(model.jump[:reactive][1]))
-        set_start_value.(model.jump[:reactive], model.power.generator.reactive)
+    if isnothing(start_value(analysis.jump[:reactive][1]))
+        set_start_value.(analysis.jump[:reactive], analysis.power.generator.reactive)
     end
 
-    JuMP.optimize!(model.jump)
+    JuMP.optimize!(analysis.jump)
 
     @inbounds for i = 1:system.bus.number
-        model.voltage.angle[i] = value(model.jump[:angle][i])
-        model.voltage.magnitude[i] = value(model.jump[:magnitude][i])
+        analysis.voltage.angle[i] = value(analysis.jump[:angle][i])
+        analysis.voltage.magnitude[i] = value(analysis.jump[:magnitude][i])
     end
 
     @inbounds for i = 1:system.generator.number
-        model.power.generator.active[i] = value(model.jump[:active][i])
-        model.power.generator.reactive[i] = value(model.jump[:reactive][i])
+        analysis.power.generator.active[i] = value(analysis.jump[:active][i])
+        analysis.power.generator.reactive[i] = value(analysis.jump[:reactive][i])
     end
 end
 

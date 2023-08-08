@@ -1,21 +1,20 @@
 """
-    power!(system::PowerSystem, model::DCAnalysis)
+    power!(system::PowerSystem, analysis::DC)
 
-The function calculates the active power values related to buses, branches, and generators 
-within the DC analysis framework. It modifies the `power` field of the abstract type 
-`DCAnalysis`.
+The function calculates the active power values related to buses, branches, and generators
+within the DC analysis framework. It modifies the `power` field of the abstract type `DC`.
 
 # Updates
-This function computes the following electrical quantities: 
-- `injection`: active power injections at each bus,
-- `supply`: active power injections from the generators at each bus,
-- `from`: active power flows at each "from" bus end of the branch,
-- `to`: active power flows at each "to" bus end of the branch,
+This function computes the following electrical quantities:
+- `injection`: active power injections at each bus;
+- `supply`: active power injections from the generators at each bus;
+- `from`: active power flows at each "from" bus end of the branch;
+- `to`: active power flows at each "to" bus end of the branch;
 - `generator`: output active powers of each generator.
 
 # Abstract type
-The abstract type `DCAnalysis` can have the following subtypes:
-- `DCPowerFlow`: computes the powers within the DC power flow,
+The abstract type `DC` can have the following subtypes:
+- `DCPowerFlow`: computes the powers within the DC power flow;
 - `DCOptimalPowerFlow`: computes the powers within the DC optimal power flow.
 
 # Examples
@@ -24,9 +23,9 @@ Compute powers after obtaining the DC power flow solution:
 system = powerSystem("case14.h5")
 dcModel!(system)
 
-model = dcPowerFlow(system)
-solve!(system, model)
-power!(system, model)
+analysis = dcPowerFlow(system)
+solve!(system, analysis)
+power!(system, analysis)
 ```
 
 Compute powers after obtaining the DC optimal power flow solution:
@@ -34,19 +33,19 @@ Compute powers after obtaining the DC optimal power flow solution:
 system = powerSystem("case14.h5")
 dcModel!(system)
 
-model = dcOptimalPowerFlow(system)
-optimize!(system, model)
-power!(system, model)
+analysis = dcOptimalPowerFlow(system)
+optimize!(system, analysis)
+power!(system, analysis)
 ```
 """
-function power!(system::PowerSystem, model::DCPowerFlow)
-    errorVoltage(model.voltage.angle)
+function power!(system::PowerSystem, analysis::DC)
+    errorVoltage(analysis.voltage.angle)
 
-    dc = system.dcModel
+    dc = system.model.dc
     bus = system.bus
     generator = system.generator
-    voltage = model.voltage
-    power = model.power
+    voltage = analysis.voltage
+    power = analysis.power
     slack = bus.layout.slack
 
     power.supply.active = copy(bus.supply.active)
@@ -84,16 +83,16 @@ function power!(system::PowerSystem, model::DCPowerFlow)
         end
     end
 
-    allPowerBranch(system, model)
+    allPowerBranch(system, analysis)
 end
 
-function power!(system::PowerSystem, model::DCOptimalPowerFlow)
-    errorVoltage(model.voltage.angle)
-    power = model.power
+function power!(system::PowerSystem, analysis::DCOptimalPowerFlow)
+    errorVoltage(analysis.voltage.angle)
+    power = analysis.power
 
     power.supply.active = fill(0.0, system.bus.number)
     @inbounds for i = 1:system.generator.number
-        power.supply.active[system.generator.layout.bus[i]] += model.power.generator.active[i]
+        power.supply.active[system.generator.layout.bus[i]] += analysis.power.generator.active[i]
     end
 
     power.injection.active = copy(power.supply.active)
@@ -101,19 +100,19 @@ function power!(system::PowerSystem, model::DCOptimalPowerFlow)
         power.injection.active[i] -= system.bus.demand.active[i]
     end
 
-    allPowerBranch(system, model)
+    allPowerBranch(system, analysis)
 end
 
 """
-    powerInjection(system::PowerSystem, model::DCAnalysis; label)
+    powerInjection(system::PowerSystem, analysis::DC; label)
 
 The function returns the active power injection associated with a specific bus in the DC
 framework. The `label` keyword argument must match an existing bus label.
 
 # Abstract type
-The abstract type `DCAnalysis` can have the following subtypes:
-- `DCPowerFlow`: computes the power within the DC power flow,
-- `DCOptimalPowerFlow`: computes the power within the DC optimal power flow.
+The abstract type `DC` can have the following subtypes:
+- `DCPowerFlow`: computes the power within the DC power flow;
+- `DCOptimalPowerFlow`: computes the power within the DC optimal power flow;
 
 # Examples
 Compute the active power of a specific bus after obtaining the DC power flow solution:
@@ -121,9 +120,9 @@ Compute the active power of a specific bus after obtaining the DC power flow sol
 system = powerSystem("case14.h5")
 dcModel!(system)
 
-model = dcPowerFlow(system)
-solve!(system, model)
-injection = powerInjection(system, model; label = 2)
+analysis = dcPowerFlow(system)
+solve!(system, analysis)
+injection = powerInjection(system, analysis; label = 2)
 ```
 
 Compute the active power of a specific bus after obtaining the DC optimal power flow solution:
@@ -131,21 +130,21 @@ Compute the active power of a specific bus after obtaining the DC optimal power 
 system = powerSystem("case14.h5")
 dcModel!(system)
 
-model = dcOptimalPowerFlow(system)
-optimize!(system, model)
-injection = powerInjection(system, model; label = 2)
+analysis = dcOptimalPowerFlow(system)
+optimize!(system, analysis)
+injection = powerInjection(system, analysis; label = 2)
 ```
 """
-function powerInjection(system::PowerSystem, model::DCPowerFlow; label)
-    errorVoltage(model.voltage.angle)
+function powerInjection(system::PowerSystem, analysis::DCPowerFlow; label)
+    errorVoltage(analysis.voltage.angle)
 
     if !haskey(system.bus.label, label)
         throw(ErrorException("The value $label of the label keyword does not exist in bus labels."))
     end
 
-    dc = system.dcModel
+    dc = system.model.dc
     bus = system.bus
-    voltage = model.voltage
+    voltage = analysis.voltage
 
     index = system.bus.label[label]
 
@@ -162,7 +161,7 @@ function powerInjection(system::PowerSystem, model::DCPowerFlow; label)
     return injectionActive
 end
 
-function powerInjection(system::PowerSystem, model::DCOptimalPowerFlow; label)
+function powerInjection(system::PowerSystem, analysis::DCOptimalPowerFlow; label)
     if !haskey(system.bus.label, label)
         throw(ErrorException("The value $label of the label keyword does not exist in bus labels."))
     end
@@ -171,21 +170,21 @@ function powerInjection(system::PowerSystem, model::DCOptimalPowerFlow; label)
 
     injectionActive = copy(-system.bus.demand.active[index])
     @inbounds for i in system.bus.supply.generator[index]
-        injectionActive += model.power.generator.active[i]
+        injectionActive += analysis.power.generator.active[i]
     end
 
     return injectionActive
 end
 
 """
-    powerSupply(system::PowerSystem, model::DCAnalysis; label)
+    powerSupply(system::PowerSystem, analysis::DC; label)
 
-The function returns the active power injection from the generators associated with a 
-specific bus in the DC framework. The `label` keyword argument must match an existing bus 
+The function returns the active power injection from the generators associated with a
+specific bus in the DC framework. The `label` keyword argument must match an existing bus
 label.
 
 # Abstract type
-The abstract type `DCAnalysis` can have the following subtypes:
+The abstract type `DC` can have the following subtypes:
 - `DCPowerFlow`: computes the power within the DC power flow,
 - `DCOptimalPowerFlow`: computes the power within the DC optimal power flow.
 
@@ -195,9 +194,9 @@ Compute the active power of a specific bus after obtaining the DC power flow sol
 system = powerSystem("case14.h5")
 dcModel!(system)
 
-model = dcPowerFlow(system)
-solve!(system, model)
-supply = powerSupply(system, model; label = 2)
+analysis = dcPowerFlow(system)
+solve!(system, analysis)
+supply = powerSupply(system, analysis; label = 2)
 ```
 
 Compute the active power of a specific bus after obtaining the DC optimal power flow solution:
@@ -205,21 +204,21 @@ Compute the active power of a specific bus after obtaining the DC optimal power 
 system = powerSystem("case14.h5")
 dcModel!(system)
 
-model = dcOptimalPowerFlow(system)
-optimize!(system, model)
-supply = powerSupply(system, model; label = 2)
+analysis = dcOptimalPowerFlow(system)
+optimize!(system, analysis)
+supply = powerSupply(system, analysis; label = 2)
 ```
 """
-function powerSupply(system::PowerSystem, model::DCPowerFlow; label)
-    errorVoltage(model.voltage.angle)
+function powerSupply(system::PowerSystem, analysis::DCPowerFlow; label)
+    errorVoltage(analysis.voltage.angle)
 
     if !haskey(system.bus.label, label)
         throw(ErrorException("The value $label of the label keyword does not exist in bus labels."))
     end
 
-    dc = system.dcModel
+    dc = system.model.dc
     bus = system.bus
-    voltage = model.voltage
+    voltage = analysis.voltage
 
     index = system.bus.label[label]
 
@@ -236,7 +235,7 @@ function powerSupply(system::PowerSystem, model::DCPowerFlow; label)
     return supplyActive
 end
 
-function powerSupply(system::PowerSystem, model::DCOptimalPowerFlow; label)
+function powerSupply(system::PowerSystem, analysis::DCOptimalPowerFlow; label)
     if !haskey(system.bus.label, label)
         throw(ErrorException("The value $label of the label keyword does not exist in bus labels."))
     end
@@ -245,21 +244,21 @@ function powerSupply(system::PowerSystem, model::DCOptimalPowerFlow; label)
 
     supplyActive = 0.0
     @inbounds for i in system.bus.supply.generator[index]
-        supplyActive += model.power.generator.active[i]
+        supplyActive += analysis.power.generator.active[i]
     end
 
     return supplyActive
 end
 
 """
-    powerFrom(system::PowerSystem, model::DCAnalysis; label)
+    powerFrom(system::PowerSystem, analysis::DC; label)
 
-The function returns the active power flow at the "from" bus end associated with a specific 
+The function returns the active power flow at the "from" bus end associated with a specific
 branch in the DC framework. The `label` keyword argument must match an existing branch label.
 
 # Abstract type
-The abstract type `DCAnalysis` can have the following subtypes:
-- `DCPowerFlow`: computes the power within the DC power flow,
+The abstract type `DC` can have the following subtypes:
+- `DCPowerFlow`: computes the power within the DC power flow;
 - `DCOptimalPowerFlow`: computes the power within the DC optimal power flow.
 
 # Examples
@@ -268,9 +267,9 @@ Compute the active power of a specific branch after obtaining the DC power flow 
 system = powerSystem("case14.h5")
 dcModel!(system)
 
-model = dcPowerFlow(system)
-solve!(system, model)
-from = powerFrom(system, model; label = 2)
+analysis = dcPowerFlow(system)
+solve!(system, analysis)
+from = powerFrom(system, analysis; label = 2)
 ```
 
 Compute the active power of a specific branch after obtaining the DC optimal power flow solution:
@@ -278,33 +277,33 @@ Compute the active power of a specific branch after obtaining the DC optimal pow
 system = powerSystem("case14.h5")
 dcModel!(system)
 
-model = dcOptimalPowerFlow(system)
-optimize!(system, model)
-from = powerFrom(system, model; label = 2)
+analysis = dcOptimalPowerFlow(system)
+optimize!(system, analysis)
+from = powerFrom(system, analysis; label = 2)
 ```
 """
-function powerFrom(system::PowerSystem, model::DCAnalysis; label)
+function powerFrom(system::PowerSystem, analysis::DC; label)
     if !haskey(system.branch.label, label)
         throw(ErrorException("The value $label of the label keyword does not exist in branch labels."))
     end
 
     branch = system.branch
-    angle = model.voltage.angle
+    angle = analysis.voltage.angle
 
     index = system.branch.label[label]
 
-    return system.dcModel.admittance[index] * (angle[branch.layout.from[index]] - angle[branch.layout.to[index]] - branch.parameter.shiftAngle[index])
+    return system.model.dc.admittance[index] * (angle[branch.layout.from[index]] - angle[branch.layout.to[index]] - branch.parameter.shiftAngle[index])
 end
 
 """
-    powerTo(system::PowerSystem, model::DCAnalysis; label)
+    powerTo(system::PowerSystem, analysis::DC; label)
 
-The function returns the active power flow at the "to" bus end associated with a specific 
+The function returns the active power flow at the "to" bus end associated with a specific
 branch in the DC framework. The `label` keyword argument must match an existing branch label.
 
 # Abstract type
-The abstract type `DCAnalysis` can have the following subtypes:
-- `DCPowerFlow`: computes the power within the DC power flow,
+The abstract type `DC` can have the following subtypes:
+- `DCPowerFlow`: computes the power within the DC power flow;
 - `DCOptimalPowerFlow`: computes the power within the DC optimal power flow.
 
 # Examples
@@ -313,9 +312,9 @@ Compute the active power of a specific branch after obtaining the DC power flow 
 system = powerSystem("case14.h5")
 dcModel!(system)
 
-model = dcPowerFlow(system)
-solve!(system, model)
-to = powerTo(system, model; label = 2)
+analysis = dcPowerFlow(system)
+solve!(system, analysis)
+to = powerTo(system, analysis; label = 2)
 ```
 
 Compute the active power of a specific branch after obtaining the DC optimal power flow solution:
@@ -323,33 +322,33 @@ Compute the active power of a specific branch after obtaining the DC optimal pow
 system = powerSystem("case14.h5")
 dcModel!(system)
 
-model = dcOptimalPowerFlow(system)
-optimize!(system, model)
-to = powerTo(system, model; label = 2)
+analysis = dcOptimalPowerFlow(system)
+optimize!(system, analysis)
+to = powerTo(system, analysis; label = 2)
 ```
 """
-function powerTo(system::PowerSystem, model::DCAnalysis; label)
+function powerTo(system::PowerSystem, analysis::DC; label)
     if !haskey(system.branch.label, label)
         throw(ErrorException("The value $label of the label keyword does not exist in branch labels."))
     end
 
     branch = system.branch
-    angle = model.voltage.angle
+    angle = analysis.voltage.angle
 
     index = system.branch.label[label]
 
-    return -system.dcModel.admittance[index] * (angle[branch.layout.from[index]] - angle[branch.layout.to[index]] - branch.parameter.shiftAngle[index])
+    return -system.model.dc.admittance[index] * (angle[branch.layout.from[index]] - angle[branch.layout.to[index]] - branch.parameter.shiftAngle[index])
 end
 
 """
-    powerGenerator(system::PowerSystem, model::DCAnalysis; label)
+    powerGenerator(system::PowerSystem, analysis::DC; label)
 
-This function returns the output active power associated with a specific generator in the 
+This function returns the output active power associated with a specific generator in the
 DC framework. The `label` keyword argument must match an existing generator label.
 
 # Abstract type
-The abstract type `DCAnalysis` can have the following subtypes:
-- `DCPowerFlow`: computes the power within the DC power flow,
+The abstract type `DC` can have the following subtypes:
+- `DCPowerFlow`: computes the power within the DC power flow;
 - `DCOptimalPowerFlow`: computes the power within the DC optimal power flow.
 
 # Examples
@@ -358,9 +357,9 @@ Compute the active power of a specific generator after obtaining the DC power fl
 system = powerSystem("case14.h5")
 dcModel!(system)
 
-model = dcPowerFlow(system)
-solve!(system, model)
-generator = powerGenerator(system, model; label = 1)
+analysis = dcPowerFlow(system)
+solve!(system, analysis)
+generator = powerGenerator(system, analysis; label = 1)
 ```
 
 Compute the active power of a specific generator after obtaining the DC optimal power flow
@@ -369,21 +368,21 @@ solution:
 system = powerSystem("case14.h5")
 dcModel!(system)
 
-model = dcOptimalPowerFlow(system)
-optimize!(system, model)
-generator = powerGenerator(system, model; label = 1)
+analysis = dcOptimalPowerFlow(system)
+optimize!(system, analysis)
+generator = powerGenerator(system, analysis; label = 1)
 ```
 """
-function powerGenerator(system::PowerSystem, model::DCPowerFlow; label)
+function powerGenerator(system::PowerSystem, analysis::DCPowerFlow; label)
     if !haskey(system.generator.label, label)
         throw(ErrorException("The value $label of the label keyword does not exist in generator labels."))
     end
-    errorVoltage(model.voltage.angle)
+    errorVoltage(analysis.voltage.angle)
 
-    dc = system.dcModel
+    dc = system.model.dc
     bus = system.bus
     generator = system.generator
-    voltage = model.voltage
+    voltage = analysis.voltage
 
     index = system.generator.label[label]
     busIndex = generator.layout.bus[index]
@@ -409,23 +408,23 @@ function powerGenerator(system::PowerSystem, model::DCPowerFlow; label)
     return generatorActive
 end
 
-function powerGenerator(system::PowerSystem, model::DCOptimalPowerFlow; label)
+function powerGenerator(system::PowerSystem, analysis::DCOptimalPowerFlow; label)
     if !haskey(system.generator.label, label)
         throw(ErrorException("The value $label of the label keyword does not exist in generator labels."))
     end
-    errorVoltage(model.voltage.angle)
+    errorVoltage(analysis.voltage.angle)
 
-    return model.power.generator.active[system.generator.label[label]]
+    return analysis.power.generator.active[system.generator.label[label]]
 end
 
 ######### Powers at Branches ##########
-function allPowerBranch(system::PowerSystem, model::Union{DCPowerFlow, DCOptimalPowerFlow})
+function allPowerBranch(system::PowerSystem, analysis::Union{DCPowerFlow, DCOptimalPowerFlow})
     branch = system.branch
-    voltage = model.voltage
-    power = model.power
+    voltage = analysis.voltage
+    power = analysis.power
 
-    power.from.active = copy(system.dcModel.admittance)
-    power.to.active = similar(system.dcModel.admittance)
+    power.from.active = copy(system.model.dc.admittance)
+    power.to.active = similar(system.model.dc.admittance)
     @inbounds for i = 1:branch.number
         power.from.active[i] *= (voltage.angle[branch.layout.from[i]] - voltage.angle[branch.layout.to[i]] - branch.parameter.shiftAngle[i])
         power.to.active[i] = -power.from.active[i]
