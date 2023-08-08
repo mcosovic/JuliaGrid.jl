@@ -11,23 +11,23 @@ These functions will set up the AC power flow framework. To obtain bus voltages 
 
 After obtaining the AC power flow solution, JuliaGrid offers post-processing analysis functions for calculating powers and currents associated with buses, branches, or generators:
 * [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)),
-* [`current!`](@ref current!(::PowerSystem, ::ACAnalysis)).
+* [`current!`](@ref current!(::PowerSystem, ::AC)).
 
 Furthermore, there are specialized functions dedicated to calculating specific types of powers related to particular buses, branches, or generators:
-* [`powerInjection`](@ref powerInjection(::PowerSystem, ::ACAnalysis)),
+* [`powerInjection`](@ref powerInjection(::PowerSystem, ::AC)),
 * [`powerSupply`](@ref powerSupply(::PowerSystem, ::ACPowerFlow)),
-* [`powerShunt`](@ref powerShunt(::PowerSystem, ::ACAnalysis)),
-* [`powerFrom`](@ref powerFrom(::PowerSystem, ::ACAnalysis)),
-* [`powerTo`](@ref powerTo(::PowerSystem, ::ACAnalysis)),
-* [`powerCharging`](@ref powerCharging(::PowerSystem, ::ACAnalysis)),
-* [`powerSeries`](@ref powerSeries(::PowerSystem, ::ACAnalysis)),
+* [`powerShunt`](@ref powerShunt(::PowerSystem, ::AC)),
+* [`powerFrom`](@ref powerFrom(::PowerSystem, ::AC)),
+* [`powerTo`](@ref powerTo(::PowerSystem, ::AC)),
+* [`powerCharging`](@ref powerCharging(::PowerSystem, ::AC)),
+* [`powerSeries`](@ref powerSeries(::PowerSystem, ::AC)),
 * [`powerGenerator`](@ref powerGenerator(::PowerSystem, ::ACPowerFlow)).
 
 Likewise, there are specialized functions dedicated to calculating specific types of currents related to particular buses or branches:
-* [`currentInjection`](@ref currentInjection(::PowerSystem, ::ACAnalysis)),
-* [`currentFrom`](@ref currentFrom(::PowerSystem, ::ACAnalysis)),
-* [`currentTo`](@ref currentTo(::PowerSystem, ::ACAnalysis)),
-* [`currentSeries`](@ref currentSeries(::PowerSystem, ::ACAnalysis)).
+* [`currentInjection`](@ref currentInjection(::PowerSystem, ::AC)),
+* [`currentFrom`](@ref currentFrom(::PowerSystem, ::AC)),
+* [`currentTo`](@ref currentTo(::PowerSystem, ::AC)),
+* [`currentSeries`](@ref currentSeries(::PowerSystem, ::AC)).
 
 Additionally, the package provides two functions for reactive power limit validation of generators and adjusting the voltage angles to match an arbitrary bus angle:
 * [`reactiveLimit!`](@ref reactiveLimit!),
@@ -389,7 +389,7 @@ analysis.current.from.magnitude
 ```
 
 !!! note "Info"
-    To better understand the powers associated with buses, branches and generators that are calculated by the [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)) and [`current!`](@ref current!(::PowerSystem, ::ACAnalysis)) functions, we suggest referring to the tutorials on [AC power flow analysis](@ref ACPowerAnalysisTutorials).
+    To better understand the powers associated with buses, branches and generators that are calculated by the [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)) and [`current!`](@ref current!(::PowerSystem, ::AC)) functions, we suggest referring to the tutorials on [AC power flow analysis](@ref ACPowerAnalysisTutorials).
 
 To calculate specific quantities for particular components rather than calculating powers or currents for all components, users can make use of the provided functions below.
 

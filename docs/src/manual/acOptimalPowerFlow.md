@@ -13,19 +13,19 @@ After obtaining the AC optimal power flow solution, JuliaGrid offers post-proces
 * [`current!`](@ref current!(::PowerSystem, ::ACPowerFlow)).
 
 Furthermore, there are specialized functions dedicated to calculating specific types of powers related to particular buses or branches:
-* [`powerInjection`](@ref powerInjection(::PowerSystem, ::ACAnalysis)),
+* [`powerInjection`](@ref powerInjection(::PowerSystem, ::AC)),
 * [`powerSupply`](@ref powerSupply(::PowerSystem, ::ACPowerFlow)),
-* [`powerShunt`](@ref powerShunt(::PowerSystem, ::ACAnalysis)),
-* [`powerFrom`](@ref powerFrom(::PowerSystem, ::ACAnalysis)),
-* [`powerTo`](@ref powerTo(::PowerSystem, ::ACAnalysis)),
-* [`powerCharging`](@ref powerCharging(::PowerSystem, ::ACAnalysis)),
-* [`powerSeries`](@ref powerSeries(::PowerSystem, ::ACAnalysis)),
+* [`powerShunt`](@ref powerShunt(::PowerSystem, ::AC)),
+* [`powerFrom`](@ref powerFrom(::PowerSystem, ::AC)),
+* [`powerTo`](@ref powerTo(::PowerSystem, ::AC)),
+* [`powerCharging`](@ref powerCharging(::PowerSystem, ::AC)),
+* [`powerSeries`](@ref powerSeries(::PowerSystem, ::AC)),
 
 Likewise, there are specialized functions dedicated to calculating specific types of currents related to particular buses or branches:
-* [`currentInjection`](@ref currentInjection(::PowerSystem, ::ACAnalysis)),
-* [`currentFrom`](@ref currentFrom(::PowerSystem, ::ACAnalysis)),
-* [`currentTo`](@ref currentTo(::PowerSystem, ::ACAnalysis)),
-* [`currentSeries`](@ref currentSeries(::PowerSystem, ::ACAnalysis)).
+* [`currentInjection`](@ref currentInjection(::PowerSystem, ::AC)),
+* [`currentFrom`](@ref currentFrom(::PowerSystem, ::AC)),
+* [`currentTo`](@ref currentTo(::PowerSystem, ::AC)),
+* [`currentSeries`](@ref currentSeries(::PowerSystem, ::AC)).
 
 ---
 
@@ -352,7 +352,7 @@ JuMP.set_silent(analysis.jump)
 ---
 
 ## [Power and Current Analysis](@id ACOptimalPowerCurrentAnalysisManual)
-After obtaining the solution from the AC optimal power flow, we can calculate various electrical quantities related to buses, branches, and generators using the [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)) and [`current!`](@ref current!(::PowerSystem, ::ACAnalysis)) functions. For instance, let us consider the power system for which we obtained the AC optimal power flow solution:
+After obtaining the solution from the AC optimal power flow, we can calculate various electrical quantities related to buses, branches, and generators using the [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)) and [`current!`](@ref current!(::PowerSystem, ::AC)) functions. For instance, let us consider the power system for which we obtained the AC optimal power flow solution:
 ```@example ACOptimalPowerFlowPower
 using JuliaGrid # hide
 using JuMP, Ipopt # hide
@@ -403,7 +403,7 @@ analysis.current.from.magnitude
 ```
 
 !!! note "Info"
-    To better understand the powers and current associated with buses and branches that are calculated by the [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)) and [`current!`](@ref current!(::PowerSystem, ::ACAnalysis)) functions, we suggest referring to the tutorials on [AC optimal power flow analysis](@ref ACOptimalPowerAnalysisTutorials).
+    To better understand the powers and current associated with buses and branches that are calculated by the [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)) and [`current!`](@ref current!(::PowerSystem, ::AC)) functions, we suggest referring to the tutorials on [AC optimal power flow analysis](@ref ACOptimalPowerAnalysisTutorials).
 
 To calculate specific quantities for particular components rather than calculating powers or currents for all components, users can make use of the provided functions below.
 

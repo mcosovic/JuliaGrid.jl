@@ -11,20 +11,20 @@ For further information on this topic, please see the [AC Optimal Power Flow](@r
 
 ###### Power Analysis
 * [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow))
-* [`powerInjection`](@ref powerInjection(::PowerSystem, ::ACAnalysis))
+* [`powerInjection`](@ref powerInjection(::PowerSystem, ::AC))
 * [`powerSupply`](@ref powerSupply(::PowerSystem, ::ACPowerFlow))
-* [`powerShunt`](@ref powerShunt(::PowerSystem, ::ACAnalysis))
-* [`powerFrom`](@ref powerFrom(::PowerSystem, ::ACAnalysis))
-* [`powerTo`](@ref powerTo(::PowerSystem, ::ACAnalysis))
-* [`powerCharging`](@ref powerCharging(::PowerSystem, ::ACAnalysis))
-* [`powerSeries`](@ref powerSeries(::PowerSystem, ::ACAnalysis))
+* [`powerShunt`](@ref powerShunt(::PowerSystem, ::AC))
+* [`powerFrom`](@ref powerFrom(::PowerSystem, ::AC))
+* [`powerTo`](@ref powerTo(::PowerSystem, ::AC))
+* [`powerCharging`](@ref powerCharging(::PowerSystem, ::AC))
+* [`powerSeries`](@ref powerSeries(::PowerSystem, ::AC))
 
 ###### Current Analysis
-* [`current!`](@ref current!(::PowerSystem, ::ACAnalysis))
-* [`currentInjection`](@ref currentInjection(::PowerSystem, ::ACAnalysis))
-* [`currentFrom`](@ref currentFrom(::PowerSystem, ::ACAnalysis))
-* [`currentTo`](@ref currentTo(::PowerSystem, ::ACAnalysis))
-* [`currentSeries`](@ref currentSeries(::PowerSystem, ::ACAnalysis))
+* [`current!`](@ref current!(::PowerSystem, ::AC))
+* [`currentInjection`](@ref currentInjection(::PowerSystem, ::AC))
+* [`currentFrom`](@ref currentFrom(::PowerSystem, ::AC))
+* [`currentTo`](@ref currentTo(::PowerSystem, ::AC))
+* [`currentSeries`](@ref currentSeries(::PowerSystem, ::AC))
 
 ---
 
