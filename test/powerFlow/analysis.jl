@@ -18,6 +18,7 @@ system30 = powerSystem(string(pathData, "case30test.m"))
         iteration += 1
     end
     power!(system14, analysis)
+    current!(system14, analysis)
 
     @test analysis.voltage.magnitude ≈ matpower14["voltageMagnitude"]
     @test analysis.voltage.angle ≈ matpower14["voltageAngle"]
@@ -39,42 +40,78 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     @test analysis.power.generator.active ≈ matpower14["generatorActive"]
     @test analysis.power.generator.reactive ≈ matpower14["generatorReactive"]
 
+    injection = (complex.(analysis.power.injection.active, analysis.power.injection.reactive))
+    voltage = (analysis.voltage.magnitude .* exp.(im * analysis.voltage.angle))
+    @test analysis.current.injection.magnitude .* exp.(-im * analysis.current.injection.angle) ≈ injection ./ voltage
+
+    from = (complex.(analysis.power.from.active, analysis.power.from.reactive))
+    voltage = (analysis.voltage.magnitude[system14.branch.layout.from] .* exp.(im * analysis.voltage.angle[system14.branch.layout.from]))
+    @test analysis.current.from.magnitude .* exp.(-im * analysis.current.from.angle) ≈ from ./ voltage
+
+    to = (complex.(analysis.power.to.active, analysis.power.to.reactive))
+    voltage = (analysis.voltage.magnitude[system14.branch.layout.to] .* exp.(im * analysis.voltage.angle[system14.branch.layout.to]))
+    @test analysis.current.to.magnitude .* exp.(-im * analysis.current.to.angle) ≈ to ./ voltage
+
+    transformerRatio = (1 ./ system14.branch.parameter.turnsRatio) .* exp.(-im * system14.branch.parameter.shiftAngle)
+    voltageFrom = analysis.voltage.magnitude[system14.branch.layout.from] .* exp.(im * analysis.voltage.angle[system14.branch.layout.from])
+    voltageTo = analysis.voltage.magnitude[system14.branch.layout.to] .* exp.(im * analysis.voltage.angle[system14.branch.layout.to])
+    series = complex.(analysis.power.series.active, analysis.power.series.reactive)
+    @test analysis.current.series.magnitude .* exp.(-im * analysis.current.series.angle) ≈ series ./ (transformerRatio .* voltageFrom - voltageTo)
+
     for (key, value) in system14.bus.label
         injection = powerInjection(system14, analysis; label = key)
-        @test injection.active ≈ matpower14["injectionActive"][value] atol = 1e-13
-        @test injection.reactive ≈ matpower14["injectionReactive"][value] atol = 1e-13
+        @test injection.active ≈ analysis.power.injection.active[value]
+        @test injection.reactive ≈ analysis.power.injection.reactive[value]
 
         supply = powerSupply(system14, analysis; label = key)
-        @test supply.active ≈ matpower14["supplyActive"][value] atol = 1e-13
-        @test supply.reactive ≈ matpower14["supplyReactive"][value] atol = 1e-13
+        @test supply.active ≈ analysis.power.supply.active[value]
+        @test supply.reactive ≈ analysis.power.supply.reactive[value]
 
         shunt = powerShunt(system14, analysis; label = key)
-        @test shunt.active ≈ matpower14["shuntActive"][value] atol = 1e-13
-        @test shunt.reactive ≈ matpower14["shuntReactive"][value] atol = 1e-13
+        @test shunt.active ≈ analysis.power.shunt.active[value]
+        @test shunt.reactive ≈ analysis.power.shunt.reactive[value]
+
+        injection = currentInjection(system14, analysis; label = key)
+        @test injection.magnitude ≈ analysis.current.injection.magnitude[value]
+        @test injection.angle ≈ analysis.current.injection.angle[value]
     end
 
     for (key, value) in system14.branch.label
         from = powerFrom(system14, analysis; label = key)
-        @test from.active ≈ matpower14["fromActive"][value] atol = 1e-13
-        @test from.reactive ≈ matpower14["fromReactive"][value] atol = 1e-13
+        @test from.active ≈ analysis.power.from.active[value]
+        @test from.reactive ≈ analysis.power.from.reactive[value]
 
         to = powerTo(system14, analysis; label = key)
-        @test to.active ≈ matpower14["toActive"][value] atol = 1e-13
-        @test to.reactive ≈ matpower14["toReactive"][value] atol = 1e-13
+        @test to.active ≈ analysis.power.to.active[value]
+        @test to.reactive ≈ analysis.power.to.reactive[value]
 
         charging = powerCharging(system14, analysis; label = key)
-        @test charging.from.reactive ≈ matpower14["chargingFrom"][value] atol = 1e-13
-        @test charging.to.reactive ≈ matpower14["chargingTo"][value] atol = 1e-13
+        @test charging.from.active ≈ analysis.power.charging.from.active[value]
+        @test charging.from.reactive ≈ analysis.power.charging.from.reactive[value]
+        @test charging.to.active ≈ analysis.power.charging.to.active[value]
+        @test charging.to.reactive ≈ analysis.power.charging.to.reactive[value]
 
         series = powerSeries(system14, analysis; label = key)
-        @test series.active ≈ matpower14["lossActive"][value] atol = 1e-13
-        @test series.reactive ≈ matpower14["lossReactive"][value] atol = 1e-13
+        @test series.active ≈ analysis.power.series.active[value]
+        @test series.reactive ≈ analysis.power.series.reactive[value]
+
+        from = currentFrom(system14, analysis; label = key)
+        @test from.magnitude ≈ analysis.current.from.magnitude[value]
+        @test from.angle ≈ analysis.current.from.angle[value]
+
+        to = currentTo(system14, analysis; label = key)
+        @test to.magnitude ≈ analysis.current.to.magnitude[value]
+        @test to.angle ≈ analysis.current.to.angle[value]
+
+        series = currentSeries(system14, analysis; label = key)
+        @test series.magnitude ≈ analysis.current.series.magnitude[value]
+        @test series.angle ≈ analysis.current.series.angle[value]
     end
 
     for (key, value) in system14.generator.label
         output = powerGenerator(system14, analysis; label = key)
-        @test output.active ≈ matpower14["generatorActive"][value] atol = 1e-13
-        @test output.reactive ≈ matpower14["generatorReactive"][value] atol = 1e-13
+        @test output.active ≈ analysis.power.generator.active[value]
+        @test output.reactive ≈ analysis.power.generator.reactive[value]
     end
 
     ######## Modified IEEE 30-bus Test Case ##########
@@ -90,6 +127,7 @@ system30 = powerSystem(string(pathData, "case30test.m"))
         iteration += 1
     end
     power!(system30, analysis)
+    current!(system30, analysis)
 
     @test analysis.voltage.magnitude ≈ matpower30["voltageMagnitude"]
     @test analysis.voltage.angle ≈ matpower30["voltageAngle"]
@@ -111,42 +149,78 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     @test analysis.power.generator.active ≈ matpower30["generatorActive"]
     @test analysis.power.generator.reactive ≈ matpower30["generatorReactive"]
 
+    injection = (complex.(analysis.power.injection.active, analysis.power.injection.reactive))
+    voltage = (analysis.voltage.magnitude .* exp.(im * analysis.voltage.angle))
+    @test analysis.current.injection.magnitude .* exp.(-im * analysis.current.injection.angle) ≈ injection ./ voltage
+
+    from = (complex.(analysis.power.from.active, analysis.power.from.reactive))
+    voltage = (analysis.voltage.magnitude[system30.branch.layout.from] .* exp.(im * analysis.voltage.angle[system30.branch.layout.from]))
+    @test analysis.current.from.magnitude .* exp.(-im * analysis.current.from.angle) ≈ from ./ voltage
+
+    to = (complex.(analysis.power.to.active, analysis.power.to.reactive))
+    voltage = (analysis.voltage.magnitude[system30.branch.layout.to] .* exp.(im * analysis.voltage.angle[system30.branch.layout.to]))
+    @test analysis.current.to.magnitude .* exp.(-im * analysis.current.to.angle) ≈ to ./ voltage
+
+    transformerRatio = (1 ./ system30.branch.parameter.turnsRatio) .* exp.(-im * system30.branch.parameter.shiftAngle)
+    voltageFrom = analysis.voltage.magnitude[system30.branch.layout.from] .* exp.(im * analysis.voltage.angle[system30.branch.layout.from])
+    voltageTo = analysis.voltage.magnitude[system30.branch.layout.to] .* exp.(im * analysis.voltage.angle[system30.branch.layout.to])
+    series = complex.(analysis.power.series.active, analysis.power.series.reactive)
+    @test analysis.current.series.magnitude .* exp.(-im * analysis.current.series.angle) ≈ series ./ (transformerRatio .* voltageFrom - voltageTo)
+
     for (key, value) in system30.bus.label
         injection = powerInjection(system30, analysis; label = key)
-        @test injection.active ≈ matpower30["injectionActive"][value] atol = 1e-13
-        @test injection.reactive ≈ matpower30["injectionReactive"][value] atol = 1e-13
+        @test injection.active ≈ analysis.power.injection.active[value]
+        @test injection.reactive ≈ analysis.power.injection.reactive[value]
 
         supply = powerSupply(system30, analysis; label = key)
-        @test supply.active ≈ matpower30["supplyActive"][value] atol = 1e-13
-        @test supply.reactive ≈ matpower30["supplyReactive"][value] atol = 1e-13
+        @test supply.active ≈ analysis.power.supply.active[value]
+        @test supply.reactive ≈ analysis.power.supply.reactive[value]
 
         shunt = powerShunt(system30, analysis; label = key)
-        @test shunt.active ≈ matpower30["shuntActive"][value] atol = 1e-13
-        @test shunt.reactive ≈ matpower30["shuntReactive"][value] atol = 1e-13
+        @test shunt.active ≈ analysis.power.shunt.active[value]
+        @test shunt.reactive ≈ analysis.power.shunt.reactive[value]
+
+        injection = currentInjection(system30, analysis; label = key)
+        @test injection.magnitude ≈ analysis.current.injection.magnitude[value]
+        @test injection.angle ≈ analysis.current.injection.angle[value]
     end
 
     for (key, value) in system30.branch.label
         from = powerFrom(system30, analysis; label = key)
-        @test from.active ≈ matpower30["fromActive"][value] atol = 1e-13
-        @test from.reactive ≈ matpower30["fromReactive"][value] atol = 1e-13
+        @test from.active ≈ analysis.power.from.active[value]
+        @test from.reactive ≈ analysis.power.from.reactive[value]
 
         to = powerTo(system30, analysis; label = key)
-        @test to.active ≈ matpower30["toActive"][value] atol = 1e-13
-        @test to.reactive ≈ matpower30["toReactive"][value] atol = 1e-13
+        @test to.active ≈ analysis.power.to.active[value]
+        @test to.reactive ≈ analysis.power.to.reactive[value]
 
         charging = powerCharging(system30, analysis; label = key)
-        @test charging.from.reactive ≈ matpower30["chargingFrom"][value] atol = 1e-13
-        @test charging.to.reactive ≈ matpower30["chargingTo"][value] atol = 1e-13
+        @test charging.from.active ≈ analysis.power.charging.from.active[value]
+        @test charging.from.reactive ≈ analysis.power.charging.from.reactive[value]
+        @test charging.to.active ≈ analysis.power.charging.to.active[value]
+        @test charging.to.reactive ≈ analysis.power.charging.to.reactive[value]
 
         series = powerSeries(system30, analysis; label = key)
-        @test series.active ≈ matpower30["lossActive"][value] atol = 1e-13
-        @test series.reactive ≈ matpower30["lossReactive"][value] atol = 1e-13
+        @test series.active ≈ analysis.power.series.active[value]
+        @test series.reactive ≈ analysis.power.series.reactive[value]
+
+        from = currentFrom(system30, analysis; label = key)
+        @test from.magnitude ≈ analysis.current.from.magnitude[value]
+        @test from.angle ≈ analysis.current.from.angle[value]
+
+        to = currentTo(system30, analysis; label = key)
+        @test to.magnitude ≈ analysis.current.to.magnitude[value]
+        @test to.angle ≈ analysis.current.to.angle[value]
+
+        series = currentSeries(system30, analysis; label = key)
+        @test series.magnitude ≈ analysis.current.series.magnitude[value]
+        @test series.angle ≈ analysis.current.series.angle[value]
     end
 
     for (key, value) in system30.generator.label
         output = powerGenerator(system30, analysis; label = key)
-        @test output.active ≈ matpower30["generatorActive"][value] atol = 1e-13
-        @test output.reactive ≈ matpower30["generatorReactive"][value] atol = 1e-13
+        @test output.active ≈ analysis.power.generator.active[value]
+        @test output.reactive ≈ analysis.power.generator.reactive[value]
     end
 end
 
