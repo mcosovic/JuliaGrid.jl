@@ -109,7 +109,7 @@ For an arbitrary segment of the piecewise function defined by the points ``(P_{\
 ```math
 H_{i} \geq \cfrac{f_i(P_{\text{g}i,j+1}) - f_i(P_{\text{g}i,j})}{P_{\text{g}i,j+1} - P_{\text{g}i,j}}(P_{\text{g}i} - P_{\text{g}i,j}) + f_i(P_{\text{g}i,j}),\;\;\;j = 1,\dots,m/2.
 ```
-To complete the method, we simply add the helper variable ``H_{i}`` to the objective function. Using this approach, JuliaGrid efficiently handles linear piecewise cost functions, offering flexibility in capturing non-linear characteristics while maintaining the advantages of linear optimization methods. 
+To complete the method, we simply add the helper variable ``H_{i}`` to the objective function. Using this approach, JuliaGrid efficiently handles linear piecewise cost functions, offering flexibility in capturing non-linear characteristics while maintaining the advantages of linear optimization methods.
 
 ---
 
@@ -122,7 +122,7 @@ nothing # hide
 
 Next, the above optimization problem is constructed by the function [`dcOptimalPowerFlow`](@ref dcOptimalPowerFlow), and we need to specify the optimization solver as follows:
 ```@example DCOptimalPowerFlow
-model = dcOptimalPowerFlow(system, HiGHS.Optimizer)
+analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer)
 nothing # hide
 ```
 
@@ -131,7 +131,7 @@ nothing # hide
 ##### Objective Function
 In the provided example, the objective function that needs to be minimized to obtain the optimal values of the active power output of the generators and the bus voltage angles is as follows:
 ```@repl DCOptimalPowerFlow
-JuMP.objective_function(model.jump)
+JuMP.objective_function(analysis.jump)
 ```
 ---
 
@@ -139,19 +139,19 @@ JuMP.objective_function(model.jump)
 ##### Slack Bus Constraint
 The first equality constraint is linked to the slack bus, where the bus voltage angle denoted as ``\theta_i`` is fixed to a constant value ``\theta_{\text{slack}}``. It can be expressed as follows:
 ```math
-\theta_i - \theta_{\text{slack}} = 0,\;\;\; i \in \mathcal{N_{\text{sb}}}.  
+\theta_i - \theta_{\text{slack}} = 0,\;\;\; i \in \mathcal{N_{\text{sb}}}.
 ```
-Here, the set ``\mathcal{N}_{\text{sb}}`` contains the index of the slack bus. This constraint is added using the `angle` keyword within the [`addBus!`](@ref addBus!) function. 
+Here, the set ``\mathcal{N}_{\text{sb}}`` contains the index of the slack bus. This constraint is added using the `angle` keyword within the [`addBus!`](@ref addBus!) function.
 
 To retrieve the equality constraint from the model, you can access the variable:
 ```@repl DCOptimalPowerFlow
-model.constraint.slack.angle
+analysis.constraint.slack.angle
 ```
 
 ---
 
 ##### Active Power Balance Constraints
-The second equality constraint in the optimization problem is associated with the active power balance equation denoted as ``h_{P_i}(\mathbf x)`` for each bus ``i \in \mathcal{N}``: 
+The second equality constraint in the optimization problem is associated with the active power balance equation denoted as ``h_{P_i}(\mathbf x)`` for each bus ``i \in \mathcal{N}``:
 ```math
 h_{P_i}(\mathbf {P}_{\text{g}}, \boldsymbol{\theta}) = 0,\;\;\;  \forall i \in \mathcal{N}.
 ```
@@ -159,11 +159,11 @@ The equation is derived using the [unified branch model](@ref DCUnifiedBranchMod
 ```math
 h_{P_i}(\mathbf {P}_{\text{g}}, \boldsymbol{\theta}) = \sum_{k=1}^{n_{\text{g}i}} P_{\text{g}k} - \sum_{k = 1}^n {B}_{ik} \theta_k - P_{\text{d}i} - P_{\text{sh}i} - P_{\text{tr}i}.
 ```
-In the equation above, ``P_{\text{g}k}`` represents the active power output of the ``k``-th generator connected to bus ``i \in \mathcal{N}``, and ``n_{\text{g}i}`` denotes the total number of generators connected to the same bus. The constant terms in these equations are determined by the active power demand at bus ``P_{\text{d}i}`` and the active power demanded by the shunt element ``P_{\text{sh}i}``, which can be defined using the `active` and `conductance` keywords within the [`addBus!`](@ref addBus!) function, respectively. If there are phase shift transformers in the system, the constant terms can also be affected by the `shiftAngle` keyword within the [`addBranch!`](@ref addBranch!) function, denoted as ``P_{\text{tr}i}``. 
+In the equation above, ``P_{\text{g}k}`` represents the active power output of the ``k``-th generator connected to bus ``i \in \mathcal{N}``, and ``n_{\text{g}i}`` denotes the total number of generators connected to the same bus. The constant terms in these equations are determined by the active power demand at bus ``P_{\text{d}i}`` and the active power demanded by the shunt element ``P_{\text{sh}i}``, which can be defined using the `active` and `conductance` keywords within the [`addBus!`](@ref addBus!) function, respectively. If there are phase shift transformers in the system, the constant terms can also be affected by the `shiftAngle` keyword within the [`addBranch!`](@ref addBranch!) function, denoted as ``P_{\text{tr}i}``.
 
 To retrieve this equality constraint from the model and access the corresponding variable, you can use the following code:
 ```@repl DCOptimalPowerFlow
-model.constraint.balance.active
+analysis.constraint.balance.active
 ```
 
 ---
@@ -173,30 +173,30 @@ The inequality constraint related to the minimum and maximum bus voltage angle d
 ```math
 \theta_{ij}^\text{min} \leq \theta_i - \theta_j \leq \theta_{ij}^\text{max},\;\;\; \forall (i,j) \in \mathcal{E}.
 ```
-The values ``\theta_{ij}^\text{min}`` and ``\theta_{ij}^\text{max}`` are specified using the `minDiffAngle` and `maxDiffAngle` keywords, respectively, within the [`addBranch!`](@ref addBranch!) function. 
+The values ``\theta_{ij}^\text{min}`` and ``\theta_{ij}^\text{max}`` are specified using the `minDiffAngle` and `maxDiffAngle` keywords, respectively, within the [`addBranch!`](@ref addBranch!) function.
 
 To retrieve this inequality constraint from the model and access the corresponding variable, you can use the following code:
 ```@repl DCOptimalPowerFlow
-model.constraint.limit.angle
-``` 
+analysis.constraint.limit.angle
+```
 
 ---
 
 ##### Active Power Rating Constraints
 The inequality constraint concerning the active power flow rating is used to represent thermal limits on the power transmission. This constraint is defined as follows:
 ```math
-- P_{ij}^{\text{max}} \leq h_{P_{ij}}(\theta_i, \theta_j) \leq P_{ij}^{\text{max}},\;\;\; \forall (i,j) \in \mathcal{E}. 
+- P_{ij}^{\text{max}} \leq h_{P_{ij}}(\theta_i, \theta_j) \leq P_{ij}^{\text{max}},\;\;\; \forall (i,j) \in \mathcal{E}.
 ```
 The active power flow at branch ``(i,j) \in \mathcal{E}`` can be derived using the [unified branch model](@ref DCUnifiedBranchModelTutorials) and is given by the equation:
 ```math
 h_{P_{ij}}(\theta_i, \theta_j) = \frac{1}{\tau_{ij} x_{ij} }(\theta_i - \theta_j - \phi_{ij}).
 ```
-Hence, this inequality constraint, with lower and upper bounds, is associated with the active power flow limits at the "to" and "from" ends of the branch, respectively. The lower and upper bounds ``P_{ij}^{\text{max}}``, ``(i,j) \in \mathcal{E}``, are defined using the `longTerm` keyword within the [`addBranch!`](@ref addBranch!) function. 
+Hence, this inequality constraint, with lower and upper bounds, is associated with the active power flow limits at the "to" and "from" ends of the branch, respectively. The lower and upper bounds ``P_{ij}^{\text{max}}``, ``(i,j) \in \mathcal{E}``, are defined using the `longTerm` keyword within the [`addBranch!`](@ref addBranch!) function.
 
 To retrieve this inequality constraint from the model and access the corresponding variable, you can use the following code:
 ```@repl DCOptimalPowerFlow
-model.constraint.rating.active
-```  
+analysis.constraint.rating.active
+```
 
 ---
 
@@ -204,82 +204,86 @@ model.constraint.rating.active
 The inequality constraints associated with the minimum and maximum active power outputs of the generators are defined as follows:
 ```math
 P_{\text{g}i}^\text{min} \leq P_{\text{g}i} \leq P_{\text{g}i}^\text{max} ,\;\;\; \forall i \in \mathcal{P}.
-```  
-These limits ``P_{\text{g}i}^\text{min}`` and ``P_{\text{g}i}^\text{max}`` are specified using the `minActive` and `maxActive` keywords, respectively, within the [`addGenerator!`](@ref addGenerator!) function. To retrieve this equality constraint from the model, you can use the following code:  
+```
+These limits ``P_{\text{g}i}^\text{min}`` and ``P_{\text{g}i}^\text{max}`` are specified using the `minActive` and `maxActive` keywords, respectively, within the [`addGenerator!`](@ref addGenerator!) function. To retrieve this equality constraint from the model, you can use the following code:
 ```@repl DCOptimalPowerFlow
-model.constraint.capability.active
-```  
+analysis.constraint.capability.active
+```
 
 ---
 
 ## [Optimal Power Flow Solution](@id DCOptimalPowerFlowSolutionTutorials)
 To acquire the output active power of generators and the bus voltage angles, the user must invoke the function:
 ```@example DCOptimalPowerFlow
-JuMP.set_silent(model.jump) # hide
-solve!(system, model)
+JuMP.set_silent(analysis.jump) # hide
+solve!(system, analysis)
 nothing # hide
 ```
 
 Therefore, to get the vector of output active power of generators ``\mathbf{P}_{\text{g}} = [P_{\text{g}i}]``, ``i \in \mathcal{P}``, you can use the following command:
 ```@repl DCOptimalPowerFlow
-𝐏ₒ = model.power.active
+𝐏ₒ = analysis.power.active
 ```
 Further, the resulting bus voltage angles ``\bm{\theta} = [\theta_{i}]``, ``i \in \mathcal{N}``, are saved in the vector as follows:
 ```@repl DCOptimalPowerFlow
-𝛉 = model.voltage.angle
+𝛉 = analysis.voltage.angle
 ```
 
 ---
 
 ## [Power Analysis](@id DCOptimalPowerAnalysisTutorials)
-After obtaining the solution from the DC optimal power flow, we can calculate powers related to buses and branches using the [`power!`](@ref power!(::PowerSystem, ::DCAnalysis)) function:  
+After obtaining the solution from the DC optimal power flow, we can calculate powers related to buses and branches using the [`power!`](@ref power!(::PowerSystem, ::DC)) function:
 ```@example DCOptimalPowerFlow
-power!(system, model)
+power!(system, analysis)
 nothing # hide
 ```
+
+!!! note "Info"
+    For a clear comprehension of the equations, symbols provided below, as well as for a better grasp of power directions, please refer to the [unified branch model](@ref UnifiedBranchModelTutorials).
 
 ---
 
 ##### Active Power Injections
-To obtain the active power injections at each bus ``i \in \mathcal{N}``, we can refer to section [DC Model](@ref DCModelTutorials), which provides the following expression:
+To obtain the active power injection at buses, we can refer to section [DC Model](@ref DCModelTutorials), which provides the following expression:
 ```math
    P_i = \sum_{j = 1}^n {B}_{ij} \theta_j + P_{\text{tr}i} + P_{\text{sh}i},\;\;\; i \in \mathcal{N}.
 ```
 Active power injections are stored as the vector ``\mathbf{P} = [P_i]``, and can be retrieved using the following commands:
 ```@repl DCOptimalPowerFlow
-𝐏 = model.power.injection.active
+𝐏 = analysis.power.injection.active
 ```
 
+---
 
-##### Active Power Injections From the Generators
+##### Active Power Injections from the Generators
 The active power supplied by generators to the buses can be calculated by summing the active power outputs of the generators obtained from the optimal DC power flow. This can be expressed as:
 ```math
     P_{\text{s}i} = \sum_{k=1}^{n_{\text{g}i}} P_{\text{g}k},\;\;\; i \in \mathcal{N}.
 ```
 Here, ``P_{\text{g}k}`` represents the active power output of the ``k``-th generator connected to bus ``i \in \mathcal{N}``, and ``n_{\text{g}i}`` denotes the total number of generators connected to the same bus. We can obtain the vector of active power injected by generators to the buses, denoted as ``\mathbf{P}_{\text{s}} = [P_{\text{s}i}]``, using the following command:
 ```@repl DCOptimalPowerFlow
-𝐏ₛ = model.power.supply.active
+𝐏ₛ = analysis.power.supply.active
 ```
 
 ---
 
 ##### Active Power Flows
-The active power flows at each "from" bus end ``i \in \mathcal{N}`` of the branch can be obtained using the following equations:
+The active power flow at each "from" bus end ``i \in \mathcal{N}`` of branches can be obtained using the following equations:
 ```math
     P_{ij} = \cfrac{1}{\tau_{ij} x_{ij}} (\theta_{i} -\theta_{j}-\phi_{ij}),\;\;\; (i,j) \in \mathcal{E}.
 ```
 The resulting active power flows are stored as the vector ``\mathbf{P}_{\text{i}} = [P_{ij}]``, which can be retrieved using the following command:
 ```@repl DCOptimalPowerFlow
-𝐏ᵢ = model.power.from.active
+𝐏ᵢ = analysis.power.from.active
 ```
 
-Similarly, the active power flows at each "to" bus end ``j \in \mathcal{N}`` of the branch can be obtained as:
+Similarly, the active power flow at each "to" bus end ``j \in \mathcal{N}`` of branches can be obtained as:
 ```math
     P_{ji} = - P_{ij},\;\;\; (i,j) \in \mathcal{E}.
 ```
 The resulting active power flows are stored as the vector ``\mathbf{P}_{\text{j}} = [P_{ji}]``, which can be retrieved using the following command:
 ```@repl DCOptimalPowerFlow
-𝐏ⱼ = model.power.to.active
+𝐏ⱼ = analysis.power.to.active
 ```
 
 

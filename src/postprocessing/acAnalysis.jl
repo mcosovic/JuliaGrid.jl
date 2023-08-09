@@ -226,7 +226,7 @@ function power!(system::PowerSystem, analysis::ACOptimalPowerFlow)
     @inbounds for i = 1:system.bus.number
         voltageBus = voltage.magnitude[i] * exp(im * voltage.angle[i])
 
-        powerShunt = voltageBus * conj(voltageBus * (system.bus.shunt.susceptance[i] + im * system.bus.shunt.susceptance[i]))
+        powerShunt = voltageBus * conj(voltageBus * (system.bus.shunt.conductance[i] + im * system.bus.shunt.susceptance[i]))
         power.shunt.active[i] = real(powerShunt)
         power.shunt.reactive[i] = imag(powerShunt)
 

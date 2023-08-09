@@ -300,7 +300,7 @@ The branch is defined with the following keywords:
   * `type = 3`: current magnitude (pu or VA at 1 pu voltage).
 
 # Default Settings
-By default, certain keywords are assigned default values: `status = 1`, `turnsRatio` = 1.0,
+By default, certain keywords are assigned default values: `status = 1`, `turnsRatio = 1.0`,
 and `type = 1`. The  rest of the keywords are initialized with a value of zero. However,
 the user can modify these default settings by utilizing the [`@branch`](@ref @branch) macro.
 

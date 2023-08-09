@@ -37,15 +37,12 @@ The given example provides the set of buses and branches:
 
 ---
 
-## [AC Analysis](@id ACModelTutorials)
+## [AC Model](@id ACModelTutorials)
 JuliaGrid is based on common network elements and benefits from the unified branch model to perform various analyses based on the system of nonlinear equations. To generate matrices and vectors for AC or nonlinear analysis, JuliaGrid employs the [`acModel!`](@ref acModel!) function. To demonstrate the usage of this function, consider the power system defined in the previous example. In order to apply the [`acModel!`](@ref acModel!) function to this power system, the following code can be executed:
 ```@example ACDCModel
 acModel!(system)
 nothing #hide
 ```
-
-!!! tip "Tip"
-    In all instances within the documentation, we explicitly refer to this function by name, although it is not obligatory to do so. When a user initiates any of the various AC analyses, and if the AC model has not been created using the [`acModel!`](@ref acModel!) function, the AC model will be generated automatically during initiation, and all its fields will be filled.
 
 ---
 
@@ -222,9 +219,6 @@ The DC model is obtained by linearisation of the nonlinear model, and it provide
 dcModel!(system)
 nothing # hide
 ```
-
-!!! tip "Tip"
-    Similar to our explanation regarding the AC model, within the documentation, we consistently mention this function by its name. However, in the case of a user initializing any of the diverse DC analyses, if the DC model has not been established through the [`dcModel!`](@ref dcModel!) function, the DC model will be automatically generated during initiation. This process will ensure that all the relevant fields of the DC model are populated.
 
 ---
 

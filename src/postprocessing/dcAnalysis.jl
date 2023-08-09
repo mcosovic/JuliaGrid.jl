@@ -38,7 +38,7 @@ optimize!(system, analysis)
 power!(system, analysis)
 ```
 """
-function power!(system::PowerSystem, analysis::DC)
+function power!(system::PowerSystem, analysis::DCPowerFlow)
     errorVoltage(analysis.voltage.angle)
 
     dc = system.model.dc
