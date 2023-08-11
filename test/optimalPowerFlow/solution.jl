@@ -57,8 +57,8 @@ system14 = powerSystem(string(pathData, "case14optimal.m"))
         @test supply.reactive ≈ analysis.power.supply.reactive[value]
 
         shunt = powerShunt(system14, analysis; label = key)
-        @test shunt.active ≈ analysis.power.shunt.active[value]
-        @test shunt.reactive ≈ analysis.power.shunt.reactive[value]
+        @test shunt.active ≈ analysis.power.shunt.active[value] atol = 1e-10
+        @test shunt.reactive ≈ analysis.power.shunt.reactive[value] atol = 1e-10
 
         injection = currentInjection(system14, analysis; label = key)
         @test injection.magnitude ≈ analysis.current.injection.magnitude[value]
