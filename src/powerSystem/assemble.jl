@@ -177,7 +177,7 @@ macro bus(kwargs...)
 
         if haskey(template[:bus], parameter)
             value = kwarg.args[2]
-            template[:bus][parameter] = eval(value)::Int64
+            template[:bus][parameter] = eval(value)
         else
             throw(ErrorException("The keyword $(parameter) is illegal."))
         end
