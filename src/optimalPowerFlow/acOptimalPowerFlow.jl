@@ -69,7 +69,7 @@ Create the complete DC optimal power flow model:
 system = powerSystem("case14.h5")
 dcModel!(system)
 
-analysis = acOptimalPowerFlow(system, HiGHS.Optimizer)
+analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
 ```
 
 Create the DC optimal power flow model without `rating` constraints:
@@ -77,7 +77,7 @@ Create the DC optimal power flow model without `rating` constraints:
 system = powerSystem("case14.h5")
 dcModel!(system)
 
-analysis = acOptimalPowerFlow(system, HiGHS.Optimizer; rating = false)
+analysis = acOptimalPowerFlow(system, Ipopt.Optimizer; rating = false)
 ```
 """
 function acOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory);
@@ -115,14 +115,8 @@ function acOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
 
     objExpr = QuadExpr()
     nonlinearExpr = Vector{NonlinearExpression}(undef, 0)
-    supplyActive = zeros(AffExpr, system.bus.number)
-    supplyReactive = zeros(AffExpr, system.bus.number)
     @inbounds for i = 1:generator.number
         if generator.layout.status[i] == 1
-            busIndex = generator.layout.bus[i]
-            supplyActive[busIndex] += active[i]
-            supplyReactive[busIndex] += reactive[i]
-
             if costActive.model[i] == 2
                 numberTerm = length(costActive.polynomial[i])
                 if numberTerm == 3
@@ -132,15 +126,21 @@ function acOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
                 elseif numberTerm == 2
                     add_to_expression!(objExpr, costActive.polynomial[i][1], active[i])
                     add_to_expression!(objExpr, costActive.polynomial[i][2])
+                elseif numberTerm == 1
+                    add_to_expression!(objExpr, costActive.polynomial[i][1])
                 elseif numberTerm > 3
-                    push!(nonlinearExpr, @NLexpression(model, sum(costActive.polynomial[i][j] * active[i]^(numberTerm - j) for j = 1:numberTerm)))
+                    add_to_expression!(objExpr, costActive.polynomial[i][end - 2], active[i], active[i])
+                    add_to_expression!(objExpr, costActive.polynomial[i][end - 1], active[i])
+                    add_to_expression!(objExpr, costActive.polynomial[i][end])
+                    push!(nonlinearExpr, @NLexpression(model, sum(costActive.polynomial[i][numberTerm - degree] * active[i]^degree for degree = numberTerm-1:-1:3)))
                 end
             elseif costActive.model[i] == 1
-                if size(costActive.piecewise[i], 1) == 2
+                numberPoint = size(costActive.piecewise[i], 1)
+                if numberPoint == 2
                     slope = (costActive.piecewise[i][2, 2] - costActive.piecewise[i][1, 2]) / (costActive.piecewise[i][2, 1] - costActive.piecewise[i][1, 1])
                     add_to_expression!(objExpr, slope, active[i])
                     add_to_expression!(objExpr, costActive.piecewise[i][1, 2] - costActive.piecewise[i][1, 1] * slope)
-                else
+                elseif numberPoint > 2
                     push!(idxPiecewiseActive, i)
                 end
             end
@@ -154,15 +154,21 @@ function acOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
                 elseif numberTerm == 2
                     add_to_expression!(objExpr, costReactive.polynomial[i][1], reactive[i])
                     add_to_expression!(objExpr, costReactive.polynomial[i][2])
+                elseif numberTerm == 1
+                    add_to_expression!(objExpr, costReactive.polynomial[i][1])
                 elseif numberTerm > 3
-                    push!(nonlinearExpr, @NLexpression(model, sum(costReactive.polynomial[i][j] * active[i]^(numberTerm - j) for j = 1:numberTerm)))
+                    add_to_expression!(objExpr, costReactive.polynomial[i][end - 2], reactive[i], reactive[i])
+                    add_to_expression!(objExpr, costReactive.polynomial[i][end - 1], reactive[i])
+                    add_to_expression!(objExpr, costReactive.polynomial[i][end])
+                    push!(nonlinearExpr, @NLexpression(model, sum(costReactive.polynomial[i][numberTerm - degree] * reactive[i]^degree for degree = numberTerm-1:-1:3)))
                 end
             elseif costReactive.model[i] == 1
-                if size(costReactive.piecewise[i], 1) == 2
+                numberPoint = size(costReactive.piecewise[i], 1)
+                if numberPoint == 2
                     slope = (costReactive.piecewise[i][2, 2] - costReactive.piecewise[i][1, 2]) / (costReactive.piecewise[i][2, 1] - costReactive.piecewise[i][1, 1])
                     add_to_expression!(objExpr, slope, reactive[i])
                     add_to_expression!(objExpr, costReactive.piecewise[i][1, 2] - costReactive.piecewise[i][1, 1] * slope)
-                else
+                elseif numberPoint > 2
                     push!(idxPiecewiseReactive, i)
                 end
             end
@@ -254,37 +260,33 @@ function acOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
                     gsi = 0.5 * branch.parameter.conductance[i]
                     bsi = 0.5 * branch.parameter.susceptance[i]
                     add_to_expression!(θij, -branch.parameter.shiftAngle[i])
+
+                    g = gij + gsi
+                    b = bij + bsi
                     βij = 1 / branch.parameter.turnsRatio[i]
 
+                    if branch.rating.type[i] == 1 || branch.rating.type[i] == 3
+                        Aij = βij^4 * (g^2 + b^2)
+                        Bij = βij^2 * (gij^2 + bij^2)
+                        Cij = βij^3 * (gij * g + bij * b)
+                        Dij = βij^3 * (bij * g - gij * b)
+
+                        Aji = g^2 + b^2
+                        Cji = βij * (gij * g + bij * b)
+                        Dji = βij * (gij * b - bij * g)
+                    end
+
                     if branch.rating.type[i] == 1
-                        A = βij^4 * ((gij + gsi)^2 + (bij + bsi)^2)
-                        B = βij^2 * (gij^2 + bij^2)
-                        C = βij^3 * (gij * (gij + gsi) + bij * (bij + bsi))
-                        D = βij^3 * (bij * (gij + gsi) - gij * (bij + bsi))
-                        ratingFromRef[i] = @NLconstraint(model, A * Vi^4 + B * Vi^2 * Vj^2 - 2 * Vi^3 * Vj * (C * cos(θij) - D * sin(θij)) <= branch.rating.longTerm[i]^2)
-
-                        A = (gij + gsi)^2 + (bij + bsi)^2
-                        C = βij * (gij * (gij + gsi) + bij * (bij + bsi))
-                        D = βij * (gij * (bij + bsi) - bij * (gij + gsi))
-                        ratingToRef[i] = @NLconstraint(model, A * Vj^4 + B * Vi^2 * Vj^2 - 2 * Vi * Vj^3 * (C * cos(θij) + D * sin(θij)) <= branch.rating.longTerm[i]^2)
+                        ratingFromRef[i] = @NLconstraint(model, Aij * Vi^4 + Bij * Vi^2 * Vj^2 - 2 * Vi^3 * Vj * (Cij * cos(θij) + Dij * sin(θij)) <= branch.rating.longTerm[i]^2)
+                        ratingToRef[i] = @NLconstraint(model, Aji * Vj^4 + Bij * Vi^2 * Vj^2 - 2 * Vi * Vj^3 * (Cji * cos(θij) + Dji * sin(θij)) <= branch.rating.longTerm[i]^2)
                     end
-
                     if branch.rating.type[i] == 2
-                        ratingFromRef[i] = @NLconstraint(model, βij^2 * (gij + gsi) * Vi^2 - βij * Vi * Vj * (gij * cos(θij) + bij * sin(θij)) <= branch.rating.longTerm[i])
-                        ratingToRef[i] = @NLconstraint(model, (gij + gsi) * Vj^2 - βij * Vi * Vj * (gij * cos(θij) - bij * sin(θij)) <= branch.rating.longTerm[i])
+                        ratingFromRef[i] = @NLconstraint(model, βij^2 * g * Vi^2 - βij * Vi * Vj * (gij * cos(θij) + bij * sin(θij)) <= branch.rating.longTerm[i])
+                        ratingToRef[i] = @NLconstraint(model, g * Vj^2 - βij * Vi * Vj * (gij * cos(θij) - bij * sin(θij)) <= branch.rating.longTerm[i])
                     end
-
                     if branch.rating.type[i] == 3
-                        A = βij^4 * ((gij + gsi)^2 + (bij + bsi)^2)
-                        B = βij^2 * (gij^2 + bij^2)
-                        C = βij^3 * (gij * (gij + gsi) + bij * (bij + bsi))
-                        D = βij^3 * (bij * (gij + gsi) - gij * (bij + bsi))
-                        ratingFromRef[i] = @NLconstraint(model, A * Vi^2 + B * Vj^2 - 2 * Vi * Vj * (C * cos(θij) - D * sin(θij)) <= branch.rating.longTerm[i]^2)
-
-                        A = (gij + gsi)^2 + (bij + bsi)^2
-                        C = βij * (gij * (gij + gsi) + bij * (bij + bsi))
-                        D = βij * (gij * (bij + bsi) - bij * (gij + gsi))
-                        ratingToRef[i] = @NLconstraint(model, A * Vj^2 + B * Vi^2 - 2 * Vi * Vj * (C * cos(θij) + D * sin(θij)) <= branch.rating.longTerm[i]^2)
+                        ratingFromRef[i] = @NLconstraint(model, Aij * Vi^2 + Bij * Vj^2 - 2 * Vi * Vj * (Cij * cos(θij) + Dij * sin(θij)) <= branch.rating.longTerm[i]^2)
+                        ratingToRef[i] = @NLconstraint(model, Aji * Vj^2 + Bij * Vi^2 - 2 * Vi * Vj * (Cji * cos(θij) + Dji * sin(θij)) <= branch.rating.longTerm[i]^2)
                     end
                 end
             end
@@ -308,8 +310,8 @@ function acOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
                 θij[k] = angle[i] - angle[row]
             end
 
-            balanceActiveRef[i] = @NLconstraint(model, bus.demand.active[i] - supplyActive[i] + magnitude[i] * sum(Gij[j] * cos(θij[j]) + Bij[j] * sin(θij[j]) for j = 1:n) == 0)
-            balanceReactiveRef[i] = @NLconstraint(model, bus.demand.reactive[i] - supplyReactive[i] + magnitude[i] * sum(Gij[j] * sin(θij[j]) - Bij[j] * cos(θij[j]) for j = 1:n) == 0)
+            balanceActiveRef[i] = @NLconstraint(model, bus.demand.active[i] - sum(active[k] for k in system.bus.supply.generator[i]) + magnitude[i] * sum(Gij[j] * cos(θij[j]) + Bij[j] * sin(θij[j]) for j = 1:n) == 0)
+            balanceReactiveRef[i] = @NLconstraint(model, bus.demand.reactive[i] - sum(reactive[k] for k in system.bus.supply.generator[i]) + magnitude[i] * sum(Gij[j] * sin(θij[j]) - Bij[j] * cos(θij[j]) for j = 1:n) == 0)
         end
 
         if limit
@@ -366,7 +368,7 @@ in the variables of the `voltage` and `power` fields of the `ACOptimalPowerFlow`
 system = powerSystem("case14.h5")
 acModel!(system)
 
-analysis = acOptimalPowerFlow(system, HiGHS.Optimizer)
+analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
 solve!(system, analysis)
 ```
 """
@@ -401,11 +403,9 @@ function capabilityCurve(system::PowerSystem, model::JuMP.Model, i)
     capability = system.generator.capability
 
     if capability.lowActive[i] != 0.0 || capability.upActive[i] != 0.0
-
         if capability.lowActive[i] >= capability.upActive[i]
             throw(ErrorException("PQ capability curve is is not correctly defined."))
         end
-
         if capability.maxLowReactive[i] <= capability.minLowReactive[i] && capability.maxUpReactive[i] <= capability.minUpReactive[i]
             throw(ErrorException("PQ capability curve is is not correctly defined."))
         end

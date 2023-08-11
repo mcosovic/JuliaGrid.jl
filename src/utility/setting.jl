@@ -89,12 +89,12 @@ end
 
 ######### Types ##########
 const N = Union{Float64, Int64}
-const T = Union{Float64, Int64, Missing}
+const T = Union{Float64, Int64, Int8, Missing}
 
 ######### Template ##########
 const template = Dict(
     :bus => Dict(
-        :type => 1,
+        :type => Int8(1),
         :active => 0.0,
         :reactive => 0.0,
         :conductance => 0.0,

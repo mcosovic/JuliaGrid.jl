@@ -33,8 +33,8 @@ Compute powers after obtaining the DC optimal power flow solution:
 system = powerSystem("case14.h5")
 dcModel!(system)
 
-analysis = dcOptimalPowerFlow(system)
-optimize!(system, analysis)
+analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer)
+solve!(system, analysis)
 power!(system, analysis)
 ```
 """
@@ -130,8 +130,8 @@ Compute the active power of a specific bus after obtaining the DC optimal power 
 system = powerSystem("case14.h5")
 dcModel!(system)
 
-analysis = dcOptimalPowerFlow(system)
-optimize!(system, analysis)
+analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer)
+solve!(system, analysis)
 injection = powerInjection(system, analysis; label = 2)
 ```
 """
@@ -204,8 +204,8 @@ Compute the active power of a specific bus after obtaining the DC optimal power 
 system = powerSystem("case14.h5")
 dcModel!(system)
 
-analysis = dcOptimalPowerFlow(system)
-optimize!(system, analysis)
+analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer)
+solve!(system, analysis)
 supply = powerSupply(system, analysis; label = 2)
 ```
 """
@@ -277,8 +277,8 @@ Compute the active power of a specific branch after obtaining the DC optimal pow
 system = powerSystem("case14.h5")
 dcModel!(system)
 
-analysis = dcOptimalPowerFlow(system)
-optimize!(system, analysis)
+analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer)
+solve!(system, analysis)
 from = powerFrom(system, analysis; label = 2)
 ```
 """
@@ -322,8 +322,8 @@ Compute the active power of a specific branch after obtaining the DC optimal pow
 system = powerSystem("case14.h5")
 dcModel!(system)
 
-analysis = dcOptimalPowerFlow(system)
-optimize!(system, analysis)
+analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer)
+solve!(system, analysis)
 to = powerTo(system, analysis; label = 2)
 ```
 """
@@ -368,8 +368,8 @@ solution:
 system = powerSystem("case14.h5")
 dcModel!(system)
 
-analysis = dcOptimalPowerFlow(system)
-optimize!(system, analysis)
+analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer)
+solve!(system, analysis)
 generator = powerGenerator(system, analysis; label = 1)
 ```
 """

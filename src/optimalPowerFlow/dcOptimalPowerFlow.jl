@@ -83,12 +83,9 @@ function dcOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
 
     capabilityRef = Array{JuMP.ConstraintRef}(undef, generator.number)
     idxPiecewise = Array{Int64,1}(undef, 0); sizehint!(idxPiecewise, generator.number)
-    supplyActive = zeros(AffExpr, system.bus.number)
     objExpr = QuadExpr()
     @inbounds for i = 1:generator.number
         if generator.layout.status[i] == 1
-            supplyActive[generator.layout.bus[i]] += active[i]
-
             if generator.cost.active.model[i] == 2
                 cost = generator.cost.active.polynomial[i]
                 numberTerm = length(cost)
@@ -162,10 +159,10 @@ function dcOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
             for j in system.model.dc.nodalMatrix.colptr[i]:(system.model.dc.nodalMatrix.colptr[i + 1] - 1)
                 add_to_expression!(expression, system.model.dc.nodalMatrix.nzval[j], angle[system.model.dc.nodalMatrix.rowval[j]])
             end
-            balanceRef[i] = @constraint(model, expression - supplyActive[i] == 0.0)
+            balanceRef[i] = @constraint(model, expression - sum(active[k] for k in system.bus.supply.generator[i]) == 0.0)
         end
     end
-
+    
     ratingRef = Array{JuMP.ConstraintRef}(undef, branch.number)
     limitRef = Array{JuMP.ConstraintRef}(undef, branch.number)
     if rating || limit

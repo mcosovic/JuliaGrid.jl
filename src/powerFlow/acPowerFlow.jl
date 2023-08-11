@@ -108,15 +108,9 @@ function newtonRaphson(system::PowerSystem)
     count = 1
     @inbounds for i = 1:bus.number
         if i != bus.layout.slack
-            I = 0.0; C = 0.0
-
             for j in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
                 row = ac.nodalMatrix.rowval[j]
                 typeRow = bus.layout.type[row]
-                Gij = real(ac.nodalMatrixTranspose.nzval[j])
-                Bij = imag(ac.nodalMatrixTranspose.nzval[j])
-                Tij = voltageAngle[i] - voltageAngle[row]
-                I += voltageMagnitude[row] * (Gij * cos(Tij) + Bij * sin(Tij))
 
                 if typeRow != 3
                     iIndex[count] = pvpqIndex[row]
@@ -137,9 +131,6 @@ function newtonRaphson(system::PowerSystem)
                     iIndex[count] = pqIndex[row]
                     jIndex[count] = pqIndex[i]
                     count += 1
-                end
-                if bus.layout.type[i] == 1
-                    C += voltageMagnitude[row] * (Gij * sin(Tij) - Bij * cos(Tij))
                 end
             end
         end

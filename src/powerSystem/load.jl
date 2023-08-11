@@ -17,7 +17,7 @@ mutable struct BusVoltage
 end
 
 mutable struct BusLayout
-    type::Array{Int64,1}
+    type::Array{Int8,1}
     area::Array{Int64,1}
     lossZone::Array{Int64,1}
     slack::Int64
@@ -55,7 +55,7 @@ mutable struct BranchRating
     longTerm::Array{Float64,1}
     shortTerm::Array{Float64,1}
     emergency::Array{Float64,1}
-    type::Array{Int64,1}
+    type::Array{Int8,1}
 end
 
 mutable struct BranchVoltage
@@ -66,7 +66,7 @@ end
 mutable struct BranchLayout
     from::Array{Int64,1}
     to::Array{Int64,1}
-    status::Array{Int64,1}
+    status::Array{Int8,1}
     renumbering::Bool
 end
 
@@ -106,7 +106,7 @@ mutable struct GeneratorRamping
 end
 
 mutable struct Cost
-    model::Array{Int64,1}
+    model::Array{Int8,1}
     polynomial::Array{Array{Float64,1}}
     piecewise::Array{Array{Float64,2}}
 end
@@ -123,7 +123,8 @@ end
 mutable struct GeneratorLayout
     bus::Array{Int64,1}
     area::Array{Float64,1}
-    status::Array{Int64,1}
+    status::Array{Int8,1}
+    renumbering::Bool
 end
 
 mutable struct Generator
@@ -265,6 +266,7 @@ system = powerSystem()
 function powerSystem()
     af = Array{Float64,1}(undef, 0)
     ai = Array{Int64,1}(undef, 0)
+    ai8 = Array{Int8,1}(undef, 0)
     sp = spzeros(0, 0)
     ac = Array{ComplexF64,1}(undef, 0)
     label = Dict{Int64,Int64}()
@@ -273,19 +275,19 @@ function powerSystem()
     supply = BusSupply(copy(af), copy(af), copy(af), copy(af))
     shunt = BusShunt(copy(af), copy(af))
     voltageBus = BusVoltage(copy(af), copy(af), copy(af), copy(af))
-    layoutBus = BusLayout(ai, copy(ai), copy(ai), 0, false)
+    layoutBus = BusLayout(ai8, copy(ai), copy(ai), 0, false)
 
     parameter = BranchParameter(copy(af), copy(af), copy(af), copy(af), copy(af), copy(af))
-    rating = BranchRating(copy(af), copy(af), copy(af), copy(ai))
+    rating = BranchRating(copy(af), copy(af), copy(af), copy(ai8))
     voltageBranch = BranchVoltage(copy(af), copy(af))
-    layoutBranch = BranchLayout(copy(ai), copy(ai), copy(ai), false)
+    layoutBranch = BranchLayout(copy(ai), copy(ai), copy(ai8), false)
 
     output = GeneratorOutput(copy(af), copy(af))
     capability = GeneratorCapability(copy(af), copy(af), copy(af), copy(af), copy(af), copy(af), copy(af), copy(af), copy(af), copy(af))
     ramping = GeneratorRamping(copy(af), copy(af), copy(af), copy(af))
-    cost = GeneratorCost(Cost(copy(ai), [], []), Cost(copy(ai), [], []))
+    cost = GeneratorCost(Cost(copy(ai8), [], []), Cost(copy(ai), [], []))
     voltageGenerator =  GeneratorVoltage(copy(af))
-    layoutGenerator = GeneratorLayout(copy(ai), copy(af), copy(ai))
+    layoutGenerator = GeneratorLayout(copy(ai), copy(af), copy(ai8), false)
 
     basePower = BasePower(1e8, "VA", 1.0)
     baseVoltage = BaseVoltage(copy(af), "V", 1.0)
@@ -327,8 +329,8 @@ function loadBus(system::PowerSystem, hdf5::HDF5.File)
     end
 
     demandh5 = hdf5["bus/demand"]
-    bus.demand.active = arrayFloat(demandh5, "active", bus.number)
-    bus.demand.reactive = arrayFloat(demandh5, "reactive", bus.number)
+    bus.demand.active = readHDF5(demandh5, "active", bus.number)
+    bus.demand.reactive = readHDF5(demandh5, "reactive", bus.number)
 
     bus.supply.active = fill(0.0, bus.number)
     bus.supply.reactive = fill(0.0, bus.number)
@@ -336,17 +338,17 @@ function loadBus(system::PowerSystem, hdf5::HDF5.File)
     bus.supply.inService = fill(0, bus.number)
 
     shunth5 = hdf5["bus/shunt"]
-    bus.shunt.conductance = arrayFloat(shunth5, "conductance", bus.number)
-    bus.shunt.susceptance = arrayFloat(shunth5, "susceptance", bus.number)
+    bus.shunt.conductance = readHDF5(shunth5, "conductance", bus.number)
+    bus.shunt.susceptance = readHDF5(shunth5, "susceptance", bus.number)
 
     voltageh5 = hdf5["bus/voltage"]
-    bus.voltage.magnitude = arrayFloat(voltageh5, "magnitude", bus.number)
-    bus.voltage.angle = arrayFloat(voltageh5, "angle", bus.number)
-    bus.voltage.minMagnitude = arrayFloat(voltageh5, "minMagnitude", bus.number)
-    bus.voltage.maxMagnitude = arrayFloat(voltageh5, "maxMagnitude", bus.number)
+    bus.voltage.magnitude = readHDF5(voltageh5, "magnitude", bus.number)
+    bus.voltage.angle = readHDF5(voltageh5, "angle", bus.number)
+    bus.voltage.minMagnitude = readHDF5(voltageh5, "minMagnitude", bus.number)
+    bus.voltage.maxMagnitude = readHDF5(voltageh5, "maxMagnitude", bus.number)
 
-    bus.layout.area = arrayInteger(layouth5, "area", bus.number)
-    bus.layout.lossZone = arrayInteger(layouth5, "lossZone", bus.number)
+    bus.layout.area = readHDF5(layouth5, "area", bus.number)
+    bus.layout.lossZone = readHDF5(layouth5, "lossZone", bus.number)
 end
 
 ######## Load Branch Data from HDF5 File ##########
@@ -370,24 +372,24 @@ function loadBranch(system::PowerSystem, hdf5::HDF5.File)
     end
 
     parameterh5 = hdf5["branch/parameter"]
-    branch.parameter.resistance = arrayFloat(parameterh5, "resistance", branch.number)
-    branch.parameter.reactance = arrayFloat(parameterh5, "reactance", branch.number)
-    branch.parameter.conductance = arrayFloat(parameterh5, "conductance", branch.number)
-    branch.parameter.susceptance = arrayFloat(parameterh5, "susceptance", branch.number)
-    branch.parameter.turnsRatio = arrayFloat(parameterh5, "turnsRatio", branch.number)
-    branch.parameter.shiftAngle = arrayFloat(parameterh5, "shiftAngle", branch.number)
+    branch.parameter.resistance = readHDF5(parameterh5, "resistance", branch.number)
+    branch.parameter.reactance = readHDF5(parameterh5, "reactance", branch.number)
+    branch.parameter.conductance = readHDF5(parameterh5, "conductance", branch.number)
+    branch.parameter.susceptance = readHDF5(parameterh5, "susceptance", branch.number)
+    branch.parameter.turnsRatio = readHDF5(parameterh5, "turnsRatio", branch.number)
+    branch.parameter.shiftAngle = readHDF5(parameterh5, "shiftAngle", branch.number)
 
     voltageh5 = hdf5["branch/voltage"]
-    branch.voltage.minDiffAngle = arrayFloat(voltageh5, "minDiffAngle", branch.number)
-    branch.voltage.maxDiffAngle = arrayFloat(voltageh5, "maxDiffAngle", branch.number)
+    branch.voltage.minDiffAngle = readHDF5(voltageh5, "minDiffAngle", branch.number)
+    branch.voltage.maxDiffAngle = readHDF5(voltageh5, "maxDiffAngle", branch.number)
 
     ratingh5 = hdf5["branch/rating"]
-    branch.rating.longTerm = arrayFloat(ratingh5, "longTerm", branch.number)
-    branch.rating.shortTerm = arrayFloat(ratingh5, "shortTerm", branch.number)
-    branch.rating.emergency = arrayFloat(ratingh5, "emergency", branch.number)
-    branch.rating.type = arrayInteger(ratingh5, "type", branch.number)
+    branch.rating.longTerm = readHDF5(ratingh5, "longTerm", branch.number)
+    branch.rating.shortTerm = readHDF5(ratingh5, "shortTerm", branch.number)
+    branch.rating.emergency = readHDF5(ratingh5, "emergency", branch.number)
+    branch.rating.type = readHDF5(ratingh5, "type", branch.number)
 
-    branch.layout.status = arrayInteger(layouth5, "status", branch.number)
+    branch.layout.status = readHDF5(layouth5, "status", branch.number)
     branch.layout.from::Array{Int64,1} = read(layouth5["from"])
     branch.layout.to::Array{Int64,1} = read(layouth5["to"])
     if system.bus.layout.renumbering
@@ -408,36 +410,36 @@ function loadGenerator(system::PowerSystem, hdf5::HDF5.File)
     generator.number = length(labelOriginal)
 
     outputh5 = hdf5["generator/output"]
-    generator.output.active = arrayFloat(outputh5, "active", generator.number)
-    generator.output.reactive = arrayFloat(outputh5, "reactive", generator.number)
+    generator.output.active = readHDF5(outputh5, "active", generator.number)
+    generator.output.reactive = readHDF5(outputh5, "reactive", generator.number)
 
     capabilityh5 = hdf5["generator/capability"]
-    generator.capability.minActive = arrayFloat(capabilityh5, "minActive", generator.number)
-    generator.capability.maxActive = arrayFloat(capabilityh5, "maxActive", generator.number)
-    generator.capability.minReactive = arrayFloat(capabilityh5, "minReactive", generator.number)
-    generator.capability.maxReactive = arrayFloat(capabilityh5, "maxReactive", generator.number)
-    generator.capability.lowActive = arrayFloat(capabilityh5, "lowActive", generator.number)
-    generator.capability.minLowReactive = arrayFloat(capabilityh5, "minLowReactive", generator.number)
-    generator.capability.maxLowReactive = arrayFloat(capabilityh5, "maxLowReactive", generator.number)
-    generator.capability.upActive = arrayFloat(capabilityh5, "upActive", generator.number)
-    generator.capability.minUpReactive = arrayFloat(capabilityh5, "minUpReactive", generator.number)
-    generator.capability.maxUpReactive = arrayFloat(capabilityh5, "maxUpReactive", generator.number)
+    generator.capability.minActive = readHDF5(capabilityh5, "minActive", generator.number)
+    generator.capability.maxActive = readHDF5(capabilityh5, "maxActive", generator.number)
+    generator.capability.minReactive = readHDF5(capabilityh5, "minReactive", generator.number)
+    generator.capability.maxReactive = readHDF5(capabilityh5, "maxReactive", generator.number)
+    generator.capability.lowActive = readHDF5(capabilityh5, "lowActive", generator.number)
+    generator.capability.minLowReactive = readHDF5(capabilityh5, "minLowReactive", generator.number)
+    generator.capability.maxLowReactive = readHDF5(capabilityh5, "maxLowReactive", generator.number)
+    generator.capability.upActive = readHDF5(capabilityh5, "upActive", generator.number)
+    generator.capability.minUpReactive = readHDF5(capabilityh5, "minUpReactive", generator.number)
+    generator.capability.maxUpReactive = readHDF5(capabilityh5, "maxUpReactive", generator.number)
 
     rampingh5 = hdf5["generator/ramping"]
-    generator.ramping.loadFollowing = arrayFloat(rampingh5, "loadFollowing", generator.number)
-    generator.ramping.reserve10min = arrayFloat(rampingh5, "reserve10min", generator.number)
-    generator.ramping.reserve30min = arrayFloat(rampingh5, "reserve30min", generator.number)
-    generator.ramping.reactiveTimescale = arrayFloat(rampingh5, "reactiveTimescale", generator.number)
+    generator.ramping.loadFollowing = readHDF5(rampingh5, "loadFollowing", generator.number)
+    generator.ramping.reserve10min = readHDF5(rampingh5, "reserve10min", generator.number)
+    generator.ramping.reserve30min = readHDF5(rampingh5, "reserve30min", generator.number)
+    generator.ramping.reactiveTimescale = readHDF5(rampingh5, "reactiveTimescale", generator.number)
 
-    generator.voltage.magnitude = arrayFloat(hdf5["generator/voltage"], "magnitude", generator.number)
+    generator.voltage.magnitude = readHDF5(hdf5["generator/voltage"], "magnitude", generator.number)
 
     costh5 = hdf5["generator/cost/active"]
-    generator.cost.active.model = arrayInteger(costh5, "model", generator.number)
+    generator.cost.active.model = readHDF5(costh5, "model", generator.number)
     generator.cost.active.polynomial = loadPolynomial(costh5, "polynomial", generator.number)
     generator.cost.active.piecewise = loadPiecewise(costh5, "piecewise", generator.number)
 
     costh5 = hdf5["generator/cost/reactive"]
-    generator.cost.reactive.model = arrayInteger(costh5, "model", generator.number)
+    generator.cost.reactive.model = readHDF5(costh5, "model", generator.number)
     generator.cost.reactive.polynomial = loadPolynomial(costh5, "polynomial", generator.number)
     generator.cost.reactive.piecewise = loadPiecewise(costh5, "piecewise", generator.number)
 
@@ -445,8 +447,8 @@ function loadGenerator(system::PowerSystem, hdf5::HDF5.File)
     if system.bus.layout.renumbering
         generator.layout.bus = runRenumbering(generator.layout.bus, generator.number, system.bus.label)
     end
-    generator.layout.area = arrayFloat(layouth5, "area", generator.number)
-    generator.layout.status = arrayInteger(layouth5, "status", generator.number)
+    generator.layout.area = readHDF5(layouth5, "area", generator.number)
+    generator.layout.status = readHDF5(layouth5, "status", generator.number)
 
     generator.label = Dict{Int64,Int64}()
     sizehint!(generator.label, generator.number)
@@ -469,7 +471,7 @@ function loadBase(system::PowerSystem, hdf5::HDF5.File)
 
     base = hdf5["base"]
     system.base.power.value = read(base["power"])
-    system.base.voltage.value = arrayFloat(base, "voltage", system.bus.number)
+    system.base.voltage.value = readHDF5(base, "voltage", system.bus.number)
 end
 
 ######### Load Power System Data from MATLAB File ##########
@@ -551,9 +553,9 @@ function loadBus(system::PowerSystem, busLine::Array{String,1})
     bus.voltage.minMagnitude = similar(bus.demand.active)
     bus.voltage.maxMagnitude = similar(bus.demand.active)
 
-    bus.layout.type = fill(0, bus.number)
-    bus.layout.area = similar(bus.layout.type)
-    bus.layout.lossZone = similar(bus.layout.type)
+    bus.layout.type = Array{Int8}(undef, bus.number)
+    bus.layout.area = fill(0, bus.number)
+    bus.layout.lossZone = similar(bus.layout.area)
     bus.layout.slack = 0
     bus.layout.renumbering = false
 
@@ -578,7 +580,7 @@ function loadBus(system::PowerSystem, busLine::Array{String,1})
         bus.voltage.minMagnitude[k] = parse(Float64, data[13])
         bus.voltage.maxMagnitude[k] = parse(Float64, data[12])
 
-        bus.layout.type[k] = parse(Int64, data[2])
+        bus.layout.type[k] = parse(Int8, data[2])
         bus.layout.area[k] = parse(Int64, data[7])
         bus.layout.lossZone[k] = parse(Int64, data[11])
 
@@ -621,11 +623,11 @@ function loadBranch(system::PowerSystem, branchLine::Array{String,1})
     branch.rating.longTerm = similar(branch.parameter.conductance)
     branch.rating.shortTerm = similar(branch.parameter.conductance)
     branch.rating.emergency = similar(branch.parameter.conductance)
-    branch.rating.type = fill(1, branch.number)
+    branch.rating.type = fill(Int8(1), branch.number)
 
     branch.layout.from = fill(0, branch.number)
     branch.layout.to = similar( branch.layout.from)
-    branch.layout.status = similar(branch.layout.from)
+    branch.layout.status = similar(branch.rating.type)
     branch.layout.renumbering = false
 
     @inbounds for (k, line) in enumerate(branchLine)
@@ -652,7 +654,7 @@ function loadBranch(system::PowerSystem, branchLine::Array{String,1})
         branch.voltage.minDiffAngle[k] = parse(Float64, data[12]) * deg2rad
         branch.voltage.maxDiffAngle[k] = parse(Float64, data[13]) * deg2rad
 
-        branch.layout.status[k] = parse(Int64, data[11])
+        branch.layout.status[k] = parse(Int8, data[11])
         branch.layout.from[k] = system.bus.label[parse(Int64, data[1])]
         branch.layout.to[k] = system.bus.label[parse(Int64, data[2])]
     end
@@ -693,7 +695,7 @@ function loadGenerator(system::PowerSystem, generatorLine::Array{String,1}, gene
 
     generator.layout.bus = fill(0, generator.number)
     generator.layout.area = similar(generator.output.active)
-    generator.layout.status = similar(generator.layout.bus)
+    generator.layout.status = Array{Int8}(undef, generator.number)
 
     @inbounds for (k, line) in enumerate(generatorLine)
         data = split(line)
@@ -723,7 +725,7 @@ function loadGenerator(system::PowerSystem, generatorLine::Array{String,1}, gene
 
         generator.layout.bus[k] = system.bus.label[parse(Int64, data[1])]
         generator.layout.area[k] = parse(Float64, data[21])
-        generator.layout.status[k] = parse(Int64, data[8])
+        generator.layout.status[k] = parse(Int8, data[8])
 
         if generator.layout.status[k] == 1
             i = generator.layout.bus[k]
@@ -735,11 +737,11 @@ function loadGenerator(system::PowerSystem, generatorLine::Array{String,1}, gene
         end
     end
 
-    generator.cost.active.model = fill(0, system.generator.number)
+    generator.cost.active.model = fill(Int8(1), system.generator.number)
     generator.cost.active.polynomial = [Array{Float64}(undef, 0) for i = 1:system.generator.number]
     generator.cost.active.piecewise = [Array{Float64}(undef, 0, 0) for i = 1:system.generator.number]
 
-    generator.cost.reactive.model = fill(0, system.generator.number)
+    generator.cost.reactive.model = fill(Int8(1), system.generator.number)
     generator.cost.reactive.polynomial = [Array{Float64}(undef, 0) for i = 1:system.generator.number]
     generator.cost.reactive.piecewise = [Array{Float64}(undef, 0, 0) for i = 1:system.generator.number]
 
@@ -761,7 +763,7 @@ end
     @inbounds for i = 1:system.generator.number
         data = split(generatorCostLine[i + start])
         pointNumber = parse(Int64, data[4])
-        cost.model[i] = parse(Int64, data[1])
+        cost.model[i] = parse(Int8, data[1])
 
         if cost.model[i] == 1
             cost.piecewise[i] = zeros(pointNumber, 2)
@@ -782,23 +784,12 @@ end
     end
 end
 
-######## Check Array Float64 Data ##########
-@inline function arrayFloat(group, key::String, number::Int64)
+######## Read Data From HDF5 File ##########
+@inline function readHDF5(group, key::String, number::Int64)
     if length(group[key]) != 1
-        data::Array{Float64,1} = read(group[key])
+        data::Union{Array{Float64,1}, Array{Int64,1}, Array{Int8,1}} = read(group[key])
     else
-        data = fill(read(group[key])::Float64, number)
-    end
-
-    return data
-end
-
-######## Check Array Int64 Data ##########
-@inline function arrayInteger(group, key::String, number::Int64)
-    if length(group[key]) != 1
-        data::Array{Int64,1} = read(group[key])
-    else
-        data = fill(read(group[key])::Int64, number)
+        data = fill(read(group[key])::Union{Float64, Int64, Int8}, number)
     end
 
     return data

@@ -53,15 +53,12 @@ addBus!(system; label = 1, active = 25, reactive = -4, angle = 10, base = 132)
 ```
 """
 function addBus!(system::PowerSystem;
-    label::T = missing,
-    type::T = template[:bus][:type],
+    label::T = missing, type::T = missing,
     active::T = missing, reactive::T = missing,
     conductance::T = missing, susceptance::T = missing,
     magnitude::T = missing, angle::T = missing,
     minMagnitude::T = missing, maxMagnitude::T = missing,
-    base::T = missing,
-    area::T = template[:bus][:area],
-    lossZone::T = template[:bus][:lossZone])
+    base::T = missing, area::T = missing, lossZone::T = missing)
 
     demand = system.bus.demand
     shunt = system.bus.shunt
@@ -74,38 +71,18 @@ function addBus!(system::PowerSystem;
     basePower = system.base.power.value
     prefixVoltage = system.base.voltage.prefix
 
-    if !ismissing(label)
-        if label <= 0
-            throw(ErrorException("The value of the label keyword must be given as a positive integer."))
-        end
-        if haskey(system.bus.label, label)
-            throw(ErrorException("The value $label of the label keyword is not unique."))
-        end
-    end
-    if !(type in [1, 2, 3])
+    system.bus.number += 1
+    setLabel(system.bus, label)
+
+    pushData!(layout.type, type, default[:type])
+    if !(layout.type[end] in [1, 2, 3])
         throw(ErrorException("The value $type of the type keyword is illegal."))
     end
-    system.bus.number += 1
-
-    if type == 3
+    if layout.type[end] == 3
         if layout.slack != 0
             throw(ErrorException("The slack bus has already been designated."))
         end
         layout.slack = system.bus.number
-    end
-    push!(layout.type, type)
-
-    if ismissing(label)
-        if system.bus.number > 1
-            label = maximum(keys(system.bus.label)) + 1
-        else
-            label = 1
-        end
-    end
-    setindex!(system.bus.label, system.bus.number, label)
-
-    if system.bus.number != label
-        layout.renumbering = true
     end
 
     if ismissing(base)
@@ -135,8 +112,8 @@ function addBus!(system::PowerSystem;
 
     pushData!(voltage.angle, angle, factor[:voltageAngle], default[:angle], default[:voltageAngle])
 
-    push!(layout.area, area)
-    push!(layout.lossZone, lossZone)
+    pushData!(layout.area, area, default[:area])
+    pushData!(layout.lossZone, lossZone, default[:lossZone])
 
     push!(supply.generator, Array{Int64}(undef, 0))
     push!(supply.inService, 0)
@@ -196,13 +173,13 @@ macro bus(kwargs...)
     end
 
     for kwarg in kwargs
-        parameter = kwarg.args[1]
+        parameter::Symbol = kwarg.args[1]
 
         if haskey(template[:bus], parameter)
             value = kwarg.args[2]
-            template[:bus][parameter] = eval(value)
+            template[:bus][parameter] = eval(value)::Int64
         else
-            throw(ErrorException("The keyword $parameter is illegal."))
+            throw(ErrorException("The keyword $(parameter) is illegal."))
         end
     end
 end
@@ -330,12 +307,11 @@ addBranch!(system; label = 1, from = 1, to = 2, reactance = 0.12, shiftAngle = 1
 ```
 """
 function addBranch!(system::PowerSystem;
-    label::T = missing, from::N, to::N, status::N = template[:branch][:status],
+    label::T = missing, from::N, to::N, status::T = missing,
     resistance::T = missing, reactance::T = missing, susceptance::T = missing,
-    conductance::T = missing, turnsRatio::T = template[:branch][:turnsRatio],
-    shiftAngle::T = missing, minDiffAngle::T = missing, maxDiffAngle::T = missing,
-    longTerm::T = missing, shortTerm::T = missing, emergency::T = missing,
-    type::T = template[:branch][:type])
+    conductance::T = missing, turnsRatio::T = missing, shiftAngle::T = missing,
+    minDiffAngle::T = missing, maxDiffAngle::T = missing,
+    longTerm::T = missing, shortTerm::T = missing, emergency::T = missing, type::T = missing)
 
     parameter = system.branch.parameter
     rating = system.branch.rating
@@ -346,14 +322,9 @@ function addBranch!(system::PowerSystem;
     prefixPower = system.base.power.prefix
     basePower = system.base.power.value
 
-    if !ismissing(label)
-        if label <= 0
-            throw(ErrorException("The value of the label keyword must be given as a positive integer."))
-        end
-        if haskey(system.branch.label, label)
-            throw(ErrorException("The branch label $label is not unique."))
-        end
-    end
+    system.branch.number += 1
+    setLabel(system.branch, label)
+
     if from <= 0
         throw(ErrorException("The value of the from keyword must be given as a positive integer."))
     end
@@ -369,33 +340,22 @@ function addBranch!(system::PowerSystem;
     if !haskey(system.bus.label, to)
         throw(ErrorException("The value $to of the to keyword is not unique."))
     end
+    if ismissing(status)
+        status = default[:status]
+    end
     if !(status in [0; 1])
         throw(ErrorException("The value $status of the status keyword is illegal, it can be in-service (1) or out-of-service (0)."))
-    end
-
-    system.branch.number += 1
-
-    if ismissing(label)
-        if system.branch.number > 1
-            label = maximum(keys(system.branch.label)) + 1
-        else
-            label = 1
-        end
-    end
-    setindex!(system.branch.label, system.branch.number, label)
-
-    if system.branch.number != label
-        layout.renumbering = true
     end
 
     push!(layout.from, system.bus.label[from])
     push!(layout.to, system.bus.label[to])
     push!(layout.status, status)
+    pushData!(parameter.turnsRatio, turnsRatio, default[:turnsRatio])
 
     apparentScale = si2pu(prefixPower, basePower, factor[:apparentPower])
     apparentScaleDef = si2pu(prefixPower, basePower, default[:apparentPower])
 
-    prefix, base = baseImpedance(system, system.base.voltage.value[layout.from[end]], turnsRatio)
+    prefix, base = baseImpedance(system, system.base.voltage.value[layout.from[end]], parameter.turnsRatio[end])
     impedanceScale = si2pu(prefix, base, factor[:impedance])
     impedanceScaleDef = si2pu(prefix, base, default[:impedance])
     admittanceScale = si2pu(1 / prefix, 1 / base, factor[:admittance])
@@ -409,21 +369,20 @@ function addBranch!(system::PowerSystem;
     pushData!(parameter.conductance, conductance, admittanceScale, default[:conductance], admittanceScaleDef)
     pushData!(parameter.susceptance, susceptance, admittanceScale, default[:susceptance], admittanceScaleDef)
     pushData!(parameter.shiftAngle, shiftAngle, factor[:voltageAngle], default[:shiftAngle], default[:voltageAngle])
-    push!(parameter.turnsRatio, turnsRatio)
 
     pushData!(voltage.minDiffAngle, minDiffAngle, factor[:voltageAngle], default[:minDiffAngle], default[:voltageAngle])
     pushData!(voltage.maxDiffAngle, maxDiffAngle, factor[:voltageAngle], default[:maxDiffAngle], default[:voltageAngle])
 
     ratingScale = apparentScale
     ratingScaleDef = apparentScaleDef
-    if type == 2
+    pushData!(rating.type, type, default[:type])
+    if rating.type[end] == 2
         ratingScale = si2pu(prefixPower, basePower, factor[:activePower])
         ratingScaleDef = si2pu(prefixPower, basePower, default[:activePower])
     end
     pushData!(rating.shortTerm, shortTerm, ratingScale, default[:shortTerm], ratingScaleDef)
     pushData!(rating.emergency, emergency, ratingScale, default[:emergency], ratingScaleDef)
     pushData!(rating.longTerm, longTerm, ratingScale, default[:longTerm], ratingScaleDef)
-    push!(rating.type, type)
 
     index = system.branch.number
     if !isempty(system.model.dc.nodalMatrix)
@@ -725,8 +684,7 @@ addGenerator!(system; label = 1, bus = 1, active = 50, reactive = 10, magnitude 
 ```
 """
 function addGenerator!(system::PowerSystem;
-    label::T = missing, bus::N,
-    area::T = template[:generator][:area], status::T = template[:generator][:status],
+    label::T = missing, bus::N, area::T = missing, status::T = missing,
     active::T = missing, reactive::T = missing, magnitude::T = missing,
     minActive::T = missing, maxActive::T = missing, minReactive::T = missing,
     maxReactive::T = missing, lowActive::T = missing, minLowReactive::T = missing,
@@ -746,14 +704,9 @@ function addGenerator!(system::PowerSystem;
     basePower = system.base.power.value
     prefixVoltage = system.base.voltage.prefix
 
-    if !ismissing(label)
-        if label <= 0
-            throw(ErrorException("The value of the label keyword must be given as a positive integer."))
-        end
-        if haskey(system.generator.label, label)
-            throw(ErrorException("The value $label of the label keyword is not unique."))
-        end
-    end
+    system.generator.number += 1
+    setLabel(system.generator, label)
+
     if bus <= 0
         throw(ErrorException("The value of the bus keyword must be given as a positive integer."))
     end
@@ -771,21 +724,12 @@ function addGenerator!(system::PowerSystem;
     activeScaleDef = si2pu(prefixPower, basePower, default[:activePower])
     reactiveScaleDef = si2pu(prefixPower, basePower, default[:reactivePower])
 
-    system.generator.number += 1
-
-    if ismissing(label)
-        if system.generator.number > 1
-            label = maximum(keys(system.generator.label)) + 1
-        else
-            label = 1
-        end
-    end
-    setindex!(system.generator.label, system.generator.number, label)
-
     pushData!(output.active, active, activeScale, default[:active], activeScaleDef)
     pushData!(output.reactive, reactive, reactiveScale, default[:reactive], reactiveScaleDef)
 
-    busIndex = system.bus.label[bus]
+    if ismissing(status)
+        status = default[:status]
+    end
     if status == 1
         push!(system.bus.supply.generator[busIndex], system.generator.number)
         system.bus.supply.inService[busIndex] += 1
@@ -815,8 +759,8 @@ function addGenerator!(system::PowerSystem;
     pushData!(voltage.magnitude, magnitude, voltageScale, default[:magnitude], voltageScaleDef)
 
     push!(layout.bus, busIndex)
-    push!(layout.area, area)
     push!(layout.status, status)
+    pushData!(layout.area, area, default[:area])
 
     push!(cost.active.model, 0)
     push!(cost.active.polynomial, Array{Float64}(undef, 0))
@@ -1388,3 +1332,33 @@ function pushData!(data, keyword, scale, default, scaleDefault)
     end
 end
 
+function pushData!(data, keyword, default)
+    if ismissing(keyword)
+        keyword = default
+    end
+    push!(data, keyword)
+end
+
+
+######### Set Label ##########
+function setLabel(component, label::T)
+    if ismissing(label)
+        if component.number > 1
+            label = maximum(keys(component.label)) + 1
+        else
+            label = 1
+        end
+    else
+        if label <= 0
+            throw(ErrorException("The value of the label keyword must be given as a positive integer."))
+        end
+        if haskey(component.label, label)
+            throw(ErrorException("The value $label of the label keyword is not unique."))
+        end
+    end
+    setindex!(component.label, component.number, label)
+
+    if !component.layout.renumbering && component.number != label
+        component.layout.renumbering = true
+    end
+end
