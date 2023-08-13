@@ -225,25 +225,25 @@ function solve!(system::PowerSystem, analysis::DCOptimalPowerFlow)
     angle = analysis.jump[:angle]::Vector{JuMP.VariableRef}
     active = analysis.jump[:active]::Vector{JuMP.VariableRef}
 
-    @time @inbounds for i = 1:system.bus.number
+    @inbounds for i = 1:system.bus.number
         variable = angle[i]::JuMP.VariableRef
         if isnothing(JuMP.start_value(variable))
             JuMP.set_start_value(variable, analysis.voltage.angle[i])
         end
     end
-    @time @inbounds for i = 1:system.generator.number
+    @inbounds for i = 1:system.generator.number
         variable = active[i]::JuMP.VariableRef
         if isnothing(JuMP.start_value(variable))
             JuMP.set_start_value(variable, analysis.power.generator.active[i])
         end
     end
 
-    @time JuMP.optimize!(analysis.jump)
+    JuMP.optimize!(analysis.jump)
 
-    @time @inbounds for i = 1:system.bus.number
+    @inbounds for i = 1:system.bus.number
         analysis.voltage.angle[i] = value(angle[i]::JuMP.VariableRef)
     end
-    @time @inbounds for i = 1:system.generator.number
+    @inbounds for i = 1:system.generator.number
         analysis.power.generator.active[i] = value(active[i]::JuMP.VariableRef)
     end
 end

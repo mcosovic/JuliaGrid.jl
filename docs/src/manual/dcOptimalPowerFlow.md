@@ -260,7 +260,6 @@ Also, the user can make use of the [`set_start_value`](https://jump.dev/JuMP.jl/
 To establish the DC optimal power flow problem, you can utilize the [`dcOptimalPowerFlow`](@ref dcOptimalPowerFlow) function. After setting up the problem, you can use the [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow)) function to compute the optimal values for the active power outputs of the generators and the bus voltage angles. Also, to turn off the solver output within the REPL, we use the [`set_silent`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.set_silent) function before calling [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow)) function. Here is an example:
 ```@example DCOptimalPowerFlow
 JuMP.set_silent(analysis.jump)
-
 solve!(system, analysis)
 nothing # hide
 ```
