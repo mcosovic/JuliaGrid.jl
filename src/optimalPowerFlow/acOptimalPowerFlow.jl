@@ -371,32 +371,43 @@ solve!(system, analysis)
 ```
 """
 function solve!(system::PowerSystem, analysis::ACOptimalPowerFlow)
+    magnitude = analysis.jump[:magnitude]::Vector{JuMP.VariableRef}
+    angle = analysis.jump[:angle]::Vector{JuMP.VariableRef}
+    active = analysis.jump[:active]::Vector{JuMP.VariableRef}
+    reactive = analysis.jump[:reactive]::Vector{JuMP.VariableRef}
+
     @inbounds for i = 1:system.bus.number
-        if isnothing(JuMP.start_value(analysis.jump[:angle][i]::JuMP.VariableRef))
-            JuMP.set_start_value(analysis.jump[:angle][i]::JuMP.VariableRef, analysis.voltage.angle[i])
+        variable = magnitude[i]::JuMP.VariableRef
+        if isnothing(JuMP.start_value(variable))
+            JuMP.set_start_value(variable, analysis.voltage.magnitude[i])
         end
-        if isnothing(JuMP.start_value(analysis.jump[:magnitude][i]::JuMP.VariableRef))
-            JuMP.set_start_value(analysis.jump[:magnitude][i]::JuMP.VariableRef, analysis.voltage.magnitude[i])
+
+        variable = angle[i]::JuMP.VariableRef
+        if isnothing(JuMP.start_value(variable))
+            JuMP.set_start_value(variable, analysis.voltage.angle[i])
         end
     end
     @inbounds for i = 1:system.generator.number
-        if isnothing(JuMP.start_value(analysis.jump[:active][i]::JuMP.VariableRef))
-            JuMP.set_start_value(analysis.jump[:active][i]::JuMP.VariableRef, analysis.power.generator.active[i])
+        variable = active[i]::JuMP.VariableRef
+        if isnothing(JuMP.start_value(variable))
+            JuMP.set_start_value(variable, analysis.power.generator.active[i])
         end
-        if isnothing(JuMP.start_value(analysis.jump[:reactive][i]::JuMP.VariableRef))
-            JuMP.set_start_value(analysis.jump[:reactive][i]::JuMP.VariableRef, analysis.power.generator.reactive[i])
+
+        variable = reactive[i]::JuMP.VariableRef
+        if isnothing(JuMP.start_value(variable))
+            JuMP.set_start_value(variable, analysis.power.generator.reactive[i])
         end
     end
 
     JuMP.optimize!(analysis.jump)
 
     @inbounds for i = 1:system.bus.number
-        analysis.voltage.angle[i] = value(analysis.jump[:angle][i]::JuMP.VariableRef)
-        analysis.voltage.magnitude[i] = value(analysis.jump[:magnitude][i]::JuMP.VariableRef)
+        analysis.voltage.magnitude[i] = value(magnitude[i]::JuMP.VariableRef)
+        analysis.voltage.angle[i] = value(angle[i]::JuMP.VariableRef)
     end
     @inbounds for i = 1:system.generator.number
-        analysis.power.generator.active[i] = value(analysis.jump[:active][i]::JuMP.VariableRef)
-        analysis.power.generator.reactive[i] = value(analysis.jump[:reactive][i]::JuMP.VariableRef)
+        analysis.power.generator.active[i] = value(active[i]::JuMP.VariableRef)
+        analysis.power.generator.reactive[i] = value(reactive[i]::JuMP.VariableRef)
     end
 end
 

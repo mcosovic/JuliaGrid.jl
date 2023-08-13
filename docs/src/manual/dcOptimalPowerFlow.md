@@ -257,8 +257,10 @@ Also, the user can make use of the [`set_start_value`](https://jump.dev/JuMP.jl/
 ---
 
 ## [Optimal Power Flow Solution](@id DCOptimalPowerFlowSolutionManual)
-To establish the DC optimal power flow problem, you can utilize the [`dcOptimalPowerFlow`](@ref dcOptimalPowerFlow) function. After setting up the problem, you can use the [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow)) function to compute the optimal values for the active power outputs of the generators and the bus voltage angles. Here is an example:
+To establish the DC optimal power flow problem, you can utilize the [`dcOptimalPowerFlow`](@ref dcOptimalPowerFlow) function. After setting up the problem, you can use the [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow)) function to compute the optimal values for the active power outputs of the generators and the bus voltage angles. Also, to turn off the solver output within the REPL, we use the [`set_silent`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.set_silent) function before calling [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow)) function. Here is an example:
 ```@example DCOptimalPowerFlow
+JuMP.set_silent(analysis.jump)
+
 solve!(system, analysis)
 nothing # hide
 ```
@@ -275,14 +277,6 @@ analysis.voltage.angle
 To obtain the objective value of the optimal power flow solution, you can use the [`objective_value`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.objective_value) function:
 ```@repl DCOptimalPowerFlow
 JuMP.objective_value(analysis.jump)
-```
-
----
-
-##### Silent Solver Output
-To turn off the solver output within the REPL, you can use the [`set_silent`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.set_silent) function before calling [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow)) function. This will suppress the solver's output:
-```@example DCOptimalPowerFlow
-JuMP.set_silent(analysis.jump)
 ```
 
 ---
@@ -342,7 +336,7 @@ To calculate specific quantities for particular components rather than calculati
 ##### Active Power Injection
 To calculate active power injection associated with a specific bus, the function can be used:
 ```@repl DCOptimalPowerFlowPower
-powerInjection(system, analysis; label = 2)
+active = powerInjection(system, analysis; label = 2)
 ```
 
 ---
@@ -350,7 +344,7 @@ powerInjection(system, analysis; label = 2)
 ##### Active Power Injection from Generators
 To calculate active power injection from the generators at a specific bus, the function can be used:
 ```@repl DCOptimalPowerFlowPower
-powerSupply(system, analysis; label = 2)
+active = powerSupply(system, analysis; label = 2)
 ```
 
 ---
@@ -358,6 +352,6 @@ powerSupply(system, analysis; label = 2)
 ##### Active Power Flow
 Similarly, we can compute the active power flow at both the "from" and "to" bus ends of the specific branch by utilizing the provided functions below:
 ```@repl DCOptimalPowerFlowPower
-powerFrom(system, analysis; label = 2)
-powerTo(system, analysis; label = 2)
+active = powerFrom(system, analysis; label = 2)
+active = powerTo(system, analysis; label = 2)
 ```

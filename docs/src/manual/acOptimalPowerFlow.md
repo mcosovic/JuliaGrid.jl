@@ -306,23 +306,26 @@ end
 After obtaining the solution, we can calculate the active and reactive power outputs of the generators and utilize the bus voltage magnitudes and angles to set the starting values. In this case, the `power` and `voltage` fields of the `ACOptimalPowerFlow` type can be employed to store the new starting values:
 ```@example ACOptimalPowerFlow
 for (key, value) in system.generator.label
-    generator = powerGenerator(system, powerFlow; label = key)
-    analysis.power.generator.active[value] = generator.active
-    analysis.power.generator.reactive[value] = generator.reactive
+    power = powerGenerator(system, powerFlow; label = key)
+    analysis.power.generator.active[value] = power[1]
+    analysis.power.generator.reactive[value] = power[2]
 end
 
 for i = 1:system.bus.number
     analysis.voltage.magnitude[i] = powerFlow.voltage.magnitude[i]
     analysis.voltage.angle[i] = powerFlow.voltage.angle[i]
 end
+nothing # hide
 ```
 Also, the user can make use of the [`set_start_value`](https://jump.dev/JuMP.jl/stable/api/JuMP/#set_start_value) function to set starting values from the AC power flow.
 
 ---
 
 ## [Optimal Power Flow Solution](@id ACOptimalPowerFlowSolutionManual)
-To establish the AC optimal power flow problem, you can utilize the [`acOptimalPowerFlow`](@ref acOptimalPowerFlow) function. After setting up the problem, you can use the [`solve!`](@ref solve!(::PowerSystem, ::ACOptimalPowerFlow)) function to compute the optimal values for the active and reactive power outputs of the generators and the bus voltage magnitudes angles. Here is an example:
+To establish the AC optimal power flow problem, you can utilize the [`acOptimalPowerFlow`](@ref acOptimalPowerFlow) function. After setting up the problem, you can use the [`solve!`](@ref solve!(::PowerSystem, ::ACOptimalPowerFlow)) function to compute the optimal values for the active and reactive power outputs of the generators and the bus voltage magnitudes angles. Also, to turn off the solver output within the REPL, we use the [`set_silent`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.set_silent) function before calling [`solve!`](@ref solve!(::PowerSystem, ::ACOptimalPowerFlow)) function. Here is an example:
 ```@example ACOptimalPowerFlow
+JuMP.set_silent(analysis.jump)
+
 solve!(system, analysis)
 nothing # hide
 ```
@@ -339,14 +342,6 @@ By executing this function, you will obtain the solution with the optimal values
 To obtain the objective value of the optimal power flow solution, you can use the [`objective_value`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.objective_value) function:
 ```@repl ACOptimalPowerFlow
 JuMP.objective_value(analysis.jump)
-```
-
----
-
-##### Silent Solver Output
-To turn off the solver output within the REPL, you can use the [`set_silent`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.set_silent) function before calling [`solve!`](@ref solve!(::PowerSystem, ::ACOptimalPowerFlow)) function. This will suppress the solver's output:
-```@example ACOptimalPowerFlow
-JuMP.set_silent(analysis.jump)
 ```
 
 ---

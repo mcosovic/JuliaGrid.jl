@@ -70,7 +70,7 @@ The vectors of resistances, denoted by ``\mathbf{r} = [r_{ij}]``, and reactances
 𝐫 = system.branch.parameter.resistance
 𝐱 = system.branch.parameter.reactance
 ```
-Moreover, the `acModel` stores the computed vector of branch series admittances ``\mathbf{y} = [y_{ij}]``:
+Moreover, the `ac` field stores the computed vector of branch series admittances ``\mathbf{y} = [y_{ij}]``:
 ```@repl ACDCModel
 𝐲 = system.model.ac.admittance
 ```
@@ -376,7 +376,7 @@ The vector ``\mathbf {P} \in \mathbb{R}^{n}`` contains active power injections a
 𝐏 = system.bus.supply.active - system.bus.demand.active
 ```
 
-The vector ``\mathbf{P_\text{tr}} \in \mathbb{R}^{n}`` represents active powers related to the non-zero shift angle of transformers. This vector is stored in the `dcModel` variable, and we can access it using:
+The vector ``\mathbf{P_\text{tr}} \in \mathbb{R}^{n}`` represents active powers related to the non-zero shift angle of transformers. This vector is stored in the `dc` field, and we can access it using:
 ```@repl ACDCModel
 𝐏ₜᵣ = system.model.dc.shiftActivePower
 ```
