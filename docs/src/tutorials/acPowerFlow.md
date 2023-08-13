@@ -715,8 +715,7 @@ The function stores the computed powers in the rectangular coordinate system. It
 It also calculates the following powers related to branches:
 * active and reactive power flows at each "from" bus end: ``\mathbf{P}_{\text{i}} = [P_{ij}]``, ``\mathbf{Q}_{\text{i}} = [Q_{ij}]``,
 * active and reactive power flows at each "to" bus end: ``\mathbf{P}_{\text{j}} = [P_{ji}]``, ``\mathbf{Q}_{\text{j}} = [Q_{ji}]``,
-* active and reactive powers at each "from" bus end charging admittance: ``\mathbf{P}_{\text{ci}} = [P_{\text{c}i}]``, ``\mathbf{Q}_{\text{ci}} = [Q_{\text{c}i}]``,
-* active and reactive powers at each "to" bus end charging admittance: ``\mathbf{P}_{\text{cj}} = [P_{\text{c}j}]``, ``\mathbf{Q}_{\text{cj}} = [Q_{\text{c}j}]``,
+* active and reactive powers at charging admittances: ``\mathbf{P}_{\text{c}} = [P_{\text{c}ij}]``, ``\mathbf{P}_{\text{c}} = [P_{\text{c}ij}]``
 * active and reactive powers at each series impedance: ``\mathbf{P}_{\text{l}} = [P_{\text{l}ij}]``, ``\mathbf{Q}_{\text{l}} = [Q_{\text{l}ij}]``.
 
 Lastly, it calculates the following powers related to generators:
@@ -802,29 +801,18 @@ Positive values of active or reactive power, such as ``P_{ij} > 0`` or ``Q_{ij} 
 ---
 
 ##### Active and Reactive Powers at Charging Admittances
-To compute the active and reactive power associated with charging admittances located near the "from" bus end ``i \in \mathcal{N}`` of branches, the following equation can be utilized:
+To compute the active and reactive power associated with charging admittances located near the "from" and "to" bus ends of branches, the following equation can be utilized:
 ```math
-    S_{\text{c}i} = P_{\text{c}i} + \text{j} Q_{\text{c}i} = \alpha_{ij} \bar{V}_{i} \bar{I}_{\text{s}i}^* = \alpha_{ij}^2 y_{\text{s}ij}^* {V}_{i}^2,\;\;\; (i,j) \in \mathcal{E}.
+    S_{\text{c}ij} = P_{\text{c}ij} + \text{j} Q_{\text{c}ij} = \alpha_{ij} \bar{V}_{i} \bar{I}_{\text{s}i}^* + \bar{V}_{j} \bar{I}_{\text{s}j}^* = y_{\text{s}ij}^*(\alpha_{ij}^2 {V}_{i}^2 + {V}_{j}^2),\;\;\; (i,j) \in \mathcal{E}.
 ```
 
-The vectors containing active and reactive power values are stored as ``\mathbf{P}_{\text{ci}} = [P_{\text{c}i}]`` and ``\mathbf{Q}_{\text{ci}} = [Q_{\text{c}i}]``, respectively. You can retrieve these values using the following code:
-```@repl PowerFlowSolution
-𝐏ₒᵢ = analysis.power.charging.from.active
-𝐐ₒᵢ = analysis.power.charging.from.reactive
+The vectors containing active and reactive power values are stored as ``\mathbf{P}_{\text{c}} = [P_{\text{c}ij}]`` and ``\mathbf{Q}_{\text{c}} = [Q_{\text{c}ij}]``, respectively. You can retrieve these values using the following code:
+```@repl ACOptimalPowerFlow
+𝐏ₒ = analysis.power.charging.active
+𝐐ₒ = analysis.power.charging.reactive
 ```
 
-For calculating the active and reactive power at charging admittances positioned near the "to" bus end ``j \in \mathcal{N}`` of branches, the equation can be employed:
-```math
-    S_{\text{c}j} = P_{\text{c}j} + \text{j} Q_{\text{c}j} = \bar{V}_{j} \bar{I}_{\text{s}j}^* = y_{\text{s}ij}^* {V}_{j}^2,\;\;\; (i,j) \in \mathcal{E}.
-```
-
-The vectors storing active and reactive power values are represented as ``\mathbf{P}_{\text{cj}} = [P_{\text{c}j}]`` and ``\mathbf{Q}_{\text{cj}} = [Q_{\text{c}j}]``, respectively. You can retrieve these values using the following code:
-```@repl PowerFlowSolution
-𝐏ₒⱼ = analysis.power.charging.to.active
-𝐐ₒⱼ = analysis.power.charging.to.reactive
-```
-
-Negative values of reactive power such as ``Q_{\text{c}i} < 0`` or ``Q_{\text{c}j} < 0`` signify that the branch injects reactive power due to its charging admittance. This indicates power flow originating from the ground. The negative sign implies that the power flow direction contradicts the assumed direction set by the current through charging admittance in the [unified branch model](@ref UnifiedBranchModelTutorials). Furthermore, active powers indicate active losses within the charging admittances of the branch.
+Negative values of reactive power ``Q_{\text{c}ij} < 0`` signify that the branch injects reactive power due to its charging admittance. This indicates power flow originating from the ground. The negative sign implies that the power flow direction contradicts the assumed direction set by the current through charging admittance in the [unified branch model](@ref UnifiedBranchModelTutorials). Furthermore, active powers indicate active losses within the charging admittances of the branch.
 
 ---
 

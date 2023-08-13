@@ -93,10 +93,8 @@ function power!(system::PowerSystem, analysis::ACPowerFlow)
     power.from.reactive = fill(0.0, system.branch.number)
     power.to.active = fill(0.0, system.branch.number)
     power.to.reactive = fill(0.0, system.branch.number)
-    power.charging.from.active = fill(0.0, system.branch.number)
-    power.charging.from.reactive = fill(0.0, system.branch.number)
-    power.charging.to.active = fill(0.0, system.branch.number)
-    power.charging.to.reactive = fill(0.0, system.branch.number)
+    power.charging.active = fill(0.0, system.branch.number)
+    power.charging.reactive = fill(0.0, system.branch.number)
     power.series.active = fill(0.0, system.branch.number)
     power.series.reactive = fill(0.0, system.branch.number)
     @inbounds for i = 1:system.branch.number
@@ -124,13 +122,9 @@ function power!(system::PowerSystem, analysis::ACPowerFlow)
             power.series.reactive[i] = imag(series)
 
             admittanceConj = 0.5 * conj(system.branch.parameter.conductance[i] + im * system.branch.parameter.susceptance[i])
-            fromShunt = (turnsRatioInv * voltage.magnitude[from])^2 * admittanceConj
-            power.charging.from.active[i] = real(fromShunt)
-            power.charging.from.reactive[i] = imag(fromShunt)
-
-            toShunt = voltage.magnitude[to]^2 * admittanceConj
-            power.charging.to.active[i] = real(toShunt)
-            power.charging.to.reactive[i] = imag(toShunt)
+            charging = admittanceConj * ((turnsRatioInv * voltage.magnitude[from])^2 + voltage.magnitude[to]^2)
+            power.charging.active[i] = real(charging)
+            power.charging.reactive[i] = imag(charging)
         end
     end
 
@@ -140,7 +134,7 @@ function power!(system::PowerSystem, analysis::ACPowerFlow)
     @inbounds for i = 1:system.generator.number
         if system.generator.layout.status[i] == 1
             busIndex = system.generator.layout.bus[i]
-            inService = system.bus.supply.inService[busIndex]
+            inService = length(system.bus.supply.generator[busIndex])
 
             if inService == 1
                 power.generator.active[i] = system.generator.output.active[i]
@@ -245,10 +239,8 @@ function power!(system::PowerSystem, analysis::ACOptimalPowerFlow)
     power.from.reactive = fill(0.0, system.branch.number)
     power.to.active = fill(0.0, system.branch.number)
     power.to.reactive = fill(0.0, system.branch.number)
-    power.charging.from.active = fill(0.0, system.branch.number)
-    power.charging.from.reactive = fill(0.0, system.branch.number)
-    power.charging.to.active = fill(0.0, system.branch.number)
-    power.charging.to.reactive = fill(0.0, system.branch.number)
+    power.charging.active = fill(0.0, system.branch.number)
+    power.charging.reactive = fill(0.0, system.branch.number)
     power.series.active = fill(0.0, system.branch.number)
     power.series.reactive = fill(0.0, system.branch.number)
     @inbounds for i = 1:system.branch.number
@@ -276,13 +268,9 @@ function power!(system::PowerSystem, analysis::ACOptimalPowerFlow)
             power.series.reactive[i] = imag(series)
 
             admittanceConj = 0.5 * conj(system.branch.parameter.conductance[i] + im * system.branch.parameter.susceptance[i])
-            fromShunt = (turnsRatioInv * voltage.magnitude[from])^2 * admittanceConj
-            power.charging.from.active[i] = real(fromShunt)
-            power.charging.from.reactive[i] = imag(fromShunt)
-
-            toShunt = voltage.magnitude[to]^2 * admittanceConj
-            power.charging.to.active[i] = real(toShunt)
-            power.charging.to.reactive[i] = imag(toShunt)
+            charging = admittanceConj * ((turnsRatioInv * voltage.magnitude[from])^2 + voltage.magnitude[to]^2)
+            power.charging.active[i] = real(charging)
+            power.charging.reactive[i] = imag(charging)
         end
     end
 
@@ -321,7 +309,7 @@ for i = 1:10
     end
     solve!(system, analysis)
 end
-injection = powerInjection(system, analysis; label = 1)
+active, reactive = powerInjection(system, analysis; label = 1)
 ```
 
 Compute powers after obtaining the AC optimal power flow solution:
@@ -331,7 +319,7 @@ acModel!(system)
 
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
 solve!(system, analysis)
-injection = powerInjection(system, analysis; label = 1)
+active, reactive = powerInjection(system, analysis; label = 1)
 ```
 """
 function powerInjection(system::PowerSystem, analysis::AC; label)
@@ -351,7 +339,7 @@ function powerInjection(system::PowerSystem, analysis::AC; label)
     end
     powerInjection = conj(I) * voltage.magnitude[index] * exp(im * voltage.angle[index])
 
-    return Cartesian(real(powerInjection), imag(powerInjection))
+    return real(powerInjection), imag(powerInjection)
 end
 
 """
@@ -380,7 +368,7 @@ for i = 1:10
     end
     solve!(system, analysis)
 end
-supply = powerSupply(system, analysis; label = 1)
+active, reactive = powerSupply(system, analysis; label = 1)
 ```
 
 Compute powers after obtaining the AC optimal power flow solution:
@@ -390,7 +378,7 @@ acModel!(system)
 
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
 solve!(system, analysis)
-supply = powerSupply(system, analysis; label = 1)
+active, reactive = powerSupply(system, analysis; label = 1)
 ```
 """
 function powerSupply(system::PowerSystem, analysis::ACPowerFlow; label)
@@ -425,7 +413,7 @@ function powerSupply(system::PowerSystem, analysis::ACPowerFlow; label)
         supplyReactive = system.bus.supply.reactive[index]
     end
 
-    return Cartesian(supplyActive, supplyReactive)
+    return supplyActive, supplyReactive
 end
 
 function powerSupply(system::PowerSystem, analysis::ACOptimalPowerFlow; label)
@@ -442,7 +430,7 @@ function powerSupply(system::PowerSystem, analysis::ACOptimalPowerFlow; label)
         supplyReactive += analysis.power.generator.reactive[i]
     end
 
-    return Cartesian(supplyActive, supplyReactive)
+    return supplyActive, supplyReactive
 end
 
 """
@@ -471,7 +459,7 @@ for i = 1:10
     end
     solve!(system, analysis)
 end
-supply = powerShunt(system, analysis; label = 1)
+active, reactive = powerShunt(system, analysis; label = 1)
 ```
 
 Compute powers after obtaining the AC optimal power flow solution:
@@ -481,7 +469,7 @@ acModel!(system)
 
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
 solve!(system, analysis)
-supply = powerShunt(system, analysis; label = 1)
+active, reactive = powerShunt(system, analysis; label = 1)
 ```
 """
 function powerShunt(system::PowerSystem, analysis::AC; label)
@@ -494,7 +482,7 @@ function powerShunt(system::PowerSystem, analysis::AC; label)
     index = system.bus.label[label]
     powerShunt = voltage.magnitude[index]^2 * conj(system.bus.shunt.conductance[index] + im * system.bus.shunt.susceptance[index])
 
-    return Cartesian(real(powerShunt), imag(powerShunt))
+    return real(powerShunt), imag(powerShunt)
 end
 
 """
@@ -523,7 +511,7 @@ for i = 1:10
     end
     solve!(system, analysis)
 end
-from = powerFrom(system, analysis; label = 2)
+active, reactive = powerFrom(system, analysis; label = 2)
 ```
 
 Compute powers after obtaining the AC optimal power flow solution:
@@ -533,7 +521,7 @@ acModel!(system)
 
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
 solve!(system, analysis)
-from = powerFrom(system, analysis; label = 2)
+active, reactive = powerFrom(system, analysis; label = 2)
 ```
 """
 function powerFrom(system::PowerSystem, analysis::AC; label)
@@ -559,7 +547,7 @@ function powerFrom(system::PowerSystem, analysis::AC; label)
         powerFrom = 0.0 + im * 0.0
     end
 
-    return Cartesian(real(powerFrom), imag(powerFrom))
+    return real(powerFrom), imag(powerFrom)
 end
 
 """
@@ -588,7 +576,7 @@ for i = 1:10
     end
     solve!(system, analysis)
 end
-to = powerTo(system, analysis; label = 2)
+active, reactive = powerTo(system, analysis; label = 2)
 ```
 
 Compute powers after obtaining the AC optimal power flow solution:
@@ -598,7 +586,7 @@ acModel!(system)
 
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
 solve!(system, analysis)
-to = powerTo(system, analysis; label = 2)
+active, reactive = powerTo(system, analysis; label = 2)
 ```
 """
 function powerTo(system::PowerSystem, analysis::AC; label)
@@ -624,7 +612,7 @@ function powerTo(system::PowerSystem, analysis::AC; label)
         powerTo = 0.0 + im * 0.0
     end
 
-    return Cartesian(real(powerTo), imag(powerTo))
+    return real(powerTo), imag(powerTo)
 end
 
 """
@@ -653,7 +641,7 @@ for i = 1:10
     end
     solve!(system, analysis)
 end
-charging = powerCharging(system, analysis; label = 2)
+active, reactive = powerCharging(system, analysis; label = 2)
 ```
 
 Compute the reactive power after obtaining the AC optimal power flow solution:
@@ -663,7 +651,7 @@ acModel!(system)
 
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
 solve!(system, analysis)
-charging = powerCharging(system, analysis; label = 2)
+active, reactive = powerCharging(system, analysis; label = 2)
 ```
 """
 function powerCharging(system::PowerSystem, analysis::AC; label)
@@ -682,24 +670,12 @@ function powerCharging(system::PowerSystem, analysis::AC; label)
         to = system.branch.layout.to[index]
         admittanceConj = 0.5 * conj(system.branch.parameter.conductance[index] + im * system.branch.parameter.susceptance[index])
 
-        fromShunt = (voltage.magnitude[from] / parameter.turnsRatio[index])^2 * admittanceConj
-        fromActive = real(fromShunt)
-        fromReactive = imag(fromShunt)
-
-        toShunt = voltage.magnitude[to]^2 * admittanceConj
-        toActive = real(toShunt)
-        toeRactive = imag(toShunt)
+        charging = admittanceConj * ((voltage.magnitude[from] / parameter.turnsRatio[index])^2 + voltage.magnitude[to]^2)
     else
-        fromActive = 0.0
-        fromReactive = 0.0
-        toActive = 0.0
-        toeRactive = 0.0
+        charging = 0.0 + im * 0.0
     end
 
-    return Charging(
-        Cartesian(fromActive, fromReactive),
-        Cartesian(toActive, toeRactive)
-    )
+    return real(charging), imag(charging)
 end
 
 """
@@ -728,7 +704,7 @@ for i = 1:10
     end
     solve!(system, analysis)
 end
-series = powerSeries(system, analysis; label = 2)
+active, reactive = powerSeries(system, analysis; label = 2)
 ```
 
 Compute the reactive power after obtaining the AC optimal power flow solution:
@@ -738,7 +714,7 @@ acModel!(system)
 
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
 solve!(system, analysis)
-series = powerSeries(system, analysis; label = 2)
+active, reactive = powerSeries(system, analysis; label = 2)
 ```
 """
 function powerSeries(system::PowerSystem, analysis::AC; label)
@@ -762,14 +738,11 @@ function powerSeries(system::PowerSystem, analysis::AC; label)
 
         voltageSeries = transformerRatio * voltageFrom - voltageTo
         series = voltageSeries * conj(ac.admittance[index] * voltageSeries)
-        seriesActive = real(series)
-        seriesReactive = imag(series)
     else
-        seriesActive = 0.0
-        seriesReactive = 0.0
+        series = 0.0 + im * 0.0
     end
 
-    return Cartesian(seriesActive,seriesReactive)
+    return real(series), imag(series)
 end
 
 """
@@ -797,7 +770,7 @@ for i = 1:10
     end
     solve!(system, analysis)
 end
-output = powerGenerator(system, analysis; label = 1)
+active, reactive = powerGenerator(system, analysis; label = 1)
 ```
 
 Compute powers after obtaining the AC optimal power flow solution:
@@ -807,7 +780,7 @@ acModel!(system)
 
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
 solve!(system, analysis)
-output = powerGenerator(system, analysis; label = 1)
+active, reactive = powerGenerator(system, analysis; label = 1)
 ```
 """
 function powerGenerator(system::PowerSystem, analysis::ACPowerFlow; label)
@@ -832,7 +805,7 @@ function powerGenerator(system::PowerSystem, analysis::ACPowerFlow; label)
         injectionActive = real(powerInjection)
         injectionReactive = imag(powerInjection)
 
-        inService = system.bus.supply.inService[busIndex]
+        inService = length(system.bus.supply.generator[busIndex])
         if inService == 1
             powerActive = system.generator.output.active[index]
             powerReactive = injectionReactive + system.bus.demand.reactive[busIndex]
@@ -906,7 +879,7 @@ function powerGenerator(system::PowerSystem, analysis::ACPowerFlow; label)
         powerReactive = 0.0
     end
 
-    return Cartesian(powerActive, powerReactive)
+    return powerActive, powerReactive
 end
 
 function powerGenerator(system::PowerSystem, analysis::ACOptimalPowerFlow; label)
@@ -917,7 +890,7 @@ function powerGenerator(system::PowerSystem, analysis::ACOptimalPowerFlow; label
 
     index = system.generator.label[label]
 
-    return Cartesian(analysis.power.generator.active[index], analysis.power.generator.reactive[index])
+    return analysis.power.generator.active[index], analysis.power.generator.reactive[index]
 end
 
 """
@@ -1040,7 +1013,7 @@ for i = 1:10
     end
     solve!(system, analysis)
 end
-injection = currentInjection(system, analysis; label = 1)
+magnitude, angle = currentInjection(system, analysis; label = 1)
 ```
 
 Compute the current after obtaining the AC optimal power flow solution:
@@ -1050,7 +1023,7 @@ acModel!(system)
 
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
 solve!(system, analysis)
-injection = currentInjection(system, analysis; label = 1)
+magnitude, angle = currentInjection(system, analysis; label = 1)
 ```
 """
 function currentInjection(system::PowerSystem, analysis::AC; label)
@@ -1069,7 +1042,7 @@ function currentInjection(system::PowerSystem, analysis::AC; label)
         I += ac.nodalMatrixTranspose.nzval[i] * voltage.magnitude[k] * exp(im * voltage.angle[k])
     end
 
-    return Polar(abs(I), angle(I))
+    return abs(I), angle(I)
 end
 
 """
@@ -1098,7 +1071,7 @@ for i = 1:10
     end
     solve!(system, analysis)
 end
-from = currentFrom(system, analysis; label = 2)
+magnitude, angle = currentFrom(system, analysis; label = 2)
 ```
 
 Compute the current after obtaining the AC optimal power flow solution:
@@ -1108,7 +1081,7 @@ acModel!(system)
 
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
 solve!(system, analysis)
-from = currentFrom(system, analysis; label = 2)
+magnitude, angle = currentFrom(system, analysis; label = 2)
 ```
 """
 function currentFrom(system::PowerSystem, analysis::AC; label)
@@ -1133,7 +1106,7 @@ function currentFrom(system::PowerSystem, analysis::AC; label)
         currentFrom = 0.0 + im * 0.0
     end
 
-    return Polar(abs(currentFrom), angle(currentFrom))
+    return abs(currentFrom), angle(currentFrom)
 end
 
 """
@@ -1162,7 +1135,7 @@ for i = 1:10
     end
     solve!(system, analysis)
 end
-to = currentTo(system, analysis; label = 2)
+magnitude, angle = currentTo(system, analysis; label = 2)
 ```
 
 Compute the current after obtaining the AC optimal power flow solution:
@@ -1172,7 +1145,7 @@ acModel!(system)
 
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
 solve!(system, analysis)
-to = currentTo(system, analysis; label = 2)
+magnitude, angle = currentTo(system, analysis; label = 2)
 ```
 """
 function currentTo(system::PowerSystem, analysis::AC; label)
@@ -1197,7 +1170,7 @@ function currentTo(system::PowerSystem, analysis::AC; label)
         currentTo = 0.0 + im * 0.0
     end
 
-    return Polar(abs(currentTo), angle(currentTo))
+    return abs(currentTo), angle(currentTo)
 end
 
 """
@@ -1227,7 +1200,7 @@ for i = 1:10
     end
     solve!(system, analysis)
 end
-line = currentSeries(system, analysis; label = 2)
+magnitude, angle = currentSeries(system, analysis; label = 2)
 ```
 
 Compute the current after obtaining the AC optimal power flow solution:
@@ -1237,7 +1210,7 @@ acModel!(system)
 
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
 solve!(system, analysis)
-line = currentSeries(system, analysis; label = 2)
+magnitude, angle = currentSeries(system, analysis; label = 2)
 ```
 """
 function currentSeries(system::PowerSystem, analysis::AC; label)
@@ -1263,5 +1236,5 @@ function currentSeries(system::PowerSystem, analysis::AC; label)
         currentSeries = 0.0 + im * 0.0
     end
 
-    return Polar(abs(currentSeries), angle(currentSeries))
+    return abs(currentSeries), angle(currentSeries)
 end

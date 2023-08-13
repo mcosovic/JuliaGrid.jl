@@ -38,7 +38,7 @@ not been created, the function will initiate an update automatically.
 JuliaGrid offers the ability to manipulate the `jump` model based on the guidelines provided
 in the [JuMP documentation](https://jump.dev/JuMP.jl/stable/manual/models/). However,
 certain configurations may require different method calls, such as:
-- `bridge`: used to manage the bridging mechanism,
+- `bridge`: used to manage the bridging mechanism;
 - `name`: used to manage the creation of string names.
 
 Moreover, we have included keywords that regulate the usage of different types of constraints:
@@ -64,18 +64,18 @@ fields:
 - `constraint`: holds the constraint references to the JuMP model.
 
 # Examples
-Create the complete DC optimal power flow model:
+Create the complete AC optimal power flow model:
 ```jldoctest
 system = powerSystem("case14.h5")
-dcModel!(system)
+acModel!(system)
 
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
 ```
 
-Create the DC optimal power flow model without `rating` constraints:
+Create the AC optimal power flow model without `rating` constraints:
 ```jldoctest
 system = powerSystem("case14.h5")
-dcModel!(system)
+acModel!(system)
 
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer; rating = false)
 ```
@@ -330,9 +330,7 @@ function acOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
             Cartesian(Float64[], Float64[]),
             Cartesian(Float64[], Float64[]),
             Cartesian(Float64[], Float64[]),
-            Charging(
-                Cartesian(Float64[], Float64[]),
-                Cartesian(Float64[], Float64[])),
+            Cartesian(Float64[], Float64[]),
             Cartesian(Float64[], Float64[]),
             Cartesian(copy(system.generator.output.active), copy(system.generator.output.reactive))
         ),
@@ -373,29 +371,32 @@ solve!(system, analysis)
 ```
 """
 function solve!(system::PowerSystem, analysis::ACOptimalPowerFlow)
-    if isnothing(start_value(analysis.jump[:angle][1]))
-        set_start_value.(analysis.jump[:angle], analysis.voltage.angle)
+    @inbounds for i = 1:system.bus.number
+        if isnothing(JuMP.start_value(analysis.jump[:angle][i]::JuMP.VariableRef))
+            JuMP.set_start_value(analysis.jump[:angle][i]::JuMP.VariableRef, analysis.voltage.angle[i])
+        end
+        if isnothing(JuMP.start_value(analysis.jump[:magnitude][i]::JuMP.VariableRef))
+            JuMP.set_start_value(analysis.jump[:magnitude][i]::JuMP.VariableRef, analysis.voltage.magnitude[i])
+        end
     end
-    if isnothing(start_value(analysis.jump[:magnitude][1]))
-        set_start_value.(analysis.jump[:magnitude], analysis.voltage.magnitude)
-    end
-    if isnothing(start_value(analysis.jump[:active][1]))
-        set_start_value.(analysis.jump[:active], analysis.power.generator.active)
-    end
-    if isnothing(start_value(analysis.jump[:reactive][1]))
-        set_start_value.(analysis.jump[:reactive], analysis.power.generator.reactive)
+    @inbounds for i = 1:system.generator.number
+        if isnothing(JuMP.start_value(analysis.jump[:active][i]::JuMP.VariableRef))
+            JuMP.set_start_value(analysis.jump[:active][i]::JuMP.VariableRef, analysis.power.generator.active[i])
+        end
+        if isnothing(JuMP.start_value(analysis.jump[:reactive][i]::JuMP.VariableRef))
+            JuMP.set_start_value(analysis.jump[:reactive][i]::JuMP.VariableRef, analysis.power.generator.reactive[i])
+        end
     end
 
     JuMP.optimize!(analysis.jump)
 
     @inbounds for i = 1:system.bus.number
-        analysis.voltage.angle[i] = value(analysis.jump[:angle][i])
-        analysis.voltage.magnitude[i] = value(analysis.jump[:magnitude][i])
+        analysis.voltage.angle[i] = value(analysis.jump[:angle][i]::JuMP.VariableRef)
+        analysis.voltage.magnitude[i] = value(analysis.jump[:magnitude][i]::JuMP.VariableRef)
     end
-
     @inbounds for i = 1:system.generator.number
-        analysis.power.generator.active[i] = value(analysis.jump[:active][i])
-        analysis.power.generator.reactive[i] = value(analysis.jump[:reactive][i])
+        analysis.power.generator.active[i] = value(analysis.jump[:active][i]::JuMP.VariableRef)
+        analysis.power.generator.reactive[i] = value(analysis.jump[:reactive][i]::JuMP.VariableRef)
     end
 end
 

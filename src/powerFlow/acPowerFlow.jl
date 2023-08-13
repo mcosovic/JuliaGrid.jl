@@ -15,7 +15,7 @@ struct FastNewtonRaphsonModel
     jacobian::SparseMatrixCSC{Float64,Int64}
     mismatch::Array{Float64,1}
     increment::Array{Float64,1}
-    factorization::Factorization
+    factorization::SuiteSparse.UMFPACK.UmfpackLU{Float64, Int64}
 end
 
 struct FastNewtonRaphson <: ACPowerFlow
@@ -34,7 +34,6 @@ struct GaussSeidel <: ACPowerFlow
     power::Power
     current::Current
     complex::Array{ComplexF64,1}
-    magnitude::Array{Float64,1}
     pq::Array{Int64,1}
     pv::Array{Int64,1}
 end
@@ -151,9 +150,7 @@ function newtonRaphson(system::PowerSystem)
             Cartesian(Float64[], Float64[]),
             Cartesian(Float64[], Float64[]),
             Cartesian(Float64[], Float64[]),
-            Charging(
-                Cartesian(Float64[], Float64[]),
-                Cartesian(Float64[], Float64[])),
+            Cartesian(Float64[], Float64[]),
             Cartesian(Float64[], Float64[]),
             Cartesian(Float64[], Float64[])
         ),
@@ -399,9 +396,7 @@ end
             Cartesian(Float64[], Float64[]),
             Cartesian(Float64[], Float64[]),
             Cartesian(Float64[], Float64[]),
-            Charging(
-                Cartesian(Float64[], Float64[]),
-                Cartesian(Float64[], Float64[])),
+            Cartesian(Float64[], Float64[]),
             Cartesian(Float64[], Float64[]),
             Cartesian(Float64[], Float64[])
         ),
@@ -431,7 +426,6 @@ type, which includes the following fields:
 - `power`: the variable allocated to store the active and reactive powers;
 - `current`: the variable allocated to store the currents;
 - `complex`: the bus complex voltages;
-- `magnitude`: the bus voltage magnitudes for correction setp;
 - `pq`: indices of demand buses;
 - `pv`: indices of generator buses.
 
@@ -475,9 +469,7 @@ function gaussSeidel(system::PowerSystem)
             Cartesian(Float64[], Float64[]),
             Cartesian(Float64[], Float64[]),
             Cartesian(Float64[], Float64[]),
-            Charging(
-                Cartesian(Float64[], Float64[]),
-                Cartesian(Float64[], Float64[])),
+            Cartesian(Float64[], Float64[]),
             Cartesian(Float64[], Float64[]),
             Cartesian(Float64[], Float64[])
         ),
@@ -487,7 +479,7 @@ function gaussSeidel(system::PowerSystem)
             Polar(Float64[], Float64[]),
             Polar(Float64[], Float64[])
         ),
-        voltage, copy(voltageMagnitude), pqIndex, pvIndex)
+        voltage, pqIndex, pvIndex)
 end
 
 
@@ -790,7 +782,8 @@ function solve!(system::PowerSystem, analysis::GaussSeidel)
     end
 
     @inbounds for i in analysis.pv
-        analysis.complex[i] = analysis.magnitude[i] * analysis.complex[i] / abs(analysis.complex[i])
+        index = system.bus.supply.generator[i][1]
+        analysis.complex[i] = system.generator.voltage.magnitude[index] * analysis.complex[i] / abs(analysis.complex[i])
 
         analysis.voltage.magnitude[i] = abs(analysis.complex[i])
         analysis.voltage.angle[i] = angle(analysis.complex[i])
@@ -868,12 +861,12 @@ function reactiveLimit!(system::PowerSystem, analysis::ACPowerFlow)
     labels = collect(keys(sort(system.generator.label; byvalue = true)))
     @inbounds for (k, i) in enumerate(generator.layout.bus)
         if generator.layout.status[k] == 1
-            power = powerGenerator(system, analysis; label = labels[k])
+            active, reactive = powerGenerator(system, analysis; label = labels[k])
 
-            generator.output.active[k] = power.active
-            bus.supply.active[i] += power.active
-            bus.supply.reactive[i] += power.reactive
-            outputReactive[k] = power.reactive
+            generator.output.active[k] = active
+            bus.supply.active[i] += active
+            bus.supply.reactive[i] += reactive
+            outputReactive[k] = reactive
         end
     end
 
@@ -985,7 +978,7 @@ function initializeACPowerFlow(system::PowerSystem)
     angle = copy(system.bus.voltage.angle)
 
     @inbounds for i = 1:system.bus.number
-        if system.bus.supply.inService[i] == 0 && system.bus.layout.type[i] == 2
+        if isempty(system.bus.supply.generator[i]) && system.bus.layout.type[i] == 2
             system.bus.layout.type[i] = 1
         end
     end
@@ -996,7 +989,7 @@ function initializeACPowerFlow(system::PowerSystem)
         end
     end
 
-    if system.bus.supply.inService[system.bus.layout.slack] == 0
+    if isempty(system.bus.supply.generator[system.bus.layout.slack])
         changeSlackBus!(system)
     end
 
@@ -1007,7 +1000,7 @@ end
 function changeSlackBus!(system::PowerSystem)
     system.bus.layout.type[system.bus.layout.slack] = 1
     @inbounds for i = 1:system.bus.number
-        if system.bus.layout.type[i] == 2 && system.bus.supply.inService[i] != 0
+        if system.bus.layout.type[i] == 2 && !isempty(system.bus.supply.generator[i])
             system.bus.layout.type[i] = 3
             system.bus.layout.slack = i
             @info("The slack bus did not have an in-service generator. The bus $(trunc(Int, system.bus.label[i])) is the new slack bus.")

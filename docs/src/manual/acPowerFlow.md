@@ -397,88 +397,41 @@ To calculate specific quantities for particular components rather than calculati
 
 ##### Active and Reactive Power Injection
 To calculate the active and reactive power injection associated with a specific bus, the function can be used:
-```@example ComputationPowersCurrentsLosses
-injection = powerInjection(system, analysis; label = 1)
-nothing # hide
-```
-
-Consequently, the outcomes will be as follows:
 ```@repl ComputationPowersCurrentsLosses
-injection.active
-injection.reactive
+active, reactive = powerInjection(system, analysis; label = 1)
 ```
 
 ---
 
 ##### Active and Reactive Power Injection from Generators
 To calculate the active and reactive power injection from the generators at a specific bus, the function can be used:
-```@example ComputationPowersCurrentsLosses
-supply = powerSupply(system, analysis; label = 1)
-nothing # hide
-```
-
-The outcomes will be as follows:
 ```@repl ComputationPowersCurrentsLosses
-supply.active
-supply.reactive
+active, reactive = powerSupply(system, analysis; label = 1)
 ```
 
 ---
 
 ##### Active and Reactive Power at Shunt Element
 To calculate the active and reactive power associated with shunt element at a specific bus, the function can be used:
-```@example ComputationPowersCurrentsLosses
-shunt = powerShunt(system, analysis; label = 3)
-nothing # hide
-```
-
-The outcomes will be as follows:
 ```@repl ComputationPowersCurrentsLosses
-shunt.active
-shunt.reactive
+active, reactive = powerShunt(system, analysis; label = 3)
 ```
 
 ---
 
 ##### Active and Reactive Power Flow
 Similarly, we can compute the active and reactive power flow at both the "from" and "to" bus ends of the specific branch by utilizing the provided functions below:
-```@example ComputationPowersCurrentsLosses
-from = powerFrom(system, analysis; label = 2)
-to = powerTo(system, analysis; label = 2)
-nothing # hide
-```
-
-The results at the "from" bus end are as follows:
 ```@repl ComputationPowersCurrentsLosses
-from.active
-from.reactive
-```
-
-Similarly, the results at "to" bus end will be as follows:
-```@repl ComputationPowersCurrentsLosses
-to.active
-to.reactive
+active, reactive = powerFrom(system, analysis; label = 2)
+active, reactive = powerTo(system, analysis; label = 2)
 ```
 
 ---
 
 ##### Active and Reactive Power at Charging Admittances
 To calculate the active and reactive power linked with branch charging admittances of the particular branch, the function can be used:
-```@example ComputationPowersCurrentsLosses
-charging = powerCharging(system, analysis; label = 1)
-nothing # hide
-```
-
-The outcomes for the charging admittance at the "from" bus end are provided below:
 ```@repl ComputationPowersCurrentsLosses
-charging.from.active
-charging.from.reactive
-```
-
-Likewise, the outcomes for the charging admittance at the "to" bus end are as follows:
-```@repl ComputationPowersCurrentsLosses
-charging.to.active
-charging.to.reactive
+active, reactive = powerCharging(system, analysis; label = 1)
 ```
 
 Active powers indicate active losses within the branch's charging or shunt admittances. Moreover, charging admittances injected reactive powers into the power system due to their capacitive nature, as denoted by a negative sign.
@@ -487,15 +440,8 @@ Active powers indicate active losses within the branch's charging or shunt admit
 
 ##### Active and Reactive Power at Series Impedance
 To calculate the active and reactive power across the series impedance of the particular branch, the function can be used:
-```@example ComputationPowersCurrentsLosses
-series = powerSeries(system, analysis; label = 2)
-nothing # hide
-```
-
-The outcomes will be as follows:
 ```@repl ComputationPowersCurrentsLosses
-series.active
-series.reactive
+active, reactive = powerSeries(system, analysis; label = 2)
 ```
 
 The active power also considers active losses originating from the series resistance of the branch, while the reactive power represents reactive losses resulting from the impedance's inductive characteristics.
@@ -504,67 +450,33 @@ The active power also considers active losses originating from the series resist
 
 ##### Generator Active and Reactive Power Output
 We can compute the active and reactive power output of a particular generator using the function:
-```@example ComputationPowersCurrentsLosses
-generator = powerGenerator(system, analysis; label = 1)
-nothing # hide
-```
-
-The outcomes will be as follows:
 ```@repl ComputationPowersCurrentsLosses
-generator.active
-generator.reactive
+active, reactive = powerGenerator(system, analysis; label = 1)
 ```
 
 ---
 
 ##### Current Injection
 To calculate the current injection associated with a specific bus, the function can be used:
-```@example ComputationPowersCurrentsLosses
-injection = currentInjection(system, analysis; label = 1)
-nothing # hide
-```
-
-Consequently, the outcomes will be as follows:
 ```@repl ComputationPowersCurrentsLosses
-injection.magnitude
-injection.angle
+magnitude, angle = currentInjection(system, analysis; label = 1)
 ```
 
 ---
 
 ##### Current Flow
 We can compute the current flow at both the "from" and "to" bus ends of the specific branch by utilizing the provided functions below:
-```@example ComputationPowersCurrentsLosses
-from = currentFrom(system, analysis; label = 2)
-to = currentTo(system, analysis; label = 2)
-nothing # hide
-```
-
-The results at the "from" bus end are as follows:
 ```@repl ComputationPowersCurrentsLosses
-from.magnitude
-from.angle
-```
-
-Similarly, the results at "to" bus end will be as follows:
-```@repl ComputationPowersCurrentsLosses
-to.magnitude
-to.angle
+magnitude, angle = currentFrom(system, analysis; label = 2)
+magnitude, angle = currentTo(system, analysis; label = 2)
 ```
 
 ---
 
 ##### Current Through Series Impedance
 To calculate the current passing through the series impedance of the branch in the direction from the "from" bus end to the "to" bus end, you can use the following function:
-```@example ComputationPowersCurrentsLosses
-series = currentSeries(system, analysis; label = 2)
-nothing # hide
-```
-
-The results are as follows:
 ```@repl ComputationPowersCurrentsLosses
-series.magnitude
-series.angle
+magnitude, angle = currentSeries(system, analysis; label = 2)
 ```
 
 ---

@@ -2,7 +2,7 @@
 struct DCPowerFlow <: DC
     voltage::PolarAngle
     power::DCPower
-    factorization::Union{Factorization, Diagonal}
+    factorization::SuiteSparse.CHOLMOD.Factor{Float64}
 end
 
 """
@@ -39,7 +39,7 @@ function dcPowerFlow(system::PowerSystem)
         dcModel!(system)
     end
 
-    if bus.supply.inService[bus.layout.slack] == 0
+    if isempty(bus.supply.generator[bus.layout.slack])
         changeSlackBus!(system)
     end
 
@@ -51,7 +51,20 @@ function dcPowerFlow(system::PowerSystem)
     end
     dc.nodalMatrix[bus.layout.slack, bus.layout.slack] = 1.0
 
-    factorization = factorize(dc.nodalMatrix)
+    nondiagonalMatrix = false
+    @inbounds for i = 1:bus.number
+        if dc.nodalMatrix.rowval[i] != i
+            nondiagonalMatrix = true
+            break
+        end
+    end
+
+    if nondiagonalMatrix
+        factorization = factorize(dc.nodalMatrix)
+    else
+        factorization = cholesky(dc.nodalMatrix)
+    end
+
     @inbounds for (k, i) in enumerate(slackRange)
         dc.nodalMatrix[dc.nodalMatrix.rowval[i], bus.layout.slack] = elementsRemove[k]
         dc.nodalMatrix[bus.layout.slack, dc.nodalMatrix.rowval[i]] = elementsRemove[k]

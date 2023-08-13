@@ -9,8 +9,8 @@ abstract type OptimalPowerFlow end
 
 ######### Polar Coordinate ##########
 mutable struct Polar
-    magnitude::Union{Array{Float64,1}, Float64}
-    angle::Union{Array{Float64,1}, Float64}
+    magnitude::Array{Float64,1}
+    angle::Array{Float64,1}
 end
 
 mutable struct PolarAngle
@@ -28,44 +28,39 @@ end
 
 ######### Cartesian Coordinate ##########
 mutable struct Cartesian
-    active::Union{Array{Float64,1}, Float64}
-    reactive::Union{Array{Float64,1}, Float64}
+    active::Array{Float64,1}
+    reactive::Array{Float64,1}
 end
 
 mutable struct CartesianReal
-    active::Union{Array{Float64,1}, Float64}
+    active::Array{Float64,1}
 end
 
 mutable struct CartesianImag
-    reactive::Union{Array{Float64,1}, Float64}
+    reactive::Array{Float64,1}
 end
 
 mutable struct CartesianRef
-    active::Union{Array{JuMP.ConstraintRef,1}, Array{Array{JuMP.ConstraintRef,1}}}
-    reactive::Union{Array{JuMP.ConstraintRef,1}, Array{Array{JuMP.ConstraintRef,1}}}
+    active::Union{Array{JuMP.ConstraintRef,1}, Array{Array{JuMP.ConstraintRef,1},1}}
+    reactive::Union{Array{JuMP.ConstraintRef,1}, Array{Array{JuMP.ConstraintRef,1},1}}
 end
 
 mutable struct CartesianRealRef
-    active::Union{Array{JuMP.ConstraintRef,1}, Array{Array{JuMP.ConstraintRef,1}}}
+    active::Union{Array{JuMP.ConstraintRef,1}, Array{Array{JuMP.ConstraintRef,1},1}}
 end
 
 mutable struct CartesianImagRef
-    reactive::Union{Array{JuMP.ConstraintRef,1}, Array{Array{JuMP.ConstraintRef,1}}}
+    reactive::Union{Array{JuMP.ConstraintRef,1}, Array{Array{JuMP.ConstraintRef,1},1}}
 end
 
 ######### Powers in the AC Framework ##########
-mutable struct Charging
-    from::Cartesian
-    to::Cartesian
-end
-
 mutable struct Power
     injection::Cartesian
     supply::Cartesian
     shunt::Cartesian
     from::Cartesian
     to::Cartesian
-    charging::Charging
+    charging::Cartesian
     series::Cartesian
     generator::Cartesian
 end

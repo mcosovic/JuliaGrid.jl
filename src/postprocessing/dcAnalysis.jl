@@ -74,7 +74,7 @@ function power!(system::PowerSystem, analysis::DCPowerFlow)
                     power.generator.active[i] += dc.nodalMatrix[row, busIndex] * voltage.angle[row]
                 end
 
-                for j = 2:bus.supply.inService[busIndex]
+                for j = 2:length(bus.supply.generator[busIndex])
                     power.generator.active[i] -= generator.output.active[bus.supply.generator[busIndex][j]]
                 end
             else
@@ -395,7 +395,7 @@ function powerGenerator(system::PowerSystem, analysis::DCPowerFlow; label)
                 generatorActive += dc.nodalMatrix[row, busIndex] * voltage.angle[row]
             end
 
-            for i = 2:bus.supply.inService[busIndex]
+            for i = 2:length(bus.supply.generator[busIndex])
                 generatorActive -= generator.output.active[bus.supply.generator[busIndex][i]]
             end
         else

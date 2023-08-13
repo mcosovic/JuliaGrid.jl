@@ -19,7 +19,7 @@ not been created, the function will initiate an update automatically.
 JuliaGrid offers the ability to manipulate the `jump` model based on the guidelines provided
 in the [JuMP documentation](https://jump.dev/JuMP.jl/stable/reference/models/). However,
 certain configurations may require different method calls, such as:
-- `bridge`: used to manage the bridging mechanism,
+- `bridge`: used to manage the bridging mechanism;
 - `name`: used to manage the creation of string names.
 
 Moreover, we have included keywords that regulate the usage of different types of constraints:
@@ -162,7 +162,7 @@ function dcOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
             balanceRef[i] = @constraint(model, expression - sum(active[k] for k in system.bus.supply.generator[i]) == 0.0)
         end
     end
-    
+
     ratingRef = Array{JuMP.ConstraintRef}(undef, branch.number)
     limitRef = Array{JuMP.ConstraintRef}(undef, branch.number)
     if rating || limit
@@ -222,20 +222,23 @@ solve!(system, analysis)
 ```
 """
 function solve!(system::PowerSystem, analysis::DCOptimalPowerFlow)
-    if isnothing(start_value(analysis.jump[:angle][1]))
-        set_start_value.(analysis.jump[:angle], analysis.voltage.angle)
+    @inbounds for i = 1:system.bus.number
+        if isnothing(JuMP.start_value(analysis.jump[:angle][i]::JuMP.VariableRef))
+            JuMP.set_start_value(analysis.jump[:angle][i]::JuMP.VariableRef, analysis.voltage.angle[i])
+        end
     end
-    if isnothing(start_value(analysis.jump[:active][1]))
-        set_start_value.(analysis.jump[:active], analysis.power.generator.active)
+    @inbounds for i = 1:system.generator.number
+        if isnothing(JuMP.start_value(analysis.jump[:active][i]::JuMP.VariableRef))
+            JuMP.set_start_value(analysis.jump[:active][i]::JuMP.VariableRef, analysis.power.generator.active[i])
+        end
     end
 
     JuMP.optimize!(analysis.jump)
 
     @inbounds for i = 1:system.bus.number
-        analysis.voltage.angle[i] = value(analysis.jump[:angle][i])
+        analysis.voltage.angle[i] = value(analysis.jump[:angle][i]::JuMP.VariableRef)
     end
-
     @inbounds for i = 1:system.generator.number
-        analysis.power.generator.active[i] = value(analysis.jump[:active][i])
+        analysis.power.generator.active[i] = value(analysis.jump[:active][i]::JuMP.VariableRef)
     end
 end

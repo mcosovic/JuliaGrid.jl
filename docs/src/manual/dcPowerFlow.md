@@ -184,7 +184,7 @@ To calculate specific quantities for particular components rather than calculati
 ##### Active Power Injection
 To calculate active power injection associated with a specific bus, the function can be used:
 ```@repl ComputationPowersCurrentsLosses
-powerInjection(system, analysis; label = 1)
+active = powerInjection(system, analysis; label = 1)
 ```
 
 ---
@@ -192,7 +192,7 @@ powerInjection(system, analysis; label = 1)
 ##### Active Power Injection from Generators
 To calculate active power injection from the generators at a specific bus, the function can be used:
 ```@repl ComputationPowersCurrentsLosses
-powerSupply(system, analysis; label = 1)
+active = powerSupply(system, analysis; label = 1)
 ```
 
 ---
@@ -200,8 +200,8 @@ powerSupply(system, analysis; label = 1)
 ##### Active Power Flow
 Similarly, we can compute the active power flow at both the "from" and "to" bus ends of the specific branch by utilizing the provided functions below:
 ```@repl ComputationPowersCurrentsLosses
-powerFrom(system, analysis; label = 2)
-powerTo(system, analysis; label = 2)
+active = powerFrom(system, analysis; label = 2)
+active = powerTo(system, analysis; label = 2)
 ```
 
 ---
@@ -209,6 +209,6 @@ powerTo(system, analysis; label = 2)
 ##### Generator Active Power Output
 Finally, we can compute the active power output of a particular generator using the function:
 ```@repl ComputationPowersCurrentsLosses
-powerGenerator(system, analysis; label = 1)
+active = powerGenerator(system, analysis; label = 1)
 ```
 
