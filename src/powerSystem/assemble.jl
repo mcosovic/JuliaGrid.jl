@@ -781,7 +781,7 @@ macro generator(kwargs...)
                     prefixLive = prefix.activePower
                 elseif parameter in [:reactive; :minReactive; :maxReactive; :minLowReactive; :maxLowReactive; :minUpReactive; :maxUpReactive; :reactiveTimescale]
                     prefixLive = prefix.reactivePower
-                elseif parameter == magnitude
+                elseif parameter == :magnitude
                     prefixLive = prefix.voltageMagnitude
                 end
                 if prefixLive != 0.0

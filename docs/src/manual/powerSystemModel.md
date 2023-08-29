@@ -74,7 +74,7 @@ The `PowerSystem` composite type stores all electrical quantities in per-units a
 
 ---
 
-##### Change Internal Base Unit Prefixes
+##### Change Base Unit Prefixes
 As an example, if you execute the previous code snippet, you can retrieve the base power and base voltage values and units as shown below:
 ```@repl buildModelScratch
 system.base.power.value, system.base.power.unit
@@ -102,15 +102,6 @@ Once the `PowerSystem` type has been created using one of the methods outlined i
 savePowerSystem(system; path = "C:/matpower/case14.h5", reference = "IEEE 14-bus test case")
 ```
 All electrical quantities saved in the HDF5 file are in per-units and radians, except for base values for power and voltages, which are given in volt-amperes and volts. It is important to note that even if the user modifies the base units using the [`@base`](@ref @base) macro, the units will still be saved in the default settings.
-
----
-
-## [Labels](@id LabelsManual)
-JuliaGrid mandates a distinctive label for every bus, branch, or generator. These labels are stored in dictionaries, functioning as pairs of strings and integers. The string signifies the exclusive label for the specific component, whereas the integer maintains an internal numbering of buses, branches, or generators.
-
-If users prefere to input labels as integers in different functions, this is permissible. However, these labels are still retained as strings. For instance, we guide users to the following section that outlines the procedure for incorporating buses into the power system.
-
-Furthermore, in functions that append any of these components, users also have the option to exclude the `label` keyword. This allows JuliaGrid to autonomously assign unique labels for buses, branches, or generators.
 
 ---
 
@@ -184,39 +175,275 @@ system.base.voltage.value, system.base.voltage.unit
 
 ---
 
-##### Bus Labels
-Within JuliaGrid, the collection of bus labels is consistently managed through internal assignment and preservation within a dictionary. To illustrate, consider a scenario where we wish to include buses labeled simply as `30` or `20`. To streamline this process and eliminate the need for redundant string entries, users can conveniently input labels directly as integers:
-```@example addBusLabels
+## [Add Branch](@id AddBranchManual)
+After adding buses with unique labels, we can define branches between them. The branch cannot be added unless the buses are already defined, and the `from` and `to` keywords should correspond to the already defined bus labels. For instance:
+```@example addBranch
 using JuliaGrid # hide
+@default(unit)  # hide
 
 system = powerSystem()
 
-addBus!(system; label = 30, type = 3, active = 0.1, base = 345e3)
-addBus!(system; label = 20, type = 1, angle = -0.034907, base = 345e3)
+addBus!(system; label = "Bus 1", type = 3, active = 0.1)
+addBus!(system; label = "Bus 2", type = 1, angle = -0.2)
+
+addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.12)
+```
+Here, we created branch from `Bus 1` to `Bus 2` with following parameter:
+```@repl addBranch
+system.branch.parameter.reactance
+```
+!!! note "Info"
+    It is recommended to consult the documentation for the [`addBranch!`](@ref addBranch!) function, which provides an explanation of all the keywords used in the function.
+
+---
+
+##### Change Input Unit System
+To use units other than per-units (pu) and radians (rad), macros can be employed to change the input units. For example, if the need arises to use ohms (Ω), the macros below can be employed:
+```@example addBranchUnit
+using JuliaGrid # hide
+@parameter(Ω, pu)
+
+system = powerSystem()
+
+addBus!(system; label = "Bus 1", type = 3, active = 0.1)
+addBus!(system; label = "Bus 2", type = 1, angle = -0.2)
+
+addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2",  reactance = 22.8528)
+```
+Still, all electrical quantities are stored in per-units and radians, and the same branch as before is created, as shown in the following output:
+```@repl addBranchUnit
+system.branch.parameter.reactance
 ```
 
-These bus labels are contained within the variable:
-```@repl addBusLabels
-system.bus.label
-```
+It is important to note that, when working with impedance and admittance values in ohms (Ω) and siemens (S) that are related to a transformer, the assignment must be based on the primary side of the transformer.
 
-For optimization purposes, JuliaGrid employs a non-sequential dictionary structure for label storage. This implies that if a user desires to extract labels in the order that corresponds to the sequence of bus definitions, the following code can be employed:
-```@repl addBusLabels
-label = collect(keys(sort(system.bus.label; byvalue = true)))
-```
+---
 
-##### Automated Bus Labels
-JuliaGrid also provides the option for internally assigned labels, allowing users to omit the use of the `label` keyword. For example, let us add a new bus to the previous system while excluding the `label` keyword:
-```@example addBusLabels
-addBus!(system; type = 1, base = 345.0)
+## [Add Generator](@id AddGeneratorManual)
+After defining the buses, generators can be added to the power system. Each generator must have a unique label, and the `bus` keyword should correspond to the unique label of the bus it is connected to. For instance:
+```@example addGenerator
+using JuliaGrid # hide
+@default(unit) # hide
+
+system = powerSystem()
+
+addBus!(system; label = "Bus 1")
+addBus!(system; label = "Bus 2")
+
+addGenerator!(system; label = "Generator 1", bus = "Bus 2", active = 0.5, reactive = 0.1)
 
 nothing # hide
 ```
 
-Now, the bus labels are as follows:
-```@repl addBusLabels
-system.bus.label
+In the above code, we add the generator to the `Bus 2`, with active and reactive power outputs set to:
+```@repl addGenerator
+system.generator.output.active
+system.generator.output.reactive
 ```
-It is notable that JuliaGrid identifies the maximum value among the stored labels and increments it by one for any absent label, ensuring the preservation of label uniqueness.
+Similar to buses and branches, the input units can be changed to units other than per-units using different macros.
+
+!!! note "Info"
+    It is recommended to refer to the documentation for the [`addGenerator!`](@ref addGenerator!) function, which explains all the keywords used in the function.
 
 ---
+
+## [Labels](@id LabelsManual)
+As we shown above, JuliaGrid mandates a distinctive label for every bus, branch, or generator. These labels are stored in dictionaries, functioning as pairs of strings and integers. The string signifies the exclusive label for the specific component, whereas the integer maintains an internal numbering of buses, branches, or generators.
+
+In contrast to the simple labeling approach, JuliaGrid offers two additional methods for labeling. The choice of method depends on the specific needs and can potentially be more straightforward.
+
+---
+
+##### Integer-Based Labeling
+If users prefer to utilize integers as labels in various functions, this is acceptable. However, it is important to note that despite using integers, these labels are still stored as strings. Let us take a look at the following illustration:
+```@example LabelInteger
+using JuliaGrid # hide
+@default(unit) # hide
+
+system = powerSystem()
+
+addBus!(system; label = 1, type = 3, active = 0.1)
+addBus!(system; label = 2, type = 1, angle = -0.2)
+
+addBranch!(system; label = 1, from = 1, to = 2, reactance = 0.12)
+
+addGenerator!(system; label = 1, bus = 2, active = 0.5, reactive = 0.1)
+
+nothing # hide
+```
+
+In this example, we create two buses labelled as `1` and `2`. The branch is established between these two buses with a unique branch label of `1`. Finally, the generator is connected to the bus labelled `2` and has its distinct label set to `1`.
+
+---
+
+##### Automated Labeling
+Users also possess the option to omit the `label` keyword, allowing JuliaGrid to independently allocate unique labels for buses, branches, or generators. In such instances, JuliaGrid employs an ordered set of incremental integers for labeling components. To illustrate, consider the subsequent example:
+```@example LabelAutomatic
+using JuliaGrid # hide
+@default(unit) # hide
+
+system = powerSystem()
+
+addBus!(system; type = 3, active = 0.1)
+addBus!(system; type = 1, angle = -0.2)
+
+addBranch!(system; from = 1, to = 2, reactance = 0.12)
+
+addGenerator!(system; bus = 2, active = 0.5, reactive = 0.1)
+
+nothing # hide
+```
+
+This example presents the same power system as the previous one. In the previous example, we used an ordered set of increasing integers for labels, which aligns with JuliaGrid's automatic labeling behaviour when the label keyword is omitted.
+
+---
+
+##### Retrieving Labels
+Finally, we will outline how users can retrieve stored labels. Let us consider the following power system creation:
+```@example RetrieveLabels
+using JuliaGrid # hide
+
+system = powerSystem()
+
+addBus!(system; label = 30)
+addBus!(system; label = 20)
+addBus!(system; label = 40)
+
+addBranch!(system; label = 100, from = 30, to = 20, reactance = 0.8)
+addBranch!(system; label = 200, from = 20, to = 40, reactance = 0.5)
+
+addGenerator!(system; label = 200, bus = 40)
+addGenerator!(system; label = 100, bus = 30)
+
+nothing # hide
+```
+
+For instance, the bus labels can be accessed using the variable:
+```@repl RetrieveLabels
+system.bus.label
+```
+
+JuliaGrid employs a non-ordered dictionary structure for label storage to optimize performance. If you need to retrieve labels in the order corresponding to the sequence of bus definitions, you can use the following code:
+```@repl RetrieveLabels
+labelBus = collect(keys(sort(system.bus.label; byvalue = true)))
+```
+A similar approach can be employed for branches and generators using `system.branch.label` and `system.generator.label` respectively.
+
+Moreover, the `from` and `to` keywords are stored based on internally assigned numerical values linked to bus labels. These values are stored in the variable:
+```@repl RetrieveLabels
+[system.branch.layout.from system.branch.layout.to]
+```
+To recover the original `from` and `to` labels, you can utilize the following method:
+```@repl RetrieveLabels
+[labelBus[system.branch.layout.from] labelBus[system.branch.layout.to]]
+```
+
+Similarly, the `bus` keyword is saved based on internally assigned numerical values corresponding to bus labels and can be accessed using:
+```@repl RetrieveLabels
+system.generator.layout.bus
+```
+To obtain the original labels of the `bus` keyword, you can use the following code:
+```@repl RetrieveLabels
+labelBus[system.generator.layout.bus]
+```
+
+---
+
+## [Add Templates](@id AddTemplatesManual)
+The functions [`addBus!`](@ref addBus!), [`addBranch!`](@ref addBranch!), and [`addGenerator!`](@ref addGenerator!) are used to add bus, branch, and generator to the power system, respectively. If certain keywords are not specified, default values are assigned to some parameters.
+
+---
+
+##### Default Keyword Values
+Concerning the [`addBus!`](@ref addBus!) function, in case the `type` keyword is not supplied, the bus type is automatically configured as a demand bus, with `type = 1` as its value. The initial bus voltage is standardized to `magnitude = 1` per unit, while the base voltage is set to `base = 138e3` volts. These predefined values hold significant importance to avert potential issues during algorithm execution, such as encountering a singular Jacobian when `magnitude = 0.0`.
+
+Transitioning to the [`addBranch!`](@ref addBranch!) function, the default status is set to `status = 1`, indicating the branch's operational status as in-service. Moreover, the transformer's off-nominal turns ratio assumes a value of `turnsRatio = 1.0`, accompanied by a `shiftAngle = 0.0`, which collectively establish the line configuration using these standard settings. Additionally, the type keyword defaults to `type = 1`, aligning with a specific rating category.
+
+Similarly, the [`addGenerator!`](@ref addGenerator!) function designates an operational generator by employing `status = 1`, and it sets` magnitude = 1.0` per unit, denoting the desired voltage magnitude setpoint.
+
+The remaining parameters are initialized with default values of zero.
+
+---
+
+##### Change Default Keyword Values
+In JuliaGrid, users are allowed to modify default values and assign non-zero values to other keywords using the [`@bus`](@ref @bus), [`@branch`](@ref @branch), and [`@generator`](@ref @generator) macros. These macros create bus, branch, and generator templates that are used every time the [`addBus!`](@ref addBus!), [`addBranch!`](@ref addBranch!), and [`addGenerator!`](@ref addGenerator!) functions are called. For instance, the code block shows an example of creating bus, branch, and generator templates with customized default values:
+```@example CreateBusTemplate
+using JuliaGrid # hide
+@default(unit) # hide
+
+system = powerSystem()
+
+@bus(type = 2, active = 0.1)
+addBus!(system; label = "Bus 1")
+addBus!(system; label = "Bus 2", type = 1, active = 0.5)
+
+@branch(reactance = 0.12)
+addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2")
+addBranch!(system; label = "Branch 2", from = "Bus 1", to = "Bus 2", reactance = 0.06)
+
+@generator(magnitude = 1.1)
+addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 50)
+addGenerator!(system; label = "Generator 2", bus = "Bus 1", active = 20)
+
+nothing # hide
+```
+
+This code example involves two uses of the [`addBus!`](@ref addBus!) and [`addBranch!`](@ref addBranch!) functions. In the first use, the functions rely on the default values set by the templates created with the [`@bus`](@ref @bus) and [`@branch`](@ref @branch) macros. In contrast, the second use passes specific values that match the keywords used in the templates. As a result, the templates are overridden:
+```@repl CreateBusTemplate
+system.bus.layout.type
+system.bus.demand.active
+system.branch.parameter.reactance
+```
+
+In the given example, the [`@generator`](@ref @generator) macro is utilized instead of repeatedly specifying the `magnitude` keyword in the [`addGenerator!`](@ref addGenerator!) function. This macro creates a generator template with a default value for `magnitude`, which is automatically applied every time the [`addGenerator!`](@ref addGenerator!) function is called. Therefore, it eliminates the requirement to set the magnitude value for each individual generator:
+```@repl CreateBusTemplate
+system.generator.voltage.magnitude
+```
+---
+
+##### Change Input Unit System
+The JuliaGrid requires users to specify electrical quantity-related keywords in per-units (pu) and radians (rad) by default. However, it provides macros, such as [`@power`](@ref @power), that allow users to specify other units:
+```@example CreateBusTemplateUnits
+using JuliaGrid # hide
+
+system = powerSystem()
+
+@power(MW, MVAr, MVA)
+
+@bus(active = 100, reactive = 200)
+addBus!(system; label = "Bus 1")
+
+@power(pu, pu, pu)
+
+addBus!(system; label = "Bus 2", active = 0.5)
+
+nothing # hide
+```
+
+In this example, we create the bus template and one bus using SI power units, and then we switch to per-units and add the second bus. It is important to note that once the template is defined in any unit system, it remains valid regardless of subsequent unit system changes. The resulting power values are:
+```@repl CreateBusTemplateUnits
+system.bus.demand.active
+system.bus.demand.reactive
+```
+Thus, JuliaGrid automatically tracks the unit system used to create templates and provides the appropriate conversion to per-units and radians. Even if the user switches to a different unit system later on, the previously defined template will still be valid.
+
+---
+
+##### Multiple Templates
+In the case of calling the [`@bus`](@ref @bus), [`@branch`](@ref @branch), or [`@generator`](@ref @generator) macros multiple times, the provided keywords and values will be combined into a single template for the corresponding component (bus, branch, or generator), which will be used for generating the component.
+
+---
+
+##### Reset Templates
+To reset the bus, branch, and generator templates to their default settings, users can utilize the following macros:
+```@example CreateBusTemplateUnits
+@default(bus)
+@default(branch)
+@default(generator)
+nothing # hide
+```
+Additionally, users can reset all templates for the bus, branch, and generator components using the macro:
+```@example CreateBusTemplateUnits
+@default(template)
+nothing # hide
+```
