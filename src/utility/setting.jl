@@ -85,87 +85,235 @@ end
 ######### Types ##########
 const N = Union{Float64, Int64}
 const T = Union{Float64, Int64, Int8, Missing}
+const L = Union{String, Int64, Missing}
 
 ######### Template ##########
-const template = Dict(
-    :bus => Dict(
-        :type => Int8(1),
-        :active => 0.0,
-        :reactive => 0.0,
-        :conductance => 0.0,
-        :susceptance => 0.0,
-        :magnitude => 1.0,
-        :angle => 0.0,
-        :minMagnitude => 0.0,
-        :maxMagnitude => 0.0,
-        :base => 138e3,
-        :area => 0,
-        :lossZone => 0,
-        :activePower => 0.0,
-        :reactivePower => 0.0,
-        :apparentPower => 0.0,
-        :voltageMagnitude => 0.0,
-        :voltageAngle => 1.0,
-        :currentMagnitude => 0.0,
-        :currentAngle => 1.0,
-        :impedance => 0.0,
-        :admittance => 0.0,
-        :baseVoltage => 1.0
+Base.@kwdef mutable struct ContainerTemplate
+    value::Float64 = 0.0
+    pu::Bool = true
+end
+
+mutable struct BusTemplate
+    active::ContainerTemplate
+    reactive::ContainerTemplate
+    conductance::ContainerTemplate
+    susceptance::ContainerTemplate
+    magnitude::ContainerTemplate
+    minMagnitude::ContainerTemplate
+    maxMagnitude::ContainerTemplate
+    base::Float64
+    angle::Float64
+    type::Int8
+    area::Int64
+    lossZone::Int64
+end
+
+mutable struct BranchTemplate
+    resistance::ContainerTemplate
+    reactance::ContainerTemplate
+    conductance::ContainerTemplate
+    susceptance::ContainerTemplate
+    longTerm::ContainerTemplate
+    shortTerm::ContainerTemplate
+    emergency::ContainerTemplate
+    turnsRatio::Float64
+    shiftAngle::Float64
+    minDiffAngle::Float64
+    maxDiffAngle::Float64
+    status::Int8
+    type::Int8
+end
+
+mutable struct GeneratorTemplate
+    active::ContainerTemplate
+    reactive::ContainerTemplate
+    magnitude::ContainerTemplate
+    minActive::ContainerTemplate
+    maxActive::ContainerTemplate
+    minReactive::ContainerTemplate
+    maxReactive::ContainerTemplate
+    lowActive::ContainerTemplate
+    minLowReactive::ContainerTemplate
+    maxLowReactive::ContainerTemplate
+    upActive::ContainerTemplate
+    minUpReactive::ContainerTemplate
+    maxUpReactive::ContainerTemplate
+    loadFollowing::ContainerTemplate
+    reactiveTimescale::ContainerTemplate
+    reserve10min::ContainerTemplate
+    reserve30min::ContainerTemplate
+    status::Int8
+    area::Int64
+end
+
+mutable struct VoltmeterTemplate
+    variance::ContainerTemplate
+    status::Int8
+end
+
+mutable struct AmmeterTemplate
+    variancefrom::ContainerTemplate
+    varianceto::ContainerTemplate
+    statusfrom::Int8
+    statusto::Int8
+end
+
+mutable struct WattmeterTemplate
+    variancebus::ContainerTemplate
+    variancefrom::ContainerTemplate
+    varianceto::ContainerTemplate
+    statusbus::Int8
+    statusfrom::Int8
+    statusto::Int8
+end
+
+mutable struct VarmeterTemplate
+    variancebus::ContainerTemplate
+    variancefrom::ContainerTemplate
+    varianceto::ContainerTemplate
+    statusbus::Int8
+    statusfrom::Int8
+    statusto::Int8
+end
+
+mutable struct AnglepmuTemplate
+    variancebus::Float64
+    variancefrom::Float64
+    varianceto::Float64
+    statusbus::Int8
+    statusfrom::Int8
+    statusto::Int8
+end
+
+mutable struct MagnitudepmuTemplate
+    variancebus::ContainerTemplate
+    variancefrom::ContainerTemplate
+    varianceto::ContainerTemplate
+    statusbus::Int8
+    statusfrom::Int8
+    statusto::Int8
+end
+
+Base.@kwdef mutable struct Template
+    bus::BusTemplate
+    branch::BranchTemplate
+    generator::GeneratorTemplate
+    voltmeter::VoltmeterTemplate
+    ammeter::AmmeterTemplate
+    wattmeter::WattmeterTemplate
+    varmeter::VarmeterTemplate
+    anglepmu::AnglepmuTemplate
+    magnitudepmu::MagnitudepmuTemplate
+end
+
+template = Template(
+    BusTemplate(
+        ContainerTemplate(),
+        ContainerTemplate(),
+        ContainerTemplate(),
+        ContainerTemplate(),
+        ContainerTemplate(1.0, true),
+        ContainerTemplate(),
+        ContainerTemplate(),
+        138e3,
+        0.0,
+        Int8(1),
+        0,
+        0
     ),
-    :branch => Dict(
-        :status => 1,
-        :resistance => 0.0,
-        :reactance => 0.0,
-        :conductance => 0.0,
-        :susceptance => 0.0,
-        :turnsRatio => 1.0,
-        :shiftAngle => 0.0,
-        :minDiffAngle => 0.0,
-        :maxDiffAngle => 0.0,
-        :longTerm => 0.0,
-        :shortTerm => 0.0,
-        :emergency => 0.0,
-        :type => 1,
-        :activePower => 0.0,
-        :reactivePower => 0.0,
-        :apparentPower => 0.0,
-        :voltageMagnitude => 0.0,
-        :voltageAngle => 1.0,
-        :currentMagnitude => 0.0,
-        :currentAngle => 1.0,
-        :impedance => 0.0,
-        :admittance => 0.0,
-        :baseVoltage => 1.0
+    BranchTemplate(
+        ContainerTemplate(),
+        ContainerTemplate(),
+        ContainerTemplate(),
+        ContainerTemplate(),
+        ContainerTemplate(),
+        ContainerTemplate(),
+        ContainerTemplate(),
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        Int8(1),
+        Int8(1)
     ),
-    :generator => Dict(
-        :status => 1,
-        :active => 0.0,
-        :reactive => 0.0,
-        :magnitude => 1.0,
-        :minActive => 0.0,
-        :maxActive => 0.0,
-        :minReactive => 0.0,
-        :maxReactive => 0.0,
-        :lowActive => 0.0,
-        :minLowReactive => 0.0,
-        :maxLowReactive => 0.0,
-        :upActive => 0.0,
-        :minUpReactive => 0.0,
-        :maxUpReactive => 0.0,
-        :loadFollowing => 0.0,
-        :reactiveTimescale => 0.0,
-        :reserve10min => 0.0,
-        :reserve30min => 0.0,
-        :area => 0,
-        :activePower => 0.0,
-        :reactivePower => 0.0,
-        :apparentPower => 0.0,
-        :voltageMagnitude => 0.0,
-        :voltageAngle => 1.0,
-        :currentMagnitude => 0.0,
-        :currentAngle => 1.0,
-        :impedance => 0.0,
-        :admittance => 0.0,
-        :baseVoltage => 1.0
+    GeneratorTemplate(
+        ContainerTemplate(),
+        ContainerTemplate(),
+        ContainerTemplate(1.0, true),
+        ContainerTemplate(),
+        ContainerTemplate(),
+        ContainerTemplate(),
+        ContainerTemplate(),
+        ContainerTemplate(),
+        ContainerTemplate(),
+        ContainerTemplate(),
+        ContainerTemplate(),
+        ContainerTemplate(),
+        ContainerTemplate(),
+        ContainerTemplate(),
+        ContainerTemplate(),
+        ContainerTemplate(),
+        ContainerTemplate(),
+        Int8(1),
+        0
+    ),
+    VoltmeterTemplate(
+        ContainerTemplate(1e-2, true),
+        Int8(1)
+    ),
+    AmmeterTemplate(
+        ContainerTemplate(1e-2, true),
+        ContainerTemplate(1e-2, true),
+        Int8(1),
+        Int8(1)
+    ),
+    WattmeterTemplate(
+        ContainerTemplate(1e-2, true),
+        ContainerTemplate(1e-2, true),
+        ContainerTemplate(1e-2, true),
+        Int8(1),
+        Int8(1),
+        Int8(1)
+    ),
+    VarmeterTemplate(
+        ContainerTemplate(1e-2, true),
+        ContainerTemplate(1e-2, true),
+        ContainerTemplate(1e-2, true),
+        Int8(1),
+        Int8(1),
+        Int8(1)
+    ),
+    AnglepmuTemplate(
+        1e-5,
+        1e-5,
+        1e-5,
+        Int8(1),
+        Int8(1),
+        Int8(1)
+    ),
+    MagnitudepmuTemplate(
+        ContainerTemplate(1e-5, true),
+        ContainerTemplate(1e-5, true),
+        ContainerTemplate(1e-5, true),
+        Int8(1),
+        Int8(1),
+        Int8(1)
     )
 )
+
+setting = Dict{UInt128, Dict{String, Int64}}()
+function setUUID()
+    id = uuid4()
+    setting[id.value] = Dict(
+        "bus" => 0,
+        "branch" => 0,
+        "generator" => 0
+    )
+
+    return id
+end
+
+
+
+
+

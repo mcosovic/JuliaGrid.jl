@@ -86,56 +86,118 @@ The `mode` argument can take on the following values:
 """
 macro default(mode::Symbol)
     if mode == :unit || mode == :power
-        factor[:activePower] = 0.0
-        factor[:reactivePower] = 0.0
-        factor[:apparentPower] = 0.0
+        prefix.activePower = 0.0
+        prefix.reactivePower = 0.0
+        prefix.apparentPower = 0.0
     end
 
     if mode == :unit || mode == :voltage
-        factor[:voltageMagnitude] = 0.0
-        factor[:voltageAngle] = 1.0
+        prefix.voltageMagnitude = 0.0
+        prefix.voltageAngle = 1.0
     end
 
     if mode == :unit || mode == :current
-        factor[:currentMagnitude] = 0.0
-        factor[:currentAngle] = 1.0
+        prefix.currentMagnitude = 0.0
+        prefix.currentAngle = 1.0
     end
 
     if mode == :unit || mode == :parameter
-        factor[:impedance] = 0.0
-        factor[:admittance] = 0.0
+        prefix.impedance = 0.0
+        prefix.admittance = 0.0
     end
 
     if mode == :template || mode == :bus
-        for key in keys(template[:bus])
-            template[:bus][key] = 0.0
-        end
-        template[:bus][:type] = 1
-        template[:bus][:magnitude] = 1.0
-        template[:bus][:base] = 138e3
-        template[:bus][:voltageAngle] = 1.0
-        template[:bus][:currentAngle] = 1.0
-        template[:bus][:baseVoltage] = 1.0
+        template.bus.active.value = 0.0
+        template.bus.active.pu = true
+        template.bus.reactive.value = 0.0
+        template.bus.reactive.pu = true
+
+        template.bus.conductance.value = 0.0
+        template.bus.conductance.pu = true
+        template.bus.susceptance.value = 0.0
+        template.bus.susceptance.pu = true
+
+        template.bus.magnitude.value = 1.0
+        template.bus.magnitude.pu = true
+        template.bus.minMagnitude.value = 0.0
+        template.bus.minMagnitude.pu = true
+        template.bus.maxMagnitude.value = 0.0
+        template.bus.maxMagnitude.pu = true
+
+        template.bus.base = 138e3
+        template.bus.angle = 0.0
+        template.bus.type = Int8(1)
+        template.bus.area = 1
+        template.bus.lossZone = 1
     end
 
     if mode == :template || mode == :branch
-        for key in keys(template[:branch])
-            template[:branch][key] = 0.0
-        end
-        template[:branch][:status] = 1
-        template[:branch][:type] = 1
-        template[:branch][:turnsRatio] = 1.0
-        template[:branch][:voltageAngle] = 1.0
-        template[:branch][:currentAngle] = 1.0
+        template.branch.resistance.value = 0.0
+        template.branch.resistance.pu = true
+        template.branch.reactance.value = 0.0
+        template.branch.reactance.pu = true
+        template.branch.conductance.value = 0.0
+        template.branch.conductance.pu = true
+        template.branch.susceptance.value = 0.0
+        template.branch.susceptance.pu = true
+
+        template.branch.longTerm.value = 0.0
+        template.branch.longTerm.pu = true
+        template.branch.shortTerm.value = 0.0
+        template.branch.shortTerm.pu = true
+        template.branch.emergency.value = 0.0
+        template.branch.emergency.pu = true
+
+        template.branch.turnsRatio = 1.0
+        template.branch.shiftAngle = 0.0
+        template.branch.minDiffAngle = 0.0
+        template.branch.maxDiffAngle = 0.0
+        template.branch.status = Int8(1)
+        template.branch.type = Int8(1)
     end
 
     if mode == :template || mode == :generator
-        for key in keys(template[:generator])
-           template[:generator][key] = 0.0
-        end
-       template[:generator][:status] = 1
-       template[:generator][:magnitude] = 1.0
-       template[:generator][:voltageAngle] = 1.0
-       template[:generator][:currentAngle] = 1.0
+        template.generator.active.value = 0.0
+        template.generator.active.pu = true
+        template.generator.reactive.value = 0.0
+        template.generator.reactive.pu = true
+        
+        template.generator.magnitude.value = 1.0
+        template.generator.magnitude.pu = true
+
+        template.generator.minActive.value = 0.0
+        template.generator.minActive.pu = true
+        template.generator.maxActive.value = 0.0
+        template.generator.maxActive.pu = true
+        template.generator.minReactive.value = 0.0
+        template.generator.minReactive.pu = true
+        template.generator.maxReactive.value = 0.0
+        template.generator.maxReactive.pu = true
+
+        template.generator.lowActive.value = 0.0
+        template.generator.lowActive.pu = true
+        template.generator.minLowReactive.value = 0.0
+        template.generator.minLowReactive.pu = true
+        template.generator.maxLowReactive.value = 0.0
+        template.generator.maxLowReactive.pu = true
+
+        template.generator.upActive.value = 0.0
+        template.generator.upActive.pu = true
+        template.generator.minUpReactive.value = 0.0
+        template.generator.minUpReactive.pu = true
+        template.generator.maxUpReactive.value = 0.0
+        template.generator.maxUpReactive.pu = true
+
+        template.generator.loadFollowing.value = 0.0
+        template.generator.loadFollowing.pu = true
+        template.generator.reactiveTimescale.value = 0.0
+        template.generator.reactiveTimescale.pu = true
+        template.generator.reserve10min.value = 0.0
+        template.generator.reserve10min.pu = true
+        template.generator.reserve30min.value = 0.0
+        template.generator.reserve30min.pu = true
+
+        template.generator.status = Int8(1)
+        template.generator.area = 0
     end
 end

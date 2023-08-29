@@ -1,4 +1,4 @@
-const prefix = Dict(
+const prefixList = Dict(
     "q" => 1e-30,
     "r" => 1e-27,
     "y" => 1e-24,
@@ -25,7 +25,7 @@ const prefix = Dict(
     "Q" => 1e30
     )
 
-const suffix = Dict(
+const suffixList = Dict(
     :basePower => ["VA"],
     :baseVoltage => ["V"],
     :activePower => ["W", "pu"],
@@ -39,23 +39,25 @@ const suffix = Dict(
     :admittance => ["S", "pu"]
     )
 
-const factor = Dict(
-    :activePower => 0.0,
-    :reactivePower => 0.0,
-    :apparentPower => 0.0,
-    :voltageMagnitude => 0.0,
-    :voltageAngle => 1.0,
-    :currentMagnitude => 0.0,
-    :currentAngle => 1.0,
-    :impedance => 0.0,
-    :admittance => 0.0,
-    :baseVoltage => 1.0,
-    )
+
+Base.@kwdef mutable struct PrefixLive
+    activePower::Float64 = 0.0
+    reactivePower::Float64 = 0.0
+    apparentPower::Float64 = 0.0
+    voltageMagnitude::Float64 = 0.0
+    voltageAngle::Float64 = 1.0
+    currentMagnitude::Float64 = 0.0
+    currentAngle::Float64 = 1.0
+    impedance::Float64 = 0.0
+    admittance::Float64 = 0.0
+    baseVoltage::Float64 = 1.0
+end
+prefix = PrefixLive()
 
 """
     @base(system::PowerSystem, power, voltage)
 
-By default, the units for base power and base voltages are set to volt-ampere (VA) and volt 
+By default, the units for base power and base voltages are set to volt-ampere (VA) and volt
 (V), but you can modify the prefixes using the macro.
 
 Prefixes must be specified according to the [SI prefixes](https://www.nist.gov/pml/owm/metric-si-prefixes)
@@ -69,13 +71,13 @@ system = powerSystem("case14.h5")
 ```
 """
 macro base(system::Symbol, power::Symbol, voltage::Symbol)
-    power = string(power)
-    suffixPower = parseSuffix(power, :basePower)
-    prefixPower = parsePrefix(power, suffixPower)
+    powerString = string(power)
+    suffixPower = parseSuffix(powerString, :basePower)
+    prefixPower = parsePrefix(powerString, suffixPower)
 
-    voltage = string(voltage)
-    suffixVoltage = parseSuffix(voltage, :baseVoltage)
-    prefixVoltage = parsePrefix(voltage, suffixVoltage)
+    voltageString = string(voltage)
+    suffixVoltage = parseSuffix(voltageString, :baseVoltage)
+    prefixVoltage = parsePrefix(voltageString, suffixVoltage)
 
     return quote
         system = $(esc(system))
@@ -83,12 +85,12 @@ macro base(system::Symbol, power::Symbol, voltage::Symbol)
         prefixOld = system.base.power.prefix
         system.base.power.value = system.base.power.value * prefixOld / $prefixPower
         system.base.power.prefix = $prefixPower
-        system.base.power.unit = $power
+        system.base.power.unit = $powerString
 
         prefixOld = system.base.voltage.prefix
         system.base.voltage.value = system.base.voltage.value * prefixOld / $prefixVoltage
         system.base.voltage.prefix = $prefixVoltage
-        system.base.voltage.unit = $voltage
+        system.base.voltage.unit = $voltageString
     end
 end
 
@@ -97,11 +99,11 @@ end
 
 JuliaGrid stores all data related with powers in per-units, and these cannot be altered.
 However, the power units of the built-in functions used to add or modified power system
-elements can be modified using the macro:
+elements can be modified using the macro.
 
 Prefixes must be specified according to the
 [SI prefixes](https://www.nist.gov/pml/owm/metric-si-prefixes) and should be included with
-the unit of `active` power (W), `reactive` power (VAr), or `apparent` power (VA). Also it 
+the unit of `active` power (W), `reactive` power (VAr), or `apparent` power (VA). Also it
 is a possible to combine SI units with/without prefixes with per-units (pu).
 
 Changing the unit of active power is reflected in the following quantities:
@@ -128,17 +130,17 @@ Changing the unit of apparent power unit is reflected in the following quantitie
 ```
 """
 macro power(active::Symbol, reactive::Symbol, apparent::Symbol)
-    active = string(active)
-    suffixUser = parseSuffix(active, :activePower)
-    factor[:activePower] = parsePrefix(active, suffixUser)
+    activeString = string(active)
+    suffixUser = parseSuffix(activeString, :activePower)
+    prefix.activePower = parsePrefix(activeString, suffixUser)
 
-    reactive = string(reactive)
-    suffixUser = parseSuffix(reactive, :reactivePower)
-    factor[:reactivePower] = parsePrefix(reactive, suffixUser)
+    reactiveString = string(reactive)
+    suffixUser = parseSuffix(reactiveString, :reactivePower)
+    prefix.reactivePower = parsePrefix(reactiveString, suffixUser)
 
-    apparent = string(apparent)
-    suffixUser = parseSuffix(apparent, :apparentPower)
-    factor[:apparentPower] = parsePrefix(apparent, suffixUser)
+    apparentString = string(apparent)
+    suffixUser = parseSuffix(apparentString, :apparentPower)
+    prefix.apparentPower = parsePrefix(apparentString, suffixUser)
 end
 
 """
@@ -146,7 +148,7 @@ end
 
 JuliaGrid stores all data related with voltages in per-units and radians, and these cannot
 be altered. However, the voltage magnitude and angle units of the built-in functions used
-to add or modified power system elements can be modified using the macro:
+to add or modified power system elements can be modified using the macro.
 
 The prefixes must adhere to the [SI prefixes](https://www.nist.gov/pml/owm/metric-si-prefixes)
 and should be specified along with the unit of voltage, either `magnitude` (V) or `base` (V).
@@ -171,17 +173,47 @@ Changing the unit prefix of voltage base is reflected in the following quantity:
 ```
 """
 macro voltage(magnitude::Symbol, angle::Symbol, base::Symbol)
-    magnitude = string(magnitude)
-    suffixUser = parseSuffix(magnitude, :voltageMagnitude)
-    factor[:voltageMagnitude] = parsePrefix(magnitude, suffixUser)
+    magnitudeString = string(magnitude)
+    suffixUser = parseSuffix(magnitudeString, :voltageMagnitude)
+    prefix.voltageMagnitude = parsePrefix(magnitudeString, suffixUser)
 
-    angle = string(angle)
-    suffixUser = parseSuffix(angle, :voltageAngle)
-    factor[:voltageAngle] = parsePrefix(angle, suffixUser)
+    angleString = string(angle)
+    suffixUser = parseSuffix(angleString, :voltageAngle)
+    prefix.voltageAngle = parsePrefix(angleString, suffixUser)
 
-    base = string(base)
-    suffixUser = parseSuffix(base, :baseVoltage)
-    factor[:baseVoltage] = parsePrefix(base, suffixUser)
+    baseString = string(base)
+    suffixUser = parseSuffix(baseString, :baseVoltage)
+    prefix.baseVoltage = parsePrefix(baseString, suffixUser)
+end
+
+"""
+    @current(magnitude, angle)
+
+JuliaGrid stores all data related with currents in per-units and radians, and these cannot
+be altered. However, the current magnitude and angle units of the built-in functions used
+to add or modified measurement devices can be modified using the macro.
+
+The prefixes must adhere to the [SI prefixes](https://www.nist.gov/pml/owm/metric-si-prefixes)
+and should be specified along with the unit of current `magnitude` (V).
+Alternatively, the unit of current `magnitude` can be expressed in per-unit (pu). The unit
+of current angle should be in radians (rad) or degrees (deg).
+
+Changing the unit of current magnitude is reflected in the following quantities:
+* [`addAmmeter!`](@ref addAmmeter!): `mean`, `exact`, `variance`.
+
+# Example
+```jldoctest
+@current(pu, deg)
+```
+"""
+macro current(magnitude::Symbol, angle::Symbol)
+    magnitudeString = string(magnitude)
+    suffixUser = parseSuffix(magnitudeString, :currentMagnitude)
+    prefix.currentMagnitude = parsePrefix(magnitudeString, suffixUser)
+
+    angleString = string(angle)
+    suffixUser = parseSuffix(angleString, :currentAngle)
+    prefix.currentAngle = parsePrefix(angleString, suffixUser)
 end
 
 """
@@ -189,11 +221,11 @@ end
 
 JuliaGrid stores all data related with impedances and admittancies in per-units, and these
 cannot be altered. However, units of impedance and admittance of the built-in functions
-used to add or modified power system elements can be modified using the macro:
+used to add or modified power system elements can be modified using the macro.
 
 Prefixes must be specified according to the
 [SI prefixes](https://www.nist.gov/pml/owm/metric-si-prefixes) and should be
-included with the unit of `impedance` (Ω) or unit of `admittance` (S). The second option 
+included with the unit of `impedance` (Ω) or unit of `admittance` (S). The second option
 is to define the units in per-unit (pu).
 
 In the case where impedance and admittance are being used in SI units (Ω and S) and these
@@ -215,19 +247,19 @@ Changing the units of admittance is reflected in the following quantities:
 ```
 """
 macro parameter(impedance::Symbol, admittance::Symbol)
-    impedance = string(impedance)
-    suffixUser = parseSuffix(impedance, :impedance)
-    factor[:impedance] = parsePrefix(impedance, suffixUser)
+    impedanceString = string(impedance)
+    suffixUser = parseSuffix(impedanceString, :impedance)
+    prefix.impedance = parsePrefix(impedanceString, suffixUser)
 
-    admittance = string(admittance)
-    suffixUser = parseSuffix(admittance, :admittance)
-    factor[:admittance] = parsePrefix(admittance, suffixUser)
+    admittanceString = string(admittance)
+    suffixUser = parseSuffix(admittanceString, :admittance)
+    prefix.admittance = parsePrefix(admittanceString, suffixUser)
 end
 
 ######### Parse Suffix (Unit) ##########
 function parseSuffix(input::String, type::Symbol)
     sufixUser = ""
-    @inbounds for i in suffix[type]
+    @inbounds for i in suffixList[type]
         if endswith(input, i)
             sufixUser = i
         end
@@ -249,10 +281,10 @@ function parsePrefix(input::String, suffixUser::String)
         scale = 1.0
         if suffixUser != input
             prefixUser = split(input, suffixUser)[1]
-            if !(prefixUser in keys(prefix))
+            if !(prefixUser in keys(prefixList))
                 error("The unit prefix $prefixUser is illegal.")
             else
-                scale = prefix[prefixUser]
+                scale = prefixList[prefixUser]
             end
         end
     end
@@ -260,32 +292,68 @@ function parsePrefix(input::String, suffixUser::String)
     return scale
 end
 
-######### Scale Values to Transform SI to pu ##########
-function si2pu(prefix::Float64, base::N, factor::N)
-    if factor == 0.0
-        scale = 1.0
-    else
-        scale = factor / (prefix * base)
-        if scale == Inf
-            error("The illegal base value.")
-        end
+######### Impedance Base Value ##########
+function baseImpedance(baseVoltage::Float64, basePowerInv::Float64, turnsRatio::Float64)
+    base = 1.0
+    if prefix.impedance != 0.0 || prefix.admittance != 0.0
+        base = (baseVoltage * turnsRatio)^2 * basePowerInv
     end
 
-    return scale
+    return base
 end
 
-######### Impedance Base Value ##########
-function baseImpedance(system::PowerSystem, baseVoltage::N, turnsRatio::N)
+######### Current Magnitude Base Value ##########
+function baseCurrentInverse(basePowerInv::Float64, baseVoltage::Float64)
     base = 1.0
-    prefix = 1.0
-    if factor[:impedance] != 0.0 || factor[:admittance] != 0.0
-        if turnsRatio != 0
-            prefix = (turnsRatio * system.base.voltage.prefix)^2 / system.base.power.prefix
-        else
-            prefix = system.base.voltage.prefix^2 / system.base.power.prefix
-        end
-        base = baseVoltage^2 / system.base.power.value
+    if prefix.currentMagnitude != 0.0
+        base = sqrt(3) * baseVoltage * basePowerInv
     end
 
-    return prefix, base
+    return base
+end
+
+######### To Per-Units with Default Values ##########
+function topu(value, default, baseInv, prefixLive)
+    if ismissing(value)
+        if default.pu
+            value = default.value
+        else
+            value = default.value * baseInv
+        end
+    else
+        if prefixLive != 0.0
+            value = (value * prefixLive) * baseInv
+        end
+    end
+
+    return value
+end
+
+######### To Per-Units Live ##########
+function topu(value, baseInv, prefixLive)
+    if prefixLive != 0.0
+       value = (value * prefixLive) * baseInv
+    end
+
+    return value
+end
+
+######### To Radians or Volts with Default Values ##########
+function tosi(value, default, prefixLive)
+    if ismissing(value)
+        value = default
+    else
+        value = value * prefixLive
+    end
+
+    return value
+end
+
+######### Unitless Quantities with Default Values ##########
+function unitless(value, default)
+    if ismissing(value)
+        value = default
+    end
+
+    return value
 end

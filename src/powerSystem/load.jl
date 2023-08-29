@@ -21,7 +21,6 @@ mutable struct BusLayout
     area::Array{Int64,1}
     lossZone::Array{Int64,1}
     slack::Int64
-    renumbering::Bool
 end
 
 mutable struct BusSupply
@@ -31,7 +30,7 @@ mutable struct BusSupply
 end
 
 mutable struct Bus
-    label::Dict{Int64,Int64}
+    label::Dict{String,Int64}
     demand::BusDemand
     supply::BusSupply
     shunt::BusShunt
@@ -66,11 +65,10 @@ mutable struct BranchLayout
     from::Array{Int64,1}
     to::Array{Int64,1}
     status::Array{Int8,1}
-    renumbering::Bool
 end
 
 mutable struct Branch
-    label::Dict{Int64,Int64}
+    label::Dict{String,Int64}
     parameter::BranchParameter
     rating::BranchRating
     voltage::BranchVoltage
@@ -123,11 +121,10 @@ mutable struct GeneratorLayout
     bus::Array{Int64,1}
     area::Array{Float64,1}
     status::Array{Int8,1}
-    renumbering::Bool
 end
 
 mutable struct Generator
-    label::Dict{Int64,Int64}
+    label::Dict{String,Int64}
     output::GeneratorOutput
     capability::GeneratorCapability
     ramping::GeneratorRamping
@@ -185,6 +182,7 @@ mutable struct PowerSystem
     generator::Generator
     base::BaseData
     model::Model
+    const uuid::UUID
 end
 
 """
@@ -268,25 +266,26 @@ function powerSystem()
     ai8 = Array{Int8,1}(undef, 0)
     sp = spzeros(0, 0)
     ac = Array{ComplexF64,1}(undef, 0)
-    label = Dict{Int64,Int64}()
+
+    label = Dict{String, Int64}()
 
     demand = BusDemand(af, copy(af))
     supply = BusSupply(copy(af), copy(af), copy(af))
     shunt = BusShunt(copy(af), copy(af))
     voltageBus = BusVoltage(copy(af), copy(af), copy(af), copy(af))
-    layoutBus = BusLayout(ai8, copy(ai), copy(ai), 0, false)
+    layoutBus = BusLayout(ai8, copy(ai), copy(ai), 0)
 
     parameter = BranchParameter(copy(af), copy(af), copy(af), copy(af), copy(af), copy(af))
     rating = BranchRating(copy(af), copy(af), copy(af), copy(ai8))
     voltageBranch = BranchVoltage(copy(af), copy(af))
-    layoutBranch = BranchLayout(copy(ai), copy(ai), copy(ai8), false)
+    layoutBranch = BranchLayout(copy(ai), copy(ai), copy(ai8))
 
     output = GeneratorOutput(copy(af), copy(af))
     capability = GeneratorCapability(copy(af), copy(af), copy(af), copy(af), copy(af), copy(af), copy(af), copy(af), copy(af), copy(af))
     ramping = GeneratorRamping(copy(af), copy(af), copy(af), copy(af))
     cost = GeneratorCost(Cost(copy(ai8), [], []), Cost(copy(ai), [], []))
     voltageGenerator =  GeneratorVoltage(copy(af))
-    layoutGenerator = GeneratorLayout(copy(ai), copy(af), copy(ai8), false)
+    layoutGenerator = GeneratorLayout(copy(ai), copy(af), copy(ai8))
 
     basePower = BasePower(1e8, "VA", 1.0)
     baseVoltage = BaseVoltage(copy(af), "V", 1.0)
@@ -294,12 +293,15 @@ function powerSystem()
     acModel = ACModel(copy(sp), copy(sp), ac, copy(ac), copy(ac), copy(ac), copy(ac))
     dcModel = DCModel(sp, copy(af), copy(af))
 
+    id = setUUID()
+
     return PowerSystem(
         Bus(label, demand, supply, shunt, voltageBus, layoutBus, 0),
         Branch(copy(label), parameter, rating, voltageBranch, layoutBranch, 0),
         Generator(copy(label), output, capability, ramping, voltageGenerator, cost, layoutGenerator, 0),
         BaseData(basePower, baseVoltage),
-        Model(acModel, dcModel))
+        Model(acModel, dcModel),
+        id)
 end
 
 ######## Load Bus Data from HDF5 File ##########
@@ -310,22 +312,28 @@ function loadBus(system::PowerSystem, hdf5::HDF5.File)
     bus = system.bus
 
     layouth5 = hdf5["bus/layout"]
-    label::Array{Int64,1} = HDF5.readmmap(layouth5["label"])
     bus.layout.type = read(layouth5["type"])
+    bus.number = length(bus.layout.type)
 
-    bus.number = length(label)
-    bus.label = Dict{Int64,Int64}(); sizehint!(bus.label, bus.number)
+    bus.layout.area = readHDF5(layouth5, "area", bus.number)
+    bus.layout.lossZone = readHDF5(layouth5, "lossZone", bus.number)
+    bus.label = Dict{String,Int64}(); sizehint!(bus.label, bus.number)
+
+    label::Array{String,1} = read(layouth5["label"])
+    maxLabel = 0
     @inbounds for i = 1:bus.number
-        j = label[i]
-        if !bus.layout.renumbering && i != j
-            bus.layout.renumbering = true
+        bus.label[label[i]] = i
+
+        labelInt64 = tryparse(Int64, label[i])
+        if labelInt64 !== nothing
+            maxLabel = max(maxLabel, labelInt64)
         end
-        bus.label[j] = i
 
         if bus.layout.type[i] == 3
             bus.layout.slack = i
-        end
+        end 
     end
+    setting[system.uuid.value]["bus"] = maxLabel
 
     demandh5 = hdf5["bus/demand"]
     bus.demand.active = readHDF5(demandh5, "active", bus.number)
@@ -344,9 +352,6 @@ function loadBus(system::PowerSystem, hdf5::HDF5.File)
     bus.voltage.angle = readHDF5(voltageh5, "angle", bus.number)
     bus.voltage.minMagnitude = readHDF5(voltageh5, "minMagnitude", bus.number)
     bus.voltage.maxMagnitude = readHDF5(voltageh5, "maxMagnitude", bus.number)
-
-    bus.layout.area = readHDF5(layouth5, "area", bus.number)
-    bus.layout.lossZone = readHDF5(layouth5, "lossZone", bus.number)
 end
 
 ######## Load Branch Data from HDF5 File ##########
@@ -357,17 +362,13 @@ function loadBranch(system::PowerSystem, hdf5::HDF5.File)
     branch = system.branch
 
     layouth5 = hdf5["branch/layout"]
-    labelOriginal::Array{Int64,1} = HDF5.readmmap(layouth5["label"])
+    branch.layout.from = read(layouth5, "from")
+    branch.layout.to = read(layouth5, "to")
+    branch.number = length(branch.layout.to)
 
-    branch.number = length(labelOriginal)
-    branch.label = Dict{Int64,Int64}(); sizehint!(branch.label, branch.number)
-    @inbounds for i = 1:branch.number
-        j = labelOriginal[i]
-        if !branch.layout.renumbering && i != j
-            branch.layout.renumbering = true
-        end
-        branch.label[j] = i
-    end
+    branch.layout.status = readHDF5(layouth5, "status", branch.number)
+    branch.label = Dict(zip(read(layouth5["label"]), collect(1:branch.number)))
+    setting[system.uuid.value]["branch"] = branch.number
 
     parameterh5 = hdf5["branch/parameter"]
     branch.parameter.resistance = readHDF5(parameterh5, "resistance", branch.number)
@@ -386,14 +387,6 @@ function loadBranch(system::PowerSystem, hdf5::HDF5.File)
     branch.rating.shortTerm = readHDF5(ratingh5, "shortTerm", branch.number)
     branch.rating.emergency = readHDF5(ratingh5, "emergency", branch.number)
     branch.rating.type = readHDF5(ratingh5, "type", branch.number)
-
-    branch.layout.status = readHDF5(layouth5, "status", branch.number)
-    branch.layout.from::Array{Int64,1} = read(layouth5["from"])
-    branch.layout.to::Array{Int64,1} = read(layouth5["to"])
-    if system.bus.layout.renumbering
-        from = runRenumbering(branch.layout.from, branch.number, system.bus.label)
-        to = runRenumbering(branch.layout.to, branch.number, system.bus.label)
-    end
 end
 
 ######## Load Generator Data from HDF5 File ##########
@@ -404,8 +397,13 @@ function loadGenerator(system::PowerSystem, hdf5::HDF5.File)
     generator = system.generator
 
     layouth5 = hdf5["generator/layout"]
-    labelOriginal::Array{Int64,1} = HDF5.readmmap(layouth5["label"])
-    generator.number = length(labelOriginal)
+    generator.layout.bus = read(layouth5, "bus")
+    generator.number = length(generator.layout.bus)
+
+    generator.layout.area = readHDF5(layouth5, "area", generator.number)
+    generator.layout.status = readHDF5(layouth5, "status", generator.number)
+    generator.label = Dict(zip(read(layouth5["label"]), collect(1:generator.number)))
+    setting[system.uuid.value]["generator"] = generator.number
 
     outputh5 = hdf5["generator/output"]
     generator.output.active = readHDF5(outputh5, "active", generator.number)
@@ -440,18 +438,8 @@ function loadGenerator(system::PowerSystem, hdf5::HDF5.File)
     generator.cost.reactive.model = readHDF5(costh5, "model", generator.number)
     generator.cost.reactive.polynomial = loadPolynomial(costh5, "polynomial", generator.number)
     generator.cost.reactive.piecewise = loadPiecewise(costh5, "piecewise", generator.number)
-
-    generator.layout.bus::Array{Int64,1} = read(layouth5["bus"])
-    if system.bus.layout.renumbering
-        generator.layout.bus = runRenumbering(generator.layout.bus, generator.number, system.bus.label)
-    end
-    generator.layout.area = readHDF5(layouth5, "area", generator.number)
-    generator.layout.status = readHDF5(layouth5, "status", generator.number)
-
-    generator.label = Dict{Int64,Int64}()
-    sizehint!(generator.label, generator.number)
+ 
     @inbounds for (k, i) in enumerate(generator.layout.bus)
-        generator.label[labelOriginal[k]] = k
         if generator.layout.status[k] == 1
             push!(system.bus.supply.generator[i], k)
             system.bus.supply.active[i] += generator.output.active[k]
@@ -532,7 +520,7 @@ function loadBus(system::PowerSystem, busLine::Array{String,1})
     deg2rad = pi / 180
 
     bus.number = length(busLine)
-    bus.label = Dict{Int64,Int64}(); sizehint!(bus.label, bus.number)
+    bus.label = Dict{String,Int64}(); sizehint!(bus.label, bus.number)
 
     bus.demand.active = fill(0.0, bus.number)
     bus.demand.reactive = similar(bus.demand.active)
@@ -553,17 +541,16 @@ function loadBus(system::PowerSystem, busLine::Array{String,1})
     bus.layout.area = fill(0, bus.number)
     bus.layout.lossZone = similar(bus.layout.area)
     bus.layout.slack = 0
-    bus.layout.renumbering = false
 
     system.base.voltage.value = similar(bus.demand.active)
+
+    maxLabel = 0
     @inbounds for (k, line) in enumerate(busLine)
         data = split(line)
 
-        busIndex = parse(Int64, data[1])
-        if !bus.layout.renumbering && k != busIndex
-            bus.layout.renumbering = true
-        end
-        bus.label[busIndex] = k
+        bus.label[data[1]] = k
+        labelInt64 = parse(Int64, data[1])
+        maxLabel = max(maxLabel, labelInt64)
 
         bus.demand.active[k] = parse(Float64, data[3]) * basePowerInv
         bus.demand.reactive[k] = parse(Float64, data[4]) * basePowerInv
@@ -586,6 +573,7 @@ function loadBus(system::PowerSystem, busLine::Array{String,1})
 
         system.base.voltage.value[k] = parse(Float64, data[10]) * 1e3
     end
+    setting[system.uuid.value]["bus"] = maxLabel
 
     if bus.layout.slack == 0
         bus.layout.slack = 1
@@ -604,7 +592,7 @@ function loadBranch(system::PowerSystem, branchLine::Array{String,1})
     deg2rad = pi / 180
 
     branch.number = length(branchLine)
-    branch.label = Dict{Int64,Int64}(); sizehint!(branch.label, branch.number)
+    branch.label = Dict{String,Int64}(); sizehint!(branch.label, branch.number)
 
     branch.parameter.conductance = fill(0.0, branch.number)
     branch.parameter.resistance = similar(branch.parameter.conductance)
@@ -624,12 +612,11 @@ function loadBranch(system::PowerSystem, branchLine::Array{String,1})
     branch.layout.from = fill(0, branch.number)
     branch.layout.to = similar( branch.layout.from)
     branch.layout.status = similar(branch.rating.type)
-    branch.layout.renumbering = false
 
     @inbounds for (k, line) in enumerate(branchLine)
         data = split(line)
 
-        branch.label[k] = k
+        branch.label[string(k)] = k
 
         branch.parameter.resistance[k] = parse(Float64, data[3])
         branch.parameter.reactance[k] = parse(Float64, data[4])
@@ -651,9 +638,10 @@ function loadBranch(system::PowerSystem, branchLine::Array{String,1})
         branch.voltage.maxDiffAngle[k] = parse(Float64, data[13]) * deg2rad
 
         branch.layout.status[k] = parse(Int8, data[11])
-        branch.layout.from[k] = system.bus.label[parse(Int64, data[1])]
-        branch.layout.to[k] = system.bus.label[parse(Int64, data[2])]
+        branch.layout.from[k] = system.bus.label[data[1]]
+        branch.layout.to[k] = system.bus.label[data[2]]
     end
+    setting[system.uuid.value]["branch"] = branch.number
 end
 
 ######## Load Generator Data from MATLAB File ##########
@@ -666,7 +654,7 @@ function loadGenerator(system::PowerSystem, generatorLine::Array{String,1}, gene
     basePowerInv = 1 / system.base.power.value
 
     generator.number = length(generatorLine)
-    generator.label = Dict{Int64,Int64}(); sizehint!(generator.label, generator.number)
+    generator.label = Dict{String,Int64}(); sizehint!(generator.label, generator.number)
 
     generator.output.active = fill(0.0, generator.number)
     generator.output.reactive = similar(generator.output.active)
@@ -696,7 +684,7 @@ function loadGenerator(system::PowerSystem, generatorLine::Array{String,1}, gene
     @inbounds for (k, line) in enumerate(generatorLine)
         data = split(line)
 
-        generator.label[k] = k
+        generator.label[string(k)] = k
 
         generator.output.active[k] = parse(Float64, data[2]) * basePowerInv
         generator.output.reactive[k] = parse(Float64, data[3]) * basePowerInv
@@ -719,7 +707,7 @@ function loadGenerator(system::PowerSystem, generatorLine::Array{String,1}, gene
 
         generator.voltage.magnitude[k] = parse(Float64, data[6])
 
-        generator.layout.bus[k] = system.bus.label[parse(Int64, data[1])]
+        generator.layout.bus[k] = system.bus.label[data[1]]
         generator.layout.area[k] = parse(Float64, data[21])
         generator.layout.status[k] = parse(Int8, data[8])
 
@@ -731,6 +719,7 @@ function loadGenerator(system::PowerSystem, generatorLine::Array{String,1}, gene
             system.bus.supply.reactive[i] += generator.output.reactive[k]
         end
     end
+    setting[system.uuid.value]["generator"] = generator.number
 
     generator.cost.active.model = fill(Int8(1), system.generator.number)
     generator.cost.active.polynomial = [Array{Float64}(undef, 0) for i = 1:system.generator.number]

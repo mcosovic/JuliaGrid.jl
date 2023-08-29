@@ -26,7 +26,6 @@
     @test systemMat.bus.layout.area == systemH5.bus.layout.area
     @test systemMat.bus.layout.lossZone == systemH5.bus.layout.lossZone
     @test systemMat.bus.layout.slack == systemH5.bus.layout.slack
-    @test systemMat.bus.layout.renumbering == systemH5.bus.layout.renumbering
 
     ######## Branch Data ##########
     @test systemMat.branch.label == systemH5.branch.label
@@ -50,7 +49,6 @@
     @test systemMat.branch.layout.from == systemH5.branch.layout.from
     @test systemMat.branch.layout.to == systemH5.branch.layout.to
     @test systemMat.branch.layout.status == systemH5.branch.layout.status
-    @test systemMat.branch.layout.renumbering == systemH5.branch.layout.renumbering
 
     ######## Generator Data ##########
     @test systemMat.generator.label == systemH5.generator.label

@@ -54,7 +54,6 @@
     @test system.bus.layout.area == systemPU.bus.layout.area
     @test system.bus.layout.lossZone == systemPU.bus.layout.lossZone
     @test system.bus.layout.slack == systemPU.bus.layout.slack
-    @test system.bus.layout.renumbering == systemPU.bus.layout.renumbering
 
     ######### Branch ##########
     @test system.branch.label == systemPU.branch.label
@@ -77,7 +76,6 @@
     @test system.branch.layout.from == systemPU.branch.layout.from
     @test system.branch.layout.to == systemPU.branch.layout.to
     @test system.branch.layout.status == systemPU.branch.layout.status
-    @test system.branch.layout.renumbering == systemPU.branch.layout.renumbering
 
     ######### Generator ##########
     @test system.generator.label == systemPU.generator.label
@@ -163,7 +161,6 @@ end
     @test system.bus.layout.area == systemSI.bus.layout.area
     @test system.bus.layout.lossZone == systemSI.bus.layout.lossZone
     @test system.bus.layout.slack == systemSI.bus.layout.slack
-    @test system.bus.layout.renumbering == systemSI.bus.layout.renumbering
 
     ######### Branch ##########
     @test system.branch.label == systemSI.branch.label
@@ -186,7 +183,6 @@ end
     @test system.branch.layout.from == systemSI.branch.layout.from
     @test system.branch.layout.to == systemSI.branch.layout.to
     @test system.branch.layout.status == systemSI.branch.layout.status
-    @test system.branch.layout.renumbering == systemSI.branch.layout.renumbering
 
     ######### Generator ##########
     @test system.generator.label == systemSI.generator.label
