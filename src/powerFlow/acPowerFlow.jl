@@ -894,8 +894,7 @@ function reactiveLimit!(system::PowerSystem, analysis::ACPowerFlow)
                 if j == bus.layout.slack
                     for k = 1:bus.number
                         if bus.layout.type[k] == 2
-                            @info("The slack bus $(trunc(Int, bus.label[j])) is converted to generator bus, the bus $(trunc(Int, bus.label[k])) is the new slack bus.")
-                            bus.layout.slack = bus.label[k]
+                            bus.layout.slack = k
                             bus.layout.type[k] = 3
                             break
                         end
@@ -964,8 +963,8 @@ end
 adjustAngle!(system, analysis; slack = 1)
 ```
 """
-function adjustAngle!(system::PowerSystem, analysis::ACPowerFlow; slack::T = system.bus.layout.slack)
-    index = system.bus.label[slack]
+function adjustAngle!(system::PowerSystem, analysis::ACPowerFlow; slack::L)
+    index = system.bus.label[getLabel(system.bus, slack, "bus")]
     T = system.bus.voltage.angle[index] - analysis.voltage.angle[index]
     @inbounds for i = 1:system.bus.number
         analysis.voltage.angle[i] = analysis.voltage.angle[i] + T
@@ -1003,7 +1002,7 @@ function changeSlackBus!(system::PowerSystem)
         if system.bus.layout.type[i] == 2 && !isempty(system.bus.supply.generator[i])
             system.bus.layout.type[i] = 3
             system.bus.layout.slack = i
-            @info("The slack bus did not have an in-service generator. The bus $(trunc(Int, system.bus.label[i])) is the new slack bus.")
+            # @info("The slack bus did not have an in-service generator. The bus $(trunc(Int, system.bus.label[i])) is the new slack bus.")
             break
         end
     end

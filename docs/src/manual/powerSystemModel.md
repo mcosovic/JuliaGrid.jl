@@ -207,7 +207,7 @@ label = collect(keys(sort(system.bus.label; byvalue = true)))
 
 ##### Automated Bus Labels
 JuliaGrid also provides the option for internally assigned labels, allowing users to omit the use of the `label` keyword. For example, let us add a new bus to the previous system while excluding the `label` keyword:
-```@example BusLabels
+```@example addBusLabels
 addBus!(system; type = 1, base = 345.0)
 
 nothing # hide
