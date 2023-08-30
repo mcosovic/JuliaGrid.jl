@@ -14,20 +14,20 @@ After obtaining the AC power flow solution, JuliaGrid offers post-processing ana
 * [`current!`](@ref current!(::PowerSystem, ::AC)).
 
 Furthermore, there are specialized functions dedicated to calculating specific types of powers related to particular buses, branches, or generators:
-* [`powerInjection`](@ref powerInjection(::PowerSystem, ::AC)),
-* [`powerSupply`](@ref powerSupply(::PowerSystem, ::ACPowerFlow)),
-* [`powerShunt`](@ref powerShunt(::PowerSystem, ::AC)),
-* [`powerFrom`](@ref powerFrom(::PowerSystem, ::AC)),
-* [`powerTo`](@ref powerTo(::PowerSystem, ::AC)),
-* [`powerCharging`](@ref powerCharging(::PowerSystem, ::AC)),
-* [`powerSeries`](@ref powerSeries(::PowerSystem, ::AC)),
-* [`powerGenerator`](@ref powerGenerator(::PowerSystem, ::ACPowerFlow)).
+* [`injectionPower`](@ref injectionPower(::PowerSystem, ::AC)),
+* [`supplyPower`](@ref supplyPower(::PowerSystem, ::ACPowerFlow)),
+* [`shuntPower`](@ref shuntPower(::PowerSystem, ::AC)),
+* [`fromPower`](@ref fromPower(::PowerSystem, ::AC)),
+* [`toPower`](@ref toPower(::PowerSystem, ::AC)),
+* [`seriesPower`](@ref seriesPower(::PowerSystem, ::AC)),
+* [`chargingPower`](@ref chargingPower(::PowerSystem, ::AC)),
+* [`generatorPower`](@ref generatorPower(::PowerSystem, ::ACPowerFlow)).
 
 Likewise, there are specialized functions dedicated to calculating specific types of currents related to particular buses or branches:
-* [`currentInjection`](@ref currentInjection(::PowerSystem, ::AC)),
-* [`currentFrom`](@ref currentFrom(::PowerSystem, ::AC)),
-* [`currentTo`](@ref currentTo(::PowerSystem, ::AC)),
-* [`currentSeries`](@ref currentSeries(::PowerSystem, ::AC)).
+* [`injectionCurrent`](@ref injectionCurrent(::PowerSystem, ::AC)),
+* [`fromCurrent`](@ref fromCurrent(::PowerSystem, ::AC)),
+* [`toCurrent`](@ref toCurrent(::PowerSystem, ::AC)),
+* [`seriesCurrent`](@ref seriesCurrent(::PowerSystem, ::AC)).
 
 Additionally, the package provides two functions for reactive power limit validation of generators and adjusting the voltage angles to match an arbitrary bus angle:
 * [`reactiveLimit!`](@ref reactiveLimit!),
