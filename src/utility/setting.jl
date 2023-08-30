@@ -36,6 +36,10 @@ mutable struct CartesianReal
     active::Array{Float64,1}
 end
 
+mutable struct SimpleCartesianReal
+    active::Float64
+end
+
 mutable struct CartesianImag
     reactive::Array{Float64,1}
 end
@@ -60,8 +64,8 @@ mutable struct Power
     shunt::Cartesian
     from::Cartesian
     to::Cartesian
-    charging::Cartesian
     series::Cartesian
+    charging::Cartesian
     generator::Cartesian
 end
 

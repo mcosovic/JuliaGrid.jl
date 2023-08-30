@@ -8,7 +8,7 @@ using UUIDs
 ########## Setting Variables ##########
 include("utility/setting.jl")
 
-# ########## Utility ##########
+########## Utility ##########
 include("utility/routine.jl")
 export @default
 
@@ -46,8 +46,8 @@ export dcOptimalPowerFlow
 include("postprocessing/dcAnalysis.jl")
 include("postprocessing/acAnalysis.jl")
 export power!, current!
-export powerInjection, powerSupply, powerShunt, powerFrom, powerTo, powerCharging, powerSeries, powerGenerator
-export currentInjection, currentFrom, currentTo, currentSeries
+export injectionPower, supplyPower, shuntPower, fromPower, toPower, chargingPower, seriesPower, generatorPower
+export injectionCurrent, fromCurrent, toCurrent, seriesCurrent
 
 ########## Unit ##########
 include("utility/unit.jl")

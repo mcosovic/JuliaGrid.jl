@@ -285,7 +285,7 @@ function power!(system::PowerSystem, analysis::ACOptimalPowerFlow)
 end
 
 """
-    powerInjection(system::PowerSystem, analysis::AC, label)
+    injectionPower(system::PowerSystem, analysis::AC, label)
 
 The function returns the active and reactive power injections associated with a specific
 bus in the AC framework. The `label` keyword argument must match an existing bus label.
@@ -309,7 +309,7 @@ for i = 1:10
     end
     solve!(system, analysis)
 end
-active, reactive = powerInjection(system, analysis; label = 1)
+active, reactive = injectionPower(system, analysis; label = 1)
 ```
 
 Compute powers after obtaining the AC optimal power flow solution:
@@ -319,10 +319,10 @@ acModel!(system)
 
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
 solve!(system, analysis)
-active, reactive = powerInjection(system, analysis; label = 1)
+active, reactive = injectionPower(system, analysis; label = 1)
 ```
 """
-function powerInjection(system::PowerSystem, analysis::AC; label)
+function injectionPower(system::PowerSystem, analysis::AC; label)
     if !haskey(system.bus.label, label)
         throw(ErrorException("The value $label of the label keyword does not exist in bus labels."))
     end
@@ -343,7 +343,7 @@ function powerInjection(system::PowerSystem, analysis::AC; label)
 end
 
 """
-    powerSupply(system::PowerSystem, analysis::AC, label)
+    supplyPower(system::PowerSystem, analysis::AC, label)
 
 The function returns the active and reactive power injections from the generators associated
 with a specific bus in the AC framework. The `label` keyword argument must match an existing
@@ -368,7 +368,7 @@ for i = 1:10
     end
     solve!(system, analysis)
 end
-active, reactive = powerSupply(system, analysis; label = 1)
+active, reactive = supplyPower(system, analysis; label = 1)
 ```
 
 Compute powers after obtaining the AC optimal power flow solution:
@@ -378,10 +378,10 @@ acModel!(system)
 
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
 solve!(system, analysis)
-active, reactive = powerSupply(system, analysis; label = 1)
+active, reactive = supplyPower(system, analysis; label = 1)
 ```
 """
-function powerSupply(system::PowerSystem, analysis::ACPowerFlow; label)
+function supplyPower(system::PowerSystem, analysis::ACPowerFlow; label)
     if !haskey(system.bus.label, label)
         throw(ErrorException("The value $label of the label keyword does not exist in bus labels."))
     end
@@ -416,7 +416,7 @@ function powerSupply(system::PowerSystem, analysis::ACPowerFlow; label)
     return supplyActive, supplyReactive
 end
 
-function powerSupply(system::PowerSystem, analysis::ACOptimalPowerFlow; label)
+function supplyPower(system::PowerSystem, analysis::ACOptimalPowerFlow; label)
     if !haskey(system.bus.label, label)
         throw(ErrorException("The value $label of the label keyword does not exist in bus labels."))
     end
@@ -434,7 +434,7 @@ function powerSupply(system::PowerSystem, analysis::ACOptimalPowerFlow; label)
 end
 
 """
-    powerShunt(system::PowerSystem, analysis::AC, label)
+    shuntPower(system::PowerSystem, analysis::AC, label)
 
 The function returns the active and reactive power values of the shunt element associated
 with a specific bus in the AC framework. The `label` keyword argument must match an existing
@@ -459,7 +459,7 @@ for i = 1:10
     end
     solve!(system, analysis)
 end
-active, reactive = powerShunt(system, analysis; label = 1)
+active, reactive = shuntPower(system, analysis; label = 1)
 ```
 
 Compute powers after obtaining the AC optimal power flow solution:
@@ -469,10 +469,10 @@ acModel!(system)
 
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
 solve!(system, analysis)
-active, reactive = powerShunt(system, analysis; label = 1)
+active, reactive = shuntPower(system, analysis; label = 1)
 ```
 """
-function powerShunt(system::PowerSystem, analysis::AC; label)
+function shuntPower(system::PowerSystem, analysis::AC; label)
     if !haskey(system.bus.label, label)
         throw(ErrorException("The value $label of the label keyword does not exist in bus labels."))
     end
@@ -486,7 +486,7 @@ function powerShunt(system::PowerSystem, analysis::AC; label)
 end
 
 """
-    powerFrom(system::PowerSystem, analysis::AC; label)
+    fromPower(system::PowerSystem, analysis::AC; label)
 
 The function returns the active and reactive power flows at the "from" bus end associated
 with a specific branch in the AC framework. The `label` keyword argument must match an
@@ -511,7 +511,7 @@ for i = 1:10
     end
     solve!(system, analysis)
 end
-active, reactive = powerFrom(system, analysis; label = 2)
+active, reactive = fromPower(system, analysis; label = 2)
 ```
 
 Compute powers after obtaining the AC optimal power flow solution:
@@ -521,10 +521,10 @@ acModel!(system)
 
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
 solve!(system, analysis)
-active, reactive = powerFrom(system, analysis; label = 2)
+active, reactive = fromPower(system, analysis; label = 2)
 ```
 """
-function powerFrom(system::PowerSystem, analysis::AC; label)
+function fromPower(system::PowerSystem, analysis::AC; label)
     if !haskey(system.branch.label, label)
         throw(ErrorException("The value $label of the label keyword does not exist in branch labels."))
     end
@@ -551,7 +551,7 @@ function powerFrom(system::PowerSystem, analysis::AC; label)
 end
 
 """
-    powerTo(system::PowerSystem, analysis::AC; label)
+    toPower(system::PowerSystem, analysis::AC; label)
 
 The function returns the active and reactive power flows at the "to" bus end associated
 with a specific branch in the AC framework. The `label` keyword argument must match an
@@ -576,7 +576,7 @@ for i = 1:10
     end
     solve!(system, analysis)
 end
-active, reactive = powerTo(system, analysis; label = 2)
+active, reactive = toPower(system, analysis; label = 2)
 ```
 
 Compute powers after obtaining the AC optimal power flow solution:
@@ -586,10 +586,10 @@ acModel!(system)
 
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
 solve!(system, analysis)
-active, reactive = powerTo(system, analysis; label = 2)
+active, reactive = toPower(system, analysis; label = 2)
 ```
 """
-function powerTo(system::PowerSystem, analysis::AC; label)
+function toPower(system::PowerSystem, analysis::AC; label)
     if !haskey(system.branch.label, label)
         throw(ErrorException("The value $label of the label keyword does not exist in branch labels."))
     end
@@ -616,7 +616,7 @@ function powerTo(system::PowerSystem, analysis::AC; label)
 end
 
 """
-    powerCharging(system::PowerSystem, analysis::AC; label)
+    chargingPower(system::PowerSystem, analysis::AC; label)
 
 The function returns the active and reactive power values associated with the charging
 admittances of a specific branch in the AC framework. The `label` keyword argument must
@@ -641,7 +641,7 @@ for i = 1:10
     end
     solve!(system, analysis)
 end
-active, reactive = powerCharging(system, analysis; label = 2)
+active, reactive = chargingPower(system, analysis; label = 2)
 ```
 
 Compute the reactive power after obtaining the AC optimal power flow solution:
@@ -651,10 +651,10 @@ acModel!(system)
 
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
 solve!(system, analysis)
-active, reactive = powerCharging(system, analysis; label = 2)
+active, reactive = chargingPower(system, analysis; label = 2)
 ```
 """
-function powerCharging(system::PowerSystem, analysis::AC; label)
+function chargingPower(system::PowerSystem, analysis::AC; label)
     if !haskey(system.branch.label, label)
         throw(ErrorException("The value $label of the label keyword does not exist in branch labels."))
     end
@@ -679,7 +679,7 @@ function powerCharging(system::PowerSystem, analysis::AC; label)
 end
 
 """
-    powerSeries(system::PowerSystem, analysis::AC; label)
+    seriesPower(system::PowerSystem, analysis::AC; label)
 
 The function returns the active and reactive power losses across the series impedance of
 a specific branch within the AC framework. The `label` keyword argument should correspond
@@ -704,7 +704,7 @@ for i = 1:10
     end
     solve!(system, analysis)
 end
-active, reactive = powerSeries(system, analysis; label = 2)
+active, reactive = seriesPower(system, analysis; label = 2)
 ```
 
 Compute the reactive power after obtaining the AC optimal power flow solution:
@@ -714,10 +714,10 @@ acModel!(system)
 
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
 solve!(system, analysis)
-active, reactive = powerSeries(system, analysis; label = 2)
+active, reactive = seriesPower(system, analysis; label = 2)
 ```
 """
-function powerSeries(system::PowerSystem, analysis::AC; label)
+function seriesPower(system::PowerSystem, analysis::AC; label)
     if !haskey(system.branch.label, label)
         throw(ErrorException("The value $label of the label keyword does not exist in branch labels."))
     end
@@ -746,7 +746,7 @@ function powerSeries(system::PowerSystem, analysis::AC; label)
 end
 
 """
-    powerGenerator(system::PowerSystem, analysis::AC)
+    generatorPower(system::PowerSystem, analysis::AC)
 
 The function returns the active and reactive powers associated with a specific generator
 in the AC framework. The `label` keyword argument must match an existing generator label.
@@ -770,7 +770,7 @@ for i = 1:10
     end
     solve!(system, analysis)
 end
-active, reactive = powerGenerator(system, analysis; label = 1)
+active, reactive = generatorPower(system, analysis; label = 1)
 ```
 
 Compute powers after obtaining the AC optimal power flow solution:
@@ -780,10 +780,10 @@ acModel!(system)
 
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
 solve!(system, analysis)
-active, reactive = powerGenerator(system, analysis; label = 1)
+active, reactive = generatorPower(system, analysis; label = 1)
 ```
 """
-function powerGenerator(system::PowerSystem, analysis::ACPowerFlow; label)
+function generatorPower(system::PowerSystem, analysis::ACPowerFlow; label)
     if !haskey(system.generator.label, label)
         throw(ErrorException("The value $label of the label keyword does not exist in generator labels."))
     end
@@ -882,7 +882,7 @@ function powerGenerator(system::PowerSystem, analysis::ACPowerFlow; label)
     return powerActive, powerReactive
 end
 
-function powerGenerator(system::PowerSystem, analysis::ACOptimalPowerFlow; label)
+function generatorPower(system::PowerSystem, analysis::ACOptimalPowerFlow; label)
     if !haskey(system.generator.label, label)
         throw(ErrorException("The value $label of the label keyword does not exist in generator labels."))
     end
@@ -989,7 +989,7 @@ function current!(system::PowerSystem, analysis::AC)
 end
 
 """
-    currentInjection(system::PowerSystem, analysis::AC; label)
+    injectionCurrent(system::PowerSystem, analysis::AC; label)
 
 The function returns the current in the polar coordinate system associated with a specific
 bus in the AC framework. The `label` keyword argument must match an existing bus label.
@@ -1013,7 +1013,7 @@ for i = 1:10
     end
     solve!(system, analysis)
 end
-magnitude, angle = currentInjection(system, analysis; label = 1)
+magnitude, angle = injectionCurrent(system, analysis; label = 1)
 ```
 
 Compute the current after obtaining the AC optimal power flow solution:
@@ -1023,10 +1023,10 @@ acModel!(system)
 
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
 solve!(system, analysis)
-magnitude, angle = currentInjection(system, analysis; label = 1)
+magnitude, angle = injectionCurrent(system, analysis; label = 1)
 ```
 """
-function currentInjection(system::PowerSystem, analysis::AC; label)
+function injectionCurrent(system::PowerSystem, analysis::AC; label)
     if !haskey(system.bus.label, label)
         throw(ErrorException("The value $label of the label keyword does not exist in bus labels."))
     end
@@ -1046,7 +1046,7 @@ function currentInjection(system::PowerSystem, analysis::AC; label)
 end
 
 """
-    currentFrom(system::PowerSystem, analysis::AC; label)
+    fromCurrent(system::PowerSystem, analysis::AC; label)
 
 The function returns the current in the polar coordinate system at the "from" bus end
 associated with a specific branch in the AC framework. The `label` keyword argument must
@@ -1071,7 +1071,7 @@ for i = 1:10
     end
     solve!(system, analysis)
 end
-magnitude, angle = currentFrom(system, analysis; label = 2)
+magnitude, angle = fromCurrent(system, analysis; label = 2)
 ```
 
 Compute the current after obtaining the AC optimal power flow solution:
@@ -1081,10 +1081,10 @@ acModel!(system)
 
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
 solve!(system, analysis)
-magnitude, angle = currentFrom(system, analysis; label = 2)
+magnitude, angle = fromCurrent(system, analysis; label = 2)
 ```
 """
-function currentFrom(system::PowerSystem, analysis::AC; label)
+function fromCurrent(system::PowerSystem, analysis::AC; label)
     if !haskey(system.branch.label, label)
         throw(ErrorException("The value $label of the label keyword does not exist in branch labels."))
     end
@@ -1110,7 +1110,7 @@ function currentFrom(system::PowerSystem, analysis::AC; label)
 end
 
 """
-    currentTo(system::PowerSystem, analysis::AC; label)
+    toCurrent(system::PowerSystem, analysis::AC; label)
 
 The function returns the current in the polar coordinate system at the "to" bus end
 associated with a specific branch in the AC framework. The `label` keyword argument must
@@ -1135,7 +1135,7 @@ for i = 1:10
     end
     solve!(system, analysis)
 end
-magnitude, angle = currentTo(system, analysis; label = 2)
+magnitude, angle = toCurrent(system, analysis; label = 2)
 ```
 
 Compute the current after obtaining the AC optimal power flow solution:
@@ -1145,10 +1145,10 @@ acModel!(system)
 
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
 solve!(system, analysis)
-magnitude, angle = currentTo(system, analysis; label = 2)
+magnitude, angle = toCurrent(system, analysis; label = 2)
 ```
 """
-function currentTo(system::PowerSystem, analysis::AC; label)
+function toCurrent(system::PowerSystem, analysis::AC; label)
     if !haskey(system.branch.label, label)
         throw(ErrorException("The value $label of the label keyword does not exist in branch labels."))
     end
@@ -1174,7 +1174,7 @@ function currentTo(system::PowerSystem, analysis::AC; label)
 end
 
 """
-    currentSeries(system::PowerSystem, analysis::AC; label)
+    seriesCurrent(system::PowerSystem, analysis::AC; label)
 
 The function returns the current in the polar coordinate system through series impedance
 associated with a specific branch in the direction from the "from" bus end to the "to" bus
@@ -1200,7 +1200,7 @@ for i = 1:10
     end
     solve!(system, analysis)
 end
-magnitude, angle = currentSeries(system, analysis; label = 2)
+magnitude, angle = seriesCurrent(system, analysis; label = 2)
 ```
 
 Compute the current after obtaining the AC optimal power flow solution:
@@ -1210,10 +1210,10 @@ acModel!(system)
 
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
 solve!(system, analysis)
-magnitude, angle = currentSeries(system, analysis; label = 2)
+magnitude, angle = seriesCurrent(system, analysis; label = 2)
 ```
 """
-function currentSeries(system::PowerSystem, analysis::AC; label)
+function seriesCurrent(system::PowerSystem, analysis::AC; label)
     if !haskey(system.branch.label, label)
         throw(ErrorException("The value $label of the label keyword does not exist in branch labels."))
     end

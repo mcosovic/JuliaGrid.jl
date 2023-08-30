@@ -355,7 +355,7 @@ The functions [`addBus!`](@ref addBus!), [`addBranch!`](@ref addBranch!), and [`
 ---
 
 ##### Default Keyword Values
-Concerning the [`addBus!`](@ref addBus!) function, in case the `type` keyword is not supplied, the bus type is automatically configured as a demand bus, with `type = 1` as its value. The initial bus voltage is standardized to `magnitude = 1` per unit, while the base voltage is set to `base = 138e3` volts. These predefined values hold significant importance to avert potential issues during algorithm execution, such as encountering a singular Jacobian when `magnitude = 0.0`.
+Concerning the [`addBus!`](@ref addBus!) function, in case the `type` keyword is not supplied, the bus type is automatically configured as a demand bus, with `type = 1` as its value. The initial bus voltage is standardized to `magnitude = 1.0` per unit, while the base voltage is set to `base = 138e3` volts. These predefined values hold significant importance to avert potential issues during algorithm execution, such as encountering a singular Jacobian when `magnitude = 0.0`.
 
 Transitioning to the [`addBranch!`](@ref addBranch!) function, the default status is set to `status = 1`, indicating the branch's operational status as in-service. Moreover, the transformer's off-nominal turns ratio assumes a value of `turnsRatio = 1.0`, accompanied by a `shiftAngle = 0.0`, which collectively establish the line configuration using these standard settings. Additionally, the type keyword defaults to `type = 1`, aligning with a specific rating category.
 
@@ -447,3 +447,350 @@ Additionally, users can reset all templates for the bus, branch, and generator c
 @default(template)
 nothing # hide
 ```
+
+---
+
+## [AC and DC Model](@id ACDCModelManual)
+When we constructed the power system, we can create an AC and/or DC model, which include vectors and matrices related to the power system's topology and parameters. The following code snippet demonstrates this:
+```@example ACDCModel
+using JuliaGrid # hide
+@default(unit) # hide
+
+system = powerSystem()
+
+addBus!(system; label = "Bus 1", type = 3, active = 0.1)
+addBus!(system; label = "Bus 2", type = 1, reactive = 0.05)
+addBus!(system; label = "Bus 3", type = 1, susceptance = 0.05)
+
+addBranch!(system; from = "Bus 1", to = "Bus 2", reactance = 0.12, shiftAngle = 0.1745)
+addBranch!(system; from = "Bus 2", to = "Bus 3", resistance = 0.008, reactance = 0.05)
+
+acModel!(system)
+dcModel!(system)
+
+nothing # hide
+```
+
+!!! tip "Tip"
+    In every case mentioned in the documentation, we specifically mention these functions by their names, even though it is not mandatory. When a user triggers any of the different AC or DC analyses and if the AC or DC model has not been established using the [`acModel!`](@ref acModel!) or [`dcModel!`](@ref dcModel!) function, the corresponding model will be automatically generated upon initiation. Additionally, all the associated fields will be populated.
+
+The nodal matrices are one of the components of both the AC and DC models and are stored in the variables:
+```@repl ACDCModel
+system.model.dc.nodalMatrix
+system.model.ac.nodalMatrix
+```
+
+!!! note "Info"
+    The AC model is used for performing AC power flow, AC optimal power flow, nonlinear state estimation, or state estimation with PMUs, whereas the DC model is essential for various DC or linear analyses. Consequently, once these models are developed, they can be applied to various types of simulations. We recommend that the reader refer to the tutorial on [AC and DC models](@ref ACDCModelTutorials).
+
+---
+
+##### New Branch Triggers Model Update
+We can execute the [`acModel!`](@ref acModel!) and [`dcModel!`](@ref dcModel!) functions after defining the final number of buses, and each new branch added will trigger an update of the AC and DC vectors and matrices. Here is an example:
+```@example ACDCModelUpdate
+using JuliaGrid # hide
+
+system = powerSystem()
+
+addBus!(system; label = "Bus 1", type = 3, active = 0.1)
+addBus!(system; label = "Bus 2", type = 1, reactive = 0.05)
+addBus!(system; label = "Bus 3", type = 1, susceptance = 0.05)
+
+acModel!(system)
+dcModel!(system)
+
+addBranch!(system; from = "Bus 1", to = "Bus 2", reactance = 0.12, shiftAngle = 0.1745)
+addBranch!(system; from = "Bus 2", to = "Bus 3", resistance = 0.008, reactance = 0.05)
+
+nothing # hide
+```
+For example, the nodal matrix in the DC framework has the same values as before:
+```@repl ACDCModelUpdate
+system.model.dc.nodalMatrix
+```
+
+!!! tip "Tip"
+    It is not fully recommended to create AC and DC models before adding a large number of branches if the execution time of functions is important. Instead, triggering updates to the AC and DC models using the [`addBranch!`](@ref addBranch!) function is useful for power systems that require the addition of several branches. This update avoids the need to recreate vectors and matrices from scratch.
+
+---
+
+##### New Bus Triggers Model Erasure
+The AC and DC models must be defined when a finite number of buses are defined, otherwise, adding a new bus will delete them. For example, if we attempt to add a new bus to the `PowerSystem` type that was previously created, the current AC and DC models will be completely erased:
+```@repl ACDCModelUpdate
+addBus!(system; label = "Bus 4", type = 2)
+system.model.dc.nodalMatrix
+system.model.ac.nodalMatrix
+```
+
+---
+
+## [Alter Shunt Elements](@id AlterShuntElementsManual)
+To modify or add new shunt element at bus, you can use the [`shuntBus!`](@ref shuntBus!) function. If the AC and DC models have not yet been created, you can directly modify the `bus.shunt` field of the `PowerSystem` type to change their values. However, if AC and DC models have been created, using the [`shuntBus!`](@ref shuntBus!) function will automatically update all relevant fields in these models. This avoids the need to recreate the AC and DC models from scratch.
+
+Therefore, it is recommended to use this function after executing the [`acModel!`](@ref acModel!) and [`dcModel!`](@ref dcModel!) functions. For example, let us start by creating the AC model:
+```@example shuntBus
+using JuliaGrid # hide
+
+system = powerSystem()
+
+addBus!(system; label = "Bus 1", type = 3)
+addBus!(system; label = "Bus 2", type = 1, susceptance = 2.1)
+
+addBranch!(system; from = "Bus 1", to = "Bus 2", reactance = 0.12)
+
+acModel!(system)
+
+nothing # hide
+```
+Then, the nodal matrix is given as:
+```@repl shuntBus
+system.model.ac.nodalMatrix
+```
+
+For example, to add a shunt element at `Bus 1` with a specified conductance value and modify the susceptance value of the shunt element at `Bus 2`, we can execute the following code:
+```@example shuntBus
+shuntBus!(system; label = "Bus 1", conductance = 0.04)
+shuntBus!(system; label = "Bus 2", susceptance = 0.25)
+
+nothing # hide
+```
+Upon examining the nodal matrix, it can be inferred that the [`shuntBus!`](@ref shuntBus!) function automatically updates this matrix:
+```@repl shuntBus
+system.model.ac.nodalMatrix
+```
+
+---
+
+## [Change Branch Status](@id ChangeBranchStatusManual)
+We can use the [`statusBranch!`](@ref statusBranch!) function to switch the branch's status between in-service and out-of-service. If the AC and DC models are not created, the function will perform the same operation as accessing the `status` variable of the `branch.layout` field and changing the value from 1 to 0 or vice versa. However, if the AC and DC models are created, the function will trigger updates to all affected vectors and matrices.
+
+Therefore, it is recommended to use this function after executing the [`acModel!`](@ref acModel!) and [`dcModel!`](@ref dcModel!) functions. The following code demonstrates the usage of the [`statusBranch!`](@ref statusBranch!) function:
+```@example statusBranch
+using JuliaGrid # hide
+
+system = powerSystem()
+
+addBus!(system; label = 1)
+addBus!(system; label = 2)
+addBus!(system; label = 3)
+
+addBranch!(system; label = "Branch 1", from = 1, to = 2, reactance = 0.12, shiftAngle = 0.175)
+addBranch!(system; label = "Branch 2", from = 2, to = 3, resistance = 0.008, reactance = 0.05)
+
+acModel!(system)
+dcModel!(system)
+
+statusBranch!(system; label = "Branch 1", status = 0)
+
+nothing # hide
+```
+
+This code sets the `Branch 1` to out-of-service. For example, the nodal matrix in the DC framework has the following form:
+```@repl statusBranch
+system.model.dc.nodalMatrix
+```
+
+---
+
+##### Drop Zeros
+After the execution of the [`statusBranch!`](@ref statusBranch!) function, the nodal matrices will contain zeros, as demonstrated in the code example. If needed, the user can remove these zeros by using the `dropzeros!` function, as shown below:
+```@repl statusBranch
+using SparseArrays
+dropzeros!(system.model.dc.nodalMatrix)
+```
+
+!!! note "Info"
+    It should be noted that in simulations conducted with the JuliaGrid package, the accuracy of the results will not be affected by leaving zeros.
+
+---
+
+## [Change Branch Parameters](@id ChangeBranchParametersManual)
+The [`parameterBranch!`](@ref parameterBranch!) function is used to modify the parameters of a branch, which include resistance, reactance, conductance, susceptance, turns ratio, and shift angle. Although one can modify these parameters by accessing the corresponding variables within the `branch.parameter` field, using the [`parameterBranch!`](@ref parameterBranch!) function will update all affected vectors and matrices, provided that the AC and DC models have been created.
+
+Therefore, this function is useful after executing the [`acModel!`](@ref acModel!) and [`dcModel!`](@ref dcModel!) functions. For example, let us start by creating the AC model:
+```@example parameterBranch
+using JuliaGrid # hide
+
+system = powerSystem()
+
+addBus!(system; label = 1)
+addBus!(system; label = 2)
+
+addBranch!(system; label = "Branch 1", from = 1, to = 2, reactance = 0.12, shiftAngle = 0.175)
+
+acModel!(system)
+
+nothing # hide
+```
+Then the nodal matrix is:
+```@repl parameterBranch
+system.model.ac.nodalMatrix
+```
+
+We can modify the reactance value of the branch and add resistance to it while keeping the shift angle constant, as shown below:
+```@example parameterBranch
+parameterBranch!(system; label = "Branch 1", reactance = 0.10, resistance = 0.02)
+
+nothing # hide
+```
+Next, we can observe that the nodal matrix is updated automatically by the function:
+```@repl parameterBranch
+system.model.ac.nodalMatrix
+```
+
+---
+
+## [Change Generator Status](@id ChangeGeneratorStatusManual)
+The [`statusGenerator!`](@ref statusGenerator!) function can be used to change the status of a generator between in-service and out-of-service. It is important to always use this function when changing the status of a previously defined generator. Directly accessing the corresponding variable to change the status can result in incorrect results because it will not affect the variable that holds the active and reactive powers generated by the generators that supply buses.
+
+Therefore, using the function is the safe way to put a generator in or out of service. Let us create the power system with two generators connected to the same bus:
+```@example statusGenerator
+using JuliaGrid # hide
+@default(unit) # hide
+
+system = powerSystem()
+
+addBus!(system; label = "Bus 1")
+addBus!(system; label = "Bus 2")
+
+addGenerator!(system; label = "Generator 1", bus = "Bus 2", active = 0.4)
+addGenerator!(system; label = "Generator 2", bus = "Bus 2", active = 0.6)
+
+nothing # hide
+```
+
+To check the the powers being generated by the generators that supply the buses and outputs of the generators, you can use:
+```@repl statusGenerator
+system.bus.supply.active
+system.generator.output.active
+```
+
+To put the second generator out-of-service, you can use the function:
+```@example statusGenerator
+statusGenerator!(system; label = "Generator 2", status = 0)
+nothing # hide
+```
+Here, we can see the updated variables, where the second generator has been taken out of the system:
+```@repl statusGenerator
+system.bus.supply.active
+system.generator.output.active
+```
+It is worth noting that even if the generator is out-of-service, the `output.active` variable still reflects its production. This is because it allows the same generator to be put back in-service with the same output power as before.
+
+---
+
+## [Change Generator Outputs](@id ChangeGeneratorOutputsManual)
+The function [`outputGenerator!`](@ref outputGenerator!) can be utilized to change the output of a generator. This function provides the safe way to modify the active and reactive powers produced by the previously defined generator.
+
+To demonstrate how to use this function, we can use the example:
+```@example outputGenerator
+using JuliaGrid # hide
+@default(unit) # hide
+
+system = powerSystem()
+
+addBus!(system; label = "Bus 1")
+addBus!(system; label = "Bus 2")
+
+addGenerator!(system; label = "Generator 1", bus = "Bus 2", active = 0.5, reactive = 0.1)
+addGenerator!(system; label = "Generator 2", bus = "Bus 2", active = 0.5, reactive = 0.1)
+
+outputGenerator!(system; label = "Generator 1", active = 1.0)
+nothing # hide
+```
+In this example, we increase the output active power of the `Generator 1`, and the results can be observed below:
+```@repl outputGenerator
+system.generator.output.active
+system.bus.supply.active
+```
+
+It is worth noting that the output reactive power of the generators remains the same:
+```@repl outputGenerator
+system.generator.output.reactive
+system.bus.supply.reactive
+```
+
+---
+
+## [Add Active and Reactive Costs](@id AddActiveReactiveCostsManual)
+The [`addActiveCost!`](@ref addActiveCost!) and [`addReactiveCost!`](@ref addReactiveCost!) functions are responsible for adding costs for the active and reactive power produced by the corresponding generator. These costs are added only if the corresponding generator is defined.
+
+The [`addActiveCost!`](@ref addActiveCost!) function will be used consistently throughout this manual. The same steps can be applied for the [`addReactiveCost!`](@ref addReactiveCost!) function. To begin, let us create an example of the power system using the following code:
+```@example addActiveCost
+using JuliaGrid # hide
+
+system = powerSystem()
+
+addBus!(system; label = "Bus 1")
+addBus!(system; label = "Bus 2")
+
+addGenerator!(system; label = "Generator 1", bus = "Bus 2", active = 0.5, reactive = 0.1)
+
+nothing # hide
+```
+
+---
+
+##### Polynomial Cost
+Let us define a quadratic polynomial cost function for the active power produced by the `Generator 1` using the following code:
+```@example addActiveCost
+addActiveCost!(system; label = "Generator 1", model = 2, polynomial = [1100.0; 500.0; 150.0])
+```
+In essence, what we have accomplished is the establishment of a cost function depicted as ``f(P_{\text{g}1}) = 1100 P_{\text{g}1}^2 + 500 P_{\text{g}1} + 150`` through the code provided.
+
+As previously, the default input units are related with per-units (pu), and the coefficients of the cost function have units of currency/pu²hr for 1100, currency/puhr for 500, and currency/hr for 150. Hence, the coefficients are stored exactly as entered:
+```@repl addActiveCost
+system.generator.cost.active.polynomial
+```
+By setting `model = 2` in the function, we specify that the quadratic polynomial cost is being used for the corresponding generator. This can be particularly useful if we have also defined a piecewise linear cost function for the same generator. In such cases, we can choose between these two cost functions depending on our simulation requirements.
+
+---
+
+##### Piecewise Linear Cost
+We can also create a piecewise linear cost function for the active power of the same generator by using:
+```@example addActiveCost
+addActiveCost!(system; label = "Generator 1", piecewise =  [0.11 12.3; 0.15 16.8; 0.18 18.1])
+nothing # hide
+```
+In this case, the first column specifies the output active powers of the generator in per-units, while the second column specifies the corresponding costs for the specified active power in currency/hr. Thus, the data is stored exactly as entered:
+```@repl addActiveCost
+system.generator.cost.active.piecewise
+```
+If we want to use this piecewise linear cost function instead of the polynomial cost function that was defined earlier, we need to set `model = 1`.
+
+---
+
+##### Change Input Unit System
+Changing input units from per-units (pu) can be particularly useful since cost functions are usually related to SI units of powers. To demonstrate this, let us set active powers in megawatts (MW) while keeping the rest of the units in per-units:
+```@example addActiveCostUnit
+using JuliaGrid # hide
+@power(MW, pu, pu)
+
+system = powerSystem()
+
+addBus!(system; label = "Bus 1")
+addBus!(system; label = "Bus 2")
+
+addGenerator!(system; label = "Generator 1", bus = "Bus 2", active = 50, reactive = 0.1)
+
+nothing # hide
+```
+
+Now, we can add the quadratic polynomial function using megawatts:
+```@example addActiveCost
+addActiveCost!(system; label = "Generator 1", model = 2, polynomial = [0.11; 5.0; 150.0])
+```
+After inspecting the resulting cost data, we can see that it is the same as before:
+```@repl addActiveCost
+system.generator.cost.active.polynomial
+```
+Similarly, we can define the linear piecewise cost:
+```@example addActiveCost
+addActiveCost!(system; label = "Generator 1", piecewise =  [11.0 12.3; 15.0 16.8; 18.0 18.1])
+nothing # hide
+```
+Upon inspection, we can see that the stored data is the same as before:
+```@repl addActiveCost
+system.generator.cost.active.piecewise
+```
+

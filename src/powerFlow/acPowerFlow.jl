@@ -861,7 +861,7 @@ function reactiveLimit!(system::PowerSystem, analysis::ACPowerFlow)
     labels = collect(keys(sort(system.generator.label; byvalue = true)))
     @inbounds for (k, i) in enumerate(generator.layout.bus)
         if generator.layout.status[k] == 1
-            active, reactive = powerGenerator(system, analysis; label = labels[k])
+            active, reactive = generatorPower(system, analysis; label = labels[k])
 
             generator.output.active[k] = active
             bus.supply.active[i] += active

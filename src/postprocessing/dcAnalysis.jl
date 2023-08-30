@@ -104,7 +104,7 @@ function power!(system::PowerSystem, analysis::DCOptimalPowerFlow)
 end
 
 """
-    powerInjection(system::PowerSystem, analysis::DC; label)
+    injectionPower(system::PowerSystem, analysis::DC; label)
 
 The function returns the active power injection associated with a specific bus in the DC
 framework. The `label` keyword argument must match an existing bus label.
@@ -122,7 +122,7 @@ dcModel!(system)
 
 analysis = dcPowerFlow(system)
 solve!(system, analysis)
-injection = powerInjection(system, analysis; label = 2)
+injection = injectionPower(system, analysis; label = 2)
 ```
 
 Compute the active power of a specific bus after obtaining the DC optimal power flow solution:
@@ -132,10 +132,10 @@ dcModel!(system)
 
 analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer)
 solve!(system, analysis)
-injection = powerInjection(system, analysis; label = 2)
+injection = injectionPower(system, analysis; label = 2)
 ```
 """
-function powerInjection(system::PowerSystem, analysis::DCPowerFlow; label)
+function injectionPower(system::PowerSystem, analysis::DCPowerFlow; label)
     errorVoltage(analysis.voltage.angle)
 
     if !haskey(system.bus.label, label)
@@ -161,7 +161,7 @@ function powerInjection(system::PowerSystem, analysis::DCPowerFlow; label)
     return injectionActive
 end
 
-function powerInjection(system::PowerSystem, analysis::DCOptimalPowerFlow; label)
+function injectionPower(system::PowerSystem, analysis::DCOptimalPowerFlow; label)
     if !haskey(system.bus.label, label)
         throw(ErrorException("The value $label of the label keyword does not exist in bus labels."))
     end
@@ -177,7 +177,7 @@ function powerInjection(system::PowerSystem, analysis::DCOptimalPowerFlow; label
 end
 
 """
-    powerSupply(system::PowerSystem, analysis::DC; label)
+    supplyPower(system::PowerSystem, analysis::DC; label)
 
 The function returns the active power injection from the generators associated with a
 specific bus in the DC framework. The `label` keyword argument must match an existing bus
@@ -196,7 +196,7 @@ dcModel!(system)
 
 analysis = dcPowerFlow(system)
 solve!(system, analysis)
-supply = powerSupply(system, analysis; label = 2)
+supply = supplyPower(system, analysis; label = 2)
 ```
 
 Compute the active power of a specific bus after obtaining the DC optimal power flow solution:
@@ -206,10 +206,10 @@ dcModel!(system)
 
 analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer)
 solve!(system, analysis)
-supply = powerSupply(system, analysis; label = 2)
+supply = supplyPower(system, analysis; label = 2)
 ```
 """
-function powerSupply(system::PowerSystem, analysis::DCPowerFlow; label)
+function supplyPower(system::PowerSystem, analysis::DCPowerFlow; label)
     errorVoltage(analysis.voltage.angle)
 
     if !haskey(system.bus.label, label)
@@ -235,7 +235,7 @@ function powerSupply(system::PowerSystem, analysis::DCPowerFlow; label)
     return supplyActive
 end
 
-function powerSupply(system::PowerSystem, analysis::DCOptimalPowerFlow; label)
+function supplyPower(system::PowerSystem, analysis::DCOptimalPowerFlow; label)
     if !haskey(system.bus.label, label)
         throw(ErrorException("The value $label of the label keyword does not exist in bus labels."))
     end
@@ -251,7 +251,7 @@ function powerSupply(system::PowerSystem, analysis::DCOptimalPowerFlow; label)
 end
 
 """
-    powerFrom(system::PowerSystem, analysis::DC; label)
+    fromPower(system::PowerSystem, analysis::DC; label)
 
 The function returns the active power flow at the "from" bus end associated with a specific
 branch in the DC framework. The `label` keyword argument must match an existing branch label.
@@ -269,7 +269,7 @@ dcModel!(system)
 
 analysis = dcPowerFlow(system)
 solve!(system, analysis)
-from = powerFrom(system, analysis; label = 2)
+from = fromPower(system, analysis; label = 2)
 ```
 
 Compute the active power of a specific branch after obtaining the DC optimal power flow solution:
@@ -279,10 +279,10 @@ dcModel!(system)
 
 analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer)
 solve!(system, analysis)
-from = powerFrom(system, analysis; label = 2)
+from = fromPower(system, analysis; label = 2)
 ```
 """
-function powerFrom(system::PowerSystem, analysis::DC; label)
+function fromPower(system::PowerSystem, analysis::DC; label)
     if !haskey(system.branch.label, label)
         throw(ErrorException("The value $label of the label keyword does not exist in branch labels."))
     end
@@ -296,7 +296,7 @@ function powerFrom(system::PowerSystem, analysis::DC; label)
 end
 
 """
-    powerTo(system::PowerSystem, analysis::DC; label)
+    toPower(system::PowerSystem, analysis::DC; label)
 
 The function returns the active power flow at the "to" bus end associated with a specific
 branch in the DC framework. The `label` keyword argument must match an existing branch label.
@@ -314,7 +314,7 @@ dcModel!(system)
 
 analysis = dcPowerFlow(system)
 solve!(system, analysis)
-to = powerTo(system, analysis; label = 2)
+to = toPower(system, analysis; label = 2)
 ```
 
 Compute the active power of a specific branch after obtaining the DC optimal power flow solution:
@@ -324,10 +324,10 @@ dcModel!(system)
 
 analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer)
 solve!(system, analysis)
-to = powerTo(system, analysis; label = 2)
+to = toPower(system, analysis; label = 2)
 ```
 """
-function powerTo(system::PowerSystem, analysis::DC; label)
+function toPower(system::PowerSystem, analysis::DC; label)
     if !haskey(system.branch.label, label)
         throw(ErrorException("The value $label of the label keyword does not exist in branch labels."))
     end
@@ -341,7 +341,7 @@ function powerTo(system::PowerSystem, analysis::DC; label)
 end
 
 """
-    powerGenerator(system::PowerSystem, analysis::DC; label)
+    generatorPower(system::PowerSystem, analysis::DC; label)
 
 This function returns the output active power associated with a specific generator in the
 DC framework. The `label` keyword argument must match an existing generator label.
@@ -359,7 +359,7 @@ dcModel!(system)
 
 analysis = dcPowerFlow(system)
 solve!(system, analysis)
-generator = powerGenerator(system, analysis; label = 1)
+generator = generatorPower(system, analysis; label = 1)
 ```
 
 Compute the active power of a specific generator after obtaining the DC optimal power flow
@@ -370,10 +370,10 @@ dcModel!(system)
 
 analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer)
 solve!(system, analysis)
-generator = powerGenerator(system, analysis; label = 1)
+generator = generatorPower(system, analysis; label = 1)
 ```
 """
-function powerGenerator(system::PowerSystem, analysis::DCPowerFlow; label)
+function generatorPower(system::PowerSystem, analysis::DCPowerFlow; label)
     if !haskey(system.generator.label, label)
         throw(ErrorException("The value $label of the label keyword does not exist in generator labels."))
     end
@@ -430,4 +430,3 @@ function allPowerBranch(system::PowerSystem, analysis::Union{DCPowerFlow, DCOpti
         power.to.active[i] = -power.from.active[i]
     end
 end
-

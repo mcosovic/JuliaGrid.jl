@@ -65,55 +65,55 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     @test current.series.magnitude .* exp.(-im * current.series.angle) ≈ seriesPower ./ (ratio .* voltageFrom - voltageTo)
 
     for (key, value) in system14.bus.label
-        active, reactive = powerInjection(system14, analysis; label = key)
+        active, reactive = injectionPower(system14, analysis; label = key)
         @test active ≈ power.injection.active[value]
         @test reactive ≈ power.injection.reactive[value]
 
-        active, reactive = powerSupply(system14, analysis; label = key)
+        active, reactive = supplyPower(system14, analysis; label = key)
         @test active ≈ power.supply.active[value]
         @test reactive ≈ power.supply.reactive[value]
 
-        active, reactive = powerShunt(system14, analysis; label = key)
+        active, reactive = shuntPower(system14, analysis; label = key)
         @test active ≈ power.shunt.active[value]
         @test reactive ≈ power.shunt.reactive[value]
 
-        magnitude, angle = currentInjection(system14, analysis; label = key)
+        magnitude, angle = injectionCurrent(system14, analysis; label = key)
         @test magnitude ≈ current.injection.magnitude[value]
         @test angle ≈ current.injection.angle[value]
     end
 
     for (key, value) in system14.branch.label
-        active, reactive = powerFrom(system14, analysis; label = key)
+        active, reactive = fromPower(system14, analysis; label = key)
         @test active ≈ power.from.active[value]
         @test reactive ≈ power.from.reactive[value]
 
-        active, reactive = powerTo(system14, analysis; label = key)
+        active, reactive = toPower(system14, analysis; label = key)
         @test active ≈ power.to.active[value]
         @test reactive ≈ power.to.reactive[value]
 
-        active, reactive = powerCharging(system14, analysis; label = key)
+        active, reactive = chargingPower(system14, analysis; label = key)
         @test active ≈ power.charging.active[value]
         @test reactive ≈ power.charging.reactive[value]
 
-        active, reactive = powerSeries(system14, analysis; label = key)
+        active, reactive = seriesPower(system14, analysis; label = key)
         @test active ≈ power.series.active[value]
         @test reactive ≈ power.series.reactive[value]
 
-        magnitude, angle = currentFrom(system14, analysis; label = key)
+        magnitude, angle = fromCurrent(system14, analysis; label = key)
         @test magnitude ≈ current.from.magnitude[value]
         @test angle ≈ current.from.angle[value]
 
-        magnitude, angle = currentTo(system14, analysis; label = key)
+        magnitude, angle = toCurrent(system14, analysis; label = key)
         @test magnitude ≈ current.to.magnitude[value]
         @test angle ≈ current.to.angle[value]
 
-        magnitude, angle = currentSeries(system14, analysis; label = key)
+        magnitude, angle = seriesCurrent(system14, analysis; label = key)
         @test magnitude ≈ current.series.magnitude[value]
         @test angle ≈ current.series.angle[value]
     end
 
     for (key, value) in system14.generator.label
-        active, reactive = powerGenerator(system14, analysis; label = key)
+        active, reactive = generatorPower(system14, analysis; label = key)
         @test active ≈ power.generator.active[value]
         @test reactive ≈ power.generator.reactive[value]
     end
@@ -178,55 +178,55 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     @test current.series.magnitude .* exp.(-im * current.series.angle) ≈ seriesPower ./ (ratio .* voltageFrom - voltageTo)
 
     for (key, value) in system30.bus.label
-        active, reactive = powerInjection(system30, analysis; label = key)
+        active, reactive = injectionPower(system30, analysis; label = key)
         @test active ≈ power.injection.active[value]
         @test reactive ≈ power.injection.reactive[value]
 
-        active, reactive = powerSupply(system30, analysis; label = key)
+        active, reactive = supplyPower(system30, analysis; label = key)
         @test active ≈ power.supply.active[value]
         @test reactive ≈ power.supply.reactive[value]
 
-        active, reactive = powerShunt(system30, analysis; label = key)
+        active, reactive = shuntPower(system30, analysis; label = key)
         @test active ≈ power.shunt.active[value]
         @test reactive ≈ power.shunt.reactive[value]
 
-        magnitude, angle = currentInjection(system30, analysis; label = key)
+        magnitude, angle = injectionCurrent(system30, analysis; label = key)
         @test magnitude ≈ current.injection.magnitude[value]
         @test angle ≈ current.injection.angle[value]
     end
 
     for (key, value) in system30.branch.label
-        active, reactive = powerFrom(system30, analysis; label = key)
+        active, reactive = fromPower(system30, analysis; label = key)
         @test active ≈ power.from.active[value]
         @test reactive ≈ power.from.reactive[value]
 
-        active, reactive = powerTo(system30, analysis; label = key)
+        active, reactive = toPower(system30, analysis; label = key)
         @test active ≈ power.to.active[value]
         @test reactive ≈ power.to.reactive[value]
 
-        active, reactive = powerCharging(system30, analysis; label = key)
+        active, reactive = chargingPower(system30, analysis; label = key)
         @test active ≈ power.charging.active[value]
         @test reactive ≈ power.charging.reactive[value]
 
-        active, reactive = powerSeries(system30, analysis; label = key)
+        active, reactive = seriesPower(system30, analysis; label = key)
         @test active ≈ power.series.active[value]
         @test reactive ≈ power.series.reactive[value]
 
-        magnitude, angle = currentFrom(system30, analysis; label = key)
+        magnitude, angle = fromCurrent(system30, analysis; label = key)
         @test magnitude ≈ current.from.magnitude[value]
         @test angle ≈ current.from.angle[value]
 
-        magnitude, angle = currentTo(system30, analysis; label = key)
+        magnitude, angle = toCurrent(system30, analysis; label = key)
         @test magnitude ≈ current.to.magnitude[value]
         @test angle ≈ current.to.angle[value]
 
-        magnitude, angle = currentSeries(system30, analysis; label = key)
+        magnitude, angle = seriesCurrent(system30, analysis; label = key)
         @test magnitude ≈ current.series.magnitude[value]
         @test angle ≈ current.series.angle[value]
     end
 
     for (key, value) in system30.generator.label
-        active, reactive = powerGenerator(system30, analysis; label = key)
+        active, reactive = generatorPower(system30, analysis; label = key)
         @test active ≈ power.generator.active[value]
         @test reactive ≈ power.generator.reactive[value]
     end
@@ -446,16 +446,16 @@ end
     @test analysis.power.generator.active ≈ matpower30["generator"]
 
     for (key, value) in system30.bus.label
-        @test powerInjection(system30, analysis; label = key) ≈ matpower30["injection"][value] atol = 1e-14
-        @test powerSupply(system30, analysis; label = key) ≈ matpower30["supply"][value] atol = 1e-14
+        @test injectionPower(system30, analysis; label = key) ≈ matpower30["injection"][value] atol = 1e-14
+        @test supplyPower(system30, analysis; label = key) ≈ matpower30["supply"][value] atol = 1e-14
     end
 
     for (key, value) in system30.branch.label
-        @test powerFrom(system30, analysis; label = key) ≈ matpower30["from"][value] atol = 1e-14
-        @test powerTo(system30, analysis; label = key) ≈ -matpower30["from"][value] atol = 1e-14
+        @test fromPower(system30, analysis; label = key) ≈ matpower30["from"][value] atol = 1e-14
+        @test toPower(system30, analysis; label = key) ≈ -matpower30["from"][value] atol = 1e-14
     end
 
     for (key, value) in system30.generator.label
-        @test powerGenerator(system30, analysis; label = key) ≈ matpower30["generator"][value] atol = 1e-14
+        @test generatorPower(system30, analysis; label = key) ≈ matpower30["generator"][value] atol = 1e-14
     end
 end
