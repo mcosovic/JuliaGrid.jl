@@ -408,7 +408,7 @@ function generatorPower(system::PowerSystem, analysis::DCPowerFlow; label)
     return generatorActive
 end
 
-function powerGenerator(system::PowerSystem, analysis::DCOptimalPowerFlow; label)
+function generatorPower(system::PowerSystem, analysis::DCOptimalPowerFlow; label)
     if !haskey(system.generator.label, label)
         throw(ErrorException("The value $label of the label keyword does not exist in generator labels."))
     end

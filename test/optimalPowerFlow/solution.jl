@@ -137,7 +137,7 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     end
 
     for (key, value) in system14.generator.label
-        @test powerGenerator(system14, analysis; label = key) ≈ analysis.power.generator.active[value]
+        @test generatorPower(system14, analysis; label = key) ≈ analysis.power.generator.active[value]
     end
 
     ######## Modified IEEE 30-bus Test Case ##########
@@ -164,6 +164,6 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     end
 
     for (key, value) in system30.generator.label
-        @test powerGenerator(system30, analysis; label = key) ≈ analysis.power.generator.active[value]
+        @test generatorPower(system30, analysis; label = key) ≈ analysis.power.generator.active[value]
     end
 end

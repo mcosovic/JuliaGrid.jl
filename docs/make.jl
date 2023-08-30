@@ -27,10 +27,10 @@ makedocs(
         #     "DC Optimal Power Flow" => "tutorials/dcOptimalPowerFlow.md"],
         "API Reference" =>
             ["Power System Model" => "api/powerSystemModel.md",
-            "Power Flow" => "api/powerFlow.md"]
+            "Power Flow" => "api/powerFlow.md",
             # "Optimal Power Flow" => "api/optimalPowerFlow.md",
-            # "Power and Current Analysis" => "api/analysis.md",
-            # "Configuration Setup" => "api/configuration.md"]
+            "Power and Current Analysis" => "api/analysis.md",
+            "Configuration Setup" => "api/configuration.md"]
     ]
 )
 
