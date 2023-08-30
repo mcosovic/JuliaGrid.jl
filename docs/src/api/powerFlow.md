@@ -2,63 +2,62 @@
 
 For further information on this topic, please see the [AC Power Flow](@ref ACPowerFlowManual) or [DC Power Flow](@ref DCPowerFlowManual) sections of the Manual. Below, we have provided a list of functions that can be utilized for power flow analysis.
 
-###### Build Model
+###### Build AC Model
 * [`newtonRaphson`](@ref newtonRaphson)
 * [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX)
 * [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB)
 * [`gaussSeidel`](@ref gaussSeidel)
-* [`dcPowerFlow`](@ref dcPowerFlow)
 
-###### Solve Power Flow
+###### Solve AC Power Flow
 * [`mismatch!`](@ref mismatch!(::PowerSystem, ::NewtonRaphson))
 * [`solve!`](@ref solve!(::PowerSystem, ::NewtonRaphson))
 
-###### Power Analysis
-* [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow))
-* [`powerInjection`](@ref powerInjection(::PowerSystem, ::AC))
-* [`powerSupply`](@ref powerSupply(::PowerSystem, ::ACPowerFlow))
-* [`powerShunt`](@ref powerShunt(::PowerSystem, ::AC))
-* [`powerFrom`](@ref powerFrom(::PowerSystem, ::AC))
-* [`powerTo`](@ref powerTo(::PowerSystem, ::AC))
-* [`powerCharging`](@ref powerCharging(::PowerSystem, ::AC))
-* [`powerSeries`](@ref powerSeries(::PowerSystem, ::AC))
-* [`powerGenerator`](@ref powerGenerator(::PowerSystem, ::ACPowerFlow))
-
-###### Current Analysis
-* [`current!`](@ref current!(::PowerSystem, ::AC))
-* [`currentInjection`](@ref currentInjection(::PowerSystem, ::AC))
-* [`currentFrom`](@ref currentFrom(::PowerSystem, ::AC))
-* [`currentTo`](@ref currentTo(::PowerSystem, ::AC))
-* [`currentSeries`](@ref currentSeries(::PowerSystem, ::AC))
-
-###### Additional Functions
+###### Additional AC Functions
 * [`reactiveLimit!`](@ref reactiveLimit!)
-* [`adjustAngle!`](@ref adjustAngle!)
+* [`adjustAngle!`](@ref adjustAngle!) 
 
+###### Build DC Model
+* [`dcPowerFlow`](@ref dcPowerFlow)
+
+###### Solve DC Power Flow
+* [`solve!`](@ref solve!(::PowerSystem, ::DCPowerFlow))
+ 
 ---
 
-## Build Model
+## Build AC Model
 ```@docs
 newtonRaphson
 fastNewtonRaphsonBX
 fastNewtonRaphsonXB
 gaussSeidel
+```
+
+---
+
+## Solve AC Power Flow
+```@docs
+mismatch!(::PowerSystem, ::NewtonRaphson)
+solve!(::PowerSystem, ::NewtonRaphson)
+```
+
+---
+
+## Additional AC Functions
+```@docs
+reactiveLimit!
+adjustAngle!
+```
+
+---
+
+## Build DC Model
+```@docs
 dcPowerFlow
 ```
 
 ---
 
-## Solve Power Flow
+## Solve DC Power Flow
 ```@docs
-mismatch!(::PowerSystem, ::NewtonRaphson)
-solve!(::PowerSystem, ::NewtonRaphson)
 solve!(::PowerSystem, ::DCPowerFlow)
-```
-
----
-
-## Additional Functions
-```@docs
-reactiveLimit!
-adjustAngle!
 ```

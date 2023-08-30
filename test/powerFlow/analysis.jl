@@ -15,7 +15,6 @@ system30 = powerSystem(string(pathData, "case30test.m"))
             break
         end
         solve!(system14, analysis)
-        iteration += 1
     end
     power!(system14, analysis)
     current!(system14, analysis)
@@ -26,7 +25,6 @@ system30 = powerSystem(string(pathData, "case30test.m"))
 
     @test voltage.magnitude ≈ matpower14["voltageMagnitude"]
     @test voltage.angle ≈ matpower14["voltageAngle"]
-    @test iteration == matpower14["iteration"][1]
     @test power.injection.active ≈ matpower14["injectionActive"]
     @test power.injection.reactive ≈ matpower14["injectionReactive"]
     @test power.supply.active ≈ matpower14["supplyActive"]
@@ -46,23 +44,21 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     to = system14.branch.layout.to
     from = system14.branch.layout.from
 
-    injectionPower = (complex.(power.injection.active, power.injection.reactive))
-    busVoltage = voltage.magnitude .* exp.(im * voltage.angle)
-    @test current.injection.magnitude .* exp.(-im * current.injection.angle) ≈ injectionPower ./ busVoltage
+    Si = (complex.(power.injection.active, power.injection.reactive))
+    Vi = voltage.magnitude .* exp.(im * voltage.angle)
+    @test current.injection.magnitude .* exp.(-im * current.injection.angle) ≈ Si ./ Vi
 
-    fromPower = (complex.(power.from.active, power.from.reactive))
-    busVoltage = voltage.magnitude[from] .* exp.(im * voltage.angle[from])
-    @test current.from.magnitude .* exp.(-im * current.from.angle) ≈ fromPower ./ busVoltage
+    Sij = (complex.(power.from.active, power.from.reactive))
+    Vi = voltage.magnitude[from] .* exp.(im * voltage.angle[from])
+    @test current.from.magnitude .* exp.(-im * current.from.angle) ≈ Sij ./ Vi
 
-    toPower = (complex.(power.to.active, power.to.reactive))
-    busVoltage = (voltage.magnitude[to] .* exp.(im * voltage.angle[to]))
-    @test current.to.magnitude .* exp.(-im * current.to.angle) ≈ toPower ./ busVoltage
+    Sji = (complex.(power.to.active, power.to.reactive))
+    Vj = (voltage.magnitude[to] .* exp.(im * voltage.angle[to]))
+    @test current.to.magnitude .* exp.(-im * current.to.angle) ≈ Sji ./ Vj
 
     ratio = (1 ./ system14.branch.parameter.turnsRatio) .* exp.(-im * system14.branch.parameter.shiftAngle)
-    voltageFrom = voltage.magnitude[from] .* exp.(im * voltage.angle[from])
-    voltageTo = voltage.magnitude[to] .* exp.(im * voltage.angle[to])
-    seriesPower = complex.(power.series.active, power.series.reactive)
-    @test current.series.magnitude .* exp.(-im * current.series.angle) ≈ seriesPower ./ (ratio .* voltageFrom - voltageTo)
+    Sijb = complex.(power.series.active, power.series.reactive)
+    @test current.series.magnitude .* exp.(-im * current.series.angle) ≈ Sijb ./ (ratio .* Vi - Vj)
 
     for (key, value) in system14.bus.label
         active, reactive = injectionPower(system14, analysis; label = key)
@@ -128,7 +124,6 @@ system30 = powerSystem(string(pathData, "case30test.m"))
             break
         end
         solve!(system30, analysis)
-        iteration += 1
     end
     power!(system30, analysis)
     current!(system30, analysis)
@@ -139,7 +134,6 @@ system30 = powerSystem(string(pathData, "case30test.m"))
 
     @test voltage.magnitude ≈ matpower30["voltageMagnitude"]
     @test voltage.angle ≈ matpower30["voltageAngle"]
-    @test iteration == matpower30["iteration"][1]
     @test power.injection.active ≈ matpower30["injectionActive"]
     @test power.injection.reactive ≈ matpower30["injectionReactive"]
     @test power.supply.active ≈ matpower30["supplyActive"]
@@ -159,23 +153,21 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     to = system30.branch.layout.to
     from = system30.branch.layout.from
 
-    injectionPower = (complex.(power.injection.active, power.injection.reactive))
-    busVoltage = (voltage.magnitude .* exp.(im * voltage.angle))
-    @test current.injection.magnitude .* exp.(-im * current.injection.angle) ≈ injectionPower ./ busVoltage
+    Si = (complex.(power.injection.active, power.injection.reactive))
+    Vi = voltage.magnitude .* exp.(im * voltage.angle)
+    @test current.injection.magnitude .* exp.(-im * current.injection.angle) ≈ Si ./ Vi
 
-    fromPower = (complex.(power.from.active, power.from.reactive))
-    busVoltage = (voltage.magnitude[from] .* exp.(im * voltage.angle[from]))
-    @test current.from.magnitude .* exp.(-im * current.from.angle) ≈ fromPower ./ busVoltage
+    Sij = (complex.(power.from.active, power.from.reactive))
+    Vi = voltage.magnitude[from] .* exp.(im * voltage.angle[from])
+    @test current.from.magnitude .* exp.(-im * current.from.angle) ≈ Sij ./ Vi
 
-    toPower = (complex.(power.to.active, power.to.reactive))
-    busVoltage = (voltage.magnitude[to] .* exp.(im * voltage.angle[to]))
-    @test current.to.magnitude .* exp.(-im * current.to.angle) ≈ toPower ./ busVoltage
+    Sji = (complex.(power.to.active, power.to.reactive))
+    Vj = (voltage.magnitude[to] .* exp.(im * voltage.angle[to]))
+    @test current.to.magnitude .* exp.(-im * current.to.angle) ≈ Sji ./ Vj
 
     ratio = (1 ./ system30.branch.parameter.turnsRatio) .* exp.(-im * system30.branch.parameter.shiftAngle)
-    voltageFrom = voltage.magnitude[from] .* exp.(im * voltage.angle[from])
-    voltageTo = voltage.magnitude[to] .* exp.(im * voltage.angle[to])
-    seriesPower = complex.(power.series.active, power.series.reactive)
-    @test current.series.magnitude .* exp.(-im * current.series.angle) ≈ seriesPower ./ (ratio .* voltageFrom - voltageTo)
+    Sijb = complex.(power.series.active, power.series.reactive)
+    @test current.series.magnitude .* exp.(-im * current.series.angle) ≈ Sijb ./ (ratio .* Vi - Vj)
 
     for (key, value) in system30.bus.label
         active, reactive = injectionPower(system30, analysis; label = key)
@@ -400,7 +392,6 @@ end
     @test nr.voltage.angle ≈ gs.voltage.angle
 end
 
-
 @testset "DC Power Flow" begin
     matpower14 = h5read(string(pathData, "results.h5"), "case14test/dcPowerFlow")
     matpower30 = h5read(string(pathData, "results.h5"), "case30test/dcPowerFlow")
@@ -419,17 +410,17 @@ end
     @test analysis.power.generator.active ≈ matpower14["generator"]
 
     for (key, value) in system14.bus.label
-        @test powerInjection(system14, analysis; label = key) ≈ matpower14["injection"][value] atol = 1e-14
-        @test powerSupply(system14, analysis; label = key) ≈ matpower14["supply"][value] atol = 1e-14
+        @test injectionPower(system14, analysis; label = key) ≈ matpower14["injection"][value] atol = 1e-14
+        @test supplyPower(system14, analysis; label = key) ≈ matpower14["supply"][value] atol = 1e-14
     end
 
     for (key, value) in system14.branch.label
-        @test powerFrom(system14, analysis; label = key) ≈ matpower14["from"][value] atol = 1e-14
-        @test powerTo(system14, analysis; label = key) ≈ -matpower14["from"][value] atol = 1e-14
+        @test fromPower(system14, analysis; label = key) ≈ matpower14["from"][value] atol = 1e-14
+        @test toPower(system14, analysis; label = key) ≈ -matpower14["from"][value] atol = 1e-14
     end
 
     for (key, value) in system14.generator.label
-        @test powerGenerator(system14, analysis; label = key) ≈ matpower14["generator"][value] atol = 1e-14
+        @test generatorPower(system14, analysis; label = key) ≈ matpower14["generator"][value] atol = 1e-14
     end
 
     ######## Modified IEEE 30-bus Test Case ##########

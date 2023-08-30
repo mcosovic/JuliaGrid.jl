@@ -49,7 +49,6 @@ power!(::PowerSystem, ::ACPowerFlow)
 ```@docs
 injectionPower(::PowerSystem, ::AC)
 supplyPower(::PowerSystem, ::ACPowerFlow)
-powerShunt(::PowerSystem, ::AC)
 shuntPower(::PowerSystem, ::AC)
 fromPower(::PowerSystem, ::AC)
 toPower(::PowerSystem, ::AC)
