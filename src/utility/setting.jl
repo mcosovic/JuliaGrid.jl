@@ -317,7 +317,8 @@ function setUUID()
     return id
 end
 
-
-
-
-
+function checkUUID(uuidSystem, uuid)
+    if uuidSystem.value != uuid.value
+        throw(ErrorException("The composite types do not match."))
+    end
+end

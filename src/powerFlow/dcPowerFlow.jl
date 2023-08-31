@@ -105,6 +105,8 @@ solve!(system, analysis)
 ```
 """
 function solve!(system::PowerSystem, analysis::DCPowerFlow)
+    checkUUID(system.uuid, analysis.uuid)
+    
     bus = system.bus
 
     b = copy(bus.supply.active)
@@ -122,30 +124,73 @@ function solve!(system::PowerSystem, analysis::DCPowerFlow)
     end
 end
 
+######### Query About Bus ##########
+function addBus!(system::PowerSystem, analysis::DCPowerFlow; kwargs...)
+    checkUUID(system.uuid, analysis.uuid)
+    throw(ErrorException("The DCPowerFlow argument cannot be reused when adding a new bus."))
+end
+
+######### Query About Deamnd Bus ##########
+function demandBus!(system::PowerSystem, analysis::DCPowerFlow; user...)
+    checkUUID(system.uuid, analysis.uuid)
+    demandBus!(system::PowerSystem; user...)
+end
+
+######### Query About Shunt Bus ##########
 function shuntBus!(system::PowerSystem, analysis::DCPowerFlow; user...)
+    checkUUID(system.uuid, analysis.uuid)
     shuntBus!(system::PowerSystem; user...)
 end
 
+######### Query About Branch ##########
+function addBranch!(system::PowerSystem, analysis::DCPowerFlow; kwargs...)
+    checkUUID(system.uuid, analysis.uuid)
+    throw(ErrorException("The DCPowerFlow argument cannot be reused when adding a new branch."))
+end
+
+######### Query About Status Branch ##########
 function statusBranch!(system::PowerSystem, analysis::DCPowerFlow; label::L, status::T)
+    checkUUID(system.uuid, analysis.uuid)
     throw(ErrorException("The DCPowerFlow argument cannot be reused when the branch status is altered."))
 end
 
+######### Query About Parameter Branch ##########
 function parameterBranch!(system::PowerSystem, analysis::DCPowerFlow; user...)
+    checkUUID(system.uuid, analysis.uuid)
     throw(ErrorException("The DCPowerFlow argument cannot be reused when the branch parameters are altered."))
 end
 
-function statusGenerator!(system::PowerSystem, analysis::DCPowerFlow; label::L, status::Int64 = 0)
-    checkStatus(status)
+######### Query About Generator ##########
+function addGenerator!(system::PowerSystem, analysis::DCPowerFlow;
+    label::L = missing, bus::L, area::T = missing, status::T = missing,
+    active::T = missing, reactive::T = missing, magnitude::T = missing,
+    minActive::T = missing, maxActive::T = missing, minReactive::T = missing,
+    maxReactive::T = missing, lowActive::T = missing, minLowReactive::T = missing,
+    maxLowReactive::T = missing, upActive::T = missing, minUpReactive::T = missing,
+    maxUpReactive::T = missing, loadFollowing::T = missing, reserve10min::T = missing,
+    reserve30min::T = missing, reactiveTimescale::T = missing)
 
-    index = system.generator.label[getLabel(system.generator, label, "generator")]
-    indexBus = system.generator.layout.bus[index]
-
-    if status == 0 && length(system.bus.supply.generator[indexBus]) == 1 
-        throw(ErrorException("The DCPowerFlow argument cannot be reused when the slack bus remains without generators."))
-    end
-    statusGenerator!(system::PowerSystem; label, status)
+    checkUUID(system.uuid, analysis.uuid)
+    addGenerator!(system::PowerSystem; label, bus, area, status, active, reactive, magnitude,
+        minActive, maxActive, minReactive, maxReactive, lowActive, minLowReactive,
+        maxLowReactive, upActive, minUpReactive, maxUpReactive, loadFollowing, reserve10min,
+        reserve30min, reactiveTimescale)
 end
 
+######### Query About Status Generator ##########
+function statusGenerator!(system::PowerSystem, analysis::DCPowerFlow; label::L, status::Int64 = 0)
+    checkUUID(system.uuid, analysis.uuid)
+    checkStatus(status)
+
+    statusGenerator!(system::PowerSystem; label, status)
+
+    if isempty(system.bus.supply.generator[system.bus.layout.slack])
+        changeSlackBus!(system)
+    end
+end
+
+######### Query About Output Generator ##########
 function outputGenerator!(system::PowerSystem, analysis::DCPowerFlow; user...)
+    checkUUID(system.uuid, analysis.uuid)
     outputGenerator!(system::PowerSystem; user...)
 end

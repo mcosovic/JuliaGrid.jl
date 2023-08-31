@@ -1012,3 +1012,9 @@ function changeSlackBus!(system::PowerSystem)
         throw(ErrorException("No generator buses with an in-service generator found in the power system. Slack bus definition not possible."))
     end
 end
+
+######### Query About Bus ##########
+function addBus!(system::PowerSystem, analysis::ACPowerFlow; kwargs...)
+    checkUUID(system.uuid, analysis.uuid)
+    throw(ErrorException("The ACPowerFlow argument cannot be reused when adding a new bus."))
+end

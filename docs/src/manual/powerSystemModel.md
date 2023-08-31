@@ -20,6 +20,7 @@ To create vectors and matrices based on the power system topology and parameters
 * [`dcModel!`](@ref dcModel!).
 
 In addition, it is possible to manipulate the parameters of buses, branches, and generators using the following functions:
+* [`demandBus!`](@ref demandBus!),
 * [`shuntBus!`](@ref shuntBus!),
 * [`statusBranch!`](@ref statusBranch!),
 * [`parameterBranch!`](@ref parameterBranch!),
@@ -524,7 +525,30 @@ system.model.ac.nodalMatrix
 
 ---
 
-## [Alter Shunt Elements](@id AlterShuntElementsManual)
+## [Change Demand Power](@id ChangeDemandPowerManual)
+To modify or introduce new power demand at a specific bus, you can utilize the [`demandBus!`](@ref demandBus!) function. This function directly alters the `bus.demand` field within the `PowerSystem` type. For instance, if we want to include an active power demand at `Bus 1` after the bus has been created, we can employ the subsequent code:
+```@example demandBus
+using JuliaGrid # hide
+
+system = powerSystem()
+
+addBus!(system; label = "Bus 1", type = 3)
+addBus!(system; label = "Bus 2", type = 1, susceptance = 2.1)
+
+addBranch!(system; from = "Bus 1", to = "Bus 2", reactance = 0.12)
+
+demandBus!(system; lable = "Bus 1", active = 0.5)
+
+nothing # hide
+```
+After executing this code, we can observe the following update:
+```@repl demandBus
+system.bus.demand.active
+```
+
+---
+
+## [Change Shunt Elements](@id ChangeShuntElementsManual)
 To modify or add new shunt element at bus, you can use the [`shuntBus!`](@ref shuntBus!) function. If the AC and DC models have not yet been created, you can directly modify the `bus.shunt` field of the `PowerSystem` type to change their values. However, if AC and DC models have been created, using the [`shuntBus!`](@ref shuntBus!) function will automatically update all relevant fields in these models. This avoids the need to recreate the AC and DC models from scratch.
 
 Therefore, it is recommended to use this function after executing the [`acModel!`](@ref acModel!) and [`dcModel!`](@ref dcModel!) functions. For example, let us start by creating the AC model:

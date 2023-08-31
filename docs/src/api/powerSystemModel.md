@@ -10,6 +10,7 @@ For further information on this topic, please see the [Power System Model](@ref 
 
 ###### Bus Functions
 * [`addBus!`](@ref addBus!)
+* [`demandBus!`](@ref demandBus!)
 * [`shuntBus!`](@ref shuntBus!)
 * [`@bus`](@ref @bus)
 
@@ -44,6 +45,7 @@ savePowerSystem
 ## Bus Functions
 ```@docs
 addBus!
+demandBus!
 shuntBus!
 @bus
 ```

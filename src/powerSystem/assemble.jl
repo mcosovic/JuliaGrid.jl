@@ -189,6 +189,47 @@ macro bus(kwargs...)
 end
 
 """
+    demandBus!(system::PowerSystem; label, active, reactive)
+
+This function allows for the adjustment of `active` and `reactive` power demand at a 
+specific bus.
+
+# Keywords
+The keyword `label` must match an existing bus label. If either `active` or `reactive`
+is left out, the corresponding value will remain unchanged.
+
+# Updates
+This function modifies the `bus.demand` field in the `PowerSystem` composite type. 
+
+# Units
+The input units are in per-units by default, but they can be modified using the
+[`@power`](@ref @power) macro.
+
+# Example
+```jldoctest
+system = powerSystem()
+
+addBus!(system; label = 1, type = 3, active = 0.25, reactive = -0.04)
+demandBus!(system; label = 1, active = 0.15)
+```
+"""
+function demandBus!(system::PowerSystem; user...)
+    demand = system.bus.demand
+
+    index = system.bus.label[getLabel(system.bus, user[:label], "bus")]
+
+    if haskey(user, :active) || haskey(user, :reactive)
+        basePowerInv = 1 / (system.base.power.value * system.base.power.prefix)
+        if haskey(user, :active)
+            demand.active[index] = topu(user[:active], basePowerInv, prefix.activePower)
+        end
+        if haskey(user, :reactive)
+            demand.reactive[index] = topu(user[:reactive], basePowerInv, prefix.reactivePower)
+        end
+    end
+end
+
+"""
     shuntBus!(system::PowerSystem; label, conductance, susceptance)
 
 This function enables the modification of the `conductance` and `susceptance` parameters of a

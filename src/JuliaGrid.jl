@@ -1,9 +1,12 @@
 module JuliaGrid
 
+# using BenchmarkTools
 using SparseArrays, LinearAlgebra, SuiteSparse
 using HDF5
 using JuMP
 using UUIDs
+
+
 
 ########## Setting Variables ##########
 include("utility/setting.jl")
@@ -12,7 +15,7 @@ include("utility/setting.jl")
 include("utility/routine.jl")
 export @default
 
-# ########## Power System ##########
+########## Power System ##########
 include("powerSystem/load.jl")
 export powerSystem
 
@@ -20,7 +23,7 @@ include("powerSystem/save.jl")
 export savePowerSystem
 
 include("powerSystem/assemble.jl")
-export addBus!, shuntBus!
+export addBus!, demandBus!, shuntBus!
 export addBranch!, statusBranch!, parameterBranch!
 export addGenerator!, addActiveCost!, addReactiveCost!, statusGenerator!, outputGenerator!
 export dcModel!, acModel!
