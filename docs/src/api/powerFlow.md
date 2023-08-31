@@ -2,7 +2,9 @@
 
 For further information on this topic, please see the [AC Power Flow](@ref ACPowerFlowManual) or [DC Power Flow](@ref DCPowerFlowManual) sections of the Manual. Below, we have provided a list of functions that can be utilized for power flow analysis.
 
-###### Build AC Model
+---
+
+###### Build AC Power Flow Model
 * [`newtonRaphson`](@ref newtonRaphson)
 * [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX)
 * [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB)
@@ -16,7 +18,7 @@ For further information on this topic, please see the [AC Power Flow](@ref ACPow
 * [`reactiveLimit!`](@ref reactiveLimit!)
 * [`adjustAngle!`](@ref adjustAngle!) 
 
-###### Build DC Model
+###### Build DC Power Flow Model
 * [`dcPowerFlow`](@ref dcPowerFlow)
 
 ###### Solve DC Power Flow
@@ -24,7 +26,7 @@ For further information on this topic, please see the [AC Power Flow](@ref ACPow
  
 ---
 
-## Build AC Model
+## Build AC Power Flow Model
 ```@docs
 newtonRaphson
 fastNewtonRaphsonBX
@@ -50,7 +52,7 @@ adjustAngle!
 
 ---
 
-## Build DC Model
+## Build DC Power Flow Model
 ```@docs
 dcPowerFlow
 ```

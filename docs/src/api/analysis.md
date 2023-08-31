@@ -2,6 +2,7 @@
 
 In the following section, we have provided a list of functions that can be utilized for post-processing analysis. Once the voltage values are obtained through power flow analysis or optimal power flow analysis, these functions can be used to calculate power or current values. The specific procedures for computing these values depend on the chosen analysis, which are described in separate manuals for further information.
 
+---
 
 ###### AC Power Analysis
 * [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow))

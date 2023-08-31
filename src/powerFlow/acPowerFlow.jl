@@ -1003,7 +1003,7 @@ function changeSlackBus!(system::PowerSystem)
         if system.bus.layout.type[i] == 2 && !isempty(system.bus.supply.generator[i])
             system.bus.layout.type[i] = 3
             system.bus.layout.slack = i
-            @info("The slack bus did not have an in-service generator, the first bus in the list with in-service generator is set to be slack bus.")
+            @info("The slack bus did not have an in-service generator, the first generator bus in the list with in-service generator is set to be slack bus.")
             break
         end
     end

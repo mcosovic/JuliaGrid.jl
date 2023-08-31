@@ -3,6 +3,7 @@ struct DCPowerFlow <: DC
     voltage::PolarAngle
     power::DCPower
     factorization::SuiteSparse.CHOLMOD.Factor{Float64}
+    uuid::UUID
 end
 
 """
@@ -70,6 +71,8 @@ function dcPowerFlow(system::PowerSystem)
         dc.nodalMatrix[bus.layout.slack, dc.nodalMatrix.rowval[i]] = elementsRemove[k]
     end
 
+    setting[system.uuid.value]["dcPowerFlow"] = 1
+
     return DCPowerFlow(
         PolarAngle(Float64[]),
         DCPower(
@@ -79,7 +82,8 @@ function dcPowerFlow(system::PowerSystem)
             CartesianReal(Float64[]),
             CartesianReal(Float64[])
         ),
-        factorization
+        factorization,
+        system.uuid
     )
 end
 
@@ -116,4 +120,32 @@ function solve!(system::PowerSystem, analysis::DCPowerFlow)
             analysis.voltage.angle[i] += bus.voltage.angle[bus.layout.slack]
         end
     end
+end
+
+function shuntBus!(system::PowerSystem, analysis::DCPowerFlow; user...)
+    shuntBus!(system::PowerSystem; user...)
+end
+
+function statusBranch!(system::PowerSystem, analysis::DCPowerFlow; label::L, status::T)
+    throw(ErrorException("The DCPowerFlow argument cannot be reused when the branch status is altered."))
+end
+
+function parameterBranch!(system::PowerSystem, analysis::DCPowerFlow; user...)
+    throw(ErrorException("The DCPowerFlow argument cannot be reused when the branch parameters are altered."))
+end
+
+function statusGenerator!(system::PowerSystem, analysis::DCPowerFlow; label::L, status::Int64 = 0)
+    checkStatus(status)
+
+    index = system.generator.label[getLabel(system.generator, label, "generator")]
+    indexBus = system.generator.layout.bus[index]
+
+    if status == 0 && length(system.bus.supply.generator[indexBus]) == 1 
+        throw(ErrorException("The DCPowerFlow argument cannot be reused when the slack bus remains without generators."))
+    end
+    statusGenerator!(system::PowerSystem; label, status)
+end
+
+function outputGenerator!(system::PowerSystem, analysis::DCPowerFlow; user...)
+    outputGenerator!(system::PowerSystem; user...)
 end

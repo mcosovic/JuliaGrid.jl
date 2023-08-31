@@ -483,8 +483,8 @@ statusBranch!(system; label = 1, status = 0)
 """
 function statusBranch!(system::PowerSystem; label::L, status::T)
     layout = system.branch.layout
-
     checkStatus(status)
+
     index = system.branch.label[getLabel(system.branch, label, "branch")]
     if layout.status[index] != status
         if !isempty(system.model.dc.nodalMatrix)
@@ -864,7 +864,7 @@ end
 """
     addReactiveCost!(system::PowerSystem; label, model, piecewise, polynomial)
 
-The function updates the `generator` field of the `PowerSystem` type by adding costs for
+The function updates the `generator.cost` field of the `PowerSystem` type by adding costs for
 the reactive power produced by the corresponding generator. It can add a cost to an already
 defined generator.
 
@@ -970,7 +970,8 @@ statusGenerator!(system; label = 1, status = 0)
 function statusGenerator!(system::PowerSystem; label::L, status::Int64 = 0)
     layout = system.generator.layout
     output = system.generator.output
-
+    checkStatus(status)
+    
     index = system.generator.label[getLabel(system.generator, label, "generator")]
     indexBus = layout.bus[index]
 
@@ -1330,7 +1331,6 @@ function getLabel(container, label::Int64, name::String)
 
     return label
 end
-
 
 ######### Check Status ##########
 function checkStatus(status)

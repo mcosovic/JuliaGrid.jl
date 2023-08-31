@@ -2,6 +2,8 @@
 
 For further information on this topic, please see the [Power System Model](@ref PowerSystemModelManual) section of the Manual. Below, we have provided a list of functions that can be used to create, save, and manipulate power system structures, as well as to build AC or DC models of power systems.
 
+---
+
 ###### Power System Data
 * [`powerSystem`](@ref powerSystem)
 * [`savePowerSystem`](@ref savePowerSystem)

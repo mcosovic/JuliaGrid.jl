@@ -202,24 +202,17 @@ The `PowerSystem` composite type with the following fields:
 - `branch`: data related to branches;
 - `generator`: data related to generators;
 - `base`: base power and base voltages;
-- `model`: data associated with AC (nonlinear) or DC (linear) analyses.
+- `model`: data associated with AC (nonlinear) or DC (linear) analyses;
+- `uuid`: universally unique identifier for the power system.
 
 # Units
 JuliaGrid stores all data in per-units and radians format which are fixed, the exceptions are
 base values in volt-amperes and volts. The prefixes for these base values can be changed using
 the [`@base`](@ref @base) macro.
 
-# Examples
-Load power system data:
+# Example
 ```jldoctest
 system = powerSystem("case14.h5")
-```
-
-Load power system data and build AC and DC models:
-```jldoctest
-system = powerSystem("case14.h5")
-acModel!(system)
-dcModel!(system)
 ```
 """
 function powerSystem(inputFile::String)
@@ -331,7 +324,7 @@ function loadBus(system::PowerSystem, hdf5::HDF5.File)
 
         if bus.layout.type[i] == 3
             bus.layout.slack = i
-        end 
+        end
     end
     setting[system.uuid.value]["bus"] = maxLabel
 
@@ -438,7 +431,7 @@ function loadGenerator(system::PowerSystem, hdf5::HDF5.File)
     generator.cost.reactive.model = readHDF5(costh5, "model", generator.number)
     generator.cost.reactive.polynomial = loadPolynomial(costh5, "polynomial", generator.number)
     generator.cost.reactive.piecewise = loadPiecewise(costh5, "piecewise", generator.number)
- 
+
     @inbounds for (k, i) in enumerate(generator.layout.bus)
         if generator.layout.status[k] == 1
             push!(system.bus.supply.generator[i], k)

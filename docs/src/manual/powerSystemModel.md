@@ -1,6 +1,6 @@
 # [Power System Model](@id PowerSystemModelManual)
 
-The JuliaGrid supports the composite type `PowerSystem` to preserve power system data, with the following fields: `bus`, `branch`, `generator`, `base`, and `model`. The fields `bus`, `branch`, and `generator` hold data related to buses, branches, and generators, respectively. The `base` field stores base values for power and voltages, with the default being three-phase power measured in volt-amperes for the base power and line-to-line voltages measured in volts for base voltages. The `model` stores vectors and matrices that are related to the topology and parameters of the power system.
+The JuliaGrid supports the composite type `PowerSystem` to preserve power system data, with the following fields: `bus`, `branch`, `generator`, `base`, `model`, and `uuid`. The fields `bus`, `branch`, and `generator` hold data related to buses, branches, and generators, respectively. The `base` field stores base values for power and voltages, with the default being three-phase power measured in volt-amperes for the base power and line-to-line voltages measured in volts for base voltages. The `model` stores vectors and matrices that are related to the topology and parameters of the power system. Lastly, the `uuid` field contains a universally unique identifier, as assigned by JuliaGrid, which manages the behavior of the `PowerSystem` type across different functions.
 
 The composite type `PowerSystem` can be created using a function:
 * [`powerSystem`](@ref powerSystem).
@@ -136,17 +136,19 @@ system.bus.voltage.angle
 
 ---
 
-##### Change Input Unit System
+##### Customizing Input Units for Keywords
 Typically, all keywords associated with electrical quantities are expected to be provided in per-units (pu) and radians (rad) by default, with the exception of base voltages, which should be specified in volts (V). However, users can choose to use different units than the default per-units and radians or modify the prefix of the base voltage unit by using macros such as the following:
 ```@example addBusUnit
 using JuliaGrid # hide
 
-@power(MW, MVAr, MVA)
+@power(MW, MVAr, pu)
 @voltage(pu, deg, kV)
 nothing # hide
 ```
+This practical example showcases the customization approach. For keywords tied to active powers, the unit is set as megawatts (MW), while reactive powers employ megavolt-amperes reactive (MVAr). Apparent power, on the other hand, employs per-units (pu). As for keywords concerning voltage magnitude, per-units (pu) remain the choice, but voltage angle mandates degrees (deg). Lastly, the input unit for base voltage is elected to be kilovolts (kV). This unit configuration will be applied throughout subsequent function calls after the unit definitions are established.
 
-We can create identical two buses as before using new system of units as follows:
+
+Now we can create identical two buses as before using new system of units as follows:
 ```@example addBusUnit
 system = powerSystem()
 
@@ -155,8 +157,7 @@ addBus!(system; label = "Bus 2", type = 1, angle = -2.0, base = 345.0)
 ```
 As can be observed, electrical quantities will continue to be stored in per-units and radians format:
 ```@repl addBusUnit
-system.bus.demand.active
-system.bus.voltage.angle
+[system.bus.demand.active system.bus.voltage.angle]
 ```
 
 The base voltage values will still be stored in volts (V) since we only changed the input unit prefix, and did not modify the internal unit prefix, as shown below:
@@ -188,7 +189,7 @@ addBus!(system; label = "Bus 2", type = 1, angle = -0.2)
 
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.12)
 ```
-Here, we created branch from `Bus 1` to `Bus 2` with following parameter:
+Here, we created the branch from `Bus 1` to `Bus 2` with following parameter:
 ```@repl addBranch
 system.branch.parameter.reactance
 ```
@@ -197,7 +198,7 @@ system.branch.parameter.reactance
 
 ---
 
-##### Change Input Unit System
+##### Customizing Input Units for Keywords
 To use units other than per-units (pu) and radians (rad), macros can be employed to change the input units. For example, if the need arises to use ohms (Ω), the macros below can be employed:
 ```@example addBranchUnit
 using JuliaGrid # hide
@@ -210,7 +211,7 @@ addBus!(system; label = "Bus 2", type = 1, angle = -0.2)
 
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2",  reactance = 22.8528)
 ```
-Still, all electrical quantities are stored in per-units and radians, and the same branch as before is created, as shown in the following output:
+Still, all electrical quantities are stored in per-units, and the same branch as before is created, as shown in the following output:
 ```@repl addBranchUnit
 system.branch.parameter.reactance
 ```
@@ -237,8 +238,7 @@ nothing # hide
 
 In the above code, we add the generator to the `Bus 2`, with active and reactive power outputs set to:
 ```@repl addGenerator
-system.generator.output.active
-system.generator.output.reactive
+[system.generator.output.active system.generator.output.reactive]
 ```
 Similar to buses and branches, the input units can be changed to units other than per-units using different macros.
 
@@ -323,28 +323,30 @@ For instance, the bus labels can be accessed using the variable:
 system.bus.label
 ```
 
-JuliaGrid employs a non-ordered dictionary structure for label storage to optimize performance. If you need to retrieve labels in the order corresponding to the sequence of bus definitions, you can use the following code:
+JuliaGrid utilizes an unordered dictionary format for storing labels, which enhances performance. If the objective is to obtain labels in the same order as the bus definitions sequence, the subsequent code can be employed:
 ```@repl RetrieveLabels
-labelBus = collect(keys(sort(system.bus.label; byvalue = true)))
+label = collect(keys(sort(system.bus.label; byvalue = true)))
 ```
-A similar approach can be employed for branches and generators using `system.branch.label` and `system.generator.label` respectively.
+Subsequently, users can match these labels with bus voltages, powers, and currents associated with buses. These values can be computed through various analyses available in JuliaGrid.
 
-Moreover, the `from` and `to` keywords are stored based on internally assigned numerical values linked to bus labels. These values are stored in the variable:
+This approach can also be extended to branch and generator labels by making use of the variables present within the `PowerSystem` composite type, namely `system.branch.label` or `system.generator.label`. These variables facilitate obtaining sequences of labels associated with these particular components of the power system.
+
+Moreover, the `from` and `to` keywords associated with branches are stored based on internally assigned numerical values linked to bus labels. These values are stored in the variable:
 ```@repl RetrieveLabels
 [system.branch.layout.from system.branch.layout.to]
 ```
 To recover the original `from` and `to` labels, you can utilize the following method:
 ```@repl RetrieveLabels
-[labelBus[system.branch.layout.from] labelBus[system.branch.layout.to]]
+[label[system.branch.layout.from] label[system.branch.layout.to]]
 ```
 
-Similarly, the `bus` keyword is saved based on internally assigned numerical values corresponding to bus labels and can be accessed using:
+Similarly, the `bus` keywords related to generators are saved based on internally assigned numerical values corresponding to bus labels and can be accessed using:
 ```@repl RetrieveLabels
 system.generator.layout.bus
 ```
-To obtain the original labels of the `bus` keyword, you can use the following code:
+To recover the original `bus` labels, you can utilize the following method:
 ```@repl RetrieveLabels
-labelBus[system.generator.layout.bus]
+label[system.generator.layout.bus]
 ```
 
 ---
@@ -355,11 +357,11 @@ The functions [`addBus!`](@ref addBus!), [`addBranch!`](@ref addBranch!), and [`
 ---
 
 ##### Default Keyword Values
-Concerning the [`addBus!`](@ref addBus!) function, in case the `type` keyword is not supplied, the bus type is automatically configured as a demand bus, with `type = 1` as its value. The initial bus voltage is standardized to `magnitude = 1.0` per unit, while the base voltage is set to `base = 138e3` volts. These predefined values hold significant importance to avert potential issues during algorithm execution, such as encountering a singular Jacobian when `magnitude = 0.0`.
+Concerning the [`addBus!`](@ref addBus!) function, in case the `type` keyword is not supplied, the bus type is automatically configured as a demand bus, with `type = 1` as its value. The initial bus voltage magnitude is set to `magnitude = 1.0` per-unit, while the base voltage is set to `base = 138e3` volts. These predefined values hold significant importance to avert potential issues during algorithm execution, such as encountering a singular Jacobian when `magnitude = 0.0`.
 
-Transitioning to the [`addBranch!`](@ref addBranch!) function, the default status is set to `status = 1`, indicating the branch's operational status as in-service. Moreover, the transformer's off-nominal turns ratio assumes a value of `turnsRatio = 1.0`, accompanied by a `shiftAngle = 0.0`, which collectively establish the line configuration using these standard settings. Additionally, the type keyword defaults to `type = 1`, aligning with a specific rating category.
+Transitioning to the [`addBranch!`](@ref addBranch!) function, the default status is set to `status = 1`, indicating the branch's operational status as in-service. Moreover, the transformer's off-nominal turns ratio assumes a value of `turnsRatio = 1.0`, accompanied by a `shiftAngle = 0.0`, which collectively establish the line configuration using these standard settings. Additionally, the `type` keyword defaults to `type = 1`, aligning with a specific rating category.
 
-Similarly, the [`addGenerator!`](@ref addGenerator!) function designates an operational generator by employing `status = 1`, and it sets` magnitude = 1.0` per unit, denoting the desired voltage magnitude setpoint.
+Similarly, the [`addGenerator!`](@ref addGenerator!) function designates an operational generator by employing `status = 1`, and it sets `magnitude = 1.0` per-unit, denoting the desired voltage magnitude setpoint.
 
 The remaining parameters are initialized with default values of zero.
 
@@ -388,11 +390,10 @@ addGenerator!(system; label = "Generator 2", bus = "Bus 1", active = 20)
 nothing # hide
 ```
 
-This code example involves two uses of the [`addBus!`](@ref addBus!) and [`addBranch!`](@ref addBranch!) functions. In the first use, the functions rely on the default values set by the templates created with the [`@bus`](@ref @bus) and [`@branch`](@ref @branch) macros. In contrast, the second use passes specific values that match the keywords used in the templates. As a result, the templates are overridden:
+This code example involves two uses of the [`addBus!`](@ref addBus!) and [`addBranch!`](@ref addBranch!) functions. In the first use, the functions rely on the default values set by the templates created with the [`@bus`](@ref @bus) and [`@branch`](@ref @branch) macros. In contrast, the second use passes specific values that match the keywords used in the templates. As a result, the templates are ignored:
 ```@repl CreateBusTemplate
 system.bus.layout.type
-system.bus.demand.active
-system.branch.parameter.reactance
+[system.bus.demand.active system.branch.parameter.reactance]
 ```
 
 In the given example, the [`@generator`](@ref @generator) macro is utilized instead of repeatedly specifying the `magnitude` keyword in the [`addGenerator!`](@ref addGenerator!) function. This macro creates a generator template with a default value for `magnitude`, which is automatically applied every time the [`addGenerator!`](@ref addGenerator!) function is called. Therefore, it eliminates the requirement to set the magnitude value for each individual generator:
@@ -401,7 +402,7 @@ system.generator.voltage.magnitude
 ```
 ---
 
-##### Change Input Unit System
+##### Customizing Input Units for Keywords
 The JuliaGrid requires users to specify electrical quantity-related keywords in per-units (pu) and radians (rad) by default. However, it provides macros, such as [`@power`](@ref @power), that allow users to specify other units:
 ```@example CreateBusTemplateUnits
 using JuliaGrid # hide
@@ -422,8 +423,7 @@ nothing # hide
 
 In this example, we create the bus template and one bus using SI power units, and then we switch to per-units and add the second bus. It is important to note that once the template is defined in any unit system, it remains valid regardless of subsequent unit system changes. The resulting power values are:
 ```@repl CreateBusTemplateUnits
-system.bus.demand.active
-system.bus.demand.reactive
+[system.bus.demand.active system.bus.demand.reactive]
 ```
 Thus, JuliaGrid automatically tracks the unit system used to create templates and provides the appropriate conversion to per-units and radians. Even if the user switches to a different unit system later on, the previously defined template will still be valid.
 
@@ -760,7 +760,7 @@ If we want to use this piecewise linear cost function instead of the polynomial 
 
 ---
 
-##### Change Input Unit System
+##### Customizing Input Units for Keywords
 Changing input units from per-units (pu) can be particularly useful since cost functions are usually related to SI units of powers. To demonstrate this, let us set active powers in megawatts (MW) while keeping the rest of the units in per-units:
 ```@example addActiveCostUnit
 using JuliaGrid # hide
@@ -793,4 +793,3 @@ Upon inspection, we can see that the stored data is the same as before:
 ```@repl addActiveCost
 system.generator.cost.active.piecewise
 ```
-
