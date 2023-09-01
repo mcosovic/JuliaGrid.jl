@@ -41,6 +41,8 @@ analysis = dcPowerFlow(system)
 In this example, the slack bus (`type = 3`) corresponds to the `Bus 1`. However, this bus does not have an in-service generator connected to it. Consequently, JuliaGrid recognizes this as an error and attempts to assign a new slack bus from the available generator buses (`type = 2`) that have connected in-service generators. In this particular example, the `Bus 3` will become the new slack bus. As a result, we can observe the updated array of bus types within the defined set of buses:
 ```@setup busType
 using JuliaGrid # hide
+@default(unit) # hide
+@default(template) # hide
 
 system = powerSystem()
 
@@ -73,6 +75,8 @@ analysis = dcPowerFlow(system)
 To solve the DC power flow problem using JuliaGrid, we start by creating the `PowerSystem` composite type and defining the DC model with the [`dcModel!`](@ref dcModel!) function. Here is an example:
 ```@example DCPowerFlowSolution
 using JuliaGrid # hide
+@default(unit) # hide
+@default(template) # hide
 
 system = powerSystem()
 
@@ -118,6 +122,8 @@ nothing # hide
 After obtaining the solution from the DC power flow, we can calculate powers related to buses, branches, and generators using the [`power!`](@ref power!(::PowerSystem, ::DCPowerFlow)) function. For instance, let us consider the power system for which we obtained the DC power flow solution:
 ```@example ComputationPowersCurrentsLosses
 using JuliaGrid # hide
+@default(unit) # hide
+@default(template) # hide
 
 system = powerSystem()
 
@@ -280,7 +286,9 @@ solve!(system, analysis)
 
 However, if you intend to reuse the `DCPowerFlow` type once more, this time with the aim of modifying the status of the `Branch 3`:
 ```@setup ReusingDCPowerFlow
-using JuliaGrid 
+using JuliaGrid # hide
+@default(unit) # hide
+@default(template) # hide
 
 system = powerSystem()
 

@@ -23,6 +23,7 @@ following fields:
 - `voltage`: the variable allocated to store the bus voltage angles;
 - `power`: the variable allocated to store the active powers;
 - `factorization`: the factorized nodal matrix.
+- `uuid`: a universally unique identifier associated with the `PowerSystem` composite type.
 
 # Example
 ```jldoctest
@@ -127,7 +128,7 @@ end
 ######### Query About Bus ##########
 function addBus!(system::PowerSystem, analysis::DCPowerFlow; kwargs...)
     checkUUID(system.uuid, analysis.uuid)
-    throw(ErrorException("The DCPowerFlow argument cannot be reused when adding a new bus."))
+    throw(ErrorException("The DCPowerFlow cannot be reused when adding a new bus."))
 end
 
 ######### Query About Deamnd Bus ##########
@@ -145,19 +146,19 @@ end
 ######### Query About Branch ##########
 function addBranch!(system::PowerSystem, analysis::DCPowerFlow; kwargs...)
     checkUUID(system.uuid, analysis.uuid)
-    throw(ErrorException("The DCPowerFlow argument cannot be reused when adding a new branch."))
+    throw(ErrorException("The DCPowerFlow cannot be reused when adding a new branch."))
 end
 
 ######### Query About Status Branch ##########
 function statusBranch!(system::PowerSystem, analysis::DCPowerFlow; label::L, status::T)
     checkUUID(system.uuid, analysis.uuid)
-    throw(ErrorException("The DCPowerFlow argument cannot be reused when the branch status is altered."))
+    throw(ErrorException("The DCPowerFlow cannot be reused when the branch status is altered."))
 end
 
 ######### Query About Parameter Branch ##########
 function parameterBranch!(system::PowerSystem, analysis::DCPowerFlow; user...)
     checkUUID(system.uuid, analysis.uuid)
-    throw(ErrorException("The DCPowerFlow argument cannot be reused when the branch parameters are altered."))
+    throw(ErrorException("The DCPowerFlow cannot be reused when the branch parameters are altered."))
 end
 
 ######### Query About Generator ##########

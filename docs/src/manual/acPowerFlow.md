@@ -91,6 +91,8 @@ Note that, if a bus is initially defined as the demand bus (`type = 1`) and late
 To begin analysing the AC power flow in JuliaGrid, we must first establish the `PowerSystem` composite type and define the AC model by calling the [`acModel!`](@ref acModel!) function. Once the power system is set up, we can select one of the available methods for solving the AC power flow problem, such as [`newtonRaphson`](@ref newtonRaphson), [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX), [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB), or [`gaussSeidel`](@ref gaussSeidel). Assuming we have selected the Newton-Raphson method, we can use the following code snippet:
 ```@example initializeACPowerFlow
 using JuliaGrid # hide
+@default(unit) # hide
+@default(template) # hide
 
 system = powerSystem()
 
@@ -134,6 +136,8 @@ system.bus.voltage.angle
 This method of specifying starting values has a significant advantage in that it allows the user to easily change the starting voltage magnitudes and angles, which play a crucial role in iterative methods. For instance, suppose we define our power system as follows:
 ```@example initializeACPowerFlowFlat
 using JuliaGrid # hide
+@default(unit) # hide
+@default(template) # hide
 
 system = powerSystem()
 
@@ -171,6 +175,8 @@ Consequently, when using the Newton-Raphson method, the iteration begins with a 
 To solve the AC power flow problem using JuliaGrid, we first need to create the `PowerSystem` composite type and define the AC model by calling the [`acModel!`](@ref acModel!) function. Here is an example:
 ```@example ACPowerFlowSolution
 using JuliaGrid # hide
+@default(unit) # hide
+@default(template) # hide
 
 system = powerSystem()
 
@@ -252,6 +258,8 @@ The [`mismatch!`](@ref mismatch!(::PowerSystem, ::NewtonRaphson)) function retur
 After obtaining the solution from the AC power flow, we can calculate various electrical quantities related to buses, branches, and generators using the [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)) and [`current!`](@ref current!(::PowerSystem, ::ACPowerFlow)) functions. For instance, let us consider the power system for which we obtained the AC power flow solution:
 ```@example ComputationPowersCurrentsLosses
 using JuliaGrid # hide
+@default(unit) # hide
+@default(template) # hide
 
 system = powerSystem()
 
@@ -391,6 +399,8 @@ magnitude, angle = seriesCurrent(system, analysis; label = "Branch 2")
 The initial application of the reusable `PowerSystem` type is simple: it can be shared among various methods, which can yield benefits. For example, the Gauss-Seidel method is commonly used for a speedy approximate solution, whereas the Newton-Raphson method is typically utilized for the precise final solution. Thus, we can execute the Gauss-Seidel method for a limited number of iterations, as exemplified below:
 ```@example ReusingPowerSystemType
 using JuliaGrid # hide
+@default(unit) # hide
+@default(template) # hide
 
 system = powerSystem()
 
@@ -468,6 +478,8 @@ Therefore, to offer a straightforward method for reusing the `ACPowerFlow` abstr
 Let us take a look at the following power system, where we have performed an AC power flow analysis:
 ```@example ReusingACPowerFlowType
 using JuliaGrid # hide
+@default(unit) # hide
+@default(template) # hide
 
 system = powerSystem()
 
@@ -509,6 +521,8 @@ for iteration = 1:100
     solve!(system, analysis)
 end
 ```
+!!! info "Info"
+    Reusing the `ACPowerFlow` and proceeding directly to the iterations can also offer the advantage of starting with voltages obtained from the previous solution, resulting in a "warm" start.
 
 However, attempting to take` Generator 2` out-of-service is not possible, as this operation would yield incorrect results if we proceed directly to the iterations. In this case, executing the [`newtonRaphson`](@ref newtonRaphson) function is mandatory:
 ```@repl ReusingACPowerFlowType
@@ -525,23 +539,25 @@ The function [`reactiveLimit!`](@ref reactiveLimit!) can be used by the user to 
 ```@example GeneratorReactivePowerLimits
 using JuliaGrid # hide
 @default(unit) # hide
+@default(template) # hide
 
 system = powerSystem()
 
-addBus!(system; label = 1, type = 3)
-addBus!(system; label = 2, type = 1, active = 0.5)
-addBus!(system; label = 3, type = 2, reactive = 0.05)
-addBus!(system; label = 4, type = 2, reactive = 0.05)
+addBus!(system; label = "Bus 1", type = 3)
+addBus!(system; label = "Bus 2", type = 1, active = 0.5)
+addBus!(system; label = "Bus 3", type = 2, reactive = 0.05)
+addBus!(system; label = "Bus 4", type = 2, reactive = 0.05)
 
-addBranch!(system; from = 1, to = 2, resistance = 0.01, reactance = 0.05)
-addBranch!(system; from = 1, to = 3, resistance = 0.02, reactance = 0.01)
-addBranch!(system; from = 2, to = 3, resistance = 0.03, reactance = 0.04)
-addBranch!(system; from = 2, to = 4, resistance = 0.03, reactance = 0.004)
+@branch(resistance = 0.015)
+addBranch!(system; from = "Bus 1", to = "Bus 2", reactance = 0.05)
+addBranch!(system; from = "Bus 1", to = "Bus 3", reactance = 0.01)
+addBranch!(system; from = "Bus 2", to = "Bus 3", reactance = 0.04)
+addBranch!(system; from = "Bus 2", to = "Bus 4", reactance = 0.004)
 
-@generator(minReactive = -0.4, maxReactive = 0.2)
-addGenerator!(system; bus = 1)
-addGenerator!(system; bus = 3, reactive = 0.8)
-addGenerator!(system; bus = 4, reactive = 0.9)
+@generator(minReactive = -0.4, maxReactive = 0.1)
+addGenerator!(system; label = "Generator 1", bus = "Bus 1")
+addGenerator!(system; label = "Generator 2", bus = "Bus 3", reactive = 0.8)
+addGenerator!(system; label = "Generator 3", bus = "Bus 4", reactive = 0.9)
 
 acModel!(system)
 
@@ -563,7 +579,7 @@ The output reactive power of the observed generators is subject to limits which 
 [system.generator.capability.minReactive system.generator.capability.maxReactive]
 ```
 
-After obtaining the solution of the AC power flow analysis, the [`reactiveLimit!`](@ref reactiveLimit!) function is used to internally calculate the output powers of the generators and verify if these values exceed the defined limits. Consequently, the variable `violate` indicates whether there is a violation of limits. In the provided example, it can be observed that the second and third generators violate the maximum limit:
+After obtaining the solution of the AC power flow analysis, the [`reactiveLimit!`](@ref reactiveLimit!) function is used to internally calculate the output powers of the generators and verify if these values exceed the defined limits. Consequently, the variable `violate` indicates whether there is a violation of limits. In the provided example, it can be observed that the `Generator 2` and `Generator 3` violate the maximum limit:
 ```@repl GeneratorReactivePowerLimits
 violate
 ```
@@ -606,6 +622,7 @@ violate = reactiveLimit!(system, analysis)
 Looking at the following code example, we can see that the output limits of the generator are set only for the first generator that is connected to the slack bus:
 ```@example NewSlackBus
 using JuliaGrid # hide
+@default(unit) # hide
 @default(template) # hide
 
 system = powerSystem()

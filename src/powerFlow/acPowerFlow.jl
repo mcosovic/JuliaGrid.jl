@@ -67,11 +67,8 @@ type, which includes the following fields:
 - `voltage`: the bus voltage magnitudes and angles;
 - `power`: the variable allocated to store the active and reactive powers;
 - `current`: the variable allocated to store the currents;
-- `jacobian`: the Jacobian matrix;
-- `mismatch`: the active and reactive power injection mismatches;
-- `increment`: the bus voltage magnitude and angle increments;
-- `pq`: indices of demand buses;
-- `pvpq`: indices of demand and generator buses.
+- `method`: contains the Jacobian matrix, power injection mismatches, bus voltage increments, and indices;
+- `uuid`: a universally unique identifier associated with the `PowerSystem` composite type.
 
 # Example
 ```jldoctest
@@ -200,18 +197,8 @@ type, which includes the following fields:
 - `voltage`: the bus voltage magnitudes and angles;
 - `power`: the variable allocated to store the active and reactive powers;
 - `current`: the variable allocated to store the currents;
-- `active`:
-  - `jacobian`: the Jacobian matrix associated with active power equations;
-  - `mismatch`: the active power injection mismatches;
-  - `increment`: the bus voltage angle increments;
-  - `factorization`: the factorized Jacobian matrix;
-- `reactive`:
-  - `jacobian`: the Jacobian matrix associated with reactive power equations;
-  - `mismatch`: the reative power injection mismatches;
-  - `increment`: the bus voltage magnitude increments;
-  - `factorization`: the factorized Jacobian matrix;
-- `pq`: indices of demand buses;
-- `pvpq`: indices of demand and generator buses.
+- `method`: contains Jacobian matrices, power injection mismatches, bus voltage increments, and indices;
+- `uuid`: a universally unique identifier associated with the `PowerSystem` composite type.
 
 # Example
 ```jldoctest
@@ -242,18 +229,8 @@ type, which includes the following fields:
 - `voltage`: the bus voltage magnitudes and angles;
 - `power`: the variable allocated to store the active and reactive powers;
 - `current`: the variable allocated to store the currents;
-- `active`:
-  - `jacobian`: the Jacobian matrix associated with active power equations;
-  - `mismatch`: the active power injection mismatches;
-  - `increment`: the bus voltage angle increments;
-  - `factorization`: the factorized Jacobian matrix;
-- `reactive`:
-  - `jacobian`: the Jacobian matrix associated with reactive power equations;
-  - `mismatch`: the reative power injection mismatches;
-  - `increment`: the bus voltage magnitude increments;
-  - `factorization`: the factorized Jacobian matrix;
-- `pq`: indices of demand buses;
-- `pvpq`: indices of demand and generator buses.
+- `method`: contains Jacobian matrices, power injection mismatches, bus voltage increments, and indices;
+- `uuid`: a universally unique identifier associated with the `PowerSystem` composite type.
 
 # Example
 ```jldoctest
@@ -462,9 +439,8 @@ type, which includes the following fields:
 - `voltage`: the bus voltage magnitudes and angles;
 - `power`: the variable allocated to store the active and reactive powers;
 - `current`: the variable allocated to store the currents;
-- `complex`: the bus complex voltages;
-- `pq`: indices of demand buses;
-- `pv`: indices of generator buses.
+- `method`: contains the bus complex voltages and indices;
+- `uuid`: a universally unique identifier associated with the `PowerSystem` composite type.
 
 # Example
 ```jldoctest
@@ -950,7 +926,7 @@ function reactiveLimit!(system::PowerSystem, analysis::ACPowerFlow)
                     for k = 1:bus.number
                         if bus.layout.type[k] == 2
                             labels = collect(keys(sort(system.bus.label; byvalue = true)))
-                            @info("The slack bus labeled $(labels[j]) is converted to generator bus, the bus labeled $(labels[k]) is the new slack bus.")
+                            @info("The slack bus labeled $(labels[j]) is converted to generator bus.\nThe bus labeled $(labels[k]) is the new slack bus.")
                             bus.layout.slack = k
                             bus.layout.type[k] = 3
                             break
@@ -1072,7 +1048,7 @@ end
 ######### Query About Bus ##########
 function addBus!(system::PowerSystem, analysis::ACPowerFlow; kwargs...)
     checkUUID(system.uuid, analysis.uuid)
-    throw(ErrorException("The ACPowerFlow argument cannot be reused when adding a new bus."))
+    throw(ErrorException("The ACPowerFlow cannot be reused when adding a new bus."))
 end
 
 ######### Query About Deamnd Bus ##########
@@ -1089,7 +1065,7 @@ end
 
 function shuntBus!(system::PowerSystem, analysis::FastNewtonRaphson; user...)
     checkUUID(system.uuid, analysis.uuid)
-    throw(ErrorException("The FastNewtonRaphson argument cannot be reused when the shunt element is altered."))
+    throw(ErrorException("The FastNewtonRaphson cannot be reused when the shunt element is altered."))
 end
 
 ######### Query About Branch ##########
@@ -1108,7 +1084,7 @@ end
 
 function addBranch!(system::PowerSystem, analysis::FastNewtonRaphson; kwargs...)
     checkUUID(system.uuid, analysis.uuid)
-    throw(ErrorException("The FastNewtonRaphson argument cannot be reused when adding a new branch."))
+    throw(ErrorException("The FastNewtonRaphson cannot be reused when adding a new branch."))
 end
 
 ######### Query About Status Branch ##########
@@ -1119,7 +1095,7 @@ end
 
 function statusBranch!(system::PowerSystem, analysis::FastNewtonRaphson; kwargs...)
     checkUUID(system.uuid, analysis.uuid)
-    throw(ErrorException("The FastNewtonRaphson argument cannot be reused when the branch status is altered."))
+    throw(ErrorException("The FastNewtonRaphson cannot be reused when the branch status is altered."))
 end
 
 ######### Query About Parameter Branch ##########
@@ -1130,7 +1106,7 @@ end
 
 function parameterBranch!(system::PowerSystem, analysis::FastNewtonRaphson; kwargs...)
     checkUUID(system.uuid, analysis.uuid)
-    throw(ErrorException("The FastNewtonRaphson argument cannot be reused when the branch parameters are altered."))
+    throw(ErrorException("The FastNewtonRaphson cannot be reused when the branch parameters are altered."))
 end
 
 ######### Query About Generator ##########
@@ -1158,7 +1134,7 @@ function statusGenerator!(system::PowerSystem, analysis::ACPowerFlow; label::L, 
     index = system.generator.label[getLabel(system.generator, label, "generator")]
     indexBus = system.generator.layout.bus[index]
     if status == 0 && system.bus.layout.type[indexBus] in [2, 3] && length(system.bus.supply.generator[indexBus]) == 1
-        throw(ErrorException("The ACPowerFlow argument cannot be reused when all in-service generators are removed from the generator or slack bus."))
+        throw(ErrorException("The ACPowerFlow cannot be reused due to required bus type conversion."))
     end
 
     statusGenerator!(system; label, status)
