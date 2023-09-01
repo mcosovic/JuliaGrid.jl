@@ -386,3 +386,283 @@ magnitude, angle = seriesCurrent(system, analysis; label = "Branch 2")
 ```
 
 ---
+
+## [Reusing PowerSystem Type](@id ACReusingPowerSystemTypeManual)
+The initial application of the reusable `PowerSystem` type is simple: it can be shared among various methods, which can yield benefits. For example, the Gauss-Seidel method is commonly used for a speedy approximate solution, whereas the Newton-Raphson method is typically utilized for the precise final solution. Thus, we can execute the Gauss-Seidel method for a limited number of iterations, as exemplified below:
+```@example ReusingPowerSystemType
+using JuliaGrid # hide
+
+system = powerSystem()
+
+addBus!(system; label = "Bus 1", type = 3, active = 0.5)
+addBus!(system; label = "Bus 2", type = 2, reactive = 0.05, susceptance = 0.03)
+addBus!(system; label = "Bus 3", type = 1, active = 0.5, conductance = 0.02)
+
+@branch(resistance = 0.02, conductance = 1e-4, susceptance = 0.04)
+addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.05)
+addBranch!(system; label = "Branch 2", from = "Bus 1", to = "Bus 2", reactance = 0.01)
+addBranch!(system; label = "Branch 3", from = "Bus 2", to = "Bus 3", reactance = 0.04)
+
+addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 3.2)
+addGenerator!(system; label = "Generator 2", bus = "Bus 2", active = 2.3)
+
+acModel!(system)
+
+gs = gaussSeidel(system)
+for iteration = 1:3
+    solve!(system, gs)
+end
+```
+
+Next, we can initialize the Newton-Raphson method with the voltages obtained from the Gauss-Seidel method and start the algorithm from that point:
+```@example ReusingPowerSystemType
+analysis = newtonRaphson(system)
+
+for i = 1:system.bus.number
+    analysis.voltage.magnitude[i] = gs.voltage.magnitude[i]
+    analysis.voltage.angle[i] = gs.voltage.angle[i]
+end
+
+for iteration = 1:100
+    stopping = mismatch!(system, analysis)
+    if all(stopping .< 1e-8)
+        break
+    end
+    solve!(system, analysis)
+end
+```
+
+!!! note "Info"
+    The functions [`newtonRaphson`](@ref newtonRaphson), [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX), [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB), or [`gaussSeidel`](@ref gaussSeidel) only modify the `PowerSystem` type to eliminate mistakes in the bus types as explained in the section [Bus Type Modification](@ref BusTypeModificationManual). Further, the functions [`mismatch!`](@ref mismatch!(::PowerSystem, ::NewtonRaphson)) and [`solve!`](@ref solve!(::PowerSystem, ::NewtonRaphson)) do not modify the `PowerSystem` type at all. Therefore, it is safe to use the same `PowerSystem` type for multiple analyses once it has been created.
+
+Next, the `PowerSystem` composite type, including its incorporated `ac` field, can be employed without limitations. It can be automatically modified using functions like [`demandBus!`](@ref demandBus!), [`shuntBus!`](@ref shuntBus!), [`addBranch!`](@ref addBranch!), [`statusBranch!`](@ref statusBranch!), [`parameterBranch!`](@ref parameterBranch!), [`addGenerator!`](@ref addGenerator!), [`statusGenerator!`](@ref statusGenerator!), and [`outputGenerator!`](@ref outputGenerator!), allowing for seamless sharing of the `PowerSystem` type across different AC power flow analyses.   
+
+To provide an example, let us envision a scenario where we initially set up a power system. Our objective is to observe the power system's performance under typical operational conditions and then compare it to an alternative situation. In this alternate scenario, we make adjustments to the output power of `Generator 2` and modify the active power demand at `Bus 2`. Additionally, we deactivate `Branch 3` from its operational state and introduce a new branch named `Branch 4`. This entire process can be effortlessly executed by reusing the `PowerSystem` composite type. In fact, to proceed with the previous example, you can simply execute this part of the code:
+```@example ReusingPowerSystemType
+outputGenerator!(system; label = "Generator 2", active = 2.5)
+demandBus!(system; label = "Bus 2", active = 0.2)
+
+statusBranch!(system; label = "Branch 3", status = 0)
+addBranch!(system; label = "Branch 4", from = "Bus 2", to = "Bus 3", reactance = 0.03)
+
+analysis = newtonRaphson(system)
+for iteration = 1:100
+    stopping = mismatch!(system, analysis)
+    if all(stopping .< 1e-8)
+        break
+    end
+    solve!(system, analysis)
+end
+```
+Please note that the [`acModel!`](@ref acModel!) function is executed only once. Each function that adds components or mutates them will automatically update the `PowerSystem` type with the `ac` field.
+
+---
+
+## [Reusing ACPowerFlow Type](@id ReusingACPowerFlowTypeManual)
+Reusing the `ACPowerFlow` abstract type essentially involves circumventing the repetitive execution of functions such as [`newtonRaphson`](@ref newtonRaphson), [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX), [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB), or [`gaussSeidel`](@ref gaussSeidel).
+
+This can be achieved by utilizing functions like [`demandBus!`](@ref demandBus!), [`shuntBus!`](@ref shuntBus!), [`addBranch!`](@ref addBranch!), [`statusBranch!`](@ref statusBranch!), [`parameterBranch!`](@ref parameterBranch!), [`addGenerator!`](@ref addGenerator!), [`statusGenerator!`](@ref statusGenerator!), and [`outputGenerator!`](@ref outputGenerator!), albeit with some limitations. For instance, the fast Newton-Raphson algorithm utilizes constant Jacobian matrices created when the `ACPowerFlow` type is instantiated, which means that modifications using [`addBranch!`](@ref addBranch!), [`statusBranch!`](@ref statusBranch!), or [`parameterBranch!`](@ref parameterBranch!) are not feasible.
+
+Therefore, to offer a straightforward method for reusing the `ACPowerFlow` abstract type without encountering unexpected errors in results, users can supply the `ACPowerFlow` type as an argument to any functions responsible for adding or modifying the `PowerSystem` composite type. If the modifications are permissible, they will be executed, thus altering the `PowerSystem` composite type accordingly. In contrast, JuliaGrid provides error messages to prevent potential mistakes.
+
+Let us take a look at the following power system, where we have performed an AC power flow analysis:
+```@example ReusingACPowerFlowType
+using JuliaGrid # hide
+
+system = powerSystem()
+
+addBus!(system; label = "Bus 1", type = 3, active = 0.5)
+addBus!(system; label = "Bus 2", type = 2, reactive = 0.05, susceptance = 0.03)
+addBus!(system; label = "Bus 3", type = 1, active = 0.5, conductance = 0.02)
+
+@branch(resistance = 0.02, conductance = 1e-4, susceptance = 0.04)
+addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.05)
+addBranch!(system; label = "Branch 2", from = "Bus 1", to = "Bus 2", reactance = 0.01)
+addBranch!(system; label = "Branch 3", from = "Bus 2", to = "Bus 3", reactance = 0.04)
+
+addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 3.2)
+addGenerator!(system; label = "Generator 2", bus = "Bus 2", active = 2.3)
+addGenerator!(system; label = "Generator 3", bus = "Bus 3", active = 0.3)
+
+acModel!(system)
+
+analysis = newtonRaphson(system)
+for iteration = 1:100
+    stopping = mismatch!(system, analysis)
+    if all(stopping .< 1e-8)
+        break
+    end
+    solve!(system, analysis)
+end
+```
+
+For instance, we can deactivate `Generator 3` and add `Branch 4` to the previously constructed power system. Without executing the [`newtonRaphson`](@ref newtonRaphson) function, we can proceed with the iterations:
+```@example ReusingACPowerFlowType
+statusGenerator!(system, analysis; label = "Generator 3", status = 0)
+addBranch!(system, analysis; label = "Branch 4", from = "Bus 1", to = "Bus 3")
+
+for iteration = 1:100
+    stopping = mismatch!(system, analysis)
+    if all(stopping .< 1e-8)
+        break
+    end
+    solve!(system, analysis)
+end
+```
+
+However, attempting to take` Generator 2` out-of-service is not possible, as this operation would yield incorrect results if we proceed directly to the iterations. In this case, executing the [`newtonRaphson`](@ref newtonRaphson) function is mandatory:
+```@repl ReusingACPowerFlowType
+statusGenerator!(system, analysis; label = "Generator 2", status = 0)
+```
+
+!!! info "Info"
+    When you provide the `ACPowerFlow` type as an argument to functions responsible for adding components or making modifications, you are essentially inquiring about the feasibility of reusing the `ACPowerFlow` type. If it is possible, the `PowerSystem` composite type will be modified, enabling you to seamlessly transition to the iterations without the need for any intermediate steps.
+
+---
+
+## [Generator Reactive Power Limits](@id GeneratorReactivePowerLimitsManual)
+The function [`reactiveLimit!`](@ref reactiveLimit!) can be used by the user to check if the generators' output of reactive power is within the defined limits after obtaining the solution from the AC power flow analysis. This can be done by using the example code provided:
+```@example GeneratorReactivePowerLimits
+using JuliaGrid # hide
+@default(unit) # hide
+
+system = powerSystem()
+
+addBus!(system; label = 1, type = 3)
+addBus!(system; label = 2, type = 1, active = 0.5)
+addBus!(system; label = 3, type = 2, reactive = 0.05)
+addBus!(system; label = 4, type = 2, reactive = 0.05)
+
+addBranch!(system; from = 1, to = 2, resistance = 0.01, reactance = 0.05)
+addBranch!(system; from = 1, to = 3, resistance = 0.02, reactance = 0.01)
+addBranch!(system; from = 2, to = 3, resistance = 0.03, reactance = 0.04)
+addBranch!(system; from = 2, to = 4, resistance = 0.03, reactance = 0.004)
+
+@generator(minReactive = -0.4, maxReactive = 0.2)
+addGenerator!(system; bus = 1)
+addGenerator!(system; bus = 3, reactive = 0.8)
+addGenerator!(system; bus = 4, reactive = 0.9)
+
+acModel!(system)
+
+analysis = newtonRaphson(system)
+for iteration = 1:100
+    stopping = mismatch!(system, analysis)
+    if all(stopping .< 1e-8)
+        break
+    end
+    solve!(system, analysis)
+end
+
+violate = reactiveLimit!(system, analysis)
+
+nothing # hide
+```
+The output reactive power of the observed generators is subject to limits which are defined as follows:
+```@repl GeneratorReactivePowerLimits
+[system.generator.capability.minReactive system.generator.capability.maxReactive]
+```
+
+After obtaining the solution of the AC power flow analysis, the [`reactiveLimit!`](@ref reactiveLimit!) function is used to internally calculate the output powers of the generators and verify if these values exceed the defined limits. Consequently, the variable `violate` indicates whether there is a violation of limits. In the provided example, it can be observed that the second and third generators violate the maximum limit:
+```@repl GeneratorReactivePowerLimits
+violate
+```
+
+Due to these violations of limits, the `PowerSystem` type undergoes modifications, and the output reactive power at the limit-violating generators is adjusted as follows:
+```@repl GeneratorReactivePowerLimits
+system.generator.output.reactive
+```
+
+To ensure that these values stay within the limits, the bus type must be changed from the generator bus (`type = 2`) to the demand bus (`type = 1`), as shown below:
+```@repl GeneratorReactivePowerLimits
+system.bus.layout.type
+```
+
+After modifying the `PowerSystem` type as described earlier, we can run the simulation again with the following code:
+```@example GeneratorReactivePowerLimits
+analysis = newtonRaphson(system)
+for iteration = 1:100
+    stopping = mismatch!(system, analysis)
+    if all(stopping .< 1e-8)
+        break
+    end
+    solve!(system, analysis)
+end
+
+nothing # hide
+```
+Once the simulation is complete, we can verify that all generator reactive power outputs now satisfy the limits by checking the violate variable again:
+```@repl GeneratorReactivePowerLimits
+violate = reactiveLimit!(system, analysis)
+```
+
+!!! note "Info"
+    The [`reactiveLimit!`](@ref reactiveLimit!) function changes the `PowerSystem` composite type deliberately because it is intended to help users create the power system where all reactive power outputs of the generators are within limits.
+
+---
+
+
+##### New Slack Bus
+Looking at the following code example, we can see that the output limits of the generator are set only for the first generator that is connected to the slack bus:
+```@example NewSlackBus
+using JuliaGrid # hide
+@default(template) # hide
+
+system = powerSystem()
+
+addBus!(system; label = "Bus 1", type = 3, active = 0.5, reactive = 0.05)
+addBus!(system; label = "Bus 2", type = 1, active = 0.5)
+addBus!(system; label = "Bus 3", type = 2)
+addBus!(system; label = "Bus 4", type = 2)
+
+@branch(resistance = 0.01)
+addBranch!(system; from = "Bus 1", to = "Bus 2", reactance = 0.05)
+addBranch!(system; from = "Bus 1", to = "Bus 3", reactance = 0.01)
+addBranch!(system; from = "Bus 2", to = "Bus 3", reactance = 0.04)
+addBranch!(system; from = "Bus 2", to = "Bus 4", reactance = 0.004)
+
+addGenerator!(system; bus = "Bus 1", minReactive = 0.0, maxReactive = 0.2)
+addGenerator!(system; bus = "Bus 4", reactive = 0.3)
+
+acModel!(system)
+
+analysis = newtonRaphson(system)
+for iteration = 1:100
+    stopping = mismatch!(system, analysis)
+    if all(stopping .< 1e-8)
+        break
+    end
+    solve!(system, analysis)
+end
+
+nothing # hide
+```
+
+Upon checking the limits, we can observe that the slack bus has been transformed by executing the following code:
+```@repl NewSlackBus
+violate = reactiveLimit!(system, analysis)
+```
+Here, the generator connected to the slack bus is violating the minimum reactive power limit, which indicates the need to convert the slack bus. It is important to note that the new slack bus can be created only from the generator bus (`type = 2`). We will now perform another AC power flow analysis on the modified system using the following code:
+```@example NewSlackBus
+analysis = newtonRaphson(system)
+for iteration = 1:100
+    stopping = mismatch!(system, analysis)
+    if all(stopping .< 1e-8)
+        break
+    end
+    solve!(system, analysis)
+end
+```
+
+After examining the bus voltages, we will focus on the angles:
+```@repl NewSlackBus
+analysis.voltage.angle
+```
+We can observe that the angles have been calculated based on the new slack bus. JuliaGrid offers the function to adjust these angles to match the original slack bus as follows:
+```@example NewSlackBus
+adjustAngle!(system, analysis; slack = "Bus 1")
+```
+Here, the `slack` keyword should correspond to the label of the slack bus. After executing the above code, the updated results can be viewed:
+```@repl NewSlackBus
+analysis.voltage.angle
+```

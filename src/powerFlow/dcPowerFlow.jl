@@ -171,7 +171,7 @@ function addGenerator!(system::PowerSystem, analysis::DCPowerFlow;
     reserve30min::T = missing, reactiveTimescale::T = missing)
 
     checkUUID(system.uuid, analysis.uuid)
-    addGenerator!(system::PowerSystem; label, bus, area, status, active, reactive, magnitude,
+    addGenerator!(system; label, bus, area, status, active, reactive, magnitude,
         minActive, maxActive, minReactive, maxReactive, lowActive, minLowReactive,
         maxLowReactive, upActive, minUpReactive, maxUpReactive, loadFollowing, reserve10min,
         reserve30min, reactiveTimescale)
@@ -181,8 +181,7 @@ end
 function statusGenerator!(system::PowerSystem, analysis::DCPowerFlow; label::L, status::Int64 = 0)
     checkUUID(system.uuid, analysis.uuid)
     checkStatus(status)
-
-    statusGenerator!(system::PowerSystem; label, status)
+    statusGenerator!(system; label, status)
 
     if isempty(system.bus.supply.generator[system.bus.layout.slack])
         changeSlackBus!(system)
@@ -192,5 +191,5 @@ end
 ######### Query About Output Generator ##########
 function outputGenerator!(system::PowerSystem, analysis::DCPowerFlow; user...)
     checkUUID(system.uuid, analysis.uuid)
-    outputGenerator!(system::PowerSystem; user...)
+    outputGenerator!(system; user...)
 end

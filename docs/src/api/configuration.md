@@ -4,8 +4,6 @@ For further information on this topic, please see the [Power System Model](@ref 
 
 ---
 
-## API Index
-
 ###### Base Unit Prefixes
 * [`@base`](@ref @base)
 

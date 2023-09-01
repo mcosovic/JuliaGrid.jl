@@ -537,7 +537,7 @@ addBus!(system; label = "Bus 2", type = 1, susceptance = 2.1)
 
 addBranch!(system; from = "Bus 1", to = "Bus 2", reactance = 0.12)
 
-demandBus!(system; lable = "Bus 1", active = 0.5)
+demandBus!(system; label = "Bus 1", active = 0.5)
 
 nothing # hide
 ```

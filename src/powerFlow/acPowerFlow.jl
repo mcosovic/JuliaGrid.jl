@@ -1,13 +1,18 @@
 ######### Newton-Raphson ##########
-struct NewtonRaphson <: ACPowerFlow
-    voltage::Polar
-    power::Power
-    current::Current
+struct NewtonRaphsonMethod
     jacobian::SparseMatrixCSC{Float64,Int64}
     mismatch::Array{Float64,1}
     increment::Array{Float64,1}
     pq::Array{Int64,1}
     pvpq::Array{Int64,1}
+end
+
+struct NewtonRaphson <: ACPowerFlow
+    voltage::Polar
+    power::Power
+    current::Current
+    method::NewtonRaphsonMethod
+    uuid::UUID
 end
 
 ######### Fast Newton-Raphson ##########
@@ -18,24 +23,34 @@ struct FastNewtonRaphsonModel
     factorization::SuiteSparse.UMFPACK.UmfpackLU{Float64, Int64}
 end
 
-struct FastNewtonRaphson <: ACPowerFlow
-    voltage::Polar
-    power::Power
-    current::Current
+struct FastNewtonRaphsonMethod
     active::FastNewtonRaphsonModel
     reactive::FastNewtonRaphsonModel
     pq::Array{Int64,1}
     pvpq::Array{Int64,1}
 end
 
+struct FastNewtonRaphson <: ACPowerFlow
+    voltage::Polar
+    power::Power
+    current::Current
+    method::FastNewtonRaphsonMethod
+    uuid::UUID
+end
+
 ######### Gauss-Seidel ##########
+struct GaussSeidelMethod
+    voltage::Array{ComplexF64,1}
+    pq::Array{Int64,1}
+    pv::Array{Int64,1}
+end
+
 struct GaussSeidel <: ACPowerFlow
     voltage::Polar
     power::Power
     current::Current
-    complex::Array{ComplexF64,1}
-    pq::Array{Int64,1}
-    pv::Array{Int64,1}
+    method::GaussSeidelMethod
+    uuid::UUID
 end
 
 """
@@ -160,7 +175,14 @@ function newtonRaphson(system::PowerSystem)
             Polar(Float64[], Float64[]),
             Polar(Float64[], Float64[])
         ),
-        jacobian, mismatch, increment, pqIndex, pvpqIndex
+        NewtonRaphsonMethod(
+            jacobian, 
+            mismatch, 
+            increment,
+            pqIndex, 
+            pvpqIndex
+        ), 
+        system.uuid
     )
 end
 
@@ -379,8 +401,8 @@ end
 
     mismatchActive = fill(0.0, bus.number - 1)
     mismatchReactive = fill(0.0, pqNumber)
-    icrementReactive = fill(0.0, pqNumber)
-    icrementActive = fill(0.0, bus.number - 1)
+    incrementReactive = fill(0.0, pqNumber)
+    incrementActive = fill(0.0, bus.number - 1)
 
     if algorithmFlag == 1
         method = "Fast Newton-Raphson BX"
@@ -406,9 +428,24 @@ end
             Polar(Float64[], Float64[]),
             Polar(Float64[], Float64[])
         ),
-        FastNewtonRaphsonModel(jacobianActive, mismatchActive, icrementActive, factorisationActive),
-        FastNewtonRaphsonModel(jacobianReactive, mismatchReactive, icrementReactive, factorisationReactive),
-        pqIndex, pvpqIndex)
+        FastNewtonRaphsonMethod(
+            FastNewtonRaphsonModel(
+                jacobianActive, 
+                mismatchActive, 
+                incrementActive, 
+                factorisationActive
+            ),
+            FastNewtonRaphsonModel(
+                jacobianReactive, 
+                mismatchReactive, 
+                incrementReactive, 
+                factorisationReactive
+            ),
+            pqIndex, 
+            pvpqIndex
+        ),
+        system.uuid
+    )
 end
 
 """
@@ -479,7 +516,13 @@ function gaussSeidel(system::PowerSystem)
             Polar(Float64[], Float64[]),
             Polar(Float64[], Float64[])
         ),
-        voltage, pqIndex, pvIndex)
+        GaussSeidelMethod(
+            voltage,
+            pqIndex, 
+            pvIndex
+        ),
+        system.uuid
+    )
 end
 
 
@@ -518,6 +561,10 @@ mismatch!(system, analysis)
 function mismatch!(system::PowerSystem, analysis::NewtonRaphson)
     ac = system.model.ac
     bus = system.bus
+    voltage = analysis.voltage
+    mismatch = analysis.method.mismatch
+    pq = analysis.method.pq
+    pvpq = analysis.method.pvpq
 
     stopActive = 0.0
     stopReactive = 0.0
@@ -529,19 +576,19 @@ function mismatch!(system::PowerSystem, analysis::NewtonRaphson)
                 row = ac.nodalMatrix.rowval[j]
                 Gij = real(ac.nodalMatrixTranspose.nzval[j])
                 Bij = imag(ac.nodalMatrixTranspose.nzval[j])
-                Tij = analysis.voltage.angle[i] - analysis.voltage.angle[row]
+                Tij = voltage.angle[i] - voltage.angle[row]
 
-                I += analysis.voltage.magnitude[row] * (Gij * cos(Tij) + Bij * sin(Tij))
+                I += voltage.magnitude[row] * (Gij * cos(Tij) + Bij * sin(Tij))
                 if bus.layout.type[i] == 1
-                    C += analysis.voltage.magnitude[row] * (Gij * sin(Tij) - Bij * cos(Tij))
+                    C += voltage.magnitude[row] * (Gij * sin(Tij) - Bij * cos(Tij))
                 end
             end
 
-            analysis.mismatch[analysis.pvpq[i]] = analysis.voltage.magnitude[i] * I - bus.supply.active[i] + bus.demand.active[i]
-            stopActive = max(stopActive, abs(analysis.mismatch[analysis.pvpq[i]]))
+            mismatch[pvpq[i]] = voltage.magnitude[i] * I - bus.supply.active[i] + bus.demand.active[i]
+            stopActive = max(stopActive, abs(mismatch[pvpq[i]]))
             if bus.layout.type[i] == 1
-                analysis.mismatch[analysis.pq[i]] = analysis.voltage.magnitude[i] * C - bus.supply.reactive[i] + bus.demand.reactive[i]
-                stopReactive = max(stopReactive, abs(analysis.mismatch[analysis.pq[i]]))
+                mismatch[pq[i]] = voltage.magnitude[i] * C - bus.supply.reactive[i] + bus.demand.reactive[i]
+                stopReactive = max(stopReactive, abs(mismatch[pq[i]]))
             end
         end
     end
@@ -554,14 +601,16 @@ function mismatch!(system::PowerSystem, analysis::FastNewtonRaphson)
     bus = system.bus
 
     voltage = analysis.voltage
-    active = analysis.active
-    reactive = analysis.reactive
+    active = analysis.method.active
+    reactive = analysis.method.reactive
+    pq = analysis.method.pq
+    pvpq = analysis.method.pvpq
 
     stopActive = 0.0
     stopReactive = 0.0
     @inbounds for i = 1:bus.number
         if i != bus.layout.slack
-            active.mismatch[analysis.pvpq[i]] = - (bus.supply.active[i] - bus.demand.active[i]) / voltage.magnitude[i]
+            active.mismatch[pvpq[i]] = - (bus.supply.active[i] - bus.demand.active[i]) / voltage.magnitude[i]
             C = 0.0
             for j in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
                 row = ac.nodalMatrix.rowval[j]
@@ -569,16 +618,16 @@ function mismatch!(system::PowerSystem, analysis::FastNewtonRaphson)
                 Bij = imag(ac.nodalMatrixTranspose.nzval[j])
                 Tij = voltage.angle[i] - voltage.angle[row]
 
-                active.mismatch[analysis.pvpq[i]] += voltage.magnitude[row] * (Gij * cos(Tij) + Bij * sin(Tij))
+                active.mismatch[pvpq[i]] += voltage.magnitude[row] * (Gij * cos(Tij) + Bij * sin(Tij))
                 if bus.layout.type[i] == 1
                     C += voltage.magnitude[row] * (Gij * sin(Tij) - Bij * cos(Tij))
                 end
             end
 
-            stopActive = max(stopActive, abs(active.mismatch[analysis.pvpq[i]]))
+            stopActive = max(stopActive, abs(active.mismatch[pvpq[i]]))
             if bus.layout.type[i] == 1
-                reactive.mismatch[analysis.pq[i]] = C - (bus.supply.reactive[i] - bus.demand.reactive[i]) / voltage.magnitude[i]
-                stopReactive = max(stopReactive, abs(reactive.mismatch[analysis.pq[i]]))
+                reactive.mismatch[pq[i]] = C - (bus.supply.reactive[i] - bus.demand.reactive[i]) / voltage.magnitude[i]
+                stopReactive = max(stopReactive, abs(reactive.mismatch[pq[i]]))
             end
         end
     end
@@ -588,15 +637,16 @@ end
 
 function mismatch!(system::PowerSystem, analysis::GaussSeidel)
     ac = system.model.ac
+    voltage = analysis.method.voltage
 
     stopActive = 0.0
     stopReactive = 0.0
-    @inbounds for i in analysis.pq
+    @inbounds for i in analysis.method.pq
         I = 0.0 + im * 0.0
         for j in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
-            I += ac.nodalMatrixTranspose.nzval[j] * analysis.complex[ac.nodalMatrix.rowval[j]]
+            I += ac.nodalMatrixTranspose.nzval[j] * voltage[ac.nodalMatrix.rowval[j]]
         end
-        apparent = analysis.complex[i] * conj(I)
+        apparent = voltage[i] * conj(I)
 
         mismatchActive = real(apparent) - system.bus.supply.active[i] + system.bus.demand.active[i]
         stopActive = max(stopActive, abs(mismatchActive))
@@ -605,12 +655,12 @@ function mismatch!(system::PowerSystem, analysis::GaussSeidel)
         stopReactive = max(stopReactive, abs(mismatchReactive))
     end
 
-    @inbounds for i in analysis.pv
+    @inbounds for i in analysis.method.pv
         I = 0.0 + im * 0.0
         for j in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
-            I += ac.nodalMatrixTranspose.nzval[j] * analysis.complex[ac.nodalMatrix.rowval[j]]
+            I += ac.nodalMatrixTranspose.nzval[j] * voltage[ac.nodalMatrix.rowval[j]]
         end
-        mismatchActive = real(analysis.complex[i] * conj(I)) - system.bus.supply.active[i] + system.bus.demand.active[i]
+        mismatchActive = real(voltage[i] * conj(I)) - system.bus.supply.active[i] + system.bus.demand.active[i]
         stopActive = max(stopActive, abs(mismatchActive))
     end
 
@@ -655,7 +705,9 @@ function solve!(system::PowerSystem, analysis::NewtonRaphson)
     bus = system.bus
 
     voltage = analysis.voltage
-    jacobian = analysis.jacobian
+    jacobian = analysis.method.jacobian
+    pq = analysis.method.pq
+    pvpq = analysis.method.pvpq
     @inbounds for i = 1:bus.number
         if i != bus.layout.slack
             for j in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
@@ -668,15 +720,15 @@ function solve!(system::PowerSystem, analysis::NewtonRaphson)
                     Bij = imag(ac.nodalMatrix.nzval[j])
                     if row != i
                         Tij = voltage.angle[row] - voltage.angle[i]
-                        jacobian[analysis.pvpq[row], analysis.pvpq[i]] = voltage.magnitude[row] * voltage.magnitude[i] * (Gij * sin(Tij) - Bij * cos(Tij))
+                        jacobian[pvpq[row], pvpq[i]] = voltage.magnitude[row] * voltage.magnitude[i] * (Gij * sin(Tij) - Bij * cos(Tij))
                         if typeRow == 1
-                            jacobian[analysis.pq[row], analysis.pvpq[i]] = voltage.magnitude[row] * voltage.magnitude[i] * (-Gij * cos(Tij) - Bij * sin(Tij))
+                            jacobian[pq[row], pvpq[i]] = voltage.magnitude[row] * voltage.magnitude[i] * (-Gij * cos(Tij) - Bij * sin(Tij))
                         end
                         if bus.layout.type[i] == 1
-                            jacobian[analysis.pvpq[row], analysis.pq[i]] = voltage.magnitude[row] * (Gij * cos(Tij) + Bij * sin(Tij))
+                            jacobian[pvpq[row], pq[i]] = voltage.magnitude[row] * (Gij * cos(Tij) + Bij * sin(Tij))
                         end
                         if bus.layout.type[i] == 1 && typeRow == 1
-                            jacobian[analysis.pq[row], analysis.pq[i]] = voltage.magnitude[row] * (Gij * sin(Tij) - Bij * cos(Tij))
+                            jacobian[pq[row], pq[i]] = voltage.magnitude[row] * (Gij * sin(Tij) - Bij * cos(Tij))
                         end
                     else
                         for k in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
@@ -689,15 +741,15 @@ function solve!(system::PowerSystem, analysis::NewtonRaphson)
                                 I2 += voltage.magnitude[q] * (Gik * cos(Tij) + Bik * sin(Tij))
                             end
                         end
-                        jacobian[analysis.pvpq[row], analysis.pvpq[i]] = voltage.magnitude[row] * I1 - Bij * voltage.magnitude[row]^2
+                        jacobian[pvpq[row], pvpq[i]] = voltage.magnitude[row] * I1 - Bij * voltage.magnitude[row]^2
                         if typeRow == 1
-                            jacobian[analysis.pq[row], analysis.pvpq[i]] = voltage.magnitude[row] * I2 - Gij * voltage.magnitude[row]^2
+                            jacobian[pq[row], pvpq[i]] = voltage.magnitude[row] * I2 - Gij * voltage.magnitude[row]^2
                         end
                         if bus.layout.type[i] == 1
-                            jacobian[analysis.pvpq[row], analysis.pq[i]] = I2 + Gij * voltage.magnitude[row]
+                            jacobian[pvpq[row], pq[i]] = I2 + Gij * voltage.magnitude[row]
                         end
                         if bus.layout.type[i] == 1 && typeRow == 1
-                            jacobian[analysis.pq[row], analysis.pq[i]] = -I1 - Bij * voltage.magnitude[row]
+                            jacobian[pq[row], pq[i]] = -I1 - Bij * voltage.magnitude[row]
                         end
                     end
                 end
@@ -705,14 +757,14 @@ function solve!(system::PowerSystem, analysis::NewtonRaphson)
         end
     end
 
-    ldiv!(analysis.increment, lu(jacobian), analysis.mismatch)
+    ldiv!(analysis.method.increment, lu(jacobian), analysis.method.mismatch)
 
     @inbounds for i = 1:bus.number
         if bus.layout.type[i] == 1
-            voltage.magnitude[i] = voltage.magnitude[i] - analysis.increment[analysis.pq[i]]
+            voltage.magnitude[i] = voltage.magnitude[i] - analysis.method.increment[pq[i]]
         end
         if i != bus.layout.slack
-            voltage.angle[i] = voltage.angle[i] - analysis.increment[analysis.pvpq[i]]
+            voltage.angle[i] = voltage.angle[i] - analysis.method.increment[pvpq[i]]
         end
     end
 end
@@ -722,27 +774,29 @@ function solve!(system::PowerSystem, analysis::FastNewtonRaphson)
     bus = system.bus
 
     voltage = analysis.voltage
-    active = analysis.active
-    reactive = analysis.reactive
+    active = analysis.method.active
+    reactive = analysis.method.reactive
+    pq = analysis.method.pq
+    pvpq = analysis.method.pvpq
 
     ldiv!(active.increment, active.factorization, active.mismatch)
 
     @inbounds for i = 1:bus.number
         if i != bus.layout.slack
-            voltage.angle[i] += active.increment[analysis.pvpq[i]]
+            voltage.angle[i] += active.increment[pvpq[i]]
         end
     end
 
     @inbounds for i = 1:bus.number
         if bus.layout.type[i] == 1
-            reactive.mismatch[analysis.pq[i]] = - (bus.supply.reactive[i] - bus.demand.reactive[i]) / voltage.magnitude[i]
+            reactive.mismatch[pq[i]] = - (bus.supply.reactive[i] - bus.demand.reactive[i]) / voltage.magnitude[i]
             for j in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
                 row = ac.nodalMatrix.rowval[j]
                 Gij = real(ac.nodalMatrixTranspose.nzval[j])
                 Bij = imag(ac.nodalMatrixTranspose.nzval[j])
                 Tij = voltage.angle[i] - voltage.angle[row]
 
-                reactive.mismatch[analysis.pq[i]] += voltage.magnitude[row] * (Gij * sin(Tij) - Bij * cos(Tij))
+                reactive.mismatch[pq[i]] += voltage.magnitude[row] * (Gij * sin(Tij) - Bij * cos(Tij))
             end
         end
     end
@@ -751,42 +805,43 @@ function solve!(system::PowerSystem, analysis::FastNewtonRaphson)
 
     @inbounds for i = 1:bus.number
         if bus.layout.type[i] == 1
-            voltage.magnitude[i] += reactive.increment[analysis.pq[i]]
+            voltage.magnitude[i] += reactive.increment[pq[i]]
         end
     end
 end
 
 function solve!(system::PowerSystem, analysis::GaussSeidel)
     ac = system.model.ac
+    voltage = analysis.method.voltage
 
-    @inbounds for i in analysis.pq
+    @inbounds for i in analysis.method.pq
         injection = system.bus.supply.active[i] - system.bus.demand.active[i] - im * (system.bus.supply.reactive[i] - system.bus.demand.reactive[i])
-        I = injection / conj(analysis.complex[i])
+        I = injection / conj(voltage[i])
         for j in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
-            I -= ac.nodalMatrixTranspose.nzval[j] * analysis.complex[ac.nodalMatrix.rowval[j]]
+            I -= ac.nodalMatrixTranspose.nzval[j] * voltage[ac.nodalMatrix.rowval[j]]
         end
-        analysis.complex[i] += I / ac.nodalMatrix[i, i]
+        voltage[i] += I / ac.nodalMatrix[i, i]
 
-        analysis.voltage.magnitude[i] = abs(analysis.complex[i])
-        analysis.voltage.angle[i] = angle(analysis.complex[i])
+        analysis.voltage.magnitude[i] = abs(voltage[i])
+        analysis.voltage.angle[i] = angle(voltage[i])
     end
 
-    @inbounds for i in analysis.pv
+    @inbounds for i in analysis.method.pv
         I = 0.0 + im * 0.0
         for j in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
-            I += ac.nodalMatrixTranspose.nzval[j] * analysis.complex[ac.nodalMatrix.rowval[j]]
+            I += ac.nodalMatrixTranspose.nzval[j] * voltage[ac.nodalMatrix.rowval[j]]
         end
-        conjVoltage = conj(analysis.complex[i])
+        conjVoltage = conj(voltage[i])
         injection = system.bus.supply.active[i] - system.bus.demand.active[i] + im * imag(conjVoltage * I)
-        analysis.complex[i] += ((injection / conjVoltage) - I) / ac.nodalMatrix[i, i]
+        voltage[i] += ((injection / conjVoltage) - I) / ac.nodalMatrix[i, i]
     end
 
-    @inbounds for i in analysis.pv
+    @inbounds for i in analysis.method.pv
         index = system.bus.supply.generator[i][1]
-        analysis.complex[i] = system.generator.voltage.magnitude[index] * analysis.complex[i] / abs(analysis.complex[i])
+        voltage[i] = system.generator.voltage.magnitude[index] * voltage[i] / abs(voltage[i])
 
-        analysis.voltage.magnitude[i] = abs(analysis.complex[i])
-        analysis.voltage.angle[i] = angle(analysis.complex[i])
+        analysis.voltage.magnitude[i] = abs(voltage[i])
+        analysis.voltage.angle[i] = angle(voltage[i])
     end
 end
 
@@ -894,6 +949,7 @@ function reactiveLimit!(system::PowerSystem, analysis::ACPowerFlow)
                 if j == bus.layout.slack
                     for k = 1:bus.number
                         if bus.layout.type[k] == 2
+                            labels = collect(keys(sort(system.bus.label; byvalue = true)))
                             @info("The slack bus labeled $(labels[j]) is converted to generator bus, the bus labeled $(labels[k]) is the new slack bus.")
                             bus.layout.slack = k
                             bus.layout.type[k] = 3
@@ -1017,4 +1073,99 @@ end
 function addBus!(system::PowerSystem, analysis::ACPowerFlow; kwargs...)
     checkUUID(system.uuid, analysis.uuid)
     throw(ErrorException("The ACPowerFlow argument cannot be reused when adding a new bus."))
+end
+
+######### Query About Deamnd Bus ##########
+function demandBus!(system::PowerSystem, analysis::ACPowerFlow; user...)
+    checkUUID(system.uuid, analysis.uuid)
+    demandBus!(system::PowerSystem; user...)
+end
+
+######### Query About Shunt Bus ##########
+function shuntBus!(system::PowerSystem, analysis::Union{NewtonRaphson, GaussSeidel}; user...)
+    checkUUID(system.uuid, analysis.uuid)
+    shuntBus!(system::PowerSystem; user...)
+end
+
+function shuntBus!(system::PowerSystem, analysis::FastNewtonRaphson; user...)
+    checkUUID(system.uuid, analysis.uuid)
+    throw(ErrorException("The FastNewtonRaphson argument cannot be reused when the shunt element is altered."))
+end
+
+######### Query About Branch ##########
+function addBranch!(system::PowerSystem, analysis::Union{NewtonRaphson, GaussSeidel};
+    label::L = missing, from::L, to::L, status::T = missing,
+    resistance::T = missing, reactance::T = missing, susceptance::T = missing,
+    conductance::T = missing, turnsRatio::T = missing, shiftAngle::T = missing,
+    minDiffAngle::T = missing, maxDiffAngle::T = missing,
+    longTerm::T = missing, shortTerm::T = missing, emergency::T = missing, type::T = missing)
+    
+    checkUUID(system.uuid, analysis.uuid)
+    addBranch!(system; label, from, to, status, resistance, reactance, susceptance,
+        conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, longTerm, shortTerm, 
+        emergency, type)
+end
+
+function addBranch!(system::PowerSystem, analysis::FastNewtonRaphson; kwargs...)
+    checkUUID(system.uuid, analysis.uuid)
+    throw(ErrorException("The FastNewtonRaphson argument cannot be reused when adding a new branch."))
+end
+
+######### Query About Status Branch ##########
+function statusBranch!(system::PowerSystem, analysis::Union{NewtonRaphson, GaussSeidel}; label::L, status::T)
+    checkUUID(system.uuid, analysis.uuid)
+    statusBranch!(system; label, status)
+end
+
+function statusBranch!(system::PowerSystem, analysis::FastNewtonRaphson; kwargs...)
+    checkUUID(system.uuid, analysis.uuid)
+    throw(ErrorException("The FastNewtonRaphson argument cannot be reused when the branch status is altered."))
+end
+
+######### Query About Parameter Branch ##########
+function parameterBranch!(system::PowerSystem, analysis::Union{NewtonRaphson, GaussSeidel}; user...)
+    checkUUID(system.uuid, analysis.uuid)
+    parameterBranch!(system; user...)
+end
+
+function parameterBranch!(system::PowerSystem, analysis::FastNewtonRaphson; kwargs...)
+    checkUUID(system.uuid, analysis.uuid)
+    throw(ErrorException("The FastNewtonRaphson argument cannot be reused when the branch parameters are altered."))
+end
+
+######### Query About Generator ##########
+function addGenerator!(system::PowerSystem, analysis::ACPowerFlow;
+    label::L = missing, bus::L, area::T = missing, status::T = missing,
+    active::T = missing, reactive::T = missing, magnitude::T = missing,
+    minActive::T = missing, maxActive::T = missing, minReactive::T = missing,
+    maxReactive::T = missing, lowActive::T = missing, minLowReactive::T = missing,
+    maxLowReactive::T = missing, upActive::T = missing, minUpReactive::T = missing,
+    maxUpReactive::T = missing, loadFollowing::T = missing, reserve10min::T = missing,
+    reserve30min::T = missing, reactiveTimescale::T = missing)
+
+    checkUUID(system.uuid, analysis.uuid)
+    addGenerator!(system; label, bus, area, status, active, reactive, magnitude,
+        minActive, maxActive, minReactive, maxReactive, lowActive, minLowReactive,
+        maxLowReactive, upActive, minUpReactive, maxUpReactive, loadFollowing, reserve10min,
+        reserve30min, reactiveTimescale)
+end
+
+######### Query About Status Generator ##########
+function statusGenerator!(system::PowerSystem, analysis::ACPowerFlow; label::L, status::Int64 = 0)
+    checkUUID(system.uuid, analysis.uuid)
+    checkStatus(status)
+
+    index = system.generator.label[getLabel(system.generator, label, "generator")]
+    indexBus = system.generator.layout.bus[index]
+    if status == 0 && system.bus.layout.type[indexBus] in [2, 3] && length(system.bus.supply.generator[indexBus]) == 1
+        throw(ErrorException("The ACPowerFlow argument cannot be reused when all in-service generators are removed from the generator or slack bus."))
+    end
+
+    statusGenerator!(system; label, status)
+end
+
+######### Query About Output Generator ##########
+function outputGenerator!(system::PowerSystem, analysis::ACPowerFlow; user...)
+    checkUUID(system.uuid, analysis.uuid)
+    outputGenerator!(system; user...)
 end
