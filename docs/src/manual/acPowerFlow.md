@@ -130,6 +130,7 @@ system.bus.voltage.angle
 
     On the other hand, the slack bus (`type = 3`) always requires an in-service generator. The starting value of the voltage magnitude at the slack bus is determined exclusively by the setpoints provided within the generators connected to it. This is a result of the slack bus having a known voltage magnitude that must be maintained.
 
+    If there are multiple generators connected to the generator or slack bus, the initial voltage magnitude will align with the magnitude setpoint specified for the first in-service generator in the list.
 ---
 
 ##### Custom Starting Voltages
@@ -152,7 +153,7 @@ acModel!(system)
 
 nothing # hide
 ```
-Now, the user can initiate a "flat start" without interfering with the input data. This can be easily done as follows:
+Now, the user can initiate a "flat start", this can be easily done as follows:
 ```@example initializeACPowerFlowFlat
 for i = 1:system.bus.number
     system.bus.voltage.magnitude[i] = 1.0
@@ -303,7 +304,7 @@ For instance, if we want to show the active power injections at each bus and the
 ```
 
 !!! note "Info"
-    To better understand the powers associated with buses, branches and generators that are calculated by the [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)) and [`current!`](@ref current!(::PowerSystem, ::AC)) functions, we suggest referring to the tutorials on [AC power flow analysis](@ref ACPowerAnalysisTutorials).
+    To better understand the powers and currents associated with buses, branches and generators that are calculated by the [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)) and [`current!`](@ref current!(::PowerSystem, ::AC)) functions, we suggest referring to the tutorials on [AC power flow analysis](@ref ACPowerAnalysisTutorials).
 
 To calculate specific quantities for particular components rather than calculating powers or currents for all components, users can make use of the provided functions below.
 
@@ -445,9 +446,17 @@ end
 !!! note "Info"
     The functions [`newtonRaphson`](@ref newtonRaphson), [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX), [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB), or [`gaussSeidel`](@ref gaussSeidel) only modify the `PowerSystem` type to eliminate mistakes in the bus types as explained in the section [Bus Type Modification](@ref BusTypeModificationManual). Further, the functions [`mismatch!`](@ref mismatch!(::PowerSystem, ::NewtonRaphson)) and [`solve!`](@ref solve!(::PowerSystem, ::NewtonRaphson)) do not modify the `PowerSystem` type at all. Therefore, it is safe to use the same `PowerSystem` type for multiple analyses once it has been created.
 
-Next, the `PowerSystem` composite type, including its incorporated `ac` field, can be employed without limitations. It can be automatically modified using functions like [`demandBus!`](@ref demandBus!), [`shuntBus!`](@ref shuntBus!), [`addBranch!`](@ref addBranch!), [`statusBranch!`](@ref statusBranch!), [`parameterBranch!`](@ref parameterBranch!), [`addGenerator!`](@ref addGenerator!), [`statusGenerator!`](@ref statusGenerator!), and [`outputGenerator!`](@ref outputGenerator!), allowing for seamless sharing of the `PowerSystem` type across different AC power flow analyses.   
+Next, the `PowerSystem` composite type, along with its previously established `ac` field, offers unlimited versatility. This facilitates the seamless sharing of the `PowerSystem` type across various AC power flow analyses. All fields automatically adjust when any of the functions that add components or modify their parameters are utilized:
+* [`demandBus!`](@ref demandBus!),
+* [`shuntBus!`](@ref shuntBus!),
+* [`addBranch!`](@ref addBranch!),
+* [`statusBranch!`](@ref statusBranch!),
+* [`parameterBranch!`](@ref parameterBranch!),
+* [`addGenerator!`](@ref addGenerator!),
+* [`statusGenerator!`](@ref statusGenerator!),
+* [`outputGenerator!`](@ref outputGenerator!).
 
-To provide an example, let us envision a scenario where we initially set up a power system. Our objective is to observe the power system's performance under typical operational conditions and then compare it to an alternative situation. In this alternate scenario, we make adjustments to the output power of `Generator 2` and modify the active power demand at `Bus 2`. Additionally, we deactivate `Branch 3` from its operational state and introduce a new branch named `Branch 4`. This entire process can be effortlessly executed by reusing the `PowerSystem` composite type. In fact, to proceed with the previous example, you can simply execute this part of the code:
+To provide an example, let us continue the previous example where we created a power system with the `ac` field. Now, we are interested in a scenario where we make adjustments to the output power of `Generator 2` and modify the active power demand at `Bus 2`. Additionally, we deactivate `Branch 3` from its operational state and introduce a new branch named `Branch 4`. This entire process can be effortlessly executed by reusing the `PowerSystem` composite type:
 ```@example ReusingPowerSystemType
 outputGenerator!(system; label = "Generator 2", active = 2.5)
 demandBus!(system; label = "Bus 2", active = 0.2)
@@ -464,16 +473,15 @@ for iteration = 1:100
     solve!(system, analysis)
 end
 ```
-Please note that the [`acModel!`](@ref acModel!) function is executed only once. Each function that adds components or mutates them will automatically update the `PowerSystem` type with the `ac` field.
 
 ---
 
 ## [Reusing ACPowerFlow Type](@id ReusingACPowerFlowTypeManual)
 Reusing the `ACPowerFlow` abstract type essentially involves circumventing the repetitive execution of functions such as [`newtonRaphson`](@ref newtonRaphson), [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX), [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB), or [`gaussSeidel`](@ref gaussSeidel).
 
-This can be achieved by utilizing functions like [`demandBus!`](@ref demandBus!), [`shuntBus!`](@ref shuntBus!), [`addBranch!`](@ref addBranch!), [`statusBranch!`](@ref statusBranch!), [`parameterBranch!`](@ref parameterBranch!), [`addGenerator!`](@ref addGenerator!), [`statusGenerator!`](@ref statusGenerator!), and [`outputGenerator!`](@ref outputGenerator!), albeit with some limitations. For instance, the fast Newton-Raphson algorithm utilizes constant Jacobian matrices created when the `ACPowerFlow` type is instantiated, which means that modifications using [`addBranch!`](@ref addBranch!), [`statusBranch!`](@ref statusBranch!), or [`parameterBranch!`](@ref parameterBranch!) are not feasible.
+This can be achieved by utilizing any of the functions that add components or change their parameters, albeit with some limitations. For instance, the fast Newton-Raphson algorithm utilizes constant Jacobian matrices created when the `ACPowerFlow` type is instantiated, which means that modifications using functions that add branches or change branch parameters are not feasible.
 
-Therefore, to offer a straightforward method for reusing the `ACPowerFlow` abstract type without encountering unexpected errors in results, users can supply the `ACPowerFlow` type as an argument to any functions responsible for adding or modifying the `PowerSystem` composite type. If the modifications are permissible, they will be executed, thus altering the `PowerSystem` composite type accordingly. In contrast, JuliaGrid provides error messages to prevent potential mistakes.
+To address this challenge and enable the straightforward reuse of the `ACPowerFlow` abstract type without encountering unexpected errors in results, users can pass the `ACPowerFlow` type as an argument to any functions that add or modify the `PowerSystem` composite type. If the modifications are permissible and lead to the correct solutions, they will be executed and will accordingly alter the composite types.
 
 Let us take a look at the following power system, where we have performed an AC power flow analysis:
 ```@example ReusingACPowerFlowType
@@ -522,9 +530,9 @@ for iteration = 1:100
 end
 ```
 !!! info "Info"
-    Reusing the `ACPowerFlow` and proceeding directly to the iterations can also offer the advantage of starting with voltages obtained from the previous solution, resulting in a "warm" start.
+    Reusing the `ACPowerFlow` type and proceeding directly to the iterations can also offer the advantage of starting with voltages obtained from the previous solution, resulting in a "warm start".
 
-However, attempting to take` Generator 2` out-of-service is not possible, as this operation would yield incorrect results if we proceed directly to the iterations. In this case, executing the [`newtonRaphson`](@ref newtonRaphson) function is mandatory:
+However, attempting to take `Generator 2` out-of-service is not possible, as this operation would yield incorrect results if we proceed directly to the iterations. In this case, executing the [`newtonRaphson`](@ref newtonRaphson) function is mandatory:
 ```@repl ReusingACPowerFlowType
 statusGenerator!(system, analysis; label = "Generator 2", status = 0)
 ```

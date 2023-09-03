@@ -173,12 +173,12 @@ function newtonRaphson(system::PowerSystem)
             Polar(Float64[], Float64[])
         ),
         NewtonRaphsonMethod(
-            jacobian, 
-            mismatch, 
+            jacobian,
+            mismatch,
             increment,
-            pqIndex, 
+            pqIndex,
             pvpqIndex
-        ), 
+        ),
         system.uuid
     )
 end
@@ -407,18 +407,18 @@ end
         ),
         FastNewtonRaphsonMethod(
             FastNewtonRaphsonModel(
-                jacobianActive, 
-                mismatchActive, 
-                incrementActive, 
+                jacobianActive,
+                mismatchActive,
+                incrementActive,
                 factorisationActive
             ),
             FastNewtonRaphsonModel(
-                jacobianReactive, 
-                mismatchReactive, 
-                incrementReactive, 
+                jacobianReactive,
+                mismatchReactive,
+                incrementReactive,
                 factorisationReactive
             ),
-            pqIndex, 
+            pqIndex,
             pvpqIndex
         ),
         system.uuid
@@ -494,7 +494,7 @@ function gaussSeidel(system::PowerSystem)
         ),
         GaussSeidelMethod(
             voltage,
-            pqIndex, 
+            pqIndex,
             pvIndex
         ),
         system.uuid
@@ -1013,11 +1013,8 @@ function initializeACPowerFlow(system::PowerSystem)
         if isempty(system.bus.supply.generator[i]) && system.bus.layout.type[i] == 2
             system.bus.layout.type[i] = 1
         end
-    end
-
-    @inbounds for (k, i) in enumerate(system.generator.layout.bus)
-        if system.generator.layout.status[k] == 1 && system.bus.layout.type[i] != 1
-            magnitude[i] = system.generator.voltage.magnitude[k]
+        if !isempty(system.bus.supply.generator[i]) && system.bus.layout.type[i] != 1
+            magnitude[i] = system.generator.voltage.magnitude[system.bus.supply.generator[i][1]]
         end
     end
 
@@ -1047,7 +1044,6 @@ end
 
 ######### Query About Bus ##########
 function addBus!(system::PowerSystem, analysis::ACPowerFlow; kwargs...)
-    checkUUID(system.uuid, analysis.uuid)
     throw(ErrorException("The ACPowerFlow cannot be reused when adding a new bus."))
 end
 
@@ -1064,7 +1060,6 @@ function shuntBus!(system::PowerSystem, analysis::Union{NewtonRaphson, GaussSeid
 end
 
 function shuntBus!(system::PowerSystem, analysis::FastNewtonRaphson; user...)
-    checkUUID(system.uuid, analysis.uuid)
     throw(ErrorException("The FastNewtonRaphson cannot be reused when the shunt element is altered."))
 end
 
@@ -1075,15 +1070,14 @@ function addBranch!(system::PowerSystem, analysis::Union{NewtonRaphson, GaussSei
     conductance::T = missing, turnsRatio::T = missing, shiftAngle::T = missing,
     minDiffAngle::T = missing, maxDiffAngle::T = missing,
     longTerm::T = missing, shortTerm::T = missing, emergency::T = missing, type::T = missing)
-    
+
     checkUUID(system.uuid, analysis.uuid)
     addBranch!(system; label, from, to, status, resistance, reactance, susceptance,
-        conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, longTerm, shortTerm, 
+        conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, longTerm, shortTerm,
         emergency, type)
 end
 
 function addBranch!(system::PowerSystem, analysis::FastNewtonRaphson; kwargs...)
-    checkUUID(system.uuid, analysis.uuid)
     throw(ErrorException("The FastNewtonRaphson cannot be reused when adding a new branch."))
 end
 
@@ -1094,7 +1088,6 @@ function statusBranch!(system::PowerSystem, analysis::Union{NewtonRaphson, Gauss
 end
 
 function statusBranch!(system::PowerSystem, analysis::FastNewtonRaphson; kwargs...)
-    checkUUID(system.uuid, analysis.uuid)
     throw(ErrorException("The FastNewtonRaphson cannot be reused when the branch status is altered."))
 end
 
@@ -1105,7 +1098,6 @@ function parameterBranch!(system::PowerSystem, analysis::Union{NewtonRaphson, Ga
 end
 
 function parameterBranch!(system::PowerSystem, analysis::FastNewtonRaphson; kwargs...)
-    checkUUID(system.uuid, analysis.uuid)
     throw(ErrorException("The FastNewtonRaphson cannot be reused when the branch parameters are altered."))
 end
 
@@ -1133,11 +1125,20 @@ function statusGenerator!(system::PowerSystem, analysis::ACPowerFlow; label::L, 
 
     index = system.generator.label[getLabel(system.generator, label, "generator")]
     indexBus = system.generator.layout.bus[index]
-    if status == 0 && system.bus.layout.type[indexBus] in [2, 3] && length(system.bus.supply.generator[indexBus]) == 1
-        throw(ErrorException("The ACPowerFlow cannot be reused due to required bus type conversion."))
+    if status == 0 && system.bus.layout.type[indexBus] in [2, 3]
+        if length(system.bus.supply.generator[indexBus]) == 1
+            throw(ErrorException("The ACPowerFlow cannot be reused due to required bus type conversion."))
+        elseif length(system.bus.supply.generator[indexBus]) > 1 && system.bus.supply.generator[indexBus][1] == index
+            idx = system.bus.supply.generator[indexBus][2]
+            analysis.voltage.magnitude[indexBus] = system.generator.voltage.magnitude[idx]
+        end
     end
 
     statusGenerator!(system; label, status)
+
+    if status == 1 && system.bus.layout.type[indexBus] in [2, 3] && system.bus.supply.generator[indexBus][1] == index
+        analysis.voltage.magnitude[indexBus] = system.generator.voltage.magnitude[system.bus.supply.generator[indexBus][1]]
+    end
 end
 
 ######### Query About Output Generator ##########

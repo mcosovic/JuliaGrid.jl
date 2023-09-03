@@ -10,6 +10,7 @@ For further information on this topic, please see the [Power System Model](@ref 
 ###### Input Unit System
 * [`@power`](@ref @power)
 * [`@voltage`](@ref @voltage)
+* [`@current`](@ref @current)
 * [`@parameter`](@ref @parameter)
 
 ###### Default Settings
@@ -28,6 +29,7 @@ For further information on this topic, please see the [Power System Model](@ref 
 ```@docs
 @power
 @voltage
+@current
 @parameter
 ```
 

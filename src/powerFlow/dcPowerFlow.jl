@@ -72,8 +72,6 @@ function dcPowerFlow(system::PowerSystem)
         dc.nodalMatrix[bus.layout.slack, dc.nodalMatrix.rowval[i]] = elementsRemove[k]
     end
 
-    setting[system.uuid.value]["dcPowerFlow"] = 1
-
     return DCPowerFlow(
         PolarAngle(Float64[]),
         DCPower(
@@ -107,7 +105,7 @@ solve!(system, analysis)
 """
 function solve!(system::PowerSystem, analysis::DCPowerFlow)
     checkUUID(system.uuid, analysis.uuid)
-    
+
     bus = system.bus
 
     b = copy(bus.supply.active)
@@ -127,7 +125,6 @@ end
 
 ######### Query About Bus ##########
 function addBus!(system::PowerSystem, analysis::DCPowerFlow; kwargs...)
-    checkUUID(system.uuid, analysis.uuid)
     throw(ErrorException("The DCPowerFlow cannot be reused when adding a new bus."))
 end
 
@@ -145,19 +142,16 @@ end
 
 ######### Query About Branch ##########
 function addBranch!(system::PowerSystem, analysis::DCPowerFlow; kwargs...)
-    checkUUID(system.uuid, analysis.uuid)
     throw(ErrorException("The DCPowerFlow cannot be reused when adding a new branch."))
 end
 
 ######### Query About Status Branch ##########
 function statusBranch!(system::PowerSystem, analysis::DCPowerFlow; label::L, status::T)
-    checkUUID(system.uuid, analysis.uuid)
     throw(ErrorException("The DCPowerFlow cannot be reused when the branch status is altered."))
 end
 
 ######### Query About Parameter Branch ##########
 function parameterBranch!(system::PowerSystem, analysis::DCPowerFlow; user...)
-    checkUUID(system.uuid, analysis.uuid)
     throw(ErrorException("The DCPowerFlow cannot be reused when the branch parameters are altered."))
 end
 

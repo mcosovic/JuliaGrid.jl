@@ -548,7 +548,7 @@ system.bus.demand.active
 
 ---
 
-## [Change Shunt Elements](@id ChangeShuntElementsManual)
+## [Change Shunt Parameters](@id ChangeShuntParametersManual)
 To modify or add new shunt element at bus, you can use the [`shuntBus!`](@ref shuntBus!) function. If the AC and DC models have not yet been created, you can directly modify the `bus.shunt` field of the `PowerSystem` type to change their values. However, if AC and DC models have been created, using the [`shuntBus!`](@ref shuntBus!) function will automatically update all relevant fields in these models. This avoids the need to recreate the AC and DC models from scratch.
 
 Therefore, it is recommended to use this function after executing the [`acModel!`](@ref acModel!) and [`dcModel!`](@ref dcModel!) functions. For example, let us start by creating the AC model:
@@ -703,7 +703,7 @@ It is worth noting that even if the generator is out-of-service, the `output.act
 
 ---
 
-## [Change Generator Outputs](@id ChangeGeneratorOutputsManual)
+## [Change Generator Output](@id ChangeGeneratorOutputManual)
 The function [`outputGenerator!`](@ref outputGenerator!) can be utilized to change the output of a generator. This function provides the safe way to modify the active and reactive powers produced by the previously defined generator.
 
 To demonstrate how to use this function, we can use the example:

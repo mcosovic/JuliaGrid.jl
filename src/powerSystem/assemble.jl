@@ -40,7 +40,7 @@ Creating a bus using the default unit system:
 ```jldoctest
 system = powerSystem()
 
-addBus!(system; label = 1, active = 0.25, reactive = -0.04, angle = 0.1745, base = 132e3)
+addBus!(system; label = "Bus 1", active = 0.25, angle = 0.175, base = 132e3)
 ```
 
 Creating a bus using a custom unit system:
@@ -49,7 +49,7 @@ Creating a bus using a custom unit system:
 @voltage(pu, deg, kV)
 system = powerSystem()
 
-addBus!(system; label = 1, active = 25, reactive = -4, angle = 10, base = 132)
+addBus!(system; label = "Bus 1", active = 25.0, angle = 10.026, base = 132.0)
 ```
 """
 function addBus!(system::PowerSystem;
@@ -136,7 +136,7 @@ Creating a bus template using the default unit system:
 system = powerSystem()
 
 @bus(type = 2, active = 0.25, angle = 0.1745)
-addBus!(system; label = 1, reactive = -0.04, base = 132e3)
+addBus!(system; label = "Bus 1", reactive = -0.04, base = 132e3)
 ```
 
 Creating a bus template using a custom unit system:
@@ -145,8 +145,8 @@ Creating a bus template using a custom unit system:
 @voltage(pu, deg, kV)
 system = powerSystem()
 
-@bus(type = 2, active = 25, angle = 10, base = 132)
-addBus!(system; label = 1, reactive = -4)
+@bus(type = 2, active = 25.0, angle = 10.0, base = 132.0)
+addBus!(system; "Bus 1", reactive = -4.0)
 ```
 """
 macro bus(kwargs...)
@@ -191,7 +191,7 @@ end
 """
     demandBus!(system::PowerSystem; label, active, reactive)
 
-This function allows for the adjustment of `active` and `reactive` power demand at a 
+This function allows for the adjustment of `active` and `reactive` power demand at a
 specific bus.
 
 # Keywords
@@ -199,7 +199,7 @@ The keyword `label` must match an existing bus label. If either `active` or `rea
 is left out, the corresponding value will remain unchanged.
 
 # Updates
-This function modifies the `bus.demand` field in the `PowerSystem` composite type. 
+This function modifies the `bus.demand` field in the `PowerSystem` composite type.
 
 # Units
 The input units are in per-units by default, but they can be modified using the
@@ -209,8 +209,8 @@ The input units are in per-units by default, but they can be modified using the
 ```jldoctest
 system = powerSystem()
 
-addBus!(system; label = 1, type = 3, active = 0.25, reactive = -0.04)
-demandBus!(system; label = 1, active = 0.15)
+addBus!(system; label = "Bus 1", type = 3, active = 0.25, reactive = -0.04)
+demandBus!(system; label = "Bus 1", active = 0.15)
 ```
 """
 function demandBus!(system::PowerSystem; user...)
@@ -253,8 +253,8 @@ The input units are in per-units by default, but they can be modified using the
 ```jldoctest
 system = powerSystem()
 
-addBus!(system; label = 1, type = 3, active = 0.25, reactive = -0.04)
-shuntBus!(system; label = 1, conductance = 0.04)
+addBus!(system; label = "Bus 1", type = 3, active = 0.25, reactive = -0.04)
+shuntBus!(system; label = "Bus 1", conductance = 0.04)
 ```
 """
 function shuntBus!(system::PowerSystem; user...)
@@ -264,8 +264,11 @@ function shuntBus!(system::PowerSystem; user...)
     index = system.bus.label[getLabel(system.bus, user[:label], "bus")]
 
     if haskey(user, :conductance) || haskey(user, :susceptance)
+
         if !isempty(ac.nodalMatrix)
-            ac.nodalMatrix[index, index] -= shunt.conductance[index] + im * shunt.susceptance[index]
+            admittance = shunt.conductance[index] + im * shunt.susceptance[index]
+            ac.nodalMatrix[index, index] -= admittance
+            ac.nodalMatrixTranspose[index, index] -= admittance
         end
 
         basePowerInv = 1 / (system.base.power.value * system.base.power.prefix)
@@ -277,7 +280,9 @@ function shuntBus!(system::PowerSystem; user...)
         end
 
         if !isempty(ac.nodalMatrix)
-            ac.nodalMatrix[index, index] += shunt.conductance[index] + im * shunt.susceptance[index]
+            admittance = shunt.conductance[index] + im * shunt.susceptance[index]
+            ac.nodalMatrix[index, index] += admittance
+            ac.nodalMatrixTranspose[index, index] += admittance
         end
     end
 end
@@ -1012,7 +1017,7 @@ function statusGenerator!(system::PowerSystem; label::L, status::Int64 = 0)
     layout = system.generator.layout
     output = system.generator.output
     checkStatus(status)
-    
+
     index = system.generator.label[getLabel(system.generator, label, "generator")]
     indexBus = layout.bus[index]
 
@@ -1028,7 +1033,9 @@ function statusGenerator!(system::PowerSystem; label::L, status::Int64 = 0)
             system.bus.supply.reactive[indexBus] -= output.reactive[index]
         end
         if status == 1
-            push!(system.bus.supply.generator[indexBus], index)
+            position = searchsortedfirst(system.bus.supply.generator[indexBus], index)
+            insert!(system.bus.supply.generator[indexBus], position, index)
+
             system.bus.supply.active[indexBus] += output.active[index]
             system.bus.supply.reactive[indexBus] += output.reactive[index]
         end

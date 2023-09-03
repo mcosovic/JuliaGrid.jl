@@ -341,7 +341,7 @@ end
     @test iteration == matpower30["iteration"][1]
 end
 
-@testset "AC Power Flow with Conductances" begin
+@testset "AC Power Flow with Branch Conductances" begin
     system14.branch.parameter.conductance[14] = 0.052
     system14.branch.parameter.conductance[7] = 0.083
     system14.branch.parameter.conductance[1] = 0.58

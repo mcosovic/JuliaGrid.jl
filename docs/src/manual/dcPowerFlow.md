@@ -214,9 +214,17 @@ active = generatorPower(system, analysis; label = "Generator 1")
 ---
 
 ## [Reusing PowerSystem Type](@id DCReusingPowerSystemTypeManual)
-The `PowerSystem` composite type, including its incorporated `dc` field, can be employed without limitations. It can be automatically modified using functions like [`demandBus!`](@ref demandBus!), [`shuntBus!`](@ref shuntBus!), [`addBranch!`](@ref addBranch!), [`statusBranch!`](@ref statusBranch!), [`parameterBranch!`](@ref parameterBranch!), [`addGenerator!`](@ref addGenerator!), [`statusGenerator!`](@ref statusGenerator!), and [`outputGenerator!`](@ref outputGenerator!), allowing for seamless sharing of the `PowerSystem` type across different DC power flow analyses.
+The `PowerSystem` composite type, along with its previously established `dc` field, offers unlimited versatility. This facilitates the seamless sharing of the `PowerSystem` type across various DC power flow analyses. All fields automatically adjust when any of the functions that add components or modify their parameters are utilized:
+* [`demandBus!`](@ref demandBus!),
+* [`shuntBus!`](@ref shuntBus!),
+* [`addBranch!`](@ref addBranch!),
+* [`statusBranch!`](@ref statusBranch!),
+* [`parameterBranch!`](@ref parameterBranch!),
+* [`addGenerator!`](@ref addGenerator!),
+* [`statusGenerator!`](@ref statusGenerator!),
+* [`outputGenerator!`](@ref outputGenerator!).
 
-To illustrate, consider a scenario where we initially establish a power system. Our goal is to observe the power system's behavior under typical operational conditions and then compare it to a different situation. In this alternative scenario, we take `Generator 1` out-of-service, adjust the output power of `Generator 2`, and modify the active power demand at `Bus 2`. Furthermore, we deactivate `Branch 3` from its operational state and introduce a new branch called `Branch 4`. This entire process can be effortlessly accomplished by reusing the `PowerSystem` composite type, as demonstrated in the following code snippet:
+To illustrate, let us consider a scenario where we initially establish a power system and find a solution:
 ```julia ReusingPowerSystem
 system = powerSystem()
 
@@ -235,7 +243,10 @@ dcModel!(system)
 
 analysis = dcPowerFlow(system)
 solve!(system, analysis)
+```
 
+Next, we want to find a solution in a situation where we take `Generator 1` out-of-service, adjust the output power of `Generator 2`, and modify the active power demand at `Bus 2`. Furthermore, we deactivate `Branch 3` from its operational state and introduce a new branch called `Branch 4`. This entire process can be effortlessly accomplished by reusing the `PowerSystem` composite type and its `dc` field formed previously using the function [`dcModel!`](@ref dcModel!). As demonstrated in the following code snippet:
+```julia ReusingPowerSystem
 statusGenerator!(system; label = "Generator 1", status = 0)
 outputGenerator!(system; label = "Generator 2", active = 2.5)
 demandBus!(system; label = "Bus 2", active = 0.2)
@@ -246,18 +257,21 @@ addBranch!(system; label = "Branch 4", from = "Bus 2", to = "Bus 3", reactance =
 analysis = dcPowerFlow(system)
 solve!(system, analysis)
 ```
-Please note that the [`dcModel!`](@ref dcModel!) function is executed only once. Each function that adds components or mutates them will automatically update the `PowerSystem` type with the `dc` field.
 
 ---
 
 ## [Reusing DCPowerFlow Type](@id ReusingDCPowerFlowTypeManual)
-Reusing the `DCPowerFlow` composite type essentially entails avoiding the execution of the [`dcPowerFlow`](@ref dcPowerFlow) function. This function is responsible for performing bus type checking, as described in the [Bus Type Modification](@ref DCBusTypeModificationManual) section, and factorizing the nodal matrix. In practical terms, reusing the `DCPowerFlow` composite type involves making adjustments exclusively to demand, shunt, or generator parameters while keeping the power system's branch parameters unchanged.
+Reusing the `DCPowerFlow` composite type essentially involves bypassing the execution of the [`dcPowerFlow`](@ref dcPowerFlow) function. This function is responsible for performing bus type checks, as described in the [Bus Type Modification](@ref DCBusTypeModificationManual) section, and for factorizing the nodal matrix. In practical terms, reusing the `DCPowerFlow` composite type means making adjustments exclusively to demand, shunt, or generator parameters while keeping the power system's branch parameters unchanged. This implies that we can utilize the following set of functions:
+* [`demandBus!`](@ref demandBus!),
+* [`shuntBus!`](@ref shuntBus!),
+* [`addGenerator!`](@ref addGenerator!),
+* [`statusGenerator!`](@ref statusGenerator!),
+* [`outputGenerator!`](@ref outputGenerator!).
+However, when using these functions, we need to be cautious. For instance, in the previous example where we set `Generator 1` to out-of-service, the slack bus must be changed. This change can be accomplished using the [`dcPowerFlow`](@ref dcPowerFlow) function. However, our primary focus is on avoiding the use of this function and reusing its output argument.
 
-To provide a straightforward approach for reusing the `DCPowerFlow` composite type without encountering unexpected errors in results, users can pass the `DCPowerFlow` type as an argument to any functions that add or modify the `PowerSystem` composite type. If the modifications are permitted, they will be executed and will accordingly alter the `PowerSystem` composite type. 
+To address this challenge and enable the straightforward reuse of the `DCPowerFlow` composite type without encountering unexpected errors in results, users can pass the `DCPowerFlow` type as an argument to any functions that add or modify the `PowerSystem` composite type. If the modifications are permissible and lead to the correct solutions, they will be executed and will accordingly alter the composite types.
 
-It is worth noting that in the example provided above, when we set `Generator 1` to out-of-service, the slack bus must be changed. If you attempt to reuse the `DCPowerFlow` composite type and execute the [`outputGenerator!`](@ref outputGenerator!) function without the `DCPowerFlow` type, it may lead to incorrect results. Therefore, it is advisable to use the `DCPowerFlow` type as an argument for functions that add or modify the `PowerSystem` composite type to avoid potential errors.
-
-Therefore, in the given example, you can reuse the `DCPowerFlow` composite type as fllowing:
+Therefore, in the given example, you can reuse the `DCPowerFlow` composite type as follows:
 ```julia ReusingDCPowerFlow
 system = powerSystem()
 
@@ -284,7 +298,7 @@ demandBus!(system, analysis; label = "Bus 2", active = 0.2)
 solve!(system, analysis)
 ```
 
-However, if you intend to reuse the `DCPowerFlow` type once more, this time with the aim of modifying the status of the `Branch 3`:
+However, if the intention is to reuse the `DCPowerFlow` type once more, this time with the aim of modifying the status of `Branch 3`, it becomes apparent that in this scenario, reusing the `DCPowerFlow` type is not feasible:
 ```@setup ReusingDCPowerFlow
 using JuliaGrid # hide
 @default(unit) # hide
@@ -318,7 +332,6 @@ solve!(system, analysis)
 ```@repl ReusingDCPowerFlow
 statusBranch!(system, analysis; label = "Branch 3", status = 0)
 ```
-It becomes apparent that in this scenario, reusing the `DCPowerFlow` type is not feasible.
 
 !!! info "Info"
     When you provide the `DCPowerFlow` type as an argument to functions responsible for adding components or making modifications, you are essentially inquiring about the feasibility of reusing the `DCPowerFlow` type. If it is possible, the `PowerSystem` composite type will be changed, and if needed, the `DCPowerFlow` type will also be adapted to provide a correct solution. This action allows you to seamlessly transition to the [`solve!`](@ref solve!(::PowerSystem, ::DCPowerFlow)) function without any intermediate steps. In this manner, JuliaGrid empowers users to make alterations to both generator and demand power while reusing the enhanced `DCPowerFlow` type, which incorporates a factorized nodal matrix to achieve computationally efficient solutions.

@@ -15,9 +15,8 @@
     shuntBus!(assemble; label = 164, susceptance = 3.4)
     shuntBus!(assemble; label = 154)
 
-    @test manual.bus.shunt.conductance == assemble.bus.shunt.conductance
-    @test manual.bus.shunt.susceptance == assemble.bus.shunt.susceptance
-    @test manual.model.ac.nodalMatrix == assemble.model.ac.nodalMatrix
+    equalStruct(manual.bus.shunt, assemble.bus.shunt)
+    equalStruct(manual.model.ac, assemble.model.ac)
 end
 
 @testset "SI Units: shuntBus!" begin
@@ -38,9 +37,8 @@ end
     shuntBus!(assemble; label = 164, susceptance = 340)
     shuntBus!(assemble; label = 154)
 
-    @test manual.bus.shunt.conductance == assemble.bus.shunt.conductance
-    @test manual.bus.shunt.susceptance == assemble.bus.shunt.susceptance
-    @test manual.model.ac.nodalMatrix == assemble.model.ac.nodalMatrix
+    equalStruct(manual.bus.shunt, assemble.bus.shunt)
+    equalStruct(manual.model.ac, assemble.model.ac)
 end
 
 @testset "statusBranch!" begin
@@ -54,17 +52,17 @@ end
     acModel!(assemble); dcModel!(assemble)
     statusBranch!(assemble; label = 3, status = 0)
 
-    @test manual.branch.layout.status == assemble.branch.layout.status
-    @test manual.model.ac.nodalMatrix ≈ assemble.model.ac.nodalMatrix
-    @test manual.model.dc.nodalMatrix ≈ assemble.model.dc.nodalMatrix
+    equalStruct(manual.branch.layout, assemble.branch.layout)
+    approxStruct(manual.model.ac, assemble.model.ac)
 
     manual.branch.layout.status[3] = 1
     acModel!(manual); dcModel!(manual)
 
     statusBranch!(assemble; label = 3, status = 1)
-    @test manual.branch.layout.status == assemble.branch.layout.status
-    @test manual.model.ac.nodalMatrix ≈ assemble.model.ac.nodalMatrix
-    @test manual.model.dc.nodalMatrix ≈ assemble.model.dc.nodalMatrix
+
+    equalStruct(manual.branch.layout, assemble.branch.layout)
+    approxStruct(manual.model.ac, assemble.model.ac)
+    approxStruct(manual.model.dc, assemble.model.dc)
 end
 
 @testset "parameterBranch!" begin
@@ -83,13 +81,9 @@ end
 
     parameterBranch!(assemble; label = 3, resistance = 0.5, reactance = 0.2, susceptance = 0.3, turnsRatio = 0.72, shiftAngle = 0.25)
 
-    @test manual.branch.parameter.resistance == assemble.branch.parameter.resistance
-    @test manual.branch.parameter.reactance == assemble.branch.parameter.reactance
-    @test manual.branch.parameter.susceptance == assemble.branch.parameter.susceptance
-    @test manual.branch.parameter.turnsRatio == assemble.branch.parameter.turnsRatio
-    @test manual.branch.parameter.shiftAngle == assemble.branch.parameter.shiftAngle
-    @test manual.model.ac.nodalMatrix ≈ assemble.model.ac.nodalMatrix
-    @test manual.model.dc.nodalMatrix ≈ assemble.model.dc.nodalMatrix
+    equalStruct(manual.branch.parameter, assemble.branch.parameter)
+    approxStruct(manual.model.ac, assemble.model.ac)
+    approxStruct(manual.model.dc, assemble.model.dc)
 end
 
 @testset "SI Units: parameterBranch!" begin
@@ -102,13 +96,8 @@ end
     @parameter(kΩ, S)
     parameterBranch!(assemble; label = 1, resistance = 0.0004351, reactance = 0.0111682, susceptance = -0.0683e-03, turnsRatio = 0.956, shiftAngle = 10.2)
 
-    @test manual.branch.parameter.resistance ≈ assemble.branch.parameter.resistance atol=1.0e-6
-    @test manual.branch.parameter.reactance ≈ assemble.branch.parameter.reactance atol=1.0e-6
-    @test manual.branch.parameter.susceptance ≈ assemble.branch.parameter.susceptance atol=1.0e-4
-    @test manual.branch.parameter.turnsRatio ≈ assemble.branch.parameter.turnsRatio
-    @test manual.branch.parameter.shiftAngle ≈ assemble.branch.parameter.shiftAngle
-    @test manual.model.ac.nodalMatrix ≈ assemble.model.ac.nodalMatrix atol=1.0e-3
-    @test manual.model.dc.nodalMatrix ≈ assemble.model.dc.nodalMatrix atol=1.0e-3
+    approxStruct(manual.branch.parameter, assemble.branch.parameter, 1.0e-4)
+    approxStruct(manual.model.ac, assemble.model.ac, 1.0e-3)
 end
 
 @testset "statusGenerator!" begin
@@ -118,19 +107,13 @@ end
     system3 = deepcopy(system2)
     statusGenerator!(system2; label = 3, status = 0)
 
-    @test system1.generator.layout.status == system2.generator.layout.status
-    @test system1.bus.supply.active ≈ system2.bus.supply.active
-    @test system1.bus.supply.reactive ≈ system2.bus.supply.reactive
-    @test system1.bus.supply.generator == system2.bus.supply.generator
-    @test system1.bus.layout.type == system2.bus.layout.type
+    equalStruct(system1.generator.layout, system2.generator.layout)
+    approxStruct(system1.bus.supply, system2.bus.supply)
 
     statusGenerator!(system2; label = 3, status = 1)
 
-    @test system3.generator.layout.status == system2.generator.layout.status
-    @test system3.bus.supply.active ≈ system2.bus.supply.active
-    @test system3.bus.supply.reactive ≈ system2.bus.supply.reactive
-    @test system3.bus.supply.generator == system2.bus.supply.generator
-    @test system3.bus.layout.type == system2.bus.layout.type
+    equalStruct(system3.generator.layout, system2.generator.layout)
+    approxStruct(system3.bus.supply, system2.bus.supply)
 end
 
 @testset "outputGenerator!" begin
@@ -139,12 +122,9 @@ end
     system2 = powerSystem(string(pathData, "part300.m"))
     outputGenerator!(system2; label = 3, active = 1.1, reactive = 1)
 
-    @test system1.generator.output.active == system2.generator.output.active
-    @test system1.generator.output.reactive == system2.generator.output.reactive
-    @test system1.bus.supply.active ≈ system2.bus.supply.active
-    @test system1.bus.supply.reactive ≈ system2.bus.supply.reactive
-    @test system1.bus.supply.generator == system2.bus.supply.generator
-    @test system1.bus.layout.type == system2.bus.layout.type
+    equalStruct(system1.generator.output, system2.generator.output)
+    approxStruct(system1.bus.supply, system2.bus.supply)
+    equalStruct(system1.generator.layout, system2.generator.layout)
 end
 
 @testset "SI Units: outputGenerator!" begin
@@ -156,10 +136,7 @@ end
     @power(MW, MVAr, MVA)
     outputGenerator!(system2; label = 3, active = 110, reactive = 100)
 
-    @test system1.generator.output.active == system2.generator.output.active
-    @test system1.generator.output.reactive == system2.generator.output.reactive
-    @test system1.bus.supply.active ≈ system2.bus.supply.active
-    @test system1.bus.supply.reactive ≈ system2.bus.supply.reactive
-    @test system1.bus.supply.generator == system2.bus.supply.generator
-    @test system1.bus.layout.type == system2.bus.layout.type
+    equalStruct(system1.generator.output, system2.generator.output)
+    approxStruct(system1.bus.supply, system2.bus.supply)
+    equalStruct(system1.generator.layout, system2.generator.layout)
 end
