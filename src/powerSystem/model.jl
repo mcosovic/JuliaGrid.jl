@@ -15,14 +15,6 @@ the following variables:
 - `nodalToFrom`: the Y-parameters of the two-port branches;
 - `admittance`: the branch admittances.
 
-Once these variables are established, they will be automatically adjusted upon using the following
-functions:
-* [`shuntBus!`](@ref shuntBus!),
-* [`addBranch!`](@ref addBranch!),
-* [`statusBranch!`](@ref statusBranch!),
-* [`parameterBranch!`](@ref parameterBranch!).
-
-
 # Example
 ```jldoctest
 system = powerSystem("case14.h5")
@@ -109,12 +101,6 @@ the following variables:
 - `nodalMatrix`: the nodal matrix;
 - `admittance`: the branch admittances;
 - `shiftActivePower`: the active powers related to phase-shifting transformers.
-
-Once these variables are established, they will be automatically adjusted upon using the following
-functions:
-* [`addBranch!`](@ref addBranch!),
-* [`statusBranch!`](@ref statusBranch!),
-* [`parameterBranch!`](@ref parameterBranch!).
 
 # Example
 ```jldoctest
