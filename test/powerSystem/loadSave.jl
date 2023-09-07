@@ -1,9 +1,12 @@
 @testset "Load and Save Power System" begin
     systemMat = powerSystem(string(pathData, "case14test.m"))
+    @base(systemMat, MVA, kV)
+
     savePowerSystem(systemMat; path = string(pathData, "case14test.h5"))
     systemH5 = powerSystem(string(pathData, "case14test.h5"))
+    @base(systemH5, MVA, kV)
 
-    ####### Bus Data ##########
+    ####### Bus Data #######
     @test systemMat.bus.label == systemH5.bus.label
     @test systemMat.bus.number == systemH5.bus.number
 
@@ -13,7 +16,7 @@
     equalStruct(systemMat.bus.voltage, systemH5.bus.voltage)
     equalStruct(systemMat.bus.layout, systemH5.bus.layout)
 
-    ######## Branch Data ##########
+    ####### Branch Data #######
     @test systemMat.branch.label == systemH5.branch.label
     @test systemMat.branch.number == systemH5.branch.number
 
@@ -22,7 +25,7 @@
     equalStruct(systemMat.branch.voltage, systemH5.branch.voltage)
     equalStruct(systemMat.branch.layout, systemH5.branch.layout)
 
-    ######## Generator Data ##########
+    ####### Generator Data #######
     @test systemMat.generator.label == systemH5.generator.label
     @test systemMat.generator.number == systemH5.generator.number
 
@@ -34,27 +37,14 @@
     equalStruct(systemMat.generator.cost.reactive, systemH5.generator.cost.reactive)
     equalStruct(systemMat.generator.layout, systemH5.generator.layout)
 
-    ######## Base Power ##########
+    ####### Base Power #######
     equalStruct(systemMat.base.power, systemH5.base.power)
     equalStruct(systemMat.base.voltage, systemH5.base.voltage)
-end
 
-@testset "Base Values" begin
-    systemMat = powerSystem(string(pathData, "case14test.m"))
-    @base(systemMat, MVA, kV)
-
-    savePowerSystem(systemMat; path = string(pathData, "case14test_temp.h5"))
-    systemH5 = powerSystem(string(pathData, "case14test_temp.h5"))
-    @base(systemH5, MVA, kV)
-
-    ######## Base Values ##########
     @test systemMat.base.power.value == 100.0
     @test systemMat.base.power.unit == "MVA"
     @test systemMat.base.power.prefix == 1e6
     @test all(systemMat.base.voltage.value .== 138.0)
     @test systemMat.base.voltage.unit == "kV"
     @test systemMat.base.voltage.prefix == 1e3
-
-    equalStruct(systemMat.base.power, systemH5.base.power)
-    equalStruct(systemMat.base.voltage, systemH5.base.voltage)
 end

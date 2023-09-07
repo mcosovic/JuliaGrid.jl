@@ -1,59 +1,3 @@
-const prefixList = Dict(
-    "q" => 1e-30,
-    "r" => 1e-27,
-    "y" => 1e-24,
-    "z" => 1e-21,
-    "a" => 1e-18,
-    "f" => 1e-15,
-    "p" => 1e-12,
-    "n" => 1e-9,
-    "μ" => 1e-6,
-    "m" => 1e-3,
-    "c" => 1e-2,
-    "d" => 1e-1,
-    "da" => 1e1,
-    "h" => 1e2,
-    "k" => 1e3,
-    "M" => 1e6,
-    "G" => 1e9,
-    "T" => 1e12,
-    "P" => 1e15,
-    "E" => 1e18,
-    "Z" => 1e21,
-    "Y" => 1e24,
-    "R" => 1e27,
-    "Q" => 1e30
-    )
-
-const suffixList = Dict(
-    :basePower => ["VA"],
-    :baseVoltage => ["V"],
-    :activePower => ["W", "pu"],
-    :reactivePower => ["VAr", "pu"],
-    :apparentPower => ["VA", "pu"],
-    :voltageMagnitude => ["V", "pu"],
-    :voltageAngle => ["deg", "rad"],
-    :currentMagnitude => ["A", "pu"],
-    :currentAngle => ["deg", "rad"],
-    :impedance => [string(:Ω), "pu"],
-    :admittance => ["S", "pu"]
-    )
-
-
-Base.@kwdef mutable struct PrefixLive
-    activePower::Float64 = 0.0
-    reactivePower::Float64 = 0.0
-    apparentPower::Float64 = 0.0
-    voltageMagnitude::Float64 = 0.0
-    voltageAngle::Float64 = 1.0
-    currentMagnitude::Float64 = 0.0
-    currentAngle::Float64 = 1.0
-    impedance::Float64 = 0.0
-    admittance::Float64 = 0.0
-    baseVoltage::Float64 = 1.0
-end
-prefix = PrefixLive()
-
 """
     @base(system::PowerSystem, power, voltage)
 
@@ -72,11 +16,11 @@ system = powerSystem("case14.h5")
 """
 macro base(system::Symbol, power::Symbol, voltage::Symbol)
     powerString = string(power)
-    suffixPower = parseSuffix(powerString, :basePower)
+    suffixPower = parseSuffix(powerString, suffixList.basePower)
     prefixPower = parsePrefix(powerString, suffixPower)
 
     voltageString = string(voltage)
-    suffixVoltage = parseSuffix(voltageString, :baseVoltage)
+    suffixVoltage = parseSuffix(voltageString, suffixList.baseVoltage)
     prefixVoltage = parsePrefix(voltageString, suffixVoltage)
 
     return quote
@@ -131,15 +75,15 @@ Changing the unit of apparent power unit is reflected in the following quantitie
 """
 macro power(active::Symbol, reactive::Symbol, apparent::Symbol)
     activeString = string(active)
-    suffixUser = parseSuffix(activeString, :activePower)
+    suffixUser = parseSuffix(activeString, suffixList.activePower)
     prefix.activePower = parsePrefix(activeString, suffixUser)
 
     reactiveString = string(reactive)
-    suffixUser = parseSuffix(reactiveString, :reactivePower)
+    suffixUser = parseSuffix(reactiveString, suffixList.reactivePower)
     prefix.reactivePower = parsePrefix(reactiveString, suffixUser)
 
     apparentString = string(apparent)
-    suffixUser = parseSuffix(apparentString, :apparentPower)
+    suffixUser = parseSuffix(apparentString, suffixList.apparentPower)
     prefix.apparentPower = parsePrefix(apparentString, suffixUser)
 end
 
@@ -174,15 +118,15 @@ Changing the unit prefix of voltage base is reflected in the following quantity:
 """
 macro voltage(magnitude::Symbol, angle::Symbol, base::Symbol)
     magnitudeString = string(magnitude)
-    suffixUser = parseSuffix(magnitudeString, :voltageMagnitude)
+    suffixUser = parseSuffix(magnitudeString, suffixList.voltageMagnitude)
     prefix.voltageMagnitude = parsePrefix(magnitudeString, suffixUser)
 
     angleString = string(angle)
-    suffixUser = parseSuffix(angleString, :voltageAngle)
+    suffixUser = parseSuffix(angleString, suffixList.voltageAngle)
     prefix.voltageAngle = parsePrefix(angleString, suffixUser)
 
     baseString = string(base)
-    suffixUser = parseSuffix(baseString, :baseVoltage)
+    suffixUser = parseSuffix(baseString, suffixList.baseVoltage)
     prefix.baseVoltage = parsePrefix(baseString, suffixUser)
 end
 
@@ -208,11 +152,11 @@ Changing the unit of current magnitude is reflected in the following quantities:
 """
 macro current(magnitude::Symbol, angle::Symbol)
     magnitudeString = string(magnitude)
-    suffixUser = parseSuffix(magnitudeString, :currentMagnitude)
+    suffixUser = parseSuffix(magnitudeString, suffixList.currentMagnitude)
     prefix.currentMagnitude = parsePrefix(magnitudeString, suffixUser)
 
     angleString = string(angle)
-    suffixUser = parseSuffix(angleString, :currentAngle)
+    suffixUser = parseSuffix(angleString, suffixList.currentAngle)
     prefix.currentAngle = parsePrefix(angleString, suffixUser)
 end
 
@@ -248,18 +192,18 @@ Changing the units of admittance is reflected in the following quantities:
 """
 macro parameter(impedance::Symbol, admittance::Symbol)
     impedanceString = string(impedance)
-    suffixUser = parseSuffix(impedanceString, :impedance)
+    suffixUser = parseSuffix(impedanceString, suffixList.impedance)
     prefix.impedance = parsePrefix(impedanceString, suffixUser)
 
     admittanceString = string(admittance)
-    suffixUser = parseSuffix(admittanceString, :admittance)
+    suffixUser = parseSuffix(admittanceString, suffixList.admittance)
     prefix.admittance = parsePrefix(admittanceString, suffixUser)
 end
 
 ######### Parse Suffix (Unit) ##########
-function parseSuffix(input::String, type::Symbol)
+function parseSuffix(input::String, suffixList)
     sufixUser = ""
-    @inbounds for i in suffixList[type]
+    @inbounds for i in suffixList
         if endswith(input, i)
             sufixUser = i
         end
@@ -292,68 +236,140 @@ function parsePrefix(input::String, suffixUser::String)
     return scale
 end
 
-######### Impedance Base Value ##########
-function baseImpedance(baseVoltage::Float64, basePowerInv::Float64, turnsRatio::Float64)
-    base = 1.0
-    if prefix.impedance != 0.0 || prefix.admittance != 0.0
-        base = (baseVoltage * turnsRatio)^2 * basePowerInv
+"""
+The macro is designed to reset various settings to their default values.
+
+    @default(mode)
+
+The `mode` argument can take on the following values:
+* `unit`: resets all units to their default settings
+* `power`: sets active, reactive, and apparent power to per-units
+* `voltage`: sets voltage magnitude to per-unit and voltage angle to radian
+* `parameter`: sets impedance and admittance to per-units
+* `template`: resets bus, branch and generator templates to their default settings
+* `bus`: resets the bus template to its default settings
+* `branch`: resets the branch template to its default settings
+* `generator`: resets the generator template to its default settings.
+
+# Example
+```jldoctest
+@default(unit)
+```
+"""
+macro default(mode::Symbol)
+    if mode == :unit || mode == :power
+        prefix.activePower = 0.0
+        prefix.reactivePower = 0.0
+        prefix.apparentPower = 0.0
     end
 
-    return base
-end
-
-######### Current Magnitude Base Value ##########
-function baseCurrentInverse(basePowerInv::Float64, baseVoltage::Float64)
-    base = 1.0
-    if prefix.currentMagnitude != 0.0
-        base = sqrt(3) * baseVoltage * basePowerInv
+    if mode == :unit || mode == :voltage
+        prefix.voltageMagnitude = 0.0
+        prefix.voltageAngle = 1.0
     end
 
-    return base
-end
-
-######### To Per-Units with Default Values ##########
-function topu(value, default, baseInv, prefixLive)
-    if ismissing(value)
-        if default.pu
-            value = default.value
-        else
-            value = default.value * baseInv
-        end
-    else
-        if prefixLive != 0.0
-            value = (value * prefixLive) * baseInv
-        end
+    if mode == :unit || mode == :current
+        prefix.currentMagnitude = 0.0
+        prefix.currentAngle = 1.0
     end
 
-    return value
-end
-
-######### To Per-Units Live ##########
-function topu(value, baseInv, prefixLive)
-    if prefixLive != 0.0
-       value = (value * prefixLive) * baseInv
+    if mode == :unit || mode == :parameter
+        prefix.impedance = 0.0
+        prefix.admittance = 0.0
     end
 
-    return value
-end
+    if mode == :template || mode == :bus
+        template.bus.active.value = 0.0
+        template.bus.active.pu = true
+        template.bus.reactive.value = 0.0
+        template.bus.reactive.pu = true
 
-######### To Radians or Volts with Default Values ##########
-function tosi(value, default, prefixLive)
-    if ismissing(value)
-        value = default
-    else
-        value = value * prefixLive
+        template.bus.conductance.value = 0.0
+        template.bus.conductance.pu = true
+        template.bus.susceptance.value = 0.0
+        template.bus.susceptance.pu = true
+
+        template.bus.magnitude.value = 1.0
+        template.bus.magnitude.pu = true
+        template.bus.minMagnitude.value = 0.0
+        template.bus.minMagnitude.pu = true
+        template.bus.maxMagnitude.value = 0.0
+        template.bus.maxMagnitude.pu = true
+
+        template.bus.base = 138e3
+        template.bus.angle = 0.0
+        template.bus.type = Int8(1)
+        template.bus.area = 1
+        template.bus.lossZone = 1
     end
 
-    return value
-end
+    if mode == :template || mode == :branch
+        template.branch.resistance.value = 0.0
+        template.branch.resistance.pu = true
+        template.branch.reactance.value = 0.0
+        template.branch.reactance.pu = true
+        template.branch.conductance.value = 0.0
+        template.branch.conductance.pu = true
+        template.branch.susceptance.value = 0.0
+        template.branch.susceptance.pu = true
 
-######### Unitless Quantities with Default Values ##########
-function unitless(value, default)
-    if ismissing(value)
-        value = default
+        template.branch.longTerm.value = 0.0
+        template.branch.longTerm.pu = true
+        template.branch.shortTerm.value = 0.0
+        template.branch.shortTerm.pu = true
+        template.branch.emergency.value = 0.0
+        template.branch.emergency.pu = true
+
+        template.branch.turnsRatio = 1.0
+        template.branch.shiftAngle = 0.0
+        template.branch.minDiffAngle = 0.0
+        template.branch.maxDiffAngle = 0.0
+        template.branch.status = Int8(1)
+        template.branch.type = Int8(1)
     end
 
-    return value
+    if mode == :template || mode == :generator
+        template.generator.active.value = 0.0
+        template.generator.active.pu = true
+        template.generator.reactive.value = 0.0
+        template.generator.reactive.pu = true
+        
+        template.generator.magnitude.value = 1.0
+        template.generator.magnitude.pu = true
+
+        template.generator.minActive.value = 0.0
+        template.generator.minActive.pu = true
+        template.generator.maxActive.value = 0.0
+        template.generator.maxActive.pu = true
+        template.generator.minReactive.value = 0.0
+        template.generator.minReactive.pu = true
+        template.generator.maxReactive.value = 0.0
+        template.generator.maxReactive.pu = true
+
+        template.generator.lowActive.value = 0.0
+        template.generator.lowActive.pu = true
+        template.generator.minLowReactive.value = 0.0
+        template.generator.minLowReactive.pu = true
+        template.generator.maxLowReactive.value = 0.0
+        template.generator.maxLowReactive.pu = true
+
+        template.generator.upActive.value = 0.0
+        template.generator.upActive.pu = true
+        template.generator.minUpReactive.value = 0.0
+        template.generator.minUpReactive.pu = true
+        template.generator.maxUpReactive.value = 0.0
+        template.generator.maxUpReactive.pu = true
+
+        template.generator.loadFollowing.value = 0.0
+        template.generator.loadFollowing.pu = true
+        template.generator.reactiveTimescale.value = 0.0
+        template.generator.reactiveTimescale.pu = true
+        template.generator.reserve10min.value = 0.0
+        template.generator.reserve10min.pu = true
+        template.generator.reserve30min.value = 0.0
+        template.generator.reserve30min.pu = true
+
+        template.generator.status = Int8(1)
+        template.generator.area = 0
+    end
 end

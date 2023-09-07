@@ -2,14 +2,17 @@
     ######## DC Power Flow ##########
     system = powerSystem(string(pathData, "case14test.m"))
 
-    demandBus!(system; label = 2, active = 0.2)
-    shuntBus!(system; label = 3, conductance = 0.1)
+    changeBus!(system; label = 2, active = 0.2, conductance = 0.1)
+
     addBranch!(system; from = 2, to = 3, reactance = 0.03, shiftAngle = 0.17)
-    statusBranch!(system; label = 3, status = 0)
-    parameterBranch!(system; label = 1, reactance = 0.2, shiftAngle = -0.12)
+    changeBranch!(system; label = 1, reactance = 0.2, shiftAngle = -0.12)
+    changeBranch!(system; label = 3, status = 0)
+    changeBranch!(system; label = 4, status = 1, reactance = 0.2, shiftAngle = -0.12)
+
     addGenerator!(system; bus = 1, active = 0.8)
-    statusGenerator!(system; label = 1, status = 0)
-    outputGenerator!(system; label = 2, active = 2.5)
+    changeGenerator!(system; label = 1, status = 0)
+    changeGenerator!(system; label = 2, active = 2.5)
+    changeGenerator!(system; label = 3, status = 1, active = 2.5)
 
     dcModel!(system)
     analysis = dcPowerFlow(system)
@@ -20,14 +23,19 @@
     system = powerSystem(string(pathData, "case14test.m"))
     dcModel!(system)
 
-    demandBus!(system; label = 2, active = 0.2)
-    shuntBus!(system; label = 3, conductance = 0.1)
+    changeBus!(system; label = 2, active = 0.2, conductance = 0.1)
+
     addBranch!(system; from = 2, to = 3, reactance = 0.03, shiftAngle = 0.17)
-    statusBranch!(system; label = 3, status = 0)
-    parameterBranch!(system; label = 1, reactance = 0.2, shiftAngle = -0.12)
+    changeBranch!(system; label = 1, reactance = 0.2, shiftAngle = -0.12)
+    changeBranch!(system; label = 3, status = 0)
+    changeBranch!(system; label = 4, status = 0, reactance = 0.2, shiftAngle = -0.12)
+    changeBranch!(system; label = 4, status = 1)
+
     addGenerator!(system; bus = 1, active = 0.8)
-    statusGenerator!(system; label = 1, status = 0)
-    outputGenerator!(system; label = 2, active = 2.5)
+    changeGenerator!(system; label = 1, status = 0)
+    changeGenerator!(system; label = 2, active = 2.5)
+    changeGenerator!(system; label = 3, status = 0, active = 2.5)
+    changeGenerator!(system; label = 3, status = 1)
 
     analysisReusing = dcPowerFlow(system)
     solve!(system, analysisReusing)
@@ -45,14 +53,22 @@ end
     ####### AC Power Flow ##########
     system = powerSystem(string(pathData, "case14test.m"))
 
-    demandBus!(system; label = 2, active = 0.2, reactive = 0.2)
-    shuntBus!(system; label = 3, conductance = 0.1, susceptance = 0.2)
-    addBranch!(system; from = 2, to = 3, resistance = 0.2, reactance = 0.03, susceptance = 0.01)
-    statusBranch!(system; label = 3, status = 0)
-    parameterBranch!(system; label = 1, reactance = 0.2, turnsRatio = 0.96, shiftAngle = 0.12)
-    addGenerator!(system; bus = 1, active = 0.8, reactive = 0.2)
-    statusGenerator!(system; label = 1, status = 0)
-    outputGenerator!(system; label = 2, active = 2.5, reactive = 1.2)
+    changeBus!(system; label = 2, type = 2, active = 0.15, reactive = 0.21, conductance = 0.18, susceptance = 0.4,
+        magnitude = 1.5, angle = 0.17, minMagnitude = 0.9, maxMagnitude = 1.8, base = 100e3, area = 1, lossZone = 1)
+    changeBus!(system; label = 3, susceptance = 0.1, conductance = 0.12)
+
+    addBranch!(system; from = 2, to = 3, resistance = 0.2, reactance = 0.03, susceptance = 0.01,
+        minDiffAngle = 0.1, maxDiffAngle = 0.5, longTerm = 0.12, shortTerm = 0.15, emergency = 0.14, type = 1)
+    changeBranch!(system; label = 17, status = 0)
+    changeBranch!(system; label = 1, reactance = 0.2, resistance = 0.2, conductance = 0.01, susceptance = 0.2, turnsRatio = 0.96, shiftAngle = 0.12)
+
+    addGenerator!(system; bus = 2, status = 1, active = 0.1, reactive = 0.2, magnitude = 1.2, 
+        minActive = 0.0, maxActive = 0.15, minReactive = 0.0, maxReactive = 0.15,
+        lowActive = 0.1, minLowReactive = 0.1, maxLowReactive = 0.1, upActive = 0.1, 
+        minUpReactive = 0.1, maxUpReactive = 0.1, loadFollowing = 0.1, 
+        reactiveTimescale = 0.1, reserve10min = 0.1, reserve30min = 0.1, area = 0.1)
+    changeGenerator!(system; label = 7, status = 0)       
+    changeGenerator!(system; label = 3, status = 1, active = 0.5, reactive = 0.8)
 
     acModel!(system)
     analysis = newtonRaphson(system)
@@ -70,14 +86,23 @@ end
     system = powerSystem(string(pathData, "case14test.m"))
     acModel!(system)
 
-    demandBus!(system; label = 2, active = 0.2, reactive = 0.2)
-    shuntBus!(system; label = 3, conductance = 0.1, susceptance = 0.2)
-    addBranch!(system; from = 2, to = 3, resistance = 0.2, reactance = 0.03, susceptance = 0.01)
-    statusBranch!(system; label = 3, status = 0)
-    parameterBranch!(system; label = 1, reactance = 0.2, turnsRatio = 0.96, shiftAngle = 0.12)
-    addGenerator!(system; bus = 1, active = 0.8, reactive = 0.2)
-    statusGenerator!(system; label = 1, status = 0)
-    outputGenerator!(system; label = 2, active = 2.5, reactive = 1.2)
+    changeBus!(system; label = 2, type = 2, active = 0.15, reactive = 0.21, conductance = 0.18, susceptance = 0.4,
+        magnitude = 1.5, angle = 0.17, minMagnitude = 0.9, maxMagnitude = 1.8, base = 100e3, area = 1, lossZone = 1)
+    changeBus!(system; label = 3, susceptance = 0.1, conductance = 0.12)
+
+    addBranch!(system; from = 2, to = 3, resistance = 0.2, reactance = 0.03, susceptance = 0.01,
+        minDiffAngle = 0.1, maxDiffAngle = 0.5, longTerm = 0.12, shortTerm = 0.15, emergency = 0.14, type = 1)
+    changeBranch!(system; label = 17, status = 0)
+    changeBranch!(system; label = 1, status = 0, reactance = 0.2, resistance = 0.2, conductance = 0.01, susceptance = 0.2, turnsRatio = 0.96, shiftAngle = 0.12)
+    changeBranch!(system; label = 1, status = 1)
+
+    addGenerator!(system; bus = 2, status = 1, active = 0.1, reactive = 0.2, magnitude = 1.2, 
+        minActive = 0.0, maxActive = 0.15, minReactive = 0.0, maxReactive = 0.15,
+        lowActive = 0.1, minLowReactive = 0.1, maxLowReactive = 0.1, upActive = 0.1, 
+        minUpReactive = 0.1, maxUpReactive = 0.1, loadFollowing = 0.1, 
+        reactiveTimescale = 0.1, reserve10min = 0.1, reserve30min = 0.1, area = 0.1)
+    changeGenerator!(system; label = 7, status = 0)    
+    changeGenerator!(system; label = 3, status = 1, active = 0.5, reactive = 0.8)
 
     analysisReusing = newtonRaphson(system)
     for iteration = 1:100
@@ -100,7 +125,6 @@ end
     approxStruct(analysis.power.series, analysisReusing.power.series)
     approxStruct(analysis.power.generator, analysisReusing.power.generator)
 
-    approxStruct(analysis.current.injection, analysisReusing.current.injection)
     approxStruct(analysis.current.from, analysisReusing.current.from)
     approxStruct(analysis.current.to, analysisReusing.current.to)
     approxStruct(analysis.current.series, analysisReusing.current.series)
@@ -110,31 +134,31 @@ end
     ######## DC Power Flow ##########
     system = powerSystem(string(pathData, "case14test.m"))
 
-    demandBus!(system; label = 2, active = 0.2)
-    shuntBus!(system; label = 3, conductance = 0.1)
-    addGenerator!(system; bus = 1, active = 0.8)
-    statusGenerator!(system; label = 1, status = 0)
-    outputGenerator!(system; label = 2, active = 2.5)
-
+    changeBus!(system; label = 1, active = 0.15, conductance = 0.16)
+    addGenerator!(system; bus = 2, active = 0.8)
+    changeGenerator!(system; label = 9, active = 1.2)
+    changeGenerator!(system; label = 1, status = 0)
+    
     dcModel!(system)
     analysis = dcPowerFlow(system)
     solve!(system, analysis)
     power!(system, analysis)
-
+    
     ######## DC Power Flow: Resuing ##########
     system = powerSystem(string(pathData, "case14test.m"))
     dcModel!(system)
     analysisReusing = dcPowerFlow(system)
-
-    demandBus!(system, analysisReusing; label = 2, active = 0.2)
-    shuntBus!(system, analysisReusing; label = 3, conductance = 0.1)
-    addGenerator!(system, analysisReusing; bus = 1, active = 0.8)
-    statusGenerator!(system, analysisReusing; label = 1, status = 0)
-    outputGenerator!(system, analysisReusing; label = 2, active = 2.5)
-
+    
+    changeBus!(system, analysisReusing; label = 1, active = 0.15, conductance = 0.16)
+    addGenerator!(system, analysisReusing; bus = 2, active = 0.8)
+    changeGenerator!(system, analysisReusing; label = 9, active = 1.2)
+    changeGenerator!(system, analysisReusing; label = 1, status = 0)
+    changeGenerator!(system, analysisReusing; label = 1, status = 1)
+    changeGenerator!(system, analysisReusing; label = 1, status = 0)
+    
     solve!(system, analysisReusing)
     power!(system, analysisReusing)
-
+    
     @test analysis.voltage.angle ≈ analysisReusing.voltage.angle
     @test analysis.power.injection.active ≈ analysisReusing.power.injection.active
     @test analysis.power.supply.active ≈ analysisReusing.power.supply.active
@@ -147,14 +171,14 @@ end
     ####### AC Power Flow ##########
     system = powerSystem(string(pathData, "case14test.m"))
 
-    demandBus!(system; label = 2, active = 0.2, reactive = 0.2)
-    shuntBus!(system; label = 3, conductance = 0.1, susceptance = 0.2)
-    addBranch!(system; from = 2, to = 3, resistance = 0.2, reactance = 0.03, susceptance = 0.01)
-    statusBranch!(system; label = 3, status = 0)
-    parameterBranch!(system; label = 1, reactance = 0.2, turnsRatio = 0.96, shiftAngle = 0.12)
+    changeBus!(system; label = 14, active = 0.12, reactive = 0.13, conductance = 0.1, susceptance = 0.15, magnitude = 1.2, angle = -0.17)
+    addBranch!(system; from = 2, to = 3, resistance = 0.02, reactance = 0.03, susceptance = 0.01, conductance = 0.0001, turnsRatio = 0.95, shiftAngle = -0.17)
+    changeBranch!(system; label = 12, status = 0, resistance = 0.02, reactance = 0.03, susceptance = 0.01)
+    changeBranch!(system; label = 12, status = 1)
     addGenerator!(system; bus = 16, active = 0.8, reactive = 0.2, magnitude = 0.95)
-    statusGenerator!(system; label = 6, status = 0)
-    outputGenerator!(system; label = 2, active = 2.5, reactive = 1.2)
+    addGenerator!(system; bus = 4, active = 0.8, reactive = 0.2, magnitude = 0.9)
+    changeGenerator!(system; label = 4, status = 0)
+    changeGenerator!(system; label = 7, active = 0.15, magnitude = 0.92)
 
     acModel!(system)
     analysis = newtonRaphson(system)
@@ -169,28 +193,28 @@ end
     current!(system, analysis)
 
     ######## AC Power Flow: Resuing ##########
-    system = powerSystem(string(pathData, "case14test.m"))
+    systemRe = powerSystem(string(pathData, "case14test.m"))
     acModel!(system)
-    analysisReusing = newtonRaphson(system)
+    analysisReusing = newtonRaphson(systemRe)
 
-    demandBus!(system, analysisReusing; label = 2, active = 0.2, reactive = 0.2)
-    shuntBus!(system, analysisReusing; label = 3, conductance = 0.1, susceptance = 0.2)
-    addBranch!(system, analysisReusing; from = 2, to = 3, resistance = 0.2, reactance = 0.03, susceptance = 0.01)
-    statusBranch!(system, analysisReusing; label = 3, status = 0)
-    parameterBranch!(system, analysisReusing; label = 1, reactance = 0.2, turnsRatio = 0.96, shiftAngle = 0.12)
-    addGenerator!(system, analysisReusing; bus = 16, active = 0.8, reactive = 0.2, magnitude = 0.95)
-    statusGenerator!(system, analysisReusing; label = 6, status = 0)
-    outputGenerator!(system, analysisReusing; label = 2, active = 2.5, reactive = 1.2)
+    changeBus!(systemRe, analysisReusing; label = 14, active = 0.12, reactive = 0.13, conductance = 0.1, susceptance = 0.15, magnitude = 1.2, angle = -0.17)
+    addBranch!(systemRe, analysisReusing; from = 2, to = 3, resistance = 0.02, reactance = 0.03, susceptance = 0.01, conductance = 0.0001, turnsRatio = 0.95, shiftAngle = -0.17)
+    changeBranch!(systemRe, analysisReusing; label = 12, status = 0, resistance = 0.02, reactance = 0.03, susceptance = 0.01)
+    changeBranch!(systemRe, analysisReusing; label = 12, status = 1)
+    addGenerator!(systemRe, analysisReusing; bus = 16, active = 0.8, reactive = 0.2, magnitude = 0.95)
+    addGenerator!(systemRe, analysisReusing; bus = 4, active = 0.8, reactive = 0.2, magnitude = 0.9)
+    changeGenerator!(systemRe, analysisReusing; label = 4, status = 0)
+    changeGenerator!(systemRe, analysisReusing; label = 7, active = 0.15, magnitude = 0.92)
 
     for iteration = 1:100
-        stopping = mismatch!(system, analysisReusing)
+        stopping = mismatch!(systemRe, analysisReusing)
         if all(stopping .< 1e-8)
             break
         end
-        solve!(system, analysisReusing)
+        solve!(systemRe, analysisReusing)
     end
-    power!(system, analysisReusing)
-    current!(system, analysisReusing)
+    power!(systemRe, analysisReusing)
+    current!(systemRe, analysisReusing)
 
     approxStruct(analysis.voltage, analysisReusing.voltage)
     approxStruct(analysis.power.injection, analysisReusing.power.injection)
@@ -202,7 +226,6 @@ end
     approxStruct(analysis.power.series, analysisReusing.power.series)
     approxStruct(analysis.power.generator, analysisReusing.power.generator)
 
-    approxStruct(analysis.current.injection, analysisReusing.current.injection)
     approxStruct(analysis.current.from, analysisReusing.current.from)
     approxStruct(analysis.current.to, analysisReusing.current.to)
     approxStruct(analysis.current.series, analysisReusing.current.series)
@@ -212,14 +235,14 @@ end
     ####### AC Power Flow ##########
     system = powerSystem(string(pathData, "case14test.m"))
 
-    demandBus!(system; label = 2, active = 0.2, reactive = 0.2)
-    shuntBus!(system; label = 3, conductance = 0.1, susceptance = 0.2)
-    addBranch!(system; from = 2, to = 3, resistance = 0.2, reactance = 0.03, susceptance = 0.01)
-    statusBranch!(system; label = 3, status = 0)
-    parameterBranch!(system; label = 1, reactance = 0.2, turnsRatio = 0.96, shiftAngle = 0.12)
+    changeBus!(system; label = 14, active = 0.12, reactive = 0.13, conductance = 0.1, susceptance = 0.15, magnitude = 1.2, angle = -0.17)
+    addBranch!(system; from = 2, to = 3, resistance = 0.02, reactance = 0.03, susceptance = 0.01, conductance = 0.0001, turnsRatio = 0.95, shiftAngle = -0.17)
+    changeBranch!(system; label = 12, status = 0, resistance = 0.02, reactance = 0.03, susceptance = 0.01)
+    changeBranch!(system; label = 12, status = 1)
     addGenerator!(system; bus = 16, active = 0.8, reactive = 0.2, magnitude = 0.95)
-    statusGenerator!(system; label = 6, status = 0)
-    outputGenerator!(system; label = 2, active = 2.5, reactive = 1.2)
+    addGenerator!(system; bus = 4, active = 0.8, reactive = 0.2, magnitude = 0.9)
+    changeGenerator!(system; label = 4, status = 0)
+    changeGenerator!(system; label = 7, active = 0.15, magnitude = 0.92)
 
     acModel!(system)
     analysis = gaussSeidel(system)
@@ -234,28 +257,28 @@ end
     current!(system, analysis)
 
     ######## AC Power Flow: Resuing ##########
-    system = powerSystem(string(pathData, "case14test.m"))
+    systemRe = powerSystem(string(pathData, "case14test.m"))
     acModel!(system)
-    analysisReusing = gaussSeidel(system)
+    analysisReusing = gaussSeidel(systemRe)
 
-    demandBus!(system, analysisReusing; label = 2, active = 0.2, reactive = 0.2)
-    shuntBus!(system, analysisReusing; label = 3, conductance = 0.1, susceptance = 0.2)
-    addBranch!(system, analysisReusing; from = 2, to = 3, resistance = 0.2, reactance = 0.03, susceptance = 0.01)
-    statusBranch!(system, analysisReusing; label = 3, status = 0)
-    parameterBranch!(system, analysisReusing; label = 1, reactance = 0.2, turnsRatio = 0.96, shiftAngle = 0.12)
-    addGenerator!(system, analysisReusing; bus = 16, active = 0.8, reactive = 0.2, magnitude = 0.95)
-    statusGenerator!(system, analysisReusing; label = 6, status = 0)
-    outputGenerator!(system, analysisReusing; label = 2, active = 2.5, reactive = 1.2)
+    changeBus!(systemRe, analysisReusing; label = 14, active = 0.12, reactive = 0.13, conductance = 0.1, susceptance = 0.15, magnitude = 1.2, angle = -0.17)
+    addBranch!(systemRe, analysisReusing; from = 2, to = 3, resistance = 0.02, reactance = 0.03, susceptance = 0.01, conductance = 0.0001, turnsRatio = 0.95, shiftAngle = -0.17)
+    changeBranch!(systemRe, analysisReusing; label = 12, status = 0, resistance = 0.02, reactance = 0.03, susceptance = 0.01)
+    changeBranch!(systemRe, analysisReusing; label = 12, status = 1)
+    addGenerator!(systemRe, analysisReusing; bus = 16, active = 0.8, reactive = 0.2, magnitude = 0.95)
+    addGenerator!(systemRe, analysisReusing; bus = 4, active = 0.8, reactive = 0.2, magnitude = 0.9)
+    changeGenerator!(systemRe, analysisReusing; label = 4, status = 0)
+    changeGenerator!(systemRe, analysisReusing; label = 7, active = 0.15, magnitude = 0.92)
 
     for iteration = 1:1000
-        stopping = mismatch!(system, analysisReusing)
+        stopping = mismatch!(systemRe, analysisReusing)
         if all(stopping .< 1e-8)
             break
         end
-        solve!(system, analysisReusing)
+        solve!(systemRe, analysisReusing)
     end
-    power!(system, analysisReusing)
-    current!(system, analysisReusing)
+    power!(systemRe, analysisReusing)
+    current!(systemRe, analysisReusing)
 
     approxStruct(analysis.voltage, analysisReusing.voltage)
     approxStruct(analysis.power.injection, analysisReusing.power.injection)
@@ -267,7 +290,6 @@ end
     approxStruct(analysis.power.series, analysisReusing.power.series)
     approxStruct(analysis.power.generator, analysisReusing.power.generator)
 
-    approxStruct(analysis.current.injection, analysisReusing.current.injection, 1e-6)
     approxStruct(analysis.current.from, analysisReusing.current.from)
     approxStruct(analysis.current.to, analysisReusing.current.to)
     approxStruct(analysis.current.series, analysisReusing.current.series)
@@ -277,10 +299,10 @@ end
     ####### AC Power Flow ##########
     system = powerSystem(string(pathData, "case14test.m"))
 
-    demandBus!(system; label = 2, active = 0.2, reactive = 0.2)
+    changeBus!(system; label = 2, active = 0.2, reactive = 0.2)
     addGenerator!(system; bus = 16, active = 0.8, reactive = 0.2, magnitude = 0.95)
-    statusGenerator!(system; label = 6, status = 0)
-    outputGenerator!(system; label = 2, active = 2.5, reactive = 1.2)
+    changeGenerator!(system; label = 6, status = 0)
+    changeGenerator!(system; label = 2, active = 2.5, reactive = 1.2)
 
     acModel!(system)
     analysis = fastNewtonRaphsonBX(system)
@@ -299,10 +321,10 @@ end
     acModel!(system)
     analysisReusing = fastNewtonRaphsonBX(system)
 
-    demandBus!(system, analysisReusing; label = 2, active = 0.2, reactive = 0.2)
+    changeBus!(system, analysisReusing; label = 2, active = 0.2, reactive = 0.2)
     addGenerator!(system, analysisReusing; bus = 16, active = 0.8, reactive = 0.2, magnitude = 0.95)
-    statusGenerator!(system, analysisReusing; label = 6, status = 0)
-    outputGenerator!(system, analysisReusing; label = 2, active = 2.5, reactive = 1.2)
+    changeGenerator!(system, analysisReusing; label = 6, status = 0)
+    changeGenerator!(system, analysisReusing; label = 2, active = 2.5, reactive = 1.2)
 
     for iteration = 1:1000
         stopping = mismatch!(system, analysisReusing)

@@ -951,7 +951,7 @@ function current!(system::PowerSystem, analysis::AC)
         I = 0.0 + im * 0.0
         for j in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
             k = ac.nodalMatrix.rowval[j]
-            I += ac.nodalMatrixTranspose.nzval[j] * voltage.magnitude[k] * exp(im * voltage.angle[k])
+            I += ac.nodalMatrixTranspose.nzval[j] * (voltage.magnitude[k] * exp(im * voltage.angle[k]))
         end
 
         current.injection.magnitude[i] = abs(I)
@@ -1027,19 +1027,16 @@ magnitude, angle = injectionCurrent(system, analysis; label = 1)
 ```
 """
 function injectionCurrent(system::PowerSystem, analysis::AC; label)
-    if !haskey(system.bus.label, label)
-        throw(ErrorException("The value $label of the label keyword does not exist in bus labels."))
-    end
+    index = system.bus.label[getLabel(system.bus, label, "bus")]
     errorVoltage(analysis.voltage.magnitude)
 
     ac = system.model.ac
     voltage = analysis.voltage
-    index = system.bus.label[label]
 
     I = 0.0 + im * 0.0
     for i in ac.nodalMatrix.colptr[index]:(ac.nodalMatrix.colptr[index + 1] - 1)
         k = ac.nodalMatrix.rowval[i]
-        I += ac.nodalMatrixTranspose.nzval[i] * voltage.magnitude[k] * exp(im * voltage.angle[k])
+        I += ac.nodalMatrixTranspose.nzval[i] * (voltage.magnitude[k] * exp(im * voltage.angle[k]))
     end
 
     return abs(I), angle(I)

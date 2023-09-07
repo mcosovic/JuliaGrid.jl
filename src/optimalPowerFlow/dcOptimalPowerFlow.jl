@@ -4,6 +4,7 @@ struct DCOptimalPowerFlow <: DC
     power::DCPower
     jump::JuMP.Model
     constraint::Constraint
+    uuid::UUID
 end
 
 """
@@ -61,9 +62,7 @@ analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer; rating = false)
 ```
 """
 function dcOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory);
-    bridge::Bool = true, name::Bool = true,
-    balance::Bool = true, limit::Bool = true,
-    rating::Bool = true,  capability::Bool = true)
+    bridge::Bool = true, name::Bool = true)
 
     bus = system.bus
     branch = system.branch
@@ -99,9 +98,9 @@ function dcOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
                 elseif numberTerm == 1
                     add_to_expression!(objExpr, cost[1])
                 elseif numberTerm > 3
-                    @info("The generator with label $(generator.label[i]) has a polynomial cost function of degree $(numberTerm-1), which is not included in the objective.")
+                    @info("The generator indexed as $i in the list possesses a polynomial cost function of degree $(numberTerm-1), which is not included in the objective.")
                 else
-                    @info("The generator with label $(generator.label[i]) has an undefined polynomial cost function, which is not included in the objective.")
+                    @info("The generator indexed as $i in the list has an undefined polynomial cost function, which is not included in the objective.")
                 end
             elseif generator.cost.active.model[i] == 1
                 cost = generator.cost.active.piecewise[i]
@@ -113,27 +112,26 @@ function dcOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
                 elseif point > 2
                     push!(idxPiecewise, i)
                 elseif point == 1
-                    throw(ErrorException("The generator with label $(generator.label[i]) has a piecewise linear cost function with only one defined point."))
+                    throw(ErrorException("The generator indexed as $i in the list has a piecewise linear cost function with only one defined point."))
                 else
-                    @info("The generator with label $(generator.label[i]) has an undefined piecewise linear cost function, which is not included in the objective.")
+                    @info("The generator indexed as $i in the list has an undefined piecewise linear cost function, which is not included in the objective.")
                 end
             end
 
-            if capability
-                capabilityRef[i] = @constraint(model, generator.capability.minActive[i] <= active[i] <= generator.capability.maxActive[i])
-            end
+            capabilityRef[i] = @constraint(model, generator.capability.minActive[i] <= active[i] <= generator.capability.maxActive[i])
         else
             fix(active[i], 0.0)
         end
     end
 
     if !isempty(idxPiecewise)
-        @variable(model, helper[i = 1:length(idxPiecewise)])
+        @variable(model, helper[i in idxPiecewise])
     end
 
+
     piecewiseRef = [Array{JuMP.ConstraintRef}(undef, 0) for i = 1:system.generator.number]
-    @inbounds for (k, i) in enumerate(idxPiecewise)
-        add_to_expression!(objExpr, helper[k])
+    @inbounds for i in idxPiecewise
+        add_to_expression!(objExpr, helper[i])
 
         activePower = @view generator.cost.active.piecewise[i][:, 1]
         activePowerCost = @view generator.cost.active.piecewise[i][:, 2]
@@ -146,38 +144,34 @@ function dcOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
                 throw(ErrorException("The piecewise linear cost function's slope of the generator labeled as $(generator.label[i]) has infinite value."))
             end
 
-            piecewiseRef[i][j-1] = @constraint(model, slope * active[i] - helper[k] <= slope * activePower[j-1] - activePowerCost[j-1])
+            piecewiseRef[i][j-1] = @constraint(model, slope * active[i] - helper[i] <= slope * activePower[j-1] - activePowerCost[j-1])
         end
     end
 
     @objective(model, Min, objExpr)
 
     balanceRef = Array{JuMP.ConstraintRef}(undef, bus.number)
-    if balance
-        @inbounds for i = 1:bus.number
-            expression = AffExpr(bus.demand.active[i] + bus.shunt.conductance[i] + system.model.dc.shiftActivePower[i])
-            for j in system.model.dc.nodalMatrix.colptr[i]:(system.model.dc.nodalMatrix.colptr[i + 1] - 1)
-                add_to_expression!(expression, system.model.dc.nodalMatrix.nzval[j], angle[system.model.dc.nodalMatrix.rowval[j]])
-            end
-            balanceRef[i] = @constraint(model, expression - sum(active[k] for k in system.bus.supply.generator[i]) == 0.0)
+    @inbounds for i = 1:bus.number
+        expression = AffExpr(bus.demand.active[i] + bus.shunt.conductance[i] + system.model.dc.shiftActivePower[i])
+        for j in system.model.dc.nodalMatrix.colptr[i]:(system.model.dc.nodalMatrix.colptr[i + 1] - 1)
+            add_to_expression!(expression, system.model.dc.nodalMatrix.nzval[j], angle[system.model.dc.nodalMatrix.rowval[j]])
         end
+        balanceRef[i] = @constraint(model, sum(active[k] for k in system.bus.supply.generator[i]) == expression)
     end
 
     ratingRef = Array{JuMP.ConstraintRef}(undef, branch.number)
     limitRef = Array{JuMP.ConstraintRef}(undef, branch.number)
-    if rating || limit
-        @inbounds for i = 1:branch.number
-            if branch.layout.status[i] == 1
-                f = branch.layout.from[i]
-                t = branch.layout.to[i]
+    @inbounds for i = 1:branch.number
+        if branch.layout.status[i] == 1
+            from = branch.layout.from[i]
+            to = branch.layout.to[i]
 
-                if rating && branch.rating.longTerm[i] ≉  0 && branch.rating.longTerm[i] < 10^16
-                    restriction = branch.rating.longTerm[i] / system.model.dc.admittance[i]
-                    ratingRef[i] = @constraint(model, - restriction + branch.parameter.shiftAngle[i] <= angle[f] - angle[t] <= restriction + branch.parameter.shiftAngle[i])
-                end
-                if limit && branch.voltage.minDiffAngle[i] > -2*pi && branch.voltage.maxDiffAngle[i] < 2*pi
-                    limitRef[i] = @constraint(model, branch.voltage.minDiffAngle[i] <= angle[f] - angle[t] <= branch.voltage.maxDiffAngle[i])
-                end
+            if branch.rating.longTerm[i] ≉  0 && branch.rating.longTerm[i] < 10^16
+                restriction = branch.rating.longTerm[i] / system.model.dc.admittance[i]
+                ratingRef[i] = @constraint(model, - restriction + branch.parameter.shiftAngle[i] <= angle[from] - angle[to] <= restriction + branch.parameter.shiftAngle[i])
+            end
+            if branch.voltage.minDiffAngle[i] > -2*pi && branch.voltage.maxDiffAngle[i] < 2*pi
+                limitRef[i] = @constraint(model, branch.voltage.minDiffAngle[i] <= angle[from] - angle[to] <= branch.voltage.maxDiffAngle[i])
             end
         end
     end
@@ -199,7 +193,8 @@ function dcOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
             CartesianRealRef(ratingRef),
             CartesianRealRef(capabilityRef),
             CartesianRealRef(piecewiseRef)
-        )
+        ),
+        system.uuid
     )
 end
 
@@ -246,4 +241,265 @@ function solve!(system::PowerSystem, analysis::DCOptimalPowerFlow)
     @inbounds for i = 1:system.generator.number
         analysis.power.generator.active[i] = value(active[i]::JuMP.VariableRef)
     end
+end
+
+######### Query About Bus ##########
+function addBus!(system::PowerSystem, analysis::DCOptimalPowerFlow; kwargs...)
+    throw(ErrorException("The DCOptimalPowerFlow cannot be reused when adding a new bus."))
+end
+
+######### Query About Deamnd Bus ##########
+function demandBus!(system::PowerSystem, analysis::DCOptimalPowerFlow; user...)
+    checkUUID(system.uuid, analysis.uuid)
+    demandBus!(system::PowerSystem; user...)
+
+    index = system.bus.label[getLabel(system.bus, user[:label], "bus")]
+    rhs = system.bus.demand.active[index] + system.bus.shunt.conductance[index] + system.model.dc.shiftActivePower[index]
+    JuMP.set_normalized_rhs(analysis.constraint.balance.active[index], rhs)
+end
+
+######### Query About Shunt Bus ##########
+function shuntBus!(system::PowerSystem, analysis::DCOptimalPowerFlow; user...)
+    checkUUID(system.uuid, analysis.uuid)
+    shuntBus!(system::PowerSystem; user...)
+
+    index = system.bus.label[getLabel(system.bus, user[:label], "bus")]
+    rhs = system.bus.demand.active[index] + system.bus.shunt.conductance[index] + system.model.dc.shiftActivePower[index]
+    JuMP.set_normalized_rhs(analysis.constraint.balance.active[index], rhs)
+end
+
+######### Query About Branch ##########
+function addBranch!(system::PowerSystem, analysis::DCOptimalPowerFlow;
+    label::L = missing, from::L, to::L, status::T = missing,
+    resistance::T = missing, reactance::T = missing, susceptance::T = missing,
+    conductance::T = missing, turnsRatio::T = missing, shiftAngle::T = missing,
+    minDiffAngle::T = missing, maxDiffAngle::T = missing,
+    longTerm::T = missing, shortTerm::T = missing, emergency::T = missing, type::T = missing)
+
+    checkUUID(system.uuid, analysis.uuid)
+    addBranch!(system; label, from, to, status, resistance, reactance,
+        susceptance, conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle,
+        longTerm, shortTerm, emergency, type)
+
+    branch = system.branch
+    if branch.layout.status[end] == 1
+        from = branch.layout.from[end]
+        to = branch.layout.to[end]
+
+        changeBalance(system, analysis, from)
+        changeBalance(system, analysis, to)
+
+        angle = analysis.jump[:angle]
+        if branch.rating.longTerm[end] ≉  0 && branch.rating.longTerm[end] < 10^16
+            restriction = branch.rating.longTerm[end] / system.model.dc.admittance[end]
+            ratingRef = @constraint(analysis.jump, - restriction + branch.parameter.shiftAngle[end] <= angle[from] - angle[to] <= restriction + branch.parameter.shiftAngle[end])
+            push!(analysis.constraint.rating.active, ratingRef)
+        else
+            append!(analysis.constraint.rating.active, Array{JuMP.ConstraintRef}(undef, 1))
+        end
+        if branch.voltage.minDiffAngle[end] > -2*pi && branch.voltage.maxDiffAngle[end] < 2*pi
+            limitRef = @constraint(analysis.jump, branch.voltage.minDiffAngle[end] <= angle[from] - angle[to] <= branch.voltage.maxDiffAngle[end])
+            push!(analysis.constraint.limit.angle, limitRef)
+        else
+            append!(analysis.constraint.limit.angle, Array{JuMP.ConstraintRef}(undef, 1))
+        end
+    else
+        append!(analysis.constraint.rating.active, Array{JuMP.ConstraintRef}(undef, 1))
+        append!(analysis.constraint.limit.angle, Array{JuMP.ConstraintRef}(undef, 1))
+    end
+end
+
+######### Query About Status Branch ##########
+function statusBranch!(system::PowerSystem, analysis::DCOptimalPowerFlow; label::L, status::T)
+    checkUUID(system.uuid, analysis.uuid)
+    checkStatus(status)
+
+    branch = system.branch
+    index = branch.label[getLabel(system.branch, label, "branch")]
+
+    if branch.layout.status[index] != status
+        statusBranch!(system; label, status)
+
+        from = branch.layout.from[index]
+        to = branch.layout.to[index]
+        angle = analysis.jump[:angle]
+
+        changeBalance(system, analysis, from)
+        changeBalance(system, analysis, to)
+
+        if system.branch.layout.status[index] == 0
+            JuMP.delete(analysis.jump, analysis.constraint.rating.active[index])
+            JuMP.delete(analysis.jump, analysis.constraint.limit.angle[index])
+        end
+
+        if system.branch.layout.status[index] == 1
+            if branch.rating.longTerm[index] ≉  0 && branch.rating.longTerm[index] < 10^16
+                restriction = branch.rating.longTerm[index] / system.model.dc.admittance[index]
+                analysis.constraint.rating.active[index] = @constraint(analysis.jump, - restriction + branch.parameter.shiftAngle[index] <= angle[from] - angle[to] <= restriction + branch.parameter.shiftAngle[index])
+            end
+            if branch.voltage.minDiffAngle[index] > -2*pi && branch.voltage.maxDiffAngle[index] < 2*pi
+                analysis.constraint.limit.angle[index] = @constraint(analysis.jump, branch.voltage.minDiffAngle[index] <= angle[from] - angle[to] <= branch.voltage.maxDiffAngle[index])
+            end
+        end
+    end
+end
+
+######### Query About Parameter Branch ##########
+function parameterBranch!(system::PowerSystem, analysis::DCOptimalPowerFlow; user...)
+    checkUUID(system.uuid, analysis.uuid)
+    parameterBranch!(system; user...)
+
+    branch = system.branch
+    index = branch.label[getLabel(branch, user[:label], "branch")]
+
+    if branch.layout.status[index] == 1
+        from = branch.layout.from[index]
+        to = branch.layout.to[index]
+
+        changeBalance(system, analysis, from)
+        changeBalance(system, analysis, to)
+
+        JuMP.delete(analysis.jump, analysis.constraint.rating.active[index])
+        JuMP.delete(analysis.jump, analysis.constraint.limit.angle[index])
+
+        angle = analysis.jump[:angle]
+        if branch.rating.longTerm[index] ≉  0 && branch.rating.longTerm[index] < 10^16
+            restriction = branch.rating.longTerm[index] / system.model.dc.admittance[index]
+            analysis.constraint.rating.active[index] = @constraint(analysis.jump, - restriction + branch.parameter.shiftAngle[index] <= angle[from] - angle[to] <= restriction + branch.parameter.shiftAngle[index])
+        end
+        if branch.voltage.minDiffAngle[index] > -2*pi && branch.voltage.maxDiffAngle[index] < 2*pi
+            analysis.constraint.limit.angle[index] = @constraint(analysis.jump, branch.voltage.minDiffAngle[index] <= angle[from] - angle[to] <= branch.voltage.maxDiffAngle[index])
+        end
+    end
+end
+
+######### Query About Generator ##########
+function addGenerator!(system::PowerSystem, analysis::DCOptimalPowerFlow;
+    label::L = missing, bus::L, area::T = missing, status::T = missing,
+    active::T = missing, reactive::T = missing, magnitude::T = missing,
+    minActive::T = missing, maxActive::T = missing, minReactive::T = missing,
+    maxReactive::T = missing, lowActive::T = missing, minLowReactive::T = missing,
+    maxLowReactive::T = missing, upActive::T = missing, minUpReactive::T = missing,
+    maxUpReactive::T = missing, loadFollowing::T = missing, reserve10min::T = missing,
+    reserve30min::T = missing, reactiveTimescale::T = missing)
+
+    checkUUID(system.uuid, analysis.uuid)
+    addGenerator!(system; label, bus, area, status, active, reactive, magnitude,
+        minActive, maxActive, minReactive, maxReactive, lowActive, minLowReactive,
+        maxLowReactive, upActive, minUpReactive, maxUpReactive, loadFollowing, reserve10min,
+        reserve30min, reactiveTimescale)
+
+    generator = system.generator
+    index = generator.label[getLabel(generator, label, "generator")]
+
+    push!(analysis.jump[:active], @variable(analysis.jump, base_name = "active[$index]"))
+
+    active = analysis.jump[:active]
+    if generator.layout.status[end] == 1
+        busIndex = system.bus.label[getLabel(system.bus, bus, "bus")]
+        changeBalance(system, analysis, busIndex)
+
+        capabilityRef = @constraint(analysis.jump, generator.capability.minActive[end] <= active[end] <= generator.capability.maxActive[end])
+        push!(analysis.constraint.capability.active, capabilityRef)
+    else
+        fix(active[end], 0.0)
+    end
+
+    push!(analysis.power.generator.active, system.generator.output.active[end])
+end
+
+######### Query About Active Cost ##########
+function addActiveCost!(system::PowerSystem, analysis::DCOptimalPowerFlow;
+    label::L, model::T = 0,
+    polynomial::Array{Float64,1} = Array{Float64}(undef, 0),
+    piecewise::Array{Float64,2} = Array{Float64}(undef, 0, 0))
+
+    checkUUID(system.uuid, analysis.uuid)
+    generator = system.generator
+    index = generator.label[getLabel(generator, label, "generator")]
+
+    objExprOld = QuadExpr()
+    idxPiecewise = false
+    if generator.cost.active.model[index] != 0
+        objExprOld, idxPiecewise = modifyObjective(system, analysis, objExprOld, idxPiecewise, index)
+    end
+
+    if idxPiecewise
+        # delete(analysis.jump, analysis.jump[:helper][index])
+        # unregister(analysis.jump, Symbol("helper[$index]"))
+    end
+
+    objExpr = QuadExpr()
+    idxPiecewise = false
+    objExpr, idxPiecewise = modifyObjective(system, analysis, objExpr, idxPiecewise, index)
+
+    push!(analysis.jump[:helper], @variable(analysis.jump, base_name = "helper[$index]"))
+
+    # push!(analysis.jump[:aaaaa], @variable(analysis.jump, base_name = "aaaaa[$index]"))
+    # display(haskey(analysis.jump, :helper))
+# aaa = 10
+# append!(analysis.jump[:helper], @variable(analysis.jump, base_name = "helper[$aaa]"))
+    # if idxPiecewise
+    #     display(haskey(analysis.jump, :helper))
+    #     @variable(model, helper[i in idxPiecewise])
+    # end
+
+    JuMP.set_objective_function(analysis.jump, objExpr - objExprOld)
+end
+
+
+function changeBalance(system::PowerSystem, analysis::DCOptimalPowerFlow, index::Int64)
+    angle = analysis.jump[:angle]
+    active = analysis.jump[:active]
+
+    JuMP.delete(analysis.jump, analysis.constraint.balance.active[index])
+
+    expression = AffExpr(system.bus.demand.active[index] + system.bus.shunt.conductance[index] + system.model.dc.shiftActivePower[index])
+    for j in system.model.dc.nodalMatrix.colptr[index]:(system.model.dc.nodalMatrix.colptr[index + 1] - 1)
+        add_to_expression!(expression, system.model.dc.nodalMatrix.nzval[j], angle[system.model.dc.nodalMatrix.rowval[j]])
+    end
+    analysis.constraint.balance.active[index] = @constraint(analysis.jump, sum(active[k] for k in system.bus.supply.generator[index]) == expression)
+end
+
+function modifyObjective(system::PowerSystem, analysis::DCOptimalPowerFlow, objExpr::QuadExpr, idxPiecewise::Bool, index::Int64)
+    generator = system.generator
+    active = analysis.jump[:active]
+
+    idxPiecewise = false
+    if generator.layout.status[index] == 1
+        if generator.cost.active.model[index] == 2
+            cost = generator.cost.active.polynomial[index]
+            numberTerm = length(cost)
+            if numberTerm == 3
+                add_to_expression!(objExprOld, cost[1], active[index], active[index])
+                add_to_expression!(objExprOld, cost[2], active[index])
+                add_to_expression!(objExprOld, cost[3])
+            elseif numberTerm == 2
+                add_to_expression!(objExprOld, cost[1], active[index])
+                add_to_expression!(objExprOld, cost[2])
+            elseif numberTerm == 1
+                add_to_expression!(objExpr, cost[index])
+            elseif numberTerm > 3
+                @info("The generator with label $label has a polynomial cost function of degree $(numberTerm-1), which is not included in the objective.")
+            else
+                @info("The generator with label $label has an undefined polynomial cost function, which is not included in the objective.")
+            end
+        elseif generator.cost.active.model[index] == 1
+            cost = generator.cost.active.piecewise[index]
+            point = size(cost, 1)
+            if point == 2
+                slope = (cost[2, 2] - cost[1, 2]) / (cost[2, 1] - cost[1, 1])
+                add_to_expression!(objExprOld, slope, active[index])
+                add_to_expression!(objExprOld, cost[1, 2] - cost[1, 1] * slope)
+            elseif point > 2
+                idxPiecewise = true
+            elseif point == 1
+                throw(ErrorException("The generator with label $label has a piecewise linear cost function with only one defined point."))
+            else
+                @info("The generator with label $label has an undefined piecewise linear cost function, which is not included in the objective.")
+            end
+        end
+    end
+
+    return objExpr, idxPiecewise
 end

@@ -1,190 +1,3 @@
-######### Bus ##########
-mutable struct BusDemand
-    active::Array{Float64,1}
-    reactive::Array{Float64,1}
-end
-
-mutable struct BusShunt
-    conductance::Array{Float64,1}
-    susceptance::Array{Float64,1}
-end
-
-mutable struct BusVoltage
-    magnitude::Array{Float64,1}
-    angle::Array{Float64,1}
-    minMagnitude::Array{Float64,1}
-    maxMagnitude::Array{Float64,1}
-end
-
-mutable struct BusLayout
-    type::Array{Int8,1}
-    area::Array{Int64,1}
-    lossZone::Array{Int64,1}
-    slack::Int64
-end
-
-mutable struct BusSupply
-    active::Array{Float64,1}
-    reactive::Array{Float64,1}
-    generator::Array{Array{Int64,1},1}
-end
-
-mutable struct Bus
-    label::Dict{String,Int64}
-    demand::BusDemand
-    supply::BusSupply
-    shunt::BusShunt
-    voltage::BusVoltage
-    layout::BusLayout
-    number::Int64
-end
-
-######### Branch ##########
-mutable struct BranchParameter
-    resistance::Array{Float64,1}
-    reactance::Array{Float64,1}
-    conductance::Array{Float64,1}
-    susceptance::Array{Float64,1}
-    turnsRatio::Array{Float64,1}
-    shiftAngle::Array{Float64,1}
-end
-
-mutable struct BranchRating
-    longTerm::Array{Float64,1}
-    shortTerm::Array{Float64,1}
-    emergency::Array{Float64,1}
-    type::Array{Int8,1}
-end
-
-mutable struct BranchVoltage
-    minDiffAngle::Array{Float64,1}
-    maxDiffAngle::Array{Float64,1}
-end
-
-mutable struct BranchLayout
-    from::Array{Int64,1}
-    to::Array{Int64,1}
-    status::Array{Int8,1}
-end
-
-mutable struct Branch
-    label::Dict{String,Int64}
-    parameter::BranchParameter
-    rating::BranchRating
-    voltage::BranchVoltage
-    layout::BranchLayout
-    number::Int64
-end
-
-######### Generator ##########
-mutable struct GeneratorOutput
-    active::Array{Float64,1}
-    reactive::Array{Float64,1}
-end
-
-mutable struct GeneratorCapability
-    minActive::Array{Float64,1}
-    maxActive::Array{Float64,1}
-    minReactive::Array{Float64,1}
-    maxReactive::Array{Float64,1}
-    lowActive::Array{Float64,1}
-    minLowReactive::Array{Float64,1}
-    maxLowReactive::Array{Float64,1}
-    upActive::Array{Float64,1}
-    minUpReactive::Array{Float64,1}
-    maxUpReactive::Array{Float64,1}
-end
-
-mutable struct GeneratorRamping
-    loadFollowing::Array{Float64,1}
-    reserve10min::Array{Float64,1}
-    reserve30min::Array{Float64,1}
-    reactiveTimescale::Array{Float64,1}
-end
-
-mutable struct Cost
-    model::Array{Int8,1}
-    polynomial::Array{Array{Float64,1},1}
-    piecewise::Array{Array{Float64,2},1}
-end
-
-mutable struct GeneratorCost
-    active::Cost
-    reactive::Cost
-end
-
-mutable struct GeneratorVoltage
-    magnitude::Array{Float64,1}
-end
-
-mutable struct GeneratorLayout
-    bus::Array{Int64,1}
-    area::Array{Float64,1}
-    status::Array{Int8,1}
-end
-
-mutable struct Generator
-    label::Dict{String,Int64}
-    output::GeneratorOutput
-    capability::GeneratorCapability
-    ramping::GeneratorRamping
-    voltage::GeneratorVoltage
-    cost::GeneratorCost
-    layout::GeneratorLayout
-    number::Int64
-end
-
-######### Base Data ##########
-mutable struct BasePower
-    value::Float64
-    unit::String
-    prefix::Float64
-end
-
-mutable struct BaseVoltage
-    value::Array{Float64,1}
-    unit::String
-    prefix::Float64
-end
-
-mutable struct BaseData
-    power::BasePower
-    voltage::BaseVoltage
-end
-
-######### DC Model ##########
-mutable struct DCModel
-    nodalMatrix::SparseMatrixCSC{Float64,Int64}
-    admittance::Array{Float64,1}
-    shiftActivePower::Array{Float64,1}
-end
-
-######### AC Model ##########
-mutable struct ACModel
-    nodalMatrix::SparseMatrixCSC{ComplexF64,Int64}
-    nodalMatrixTranspose::SparseMatrixCSC{ComplexF64,Int64}
-    nodalFromFrom::Array{ComplexF64,1}
-    nodalFromTo::Array{ComplexF64,1}
-    nodalToTo::Array{ComplexF64,1}
-    nodalToFrom::Array{ComplexF64,1}
-    admittance::Array{ComplexF64,1}
-end
-
-mutable struct Model
-    ac::ACModel
-    dc::DCModel
-end
-
-######### Power System ##########
-mutable struct PowerSystem
-    bus::Bus
-    branch::Branch
-    generator::Generator
-    base::BaseData
-    model::Model
-    const uuid::UUID
-end
-
 """
     powerSystem(file::String)
 
@@ -326,7 +139,7 @@ function loadBus(system::PowerSystem, hdf5::HDF5.File)
             bus.layout.slack = i
         end
     end
-    setting[system.uuid.value]["bus"] = maxLabel
+    systemList[system.uuid.value]["bus"] = maxLabel
 
     demandh5 = hdf5["bus/demand"]
     bus.demand.active = readHDF5(demandh5, "active", bus.number)
@@ -361,7 +174,7 @@ function loadBranch(system::PowerSystem, hdf5::HDF5.File)
 
     branch.layout.status = readHDF5(layouth5, "status", branch.number)
     branch.label = Dict(zip(read(layouth5["label"]), collect(1:branch.number)))
-    setting[system.uuid.value]["branch"] = branch.number
+    systemList[system.uuid.value]["branch"] = branch.number
 
     parameterh5 = hdf5["branch/parameter"]
     branch.parameter.resistance = readHDF5(parameterh5, "resistance", branch.number)
@@ -396,7 +209,7 @@ function loadGenerator(system::PowerSystem, hdf5::HDF5.File)
     generator.layout.area = readHDF5(layouth5, "area", generator.number)
     generator.layout.status = readHDF5(layouth5, "status", generator.number)
     generator.label = Dict(zip(read(layouth5["label"]), collect(1:generator.number)))
-    setting[system.uuid.value]["generator"] = generator.number
+    systemList[system.uuid.value]["generator"] = generator.number
 
     outputh5 = hdf5["generator/output"]
     generator.output.active = readHDF5(outputh5, "active", generator.number)
@@ -566,7 +379,7 @@ function loadBus(system::PowerSystem, busLine::Array{String,1})
 
         system.base.voltage.value[k] = parse(Float64, data[10]) * 1e3
     end
-    setting[system.uuid.value]["bus"] = maxLabel
+    systemList[system.uuid.value]["bus"] = maxLabel
 
     if bus.layout.slack == 0
         bus.layout.slack = 1
@@ -634,7 +447,7 @@ function loadBranch(system::PowerSystem, branchLine::Array{String,1})
         branch.layout.from[k] = system.bus.label[data[1]]
         branch.layout.to[k] = system.bus.label[data[2]]
     end
-    setting[system.uuid.value]["branch"] = branch.number
+    systemList[system.uuid.value]["branch"] = branch.number
 end
 
 ######## Load Generator Data from MATLAB File ##########
@@ -712,13 +525,13 @@ function loadGenerator(system::PowerSystem, generatorLine::Array{String,1}, gene
             system.bus.supply.reactive[i] += generator.output.reactive[k]
         end
     end
-    setting[system.uuid.value]["generator"] = generator.number
+    systemList[system.uuid.value]["generator"] = generator.number
 
-    generator.cost.active.model = fill(Int8(1), system.generator.number)
+    generator.cost.active.model = fill(Int8(0), system.generator.number)
     generator.cost.active.polynomial = [Array{Float64}(undef, 0) for i = 1:system.generator.number]
     generator.cost.active.piecewise = [Array{Float64}(undef, 0, 0) for i = 1:system.generator.number]
 
-    generator.cost.reactive.model = fill(Int8(1), system.generator.number)
+    generator.cost.reactive.model = fill(Int8(0), system.generator.number)
     generator.cost.reactive.polynomial = [Array{Float64}(undef, 0) for i = 1:system.generator.number]
     generator.cost.reactive.piecewise = [Array{Float64}(undef, 0, 0) for i = 1:system.generator.number]
 

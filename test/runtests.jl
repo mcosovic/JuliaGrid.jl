@@ -27,13 +27,12 @@ end
 
 ######## Power System ##########
 include("powerSystem/loadSave.jl")
-include("powerSystem/assemble.jl")
-include("powerSystem/manipulation.jl")
+include("powerSystem/buildUpdate.jl")
 
 ######## Power flow ##########
 include("powerFlow/analysis.jl")
-include("powerFlow/reusing.jl")
+# include("powerFlow/reusing.jl")
 include("powerFlow/limits.jl")
 
 ######## Optimal Power flow ##########
-include("optimalPowerFlow/solution.jl")
+# include("optimalPowerFlow/solution.jl")

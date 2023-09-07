@@ -1,48 +1,46 @@
 module JuliaGrid
 
-# using BenchmarkTools
 using SparseArrays, LinearAlgebra, SuiteSparse
-using HDF5
+using HDF5, UUIDs
 using JuMP
-using UUIDs
 
+########## Types and Constants ##########
+include("definition/internal.jl")
+include("definition/powerSystem.jl")
+include("definition/analysis.jl")
 
-
-########## Setting Variables ##########
-include("utility/setting.jl")
-
-########## Utility ##########
+######### Utility ##########
 include("utility/routine.jl")
-export @default
+include("utility/internal.jl")
+export @base, @power, @voltage, @current, @parameter, @default
 
 ########## Power System ##########
 include("powerSystem/load.jl")
-export powerSystem
-
 include("powerSystem/save.jl")
-export savePowerSystem
+include("powerSystem/model.jl")
+export powerSystem, savePowerSystem
+export acModel!, dcModel!
 
-include("powerSystem/assemble.jl")
-export addBus!, demandBus!, shuntBus!
-export addBranch!, statusBranch!, parameterBranch!
-export addGenerator!, addActiveCost!, addReactiveCost!, statusGenerator!, outputGenerator!
-export dcModel!, acModel!
-export @bus, @branch, @generator
+########## Power System Components ##########
+include("powerSystem/bus.jl")
+include("powerSystem/branch.jl")
+include("powerSystem/generator.jl")
+export addBus!, updateBus!, @bus
+export addBranch!, updateBranch!, @branch
+export addGenerator!, updateGenerator!, cost!, @generator
 
 ########## Power Flow ##########
 include("powerFlow/acPowerFlow.jl")
-export newtonRaphson, fastNewtonRaphsonBX, fastNewtonRaphsonXB, gaussSeidel
-export mismatch!
-export reactiveLimit!, adjustAngle!
-
 include("powerFlow/dcPowerFlow.jl")
+export newtonRaphson, fastNewtonRaphsonBX, fastNewtonRaphsonXB, gaussSeidel
+export mismatch!, solve!
+export reactiveLimit!, adjustAngle!
 export dcPowerFlow
 
 ######### Optimal Power Flow ##########
 include("optimalPowerFlow/acOptimalPowerFlow.jl")
-export acOptimalPowerFlow
-
 include("optimalPowerFlow/dcOptimalPowerFlow.jl")
+export acOptimalPowerFlow
 export dcOptimalPowerFlow
 
 ########## Postprocessing ##########
@@ -52,12 +50,4 @@ export power!, current!
 export injectionPower, supplyPower, shuntPower, fromPower, toPower, chargingPower, seriesPower, generatorPower
 export injectionCurrent, fromCurrent, toCurrent, seriesCurrent
 
-########## Unit ##########
-include("utility/unit.jl")
-export @base, @power, @voltage, @parameter
-
-######### Solve Function ##########
-export solve!
-
 end # JuliaGrid
-

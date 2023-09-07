@@ -10,22 +10,18 @@ For further information on this topic, please see the [Power System Model](@ref 
 
 ###### Bus Functions
 * [`addBus!`](@ref addBus!)
-* [`demandBus!`](@ref demandBus!)
-* [`shuntBus!`](@ref shuntBus!)
+* [`updateBus!`](@ref updateBus!)
 * [`@bus`](@ref @bus)
 
 ###### Branch Functions
 * [`addBranch!`](@ref addBranch!)
-* [`statusBranch!`](@ref statusBranch!)
-* [`parameterBranch!`](@ref parameterBranch!)
+* [`updateBranch!`](@ref updateBranch!)
 * [`@branch`](@ref @branch)
 
 ###### Generator Functions
 * [`addGenerator!`](@ref addGenerator!)
-* [`statusGenerator!`](@ref statusGenerator!)
-* [`outputGenerator!`](@ref outputGenerator!)
-* [`addActiveCost!`](@ref addActiveCost!)
-* [`addReactiveCost!`](@ref addReactiveCost!)
+* [`updateGenerator!`](@ref updateGenerator!)
+* [`cost!`](@ref cost!)
 * [`@generator`](@ref @generator)
 
 ###### AC and DC Model
@@ -45,8 +41,7 @@ savePowerSystem
 ## Bus Functions
 ```@docs
 addBus!
-demandBus!
-shuntBus!
+updateBus!
 @bus
 ```
 
@@ -55,8 +50,7 @@ shuntBus!
 ## Branch Functions
 ```@docs
 addBranch!
-statusBranch!
-parameterBranch!
+updateBranch!
 @branch
 ```
 
@@ -65,10 +59,8 @@ parameterBranch!
 ## Generator Functions
 ```@docs
 addGenerator!
-statusGenerator!
-outputGenerator!
-addActiveCost!
-addReactiveCost!
+updateGenerator!
+cost!
 @generator
 ```
 

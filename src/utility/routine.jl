@@ -50,13 +50,6 @@ end
     return newIndex
 end
 
-######### Check Minimal Data Structure for Power System ##########
-@inline function dataStructure(Ncol::Int64, max::Int64; var::String = "", name::String = "")
-    if Ncol < max
-        throw(DomainError(var, "The minimum input data structure contained in $name is not satisfied."))
-    end
-end
-
 ######### Error Voltage ##########
 @inline function errorVoltage(voltage)
     if isempty(voltage)
@@ -64,140 +57,141 @@ end
     end
 end
 
-"""
-The macro is designed to reset various settings to their default values.
+######### Power System Live State ##########
+function setUUID()
+    id = uuid4()
+    systemList[id.value] = Dict(
+        "bus" => 0,
+        "branch" => 0,
+        "generator" => 0
+    )
 
-    @default(mode)
+    return id
+end
 
-The `mode` argument can take on the following values:
-* `unit`: resets all units to their default settings
-* `power`: sets active, reactive, and apparent power to per-units
-* `voltage`: sets voltage magnitude to per-unit and voltage angle to radian
-* `parameter`: sets impedance and admittance to per-units
-* `template`: resets bus, branch and generator templates to their default settings
-* `bus`: resets the bus template to its default settings
-* `branch`: resets the branch template to its default settings
-* `generator`: resets the generator template to its default settings.
+######### Check UUID ##########
+function checkUUID(uuidSystem, uuid)
+    if uuidSystem.value != uuid.value
+        throw(ErrorException("The composite types do not match."))
+    end
+end
 
-# Example
-```jldoctest
-@default(unit)
-```
-"""
-macro default(mode::Symbol)
-    if mode == :unit || mode == :power
-        prefix.activePower = 0.0
-        prefix.reactivePower = 0.0
-        prefix.apparentPower = 0.0
+######### Impedance Base Value ##########
+function baseImpedance(baseVoltage::Float64, basePowerInv::Float64, turnsRatio::Float64)
+    base = 1.0
+    if prefix.impedance != 0.0 || prefix.admittance != 0.0
+        base = (baseVoltage * turnsRatio)^2 * basePowerInv
     end
 
-    if mode == :unit || mode == :voltage
-        prefix.voltageMagnitude = 0.0
-        prefix.voltageAngle = 1.0
+    return base
+end
+
+######### Current Magnitude Base Value ##########
+function baseCurrentInverse(basePowerInv::Float64, baseVoltage::Float64)
+    base = 1.0
+    if prefix.currentMagnitude != 0.0
+        base = sqrt(3) * baseVoltage * basePowerInv
     end
 
-    if mode == :unit || mode == :current
-        prefix.currentMagnitude = 0.0
-        prefix.currentAngle = 1.0
+    return base
+end
+
+######### To Per-Units with Default Values ##########
+function topu(value, default, baseInv, prefixLive)
+    if ismissing(value)
+        if default.pu
+            value = default.value
+        else
+            value = default.value * baseInv
+        end
+    else
+        if prefixLive != 0.0
+            value = (value * prefixLive) * baseInv
+        end
     end
 
-    if mode == :unit || mode == :parameter
-        prefix.impedance = 0.0
-        prefix.admittance = 0.0
+    return value
+end
+
+######### To Per-Units Live ##########
+function topu(value, baseInv, prefixLive)
+    if prefixLive != 0.0
+       value = (value * prefixLive) * baseInv
     end
 
-    if mode == :template || mode == :bus
-        template.bus.active.value = 0.0
-        template.bus.active.pu = true
-        template.bus.reactive.value = 0.0
-        template.bus.reactive.pu = true
+    return value
+end
 
-        template.bus.conductance.value = 0.0
-        template.bus.conductance.pu = true
-        template.bus.susceptance.value = 0.0
-        template.bus.susceptance.pu = true
-
-        template.bus.magnitude.value = 1.0
-        template.bus.magnitude.pu = true
-        template.bus.minMagnitude.value = 0.0
-        template.bus.minMagnitude.pu = true
-        template.bus.maxMagnitude.value = 0.0
-        template.bus.maxMagnitude.pu = true
-
-        template.bus.base = 138e3
-        template.bus.angle = 0.0
-        template.bus.type = Int8(1)
-        template.bus.area = 1
-        template.bus.lossZone = 1
+######### To Radians or Volts with Default Values ##########
+function tosi(value, default, prefixLive)
+    if ismissing(value)
+        value = default
+    else
+        value = value * prefixLive
     end
 
-    if mode == :template || mode == :branch
-        template.branch.resistance.value = 0.0
-        template.branch.resistance.pu = true
-        template.branch.reactance.value = 0.0
-        template.branch.reactance.pu = true
-        template.branch.conductance.value = 0.0
-        template.branch.conductance.pu = true
-        template.branch.susceptance.value = 0.0
-        template.branch.susceptance.pu = true
+    return value
+end
 
-        template.branch.longTerm.value = 0.0
-        template.branch.longTerm.pu = true
-        template.branch.shortTerm.value = 0.0
-        template.branch.shortTerm.pu = true
-        template.branch.emergency.value = 0.0
-        template.branch.emergency.pu = true
-
-        template.branch.turnsRatio = 1.0
-        template.branch.shiftAngle = 0.0
-        template.branch.minDiffAngle = 0.0
-        template.branch.maxDiffAngle = 0.0
-        template.branch.status = Int8(1)
-        template.branch.type = Int8(1)
+######### Unitless Quantities with Default Values ##########
+function unitless(value, default)
+    if ismissing(value)
+        value = default
     end
 
-    if mode == :template || mode == :generator
-        template.generator.active.value = 0.0
-        template.generator.active.pu = true
-        template.generator.reactive.value = 0.0
-        template.generator.reactive.pu = true
-        
-        template.generator.magnitude.value = 1.0
-        template.generator.magnitude.pu = true
+    return value
+end
 
-        template.generator.minActive.value = 0.0
-        template.generator.minActive.pu = true
-        template.generator.maxActive.value = 0.0
-        template.generator.maxActive.pu = true
-        template.generator.minReactive.value = 0.0
-        template.generator.minReactive.pu = true
-        template.generator.maxReactive.value = 0.0
-        template.generator.maxReactive.pu = true
+######### Set Label ##########
+function setLabel(component, id::UUID, label::Missing, key::String)
+    systemList[id.value][key] += 1
+    setindex!(component.label, component.number, string(systemList[id.value][key]))
+end
 
-        template.generator.lowActive.value = 0.0
-        template.generator.lowActive.pu = true
-        template.generator.minLowReactive.value = 0.0
-        template.generator.minLowReactive.pu = true
-        template.generator.maxLowReactive.value = 0.0
-        template.generator.maxLowReactive.pu = true
+function setLabel(component, id::UUID, label::String, key::String)
+    if haskey(component.label, label)
+        throw(ErrorException("The label $label is not unique."))
+    end
 
-        template.generator.upActive.value = 0.0
-        template.generator.upActive.pu = true
-        template.generator.minUpReactive.value = 0.0
-        template.generator.minUpReactive.pu = true
-        template.generator.maxUpReactive.value = 0.0
-        template.generator.maxUpReactive.pu = true
+    labelInt64 = tryparse(Int64, label)
+    if labelInt64 !== nothing
+        systemList[id.value][key] = max(systemList[id.value][key], labelInt64)
+    end
+    setindex!(component.label, component.number, label)
+end
 
-        template.generator.loadFollowing.value = 0.0
-        template.generator.loadFollowing.pu = true
-        template.generator.reactiveTimescale.value = 0.0
-        template.generator.reactiveTimescale.pu = true
-        template.generator.reserve10min.value = 0.0
-        template.generator.reserve10min.pu = true
-        template.generator.reserve30min.value = 0.0
-        template.generator.reserve30min.pu = true
+function setLabel(component, id::UUID, label::Int64, key::String)
+    labelString = string(label)
+    if haskey(component.label, labelString)
+        throw(ErrorException("The label $label is not unique."))
+    end
 
-        template.generator.status = Int8(1)
-        template.generator.area = 0
+    systemList[id.value][key] = max(systemList[id.value][key], label)
+
+    setindex!(component.label, component.number, labelString)
+end
+
+######### Get Label ##########
+function getLabel(container, label::String, name::String)
+    if !haskey(container.label, label)
+        throw(ErrorException("The $name label $label that has been specified does not exist within the available $name labels."))
+    end
+
+    return label
+end
+
+function getLabel(container, label::Int64, name::String)
+    label = string(label)
+    if !haskey(container.label, label)
+        throw(ErrorException("The $name label $label that has been specified does not exist within the available $name labels."))
+    end
+
+    return label
+end
+
+######### Check Status ##########
+function checkStatus(status)
+    if !(status in [0; 1])
+        throw(ErrorException("The status $status is not allowed; it should be either in-service (1) or out-of-service (0)."))
     end
 end

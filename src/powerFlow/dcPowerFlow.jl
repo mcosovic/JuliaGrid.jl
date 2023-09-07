@@ -1,11 +1,3 @@
-######### DC Power Flow ##########
-struct DCPowerFlow <: DC
-    voltage::PolarAngle
-    power::DCPower
-    factorization::SuiteSparse.CHOLMOD.Factor{Float64}
-    uuid::UUID
-end
-
 """
     dcPowerFlow(system::PowerSystem)
 
@@ -36,6 +28,10 @@ analysis = dcPowerFlow(system)
 function dcPowerFlow(system::PowerSystem)
     dc = system.model.dc
     bus = system.bus
+
+    if bus.layout.slack == 0
+        throw(ErrorException("The slack bus is missing."))
+    end
 
     if isempty(dc.nodalMatrix)
         dcModel!(system)
@@ -121,70 +117,4 @@ function solve!(system::PowerSystem, analysis::DCPowerFlow)
             analysis.voltage.angle[i] += bus.voltage.angle[bus.layout.slack]
         end
     end
-end
-
-######### Query About Bus ##########
-function addBus!(system::PowerSystem, analysis::DCPowerFlow; kwargs...)
-    throw(ErrorException("The DCPowerFlow cannot be reused when adding a new bus."))
-end
-
-######### Query About Deamnd Bus ##########
-function demandBus!(system::PowerSystem, analysis::DCPowerFlow; user...)
-    checkUUID(system.uuid, analysis.uuid)
-    demandBus!(system::PowerSystem; user...)
-end
-
-######### Query About Shunt Bus ##########
-function shuntBus!(system::PowerSystem, analysis::DCPowerFlow; user...)
-    checkUUID(system.uuid, analysis.uuid)
-    shuntBus!(system::PowerSystem; user...)
-end
-
-######### Query About Branch ##########
-function addBranch!(system::PowerSystem, analysis::DCPowerFlow; kwargs...)
-    throw(ErrorException("The DCPowerFlow cannot be reused when adding a new branch."))
-end
-
-######### Query About Status Branch ##########
-function statusBranch!(system::PowerSystem, analysis::DCPowerFlow; label::L, status::T)
-    throw(ErrorException("The DCPowerFlow cannot be reused when the branch status is altered."))
-end
-
-######### Query About Parameter Branch ##########
-function parameterBranch!(system::PowerSystem, analysis::DCPowerFlow; user...)
-    throw(ErrorException("The DCPowerFlow cannot be reused when the branch parameters are altered."))
-end
-
-######### Query About Generator ##########
-function addGenerator!(system::PowerSystem, analysis::DCPowerFlow;
-    label::L = missing, bus::L, area::T = missing, status::T = missing,
-    active::T = missing, reactive::T = missing, magnitude::T = missing,
-    minActive::T = missing, maxActive::T = missing, minReactive::T = missing,
-    maxReactive::T = missing, lowActive::T = missing, minLowReactive::T = missing,
-    maxLowReactive::T = missing, upActive::T = missing, minUpReactive::T = missing,
-    maxUpReactive::T = missing, loadFollowing::T = missing, reserve10min::T = missing,
-    reserve30min::T = missing, reactiveTimescale::T = missing)
-
-    checkUUID(system.uuid, analysis.uuid)
-    addGenerator!(system; label, bus, area, status, active, reactive, magnitude,
-        minActive, maxActive, minReactive, maxReactive, lowActive, minLowReactive,
-        maxLowReactive, upActive, minUpReactive, maxUpReactive, loadFollowing, reserve10min,
-        reserve30min, reactiveTimescale)
-end
-
-######### Query About Status Generator ##########
-function statusGenerator!(system::PowerSystem, analysis::DCPowerFlow; label::L, status::Int64 = 0)
-    checkUUID(system.uuid, analysis.uuid)
-    checkStatus(status)
-    statusGenerator!(system; label, status)
-
-    if isempty(system.bus.supply.generator[system.bus.layout.slack])
-        changeSlackBus!(system)
-    end
-end
-
-######### Query About Output Generator ##########
-function outputGenerator!(system::PowerSystem, analysis::DCPowerFlow; user...)
-    checkUUID(system.uuid, analysis.uuid)
-    outputGenerator!(system; user...)
 end

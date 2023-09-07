@@ -4,43 +4,42 @@ For further information on this topic, please see the [AC Optimal Power Flow](@r
 
 ---
 
-###### Build Model
+###### Build AC Optimal Power Flow Model
 * [`acOptimalPowerFlow`](@ref acOptimalPowerFlow)
-* [`dcOptimalPowerFlow`](@ref dcOptimalPowerFlow)
 
-###### Solve Optimal Power Flow
+###### Solve AC Optimal Power Flow
 * [`solve!`](@ref solve!(::PowerSystem, ::ACOptimalPowerFlow))
 
-###### Power Analysis
-* [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow))
-* [`powerInjection`](@ref powerInjection(::PowerSystem, ::AC))
-* [`powerSupply`](@ref powerSupply(::PowerSystem, ::ACPowerFlow))
-* [`powerShunt`](@ref powerShunt(::PowerSystem, ::AC))
-* [`powerFrom`](@ref powerFrom(::PowerSystem, ::AC))
-* [`powerTo`](@ref powerTo(::PowerSystem, ::AC))
-* [`powerCharging`](@ref powerCharging(::PowerSystem, ::AC))
-* [`powerSeries`](@ref powerSeries(::PowerSystem, ::AC))
+###### Build DC Optimal Power Flow Model
+* [`dcOptimalPowerFlow`](@ref dcOptimalPowerFlow)
 
-###### Current Analysis
-* [`current!`](@ref current!(::PowerSystem, ::AC))
-* [`currentInjection`](@ref currentInjection(::PowerSystem, ::AC))
-* [`currentFrom`](@ref currentFrom(::PowerSystem, ::AC))
-* [`currentTo`](@ref currentTo(::PowerSystem, ::AC))
-* [`currentSeries`](@ref currentSeries(::PowerSystem, ::AC))
+###### Solve DC Optimal Power Flow
+* [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow))
 
 ---
 
-## Build Model
+## Build AC Optimal Power Flow Model
 ```@docs
 acOptimalPowerFlow
+```
+
+---
+
+## Solve AC Optimal Power Flow
+```@docs
+solve!(::PowerSystem, ::ACOptimalPowerFlow)
+```
+
+---
+
+## Build DC Optimal Power Flow Model
+```@docs
 dcOptimalPowerFlow
 ```
 
 ---
 
-## Solve Optimal Power Flow
+## Solve DC Optimal Power Flow
 ```@docs
-solve!(::PowerSystem, ::ACOptimalPowerFlow)
 solve!(::PowerSystem, ::DCOptimalPowerFlow)
 ```
-
