@@ -266,6 +266,7 @@ macro default(mode::Symbol)
     if mode == :unit || mode == :voltage
         prefix.voltageMagnitude = 0.0
         prefix.voltageAngle = 1.0
+        prefix.baseVoltage = 1.0
     end
 
     if mode == :unit || mode == :current

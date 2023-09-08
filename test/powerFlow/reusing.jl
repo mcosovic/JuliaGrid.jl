@@ -1,4 +1,7 @@
 @testset "DC Power Flow" begin
+    @default(unit)
+    @default(template)
+    
     ################ Resuing First Pass ################
     system = powerSystem(string(pathData, "case14test.m"))
 
@@ -74,7 +77,7 @@ end
 
     updateBus!(system; label = 14, active = 0.12, reactive = 0.13, conductance = 0.1, susceptance = 0.15, magnitude = 1.2, angle = -0.17)
     addBranch!(system; from = 2, to = 3, resistance = 0.02, reactance = 0.03, susceptance = 0.01, conductance = 0.0001, turnsRatio = 0.95, shiftAngle = -0.17)
-    updateBranch!(system; label = 12, status = 0, resistance = 0.02, reactance = 0.03, susceptance = 0.01)
+    updateBranch!(system; label = 12, status = 0, resistance = 0.02, reactance = 0.03, susceptance = 0.001)
     updateBranch!(system; label = 12, status = 1)
     addGenerator!(system; bus = 16, active = 0.8, reactive = 0.2, magnitude = 0.95)
     addGenerator!(system; bus = 4, active = 0.8, reactive = 0.2, magnitude = 0.9)
@@ -100,7 +103,7 @@ end
 
     updateBus!(resystem, reusing; label = 14, active = 0.12, reactive = 0.13, conductance = 0.1, susceptance = 0.15, magnitude = 1.2, angle = -0.17)
     addBranch!(resystem, reusing; from = 2, to = 3, resistance = 0.02, reactance = 0.03, susceptance = 0.01, conductance = 0.0001, turnsRatio = 0.95, shiftAngle = -0.17)
-    updateBranch!(resystem, reusing; label = 12, status = 0, resistance = 0.02, reactance = 0.03, susceptance = 0.01)
+    updateBranch!(resystem, reusing; label = 12, status = 0, resistance = 0.02, reactance = 0.03, susceptance = 0.001)
     updateBranch!(resystem, reusing; label = 12, status = 1)
     addGenerator!(resystem, reusing; bus = 16, active = 0.8, reactive = 0.2, magnitude = 0.95)
     addGenerator!(resystem, reusing; bus = 4, active = 0.8, reactive = 0.2, magnitude = 0.9)
@@ -117,7 +120,7 @@ end
     power!(resystem, reusing)
     current!(resystem, reusing)
 
-    ####### Compare Voltages, Powers, and Currents #######
+    ###### Compare Voltages, Powers, and Currents #######
     approxStruct(analysis.voltage, reusing.voltage)
     approxStruct(analysis.power.injection, reusing.power.injection)
     approxStruct(analysis.power.supply, reusing.power.supply)
