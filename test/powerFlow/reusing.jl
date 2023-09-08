@@ -274,7 +274,7 @@ end
     power!(system, analysis)
     current!(system, analysis)
 
-    # ###### Reuse Model #######
+    ###### Reuse Model #######
     updateBus!(resystem, reusing; label = 10, active = 0.12, susceptance = 0.005, magnitude = 1.02, angle = -0.21)
     addBranch!(resystem, reusing; from = 16, to = 7, resistance = 0.001, reactance = 0.03, susceptance = 0.001)
     updateBranch!(resystem, reusing; label = 14, status = 1, resistance = 0.02, reactance = 0.03, susceptance = 0.01)
@@ -344,6 +344,7 @@ end
     updateGenerator!(resystem, reusing; label = 4, status = 0)
     updateGenerator!(resystem, reusing; label = 7, active = 0.15, magnitude = 0.92)
 
+    startingVoltage!(resystem, reusing)
     for iteration = 1:1000
         stopping = mismatch!(resystem, reusing)
         if all(stopping .< 1e-8)
@@ -395,6 +396,7 @@ end
     updateGenerator!(resystem, reusing; label = 4, status = 0)
     updateGenerator!(resystem, reusing; label = 7, reactive = 0.13, magnitude = 0.91)
 
+    startingVoltage!(resystem, reusing)
     for iteration = 1:1000
         stopping = mismatch!(resystem, reusing)
         if all(stopping .< 1e-8)
