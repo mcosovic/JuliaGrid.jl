@@ -254,7 +254,9 @@ function updateBus!(system::PowerSystem, analysis::DCPowerFlow;
 
     checkUUID(system.uuid, analysis.uuid)
 
-    index = system.bus.label[getLabel(system.bus, label, "bus")]
+    bus = system.bus
+    index = bus.label[getLabel(bus, label, "bus")]
+
     if !ismissing(type) && system.bus.layout.slack == index && type != 3
         throw(ErrorException("The DC power flow model cannot be reused due to required bus type conversion."))
     end
@@ -263,7 +265,7 @@ function updateBus!(system::PowerSystem, analysis::DCPowerFlow;
         magnitude, angle, minMagnitude, maxMagnitude, base, area, lossZone)
 end
 
-function updateBus!(system::PowerSystem, analysis::Union{NewtonRaphson, GaussSeidel};
+function updateBus!(system::PowerSystem, analysis::NewtonRaphson;
     label::L, type::T = missing,
     active::T = missing, reactive::T = missing,
     conductance::T = missing, susceptance::T = missing,
@@ -273,7 +275,9 @@ function updateBus!(system::PowerSystem, analysis::Union{NewtonRaphson, GaussSei
 
     checkUUID(system.uuid, analysis.uuid)
 
-    index = system.bus.label[getLabel(system.bus, label, "bus")]
+    bus = system.bus
+    index = bus.label[getLabel(bus, label, "bus")]
+    
     if !ismissing(type) && type != system.bus.layout.type[index]
         throw(ErrorException("The AC power flow model cannot be reused due to required bus type conversion."))
     end
@@ -281,11 +285,11 @@ function updateBus!(system::PowerSystem, analysis::Union{NewtonRaphson, GaussSei
     updateBus!(system; label, type, active, reactive, conductance, susceptance,
         magnitude, angle, minMagnitude, maxMagnitude, base, area, lossZone)
 
-    if !ismissing(magnitude) && system.bus.layout.type[index] == 1
-        analysis.voltage.magnitude[index] = system.bus.voltage.magnitude[index]
+    if !ismissing(magnitude) && bus.layout.type[index] == 1
+        analysis.voltage.magnitude[index] = bus.voltage.magnitude[index]
     end
     if !ismissing(angle)
-        analysis.voltage.angle[index] = system.bus.voltage.angle[index]
+        analysis.voltage.angle[index] = bus.voltage.angle[index]
     end
 end
 
@@ -299,22 +303,55 @@ function updateBus!(system::PowerSystem, analysis::FastNewtonRaphson;
 
     checkUUID(system.uuid, analysis.uuid)
 
-    index = system.bus.label[getLabel(system.bus, label, "bus")]
-    if !ismissing(type) && type != system.bus.layout.type[index]
+    bus = system.bus
+    index = bus.label[getLabel(bus, label, "bus")]
+
+    if !ismissing(type) && type != bus.layout.type[index]
         throw(ErrorException("The AC power flow model cannot be reused due to required bus type conversion."))
     end
-    if !ismissing(conductance) || !ismissing(susceptance)
+    if (!ismissing(conductance) && bus.shunt.conductance[index] != conductance) || (!ismissing(susceptance) && bus.shunt.susceptance[index] != susceptance)
         throw(ErrorException("The fast Newton-Raphson model cannot be reused when the shunt element is altered."))
     end
 
-    changeBus!(system; label, type, active, reactive, conductance, susceptance,
+    updateBus!(system; label, type, active, reactive, conductance, susceptance,
         magnitude, angle, minMagnitude, maxMagnitude, base, area, lossZone)
 
-    if !ismissing(magnitude) && system.bus.layout.type[index] == 1
-        analysis.voltage.magnitude[index] = system.bus.voltage.magnitude[index]
+    if !ismissing(magnitude) && bus.layout.type[index] == 1
+        analysis.voltage.magnitude[index] = bus.voltage.magnitude[index]
     end
     if !ismissing(angle)
-        analysis.voltage.angle[index] = system.bus.voltage.angle[index]
+        analysis.voltage.angle[index] = bus.voltage.angle[index]
+    end
+end
+
+function updateBus!(system::PowerSystem, analysis::GaussSeidel;
+    label::L, type::T = missing,
+    active::T = missing, reactive::T = missing,
+    conductance::T = missing, susceptance::T = missing,
+    magnitude::T = missing, angle::T = missing,
+    minMagnitude::T = missing, maxMagnitude::T = missing,
+    base::T = missing, area::T = missing, lossZone::T = missing)
+
+    checkUUID(system.uuid, analysis.uuid)
+
+    bus = system.bus
+    index = bus.label[getLabel(bus, label, "bus")]
+
+    if !ismissing(type) && type != system.bus.layout.type[index]
+        throw(ErrorException("The AC power flow model cannot be reused due to required bus type conversion."))
+    end
+
+    updateBus!(system; label, type, active, reactive, conductance, susceptance,
+        magnitude, angle, minMagnitude, maxMagnitude, base, area, lossZone)
+
+    if !ismissing(magnitude) || !ismissing(angle)
+        if !ismissing(magnitude) && bus.layout.type[index] == 1
+            analysis.voltage.magnitude[index] = bus.voltage.magnitude[index]
+        end
+        if !ismissing(angle)
+            analysis.voltage.angle[index] = bus.voltage.angle[index]
+        end
+        analysis.method.voltage[index] = analysis.voltage.magnitude[index] * exp(im * analysis.voltage.angle[index])
     end
 end
 

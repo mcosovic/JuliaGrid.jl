@@ -31,8 +31,9 @@ include("powerSystem/buildUpdate.jl")
 
 ######## Power flow ##########
 include("powerFlow/analysis.jl")
-# include("powerFlow/reusing.jl")
 include("powerFlow/limits.jl")
+include("powerFlow/reusing.jl")
+
 
 ######## Optimal Power flow ##########
 # include("optimalPowerFlow/solution.jl")

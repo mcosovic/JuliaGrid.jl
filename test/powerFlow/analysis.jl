@@ -451,7 +451,7 @@ end
     solve!(system30, analysis)
     power!(system30, analysis)
 
-    ####### Compare Bus Powers and Currents #######
+    ####### Compare Voltages and Powers #######
     @test analysis.voltage.angle ≈ matpower30["voltage"]
     @test analysis.power.injection.active ≈ matpower30["injection"]
     @test analysis.power.supply.active ≈ matpower30["supply"]

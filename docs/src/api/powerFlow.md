@@ -17,6 +17,7 @@ For further information on this topic, please see the [AC Power Flow](@ref ACPow
 ###### Additional AC Functions
 * [`reactiveLimit!`](@ref reactiveLimit!)
 * [`adjustAngle!`](@ref adjustAngle!) 
+* [`startingVoltage!`](@ref startingVoltage!) 
 
 ###### Build DC Power Flow Model
 * [`dcPowerFlow`](@ref dcPowerFlow)
@@ -48,6 +49,7 @@ solve!(::PowerSystem, ::NewtonRaphson)
 ```@docs
 reactiveLimit!
 adjustAngle!
+startingVoltage!
 ```
 
 ---

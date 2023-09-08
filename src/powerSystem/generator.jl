@@ -40,9 +40,9 @@ The generator is defined with the following keywords:
 * `area`: area participation factor.
 
 # Updates
-The function updates the `generator` field within the `PowerSystem` composite type, and in 
-cases where parameters impact variables in the `bus` field, it automatically adjusts the 
-field. Furthermore, it guarantees that any modifications to the parameters are transmitted 
+The function updates the `generator` field within the `PowerSystem` composite type, and in
+cases where parameters impact variables in the `bus` field, it automatically adjusts the
+field. Furthermore, it guarantees that any modifications to the parameters are transmitted
 to the `Analysis` type.
 
 # Default Settings
@@ -169,24 +169,10 @@ function addGenerator!(system::PowerSystem, analysis::ACPowerFlow;
 
     checkUUID(system.uuid, analysis.uuid)
 
-    indexBus = system.bus.label[getLabel(system.bus, bus, "bus")]
-
-    if !ismissing(status)
-        checkStatus(status)
-        if status == 0 && system.bus.layout.type[indexBus] in [2, 3] && length(system.bus.supply.generator[indexBus]) == 1
-            throw(ErrorException("The AC power flow model cannot be reused due to required bus type conversion."))
-        end
-    end
-
     addGenerator!(system; label, bus, area, status, active, reactive, magnitude,
         minActive, maxActive, minReactive, maxReactive, lowActive, minLowReactive,
         maxLowReactive, upActive, minUpReactive, maxUpReactive, loadFollowing, reserve10min,
         reserve30min, reactiveTimescale)
-
-    if system.bus.layout.type[indexBus] in [2, 3] 
-        index = system.bus.supply.generator[indexBus][1]
-        analysis.voltage.magnitude[indexBus] = system.generator.voltage.magnitude[index]
-    end
 end
 
 """
@@ -208,9 +194,9 @@ generator you want to modify. If any keywords are omitted, their corresponding v
 remain unchanged.
 
 # Updates
-The function updates the `generator` field within the `PowerSystem` composite type, and in 
-cases where parameters impact variables in the `bus` field, it automatically adjusts the 
-field. Furthermore, it guarantees that any modifications to the parameters are transmitted 
+The function updates the `generator` field within the `PowerSystem` composite type, and in
+cases where parameters impact variables in the `bus` field, it automatically adjusts the
+field. Furthermore, it guarantees that any modifications to the parameters are transmitted
 to the `Analysis` type.
 
 # Units
@@ -350,7 +336,7 @@ function updateGenerator!(system::PowerSystem, analysis::DCPowerFlow;
     maxLowReactive::T = missing, upActive::T = missing, minUpReactive::T = missing,
     maxUpReactive::T = missing, loadFollowing::T = missing, reserve10min::T = missing,
     reserve30min::T = missing, reactiveTimescale::T = missing)
-    
+
     checkUUID(system.uuid, analysis.uuid)
 
     if !ismissing(status)
@@ -368,7 +354,7 @@ function updateGenerator!(system::PowerSystem, analysis::DCPowerFlow;
         reserve30min, reactiveTimescale)
 end
 
-function updateGenerator!(system::PowerSystem, analysis::ACPowerFlow;
+function updateGenerator!(system::PowerSystem, analysis::Union{NewtonRaphson, FastNewtonRaphson};
     label::L, area::T = missing, status::T = missing,
     active::T = missing, reactive::T = missing, magnitude::T = missing,
     minActive::T = missing, maxActive::T = missing, minReactive::T = missing,
@@ -376,12 +362,11 @@ function updateGenerator!(system::PowerSystem, analysis::ACPowerFlow;
     maxLowReactive::T = missing, upActive::T = missing, minUpReactive::T = missing,
     maxUpReactive::T = missing, loadFollowing::T = missing, reserve10min::T = missing,
     reserve30min::T = missing, reactiveTimescale::T = missing)
-    
+
     checkUUID(system.uuid, analysis.uuid)
 
     index = system.generator.label[getLabel(system.generator, label, "generator")]
     indexBus = system.generator.layout.bus[index]
-
     if !ismissing(status)
         checkStatus(status)
         if status == 0 && system.bus.layout.type[indexBus] in [2, 3] && length(system.bus.supply.generator[indexBus]) == 1
@@ -396,7 +381,42 @@ function updateGenerator!(system::PowerSystem, analysis::ACPowerFlow;
 
     if system.bus.layout.type[indexBus] in [2, 3]
         index = system.bus.supply.generator[indexBus][1]
-        analysis.voltage.magnitude[indexBus] = system.generator.voltage.magnitude[index] 
+        analysis.voltage.magnitude[indexBus] = system.generator.voltage.magnitude[index]
+     end
+end
+
+function updateGenerator!(system::PowerSystem, analysis::GaussSeidel;
+    label::L, area::T = missing, status::T = missing,
+    active::T = missing, reactive::T = missing, magnitude::T = missing,
+    minActive::T = missing, maxActive::T = missing, minReactive::T = missing,
+    maxReactive::T = missing, lowActive::T = missing, minLowReactive::T = missing,
+    maxLowReactive::T = missing, upActive::T = missing, minUpReactive::T = missing,
+    maxUpReactive::T = missing, loadFollowing::T = missing, reserve10min::T = missing,
+    reserve30min::T = missing, reactiveTimescale::T = missing)
+
+    checkUUID(system.uuid, analysis.uuid)
+
+    bus = system.bus
+    generator = system.generator
+
+    index = generator.label[getLabel(generator, label, "generator")]
+    indexBus = generator.layout.bus[index]
+    if !ismissing(status)
+        checkStatus(status)
+        if status == 0 && bus.layout.type[indexBus] in [2, 3] && length(bus.supply.generator[indexBus]) == 1
+            throw(ErrorException("The AC power flow model cannot be reused due to required bus type conversion."))
+        end
+    end
+
+    updateGenerator!(system; label, area, status, active, reactive, magnitude,
+        minActive, maxActive, minReactive, maxReactive, lowActive, minLowReactive,
+        maxLowReactive, upActive, minUpReactive, maxUpReactive, loadFollowing, reserve10min,
+        reserve30min, reactiveTimescale)
+
+    if bus.layout.type[indexBus] in [2, 3]
+        index = bus.supply.generator[indexBus][1]
+        analysis.voltage.magnitude[indexBus] = generator.voltage.magnitude[index]
+        analysis.method.voltage[indexBus] = generator.voltage.magnitude[index] * exp(im * angle(analysis.method.voltage[indexBus]))
      end
 end
 
@@ -475,13 +495,13 @@ macro generator(kwargs...)
 end
 
 """
-    cost!(system::PowerSystem, analysis::Analysis; label, cost, 
+    cost!(system::PowerSystem, analysis::Analysis; label, cost,
         model, piecewise, polynomial)
 
-The function either adds a new cost or modifies an existing one for the active or reactive 
-power generated by the corresponding generator within the `PowerSystem` composite type. 
+The function either adds a new cost or modifies an existing one for the active or reactive
+power generated by the corresponding generator within the `PowerSystem` composite type.
 It has the capability to append a cost to an already defined generator.
-    
+
 # Arguments
 If the `Analysis` type is omitted, the function applies changes to the `PowerSystem`
 composite type only. However, when including the `Analysis` type, it updates both the
@@ -493,7 +513,7 @@ The function accepts four keywords:
 * `label`: corresponds to the already defined generator label;
 * `cost`: cost type:
   * `cost = :active`: adding cost for the active power;
-  * `cost = :reactive`: adding cost for the reactive power;  
+  * `cost = :reactive`: adding cost for the reactive power;
 * `model`: cost model:
   * `model = 1`: piecewise linear is being used;
   * `model = 2`: polynomial is being used;
@@ -506,13 +526,13 @@ The function accepts four keywords:
   * last element (currency/hr): constant coefficient.
 
 # Updates
-The function updates the `generator.cost` field within the `PowerSystem` composite type. 
-Furthermore, it guarantees that any modifications to the parameters are transmitted 
+The function updates the `generator.cost` field within the `PowerSystem` composite type.
+Furthermore, it guarantees that any modifications to the parameters are transmitted
 to the `Analysis` type.
 
 # Default Settings
-By default, the cost type is set to c`ost = :active`. Additionally, when adding only a 
-`piecewise` or `polynomial` cost function, you can omit the `model` keyword, as the 
+By default, the cost type is set to c`ost = :active`. Additionally, when adding only a
+`piecewise` or `polynomial` cost function, you can omit the `model` keyword, as the
 appropriate model will be assigned based on the defined cost function.
 
 # Units
@@ -541,7 +561,7 @@ addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 50, reactiv
 cost!(system; label = "Generator 1", polynomial = [0.11; 5.0; 150.0])
 ```
 """
-function cost!(system::PowerSystem; label::L, 
+function cost!(system::PowerSystem; label::L,
     cost::Symbol = :active, model::T = missing,
     polynomial::Array{Float64,1} = Array{Float64}(undef, 0),
     piecewise::Array{Float64,2} = Array{Float64}(undef, 0, 0))

@@ -29,7 +29,7 @@ Finally, after adding the generator, JualiGrid provides the following function f
 * [`cost!`](@ref cost!).
 
 !!! tip "Tip"
-    The functions [`addBranch!`](@ref addBranch!), [`addGenerator!`](@ref addGenerator!), [`updateBus!`](@ref updateBus!), [`updateBranch!`](@ref updateBranch!), [`updateGenerator!`](@ref updateGenerator!), and [`cost!`](@ref cost!), in addition to their primary purpose of accepting and modifying the `PowerSystem` composite type, also have the flexibility to accept any analysis model as an argument, for example, AC or DC power flow model. In this case, if modification of the analysis model is feasible, these functions will not only change the `PowerSystem` type but also adapt the analysis model. This adaptation commonly leads to a solution with improved computational efficiency. Readers can find more comprehensive information in the manuals dedicated to specific analyses.
+    The functions [`addBranch!`](@ref addBranch!), [`addGenerator!`](@ref addGenerator!), [`updateBus!`](@ref updateBus!), [`updateBranch!`](@ref updateBranch!), [`updateGenerator!`](@ref updateGenerator!), and [`cost!`](@ref cost!) serve a dual purpose. While their primary function is to modify the `PowerSystem` composite type, they are also designed to accept various analysis models like AC or DC power flow models. When feasible, these functions not only modify the `PowerSystem` type but also adapt the analysis model, often resulting in improved computational efficiency. Detailed information on specific analyses can be found in dedicated manuals.
 
 ---
 
@@ -526,7 +526,7 @@ system.model.ac.nodalMatrix
 ---
 
 ## [Update Bus](@id UpdateBusManual)
-Once a bus has been added to the `PowerSystem` composite type, users have the flexibility to modify all parameters defined within the [`addBus!`](@ref addBus!) function. This means that the [`updateBus!`](@ref updateBus!) function not only updates the `PowerSystem` type but also, if AC and DC models have been created, automatically updates these models. This eliminates the need to recreate the AC and DC models from scratch. 
+Once a bus has been added to the `PowerSystem` composite type, users have the flexibility to modify all parameters defined within the [`addBus!`](@ref addBus!) function. This means that the [`updateBus!`](@ref updateBus!) function not only updates the `PowerSystem` type but also, if AC and DC models have been created, automatically updates these models. This eliminates the need to recreate the AC and DC models from scratch.
 
 To illustrate, let us consider the following power system:
 ```@example updateSystem
@@ -571,7 +571,7 @@ system.model.ac.nodalMatrix
 ---
 
 ## [Update Branch](@id UpdateBranchManual)
-Similarly to updating buses, once a branch has been added to the `PowerSystem` composite type, users have the freedom to modify all parameters defined within the [`addBranch!`](@ref addBranch!) function. This means that the [`updateBranch!`](@ref updateBranch!) function not only updates the `PowerSystem` type but also, if AC and DC models have been created, automatically updates these models. 
+Similarly to updating buses, once a branch has been added to the `PowerSystem` composite type, users have the freedom to modify all parameters defined within the [`addBranch!`](@ref addBranch!) function. This means that the [`updateBranch!`](@ref updateBranch!) function not only updates the `PowerSystem` type but also, if AC and DC models have been created, automatically updates these models.
 
 To illustrate, let us continue with the previous example, where we modify the parameters of `Branch 1`:
 ```@example updateSystem
@@ -611,7 +611,7 @@ dropzeros!(system.model.ac.nodalMatrix)
 ---
 
 ## [Update Generator](@id UpdateGeneratorManual)
-Finally, users can update all generator parameters defined within the [`addGenerator!`](@ref addGenerator!) function using the [`updateGenerator!`](@ref updateGenerator!) function. The execution of this function will affect all variables within the `PowerSystem` type. Let us first observe the following variable from the previous example:
+Finally, users can update all generator parameters defined within the [`addGenerator!`](@ref addGenerator!) function using the [`updateGenerator!`](@ref updateGenerator!) function. The execution of this function will affect all variables within the `PowerSystem` type. To put it succinctly, in addition to the `generator` field, JuliaGrid also retains variables associated with generators within the `bus` field. As an illustration, let us examine one of these variables and its values derived from a previous example:
 ```@repl updateSystem
 system.bus.supply.active
 ```
@@ -627,6 +627,8 @@ As we can see, executing the function triggers an update of the observed variabl
 ```@repl updateSystem
 system.bus.supply.active
 ```
+
+Hence, this function ensures the adjustment of generator parameters and updates all fields of the `PowerSystem` composite type affected by them.
 
 ---
 

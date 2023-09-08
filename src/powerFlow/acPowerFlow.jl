@@ -953,7 +953,71 @@ function adjustAngle!(system::PowerSystem, analysis::ACPowerFlow; slack::L)
     end
 end
 
-########## Initialize AC Power Flow ##########
+"""
+    startingVoltage!(system::PowerSystem, analysis::ACPowerFlow)
+
+The function extracts bus voltage magnitudes and angles from the `PowerSystem` composite 
+type and assigns them to the `ACPowerFlow` abstract type, enabling users to initialize 
+voltage values as required.
+
+# Updates
+This function only updates the `voltage` field of the `ACPowerFlow` abstract type.
+
+# Abstract type
+The abstract type `ACPowerFlow` can have the following subtypes:
+- `NewtonRaphson`: computes the bus voltages within the Newton-Raphson method;
+- `FastNewtonRaphson`: computes the bus voltages within the fast Newton-Raphson method;
+- `GaussSeidel`: computes the bus voltages within the Gauss-Seidel method.
+
+# Example
+```jldoctest
+system = powerSystem("case14.h5")
+acModel!(system)
+
+analysis = newtonRaphson(system)
+for i = 1:10
+    stopping = mismatch!(system, analysis)
+    if all(stopping .< 1e-8)
+        break
+    end
+    solve!(system, analysis)
+end
+
+updateBus!(system, analysis; label = 14, reactive = 0.13, magnitude = 1.2, angle = -0.17)
+
+startingVoltage!(system, analysis)
+for i = 1:10
+    stopping = mismatch!(system, analysis)
+    if all(stopping .< 1e-8)
+        break
+    end
+    solve!(system, analysis)
+end
+```
+"""
+function startingVoltage!(system::PowerSystem, analysis::Union{NewtonRaphson, FastNewtonRaphson})
+    @inbounds for i = 1:system.bus.number
+        if !isempty(system.bus.supply.generator[i]) && system.bus.layout.type[i] != 1
+            analysis.voltage.magnitude[i] = system.generator.voltage.magnitude[system.bus.supply.generator[i][1]]
+        else
+            analysis.voltage.magnitude[i] = system.bus.voltage.magnitude[i]
+        end
+        analysis.voltage.angle[i] = system.bus.voltage.angle[i]
+    end
+end
+
+function startingVoltage!(system::PowerSystem, analysis::GaussSeidel)
+    @inbounds for i = 1:system.bus.number
+        if !isempty(system.bus.supply.generator[i]) && system.bus.layout.type[i] != 1
+            analysis.voltage.magnitude[i] = system.generator.voltage.magnitude[system.bus.supply.generator[i][1]]
+        else
+            analysis.voltage.magnitude[i] = system.bus.voltage.magnitude[i]
+        end
+        analysis.voltage.angle[i] = system.bus.voltage.angle[i]
+        analysis.method.voltage[i] = analysis.voltage.magnitude[i] * exp(im * analysis.voltage.angle[i]) 
+    end
+end
+
 function initializeACPowerFlow(system::PowerSystem)
     magnitude = copy(system.bus.voltage.magnitude)
     angle = copy(system.bus.voltage.angle)
@@ -973,6 +1037,8 @@ function initializeACPowerFlow(system::PowerSystem)
 
     return magnitude, angle
 end
+
+
 
 ########## Change Slack Bus ##########
 function changeSlackBus!(system::PowerSystem)
