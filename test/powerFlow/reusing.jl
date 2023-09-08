@@ -68,125 +68,125 @@
     @test analysis.power.generator.active ≈ reusing.power.generator.active
 end
 
-# @testset "Newton-Raphson Method" begin
-#     ################ Resuing First Pass ################
-#     system = powerSystem(string(pathData, "case14test.m"))
+@testset "Newton-Raphson Method" begin
+    ################ Resuing First Pass ################
+    system = powerSystem(string(pathData, "case14test.m"))
 
-#     updateBus!(system; label = 14, active = 0.12, reactive = 0.13, conductance = 0.1, susceptance = 0.15, magnitude = 1.2, angle = -0.17)
-#     addBranch!(system; from = 2, to = 3, resistance = 0.02, reactance = 0.03, susceptance = 0.01, conductance = 0.0001, turnsRatio = 0.95, shiftAngle = -0.17)
-#     updateBranch!(system; label = 12, status = 0, resistance = 0.02, reactance = 0.03, susceptance = 0.01)
-#     updateBranch!(system; label = 12, status = 1)
-#     addGenerator!(system; bus = 16, active = 0.8, reactive = 0.2, magnitude = 0.95)
-#     addGenerator!(system; bus = 4, active = 0.8, reactive = 0.2, magnitude = 0.9)
-#     updateGenerator!(system; label = 4, status = 0)
-#     updateGenerator!(system; label = 7, active = 0.15, magnitude = 0.92)
+    updateBus!(system; label = 14, active = 0.12, reactive = 0.13, conductance = 0.1, susceptance = 0.15, magnitude = 1.2, angle = -0.17)
+    addBranch!(system; from = 2, to = 3, resistance = 0.02, reactance = 0.03, susceptance = 0.01, conductance = 0.0001, turnsRatio = 0.95, shiftAngle = -0.17)
+    updateBranch!(system; label = 12, status = 0, resistance = 0.02, reactance = 0.03, susceptance = 0.01)
+    updateBranch!(system; label = 12, status = 1)
+    addGenerator!(system; bus = 16, active = 0.8, reactive = 0.2, magnitude = 0.95)
+    addGenerator!(system; bus = 4, active = 0.8, reactive = 0.2, magnitude = 0.9)
+    updateGenerator!(system; label = 4, status = 0)
+    updateGenerator!(system; label = 7, active = 0.15, magnitude = 0.92)
 
-#     acModel!(system)
-#     analysis = newtonRaphson(system)
-#     for iteration = 1:100
-#         stopping = mismatch!(system, analysis)
-#         if all(stopping .< 1e-8)
-#             break
-#         end
-#         solve!(system, analysis)
-#     end
-#     power!(system, analysis)
-#     current!(system, analysis)
+    acModel!(system)
+    analysis = newtonRaphson(system)
+    for iteration = 1:100
+        stopping = mismatch!(system, analysis)
+        if all(stopping .< 1e-8)
+            break
+        end
+        solve!(system, analysis)
+    end
+    power!(system, analysis)
+    current!(system, analysis)
 
-#     ####### Reuse Model #######
-#     resystem = powerSystem(string(pathData, "case14test.m"))
-#     acModel!(resystem)
-#     reusing = newtonRaphson(resystem)
+    ####### Reuse Model #######
+    resystem = powerSystem(string(pathData, "case14test.m"))
+    acModel!(resystem)
+    reusing = newtonRaphson(resystem)
 
-#     updateBus!(resystem, reusing; label = 14, active = 0.12, reactive = 0.13, conductance = 0.1, susceptance = 0.15, magnitude = 1.2, angle = -0.17)
-#     addBranch!(resystem, reusing; from = 2, to = 3, resistance = 0.02, reactance = 0.03, susceptance = 0.01, conductance = 0.0001, turnsRatio = 0.95, shiftAngle = -0.17)
-#     updateBranch!(resystem, reusing; label = 12, status = 0, resistance = 0.02, reactance = 0.03, susceptance = 0.01)
-#     updateBranch!(resystem, reusing; label = 12, status = 1)
-#     addGenerator!(resystem, reusing; bus = 16, active = 0.8, reactive = 0.2, magnitude = 0.95)
-#     addGenerator!(resystem, reusing; bus = 4, active = 0.8, reactive = 0.2, magnitude = 0.9)
-#     updateGenerator!(resystem, reusing; label = 4, status = 0)
-#     updateGenerator!(resystem, reusing; label = 7, active = 0.15, magnitude = 0.92)
+    updateBus!(resystem, reusing; label = 14, active = 0.12, reactive = 0.13, conductance = 0.1, susceptance = 0.15, magnitude = 1.2, angle = -0.17)
+    addBranch!(resystem, reusing; from = 2, to = 3, resistance = 0.02, reactance = 0.03, susceptance = 0.01, conductance = 0.0001, turnsRatio = 0.95, shiftAngle = -0.17)
+    updateBranch!(resystem, reusing; label = 12, status = 0, resistance = 0.02, reactance = 0.03, susceptance = 0.01)
+    updateBranch!(resystem, reusing; label = 12, status = 1)
+    addGenerator!(resystem, reusing; bus = 16, active = 0.8, reactive = 0.2, magnitude = 0.95)
+    addGenerator!(resystem, reusing; bus = 4, active = 0.8, reactive = 0.2, magnitude = 0.9)
+    updateGenerator!(resystem, reusing; label = 4, status = 0)
+    updateGenerator!(resystem, reusing; label = 7, active = 0.15, magnitude = 0.92)
 
-#     for iteration = 1:100
-#         stopping = mismatch!(resystem, reusing)
-#         if all(stopping .< 1e-8)
-#             break
-#         end
-#         solve!(resystem, reusing)
-#     end
-#     power!(resystem, reusing)
-#     current!(resystem, reusing)
+    for iteration = 1:100
+        stopping = mismatch!(resystem, reusing)
+        if all(stopping .< 1e-8)
+            break
+        end
+        solve!(resystem, reusing)
+    end
+    power!(resystem, reusing)
+    current!(resystem, reusing)
 
-#     ####### Compare Voltages, Powers, and Currents #######
-#     approxStruct(analysis.voltage, reusing.voltage)
-#     approxStruct(analysis.power.injection, reusing.power.injection)
-#     approxStruct(analysis.power.supply, reusing.power.supply)
-#     approxStruct(analysis.power.shunt, reusing.power.shunt)
-#     approxStruct(analysis.power.from, reusing.power.from)
-#     approxStruct(analysis.power.to, reusing.power.to)
-#     approxStruct(analysis.power.charging, reusing.power.charging)
-#     approxStruct(analysis.power.series, reusing.power.series)
-#     approxStruct(analysis.power.generator, reusing.power.generator)
+    ####### Compare Voltages, Powers, and Currents #######
+    approxStruct(analysis.voltage, reusing.voltage)
+    approxStruct(analysis.power.injection, reusing.power.injection)
+    approxStruct(analysis.power.supply, reusing.power.supply)
+    approxStruct(analysis.power.shunt, reusing.power.shunt)
+    approxStruct(analysis.power.from, reusing.power.from)
+    approxStruct(analysis.power.to, reusing.power.to)
+    approxStruct(analysis.power.charging, reusing.power.charging)
+    approxStruct(analysis.power.series, reusing.power.series)
+    approxStruct(analysis.power.generator, reusing.power.generator)
 
-#     approxStruct(analysis.current.from, reusing.current.from)
-#     approxStruct(analysis.current.to, reusing.current.to)
-#     approxStruct(analysis.current.series, reusing.current.series)
+    approxStruct(analysis.current.from, reusing.current.from)
+    approxStruct(analysis.current.to, reusing.current.to)
+    approxStruct(analysis.current.series, reusing.current.series)
 
-#     ################ Resuing Second Pass ################
-#     updateBus!(system; label = 10, active = 0.12, susceptance = 0.005, magnitude = 1.02, angle = -0.21)
-#     addBranch!(system; from = 16, to = 7, resistance = 0.001, reactance = 0.03, susceptance = 0.001)
-#     updateBranch!(system; label = 14, status = 1, resistance = 0.02, reactance = 0.03, susceptance = 0.01)
-#     addGenerator!(system; bus = 2, active = 0.2, magnitude = 0.92)
-#     addGenerator!(system; bus = 16, active = 0.3, reactive = 0.2)
-#     updateGenerator!(system; label = 4, status = 0)
-#     updateGenerator!(system; label = 7, reactive = 0.13, magnitude = 0.91)
+    ################ Resuing Second Pass ################
+    updateBus!(system; label = 10, active = 0.12, susceptance = 0.005, magnitude = 1.02, angle = -0.21)
+    addBranch!(system; from = 16, to = 7, resistance = 0.001, reactance = 0.03, susceptance = 0.001)
+    updateBranch!(system; label = 14, status = 1, resistance = 0.02, reactance = 0.03, susceptance = 0.01)
+    addGenerator!(system; bus = 2, active = 0.2, magnitude = 0.92)
+    addGenerator!(system; bus = 16, active = 0.3, reactive = 0.2)
+    updateGenerator!(system; label = 4, status = 0)
+    updateGenerator!(system; label = 7, reactive = 0.13, magnitude = 0.91)
 
-#     acModel!(system)
-#     analysis = newtonRaphson(system)
-#     for iteration = 1:100
-#         stopping = mismatch!(system, analysis)
-#         if all(stopping .< 1e-8)
-#             break
-#         end
-#         solve!(system, analysis)
-#     end
-#     power!(system, analysis)
-#     current!(system, analysis)
+    acModel!(system)
+    analysis = newtonRaphson(system)
+    for iteration = 1:100
+        stopping = mismatch!(system, analysis)
+        if all(stopping .< 1e-8)
+            break
+        end
+        solve!(system, analysis)
+    end
+    power!(system, analysis)
+    current!(system, analysis)
 
-#     ###### Reuse Model #######
-#     updateBus!(resystem, reusing; label = 10, active = 0.12, susceptance = 0.005, magnitude = 1.02, angle = -0.21)
-#     addBranch!(resystem, reusing; from = 16, to = 7, resistance = 0.001, reactance = 0.03, susceptance = 0.001)
-#     updateBranch!(resystem, reusing; label = 14, status = 1, resistance = 0.02, reactance = 0.03, susceptance = 0.01)
-#     addGenerator!(resystem, reusing; bus = 2, active = 0.2, magnitude = 0.92)
-#     addGenerator!(resystem, reusing; bus = 16, active = 0.3, reactive = 0.2)
-#     updateGenerator!(resystem, reusing; label = 4, status = 0)
-#     updateGenerator!(resystem, reusing; label = 7, reactive = 0.13, magnitude = 0.91)
+    ###### Reuse Model #######
+    updateBus!(resystem, reusing; label = 10, active = 0.12, susceptance = 0.005, magnitude = 1.02, angle = -0.21)
+    addBranch!(resystem, reusing; from = 16, to = 7, resistance = 0.001, reactance = 0.03, susceptance = 0.001)
+    updateBranch!(resystem, reusing; label = 14, status = 1, resistance = 0.02, reactance = 0.03, susceptance = 0.01)
+    addGenerator!(resystem, reusing; bus = 2, active = 0.2, magnitude = 0.92)
+    addGenerator!(resystem, reusing; bus = 16, active = 0.3, reactive = 0.2)
+    updateGenerator!(resystem, reusing; label = 4, status = 0)
+    updateGenerator!(resystem, reusing; label = 7, reactive = 0.13, magnitude = 0.91)
 
-#     for iteration = 1:100
-#         stopping = mismatch!(resystem, reusing)
-#         if all(stopping .< 1e-8)
-#             break
-#         end
-#         solve!(resystem, reusing)
-#     end
-#     power!(resystem, reusing)
-#     current!(resystem, reusing)
+    for iteration = 1:100
+        stopping = mismatch!(resystem, reusing)
+        if all(stopping .< 1e-8)
+            break
+        end
+        solve!(resystem, reusing)
+    end
+    power!(resystem, reusing)
+    current!(resystem, reusing)
 
-#     ####### Compare Voltages, Powers, and Currents #######
-#     approxStruct(analysis.voltage, reusing.voltage)
-#     approxStruct(analysis.power.injection, reusing.power.injection)
-#     approxStruct(analysis.power.supply, reusing.power.supply)
-#     approxStruct(analysis.power.shunt, reusing.power.shunt)
-#     approxStruct(analysis.power.from, reusing.power.from)
-#     approxStruct(analysis.power.to, reusing.power.to)
-#     approxStruct(analysis.power.charging, reusing.power.charging)
-#     approxStruct(analysis.power.series, reusing.power.series)
-#     approxStruct(analysis.power.generator, reusing.power.generator)
+    ####### Compare Voltages, Powers, and Currents #######
+    approxStruct(analysis.voltage, reusing.voltage)
+    approxStruct(analysis.power.injection, reusing.power.injection)
+    approxStruct(analysis.power.supply, reusing.power.supply)
+    approxStruct(analysis.power.shunt, reusing.power.shunt)
+    approxStruct(analysis.power.from, reusing.power.from)
+    approxStruct(analysis.power.to, reusing.power.to)
+    approxStruct(analysis.power.charging, reusing.power.charging)
+    approxStruct(analysis.power.series, reusing.power.series)
+    approxStruct(analysis.power.generator, reusing.power.generator)
     
-#     approxStruct(analysis.current.from, reusing.current.from)
-#     approxStruct(analysis.current.to, reusing.current.to)
-#     approxStruct(analysis.current.series, reusing.current.series)
-# end
+    approxStruct(analysis.current.from, reusing.current.from)
+    approxStruct(analysis.current.to, reusing.current.to)
+    approxStruct(analysis.current.series, reusing.current.series)
+end
 
 @testset "Gauss-Seidel Method" begin
     ################ Resuing First Pass ################
@@ -274,7 +274,7 @@ end
     power!(system, analysis)
     current!(system, analysis)
 
-    ###### Reuse Model #######
+    # ###### Reuse Model #######
     updateBus!(resystem, reusing; label = 10, active = 0.12, susceptance = 0.005, magnitude = 1.02, angle = -0.21)
     addBranch!(resystem, reusing; from = 16, to = 7, resistance = 0.001, reactance = 0.03, susceptance = 0.001)
     updateBranch!(resystem, reusing; label = 14, status = 1, resistance = 0.02, reactance = 0.03, susceptance = 0.01)
@@ -344,7 +344,6 @@ end
     updateGenerator!(resystem, reusing; label = 4, status = 0)
     updateGenerator!(resystem, reusing; label = 7, active = 0.15, magnitude = 0.92)
 
-    startingVoltage!(resystem, reusing)
     for iteration = 1:1000
         stopping = mismatch!(resystem, reusing)
         if all(stopping .< 1e-8)
@@ -396,7 +395,6 @@ end
     updateGenerator!(resystem, reusing; label = 4, status = 0)
     updateGenerator!(resystem, reusing; label = 7, reactive = 0.13, magnitude = 0.91)
 
-    startingVoltage!(resystem, reusing)
     for iteration = 1:1000
         stopping = mismatch!(resystem, reusing)
         if all(stopping .< 1e-8)
