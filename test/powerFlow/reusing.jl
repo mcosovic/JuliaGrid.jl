@@ -269,7 +269,6 @@ end
     for iteration = 1:1000
         stopping = mismatch!(system, analysis)
         if all(stopping .< 1e-8)
-            display(iteration)
             break
         end
         solve!(system, analysis)
@@ -290,7 +289,6 @@ end
     for iteration = 1:1000
         stopping = mismatch!(resystem, reusing)
         if all(stopping .< 1e-8)
-            display(iteration)
             break
         end
         solve!(resystem, reusing)

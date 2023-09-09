@@ -397,6 +397,11 @@ magnitude, angle = seriesCurrent(system, analysis; label = "Branch 2")
 ---
 
 ## [Reusing Power System Model](@id ACReusingPowerSystemModelManual)
+In essence, the power system model's reusability entails that once a user creates a `PowerSystem` composite type, they can share it across various functions without the necessity of recreating the type from scratch.
+
+---
+
+##### Reusability for Diverse Methods
 The initial application of the reusable `PowerSystem` type is simple: it can be shared among various methods, which can yield benefits. For example, the Gauss-Seidel method is commonly used for a speedy approximate solution, whereas the Newton-Raphson method is typically utilized for the precise final solution. Thus, we can execute the Gauss-Seidel method for a limited number of iterations, as exemplified below:
 ```@example ReusingPowerSystemType
 using JuliaGrid # hide
@@ -446,6 +451,9 @@ end
 !!! note "Info"
     The functions [`newtonRaphson`](@ref newtonRaphson), [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX), [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB), or [`gaussSeidel`](@ref gaussSeidel) only modify the `PowerSystem` type to eliminate mistakes in the bus types as explained in the section [Bus Type Modification](@ref BusTypeModificationManual). Further, the functions [`mismatch!`](@ref mismatch!(::PowerSystem, ::NewtonRaphson)) and [`solve!`](@ref solve!(::PowerSystem, ::NewtonRaphson)) do not modify the `PowerSystem` type at all. Therefore, it is safe to use the same `PowerSystem` type for multiple analyses once it has been created.
 
+---
+
+#####  Reusability for Diverse Power System Reconfiguration
 Next, the `PowerSystem` composite type, along with its previously established `ac` field, offers unlimited versatility. This facilitates the seamless sharing of the `PowerSystem` type across various AC power flow analyses. All fields automatically adjust when any of the functions that add components or update their parameters are utilized:
 * [`addBranch!`](@ref addBranch!),
 * [`addGenerator!`](@ref addGenerator!),
@@ -479,10 +487,9 @@ This can be achieved by utilizing any of the functions that add components or up
 
 To address this challenge and enable the straightforward reuse of the `ACPowerFlow` abstract type without encountering unexpected errors in results, users can pass the `ACPowerFlow` type as an argument to any functions that add or update the `PowerSystem` composite type. If the modifications are permissible and lead to the correct solutions, they will be executed and will accordingly alter the composite types.
 
-Continuing with the previous example, we can further enhance the power system by adding `Branch 5` and adjusting the output power of `Generator 2` to the previously constructed system. Without executing the [`newtonRaphson`](@ref newtonRaphson) function, we can proceed with the iterations as follows:
+Continuing from the previous example, let us add `Branch 5` to the existing system and proceed with the iterations without executing the [`newtonRaphson`](@ref newtonRaphson) function:
 ```@example ReusingPowerSystemType
 addBranch!(system, analysis; label = "Branch 5", from = "Bus 1", to = "Bus 3")
-updateGenerator!(system, analysis; label = "Generator 2", active = 0.5, reactive = 0.2)
 
 for iteration = 1:100
     stopping = mismatch!(system, analysis)
@@ -491,10 +498,15 @@ for iteration = 1:100
     end
     solve!(system, analysis)
 end
+nothing # hide
 ```
 
-!!! info "Info"
-    Reusing the `ACPowerFlow` type and proceeding directly to the iterations can also offer the advantage of starting with voltages obtained from the previous solution, resulting in a "warm start". However, users who wish to employ an initial point defined within the `PowerSystem` type can achieve this by using the [startingVoltage!](@ref startingVoltage!) function before entering the iteration loop.
+The solutions obtained for the AC power flow are as follows:
+```@repl ReusingPowerSystemType
+label = collect(keys(sort(system.bus.label; byvalue = true)));
+
+[label analysis.voltage.magnitude analysis.voltage.angle]
+```
 
 However, attempting to take `Generator 2` out-of-service is not possible, as this operation would yield incorrect results if we proceed directly to the iterations. In this case, executing the [`newtonRaphson`](@ref newtonRaphson) function is mandatory:
 ```@repl ReusingPowerSystemType
@@ -503,6 +515,45 @@ updateGenerator!(system, analysis; label = "Generator 2", status = 0)
 
 !!! info "Info"
     When you provide the `ACPowerFlow` type as an argument to functions responsible for adding components or making modifications, you are essentially inquiring about the feasibility of reusing the `ACPowerFlow` type. If it is possible, the `PowerSystem` composite type will be modified, enabling you to seamlessly transition to the iterations without the need for any intermediate steps.
+
+---
+
+##### Starting Voltages
+Reusing the `ACPowerFlow` type and proceeding directly to the iterations provides the advantage of a "warm start", where the starting voltages for the next iteration step match the solution from the previous example, allowing for efficient continuation of the power flow analysis.
+
+Furthermore, users have the flexibility to modify these values as required by utilizing the `magnitude` and `angle` keywords within the [`updateBus!`](@ref updateBus!) and [`updateGenerator!`](@ref updateGenerator!) functions. Let us update `Bus 3` and `Generator 2` as an example:
+```@example ReusingPowerSystemType
+updateBus!(system, analysis; label = "Bus 3", magnitude = 0.95, angle = -0.07)
+updateGenerator!(system, analysis; label = "Generator 2", magnitude = 1.1)
+
+nothing # hide
+```
+
+Next, let us observe the new starting voltages for the updated power system:
+```@repl ReusingPowerSystemType
+[label analysis.voltage.magnitude analysis.voltage.angle]
+```
+
+As we can see, JuliaGrid accepts new values and combines them with the last obtained bus voltages. If user wants to set starting voltages as per the usual scenario using the `PowerSystem` composite type, you can achieve this by using the [`startingVoltage!`](@ref startingVoltage!) function:
+```@example ReusingPowerSystemType
+startingVoltage!(system, analysis)
+```
+
+Now, we have starting voltages defined exclusively according to the `PowerSystem`. These values are exactly the same as if we executed the [`newtonRaphson`](@ref newtonRaphson) function after all the updates we performed:
+```@repl ReusingPowerSystemType
+[label analysis.voltage.magnitude analysis.voltage.angle]
+```
+
+Following this, we can run the Newton-Raphson method once more to solve the AC power flow:
+```@example ReusingPowerSystemType
+for iteration = 1:100
+    stopping = mismatch!(system, analysis)
+    if all(stopping .< 1e-8)
+        break
+    end
+    solve!(system, analysis)
+end
+```
 
 ---
 
