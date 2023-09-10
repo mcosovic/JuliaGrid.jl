@@ -195,3 +195,16 @@ function checkStatus(status)
         throw(ErrorException("The status $status is not allowed; it should be either in-service (1) or out-of-service (0)."))
     end
 end
+
+######### Print Constraints ##########
+macro print(constraint)
+    analysis = constraint.args[1].args[1].args[1]
+    return quote
+        analysis = $(esc(analysis))
+        for i = 1:length($constraint)
+            if is_valid(analysis.jump, $constraint[i])
+                println($constraint[i])
+            end
+        end
+    end
+end
