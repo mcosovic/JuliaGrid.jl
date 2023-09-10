@@ -2,9 +2,13 @@
     dcOptimalPowerFlow(system::PowerSystem, optimizer; bridge, name)
 
 The function takes the `PowerSystem` composite type as input to establish the structure for
-solving the DC optimal power flow. The `optimizer` argument is also required to create and
-solve the optimization problem. If the `dc` field within the `PowerSystem` composite type has
-not been created, the function will initiate an update automatically.
+solving the DC optimal power flow. If the `dc` field within the `PowerSystem` composite type
+has not been created, the function will automatically  initiate an update process.
+
+Additionally, the `optimizer` argument is a necessary component for formulating and solving the
+optimization problem. Specifically, JuliaGrid constructs the DC optimal power flow using the
+JuMP package and provides support for commonly employed solvers. For more detailed information,
+please consult the [JuMP documenatation](https://jump.dev/JuMP.jl/stable/packages/solvers/).
 
 # Keywords
 JuliaGrid offers the ability to manipulate the `jump` model based on the guidelines provided
@@ -12,26 +16,14 @@ in the [JuMP documentation](https://jump.dev/JuMP.jl/stable/reference/models/). 
 certain configurations may require different method calls, such as:
 - `bridge`: used to manage the bridging mechanism;
 - `name`: used to manage the creation of string names.
-
-Moreover, we have included keywords that regulate the usage of different types of constraints:
-- `balance`: controls the equality constraints that relate to the active power balance equations;
-- `limit`: controls the inequality constraints that relate to the voltage angle differences between buses;
-- `flow`: controls the inequality constraints that relate to the active power flow limits of branches;
-- `capability`: controls the inequality constraints that relate to the active power generator outputs.
-
-By default, all of these keywords are set to `true` and are of the `Bool` type.
-
-# JuMP
-The JuliaGrid builds the DC optimal power flow around the JuMP package and supports commonly
-used solvers. For more information, refer to the
-[JuMP documenatation](https://jump.dev/JuMP.jl/stable/packages/solvers/).
+By default, these keyword settings are configured as `true`.
 
 # Returns
 The function returns an instance of the `DCOptimalPowerFlow` type, which includes the following
 fields:
-- `voltage`: the variable allocated to store the bus voltage angle,
-- `power`: the variable allocated to store the active powers,
-- `jump`: the JuMP model,
+- `voltage`: the variable allocated to store the bus voltage angle;
+- `power`: the variable allocated to store the active powers;
+- `jump`: the JuMP model;
 - `constraint`: holds the constraint references to the JuMP model.
 
 # Examples
@@ -53,7 +45,6 @@ function dcOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
     if bus.layout.slack == 0
         throw(ErrorException("The slack bus is missing."))
     end
-
     if isempty(system.model.dc.nodalMatrix)
         dcModel!(system)
     end
@@ -107,7 +98,7 @@ function dcOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
             if generator.capability.minActive[i] != generator.capability.maxActive[i]
                 capabilityRef[i] = @constraint(jump, generator.capability.minActive[i] <= active[i] <= generator.capability.maxActive[i])
             else
-                fix(active[i], 0.0)
+                fix(active[i], generator.capability.minActive[i])
                 capabilityRef[i] = FixRef(active[i])
             end
         else
@@ -132,7 +123,7 @@ function dcOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
         for j = 2:point
             slope = (activePowerCost[j] - activePowerCost[j-1]) / (activePower[j] - activePower[j-1])
             if slope == Inf
-                throw(ErrorException("The piecewise linear cost function's slope of the generator labeled as $(generator.label[i]) has infinite value."))
+                throw(ErrorException("The piecewise linear cost function's slope of the generator indexed as $i in the list has infinite value."))
             end
 
             piecewiseRef[i][j-1] = @constraint(jump, slope * active[i] - helper[i] <= slope * activePower[j-1] - activePowerCost[j-1])

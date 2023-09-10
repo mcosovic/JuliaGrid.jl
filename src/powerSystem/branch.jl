@@ -199,14 +199,14 @@ function addBranch!(system::PowerSystem, analysis::DCOptimalPowerFlow;
             append!(constraint.flow.active, Array{JuMP.ConstraintRef}(undef, 1))
         end
         if branch.voltage.minDiffAngle[end] > -2*pi && branch.voltage.maxDiffAngle[end] < 2*pi
-            limitRef = @constraint(jump, branch.voltage.minDiffAngle[end] <= angle[from] - angle[to] <= branch.voltage.maxDiffAngle[end])
-            push!(constraint.limit.angle, limitRef)
+            voltageRef = @constraint(jump, branch.voltage.minDiffAngle[end] <= angle[from] - angle[to] <= branch.voltage.maxDiffAngle[end])
+            push!(constraint.voltage.angle, voltageRef)
         else
-            append!(constraint.limit.angle, Array{JuMP.ConstraintRef}(undef, 1))
+            append!(constraint.voltage.angle, Array{JuMP.ConstraintRef}(undef, 1))
         end
     else
         append!(constraint.flow.active, Array{JuMP.ConstraintRef}(undef, 1))
-        append!(constraint.limit.angle, Array{JuMP.ConstraintRef}(undef, 1))
+        append!(constraint.voltage.angle, Array{JuMP.ConstraintRef}(undef, 1))
     end
 end
 
@@ -412,7 +412,7 @@ function updateBranch!(system::PowerSystem, analysis::DCOptimalPowerFlow;
             JuMP.delete(jump, constraint.flow.active[index])
         end
         if branch.layout.status[index] == 0 || (branch.layout.status[index] == 1 && diffAngle)
-            JuMP.delete(jump, constraint.limit.angle[index])
+            JuMP.delete(jump, constraint.voltage.angle[index])
         end
     end
 
@@ -425,7 +425,7 @@ function updateBranch!(system::PowerSystem, analysis::DCOptimalPowerFlow;
         end
         if statusOld == 0 || (statusOld == 1 && diffAngle)
             if branch.voltage.minDiffAngle[index] > -2*pi && branch.voltage.maxDiffAngle[index] < 2*pi
-                constraint.limit.angle[index] = @constraint(jump, branch.voltage.minDiffAngle[index] <= angle[from] - angle[to] <= branch.voltage.maxDiffAngle[index])
+                constraint.voltage.angle[index] = @constraint(jump, branch.voltage.minDiffAngle[index] <= angle[from] - angle[to] <= branch.voltage.maxDiffAngle[index])
             end
         end
     end
