@@ -175,6 +175,49 @@ function addGenerator!(system::PowerSystem, analysis::ACPowerFlow;
         reserve30min, reactiveTimescale)
 end
 
+function addGenerator!(system::PowerSystem, analysis::DCOptimalPowerFlow;
+    label::L = missing, bus::L, area::T = missing, status::T = missing,
+    active::T = missing, reactive::T = missing, magnitude::T = missing,
+    minActive::T = missing, maxActive::T = missing, minReactive::T = missing,
+    maxReactive::T = missing, lowActive::T = missing, minLowReactive::T = missing,
+    maxLowReactive::T = missing, upActive::T = missing, minUpReactive::T = missing,
+    maxUpReactive::T = missing, loadFollowing::T = missing, reserve10min::T = missing,
+    reserve30min::T = missing, reactiveTimescale::T = missing)
+
+    checkUUID(system.uuid, analysis.uuid)
+
+    addGenerator!(system; label, bus, area, status, active, reactive, magnitude,
+        minActive, maxActive, minReactive, maxReactive, lowActive, minLowReactive,
+        maxLowReactive, upActive, minUpReactive, maxUpReactive, loadFollowing, reserve10min,
+        reserve30min, reactiveTimescale)
+
+    generator = system.generator
+    jump = analysis.jump
+    constraint = analysis.constraint
+    active = analysis.jump[:active]
+
+    index = generator.label[getLabel(generator, label, "generator")]
+    busIndex = generator.layout.bus[end]
+
+    push!(active, @variable(jump, base_name = "active[$index]"))
+    push!(analysis.power.generator.active, system.generator.output.active[end])
+
+    if generator.layout.status[end] == 1
+        changeBalance(system, analysis, busIndex; power = true, genIndex = index)
+
+        if generator.capability.minActive[end] != generator.capability.maxActive[end]
+            capabilityRef = @constraint(jump, generator.capability.minActive[end] <= active[end] <= generator.capability.maxActive[end])
+            push!(constraint.capability.active, capabilityRef)
+        else
+            fix(active[end], 0.0)
+            push!(constraint.capability.active, FixRef(active[end]))
+        end
+    else
+        fix(active[end], 0.0)
+        push!(constraint.capability.active, FixRef(active[end]))
+    end
+end
+
 """
     updateGenerator!(system::PowerSystem, analysis::Analysis; kwargs...)
 
@@ -418,6 +461,60 @@ function updateGenerator!(system::PowerSystem, analysis::GaussSeidel;
         analysis.voltage.magnitude[indexBus] = generator.voltage.magnitude[index]
         analysis.method.voltage[indexBus] = generator.voltage.magnitude[index] * exp(im * angle(analysis.method.voltage[indexBus]))
      end
+end
+
+function updateGenerator!(system::PowerSystem, analysis::DCOptimalPowerFlow;
+    label::L, area::T = missing, status::T = missing,
+    active::T = missing, reactive::T = missing, magnitude::T = missing,
+    minActive::T = missing, maxActive::T = missing, minReactive::T = missing,
+    maxReactive::T = missing, lowActive::T = missing, minLowReactive::T = missing,
+    maxLowReactive::T = missing, upActive::T = missing, minUpReactive::T = missing,
+    maxUpReactive::T = missing, loadFollowing::T = missing, reserve10min::T = missing,
+    reserve30min::T = missing, reactiveTimescale::T = missing)
+
+    checkUUID(system.uuid, analysis.uuid)
+
+    generator = system.generator
+    jump = analysis.jump
+    constraint = analysis.constraint
+
+    index = generator.label[getLabel(generator, label, "generator")]
+    indexBus = generator.layout.bus[index]
+    statusOld = generator.layout.status[index]
+
+    updateGenerator!(system; label, area, status, active, reactive, magnitude,
+        minActive, maxActive, minReactive, maxReactive, lowActive, minLowReactive,
+        maxLowReactive, upActive, minUpReactive, maxUpReactive, loadFollowing, reserve10min,
+        reserve30min, reactiveTimescale)
+
+
+
+    if !ismissing(active)
+        analysis.power.generator.active[index] = generator.output.active[index]
+    end
+
+    if statusOld == 1
+        if status == 0 || (status == 1 && !ismissing(active))
+            JuMP.delete(jump, constraint.capability.active[index])
+            JuMP.set_normalized_coefficient(constraint.balance.active[indexBus], jump[:active][index], 0)
+
+            fix(jump[:active][index], 0.0)
+            constraint.capability.active[index] = JuMP.FixRef(jump[:active][index])
+        end
+    end
+
+    if generator.layout.status[index] == 1
+        if statusOld == 0 || (statusOld == 1 && !ismissing(active))
+            changeBalance(system, analysis, indexBus; power = true, genIndex = index)
+
+            if generator.capability.minActive[index] != generator.capability.maxActive[index]
+                constraint.capability.active[index] =  @constraint(jump, generator.capability.minActive[index] <= jump[:active][index] <= generator.capability.maxActive[index])
+            else
+                fix(jump[:active][index], 0.0)
+                constraint.capability.active[index] = JuMP.FixRef(jump[:active][index])
+            end
+        end
+    end
 end
 
 """

@@ -124,6 +124,11 @@ function addBus!(system::PowerSystem, analysis::ACPowerFlow; kwargs...)
     throw(ErrorException("The AC power flow model cannot be reused when adding a new bus."))
 end
 
+######### Query About Bus ##########
+function addBus!(system::PowerSystem, analysis::DCOptimalPowerFlow; kwargs...)
+    throw(ErrorException("The DC optimal power flow model cannot be reused when adding a new bus."))
+end
+
 """
     updateBus!(system::PowerSystem, analysis::Analysis; kwargs...)
 
@@ -277,7 +282,7 @@ function updateBus!(system::PowerSystem, analysis::NewtonRaphson;
 
     bus = system.bus
     index = bus.label[getLabel(bus, label, "bus")]
-    
+
     if !ismissing(type) && type != system.bus.layout.type[index]
         throw(ErrorException("The AC power flow model cannot be reused due to required bus type conversion."))
     end
@@ -352,6 +357,44 @@ function updateBus!(system::PowerSystem, analysis::GaussSeidel;
             analysis.voltage.angle[index] = bus.voltage.angle[index]
         end
         analysis.method.voltage[index] = analysis.voltage.magnitude[index] * exp(im * analysis.voltage.angle[index])
+    end
+end
+
+function updateBus!(system::PowerSystem, analysis::DCOptimalPowerFlow;
+    label::L, type::T = missing,
+    active::T = missing, reactive::T = missing,
+    conductance::T = missing, susceptance::T = missing,
+    magnitude::T = missing, angle::T = missing,
+    minMagnitude::T = missing, maxMagnitude::T = missing,
+    base::T = missing, area::T = missing, lossZone::T = missing)
+
+    checkUUID(system.uuid, analysis.uuid)
+
+    bus = system.bus
+    jump = analysis.jump
+    constraint = analysis.constraint
+
+    index = bus.label[getLabel(bus, label, "bus")]
+    typeOld = bus.layout.type[index]
+
+    updateBus!(system; label, type, active, reactive, conductance, susceptance,
+        magnitude, angle, minMagnitude, maxMagnitude, base, area, lossZone)
+
+    if !(ismissing(conductance)) || !(ismissing(active))
+        changeBalance(system, analysis, index; rhs = true)
+    end
+
+    if !ismissing(angle)
+        analysis.voltage.angle[index] = bus.voltage.angle[index]
+    end
+
+    if typeOld == 3 && bus.layout.type[index] != 3 && JuMP.is_valid(jump, constraint.slack.angle)
+        JuMP.unfix(jump[:angle][index])
+    end
+
+    if bus.layout.type[index] == 3
+        JuMP.fix(jump[:angle][index], bus.voltage.angle[index])
+        constraint.slack.angle = JuMP.FixRef(jump[:angle][index])
     end
 end
 

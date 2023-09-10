@@ -1,30 +1,3 @@
-
-######### Constraints ##########
-ArrayRef = Array{JuMP.ConstraintRef,1}
-
-struct CartesianFlowRef
-    from::ArrayRef
-    to::ArrayRef
-end
-
-struct Constraint
-    slack::Union{PolarRef, PolarAngleRef}
-    balance::Union{CartesianRef, CartesianRealRef}
-    limit::Union{PolarRef, PolarAngleRef}
-    rating::Union{CartesianFlowRef, CartesianRealRef}
-    capability::Union{CartesianRef, CartesianRealRef}
-    piecewise::Union{CartesianRef, CartesianRealRef}
-end
-
-######### AC Optimal Power Flow ##########
-struct ACOptimalPowerFlow <: AC
-    voltage::Polar
-    power::Power
-    current::Current
-    jump::JuMP.Model
-    constraint::Constraint
-end
-
 """
     acOptimalPowerFlow(system::PowerSystem, optimizer; bridge, name, balance, limit,
         rating, capability)

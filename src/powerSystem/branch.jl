@@ -28,18 +28,18 @@ The branch is defined with the following keywords:
 * `shiftAngle` (rad or deg): transformer phase shift angle, where positive value defines delay;
 * `minDiffAngle` (rad or deg): minimum voltage angle difference value between from and to bus;
 * `maxDiffAngle` (rad or deg): maximum voltage angle difference value between from and to bus;
-* `longTerm` (pu or VA, W): long-term rating (equal to zero for unlimited);
-* `shortTerm` (pu or VA, W): short-term rating (equal to zero for unlimited);
-* `emergency` (pu or VA, W): emergency rating (equal to zero for unlimited);
-* `type`: types of `longTerm`, `shortTerm`, and `emergency` ratings:
+* `longTerm` (pu or VA, W): long-term flow rating (equal to zero for unlimited);
+* `shortTerm` (pu or VA, W): short-term flow rating (equal to zero for unlimited);
+* `emergency` (pu or VA, W): emergency flow rating (equal to zero for unlimited);
+* `type`: types of `longTerm`, `shortTerm`, and `emergency` flow ratings:
   * `type = 1`: apparent power flow (pu or VA);
   * `type = 2`: active power flow (pu or W);
-  * `type = 3`: current magnitude (pu or VA at 1 pu voltage).
+  * `type = 3`: current magnitude flow (pu or VA at 1 pu voltage).
 
 # Updates
-The function updates the `branch` field within the `PowerSystem` composite type, and in 
-cases where parameters impact variables in the `ac` and `dc` fields, it automatically 
-adjusts the fields. Furthermore, it guarantees that any modifications to the parameters 
+The function updates the `branch` field within the `PowerSystem` composite type, and in
+cases where parameters impact variables in the `ac` and `dc` fields, it automatically
+adjusts the fields. Furthermore, it guarantees that any modifications to the parameters
 are transmitted to the  `Analysis` type.
 
 # Default Settings
@@ -117,15 +117,15 @@ function addBranch!(system::PowerSystem;
     push!(branch.voltage.minDiffAngle, tosi(minDiffAngle, default.minDiffAngle, prefix.voltageAngle))
     push!(branch.voltage.maxDiffAngle, tosi(maxDiffAngle, default.maxDiffAngle, prefix.voltageAngle))
 
-    push!(branch.rating.type, unitless(type, default.type))
-    if branch.rating.type[end] == 2
+    push!(branch.flow.type, unitless(type, default.type))
+    if branch.flow.type[end] == 2
         prefixLive = prefix.activePower
     else
         prefixLive = prefix.apparentPower
     end
-    push!(branch.rating.longTerm, topu(longTerm, default.longTerm, basePowerInv, prefixLive))
-    push!(branch.rating.shortTerm, topu(shortTerm, default.shortTerm, basePowerInv, prefixLive))
-    push!(branch.rating.emergency, topu(emergency, default.emergency, basePowerInv, prefixLive))
+    push!(branch.flow.longTerm, topu(longTerm, default.longTerm, basePowerInv, prefixLive))
+    push!(branch.flow.shortTerm, topu(shortTerm, default.shortTerm, basePowerInv, prefixLive))
+    push!(branch.flow.emergency, topu(emergency, default.emergency, basePowerInv, prefixLive))
 
     if !isempty(system.model.dc.nodalMatrix)
         nilModel!(system, :dcModelPushZeros)
@@ -155,7 +155,7 @@ function addBranch!(system::PowerSystem, analysis::Union{NewtonRaphson, GaussSei
     longTerm::T = missing, shortTerm::T = missing, emergency::T = missing, type::T = missing)
 
     checkUUID(system.uuid, analysis.uuid)
-    
+
     addBranch!(system; label, from, to, status, resistance, reactance, susceptance,
         conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, longTerm, shortTerm,
         emergency, type)
@@ -163,6 +163,51 @@ end
 
 function addBranch!(system::PowerSystem, analysis::FastNewtonRaphson; kwargs...)
     throw(ErrorException("The fast Newton-Raphson model cannot be reused when adding a new branch."))
+end
+
+function addBranch!(system::PowerSystem, analysis::DCOptimalPowerFlow;
+    label::L = missing, from::L, to::L, status::T = missing,
+    resistance::T = missing, reactance::T = missing, susceptance::T = missing,
+    conductance::T = missing, turnsRatio::T = missing, shiftAngle::T = missing,
+    minDiffAngle::T = missing, maxDiffAngle::T = missing,
+    longTerm::T = missing, shortTerm::T = missing, emergency::T = missing, type::T = missing)
+
+    checkUUID(system.uuid, analysis.uuid)
+
+    branch = system.branch
+    jump = analysis.jump
+    constraint = analysis.constraint
+
+    addBranch!(system; label, from, to, status, resistance, reactance, susceptance,
+        conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, longTerm, shortTerm,
+        emergency, type)
+
+    if branch.layout.status[end] == 1
+        from = branch.layout.from[end]
+        to = branch.layout.to[end]
+
+        rhs = !ismissing(shiftAngle)
+        changeBalance(system, analysis, from; voltage = true, rhs = rhs)
+        changeBalance(system, analysis, to; voltage = true, rhs = rhs)
+
+        angle = analysis.jump[:angle]
+        if branch.flow.longTerm[end] ≉  0 && branch.flow.longTerm[end] < 10^16
+            restriction = branch.flow.longTerm[end] / system.model.dc.admittance[end]
+            flowRef = @constraint(jump, - restriction + branch.parameter.shiftAngle[end] <= angle[from] - angle[to] <= restriction + branch.parameter.shiftAngle[end])
+            push!(constraint.flow.active, flowRef)
+        else
+            append!(constraint.flow.active, Array{JuMP.ConstraintRef}(undef, 1))
+        end
+        if branch.voltage.minDiffAngle[end] > -2*pi && branch.voltage.maxDiffAngle[end] < 2*pi
+            limitRef = @constraint(jump, branch.voltage.minDiffAngle[end] <= angle[from] - angle[to] <= branch.voltage.maxDiffAngle[end])
+            push!(constraint.limit.angle, limitRef)
+        else
+            append!(constraint.limit.angle, Array{JuMP.ConstraintRef}(undef, 1))
+        end
+    else
+        append!(constraint.flow.active, Array{JuMP.ConstraintRef}(undef, 1))
+        append!(constraint.limit.angle, Array{JuMP.ConstraintRef}(undef, 1))
+    end
 end
 
 """
@@ -184,9 +229,9 @@ branch you want to modify. If any keywords are omitted, their corresponding valu
 remain unchanged.
 
 # Updates
-The function updates the `branch` field within the `PowerSystem` composite type, and in 
-cases where parameters impact variables in the `ac` and `dc` fields, it automatically 
-adjusts the fields. Furthermore, it guarantees that any modifications to the parameters 
+The function updates the `branch` field within the `PowerSystem` composite type, and in
+cases where parameters impact variables in the `ac` and `dc` fields, it automatically
+adjusts the fields. Furthermore, it guarantees that any modifications to the parameters
 are transmitted to the `Analysis` type.
 
 # Units
@@ -287,23 +332,23 @@ function updateBranch!(system::PowerSystem;
     end
 
     if !ismissing(type)
-        branch.rating.type[index] = type
+        branch.flow.type[index] = type
     end
 
     if !ismissing(longTerm) || !ismissing(shortTerm) || !ismissing(emergency)
-        if branch.rating.type[index] == 2
+        if branch.flow.type[index] == 2
             prefixLive = prefix.activePower
         else
             prefixLive = prefix.apparentPower
         end
         if !ismissing(longTerm)
-            branch.rating.longTerm[index] = topu(longTerm, basePowerInv, prefixLive)
+            branch.flow.longTerm[index] = topu(longTerm, basePowerInv, prefixLive)
         end
         if !ismissing(shortTerm)
-            branch.rating.shortTerm[index] = topu(shortTerm, basePowerInv, prefixLive)
+            branch.flow.shortTerm[index] = topu(shortTerm, basePowerInv, prefixLive)
         end
         if !ismissing(emergency)
-            branch.rating.emergency[index] = topu(emergency, basePowerInv, prefixLive)
+            branch.flow.emergency[index] = topu(emergency, basePowerInv, prefixLive)
         end
     end
 
@@ -321,13 +366,69 @@ function updateBranch!(system::PowerSystem, analysis::Union{NewtonRaphson, Gauss
 
     checkUUID(system.uuid, analysis.uuid)
 
-    updateBranch!(system; label, status, resistance, reactance, susceptance, 
-    conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, longTerm, shortTerm, 
+    updateBranch!(system; label, status, resistance, reactance, susceptance,
+    conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, longTerm, shortTerm,
     emergency, type)
 end
 
 function updateBranch!(system::PowerSystem, analysis::FastNewtonRaphson; kwargs...)
     throw(ErrorException("The fast Newton-Raphson model cannot be reused when the branch is altered."))
+end
+
+function updateBranch!(system::PowerSystem, analysis::DCOptimalPowerFlow;
+    label::L, status::T = missing, resistance::T = missing, reactance::T = missing,
+    susceptance::T = missing, conductance::T = missing, turnsRatio::T = missing,
+    shiftAngle::T = missing, minDiffAngle::T = missing, maxDiffAngle::T = missing,
+    longTerm::T = missing, shortTerm::T = missing, emergency::T = missing, type::T = missing)
+
+    checkUUID(system.uuid, analysis.uuid)
+
+    branch = system.branch
+    jump = analysis.jump
+    constraint = analysis.constraint
+
+    index = branch.label[getLabel(branch, label, "branch")]
+    statusOld = branch.layout.status[index]
+
+    updateBranch!(system; label, status, resistance, reactance, susceptance,
+        conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, longTerm, shortTerm,
+        emergency, type)
+
+    angle = jump[:angle]
+    from = branch.layout.from[index]
+    to = branch.layout.to[index]
+
+    parameter = !ismissing(reactance) || !ismissing(turnsRatio) || !ismissing(shiftAngle)
+    diffAngle = !ismissing(minDiffAngle) || !ismissing(maxDiffAngle)
+    long = !ismissing(longTerm)
+
+    if parameter || branch.layout.status[index] != statusOld
+        changeBalance(system, analysis, from; voltage = true, rhs = true)
+        changeBalance(system, analysis, to; voltage = true, rhs = true)
+    end
+
+    if statusOld == 1
+        if branch.layout.status[index] == 0 || (branch.layout.status[index] == 1 && (parameter || long))
+            JuMP.delete(jump, constraint.flow.active[index])
+        end
+        if branch.layout.status[index] == 0 || (branch.layout.status[index] == 1 && diffAngle)
+            JuMP.delete(jump, constraint.limit.angle[index])
+        end
+    end
+
+    if branch.layout.status[index] == 1
+        if statusOld == 0 || (statusOld == 1 && (parameter || long))
+            if branch.flow.longTerm[index] ≉  0 && branch.flow.longTerm[index] < 10^16
+                restriction = branch.flow.longTerm[index] / system.model.dc.admittance[index]
+                constraint.flow.active[index] = @constraint(jump, - restriction + branch.parameter.shiftAngle[index] <= angle[from] - angle[to] <= restriction + branch.parameter.shiftAngle[index])
+            end
+        end
+        if statusOld == 0 || (statusOld == 1 && diffAngle)
+            if branch.voltage.minDiffAngle[index] > -2*pi && branch.voltage.maxDiffAngle[index] < 2*pi
+                constraint.limit.angle[index] = @constraint(jump, branch.voltage.minDiffAngle[index] <= angle[from] - angle[to] <= branch.voltage.maxDiffAngle[index])
+            end
+        end
+    end
 end
 
 """

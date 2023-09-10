@@ -4,7 +4,7 @@
 
     ################ Build Power System ################
     systemPU = powerSystem()
-    
+
     @bus(area = 1, lossZone = 1, base = 230e3)
     @branch(maxDiffAngle = 360 * pi / 180, susceptance = 0.14, resistance = 0.09, reactance = 0.02)
     @generator(minReactive = -0.5, maxReactive = 0.9)
@@ -52,7 +52,7 @@
     @test system.branch.number == systemPU.branch.number
 
     approxStruct(system.branch.parameter, systemPU.branch.parameter)
-    equalStruct(system.branch.rating, systemPU.branch.rating)
+    equalStruct(system.branch.flow, systemPU.branch.flow)
     equalStruct(system.branch.voltage, systemPU.branch.voltage)
     equalStruct(system.branch.layout, systemPU.branch.layout)
 
@@ -111,7 +111,7 @@
     @test system.branch.number == systemPU.branch.number
 
     approxStruct(system.branch.parameter, systemPU.branch.parameter)
-    equalStruct(system.branch.rating, systemPU.branch.rating)
+    equalStruct(system.branch.flow, systemPU.branch.flow)
     equalStruct(system.branch.voltage, systemPU.branch.voltage)
     equalStruct(system.branch.layout, systemPU.branch.layout)
 
@@ -196,7 +196,7 @@ end
     @test system.branch.number == systemSI.branch.number
 
     approxStruct(system.branch.parameter, systemSI.branch.parameter)
-    approxStruct(system.branch.rating, systemSI.branch.rating)
+    approxStruct(system.branch.flow, systemSI.branch.flow)
     equalStruct(system.branch.voltage, systemSI.branch.voltage)
     equalStruct(system.branch.layout, systemSI.branch.layout)
 
@@ -217,7 +217,7 @@ end
     ################ Update Power System ################
     system = powerSystem(string(pathData, "update.m"))
     @base(system, MVA, kV)
-    
+
     updateBus!(systemSI; label = 1, conductance = 10e3, susceptance = -20, active = 30e3)
     updateBus!(systemSI; label = 2, type = 1, reactive = 20, magnitude = 1.2 * 120, base = 0.12)
     updateBus!(systemSI; label = 5, angle = -0.8, area = 2, lossZone = 3)
@@ -260,7 +260,7 @@ end
     @test system.branch.number == systemSI.branch.number
 
     approxStruct(system.branch.parameter, systemSI.branch.parameter)
-    approxStruct(system.branch.rating, systemSI.branch.rating)
+    approxStruct(system.branch.flow, systemSI.branch.flow)
     equalStruct(system.branch.voltage, systemSI.branch.voltage)
     equalStruct(system.branch.layout, systemSI.branch.layout)
 

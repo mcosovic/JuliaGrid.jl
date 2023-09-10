@@ -21,7 +21,7 @@
     @test systemMat.branch.number == systemH5.branch.number
 
     equalStruct(systemMat.branch.parameter, systemH5.branch.parameter)
-    equalStruct(systemMat.branch.rating, systemH5.branch.rating)
+    equalStruct(systemMat.branch.flow, systemH5.branch.flow)
     equalStruct(systemMat.branch.voltage, systemH5.branch.voltage)
     equalStruct(systemMat.branch.layout, systemH5.branch.layout)
 

@@ -51,7 +51,7 @@ mutable struct BranchParameter
     shiftAngle::Array{Float64,1}
 end
 
-mutable struct BranchRating
+mutable struct BranchFlow
     longTerm::Array{Float64,1}
     shortTerm::Array{Float64,1}
     emergency::Array{Float64,1}
@@ -72,7 +72,7 @@ end
 mutable struct Branch
     label::Dict{String,Int64}
     parameter::BranchParameter
-    rating::BranchRating
+    flow::BranchFlow
     voltage::BranchVoltage
     layout::BranchLayout
     number::Int64

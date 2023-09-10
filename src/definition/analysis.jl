@@ -98,3 +98,45 @@ struct DCPowerFlow <: DC
     factorization::SuiteSparse.CHOLMOD.Factor{Float64}
     uuid::UUID
 end
+
+######### Constraints ##########
+struct CartesianFlowRef
+    from::Array{JuMP.ConstraintRef,1}
+    to::Array{JuMP.ConstraintRef,1}
+end
+
+struct ConstraintAC
+    slack::Union{PolarRef, PolarAngleRef}
+    balance::CartesianRef
+    limit::PolarRef
+    rating::CartesianRef
+    capability::CartesianRef
+    piecewise::CartesianRef
+end
+
+struct DCConstraint
+    slack::PolarAngleRefSimple
+    balance::CartesianRealRef
+    voltage::PolarAngleRef
+    flow::CartesianRealRef
+    capability::CartesianRealRef
+    piecewise::CartesianRealRefComplex
+end
+
+######### AC Optimal Power Flow ##########
+struct ACOptimalPowerFlow <: AC
+    voltage::Polar
+    power::Power
+    current::Current
+    jump::JuMP.Model
+    constraint::ConstraintAC
+end
+
+######### DC Optimal Power Flow ##########
+struct DCOptimalPowerFlow <: DC
+    voltage::PolarAngle
+    power::DCPower
+    jump::JuMP.Model
+    constraint::DCConstraint
+    uuid::UUID
+end

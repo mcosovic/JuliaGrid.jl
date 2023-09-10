@@ -32,7 +32,6 @@ function dcPowerFlow(system::PowerSystem)
     if bus.layout.slack == 0
         throw(ErrorException("The slack bus is missing."))
     end
-
     if isempty(dc.nodalMatrix)
         dcModel!(system)
     end

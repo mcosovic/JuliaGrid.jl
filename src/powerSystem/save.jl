@@ -5,8 +5,8 @@ The function saves the power system's data in the HDF5 file using the fields `bu
 `generator`, and `base` from the `PowerSystem` composite type.
 
 # Keywords
-The location and file name of the HDF5 file is specified by the mandatory keyword `path` in 
-the format of `"path/name.h5"`. Additional information can be provided by the optional 
+The location and file name of the HDF5 file is specified by the mandatory keyword `path` in
+the format of `"path/name.h5"`. Additional information can be provided by the optional
 keywords `reference` and `note`, which can be saved along with the power system data.
 
 # View HDF5 File
@@ -56,7 +56,7 @@ function saveBus(system::PowerSystem, file)
             shuntNumber += 1
         end
     end
-    
+
     write(file, "bus/layout/label", label)
     attrs(file["bus/layout/label"])["unit"] = "dimensionless"
     attrs(file["bus/layout/label"])["format"] = "expand"
@@ -121,7 +121,7 @@ end
 ######### Save Branch Data ##########
 function saveBranch(system::PowerSystem, labelBus::Array{String,1}, file)
     parameter = system.branch.parameter
-    rating = system.branch.rating
+    flow = system.branch.flow
     voltage = system.branch.voltage
     layout = system.branch.layout
 
@@ -170,27 +170,27 @@ function saveBranch(system::PowerSystem, labelBus::Array{String,1}, file)
     attrs(file["branch/voltage/maxDiffAngle"])["unit"] = "radian (rad)"
     attrs(file["branch/voltage/maxDiffAngle"])["format"] = format
 
-    format = compresseArray(file, rating.longTerm, "branch/rating/longTerm")
-    attrs(file["branch/rating/longTerm"])["unit"] = "per-unit (pu)"
-    attrs(file["branch/rating/longTerm"])["SI unit"] = "volt-ampere (VA) or watt (W)"
-    attrs(file["branch/rating/longTerm"])["format"] = format
+    format = compresseArray(file, flow.longTerm, "branch/flow/longTerm")
+    attrs(file["branch/flow/longTerm"])["unit"] = "per-unit (pu)"
+    attrs(file["branch/flow/longTerm"])["SI unit"] = "volt-ampere (VA) or watt (W)"
+    attrs(file["branch/flow/longTerm"])["format"] = format
 
-    format = compresseArray(file, rating.shortTerm, "branch/rating/shortTerm")
-    attrs(file["branch/rating/shortTerm"])["unit"] = "per-unit (pu)"
-    attrs(file["branch/rating/shortTerm"])["SI unit"] = "volt-ampere (VA) or watt (W)"
-    attrs(file["branch/rating/shortTerm"])["format"] = format
+    format = compresseArray(file, flow.shortTerm, "branch/flow/shortTerm")
+    attrs(file["branch/flow/shortTerm"])["unit"] = "per-unit (pu)"
+    attrs(file["branch/flow/shortTerm"])["SI unit"] = "volt-ampere (VA) or watt (W)"
+    attrs(file["branch/flow/shortTerm"])["format"] = format
 
-    format = compresseArray(file, rating.emergency, "branch/rating/emergency")
-    attrs(file["branch/rating/emergency"])["unit"] = "per-unit (pu)"
-    attrs(file["branch/rating/emergency"])["SI unit"] = "volt-ampere (VA) or watt (W)"
-    attrs(file["branch/rating/emergency"])["format"] = format
+    format = compresseArray(file, flow.emergency, "branch/flow/emergency")
+    attrs(file["branch/flow/emergency"])["unit"] = "per-unit (pu)"
+    attrs(file["branch/flow/emergency"])["SI unit"] = "volt-ampere (VA) or watt (W)"
+    attrs(file["branch/flow/emergency"])["format"] = format
 
-    format = compresseArray(file, rating.type, "branch/rating/type")
-    attrs(file["branch/rating/type"])["apparent power flow"] = 1
-    attrs(file["branch/rating/type"])["active power flow"] = 2
-    attrs(file["branch/rating/type"])["current magnitude"] = 3
-    attrs(file["branch/rating/type"])["unit"] = "dimensionless"
-    attrs(file["branch/rating/type"])["format"] = format
+    format = compresseArray(file, flow.type, "branch/flow/type")
+    attrs(file["branch/flow/type"])["apparent power flow"] = 1
+    attrs(file["branch/flow/type"])["active power flow"] = 2
+    attrs(file["branch/flow/type"])["current magnitude"] = 3
+    attrs(file["branch/flow/type"])["unit"] = "dimensionless"
+    attrs(file["branch/flow/type"])["format"] = format
 
     format = compresseArray(file, layout.status, "branch/layout/status")
     attrs(file["branch/layout/status"])["in-service"] = 1
