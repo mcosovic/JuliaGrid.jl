@@ -15,6 +15,7 @@ include("definition/analysis.jl")
 include("utility/routine.jl")
 include("utility/internal.jl")
 export @base, @power, @voltage, @current, @parameter, @default
+export print
 
 ########## Power System ##########
 include("powerSystem/load.jl")
