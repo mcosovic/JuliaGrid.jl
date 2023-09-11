@@ -197,6 +197,8 @@ function checkStatus(status)
 end
 
 ######### Print Constraints ##########
+import Base.print
+
 function print(io::IO, obj::Union{PolarAngleRef, CartesianRealRef})
     for i in eachindex(obj)
         try
