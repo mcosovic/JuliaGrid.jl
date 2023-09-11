@@ -197,7 +197,7 @@ function checkStatus(status)
 end
 
 ######### Print Constraints ##########
-function print(obj::Union{PolarAngleRef, CartesianRealRef})
+function print(io::IO, obj::Union{PolarAngleRef, CartesianRealRef})
     for i in eachindex(obj)
         try
             println(obj[i])
@@ -206,7 +206,7 @@ function print(obj::Union{PolarAngleRef, CartesianRealRef})
     end
 end
 
-function print(obj::PolarAngleRefSimple)
+function print(io::IO, obj::PolarAngleRefSimple)
     try
         println(obj)
     catch
