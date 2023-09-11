@@ -197,14 +197,18 @@ function checkStatus(status)
 end
 
 ######### Print Constraints ##########
-macro print(constraint)
-    analysis = constraint.args[1].args[1].args[1]
-    return quote
-        analysis = $(esc(analysis))
-        for i = 1:length($constraint)
-            if is_valid(analysis.jump, $constraint[i])
-                println($constraint[i])
-            end
+function print(obj::Union{PolarAngleRef, CartesianRealRef})
+    for i in eachindex(obj)
+        try
+            println(obj[i])
+        catch
         end
+    end
+end
+
+function print(obj::PolarAngleRefSimple)
+    try
+        println(obj)
+    catch
     end
 end

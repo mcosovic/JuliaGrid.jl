@@ -4,6 +4,7 @@ using SparseArrays, LinearAlgebra, SuiteSparse
 using HDF5, UUIDs
 using JuMP
 
+import Base.print
 
 ########## Types and Constants ##########
 include("definition/internal.jl")
@@ -13,7 +14,7 @@ include("definition/analysis.jl")
 ######### Utility ##########
 include("utility/routine.jl")
 include("utility/internal.jl")
-export @base, @power, @voltage, @current, @parameter, @default, @print
+export @base, @power, @voltage, @current, @parameter, @default
 
 ########## Power System ##########
 include("powerSystem/load.jl")
