@@ -1,5 +1,3 @@
-export PolarAngleRefSimple, PolarAngleRef, CartesianRealRef
-
 ########### Types ###########
 const N = Union{Float64, Int64}
 const T = Union{Float64, Int64, Int8, Missing}

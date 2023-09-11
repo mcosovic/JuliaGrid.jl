@@ -199,7 +199,7 @@ end
 ######### Print Constraints ##########
 import Base.print
 
-function print(io::IO, obj::Union{PolarAngleRef, CartesianRealRef})
+function print(io::IO, obj::JuMP.Vector{ConstraintRef})
     for i in eachindex(obj)
         try
             println(obj[i])
@@ -208,9 +208,3 @@ function print(io::IO, obj::Union{PolarAngleRef, CartesianRealRef})
     end
 end
 
-function print(io::IO, obj::PolarAngleRefSimple)
-    try
-        println(obj)
-    catch
-    end
-end
