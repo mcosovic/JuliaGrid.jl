@@ -196,15 +196,51 @@ function checkStatus(status)
     end
 end
 
-######### Print Constraints ##########
+######### Print Data ##########
 import Base.print
 
-function print(io::IO, obj::JuMP.Vector{ConstraintRef})
+function print(io::IO, label::Dict{String, Int64}, data::Union{Array{Float64,1}, Array{Int64,1}, Array{Int8,1}})
+    names = collect(keys(sort(label; byvalue = true)))
+    for (k, i) in enumerate(data)
+        println(io::IO, names[k], ": ", i)
+    end
+end
+
+function print(io::IO, label::Dict{String, Int64}, data::BranchParameter)
+    fields = fieldnames(typeof(data))
+    numberFields = length(fields)
+    numberData = length(getfield(data, fields[1]))
+    names = collect(keys(sort(label; byvalue = true)))
+    for i = 1:numberData
+        print(io::IO, names[i], ": ")
+        for j = 1:numberFields
+            a = getfield(data, fields[j])
+            print(io::IO, a[i], " ")
+        end
+        println(io::IO)
+    end
+end
+
+function print(io::IO, label::Dict{String, Int64}, obj::JuMP.Vector{ConstraintRef})
+    names = collect(keys(sort(label; byvalue = true)))
     for i in eachindex(obj)
         try
-            println(obj[i])
+            println(names[i], ": ", obj[i])
         catch
+            println("Undefined")
         end
     end
 end
 
+function print(io::IO, label::Dict{String, Int64}, obj::JuMP.Vector{Vector{ConstraintRef}})
+    names = collect(keys(sort(label; byvalue = true)))
+    for (k, con) in enumerate(obj)
+        try
+            for i in eachindex(con)
+                println(names[k], ": ", con[i])
+            end
+        catch
+            println("Undefined")
+        end
+    end
+end
