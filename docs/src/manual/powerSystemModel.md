@@ -632,8 +632,8 @@ Hence, this function ensures the adjustment of generator parameters and updates 
 
 ---
 
-## [Add Cost](@id AddCostManual)
-The [`cost!`](@ref cost!) function is responsible for adding costs associated with the active or reactive power produced by the corresponding generator. These costs are added only if the corresponding generator is defined.
+## [Add and Update Cost](@id AddUpdateCostManual)
+The [`cost!`](@ref cost!) function is responsible for adding and updating costs associated with the active or reactive power produced by the corresponding generator. These costs are added only if the corresponding generator is defined.
 
 To start, let us create an example of a power system using the following code:
 ```@example addActiveCost
@@ -715,4 +715,4 @@ system.generator.cost.reactive.piecewise
 ```
 
 !!! tip "Tip"
-    The [`cost!`](@ref cost!) function not only adds costs but also allows you to modify previously defined cost functions. This capability is particularly valuable in optimal power flow analyses, as it enables you to make changes to generator power costs without the need to recreate models from scratch.
+    The [`cost!`](@ref cost!) function not only adds costs but also allows users to update previously defined cost functions. This capability is particularly valuable in optimal power flow analyses, as it enables you to modify generator power costs without recreating models from scratch.

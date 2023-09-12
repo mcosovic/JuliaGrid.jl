@@ -707,3 +707,76 @@ function cost!(system::PowerSystem; label::L,
         container.piecewise[index] = [scale .* piecewise[:, 1] piecewise[:, 2]]
     end
 end
+
+function cost!(system::PowerSystem, analysis::DCOptimalPowerFlow; label::L,
+    cost::Symbol = :active, model::T = missing,
+    polynomial::Array{Float64,1} = Array{Float64}(undef, 0),
+    piecewise::Array{Float64,2} = Array{Float64}(undef, 0, 0))
+
+    checkUUID(system.uuid, analysis.uuid)
+
+    generator = system.generator
+    jump = analysis.jump
+    constraint = analysis.constraint
+
+    index = generator.label[getLabel(generator, label, "generator")]
+    active = jump[:active][index]
+    objExpr = objective_function(jump)
+
+    objExpr, helperOld = updateObjective(-objExpr, active, generator, index, label)
+
+    if helperOld
+        delete(jump, constraint.piecewise.active[index])
+        constraint.piecewise.active[index] = Array{JuMP.ConstraintRef}(undef, 0)
+    end
+
+    cost!(system; label, cost, model, polynomial, piecewise)
+
+    objExpr, helperNew = updateObjective(-objExpr, active, generator, index, label)
+
+    if helperOld && !helperNew
+        add_to_expression!(objExpr, -jump[:helper][index])
+        delete(jump, jump[:helper][index])
+    end
+
+    if helperNew && !helperOld
+        if haskey(jump, :helper)
+            idxPiecewise = jump[:helper].axes[1]
+
+            for i in idxPiecewise
+                add_to_expression!(objExpr, -jump[:helper][i])
+                delete(jump, jump[:helper][i])
+            end
+            unregister(jump, :helper)
+
+            idxPiecewise = sort!(vcat(idxPiecewise, index))
+            @variable(jump, helper[idxPiecewise])
+
+            for i in idxPiecewise
+                add_to_expression!(objExpr, helper[i])
+            end
+        else
+            @variable(jump, helper[[index]])
+            add_to_expression!(objExpr, helper[index])
+        end
+    end
+
+    if helperNew
+        activePower = @view generator.cost.active.piecewise[index][:, 1]
+        activePowerCost = @view generator.cost.active.piecewise[index][:, 2]
+
+        point = size(generator.cost.active.piecewise[index], 1)
+        constraint.piecewise.active[index] = Array{JuMP.ConstraintRef}(undef, point - 1)
+
+        for j = 2:point
+            slope = (activePowerCost[j] - activePowerCost[j-1]) / (activePower[j] - activePower[j-1])
+            if slope == Inf
+                throw(ErrorException("The piecewise linear cost function's slope of the generator indexed as $index in the list has infinite value."))
+            end
+
+            constraint.piecewise.active[index][j-1] = @constraint(jump, slope * active - jump[:helper][index] <= slope * activePower[j-1] - activePowerCost[j-1])
+        end
+    end
+
+    JuMP.set_objective_function(jump, objExpr)
+end

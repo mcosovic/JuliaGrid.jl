@@ -76,9 +76,9 @@ function dcOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
                 elseif numberTerm == 1
                     add_to_expression!(objExpr, cost[1])
                 elseif numberTerm > 3
-                    @info("The generator indexed as $i in the list possesses a polynomial cost function of degree $(numberTerm-1), which is not included in the objective.")
+                    @info("The generator indexed $i in the list has a polynomial cost function of degree $(numberTerm-1), which is not included in the objective.")
                 else
-                    @info("The generator indexed as $i in the list has an undefined polynomial cost function, which is not included in the objective.")
+                    @info("The generator indexed $i in the list has an undefined polynomial cost function, which is not included in the objective.")
                 end
             elseif generator.cost.active.model[i] == 1
                 cost = generator.cost.active.piecewise[i]
@@ -90,9 +90,9 @@ function dcOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
                 elseif point > 2
                     push!(idxPiecewise, i)
                 elseif point == 1
-                    throw(ErrorException("The generator indexed as $i in the list has a piecewise linear cost function with only one defined point."))
+                    throw(ErrorException("The generator indexed $i in the list has a piecewise linear cost function with only one defined point."))
                 else
-                    @info("The generator indexed as $i in the list has an undefined piecewise linear cost function, which is not included in the objective.")
+                    @info("The generator indexed $i in the list has an undefined piecewise linear cost function, which is not included in the objective.")
                 end
             end
             if generator.capability.minActive[i] != generator.capability.maxActive[i]
@@ -226,88 +226,6 @@ function solve!(system::PowerSystem, analysis::DCOptimalPowerFlow)
     end
 end
 
-# ######### Query About Active Cost ##########
-# function addActiveCost!(system::PowerSystem, analysis::DCOptimalPowerFlow;
-#     label::L, model::T = 0,
-#     polynomial::Array{Float64,1} = Array{Float64}(undef, 0),
-#     piecewise::Array{Float64,2} = Array{Float64}(undef, 0, 0))
-
-#     checkUUID(system.uuid, analysis.uuid)
-#     generator = system.generator
-#     index = generator.label[getLabel(generator, label, "generator")]
-
-#     objExprOld = QuadExpr()
-#     idxPiecewise = false
-#     if generator.cost.active.model[index] != 0
-#         objExprOld, idxPiecewise = modifyObjective(system, analysis, objExprOld, idxPiecewise, index)
-#     end
-
-#     if idxPiecewise
-#         # delete(analysis.jump, analysis.jump[:helper][index])
-#         # unregister(analysis.jump, Symbol("helper[$index]"))
-#     end
-
-#     objExpr = QuadExpr()
-#     idxPiecewise = false
-#     objExpr, idxPiecewise = modifyObjective(system, analysis, objExpr, idxPiecewise, index)
-
-#     push!(analysis.jump[:helper], @variable(analysis.jump, base_name = "helper[$index]"))
-
-#     # push!(analysis.jump[:aaaaa], @variable(analysis.jump, base_name = "aaaaa[$index]"))
-#     # display(haskey(analysis.jump, :helper))
-# # aaa = 10
-# # append!(analysis.jump[:helper], @variable(analysis.jump, base_name = "helper[$aaa]"))
-#     # if idxPiecewise
-#     #     display(haskey(analysis.jump, :helper))
-#     #     @variable(model, helper[i in idxPiecewise])
-#     # end
-
-#     JuMP.set_objective_function(analysis.jump, objExpr - objExprOld)
-# end
-
-# function modifyObjective(system::PowerSystem, analysis::DCOptimalPowerFlow, objExpr::QuadExpr, idxPiecewise::Bool, index::Int64)
-#     generator = system.generator
-#     active = analysis.jump[:active]
-
-#     idxPiecewise = false
-#     if generator.layout.status[index] == 1
-#         if generator.cost.active.model[index] == 2
-#             cost = generator.cost.active.polynomial[index]
-#             numberTerm = length(cost)
-#             if numberTerm == 3
-#                 add_to_expression!(objExprOld, cost[1], active[index], active[index])
-#                 add_to_expression!(objExprOld, cost[2], active[index])
-#                 add_to_expression!(objExprOld, cost[3])
-#             elseif numberTerm == 2
-#                 add_to_expression!(objExprOld, cost[1], active[index])
-#                 add_to_expression!(objExprOld, cost[2])
-#             elseif numberTerm == 1
-#                 add_to_expression!(objExpr, cost[index])
-#             elseif numberTerm > 3
-#                 @info("The generator with label $label has a polynomial cost function of degree $(numberTerm-1), which is not included in the objective.")
-#             else
-#                 @info("The generator with label $label has an undefined polynomial cost function, which is not included in the objective.")
-#             end
-#         elseif generator.cost.active.model[index] == 1
-#             cost = generator.cost.active.piecewise[index]
-#             point = size(cost, 1)
-#             if point == 2
-#                 slope = (cost[2, 2] - cost[1, 2]) / (cost[2, 1] - cost[1, 1])
-#                 add_to_expression!(objExprOld, slope, active[index])
-#                 add_to_expression!(objExprOld, cost[1, 2] - cost[1, 1] * slope)
-#             elseif point > 2
-#                 idxPiecewise = true
-#             elseif point == 1
-#                 throw(ErrorException("The generator with label $label has a piecewise linear cost function with only one defined point."))
-#             else
-#                 @info("The generator with label $label has an undefined piecewise linear cost function, which is not included in the objective.")
-#             end
-#         end
-#     end
-
-#     return objExpr, idxPiecewise
-# end
-
 function changeBalance(system::PowerSystem, analysis::DCOptimalPowerFlow, index::Int64; voltage = false, power = false, rhs = false, genIndex = 0)
     bus = system.bus
     dc = system.model.dc
@@ -337,4 +255,45 @@ function changeBalance(system::PowerSystem, analysis::DCOptimalPowerFlow, index:
         end
         constraint.balance.active[index] = @constraint(analysis.jump, sum(jump[:active][k] for k in bus.supply.generator[index]) + expression == exprrhs)
     end
+end
+
+function updateObjective(objExpr::QuadExpr, active::JuMP.VariableRef, generator::Generator, index::Int64, label::L)
+    ishelper = false
+
+    if generator.layout.status[index] == 1
+        if generator.cost.active.model[index] == 2
+            cost = generator.cost.active.polynomial[index]
+            numberTerm = length(cost)
+            if numberTerm == 3
+                add_to_expression!(objExpr, cost[1], active, active)
+                add_to_expression!(objExpr, cost[2], active)
+                add_to_expression!(objExpr, cost[3])
+            elseif numberTerm == 2
+                add_to_expression!(objExpr, cost[1], active)
+                add_to_expression!(objExpr, cost[2])
+            elseif numberTerm == 1
+                add_to_expression!(objExpr, cost[1])
+            elseif numberTerm > 3
+                @info("The generator labelled $label has a polynomial cost function of degree $(numberTerm-1), which is not included in the objective.")
+            else
+                @info("The generator labelled $label has an undefined polynomial cost function, which is not included in the objective.")
+            end
+        elseif generator.cost.active.model[index] == 1
+            cost = generator.cost.active.piecewise[index]
+            point = size(cost, 1)
+            if point == 2
+                slope = (cost[2, 2] - cost[1, 2]) / (cost[2, 1] - cost[1, 1])
+                add_to_expression!(objExpr, slope, active)
+                add_to_expression!(objExpr, cost[1, 2] - cost[1, 1] * slope)
+            elseif point > 2
+                ishelper = true
+            elseif point == 1
+                throw(ErrorException("The generator labelled $label has a piecewise linear cost function with only one defined point."))
+            else
+                @info("The generator labelled $label has an undefined piecewise linear cost function, which is not included in the objective.")
+            end
+        end
+    end
+
+    return objExpr, ishelper
 end
