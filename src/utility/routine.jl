@@ -206,28 +206,27 @@ function print(io::IO, label::Dict{String, Int64}, data::Union{Array{Float64,1},
     end
 end
 
-function print(io::IO, label::Dict{String, Int64}, obj::Dict{Int64, Array{JuMP.ConstraintRef,1}})
+function print(io::IO, label::Dict{String, Int64}, obj::JuMP.Array{JuMP.ConstraintRef, 1})
     names = collect(keys(sort(label; byvalue = true)))
-    for key in keys(obj)
+    for (k, con) in enumerate(obj)
         try
-            for cons in obj[key]
-                println(io::IO, names[key], ": ", cons)
-            end
+            println(io::IO, names[k], ": ", con)
         catch
             println(io::IO, "undefined")
         end
     end
 end
 
-function print(io::IO, label::Dict{String, Int64}, obj::JuMP.Vector{Vector{ConstraintRef}})
+function print(io::IO, label::Dict{String, Int64}, obj::Dict{Int64, Array{JuMP.ConstraintRef,1}})
     names = collect(keys(sort(label; byvalue = true)))
-    for (k, con) in enumerate(obj)
+    for key in keys(obj)
         try
-            for i in eachindex(con)
-                println(io::IO, names[k], ": ", con[i])
+            for cons in obj[key]
+                println(names[key], ": ", cons)
             end
         catch
-            println(io::IO, "undefined")
+            println("undefined")
         end
     end
 end
+
