@@ -129,7 +129,7 @@ function addBranch!(system::PowerSystem;
 
     if !isempty(system.model.dc.nodalMatrix)
         nilModel!(system, :dcModelPushZeros)
-        if branch.layout.status[system.branch.number] == 1
+        if branch.layout.status[branch.number] == 1
             dcParameterUpdate!(system, branch.number)
             dcNodalShiftUpdate!(system, branch.number)
         end
@@ -190,7 +190,7 @@ function addBranch!(system::PowerSystem, analysis::DCOptimalPowerFlow;
         changeBalance(system, analysis, from; voltage = true, rhs = rhs)
         changeBalance(system, analysis, to; voltage = true, rhs = rhs)
 
-        angle = analysis.jump[:angle]
+        angle = jump[:angle]
         if branch.flow.longTerm[end] ≉  0 && branch.flow.longTerm[end] < 10^16
             restriction = branch.flow.longTerm[end] / system.model.dc.admittance[end]
             flowRef = @constraint(jump, - restriction + branch.parameter.shiftAngle[end] <= angle[from] - angle[to] <= restriction + branch.parameter.shiftAngle[end])
@@ -271,12 +271,12 @@ function updateBranch!(system::PowerSystem;
 
     if branch.layout.status[index] == 1
         if status == 0 || (status == 1 && parameter)
-            if !isempty(system.model.ac.nodalMatrix)
+            if !isempty(ac.nodalMatrix)
                 nilModel!(system, :acModelDeprive; index = index)
                 acNodalUpdate!(system, index)
                 nilModel!(system, :acModelZeros; index = index)
             end
-            if !isempty(system.model.dc.nodalMatrix)
+            if !isempty(dc.nodalMatrix)
                 nilModel!(system, :dcModelDeprive; index = index)
                 dcNodalShiftUpdate!(system, index)
                 nilModel!(system, :dcModelZeros; index = index)

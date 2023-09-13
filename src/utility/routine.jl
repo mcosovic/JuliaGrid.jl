@@ -206,28 +206,15 @@ function print(io::IO, label::Dict{String, Int64}, data::Union{Array{Float64,1},
     end
 end
 
-function print(io::IO, label::Dict{String, Int64}, data::BranchParameter)
-    fields = fieldnames(typeof(data))
-    numberFields = length(fields)
-    numberData = length(getfield(data, fields[1]))
+function print(io::IO, label::Dict{String, Int64}, obj::Dict{Int64, Array{JuMP.ConstraintRef,1}})
     names = collect(keys(sort(label; byvalue = true)))
-    for i = 1:numberData
-        print(io::IO, names[i], ": ")
-        for j = 1:numberFields
-            a = getfield(data, fields[j])
-            print(io::IO, a[i], " ")
-        end
-        println(io::IO)
-    end
-end
-
-function print(io::IO, label::Dict{String, Int64}, obj::JuMP.Vector{ConstraintRef})
-    names = collect(keys(sort(label; byvalue = true)))
-    for i in eachindex(obj)
+    for key in keys(obj)
         try
-            println(names[i], ": ", obj[i])
+            for cons in obj[key]
+                println(io::IO, names[key], ": ", cons)
+            end
         catch
-            println("Undefined")
+            println(io::IO, "undefined")
         end
     end
 end
@@ -237,10 +224,10 @@ function print(io::IO, label::Dict{String, Int64}, obj::JuMP.Vector{Vector{Const
     for (k, con) in enumerate(obj)
         try
             for i in eachindex(con)
-                println(names[k], ": ", con[i])
+                println(io::IO, names[k], ": ", con[i])
             end
         catch
-            println("Undefined")
+            println(io::IO, "undefined")
         end
     end
 end

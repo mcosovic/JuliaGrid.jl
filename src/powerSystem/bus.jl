@@ -176,7 +176,7 @@ function updateBus!(system::PowerSystem;
     bus = system.bus
     ac = system.model.ac
 
-    index = system.bus.label[getLabel(system.bus, label, "bus")]
+    index = bus.label[getLabel(bus, label, "bus")]
 
     if !ismissing(type)
         if type in [1; 2]
@@ -262,7 +262,7 @@ function updateBus!(system::PowerSystem, analysis::DCPowerFlow;
     bus = system.bus
     index = bus.label[getLabel(bus, label, "bus")]
 
-    if !ismissing(type) && system.bus.layout.slack == index && type != 3
+    if !ismissing(type) && bus.layout.slack == index && type != 3
         throw(ErrorException("The DC power flow model cannot be reused due to required bus type conversion."))
     end
 
@@ -283,7 +283,7 @@ function updateBus!(system::PowerSystem, analysis::NewtonRaphson;
     bus = system.bus
     index = bus.label[getLabel(bus, label, "bus")]
 
-    if !ismissing(type) && type != system.bus.layout.type[index]
+    if !ismissing(type) && type != bus.layout.type[index]
         throw(ErrorException("The AC power flow model cannot be reused due to required bus type conversion."))
     end
 
@@ -342,7 +342,7 @@ function updateBus!(system::PowerSystem, analysis::GaussSeidel;
     bus = system.bus
     index = bus.label[getLabel(bus, label, "bus")]
 
-    if !ismissing(type) && type != system.bus.layout.type[index]
+    if !ismissing(type) && type != bus.layout.type[index]
         throw(ErrorException("The AC power flow model cannot be reused due to required bus type conversion."))
     end
 

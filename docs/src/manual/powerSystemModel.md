@@ -350,6 +350,12 @@ To recover the original `bus` labels, you can utilize the following method:
 label[system.generator.layout.bus]
 ```
 
+!!! tip "Tip"
+    JuliaGrid offers the capability to print labels alongside various types of data, such as power system parameters, voltages, powers, currents, or constraints used in optimal power flow analyses. For instance, users can use the following code to print labels in combination with specific data:
+    ```@example RetrieveLabels
+    print(system.branch.label, system.branch.parameter.reactance)
+    ```    
+
 ---
 
 ## [Add Templates](@id AddTemplatesManual)

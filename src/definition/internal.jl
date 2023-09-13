@@ -54,25 +54,12 @@ mutable struct CartesianRef
     reactive::Array{JuMP.ConstraintRef,1}
 end
 
-mutable struct CartesianRefComplex
-    active::Array{Array{JuMP.ConstraintRef,1},1}
-    reactive::Array{Array{JuMP.ConstraintRef,1},1}
-end
-
 mutable struct CartesianRealRef
     active::Array{JuMP.ConstraintRef,1}
 end
 
-mutable struct CartesianRealRefComplex
-    active::Array{Array{JuMP.ConstraintRef,1},1}
-end
-
 mutable struct CartesianImagRef
     reactive::Array{JuMP.ConstraintRef,1}
-end
-
-mutable struct CartesianImagRefComplex
-    reactive::Array{Array{JuMP.ConstraintRef,1},1}
 end
 
 ########### Template ###########

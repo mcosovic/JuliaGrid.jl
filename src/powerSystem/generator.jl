@@ -103,7 +103,7 @@ function addGenerator!(system::PowerSystem;
     push!(generator.output.reactive, topu(reactive, default.reactive, basePowerInv, prefix.reactivePower))
 
     if generator.layout.status[end] == 1
-        push!(system.bus.supply.generator[busIndex], system.generator.number)
+        push!(system.bus.supply.generator[busIndex], generator.number)
         system.bus.supply.active[busIndex] += generator.output.active[end]
         system.bus.supply.reactive[busIndex] += generator.output.reactive[end]
     end
@@ -200,7 +200,7 @@ function addGenerator!(system::PowerSystem, analysis::DCOptimalPowerFlow;
     busIndex = generator.layout.bus[end]
 
     push!(active, @variable(jump, base_name = "active[$index]"))
-    push!(analysis.power.generator.active, system.generator.output.active[end])
+    push!(analysis.power.generator.active, generator.output.active[end])
 
     if generator.layout.status[end] == 1
         changeBalance(system, analysis, busIndex; power = true, genIndex = index)
@@ -382,10 +382,12 @@ function updateGenerator!(system::PowerSystem, analysis::DCPowerFlow;
 
     checkUUID(system.uuid, analysis.uuid)
 
+    generator = system.generator
+
     if !ismissing(status)
         checkStatus(status)
-        index = system.generator.label[getLabel(system.generator, label, "generator")]
-        indexBus = system.generator.layout.bus[index]
+        index = generator.label[getLabel(generator, label, "generator")]
+        indexBus = generator.layout.bus[index]
         if status == 0 && system.bus.layout.slack == indexBus && length(system.bus.supply.generator[indexBus]) == 1
             throw(ErrorException("The DC power flow model cannot be reused due to required bus type conversion."))
         end
@@ -408,8 +410,10 @@ function updateGenerator!(system::PowerSystem, analysis::Union{NewtonRaphson, Fa
 
     checkUUID(system.uuid, analysis.uuid)
 
-    index = system.generator.label[getLabel(system.generator, label, "generator")]
-    indexBus = system.generator.layout.bus[index]
+    generator = system.generator
+
+    index = generator.label[getLabel(generator, label, "generator")]
+    indexBus = generator.layout.bus[index]
     if !ismissing(status)
         checkStatus(status)
         if status == 0 && system.bus.layout.type[indexBus] in [2, 3] && length(system.bus.supply.generator[indexBus]) == 1
@@ -424,7 +428,7 @@ function updateGenerator!(system::PowerSystem, analysis::Union{NewtonRaphson, Fa
 
     if system.bus.layout.type[indexBus] in [2, 3]
         index = system.bus.supply.generator[indexBus][1]
-        analysis.voltage.magnitude[indexBus] = system.generator.voltage.magnitude[index]
+        analysis.voltage.magnitude[indexBus] = generator.voltage.magnitude[index]
      end
 end
 
@@ -721,13 +725,14 @@ function cost!(system::PowerSystem, analysis::DCOptimalPowerFlow; label::L,
 
     index = generator.label[getLabel(generator, label, "generator")]
     active = jump[:active][index]
+    helper = constraint.piecewise.helper
     objExpr = objective_function(jump)
 
     objExpr, helperOld = updateObjective(-objExpr, active, generator, index, label)
 
     if helperOld
-        delete(jump, constraint.piecewise.active[index])
-        constraint.piecewise.active[index] = Array{JuMP.ConstraintRef}(undef, 0)
+        delete.(jump, constraint.piecewise.active[index])
+        delete!(constraint.piecewise.active, index)
     end
 
     cost!(system; label, cost, model, polynomial, piecewise)
@@ -735,30 +740,13 @@ function cost!(system::PowerSystem, analysis::DCOptimalPowerFlow; label::L,
     objExpr, helperNew = updateObjective(-objExpr, active, generator, index, label)
 
     if helperOld && !helperNew
-        add_to_expression!(objExpr, -jump[:helper][index])
-        delete(jump, jump[:helper][index])
-    end
-
-    if helperNew && !helperOld
-        if haskey(jump, :helper)
-            idxPiecewise = jump[:helper].axes[1]
-
-            for i in idxPiecewise
-                add_to_expression!(objExpr, -jump[:helper][i])
-                delete(jump, jump[:helper][i])
-            end
-            unregister(jump, :helper)
-
-            idxPiecewise = sort!(vcat(idxPiecewise, index))
-            @variable(jump, helper[idxPiecewise])
-
-            for i in idxPiecewise
-                add_to_expression!(objExpr, helper[i])
-            end
-        else
-            @variable(jump, helper[[index]])
-            add_to_expression!(objExpr, helper[index])
-        end
+        add_to_expression!(objExpr, -helper[index])
+        drop_zeros!(objExpr)
+        delete(jump, helper[index])
+        delete!(helper, index)
+    elseif helperNew && !helperOld
+        helper[index] = @variable(jump, base_name = "helper[$index]")
+        add_to_expression!(objExpr, helper[index])
     end
 
     if helperNew
@@ -767,14 +755,12 @@ function cost!(system::PowerSystem, analysis::DCOptimalPowerFlow; label::L,
 
         point = size(generator.cost.active.piecewise[index], 1)
         constraint.piecewise.active[index] = Array{JuMP.ConstraintRef}(undef, point - 1)
-
         for j = 2:point
             slope = (activePowerCost[j] - activePowerCost[j-1]) / (activePower[j] - activePower[j-1])
             if slope == Inf
-                throw(ErrorException("The piecewise linear cost function's slope of the generator indexed as $index in the list has infinite value."))
+                throw(ErrorException("The piecewise linear cost function's slope of the generator lablled $label has infinite value."))
             end
-
-            constraint.piecewise.active[index][j-1] = @constraint(jump, slope * active - jump[:helper][index] <= slope * activePower[j-1] - activePowerCost[j-1])
+            constraint.piecewise.active[index][j-1] = @constraint(jump, slope * active - helper[index] <= slope * activePower[j-1] - activePowerCost[j-1])
         end
     end
 

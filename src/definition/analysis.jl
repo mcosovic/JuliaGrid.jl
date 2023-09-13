@@ -114,13 +114,18 @@ struct ConstraintAC
     piecewise::CartesianRef
 end
 
+struct DCPiecewise
+    active::Dict{Int64, Array{JuMP.ConstraintRef,1}}
+    helper::Dict{Int64, VariableRef}
+end
+
 struct DCConstraint
     slack::PolarAngleRefSimple
     balance::CartesianRealRef
     voltage::PolarAngleRef
     flow::CartesianRealRef
     capability::CartesianRealRef
-    piecewise::CartesianRealRefComplex
+    piecewise::DCPiecewise
 end
 
 ######### AC Optimal Power Flow ##########
