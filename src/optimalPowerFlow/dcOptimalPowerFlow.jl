@@ -2,8 +2,8 @@
     dcOptimalPowerFlow(system::PowerSystem, optimizer; bridge, name)
 
 The function takes the `PowerSystem` composite type as input to establish the structure for
-solving the DC optimal power flow. If the `dc` field within the `PowerSystem` composite type
-has not been created, the function will automatically  initiate an update process.
+solving the DC optimal power flow. If the `dc` field within the `PowerSystem` composite 
+type has not been created, the function will automatically  initiate an update process.
 
 Additionally, the `optimizer` argument is a necessary component for formulating and solving the
 optimization problem. Specifically, JuliaGrid constructs the DC optimal power flow using the
@@ -217,6 +217,7 @@ function solve!(system::PowerSystem, analysis::DCOptimalPowerFlow)
     end
 end
 
+######### Change Balance Constraints ##########
 function changeBalance(system::PowerSystem, analysis::DCOptimalPowerFlow, index::Int64; voltage = false, power = false, rhs = false, genIndex = 0)
     bus = system.bus
     dc = system.model.dc
@@ -248,6 +249,7 @@ function changeBalance(system::PowerSystem, analysis::DCOptimalPowerFlow, index:
     end
 end
 
+######### Update Objective Function ##########
 function updateObjective(objExpr::QuadExpr, active::JuMP.VariableRef, generator::Generator, index::Int64, label::L)
     ishelper = false
 
@@ -287,6 +289,7 @@ function updateObjective(objExpr::QuadExpr, active::JuMP.VariableRef, generator:
     return objExpr, ishelper
 end
 
+######### Update Piecewise Constraints ##########
 function updatePiecewise(objExpr::QuadExpr, analysis::DCOptimalPowerFlow, generator::Generator, index::Int64, label::L)
     jump = analysis.jump
     constraint = analysis.constraint

@@ -221,7 +221,11 @@ function print(io::IO, label::Dict{String, Int64}, obj::Dict{Int64, Array{JuMP.C
     names = collect(keys(sort(label; byvalue = true)))
     for key in keys(sort(obj))
         for cons in obj[key]
-            println(names[key], ": ", cons)
+            try
+                println(names[key], ": ", cons)
+            catch
+                println(io::IO, "undefined")
+            end
         end
     end
 end
