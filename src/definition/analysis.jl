@@ -120,7 +120,7 @@ struct DCPiecewise
 end
 
 struct DCConstraint
-    slack::PolarAngleRefSimple
+    slack::PolarAngleRef
     balance::CartesianRealRef
     voltage::PolarAngleRef
     flow::CartesianRealRef

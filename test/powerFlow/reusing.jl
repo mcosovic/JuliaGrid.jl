@@ -276,7 +276,7 @@ end
     power!(system, analysis)
     current!(system, analysis)
 
-    # ###### Reuse Model #######
+    ###### Reuse Model #######
     updateBus!(resystem, reusing; label = 10, active = 0.12, susceptance = 0.005, magnitude = 1.02, angle = -0.21)
     addBranch!(resystem, reusing; from = 16, to = 7, resistance = 0.001, reactance = 0.03, susceptance = 0.001)
     updateBranch!(resystem, reusing; label = 14, status = 1, resistance = 0.02, reactance = 0.03, susceptance = 0.01)

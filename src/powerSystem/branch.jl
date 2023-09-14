@@ -193,20 +193,11 @@ function addBranch!(system::PowerSystem, analysis::DCOptimalPowerFlow;
         angle = jump[:angle]
         if branch.flow.longTerm[end] ≉  0 && branch.flow.longTerm[end] < 10^16
             restriction = branch.flow.longTerm[end] / system.model.dc.admittance[end]
-            flowRef = @constraint(jump, - restriction + branch.parameter.shiftAngle[end] <= angle[from] - angle[to] <= restriction + branch.parameter.shiftAngle[end])
-            push!(constraint.flow.active, flowRef)
-        else
-            append!(constraint.flow.active, Array{JuMP.ConstraintRef}(undef, 1))
+            constraint.flow.active[branch.number] = @constraint(jump, - restriction + branch.parameter.shiftAngle[end] <= angle[from] - angle[to] <= restriction + branch.parameter.shiftAngle[end])
         end
-        if branch.voltage.minDiffAngle[end] > -2*pi && branch.voltage.maxDiffAngle[end] < 2*pi
-            voltageRef = @constraint(jump, branch.voltage.minDiffAngle[end] <= angle[from] - angle[to] <= branch.voltage.maxDiffAngle[end])
-            push!(constraint.voltage.angle, voltageRef)
-        else
-            append!(constraint.voltage.angle, Array{JuMP.ConstraintRef}(undef, 1))
+        if branch.voltage.minDiffAngle[end] > -2*pi || branch.voltage.maxDiffAngle[end] < 2*pi
+            constraint.voltage.angle[branch.number] = @constraint(jump, branch.voltage.minDiffAngle[end] <= angle[from] - angle[to] <= branch.voltage.maxDiffAngle[end])
         end
-    else
-        append!(constraint.flow.active, Array{JuMP.ConstraintRef}(undef, 1))
-        append!(constraint.voltage.angle, Array{JuMP.ConstraintRef}(undef, 1))
     end
 end
 
@@ -394,14 +385,12 @@ function updateBranch!(system::PowerSystem, analysis::DCOptimalPowerFlow;
         conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, longTerm, shortTerm,
         emergency, type)
 
-    angle = jump[:angle]
-    from = branch.layout.from[index]
-    to = branch.layout.to[index]
-
     parameter = !ismissing(reactance) || !ismissing(turnsRatio) || !ismissing(shiftAngle)
     diffAngle = !ismissing(minDiffAngle) || !ismissing(maxDiffAngle)
     long = !ismissing(longTerm)
 
+    from = branch.layout.from[index]
+    to = branch.layout.to[index]
     if parameter || branch.layout.status[index] != statusOld
         changeBalance(system, analysis, from; voltage = true, rhs = true)
         changeBalance(system, analysis, to; voltage = true, rhs = true)
@@ -409,27 +398,31 @@ function updateBranch!(system::PowerSystem, analysis::DCOptimalPowerFlow;
 
     if statusOld == 1
         if branch.layout.status[index] == 0 || (branch.layout.status[index] == 1 && (parameter || long))
-            JuMP.delete(jump, constraint.flow.active[index])
+            delete!(jump, constraint.flow.active, index)
         end
         if branch.layout.status[index] == 0 || (branch.layout.status[index] == 1 && diffAngle)
-            JuMP.delete(jump, constraint.voltage.angle[index])
+            delete!(jump, constraint.voltage.angle, index)
         end
     end
 
     if branch.layout.status[index] == 1
-        if statusOld == 0 || (statusOld == 1 && (parameter || long))
+        angle = jump[:angle]
+
+        if statusOld == 0 || (statusOld == 1 && (parameter || long)) || (statusOld == 1 && haskey(constraint.flow.active, index) && !JuMP.is_valid(jump, constraint.flow.active[index]))
             if branch.flow.longTerm[index] ≉  0 && branch.flow.longTerm[index] < 10^16
                 restriction = branch.flow.longTerm[index] / system.model.dc.admittance[index]
                 constraint.flow.active[index] = @constraint(jump, - restriction + branch.parameter.shiftAngle[index] <= angle[from] - angle[to] <= restriction + branch.parameter.shiftAngle[index])
             end
         end
-        if statusOld == 0 || (statusOld == 1 && diffAngle)
-            if branch.voltage.minDiffAngle[index] > -2*pi && branch.voltage.maxDiffAngle[index] < 2*pi
+        if statusOld == 0 || (statusOld == 1 && diffAngle) || (statusOld == 1 && haskey(constraint.voltage.angle, index) && !JuMP.is_valid(jump, constraint.voltage.angle[index]))
+            if branch.voltage.minDiffAngle[index] > -2*pi || branch.voltage.maxDiffAngle[index] < 2*pi
                 constraint.voltage.angle[index] = @constraint(jump, branch.voltage.minDiffAngle[index] <= angle[from] - angle[to] <= branch.voltage.maxDiffAngle[index])
             end
         end
     end
 end
+
+
 
 """
     @branch(kwargs...)

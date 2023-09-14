@@ -57,12 +57,12 @@ function dcOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
     @variable(jump, angle[i = 1:bus.number])
 
     fix(angle[bus.layout.slack], bus.voltage.angle[bus.layout.slack])
-    slackRef = FixRef(angle[bus.layout.slack])
+    slackRef = Dict(bus.layout.slack => FixRef(angle[bus.layout.slack]))
 
     objExpr = QuadExpr()
     helper = Dict{Int64, VariableRef}()
     piecewiseRef = Dict{Int64, Array{JuMP.ConstraintRef,1}}()
-    capabilityRef = Array{JuMP.ConstraintRef}(undef, generator.number)
+    capabilityRef = Dict{Int64, JuMP.ConstraintRef}()
     @inbounds for i = 1:generator.number
         if generator.layout.status[i] == 1
             if generator.cost.active.model[i] == 2
@@ -123,7 +123,7 @@ function dcOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
 
     @objective(jump, Min, objExpr)
 
-    balanceRef = Array{JuMP.ConstraintRef}(undef, bus.number)
+    balanceRef = Dict{Int64, JuMP.ConstraintRef}()
     @inbounds for i = 1:bus.number
         expression = AffExpr()
         for j in dc.nodalMatrix.colptr[i]:(dc.nodalMatrix.colptr[i + 1] - 1)
@@ -133,8 +133,8 @@ function dcOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
         balanceRef[i] = @constraint(jump, expression + sum(active[k] for k in bus.supply.generator[i]) == rhs)
     end
 
-    flowgRef = Array{JuMP.ConstraintRef}(undef, branch.number)
-    voltageRef = Array{JuMP.ConstraintRef}(undef, branch.number)
+    flowgRef = Dict{Int64, JuMP.ConstraintRef}()
+    voltageRef = Dict{Int64, JuMP.ConstraintRef}()
     @inbounds for i = 1:branch.number
         if branch.layout.status[i] == 1
             from = branch.layout.from[i]
@@ -144,7 +144,7 @@ function dcOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
                 restriction = branch.flow.longTerm[i] / dc.admittance[i]
                 flowgRef[i] = @constraint(jump, - restriction + branch.parameter.shiftAngle[i] <= angle[from] - angle[to] <= restriction + branch.parameter.shiftAngle[i])
             end
-            if branch.voltage.minDiffAngle[i] > -2*pi && branch.voltage.maxDiffAngle[i] < 2*pi
+            if branch.voltage.minDiffAngle[i] > -2*pi || branch.voltage.maxDiffAngle[i] < 2*pi
                 voltageRef[i] = @constraint(jump, branch.voltage.minDiffAngle[i] <= angle[from] - angle[to] <= branch.voltage.maxDiffAngle[i])
             end
         end
@@ -161,7 +161,7 @@ function dcOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
         ),
         jump,
         DCConstraint(
-            PolarAngleRefSimple(slackRef),
+            PolarAngleRef(slackRef),
             CartesianRealRef(balanceRef),
             PolarAngleRef(voltageRef),
             CartesianRealRef(flowgRef),
@@ -251,40 +251,59 @@ end
 function updateObjective(objExpr::QuadExpr, active::JuMP.VariableRef, generator::Generator, index::Int64, label::L)
     ishelper = false
 
-    if generator.layout.status[index] == 1
-        if generator.cost.active.model[index] == 2
-            cost = generator.cost.active.polynomial[index]
-            numberTerm = length(cost)
-            if numberTerm == 3
-                add_to_expression!(objExpr, cost[1], active, active)
-                add_to_expression!(objExpr, cost[2], active)
-                add_to_expression!(objExpr, cost[3])
-            elseif numberTerm == 2
-                add_to_expression!(objExpr, cost[1], active)
-                add_to_expression!(objExpr, cost[2])
-            elseif numberTerm == 1
-                add_to_expression!(objExpr, cost[1])
-            elseif numberTerm > 3
-                @info("The generator labelled $label has a polynomial cost function of degree $(numberTerm-1), which is not included in the objective.")
-            else
-                @info("The generator labelled $label has an undefined polynomial cost function, which is not included in the objective.")
-            end
-        elseif generator.cost.active.model[index] == 1
-            cost = generator.cost.active.piecewise[index]
-            point = size(cost, 1)
-            if point == 2
-                slope = (cost[2, 2] - cost[1, 2]) / (cost[2, 1] - cost[1, 1])
-                add_to_expression!(objExpr, slope, active)
-                add_to_expression!(objExpr, cost[1, 2] - cost[1, 1] * slope)
-            elseif point > 2
-                ishelper = true
-            elseif point == 1
-                throw(ErrorException("The generator labelled $label has a piecewise linear cost function with only one defined point."))
-            else
-                @info("The generator labelled $label has an undefined piecewise linear cost function, which is not included in the objective.")
-            end
+    if generator.cost.active.model[index] == 2
+        cost = generator.cost.active.polynomial[index]
+        numberTerm = length(cost)
+        if numberTerm == 3
+            add_to_expression!(objExpr, cost[1], active, active)
+            add_to_expression!(objExpr, cost[2], active)
+            add_to_expression!(objExpr, cost[3])
+        elseif numberTerm == 2
+            add_to_expression!(objExpr, cost[1], active)
+            add_to_expression!(objExpr, cost[2])
+        elseif numberTerm == 1
+            add_to_expression!(objExpr, cost[1])
+        elseif numberTerm > 3
+            @info("The generator labelled $label has a polynomial cost function of degree $(numberTerm-1), which is not included in the objective.")
+        else
+            @info("The generator labelled $label has an undefined polynomial cost function, which is not included in the objective.")
+        end
+    elseif generator.cost.active.model[index] == 1
+        cost = generator.cost.active.piecewise[index]
+        point = size(cost, 1)
+        if point == 2
+            slope = (cost[2, 2] - cost[1, 2]) / (cost[2, 1] - cost[1, 1])
+            add_to_expression!(objExpr, slope, active)
+            add_to_expression!(objExpr, cost[1, 2] - cost[1, 1] * slope)
+        elseif point > 2
+            ishelper = true
+        elseif point == 1
+            throw(ErrorException("The generator labelled $label has a piecewise linear cost function with only one defined point."))
+        else
+            @info("The generator labelled $label has an undefined piecewise linear cost function, which is not included in the objective.")
         end
     end
 
     return objExpr, ishelper
+end
+
+function updatePiecewise(objExpr::QuadExpr, analysis::DCOptimalPowerFlow, generator::Generator, index::Int64, label::L)
+    jump = analysis.jump
+    constraint = analysis.constraint
+    helper = constraint.piecewise.helper
+
+    activePower = @view generator.cost.active.piecewise[index][:, 1]
+    activePowerCost = @view generator.cost.active.piecewise[index][:, 2]
+
+    point = size(generator.cost.active.piecewise[index], 1)
+    constraint.piecewise.active[index] = Array{JuMP.ConstraintRef}(undef, point - 1)
+    for j = 2:point
+        slope = (activePowerCost[j] - activePowerCost[j-1]) / (activePower[j] - activePower[j-1])
+        if slope == Inf
+            throw(ErrorException("The piecewise linear cost function's slope of the generator lablled $label has infinite value."))
+        end
+        constraint.piecewise.active[index][j-1] = @constraint(jump, slope * jump[:active][index] - helper[index] <= slope * activePower[j-1] - activePowerCost[j-1])
+    end
+
+    return objExpr
 end

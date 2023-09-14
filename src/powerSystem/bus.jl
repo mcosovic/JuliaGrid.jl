@@ -371,9 +371,6 @@ function updateBus!(system::PowerSystem, analysis::DCOptimalPowerFlow;
     checkUUID(system.uuid, analysis.uuid)
 
     bus = system.bus
-    jump = analysis.jump
-    constraint = analysis.constraint
-
     index = bus.label[getLabel(bus, label, "bus")]
     typeOld = bus.layout.type[index]
 
@@ -388,13 +385,12 @@ function updateBus!(system::PowerSystem, analysis::DCOptimalPowerFlow;
         analysis.voltage.angle[index] = bus.voltage.angle[index]
     end
 
-    if typeOld == 3 && bus.layout.type[index] != 3 && JuMP.is_valid(jump, constraint.slack.angle)
-        JuMP.unfix(jump[:angle][index])
+    if typeOld == 3 && bus.layout.type[index] != 3
+        unfix!(analysis.jump, analysis.jump[:angle], analysis.constraint.slack.angle, index)
     end
 
     if bus.layout.type[index] == 3
-        JuMP.fix(jump[:angle][index], bus.voltage.angle[index])
-        constraint.slack.angle = JuMP.FixRef(jump[:angle][index])
+        fix!(analysis.jump[:angle], bus.voltage.angle[index], analysis.constraint.slack.angle, index)
     end
 end
 

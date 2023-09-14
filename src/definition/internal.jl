@@ -24,11 +24,7 @@ mutable struct PolarRefSimple
 end
 
 mutable struct PolarAngleRef
-    angle::Array{JuMP.ConstraintRef,1}
-end
-
-mutable struct PolarAngleRefSimple
-    angle::JuMP.ConstraintRef
+    angle::Dict{Int64, JuMP.ConstraintRef}
 end
 
 ########### Cartesian Coordinate ###########
@@ -55,7 +51,7 @@ mutable struct CartesianRef
 end
 
 mutable struct CartesianRealRef
-    active::Array{JuMP.ConstraintRef,1}
+    active::Dict{Int64, JuMP.ConstraintRef}
 end
 
 mutable struct CartesianImagRef
@@ -93,8 +89,8 @@ Base.@kwdef mutable struct BranchTemplate
     emergency::ContainerTemplate = ContainerTemplate()
     turnsRatio::Float64 = 1.0
     shiftAngle::Float64 = 0.0
-    minDiffAngle::Float64 = 0.0
-    maxDiffAngle::Float64 = 0.0
+    minDiffAngle::Float64 = -2*pi
+    maxDiffAngle::Float64 = 2*pi
     status::Int8 = Int8(1)
     type::Int8 = Int8(1)
 end

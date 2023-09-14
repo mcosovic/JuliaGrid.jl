@@ -323,8 +323,8 @@ macro default(mode::Symbol)
 
         template.branch.turnsRatio = 1.0
         template.branch.shiftAngle = 0.0
-        template.branch.minDiffAngle = 0.0
-        template.branch.maxDiffAngle = 0.0
+        template.branch.minDiffAngle = -2*pi
+        template.branch.maxDiffAngle = 2*pi
         template.branch.status = Int8(1)
         template.branch.type = Int8(1)
     end

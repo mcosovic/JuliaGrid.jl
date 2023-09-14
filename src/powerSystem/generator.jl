@@ -206,15 +206,12 @@ function addGenerator!(system::PowerSystem, analysis::DCOptimalPowerFlow;
         changeBalance(system, analysis, busIndex; power = true, genIndex = index)
 
         if generator.capability.minActive[end] != generator.capability.maxActive[end]
-            capabilityRef = @constraint(jump, generator.capability.minActive[end] <= active[end] <= generator.capability.maxActive[end])
-            push!(constraint.capability.active, capabilityRef)
+            constraint.capability.active[index] = @constraint(jump, generator.capability.minActive[end] <= active[end] <= generator.capability.maxActive[end])
         else
-            fix(active[end], 0.0)
-            push!(constraint.capability.active, FixRef(active[end]))
+            fix!(analysis.jump[:active], 0.0, constraint.capability.active, generator.number)
         end
     else
-        fix(active[end], 0.0)
-        push!(constraint.capability.active, FixRef(active[end]))
+        fix!(analysis.jump[:active], 0.0, constraint.capability.active, generator.number)
     end
 end
 
@@ -486,37 +483,67 @@ function updateGenerator!(system::PowerSystem, analysis::DCOptimalPowerFlow;
     indexBus = generator.layout.bus[index]
     statusOld = generator.layout.status[index]
 
+    helper = constraint.piecewise.helper
+
     updateGenerator!(system; label, area, status, active, reactive, magnitude,
         minActive, maxActive, minReactive, maxReactive, lowActive, minLowReactive,
         maxLowReactive, upActive, minUpReactive, maxUpReactive, loadFollowing, reserve10min,
         reserve30min, reactiveTimescale)
 
-
-
     if !ismissing(active)
         analysis.power.generator.active[index] = generator.output.active[index]
     end
 
-    if statusOld == 1
-        if status == 0 || (status == 1 && !ismissing(active))
-            JuMP.delete(jump, constraint.capability.active[index])
-            JuMP.set_normalized_coefficient(constraint.balance.active[indexBus], jump[:active][index], 0)
+    if statusOld == 1 && generator.layout.status[index] == 0
+        objExpr = objective_function(jump)
+        objExpr, helperFlag = updateObjective(-objExpr, jump[:active][index], generator, index, label)
 
+        if helperFlag
+            delete!(jump, constraint.piecewise.active, index)
+            add_to_expression!(objExpr, helper[index])
+            drop_zeros!(objExpr)
+            delete!(jump, helper, index)
+        end
+
+        delete!(jump, constraint.capability.active, index)
+        if haskey(constraint.balance.active, indexBus) && !JuMP.is_valid(jump, constraint.balance.active[indexBus]) 
+            JuMP.set_normalized_coefficient(constraint.balance.active[indexBus], jump[:active][index], 0)
+        end
+        fix!(jump[:active], 0.0, constraint.capability.active, index)
+
+        JuMP.set_objective_function(jump, -objExpr)
+    end
+
+    if statusOld == 0 && generator.layout.status[index] == 1
+        objExpr = objective_function(jump)
+        objExpr, helperFlag = updateObjective(objExpr, jump[:active][index], generator, index, label)
+
+        if helperFlag
+            helper[index] = @variable(jump, base_name = "helper[$index]")
+            add_to_expression!(objExpr, helper[index])
+
+            objExpr = updatePiecewise(objExpr, analysis, generator, index, label)
+            JuMP.set_objective_function(jump, objExpr)
+        end
+
+        changeBalance(system, analysis, indexBus; power = true, genIndex = index)
+        if generator.capability.minActive[index] != generator.capability.maxActive[index]
+            constraint.capability.active[index] =  @constraint(jump, generator.capability.minActive[index] <= jump[:active][index] <= generator.capability.maxActive[index])
+        else
             fix(jump[:active][index], 0.0)
             constraint.capability.active[index] = JuMP.FixRef(jump[:active][index])
         end
     end
 
-    if generator.layout.status[index] == 1
-        if statusOld == 0 || (statusOld == 1 && !ismissing(active))
-            changeBalance(system, analysis, indexBus; power = true, genIndex = index)
-
-            if generator.capability.minActive[index] != generator.capability.maxActive[index]
-                constraint.capability.active[index] =  @constraint(jump, generator.capability.minActive[index] <= jump[:active][index] <= generator.capability.maxActive[index])
-            else
-                fix(jump[:active][index], 0.0)
-                constraint.capability.active[index] = JuMP.FixRef(jump[:active][index])
-            end
+    if statusOld == 1 && generator.layout.status[index] == 1 && (!ismissing(minActive) || !ismissing(maxActive))
+        if generator.capability.minActive[index] != generator.capability.maxActive[index]
+            constraint.capability.active[index] =  @constraint(jump, generator.capability.minActive[index] <= jump[:active][index] <= generator.capability.maxActive[index])
+        else
+            fix(jump[:active][index], 0.0)
+            constraint.capability.active[index] = JuMP.FixRef(jump[:active][index])
+        end
+        if haskey(constraint.balance.active, indexBus) && !JuMP.is_valid(jump, constraint.balance.active[indexBus])
+            changeBalance(system, analysis, indexBus)
         end
     end
 end
@@ -728,39 +755,30 @@ function cost!(system::PowerSystem, analysis::DCOptimalPowerFlow; label::L,
     helper = constraint.piecewise.helper
     objExpr = objective_function(jump)
 
-    objExpr, helperOld = updateObjective(-objExpr, active, generator, index, label)
+    if generator.layout.status[index] == 1
+        objExpr, helperOld = updateObjective(-objExpr, active, generator, index, label)
 
-    if helperOld
-        delete.(jump, constraint.piecewise.active[index])
-        delete!(constraint.piecewise.active, index)
+        if helperOld
+            delete!(jump, constraint.piecewise.active, index)
+        end
     end
 
     cost!(system; label, cost, model, polynomial, piecewise)
 
-    objExpr, helperNew = updateObjective(-objExpr, active, generator, index, label)
+    if generator.layout.status[index] == 1
+        objExpr, helperNew = updateObjective(-objExpr, active, generator, index, label)
 
-    if helperOld && !helperNew
-        add_to_expression!(objExpr, -helper[index])
-        drop_zeros!(objExpr)
-        delete(jump, helper[index])
-        delete!(helper, index)
-    elseif helperNew && !helperOld
-        helper[index] = @variable(jump, base_name = "helper[$index]")
-        add_to_expression!(objExpr, helper[index])
-    end
+        if helperOld && !helperNew
+            add_to_expression!(objExpr, -helper[index])
+            drop_zeros!(objExpr)
+            delete!(jump, helper, index)
+        elseif helperNew && !helperOld
+            helper[index] = @variable(jump, base_name = "helper[$index]")
+            add_to_expression!(objExpr, helper[index])
+        end
 
-    if helperNew
-        activePower = @view generator.cost.active.piecewise[index][:, 1]
-        activePowerCost = @view generator.cost.active.piecewise[index][:, 2]
-
-        point = size(generator.cost.active.piecewise[index], 1)
-        constraint.piecewise.active[index] = Array{JuMP.ConstraintRef}(undef, point - 1)
-        for j = 2:point
-            slope = (activePowerCost[j] - activePowerCost[j-1]) / (activePower[j] - activePower[j-1])
-            if slope == Inf
-                throw(ErrorException("The piecewise linear cost function's slope of the generator lablled $label has infinite value."))
-            end
-            constraint.piecewise.active[index][j-1] = @constraint(jump, slope * active - helper[index] <= slope * activePower[j-1] - activePowerCost[j-1])
+        if helperNew
+            objExpr = updatePiecewise(objExpr, analysis, generator, index, label)
         end
     end
 
