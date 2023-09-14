@@ -208,7 +208,7 @@ end
 
 function print(io::IO, label::Dict{String, Int64}, obj::Dict{Int64, JuMP.ConstraintRef})
     names = collect(keys(sort(label; byvalue = true)))
-    for key in keys(obj)
+    for key in keys(sort(obj))
         try
             println(io::IO, names[key], ": ", obj[key])
         catch
@@ -219,7 +219,7 @@ end
 
 function print(io::IO, label::Dict{String, Int64}, obj::Dict{Int64, Array{JuMP.ConstraintRef,1}})
     names = collect(keys(sort(label; byvalue = true)))
-    for key in keys(obj)
+    for key in keys(sort(obj))
         for cons in obj[key]
             println(names[key], ": ", cons)
         end
