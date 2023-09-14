@@ -44,8 +44,9 @@ are transmitted to the  `Analysis` type.
 
 # Default Settings
 By default, certain keywords are assigned default values: `status = 1`, `turnsRatio = 1.0`,
-and `type = 1`. The  rest of the keywords are initialized with a value of zero. However,
-the user can modify these default settings by utilizing the [`@branch`](@ref @branch) macro.
+`type = 1`, `minDiffAngle = -2*pi`, and `maxDiffAngle = 2*pi`. The rest of the keywords are 
+initialized with a value of zero. However, the user can modify these default settings by 
+utilizing the [`@branch`](@ref @branch) macro.
 
 # Units
 The default units for the keyword parameters are per-units (pu) and radians (rad). However,

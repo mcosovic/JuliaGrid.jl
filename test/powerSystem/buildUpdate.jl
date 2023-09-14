@@ -6,7 +6,7 @@
     systemPU = powerSystem()
 
     @bus(area = 1, lossZone = 1, base = 230e3)
-    @branch(maxDiffAngle = 360 * pi / 180, susceptance = 0.14, resistance = 0.09, reactance = 0.02)
+    @branch(minDiffAngle = 0, maxDiffAngle = 360 * pi / 180, susceptance = 0.14, resistance = 0.09, reactance = 0.02)
     @generator(minReactive = -0.5, maxReactive = 0.9)
 
     addBus!(systemPU; label = 1, type = 3, active = 0.17, conductance = 0.09)
@@ -144,7 +144,7 @@ end
     @base(systemSI, MVA, kV)
 
     @bus(area = 1, lossZone = 1, base = 0.23)
-    @branch(maxDiffAngle = 360, susceptance = 0.14, resistance = 0.09, reactance = 0.02)
+    @branch(minDiffAngle = 0, maxDiffAngle = 360, susceptance = 0.14, resistance = 0.09, reactance = 0.02)
     @generator(minReactive = -50, maxReactive = 90)
 
     addBus!(systemSI; label = 1, type = 3, active = 17e3, conductance = 9e3)
