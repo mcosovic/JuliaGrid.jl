@@ -100,7 +100,7 @@ The DC optimal power flow in JuliaGrid allows the cost function ``f_i(P_{\text{g
 
 Furthermore, it is worth noting that the function can be given simply as a constant with only the coefficient ``a_0``, which implies that the cost of the generator remains constant regardless of the active power outputs. In conclusion, as illustrated in Figure 1, typical scenarios involve linear or quadratic cost functions, resulting in a best-case scenario for a linear optimization problem and a worst-case scenario for a quadratic optimization problem.
 ```@raw html
-<img src="../assets/cost_function_dc.svg" class="center" width="500"/>
+<img src="../../assets/cost_function_dc.svg" class="center" width="500"/>
 <figcaption>Figure 1: The polynomial cost functions of generator active power output.</figcaption>
 &nbsp;
 ```
@@ -121,7 +121,7 @@ f₁ = system.generator.cost.active.polynomial[1]
 ##### Linear Piecewise Active Power Cost Function
 The DC optimal power flow in JuliaGrid offers another option for defining cost functions by using linear piecewise functions as approximations of the polynomial functions, as depicted in Figure 2.
 ```@raw html
-<img src="../assets/cost_function_piecewise_dc.svg" class="center" width="500"/>
+<img src="../../assets/cost_function_piecewise_dc.svg" class="center" width="500"/>
 <figcaption>Figure 2: The linear piecewise cost functions of active power output.</figcaption>
 &nbsp;
 ```

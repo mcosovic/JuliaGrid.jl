@@ -16,7 +16,7 @@ HiGHS = "87dc4568-4c63-4d18-b0c0-bb2238e4078b"
 
 [compat]
 julia = "1.8.3"
-HDF5 = "0.16.12"
-JuMP = "1.9.0"
+HDF5 = "0.17.0"
+JuMP = "1.15.0"
 Ipopt = "1.2.0"
 HiGHS = "1.5.0"

@@ -252,33 +252,3 @@ function print(io::IO, obj::Dict{Int64, Array{JuMP.ConstraintRef,1}})
     end
 end
 
-######### Delete Data ##########
-import Base.delete!
-
-function delete!(jump::JuMP.Model, ref::Union{Dict{Int64, JuMP.ConstraintRef}, Dict{Int64, VariableRef}}, index::Int64)
-    if haskey(ref, index)
-        if JuMP.is_valid.(jump, ref[index])
-            JuMP.delete(jump, ref[index])
-        end
-        delete!(ref, index)
-    end
-end
-
-function delete!(jump::JuMP.Model, ref::Dict{Int64, Array{JuMP.ConstraintRef,1}}, index::Int64)
-    if haskey(ref, index)
-        if all(JuMP.is_valid.(jump, ref[index]))
-            JuMP.delete.(jump, ref[index])
-        end
-        delete!(ref, index)
-    end
-end
-
-function unfix!(jump::JuMP.Model, variable::Array{JuMP.VariableRef, 1}, ref::Dict{Int64, JuMP.ConstraintRef}, index::Int64)
-    if haskey(ref, index)
-        if JuMP.is_valid(jump, ref[index])
-            JuMP.unfix(variable[index])
-        end
-        delete!(ref, index)
-    end
-end
-

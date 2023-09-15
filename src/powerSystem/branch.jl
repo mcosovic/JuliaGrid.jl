@@ -192,8 +192,8 @@ function addBranch!(system::PowerSystem, analysis::DCOptimalPowerFlow;
         updateBalance(system, analysis, to; voltage = true, rhs = rhs)
 
         angle = jump[:angle]
-        addFlow(jump, angle, constraint.flow.active, branch, system.model.dc, branch.number)
-        addDiffAngle(jump, angle, constraint.voltage.angle, branch, branch.number)
+        addFlow(system, jump, angle, constraint.flow.active, branch.number)
+        addDiffAngle(system, jump, angle, constraint.voltage.angle, branch.number)
     end
 end
 
@@ -405,10 +405,10 @@ function updateBranch!(system::PowerSystem, analysis::DCOptimalPowerFlow;
         angle = jump[:angle]
 
         if statusOld == 0 || (statusOld == 1 && (parameter || long)) || (statusOld == 1 && haskey(constraint.flow.active, index) && !JuMP.is_valid(jump, constraint.flow.active[index]))
-            addFlow(jump, angle, constraint.flow.active, branch, system.model.dc, index)
+            addFlow(system, jump, angle, constraint.flow.active, index)
         end
         if statusOld == 0 || (statusOld == 1 && diffAngle) || (statusOld == 1 && haskey(constraint.voltage.angle, index) && !JuMP.is_valid(jump, constraint.voltage.angle[index]))
-            addDiffAngle(jump, angle, constraint.voltage.angle, branch, index)
+            addDiffAngle(system, jump, angle, constraint.voltage.angle, index)
         end
     end
 end

@@ -492,7 +492,7 @@ function updateGenerator!(system::PowerSystem, analysis::DCOptimalPowerFlow;
 
     if statusOld == 1 && generator.layout.status[index] == 0
         objExpr = objective_function(jump)
-        objExpr, helperFlag = updateObjective(-objExpr, activeVar[index], generator, index, label)
+        objExpr, helperFlag = updateObjective(system, -objExpr, activeVar[index], index, label)
 
         if helperFlag
             delete!(jump, constraint.piecewise.active, index)
@@ -512,7 +512,7 @@ function updateGenerator!(system::PowerSystem, analysis::DCOptimalPowerFlow;
 
     if statusOld == 0 && generator.layout.status[index] == 1
         objExpr = objective_function(jump)
-        objExpr, helperFlag = updateObjective(objExpr, activeVar[index], generator, index, label)
+        objExpr, helperFlag = updateObjective(system, objExpr, activeVar[index], index, label)
 
         if helperFlag
             jump, objExpr, helper = addHelper(jump, objExpr, helper, index)
@@ -527,7 +527,7 @@ function updateGenerator!(system::PowerSystem, analysis::DCOptimalPowerFlow;
     if statusOld == 1 && generator.layout.status[index] == 1 && (!ismissing(minActive) || !ismissing(maxActive))
         addCapability(jump, activeVar,  constraint.capability.active, generator.capability.minActive, generator.capability.maxActive, index)
         if haskey(constraint.balance.active, indexBus) && !JuMP.is_valid(jump, constraint.balance.active[indexBus])
-            changeBalance(system, analysis, indexBus)
+            updateBalance(system, analysis, indexBus)
         end
     end
 end
@@ -740,7 +740,7 @@ function cost!(system::PowerSystem, analysis::DCOptimalPowerFlow; label::L,
     objExpr = objective_function(jump)
 
     if generator.layout.status[index] == 1
-        objExpr, helperOld = updateObjective(-objExpr, active, generator, index, label)
+        objExpr, helperOld = updateObjective(system, -objExpr, active, index, label)
 
         if helperOld
             delete!(jump, constraint.piecewise.active, index)
@@ -750,7 +750,7 @@ function cost!(system::PowerSystem, analysis::DCOptimalPowerFlow; label::L,
     cost!(system; label, cost, model, polynomial, piecewise)
 
     if generator.layout.status[index] == 1
-        objExpr, helperNew = updateObjective(-objExpr, active, generator, index, label)
+        objExpr, helperNew = updateObjective(system, -objExpr, active, index, label)
 
         if helperOld && !helperNew
             add_to_expression!(objExpr, -helper[index])

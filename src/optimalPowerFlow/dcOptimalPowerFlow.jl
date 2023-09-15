@@ -39,15 +39,13 @@ function dcOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
     bridge::Bool = true, name::Bool = true)
 
     bus = system.bus
-    branch = system.branch
     generator = system.generator
-    dc = system.model.dc
     cost = generator.cost.active
 
     if bus.layout.slack == 0
         throw(ErrorException("The slack bus is missing."))
     end
-    if isempty(dc.nodalMatrix)
+    if isempty(system.model.dc.nodalMatrix)
         dcModel!(system)
     end
 
@@ -102,15 +100,15 @@ function dcOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
 
     balance = Dict{Int64, JuMP.ConstraintRef}()
     @inbounds for i = 1:bus.number
-        jump, balance = addBalance(jump, active, angle, balance, dc, bus, i)
+        jump, balance = addBalance(system, jump, active, angle, balance, i)
     end
 
     flow = Dict{Int64, JuMP.ConstraintRef}()
     voltage = Dict{Int64, JuMP.ConstraintRef}()
-    @inbounds for i = 1:branch.number
-        if branch.layout.status[i] == 1
-            jump, flow = addFlow(jump, angle, flow, branch, dc, i)
-            jump, voltage = addDiffAngle(jump, angle, voltage, branch, i)
+    @inbounds for i = 1:system.branch.number
+        if system.branch.layout.status[i] == 1
+            jump, flow = addFlow(system, jump, angle, flow, i)
+            jump, voltage = addDiffAngle(system, jump, angle, voltage, i)
         end
     end
 
@@ -182,21 +180,23 @@ function solve!(system::PowerSystem, analysis::DCOptimalPowerFlow)
 end
 
 ######### Balance Constraints ##########
-function addBalance(jump::JuMP.Model, active::Vector{VariableRef}, angle::Vector{VariableRef},  ref::Dict{Int64, JuMP.ConstraintRef}, dc::DCModel, bus::Bus, i::Int64)
+function addBalance(system::PowerSystem, jump::JuMP.Model, active::Vector{VariableRef}, angle::Vector{VariableRef},  ref::Dict{Int64, JuMP.ConstraintRef}, i::Int64)
+    dc = system.model.dc
     expression = AffExpr()
     for j in dc.nodalMatrix.colptr[i]:(dc.nodalMatrix.colptr[i + 1] - 1)
         add_to_expression!(expression, dc.nodalMatrix.nzval[j], - angle[dc.nodalMatrix.rowval[j]])
     end
-    rhs = bus.demand.active[i] + bus.shunt.conductance[i] + dc.shiftActivePower[i]
-    ref[i] = @constraint(jump, expression + sum(active[k] for k in bus.supply.generator[i]) == rhs)
+    rhs = system.bus.demand.active[i] + system.bus.shunt.conductance[i] + dc.shiftActivePower[i]
+    ref[i] = @constraint(jump, expression + sum(active[k] for k in system.bus.supply.generator[i]) == rhs)
 
     return jump, ref
 end
 
 ######### Flow Constraints ##########
-function addFlow(jump::JuMP.Model, angle::Vector{VariableRef}, ref::Dict{Int64, JuMP.ConstraintRef}, branch::Branch, dc::DCModel, index::Int64)
+function addFlow(system::PowerSystem, jump::JuMP.Model, angle::Vector{VariableRef}, ref::Dict{Int64, JuMP.ConstraintRef}, index::Int64)
+    branch = system.branch
     if branch.flow.longTerm[index] ≉  0 && branch.flow.longTerm[index] < 10^16
-        restriction = branch.flow.longTerm[index] / dc.admittance[index]
+        restriction = branch.flow.longTerm[index] / system.model.dc.admittance[index]
         ref[index] = @constraint(jump, - restriction + branch.parameter.shiftAngle[index] <= angle[branch.layout.from[index]] - angle[branch.layout.to[index]] <= restriction + branch.parameter.shiftAngle[index])
     end
 
@@ -205,7 +205,6 @@ end
 
 ######### Update Balance Constraints ##########
 function updateBalance(system::PowerSystem, analysis::DCOptimalPowerFlow, index::Int64; voltage = false, power = false, rhs = false, genIndex = 0)
-    bus = system.bus
     dc = system.model.dc
     jump = analysis.jump
     constraint = analysis.constraint
@@ -222,36 +221,35 @@ function updateBalance(system::PowerSystem, analysis::DCOptimalPowerFlow, index:
             JuMP.set_normalized_coefficient(constraint.balance.active[index], jump[:active][genIndex], 1)
         end
         if rhs
-            JuMP.set_normalized_rhs(constraint.balance.active[index], bus.demand.active[index] + bus.shunt.conductance[index] + dc.shiftActivePower[index])
+            JuMP.set_normalized_rhs(constraint.balance.active[index], system.bus.demand.active[index] + system.bus.shunt.conductance[index] + dc.shiftActivePower[index])
         end
     else
-        addBalance(jump, jump[:active], jump[:angle], constraint.balance.active, dc, bus, index)
+        addBalance(system, jump, jump[:active], jump[:angle], constraint.balance.active, index)
     end
 end
 
 ######### Update Objective Function ##########
-function updateObjective(objExpr::QuadExpr, active::JuMP.VariableRef, generator::Generator, index::Int64, label::L)
+function updateObjective(system::PowerSystem, objExpr::QuadExpr, active::JuMP.VariableRef, index::Int64, label::L)
     ishelper = false
+    cost = system.generator.cost.active
 
-    if generator.cost.active.model[index] == 2
-        cost = generator.cost.active.polynomial[index]
-        numberTerm = length(cost)
-        if numberTerm == 3
-            polynomialQuadratic(objExpr, active, cost)
-        elseif numberTerm == 2
-            polynomialLinear(objExpr, active, cost)
-        elseif numberTerm == 1
-            add_to_expression!(objExpr, cost[1])
-        elseif numberTerm > 3
-            @info("The generator labelled $label has a polynomial cost function of degree $(numberTerm-1), which is not included in the objective.")
+    if cost.model[index] == 2
+        term = length(cost.polynomial[index])
+        if term == 3
+            polynomialQuadratic(objExpr, active, cost.polynomial[index])
+        elseif term == 2
+            polynomialLinear(objExpr, active, cost.polynomial[index])
+        elseif term == 1
+            add_to_expression!(objExpr, cost.polynomial[index][1])
+        elseif term > 3
+            @info("The generator labelled $label has a polynomial cost function of degree $(term-1), which is not included in the objective.")
         else
             @info("The generator labelled $label has an undefined polynomial cost function, which is not included in the objective.")
         end
-    elseif generator.cost.active.model[index] == 1
-        piecewise = generator.cost.active.piecewise[index]
-        point = size(piecewise, 1)
+    elseif cost.model[index] == 1
+        point = size(cost.piecewise[index], 1)
         if point == 2
-            piecewiseLinear(objExpr, active, piecewise)
+            piecewiseLinear(objExpr, active, cost.piecewise[index])
         elseif point > 2
             ishelper = true
         elseif point == 1

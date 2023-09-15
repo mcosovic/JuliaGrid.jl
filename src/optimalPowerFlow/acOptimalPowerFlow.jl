@@ -172,7 +172,7 @@ function acOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
     flowTo = Dict{Int64, JuMP.ConstraintRef}()
     @inbounds for i = 1:branch.number
         if branch.layout.status[i] == 1
-            jump, voltageAngle = addDiffAngle(jump, angle, voltageAngle, branch, i)
+            jump, voltageAngle = addDiffAngle(system, jump, angle, voltageAngle, i)
 
             if branch.flow.longTerm[i] ≉  0 && branch.flow.longTerm[i] < 10^16
                 from = branch.layout.from[i]
@@ -332,6 +332,39 @@ function solve!(system::PowerSystem, analysis::ACOptimalPowerFlow)
     end
 end
 
+######### Voltage Magnitude Constraints ##########
+function addLimitMagnitude(jump::JuMP.Model, variable::Vector{VariableRef}, ref::Dict{Int64, JuMP.ConstraintRef}, minMagnitude::Array{Float64, 1}, maxMagnitude::Array{Float64, 1}, index::Int64)
+    if minMagnitude[index] != maxMagnitude[index]
+        ref[index] = @constraint(jump, minMagnitude[index] <= variable[index] <= maxMagnitude[index])
+    else
+        fix!(variable, 0.0, ref, index)
+    end
+
+    return jump, ref
+end
+
+######### Angle Difference Constraints ##########
+function addDiffAngle(system::PowerSystem, jump::JuMP.Model, angle::Vector{VariableRef}, ref::Dict{Int64, JuMP.ConstraintRef}, index::Int64)
+    branch = system.branch
+    if branch.voltage.minDiffAngle[index] > -2*pi || branch.voltage.maxDiffAngle[index] < 2*pi
+        ref[index] = @constraint(jump, branch.voltage.minDiffAngle[index] <= angle[branch.layout.from[index]] - angle[branch.layout.to[index]] <= branch.voltage.maxDiffAngle[index])
+    end
+
+    return jump, ref
+end
+
+######## Capability Constraints ##########
+function addCapability(jump::JuMP.Model, variable::Vector{VariableRef}, ref::Dict{Int64, JuMP.ConstraintRef}, minPower::Array{Float64, 1}, maxPower::Array{Float64, 1}, index::Int64)
+    if minPower[index] != maxPower[index]
+        ref[index] = @constraint(jump, minPower[index] <= variable[index] <= maxPower[index])
+    else
+        fix!(variable, 0.0, ref, index)
+    end
+
+    return jump, ref
+end
+
+######### Capability Curve Constraints ##########
 function capabilityCurve(system::PowerSystem, jump::JuMP.Model, active::Vector{VariableRef}, reactive::Vector{VariableRef}, lower::Dict{Int64, JuMP.ConstraintRef}, upper::Dict{Int64, JuMP.ConstraintRef}, i::Int64)
     capability = system.generator.capability
 
@@ -377,24 +410,7 @@ function capabilityCurve(system::PowerSystem, jump::JuMP.Model, active::Vector{V
     return jump, lower, upper
 end
 
-######### Voltage Magnitude Constraints ##########
-function addLimitMagnitude(jump::JuMP.Model, variable::Vector{VariableRef}, ref::Dict{Int64, JuMP.ConstraintRef}, minMagnitude::Array{Float64, 1}, maxMagnitude::Array{Float64, 1}, index::Int64)
-    if minMagnitude[index] != maxMagnitude[index]
-        ref[index] = @constraint(jump, minMagnitude[index] <= variable[index] <= maxMagnitude[index])
-    else
-        fix!(variable, 0.0, ref, index)
-    end
-
-    return jump, ref
-end
-
-function polynomialLinear(objExpr::QuadExpr, power::VariableRef, cost::Array{Float64,1})
-    add_to_expression!(objExpr, cost[1], power)
-    add_to_expression!(objExpr, cost[2])
-
-    return objExpr
-end
-
+######## Quadratic Term in the Objective Function ##########
 function polynomialQuadratic(objExpr::QuadExpr, power::VariableRef, cost::Array{Float64,1})
     add_to_expression!(objExpr, cost[1], power, power)
     add_to_expression!(objExpr, cost[2], power)
@@ -403,6 +419,15 @@ function polynomialQuadratic(objExpr::QuadExpr, power::VariableRef, cost::Array{
     return objExpr
 end
 
+######## Linear Term in the Objective Function ##########
+function polynomialLinear(objExpr::QuadExpr, power::VariableRef, cost::Array{Float64,1})
+    add_to_expression!(objExpr, cost[1], power)
+    add_to_expression!(objExpr, cost[2])
+
+    return objExpr
+end
+
+######## Nonlinear Expression in the Objective Function ##########
 function polynomialNonlinear(jump::JuMP.Model, objExpr::QuadExpr, nonlinearExpr::Vector{NonlinearExpression}, cost::Array{Float64,1}, power::VariableRef, term::Int64)
     add_to_expression!(objExpr, cost[end - 2], power, power)
     add_to_expression!(objExpr, cost[end - 1], power)
@@ -412,6 +437,8 @@ function polynomialNonlinear(jump::JuMP.Model, objExpr::QuadExpr, nonlinearExpr:
     return jump, objExpr, nonlinearExpr
 end
 
+
+######## Linear Piecewise in the Objective Function ##########
 function piecewiseLinear(objExpr::QuadExpr, power::VariableRef, piecewise::Array{Float64,2})
     slope = (piecewise[2, 2] - piecewise[1, 2]) / (piecewise[2, 1] - piecewise[1, 1])
     add_to_expression!(objExpr, slope, power)
@@ -420,6 +447,7 @@ function piecewiseLinear(objExpr::QuadExpr, power::VariableRef, piecewise::Array
     return objExpr
 end
 
+######## Add Helper Variable ##########
 function addHelper(jump::JuMP.Model, objExpr::QuadExpr, helper::Dict{Int64, VariableRef}, index::Int64)
     helper[index] = @variable(jump, base_name = "helper[$index]")
     add_to_expression!(objExpr, helper[index])
@@ -427,6 +455,7 @@ function addHelper(jump::JuMP.Model, objExpr::QuadExpr, helper::Dict{Int64, Vari
     return jump, objExpr, helper
 end
 
+######## Piecewise Constraints ##########
 function addPiecewise(jump::JuMP.Model, helper::VariableRef, ref::Dict{Int64, Array{JuMP.ConstraintRef,1}}, piecewise::Array{Float64,2}, point::Int64, index::Int64)
     power = @view piecewise[:, 1]
     cost = @view piecewise[:, 2]
@@ -443,27 +472,38 @@ function addPiecewise(jump::JuMP.Model, helper::VariableRef, ref::Dict{Int64, Ar
 end
 
 ######### Fix Data ##########
-function fix!(variable::Array{JuMP.VariableRef, 1}, value::Float64, ref::Dict{Int64, JuMP.ConstraintRef}, index::Int64)
+function fix!(variable::Vector{JuMP.VariableRef}, value::Float64, ref::Dict{Int64, JuMP.ConstraintRef}, index::Int64)
     JuMP.fix(variable[index], value)
     ref[index] = JuMP.FixRef(variable[index])
 end
 
-######## Capability Constraints ##########
-function addCapability(jump::JuMP.Model, variable::Vector{VariableRef}, ref::Dict{Int64, JuMP.ConstraintRef}, minPower::Array{Float64, 1}, maxPower::Array{Float64, 1}, index::Int64)
-    if minPower[index] != maxPower[index]
-        ref[index] = @constraint(jump, minPower[index] <= variable[index] <= maxPower[index])
-    else
-        fix!(variable, 0.0, ref, index)
-    end
+######### Delete Data ##########
+import Base.delete!
 
-    return jump, ref
+function delete!(jump::JuMP.Model, ref::Union{Dict{Int64, JuMP.ConstraintRef}, Dict{Int64, VariableRef}}, index::Int64)
+    if haskey(ref, index)
+        if JuMP.is_valid.(jump, ref[index])
+            JuMP.delete(jump, ref[index])
+        end
+        delete!(ref, index)
+    end
 end
 
-######### Angle Difference Constraints ##########
-function addDiffAngle(jump::JuMP.Model, angle::Vector{VariableRef}, ref::Dict{Int64, JuMP.ConstraintRef}, branch::Branch, index::Int64)
-    if branch.voltage.minDiffAngle[index] > -2*pi || branch.voltage.maxDiffAngle[index] < 2*pi
-        ref[index] = @constraint(jump, branch.voltage.minDiffAngle[index] <= angle[branch.layout.from[index]] - angle[branch.layout.to[index]] <= branch.voltage.maxDiffAngle[index])
+function delete!(jump::JuMP.Model, ref::Dict{Int64, Array{JuMP.ConstraintRef,1}}, index::Int64)
+    if haskey(ref, index)
+        if all(JuMP.is_valid.(jump, ref[index]))
+            JuMP.delete.(jump, ref[index])
+        end
+        delete!(ref, index)
     end
-
-    return jump, ref
 end
+
+function unfix!(jump::JuMP.Model, variable::Vector{JuMP.VariableRef}, ref::Dict{Int64, JuMP.ConstraintRef}, index::Int64)
+    if haskey(ref, index)
+        if JuMP.is_valid(jump, ref[index])
+            JuMP.unfix(variable[index])
+        end
+        delete!(ref, index)
+    end
+end
+
