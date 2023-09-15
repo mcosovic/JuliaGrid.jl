@@ -14,13 +14,8 @@ mutable struct PolarAngle
 end
 
 mutable struct PolarRef
-    magnitude::Array{JuMP.ConstraintRef,1}
-    angle::Array{JuMP.ConstraintRef,1}
-end
-
-mutable struct PolarRefSimple
-    magnitude::JuMP.ConstraintRef
-    angle::JuMP.ConstraintRef
+    magnitude::Dict{Int64, JuMP.ConstraintRef}
+    angle::Dict{Int64, JuMP.ConstraintRef}
 end
 
 mutable struct PolarAngleRef
@@ -46,16 +41,12 @@ mutable struct CartesianImag
 end
 
 mutable struct CartesianRef
-    active::Array{JuMP.ConstraintRef,1}
-    reactive::Array{JuMP.ConstraintRef,1}
+    active::Dict{Int64, JuMP.ConstraintRef}
+    reactive::Dict{Int64, JuMP.ConstraintRef}
 end
 
 mutable struct CartesianRealRef
     active::Dict{Int64, JuMP.ConstraintRef}
-end
-
-mutable struct CartesianImagRef
-    reactive::Array{JuMP.ConstraintRef,1}
 end
 
 ########### Template ###########

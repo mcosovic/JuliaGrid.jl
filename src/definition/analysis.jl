@@ -101,17 +101,31 @@ end
 
 ######### Constraints ##########
 struct CartesianFlowRef
-    from::Array{JuMP.ConstraintRef,1}
-    to::Array{JuMP.ConstraintRef,1}
+    from::Dict{Int64, JuMP.ConstraintRef}
+    to::Dict{Int64, JuMP.ConstraintRef}
 end
 
-struct ConstraintAC
-    slack::Union{PolarRef, PolarAngleRef}
+struct ACPiecewise
+    active::Dict{Int64, Array{JuMP.ConstraintRef,1}}
+    reactive::Dict{Int64, Array{JuMP.ConstraintRef,1}}
+    helperActive::Dict{Int64, VariableRef}
+    helperReactive::Dict{Int64, VariableRef}
+end
+
+struct CapabilityRef
+    active::Dict{Int64, JuMP.ConstraintRef}
+    reactive::Dict{Int64, JuMP.ConstraintRef}
+    lower::Dict{Int64, JuMP.ConstraintRef}
+    upper::Dict{Int64, JuMP.ConstraintRef}
+end
+
+struct Constraint
+    slack::PolarRef
     balance::CartesianRef
-    limit::PolarRef
-    rating::CartesianRef
-    capability::CartesianRef
-    piecewise::CartesianRef
+    voltage::PolarRef
+    flow::CartesianFlowRef
+    capability::CapabilityRef
+    piecewise::ACPiecewise
 end
 
 struct DCPiecewise
@@ -134,7 +148,7 @@ struct ACOptimalPowerFlow <: AC
     power::Power
     current::Current
     jump::JuMP.Model
-    constraint::ConstraintAC
+    constraint::Constraint
 end
 
 ######### DC Optimal Power Flow ##########

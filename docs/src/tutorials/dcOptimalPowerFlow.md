@@ -78,8 +78,8 @@ nothing # hide
 ##### Optimization Variables
 Hence, the variables in this model encompass the active power outputs of the generators denoted as ``\mathbf{P}_{\text{g}} = [{P}_{\text{g}i}]``, where ``i \in \mathcal{P}``, and the bus voltage angles represented by ``\boldsymbol{\theta} = [{\theta}_{i}]``, where ``i \in \mathcal{N}``. You can access these variables using the following code:
 ```@repl DCOptimalPowerFlow
-analysis.jump[:active]
-analysis.jump[:angle]
+𝐏ₒ = analysis.jump[:active]
+𝛉 = analysis.jump[:angle]
 ```
 
 ---

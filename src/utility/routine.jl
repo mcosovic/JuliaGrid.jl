@@ -217,12 +217,34 @@ function print(io::IO, label::Dict{String, Int64}, obj::Dict{Int64, JuMP.Constra
     end
 end
 
+function print(io::IO, obj::Dict{Int64, JuMP.ConstraintRef})
+    for key in keys(sort(obj))
+        try
+            println(io::IO, obj[key])
+        catch
+            println(io::IO, "undefined")
+        end
+    end
+end
+
 function print(io::IO, label::Dict{String, Int64}, obj::Dict{Int64, Array{JuMP.ConstraintRef,1}})
     names = collect(keys(sort(label; byvalue = true)))
     for key in keys(sort(obj))
         for cons in obj[key]
             try
-                println(names[key], ": ", cons)
+                println(io::IO, names[key], ": ", cons)
+            catch
+                println(io::IO, "undefined")
+            end
+        end
+    end
+end
+
+function print(io::IO, obj::Dict{Int64, Array{JuMP.ConstraintRef,1}})
+    for key in keys(sort(obj))
+        for cons in obj[key]
+            try
+                println(io::IO, cons)
             catch
                 println(io::IO, "undefined")
             end
@@ -260,8 +282,3 @@ function unfix!(jump::JuMP.Model, variable::Array{JuMP.VariableRef, 1}, ref::Dic
     end
 end
 
-######### Fix Data ##########
-function fix!(variable::Array{JuMP.VariableRef, 1}, value::Float64, ref::Dict{Int64, JuMP.ConstraintRef}, index::Int64)
-    JuMP.fix(variable[index], value)
-    ref[index] = JuMP.FixRef(variable[index])
-end

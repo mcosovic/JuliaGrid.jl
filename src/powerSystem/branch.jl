@@ -44,8 +44,8 @@ are transmitted to the  `Analysis` type.
 
 # Default Settings
 By default, certain keywords are assigned default values: `status = 1`, `turnsRatio = 1.0`,
-`type = 1`, `minDiffAngle = -2*pi`, and `maxDiffAngle = 2*pi`. The rest of the keywords are 
-initialized with a value of zero. However, the user can modify these default settings by 
+`type = 1`, `minDiffAngle = -2*pi`, and `maxDiffAngle = 2*pi`. The rest of the keywords are
+initialized with a value of zero. However, the user can modify these default settings by
 utilizing the [`@branch`](@ref @branch) macro.
 
 # Units
@@ -188,17 +188,12 @@ function addBranch!(system::PowerSystem, analysis::DCOptimalPowerFlow;
         to = branch.layout.to[end]
 
         rhs = !ismissing(shiftAngle)
-        changeBalance(system, analysis, from; voltage = true, rhs = rhs)
-        changeBalance(system, analysis, to; voltage = true, rhs = rhs)
+        updateBalance(system, analysis, from; voltage = true, rhs = rhs)
+        updateBalance(system, analysis, to; voltage = true, rhs = rhs)
 
         angle = jump[:angle]
-        if branch.flow.longTerm[end] ≉  0 && branch.flow.longTerm[end] < 10^16
-            restriction = branch.flow.longTerm[end] / system.model.dc.admittance[end]
-            constraint.flow.active[branch.number] = @constraint(jump, - restriction + branch.parameter.shiftAngle[end] <= angle[from] - angle[to] <= restriction + branch.parameter.shiftAngle[end])
-        end
-        if branch.voltage.minDiffAngle[end] > -2*pi || branch.voltage.maxDiffAngle[end] < 2*pi
-            constraint.voltage.angle[branch.number] = @constraint(jump, branch.voltage.minDiffAngle[end] <= angle[from] - angle[to] <= branch.voltage.maxDiffAngle[end])
-        end
+        addFlow(jump, angle, constraint.flow.active, branch, system.model.dc, branch.number)
+        addDiffAngle(jump, angle, constraint.voltage.angle, branch, branch.number)
     end
 end
 
@@ -393,8 +388,8 @@ function updateBranch!(system::PowerSystem, analysis::DCOptimalPowerFlow;
     from = branch.layout.from[index]
     to = branch.layout.to[index]
     if parameter || branch.layout.status[index] != statusOld
-        changeBalance(system, analysis, from; voltage = true, rhs = true)
-        changeBalance(system, analysis, to; voltage = true, rhs = true)
+        updateBalance(system, analysis, from; voltage = true, rhs = true)
+        updateBalance(system, analysis, to; voltage = true, rhs = true)
     end
 
     if statusOld == 1
@@ -410,20 +405,13 @@ function updateBranch!(system::PowerSystem, analysis::DCOptimalPowerFlow;
         angle = jump[:angle]
 
         if statusOld == 0 || (statusOld == 1 && (parameter || long)) || (statusOld == 1 && haskey(constraint.flow.active, index) && !JuMP.is_valid(jump, constraint.flow.active[index]))
-            if branch.flow.longTerm[index] ≉  0 && branch.flow.longTerm[index] < 10^16
-                restriction = branch.flow.longTerm[index] / system.model.dc.admittance[index]
-                constraint.flow.active[index] = @constraint(jump, - restriction + branch.parameter.shiftAngle[index] <= angle[from] - angle[to] <= restriction + branch.parameter.shiftAngle[index])
-            end
+            addFlow(jump, angle, constraint.flow.active, branch, system.model.dc, index)
         end
         if statusOld == 0 || (statusOld == 1 && diffAngle) || (statusOld == 1 && haskey(constraint.voltage.angle, index) && !JuMP.is_valid(jump, constraint.voltage.angle[index]))
-            if branch.voltage.minDiffAngle[index] > -2*pi || branch.voltage.maxDiffAngle[index] < 2*pi
-                constraint.voltage.angle[index] = @constraint(jump, branch.voltage.minDiffAngle[index] <= angle[from] - angle[to] <= branch.voltage.maxDiffAngle[index])
-            end
+            addDiffAngle(jump, angle, constraint.voltage.angle, branch, index)
         end
     end
 end
-
-
 
 """
     @branch(kwargs...)

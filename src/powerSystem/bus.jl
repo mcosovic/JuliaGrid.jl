@@ -378,7 +378,7 @@ function updateBus!(system::PowerSystem, analysis::DCOptimalPowerFlow;
         magnitude, angle, minMagnitude, maxMagnitude, base, area, lossZone)
 
     if !(ismissing(conductance)) || !(ismissing(active))
-        changeBalance(system, analysis, index; rhs = true)
+        updateBalance(system, analysis, index; rhs = true)
     end
 
     if !ismissing(angle)
