@@ -51,35 +51,21 @@ the unit of `active` power (W), `reactive` power (VAr), or `apparent` power (VA)
 is a possible to combine SI units with/without prefixes with per-units (pu).
 
 Changing the unit of active power is reflected in the following quantities:
-* [`addBranch!`](@ref addBranch!): `longTerm`, `shortTerm`, `emergency` if `type = 2`;
+* [`addBranch!`](@ref addBranch!) if `type = 2`: `longTerm`, `shortTerm`, `emergency`;
 * [`addGenerator!`](@ref addGenerator!): `active`, `minActive`, `maxActive`, `lowActive`, `upActive`, `loadFollowing`, `reserve10min`, `reserve30min`;
 * [`updateBus!`](@ref updateBus!): `active`, `conductance`;
 * [`updateGenerator!`](@ref updateGenerator!): `active`;
-* [`cost!`](@ref cost!): `piecewise`, `polynomial` if `cost = :active`.
+* [`cost!`](@ref cost!) if `cost = :active`: `piecewise`, `polynomial`.
 
 Changing the unit of reactive power unit is reflected in the following quantities:
-* [`addBus!`](@ref addBus!):
-  * `reactive`;
-  * `susceptance`;
-* [`addGenerator!`](@ref addGenerator!):
-  * `reactive`;
-  * `minReactive`;
-  * `maxReactive`;
-  * `minLowReactive`;
-  * `maxLowReactive`;
-  * `minUpReactive`;
-  * `maxUpReactive`;
-  * `reactiveTimescale`;
-* [`updateBus!`](@ref updateBus!):
-  * `susceptance`;
-* [`updateGenerator!`](@ref updateGenerator!):
-  * `reactive`;
-* [`cost!`](@ref cost!) for `cost = :reactive`:
-  * `piecewise`;
-  * `polynomial` if `cost = :reactive`.
+* [`addBus!`](@ref addBus!): `reactive`, `susceptance`;
+* [`addGenerator!`](@ref addGenerator!): `reactive`, `minReactive`, `maxReactive`, `minLowReactive`, `maxLowReactive`, `minUpReactive`, `maxUpReactive`, `reactiveTimescale`,
+* [`updateBus!`](@ref updateBus!): `susceptance`;
+* [`updateGenerator!`](@ref updateGenerator!): `reactive`;
+* [`cost!`](@ref cost!) if `cost = :reactive`: `piecewise`, `polynomial`.
 
 Changing the unit of apparent power unit is reflected in the following quantities:
-* [`addBranch!`](@ref addBranch!): `longTerm`, `shortTerm`, `emergency` if `type = 1` or `type = 3`.
+* [`addBranch!`](@ref addBranch!) if `type = 1` or `type = 3`: `longTerm`, `shortTerm`, `emergency`.
 
 # Example
 ```jldoctest
@@ -156,7 +142,7 @@ Alternatively, the unit of current `magnitude` can be expressed in per-unit (pu)
 of current angle should be in radians (rad) or degrees (deg).
 
 Changing the unit of current magnitude is reflected in the following quantities:
-* [`addAmmeter!`](@ref addAmmeter!): `mean`, `exact`, `variance`.
+* ...
 
 # Example
 ```jldoctest
@@ -196,7 +182,7 @@ functions:
 
 Changing the units of admittance is reflected in the following quantities:
 * [`addBranch!`](@ref addBranch!): `susceptance`;
-* [`updateBranch!`](@ref parameterBranch!): `susceptance`.
+* [`updateBranch!`](@ref updateBranch!): `susceptance`.
 
 # Example
 ```jldoctest

@@ -11,10 +11,10 @@ After obtaining the solution for DC optimal power flow, JuliaGrid offers a post-
 * [`power!`](@ref power!(::PowerSystem, ::DCPowerFlow)).
 
 Additionally, there are specialized functions dedicated to calculating specific types of active powers related to particular buses or branches:
-* [`powerInjection`](@ref powerInjection(::PowerSystem, ::DCPowerFlow)),
-* [`powerSupply`](@ref powerSupply(::PowerSystem, ::DCPowerFlow)),
-* [`powerFrom`](@ref powerFrom(::PowerSystem, ::DCPowerFlow)),
-* [`powerTo`](@ref powerTo(::PowerSystem, ::DCPowerFlow)).
+* [`injectionPower`](@ref injectionPower(::PowerSystem, ::DCPowerFlow)),
+* [`supplyPower`](@ref supplyPower(::PowerSystem, ::DCPowerFlow)),
+* [`fromPower`](@ref fromPower(::PowerSystem, ::DCPowerFlow)),
+* [`toPower`](@ref toPower(::PowerSystem, ::DCPowerFlow)).
 
 ---
 
