@@ -27,9 +27,9 @@ The bus is defined with the following keywords:
 The function updates the `bus` field of the `PowerSystem` composite type.
 
 # Default Settings
-By default, certain keywords are assigned default values: `type = 1`, `magnitude = 1.0`
-per-unit, and `base = 138e3` volts. The rest of the keywords are initialized with a value
-of zero. However, the user can modify these default settings by utilizing the
+By default, certain keywords are assigned default values: `type = 1`, `magnitude = 1.0`,
+`minMagnitude = 0.9`, and `maxMagnitude = 1.1`. The rest of the keywords are initialized with
+a value of zero. However, the user can modify these default settings by utilizing the
 [`@bus`](@ref @bus) macro.
 
 # Units

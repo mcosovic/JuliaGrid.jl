@@ -62,7 +62,7 @@ analysis = dcPowerFlow(system)
 ```
 
 ```@repl busType
-[collect(keys(sort(system.bus.label; byvalue = true))) system.bus.layout.type]
+print(system.bus.label, system.bus.layout.type)
 ```
 
 !!! note "Info"
@@ -109,7 +109,7 @@ nothing # hide
 
 Once the solution is obtained, the bus voltage angles can be accessed using:
 ```@repl DCPowerFlowSolution
-[collect(keys(sort(system.bus.label; byvalue = true)))  analysis.voltage.angle]
+print(system.bus.label, analysis.voltage.angle)
 nothing # hide
 ```
 
@@ -152,14 +152,6 @@ power!(system, analysis)
 nothing # hide
 ```
 
-First, let us create label arrays to display active power injections at each bus and active power flows at each "from" end of the branch:
-```@example ComputationPowersCurrentsLosses
-labelBus = collect(keys(sort(system.bus.label; byvalue = true)))
-labelBranch = collect(keys(sort(system.branch.label; byvalue = true)))
-
-nothing # hide
-```
-
 Next, let us convert the base power unit to megavolt-amperes (MVA):
 ```@example ComputationPowersCurrentsLosses
 @base(system, MVA, V)
@@ -169,8 +161,8 @@ nothing # hide
 
 Finally, here are the calculated active power values in megawatts (MW) corresponding to buses and branches:
 ```@repl ComputationPowersCurrentsLosses
-[labelBus system.base.power.value * analysis.power.injection.active]
-[labelBranch system.base.power.value * analysis.power.from.active]
+print(system.bus.label, system.base.power.value * analysis.power.injection.active)
+print(system.branch.label, system.base.power.value * analysis.power.from.active)
 ```
 
 !!! note "Info"
@@ -260,11 +252,9 @@ solve!(system, analysis)
 ---
 
 ## [Reusing Power Flow Model](@id DCReusingPowerFlowModelManual)
-To reuse the `DCPowerFlow` composite type, you essentially skip running the [`dcPowerFlow`](@ref dcPowerFlow) function. This function is responsible for conducting bus type checks, as explained in the [Bus Type Modification](@ref DCBusTypeModificationManual) section, and for factorizing the nodal matrix. In practical terms, reusing the `DCPowerFlow` composite type involves making adjustments exclusively to demand, shunt, or generator parameters while leaving the power system's branch parameters unchanged.
+To reuse the `DCPowerFlow` composite type, you essentially skip running the [`dcPowerFlow`](@ref dcPowerFlow) function. This can be accomplished by using functions that add components or update their parameters and passing the `DCPowerFlow` composite type as an argument within the `PowerSystem` composite type. If the modifications the user intends to make are compatible with reusing the `DCPowerFlow` type, they will be executed and will consequently impact both types.
 
-However, it is important to exercise caution when modifying these parameters. For example, in the previous instance where we deactivated `Generator 1`, adjustments to the slack bus may be necessary. You can achieve this by utilizing the [`dcPowerFlow`](@ref dcPowerFlow) function. Nevertheless, our primary objective is to minimize the usage of this function and leverage its output for reusability.
-
-To address this challenge and enable the straightforward reuse of the `DCPowerFlow` composite type without encountering unexpected errors in results, users can pass the `DCPowerFlow` type as an argument to any functions that add or modify the `PowerSystem` composite type. If the modifications are permissible and lead to the correct solutions, they will be executed and will accordingly alter the composite types.
+The [`dcPowerFlow`](@ref dcPowerFlow) function plays a role in conducting bus type checks, as explained in the [Bus Type Modification](@ref DCBusTypeModificationManual) section, and in factorizing the nodal matrix. In practical terms, reusing the `DCPowerFlow` composite type involves making adjustments exclusively to demand, shunt, or generator parameters, while keeping the power system's branch parameters unchanged. Consequently, there are situations where reusing may not be a viable option. In such cases, JuliGrid will trigger an error message.
 
 Building upon the earlier example, we can continue to refine the power system by making changes to the output power of `Generator 1` and adjusting the active power demand at `Bus 2` within the existing system. Without invoking the [`dcPowerFlow`](@ref dcPowerFlow) function, we can move ahead to obtain a solution using the following code snippet:
 ```@example ReusingPowerSystem
@@ -280,5 +270,4 @@ updateBranch!(system, analysis; label = "Branch 3", status = 0)
 ```
 
 !!! info "Info"
-    By providing the `DCPowerFlow` type as an argument when adding components or making updates, you inquire about the potential for reusing this type. If feasible, the `PowerSystem` composite type is updated, and if necessary, the `DCPowerFlow` type is adjusted for a valid solution. This streamlined process allows for a seamless transition to the [`solve!`](@ref solve!(::PowerSystem, ::DCPowerFlow)) function without intermediate steps. JuliaGrid empowers users to modify generator and demand power while reusing the optimized `DCPowerFlow` type, which utilizes a factorized nodal matrix for efficient computation.
-
+    When a user employs `DCPowerFlow` as an argument in functions for adding components or modifications, functions are checking if `DCPowerFlow` can be reused. If possible, both `PowerSystem` and `DCPowerFlow` types will be modified. This streamlined process allows for a seamless transition to the [`solve!`](@ref solve!(::PowerSystem, ::DCPowerFlow)) function without intermediate steps.

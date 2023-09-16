@@ -206,6 +206,13 @@ function print(io::IO, label::Dict{String, Int64}, data::Union{Array{Float64,1},
     end
 end
 
+function print(io::IO, label::Dict{String, Int64}, data1::Array{Float64,1}, data2::Array{Float64,1})
+    names = collect(keys(sort(label; byvalue = true)))
+    for i = 1:lastindex(names)
+        println(io::IO, names[i], ": ", data1[i], ", ", data2[i])
+    end
+end
+
 function print(io::IO, label::Dict{String, Int64}, obj::Dict{Int64, JuMP.ConstraintRef})
     names = collect(keys(sort(label; byvalue = true)))
     for key in keys(sort(obj))

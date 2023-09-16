@@ -61,8 +61,8 @@ Base.@kwdef mutable struct BusTemplate
     conductance::ContainerTemplate = ContainerTemplate()
     susceptance::ContainerTemplate = ContainerTemplate()
     magnitude::ContainerTemplate = ContainerTemplate(1.0, true)
-    minMagnitude::ContainerTemplate = ContainerTemplate()
-    maxMagnitude::ContainerTemplate = ContainerTemplate()
+    minMagnitude::ContainerTemplate = ContainerTemplate(0.9, true)
+    maxMagnitude::ContainerTemplate = ContainerTemplate(1.1, true)
     base::Float64 = 138e3
     angle::Float64 = 0.0
     type::Int8 = Int8(1)

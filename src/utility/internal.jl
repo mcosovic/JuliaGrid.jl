@@ -291,9 +291,9 @@ macro default(mode::Symbol)
 
         template.bus.magnitude.value = 1.0
         template.bus.magnitude.pu = true
-        template.bus.minMagnitude.value = 0.0
+        template.bus.minMagnitude.value = 0.9
         template.bus.minMagnitude.pu = true
-        template.bus.maxMagnitude.value = 0.0
+        template.bus.maxMagnitude.value = 1.1
         template.bus.maxMagnitude.pu = true
 
         template.bus.base = 138e3

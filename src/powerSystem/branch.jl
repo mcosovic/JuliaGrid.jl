@@ -44,7 +44,7 @@ are transmitted to the  `Analysis` type.
 
 # Default Settings
 By default, certain keywords are assigned default values: `status = 1`, `turnsRatio = 1.0`,
-`type = 1`, `minDiffAngle = -2*pi`, and `maxDiffAngle = 2*pi`. The rest of the keywords are
+`type = 1`, `minDiffAngle = -2pi`, and `maxDiffAngle = 2pi`. The rest of the keywords are
 initialized with a value of zero. However, the user can modify these default settings by
 utilizing the [`@branch`](@ref @branch) macro.
 

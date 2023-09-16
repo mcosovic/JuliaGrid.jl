@@ -84,7 +84,7 @@ function acOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
     slackMagnitude = Dict(bus.layout.slack => FixRef(magnitude[bus.layout.slack]))
 
     objExpr = QuadExpr()
-    nonLinExpr = Vector{NonlinearExpression}(undef, 0)
+    nonLinExpr = Vector{NonlinearExpr}(undef, 0)
     helperActive = Dict{Int64, VariableRef}()
     helperReactive = Dict{Int64, VariableRef}()
     piecewiseActive = Dict{Int64, Array{JuMP.ConstraintRef,1}}()
@@ -158,19 +158,12 @@ function acOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
         end
     end
 
-    numberNonLin = length(nonLinExpr)
-    if numberNonLin == 0
-        @objective(jump, Min, objExpr)
-    elseif numberNonLin == 1
-        @NLobjective(jump, Min, objExpr + nonLinExpr[1])
-    else
-        @NLobjective(jump, Min, objExpr + sum(nonLinExpr[i] for i = 1:numberNonLin))
-    end
+    @objective(jump, Min, objExpr + sum(nonLinExpr[i] for i = 1:lastindex(nonLinExpr)))
 
     voltageAngle = Dict{Int64, JuMP.ConstraintRef}()
     flowFrom = Dict{Int64, JuMP.ConstraintRef}()
     flowTo = Dict{Int64, JuMP.ConstraintRef}()
-    @inbounds for i = 1:branch.number
+    @time @inbounds for i = 1:branch.number
         if branch.layout.status[i] == 1
             jump, voltageAngle = addDiffAngle(system, jump, angle, voltageAngle, i)
 
@@ -202,17 +195,19 @@ function acOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
                     Dji = βij * (gij * b - bij * g)
                 end
 
+
                 if branch.flow.type[i] == 1
-                    flowFrom[i] = @NLconstraint(jump, Aij * Vi^4 + Bij * Vi^2 * Vj^2 - 2 * Vi^3 * Vj * (Cij * cos(θij) + Dij * sin(θij)) <= branch.flow.longTerm[i]^2)
-                    flowTo[i] = @NLconstraint(jump, Aji * Vj^4 + Bij * Vi^2 * Vj^2 - 2 * Vi * Vj^3 * (Cji * cos(θij) + Dji * sin(θij)) <= branch.flow.longTerm[i]^2)
+                    a = @expression(jump, Cij * cos(θij) + Dij * sin(θij))
+                    flowFrom[i] = @constraint(jump, Aij * Vi^4 + Bij * Vi^2 * Vj^2 - 2 * Vi^3 * Vj * a <= branch.flow.longTerm[i]^2)
+                    flowTo[i] = @constraint(jump, Aji * Vj^4 + Bij * Vi^2 * Vj^2 - 2 * Vi * Vj^3 * a <= branch.flow.longTerm[i]^2)
                 end
                 if branch.flow.type[i] == 2
-                    flowFrom[i] = @NLconstraint(jump, βij^2 * g * Vi^2 - βij * Vi * Vj * (gij * cos(θij) + bij * sin(θij)) <= branch.flow.longTerm[i])
-                    flowTo[i] = @NLconstraint(jump, g * Vj^2 - βij * Vi * Vj * (gij * cos(θij) - bij * sin(θij)) <= branch.flow.longTerm[i])
+                    flowFrom[i] = @constraint(jump, βij^2 * g * Vi^2 - βij * Vi * Vj * (gij * cos(θij) + bij * sin(θij)) <= branch.flow.longTerm[i])
+                    flowTo[i] = @constraint(jump, g * Vj^2 - βij * Vi * Vj * (gij * cos(θij) - bij * sin(θij)) <= branch.flow.longTerm[i])
                 end
                 if branch.flow.type[i] == 3
-                    flowFrom[i] = @NLconstraint(jump, Aij * Vi^2 + Bij * Vj^2 - 2 * Vi * Vj * (Cij * cos(θij) + Dij * sin(θij)) <= branch.flow.longTerm[i]^2)
-                    flowTo[i] = @NLconstraint(jump, Aji * Vj^2 + Bij * Vi^2 - 2 * Vi * Vj * (Cji * cos(θij) + Dji * sin(θij)) <= branch.flow.longTerm[i]^2)
+                    flowFrom[i] = @constraint(jump, Aij * Vi^2 + Bij * Vj^2 - 2 * Vi * Vj * (Cij * cos(θij) + Dij * sin(θij)) <= branch.flow.longTerm[i]^2)
+                    flowTo[i] = @constraint(jump, Aji * Vj^2 + Bij * Vi^2 - 2 * Vi * Vj * (Cji * cos(θij) + Dji * sin(θij)) <= branch.flow.longTerm[i]^2)
                 end
             end
         end
@@ -234,8 +229,8 @@ function acOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
             θij[k] = angle[i] - angle[row]
         end
 
-        balanceActive[i] = @NLconstraint(jump, bus.demand.active[i] - sum(active[k] for k in system.bus.supply.generator[i]) + magnitude[i] * sum(Gij[j] * cos(θij[j]) + Bij[j] * sin(θij[j]) for j = 1:n) == 0)
-        balanceReactive[i] = @NLconstraint(jump, bus.demand.reactive[i] - sum(reactive[k] for k in system.bus.supply.generator[i]) + magnitude[i] * sum(Gij[j] * sin(θij[j]) - Bij[j] * cos(θij[j]) for j = 1:n) == 0)
+        balanceActive[i] = @constraint(jump, bus.demand.active[i] - sum(active[k] for k in system.bus.supply.generator[i]) + magnitude[i] * sum(Gij[j] * cos(θij[j]) + Bij[j] * sin(θij[j]) for j = 1:n) == 0)
+        balanceReactive[i] = @constraint(jump, bus.demand.reactive[i] - sum(reactive[k] for k in system.bus.supply.generator[i]) + magnitude[i] * sum(Gij[j] * sin(θij[j]) - Bij[j] * cos(θij[j]) for j = 1:n) == 0)
 
         jump, voltageMagnitude = addLimitMagnitude(jump, magnitude, voltageMagnitude, bus.voltage.minMagnitude, bus.voltage.maxMagnitude, i)
     end
@@ -428,11 +423,12 @@ function polynomialLinear(objExpr::QuadExpr, power::VariableRef, cost::Array{Flo
 end
 
 ######## Nonlinear Expression in the Objective Function ##########
-function polynomialNonlinear(jump::JuMP.Model, objExpr::QuadExpr, nonlinearExpr::Vector{NonlinearExpression}, cost::Array{Float64,1}, power::VariableRef, term::Int64)
+function polynomialNonlinear(jump::JuMP.Model, objExpr::QuadExpr, nonlinearExpr::Vector{NonlinearExpr}, cost::Array{Float64,1}, power::VariableRef, term::Int64)
     add_to_expression!(objExpr, cost[end - 2], power, power)
     add_to_expression!(objExpr, cost[end - 1], power)
     add_to_expression!(objExpr, cost[end])
-    push!(nonlinearExpr, @NLexpression(jump, sum(cost[term - degree] * power^degree for degree = term-1:-1:3)))
+
+    push!(nonlinearExpr, @expression(jump, sum(cost[term - degree] * power^degree for degree = term-1:-1:3)))
 
     return jump, objExpr, nonlinearExpr
 end

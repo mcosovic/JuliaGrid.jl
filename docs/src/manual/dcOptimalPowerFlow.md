@@ -30,7 +30,7 @@ addBus!(system; label = "Bus 1", type = 3, angle = 0.17)
 addBus!(system; label = "Bus 2", active = 0.1, conductance = 0.04)
 addBus!(system; label = "Bus 3", active = 0.05)
 
-@branch(minDiffAngle = -3.0, maxDiffAngle = 3.0, longTerm = 0.12)
+@branch(minDiffAngle = -3.1, maxDiffAngle = 3.1, longTerm = 0.12)
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.05)
 addBranch!(system; label = "Branch 2", from = "Bus 1", to = "Bus 3", reactance = 0.01)
 addBranch!(system; label = "Branch 3", from = "Bus 2", to = "Bus 3", reactance = 0.01)
@@ -317,13 +317,13 @@ JuMP.start_value.(analysis.jump[:active])
 ##### Using JuliaGrid Variables
 Alternatively, you can rely on the [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow)) function to assign starting values based on the `power` and `voltage` fields. By default, these values are initially defined according to the active power outputs of the generators and the initial bus voltage angles:
 ```@repl DCOptimalPowerFlow
-analysis.power.generator.active
-analysis.voltage.angle
+print(system.generator.label, analysis.power.generator.active)
+print(system.bus.label, analysis.voltage.angle)
 ```
 You can modify these values, and they will be used as primal starting values during the execution of the [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow)) function.
 
 !!! warning "Warning"
-    It is important to be aware that if users establish any primal starting value using the [`start_value`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.start_value) function or any other approach before running the [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow)) function, that particular value will be disregarded when JuliaGrid establishes starting values using the `power` and `voltage` fields. This is because the starting point will be regarded as already defined.
+    It is important to be aware that if users establish any primal starting value using the [`start_value`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.start_value) function or any other approach before running the [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow)) function, those specific values will remain as user-defined when JuliaGrid establishes starting values using the `power` and `voltage` fields. This is due to the fact that the starting point will be considered as already specified.
 
 ---
 
@@ -359,8 +359,8 @@ nothing # hide
 
 By executing this function, you will obtain the solution with the optimal values for the active power outputs of the generators and the bus voltage angles:
 ```@repl DCOptimalPowerFlow
-analysis.power.generator.active
-analysis.voltage.angle
+print(system.generator.label, analysis.power.generator.active)
+print(system.bus.label, analysis.voltage.angle)
 ```
 
 ---
@@ -466,6 +466,29 @@ This implies that users have the flexibility to add or update parameters after c
 ---
 
 ## [Reusing Optimal Power Flow Model](@id DCReusingOptimalPowerFlowModelManual)
-Efficiently modelling and solving large-scale power systems necessitates the reuse of the `DCOptimalPowerFlow` type, bypassing the execution of [`dcOptimalPowerFlow`](@ref dcOptimalPowerFlow). Constructing an optimal power flow model can consume a substantial amount of time, especially for large-scale systems. By creating the `DCOptimalPowerFlow` composite type once, users can effortlessly adapt it to alterations in the power system's structure, conserving computational resources and time. This approach simplifies dynamic modifications to the power system without the requirement to recreate the entire optimization model.
+Efficiently modelling and solving large-scale power systems requires reusing the `DCOptimalPowerFlow` type, avoiding the need to run [`dcOptimalPowerFlow`](@ref dcOptimalPowerFlow). Constructing an optimal power flow model can be time-consuming, especially for large systems. By creating the `DCOptimalPowerFlow` composite type once, users can easily adapt it to changes in the power system's structure, saving computational resources and time. This simplifies dynamic power system modifications without recreating the entire optimization model.
 
-As illustrated throughout this manual, this is accomplished by passing the `DCOptimalPowerFlow` type as an argument to functions responsible for adding or updating components within the `PowerSystem` composite type. If these changes prove to be valid and yield accurate solutions, these functions will automatically adjust the composite types, ensuring seamless integration for dynamic power system adjustments while upholding the integrity of the DC optimal power flow analysis.
+As demonstrated in this manual, this is achieved by using the `DCOptimalPowerFlow` type as an argument in functions that add or update components within the `PowerSystem` composite type. If these changes are valid and provide accurate solutions, these functions will automatically adjust the composite types, ensuring smooth integration for dynamic power system adjustments while maintaining the integrity of the DC optimal power flow analysis.
+
+---
+
+##### Primal Starting Values
+Utilizing the `DCOptimalPowerFlow` type and proceeding directly to the solver offers the advantage of a "warm start." In this scenario, the primal starting values for the subsequent solving step correspond to the solution obtained from the previous step.
+
+In the previous example, we obtained the following solution:
+```@repl DCOptimalPowerFlowPower
+print(system.generator.label, analysis.power.generator.active)
+print(system.bus.label, analysis.voltage.angle)
+```
+
+Now, let us introduce changes to the power system from the previous example and solve it. The primal starting values will now be set to the values shown above.
+```@example DCOptimalPowerFlowPower
+updateGenerator!(system, analysis; label = "Generator 2", maxActive = 0.08)
+solve!(system, analysis)
+```
+
+As a result, we obtain a new solution:
+```@repl DCOptimalPowerFlowPower
+print(system.generator.label, analysis.power.generator.active)
+print(system.bus.label, analysis.voltage.angle)
+```
