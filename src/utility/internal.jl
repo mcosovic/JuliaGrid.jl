@@ -51,22 +51,35 @@ the unit of `active` power (W), `reactive` power (VAr), or `apparent` power (VA)
 is a possible to combine SI units with/without prefixes with per-units (pu).
 
 Changing the unit of active power is reflected in the following quantities:
-* [`addBus!`](@ref addBus!): `active`, `conductance`,
-* [`shuntBus!`](@ref shuntBus!): `conductance`,
-* [`addGenerator!`](@ref addGenerator!): `active`, `minActive`, `maxActive`, `lowActive`, `upActive`, `loadFollowing`, `reserve10min`, `reserve30min`,
-* [`addActiveCost!`](@ref addActiveCost!): `piecewise`, `polynomial`,
-* [`outputGenerator!`](@ref outputGenerator!): `active`,
-* [`addBranch!`](@ref addBranch!): `longTerm`, `shortTerm`, `emergency` if rating `type = 2`.
+* [`addBranch!`](@ref addBranch!): `longTerm`, `shortTerm`, `emergency` if `type = 2`;
+* [`addGenerator!`](@ref addGenerator!): `active`, `minActive`, `maxActive`, `lowActive`, `upActive`, `loadFollowing`, `reserve10min`, `reserve30min`;
+* [`updateBus!`](@ref updateBus!): `active`, `conductance`;
+* [`updateGenerator!`](@ref updateGenerator!): `active`;
+* [`cost!`](@ref cost!): `piecewise`, `polynomial` if `cost = :active`.
 
 Changing the unit of reactive power unit is reflected in the following quantities:
-* [`addBus!`](@ref addBus!): `reactive`, `susceptance`,
-* [`shuntBus!`](@ref shuntBus!): `susceptance`,
-* [`addGenerator!`](@ref addGenerator!): `reactive`, `minReactive`, `maxReactive`, `minLowReactive`, `maxLowReactive`, `minUpReactive`, `maxUpReactive`, `reactiveTimescale`,
-* [`addReactiveCost!`](@ref addReactiveCost!): `piecewise`, `polynomial`,
-* [`outputGenerator!`](@ref outputGenerator!): `reactive`.
+* [`addBus!`](@ref addBus!):
+  * `reactive`;
+  * `susceptance`;
+* [`addGenerator!`](@ref addGenerator!):
+  * `reactive`;
+  * `minReactive`;
+  * `maxReactive`;
+  * `minLowReactive`;
+  * `maxLowReactive`;
+  * `minUpReactive`;
+  * `maxUpReactive`;
+  * `reactiveTimescale`;
+* [`updateBus!`](@ref updateBus!):
+  * `susceptance`;
+* [`updateGenerator!`](@ref updateGenerator!):
+  * `reactive`;
+* [`cost!`](@ref cost!) for `cost = :reactive`:
+  * `piecewise`;
+  * `polynomial` if `cost = :reactive`.
 
 Changing the unit of apparent power unit is reflected in the following quantities:
-* [`addBranch!`](@ref addBranch!): `longTerm`, `shortTerm`, `emergency` if rating `type = 1` or `type = 3`.
+* [`addBranch!`](@ref addBranch!): `longTerm`, `shortTerm`, `emergency` if `type = 1` or `type = 3`.
 
 # Example
 ```jldoctest
@@ -100,13 +113,13 @@ Alternatively, the unit of voltage `magnitude` can be expressed in per-unit (pu)
 voltage angle should be in radians (rad) or degrees (deg).
 
 Changing the unit of voltage magnitude is reflected in the following quantities:
-* [`addBus!`](@ref addBus!): `magnitude`, `minMagnitude`, `maxMagnitude`,
+* [`addBus!`](@ref addBus!): `magnitude`, `minMagnitude`, `maxMagnitude`;
 * [`addGenerator!`](@ref addGenerator!): `magnitude`.
 
 Changing the unit of voltage angle is reflected in the following quantities:
-* [`addBus!`](@ref addBus!): `angle`,
-* [`addBranch!`](@ref addBranch!): `shiftAngle`, `minDiffAngle`, `maxDiffAngle`,
-* [`parameterBranch!`](@ref parameterBranch!): `shiftAngle`.
+* [`addBus!`](@ref addBus!): `angle`;
+* [`addBranch!`](@ref addBranch!): `shiftAngle`, `minDiffAngle`, `maxDiffAngle`;
+* [`updateBranch!`](@ref updateBranch!): `shiftAngle`.
 
 Changing the unit prefix of voltage base is reflected in the following quantity:
 * [`addBus!`](@ref addBus!): `base`.
@@ -178,12 +191,12 @@ the transformer.
 
 Changing the units of impedance is reflected in the following quantities in specific
 functions:
-* [`addBranch!`](@ref addBranch!): `resistance`, `reactance`,
-* [`parameterBranch!`](@ref parameterBranch!): `resistance`, `reactance`.
+* [`addBranch!`](@ref addBranch!): `resistance`, `reactance`;
+* [`updateBranch!`](@ref updateBranch!): `resistance`, `reactance`.
 
 Changing the units of admittance is reflected in the following quantities:
-* [`addBranch!`](@ref addBranch!): `susceptance`,
-* [`parameterBranch!`](@ref parameterBranch!): `susceptance`.
+* [`addBranch!`](@ref addBranch!): `susceptance`;
+* [`updateBranch!`](@ref parameterBranch!): `susceptance`.
 
 # Example
 ```jldoctest
@@ -242,13 +255,13 @@ The macro is designed to reset various settings to their default values.
     @default(mode)
 
 The `mode` argument can take on the following values:
-* `unit`: resets all units to their default settings
-* `power`: sets active, reactive, and apparent power to per-units
-* `voltage`: sets voltage magnitude to per-unit and voltage angle to radian
-* `parameter`: sets impedance and admittance to per-units
-* `template`: resets bus, branch and generator templates to their default settings
-* `bus`: resets the bus template to its default settings
-* `branch`: resets the branch template to its default settings
+* `unit`: resets all units to their default settings;
+* `power`: sets active, reactive, and apparent power to per-units;
+* `voltage`: sets voltage magnitude to per-unit and voltage angle to radian;
+* `parameter`: sets impedance and admittance to per-units;
+* `template`: resets bus, branch and generator templates to their default settings;
+* `bus`: resets the bus template to its default settings;
+* `branch`: resets the branch template to its default settings;
 * `generator`: resets the generator template to its default settings.
 
 # Example
@@ -334,7 +347,7 @@ macro default(mode::Symbol)
         template.generator.active.pu = true
         template.generator.reactive.value = 0.0
         template.generator.reactive.pu = true
-        
+
         template.generator.magnitude.value = 1.0
         template.generator.magnitude.pu = true
 
