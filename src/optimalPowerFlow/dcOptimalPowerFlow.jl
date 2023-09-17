@@ -177,6 +177,9 @@ function solve!(system::PowerSystem, analysis::DCOptimalPowerFlow)
     @inbounds for i = 1:system.generator.number
         analysis.power.generator.active[i] = value(active[i]::JuMP.VariableRef)
     end
+
+    JuMP.set_start_value.(angle, nothing)
+    JuMP.set_start_value.(active, nothing)
 end
 
 ######### Balance Constraints ##########
@@ -204,7 +207,7 @@ function addFlow(system::PowerSystem, jump::JuMP.Model, angle::Vector{VariableRe
 end
 
 ######### Update Balance Constraints ##########
-function updateBalance(system::PowerSystem, analysis::DCOptimalPowerFlow, index::Int64; voltage = false, power = false, rhs = false, genIndex = 0)
+function updateBalance(system::PowerSystem, analysis::DCOptimalPowerFlow, index::Int64; voltage = false, power = -1, rhs = false, genIndex = 0)
     dc = system.model.dc
     jump = analysis.jump
     constraint = analysis.constraint
@@ -217,8 +220,8 @@ function updateBalance(system::PowerSystem, analysis::DCOptimalPowerFlow, index:
                 JuMP.set_normalized_coefficient(constraint.balance.active[index], angle, - dc.nodalMatrix.nzval[j])
             end
         end
-        if power
-            JuMP.set_normalized_coefficient(constraint.balance.active[index], jump[:active][genIndex], 1)
+        if power in [0, 1]
+            JuMP.set_normalized_coefficient(constraint.balance.active[index], jump[:active][genIndex], power)
         end
         if rhs
             JuMP.set_normalized_rhs(constraint.balance.active[index], system.bus.demand.active[index] + system.bus.shunt.conductance[index] + dc.shiftActivePower[index])

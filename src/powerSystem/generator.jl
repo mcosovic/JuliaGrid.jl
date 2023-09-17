@@ -203,7 +203,7 @@ function addGenerator!(system::PowerSystem, analysis::DCOptimalPowerFlow;
     push!(analysis.power.generator.active, generator.output.active[end])
 
     if generator.layout.status[end] == 1
-        updateBalance(system, analysis, busIndex; power = true, genIndex = index)
+        updateBalance(system, analysis, busIndex; power = 1, genIndex = index)
         addCapability(jump, active, constraint.capability.active, generator.capability.minActive, generator.capability.maxActive, generator.number)
     else
         fix!(active, 0.0, constraint.capability.active, generator.number)
@@ -502,8 +502,8 @@ function updateGenerator!(system::PowerSystem, analysis::DCOptimalPowerFlow;
         end
 
         delete!(jump, constraint.capability.active, index)
-        if haskey(constraint.balance.active, indexBus) && !JuMP.is_valid(jump, constraint.balance.active[indexBus])
-            JuMP.set_normalized_coefficient(constraint.balance.active[indexBus], activeVar[index], 0)
+        if haskey(constraint.balance.active, indexBus)
+            updateBalance(system, analysis, indexBus; power = 0, genIndex = index)
         end
         fix!(activeVar, 0.0, constraint.capability.active, index)
 
@@ -520,7 +520,7 @@ function updateGenerator!(system::PowerSystem, analysis::DCOptimalPowerFlow;
             JuMP.set_objective_function(jump, objExpr)
         end
 
-        updateBalance(system, analysis, indexBus; power = true, genIndex = index)
+        updateBalance(system, analysis, indexBus; power = 1, genIndex = index)
         addCapability(jump, activeVar, constraint.capability.active, generator.capability.minActive, generator.capability.maxActive, index)
     end
 
