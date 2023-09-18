@@ -394,6 +394,54 @@ function updateBus!(system::PowerSystem, analysis::DCOptimalPowerFlow;
     end
 end
 
+function updateBus!(system::PowerSystem, analysis::ACOptimalPowerFlow;
+    label::L, type::T = missing,
+    active::T = missing, reactive::T = missing,
+    conductance::T = missing, susceptance::T = missing,
+    magnitude::T = missing, angle::T = missing,
+    minMagnitude::T = missing, maxMagnitude::T = missing,
+    base::T = missing, area::T = missing, lossZone::T = missing)
+
+    checkUUID(system.uuid, analysis.uuid)
+
+    bus = system.bus
+    jump = analysis.jump
+    constraint = analysis.constraint
+
+    index = bus.label[getLabel(bus, label, "bus")]
+    typeOld = bus.layout.type[index]
+
+    updateBus!(system; label, type, active, reactive, conductance, susceptance,
+        magnitude, angle, minMagnitude, maxMagnitude, base, area, lossZone)
+
+    activeUpdate = !(ismissing(conductance)) || !(ismissing(susceptance)) || !(ismissing(active))
+    reactiveupdate = !(ismissing(conductance)) || !(ismissing(susceptance)) || !(ismissing(reactive))
+    if activeUpdate || reactiveupdate
+        updateBalance(system, analysis, index; active = activeUpdate, reactive = reactiveupdate)
+    end
+
+    if !ismissing(magnitude)
+        analysis.voltage.magnitude[index] = bus.voltage.magnitude[index]
+    end
+    if !ismissing(angle)
+        analysis.voltage.angle[index] = bus.voltage.angle[index]
+    end
+
+    if !ismissing(minMagnitude) || !ismissing(maxMagnitude)
+        delete!(jump, constraint.voltage.magnitude, index)
+        addLimitMagnitude(system, jump, jump[:magnitude], constraint.voltage.magnitude, index)
+    end
+
+    if typeOld == 3 && bus.layout.type[index] != 3
+        unfix!(analysis.jump, analysis.jump[:angle], analysis.constraint.slack.angle, index)
+    end
+
+    if bus.layout.type[index] == 3
+        fix!(analysis.jump[:angle], bus.voltage.angle[index], analysis.constraint.slack.angle, index)
+    end
+end
+
+
 """
     @bus(kwargs...)
 

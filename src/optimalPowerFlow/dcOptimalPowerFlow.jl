@@ -157,16 +157,10 @@ function solve!(system::PowerSystem, analysis::DCOptimalPowerFlow)
     active = analysis.jump[:active]::Vector{JuMP.VariableRef}
 
     @inbounds for i = 1:system.bus.number
-        variable = angle[i]::JuMP.VariableRef
-        if isnothing(JuMP.start_value(variable))
-            JuMP.set_start_value(variable, analysis.voltage.angle[i])
-        end
+        JuMP.set_start_value(angle[i]::JuMP.VariableRef, analysis.voltage.angle[i])
     end
     @inbounds for i = 1:system.generator.number
-        variable = active[i]::JuMP.VariableRef
-        if isnothing(JuMP.start_value(variable))
-            JuMP.set_start_value(variable, analysis.power.generator.active[i])
-        end
+        JuMP.set_start_value(active[i]::JuMP.VariableRef, analysis.power.generator.active[i])
     end
 
     JuMP.optimize!(analysis.jump)
@@ -177,9 +171,6 @@ function solve!(system::PowerSystem, analysis::DCOptimalPowerFlow)
     @inbounds for i = 1:system.generator.number
         analysis.power.generator.active[i] = value(active[i]::JuMP.VariableRef)
     end
-
-    JuMP.set_start_value.(angle, nothing)
-    JuMP.set_start_value.(active, nothing)
 end
 
 ######### Balance Constraints ##########
@@ -207,7 +198,7 @@ function addFlow(system::PowerSystem, jump::JuMP.Model, angle::Vector{VariableRe
 end
 
 ######### Update Balance Constraints ##########
-function updateBalance(system::PowerSystem, analysis::DCOptimalPowerFlow, index::Int64; voltage = false, power = -1, rhs = false, genIndex = 0)
+function updateBalance(system::PowerSystem, analysis::DCOptimalPowerFlow, index::Int64; voltage = false, rhs = false, power = -1, genIndex = 0)
     dc = system.model.dc
     jump = analysis.jump
     constraint = analysis.constraint

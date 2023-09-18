@@ -120,7 +120,7 @@ struct CapabilityRef
 end
 
 struct Constraint
-    slack::PolarRef
+    slack::PolarAngleRef
     balance::CartesianRef
     voltage::PolarRef
     flow::CartesianFlowRef
@@ -149,6 +149,7 @@ struct ACOptimalPowerFlow <: AC
     current::Current
     jump::JuMP.Model
     constraint::Constraint
+    uuid::UUID
 end
 
 ######### DC Optimal Power Flow ##########

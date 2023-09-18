@@ -40,9 +40,9 @@ addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 0.6, maxAct
 addGenerator!(system; label = "Generator 2", bus = "Bus 2", active = 0.1, maxActive = 0.3)
 addGenerator!(system; label = "Generator 3", bus = "Bus 2", active = 0.2, maxActive = 0.4)
 
-cost!(system; label = "Generator 1", model = 2, polynomial = [1100.2; 500; 80])
-cost!(system; label = "Generator 2", model = 1, piecewise =  [8.0 11.0; 14.0 17.0])
-cost!(system; label = "Generator 3", model = 1, piecewise =  [6.8 12.3; 8.7 16.8; 11.2 19.8])
+cost!(system; label = "Generator 1", active = 2, polynomial = [1100.2; 500; 80])
+cost!(system; label = "Generator 2", active = 1, piecewise =  [8.0 11.0; 14.0 17.0])
+cost!(system; label = "Generator 3", active = 1, piecewise =  [6.8 12.3; 8.7 16.8; 11.2 19.8])
 
 dcModel!(system)
 
@@ -185,7 +185,7 @@ print(system.branch.label, analysis.constraint.flow.active)
 ---
 
 ##### Active Power Capability Constraints
-The `capability` field contains references to the inequality constraints associated with the minimum and maximum active power outputs of the active power outputs of the generators. These limits are specified using the `minActive` and `maxActive` keywords within the [`addGenerator!`](@ref addGenerator!) function:
+The `capability` field contains references to the inequality constraints associated with the minimum and maximum active power outputs of the generators. These limits are specified using the `minActive` and `maxActive` keywords within the [`addGenerator!`](@ref addGenerator!) function:
 ```@repl DCOptimalPowerFlow
 print(system.generator.label, analysis.constraint.capability.active)
 ```
@@ -206,7 +206,7 @@ It is important to note that by bringing back `Generator 2` into service, it wil
 ---
 
 ##### Active Power Piecewise Constraints
-In the context of active power modelling, the `piecewise` field serves as a reference to the inequality constraints related to linear piecewise cost functions. These constraints are created using the [`cost!`](@ref cost!) function with `model = 1` specified when dealing with linear piecewise cost functions comprising multiple segments. JuliaGrid takes care of establishing the appropriate inequality constraints for each segment of the linear piecewise cost:
+In the context of active power modelling, the `piecewise` field serves as a reference to the inequality constraints related to linear piecewise cost functions. These constraints are created using the [`cost!`](@ref cost!) function with `active = 1` specified when dealing with linear piecewise cost functions comprising multiple segments. JuliaGrid takes care of establishing the appropriate inequality constraints for each segment of the linear piecewise cost:
 ```@repl DCOptimalPowerFlow
 print(system.generator.label, analysis.constraint.piecewise.active)
 ```
@@ -266,9 +266,9 @@ JuMP.objective_function(analysis.jump)
 ---
 
 ##### Update Objective Function
-By utilizing the [`cost!`](@ref cost!) functions, users have the flexibility to modify the objective function by adjusting polynomial or linear piecewise cost coefficients or by changing the type of polynomial or linear piecewise function employed. For instance, consider `Generator 3`, which incorporates a piecewise cost structure with three segments. In essence, this structure generates a helper variable with additional constraints. Now, let us define a polynomial function for this generator and set it to use `model = 2` as follows:
+By utilizing the [`cost!`](@ref cost!) functions, users have the flexibility to modify the objective function by adjusting polynomial or linear piecewise cost coefficients or by changing the type of polynomial or linear piecewise function employed. For instance, consider `Generator 3`, which incorporates a piecewise cost structure with three segments. In essence, this structure generates a helper variable with additional constraints. Now, let us define a polynomial function for this generator and set it to use `active = 2` as follows:
 ```@example DCOptimalPowerFlow
-cost!(system, analysis; label = "Generator 3", model = 2, polynomial = [853.4; 257; 40])
+cost!(system, analysis; label = "Generator 3", active = 2, polynomial = [853.4; 257; 40])
 ```
 
 This results in the updated objective function, which can be observed as follows:
@@ -295,40 +295,17 @@ JuMP.objective_function(analysis.jump)
 ---
 
 ## [Setup Primal Starting Values](@id SetupPrimalStartingValuesManual)
-There are two methods available to specify primal starting values for each variable: using the built-in function provided by JuMP or accessing and modifying values directly within the `voltage` and `power` fields of the `DCOptimalPowerFlow` type.
-
----
-
-##### Using JuMP Functions
-One approach is to utilize the [`set_start_value`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.set_start_value) function from the JuMP package. This allows us to set primal starting values for the active power outputs of the generators and the bus voltage angles. Here is an example:
-```@example DCOptimalPowerFlow
-JuMP.set_start_value.(analysis.jump[:active], [0.8, 0.3, 0.1, 0.2])
-JuMP.set_start_value.(analysis.jump[:angle], [-0.1, 0.13, 0.14])
-nothing # hide
-```
-To inspect the primal starting values that have been set, you can use the [`start_value`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.start_value) function from JuMP. Here is an example of how you can inspect the starting values for the active power outputs:
-We can inspect that starting values are set:
-```@repl DCOptimalPowerFlow
-JuMP.start_value.(analysis.jump[:active])
-```
-
----
-
-##### Using JuliaGrid Variables
-Alternatively, you can rely on the [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow)) function to assign starting values based on the `power` and `voltage` fields. By default, these values are initially defined according to the active power outputs of the generators and the initial bus voltage angles:
+In JuliaGrid, the assignment of primal starting values for optimization variables takes place when the [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow)) function is executed. Primal starting values are determined based on the `voltage` and `power` fields within the `DCOptimalPowerFlow` type. By default, these values are initially established using the active power outputs of the generators and the initial bus voltage angles:
 ```@repl DCOptimalPowerFlow
 print(system.generator.label, analysis.power.generator.active)
 print(system.bus.label, analysis.voltage.angle)
 ```
-You can modify these values, and they will be used as primal starting values during the execution of the [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow)) function.
-
-!!! warning "Warning"
-    It is important to be aware that if users establish any primal starting value using the [`start_value`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.start_value) function or any other approach before running the [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow)) function, those specific values will remain as user-defined when JuliaGrid establishes starting values using the `power` and `voltage` fields. This is due to the fact that the starting point will be considered as already specified.
+You have the flexibility to adjust these values to your specifications, and they will be utilized as the primal starting values when you run the [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow)) function.
 
 ---
 
 ##### Using DC Power Flow
-Another approach is to perform the DC power flow and use the resulting solution to set primal starting values. Here is an example of how it can be done:
+In this perspective, users have the capability to conduct the DC power flow analysis and leverage the resulting solution to configure primal starting values. Here is an illustration of how this can be achieved:
 ```@example DCOptimalPowerFlow
 flow = dcPowerFlow(system)
 solve!(system, flow)
@@ -344,10 +321,13 @@ for i = 1:system.bus.number
     analysis.voltage.angle[i] = flow.voltage.angle[i]
 end
 ```
-Also, the user can make use of the [`set_start_value`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.set_start_value) function to set starting values from the DC power flow.
 
 ---
 
+##### Using DC Optimal Power Flow
+Performing repeated executions of the DC optimal power flow problem, and opting to reuse the existing `DCOptimalPowerFlow` type without generating a new instance offers the benefit of a "warm start". In such a situation, the initial primal values for the subsequent solving step align with the solution achieved in the prior step. Additional information can be found in the section dedicated to [Reusing the Optimal Power Flow Model](@ref DCReusingOptimalPowerFlowModelManual).
+
+---
 
 ## [Optimal Power Flow Solution](@id DCOptimalPowerFlowSolutionManual)
 To establish the DC optimal power flow problem, you can utilize the [`dcOptimalPowerFlow`](@ref dcOptimalPowerFlow) function. After setting up the problem, you can use the [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow)) function to compute the optimal values for the active power outputs of the generators and the bus voltage angles. Also, to turn off the solver output within the REPL, we use the [`set_silent`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.set_silent) function before calling [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow)) function. Here is an example:
@@ -394,8 +374,8 @@ addBranch!(system; label = "Branch 3", from = "Bus 2", to = "Bus 3", reactance =
 addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 3.2, maxActive = 0.5)
 addGenerator!(system; label = "Generator 2", bus = "Bus 2", active = 0.2, maxActive = 0.2)
 
-cost!(system; label = "Generator 1", model = 2, polynomial = [1100.2; 500; 80])
-cost!(system; label = "Generator 2", model = 1, piecewise =  [10.8 12.3; 14.7 16.8])
+cost!(system; label = "Generator 1", active = 2, polynomial = [1100.2; 500; 80])
+cost!(system; label = "Generator 2", active = 1, piecewise =  [10.8 12.3; 14.7 16.8])
 
 dcModel!(system)
 
@@ -473,7 +453,7 @@ As demonstrated in this manual, this is achieved by using the `DCOptimalPowerFlo
 ---
 
 ##### Primal Starting Values
-Utilizing the `DCOptimalPowerFlow` type and proceeding directly to the solver offers the advantage of a "warm start." In this scenario, the primal starting values for the subsequent solving step correspond to the solution obtained from the previous step.
+Utilizing the `DCOptimalPowerFlow` type and proceeding directly to the solver offers the advantage of a "warm start". In this scenario, the primal starting values for the subsequent solving step correspond to the solution obtained from the previous step.
 
 In the previous example, we obtained the following solution:
 ```@repl DCOptimalPowerFlowPower

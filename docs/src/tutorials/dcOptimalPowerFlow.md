@@ -21,8 +21,8 @@ addBranch!(system; label = 3, from = 2, to = 3, reactance = 0.01, longTerm = 0.2
 addGenerator!(system; label = 1, bus = 1, active = 3.2, maxActive = 0.5)
 addGenerator!(system; label = 2, bus = 2, active = 0.2, maxActive = 0.3)
 
-cost!(system; label = 1, model = 2, polynomial = [1100.2; 500; 80])
-cost!(system; label = 2, model = 1, piecewise =  [10.85 12.3; 14.77 16.8; 18 18.1])
+cost!(system; label = 1, active = 2, polynomial = [1100.2; 500; 80])
+cost!(system; label = 2, active = 1, piecewise =  [10.85 12.3; 14.77 16.8; 18 18.1])
 
 nothing # hide
 ```

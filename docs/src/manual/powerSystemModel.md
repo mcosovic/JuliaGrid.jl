@@ -659,7 +659,7 @@ nothing # hide
 ##### Polynomial Cost
 Let us define a quadratic polynomial cost function for the active power produced by the `Generator 1` using the following code:
 ```@example addActiveCost
-cost!(system; label = "Generator 1", model = 2, polynomial = [1100.0; 500.0; 150.0])
+cost!(system; label = "Generator 1", active = 2, polynomial = [1100.0; 500.0; 150.0])
 ```
 In essence, what we have accomplished is the establishment of a cost function depicted as ``f(P_{\text{g}1}) = 1100 P_{\text{g}1}^2 + 500 P_{\text{g}1} + 150`` through the code provided.
 
@@ -667,14 +667,14 @@ As previously, the default input units are related with per-units (pu), and the 
 ```@repl addActiveCost
 system.generator.cost.active.polynomial
 ```
-By setting `model = 2` in the function, we specify that the quadratic polynomial cost is being used for the corresponding generator. This can be particularly useful if we have also defined a piecewise linear cost function for the same generator. In such cases, we can choose between these two cost functions depending on our simulation requirements.
+By setting `active = 2` within the function, we express our intent to specify the active power cost using the `active` key. By using a value of `1`, we signify our preference for employing a quadratic polynomial cost model for the associated generator. This flexibility proves invaluable when we have previously defined a piecewise linear cost function for the same generator. In such cases, we can set `active = 1` to utilize the piecewise linear cost function to represent the cost of the corresponding generators. Thus, we retain the freedom to choose between these two cost functions according to the requirements of our simulation. Additionally, users have the option to define both piecewise and polynomial costs within a single function call, further enhancing the versatility of the implementation.
 
 ---
 
 ##### Piecewise Linear Cost
 We can also create a piecewise linear cost function, for example, let us create the reactive power cost function for the same generator using the following code:
 ```@example addActiveCost
-cost!(system; label = "Generator 1", cost = :reactive, piecewise =  [0.11 12.3; 0.15 16.8])
+cost!(system; label = "Generator 1", reactive = 1, piecewise =  [0.11 12.3; 0.15 16.8])
 nothing # hide
 ```
 In this case, the first column specifies the output reactive powers of the generator in per-units, while the second column specifies the corresponding costs for the specified reactive power in currency/hr. Thus, the data is stored exactly as entered:
@@ -694,7 +694,7 @@ nothing # hide
 
 Now, we can add the quadratic polynomial function using megawatts:
 ```@example addActiveCost
-cost!(system; label = "Generator 1", model = 2, polynomial = [0.11; 5.0; 150.0])
+cost!(system; label = "Generator 1", active = 2, polynomial = [0.11; 5.0; 150.0])
 ```
 After inspecting the resulting cost data, we can see that it is the same as before:
 ```@repl addActiveCost
@@ -703,7 +703,7 @@ system.generator.cost.active.polynomial
 
 Similarly, we can define the linear piecewise cost using megavolt-amperes reactive:
 ```@example addActiveCost
-cost!(system; label = "Generator 1", cost = :reactive, piecewise =  [11.0 12.3; 15.0 16.8])
+cost!(system; label = "Generator 1", reactive = 1, piecewise =  [11.0 12.3; 15.0 16.8])
 nothing # hide
 ```
 Upon inspection, we can see that the stored data is the same as before:

@@ -32,10 +32,10 @@
     addGenerator!(systemPU; bus = 2, active = 2.6, reactive = 0.3, maxActive = 3.16)
     addGenerator!(systemPU; bus = 1, active = 0.8, reactive = 0.3, status = 0)
 
-    cost!(systemPU; label = 1, model = 2, polynomial = [0.01 * 100^2; 40 * 100; 4])
-    cost!(systemPU; label = 2, model = 2, polynomial = [0.0266666667 * 100^2; 20 * 100; 3])
-    cost!(systemPU; label = 3, model = 2, polynomial = [0.0266666667 * 100^2; 20 * 100; 2])
-    cost!(systemPU; label = 4, model = 2, polynomial = [30.0 * 100; 5])
+    cost!(systemPU; label = 1, active = 2, polynomial = [0.01 * 100^2; 40 * 100; 4])
+    cost!(systemPU; label = 2, active = 2, polynomial = [0.0266666667 * 100^2; 20 * 100; 3])
+    cost!(systemPU; label = 3, active = 2, polynomial = [0.0266666667 * 100^2; 20 * 100; 2])
+    cost!(systemPU; label = 4, active = 2, polynomial = [30.0 * 100; 5])
 
     ####### Bus Data #######
     @test system.bus.label == systemPU.bus.label
@@ -94,7 +94,7 @@
     updateGenerator!(systemPU; label = 1, upActive = 5, minUpReactive = 3, maxUpReactive = 4)
     updateGenerator!(systemPU; label = 1, loadFollowing = 5, reserve10min = 3, reactiveTimescale = 4)
 
-    cost!(systemPU; label = 4, model = 2, polynomial = [0.3 * 100^2; 15 * 100; 5])
+    cost!(systemPU; label = 4, active = 2, polynomial = [0.3 * 100^2; 15 * 100; 5])
 
     ####### Bus Data #######
     @test system.bus.label == systemPU.bus.label
@@ -176,10 +176,10 @@ end
     addGenerator!(systemSI; bus = 2, active = 260e3, reactive = 30, maxActive = 316e3)
     addGenerator!(systemSI; bus = 1, active = 80e3, reactive = 30, status = 0)
 
-    cost!(systemSI; label = 1, model = 2, polynomial = [0.01e-6; 40e-3; 4])
-    cost!(systemSI; label = 2, model = 2, polynomial = [0.0266666667e-6; 20e-3; 3])
-    cost!(systemSI; label = 3, model = 2, polynomial = [0.0266666667e-6; 20e-3; 2])
-    cost!(systemSI; label = 4, model = 2, polynomial = [30.0e-3; 5])
+    cost!(systemSI; label = 1, active = 2, polynomial = [0.01e-6; 40e-3; 4])
+    cost!(systemSI; label = 2, active = 2, polynomial = [0.0266666667e-6; 20e-3; 3])
+    cost!(systemSI; label = 3, active = 2, polynomial = [0.0266666667e-6; 20e-3; 2])
+    cost!(systemSI; label = 4, active = 2, polynomial = [30.0e-3; 5])
 
     ####### Bus Data #######
     @test system.bus.label == systemSI.bus.label
@@ -243,7 +243,7 @@ end
     updateGenerator!(systemSI; label = 1, upActive = 500e3, minUpReactive = 300, maxUpReactive = 400)
     updateGenerator!(systemSI; label = 1, loadFollowing = 500e3, reserve10min = 300e3, reactiveTimescale = 400)
 
-    cost!(systemSI; label = 4, model = 2, polynomial = [0.3e-6; 15e-3; 5])
+    cost!(systemSI; label = 4, active = 2, polynomial = [0.3e-6; 15e-3; 5])
 
     ####### Bus Data #######
     @test system.bus.label == systemSI.bus.label
