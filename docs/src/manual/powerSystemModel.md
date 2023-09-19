@@ -667,7 +667,7 @@ As previously, the default input units are related with per-units (pu), and the 
 ```@repl addActiveCost
 system.generator.cost.active.polynomial
 ```
-By setting `active = 2` within the function, we express our intent to specify the active power cost using the `active` key. By using a value of `1`, we signify our preference for employing a quadratic polynomial cost model for the associated generator. This flexibility proves invaluable when we have previously defined a piecewise linear cost function for the same generator. In such cases, we can set `active = 1` to utilize the piecewise linear cost function to represent the cost of the corresponding generators. Thus, we retain the freedom to choose between these two cost functions according to the requirements of our simulation. Additionally, users have the option to define both piecewise and polynomial costs within a single function call, further enhancing the versatility of the implementation.
+By setting `active = 2` within the function, we express our intent to specify the active power cost using the `active` key. By using a value of `2`, we signify our preference for employing a quadratic polynomial cost model for the associated generator. This flexibility proves invaluable when we have previously defined a piecewise linear cost function for the same generator. In such cases, we can set `active = 1` to utilize the piecewise linear cost function to represent the cost of the corresponding generators. Thus, we retain the freedom to choose between these two cost functions according to the requirements of our simulation. Additionally, users have the option to define both piecewise and polynomial costs within a single function call, further enhancing the versatility of the implementation.
 
 ---
 

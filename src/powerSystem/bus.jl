@@ -386,11 +386,11 @@ function updateBus!(system::PowerSystem, analysis::DCOptimalPowerFlow;
     end
 
     if typeOld == 3 && bus.layout.type[index] != 3
-        unfix!(analysis.jump, analysis.jump[:angle], analysis.constraint.slack.angle, index)
+        unfix!(analysis.jump, analysis.variable.angle, analysis.constraint.slack.angle, index)
     end
 
     if bus.layout.type[index] == 3
-        fix!(analysis.jump[:angle], bus.voltage.angle[index], analysis.constraint.slack.angle, index)
+        fix!(analysis.variable.angle, bus.voltage.angle[index], analysis.constraint.slack.angle, index)
     end
 end
 

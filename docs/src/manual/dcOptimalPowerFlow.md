@@ -64,7 +64,12 @@ In the DC optimal power flow, the active power outputs of the generators are rep
 JuMP.all_variables(analysis.jump)
 ```
 
-Furthermore, it is important to highlight that when dealing with linear piecewise cost functions comprising multiple segments, as exemplified in the case of `Generator 3`, JuliaGrid automatically generates helper optimization variables, such as `helper[3]`, and formulates a set of linear constraints to appropriately handle these cost functions. However, in instances where a linear piecewise cost function consists of only a single segment, as demonstrated by `Generator 2`, the function is modelled as a standard linear function, eliminating the necessity for additional helper optimization variables.
+Furthermore, it is important to highlight that when dealing with linear piecewise cost functions comprising multiple segments, as exemplified in the case of `Generator 3`, JuliaGrid automatically generates helper optimization variables, such as `activewise[3]`, and formulates a set of linear constraints to appropriately handle these cost functions. However, in instances where a linear piecewise cost function consists of only a single segment, as demonstrated by `Generator 2`, the function is modelled as a standard linear function, eliminating the necessity for additional helper optimization variables.
+
+Please note that JuliaGrid keeps references to all variables categorized into three fields:
+```@repl DCOptimalPowerFlow
+fieldnames(typeof(analysis.variable))
+```
 
 ---
 

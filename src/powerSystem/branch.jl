@@ -178,6 +178,7 @@ function addBranch!(system::PowerSystem, analysis::DCOptimalPowerFlow;
     branch = system.branch
     jump = analysis.jump
     constraint = analysis.constraint
+    variable = analysis.variable
 
     addBranch!(system; label, from, to, status, resistance, reactance, susceptance,
         conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, longTerm, shortTerm,
@@ -191,9 +192,8 @@ function addBranch!(system::PowerSystem, analysis::DCOptimalPowerFlow;
         updateBalance(system, analysis, from; voltage = true, rhs = rhs)
         updateBalance(system, analysis, to; voltage = true, rhs = rhs)
 
-        angle = jump[:angle]
-        addFlow(system, jump, angle, constraint.flow.active, branch.number)
-        addDiffAngle(system, jump, angle, constraint.voltage.angle, branch.number)
+        addFlow(system, jump, variable.angle, constraint.flow.active, branch.number)
+        addAngle(system, jump, variable.angle, constraint.voltage.angle, branch.number)
     end
 end
 
@@ -373,6 +373,7 @@ function updateBranch!(system::PowerSystem, analysis::DCOptimalPowerFlow;
     branch = system.branch
     jump = analysis.jump
     constraint = analysis.constraint
+    variable = analysis.variable
 
     index = branch.label[getLabel(branch, label, "branch")]
     statusOld = branch.layout.status[index]
@@ -402,13 +403,11 @@ function updateBranch!(system::PowerSystem, analysis::DCOptimalPowerFlow;
     end
 
     if branch.layout.status[index] == 1
-        angle = jump[:angle]
-
         if statusOld == 0 || (statusOld == 1 && (parameter || long)) || (statusOld == 1 && haskey(constraint.flow.active, index) && !JuMP.is_valid(jump, constraint.flow.active[index]))
-            addFlow(system, jump, angle, constraint.flow.active, index)
+            addFlow(system, jump, variable.angle, constraint.flow.active, index)
         end
         if statusOld == 0 || (statusOld == 1 && diffAngle) || (statusOld == 1 && haskey(constraint.voltage.angle, index) && !JuMP.is_valid(jump, constraint.voltage.angle[index]))
-            addDiffAngle(system, jump, angle, constraint.voltage.angle, index)
+            addAngle(system, jump, variable.angle, constraint.voltage.angle, index)
         end
     end
 end

@@ -24,6 +24,7 @@ fields:
 - `voltage`: the variable allocated to store the bus voltage angle;
 - `power`: the variable allocated to store the active powers;
 - `jump`: the JuMP model;
+- `variable`: holds the variable references to the JuMP model;
 - `constraint`: holds the constraint references to the JuMP model.
 
 # Examples
@@ -52,14 +53,14 @@ function dcOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
     jump = JuMP.Model(optimizerFactory; add_bridges = bridge)
     set_string_names_on_creation(jump, name)
 
-    @variable(jump, active[i = 1:generator.number])
-    @variable(jump, angle[i = 1:bus.number])
+    active = @variable(jump, active[i = 1:generator.number])
+    angle = @variable(jump, angle[i = 1:bus.number])
 
     fix(angle[bus.layout.slack], bus.voltage.angle[bus.layout.slack])
     slack = Dict(bus.layout.slack => FixRef(angle[bus.layout.slack]))
 
     objExpr = QuadExpr()
-    helper = Dict{Int64, VariableRef}()
+    activewise = Dict{Int64, VariableRef}()
     piecewise = Dict{Int64, Array{JuMP.ConstraintRef,1}}()
     capability = Dict{Int64, JuMP.ConstraintRef}()
     @inbounds for i = 1:generator.number
@@ -82,8 +83,8 @@ function dcOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
                 if point == 2
                     objExpr = piecewiseLinear(objExpr, active[i], cost.piecewise[i])
                 elseif point > 2
-                    jump, objExpr, helper = addHelper(jump, objExpr, helper, i)
-                    piecewise = addPiecewise(jump, helper[i], piecewise, cost.piecewise[i], point, i)
+                    jump, objExpr, activewise = addPowerwise(jump, objExpr, activewise, i; name = "activewise")
+                    piecewise = addPiecewise(jump, activewise[i], piecewise, cost.piecewise[i], point, i)
                 elseif point == 1
                     throw(ErrorException("The generator indexed $i has a piecewise linear cost function with only one defined point."))
                 else
@@ -108,7 +109,7 @@ function dcOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
     @inbounds for i = 1:system.branch.number
         if system.branch.layout.status[i] == 1
             jump, flow = addFlow(system, jump, angle, flow, i)
-            jump, voltage = addDiffAngle(system, jump, angle, voltage, i)
+            jump, voltage = addAngle(system, jump, angle, voltage, i)
         end
     end
 
@@ -122,13 +123,14 @@ function dcOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
             CartesianReal(copy(generator.output.active))
         ),
         jump,
+        DCVariable(active, angle, activewise),
         DCConstraint(
             PolarAngleRef(slack),
             CartesianRealRef(balance),
             PolarAngleRef(voltage),
             CartesianRealRef(flow),
             CartesianRealRef(capability),
-            DCPiecewise(piecewise, helper)
+            DCPiecewise(piecewise)
         ),
         system.uuid
     )
@@ -153,23 +155,22 @@ solve!(system, analysis)
 ```
 """
 function solve!(system::PowerSystem, analysis::DCOptimalPowerFlow)
-    angle = analysis.jump[:angle]::Vector{JuMP.VariableRef}
-    active = analysis.jump[:active]::Vector{JuMP.VariableRef}
+    variable = analysis.variable
 
     @inbounds for i = 1:system.bus.number
-        JuMP.set_start_value(angle[i]::JuMP.VariableRef, analysis.voltage.angle[i])
+        JuMP.set_start_value(variable.angle[i]::JuMP.VariableRef, analysis.voltage.angle[i])
     end
     @inbounds for i = 1:system.generator.number
-        JuMP.set_start_value(active[i]::JuMP.VariableRef, analysis.power.generator.active[i])
+        JuMP.set_start_value(variable.active[i]::JuMP.VariableRef, analysis.power.generator.active[i])
     end
 
     JuMP.optimize!(analysis.jump)
 
     @inbounds for i = 1:system.bus.number
-        analysis.voltage.angle[i] = value(angle[i]::JuMP.VariableRef)
+        analysis.voltage.angle[i] = value(variable.angle[i]::JuMP.VariableRef)
     end
     @inbounds for i = 1:system.generator.number
-        analysis.power.generator.active[i] = value(active[i]::JuMP.VariableRef)
+        analysis.power.generator.active[i] = value(variable.active[i]::JuMP.VariableRef)
     end
 end
 
@@ -202,29 +203,30 @@ function updateBalance(system::PowerSystem, analysis::DCOptimalPowerFlow, index:
     dc = system.model.dc
     jump = analysis.jump
     constraint = analysis.constraint
+    variable = analysis.variable
 
     if is_valid(jump, constraint.balance.active[index])
         if voltage
             @inbounds for j in dc.nodalMatrix.colptr[index]:(dc.nodalMatrix.colptr[index + 1] - 1)
-                angle = jump[:angle][dc.nodalMatrix.rowval[j]]
+                angle = variable.angle[dc.nodalMatrix.rowval[j]]
                 JuMP.set_normalized_coefficient(constraint.balance.active[index], angle, 0)
                 JuMP.set_normalized_coefficient(constraint.balance.active[index], angle, - dc.nodalMatrix.nzval[j])
             end
         end
         if power in [0, 1]
-            JuMP.set_normalized_coefficient(constraint.balance.active[index], jump[:active][genIndex], power)
+            JuMP.set_normalized_coefficient(constraint.balance.active[index], variable.active[genIndex], power)
         end
         if rhs
             JuMP.set_normalized_rhs(constraint.balance.active[index], system.bus.demand.active[index] + system.bus.shunt.conductance[index] + dc.shiftActivePower[index])
         end
     else
-        addBalance(system, jump, jump[:active], jump[:angle], constraint.balance.active, index)
+        addBalance(system, jump, variable.active, variable.angle, constraint.balance.active, index)
     end
 end
 
 ######### Update Objective Function ##########
 function updateObjective(system::PowerSystem, objExpr::QuadExpr, active::JuMP.VariableRef, index::Int64, label::L)
-    ishelper = false
+    isPowerwise = false
     cost = system.generator.cost.active
 
     if cost.model[index] == 2
@@ -245,7 +247,7 @@ function updateObjective(system::PowerSystem, objExpr::QuadExpr, active::JuMP.Va
         if point == 2
             piecewiseLinear(objExpr, active, cost.piecewise[index])
         elseif point > 2
-            ishelper = true
+            isPowerwise = true
         elseif point == 1
             throw(ErrorException("The generator labelled $label has a piecewise linear cost function with only one defined point."))
         else
@@ -253,5 +255,5 @@ function updateObjective(system::PowerSystem, objExpr::QuadExpr, active::JuMP.Va
         end
     end
 
-    return objExpr, ishelper
+    return objExpr, isPowerwise
 end

@@ -78,8 +78,8 @@ nothing # hide
 ##### Optimization Variables
 Hence, the variables in this model encompass the active power outputs of the generators denoted as ``\mathbf{P}_{\text{g}} = [{P}_{\text{g}i}]``, where ``i \in \mathcal{P}``, and the bus voltage angles represented by ``\boldsymbol{\theta} = [{\theta}_{i}]``, where ``i \in \mathcal{N}``. You can access these variables using the following code:
 ```@repl DCOptimalPowerFlow
-𝐏ₒ = analysis.jump[:active]
-𝛉 = analysis.jump[:angle]
+𝐏ₒ = analysis.variable.active
+𝛉 = analysis.variable.angle
 ```
 
 ---
@@ -132,7 +132,10 @@ To represent the function ``f_i(P_{\text{g}i})`` for an arbitrary segment define
 ```math
 \cfrac{f_i(P_{\text{g}i,j+1}) - f_i(P_{\text{g}i,j})}{P_{\text{g}i,j+1} - P_{\text{g}i,j}}(P_{\text{g}i} - P_{\text{g}i,j}) + f_i(P_{\text{g}i,j}) \leq H_i ,\;\;\;j = 1,\dots,k,
 ```
-where ``k`` is the number of segments. To complete the method, we simply need to add the helper variable ``H_{i}`` to the objective function. This approach in JuliaGrid efficiently handles linear piecewise cost functions, offering flexibility in capturing non-linear characteristics while still benefiting from the advantages of linear optimization methods.
+where ``k`` is the number of segments. To complete the method, we simply need to add the helper variable ``H_{i}`` to the objective function. This approach in JuliaGrid efficiently handles linear piecewise cost functions, offering flexibility in capturing non-linear characteristics while still benefiting from the advantages of linear optimization methods. For instance, in the provided case study, the helper variable is defined as:
+```@repl DCOptimalPowerFlow
+H₂ = analysis.variable.activewise[2]
+```
 
 To define linear piecewise functions in JuliaGrid, users can utilize the [`cost!`](@ref cost!) function with the `piecewise` keyword. The linear piecewise function is constructed using a matrix where each row defines a single point. The first column holds the generator's active power output, while the second column corresponds to the associated cost value. For example, in the provided case study, a linear piecewise function is created and can be accessed as follows:
 ```@repl DCOptimalPowerFlow

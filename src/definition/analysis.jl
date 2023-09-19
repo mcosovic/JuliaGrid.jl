@@ -119,6 +119,8 @@ struct CapabilityRef
     upper::Dict{Int64, JuMP.ConstraintRef}
 end
 
+
+
 struct Constraint
     slack::PolarAngleRef
     balance::CartesianRef
@@ -130,7 +132,12 @@ end
 
 struct DCPiecewise
     active::Dict{Int64, Array{JuMP.ConstraintRef,1}}
-    helper::Dict{Int64, VariableRef}
+end
+
+struct DCVariable
+    active::Array{JuMP.VariableRef,1}
+    angle::Array{JuMP.VariableRef,1}
+    activewise::Dict{Int64, VariableRef}
 end
 
 struct DCConstraint
@@ -157,6 +164,7 @@ struct DCOptimalPowerFlow <: DC
     voltage::PolarAngle
     power::DCPower
     jump::JuMP.Model
+    variable::DCVariable
     constraint::DCConstraint
     uuid::UUID
 end

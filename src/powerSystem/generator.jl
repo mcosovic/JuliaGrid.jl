@@ -194,19 +194,19 @@ function addGenerator!(system::PowerSystem, analysis::DCOptimalPowerFlow;
     generator = system.generator
     jump = analysis.jump
     constraint = analysis.constraint
-    active = analysis.jump[:active]
+    variable = analysis.variable
 
     index = generator.label[getLabel(generator, label, "generator")]
     busIndex = generator.layout.bus[end]
 
-    push!(active, @variable(jump, base_name = "active[$index]"))
+    push!(variable.active, @variable(jump, base_name = "active[$index]"))
     push!(analysis.power.generator.active, generator.output.active[end])
 
     if generator.layout.status[end] == 1
         updateBalance(system, analysis, busIndex; power = 1, genIndex = index)
-        addCapability(jump, active, constraint.capability.active, generator.capability.minActive, generator.capability.maxActive, generator.number)
+        addCapability(jump, variable.active, constraint.capability.active, generator.capability.minActive, generator.capability.maxActive, generator.number)
     else
-        fix!(active, 0.0, constraint.capability.active, generator.number)
+        fix!(variable.active, 0.0, constraint.capability.active, generator.number)
     end
 end
 
@@ -473,13 +473,13 @@ function updateGenerator!(system::PowerSystem, analysis::DCOptimalPowerFlow;
     generator = system.generator
     jump = analysis.jump
     constraint = analysis.constraint
-    activeVar = jump[:active]
+    variable = analysis.variable
 
     index = generator.label[getLabel(generator, label, "generator")]
     indexBus = generator.layout.bus[index]
     statusOld = generator.layout.status[index]
 
-    helper = constraint.piecewise.helper
+    activewise = variable.activewise
 
     updateGenerator!(system; label, area, status, active, reactive, magnitude,
         minActive, maxActive, minReactive, maxReactive, lowActive, minLowReactive,
@@ -492,40 +492,40 @@ function updateGenerator!(system::PowerSystem, analysis::DCOptimalPowerFlow;
 
     if statusOld == 1 && generator.layout.status[index] == 0
         objExpr = objective_function(jump)
-        objExpr, helperFlag = updateObjective(system, -objExpr, activeVar[index], index, label)
+        objExpr, isPowerwise = updateObjective(system, -objExpr, variable.active[index], index, label)
 
-        if helperFlag
+        if isPowerwise
             delete!(jump, constraint.piecewise.active, index)
-            add_to_expression!(objExpr, helper[index])
+            add_to_expression!(objExpr, variable.activewise[index])
             drop_zeros!(objExpr)
-            delete!(jump, helper, index)
+            delete!(jump, variable.activewise, index)
         end
 
         delete!(jump, constraint.capability.active, index)
         if haskey(constraint.balance.active, indexBus)
             updateBalance(system, analysis, indexBus; power = 0, genIndex = index)
         end
-        fix!(activeVar, 0.0, constraint.capability.active, index)
+        fix!(variable.active, 0.0, constraint.capability.active, index)
 
         JuMP.set_objective_function(jump, -objExpr)
     end
 
     if statusOld == 0 && generator.layout.status[index] == 1
         objExpr = objective_function(jump)
-        objExpr, helperFlag = updateObjective(system, objExpr, activeVar[index], index, label)
+        objExpr, isPowerwise = updateObjective(system, objExpr, variable.active[index], index, label)
 
-        if helperFlag
-            jump, objExpr, helper = addHelper(jump, objExpr, helper, index)
-            addPiecewise(jump, helper[index], constraint.piecewise.active, generator.cost.active.piecewise[index], size(generator.cost.active.piecewise[index], 1), index)
+        if isPowerwise
+            jump, objExpr, activewise = addPowerwise(jump, objExpr, activewise, index; name = "activewise")
+            addPiecewise(jump, activewise[index], constraint.piecewise.active, generator.cost.active.piecewise[index], size(generator.cost.active.piecewise[index], 1), index)
             JuMP.set_objective_function(jump, objExpr)
         end
 
         updateBalance(system, analysis, indexBus; power = 1, genIndex = index)
-        addCapability(jump, activeVar, constraint.capability.active, generator.capability.minActive, generator.capability.maxActive, index)
+        addCapability(jump, variable.active, constraint.capability.active, generator.capability.minActive, generator.capability.maxActive, index)
     end
 
     if statusOld == 1 && generator.layout.status[index] == 1 && (!ismissing(minActive) || !ismissing(maxActive))
-        addCapability(jump, activeVar,  constraint.capability.active, generator.capability.minActive, generator.capability.maxActive, index)
+        addCapability(jump, variable.active,  constraint.capability.active, generator.capability.minActive, generator.capability.maxActive, index)
         if haskey(constraint.balance.active, indexBus) && !JuMP.is_valid(jump, constraint.balance.active[indexBus])
             updateBalance(system, analysis, indexBus)
         end
@@ -731,16 +731,14 @@ function cost!(system::PowerSystem, analysis::DCOptimalPowerFlow; label::L,
     generator = system.generator
     jump = analysis.jump
     constraint = analysis.constraint
-
-    index = generator.label[getLabel(generator, label, "generator")]
-    power = jump[:active][index]
-    helper = constraint.piecewise.helper
+    variable = analysis.variable
     objExpr = objective_function(jump)
 
+    index = generator.label[getLabel(generator, label, "generator")]
     if generator.layout.status[index] == 1
-        objExpr, helperOld = updateObjective(system, -objExpr, power, index, label)
+        objExpr, isPowerwiseOld = updateObjective(system, -objExpr, variable.active[index], index, label)
 
-        if helperOld
+        if isPowerwiseOld
             delete!(jump, constraint.piecewise.active, index)
         end
     end
@@ -748,18 +746,18 @@ function cost!(system::PowerSystem, analysis::DCOptimalPowerFlow; label::L,
     cost!(system; label, active, reactive, polynomial, piecewise)
 
     if generator.layout.status[index] == 1
-        objExpr, helperNew = updateObjective(system, -objExpr, power, index, label)
+        objExpr, isPowerwiseNew = updateObjective(system, -objExpr, variable.active[index], index, label)
 
-        if helperOld && !helperNew
-            add_to_expression!(objExpr, -helper[index])
+        if isPowerwiseOld && !isPowerwiseNew
+            add_to_expression!(objExpr, -variable.activewise[index])
             drop_zeros!(objExpr)
-            delete!(jump, helper, index)
-        elseif helperNew && !helperOld
-            jump, objExpr, helper = addHelper(jump, objExpr, helper, index)
+            delete!(jump, variable.activewise, index)
+        elseif isPowerwiseNew && !isPowerwiseOld
+            jump, objExpr, activewise = addPowerwise(jump, objExpr, variable.activewise, index; name = "activewise")
         end
 
-        if helperNew
-            addPiecewise(jump, helper[index], constraint.piecewise.active, generator.cost.active.piecewise[index], size(generator.cost.active.piecewise[index], 1), index)
+        if isPowerwiseNew
+            addPiecewise(jump, variable.activewise[index], constraint.piecewise.active, generator.cost.active.piecewise[index], size(generator.cost.active.piecewise[index], 1), index)
         end
     end
 
