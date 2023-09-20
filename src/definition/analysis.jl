@@ -137,7 +137,7 @@ end
 struct DCVariable
     active::Array{JuMP.VariableRef,1}
     angle::Array{JuMP.VariableRef,1}
-    activewise::Dict{Int64, VariableRef}
+    actwise::Dict{Int64, VariableRef}
 end
 
 struct DCConstraint

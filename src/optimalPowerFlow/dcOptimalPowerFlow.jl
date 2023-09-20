@@ -60,7 +60,7 @@ function dcOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
     slack = Dict(bus.layout.slack => FixRef(angle[bus.layout.slack]))
 
     objExpr = QuadExpr()
-    activewise = Dict{Int64, VariableRef}()
+    actwise = Dict{Int64, VariableRef}()
     piecewise = Dict{Int64, Array{JuMP.ConstraintRef,1}}()
     capability = Dict{Int64, JuMP.ConstraintRef}()
     @inbounds for i = 1:generator.number
@@ -83,8 +83,8 @@ function dcOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
                 if point == 2
                     objExpr = piecewiseLinear(objExpr, active[i], cost.piecewise[i])
                 elseif point > 2
-                    jump, objExpr, activewise = addPowerwise(jump, objExpr, activewise, i; name = "activewise")
-                    piecewise = addPiecewise(jump, activewise[i], piecewise, cost.piecewise[i], point, i)
+                    jump, objExpr, actwise = addPowerwise(jump, objExpr, actwise, i; name = "actwise")
+                    piecewise = addPiecewise(jump, actwise[i], piecewise, cost.piecewise[i], point, i)
                 elseif point == 1
                     throw(ErrorException("The generator indexed $i has a piecewise linear cost function with only one defined point."))
                 else
@@ -123,7 +123,7 @@ function dcOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
             CartesianReal(copy(generator.output.active))
         ),
         jump,
-        DCVariable(active, angle, activewise),
+        DCVariable(active, angle, actwise),
         DCConstraint(
             PolarAngleRef(slack),
             CartesianRealRef(balance),

@@ -65,17 +65,3 @@ acModel!(system)
 nothing # hide
 ```
 
-Next, the [`acOptimalPowerFlow`](@ref acOptimalPowerFlow) function is utilized to formulate the AC optimal power flow problem:
-```@example ACOptimalPowerFlow
-analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
-
-nothing # hide
-```
-
----
-
-## [Optimization Variables](@id ACOptimizationVariablesManual)
-In the AC optimal power flow model, the active and reactive power outputs of the generators are expressed as nonlinear functions of the bus voltage magnitudes and angles. As a result, the variables in this model include the active and reactive power outputs of the generators, as well as the bus voltage magnitudes and angles:
-```@repl ACOptimalPowerFlow
-JuMP.all_variables(analysis.jump)
-```

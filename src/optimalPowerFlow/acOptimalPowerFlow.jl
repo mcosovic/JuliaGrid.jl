@@ -163,7 +163,7 @@ function acOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
     flowTo = Dict{Int64, JuMP.ConstraintRef}()
     @inbounds for i = 1:branch.number
         if branch.layout.status[i] == 1
-            jump, voltageAngle = addDiffAngle(system, jump, angle, voltageAngle, i)
+            jump, voltageAngle = addAngle(system, jump, angle, voltageAngle, i)
 
             if branch.flow.longTerm[i] ≉  0 && branch.flow.longTerm[i] < 10^16
                 from = branch.layout.from[i]
@@ -284,32 +284,15 @@ solve!(system, analysis)
 ```
 """
 function solve!(system::PowerSystem, analysis::ACOptimalPowerFlow)
-    magnitude = analysis.jump[:magnitude]::Vector{JuMP.VariableRef}
-    angle = analysis.jump[:angle]::Vector{JuMP.VariableRef}
-    active = analysis.jump[:active]::Vector{JuMP.VariableRef}
-    reactive = analysis.jump[:reactive]::Vector{JuMP.VariableRef}
+    variable = analysis.variable
 
     @inbounds for i = 1:system.bus.number
-        variable = magnitude[i]::JuMP.VariableRef
-        if isnothing(JuMP.start_value(variable))
-            JuMP.set_start_value(variable, analysis.voltage.magnitude[i])
-        end
-
-        variable = angle[i]::JuMP.VariableRef
-        if isnothing(JuMP.start_value(variable))
-            JuMP.set_start_value(variable, analysis.voltage.angle[i])
-        end
+        JuMP.set_start_value(variable.magnitude[i]::JuMP.VariableRef, analysis.voltage.magnitude[i])
+        JuMP.set_start_value(variable.angle[i]::JuMP.VariableRef, analysis.voltage.angle[i])
     end
     @inbounds for i = 1:system.generator.number
-        variable = active[i]::JuMP.VariableRef
-        if isnothing(JuMP.start_value(variable))
-            JuMP.set_start_value(variable, analysis.power.generator.active[i])
-        end
-
-        variable = reactive[i]::JuMP.VariableRef
-        if isnothing(JuMP.start_value(variable))
-            JuMP.set_start_value(variable, analysis.power.generator.reactive[i])
-        end
+        JuMP.set_start_value(variable.active[i]::JuMP.VariableRef, analysis.power.generator.active[i])
+        JuMP.set_start_value(variable.reactive[i]::JuMP.VariableRef, analysis.power.generator.reactive[i])
     end
 
     JuMP.optimize!(analysis.jump)
@@ -347,7 +330,7 @@ function addAngle(system::PowerSystem, jump::JuMP.Model, angle::Vector{VariableR
 end
 
 ######## Capability Constraints ##########
-function addCapability(jump::JuMP.Model, variable::Vector{VariableRef}, ref::Dict{Int64, JuMP.ConstraintRef}, minPower::Array{Float64, 1}, maxPower::Array{Float64, 1}, index::Int64)
+function addCapability(jump::JuMP.Model, variable::Vector{VariableRef}, ref::Dict{Int64, JuMP.ConstraintRef}, minPower::Array{Float64,1}, maxPower::Array{Float64,1}, index::Int64)
     if minPower[index] != maxPower[index]
         ref[index] = @constraint(jump, minPower[index] <= variable[index] <= maxPower[index])
     else

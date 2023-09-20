@@ -126,20 +126,27 @@ The DC optimal power flow in JuliaGrid offers another option for defining cost f
 &nbsp;
 ```
 
-Similar to how convex linear piecewise functions are treated in the [AC Optimal Power Flow](@ref ACOptimalPowerFlowTutorials), JuliaGrid adopts a constrained cost variable method for the linear piecewise functions. In this method, the piecewise linear cost function is converted into a series of linear inequality constraints for each segment, which are defined by two adjacent points along the line, along with a helper variable specific to the piecewise function. However, for linear piecewise functions that have only one segment defined by two points, JuliaGrid simplifies it into a standard linear function without requiring a helper variable.
-
-To represent the function ``f_i(P_{\text{g}i})`` for an arbitrary segment defined by the points ``[P_{\text{g}i,j}, f_i(P_{\text{g}i,j})]`` and ``[P_{\text{g}i,j+1}, f_i(P_{\text{g}i,j+1})]``, an additional inequality constraints can be formulated involving the helper variable ``H_i`` as follows:
-```math
-\cfrac{f_i(P_{\text{g}i,j+1}) - f_i(P_{\text{g}i,j})}{P_{\text{g}i,j+1} - P_{\text{g}i,j}}(P_{\text{g}i} - P_{\text{g}i,j}) + f_i(P_{\text{g}i,j}) \leq H_i ,\;\;\;j = 1,\dots,k,
-```
-where ``k`` is the number of segments. To complete the method, we simply need to add the helper variable ``H_{i}`` to the objective function. This approach in JuliaGrid efficiently handles linear piecewise cost functions, offering flexibility in capturing non-linear characteristics while still benefiting from the advantages of linear optimization methods. For instance, in the provided case study, the helper variable is defined as:
-```@repl DCOptimalPowerFlow
-H₂ = analysis.variable.activewise[2]
-```
-
 To define linear piecewise functions in JuliaGrid, users can utilize the [`cost!`](@ref cost!) function with the `piecewise` keyword. The linear piecewise function is constructed using a matrix where each row defines a single point. The first column holds the generator's active power output, while the second column corresponds to the associated cost value. For example, in the provided case study, a linear piecewise function is created and can be accessed as follows:
 ```@repl DCOptimalPowerFlow
 f₂ = system.generator.cost.active.piecewise[2]
+```
+
+Similar to how convex linear piecewise functions are treated in the [AC Optimal Power Flow](@ref ACOptimalPowerFlowTutorials), JuliaGrid adopts a constrained cost variable method for the linear piecewise functions. In this method, the piecewise linear cost function is converted into a series of linear inequality constraints for each segment, which are defined by two adjacent points along the line, along with a helper variable specific to the piecewise function. However, for linear piecewise functions that have only one segment defined by two points, JuliaGrid simplifies it into a standard linear function without requiring a helper variable.
+
+Consequently, for a piecewise cost function denoted as ``f_i(P_{\text{g}i})`` with ``k`` segments (where ``k > 1``), the ``j``-th segment, defined by the points ``[P_{\text{g}i,j}, f_i(P_{\text{g}i,j})]`` and ``[P_{\text{g}i,j+1}, f_i(P_{\text{g}i,j+1})]``, is characterized by the following inequality constraints:
+```math
+\cfrac{f_i(P_{\text{g}i,j+1}) - f_i(P_{\text{g}i,j})}{P_{\text{g}i,j+1} - P_{\text{g}i,j}}(P_{\text{g}i} - P_{\text{g}i,j}) + f_i(P_{\text{g}i,j}) \leq H_i ,\;\;\;j = 1,\dots,k,
+```
+where ``H_i`` represents the helper variable. To finalize this method, we simply need to include the helper variable ``H_i`` in the objective function. This approach in JuliaGrid efficiently handles linear piecewise cost functions, providing the flexibility to capture nonlinear characteristics while still benefiting from the advantages of linear optimization techniques.
+
+As an example, in the provided case study, the helper variable is defined as follows:
+```@repl DCOptimalPowerFlow
+H₂ = analysis.variable.actwise[2]
+```
+
+Lastly, the set of constraints introduced by the linear piecewise cost function is displayed as follows:
+```@repl DCOptimalPowerFlow
+print(analysis.constraint.piecewise.active)
 ```
 
 ---
@@ -148,11 +155,6 @@ f₂ = system.generator.cost.active.piecewise[2]
 As previously explained, the objective function relies on the defined polynomial or linear piecewise cost functions and represents the sum of these costs. In the provided example, the objective function that must be minimized to obtain the optimal values for the active power output of the generators and the bus voltage angles can be accessed using the following code:
 ```@repl DCOptimalPowerFlow
 JuMP.objective_function(analysis.jump)
-```
-
-In addition to the objective function, there are supplementary constraints introduced by the linear piecewise cost function, and they are displayed as follows:
-```@repl DCOptimalPowerFlow
-print(analysis.constraint.piecewise.active)
 ```
 
 ---

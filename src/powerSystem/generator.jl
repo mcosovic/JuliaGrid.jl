@@ -479,7 +479,7 @@ function updateGenerator!(system::PowerSystem, analysis::DCOptimalPowerFlow;
     indexBus = generator.layout.bus[index]
     statusOld = generator.layout.status[index]
 
-    activewise = variable.activewise
+    actwise = variable.actwise
 
     updateGenerator!(system; label, area, status, active, reactive, magnitude,
         minActive, maxActive, minReactive, maxReactive, lowActive, minLowReactive,
@@ -496,9 +496,9 @@ function updateGenerator!(system::PowerSystem, analysis::DCOptimalPowerFlow;
 
         if isPowerwise
             delete!(jump, constraint.piecewise.active, index)
-            add_to_expression!(objExpr, variable.activewise[index])
+            add_to_expression!(objExpr, variable.actwise[index])
             drop_zeros!(objExpr)
-            delete!(jump, variable.activewise, index)
+            delete!(jump, variable.actwise, index)
         end
 
         delete!(jump, constraint.capability.active, index)
@@ -515,8 +515,8 @@ function updateGenerator!(system::PowerSystem, analysis::DCOptimalPowerFlow;
         objExpr, isPowerwise = updateObjective(system, objExpr, variable.active[index], index, label)
 
         if isPowerwise
-            jump, objExpr, activewise = addPowerwise(jump, objExpr, activewise, index; name = "activewise")
-            addPiecewise(jump, activewise[index], constraint.piecewise.active, generator.cost.active.piecewise[index], size(generator.cost.active.piecewise[index], 1), index)
+            jump, objExpr, actwise = addPowerwise(jump, objExpr, actwise, index; name = "actwise")
+            addPiecewise(jump, actwise[index], constraint.piecewise.active, generator.cost.active.piecewise[index], size(generator.cost.active.piecewise[index], 1), index)
             JuMP.set_objective_function(jump, objExpr)
         end
 
@@ -749,15 +749,15 @@ function cost!(system::PowerSystem, analysis::DCOptimalPowerFlow; label::L,
         objExpr, isPowerwiseNew = updateObjective(system, -objExpr, variable.active[index], index, label)
 
         if isPowerwiseOld && !isPowerwiseNew
-            add_to_expression!(objExpr, -variable.activewise[index])
+            add_to_expression!(objExpr, -variable.actwise[index])
             drop_zeros!(objExpr)
-            delete!(jump, variable.activewise, index)
+            delete!(jump, variable.actwise, index)
         elseif isPowerwiseNew && !isPowerwiseOld
-            jump, objExpr, activewise = addPowerwise(jump, objExpr, variable.activewise, index; name = "activewise")
+            jump, objExpr, actwise = addPowerwise(jump, objExpr, variable.actwise, index; name = "actwise")
         end
 
         if isPowerwiseNew
-            addPiecewise(jump, variable.activewise[index], constraint.piecewise.active, generator.cost.active.piecewise[index], size(generator.cost.active.piecewise[index], 1), index)
+            addPiecewise(jump, variable.actwise[index], constraint.piecewise.active, generator.cost.active.piecewise[index], size(generator.cost.active.piecewise[index], 1), index)
         end
     end
 
