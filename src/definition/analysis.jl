@@ -108,8 +108,6 @@ end
 struct ACPiecewise
     active::Dict{Int64, Array{JuMP.ConstraintRef,1}}
     reactive::Dict{Int64, Array{JuMP.ConstraintRef,1}}
-    helperActive::Dict{Int64, VariableRef}
-    helperReactive::Dict{Int64, VariableRef}
 end
 
 struct CapabilityRef
@@ -118,8 +116,6 @@ struct CapabilityRef
     lower::Dict{Int64, JuMP.ConstraintRef}
     upper::Dict{Int64, JuMP.ConstraintRef}
 end
-
-
 
 struct Constraint
     slack::PolarAngleRef
@@ -130,14 +126,46 @@ struct Constraint
     piecewise::ACPiecewise
 end
 
-struct DCPiecewise
-    active::Dict{Int64, Array{JuMP.ConstraintRef,1}}
+######### AC Optimal Power Flow ##########
+struct ACVariable
+    active::Array{JuMP.VariableRef,1}
+    reactive::Array{JuMP.VariableRef,1}
+    magnitude::Array{JuMP.VariableRef,1}
+    angle::Array{JuMP.VariableRef,1}
+    actwise::Dict{Int64, VariableRef}
+    reactwise::Dict{Int64, VariableRef}
 end
 
+struct ACNonlinear
+    active::Dict{Int64, JuMP.NonlinearExpr}
+    reactive::Dict{Int64, JuMP.NonlinearExpr}
+end
+
+struct ACObjective
+    quadratic::JuMP.QuadExpr
+    nonlinear::ACNonlinear
+end
+
+struct ACOptimalPowerFlow <: AC
+    voltage::Polar
+    power::Power
+    current::Current
+    jump::JuMP.Model
+    variable::ACVariable
+    constraint::Constraint
+    objective::ACObjective
+    uuid::UUID
+end
+
+######### DC Optimal Power Flow ##########
 struct DCVariable
     active::Array{JuMP.VariableRef,1}
     angle::Array{JuMP.VariableRef,1}
     actwise::Dict{Int64, VariableRef}
+end
+
+struct DCPiecewise
+    active::Dict{Int64, Array{JuMP.ConstraintRef,1}}
 end
 
 struct DCConstraint
@@ -149,22 +177,12 @@ struct DCConstraint
     piecewise::DCPiecewise
 end
 
-######### AC Optimal Power Flow ##########
-struct ACOptimalPowerFlow <: AC
-    voltage::Polar
-    power::Power
-    current::Current
-    jump::JuMP.Model
-    constraint::Constraint
-    uuid::UUID
-end
-
-######### DC Optimal Power Flow ##########
-struct DCOptimalPowerFlow <: DC
+mutable struct DCOptimalPowerFlow <: DC
     voltage::PolarAngle
     power::DCPower
     jump::JuMP.Model
     variable::DCVariable
     constraint::DCConstraint
+    objective::JuMP.QuadExpr
     uuid::UUID
 end

@@ -204,11 +204,52 @@ function addGenerator!(system::PowerSystem, analysis::DCOptimalPowerFlow;
 
     if generator.layout.status[end] == 1
         updateBalance(system, analysis, busIndex; power = 1, genIndex = index)
-        addCapability(jump, variable.active, constraint.capability.active, generator.capability.minActive, generator.capability.maxActive, generator.number)
+        addCapability(jump, variable.active[index], constraint.capability.active, generator.capability.minActive, generator.capability.maxActive, index)
     else
-        fix!(variable.active, 0.0, constraint.capability.active, generator.number)
+        fix!(variable.active[index], 0.0, constraint.capability.active, index)
     end
 end
+
+function addGenerator!(system::PowerSystem, analysis::ACOptimalPowerFlow;
+    label::L = missing, bus::L, area::T = missing, status::T = missing,
+    active::T = missing, reactive::T = missing, magnitude::T = missing,
+    minActive::T = missing, maxActive::T = missing, minReactive::T = missing,
+    maxReactive::T = missing, lowActive::T = missing, minLowReactive::T = missing,
+    maxLowReactive::T = missing, upActive::T = missing, minUpReactive::T = missing,
+    maxUpReactive::T = missing, loadFollowing::T = missing, reserve10min::T = missing,
+    reserve30min::T = missing, reactiveTimescale::T = missing)
+
+    checkUUID(system.uuid, analysis.uuid)
+
+    addGenerator!(system; label, bus, area, status, active, reactive, magnitude,
+        minActive, maxActive, minReactive, maxReactive, lowActive, minLowReactive,
+        maxLowReactive, upActive, minUpReactive, maxUpReactive, loadFollowing, reserve10min,
+        reserve30min, reactiveTimescale)
+
+    generator = system.generator
+    jump = analysis.jump
+    constraint = analysis.constraint
+    variable = analysis.variable
+
+    index = generator.label[getLabel(generator, label, "generator")]
+    busIndex = generator.layout.bus[end]
+
+    push!(variable.active, @variable(jump, base_name = "active[$index]"))
+    push!(variable.reactive, @variable(jump, base_name = "reactive[$index]"))
+
+    push!(analysis.power.generator.active, generator.output.active[end])
+    push!(analysis.power.generator.reactive, generator.output.reactive[end])
+
+    if generator.layout.status[end] == 1
+        updateBalance(system, analysis, busIndex; active = true, reactive = true)
+        addCapability(jump, variable.active, constraint.capability.active, generator.capability.minActive, generator.capability.maxActive, generator.number)
+        addCapability(jump, variable.reactive, constraint.capability.reactive, generator.capability.minReactive, generator.capability.maxReactive, generator.number)
+    else
+        fix!(variable.active, 0.0, constraint.capability.active, generator.number)
+        fix!(variable.reactive, 0.0, constraint.capability.reactive, generator.number)
+    end
+end
+
 
 """
     updateGenerator!(system::PowerSystem, analysis::Analysis; kwargs...)
@@ -269,7 +310,7 @@ function updateGenerator!(system::PowerSystem;
     checkStatus(status)
 
     basePowerInv = 1 / (system.base.power.value * system.base.power.prefix)
-    output = !ismissing(active) || !ismissing(reactive)
+    output = isset(active) || isset(reactive)
 
     if generator.layout.status[index] == 1
         if status == 0 || (status == 1 && output)
@@ -287,10 +328,10 @@ function updateGenerator!(system::PowerSystem;
     end
 
     if output
-        if !ismissing(active)
+        if isset(active)
             generator.output.active[index] = topu(active, basePowerInv, prefix.activePower)
         end
-        if !ismissing(reactive)
+        if isset(reactive)
             generator.output.reactive[index] = topu(reactive, basePowerInv, prefix.reactivePower)
         end
     end
@@ -307,58 +348,58 @@ function updateGenerator!(system::PowerSystem;
     end
     generator.layout.status[index] = status
 
-    if !ismissing(minActive)
+    if isset(minActive)
         generator.capability.minActive[index] = topu(minActive, basePowerInv, prefix.activePower)
     end
-    if !ismissing(maxActive)
+    if isset(maxActive)
         generator.capability.maxActive[index] = topu(maxActive, basePowerInv, prefix.activePower)
     end
-    if !ismissing(minReactive)
+    if isset(minReactive)
         generator.capability.minReactive[index] = topu(minReactive, basePowerInv, prefix.reactivePower)
     end
-    if !ismissing(maxReactive)
+    if isset(maxReactive)
         generator.capability.maxReactive[index] = topu(maxReactive, basePowerInv, prefix.reactivePower)
     end
 
-    if !ismissing(lowActive)
+    if isset(lowActive)
         generator.capability.lowActive[index] = topu(lowActive, basePowerInv, prefix.activePower)
     end
-    if !ismissing(minLowReactive)
+    if isset(minLowReactive)
         generator.capability.minLowReactive[index] = topu(minLowReactive, basePowerInv, prefix.reactivePower)
     end
-    if !ismissing(maxLowReactive)
+    if isset(maxLowReactive)
         generator.capability.maxLowReactive[index] = topu(maxLowReactive, basePowerInv, prefix.reactivePower)
     end
 
-    if !ismissing(upActive)
+    if isset(upActive)
         generator.capability.upActive[index] = topu(upActive, basePowerInv, prefix.activePower)
     end
-    if !ismissing(minUpReactive)
+    if isset(minUpReactive)
         generator.capability.minUpReactive[index] = topu(minUpReactive, basePowerInv, prefix.reactivePower)
     end
-    if !ismissing(maxUpReactive)
+    if isset(maxUpReactive)
         generator.capability.maxUpReactive[index] = topu(maxUpReactive, basePowerInv, prefix.reactivePower)
     end
 
-    if !ismissing(loadFollowing)
+    if isset(loadFollowing)
         generator.ramping.loadFollowing[index] = topu(loadFollowing, basePowerInv, prefix.activePower)
     end
-    if !ismissing(reserve10min)
+    if isset(reserve10min)
         generator.ramping.reserve10min[index] = topu(reserve10min, basePowerInv, prefix.activePower)
     end
-    if !ismissing(reserve30min)
+    if isset(reserve30min)
         generator.ramping.reserve30min[index] = topu(reserve30min, basePowerInv, prefix.activePower)
     end
-    if !ismissing(reactiveTimescale)
+    if isset(reactiveTimescale)
         generator.ramping.reactiveTimescale[index] = topu(reactiveTimescale, basePowerInv, prefix.reactivePower)
     end
 
-    if !ismissing(magnitude)
+    if isset(magnitude)
         baseVoltageInv = 1 / (system.base.voltage.value[indexBus] * system.base.voltage.prefix)
         generator.voltage.magnitude[index] = topu(magnitude, baseVoltageInv, prefix.voltageMagnitude)
     end
 
-    if !ismissing(area)
+    if isset(area)
         generator.layout.area[index] = area
     end
 end
@@ -376,7 +417,7 @@ function updateGenerator!(system::PowerSystem, analysis::DCPowerFlow;
 
     generator = system.generator
 
-    if !ismissing(status)
+    if isset(status)
         checkStatus(status)
         index = generator.label[getLabel(generator, label, "generator")]
         indexBus = generator.layout.bus[index]
@@ -406,7 +447,7 @@ function updateGenerator!(system::PowerSystem, analysis::Union{NewtonRaphson, Fa
 
     index = generator.label[getLabel(generator, label, "generator")]
     indexBus = generator.layout.bus[index]
-    if !ismissing(status)
+    if isset(status)
         checkStatus(status)
         if status == 0 && system.bus.layout.type[indexBus] in [2, 3] && length(system.bus.supply.generator[indexBus]) == 1
             throw(ErrorException("The AC power flow model cannot be reused due to required bus type conversion."))
@@ -440,7 +481,7 @@ function updateGenerator!(system::PowerSystem, analysis::GaussSeidel;
 
     index = generator.label[getLabel(generator, label, "generator")]
     indexBus = generator.layout.bus[index]
-    if !ismissing(status)
+    if isset(status)
         checkStatus(status)
         if status == 0 && bus.layout.type[indexBus] in [2, 3] && length(bus.supply.generator[indexBus]) == 1
             throw(ErrorException("The AC power flow model cannot be reused due to required bus type conversion."))
@@ -479,58 +520,131 @@ function updateGenerator!(system::PowerSystem, analysis::DCOptimalPowerFlow;
     indexBus = generator.layout.bus[index]
     statusOld = generator.layout.status[index]
 
-    actwise = variable.actwise
-
     updateGenerator!(system; label, area, status, active, reactive, magnitude,
         minActive, maxActive, minReactive, maxReactive, lowActive, minLowReactive,
         maxLowReactive, upActive, minUpReactive, maxUpReactive, loadFollowing, reserve10min,
         reserve30min, reactiveTimescale)
 
-    if !ismissing(active)
+    if isset(active)
         analysis.power.generator.active[index] = generator.output.active[index]
     end
 
     if statusOld == 1 && generator.layout.status[index] == 0
-        objExpr = objective_function(jump)
-        objExpr, isPowerwise = updateObjective(system, -objExpr, variable.active[index], index, label)
-
+        cost, isPowerwise = costExpr(system, variable.active[index], index, label)
+        
         if isPowerwise
-            delete!(jump, constraint.piecewise.active, index)
-            add_to_expression!(objExpr, variable.actwise[index])
-            drop_zeros!(objExpr)
-            delete!(jump, variable.actwise, index)
+            remove!(jump, constraint.piecewise.active, index)
+            add_to_expression!(analysis.objective, -variable.actwise[index])
+            remove!(jump, variable.actwise, index)
+        else
+            analysis.objective -= cost
         end
+        drop_zeros!(analysis.objective)
+        JuMP.set_objective_function(jump, analysis.objective)
 
-        delete!(jump, constraint.capability.active, index)
-        if haskey(constraint.balance.active, indexBus)
-            updateBalance(system, analysis, indexBus; power = 0, genIndex = index)
-        end
-        fix!(variable.active, 0.0, constraint.capability.active, index)
-
-        JuMP.set_objective_function(jump, -objExpr)
+        remove!(jump, constraint.capability.active, index)
+        updateBalance(system, analysis, indexBus; power = 0, genIndex = index)
+        fix!(variable.active[index], 0.0, constraint.capability.active, index)
     end
 
     if statusOld == 0 && generator.layout.status[index] == 1
-        objExpr = objective_function(jump)
-        objExpr, isPowerwise = updateObjective(system, objExpr, variable.active[index], index, label)
+        cost, isPowerwise = costExpr(system, variable.active[index], index, label)
 
         if isPowerwise
-            jump, objExpr, actwise = addPowerwise(jump, objExpr, actwise, index; name = "actwise")
-            addPiecewise(jump, actwise[index], constraint.piecewise.active, generator.cost.active.piecewise[index], size(generator.cost.active.piecewise[index], 1), index)
-            JuMP.set_objective_function(jump, objExpr)
+            addPowerwise(jump, analysis.objective, variable.actwise, index; name = "actwise")
+            addPiecewise(jump, variable.active[index], variable.actwise[index], constraint.piecewise.active, generator.cost.active.piecewise[index], size(generator.cost.active.piecewise[index], 1), index)
+        else
+            analysis.objective += cost
         end
+        JuMP.set_objective_function(jump, analysis.objective)
 
         updateBalance(system, analysis, indexBus; power = 1, genIndex = index)
-        addCapability(jump, variable.active, constraint.capability.active, generator.capability.minActive, generator.capability.maxActive, index)
+        addCapability(jump, variable.active[index], constraint.capability.active, generator.capability.minActive, generator.capability.maxActive, index)
     end
 
-    if statusOld == 1 && generator.layout.status[index] == 1 && (!ismissing(minActive) || !ismissing(maxActive))
-        addCapability(jump, variable.active,  constraint.capability.active, generator.capability.minActive, generator.capability.maxActive, index)
-        if haskey(constraint.balance.active, indexBus) && !JuMP.is_valid(jump, constraint.balance.active[indexBus])
-            updateBalance(system, analysis, indexBus)
-        end
+    if statusOld == 1 && generator.layout.status[index] == 1 && (isset(minActive) || isset(maxActive))
+        remove!(jump, constraint.capability.active, index)
+        addCapability(jump, variable.active[index], constraint.capability.active, generator.capability.minActive, generator.capability.maxActive, index)  
     end
 end
+
+# function updateGenerator!(system::PowerSystem, analysis::ACOptimalPowerFlow;
+#     label::L, area::T = missing, status::T = missing,
+#     active::T = missing, reactive::T = missing, magnitude::T = missing,
+#     minActive::T = missing, maxActive::T = missing, minReactive::T = missing,
+#     maxReactive::T = missing, lowActive::T = missing, minLowReactive::T = missing,
+#     maxLowReactive::T = missing, upActive::T = missing, minUpReactive::T = missing,
+#     maxUpReactive::T = missing, loadFollowing::T = missing, reserve10min::T = missing,
+#     reserve30min::T = missing, reactiveTimescale::T = missing)
+
+#     checkUUID(system.uuid, analysis.uuid)
+
+#     generator = system.generator
+#     jump = analysis.jump
+#     constraint = analysis.constraint
+#     variable = analysis.variable
+
+#     index = generator.label[getLabel(generator, label, "generator")]
+#     indexBus = generator.layout.bus[index]
+#     statusOld = generator.layout.status[index]
+
+#     actwise = variable.actwise
+#     reactwise = variable.reactwise
+
+#     updateGenerator!(system; label, area, status, active, reactive, magnitude,
+#         minActive, maxActive, minReactive, maxReactive, lowActive, minLowReactive,
+#         maxLowReactive, upActive, minUpReactive, maxUpReactive, loadFollowing, reserve10min,
+#         reserve30min, reactiveTimescale)
+
+#     if isset(active)
+#         analysis.power.generator.active[index] = generator.output.active[index]
+#     end
+#     if isset(reactive)
+#         analysis.power.generator.reactive[index] = generator.output.reactive[index]
+#     end
+
+#     if statusOld == 1 && generator.layout.status[index] == 0
+#         objExpr = objective_function(jump)
+#         objExpr, isPowerwise = updateObjective(system, -objExpr, variable.active[index], index, label)
+
+    #     if isPowerwise
+    #         delete!(jump, constraint.piecewise.active, index)
+    #         add_to_expression!(objExpr, variable.actwise[index])
+    #         drop_zeros!(objExpr)
+    #         delete!(jump, variable.actwise, index)
+    #     end
+
+    #     delete!(jump, constraint.capability.active, index)
+    #     if haskey(constraint.balance.active, indexBus)
+    #         updateBalance(system, analysis, indexBus; power = 0, genIndex = index)
+    #     end
+    #     fix!(variable.active, 0.0, constraint.capability.active, index)
+
+    #     JuMP.set_objective_function(jump, -objExpr)
+    # end
+
+    # if statusOld == 0 && generator.layout.status[index] == 1
+    #     objExpr = objective_function(jump)
+    #     objExpr, isPowerwise = updateObjective(system, objExpr, variable.active[index], index, label)
+
+    #     if isPowerwise
+    #         jump, objExpr, actwise = addPowerwise(jump, objExpr, actwise, index; name = "actwise")
+    #         addPiecewise(jump, actwise[index], constraint.piecewise.active, generator.cost.active.piecewise[index], size(generator.cost.active.piecewise[index], 1), index)
+    #         JuMP.set_objective_function(jump, objExpr)
+    #     end
+
+    #     updateBalance(system, analysis, indexBus; power = 1, genIndex = index)
+    #     addCapability(jump, variable.active, constraint.capability.active, generator.capability.minActive, generator.capability.maxActive, index)
+    # end
+
+    # if statusOld == 1 && generator.layout.status[index] == 1 && (!ismissing(minActive) || !ismissing(maxActive))
+    #     addCapability(jump, variable.active,  constraint.capability.active, generator.capability.minActive, generator.capability.maxActive, index)
+    #     if haskey(constraint.balance.active, indexBus) && !JuMP.is_valid(jump, constraint.balance.active[indexBus])
+    #         updateBalance(system, analysis, indexBus)
+    #     end
+    # end
+# end
+
 
 """
     @generator(kwargs...)
@@ -673,17 +787,17 @@ function cost!(system::PowerSystem; label::L,
     polynomial::Array{Float64,1} = Array{Float64}(undef, 0),
     piecewise::Array{Float64,2} = Array{Float64}(undef, 0, 0))
 
-    if !ismissing(active) && !ismissing(reactive)
+    if isset(active) && isset(reactive)
         throw(ErrorException("The concurrent definition of the keywords active and reactive is not allowed."))
     elseif ismissing(active) && ismissing(reactive)
         throw(ErrorException("The cost model is missing."))
-    elseif !ismissing(active) && !(active in [1; 2]) || !ismissing(reactive) && !(reactive in [1; 2])
+    elseif isset(active) && !(active in [1; 2]) || isset(reactive) && !(reactive in [1; 2])
         throw(ErrorException("The model $model is not allowed; it should be either piecewise (1) or polynomial (2)."))
     end
 
     index = system.generator.label[getLabel(system.generator, label, "generator")]
 
-    if !ismissing(active)
+    if isset(active)
         container = system.generator.cost.active
         container.model[index] = active
         if prefix.activePower == 0.0
@@ -691,7 +805,7 @@ function cost!(system::PowerSystem; label::L,
         else
             scale = prefix.activePower / (system.base.power.prefix * system.base.power.value)
         end 
-    elseif !ismissing(reactive) 
+    elseif isset(reactive) 
         container = system.generator.cost.reactive
         container.model[index] = reactive
         if prefix.reactivePower == 0.0
@@ -732,34 +846,43 @@ function cost!(system::PowerSystem, analysis::DCOptimalPowerFlow; label::L,
     jump = analysis.jump
     constraint = analysis.constraint
     variable = analysis.variable
-    objExpr = objective_function(jump)
-
+ 
+    dropZero = false
     index = generator.label[getLabel(generator, label, "generator")]
     if generator.layout.status[index] == 1
-        objExpr, isPowerwiseOld = updateObjective(system, -objExpr, variable.active[index], index, label)
+        costOld, isPowerwiseOld = costExpr(system, variable.active[index], index, label)
 
         if isPowerwiseOld
-            delete!(jump, constraint.piecewise.active, index)
+            remove!(jump, constraint.piecewise.active, index)
+        else
+            dropZero = true
+            analysis.objective -= costOld
         end
     end
 
     cost!(system; label, active, reactive, polynomial, piecewise)
 
     if generator.layout.status[index] == 1
-        objExpr, isPowerwiseNew = updateObjective(system, -objExpr, variable.active[index], index, label)
-
-        if isPowerwiseOld && !isPowerwiseNew
-            add_to_expression!(objExpr, -variable.actwise[index])
-            drop_zeros!(objExpr)
-            delete!(jump, variable.actwise, index)
-        elseif isPowerwiseNew && !isPowerwiseOld
-            jump, objExpr, actwise = addPowerwise(jump, objExpr, variable.actwise, index; name = "actwise")
-        end
+        costNew, isPowerwiseNew = costExpr(system, variable.active[index], index, label)
 
         if isPowerwiseNew
-            addPiecewise(jump, variable.actwise[index], constraint.piecewise.active, generator.cost.active.piecewise[index], size(generator.cost.active.piecewise[index], 1), index)
+            if !isPowerwiseOld
+                addPowerwise(jump, analysis.objective, variable.actwise, index; name = "actwise")
+            end
+            addPiecewise(jump, variable.active[index], variable.actwise[index], constraint.piecewise.active, generator.cost.active.piecewise[index], size(generator.cost.active.piecewise[index], 1), index)
+        else
+            if isPowerwiseOld
+                dropZero = true
+                add_to_expression!(analysis.objective, -variable.actwise[index])
+                remove!(jump, variable.actwise, index)
+            end
+            analysis.objective += costNew
         end
     end
 
-    JuMP.set_objective_function(jump, objExpr)
+    if dropZero
+        drop_zeros!(analysis.objective)
+    end
+
+    JuMP.set_objective_function(jump, analysis.objective)
 end

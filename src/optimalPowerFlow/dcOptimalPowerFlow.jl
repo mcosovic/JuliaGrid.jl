@@ -25,7 +25,10 @@ fields:
 - `power`: the variable allocated to store the active powers;
 - `jump`: the JuMP model;
 - `variable`: holds the variable references to the JuMP model;
-- `constraint`: holds the constraint references to the JuMP model.
+- `constraint`: holds the constraint references to the JuMP model;
+- `objective`: holds the objective expression of the JuMP model;
+- `uuid`: a universally unique identifier associated with the `PowerSystem` composite type.
+
 
 # Examples
 Create the complete DC optimal power flow model:
@@ -59,7 +62,7 @@ function dcOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
     fix(angle[bus.layout.slack], bus.voltage.angle[bus.layout.slack])
     slack = Dict(bus.layout.slack => FixRef(angle[bus.layout.slack]))
 
-    objExpr = QuadExpr()
+    objective = @expression(jump, QuadExpr()) 
     actwise = Dict{Int64, VariableRef}()
     piecewise = Dict{Int64, Array{JuMP.ConstraintRef,1}}()
     capability = Dict{Int64, JuMP.ConstraintRef}()
@@ -68,11 +71,11 @@ function dcOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
             if cost.model[i] == 2
                 term = length(cost.polynomial[i])
                 if term == 3
-                    objExpr = polynomialQuadratic(objExpr, active[i], cost.polynomial[i])
+                    polynomialQuadratic(objective, active[i], cost.polynomial[i])
                 elseif term == 2
-                    objExpr = polynomialLinear(objExpr, active[i], cost.polynomial[i])
+                    polynomialLinear(objective, active[i], cost.polynomial[i])
                 elseif term == 1
-                    add_to_expression!(objExpr, cost.polynomial[i][1])
+                    add_to_expression!(objective, cost.polynomial[i][1])
                 elseif term > 3
                     @info("The generator indexed $i has a polynomial cost function of degree $(term-1), which is not included in the objective.")
                 else
@@ -81,35 +84,35 @@ function dcOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
             elseif cost.model[i] == 1
                 point = size(cost.piecewise[i], 1)
                 if point == 2
-                    objExpr = piecewiseLinear(objExpr, active[i], cost.piecewise[i])
+                    piecewiseLinear(objective, active[i], cost.piecewise[i])
                 elseif point > 2
-                    jump, objExpr, actwise = addPowerwise(jump, objExpr, actwise, i; name = "actwise")
-                    piecewise = addPiecewise(jump, actwise[i], piecewise, cost.piecewise[i], point, i)
+                    addPowerwise(jump, objective, actwise, i; name = "actwise")
+                    addPiecewise(jump, active[i], actwise[i], piecewise, cost.piecewise[i], point, i)
                 elseif point == 1
                     throw(ErrorException("The generator indexed $i has a piecewise linear cost function with only one defined point."))
                 else
                     @info("The generator indexed $i has an undefined piecewise linear cost function, which is not included in the objective.")
                 end
             end
-            jump, capability = addCapability(jump, active, capability, generator.capability.minActive, generator.capability.maxActive, i)
+            addCapability(jump, active[i], capability, generator.capability.minActive, generator.capability.maxActive, i)
         else
-            fix!(active, 0.0, capability, i)
+            fix!(active[i], 0.0, capability, i)
         end
     end
 
-    @objective(jump, Min, objExpr)
+    @objective(jump, Min, objective)
 
     balance = Dict{Int64, JuMP.ConstraintRef}()
     @inbounds for i = 1:bus.number
-        jump, balance = addBalance(system, jump, active, angle, balance, i)
+        addBalance(system, jump, active, angle, balance, i)
     end
 
     flow = Dict{Int64, JuMP.ConstraintRef}()
     voltage = Dict{Int64, JuMP.ConstraintRef}()
     @inbounds for i = 1:system.branch.number
         if system.branch.layout.status[i] == 1
-            jump, flow = addFlow(system, jump, angle, flow, i)
-            jump, voltage = addAngle(system, jump, angle, voltage, i)
+            addFlow(system, jump, angle, flow, i)
+            addAngle(system, jump, angle, voltage, i)
         end
     end
 
@@ -123,7 +126,11 @@ function dcOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
             CartesianReal(copy(generator.output.active))
         ),
         jump,
-        DCVariable(active, angle, actwise),
+        DCVariable(
+            active, 
+            angle, 
+            actwise
+        ),
         DCConstraint(
             PolarAngleRef(slack),
             CartesianRealRef(balance),
@@ -132,6 +139,7 @@ function dcOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
             CartesianRealRef(capability),
             DCPiecewise(piecewise)
         ),
+        objective,
         system.uuid
     )
 end
@@ -175,7 +183,7 @@ function solve!(system::PowerSystem, analysis::DCOptimalPowerFlow)
 end
 
 ######### Balance Constraints ##########
-function addBalance(system::PowerSystem, jump::JuMP.Model, active::Vector{VariableRef}, angle::Vector{VariableRef},  ref::Dict{Int64, JuMP.ConstraintRef}, i::Int64)
+function addBalance(system::PowerSystem, jump::JuMP.Model, active::Vector{VariableRef}, angle::Vector{VariableRef}, ref::Dict{Int64, JuMP.ConstraintRef}, i::Int64)
     dc = system.model.dc
     expression = AffExpr()
     for j in dc.nodalMatrix.colptr[i]:(dc.nodalMatrix.colptr[i + 1] - 1)
@@ -205,7 +213,7 @@ function updateBalance(system::PowerSystem, analysis::DCOptimalPowerFlow, index:
     constraint = analysis.constraint
     variable = analysis.variable
 
-    if is_valid(jump, constraint.balance.active[index])
+    if haskey(constraint.balance.active, index) && is_valid(jump, constraint.balance.active[index])
         if voltage
             @inbounds for j in dc.nodalMatrix.colptr[index]:(dc.nodalMatrix.colptr[index + 1] - 1)
                 angle = variable.angle[dc.nodalMatrix.rowval[j]]
@@ -224,19 +232,20 @@ function updateBalance(system::PowerSystem, analysis::DCOptimalPowerFlow, index:
     end
 end
 
-######### Update Objective Function ##########
-function updateObjective(system::PowerSystem, objExpr::QuadExpr, active::JuMP.VariableRef, index::Int64, label::L)
+######### Make Cost Expression ##########
+function costExpr(system::PowerSystem, active::JuMP.VariableRef, index::Int64, label::L)
     isPowerwise = false
     cost = system.generator.cost.active
+    expr = QuadExpr()
 
     if cost.model[index] == 2
         term = length(cost.polynomial[index])
         if term == 3
-            polynomialQuadratic(objExpr, active, cost.polynomial[index])
+            polynomialQuadratic(expr, active, cost.polynomial[index])
         elseif term == 2
-            polynomialLinear(objExpr, active, cost.polynomial[index])
+            polynomialLinear(expr, active, cost.polynomial[index])
         elseif term == 1
-            add_to_expression!(objExpr, cost.polynomial[index][1])
+            add_to_expression!(expr, cost.polynomial[index][1])
         elseif term > 3
             @info("The generator labelled $label has a polynomial cost function of degree $(term-1), which is not included in the objective.")
         else
@@ -245,7 +254,7 @@ function updateObjective(system::PowerSystem, objExpr::QuadExpr, active::JuMP.Va
     elseif cost.model[index] == 1
         point = size(cost.piecewise[index], 1)
         if point == 2
-            piecewiseLinear(objExpr, active, cost.piecewise[index])
+            piecewiseLinear(expr, active, cost.piecewise[index])
         elseif point > 2
             isPowerwise = true
         elseif point == 1
@@ -255,5 +264,5 @@ function updateObjective(system::PowerSystem, objExpr::QuadExpr, active::JuMP.Va
         end
     end
 
-    return objExpr, isPowerwise
+    return expr, isPowerwise
 end

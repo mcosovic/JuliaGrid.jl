@@ -126,6 +126,7 @@ Subsequently, the updated slack constraint can be inspected as follows:
 ```@repl DCOptimalPowerFlow
 print(system.bus.label, analysis.constraint.slack.angle)
 ```
+
 ---
 
 ##### Active Power Balance Constraints
@@ -248,7 +249,6 @@ nothing # hide
 ##### Delete Constraints
 To delete a constraint, users can make use of the [`delete`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.delete) function from the JuMP package. When handling constraints that have been internally created, users can refer to the constraint references stored in the `constraint` field of the `DCOptimalPowerFlow` type.
 
-
 For example, if the intention is to eliminate constraints related to the capability of `Generator 4`, the following code snippet can be employed:
 ```@example DCOptimalPowerFlow
 JuMP.delete(analysis.jump, analysis.constraint.capability.active[4])
@@ -256,7 +256,7 @@ nothing # hide
 ```
 
 !!! note "Info"
-    In the event that a user deletes a constraint and subsequently executes a function that updates bus, branch, or generator parameters, and if the deleted constraint is affected by these functions, JuliaGrid will automatically reinstate that constraint.
+    In the event that a user deletes a constraint and subsequently executes a function that updates bus, branch, or generator parameters, and if the deleted constraint is affected by these functions, JuliaGrid will automatically reinstate that constraint. Users should exercise caution when deleting constraints, as this action is considered potentially harmful since it operates independently of power system data.
 
 ---
 
@@ -268,6 +268,8 @@ In the provided example, the objective function that needs to be minimized to ob
 JuMP.objective_function(analysis.jump)
 ```
 
+Additionally, JuliaGrid stores the objective function in a separate variable, allowing users to access it by referencing the variable `analysis.objective`.
+
 ---
 
 ##### Update Objective Function
@@ -278,7 +280,7 @@ cost!(system, analysis; label = "Generator 3", active = 2, polynomial = [853.4; 
 
 This results in the updated objective function, which can be observed as follows:
 ```@repl DCOptimalPowerFlow
-JuMP.objective_function(analysis.jump)
+analysis.objective
 ```
 
 ---
@@ -286,10 +288,9 @@ JuMP.objective_function(analysis.jump)
 ##### User-Defined Objective Function
 Users can modify the objective function using the [`set_objective_function`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.set_objective_function) function from the JuMP package. This operation is considered destructive because it is independent of power system data; however, in certain scenarios, it may be more straightforward than using the [`cost!`](@ref cost!) function for updates. Moreover, using this methodology, users can combine a defined function with a newly defined expression. Here is an example of how it can be achieved:
 ```@example DCOptimalPowerFlow
-active = analysis.jump[:active]
-expr = 100.2 * active[1] * active[1] + 123
+expr = 100.2 * analysis.variable.active[1] * analysis.variable.active[1] + 123
 
-JuMP.set_objective_function(analysis.jump, JuMP.objective_function(analysis.jump) - expr)
+JuMP.set_objective_function(analysis.jump, analysis.objective - expr)
 ```
 
 You can now observe the updated objective function as follows:

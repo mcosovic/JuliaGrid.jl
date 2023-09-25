@@ -259,3 +259,7 @@ function print(io::IO, obj::Dict{Int64, Array{JuMP.ConstraintRef,1}})
     end
 end
 
+######### Check Input Data ##########
+function isset(input::T)
+    return !ismissing(input)
+end

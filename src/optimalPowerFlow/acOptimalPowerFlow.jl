@@ -1,31 +1,23 @@
 """
-    acOptimalPowerFlow(system::PowerSystem, optimizer; bridge, name, balance, limit,
-        rating, capability)
+    acOptimalPowerFlow(system::PowerSystem, optimizer; bridge, name)
 
 The function takes the `PowerSystem` composite type as input to establish the structure for
 solving the AC optimal power flow. The `optimizer` argument is also required to create and
 solve the optimization problem. If the `ac` field within the `PowerSystem` composite type has
 not been created, the function will initiate an update automatically.
 
+Additionally, the `optimizer` argument is a necessary component for formulating and solving the
+optimization problem. Specifically, JuliaGrid constructs the AC optimal power flow using the
+JuMP package and provides support for commonly employed solvers. For more detailed information,
+please consult the [JuMP documenatation](https://jump.dev/JuMP.jl/stable/packages/solvers/).
+
 # Keywords
 JuliaGrid offers the ability to manipulate the `jump` model based on the guidelines provided
-in the [JuMP documentation](https://jump.dev/JuMP.jl/stable/manual/models/). However,
+in the [JuMP documentation](https://jump.dev/JuMP.jl/stable/reference/models/). However,
 certain configurations may require different method calls, such as:
 - `bridge`: used to manage the bridging mechanism;
 - `name`: used to manage the creation of string names.
-
-Moreover, we have included keywords that regulate the usage of different types of constraints:
-- `balance`: controls the equality constraints that relate to the active and reactive power balance equations;
-- `limit`: controls the inequality constraints that relate to the voltage magnitude and angle differences between buses;
-- `rating`: controls the inequality constraints that relate to the long-term rating of branches;
-- `capability`: controls the inequality constraints that relate to the active and reactive power generator outputs.
-
-By default, all of these keywords are set to `true` and are of the `Bool` type.
-
-# JuMP
-The JuliaGrid builds the AC optimal power flow around the JuMP package and supports commonly
-used solvers. For more information, refer to the
-[JuMP documenatation](https://jump.dev/JuMP.jl/stable/packages/solvers/).
+By default, these keyword settings are configured as `true`.
 
 # Returns
 The function returns an instance of the `ACOptimalPowerFlow` type, which includes the following
@@ -34,7 +26,10 @@ fields:
 - `power`: the variable allocated to store the active and reactive powers;
 - `current`: the variable allocated to store the currents;
 - `jump`: the JuMP model;
-- `constraint`: holds the constraint references to the JuMP model.
+- `variable`: holds the variable references to the JuMP model;
+- `constraint`: holds the constraint references to the JuMP model;
+- `objective`: holds the objective expression of the JuMP model;
+- `uuid`: a universally unique identifier associated with the `PowerSystem` composite type.
 
 # Examples
 Create the complete AC optimal power flow model:
@@ -44,19 +39,9 @@ acModel!(system)
 
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
 ```
-
-Create the AC optimal power flow model without `rating` constraints:
-```jldoctest
-system = powerSystem("case14.h5")
-acModel!(system)
-
-analysis = acOptimalPowerFlow(system, Ipopt.Optimizer; rating = false)
-```
 """
 function acOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory);
-    bridge::Bool = true, name::Bool = true,
-    balance::Bool = true, limit::Bool = true,
-    rating::Bool = true,  capability::Bool = true)
+    bridge::Bool = true, name::Bool = true)
 
     if isempty(system.model.ac.nodalMatrix)
         acModel!(system)
@@ -73,18 +58,19 @@ function acOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
     jump = JuMP.Model(optimizerFactory; add_bridges = bridge)
     set_string_names_on_creation(jump, name)
 
-    @variable(jump, active[i = 1:generator.number])
-    @variable(jump, reactive[i = 1:generator.number])
-    @variable(jump, magnitude[i = 1:bus.number])
-    @variable(jump, angle[i = 1:bus.number])
+    active = @variable(jump, active[i = 1:generator.number])
+    reactive = @variable(jump, reactive[i = 1:generator.number])
+    magnitude = @variable(jump, magnitude[i = 1:bus.number])
+    angle = @variable(jump, angle[i = 1:bus.number])
 
     fix(angle[bus.layout.slack], bus.voltage.angle[bus.layout.slack])
     slack = Dict(bus.layout.slack => FixRef(angle[bus.layout.slack]))
 
-    objExpr = QuadExpr()
-    nonLinExpr = Vector{NonlinearExpr}(undef, 0)
-    activewise = Dict{Int64, VariableRef}()
-    reactivewise = Dict{Int64, VariableRef}()
+    quadratic = @expression(jump, QuadExpr()) 
+    nonLinActive = Dict{Int64, JuMP.NonlinearExpr}()
+    nonLinReactive = Dict{Int64, JuMP.NonlinearExpr}()
+    actwise = Dict{Int64, VariableRef}()
+    reactwise = Dict{Int64, VariableRef}()
     piecewiseActive = Dict{Int64, Array{JuMP.ConstraintRef,1}}()
     piecewiseReactive = Dict{Int64, Array{JuMP.ConstraintRef,1}}()
     capabilityActive = Dict{Int64, JuMP.ConstraintRef}()
@@ -96,23 +82,24 @@ function acOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
             if costActive.model[i] == 2
                 term = length(costActive.polynomial[i])
                 if term == 3
-                    objExpr = polynomialQuadratic(objExpr, active[i], costActive.polynomial[i])
+                    polynomialQuadratic(quadratic, active[i], costActive.polynomial[i])
                 elseif term == 2
-                    objExpr = polynomialLinear(objExpr, active[i], costActive.polynomial[i])
+                    polynomialLinear(quadratic, active[i], costActive.polynomial[i])
                 elseif term == 1
-                    add_to_expression!(objExpr, costActive.polynomial[i][1])
+                    add_to_expression!(quadratic, costActive.polynomial[i][1])
                 elseif term > 3
-                    jump, objExpr, nonLinExpr = polynomialNonlinear(jump, objExpr, nonLinExpr, costActive.polynomial[i], active[i], term)
+                    polynomialQuadratic(quadratic, active[i], costActive.polynomial[i])
+                    nonLinActive[i] =  @expression(jump, sum(costActive.polynomial[i][term - degree] * active[i]^degree for degree = term-1:-1:3))
                 else
                     @info("The generator indexed $i has an undefined polynomial cost function, which is not included in the objective.")
                 end
             elseif costActive.model[i] == 1
                 point = size(costActive.piecewise[i], 1)
                 if point == 2
-                    objExpr = piecewiseLinear(objExpr, active[i], costActive.piecewise[i])
+                    piecewiseLinear(quadratic, active[i], costActive.piecewise[i])
                 elseif point > 2
-                    jump, objExpr, activewise = addPowerwise(jump, objExpr, activewise, i; name = "activewise")
-                    piecewiseActive = addPiecewise(jump, activewise[i], piecewiseActive, costActive.piecewise[i], point, i)
+                    addPowerwise(jump, quadratic, actwise, i; name = "actwise")
+                    addPiecewise(jump, actwise[i], piecewiseActive, costActive.piecewise[i], point, i)
                 elseif point == 1
                     throw(ErrorException("The generator indexed $i has a piecewise linear cost function with only one defined point."))
                 else
@@ -123,86 +110,49 @@ function acOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
             if costReactive.model[i] == 2
                 term = length(costReactive.polynomial[i])
                 if term == 3
-                    objExpr = polynomialQuadratic(objExpr, reactive[i], costReactive.polynomial[i])
+                    polynomialQuadratic(quadratic, reactive[i], costReactive.polynomial[i])
                 elseif term == 2
-                    objExpr = polynomialLinear(objExpr, reactive[i], costReactive.polynomial[i])
+                    polynomialLinear(quadratic, reactive[i], costReactive.polynomial[i])
                 elseif term == 1
-                    add_to_expression!(objExpr, costReactive.polynomial[i][1])
+                    add_to_expression!(quadratic, costReactive.polynomial[i][1])
                 elseif term > 3
-                    jump, objExpr, nonLinExpr = polynomialNonlinear(jump, objExpr, nonLinExpr, costReactive.polynomial[i], reactive[i], term)
+                    polynomialQuadratic(quadratic, reactive[i], costReactive.polynomial[i])
+                    nonLinReactive[i] =  @expression(jump, sum(costReactive.polynomial[i][term - degree] * reactive[i]^degree for degree = term-1:-1:3))
                 else
                     @info("The generator indexed $i has an undefined polynomial cost function, which is not included in the objective.")
                 end
             elseif costReactive.model[i] == 1
                 point = size(costReactive.piecewise[i], 1)
                 if point == 2
-                    objExpr = piecewiseLinear(objExpr, reactive[i], costReactive.piecewise[i])
+                    piecewiseLinear(quadratic, reactive[i], costReactive.piecewise[i])
                 elseif point > 2
-                    jump, objExpr, reactivewise = addPowerwise(jump, objExpr, reactivewise, i; name = "reactivewise")
-                    piecewiseReactive = addPiecewise(jump, reactivewise[i], piecewiseReactive, costReactive.piecewise[i], point, i)
+                    addPowerwise(jump, quadratic, reactwise, i; name = "reactwise")
+                    addPiecewise(jump, reactwise[i], piecewiseReactive, costReactive.piecewise[i], point, i)
                 elseif point == 1
                     throw(ErrorException("The generator indexed $i has a piecewise linear cost function with only one defined point."))
                 else
                     @info("The generator indexed $i has an undefined piecewise linear cost function, which is not included in the objective.")
                 end
             end
-            jump, lower, upper = capabilityCurve(system, jump, active, reactive, lower, upper, i)
+            capabilityCurve(system, jump, active, reactive, lower, upper, i)
 
-            jump, capabilityActive = addCapability(jump, active, capabilityActive, generator.capability.minActive, generator.capability.maxActive, i)
-            jump, capabilityReactive = addCapability(jump, reactive, capabilityReactive, generator.capability.minReactive, generator.capability.maxReactive, i)
+            addCapability(jump, active, capabilityActive, generator.capability.minActive, generator.capability.maxActive, i)
+            addCapability(jump, reactive, capabilityReactive, generator.capability.minReactive, generator.capability.maxReactive, i)
         else
             fix!(active, 0.0, capabilityActive, i)
             fix!(reactive, 0.0, capabilityReactive, i)
         end
     end
 
-    @objective(jump, Min, objExpr + sum(nonLinExpr[i] for i = 1:lastindex(nonLinExpr)))
+    @objective(jump, Min, quadratic + sum(nonLinActive[i] for i in keys(nonLinActive)) + sum(nonLinReactive[i] for i in keys(nonLinReactive)))
 
     voltageAngle = Dict{Int64, JuMP.ConstraintRef}()
     flowFrom = Dict{Int64, JuMP.ConstraintRef}()
     flowTo = Dict{Int64, JuMP.ConstraintRef}()
     @inbounds for i = 1:branch.number
         if branch.layout.status[i] == 1
-            jump, voltageAngle = addAngle(system, jump, angle, voltageAngle, i)
-
-            if branch.flow.longTerm[i] ≉  0 && branch.flow.longTerm[i] < 10^16
-                from = branch.layout.from[i]
-                to = branch.layout.to[i]
-
-                Vi = magnitude[from]
-                Vj = magnitude[to]
-                θ = @expression(jump, angle[from] - angle[to] - branch.parameter.shiftAngle[i])
-                cosθ = @expression(jump, cos(θ))
-                sinθ = @expression(jump, sin(θ))
-
-                gij = real(ac.admittance[i])
-                bij = imag(ac.admittance[i])
-                gsi = 0.5 * branch.parameter.conductance[i]
-                bsi = 0.5 * branch.parameter.susceptance[i]
-                βij = 1 / branch.parameter.turnsRatio[i]
-
-                if branch.flow.type[i] == 1 || branch.flow.type[i] == 3
-                    Aij = βij^4 * ((gij + gsi)^2 + (bij + bsi)^2)
-                    Bij = βij^2 * (gij^2 + bij^2)
-                    Cij = βij^3 * (gij * (gij + gsi) + bij * (bij + bsi))
-                    Dij = βij^3 * (bij * (gij + gsi) - gij * (bij + bsi))
-
-                    Aji = (gij + gsi)^2 + (bij + bsi)^2
-                    Cji = βij * (gij * (gij + gsi) + bij * (bij + bsi))
-                    Dji = βij * (gij * (bij + bsi) - bij * (gij + gsi))
-
-                    if branch.flow.type[i] == 1
-                        flowFrom[i] = @constraint(jump, Aij * Vi^4 + Bij * Vi^2 * Vj^2 - 2 * Vi^3 * Vj * (Cij * cosθ + Dij * sinθ) <= branch.flow.longTerm[i]^2)
-                        flowTo[i] = @constraint(jump, Aji * Vj^4 + Bij * Vi^2 * Vj^2 - 2 * Vi * Vj^3 * (Cji * cosθ + Dji * sinθ) <= branch.flow.longTerm[i]^2)
-                    elseif branch.flow.type[i] == 3
-                        flowFrom[i] = @constraint(jump, Aij * Vi^2 + Bij * Vj^2 - 2 * Vi * Vj * (Cij * cosθ + Dij * sinθ) <= branch.flow.longTerm[i]^2)
-                        flowTo[i] = @constraint(jump, Aji * Vj^2 + Bij * Vi^2 - 2 * Vi * Vj * (Cji * cosθ + Dji * sinθ) <= branch.flow.longTerm[i]^2)
-                    end
-                elseif branch.flow.type[i] == 2
-                    flowFrom[i] = @constraint(jump, βij^2 * (gij + gsi) * Vi^2 - βij * Vi * Vj * (gij * cosθ + bij * sinθ) <= branch.flow.longTerm[i])
-                    flowTo[i] = @constraint(jump, (gij + gsi) * Vj^2 - βij * Vi * Vj * (gij * cosθ - bij * sinθ) <= branch.flow.longTerm[i])
-                end
-            end
+            addAngle(system, jump, angle, voltageAngle, i)
+            addFlow(system, jump, magnitude, angle, flowFrom, flowTo, i)
         end
     end
 
@@ -228,7 +178,7 @@ function acOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
         balanceActive[i] = @constraint(jump, bus.demand.active[i] - sum(active[k] for k in bus.supply.generator[i]) + magnitude[i] * activeExpr == 0)
         balanceReactive[i] = @constraint(jump, bus.demand.reactive[i] - sum(reactive[k] for k in bus.supply.generator[i]) + magnitude[i] * reactiveExpr == 0)
 
-        jump, voltageMagnitude = addLimitMagnitude(system, jump, magnitude, voltageMagnitude, i)
+        addMagnitude(system, jump, magnitude, voltageMagnitude, i)
     end
 
     return ACOptimalPowerFlow(
@@ -253,13 +203,27 @@ function acOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
             Polar(Float64[], Float64[])
         ),
         jump,
+        ACVariable(
+            active, 
+            reactive, 
+            magnitude, 
+            angle, 
+            actwise, 
+            reactwise),
         Constraint(
             PolarAngleRef(slack),
             CartesianRef(balanceActive, balanceReactive),
             PolarRef(voltageMagnitude, voltageAngle),
             CartesianFlowRef(flowFrom, flowTo),
             CapabilityRef(capabilityActive, capabilityReactive, lower, upper),
-            ACPiecewise(piecewiseActive, piecewiseReactive, activewise, reactivewise),
+            ACPiecewise(piecewiseActive, piecewiseReactive),
+        ),
+        ACObjective(
+            quadratic, 
+            ACNonlinear(
+                nonLinActive, 
+                nonLinReactive
+            )
         ),
         system.uuid
     )
@@ -307,13 +271,75 @@ function solve!(system::PowerSystem, analysis::ACOptimalPowerFlow)
     end
 end
 
+######## Quadratic Term in the Objective Function ##########
+function polynomialQuadratic(objective::QuadExpr, power::VariableRef, cost::Array{Float64,1})
+    add_to_expression!(objective, cost[end - 2], power, power)
+    add_to_expression!(objective, cost[end - 1], power)
+    add_to_expression!(objective, cost[end])
+
+    return objective
+end
+
+######## Linear Term in the Objective Function ##########
+function polynomialLinear(objective::QuadExpr, power::VariableRef, cost::Array{Float64,1})
+    add_to_expression!(objective, cost[1], power)
+    add_to_expression!(objective, cost[2])
+
+    return objective
+end
+
+######## Linear Piecewise in the Objective Function ##########
+function piecewiseLinear(objective::QuadExpr, power::VariableRef, piecewise::Array{Float64,2})
+    slope = (piecewise[2, 2] - piecewise[1, 2]) / (piecewise[2, 1] - piecewise[1, 1])
+    add_to_expression!(objective, slope, power)
+    add_to_expression!(objective, piecewise[1, 2] - piecewise[1, 1] * slope)
+
+    return objective
+end
+
+######## Add Helper Variable ##########
+function addPowerwise(jump::JuMP.Model, objective::QuadExpr, powerwise::Dict{Int64, VariableRef}, index::Int64; name)
+    powerwise[index] = @variable(jump, base_name = "$name[$index]")
+    add_to_expression!(objective, powerwise[index])
+
+    return jump, objective, powerwise
+end
+
+######## Piecewise Constraints ##########
+function addPiecewise(jump::JuMP.Model, active::VariableRef, powerwise::VariableRef, ref::Dict{Int64, Array{JuMP.ConstraintRef,1}}, piecewise::Array{Float64,2}, point::Int64, index::Int64)
+    power = @view piecewise[:, 1]
+    cost = @view piecewise[:, 2]
+    ref[index] = Array{JuMP.ConstraintRef}(undef, point - 1)
+    for j = 2:point
+        slope = (cost[j] - cost[j-1]) / (power[j] - power[j-1])
+        if slope == Inf
+            throw(ErrorException("The piecewise linear cost function's slope of the generator indexed $i has infinite value."))
+        end
+        ref[index][j-1] = @constraint(jump, slope * active - powerwise <= slope * power[j-1] - cost[j-1])
+    end
+
+    return jump, ref
+end
+
+######## Add Capability Constraints ##########
+function addCapability(jump::JuMP.Model, variable::VariableRef, ref::Dict{Int64, JuMP.ConstraintRef}, minPower::Array{Float64,1}, maxPower::Array{Float64,1}, index::Int64)
+    if minPower[index] != maxPower[index]
+        ref[index] = @constraint(jump, minPower[index] <= variable <= maxPower[index])
+    else
+        fix!(variable, minPower[index], ref, index)
+    end
+
+    return jump, ref
+end
+
+
 ######### Voltage Magnitude Constraints ##########
-function addLimitMagnitude(system::PowerSystem, jump::JuMP.Model, magnitude::Vector{VariableRef}, ref::Dict{Int64, JuMP.ConstraintRef}, index::Int64)
+function addMagnitude(system::PowerSystem, jump::JuMP.Model, magnitude::Vector{VariableRef}, ref::Dict{Int64, JuMP.ConstraintRef}, index::Int64)
     bus = system.bus
     if bus.voltage.minMagnitude[index] != bus.voltage.maxMagnitude[index]
         ref[index] = @constraint(jump, bus.voltage.minMagnitude[index] <= magnitude[index] <= bus.voltage.maxMagnitude[index])
     else
-        fix!(magnitude, bus.voltage.minMagnitude[index], ref, index)
+        fix!(magnitude[index], bus.voltage.minMagnitude[index], ref, index)
     end
 
     return jump, ref
@@ -329,16 +355,7 @@ function addAngle(system::PowerSystem, jump::JuMP.Model, angle::Vector{VariableR
     return jump, ref
 end
 
-######## Capability Constraints ##########
-function addCapability(jump::JuMP.Model, variable::Vector{VariableRef}, ref::Dict{Int64, JuMP.ConstraintRef}, minPower::Array{Float64,1}, maxPower::Array{Float64,1}, index::Int64)
-    if minPower[index] != maxPower[index]
-        ref[index] = @constraint(jump, minPower[index] <= variable[index] <= maxPower[index])
-    else
-        fix!(variable, minPower[index], ref, index)
-    end
 
-    return jump, ref
-end
 
 ######### Capability Curve Constraints ##########
 function capabilityCurve(system::PowerSystem, jump::JuMP.Model, active::Vector{VariableRef}, reactive::Vector{VariableRef}, lower::Dict{Int64, JuMP.ConstraintRef}, upper::Dict{Int64, JuMP.ConstraintRef}, i::Int64)
@@ -386,78 +403,25 @@ function capabilityCurve(system::PowerSystem, jump::JuMP.Model, active::Vector{V
     return jump, lower, upper
 end
 
-######## Quadratic Term in the Objective Function ##########
-function polynomialQuadratic(objExpr::QuadExpr, power::VariableRef, cost::Array{Float64,1})
-    add_to_expression!(objExpr, cost[1], power, power)
-    add_to_expression!(objExpr, cost[2], power)
-    add_to_expression!(objExpr, cost[3])
 
-    return objExpr
+
+######### Fix and UnfixData ##########
+function fix!(variable::JuMP.VariableRef, value::Float64, ref::Dict{Int64, JuMP.ConstraintRef}, index::Int64)
+    JuMP.fix(variable, value)
+    ref[index] = JuMP.FixRef(variable)
 end
 
-######## Linear Term in the Objective Function ##########
-function polynomialLinear(objExpr::QuadExpr, power::VariableRef, cost::Array{Float64,1})
-    add_to_expression!(objExpr, cost[1], power)
-    add_to_expression!(objExpr, cost[2])
-
-    return objExpr
-end
-
-######## Nonlinear Expression in the Objective Function ##########
-function polynomialNonlinear(jump::JuMP.Model, objExpr::QuadExpr, nonlinearExpr::Vector{NonlinearExpr}, cost::Array{Float64,1}, power::VariableRef, term::Int64)
-    add_to_expression!(objExpr, cost[end - 2], power, power)
-    add_to_expression!(objExpr, cost[end - 1], power)
-    add_to_expression!(objExpr, cost[end])
-
-    push!(nonlinearExpr, @expression(jump, sum(cost[term - degree] * power^degree for degree = term-1:-1:3)))
-
-    return jump, objExpr, nonlinearExpr
-end
-
-
-######## Linear Piecewise in the Objective Function ##########
-function piecewiseLinear(objExpr::QuadExpr, power::VariableRef, piecewise::Array{Float64,2})
-    slope = (piecewise[2, 2] - piecewise[1, 2]) / (piecewise[2, 1] - piecewise[1, 1])
-    add_to_expression!(objExpr, slope, power)
-    add_to_expression!(objExpr, piecewise[1, 2] - piecewise[1, 1] * slope)
-
-    return objExpr
-end
-
-######## Add Helper Variable ##########
-function addPowerwise(jump::JuMP.Model, objExpr::QuadExpr, powerwise::Dict{Int64, VariableRef}, index::Int64; name)
-    powerwise[index] = @variable(jump, base_name = "$name[$index]")
-    add_to_expression!(objExpr, powerwise[index])
-
-    return jump, objExpr, powerwise
-end
-
-######## Piecewise Constraints ##########
-function addPiecewise(jump::JuMP.Model, powerwise::VariableRef, ref::Dict{Int64, Array{JuMP.ConstraintRef,1}}, piecewise::Array{Float64,2}, point::Int64, index::Int64)
-    power = @view piecewise[:, 1]
-    cost = @view piecewise[:, 2]
-    ref[index] = Array{JuMP.ConstraintRef}(undef, point - 1)
-    for j = 2:point
-        slope = (cost[j] - cost[j-1]) / (power[j] - power[j-1])
-        if slope == Inf
-            throw(ErrorException("The piecewise linear cost function's slope of the generator indexed $i has infinite value."))
+function unfix!(jump::JuMP.Model, variable::JuMP.VariableRef, ref::Dict{Int64, JuMP.ConstraintRef}, index::Int64)
+    if haskey(ref, index)
+        if JuMP.is_valid(jump, ref[index])
+            JuMP.unfix(variable)
         end
-        ref[index][j-1] = @constraint(jump, slope * jump[:active][index] - powerwise <= slope * power[j-1] - cost[j-1])
+        delete!(ref, index)
     end
-
-    return ref
 end
 
-######### Fix Data ##########
-function fix!(variable::Vector{JuMP.VariableRef}, value::Float64, ref::Dict{Int64, JuMP.ConstraintRef}, index::Int64)
-    JuMP.fix(variable[index], value)
-    ref[index] = JuMP.FixRef(variable[index])
-end
-
-######### Delete Data ##########
-import Base.delete!
-
-function delete!(jump::JuMP.Model, ref::Union{Dict{Int64, JuMP.ConstraintRef}, Dict{Int64, VariableRef}}, index::Int64)
+######### Remove Constraints ##########
+function remove!(jump::JuMP.Model, ref::Union{Dict{Int64, JuMP.ConstraintRef}, Dict{Int64, VariableRef}}, index::Int64)
     if haskey(ref, index)
         if JuMP.is_valid.(jump, ref[index])
             JuMP.delete(jump, ref[index])
@@ -466,7 +430,7 @@ function delete!(jump::JuMP.Model, ref::Union{Dict{Int64, JuMP.ConstraintRef}, D
     end
 end
 
-function delete!(jump::JuMP.Model, ref::Dict{Int64, Array{JuMP.ConstraintRef,1}}, index::Int64)
+function remove!(jump::JuMP.Model, ref::Dict{Int64, Array{JuMP.ConstraintRef,1}}, index::Int64)
     if haskey(ref, index)
         if all(JuMP.is_valid.(jump, ref[index]))
             JuMP.delete.(jump, ref[index])
@@ -475,61 +439,128 @@ function delete!(jump::JuMP.Model, ref::Dict{Int64, Array{JuMP.ConstraintRef,1}}
     end
 end
 
-function unfix!(jump::JuMP.Model, variable::Vector{JuMP.VariableRef}, ref::Dict{Int64, JuMP.ConstraintRef}, index::Int64)
-    if haskey(ref, index)
-        if JuMP.is_valid(jump, ref[index])
-            JuMP.unfix(variable[index])
+######### Update Balance Constraints ##########
+function updateBalance(system::PowerSystem, analysis::ACOptimalPowerFlow, index::Int64; active = false, reactive = false)
+    bus = system.bus
+    ac = system.model.ac
+    jump = analysis.jump
+    constraint = analysis.constraint
+    variable = analysis.variable
+
+    if active
+        if is_valid(jump, constraint.balance.active[index])
+            remove!(jump, constraint.balance.active, index)
         end
-        delete!(ref, index)
+        activeExpr = @expression(jump, variable.magnitude[index] * real(ac.nodalMatrixTranspose[index, index]))
+    end
+    if reactive
+        if is_valid(jump, constraint.balance.reactive[index])
+            remove!(jump, constraint.balance.reactive, index)
+        end
+        reactiveExpr = @expression(jump, -variable.magnitude[index] * imag(ac.nodalMatrixTranspose[index, index]))
+    end
+    for j in ac.nodalMatrix.colptr[index]:(ac.nodalMatrix.colptr[index + 1] - 1)
+        row = ac.nodalMatrix.rowval[j]
+        if index != row
+            θ = @expression(jump, variable.angle[index] - variable.angle[row])
+            cosθ = @expression(jump, cos(θ))
+            sinθ = @expression(jump, sin(θ))
+            Gij = real(ac.nodalMatrixTranspose.nzval[j])
+            Bij = imag(ac.nodalMatrixTranspose.nzval[j])
+
+            if active
+                activeExpr = @expression(jump, activeExpr + variable.magnitude[row] * (Gij * cosθ + Bij * sinθ))
+            end
+            if reactive
+                reactiveExpr = @expression(jump, reactiveExpr + variable.magnitude[row] * (Gij * sinθ - Bij * cosθ))
+            end
+        end
+    end
+    if active
+        constraint.balance.active[index] = @constraint(jump, bus.demand.active[index] - sum(variable.active[k] for k in bus.supply.generator[index]) + variable.magnitude[index] * activeExpr == 0)
+    end
+    if reactive
+        constraint.balance.reactive[index] = @constraint(jump, bus.demand.reactive[index] - sum(variable.reactive[k] for k in bus.supply.generator[index]) + variable.magnitude[index] * reactiveExpr == 0)
     end
 end
 
-# ######### Update Balance Constraints ##########
-# function updateBalance(system::PowerSystem, analysis::ACOptimalPowerFlow, i::Int64; active = false, reactive = false)
-#     bus = system.bus
-#     ac = system.model.ac
-#     jump = analysis.jump
-#     constraint = analysis.constraint
+######### Flow Constraints ##########
+function addFlow(system::PowerSystem, jump::JuMP.Model, magnitude::Vector{VariableRef}, angle::Vector{VariableRef}, refFrom::Dict{Int64, JuMP.ConstraintRef}, refTo::Dict{Int64, JuMP.ConstraintRef}, i::Int64)
+    branch = system.branch
+    ac = system.model.ac
 
-#     magnitude = jump[:magnitude]
-#     angle = jump[:angle]
-#     activeVar = jump[:active]
-#     reactiveVar = jump[:reactive]
+    if branch.flow.longTerm[i] ≉  0 && branch.flow.longTerm[i] < 10^16
+        from = branch.layout.from[i]
+        to = branch.layout.to[i]
 
-#     if active
-#         if is_valid(jump, constraint.balance.active[i])
-#             delete!(jump, constraint.balance.active, i)
-#         end
-#         activeExpr = @expression(jump, magnitude[i] * real(ac.nodalMatrixTranspose[i, i]))
-#     end
-#     if reactive
-#         if is_valid(jump, constraint.balance.reactive[i])
-#             delete!(jump, constraint.balance.reactive, i)
-#         end
-#         reactiveExpr = @expression(jump, -magnitude[i] * imag(ac.nodalMatrixTranspose[i, i]))
-#     end
-#     for j in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
-#         row = ac.nodalMatrix.rowval[j]
-#         if i != row
-#             θ = @expression(jump, angle[i] - angle[row])
-#             cosθ = @expression(jump, cos(θ))
-#             sinθ = @expression(jump, sin(θ))
-#             Gij = real(ac.nodalMatrixTranspose.nzval[j])
-#             Bij = imag(ac.nodalMatrixTranspose.nzval[j])
+        Vi = magnitude[from]
+        Vj = magnitude[to]
+        θ = @expression(jump, angle[from] - angle[to] - branch.parameter.shiftAngle[i])
+        cosθ = @expression(jump, cos(θ))
+        sinθ = @expression(jump, sin(θ))
 
-#             if active
-#                 activeExpr = @expression(jump, activeExpr + magnitude[row] * (Gij * cosθ + Bij * sinθ))
-#             end
-#             if reactive
-#                 reactiveExpr = @expression(jump, reactiveExpr + magnitude[row] * (Gij * sinθ - Bij * cosθ))
-#             end
-#         end
-#     end
-#     if active
-#         constraint.balance.active[i] = @constraint(jump, bus.demand.active[i] - sum(activeVar[k] for k in bus.supply.generator[i]) + magnitude[i] * activeExpr == 0)
-#     end
-#     if reactive
-#         constraint.balance.reactive[i] = @constraint(jump, bus.demand.reactive[i] - sum(reactiveVar[k] for k in bus.supply.generator[i]) + magnitude[i] * reactiveExpr == 0)
-#     end
-# end
+        gij = real(ac.admittance[i])
+        bij = imag(ac.admittance[i])
+        gsi = 0.5 * branch.parameter.conductance[i]
+        bsi = 0.5 * branch.parameter.susceptance[i]
+        βij = 1 / branch.parameter.turnsRatio[i]
 
+        if branch.flow.type[i] == 1 || branch.flow.type[i] == 3
+            Aij = βij^4 * ((gij + gsi)^2 + (bij + bsi)^2)
+            Bij = βij^2 * (gij^2 + bij^2)
+            Cij = βij^3 * (gij * (gij + gsi) + bij * (bij + bsi))
+            Dij = βij^3 * (bij * (gij + gsi) - gij * (bij + bsi))
+
+            Aji = (gij + gsi)^2 + (bij + bsi)^2
+            Cji = βij * (gij * (gij + gsi) + bij * (bij + bsi))
+            Dji = βij * (gij * (bij + bsi) - bij * (gij + gsi))
+
+            if branch.flow.type[i] == 1
+                refFrom[i] = @constraint(jump, Aij * Vi^4 + Bij * Vi^2 * Vj^2 - 2 * Vi^3 * Vj * (Cij * cosθ + Dij * sinθ) <= branch.flow.longTerm[i]^2)
+                refTo[i] = @constraint(jump, Aji * Vj^4 + Bij * Vi^2 * Vj^2 - 2 * Vi * Vj^3 * (Cji * cosθ + Dji * sinθ) <= branch.flow.longTerm[i]^2)
+            elseif branch.flow.type[i] == 3
+                refFrom[i] = @constraint(jump, Aij * Vi^2 + Bij * Vj^2 - 2 * Vi * Vj * (Cij * cosθ + Dij * sinθ) <= branch.flow.longTerm[i]^2)
+                refTo[i] = @constraint(jump, Aji * Vj^2 + Bij * Vi^2 - 2 * Vi * Vj * (Cji * cosθ + Dji * sinθ) <= branch.flow.longTerm[i]^2)
+            end
+        elseif branch.flow.type[i] == 2
+            refFrom[i] = @constraint(jump, βij^2 * (gij + gsi) * Vi^2 - βij * Vi * Vj * (gij * cosθ + bij * sinθ) <= branch.flow.longTerm[i])
+            refTo[i] = @constraint(jump, (gij + gsi) * Vj^2 - βij * Vi * Vj * (gij * cosθ - bij * sinθ) <= branch.flow.longTerm[i])
+        end
+    end
+
+    return jump, refFrom, refTo
+end
+
+######### Update Objective Function ##########
+function updateObjective(system::PowerSystem, objExpr::QuadExpr, active::JuMP.VariableRef, index::Int64, label::L)
+    isPowerwise = false
+    cost = system.generator.cost.active
+
+    if cost.model[index] == 2
+        term = length(cost.polynomial[index])
+        if term == 3
+            polynomialQuadratic(objExpr, active, cost.polynomial[index])
+        elseif term == 2
+            polynomialLinear(objExpr, active, cost.polynomial[index])
+        elseif term == 1
+            add_to_expression!(objExpr, cost.polynomial[index][1])
+        elseif term > 3
+            
+        else
+            @info("The generator labelled $label has an undefined polynomial cost function, which is not included in the objective.")
+        end
+    elseif cost.model[index] == 1
+        point = size(cost.piecewise[index], 1)
+        if point == 2
+            piecewiseLinear(objExpr, active, cost.piecewise[index])
+        elseif point > 2
+            isPowerwise = true
+        elseif point == 1
+            throw(ErrorException("The generator labelled $label has a piecewise linear cost function with only one defined point."))
+        else
+            @info("The generator labelled $label has an undefined piecewise linear cost function, which is not included in the objective.")
+        end
+    end
+
+    return objExpr, isPowerwise
+end

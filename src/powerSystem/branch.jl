@@ -188,12 +188,49 @@ function addBranch!(system::PowerSystem, analysis::DCOptimalPowerFlow;
         from = branch.layout.from[end]
         to = branch.layout.to[end]
 
-        rhs = !ismissing(shiftAngle)
+        rhs = isset(shiftAngle)
         updateBalance(system, analysis, from; voltage = true, rhs = rhs)
         updateBalance(system, analysis, to; voltage = true, rhs = rhs)
 
         addFlow(system, jump, variable.angle, constraint.flow.active, branch.number)
         addAngle(system, jump, variable.angle, constraint.voltage.angle, branch.number)
+    end
+end
+
+function addBranch!(system::PowerSystem, analysis::ACOptimalPowerFlow;
+    label::L = missing, from::L, to::L, status::T = missing,
+    resistance::T = missing, reactance::T = missing, susceptance::T = missing,
+    conductance::T = missing, turnsRatio::T = missing, shiftAngle::T = missing,
+    minDiffAngle::T = missing, maxDiffAngle::T = missing,
+    longTerm::T = missing, shortTerm::T = missing, emergency::T = missing, type::T = missing)
+
+    checkUUID(system.uuid, analysis.uuid)
+
+    branch = system.branch
+    jump = analysis.jump
+    constraint = analysis.constraint
+    variable = analysis.variable
+    
+    addBranch!(system; label, from, to, status, resistance, reactance, susceptance,
+        conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, longTerm, shortTerm,
+        emergency, type)
+
+    if branch.layout.status[end] == 1
+        from = branch.layout.from[end]
+        to = branch.layout.to[end]
+
+        parameter = isset(resistance) || isset(reactance) || isset(conductance) || isset(susceptance) || isset(turnsRatio) || isset(shiftAngle)
+        if parameter
+            updateBalance(system, analysis, branch.number; active = parameter, reactive = parameter)
+        end
+
+        if isset(minDiffAngle) || isset(maxDiffAngle)
+            addAngle(system, jump, variable.angle, constraint.voltage.angle, branch.number)
+        end
+
+        if parameter || isset(longTerm) || isset(type)
+            addFlow(system, jump, variable.magnitude, variable.angle, constraint.flow.from, constraint.flow.to, branch.number)
+        end
     end
 end
 
@@ -254,7 +291,7 @@ function updateBranch!(system::PowerSystem;
     checkStatus(status)
 
     basePowerInv = 1 / (system.base.power.value * system.base.power.prefix)
-    parameter = !ismissing(resistance) || !ismissing(reactance) || !ismissing(conductance) || !ismissing(susceptance) || !ismissing(turnsRatio) || !ismissing(shiftAngle)
+    parameter = isset(resistance) || isset(reactance) || isset(conductance) || isset(susceptance) || isset(turnsRatio) || isset(shiftAngle)
 
     if branch.layout.status[index] == 1
         if status == 0 || (status == 1 && parameter)
@@ -272,7 +309,7 @@ function updateBranch!(system::PowerSystem;
     end
 
     if parameter
-        if !ismissing(turnsRatio)
+        if isset(turnsRatio)
             branch.parameter.turnsRatio[index] = turnsRatio
         end
 
@@ -280,19 +317,19 @@ function updateBranch!(system::PowerSystem;
         baseAdmittanceInv = baseImpedance(baseVoltage, basePowerInv, branch.parameter.turnsRatio[index])
         baseImpedanceInv = 1 / baseAdmittanceInv
 
-        if !ismissing(resistance)
+        if isset(resistance)
             branch.parameter.resistance[index] = topu(resistance, baseImpedanceInv, prefix.impedance)
         end
-        if !ismissing(reactance)
+        if isset(reactance)
             branch.parameter.reactance[index] = topu(reactance, baseImpedanceInv, prefix.impedance)
         end
-        if !ismissing(conductance)
+        if isset(conductance)
             branch.parameter.conductance[index] = topu(conductance, baseAdmittanceInv, prefix.admittance)
         end
-        if !ismissing(susceptance)
+        if isset(susceptance)
             branch.parameter.susceptance[index] = topu(susceptance, baseAdmittanceInv, prefix.admittance)
         end
-        if !ismissing(shiftAngle)
+        if isset(shiftAngle)
             branch.parameter.shiftAngle[index] = shiftAngle * prefix.voltageAngle
         end
     end
@@ -311,30 +348,30 @@ function updateBranch!(system::PowerSystem;
     end
     branch.layout.status[index] = status
 
-    if !ismissing(minDiffAngle)
+    if isset(minDiffAngle)
         branch.voltage.minDiffAngle[index] = minDiffAngle * prefix.voltageAngle
     end
-    if !ismissing(maxDiffAngle)
+    if isset(maxDiffAngle)
         branch.voltage.maxDiffAngle[index] = maxDiffAngle * prefix.voltageAngle
     end
 
-    if !ismissing(type)
+    if isset(type)
         branch.flow.type[index] = type
     end
 
-    if !ismissing(longTerm) || !ismissing(shortTerm) || !ismissing(emergency)
+    if isset(longTerm) || isset(shortTerm) || isset(emergency)
         if branch.flow.type[index] == 2
             prefixLive = prefix.activePower
         else
             prefixLive = prefix.apparentPower
         end
-        if !ismissing(longTerm)
+        if isset(longTerm)
             branch.flow.longTerm[index] = topu(longTerm, basePowerInv, prefixLive)
         end
-        if !ismissing(shortTerm)
+        if isset(shortTerm)
             branch.flow.shortTerm[index] = topu(shortTerm, basePowerInv, prefixLive)
         end
-        if !ismissing(emergency)
+        if isset(emergency)
             branch.flow.emergency[index] = topu(emergency, basePowerInv, prefixLive)
         end
     end
@@ -382,9 +419,9 @@ function updateBranch!(system::PowerSystem, analysis::DCOptimalPowerFlow;
         conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, longTerm, shortTerm,
         emergency, type)
 
-    parameter = !ismissing(reactance) || !ismissing(turnsRatio) || !ismissing(shiftAngle)
-    diffAngle = !ismissing(minDiffAngle) || !ismissing(maxDiffAngle)
-    long = !ismissing(longTerm)
+    parameter = isset(reactance) || isset(turnsRatio) || isset(shiftAngle)
+    diffAngle = isset(minDiffAngle) || isset(maxDiffAngle)
+    long = isset(longTerm)
 
     from = branch.layout.from[index]
     to = branch.layout.to[index]
@@ -395,18 +432,68 @@ function updateBranch!(system::PowerSystem, analysis::DCOptimalPowerFlow;
 
     if statusOld == 1
         if branch.layout.status[index] == 0 || (branch.layout.status[index] == 1 && (parameter || long))
-            delete!(jump, constraint.flow.active, index)
+            remove!(jump, constraint.flow.active, index)
         end
         if branch.layout.status[index] == 0 || (branch.layout.status[index] == 1 && diffAngle)
-            delete!(jump, constraint.voltage.angle, index)
+            remove!(jump, constraint.voltage.angle, index)
         end
     end
 
     if branch.layout.status[index] == 1
-        if statusOld == 0 || (statusOld == 1 && (parameter || long)) || (statusOld == 1 && haskey(constraint.flow.active, index) && !JuMP.is_valid(jump, constraint.flow.active[index]))
+        if statusOld == 0 || (statusOld == 1 && (parameter || long)) 
             addFlow(system, jump, variable.angle, constraint.flow.active, index)
         end
-        if statusOld == 0 || (statusOld == 1 && diffAngle) || (statusOld == 1 && haskey(constraint.voltage.angle, index) && !JuMP.is_valid(jump, constraint.voltage.angle[index]))
+        if statusOld == 0 || (statusOld == 1 && diffAngle)
+            addAngle(system, jump, variable.angle, constraint.voltage.angle, index)
+        end
+    end
+end
+
+function updateBranch!(system::PowerSystem, analysis::ACOptimalPowerFlow;
+    label::L, status::T = missing, resistance::T = missing, reactance::T = missing,
+    susceptance::T = missing, conductance::T = missing, turnsRatio::T = missing,
+    shiftAngle::T = missing, minDiffAngle::T = missing, maxDiffAngle::T = missing,
+    longTerm::T = missing, shortTerm::T = missing, emergency::T = missing, type::T = missing)
+
+    checkUUID(system.uuid, analysis.uuid)
+
+    branch = system.branch
+    jump = analysis.jump
+    constraint = analysis.constraint
+    variable = analysis.variable
+
+    index = branch.label[getLabel(branch, label, "branch")]
+    statusOld = branch.layout.status[index]
+
+    updateBranch!(system; label, status, resistance, reactance, susceptance,
+        conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, longTerm, shortTerm,
+        emergency, type)
+
+    parameter = isset(resistance) || isset(reactance) || isset(conductance) || isset(susceptance) || isset(turnsRatio) || isset(shiftAngle)
+    diffAngle = isset(minDiffAngle) || isset(maxDiffAngle) 
+    long = isset(longTerm) || isset(type) 
+
+    from = branch.layout.from[index]
+    to = branch.layout.to[index]
+    if parameter || branch.layout.status[index] != statusOld
+        updateBalance(system, analysis, index; active = true, reactive = true)
+    end
+
+    if statusOld == 1
+        if branch.layout.status[index] == 0 || (branch.layout.status[index] == 1 && (parameter || long))
+            remove!(jump, constraint.flow.from, index)
+            remove!(jump, constraint.flow.to, index)
+        end
+        if branch.layout.status[index] == 0 || (branch.layout.status[index] == 1 && diffAngle)
+            remove!(jump, constraint.voltage.angle, index)
+        end
+    end
+
+    if branch.layout.status[index] == 1
+        if statusOld == 0 || (statusOld == 1 && (parameter || long))
+            addFlow(system, jump, variable.magnitude, variable.angle, constraint.flow.from, constraint.flow.to, index)
+        end
+        if statusOld == 0 || (statusOld == 1 && diffAngle)
             addAngle(system, jump, variable.angle, constraint.voltage.angle, index)
         end
     end
