@@ -529,6 +529,42 @@ function updateBalance(system::PowerSystem, analysis::ACOptimalPowerFlow, index:
     end
 end
 
+"""
+    startingPrimal!(system::PowerSystem, analysis::OptimalPowerFlow)
+
+In the context of the `ACOptimalPowerFlow` composite type, this function retrieves the 
+active and reactive power outputs of the generators, as well as the voltage magnitudes and 
+angles from the `PowerSystem` composite type. It then assigns these values to the 
+`ACOptimalPowerFlow` type, allowing users to initialize starting primal values as needed.
+
+For the `DCOptimalPowerFlow` composite type, this function retrieves the active power 
+outputs of the generators and the bus voltage angles from the `PowerSystem` composite type. 
+These values are then assigned to the `DCOptimalPowerFlow` type, enabling users to 
+initialize starting primal values according to their requirements.
+
+# Updates
+This function only updates the `voltage` and `generator` fields of the `OptimalPowerFlow` 
+abstract type.
+
+# Abstract type
+The abstract type `OptimalPowerFlow` can have the following subtypes:
+- `ACOptimalPowerFlow`: employed to initializing starting primal values within the AC optimal power flow;
+- `DCOptimalPowerFlow`: employed to initialize starting primal values within the DC optimal power flow.
+
+# Example
+```jldoctest
+system = powerSystem("case14.h5")
+acModel!(system)
+
+analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
+solve!(system, analysis)
+
+updateBus!(system, analysis; label = 14, reactive = 0.13, magnitude = 1.2, angle = -0.17)
+
+startingPrimal!(system, analysis)
+solve!(system, analysis)
+```
+"""
 function startingPrimal!(system::PowerSystem, analysis::ACOptimalPowerFlow)
     @inbounds for i = 1:system.bus.number
         analysis.voltage.magnitude[i] = system.bus.voltage.magnitude[i]
@@ -537,5 +573,14 @@ function startingPrimal!(system::PowerSystem, analysis::ACOptimalPowerFlow)
     @inbounds for i = 1:system.generator.number
         analysis.power.generator.active[i] = system.generator.output.active[i]
         analysis.power.generator.reactive[i] = system.generator.output.reactive[i]
+    end
+end
+
+function startingPrimal!(system::PowerSystem, analysis::DCOptimalPowerFlow)
+    @inbounds for i = 1:system.bus.number
+        analysis.voltage.angle[i] = system.bus.voltage.angle[i]
+    end
+    @inbounds for i = 1:system.generator.number
+        analysis.power.generator.active[i] = system.generator.output.active[i]
     end
 end

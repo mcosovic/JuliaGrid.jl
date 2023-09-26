@@ -272,11 +272,3 @@ function costExpr(cost::Cost, variable::JuMP.VariableRef, index::Int64, label::L
     return expr, isPowerwise, isNonLin
 end
 
-function startingPrimal!(system::PowerSystem, analysis::DCOptimalPowerFlow)
-    @inbounds for i = 1:system.bus.number
-        analysis.voltage.angle[i] = system.bus.voltage.angle[i]
-    end
-    @inbounds for i = 1:system.generator.number
-        analysis.power.generator.active[i] = system.generator.output.active[i]
-    end
-end

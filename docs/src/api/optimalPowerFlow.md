@@ -16,6 +16,8 @@ For further information on this topic, please see the [AC Optimal Power Flow](@r
 ###### Solve DC Optimal Power Flow
 * [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow))
 
+###### Additional Function
+* [`startingPrimal!`](@ref startingPrimal!(::PowerSystem, ::ACOptimalPowerFlow)) 
 ---
 
 ## Build AC Optimal Power Flow Model
@@ -43,3 +45,11 @@ dcOptimalPowerFlow
 ```@docs
 solve!(::PowerSystem, ::DCOptimalPowerFlow)
 ```
+
+---
+
+## Additional Function
+```@docs
+startingPrimal!(::PowerSystem, ::ACOptimalPowerFlow)
+```
+
