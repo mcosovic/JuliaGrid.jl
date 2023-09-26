@@ -532,20 +532,20 @@ function updateBalance(system::PowerSystem, analysis::ACOptimalPowerFlow, index:
 
             if active
                 if Gij != 0 && Bij !=0
-                    activeExpr = @expression(jump, activeExpr + magnitude[row] * (Gij * cosθ + Bij * sinθ))
+                    activeExpr = @expression(jump, activeExpr + variable.magnitude[row] * (Gij * cosθ + Bij * sinθ))
                 elseif Gij != 0
-                    activeExpr = @expression(jump, activeExpr + magnitude[row] * Gij * cosθ)
+                    activeExpr = @expression(jump, activeExpr + variable.magnitude[row] * Gij * cosθ)
                 elseif Bij != 0
-                    activeExpr = @expression(jump, activeExpr + magnitude[row] * Bij * sinθ)
+                    activeExpr = @expression(jump, activeExpr + variable.magnitude[row] * Bij * sinθ)
                 end
             end
             if reactive
                 if Gij != 0 && Bij !=0
-                    reactiveExpr = @expression(jump, reactiveExpr + magnitude[row] * (Gij * sinθ - Bij * cosθ))
+                    reactiveExpr = @expression(jump, reactiveExpr + variable.magnitude[row] * (Gij * sinθ - Bij * cosθ))
                 elseif Gij != 0
-                    reactiveExpr = @expression(jump, reactiveExpr + magnitude[row] * Gij * sinθ)
+                    reactiveExpr = @expression(jump, reactiveExpr + variable.magnitude[row] * Gij * sinθ)
                 elseif Bij != 0
-                    reactiveExpr = @expression(jump, reactiveExpr - magnitude[row] * Bij * cosθ)
+                    reactiveExpr = @expression(jump, reactiveExpr - variable.magnitude[row] * Bij * cosθ)
                 end
             end
         end
