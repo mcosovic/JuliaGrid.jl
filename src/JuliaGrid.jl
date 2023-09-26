@@ -2,9 +2,9 @@ module JuliaGrid
 
 using SparseArrays, LinearAlgebra, SuiteSparse
 using HDF5, UUIDs
-using JuMP
+using HiGHS, Ipopt
 
-########## Types and Constants ##########
+######### Types and Constants ##########
 include("definition/internal.jl")
 include("definition/powerSystem.jl")
 include("definition/analysis.jl")
@@ -40,7 +40,7 @@ export dcPowerFlow
 ######### Optimal Power Flow ##########
 include("optimalPowerFlow/acOptimalPowerFlow.jl")
 include("optimalPowerFlow/dcOptimalPowerFlow.jl")
-export acOptimalPowerFlow
+export acOptimalPowerFlow, startingPrimal!
 export dcOptimalPowerFlow
 
 ########## Postprocessing ##########
