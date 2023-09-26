@@ -529,7 +529,7 @@ function updateBalance(system::PowerSystem, analysis::ACOptimalPowerFlow, index:
     end
 end
 
-function startingVoltage!(system::PowerSystem, analysis::ACOptimalPowerFlow)
+function startingPrimal!(system::PowerSystem, analysis::ACOptimalPowerFlow)
     @inbounds for i = 1:system.bus.number
         analysis.voltage.magnitude[i] = system.bus.voltage.magnitude[i]
         analysis.voltage.angle[i] = system.bus.voltage.angle[i]

@@ -99,7 +99,7 @@
     cost!(resystem, reusing; label = 10, active = 1, piecewise = [10.2 14.3; 11.5 16.1; 12.8 18.6])
     cost!(resystem, reusing; label = 9, active = 2, polynomial = [856.2; 135.3; 80])
 
-    startingVoltage!(resystem, reusing)
+    startingPrimal!(resystem, reusing)
     solve!(resystem, reusing)
     power!(resystem, reusing)
 
