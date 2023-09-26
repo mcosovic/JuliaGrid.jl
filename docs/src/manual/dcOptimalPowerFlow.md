@@ -117,7 +117,7 @@ The `slack` field contains a reference to the equality constraint associated wit
 print(system.bus.label, analysis.constraint.slack.angle)
 ```
 
-Users have the flexibility to modify this constraint by changing which bus serves as the slack bus and adjusting the value of the bus angle. This can be achieved using the [`updateBus!`](@ref updateBus!) function, for example:
+Users have the flexibility to modify this constraint by changing which bus serves as the slack bus and by adjusting the value of the bus angle. This can be achieved using the [`updateBus!`](@ref updateBus!) function, for example:
 ```@example DCOptimalPowerFlow
 updateBus!(system, analysis; label = "Bus 1", angle = -0.1)
 nothing # hide
@@ -135,7 +135,7 @@ The `balance` field contains references to the equality constraints associated w
 print(system.bus.label, analysis.constraint.balance.active)
 ```
 
-Users possess the flexibility to adjust these constraints using any of the following functions: [`updateBus!`](@ref updateBus!), [`updateBranch!`](@ref updateBranch!), or [`updateGenerator!`](@ref updateGenerator!). An example of this flexibility is illustrated below:
+During the execution of functions that add or update power system components, these constraints are automatically adjusted to reflect the current configuration of the power system. An example of this adaptability is demonstrated below:
 ```@example DCOptimalPowerFlow
 updateBus!(system, analysis; label = "Bus 3", active = 0.1)
 updateGenerator!(system, analysis; label = "Generator 2", status = 0)
@@ -273,7 +273,7 @@ Additionally, JuliaGrid stores the objective function in a separate variable, al
 ---
 
 ##### Update Objective Function
-By utilizing the [`cost!`](@ref cost!) functions, users have the flexibility to modify the objective function by adjusting polynomial or linear piecewise cost coefficients or by changing the type of polynomial or linear piecewise function employed. For instance, consider `Generator 3`, which incorporates a piecewise cost structure with three segments. In essence, this structure generates a helper variable with additional constraints. Now, let us define a polynomial function for this generator and set it to use `active = 2` as follows:
+By utilizing the [`cost!`](@ref cost!) functions, users have the flexibility to modify the objective function by adjusting polynomial or linear piecewise cost coefficients or by changing the type of polynomial or linear piecewise function employed. For instance, consider `Generator 3`, which incorporates a piecewise cost structure with three segments. Now, we can define a polynomial function for this generator and activate it by specifying the keyword `active = 2` as shown:
 ```@example DCOptimalPowerFlow
 cost!(system, analysis; label = "Generator 3", active = 2, polynomial = [853.4; 257; 40])
 ```
@@ -300,18 +300,18 @@ JuMP.objective_function(analysis.jump)
 
 ---
 
-## [Setup Primal Starting Values](@id SetupPrimalStartingValuesManual)
-In JuliaGrid, the assignment of primal starting values for optimization variables takes place when the [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow)) function is executed. Primal starting values are determined based on the `voltage` and `power` fields within the `DCOptimalPowerFlow` type. By default, these values are initially established using the active power outputs of the generators and the initial bus voltage angles:
+## [Setup Starting Primal Values](@id SetupStartingPrimalValuesManual)
+In JuliaGrid, the assignment of starting primal values for optimization variables takes place when the [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow)) function is executed. Starting primal values are determined based on the `voltage` and `power` fields within the `DCOptimalPowerFlow` type. By default, these values are initially established using the active power outputs of the generators and the initial bus voltage angles:
 ```@repl DCOptimalPowerFlow
 print(system.generator.label, analysis.power.generator.active)
 print(system.bus.label, analysis.voltage.angle)
 ```
-You have the flexibility to adjust these values to your specifications, and they will be utilized as the primal starting values when you run the [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow)) function.
+You have the flexibility to adjust these values to your specifications, and they will be utilized as the starting primal values when you run the [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow)) function.
 
 ---
 
 ##### Using DC Power Flow
-In this perspective, users have the capability to conduct the DC power flow analysis and leverage the resulting solution to configure primal starting values. Here is an illustration of how this can be achieved:
+In this perspective, users have the capability to conduct the DC power flow analysis and leverage the resulting solution to configure starting primal values. Here is an illustration of how this can be achieved:
 ```@example DCOptimalPowerFlow
 flow = dcPowerFlow(system)
 solve!(system, flow)
@@ -458,8 +458,8 @@ As demonstrated in this manual, this is achieved by using the `DCOptimalPowerFlo
 
 ---
 
-##### Primal Starting Values
-Utilizing the `DCOptimalPowerFlow` type and proceeding directly to the solver offers the advantage of a "warm start". In this scenario, the primal starting values for the subsequent solving step correspond to the solution obtained from the previous step.
+##### Starting Primal Values
+Utilizing the `DCOptimalPowerFlow` type and proceeding directly to the solver offers the advantage of a "warm start". In this scenario, the starting primal values for the subsequent solving step correspond to the solution obtained from the previous step.
 
 In the previous example, we obtained the following solution:
 ```@repl DCOptimalPowerFlowPower
@@ -474,6 +474,17 @@ solve!(system, analysis)
 ```
 
 As a result, we obtain a new solution:
+```@repl DCOptimalPowerFlowPower
+print(system.generator.label, analysis.power.generator.active)
+print(system.bus.label, analysis.voltage.angle)
+```
+
+Users retain the flexibility to reset these initial primal values to their default configurations at any juncture. This can be accomplished by utilizing the active power outputs of the generators and the initial bus voltage angles extracted from the `PowerSystem` composite type, employing the [`startingPrimal!`](@ref startingPrimal!) function:
+```@example DCOptimalPowerFlowPower
+startingPrimal!(system, analysis)
+```
+
+These values are precisely identical to what we would obtain if we executed the [`dcOptimalPowerFlow`](@ref dcOptimalPowerFlow) function following all the updates we performed:
 ```@repl DCOptimalPowerFlowPower
 print(system.generator.label, analysis.power.generator.active)
 print(system.bus.label, analysis.voltage.angle)

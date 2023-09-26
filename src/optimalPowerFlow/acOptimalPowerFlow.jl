@@ -177,8 +177,8 @@ function acOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
                 reactiveExpr = @expression(jump, reactiveExpr + magnitude[row] * (Gij * sinθ - Bij * cosθ))
             end
         end
-        balanceActive[i] = @constraint(jump, bus.demand.active[i] - sum(active[k] for k in bus.supply.generator[i]) + magnitude[i] * activeExpr == 0)
-        balanceReactive[i] = @constraint(jump, bus.demand.reactive[i] - sum(reactive[k] for k in bus.supply.generator[i]) + magnitude[i] * reactiveExpr == 0)
+        balanceActive[i] = @constraint(jump, sum(active[k] for k in bus.supply.generator[i]) - magnitude[i] * activeExpr == bus.demand.active[i])
+        balanceReactive[i] = @constraint(jump, sum(reactive[k] for k in bus.supply.generator[i]) - magnitude[i] * reactiveExpr == bus.demand.reactive[i])
 
         addMagnitude(system, jump, magnitude, voltageMagnitude, i)
     end
@@ -522,10 +522,10 @@ function updateBalance(system::PowerSystem, analysis::ACOptimalPowerFlow, index:
         end
     end
     if active
-        constraint.balance.active[index] = @constraint(jump, bus.demand.active[index] - sum(variable.active[k] for k in bus.supply.generator[index]) + variable.magnitude[index] * activeExpr == 0)
+        constraint.balance.active[index] = @constraint(jump, sum(variable.active[k] for k in bus.supply.generator[index]) - variable.magnitude[index] * activeExpr == bus.demand.active[index])
     end
     if reactive
-        constraint.balance.reactive[index] = @constraint(jump, bus.demand.reactive[index] - sum(variable.reactive[k] for k in bus.supply.generator[index]) + variable.magnitude[index] * reactiveExpr == 0)
+        constraint.balance.reactive[index] = @constraint(jump, sum(variable.reactive[k] for k in bus.supply.generator[index]) - variable.magnitude[index] * reactiveExpr == bus.demand.reactive[index])
     end
 end
 
