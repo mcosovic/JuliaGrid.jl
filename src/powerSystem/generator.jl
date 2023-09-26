@@ -242,11 +242,11 @@ function addGenerator!(system::PowerSystem, analysis::ACOptimalPowerFlow;
 
     if generator.layout.status[end] == 1
         updateBalance(system, analysis, busIndex; active = true, reactive = true)
-        addCapability(jump, variable.active, constraint.capability.active, generator.capability.minActive, generator.capability.maxActive, generator.number)
-        addCapability(jump, variable.reactive, constraint.capability.reactive, generator.capability.minReactive, generator.capability.maxReactive, generator.number)
+        addCapability(jump, variable.active[index], constraint.capability.active, generator.capability.minActive, generator.capability.maxActive, index)
+        addCapability(jump, variable.reactive[index], constraint.capability.reactive, generator.capability.minReactive, generator.capability.maxReactive, index)
     else
-        fix!(variable.active, 0.0, constraint.capability.active, generator.number)
-        fix!(variable.reactive, 0.0, constraint.capability.reactive, generator.number)
+        fix!(variable.active[index], 0.0, constraint.capability.active, index)
+        fix!(variable.reactive[index], 0.0, constraint.capability.reactive, index)
     end
 end
 
@@ -530,8 +530,8 @@ function updateGenerator!(system::PowerSystem, analysis::DCOptimalPowerFlow;
     end
 
     if statusOld == 1 && generator.layout.status[index] == 0
-        cost, isPowerwise = costExpr(system, variable.active[index], index, label)
-        
+        cost, isPowerwise = costExpr(generator.cost.active, variable.active[index], index, label)
+
         if isPowerwise
             remove!(jump, constraint.piecewise.active, index)
             add_to_expression!(analysis.objective, -variable.actwise[index])
@@ -548,7 +548,7 @@ function updateGenerator!(system::PowerSystem, analysis::DCOptimalPowerFlow;
     end
 
     if statusOld == 0 && generator.layout.status[index] == 1
-        cost, isPowerwise = costExpr(system, variable.active[index], index, label)
+        cost, isPowerwise = costExpr(generator.cost.active, variable.active[index], index, label)
 
         if isPowerwise
             addPowerwise(jump, analysis.objective, variable.actwise, index; name = "actwise")
@@ -559,6 +559,7 @@ function updateGenerator!(system::PowerSystem, analysis::DCOptimalPowerFlow;
         JuMP.set_objective_function(jump, analysis.objective)
 
         updateBalance(system, analysis, indexBus; power = 1, genIndex = index)
+        remove!(jump, constraint.capability.active, index)
         addCapability(jump, variable.active[index], constraint.capability.active, generator.capability.minActive, generator.capability.maxActive, index)
     end
 
@@ -568,83 +569,127 @@ function updateGenerator!(system::PowerSystem, analysis::DCOptimalPowerFlow;
     end
 end
 
-# function updateGenerator!(system::PowerSystem, analysis::ACOptimalPowerFlow;
-#     label::L, area::T = missing, status::T = missing,
-#     active::T = missing, reactive::T = missing, magnitude::T = missing,
-#     minActive::T = missing, maxActive::T = missing, minReactive::T = missing,
-#     maxReactive::T = missing, lowActive::T = missing, minLowReactive::T = missing,
-#     maxLowReactive::T = missing, upActive::T = missing, minUpReactive::T = missing,
-#     maxUpReactive::T = missing, loadFollowing::T = missing, reserve10min::T = missing,
-#     reserve30min::T = missing, reactiveTimescale::T = missing)
+function updateGenerator!(system::PowerSystem, analysis::ACOptimalPowerFlow;
+    label::L, area::T = missing, status::T = missing,
+    active::T = missing, reactive::T = missing, magnitude::T = missing,
+    minActive::T = missing, maxActive::T = missing, minReactive::T = missing,
+    maxReactive::T = missing, lowActive::T = missing, minLowReactive::T = missing,
+    maxLowReactive::T = missing, upActive::T = missing, minUpReactive::T = missing,
+    maxUpReactive::T = missing, loadFollowing::T = missing, reserve10min::T = missing,
+    reserve30min::T = missing, reactiveTimescale::T = missing)
 
-#     checkUUID(system.uuid, analysis.uuid)
+    checkUUID(system.uuid, analysis.uuid)
 
-#     generator = system.generator
-#     jump = analysis.jump
-#     constraint = analysis.constraint
-#     variable = analysis.variable
+    generator = system.generator
+    jump = analysis.jump
+    constraint = analysis.constraint
+    variable = analysis.variable
+    objective = analysis.objective
 
-#     index = generator.label[getLabel(generator, label, "generator")]
-#     indexBus = generator.layout.bus[index]
-#     statusOld = generator.layout.status[index]
+    index = generator.label[getLabel(generator, label, "generator")]
+    indexBus = generator.layout.bus[index]
+    statusOld = generator.layout.status[index]
 
-#     actwise = variable.actwise
-#     reactwise = variable.reactwise
+    costActive = generator.cost.active
+    costReactive = generator.cost.reactive
 
-#     updateGenerator!(system; label, area, status, active, reactive, magnitude,
-#         minActive, maxActive, minReactive, maxReactive, lowActive, minLowReactive,
-#         maxLowReactive, upActive, minUpReactive, maxUpReactive, loadFollowing, reserve10min,
-#         reserve30min, reactiveTimescale)
+    updateGenerator!(system; label, area, status, active, reactive, magnitude,
+        minActive, maxActive, minReactive, maxReactive, lowActive, minLowReactive,
+        maxLowReactive, upActive, minUpReactive, maxUpReactive, loadFollowing, reserve10min,
+        reserve30min, reactiveTimescale)
 
-#     if isset(active)
-#         analysis.power.generator.active[index] = generator.output.active[index]
-#     end
-#     if isset(reactive)
-#         analysis.power.generator.reactive[index] = generator.output.reactive[index]
-#     end
+    if isset(active)
+        analysis.power.generator.active[index] = generator.output.active[index]
+    end
+    if isset(reactive)
+        analysis.power.generator.reactive[index] = generator.output.reactive[index]
+    end
 
-#     if statusOld == 1 && generator.layout.status[index] == 0
-#         objExpr = objective_function(jump)
-#         objExpr, isPowerwise = updateObjective(system, -objExpr, variable.active[index], index, label)
+    if statusOld == 1 && generator.layout.status[index] == 0
+        ActCost, isActwise, isActNonlin = costExpr(costActive, variable.active[index], index, label; ac = true)
+        ReactCost, isReactwise, isReactNonlin = costExpr(costReactive, variable.reactive[index], index, label; ac = true)
 
-    #     if isPowerwise
-    #         delete!(jump, constraint.piecewise.active, index)
-    #         add_to_expression!(objExpr, variable.actwise[index])
-    #         drop_zeros!(objExpr)
-    #         delete!(jump, variable.actwise, index)
-    #     end
+        @objective(jump, Min, 0.0)
 
-    #     delete!(jump, constraint.capability.active, index)
-    #     if haskey(constraint.balance.active, indexBus)
-    #         updateBalance(system, analysis, indexBus; power = 0, genIndex = index)
-    #     end
-    #     fix!(variable.active, 0.0, constraint.capability.active, index)
+        if isActwise
+            remove!(jump, constraint.piecewise.active, index)
+            add_to_expression!(objective.quadratic, -variable.actwise[index])
+            remove!(jump, variable.actwise, index)
+        else
+            objective.quadratic -= ActCost
+        end
+        if isReactwise
+            remove!(jump, constraint.piecewise.reactive, index)
+            add_to_expression!(objective.quadratic, -variable.reactwise[index])
+            remove!(jump, variable.reactwise, index)
+        else
+            objective.quadratic -= ReactCost
+        end
+        drop_zeros!(objective.quadratic)
 
-    #     JuMP.set_objective_function(jump, -objExpr)
-    # end
+        if isActNonlin
+            delete!(objective.nonlinear.active, index)
+        end
+        if isReactNonlin
+            delete!(objective.nonlinear.reactive, index)
+        end
 
-    # if statusOld == 0 && generator.layout.status[index] == 1
-    #     objExpr = objective_function(jump)
-    #     objExpr, isPowerwise = updateObjective(system, objExpr, variable.active[index], index, label)
+        @objective(jump, Min, objective.quadratic + sum(objective.nonlinear.active[i] for i in keys(objective.nonlinear.active)) + sum(objective.nonlinear.reactive[i] for i in keys(objective.nonlinear.reactive)))
 
-    #     if isPowerwise
-    #         jump, objExpr, actwise = addPowerwise(jump, objExpr, actwise, index; name = "actwise")
-    #         addPiecewise(jump, actwise[index], constraint.piecewise.active, generator.cost.active.piecewise[index], size(generator.cost.active.piecewise[index], 1), index)
-    #         JuMP.set_objective_function(jump, objExpr)
-    #     end
+        remove!(jump, constraint.capability.active, index)
+        remove!(jump, constraint.capability.reactive, index)
+        fix!(variable.active[index], 0.0, constraint.capability.active, index)
+        fix!(variable.reactive[index], 0.0, constraint.capability.reactive, index)
+        updateBalance(system, analysis, indexBus; active = true, reactive = true)
+    end
 
-    #     updateBalance(system, analysis, indexBus; power = 1, genIndex = index)
-    #     addCapability(jump, variable.active, constraint.capability.active, generator.capability.minActive, generator.capability.maxActive, index)
-    # end
+    if statusOld == 0 && generator.layout.status[index] == 1
+        ActCost, isActwise, isActNonlin = costExpr(costActive, variable.active[index], index, label; ac = true)
+        ReactCost, isReactwise, isReactNonlin = costExpr(costReactive, variable.reactive[index], index, label; ac = true)
 
-    # if statusOld == 1 && generator.layout.status[index] == 1 && (!ismissing(minActive) || !ismissing(maxActive))
-    #     addCapability(jump, variable.active,  constraint.capability.active, generator.capability.minActive, generator.capability.maxActive, index)
-    #     if haskey(constraint.balance.active, indexBus) && !JuMP.is_valid(jump, constraint.balance.active[indexBus])
-    #         updateBalance(system, analysis, indexBus)
-    #     end
-    # end
-# end
+        if isActwise
+            addPowerwise(jump, objective.quadratic, variable.actwise, index; name = "actwise")
+            addPiecewise(jump, variable.active[index], variable.actwise[index], constraint.piecewise.active, generator.cost.active.piecewise[index], size(generator.cost.active.piecewise[index], 1), index)
+        else
+            objective.quadratic += ActCost
+        end
+        if isReactwise
+            addPowerwise(jump, objective.quadratic, variable.reactwise, index; name = "reactwise")
+            addPiecewise(jump, variable.reactive[index], variable.reactwise[index], constraint.piecewise.reactive, generator.cost.reactive.piecewise[index], size(generator.cost.reactive.piecewise[index], 1), index)
+        else
+            objective.quadratic += ReactCost
+        end
 
+        if isActNonlin
+            term = length(costActive.polynomial[index])
+            objective.nonlinear.active[index] = @expression(jump, sum(costActive.polynomial[index][term - degree] * variable.active[index]^degree for degree = term-1:-1:3))
+        end
+        if isReactNonlin
+            term = length(costReactive.polynomial[index])
+            objective.nonlinear.reactive[index] = @expression(jump, sum(costReactive.polynomial[index][term - degree] * variable.reactive[index]^degree for degree = term-1:-1:3))
+        end
+        
+        @objective(jump, Min, objective.quadratic + sum(objective.nonlinear.active[i] for i in keys(objective.nonlinear.active)) + sum(objective.nonlinear.reactive[i] for i in keys(objective.nonlinear.reactive)))
+
+
+        remove!(jump, constraint.capability.active, index)
+        remove!(jump, constraint.capability.reactive, index)
+        addCapability(jump, variable.active[index], constraint.capability.active, generator.capability.minActive, generator.capability.maxActive, index)
+        addCapability(jump, variable.reactive[index], constraint.capability.reactive, generator.capability.minReactive, generator.capability.maxReactive, index)
+        updateBalance(system, analysis, indexBus; active = true, reactive = true)
+    end
+
+    if statusOld == 1 && generator.layout.status[index] == 1 
+        if isset(minActive) || isset(maxActive)
+            remove!(jump, constraint.capability.active, index)
+            addCapability(jump, variable.active[index], constraint.capability.active, generator.capability.minActive, generator.capability.maxActive, index) 
+        end 
+        if isset(minReactive) || isset(maxReactive)
+            remove!(jump, constraint.capability.reactive, index)
+            addCapability(jump, variable.reactive[index], constraint.capability.reactive, generator.capability.minReactive, generator.capability.maxReactive, index) 
+        end 
+    end
+end
 
 """
     @generator(kwargs...)
@@ -850,7 +895,7 @@ function cost!(system::PowerSystem, analysis::DCOptimalPowerFlow; label::L,
     dropZero = false
     index = generator.label[getLabel(generator, label, "generator")]
     if generator.layout.status[index] == 1
-        costOld, isPowerwiseOld = costExpr(system, variable.active[index], index, label)
+        costOld, isPowerwiseOld = costExpr(generator.cost.active, variable.active[index], index, label)
 
         if isPowerwiseOld
             remove!(jump, constraint.piecewise.active, index)
@@ -863,7 +908,7 @@ function cost!(system::PowerSystem, analysis::DCOptimalPowerFlow; label::L,
     cost!(system; label, active, reactive, polynomial, piecewise)
 
     if generator.layout.status[index] == 1
-        costNew, isPowerwiseNew = costExpr(system, variable.active[index], index, label)
+        costNew, isPowerwiseNew = costExpr(generator.cost.active, variable.active[index], index, label)
 
         if isPowerwiseNew
             if !isPowerwiseOld
@@ -885,4 +930,102 @@ function cost!(system::PowerSystem, analysis::DCOptimalPowerFlow; label::L,
     end
 
     JuMP.set_objective_function(jump, analysis.objective)
+end
+
+function cost!(system::PowerSystem, analysis::ACOptimalPowerFlow; label::L,
+    active::T = missing,  reactive::T = missing,
+    polynomial::Array{Float64,1} = Array{Float64}(undef, 0),
+    piecewise::Array{Float64,2} = Array{Float64}(undef, 0, 0))
+
+    checkUUID(system.uuid, analysis.uuid)
+
+    generator = system.generator
+    jump = analysis.jump
+    constraint = analysis.constraint
+    variable = analysis.variable
+    objective = analysis.objective
+
+    costActive = generator.cost.active
+    costReactive = generator.cost.reactive
+ 
+    dropZero = false
+    index = generator.label[getLabel(generator, label, "generator")]
+    if generator.layout.status[index] == 1
+        ActCost, isActwiseOld, isActNonlin = costExpr(generator.cost.active, variable.active[index], index, label; ac = true)
+        ReactCost, isReactwisOld, isReactNonlin = costExpr(generator.cost.reactive, variable.reactive[index], index, label; ac = true)
+
+        @objective(jump, Min, 0.0)
+
+        if isActwiseOld
+            remove!(jump, constraint.piecewise.active, index)
+        else
+            dropZero = true
+            objective.quadratic -= ActCost
+        end
+        if isReactwisOld
+            remove!(jump, constraint.piecewise.reactive, index)
+        else
+            dropZero = true
+            objective.quadratic -= ReactCost
+        end
+
+        if isActNonlin
+            delete!(objective.nonlinear.active, index)
+        end
+        if isReactNonlin
+            delete!(objective.nonlinear.reactive, index)
+        end
+    end
+
+    cost!(system; label, active, reactive, polynomial, piecewise)
+
+    if generator.layout.status[index] == 1
+        ActCost, isActwiseNew, isActNonlin = costExpr(generator.cost.active, variable.active[index], index, label; ac = true)
+        ReactCost, isReactwiseNew, isReactNonlin = costExpr(generator.cost.reactive, variable.reactive[index], index, label; ac = true)
+
+        if isActwiseNew
+            if !isActwiseOld
+                addPowerwise(jump, objective.quadratic, variable.actwise, index; name = "actwise")
+            end
+            addPiecewise(jump, variable.active[index], variable.actwise[index], constraint.piecewise.active, generator.cost.active.piecewise[index], size(generator.cost.active.piecewise[index], 1), index)
+        else
+            if isActwiseOld
+                dropZero = true
+                add_to_expression!(objective.quadratic, -variable.actwise[index])
+                remove!(jump, variable.actwise, index)
+            end
+            objective.quadratic += ActCost
+        end
+        
+        if isReactwiseNew
+            if !isReactwisOld
+                addPowerwise(jump, objective.quadratic, variable.reactwise, index; name = "reactwise")
+            end
+            addPiecewise(jump, variable.reactive[index], variable.reactwise[index], constraint.piecewise.reactive, generator.cost.reactive.piecewise[index], size(generator.cost.reactive.piecewise[index], 1), index)
+        else
+            if isReactwisOld
+                dropZero = true
+                add_to_expression!(objective.quadratic, -variable.reactwise[index])
+                remove!(jump, variable.reactwise, index)
+            end
+            objective.quadratic += ReactCost
+        end
+
+        if isActNonlin
+            delete!(objective.nonlinear.active, index)
+            term = length(costActive.polynomial[index])
+            objective.nonlinear.active[index] = @expression(jump, sum(costActive.polynomial[index][term - degree] * variable.active[index]^degree for degree = term-1:-1:3))
+        end
+        if isReactNonlin
+            delete!(objective.nonlinear.reactive, index)
+            term = length(costReactive.polynomial[index])
+            objective.nonlinear.reactive[index] = @expression(jump, sum(costReactive.polynomial[index][term - degree] * variable.reactive[index]^degree for degree = term-1:-1:3))    
+        end
+    end
+
+    if dropZero
+        drop_zeros!(objective.quadratic)
+    end
+
+    @objective(jump, Min, objective.quadratic + sum(objective.nonlinear.active[i] for i in keys(objective.nonlinear.active)) + sum(objective.nonlinear.reactive[i] for i in keys(objective.nonlinear.reactive)))
 end

@@ -221,7 +221,8 @@ function addBranch!(system::PowerSystem, analysis::ACOptimalPowerFlow;
 
         parameter = isset(resistance) || isset(reactance) || isset(conductance) || isset(susceptance) || isset(turnsRatio) || isset(shiftAngle)
         if parameter
-            updateBalance(system, analysis, branch.number; active = parameter, reactive = parameter)
+            updateBalance(system, analysis, from; active = parameter, reactive = parameter)
+            updateBalance(system, analysis, to; active = parameter, reactive = parameter)
         end
 
         if isset(minDiffAngle) || isset(maxDiffAngle)
@@ -476,7 +477,8 @@ function updateBranch!(system::PowerSystem, analysis::ACOptimalPowerFlow;
     from = branch.layout.from[index]
     to = branch.layout.to[index]
     if parameter || branch.layout.status[index] != statusOld
-        updateBalance(system, analysis, index; active = true, reactive = true)
+        updateBalance(system, analysis, from; active = true, reactive = true)
+        updateBalance(system, analysis, to; active = true, reactive = true)
     end
 
     if statusOld == 1

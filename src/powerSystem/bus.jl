@@ -434,14 +434,13 @@ function updateBus!(system::PowerSystem, analysis::ACOptimalPowerFlow;
     end
 
     if typeOld == 3 && bus.layout.type[index] != 3
-        unfix!(jump, variable.angle, constraint.slack.angle, index)
+        unfix!(jump, variable.angle[index], constraint.slack.angle, index)
     end
 
     if bus.layout.type[index] == 3
-        fix!(variable.angle, bus.voltage.angle[index], constraint.slack.angle, index)
+        fix!(variable.angle[index], bus.voltage.angle[index], constraint.slack.angle, index)
     end
 end
-
 
 """
     @bus(kwargs...)

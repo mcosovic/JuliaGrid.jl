@@ -141,12 +141,12 @@ struct ACNonlinear
     reactive::Dict{Int64, JuMP.NonlinearExpr}
 end
 
-struct ACObjective
+mutable struct ACObjective
     quadratic::JuMP.QuadExpr
     nonlinear::ACNonlinear
 end
 
-struct ACOptimalPowerFlow <: AC
+mutable struct ACOptimalPowerFlow <: AC
     voltage::Polar
     power::Power
     current::Current

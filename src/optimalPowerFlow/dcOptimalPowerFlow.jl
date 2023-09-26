@@ -62,7 +62,7 @@ function dcOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
     fix(angle[bus.layout.slack], bus.voltage.angle[bus.layout.slack])
     slack = Dict(bus.layout.slack => FixRef(angle[bus.layout.slack]))
 
-    objective = @expression(jump, QuadExpr()) 
+    objective = @expression(jump, QuadExpr())
     actwise = Dict{Int64, VariableRef}()
     piecewise = Dict{Int64, Array{JuMP.ConstraintRef,1}}()
     capability = Dict{Int64, JuMP.ConstraintRef}()
@@ -127,8 +127,8 @@ function dcOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
         ),
         jump,
         DCVariable(
-            active, 
-            angle, 
+            active,
+            angle,
             actwise
         ),
         DCConstraint(
@@ -233,28 +233,33 @@ function updateBalance(system::PowerSystem, analysis::DCOptimalPowerFlow, index:
 end
 
 ######### Make Cost Expression ##########
-function costExpr(system::PowerSystem, active::JuMP.VariableRef, index::Int64, label::L)
+function costExpr(cost::Cost, variable::JuMP.VariableRef, index::Int64, label::L; ac = false)
     isPowerwise = false
-    cost = system.generator.cost.active
+    isNonLin = false
     expr = QuadExpr()
 
     if cost.model[index] == 2
         term = length(cost.polynomial[index])
         if term == 3
-            polynomialQuadratic(expr, active, cost.polynomial[index])
+            polynomialQuadratic(expr, variable, cost.polynomial[index])
         elseif term == 2
-            polynomialLinear(expr, active, cost.polynomial[index])
+            polynomialLinear(expr, variable, cost.polynomial[index])
         elseif term == 1
             add_to_expression!(expr, cost.polynomial[index][1])
         elseif term > 3
-            @info("The generator labelled $label has a polynomial cost function of degree $(term-1), which is not included in the objective.")
+            if ac
+                polynomialQuadratic(expr, variable, cost.polynomial[index])
+                isNonLin = true
+            else
+                @info("The generator labelled $label has a polynomial cost function of degree $(term-1), which is not included in the objective.")
+            end
         else
             @info("The generator labelled $label has an undefined polynomial cost function, which is not included in the objective.")
         end
     elseif cost.model[index] == 1
         point = size(cost.piecewise[index], 1)
         if point == 2
-            piecewiseLinear(expr, active, cost.piecewise[index])
+            piecewiseLinear(expr, variable, cost.piecewise[index])
         elseif point > 2
             isPowerwise = true
         elseif point == 1
@@ -264,5 +269,14 @@ function costExpr(system::PowerSystem, active::JuMP.VariableRef, index::Int64, l
         end
     end
 
-    return expr, isPowerwise
+    return expr, isPowerwise, isNonLin
+end
+
+function startingVoltage!(system::PowerSystem, analysis::DCOptimalPowerFlow)
+    @inbounds for i = 1:system.bus.number
+        analysis.voltage.angle[i] = system.bus.voltage.angle[i]
+    end
+    @inbounds for i = 1:system.generator.number
+        analysis.power.generator.active[i] = system.generator.output.active[i]
+    end
 end
