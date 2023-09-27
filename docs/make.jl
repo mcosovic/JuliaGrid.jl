@@ -17,13 +17,13 @@ makedocs(
             ["Power System Model" => "manual/powerSystemModel.md",
             "AC Power Flow" => "manual/acPowerFlow.md",
             "DC Power Flow" => "manual/dcPowerFlow.md",
-            # "AC Optimal Power Flow" => "manual/acOptimalPowerFlow.md",
+            "AC Optimal Power Flow" => "manual/acOptimalPowerFlow.md",
             "DC Optimal Power Flow" => "manual/dcOptimalPowerFlow.md"],
         "Tutorials" =>
             ["AC and DC Model" => "tutorials/acdcModel.md",
             "AC Power Flow" => "tutorials/acPowerFlow.md",
             "DC Power Flow" => "tutorials/dcPowerFlow.md",
-        #     "AC Optimal Power Flow" => "tutorials/acOptimalPowerFlow.md",
+            "AC Optimal Power Flow" => "tutorials/acOptimalPowerFlow.md",
             "DC Optimal Power Flow" => "tutorials/dcOptimalPowerFlow.md"],
         "API Reference" =>
             ["Power System Model" => "api/powerSystemModel.md",

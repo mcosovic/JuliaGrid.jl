@@ -56,7 +56,7 @@ In the DC optimal power flow, the active power outputs of the generators ``\math
 \end{aligned}
 ```
 
-In essence, the DC optimal power flow aims to minimize the objective function associated with the costs of generator active power output while ensuring the fulfillment of all constraints. This optimization task plays a pivotal role in effectively managing electrical power systems. By striking a balance between cost reduction and constraint adherence, the DC optimal power flow contributes to efficient and reliable electricity supply in complex grid environments.
+Essentially, the DC optimal power flow is focused on the minimization of the objective function related to the costs associated with the active power output of generators, all while ensuring the satisfaction of various constraints. This optimization task holds a crucial role in the efficient and timely management of electrical power systems. However, it is important to note that the solutions provided by the DC optimal power flow are approximate in nature.
 
 ---
 
@@ -185,7 +185,15 @@ The equation is derived using the [unified branch model](@ref DCUnifiedBranchMod
 ```math
 h_{P_i}(\mathbf {P}_{\text{g}}, \boldsymbol{\theta}) = \sum_{k=1}^{n_{\text{g}i}} P_{\text{g}k} - \sum_{k = 1}^n {B}_{ik} \theta_k - P_{\text{d}i} - P_{\text{sh}i} - P_{\text{tr}i}.
 ```
-In the equation above, ``P_{\text{g}k}`` represents the active power output of the ``k``-th generator connected to bus ``i \in \mathcal{N}``, and ``n_{\text{g}i}`` denotes the total number of generators connected to the same bus. The constant terms in these equations are determined by the active power demand at bus ``P_{\text{d}i}``, the active power demanded by the shunt element ``P_{\text{sh}i}``, and power related to the shift angle of the phase transformers ``P_{\text{tr}i}``.
+
+In the equation above, ``P_{\text{g}k}`` represents the active power output of the ``k``-th generator connected to bus ``i \in \mathcal{N}``, and ``n_{\text{g}i}`` denotes the total number of generators connected to the same bus. More precisely, the variable ``P_{\text{g}k}`` represents the optimization variables, as well as the bus voltage angle ``\theta_k``. 
+
+The constant terms in these equations are determined by the active power demand at bus ``P_{\text{d}i}``, the active power demanded by the shunt element ``P_{\text{sh}i}``, and power related to the shift angle of the phase transformers ``P_{\text{tr}i}``. The values representing these constant terms ``\mathbf{P}_{\text{d}} = [P_{\text{d}i}]``, ``\mathbf{P}_{\text{sh}} = [P_{\text{sh}i}]``, and ``\mathbf{P}_{\text{tr}} = [P_{\text{tr}i}]``, ``i, \in \mathcal{N}``, can be accessed as follows:
+```@repl DCOptimalPowerFlow
+𝐏ₒ = system.bus.demand.active
+𝐏ₛₕ = system.bus.shunt.conductance
+𝐏ₜᵣ = system.model.dc.shiftActivePower
+```
 
 To retrieve this equality constraint from the model and access the corresponding variable, you can use the following code:
 ```@repl DCOptimalPowerFlow
@@ -199,9 +207,9 @@ The inequality constraint related to the minimum and maximum bus voltage angle d
 ```math
 \theta_{ij}^\text{min} \leq \theta_i - \theta_j \leq \theta_{ij}^\text{max},\;\;\; \forall (i,j) \in \mathcal{E},
 ```
-where ``\theta_{ij}^\text{min}`` represents the minimum, while ``\theta_{ij}^\text{max}`` represents the maximum of the angle difference between adjacent buses. The values representing the voltage angle difference, denoted as ``\boldsymbol{\theta}_{\text{max}} = [\theta_{ij}^\text{min}, \theta_{ij}^\text{max}]``, ``(i,j) \in \mathcal{E}``, are provided as follows:
+where ``\theta_{ij}^\text{min}`` represents the minimum, while ``\theta_{ij}^\text{max}`` represents the maximum of the angle difference between adjacent buses. The values representing the voltage angle difference, denoted as ``\boldsymbol{\theta}_{\text{lm}} = [\theta_{ij}^\text{min}, \theta_{ij}^\text{max}]``, ``(i,j) \in \mathcal{E}``, are provided as follows:
 ```@repl DCOptimalPowerFlow
-𝛉ₘₐₓ = [system.branch.voltage.minDiffAngle system.branch.voltage.maxDiffAngle]
+𝛉ₗₘ = [system.branch.voltage.minDiffAngle system.branch.voltage.maxDiffAngle]
 ```
 
 To retrieve this inequality constraint from the model and access the corresponding variable, you can use the following code:
@@ -239,9 +247,9 @@ The inequality constraints associated with the minimum and maximum active power 
 P_{\text{g}i}^\text{min} \leq P_{\text{g}i} \leq P_{\text{g}i}^\text{max} ,\;\;\; \forall i \in \mathcal{P}.
 ```
 
-In this representation, the lower and upper limits are determined by the vector ``\mathbf{P}_{\text{cap}} = [P_{\text{g}i}^\text{min}, P_{\text{g}i}^\text{max}]``, ``i \in \mathcal{P}``. We can access these bounds using the following variable:
+In this representation, the lower and upper bounds are determined by the vector ``\mathbf{P}_{\text{lm}} = [P_{\text{g}i}^\text{min}, P_{\text{g}i}^\text{max}]``, ``i \in \mathcal{P}``. We can access these bounds using the following variable:
 ```@repl DCOptimalPowerFlow
-𝐏ₒₐₚ = [system.generator.capability.minActive system.generator.capability.maxActive]
+𝐏ₗₘ = [system.generator.capability.minActive system.generator.capability.maxActive]
 ```
 
 To retrieve this equality constraint from the model, we can utilize the following code:

@@ -240,7 +240,7 @@ print(system.generator.label, analysis.constraint.capability.active)
 ##### Add User-Defined Constraints
 Users also have the option to include their custom constraints within the established DC optimal power flow model by employing the [`@constraint`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.@constraint) macro. For example, the addition of a new constraint can be achieved as follows:
 ```@example DCOptimalPowerFlow
-JuMP.@constraint(analysis.jump, 0.0 <= analysis.jump[:active][4] <= 0.3)
+JuMP.@constraint(analysis.jump, 0.0 <= analysis.variable.active[4] <= 0.3)
 nothing # hide
 ```
 
@@ -273,7 +273,7 @@ Additionally, JuliaGrid stores the objective function in a separate variable, al
 ---
 
 ##### Update Objective Function
-By utilizing the [`cost!`](@ref cost!) functions, users have the flexibility to modify the objective function by adjusting polynomial or linear piecewise cost coefficients or by changing the type of polynomial or linear piecewise function employed. For instance, consider `Generator 3`, which incorporates a piecewise cost structure with three segments. Now, we can define a polynomial function for this generator and activate it by specifying the keyword `active = 2` as shown:
+By utilizing the [`cost!`](@ref cost!) functions, users have the flexibility to modify the objective function by adjusting polynomial or linear piecewise cost coefficients or by changing the type of polynomial or linear piecewise function employed. For instance, consider `Generator 3`, which incorporates a piecewise cost structure with two segments. Now, we can define a polynomial function for this generator and activate it by specifying the keyword `active = 2` as shown:
 ```@example DCOptimalPowerFlow
 cost!(system, analysis; label = "Generator 3", active = 2, polynomial = [853.4; 257; 40])
 ```
@@ -301,7 +301,7 @@ JuMP.objective_function(analysis.jump)
 ---
 
 ## [Setup Starting Primal Values](@id SetupStartingPrimalValuesManual)
-In JuliaGrid, the assignment of starting primal values for optimization variables takes place when the [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow)) function is executed. Starting primal values are determined based on the `voltage` and `power` fields within the `DCOptimalPowerFlow` type. By default, these values are initially established using the active power outputs of the generators and the initial bus voltage angles:
+In JuliaGrid, the assignment of starting primal values for optimization variables takes place when the [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow)) function is executed. Starting primal values are determined based on the `generator` and `voltage` fields within the `DCOptimalPowerFlow` type. By default, these values are initially established using the active power outputs of the generators and the initial bus voltage angles:
 ```@repl DCOptimalPowerFlow
 print(system.generator.label, analysis.power.generator.active)
 print(system.bus.label, analysis.voltage.angle)
@@ -317,7 +317,7 @@ flow = dcPowerFlow(system)
 solve!(system, flow)
 ```
 
-After obtaining the solution, we can calculate the active power outputs of the generators and utilize the bus voltage angles to set the starting values. In this case, the `power` and `voltage` fields of the `DCOptimalPowerFlow` type can be employed to store the new starting values:
+After obtaining the solution, we can calculate the active power outputs of the generators and utilize the bus voltage angles to set the starting values. In this case, the `generator` and `voltage` fields of the `DCOptimalPowerFlow` type can be employed to store the new starting values:
 ```@example DCOptimalPowerFlow
 for (key, value) in system.generator.label
     analysis.power.generator.active[value] = generatorPower(system, flow; label = key)
