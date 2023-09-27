@@ -219,19 +219,11 @@ function addBranch!(system::PowerSystem, analysis::ACOptimalPowerFlow;
         from = branch.layout.from[end]
         to = branch.layout.to[end]
 
-        parameter = isset(resistance) || isset(reactance) || isset(conductance) || isset(susceptance) || isset(turnsRatio) || isset(shiftAngle)
-        if parameter
-            updateBalance(system, analysis, from; active = parameter, reactive = parameter)
-            updateBalance(system, analysis, to; active = parameter, reactive = parameter)
-        end
-
-        if isset(minDiffAngle) || isset(maxDiffAngle)
-            addAngle(system, jump, variable.angle, constraint.voltage.angle, branch.number)
-        end
-
-        if parameter || isset(longTerm) || isset(type)
-            addFlow(system, jump, variable.magnitude, variable.angle, constraint.flow.from, constraint.flow.to, branch.number)
-        end
+        updateBalance(system, analysis, from; active = true, reactive = true)
+        updateBalance(system, analysis, to; active = true, reactive = true)
+        
+        addFlow(system, jump, variable.magnitude, variable.angle, constraint.flow.from, constraint.flow.to, branch.number)
+        addAngle(system, jump, variable.angle, constraint.voltage.angle, branch.number)
     end
 end
 

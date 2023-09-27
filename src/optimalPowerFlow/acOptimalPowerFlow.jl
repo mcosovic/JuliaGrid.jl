@@ -161,7 +161,7 @@ function acOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
     balanceActive = Dict{Int64, JuMP.ConstraintRef}()
     balanceReactive = Dict{Int64, JuMP.ConstraintRef}()
     voltageMagnitude = Dict{Int64, JuMP.ConstraintRef}()
-    @time @inbounds for i = 1:bus.number
+    @inbounds for i = 1:bus.number
         activeExpr = @expression(jump, magnitude[i] * real(ac.nodalMatrixTranspose[i, i]))
         reactiveExpr = @expression(jump, -magnitude[i] * imag(ac.nodalMatrixTranspose[i, i]))
 
@@ -561,18 +561,18 @@ end
 """
     startingPrimal!(system::PowerSystem, analysis::OptimalPowerFlow)
 
-In the context of the `ACOptimalPowerFlow` composite type, this function retrieves the 
-active and reactive power outputs of the generators, as well as the voltage magnitudes and 
-angles from the `PowerSystem` composite type. It then assigns these values to the 
+In the context of the `ACOptimalPowerFlow` composite type, this function retrieves the
+active and reactive power outputs of the generators, as well as the voltage magnitudes and
+angles from the `PowerSystem` composite type. It then assigns these values to the
 `ACOptimalPowerFlow` type, allowing users to initialize starting primal values as needed.
 
-For the `DCOptimalPowerFlow` composite type, this function retrieves the active power 
-outputs of the generators and the bus voltage angles from the `PowerSystem` composite type. 
-These values are then assigned to the `DCOptimalPowerFlow` type, enabling users to 
+For the `DCOptimalPowerFlow` composite type, this function retrieves the active power
+outputs of the generators and the bus voltage angles from the `PowerSystem` composite type.
+These values are then assigned to the `DCOptimalPowerFlow` type, enabling users to
 initialize starting primal values according to their requirements.
 
 # Updates
-This function only updates the `voltage` and `generator` fields of the `OptimalPowerFlow` 
+This function only updates the `voltage` and `generator` fields of the `OptimalPowerFlow`
 abstract type.
 
 # Abstract type

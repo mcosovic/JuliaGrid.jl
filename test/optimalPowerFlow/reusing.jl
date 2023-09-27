@@ -28,6 +28,8 @@
 
     acModel!(system)
     analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
+
+    JuMP.set_silent(analysis.jump)
     solve!(system, analysis)
     power!(system, analysis)
 
@@ -58,11 +60,11 @@
     cost!(resystem, reusing; label = 4, reactive = 2, polynomial = [452.2; 31; 18; 5])
     cost!(resystem, reusing; label = 4, reactive = 1, piecewise = [10.2 14.3; 11.5 16.1; 12.8 18.6])
 
+    JuMP.set_silent(reusing.jump)
     solve!(resystem, reusing)
     power!(resystem, reusing)
 
-    ###### Compare Objective, Voltages and Powers #######
-    @test JuMP.objective_value(analysis.jump) ≈ JuMP.objective_value(reusing.jump)
+    ###### Compare Objective, Constraints, Voltages and Powers #######
     approxStruct(analysis.voltage, reusing.voltage)
     approxStruct(analysis.power.generator, reusing.power.generator)
     approxStruct(analysis.power.injection, reusing.power.injection)
@@ -72,6 +74,11 @@
     approxStruct(analysis.power.to, reusing.power.to)
     approxStruct(analysis.power.charging, reusing.power.charging)
     approxStruct(analysis.power.series, reusing.power.series)
+
+    @test JuMP.objective_value(analysis.jump) ≈ JuMP.objective_value(reusing.jump)
+    for list in list_of_constraint_types(analysis.jump)
+        @test num_constraints(analysis.jump, list[1], list[2]) == num_constraints(reusing.jump, list[1], list[2])
+    end
 
     ################ Resuing Second Pass ################
     updateBus!(system; label = 1, type = 1, conductance = 0.06, susceptance = 0.8, angle = -0.01)
@@ -86,6 +93,7 @@
     acModel!(system)
     analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
 
+    JuMP.set_silent(analysis.jump)
     solve!(system, analysis)
     power!(system, analysis)
 
@@ -103,8 +111,7 @@
     solve!(resystem, reusing)
     power!(resystem, reusing)
 
-    ###### Compare Objective, Voltages and Powers #######
-    @test JuMP.objective_value(analysis.jump) ≈ JuMP.objective_value(reusing.jump)
+    ###### Compare Objective, Constraints, Voltages and Powers #######
     approxStruct(analysis.voltage, reusing.voltage)
     approxStruct(analysis.power.generator, reusing.power.generator)
     approxStruct(analysis.power.injection, reusing.power.injection)
@@ -114,12 +121,17 @@
     approxStruct(analysis.power.to, reusing.power.to)
     approxStruct(analysis.power.charging, reusing.power.charging)
     approxStruct(analysis.power.series, reusing.power.series)
+
+    @test JuMP.objective_value(analysis.jump) ≈ JuMP.objective_value(reusing.jump)
+    for list in list_of_constraint_types(analysis.jump)
+        @test num_constraints(analysis.jump, list[1], list[2]) == num_constraints(reusing.jump, list[1], list[2])
+    end
 end
 
 @testset "DC Optimal Power Flow" begin
     @default(unit)
     @default(template)
-    
+
     ################ Resuing First Pass ################
     system = powerSystem(string(pathData, "case14test.m"))
 
@@ -141,9 +153,11 @@ end
 
     dcModel!(system)
     analysis = dcOptimalPowerFlow(system, Ipopt.Optimizer)
+
+    JuMP.set_silent(analysis.jump)
     solve!(system, analysis)
     power!(system, analysis)
-   
+
     ####### Reuse Model #######
     resystem = powerSystem(string(pathData, "case14test.m"))
     dcModel!(resystem)
@@ -165,17 +179,22 @@ end
     updateGenerator!(resystem, reusing; label = 9, status = 0)
     cost!(resystem, reusing; label = 5, active = 2, polynomial = [854.0, 116.0])
 
+    JuMP.set_silent(reusing.jump)
     solve!(resystem, reusing)
     power!(resystem, reusing)
 
-    ###### Compare Objective, Voltages and Powers #######
-    @test JuMP.objective_value(analysis.jump) ≈ JuMP.objective_value(reusing.jump)
+    ###### Compare Objective, Constraints, Voltages and Powers #######
     @test analysis.voltage.angle ≈ reusing.voltage.angle
     @test analysis.power.injection.active ≈ reusing.power.injection.active
     @test analysis.power.supply.active ≈ reusing.power.supply.active
     @test analysis.power.from.active ≈ reusing.power.from.active
     @test analysis.power.to.active ≈ reusing.power.to.active
     @test analysis.power.generator.active ≈ reusing.power.generator.active
+
+    @test JuMP.objective_value(analysis.jump) ≈ JuMP.objective_value(reusing.jump)
+    for list in list_of_constraint_types(analysis.jump)
+        @test num_constraints(analysis.jump, list[1], list[2]) == num_constraints(reusing.jump, list[1], list[2])
+    end
 
     ################ Resuing Second Pass ################
     updateBus!(system; label = 1, type = 1, conductance = 0.06, angle = -0.01)
@@ -188,6 +207,8 @@ end
 
     dcModel!(system)
     analysis = dcOptimalPowerFlow(system, Ipopt.Optimizer)
+
+    JuMP.set_silent(analysis.jump)
     solve!(system, analysis)
     power!(system, analysis)
 
@@ -199,17 +220,21 @@ end
     cost!(resystem, reusing; label = 11, active = 2, polynomial = [165.0])
     cost!(resystem, reusing; label = 10, active = 1, piecewise = [10.2 14.3; 11.5 16.1; 12.8 18.6])
     cost!(resystem, reusing; label = 9, active = 2, polynomial = [856.2; 135.3; 80])
-    
+
     solve!(resystem, reusing)
     power!(resystem, reusing)
 
-    ###### Compare Objective, Voltages and Powers #######
-    @test JuMP.objective_value(analysis.jump) ≈ JuMP.objective_value(reusing.jump)
+    ###### Compare Objective, Constraints, Voltages and Powers #######
     @test analysis.voltage.angle ≈ reusing.voltage.angle
     @test analysis.power.injection.active ≈ reusing.power.injection.active
     @test analysis.power.supply.active ≈ reusing.power.supply.active
     @test analysis.power.from.active ≈ reusing.power.from.active
     @test analysis.power.to.active ≈ reusing.power.to.active
-    @test analysis.power.generator.active ≈ reusing.power.generator.active    
+    @test analysis.power.generator.active ≈ reusing.power.generator.active
+
+    @test JuMP.objective_value(analysis.jump) ≈ JuMP.objective_value(reusing.jump)
+    for list in list_of_constraint_types(analysis.jump)
+        @test num_constraints(analysis.jump, list[1], list[2]) == num_constraints(reusing.jump, list[1], list[2])
+    end
 end
 
