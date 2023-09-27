@@ -196,7 +196,7 @@ function addGenerator!(system::PowerSystem, analysis::DCOptimalPowerFlow;
     constraint = analysis.constraint
     variable = analysis.variable
 
-    index = generator.label[getLabel(generator, label, "generator")]
+    index = generator.number
     busIndex = generator.layout.bus[end]
 
     push!(variable.active, @variable(jump, base_name = "active[$index]"))
@@ -231,7 +231,7 @@ function addGenerator!(system::PowerSystem, analysis::ACOptimalPowerFlow;
     constraint = analysis.constraint
     variable = analysis.variable
 
-    index = generator.label[getLabel(generator, label, "generator")]
+    index = generator.number
     busIndex = generator.layout.bus[end]
 
     push!(variable.active, @variable(jump, base_name = "active[$index]"))
@@ -565,7 +565,7 @@ function updateGenerator!(system::PowerSystem, analysis::DCOptimalPowerFlow;
 
     if statusOld == 1 && generator.layout.status[index] == 1 && (isset(minActive) || isset(maxActive))
         remove!(jump, constraint.capability.active, index)
-        addCapability(jump, variable.active[index], constraint.capability.active, generator.capability.minActive, generator.capability.maxActive, index)  
+        addCapability(jump, variable.active[index], constraint.capability.active, generator.capability.minActive, generator.capability.maxActive, index)
     end
 end
 
@@ -668,7 +668,7 @@ function updateGenerator!(system::PowerSystem, analysis::ACOptimalPowerFlow;
             term = length(costReactive.polynomial[index])
             objective.nonlinear.reactive[index] = @expression(jump, sum(costReactive.polynomial[index][term - degree] * variable.reactive[index]^degree for degree = term-1:-1:3))
         end
-        
+
         @objective(jump, Min, objective.quadratic + sum(objective.nonlinear.active[i] for i in keys(objective.nonlinear.active)) + sum(objective.nonlinear.reactive[i] for i in keys(objective.nonlinear.reactive)))
 
 
@@ -679,15 +679,15 @@ function updateGenerator!(system::PowerSystem, analysis::ACOptimalPowerFlow;
         updateBalance(system, analysis, indexBus; active = true, reactive = true)
     end
 
-    if statusOld == 1 && generator.layout.status[index] == 1 
+    if statusOld == 1 && generator.layout.status[index] == 1
         if isset(minActive) || isset(maxActive)
             remove!(jump, constraint.capability.active, index)
-            addCapability(jump, variable.active[index], constraint.capability.active, generator.capability.minActive, generator.capability.maxActive, index) 
-        end 
+            addCapability(jump, variable.active[index], constraint.capability.active, generator.capability.minActive, generator.capability.maxActive, index)
+        end
         if isset(minReactive) || isset(maxReactive)
             remove!(jump, constraint.capability.reactive, index)
-            addCapability(jump, variable.reactive[index], constraint.capability.reactive, generator.capability.minReactive, generator.capability.maxReactive, index) 
-        end 
+            addCapability(jump, variable.reactive[index], constraint.capability.reactive, generator.capability.minReactive, generator.capability.maxReactive, index)
+        end
     end
 end
 
@@ -849,15 +849,15 @@ function cost!(system::PowerSystem; label::L,
             scale = 1.0
         else
             scale = prefix.activePower / (system.base.power.prefix * system.base.power.value)
-        end 
-    elseif isset(reactive) 
+        end
+    elseif isset(reactive)
         container = system.generator.cost.reactive
         container.model[index] = reactive
         if prefix.reactivePower == 0.0
             scale = 1.0
         else
             scale = prefix.reactivePower / (system.base.power.prefix * system.base.power.value)
-        end  
+        end
     end
 
     if container.model[index] == 1 && isempty(piecewise) && isempty(container.piecewise[index])
@@ -891,7 +891,7 @@ function cost!(system::PowerSystem, analysis::DCOptimalPowerFlow; label::L,
     jump = analysis.jump
     constraint = analysis.constraint
     variable = analysis.variable
- 
+
     dropZero = false
     index = generator.label[getLabel(generator, label, "generator")]
     if generator.layout.status[index] == 1
@@ -947,7 +947,7 @@ function cost!(system::PowerSystem, analysis::ACOptimalPowerFlow; label::L,
 
     costActive = generator.cost.active
     costReactive = generator.cost.reactive
- 
+
     dropZero = false
     index = generator.label[getLabel(generator, label, "generator")]
     if generator.layout.status[index] == 1
@@ -996,7 +996,7 @@ function cost!(system::PowerSystem, analysis::ACOptimalPowerFlow; label::L,
             end
             objective.quadratic += ActCost
         end
-        
+
         if isReactwiseNew
             if !isReactwisOld
                 addPowerwise(jump, objective.quadratic, variable.reactwise, index; name = "reactwise")
@@ -1019,7 +1019,7 @@ function cost!(system::PowerSystem, analysis::ACOptimalPowerFlow; label::L,
         if isReactNonlin
             delete!(objective.nonlinear.reactive, index)
             term = length(costReactive.polynomial[index])
-            objective.nonlinear.reactive[index] = @expression(jump, sum(costReactive.polynomial[index][term - degree] * variable.reactive[index]^degree for degree = term-1:-1:3))    
+            objective.nonlinear.reactive[index] = @expression(jump, sum(costReactive.polynomial[index][term - degree] * variable.reactive[index]^degree for degree = term-1:-1:3))
         end
     end
 
