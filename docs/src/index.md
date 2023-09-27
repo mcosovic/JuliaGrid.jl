@@ -52,8 +52,7 @@ nothing # hide
 ---
 
 #### AC Optimal Power Flow
-```@example
-using JuliaGrid # hide
+```julia
 using JuMP, Ipopt
 
 system = powerSystem("case14.h5")
@@ -69,15 +68,12 @@ current!(system, analysis)
 updateBus!(system, analysis; label = 1, active = 0.2)
 addBranch!(system, analysis; from = 1, to = 5, resistance = 0.01, reactance = 0.2)
 solve!(system, analysis)
-
-nothing # hide
 ```
 
 ---
 
 #### DC Optimal Power Flow
-```@example
-using JuliaGrid # hide
+```julia
 using JuMP, HiGHS
 
 system = powerSystem("case14.h5")
@@ -91,6 +87,4 @@ power!(system, analysis)
 
 addGenerator!(system, analysis; bus = 1, active = 0.1, maxActive = 0.5)
 solve!(system, analysis)
-
-nothing # hide
 ```
