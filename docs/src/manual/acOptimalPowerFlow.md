@@ -402,7 +402,11 @@ Performing repeated executions of the AC optimal power flow problem, and opting 
 
 ## [Optimal Power Flow Solution](@id ACOptimalPowerFlowSolutionManual)
 To establish the AC optimal power flow problem, you can utilize the [`acOptimalPowerFlow`](@ref acOptimalPowerFlow) function. After setting up the problem, you can use the [`solve!`](@ref solve!(::PowerSystem, ::ACOptimalPowerFlow)) function to compute the optimal values for the active and reactive power outputs of the generators and the bus voltage magnitudes angles. Also, to turn off the solver output within the REPL, we use the [`set_silent`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.set_silent) function before calling [`solve!`](@ref solve!(::PowerSystem, ::ACOptimalPowerFlow)) function. Here is an example:
-```@example ACOptimalPowerFlow
+```julia ACOptimalPowerFlow
+JuMP.set_silent(analysis.jump)
+solve!(system, analysis)
+```
+```@setup ACOptimalPowerFlow
 JuMP.set_silent(analysis.jump)
 solve!(system, analysis)
 nothing # hide
