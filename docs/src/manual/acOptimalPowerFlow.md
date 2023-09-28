@@ -52,7 +52,7 @@ addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 0.4, reacti
 addGenerator!(system; label = "Generator 2", bus = "Bus 2", active = 0.2, reactive = 0.1)
 
 cost!(system; label = "Generator 1", active = 2, polynomial = [800.0; 200.0; 80.0])
-cost!(system; label = "Generator 2", active = 1, piecewise =  [10.8 12.3; 14.7 16.8; 18 18.1])
+cost!(system; label = "Generator 2", active = 1, piecewise = [10.8 12.3; 14.7 16.8; 18 18.1])
 
 cost!(system; label = "Generator 1", reactive = 2, polynomial = [2.0])
 cost!(system; label = "Generator 2", reactive = 1, piecewise = [2.0 4.0; 6.0 8.0])
@@ -122,7 +122,7 @@ fieldnames(typeof(analysis.constraint))
 ```
 
 !!! note "Info"
-    We recommend that readers refer to the tutorial on [AC optimal power flow](@ref ACOptimalPowerFlowTutorials) for insights into the implementation.
+    We recommend that readers refer to the tutorial on [AC Optimal Power Flow](@ref ACOptimalPowerFlowTutorials) for insights into the implementation.
 
 ---
 
@@ -256,6 +256,9 @@ print(system.generator.label, analysis.constraint.capability.active)
 print(system.generator.label, analysis.constraint.capability.reactive)
 ```
 
+!!! note "Info"
+    This representation may not provide the most accurate portrayal of the generator's power output behavior. In reality, there is a tradeoff between the active and reactive power outputs of the generators, and JuliaGrid has the capability to integrate this tradeoff into the optimization model. For more details, please refer to the tutorial on [Power Capability Constraints](@ref ACPowerCapabilityConstraintsTutorials).
+
 ---
 
 ##### Power Piecewise Constraints
@@ -266,7 +269,7 @@ print(system.generator.label, analysis.constraint.piecewise.active)
 
 It is worth noting that these constraints can also be automatically updated using the [`cost!`](@ref cost!) function. Readers can find more details in the section discussing the objective function. 
 
-As mentioned at the beginning, a linear piecewise cost functions with multiple segments will also introduce helper variables that are added to the objective function. In this specific example, the helper variable is:   
+As mentioned at the beginning, a linear piecewise cost functions with multiple segments will also introduce helper variables that are added to the objective function. In this specific example, the helper variable is:
 ```@repl ACOptimalPowerFlow
 analysis.variable.actwise[2]
 ```
@@ -356,7 +359,7 @@ JuMP.objective_function(analysis.jump)
 ---
 
 ## [Setup Primal Starting Values](@id ACSetupPrimalStartingValuesManual)
-In JuliaGrid, the assignment of starting primal values for optimization variables takes place when the [`solve!`](@ref solve!(::PowerSystem, ::ACOptimalPowerFlow)) function is executed. Starting primal values are determined based on the `generator` and `voltage` fields within the `ACOptimalPowerFlow` type. By default, these values are initially established using the active and reactive power outputs of the generators and the initial bus voltage magnitudes angles:
+In JuliaGrid, the assignment of starting primal values for optimization variables takes place when the [`solve!`](@ref solve!(::PowerSystem, ::ACOptimalPowerFlow)) function is executed. Starting primal values are determined based on the `generator` and `voltage` fields within the `ACOptimalPowerFlow` type. By default, these values are initially established using the active and reactive power outputs of the generators and the initial bus voltage magnitudes and angles:
 ```@repl ACOptimalPowerFlow
 generator = analysis.power.generator;
 print(system.generator.label, generator.active, generator.reactive)
@@ -379,7 +382,7 @@ for iteration = 1:100
 end
 ```
 
-After obtaining the solution, we can calculate the active power outputs of the generators and utilize the bus voltage angles to set the starting values. In this case, the `generator` and `voltage` fields of the `ACOptimalPowerFlow` type can be employed to store the new starting values:
+After obtaining the solution, we can calculate the active and reactive power outputs of the generators and utilize the bus voltage magnitudes and angles to set the starting values. In this case, the `generator` and `voltage` fields of the `ACOptimalPowerFlow` type can be employed to store the new starting values:
 ```@example ACOptimalPowerFlow
 for (key, value) in system.generator.label
     active, reactive = generatorPower(system, flow; label = key)
@@ -437,7 +440,6 @@ using JuMP, Ipopt
 
 @default(unit) # hide
 @default(template) # hide
-
 system = powerSystem()
 
 @bus(minMagnitude = 0.9, maxMagnitude = 1.1)
@@ -455,19 +457,18 @@ addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 3.2, reacti
 addGenerator!(system; label = "Generator 2", bus = "Bus 2", active = 0.2, reactive = 0.1)
 
 cost!(system; label = "Generator 1", active = 2, polynomial = [1100.2; 500; 80])
-cost!(system; label = "Generator 2", active = 1, piecewise =  [10.8 12.3; 14.7 16.8; 18 18.1])
+cost!(system; label = "Generator 2", active = 1, piecewise = [10.8 12.3; 14.7 16.8; 18 18.1])
 
 acModel!(system)
 
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
-
-JuMP.set_silent(analysis.jump)
+JuMP.set_silent(analysis.jump) # hide
 solve!(system, analysis)
 
 nothing # hide
 ```
 
-We can now utilize the provided functions to compute powers and currents. The following functions can be used for this purpose:
+We can now utilize the following functions to calculate powers and currents:
 ```@example ACOptimalPowerFlowPower
 power!(system, analysis)
 current!(system, analysis)
@@ -481,9 +482,9 @@ print(system.branch.label, analysis.current.from.magnitude)
 ```
 
 !!! note "Info"
-    To better understand the powers and current associated with buses and branches that are calculated by the [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)) and [`current!`](@ref current!(::PowerSystem, ::AC)) functions, we suggest referring to the tutorials on [AC optimal power flow analysis](@ref ACOptimalPowerFlowTutorials).
+    To better understand the powers and current associated with buses and branches that are calculated by the [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)) and [`current!`](@ref current!(::PowerSystem, ::AC)) functions, we suggest referring to the tutorials on [AC Optimal Power Flow](@ref ACOptimalPowerFlowTutorials).
 
-To calculate specific quantities for particular components rather than calculating powers or currents for all components, users can make use of the provided functions below.
+To compute specific quantities for particular components, rather than calculating powers or currents for all components, users can utilize one of the provided functions below.
 
 ---
 
@@ -596,9 +597,13 @@ print(system.generator.label, generator.active, generator.reactive)
 print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
 ```
 
-Now, let us introduce changes to the power system from the previous example and solve it. The primal starting values will now be set to the values shown above.
+Now, let us introduce changes to the power system from the previous example:
 ```@example ACOptimalPowerFlowPower
 updateGenerator!(system, analysis; label = "Generator 2", maxActive = 0.08)
+```
+
+Next, solve this new power system. During the execution of the [`solve!`](@ref solve!(::PowerSystem, ::ACOptimalPowerFlow)) function, the primal starting values will first be set, and these values will be defined according to the values given above.
+```@example ACOptimalPowerFlowPower
 solve!(system, analysis)
 ```
 

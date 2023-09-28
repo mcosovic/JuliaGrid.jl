@@ -41,8 +41,8 @@ addGenerator!(system; label = "Generator 2", bus = "Bus 2", active = 0.1, maxAct
 addGenerator!(system; label = "Generator 3", bus = "Bus 2", active = 0.2, maxActive = 0.4)
 
 cost!(system; label = "Generator 1", active = 2, polynomial = [1100.2; 500; 80])
-cost!(system; label = "Generator 2", active = 1, piecewise =  [8.0 11.0; 14.0 17.0])
-cost!(system; label = "Generator 3", active = 1, piecewise =  [6.8 12.3; 8.7 16.8; 11.2 19.8])
+cost!(system; label = "Generator 2", active = 1, piecewise = [8.0 11.0; 14.0 17.0])
+cost!(system; label = "Generator 3", active = 1, piecewise = [6.8 12.3; 8.7 16.8; 11.2 19.8])
 
 dcModel!(system)
 
@@ -107,7 +107,7 @@ fieldnames(typeof(analysis.constraint))
 ```
 
 !!! note "Info"
-    We recommend that readers refer to the tutorial on [DC optimal power flow](@ref DCOptimalPowerFlowTutorials) for insights into the implementation.
+    We recommend that readers refer to the tutorial on [DC Optimal Power Flow](@ref DCOptimalPowerFlowTutorials) for insights into the implementation.
 
 ---
 
@@ -289,7 +289,6 @@ analysis.objective
 Users can modify the objective function using the [`set_objective_function`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.set_objective_function) function from the JuMP package. This operation is considered destructive because it is independent of power system data; however, in certain scenarios, it may be more straightforward than using the [`cost!`](@ref cost!) function for updates. Moreover, using this methodology, users can combine a defined function with a newly defined expression. Here is an example of how it can be achieved:
 ```@example DCOptimalPowerFlow
 expr = 100.2 * analysis.variable.active[1] * analysis.variable.active[1] + 123
-
 JuMP.set_objective_function(analysis.jump, analysis.objective - expr)
 ```
 
@@ -331,7 +330,7 @@ end
 ---
 
 ##### Using DC Optimal Power Flow
-Performing repeated executions of the DC optimal power flow problem, and opting to reuse the existing `DCOptimalPowerFlow` type without generating a new instance offers the benefit of a "warm start". In such a situation, the initial primal values for the subsequent solving step align with the solution achieved in the prior step. Additional information can be found in the section dedicated to [Reusing the Optimal Power Flow Model](@ref DCReusingOptimalPowerFlowModelManual).
+Performing repeated executions of the DC optimal power flow problem, and opting to reuse the existing `DCOptimalPowerFlow` type without generating a new instance offers the benefit of a "warm start". In such a situation, the initial primal values for the subsequent solving step align with the solution achieved in the prior step. Additional information can be found in the section dedicated to [Reusing Optimal Power Flow Model](@ref DCReusingOptimalPowerFlowModelManual).
 
 ---
 
@@ -381,13 +380,12 @@ addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 3.2, maxAct
 addGenerator!(system; label = "Generator 2", bus = "Bus 2", active = 0.2, maxActive = 0.2)
 
 cost!(system; label = "Generator 1", active = 2, polynomial = [1100.2; 500; 80])
-cost!(system; label = "Generator 2", active = 1, piecewise =  [10.8 12.3; 14.7 16.8])
+cost!(system; label = "Generator 2", active = 1, piecewise = [10.8 12.3; 14.7 16.8])
 
 dcModel!(system)
 
 analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer)
-
-JuMP.set_silent(analysis.jump)
+JuMP.set_silent(analysis.jump) # hide
 solve!(system, analysis)
 
 nothing # hide
@@ -406,9 +404,9 @@ print(system.branch.label, analysis.power.from.active)
 ```
 
 !!! note "Info"
-    To better understand the powers associated with buses and branches that are calculated by the [`power!`](@ref power!(::PowerSystem, ::DCPowerFlow)) function, we suggest referring to the tutorials on [DC optimal power flow analysis](@ref DCOptimalPowerAnalysisTutorials).
+    To better understand the powers associated with buses and branches that are calculated by the [`power!`](@ref power!(::PowerSystem, ::DCPowerFlow)) function, we suggest referring to the tutorials on [DC Optimal Power Flow](@ref DCOptimalPowerAnalysisTutorials).
 
-To calculate specific quantities for particular components rather than calculating active powers for all components, users can make use of the provided functions below.
+To compute specific quantities for particular components, rather than calculating powers or currents for all components, users can utilize one of the provided functions below.
 
 ---
 
@@ -467,9 +465,14 @@ print(system.generator.label, analysis.power.generator.active)
 print(system.bus.label, analysis.voltage.angle)
 ```
 
-Now, let us introduce changes to the power system from the previous example and solve it. The primal starting values will now be set to the values shown above.
+Now, let us introduce changes to the power system from the previous example:
 ```@example DCOptimalPowerFlowPower
 updateGenerator!(system, analysis; label = "Generator 2", maxActive = 0.08)
+nothing # hide
+```
+
+Next, solve this new power system. During the execution of the [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow)) function, the primal starting values will first be set, and these values will be defined according to the values given above.
+```@example DCOptimalPowerFlowPower
 solve!(system, analysis)
 ```
 

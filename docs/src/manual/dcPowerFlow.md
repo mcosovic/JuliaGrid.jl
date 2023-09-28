@@ -24,21 +24,20 @@ During the initialization process, the designated slack bus, which is initially 
 system = powerSystem()
 
 addBus!(system; label = "Bus 1", type = 3)
-addBus!(system; label = "Bus 2", type = 2, active = 0.1)
-addBus!(system; label = "Bus 3", type = 2, active = 0.05)
+addBus!(system; label = "Bus 2", type = 2)
+addBus!(system; label = "Bus 3", type = 2)
 
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.05)
-addBranch!(system; label = "Branch 2", from = "Bus 1", to = "Bus 3", reactance = 0.01)
-addBranch!(system; label = "Branch 3", from = "Bus 2", to = "Bus 3", reactance = 0.01)
+addBranch!(system; label = "Branch 2", from = "Bus 2", to = "Bus 3", reactance = 0.01)
 
-addGenerator!(system; bus = "Bus 3", active = 3.2)
+addGenerator!(system; label = "Generator 1", bus = "Bus 3")
 
 dcModel!(system)
 
 analysis = dcPowerFlow(system)
 ```
 
-In this example, the slack bus (`type = 3`) corresponds to the `Bus 1`. However, this bus does not have an in-service generator connected to it. Consequently, JuliaGrid recognizes this as an error and attempts to assign a new slack bus from the available generator buses (`type = 2`) that have connected in-service generators. In this particular example, the `Bus 3` will become the new slack bus. As a result, we can observe the updated array of bus types within the defined set of buses:
+In this example, the slack bus (`type = 3`) corresponds to the `Bus 1`. However, this bus does not have an in-service generator connected to it. Consequently, JuliaGrid recognizes this as an error and attempts to assign a new slack bus from the available generator buses (`type = 2`) that have connected in-service generators. In this particular example, the `Bus 3` will become the new slack bus. As a result, we can observe the updated array of bus types:
 ```@setup busType
 using JuliaGrid # hide
 @default(unit) # hide
@@ -114,7 +113,7 @@ nothing # hide
 ```
 
 !!! note "Info"
-    We recommend that readers refer to the tutorial on [DC power flow](@ref DCPowerFlowTutorials) for insights into the implementation.
+    We recommend that readers refer to the tutorial on [DC Power Flow Analysis](@ref DCPowerFlowTutorials) for insights into the implementation.
 
 ---
 
@@ -166,9 +165,9 @@ print(system.branch.label, system.base.power.value * analysis.power.from.active)
 ```
 
 !!! note "Info"
-    To better understand the powers associated with buses, branches and generators that are calculated by the [`power!`](@ref power!(::PowerSystem, ::DCPowerFlow)) function, we suggest referring to the tutorials on [DC power flow analysis](@ref DCPowerAnalysisTutorials).
+    To better understand the powers associated with buses, branches and generators that are calculated by the [`power!`](@ref power!(::PowerSystem, ::DCPowerFlow)) function, we suggest referring to the tutorials on [DC Power Flow Analysis](@ref DCPowerAnalysisTutorials).
 
-To calculate specific quantities for particular components rather than calculating active powers for all components, users can make use of the provided functions below.
+To compute specific quantities for particular components, rather than calculating powers or currents for all components, users can utilize one of the provided functions below.
 
 ---
 

@@ -28,7 +28,7 @@ Finally, after adding the generator, JualiGrid provides the following function f
 * [`cost!`](@ref cost!).
 
 !!! tip "Tip"
-    The functions [`addBranch!`](@ref addBranch!), [`addGenerator!`](@ref addGenerator!), [`updateBus!`](@ref updateBus!), [`updateBranch!`](@ref updateBranch!), [`updateGenerator!`](@ref updateGenerator!), and [`cost!`](@ref cost!) serve a dual purpose. While their primary function is to modify the `PowerSystem` composite type, they are also designed to accept various analysis models like AC or DC power flow models. When feasible, these functions not only modify the `PowerSystem` type but also adapt the analysis model, often resulting in improved computational efficiency. Detailed information on specific analyses can be found in dedicated manuals.
+    The functions [`addBranch!`](@ref addBranch!), [`addGenerator!`](@ref addGenerator!), [`updateBus!`](@ref updateBus!), [`updateBranch!`](@ref updateBranch!), [`updateGenerator!`](@ref updateGenerator!), and [`cost!`](@ref cost!) serve a dual purpose. While their primary function is to modify the `PowerSystem` composite type, they are also designed to accept various analysis models like AC or DC power flow models. When feasible, these functions not only modify the `PowerSystem` type but also adapt the analysis model, often resulting in improved computational efficiency. Detailed instructions on utilizing this feature can be found in dedicated manuals for specific analyses.
 
 ---
 
@@ -96,7 +96,7 @@ Therefore, by using the [`@base`](@ref @base) macro to modify the prefixes of th
 ---
 
 ## [Save Model](@id SaveModelManual)
-Once the `PowerSystem` type has been created using one of the methods outlined in [Build Model](@ref BuildModelManual), the current data can be stored in the HDF5 file by using  [`savePowerSystem`](@ref savePowerSystem) function:
+Once the `PowerSystem` type has been created using one of the methods outlined in [Build Model](@ref BuildModelManual), the current data can be stored in the HDF5 file by using [`savePowerSystem`](@ref savePowerSystem) function:
 ```julia
 savePowerSystem(system; path = "C:/matpower/case14.h5", reference = "IEEE 14-bus test case")
 ```
@@ -132,7 +132,7 @@ system.bus.voltage.angle
 ```
 
 !!! note "Info"
-    We recommend reading the documentation for the [`addBus!`](@ref addBus!) function, where all the keywords used in the function are explained in detail.
+    We recommend reading the documentation for the [`addBus!`](@ref addBus!) function, where we have provided a list of all the keywords that can be used.
 
 ---
 
@@ -194,7 +194,7 @@ Here, we created the branch from `Bus 1` to `Bus 2` with following parameter:
 system.branch.parameter.reactance
 ```
 !!! note "Info"
-    It is recommended to consult the documentation for the [`addBranch!`](@ref addBranch!) function, which provides an explanation of all the keywords used in the function.
+    It is recommended to consult the documentation for the [`addBranch!`](@ref addBranch!) function, where we have provided a list of all the keywords that can be used.
 
 ---
 
@@ -209,7 +209,7 @@ system = powerSystem()
 addBus!(system; label = "Bus 1", type = 3, active = 0.1)
 addBus!(system; label = "Bus 2", type = 1, angle = -0.2)
 
-addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2",  reactance = 22.8528)
+addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 22.8528)
 ```
 Still, all electrical quantities are stored in per-units, and the same branch as before is created, as shown in the following output:
 ```@repl addBranchUnit
@@ -243,7 +243,7 @@ In the above code, we add the generator to the `Bus 2`, with active and reactive
 Similar to buses and branches, the input units can be changed to units other than per-units using different macros.
 
 !!! note "Info"
-    It is recommended to refer to the documentation for the [`addGenerator!`](@ref addGenerator!) function, which explains all the keywords used in the function.
+    It is recommended to refer to the documentation for the [`addGenerator!`](@ref addGenerator!) function, where we have provided a list of all the keywords that can be used.
 
 ---
 
@@ -374,7 +374,7 @@ The remaining parameters are initialized with default values of zero.
 ---
 
 ##### Change Default Keyword Values
-In JuliaGrid, users are allowed to modify default values and assign non-zero values to other keywords using the [`@bus`](@ref @bus), [`@branch`](@ref @branch), and [`@generator`](@ref @generator) macros. These macros create bus, branch, and generator templates that are used every time the [`addBus!`](@ref addBus!), [`addBranch!`](@ref addBranch!), and [`addGenerator!`](@ref addGenerator!) functions are called. For instance, the code block shows an example of creating bus, branch, and generator templates with customized default values:
+In JuliaGrid, users have the flexibility to adjust default values and assign customized values using the [`@bus`](@ref @bus), [`@branch`](@ref @branch), and [`@generator`](@ref @generator) macros. These macros create bus, branch, and generator templates that are used every time the [`addBus!`](@ref addBus!), [`addBranch!`](@ref addBranch!), and [`addGenerator!`](@ref addGenerator!) functions are called. For instance, the code block shows an example of creating bus, branch, and generator templates with customized default values:
 ```@example CreateBusTemplate
 using JuliaGrid # hide
 @default(unit) # hide
@@ -478,12 +478,12 @@ nothing # hide
 ```
 
 !!! tip "Tip"
-    In all instances documented, we explicitly refer to these functions by their names, although it is not obligatory. If a user initiates any of the various AC or DC analyses without having previously established the AC or DC model using the [`acModel!`](@ref acModel!) or [`dcModel!`](@ref dcModel!) function, the corresponding model will be automatically generated at the start of the analysis.
+    In all instances documented, we explicitly refer to these functions by their names, although it is not obligatory. If a user initiates any of the various AC or DC analyses without having previously created the AC or DC model using the [`acModel!`](@ref acModel!) or [`dcModel!`](@ref dcModel!) function, the relevant function for setting the analysis will automatically generate the AC or DC model.
 
 The nodal matrices are one of the components of both the AC and DC models and are stored in the variables:
 ```@repl ACDCModel
-system.model.dc.nodalMatrix
 system.model.ac.nodalMatrix
+system.model.dc.nodalMatrix
 ```
 
 !!! note "Info"
@@ -524,8 +524,8 @@ system.model.dc.nodalMatrix
 The AC and DC models must be defined when a finite number of buses are defined, otherwise, adding a new bus will delete them. For example, if we attempt to add a new bus to the `PowerSystem` type that was previously created, the current AC and DC models will be completely erased:
 ```@repl ACDCModelUpdate
 addBus!(system; label = "Bus 4", type = 2)
-system.model.dc.nodalMatrix
 system.model.ac.nodalMatrix
+system.model.dc.nodalMatrix
 ```
 
 ---
@@ -578,7 +578,7 @@ system.model.ac.nodalMatrix
 ## [Update Branch](@id UpdateBranchManual)
 Similarly to updating buses, once a branch has been added to the `PowerSystem` composite type, users have the freedom to modify all parameters defined within the [`addBranch!`](@ref addBranch!) function. This means that the [`updateBranch!`](@ref updateBranch!) function not only updates the `PowerSystem` type but also, if AC and DC models have been created, automatically updates these models.
 
-To illustrate, let us continue with the previous example, where we modify the parameters of `Branch 1`:
+To illustrate, let us continue with the previous example and modify the parameters of `Branch 1` as follows:
 ```@example updateSystem
 updateBranch!(system; label = "Branch 1", resistance = 0.012, reactance = 0.3)
 
@@ -637,7 +637,7 @@ Hence, this function ensures the adjustment of generator parameters and updates 
 
 ---
 
-## [Add and Update Cost](@id AddUpdateCostManual)
+## [Add and Update Costs](@id AddUpdateCostsManual)
 The [`cost!`](@ref cost!) function is responsible for adding and updating costs associated with the active or reactive power produced by the corresponding generator. These costs are added only if the corresponding generator is defined.
 
 To start, let us create an example of a power system using the following code:
@@ -661,7 +661,7 @@ Let us define a quadratic polynomial cost function for the active power produced
 ```@example addActiveCost
 cost!(system; label = "Generator 1", active = 2, polynomial = [1100.0; 500.0; 150.0])
 ```
-In essence, what we have accomplished is the establishment of a cost function depicted as ``f(P_{\text{g}1}) = 1100 P_{\text{g}1}^2 + 500 P_{\text{g}1} + 150`` through the code provided.
+In essence, what we have accomplished is the establishment of a cost function depicted as ``f(P_{\text{g}1}) = 1100 P_{\text{g}1}^2 + 500 P_{\text{g}1} + 150`` through the code provided. In general, when constructing a polynomial cost function, the coefficients must be ordered from the highest degree to the lowest.
 
 As previously, the default input units are related with per-units (pu), and the coefficients of the cost function have units of currency/pu²hr for 1100, currency/puhr for 500, and currency/hr for 150. Hence, the coefficients are stored exactly as entered:
 ```@repl addActiveCost
@@ -674,7 +674,7 @@ By setting `active = 2` within the function, we express our intent to specify th
 ##### Piecewise Linear Cost
 We can also create a piecewise linear cost function, for example, let us create the reactive power cost function for the same generator using the following code:
 ```@example addActiveCost
-cost!(system; label = "Generator 1", reactive = 1, piecewise =  [0.11 12.3; 0.15 16.8])
+cost!(system; label = "Generator 1", reactive = 1, piecewise = [0.11 12.3; 0.15 16.8])
 nothing # hide
 ```
 In this case, the first column specifies the output reactive powers of the generator in per-units, while the second column specifies the corresponding costs for the specified reactive power in currency/hr. Thus, the data is stored exactly as entered:
@@ -703,7 +703,7 @@ system.generator.cost.active.polynomial
 
 Similarly, we can define the linear piecewise cost using megavolt-amperes reactive:
 ```@example addActiveCost
-cost!(system; label = "Generator 1", reactive = 1, piecewise =  [11.0 12.3; 15.0 16.8])
+cost!(system; label = "Generator 1", reactive = 1, piecewise = [11.0 12.3; 15.0 16.8])
 nothing # hide
 ```
 Upon inspection, we can see that the stored data is the same as before:
@@ -712,4 +712,4 @@ system.generator.cost.reactive.piecewise
 ```
 
 !!! tip "Tip"
-    The [`cost!`](@ref cost!) function not only adds costs but also allows users to update previously defined cost functions. This capability is particularly valuable in optimal power flow analyses, as it enables you to modify generator power costs without recreating models from scratch.
+    The [`cost!`](@ref cost!) function not only adds costs but also allows users to update previously defined cost functions. This functionality is particularly valuable in optimal power flow analyses, as it allows users to modify generator power costs without the need to recreate models from scratch.

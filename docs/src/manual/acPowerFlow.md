@@ -73,7 +73,7 @@ acModel!(system)
 analysis = newtonRaphson(system)
 ```
 
-As a result, we can observe the updated array of bus types within the defined set of buses:
+As a result, we can observe the updated array of bus types:
 ```@repl busType
 print(system.bus.label, system.bus.layout.type)
 ```
@@ -169,7 +169,7 @@ The starting voltage values are:
 print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
 ```
 
-Consequently, when using the Newton-Raphson method, the iteration begins with a fixed set of voltage magnitude values that remain constant throughout the process. The remaining values are initialized as part of the "flat start" approach.
+Consequently, when using the Newton-Raphson method, the iteration begins with a fixed set of voltage magnitude values that remain constant throughout the iteration process. The remaining values are initialized as part of the "flat start" approach.
 
 ---
 
@@ -230,7 +230,7 @@ nothing # hide
 In these examples, the algorithms run until the specified number of iterations is reached.
 
 !!! note "Info"
-    We recommend that the reader refer to the tutorial on [AC power flow analysis](@ref ACPowerFlowTutorials), where we explain the implementation of the methods and algorithm structures in detail.
+    We recommend that the reader refer to the tutorial on [AC Power Flow Analysis](@ref ACPowerFlowTutorials), where we explain the implementation of the methods and algorithm structures in detail.
 
 ---
 
@@ -303,9 +303,9 @@ print(system.branch.label, analysis.current.to.angle)
 ```
 
 !!! note "Info"
-    To better understand the powers and currents associated with buses, branches and generators that are calculated by the [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)) and [`current!`](@ref current!(::PowerSystem, ::AC)) functions, we suggest referring to the tutorials on [AC power flow analysis](@ref ACPowerAnalysisTutorials).
+    To better understand the powers and currents associated with buses, branches and generators that are calculated by the [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)) and [`current!`](@ref current!(::PowerSystem, ::AC)) functions, we suggest referring to the tutorials on [AC Power Flow Analysis](@ref ACPowerAnalysisTutorials).
 
-To calculate specific quantities for particular components rather than calculating powers or currents for all components, users can make use of the provided functions below.
+To compute specific quantities for particular components, rather than calculating powers or currents for all components, users can utilize one of the provided functions below.
 
 ---
 
@@ -452,7 +452,7 @@ end
 
 ---
 
-#####  Reusability for Diverse Power System Reconfiguration
+##### Reusability for Diverse Power System Reconfiguration
 Next, the `PowerSystem` composite type, along with its previously established `ac` field, offers unlimited versatility. This facilitates the seamless sharing of the `PowerSystem` type across various AC power flow analyses. All fields automatically adjust when any of the functions that add components or update their parameters are utilized:
 * [`addBranch!`](@ref addBranch!),
 * [`addGenerator!`](@ref addGenerator!),
@@ -639,7 +639,7 @@ violate = reactiveLimit!(system, analysis)
 
 
 ##### New Slack Bus
-Looking at the following code example, we can see that the output limits of the generator are set only for the first generator that is connected to the slack bus:
+Looking at the following code example, we can see that the output limits of the generator are set only for `Generator 1` that is connected to the slack bus:
 ```@example NewSlackBus
 using JuliaGrid # hide
 @default(unit) # hide
@@ -658,8 +658,8 @@ addBranch!(system; from = "Bus 1", to = "Bus 3", reactance = 0.01)
 addBranch!(system; from = "Bus 2", to = "Bus 3", reactance = 0.04)
 addBranch!(system; from = "Bus 2", to = "Bus 4", reactance = 0.004)
 
-addGenerator!(system; bus = "Bus 1", minReactive = 0.0, maxReactive = 0.2)
-addGenerator!(system; bus = "Bus 4", reactive = 0.3)
+addGenerator!(system; label = "Generator 1", bus = "Bus 1", maxReactive = 0.2)
+addGenerator!(system; label = "Generator 2", bus = "Bus 4", reactive = 0.3)
 
 acModel!(system)
 

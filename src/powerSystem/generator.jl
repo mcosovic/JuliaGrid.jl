@@ -197,13 +197,12 @@ function addGenerator!(system::PowerSystem, analysis::DCOptimalPowerFlow;
     variable = analysis.variable
 
     index = generator.number
-    busIndex = generator.layout.bus[end]
 
     push!(variable.active, @variable(jump, base_name = "active[$index]"))
     push!(analysis.power.generator.active, generator.output.active[end])
 
     if generator.layout.status[end] == 1
-        updateBalance(system, analysis, busIndex; power = 1, genIndex = index)
+        updateBalance(system, analysis, generator.layout.bus[end]; power = 1, genIndex = index)
         addCapability(jump, variable.active[index], constraint.capability.active, generator.capability.minActive, generator.capability.maxActive, index)
     else
         fix!(variable.active[index], 0.0, constraint.capability.active, index)
@@ -232,7 +231,6 @@ function addGenerator!(system::PowerSystem, analysis::ACOptimalPowerFlow;
     variable = analysis.variable
 
     index = generator.number
-    busIndex = generator.layout.bus[end]
 
     push!(variable.active, @variable(jump, base_name = "active[$index]"))
     push!(variable.reactive, @variable(jump, base_name = "reactive[$index]"))
@@ -241,7 +239,7 @@ function addGenerator!(system::PowerSystem, analysis::ACOptimalPowerFlow;
     push!(analysis.power.generator.reactive, generator.output.reactive[end])
 
     if generator.layout.status[end] == 1
-        updateBalance(system, analysis, busIndex; active = true, reactive = true)
+        updateBalance(system, analysis, generator.layout.bus[end]; active = true, reactive = true)
         addCapability(jump, variable.active[index], constraint.capability.active, generator.capability.minActive, generator.capability.maxActive, index)
         addCapability(jump, variable.reactive[index], constraint.capability.reactive, generator.capability.minReactive, generator.capability.maxReactive, index)
     else

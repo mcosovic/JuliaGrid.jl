@@ -359,7 +359,7 @@ These coefficients remain the same as those specified for apparent powers. Simil
 
 ---
 
-##### Power Capability Constraints
+##### [Power Capability Constraints](@id ACPowerCapabilityConstraintsTutorials)
 The next set of constraints pertains to the minimum and maximum limits of active and reactive power outputs of the generators. These constraints ensure that the power outputs of the generators remain within specified bounds:
 ```math
 P_{\text{g}i}^\text{min} \leq P_{\text{g}i} \leq P_{\text{g}i}^\text{max} ,\;\;\; \forall i \in \mathcal{P}.
