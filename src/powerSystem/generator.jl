@@ -28,11 +28,11 @@ The generator is defined with the following keywords:
 * `minReactive` (pu or VAr): minimum allowed output reactive power value;
 * `maxReactive` (pu or VAr): maximum allowed output reactive power value;
 * `lowActive` (pu or W): lower allowed active power output value of PQ capability curve;
-* `minLowReactive` (pu or VAr): minimum allowed reactive power output value at lowActive value;
-* `maxLowReactive` (pu or VAr): maximum allowed reactive power output value at lowActive value;
+* `minLowReactive` (pu or VAr): minimum allowed reactive power output value at `lowActive` value;
+* `maxLowReactive` (pu or VAr): maximum allowed reactive power output value at `lowActive` value;
 * `upActive` (pu or W): upper allowed active power output value of PQ capability curve;
-* `minUpReactive` (pu or VAr): minimum allowed reactive power output value at upActive value;
-* `maxUpReactive` (pu or VAr): maximum allowed reactive power output value at upActive value;
+* `minUpReactive` (pu or VAr): minimum allowed reactive power output value at `upActive` value;
+* `maxUpReactive` (pu or VAr): maximum allowed reactive power output value at `upActive` value;
 * `loadFollowing` (pu/min or W/min): ramp rate for load following/AG;
 * `reserve10min` (pu or W): ramp rate for 10-minute reserves;
 * `reserve30min` (pu or W): ramp rate for 30-minute reserves;

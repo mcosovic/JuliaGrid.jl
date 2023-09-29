@@ -1,6 +1,6 @@
 # [DC Power Flow](@id DCPowerFlowTutorials)
 
-JuliaGrid employs standard network components and the [unified branch model](@ref DCUnifiedBranchModelTutorials) to obtain the DC power flow solution. To begin, the `PowerSystem` composite type must be provided to JuliaGrid through the use of the [`powerSystem`](@ref powerSystem) function, as illustrated by the following example:
+JuliaGrid employs standard network components and the [Unified Branch Model](@ref DCUnifiedBranchModelTutorials) to obtain the DC power flow solution. To begin, the `PowerSystem` composite type must be provided to JuliaGrid through the use of the [`powerSystem`](@ref powerSystem) function, as illustrated by the following example:
 ```@example PowerFlowSolutionDC
 using JuliaGrid # hide
 @default(unit) # hide
@@ -94,14 +94,14 @@ nothing # hide
 ```
 
 !!! note "Info"
-    For a clear comprehension of the equations, symbols provided below, as well as for a better grasp of power directions, please refer to the [unified branch model](@ref UnifiedBranchModelTutorials).
+    For a clear comprehension of the equations, symbols provided below, as well as for a better grasp of power directions, please refer to the [Unified Branch Model](@ref UnifiedBranchModelTutorials).
 
 ---
 
 ##### Active Power Injections
 To obtain the active power injection at buses, we can refer to section [DC Model](@ref DCModelTutorials), which provides the following expression:
 ```math
-   P_i = \sum_{j = 1}^n {B}_{ij} \theta_j + P_{\text{tr}i} + P_{\text{sh}i},\;\;\; i \in \mathcal{N}.
+   P_i = \sum_{j = 1}^n {B}_{ij} \theta_j + P_{\text{tr}i} + P_{\text{sh}i},\;\;\; \forall i \in \mathcal{N}.
 ```
 Active power injections are stored as the vector ``\mathbf{P} = [P_i]``, and can be retrieved using the following commands:
 ```@repl PowerFlowSolutionDC
@@ -113,7 +113,7 @@ Active power injections are stored as the vector ``\mathbf{P} = [P_i]``, and can
 ##### Active Power Injections from the Generators
 The active power supplied by generators to the buses can be calculated by summing the given generator active powers in the input data, except for the slack bus, which can be determined as:
 ```math
-    P_{\text{s}i} = P_i + P_{\text{d}i},\;\;\; i \in \mathcal{N}_{\text{sb}},
+    P_{\text{s}i} = P_i + P_{\text{d}i},\;\;\; \forall i \in \mathcal{N}_{\text{sb}},
 ```
 where ``P_{\text{d}i}`` represents the active power demanded by consumers at the slack bus. The vector of active power injected by generators to the buses, denoted by ``\mathbf{P}_{\text{s}} = [P_{\text{s}i}]``, can be obtained using the following command:
 ```@repl PowerFlowSolutionDC
@@ -125,7 +125,7 @@ where ``P_{\text{d}i}`` represents the active power demanded by consumers at the
 ##### Active Power Flows
 The active power flow at each "from" bus end ``i \in \mathcal{N}`` of branches can be obtained using the following equations:
 ```math
-    P_{ij} = \cfrac{1}{\tau_{ij} x_{ij}} (\theta_{i} -\theta_{j}-\phi_{ij}),\;\;\; (i,j) \in \mathcal{E}.
+    P_{ij} = \cfrac{1}{\tau_{ij} x_{ij}} (\theta_{i} -\theta_{j}-\phi_{ij}),\;\;\; \forall (i,j) \in \mathcal{E}.
 ```
 The resulting active power flows are stored as the vector ``\mathbf{P}_{\text{i}} = [P_{ij}]``, which can be retrieved using the following command:
 ```@repl PowerFlowSolutionDC
@@ -134,7 +134,7 @@ The resulting active power flows are stored as the vector ``\mathbf{P}_{\text{i}
 
 Similarly, the active power flow at each "to" bus end ``j \in \mathcal{N}`` of branches can be obtained as:
 ```math
-    P_{ji} = - P_{ij},\;\;\; (i,j) \in \mathcal{E}.
+    P_{ji} = - P_{ij},\;\;\; \forall (i,j) \in \mathcal{E}.
 ```
 The resulting active power flows are stored as the vector ``\mathbf{P}_{\text{j}} = [P_{ji}]``, which can be retrieved using the following command:
 ```@repl PowerFlowSolutionDC
@@ -148,9 +148,9 @@ The output active power of each generator located at bus ``i \in \mathcal{N}_{\t
 ```math
     P_{\text{g}i} = P_i + P_{\text{d}i},\;\;\; i \in \mathcal{N}_{\text{sb}}.
 ```
-In the case of multiple generators connected to the slack bus, the first generator in the input data is assigned the obtained value of ``P_{\text{g}i}``. Then, this amount of power is reduced by the output active power of the other generators. Therefore, to get the vector of output active power of generators, i.e., ``\mathbf{P}_{\text{g}} = [P_{\text{g}i}]``, you can use the following command:
+In the case of multiple generators connected to the slack bus, the first generator in the input data is assigned the obtained value of ``P_{\text{g}i}``. Then, this amount of power is reduced by the output active power of the other generators. 
+
+To retrieve the vector of active power outputs of generators, denoted as ``\mathbf{P}_{\text{g}} = [P_{\text{g}i}]``, ``i \in \mathcal{P}``, where the set ``\mathcal{P}`` represents the set of generators, users can utilize the following command:
 ```@repl PowerFlowSolutionDC
 𝐏ₒ = analysis.power.generator.active
 ```
-
-Please take into consideration that in this context, the term ``P_{\text{g}i}`` is interconnected with the group of generators represented by the set ``\mathcal{P} = \{1, \dots, n_g\}``.

@@ -189,7 +189,7 @@ function addBalance(system::PowerSystem, jump::JuMP.Model, active::Vector{Variab
     for j in dc.nodalMatrix.colptr[i]:(dc.nodalMatrix.colptr[i + 1] - 1)
         add_to_expression!(expression, dc.nodalMatrix.nzval[j], - angle[dc.nodalMatrix.rowval[j]])
     end
-    rhs = system.bus.demand.active[i] + system.bus.shunt.conductance[i] + dc.shiftActivePower[i]
+    rhs = system.bus.demand.active[i] + system.bus.shunt.conductance[i] + dc.shiftPower[i]
     ref[i] = @constraint(jump, expression + sum(active[k] for k in system.bus.supply.generator[i]) == rhs)
 
     return jump, ref
@@ -225,7 +225,7 @@ function updateBalance(system::PowerSystem, analysis::DCOptimalPowerFlow, index:
             JuMP.set_normalized_coefficient(constraint.balance.active[index], variable.active[genIndex], power)
         end
         if rhs
-            JuMP.set_normalized_rhs(constraint.balance.active[index], system.bus.demand.active[index] + system.bus.shunt.conductance[index] + dc.shiftActivePower[index])
+            JuMP.set_normalized_rhs(constraint.balance.active[index], system.bus.demand.active[index] + system.bus.shunt.conductance[index] + dc.shiftPower[index])
         end
     else
         addBalance(system, jump, variable.active, variable.angle, constraint.balance.active, index)

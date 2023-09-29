@@ -59,9 +59,9 @@ The equivalent unified ``\pi``-model for a branch ``(i,j) \in \mathcal{E}`` inci
 
 The branch series admittance ``y_{ij}`` is inversely proportional to the branch series impedance ``z_{ij}``:
 ```math
-    y_{ij} = \frac{1}{z_{ij}} =
-    \frac{1}{{r_{ij}} + \text{j}x_{ij}} =
-    \frac{r_{ij}}{r_{ij}^2 + x_{ij}^2} - \text{j}\frac{x_{ij}}{r_{ij}^2 + x_{ij}^2} = g_{ij} + \text{j}b_{ij},
+  y_{ij} = \frac{1}{z_{ij}} =
+  \frac{1}{{r_{ij}} + \text{j}x_{ij}} =
+  \frac{r_{ij}}{r_{ij}^2 + x_{ij}^2} - \text{j}\frac{x_{ij}}{r_{ij}^2 + x_{ij}^2} = g_{ij} + \text{j}b_{ij},
 ```
 where ``r_{ij}`` is a resistance, ``x_{ij}`` is a reactance, ``g_{ij}`` is a conductance and ``b_{ij}`` is a susceptance of the branch.
 
@@ -89,7 +89,7 @@ Within JuliaGrid, the total shunt conductances and susceptances of branches are 
 
 The transformer complex ratio ``\alpha_{ij}`` is defined:
 ```math
-    \alpha_{ij} = \cfrac{1}{\tau_{ij}}e^{-\text{j}\phi_{ij}},
+  \alpha_{ij} = \cfrac{1}{\tau_{ij}}e^{-\text{j}\phi_{ij}},
 ```
 where ``\tau_{ij} \neq 0`` is a transformer turns ratio, while ``\phi_{ij}`` is a transformer phase shift angle, always located "from" bus end of the branch. Note, if ``\tau_{ij} = 1`` and ``\phi_{ij} = 0`` the model describes the line. In-phase transformers are defined if ``\tau_{ij} \neq 1``, ``\phi_{ij} = 0``, and ``y_{\text{s}ij} = 0``, while phase-shifting transformers are obtained if ``\tau_{ij} \neq 1``, ``\phi_{ij} \neq 0``, and ``y_{\text{s}ij} = 0``.
 
@@ -134,7 +134,7 @@ Let us consider an example, given in Figure 2, that will allow us an easy transi
 !!! note "Info"
     The current ``\bar{I}_{\text{sh}k}`` follows the convention of coming out from the bus in terms of its direction. When calculating powers related to shunt elements, this current direction is assumed. Therefore, in cases where power is positive, it signifies alignment with the assumed current direction, emerging away from the bus. Conversely, when power is negative, the direction is reversed, indicating a flow towards the bus.
 
-According to the [unified branch model](@ref UnifiedBranchModelTutorials) each branch is described using the system of equations as follows:
+According to the [Unified Branch Model](@ref UnifiedBranchModelTutorials) each branch is described using the system of equations as follows:
 ```math
   \begin{bmatrix}
     \bar{I}_{pk} \\ \bar{I}_{kp}
@@ -192,17 +192,17 @@ Next, the system of equations for buses ``i=1, \dots, n`` can be written in the 
 where ``\mathbf {\bar {V}} \in \mathbb{C}^{n}`` is the vector of bus complex voltages, and ``\mathbf {\bar {I}} \in \mathbb{C}^{n}`` is the vector of complex current injections at buses.
 
 The matrix ``\mathbf{Y} = \mathbf{G} + \text{j}\mathbf{B} \in \mathbb{C}^{n \times n}`` is the bus or nodal admittance matrix, with elements:
-  * the diagonal elements, where ``i \in \mathcal{N}``,  are equal to:
+  * the diagonal elements, where ``i \in \mathcal{N}``, are equal to:
     ```math
     Y_{ii} = G_{ii} + \text{j}B_{ii} = {y}_{\text{sh}i} +
     \sum\limits_{e \in \mathcal{E}, \; e(1) = i} \cfrac{1}{\tau_{ij}^2}({y}_{ij} + y_{\text{s}ij}) + \sum\limits_{e \in \mathcal{E}, \; e(2) = i} ({y}_{ij} + y_{\text{s}ij}),
     ```
-  * the non-diagonal elements, where ``i = e(1),\;  j = e(2), \; e \in \mathcal{E}``, are equal to:
+  * the non-diagonal elements, where ``i = e(1),\; j = e(2), \; e \in \mathcal{E}``, are equal to:
     ```math
     Y_{ij} = G_{ij} + \text{j}B_{ij} = -\alpha_{ij}^*{y}_{ij}
     ```
     ```math
-    Y_{ji} = G_{ji} + \text{j}B_{ji} =  -\alpha_{ij}{y}_{ij}.
+    Y_{ji} = G_{ji} + \text{j}B_{ji} = -\alpha_{ij}{y}_{ij}.
     ```
 
 When a branch is not incident (or adjacent) to a bus the corresponding element in the nodal admittance matrix ``\mathbf{Y}`` is equal to zero. The nodal admittance matrix ``\mathbf{Y}`` is a sparse (i.e., a small number of elements are non-zeros) for real-world power systems. Although it is often assumed that the matrix ``\mathbf{Y}`` is symmetrical, it is not a general case, for example, in the presence of phase shifting transformers the matrix ``\mathbf{Y}`` is not symmetrical [[2, Sec. 9.6]](@ref ACDCModelReferenceTutorials). JuliaGrid stores both the matrix ``\mathbf{Y}`` and its transpose ``\mathbf{Y}^T`` in the `ac` field of the `PowerSystem` composite type:
@@ -223,18 +223,18 @@ nothing # hide
 ---
 
 ##### [Unified Branch Model](@id DCUnifiedBranchModelTutorials)
-According to the above assumptions, we start from the [unified branch model](@ref UnifiedBranchModelTutorials):
+According to the above assumptions, we start from the [Unified Branch Model](@ref UnifiedBranchModelTutorials):
 ```math
-    \begin{bmatrix}
-      \bar{I}_{ij} \\ \bar{I}_{ji}
-    \end{bmatrix} = \cfrac{1}{\text{j}x_{ij}}
-    \begin{bmatrix}
-      \cfrac{1}{\tau_{ij}^2} && -\alpha_{ij}^*\\
-      -\alpha_{ij} && 1
-    \end{bmatrix}
-    \begin{bmatrix}
-      \bar{V}_{i} \\ \bar{V}_{j}
-    \end{bmatrix},
+  \begin{bmatrix}
+    \bar{I}_{ij} \\ \bar{I}_{ji}
+  \end{bmatrix} = \cfrac{1}{\text{j}x_{ij}}
+  \begin{bmatrix}
+    \cfrac{1}{\tau_{ij}^2} && -\alpha_{ij}^*\\
+    -\alpha_{ij} && 1
+  \end{bmatrix}
+  \begin{bmatrix}
+    \bar{V}_{i} \\ \bar{V}_{j}
+  \end{bmatrix},
 ```
 where ``\bar{V}_{i} = \text{e}^{\text{j}\theta_{i}}`` and ``\bar{V}_{j} = \text{e}^{\text{j}\theta_{j}}``. Further, we have:
 ```math
@@ -272,7 +272,7 @@ Furthermore, the computed branch admittances in the DC framework are stored in t
 𝐲 = system.model.dc.admittance
 ```
 
-We can conclude that ``P_{ij}=-P_{ji}`` holds. With the DC model, the linear network equations relate active powers to bus voltage angles, versus complex currents to complex bus voltages in the AC model [[3]](@ref ACDCModelReferenceTutorials). Consequently, analogous to the [unified branch model](@ref UnifiedBranchModelTutorials) we can write:
+We can conclude that ``P_{ij}=-P_{ji}`` holds. With the DC model, the linear network equations relate active powers to bus voltage angles, versus complex currents to complex bus voltages in the AC model [[3]](@ref ACDCModelReferenceTutorials). Consequently, analogous to the [Unified Branch Model](@ref UnifiedBranchModelTutorials) we can write:
 ```math
   \begin{bmatrix}
     P_{ij} \\ P_{ji}
@@ -378,7 +378,7 @@ The vector ``\mathbf {P} \in \mathbb{R}^{n}`` contains active power injections a
 
 The vector ``\mathbf{P_\text{tr}} \in \mathbb{R}^{n}`` represents active powers related to the non-zero shift angle of transformers. This vector is stored in the `dc` field, and we can access it using:
 ```@repl ACDCModel
-𝐏ₜᵣ = system.model.dc.shiftActivePower
+𝐏ₜᵣ = system.model.dc.shiftPower
 ```
 
 The vector ``\mathbf{P}_\text{sh} \in \mathbb{R}^{n}`` represents active powers consumed by shunt elements. We can access this vector using:
@@ -387,11 +387,11 @@ The vector ``\mathbf{P}_\text{sh} \in \mathbb{R}^{n}`` represents active powers 
 ```
 
 The bus or nodal matrix in the DC framework is given as ``\mathbf{B} \in \mathbb{C}^{n \times n}``, with elements:
-  * the diagonal elements, where ``i \in \mathcal{N}``,  are equal to:
+  * the diagonal elements, where ``i \in \mathcal{N}``, are equal to:
     ```math
     B_{ii} = \sum\limits_{e \in \mathcal{E},\; i \in e} \cfrac{1}{\tau_{ij}x_{ij}},
     ```
-  * the non-diagonal elements, where ``i = e(1),\;  j = e(2), \; e \in \mathcal{E}``, are equal to:
+  * the non-diagonal elements, where ``i = e(1),\; j = e(2), \; e \in \mathcal{E}``, are equal to:
     ```math
     B_{ij} = -\cfrac{1}{\tau_{ij}x_{ij}}
     ```

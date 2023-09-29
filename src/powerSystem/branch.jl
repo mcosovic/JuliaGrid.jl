@@ -15,8 +15,8 @@ for completely reconstructing vectors and matrices when adding a new branch.
 # Keywords
 The branch is defined with the following keywords:
 * `label`: unique label for the branch;
-* `from`: from bus label, corresponds to the bus label;
-* `to`: to bus label, corresponds to the bus label;
+* `from`: "from" bus label, corresponds to the bus label;
+* `to`: "to" bus label, corresponds to the bus label;
 * `status`: operating status of the branch:
   * `status = 1`: in-service;
   * `status = 0`: out-of-service;
@@ -26,8 +26,8 @@ The branch is defined with the following keywords:
 * `susceptance` (pu or S): total shunt susceptance;
 * `turnsRatio`: transformer off-nominal turns ratio, equal to one for a line;
 * `shiftAngle` (rad or deg): transformer phase shift angle, where positive value defines delay;
-* `minDiffAngle` (rad or deg): minimum voltage angle difference value between from and to bus;
-* `maxDiffAngle` (rad or deg): maximum voltage angle difference value between from and to bus;
+* `minDiffAngle` (rad or deg): minimum voltage angle difference value between "from" and "to" bus end;
+* `maxDiffAngle` (rad or deg): maximum voltage angle difference value between "from" and "to" bus end;
 * `longTerm` (pu or VA, W): long-term flow rating (equal to zero for unlimited);
 * `shortTerm` (pu or VA, W): short-term flow rating (equal to zero for unlimited);
 * `emergency` (pu or VA, W): emergency flow rating (equal to zero for unlimited);

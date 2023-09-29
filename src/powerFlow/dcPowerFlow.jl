@@ -105,7 +105,7 @@ function solve!(system::PowerSystem, analysis::DCPowerFlow)
 
     b = copy(bus.supply.active)
     @inbounds for i = 1:bus.number
-        b[i] -= bus.demand.active[i] + bus.shunt.conductance[i] + system.model.dc.shiftActivePower[i]
+        b[i] -= bus.demand.active[i] + bus.shunt.conductance[i] + system.model.dc.shiftPower[i]
     end
 
     analysis.voltage.angle = analysis.factorization \ b

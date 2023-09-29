@@ -53,13 +53,12 @@ function powerSystem(inputFile::String)
 end
 
 """
-Alternatively, the `PowerSystem` composite type can be initialized by calling the function
-without any arguments.
-
     powerSystem()
 
-This allows the model to be built from scratch and modified as needed. This generates an empty
-`PowerSystem` type, with only the base power initialized to 1.0e8 volt-amperes (VA).
+Alternatively, the `PowerSystem` composite type can be initialized by calling the function
+without any arguments. This allows the model to be built from scratch and modified as 
+needed. This generates an empty `PowerSystem` type, with only the base power initialized 
+to 1.0e8 volt-amperes (VA).
 
 # Example
 ```jldoctest

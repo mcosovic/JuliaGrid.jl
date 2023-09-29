@@ -47,7 +47,7 @@ Moreover, we identify the set of generators as ``\mathcal{P} = \{1, \dots, n_g\}
 In the DC optimal power flow, the active power outputs of the generators ``\mathbf {P}_{\text{g}} = [{P}_{\text{g}i}]``, ``i \in \mathcal{P}``, are represented as linear functions of the bus voltage angles ``\boldsymbol{\theta} = [{\theta}_{i}]``, ``i \in \mathcal{N}``. Therefore, the optimization variables in this model are the active power outputs of the generators and the bus voltage angles. The DC optimal power flow model has the form:
 ```math
 \begin{aligned}
-    & {\text{minimize}} & & \sum_{i=1}^{n_\text{g}} f_i(P_{\text{g}i}) \\
+    & {\text{minimize}} & & \sum_{i \in \mathcal{P}} f_i(P_{\text{g}i}) \\
     & \text{subject\;to} & &  \theta_i - \theta_{\text{slack}} = 0,\;\;\; i \in \mathcal{N_{\text{sb}}}  \\[3pt]
     & & & h_{P_i}(\mathbf {P}_{\text{g}}, \boldsymbol{\theta}) = 0,\;\;\;  \forall i \in \mathcal{N} \\[3pt]
     & & & \theta_{ij}^\text{min} \leq \theta_i - \theta_j \leq \theta_{ij}^\text{max},\;\;\; \forall (i,j) \in \mathcal{E} \\[3pt]
@@ -181,18 +181,17 @@ The second equality constraint in the optimization problem is associated with th
 ```math
 h_{P_i}(\mathbf {P}_{\text{g}}, \boldsymbol{\theta}) = 0,\;\;\;  \forall i \in \mathcal{N}.
 ```
-The equation is derived using the [unified branch model](@ref DCUnifiedBranchModelTutorials) and can be represented as:
+The equation is derived using the [Unified Branch Model](@ref DCUnifiedBranchModelTutorials) and can be represented as:
 ```math
-h_{P_i}(\mathbf {P}_{\text{g}}, \boldsymbol{\theta}) = \sum_{k=1}^{n_{\text{g}i}} P_{\text{g}k} - \sum_{k = 1}^n {B}_{ik} \theta_k - P_{\text{d}i} - P_{\text{sh}i} - P_{\text{tr}i}.
+h_{P_i}(\mathbf {P}_{\text{g}}, \boldsymbol{\theta}) = \sum_{k \in \mathcal{P}_i} P_{\text{g}k} - \sum_{k = 1}^n {B}_{ik} \theta_k - P_{\text{d}i} - P_{\text{sh}i} - P_{\text{tr}i}.
 ```
-
-In the equation above, ``P_{\text{g}k}`` represents the active power output of the ``k``-th generator connected to bus ``i \in \mathcal{N}``, and ``n_{\text{g}i}`` denotes the total number of generators connected to the same bus. More precisely, the variable ``P_{\text{g}k}`` represents the optimization variables, as well as the bus voltage angle ``\theta_k``. 
+In this equation, the set ``\mathcal{P}_i \subseteq \mathcal{P}`` encompasses all generators connected to bus ``i \in \mathcal{N}``, and ``P_{\text{g}k}`` represents the active power output of the ``k``-th generator within the set ``\mathcal{P}_i``. More precisely, the variable ``P_{\text{g}k}`` represents the optimization variable, as well as the bus voltage angle ``\theta_k``. 
 
 The constant terms in these equations are determined by the active power demand at bus ``P_{\text{d}i}``, the active power demanded by the shunt element ``P_{\text{sh}i}``, and power related to the shift angle of the phase transformers ``P_{\text{tr}i}``. The values representing these constant terms ``\mathbf{P}_{\text{d}} = [P_{\text{d}i}]``, ``\mathbf{P}_{\text{sh}} = [P_{\text{sh}i}]``, and ``\mathbf{P}_{\text{tr}} = [P_{\text{tr}i}]``, ``i, \in \mathcal{N}``, can be accessed as follows:
 ```@repl DCOptimalPowerFlow
 𝐏ₒ = system.bus.demand.active
 𝐏ₛₕ = system.bus.shunt.conductance
-𝐏ₜᵣ = system.model.dc.shiftActivePower
+𝐏ₜᵣ = system.model.dc.shiftPower
 ```
 
 To retrieve this equality constraint from the model and access the corresponding variable, you can use the following code:
@@ -229,7 +228,7 @@ Here, the lower and upper bounds are determined based on the vector ``\mathbf{P}
 𝐏ₘₐₓ = system.branch.flow.longTerm
 ```
 
-The active power flow at branch ``(i,j) \in \mathcal{E}`` can be derived using the [unified branch model](@ref DCUnifiedBranchModelTutorials) and is given by the equation:
+The active power flow at branch ``(i,j) \in \mathcal{E}`` can be derived using the [Unified Branch Model](@ref DCUnifiedBranchModelTutorials) and is given by the equation:
 ```math
 h_{P_{ij}}(\theta_i, \theta_j) = \frac{1}{\tau_{ij} x_{ij} }(\theta_i - \theta_j - \phi_{ij}).
 ```
@@ -287,14 +286,14 @@ nothing # hide
 ```
 
 !!! note "Info"
-    For a clear comprehension of the equations, symbols provided below, as well as for a better grasp of power directions, please refer to the [unified branch model](@ref UnifiedBranchModelTutorials).
+    For a clear comprehension of the equations, symbols provided below, as well as for a better grasp of power directions, please refer to the [Unified Branch Model](@ref UnifiedBranchModelTutorials).
 
 ---
 
 ##### Active Power Injections
 To obtain the active power injection at buses, we can refer to section [DC Model](@ref DCModelTutorials), which provides the following expression:
 ```math
-   P_i = \sum_{j = 1}^n {B}_{ij} \theta_j + P_{\text{tr}i} + P_{\text{sh}i},\;\;\; i \in \mathcal{N}.
+   P_i = \sum_{j = 1}^n {B}_{ij} \theta_j + P_{\text{tr}i} + P_{\text{sh}i},\;\;\; \forall i \in \mathcal{N}.
 ```
 Active power injections are stored as the vector ``\mathbf{P} = [P_i]``, and can be retrieved using the following commands:
 ```@repl DCOptimalPowerFlow
@@ -306,7 +305,7 @@ Active power injections are stored as the vector ``\mathbf{P} = [P_i]``, and can
 ##### Active Power Injections from the Generators
 The active power supplied by generators to the buses can be calculated by summing the active power outputs of the generators obtained from the optimal DC power flow. This can be expressed as:
 ```math
-    P_{\text{s}i} = \sum_{k=1}^{n_{\text{g}i}} P_{\text{g}k},\;\;\; i \in \mathcal{N}.
+    P_{\text{s}i} = \sum_{k=1}^{n_{\text{g}i}} P_{\text{g}k},\;\;\; \forall i \in \mathcal{N}.
 ```
 Here, ``P_{\text{g}k}`` represents the active power output of the ``k``-th generator connected to bus ``i \in \mathcal{N}``, and ``n_{\text{g}i}`` denotes the total number of generators connected to the same bus. We can obtain the vector of active power injected by generators to the buses, denoted as ``\mathbf{P}_{\text{s}} = [P_{\text{s}i}]``, using the following command:
 ```@repl DCOptimalPowerFlow
@@ -318,7 +317,7 @@ Here, ``P_{\text{g}k}`` represents the active power output of the ``k``-th gener
 ##### Active Power Flows
 The active power flow at each "from" bus end ``i \in \mathcal{N}`` of branches can be obtained using the following equations:
 ```math
-    P_{ij} = \cfrac{1}{\tau_{ij} x_{ij}} (\theta_{i} -\theta_{j}-\phi_{ij}),\;\;\; (i,j) \in \mathcal{E}.
+    P_{ij} = \cfrac{1}{\tau_{ij} x_{ij}} (\theta_{i} -\theta_{j}-\phi_{ij}),\;\;\; \forall (i,j) \in \mathcal{E}.
 ```
 The resulting active power flows are stored as the vector ``\mathbf{P}_{\text{i}} = [P_{ij}]``, which can be retrieved using the following command:
 ```@repl DCOptimalPowerFlow
@@ -327,7 +326,7 @@ The resulting active power flows are stored as the vector ``\mathbf{P}_{\text{i}
 
 Similarly, the active power flow at each "to" bus end ``j \in \mathcal{N}`` of branches can be obtained as:
 ```math
-    P_{ji} = - P_{ij},\;\;\; (i,j) \in \mathcal{E}.
+    P_{ji} = - P_{ij},\;\;\; \forall (i,j) \in \mathcal{E}.
 ```
 The resulting active power flows are stored as the vector ``\mathbf{P}_{\text{j}} = [P_{ji}]``, which can be retrieved using the following command:
 ```@repl DCOptimalPowerFlow

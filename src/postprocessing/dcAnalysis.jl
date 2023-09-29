@@ -54,7 +54,7 @@ function power!(system::PowerSystem, analysis::DCPowerFlow)
         power.injection.active[i] -= bus.demand.active[i]
     end
 
-    power.injection.active[slack] = bus.shunt.conductance[slack] + dc.shiftActivePower[slack]
+    power.injection.active[slack] = bus.shunt.conductance[slack] + dc.shiftPower[slack]
     @inbounds for j in dc.nodalMatrix.colptr[slack]:(dc.nodalMatrix.colptr[slack + 1] - 1)
         row = dc.nodalMatrix.rowval[j]
         power.injection.active[slack] += dc.nodalMatrix[row, slack] * voltage.angle[row]
@@ -68,7 +68,7 @@ function power!(system::PowerSystem, analysis::DCPowerFlow)
             busIndex = system.generator.layout.bus[i]
 
             if busIndex == bus.layout.slack && bus.supply.generator[busIndex][1] == i
-                power.generator.active[i] = bus.shunt.conductance[busIndex] + dc.shiftActivePower[busIndex] + bus.demand.active[busIndex]
+                power.generator.active[i] = bus.shunt.conductance[busIndex] + dc.shiftPower[busIndex] + bus.demand.active[busIndex]
                 for j in dc.nodalMatrix.colptr[busIndex]:(dc.nodalMatrix.colptr[busIndex + 1] - 1)
                     row = dc.nodalMatrix.rowval[j]
                     power.generator.active[i] += dc.nodalMatrix[row, busIndex] * voltage.angle[row]
@@ -149,7 +149,7 @@ function injectionPower(system::PowerSystem, analysis::DCPowerFlow; label)
     index = system.bus.label[label]
 
     if index == system.bus.layout.slack
-        injectionActive = bus.shunt.conductance[index] + dc.shiftActivePower[index]
+        injectionActive = bus.shunt.conductance[index] + dc.shiftPower[index]
         @inbounds for j in dc.nodalMatrix.colptr[index]:(dc.nodalMatrix.colptr[index + 1] - 1)
             row = dc.nodalMatrix.rowval[j]
             injectionActive += dc.nodalMatrix[row, index] * voltage.angle[row]
@@ -223,7 +223,7 @@ function supplyPower(system::PowerSystem, analysis::DCPowerFlow; label)
     index = system.bus.label[label]
 
     if index == system.bus.layout.slack
-        supplyActive = bus.demand.active[index] + bus.shunt.conductance[index] + dc.shiftActivePower[index]
+        supplyActive = bus.demand.active[index] + bus.shunt.conductance[index] + dc.shiftPower[index]
         @inbounds for j in dc.nodalMatrix.colptr[index]:(dc.nodalMatrix.colptr[index + 1] - 1)
             row = dc.nodalMatrix.rowval[j]
             supplyActive += dc.nodalMatrix[row, index] * voltage.angle[row]
@@ -389,7 +389,7 @@ function generatorPower(system::PowerSystem, analysis::DCPowerFlow; label)
 
     if generator.layout.status[index] == 1
         if busIndex == bus.layout.slack && bus.supply.generator[busIndex][1] == index
-            generatorActive = bus.shunt.conductance[busIndex] + dc.shiftActivePower[busIndex] + bus.demand.active[busIndex]
+            generatorActive = bus.shunt.conductance[busIndex] + dc.shiftPower[busIndex] + bus.demand.active[busIndex]
             for j in dc.nodalMatrix.colptr[busIndex]:(dc.nodalMatrix.colptr[busIndex + 1] - 1)
                 row = dc.nodalMatrix.rowval[j]
                 generatorActive += dc.nodalMatrix[row, busIndex] * voltage.angle[row]

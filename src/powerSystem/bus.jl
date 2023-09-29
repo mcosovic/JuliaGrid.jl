@@ -14,12 +14,12 @@ The bus is defined with the following keywords:
 * `active` (pu or W): the active power demand at the bus;
 * `reactive` (pu or VAr): the reactive power demand at the bus;
 * `conductance` (pu or W): the active power demanded of the shunt element;
-* `susceptance` (pu or VAr): the reactive power injected of the shunt element;
+* `susceptance` (pu or VAr): the reactive power injected/demanded of the shunt element;
 * `magnitude` (pu or V): the initial value of the voltage magnitude;
 * `angle` (rad or deg): the initial value of the voltage angle;
 * `minMagnitude` (pu or V): the minimum voltage magnitude value;
 * `maxMagnitude` (pu or V): the maximum voltage magnitude value;
-* `base` (V): the base value of the voltage magnitude;
+* `base` (V): the voltage base value;
 * `area`: the area number;
 * `lossZone`: the loss zone.
 
@@ -27,10 +27,10 @@ The bus is defined with the following keywords:
 The function updates the `bus` field of the `PowerSystem` composite type.
 
 # Default Settings
-By default, certain keywords are assigned default values: `type = 1`, `magnitude = 1.0`,
-`minMagnitude = 0.9`, and `maxMagnitude = 1.1`. The rest of the keywords are initialized with
-a value of zero. However, the user can modify these default settings by utilizing the
-[`@bus`](@ref @bus) macro.
+The default settings for certain keywords are as follows: `type = 1`, `magnitude = 1.0`,
+`minMagnitude = 0.9`, `maxMagnitude = 1.1`, and `base = 138e3`. The rest of the keywords 
+are initialized with a value of zero. However, the user can modify these default settings 
+by utilizing the [`@bus`](@ref @bus) macro.
 
 # Units
 By default, the keyword parameters use per-units (pu) and radians (rad) as units, with the
@@ -475,7 +475,7 @@ Creating a bus template using a custom unit system:
 system = powerSystem()
 
 @bus(type = 2, active = 25.0, angle = 10.0, base = 132.0)
-addBus!(system; "Bus 1", reactive = -4.0)
+addBus!(system; label = "Bus 1", reactive = -4.0)
 ```
 """
 macro bus(kwargs...)

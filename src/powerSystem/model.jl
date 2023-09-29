@@ -100,7 +100,7 @@ The function modifies the `model.dc` field within the `PowerSystem` composite ty
 the following variables:
 - `nodalMatrix`: the nodal matrix;
 - `admittance`: the branch admittances;
-- `shiftActivePower`: the active powers related to phase-shifting transformers.
+- `shiftPower`: the active powers related to phase-shifting transformers.
 
 # Example
 ```jldoctest
@@ -113,7 +113,7 @@ function dcModel!(system::PowerSystem)
     layout = system.branch.layout
     parameter = system.branch.parameter
 
-    dc.shiftActivePower = fill(0.0, system.bus.number)
+    dc.shiftPower = fill(0.0, system.bus.number)
     dc.admittance = fill(0.0, system.branch.number)
     nodalDiagonals = fill(0.0, system.bus.number)
     @inbounds for i = 1:system.branch.number
@@ -124,8 +124,8 @@ function dcModel!(system::PowerSystem)
             to = layout.to[i]
 
             shift = parameter.shiftAngle[i] * dc.admittance[i]
-            dc.shiftActivePower[from] -= shift
-            dc.shiftActivePower[to] += shift
+            dc.shiftPower[from] -= shift
+            dc.shiftPower[to] += shift
 
             nodalDiagonals[from] += dc.admittance[i]
             nodalDiagonals[to] += dc.admittance[i]
@@ -148,8 +148,8 @@ function dcNodalShiftUpdate!(system, index::Int64)
     admittance = dc.admittance[index]
 
     shift = parameter.shiftAngle[index] * admittance
-    dc.shiftActivePower[from] -= shift
-    dc.shiftActivePower[to] += shift
+    dc.shiftPower[from] -= shift
+    dc.shiftPower[to] += shift
 
     dc.nodalMatrix[from, from] += admittance
     dc.nodalMatrix[to, to] += admittance
@@ -173,7 +173,7 @@ function nilModel!(system::PowerSystem, flag::Symbol; index::Int64 = 0)
     if flag == :dcModelEmpty
         dc.nodalMatrix = spzeros(0, 0)
         dc.admittance =  Array{Float64,1}(undef, 0)
-        dc.shiftActivePower = Array{Float64,1}(undef, 0)
+        dc.shiftPower = Array{Float64,1}(undef, 0)
     end
 
     if flag == :acModelEmpty

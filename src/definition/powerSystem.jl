@@ -158,7 +158,7 @@ end
 mutable struct DCModel
     nodalMatrix::SparseMatrixCSC{Float64,Int64}
     admittance::Array{Float64,1}
-    shiftActivePower::Array{Float64,1}
+    shiftPower::Array{Float64,1}
 end
 
 ########### AC Model ###########
