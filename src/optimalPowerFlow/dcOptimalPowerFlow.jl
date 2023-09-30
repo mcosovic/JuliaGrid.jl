@@ -31,7 +31,6 @@ fields:
 
 
 # Examples
-Create the complete DC optimal power flow model:
 ```jldoctest
 system = powerSystem("case14.h5")
 dcModel!(system)
@@ -147,11 +146,12 @@ end
 """
     solve!(system::PowerSystem, analysis::DCOptimalPowerFlow)
 
-The function finds the DC optimal power flow solution and calculate the bus voltage angles
-and output active powers of the generators.
+The function determines the optimal power flow for DC systems, computing the angles of bus
+voltages, as well as generating active power values for each generator.
 
-The calculated voltage angles and active powers are then stored in the `angle` variable of
-the `voltage` field and the `generator` variable of the `power` field.
+# Updates
+The calculated voltage angles and active powers are then stored in the variables of the
+`voltage` and `power.generator` fields of the `DCOptimalPowerFlow` composite type.
 
 # Example
 ```jldoctest

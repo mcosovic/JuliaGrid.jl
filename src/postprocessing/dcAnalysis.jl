@@ -136,17 +136,12 @@ injection = injectionPower(system, analysis; label = 2)
 ```
 """
 function injectionPower(system::PowerSystem, analysis::DCPowerFlow; label)
+    index = system.bus.label[getLabel(system.bus, label, "bus")]
     errorVoltage(analysis.voltage.angle)
-
-    if !haskey(system.bus.label, label)
-        throw(ErrorException("The value $label of the label keyword does not exist in bus labels."))
-    end
 
     dc = system.model.dc
     bus = system.bus
     voltage = analysis.voltage
-
-    index = system.bus.label[label]
 
     if index == system.bus.layout.slack
         injectionActive = bus.shunt.conductance[index] + dc.shiftPower[index]
@@ -162,11 +157,8 @@ function injectionPower(system::PowerSystem, analysis::DCPowerFlow; label)
 end
 
 function injectionPower(system::PowerSystem, analysis::DCOptimalPowerFlow; label)
-    if !haskey(system.bus.label, label)
-        throw(ErrorException("The value $label of the label keyword does not exist in bus labels."))
-    end
-
-    index = system.bus.label[label]
+    index = system.bus.label[getLabel(system.bus, label, "bus")]
+    errorVoltage(analysis.voltage.angle)
 
     injectionActive = copy(-system.bus.demand.active[index])
     @inbounds for i in system.bus.supply.generator[index]
@@ -210,17 +202,12 @@ supply = supplyPower(system, analysis; label = 2)
 ```
 """
 function supplyPower(system::PowerSystem, analysis::DCPowerFlow; label)
+    index = system.bus.label[getLabel(system.bus, label, "bus")]
     errorVoltage(analysis.voltage.angle)
-
-    if !haskey(system.bus.label, label)
-        throw(ErrorException("The value $label of the label keyword does not exist in bus labels."))
-    end
 
     dc = system.model.dc
     bus = system.bus
     voltage = analysis.voltage
-
-    index = system.bus.label[label]
 
     if index == system.bus.layout.slack
         supplyActive = bus.demand.active[index] + bus.shunt.conductance[index] + dc.shiftPower[index]
@@ -236,11 +223,8 @@ function supplyPower(system::PowerSystem, analysis::DCPowerFlow; label)
 end
 
 function supplyPower(system::PowerSystem, analysis::DCOptimalPowerFlow; label)
-    if !haskey(system.bus.label, label)
-        throw(ErrorException("The value $label of the label keyword does not exist in bus labels."))
-    end
-
-    index = system.bus.label[label]
+    index = system.bus.label[getLabel(system.bus, label, "bus")]
+    errorVoltage(analysis.voltage.angle)
 
     supplyActive = 0.0
     @inbounds for i in system.bus.supply.generator[index]
@@ -283,14 +267,11 @@ from = fromPower(system, analysis; label = 2)
 ```
 """
 function fromPower(system::PowerSystem, analysis::DC; label)
-    if !haskey(system.branch.label, label)
-        throw(ErrorException("The value $label of the label keyword does not exist in branch labels."))
-    end
+    index = system.branch.label[getLabel(system.branch, label, "branch")]
+    errorVoltage(analysis.voltage.angle)
 
     branch = system.branch
     angle = analysis.voltage.angle
-
-    index = system.branch.label[label]
 
     return system.model.dc.admittance[index] * (angle[branch.layout.from[index]] - angle[branch.layout.to[index]] - branch.parameter.shiftAngle[index])
 end
@@ -328,14 +309,11 @@ to = toPower(system, analysis; label = 2)
 ```
 """
 function toPower(system::PowerSystem, analysis::DC; label)
-    if !haskey(system.branch.label, label)
-        throw(ErrorException("The value $label of the label keyword does not exist in branch labels."))
-    end
+    index = system.branch.label[getLabel(system.branch, label, "branch")]
+    errorVoltage(analysis.voltage.angle)
 
     branch = system.branch
     angle = analysis.voltage.angle
-
-    index = system.branch.label[label]
 
     return -system.model.dc.admittance[index] * (angle[branch.layout.from[index]] - angle[branch.layout.to[index]] - branch.parameter.shiftAngle[index])
 end
@@ -374,17 +352,13 @@ generator = generatorPower(system, analysis; label = 1)
 ```
 """
 function generatorPower(system::PowerSystem, analysis::DCPowerFlow; label)
-    if !haskey(system.generator.label, label)
-        throw(ErrorException("The value $label of the label keyword does not exist in generator labels."))
-    end
+    index = system.generator.label[getLabel(system.generator, label, "generator")]
     errorVoltage(analysis.voltage.angle)
 
     dc = system.model.dc
     bus = system.bus
     generator = system.generator
     voltage = analysis.voltage
-
-    index = system.generator.label[label]
     busIndex = generator.layout.bus[index]
 
     if generator.layout.status[index] == 1
@@ -409,9 +383,7 @@ function generatorPower(system::PowerSystem, analysis::DCPowerFlow; label)
 end
 
 function generatorPower(system::PowerSystem, analysis::DCOptimalPowerFlow; label)
-    if !haskey(system.generator.label, label)
-        throw(ErrorException("The value $label of the label keyword does not exist in generator labels."))
-    end
+    index = system.generator.label[getLabel(system.generator, label, "generator")]
     errorVoltage(analysis.voltage.angle)
 
     return analysis.power.generator.active[system.generator.label[label]]

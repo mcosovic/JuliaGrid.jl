@@ -11,6 +11,15 @@ Below, we have provided a list of examples to assist users in getting started wi
 
 ---
 
+#### Installation
+JuliaGrid is compatible with Julia version 1.8 and newer. To get the JuliaGrid package installed, execute the following Julia command:
+```julia
+import Pkg
+Pkg.add("JuliaGrid")
+```
+
+---
+
 #### AC Power Flow
 ```julia
 using JuliaGrid
@@ -63,9 +72,9 @@ solve!(system, analysis)                       # Compute generator powers and bu
 
 current!(system, analysis)                     # Compute currents within the power system
 
-@branch(resistance = 0.01, reactance = 0.2)    # Define a new template for branches 
+@branch(resistance = 0.01, reactance = 0.2)    # Define a new template for branches
 addBranch!(system, analysis; from = 1, to = 5) # Add a new branch into the power system
-solve!(system, analysis)                       # Compute a new solution in the updated setup  
+solve!(system, analysis)                       # Compute a new solution in the updated setup
 ```
 
 ---

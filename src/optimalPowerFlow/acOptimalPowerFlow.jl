@@ -32,7 +32,6 @@ fields:
 - `uuid`: a universally unique identifier associated with the `PowerSystem` composite type.
 
 # Examples
-Create the complete AC optimal power flow model:
 ```jldoctest
 system = powerSystem("case14.h5")
 acModel!(system)
@@ -243,11 +242,13 @@ end
 """
     solve!(system::PowerSystem, analysis::ACOptimalPowerFlow)
 
-The function finds the AC optimal power flow solution and calculate the bus voltage
-magnitudes and angles, and output active and reactive powers of each generators.
+The function determines the optimal power flow for AC systems, computing the magnitudes and
+angles of bus voltages, as well as generating active and reactive power values for each generator.
 
+# Updates
 The calculated voltage magnitudes and angles and active and reactive powers are then stored
-in the variables of the `voltage` and `power` fields of the `ACOptimalPowerFlow` composite type.
+in the variables of the `voltage` and `power.generator` fields of the `ACOptimalPowerFlow`
+composite type.
 
 # Example
 ```jldoctest

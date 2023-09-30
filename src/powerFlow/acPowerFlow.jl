@@ -602,7 +602,7 @@ After the [`mismatch!`](@ref mismatch!) function is called, this function should
 perform a single iteration of the method.
 
 # Updates
-The calculated voltages are stored in the `voltage` field of the respective struct type.
+The calculated voltages are stored in the `voltage` field of the `ACPowerFlow` abstract type.
 
 # Abstract type
 The abstract type `ACPowerFlow` can have the following subtypes:
@@ -956,8 +956,8 @@ end
 """
     startingVoltage!(system::PowerSystem, analysis::ACPowerFlow)
 
-The function extracts bus voltage magnitudes and angles from the `PowerSystem` composite 
-type and assigns them to the `ACPowerFlow` abstract type, enabling users to initialize 
+The function extracts bus voltage magnitudes and angles from the `PowerSystem` composite
+type and assigns them to the `ACPowerFlow` abstract type, enabling users to initialize
 voltage values as required.
 
 # Updates
@@ -1014,7 +1014,7 @@ function startingVoltage!(system::PowerSystem, analysis::GaussSeidel)
             analysis.voltage.magnitude[i] = system.bus.voltage.magnitude[i]
         end
         analysis.voltage.angle[i] = system.bus.voltage.angle[i]
-        analysis.method.voltage[i] = analysis.voltage.magnitude[i] * exp(im * analysis.voltage.angle[i]) 
+        analysis.method.voltage[i] = analysis.voltage.magnitude[i] * exp(im * analysis.voltage.angle[i])
     end
 end
 

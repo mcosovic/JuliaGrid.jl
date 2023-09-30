@@ -10,8 +10,8 @@ electrical quantities:
 - `injection`: active and reactive power bus injections;
 - `supply`: active and reactive power bus injections from the generators;
 - `shunt`: active and reactive power values associated with shunt element at each bus;
-- `from`: active and reactive power flows at the "from" end of each branch;
-- `to`: active and reactive power flows at the "to" end of each branch;
+- `from`: active and reactive power flows at the "from" bus end of each branch;
+- `to`: active and reactive power flows at the "to" bus end of each branch;
 - `charging`: active and reactive power values linked with branch charging admittances for each branch;
 - `series` active and reactive power losses through each branch series impedance;
 - `generator`: produced active and reactive power outputs of each generator.
@@ -323,14 +323,11 @@ active, reactive = injectionPower(system, analysis; label = 1)
 ```
 """
 function injectionPower(system::PowerSystem, analysis::AC; label)
-    if !haskey(system.bus.label, label)
-        throw(ErrorException("The value $label of the label keyword does not exist in bus labels."))
-    end
+    index = system.bus.label[getLabel(system.bus, label, "bus")]
     errorVoltage(analysis.voltage.magnitude)
 
     ac = system.model.ac
     voltage = analysis.voltage
-    index = system.bus.label[label]
 
     I = 0.0 + im * 0.0
     for j in ac.nodalMatrix.colptr[index]:(ac.nodalMatrix.colptr[index + 1] - 1)
@@ -382,15 +379,11 @@ active, reactive = supplyPower(system, analysis; label = 1)
 ```
 """
 function supplyPower(system::PowerSystem, analysis::ACPowerFlow; label)
-    if !haskey(system.bus.label, label)
-        throw(ErrorException("The value $label of the label keyword does not exist in bus labels."))
-    end
+    index = system.bus.label[getLabel(system.bus, label, "bus")]
     errorVoltage(analysis.voltage.magnitude)
 
     ac = system.model.ac
     voltage = analysis.voltage
-
-    index = system.bus.label[label]
 
     if system.bus.layout.type[index] != 1
         I = 0.0 + im * 0.0
@@ -417,11 +410,8 @@ function supplyPower(system::PowerSystem, analysis::ACPowerFlow; label)
 end
 
 function supplyPower(system::PowerSystem, analysis::ACOptimalPowerFlow; label)
-    if !haskey(system.bus.label, label)
-        throw(ErrorException("The value $label of the label keyword does not exist in bus labels."))
-    end
+    index = system.bus.label[getLabel(system.bus, label, "bus")]
     errorVoltage(analysis.voltage.magnitude)
-    index = system.bus.label[label]
 
     supplyActive = 0.0
     supplyReactive = 0.0
@@ -473,14 +463,10 @@ active, reactive = shuntPower(system, analysis; label = 1)
 ```
 """
 function shuntPower(system::PowerSystem, analysis::AC; label)
-    if !haskey(system.bus.label, label)
-        throw(ErrorException("The value $label of the label keyword does not exist in bus labels."))
-    end
+    index = system.bus.label[getLabel(system.bus, label, "bus")]
     errorVoltage(analysis.voltage.magnitude)
-    voltage = analysis.voltage
 
-    index = system.bus.label[label]
-    powerShunt = voltage.magnitude[index]^2 * conj(system.bus.shunt.conductance[index] + im * system.bus.shunt.susceptance[index])
+    powerShunt = analysis.voltage.magnitude[index]^2 * conj(system.bus.shunt.conductance[index] + im * system.bus.shunt.susceptance[index])
 
     return real(powerShunt), imag(powerShunt)
 end
@@ -525,15 +511,11 @@ active, reactive = fromPower(system, analysis; label = 2)
 ```
 """
 function fromPower(system::PowerSystem, analysis::AC; label)
-    if !haskey(system.branch.label, label)
-        throw(ErrorException("The value $label of the label keyword does not exist in branch labels."))
-    end
+    index = system.branch.label[getLabel(system.branch, label, "branch")]
     errorVoltage(analysis.voltage.magnitude)
 
     ac = system.model.ac
     voltage = analysis.voltage
-
-    index = system.branch.label[label]
 
     if system.branch.layout.status[index] == 1
         from = system.branch.layout.from[index]
@@ -590,15 +572,11 @@ active, reactive = toPower(system, analysis; label = 2)
 ```
 """
 function toPower(system::PowerSystem, analysis::AC; label)
-    if !haskey(system.branch.label, label)
-        throw(ErrorException("The value $label of the label keyword does not exist in branch labels."))
-    end
+    index = system.branch.label[getLabel(system.branch, label, "branch")]
     errorVoltage(analysis.voltage.magnitude)
 
     ac = system.model.ac
     voltage = analysis.voltage
-
-    index = system.branch.label[label]
 
     if system.branch.layout.status[index] == 1
         from = system.branch.layout.from[index]
@@ -655,15 +633,11 @@ active, reactive = chargingPower(system, analysis; label = 2)
 ```
 """
 function chargingPower(system::PowerSystem, analysis::AC; label)
-    if !haskey(system.branch.label, label)
-        throw(ErrorException("The value $label of the label keyword does not exist in branch labels."))
-    end
+    index = system.branch.label[getLabel(system.branch, label, "branch")]
     errorVoltage(analysis.voltage.magnitude)
 
-    ac = system.model.ac
     voltage = analysis.voltage
     parameter = system.branch.parameter
-    index = system.branch.label[label]
 
     if system.branch.layout.status[index] == 1
         from = system.branch.layout.from[index]
@@ -718,15 +692,12 @@ active, reactive = seriesPower(system, analysis; label = 2)
 ```
 """
 function seriesPower(system::PowerSystem, analysis::AC; label)
-    if !haskey(system.branch.label, label)
-        throw(ErrorException("The value $label of the label keyword does not exist in branch labels."))
-    end
+    index = system.branch.label[getLabel(system.branch, label, "branch")]
     errorVoltage(analysis.voltage.magnitude)
 
     ac = system.model.ac
     voltage = analysis.voltage
     parameter = system.branch.parameter
-    index = system.branch.label[label]
 
     if system.branch.layout.status[index] == 1
         from = system.branch.layout.from[index]
@@ -784,15 +755,11 @@ active, reactive = generatorPower(system, analysis; label = 1)
 ```
 """
 function generatorPower(system::PowerSystem, analysis::ACPowerFlow; label)
-    if !haskey(system.generator.label, label)
-        throw(ErrorException("The value $label of the label keyword does not exist in generator labels."))
-    end
+    index = system.generator.label[getLabel(system.generator, label, "generator")]
     errorVoltage(analysis.voltage.magnitude)
 
     ac = system.model.ac
     voltage = analysis.voltage
-
-    index = system.generator.label[label]
     busIndex = system.generator.layout.bus[index]
 
     if system.generator.layout.status[index] == 1
@@ -883,12 +850,8 @@ function generatorPower(system::PowerSystem, analysis::ACPowerFlow; label)
 end
 
 function generatorPower(system::PowerSystem, analysis::ACOptimalPowerFlow; label)
-    if !haskey(system.generator.label, label)
-        throw(ErrorException("The value $label of the label keyword does not exist in generator labels."))
-    end
+    index = system.generator.label[getLabel(system.generator, label, "generator")]
     errorVoltage(analysis.voltage.angle)
-
-    index = system.generator.label[label]
 
     return analysis.power.generator.active[index], analysis.power.generator.reactive[index]
 end
@@ -1082,15 +1045,12 @@ magnitude, angle = fromCurrent(system, analysis; label = 2)
 ```
 """
 function fromCurrent(system::PowerSystem, analysis::AC; label)
-    if !haskey(system.branch.label, label)
-        throw(ErrorException("The value $label of the label keyword does not exist in branch labels."))
-    end
+    index = system.branch.label[getLabel(system.branch, label, "branch")]
     errorVoltage(analysis.voltage.magnitude)
 
     ac = system.model.ac
     voltage = analysis.voltage
 
-    index = system.branch.label[label]
     if system.branch.layout.status[index] == 1
         from = system.branch.layout.from[index]
         to = system.branch.layout.to[index]
@@ -1146,15 +1106,12 @@ magnitude, angle = toCurrent(system, analysis; label = 2)
 ```
 """
 function toCurrent(system::PowerSystem, analysis::AC; label)
-    if !haskey(system.branch.label, label)
-        throw(ErrorException("The value $label of the label keyword does not exist in branch labels."))
-    end
+    index = system.branch.label[getLabel(system.branch, label, "branch")]
     errorVoltage(analysis.voltage.magnitude)
 
     ac = system.model.ac
     voltage = analysis.voltage
 
-    index = system.branch.label[label]
     if system.branch.layout.status[index] == 1
         from = system.branch.layout.from[index]
         to = system.branch.layout.to[index]
@@ -1211,15 +1168,12 @@ magnitude, angle = seriesCurrent(system, analysis; label = 2)
 ```
 """
 function seriesCurrent(system::PowerSystem, analysis::AC; label)
-    if !haskey(system.branch.label, label)
-        throw(ErrorException("The value $label of the label keyword does not exist in branch labels."))
-    end
+    index = system.branch.label[getLabel(system.branch, label, "branch")]
     errorVoltage(analysis.voltage.magnitude)
 
     ac = system.model.ac
     voltage = analysis.voltage
 
-    index = system.branch.label[label]
     if system.branch.layout.status[index] == 1
         from = system.branch.layout.from[index]
         to = system.branch.layout.to[index]
