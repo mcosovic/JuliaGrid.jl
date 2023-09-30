@@ -2,10 +2,11 @@
     power!(system::PowerSystem, analysis::DC)
 
 The function calculates the active power values related to buses, branches, and generators
-within the DC analysis framework. It modifies the `power` field of the abstract type `DC`.
+within the DC analysis framework.
 
 # Updates
-This function computes the following electrical quantities:
+This function updates the `power` field of the DC abstract type by computing the following
+electrical quantities:
 - `injection`: active power injections at each bus;
 - `supply`: active power injections from the generators at each bus;
 - `from`: active power flows at each "from" bus end of the branch;
@@ -115,7 +116,7 @@ The abstract type `DC` can have the following subtypes:
 - `DCOptimalPowerFlow`: computes the power within the DC optimal power flow;
 
 # Examples
-Compute the active power of a specific bus after obtaining the DC power flow solution:
+Compute the active power after obtaining the DC power flow solution:
 ```jldoctest
 system = powerSystem("case14.h5")
 dcModel!(system)
@@ -125,7 +126,7 @@ solve!(system, analysis)
 injection = injectionPower(system, analysis; label = 2)
 ```
 
-Compute the active power of a specific bus after obtaining the DC optimal power flow solution:
+Compute the active power after obtaining the DC optimal power flow solution:
 ```jldoctest
 system = powerSystem("case14.h5")
 dcModel!(system)
@@ -181,7 +182,7 @@ The abstract type `DC` can have the following subtypes:
 - `DCOptimalPowerFlow`: computes the power within the DC optimal power flow.
 
 # Examples
-Compute the active power of a specific bus after obtaining the DC power flow solution:
+Compute the active power after obtaining the DC power flow solution:
 ```jldoctest
 system = powerSystem("case14.h5")
 dcModel!(system)
@@ -191,7 +192,7 @@ solve!(system, analysis)
 supply = supplyPower(system, analysis; label = 2)
 ```
 
-Compute the active power of a specific bus after obtaining the DC optimal power flow solution:
+Compute the active power after obtaining the DC optimal power flow solution:
 ```jldoctest
 system = powerSystem("case14.h5")
 dcModel!(system)
@@ -246,7 +247,7 @@ The abstract type `DC` can have the following subtypes:
 - `DCOptimalPowerFlow`: computes the power within the DC optimal power flow.
 
 # Examples
-Compute the active power of a specific branch after obtaining the DC power flow solution:
+Compute the active power after obtaining the DC power flow solution:
 ```jldoctest
 system = powerSystem("case14.h5")
 dcModel!(system)
@@ -256,7 +257,7 @@ solve!(system, analysis)
 from = fromPower(system, analysis; label = 2)
 ```
 
-Compute the active power of a specific branch after obtaining the DC optimal power flow solution:
+Compute the active power after obtaining the DC optimal power flow solution:
 ```jldoctest
 system = powerSystem("case14.h5")
 dcModel!(system)
@@ -288,7 +289,7 @@ The abstract type `DC` can have the following subtypes:
 - `DCOptimalPowerFlow`: computes the power within the DC optimal power flow.
 
 # Examples
-Compute the active power of a specific branch after obtaining the DC power flow solution:
+Compute the active power after obtaining the DC power flow solution:
 ```jldoctest
 system = powerSystem("case14.h5")
 dcModel!(system)
@@ -298,7 +299,7 @@ solve!(system, analysis)
 to = toPower(system, analysis; label = 2)
 ```
 
-Compute the active power of a specific branch after obtaining the DC optimal power flow solution:
+Compute the active power after obtaining the DC optimal power flow solution:
 ```jldoctest
 system = powerSystem("case14.h5")
 dcModel!(system)
@@ -330,7 +331,7 @@ The abstract type `DC` can have the following subtypes:
 - `DCOptimalPowerFlow`: computes the power within the DC optimal power flow.
 
 # Examples
-Compute the active power of a specific generator after obtaining the DC power flow solution:
+Compute the active power after obtaining the DC power flow solution:
 ```jldoctest
 system = powerSystem("case14.h5")
 dcModel!(system)
@@ -340,7 +341,7 @@ solve!(system, analysis)
 generator = generatorPower(system, analysis; label = 1)
 ```
 
-Compute the active power of a specific generator after obtaining the DC optimal power flow
+Compute the active power after obtaining the DC optimal power flow
 solution:
 ```jldoctest
 system = powerSystem("case14.h5")
@@ -386,7 +387,7 @@ function generatorPower(system::PowerSystem, analysis::DCOptimalPowerFlow; label
     index = system.generator.label[getLabel(system.generator, label, "generator")]
     errorVoltage(analysis.voltage.angle)
 
-    return analysis.power.generator.active[system.generator.label[label]]
+    return analysis.power.generator.active[index]
 end
 
 ######### Powers at Branches ##########

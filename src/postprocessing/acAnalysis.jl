@@ -449,7 +449,7 @@ for i = 1:10
     end
     solve!(system, analysis)
 end
-active, reactive = shuntPower(system, analysis; label = 1)
+active, reactive = shuntPower(system, analysis; label = 9)
 ```
 
 Compute powers after obtaining the AC optimal power flow solution:
@@ -459,7 +459,7 @@ acModel!(system)
 
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
 solve!(system, analysis)
-active, reactive = shuntPower(system, analysis; label = 1)
+active, reactive = shuntPower(system, analysis; label = 9)
 ```
 """
 function shuntPower(system::PowerSystem, analysis::AC; label)
@@ -606,7 +606,7 @@ The abstract type `AC` can have the following subtypes:
 - `ACOptimalPowerFlow`: computes the power within the AC optimal power flow.
 
 # Examples
-Compute the reactive power after obtaining the AC power flow solution:
+Compute powers after obtaining the AC power flow solution:
 ```jldoctest
 system = powerSystem("case14.h5")
 acModel!(system)
@@ -622,7 +622,7 @@ end
 active, reactive = chargingPower(system, analysis; label = 2)
 ```
 
-Compute the reactive power after obtaining the AC optimal power flow solution:
+Compute powers after obtaining the AC optimal power flow solution:
 ```jldoctest
 system = powerSystem("case14.h5")
 acModel!(system)
@@ -665,7 +665,7 @@ The abstract type `AC` can have the following subtypes:
 - `ACOptimalPowerFlow`: computes the power within the AC optimal power flow.
 
 # Examples
-Compute the reactive power after obtaining the AC power flow solution:
+Compute powers after obtaining the AC power flow solution:
 ```jldoctest
 system = powerSystem("case14.h5")
 acModel!(system)
@@ -681,7 +681,7 @@ end
 active, reactive = seriesPower(system, analysis; label = 2)
 ```
 
-Compute the reactive power after obtaining the AC optimal power flow solution:
+Compute powers after obtaining the AC optimal power flow solution:
 ```jldoctest
 system = powerSystem("case14.h5")
 acModel!(system)
@@ -954,8 +954,8 @@ end
 """
     injectionCurrent(system::PowerSystem, analysis::AC; label)
 
-The function returns the current in the polar coordinate system associated with a specific
-bus in the AC framework. The `label` keyword argument must match an existing bus label.
+The function returns the current injection in the polar coordinate system associated with a
+specific bus in the AC framework. The `label` keyword argument must match an existing bus label.
 
 # Abstract type
 The abstract type `AC` can have the following subtypes:

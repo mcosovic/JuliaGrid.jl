@@ -50,22 +50,27 @@ Prefixes must be specified according to the
 the unit of `active` power (W), `reactive` power (VAr), or `apparent` power (VA). Also it
 is a possible to combine SI units with/without prefixes with per-units (pu).
 
-Changing the unit of active power is reflected in the following quantities:
-* [`addBranch!`](@ref addBranch!) if `type = 2`: `longTerm`, `shortTerm`, `emergency`;
-* [`addGenerator!`](@ref addGenerator!): `active`, `minActive`, `maxActive`, `lowActive`, `upActive`, `loadFollowing`, `reserve10min`, `reserve30min`;
-* [`updateBus!`](@ref updateBus!): `active`, `conductance`;
-* [`updateGenerator!`](@ref updateGenerator!): `active`;
-* [`cost!`](@ref cost!) if `cost = :active`: `piecewise`, `polynomial`.
+Changing the unit of `active` power is reflected in the following quantities:
+* [`addBus!`](@ref addBus!), [`updateBus!`](@ref updateBus!), [`@bus`](@ref @bus):
+  * `active`, `conductance`;
+* [`addBranch!`](@ref addBranch!), [`updateBranch!`](@ref updateBranch!), [`@branch`](@ref @branch):
+  * if `type = 2`: `longTerm`, `shortTerm`, `emergency`;
+* [`addGenerator!`](@ref addGenerator!), [`updateGenerator!`](@ref updateGenerator!), [`@generator`](@ref @generator):
+  * `active`, `minActive`, `maxActive`, `lowActive`, `upActive`, `loadFollowing`, `reserve10min`, `reserve30min`;
+* [`cost!`](@ref cost!):
+  * if `active`: `piecewise`, `polynomial`.
 
-Changing the unit of reactive power unit is reflected in the following quantities:
-* [`addBus!`](@ref addBus!): `reactive`, `susceptance`;
-* [`addGenerator!`](@ref addGenerator!): `reactive`, `minReactive`, `maxReactive`, `minLowReactive`, `maxLowReactive`, `minUpReactive`, `maxUpReactive`, `reactiveTimescale`,
-* [`updateBus!`](@ref updateBus!): `susceptance`;
-* [`updateGenerator!`](@ref updateGenerator!): `reactive`;
-* [`cost!`](@ref cost!) if `cost = :reactive`: `piecewise`, `polynomial`.
+Changing the unit of `reactive` power unit is reflected in the following quantities:
+* [`addBus!`](@ref addBus!), [`updateBus!`](@ref updateBus!), [`@bus`](@ref @bus):
+  * `reactive`, `susceptance`;
+* [`addGenerator!`](@ref addGenerator!), [`updateGenerator!`](@ref updateGenerator!), [`@generator`](@ref @generator):
+  * `reactive`, `minReactive`, `maxReactive`, `minLowReactive`, `maxLowReactive`, `minUpReactive`, `maxUpReactive`, `reactiveTimescale`;
+* [`cost!`](@ref cost!):
+  * if `reactive`: `piecewise`, `polynomial`.
 
-Changing the unit of apparent power unit is reflected in the following quantities:
-* [`addBranch!`](@ref addBranch!) if `type = 1` or `type = 3`: `longTerm`, `shortTerm`, `emergency`.
+Changing the unit of `apparent` power unit is reflected in the following quantities:
+* [`addBranch!`](@ref addBranch!), [`updateBranch!`](@ref updateBranch!), [`@branch`](@ref @branch):
+  * if `type = 1` or `type = 3`: `longTerm`, `shortTerm`, `emergency`.
 
 # Example
 ```jldoctest
@@ -96,19 +101,23 @@ to add or modified power system elements can be modified using the macro.
 The prefixes must adhere to the [SI prefixes](https://www.nist.gov/pml/owm/metric-si-prefixes)
 and should be specified along with the unit of voltage, either `magnitude` (V) or `base` (V).
 Alternatively, the unit of voltage `magnitude` can be expressed in per-unit (pu). The unit of
-voltage angle should be in radians (rad) or degrees (deg).
+voltage `angle` should be in radians (rad) or degrees (deg).
 
-Changing the unit of voltage magnitude is reflected in the following quantities:
-* [`addBus!`](@ref addBus!): `magnitude`, `minMagnitude`, `maxMagnitude`;
-* [`addGenerator!`](@ref addGenerator!): `magnitude`.
+Changing the unit of voltage `magnitude` is reflected in the following quantities:
+* [`addBus!`](@ref addBus!), [`updateBus!`](@ref updateBus!), [`@bus`](@ref @bus):
+  * `magnitude`, `minMagnitude`, `maxMagnitude`;
+* [`addGenerator!`](@ref addGenerator!), [`updateGenerator!`](@ref updateGenerator!), [`@generator`](@ref @generator):
+  * `magnitude`.
 
-Changing the unit of voltage angle is reflected in the following quantities:
-* [`addBus!`](@ref addBus!): `angle`;
-* [`addBranch!`](@ref addBranch!): `shiftAngle`, `minDiffAngle`, `maxDiffAngle`;
-* [`updateBranch!`](@ref updateBranch!): `shiftAngle`.
+Changing the unit of voltage `angle` is reflected in the following quantities:
+* [`addBus!`](@ref addBus!), [`updateBus!`](@ref updateBus!), [`@bus`](@ref @bus):
+  * `angle`;
+* [`addBranch!`](@ref addBranch!), [`updateBranch!`](@ref updateBranch!), [`@branch`](@ref @branch):
+  * `shiftAngle`, `minDiffAngle`, `maxDiffAngle`.
 
-Changing the unit prefix of voltage base is reflected in the following quantity:
-* [`addBus!`](@ref addBus!): `base`.
+Changing the unit prefix of voltage `base` is reflected in the following quantity:
+* [`addBus!`](@ref addBus!), [`updateBus!`](@ref updateBus!), [`@bus`](@ref @bus):
+  * `base`.
 
 # Example
 ```jldoctest
@@ -141,7 +150,7 @@ and should be specified along with the unit of current `magnitude` (V).
 Alternatively, the unit of current `magnitude` can be expressed in per-unit (pu). The unit
 of current angle should be in radians (rad) or degrees (deg).
 
-Changing the unit of current magnitude is reflected in the following quantities:
+Changing the unit of current `magnitude` is reflected in the following quantities:
 * ...
 
 # Example
@@ -175,14 +184,14 @@ In the case where impedance and admittance are being used in SI units (Ω and S
 units are related to the transformer, the assignment must be based on the primary side of
 the transformer.
 
-Changing the units of impedance is reflected in the following quantities in specific
+Changing the units of `impedance` is reflected in the following quantities in specific
 functions:
-* [`addBranch!`](@ref addBranch!): `resistance`, `reactance`;
-* [`updateBranch!`](@ref updateBranch!): `resistance`, `reactance`.
+* [`addBranch!`](@ref addBranch!), [`updateBranch!`](@ref updateBranch!), [`@branch`](@ref @branch):
+  * `resistance`, `reactance`.
 
-Changing the units of admittance is reflected in the following quantities:
-* [`addBranch!`](@ref addBranch!): `susceptance`;
-* [`updateBranch!`](@ref updateBranch!): `susceptance`.
+Changing the units of `admittance` is reflected in the following quantities:
+* [`addBranch!`](@ref addBranch!), [`updateBranch!`](@ref updateBranch!), [`@branch`](@ref @branch):
+  * `conductance` , `susceptance`.
 
 # Example
 ```jldoctest
@@ -236,9 +245,9 @@ function parsePrefix(input::String, suffixUser::String)
 end
 
 """
-The macro is designed to reset various settings to their default values.
-
     @default(mode)
+
+The macro is designed to reset various settings to their default values.
 
 The `mode` argument can take on the following values:
 * `unit`: resets all units to their default settings;
