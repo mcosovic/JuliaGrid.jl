@@ -6,7 +6,7 @@
 
 JuliaGrid is an open-source and easy-to-use simulation tool and solver designed for researchers and educators. It is available as a Julia package, with its source code released under the MIT License. JuliaGrid primarily focuses on steady-state power system analyses, offering a versatile set of algorithms and easy manipulation of power system configuration and analyses.
 
-We have rigorously tested and validated our simulation tool across various scenarios to the best of our abilities. Your feedback on errors, inaccuracies, or bugs as a user would be highly appreciated and can help improve future versions. For more details, visit our [documentation][documentation] site.
+We've rigorously tested and validated our simulation tool across various scenarios to the best of our abilities. Your feedback on errors, inaccuracies, or bugs as a user would be highly appreciated and can help improve future versions. For more details, visit our [documentation][documentation] site.
 
 ---
 
