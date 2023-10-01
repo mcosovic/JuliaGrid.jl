@@ -2,7 +2,7 @@
 
 [![Documentation][documentation-badge]][documentation] ![Build][build-badge]
 
-<a href="https://mcosovic.github.io/JuliaGrid.jl/stable/"><img align="left" width="145" src="/docs/src/assets/logo2.svg" /></a>
+<a href="https://mcosovic.github.io/JuliaGrid.jl/stable/"><img align="left" width="200" src="/docs/src/assets/logo2.svg" /></a>
 
 JuliaGrid is an open-source and easy-to-use simulation tool and solver developed for researchers and educators. It is available as a Julia package, and its source code is released under the MIT License. JuliaGrid primarily focuses on steady-state power system analyses, providing a versatile set of algorithms while also allowing for easy manipulation of both the power system configuration and the analyses involved.
 
@@ -17,13 +17,15 @@ import Pkg
 Pkg.add("JuliaGrid")
 ```
 
+---
+
 ### Contributors
  - [Ognjen Kundacina][ognjen] - Schneider Electric DMS NS LLC Novi Sad, Serbia
  - [Muhamed Delalic][muhamed] - University of Sarajevo, Bosnia and Herzegovina
  - Lin Zeng - Cornell University, Ithaca, NY, USA
  - [Mirsad Cosovic][mirsad] - University of Sarajevo, Bosnia and Herzegovina
----
 
+---
 
 [documentation-badge]: https://github.com/mcosovic/JuliaGrid.jl/workflows/Documentation/badge.svg
 [build-badge]: https://github.com/mcosovic/JuliaGrid.jl/workflows/Build/badge.svg
