@@ -113,7 +113,7 @@ Active power injections are stored as the vector ``\mathbf{P} = [P_i]``, and can
 ##### Active Power Injections from the Generators
 The active power supplied by generators to the buses can be calculated by summing the given generator active powers in the input data, except for the slack bus, which can be determined as:
 ```math
-    P_{\text{s}i} = P_i + P_{\text{d}i},\;\;\; \forall i \in \mathcal{N}_{\text{sb}},
+    P_{\text{s}i} = P_i + P_{\text{d}i},\;\;\; i \in \mathcal{N}_{\text{sb}},
 ```
 where ``P_{\text{d}i}`` represents the active power demanded by consumers at the slack bus. The vector of active power injected by generators to the buses, denoted by ``\mathbf{P}_{\text{s}} = [P_{\text{s}i}]``, can be obtained using the following command:
 ```@repl PowerFlowSolutionDC
@@ -148,7 +148,7 @@ The output active power of each generator located at bus ``i \in \mathcal{N}_{\t
 ```math
     P_{\text{g}i} = P_i + P_{\text{d}i},\;\;\; i \in \mathcal{N}_{\text{sb}}.
 ```
-In the case of multiple generators connected to the slack bus, the first generator in the input data is assigned the obtained value of ``P_{\text{g}i}``. Then, this amount of power is reduced by the output active power of the other generators. 
+In the case of multiple generators connected to the slack bus, the first generator in the input data is assigned the obtained value of ``P_{\text{g}i}``. Then, this amount of power is reduced by the output active power of the other generators.
 
 To retrieve the vector of active power outputs of generators, denoted as ``\mathbf{P}_{\text{g}} = [P_{\text{g}i}]``, ``i \in \mathcal{P}``, where the set ``\mathcal{P}`` represents the set of generators, users can utilize the following command:
 ```@repl PowerFlowSolutionDC

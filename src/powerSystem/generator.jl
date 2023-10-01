@@ -248,7 +248,6 @@ function addGenerator!(system::PowerSystem, analysis::ACOptimalPowerFlow;
     end
 end
 
-
 """
     updateGenerator!(system::PowerSystem, analysis::Analysis; kwargs...)
 
