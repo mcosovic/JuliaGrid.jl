@@ -1,6 +1,6 @@
 ## JuliaGrid
 
-[![Documentation][documentation-badge]][documentation] ![Build][build-badge]
+[![Documentation][documentation-badge]][documentation] [![Build][build-badge]][build] [![Codecov][codecov-badge]][codecov]
 
 <a href="https://mcosovic.github.io/JuliaGrid.jl/stable/"><img align="left" width="290" src="/docs/src/assets/logo2.svg" /></a>
 
@@ -18,6 +18,8 @@ Pkg.add("JuliaGrid")
 ```
 
 [documentation-badge]: https://github.com/mcosovic/JuliaGrid.jl/workflows/Documentation/badge.svg
-[build-badge]: https://github.com/mcosovic/JuliaGrid.jl/workflows/Build/badge.svg
 [documentation]: https://mcosovic.github.io/JuliaGrid.jl/stable/
-
+[build-badge]: https://github.com/mcosovic/JuliaGrid.jl/workflows/Build/badge.svg
+[build]: https://github.com/mcosovic/JuliaGrid.jl/actions
+[codecov-badge]: https://codecov.io/github/mcosovic/JuliaGrid.jl/branch/master/graph/badge.svg
+[codecov]: https://app.codecov.io/github/mcosovic/JuliaGrid.jl
