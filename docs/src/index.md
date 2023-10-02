@@ -93,3 +93,11 @@ updateBus!(system, analysis; label = 1, type = 1) # Modify the existing bus
 updateBus!(system, analysis; label = 2, type = 3) # Designate the new slack bus
 solve!(system, analysis)                          # Compute new solution in the updated setup
 ```
+
+---
+
+#### Contributors
+ - [Ognjen Kundacina](https://www.linkedin.com/in/ognjen-kundacina-machine-learning-guy/) - The Institute for Artificial Intelligence Research and Development of Serbia
+ - [Muhamed Delalic](https://www.linkedin.com/in/muhameddelalic/) - University of Sarajevo, Bosnia and Herzegovina
+ - Lin Zeng - Cornell University, Ithaca, NY, USA
+ - [Mirsad Cosovic](https://www.linkedin.com/in/mirsad-cosovic-5a4972a9/) - University of Sarajevo, Bosnia and Herzegovina

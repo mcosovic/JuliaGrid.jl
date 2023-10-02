@@ -19,17 +19,7 @@ Pkg.add("JuliaGrid")
 
 ---
 
-### Contributors
- - [Ognjen Kundacina][ognjen] - Schneider Electric DMS NS LLC Novi Sad, Serbia
- - [Muhamed Delalic][muhamed] - University of Sarajevo, Bosnia and Herzegovina
- - Lin Zeng - Cornell University, Ithaca, NY, USA
- - [Mirsad Cosovic][mirsad] - University of Sarajevo, Bosnia and Herzegovina
-
----
-
 [documentation-badge]: https://github.com/mcosovic/JuliaGrid.jl/workflows/Documentation/badge.svg
 [build-badge]: https://github.com/mcosovic/JuliaGrid.jl/workflows/Build/badge.svg
 [documentation]: https://mcosovic.github.io/JuliaGrid.jl/stable/
-[mirsad]: https://www.linkedin.com/in/mirsad-cosovic-5a4972a9/
-[ognjen]: https://www.linkedin.com/in/ognjen-kundacina-machine-learning-guy/
-[muhamed]: https://www.linkedin.com/in/muhameddelalic/
+

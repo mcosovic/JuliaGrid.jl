@@ -6,6 +6,7 @@ system14 = powerSystem(string(pathData, "case14optimal.m"))
     ######## Modified IEEE 14-bus Test Case ##########
     acModel!(system14)
     analysis = acOptimalPowerFlow(system14, Ipopt.Optimizer)
+    JuMP.set_silent(analysis.jump)
     solve!(system14, analysis)
     power!(system14, analysis)
     current!(system14, analysis)
@@ -115,6 +116,7 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     ################ Modified IEEE 14-bus Test Case ################
     dcModel!(system14)
     analysis = dcOptimalPowerFlow(system14, Ipopt.Optimizer)
+    JuMP.set_silent(analysis.jump)
     solve!(system14, analysis)
     power!(system14, analysis)
 
@@ -146,6 +148,7 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     ################ Modified IEEE 30-bus Test Case ################
     dcModel!(system30)
     analysis = dcOptimalPowerFlow(system30, HiGHS.Optimizer)
+    JuMP.set_silent(analysis.jump)
     solve!(system30, analysis)
     power!(system30, analysis)
 
