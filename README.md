@@ -17,8 +17,6 @@ import Pkg
 Pkg.add("JuliaGrid")
 ```
 
----
-
 [documentation-badge]: https://github.com/mcosovic/JuliaGrid.jl/workflows/Documentation/badge.svg
 [build-badge]: https://github.com/mcosovic/JuliaGrid.jl/workflows/Build/badge.svg
 [documentation]: https://mcosovic.github.io/JuliaGrid.jl/stable/
