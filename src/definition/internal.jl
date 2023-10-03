@@ -238,6 +238,3 @@ Base.@kwdef mutable struct PrefixLive
     baseVoltage::Float64 = 1.0
 end
 prefix = PrefixLive()
-
-########### Live Power System Data ###########
-systemList = Dict{UInt128, Dict{String, Int64}}()

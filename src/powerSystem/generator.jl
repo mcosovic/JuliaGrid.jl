@@ -89,7 +89,7 @@ function addGenerator!(system::PowerSystem;
     default = template.generator
 
     system.generator.number += 1
-    setLabel(generator, system.uuid, label, "generator")
+    setLabel(generator, label, "generator")
 
     busIndex = system.bus.label[getLabel(system.bus, bus, "bus")]
 

@@ -67,7 +67,7 @@ function addBus!(system::PowerSystem;
     default = template.bus
 
     bus.number += 1
-    setLabel(bus, system.uuid, label, "bus")
+    setLabel(bus, label, "bus")
 
     push!(bus.layout.type, unitless(type, default.type))
     if !(bus.layout.type[end] in [1, 2, 3])

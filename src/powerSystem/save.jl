@@ -60,6 +60,7 @@ function saveBus(system::PowerSystem, file)
     write(file, "bus/layout/label", label)
     attrs(file["bus/layout/label"])["unit"] = "dimensionless"
     attrs(file["bus/layout/label"])["format"] = "expand"
+    write(file, "bus/layout/maxLabel", layout.maxLabel)
 
     write(file, "bus/layout/type", layout.type)
     attrs(file["bus/layout/type"])["demand bus (PQ)"] = 1
@@ -133,6 +134,7 @@ function saveBranch(system::PowerSystem, labelBus::Array{String,1}, file)
     write(file, "branch/layout/label", label)
     attrs(file["branch/layout/label"])["unit"] = "dimensionless"
     attrs(file["branch/layout/label"])["format"] = "expand"
+    write(file, "branch/layout/maxLabel", layout.maxLabel)
 
     format = compresseArray(file, parameter.resistance, "branch/parameter/resistance")
     attrs(file["branch/parameter/resistance"])["unit"] = "per-unit (pu)"
@@ -232,6 +234,7 @@ function saveGenerator(system::PowerSystem, labelBus::Array{String,1}, file)
     write(file, "generator/layout/label", label)
     attrs(file["generator/layout/label"])["unit"] = "dimensionless"
     attrs(file["generator/layout/label"])["format"] = "expand"
+    write(file, "generator/layout/maxLabel", layout.maxLabel)
 
     format = compresseArray(file, output.active, "generator/output/active")
     attrs(file["generator/output/active"])["unit"] = "per-unit (pu)"

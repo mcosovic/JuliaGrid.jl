@@ -23,6 +23,7 @@ mutable struct BusLayout
     area::Array{Int64,1}
     lossZone::Array{Int64,1}
     slack::Int64
+    maxLabel::Int64
 end
 
 mutable struct BusSupply
@@ -67,6 +68,7 @@ mutable struct BranchLayout
     from::Array{Int64,1}
     to::Array{Int64,1}
     status::Array{Int8,1}
+    maxLabel::Int64
 end
 
 mutable struct Branch
@@ -123,6 +125,7 @@ mutable struct GeneratorLayout
     bus::Array{Int64,1}
     area::Array{Float64,1}
     status::Array{Int8,1}
+    maxLabel::Int64
 end
 
 mutable struct Generator
@@ -185,5 +188,4 @@ mutable struct PowerSystem
     generator::Generator
     base::BaseData
     model::Model
-    const uuid::UUID
 end

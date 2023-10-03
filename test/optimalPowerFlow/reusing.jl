@@ -221,6 +221,7 @@ end
     cost!(resystem, reusing; label = 10, active = 1, piecewise = [10.2 14.3; 11.5 16.1; 12.8 18.6])
     cost!(resystem, reusing; label = 9, active = 2, polynomial = [856.2; 135.3; 80])
 
+    startingPrimal!(resystem, reusing)
     solve!(resystem, reusing)
     power!(resystem, reusing)
 
@@ -237,4 +238,3 @@ end
         @test num_constraints(analysis.jump, list[1], list[2]) == num_constraints(reusing.jump, list[1], list[2])
     end
 end
-

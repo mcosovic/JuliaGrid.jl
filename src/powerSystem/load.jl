@@ -15,8 +15,7 @@ The `PowerSystem` composite type with the following fields:
 - `branch`: data related to branches;
 - `generator`: data related to generators;
 - `base`: base power and base voltages;
-- `model`: data associated with AC (nonlinear) or DC (linear) analyses;
-- `uuid`: universally unique identifier for the power system.
+- `model`: data associated with AC (nonlinear) or DC (linear) analyses.
 
 # Units
 JuliaGrid stores all data in per-units and radians format which are fixed, the exceptions are
@@ -78,19 +77,19 @@ function powerSystem()
     supply = BusSupply(copy(af), copy(af), copy(af))
     shunt = BusShunt(copy(af), copy(af))
     voltageBus = BusVoltage(copy(af), copy(af), copy(af), copy(af))
-    layoutBus = BusLayout(ai8, copy(ai), copy(ai), 0)
+    layoutBus = BusLayout(ai8, copy(ai), copy(ai), 0, 0)
 
     parameter = BranchParameter(copy(af), copy(af), copy(af), copy(af), copy(af), copy(af))
     flow = BranchFlow(copy(af), copy(af), copy(af), copy(ai8))
     voltageBranch = BranchVoltage(copy(af), copy(af))
-    layoutBranch = BranchLayout(copy(ai), copy(ai), copy(ai8))
+    layoutBranch = BranchLayout(copy(ai), copy(ai), copy(ai8), 0)
 
     output = GeneratorOutput(copy(af), copy(af))
     capability = GeneratorCapability(copy(af), copy(af), copy(af), copy(af), copy(af), copy(af), copy(af), copy(af), copy(af), copy(af))
     ramping = GeneratorRamping(copy(af), copy(af), copy(af), copy(af))
     cost = GeneratorCost(Cost(copy(ai8), [], []), Cost(copy(ai), [], []))
     voltageGenerator =  GeneratorVoltage(copy(af))
-    layoutGenerator = GeneratorLayout(copy(ai), copy(af), copy(ai8))
+    layoutGenerator = GeneratorLayout(copy(ai), copy(af), copy(ai8), 0)
 
     basePower = BasePower(1e8, "VA", 1.0)
     baseVoltage = BaseVoltage(copy(af), "V", 1.0)
@@ -98,15 +97,12 @@ function powerSystem()
     acModel = ACModel(copy(sp), copy(sp), ac, copy(ac), copy(ac), copy(ac), copy(ac))
     dcModel = DCModel(sp, copy(af), copy(af))
 
-    id = setUUID()
-
     return PowerSystem(
         Bus(label, demand, supply, shunt, voltageBus, layoutBus, 0),
         Branch(copy(label), parameter, flow, voltageBranch, layoutBranch, 0),
         Generator(copy(label), output, capability, ramping, voltageGenerator, cost, layoutGenerator, 0),
         BaseData(basePower, baseVoltage),
-        Model(acModel, dcModel),
-        id)
+        Model(acModel, dcModel))
 end
 
 ######## Load Bus Data from HDF5 File ##########
@@ -129,16 +125,11 @@ function loadBus(system::PowerSystem, hdf5::HDF5.File)
     @inbounds for i = 1:bus.number
         bus.label[label[i]] = i
 
-        labelInt64 = tryparse(Int64, label[i])
-        if labelInt64 !== nothing
-            maxLabel = max(maxLabel, labelInt64)
-        end
-
         if bus.layout.type[i] == 3
             bus.layout.slack = i
         end
     end
-    systemList[system.uuid.value]["bus"] = maxLabel
+    bus.layout.maxLabel = read(layouth5["maxLabel"])
 
     demandh5 = hdf5["bus/demand"]
     bus.demand.active = readHDF5(demandh5, "active", bus.number)
@@ -173,7 +164,7 @@ function loadBranch(system::PowerSystem, hdf5::HDF5.File)
 
     branch.layout.status = readHDF5(layouth5, "status", branch.number)
     branch.label = Dict(zip(read(layouth5["label"]), collect(1:branch.number)))
-    systemList[system.uuid.value]["branch"] = branch.number
+    branch.layout.maxLabel = read(layouth5["maxLabel"])
 
     parameterh5 = hdf5["branch/parameter"]
     branch.parameter.resistance = readHDF5(parameterh5, "resistance", branch.number)
@@ -208,7 +199,7 @@ function loadGenerator(system::PowerSystem, hdf5::HDF5.File)
     generator.layout.area = readHDF5(layouth5, "area", generator.number)
     generator.layout.status = readHDF5(layouth5, "status", generator.number)
     generator.label = Dict(zip(read(layouth5["label"]), collect(1:generator.number)))
-    systemList[system.uuid.value]["generator"] = generator.number
+    generator.layout.maxLabel = read(layouth5["maxLabel"])
 
     outputh5 = hdf5["generator/output"]
     generator.output.active = readHDF5(outputh5, "active", generator.number)
@@ -355,7 +346,9 @@ function loadBus(system::PowerSystem, busLine::Array{String,1})
 
         bus.label[data[1]] = k
         labelInt64 = parse(Int64, data[1])
-        maxLabel = max(maxLabel, labelInt64)
+        if bus.layout.maxLabel < labelInt64
+            bus.layout.maxLabel = labelInt64
+        end
 
         bus.demand.active[k] = parse(Float64, data[3]) * basePowerInv
         bus.demand.reactive[k] = parse(Float64, data[4]) * basePowerInv
@@ -378,7 +371,6 @@ function loadBus(system::PowerSystem, busLine::Array{String,1})
 
         system.base.voltage.value[k] = parse(Float64, data[10]) * 1e3
     end
-    systemList[system.uuid.value]["bus"] = maxLabel
 
     if bus.layout.slack == 0
         bus.layout.slack = 1
@@ -446,7 +438,7 @@ function loadBranch(system::PowerSystem, branchLine::Array{String,1})
         branch.layout.from[k] = system.bus.label[data[1]]
         branch.layout.to[k] = system.bus.label[data[2]]
     end
-    systemList[system.uuid.value]["branch"] = branch.number
+    branch.layout.maxLabel = branch.number
 end
 
 ######## Load Generator Data from MATLAB File ##########
@@ -524,7 +516,7 @@ function loadGenerator(system::PowerSystem, generatorLine::Array{String,1}, gene
             system.bus.supply.reactive[i] += generator.output.reactive[k]
         end
     end
-    systemList[system.uuid.value]["generator"] = generator.number
+    generator.layout.maxLabel = generator.number
 
     generator.cost.active.model = fill(Int8(0), system.generator.number)
     generator.cost.active.polynomial = [Array{Float64}(undef, 0) for i = 1:system.generator.number]

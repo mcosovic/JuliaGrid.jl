@@ -41,33 +41,11 @@ end
     return fullpath, extension
 end
 
-######### Renumbering #########
-@inline function runRenumbering(newIndex::Array{Int64,1}, indexNumber::Int64, lookup::Dict{Int64,Int64})
-    @inbounds for i = 1:indexNumber
-        newIndex[i] = lookup[newIndex[i]]
-    end
-
-    return newIndex
-end
-
 ######### Error Voltage ##########
 @inline function errorVoltage(voltage)
     if isempty(voltage)
         error("The voltage values are missing.")
     end
-end
-
-######### Power System Live State ##########
-function setUUID()
-    id = uuid4()
-    systemList[id.value] = Dict(
-        "bus" => 0,
-        "branch" => 0,
-        "generator" => 0,
-        "voltmeter" => 0
-    )
-
-    return id
 end
 
 ######### Impedance Base Value ##########
@@ -137,31 +115,34 @@ function unitless(value, default)
 end
 
 ######### Set Label ##########
-function setLabel(component, id::UUID, label::Missing, key::String)
-    systemList[id.value][key] += 1
-    setindex!(component.label, component.number, string(systemList[id.value][key]))
+function setLabel(component, label::Missing, key::String)
+    component.layout.maxLabel += 1
+    setindex!(component.label, component.number, string(component.layout.maxLabel))
 end
 
-function setLabel(component, id::UUID, label::String, key::String)
+function setLabel(component, label::String, key::String)
     if haskey(component.label, label)
         throw(ErrorException("The label $label is not unique."))
     end
 
     labelInt64 = tryparse(Int64, label)
     if labelInt64 !== nothing
-        systemList[id.value][key] = max(systemList[id.value][key], labelInt64)
+        if component.layout.maxLabel < labelInt64
+            component.layout.maxLabel = labelInt64
+        end
     end
     setindex!(component.label, component.number, label)
 end
 
-function setLabel(component, id::UUID, label::Int64, key::String)
+function setLabel(component, label::Int64, key::String)
     labelString = string(label)
     if haskey(component.label, labelString)
         throw(ErrorException("The label $label is not unique."))
     end
 
-    systemList[id.value][key] = max(systemList[id.value][key], label)
-
+    if component.layout.maxLabel < label
+        component.layout.maxLabel = label
+    end
     setindex!(component.label, component.number, labelString)
 end
 

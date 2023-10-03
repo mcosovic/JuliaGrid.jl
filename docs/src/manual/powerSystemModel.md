@@ -1,6 +1,6 @@
 # [Power System Model](@id PowerSystemModelManual)
 
-The JuliaGrid supports the composite type `PowerSystem` to preserve power system data, with the following fields: `bus`, `branch`, `generator`, `base`, `model`, and `uuid`. The fields `bus`, `branch`, and `generator` hold data related to buses, branches, and generators, respectively. The `base` field stores base values for power and voltages, with the default being three-phase power measured in volt-amperes for the base power and line-to-line voltages measured in volts for base voltages. The `model` stores vectors and matrices that are related to the topology and parameters of the power system. Lastly, the `uuid` field contains a universally unique identifier, as assigned by JuliaGrid, which manages the behavior of the `PowerSystem` type across different functions.
+The JuliaGrid supports the composite type `PowerSystem` to preserve power system data, with the following fields: `bus`, `branch`, `generator`, `base`, and `model`. The fields `bus`, `branch`, and `generator` hold data related to buses, branches, and generators, respectively. The `base` field stores base values for power and voltages, with the default being three-phase power measured in volt-amperes for the base power and line-to-line voltages measured in volts for base voltages. The `model` stores vectors and matrices that are related to the topology and parameters of the power system. 
 
 The composite type `PowerSystem` can be created using a function:
 * [`powerSystem`](@ref powerSystem).

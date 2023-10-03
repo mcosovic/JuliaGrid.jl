@@ -86,7 +86,7 @@ function addBranch!(system::PowerSystem;
     default = template.branch
 
     branch.number += 1
-    setLabel(branch, system.uuid, label, "branch")
+    setLabel(branch, label, "branch")
 
     if from == to
         throw(ErrorException("The provided value for the from or to keywords is not valid."))
