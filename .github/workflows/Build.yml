@@ -1,7 +1,12 @@
 name: Build
-
-on: [push, pull_request]
-
+on:
+  pull_request:
+    branches:
+      - master
+  push:
+    branches:
+      - master
+    tags: '*'
 jobs:
   test:
     runs-on: ${{ matrix.os }}
