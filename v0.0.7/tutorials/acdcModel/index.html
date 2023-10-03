@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>AC and DC Model · JuliaGrid</title><meta name="title" content="AC and DC Model · JuliaGrid"/><meta property="og:title" content="AC and DC Model · JuliaGrid"/><meta property="twitter:title" content="AC and DC Model · JuliaGrid"/><meta name="description" content="Documentation for JuliaGrid."/><meta property="og:description" content="Documentation for JuliaGrid."/><meta property="twitter:description" content="Documentation for JuliaGrid."/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script><link href="../../assets/tablestyle.css" rel="stylesheet" type="text/css"/></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.svg" alt="JuliaGrid logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../../">JuliaGrid</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Introduction</a></li><li><input class="collapse-toggle" id="menuitem-2" type="checkbox"/><label class="tocitem" for="menuitem-2"><span class="docs-label">Manual</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../manual/powerSystemModel/">Power System Model</a></li><li><a class="tocitem" href="../../manual/acPowerFlow/">AC Power Flow</a></li><li><a class="tocitem" href="../../manual/dcPowerFlow/">DC Power Flow</a></li><li><a class="tocitem" href="../../manual/acOptimalPowerFlow/">AC Optimal Power Flow</a></li><li><a class="tocitem" href="../../manual/dcOptimalPowerFlow/">DC Optimal Power Flow</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-3" type="checkbox" checked/><label class="tocitem" for="menuitem-3"><span class="docs-label">Tutorials</span><i class="docs-chevron"></i></label><ul class="collapsed"><li class="is-active"><a class="tocitem" href>AC and DC Model</a><ul class="internal"><li><a class="tocitem" href="#ACModelTutorials"><span>AC Model</span></a></li><li><a class="tocitem" href="#DCModelTutorials"><span>DC Model</span></a></li><li><a class="tocitem" href="#ACDCModelReferenceTutorials"><span>References</span></a></li></ul></li><li><a class="tocitem" href="../acPowerFlow/">AC Power Flow</a></li><li><a class="tocitem" href="../dcPowerFlow/">DC Power Flow</a></li><li><a class="tocitem" href="../acOptimalPowerFlow/">AC Optimal Power Flow</a></li><li><a class="tocitem" href="../dcOptimalPowerFlow/">DC Optimal Power Flow</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-4" type="checkbox"/><label class="tocitem" for="menuitem-4"><span class="docs-label">API Reference</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../api/powerSystemModel/">Power System Model</a></li><li><a class="tocitem" href="../../api/powerFlow/">Power Flow</a></li><li><a class="tocitem" href="../../api/optimalPowerFlow/">Optimal Power Flow</a></li><li><a class="tocitem" href="../../api/analysis/">Power and Current Analysis</a></li><li><a class="tocitem" href="../../api/configuration/">Configuration Setup</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Tutorials</a></li><li class="is-active"><a href>AC and DC Model</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>AC and DC Model</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/mcosovic/JuliaGrid.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/mcosovic/JuliaGrid.jl/blob/master/docs/src/tutorials/acdcModel.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="ACDCModelTutorials"><a class="docs-heading-anchor" href="#ACDCModelTutorials">AC and DC Model</a><a id="ACDCModelTutorials-1"></a><a class="docs-heading-anchor-permalink" href="#ACDCModelTutorials" title="Permalink"></a></h1><p>The power system analyses commonly utilize the unified branch model that provides linear relationships between voltages and currents. However, as the focus is on power calculations rather than current calculations, the resulting equations become nonlinear, posing challenges in solving them <a href="#ACDCModelReferenceTutorials">[1]</a>. Hence, to accurately analyze power systems without any approximations, we use the AC model, which is a crucial component of our framework. In contrast, to obtain a linear system of equations for various DC analyses, we introduce approximations in the unified branch model, resulting in the DC model.</p><p>A common way to describe the power system network topology is through the bus/branch model, which employs the two-port <span>$\pi$</span>-model, which results in the unified branch model. The bus/branch model can be represented by a graph denoted by <span>$\mathcal{G} = (\mathcal{N}, \mathcal{E})$</span>, where the set of nodes <span>$\mathcal{N} = \{1, \dots, n\}$</span> corresponds to buses, and the set of edges <span>$\mathcal{E} \subseteq \mathcal{N} \times \mathcal{N}$</span> represents the branches of the power network.</p><p>Let us now construct the power system:</p><pre><code class="language-julia hljs">@power(MW, MVAr, MVA)
+@voltage(pu, deg, V)
+
+system = powerSystem()
+
+addBus!(system; label = 1, type = 3)
+addBus!(system; label = 2, type = 1, active = 21.7, reactive = 12.7)
+addBus!(system; label = 3, type = 2, conductance = 2.1, susceptance = 1.2)
+
+addBranch!(system; from = 1, to = 2, resistance = 0.02, reactance = 0.06, susceptance = 0.05)
+addBranch!(system; from = 1, to = 3, reactance = 0.21, turnsRatio = 0.98, shiftAngle = 1.2)
+addBranch!(system; from = 2, to = 3, resistance = 0.13, reactance = 0.26, conductance = 1e-3)
+
+addGenerator!(system; bus = 1, active = 40.0, reactive = 42.4)</code></pre><p>The given example provides the set of buses and branches:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; 𝒩 = collect(keys(sort(system.bus.label)))</code><code class="nohighlight hljs ansi" style="display:block;">3-element Vector{String}:
+ &quot;1&quot;
+ &quot;2&quot;
+ &quot;3&quot;</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; ℰ = [𝒩[system.branch.layout.from] 𝒩[system.branch.layout.to]]</code><code class="nohighlight hljs ansi" style="display:block;">3×2 Matrix{String}:
+ &quot;1&quot;  &quot;2&quot;
+ &quot;1&quot;  &quot;3&quot;
+ &quot;2&quot;  &quot;3&quot;</code></pre><div class="admonition is-category-ukw"><header class="admonition-header">Notation</header><div class="admonition-body"><p>In this section, when referring to a vector <span>$\mathbf{a}$</span>, we use the notation <span>$\mathbf{a} = [a_{ij}]$</span>, where <span>$a_{ij}$</span> represents the generic element associated with the branch <span>$(i,j) \in \mathcal{E}$</span>.</p></div></div><hr/><h2 id="ACModelTutorials"><a class="docs-heading-anchor" href="#ACModelTutorials">AC Model</a><a id="ACModelTutorials-1"></a><a class="docs-heading-anchor-permalink" href="#ACModelTutorials" title="Permalink"></a></h2><p>JuliaGrid is based on common network elements and benefits from the unified branch model to perform various analyses based on the system of nonlinear equations. To generate matrices and vectors for AC or nonlinear analysis, JuliaGrid employs the <a href="../../api/powerSystemModel/#JuliaGrid.acModel!"><code>acModel!</code></a> function. To demonstrate the usage of this function, consider the power system defined in the previous example. In order to apply the <a href="../../api/powerSystemModel/#JuliaGrid.acModel!"><code>acModel!</code></a> function to this power system, the following code can be executed:</p><pre><code class="language-julia hljs">acModel!(system)</code></pre><hr/><h5 id="UnifiedBranchModelTutorials"><a class="docs-heading-anchor" href="#UnifiedBranchModelTutorials">Unified Branch Model</a><a id="UnifiedBranchModelTutorials-1"></a><a class="docs-heading-anchor-permalink" href="#UnifiedBranchModelTutorials" title="Permalink"></a></h5><p>The equivalent unified <span>$\pi$</span>-model for a branch <span>$(i,j) \in \mathcal{E}$</span> incident to the buses <span>$\{i,j\} \in \mathcal{N}$</span> is shown in Figure 1.</p><img src="../../assets/pi_model.svg" class="center" width="600"/>
+<figcaption>Figure 1: The equivalent branch model, where the transformer is located at "from" bus end of the branch.</figcaption>
+&nbsp;<div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p>The directions of the currents <span>$\bar{I}_{ij}$</span>, <span>$\bar{I}_{ji}$</span>, <span>$\bar{I}_{\text{s}i}$</span>, and <span>$\bar{I}_{\text{s}j}$</span> are initially defined to come out from the nodes or buses. This convention proves particularly valuable during power flow analyses. In cases where active or reactive power is positive, it signifies alignment with the assumed current direction, flowing away from the bus. Conversely, when power is negative, the direction is reversed, indicating a flow towards the bus. These current directions, in conjunction with <span>$\bar{I}_{\text{s}ij}$</span>, are consistently employed by JuliaGrid in its calculations of powers or currents.</p></div></div><p>The branch series admittance <span>$y_{ij}$</span> is inversely proportional to the branch series impedance <span>$z_{ij}$</span>:</p><p class="math-container">\[  y_{ij} = \frac{1}{z_{ij}} =
+  \frac{1}{{r_{ij}} + \text{j}x_{ij}} =
+  \frac{r_{ij}}{r_{ij}^2 + x_{ij}^2} - \text{j}\frac{x_{ij}}{r_{ij}^2 + x_{ij}^2} = g_{ij} + \text{j}b_{ij},\]</p><p>where <span>$r_{ij}$</span> is a resistance, <span>$x_{ij}$</span> is a reactance, <span>$g_{ij}$</span> is a conductance and <span>$b_{ij}$</span> is a susceptance of the branch.</p><p>The vectors of resistances, denoted by <span>$\mathbf{r} = [r_{ij}]$</span>, and reactances, denoted by <span>$\mathbf{x} = [x_{ij}]$</span>, are stored in the variables:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; 𝐫 = system.branch.parameter.resistance</code><code class="nohighlight hljs ansi" style="display:block;">3-element Vector{Float64}:
+ 0.02
+ 0.0
+ 0.13</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; 𝐱 = system.branch.parameter.reactance</code><code class="nohighlight hljs ansi" style="display:block;">3-element Vector{Float64}:
+ 0.06
+ 0.21
+ 0.26</code></pre><p>Moreover, the <code>ac</code> field stores the computed vector of branch series admittances <span>$\mathbf{y} = [y_{ij}]$</span>:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; 𝐲 = system.model.ac.admittance</code><code class="nohighlight hljs ansi" style="display:block;">3-element Vector{ComplexF64}:
+  5.000000000000001 - 15.0im
+                0.0 - 4.761904761904762im
+ 1.5384615384615383 - 3.0769230769230766im</code></pre><p>The branch shunt admittance <span>$y_{\text{s}ij}$</span> is equal to:</p><p class="math-container">\[y_{\text{s}ij} = g_{\text{s}ij} + \text{j} b_{\text{s}ij},\]</p><p>where <span>$g_{\text{s}ij}$</span> represents the shunt conductance of the branch, and <span>$b_{\text{s}ij}$</span> represents the shunt susceptance. Both of these values are positive for real line sections. It is worth noting that while the shunt conductance <span>$g_{\text{s}ij}$</span> is often insignificantly small and can be ignored in many cases, it is included in the analyses to ensure comprehensive consideration of all potential scenarios.</p><p>Within JuliaGrid, the total shunt conductances and susceptances of branches are stored. In order to obtain the vectors <span>$\mathbf{g}_\text{s} = [g_{\text{s}ij}]$</span> and <span>$\mathbf{b}_\text{s} = [b_{\text{s}ij}]$</span>, the conductances and susceptances must be distributed by considering the ends of the branches:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; 𝐠ₛ = 0.5 * system.branch.parameter.conductance</code><code class="nohighlight hljs ansi" style="display:block;">3-element Vector{Float64}:
+ 0.0
+ 0.0
+ 0.0005</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; 𝐛ₛ = 0.5 * system.branch.parameter.susceptance</code><code class="nohighlight hljs ansi" style="display:block;">3-element Vector{Float64}:
+ 0.025
+ 0.0
+ 0.0</code></pre><p>The transformer complex ratio <span>$\alpha_{ij}$</span> is defined:</p><p class="math-container">\[  \alpha_{ij} = \cfrac{1}{\tau_{ij}}e^{-\text{j}\phi_{ij}},\]</p><p>where <span>$\tau_{ij} \neq 0$</span> is a transformer turns ratio, while <span>$\phi_{ij}$</span> is a transformer phase shift angle, always located &quot;from&quot; bus end of the branch. Note, if <span>$\tau_{ij} = 1$</span> and <span>$\phi_{ij} = 0$</span> the model describes the line. In-phase transformers are defined if <span>$\tau_{ij} \neq 1$</span>, <span>$\phi_{ij} = 0$</span>, and <span>$y_{\text{s}ij} = 0$</span>, while phase-shifting transformers are obtained if <span>$\tau_{ij} \neq 1$</span>, <span>$\phi_{ij} \neq 0$</span>, and <span>$y_{\text{s}ij} = 0$</span>.</p><p>These transformer parameters are stored in the vectors <span>$\bm{\tau} = [\tau_{ij}]$</span> and <span>$\bm{\phi} = [\phi_{ij}]$</span>, respectively:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; 𝛕 = system.branch.parameter.turnsRatio</code><code class="nohighlight hljs ansi" style="display:block;">3-element Vector{Float64}:
+ 1.0
+ 0.98
+ 1.0</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; 𝚽 = system.branch.parameter.shiftAngle</code><code class="nohighlight hljs ansi" style="display:block;">3-element Vector{Float64}:
+ 0.0
+ 0.020943951023931952
+ 0.0</code></pre><p>Using Kirchhoff&#39;s circuit laws, the unified branch model can be described by complex expressions:</p><p class="math-container">\[  \begin{bmatrix}
+    \bar{I}_{ij} \\ \bar{I}_{ji}
+  \end{bmatrix} =
+  \begin{bmatrix}
+    \cfrac{1}{\tau_{ij}^2}({y}_{ij} + y_{\text{s}ij}) &amp; -\alpha_{ij}^*{y}_{ij}\\
+    -\alpha_{ij}{y}_{ij} &amp; {y}_{ij} + y_{\text{s}ij}
+  \end{bmatrix}
+  \begin{bmatrix}
+    \bar{V}_{i} \\ \bar{V}_{j}
+  \end{bmatrix}.\]</p><p>The values of the vectors <span>$\mathbf{y}_{\text{ii}} = [({y}_{ij} + y_{\text{s}ij}) / \tau_{ij}^2]$</span>, <span>$\mathbf{y}_{\text{ij}} = [-\alpha_{ij}^*{y}_{ij}]$</span>, <span>$\mathbf{y}_{\text{ji}} = [-\alpha_{ij}{y}_{ij}]$</span>, and <span>$\mathbf{y}_{\text{jj}} = [{y}_{ij} + y_{\text{s}ij}]$</span> can be found stored in the variables:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; 𝐲ᵢᵢ = system.model.ac.nodalFromFrom</code><code class="nohighlight hljs ansi" style="display:block;">3-element Vector{ComplexF64}:
+  5.000000000000001 - 14.975im
+                0.0 - 4.958251522183217im
+ 1.5389615384615383 - 3.0769230769230766im</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; 𝐲ᵢⱼ = system.model.ac.nodalFromTo</code><code class="nohighlight hljs ansi" style="display:block;">3-element Vector{ComplexF64}:
+   -5.000000000000001 + 15.0im
+ -0.10176102955955761 + 4.858020813774759im
+  -1.5384615384615383 + 3.0769230769230766im</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; 𝐲ⱼᵢ = system.model.ac.nodalToFrom</code><code class="nohighlight hljs ansi" style="display:block;">3-element Vector{ComplexF64}:
+  -5.000000000000001 + 15.0im
+ 0.10176102955955761 + 4.858020813774759im
+ -1.5384615384615383 + 3.0769230769230766im</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; 𝐲ⱼⱼ = system.model.ac.nodalToTo</code><code class="nohighlight hljs ansi" style="display:block;">3-element Vector{ComplexF64}:
+  5.000000000000001 - 14.975im
+                0.0 - 4.761904761904762im
+ 1.5389615384615383 - 3.0769230769230766im</code></pre><hr/><h5 id="SystemEquationsNodalMatrixTutorials"><a class="docs-heading-anchor" href="#SystemEquationsNodalMatrixTutorials">System of Equations and Nodal Matrix</a><a id="SystemEquationsNodalMatrixTutorials-1"></a><a class="docs-heading-anchor-permalink" href="#SystemEquationsNodalMatrixTutorials" title="Permalink"></a></h5><p>Let us consider an example, given in Figure 2, that will allow us an easy transition to the general case. We observe system with three buses <span>$\mathcal{N} = \{p, k, q\}$</span> and two branches <span>$\mathcal{E} = \{(p, k), (k, q)\}$</span>, where the bus <span>$k$</span> is incident to the shunt element with admittance <span>${y}_{\text{sh}k}$</span>.</p><img src="../../assets/pi_model_example.svg" class="center" width="710"/>
+<figcaption>Figure 2: The example of the system with three buses and two branches.</figcaption>
+&nbsp;<div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p>The current <span>$\bar{I}_{\text{sh}k}$</span> follows the convention of coming out from the bus in terms of its direction. When calculating powers related to shunt elements, this current direction is assumed. Therefore, in cases where power is positive, it signifies alignment with the assumed current direction, emerging away from the bus. Conversely, when power is negative, the direction is reversed, indicating a flow towards the bus.</p></div></div><p>According to the <a href="#UnifiedBranchModelTutorials">Unified Branch Model</a> each branch is described using the system of equations as follows:</p><p class="math-container">\[  \begin{bmatrix}
+    \bar{I}_{pk} \\ \bar{I}_{kp}
+  \end{bmatrix} =
+  \begin{bmatrix}
+    \cfrac{1}{\tau_{pk}^2}({y}_{pk} + y_{\text{s}pk}) &amp; -\alpha_{pk}^*{y}_{pk}\\
+    -\alpha_{pk}{y}_{pk} &amp; {y}_{pk} + y_{\text{s}pk}
+  \end{bmatrix}
+  \begin{bmatrix}
+    \bar{V}_{p} \\ \bar{V}_{k}
+  \end{bmatrix}\]</p><p class="math-container">\[  \begin{bmatrix}
+    \bar{I}_{kq} \\ \bar{I}_{qk}
+  \end{bmatrix} =
+  \begin{bmatrix}
+    \cfrac{1}{\tau_{kq}^2}({y}_{kq} + y_{\text{s}kq}) &amp; -\alpha_{kq}^*{y}_{kq}\\
+    -\alpha_{kq}{y}_{kq} &amp; {y}_{kq} + y_{\text{s}kq}
+  \end{bmatrix}
+  \begin{bmatrix}
+    \bar{V}_{k} \\ \bar{V}_{q}
+  \end{bmatrix}.\]</p><p>The complex current injections at buses are:</p><p class="math-container">\[  \begin{aligned}
+    \bar{I}_{p} &amp;= \bar{I}_{pk} = \cfrac{1}{\tau_{pk}^2}({y}_{pk} + y_{\text{s}pk}) \bar{V}_{p} -\alpha_{kq}^*{y}_{kq} \bar{V}_{k} \\
+    \bar{I}_{k} &amp;= \bar{I}_{kp} + \bar{I}_{kq} + \bar{I}_{\text{sh}k} =
+    -\alpha_{kq}{y}_{kq} \bar{V}_{p} + ({y}_{kq} + y_{\text{s}kq}) \bar{V}_{k} +
+    \cfrac{1}{\tau_{kq}^2}({y}_{kq} + y_{\text{s}kq}) \bar{V}_{k} -\alpha_{kq}^*{y}_{kq} \bar{V}_{q} + {y}_{\text{sh}k} \bar{V}_k \\
+    \bar{I}_{q} &amp;= \bar{I}_{qk} = -\alpha_{kq}{y}_{kq} \bar{V}_{k} + ({y}_{kq} + y_{\text{s}kq}) \bar{V}_{q}.
+  \end{aligned}\]</p><p>The system of equations can be written in the matrix form:</p><p class="math-container">\[  \begin{bmatrix}
+    \bar{I}_{p} \\ \bar{I}_{k} \\ \bar{I}_{q}
+  \end{bmatrix} =
+  \begin{bmatrix}
+    \cfrac{1}{\tau_{pk}^2}({y}_{pk} + y_{\text{s}pk}) &amp; -\alpha_{kq}^*{y}_{kq} &amp; 0 \\
+   -\alpha_{kq}{y}_{kq} &amp; {y}_{kq} + y_{\text{s}kq} + \cfrac{1}{\tau_{kq}^2}({y}_{kq} + y_{\text{s}kq}) + {y}_{\text{sh}k}  &amp; -\alpha_{kq}^*{y}_{kq} \\
+    0 &amp; -\alpha_{kq}{y}_{kq} &amp; {y}_{kq} + y_{\text{s}kq}
+  \end{bmatrix}
+  \begin{bmatrix}
+    \bar{V}_{p} \\ \bar{V}_{k} \\ \bar{V}_{q}
+  \end{bmatrix}.\]</p><p>Next, the system of equations for buses <span>$i=1, \dots, n$</span> can be written in the matrix form:</p><p class="math-container">\[  \mathbf {\bar {I}} = \mathbf{Y} \mathbf {\bar {V}},\]</p><p>where <span>$\mathbf {\bar {V}} \in \mathbb{C}^{n}$</span> is the vector of bus complex voltages, and <span>$\mathbf {\bar {I}} \in \mathbb{C}^{n}$</span> is the vector of complex current injections at buses.</p><p>The matrix <span>$\mathbf{Y} = \mathbf{G} + \text{j}\mathbf{B} \in \mathbb{C}^{n \times n}$</span> is the bus or nodal admittance matrix, with elements:</p><ul><li>the diagonal elements, where <span>$i \in \mathcal{N}$</span>, are equal to:<p class="math-container">\[Y_{ii} = G_{ii} + \text{j}B_{ii} = {y}_{\text{sh}i} +
+\sum\limits_{e \in \mathcal{E}, \; e(1) = i} \cfrac{1}{\tau_{ij}^2}({y}_{ij} + y_{\text{s}ij}) + \sum\limits_{e \in \mathcal{E}, \; e(2) = i} ({y}_{ij} + y_{\text{s}ij}),\]</p></li><li>the non-diagonal elements, where <span>$i = e(1),\; j = e(2), \; e \in \mathcal{E}$</span>, are equal to:<p class="math-container">\[Y_{ij} = G_{ij} + \text{j}B_{ij} = -\alpha_{ij}^*{y}_{ij}\]</p><p class="math-container">\[Y_{ji} = G_{ji} + \text{j}B_{ji} = -\alpha_{ij}{y}_{ij}.\]</p></li></ul><p>When a branch is not incident (or adjacent) to a bus the corresponding element in the nodal admittance matrix <span>$\mathbf{Y}$</span> is equal to zero. The nodal admittance matrix <span>$\mathbf{Y}$</span> is a sparse (i.e., a small number of elements are non-zeros) for real-world power systems. Although it is often assumed that the matrix <span>$\mathbf{Y}$</span> is symmetrical, it is not a general case, for example, in the presence of phase shifting transformers the matrix <span>$\mathbf{Y}$</span> is not symmetrical <a href="#ACDCModelReferenceTutorials">[2, Sec. 9.6]</a>. JuliaGrid stores both the matrix <span>$\mathbf{Y}$</span> and its transpose <span>$\mathbf{Y}^T$</span> in the <code>ac</code> field of the <code>PowerSystem</code> composite type:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; 𝐘 = system.model.ac.nodalMatrix</code><code class="nohighlight hljs ansi" style="display:block;">3×3 SparseArrays.SparseMatrixCSC{ComplexF64, Int64} with 9 stored entries:
+      5.0-19.9333im      -5.0+15.0im     -0.101761+4.85802im
+     -5.0+15.0im      6.53896-18.0519im   -1.53846+3.07692im
+ 0.101761+4.85802im  -1.53846+3.07692im    1.55996-7.82683im</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; 𝐘ᵀ = system.model.ac.nodalMatrixTranspose</code><code class="nohighlight hljs ansi" style="display:block;">3×3 SparseArrays.SparseMatrixCSC{ComplexF64, Int64} with 9 stored entries:
+       5.0-19.9333im      -5.0+15.0im     0.101761+4.85802im
+      -5.0+15.0im      6.53896-18.0519im  -1.53846+3.07692im
+ -0.101761+4.85802im  -1.53846+3.07692im   1.55996-7.82683im</code></pre><hr/><h2 id="DCModelTutorials"><a class="docs-heading-anchor" href="#DCModelTutorials">DC Model</a><a id="DCModelTutorials-1"></a><a class="docs-heading-anchor-permalink" href="#DCModelTutorials" title="Permalink"></a></h2><p>The DC model is obtained by linearisation of the nonlinear model, and it provides an approximate solution. In the typical operating conditions, the difference of bus voltage angles between adjacent buses <span>$(i,j) \in \mathcal{E}$</span> is very small <span>$\theta_{i}-\theta_{j} \approx 0$</span>, which implies <span>$\cos \theta_{ij}\approx 1$</span> and <span>$\sin \theta_{ij} \approx \theta_{ij}$</span>. Further, all bus voltage magnitudes are <span>$V_i \approx 1$</span>, <span>$i \in \mathcal{N}$</span>, and all branch shunt admittances and branch resistances can be neglected. This implies that the DC model ignores the reactive powers and transmission losses and takes into account only the active powers. Therefore, the DC power flow takes only bus voltage angles <span>$\bm \theta$</span> as variables. To create vectors and matrices related to DC or linear analyses, JuliaGrid uses the function <a href="../../api/powerSystemModel/#JuliaGrid.dcModel!"><code>dcModel!</code></a>. Therefore, we can continue with the previous example:</p><pre><code class="language-julia hljs">dcModel!(system)</code></pre><hr/><h5 id="DCUnifiedBranchModelTutorials"><a class="docs-heading-anchor" href="#DCUnifiedBranchModelTutorials">Unified Branch Model</a><a id="DCUnifiedBranchModelTutorials-1"></a><a class="docs-heading-anchor-permalink" href="#DCUnifiedBranchModelTutorials" title="Permalink"></a></h5><p>According to the above assumptions, we start from the <a href="#UnifiedBranchModelTutorials">Unified Branch Model</a>:</p><p class="math-container">\[  \begin{bmatrix}
+    \bar{I}_{ij} \\ \bar{I}_{ji}
+  \end{bmatrix} = \cfrac{1}{\text{j}x_{ij}}
+  \begin{bmatrix}
+    \cfrac{1}{\tau_{ij}^2} &amp;&amp; -\alpha_{ij}^*\\
+    -\alpha_{ij} &amp;&amp; 1
+  \end{bmatrix}
+  \begin{bmatrix}
+    \bar{V}_{i} \\ \bar{V}_{j}
+  \end{bmatrix},\]</p><p>where <span>$\bar{V}_{i} = \text{e}^{\text{j}\theta_{i}}$</span> and <span>$\bar{V}_{j} = \text{e}^{\text{j}\theta_{j}}$</span>. Further, we have:</p><p class="math-container">\[  \begin{aligned}
+    \bar{I}_{ij} &amp;= \cfrac{1}{\text{j}x_{ij}} \left[\cfrac{1}{\tau_{ij}^2} \text{e}^{\text{j}\theta_{i}} -
+    \cfrac{1}{\tau_{ij}}e^{\text{j}(\phi_{ij} + \theta_j)} \right] \\
+    \bar{I}_{ji} &amp;= \cfrac{1}{\text{j}x_{ij}} \left[-\cfrac{1}{\tau_{ij}}e^{\text{j}(\theta_i - \phi_{ij})} + \text{e}^{\text{j}\theta_{j}} \right].
+  \end{aligned}\]</p><p>The active power flows are derived as follows:</p><p class="math-container">\[  \begin{aligned}
+    P_{ij} &amp;= \Re\{\bar{V}_{i}\bar{I}_{ij}^*\} =
+    \Re \left\{\text{j}\cfrac{1}{x_{ij}}
+    \left[\cfrac{1}{\tau_{ij}^2} - \cfrac{1}{\tau_{ij}}e^{\text{j}(\theta_i - \theta_j - \phi_{ij})} \right]  \right\} \\
+    P_{ji} &amp;= \Re\{\bar{V}_{j}\bar{I}_{ji}^*\} =
+    \Re \left\{\text{j}\cfrac{1}{x_{ij}}
+   \left[1-\cfrac{1}{\tau_{ij}}e^{\text{j}(-\theta_i +\theta_j + \phi_{ij})} \right]  \right\}.
+  \end{aligned}\]</p><p>The real components are:</p><p class="math-container">\[  \begin{aligned}
+    P_{ij} &amp;=\cfrac{1}{\tau_{ij}x_{ij}} \sin(\theta_{i} -\theta_{j}-\phi_{ij}) \approx \cfrac{1}{\tau_{ij} x_{ij}} (\theta_{i} -\theta_{j}-\phi_{ij}) \\
+    P_{ji} &amp;=\cfrac{1}{\tau_{ij}x_{ij}} \sin(\theta_{j} -\theta_{i}+\phi_{ij}) \approx -\cfrac{1}{\tau_{ij} x_{ij}} (\theta_{i} - \theta_{j}-\phi_{ij}),
+  \end{aligned}\]</p><p>where <span>${1}/({\tau_{ij} x_{ij}})$</span> represents the branch admittance in the DC framework. To recall, the <code>PowerSystem</code> composite type stores the reactances as vector <span>$\mathbf{x} = [x_{ij}]$</span> in the variable:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; 𝐱 = system.branch.parameter.reactance</code><code class="nohighlight hljs ansi" style="display:block;">3-element Vector{Float64}:
+ 0.06
+ 0.21
+ 0.26</code></pre><p>Furthermore, the computed branch admittances in the DC framework are stored in the vector <span>$\mathbf{y} = [{1}/({\tau_{ij} x_{ij}})]$</span>:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; 𝐲 = system.model.dc.admittance</code><code class="nohighlight hljs ansi" style="display:block;">3-element Vector{Float64}:
+ 16.666666666666668
+  4.8590864917395535
+  3.846153846153846</code></pre><p>We can conclude that <span>$P_{ij}=-P_{ji}$</span> holds. With the DC model, the linear network equations relate active powers to bus voltage angles, versus complex currents to complex bus voltages in the AC model <a href="#ACDCModelReferenceTutorials">[3]</a>. Consequently, analogous to the <a href="#UnifiedBranchModelTutorials">Unified Branch Model</a> we can write:</p><p class="math-container">\[  \begin{bmatrix}
+    P_{ij} \\ P_{ji}
+  \end{bmatrix} = \cfrac{1}{\tau_{ij}x_{ij}}
+  \begin{bmatrix}
+    1 &amp;&amp; -1\\
+    -1 &amp;&amp; 1
+  \end{bmatrix}
+  \begin{bmatrix}
+    \theta_{i} \\ \theta_{j}
+  \end{bmatrix} + \cfrac{\phi_{ij}}{\tau_{ij}x_{ij}}
+  \begin{bmatrix}
+    -1 \\ 1
+  \end{bmatrix}.\]</p><hr/><h5 id="SystemEquationsNodalMatrixTutorials-2"><a class="docs-heading-anchor" href="#SystemEquationsNodalMatrixTutorials-2">System of Equations and Nodal Matrix</a><a class="docs-heading-anchor-permalink" href="#SystemEquationsNodalMatrixTutorials-2" title="Permalink"></a></h5><p>As before, let us consider an example of the DC framework, given in Figure 3, that will allow us an easy transition to the general case. We observe system with three buses <span>$\mathcal{N} = \{p, k, q\}$</span> and two branches <span>$\mathcal{E} = \{(p, k), (k, q)\}$</span>, where the bus <span>$k$</span> is incident to the shunt element with conductance <span>${g}_{\text{sh}k}$</span>.</p><img src="../../assets/dc_model.svg" class="center" width="600" />
+<figcaption>Figure 3: The example of the system with three buses and two branches.</figcaption>
+&nbsp;<p>Each branch in the DC framework is described with a system of equations as follows:</p><p class="math-container">\[  \begin{bmatrix}
+    P_{pk} \\ P_{kp}
+  \end{bmatrix} = \cfrac{1}{\tau_{pk}x_{pk}}
+  \begin{bmatrix}
+    1 &amp;&amp; -1\\
+    -1 &amp;&amp; 1
+  \end{bmatrix}
+  \begin{bmatrix}
+    \theta_{p} \\ \theta_{k}
+  \end{bmatrix} + \cfrac{\phi_{pk}}{\tau_{pk}x_{pk}}
+  \begin{bmatrix}
+    -1 \\ 1
+  \end{bmatrix}\]</p><p class="math-container">\[  \begin{bmatrix}
+    P_{kq} \\ P_{qk}
+  \end{bmatrix} = \cfrac{1}{\tau_{kq}x_{kq}}
+  \begin{bmatrix}
+    1 &amp;&amp; -1\\
+    -1 &amp;&amp; 1
+  \end{bmatrix}
+  \begin{bmatrix}
+    \theta_{k} \\ \theta_{q}
+  \end{bmatrix} + \cfrac{\phi_{kq}}{\tau_{kq}x_{kq}}
+  \begin{bmatrix}
+    -1 \\ 1
+  \end{bmatrix}.\]</p><p>The active power injections at buses are:</p><p class="math-container">\[  \begin{aligned}
+    P_{p} &amp;= P_{pk} =\cfrac{1}{\tau_{pk}x_{pk}} \theta_{p} - \cfrac{1}{\tau_{pk}x_{pk}} \theta_{k} - \cfrac{\phi_{pk}}{\tau_{pk}x_{pk}} \\
+    P_{k} &amp;= P_{kp} + P_{kq} + P_{\text{sh}k} = -\cfrac{1}{\tau_{pk}x_{pk}} \theta_{p} + \cfrac{1}{\tau_{pk}x_{pk}} \theta_{k} + \cfrac{\phi_{pk}}{\tau_{pk}x_{pk}} +
+    \cfrac{1}{\tau_{kq}x_{kq}} \theta_{k} - \cfrac{1}{\tau_{kq}x_{kq}} \theta_{q} - \cfrac{\phi_{kq}}{\tau_{kq}x_{kq}} + {g}_{\text{sh}k} \\
+    P_{q} &amp;= {P}_{qk} = -\cfrac{1}{\tau_{kq}x_{kq}} \theta_{k} +\cfrac{1}{\tau_{kq}x_{kq}} \theta_{q} + \cfrac{\phi_{kq}}{\tau_{kq}x_{kq}},
+  \end{aligned}\]</p><p>where the active power injected by the shunt element at the bus <span>$k$</span> is equal to:</p><p class="math-container">\[  P_{\text{sh}k} = \Re\{\bar{V}_{k}\bar{I}_{\text{sh}k}^*\} = \Re\{\bar{V}_{k}{y}_{\text{sh}k}^*\bar{V}_{k}^*\} = V_k^2 {g}_{\text{sh}k} = {g}_{\text{sh}k}.\]</p><p>The system of equations can be written in the matrix form:</p><p class="math-container">\[  \begin{bmatrix}
+    P_{p} \\ P_{k} \\ P_{q}
+  \end{bmatrix} =
+  \begin{bmatrix}
+    \cfrac{1}{\tau_{pk}x_{pk}} &amp; - \cfrac{1}{\tau_{pk}x_{pk}} &amp; 0 \\
+    -\cfrac{1}{\tau_{pk}x_{pk}} &amp; \cfrac{1}{\tau_{pk}x_{pk}} + \cfrac{1}{\tau_{kq}x_{kq}}  &amp; -\cfrac{1}{\tau_{kq}x_{kq}} \\
+    0 &amp; -\cfrac{1}{\tau_{kq}x_{kq}} &amp;\cfrac{1}{\tau_{kq}x_{kq}}
+  \end{bmatrix}
+  \begin{bmatrix}
+    \theta_{p} \\ \theta_{k} \\ \theta_{q}
+  \end{bmatrix} +
+  \begin{bmatrix}
+    - \cfrac{\phi_{pk}}{\tau_{pk}x_{pk}} \\ \cfrac{\phi_{pk}}{\tau_{pk}x_{pk}} - \cfrac{\phi_{kq}}{\tau_{kq}x_{kq}} \\ \cfrac{\phi_{kq}}{\tau_{kq}x_{kq}}
+  \end{bmatrix} +
+  \begin{bmatrix}
+    0 \\ {g}_{\text{sh}k} \\ 0
+  \end{bmatrix}.\]</p><p>Next, the system of equations for <span>$i=1,\dots,n$</span> can be written in the matrix form:</p><p class="math-container">\[  \mathbf {P} = \mathbf{B} \bm {\theta} + \mathbf{P_\text{tr}} + \mathbf{P}_\text{sh},\]</p><p>where <span>$\bm \theta \in \mathbb{R}^{n}$</span> is the vector of bus voltage angles.</p><p>The vector <span>$\mathbf {P} \in \mathbb{R}^{n}$</span> contains active power injections at buses caused by generators and demands. In JuliaGrid, the vector can be recovered using a command:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; 𝐏 = system.bus.supply.active - system.bus.demand.active</code><code class="nohighlight hljs ansi" style="display:block;">3-element Vector{Float64}:
+  0.4
+ -0.217
+  0.0</code></pre><p>The vector <span>$\mathbf{P_\text{tr}} \in \mathbb{R}^{n}$</span> represents active powers related to the non-zero shift angle of transformers. This vector is stored in the <code>dc</code> field, and we can access it using:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; 𝐏ₜᵣ = system.model.dc.shiftPower</code><code class="nohighlight hljs ansi" style="display:block;">3-element Vector{Float64}:
+ -0.10176846950404254
+  0.0
+  0.10176846950404254</code></pre><p>The vector <span>$\mathbf{P}_\text{sh} \in \mathbb{R}^{n}$</span> represents active powers consumed by shunt elements. We can access this vector using:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; 𝐏ₛₕ = system.bus.shunt.conductance</code><code class="nohighlight hljs ansi" style="display:block;">3-element Vector{Float64}:
+ 0.0
+ 0.0
+ 0.021</code></pre><p>The bus or nodal matrix in the DC framework is given as <span>$\mathbf{B} \in \mathbb{C}^{n \times n}$</span>, with elements:</p><ul><li>the diagonal elements, where <span>$i \in \mathcal{N}$</span>, are equal to:<p class="math-container">\[B_{ii} = \sum\limits_{e \in \mathcal{E},\; i \in e} \cfrac{1}{\tau_{ij}x_{ij}},\]</p></li><li>the non-diagonal elements, where <span>$i = e(1),\; j = e(2), \; e \in \mathcal{E}$</span>, are equal to:<p class="math-container">\[B_{ij} = -\cfrac{1}{\tau_{ij}x_{ij}}\]</p><p class="math-container">\[B_{ji} = -\cfrac{1}{\tau_{ij}x_{ij}}.\]</p></li></ul><p>The sparse nodal matrix <span>$\mathbf{B}$</span> is stored in the <code>dc</code> field, and we can access it using:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; 𝐁 = system.model.dc.nodalMatrix</code><code class="nohighlight hljs ansi" style="display:block;">3×3 SparseArrays.SparseMatrixCSC{Float64, Int64} with 9 stored entries:
+  21.5258   -16.6667   -4.85909
+ -16.6667    20.5128   -3.84615
+  -4.85909   -3.84615   8.70524</code></pre><hr/><h2 id="ACDCModelReferenceTutorials"><a class="docs-heading-anchor" href="#ACDCModelReferenceTutorials">References</a><a id="ACDCModelReferenceTutorials-1"></a><a class="docs-heading-anchor-permalink" href="#ACDCModelReferenceTutorials" title="Permalink"></a></h2><p>[1] G. Andersson, <em>Power system analysis</em>, EEH-Power Systems Laboratory, ETH Zurich, Lecture Notes 2012.</p><p>[2] J. Grainger and W. Stevenson, <em>Power system analysis</em>, ser. McGraw-Hill series in electrical and computer engineering: Power and energy. McGraw-Hill, 1994.</p><p>[3] R. D. Zimmerman, C. E. Murillo-Sanchez, <em>MATPOWER User’s Manual</em>, Version 7.0. 2019.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../manual/dcOptimalPowerFlow/">« DC Optimal Power Flow</a><a class="docs-footer-nextpage" href="../acPowerFlow/">AC Power Flow »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="auto">Automatic (OS)</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.1.0 on <span class="colophon-date" title="Tuesday 3 October 2023 11:47">Tuesday 3 October 2023</span>. Using Julia version 1.8.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
