@@ -1,8 +1,8 @@
 module JuliaGrid
 
 using SparseArrays, LinearAlgebra, SuiteSparse
-using HDF5, UUIDs
-using JuMP, HiGHS, Ipopt
+using JuMP
+using HDF5
 
 ######### Types and Constants ##########
 include("definition/internal.jl")
