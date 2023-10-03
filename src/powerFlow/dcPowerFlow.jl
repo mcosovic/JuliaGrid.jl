@@ -15,7 +15,6 @@ following fields:
 - `voltage`: the variable allocated to store the bus voltage angles;
 - `power`: the variable allocated to store the active powers;
 - `factorization`: the factorized nodal matrix.
-- `uuid`: a universally unique identifier associated with the `PowerSystem` composite type.
 
 # Example
 ```jldoctest
@@ -76,8 +75,7 @@ function dcPowerFlow(system::PowerSystem)
             CartesianReal(Float64[]),
             CartesianReal(Float64[])
         ),
-        factorization,
-        system.uuid
+        factorization
     )
 end
 
@@ -99,8 +97,6 @@ solve!(system, analysis)
 ```
 """
 function solve!(system::PowerSystem, analysis::DCPowerFlow)
-    checkUUID(system.uuid, analysis.uuid)
-
     bus = system.bus
 
     b = copy(bus.supply.active)

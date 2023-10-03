@@ -1,5 +1,6 @@
 export AC, DC, ACPowerFlow, OptimalPowerFlow
-export NewtonRaphson, DCPowerFlow, DCOptimalPowerFlow, ACOptimalPowerFlow
+export NewtonRaphson, FastNewtonRaphson, GaussSeidel, DCPowerFlow
+export DCOptimalPowerFlow, ACOptimalPowerFlow
 
 ########### Abstract Types ###########
 abstract type AC end
@@ -50,7 +51,6 @@ struct NewtonRaphson <: ACPowerFlow
     power::Power
     current::Current
     method::NewtonRaphsonMethod
-    uuid::UUID
 end
 
 ########### Fast Newton-Raphson ###########
@@ -73,7 +73,6 @@ struct FastNewtonRaphson <: ACPowerFlow
     power::Power
     current::Current
     method::FastNewtonRaphsonMethod
-    uuid::UUID
 end
 
 ########### Gauss-Seidel ###########
@@ -88,7 +87,6 @@ struct GaussSeidel <: ACPowerFlow
     power::Power
     current::Current
     method::GaussSeidelMethod
-    uuid::UUID
 end
 
 ########### DC Power Flow ###########
@@ -96,7 +94,6 @@ struct DCPowerFlow <: DC
     voltage::PolarAngle
     power::DCPower
     factorization::SuiteSparse.CHOLMOD.Factor{Float64}
-    uuid::UUID
 end
 
 ######### Constraints ##########
@@ -154,7 +151,6 @@ mutable struct ACOptimalPowerFlow <: AC
     variable::ACVariable
     constraint::Constraint
     objective::ACObjective
-    uuid::UUID
 end
 
 ######### DC Optimal Power Flow ##########
@@ -184,5 +180,6 @@ mutable struct DCOptimalPowerFlow <: DC
     variable::DCVariable
     constraint::DCConstraint
     objective::JuMP.QuadExpr
-    uuid::UUID
 end
+
+

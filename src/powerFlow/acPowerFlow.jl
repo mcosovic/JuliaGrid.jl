@@ -12,8 +12,7 @@ type, which includes the following fields:
 - `voltage`: the bus voltage magnitudes and angles;
 - `power`: the variable allocated to store the active and reactive powers;
 - `current`: the variable allocated to store the currents;
-- `method`: contains the Jacobian matrix, power injection mismatches, bus voltage increments, and indices;
-- `uuid`: a universally unique identifier associated with the `PowerSystem` composite type.
+- `method`: contains the Jacobian matrix, power injection mismatches, bus voltage increments, and indices.
 
 # Example
 ```jldoctest
@@ -127,8 +126,7 @@ function newtonRaphson(system::PowerSystem)
             increment,
             pqIndex,
             pvpqIndex
-        ),
-        system.uuid
+        )
     )
 end
 
@@ -146,8 +144,7 @@ type, which includes the following fields:
 - `voltage`: the bus voltage magnitudes and angles;
 - `power`: the variable allocated to store the active and reactive powers;
 - `current`: the variable allocated to store the currents;
-- `method`: contains Jacobian matrices, power injection mismatches, bus voltage increments, and indices;
-- `uuid`: a universally unique identifier associated with the `PowerSystem` composite type.
+- `method`: contains Jacobian matrices, power injection mismatches, bus voltage increments, and indices.
 
 # Example
 ```jldoctest
@@ -178,8 +175,7 @@ type, which includes the following fields:
 - `voltage`: the bus voltage magnitudes and angles;
 - `power`: the variable allocated to store the active and reactive powers;
 - `current`: the variable allocated to store the currents;
-- `method`: contains Jacobian matrices, power injection mismatches, bus voltage increments, and indices;
-- `uuid`: a universally unique identifier associated with the `PowerSystem` composite type.
+- `method`: contains Jacobian matrices, power injection mismatches, bus voltage increments, and indices.
 
 # Example
 ```jldoctest
@@ -369,8 +365,7 @@ end
             ),
             pqIndex,
             pvpqIndex
-        ),
-        system.uuid
+        )
     )
 end
 
@@ -388,8 +383,7 @@ type, which includes the following fields:
 - `voltage`: the bus voltage magnitudes and angles;
 - `power`: the variable allocated to store the active and reactive powers;
 - `current`: the variable allocated to store the currents;
-- `method`: contains the bus complex voltages and indices;
-- `uuid`: a universally unique identifier associated with the `PowerSystem` composite type.
+- `method`: contains the bus complex voltages and indices.
 
 # Example
 ```jldoctest
@@ -445,8 +439,7 @@ function gaussSeidel(system::PowerSystem)
             voltage,
             pqIndex,
             pvIndex
-        ),
-        system.uuid
+        )
     )
 end
 

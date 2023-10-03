@@ -1,8 +1,8 @@
-@testset "AC Optimal Power Flow" begin
+@testset "Reusing AC Optimal Power Flow" begin
     @default(unit)
     @default(template)
 
-    ################ Resuing First Pass ################
+    ################ Reusing First Pass ################
     system = powerSystem(string(pathData, "case14optimal.m"))
 
     updateBus!(system; label = 1, type = 1, active = 0.15, reactive = 0.2, conductance = 0.16, angle = -0.1)
@@ -80,7 +80,7 @@
         @test num_constraints(analysis.jump, list[1], list[2]) == num_constraints(reusing.jump, list[1], list[2])
     end
 
-    ################ Resuing Second Pass ################
+    ################ Reusing Second Pass ################
     updateBus!(system; label = 1, type = 1, conductance = 0.06, susceptance = 0.8, angle = -0.01)
     updateBranch!(system; label = 21, status = 0)
     updateBranch!(system; label = 22, reactance = 0.35, longTerm = 0.22)
@@ -128,11 +128,11 @@
     end
 end
 
-@testset "DC Optimal Power Flow" begin
+@testset "Reusing DC Optimal Power Flow" begin
     @default(unit)
     @default(template)
 
-    ################ Resuing First Pass ################
+    ################ Reusing First Pass ################
     system = powerSystem(string(pathData, "case14test.m"))
 
     updateBus!(system; label = 1, type = 1, active = 0.15, conductance = 0.16, angle = -0.1)
@@ -196,7 +196,7 @@ end
         @test num_constraints(analysis.jump, list[1], list[2]) == num_constraints(reusing.jump, list[1], list[2])
     end
 
-    ################ Resuing Second Pass ################
+    ################ Reusing Second Pass ################
     updateBus!(system; label = 1, type = 1, conductance = 0.06, angle = -0.01)
     updateBranch!(system; label = 21, status = 0)
     updateBranch!(system; label = 22, reactance = 0.35, longTerm = 0.22)

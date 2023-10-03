@@ -1,4 +1,4 @@
-@testset "Build and Update in Per-Unit" begin
+@testset "Build and Update in Per-Units" begin
     system = powerSystem(string(pathData, "build.m"))
     rad = pi / 180
 
@@ -9,7 +9,7 @@
     @branch(minDiffAngle = 0, maxDiffAngle = 360 * pi / 180, susceptance = 0.14, resistance = 0.09, reactance = 0.02)
     @generator(minReactive = -0.5, maxReactive = 0.9)
 
-    addBus!(systemPU; label = 1, type = 3, active = 0.17, conductance = 0.09)
+    addBus!(systemPU; label = "1", type = 3, active = 0.17, conductance = 0.09)
     addBus!(systemPU; label = 2, type = 2, magnitude = 1.1, minMagnitude = 0.9, base = 115e3)
     addBus!(systemPU; label = 4, active = 0.7, reactive = 0.05, susceptance = 0.3)
     addBus!(systemPU; label = 5, active = 2, reactive = 0.5, angle = -1.8 * rad)
@@ -19,7 +19,7 @@
     addBus!(systemPU; label = 9, active = 0.4, reactive = 0.04, base = 115e3)
 
     addBranch!(systemPU; from = 8, to = 5, susceptance = 0, turnsRatio = 0.956, shiftAngle = 2.2 * rad)
-    addBranch!(systemPU; from = 5, to = 6, susceptance = 0, turnsRatio = 1.05)
+    addBranch!(systemPU; from = "5", to = "6", susceptance = 0, turnsRatio = 1.05)
     addBranch!(systemPU; from = 4, to = 6, resistance = 0.17, reactance = 0.31, status = 0)
     addBranch!(systemPU; from = 5, to = 7, resistance = 0.01, reactance = 0.05, shortTerm = 0.05)
     addBranch!(systemPU; from = 2, to = 9, reactance = 0.06, susceptance = 0, turnsRatio = 1.073)
@@ -27,7 +27,7 @@
     addBranch!(systemPU; from = 1, to = 2, resistance = 0.07, reactance = 0.09, longTerm = 0.1)
     addBranch!(systemPU; from = 4, to = 9, resistance = 0.08, reactance = 0.30, emergency = 0.03)
 
-    addGenerator!(systemPU; bus = 1, active = 3.7, maxReactive = 1.75, maxActive = 4.72)
+    addGenerator!(systemPU; bus = "1", active = 3.7, maxReactive = 1.75, maxActive = 4.72)
     addGenerator!(systemPU; bus = 2, active = 2.1, magnitude = 1.1, maxActive = 3.16, status = 0)
     addGenerator!(systemPU; bus = 2, active = 2.6, reactive = 0.3, maxActive = 3.16)
     addGenerator!(systemPU; bus = 1, active = 0.8, reactive = 0.3, status = 0)
@@ -130,7 +130,7 @@
     equalStruct(system.base.voltage, systemPU.base.voltage)
 end
 
-@testset "Build and Update in SI Unit" begin
+@testset "Build and Update in SI Units" begin
     system = powerSystem(string(pathData, "build.m"))
     @base(system, MVA, kV)
 

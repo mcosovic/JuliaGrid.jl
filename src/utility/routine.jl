@@ -63,17 +63,11 @@ function setUUID()
     systemList[id.value] = Dict(
         "bus" => 0,
         "branch" => 0,
-        "generator" => 0
+        "generator" => 0,
+        "voltmeter" => 0
     )
 
     return id
-end
-
-######### Check UUID ##########
-function checkUUID(uuidSystem, uuid)
-    if uuidSystem.value != uuid.value
-        throw(ErrorException("The composite types do not match."))
-    end
 end
 
 ######### Impedance Base Value ##########

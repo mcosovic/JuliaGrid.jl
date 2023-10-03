@@ -1,78 +1,8 @@
-@testset "DC Power Flow" begin
+@testset "Reusing Newton-Raphson Method" begin
     @default(unit)
     @default(template)
-    
-    ################ Resuing First Pass ################
-    system = powerSystem(string(pathData, "case14test.m"))
 
-    updateBus!(system; label = 1, active = 0.15, conductance = 0.16)
-    addGenerator!(system; bus = 2, active = 0.8)
-    updateGenerator!(system; label = 9, active = 1.2)
-    updateGenerator!(system; label = 1, status = 0)
-    updateGenerator!(system; label = 3, status = 0)
-    
-    dcModel!(system)
-    analysis = dcPowerFlow(system)
-    solve!(system, analysis)
-    power!(system, analysis)
-    
-    ####### Reuse Model #######
-    resystem = powerSystem(string(pathData, "case14test.m"))
-    dcModel!(resystem)
-    reusing = dcPowerFlow(resystem)
-    
-    updateBus!(resystem, reusing; label = 1, active = 0.15, conductance = 0.16)
-    addGenerator!(resystem, reusing; bus = 2, active = 0.8)
-    updateGenerator!(resystem, reusing; label = 9, active = 1.2)
-    updateGenerator!(resystem, reusing; label = 1, status = 0)
-    updateGenerator!(resystem, reusing; label = 1, status = 1)
-    updateGenerator!(resystem, reusing; label = 1, status = 0)
-    updateGenerator!(resystem; label = 3, status = 0)
-    
-    solve!(resystem, reusing)
-    power!(resystem, reusing)
-    
-    ####### Compare Voltages and Powers #######
-    @test analysis.voltage.angle ≈ reusing.voltage.angle
-    @test analysis.power.injection.active ≈ reusing.power.injection.active
-    @test analysis.power.supply.active ≈ reusing.power.supply.active
-    @test analysis.power.from.active ≈ reusing.power.from.active
-    @test analysis.power.to.active ≈ reusing.power.to.active
-    @test analysis.power.generator.active ≈ reusing.power.generator.active
-
-    ################ Resuing Second Pass ################
-    updateBus!(system; label = 2, active = 0.15, susceptance = 0.16, type = 2)
-    addGenerator!(system; bus = 2, active = 0.8)
-    updateGenerator!(system; label = 9, status = 0)
-    updateGenerator!(system; label = 1, status = 1)
-    updateGenerator!(system; label = 3, status = 1)
-    
-    dcModel!(system)
-    analysis = dcPowerFlow(system)
-    solve!(system, analysis)
-    power!(system, analysis)
-
-    ####### Reuse Model #######
-    updateBus!(resystem, reusing; label = 2, active = 0.15, susceptance = 0.16, type = 2)
-    addGenerator!(resystem, reusing; bus = 2, active = 0.8)
-    updateGenerator!(resystem, reusing; label = 9, status = 0)
-    updateGenerator!(resystem, reusing; label = 1, status = 1)
-    updateGenerator!(resystem, reusing; label = 3, status = 1)
-    
-    solve!(resystem, reusing)
-    power!(resystem, reusing)
-
-    ####### Compare Voltages and Powers #######
-    @test analysis.voltage.angle ≈ reusing.voltage.angle
-    @test analysis.power.injection.active ≈ reusing.power.injection.active
-    @test analysis.power.supply.active ≈ reusing.power.supply.active
-    @test analysis.power.from.active ≈ reusing.power.from.active
-    @test analysis.power.to.active ≈ reusing.power.to.active
-    @test analysis.power.generator.active ≈ reusing.power.generator.active
-end
-
-@testset "Newton-Raphson Method" begin
-    ################ Resuing First Pass ################
+    ################ Reusing First Pass ################
     system = powerSystem(string(pathData, "case14test.m"))
 
     updateBus!(system; label = 14, active = 0.12, reactive = 0.13, conductance = 0.1, susceptance = 0.15, magnitude = 1.2, angle = -0.17)
@@ -135,7 +65,7 @@ end
     approxStruct(analysis.current.to, reusing.current.to)
     approxStruct(analysis.current.series, reusing.current.series)
 
-    ################ Resuing Second Pass ################
+    ################ Reusing Second Pass ################
     updateBus!(system; label = 10, active = 0.12, susceptance = 0.005, magnitude = 1.02, angle = -0.21)
     addBranch!(system; from = 16, to = 7, resistance = 0.001, reactance = 0.03, susceptance = 0.001)
     updateBranch!(system; label = 14, status = 1, resistance = 0.02, reactance = 0.03, susceptance = 0.01)
@@ -191,8 +121,8 @@ end
     approxStruct(analysis.current.series, reusing.current.series)
 end
 
-@testset "Gauss-Seidel Method" begin
-    ################ Resuing First Pass ################
+@testset "Reusing Gauss-Seidel Method" begin
+    ################ Reusing First Pass ################
     system = powerSystem(string(pathData, "case14test.m"))
 
     updateBus!(system; label = 14, active = 0.12, reactive = 0.13, conductance = 0.1, susceptance = 0.15, magnitude = 1.2, angle = -0.17)
@@ -255,7 +185,7 @@ end
     approxStruct(analysis.current.to, reusing.current.to)
     approxStruct(analysis.current.series, reusing.current.series)
 
-    ################ Resuing Second Pass ################
+    ################ Reusing Second Pass ################
     updateBus!(system; label = 10, active = 0.12, susceptance = 0.005, magnitude = 1.02, angle = -0.21)
     addBranch!(system; from = 16, to = 7, resistance = 0.001, reactance = 0.03, susceptance = 0.001)
     updateBranch!(system; label = 14, status = 1, resistance = 0.02, reactance = 0.03, susceptance = 0.01)
@@ -312,8 +242,8 @@ end
     approxStruct(analysis.current.series, reusing.current.series)
 end
 
-@testset "Fast Newton-Raphson Method" begin
-    ################ Resuing First Pass ################
+@testset "Reusing Fast Newton-Raphson Method" begin
+    ################ Reusing First Pass ################
     system = powerSystem(string(pathData, "case14test.m"))
 
     updateBus!(system; label = 14, active = 0.12, reactive = 0.13, magnitude = 1.2, angle = -0.17)
@@ -370,7 +300,7 @@ end
     approxStruct(analysis.current.to, reusing.current.to)
     approxStruct(analysis.current.series, reusing.current.series)
 
-    ################ Resuing Second Pass ################
+    ################ Reusing Second Pass ################
     updateBus!(system; label = 10, active = 0.12, magnitude = 1.02, angle = -0.21)
     addGenerator!(system; bus = 2, active = 0.2, magnitude = 0.92)
     addGenerator!(system; bus = 16, active = 0.3, reactive = 0.2)
@@ -422,9 +352,75 @@ end
     approxStruct(analysis.current.series, reusing.current.series)
 end
 
+@testset "Reusing DC Power Flow" begin
+    @default(unit)
+    @default(template)
+    
+    ################ Reusing First Pass ################
+    system = powerSystem(string(pathData, "case14test.m"))
 
+    updateBus!(system; label = 1, active = 0.15, conductance = 0.16)
+    addGenerator!(system; bus = 2, active = 0.8)
+    updateGenerator!(system; label = 9, active = 1.2)
+    updateGenerator!(system; label = 1, status = 0)
+    updateGenerator!(system; label = 3, status = 0)
+    
+    dcModel!(system)
+    analysis = dcPowerFlow(system)
+    solve!(system, analysis)
+    power!(system, analysis)
+    
+    ####### Reuse Model #######
+    resystem = powerSystem(string(pathData, "case14test.m"))
+    dcModel!(resystem)
+    reusing = dcPowerFlow(resystem)
+    
+    updateBus!(resystem, reusing; label = 1, active = 0.15, conductance = 0.16)
+    addGenerator!(resystem, reusing; bus = 2, active = 0.8)
+    updateGenerator!(resystem, reusing; label = 9, active = 1.2)
+    updateGenerator!(resystem, reusing; label = 1, status = 0)
+    updateGenerator!(resystem, reusing; label = 1, status = 1)
+    updateGenerator!(resystem, reusing; label = 1, status = 0)
+    updateGenerator!(resystem; label = 3, status = 0)
+    
+    solve!(resystem, reusing)
+    power!(resystem, reusing)
+    
+    ####### Compare Voltages and Powers #######
+    @test analysis.voltage.angle ≈ reusing.voltage.angle
+    @test analysis.power.injection.active ≈ reusing.power.injection.active
+    @test analysis.power.supply.active ≈ reusing.power.supply.active
+    @test analysis.power.from.active ≈ reusing.power.from.active
+    @test analysis.power.to.active ≈ reusing.power.to.active
+    @test analysis.power.generator.active ≈ reusing.power.generator.active
 
+    ################ Reusing Second Pass ################
+    updateBus!(system; label = 2, active = 0.15, susceptance = 0.16, type = 2)
+    addGenerator!(system; bus = 2, active = 0.8)
+    updateGenerator!(system; label = 9, status = 0)
+    updateGenerator!(system; label = 1, status = 1)
+    updateGenerator!(system; label = 3, status = 1)
+    
+    dcModel!(system)
+    analysis = dcPowerFlow(system)
+    solve!(system, analysis)
+    power!(system, analysis)
 
+    ####### Reuse Model #######
+    updateBus!(resystem, reusing; label = 2, active = 0.15, susceptance = 0.16, type = 2)
+    addGenerator!(resystem, reusing; bus = 2, active = 0.8)
+    updateGenerator!(resystem, reusing; label = 9, status = 0)
+    updateGenerator!(resystem, reusing; label = 1, status = 1)
+    updateGenerator!(resystem, reusing; label = 3, status = 1)
+    
+    solve!(resystem, reusing)
+    power!(resystem, reusing)
 
-
-
+    ####### Compare Voltages and Powers #######
+    @test analysis.voltage.angle ≈ reusing.voltage.angle
+    @test analysis.power.injection.active ≈ reusing.power.injection.active
+    @test analysis.power.supply.active ≈ reusing.power.supply.active
+    @test analysis.power.from.active ≈ reusing.power.from.active
+    @test analysis.power.to.active ≈ reusing.power.to.active
+    @test analysis.power.generator.active ≈ reusing.power.generator.active
+end

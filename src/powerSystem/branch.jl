@@ -155,8 +155,6 @@ function addBranch!(system::PowerSystem, analysis::Union{NewtonRaphson, GaussSei
     minDiffAngle::T = missing, maxDiffAngle::T = missing,
     longTerm::T = missing, shortTerm::T = missing, emergency::T = missing, type::T = missing)
 
-    checkUUID(system.uuid, analysis.uuid)
-
     addBranch!(system; label, from, to, status, resistance, reactance, susceptance,
         conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, longTerm, shortTerm,
         emergency, type)
@@ -172,8 +170,6 @@ function addBranch!(system::PowerSystem, analysis::DCOptimalPowerFlow;
     conductance::T = missing, turnsRatio::T = missing, shiftAngle::T = missing,
     minDiffAngle::T = missing, maxDiffAngle::T = missing,
     longTerm::T = missing, shortTerm::T = missing, emergency::T = missing, type::T = missing)
-
-    checkUUID(system.uuid, analysis.uuid)
 
     branch = system.branch
     jump = analysis.jump
@@ -203,8 +199,6 @@ function addBranch!(system::PowerSystem, analysis::ACOptimalPowerFlow;
     conductance::T = missing, turnsRatio::T = missing, shiftAngle::T = missing,
     minDiffAngle::T = missing, maxDiffAngle::T = missing,
     longTerm::T = missing, shortTerm::T = missing, emergency::T = missing, type::T = missing)
-
-    checkUUID(system.uuid, analysis.uuid)
 
     branch = system.branch
     jump = analysis.jump
@@ -381,8 +375,6 @@ function updateBranch!(system::PowerSystem, analysis::Union{NewtonRaphson, Gauss
     shiftAngle::T = missing, minDiffAngle::T = missing, maxDiffAngle::T = missing,
     longTerm::T = missing, shortTerm::T = missing, emergency::T = missing, type::T = missing)
 
-    checkUUID(system.uuid, analysis.uuid)
-
     updateBranch!(system; label, status, resistance, reactance, susceptance,
     conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, longTerm, shortTerm,
     emergency, type)
@@ -397,8 +389,6 @@ function updateBranch!(system::PowerSystem, analysis::DCOptimalPowerFlow;
     susceptance::T = missing, conductance::T = missing, turnsRatio::T = missing,
     shiftAngle::T = missing, minDiffAngle::T = missing, maxDiffAngle::T = missing,
     longTerm::T = missing, shortTerm::T = missing, emergency::T = missing, type::T = missing)
-
-    checkUUID(system.uuid, analysis.uuid)
 
     branch = system.branch
     jump = analysis.jump
@@ -447,8 +437,6 @@ function updateBranch!(system::PowerSystem, analysis::ACOptimalPowerFlow;
     susceptance::T = missing, conductance::T = missing, turnsRatio::T = missing,
     shiftAngle::T = missing, minDiffAngle::T = missing, maxDiffAngle::T = missing,
     longTerm::T = missing, shortTerm::T = missing, emergency::T = missing, type::T = missing)
-
-    checkUUID(system.uuid, analysis.uuid)
 
     branch = system.branch
     jump = analysis.jump

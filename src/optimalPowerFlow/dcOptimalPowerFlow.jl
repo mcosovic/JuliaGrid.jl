@@ -26,9 +26,7 @@ fields:
 - `jump`: the JuMP model;
 - `variable`: holds the variable references to the JuMP model;
 - `constraint`: holds the constraint references to the JuMP model;
-- `objective`: holds the objective expression of the JuMP model;
-- `uuid`: a universally unique identifier associated with the `PowerSystem` composite type.
-
+- `objective`: holds the objective expression of the JuMP model.
 
 # Examples
 ```jldoctest
@@ -138,8 +136,7 @@ function dcOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
             CartesianRealRef(capability),
             DCPiecewise(piecewise)
         ),
-        objective,
-        system.uuid
+        objective
     )
 end
 

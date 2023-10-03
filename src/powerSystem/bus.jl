@@ -257,8 +257,6 @@ function updateBus!(system::PowerSystem, analysis::DCPowerFlow;
     minMagnitude::T = missing, maxMagnitude::T = missing,
     base::T = missing, area::T = missing, lossZone::T = missing)
 
-    checkUUID(system.uuid, analysis.uuid)
-
     bus = system.bus
     index = bus.label[getLabel(bus, label, "bus")]
 
@@ -277,8 +275,6 @@ function updateBus!(system::PowerSystem, analysis::NewtonRaphson;
     magnitude::T = missing, angle::T = missing,
     minMagnitude::T = missing, maxMagnitude::T = missing,
     base::T = missing, area::T = missing, lossZone::T = missing)
-
-    checkUUID(system.uuid, analysis.uuid)
 
     bus = system.bus
     index = bus.label[getLabel(bus, label, "bus")]
@@ -305,8 +301,6 @@ function updateBus!(system::PowerSystem, analysis::FastNewtonRaphson;
     magnitude::T = missing, angle::T = missing,
     minMagnitude::T = missing, maxMagnitude::T = missing,
     base::T = missing, area::T = missing, lossZone::T = missing)
-
-    checkUUID(system.uuid, analysis.uuid)
 
     bus = system.bus
     index = bus.label[getLabel(bus, label, "bus")]
@@ -337,8 +331,6 @@ function updateBus!(system::PowerSystem, analysis::GaussSeidel;
     minMagnitude::T = missing, maxMagnitude::T = missing,
     base::T = missing, area::T = missing, lossZone::T = missing)
 
-    checkUUID(system.uuid, analysis.uuid)
-
     bus = system.bus
     index = bus.label[getLabel(bus, label, "bus")]
 
@@ -367,8 +359,6 @@ function updateBus!(system::PowerSystem, analysis::DCOptimalPowerFlow;
     magnitude::T = missing, angle::T = missing,
     minMagnitude::T = missing, maxMagnitude::T = missing,
     base::T = missing, area::T = missing, lossZone::T = missing)
-
-    checkUUID(system.uuid, analysis.uuid)
 
     bus = system.bus
     index = bus.label[getLabel(bus, label, "bus")]
@@ -401,8 +391,6 @@ function updateBus!(system::PowerSystem, analysis::ACOptimalPowerFlow;
     magnitude::T = missing, angle::T = missing,
     minMagnitude::T = missing, maxMagnitude::T = missing,
     base::T = missing, area::T = missing, lossZone::T = missing)
-
-    checkUUID(system.uuid, analysis.uuid)
 
     bus = system.bus
     jump = analysis.jump
