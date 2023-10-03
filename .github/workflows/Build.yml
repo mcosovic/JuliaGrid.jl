@@ -1,7 +1,12 @@
 name: Build
-
-on: [push, pull_request]
-
+on:
+  pull_request:
+    branches:
+      - master
+  push:
+    branches:
+      - master
+    tags: '*'
 jobs:
   test:
     runs-on: ${{ matrix.os }}
@@ -15,10 +20,20 @@ jobs:
             julia-arch: x86
 
     steps:
-      - uses: actions/checkout@v1.0.0
+      - uses: actions/checkout@v3
       - uses: julia-actions/setup-julia@latest
         with:
           version: ${{ matrix.julia-version }}
+      - uses: actions/cache@v3
+        env:
+          cache-name: cache-artifacts
+        with:
+          path: ~/.julia/artifacts
+          key: ${{ runner.os }}-test-${{ env.cache-name }}-${{ hashFiles('**/Project.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-test-${{ env.cache-name }}-
+            ${{ runner.os }}-test-
+            ${{ runner.os }}-
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
       - uses: julia-actions/julia-processcoverage@v1
