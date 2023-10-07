@@ -165,7 +165,7 @@ The complex current injections at buses are:
   \begin{aligned}
     \bar{I}_{p} &= \bar{I}_{pk} = \cfrac{1}{\tau_{pk}^2}({y}_{pk} + y_{\text{s}pk}) \bar{V}_{p} -\alpha_{kq}^*{y}_{kq} \bar{V}_{k} \\
     \bar{I}_{k} &= \bar{I}_{kp} + \bar{I}_{kq} + \bar{I}_{\text{sh}k} =
-    -\alpha_{kq}{y}_{kq} \bar{V}_{p} + ({y}_{kq} + y_{\text{s}kq}) \bar{V}_{k} +
+    -\alpha_{kq}{y}_{kq} \bar{V}_{p} + ({y}_{pk} + y_{\text{s}pk}) \bar{V}_{k} +
     \cfrac{1}{\tau_{kq}^2}({y}_{kq} + y_{\text{s}kq}) \bar{V}_{k} -\alpha_{kq}^*{y}_{kq} \bar{V}_{q} + {y}_{\text{sh}k} \bar{V}_k \\
     \bar{I}_{q} &= \bar{I}_{qk} = -\alpha_{kq}{y}_{kq} \bar{V}_{k} + ({y}_{kq} + y_{\text{s}kq}) \bar{V}_{q}.
   \end{aligned}
@@ -177,7 +177,7 @@ The system of equations can be written in the matrix form:
   \end{bmatrix} =
   \begin{bmatrix}
     \cfrac{1}{\tau_{pk}^2}({y}_{pk} + y_{\text{s}pk}) & -\alpha_{kq}^*{y}_{kq} & 0 \\
-   -\alpha_{kq}{y}_{kq} & {y}_{kq} + y_{\text{s}kq} + \cfrac{1}{\tau_{kq}^2}({y}_{kq} + y_{\text{s}kq}) + {y}_{\text{sh}k}  & -\alpha_{kq}^*{y}_{kq} \\
+   -\alpha_{kq}{y}_{kq} & {y}_{pk} + y_{\text{s}pk} + \cfrac{1}{\tau_{kq}^2}({y}_{kq} + y_{\text{s}kq}) + {y}_{\text{sh}k}  & -\alpha_{kq}^*{y}_{kq} \\
     0 & -\alpha_{kq}{y}_{kq} & {y}_{kq} + y_{\text{s}kq}
   \end{bmatrix}
   \begin{bmatrix}

@@ -1031,8 +1031,6 @@ function initializeACPowerFlow(system::PowerSystem)
     return magnitude, angle
 end
 
-
-
 ########## Change Slack Bus ##########
 function changeSlackBus!(system::PowerSystem)
     system.bus.layout.type[system.bus.layout.slack] = 1

@@ -687,7 +687,7 @@ the option to use other units instead of per-units using the [`@power`](@ref @po
 [`@voltage`](@ref @voltage) macros.
 
 # Examples
-Creating a bus using the default unit system:
+Creating a generator using the default unit system:
 ```jldoctest
 system = powerSystem()
 
@@ -697,7 +697,7 @@ addBus!(system; label = "Bus 1", type = 2, active = 0.25, reactive = -0.04, base
 addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 0.5, reactive = 0.1)
 ```
 
-Creating a bus using a custom unit system:
+Creating a generator using a custom unit system:
 ```jldoctest
 @power(MW, MVAr, MVA)
 @voltage(kV, deg, kV)
