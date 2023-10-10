@@ -3,7 +3,7 @@
 To begin, the `PowerSystem` composite type must be provided to JuliaGrid through the use of the [`powerSystem`](@ref powerSystem) function, as illustrated by the following example:
 ```@example ACOptimalPowerFlow
 using JuliaGrid # hide
-using JuMP, Ipopt 
+using JuMP, Ipopt
 @default(unit) # hide
 @default(template) # hide
 
@@ -41,7 +41,7 @@ Moreover, we identify the set of generators as ``\mathcal{P} = \{1, \dots, n_g\}
 ```
 
 !!! ukw "Notation"
-    In this section, when referring to a vector ``\mathbf{a}``, we use the notation ``\mathbf{a} = [a_{i}]`` or ``\mathbf{a} = [a_{ij}]``, where ``a_i`` denotes the generic element associated with bus ``i \in \mathcal{N}`` or generator ``i \in \mathcal{P}``, while ``a_{ij}`` denotes the generic element associated with branch ``(i,j) \in \mathcal{E}``.
+    In this section, when referring to a vector ``\mathbf{a}``, we use the notation ``\mathbf{a} = [a_{i}]`` or ``\mathbf{a} = [a_{ij}]``, where ``a_i`` represents the element associated with bus ``i \in \mathcal{N}`` or generator ``i \in \mathcal{P}``, while ``a_{ij}`` denotes the element associated with branch ``(i,j) \in \mathcal{E}``.
 
 ---
 
@@ -199,7 +199,7 @@ h_{P_i}(\mathbf {P}_{\text{g}}, \mathbf {V}, \boldsymbol{\theta}) = 0,\;\;\;  \f
 \end{aligned}
 ```
 
-The active power balance equation is derived using the [Unified Branch Model](@ref UnifiedBranchModelTutorials) and can be represented as:
+The active power balance equation is derived using the [Bus Injections](@ref BusInjectionsTutorials) and can be represented as:
 ```math
 h_{P_i}(\mathbf {P}_{\text{g}}, \mathbf {V}, \boldsymbol{\theta}) = {V}_{i}\sum\limits_{j=1}^n {V}_{j} (G_{ij}\cos\theta_{ij}+B_{ij}\sin\theta_{ij}) - \sum_{k \in \mathcal{P}_i} P_{\text{g}k} + P_{\text{d}i}.
 ```
@@ -221,7 +221,7 @@ Similarly, the next constraint in the optimization problem is associated with th
 h_{Q_i}(\mathbf {Q}_{\text{g}}, \mathbf {V}, \boldsymbol{\theta}) = 0,\;\;\;  \forall i \in \mathcal{N}.
 \end{aligned}
 ```
-The reactive power balance equation is derived using the [unified branch model](@ref UnifiedBranchModelTutorials) and can be represented as:
+The reactive power balance equation is derived using the [Bus Injections](@ref BusInjectionsTutorials) and can be represented as:
 ```math
 h_{Q_i}(\mathbf {Q}_{\text{g}}, \mathbf {V}, \boldsymbol{\theta}) = {V}_{i}\sum\limits_{j=1}^n {V}_{j} (G_{ij}\sin\theta_{ij}-B_{ij}\cos\theta_{ij}) - \sum_{k \in \mathcal{P}_i} Q_{\text{g}k} + Q_{\text{d}i}.
 ```
@@ -403,7 +403,7 @@ However, this representation might not be the most accurate depiction of the gen
 
 If a user wishes to incorporate the tradeoff between active and reactive power outputs into the optimization model, they can define the points shown in Figure 4 within the [`addGenerator!`](@ref addGenerator!) function using the following keywords:
 
-| Keyword           | Coordinate                              | 
+| Keyword           | Coordinate                              |
 |:------------------|:----------------------------------------|
 | `lowActive`       | ``P_{\text{g}i}^\text{low}``            |
 | `minLowReactive`  | ``Q_{\text{g}i,\text{low}}^\text{min}`` |
@@ -474,130 +474,94 @@ nothing # hide
 
 The function stores the computed powers in the rectangular coordinate system. It calculates the following powers related to buses and branches:
 
-| Bus                                  | Active                                          | Reactive                                        |
-|:-------------------------------------|:------------------------------------------------|:------------------------------------------------|
-| Power injections                     | ``\mathbf{P} = [P_i]``                          | ``\mathbf{Q} = [Q_i]``                          |
-| Power injections from the generators | ``\mathbf{P}_{\text{s}} = [P_{\text{s}i}]``     | ``\mathbf{Q}_{\text{s}} = [Q_{\text{s}i}]``     |
-| Power at shunt elements              | ``\mathbf{P}_{\text{sh}} = [{P}_{\text{sh}i}]`` | ``\mathbf{Q}_{\text{sh}} = [{Q}_{\text{sh}i}]`` |
+| Bus                                                            | Active                                          | Reactive                                        | 
+|:---------------------------------------------------------------|:------------------------------------------------|:------------------------------------------------|
+| [Injections](@ref BusInjectionsTutorials)                      | ``\mathbf{P} = [P_i]``                          | ``\mathbf{Q} = [Q_i]``                          |
+| [Generator injections](@ref OptGeneratorPowerInjectionsManual) | ``\mathbf{P}_{\text{p}} = [P_{\text{p}i}]``     | ``\mathbf{Q}_{\text{p}} = [Q_{\text{p}i}]``     |
+| [Shunt elements](@ref BusShuntElementTutorials)                | ``\mathbf{P}_{\text{sh}} = [{P}_{\text{sh}i}]`` | ``\mathbf{Q}_{\text{sh}} = [{Q}_{\text{sh}i}]`` |
 
 
-| Branch                               | Active                                       | Reactive                                     |
-|:-------------------------------------|:---------------------------------------------|:---------------------------------------------|
-| Power flows at "from" bus ends       | ``\mathbf{P}_{\text{i}} = [P_{ij}]``         | ``\mathbf{Q}_{\text{i}} = [Q_{ij}]``         |
-| Power flows at "to" bus ends         | ``\mathbf{P}_{\text{j}} = [P_{ji}]``         | ``\mathbf{Q}_{\text{j}} = [Q_{ji}]``         |
-| Power at charging admittances        | ``\mathbf{P}_{\text{c}} = [P_{\text{c}ij}]`` | ``\mathbf{P}_{\text{c}} = [P_{\text{c}ij}]`` |
-| Power at series impedances           | ``\mathbf{P}_{\text{l}} = [P_{\text{l}ij}]`` | ``\mathbf{Q}_{\text{l}} = [Q_{\text{l}ij}]`` |
+| Branch                                                       | Active                                       | Reactive                                     |
+|:-------------------------------------------------------------|:---------------------------------------------|:---------------------------------------------|
+| ["From" bus end flows](@ref BranchNetworkEquationsTutorials) | ``\mathbf{P}_{\text{i}} = [P_{ij}]``         | ``\mathbf{Q}_{\text{i}} = [Q_{ij}]``         |
+| ["To" bus end flows](@ref BranchNetworkEquationsTutorials)   | ``\mathbf{P}_{\text{j}} = [P_{ji}]``         | ``\mathbf{Q}_{\text{j}} = [Q_{ji}]``         |
+| [Shunt elements](@ref BranchShuntElementsTutorials)          | ``\mathbf{P}_{\text{s}} = [P_{\text{s}ij}]`` | ``\mathbf{P}_{\text{s}} = [P_{\text{s}ij}]`` |
+| [Series elements](@ref BranchSeriesElementTutorials)         | ``\mathbf{P}_{\text{l}} = [P_{\text{l}ij}]`` | ``\mathbf{Q}_{\text{l}} = [Q_{\text{l}ij}]`` |
 
 !!! note "Info"
-    For a clear comprehension of the equations, symbols provided below, as well as for a better grasp of power directions, please refer to the [Unified Branch Model](@ref UnifiedBranchModelTutorials).
+    For a clear comprehension of the equations, symbols presented in this section, as well as for a better grasp of power directions, please refer to the [Unified Branch Model](@ref UnifiedBranchModelTutorials).
 
 ---
 
-##### Active and Reactive Power Injections
-The computation of active and reactive power injection at buses is expressed by the following equation:
-```math
-    {S}_{i} = P_i + \text{j}Q_i = \bar{V}_{i}\sum\limits_{j = 1}^n {Y}_{ij}^* \bar{V}_{j}^*,\;\;\; \forall i \in \mathcal{N}.
-```
-Active and reactive power injections are stored as the vectors ``\mathbf{P} = [P_i]`` and ``\mathbf{Q} = [Q_i]``, respectively, and can be retrieved using the following commands:
+##### Power Injections
+[Active and reactive power injections](@ref BusInjectionsTutorials) are stored as the vectors ``\mathbf{P} = [P_i]`` and ``\mathbf{Q} = [Q_i]``, respectively, and can be retrieved using the following commands:
 ```@repl ACOptimalPowerFlow
 𝐏 = analysis.power.injection.active
 𝐐 = analysis.power.injection.reactive
 ```
-To recall, when the active or reactive power values are positive, ``P_i > 0`` or ``Q_i > 0``, it signifies that power is being supplied into the power system from the specific bus. Conversely, negative values, ``P_i < 0`` or ``Q_i < 0``, indicate that the bus is drawing in active or reactive power from the power system.
 
 ---
 
-
-
-##### Active and Reactive Power Injections from the Generators
+##### [Generator Power Injections](@id OptGeneratorPowerInjectionsManual)
 The [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)) function in JuliaGrid also provides the computation of active and reactive power injections from the generators at each bus. To calculate the active power supplied by generators to the buses, one can simply sum the active power outputs of the generators obtained from the AC optimal power flow. This can be represented as follows:
 ```math
-    P_{\text{s}i} = \sum_{k \in \mathcal{P}_i} P_{\text{g}k},\;\;\; \forall i \in \mathcal{N},
+    P_{\text{p}i} = \sum_{k \in \mathcal{P}_i} P_{\text{g}k},\;\;\; \forall i \in \mathcal{N},
 ```
-where the set ``\mathcal{P}_i \subseteq \mathcal{P}`` encompasses all generators connected to bus ``i \in \mathcal{N}``. The active power injections from the generators at each bus are stored as a vector denoted by ``\mathbf{P}_{\text{s}} = [P_{\text{s}i}]``, and can be obtained using the following command:
+where the set ``\mathcal{P}_i \subseteq \mathcal{P}`` encompasses all generators connected to bus ``i \in \mathcal{N}``. The active power injections from the generators at each bus are stored as a vector denoted by ``\mathbf{P}_{\text{p}} = [P_{\text{p}i}]``, and can be obtained using the following command:
 ```@repl ACOptimalPowerFlow
-𝐏ₛ = analysis.power.supply.active
+𝐏ₚ = analysis.power.supply.active
 ```
 
 Similarly, we can obtain the reactive power supplied by generators to the buses:
 ```math
-    Q_{\text{s}i} = \sum_{k \in \mathcal{P}_i} Q_{\text{g}k},\;\;\; \forall  i \in \mathcal{N}.
+    Q_{\text{p}i} = \sum_{k \in \mathcal{P}_i} Q_{\text{g}k},\;\;\; \forall  i \in \mathcal{N}.
 ```
-The vector of these reactive power injections by the generators to the buses, denoted by ``\mathbf{Q}_{\text{s}} = [Q_{\text{s}i}]``, can be retrieved using the following command:
+The vector of these reactive power injections by the generators to the buses, denoted by ``\mathbf{Q}_{\text{p}} = [Q_{\text{p}i}]``, can be retrieved using the following command:
 ```@repl ACOptimalPowerFlow
-𝐐ₛ = analysis.power.supply.reactive
+𝐐ₚ = analysis.power.supply.reactive
 ```
 
 ---
 
-##### Active and Reactive Power at Shunt Elements
-To obtain the active and reactive power at the shunt element at buses, you can use the following equation:
-```math
-  {S}_{\text{sh}i} = {P}_{\text{sh}i} + \text{j}{Q}_{\text{sh}i} = \bar{V}_{i}\bar{I}_{\text{sh}i}^* = {y}_{\text{sh}i}^*{V}_{i}^2,\;\;\; \forall i \in \mathcal{N}.
-```
-The active power demanded by the shunt element at each bus is represented by the vector ``\mathbf{P}_{\text{sh}} = [{P}_{\text{sh}i}]``, while the reactive power injected or demanded by the shunt element at each bus is represented by the vector ``\mathbf{Q}_{\text{sh}} = [{Q}_{\text{sh}i}]``. To retrieve these powers in JuliaGrid, use the following commands:
+##### Power at Bus Shunt Elements
+[Active and reactive powers](@ref BusShuntElementTutorials) associated with the shunt elements at each bus are represented by the vectors ``\mathbf{P}_{\text{sh}} = [{P}_{\text{sh}i}]`` and ``\mathbf{Q}_{\text{sh}} = [{Q}_{\text{sh}i}]``. To retrieve these powers in JuliaGrid, use the following commands:
 ```@repl ACOptimalPowerFlow
 𝐏ₛₕ = analysis.power.shunt.active
 𝐐ₛₕ = analysis.power.shunt.reactive
 ```
-The positive active power value ``{P}_{\text{sh}i} > 0`` indicates that the shunt element is consuming active power. In terms of power flow, this signifies that active power flows from bus ``i \in \mathcal{N}`` towards the ground. On the other hand, a negative reactive power value ``{Q}_{\text{sh}i} < 0`` suggests that the shunt element is injecting reactive power into the power system. This implies that the direction of reactive power is from the ground to bus ``i \in \mathcal{N}``, illustrating the capacitive nature of the shunt component. Conversely, if ``{Q}_{\text{sh}i} > 0``, it indicates an inductive characteristic, implying that the shunt component is absorbing reactive power. In this case, the reactive power flows from bus ``i \in \mathcal{N}`` towards the ground.
 
 ---
 
-##### Active and Reactive Power Flows
-The active and reactive power flow at "from" bus end ``i \in \mathcal{N}`` of branches can be obtained using the following equation:
-```math
-    S_{ij} = P_{ij} + \text{j}Q_{ij} = \bar{V}_{i}\left[\cfrac{1}{\tau_{ij}^2}({y}_{ij} + y_{\text{s}ij}) \bar{V}_{i} - \alpha_{ij}^*{y}_{ij} \bar{V}_{j}\right]^*,\;\;\; \forall (i,j) \in \mathcal{E}.
-```
-The resulting active and reactive power flows at each "from" bus end are stored as the vectors ``\mathbf{P}_{\text{i}} = [P_{ij}]`` and ``\mathbf{Q}_{\text{i}} = [Q_{ij}],`` respectively, and can be retrieved using the following commands:
+##### Power Flows
+The resulting [active and reactive power flows](@ref BranchNetworkEquationsTutorials) at each "from" bus end are stored as the vectors ``\mathbf{P}_{\text{i}} = [P_{ij}]`` and ``\mathbf{Q}_{\text{i}} = [Q_{ij}],`` respectively, and can be retrieved using the following commands:
 ```@repl ACOptimalPowerFlow
 𝐏ᵢ = analysis.power.from.active
 𝐐ᵢ = analysis.power.from.reactive
 ```
 
-Similarly, we can determine the active and reactive power flow at the "to" bus end ``j \in \mathcal{N}`` of branches using the equation:
-```math
-    {S}_{ji} = P_{ji} + \text{j}Q_{ji} = \bar{V}_{j} \left[-\alpha_{ij}{y}_{ij} \bar{V}_{i} + ({y}_{ij} + y_{\text{s}ij}) \bar{V}_{j}\right]^*,\;\;\; \forall (i,j) \in \mathcal{E}.
-```
-The vectors of active and reactive power flows at the "to" bus end are stored as ``\mathbf{P}_{\text{j}} = [P_{ji}]`` and ``\mathbf{Q}_{\text{j}} = [Q_{ji}]``, respectively, and can be retrieved using the following code:
+Similarly, the vectors of [active and reactive power flows](@ref BranchNetworkEquationsTutorials) at the "to" bus end are stored as ``\mathbf{P}_{\text{j}} = [P_{ji}]`` and ``\mathbf{Q}_{\text{j}} = [Q_{ji}]``, respectively, and can be retrieved using the following code:
 ```@repl ACOptimalPowerFlow
 𝐏ⱼ = analysis.power.to.active
 𝐐ⱼ = analysis.power.to.reactive
 ```
 
-Positive values of active or reactive power, such as ``P_{ij} > 0`` or ``Q_{ij} > 0``, indicate power flow originating from the "from" bus and moving towards the "to" bus. Conversely, negative values, like ``P_{ij} < 0`` or ``Q_{ij} < 0``, denote opposite power flow direction. The same holds true for ``P_{ji} > 0`` or ``Q_{ji} > 0``, indicating power flow from the "to" bus towards the "from" bus, while negative values, ``P_{ji} < 0`` or ``Q_{ji} < 0``, signify the reverse flow direction. A negative sign generally indicates a power flow direction contrary to the conventional current-defined direction in the [Unified Branch Model](@ref UnifiedBranchModelTutorials).
-
 ---
 
-##### Active and Reactive Power at Charging Admittances
-To compute the active and reactive power associated with charging admittances located near the "from" and "to" bus ends of branches, the following equation can be utilized:
-```math
-    S_{\text{c}ij} = P_{\text{c}ij} + \text{j} Q_{\text{c}ij} = \alpha_{ij} \bar{V}_{i} \bar{I}_{\text{s}i}^* + \bar{V}_{j} \bar{I}_{\text{s}j}^* = y_{\text{s}ij}^*(\alpha_{ij}^2 {V}_{i}^2 + {V}_{j}^2),\;\;\; \forall (i,j) \in \mathcal{E}.
-```
-
-The vectors containing active and reactive power values are stored as ``\mathbf{P}_{\text{c}} = [P_{\text{c}ij}]`` and ``\mathbf{Q}_{\text{c}} = [Q_{\text{c}ij}]``, respectively. You can retrieve these values using the following code:
+##### Power at Branch Shunt Elements
+[Active and reactive powers](@ref BranchShuntElementsTutorials) associated with the branch shunt elements at each branch are represented by the vectors ``\mathbf{P}_{\text{s}} = [P_{\text{s}ij}]`` and ``\mathbf{Q}_{\text{s}} = [Q_{\text{s}ij}]``. We can retrieve these values using the following code:
 ```@repl ACOptimalPowerFlow
-𝐏ₒ = analysis.power.charging.active
-𝐐ₒ = analysis.power.charging.reactive
+𝐏ₛ = analysis.power.charging.active
+𝐐ₛ = analysis.power.charging.reactive
 ```
-
-Negative values of reactive power ``Q_{\text{c}ij} < 0`` signify that the branch injects reactive power due to its charging admittance. This indicates power flow originating from the ground. The negative sign implies that the power flow direction contradicts the assumed direction set by the current through charging admittance in the [Unified Branch Model](@ref UnifiedBranchModelTutorials). Furthermore, active powers indicate active losses within the charging admittances of the branch.
 
 ---
 
-##### Active and Reactive Power at Series Impedances
-To compute the active and reactive power across the series impedance of branches, you can use the equation:
-```math
-    S_{\text{l}ij} = P_{\text{l}ij} + \text{j} Q_{\text{l}ij} = (\alpha_{ij} \bar{V}_{i} - \bar{V}_{j}) \bar{I}_{\text{s}ij}^* = y_{ij}^* (\alpha_{ij} \bar{V}_{i} - \bar{V}_{j})  (\alpha_{ij} \bar{V}_{i} - \bar{V}_{j})^* ,\;\;\; \forall (i,j) \in \mathcal{E}.
-```
-
-To retrieve the active and reactive power vectors, ``\mathbf{P}_{\text{l}} = [P_{\text{l}ij}]`` and ``\mathbf{Q}_{\text{l}} = [Q_{\text{l}ij}]``, use the following commands:
+##### Power at Branch Series Elements
+[Active and reactive powers](@ref BranchSeriesElementTutorials) associated with the branch series element at each branch are represented by the vectors ``\mathbf{P}_{\text{l}} = [P_{\text{l}ij}]`` and ``\mathbf{Q}_{\text{l}} = [Q_{\text{l}ij}]``. We can retrieve these values using the following code:
 ```@repl ACOptimalPowerFlow
 𝐏ₗ = analysis.power.series.active
 𝐐ₗ = analysis.power.series.reactive
 ```
-
-The active power accounts for losses originating from the series resistance ``r_{ij}`` of the branch, while the reactive power represents losses resulting from the inductive characteristics of the impedance defined by series reactance ``x_{ij}``. This can be observed when the reactive power is positive ``Q_{\text{l}ij} > 0``.
 
 ---
 
@@ -610,27 +574,23 @@ nothing # hide
 
 The function stores the computed currents in the polar coordinate system. It calculates the following currents related to buses and branches:
 
-| Bus                | Magnitude              | Angle                    |
-|:-------------------|:-----------------------|:-------------------------|
-| Current injections | ``\mathbf{I} = [I_i]`` | ``\bm{\psi} = [\psi_i]`` |
+| Bus                                       | Magnitude              | Angle                    |
+|:------------------------------------------|:-----------------------|:-------------------------|
+| [Injections](@ref BusInjectionsTutorials) | ``\mathbf{I} = [I_i]`` | ``\bm{\psi} = [\psi_i]`` |
 
-| Branch                             | Magnitude                                    | Angle                                          |
-|:-----------------------------------|:---------------------------------------------|:-----------------------------------------------|
-| Current flows at "from" bus ends   | ``\mathbf{I}_{\text{i}} = [I_{ij}]``         | ``\bm{\psi}_{\text{i}} = [\psi_{ij}]``         |
-| Current flows at "to" bus ends     | ``\mathbf{I}_{\text{j}} = [I_{ji}]``         | ``\bm{\psi}_{\text{j}} = [\psi_{ji}]``         |
-| Current flows at series impedances | ``\mathbf{I}_{\text{s}} = [I_{\text{s}ij}]`` | ``\bm{\psi}_{\text{s}} = [\psi_{\text{s}ij}]`` |
+| Branch                                                       | Magnitude                                    | Angle                                          |
+|:-------------------------------------------------------------|:---------------------------------------------|:-----------------------------------------------|
+| ["From" bus end flows](@ref BranchNetworkEquationsTutorials) | ``\mathbf{I}_{\text{i}} = [I_{ij}]``         | ``\bm{\psi}_{\text{i}} = [\psi_{ij}]``         |
+| ["To" bus end flows](@ref BranchNetworkEquationsTutorials)   | ``\mathbf{I}_{\text{j}} = [I_{ji}]``         | ``\bm{\psi}_{\text{j}} = [\psi_{ji}]``         |
+| [Series elements](@ref BranchSeriesElementTutorials)         | ``\mathbf{I}_{\text{l}} = [I_{\text{l}ij}]`` | ``\bm{\psi}_{\text{l}} = [\psi_{\text{l}ij}]`` |
 
 !!! note "Info"
-    For a clear comprehension of the equations, symbols provided below, as well as for a better grasp of current directions, please refer to the [Unified Branch Model](@ref UnifiedBranchModelTutorials).
+    For a clear comprehension of the equations, symbols presented in this section, as well as for a better grasp of power directions, please refer to the [Unified Branch Model](@ref UnifiedBranchModelTutorials).
 
 ---
 
 ##### Current Injections
-To obtain the complex current injection at buses, we use the following equation:
-```math
-    \bar{I}_{i} = I_i \text{e}^{\text{j}\psi_i} = \sum\limits_{j = 1}^n {Y}_{ij} \bar{V}_{j},\;\;\; \forall i \in \mathcal{N}.
-```
-In JuliaGrid, these complex current injections are stored in the vector of magnitudes denoted as ``\mathbf{I} = [I_i]`` and the vector of angles represented as ``\bm{\psi} = [\psi_i]``. You can retrieve them using the following commands:
+In JuliaGrid, [complex current injections](@ref BusInjectionsTutorials) are stored in the vector of magnitudes denoted as ``\mathbf{I} = [I_i]`` and the vector of angles represented as ``\bm{\psi} = [\psi_i]``. You can retrieve them using the following commands:
 ```@repl ACOptimalPowerFlow
 𝐈 = analysis.current.injection.magnitude
 𝛙 = analysis.current.injection.angle
@@ -639,21 +599,13 @@ In JuliaGrid, these complex current injections are stored in the vector of magni
 ---
 
 ##### Current Flows
-To calculate the complex current flow at "from" bus end ``i \in \mathcal{N}`` of branches, we use the following equation:
-```math
-    \bar{I}_{ij} = I_{ij} \text{e}^{\text{j}\psi_{ij}} = \cfrac{1}{\tau_{ij}^2}({y}_{ij} + y_{\text{s}ij}) \bar{V}_{i} - \alpha_{ij}^*{y}_{ij} \bar{V}_{j},\;\;\; \forall (i,j) \in \mathcal{E}.
-```
-To obtain the vectors of magnitudes ``\mathbf{I}_{\text{i}} = [I_{ij}]`` and angles ``\bm{\psi}_{\text{i}} = [\psi_{ij}]`` for the resulting complex current flows, you can use the following commands:
+To obtain the vectors of magnitudes ``\mathbf{I}_{\text{i}} = [I_{ij}]`` and angles ``\bm{\psi}_{\text{i}} = [\psi_{ij}]`` for the resulting [complex current flows](@ref BranchNetworkEquationsTutorials), you can use the following commands:
 ```@repl ACOptimalPowerFlow
 𝐈ᵢ = analysis.current.from.magnitude
 𝛙ᵢ = analysis.current.from.angle
 ```
 
-Similarly, we can obtain the complex current flow at "to" bus end ``j \in \mathcal{N}`` of branches:
-```math
-    \bar{I}_{ji} = I_{ji} \text{e}^{\text{j}\psi_{ji}} = -\alpha_{ij}{y}_{ij} \bar{V}_{i} + ({y}_{ij} + y_{\text{s}ij}) \bar{V}_{j},\;\;\; \forall (i,j) \in \mathcal{E}.
-```
-We can obtain the vectors of magnitudes ``\mathbf{I}_{\text{j}} = [I_{ji}]`` and angles ``\bm{\psi}_{\text{j}} = [\psi_{ji}]`` of the resulting complex current flows using the following code:
+Similarly, we can obtain the vectors of magnitudes ``\mathbf{I}_{\text{j}} = [I_{ji}]`` and angles ``\bm{\psi}_{\text{j}} = [\psi_{ji}]`` of the resulting c[omplex current flows](@ref BranchNetworkEquationsTutorials) using the following code:
 ```@repl ACOptimalPowerFlow
 𝐈ⱼ = analysis.current.to.magnitude
 𝛙ⱼ = analysis.current.to.angle
@@ -661,15 +613,11 @@ We can obtain the vectors of magnitudes ``\mathbf{I}_{\text{j}} = [I_{ji}]`` and
 
 ---
 
-##### Current Flows at Series Impedances
-To obtain the complex current flow through series impedance of branches in the direction from bus ``i \in \mathcal{N}`` to bus ``j \in \mathcal{N}``, one can use the expression:
-```math
-    \bar{I}_{\text{s}ij} = I_{\text{s}ij} \text{e}^{\psi_{\text{s}ij}} =  y_{ij} (\alpha_{ij}\bar{V}_{i} - \bar{V}_{j}), \;\;\; \forall (i,j) \in \mathcal{E}.
-```
-To obtain the vectors of magnitudes ``\mathbf{I}_{\text{s}} = [I_{\text{s}ij}]`` and angles ``\bm{\psi}_{\text{s}} = [\psi_{\text{s}ij}]`` of the resulting complex current flows, one can use the following code:
+##### Current at Branch Series Elements
+To obtain the vectors of magnitudes ``\mathbf{I}_{\text{l}} = [I_{\text{l}ij}]`` and angles ``\bm{\psi}_{\text{l}} = [\psi_{\text{l}ij}]`` of the resulting [complex current flows](@ref BranchSeriesElementTutorials), one can use the following code:
 ```@repl ACOptimalPowerFlow
-𝐈ₛ = analysis.current.series.magnitude
-𝛙ₛ = analysis.current.series.angle
+𝐈ₗ = analysis.current.series.magnitude
+𝛙ₗ = analysis.current.series.angle
 ```
 
 ---

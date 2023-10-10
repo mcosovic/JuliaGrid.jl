@@ -1,6 +1,9 @@
 # [AC and DC Model](@id ACDCModelTutorials)
 The power system analyses commonly utilize the unified branch model that provides linear relationships between voltages and currents. However, as the focus is on power calculations rather than current calculations, the resulting equations become nonlinear, posing challenges in solving them [[1]](@ref ACDCModelReferenceTutorials). Hence, to accurately analyze power systems without any approximations, we use the AC model, which is a crucial component of our framework. In contrast, to obtain a linear system of equations for various DC analyses, we introduce approximations in the unified branch model, resulting in the DC model.
 
+!!! note "Info"
+    In this section, we not only describe the AC and DC models derived from the unified branch model but also furnish the power and current equations utilized in all JuliaGrid analyses.
+
 A common way to describe the power system network topology is through the bus/branch model, which employs the two-port ``\pi``-model, which results in the unified branch model. The bus/branch model can be represented by a graph denoted by ``\mathcal{G} = (\mathcal{N}, \mathcal{E})``, where the set of nodes ``\mathcal{N} = \{1, \dots, n\}`` corresponds to buses, and the set of edges ``\mathcal{E} \subseteq \mathcal{N} \times \mathcal{N}`` represents the branches of the power network.
 
 Let us now construct the power system:
@@ -19,8 +22,7 @@ addBus!(system; label = 2, type = 1, active = 21.7, reactive = 12.7)
 addBus!(system; label = 3, type = 2, conductance = 2.1, susceptance = 1.2)
 
 addBranch!(system; from = 1, to = 2, resistance = 0.02, reactance = 0.06, susceptance = 0.05)
-addBranch!(system; from = 1, to = 3, reactance = 0.21, turnsRatio = 0.98, shiftAngle = 1.2)
-addBranch!(system; from = 2, to = 3, resistance = 0.13, reactance = 0.26, conductance = 1e-3)
+addBranch!(system; from = 2, to = 3, reactance = 0.21, turnsRatio = 0.98, shiftAngle = 1.2)
 
 addGenerator!(system; bus = 1, active = 40.0, reactive = 42.4)
 nothing #hide
@@ -55,7 +57,7 @@ The equivalent unified ``\pi``-model for a branch ``(i,j) \in \mathcal{E}`` inci
 ```
 
 !!! note "Info"
-    The directions of the currents ``\bar{I}_{ij}``, ``\bar{I}_{ji}``, ``\bar{I}_{\text{s}i}``, and ``\bar{I}_{\text{s}j}`` are initially defined to come out from the nodes or buses. This convention proves particularly valuable during power flow analyses. In cases where active or reactive power is positive, it signifies alignment with the assumed current direction, flowing away from the bus. Conversely, when power is negative, the direction is reversed, indicating a flow towards the bus. These current directions, in conjunction with ``\bar{I}_{\text{s}ij}``, are consistently employed by JuliaGrid in its calculations of powers or currents.
+    The directions of the currents ``\bar{I}_{ij}``, ``\bar{I}_{ji}``, ``\bar{I}_{\text{s}i}``, and ``\bar{I}_{\text{s}j}`` are vital for power flow analysis. Positive power aligns with the assumed current direction, moving away from the bus, while negative power implies a reverse flow towards the bus. JuliaGrid consistently uses these directions, along with ``\bar{I}_{\text{l}ij}``, for power and current calculations.
 
 The branch series admittance ``y_{ij}`` is inversely proportional to the branch series impedance ``z_{ij}``:
 ```math
@@ -99,7 +101,39 @@ These transformer parameters are stored in the vectors ``\bm{\tau} = [\tau_{ij}]
 𝚽 = system.branch.parameter.shiftAngle
 ```
 
-Using Kirchhoff's circuit laws, the unified branch model can be described by complex expressions:
+---
+
+##### [Branch Shunt Elements](@id BranchShuntElementsTutorials)
+The currents flowing through shunt admittances denoted as ``y_{\text{s}ij}`` are defined as follows:
+```math
+  \begin{aligned}
+    \bar{I}_{\text{s}i} &=  \alpha_{ij} y_{\text{s}ij}\bar{V}_{i},\;\;\; (i,j) \in \mathcal{E} \\
+    \bar{I}_{\text{s}j} &=  y_{\text{s}ij}\bar{V}_{j},\;\;\; (i,j) \in \mathcal{E}.
+  \end{aligned}
+```
+With these specified currents in place, it becomes straightforward to compute both the total active and reactive power that branch shunt elements demand and inject concerning the power system. This can be expressed as follows:
+```math
+  S_{\text{s}ij} = P_{\text{s}ij} + \text{j} Q_{\text{s}ij} = \alpha_{ij} \bar{V}_{i} \bar{I}_{\text{s}i}^* + \bar{V}_{j} \bar{I}_{\text{s}j}^* = y_{\text{s}ij}^*(\alpha_{ij}^2 {V}_{i}^2 + {V}_{j}^2),\;\;\; (i,j) \in \mathcal{E}.
+```
+For real branch sections, the reactive power is negative, ``Q_{\text{s}ij}``, signifying that the branch injects reactive power due to its capacitive nature. The negative sign implies that the power flow direction opposes the assumed direction set by the currents ``\bar{I}_{\text{s}i}`` and ``\bar{I}_{\text{s}j}``. Additionally, the active power, ``P_{\text{s}ij}`` represents active losses within the branch shunt admittances.
+
+---
+
+##### [Branch Series Element](@id BranchSeriesElementTutorials)
+The current flowing through a series admittance, denoted as ``y_{ij}``, is defined as follows:
+```math
+    \bar{I}_{\text{l}ij} = \alpha_{ij} y_{ij}\bar{V}_{i} - y_{ij}\bar{V}_{i},\;\;\; (i,j) \in \mathcal{E}.
+```
+Consequently, the active and reactive power associated with the branch series element are as follows:
+```math
+  S_{\text{l}ij} = P_{\text{l}ij} + \text{j} Q_{\text{l}ij} = (\alpha_{ij} \bar{V}_{i} - \bar{V}_{j}) \bar{I}_{\text{s}ij}^* = y_{ij}^* (\alpha_{ij} \bar{V}_{i} - \bar{V}_{j}) (\alpha_{ij} \bar{V}_{i} - \bar{V}_{j})^* ,\;\;\; (i,j) \in \mathcal{E}.
+```
+The active power accounts for losses originating from the series resistance ``r_{ij}`` of the branch, while the reactive power represents losses resulting from the inductive characteristics of the impedance defined by series reactance ``x_{ij}``. This can be observed when the reactive power is positive ``Q_{\text{l}ij} > 0``.
+
+---
+
+##### [Branch Network Equations](@id BranchNetworkEquationsTutorials)
+Using Kirchhoff's circuit laws, the branch model can be described by complex expressions:
 ```math
   \begin{bmatrix}
     \bar{I}_{ij} \\ \bar{I}_{ji}
@@ -113,7 +147,7 @@ Using Kirchhoff's circuit laws, the unified branch model can be described by com
   \end{bmatrix}.
 ```
 
-The values of the vectors ``\mathbf{y}_{\text{ii}} = [({y}_{ij} + y_{\text{s}ij}) / \tau_{ij}^2]``, ``\mathbf{y}_{\text{ij}} = [-\alpha_{ij}^*{y}_{ij}]``, ``\mathbf{y}_{\text{ji}} = [-\alpha_{ij}{y}_{ij}]``, and ``\mathbf{y}_{\text{jj}} = [{y}_{ij} + y_{\text{s}ij}]`` can be found stored in the variables:
+The admittance parameters are stored in the vectors ``\mathbf{y}_{\text{ii}} = [({y}_{ij} + y_{\text{s}ij}) / \tau_{ij}^2]``, ``\mathbf{y}_{\text{ij}} = [-\alpha_{ij}^*{y}_{ij}]``, ``\mathbf{y}_{\text{ji}} = [-\alpha_{ij}{y}_{ij}]``, and ``\mathbf{y}_{\text{jj}} = [{y}_{ij} + y_{\text{s}ij}]`` and can be found in the variables:
 
 ```@repl ACDCModel
 𝐲ᵢᵢ = system.model.ac.nodalFromFrom
@@ -122,66 +156,78 @@ The values of the vectors ``\mathbf{y}_{\text{ii}} = [({y}_{ij} + y_{\text{s}ij}
 𝐲ⱼⱼ = system.model.ac.nodalToTo
 ```
 
+In this context, we have easily derived the active and reactive power flow at the "from" bus end, denoted as ``i \in \mathcal{N}``, of the branch ``(i,j) \in \mathcal{E}``:
+```math
+  S_{ij} = P_{ij} + \text{j}Q_{ij} = \bar{V}_{i}\left[\cfrac{1}{\tau_{ij}^2}({y}_{ij} + y_{\text{s}ij}) \bar{V}_{i} - \alpha_{ij}^*{y}_{ij} \bar{V}_{j}\right]^*,\;\;\; (i,j) \in \mathcal{E}.
+```
+
+Similarly, we can determine the active and reactive power flow at the "to" bus end, denoted as ``j \in \mathcal{N}``, of the branch ``(i,j) \in \mathcal{E}``:
+```math
+  {S}_{ji} = P_{ji} + \text{j}Q_{ji} = \bar{V}_{j} \left[-\alpha_{ij}{y}_{ij} \bar{V}_{i} + ({y}_{ij} + y_{\text{s}ij}) \bar{V}_{j}\right]^*,\;\;\; (i,j) \in \mathcal{E}.
+```
+
+Positive values of active or reactive power, such as ``P_{ij} > 0`` or ``Q_{ij} > 0``, indicate power flow originating from the "from" bus and moving towards the "to" bus, following the direction of the current ``\bar{I}_{ij}``. Conversely, negative values, like ``P_{ij} < 0`` or ``Q_{ij} < 0``, signify power flow in the opposite direction. The same principles apply to ``P_{ji} > 0`` or ``Q_{ji} > 0``, indicating power flow from the "to" bus to the "from" bus, aligned with the current ``\bar{I}_{ji}``, while negative values, ``P_{ji} < 0`` or ``Q_{ji} < 0``, denote the reverse flow direction.
+
 ---
 
-##### [System of Equations and Nodal Matrix](@id SystemEquationsNodalMatrixTutorials)
-Let us consider an example, given in Figure 2, that will allow us an easy transition to the general case. We observe system with three buses ``\mathcal{N} = \{p, k, q\}`` and two branches ``\mathcal{E} = \{(p, k), (k, q)\}``, where the bus ``k`` is incident to the shunt element with admittance ``{y}_{\text{sh}k}``.
+##### [Nodal Formulation of the Network Equations](@id NodalFormulationNetworkEquationsTutorials)
+Let us consider an illustrative example from our case study, depicted in Figure 2. This example provides a smooth transition to the general case, demonstrating a system with three buses represented as ``\mathcal{N} = \{1, 2, 3\}`` and two branches ``\mathcal{E} = \{(1, 2), (2, 3)\}``, where bus ``2`` is incident to the shunt element with admittance ``{y}_{\text{sh}2}``.
 ```@raw html
 <img src="../../assets/pi_model_example.svg" class="center" width="710"/>
 <figcaption>Figure 2: The example of the system with three buses and two branches.</figcaption>
 &nbsp;
 ```
 !!! note "Info"
-    The current ``\bar{I}_{\text{sh}k}`` follows the convention of coming out from the bus in terms of its direction. When calculating powers related to shunt elements, this current direction is assumed. Therefore, in cases where power is positive, it signifies alignment with the assumed current direction, emerging away from the bus. Conversely, when power is negative, the direction is reversed, indicating a flow towards the bus.
+    The current ``\bar{I}_{\text{sh}2}`` follows the convention of coming out from the bus in terms of its direction. When calculating powers related to shunt elements, this current direction is assumed. Therefore, in cases where power is positive, it signifies alignment with the assumed current direction, emerging away from the bus. Conversely, when power is negative, the direction is reversed, indicating a flow towards the bus.
 
-According to the [Unified Branch Model](@ref UnifiedBranchModelTutorials) each branch is described using the system of equations as follows:
+According to the [Branch Network Equations](@ref BranchNetworkEquationsTutorials) each branch is described using the system of equations as follows:
 ```math
   \begin{bmatrix}
-    \bar{I}_{pk} \\ \bar{I}_{kp}
+    \bar{I}_{12} \\ \bar{I}_{21}
   \end{bmatrix} =
   \begin{bmatrix}
-    \cfrac{1}{\tau_{pk}^2}({y}_{pk} + y_{\text{s}pk}) & -\alpha_{pk}^*{y}_{pk}\\
-    -\alpha_{pk}{y}_{pk} & {y}_{pk} + y_{\text{s}pk}
+    \cfrac{1}{\tau_{12}^2}({y}_{12} + y_{\text{s}12}) & -\alpha_{12}^*{y}_{12}\\
+    -\alpha_{12}{y}_{12} & {y}_{12} + y_{\text{s}12}
   \end{bmatrix}
   \begin{bmatrix}
-    \bar{V}_{p} \\ \bar{V}_{k}
+    \bar{V}_{1} \\ \bar{V}_{2}
   \end{bmatrix}
 ```
 ```math
   \begin{bmatrix}
-    \bar{I}_{kq} \\ \bar{I}_{qk}
+    \bar{I}_{23} \\ \bar{I}_{32}
   \end{bmatrix} =
   \begin{bmatrix}
-    \cfrac{1}{\tau_{kq}^2}({y}_{kq} + y_{\text{s}kq}) & -\alpha_{kq}^*{y}_{kq}\\
-    -\alpha_{kq}{y}_{kq} & {y}_{kq} + y_{\text{s}kq}
+    \cfrac{1}{\tau_{23}^2}({y}_{23} + y_{\text{s}23}) & -\alpha_{23}^*{y}_{23}\\
+    -\alpha_{23}{y}_{23} & {y}_{23} + y_{\text{s}23}
   \end{bmatrix}
   \begin{bmatrix}
-    \bar{V}_{k} \\ \bar{V}_{q}
+    \bar{V}_{2} \\ \bar{V}_{3}
   \end{bmatrix}.
 ```
 
 The complex current injections at buses are:
 ```math
   \begin{aligned}
-    \bar{I}_{p} &= \bar{I}_{pk} = \cfrac{1}{\tau_{pk}^2}({y}_{pk} + y_{\text{s}pk}) \bar{V}_{p} -\alpha_{pk}^*{y}_{pk} \bar{V}_{k} \\
-    \bar{I}_{k} &= \bar{I}_{kp} + \bar{I}_{kq} + \bar{I}_{\text{sh}k} =
-    -\alpha_{pk}{y}_{pk} \bar{V}_{p} + ({y}_{pk} + y_{\text{s}pk}) \bar{V}_{k} +
-    \cfrac{1}{\tau_{kq}^2}({y}_{kq} + y_{\text{s}kq}) \bar{V}_{k} -\alpha_{kq}^*{y}_{kq} \bar{V}_{q} + {y}_{\text{sh}k} \bar{V}_k \\
-    \bar{I}_{q} &= \bar{I}_{qk} = -\alpha_{kq}{y}_{kq} \bar{V}_{k} + ({y}_{kq} + y_{\text{s}kq}) \bar{V}_{q}.
+    \bar{I}_{1} &= \bar{I}_{12} = \cfrac{1}{\tau_{12}^2}({y}_{12} + y_{\text{s}12}) \bar{V}_{1} -\alpha_{12}^*{y}_{12} \bar{V}_{2} \\
+    \bar{I}_{2} &= \bar{I}_{21} + \bar{I}_{23} + \bar{I}_{\text{sh}2} =
+    -\alpha_{12}{y}_{12} \bar{V}_{1} + ({y}_{12} + y_{\text{s}12}) \bar{V}_{2} +
+    \cfrac{1}{\tau_{23}^2}({y}_{23} + y_{\text{s}23}) \bar{V}_{2} -\alpha_{23}^*{y}_{23} \bar{V}_{3} + {y}_{\text{sh}2} \bar{V}_2 \\
+    \bar{I}_{3} &= \bar{I}_{32} = -\alpha_{23}{y}_{23} \bar{V}_{2} + ({y}_{23} + y_{\text{s}23}) \bar{V}_{3}.
   \end{aligned}
 ```
 The system of equations can be written in the matrix form:
 ```math
   \begin{bmatrix}
-    \bar{I}_{p} \\ \bar{I}_{k} \\ \bar{I}_{q}
+    \bar{I}_{1} \\ \bar{I}_{2} \\ \bar{I}_{3}
   \end{bmatrix} =
   \begin{bmatrix}
-    \cfrac{1}{\tau_{pk}^2}({y}_{pk} + y_{\text{s}pk}) & -\alpha_{pk}^*{y}_{pk} & 0 \\
-   -\alpha_{pk}{y}_{pk} & {y}_{pk} + y_{\text{s}pk} + \cfrac{1}{\tau_{kq}^2}({y}_{kq} + y_{\text{s}kq}) + {y}_{\text{sh}k}  & -\alpha_{kq}^*{y}_{kq} \\
-    0 & -\alpha_{kq}{y}_{kq} & {y}_{kq} + y_{\text{s}kq}
+    \cfrac{1}{\tau_{12}^2}({y}_{12} + y_{\text{s}12}) & -\alpha_{12}^*{y}_{12} & 0 \\
+   -\alpha_{12}{y}_{12} & {y}_{12} + y_{\text{s}12} + \cfrac{1}{\tau_{23}^2}({y}_{23} + y_{\text{s}23}) + {y}_{\text{sh}2}  & -\alpha_{23}^*{y}_{23} \\
+    0 & -\alpha_{23}{y}_{23} & {y}_{23} + y_{\text{s}23}
   \end{bmatrix}
   \begin{bmatrix}
-    \bar{V}_{p} \\ \bar{V}_{k} \\ \bar{V}_{q}
+    \bar{V}_{1} \\ \bar{V}_{2} \\ \bar{V}_{3}
   \end{bmatrix}.
 ```
 
@@ -195,7 +241,7 @@ The matrix ``\mathbf{Y} = \mathbf{G} + \text{j}\mathbf{B} \in \mathbb{C}^{n \tim
   * the diagonal elements, where ``i \in \mathcal{N}``, are equal to:
     ```math
     Y_{ii} = G_{ii} + \text{j}B_{ii} = {y}_{\text{sh}i} +
-    \sum\limits_{e \in \mathcal{E}, \; e(1) = i} \cfrac{1}{\tau_{ij}^2}({y}_{ij} + y_{\text{s}ij}) + \sum\limits_{e \in \mathcal{E}, \; e(2) = i} ({y}_{ij} + y_{\text{s}ij}),
+    \sum\limits_{e \in \mathcal{E}, \; e(1) = i} \cfrac{1}{\tau_{ij}^2}({y}_{ij} + y_{\text{s}ij}) + \sum\limits_{e \in \mathcal{E}, \; e(2) = i} ({y}_{ji} + y_{\text{s}ji}),
     ```
   * the non-diagonal elements, where ``i = e(1),\; j = e(2), \; e \in \mathcal{E}``, are equal to:
     ```math
@@ -213,6 +259,30 @@ When a branch is not incident (or adjacent) to a bus the corresponding element i
 
 ---
 
+##### [Bus Injections](@id BusInjectionsTutorials)
+From the previous analysis, we can determine the complex current injection at each bus as follows:
+```math
+  \bar{I}_{i} = \sum\limits_{j = 1}^n {Y}_{ij} \bar{V}_{j},\;\;\; i \in \mathcal{N}.
+```
+
+Furthermore, the calculation of active and reactive power injection at each bus is expressed by the following equation:
+```math
+    {S}_{i} = P_i + \text{j}Q_i = \bar{V}_{i}\sum\limits_{j = 1}^n {Y}_{ij}^* \bar{V}_{j}^*,\;\;\; i \in \mathcal{N}.
+```
+When the values of active or reactive power are positive, ``P_i > 0`` or ``Q_i > 0``, it indicates that the bus is supplying power into the power system. Conversely, negative values, ``P_i < 0`` or ``Q_i < 0``, suggest that the bus is drawing active or reactive power from the power system.
+
+---
+
+##### [Bus Shunt Element](@id BusShuntElementTutorials)
+In conclusion, based on the previous analysis, we can determine the active and reactive power at the shunt element of each bus using the following equation:
+```math
+  {S}_{\text{sh}i} = {P}_{\text{sh}i} + \text{j}{Q}_{\text{sh}i} = \bar{V}_{i}\bar{I}_{\text{sh}i}^* = {y}_{\text{sh}i}^*{V}_{i}^2,\;\;\; i \in \mathcal{N}.
+```
+
+The positive active power value ``{P}_{\text{sh}i} > 0`` indicates that the shunt element is consuming active power. In terms of power flow, this signifies that active power flows from bus ``i \in \mathcal{N}`` towards the ground. On the other hand, a negative reactive power value ``{Q}_{\text{sh}i} < 0`` suggests that the shunt element is injecting reactive power into the power system. This implies that the direction of reactive power is from the ground to bus ``i \in \mathcal{N}``, illustrating the capacitive nature of the shunt component. Conversely, if ``{Q}_{\text{sh}i} > 0``, it indicates an inductive characteristic, implying that the shunt component is absorbing reactive power. In this case, the reactive power flows from bus ``i \in \mathcal{N}`` towards the ground.
+
+---
+
 ## [DC Model](@id DCModelTutorials)
 The DC model is obtained by linearisation of the nonlinear model, and it provides an approximate solution. In the typical operating conditions, the difference of bus voltage angles between adjacent buses ``(i,j) \in \mathcal{E}`` is very small ``\theta_{i}-\theta_{j} \approx 0``, which implies ``\cos \theta_{ij}\approx 1`` and ``\sin \theta_{ij} \approx \theta_{ij}``. Further, all bus voltage magnitudes are ``V_i \approx 1``, ``i \in \mathcal{N}``, and all branch shunt admittances and branch resistances can be neglected. This implies that the DC model ignores the reactive powers and transmission losses and takes into account only the active powers. Therefore, the DC power flow takes only bus voltage angles ``\bm \theta`` as variables. To create vectors and matrices related to DC or linear analyses, JuliaGrid uses the function [`dcModel!`](@ref dcModel!). Therefore, we can continue with the previous example:
 ```@example ACDCModel
@@ -222,7 +292,7 @@ nothing # hide
 
 ---
 
-##### [Unified Branch Model](@id DCUnifiedBranchModelTutorials)
+##### [Branch Network Equations](@id DCBranchNetworkEquationsTutorials)
 According to the above assumptions, we start from the [Unified Branch Model](@ref UnifiedBranchModelTutorials):
 ```math
   \begin{bmatrix}
@@ -240,8 +310,8 @@ where ``\bar{V}_{i} = \text{e}^{\text{j}\theta_{i}}`` and ``\bar{V}_{j} = \text{
 ```math
   \begin{aligned}
     \bar{I}_{ij} &= \cfrac{1}{\text{j}x_{ij}} \left[\cfrac{1}{\tau_{ij}^2} \text{e}^{\text{j}\theta_{i}} -
-    \cfrac{1}{\tau_{ij}}e^{\text{j}(\phi_{ij} + \theta_j)} \right] \\
-    \bar{I}_{ji} &= \cfrac{1}{\text{j}x_{ij}} \left[-\cfrac{1}{\tau_{ij}}e^{\text{j}(\theta_i - \phi_{ij})} + \text{e}^{\text{j}\theta_{j}} \right].
+    \cfrac{1}{\tau_{ij}}\text{e}^{\text{j}(\phi_{ij} + \theta_j)} \right] \\
+    \bar{I}_{ji} &= \cfrac{1}{\text{j}x_{ij}} \left[-\cfrac{1}{\tau_{ij}}\text{e}^{\text{j}(\theta_i - \phi_{ij})} + \text{e}^{\text{j}\theta_{j}} \right].
   \end{aligned}
 ```
 The active power flows are derived as follows:
@@ -272,7 +342,7 @@ Furthermore, the computed branch admittances in the DC framework are stored in t
 𝐲 = system.model.dc.admittance
 ```
 
-We can conclude that ``P_{ij}=-P_{ji}`` holds. With the DC model, the linear network equations relate active powers to bus voltage angles, versus complex currents to complex bus voltages in the AC model [[3]](@ref ACDCModelReferenceTutorials). Consequently, analogous to the [Unified Branch Model](@ref UnifiedBranchModelTutorials) we can write:
+We can conclude that ``P_{ij}=-P_{ji}`` holds. With the DC model, the linear network equations relate active powers to bus voltage angles, versus complex currents to complex bus voltages in the AC model [[3]](@ref ACDCModelReferenceTutorials). Consequently, analogous to the [Branch Network Equations](@ref BranchNetworkEquationsTutorials) we can write:
 ```math
   \begin{bmatrix}
     P_{ij} \\ P_{ji}
@@ -291,8 +361,8 @@ We can conclude that ``P_{ij}=-P_{ji}`` holds. With the DC model, the linear net
 
 ---
 
-##### [System of Equations and Nodal Matrix](@id SystemEquationsNodalMatrixTutorials)
-As before, let us consider an example of the DC framework, given in Figure 3, that will allow us an easy transition to the general case. We observe system with three buses ``\mathcal{N} = \{p, k, q\}`` and two branches ``\mathcal{E} = \{(p, k), (k, q)\}``, where the bus ``k`` is incident to the shunt element with conductance ``{g}_{\text{sh}k}``.
+##### [Nodal Formulation of the Network Equations](@id DCNodalFormulationNetworkEquationsTutorials)
+As before, let us consider an illustrative example from our case study, depicted in Figure 3. This example provides a smooth transition to the general case, demonstrating a system with three buses represented as ``\mathcal{N} = \{1, 2, 3\}`` and two branches ``\mathcal{E} = \{(1, 2), (2, 3)\}``, where bus ``2`` is incident to the shunt element with admittance ``{g}_{\text{sh}2}``.
 ```@raw html
 <img src="../../assets/dc_model.svg" class="center" width="600" />
 <figcaption>Figure 3: The example of the system with three buses and two branches.</figcaption>
@@ -302,30 +372,30 @@ As before, let us consider an example of the DC framework, given in Figure 3, th
 Each branch in the DC framework is described with a system of equations as follows:
 ```math
   \begin{bmatrix}
-    P_{pk} \\ P_{kp}
-  \end{bmatrix} = \cfrac{1}{\tau_{pk}x_{pk}}
+    P_{12} \\ P_{21}
+  \end{bmatrix} = \cfrac{1}{\tau_{12}x_{12}}
   \begin{bmatrix}
     1 && -1\\
     -1 && 1
   \end{bmatrix}
   \begin{bmatrix}
-    \theta_{p} \\ \theta_{k}
-  \end{bmatrix} + \cfrac{\phi_{pk}}{\tau_{pk}x_{pk}}
+    \theta_{1} \\ \theta_{2}
+  \end{bmatrix} + \cfrac{\phi_{12}}{\tau_{12}x_{12}}
   \begin{bmatrix}
     -1 \\ 1
   \end{bmatrix}
 ```
 ```math
   \begin{bmatrix}
-    P_{kq} \\ P_{qk}
-  \end{bmatrix} = \cfrac{1}{\tau_{kq}x_{kq}}
+    P_{23} \\ P_{32}
+  \end{bmatrix} = \cfrac{1}{\tau_{23}x_{23}}
   \begin{bmatrix}
     1 && -1\\
     -1 && 1
   \end{bmatrix}
   \begin{bmatrix}
-    \theta_{k} \\ \theta_{q}
-  \end{bmatrix} + \cfrac{\phi_{kq}}{\tau_{kq}x_{kq}}
+    \theta_{2} \\ \theta_{3}
+  \end{bmatrix} + \cfrac{\phi_{23}}{\tau_{23}x_{23}}
   \begin{bmatrix}
     -1 \\ 1
   \end{bmatrix}.
@@ -334,34 +404,34 @@ Each branch in the DC framework is described with a system of equations as follo
 The active power injections at buses are:
 ```math
   \begin{aligned}
-    P_{p} &= P_{pk} =\cfrac{1}{\tau_{pk}x_{pk}} \theta_{p} - \cfrac{1}{\tau_{pk}x_{pk}} \theta_{k} - \cfrac{\phi_{pk}}{\tau_{pk}x_{pk}} \\
-    P_{k} &= P_{kp} + P_{kq} + P_{\text{sh}k} = -\cfrac{1}{\tau_{pk}x_{pk}} \theta_{p} + \cfrac{1}{\tau_{pk}x_{pk}} \theta_{k} + \cfrac{\phi_{pk}}{\tau_{pk}x_{pk}} +
-    \cfrac{1}{\tau_{kq}x_{kq}} \theta_{k} - \cfrac{1}{\tau_{kq}x_{kq}} \theta_{q} - \cfrac{\phi_{kq}}{\tau_{kq}x_{kq}} + {g}_{\text{sh}k} \\
-    P_{q} &= {P}_{qk} = -\cfrac{1}{\tau_{kq}x_{kq}} \theta_{k} +\cfrac{1}{\tau_{kq}x_{kq}} \theta_{q} + \cfrac{\phi_{kq}}{\tau_{kq}x_{kq}},
+    P_{1} &= P_{12} =\cfrac{1}{\tau_{12}x_{12}} \theta_{1} - \cfrac{1}{\tau_{12}x_{12}} \theta_{k} - \cfrac{\phi_{12}}{\tau_{12}x_{12}} \\
+    P_{2} &= P_{21} + P_{23} + P_{\text{sh}2} = -\cfrac{1}{\tau_{12}x_{12}} \theta_{1} + \cfrac{1}{\tau_{12}x_{12}} \theta_{2} + \cfrac{\phi_{12}}{\tau_{12}x_{12}} +
+    \cfrac{1}{\tau_{23}x_{23}} \theta_{2} - \cfrac{1}{\tau_{23}x_{23}} \theta_{3} - \cfrac{\phi_{23}}{\tau_{23}x_{23}} + {g}_{\text{sh}2} \\
+    P_{3} &= {P}_{32} = -\cfrac{1}{\tau_{23}x_{23}} \theta_{2} +\cfrac{1}{\tau_{23}x_{23}} \theta_{3} + \cfrac{\phi_{23}}{\tau_{23}x_{23}},
   \end{aligned}
 ```
-where the active power injected by the shunt element at the bus ``k`` is equal to:
+where the active power injected by the shunt element at the bus ``2`` is equal to:
 ```math
-  P_{\text{sh}k} = \Re\{\bar{V}_{k}\bar{I}_{\text{sh}k}^*\} = \Re\{\bar{V}_{k}{y}_{\text{sh}k}^*\bar{V}_{k}^*\} = V_k^2 {g}_{\text{sh}k} = {g}_{\text{sh}k}.
+  P_{\text{sh}2} = \Re\{\bar{V}_{2}\bar{I}_{\text{sh}2}^*\} = \Re\{\bar{V}_{2}{y}_{\text{sh}2}^*\bar{V}_{2}^*\} = V_2^2 {g}_{\text{sh}2} = {g}_{\text{sh}2}.
 ```
 The system of equations can be written in the matrix form:
 ```math
   \begin{bmatrix}
-    P_{p} \\ P_{k} \\ P_{q}
+    P_{1} \\ P_{2} \\ P_{3}
   \end{bmatrix} =
   \begin{bmatrix}
-    \cfrac{1}{\tau_{pk}x_{pk}} & - \cfrac{1}{\tau_{pk}x_{pk}} & 0 \\
-    -\cfrac{1}{\tau_{pk}x_{pk}} & \cfrac{1}{\tau_{pk}x_{pk}} + \cfrac{1}{\tau_{kq}x_{kq}}  & -\cfrac{1}{\tau_{kq}x_{kq}} \\
-    0 & -\cfrac{1}{\tau_{kq}x_{kq}} &\cfrac{1}{\tau_{kq}x_{kq}}
+    \cfrac{1}{\tau_{12}x_{12}} & - \cfrac{1}{\tau_{12}x_{12}} & 0 \\
+    -\cfrac{1}{\tau_{12}x_{12}} & \cfrac{1}{\tau_{12}x_{12}} + \cfrac{1}{\tau_{23}x_{23}}  & -\cfrac{1}{\tau_{23}x_{23}} \\
+    0 & -\cfrac{1}{\tau_{23}x_{23}} &\cfrac{1}{\tau_{23}x_{23}}
   \end{bmatrix}
   \begin{bmatrix}
-    \theta_{p} \\ \theta_{k} \\ \theta_{q}
+    \theta_{1} \\ \theta_{2} \\ \theta_{3}
   \end{bmatrix} +
   \begin{bmatrix}
-    - \cfrac{\phi_{pk}}{\tau_{pk}x_{pk}} \\ \cfrac{\phi_{pk}}{\tau_{pk}x_{pk}} - \cfrac{\phi_{kq}}{\tau_{kq}x_{kq}} \\ \cfrac{\phi_{kq}}{\tau_{kq}x_{kq}}
+    - \cfrac{\phi_{12}}{\tau_{12}x_{12}} \\ \cfrac{\phi_{12}}{\tau_{12}x_{12}} - \cfrac{\phi_{23}}{\tau_{23}x_{23}} \\ \cfrac{\phi_{23}}{\tau_{23}x_{23}}
   \end{bmatrix} +
   \begin{bmatrix}
-    0 \\ {g}_{\text{sh}k} \\ 0
+    0 \\ {g}_{\text{sh}2} \\ 0
   \end{bmatrix}.
 ```
 
@@ -386,7 +456,7 @@ The vector ``\mathbf{P}_\text{sh} \in \mathbb{R}^{n}`` represents active powers 
 𝐏ₛₕ = system.bus.shunt.conductance
 ```
 
-The bus or nodal matrix in the DC framework is given as ``\mathbf{B} \in \mathbb{C}^{n \times n}``, with elements:
+The bus or nodal matrix in the DC framework is given as ``\mathbf{B} \in \mathbb{R}^{n \times n}``, with elements:
   * the diagonal elements, where ``i \in \mathcal{N}``, are equal to:
     ```math
     B_{ii} = \sum\limits_{e \in \mathcal{E},\; i \in e} \cfrac{1}{\tau_{ij}x_{ij}},
@@ -402,6 +472,14 @@ The bus or nodal matrix in the DC framework is given as ``\mathbf{B} \in \mathbb
 The sparse nodal matrix ``\mathbf{B}`` is stored in the `dc` field, and we can access it using:
 ```@repl ACDCModel
 𝐁 = system.model.dc.nodalMatrix
+```
+
+---
+
+##### [Bus Injection](@id DCBusInjectionTutorials)
+From the previous analysis, the calculation of active power injection at each bus is expressed by the following equation:
+```math
+    P_i = \sum_{j = 1}^n {B}_{ij} \theta_j + P_{\text{tr}i} + P_{\text{sh}i},\;\;\; i \in \mathcal{N}.
 ```
 
 ---
