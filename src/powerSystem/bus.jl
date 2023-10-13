@@ -28,8 +28,8 @@ The function updates the `bus` field of the `PowerSystem` composite type.
 
 # Default Settings
 The default settings for certain keywords are as follows: `type = 1`, `magnitude = 1.0`,
-`minMagnitude = 0.9`, `maxMagnitude = 1.1`, and `base = 138e3`. The rest of the keywords 
-are initialized with a value of zero. However, the user can modify these default settings 
+`minMagnitude = 0.9`, `maxMagnitude = 1.1`, and `base = 138e3`. The rest of the keywords
+are initialized with a value of zero. However, the user can modify these default settings
 by utilizing the [`@bus`](@ref @bus) macro.
 
 # Units
@@ -497,12 +497,7 @@ macro bus(kwargs...)
                 elseif parameter in [:area; :lossZone]
                     setfield!(template.bus, parameter, Int64(eval(kwarg.args[2])))
                 elseif parameter == :label
-                    label = string(kwarg.args[2])
-                    containerLabel::ContainerLabel = getfield(template.bus, parameter)
-                    setfield!(containerLabel, :label, label)
-                    if contains(label, "?")
-                        setfield!(containerLabel, :question, true)
-                    end
+                    setfield!(template.bus, parameter, string(kwarg.args[2]))
                 end
             end
         else

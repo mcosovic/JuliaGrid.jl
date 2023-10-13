@@ -55,13 +55,7 @@ Base.@kwdef mutable struct ContainerTemplate
     pu::Bool = true
 end
 
-Base.@kwdef mutable struct ContainerLabel
-    label::String = ""
-    question::Bool = false
-end
-
 Base.@kwdef mutable struct BusTemplate
-    label::ContainerLabel = ContainerLabel()
     active::ContainerTemplate = ContainerTemplate()
     reactive::ContainerTemplate = ContainerTemplate()
     conductance::ContainerTemplate = ContainerTemplate()
@@ -69,6 +63,7 @@ Base.@kwdef mutable struct BusTemplate
     magnitude::ContainerTemplate = ContainerTemplate(1.0, true)
     minMagnitude::ContainerTemplate = ContainerTemplate(0.9, true)
     maxMagnitude::ContainerTemplate = ContainerTemplate(1.1, true)
+    label::String = ""
     base::Float64 = 138e3
     angle::Float64 = 0.0
     type::Int8 = Int8(1)
@@ -77,7 +72,6 @@ Base.@kwdef mutable struct BusTemplate
 end
 
 Base.@kwdef mutable struct BranchTemplate
-    label::ContainerLabel = ContainerLabel()
     resistance::ContainerTemplate = ContainerTemplate()
     reactance::ContainerTemplate = ContainerTemplate()
     conductance::ContainerTemplate = ContainerTemplate()
@@ -85,6 +79,7 @@ Base.@kwdef mutable struct BranchTemplate
     longTerm::ContainerTemplate = ContainerTemplate()
     shortTerm::ContainerTemplate = ContainerTemplate()
     emergency::ContainerTemplate = ContainerTemplate()
+    label::String = ""
     turnsRatio::Float64 = 1.0
     shiftAngle::Float64 = 0.0
     minDiffAngle::Float64 = -2*pi
@@ -94,7 +89,6 @@ Base.@kwdef mutable struct BranchTemplate
 end
 
 Base.@kwdef mutable struct GeneratorTemplate
-    label::ContainerLabel = ContainerLabel()
     active::ContainerTemplate = ContainerTemplate()
     reactive::ContainerTemplate = ContainerTemplate()
     magnitude::ContainerTemplate = ContainerTemplate(1.0, true)
@@ -112,6 +106,7 @@ Base.@kwdef mutable struct GeneratorTemplate
     reactiveTimescale::ContainerTemplate = ContainerTemplate()
     reserve10min::ContainerTemplate = ContainerTemplate()
     reserve30min::ContainerTemplate = ContainerTemplate()
+    label::String = ""
     status::Int8 = Int8(1)
     area::Int64 = 0
 end

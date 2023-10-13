@@ -737,12 +737,7 @@ macro generator(kwargs...)
                 elseif parameter == :area
                     setfield!(template.generator, parameter, Int64(eval(kwarg.args[2])))
                 elseif parameter == :label
-                    label = string(kwarg.args[2])
-                    containerLabel::ContainerLabel = getfield(template.generator, parameter)
-                    setfield!(containerLabel, :label, label)
-                    if contains(label, "?")
-                        setfield!(containerLabel, :question, true)
-                    end   
+                    setfield!(template.generator, parameter, string(kwarg.args[2]))
                 end
             end
         else

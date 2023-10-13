@@ -204,7 +204,7 @@ function addBranch!(system::PowerSystem, analysis::ACOptimalPowerFlow;
     jump = analysis.jump
     constraint = analysis.constraint
     variable = analysis.variable
-    
+
     addBranch!(system; label, from, to, status, resistance, reactance, susceptance,
         conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, longTerm, shortTerm,
         emergency, type)
@@ -215,7 +215,7 @@ function addBranch!(system::PowerSystem, analysis::ACOptimalPowerFlow;
 
         updateBalance(system, analysis, from; active = true, reactive = true)
         updateBalance(system, analysis, to; active = true, reactive = true)
-        
+
         addFlow(system, jump, variable.magnitude, variable.angle, constraint.flow.from, constraint.flow.to, branch.number)
         addAngle(system, jump, variable.angle, constraint.voltage.angle, branch.number)
     end
@@ -423,7 +423,7 @@ function updateBranch!(system::PowerSystem, analysis::DCOptimalPowerFlow;
     end
 
     if branch.layout.status[index] == 1
-        if statusOld == 0 || (statusOld == 1 && (parameter || long)) 
+        if statusOld == 0 || (statusOld == 1 && (parameter || long))
             addFlow(system, jump, variable.angle, constraint.flow.active, index)
         end
         if statusOld == 0 || (statusOld == 1 && diffAngle)
@@ -451,8 +451,8 @@ function updateBranch!(system::PowerSystem, analysis::ACOptimalPowerFlow;
         emergency, type)
 
     parameter = isset(resistance) || isset(reactance) || isset(conductance) || isset(susceptance) || isset(turnsRatio) || isset(shiftAngle)
-    diffAngle = isset(minDiffAngle) || isset(maxDiffAngle) 
-    long = isset(longTerm) || isset(type) 
+    diffAngle = isset(minDiffAngle) || isset(maxDiffAngle)
+    long = isset(longTerm) || isset(type)
 
     from = branch.layout.from[index]
     to = branch.layout.to[index]
@@ -559,12 +559,7 @@ macro branch(kwargs...)
                 elseif parameter == :status
                     setfield!(template.branch, parameter, Int8(eval(kwarg.args[2])))
                 elseif parameter == :label
-                    label = string(kwarg.args[2])
-                    containerLabel::ContainerLabel = getfield(template.branch, parameter)
-                    setfield!(containerLabel, :label, label)
-                    if contains(label, "?")
-                        setfield!(containerLabel, :question, true)
-                    end
+                    setfield!(template.branch, parameter, string(kwarg.args[2]))
                 end
             end
         else

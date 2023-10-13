@@ -115,18 +115,13 @@ function unitless(value, default)
 end
 
 ######### Set Label ##########
-function setLabel(component, label::Missing, default::ContainerLabel, key::String)
+function setLabel(component, label::Missing, default::String, key::String)
     component.layout.maxLabel += 1
+    setindex!(component.label, component.number, replace(default, r"\?" => string(component.layout.maxLabel)))
 
-    if default.question
-        setindex!(component.label, component.number, replace(default.label, r"\?" => string(component.layout.maxLabel)))
-    else
-        setindex!(component.label, component.number, string(default.label, component.layout.maxLabel))
-    end
-    
 end
 
-function setLabel(component, label::String, default::ContainerLabel, key::String)
+function setLabel(component, label::String, default::String, key::String)
     if haskey(component.label, label)
         throw(ErrorException("The label $label is not unique."))
     end
@@ -140,7 +135,7 @@ function setLabel(component, label::String, default::ContainerLabel, key::String
     setindex!(component.label, component.number, label)
 end
 
-function setLabel(component, label::Int64, default::ContainerLabel, key::String)
+function setLabel(component, label::Int64, default::String, key::String)
     labelString = string(label)
     if haskey(component.label, labelString)
         throw(ErrorException("The label $label is not unique."))
@@ -201,7 +196,7 @@ function checkLocation(device, from, to)
         push!(device.layout.from, false)
         push!(device.layout.to, true)
     end
-    
+
     return location
 end
 
