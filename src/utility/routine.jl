@@ -118,7 +118,6 @@ end
 function setLabel(component, label::Missing, default::String, key::String)
     component.layout.maxLabel += 1
     setindex!(component.label, component.number, replace(default, r"\?" => string(component.layout.maxLabel)))
-
 end
 
 function setLabel(component, label::String, default::String, key::String)

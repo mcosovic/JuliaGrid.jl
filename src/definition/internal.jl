@@ -63,7 +63,7 @@ Base.@kwdef mutable struct BusTemplate
     magnitude::ContainerTemplate = ContainerTemplate(1.0, true)
     minMagnitude::ContainerTemplate = ContainerTemplate(0.9, true)
     maxMagnitude::ContainerTemplate = ContainerTemplate(1.1, true)
-    label::String = ""
+    label::String = "?"
     base::Float64 = 138e3
     angle::Float64 = 0.0
     type::Int8 = Int8(1)
@@ -79,7 +79,7 @@ Base.@kwdef mutable struct BranchTemplate
     longTerm::ContainerTemplate = ContainerTemplate()
     shortTerm::ContainerTemplate = ContainerTemplate()
     emergency::ContainerTemplate = ContainerTemplate()
-    label::String = ""
+    label::String = "?"
     turnsRatio::Float64 = 1.0
     shiftAngle::Float64 = 0.0
     minDiffAngle::Float64 = -2*pi
@@ -106,7 +106,7 @@ Base.@kwdef mutable struct GeneratorTemplate
     reactiveTimescale::ContainerTemplate = ContainerTemplate()
     reserve10min::ContainerTemplate = ContainerTemplate()
     reserve30min::ContainerTemplate = ContainerTemplate()
-    label::String = ""
+    label::String = "?"
     status::Int8 = Int8(1)
     area::Int64 = 0
 end
