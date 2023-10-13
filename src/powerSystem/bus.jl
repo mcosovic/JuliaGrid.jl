@@ -67,7 +67,7 @@ function addBus!(system::PowerSystem;
     default = template.bus
 
     bus.number += 1
-    setLabel(bus, label, "bus")
+    setLabel(bus, label, default.label, "bus")
 
     push!(bus.layout.type, unitless(type, default.type))
     if !(bus.layout.type[end] in [1, 2, 3])
@@ -469,10 +469,9 @@ addBus!(system; label = "Bus 1", reactive = -4.0)
 macro bus(kwargs...)
     for kwarg in kwargs
         parameter::Symbol = kwarg.args[1]
-        value::Float64 = Float64(eval(kwarg.args[2]))
 
         if hasfield(BusTemplate, parameter)
-            if !(parameter in [:base; :angle; :type; :area; :lossZone])
+            if !(parameter in [:base; :angle; :type; :area; :lossZone; :label])
                 container::ContainerTemplate = getfield(template.bus, parameter)
                 if parameter in [:active; :conductance]
                     prefixLive = prefix.activePower
@@ -482,21 +481,28 @@ macro bus(kwargs...)
                     prefixLive = prefix.voltageMagnitude
                 end
                 if prefixLive != 0.0
-                    setfield!(container, :value, prefixLive * value)
+                    setfield!(container, :value, prefixLive * Float64(eval(kwarg.args[2])))
                     setfield!(container, :pu, false)
                 else
-                    setfield!(container, :value, value)
+                    setfield!(container, :value, Float64(eval(kwarg.args[2])))
                     setfield!(container, :pu, true)
                 end
             else
                 if parameter == :base
-                    setfield!(template.bus, parameter, value * prefix.baseVoltage)
+                    setfield!(template.bus, parameter, Float64(eval(kwarg.args[2])) * prefix.baseVoltage)
                 elseif parameter == :angle
-                    setfield!(template.bus, parameter, value * prefix.voltageAngle)
+                    setfield!(template.bus, parameter, Float64(eval(kwarg.args[2])) * prefix.voltageAngle)
                 elseif parameter == :type
-                    setfield!(template.bus, parameter, Int8(value))
+                    setfield!(template.bus, parameter, Int8(eval(kwarg.args[2])))
                 elseif parameter in [:area; :lossZone]
-                    setfield!(template.bus, parameter, Int64(value))
+                    setfield!(template.bus, parameter, Int64(eval(kwarg.args[2])))
+                elseif parameter == :label
+                    label = string(kwarg.args[2])
+                    containerLabel::ContainerLabel = getfield(template.bus, parameter)
+                    setfield!(containerLabel, :label, label)
+                    if contains(label, "?")
+                        setfield!(containerLabel, :question, true)
+                    end
                 end
             end
         else

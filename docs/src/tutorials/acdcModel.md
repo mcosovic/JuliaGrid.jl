@@ -28,7 +28,7 @@ addGenerator!(system; bus = 1, active = 40.0, reactive = 42.4)
 nothing #hide
 ```
 
-The given example provides the set of buses and branches:
+The given example provides the set of buses ``\mathcal{N}``  and the set of branches ``\mathcal{E}``:
 ```@repl ACDCModel
 𝒩 = collect(keys(sort(system.bus.label)))
 ℰ = [𝒩[system.branch.layout.from] 𝒩[system.branch.layout.to]]

@@ -86,7 +86,7 @@ function addBranch!(system::PowerSystem;
     default = template.branch
 
     branch.number += 1
-    setLabel(branch, label, "branch")
+    setLabel(branch, label, default.label, "branch")
 
     if from == to
         throw(ErrorException("The provided value for the from or to keywords is not valid."))
@@ -531,9 +531,9 @@ macro branch(kwargs...)
 
     for kwarg in kwargs
         parameter::Symbol = kwarg.args[1]
-        value::Float64 = Float64(eval(kwarg.args[2]))
+
         if hasfield(BranchTemplate, parameter)
-            if !(parameter in [:status; :type; :shiftAngle; :minDiffAngle; :maxDiffAngle])
+            if !(parameter in [:status; :type; :shiftAngle; :minDiffAngle; :maxDiffAngle; :label])
                 container::ContainerTemplate = getfield(template.branch, parameter)
                 if parameter in [:resistance; :reactance]
                     prefixLive = prefix.impedance
@@ -547,17 +547,24 @@ macro branch(kwargs...)
                     end
                 end
                 if prefixLive != 0.0
-                    setfield!(container, :value, prefixLive * value)
+                    setfield!(container, :value, prefixLive * Float64(eval(kwarg.args[2])))
                     setfield!(container, :pu, false)
                 else
-                    setfield!(container, :value, value)
+                    setfield!(container, :value, Float64(eval(kwarg.args[2])))
                     setfield!(container, :pu, true)
                 end
             else
                 if parameter in [:shiftAngle; :minDiffAngle; :maxDiffAngle]
-                    setfield!(template.branch, parameter, value * prefix.voltageAngle)
+                    setfield!(template.branch, parameter, Float64(eval(kwarg.args[2])) * prefix.voltageAngle)
                 elseif parameter == :status
-                    setfield!(template.branch, parameter, Int8(value))
+                    setfield!(template.branch, parameter, Int8(eval(kwarg.args[2])))
+                elseif parameter == :label
+                    label = string(kwarg.args[2])
+                    containerLabel::ContainerLabel = getfield(template.branch, parameter)
+                    setfield!(containerLabel, :label, label)
+                    if contains(label, "?")
+                        setfield!(containerLabel, :question, true)
+                    end
                 end
             end
         else

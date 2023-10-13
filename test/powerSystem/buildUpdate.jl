@@ -27,6 +27,7 @@
     addBranch!(systemPU; from = 1, to = 2, resistance = 0.07, reactance = 0.09, longTerm = 0.1)
     addBranch!(systemPU; from = 4, to = 9, resistance = 0.08, reactance = 0.30, emergency = 0.03)
 
+    @generator(label = "?")
     addGenerator!(systemPU; bus = "1", active = 3.7, maxReactive = 1.75, maxActive = 4.72)
     addGenerator!(systemPU; bus = 2, active = 2.1, magnitude = 1.1, maxActive = 3.16, status = 0)
     addGenerator!(systemPU; bus = 2, active = 2.6, reactive = 0.3, maxActive = 3.16)

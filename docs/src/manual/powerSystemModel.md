@@ -250,7 +250,7 @@ Similar to buses and branches, the input units can be changed to units other tha
 ## [Labels](@id LabelsManual)
 As we shown above, JuliaGrid mandates a distinctive label for every bus, branch, or generator. These labels are stored in dictionaries, functioning as pairs of strings and integers. The string signifies the exclusive label for the specific component, whereas the integer maintains an internal numbering of buses, branches, or generators.
 
-In contrast to the simple labeling approach, JuliaGrid offers two additional methods for labeling. The choice of method depends on the specific needs and can potentially be more straightforward.
+In contrast to the simple labeling approach, JuliaGrid offers several additional methods for labeling. The choice of method depends on the specific needs and can potentially be more straightforward.
 
 ---
 
@@ -293,8 +293,32 @@ addGenerator!(system; bus = 2, active = 0.5, reactive = 0.1)
 
 nothing # hide
 ```
-
 This example presents the same power system as the previous one. In the previous example, we used an ordered set of increasing integers for labels, which aligns with JuliaGrid's automatic labeling behaviour when the label keyword is omitted.
+
+---
+
+##### Automated Labeling Using Templates
+Additionally, users have the ability to generate labels through templates and employ the symbol `?` to insert an incremental set of integers at any location. Moreover, when users desire to place an incremental set of integers at the end of the label template, the use of `?` can be omitted. For instance:
+```@example LabelAutomaticTemplate
+using JuliaGrid # hide
+@default(unit) # hide
+@default(template) # hide
+
+system = powerSystem()
+
+@bus(label = "Bus ? HV")
+addBus!(system; type = 3, active = 0.1)
+addBus!(system; type = 1, angle = -0.2)
+
+@branch(label = "Branch ")
+addBranch!(system; from = "Bus 1 HV", to = "Bus 2 HV", reactance = 0.12)
+
+@generator(label = "Generator ")
+addGenerator!(system; bus = "Bus 2 HV", active = 0.5, reactive = 0.1)
+
+nothing # hide
+```
+In this this example, two buses are generated and labeled as `Bus 1 HV` and `Bus 2 HV`, along with one branch and one generator labeled as `Branch 1` and `Generator 1`, respectively.
 
 ---
 

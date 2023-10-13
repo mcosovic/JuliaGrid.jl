@@ -55,7 +55,13 @@ Base.@kwdef mutable struct ContainerTemplate
     pu::Bool = true
 end
 
+Base.@kwdef mutable struct ContainerLabel
+    label::String = ""
+    question::Bool = false
+end
+
 Base.@kwdef mutable struct BusTemplate
+    label::ContainerLabel = ContainerLabel()
     active::ContainerTemplate = ContainerTemplate()
     reactive::ContainerTemplate = ContainerTemplate()
     conductance::ContainerTemplate = ContainerTemplate()
@@ -71,6 +77,7 @@ Base.@kwdef mutable struct BusTemplate
 end
 
 Base.@kwdef mutable struct BranchTemplate
+    label::ContainerLabel = ContainerLabel()
     resistance::ContainerTemplate = ContainerTemplate()
     reactance::ContainerTemplate = ContainerTemplate()
     conductance::ContainerTemplate = ContainerTemplate()
@@ -87,6 +94,7 @@ Base.@kwdef mutable struct BranchTemplate
 end
 
 Base.@kwdef mutable struct GeneratorTemplate
+    label::ContainerLabel = ContainerLabel()
     active::ContainerTemplate = ContainerTemplate()
     reactive::ContainerTemplate = ContainerTemplate()
     magnitude::ContainerTemplate = ContainerTemplate(1.0, true)
@@ -111,6 +119,7 @@ end
 Base.@kwdef mutable struct VoltmeterTemplate
     variance::ContainerTemplate = ContainerTemplate(1e-2, true)
     status::Int8 = Int8(1)
+    label::String = ""
 end
 
 Base.@kwdef mutable struct AmmeterTemplate
@@ -118,6 +127,7 @@ Base.@kwdef mutable struct AmmeterTemplate
     varianceto::ContainerTemplate = ContainerTemplate(1e-2, true)
     statusfrom::Int8 = Int8(1)
     statusto::Int8 = Int8(1)
+    label::String = ""
 end
 
 Base.@kwdef mutable struct WattmeterTemplate
@@ -127,6 +137,7 @@ Base.@kwdef mutable struct WattmeterTemplate
     statusbus::Int8 = Int8(1)
     statusfrom::Int8 = Int8(1)
     statusto::Int8 = Int8(1)
+    label::String = ""
 end
 
 Base.@kwdef mutable struct VarmeterTemplate
@@ -136,6 +147,7 @@ Base.@kwdef mutable struct VarmeterTemplate
     statusbus::Int8 = Int8(1)
     statusfrom::Int8 = Int8(1)
     statusto::Int8 = Int8(1)
+    label::String = ""
 end
 
 Base.@kwdef mutable struct AnglepmuTemplate
@@ -145,6 +157,7 @@ Base.@kwdef mutable struct AnglepmuTemplate
     statusbus::Int8 = Int8(1)
     statusfrom::Int8 = Int8(1)
     statusto::Int8 = Int8(1)
+    label::String = ""
 end
 
 Base.@kwdef mutable struct MagnitudepmuTemplate
@@ -154,6 +167,7 @@ Base.@kwdef mutable struct MagnitudepmuTemplate
     statusbus::Int8 = Int8(1)
     statusfrom::Int8 = Int8(1)
     statusto::Int8 = Int8(1)
+    label::String = ""
 end
 
 mutable struct Template

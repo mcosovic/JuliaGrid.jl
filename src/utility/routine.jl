@@ -115,12 +115,18 @@ function unitless(value, default)
 end
 
 ######### Set Label ##########
-function setLabel(component, label::Missing, key::String)
+function setLabel(component, label::Missing, default::ContainerLabel, key::String)
     component.layout.maxLabel += 1
-    setindex!(component.label, component.number, string(component.layout.maxLabel))
+
+    if default.question
+        setindex!(component.label, component.number, replace(default.label, r"\?" => string(component.layout.maxLabel)))
+    else
+        setindex!(component.label, component.number, string(default.label, component.layout.maxLabel))
+    end
+    
 end
 
-function setLabel(component, label::String, key::String)
+function setLabel(component, label::String, default::ContainerLabel, key::String)
     if haskey(component.label, label)
         throw(ErrorException("The label $label is not unique."))
     end
@@ -134,7 +140,7 @@ function setLabel(component, label::String, key::String)
     setindex!(component.label, component.number, label)
 end
 
-function setLabel(component, label::Int64, key::String)
+function setLabel(component, label::Int64, default::ContainerLabel, key::String)
     labelString = string(label)
     if haskey(component.label, labelString)
         throw(ErrorException("The label $label is not unique."))
@@ -169,6 +175,34 @@ function checkStatus(status)
     if !(status in [0; 1])
         throw(ErrorException("The status $status is not allowed; it should be either in-service (1) or out-of-service (0)."))
     end
+end
+
+######### Check Mean and Exact ##########
+function checkMeanExact(mean, exact)
+    if ismissing(mean) && ismissing(exact)
+        throw(ErrorException("At least one of the keywords mean or exact must be provided."))
+    end
+end
+
+######### Check Location ##########
+function checkLocation(device, from, to)
+    if isset(from) && isset(to)
+        throw(ErrorException("The concurrent definition of the location keywords is not allowed."))
+    elseif ismissing(from) && ismissing(to)
+        throw(ErrorException("At least one of the location keywords must be provided."))
+    end
+
+    if isset(from)
+        location = from
+        push!(device.layout.from, true)
+        push!(device.layout.to, false)
+    else
+        location = to
+        push!(device.layout.from, false)
+        push!(device.layout.to, true)
+    end
+    
+    return location
 end
 
 ######### Print Data ##########
@@ -235,6 +269,6 @@ function print(io::IO, obj::Dict{Int64, Array{JuMP.ConstraintRef,1}})
 end
 
 ######### Check Input Data ##########
-function isset(input::T)
+function isset(input::Union{L, T})
     return !ismissing(input)
 end

@@ -89,7 +89,7 @@ function addGenerator!(system::PowerSystem;
     default = template.generator
 
     system.generator.number += 1
-    setLabel(generator, label, "generator")
+    setLabel(generator, label, default.label, "generator")
 
     busIndex = system.bus.label[getLabel(system.bus, bus, "bus")]
 
@@ -712,9 +712,9 @@ addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 50, reactiv
 macro generator(kwargs...)
     for kwarg in kwargs
         parameter::Symbol = kwarg.args[1]
-        value::Float64 = Float64(eval(kwarg.args[2]))
+
         if hasfield(GeneratorTemplate, parameter)
-            if !(parameter in [:area; :status])
+            if !(parameter in [:area; :status; :label])
                 container::ContainerTemplate = getfield(template.generator, parameter)
 
                 if parameter in [:active; :minActive; :maxActive; :lowActive; :upActive; :loadFollowing; :reserve10min; :reserve30min]
@@ -725,17 +725,24 @@ macro generator(kwargs...)
                     prefixLive = prefix.voltageMagnitude
                 end
                 if prefixLive != 0.0
-                    setfield!(container, :value, prefixLive * value)
+                    setfield!(container, :value, prefixLive * Float64(eval(kwarg.args[2])))
                     setfield!(container, :pu, false)
                 else
-                    setfield!(container, :value, value)
+                    setfield!(container, :value, Float64(eval(kwarg.args[2])))
                     setfield!(container, :pu, true)
                 end
             else
                 if parameter == :status
-                    setfield!(template.generator, parameter, Int8(value))
+                    setfield!(template.generator, parameter, Int8(eval(kwarg.args[2])))
                 elseif parameter == :area
-                    setfield!(template.generator, parameter, Int64(value))
+                    setfield!(template.generator, parameter, Int64(eval(kwarg.args[2])))
+                elseif parameter == :label
+                    label = string(kwarg.args[2])
+                    containerLabel::ContainerLabel = getfield(template.generator, parameter)
+                    setfield!(containerLabel, :label, label)
+                    if contains(label, "?")
+                        setfield!(containerLabel, :question, true)
+                    end   
                 end
             end
         else
