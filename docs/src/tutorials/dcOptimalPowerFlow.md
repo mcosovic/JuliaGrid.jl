@@ -181,7 +181,7 @@ The second equality constraint in the optimization problem is associated with th
 ```math
 h_{P_i}(\mathbf {P}_{\text{g}}, \boldsymbol{\theta}) = 0,\;\;\;  \forall i \in \mathcal{N}.
 ```
-The equation is derived using the [Nodal Formulation of the Network Equations](@ref DCNodalFormulationNetworkEquationsTutorials) and can be represented as:
+The equation is derived using the [Nodal Network Equations](@ref DCNodalNetworkEquationsTutorials) and can be represented as:
 ```math
 h_{P_i}(\mathbf {P}_{\text{g}}, \boldsymbol{\theta}) = \sum_{k \in \mathcal{P}_i} P_{\text{g}k} - \sum_{k = 1}^n {B}_{ik} \theta_k - P_{\text{d}i} - P_{\text{sh}i} - P_{\text{tr}i}.
 ```

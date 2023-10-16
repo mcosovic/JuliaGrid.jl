@@ -170,7 +170,7 @@ Positive values of active or reactive power, such as ``P_{ij} > 0`` or ``Q_{ij} 
 
 ---
 
-##### [Nodal Formulation of the Network Equations](@id NodalFormulationNetworkEquationsTutorials)
+##### [Nodal Network Equations](@id NodalNetworkEquationsTutorials)
 Let us consider an illustrative example from our case study, depicted in Figure 2. This example provides a smooth transition to the general case, demonstrating a system with three buses represented as ``\mathcal{N} = \{1, 2, 3\}`` and two branches ``\mathcal{E} = \{(1, 2), (2, 3)\}``, where bus ``2`` is incident to the shunt element with admittance ``{y}_{\text{sh}2}``.
 ```@raw html
 <img src="../../assets/pi_model_example.svg" class="center" width="710"/>
@@ -361,7 +361,7 @@ We can conclude that ``P_{ij}=-P_{ji}`` holds. With the DC model, the linear net
 
 ---
 
-##### [Nodal Formulation of the Network Equations](@id DCNodalFormulationNetworkEquationsTutorials)
+##### [Nodal Network Equations](@id DCNodalNetworkEquationsTutorials)
 As before, let us consider an illustrative example from our case study, depicted in Figure 3. This example provides a smooth transition to the general case, demonstrating a system with three buses represented as ``\mathcal{N} = \{1, 2, 3\}`` and two branches ``\mathcal{E} = \{(1, 2), (2, 3)\}``, where bus ``2`` is incident to the shunt element with admittance ``{g}_{\text{sh}2}``.
 ```@raw html
 <img src="../../assets/dc_model.svg" class="center" width="600" />

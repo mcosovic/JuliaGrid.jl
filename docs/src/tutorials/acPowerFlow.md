@@ -39,11 +39,12 @@ To review, we can conceptualize the bus/branch model as the graph denoted by ``\
 
 ---
 
-## [Bus Types and Power Injections](@id BusTypesPowerInjectionsTutorials)
-As previously demonstrated in the section on the [Nodal Formulation of the Network Equations](@ref NodalFormulationNetworkEquationsTutorials), we observe the system of equations:
+## [Nodal Network Equations](@id FlowNodalNetworkEquationsTutorials)
+As previously demonstrated in the section on the [Nodal Network Equations](@ref NodalNetworkEquationsTutorials), we observe the system of equations:
 ```math
   \mathbf{\bar {I}} = \mathbf{Y} \mathbf{\bar {V}}.
 ```
+
 The complex current injection at the bus ``i \in \mathcal{N}`` is defined as:
 ```math
   \bar{I}_{i} = \cfrac{S_{i}^*}{\bar{V}_{i}^*},
@@ -52,11 +53,22 @@ where ``\bar{V}_{i} = V_i \text{e}^{\text{j}\theta_{i}}``. Thus, for any given b
 ```math
   \cfrac{S_{i}^*}{\bar{V}_{i}^*} = \sum_{j = 1}^n Y_{ij} \bar {V}_j.
 ```
+
 The complex power injection denoted by ``S_i`` comprises of both the active power ``P_i`` and reactive power ``Q_i``. This relationship can be represented as follows:
 ```math
   \cfrac{P_i - \text{j}Q_i}{\bar{V}_{i}} = \sum_{j = 1}^n Y_{ij} \bar {V}_j.
 ```
-As demonstrated by the above equation, the bus ``i \in \mathcal{N}`` contains four unknown variables, namely the active power injection ``{P}_{i}``, reactive power injection ``{Q}_{i}``, bus voltage magnitude ``{V}_{i}``, and bus voltage angle ``{\theta}_{i}``. To solve the system of equations, two variables must be specified for each equation. Although any two variables can be selected mathematically, the choice is determined by the devices that are connected to a particular bus. The standard options are listed in the table below, and these options are used to define the bus types [[1]](@ref PowerFlowSolutionReferenceTutorials).
+
+Recognizing that ``Y_{ij} =  G_{ij} + \text{j}B_{ij}`` and ``\bar{V}_{j} = V_j \text{e}^{\text{j}\theta_{j}}``, we can break down the above equation into its real and imaginary parts, resulting in two equations that describe bus ``i \in \mathcal{N}`` as follows:
+```math
+  \begin{aligned}
+    {P}_{i} &={V}_{i}\sum\limits_{j=1}^n {V}_{j} (G_{ij}\cos\theta_{ij}+B_{ij}\sin\theta_{ij})\\
+    {Q}_{i} &={V}_{i}\sum\limits_{j=1}^n {V}_{j} (G_{ij}\sin\theta_{ij}-B_{ij}\cos\theta_{ij}),
+	\end{aligned}
+```
+where ``\theta_{ij} = \theta_{i} - \theta_{j}``.
+
+As demonstrated by the above equations, the bus ``i \in \mathcal{N}`` contains four unknown variables for bus  ``i \in \mathcal{N}``, namely the active power injection ``{P}_{i}``, reactive power injection ``{Q}_{i}``, bus voltage magnitude ``{V}_{i}``, and bus voltage angle ``{\theta}_{i}``. To solve these equations, it is necessary to specify two known variables. Although any two variables can be selected mathematically, the choice is determined by the devices that are connected to a particular bus. The standard options are listed in the table below, and these options are used to define the bus types [[1]](@ref PowerFlowSolutionReferenceTutorials).
 
 | Bus Type         | Label     | Known                       | Unknown                     |
 |:-----------------|----------:|----------------------------:|----------------------------:|
@@ -109,13 +121,14 @@ This, in turn, allows for the determination of the unknown voltage magnitudes an
 
 Knowing the voltage magnitudes and angles for certain types of buses is a consequence of the structure of the state vector ``\mathbf x``. Specifically, the voltage magnitude and angle at the slack bus are known, as well as the voltage magnitude at generator buses.
 
-The complex power injection ``S_i`` at a bus ``i \in \mathcal{N}`` is a function of the complex bus voltages. Therefore, the active and reactive power injection expressions can be defined based on the real and imaginary components of the complex power as follows:
+As detailed in the [Nodal Network Equations](@ref FlowNodalNetworkEquationsTutorials) section of this manual, the expressions for active and reactive power injection are as follows:
 ```math
   \begin{aligned}
     {P}_{i} &={V}_{i}\sum\limits_{j=1}^n {V}_{j} (G_{ij}\cos\theta_{ij}+B_{ij}\sin\theta_{ij})\\
     {Q}_{i} &={V}_{i}\sum\limits_{j=1}^n {V}_{j} (G_{ij}\sin\theta_{ij}-B_{ij}\cos\theta_{ij}).
 	\end{aligned}
 ```
+
 Using the above equations, we can define the active power injection function for demand and generator buses as follows:
 ```math
   f_{P_i}(\mathbf x) = {V}_{i}\sum\limits_{j=1}^n {V}_{j}(G_{ij}\cos\theta_{ij}+B_{ij}\sin\theta_{ij}) - {P}_{i} = 0,
@@ -608,15 +621,11 @@ Again, it is important to note that only the the voltage magnitudes of demand bu
 ---
 
 ## [Gauss-Seidel Method](@id GaussSeidelMethodTutorials)
-By defining the complex current injection at bus ``i \in \mathcal{N}`` as:
+As elaborated in the [Nodal Network Equations](@ref FlowNodalNetworkEquationsTutorials) section of this manual, each bus is associated with the balance equation expressed as:
 ```math
-	\bar{I}_{i} = \frac{{P}_{i} - j{Q}_{i}}{\bar{V}_{i}^*},
+  \sum_{j = 1}^n Y_{ij} \bar {V}_j = \cfrac{P_i - \text{j}Q_i}{\bar{V}_{i}}, \;\;\; \forall i \in \mathcal{N}.
 ```
-the power flow problem can be represented as the system of equations:
-```math
-  \mathbf {\bar {I}} = \mathbf{Y} \mathbf {\bar {V}}.
-```
-This system of equations can be expanded to ``n`` complex equations:
+In its expanded form, this can be written as:
 ```math
   \begin{aligned}
     Y_{11} & \bar{V}_{1} + \cdots+ Y_{1n}\bar{V}_{n} = \frac{{P}_{1} - j{Q}_{1}}{\bar{V}_{1}^*} \\
@@ -624,6 +633,7 @@ This system of equations can be expanded to ``n`` complex equations:
     Y_{n1} & \bar{V}_{1} + \cdots+ Y_{nn}\bar{V}_{n} = \frac{{P}_{n} - j{Q}_{n}}{\bar{V}_{n}^*}.
 	\end{aligned}
 ```
+
 While the Gauss-Seidel method directly solves the system of equations, it suffers from very slow convergence, which increases almost linearly with the system size, necessitating numerous iterations to obtain the desired solution [[4]](@ref PowerFlowSolutionReferenceTutorials). Moreover, the convergence time of the Gauss-Seidel method increases significantly for large-scale systems and can face convergence issues for systems with high active power transfers. Nevertheless, power flow programs utilize both the Gauss-Seidel and Newton-Raphson methods in a complementary manner. Specifically, the Gauss-Seidel method is employed to obtain a quick approximate solution from a "flat start", while the Newton-Raphson method is utilized to obtain the final accurate solution [[5]](@ref PowerFlowSolutionReferenceTutorials).
 
 The Gauss-Seidel method is typically based on the system of equations with ``n`` complex equations, one of which represents the slack bus. As a result, one equation can be eliminated, resulting in a power flow problem with ``n-1`` equations.
