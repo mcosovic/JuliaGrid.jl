@@ -59,14 +59,13 @@ The complex power injection denoted by ``S_i`` comprises of both the active powe
   \cfrac{P_i - \text{j}Q_i}{\bar{V}_{i}} = \sum_{j = 1}^n Y_{ij} \bar {V}_j.
 ```
 
-Recognizing that ``Y_{ij} =  G_{ij} + \text{j}B_{ij}`` and ``\bar{V}_{j} = V_j \text{e}^{\text{j}\theta_{j}}``, we can break down the above equation into its real and imaginary parts, resulting in two equations that describe bus ``i \in \mathcal{N}`` as follows:
+With the recognition that ``Y_{ij} =  G_{ij} + \text{j}B_{ij}`` and ``\bar{V}_{j} = V_j \text{e}^{\text{j}\theta_{j}}``, and by defining ``\theta_{ij} = \theta_{i} - \theta_{j}``,  we can break down the above equation into its real and imaginary parts, resulting in two equations that describe bus ``i \in \mathcal{N}`` as follows:
 ```math
   \begin{aligned}
     {P}_{i} &={V}_{i}\sum\limits_{j=1}^n {V}_{j} (G_{ij}\cos\theta_{ij}+B_{ij}\sin\theta_{ij})\\
-    {Q}_{i} &={V}_{i}\sum\limits_{j=1}^n {V}_{j} (G_{ij}\sin\theta_{ij}-B_{ij}\cos\theta_{ij}),
+    {Q}_{i} &={V}_{i}\sum\limits_{j=1}^n {V}_{j} (G_{ij}\sin\theta_{ij}-B_{ij}\cos\theta_{ij}).
 	\end{aligned}
 ```
-where ``\theta_{ij} = \theta_{i} - \theta_{j}``.
 
 As demonstrated by the above equations, the bus ``i \in \mathcal{N}`` contains four unknown variables for bus  ``i \in \mathcal{N}``, namely the active power injection ``{P}_{i}``, reactive power injection ``{Q}_{i}``, bus voltage magnitude ``{V}_{i}``, and bus voltage angle ``{\theta}_{i}``. To solve these equations, it is necessary to specify two known variables. Although any two variables can be selected mathematically, the choice is determined by the devices that are connected to a particular bus. The standard options are listed in the table below, and these options are used to define the bus types [[1]](@ref PowerFlowSolutionReferenceTutorials).
 
