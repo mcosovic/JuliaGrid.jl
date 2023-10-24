@@ -27,7 +27,7 @@ Default settings for certain keywords are as follows: `variance = 1e-2`, `status
 `noise = true`, which apply to ammeters located at both the "from" and "to" bus ends.
 Users can fine-tune these settings by explicitly specifying the variance and status for
 ammeters positioned on either the "from" or "to" bus ends of branches using the 
-[@ammeter](@ref @ammeter) macro.
+[`@ammeter`](@ref @ammeter) macro.
 
 # Units
 The default units for the `magnitude` and `variance` keywords are per-units (pu). However,
@@ -120,7 +120,7 @@ The function updates the `ammeter` field of the `Measurement` composite type.
 # Default Settings
 Default settings for keywords are as follows: `varianceFrom = 1e-2`, `statusFrom = 1`, 
 `varianceTo = 1e-2`, and `statusTo = 1`. Users can change these default settings using the
-[@ammeter](@ref @ammeter) macro.
+[`@ammeter`](@ref @ammeter) macro.
 
 # Units
 The default units for the `varianceFrom` and `varianceTo` keywords are per-units (pu).
