@@ -1,4 +1,7 @@
 @testset "Build and Update Measurements in Per-Units" begin
+    @default(template)
+    @default(unit)
+
     system = powerSystem(string(pathData, "case14test.m"))
     device = measurement()
     deviceAll = measurement()
@@ -111,11 +114,13 @@
 end
 
 @testset "Build and Update Measurements in SI Units" begin
+    @default(template)
+    @default(unit)
+
     @power(kW, MVAr, GVA)
     @voltage(kV, deg, MV)
     @current(A, rad)
-    @default(template)
-    
+
     system = powerSystem()
     device = measurement()
     @base(system, MVA, kV)

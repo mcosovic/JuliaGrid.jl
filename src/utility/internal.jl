@@ -276,10 +276,15 @@ The `mode` argument can take on the following values:
 * `power`: sets active, reactive, and apparent power to per-units;
 * `voltage`: sets voltage magnitude to per-unit and voltage angle to radian;
 * `parameter`: sets impedance and admittance to per-units;
-* `template`: resets bus, branch and generator templates to their default settings;
+* `template`: resets bus, branch, generator, voltmeter, ammeter, wattmeter, varmeter, and pmu templates to their default settings;
 * `bus`: resets the bus template to its default settings;
 * `branch`: resets the branch template to its default settings;
-* `generator`: resets the generator template to its default settings.
+* `generator`: resets the generator template to its default settings;
+* `voltmeter`: resets the voltmeter template to its default settings;
+* `ammeter`: resets the ammeter template to its default settings;
+* `wattmeter`: resets the wattmeter template to its default settings;
+* `varmeter`: resets the varmeter template to its default settings;
+* `pmu`: resets the pmu template to its default settings.
 
 # Example
 ```jldoctest
@@ -330,6 +335,7 @@ macro default(mode::Symbol)
         template.bus.angle.value = 0.0
         template.bus.angle.pu = true
 
+        template.bus.label = "?"
         template.bus.base = 138e3
         template.bus.type = Int8(1)
         template.bus.area = 1
@@ -360,6 +366,7 @@ macro default(mode::Symbol)
         template.branch.emergency.value = 0.0
         template.branch.emergency.pu = true
 
+        template.branch.label = "?"
         template.branch.turnsRatio = 1.0
         template.branch.status = Int8(1)
         template.branch.type = Int8(1)
@@ -406,7 +413,91 @@ macro default(mode::Symbol)
         template.generator.reserve30min.value = 0.0
         template.generator.reserve30min.pu = true
 
+        template.generator.label = "?"
         template.generator.status = Int8(1)
         template.generator.area = 0
+    end
+
+    if mode == :template || mode == :voltmeter
+        template.voltmeter.variance.value = 1e-2
+        template.voltmeter.variance.pu = true
+
+        template.voltmeter.status = Int8(1)
+        template.voltmeter.label = "?"
+        template.voltmeter.noise = true
+    end
+
+    if mode == :template || mode == :ammeter
+      template.ammeter.varianceFrom.value = 1e-2
+      template.ammeter.varianceFrom.pu = true
+      template.ammeter.varianceTo.value = 1e-2
+      template.ammeter.varianceTo.pu = true
+
+      template.ammeter.statusFrom = Int8(1)
+      template.ammeter.statusTo = Int8(1)
+
+      template.ammeter.label = "?"
+      template.ammeter.noise = true
+    end
+
+    if mode == :template || mode == :wattmeter
+      template.wattmeter.varianceBus.value = 1e-2
+      template.wattmeter.varianceBus.pu = true
+      template.wattmeter.varianceFrom.value = 1e-2
+      template.wattmeter.varianceFrom.pu = true
+      template.wattmeter.varianceTo.value = 1e-2
+      template.wattmeter.varianceTo.pu = true
+
+      template.wattmeter.statusBus = Int8(1)
+      template.wattmeter.statusFrom = Int8(1)
+      template.wattmeter.statusTo = Int8(1)
+
+      template.wattmeter.label = "?"
+      template.wattmeter.noise = true
+    end
+
+    if mode == :template || mode == :varmeter
+      template.varmeter.varianceBus.value = 1e-2
+      template.varmeter.varianceBus.pu = true
+      template.varmeter.varianceFrom.value = 1e-2
+      template.varmeter.varianceFrom.pu = true
+      template.varmeter.varianceTo.value = 1e-2
+      template.varmeter.varianceTo.pu = true
+
+      template.varmeter.statusBus = Int8(1)
+      template.varmeter.statusFrom = Int8(1)
+      template.varmeter.statusTo = Int8(1)
+
+      template.varmeter.label = "?"
+      template.varmeter.noise = true
+    end
+
+    if mode == :template || mode == :pmu
+      template.pmu.varianceMagnitudeBus.value = 1e-5
+      template.pmu.varianceMagnitudeBus.pu = true
+      template.pmu.varianceAngleBus.value = 1e-5
+      template.pmu.varianceAngleBus.pu = true
+
+      template.pmu.varianceMagnitudeFrom.value = 1e-5
+      template.pmu.varianceMagnitudeFrom.pu = true
+      template.pmu.varianceAngleFrom.value = 1e-5
+      template.pmu.varianceAngleFrom.pu = true
+
+      template.pmu.varianceMagnitudeTo.value = 1e-5
+      template.pmu.varianceMagnitudeTo.pu = true
+      template.pmu.varianceAngleTo.value = 1e-5
+      template.pmu.varianceAngleTo.pu = true
+
+      template.pmu.statusMagnitudeBus = Int8(1)
+      template.pmu.statusAngleBus = Int8(1)
+
+      template.pmu.statusMagnitudeFrom = Int8(1)
+      template.pmu.statusAngleFrom = Int8(1)
+
+      template.pmu.statusMagnitudeTo = Int8(1)
+      template.pmu.statusAngleTo = Int8(1)
+
+      template.pmu.label = "?"
+      template.pmu.noise = true
     end
 end
