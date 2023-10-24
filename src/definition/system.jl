@@ -1,4 +1,4 @@
-export PowerSystem
+export PowerSystem, SCADA
 
 ########### Bus ###########
 mutable struct BusDemand
@@ -23,7 +23,7 @@ mutable struct BusLayout
     area::Array{Int64,1}
     lossZone::Array{Int64,1}
     slack::Int64
-    maxLabel::Int64
+    label::Int64
 end
 
 mutable struct BusSupply
@@ -68,7 +68,7 @@ mutable struct BranchLayout
     from::Array{Int64,1}
     to::Array{Int64,1}
     status::Array{Int8,1}
-    maxLabel::Int64
+    label::Int64
 end
 
 mutable struct Branch
@@ -125,7 +125,7 @@ mutable struct GeneratorLayout
     bus::Array{Int64,1}
     area::Array{Float64,1}
     status::Array{Int8,1}
-    maxLabel::Int64
+    label::Int64
 end
 
 mutable struct Generator
@@ -188,4 +188,68 @@ mutable struct PowerSystem
     generator::Generator
     base::BaseData
     model::Model
+end
+
+####### Measurement ##########
+mutable struct GaussMeter
+    mean::Array{Float64,1}
+    variance::Array{Float64,1}
+    status::Array{Int8,1}
+end
+
+mutable struct BusLayoutMeter
+    index::Array{Int64,1}
+    label::Int64
+end
+
+mutable struct BranchLayoutMeter
+    index::Array{Int64,1}
+    from::Array{Bool,1}
+    to::Array{Bool,1}
+    label::Int64
+end
+
+mutable struct MultiLayoutMeter
+    index::Array{Int64,1}
+    bus::Array{Bool,1}
+    from::Array{Bool,1}
+    to::Array{Bool,1}
+    label::Int64
+end
+
+mutable struct BusMeter
+    label::Dict{String,Int64}
+    magnitude::GaussMeter
+    layout::BusLayoutMeter
+    number::Int64
+end
+
+mutable struct BranchMeter
+    label::Dict{String,Int64}
+    magnitude::GaussMeter
+    layout::BranchLayoutMeter
+    number::Int64
+end
+
+mutable struct MultiMeter
+    label::Dict{String,Int64}
+    power::GaussMeter
+    layout::MultiLayoutMeter
+    number::Int64
+end
+
+mutable struct PMU
+    label::Dict{String,Int64}
+    magnitude::GaussMeter
+    angle::GaussMeter
+    layout::MultiLayoutMeter
+    number::Int64
+end
+
+mutable struct Measurement
+    voltmeter::BusMeter
+    ammeter::BranchMeter
+    wattmeter::MultiMeter
+    varmeter::MultiMeter
+    pmu::PMU
 end

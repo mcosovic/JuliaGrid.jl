@@ -16,11 +16,11 @@ system = powerSystem("case14.h5")
 """
 macro base(system::Symbol, power::Symbol, voltage::Symbol)
     powerString = string(power)
-    suffixPower = parseSuffix(powerString, suffixList.basePower)
+    suffixPower = parseSuffix(powerString, suffixList.basePower, "base power")
     prefixPower = parsePrefix(powerString, suffixPower)
 
     voltageString = string(voltage)
-    suffixVoltage = parseSuffix(voltageString, suffixList.baseVoltage)
+    suffixVoltage = parseSuffix(voltageString, suffixList.baseVoltage, "base voltage")
     prefixVoltage = parsePrefix(voltageString, suffixVoltage)
 
     return quote
@@ -58,7 +58,9 @@ Changing the unit of `active` power is reflected in the following quantities:
 * [`addGenerator!`](@ref addGenerator!), [`updateGenerator!`](@ref updateGenerator!), [`@generator`](@ref @generator):
   * `active`, `minActive`, `maxActive`, `lowActive`, `upActive`, `loadFollowing`, `reserve10min`, `reserve30min`;
 * [`cost!`](@ref cost!):
-  * if `active`: `piecewise`, `polynomial`.
+  * if `active`: `piecewise`, `polynomial`;
+* [`addWattmeter!`](@ref addWattmeter!), [`updateWattmeter!`](@ref updateWattmeter!), [`@wattmeter`](@ref @wattmeter):  
+  * `active`, `variance`, `varianceBus`, `varianceFrom`, `varianceTo`.
 
 Changing the unit of `reactive` power unit is reflected in the following quantities:
 * [`addBus!`](@ref addBus!), [`updateBus!`](@ref updateBus!), [`@bus`](@ref @bus):
@@ -66,7 +68,9 @@ Changing the unit of `reactive` power unit is reflected in the following quantit
 * [`addGenerator!`](@ref addGenerator!), [`updateGenerator!`](@ref updateGenerator!), [`@generator`](@ref @generator):
   * `reactive`, `minReactive`, `maxReactive`, `minLowReactive`, `maxLowReactive`, `minUpReactive`, `maxUpReactive`, `reactiveTimescale`;
 * [`cost!`](@ref cost!):
-  * if `reactive`: `piecewise`, `polynomial`.
+  * if `reactive`: `piecewise`, `polynomial`;
+* [`addVarmeter!`](@ref addVarmeter!), [`updateVarmeter!`](@ref updateVarmeter!), [`@varmeter`](@ref @varmeter):  
+  * `reactive`, `variance`, `varianceBus`, `varianceFrom`, `varianceTo`.
 
 Changing the unit of `apparent` power unit is reflected in the following quantities:
 * [`addBranch!`](@ref addBranch!), [`updateBranch!`](@ref updateBranch!), [`@branch`](@ref @branch):
@@ -79,15 +83,15 @@ Changing the unit of `apparent` power unit is reflected in the following quantit
 """
 macro power(active::Symbol, reactive::Symbol, apparent::Symbol)
     activeString = string(active)
-    suffixUser = parseSuffix(activeString, suffixList.activePower)
+    suffixUser = parseSuffix(activeString, suffixList.activePower, "active power")
     prefix.activePower = parsePrefix(activeString, suffixUser)
 
     reactiveString = string(reactive)
-    suffixUser = parseSuffix(reactiveString, suffixList.reactivePower)
+    suffixUser = parseSuffix(reactiveString, suffixList.reactivePower, "reactive power")
     prefix.reactivePower = parsePrefix(reactiveString, suffixUser)
 
     apparentString = string(apparent)
-    suffixUser = parseSuffix(apparentString, suffixList.apparentPower)
+    suffixUser = parseSuffix(apparentString, suffixList.apparentPower, "apparent power")
     prefix.apparentPower = parsePrefix(apparentString, suffixUser)
 end
 
@@ -107,13 +111,22 @@ Changing the unit of voltage `magnitude` is reflected in the following quantitie
 * [`addBus!`](@ref addBus!), [`updateBus!`](@ref updateBus!), [`@bus`](@ref @bus):
   * `magnitude`, `minMagnitude`, `maxMagnitude`;
 * [`addGenerator!`](@ref addGenerator!), [`updateGenerator!`](@ref updateGenerator!), [`@generator`](@ref @generator):
-  * `magnitude`.
+  * `magnitude`;
+* [`addVoltmeter!`](@ref addVoltmeter!), [`updateVoltmeter!`](@ref updateVoltmeter!), [`@voltmeter`](@ref @voltmeter):  
+  * `magnitude`, `variance`.
+* [`addPmu!`](@ref addPmu!), [`updatePmu!`](@ref updatePmu!), [`@pmu`](@ref @pmu):
+  * if `bus`: `magnitude`, `varianceMagnitude`;
+  * `varianceAngleMagnitude`.
+
 
 Changing the unit of voltage `angle` is reflected in the following quantities:
 * [`addBus!`](@ref addBus!), [`updateBus!`](@ref updateBus!), [`@bus`](@ref @bus):
   * `angle`;
 * [`addBranch!`](@ref addBranch!), [`updateBranch!`](@ref updateBranch!), [`@branch`](@ref @branch):
-  * `shiftAngle`, `minDiffAngle`, `maxDiffAngle`.
+  * `shiftAngle`, `minDiffAngle`, `maxDiffAngle`;
+* [`addPmu!`](@ref addPmu!), [`updatePmu!`](@ref updatePmu!), [`@pmu`](@ref @pmu):
+  * if `bus`: `angle`, `varianceAngle`;
+  * `varianceAngleBus`.
 
 Changing the unit prefix of voltage `base` is reflected in the following quantity:
 * [`addBus!`](@ref addBus!), [`updateBus!`](@ref updateBus!), [`@bus`](@ref @bus):
@@ -126,15 +139,15 @@ Changing the unit prefix of voltage `base` is reflected in the following quantit
 """
 macro voltage(magnitude::Symbol, angle::Symbol, base::Symbol)
     magnitudeString = string(magnitude)
-    suffixUser = parseSuffix(magnitudeString, suffixList.voltageMagnitude)
+    suffixUser = parseSuffix(magnitudeString, suffixList.voltageMagnitude, "voltage magnitude")
     prefix.voltageMagnitude = parsePrefix(magnitudeString, suffixUser)
 
     angleString = string(angle)
-    suffixUser = parseSuffix(angleString, suffixList.voltageAngle)
+    suffixUser = parseSuffix(angleString, suffixList.voltageAngle, "voltage angle")
     prefix.voltageAngle = parsePrefix(angleString, suffixUser)
 
     baseString = string(base)
-    suffixUser = parseSuffix(baseString, suffixList.baseVoltage)
+    suffixUser = parseSuffix(baseString, suffixList.baseVoltage, "base voltage")
     prefix.baseVoltage = parsePrefix(baseString, suffixUser)
 end
 
@@ -151,7 +164,16 @@ Alternatively, the unit of current `magnitude` can be expressed in per-unit (pu)
 of current angle should be in radians (rad) or degrees (deg).
 
 Changing the unit of current `magnitude` is reflected in the following quantities:
-* ...
+* [`addAmmeter!`](@ref addAmmeter!), [`updateAmmeter!`](@ref updateAmmeter!), [`@ammeter`](@ref @ammeter):
+  * `magnitude`, `variance`, `varianceFrom`, `varianceTo`;
+* [`addPmu!`](@ref addPmu!), [`updatePmu!`](@ref updatePmu!), [`@pmu`](@ref @pmu):
+  * if `from` or `to`: `magnitude`, `varianceMagnitude`;
+  * `varianceMagnitudeFrom`, `varianceMagnitudeTo`.
+
+Changing the unit of current `angle` is reflected in the following quantities:
+* [`addPmu!`](@ref addPmu!), [`updatePmu!`](@ref updatePmu!), [`@pmu`](@ref @pmu):
+  * if `from` or `to`: `angle`, `varianceAngle`;
+  * `varianceAngleFrom`, `varianceAngleTo`.
 
 # Example
 ```jldoctest
@@ -160,11 +182,11 @@ Changing the unit of current `magnitude` is reflected in the following quantitie
 """
 macro current(magnitude::Symbol, angle::Symbol)
     magnitudeString = string(magnitude)
-    suffixUser = parseSuffix(magnitudeString, suffixList.currentMagnitude)
+    suffixUser = parseSuffix(magnitudeString, suffixList.currentMagnitude, "current magnitude")
     prefix.currentMagnitude = parsePrefix(magnitudeString, suffixUser)
 
     angleString = string(angle)
-    suffixUser = parseSuffix(angleString, suffixList.currentAngle)
+    suffixUser = parseSuffix(angleString, suffixList.currentAngle, "current angle")
     prefix.currentAngle = parsePrefix(angleString, suffixUser)
 end
 
@@ -200,16 +222,16 @@ Changing the units of `admittance` is reflected in the following quantities:
 """
 macro parameter(impedance::Symbol, admittance::Symbol)
     impedanceString = string(impedance)
-    suffixUser = parseSuffix(impedanceString, suffixList.impedance)
+    suffixUser = parseSuffix(impedanceString, suffixList.impedance, "impedance")
     prefix.impedance = parsePrefix(impedanceString, suffixUser)
 
     admittanceString = string(admittance)
-    suffixUser = parseSuffix(admittanceString, suffixList.admittance)
+    suffixUser = parseSuffix(admittanceString, suffixList.admittance, "admittance")
     prefix.admittance = parsePrefix(admittanceString, suffixUser)
 end
 
 ######### Parse Suffix (Unit) ##########
-function parseSuffix(input::String, suffixList)
+function parseSuffix(input::String, suffixList, type::String)
     sufixUser = ""
     @inbounds for i in suffixList
         if endswith(input, i)
@@ -217,7 +239,7 @@ function parseSuffix(input::String, suffixList)
         end
     end
     if isempty(sufixUser) || (sufixUser in ["pu"; "rad"; "deg"] && sufixUser != input)
-        error("The unit $input of $type is illegal.")
+        throw(ErrorException("The unit $input of $type is illegal."))
     end
 
     return sufixUser
@@ -225,7 +247,7 @@ end
 
 ######### Parse Prefix ##########
 function parsePrefix(input::String, suffixUser::String)
-    if suffixUser == "pu"
+    if suffixUser in ["pu"; "rad"]
         scale = 0.0
     elseif suffixUser == "deg"
         scale = pi / 180
@@ -234,7 +256,7 @@ function parsePrefix(input::String, suffixUser::String)
         if suffixUser != input
             prefixUser = split(input, suffixUser)[1]
             if !(prefixUser in keys(prefixList))
-                error("The unit prefix $prefixUser is illegal.")
+                throw(ErrorException("The unit prefix $prefixUser is illegal."))
             else
                 scale = prefixList[prefixUser]
             end
@@ -273,13 +295,13 @@ macro default(mode::Symbol)
 
     if mode == :unit || mode == :voltage
         prefix.voltageMagnitude = 0.0
-        prefix.voltageAngle = 1.0
+        prefix.voltageAngle = 0.0
         prefix.baseVoltage = 1.0
     end
 
     if mode == :unit || mode == :current
         prefix.currentMagnitude = 0.0
-        prefix.currentAngle = 1.0
+        prefix.currentAngle = 0.0
     end
 
     if mode == :unit || mode == :parameter
@@ -305,8 +327,10 @@ macro default(mode::Symbol)
         template.bus.maxMagnitude.value = 1.1
         template.bus.maxMagnitude.pu = true
 
+        template.bus.angle.value = 0.0
+        template.bus.angle.pu = true
+
         template.bus.base = 138e3
-        template.bus.angle = 0.0
         template.bus.type = Int8(1)
         template.bus.area = 1
         template.bus.lossZone = 1
@@ -321,6 +345,13 @@ macro default(mode::Symbol)
         template.branch.conductance.pu = true
         template.branch.susceptance.value = 0.0
         template.branch.susceptance.pu = true
+        template.branch.shiftAngle.value = 0.0
+        template.branch.shiftAngle.pu = true
+
+        template.branch.minDiffAngle.value = -2*pi
+        template.branch.minDiffAngle.pu = true
+        template.branch.maxDiffAngle.value = 2*pi
+        template.branch.maxDiffAngle.pu = true
 
         template.branch.longTerm.value = 0.0
         template.branch.longTerm.pu = true
@@ -330,9 +361,6 @@ macro default(mode::Symbol)
         template.branch.emergency.pu = true
 
         template.branch.turnsRatio = 1.0
-        template.branch.shiftAngle = 0.0
-        template.branch.minDiffAngle = -2*pi
-        template.branch.maxDiffAngle = 2*pi
         template.branch.status = Int8(1)
         template.branch.type = Int8(1)
     end

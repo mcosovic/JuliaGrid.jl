@@ -6,7 +6,7 @@ using HDF5
 
 ######### Types and Constants ##########
 include("definition/internal.jl")
-include("definition/powerSystem.jl")
+include("definition/system.jl")
 include("definition/analysis.jl")
 
 ######### Utility ##########
@@ -42,6 +42,22 @@ include("optimalPowerFlow/acOptimalPowerFlow.jl")
 include("optimalPowerFlow/dcOptimalPowerFlow.jl")
 export acOptimalPowerFlow, startingPrimal!
 export dcOptimalPowerFlow
+
+######### Measurement ##########
+include("measurement/load.jl")
+include("measurement/save.jl")
+export measurement, saveMeasurement
+
+########## Measurement Devices ##########
+include("measurement/voltmeter.jl")
+include("measurement/ammeter.jl")
+include("measurement/powermeter.jl")
+include("measurement/pmu.jl")
+export addVoltmeter!, updateVoltmeter!, @voltmeter
+export addAmmeter!, updateAmmeter!, @ammeter
+export addWattmeter!, updateWattmeter!, @wattmeter
+export addVarmeter!, updateVarmeter, @varmeter
+export addPmu!, updatePmu, @pmu
 
 ########## Postprocessing ##########
 include("postprocessing/dcAnalysis.jl")

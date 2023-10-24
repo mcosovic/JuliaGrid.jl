@@ -69,7 +69,7 @@ function baseCurrentInverse(basePowerInv::Float64, baseVoltage::Float64)
 end
 
 ######### To Per-Units with Default Values ##########
-function topu(value, default, baseInv, prefixLive)
+function topu(value, default, prefixLive, baseInv)
     if ismissing(value)
         if default.pu
             value = default.value
@@ -86,20 +86,9 @@ function topu(value, default, baseInv, prefixLive)
 end
 
 ######### To Per-Units Live ##########
-function topu(value, baseInv, prefixLive)
+function topu(value, prefixLive, baseInv)
     if prefixLive != 0.0
        value = (value * prefixLive) * baseInv
-    end
-
-    return value
-end
-
-######### To Radians or Volts with Default Values ##########
-function tosi(value, default, prefixLive)
-    if ismissing(value)
-        value = default
-    else
-        value = value * prefixLive
     end
 
     return value
@@ -116,8 +105,8 @@ end
 
 ######### Set Label ##########
 function setLabel(component, label::Missing, default::String, key::String)
-    component.layout.maxLabel += 1
-    setindex!(component.label, component.number, replace(default, r"\?" => string(component.layout.maxLabel)))
+    component.layout.label += 1
+    setindex!(component.label, component.number, replace(default, r"\?" => string(component.layout.label)))
 end
 
 function setLabel(component, label::String, default::String, key::String)
@@ -127,8 +116,8 @@ function setLabel(component, label::String, default::String, key::String)
 
     labelInt64 = tryparse(Int64, label)
     if labelInt64 !== nothing
-        if component.layout.maxLabel < labelInt64
-            component.layout.maxLabel = labelInt64
+        if component.layout.label < labelInt64
+            component.layout.label = labelInt64
         end
     end
     setindex!(component.label, component.number, label)
@@ -140,8 +129,8 @@ function setLabel(component, label::Int64, default::String, key::String)
         throw(ErrorException("The label $label is not unique."))
     end
 
-    if component.layout.maxLabel < label
-        component.layout.maxLabel = label
+    if component.layout.label < label
+        component.layout.label = label
     end
     setindex!(component.label, component.number, labelString)
 end
@@ -171,13 +160,6 @@ function checkStatus(status)
     end
 end
 
-######### Check Mean and Exact ##########
-function checkMeanExact(mean, exact)
-    if ismissing(mean) && ismissing(exact)
-        throw(ErrorException("At least one of the keywords mean or exact must be provided."))
-    end
-end
-
 ######### Check Location ##########
 function checkLocation(device, from, to)
     if isset(from) && isset(to)
@@ -198,6 +180,72 @@ function checkLocation(device, from, to)
 
     return location
 end
+
+function checkLocation(device, bus, from, to)
+    if count(==(true), [isset(bus); isset(from); isset(to)]) > 1 
+        throw(ErrorException("The concurrent definition of the location keywords is not allowed."))
+    elseif ismissing(bus) && ismissing(from) && ismissing(to) 
+        throw(ErrorException("At least one of the location keywords must be provided."))
+    end
+
+    if isset(bus)
+        location = bus
+        push!(device.layout.bus, true)
+        push!(device.layout.from, false)
+        push!(device.layout.to, false)
+    elseif isset(from)
+        location = from
+        push!(device.layout.bus, false)
+        push!(device.layout.from, true)
+        push!(device.layout.to, false)
+    else
+        location = to
+        push!(device.layout.bus, false)
+        push!(device.layout.from, false)
+        push!(device.layout.to, true)
+    end
+
+    return location
+end
+
+######### Set Mean, Variance, and Status ##########
+function setMeter(device::GaussMeter, mean::T, variance::T, status::T, noise::Bool, 
+    defVariance::ContainerTemplate, defStatus::Int8, prefixLive::Float64, baseInv::Float64)
+    
+    push!(device.variance, topu(variance, defVariance, prefixLive, baseInv))
+
+    if noise
+        measure = topu(mean, prefixLive, baseInv) + device.variance[end]^(1/2) * randn(1)[1]
+    else
+        measure = topu(mean, prefixLive, baseInv)
+    end
+    push!(device.mean, measure)
+
+    push!(device.status, unitless(status, defStatus))
+    checkStatus(device.status[end])
+end
+
+function updateMeter(device::GaussMeter, index::Int64, mean::T, variance::T, 
+    status::T, noise::Bool, prefixLive::Float64, baseInv::Float64)
+
+    if isset(variance)
+        device.variance[index] = topu(variance, prefixLive, baseInv)
+    end
+
+    if isset(mean)
+        if noise 
+            device.mean[index] = topu(mean, prefixLive, baseInv) + device.variance[index]^(1/2) * randn(1)[1]
+        else
+            device.mean[index] = topu(mean, prefixLive, baseInv)
+        end
+    end
+
+    if isset(status)
+        checkStatus(status)
+        device.status[index] = status
+    end
+end
+
 
 ######### Print Data ##########
 import Base.print

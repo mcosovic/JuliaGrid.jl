@@ -61,11 +61,11 @@ Base.@kwdef mutable struct BusTemplate
     conductance::ContainerTemplate = ContainerTemplate()
     susceptance::ContainerTemplate = ContainerTemplate()
     magnitude::ContainerTemplate = ContainerTemplate(1.0, true)
+    angle::ContainerTemplate = ContainerTemplate()
     minMagnitude::ContainerTemplate = ContainerTemplate(0.9, true)
     maxMagnitude::ContainerTemplate = ContainerTemplate(1.1, true)
     label::String = "?"
     base::Float64 = 138e3
-    angle::Float64 = 0.0
     type::Int8 = Int8(1)
     area::Int64 = 0
     lossZone::Int64 = 0
@@ -76,14 +76,14 @@ Base.@kwdef mutable struct BranchTemplate
     reactance::ContainerTemplate = ContainerTemplate()
     conductance::ContainerTemplate = ContainerTemplate()
     susceptance::ContainerTemplate = ContainerTemplate()
+    shiftAngle::ContainerTemplate = ContainerTemplate()
+    minDiffAngle::ContainerTemplate = ContainerTemplate(-2*pi, true)
+    maxDiffAngle::ContainerTemplate = ContainerTemplate(2*pi, true)
     longTerm::ContainerTemplate = ContainerTemplate()
     shortTerm::ContainerTemplate = ContainerTemplate()
     emergency::ContainerTemplate = ContainerTemplate()
     label::String = "?"
     turnsRatio::Float64 = 1.0
-    shiftAngle::Float64 = 0.0
-    minDiffAngle::Float64 = -2*pi
-    maxDiffAngle::Float64 = 2*pi
     status::Int8 = Int8(1)
     type::Int8 = Int8(1)
 end
@@ -114,55 +114,56 @@ end
 Base.@kwdef mutable struct VoltmeterTemplate
     variance::ContainerTemplate = ContainerTemplate(1e-2, true)
     status::Int8 = Int8(1)
-    label::String = ""
+    label::String = "?"
+    noise::Bool = true
 end
 
 Base.@kwdef mutable struct AmmeterTemplate
-    variancefrom::ContainerTemplate = ContainerTemplate(1e-2, true)
-    varianceto::ContainerTemplate = ContainerTemplate(1e-2, true)
-    statusfrom::Int8 = Int8(1)
-    statusto::Int8 = Int8(1)
-    label::String = ""
+    varianceFrom::ContainerTemplate = ContainerTemplate(1e-2, true)
+    varianceTo::ContainerTemplate = ContainerTemplate(1e-2, true)
+    statusFrom::Int8 = Int8(1)
+    statusTo::Int8 = Int8(1)
+    label::String = "?"
+    noise::Bool = true
 end
 
 Base.@kwdef mutable struct WattmeterTemplate
-    variancebus::ContainerTemplate = ContainerTemplate(1e-2, true)
-    variancefrom::ContainerTemplate = ContainerTemplate(1e-2, true)
-    varianceto::ContainerTemplate = ContainerTemplate(1e-2, true)
-    statusbus::Int8 = Int8(1)
-    statusfrom::Int8 = Int8(1)
-    statusto::Int8 = Int8(1)
-    label::String = ""
+    varianceBus::ContainerTemplate = ContainerTemplate(1e-2, true)
+    varianceFrom::ContainerTemplate = ContainerTemplate(1e-2, true)
+    varianceTo::ContainerTemplate = ContainerTemplate(1e-2, true)
+    statusBus::Int8 = Int8(1)
+    statusFrom::Int8 = Int8(1)
+    statusTo::Int8 = Int8(1)
+    label::String = "?"
+    noise::Bool = true
 end
 
 Base.@kwdef mutable struct VarmeterTemplate
-    variancebus::ContainerTemplate = ContainerTemplate(1e-2, true)
-    variancefrom::ContainerTemplate = ContainerTemplate(1e-2, true)
-    varianceto::ContainerTemplate = ContainerTemplate(1e-2, true)
-    statusbus::Int8 = Int8(1)
-    statusfrom::Int8 = Int8(1)
-    statusto::Int8 = Int8(1)
-    label::String = ""
+    varianceBus::ContainerTemplate = ContainerTemplate(1e-2, true)
+    varianceFrom::ContainerTemplate = ContainerTemplate(1e-2, true)
+    varianceTo::ContainerTemplate = ContainerTemplate(1e-2, true)
+    statusBus::Int8 = Int8(1)
+    statusFrom::Int8 = Int8(1)
+    statusTo::Int8 = Int8(1)
+    label::String = "?"
+    noise::Bool = true
 end
 
-Base.@kwdef mutable struct AnglepmuTemplate
-    variancebus::Float64 = 1e-5
-    variancefrom::Float64 = 1e-5
-    varianceto::Float64 = 1e-5
-    statusbus::Int8 = Int8(1)
-    statusfrom::Int8 = Int8(1)
-    statusto::Int8 = Int8(1)
-    label::String = ""
-end
-
-Base.@kwdef mutable struct MagnitudepmuTemplate
-    variancebus::ContainerTemplate = ContainerTemplate(1e-5, true)
-    variancefrom::ContainerTemplate = ContainerTemplate(1e-5, true)
-    varianceto::ContainerTemplate = ContainerTemplate(1e-5, true)
-    statusbus::Int8 = Int8(1)
-    statusfrom::Int8 = Int8(1)
-    statusto::Int8 = Int8(1)
-    label::String = ""
+Base.@kwdef mutable struct PmuTemplate
+    varianceMagnitudeBus::ContainerTemplate = ContainerTemplate(1e-5, true)
+    varianceAngleBus::ContainerTemplate = ContainerTemplate(1e-5, true)
+    varianceMagnitudeFrom::ContainerTemplate = ContainerTemplate(1e-5, true)
+    varianceAngleFrom::ContainerTemplate = ContainerTemplate(1e-5, true)
+    varianceMagnitudeTo::ContainerTemplate = ContainerTemplate(1e-5, true)
+    varianceAngleTo::ContainerTemplate = ContainerTemplate(1e-5, true)
+    statusMagnitudeBus::Int8 = Int8(1)
+    statusAngleBus::Int8 = Int8(1)
+    statusMagnitudeFrom::Int8 = Int8(1)
+    statusAngleFrom::Int8 = Int8(1)
+    statusMagnitudeTo::Int8 = Int8(1)
+    statusAngleTo::Int8 = Int8(1)
+    label::String = "?"
+    noise::Bool = true
 end
 
 mutable struct Template
@@ -173,8 +174,7 @@ mutable struct Template
     ammeter::AmmeterTemplate
     wattmeter::WattmeterTemplate
     varmeter::VarmeterTemplate
-    anglepmu::AnglepmuTemplate
-    magnitudepmu::MagnitudepmuTemplate
+    pmu::PmuTemplate
 end
 
 template = Template(
@@ -185,8 +185,7 @@ template = Template(
     AmmeterTemplate(),
     WattmeterTemplate(),
     VarmeterTemplate(),
-    AnglepmuTemplate(),
-    MagnitudepmuTemplate()
+    PmuTemplate()
 )
 
 ########### List of Prefixes ###########
@@ -239,9 +238,9 @@ Base.@kwdef mutable struct PrefixLive
     reactivePower::Float64 = 0.0
     apparentPower::Float64 = 0.0
     voltageMagnitude::Float64 = 0.0
-    voltageAngle::Float64 = 1.0
+    voltageAngle::Float64 = 0.0
     currentMagnitude::Float64 = 0.0
-    currentAngle::Float64 = 1.0
+    currentAngle::Float64 = 0.0
     impedance::Float64 = 0.0
     admittance::Float64 = 0.0
     baseVoltage::Float64 = 1.0

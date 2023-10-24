@@ -6,7 +6,7 @@ The function adds a new bus to the `PowerSystem` composite type.
 
 # Keywords
 The bus is defined with the following keywords:
-* `label`: unique label for the bus;
+* `label`: a unique label for the bus;
 * `type`: the bus type:
   * `type = 1`: demand bus (PQ);
   * `type = 2`: generator bus (PV);
@@ -39,14 +39,14 @@ option to use other units instead of per-units and radians, or to specify prefix
 voltage by using the [`@power`](@ref @power) and [`@voltage`](@ref @voltage) macros.
 
 # Examples
-Creating a bus using the default unit system:
+Adding a bus using the default unit system:
 ```jldoctest
 system = powerSystem()
 
 addBus!(system; label = "Bus 1", active = 0.25, angle = 0.175, base = 132e3)
 ```
 
-Creating a bus using a custom unit system:
+Adding a bus using a custom unit system:
 ```jldoctest
 @power(MW, MVAr, MVA)
 @voltage(pu, deg, kV)
@@ -80,23 +80,28 @@ function addBus!(system::PowerSystem;
         bus.layout.slack = bus.number
     end
 
-    baseVoltage = tosi(base, default.base, prefix.baseVoltage)
+    if isset(base)
+        baseVoltage = base * prefix.baseVoltage
+    else
+        baseVoltage = default.base
+    end
+
     push!(system.base.voltage.value, baseVoltage / system.base.voltage.prefix)
 
     basePowerInv = 1 / (system.base.power.value * system.base.power.prefix)
     baseVoltageInv = 1 / baseVoltage
 
-    push!(bus.demand.active, topu(active, default.active, basePowerInv, prefix.activePower))
-    push!(bus.demand.reactive, topu(reactive, default.reactive, basePowerInv, prefix.reactivePower))
+    push!(bus.demand.active, topu(active, default.active, prefix.activePower, basePowerInv))
+    push!(bus.demand.reactive, topu(reactive, default.reactive, prefix.reactivePower, basePowerInv))
 
-    push!(bus.shunt.conductance, topu(conductance, default.conductance, basePowerInv, prefix.activePower))
-    push!(bus.shunt.susceptance, topu(susceptance, default.susceptance, basePowerInv, prefix.reactivePower))
+    push!(bus.shunt.conductance, topu(conductance, default.conductance, prefix.activePower, basePowerInv))
+    push!(bus.shunt.susceptance, topu(susceptance, default.susceptance, prefix.reactivePower, basePowerInv))
 
-    push!(bus.voltage.magnitude, topu(magnitude, default.magnitude, baseVoltageInv, prefix.voltageMagnitude))
-    push!(bus.voltage.minMagnitude, topu(minMagnitude, default.minMagnitude, baseVoltageInv, prefix.voltageMagnitude))
-    push!(bus.voltage.maxMagnitude, topu(maxMagnitude, default.maxMagnitude, baseVoltageInv, prefix.voltageMagnitude))
+    push!(bus.voltage.magnitude, topu(magnitude, default.magnitude, prefix.voltageMagnitude, baseVoltageInv))
+    push!(bus.voltage.minMagnitude, topu(minMagnitude, default.minMagnitude, prefix.voltageMagnitude, baseVoltageInv))
+    push!(bus.voltage.maxMagnitude, topu(maxMagnitude, default.maxMagnitude, prefix.voltageMagnitude, baseVoltageInv))
 
-    push!(bus.voltage.angle, tosi(angle, default.angle, prefix.voltageAngle))
+    push!(bus.voltage.angle, topu(angle, default.angle, prefix.voltageAngle, 1.0))
 
     push!(bus.layout.area, unitless(area, default.area))
     push!(bus.layout.lossZone, unitless(lossZone, default.lossZone))
@@ -196,10 +201,10 @@ function updateBus!(system::PowerSystem;
 
     basePowerInv = 1 / (system.base.power.value * system.base.power.prefix)
     if isset(active)
-        bus.demand.active[index] = topu(active, basePowerInv, prefix.activePower)
+        bus.demand.active[index] = topu(active, prefix.activePower, basePowerInv)
     end
     if isset(reactive)
-        bus.demand.reactive[index] = topu(reactive, basePowerInv, prefix.reactivePower)
+        bus.demand.reactive[index] = topu(reactive, prefix.reactivePower, basePowerInv)
     end
 
     if isset(conductance) || isset(susceptance)
@@ -210,10 +215,10 @@ function updateBus!(system::PowerSystem;
         end
 
         if isset(conductance)
-            bus.shunt.conductance[index] = topu(conductance, basePowerInv, prefix.activePower)
+            bus.shunt.conductance[index] = topu(conductance, prefix.activePower, basePowerInv)
         end
         if isset(susceptance)
-            bus.shunt.susceptance[index] = topu(susceptance, basePowerInv, prefix.reactivePower)
+            bus.shunt.susceptance[index] = topu(susceptance, prefix.reactivePower, basePowerInv)
         end
 
         if !isempty(ac.nodalMatrix)
@@ -229,16 +234,16 @@ function updateBus!(system::PowerSystem;
 
     baseVoltageInv = 1 / (system.base.voltage.value[index] * system.base.voltage.prefix)
     if isset(magnitude)
-        bus.voltage.magnitude[index] = topu(magnitude, baseVoltageInv, prefix.voltageMagnitude)
+        bus.voltage.magnitude[index] = topu(magnitude, prefix.voltageMagnitude, baseVoltageInv)
     end
     if isset(angle)
-        bus.voltage.angle[index] = angle * prefix.voltageAngle
+        bus.voltage.angle[index] = topu(angle, prefix.voltageAngle, 1.0)
     end
     if isset(minMagnitude)
-        bus.voltage.minMagnitude[index] = topu(minMagnitude, baseVoltageInv, prefix.voltageMagnitude)
+        bus.voltage.minMagnitude[index] = topu(minMagnitude, prefix.voltageMagnitude, baseVoltageInv)
     end
     if isset(maxMagnitude)
-        bus.voltage.maxMagnitude[index] = topu(maxMagnitude, baseVoltageInv, prefix.voltageMagnitude)
+        bus.voltage.maxMagnitude[index] = topu(maxMagnitude, prefix.voltageMagnitude, baseVoltageInv)
     end
 
     if isset(area)
@@ -448,7 +453,7 @@ option to use other units instead of per-units and radians, or to specify prefix
 voltage by using the [`@power`](@ref @power) and [`@voltage`](@ref @voltage) macros.
 
 # Examples
-Creating a bus template using the default unit system:
+Adding a bus template using the default unit system:
 ```jldoctest
 system = powerSystem()
 
@@ -456,7 +461,7 @@ system = powerSystem()
 addBus!(system; label = "Bus 1", reactive = -0.04, base = 132e3)
 ```
 
-Creating a bus template using a custom unit system:
+Adding a bus template using a custom unit system:
 ```jldoctest
 @power(MW, MVAr, MVA)
 @voltage(pu, deg, kV)
@@ -471,7 +476,7 @@ macro bus(kwargs...)
         parameter::Symbol = kwarg.args[1]
 
         if hasfield(BusTemplate, parameter)
-            if !(parameter in [:base; :angle; :type; :area; :lossZone; :label])
+            if !(parameter in [:base; :type; :area; :lossZone; :label])
                 container::ContainerTemplate = getfield(template.bus, parameter)
                 if parameter in [:active; :conductance]
                     prefixLive = prefix.activePower
@@ -479,6 +484,8 @@ macro bus(kwargs...)
                     prefixLive = prefix.reactivePower
                 elseif parameter in [:magnitude; :minMagnitude; :maxMagnitude]
                     prefixLive = prefix.voltageMagnitude
+                elseif parameter == :angle
+                    prefixLive = prefix.voltageAngle
                 end
                 if prefixLive != 0.0
                     setfield!(container, :value, prefixLive * Float64(eval(kwarg.args[2])))
@@ -490,14 +497,17 @@ macro bus(kwargs...)
             else
                 if parameter == :base
                     setfield!(template.bus, parameter, Float64(eval(kwarg.args[2])) * prefix.baseVoltage)
-                elseif parameter == :angle
-                    setfield!(template.bus, parameter, Float64(eval(kwarg.args[2])) * prefix.voltageAngle)
                 elseif parameter == :type
                     setfield!(template.bus, parameter, Int8(eval(kwarg.args[2])))
                 elseif parameter in [:area; :lossZone]
                     setfield!(template.bus, parameter, Int64(eval(kwarg.args[2])))
                 elseif parameter == :label
-                    setfield!(template.bus, parameter, string(kwarg.args[2]))
+                    label = string(kwarg.args[2])
+                    if contains(label, "?")
+                        setfield!(template.bus, parameter, label)
+                    else
+                        throw(ErrorException("The label template lacks the '?' symbol to indicate integer placement."))
+                    end
                 end
             end
         else

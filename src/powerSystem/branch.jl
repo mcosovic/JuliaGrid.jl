@@ -14,7 +14,7 @@ for completely reconstructing vectors and matrices when adding a new branch.
 
 # Keywords
 The branch is defined with the following keywords:
-* `label`: unique label for the branch;
+* `label`: a unique label for the branch;
 * `from`: "from" bus label, corresponds to the bus label;
 * `to`: "to" bus label, corresponds to the bus label;
 * `status`: operating status of the branch:
@@ -54,7 +54,7 @@ the user can choose to use other units besides per-units and radians by utilizin
 as [`@power`](@ref @power), [`@voltage`](@ref @voltage), and [`@parameter`](@ref @parameter).
 
 # Examples
-Creating a branch using the default unit system:
+Adding a branch using the default unit system:
 ```jldoctest
 system = powerSystem()
 
@@ -64,7 +64,7 @@ addBus!(system; label = "Bus 2", type = 1, active = 0.15, reactive = 0.08)
 addBranch!(system; from = "Bus 1", to = "Bus 2", reactance = 0.12, shiftAngle = 0.1745)
 ```
 
-Creating a branch using a custom unit system:
+Adding a branch using a custom unit system:
 ```jldoctest
 @voltage(pu, deg, kV)
 system = powerSystem()
@@ -105,18 +105,18 @@ function addBranch!(system::PowerSystem;
     baseAdmittanceInv = baseImpedance(baseVoltage, basePowerInv, branch.parameter.turnsRatio[end])
     baseImpedanceInv = 1 / baseAdmittanceInv
 
-    push!(branch.parameter.resistance, topu(resistance, default.resistance, baseImpedanceInv, prefix.impedance))
-    push!(branch.parameter.reactance, topu(reactance, default.reactance, baseImpedanceInv, prefix.impedance))
+    push!(branch.parameter.resistance, topu(resistance, default.resistance, prefix.impedance, baseImpedanceInv))
+    push!(branch.parameter.reactance, topu(reactance, default.reactance, prefix.impedance, baseImpedanceInv))
     if branch.parameter.resistance[end] == 0.0 && branch.parameter.reactance[end] == 0.0
         throw(ErrorException("At least one of the keywords resistance or reactance must be provided."))
     end
 
-    push!(branch.parameter.conductance, topu(conductance, default.conductance, baseAdmittanceInv, prefix.admittance))
-    push!(branch.parameter.susceptance, topu(susceptance, default.susceptance, baseAdmittanceInv, prefix.admittance))
-    push!(branch.parameter.shiftAngle, tosi(shiftAngle, default.shiftAngle, prefix.voltageAngle))
+    push!(branch.parameter.conductance, topu(conductance, default.conductance, prefix.admittance, baseAdmittanceInv))
+    push!(branch.parameter.susceptance, topu(susceptance, default.susceptance, prefix.admittance, baseAdmittanceInv))
+    push!(branch.parameter.shiftAngle, topu(shiftAngle, default.shiftAngle, prefix.voltageAngle, 1.0))
 
-    push!(branch.voltage.minDiffAngle, tosi(minDiffAngle, default.minDiffAngle, prefix.voltageAngle))
-    push!(branch.voltage.maxDiffAngle, tosi(maxDiffAngle, default.maxDiffAngle, prefix.voltageAngle))
+    push!(branch.voltage.minDiffAngle, topu(minDiffAngle, default.minDiffAngle, prefix.voltageAngle, 1.0))
+    push!(branch.voltage.maxDiffAngle, topu(maxDiffAngle, default.maxDiffAngle, prefix.voltageAngle, 1.0))
 
     push!(branch.flow.type, unitless(type, default.type))
     if branch.flow.type[end] == 2
@@ -124,9 +124,9 @@ function addBranch!(system::PowerSystem;
     else
         prefixLive = prefix.apparentPower
     end
-    push!(branch.flow.longTerm, topu(longTerm, default.longTerm, basePowerInv, prefixLive))
-    push!(branch.flow.shortTerm, topu(shortTerm, default.shortTerm, basePowerInv, prefixLive))
-    push!(branch.flow.emergency, topu(emergency, default.emergency, basePowerInv, prefixLive))
+    push!(branch.flow.longTerm, topu(longTerm, default.longTerm, prefixLive, basePowerInv))
+    push!(branch.flow.shortTerm, topu(shortTerm, default.shortTerm, prefixLive, basePowerInv))
+    push!(branch.flow.emergency, topu(emergency, default.emergency, prefixLive, basePowerInv))
 
     if !isempty(system.model.dc.nodalMatrix)
         nilModel!(system, :dcModelPushZeros)
@@ -305,19 +305,19 @@ function updateBranch!(system::PowerSystem;
         baseImpedanceInv = 1 / baseAdmittanceInv
 
         if isset(resistance)
-            branch.parameter.resistance[index] = topu(resistance, baseImpedanceInv, prefix.impedance)
+            branch.parameter.resistance[index] = topu(resistance, prefix.impedance, baseImpedanceInv)
         end
         if isset(reactance)
-            branch.parameter.reactance[index] = topu(reactance, baseImpedanceInv, prefix.impedance)
+            branch.parameter.reactance[index] = topu(reactance, prefix.impedance, baseImpedanceInv)
         end
         if isset(conductance)
-            branch.parameter.conductance[index] = topu(conductance, baseAdmittanceInv, prefix.admittance)
+            branch.parameter.conductance[index] = topu(conductance, prefix.admittance, baseAdmittanceInv)
         end
         if isset(susceptance)
-            branch.parameter.susceptance[index] = topu(susceptance, baseAdmittanceInv, prefix.admittance)
+            branch.parameter.susceptance[index] = topu(susceptance, prefix.admittance, baseAdmittanceInv)
         end
         if isset(shiftAngle)
-            branch.parameter.shiftAngle[index] = shiftAngle * prefix.voltageAngle
+            branch.parameter.shiftAngle[index] = topu(shiftAngle, prefix.voltageAngle, 1.0)
         end
     end
 
@@ -336,10 +336,10 @@ function updateBranch!(system::PowerSystem;
     branch.layout.status[index] = status
 
     if isset(minDiffAngle)
-        branch.voltage.minDiffAngle[index] = minDiffAngle * prefix.voltageAngle
+        branch.voltage.minDiffAngle[index] = topu(minDiffAngle, prefix.voltageAngle, 1.0)
     end
     if isset(maxDiffAngle)
-        branch.voltage.maxDiffAngle[index] = maxDiffAngle * prefix.voltageAngle
+        branch.voltage.maxDiffAngle[index] = topu(maxDiffAngle, prefix.voltageAngle, 1.0)
     end
 
     if isset(type)
@@ -353,13 +353,13 @@ function updateBranch!(system::PowerSystem;
             prefixLive = prefix.apparentPower
         end
         if isset(longTerm)
-            branch.flow.longTerm[index] = topu(longTerm, basePowerInv, prefixLive)
+            branch.flow.longTerm[index] = topu(longTerm, prefixLive, basePowerInv)
         end
         if isset(shortTerm)
-            branch.flow.shortTerm[index] = topu(shortTerm, basePowerInv, prefixLive)
+            branch.flow.shortTerm[index] = topu(shortTerm, prefixLive, basePowerInv)
         end
         if isset(emergency)
-            branch.flow.emergency[index] = topu(emergency, basePowerInv, prefixLive)
+            branch.flow.emergency[index] = topu(emergency, prefixLive, basePowerInv)
         end
     end
 
@@ -498,7 +498,7 @@ can choose to use other units besides per-units and radians by utilizing macros 
 [`@power`](@ref @power), [`@voltage`](@ref @voltage), and [`@parameter`](@ref @parameter).
 
 # Examples
-Creating a branch template using the default unit system:
+Adding a branch template using the default unit system:
 ```jldoctest
 system = powerSystem()
 
@@ -509,7 +509,7 @@ addBus!(system; label = "Bus 2", type = 1, active = 0.15, reactive = 0.08)
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2")
 ```
 
-Creating a branch template using a custom unit system:
+Adding a branch template using a custom unit system:
 ```jldoctest
 @voltage(pu, deg, kV)
 system = powerSystem()
@@ -533,12 +533,14 @@ macro branch(kwargs...)
         parameter::Symbol = kwarg.args[1]
 
         if hasfield(BranchTemplate, parameter)
-            if !(parameter in [:status; :type; :shiftAngle; :minDiffAngle; :maxDiffAngle; :label])
+            if !(parameter in [:status; :type; :label])
                 container::ContainerTemplate = getfield(template.branch, parameter)
                 if parameter in [:resistance; :reactance]
                     prefixLive = prefix.impedance
                 elseif parameter in [:conductance; :susceptance]
                     prefixLive = prefix.admittance
+                elseif parameter in [:shiftAngle; :minDiffAngle; :maxDiffAngle]
+                    prefixLive = prefix.voltageAngle
                 elseif parameter in [:longTerm; :shortTerm; :emergency]
                     if template.branch.type in [1, 3]
                         prefixLive = prefix.apparentPower
@@ -554,12 +556,15 @@ macro branch(kwargs...)
                     setfield!(container, :pu, true)
                 end
             else
-                if parameter in [:shiftAngle; :minDiffAngle; :maxDiffAngle]
-                    setfield!(template.branch, parameter, Float64(eval(kwarg.args[2])) * prefix.voltageAngle)
-                elseif parameter == :status
+                if parameter == :status
                     setfield!(template.branch, parameter, Int8(eval(kwarg.args[2])))
                 elseif parameter == :label
-                    setfield!(template.branch, parameter, string(kwarg.args[2]))
+                    label = string(kwarg.args[2])
+                    if contains(label, "?")
+                        setfield!(template.branch, parameter, label)
+                    else
+                        throw(ErrorException("The label template lacks the '?' symbol to indicate integer placement."))
+                    end
                 end
             end
         else

@@ -56,7 +56,7 @@ have the option to use other units instead of per-units using the [`@power`](@re
 and [`@voltage`](@ref @voltage) macros.
 
 # Examples
-Creating a bus using the default unit system:
+Adding a generator using the default unit system:
 ```jldoctest
 system = powerSystem()
 
@@ -65,7 +65,7 @@ addBus!(system; label = "Bus 1", type = 2, active = 0.2, base = 132e3)
 addGenerator!(system; bus = "Bus 1", active = 0.5, magnitude = 1.1)
 ```
 
-Creating a bus using a custom unit system:
+Adding a generator using a custom unit system:
 ```jldoctest
 @power(MW, MVAr, MVA)
 @voltage(kV, deg, kV)
@@ -99,8 +99,8 @@ function addGenerator!(system::PowerSystem;
     basePowerInv = 1 / (system.base.power.value * system.base.power.prefix)
     baseVoltageInv = 1 / (system.base.voltage.value[busIndex] * system.base.voltage.prefix)
 
-    push!(generator.output.active, topu(active, default.active, basePowerInv, prefix.activePower))
-    push!(generator.output.reactive, topu(reactive, default.reactive, basePowerInv, prefix.reactivePower))
+    push!(generator.output.active, topu(active, default.active, prefix.activePower, basePowerInv))
+    push!(generator.output.reactive, topu(reactive, default.reactive, prefix.reactivePower, basePowerInv))
 
     if generator.layout.status[end] == 1
         push!(system.bus.supply.generator[busIndex], generator.number)
@@ -108,26 +108,26 @@ function addGenerator!(system::PowerSystem;
         system.bus.supply.reactive[busIndex] += generator.output.reactive[end]
     end
 
-    push!(generator.capability.minActive, topu(minActive, default.minActive, basePowerInv, prefix.activePower))
-    push!(generator.capability.maxActive, topu(maxActive, default.maxActive, basePowerInv, prefix.activePower))
+    push!(generator.capability.minActive, topu(minActive, default.minActive, prefix.activePower, basePowerInv))
+    push!(generator.capability.maxActive, topu(maxActive, default.maxActive, prefix.activePower, basePowerInv))
 
-    push!(generator.capability.minReactive, topu(minReactive, default.minReactive, basePowerInv, prefix.reactivePower))
-    push!(generator.capability.maxReactive, topu(maxReactive, default.maxReactive, basePowerInv, prefix.reactivePower))
+    push!(generator.capability.minReactive, topu(minReactive, default.minReactive, prefix.reactivePower, basePowerInv))
+    push!(generator.capability.maxReactive, topu(maxReactive, default.maxReactive, prefix.reactivePower, basePowerInv))
 
-    push!(generator.capability.lowActive, topu(lowActive, default.lowActive, basePowerInv, prefix.activePower))
-    push!(generator.capability.minLowReactive, topu(minLowReactive, default.minLowReactive, basePowerInv, prefix.reactivePower))
-    push!(generator.capability.maxLowReactive, topu(maxLowReactive, default.maxLowReactive, basePowerInv, prefix.reactivePower))
+    push!(generator.capability.lowActive, topu(lowActive, default.lowActive, prefix.activePower, basePowerInv))
+    push!(generator.capability.minLowReactive, topu(minLowReactive, default.minLowReactive, prefix.reactivePower, basePowerInv))
+    push!(generator.capability.maxLowReactive, topu(maxLowReactive, default.maxLowReactive, prefix.reactivePower, basePowerInv))
 
-    push!(generator.capability.upActive, topu(upActive, default.upActive, basePowerInv, prefix.activePower))
-    push!(generator.capability.minUpReactive, topu(minUpReactive, default.minUpReactive, basePowerInv, prefix.reactivePower))
-    push!(generator.capability.maxUpReactive, topu(maxUpReactive, default.maxUpReactive, basePowerInv, prefix.reactivePower))
+    push!(generator.capability.upActive, topu(upActive, default.upActive, prefix.activePower, basePowerInv))
+    push!(generator.capability.minUpReactive, topu(minUpReactive, default.minUpReactive, prefix.reactivePower, basePowerInv))
+    push!(generator.capability.maxUpReactive, topu(maxUpReactive, default.maxUpReactive, prefix.reactivePower, basePowerInv))
 
-    push!(generator.ramping.loadFollowing, topu(loadFollowing, default.loadFollowing, basePowerInv, prefix.activePower))
-    push!(generator.ramping.reserve10min, topu(reserve10min, default.reserve10min, basePowerInv, prefix.activePower))
-    push!(generator.ramping.reserve30min, topu(reserve30min, default.reserve30min, basePowerInv, prefix.activePower))
-    push!(generator.ramping.reactiveTimescale, topu(reactiveTimescale, default.reactiveTimescale, basePowerInv, prefix.reactivePower))
+    push!(generator.ramping.loadFollowing, topu(loadFollowing, default.loadFollowing, prefix.activePower, basePowerInv))
+    push!(generator.ramping.reserve10min, topu(reserve10min, default.reserve10min, prefix.activePower, basePowerInv))
+    push!(generator.ramping.reserve30min, topu(reserve30min, default.reserve30min, prefix.activePower, basePowerInv))
+    push!(generator.ramping.reactiveTimescale, topu(reactiveTimescale, default.reactiveTimescale, prefix.reactivePower, basePowerInv))
 
-    push!(generator.voltage.magnitude, topu(magnitude, default.magnitude, baseVoltageInv, prefix.voltageMagnitude))
+    push!(generator.voltage.magnitude, topu(magnitude, default.magnitude, prefix.voltageMagnitude, baseVoltageInv))
 
     push!(generator.layout.bus, busIndex)
     push!(generator.layout.area, unitless(area, default.area))
@@ -318,10 +318,10 @@ function updateGenerator!(system::PowerSystem;
 
     if output
         if isset(active)
-            generator.output.active[index] = topu(active, basePowerInv, prefix.activePower)
+            generator.output.active[index] = topu(active, prefix.activePower, basePowerInv)
         end
         if isset(reactive)
-            generator.output.reactive[index] = topu(reactive, basePowerInv, prefix.reactivePower)
+            generator.output.reactive[index] = topu(reactive, prefix.reactivePower, basePowerInv)
         end
     end
 
@@ -338,54 +338,54 @@ function updateGenerator!(system::PowerSystem;
     generator.layout.status[index] = status
 
     if isset(minActive)
-        generator.capability.minActive[index] = topu(minActive, basePowerInv, prefix.activePower)
+        generator.capability.minActive[index] = topu(minActive, prefix.activePower, basePowerInv)
     end
     if isset(maxActive)
-        generator.capability.maxActive[index] = topu(maxActive, basePowerInv, prefix.activePower)
+        generator.capability.maxActive[index] = topu(maxActive, prefix.activePower, basePowerInv)
     end
     if isset(minReactive)
-        generator.capability.minReactive[index] = topu(minReactive, basePowerInv, prefix.reactivePower)
+        generator.capability.minReactive[index] = topu(minReactive, prefix.reactivePower, basePowerInv)
     end
     if isset(maxReactive)
-        generator.capability.maxReactive[index] = topu(maxReactive, basePowerInv, prefix.reactivePower)
+        generator.capability.maxReactive[index] = topu(maxReactive, prefix.reactivePower, basePowerInv)
     end
 
     if isset(lowActive)
-        generator.capability.lowActive[index] = topu(lowActive, basePowerInv, prefix.activePower)
+        generator.capability.lowActive[index] = topu(lowActive, prefix.activePower, basePowerInv)
     end
     if isset(minLowReactive)
-        generator.capability.minLowReactive[index] = topu(minLowReactive, basePowerInv, prefix.reactivePower)
+        generator.capability.minLowReactive[index] = topu(minLowReactive, prefix.reactivePower, basePowerInv)
     end
     if isset(maxLowReactive)
-        generator.capability.maxLowReactive[index] = topu(maxLowReactive, basePowerInv, prefix.reactivePower)
+        generator.capability.maxLowReactive[index] = topu(maxLowReactive, prefix.reactivePower, basePowerInv)
     end
 
     if isset(upActive)
-        generator.capability.upActive[index] = topu(upActive, basePowerInv, prefix.activePower)
+        generator.capability.upActive[index] = topu(upActive, prefix.activePower, basePowerInv)
     end
     if isset(minUpReactive)
-        generator.capability.minUpReactive[index] = topu(minUpReactive, basePowerInv, prefix.reactivePower)
+        generator.capability.minUpReactive[index] = topu(minUpReactive, prefix.reactivePower, basePowerInv)
     end
     if isset(maxUpReactive)
-        generator.capability.maxUpReactive[index] = topu(maxUpReactive, basePowerInv, prefix.reactivePower)
+        generator.capability.maxUpReactive[index] = topu(maxUpReactive, prefix.reactivePower, basePowerInv)
     end
 
     if isset(loadFollowing)
-        generator.ramping.loadFollowing[index] = topu(loadFollowing, basePowerInv, prefix.activePower)
+        generator.ramping.loadFollowing[index] = topu(loadFollowing, prefix.activePower, basePowerInv)
     end
     if isset(reserve10min)
-        generator.ramping.reserve10min[index] = topu(reserve10min, basePowerInv, prefix.activePower)
+        generator.ramping.reserve10min[index] = topu(reserve10min, prefix.activePower, basePowerInv)
     end
     if isset(reserve30min)
-        generator.ramping.reserve30min[index] = topu(reserve30min, basePowerInv, prefix.activePower)
+        generator.ramping.reserve30min[index] = topu(reserve30min, prefix.activePower, basePowerInv)
     end
     if isset(reactiveTimescale)
-        generator.ramping.reactiveTimescale[index] = topu(reactiveTimescale, basePowerInv, prefix.reactivePower)
+        generator.ramping.reactiveTimescale[index] = topu(reactiveTimescale, prefix.reactivePower, basePowerInv)
     end
 
     if isset(magnitude)
         baseVoltageInv = 1 / (system.base.voltage.value[indexBus] * system.base.voltage.prefix)
-        generator.voltage.magnitude[index] = topu(magnitude, baseVoltageInv, prefix.voltageMagnitude)
+        generator.voltage.magnitude[index] = topu(magnitude, prefix.voltageMagnitude, baseVoltageInv)
     end
 
     if isset(area)
@@ -687,7 +687,7 @@ the option to use other units instead of per-units using the [`@power`](@ref @po
 [`@voltage`](@ref @voltage) macros.
 
 # Examples
-Creating a generator using the default unit system:
+Adding a generator using the default unit system:
 ```jldoctest
 system = powerSystem()
 
@@ -697,7 +697,7 @@ addBus!(system; label = "Bus 1", type = 2, active = 0.25, reactive = -0.04, base
 addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 0.5, reactive = 0.1)
 ```
 
-Creating a generator using a custom unit system:
+Adding a generator using a custom unit system:
 ```jldoctest
 @power(MW, MVAr, MVA)
 @voltage(kV, deg, kV)
@@ -737,7 +737,12 @@ macro generator(kwargs...)
                 elseif parameter == :area
                     setfield!(template.generator, parameter, Int64(eval(kwarg.args[2])))
                 elseif parameter == :label
-                    setfield!(template.generator, parameter, string(kwarg.args[2]))
+                    label = string(kwarg.args[2])
+                    if contains(label, "?")
+                        setfield!(template.generator, parameter, label)
+                    else
+                        throw(ErrorException("The label template lacks the '?' symbol to indicate integer placement."))
+                    end
                 end
             end
         else
@@ -787,7 +792,7 @@ By default, the input units related with active powers are per-units (pu), but t
 modified using the macro [`@power`](@ref @power).
 
 # Examples
-Creating a bus using the default unit system:
+Adding a cost using the default unit system:
 ```jldoctest
 system = powerSystem()
 
@@ -797,7 +802,7 @@ addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 0.5)
 cost!(system; label = "Generator 1", active = 2, polynomial = [1100.0; 500.0; 150.0])
 ```
 
-Creating a bus using a custom unit system:
+Adding a cost using a custom unit system:
 ```jldoctest
 @power(MW, MVAr, MVA)
 system = powerSystem()

@@ -1,4 +1,4 @@
-@testset "Build and Update in Per-Units" begin
+@testset "Build and Update Power System in Per-Units" begin
     system = powerSystem(string(pathData, "build.m"))
     rad = pi / 180
 
@@ -131,7 +131,7 @@
     equalStruct(system.base.voltage, systemPU.base.voltage)
 end
 
-@testset "Build and Update in SI Units" begin
+@testset "Build and Update Power System in SI Units" begin
     system = powerSystem(string(pathData, "build.m"))
     @base(system, MVA, kV)
 

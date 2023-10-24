@@ -120,8 +120,7 @@ function loadBus(system::PowerSystem, hdf5::HDF5.File)
     bus.layout.lossZone = readHDF5(layouth5, "lossZone", bus.number)
     bus.label = Dict{String,Int64}(); sizehint!(bus.label, bus.number)
 
-    label::Array{String,1} = read(layouth5["label"])
-    maxLabel = 0
+    label::Array{String,1} = read(hdf5["bus/label"])
     @inbounds for i = 1:bus.number
         bus.label[label[i]] = i
 
@@ -129,7 +128,7 @@ function loadBus(system::PowerSystem, hdf5::HDF5.File)
             bus.layout.slack = i
         end
     end
-    bus.layout.maxLabel = read(layouth5["maxLabel"])
+    bus.layout.label = read(layouth5["label"])
 
     demandh5 = hdf5["bus/demand"]
     bus.demand.active = readHDF5(demandh5, "active", bus.number)
@@ -163,8 +162,8 @@ function loadBranch(system::PowerSystem, hdf5::HDF5.File)
     branch.number = length(branch.layout.to)
 
     branch.layout.status = readHDF5(layouth5, "status", branch.number)
-    branch.label = Dict(zip(read(layouth5["label"]), collect(1:branch.number)))
-    branch.layout.maxLabel = read(layouth5["maxLabel"])
+    branch.label = Dict(zip(read(hdf5["branch/label"]), collect(1:branch.number)))
+    branch.layout.label = read(layouth5["label"])
 
     parameterh5 = hdf5["branch/parameter"]
     branch.parameter.resistance = readHDF5(parameterh5, "resistance", branch.number)
@@ -198,8 +197,8 @@ function loadGenerator(system::PowerSystem, hdf5::HDF5.File)
 
     generator.layout.area = readHDF5(layouth5, "area", generator.number)
     generator.layout.status = readHDF5(layouth5, "status", generator.number)
-    generator.label = Dict(zip(read(layouth5["label"]), collect(1:generator.number)))
-    generator.layout.maxLabel = read(layouth5["maxLabel"])
+    generator.label = Dict(zip(read(hdf5["generator/label"]), collect(1:generator.number)))
+    generator.layout.label = read(layouth5["label"])
 
     outputh5 = hdf5["generator/output"]
     generator.output.active = readHDF5(outputh5, "active", generator.number)
@@ -340,14 +339,14 @@ function loadBus(system::PowerSystem, busLine::Array{String,1})
 
     system.base.voltage.value = similar(bus.demand.active)
 
-    maxLabel = 0
+    bus.layout.label = 0
     @inbounds for (k, line) in enumerate(busLine)
         data = split(line)
 
         bus.label[data[1]] = k
         labelInt64 = parse(Int64, data[1])
-        if bus.layout.maxLabel < labelInt64
-            bus.layout.maxLabel = labelInt64
+        if bus.layout.label < labelInt64
+            bus.layout.label = labelInt64
         end
 
         bus.demand.active[k] = parse(Float64, data[3]) * basePowerInv
@@ -438,7 +437,7 @@ function loadBranch(system::PowerSystem, branchLine::Array{String,1})
         branch.layout.from[k] = system.bus.label[data[1]]
         branch.layout.to[k] = system.bus.label[data[2]]
     end
-    branch.layout.maxLabel = branch.number
+    branch.layout.label = branch.number
 end
 
 ######## Load Generator Data from MATLAB File ##########
@@ -516,7 +515,7 @@ function loadGenerator(system::PowerSystem, generatorLine::Array{String,1}, gene
             system.bus.supply.reactive[i] += generator.output.reactive[k]
         end
     end
-    generator.layout.maxLabel = generator.number
+    generator.layout.label = generator.number
 
     generator.cost.active.model = fill(Int8(0), system.generator.number)
     generator.cost.active.polynomial = [Array{Float64}(undef, 0) for i = 1:system.generator.number]
@@ -568,9 +567,9 @@ end
 ######## Read Data From HDF5 File ##########
 @inline function readHDF5(group, key::String, number::Int64)
     if length(group[key]) != 1
-        data::Union{Array{Float64,1}, Array{Int64,1}, Array{Int8,1}} = read(group[key])
+        data::Union{Array{Float64,1}, Array{Int64,1}, Array{Int8,1}, Array{Bool,1}} = read(group[key])
     else
-        data = fill(read(group[key])::Union{Float64, Int64, Int8}, number)
+        data = fill(read(group[key])::Union{Float64, Int64, Int8, Bool}, number)
     end
 
     return data

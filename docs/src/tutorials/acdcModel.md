@@ -126,7 +126,7 @@ The current flowing through a series admittance, denoted as ``y_{ij}``, is defin
 ```
 Consequently, the active and reactive power associated with the branch series element are as follows:
 ```math
-  S_{\text{l}ij} = P_{\text{l}ij} + \text{j} Q_{\text{l}ij} = (\alpha_{ij} \bar{V}_{i} - \bar{V}_{j}) \bar{I}_{\text{s}ij}^* = y_{ij}^* (\alpha_{ij} \bar{V}_{i} - \bar{V}_{j}) (\alpha_{ij} \bar{V}_{i} - \bar{V}_{j})^* ,\;\;\; (i,j) \in \mathcal{E}.
+  S_{\text{l}ij} = P_{\text{l}ij} + \text{j} Q_{\text{l}ij} = (\alpha_{ij} \bar{V}_{i} - \bar{V}_{j}) \bar{I}_{\text{l}ij}^* = y_{ij}^* (\alpha_{ij} \bar{V}_{i} - \bar{V}_{j}) (\alpha_{ij} \bar{V}_{i} - \bar{V}_{j})^* ,\;\;\; (i,j) \in \mathcal{E}.
 ```
 The active power accounts for losses originating from the series resistance ``r_{ij}`` of the branch, while the reactive power represents losses resulting from the inductive characteristics of the impedance defined by series reactance ``x_{ij}``. This can be observed when the reactive power is positive ``Q_{\text{l}ij} > 0``.
 

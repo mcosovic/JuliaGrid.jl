@@ -38,7 +38,6 @@ function saveBase(system::PowerSystem, file)
     format = compresseArray(file, system.base.voltage.value * system.base.voltage.prefix, "base/voltage")
     attrs(file["base/voltage"])["unit"] = "volt (V)"
     attrs(file["base/voltage"])["format"] = format
-
 end
 
 ######### Save Bus Data ##########
@@ -57,10 +56,10 @@ function saveBus(system::PowerSystem, file)
         end
     end
 
-    write(file, "bus/layout/label", label)
-    attrs(file["bus/layout/label"])["unit"] = "dimensionless"
-    attrs(file["bus/layout/label"])["format"] = "expand"
-    write(file, "bus/layout/maxLabel", layout.maxLabel)
+    write(file, "bus/label", label)
+    attrs(file["bus/label"])["unit"] = "dimensionless"
+    attrs(file["bus/label"])["format"] = "expand"
+    write(file, "bus/layout/label", layout.label)
 
     write(file, "bus/layout/type", layout.type)
     attrs(file["bus/layout/type"])["demand bus (PQ)"] = 1
@@ -131,10 +130,10 @@ function saveBranch(system::PowerSystem, labelBus::Array{String,1}, file)
         label[value] = key
     end
 
-    write(file, "branch/layout/label", label)
-    attrs(file["branch/layout/label"])["unit"] = "dimensionless"
-    attrs(file["branch/layout/label"])["format"] = "expand"
-    write(file, "branch/layout/maxLabel", layout.maxLabel)
+    write(file, "branch/label", label)
+    attrs(file["branch/label"])["unit"] = "dimensionless"
+    attrs(file["branch/label"])["format"] = "expand"
+    write(file, "branch/layout/label", layout.label)
 
     format = compresseArray(file, parameter.resistance, "branch/parameter/resistance")
     attrs(file["branch/parameter/resistance"])["unit"] = "per-unit (pu)"
@@ -231,10 +230,10 @@ function saveGenerator(system::PowerSystem, labelBus::Array{String,1}, file)
     @inbounds for (key, value) in system.generator.label
         label[value] = key
     end
-    write(file, "generator/layout/label", label)
-    attrs(file["generator/layout/label"])["unit"] = "dimensionless"
-    attrs(file["generator/layout/label"])["format"] = "expand"
-    write(file, "generator/layout/maxLabel", layout.maxLabel)
+    write(file, "generator/label", label)
+    attrs(file["generator/label"])["unit"] = "dimensionless"
+    attrs(file["generator/label"])["format"] = "expand"
+    write(file, "generator/layout/label", layout.label)
 
     format = compresseArray(file, output.active, "generator/output/active")
     attrs(file["generator/output/active"])["unit"] = "per-unit (pu)"
