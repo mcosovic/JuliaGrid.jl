@@ -56,8 +56,8 @@ include("measurement/pmu.jl")
 export addVoltmeter!, updateVoltmeter!, @voltmeter
 export addAmmeter!, updateAmmeter!, @ammeter
 export addWattmeter!, updateWattmeter!, @wattmeter
-export addVarmeter!, updateVarmeter, @varmeter
-export addPmu!, updatePmu, @pmu
+export addVarmeter!, updateVarmeter!, @varmeter
+export addPmu!, updatePmu!, @pmu
 
 ########## Postprocessing ##########
 include("postprocessing/dcAnalysis.jl")
