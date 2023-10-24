@@ -1,11 +1,10 @@
 """
-    addPmu!(system::PowerSystem, device::Measurement; label, bus, from, to,
-        magnitude, varianceMagnitude, statusMagnitude,
-        angle, varianceAngle, statusAngle, noise)
-        
-The function adds a new PMU to the `Measurement` composite type within a given `PowerSystem` 
-type. The PMU can be added to an already defined bus or branch. When defining the PMU, it 
-is essential to provide the voltage magnitude and angle if the PMU is located at a bus or 
+    addPmu!(system::PowerSystem, device::Measurement; label, bus, from, to, magnitude,
+        varianceMagnitude, statusMagnitude, angle, varianceAngle, statusAngle, noise)
+
+The function adds a new PMU to the `Measurement` composite type within a given `PowerSystem`
+type. The PMU can be added to an already defined bus or branch. When defining the PMU, it
+is essential to provide the voltage magnitude and angle if the PMU is located at a bus or
 the current magnitude and angle if the PMU is located at a branch.
 
 # Keywords
@@ -32,11 +31,11 @@ The PMU is defined with the following keywords:
 The function updates the `pmu` field of the `Measurement` composite type.
 
 # Default Settings
-Default settings for certain keywords are as follows: `varianceMagnitude = 1e-5`, 
-`statusMagnitude = 1`, `varianceAngle = 1e-5`,  `statusAngle = 1`, and `noise = true`, 
-which apply to PMUs located at the bus, as well as at both the "from" and "to" bus ends. 
-Users can fine-tune these settings by explicitly specifying the variance and status for 
-PMUs positioned at the bus, "from" bus ends, or "to" bus ends of branches using the 
+Default settings for certain keywords are as follows: `varianceMagnitude = 1e-5`,
+`statusMagnitude = 1`, `varianceAngle = 1e-5`,  `statusAngle = 1`, and `noise = true`,
+which apply to PMUs located at the bus, as well as at both the "from" and "to" bus ends.
+Users can fine-tune these settings by explicitly specifying the variance and status for
+PMUs positioned at the bus, "from" bus ends, or "to" bus ends of branches using the
 [@pmu](@ref @pmu) macro.
 
 # Units
@@ -61,7 +60,7 @@ addPmu!(system, device; label = "PMU 2", from = "Branch 1", magnitude = 1.1, ang
 ```
 
 Adding PMUs using a custom unit system:
-```jldoctest``
+```jldoctest
 @voltage(kV, deg, kV)
 @current(A, deg)
 system = powerSystem()
@@ -173,13 +172,13 @@ Users have the option to configure the following keywords:
 The function updates the `pmu` field of the `Measurement` composite type.
 
 # Default Settings
-Default settings for variance keywords are established at `1e-5`, with all statuses set to 
+Default settings for variance keywords are established at `1e-5`, with all statuses set to
 `1`. Users can change these default settings using the [`@pmu`](@ref @pmu) macro.
 
 # Units
-The default units for the variance keywords are in per-units (pu) and radians (rad). However, 
-users have the option to switch to volts (V) and degrees (deg) when the PMU is located at 
-a bus using the [`@voltage`](@ref @voltage) macro, or amperes (A) and degrees (deg) when 
+The default units for the variance keywords are in per-units (pu) and radians (rad). However,
+users have the option to switch to volts (V) and degrees (deg) when the PMU is located at
+a bus using the [`@voltage`](@ref @voltage) macro, or amperes (A) and degrees (deg) when
 the PMU is located at a branch through the use of the [`@current`](@ref @current) macro.
 
 # Abstract type
@@ -386,8 +385,8 @@ end
 
 """
     @pmu(label, varianceMagnitudeBus, statusMagnitudeBus, varianceAngleBus, statusAngleBus,
-        varianceMagnitudeFrom, statusMagnitudeFrom, varianceAngleFrom, statusAngleFrom, 
-        ,varianceMagnitudeTo, statusMagnitudeTo, varianceAngleTo, statusAngleTo, noise)
+        varianceMagnitudeFrom, statusMagnitudeFrom, varianceAngleFrom, statusAngleFrom,
+        varianceMagnitudeTo, statusMagnitudeTo, varianceAngleTo, statusAngleTo, noise)
 
 The macro generates a template for a PMU, which can be utilized to define a PMU using the
 [`addPmu!`](@ref addPmu!) function.
@@ -398,16 +397,16 @@ and angle variances, as well as statuses for each component of the phasor. This 
 done for PMUs located at the buses using the `varianceMagnitudeBus`, `varianceAngleBus`,
 `statusMagnitudeBus`, and `statusAngleBus` keywords. The same configuration can be applied
 at both the "from" bus ends of the branches using the `varianceMagnitudeFrom`,
-`varianceAngleFrom`, `statusMagnitudeFrom`, and `statusAngleFrom` keywords. For PMUs 
+`varianceAngleFrom`, `statusMagnitudeFrom`, and `statusAngleFrom` keywords. For PMUs
 located at the "to" bus ends of the branches, users can use the `varianceMagnitudeTo`,
 `varianceAngleTo`, `statusMagnitudeTo`, and `statusAngleTo` keywords. Additionally, users
 can configure the pattern for labels using the `label` keyword and specify the type of
 `noise`.
 
 # Units
-By default, the units for variances are per-units (pu) and radians (rad). However, users 
-have the option to switch to volts (V) and degrees (deg) as the units for PMUs located at 
-the buses by using the [@voltage](@ref @voltage) macro, or they can switch to amperes (A) 
+By default, the units for variances are per-units (pu) and radians (rad). However, users
+have the option to switch to volts (V) and degrees (deg) as the units for PMUs located at
+the buses by using the [@voltage](@ref @voltage) macro, or they can switch to amperes (A)
 and degrees (deg) as the units for PMUs located at the branches by using the
 [@current](@ref @current) macro.
 
@@ -423,7 +422,7 @@ addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance =
 
 @pmu(label = "PMU ?", varianceAngleBus = 1e-6, varianceMagnitudeFrom = 1e-4)
 addPmu!(system, device; bus = "Bus 1", magnitude = 1.1, angle = -0.1, noise = false)
-addPmu!(system, device; from = "Branch 1", magnitude = 1.1, angle = -0.2, noise = false)
+addPmu!(system, device; from = "Branch 1", magnitude = 1.1, angle = -0.2)
 ```
 
 Adding PMUs using a custom unit system:
@@ -439,7 +438,7 @@ addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance =
 
 @pmu(label = "PMU ?", varianceAngleBus = 5.73e-5, varianceMagnitudeFrom = 0.0481)
 addPmu!(system, device; bus = "Bus 1", magnitude = 145.2, angle = -5.73, noise = false)
-addPmu!(system, device; from = "Branch 1", magnitude = 481.125, angle = -11.46, noise = false)
+addPmu!(system, device; from = "Branch 1", magnitude = 481.125, angle = -11.46)
 ```
 """
 macro pmu(kwargs...)

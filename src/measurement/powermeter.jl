@@ -1,6 +1,6 @@
 """
-    addWattmeter!(system::PowerSystem, device::Measurement; label, bus, from, to,
-        active, variance, status, noise)
+    addWattmeter!(system::PowerSystem, device::Measurement; label, bus, from, to, active,
+        variance, status, noise)
 
 The function adds a new wattmeter to the `Measurement` composite type within a given
 `PowerSystem` type. The wattmeter can be added to an already defined bus or branch.
@@ -25,14 +25,14 @@ The function updates the `wattmeter` field of the `Measurement` composite type.
 
 # Default Settings
 Default settings for certain keywords are as follows: `variance = 1e-2`, `status = 1`, and
-`noise = true`, which apply to wattmeters located at the bus, as well as at both the "from" 
-and "to" bus ends. Users can fine-tune these settings by explicitly specifying the variance 
+`noise = true`, which apply to wattmeters located at the bus, as well as at both the "from"
+and "to" bus ends. Users can fine-tune these settings by explicitly specifying the variance
 and status for wattmeters positioned at the bus, "from" bus ends, or "to" bus ends of
 branches using the [`@wattmeter`](@ref @wattmeter) macro.
 
 # Units
-The default units for the `active` and `variance` keywords are per-units (pu). However, 
-users can choose to use watts (W) as the units by applying the [`@power`](@ref @power) 
+The default units for the `active` and `variance` keywords are per-units (pu). However,
+users can choose to use watts (W) as the units by applying the [`@power`](@ref @power)
 macro.
 
 # Examples
@@ -73,8 +73,8 @@ function addWattmeter!(system::PowerSystem, device::Measurement;
 end
 
 """
-    addVarmeter!(system::PowerSystem, device::Measurement; label, bus, from, to,
-        reactive, variance, status, noise)
+    addVarmeter!(system::PowerSystem, device::Measurement; label, bus, from, to, reactive,
+        variance, status, noise)
 
 The function adds a new varmeter to the `Measurement` composite type within a given
 `PowerSystem` type. The varmeter can be added to an already defined bus or branch.
@@ -99,9 +99,9 @@ The function updates the `varmeter` field of the `Measurement` composite type.
 
 # Default Settings
 Default settings for certain keywords are as follows: `variance = 1e-2`, `status = 1`, and
-`noise = true`, which apply to varmeters located at the bus, as well as at both the "from" 
-and "to" bus ends. Users can fine-tune these settings by explicitly specifying the variance 
-and status for varmeters positioned at the bus, "from" bus ends, or "to" bus ends of 
+`noise = true`, which apply to varmeters located at the bus, as well as at both the "from"
+and "to" bus ends. Users can fine-tune these settings by explicitly specifying the variance
+and status for varmeters positioned at the bus, "from" bus ends, or "to" bus ends of
 branches using the [`@varmeter`](@ref @varmeter) macro.
 
 # Units
@@ -206,7 +206,7 @@ The function updates the `wattmeter` field of the `Measurement` composite type.
 
 # Default Settings
 Default settings for keywords are as follows: `varianceBus = 1e-2`, `statusBus = 1`,
-`varianceFrom = 1e-2`, `statusFrom = 1`, `varianceTo = 1e-2`, and `statusTo = 1`. Users 
+`varianceFrom = 1e-2`, `statusFrom = 1`, `varianceTo = 1e-2`, and `statusTo = 1`. Users
 can change these default settings using the [`@wattmeter`](@ref @wattmeter) macro.
 
 # Units
@@ -292,12 +292,12 @@ The function updates the `varmeter` field of the `Measurement` composite type.
 
 # Default Settings
 Default settings for keywords are as follows: `varianceBus = 1e-2`, `statusBus = 1`,
-`varianceFrom = 1e-2`, `statusFrom = 1`, `varianceTo = 1e-2`, and `statusTo = 1`. Users 
+`varianceFrom = 1e-2`, `statusFrom = 1`, `varianceTo = 1e-2`, and `statusTo = 1`. Users
 can change these default settings using the [`@varmeter`](@ref @varmeter) macro.
 
 # Units
 The default units for the `varianceBus`, `varianceFrom`, and `varianceTo` keywords are
-per-units (pu). However, users can choose to use volt-amperes reactive (VAr) as the units 
+per-units (pu). However, users can choose to use volt-amperes reactive (VAr) as the units
 by applying the [`@power`](@ref @power) macro.
 
 # Abstract type
@@ -517,8 +517,8 @@ function updateVarmeter!(system::PowerSystem, device::Measurement; label::L,
 end
 
 """
-    @wattmeter(label, varianceBus, statusBus, varianceFrom, statusFrom,
-        varianceTo, statusTo, noise)
+    @wattmeter(label, varianceBus, statusBus, varianceFrom, statusFrom, varianceTo, statusTo,
+        noise)
 
 The macro generates a template for a wattmeter, which can be utilized to define a wattmeter
 using the [`addWattmeter!`](@ref addWattmeter!) function.
@@ -598,8 +598,8 @@ macro wattmeter(kwargs...)
 end
 
 """
-    @varmeter(label, varinaceBus, varianceFrom, varianceTo, statusBus, statusFrom,
-        statusTo, noise)
+    @varmeter(label, varinaceBus, varianceFrom, varianceTo, statusBus, statusFrom, statusTo,
+        noise)
 
 The macro generates a template for a varmeter, which can be utilized to define a varmeter
 using the [`addVarmeter!`](@ref addVarmeter!) function.
@@ -613,7 +613,7 @@ as well as specify the `noise` type.
 
 # Units
 The default units for the `varianceBus`, `varianceFrom`, and `varianceTo` keywords are
-per-units (pu). However, users can choose to usevolt-amperes reactive (VAr) as the units 
+per-units (pu). However, users can choose to usevolt-amperes reactive (VAr) as the units
 by applying the [`@power`](@ref @power) macro.
 
 # Examples

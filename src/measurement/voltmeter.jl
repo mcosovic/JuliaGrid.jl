@@ -1,6 +1,6 @@
 """
-    addVoltmeter!(system::PowerSystem, device::Measurement; label, bus, magnitude,
-        variance, status, noise)
+    addVoltmeter!(system::PowerSystem, device::Measurement; label, bus, magnitude, variance,
+        status, noise)
 
 The function adds a new voltmeter to the `Measurement` composite type within a given
 `PowerSystem` type. The voltmeter can be added to an already defined bus.
@@ -81,7 +81,7 @@ with the specified `variance` to obtain measurement data.
 
 # Keywords
 Users have the option to configure the following keywords:
-* `variance` (pu or V): the variance of bus voltage magnitude measurements; 
+* `variance` (pu or V): the variance of bus voltage magnitude measurements;
 * `status`: the operating status of the voltmeters:
   * `status = 1`: in-service;
   * `status = 0`: out-of-service.
@@ -171,13 +171,13 @@ end
 The function allows for the alteration of parameters for a voltmeter.
 
 # Arguments
-If the `Analysis` type is omitted, the function applies changes to the `Measurement` 
+If the `Analysis` type is omitted, the function applies changes to the `Measurement`
 composite type only. However, when including the `Analysis` type, it updates both the
 `Measurement` and `Analysis` types. This streamlined process avoids the need to completely
 rebuild vectors and matrices when adjusting these parameters.
 
 # Keywords
-To update a specific voltmeter, provide the necessary `kwargs` input arguments in 
+To update a specific voltmeter, provide the necessary `kwargs` input arguments in
 accordance with the keywords specified in the [`addVoltmeter!`](@ref addVoltmeter!)
 function, along with their respective values. Ensure that the `label` keyword matches the
 `label` of the existing voltmeter you want to modify. If any keywords are omitted, their

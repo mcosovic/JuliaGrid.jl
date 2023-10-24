@@ -1,6 +1,6 @@
 """
-    addAmmeter!(system::PowerSystem, device::Measurement; label, from, to,
-        magnitude, variance, status, noise)
+    addAmmeter!(system::PowerSystem, device::Measurement; label, from, to, magnitude,
+        variance, status, noise)
 
 The function adds a new ammeter to the `Measurement` composite type within a given
 `PowerSystem` type. The ammeter can be added to an already defined branch.
@@ -26,7 +26,7 @@ The function updates the `ammeter` field of the `Measurement` composite type.
 Default settings for certain keywords are as follows: `variance = 1e-2`, `status = 1`,
 `noise = true`, which apply to ammeters located at both the "from" and "to" bus ends.
 Users can fine-tune these settings by explicitly specifying the variance and status for
-ammeters positioned on either the "from" or "to" bus ends of branches using the 
+ammeters positioned on either the "from" or "to" bus ends of branches using the
 [`@ammeter`](@ref @ammeter) macro.
 
 # Units
@@ -95,8 +95,8 @@ function addAmmeter!(system::PowerSystem, device::Measurement;
 end
 
 """
-    addAmmeter!(system::PowerSystem, device::Measurement, analysis::AC;
-        varianceFrom, statusFrom, varianceTo, statusTo)
+    addAmmeter!(system::PowerSystem, device::Measurement, analysis::AC; varianceFrom,
+        statusFrom, varianceTo, statusTo)
 
 The function incorporates ammeters into the `Measurement` composite type for every branch
 within the `PowerSystem` type. These measurements are derived from the exact branch current
@@ -118,7 +118,7 @@ Users have the option to configure the following keywords:
 The function updates the `ammeter` field of the `Measurement` composite type.
 
 # Default Settings
-Default settings for keywords are as follows: `varianceFrom = 1e-2`, `statusFrom = 1`, 
+Default settings for keywords are as follows: `varianceFrom = 1e-2`, `statusFrom = 1`,
 `varianceTo = 1e-2`, and `statusTo = 1`. Users can change these default settings using the
 [`@ammeter`](@ref @ammeter) macro.
 
