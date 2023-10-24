@@ -1,4 +1,4 @@
-export PowerSystem, SCADA
+export PowerSystem, Measurement
 
 ########### Bus ###########
 mutable struct BusDemand
