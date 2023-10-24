@@ -328,7 +328,6 @@ addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance =
 addAmmeter!(system, device; label = "Ammeter 1", to = "Branch 1", magnitude = 481.125)
 ```
 """
-
 macro ammeter(kwargs...)
     for kwarg in kwargs
         parameter::Symbol = kwarg.args[1]
