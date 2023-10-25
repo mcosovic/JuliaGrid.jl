@@ -11,11 +11,11 @@ of existing ones.
 
 # Returns
 The `Measurement` composite type with the following fields:
-- `voltmeter`: data related to voltmeters;
-- `ammeter`: data related to ammeters;
-- `wattmeter`: data related to wattmeters;
-- `varmeter`: data related to varmeters;
-- `pmu`: data related to PMUs.
+- `voltmeter`: bus voltage magnitude measurements;
+- `ammeter`: branch current flow magnitude measurements;
+- `wattmeter`: active power flow and injection measurements;
+- `varmeter`: reactive power flow and injection measurements;
+- `pmu`: bus voltage and branch current flow phasors measurements.
 
 # Units
 JuliaGrid stores all data in per-units and radians format. 

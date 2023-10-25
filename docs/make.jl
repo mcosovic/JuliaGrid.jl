@@ -29,8 +29,8 @@ makedocs(
             ["Power System Model" => "api/powerSystemModel.md",
              "Power Flow" => "api/powerFlow.md",
              "Optimal Power Flow" => "api/optimalPowerFlow.md",
-             "Power and Current Analysis" => "api/analysis.md",
              "Measurement Model" => "api/measurementModel.md",
+             "Power and Current Analysis" => "api/analysis.md",
              "Configuration Setup" => "api/configuration.md"]
     ]
 )

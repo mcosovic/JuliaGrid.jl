@@ -2,8 +2,9 @@
     addVoltmeter!(system::PowerSystem, device::Measurement; label, bus, magnitude, variance,
         status, noise)
 
-The function adds a new voltmeter to the `Measurement` composite type within a given
-`PowerSystem` type. The voltmeter can be added to an already defined bus.
+The function adds a new voltmeter that measures bus voltage magnitude to the `Measurement` 
+composite type within a given `PowerSystem` type. The voltmeter can be added to an already 
+defined bus.
 
 # Keywords
 The voltmeter is defined with the following keywords:
@@ -14,9 +15,9 @@ The voltmeter is defined with the following keywords:
 * `status`: the operating status of the voltmeter:
   * `status = 1`: in-service;
   * `status = 0`: out-of-service;
-* `noise`:
-  * `noise = true`: AWGN with `variance` influences `magnitude` to define the measurement mean;
-  * `noise = false`: the value of `magnitude` is used as the measurement mean.
+* `noise`: specifies how to generate the measurement mean:
+  * `noise = true`: Adds white Gaussian noise with the `variance` to the `magnitude`;
+  * `noise = false`: uses the `magnitude` value only.
 
 # Updates
 The function updates the `voltmeter` field of the `Measurement` composite type.
@@ -76,8 +77,8 @@ end
 
 The function incorporates voltmeters into the `Measurement` composite type for every bus
 within the `PowerSystem` type. These measurements are derived from the exact bus voltage
-magnitudes defined in the `AC` abstract type. These exact values are perturbed by AWGN
-with the specified `variance` to obtain measurement data.
+magnitudes defined in the `AC` abstract type. These exact values are perturbed by white 
+Gaussian noise with the specified `variance` to obtain measurement data.
 
 # Keywords
 Users have the option to configure the following keywords:

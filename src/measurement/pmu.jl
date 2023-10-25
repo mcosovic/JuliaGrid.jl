@@ -4,8 +4,8 @@
 
 The function adds a new PMU to the `Measurement` composite type within a given `PowerSystem`
 type. The PMU can be added to an already defined bus or branch. When defining the PMU, it
-is essential to provide the voltage magnitude and angle if the PMU is located at a bus or
-the current magnitude and angle if the PMU is located at a branch.
+is essential to provide the bus voltage magnitude and angle if the PMU is located at a bus 
+or the branch current flow magnitude and angle if the PMU is located at a branch.
 
 # Keywords
 The PMU is defined with the following keywords:
@@ -13,19 +13,19 @@ The PMU is defined with the following keywords:
 * `bus`: the label of the bus if the PMU is located at the bus;
 * `from`: the label of the branch if the PMU is located at the "from" bus end;
 * `to`: the label of the branch if the PMU is located at the "to" bus end;
-* `magnitude` (pu or V, A): the magnitude value of the bus voltage or branch current;
+* `magnitude` (pu or V, A): the bus voltage or branch current magnitude value;
 * `varianceMagnitude` (pu or V, A): the magnitude measurement variance;
-* `statusMagnitude`: the operating status of the magnitude measurement of the PMU:
+* `statusMagnitude`: the operating status of PMU magnitude measurement:
   * `statusMagnitude = 1`: in-service;
   * `statusMagnitude = 0`: out-of-service;
-* `angle` (rad or deg): the angle value of the bus voltage or branch current;
+* `angle` (rad or deg): the bus voltage or branch current angle value;
 * `varianceAngle` (rad or deg): the angle measurement variance;
-* `statusAngle`: the operating status of the angle measurement of the PMU:
+* `statusAngle`: the operating status of PMU angle measurement:
   * `statusAngle = 1`: in-service;
   * `statusAngle = 0`: out-of-service;
-* `noise`:
-  * `noise = true`: AWGNs with variances influence `magnitude` and `angle` to define the measurement means;
-  * `noise = false`: the values of `magnitude` and `angle` are used as the means of the measurements.
+* `noise`: specifies how to generate the measurement means:
+  * `noise = true`: Adds white Gaussian noises with variances to the `magnitude` and `angle`;
+  * `noise = false`: uses the `magnitude` and `angle` values only.
 
 # Updates
 The function updates the `pmu` field of the `Measurement` composite type.
@@ -35,7 +35,7 @@ Default settings for certain keywords are as follows: `varianceMagnitude = 1e-5`
 `statusMagnitude = 1`, `varianceAngle = 1e-5`,  `statusAngle = 1`, and `noise = true`,
 which apply to PMUs located at the bus, as well as at both the "from" and "to" bus ends.
 Users can fine-tune these settings by explicitly specifying the variance and status for
-PMUs positioned at the bus, "from" bus ends, or "to" bus ends of branches using the
+PMUs positioned at the buses, "from" bus ends, or "to" bus ends of branches using the
 [@pmu](@ref @pmu) macro.
 
 # Units
@@ -56,7 +56,7 @@ addBus!(system; label = "Bus 2", base = 132e3)
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.2)
 
 addPmu!(system, device; label = "PMU 1", bus = "Bus 1", magnitude = 1.1, angle = -0.1)
-addPmu!(system, device; label = "PMU 2", from = "Branch 1", magnitude = 1.1, angle = -0.2)
+addPmu!(system, device; label = "PMU 2", from = "Branch 1", magnitude = 1.1, angle = 0.2)
 ```
 
 Adding PMUs using a custom unit system:
@@ -70,8 +70,8 @@ addBus!(system; label = "Bus 1", base = 132.0)
 addBus!(system; label = "Bus 2", base = 132.0)
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.2)
 
-addPmu!(system, device; label = "PMU 1", bus = "Bus 1", magnitude = 145.2, angle = -5.73)
-addPmu!(system, device; label = "PMU 2", from = "Branch 1", magnitude = 481.125, angle = -11.46)
+addPmu!(system, device; label = "PMU 1", bus = "Bus 1", magnitude = 145.2, angle = -5.7)
+addPmu!(system, device; label = "PMU 2", from = "Branch 1", magnitude = 481.1, angle = 11.5)
 ```
 """
 function addPmu!(system::PowerSystem, device::Measurement;
@@ -138,33 +138,33 @@ end
 The function incorporates PMUs into the `Measurement` composite type for every bus and
 branch within the `PowerSystem` type. These measurements are derived from the exact bus
 voltage magnitudes and angles, as well as branch current magnitudes and angles defined in
-the `AC` abstract type. These exact values are then perturbed by AWGN with the specified
-`varianceMagnitude` and `varianceAngle` to obtain measurement data.
+the `AC` abstract type. These exact values are then perturbed by white Gaussian noise with 
+the specified `varianceMagnitude` and `varianceAngle` to obtain measurement data.
 
 # Keywords
 Users have the option to configure the following keywords:
-* `varianceMagnitudeBus` (pu or V): the magnitude measurement variance for PMUs at the buses;
-* `statusMagnitudeBus`: the operating status of the magnitude measurements of the PMUs at the buses:
+* `varianceMagnitudeBus` (pu or V): variance of PMU magnitude measurements at buses;
+* `statusMagnitudeBus`: the operating status of PMU magnitude measurements at buses:
   * `statusMagnitudeBus = 1`: in-service;
   * `statusMagnitudeBus = 0`: out-of-service;
-* `varianceAngleBus` (rad or deg): the angle measurement variance for PMUs at the buses;
-* `statusAngleBus`: the operating status of the angle measurements of the PMUs at the buses:
+* `varianceAngleBus` (rad or deg): variance of PMU angle measurements at buses;
+* `statusAngleBus`: the operating status of PMU agle measurements at buses:
   * `statusAngleBus = 1`: in-service;
   * `statusAngleBus = 0`: out-of-service;
-* `varianceMagnitudeFrom` (pu or A): the magnitude measurement variance for PMUs at the "from" bus ends of branches;
-* `statusMagnitudeFrom`: the operating status of the magnitude measurements of the PMUs at the "from" bus ends of branches;
+* `varianceMagnitudeFrom` (pu or A): variance of PMU magnitude measurements at the "from" bus ends;      
+* `statusMagnitudeFrom`: the operating status of PMU magnitude measurements at the "from" bus ends:
   * `statusMagnitudeFrom = 1`: in-service;
   * `statusMagnitudeFrom = 0`: out-of-service;
-* `varianceAngleFrom` (rad or deg): the angle measurement variance for PMUs at the "from" bus ends of branches;
-* `statusAngleFrom`: the operating status of the angle measurements of the PMUs at the "from" bus ends of branches;
+* `varianceAngleFrom` (rad or deg): variance of PMU angle measurements at the "from" bus ends;
+* `statusAngleFrom`: the operating status of PMU angle measurements at the "from" bus ends:
   * `statusAngleFrom = 1`: in-service;
   * `statusAngleFrom = 0`: out-of-service;
-* `varianceMagnitudeTo` (pu or A): the magnitude measurement variance for PMUs at the "to" bus ends of branches;
-* `statusMagnitudeTo`: the operating status of the magnitude measurements of the PMUs at the "to" bus ends of branches;
+* `varianceMagnitudeTo` (pu or A): variance of PMU magnitude measurements at the "to" bus ends; 
+* `statusMagnitudeTo`: the operating status of PMU magnitude measurements at the "to" bus ends:
   * `statusMagnitudeTo = 1`: in-service;
   * `statusMagnitudeTo = 0`: out-of-service;
-* `varianceAngleTo` (rad or deg): the angle measurement variance for PMUs at the "to" bus ends of branches;
-* `statusAngleTo`: the operating status of the angle measurements of the PMUs at the "to" bus ends of branches;
+* `varianceAngleTo` (rad or deg): variance of PMU angle measurements at the "to" bus ends;
+* `statusAngleTo`: the operating status of PMU angle measurements at the "to" bus ends:
   * `statusAngleTo = 1`: in-service;
   * `statusAngleTo = 0`: out-of-service.
 
@@ -187,7 +187,7 @@ The abstract type `AC` can have the following subtypes:
 - `ACOptimalPowerFlow`: generates measurements uses AC optimal power flow results.
 
 # Examples
-Adding ammeters using exact values from the AC power flow:
+Adding PMUs using exact values from the AC power flow:
 ```jldoctest
 system = powerSystem("case14.h5")
 acModel!(system)
@@ -200,47 +200,53 @@ for i = 1:10
     end
     solve!(system, analysis)
 end
+current!(system, analysis)
 
 device = measurement()
 
-@ammeter(label = "Wattmeter ?")
-addWattmeter!(system, device, analysis; variance = 1e-3)
+@pmu(label = "PMU ?")
+addPmu!(system, device, analysis; varianceMagnitudeBus = 1e-3)
 ```
 
-Adding ammeters using exact values from the AC optimal power flow:
+Adding PMUs using exact values from the AC optimal power flow:
 ```jldoctest
 system = powerSystem("case14.h5")
 acModel!(system)
 
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
 solve!(system, analysis)
+current!(system, analysis)
 
 device = measurement()
 
-@ammeter(label = "Wattmeter ?")
-addWattmeter!(system, device, analysis; variance = 1e-3)
+@pmu(label = "PMU ?")
+addPmu!(system, device, analysis; varianceMagnitudeBus = 1e-3)
 ```
 """
 function addPmu!(system::PowerSystem, device::Measurement, analysis::AC;
-    varianceMagnitude::T = missing, varianceAngle::T = missing,
-    statusMagnitude::T = missing, statusAngle::T = missing)
+    varianceMagnitudeBus::T = missing, varianceAngleBus::T = missing,
+    statusMagnitudeBus::T = missing, statusAngleBus::T = missing,
+    varianceMagnitudeFrom::T = missing, varianceAngleFrom::T = missing,
+    statusMagnitudeFrom::T = missing, statusAngleFrom::T = missing,
+    varianceMagnitudeTo::T = missing, varianceAngleTo::T = missing,
+    statusMagnitudeTo::T = missing, statusAngleTo::T = missing)
 
     pmu = device.pmu
     default = template.pmu
 
-    statusMagnitudeBus = unitless(statusMagnitude, default.statusMagnitudeBus)
+    statusMagnitudeBus = unitless(statusMagnitudeBus, default.statusMagnitudeBus)
     checkStatus(statusMagnitudeBus)
-    statusAngleBus = unitless(statusAngle, default.statusAngleBus)
+    statusAngleBus = unitless(statusAngleBus, default.statusAngleBus)
     checkStatus(statusAngleBus)
 
-    statusMagnitudeFrom = unitless(statusMagnitude, default.statusMagnitudeFrom)
+    statusMagnitudeFrom = unitless(statusMagnitudeFrom, default.statusMagnitudeFrom)
     checkStatus(statusMagnitudeFrom)
-    statusAngleFrom = unitless(statusAngle, default.statusAngleFrom)
+    statusAngleFrom = unitless(statusAngleFrom, default.statusAngleFrom)
     checkStatus(statusAngleFrom)
 
-    statusMagnitudeTo = unitless(statusMagnitude, default.statusMagnitudeTo)
+    statusMagnitudeTo = unitless(statusMagnitudeTo, default.statusMagnitudeTo)
     checkStatus(statusMagnitudeTo)
-    statusAngleTo = unitless(statusAngle, default.statusAngleTo)
+    statusAngleTo = unitless(statusAngleTo, default.statusAngleTo)
     checkStatus(statusAngleTo)
 
     pmu.number = system.bus.number + 2 * system.branch.number
@@ -266,11 +272,11 @@ function addPmu!(system::PowerSystem, device::Measurement, analysis::AC;
         pmu.layout.index[i] = i
         pmu.layout.bus[i] = true
 
-        pmu.magnitude.variance[i] = topu(varianceMagnitude, default.varianceMagnitudeBus, prefix.voltageMagnitude, prefixInv / system.base.voltage.value[i])
+        pmu.magnitude.variance[i] = topu(varianceMagnitudeBus, default.varianceMagnitudeBus, prefix.voltageMagnitude, prefixInv / system.base.voltage.value[i])
         pmu.magnitude.mean[i] = analysis.voltage.magnitude[i] + pmu.magnitude.variance[i]^(1/2) * randn(1)[1]
         pmu.magnitude.status[i] = statusMagnitudeBus
 
-        pmu.angle.variance[i] = topu(varianceAngle, default.varianceAngleBus, prefix.voltageAngle, 1.0)
+        pmu.angle.variance[i] = topu(varianceAngleBus, default.varianceAngleBus, prefix.voltageAngle, 1.0)
         pmu.angle.mean[i] = analysis.voltage.angle[i] + pmu.angle.variance[i]^(1/2) * randn(1)[1]
         pmu.angle.status[i] = statusAngleBus
     end
@@ -292,18 +298,18 @@ function addPmu!(system::PowerSystem, device::Measurement, analysis::AC;
 
         baseVoltage = system.base.voltage.value[system.branch.layout.from[count]] * system.base.voltage.prefix
         baseCurrentInv = baseCurrentInverse(basePowerInv, baseVoltage)
-        pmu.magnitude.variance[i] = topu(varianceMagnitude, default.varianceMagnitudeFrom, prefix.currentMagnitude, baseCurrentInv)
+        pmu.magnitude.variance[i] = topu(varianceMagnitudeFrom, default.varianceMagnitudeFrom, prefix.currentMagnitude, baseCurrentInv)
         pmu.magnitude.mean[i] = analysis.current.from.magnitude[count] + pmu.magnitude.variance[i]^(1/2) * randn(1)[1]
 
-        pmu.angle.variance[i] = topu(varianceAngle, default.varianceAngleFrom, prefix.currentAngle, 1.0)
+        pmu.angle.variance[i] = topu(varianceAngleFrom, default.varianceAngleFrom, prefix.currentAngle, 1.0)
         pmu.angle.mean[i] = analysis.current.from.angle[count] + pmu.angle.variance[i]^(1/2) * randn(1)[1]
 
         baseVoltage = system.base.voltage.value[system.branch.layout.to[count]] * system.base.voltage.prefix
         baseCurrentInv = baseCurrentInverse(basePowerInv, baseVoltage)
-        pmu.magnitude.variance[i + 1] = topu(varianceMagnitude, default.varianceMagnitudeTo, prefix.currentMagnitude, baseCurrentInv)
+        pmu.magnitude.variance[i + 1] = topu(varianceMagnitudeTo, default.varianceMagnitudeTo, prefix.currentMagnitude, baseCurrentInv)
         pmu.magnitude.mean[i + 1] = analysis.current.to.magnitude[count] + pmu.magnitude.variance[i + 1]^(1/2) * randn(1)[1]
 
-        pmu.angle.variance[i + 1] = topu(varianceAngle, default.varianceAngleTo, prefix.currentAngle, 1.0)
+        pmu.angle.variance[i + 1] = topu(varianceAngleTo, default.varianceAngleTo, prefix.currentAngle, 1.0)
         pmu.angle.mean[i + 1] = analysis.current.to.angle[count] + pmu.angle.variance[i + 1]^(1/2) * randn(1)[1]
 
         count += 1

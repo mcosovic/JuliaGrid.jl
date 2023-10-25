@@ -2,8 +2,9 @@
     addWattmeter!(system::PowerSystem, device::Measurement; label, bus, from, to, active,
         variance, status, noise)
 
-The function adds a new wattmeter to the `Measurement` composite type within a given
-`PowerSystem` type. The wattmeter can be added to an already defined bus or branch.
+The function adds a new wattmeter that measures active power flow or injection to the 
+`Measurement` composite type within a given `PowerSystem` type. The wattmeter can be added 
+to an already defined bus or branch.
 
 # Keywords
 The wattmeter is defined with the following keywords:
@@ -16,9 +17,9 @@ The wattmeter is defined with the following keywords:
 * `status`: the operating status of the wattmeter:
   * `status = 1`: in-service;
   * `status = 0`: out-of-service;
-* `noise`:
-  * `noise = true`: AWGN with `variance` influences `active` to define the measurement mean;
-  * `noise = false`: the value of `active` is used as the measurement mean.
+* `noise`: specifies how to generate the measurement mean:
+  * `noise = true`: Adds white Gaussian noise with the `variance` to the `active`;
+  * `noise = false`: uses the `active` value only.
 
 # Updates
 The function updates the `wattmeter` field of the `Measurement` composite type.
@@ -27,7 +28,7 @@ The function updates the `wattmeter` field of the `Measurement` composite type.
 Default settings for certain keywords are as follows: `variance = 1e-2`, `status = 1`, and
 `noise = true`, which apply to wattmeters located at the bus, as well as at both the "from"
 and "to" bus ends. Users can fine-tune these settings by explicitly specifying the variance
-and status for wattmeters positioned at the bus, "from" bus ends, or "to" bus ends of
+and status for wattmeters positioned at the buses, "from" bus ends, or "to" bus ends of
 branches using the [`@wattmeter`](@ref @wattmeter) macro.
 
 # Units
@@ -76,8 +77,9 @@ end
     addVarmeter!(system::PowerSystem, device::Measurement; label, bus, from, to, reactive,
         variance, status, noise)
 
-The function adds a new varmeter to the `Measurement` composite type within a given
-`PowerSystem` type. The varmeter can be added to an already defined bus or branch.
+The function adds a new varmeter that measures reactive power flow or injection to the 
+`Measurement` composite type within a given `PowerSystem` type. The varmeter can be added 
+to an already defined bus or branch.
 
 # Keywords
 The varmeter is defined with the following keywords:
@@ -90,9 +92,9 @@ The varmeter is defined with the following keywords:
 * `status`: the operating status of the varmeter:
   * `status = 1`: in-service;
   * `status = 0`: out-of-service;
-* `noise`:
-  * `noise = true`: AWGN with `variance` influences `reactive` to define the measurement mean;
-  * `noise = false`: the value of `reactive` is used as the measurement mean.
+* `noise`: specifies how to generate the measurement mean:
+  * `noise = true`: Adds white Gaussian noise with the `variance` to the `reactive`;
+  * `noise = false`: uses the `reactive` value only.
 
 # Updates
 The function updates the `varmeter` field of the `Measurement` composite type.
@@ -101,7 +103,7 @@ The function updates the `varmeter` field of the `Measurement` composite type.
 Default settings for certain keywords are as follows: `variance = 1e-2`, `status = 1`, and
 `noise = true`, which apply to varmeters located at the bus, as well as at both the "from"
 and "to" bus ends. Users can fine-tune these settings by explicitly specifying the variance
-and status for varmeters positioned at the bus, "from" bus ends, or "to" bus ends of
+and status for varmeters positioned at the buses, "from" bus ends, or "to" bus ends of
 branches using the [`@varmeter`](@ref @varmeter) macro.
 
 # Units
@@ -183,8 +185,8 @@ end
 The function incorporates wattmeters into the `Measurement` composite type for every bus
 and branch within the `PowerSystem` type. These measurements are derived from the exact
 active power injections at buses and active power flows in branches defined in the `AC`
-abstract type. These exact values are perturbed by AWGN with the specified `variance` to
-obtain measurement data.
+abstract type. These exact values are perturbed by white Gaussian noise with the specified 
+`variance` to obtain measurement data.
 
 # Keywords
 Users have the option to configure the following keywords:
@@ -192,12 +194,12 @@ Users have the option to configure the following keywords:
 * `statusBus`: the operating status of the wattmeters at the buses:
   * `statusBus = 1`: in-service;
   * `statusBus = 0`: out-of-service;
-* `varianceFrom` (pu or W): the measurement variance for wattmeters at the "from" bus ends of branches;
-* `statusFrom`: the operating status of the wattmeters at the "from" bus ends of branches:
+* `varianceFrom` (pu or W): the measurement variance for wattmeters at the "from" bus ends;
+* `statusFrom`: the operating status of the wattmeters at the "from" bus ends:
   * `statusFrom = 1`: in-service;
   * `statusFrom = 0`: out-of-service;
-* `varianceTo` (pu or W): the measurement variance for wattmeters at the "to" bus ends of branches;
-* `statusTo`: the operating status of the wattmeters at the "to" bus ends of branches:
+* `varianceTo` (pu or W): the measurement variance for wattmeters at the "to" bus ends;
+* `statusTo`: the operating status of the wattmeters at the "to" bus ends:
   * `statusTo = 1`: in-service;
   * `statusTo = 0`: out-of-service.
 
@@ -233,10 +235,11 @@ for i = 1:10
     end
     solve!(system, analysis)
 end
+power!(system, analysis)
 
 device = measurement()
 
-@ammeter(label = "Wattmeter ?")
+@wattmeter(label = "Wattmeter ?")
 addWattmeter!(system, device, analysis; varianceBus = 1e-3, statusFrom = 0)
 ```
 
@@ -247,10 +250,11 @@ acModel!(system)
 
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
 solve!(system, analysis)
+power!(system, analysis)
 
 device = measurement()
 
-@ammeter(label = "Wattmeter ?")
+@wattmeter(label = "Wattmeter ?")
 addWattmeter!(system, device, analysis; varianceBus = 1e-3, statusFrom = 0)
 ```
 """
@@ -270,20 +274,20 @@ end
 The function incorporates varmeters into the `Measurement` composite type for every bus
 and branch within the `PowerSystem` type. These measurements are derived from the exact
 reactive power injections at buses and reactive power flows in branches defined in the `AC`
-abstract type. These exact values are perturbed by AWGN with the specified `variance` to
-obtain measurement data.
+abstract type. These exact values are perturbed by white Gaussian noise with the specified 
+`variance` to obtain measurement data.
 
 # Keywords
 * `varianceBus` (pu or VAr): the measurement variance for varmeters at the buses;
 * `statusBus`: the operating status of the varmeters at the buses:
   * `statusBus = 1`: in-service;
   * `statusBus = 0`: out-of-service;
-* `varianceFrom` (pu or VAr): the measurement variance for varmeters at the "from" bus ends of branches;
-* `statusFrom`: the operating status of the varmeters at the "from" bus ends of branches:
+* `varianceFrom` (pu or VAr): the measurement variance for varmeters at the "from" bus ends;
+* `statusFrom`: the operating status of the varmeters at the "from" bus ends:
   * `statusFrom = 1`: in-service;
   * `statusFrom = 0`: out-of-service;
-* `varianceTo` (pu or VAr): the measurement variance for varmeters at the "to" bus ends of branches;
-* `statusTo`: the operating status of the varmeters at the "to" bus ends of branches:
+* `varianceTo` (pu or VAr): the measurement variance for varmeters at the "to" bus ends;
+* `statusTo`: the operating status of the varmeters at the "to" bus ends:
   * `statusTo = 1`: in-service;
   * `statusTo = 0`: out-of-service.
 
@@ -319,10 +323,11 @@ for i = 1:10
     end
     solve!(system, analysis)
 end
+power!(system, analysis)
 
 device = measurement()
 
-@ammeter(label = "Varmeter ?")
+@varmeter(label = "Varmeter ?")
 addVarmeter!(system, device, analysis; varianceFrom = 1e-3, statusBus = 0)
 ```
 
@@ -333,10 +338,11 @@ acModel!(system)
 
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
 solve!(system, analysis)
+power!(system, analysis)
 
 device = measurement()
 
-@ammeter(label = "Varmeter ?")
+@varmeter(label = "Varmeter ?")
 addVarmeter!(system, device, analysis; varianceFrom = 1e-3, statusBus = 0)
 ```
 """

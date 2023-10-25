@@ -2,22 +2,23 @@
     addAmmeter!(system::PowerSystem, device::Measurement; label, from, to, magnitude,
         variance, status, noise)
 
-The function adds a new ammeter to the `Measurement` composite type within a given
-`PowerSystem` type. The ammeter can be added to an already defined branch.
+The function adds a new ammeter that measures branch current flow magnitude to the 
+`Measurement` composite type within a given `PowerSystem` type. The ammeter can be added 
+to an already defined branch.
 
 # Keywords
 The ammeter is defined with the following keywords:
 * `label`: a unique label for the ammeter;
 * `from`: the label of the branch if the ammeter is located at the "from" bus end;
 * `to`: the label of the branch if the ammeter is located at the "to" bus end;
-* `magnitude` (pu or A): the branch current magnitude value;
-* `variance` (pu or A): the variance of the branch current magnitude measurement;
+* `magnitude` (pu or A): the branch current flow magnitude value;
+* `variance` (pu or A): the variance of the branch current flow magnitude measurement;
 * `status`: the operating status of the ammeter:
   * `status = 1`: in-service;
   * `status = 0`: out-of-service;
-* `noise`:
-  * `noise = true`: AWGN with `variance` influences `magnitude` to define the measurement mean;
-  * `noise = false`: the value of `magnitude` is used as the measurement mean.
+* `noise`: specifies how to generate the measurement mean:
+  * `noise = true`: Adds white Gaussian noise with the `variance` to the `magnitude`;
+  * `noise = false`: uses the `magnitude` value only.
 
 # Updates
 The function updates the `ammeter` field of the `Measurement` composite type.
@@ -100,17 +101,17 @@ end
 
 The function incorporates ammeters into the `Measurement` composite type for every branch
 within the `PowerSystem` type. These measurements are derived from the exact branch current
-magnitudes defined in the `AC` abstract type. These exact values are perturbed by AWGN
-with the specified `variance` to obtain measurement data.
+flow magnitudes defined in the `AC` abstract type. These exact values are perturbed by 
+white Gaussian noise with the specified `variance` to obtain measurement data.
 
 # Keywords
 Users have the option to configure the following keywords:
-* `varianceFrom` (pu or A): the measurement variance for ammeters at the "from" bus ends of branches;
-* `statusFrom`: the operating status of the ammeters at the "from" bus ends of branches:
+* `varianceFrom` (pu or A): the measurement variance for ammeters at the "from" bus ends;
+* `statusFrom`: the operating status of the ammeters at the "from" bus ends:
   * `statusFrom = 1`: in-service;
   * `statusFrom = 0`: out-of-service;
-* `varianceTo` (pu or A): the measurement variance for ammeters at the "to" bus ends of branches;
-* `statusTo`: the operating status of the ammeters at the "to" bus ends of branches:
+* `varianceTo` (pu or A): the measurement variance for ammeters at the "to" bus ends;
+* `statusTo`: the operating status of the ammeters at the "to" bus ends:
   * `statusTo = 1`: in-service;
   * `statusTo = 0`: out-of-service.
 
