@@ -25,12 +25,14 @@
         varianceMagnitudeFrom = 1e-60, varianceAngleFrom = 1e-60, statusAngleFrom = 0,
         varianceMagnitudeTo = 1e-60, varianceAngleTo = 1e-60, statusMagnitudeBus = 0)
     
+    ############### Measurements from AC Power Flow ################
     addVoltmeter!(system, deviceAll, analysis)
     addAmmeter!(system, deviceAll, analysis)
     addWattmeter!(system, deviceAll, analysis)
     addVarmeter!(system, deviceAll, analysis)
     addPmu!(system, deviceAll, analysis)
     
+    ############### Bus Measurements ################
     for (key, value) in system.bus.label
         addVoltmeter!(system, device; bus = key, magnitude = analysis.voltage.magnitude[value])
         @test device.voltmeter.magnitude.mean[end] ≈ analysis.voltage.magnitude[value] atol = 1e-16
@@ -56,6 +58,7 @@
         @test device.pmu.angle.status[end] == 1
     end
     
+    ############### Branch Measurements ################
     currentMagnitudeFrom = deviceAll.ammeter.magnitude.mean[deviceAll.ammeter.layout.from]
     currentMagnitudeTo = deviceAll.ammeter.magnitude.mean[deviceAll.ammeter.layout.to]
     activeFrom = deviceAll.wattmeter.power.mean[deviceAll.wattmeter.layout.from]
@@ -66,6 +69,7 @@
     pmuAngleFrom = deviceAll.pmu.angle.mean[deviceAll.pmu.layout.from]
     pmuMagnitudeTo = deviceAll.pmu.magnitude.mean[deviceAll.pmu.layout.to]
     pmuAngleTo = deviceAll.pmu.angle.mean[deviceAll.pmu.layout.to]
+
     for (key, value) in system.branch.label
         addAmmeter!(system, device; from = key, magnitude = analysis.current.from.magnitude[value], noise = false)
         @test device.ammeter.magnitude.mean[end] == analysis.current.from.magnitude[value]
@@ -110,7 +114,76 @@
         @test device.pmu.angle.mean[end] ≈ analysis.current.to.angle[value] atol = 1e-16
         @test device.pmu.angle.mean[end] ≈ pmuAngleTo[value] atol = 1e-16
         @test device.pmu.magnitude.status[end] == 1
-    end 
+    end
+    
+    ############### Update Voltmeter ################
+    updateVoltmeter!(system, device; label = "Voltmeter 3", magnitude = 0.2, variance = 1e-6, status = 0, noise = false)
+    @test device.voltmeter.magnitude.mean[3] == 0.2
+    @test device.voltmeter.magnitude.variance[3] == 1e-6
+    @test device.voltmeter.magnitude.status[3] == 0
+
+    updateVoltmeter!(system, device; label = "Voltmeter 5", magnitude = 0.3, variance = 1e-32, status = 1)
+    @test device.voltmeter.magnitude.mean[5] ≈ 0.3 atol = 1e-10
+    @test device.voltmeter.magnitude.mean[5] != 0.3
+    @test device.voltmeter.magnitude.variance[5] == 1e-32
+    @test device.voltmeter.magnitude.status[5] == 1
+
+    ############### Update Ammeter ################
+    updateAmmeter!(system, device; label = "Ammeter 3", magnitude = 0.4, variance = 1e-8, status = 0, noise = false)
+    @test device.ammeter.magnitude.mean[3] == 0.4
+    @test device.ammeter.magnitude.variance[3] == 1e-8
+    @test device.ammeter.magnitude.status[3] == 0
+
+    updateAmmeter!(system, device; label = "Ammeter 8", magnitude = 0.6, variance = 1e-30, status = 1)
+    @test device.ammeter.magnitude.mean[8] ≈ 0.6 atol = 1e-10
+    @test device.ammeter.magnitude.mean[8] != 0.6
+    @test device.ammeter.magnitude.variance[8] == 1e-30
+    @test device.ammeter.magnitude.status[8] == 1
+
+    ############### Update Wattmeter ################
+    updateWattmeter!(system, device; label = "4", active = 0.5, variance = 1e-2, status = 0, noise = false)
+    @test device.wattmeter.power.mean[4] == 0.5
+    @test device.wattmeter.power.variance[4] == 1e-2
+    @test device.wattmeter.power.status[4] == 0
+
+    updateWattmeter!(system, device; label = "14", active = 0.1, variance = 1e-30, status = 1)
+    @test device.wattmeter.power.mean[14] ≈ 0.1 atol = 1e-10
+    @test device.wattmeter.power.mean[14] != 0.1
+    @test device.wattmeter.power.variance[14] == 1e-30
+    @test device.wattmeter.power.status[14] == 1
+
+    ############### Update Varmeter ################
+    updateVarmeter!(system, device; label = "5", reactive = 1.5, variance = 1e-1, status = 0, noise = false)
+    @test device.varmeter.power.mean[5] == 1.5
+    @test device.varmeter.power.variance[5] == 1e-1
+    @test device.varmeter.power.status[5] == 0
+
+    updateVarmeter!(system, device; label = "16", reactive = 0.9, variance = 1e-30, status = 1)
+    @test device.varmeter.power.mean[16] ≈ 0.9 atol = 1e-10
+    @test device.varmeter.power.mean[16] != 0.9
+    @test device.varmeter.power.variance[16] == 1e-30
+    @test device.varmeter.power.status[16] == 1
+
+    ############### Update PMU ################
+    updatePmu!(system, device; label = "4 PMU", magnitude = 0.1, angle = 0.2, varianceMagnitude = 1e-6, varianceAngle = 1e-7, 
+    statusMagnitude = 0, statusAngle = 1, noise = false)
+    @test device.pmu.magnitude.mean[4] == 0.1
+    @test device.pmu.magnitude.variance[4] == 1e-6
+    @test device.pmu.magnitude.status[4] == 0
+    @test device.pmu.angle.mean[4] == 0.2
+    @test device.pmu.angle.variance[4] == 1e-7
+    @test device.pmu.angle.status[4] == 1
+
+    updatePmu!(system, device; label = "5 PMU", magnitude = 0.3, angle = 0.4, varianceMagnitude = 1e-31, varianceAngle = 1e-31, 
+    statusMagnitude = 1, statusAngle = 0)
+    @test device.pmu.magnitude.mean[5] ≈ 0.3 atol = 1e-10
+    @test device.pmu.magnitude.mean[5] != 0.3
+    @test device.pmu.magnitude.variance[5] == 1e-31
+    @test device.pmu.magnitude.status[5] == 1
+    @test device.pmu.angle.mean[5] ≈ 0.4 atol = 1e-10
+    @test device.pmu.magnitude.mean[5] != 0.4
+    @test device.pmu.angle.variance[5] == 1e-31
+    @test device.pmu.angle.status[5] == 0
 end
 
 @testset "Build and Update Measurements in SI Units" begin
