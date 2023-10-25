@@ -56,7 +56,7 @@ addBus!(system; label = "Bus 2", base = 132e3)
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.2)
 
 addPmu!(system, device; label = "PMU 1", bus = "Bus 1", magnitude = 1.1, angle = -0.1)
-addPmu!(system, device; label = "PMU 2", from = "Branch 1", magnitude = 1.1, angle = 0.2)
+addPmu!(system, device; label = "PMU 2", from = "Branch 1", magnitude = 1.1, angle = 0.1)
 ```
 
 Adding PMUs using a custom unit system:
@@ -71,7 +71,7 @@ addBus!(system; label = "Bus 2", base = 132.0)
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.2)
 
 addPmu!(system, device; label = "PMU 1", bus = "Bus 1", magnitude = 145.2, angle = -5.7)
-addPmu!(system, device; label = "PMU 2", from = "Branch 1", magnitude = 481.1, angle = 11.5)
+addPmu!(system, device; label = "PMU 2", from = "Branch 1", magnitude = 481.1, angle = 5.7)
 ```
 """
 function addPmu!(system::PowerSystem, device::Measurement;

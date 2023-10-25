@@ -222,7 +222,7 @@ The abstract type `AC` can have the following subtypes:
 - `ACOptimalPowerFlow`: generates measurements uses AC optimal power flow results.
 
 # Examples
-Adding ammeters using exact values from the AC power flow:
+Adding wattmeters using exact values from the AC power flow:
 ```jldoctest
 system = powerSystem("case14.h5")
 acModel!(system)
@@ -243,7 +243,7 @@ device = measurement()
 addWattmeter!(system, device, analysis; varianceBus = 1e-3, statusFrom = 0)
 ```
 
-Adding ammeters using exact values from the AC optimal power flow:
+Adding wattmeters using exact values from the AC optimal power flow:
 ```jldoctest
 system = powerSystem("case14.h5")
 acModel!(system)
