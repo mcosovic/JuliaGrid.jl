@@ -9,7 +9,7 @@
     addAmmeter!(system, device; from = 10, magnitude = 0.2, variance = 1e-5, noise = false)
     addAmmeter!(system, device; to = 10, magnitude = 0.1, status = 0)
     
-    @wattmeter(label = "Wattmeter ?", statusBus = 0, varianceFrom = 1e-5)
+    @wattmeter(label = "Wattmeter ?: !", statusBus = 0, varianceFrom = 1e-5)
     addWattmeter!(system, device; bus = 3, active = 1.1, noise = false, status = 1)
     addWattmeter!(system, device; from = 14, active = 1.0, variance = 1e-4)
     addWattmeter!(system, device; to = 2, active = 0.8, status = 0)
@@ -19,7 +19,7 @@
     addVarmeter!(system, device; from = 14, reactive = 1.2, variance = 1e-4)
     addVarmeter!(system, device; to = 2, reactive = 0.1, status = 0)
     
-    @pmu(statusAngleTo = 0, varianceMagnitudeTo = 1e-3)
+    @pmu(label = "!", statusAngleTo = 0, varianceMagnitudeTo = 1e-3)
     addPmu!(system, device; bus = 9, magnitude = 1.6, angle = -0.1, noise = false, statusAngle = 1)
     addPmu!(system, device; from = 14, magnitude = 1.2, angle = -0.2, varianceMagnitude = 1e-4)
     addPmu!(system, device; to = 18, magnitude = 0.3, angle = 0.1, statusMagnitude = 0)

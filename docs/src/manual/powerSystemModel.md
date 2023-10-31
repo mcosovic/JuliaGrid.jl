@@ -338,7 +338,8 @@ To reset the bus, branch, and generator templates to their default settings, use
 @default(generator)
 nothing # hide
 ```
-Additionally, users can reset all templates for the bus, branch, and generator components using the macro:
+
+Additionally, users can reset all templates using the macro:
 ```@example CreateBusTemplateUnits
 @default(template)
 nothing # hide

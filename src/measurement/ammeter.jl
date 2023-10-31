@@ -1,8 +1,8 @@
 """
     addAmmeter!(system::PowerSystem, device::Measurement; label, from, to, magnitude,
-        variance, status, noise)
+        variance, noise, status)
 
-The function adds a new ammeter that measures branch current flow magnitude to the 
+The function adds a new ammeter that measures branch current magnitude to the 
 `Measurement` composite type within a given `PowerSystem` type. The ammeter can be added 
 to an already defined branch.
 
@@ -11,21 +11,22 @@ The ammeter is defined with the following keywords:
 * `label`: a unique label for the ammeter;
 * `from`: the label of the branch if the ammeter is located at the "from" bus end;
 * `to`: the label of the branch if the ammeter is located at the "to" bus end;
-* `magnitude` (pu or A): the branch current flow magnitude value;
-* `variance` (pu or A): the variance of the branch current flow magnitude measurement;
+* `magnitude` (pu or A): the branch current magnitude value;
+* `variance` (pu or A): the variance of the branch current magnitude measurement;
+* `noise`: specifies how to generate the measurement mean:
+  * `noise = true`: adds white Gaussian noise with the `variance` to the `magnitude`;
+  * `noise = false`: uses the `magnitude` value only.
 * `status`: the operating status of the ammeter:
   * `status = 1`: in-service;
   * `status = 0`: out-of-service;
-* `noise`: specifies how to generate the measurement mean:
-  * `noise = true`: Adds white Gaussian noise with the `variance` to the `magnitude`;
-  * `noise = false`: uses the `magnitude` value only.
+
 
 # Updates
 The function updates the `ammeter` field of the `Measurement` composite type.
 
 # Default Settings
-Default settings for certain keywords are as follows: `variance = 1e-2`, `status = 1`,
-`noise = true`, which apply to ammeters located at both the "from" and "to" bus ends.
+Default settings for certain keywords are as follows: `variance = 1e-2`, `noise = true`, 
+`status = 1`, which apply to ammeters located at both the "from" and "to" bus ends.
 Users can fine-tune these settings by explicitly specifying the variance and status for
 ammeters positioned on either the "from" or "to" bus ends of branches using the
 [`@ammeter`](@ref @ammeter) macro.
@@ -74,17 +75,19 @@ function addAmmeter!(system::PowerSystem, device::Measurement;
     location = checkLocation(ammeter, from, to)
 
     ammeter.number += 1
-    setLabel(ammeter, label, default.label, "ammeter")
+    labelBranch = getLabel(system.branch, location, "branch")
 
     index = system.branch.label[getLabel(system.branch, location, "branch")]
     push!(ammeter.layout.index, index)
 
     basePowerInv = 1 / (system.base.power.value * system.base.power.prefix)
     if ammeter.layout.from[end]
+        setLabel(ammeter, label, default.label, labelBranch; prefix = "From")
         defaultVariance = default.varianceFrom
         defaultStatus = default.statusFrom
         baseVoltage = system.base.voltage.value[system.branch.layout.from[index]] * system.base.voltage.prefix
     else
+        setLabel(ammeter, label, default.label, labelBranch; prefix = "to")
         defaultVariance = default.varianceTo
         defaultStatus = default.statusTo
         baseVoltage = system.base.voltage.value[system.branch.layout.to[index]] * system.base.voltage.prefix
@@ -101,8 +104,8 @@ end
 
 The function incorporates ammeters into the `Measurement` composite type for every branch
 within the `PowerSystem` type. These measurements are derived from the exact branch current
-flow magnitudes defined in the `AC` abstract type. These exact values are perturbed by 
-white Gaussian noise with the specified `variance` to obtain measurement data.
+magnitudes defined in the `AC` abstract type. These exact values are perturbed by white 
+Gaussian noise with the specified `variance` to obtain measurement data.
 
 # Keywords
 Users have the option to configure the following keywords:
@@ -196,9 +199,11 @@ function addAmmeter!(system::PowerSystem, device::Measurement, analysis::AC;
 
     count = 1
     basePowerInv = 1 / (system.base.power.value * system.base.power.prefix)
+    label = collect(keys(sort(system.branch.label; byvalue = true)))
     @inbounds for i = 1:2:ammeter.number
-        ammeter.label[replace(default.label, r"\?" => string(i))] = i
-        ammeter.label[replace(default.label, r"\?" => string(i + 1))] = i + 1
+        labelBranch = getLabel(system.branch, label[count], "branch")
+        setLabel(ammeter, missing, default.label, labelBranch; prefix = "From")
+        setLabel(ammeter, missing, default.label, labelBranch; prefix = "To")
 
         ammeter.layout.index[i] = count
         ammeter.layout.index[i + 1] = count
@@ -349,10 +354,10 @@ macro ammeter(kwargs...)
                 setfield!(template.ammeter, parameter, Bool(eval(kwarg.args[2])))
             elseif parameter == :label
                 label = string(kwarg.args[2])
-                if contains(label, "?")
+                if contains(label, "?") || contains(label, "!")
                     setfield!(template.ammeter, parameter, label)
                 else
-                    throw(ErrorException("The label template lacks the '?' symbol to indicate integer placement."))
+                    throw(ErrorException("The label template is missing the '?' or '!' symbols."))
                 end
             end
         else

@@ -8,17 +8,17 @@ For further information on this topic, please see the [Power System Model](@ref 
 * [`powerSystem`](@ref powerSystem)
 * [`savePowerSystem`](@ref savePowerSystem)
 
-###### Bus Functions
+###### Bus
 * [`addBus!`](@ref addBus!)
 * [`updateBus!`](@ref updateBus!)
 * [`@bus`](@ref @bus)
 
-###### Branch Functions
+###### Branch
 * [`addBranch!`](@ref addBranch!)
 * [`updateBranch!`](@ref updateBranch!)
 * [`@branch`](@ref @branch)
 
-###### Generator Functions
+###### Generator
 * [`addGenerator!`](@ref addGenerator!)
 * [`updateGenerator!`](@ref updateGenerator!)
 * [`cost!`](@ref cost!)
@@ -38,7 +38,7 @@ savePowerSystem
 
 ---
 
-## Bus Functions
+## Bus
 ```@docs
 addBus!
 updateBus!
@@ -47,7 +47,7 @@ updateBus!
 
 ---
 
-## Branch Functions
+## Branch
 ```@docs
 addBranch!
 updateBranch!
@@ -56,7 +56,7 @@ updateBranch!
 
 ---
 
-## Generator Functions
+## Generator
 ```@docs
 addGenerator!
 updateGenerator!

@@ -1,10 +1,10 @@
 """
     addWattmeter!(system::PowerSystem, device::Measurement; label, bus, from, to, active,
-        variance, status, noise)
+        variance, noise, status)
 
-The function adds a new wattmeter that measures active power flow or injection to the 
-`Measurement` composite type within a given `PowerSystem` type. The wattmeter can be added 
-to an already defined bus or branch.
+The function adds a new wattmeter that measures active power injection or active power flow
+to the `Measurement` composite type within a given `PowerSystem` type. The wattmeter can 
+be added to an already defined bus or branch.
 
 # Keywords
 The wattmeter is defined with the following keywords:
@@ -14,22 +14,22 @@ The wattmeter is defined with the following keywords:
 * `to`: the label of the branch if the wattmeter is located at the "to" bus end;
 * `active` (pu or W): the active power value;
 * `variance` (pu or W): the variance of the active power measurement;
+* `noise`: specifies how to generate the measurement mean:
+  * `noise = true`: adds white Gaussian noise with the `variance` to the `active`;
+  * `noise = false`: uses the `active` value only.
 * `status`: the operating status of the wattmeter:
   * `status = 1`: in-service;
   * `status = 0`: out-of-service;
-* `noise`: specifies how to generate the measurement mean:
-  * `noise = true`: Adds white Gaussian noise with the `variance` to the `active`;
-  * `noise = false`: uses the `active` value only.
 
 # Updates
 The function updates the `wattmeter` field of the `Measurement` composite type.
 
 # Default Settings
-Default settings for certain keywords are as follows: `variance = 1e-2`, `status = 1`, and
-`noise = true`, which apply to wattmeters located at the bus, as well as at both the "from"
-and "to" bus ends. Users can fine-tune these settings by explicitly specifying the variance
-and status for wattmeters positioned at the buses, "from" bus ends, or "to" bus ends of
-branches using the [`@wattmeter`](@ref @wattmeter) macro.
+Default settings for certain keywords are as follows: `variance = 1e-2`, `noise = true`, 
+and `status = 1`, which apply to wattmeters located at the bus, as well as at both the 
+"from" and "to" bus ends. Users can fine-tune these settings by explicitly specifying the 
+variance and status for wattmeters positioned at the buses, "from" bus ends, or "to" bus 
+ends of branches using the [`@wattmeter`](@ref @wattmeter) macro.
 
 # Units
 The default units for the `active` and `variance` keywords are per-units (pu). However,
@@ -70,16 +70,16 @@ function addWattmeter!(system::PowerSystem, device::Measurement;
     noise::Bool = template.wattmeter.noise)
 
     addPowerMeter!(system, device.wattmeter, template.wattmeter, prefix.activePower,
-        label, bus, from, to, active, variance, status, noise, "wattmeter")
+        label, bus, from, to, active, variance, status, noise)
 end
 
 """
     addVarmeter!(system::PowerSystem, device::Measurement; label, bus, from, to, reactive,
-        variance, status, noise)
+        variance, noise, status)
 
-The function adds a new varmeter that measures reactive power flow or injection to the 
-`Measurement` composite type within a given `PowerSystem` type. The varmeter can be added 
-to an already defined bus or branch.
+The function adds a new varmeter that measures reactivepower injection or reactive power 
+flow to the `Measurement` composite type within a given `PowerSystem` type. The varmeter 
+can be added to an already defined bus or branch.
 
 # Keywords
 The varmeter is defined with the following keywords:
@@ -89,22 +89,22 @@ The varmeter is defined with the following keywords:
 * `to`: the label of the branch if the varmeter is located at the "to" bus end;
 * `reactive` (pu or VAr): the reactive power value;
 * `variance` (pu or VAr): the variance of the reactive power measurement;
+* `noise`: specifies how to generate the measurement mean:
+  * `noise = true`: adds white Gaussian noise with the `variance` to the `reactive`;
+  * `noise = false`: uses the `reactive` value only.
 * `status`: the operating status of the varmeter:
   * `status = 1`: in-service;
   * `status = 0`: out-of-service;
-* `noise`: specifies how to generate the measurement mean:
-  * `noise = true`: Adds white Gaussian noise with the `variance` to the `reactive`;
-  * `noise = false`: uses the `reactive` value only.
 
 # Updates
 The function updates the `varmeter` field of the `Measurement` composite type.
 
 # Default Settings
-Default settings for certain keywords are as follows: `variance = 1e-2`, `status = 1`, and
-`noise = true`, which apply to varmeters located at the bus, as well as at both the "from"
-and "to" bus ends. Users can fine-tune these settings by explicitly specifying the variance
-and status for varmeters positioned at the buses, "from" bus ends, or "to" bus ends of
-branches using the [`@varmeter`](@ref @varmeter) macro.
+Default settings for certain keywords are as follows: `variance = 1e-2`, `noise = true`, 
+and `status = 1`, which apply to varmeters located at the bus, as well as at both the 
+"from" and "to" bus ends. Users can fine-tune these settings by explicitly specifying the 
+variance and status for varmeters positioned at the buses, "from" bus ends, or "to" bus 
+ends of branches using the [`@varmeter`](@ref @varmeter) macro.
 
 # Units
 The default units for the `reactive` and `variance` keywords are per-units (pu). However,
@@ -145,28 +145,32 @@ function addVarmeter!(system::PowerSystem, device::Measurement;
     noise::Bool = template.varmeter.noise)
 
     addPowerMeter!(system, device.varmeter, template.varmeter, prefix.reactivePower,
-        label, bus, from, to, reactive, variance, status, noise, "varmeter")
+        label, bus, from, to, reactive, variance, status, noise)
 end
 
 ######### Add Wattmeter or Varmeter ##########
 function addPowerMeter!(system, device, default, prefixPower, label, bus, from, to,
-    power, variance, status, noise, name)
-
+    power, variance, status, noise)
+    
+    device.number += 1
     location = checkLocation(device, bus, from, to)
 
-    device.number += 1
-    setLabel(device, label, default.label, name)
-
     if device.layout.bus[end]
-        index = system.bus.label[getLabel(system.bus, location, "bus")]
+        labelBus = getLabel(system.bus, location, "bus")
+        index = system.bus.label[labelBus]
+        setLabel(device, label, default.label, labelBus)
+
         defaultVariance = default.varianceBus
         defaultStatus = default.statusBus
     else
-        index = system.branch.label[getLabel(system.branch, location, "branch")]
+        labelBranch = getLabel(system.branch, location, "branch")
+        index = system.branch.label[labelBranch]
         if device.layout.from[end]
+            setLabel(device, label, default.label, labelBranch; prefix = "From")
             defaultVariance = default.varianceFrom
             defaultStatus = default.statusFrom
         else
+            setLabel(device, label, default.label, labelBranch; prefix = "To")
             defaultVariance = default.varianceTo
             defaultStatus = default.statusTo
         end
@@ -381,8 +385,10 @@ function addPowermeter!(system, device, powerBus, powerFrom, powerTo, default, p
     device.power.status = fill(Int8(0), device.number)
 
     basePowerInv = 1 / (system.base.power.value * system.base.power.prefix)
+    label = collect(keys(sort(system.bus.label; byvalue = true)))
     @inbounds for i = 1:system.bus.number
-        device.label[replace(default.label, r"\?" => string(i))] = i
+        labelBus = getLabel(system.bus, label[i], "bus")
+        setLabel(device, missing, default.label, labelBus)
 
         device.layout.index[i] = i
         device.layout.bus[i] = true
@@ -393,9 +399,11 @@ function addPowermeter!(system, device, powerBus, powerFrom, powerTo, default, p
     end
 
     count = 1
+    label = collect(keys(sort(system.branch.label; byvalue = true)))
     @inbounds for i = (system.bus.number + 1):2:device.number
-        device.label[replace(default.label, r"\?" => string(i))] = i
-        device.label[replace(default.label, r"\?" => string(i + 1))] = i + 1
+        labelBranch = getLabel(system.branch, label[count], "branch")
+        setLabel(device, missing, default.label, labelBranch; prefix = "From")
+        setLabel(device, missing, default.label, labelBranch; prefix = "To")
 
         device.layout.index[i] = count
         device.layout.index[i + 1] = count
@@ -591,10 +599,10 @@ macro wattmeter(kwargs...)
                 setfield!(template.wattmeter, parameter, Bool(eval(kwarg.args[2])))
             elseif parameter == :label
                 label = string(kwarg.args[2])
-                if contains(label, "?")
+                if contains(label, "?") || contains(label, "!")
                     setfield!(template.wattmeter, parameter, label)
                 else
-                    throw(ErrorException("The label template lacks the '?' symbol to indicate integer placement."))
+                    throw(ErrorException("The label template is missing the '?' or '!' symbols."))
                 end
             end
         else
@@ -672,10 +680,10 @@ macro varmeter(kwargs...)
                 setfield!(template.varmeter, parameter, Bool(eval(kwarg.args[2])))
             elseif parameter == :label
                 label = string(kwarg.args[2])
-                if contains(label, "?")
+                if contains(label, "?") || contains(label, "!")
                     setfield!(template.varmeter, parameter, label)
                 else
-                    throw(ErrorException("The label template lacks the '?' symbol to indicate integer placement."))
+                    throw(ErrorException("The label template is missing the '?' or '!' symbols."))
                 end
             end
         else

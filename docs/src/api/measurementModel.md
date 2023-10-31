@@ -8,27 +8,27 @@ For further information on this topic, please see the [Measurement Model] sectio
 * [`measurement`](@ref measurement)
 * [`saveMeasurement`](@ref saveMeasurement)
 
-###### Voltmeter Functions
+###### Voltmeter
 * [`addVoltmeter!`](@ref addVoltmeter!)
 * [`updateVoltmeter!`](@ref updateVoltmeter!)
 * [`@voltmeter`](@ref @voltmeter)
 
-###### Ammeter Functions
+###### Ammeter
 * [`addAmmeter!`](@ref addAmmeter!)
 * [`updateAmmeter!`](@ref updateAmmeter!)
 * [`@ammeter`](@ref @ammeter)
 
-###### Wattmeter Functions
+###### Wattmeter
 * [`addWattmeter!`](@ref addWattmeter!)
 * [`updateWattmeter!`](@ref updateWattmeter!)
 * [`@wattmeter`](@ref @wattmeter)
 
-###### Varmeter Functions
+###### Varmeter
 * [`addVarmeter!`](@ref addVarmeter!)
 * [`updateVarmeter!`](@ref updateVarmeter!)
 * [`@varmeter`](@ref @varmeter)
 
-###### PMU Functions
+###### PMU
 * [`addPmu!`](@ref addPmu!)
 * [`updatePmu!`](@ref updatePmu!)
 * [`@pmu`](@ref @pmu)
@@ -43,7 +43,7 @@ saveMeasurement
 
 ---
 
-## Voltmeter Functions
+## Voltmeter
 ```@docs
 addVoltmeter!(::PowerSystem, ::Measurement)
 addVoltmeter!(::PowerSystem, ::Measurement, ::AC)
@@ -53,7 +53,7 @@ updateVoltmeter!
 
 ---
 
-## Ammeter Functions
+## Ammeter
 ```@docs
 addAmmeter!(::PowerSystem, ::Measurement)
 addAmmeter!(::PowerSystem, ::Measurement, ::AC)
@@ -63,7 +63,7 @@ updateAmmeter!
 
 ---
 
-## Wattmeter Functions
+## Wattmeter
 ```@docs
 addWattmeter!(::PowerSystem, ::Measurement)
 addWattmeter!(::PowerSystem, ::Measurement, ::AC)
@@ -73,7 +73,7 @@ updateWattmeter!
 
 ---
 
-## Varmeter Functions
+## Varmeter
 ```@docs
 addVarmeter!(::PowerSystem, ::Measurement)
 addVarmeter!(::PowerSystem, ::Measurement, ::AC)
@@ -83,7 +83,7 @@ updateVarmeter!
 
 ---
 
-## PMU Functions
+## PMU
 ```@docs
 addPmu!(::PowerSystem, ::Measurement)
 addPmu!(::PowerSystem, ::Measurement, ::AC)

@@ -5,7 +5,7 @@
 The function adds a new PMU to the `Measurement` composite type within a given `PowerSystem`
 type. The PMU can be added to an already defined bus or branch. When defining the PMU, it
 is essential to provide the bus voltage magnitude and angle if the PMU is located at a bus 
-or the branch current flow magnitude and angle if the PMU is located at a branch.
+or the branch current magnitude and angle if the PMU is located at a branch.
 
 # Keywords
 The PMU is defined with the following keywords:
@@ -24,7 +24,7 @@ The PMU is defined with the following keywords:
   * `statusAngle = 1`: in-service;
   * `statusAngle = 0`: out-of-service;
 * `noise`: specifies how to generate the measurement means:
-  * `noise = true`: Adds white Gaussian noises with variances to the `magnitude` and `angle`;
+  * `noise = true`: adds white Gaussian noises with variances to the `magnitude` and `angle`;
   * `noise = false`: uses the `magnitude` and `angle` values only.
 
 # Updates
@@ -32,7 +32,7 @@ The function updates the `pmu` field of the `Measurement` composite type.
 
 # Default Settings
 Default settings for certain keywords are as follows: `varianceMagnitude = 1e-5`,
-`statusMagnitude = 1`, `varianceAngle = 1e-5`,  `statusAngle = 1`, and `noise = true`,
+`statusMagnitude = 1`, `varianceAngle = 1e-5`, `statusAngle = 1`, and `noise = true`,
 which apply to PMUs located at the bus, as well as at both the "from" and "to" bus ends.
 Users can fine-tune these settings by explicitly specifying the variance and status for
 PMUs positioned at the buses, "from" bus ends, or "to" bus ends of branches using the
@@ -82,13 +82,13 @@ function addPmu!(system::PowerSystem, device::Measurement;
     pmu = device.pmu
     default = template.pmu
 
+    pmu.number += 1
     location = checkLocation(pmu, bus, from, to)
 
-    pmu.number += 1
-    setLabel(pmu, label, default.label, "PMU")
-
     if pmu.layout.bus[end]
-        index = system.bus.label[getLabel(system.bus, location, "bus")]
+        labelBus = getLabel(system.bus, location, "bus")
+        index = system.bus.label[labelBus]
+        setLabel(pmu, label, default.label, labelBus)
 
         defaultVarianceMagnitude = default.varianceMagnitudeBus
         defaultVarianceAngle = default.varianceAngleBus
@@ -99,8 +99,10 @@ function addPmu!(system::PowerSystem, device::Measurement;
         prefixAngle = prefix.voltageAngle
         baseInv = 1 / (system.base.voltage.value[index] * system.base.voltage.prefix)
     else
-        index = system.branch.label[getLabel(system.branch, location, "branch")]
+        labelBranch = getLabel(system.branch, location, "branch")
+        index = system.branch.label[labelBranch]
         if pmu.layout.from[end]
+            setLabel(pmu, label, default.label, labelBranch; prefix = "From")
             defaultVarianceMagnitude = default.varianceMagnitudeFrom
             defaultVarianceAngle = default.varianceAngleFrom
             defaultMagnitudeStatus = default.statusMagnitudeFrom
@@ -108,6 +110,7 @@ function addPmu!(system::PowerSystem, device::Measurement;
 
             baseVoltage = system.base.voltage.value[system.branch.layout.from[index]] * system.base.voltage.prefix
         else
+            setLabel(pmu, label, default.label, labelBranch; prefix = "To")
             defaultVarianceMagnitude = default.varianceMagnitudeTo
             defaultVarianceAngle = default.varianceAngleTo
             defaultMagnitudeStatus = default.statusMagnitudeTo
@@ -266,8 +269,10 @@ function addPmu!(system::PowerSystem, device::Measurement, analysis::AC;
     pmu.angle.status = similar(pmu.magnitude.status)
 
     prefixInv = 1 / system.base.voltage.prefix
+    label = collect(keys(sort(system.bus.label; byvalue = true)))
     @inbounds for i = 1:system.bus.number
-        pmu.label[replace(default.label, r"\?" => string(i))] = i
+        labelBus = getLabel(system.bus, label[i], "bus")
+        setLabel(pmu, missing, default.label, labelBus)
 
         pmu.layout.index[i] = i
         pmu.layout.bus[i] = true
@@ -283,9 +288,11 @@ function addPmu!(system::PowerSystem, device::Measurement, analysis::AC;
 
     count = 1
     basePowerInv = 1 / (system.base.power.value * system.base.power.prefix)
+    label = collect(keys(sort(system.branch.label; byvalue = true)))
     @inbounds for i = (system.bus.number + 1):2:pmu.number
-        pmu.label[replace(default.label, r"\?" => string(i))] = i
-        pmu.label[replace(default.label, r"\?" => string(i + 1))] = i + 1
+        labelBranch = getLabel(system.branch, label[count], "branch")
+        setLabel(pmu, missing, default.label, labelBranch; prefix = "From")
+        setLabel(pmu, missing, default.label, labelBranch; prefix = "To")
 
         pmu.layout.index[i] = count
         pmu.layout.index[i + 1] = count
@@ -477,10 +484,10 @@ macro pmu(kwargs...)
                     setfield!(template.pmu, parameter, Bool(eval(kwarg.args[2])))
                 elseif parameter == :label
                     label = string(kwarg.args[2])
-                    if contains(label, "?")
+                    if contains(label, "?") || contains(label, "!")
                         setfield!(template.pmu, parameter, label)
                     else
-                        throw(ErrorException("The label template lacks the '?' symbol to indicate integer placement."))
+                        throw(ErrorException("The label template is missing the '?' or '!' symbols."))
                     end
                 end
             end

@@ -1,6 +1,6 @@
 """
     addVoltmeter!(system::PowerSystem, device::Measurement; label, bus, magnitude, variance,
-        status, noise)
+        noise, status)
 
 The function adds a new voltmeter that measures bus voltage magnitude to the `Measurement` 
 composite type within a given `PowerSystem` type. The voltmeter can be added to an already 
@@ -12,19 +12,19 @@ The voltmeter is defined with the following keywords:
 * `bus`: the label of the bus to which the voltmeter is connected;
 * `magnitude` (pu or V): the bus voltage magnitude value;
 * `variance` (pu or V): the variance of the bus voltage magnitude measurement;
+* `noise`: specifies how to generate the measurement mean:
+  * `noise = true`: adds white Gaussian noise with the `variance` to the `magnitude`;
+  * `noise = false`: uses the `magnitude` value only.
 * `status`: the operating status of the voltmeter:
   * `status = 1`: in-service;
   * `status = 0`: out-of-service;
-* `noise`: specifies how to generate the measurement mean:
-  * `noise = true`: Adds white Gaussian noise with the `variance` to the `magnitude`;
-  * `noise = false`: uses the `magnitude` value only.
 
 # Updates
 The function updates the `voltmeter` field of the `Measurement` composite type.
 
 # Default Settings
-Default settings for certain keywords are as follows: `variance = 1e-2`, `status = 1`,
-`noise = true`, and users can modify these default settings using the
+Default settings for certain keywords are as follows: `variance = 1e-2`, `noise = true`, 
+`status = 1`, and users can modify these default settings using the
 [`@voltmeter`](@ref @voltmeter) macro.
 
 # Units
@@ -62,7 +62,8 @@ function addVoltmeter!(system::PowerSystem, device::Measurement;
     default = template.voltmeter
 
     voltmeter.number += 1
-    setLabel(voltmeter, label, default.label, "voltmeter")
+    labelBus = getLabel(system.bus, bus, "bus")
+    setLabel(voltmeter, label, default.label, labelBus)
 
     index = system.bus.label[getLabel(system.bus, bus, "bus")]
     push!(voltmeter.layout.index, index)
@@ -156,8 +157,10 @@ function addVoltmeter!(system::PowerSystem, device::Measurement, analysis::AC;
     voltmeter.magnitude.status = fill(Int8(status), system.bus.number)
 
     prefixInv = 1 / system.base.voltage.prefix
+    label = collect(keys(sort(system.bus.label; byvalue = true)))
     @inbounds for i = 1:system.bus.number
-        voltmeter.label[replace(default.label, r"\?" => string(i))] = i
+        labelBus = getLabel(system.bus, label[i], "bus")
+        setLabel(voltmeter, missing, default.label, labelBus)
 
         voltmeter.magnitude.variance[i] = topu(variance, default.variance, prefix.voltageMagnitude, prefixInv / system.base.voltage.value[i])
         voltmeter.magnitude.mean[i] = analysis.voltage.magnitude[i] + voltmeter.magnitude.variance[i]^(1/2) * randn(1)[1]
@@ -220,14 +223,14 @@ function updateVoltmeter!(system::PowerSystem, device::Measurement; label::L,
 end
 
 """
-    @voltmeter(label, variance, status, noise)
+    @voltmeter(label, variance, noise, status)
 
 The macro generates a template for a voltmeter, which can be utilized to define a voltmeter
 using the [`addVoltmeter!`](@ref addVoltmeter!) function.
 
 # Keywords
 To establish the voltmeter template, users can specify default values for the `variance`,
-`status`, and `noise` keywords, along with pattern for labels using the `label` keyword.
+`noise`, and `status` keywords, along with pattern for labels using the `label` keyword.
 
 # Units
 By default, the unit for `variance` is per-unit (pu). However, users can choose to use
@@ -277,10 +280,10 @@ macro voltmeter(kwargs...)
                 setfield!(template.voltmeter, parameter, Bool(eval(kwarg.args[2])))
             elseif parameter == :label
                 label = string(kwarg.args[2])
-                if contains(label, "?")
+                if contains(label, "?") || contains(label, "!")
                     setfield!(template.voltmeter, parameter, label)
                 else
-                    throw(ErrorException("The label template lacks the '?' symbol to indicate integer placement."))
+                    throw(ErrorException("The label template is missing the '?' or '!' symbols."))
                 end
             end
         else

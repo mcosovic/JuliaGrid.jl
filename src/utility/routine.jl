@@ -104,12 +104,28 @@ function unitless(value, default)
 end
 
 ######### Set Label ##########
-function setLabel(component, label::Missing, default::String, key::String)
+function setLabel(component, label::Missing, default::String, key::String; prefix::String = "")
     component.layout.label += 1
     setindex!(component.label, component.number, replace(default, r"\?" => string(component.layout.label)))
 end
 
-function setLabel(component, label::String, default::String, key::String)
+function setLabel(component, label::Missing, default::String, key::String; prefix::String = "")
+    component.layout.label += 1
+    label = replace(default, r"\?" => string(component.layout.label), r"\!" => string(prefix, " ", key))
+
+    if haskey(component.label, label)
+        count = 1
+        labelOld = label
+        while haskey(component.label, label)
+            label = string(labelOld, " ($count)")
+            count += 1
+        end
+    end
+
+    setindex!(component.label, component.number, label)
+end
+
+function setLabel(component, label::String, default::String, key::String; prefix::String = "")
     if haskey(component.label, label)
         throw(ErrorException("The label $label is not unique."))
     end
@@ -123,7 +139,7 @@ function setLabel(component, label::String, default::String, key::String)
     setindex!(component.label, component.number, label)
 end
 
-function setLabel(component, label::Int64, default::String, key::String)
+function setLabel(component, label::Int64, default::String, key::String; prefix::String = "")
     labelString = string(label)
     if haskey(component.label, labelString)
         throw(ErrorException("The label $label is not unique."))
@@ -182,9 +198,9 @@ function checkLocation(device, from, to)
 end
 
 function checkLocation(device, bus, from, to)
-    if count(==(true), [isset(bus); isset(from); isset(to)]) > 1 
+    if count(==(true), [isset(bus); isset(from); isset(to)]) > 1
         throw(ErrorException("The concurrent definition of the location keywords is not allowed."))
-    elseif ismissing(bus) && ismissing(from) && ismissing(to) 
+    elseif ismissing(bus) && ismissing(from) && ismissing(to)
         throw(ErrorException("At least one of the location keywords must be provided."))
     end
 
@@ -209,9 +225,9 @@ function checkLocation(device, bus, from, to)
 end
 
 ######### Set Mean, Variance, and Status ##########
-function setMeter(device::GaussMeter, mean::T, variance::T, status::T, noise::Bool, 
+function setMeter(device::GaussMeter, mean::T, variance::T, status::T, noise::Bool,
     defVariance::ContainerTemplate, defStatus::Int8, prefixLive::Float64, baseInv::Float64)
-    
+
     push!(device.variance, topu(variance, defVariance, prefixLive, baseInv))
 
     if noise
@@ -225,7 +241,7 @@ function setMeter(device::GaussMeter, mean::T, variance::T, status::T, noise::Bo
     checkStatus(device.status[end])
 end
 
-function updateMeter(device::GaussMeter, index::Int64, mean::T, variance::T, 
+function updateMeter(device::GaussMeter, index::Int64, mean::T, variance::T,
     status::T, noise::Bool, prefixLive::Float64, baseInv::Float64)
 
     if isset(variance)
@@ -233,7 +249,7 @@ function updateMeter(device::GaussMeter, index::Int64, mean::T, variance::T,
     end
 
     if isset(mean)
-        if noise 
+        if noise
             device.mean[index] = topu(mean, prefixLive, baseInv) + device.variance[index]^(1/2) * randn(1)[1]
         else
             device.mean[index] = topu(mean, prefixLive, baseInv)
