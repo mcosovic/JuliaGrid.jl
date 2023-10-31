@@ -166,11 +166,11 @@ function addPowerMeter!(system, device, default, prefixPower, label, bus, from, 
         labelBranch = getLabel(system.branch, location, "branch")
         index = system.branch.label[labelBranch]
         if device.layout.from[end]
-            setLabel(device, label, default.label, labelBranch; prefix = "From")
+            setLabel(device, label, default.label, labelBranch; prefix = "From ")
             defaultVariance = default.varianceFrom
             defaultStatus = default.statusFrom
         else
-            setLabel(device, label, default.label, labelBranch; prefix = "To")
+            setLabel(device, label, default.label, labelBranch; prefix = "To ")
             defaultVariance = default.varianceTo
             defaultStatus = default.statusTo
         end
@@ -402,8 +402,8 @@ function addPowermeter!(system, device, powerBus, powerFrom, powerTo, default, p
     label = collect(keys(sort(system.branch.label; byvalue = true)))
     @inbounds for i = (system.bus.number + 1):2:device.number
         labelBranch = getLabel(system.branch, label[count], "branch")
-        setLabel(device, missing, default.label, labelBranch; prefix = "From")
-        setLabel(device, missing, default.label, labelBranch; prefix = "To")
+        setLabel(device, missing, default.label, labelBranch; prefix = "From ")
+        setLabel(device, missing, default.label, labelBranch; prefix = "To ")
 
         device.layout.index[i] = count
         device.layout.index[i + 1] = count

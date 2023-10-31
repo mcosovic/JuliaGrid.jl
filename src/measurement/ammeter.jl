@@ -82,12 +82,12 @@ function addAmmeter!(system::PowerSystem, device::Measurement;
 
     basePowerInv = 1 / (system.base.power.value * system.base.power.prefix)
     if ammeter.layout.from[end]
-        setLabel(ammeter, label, default.label, labelBranch; prefix = "From")
+        setLabel(ammeter, label, default.label, labelBranch; prefix = "From ")
         defaultVariance = default.varianceFrom
         defaultStatus = default.statusFrom
         baseVoltage = system.base.voltage.value[system.branch.layout.from[index]] * system.base.voltage.prefix
     else
-        setLabel(ammeter, label, default.label, labelBranch; prefix = "to")
+        setLabel(ammeter, label, default.label, labelBranch; prefix = "To ")
         defaultVariance = default.varianceTo
         defaultStatus = default.statusTo
         baseVoltage = system.base.voltage.value[system.branch.layout.to[index]] * system.base.voltage.prefix
@@ -202,8 +202,8 @@ function addAmmeter!(system::PowerSystem, device::Measurement, analysis::AC;
     label = collect(keys(sort(system.branch.label; byvalue = true)))
     @inbounds for i = 1:2:ammeter.number
         labelBranch = getLabel(system.branch, label[count], "branch")
-        setLabel(ammeter, missing, default.label, labelBranch; prefix = "From")
-        setLabel(ammeter, missing, default.label, labelBranch; prefix = "To")
+        setLabel(ammeter, missing, default.label, labelBranch; prefix = "From ")
+        setLabel(ammeter, missing, default.label, labelBranch; prefix = "To ")
 
         ammeter.layout.index[i] = count
         ammeter.layout.index[i + 1] = count

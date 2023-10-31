@@ -36,7 +36,7 @@ Default settings for certain keywords are as follows: `varianceMagnitude = 1e-5`
 which apply to PMUs located at the bus, as well as at both the "from" and "to" bus ends.
 Users can fine-tune these settings by explicitly specifying the variance and status for
 PMUs positioned at the buses, "from" bus ends, or "to" bus ends of branches using the
-[@pmu](@ref @pmu) macro.
+[`@pmu`](@ref @pmu) macro.
 
 # Units
 The default units for the `magnitude`, `varianceMagnitude`, and `angle`, `varianceAngle`
@@ -102,7 +102,7 @@ function addPmu!(system::PowerSystem, device::Measurement;
         labelBranch = getLabel(system.branch, location, "branch")
         index = system.branch.label[labelBranch]
         if pmu.layout.from[end]
-            setLabel(pmu, label, default.label, labelBranch; prefix = "From")
+            setLabel(pmu, label, default.label, labelBranch; prefix = "From ")
             defaultVarianceMagnitude = default.varianceMagnitudeFrom
             defaultVarianceAngle = default.varianceAngleFrom
             defaultMagnitudeStatus = default.statusMagnitudeFrom
@@ -110,7 +110,7 @@ function addPmu!(system::PowerSystem, device::Measurement;
 
             baseVoltage = system.base.voltage.value[system.branch.layout.from[index]] * system.base.voltage.prefix
         else
-            setLabel(pmu, label, default.label, labelBranch; prefix = "To")
+            setLabel(pmu, label, default.label, labelBranch; prefix = "To ")
             defaultVarianceMagnitude = default.varianceMagnitudeTo
             defaultVarianceAngle = default.varianceAngleTo
             defaultMagnitudeStatus = default.statusMagnitudeTo
@@ -291,8 +291,8 @@ function addPmu!(system::PowerSystem, device::Measurement, analysis::AC;
     label = collect(keys(sort(system.branch.label; byvalue = true)))
     @inbounds for i = (system.bus.number + 1):2:pmu.number
         labelBranch = getLabel(system.branch, label[count], "branch")
-        setLabel(pmu, missing, default.label, labelBranch; prefix = "From")
-        setLabel(pmu, missing, default.label, labelBranch; prefix = "To")
+        setLabel(pmu, missing, default.label, labelBranch; prefix = "From ")
+        setLabel(pmu, missing, default.label, labelBranch; prefix = "To ")
 
         pmu.layout.index[i] = count
         pmu.layout.index[i + 1] = count
@@ -419,9 +419,9 @@ can configure the pattern for labels using the `label` keyword and specify the t
 # Units
 By default, the units for variances are per-units (pu) and radians (rad). However, users
 have the option to switch to volts (V) and degrees (deg) as the units for PMUs located at
-the buses by using the [@voltage](@ref @voltage) macro, or they can switch to amperes (A)
+the buses by using the [`@voltage`](@ref @voltage) macro, or they can switch to amperes (A)
 and degrees (deg) as the units for PMUs located at the branches by using the
-[@current](@ref @current) macro.
+[`@current`](@ref @current) macro.
 
 # Examples
 Adding PMUs using the default unit system:

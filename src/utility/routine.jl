@@ -111,7 +111,7 @@ end
 
 function setLabel(component, label::Missing, default::String, key::String; prefix::String = "")
     component.layout.label += 1
-    label = replace(default, r"\?" => string(component.layout.label), r"\!" => string(prefix, " ", key))
+    label = replace(default, r"\?" => string(component.layout.label), r"\!" => string(prefix, key))
 
     if haskey(component.label, label)
         count = 1
