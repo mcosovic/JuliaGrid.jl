@@ -106,22 +106,21 @@ end
 ######### Set Label ##########
 function setLabel(component, label::Missing, default::String, key::String; prefix::String = "")
     component.layout.label += 1
-    setindex!(component.label, component.number, replace(default, r"\?" => string(component.layout.label)))
-end
 
-function setLabel(component, label::Missing, default::String, key::String; prefix::String = "")
-    component.layout.label += 1
-    label = replace(default, r"\?" => string(component.layout.label), r"\!" => string(prefix, key))
-
-    if haskey(component.label, label)
-        count = 1
-        labelOld = label
-        while haskey(component.label, label)
-            label = string(labelOld, " ($count)")
-            count += 1
+    if key in ["bus"; "branch"; "generator"]
+        label = replace(default, r"\?" => string(component.layout.label))
+    else
+        label = replace(default, r"\?" => string(component.layout.label), r"\!" => string(prefix, key))
+        if haskey(component.label, label)
+            count = 1
+            labelOld = label
+            while haskey(component.label, label)
+                label = string(labelOld, " ($count)")
+                count += 1
+            end
         end
     end
-
+    
     setindex!(component.label, component.number, label)
 end
 

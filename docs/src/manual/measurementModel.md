@@ -540,6 +540,8 @@ addWattmeter!(system, device; label = "Wattmeter 2", bus = "Bus 2", active = 0.6
 addWattmeter!(system, device; label = "Wattmeter 1", bus = "Bus 1", active = 0.2)
 addWattmeter!(system, device; label = "Wattmeter 4", from = "Branch 1", active = 0.3)
 addWattmeter!(system, device; label = "Wattmeter 3", to = "Branch 1", active = 0.1)
+
+nothing # hide
 ```
 
 To access the wattmeter labels, you can use the variable:
@@ -605,7 +607,6 @@ analysis = newtonRaphson(system)
 for iteration = 1:100
     stopping = mismatch!(system, analysis)
     if all(stopping .< 1e-8)
-        display(iteration)
         break
     end
     solve!(system, analysis)
@@ -636,8 +637,13 @@ In this example, we add voltmeters to all buses, ammeters to all branches on bot
 
 ---
 
-## [Update Voltmeter](@id UpdateVoltmeterManual)
-Once a voltmeter has been added to the `Measurement` composite type, users have the flexibility to modify all parameters defined within the [`addVoltmeter!`](@ref addVoltmeter!) function. For instance, let us continue with the example from the [Add Device Groups](@ref AddDeviceGroupsManual) section:
+## [Update Devices](@id UpdateMeasurementDevicesManual)
+After the addition of measurement devices to the `Measurement` composite type, users possess the flexibility to modify all parameters as defined in the function that added these measurement devices.
+
+---
+
+##### [Update Voltmeter](@id UpdateVoltmeterManual)
+Users have the flexibility to modify all parameters as defined within the [`addVoltmeter!`](@ref addVoltmeter!) function. For illustration, let us continue with the example from the [Add Device Groups](@ref AddDeviceGroupsManual) section:
 ```@example addDeviceGroups
 updateVoltmeter!(system, device; label = "Bus 2", magnitude = 0.9, noise = false)
 nothing  # hide
@@ -646,8 +652,8 @@ In this example, we update the measurement value of the voltmeter located at `Bu
 
 ---
 
-## [Update Ammeter](@id UpdateAmmeterManual)
-Similarly, once an ammeter has been added to the `Measurement` composite type, users have the flexibility to modify all parameters defined within the [`addAmmeter!`](@ref addAmmeter!) function. Using the same example from the [Add Device Groups](@ref AddDeviceGroupsManual) section, for example, we have:
+##### [Update Ammeter](@id UpdateAmmeterManual)
+Similarly, users have the flexibility to modify all parameters defined within the [`addAmmeter!`](@ref addAmmeter!) function. Using the same example from the [Add Device Groups](@ref AddDeviceGroupsManual) section, for example, we have:
 ```@example addDeviceGroups
 updateAmmeter!(system, device; label = "From Branch 2", magnitude = 1.2, variance = 1e-4)
 updateAmmeter!(system, device; label = "To Branch 2", status = 0)
@@ -657,8 +663,8 @@ In this example, we make adjustments to the measurement and variance values of t
 
 ---
 
-## [Update Wattmeter](@id UpdateWattmeterManual)
-Following the same logic, users can modify all parameters defined within the [`addWattmeter!`](@ref addWattmeter!) function as shown in the example below:
+##### [Update Wattmeter](@id UpdateWattmeterManual)
+Following the same logic, users can modify all parameters defined within the [`addWattmeter!`](@ref addWattmeter!) function:
 ```@example addDeviceGroups
 updateWattmeter!(system, device; label = "Bus 1", active = 1.2, variance = 1e-4)
 updateWattmeter!(system, device; label = "From Branch 1", active = 0.7, noise = false)
@@ -669,8 +675,8 @@ In this particular case, we modify the measurement and variance values for the w
 
 ---
 
-## [Update Varmeter](@id UpdateVarmeterManual)
-Following the same logic as shown in [Update Wattmeter](@ref UpdateWattmeterManual), users can modify all parameters defined within the [`addVarmeter!`](@ref addVarmeter!) function, as demonstrated in the example below:
+##### [Update Varmeter](@id UpdateVarmeterManual)
+Following the same logic, users can modify all parameters defined within the [`addVarmeter!`](@ref addVarmeter!) function:
 ```@example addDeviceGroups
 updateVarmeter!(system, device; label = "Bus 1", reactive = 1.2)
 updateVarmeter!(system, device; label = "Bus 2", status = 0)
@@ -680,8 +686,8 @@ In this instance, we make adjustments to the measurement value of the varmeter l
 
 ---
 
-## [Update PMU](@id UpdatePMUrManual)
-Finally, users can modify all PMU parameters defined within the [`addPmu!`](@ref addPmu!) function, as demonstrated in the example below:
+##### [Update PMU](@id UpdatePMUrManual)
+Finally, users can modify all PMU parameters defined within the [`addPmu!`](@ref addPmu!) function:
 ```@example addDeviceGroups
 updatePmu!(system, device; label = "Bus 1", magnitude = 1.05, noise = false)
 updatePmu!(system, device; label = "From Branch 1", varianceAngle = 1e-6)
