@@ -412,7 +412,7 @@ function addPowermeter!(system, device, measure, powerBus, powerFrom, powerTo, d
 
     count = 1
     label = collect(keys(sort(system.branch.label; byvalue = true)))
-    @inbounds for i = (system.bus.number + 1):2:device.number
+    @inbounds for i = (system.bus.number + 1):2:deviceNumber
         labelBranch = getLabel(system.branch, label[count], "branch")
 
         device.number += 1

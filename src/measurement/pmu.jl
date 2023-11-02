@@ -297,7 +297,7 @@ function addPmu!(system::PowerSystem, device::Measurement, analysis::AC;
     count = 1
     basePowerInv = 1 / (system.base.power.value * system.base.power.prefix)
     label = collect(keys(sort(system.branch.label; byvalue = true)))
-    @inbounds for i = (system.bus.number + 1):2:pmu.number
+    @inbounds for i = (system.bus.number + 1):2:pmuNumber
         labelBranch = getLabel(system.branch, label[count], "branch")
         
         pmu.number += 1
