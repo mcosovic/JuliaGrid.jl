@@ -30,6 +30,7 @@ for i = 1:10
     end
     solve!(system, analysis)
 end
+power!(system, analysis)
 
 device = measurement()
 
@@ -52,6 +53,7 @@ for i = 1:10
     end
     solve!(system, analysis)
 end
+power!(system, analysis)
 
 device = measurement()
 
@@ -173,6 +175,7 @@ for i = 1:10
     end
     solve!(system, analysis)
 end
+current!(system, analysis)
 
 device = measurement()
 
@@ -242,8 +245,8 @@ all fine-tuning keywords will not be considered.
 If a user chooses fine-tuning without specifying any of the primary keywords, only one 
 keyword from each of the three sets will be executed, and the remaining keywords within 
 each set will be ignored. These sets are as follows:
-* `inserviceBus`, `outserviceBus`, `redundancyBus;
-* `inserviceFrom`, `outserviceFrom`, `redundancyFrom;
+* `inserviceBus`, `outserviceBus`, `redundancyBus`;
+* `inserviceFrom`, `outserviceFrom`, `redundancyFrom`;
 * `inserviceTo`, `outserviceTo`, `redundancyTo`.
 
 # Updates
@@ -262,6 +265,7 @@ for i = 1:10
     end
     solve!(system, analysis)
 end
+power!(system, analysis)
 
 device = measurement()
 
@@ -339,8 +343,8 @@ all fine-tuning keywords will not be considered.
 If a user chooses fine-tuning without specifying any of the primary keywords, only one 
 keyword from each of the three sets will be executed, and the remaining keywords within 
 each set will be ignored. These sets are as follows:
-* `inserviceBus`, `outserviceBus`, `redundancyBus;
-* `inserviceFrom`, `outserviceFrom`, `redundancyFrom;
+* `inserviceBus`, `outserviceBus`, `redundancyBus`;
+* `inserviceFrom`, `outserviceFrom`, `redundancyFrom`;
 * `inserviceTo`, `outserviceTo`, `redundancyTo`.
 
 # Updates
@@ -359,6 +363,7 @@ for i = 1:10
     end
     solve!(system, analysis)
 end
+power!(system, analysis)
 
 device = measurement()
 
@@ -437,8 +442,8 @@ all fine-tuning keywords will not be considered.
 If a user chooses fine-tuning without specifying any of the primary keywords, only one 
 keyword from each of the three sets will be executed, and the remaining keywords within 
 each set will be ignored. These sets are as follows:
-* `inserviceBus`, `outserviceBus`, `redundancyBus;
-* `inserviceFrom`, `outserviceFrom`, `redundancyFrom;
+* `inserviceBus`, `outserviceBus`, `redundancyBus`;
+* `inserviceFrom`, `outserviceFrom`, `redundancyFrom`;
 * `inserviceTo`, `outserviceTo`, `redundancyTo`.
 
 # Updates
@@ -457,6 +462,7 @@ for i = 1:10
     end
     solve!(system, analysis)
 end
+current!(system, analysis)
 
 device = measurement()
 
