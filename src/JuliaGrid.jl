@@ -1,6 +1,8 @@
-module JuliaGrid
+module JuliaGridTest
 
-using SparseArrays, LinearAlgebra, SuiteSparse
+using JuliaGrid
+
+using SparseArrays, LinearAlgebra, SuiteSparse, Random
 using JuMP
 using HDF5
 
@@ -53,11 +55,13 @@ include("measurement/voltmeter.jl")
 include("measurement/ammeter.jl")
 include("measurement/powermeter.jl")
 include("measurement/pmu.jl")
-export addVoltmeter!, updateVoltmeter!, @voltmeter
-export addAmmeter!, updateAmmeter!, @ammeter
-export addWattmeter!, updateWattmeter!, @wattmeter
-export addVarmeter!, updateVarmeter!, @varmeter
-export addPmu!, updatePmu!, @pmu
+include("measurement/configuration.jl")
+export addVoltmeter!, updateVoltmeter!, statusVoltmeter!, @voltmeter
+export addAmmeter!, updateAmmeter!, statusAmmeter!, @ammeter
+export addWattmeter!, updateWattmeter!, statusWattmeter!, @wattmeter
+export addVarmeter!, updateVarmeter!, statusVarmeter!, @varmeter
+export addPmu!, updatePmu!, statusPmu!, @pmu
+export status!
 
 ########## Postprocessing ##########
 include("postprocessing/dcAnalysis.jl")

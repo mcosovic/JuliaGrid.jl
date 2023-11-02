@@ -1,4 +1,4 @@
-export PowerSystem, Measurement
+export PowerSystem, Measurement, Voltmeter, Ammeter, Wattmeter, Varmeter, PMU
 
 ########### Bus ###########
 mutable struct BusDemand
@@ -217,14 +217,14 @@ mutable struct MultiLayoutMeter
     label::Int64
 end
 
-mutable struct BusMeter
+mutable struct Voltmeter
     label::Dict{String,Int64}
     magnitude::GaussMeter
     layout::BusLayoutMeter
     number::Int64
 end
 
-mutable struct BranchMeter
+mutable struct Ammeter
     label::Dict{String,Int64}
     magnitude::GaussMeter
     layout::BranchLayoutMeter
@@ -238,6 +238,20 @@ mutable struct MultiMeter
     number::Int64
 end
 
+mutable struct Wattmeter
+    label::Dict{String,Int64}
+    active::GaussMeter
+    layout::MultiLayoutMeter
+    number::Int64
+end
+
+mutable struct Varmeter
+    label::Dict{String,Int64}
+    reactive::GaussMeter
+    layout::MultiLayoutMeter
+    number::Int64
+end
+
 mutable struct PMU
     label::Dict{String,Int64}
     magnitude::GaussMeter
@@ -247,9 +261,9 @@ mutable struct PMU
 end
 
 mutable struct Measurement
-    voltmeter::BusMeter
-    ammeter::BranchMeter
-    wattmeter::MultiMeter
-    varmeter::MultiMeter
+    voltmeter::Voltmeter
+    ammeter::Ammeter
+    wattmeter::Wattmeter
+    varmeter::Varmeter
     pmu::PMU
 end

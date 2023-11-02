@@ -42,13 +42,13 @@
     ####### Wattmeter Data #######
     @test device.wattmeter.label == deviceLoad.wattmeter.label
     @test device.wattmeter.number == deviceLoad.wattmeter.number
-    equalStruct(device.wattmeter.power, deviceLoad.wattmeter.power)
+    equalStruct(device.wattmeter.active, deviceLoad.wattmeter.active)
     equalStruct(device.wattmeter.layout, deviceLoad.wattmeter.layout)   
 
     ####### Varmeter Data #######
     @test device.varmeter.label == deviceLoad.varmeter.label
     @test device.varmeter.number == deviceLoad.varmeter.number
-    equalStruct(device.varmeter.power, deviceLoad.varmeter.power)
+    equalStruct(device.varmeter.reactive, deviceLoad.varmeter.reactive)
     equalStruct(device.varmeter.layout, deviceLoad.varmeter.layout)      
     
     ####### PMU Data #######

@@ -40,14 +40,14 @@
         @test device.voltmeter.magnitude.status[end] == 1
     
         addWattmeter!(system, device; bus = key, active = analysis.power.injection.active[value])
-        @test device.wattmeter.power.mean[end] ≈ analysis.power.injection.active[value] atol = 1e-16
-        @test device.wattmeter.power.mean[end] ≈ deviceAll.wattmeter.power.mean[value] atol = 1e-16
-        @test device.wattmeter.power.status[end] == 0
+        @test device.wattmeter.active.mean[end] ≈ analysis.power.injection.active[value] atol = 1e-16
+        @test device.wattmeter.active.mean[end] ≈ deviceAll.wattmeter.active.mean[value] atol = 1e-16
+        @test device.wattmeter.active.status[end] == 0
     
         addVarmeter!(system, device; bus = key, reactive = analysis.power.injection.reactive[value])
-        @test device.varmeter.power.mean[end] ≈ analysis.power.injection.reactive[value] atol = 1e-16
-        @test device.varmeter.power.mean[end] ≈ deviceAll.varmeter.power.mean[value] atol = 1e-16
-        @test device.varmeter.power.status[end] == 1
+        @test device.varmeter.reactive.mean[end] ≈ analysis.power.injection.reactive[value] atol = 1e-16
+        @test device.varmeter.reactive.mean[end] ≈ deviceAll.varmeter.reactive.mean[value] atol = 1e-16
+        @test device.varmeter.reactive.status[end] == 1
     
         addPmu!(system, device; bus = key, magnitude = analysis.voltage.magnitude[value], angle = analysis.voltage.angle[value])
         @test device.pmu.magnitude.mean[end] ≈ analysis.voltage.magnitude[value] atol = 1e-16
@@ -61,10 +61,10 @@
     ############### Branch Measurements ################
     currentMagnitudeFrom = deviceAll.ammeter.magnitude.mean[deviceAll.ammeter.layout.from]
     currentMagnitudeTo = deviceAll.ammeter.magnitude.mean[deviceAll.ammeter.layout.to]
-    activeFrom = deviceAll.wattmeter.power.mean[deviceAll.wattmeter.layout.from]
-    activeTo = deviceAll.wattmeter.power.mean[deviceAll.wattmeter.layout.to]
-    reactiveFrom = deviceAll.varmeter.power.mean[deviceAll.varmeter.layout.from]
-    reactiveTo = deviceAll.varmeter.power.mean[deviceAll.varmeter.layout.to]
+    activeFrom = deviceAll.wattmeter.active.mean[deviceAll.wattmeter.layout.from]
+    activeTo = deviceAll.wattmeter.active.mean[deviceAll.wattmeter.layout.to]
+    reactiveFrom = deviceAll.varmeter.reactive.mean[deviceAll.varmeter.layout.from]
+    reactiveTo = deviceAll.varmeter.reactive.mean[deviceAll.varmeter.layout.to]
     pmuMagnitudeFrom = deviceAll.pmu.magnitude.mean[deviceAll.pmu.layout.from]
     pmuAngleFrom = deviceAll.pmu.angle.mean[deviceAll.pmu.layout.from]
     pmuMagnitudeTo = deviceAll.pmu.magnitude.mean[deviceAll.pmu.layout.to]
@@ -82,24 +82,24 @@
         @test device.ammeter.magnitude.status[end] == 1
     
         addWattmeter!(system, device; from = key, active = analysis.power.from.active[value])
-        @test device.wattmeter.power.mean[end] ≈ analysis.power.from.active[value] atol = 1e-16
-        @test device.wattmeter.power.mean[end] ≈ activeFrom[value] atol = 1e-16
-        @test device.wattmeter.power.status[end] == 1
+        @test device.wattmeter.active.mean[end] ≈ analysis.power.from.active[value] atol = 1e-16
+        @test device.wattmeter.active.mean[end] ≈ activeFrom[value] atol = 1e-16
+        @test device.wattmeter.active.status[end] == 1
     
         addWattmeter!(system, device; from = key, active = analysis.power.to.active[value], noise = false)
-        @test device.wattmeter.power.mean[end] == analysis.power.to.active[value]
-        @test device.wattmeter.power.mean[end] ≈ activeTo[value] atol = 1e-16
-        @test device.wattmeter.power.status[end] == 1
+        @test device.wattmeter.active.mean[end] == analysis.power.to.active[value]
+        @test device.wattmeter.active.mean[end] ≈ activeTo[value] atol = 1e-16
+        @test device.wattmeter.active.status[end] == 1
     
         addVarmeter!(system, device; from = key, reactive = analysis.power.from.reactive[value])
-        @test device.varmeter.power.mean[end] ≈ analysis.power.from.reactive[value] atol = 1e-16
-        @test device.varmeter.power.mean[end] ≈ reactiveFrom[value] atol = 1e-16
-        @test device.varmeter.power.status[end] == 1
+        @test device.varmeter.reactive.mean[end] ≈ analysis.power.from.reactive[value] atol = 1e-16
+        @test device.varmeter.reactive.mean[end] ≈ reactiveFrom[value] atol = 1e-16
+        @test device.varmeter.reactive.status[end] == 1
     
         addVarmeter!(system, device; to = key, reactive = analysis.power.to.reactive[value])
-        @test device.varmeter.power.mean[end] ≈ analysis.power.to.reactive[value] atol = 1e-16
-        @test device.varmeter.power.mean[end] ≈ reactiveTo[value] atol = 1e-16
-        @test device.varmeter.power.status[end] == 0
+        @test device.varmeter.reactive.mean[end] ≈ analysis.power.to.reactive[value] atol = 1e-16
+        @test device.varmeter.reactive.mean[end] ≈ reactiveTo[value] atol = 1e-16
+        @test device.varmeter.reactive.status[end] == 0
     
         addPmu!(system, device; from = key, magnitude = analysis.current.from.magnitude[value], angle = analysis.current.from.angle[value])
         @test device.pmu.magnitude.mean[end] ≈ analysis.current.from.magnitude[value] atol = 1e-16
@@ -142,27 +142,27 @@
 
     ############### Update Wattmeter ################
     updateWattmeter!(system, device; label = "4", active = 0.5, variance = 1e-2, status = 0, noise = false)
-    @test device.wattmeter.power.mean[4] == 0.5
-    @test device.wattmeter.power.variance[4] == 1e-2
-    @test device.wattmeter.power.status[4] == 0
+    @test device.wattmeter.active.mean[4] == 0.5
+    @test device.wattmeter.active.variance[4] == 1e-2
+    @test device.wattmeter.active.status[4] == 0
 
     updateWattmeter!(system, device; label = "14", active = 0.1, variance = 1e-10, status = 1)
-    @test device.wattmeter.power.mean[14] ≈ 0.1 atol = 1e-2
-    @test device.wattmeter.power.mean[14] != 0.1
-    @test device.wattmeter.power.variance[14] == 1e-10
-    @test device.wattmeter.power.status[14] == 1
+    @test device.wattmeter.active.mean[14] ≈ 0.1 atol = 1e-2
+    @test device.wattmeter.active.mean[14] != 0.1
+    @test device.wattmeter.active.variance[14] == 1e-10
+    @test device.wattmeter.active.status[14] == 1
 
     ############### Update Varmeter ################
     updateVarmeter!(system, device; label = "5", reactive = 1.5, variance = 1e-1, status = 0, noise = false)
-    @test device.varmeter.power.mean[5] == 1.5
-    @test device.varmeter.power.variance[5] == 1e-1
-    @test device.varmeter.power.status[5] == 0
+    @test device.varmeter.reactive.mean[5] == 1.5
+    @test device.varmeter.reactive.variance[5] == 1e-1
+    @test device.varmeter.reactive.status[5] == 0
 
     updateVarmeter!(system, device; label = "16", reactive = 0.9, variance = 1e-10, status = 1)
-    @test device.varmeter.power.mean[16] ≈ 0.9 atol = 1e-2
-    @test device.varmeter.power.mean[16] != 0.9
-    @test device.varmeter.power.variance[16] == 1e-10
-    @test device.varmeter.power.status[16] == 1
+    @test device.varmeter.reactive.mean[16] ≈ 0.9 atol = 1e-2
+    @test device.varmeter.reactive.mean[16] != 0.9
+    @test device.varmeter.reactive.variance[16] == 1e-10
+    @test device.varmeter.reactive.status[16] == 1
 
     ############### Update PMU ################
     updatePmu!(system, device; label = "4 PMU", magnitude = 0.1, angle = 0.2, varianceMagnitude = 1e-6, varianceAngle = 1e-7, 
@@ -228,40 +228,40 @@ end
     ####### Wattmeter Data #######
     addWattmeter!(system, device; bus = 1, active = 20.5, variance = 20.5, noise = false)
     addWattmeter!(system, device; bus = 1, active = 20.5, variance = 1e-60, noise = true)
-    @test device.wattmeter.power.mean[1] == system.bus.demand.active[1]
-    @test device.wattmeter.power.variance[1] == system.bus.demand.active[1]
-    @test device.wattmeter.power.mean[2] == system.bus.demand.active[1]
+    @test device.wattmeter.active.mean[1] == system.bus.demand.active[1]
+    @test device.wattmeter.active.variance[1] == system.bus.demand.active[1]
+    @test device.wattmeter.active.mean[2] == system.bus.demand.active[1]
     
     addWattmeter!(system, device; from = 1, active = 20.5, variance = 20.5, noise = false)
     addWattmeter!(system, device; from = 1, active = 20.5, variance = 1e-60, noise = true)
-    @test device.wattmeter.power.mean[3] == system.bus.demand.active[1]
-    @test device.wattmeter.power.variance[3] == system.bus.demand.active[1]
-    @test device.wattmeter.power.mean[4] == system.bus.demand.active[1]
+    @test device.wattmeter.active.mean[3] == system.bus.demand.active[1]
+    @test device.wattmeter.active.variance[3] == system.bus.demand.active[1]
+    @test device.wattmeter.active.mean[4] == system.bus.demand.active[1]
     
     addWattmeter!(system, device; to = 1, active = 20.5, variance = 20.5, noise = false)
     addWattmeter!(system, device; to = 1, active = 20.5, variance = 1e-60, noise = true)
-    @test device.wattmeter.power.mean[5] == system.bus.demand.active[1]
-    @test device.wattmeter.power.variance[5] == system.bus.demand.active[1]
-    @test device.wattmeter.power.mean[6] == system.bus.demand.active[1]
+    @test device.wattmeter.active.mean[5] == system.bus.demand.active[1]
+    @test device.wattmeter.active.variance[5] == system.bus.demand.active[1]
+    @test device.wattmeter.active.mean[6] == system.bus.demand.active[1]
     
     ####### Varmeter Data #######
     addVarmeter!(system, device; bus = 1, reactive = 11.2, variance = 11.2, noise = false)
     addVarmeter!(system, device; bus = 1, reactive = 11.2, variance = 1e-60, noise = true)
-    @test device.varmeter.power.mean[1] == system.bus.demand.reactive[1]
-    @test device.varmeter.power.variance[1] == system.bus.demand.reactive[1]
-    @test device.varmeter.power.mean[2] == system.bus.demand.reactive[1]
+    @test device.varmeter.reactive.mean[1] == system.bus.demand.reactive[1]
+    @test device.varmeter.reactive.variance[1] == system.bus.demand.reactive[1]
+    @test device.varmeter.reactive.mean[2] == system.bus.demand.reactive[1]
     
     addVarmeter!(system, device; from = 1, reactive = 11.2, variance = 11.2, noise = false)
     addVarmeter!(system, device; from = 1,reactive = 11.2, variance = 1e-60,  noise = true)
-    @test device.varmeter.power.mean[3] == system.bus.demand.reactive[1]
-    @test device.varmeter.power.variance[3] == system.bus.demand.reactive[1]
-    @test device.varmeter.power.mean[4] == system.bus.demand.reactive[1]
+    @test device.varmeter.reactive.mean[3] == system.bus.demand.reactive[1]
+    @test device.varmeter.reactive.variance[3] == system.bus.demand.reactive[1]
+    @test device.varmeter.reactive.mean[4] == system.bus.demand.reactive[1]
     
     addVarmeter!(system, device; to = 1, reactive = 11.2, variance = 11.2, noise = false)
     addVarmeter!(system, device; to = 1, reactive = 11.2, variance = 1e-60, noise = true)
-    @test device.varmeter.power.mean[5] == system.bus.demand.reactive[1]
-    @test device.varmeter.power.variance[5] == system.bus.demand.reactive[1]
-    @test device.varmeter.power.mean[6] == system.bus.demand.reactive[1]
+    @test device.varmeter.reactive.mean[5] == system.bus.demand.reactive[1]
+    @test device.varmeter.reactive.variance[5] == system.bus.demand.reactive[1]
+    @test device.varmeter.reactive.mean[6] == system.bus.demand.reactive[1]
     
     ####### PMU Data #######
     addPmu!(system, device; bus = 2, magnitude = 95, angle = 2.4, varianceMagnitude = 95, varianceAngle = 2.4, noise = false)
@@ -290,4 +290,168 @@ end
     @test device.pmu.angle.mean[5] == 3
     @test device.pmu.angle.variance[5] == 3
     @test device.pmu.angle.mean[6] == 3
+end
+
+@testset "Measurement Set" begin
+    system = powerSystem(string(pathData, "case14test.m"))
+    device = measurement()
+    
+    analysis = newtonRaphson(system)
+    for iteration = 1:100
+        stopping = mismatch!(system, analysis)
+        if all(stopping .< 1e-8)
+            break
+        end
+        solve!(system, analysis)
+    end
+    power!(system, analysis)
+    current!(system, analysis)
+    
+    stateVariable = 2 * system.bus.number - 1
+
+    ############### Voltmeter Set ################
+    addVoltmeter!(system, device, analysis)
+    
+    statusVoltmeter!(system, device; inservice = 10)
+    @test sum(device.voltmeter.magnitude.status) == 10
+    
+    statusVoltmeter!(system, device; outservice = 5)
+    @test sum(device.voltmeter.magnitude.status) == 9
+    
+    statusVoltmeter!(system, device; redundancy = 0.5)
+    @test sum(device.voltmeter.magnitude.status) == round(0.5 * stateVariable)
+    
+    ############### Ammeter Set ################
+    addAmmeter!(system, device, analysis)
+    
+    statusAmmeter!(system, device; inservice = 20)
+    @test sum(device.ammeter.magnitude.status) == 20
+    
+    statusAmmeter!(system, device; outservice = 4)
+    @test sum(device.ammeter.magnitude.status) == 36
+    
+    statusAmmeter!(system, device; redundancy = 1.5)
+    @test sum(device.ammeter.magnitude.status) == round(1.5 * stateVariable)
+    
+    layout = device.ammeter.layout
+    statusAmmeter!(system, device; inserviceFrom = 10, inserviceTo = 4)
+    @test sum(device.ammeter.magnitude.status[layout.from]) == 10
+    @test sum(device.ammeter.magnitude.status[layout.to]) == 4
+    
+    statusAmmeter!(system, device; outserviceFrom = 5, outserviceTo = 3)
+    @test sum(device.ammeter.magnitude.status[layout.from]) == 15
+    @test sum(device.ammeter.magnitude.status[layout.to]) == 17
+    
+    statusAmmeter!(system, device; redundancyFrom = 0.5, redundancyTo = 0.2)
+    @test sum(device.ammeter.magnitude.status[layout.from]) == round(0.5 * stateVariable)
+    @test sum(device.ammeter.magnitude.status[layout.to]) == round(0.2 * stateVariable)
+    
+    ############### Wattmeter Set ################
+    addWattmeter!(system, device, analysis)
+    
+    statusWattmeter!(system, device; inservice = 14)
+    @test sum(device.wattmeter.active.status) == 14
+    
+    statusWattmeter!(system, device; outservice = 40)
+    @test sum(device.wattmeter.active.status) == 14
+    
+    statusWattmeter!(system, device; redundancy = 1.8)
+    @test sum(device.wattmeter.active.status) == round(1.8 * stateVariable)
+    
+    layout = device.wattmeter.layout
+    statusWattmeter!(system, device; inserviceBus = 10, inserviceFrom = 12, inserviceTo = 8)
+    @test sum(device.wattmeter.active.status[layout.bus]) == 10
+    @test sum(device.wattmeter.active.status[layout.from]) == 12
+    @test sum(device.wattmeter.active.status[layout.to]) == 8
+    
+    statusWattmeter!(system, device; outserviceBus = 14, outserviceFrom = 15, outserviceTo = 19)
+    @test sum(device.wattmeter.active.status[layout.bus]) == 0
+    @test sum(device.wattmeter.active.status[layout.from]) == 5
+    @test sum(device.wattmeter.active.status[layout.to]) == 1
+    
+    statusWattmeter!(system, device; redundancyBus = 0.1, redundancyFrom = 0.3, redundancyTo = 0.4)
+    @test sum(device.wattmeter.active.status[layout.bus]) == round(0.1 * stateVariable)
+    @test sum(device.wattmeter.active.status[layout.from]) == round(0.3 * stateVariable)
+    @test sum(device.wattmeter.active.status[layout.to]) == round(0.4 * stateVariable)
+    
+    ############### Varmeter Set ################
+    addVarmeter!(system, device, analysis)
+    
+    statusVarmeter!(system, device; inservice = 1)
+    @test sum(device.varmeter.reactive.status) == 1
+    
+    statusVarmeter!(system, device; outservice = 30)
+    @test sum(device.varmeter.reactive.status) == 24
+    
+    statusVarmeter!(system, device; redundancy = 1.2)
+    @test sum(device.varmeter.reactive.status) == round(1.2 * stateVariable)
+    
+    layout = device.varmeter.layout
+    statusVarmeter!(system, device; inserviceBus = 0, inserviceFrom = 20, inserviceTo = 4)
+    @test sum(device.varmeter.reactive.status[layout.bus]) == 0
+    @test sum(device.varmeter.reactive.status[layout.from]) == 20
+    @test sum(device.varmeter.reactive.status[layout.to]) == 4
+    
+    statusVarmeter!(system, device; outserviceBus = 0, outserviceFrom = 10, outserviceTo = 2)
+    @test sum(device.varmeter.reactive.status[layout.bus]) == 14
+    @test sum(device.varmeter.reactive.status[layout.from]) == 10
+    @test sum(device.varmeter.reactive.status[layout.to]) == 18
+    
+    statusVarmeter!(system, device; redundancyBus = 0.2, redundancyFrom = 0.1, redundancyTo = 0.3)
+    @test sum(device.varmeter.reactive.status[layout.bus]) == round(0.2 * stateVariable)
+    @test sum(device.varmeter.reactive.status[layout.from]) == round(0.1 * stateVariable)
+    @test sum(device.varmeter.reactive.status[layout.to]) == round(0.3 * stateVariable)
+    
+    ############### PMU Set ################
+    addPmu!(system, device, analysis)
+    
+    statusPmu!(system, device; inservice = 10)
+    @test device.pmu.magnitude.status == device.pmu.angle.status
+    @test sum(device.pmu.magnitude.status) == 10
+    
+    statusPmu!(system, device; outservice = 40)
+    @test device.pmu.magnitude.status == device.pmu.angle.status
+    @test sum(device.pmu.magnitude.status) == 14
+    
+    statusPmu!(system, device; redundancy = 0.2)
+    @test device.pmu.magnitude.status == device.pmu.angle.status
+    @test sum(device.pmu.magnitude.status) == round(0.2 * stateVariable)
+    
+    layout = device.pmu.layout
+    statusPmu!(system, device; inserviceBus = 10, inserviceFrom = 15, inserviceTo = 16)
+    @test device.pmu.magnitude.status == device.pmu.angle.status
+    @test sum(device.pmu.magnitude.status[layout.bus]) == 10
+    @test sum(device.pmu.magnitude.status[layout.from]) == 15
+    @test sum(device.pmu.magnitude.status[layout.to]) == 16
+    
+    statusPmu!(system, device; outserviceBus = 6, outserviceFrom = 10, outserviceTo = 15)
+    @test device.pmu.magnitude.status == device.pmu.angle.status
+    @test sum(device.pmu.magnitude.status[layout.bus]) == 8
+    @test sum(device.pmu.magnitude.status[layout.from]) == 10
+    @test sum(device.pmu.magnitude.status[layout.to]) == 5
+    
+    statusPmu!(system, device; redundancyBus = 0.3, redundancyFrom = 0.2, redundancyTo = 0.4)
+    @test device.pmu.magnitude.status == device.pmu.angle.status
+    @test sum(device.pmu.magnitude.status[layout.bus]) == round(0.3 * stateVariable)
+    @test sum(device.pmu.magnitude.status[layout.from]) == round(0.2 * stateVariable)
+    @test sum(device.pmu.magnitude.status[layout.to]) == round(0.4 * stateVariable)
+    
+    ############### Measurement Set ################
+    status!(system, device; inservice = 40)
+    @test device.pmu.magnitude.status == device.pmu.angle.status
+    @test sum(device.voltmeter.magnitude.status) + sum(device.ammeter.magnitude.status) +
+    sum(device.wattmeter.active.status) + sum(device.varmeter.reactive.status) + 
+    sum(device.pmu.magnitude.status) == 40
+    
+    status!(system, device; outservice = 100)    
+    @test device.pmu.magnitude.status == device.pmu.angle.status
+    @test sum(device.voltmeter.magnitude.status) + sum(device.ammeter.magnitude.status) +
+    sum(device.wattmeter.active.status) + sum(device.varmeter.reactive.status) + 
+    sum(device.pmu.magnitude.status) == 116    
+    
+    status!(system, device; redundancy = 3.1)
+    @test device.pmu.magnitude.status == device.pmu.angle.status
+    @test sum(device.voltmeter.magnitude.status) + sum(device.ammeter.magnitude.status) +
+    sum(device.wattmeter.active.status) + sum(device.varmeter.reactive.status) + 
+    sum(device.pmu.magnitude.status) == round(3.1 * stateVariable)    
 end

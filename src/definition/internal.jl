@@ -2,6 +2,7 @@
 const N = Union{Float64, Int64}
 const T = Union{Float64, Int64, Int8, Missing}
 const L = Union{String, Int64, Missing}
+const S = Union{Int64, Missing}
 
 ########### Polar Coordinate ###########
 mutable struct Polar

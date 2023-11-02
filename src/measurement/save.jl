@@ -39,7 +39,7 @@ function saveMeasurement(device::Measurement; path::String, reference::String = 
 end
 
 ######### Save Voltmeter ##########
-function saveVoltmeter(voltmeter::BusMeter, file)
+function saveVoltmeter(voltmeter::Voltmeter, file)
     if voltmeter.number != 0
         saveLabel(voltmeter, file; fid = "voltmeter")
         saveMeter(voltmeter, voltmeter.magnitude, file; name = "voltmeter/magnitude", si = "volt (V)")
@@ -48,7 +48,7 @@ function saveVoltmeter(voltmeter::BusMeter, file)
 end
 
 ######### Save Ammeter ##########
-function saveAmmeter(ammeter::BranchMeter, file)
+function saveAmmeter(ammeter::Ammeter, file)
     if ammeter.number != 0
         saveLabel(ammeter, file; fid = "ammeter")
         saveMeter(ammeter, ammeter.magnitude, file; name = "ammeter/magnitude", si = "ampere (A)")
@@ -59,7 +59,7 @@ function saveAmmeter(ammeter::BranchMeter, file)
 end
 
 ######### Save Wattmeter ##########
-function saveWattmeter(wattmeter::MultiMeter, file)
+function saveWattmeter(wattmeter::Wattmeter, file)
     if wattmeter.number != 0
         saveLabel(wattmeter, file; fid = "wattmeter")
         saveMeter(wattmeter, wattmeter.power, file; name = "wattmeter/power", si = "watt (W)")
@@ -71,7 +71,7 @@ function saveWattmeter(wattmeter::MultiMeter, file)
 end
 
 ######### Save Varmeter ##########
-function saveVarmeter(varmeter::MultiMeter, file)
+function saveVarmeter(varmeter::Varmeter, file)
     if varmeter.number != 0
         saveLabel(varmeter, file; fid = "varmeter")
         saveMeter(varmeter, varmeter.power, file; name = "varmeter/power", si = "volt-amperes reactive (VAr)")

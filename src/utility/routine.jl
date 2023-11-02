@@ -261,7 +261,6 @@ function updateMeter(device::GaussMeter, index::Int64, mean::T, variance::T,
     end
 end
 
-
 ######### Print Data ##########
 import Base.print
 

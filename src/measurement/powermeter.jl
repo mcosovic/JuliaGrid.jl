@@ -69,8 +69,8 @@ function addWattmeter!(system::PowerSystem, device::Measurement;
     active::T, variance::T = missing, status::T = missing,
     noise::Bool = template.wattmeter.noise)
 
-    addPowerMeter!(system, device.wattmeter, template.wattmeter, prefix.activePower,
-        label, bus, from, to, active, variance, status, noise)
+    addPowerMeter!(system, device.wattmeter, device.wattmeter.active, template.wattmeter, 
+        prefix.activePower, label, bus, from, to, active, variance, status, noise)
 end
 
 """
@@ -144,12 +144,12 @@ function addVarmeter!(system::PowerSystem, device::Measurement;
     reactive::T, variance::T = missing, status::T = missing,
     noise::Bool = template.varmeter.noise)
 
-    addPowerMeter!(system, device.varmeter, template.varmeter, prefix.reactivePower,
-        label, bus, from, to, reactive, variance, status, noise)
+    addPowerMeter!(system, device.varmeter, device.varmeter.reactive, template.varmeter, 
+        prefix.reactivePower, label, bus, from, to, reactive, variance, status, noise)
 end
 
 ######### Add Wattmeter or Varmeter ##########
-function addPowerMeter!(system, device, default, prefixPower, label, bus, from, to,
+function addPowerMeter!(system, device, measure, default, prefixPower, label, bus, from, to,
     power, variance, status, noise)
     
     device.number += 1
@@ -178,7 +178,7 @@ function addPowerMeter!(system, device, default, prefixPower, label, bus, from, 
     push!(device.layout.index, index)
 
     basePowerInv = 1 / (system.base.power.value * system.base.power.prefix)
-    setMeter(device.power, power, variance, status, noise, defaultVariance,
+    setMeter(measure, power, variance, status, noise, defaultVariance,
         defaultStatus, prefixPower, basePowerInv)
 end
 
@@ -266,9 +266,12 @@ function addWattmeter!(system::PowerSystem, device::Measurement, analysis::AC;
     varianceBus::T = missing, varianceFrom::T = missing, varianceTo::T = missing,
     statusBus::T = missing, statusFrom::T = missing, statusTo::T = missing)
 
-    addPowermeter!(system, device.wattmeter, analysis.power.injection.active,
-        analysis.power.from.active, analysis.power.to.active, template.wattmeter,
-        prefix.activePower, varianceBus, varianceFrom, varianceTo, statusBus, statusFrom, statusTo)
+    wattmeter = device.wattmeter
+    power = analysis.power
+
+    addPowermeter!(system, wattmeter, wattmeter.active, power.injection.active,
+        power.from.active, power.to.active, template.wattmeter, prefix.activePower, 
+        varianceBus, varianceFrom, varianceTo, statusBus, statusFrom, statusTo)
 end
 
 """
@@ -354,14 +357,17 @@ function addVarmeter!(system::PowerSystem, device::Measurement, analysis::AC;
     varianceBus::T = missing, varianceFrom::T = missing, varianceTo::T = missing,
     statusBus::T = missing, statusFrom::T = missing, statusTo::T = missing)
 
-    addPowermeter!(system, device.varmeter, analysis.power.injection.reactive,
-        analysis.power.from.reactive, analysis.power.to.reactive, template.varmeter,
-        prefix.reactivePower, varianceBus, varianceFrom, varianceTo, statusBus, statusFrom, statusTo)
+    varmeter = device.varmeter
+    power = analysis.power
+
+    addPowermeter!(system, varmeter, varmeter.reactive, power.injection.reactive, power.from.reactive, 
+        power.to.reactive, template.varmeter, prefix.reactivePower, varianceBus, varianceFrom, varianceTo, 
+        statusBus, statusFrom, statusTo)
 end
 
 ######### Add Group of Wattmeters or Varmeters ##########
-function addPowermeter!(system, device, powerBus, powerFrom, powerTo, default, prefixPower,
-    varianceBus, varianceFrom, varianceTo, statusBus, statusFrom, statusTo)
+function addPowermeter!(system, device, measure, powerBus, powerFrom, powerTo, default, 
+    prefixPower, varianceBus, varianceFrom, varianceTo, statusBus, statusFrom, statusTo)
 
     statusBus = unitless(statusBus, default.statusBus)
     checkStatus(statusBus)
@@ -380,9 +386,9 @@ function addPowermeter!(system, device, powerBus, powerFrom, powerTo, default, p
     device.layout.from = fill(false, device.number)
     device.layout.to = fill(false, device.number)
 
-    device.power.mean = fill(0.0, device.number)
-    device.power.variance = similar(device.power.mean)
-    device.power.status = fill(Int8(0), device.number)
+    measure.mean = fill(0.0, device.number)
+    measure.variance = similar(measure.mean)
+    measure.status = fill(Int8(0), device.number)
 
     basePowerInv = 1 / (system.base.power.value * system.base.power.prefix)
     label = collect(keys(sort(system.bus.label; byvalue = true)))
@@ -393,9 +399,9 @@ function addPowermeter!(system, device, powerBus, powerFrom, powerTo, default, p
         device.layout.index[i] = i
         device.layout.bus[i] = true
 
-        device.power.variance[i] = topu(varianceBus, default.varianceBus, prefixPower, basePowerInv)
-        device.power.mean[i] = powerBus[i] + device.power.variance[i]^(1/2) * randn(1)[1]
-        device.power.status[i] = statusBus
+        measure.variance[i] = topu(varianceBus, default.varianceBus, prefixPower, basePowerInv)
+        measure.mean[i] = powerBus[i] + measure.variance[i]^(1/2) * randn(1)[1]
+        measure.status[i] = statusBus
     end
 
     count = 1
@@ -410,13 +416,13 @@ function addPowermeter!(system, device, powerBus, powerFrom, powerTo, default, p
         device.layout.from[i] = true
         device.layout.to[i + 1] = true
 
-        device.power.variance[i] = topu(varianceFrom, default.varianceFrom, prefixPower, basePowerInv)
-        device.power.mean[i] = powerFrom[count] + device.power.variance[i]^(1/2) * randn(1)[1]
-        device.power.status[i] = statusFrom
+        measure.variance[i] = topu(varianceFrom, default.varianceFrom, prefixPower, basePowerInv)
+        measure.mean[i] = powerFrom[count] + measure.variance[i]^(1/2) * randn(1)[1]
+        measure.status[i] = statusFrom
 
-        device.power.variance[i + 1] = topu(varianceTo, default.varianceTo, prefixPower, basePowerInv)
-        device.power.mean[i + 1] = powerTo[count] + device.power.variance[i + 1]^(1/2) * randn(1)[1]
-        device.power.status[i + 1] = statusTo
+        measure.variance[i + 1] = topu(varianceTo, default.varianceTo, prefixPower, basePowerInv)
+        measure.mean[i + 1] = powerTo[count] + measure.variance[i + 1]^(1/2) * randn(1)[1]
+        measure.status[i + 1] = statusTo
 
         count += 1
     end
@@ -473,7 +479,7 @@ function updateWattmeter!(system::PowerSystem, device::Measurement; label::L,
     index = wattmeter.label[getLabel(wattmeter, label, "wattmeter")]
     basePowerInv = 1 / (system.base.power.value * system.base.power.prefix)
 
-    updateMeter(wattmeter.power, index, active, variance, status, noise,
+    updateMeter(wattmeter.active, index, active, variance, status, noise,
         prefix.activePower, basePowerInv)
 end
 
@@ -526,7 +532,7 @@ function updateVarmeter!(system::PowerSystem, device::Measurement; label::L,
     index = varmeter.label[getLabel(varmeter, label, "varmeter")]
     basePowerInv = 1 / (system.base.power.value * system.base.power.prefix)
 
-    updateMeter(varmeter.power, index, reactive, variance, status, noise,
+    updateMeter(varmeter.reactive, index, reactive, variance, status, noise,
         prefix.reactivePower, basePowerInv)
 end
 

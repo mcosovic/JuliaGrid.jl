@@ -72,10 +72,10 @@ function measurement()
     gauss = GaussMeter(copy(af), copy(af), copy(ai8))
 
     return Measurement(
-        BusMeter(copy(label), deepcopy(gauss), busLayout, 0),
-        BranchMeter(copy(label), deepcopy(gauss), branchLayout, 0),
-        MultiMeter(copy(label), deepcopy(gauss), deepcopy(layout), 0),
-        MultiMeter(copy(label), deepcopy(gauss), deepcopy(layout), 0),
+        Voltmeter(copy(label), deepcopy(gauss), busLayout, 0),
+        Ammeter(copy(label), deepcopy(gauss), branchLayout, 0),
+        Wattmeter(copy(label), deepcopy(gauss), deepcopy(layout), 0),
+        Varmeter(copy(label), deepcopy(gauss), deepcopy(layout), 0),
         PMU(copy(label), deepcopy(gauss), deepcopy(gauss), deepcopy(layout), 0)
     )
 end
