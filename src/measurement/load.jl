@@ -131,7 +131,7 @@ function loadWattmeter(device::Measurement, hdf5::HDF5.File)
     if haskey(hdf5, "wattmeter")
         wattmeter = device.wattmeter
         loadLabel(wattmeter, hdf5; meter = "wattmeter")
-        loadMeter(wattmeter.power, hdf5["wattmeter/power"], wattmeter.number)
+        loadMeter(wattmeter.active, hdf5["wattmeter/active"], wattmeter.number)
 
         layout = hdf5["wattmeter/layout"]
         wattmeter.layout.index = readHDF5(layout, "index", wattmeter.number)
@@ -146,7 +146,7 @@ function loadVarmeter(device::Measurement, hdf5::HDF5.File)
     if haskey(hdf5, "varmeter")
         varmeter = device.varmeter
         loadLabel(varmeter, hdf5; meter = "varmeter")
-        loadMeter(varmeter.power, hdf5["varmeter/power"], varmeter.number)
+        loadMeter(varmeter.reactive, hdf5["varmeter/reactive"], varmeter.number)
 
         layout = hdf5["varmeter/layout"]
         varmeter.layout.index = readHDF5(layout, "index", varmeter.number)

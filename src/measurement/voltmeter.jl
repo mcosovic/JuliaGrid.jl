@@ -148,7 +148,6 @@ function addVoltmeter!(system::PowerSystem, device::Measurement, analysis::AC;
     status = unitless(status, default.status)
     checkStatus(status)
 
-    voltmeter.number = copy(system.bus.number)
     voltmeter.layout.index = collect(1:system.bus.number)
     voltmeter.label = Dict{String,Int64}(); sizehint!(voltmeter.label, voltmeter.number)
 
@@ -159,6 +158,7 @@ function addVoltmeter!(system::PowerSystem, device::Measurement, analysis::AC;
     prefixInv = 1 / system.base.voltage.prefix
     label = collect(keys(sort(system.bus.label; byvalue = true)))
     @inbounds for i = 1:system.bus.number
+        voltmeter.number += 1
         labelBus = getLabel(system.bus, label[i], "bus")
         setLabel(voltmeter, missing, default.label, labelBus)
 

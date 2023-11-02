@@ -369,6 +369,10 @@ end
 function addPowermeter!(system, device, measure, powerBus, powerFrom, powerTo, default, 
     prefixPower, varianceBus, varianceFrom, varianceTo, statusBus, statusFrom, statusTo)
 
+    if isempty(powerBus)
+        throw(ErrorException("The powers cannot be found."))
+    end
+
     statusBus = unitless(statusBus, default.statusBus)
     checkStatus(statusBus)
 
@@ -378,21 +382,23 @@ function addPowermeter!(system, device, measure, powerBus, powerFrom, powerTo, d
     statusTo = unitless(statusTo, default.statusTo)
     checkStatus(statusTo)
 
-    device.number = system.bus.number + 2 * system.branch.number
-    device.label = Dict{String,Int64}(); sizehint!(device.label, device.number)
+    deviceNumber = system.bus.number + 2 * system.branch.number
 
-    device.layout.index = fill(0, device.number)
-    device.layout.bus = fill(false, device.number)
-    device.layout.from = fill(false, device.number)
-    device.layout.to = fill(false, device.number)
+    device.label = Dict{String,Int64}(); sizehint!(device.label, deviceNumber)
 
-    measure.mean = fill(0.0, device.number)
+    device.layout.index = fill(0, deviceNumber)
+    device.layout.bus = fill(false, deviceNumber)
+    device.layout.from = fill(false, deviceNumber)
+    device.layout.to = fill(false, deviceNumber)
+
+    measure.mean = fill(0.0, deviceNumber)
     measure.variance = similar(measure.mean)
-    measure.status = fill(Int8(0), device.number)
+    measure.status = fill(Int8(0), deviceNumber)
 
     basePowerInv = 1 / (system.base.power.value * system.base.power.prefix)
     label = collect(keys(sort(system.bus.label; byvalue = true)))
     @inbounds for i = 1:system.bus.number
+        device.number += 1
         labelBus = getLabel(system.bus, label[i], "bus")
         setLabel(device, missing, default.label, labelBus)
 
@@ -408,7 +414,11 @@ function addPowermeter!(system, device, measure, powerBus, powerFrom, powerTo, d
     label = collect(keys(sort(system.branch.label; byvalue = true)))
     @inbounds for i = (system.bus.number + 1):2:device.number
         labelBranch = getLabel(system.branch, label[count], "branch")
+
+        device.number += 1
         setLabel(device, missing, default.label, labelBranch; prefix = "From ")
+
+        device.number += 1
         setLabel(device, missing, default.label, labelBranch; prefix = "To ")
 
         device.layout.index[i] = count

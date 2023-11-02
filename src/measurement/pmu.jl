@@ -234,6 +234,13 @@ function addPmu!(system::PowerSystem, device::Measurement, analysis::AC;
     varianceMagnitudeTo::T = missing, varianceAngleTo::T = missing,
     statusMagnitudeTo::T = missing, statusAngleTo::T = missing)
 
+    if isempty(analysis.voltage.magnitude)
+        throw(ErrorException("The voltages cannot be found."))
+    end
+    if isempty(analysis.current.from.magnitude)
+        throw(ErrorException("The currents cannot be found."))
+    end
+
     pmu = device.pmu
     default = template.pmu
 
@@ -252,17 +259,17 @@ function addPmu!(system::PowerSystem, device::Measurement, analysis::AC;
     statusAngleTo = unitless(statusAngleTo, default.statusAngleTo)
     checkStatus(statusAngleTo)
 
-    pmu.number = system.bus.number + 2 * system.branch.number
-    pmu.label = Dict{String,Int64}(); sizehint!(pmu.label, pmu.number)
+    pmuNumber = system.bus.number + 2 * system.branch.number
+    pmu.label = Dict{String,Int64}(); sizehint!(pmu.label, pmuNumber)
 
-    pmu.layout.index = fill(0, pmu.number)
-    pmu.layout.bus = fill(false, pmu.number)
-    pmu.layout.from = fill(false, pmu.number)
-    pmu.layout.to = fill(false, pmu.number)
+    pmu.layout.index = fill(0, pmuNumber)
+    pmu.layout.bus = fill(false, pmuNumber)
+    pmu.layout.from = fill(false, pmuNumber)
+    pmu.layout.to = fill(false, pmuNumber)
 
-    pmu.magnitude.mean = fill(0.0, pmu.number)
+    pmu.magnitude.mean = fill(0.0, pmuNumber)
     pmu.magnitude.variance = similar(pmu.magnitude.mean)
-    pmu.magnitude.status = fill(Int8(0), pmu.number)
+    pmu.magnitude.status = fill(Int8(0), pmuNumber)
 
     pmu.angle.mean = similar(pmu.magnitude.mean)
     pmu.angle.variance = similar(pmu.magnitude.mean)
@@ -272,6 +279,7 @@ function addPmu!(system::PowerSystem, device::Measurement, analysis::AC;
     label = collect(keys(sort(system.bus.label; byvalue = true)))
     @inbounds for i = 1:system.bus.number
         labelBus = getLabel(system.bus, label[i], "bus")
+        pmu.number += 1
         setLabel(pmu, missing, default.label, labelBus)
 
         pmu.layout.index[i] = i
@@ -291,7 +299,11 @@ function addPmu!(system::PowerSystem, device::Measurement, analysis::AC;
     label = collect(keys(sort(system.branch.label; byvalue = true)))
     @inbounds for i = (system.bus.number + 1):2:pmu.number
         labelBranch = getLabel(system.branch, label[count], "branch")
+        
+        pmu.number += 1
         setLabel(pmu, missing, default.label, labelBranch; prefix = "From ")
+        
+        pmu.number += 1
         setLabel(pmu, missing, default.label, labelBranch; prefix = "To ")
 
         pmu.layout.index[i] = count

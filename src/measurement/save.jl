@@ -62,7 +62,7 @@ end
 function saveWattmeter(wattmeter::Wattmeter, file)
     if wattmeter.number != 0
         saveLabel(wattmeter, file; fid = "wattmeter")
-        saveMeter(wattmeter, wattmeter.power, file; name = "wattmeter/power", si = "watt (W)")
+        saveMeter(wattmeter, wattmeter.active, file; name = "wattmeter/active", si = "watt (W)")
         saveLayout(wattmeter.layout.index, file; fid = "wattmeter/layout/index")
         saveLayout(wattmeter.layout.bus, file; fid = "wattmeter/layout/bus")
         saveLayout(wattmeter.layout.from, file; fid = "wattmeter/layout/from")
@@ -74,7 +74,7 @@ end
 function saveVarmeter(varmeter::Varmeter, file)
     if varmeter.number != 0
         saveLabel(varmeter, file; fid = "varmeter")
-        saveMeter(varmeter, varmeter.power, file; name = "varmeter/power", si = "volt-amperes reactive (VAr)")
+        saveMeter(varmeter, varmeter.reactive, file; name = "varmeter/reactive", si = "volt-amperes reactive (VAr)")
         saveLayout(varmeter.layout.index, file; fid = "varmeter/layout/index")
         saveLayout(varmeter.layout.bus, file; fid = "varmeter/layout/bus")
         saveLayout(varmeter.layout.from, file; fid = "varmeter/layout/from")

@@ -177,6 +177,10 @@ function addAmmeter!(system::PowerSystem, device::Measurement, analysis::AC;
     varianceFrom::T = missing, varianceTo::T = missing,
     statusFrom::T = missing, statusTo::T = missing)
 
+    if isempty(analysis.current.from.magnitude)
+        throw(ErrorException("The currents cannot be found."))
+    end
+
     ammeter = device.ammeter
     default = template.ammeter
 
@@ -186,23 +190,27 @@ function addAmmeter!(system::PowerSystem, device::Measurement, analysis::AC;
     statusTo = unitless(statusTo, default.statusTo)
     checkStatus(statusTo)
 
-    ammeter.number = 2 * system.branch.number
-    ammeter.label = Dict{String,Int64}(); sizehint!(ammeter.label, ammeter.number)
+    ammeterNumber = 2 * system.branch.number
+    ammeter.label = Dict{String,Int64}(); sizehint!(ammeter.label, ammeterNumber)
 
-    ammeter.layout.index = fill(0, ammeter.number)
-    ammeter.layout.from = fill(false, ammeter.number)
-    ammeter.layout.to = fill(false, ammeter.number)
+    ammeter.layout.index = fill(0, ammeterNumber)
+    ammeter.layout.from = fill(false, ammeterNumber)
+    ammeter.layout.to = fill(false, ammeterNumber)
 
-    ammeter.magnitude.mean = fill(0.0, ammeter.number)
+    ammeter.magnitude.mean = fill(0.0, ammeterNumber)
     ammeter.magnitude.variance = similar(ammeter.magnitude.mean)
-    ammeter.magnitude.status = fill(Int8(0), ammeter.number)
+    ammeter.magnitude.status = fill(Int8(0), ammeterNumber)
 
     count = 1
     basePowerInv = 1 / (system.base.power.value * system.base.power.prefix)
     label = collect(keys(sort(system.branch.label; byvalue = true)))
-    @inbounds for i = 1:2:ammeter.number
+    @inbounds for i = 1:2:ammeterNumber
         labelBranch = getLabel(system.branch, label[count], "branch")
+
+        ammeter.number += 1
         setLabel(ammeter, missing, default.label, labelBranch; prefix = "From ")
+
+        ammeter.number += 1
         setLabel(ammeter, missing, default.label, labelBranch; prefix = "To ")
 
         ammeter.layout.index[i] = count
