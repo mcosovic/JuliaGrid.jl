@@ -1,4 +1,4 @@
-using JuliaGrid
+module JuliaGrid
 
 using SparseArrays, LinearAlgebra, SuiteSparse, Random
 using JuMP
