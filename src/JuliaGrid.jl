@@ -1,5 +1,3 @@
-module JuliaGridTest
-
 using JuliaGrid
 
 using SparseArrays, LinearAlgebra, SuiteSparse, Random
