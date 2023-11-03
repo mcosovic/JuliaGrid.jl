@@ -28,6 +28,16 @@ Moreover, it is feasible to modify the parameters of measurement devices. When t
 !!! tip "Tip"
     The functions for adding or updating measurement devices serve a dual purpose. While their primary function is to modify the `Measurement` composite type, they are also designed to accept various analysis models like AC or DC state estimation models. When feasible, these functions not only modify the `Measurement` type but also adapt the analysis model, often resulting in improved computational efficiency. Detailed instructions on utilizing this feature can be found in dedicated manuals for specific analyses.
 
+Finally, the user has the capability to randomly alter the measurement set by activating or deactivating devices through the following function:
+* [`status!`](@ref status!).
+
+Furthermore, we provide users with the ability to modify each specific measurement set by utilizing the functions:
+* [`statusVoltmeter!`](@ref statusVoltmeter!), 
+* [`statusAmmeter!`](@ref statusAmmeter!), 
+* [`statusWattmeter!`](@ref statusWattmeter!), 
+* [`statusVarmeter!`](@ref statusVarmeter!), 
+* [`statusPmu!`](@ref statusPmu!).
+
 ---
 
 ## [Build Model](@id BuildMeasurementModelManual)
@@ -67,7 +77,7 @@ In this context, we have created the voltmeter responsible for measuring the mag
 
 Furthermore, we have established the wattmeter to measure the active power flow at the "from" bus end of `Branch 1`, with corresponding mean and variance values also expressed in per-units:
 ```@repl buildModelScratch
-[device.wattmeter.power.mean device.wattmeter.power.variance]
+[device.wattmeter.active.mean device.wattmeter.active.variance]
 ```
 
 It is worth noting that the measurement means are obtained by introducing white Gaussian noise with `variance` values to perturb the `magnitude` and `active` parameters.
@@ -207,7 +217,7 @@ In this scenario, one wattmeter has been added to measure the active power injec
 
 The measurement values for the first and second wattmeters are obtained by adding white Gaussian noise with the specified `variance` to the `active` value. However, for the third wattmeter, we assume that we already have the measurement value, defined by `active`, and this is accomplished by setting `noise = false`. As a result, the measurement data is as follows:
 ```@repl addWattmeter
-[device.wattmeter.power.mean device.wattmeter.power.variance]
+[device.wattmeter.active.mean device.wattmeter.active.variance]
 ```
 
 !!! note "Info"
@@ -236,7 +246,7 @@ addWattmeter!(system, device; to = "Branch 1", active = 10, variance = 1, noise 
 
 In this example, we have chosen to specify the `active` and `variance` in megawatts (MW), but even though we have used megawatts as the input units, these keywords will still be stored in the per-unit system:
 ```@repl addWattmeterSI
-[device.wattmeter.power.mean device.wattmeter.power.variance]
+[device.wattmeter.active.mean device.wattmeter.active.variance]
 ```
 
 ---
@@ -261,7 +271,7 @@ addVarmeter!(system, device; to = "Branch 1", reactive = 0.05, variance = 1e-2, 
 
 In this context, one varmeter has been added to measure the reactive power injection at `Bus 1`, as indicated by the use of the `bus` keyword. Additionally, two varmeters have been introduced to measure the reactive power flow on both sides of `Branch 1` using the `from` and `to` keywords. As a result, the following outcomes are observed:
 ```@repl addVarmeter
-[device.varmeter.power.mean device.varmeter.power.variance]
+[device.varmeter.reactive.mean device.varmeter.reactive.variance]
 ```
 
 !!! note "Info"
@@ -290,7 +300,7 @@ addVarmeter!(system, device; to = "Branch 1", reactive = 5, variance = 1, noise 
 
 JuliaGrid will still store the values in the per-unit system:
 ```@repl addVarmeterSI
-[device.varmeter.power.mean device.varmeter.power.variance]
+[device.varmeter.reactive.mean device.varmeter.reactive.variance]
 ```
 
 ---
@@ -578,6 +588,12 @@ label[index]
 
 This procedure is applicable to all measurement devices, including voltmeters, ammeters, varmeters, and PMUs.
 
+!!! tip "Tip"
+    JuliaGrid offers the capability to print labels alongside various types of data. For instance, users can use the following code to print labels in combination with specific data:
+    ```@repl retrievingLabels
+    print(device.wattmeter.label, device.wattmeter.active.mean)
+    ```
+
 ---
 
 ## [Add Device Groups](@id AddDeviceGroupsManual)
@@ -696,3 +712,91 @@ nothing  # hide
 In this example, we adjust the magnitude measurement value of the PMU situated at `Bus 1`, and this measurement is now generated without the use of white Gaussian noise. For the PMU positioned at `Branch 1` on the "from" bus end, we maintain the existing measurement values and solely modify the angle measurement variance.
 
 
+---
+
+## [Measurement Set](@id MeasurementSetManual)
+Once measurement devices are integrated into the `Measurement` composite type, we empower users to create measurement sets in a randomized manner. To be more precise, users can manipulate the status of devices, activating or deactivating them according to specific settings. To illustrate this feature, let us first create a measurement set using the following example:
+```@example measurementSet
+using JuliaGrid # hide
+@default(unit) # hide
+@default(template) # hide
+
+system = powerSystem()
+
+addBus!(system; label = "Bus 1", type = 3, active = 0.5, magnitude = 0.9, angle = 0.0)
+addBus!(system; label = "Bus 2", type = 1, reactive = 0.05, magnitude = 1.1, angle = -0.1)
+addBus!(system; label = "Bus 3", type = 1, active = 0.5, magnitude = 1.0, angle = -0.2)
+
+@branch(resistance = 0.03, susceptance = 0.02)
+addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.5)
+addBranch!(system; label = "Branch 2", from = "Bus 1", to = "Bus 3", reactance = 0.1)
+addBranch!(system; label = "Branch 3", from = "Bus 2", to = "Bus 3", reactance = 0.2)
+
+addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 0.2)
+addGenerator!(system; label = "Generator 2", bus = "Bus 2", active = 1.2)
+
+acModel!(system)
+
+analysis = newtonRaphson(system)
+for iteration = 1:100
+    stopping = mismatch!(system, analysis)
+    if all(stopping .< 1e-8)
+        break
+    end
+    solve!(system, analysis)
+end
+power!(system, analysis)
+current!(system, analysis)
+
+device = measurement()
+
+addVoltmeter!(system, device, analysis)
+addAmmeter!(system, device, analysis)
+addPmu!(system, device, analysis)
+
+nothing  # hide
+```
+
+---
+
+##### Activating Devices
+As a starting point, we create the measurement set where all devices are set to in-service mode based on default settings. In this instance, we generate the measurement set comprising 3 voltmeters, 6 ammeters, and 9 PMUs. Subsequently, we offer users the ability to manipulate the status of in-service devices using the [`status!`](@ref status!) function. For example, within this set, if we wish to have only 12 out of the total 18 devices in-service while the rest are out-of-service, we can accomplish this as follows:
+```@example measurementSet
+status!(system, device; inservice = 12)
+nothing  # hide
+```
+Upon executing this function, 12 devices will be randomly selected to be in-service, while the remaining 6 will be set to out-of-service.
+
+Furthermore, users can fine-tune the manipulation of specific measurements. Let us say we want to activate only 2 ammeters while deactivating the remaining ammeters:
+```@example measurementSet
+statusAmmeter!(system, device; inservice = 2)
+nothing  # hide
+```
+This action will result in 2 ammeters being in-service and 4 being out-of-service.  
+
+Users also have the option to further refine these actions by specifying devices at particular locations within the power system. For instance, we can enable 3 PMUs at buses to measure bus voltage phasors while deactivating all PMUs at branches that measure current phasors:
+```@example measurementSet
+statusPmu!(system, device; inserviceBus = 3, inserviceFrom = 0, inserviceTo = 0)
+nothing  # hide
+```
+The outcome will be that 3 PMUs are set to in-service at buses for voltage phasor measurement, while all PMUs at branches measuring current phasors will be in out-of-service mode.
+
+---
+
+##### Deactivating Devices
+Likewise, we empower users to specify the number of devices to be set as out-of-service rather than defining the number of in-service devices. For instance, if the intention is to deactivate just 2 devices from the total measurement set, it can be achieved as follows:
+```@example measurementSet
+status!(system, device; outservice = 2)
+nothing  # hide
+```
+In this scenario 2 devices will be randomly deactivated, while the rest will remain in in-service status. Similar to the previous approach, users can apply this to specific devices or employ fine-tuning as needed.
+
+---
+
+##### Activating Devices Using Redundancy
+Furthermore, users can take advantage of redundancy, which represents the ratio between measurement devices and state variables. For example, if we wish to have the number of measurement devices be 1.2 times greater than the number of state variables, we can utilize the following command:
+```@example measurementSet
+status!(system, device; redundancy = 1.2)
+nothing  # hide
+```
+Considering that the number of state variables is 5 (excluding the voltage angle related to the slack bus), using a redundancy value of 1.2 will result in 6 devices being set to in-service, while the remainder will be deactivated. As with the previous methods, users can apply this to specific devices or fine-tune the settings according to their requirements.
