@@ -25,7 +25,8 @@ makedocs(
              "AC Power Flow" => "tutorials/acPowerFlow.md",
              "DC Power Flow" => "tutorials/dcPowerFlow.md",
              "AC Optimal Power Flow" => "tutorials/acOptimalPowerFlow.md",
-             "DC Optimal Power Flow" => "tutorials/dcOptimalPowerFlow.md"],
+             "DC Optimal Power Flow" => "tutorials/dcOptimalPowerFlow.md",
+             "Measurement Model" => "tutorials/measurementModel.md"],
         "API Reference" =>
             ["Power System Model" => "api/powerSystemModel.md",
              "Power Flow" => "api/powerFlow.md",
