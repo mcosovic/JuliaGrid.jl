@@ -33,26 +33,26 @@ To review, we can conceptualize the bus/branch model as the graph denoted by ``\
 ℰ = [𝒩[system.branch.layout.from] 𝒩[system.branch.layout.to]]
 ```
 
-Moreover, we identify the set of generators as ``\mathcal{P} = \{1, \dots, n_g\}`` within the power system. For the specific example at hand, it can be represented as:
+Moreover, we identify the set of generators as ``\mathcal{S} = \{1, \dots, n_g\}`` within the power system. For the specific example at hand, it can be represented as:
 ```@repl DCOptimalPowerFlow
-𝒫 = collect(keys(sort(system.generator.label)))
+𝒮 = collect(keys(sort(system.generator.label)))
 ```
 
 !!! ukw "Notation"
-    In this section, when referring to a vector ``\mathbf{a}``, we use the notation ``\mathbf{a} = [a_{i}]`` or ``\mathbf{a} = [a_{ij}]``, where ``a_i`` represents the element associated with bus ``i \in \mathcal{N}`` or generator ``i \in \mathcal{P}``, while ``a_{ij}`` denotes the element associated with branch ``(i,j) \in \mathcal{E}``.
+    In this section, when referring to a vector ``\mathbf{a}``, we use the notation ``\mathbf{a} = [a_{i}]`` or ``\mathbf{a} = [a_{ij}]``, where ``a_i`` represents the element associated with bus ``i \in \mathcal{N}`` or generator ``i \in \mathcal{S}``, while ``a_{ij}`` denotes the element associated with branch ``(i,j) \in \mathcal{E}``.
 
 ---
 
 ## [Optimal Power Flow Model](@id DCOptimalPowerFlowModelTutorials)
-In the DC optimal power flow, the active power outputs of the generators ``\mathbf {P}_{\text{g}} = [{P}_{\text{g}i}]``, ``i \in \mathcal{P}``, are represented as linear functions of the bus voltage angles ``\boldsymbol{\theta} = [{\theta}_{i}]``, ``i \in \mathcal{N}``. Therefore, the optimization variables in this model are the active power outputs of the generators and the bus voltage angles. The DC optimal power flow model has the form:
+In the DC optimal power flow, the active power outputs of the generators ``\mathbf {P}_{\text{g}} = [{P}_{\text{g}i}]``, ``i \in \mathcal{S}``, are represented as linear functions of the bus voltage angles ``\boldsymbol{\theta} = [{\theta}_{i}]``, ``i \in \mathcal{N}``. Therefore, the optimization variables in this model are the active power outputs of the generators and the bus voltage angles. The DC optimal power flow model has the form:
 ```math
 \begin{aligned}
-    & {\text{minimize}} & & \sum_{i \in \mathcal{P}} f_i(P_{\text{g}i}) \\
+    & {\text{minimize}} & & \sum_{i \in \mathcal{S}} f_i(P_{\text{g}i}) \\
     & \text{subject\;to} & &  \theta_i - \theta_{\text{slack}} = 0,\;\;\; i \in \mathcal{N_{\text{sb}}}  \\[3pt]
     & & & h_{P_i}(\mathbf {P}_{\text{g}}, \boldsymbol{\theta}) = 0,\;\;\;  \forall i \in \mathcal{N} \\[3pt]
     & & & \theta_{ij}^\text{min} \leq \theta_i - \theta_j \leq \theta_{ij}^\text{max},\;\;\; \forall (i,j) \in \mathcal{E} \\[3pt]
     & & &  - P_{ij}^{\text{max}} \leq h_{P_{ij}}(\theta_i, \theta_j) \leq P_{ij}^{\text{max}},\;\;\; \forall (i,j) \in \mathcal{E} \\[3pt]
-    & & & P_{\text{g}i}^\text{min} \leq P_{\text{g}i} \leq P_{\text{g}i}^\text{max} ,\;\;\; \forall i \in \mathcal{P}.
+    & & & P_{\text{g}i}^\text{min} \leq P_{\text{g}i} \leq P_{\text{g}i}^\text{max} ,\;\;\; \forall i \in \mathcal{S}.
 \end{aligned}
 ```
 
@@ -76,7 +76,7 @@ nothing # hide
 ---
 
 ##### Optimization Variables
-Hence, the variables in this model encompass the active power outputs of the generators denoted as ``\mathbf{P}_{\text{g}} = [{P}_{\text{g}i}]``, where ``i \in \mathcal{P}``, and the bus voltage angles represented by ``\boldsymbol{\theta} = [{\theta}_{i}]``, where ``i \in \mathcal{N}``. You can access these variables using the following code:
+Hence, the variables in this model encompass the active power outputs of the generators denoted as ``\mathbf{P}_{\text{g}} = [{P}_{\text{g}i}]``, where ``i \in \mathcal{S}``, and the bus voltage angles represented by ``\boldsymbol{\theta} = [{\theta}_{i}]``, where ``i \in \mathcal{N}``. You can access these variables using the following code:
 ```@repl DCOptimalPowerFlow
 𝐏ₒ = analysis.variable.active
 𝛉 = analysis.variable.angle
@@ -85,7 +85,7 @@ Hence, the variables in this model encompass the active power outputs of the gen
 ---
 
 ## Objective Function
-The objective function represents the sum of the active power cost functions ``f_i(P_{\text{g}i})``, ``i \in \mathcal{P}``, for each generator, where these cost functions can be polynomial or linear piecewise functions. It is important to note that only polynomial cost functions up to the second degree are included in the objective function. If higher-degree polynomials are present, they will be excluded from the objective function by JuliaGrid.
+The objective function represents the sum of the active power cost functions ``f_i(P_{\text{g}i})``, ``i \in \mathcal{S}``, for each generator, where these cost functions can be polynomial or linear piecewise functions. It is important to note that only polynomial cost functions up to the second degree are included in the objective function. If higher-degree polynomials are present, they will be excluded from the objective function by JuliaGrid.
 
 ---
 
@@ -183,9 +183,9 @@ h_{P_i}(\mathbf {P}_{\text{g}}, \boldsymbol{\theta}) = 0,\;\;\;  \forall i \in \
 ```
 The equation is derived using the [Nodal Network Equations](@ref DCNodalNetworkEquationsTutorials) and can be represented as:
 ```math
-h_{P_i}(\mathbf {P}_{\text{g}}, \boldsymbol{\theta}) = \sum_{k \in \mathcal{P}_i} P_{\text{g}k} - \sum_{k = 1}^n {B}_{ik} \theta_k - P_{\text{d}i} - P_{\text{sh}i} - P_{\text{tr}i}.
+h_{P_i}(\mathbf {P}_{\text{g}}, \boldsymbol{\theta}) = \sum_{k \in \mathcal{S}_i} P_{\text{g}k} - \sum_{k = 1}^n {B}_{ik} \theta_k - P_{\text{d}i} - P_{\text{sh}i} - P_{\text{tr}i}.
 ```
-In this equation, the set ``\mathcal{P}_i \subseteq \mathcal{P}`` encompasses all generators connected to bus ``i \in \mathcal{N}``, and ``P_{\text{g}k}`` represents the active power output of the ``k``-th generator within the set ``\mathcal{P}_i``. More precisely, the variable ``P_{\text{g}k}`` represents the optimization variable, as well as the bus voltage angle ``\theta_k``.
+In this equation, the set ``\mathcal{S}_i \subseteq \mathcal{S}`` encompasses all generators connected to bus ``i \in \mathcal{N}``, and ``P_{\text{g}k}`` represents the active power output of the ``k``-th generator within the set ``\mathcal{S}_i``. More precisely, the variable ``P_{\text{g}k}`` represents the optimization variable, as well as the bus voltage angle ``\theta_k``.
 
 The constant terms in these equations are determined by the active power demand at bus ``P_{\text{d}i}``, the active power demanded by the shunt element ``P_{\text{sh}i}``, and power related to the shift angle of the phase transformers ``P_{\text{tr}i}``. The values representing these constant terms ``\mathbf{P}_{\text{d}} = [P_{\text{d}i}]``, ``\mathbf{P}_{\text{sh}} = [P_{\text{sh}i}]``, and ``\mathbf{P}_{\text{tr}} = [P_{\text{tr}i}]``, ``i, \in \mathcal{N}``, can be accessed as follows:
 ```@repl DCOptimalPowerFlow
@@ -243,10 +243,10 @@ print(analysis.constraint.flow.active)
 ##### Active Power Capability Constraints
 The inequality constraints associated with the minimum and maximum active power outputs of the generators are defined as follows:
 ```math
-P_{\text{g}i}^\text{min} \leq P_{\text{g}i} \leq P_{\text{g}i}^\text{max} ,\;\;\; \forall i \in \mathcal{P}.
+P_{\text{g}i}^\text{min} \leq P_{\text{g}i} \leq P_{\text{g}i}^\text{max} ,\;\;\; \forall i \in \mathcal{S}.
 ```
 
-In this representation, the lower and upper bounds are determined by the vector ``\mathbf{P}_{\text{lm}} = [P_{\text{g}i}^\text{min}, P_{\text{g}i}^\text{max}]``, ``i \in \mathcal{P}``. We can access these bounds using the following variable:
+In this representation, the lower and upper bounds are determined by the vector ``\mathbf{P}_{\text{lm}} = [P_{\text{g}i}^\text{min}, P_{\text{g}i}^\text{max}]``, ``i \in \mathcal{S}``. We can access these bounds using the following variable:
 ```@repl DCOptimalPowerFlow
 𝐏ₗₘ = [system.generator.capability.minActive system.generator.capability.maxActive]
 ```
@@ -266,7 +266,7 @@ solve!(system, analysis)
 nothing # hide
 ```
 
-Therefore, to get the vector of output active power of generators ``\mathbf{P}_{\text{g}} = [P_{\text{g}i}]``, ``i \in \mathcal{P}``, you can use the following command:
+Therefore, to get the vector of output active power of generators ``\mathbf{P}_{\text{g}} = [P_{\text{g}i}]``, ``i \in \mathcal{S}``, you can use the following command:
 ```@repl DCOptimalPowerFlow
 𝐏ₒ = analysis.power.generator.active
 ```

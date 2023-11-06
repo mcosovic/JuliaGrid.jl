@@ -138,7 +138,7 @@ The output active power of each generator located at bus ``i \in \mathcal{N}_{\t
 ```
 In the case of multiple generators connected to the slack bus, the first generator in the input data is assigned the obtained value of ``P_{\text{g}i}``. Then, this amount of power is reduced by the output active power of the other generators.
 
-To retrieve the vector of active power outputs of generators, denoted as ``\mathbf{P}_{\text{g}} = [P_{\text{g}i}]``, ``i \in \mathcal{P}``, where the set ``\mathcal{P}`` represents the set of generators, users can utilize the following command:
+To retrieve the vector of active power outputs of generators, denoted as ``\mathbf{P}_{\text{g}} = [P_{\text{g}i}]``, ``i \in \mathcal{S}``, where the set ``\mathcal{S}`` represents the set of generators, users can utilize the following command:
 ```@repl PowerFlowSolutionDC
 𝐏ₒ = analysis.power.generator.active
 ```

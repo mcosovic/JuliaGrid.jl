@@ -35,21 +35,21 @@ To review, we can conceptualize the bus/branch model as the graph denoted by ``\
 ℰ = [𝒩[system.branch.layout.from] 𝒩[system.branch.layout.to]]
 ```
 
-Moreover, we identify the set of generators as ``\mathcal{P} = \{1, \dots, n_g\}`` within the power system. For the specific example at hand, it can be represented as:
+Moreover, we identify the set of generators as ``\mathcal{S} = \{1, \dots, n_g\}`` within the power system. For the specific example at hand, it can be represented as:
 ```@repl ACOptimalPowerFlow
-𝒫 = collect(keys(sort(system.generator.label)))
+𝒮 = collect(keys(sort(system.generator.label)))
 ```
 
 !!! ukw "Notation"
-    In this section, when referring to a vector ``\mathbf{a}``, we use the notation ``\mathbf{a} = [a_{i}]`` or ``\mathbf{a} = [a_{ij}]``, where ``a_i`` represents the element associated with bus ``i \in \mathcal{N}`` or generator ``i \in \mathcal{P}``, while ``a_{ij}`` denotes the element associated with branch ``(i,j) \in \mathcal{E}``.
+    In this section, when referring to a vector ``\mathbf{a}``, we use the notation ``\mathbf{a} = [a_{i}]`` or ``\mathbf{a} = [a_{ij}]``, where ``a_i`` represents the element associated with bus ``i \in \mathcal{N}`` or generator ``i \in \mathcal{S}``, while ``a_{ij}`` denotes the element associated with branch ``(i,j) \in \mathcal{E}``.
 
 ---
 
 ## [Optimal Power Flow Model](@id ACOptimalPowerFlowModelTutorials)
-In the AC optimal power flow model, the active power outputs of the generators denoted as ``\mathbf {P}_{\text{g}} = [{P}_{\text{g}i}]``, ``i \in \mathcal{P}``, and reactive power outputs represented as ``\mathbf {Q}_{\text{g}} = [{Q}_{\text{g}i}]``, ``i \in \mathcal{P}``, are expressed as nonlinear functions of the bus voltage magnitudes ``\mathbf {V} = [{V}_{i}]``, ``i \in \mathcal{N}``, and angles ``\boldsymbol{\theta} = [{\theta}_{i}]``, ``i \in \mathcal{N}``. Consequently, the optimization variables in this model consist of the active and reactive power outputs of the generators, as well as the bus voltage magnitudes and angles. The AC optimal power flow problem can be formulated as follows:
+In the AC optimal power flow model, the active power outputs of the generators denoted as ``\mathbf {P}_{\text{g}} = [{P}_{\text{g}i}]``, ``i \in \mathcal{S}``, and reactive power outputs represented as ``\mathbf {Q}_{\text{g}} = [{Q}_{\text{g}i}]``, ``i \in \mathcal{S}``, are expressed as nonlinear functions of the bus voltage magnitudes ``\mathbf {V} = [{V}_{i}]``, ``i \in \mathcal{N}``, and angles ``\boldsymbol{\theta} = [{\theta}_{i}]``, ``i \in \mathcal{N}``. Consequently, the optimization variables in this model consist of the active and reactive power outputs of the generators, as well as the bus voltage magnitudes and angles. The AC optimal power flow problem can be formulated as follows:
 ```math
 \begin{aligned}
-    & {\text{minimize}} & & \sum_{i \in \mathcal{P}} \left [ f_i(P_{\text{g}i}) + f_i(Q_{\text{g}i}) \right ] \\
+    & {\text{minimize}} & & \sum_{i \in \mathcal{S}} \left [ f_i(P_{\text{g}i}) + f_i(Q_{\text{g}i}) \right ] \\
     & \text{subject\;to} & & \theta_i - \theta_{\text{slack}} = 0,\;\;\; i \in \mathcal{N_{\text{sb}}}  \\[4pt]
     & & & h_{P_i}(\mathbf {P}_{\text{g}}, \mathbf {V}, \boldsymbol{\theta}) = 0,\;\;\;  \forall i \in \mathcal{N} \\
     & & & h_{Q_i}(\mathbf {Q}_{\text{g}}, \mathbf {V}, \boldsymbol{\theta}) = 0,\;\;\;  \forall i \in \mathcal{N} \\[4pt]
@@ -57,8 +57,8 @@ In the AC optimal power flow model, the active power outputs of the generators d
     & & & \theta_{ij}^\text{min} \leq \theta_i - \theta_j \leq \theta_{ij}^\text{max},\;\;\; \forall (i,j) \in \mathcal{E} \\[4pt]
     & & & h_{ij}(\mathbf {V}, \boldsymbol{\theta}) \leq F_{ij}^{\text{max}},\;\;\; \forall (i,j) \in \mathcal{E} \\
     & & & h_{ji}(\mathbf {V}, \boldsymbol{\theta}) \leq F_{ij}^{\text{max}},\;\;\; \forall (i,j) \in \mathcal{E} \\[4pt]
-    & & & P_{\text{g}i}^\text{min} \leq P_{\text{g}i} \leq P_{\text{g}i}^\text{max} ,\;\;\; \forall i \in \mathcal{P} \\
-    & & & Q_{\text{g}i}^\text{min} \leq Q_{\text{g}i} \leq Q_{\text{g}i}^\text{max} ,\;\;\; \forall i \in \mathcal{P}.
+    & & & P_{\text{g}i}^\text{min} \leq P_{\text{g}i} \leq P_{\text{g}i}^\text{max} ,\;\;\; \forall i \in \mathcal{S} \\
+    & & & Q_{\text{g}i}^\text{min} \leq Q_{\text{g}i} \leq Q_{\text{g}i}^\text{max} ,\;\;\; \forall i \in \mathcal{S}.
 \end{aligned}
 ```
 
@@ -82,7 +82,7 @@ nothing # hide
 ---
 
 ##### Optimization Variables
-Hence, the variables within this model encompass the active and reactive power outputs of the generators, denoted as ``\mathbf{P}_{\text{g}} = [{P}_{\text{g}i}]`` and ``\mathbf{Q}_{\text{g}} = [{Q}_{\text{g}i}]``, where ``i \in \mathcal{P}``, and the bus voltage magnitudes and angles represented by ``\mathbf{V} = [V_{i}]`` and ``\boldsymbol{\theta} = [{\theta}_{i}]``, where ``i \in \mathcal{N}``. We can access these variables using the following code:
+Hence, the variables within this model encompass the active and reactive power outputs of the generators, denoted as ``\mathbf{P}_{\text{g}} = [{P}_{\text{g}i}]`` and ``\mathbf{Q}_{\text{g}} = [{Q}_{\text{g}i}]``, where ``i \in \mathcal{S}``, and the bus voltage magnitudes and angles represented by ``\mathbf{V} = [V_{i}]`` and ``\boldsymbol{\theta} = [{\theta}_{i}]``, where ``i \in \mathcal{N}``. We can access these variables using the following code:
 ```@repl ACOptimalPowerFlow
 𝐏ₒ = analysis.variable.active
 𝐐ₒ = analysis.variable.reactive
@@ -93,7 +93,7 @@ Hence, the variables within this model encompass the active and reactive power o
 ---
 
 ## Objective Function
-The objective function represents the sum of the active and reactive power cost functions ``f_i(P_{\text{g}i})`` and ``f_i(Q_{\text{g}i})``, where ``i \in \mathcal{P}``, for each generator, where these cost functions can be polynomial or linear piecewise functions. Typically, the AC optimal power flow focuses on minimizing the cost of active power outputs only, but for comprehensive analysis, we also consider the costs associated with reactive power outputs.
+The objective function represents the sum of the active and reactive power cost functions ``f_i(P_{\text{g}i})`` and ``f_i(Q_{\text{g}i})``, where ``i \in \mathcal{S}``, for each generator, where these cost functions can be polynomial or linear piecewise functions. Typically, the AC optimal power flow focuses on minimizing the cost of active power outputs only, but for comprehensive analysis, we also consider the costs associated with reactive power outputs.
 
 ---
 
@@ -201,9 +201,9 @@ h_{P_i}(\mathbf {P}_{\text{g}}, \mathbf {V}, \boldsymbol{\theta}) = 0,\;\;\;  \f
 
 The active power balance equation is derived using the [Bus Injections](@ref BusInjectionsTutorials) and can be represented as:
 ```math
-h_{P_i}(\mathbf {P}_{\text{g}}, \mathbf {V}, \boldsymbol{\theta}) = {V}_{i}\sum\limits_{j=1}^n {V}_{j} (G_{ij}\cos\theta_{ij}+B_{ij}\sin\theta_{ij}) - \sum_{k \in \mathcal{P}_i} P_{\text{g}k} + P_{\text{d}i}.
+h_{P_i}(\mathbf {P}_{\text{g}}, \mathbf {V}, \boldsymbol{\theta}) = {V}_{i}\sum\limits_{j=1}^n {V}_{j} (G_{ij}\cos\theta_{ij}+B_{ij}\sin\theta_{ij}) - \sum_{k \in \mathcal{S}_i} P_{\text{g}k} + P_{\text{d}i}.
 ```
-In this equation, the set ``\mathcal{P}_i \subseteq \mathcal{P}`` encompasses all generators connected to bus ``i \in \mathcal{N}``, and ``P_{\text{g}k}`` represents the active power output of the ``k``-th generator within the set ``\mathcal{P}_i``. More Precisely, the variable ``P_{\text{g}k}`` represents the optimization variable, along with the bus voltage angles ``\theta_{ij} = \theta_i - \theta_j`` and the bus voltage magnitudes ``V_i`` and ``V_j``.
+In this equation, the set ``\mathcal{S}_i \subseteq \mathcal{S}`` encompasses all generators connected to bus ``i \in \mathcal{N}``, and ``P_{\text{g}k}`` represents the active power output of the ``k``-th generator within the set ``\mathcal{S}_i``. More Precisely, the variable ``P_{\text{g}k}`` represents the optimization variable, along with the bus voltage angles ``\theta_{ij} = \theta_i - \theta_j`` and the bus voltage magnitudes ``V_i`` and ``V_j``.
 
 The constant term is determined by the active power demand ``P_{\text{d}i}`` at bus ``i \in \mathcal{N}``. The values representing this constant term, denoted as ``\mathbf{P}_{\text{d}} = [P_{\text{d}i}]``, ``i, \in \mathcal{N}``, can be accessed using the following code:
 ```@repl ACOptimalPowerFlow
@@ -223,9 +223,9 @@ h_{Q_i}(\mathbf {Q}_{\text{g}}, \mathbf {V}, \boldsymbol{\theta}) = 0,\;\;\;  \f
 ```
 The reactive power balance equation is derived using the [Bus Injections](@ref BusInjectionsTutorials) and can be represented as:
 ```math
-h_{Q_i}(\mathbf {Q}_{\text{g}}, \mathbf {V}, \boldsymbol{\theta}) = {V}_{i}\sum\limits_{j=1}^n {V}_{j} (G_{ij}\sin\theta_{ij}-B_{ij}\cos\theta_{ij}) - \sum_{k \in \mathcal{P}_i} Q_{\text{g}k} + Q_{\text{d}i}.
+h_{Q_i}(\mathbf {Q}_{\text{g}}, \mathbf {V}, \boldsymbol{\theta}) = {V}_{i}\sum\limits_{j=1}^n {V}_{j} (G_{ij}\sin\theta_{ij}-B_{ij}\cos\theta_{ij}) - \sum_{k \in \mathcal{S}_i} Q_{\text{g}k} + Q_{\text{d}i}.
 ```
-Similarly, as mentioned earlier for active power, ``Q_{\text{g}k}`` represents the reactive power output of the ``k``-th generator within the set ``\mathcal{P}_i``. The variable ``Q_{\text{g}k}`` serves as optimization variable, as well as the bus voltage angles ``\theta_{ij} = \theta_i - \theta_j``, and the bus voltage magnitudes ``V_i`` and ``V_j``.
+Similarly, as mentioned earlier for active power, ``Q_{\text{g}k}`` represents the reactive power output of the ``k``-th generator within the set ``\mathcal{S}_i``. The variable ``Q_{\text{g}k}`` serves as optimization variable, as well as the bus voltage angles ``\theta_{ij} = \theta_i - \theta_j``, and the bus voltage magnitudes ``V_i`` and ``V_j``.
 
 The constant term is determined by the reactive power demand ``Q_{\text{d}i}`` at bus ``i \in \mathcal{N}``. The values representing this constant term, denoted as ``\mathbf{Q}_{\text{d}} = [Q_{\text{d}i}]``, ``i, \in \mathcal{N}``, can be accessed using the following code:
 ```@repl ACOptimalPowerFlow
@@ -359,10 +359,10 @@ These coefficients remain the same as those specified for apparent powers. Simil
 ##### [Power Capability Constraints](@id ACPowerCapabilityConstraintsTutorials)
 The next set of constraints pertains to the minimum and maximum limits of active and reactive power outputs of the generators. These constraints ensure that the power outputs of the generators remain within specified bounds:
 ```math
-P_{\text{g}i}^\text{min} \leq P_{\text{g}i} \leq P_{\text{g}i}^\text{max} ,\;\;\; \forall i \in \mathcal{P}.
+P_{\text{g}i}^\text{min} \leq P_{\text{g}i} \leq P_{\text{g}i}^\text{max} ,\;\;\; \forall i \in \mathcal{S}.
 ```
 
-In this representation, the lower and upper limits are determined by the vector ``\mathbf{P}_{\text{lm}} = [P_{\text{g}i}^\text{min}, P_{\text{g}i}^\text{max}]``, ``i \in \mathcal{P}``. We can access these bounds using the following variable:
+In this representation, the lower and upper limits are determined by the vector ``\mathbf{P}_{\text{lm}} = [P_{\text{g}i}^\text{min}, P_{\text{g}i}^\text{max}]``, ``i \in \mathcal{S}``. We can access these bounds using the following variable:
 ```@repl ACOptimalPowerFlow
 𝐏ₗₘ = [system.generator.capability.minActive system.generator.capability.maxActive]
 ```
@@ -374,10 +374,10 @@ print(analysis.constraint.capability.active)
 
 Similarly, constraints related to the minimum and maximum limits of reactive power outputs of the generators ensure that the reactive powers remain within specified boundaries:
 ```math
-Q_{\text{g}i}^\text{min} \leq Q_{\text{g}i} \leq Q_{\text{g}i}^\text{max} ,\;\;\; \forall i \in \mathcal{P}.
+Q_{\text{g}i}^\text{min} \leq Q_{\text{g}i} \leq Q_{\text{g}i}^\text{max} ,\;\;\; \forall i \in \mathcal{S}.
 ```
 
-Thus, the lower and upper limits are determined by the vector ``\mathbf{Q}_{\text{lm}} = [Q_{\text{g}i}^\text{min}, Q_{\text{g}i}^\text{max}]``, ``i \in \mathcal{P}``. We can access these bounds using the following variable:
+Thus, the lower and upper limits are determined by the vector ``\mathbf{Q}_{\text{lm}} = [Q_{\text{g}i}^\text{min}, Q_{\text{g}i}^\text{max}]``, ``i \in \mathcal{S}``. We can access these bounds using the following variable:
 ```@repl ACOptimalPowerFlow
 𝐐ₗₘ = [system.generator.capability.minReactive system.generator.capability.maxReactive]
 ```
@@ -449,7 +449,7 @@ solve!(system, analysis)
 nothing # hide
 ```
 
-After solving the AC optimal power flow problem, you can retrieve the vectors of output active and reactive power for generators, denoted as ``\mathbf{P}_{\text{g}} = [P_{\text{g}i}]`` and ``\mathbf{Q}_{\text{g}} = [Q_{\text{g}i}]``, where ``i \in \mathcal{P}``, using the following commands:
+After solving the AC optimal power flow problem, you can retrieve the vectors of output active and reactive power for generators, denoted as ``\mathbf{P}_{\text{g}} = [P_{\text{g}i}]`` and ``\mathbf{Q}_{\text{g}} = [Q_{\text{g}i}]``, where ``i \in \mathcal{S}``, using the following commands:
 ```@repl ACOptimalPowerFlow
 𝐏ₒ = analysis.power.generator.active
 𝐐ₒ = analysis.power.generator.reactive
@@ -505,16 +505,16 @@ The function stores the computed powers in the rectangular coordinate system. It
 ##### [Generator Power Injections](@id OptGeneratorPowerInjectionsManual)
 The [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)) function in JuliaGrid also provides the computation of active and reactive power injections from the generators at each bus. To calculate the active power supplied by generators to the buses, one can simply sum the active power outputs of the generators obtained from the AC optimal power flow. This can be represented as follows:
 ```math
-    P_{\text{p}i} = \sum_{k \in \mathcal{P}_i} P_{\text{g}k},\;\;\; \forall i \in \mathcal{N},
+    P_{\text{p}i} = \sum_{k \in \mathcal{S}_i} P_{\text{g}k},\;\;\; \forall i \in \mathcal{N},
 ```
-where the set ``\mathcal{P}_i \subseteq \mathcal{P}`` encompasses all generators connected to bus ``i \in \mathcal{N}``. The active power injections from the generators at each bus are stored as a vector denoted by ``\mathbf{P}_{\text{p}} = [P_{\text{p}i}]``, and can be obtained using the following command:
+where the set ``\mathcal{S}_i \subseteq \mathcal{S}`` encompasses all generators connected to bus ``i \in \mathcal{N}``. The active power injections from the generators at each bus are stored as a vector denoted by ``\mathbf{P}_{\text{p}} = [P_{\text{p}i}]``, and can be obtained using the following command:
 ```@repl ACOptimalPowerFlow
 𝐏ₚ = analysis.power.supply.active
 ```
 
 Similarly, we can obtain the reactive power supplied by generators to the buses:
 ```math
-    Q_{\text{p}i} = \sum_{k \in \mathcal{P}_i} Q_{\text{g}k},\;\;\; \forall  i \in \mathcal{N}.
+    Q_{\text{p}i} = \sum_{k \in \mathcal{S}_i} Q_{\text{g}k},\;\;\; \forall  i \in \mathcal{N}.
 ```
 The vector of these reactive power injections by the generators to the buses, denoted by ``\mathbf{Q}_{\text{p}} = [Q_{\text{p}i}]``, can be retrieved using the following command:
 ```@repl ACOptimalPowerFlow

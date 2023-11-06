@@ -91,14 +91,14 @@ Furthermore, the active power injections ``{P}_{i}`` and reactive power injectio
 ```
 where ``{P}_{\text{d}i}`` and ``{Q}_{\text{d}i}`` denote the active and reactive power demanded at the bus ``i \in \mathcal{N}``, while ``{P}_{\text{p}i}`` and ``{Q}_{\text{p}i}`` correspond to the active and reactive power produced by the generators at the bus ``i \in \mathcal{N}``.
 
-To provide a more comprehensive understanding, it is important to note that each bus ``i \in \mathcal{N}`` has the capacity to host multiple generators. This scenario can be conceptualized by introducing the set ``\mathcal{P}_i``, which encompasses all generators connected to bus ``i \in \mathcal{N}``. With this perspective in mind, we can calculate the values of ``{P}_{\text{p}i}`` and ``{Q}_{\text{p}i}`` as follows:
+To provide a more comprehensive understanding, it is important to note that each bus ``i \in \mathcal{N}`` has the capacity to host multiple generators. This scenario can be conceptualized by introducing the set ``\mathcal{S}_i``, which encompasses all generators connected to bus ``i \in \mathcal{N}``. With this perspective in mind, we can calculate the values of ``{P}_{\text{p}i}`` and ``{Q}_{\text{p}i}`` as follows:
 ```math
   \begin{aligned}
-  	P_{\text{p}i} &= \sum_{k \in \mathcal{P}_i} P_{\text{g}k}\\
-    Q_{\text{p}i} &=  \sum_{k \in \mathcal{P}_i} Q_{\text{g}k},
+  	P_{\text{p}i} &= \sum_{k \in \mathcal{S}_i} P_{\text{g}k}\\
+    Q_{\text{p}i} &=  \sum_{k \in \mathcal{S}_i} Q_{\text{g}k},
   \end{aligned}
 ```
-where ``P_{\text{g}k}`` and ``Q_{\text{g}k}`` represent the active and reactive power outputs of the ``k``-th generator within the set ``\mathcal{P}_i``.
+where ``P_{\text{g}k}`` and ``Q_{\text{g}k}`` represent the active and reactive power outputs of the ``k``-th generator within the set ``\mathcal{S}_i``.
 
 As a way to summarize, the power injection vectors, represented as ``\mathbf{P} = [P_i] `` and ``\mathbf{Q} = [Q_i]`` can be computed based on the following variables and expressions:
 ```@repl PowerFlowSolution
@@ -824,7 +824,7 @@ To obtain the output active powers of each generator connected to bus ``i \in \m
 ```
 In the case of multiple generators connected to the slack bus, the first generator in the input data is assigned the obtained value of ``P_{\text{g}i}``. Then, this amount of power is reduced by the output active power of the other generators.
 
-To retrieve the vector of active power outputs of generators, denoted as ``\mathbf{P}_{\text{g}} = [P_{\text{g}i}]``, ``i \in \mathcal{P}``, where the set ``\mathcal{P}`` represents the set of generators, users can utilize the following command:
+To retrieve the vector of active power outputs of generators, denoted as ``\mathbf{P}_{\text{g}} = [P_{\text{g}i}]``, ``i \in \mathcal{S}``, where the set ``\mathcal{S}`` represents the set of generators, users can utilize the following command:
 ```@repl PowerFlowSolution
 𝐏ₒ = analysis.power.generator.active
 ```
@@ -835,7 +835,7 @@ The output reactive powers of each generator located at the bus is obtained as:
 ```
 If there are multiple generators at the same bus, the reactive power is allocated proportionally among the generators based on their reactive power capabilities.
 
-To retrieve the vector of reactive power outputs of generators, denoted as ``\mathbf{Q}_{\text{g}} = [Q_{\text{g}i}]``, ``i \in \mathcal{P}``, users can utilize the following command:
+To retrieve the vector of reactive power outputs of generators, denoted as ``\mathbf{Q}_{\text{g}} = [Q_{\text{g}i}]``, ``i \in \mathcal{S}``, users can utilize the following command:
 ```@repl PowerFlowSolution
 𝐐ₒ = analysis.power.generator.reactive
 ```
