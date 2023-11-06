@@ -51,30 +51,22 @@ the unit of `active` power (W), `reactive` power (VAr), or `apparent` power (VA)
 is a possible to combine SI units with/without prefixes with per-units (pu).
 
 Changing the unit of `active` power is reflected in the following quantities:
-* [`addBus!`](@ref addBus!), [`updateBus!`](@ref updateBus!), [`@bus`](@ref @bus):
-  * `active`, `conductance`;
-* [`addBranch!`](@ref addBranch!), [`updateBranch!`](@ref updateBranch!), [`@branch`](@ref @branch):
-  * if `type = 2`: `longTerm`, `shortTerm`, `emergency`;
-* [`addGenerator!`](@ref addGenerator!), [`updateGenerator!`](@ref updateGenerator!), [`@generator`](@ref @generator):
-  * `active`, `minActive`, `maxActive`, `lowActive`, `upActive`, `loadFollowing`, `reserve10min`, `reserve30min`;
-* [`cost!`](@ref cost!):
-  * if `active`: `piecewise`, `polynomial`;
-* [`addWattmeter!`](@ref addWattmeter!), [`updateWattmeter!`](@ref updateWattmeter!), [`@wattmeter`](@ref @wattmeter):  
-  * `active`, `variance`, `varianceBus`, `varianceFrom`, `varianceTo`.
+* [`addBus!`](@ref addBus!), [`updateBus!`](@ref updateBus!), [`@bus`](@ref @bus): `active`, `conductance`;
+* [`addBranch!`](@ref addBranch!), [`updateBranch!`](@ref updateBranch!), [`@branch`](@ref @branch): if `type = 2`: `longTerm`, `shortTerm`, `emergency`;
+* [`addGenerator!`](@ref addGenerator!), [`updateGenerator!`](@ref updateGenerator!), [`@generator`](@ref @generator): `active`, `minActive`, `maxActive`, `lowActive`, `upActive`, `loadFollowing`, `reserve10min`, `reserve30min`;
+* [`cost!`](@ref cost!): if `active`: `piecewise`, `polynomial`;
+* [`addWattmeter!`](@ref addWattmeter!), [`updateWattmeter!`](@ref updateWattmeter!): `active`, `variance`;
+* [`@wattmeter`](@ref @wattmeter): , `varianceBus`, `varianceFrom`, `varianceTo`.
 
 Changing the unit of `reactive` power unit is reflected in the following quantities:
-* [`addBus!`](@ref addBus!), [`updateBus!`](@ref updateBus!), [`@bus`](@ref @bus):
-  * `reactive`, `susceptance`;
-* [`addGenerator!`](@ref addGenerator!), [`updateGenerator!`](@ref updateGenerator!), [`@generator`](@ref @generator):
-  * `reactive`, `minReactive`, `maxReactive`, `minLowReactive`, `maxLowReactive`, `minUpReactive`, `maxUpReactive`, `reactiveTimescale`;
-* [`cost!`](@ref cost!):
-  * if `reactive`: `piecewise`, `polynomial`;
-* [`addVarmeter!`](@ref addVarmeter!), [`updateVarmeter!`](@ref updateVarmeter!), [`@varmeter`](@ref @varmeter):  
-  * `reactive`, `variance`, `varianceBus`, `varianceFrom`, `varianceTo`.
+* [`addBus!`](@ref addBus!), [`updateBus!`](@ref updateBus!), [`@bus`](@ref @bus): `reactive`, `susceptance`;
+* [`addGenerator!`](@ref addGenerator!), [`updateGenerator!`](@ref updateGenerator!), [`@generator`](@ref @generator): `reactive`, `minReactive`, `maxReactive`, `minLowReactive`, `maxLowReactive`, `minUpReactive`, `maxUpReactive`, `reactiveTimescale`;
+* [`cost!`](@ref cost!): if `reactive`: `piecewise`, `polynomial`;
+* [`addVarmeter!`](@ref addVarmeter!), [`updateVarmeter!`](@ref updateVarmeter!): `reactive`, `variance`; 
+* [`@varmeter`](@ref @varmeter): `varianceBus`, `varianceFrom`, `varianceTo`.
 
 Changing the unit of `apparent` power unit is reflected in the following quantities:
-* [`addBranch!`](@ref addBranch!), [`updateBranch!`](@ref updateBranch!), [`@branch`](@ref @branch):
-  * if `type = 1` or `type = 3`: `longTerm`, `shortTerm`, `emergency`.
+* [`addBranch!`](@ref addBranch!), [`updateBranch!`](@ref updateBranch!), [`@branch`](@ref @branch): if `type = 1` or `type = 3`: `longTerm`, `shortTerm`, `emergency`.
 
 # Example
 ```jldoctest
@@ -108,29 +100,20 @@ Alternatively, the unit of voltage `magnitude` can be expressed in per-unit (pu)
 voltage `angle` should be in radians (rad) or degrees (deg).
 
 Changing the unit of voltage `magnitude` is reflected in the following quantities:
-* [`addBus!`](@ref addBus!), [`updateBus!`](@ref updateBus!), [`@bus`](@ref @bus):
-  * `magnitude`, `minMagnitude`, `maxMagnitude`;
-* [`addGenerator!`](@ref addGenerator!), [`updateGenerator!`](@ref updateGenerator!), [`@generator`](@ref @generator):
-  * `magnitude`;
-* [`addVoltmeter!`](@ref addVoltmeter!), [`updateVoltmeter!`](@ref updateVoltmeter!), [`@voltmeter`](@ref @voltmeter):  
-  * `magnitude`, `variance`.
-* [`addPmu!`](@ref addPmu!), [`updatePmu!`](@ref updatePmu!), [`@pmu`](@ref @pmu):
-  * if `bus`: `magnitude`, `varianceMagnitude`;
-  * `varianceAngleMagnitude`.
-
+* [`addBus!`](@ref addBus!), [`updateBus!`](@ref updateBus!), [`@bus`](@ref @bus): `magnitude`, `minMagnitude`, `maxMagnitude`;
+* [`addGenerator!`](@ref addGenerator!), [`updateGenerator!`](@ref updateGenerator!), [`@generator`](@ref @generator): `magnitude`;
+* [`addVoltmeter!`](@ref addVoltmeter!), [`updateVoltmeter!`](@ref updateVoltmeter!), [`@voltmeter`](@ref @voltmeter): `magnitude`, `variance`;
+* [`addPmu!`](@ref addPmu!), [`updatePmu!`](@ref updatePmu!): if `bus`: `magnitude`, `varianceMagnitude`;
+* [`@pmu`](@ref @pmu): varianceMagnitudeBus.
 
 Changing the unit of voltage `angle` is reflected in the following quantities:
-* [`addBus!`](@ref addBus!), [`updateBus!`](@ref updateBus!), [`@bus`](@ref @bus):
-  * `angle`;
-* [`addBranch!`](@ref addBranch!), [`updateBranch!`](@ref updateBranch!), [`@branch`](@ref @branch):
-  * `shiftAngle`, `minDiffAngle`, `maxDiffAngle`;
-* [`addPmu!`](@ref addPmu!), [`updatePmu!`](@ref updatePmu!), [`@pmu`](@ref @pmu):
-  * if `bus`: `angle`, `varianceAngle`;
-  * `varianceAngleBus`.
+* [`addBus!`](@ref addBus!), [`updateBus!`](@ref updateBus!), [`@bus`](@ref @bus): `angle`;
+* [`addBranch!`](@ref addBranch!), [`updateBranch!`](@ref updateBranch!), [`@branch`](@ref @branch): `shiftAngle`, `minDiffAngle`, `maxDiffAngle`;
+* [`addPmu!`](@ref addPmu!), [`updatePmu!`](@ref updatePmu!): if `bus`: `angle`, `varianceAngle`;
+* [`@pmu`](@ref @pmu): `varianceAngleBus`.
 
 Changing the unit prefix of voltage `base` is reflected in the following quantity:
-* [`addBus!`](@ref addBus!), [`updateBus!`](@ref updateBus!), [`@bus`](@ref @bus):
-  * `base`.
+* [`addBus!`](@ref addBus!), [`updateBus!`](@ref updateBus!), [`@bus`](@ref @bus): `base`.
 
 # Example
 ```jldoctest
@@ -164,16 +147,14 @@ Alternatively, the unit of current `magnitude` can be expressed in per-unit (pu)
 of current angle should be in radians (rad) or degrees (deg).
 
 Changing the unit of current `magnitude` is reflected in the following quantities:
-* [`addAmmeter!`](@ref addAmmeter!), [`updateAmmeter!`](@ref updateAmmeter!), [`@ammeter`](@ref @ammeter):
-  * `magnitude`, `variance`, `varianceFrom`, `varianceTo`;
-* [`addPmu!`](@ref addPmu!), [`updatePmu!`](@ref updatePmu!), [`@pmu`](@ref @pmu):
-  * if `from` or `to`: `magnitude`, `varianceMagnitude`;
-  * `varianceMagnitudeFrom`, `varianceMagnitudeTo`.
+* [`addAmmeter!`](@ref addAmmeter!), [`updateAmmeter!`](@ref updateAmmeter!): `magnitude`, `variance`;
+* [`@ammeter`](@ref @ammeter): `varianceFrom`, `varianceTo`;
+* [`addPmu!`](@ref addPmu!), [`updatePmu!`](@ref updatePmu!): if `from` or `to`: `magnitude`, `varianceMagnitude`; 
+* [`@pmu`](@ref @pmu): `varianceMagnitudeFrom`, `varianceMagnitudeTo`.
 
 Changing the unit of current `angle` is reflected in the following quantities:
-* [`addPmu!`](@ref addPmu!), [`updatePmu!`](@ref updatePmu!), [`@pmu`](@ref @pmu):
-  * if `from` or `to`: `angle`, `varianceAngle`;
-  * `varianceAngleFrom`, `varianceAngleTo`.
+* [`addPmu!`](@ref addPmu!), [`updatePmu!`](@ref updatePmu!): if `from` or `to`: `angle`, `varianceAngle`;
+* [`@pmu`](@ref @pmu): `varianceAngleFrom`, `varianceAngleTo`.
 
 # Example
 ```jldoctest
@@ -208,12 +189,10 @@ the transformer.
 
 Changing the units of `impedance` is reflected in the following quantities in specific
 functions:
-* [`addBranch!`](@ref addBranch!), [`updateBranch!`](@ref updateBranch!), [`@branch`](@ref @branch):
-  * `resistance`, `reactance`.
+* [`addBranch!`](@ref addBranch!), [`updateBranch!`](@ref updateBranch!), [`@branch`](@ref @branch): `resistance`, `reactance`.
 
 Changing the units of `admittance` is reflected in the following quantities:
-* [`addBranch!`](@ref addBranch!), [`updateBranch!`](@ref updateBranch!), [`@branch`](@ref @branch):
-  * `conductance` , `susceptance`.
+* [`addBranch!`](@ref addBranch!), [`updateBranch!`](@ref updateBranch!), [`@branch`](@ref @branch): `conductance`, `susceptance`.
 
 # Example
 ```jldoctest
