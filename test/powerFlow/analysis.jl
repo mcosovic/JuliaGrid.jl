@@ -446,7 +446,7 @@ end
 
     ################ Modified IEEE 30-bus Test Case ################
     dcModel!(system30)
-    analysis = dcPowerFlow(system30, ldlt)
+    analysis = dcPowerFlow(system30, LDLt)
     solve!(system30, analysis)
     power!(system30, analysis)
 
