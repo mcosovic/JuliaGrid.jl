@@ -50,6 +50,12 @@ mutable struct CartesianRealRef
     active::Dict{Int64, JuMP.ConstraintRef}
 end
 
+########### Factorization ###########
+mutable struct FactorizationSparse
+    factor::Union{SuiteSparse.CHOLMOD.Factor{Float64}, SuiteSparse.UMFPACK.UmfpackLU{Float64, Int64}, SuiteSparse.SPQR.QRSparse{Float64, Int64}}
+    done::Bool
+end
+
 ########### Template ###########
 Base.@kwdef mutable struct ContainerTemplate
     value::Float64 = 0.0
@@ -247,3 +253,17 @@ Base.@kwdef mutable struct PrefixLive
     baseVoltage::Float64 = 1.0
 end
 prefix = PrefixLive()
+
+########### Solving Methods ###########
+export LU, QR, LDLt, Factorization
+
+abstract type Factorization end
+abstract type QR <: Factorization end
+abstract type LU <: Factorization end
+abstract type LDLt <: Factorization end
+
+const solveMethod = Dict(
+    LU => lu, 
+    LDLt => ldlt, 
+    QR => qr
+    )

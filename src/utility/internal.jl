@@ -104,7 +104,7 @@ Changing the unit of voltage `magnitude` is reflected in the following quantitie
 * [`addGenerator!`](@ref addGenerator!), [`updateGenerator!`](@ref updateGenerator!), [`@generator`](@ref @generator): `magnitude`;
 * [`addVoltmeter!`](@ref addVoltmeter!), [`updateVoltmeter!`](@ref updateVoltmeter!), [`@voltmeter`](@ref @voltmeter): `magnitude`, `variance`;
 * [`addPmu!`](@ref addPmu!), [`updatePmu!`](@ref updatePmu!): if `bus`: `magnitude`, `varianceMagnitude`;
-* [`@pmu`](@ref @pmu): varianceMagnitudeBus.
+* [`@pmu`](@ref @pmu): `varianceMagnitudeBus`.
 
 Changing the unit of voltage `angle` is reflected in the following quantities:
 * [`addBus!`](@ref addBus!), [`updateBus!`](@ref updateBus!), [`@bus`](@ref @bus): `angle`;

@@ -1,9 +1,18 @@
 """
-    dcPowerFlow(system::PowerSystem)
+    dcPowerFlow(system::PowerSystem, factorization::Factorization)
 
-The function accepts the `PowerSystem` composite type as input, which is utilized to establish
-the structure for solving the DC power flow.
+The function sets up the framework to solve the DC power flow.
 
+# Arguments
+This function requires a `PowerSystem` composite type to establish the framework. Moreover, 
+the `Factorization` argument is optional and can be one of the following:
+  * `LU`: solves the DC power flow problem in-place using LU factorization;
+  * `LDLt`: solves the DC power flow problem using LDLt factorization;
+  * `QR`: solves the DC power flow problem using QR factorization.
+If the user does not provide the `Factorization` composite type, the default method for 
+solving the DC power flow will be LU factorization.
+
+# Updates
 If the DC model was not created, the function will automatically initiate an update of the
 `dc` field within the `PowerSystem` composite type. Additionally, if the slack bus lacks
 an in-service generator, JuliaGrid considers it a mistake and defines a new slack bus as the
@@ -16,54 +25,32 @@ following fields:
 - `power`: the variable allocated to store the active powers;
 - `factorization`: the factorized nodal matrix.
 
-# Example
+# Examples
+Establish the DC power flow framework that will be solved using the default LU factorization:
 ```jldoctest
 system = powerSystem("case14.h5")
 dcModel!(system)
 
 analysis = dcPowerFlow(system)
 ```
-"""
-function dcPowerFlow(system::PowerSystem)
-    dc = system.model.dc
-    bus = system.bus
 
-    if bus.layout.slack == 0
+Establish the DC power flow framework that will be solved using the default QR factorization:
+```jldoctest
+system = powerSystem("case14.h5")
+dcModel!(system)
+
+analysis = dcPowerFlow(system, QR)
+```
+"""
+function dcPowerFlow(system::PowerSystem, factorization::Type{<:Union{QR, LDLt, LU}} = LU)
+    if system.bus.layout.slack == 0
         throw(ErrorException("The slack bus is missing."))
     end
-    if isempty(dc.nodalMatrix)
+    if isempty(system.model.dc.nodalMatrix)
         dcModel!(system)
     end
-
-    if isempty(bus.supply.generator[bus.layout.slack])
+    if isempty(system.bus.supply.generator[system.bus.layout.slack])
         changeSlackBus!(system)
-    end
-
-    slackRange = dc.nodalMatrix.colptr[bus.layout.slack]:(dc.nodalMatrix.colptr[bus.layout.slack + 1] - 1)
-    elementsRemove = dc.nodalMatrix.nzval[slackRange]
-    @inbounds for i in slackRange
-        dc.nodalMatrix[dc.nodalMatrix.rowval[i], bus.layout.slack] = 0.0
-        dc.nodalMatrix[bus.layout.slack, dc.nodalMatrix.rowval[i]] = 0.0
-    end
-    dc.nodalMatrix[bus.layout.slack, bus.layout.slack] = 1.0
-
-    nondiagonalMatrix = false
-    @inbounds for i = 1:bus.number
-        if dc.nodalMatrix.rowval[i] != i
-            nondiagonalMatrix = true
-            break
-        end
-    end
-
-    if nondiagonalMatrix
-        factorization = factorize(dc.nodalMatrix)
-    else
-        factorization = cholesky(dc.nodalMatrix)
-    end
-
-    @inbounds for (k, i) in enumerate(slackRange)
-        dc.nodalMatrix[dc.nodalMatrix.rowval[i], bus.layout.slack] = elementsRemove[k]
-        dc.nodalMatrix[bus.layout.slack, dc.nodalMatrix.rowval[i]] = elementsRemove[k]
     end
 
     return DCPowerFlow(
@@ -75,7 +62,7 @@ function dcPowerFlow(system::PowerSystem)
             CartesianReal(Float64[]),
             CartesianReal(Float64[])
         ),
-        factorization
+        FactorizationSparse(get(solveMethod, factorization, lu)(sparse(Matrix(1.0I, 1, 1))), false)
     )
 end
 
@@ -104,7 +91,11 @@ function solve!(system::PowerSystem, analysis::DCPowerFlow)
         b[i] -= bus.demand.active[i] + bus.shunt.conductance[i] + system.model.dc.shiftPower[i]
     end
 
-    analysis.voltage.angle = analysis.factorization \ b
+    if !analysis.factorization.done
+        dcPowerFlowFactorization(system, analysis)
+    end
+    dcPowerFlowSolve(system, analysis, b, analysis.factorization.factor)
+
     analysis.voltage.angle[bus.layout.slack] = 0.0
 
     if bus.voltage.angle[bus.layout.slack] != 0.0
@@ -112,4 +103,41 @@ function solve!(system::PowerSystem, analysis::DCPowerFlow)
             analysis.voltage.angle[i] += bus.voltage.angle[bus.layout.slack]
         end
     end
+end
+
+########### Nodal Matrix Factorization ###########
+function dcPowerFlowFactorization(system::PowerSystem, analysis::DCPowerFlow)
+    dc = system.model.dc
+    bus = system.bus
+
+    analysis.factorization.done = true
+
+    slackRange = dc.nodalMatrix.colptr[bus.layout.slack]:(dc.nodalMatrix.colptr[bus.layout.slack + 1] - 1)
+    elementsRemove = dc.nodalMatrix.nzval[slackRange]
+    @inbounds for i in slackRange
+        dc.nodalMatrix[dc.nodalMatrix.rowval[i], bus.layout.slack] = 0.0
+        dc.nodalMatrix[bus.layout.slack, dc.nodalMatrix.rowval[i]] = 0.0
+    end
+    dc.nodalMatrix[bus.layout.slack, bus.layout.slack] = 1.0
+
+    analysis.factorization.factor = sparseFactorization(dc.nodalMatrix, analysis.factorization.factor)
+
+    @inbounds for (k, i) in enumerate(slackRange)
+        dc.nodalMatrix[dc.nodalMatrix.rowval[i], bus.layout.slack] = elementsRemove[k]
+        dc.nodalMatrix[bus.layout.slack, dc.nodalMatrix.rowval[i]] = elementsRemove[k]
+    end 
+end
+
+########### Find Solution using LU Factorization ###########
+function dcPowerFlowSolve(system::PowerSystem, analysis::DCPowerFlow, b::Array{Float64,1}, type::SuiteSparse.UMFPACK.UmfpackLU{Float64, Int64})
+    if isempty(analysis.voltage.angle)
+        analysis.voltage.angle = fill(0.0, system.bus.number) 
+    end
+
+    ldiv!(analysis.voltage.angle, analysis.factorization.factor, b)
+end
+
+########### Find Solution using LDLt or QR Factorization ###########
+function dcPowerFlowSolve(system::PowerSystem, analysis::DCPowerFlow, b::Array{Float64,1}, type::Union{SuiteSparse.SPQR.QRSparse{Float64, Int64}, SuiteSparse.CHOLMOD.Factor{Float64}})
+    analysis.voltage.angle = analysis.factorization.factor \ b 
 end

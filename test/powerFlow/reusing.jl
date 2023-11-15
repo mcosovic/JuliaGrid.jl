@@ -396,6 +396,8 @@ end
 
     ################ Reusing Second Pass ################
     updateBus!(system; label = 2, active = 0.15, susceptance = 0.16, type = 2)
+    addBranch!(system, reusing; from = 16, to = 7, reactance = 0.03)
+    updateBranch!(system, reusing; label = 14, status = 1, reactance = 0.03)
     addGenerator!(system; bus = 2, active = 0.8)
     updateGenerator!(system; label = 9, status = 0)
     updateGenerator!(system; label = 1, status = 1)
@@ -408,6 +410,8 @@ end
 
     ####### Reuse Model #######
     updateBus!(resystem, reusing; label = 2, active = 0.15, susceptance = 0.16, type = 2)
+    addBranch!(resystem, reusing; from = 16, to = 7, reactance = 0.03)
+    updateBranch!(resystem, reusing; label = 14, status = 1, reactance = 0.03)
     addGenerator!(resystem, reusing; bus = 2, active = 0.8)
     updateGenerator!(resystem, reusing; label = 9, status = 0)
     updateGenerator!(resystem, reusing; label = 1, status = 1)

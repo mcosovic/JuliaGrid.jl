@@ -261,6 +261,19 @@ function updateMeter(device::GaussMeter, index::Int64, mean::T, variance::T,
     end
 end
 
+######### Factorizations ##########
+function sparseFactorization(A::SparseMatrixCSC{Float64,Int64}, type::SuiteSparse.UMFPACK.UmfpackLU{Float64, Int64})
+    return lu(A)
+end
+
+function sparseFactorization(A::SparseMatrixCSC{Float64,Int64}, type::SuiteSparse.CHOLMOD.Factor{Float64})
+    return ldlt(A)
+end
+
+function sparseFactorization(A::SparseMatrixCSC{Float64,Int64}, type::SuiteSparse.SPQR.QRSparse{Float64, Int64})
+    return qr(A)
+end
+
 ######### Print Data ##########
 import Base.print
 

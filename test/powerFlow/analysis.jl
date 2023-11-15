@@ -234,7 +234,6 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     end
 end
 
-
 @testset "Fast Newton-Raphson BX Method" begin
     matpower14 = h5read(string(pathData, "results.h5"), "case14test/fastNewtonRaphsonBX")
     matpower30 = h5read(string(pathData, "results.h5"), "case30test/fastNewtonRaphsonBX")
@@ -447,7 +446,7 @@ end
 
     ################ Modified IEEE 30-bus Test Case ################
     dcModel!(system30)
-    analysis = dcPowerFlow(system30)
+    analysis = dcPowerFlow(system30, ldlt)
     solve!(system30, analysis)
     power!(system30, analysis)
 

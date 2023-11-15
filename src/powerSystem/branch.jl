@@ -144,8 +144,18 @@ function addBranch!(system::PowerSystem;
     end
 end
 
-function addBranch!(system::PowerSystem, analysis::DCPowerFlow; kwargs...)
-    throw(ErrorException("The DC power flow model cannot be reused when adding a new branch."))
+function addBranch!(system::PowerSystem, analysis::DCPowerFlow;
+    label::L = missing, from::L, to::L, status::T = missing,
+    resistance::T = missing, reactance::T = missing, susceptance::T = missing,
+    conductance::T = missing, turnsRatio::T = missing, shiftAngle::T = missing,
+    minDiffAngle::T = missing, maxDiffAngle::T = missing,
+    longTerm::T = missing, shortTerm::T = missing, emergency::T = missing, type::T = missing)
+
+    analysis.factorization.done = false 
+
+    addBranch!(system; label, from, to, status, resistance, reactance, susceptance,
+        conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, longTerm, shortTerm,
+        emergency, type)       
 end
 
 function addBranch!(system::PowerSystem, analysis::Union{NewtonRaphson, GaussSeidel};
@@ -362,11 +372,19 @@ function updateBranch!(system::PowerSystem;
             branch.flow.emergency[index] = topu(emergency, prefixLive, basePowerInv)
         end
     end
-
 end
 
-function updateBranch!(system::PowerSystem, analysis::DCPowerFlow; kwargs...)
-    throw(ErrorException("The DC power flow model cannot be reused when the branch is altered."))
+function updateBranch!(system::PowerSystem, analysis::DCPowerFlow;
+    label::L, status::T = missing, resistance::T = missing, reactance::T = missing,
+    susceptance::T = missing, conductance::T = missing, turnsRatio::T = missing,
+    shiftAngle::T = missing, minDiffAngle::T = missing, maxDiffAngle::T = missing,
+    longTerm::T = missing, shortTerm::T = missing, emergency::T = missing, type::T = missing)
+
+    analysis.factorization.done = false
+    
+    updateBranch!(system; label, status, resistance, reactance, susceptance,
+    conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, longTerm, shortTerm,
+    emergency, type)
 end
 
 function updateBranch!(system::PowerSystem, analysis::Union{NewtonRaphson, GaussSeidel};

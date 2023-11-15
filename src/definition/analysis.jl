@@ -93,7 +93,7 @@ end
 struct DCPowerFlow <: DC
     voltage::PolarAngle
     power::DCPower
-    factorization::SuiteSparse.CHOLMOD.Factor{Float64}
+    factorization::FactorizationSparse
 end
 
 ######### Constraints ##########
@@ -181,5 +181,3 @@ mutable struct DCOptimalPowerFlow <: DC
     constraint::DCConstraint
     objective::JuMP.QuadExpr
 end
-
-
