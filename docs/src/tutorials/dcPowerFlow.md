@@ -56,26 +56,28 @@ The DC power flow solution is obtained through a non-iterative approach by solvi
     \bm {\theta} = \mathbf{B}^{-1}(\mathbf {P} - \mathbf{P_\text{tr}} - \mathbf{P}_\text{sh}).
 ```
 
-The initial step taken by JuliaGrid is to factorize the nodal matrix ``\mathbf{B}`` using the function:
+JuliaGrid begins the process by establishing the DC power flow framework:
 ```@example PowerFlowSolutionDC
 analysis = dcPowerFlow(system)
 nothing # hide
 ```
 
-The factorization of the nodal matrix can be accessed using:
-```@repl PowerFlowSolutionDC
-analysis.factorization
-using SparseArrays
-sparse(analysis.factorization.L)
-```
-
-This enables the user to modify any of the vectors ``\mathbf {P}``, ``\mathbf{P_\text{tr}}``, and ``\mathbf{P}_\text{sh}`` and reuse the factorization. This approach is more efficient compared to solving the system of equations from the beginning, as it saves computation time.
-
-To acquire the bus voltage angles, the user must invoke the function:
+The subsequent step involves performing the factorization of the nodal matrix ``\mathbf{B}`` and computing the bus voltage angles using:
 ```@example PowerFlowSolutionDC
 solve!(system, analysis)
 nothing # hide
 ```
+
+The factorization of the nodal matrix can be accessed using:
+```@repl PowerFlowSolutionDC
+using SparseArrays
+sparse(analysis.factorization.factor.L)
+sparse(analysis.factorization.factor.U)
+```
+
+!!! tip "Tip"
+    By default, JuliaGrid initiates LU factorization as the primary method to solve the DC power flow problem. Nevertheless, users also have the flexibility to choose alternative factorization methods like LDLt or QR.
+
 
 It is important to note that the slack bus voltage angle is excluded from the vector ``\bm{\theta}`` only during the computation step. As a analysis, the corresponding elements in the vectors ``\mathbf {P}``, ``\mathbf{P_\text{tr}}``, ``\mathbf{P}_\text{sh}``, and the corresponding row and column of the matrix ``\mathbf{B}`` are removed. It is worth mentioning that this process is handled internally, and the stored elements remain unchanged.
 

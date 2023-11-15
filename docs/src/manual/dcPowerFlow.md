@@ -94,11 +94,17 @@ dcModel!(system)
 nothing # hide
 ```
 
-The [`dcPowerFlow`](@ref dcPowerFlow) function can be used to establish the DC power flow problem. It factorizes the nodal matrix to prepare for determining the bus voltage angles:
+The [`dcPowerFlow`](@ref dcPowerFlow) function can be used to establish the DC power flow problem:  
 ```@example DCPowerFlowSolution
 analysis = dcPowerFlow(system)
 nothing # hide
 ```
+
+!!! tip "Tip"
+    Here, the user triggers LU factorization as the default method for solving the DC power flow problem. However, the user also has the option to select alternative factorization methods such as `LDLt` or `QR`, for instance:
+    ```julia DCPowerFlowSolution
+    analysis = dcPowerFlow(system, LDLt)
+    ```
 
 To obtain the bus voltage angles, we can call the [`solve!`](@ref solve!(::PowerSystem, ::DCPowerFlow)) function as follows:
 ```@example DCPowerFlowSolution
@@ -251,10 +257,14 @@ solve!(system, analysis)
 ---
 
 ## [Reusing Power Flow Model](@id DCReusingPowerFlowModelManual)
-To reuse the `DCPowerFlow` composite type, you essentially skip running the [`dcPowerFlow`](@ref dcPowerFlow) function. This can be accomplished by using functions that add components or update their parameters and passing the `DCPowerFlow` composite type as an argument within the `PowerSystem` composite type. If the modifications the user intends to make are compatible with reusing the `DCPowerFlow` type, they will be executed and will consequently impact both types.
+To reuse the `DCPowerFlow` composite type, you essentially skip running the [`dcPowerFlow`](@ref dcPowerFlow) function. This can be accomplished by using functions that add components or update their parameters and passing the `DCPowerFlow` composite type as an argument within the `PowerSystem` composite type. 
 
-The [`dcPowerFlow`](@ref dcPowerFlow) function plays a role in conducting bus type checks, as explained in the [Bus Type Modification](@ref DCBusTypeModificationManual) section, and in factorizing the nodal matrix. In practical terms, reusing the `DCPowerFlow` composite type involves making adjustments exclusively to demand, shunt, or generator parameters, while keeping the power system's branch parameters unchanged. Consequently, there are situations where reusing may not be a viable option. In such cases, JuliGrid will trigger an error message.
+!!! info "Info"
+    When a user employs `DCPowerFlow` as an argument in functions for adding components or modifications, functions are checking if `DCPowerFlow` can be reused. If possible, both `PowerSystem` and `DCPowerFlow` types will be modified. This streamlined process allows for a seamless transition to the [`solve!`](@ref solve!(::PowerSystem, ::DCPowerFlow)) function without intermediate steps.
 
+---
+
+##### Reusing Matrix Factorization
 Building upon the earlier example, we can continue to refine the power system by making changes to the output power of `Generator 1` and adjusting the active power demand at `Bus 2` within the existing system. Without invoking the [`dcPowerFlow`](@ref dcPowerFlow) function, we can move ahead to obtain a solution using the following code snippet:
 ```@example ReusingPowerSystem
 updateGenerator!(system, analysis; label = "Generator 1", status = 1)
@@ -263,10 +273,23 @@ updateBus!(system, analysis; label = "Bus 2", active = 0.4)
 solve!(system, analysis)
 ```
 
-However, if the intention is to reuse the `DCPowerFlow` type once more, this time with the aim of modifying the status of `Branch 3`, it becomes apparent that in this scenario, reusing the `DCPowerFlow` type is not feasible:
-```@repl ReusingPowerSystem
-updateBranch!(system, analysis; label = "Branch 3", status = 0)
-```
+!!! note "Info"
+    In this scenario, JuliaGrid will detect when the user has not modified branch parameters affecting the nodal matrix. As a result, the earlier performed nodal matrix factorization will be utilized by JuliaGrid, leading to a notably faster solution compared to recomputing the factorization.
 
-!!! info "Info"
-    When a user employs `DCPowerFlow` as an argument in functions for adding components or modifications, functions are checking if `DCPowerFlow` can be reused. If possible, both `PowerSystem` and `DCPowerFlow` types will be modified. This streamlined process allows for a seamless transition to the [`solve!`](@ref solve!(::PowerSystem, ::DCPowerFlow)) function without intermediate steps.
+---
+
+##### Limitations on Matrix Factorization Reuse
+Next, if there is an intention to reuse the `DCPowerFlow` type again, this time aiming to modify the status of `Branch 3` as shown below:
+```@example ReusingPowerSystem
+updateBranch!(system, analysis; label = "Branch 3", status = 0)
+solve!(system, analysis)
+```
+In this scenario, JuliaGrid will execute the nodal matrix factorization once more to ensure the accuracy of the solution.
+
+---
+
+##### Constraints on Power Flow Model Reuse
+The [`dcPowerFlow`](@ref dcPowerFlow) function orchestrates bus type checks, as elaborated in the [Bus Type Modification](@ref DCBusTypeModificationManual) section. Attempting to reuse [`dcPowerFlow`](@ref dcPowerFlow) by deactivating `Generator 1`, thereby leaving the slack bus without generators, will lead to erroneous outcomes:
+```@repl ReusingPowerSystem
+updateGenerator!(system, analysis; label = "Generator 1", status = 0)
+```
