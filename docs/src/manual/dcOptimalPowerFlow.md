@@ -436,7 +436,7 @@ active = toPower(system, analysis; label = "Branch 2")
 ---
 
 ## [Reusing Power System Model](@id DCOptimalReusingPowerSystemModelManual)
-Similar to what we discussed in the section [Reusing Power System Model](@ref DCReusingPowerSystemModelManual) concerning DC power flow, the `PowerSystem` composite type, along with its previously established `dc` field, offers remarkable versatility. This versatility extends to the use of the `PowerSystem` type in various DC analyses. As demonstrated when we employ initial conditions from DC power flow for DC optimal power flow, the `PowerSystem` type seamlessly integrates across different analysis types.
+Similar to what we discussed in the section [Power System Alteration](@ref DCPowerSystemAlterationManual) concerning DC power flow, the `PowerSystem` composite type, along with its previously established `dc` field, offers remarkable versatility. This versatility extends to the use of the `PowerSystem` type in various DC analyses. As demonstrated when we employ initial conditions from DC power flow for DC optimal power flow, the `PowerSystem` type seamlessly integrates across different analysis types.
 
 Furthermore, all fields within the `PowerSystem` type automatically adjust when any of the functions responsible for adding components or modifying their parameters are used. These functions encompass:
 * [`addBranch!`](@ref addBranch!),

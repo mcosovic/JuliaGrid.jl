@@ -123,6 +123,58 @@ nothing # hide
 
 ---
 
+## [Power System Alteration](@id DCPowerSystemAlterationManual)
+Once users establish the `PowerSystem` composite type with the `dc` model alongside the `DCPowerFlow` composite type, they gain the freedom to seamlessly add, update branches, generators, and modify buses. This can be achieved by reusing the aforementioned composite types, eliminating the need to recreate them from scratch.
+
+This streamlined process is facilitated by simply providing the `PowerSystem` and `DCPowerFlow` composite types as arguments to functions responsible for adding or updating power system components.
+
+---
+
+##### Reusing Matrix Factorization
+To further illustrate, let us continue with the previous example. Now, we aim to seek a solution where modifications involve altering the active power demand at `Bus 2`, adjusting the output power of `Generator 1`, and introducing a new generator at `Bus 2`. It is important to note that these adjustments do not affect the branches leaving the nodal matrix unchanged. To solve this system, executing the [`solve!`](@ref solve!(::PowerSystem, ::DCPowerFlow)) function is sufficient:
+```@example DCPowerFlowSolution
+updateBus!(system, analysis; label = "Bus 2", active = 0.4)
+updateGenerator!(system, analysis; label = "Generator 1", status = 1)
+addGenerator!(system, analysis; label = "Generator 2", bus = "Bus 2", active = 1.5)
+
+solve!(system, analysis)
+```
+
+!!! note "Info"
+    In this scenario, JuliaGrid will recognize instances where the user has not modified branch parameters affecting the nodal matrix. Consequently, JuliaGrid will leverage the previously performed nodal matrix factorization, resulting in a significantly faster solution compared to recomputing the factorization.
+
+---
+
+##### Sequential Matrix Factorization
+Should the user decide to modify branch parameters by adding or updating branches, reusing the nodal matrix factorization becomes impractical. In this scenario, JuliaGrid will need to repeat the factorization step while ensuring the delivery of an accurate solution. Thus, the user can still effortlessly execute [`solve!`](@ref solve!(::PowerSystem, ::DCPowerFlow)) as demonstrated below:
+```@example DCPowerFlowSolution
+addBranch!(system, analysis; label = "Branch 4", from = "Bus 3", to = "Bus 2", reactance = 1)
+updateBranch!(system, analysis; label = "Branch 3", status = 0)
+
+solve!(system, analysis)
+```
+
+---
+
+##### Limitations
+The [`dcPowerFlow`](@ref dcPowerFlow) function oversees bus type validations, as detailed in the [Bus Type Modification](@ref DCBusTypeModificationManual) section. Consequently, if a user intends to change the slack bus or leaves an existing slack bus without a generator, proceeding directly to the [`solve!`](@ref solve!(::PowerSystem, ::DCPowerFlow)) function is not feasible. In these instances, JuliaGrid will raise an error:
+```@repl DCPowerFlowSolution
+updateGenerator!(system, analysis; label = "Generator 1", status = 0)
+```
+
+Now, the user must execute the [`dcPowerFlow`](@ref dcPowerFlow) function instead of attempting to reuse the `DCPowerFlow` type:
+```julia DCPowerFlowSolution
+updateGenerator!(system; label = "Generator 1", status = 0)
+analysis = dcPowerFlow(system)
+
+solve!(system, analysis)
+```
+
+!!! note "Info"
+    Users retain the ability to add or modify buses, branches, and generators, allowing them to proceed directly to the [`solve!`](@ref solve!(::PowerSystem, ::DCPowerFlow)) function. When the user's modifications yield a correct solution, JuliaGrid will execute the necessary sequence of functions. Conversely, if the modifications result in an incorrect solution, JuliaGrid will raise an error. 
+
+---
+
 ## [Power Analysis](@id DCPowerAnalysisManual)
 After obtaining the solution from the DC power flow, we can calculate powers related to buses, branches, and generators using the [`power!`](@ref power!(::PowerSystem, ::DCPowerFlow)) function. For instance, let us consider the power system for which we obtained the DC power flow solution:
 ```@example ComputationPowersCurrentsLosses
@@ -206,90 +258,4 @@ active = toPower(system, analysis; label = "Branch 2")
 Finally, we can compute the active power output of a particular generator using the function:
 ```@repl ComputationPowersCurrentsLosses
 active = generatorPower(system, analysis; label = "Generator 1")
-```
-
----
-
-## [Reusing Power System Model](@id DCReusingPowerSystemModelManual)
-The `PowerSystem` composite type, along with its previously established `dc` field, offers unlimited versatility. This facilitates the seamless sharing of the `PowerSystem` type across various DC power flow analyses. All fields automatically adjust when any of the functions that add components or modify their parameters are utilized:
-* [`addBranch!`](@ref addBranch!),
-* [`addGenerator!`](@ref addGenerator!),
-* [`updateBus!`](@ref updateBus!),
-* [`updateBranch!`](@ref updateBranch!),
-* [`updateGenerator!`](@ref updateGenerator!).
-
-To illustrate, let us consider a scenario where we initially establish a power system and find a solution:
-```@example ReusingPowerSystem
-using JuliaGrid # hide
-
-system = powerSystem()
-
-addBus!(system; label = "Bus 1", type = 3)
-addBus!(system; label = "Bus 2", type = 2, active = 0.1)
-addBus!(system; label = "Bus 3", type = 1, active = 0.05)
-
-addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.05)
-addBranch!(system; label = "Branch 2", from = "Bus 1", to = "Bus 3", reactance = 0.01)
-addBranch!(system; label = "Branch 3", from = "Bus 2", to = "Bus 3", reactance = 0.01)
-
-addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 3.2)
-addGenerator!(system; label = "Generator 2", bus = "Bus 2", active = 2.1)
-
-dcModel!(system)
-
-analysis = dcPowerFlow(system)
-solve!(system, analysis)
-```
-
-Next, we want to find a solution in a situation where we make changes to the output power of `Generator 1`, take `Generator 2` out-of-service, and modify the active power demand at `Bus 2`. Furthermore, we deactivate `Branch 3` from its operational state and introduce a new branch called `Branch 4`. This entire process can be effortlessly accomplished by reusing the `PowerSystem` composite type and its `dc` field formed previously using the function [`dcModel!`](@ref dcModel!). As demonstrated in the following code snippet:
-```@example ReusingPowerSystem
-updateGenerator!(system; label = "Generator 1", active = 0.3)
-updateGenerator!(system; label = "Generator 2", status = 0)
-updateBus!(system; label = "Bus 2", active = 0.2)
-
-updateBranch!(system; label = "Branch 3", status = 0)
-addBranch!(system; label = "Branch 4", from = "Bus 2", to = "Bus 3", reactance = 0.03)
-
-analysis = dcPowerFlow(system)
-solve!(system, analysis)
-```
-
----
-
-## [Reusing Power Flow Model](@id DCReusingPowerFlowModelManual)
-To reuse the `DCPowerFlow` composite type, you essentially skip running the [`dcPowerFlow`](@ref dcPowerFlow) function. This can be accomplished by using functions that add components or update their parameters and passing the `DCPowerFlow` composite type as an argument within the `PowerSystem` composite type. 
-
-!!! info "Info"
-    When a user employs `DCPowerFlow` as an argument in functions for adding components or modifications, functions are checking if `DCPowerFlow` can be reused. If possible, both `PowerSystem` and `DCPowerFlow` types will be modified. This streamlined process allows for a seamless transition to the [`solve!`](@ref solve!(::PowerSystem, ::DCPowerFlow)) function without intermediate steps.
-
----
-
-##### Reusing Matrix Factorization
-Building upon the earlier example, we can continue to refine the power system by making changes to the output power of `Generator 1` and adjusting the active power demand at `Bus 2` within the existing system. Without invoking the [`dcPowerFlow`](@ref dcPowerFlow) function, we can move ahead to obtain a solution using the following code snippet:
-```@example ReusingPowerSystem
-updateGenerator!(system, analysis; label = "Generator 1", status = 1)
-updateBus!(system, analysis; label = "Bus 2", active = 0.4)
-
-solve!(system, analysis)
-```
-
-!!! note "Info"
-    In this scenario, JuliaGrid will detect when the user has not modified branch parameters affecting the nodal matrix. As a result, the earlier performed nodal matrix factorization will be utilized by JuliaGrid, leading to a notably faster solution compared to recomputing the factorization.
-
----
-
-##### Limitations on Matrix Factorization Reuse
-Next, if there is an intention to reuse the `DCPowerFlow` type again, this time aiming to modify the status of `Branch 3` as shown below:
-```@example ReusingPowerSystem
-updateBranch!(system, analysis; label = "Branch 3", status = 0)
-solve!(system, analysis)
-```
-In this scenario, JuliaGrid will execute the nodal matrix factorization once more to ensure the accuracy of the solution.
-
----
-
-##### Constraints on Power Flow Model Reuse
-The [`dcPowerFlow`](@ref dcPowerFlow) function orchestrates bus type checks, as elaborated in the [Bus Type Modification](@ref DCBusTypeModificationManual) section. Attempting to reuse [`dcPowerFlow`](@ref dcPowerFlow) by deactivating `Generator 1`, thereby leaving the slack bus without generators, will lead to erroneous outcomes:
-```@repl ReusingPowerSystem
-updateGenerator!(system, analysis; label = "Generator 1", status = 0)
 ```

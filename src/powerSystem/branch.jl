@@ -380,7 +380,9 @@ function updateBranch!(system::PowerSystem, analysis::DCPowerFlow;
     shiftAngle::T = missing, minDiffAngle::T = missing, maxDiffAngle::T = missing,
     longTerm::T = missing, shortTerm::T = missing, emergency::T = missing, type::T = missing)
 
-    analysis.factorization.done = false
+    if isset(reactance) || isset(turnsRatio) || isset(shiftAngle)
+        analysis.factorization.done = false
+    end
     
     updateBranch!(system; label, status, resistance, reactance, susceptance,
     conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, longTerm, shortTerm,

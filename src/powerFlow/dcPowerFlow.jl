@@ -53,6 +53,8 @@ function dcPowerFlow(system::PowerSystem, factorization::Type{<:Union{QR, LDLt, 
         changeSlackBus!(system)
     end
 
+    method = Dict(LU => lu, LDLt => ldlt, QR => qr)
+
     return DCPowerFlow(
         PolarAngle(Float64[]),
         DCPower(
@@ -62,7 +64,7 @@ function dcPowerFlow(system::PowerSystem, factorization::Type{<:Union{QR, LDLt, 
             CartesianReal(Float64[]),
             CartesianReal(Float64[])
         ),
-        FactorizationSparse(get(solveMethod, factorization, lu)(sparse(Matrix(1.0I, 1, 1))), false)
+        FactorizationSparse(get(method, factorization, lu)(sparse(Matrix(1.0I, 1, 1))), false)
     )
 end
 
