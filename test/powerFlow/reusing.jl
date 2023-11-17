@@ -249,7 +249,7 @@ end
     updateBus!(system; label = 14, active = 0.12, reactive = 0.13, magnitude = 1.2, angle = -0.17)
     updateBus!(system; label = 10, active = 0.12, susceptance = 0.005, magnitude = 1.02, angle = -0.21)
     addBranch!(system; from = 16, to = 7, resistance = 0.001, reactance = 0.03, susceptance = 0.001)
-    updateBranch!(system; label = 13, status = 1, resistance = 0.02, reactance = 0.03, susceptance = 0.01)
+    updateBranch!(system; label = 14, status = 1, resistance = 0.02, reactance = 0.03, susceptance = 0.01)
     updateBranch!(system; label = 13, status = 0)
     addGenerator!(system; bus = 16, active = 0.8, reactive = 0.2, magnitude = 0.95)
     addGenerator!(system; bus = 4, active = 0.8, reactive = 0.2, magnitude = 0.9)

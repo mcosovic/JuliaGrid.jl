@@ -357,7 +357,7 @@ end
 
     @inbounds for i = 1:branch.number
         if branch.layout.status[i] == 1
-            fastNewtonRaphsonJacobian(system, analysis, i)
+            fastNewtonRaphsonJacobian(system, analysis, i, 1)
         end
     end
 
@@ -370,7 +370,7 @@ end
     return analysis
 end
 
-@inline function fastNewtonRaphsonJacobian(system::PowerSystem, analysis::FastNewtonRaphson, i::Int64)
+@inline function fastNewtonRaphsonJacobian(system::PowerSystem, analysis::FastNewtonRaphson, i::Int64, sign::Int64)
     from = system.branch.layout.from[i]
     to = system.branch.layout.to[i]
 
@@ -392,14 +392,14 @@ end
         bmk = -1 / reactance
     end
     if from != system.bus.layout.slack && to != system.bus.layout.slack
-        analysis.method.active.jacobian[m, n] += (-gmk * shiftsin - bmk * shiftcos) / (shiftcos^2 + shiftsin^2)
-        analysis.method.active.jacobian[n, m] += (gmk * shiftsin - bmk * shiftcos) / (shiftcos^2 + shiftsin^2)
+        analysis.method.active.jacobian[m, n] += sign * (-gmk * shiftsin - bmk * shiftcos) / (shiftcos^2 + shiftsin^2)
+        analysis.method.active.jacobian[n, m] += sign * (gmk * shiftsin - bmk * shiftcos) / (shiftcos^2 + shiftsin^2)
     end
     if from != system.bus.layout.slack
-        analysis.method.active.jacobian[m, m] += bmk / (shiftcos^2 + shiftsin^2)
+        analysis.method.active.jacobian[m, m] += sign * bmk / (shiftcos^2 + shiftsin^2)
     end
     if to != system.bus.layout.slack
-        analysis.method.active.jacobian[n, n] += bmk
+        analysis.method.active.jacobian[n, n] += sign * bmk
     end
 
     m = analysis.method.pq[from]
@@ -411,14 +411,14 @@ end
         bmk = -reactance / (resistance^2 + reactance^2)
     end
     if m != 0 && n != 0
-        analysis.method.reactive.jacobian[m, n] += -bmk / turnsRatio
-        analysis.method.reactive.jacobian[n, m] += -bmk / turnsRatio
+        analysis.method.reactive.jacobian[m, n] += sign * (-bmk / turnsRatio)
+        analysis.method.reactive.jacobian[n, m] += sign * (-bmk / turnsRatio)
     end
     if system.bus.layout.type[from] == 1
-        analysis.method.reactive.jacobian[m, m] += (bmk + 0.5 * susceptance) / (turnsRatio^2)
+        analysis.method.reactive.jacobian[m, m] += sign * (bmk + 0.5 * susceptance) / (turnsRatio^2)
     end
     if system.bus.layout.type[to] == 1
-        analysis.method.reactive.jacobian[n, n] += bmk + 0.5 * susceptance
+        analysis.method.reactive.jacobian[n, n] += sign * (bmk + 0.5 * susceptance)
     end
 end
 
