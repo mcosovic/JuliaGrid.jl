@@ -529,19 +529,6 @@ When a user creates the fast Newton-Raphson method in JuliaGrid, the Jacobian ma
 𝐁₂ = analysis.method.reactive.jacobian
 ```
 
-Next, JuliaGrid utilizes the [LU factorization](https://docs.julialang.org/en/v1/stdlib/LinearAlgebra/#LinearAlgebra.lu) of matrices ``\mathbf{B}_1 = \mathbf{L}_1\mathbf{U}_1`` and ``\mathbf{B}_2 = \mathbf{L}_2\mathbf{U}_2`` to compute solutions through iterations, which can be accessed using the following commands:
-```@repl PowerFlowSolution
-𝐋₁ = analysis.method.active.factorization.L
-𝐔₁ = analysis.method.active.factorization.U
-
-𝐋₂ = analysis.method.reactive.factorization.L
-𝐔₂ = analysis.method.reactive.factorization.U
-```
-
-!!! tip "Tip"
-    By default, JuliaGrid uses LU factorization as the primary method for factorizing Jacobian matrices. Nevertheless, users have the flexibility to opt for QR factorization as an alternative method.
-
-
 Additionally, during this stage, JuliaGrid generates the starting vectors for bus voltage magnitudes ``\mathbf{V}^{(0)}`` and angles ``\bm{\theta}^{(0)}`` as demonstrated below:
 ```@repl PowerFlowSolution
 𝐕⁽⁰⁾ = analysis.voltage.magnitude
@@ -599,6 +586,17 @@ Next, the function [`solve!`](@ref solve!(::PowerSystem, ::NewtonRaphson)) compu
 ```math
   \mathbf \Delta \mathbf x_a^{(\nu-1)} = \mathbf{B}_1^{-1} \mathbf{h}_{P}(\mathbf x_a^{(\nu-1)}, \mathbf x_m^{(\nu-1)}).
 ```
+
+To obtain the voltage angle increments, JuliaGrid initially performs LU factorization on the Jacobian matrix ``\mathbf{B}_1 = \mathbf{L}_1\mathbf{U}_1``. This factorization is executed only once and is utilized in each iteration of the fast Newton-Raphson algorithm:
+```@repl PowerFlowSolution
+𝐋₁ = analysis.method.active.factorization.L
+𝐔₁ = analysis.method.active.factorization.U
+```
+
+!!! tip "Tip"
+    By default, JuliaGrid uses LU factorization as the primary method for factorizing Jacobian matrix. Nevertheless, users have the flexibility to opt for QR factorization as an alternative method.
+
+
 The vector of increments that corresponds to the active power equations can be accessed using the following command:
 ```@repl PowerFlowSolution
 𝚫𝐱ₐ = analysis.method.active.increment
@@ -617,6 +615,13 @@ The fast Newton-Raphson method then solves the equation:
 ```math
   \mathbf \Delta \mathbf x_m^{(\nu-1)} = \mathbf{B}_2^{-1} \mathbf{h}_{Q}(\mathbf x_a^{(\nu)}, \mathbf x_m^{(\nu-1)}).
 ```
+
+Similarly to the previous instance, JuliaGrid initially executes LU factorization on the Jacobian matrix ``\mathbf{B}_2 = \mathbf{L}_2\mathbf{U}_2``. However, it provides the flexibility for users to opt for QR factorization instead. This factorization occurs only once and is utilized in each iteration of the fast Newton-Raphson algorithm:
+```@repl PowerFlowSolution
+𝐋₂ = analysis.method.reactive.factorization.L
+𝐔₂ = analysis.method.reactive.factorization.U
+```
+
 The vector of increments that corresponds to the reactive power equations can be accessed using the following command:
 ```@repl PowerFlowSolution
 𝚫𝐱ₘ = analysis.method.active.increment

@@ -62,14 +62,14 @@ analysis = dcPowerFlow(system)
 nothing # hide
 ```
 
-The subsequent step involves performing the factorization of the nodal matrix ``\mathbf{B}`` and computing the bus voltage angles using:
+The subsequent step involves performing the LU factorization of the nodal matrix ``\mathbf{B} = \mathbf{L}\mathbf{U}`` and computing the bus voltage angles using:
 ```@example PowerFlowSolutionDC
 solve!(system, analysis)
 nothing # hide
 ```
 
 !!! tip "Tip"
-    By default, JuliaGrid utilizes LU factorization as the primary method to factorize the nodal matrix represented by ``\mathbf{B} = \mathbf{L}\mathbf{U}``. However, users maintain the flexibility to opt for alternative factorization methods such as LDLt or QR.
+    By default, JuliaGrid utilizes LU factorization as the primary method to factorize the nodal matrix. However, users maintain the flexibility to opt for alternative factorization methods such as LDLt or QR.
 
 The factorization of the nodal matrix can be accessed using:
 ```@repl PowerFlowSolutionDC
