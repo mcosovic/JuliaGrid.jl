@@ -329,11 +329,6 @@ end
 
 ---
 
-##### Using DC Optimal Power Flow
-Performing repeated executions of the DC optimal power flow problem, and opting to reuse the existing `DCOptimalPowerFlow` type without generating a new instance offers the benefit of a "warm start". In such a situation, the initial primal values for the subsequent solving step align with the solution achieved in the prior step. Additional information can be found in the section dedicated to [Reusing Optimal Power Flow Model](@ref DCReusingOptimalPowerFlowModelManual).
-
----
-
 ## [Optimal Power Flow Solution](@id DCOptimalPowerFlowSolutionManual)
 To establish the DC optimal power flow problem, you can utilize the [`dcOptimalPowerFlow`](@ref dcOptimalPowerFlow) function. After setting up the problem, you can use the [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow)) function to compute the optimal values for the active power outputs of the generators and the bus voltage angles. Also, to turn off the solver output within the REPL, we use the [`set_silent`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.set_silent) function before calling [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow)) function. Here is an example:
 ```@example DCOptimalPowerFlow
@@ -354,6 +349,45 @@ print(system.bus.label, analysis.voltage.angle)
 To obtain the objective value of the optimal power flow solution, you can use the [`objective_value`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.objective_value) function:
 ```@repl DCOptimalPowerFlow
 JuMP.objective_value(analysis.jump)
+```
+
+---
+
+##### Warm Start
+Utilizing the `DCOptimalPowerFlow` type and proceeding directly to the solver offers the advantage of a "warm start". In this scenario, the starting primal values for the subsequent solving step correspond to the solution obtained from the previous step.
+
+In the previous example, we obtained the following solution:
+```@repl DCOptimalPowerFlow
+print(system.generator.label, analysis.power.generator.active)
+print(system.bus.label, analysis.voltage.angle)
+```
+
+Now, let us introduce changes to the power system from the previous example:
+```@example DCOptimalPowerFlow
+updateGenerator!(system, analysis; label = "Generator 2", maxActive = 0.08)
+nothing # hide
+```
+
+Next, solve this new power system. During the execution of the [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow)) function, the primal starting values will first be set, and these values will be defined according to the values given above.
+```@example DCOptimalPowerFlow
+solve!(system, analysis)
+```
+
+As a result, we obtain a new solution:
+```@repl DCOptimalPowerFlow
+print(system.generator.label, analysis.power.generator.active)
+print(system.bus.label, analysis.voltage.angle)
+```
+
+Users retain the flexibility to reset these initial primal values to their default configurations at any juncture. This can be accomplished by utilizing the active power outputs of the generators and the initial bus voltage angles extracted from the `PowerSystem` composite type, employing the [`startingPrimal!`](@ref startingPrimal!) function:
+```@example DCOptimalPowerFlow
+startingPrimal!(system, analysis)
+```
+
+These values are precisely identical to what we would obtain if we executed the [`dcOptimalPowerFlow`](@ref dcOptimalPowerFlow) function following all the updates we performed:
+```@repl DCOptimalPowerFlow
+print(system.generator.label, analysis.power.generator.active)
+print(system.bus.label, analysis.voltage.angle)
 ```
 
 ---
@@ -431,64 +465,4 @@ Similarly, we can compute the active power flow at both the "from" and "to" bus 
 ```@repl DCOptimalPowerFlowPower
 active = fromPower(system, analysis; label = "Branch 2")
 active = toPower(system, analysis; label = "Branch 2")
-```
-
----
-
-## [Reusing Power System Model](@id DCOptimalReusingPowerSystemModelManual)
-Similar to what we discussed in the section [Power System Alteration](@ref DCPowerSystemAlterationManual) concerning DC power flow, the `PowerSystem` composite type, along with its previously established `dc` field, offers remarkable versatility. This versatility extends to the use of the `PowerSystem` type in various DC analyses. As demonstrated when we employ initial conditions from DC power flow for DC optimal power flow, the `PowerSystem` type seamlessly integrates across different analysis types.
-
-Furthermore, all fields within the `PowerSystem` type automatically adjust when any of the functions responsible for adding components or modifying their parameters are used. These functions encompass:
-* [`addBranch!`](@ref addBranch!),
-* [`addGenerator!`](@ref addGenerator!),
-* [`updateBus!`](@ref updateBus!),
-* [`updateBranch!`](@ref updateBranch!),
-* [`updateGenerator!`](@ref updateGenerator!).
-
-This implies that users have the flexibility to add or update parameters after creating the `PowerSystem` composite type. Subsequently, they can utilize [`dcOptimalPowerFlow`](@ref dcOptimalPowerFlow) to establish a DC optimal power flow model. However, as consistently emphasized throughout this manual, it is significantly more advantageous to reuse the optimal power flow model instead.
-
----
-
-## [Reusing Optimal Power Flow Model](@id DCReusingOptimalPowerFlowModelManual)
-Efficiently modelling and solving large-scale power systems requires reusing the `DCOptimalPowerFlow` type, avoiding the need to run [`dcOptimalPowerFlow`](@ref dcOptimalPowerFlow). Constructing an optimal power flow model can be time-consuming, especially for large systems. By creating the `DCOptimalPowerFlow` composite type once, users can easily adapt it to changes in the power system's structure, saving computational resources and time. This simplifies dynamic power system modifications without recreating the entire optimization model.
-
-As demonstrated in this manual, this is achieved by using the `DCOptimalPowerFlow` type as an argument in functions that add or update components within the `PowerSystem` composite type. If these changes are valid and provide accurate solutions, these functions will automatically adjust the composite types, ensuring smooth integration for dynamic power system adjustments while maintaining the integrity of the DC optimal power flow analysis.
-
----
-
-##### Starting Primal Values
-Utilizing the `DCOptimalPowerFlow` type and proceeding directly to the solver offers the advantage of a "warm start". In this scenario, the starting primal values for the subsequent solving step correspond to the solution obtained from the previous step.
-
-In the previous example, we obtained the following solution:
-```@repl DCOptimalPowerFlowPower
-print(system.generator.label, analysis.power.generator.active)
-print(system.bus.label, analysis.voltage.angle)
-```
-
-Now, let us introduce changes to the power system from the previous example:
-```@example DCOptimalPowerFlowPower
-updateGenerator!(system, analysis; label = "Generator 2", maxActive = 0.08)
-nothing # hide
-```
-
-Next, solve this new power system. During the execution of the [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow)) function, the primal starting values will first be set, and these values will be defined according to the values given above.
-```@example DCOptimalPowerFlowPower
-solve!(system, analysis)
-```
-
-As a result, we obtain a new solution:
-```@repl DCOptimalPowerFlowPower
-print(system.generator.label, analysis.power.generator.active)
-print(system.bus.label, analysis.voltage.angle)
-```
-
-Users retain the flexibility to reset these initial primal values to their default configurations at any juncture. This can be accomplished by utilizing the active power outputs of the generators and the initial bus voltage angles extracted from the `PowerSystem` composite type, employing the [`startingPrimal!`](@ref startingPrimal!) function:
-```@example DCOptimalPowerFlowPower
-startingPrimal!(system, analysis)
-```
-
-These values are precisely identical to what we would obtain if we executed the [`dcOptimalPowerFlow`](@ref dcOptimalPowerFlow) function following all the updates we performed:
-```@repl DCOptimalPowerFlowPower
-print(system.generator.label, analysis.power.generator.active)
-print(system.bus.label, analysis.voltage.angle)
 ```

@@ -134,7 +134,7 @@ This streamlined process is facilitated by simply providing the `PowerSystem` an
 To further illustrate, let us continue with the previous example. Now, we aim to seek a solution where modifications involve altering the active power demand at `Bus 2`, adjusting the output power of `Generator 1`, and introducing a new generator at `Bus 2`. It is important to note that these adjustments do not affect the branches leaving the nodal matrix unchanged. To solve this system, executing the [`solve!`](@ref solve!(::PowerSystem, ::DCPowerFlow)) function is sufficient:
 ```@example DCPowerFlowSolution
 updateBus!(system, analysis; label = "Bus 2", active = 0.4)
-updateGenerator!(system, analysis; label = "Generator 1", status = 1)
+updateGenerator!(system, analysis; label = "Generator 1", active = 1.9)
 addGenerator!(system, analysis; label = "Generator 2", bus = "Bus 2", active = 1.5)
 
 solve!(system, analysis)

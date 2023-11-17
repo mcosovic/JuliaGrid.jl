@@ -151,7 +151,7 @@ function addBranch!(system::PowerSystem, analysis::DCPowerFlow;
     minDiffAngle::T = missing, maxDiffAngle::T = missing,
     longTerm::T = missing, shortTerm::T = missing, emergency::T = missing, type::T = missing)
 
-    analysis.factorization.done = false 
+    analysis.method.done = false 
 
     addBranch!(system; label, from, to, status, resistance, reactance, susceptance,
         conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, longTerm, shortTerm,
@@ -170,8 +170,26 @@ function addBranch!(system::PowerSystem, analysis::Union{NewtonRaphson, GaussSei
         emergency, type)
 end
 
-function addBranch!(system::PowerSystem, analysis::FastNewtonRaphson; kwargs...)
-    throw(ErrorException("The fast Newton-Raphson model cannot be reused when adding a new branch."))
+function addBranch!(system::PowerSystem, analysis::FastNewtonRaphson;     
+    label::L = missing, from::L, to::L, status::T = missing,
+    resistance::T = missing, reactance::T = missing, susceptance::T = missing,
+    conductance::T = missing, turnsRatio::T = missing, shiftAngle::T = missing,
+    minDiffAngle::T = missing, maxDiffAngle::T = missing,
+    longTerm::T = missing, shortTerm::T = missing, emergency::T = missing, type::T = missing)
+
+    bus = system.bus
+    branch = system.branch
+    active = analysis.method.active
+    reactive = analysis.method.reactive
+
+    addBranch!(system; label, from, to, status, resistance, reactance, susceptance,
+    conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, longTerm, shortTerm,
+    emergency, type)
+
+    if branch.layout.status[branch.number] == 1
+        analysis.method.done = false
+        fastNewtonRaphsonJacobian(system, analysis, branch.number)
+    end
 end
 
 function addBranch!(system::PowerSystem, analysis::DCOptimalPowerFlow;
@@ -381,7 +399,7 @@ function updateBranch!(system::PowerSystem, analysis::DCPowerFlow;
     longTerm::T = missing, shortTerm::T = missing, emergency::T = missing, type::T = missing)
 
     if isset(reactance) || isset(turnsRatio) || isset(shiftAngle)
-        analysis.factorization.done = false
+        analysis.method.done = false
     end
     
     updateBranch!(system; label, status, resistance, reactance, susceptance,
@@ -400,8 +418,77 @@ function updateBranch!(system::PowerSystem, analysis::Union{NewtonRaphson, Gauss
     emergency, type)
 end
 
-function updateBranch!(system::PowerSystem, analysis::FastNewtonRaphson; kwargs...)
-    throw(ErrorException("The fast Newton-Raphson model cannot be reused when the branch is altered."))
+function updateBranch!(system::PowerSystem, analysis::FastNewtonRaphson;
+    label::L, status::T = missing, resistance::T = missing, reactance::T = missing,
+    susceptance::T = missing, conductance::T = missing, turnsRatio::T = missing,
+    shiftAngle::T = missing, minDiffAngle::T = missing, maxDiffAngle::T = missing,
+    longTerm::T = missing, shortTerm::T = missing, emergency::T = missing, type::T = missing)
+
+    branch = system.branch
+    index = branch.label[getLabel(branch, label, "branch")]
+
+    if branch.layout.status[index] == 1 
+        analysis.method.done = false
+
+        from = system.branch.layout.from[index]
+        to = system.branch.layout.to[index]
+
+        shiftcos = cos(system.branch.parameter.shiftAngle[index])
+        shiftsin = sin(system.branch.parameter.shiftAngle[index])
+        resistance = system.branch.parameter.resistance[index]
+        reactance = system.branch.parameter.reactance[index]
+        susceptance = system.branch.parameter.susceptance[index]
+        turnsRatio = system.branch.parameter.turnsRatio[index]
+
+        m = analysis.method.pvpq[from]
+        n = analysis.method.pvpq[to]
+
+        if analysis.method.bx
+            gmk = resistance / (resistance^2 + reactance^2)
+            bmk = -reactance / (resistance^2 + reactance^2)
+        else
+            gmk = 0.0
+            bmk = -1 / reactance
+        end
+        if from != system.bus.layout.slack && to != system.bus.layout.slack
+            analysis.method.active.jacobian[m, n] -= (-gmk * shiftsin - bmk * shiftcos) / (shiftcos^2 + shiftsin^2)
+            analysis.method.active.jacobian[n, m] -= (gmk * shiftsin - bmk * shiftcos) / (shiftcos^2 + shiftsin^2)
+        end
+        if from != system.bus.layout.slack
+            analysis.method.active.jacobian[m, m] -= bmk / (shiftcos^2 + shiftsin^2)
+        end
+        if to != system.bus.layout.slack
+            analysis.method.active.jacobian[n, n] -= bmk
+        end
+
+        m = analysis.method.pq[from]
+        n = analysis.method.pq[to]
+
+        if analysis.method.bx
+            bmk = - 1 / reactance
+        else
+            bmk = -reactance / (resistance^2 + reactance^2)
+        end
+        if m != 0 && n != 0
+            analysis.method.reactive.jacobian[m, n] -= -bmk / turnsRatio
+            analysis.method.reactive.jacobian[n, m] -= -bmk / turnsRatio
+        end
+        if system.bus.layout.type[from] == 1
+            analysis.method.reactive.jacobian[m, m] -= (bmk + 0.5 * susceptance) / (turnsRatio^2)
+        end
+        if system.bus.layout.type[to] == 1
+            analysis.method.reactive.jacobian[n, n] -= bmk + 0.5 * susceptance
+        end
+    end
+
+    updateBranch!(system; label, status, resistance, reactance, susceptance,
+    conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, longTerm, shortTerm,
+    emergency, type)
+
+    if branch.layout.status[index] == 1
+        analysis.method.done = false
+        fastNewtonRaphsonJacobian(system, analysis, index)
+    end
 end
 
 function updateBranch!(system::PowerSystem, analysis::DCOptimalPowerFlow;

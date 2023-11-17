@@ -274,6 +274,23 @@ function sparseFactorization(A::SparseMatrixCSC{Float64,Int64}, type::SuiteSpars
     return qr(A)
 end
 
+########### Solution using LU Factorization ###########
+function sparseSolution(x::Array{Float64,1}, b::Array{Float64,1}, factor::SuiteSparse.UMFPACK.UmfpackLU{Float64, Int64})
+    if isempty(x)
+        x = fill(0.0, size(factor.L, 2)) 
+    end
+
+    ldiv!(x, factor, b)
+
+    return x
+end
+
+########### Solution using LDLt or QR Factorization ###########
+function sparseSolution(x::Array{Float64,1}, b::Array{Float64,1}, factor::Union{SuiteSparse.SPQR.QRSparse{Float64, Int64}, SuiteSparse.CHOLMOD.Factor{Float64}})
+    return x = factor \ b 
+end
+
+
 ######### Print Data ##########
 import Base.print
 

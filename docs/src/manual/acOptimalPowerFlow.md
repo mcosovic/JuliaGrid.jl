@@ -398,11 +398,6 @@ end
 
 ---
 
-##### Using AC Optimal Power Flow
-Performing repeated executions of the AC optimal power flow problem, and opting to reuse the existing `ACOptimalPowerFlow` type without generating a new instance offers the benefit of a "warm start". In such a situation, the initial primal values for the subsequent solving step align with the solution achieved in the prior step. Additional information can be found in the section dedicated to [Reusing the Optimal Power Flow Model](@ref ACReusingOptimalPowerFlowModelManual).
-
----
-
 ## [Optimal Power Flow Solution](@id ACOptimalPowerFlowSolutionManual)
 To establish the AC optimal power flow problem, you can utilize the [`acOptimalPowerFlow`](@ref acOptimalPowerFlow) function. After setting up the problem, you can use the [`solve!`](@ref solve!(::PowerSystem, ::ACOptimalPowerFlow)) function to compute the optimal values for the active and reactive power outputs of the generators and the bus voltage magnitudes angles. Also, to turn off the solver output within the REPL, we use the [`set_silent`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.set_silent) function before calling [`solve!`](@ref solve!(::PowerSystem, ::ACOptimalPowerFlow)) function. Here is an example:
 ```julia ACOptimalPowerFlow
@@ -428,6 +423,45 @@ print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
 To obtain the objective value of the optimal power flow solution, you can use the [`objective_value`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.objective_value) function:
 ```@repl ACOptimalPowerFlow
 JuMP.objective_value(analysis.jump)
+```
+
+---
+
+##### Warm Start
+Utilizing the `ACOptimalPowerFlow` type and proceeding directly to the solver offers the advantage of a "warm start". In this scenario, the starting primal values for the subsequent solving step correspond to the solution obtained from the previous step.
+
+In the previous example, we obtained the following solution:
+```@repl ACOptimalPowerFlow
+generator = analysis.power.generator;
+print(system.generator.label, generator.active, generator.reactive)
+print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
+```
+
+Now, let us introduce changes to the power system from the previous example:
+```@example ACOptimalPowerFlow
+updateGenerator!(system, analysis; label = "Generator 2", maxActive = 0.08)
+```
+
+Next, solve this new power system. During the execution of the [`solve!`](@ref solve!(::PowerSystem, ::ACOptimalPowerFlow)) function, the primal starting values will first be set, and these values will be defined according to the values given above.
+```@example ACOptimalPowerFlow
+solve!(system, analysis)
+```
+
+As a result, we obtain a new solution:
+```@repl ACOptimalPowerFlow
+print(system.generator.label, generator.active, generator.reactive)
+print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
+```
+
+Users retain the flexibility to reset these initial primal values to their default configurations at any juncture. This can be accomplished by utilizing the active and reactive power outputs of the generators and the initial bus voltage magnitudes and angles extracted from the `PowerSystem` composite type, employing the [`startingPrimal!`](@ref startingPrimal!) function:
+```@example ACOptimalPowerFlow
+startingPrimal!(system, analysis)
+```
+
+These values are precisely identical to what we would obtain if we executed the [`acOptimalPowerFlow`](@ref acOptimalPowerFlow) function following all the updates we performed:
+```@repl ACOptimalPowerFlow
+print(system.generator.label, generator.active, generator.reactive)
+print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
 ```
 
 ---
@@ -562,64 +596,4 @@ magnitude, angle = toCurrent(system, analysis; label = "Branch 2")
 To calculate the current passing through the series impedance of the branch in the direction from the "from" bus end to the "to" bus end, you can use the following function:
 ```@repl ACOptimalPowerFlowPower
 magnitude, angle = seriesCurrent(system, analysis; label = "Branch 2")
-```
-
----
-
-## [Reusing Power System Model](@id ACOptimalReusingPowerSystemModelManual)
-Similar to what we discussed in the section [Reusing Power System Model](@ref ACReusingPowerSystemModelManual) concerning AC power flow, the `PowerSystem` composite type, along with its previously established `ac` field, offers remarkable versatility. This versatility extends to the use of the `PowerSystem` type in various AC analyses. As demonstrated when we employ initial conditions from AC power flow for AC optimal power flow, the `PowerSystem` type seamlessly integrates across different analysis types.
-
-Furthermore, all fields within the `PowerSystem` type automatically adjust when any of the functions responsible for adding components or modifying their parameters are used. These functions encompass:
-* [`addBranch!`](@ref addBranch!),
-* [`addGenerator!`](@ref addGenerator!),
-* [`updateBus!`](@ref updateBus!),
-* [`updateBranch!`](@ref updateBranch!),
-* [`updateGenerator!`](@ref updateGenerator!).
-
-This implies that users have the flexibility to add or update parameters after creating the `PowerSystem` composite type. Subsequently, they can utilize [`acOptimalPowerFlow`](@ref acOptimalPowerFlow) to establish a AC optimal power flow model. However, as consistently emphasized throughout this manual, it is significantly more advantageous to reuse the optimal power flow model instead.
-
----
-
-## [Reusing Optimal Power Flow Model](@id ACReusingOptimalPowerFlowModelManual)
-Efficiently modelling and solving large-scale power systems requires reusing the `ACOptimalPowerFlow` type, avoiding the need to run [`acOptimalPowerFlow`](@ref acOptimalPowerFlow). Constructing an optimal power flow model can be time-consuming, especially for large systems. By creating the `ACOptimalPowerFlow` composite type once, users can easily adapt it to changes in the power system's structure, saving computational resources and time. This simplifies dynamic power system modifications without recreating the entire optimization model.
-
-As demonstrated in this manual, this is achieved by using the `ACOptimalPowerFlow` type as an argument in functions that add or update components within the `PowerSystem` composite type. If these changes are valid and provide accurate solutions, these functions will automatically adjust the composite types, ensuring smooth integration for dynamic power system adjustments while maintaining the integrity of the DC optimal power flow analysis.
-
----
-
-##### Starting Primal Values
-Utilizing the `ACOptimalPowerFlow` type and proceeding directly to the solver offers the advantage of a "warm start". In this scenario, the starting primal values for the subsequent solving step correspond to the solution obtained from the previous step.
-
-In the previous example, we obtained the following solution:
-```@repl ACOptimalPowerFlowPower
-generator = analysis.power.generator;
-print(system.generator.label, generator.active, generator.reactive)
-print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
-```
-
-Now, let us introduce changes to the power system from the previous example:
-```@example ACOptimalPowerFlowPower
-updateGenerator!(system, analysis; label = "Generator 2", maxActive = 0.08)
-```
-
-Next, solve this new power system. During the execution of the [`solve!`](@ref solve!(::PowerSystem, ::ACOptimalPowerFlow)) function, the primal starting values will first be set, and these values will be defined according to the values given above.
-```@example ACOptimalPowerFlowPower
-solve!(system, analysis)
-```
-
-As a result, we obtain a new solution:
-```@repl ACOptimalPowerFlowPower
-print(system.generator.label, generator.active, generator.reactive)
-print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
-```
-
-Users retain the flexibility to reset these initial primal values to their default configurations at any juncture. This can be accomplished by utilizing the active and reactive power outputs of the generators and the initial bus voltage magnitudes and angles extracted from the `PowerSystem` composite type, employing the [`startingPrimal!`](@ref startingPrimal!) function:
-```@example ACOptimalPowerFlowPower
-startingPrimal!(system, analysis)
-```
-
-These values are precisely identical to what we would obtain if we executed the [`acOptimalPowerFlow`](@ref acOptimalPowerFlow) function following all the updates we performed:
-```@repl ACOptimalPowerFlowPower
-print(system.generator.label, generator.active, generator.reactive)
-print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
 ```

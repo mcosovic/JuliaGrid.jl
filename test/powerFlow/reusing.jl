@@ -247,6 +247,10 @@ end
     system = powerSystem(string(pathData, "case14test.m"))
 
     updateBus!(system; label = 14, active = 0.12, reactive = 0.13, magnitude = 1.2, angle = -0.17)
+    updateBus!(system; label = 10, active = 0.12, susceptance = 0.005, magnitude = 1.02, angle = -0.21)
+    addBranch!(system; from = 16, to = 7, resistance = 0.001, reactance = 0.03, susceptance = 0.001)
+    updateBranch!(system; label = 13, status = 1, resistance = 0.02, reactance = 0.03, susceptance = 0.01)
+    updateBranch!(system; label = 13, status = 0)
     addGenerator!(system; bus = 16, active = 0.8, reactive = 0.2, magnitude = 0.95)
     addGenerator!(system; bus = 4, active = 0.8, reactive = 0.2, magnitude = 0.9)
     updateGenerator!(system; label = 4, status = 0)
@@ -270,11 +274,15 @@ end
     reusing = fastNewtonRaphsonBX(resystem)
 
     updateBus!(resystem, reusing; label = 14, active = 0.12, reactive = 0.13, magnitude = 1.2, angle = -0.17)
+    updateBus!(resystem, reusing; label = 10, active = 0.12, susceptance = 0.005, magnitude = 1.02, angle = -0.21)
+    addBranch!(resystem, reusing; from = 16, to = 7, resistance = 0.001, reactance = 0.03, susceptance = 0.001)
+    updateBranch!(resystem, reusing; label = 14, status = 1, resistance = 0.02, reactance = 0.03, susceptance = 0.01)
+    updateBranch!(resystem, reusing; label = 13, status = 0)
     addGenerator!(resystem, reusing; bus = 16, active = 0.8, reactive = 0.2, magnitude = 0.95)
     addGenerator!(resystem, reusing; bus = 4, active = 0.8, reactive = 0.2, magnitude = 0.9)
     updateGenerator!(resystem, reusing; label = 4, status = 0)
     updateGenerator!(resystem, reusing; label = 7, active = 0.15, magnitude = 0.92)
-
+    
     for iteration = 1:1000
         stopping = mismatch!(resystem, reusing)
         if all(stopping .< 1e-8)

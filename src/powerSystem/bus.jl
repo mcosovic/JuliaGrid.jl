@@ -308,13 +308,15 @@ function updateBus!(system::PowerSystem, analysis::FastNewtonRaphson;
     base::T = missing, area::T = missing, lossZone::T = missing)
 
     bus = system.bus
+    method = analysis.method
     index = bus.label[getLabel(bus, label, "bus")]
 
     if isset(type) && type != bus.layout.type[index]
         throw(ErrorException("The AC power flow model cannot be reused due to required bus type conversion."))
     end
-    if (isset(conductance) && bus.shunt.conductance[index] != conductance) || (isset(susceptance) && bus.shunt.susceptance[index] != susceptance)
-        throw(ErrorException("The fast Newton-Raphson model cannot be reused when the shunt element is altered."))
+
+    if isset(susceptance) && bus.layout.type[index] == 1
+        oldSusceptance = bus.shunt.susceptance[index]
     end
 
     updateBus!(system; label, type, active, reactive, conductance, susceptance,
@@ -325,6 +327,12 @@ function updateBus!(system::PowerSystem, analysis::FastNewtonRaphson;
     end
     if isset(angle)
         analysis.voltage.angle[index] = bus.voltage.angle[index]
+    end
+
+    if isset(susceptance) && bus.layout.type[index] == 1 && oldSusceptance != bus.shunt.susceptance[index]
+        method.done = false
+        method.reactive.jacobian[method.pq[index], method.pq[index]] -= oldSusceptance
+        method.reactive.jacobian[method.pq[index], method.pq[index]] += bus.shunt.susceptance[index]
     end
 end
 

@@ -68,16 +68,14 @@ solve!(system, analysis)
 nothing # hide
 ```
 
+!!! tip "Tip"
+    By default, JuliaGrid utilizes LU factorization as the primary method to factorize the nodal matrix represented by ``\mathbf{B} = \mathbf{L}\mathbf{U}``. However, users maintain the flexibility to opt for alternative factorization methods such as LDLt or QR.
+
 The factorization of the nodal matrix can be accessed using:
 ```@repl PowerFlowSolutionDC
-using SparseArrays
-sparse(analysis.factorization.factor.L)
-sparse(analysis.factorization.factor.U)
+𝐋 = analysis.method.factorization.L
+𝐔 = analysis.method.factorization.U
 ```
-
-!!! tip "Tip"
-    By default, JuliaGrid initiates LU factorization as the primary method to solve the DC power flow problem. Nevertheless, users also have the flexibility to choose alternative factorization methods like LDLt or QR.
-
 
 It is important to note that the slack bus voltage angle is excluded from the vector ``\bm{\theta}`` only during the computation step. As a analysis, the corresponding elements in the vectors ``\mathbf {P}``, ``\mathbf{P_\text{tr}}``, ``\mathbf{P}_\text{sh}``, and the corresponding row and column of the matrix ``\mathbf{B}`` are removed. It is worth mentioning that this process is handled internally, and the stored elements remain unchanged.
 

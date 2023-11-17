@@ -7,7 +7,7 @@ system30 = powerSystem(string(pathData, "case30test.m"))
 
     ################ Modified IEEE 14-bus Test Case ################
     acModel!(system14)
-    analysis = newtonRaphson(system14)
+    analysis = newtonRaphson(system14, QR)
     iteration = 0
     for i = 1:1000
         stopping = mismatch!(system14, analysis)
@@ -65,7 +65,7 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     ####### Compare Bus Powers and Currents #######
     for (key, value) in system14.bus.label
         active, reactive = injectionPower(system14, analysis; label = key)
-        @test active ≈ power.injection.active[value]
+        @test active ≈ power.injection.active[value] atol = 1e-14
         @test reactive ≈ power.injection.reactive[value]
 
         active, reactive = supplyPower(system14, analysis; label = key)
@@ -258,7 +258,7 @@ end
 
     ################ Modified IEEE 30-bus Test Case ################
     acModel!(system30)
-    analysis = fastNewtonRaphsonBX(system30)
+    analysis = fastNewtonRaphsonBX(system30, QR)
     iteration = 0
     for i = 1:1000
         stopping = mismatch!(system30, analysis)
@@ -299,7 +299,7 @@ end
 
     ################ Modified IEEE 30-bus Test Case ################
     acModel!(system30)
-    analysis = fastNewtonRaphsonXB(system30)
+    analysis = fastNewtonRaphsonXB(system30, QR)
     iteration = 0
     for i = 1:1000
         stopping = mismatch!(system30, analysis)

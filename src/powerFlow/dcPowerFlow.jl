@@ -4,8 +4,8 @@
 The function sets up the framework to solve the DC power flow.
 
 # Arguments
-This function requires a `PowerSystem` composite type to establish the framework. Moreover, 
-the `Factorization` argument is optional and can be one of the following:
+The function requires the `PowerSystem` composite type to establish the framework. 
+Moreover, the `Factorization` argument is optional and can be one of the following:
   * `LU`: solves the DC power flow problem in-place using LU factorization;
   * `LDLt`: solves the DC power flow problem using LDLt factorization;
   * `QR`: solves the DC power flow problem using QR factorization.
@@ -23,7 +23,7 @@ The function returns an instance of the `DCPowerFlow` composite type, which incl
 following fields:
 - `voltage`: the variable allocated to store the bus voltage angles;
 - `power`: the variable allocated to store the active powers;
-- `factorization`: the factorized nodal matrix.
+- `method`: the factorized nodal matrix.
 
 # Examples
 Establish the DC power flow framework that will be solved using the default LU factorization:
@@ -64,7 +64,7 @@ function dcPowerFlow(system::PowerSystem, factorization::Type{<:Union{QR, LDLt, 
             CartesianReal(Float64[]),
             CartesianReal(Float64[])
         ),
-        FactorizationSparse(get(method, factorization, lu)(sparse(Matrix(1.0I, 1, 1))), false)
+        DCPowerFlowMethod(get(method, factorization, lu)(sparse(Matrix(1.0I, 1, 1))), false)
     )
 end
 
@@ -93,10 +93,10 @@ function solve!(system::PowerSystem, analysis::DCPowerFlow)
         b[i] -= bus.demand.active[i] + bus.shunt.conductance[i] + system.model.dc.shiftPower[i]
     end
 
-    if !analysis.factorization.done
+    if !analysis.method.done
         dcPowerFlowFactorization(system, analysis)
     end
-    dcPowerFlowSolve(system, analysis, b, analysis.factorization.factor)
+    analysis.voltage.angle = sparseSolution(analysis.voltage.angle, b, analysis.method.factorization)
 
     analysis.voltage.angle[bus.layout.slack] = 0.0
 
@@ -112,7 +112,7 @@ function dcPowerFlowFactorization(system::PowerSystem, analysis::DCPowerFlow)
     dc = system.model.dc
     bus = system.bus
 
-    analysis.factorization.done = true
+    analysis.method.done = true
 
     slackRange = dc.nodalMatrix.colptr[bus.layout.slack]:(dc.nodalMatrix.colptr[bus.layout.slack + 1] - 1)
     elementsRemove = dc.nodalMatrix.nzval[slackRange]
@@ -122,24 +122,10 @@ function dcPowerFlowFactorization(system::PowerSystem, analysis::DCPowerFlow)
     end
     dc.nodalMatrix[bus.layout.slack, bus.layout.slack] = 1.0
 
-    analysis.factorization.factor = sparseFactorization(dc.nodalMatrix, analysis.factorization.factor)
+    analysis.method.factorization = sparseFactorization(dc.nodalMatrix, analysis.method.factorization)
 
     @inbounds for (k, i) in enumerate(slackRange)
         dc.nodalMatrix[dc.nodalMatrix.rowval[i], bus.layout.slack] = elementsRemove[k]
         dc.nodalMatrix[bus.layout.slack, dc.nodalMatrix.rowval[i]] = elementsRemove[k]
     end 
-end
-
-########### Find Solution using LU Factorization ###########
-function dcPowerFlowSolve(system::PowerSystem, analysis::DCPowerFlow, b::Array{Float64,1}, type::SuiteSparse.UMFPACK.UmfpackLU{Float64, Int64})
-    if isempty(analysis.voltage.angle)
-        analysis.voltage.angle = fill(0.0, system.bus.number) 
-    end
-
-    ldiv!(analysis.voltage.angle, analysis.factorization.factor, b)
-end
-
-########### Find Solution using LDLt or QR Factorization ###########
-function dcPowerFlowSolve(system::PowerSystem, analysis::DCPowerFlow, b::Array{Float64,1}, type::Union{SuiteSparse.SPQR.QRSparse{Float64, Int64}, SuiteSparse.CHOLMOD.Factor{Float64}})
-    analysis.voltage.angle = analysis.factorization.factor \ b 
 end

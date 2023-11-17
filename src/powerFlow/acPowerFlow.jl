@@ -1,10 +1,20 @@
 """
-    newtonRaphson(system::PowerSystem)
+    newtonRaphson(system::PowerSystem, factorization::Factorization)
 
-The function accepts the `PowerSystem` composite type as input and uses it to set up the
-Newton-Raphson method to solve AC power flow. Additionally, if the AC model was not created,
-the function will automatically initiate an update of the `ac` field within the `PowerSystem`
-composite type.
+The function sets up the Newton-Raphson method to solve the AC power flow.    
+
+# Arguments
+The function requires the `PowerSystem` composite type to establish the framework. 
+Moreover, the `Factorization` argument is optional and can be one of the following:
+  * `LU`: utilizes LU factorization to solve the linear system of equations within each iteration;
+  * `QR`: utilizes QR factorization to solve the linear system of equations within each iteration.
+If the user does not provide the `Factorization` composite type, the default solving method 
+will be LU factorization.
+
+# Updates
+If the AC model has not been created, the function automatically initiates an update within 
+the `ac` field of the `PowerSystem` composite type. It also performs a check on bus types 
+and rectifies any mistakes present.
 
 # Returns
 The function returns an instance of the `NewtonRaphson` subtype of the abstract `ACPowerFlow`
@@ -12,17 +22,26 @@ type, which includes the following fields:
 - `voltage`: the bus voltage magnitudes and angles;
 - `power`: the variable allocated to store the active and reactive powers;
 - `current`: the variable allocated to store the currents;
-- `method`: contains the Jacobian matrix, power injection mismatches, bus voltage increments, and indices.
+- `method`: the Jacobian matrix, its factorization, power injection mismatches, bus voltage increments, and indices.
 
-# Example
+# Examples
+Set up the Newton-Raphson method using LU factorization within each iteration:
 ```jldoctest
 system = powerSystem("case14.h5")
 acModel!(system)
 
 analysis = newtonRaphson(system)
 ```
+
+Set up the Newton-Raphson method using QR factorization within each iteration:
+```jldoctest
+system = powerSystem("case14.h5")
+acModel!(system)
+
+analysis = newtonRaphson(system, QR)
+```
 """
-function newtonRaphson(system::PowerSystem)
+function newtonRaphson(system::PowerSystem, factorization::Type{<:Union{QR, LU}} = LU)
     ac = system.model.ac
     bus = system.bus
 
@@ -99,6 +118,7 @@ function newtonRaphson(system::PowerSystem)
     mismatch = fill(0.0, bus.number + pqNumber - 1)
     increment = fill(0.0, bus.number + pqNumber - 1)
 
+    method = Dict(LU => lu, QR => qr)
     return NewtonRaphson(
         Polar(
             voltageMagnitude,
@@ -124,6 +144,7 @@ function newtonRaphson(system::PowerSystem)
             jacobian,
             mismatch,
             increment,
+            get(method, factorization, lu)(sparse(Matrix(1.0I, 1, 1))),
             pqIndex,
             pvpqIndex
         )
@@ -131,12 +152,23 @@ function newtonRaphson(system::PowerSystem)
 end
 
 """
-    fastNewtonRaphsonBX(system::PowerSystem)
+    fastNewtonRaphsonBX(system::PowerSystem, factorization::Factorization)
 
-The function accepts the `PowerSystem` composite type as input and uses it to set up the fast
-Newton-Raphson method of version BX to solve AC power flow. Additionally, if the AC model was
-not created, the function will automatically initiate an update of the `ac` field  within the
-`PowerSystem` composite type.
+The function sets up the fast Newton-Raphson method of version BX to solve the AC power 
+flow. 
+
+# Arguments
+The function requires the `PowerSystem` composite type to establish the framework. 
+Moreover, the `Factorization` argument is optional and can be one of the following:
+  * `LU`: utilizes LU factorization to factorize constant Jacobian matrices;
+  * `QR`: utilizes QR factorization to factorize constant Jacobian matrices.
+If the user does not provide the `Factorization` composite type, the default solving method 
+will be LU factorization.
+
+# Updates
+If the AC model has not been created, the function automatically initiates an update within 
+the `ac` field of the `PowerSystem` composite type. It also performs a check on bus types 
+and rectifies any mistakes present.
 
 # Returns
 The function returns an instance of the `FastNewtonRaphson` subtype of the abstract `ACPowerFlow`
@@ -144,30 +176,49 @@ type, which includes the following fields:
 - `voltage`: the bus voltage magnitudes and angles;
 - `power`: the variable allocated to store the active and reactive powers;
 - `current`: the variable allocated to store the currents;
-- `method`: contains Jacobian matrices, power injection mismatches, bus voltage increments, and indices.
+- `method`: contains Jacobian matrices, its factorization, power injection mismatches, bus voltage increments, and indices.
 
-# Example
+# Examples
+Set up the fast Newton-Raphson method utilizing LU factorization:
 ```jldoctest
 system = powerSystem("case14.h5")
 acModel!(system)
 
 analysis = fastNewtonRaphsonBX(system)
 ```
+
+Set up the fast Newton-Raphson method utilizing QR factorization:
+```jldoctest
+system = powerSystem("case14.h5")
+acModel!(system)
+
+analysis = fastNewtonRaphsonBX(system, QR)
+```
 """
-function fastNewtonRaphsonBX(system::PowerSystem)
-    algorithmBX = 1
-    analysis = fastNewtonRaphson(system, algorithmBX)
+function fastNewtonRaphsonBX(system::PowerSystem, factorization::Type{<:Union{QR, LU}} = LU)
+    analysis = fastNewtonRaphsonModel(system, factorization, true)
 
     return analysis
 end
 
 """
-    fastNewtonRaphsonXB(system::PowerSystem)
+    fastNewtonRaphsonXB(system::PowerSystem, factorization::Factorization)
 
-The function accepts the `PowerSystem` composite type as input and uses it to set up the fast
-Newton-Raphson method of version XB to solve AC power flow. Additionally, if the AC model was
-not created, the function will automatically initiate an update of the `ac` field within the
-`PowerSystem` composite type.
+The function sets up the fast Newton-Raphson method of version XB to solve the AC power 
+flow. 
+
+# Arguments
+The function requires the `PowerSystem` composite type to establish the framework. 
+Moreover, the `Factorization` argument is optional and can be one of the following:
+  * `LU`: utilizes LU factorization to factorize constant Jacobian matrices;
+  * `QR`: utilizes QR factorization to factorize constant Jacobian matrices.
+If the user does not provide the `Factorization` composite type, the default solving method 
+will be LU factorization.
+
+# Updates
+If the AC model has not been created, the function automatically initiates an update within 
+the `ac` field of the `PowerSystem` composite type. It also performs a check on bus types 
+and rectifies any mistakes present.
 
 # Returns
 The function returns an instance of the `FastNewtonRaphson` subtype of the abstract `ACPowerFlow`
@@ -175,27 +226,35 @@ type, which includes the following fields:
 - `voltage`: the bus voltage magnitudes and angles;
 - `power`: the variable allocated to store the active and reactive powers;
 - `current`: the variable allocated to store the currents;
-- `method`: contains Jacobian matrices, power injection mismatches, bus voltage increments, and indices.
+- `method`: contains Jacobian matrices, its factorization, power injection mismatches, bus voltage increments, and indices.
 
-# Example
+# Examples
+Set up the fast Newton-Raphson method utilizing LU factorization:
 ```jldoctest
 system = powerSystem("case14.h5")
 acModel!(system)
 
 analysis = fastNewtonRaphsonXB(system)
 ```
+
+Set up the fast Newton-Raphson method utilizing QR factorization:
+```jldoctest
+system = powerSystem("case14.h5")
+acModel!(system)
+
+analysis = fastNewtonRaphsonXB(system, QR)
+```
 """
-function fastNewtonRaphsonXB(system::PowerSystem)
-    algorithmXB = 2
-    analysis = fastNewtonRaphson(system, algorithmXB)
+function fastNewtonRaphsonXB(system::PowerSystem, factorization::Type{<:Union{QR, LU}} = LU)
+    analysis = fastNewtonRaphsonModel(system, factorization, false)
 
     return analysis
 end
 
-@inline function fastNewtonRaphson(system::PowerSystem, algorithmFlag::Int64)
-    ac = system.model.ac
+@inline function fastNewtonRaphsonModel(system::PowerSystem, factorization::Type{<:Union{QR, LU}}, bx)
     bus = system.bus
     branch = system.branch
+    ac = system.model.ac
 
     if isempty(ac.nodalMatrix)
         acModel!(system)
@@ -252,87 +311,13 @@ end
     jacobianActive = sparse(iIndexActive, jIndexActive, zeros(nonZeroElementActive), bus.number - 1, bus.number - 1)
     jacobianReactive = sparse(iIndexReactive, jIndexReactive, zeros(nonZeroElementReactive), pqNumber, pqNumber)
 
-    @inbounds for i = 1:branch.number
-        if branch.layout.status[i] == 1
-            from = branch.layout.from[i]
-            to = branch.layout.to[i]
-
-            shiftcos = cos(branch.parameter.shiftAngle[i])
-            shiftsin = sin(branch.parameter.shiftAngle[i])
-            resistance = branch.parameter.resistance[i]
-            reactance = branch.parameter.reactance[i]
-            susceptance = branch.parameter.susceptance[i]
-
-            m = pvpqIndex[from]
-            n = pvpqIndex[to]
-
-            if algorithmFlag == 1
-                gmk = resistance / (resistance^2 + reactance^2)
-                bmk = -reactance / (resistance^2 + reactance^2)
-            end
-            if algorithmFlag == 2
-                gmk = 0.0
-                bmk = -1 / reactance
-            end
-            if from != bus.layout.slack && to != bus.layout.slack
-                jacobianActive[m, n] += (-gmk * shiftsin - bmk * shiftcos) / (shiftcos^2 + shiftsin^2)
-                jacobianActive[n, m] += (gmk * shiftsin - bmk * shiftcos) / (shiftcos^2 + shiftsin^2)
-            end
-            if from != bus.layout.slack
-                jacobianActive[m, m] += bmk / (shiftcos^2 + shiftsin^2)
-            end
-            if to != bus.layout.slack
-                jacobianActive[n, n] += bmk
-            end
-
-            m = pqIndex[from]
-            n = pqIndex[to]
-
-            if algorithmFlag == 1
-                bmk = - 1 / reactance
-            end
-            if algorithmFlag == 2
-                bmk = -reactance / (resistance^2 + reactance^2)
-            end
-            if branch.parameter.turnsRatio[i] == 0
-                turnsRatio = 1.0
-            else
-                turnsRatio = branch.parameter.turnsRatio[i]
-            end
-            if m != 0 && n != 0
-                jacobianReactive[m, n] += -bmk / turnsRatio
-                jacobianReactive[n, m] += -bmk / turnsRatio
-            end
-            if bus.layout.type[from] == 1
-                jacobianReactive[m, m] += (bmk + 0.5 * susceptance) / (turnsRatio^2)
-            end
-            if bus.layout.type[to] == 1
-                jacobianReactive[n, n] += bmk + 0.5 * susceptance
-            end
-        end
-    end
-
-    @inbounds for i = 1:bus.number
-        if bus.layout.type[i] == 1
-            jacobianReactive[pqIndex[i], pqIndex[i]] += bus.shunt.susceptance[i]
-        end
-    end
-
-    factorisationActive = lu(jacobianActive)
-    factorisationReactive = lu(jacobianReactive)
-
     mismatchActive = fill(0.0, bus.number - 1)
     mismatchReactive = fill(0.0, pqNumber)
     incrementReactive = fill(0.0, pqNumber)
     incrementActive = fill(0.0, bus.number - 1)
 
-    if algorithmFlag == 1
-        method = "Fast Newton-Raphson BX"
-    else
-        method = "Fast Newton-Raphson XB"
-    end
-
-    return FastNewtonRaphson(
+    method = Dict(LU => lu, QR => qr)
+    analysis = FastNewtonRaphson(
         Polar(voltageMagnitude,voltageAngle),
         Power(
             Cartesian(Float64[], Float64[]),
@@ -355,18 +340,86 @@ end
                 jacobianActive,
                 mismatchActive,
                 incrementActive,
-                factorisationActive
+                get(method, factorization, lu)(sparse(Matrix(1.0I, 1, 1)))
             ),
             FastNewtonRaphsonModel(
                 jacobianReactive,
                 mismatchReactive,
                 incrementReactive,
-                factorisationReactive
+                get(method, factorization, lu)(sparse(Matrix(1.0I, 1, 1)))
             ),
             pqIndex,
-            pvpqIndex
+            pvpqIndex,
+            false,
+            bx
         )
     )
+
+    @inbounds for i = 1:branch.number
+        if branch.layout.status[i] == 1
+            fastNewtonRaphsonJacobian(system, analysis, i)
+        end
+    end
+
+    @inbounds for i = 1:bus.number
+        if bus.layout.type[i] == 1
+            analysis.method.reactive.jacobian[analysis.method.pq[i], analysis.method.pq[i]] += bus.shunt.susceptance[i]
+        end
+    end
+
+    return analysis
+end
+
+@inline function fastNewtonRaphsonJacobian(system::PowerSystem, analysis::FastNewtonRaphson, i::Int64)
+    from = system.branch.layout.from[i]
+    to = system.branch.layout.to[i]
+
+    shiftcos = cos(system.branch.parameter.shiftAngle[i])
+    shiftsin = sin(system.branch.parameter.shiftAngle[i])
+    resistance = system.branch.parameter.resistance[i]
+    reactance = system.branch.parameter.reactance[i]
+    susceptance = system.branch.parameter.susceptance[i]
+    turnsRatio = system.branch.parameter.turnsRatio[i]
+
+    m = analysis.method.pvpq[from]
+    n = analysis.method.pvpq[to]
+
+    if analysis.method.bx
+        gmk = resistance / (resistance^2 + reactance^2)
+        bmk = -reactance / (resistance^2 + reactance^2)
+    else
+        gmk = 0.0
+        bmk = -1 / reactance
+    end
+    if from != system.bus.layout.slack && to != system.bus.layout.slack
+        analysis.method.active.jacobian[m, n] += (-gmk * shiftsin - bmk * shiftcos) / (shiftcos^2 + shiftsin^2)
+        analysis.method.active.jacobian[n, m] += (gmk * shiftsin - bmk * shiftcos) / (shiftcos^2 + shiftsin^2)
+    end
+    if from != system.bus.layout.slack
+        analysis.method.active.jacobian[m, m] += bmk / (shiftcos^2 + shiftsin^2)
+    end
+    if to != system.bus.layout.slack
+        analysis.method.active.jacobian[n, n] += bmk
+    end
+
+    m = analysis.method.pq[from]
+    n = analysis.method.pq[to]
+
+    if analysis.method.bx
+        bmk = - 1 / reactance
+    else
+        bmk = -reactance / (resistance^2 + reactance^2)
+    end
+    if m != 0 && n != 0
+        analysis.method.reactive.jacobian[m, n] += -bmk / turnsRatio
+        analysis.method.reactive.jacobian[n, m] += -bmk / turnsRatio
+    end
+    if system.bus.layout.type[from] == 1
+        analysis.method.reactive.jacobian[m, m] += (bmk + 0.5 * susceptance) / (turnsRatio^2)
+    end
+    if system.bus.layout.type[to] == 1
+        analysis.method.reactive.jacobian[n, n] += bmk + 0.5 * susceptance
+    end
 end
 
 """
@@ -675,7 +728,8 @@ function solve!(system::PowerSystem, analysis::NewtonRaphson)
         end
     end
 
-    ldiv!(analysis.method.increment, lu(jacobian), analysis.method.mismatch)
+    analysis.method.factorization = sparseFactorization(jacobian, analysis.method.factorization)
+    analysis.method.increment = sparseSolution(analysis.method.increment, analysis.method.mismatch, analysis.method.factorization)
 
     @inbounds for i = 1:bus.number
         if bus.layout.type[i] == 1
@@ -697,7 +751,13 @@ function solve!(system::PowerSystem, analysis::FastNewtonRaphson)
     pq = analysis.method.pq
     pvpq = analysis.method.pvpq
 
-    ldiv!(active.increment, active.factorization, active.mismatch)
+    if !analysis.method.done
+        analysis.method.done = true
+        active.factorization = sparseFactorization(active.jacobian, active.factorization)
+        reactive.factorization = sparseFactorization(reactive.jacobian, reactive.factorization)
+    end
+
+    active.increment = sparseSolution(active.increment, active.mismatch, active.factorization)
 
     @inbounds for i = 1:bus.number
         if i != bus.layout.slack
@@ -719,7 +779,7 @@ function solve!(system::PowerSystem, analysis::FastNewtonRaphson)
         end
     end
 
-    ldiv!(reactive.increment, reactive.factorization, reactive.mismatch)
+    reactive.increment = sparseSolution(reactive.increment, reactive.mismatch, reactive.factorization)
 
     @inbounds for i = 1:bus.number
         if bus.layout.type[i] == 1
@@ -1038,7 +1098,7 @@ function changeSlackBus!(system::PowerSystem)
         if system.bus.layout.type[i] == 2 && !isempty(system.bus.supply.generator[i])
             system.bus.layout.type[i] = 3
             system.bus.layout.slack = i
-            @info("The slack bus did not have an in-service generator, the first generator bus in the list with in-service generator is set to be slack bus.")
+            @info("The bus with index $i is now the new slack bus since no in-service generator was available at the previous slack bus.")
             break
         end
     end

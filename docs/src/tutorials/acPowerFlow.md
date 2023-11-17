@@ -203,10 +203,17 @@ Next, the function [`solve!`](@ref solve!(::PowerSystem, ::NewtonRaphson)) compu
 ```math
   \mathbf{\Delta} \mathbf{x}^{(\nu-1)} = -\mathbf{J}(\mathbf{x}^{(\nu-1)})^{-1} \mathbf{f}(\mathbf{x}^{(\nu-1)}),
 ```
-where ``\mathbf{\Delta} \mathbf{x} = [\mathbf \Delta \mathbf x_a, \mathbf \Delta \mathbf x_m]^T`` consists of the vector of bus voltage angle increments ``\mathbf \Delta \mathbf x_a \in \mathbb{R}^{n-1}`` and bus voltage magnitude increments ``\mathbf \Delta \mathbf x_m \in \mathbb{R}^{n_{\text{pq}}}``, and ``\mathbf{J}(\mathbf{x}) \in \mathbb{R}^{n_{\text{u}} \times n_{\text{u}}}`` is the Jacobian matrix, ``n_{\text{u}} = n + n_{\text{pq}} - 1``. These values are stored in the `ACPowerFlow` abstract type and can be accessed after each iteration using the following commands:
+where ``\mathbf{\Delta} \mathbf{x} = [\mathbf \Delta \mathbf x_a, \mathbf \Delta \mathbf x_m]^T`` consists of the vector of bus voltage angle increments ``\mathbf \Delta \mathbf x_a \in \mathbb{R}^{n-1}`` and bus voltage magnitude increments ``\mathbf \Delta \mathbf x_m \in \mathbb{R}^{n_{\text{pq}}}``, and ``\mathbf{J}(\mathbf{x}) \in \mathbb{R}^{n_{\text{u}} \times n_{\text{u}}}`` is the Jacobian matrix, ``n_{\text{u}} = n + n_{\text{pq}} - 1``. 
+
+!!! tip "Tip"
+    By default, JuliaGrid uses LU factorization as the primary method for factorizing the Jacobian matrix ``\mathbf{J} = \mathbf{L}\mathbf{U}``, aiming to compute the increments. Nevertheless, users have the flexibility to opt for QR factorization as an alternative method.
+
+These values are stored in the `ACPowerFlow` abstract type and can be accessed after each iteration using the following commands:
 ```@repl PowerFlowSolution
 𝚫𝐱 = analysis.method.increment
 𝐉 = analysis.method.jacobian
+𝐋 = analysis.method.factorization.L
+𝐔 = analysis.method.factorization.U
 ```
 
 The JuliaGrid implementation of the AC power flow follows a specific order to store the increment and mismatch vectors. The first ``n-1`` elements of both vectors correspond to the demand and generator buses in the same order as they appear in the input data. This order is not obtained by first extracting the demand and then generator buses but by excluding the slack bus in the input data. The first ``n-1`` elements of the increment vector correspond to the voltage angle increments, while the first ``n-1`` elements of the mismatch vector correspond to the mismatch in active power injections. The last ``n_{\text{pq}}`` elements of the increment and mismatch vectors correspond to the demand buses in the order they appear in the input data. For the increment vector, it matches the bus voltage magnitude increments, while for the mismatch vector, it matches the mismatch in reactive power injections. As a analysis, this order defines the row and column order of the Jacobian matrix ``\mathbf{J}(\mathbf{x})``.
@@ -522,11 +529,18 @@ When a user creates the fast Newton-Raphson method in JuliaGrid, the Jacobian ma
 𝐁₂ = analysis.method.reactive.jacobian
 ```
 
-Next, JuliaGrid utilizes the [LU factorization](https://docs.julialang.org/en/v1/stdlib/LinearAlgebra/#LinearAlgebra.lu) of matrices ``\mathbf{B}_1`` and ``\mathbf{B}_2`` to compute solutions through iterations, which can be accessed using the following commands:
+Next, JuliaGrid utilizes the [LU factorization](https://docs.julialang.org/en/v1/stdlib/LinearAlgebra/#LinearAlgebra.lu) of matrices ``\mathbf{B}_1 = \mathbf{L}_1\mathbf{U}_1`` and ``\mathbf{B}_2 = \mathbf{L}_2\mathbf{U}_2`` to compute solutions through iterations, which can be accessed using the following commands:
 ```@repl PowerFlowSolution
-analysis.method.active.factorization
-analysis.method.reactive.factorization
+𝐋₁ = analysis.method.active.factorization.L
+𝐔₁ = analysis.method.active.factorization.U
+
+𝐋₂ = analysis.method.reactive.factorization.L
+𝐔₂ = analysis.method.reactive.factorization.U
 ```
+
+!!! tip "Tip"
+    By default, JuliaGrid uses LU factorization as the primary method for factorizing Jacobian matrices. Nevertheless, users have the flexibility to opt for QR factorization as an alternative method.
+
 
 Additionally, during this stage, JuliaGrid generates the starting vectors for bus voltage magnitudes ``\mathbf{V}^{(0)}`` and angles ``\bm{\theta}^{(0)}`` as demonstrated below:
 ```@repl PowerFlowSolution

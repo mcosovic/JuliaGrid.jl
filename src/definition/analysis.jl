@@ -1,12 +1,17 @@
 export AC, DC, ACPowerFlow, OptimalPowerFlow
 export NewtonRaphson, FastNewtonRaphson, GaussSeidel, DCPowerFlow
 export DCOptimalPowerFlow, ACOptimalPowerFlow
+export LU, QR, LDLt, Factorization
 
 ########### Abstract Types ###########
 abstract type AC end
 abstract type DC end
 abstract type ACPowerFlow <: AC end
 abstract type OptimalPowerFlow end
+abstract type Factorization end
+abstract type QR <: Factorization end
+abstract type LU <: Factorization end
+abstract type LDLt <: Factorization end
 
 ########### Powers in the AC Framework ###########
 mutable struct Power
@@ -38,12 +43,13 @@ mutable struct DCPower
 end
 
 ########### Newton-Raphson ###########
-struct NewtonRaphsonMethod
+mutable struct NewtonRaphsonMethod
     jacobian::SparseMatrixCSC{Float64,Int64}
     mismatch::Array{Float64,1}
     increment::Array{Float64,1}
+    factorization::LUQR
     pq::Array{Int64,1}
-    pvpq::Array{Int64,1}
+    pvpq::Array{Int64,1} 
 end
 
 struct NewtonRaphson <: ACPowerFlow
@@ -54,18 +60,20 @@ struct NewtonRaphson <: ACPowerFlow
 end
 
 ########### Fast Newton-Raphson ###########
-struct FastNewtonRaphsonModel
+mutable struct FastNewtonRaphsonModel
     jacobian::SparseMatrixCSC{Float64,Int64}
     mismatch::Array{Float64,1}
     increment::Array{Float64,1}
-    factorization::SuiteSparse.UMFPACK.UmfpackLU{Float64, Int64}
+    factorization::LUQR
 end
 
-struct FastNewtonRaphsonMethod
+mutable struct FastNewtonRaphsonMethod
     active::FastNewtonRaphsonModel
     reactive::FastNewtonRaphsonModel
     pq::Array{Int64,1}
     pvpq::Array{Int64,1}
+    done::Bool
+    const bx::Bool
 end
 
 struct FastNewtonRaphson <: ACPowerFlow
@@ -90,10 +98,15 @@ struct GaussSeidel <: ACPowerFlow
 end
 
 ########### DC Power Flow ###########
+mutable struct DCPowerFlowMethod
+    factorization::LULDLtQR
+    done::Bool
+end
+
 struct DCPowerFlow <: DC
     voltage::PolarAngle
     power::DCPower
-    factorization::FactorizationSparse
+    method::DCPowerFlowMethod
 end
 
 ######### Constraints ##########
