@@ -124,9 +124,9 @@ nothing # hide
 ---
 
 ## [Power System Alteration](@id DCPowerSystemAlterationManual)
-Once users establish the `PowerSystem` composite type with the `dc` model alongside the `DCPowerFlow` composite type, they gain the freedom to seamlessly add, update branches, generators, and modify buses. This can be achieved by reusing the aforementioned composite types, eliminating the need to recreate them from scratch.
+Once users have established the `PowerSystem` composite type and the `dc` model using the [`dcModel!`](@ref dcModel!) function, users gain the ability to include new branches and generators. They can also modify buses, branches, and generators while progressing to generate the `DCPowerFlow` composite type via the [`dcPowerFlow`](@ref dcPowerFlow) function. Finally, the resolution of the DC power flow is achieved by employing the [`solve!`](@ref solve!(::PowerSystem, ::DCPowerFlow)) function. This process eliminates the necessity to start over and recreate the `PowerSystem` and `dc` model from scratch.
 
-This streamlined process is facilitated by simply providing the `PowerSystem` and `DCPowerFlow` composite types as arguments to functions responsible for adding or updating power system components.
+However, once users establish the `DCPowerFlow` composite type using [`dcPowerFlow`](@ref dcPowerFlow), they also acquire the flexibility to seamlessly incorporate new branches and generators, along with the capability to modify buses, branches, and generators. This extends the previous scenario where there was no need to recreate the `PowerSystem` and `dc` model, and similarly, the `DCPowerFlow` composite type does not require recreation from scratch. This efficient process is facilitated by directly supplying the `PowerSystem` and `DCPowerFlow` composite types as arguments to functions responsible for adding or updating power system components.
 
 ---
 
@@ -171,7 +171,7 @@ solve!(system, analysis)
 ```
 
 !!! note "Info"
-    Users retain the ability to add or modify buses, branches, and generators, allowing them to proceed directly to the [`solve!`](@ref solve!(::PowerSystem, ::DCPowerFlow)) function. When the user's modifications yield a correct solution, JuliaGrid will execute the necessary sequence of functions. Conversely, if the modifications result in an incorrect solution, JuliaGrid will raise an error. 
+    Upon creating the `PowerSystem` and `DCPowerFlow` composite types, users maintain the capability to add or modify buses, branches, and generators before directly proceeding to utilize the [`solve!`](@ref solve!(::PowerSystem, ::DCPowerFlow)) function. When the user's adjustments result in a valid solution, JuliaGrid will execute the essential sequence of functions accordingly. However, in cases where modifications are incompatible, such as altering the slack bus or when it should be changed, JuliaGrid will raise an error, preventing users from obtaining erroneous results. This mechanism ensures accuracy and avoids misleading outcomes due to incompatible modifications.
 
 ---
 

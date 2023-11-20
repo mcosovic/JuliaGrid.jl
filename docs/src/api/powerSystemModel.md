@@ -4,7 +4,7 @@ For further information on this topic, please see the [Power System Model](@ref 
 
 ---
 
-###### Power System Data
+###### Power System
 * [`powerSystem`](@ref powerSystem)
 * [`savePowerSystem`](@ref savePowerSystem)
 
@@ -30,7 +30,7 @@ For further information on this topic, please see the [Power System Model](@ref 
 
 ---
 
-## Power System Data
+## Power System
 ```@docs
 powerSystem
 savePowerSystem

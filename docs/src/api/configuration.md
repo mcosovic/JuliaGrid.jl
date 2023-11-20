@@ -4,10 +4,10 @@ For further information on this topic, please see the [Power System Model](@ref 
 
 ---
 
-###### Base Unit Prefixes
+###### Base Units
 * [`@base`](@ref @base)
 
-###### Input Unit System
+###### Input Units
 * [`@power`](@ref @power)
 * [`@voltage`](@ref @voltage)
 * [`@current`](@ref @current)
@@ -18,14 +18,14 @@ For further information on this topic, please see the [Power System Model](@ref 
 
 ---
 
-## Base Unit Prefixes
+## Base Units
 ```@docs
 @base
 ```
 
 ---
 
-## Input Unit System
+## Input Units
 ```@docs
 @power
 @voltage

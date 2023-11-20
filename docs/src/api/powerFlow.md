@@ -4,7 +4,7 @@ For further information on this topic, please see the [AC Power Flow](@ref ACPow
 
 ---
 
-###### Build AC Power Flow Model
+###### Build AC Power Flow
 * [`newtonRaphson`](@ref newtonRaphson)
 * [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX)
 * [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB)
@@ -19,7 +19,7 @@ For further information on this topic, please see the [AC Power Flow](@ref ACPow
 * [`adjustAngle!`](@ref adjustAngle!) 
 * [`startingVoltage!`](@ref startingVoltage!) 
 
-###### Build DC Power Flow Model
+###### Build DC Power Flow
 * [`dcPowerFlow`](@ref dcPowerFlow)
 
 ###### Solve DC Power Flow
@@ -27,7 +27,7 @@ For further information on this topic, please see the [AC Power Flow](@ref ACPow
  
 ---
 
-## Build AC Power Flow Model
+## Build AC Power Flow
 ```@docs
 newtonRaphson
 fastNewtonRaphsonBX
@@ -54,7 +54,7 @@ startingVoltage!
 
 ---
 
-## Build DC Power Flow Model
+## Build DC Power Flow
 ```@docs
 dcPowerFlow
 ```

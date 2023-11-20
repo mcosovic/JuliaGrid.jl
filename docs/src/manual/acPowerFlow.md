@@ -297,13 +297,15 @@ end
 ---
 
 ## [Power System Alteration](@id ACPowerSystemAlterationManual)
-After setting up the `PowerSystem` composite type with the `ac` model and the `ACPowerFlow` composite type, users can conveniently modify and update branches, generators, and buses without the necessity of recreating them entirely. This can be achieved by reusing the aforementioned composite types, eliminating the need to recreate them from scratch.
+Once users have established the `PowerSystem` composite type and the `ac` model using the [`acModel!`](@ref acModel!) function, users gain the ability to include new branches and generators. They can also modify buses, branches, and generators while progressing to generate the `ACPowerFlow` composite type via the the [`newtonRaphson`](@ref newtonRaphson), [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX), [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB), or [`gaussSeidel`](@ref gaussSeidel) function. Finally, the resolution of the AC power flow is achieved by employing [`mismatch!`](@ref mismatch!(::PowerSystem, ::NewtonRaphson)) and [`solve!`](@ref solve!(::PowerSystem, ::NewtonRaphson)) functions. This process eliminates the necessity to start over and recreate the `PowerSystem` and `ac` model from scratch.
 
-This streamlined process is facilitated by simply providing the `PowerSystem` and `ACPowerFlow` composite types as arguments to functions responsible for adding or updating power system components.
+However, once users establish the `ACPowerFlow` composite type, they also acquire the flexibility to seamlessly incorporate new branches and generators, along with the capability to modify buses, branches, and generators. This extends the previous scenario where there was no need to recreate the `PowerSystem` and `ac` model, and similarly, the `ACPowerFlow` composite type does not require recreation from scratch. This efficient process is facilitated by directly supplying the `PowerSystem` and `ACPowerFlow` composite types as arguments to functions responsible for adding or updating power system components.
+
+Depending on the chosen method, reusing the `PowerSystem` and `ACPowerFlow` composite types can result in several advantages concerning the speed of executing algorithms for solving AC power flows, as detailed below.
 
 ---
 
-##### Reusing Jacobian Matrix
+##### Newton-Raphson: Reusing Jacobian Matrix
 In utilizing the Newton-Raphson method, users can directly proceed with iterations without reinitializing the Jacobian matrix. To illustrate, let us build upon the previous example by modifying the power system as follows:
 ```@example ACPowerFlowSolution
 addBranch!(system, analysis; label = "Branch 4", from = "Bus 2", to = "Bus 3", reactance = 1)
@@ -322,8 +324,9 @@ end
 nothing # hide
 ```
 
+---
 
-
+##### Fast Newton-Raphson: Reusing Jacobian Matrices
 A more captivating situation emerges when utilizing the fast Newton-Raphson method. Let us initialize the fast Newton-Raphson method and perform iterations as follows:
 ```@example ACPowerFlowSolution
 analysis = fastNewtonRaphsonBX(system)
@@ -335,14 +338,14 @@ end
 nothing # hide
 ```
 
-After making further changes to the power system:
+During this process, JuliaGrid will factorize constant Jacobian matrices governing the fast Newton-Raphson method. Now, let us make changes to the power system:
 ```@example ACPowerFlowSolution
 updateGenerator!(system, analysis; label = "Generator 1", reactive = 0.5)
 updateBus!(system, analysis; label = "Bus 2", active = 0.6, reactive = 0.2)
 nothing # hide
 ```
 
-To solve the AC power flow problem with the modified system, JuliaGrid optimally reuses previously formed and factorized Jacobian matrices:
+In the subsequent iterations, JuliaGrid will reuse the previously formed and factorized Jacobian matrices:
 ```@example ACPowerFlowSolution
 for iteration = 1:100
     mismatch!(system, analysis)
@@ -356,7 +359,7 @@ nothing # hide
 
 ---
 
-##### Sequential Matrix Factorization
+##### Fast Newton-Raphson: Sequential Matrix Factorization
 If the user opts to modify branch parameters, such as adding or updating branches, the reusability of Jacobian matrix factorizations becomes impractical. In such cases, JuliaGrid will need to recompute the factorization step to ensure the delivery of an accurate solution. However, executing iterations remains straightforward, as demonstrated below:
 ```@example ACPowerFlowSolution
 addBranch!(system, analysis; label = "Branch 5", from = "Bus 3", to = "Bus 2", reactance = 1)
@@ -379,12 +382,10 @@ print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
 ---
 
 ##### Warm Start
-In these scenario, users reuse alredy created power system with `ac` model, and also reuse `ACPowerFlow` type and proceeding directly to the iterations provides the advantage of a "warm start", where the starting voltages for the next iteration step match the solution from the previous example, allowing for efficient continuation of the power flow analysis.
-
-Let us now make another alteration on the power system:
+In these scenarios, users leverage the previously created `PowerSystem` composite type with the `ac` model and also reuse the `ACPowerFlow` type, proceeding directly to the iterations. This approach offers the advantage of a "warm start", wherein the initial voltages for the subsequent iteration step align with the solution from the previous iteration step. This alignment facilitates an efficient continuation of the power flow analysis. Let us now make another alteration on the power system:
 ```@example ACPowerFlowSolution
-updateBus!(system, analysis; label = "Bus 3", magnitude = 0.95, angle = -0.07)
-updateGenerator!(system, analysis; label = "Generator 2", magnitude = 1.1)
+updateBus!(system, analysis; label = "Bus 3", active = 0.1, magnitude = 0.95, angle = -0.07)
+updateGenerator!(system, analysis; label = "Generator 2", reactive = 0.2, magnitude = 1.1)
 
 nothing # hide
 ```
@@ -394,7 +395,7 @@ With these modifications we are not only alteration power system, but also start
 print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
 ```
 
-Hence, users have the flexibility to modify starting these values as required by utilizing the `magnitude` and `angle` keywords within the [`updateBus!`](@ref updateBus!) and [`updateGenerator!`](@ref updateGenerator!) functions. If user wants to set starting voltages as per the usual scenario using the `PowerSystem` composite type, you can achieve this by using the [`startingVoltage!`](@ref startingVoltage!) function:
+Therefore, users possess the flexibility to adjust these initial values as needed by employing the `magnitude` and `angle` keywords within the [`updateBus!`](@ref updateBus!) and [`updateGenerator!`](@ref updateGenerator!) functions. If users prefer to set starting voltages according to the typical scenario, they can accomplish this through the [`startingVoltage!`](@ref startingVoltage!) function:
 ```@example ACPowerFlowSolution
 startingVoltage!(system, analysis)
 ```
@@ -423,7 +424,7 @@ end
 ```
 
 !!! note "Info"
-    Users maintain the capability to add or modify buses, branches, and generators, enabling them to directly proceed to iterations. JuliaGrid, upon recognizing correct solutions resulting from user modifications, will execute the necessary sequence of functions. Conversely, if these modifications lead to an incorrect solution, JuliaGrid will raise an error. 
+    pon creating the `PowerSystem` and `ACPowerFlow` composite types, users retain the capability to add or modify buses, branches, and generators before proceeding directly to iterations. When the user's adjustments yield a valid solution, JuliaGrid will execute the necessary sequence of functions accordingly. However, in cases where modifications are incompatible, such as altering bus types, JuliaGrid will raise an error, preventing users from obtaining erroneous results. This mechanism ensures accuracy and avoids misleading outcomes caused by incompatible modifications.
 
 ---
 
