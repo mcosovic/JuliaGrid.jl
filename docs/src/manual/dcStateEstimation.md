@@ -6,14 +6,14 @@ For resolving the DC state estimation problem employing either the weighted leas
 * [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimationWLS)).
 
 After obtaining the solution for DC state estimation, JuliaGrid offers a post-processing analysis function to compute active powers associated with buses, branches, and generators:
-* [`power!`](@ref power!(::PowerSystem, ::DCStateEstimation)).
+* [`power!`](@ref power!(::PowerSystem, ::Union{DCPowerFlow, DCStateEstimation})).
 
 Additionally, there are specialized functions dedicated to calculating specific types of active powers related to particular buses, branches, or generators:
-* [`injectionPower`](@ref injectionPower(::PowerSystem, ::DCStateEstimation)),
-* [`supplyPower`](@ref supplyPower(::PowerSystem, ::DCStateEstimation)),
-* [`fromPower`](@ref fromPower(::PowerSystem, ::DCStateEstimation)),
-* [`toPower`](@ref toPower(::PowerSystem, ::DCStateEstimation)),
-* [`generatorPower`](@ref generatorPower(::PowerSystem, ::DCStateEstimation)).
+* [`injectionPower`](@ref injectionPower(::PowerSystem, ::Union{DCPowerFlow, DCStateEstimation})),
+* [`supplyPower`](@ref supplyPower(::PowerSystem, ::Union{DCPowerFlow, DCStateEstimation})),
+* [`fromPower`](@ref fromPower(::PowerSystem, ::Union{DCPowerFlow, DCStateEstimation})),
+* [`toPower`](@ref toPower(::PowerSystem, ::Union{DCPowerFlow, DCStateEstimation})),
+* [`generatorPower`](@ref generatorPower(::PowerSystem, ::Union{DCPowerFlow, DCStateEstimation})).
 
 It is important to note that when JuliaGrid computes powers related to generators, it utilizes bus voltage angles along with provided generator data within the `PowerSystem` composite type. This might be perceived as constraining, considering the power system is monitored solely through measurement data. Nevertheless, users are allowed the possibility to reveal powers associated with generators.
 
