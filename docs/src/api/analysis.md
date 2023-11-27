@@ -79,7 +79,7 @@ seriesCurrent(::PowerSystem, ::AC)
 
 ## [DC Power Analysis](@id DCPowerAnalysisAPI)
 ```@docs
-power!(::PowerSystem, ::DCPowerFlow)
+power!(::PowerSystem, ::Union{DCPowerFlow, DCStateEstimation})
 ```
 
 ---
