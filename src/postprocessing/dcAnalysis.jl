@@ -39,7 +39,7 @@ solve!(system, analysis)
 power!(system, analysis)
 ```
 """
-function power!(system::PowerSystem, analysis::DCPowerFlow)
+function power!(system::PowerSystem, analysis::Union{DCPowerFlow, DCStateEstimation})
     errorVoltage(analysis.voltage.angle)
 
     dc = system.model.dc
@@ -136,7 +136,7 @@ solve!(system, analysis)
 injection = injectionPower(system, analysis; label = 2)
 ```
 """
-function injectionPower(system::PowerSystem, analysis::DCPowerFlow; label)
+function injectionPower(system::PowerSystem, analysis::Union{DCPowerFlow, DCStateEstimation}; label)
     index = system.bus.label[getLabel(system.bus, label, "bus")]
     errorVoltage(analysis.voltage.angle)
 
@@ -202,7 +202,7 @@ solve!(system, analysis)
 supply = supplyPower(system, analysis; label = 2)
 ```
 """
-function supplyPower(system::PowerSystem, analysis::DCPowerFlow; label)
+function supplyPower(system::PowerSystem, analysis::Union{DCPowerFlow, DCStateEstimation}; label)
     index = system.bus.label[getLabel(system.bus, label, "bus")]
     errorVoltage(analysis.voltage.angle)
 
@@ -352,7 +352,7 @@ solve!(system, analysis)
 generator = generatorPower(system, analysis; label = 1)
 ```
 """
-function generatorPower(system::PowerSystem, analysis::DCPowerFlow; label)
+function generatorPower(system::PowerSystem, analysis::Union{DCPowerFlow, DCStateEstimation}; label)
     index = system.generator.label[getLabel(system.generator, label, "generator")]
     errorVoltage(analysis.voltage.angle)
 
@@ -391,7 +391,7 @@ function generatorPower(system::PowerSystem, analysis::DCOptimalPowerFlow; label
 end
 
 ######### Powers at Branches ##########
-function allPowerBranch(system::PowerSystem, analysis::Union{DCPowerFlow, DCOptimalPowerFlow})
+function allPowerBranch(system::PowerSystem, analysis::Union{DCPowerFlow, DCOptimalPowerFlow, DCStateEstimation})
     branch = system.branch
     voltage = analysis.voltage
     power = analysis.power

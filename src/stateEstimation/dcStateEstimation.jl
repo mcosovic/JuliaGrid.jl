@@ -7,15 +7,16 @@ The function sets up the framework to solve the DC state estimation.
 This function requires the `PowerSystem` and `Measurement` composite types to establish the 
 framework. 
 
-Furthermore, the `method` argument is not mandatory. It offers various methods for solving 
-DC state estimation. To address the weighted least-aquares (WLS) problem, users can opt for 
-standard factorization methods such as `LU` or `LDLt` for symmetrical/Hermitian gain 
-matrices. For a more robust solution in scenarios with ill-conditioned data, selecting the 
-`QR` factorization is advisable.
+Additionally, the inclusion of the `method` parameter is not obligatory. It offers a range 
+of techniques for resolving DC state estimation. To tackle the weighted least-squares (WLS) 
+issue, users have the option to employ standard factorization methods like `LU` or `LDLt`, 
+but only when the gain matrix is symmetrical. For a more resilient solution in situations 
+involving ill-conditioned data, particularly when significant differences in variances 
+exist, choosing the `QR` factorization method is recommended.
 
 Moreover, instead of solving the WLS state estimation problem, users can utilize the least 
 absolute value (LAV) method to find an estimator. This can be achieved by selecting one of 
-the [optimization solvers][JuMP documenatation](https://jump.dev/JuMP.jl/stable/packages/solvers/), 
+the [optimization solvers](https://jump.dev/JuMP.jl/stable/packages/solvers/), 
 where typically `Ipopt.Optimizer` suffices for common scenarios.
 
 If the user does not provide the `method`, the default method for solving the DC estimation 
@@ -24,12 +25,12 @@ will be LU factorization.
 # Updates
 If the DC model was not created, the function will automatically initiate an update of the
 `dc` field within the `PowerSystem` composite type. Additionally, if the slack bus lacks
-an in-service generator, JuliaGrid considers it a mistake and defines a new slack bus as the
-first generator bus with an in-service generator in the bus type list.
+an in-service generator, JuliaGrid considers it a mistake and defines a new slack bus as 
+the first generator bus with an in-service generator in the bus type list.
 
 # Returns
-The function returns an instance of the `DCStateEstimation` abstract type, which includes the
-following fields:
+The function returns an instance of the `DCStateEstimation` abstract type, which includes 
+the following fields:
 - `voltage`: the variable allocated to store the bus voltage angles;
 - `power`: the variable allocated to store the active powers;
 - `method`: the system model vectors and matrices, or alternatively, the optimization model.
@@ -133,7 +134,7 @@ end
 """
     solve!(system::PowerSystem, analysis::DCStateEstimation)
 
-By computing the bus voltage angles, the function solves the SE power flow problem.
+By computing the bus voltage angles, the function solves the DC state estimation problem.
 
 # Updates
 The resulting bus voltage angles are stored in the `voltage` field of the `DCStateEstimation` 

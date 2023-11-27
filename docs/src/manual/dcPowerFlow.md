@@ -17,7 +17,6 @@ Additionally, there are specialized functions dedicated to calculating specific 
 
 ---
 
-
 ## [Bus Type Modification](@id DCBusTypeModificationManual)
 During the initialization process, the designated slack bus, which is initially set, undergoes examination and can be altered using the [`dcPowerFlow`](@ref dcPowerFlow) function. Here is an example:
 ```julia
@@ -68,7 +67,6 @@ print(system.bus.label, system.bus.layout.type)
     The bus that is defined as the slack bus (`type = 3`) but lacks a connected in-service generator will have its type changed to the demand bus (`type = 1`). Meanwhile, the first generator bus (`type = 2`) with an in-service generator connected to it will be assigned as the new slack bus (`type = 3`).
 
 ---
-
 
 ## [Power Flow Solution](@id DCPowerFlowSolutionManual)
 To solve the DC power flow problem using JuliaGrid, we start by creating the `PowerSystem` composite type and defining the DC model with the [`dcModel!`](@ref dcModel!) function. Here is an example:
