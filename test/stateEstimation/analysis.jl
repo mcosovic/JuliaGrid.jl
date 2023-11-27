@@ -2,6 +2,9 @@ system14 = powerSystem(string(pathData, "case14test.m"))
 system30 = powerSystem(string(pathData, "case30test.m"))
 
 @testset "DC State Estimation" begin
+    @default(template)
+    @default(unit)
+    
     ############### Modified IEEE 14-bus Test Case ################
     updateBus!(system14; label = 1, type = 2)
     updateBus!(system14; label = 3, type = 3, angle = -0.17)
