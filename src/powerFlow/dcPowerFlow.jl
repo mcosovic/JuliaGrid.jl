@@ -34,7 +34,7 @@ dcModel!(system)
 analysis = dcPowerFlow(system)
 ```
 
-Establish the DC power flow framework that will be solved using the default QR factorization:
+Establish the DC power flow framework that will be solved using the QR factorization:
 ```jldoctest
 system = powerSystem("case14.h5")
 dcModel!(system)

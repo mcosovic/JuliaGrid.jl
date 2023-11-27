@@ -467,9 +467,7 @@ function gaussSeidel(system::PowerSystem)
             push!(pvIndex, i)
         end
     end
-
-    method = "Gauss-Seidel"
-
+    
     return GaussSeidel(
         Polar(voltageMagnitude, voltageAngle),
         Power(

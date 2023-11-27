@@ -1,6 +1,7 @@
 export AC, DC, ACPowerFlow, OptimalPowerFlow
 export NewtonRaphson, FastNewtonRaphson, GaussSeidel, DCPowerFlow
 export DCOptimalPowerFlow, ACOptimalPowerFlow
+export DCStateEstimation, DCStateEstimationWLS, DCStateEstimationLAV
 export LU, QR, LDLt, Factorization
 
 ########### Abstract Types ###########
@@ -12,6 +13,7 @@ abstract type Factorization end
 abstract type QR <: Factorization end
 abstract type LU <: Factorization end
 abstract type LDLt <: Factorization end
+abstract type DCStateEstimation <: DC end
 
 ########### Powers in the AC Framework ###########
 mutable struct Power
@@ -193,4 +195,42 @@ mutable struct DCOptimalPowerFlow <: DC
     variable::DCVariable
     constraint::DCConstraint
     objective::JuMP.QuadExpr
+end
+
+########### DC State Estimation ###########
+mutable struct DCStateEstimationWLSMethod
+    jacobian::SparseMatrixCSC{Float64,Int64}
+    weight::Array{Float64,1}
+    mean::Array{Float64,1}
+    factorization::LULDLtQR
+    done::Bool
+end
+
+struct DCStateEstimationWLS <: DCStateEstimation
+    voltage::PolarAngle
+    power::DCPower
+    method::DCStateEstimationWLSMethod
+end
+
+struct VariableLAV
+    anglex::Array{JuMP.VariableRef,1}
+    angley::Array{JuMP.VariableRef,1}
+    residualx::Array{JuMP.VariableRef,1}
+    residualy::Array{JuMP.VariableRef,1}
+end
+
+mutable struct DCStateEstimationMethodLAV
+    jacobian::SparseMatrixCSC{Float64,Int64}
+    weight::Array{Float64,1}
+    mean::Array{Float64,1}
+    jump::JuMP.Model
+    variable::VariableLAV
+    residual::Dict{Int64, JuMP.ConstraintRef}
+    objective::JuMP.AffExpr
+end
+
+struct DCStateEstimationLAV <: DCStateEstimation
+    voltage::PolarAngle
+    power::DCPower
+    method::DCStateEstimationMethodLAV
 end

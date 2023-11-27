@@ -32,6 +32,7 @@ makedocs(
              "Power Flow" => "api/powerFlow.md",
              "Optimal Power Flow" => "api/optimalPowerFlow.md",
              "Measurement Model" => "api/measurementModel.md",
+             "State Estimation" => "api/stateEstimation.md",
              "Power and Current Analysis" => "api/analysis.md",
              "Configuration Setup" => "api/configuration.md"]
     ]

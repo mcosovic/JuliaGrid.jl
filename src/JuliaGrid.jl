@@ -61,6 +61,10 @@ export addVarmeter!, updateVarmeter!, statusVarmeter!, @varmeter
 export addPmu!, updatePmu!, statusPmu!, @pmu
 export status!
 
+######### State Estimation ##########
+include("stateEstimation/dcStateEstimation.jl")
+export dcStateEstimation
+
 ########## Postprocessing ##########
 include("postprocessing/dcAnalysis.jl")
 include("postprocessing/acAnalysis.jl")
@@ -68,4 +72,4 @@ export power!, current!
 export injectionPower, supplyPower, shuntPower, fromPower, toPower, chargingPower, seriesPower, generatorPower
 export injectionCurrent, fromCurrent, toCurrent, seriesCurrent
 
-end # JuliaGrid
+end # JuliaGrid 

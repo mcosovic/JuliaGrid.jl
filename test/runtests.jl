@@ -41,3 +41,6 @@ include("optimalPowerFlow/reusing.jl")
 ######## Measurement ##########
 include("measurement/loadSave.jl")
 include("measurement/buildUpdate.jl")
+
+######## State Estimation ##########
+include("stateEstimation/analysis.jl")
