@@ -91,6 +91,7 @@ The LAV method presents an alternative estimation technique known for its increa
 To obtain an LAV estimator, users need to employ one of the [solvers](https://jump.dev/JuMP.jl/stable/packages/solvers/) listed in the JuMP documentation. In many common scenarios, the Ipopt solver proves sufficient to obtain a solution:
 ```@example WLSDCStateEstimationSolution
 using Ipopt
+using JuMP  # hide
 
 analysis = dcStateEstimation(system, device, Ipopt.Optimizer)
 JuMP.set_silent(analysis.method.jump) # hide
