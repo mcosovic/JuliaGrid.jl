@@ -59,13 +59,13 @@ nothing # hide
     Here, the user triggers LU factorization as the default method for solving the DC state estimation problem. However, the user also has the option to select alternative factorization methods such as `LDLt` or `QR`, for instance.
 
 To obtain the bus voltage angles, the [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimationWLS)) function can be invoked as shown:
-```@example DCPowerFlowSolution
+```@example WLSDCStateEstimationSolution
 solve!(system, analysis)
 nothing # hide
 ```
 
 Upon obtaining the solution, access the bus voltage angles using:
-```@repl DCPowerFlowSolution
+```@repl WLSDCStateEstimationSolution
 print(system.bus.label, analysis.voltage.angle)
 nothing # hide
 ```
