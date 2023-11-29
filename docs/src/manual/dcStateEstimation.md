@@ -12,7 +12,7 @@ Additionally, there are specialized functions dedicated to calculating specific 
 * [`injectionPower`](@ref injectionPower(::PowerSystem, ::DCStateEstimation)),
 * [`supplyPower`](@ref supplyPower(::PowerSystem, ::DCStateEstimation)),
 * [`fromPower`](@ref fromPower(::PowerSystem, ::DCStateEstimation)),
-* [`toPower`](@ref toPower(::PowerSystem, ::DCStateEstimation)),
+* [`toPower`](@ref toPower(::PowerSystem, ::DCStateEstimation)).
 
 ---
 
@@ -93,6 +93,7 @@ To obtain an LAV estimator, users need to employ one of the [solvers](https://ju
 using Ipopt
 
 analysis = dcStateEstimation(system, device, Ipopt.Optimizer)
+JuMP.set_silent(analysis.method.jump) # hide
 solve!(system, analysis)
 nothing # hide
 ```
