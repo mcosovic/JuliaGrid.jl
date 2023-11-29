@@ -27,14 +27,14 @@ In the following section, we have provided a list of functions that can be utili
 * [`seriesCurrent`](@ref seriesCurrent(::PowerSystem, ::AC))
 
 ###### DC Power Analysis
-* [`power!`](@ref power!(::PowerSystem, ::Union{DCPowerFlow, DCStateEstimation}))
+* [`power!`](@ref power!(::PowerSystem, ::DCPowerFlow))
 
 ###### DC Power Breakdown Analysis
-* [`injectionPower`](@ref injectionPower(::PowerSystem, ::Union{DCPowerFlow, DCStateEstimation}))
-* [`supplyPower`](@ref supplyPower(::PowerSystem, ::Union{DCPowerFlow, DCStateEstimation}))
+* [`injectionPower`](@ref injectionPower(::PowerSystem, ::DCPowerFlow))
+* [`supplyPower`](@ref supplyPower(::PowerSystem, ::DCPowerFlow))
 * [`fromPower`](@ref fromPower(::PowerSystem, ::DC))
 * [`toPower`](@ref toPower(::PowerSystem, ::DC))
-* [`generatorPower`](@ref generatorPower(::PowerSystem, ::Union{DCPowerFlow, DCStateEstimation}))
+* [`generatorPower`](@ref generatorPower(::PowerSystem, ::DCPowerFlow))
 
 
 ---
@@ -79,7 +79,7 @@ seriesCurrent(::PowerSystem, ::AC)
 
 ## [DC Power Analysis](@id DCPowerAnalysisAPI)
 ```@docs
-power!(::PowerSystem, ::Union{DCPowerFlow, DCStateEstimation})
+power!(::PowerSystem, ::DCPowerFlow)
 ```
 
 ---

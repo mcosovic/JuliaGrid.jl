@@ -70,12 +70,11 @@ function dcStateEstimation(system::PowerSystem, device::Measurement, factorizati
     method = Dict(LU => lu, LDLt => ldlt, QR => qr)
     return DCStateEstimationWLS(
         PolarAngle(Float64[]),
-        DCPower(
+        DCPowerSE(
             CartesianReal(Float64[]),
             CartesianReal(Float64[]),
             CartesianReal(Float64[]),
             CartesianReal(Float64[]),
-            CartesianReal(Float64[])
         ),
         DCStateEstimationWLSMethod(
             jacobian,
@@ -113,12 +112,11 @@ function dcStateEstimation(system::PowerSystem, device::Measurement, (@nospecial
 
     return DCStateEstimationLAV(
         PolarAngle(Float64[]),
-        DCPower(
+        DCPowerSE(
             CartesianReal(Float64[]),
             CartesianReal(Float64[]),
             CartesianReal(Float64[]),
             CartesianReal(Float64[]),
-            CartesianReal(Float64[])
         ),
         DCStateEstimationMethodLAV(
             jacobian,
@@ -317,3 +315,283 @@ function dcStateEstimationModel(system::PowerSystem, device::Measurement)
 
     return sparse(row, col, jac, measureNumber, bus.number), weight, mean
 end
+
+function residual(system::PowerSystem, analysis::DCStateEstimation)
+    return analysis.method.jacobian * analysis.voltage.angle - analysis.method.mean
+end
+
+# function badData(system::PowerSystem, device::Measurement, analysis::DCStateEstimation; threshold = 3.0)
+#     se = analysis.method
+
+
+#     for i in se.jacobian.colptr[system.bus.layout.slack]:(se.jacobian.colptr[system.bus.layout.slack + 1] - 1)
+#         se.jacobian.nzval[i] = 0.0
+#     end
+#     se.jacobian = [se.jacobian; sparse([1], [system.bus.layout.slack], [1.0], 1, system.bus.number)]
+#     push!(se.mean, 0.0); push!(se.weight, 1.0);
+
+
+#     ########## Construct Factorization ##########
+#     precision = spdiagm(0 => se.weight)
+#     gain = transpose(se.jacobian) * precision * se.jacobian
+#     gain[system.bus.layout.slack, system.bus.layout.slack] = 1.0
+#     # if !isa(se.factorization, SuiteSparse.UMFPACK.UmfpackLU{Float64, Int64}) 
+#         F = lu(gain)
+#     # else 
+#         F = se.factorization
+#     # end
+
+#     L, U, p, q, Rss = F.:(:)
+#     U = copy(transpose(U))
+#     n = size(U, 2)
+#     d = fill(0.0, n)
+#     Rs = fill(0.0, n)
+
+#     for i = 1:n
+#         Rs[i] = Rss[p[i]]
+#         d[i] = U[i, i]
+#         for j = U.colptr[i]:(U.colptr[i + 1] - 1)
+#             if i != U.rowval[j]
+#                 U.nzval[j] = U.nzval[j] / d[i]
+#             end
+#         end
+#     end
+#     S = gain[p, q]
+#     S = S + transpose(S)
+
+#     parent = etree(S)
+#     R = symbfact(S, parent)
+#     gainInverse = sparseinv(L, U, d, p, q, Rs, R)
+    
+#     ########## Diagonal entries of residual matrix ##########
+#     JGi = se.jacobian * gainInverse
+#     idx = findall(!iszero, se.jacobian)
+#     c = fill(0.0, size(se.jacobian, 1))
+#     for i in idx
+#         c[i[1]] += JGi[i] * se.jacobian[i]
+#     end
+
+#     ########## Critical data ##########
+#     xcr = (se.jacobian' * se.jacobian) \ (se.jacobian' * se.mean)
+#     hcr = se.jacobian * xcr
+
+#   ########## Largest normalized residual ##########
+#   h = se.jacobian * analysis.voltage.angle
+#   rmax = 0.0; idxr = 0
+# #   @inbounds for i = 1:lastindex(se.mean)
+# #       if abs(se.mean[i] - hcr[i]) > threshold
+# #           rnor = abs(se.mean[i] - h[i]) / sqrt(abs((1 / se.weight[i]) - c[i]))
+# #           if rnor > rmax
+# #               idxr = i
+# #               rmax = rnor
+# #           end
+# #       end
+# #   end
+
+#     @inbounds for i = 1:lastindex(se.mean)
+#         rnor = abs(se.mean[i] - h[i]) / sqrt(abs((1 / se.weight[i]) - c[i]))
+#         if rnor > rmax
+#             idxr = i
+#             rmax = rnor
+#         end
+#     end
+
+#   display([idxr rmax])
+# #   if rmax < settings.bad[:treshold]
+# #       rbelow = false
+# #   end
+
+# #   if idxr == 0
+# #       println("All measurements are marked as critical, the bad data processing is terminated.")
+# #       rbelow = false
+# #   end
+
+# #   ########## Remove measurement ##########
+# #   if rbelow
+# #       @inbounds for i in idx
+# #           if i[1] == idxr
+# #               J[i] = 0.0
+# #           end
+# #       end
+# #       z[idxr] = 0.0
+# #       @inbounds for i in W.rowval
+# #           if i == idxr
+# #               W.nzval[i] = 0.0
+# #           end
+# #       end
+# #       badsave = [badsave; [idxr rmax]]
+# #   end
+
+# #   return J, z, W, badsave, rbelow
+
+
+# end
+
+# ### The sparse inverse subset of a real sparse square matrix: Compute the elimination tree of a sparse matrix
+# # Copyright (c) 2013-2014 Viral Shah, Douglas Bates and other contributors
+# # https://github.com/JuliaPackageMirrors/SuiteSparse.jl/blob/master/src/csparse.jl
+# # Based on Direct Methods for Sparse Linear Systems, T. A. Davis, SIAM, Philadelphia, Sept. 2006.
+# function etree(A)
+#     n = size(A, 2)
+#     parent = fill(0, n)
+#     ancestor = fill(0, n)
+#     for k in 1:n, p in A.colptr[k]:(A.colptr[k + 1] - 1)
+#         i = A.rowval[p]
+#         while i != 0 && i < k
+#             inext = ancestor[i]
+#             ancestor[i] = k
+#             if inext == 0
+#                 parent[i] = k
+#             end
+#             i = inext
+#         end
+#     end
+
+#     head = fill(0, n)
+#     next = fill(0, n)
+#     for j in n:-1:1
+#         if parent[j] == 0 
+#             continue 
+#         end
+#         next[j] = head[parent[j]]
+#         head[parent[j]] = j
+#     end
+#     stack = Int64[]
+#     for j in 1:n 
+#         if parent[j] != 0
+#             continue
+#         end
+#         push!(stack, j)
+#         while !isempty(stack)
+#             p = stack[end]
+#             i = head[p]
+#             if i == 0
+#                 pop!(stack)
+#             else
+#                 head[p] = next[i]
+#                 push!(stack, i)
+#             end
+#         end
+#     end
+
+#     return parent
+# end
+
+# ### The sparse inverse subset of a real sparse square matrix: Find nonzero pattern of Cholesky
+# # Copyright (c) 2013-2014 Viral Shah, Douglas Bates and other contributors
+# # https://github.com/JuliaPackageMirrors/SuiteSparse.jl/blob/master/src/csparse.jl
+# # Based on Direct Methods for Sparse Linear Systems, T. A. Davis, SIAM, Philadelphia, Sept. 2006.
+# function symbfact(A, parent)
+#     m, n = size(A) 
+#     Ap = A.colptr 
+#     Ai = A.rowval
+#     col = Int64[]; sizehint!(col, n)
+#     row = Int64[]; sizehint!(row, n)
+
+#     visited = falses(n)
+#     for k = 1:m
+#         visited = falses(n)
+#         visited[k] = true
+#         for p in Ap[k]:(Ap[k + 1] - 1)
+#             i = Ai[p]
+#             if i > k 
+#                 continue 
+#             end
+#             while !visited[i]
+#                 push!(col, i)
+#                 push!(row, k)
+#                 visited[i] = true
+#                 i = parent[i]
+#             end
+#         end
+#     end
+#     R = sparse([col; collect(1:n)], [row; collect(1:n)], ones(length(row) + n), n, n)
+
+#     return R
+# end
+
+# ### The sparse inverse subset of a real sparse square matrix
+# # Copyright 2011, Timothy A. Davis
+# # http://www.suitesparse.com
+# @inbounds function sparseinv(L, U, d, p, q, Rs, R)
+#     Zpattern = R + R'
+#     n = size(Zpattern, 1)
+
+#     Zdiagp = fill(1, n)
+#     Lmunch = fill(0, n)
+
+#     znz = nnz(Zpattern)
+#     Zx = fill(0.0, znz)
+#     z = zeros(n)
+#     k = 0
+
+#     Zcolptr = Zpattern.colptr
+#     Zrowval = Zpattern.rowval
+#     flag = true
+#     for j = 1:n
+#         pdiag = -1
+#         for p = Zcolptr[j]:(Zcolptr[j + 1] - 1)
+#             if pdiag == -1 && Zrowval[p] == j
+#                 pdiag = p
+#                 Zx[p] = 1 / (d[j] / Rs[j])
+#             end
+#         end
+#         if pdiag == -1
+#             flag = false
+#           break
+#         end
+#         Zdiagp[j] = pdiag
+#     end
+
+#     if flag
+#         for k = 1:n
+#             Lmunch[k] = L.colptr[k + 1] - 1
+#         end
+
+#         for j = n:-1:1
+#             for p = Zdiagp[j]:Zcolptr[j + 1] - 1
+#                 z[Zrowval[p]] = Zx[p]
+#             end
+
+#             for p = Zdiagp[j]-1:-1:Zcolptr[j]
+#                 k = Zrowval[p]
+#                 zkj = 0.0
+#                 for up = U.colptr[k]:U.colptr[k + 1] - 1
+#                     i = U.rowval[up]
+#                     if i > k && z[i] != 0.0
+#                         zkj -= U.nzval[up] * z[i]
+#                     end
+#                 end
+#                 z[k] = zkj
+#             end
+
+#             for p = Zdiagp[j]-1:-1:Zcolptr[j]
+#                 k = Zrowval[p]
+#                 if Lmunch[k] < L.colptr[k] || L.rowval[Lmunch[k]] != j
+#                     continue
+#                 end
+#                 ljk = L.nzval[Lmunch[k]] * Rs[k] / Rs[L.rowval[Lmunch[k]]]
+#                 Lmunch[k] -= 1
+#                 for zp = Zdiagp[k]:Zcolptr[k + 1] - 1
+#                     Zx[zp] -= z[Zrowval[zp]] * ljk
+#                 end
+#             end
+
+#             for p = Zcolptr[j]:Zcolptr[j + 1] - 1
+#                 i = Zrowval[p]
+#                 Zx[p] = z[i]
+#                 z[i] = 0.0
+#             end
+#         end
+#     end
+
+#     idx = findall(!iszero, Zpattern)
+#     for (k, i) in enumerate(idx)
+#         Zpattern[i] = Zx[k]
+#     end
+
+#     return Zpattern[invperm(q), invperm(p)]
+# end
+
+
+

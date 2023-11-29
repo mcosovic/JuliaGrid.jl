@@ -143,54 +143,10 @@ function power!(system::PowerSystem, analysis::ACPowerFlow)
                     power.generator.active[i] = power.injection.active[busIndex] + system.bus.demand.active[busIndex]
                 end
             else
-                Qmintotal = 0.0
-                Qmaxtotal = 0.0
-                Qgentotal = 0.0
-                QminInf = 0.0
-                QmaxInf = 0.0
-                QminNew = system.generator.capability.minReactive[i]
-                QmaxNew = system.generator.capability.maxReactive[i]
-
                 generatorIndex = system.bus.supply.generator[busIndex]
-                for j in generatorIndex
-                    if !isinf(system.generator.capability.minReactive[j])
-                        Qmintotal += system.generator.capability.minReactive[j]
-                    end
-                    if !isinf(system.generator.capability.maxReactive[j])
-                        Qmaxtotal += system.generator.capability.maxReactive[j]
-                    end
-                    Qgentotal += (power.injection.reactive[busIndex] + system.bus.demand.reactive[busIndex]) / inService
-                end
-                for j in generatorIndex
-                    if isinf(system.generator.capability.minReactive[j])
-                        Qmin = -abs(Qgentotal) - abs(Qmintotal) - abs(Qmaxtotal)
-                        if system.generator.capability.minReactive[j] == Inf
-                            Qmin = -Qmin
-                        end
-                        if i == j
-                            QminNew = Qmin
-                        end
-                        QminInf += Qmin
-                    end
-                    if isinf(system.generator.capability.maxReactive[j])
-                        Qmax = abs(Qgentotal) + abs(Qmintotal) + abs(Qmaxtotal)
-                        if system.generator.capability.maxReactive[j] == -Inf
-                            Qmax = -Qmax
-                        end
-                        if i == j
-                            QmaxNew = Qmax
-                        end
-                        QmaxInf += Qmax
-                    end
-                end
-                Qmintotal += QminInf
-                Qmaxtotal += QmaxInf
 
-                if basePowerMVA * abs(Qmintotal - Qmaxtotal) > 10 * eps(Float64)
-                    power.generator.reactive[i] = QminNew + ((Qgentotal - Qmintotal) / (Qmaxtotal - Qmintotal)) * (QmaxNew - QminNew)
-                else
-                    power.generator.reactive[i] = QminNew + (Qgentotal - Qmintotal) / inService
-                end
+                power.generator.reactive[i] = generatorProportionally!(system.generator.capability.minReactive, system.generator.capability.maxReactive, 
+                    power.injection.reactive, system.bus.demand.reactive, inService, basePowerMVA, busIndex, generatorIndex, i)
 
                 if busIndex == system.bus.layout.slack && generatorIndex[1] == i
                     power.generator.active[i] = power.injection.active[busIndex] + system.bus.demand.active[busIndex]
@@ -780,56 +736,12 @@ function generatorPower(system::PowerSystem, analysis::ACPowerFlow; label)
                 powerActive = injectionActive + system.bus.demand.active[busIndex]
             end
         else
-            Qmintotal = 0.0
-            Qmaxtotal = 0.0
-            Qgentotal = 0.0
-            QminInf = 0.0
-            QmaxInf = 0.0
-            QminNew = system.generator.capability.minReactive[index]
-            QmaxNew = system.generator.capability.maxReactive[index]
-
-            generatorIndex = system.bus.supply.generator[busIndex]
-            @inbounds for i in generatorIndex
-                if !isinf(system.generator.capability.minReactive[i])
-                    Qmintotal += system.generator.capability.minReactive[i]
-                end
-                if !isinf(system.generator.capability.maxReactive[i])
-                    Qmaxtotal += system.generator.capability.maxReactive[i]
-                end
-                Qgentotal += (injectionReactive + system.bus.demand.reactive[busIndex]) / inService
-            end
-
-            @inbounds for i in generatorIndex
-                if isinf(system.generator.capability.minReactive[i])
-                    Qmin = -abs(Qgentotal) - abs(Qmintotal) - abs(Qmaxtotal)
-                    if system.generator.capability.minReactive[i] == Inf
-                        Qmin = -Qmin
-                    end
-                    if i == index
-                        QminNew = Qmin
-                    end
-                    QminInf += Qmin
-                end
-                if isinf(system.generator.capability.maxReactive[i])
-                    Qmax = abs(Qgentotal) + abs(Qmintotal) + abs(Qmaxtotal)
-                    if system.generator.capability.maxReactive[i] == -Inf
-                        Qmax = -Qmax
-                    end
-                    if i == index
-                        QmaxNew = Qmax
-                    end
-                    QmaxInf += Qmax
-                end
-            end
-            Qmintotal += QminInf
-            Qmaxtotal += QmaxInf
-
             basePowerMVA = system.base.power.value * system.base.power.prefix * 1e-6
-            if basePowerMVA * abs(Qmintotal - Qmaxtotal) > 10 * eps(Float64)
-                powerReactive = QminNew + ((Qgentotal - Qmintotal) / (Qmaxtotal - Qmintotal)) * (QmaxNew - QminNew)
-            else
-                powerReactive = QminNew + (Qgentotal - Qmintotal) / inService
-            end
+            generatorIndex = system.bus.supply.generator[busIndex]
+
+            powerReactive = generatorProportionally!(system.generator.capability.minReactive, 
+                system.generator.capability.maxReactive, power.injection.reactive, system.bus.demand.reactive, 
+                inService, basePowerMVA, busIndex, generatorIndex, index)
 
             if busIndex == system.bus.layout.slack && generatorIndex[1] == index
                 powerActive = injectionActive + system.bus.demand.active[busIndex]
@@ -1188,4 +1100,116 @@ function seriesCurrent(system::PowerSystem, analysis::AC; label)
     end
 
     return abs(currentSeries), angle(currentSeries)
+end
+
+########## Allocate Proportionally Output of the Generators ##########
+function generatorProportionally!(minCapability::Array{Float64,1}, maxCapability::Array{Float64,1}, 
+    injection::Array{Float64,1}, demand::Array{Float64,1},  inService::Int64, basePowerMVA::Float64, 
+    busIndex::Int64, generatorIndex::Array{Int64,1}, index::Int64)
+
+    mintotal = 0.0
+    maxtotal = 0.0
+    gentotal = 0.0
+    minInf = 0.0
+    maxInf = 0.0
+    minNew = minCapability[index]
+    maxNew = maxCapability[index]
+
+    for j in generatorIndex
+        if !isinf(minCapability[j])
+            mintotal += minCapability[j]
+        end
+        if !isinf(maxCapability[j])
+            maxtotal += maxCapability[j]
+        end
+        gentotal += (injection[busIndex] + demand[busIndex]) / inService
+    end
+    for j in generatorIndex
+        if isinf(minCapability[j])
+            minPower = -abs(gentotal) - abs(mintotal) - abs(maxtotal)
+            if minCapability[j] == Inf
+                minPower = -minPower
+            end
+            if index == j
+                minNew = minPower
+            end
+            minInf += minPower
+        end
+        if isinf(maxCapability[j])
+            maxPower = abs(gentotal) + abs(mintotal) + abs(maxtotal)
+            if maxCapability[j] == -Inf
+                maxPower = -maxPower
+            end
+            if index == j
+                maxNew = maxPower
+            end
+            maxInf += maxPower
+        end
+    end
+    mintotal += minInf
+    maxtotal += maxInf
+
+    if basePowerMVA * abs(mintotal - maxtotal) > 10 * eps(Float64)
+        output = minNew + ((gentotal - mintotal) / (maxtotal - mintotal)) * (maxNew - minNew)
+    else
+        output = minNew + (gentotal - mintotal) / inService
+    end
+
+    return output
+end
+
+########## Allocate Proportionally Output of the Generators ##########
+function generatorProportionally!(minCapability::Array{Float64,1}, maxCapability::Array{Float64,1}, 
+    injection::Array{Float64,1}, demand::Array{Float64,1},  inService::Int64, basePowerMVA::Float64, 
+    busIndex::Int64, generatorIndex::Array{Int64,1}, index::Int64)
+
+    mintotal = 0.0
+    maxtotal = 0.0
+    gentotal = 0.0
+    minInf = 0.0
+    maxInf = 0.0
+    minNew = minCapability[index]
+    maxNew = maxCapability[index]
+
+    for j in generatorIndex
+        if !isinf(minCapability[j])
+            mintotal += minCapability[j]
+        end
+        if !isinf(maxCapability[j])
+            maxtotal += maxCapability[j]
+        end
+        gentotal += (injection[busIndex] + demand[busIndex]) / inService
+    end
+    for j in generatorIndex
+        if isinf(minCapability[j])
+            minPower = -abs(gentotal) - abs(mintotal) - abs(maxtotal)
+            if minCapability[j] == Inf
+                minPower = -minPower
+            end
+            if index == j
+                minNew = minPower
+            end
+            minInf += minPower
+        end
+        if isinf(maxCapability[j])
+            maxPower = abs(gentotal) + abs(mintotal) + abs(maxtotal)
+            if maxCapability[j] == -Inf
+                maxPower = -maxPower
+            end
+            if index == j
+                maxNew = maxPower
+            end
+            maxInf += maxPower
+        end
+    end
+    mintotal += minInf
+    maxtotal += maxInf
+
+    if basePowerMVA * abs(mintotal - maxtotal) > 10 * eps(Float64)
+        output = minNew + ((gentotal - mintotal) / (maxtotal - mintotal)) * (maxNew - minNew)
+    else
+        output = minNew + (gentotal - mintotal) / inService
+    end
+
+    return output
 end

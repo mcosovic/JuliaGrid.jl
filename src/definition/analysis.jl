@@ -44,6 +44,14 @@ mutable struct DCPower
     generator::CartesianReal
 end
 
+########### Powers in the DC SE Framework ###########
+mutable struct DCPowerSE
+    injection::CartesianReal
+    supply::CartesianReal
+    from::CartesianReal
+    to::CartesianReal
+end
+
 ########### Newton-Raphson ###########
 mutable struct NewtonRaphsonMethod
     jacobian::SparseMatrixCSC{Float64,Int64}
@@ -208,7 +216,7 @@ end
 
 struct DCStateEstimationWLS <: DCStateEstimation
     voltage::PolarAngle
-    power::DCPower
+    power::DCPowerSE
     method::DCStateEstimationWLSMethod
 end
 
@@ -231,6 +239,6 @@ end
 
 struct DCStateEstimationLAV <: DCStateEstimation
     voltage::PolarAngle
-    power::DCPower
+    power::DCPowerSE
     method::DCStateEstimationMethodLAV
 end

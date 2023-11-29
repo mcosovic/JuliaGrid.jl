@@ -61,6 +61,25 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     solve!(system14, analysisLAV)
     @test analysisLAV.voltage.angle ≈ analysis.voltage.angle
 
+    ####### Compare Powers #######
+    power!(system14, analysisLAV)
+    @test analysisLAV.power.injection.active ≈ analysis.power.injection.active
+    @test analysisLAV.power.supply.active ≈ analysis.power.supply.active
+    @test analysisLAV.power.from.active ≈ analysis.power.from.active
+    @test analysisLAV.power.to.active ≈ analysis.power.to.active
+
+    ####### Compare Bus Powers #######
+    for (key, value) in system14.bus.label
+        @test injectionPower(system14, analysisLAV; label = key) ≈ analysis.power.injection.active[value] atol = 1e-6
+        @test supplyPower(system14, analysisLAV; label = key) ≈ analysis.power.supply.active[value] atol = 1e-6
+    end
+
+    ####### Compare Branch Powers #######
+    for (key, value) in system14.branch.label
+        @test fromPower(system14, analysisLAV; label = key) ≈ analysis.power.from.active[value] atol = 1e-6
+        @test toPower(system14, analysisLAV; label = key) ≈ analysis.power.to.active[value] atol = 1e-6
+    end
+
     ################ Modified IEEE 30-bus Test Case ################
     dcModel!(system30)
     analysis = dcPowerFlow(system30)

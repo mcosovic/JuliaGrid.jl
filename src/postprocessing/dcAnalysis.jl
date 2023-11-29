@@ -11,12 +11,13 @@ electrical quantities:
 - `supply`: active power injections from the generators at each bus;
 - `from`: active power flows at each "from" bus end of the branch;
 - `to`: active power flows at each "to" bus end of the branch;
-- `generator`: output active powers of each generator.
+- `generator`: output active powers of each generator (excluding for state estimation).
 
 # Abstract type
 The abstract type `DC` can have the following subtypes:
 - `DCPowerFlow`: computes the powers within the DC power flow;
-- `DCOptimalPowerFlow`: computes the powers within the DC optimal power flow.
+- `DCOptimalPowerFlow`: computes the powers within the DC optimal power flow;
+- `DCStateEstimation`: computes the powers within the DC state estimation.
 
 # Examples
 Compute powers after obtaining the DC power flow solution:
@@ -38,8 +39,18 @@ analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer)
 solve!(system, analysis)
 power!(system, analysis)
 ```
+
+Compute powers after obtaining the DC state estimation solution:
+```jldoctest
+system = powerSystem("case14.h5")
+device = measurement("measurement14.h5")
+
+analysis = dcStateEstimation(system, device)
+solve!(system, analysis)
+power!(system, analysis)
+```
 """
-function power!(system::PowerSystem, analysis::Union{DCPowerFlow, DCStateEstimation})
+function power!(system::PowerSystem, analysis::DCPowerFlow)
     errorVoltage(analysis.voltage.angle)
 
     dc = system.model.dc
@@ -104,6 +115,19 @@ function power!(system::PowerSystem, analysis::DCOptimalPowerFlow)
     allPowerBranch(system, analysis)
 end
 
+function power!(system::PowerSystem, analysis::DCStateEstimation)
+    errorVoltage(analysis.voltage.angle)
+
+    dc = system.model.dc
+    bus = system.bus
+    power = analysis.power
+
+    power.injection.active = dc.nodalMatrix * analysis.voltage.angle + dc.shiftPower + bus.shunt.conductance
+    power.supply.active = power.injection.active + bus.demand.active
+
+    allPowerBranch(system, analysis)
+end
+
 """
     injectionPower(system::PowerSystem, analysis::DC; label)
 
@@ -114,6 +138,7 @@ framework. The `label` keyword argument must match an existing bus label.
 The abstract type `DC` can have the following subtypes:
 - `DCPowerFlow`: computes the power within the DC power flow;
 - `DCOptimalPowerFlow`: computes the power within the DC optimal power flow;
+- `DCStateEstimation`: computes the power within the DC state estimation.
 
 # Examples
 Compute the active power after obtaining the DC power flow solution:
@@ -135,8 +160,18 @@ analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer)
 solve!(system, analysis)
 injection = injectionPower(system, analysis; label = 2)
 ```
+
+Compute the active power after obtaining the DC state estimation solution:
+```jldoctest
+system = powerSystem("case14.h5")
+device = measurement("measurement14.h5")
+
+analysis = dcStateEstimation(system, device)
+solve!(system, analysis)
+injection = injectionPower(system, analysis; label = 2)
+```
 """
-function injectionPower(system::PowerSystem, analysis::Union{DCPowerFlow, DCStateEstimation}; label)
+function injectionPower(system::PowerSystem, analysis::DCPowerFlow; label)
     index = system.bus.label[getLabel(system.bus, label, "bus")]
     errorVoltage(analysis.voltage.angle)
 
@@ -169,6 +204,23 @@ function injectionPower(system::PowerSystem, analysis::DCOptimalPowerFlow; label
     return injectionActive
 end
 
+function injectionPower(system::PowerSystem, analysis::DCStateEstimation; label)
+    index = system.bus.label[getLabel(system.bus, label, "bus")]
+    errorVoltage(analysis.voltage.angle)
+
+    dc = system.model.dc
+    bus = system.bus
+    voltage = analysis.voltage
+
+    injectionActive = bus.shunt.conductance[index] + dc.shiftPower[index]
+    @inbounds for j in dc.nodalMatrix.colptr[index]:(dc.nodalMatrix.colptr[index + 1] - 1)
+        row = dc.nodalMatrix.rowval[j]
+        injectionActive += dc.nodalMatrix[row, index] * voltage.angle[row]
+    end
+
+    return injectionActive
+end
+
 """
     supplyPower(system::PowerSystem, analysis::DC; label)
 
@@ -179,7 +231,8 @@ label.
 # Abstract type
 The abstract type `DC` can have the following subtypes:
 - `DCPowerFlow`: computes the power within the DC power flow,
-- `DCOptimalPowerFlow`: computes the power within the DC optimal power flow.
+- `DCOptimalPowerFlow`: computes the power within the DC optimal power flow;
+- `DCStateEstimation`: computes the power within the DC state estimation.
 
 # Examples
 Compute the active power after obtaining the DC power flow solution:
@@ -201,8 +254,18 @@ analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer)
 solve!(system, analysis)
 supply = supplyPower(system, analysis; label = 2)
 ```
+
+Compute the active power after obtaining the DC state estimation solution:
+```jldoctest
+system = powerSystem("case14.h5")
+device = measurement("measurement14.h5")
+
+analysis = dcStateEstimation(system, device)
+solve!(system, analysis)
+supply = supplyPower(system, analysis; label = 2)
+```
 """
-function supplyPower(system::PowerSystem, analysis::Union{DCPowerFlow, DCStateEstimation}; label)
+function supplyPower(system::PowerSystem, analysis::DCPowerFlow; label)
     index = system.bus.label[getLabel(system.bus, label, "bus")]
     errorVoltage(analysis.voltage.angle)
 
@@ -235,6 +298,23 @@ function supplyPower(system::PowerSystem, analysis::DCOptimalPowerFlow; label)
     return supplyActive
 end
 
+function supplyPower(system::PowerSystem, analysis::DCStateEstimation; label)
+    index = system.bus.label[getLabel(system.bus, label, "bus")]
+    errorVoltage(analysis.voltage.angle)
+
+    dc = system.model.dc
+    bus = system.bus
+    voltage = analysis.voltage
+
+    supplyActive = bus.shunt.conductance[index] + dc.shiftPower[index] + bus.demand.active[index]
+    @inbounds for j in dc.nodalMatrix.colptr[index]:(dc.nodalMatrix.colptr[index + 1] - 1)
+        row = dc.nodalMatrix.rowval[j]
+        supplyActive += dc.nodalMatrix[row, index] * voltage.angle[row]
+    end
+
+    return supplyActive
+end
+
 """
     fromPower(system::PowerSystem, analysis::DC; label)
 
@@ -244,7 +324,8 @@ branch in the DC framework. The `label` keyword argument must match an existing 
 # Abstract type
 The abstract type `DC` can have the following subtypes:
 - `DCPowerFlow`: computes the power within the DC power flow;
-- `DCOptimalPowerFlow`: computes the power within the DC optimal power flow.
+- `DCOptimalPowerFlow`: computes the power within the DC optimal power flow;
+- `DCStateEstimation`: computes the power within the DC state estimation.
 
 # Examples
 Compute the active power after obtaining the DC power flow solution:
@@ -263,6 +344,16 @@ system = powerSystem("case14.h5")
 dcModel!(system)
 
 analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer)
+solve!(system, analysis)
+from = fromPower(system, analysis; label = 2)
+```
+
+Compute the active power after obtaining the DC state estimation solution:
+```jldoctest
+system = powerSystem("case14.h5")
+device = measurement("measurement14.h5")
+
+analysis = dcStateEstimation(system, device)
 solve!(system, analysis)
 from = fromPower(system, analysis; label = 2)
 ```
@@ -286,7 +377,8 @@ branch in the DC framework. The `label` keyword argument must match an existing 
 # Abstract type
 The abstract type `DC` can have the following subtypes:
 - `DCPowerFlow`: computes the power within the DC power flow;
-- `DCOptimalPowerFlow`: computes the power within the DC optimal power flow.
+- `DCOptimalPowerFlow`: computes the power within the DC optimal power flow;
+- `DCStateEstimation`: computes the power within the DC state estimation.
 
 # Examples
 Compute the active power after obtaining the DC power flow solution:
@@ -305,6 +397,16 @@ system = powerSystem("case14.h5")
 dcModel!(system)
 
 analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer)
+solve!(system, analysis)
+to = toPower(system, analysis; label = 2)
+```
+
+Compute the active power after obtaining the DC state estimation solution:
+```jldoctest
+system = powerSystem("case14.h5")
+device = measurement("measurement14.h5")
+
+analysis = dcStateEstimation(system, device)
 solve!(system, analysis)
 to = toPower(system, analysis; label = 2)
 ```
@@ -352,7 +454,7 @@ solve!(system, analysis)
 generator = generatorPower(system, analysis; label = 1)
 ```
 """
-function generatorPower(system::PowerSystem, analysis::Union{DCPowerFlow, DCStateEstimation}; label)
+function generatorPower(system::PowerSystem, analysis::DCPowerFlow; label)
     index = system.generator.label[getLabel(system.generator, label, "generator")]
     errorVoltage(analysis.voltage.angle)
 
@@ -391,7 +493,7 @@ function generatorPower(system::PowerSystem, analysis::DCOptimalPowerFlow; label
 end
 
 ######### Powers at Branches ##########
-function allPowerBranch(system::PowerSystem, analysis::Union{DCPowerFlow, DCOptimalPowerFlow, DCStateEstimation})
+function allPowerBranch(system::PowerSystem, analysis::DC)
     branch = system.branch
     voltage = analysis.voltage
     power = analysis.power

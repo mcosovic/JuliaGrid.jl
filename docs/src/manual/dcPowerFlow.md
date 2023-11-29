@@ -6,14 +6,14 @@ To solve the DC power flow problem and acquire bus voltage angles, make use of t
 * [`solve!`](@ref solve!(::PowerSystem, ::DCPowerFlow)).
 
 After obtaining the solution for DC power flow, JuliaGrid offers a post-processing analysis function to compute active powers associated with buses, branches, and generators:
-* [`power!`](@ref power!(::PowerSystem, ::Union{DCPowerFlow, DCStateEstimation})).
+* [`power!`](@ref power!(::PowerSystem, ::DCPowerFlow)).
 
 Additionally, there are specialized functions dedicated to calculating specific types of active powers related to particular buses, branches, or generators:
-* [`injectionPower`](@ref injectionPower(::PowerSystem, ::Union{DCPowerFlow, DCStateEstimation})),
-* [`supplyPower`](@ref supplyPower(::PowerSystem, ::Union{DCPowerFlow, DCStateEstimation})),
-* [`fromPower`](@ref fromPower(::PowerSystem, ::Union{DCPowerFlow, DCStateEstimation})),
-* [`toPower`](@ref toPower(::PowerSystem, ::Union{DCPowerFlow, DCStateEstimation})),
-* [`generatorPower`](@ref generatorPower(::PowerSystem, ::Union{DCPowerFlow, DCStateEstimation})).
+* [`injectionPower`](@ref injectionPower(::PowerSystem, ::DCPowerFlow)),
+* [`supplyPower`](@ref supplyPower(::PowerSystem, ::DCPowerFlow)),
+* [`fromPower`](@ref fromPower(::PowerSystem, ::DCPowerFlow)),
+* [`toPower`](@ref toPower(::PowerSystem, ::DCPowerFlow)),
+* [`generatorPower`](@ref generatorPower(::PowerSystem, ::DCPowerFlow)).
 
 ---
 
@@ -174,7 +174,7 @@ solve!(system, analysis)
 ---
 
 ## [Power Analysis](@id DCPowerAnalysisManual)
-After obtaining the solution from the DC power flow, we can calculate powers related to buses, branches, and generators using the [`power!`](@ref power!(::PowerSystem, ::Union{DCPowerFlow, DCStateEstimation})) function. For instance, let us consider the power system for which we obtained the DC power flow solution:
+After obtaining the solution from the DC power flow, we can calculate powers related to buses, branches, and generators using the [`power!`](@ref power!(::PowerSystem, ::DCPowerFlow)) function. For instance, let us consider the power system for which we obtained the DC power flow solution:
 ```@example ComputationPowersCurrentsLosses
 using JuliaGrid # hide
 @default(unit) # hide
@@ -221,7 +221,7 @@ print(system.branch.label, system.base.power.value * analysis.power.from.active)
 ```
 
 !!! note "Info"
-    To better understand the powers associated with buses, branches and generators that are calculated by the [`power!`](@ref power!(::PowerSystem, ::Union{DCPowerFlow, DCStateEstimation})) function, we suggest referring to the tutorials on [DC Power Flow Analysis](@ref DCPowerAnalysisTutorials).
+    To better understand the powers associated with buses, branches and generators that are calculated by the [`power!`](@ref power!(::PowerSystem, ::DCPowerFlow)) function, we suggest referring to the tutorials on [DC Power Flow Analysis](@ref DCPowerAnalysisTutorials).
 
 To compute specific quantities for particular components, rather than calculating powers or currents for all components, users can utilize one of the provided functions below.
 
