@@ -191,7 +191,7 @@ function addAmmeter!(system::PowerSystem, device::Measurement, analysis::AC;
     checkStatus(statusTo)
 
     ammeterNumber = 2 * system.branch.number
-    ammeter.label = Dict{String,Int64}(); sizehint!(ammeter.label, ammeterNumber)
+    ammeter.label = OrderedDict{String,Int64}(); sizehint!(ammeter.label, ammeterNumber)
 
     ammeter.layout.index = fill(0, ammeterNumber)
     ammeter.layout.from = fill(false, ammeterNumber)

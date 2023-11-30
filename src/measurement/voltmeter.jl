@@ -149,7 +149,7 @@ function addVoltmeter!(system::PowerSystem, device::Measurement, analysis::AC;
     checkStatus(status)
 
     voltmeter.layout.index = collect(1:system.bus.number)
-    voltmeter.label = Dict{String,Int64}(); sizehint!(voltmeter.label, voltmeter.number)
+    voltmeter.label = OrderedDict{String,Int64}(); sizehint!(voltmeter.label, voltmeter.number)
 
     voltmeter.magnitude.mean = similar(analysis.voltage.magnitude)
     voltmeter.magnitude.variance = similar(analysis.voltage.magnitude)

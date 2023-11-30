@@ -60,7 +60,7 @@ device = measurement()
 ```
 """
 function measurement()
-    label = Dict{String, Int64}()
+    label = OrderedDict{String, Int64}()
     af = Array{Float64,1}(undef, 0)
     ai = Array{Int64,1}(undef, 0)
     ai8 = Array{Int8,1}(undef, 0)
@@ -85,7 +85,7 @@ function loadLabel(device, hdf5::HDF5.File; meter = "")
     label::Array{String,1} = read(hdf5[string(meter, "/label")])
     device.number = length(label)
 
-    device.label = Dict{String,Int64}(); sizehint!(device.label, device.number)
+    device.label = OrderedDict{String,Int64}(); sizehint!(device.label, device.number)
     @inbounds for i = 1:device.number
         device.label[label[i]] = i
     end

@@ -33,7 +33,7 @@ mutable struct BusSupply
 end
 
 mutable struct Bus
-    label::Dict{String,Int64}
+    label::OrderedDict{String, Int64}
     demand::BusDemand
     supply::BusSupply
     shunt::BusShunt
@@ -72,7 +72,7 @@ mutable struct BranchLayout
 end
 
 mutable struct Branch
-    label::Dict{String,Int64}
+    label::OrderedDict{String, Int64}
     parameter::BranchParameter
     flow::BranchFlow
     voltage::BranchVoltage
@@ -129,7 +129,7 @@ mutable struct GeneratorLayout
 end
 
 mutable struct Generator
-    label::Dict{String,Int64}
+    label::OrderedDict{String, Int64}
     output::GeneratorOutput
     capability::GeneratorCapability
     ramping::GeneratorRamping
@@ -218,42 +218,42 @@ mutable struct MultiLayoutMeter
 end
 
 mutable struct Voltmeter
-    label::Dict{String,Int64}
+    label::OrderedDict{String,Int64}
     magnitude::GaussMeter
     layout::BusLayoutMeter
     number::Int64
 end
 
 mutable struct Ammeter
-    label::Dict{String,Int64}
+    label::OrderedDict{String,Int64}
     magnitude::GaussMeter
     layout::BranchLayoutMeter
     number::Int64
 end
 
 mutable struct MultiMeter
-    label::Dict{String,Int64}
+    label::OrderedDict{String,Int64}
     power::GaussMeter
     layout::MultiLayoutMeter
     number::Int64
 end
 
 mutable struct Wattmeter
-    label::Dict{String,Int64}
+    label::OrderedDict{String,Int64}
     active::GaussMeter
     layout::MultiLayoutMeter
     number::Int64
 end
 
 mutable struct Varmeter
-    label::Dict{String,Int64}
+    label::OrderedDict{String,Int64}
     reactive::GaussMeter
     layout::MultiLayoutMeter
     number::Int64
 end
 
 mutable struct PMU
-    label::Dict{String,Int64}
+    label::OrderedDict{String,Int64}
     magnitude::GaussMeter
     angle::GaussMeter
     layout::MultiLayoutMeter

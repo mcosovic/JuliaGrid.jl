@@ -260,7 +260,7 @@ function addPmu!(system::PowerSystem, device::Measurement, analysis::AC;
     checkStatus(statusAngleTo)
 
     pmuNumber = system.bus.number + 2 * system.branch.number
-    pmu.label = Dict{String,Int64}(); sizehint!(pmu.label, pmuNumber)
+    pmu.label = OrderedDict{String,Int64}(); sizehint!(pmu.label, pmuNumber)
 
     pmu.layout.index = fill(0, pmuNumber)
     pmu.layout.bus = fill(false, pmuNumber)

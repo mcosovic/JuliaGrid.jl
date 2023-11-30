@@ -458,7 +458,7 @@ nothing # hide
 ---
 
 ## [Labels](@id LabelsMeasurementManual)
-JuliaGrid necessitates a unique label for each voltmeter, ammeter, wattmeter, varmeter, or pmu. These labels are stored in dictionaries, functioning as pairs of strings and integers. The string signifies the distinct label for the particular device, while the integer tracks the internal numbering of measurement devices.
+JuliaGrid necessitates a unique label for each voltmeter, ammeter, wattmeter, varmeter, or pmu. These labels are stored in order dictionaries, functioning as pairs of strings and integers. The string signifies the distinct label for the particular device, while the integer tracks the internal numbering of measurement devices.
 
 In all the previous examples, with the exception of the last one, we relied on automatic labeling by omitting the `label` keyword. This allowed JuliaGrid to independently assign unique labels to measurement devices. In such cases, JuliaGrid utilizes a sequential set of increasing integers for labeling the devices. The [last example](@ref ChangeKeywordsMeasurementManual) demonstrates the user labeling approach.
 
@@ -566,7 +566,7 @@ device.wattmeter.label
 
 JuliaGrid utilizes an unordered dictionary format for storing labels, which improves performance. If you need to obtain labels in the same order as the wattmeter definitions sequence, you can use the following code:
 ```@repl retrievingLabels
-label = collect(keys(sort(device.wattmeter.label; byvalue = true)))
+label = collect(keys(device.wattmeter.label))
 ```
 
 To isolate the wattmeters located at the buses, both at the "from" and "to" bus ends of branches, users can accomplish this by employing the following code:
@@ -578,18 +578,17 @@ label[device.wattmeter.layout.to]
 
 Furthermore, when using the [`addWattmeter!`](@ref addWattmeter!) function, the labels for the keywords `bus`, `from`, and `to` are stored internally as numerical values. To retrieve bus labels, you can follow this procedure:
 ```@repl retrievingLabels
-label = collect(keys(sort(system.bus.label; byvalue = true)));
+label = collect(keys(system.bus.label));
 label[device.wattmeter.layout.index[device.wattmeter.layout.bus]]
 ```
 
 Similarly, to obtain labels for branches, we can use the following code:
 ```@repl retrievingLabels
-label = collect(keys(sort(system.branch.label; byvalue = true)));
+label = collect(keys(system.branch.label));
 
 label[device.wattmeter.layout.index[device.wattmeter.layout.from]]
 label[device.wattmeter.layout.index[device.wattmeter.layout.to]]
 ```
-
 
 This procedure is applicable to all measurement devices, including voltmeters, ammeters, varmeters, and PMUs.
 

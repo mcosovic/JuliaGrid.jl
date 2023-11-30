@@ -348,7 +348,7 @@ nothing # hide
 ---
 
 ## [Labels](@id LabelsManual)
-As we shown above, JuliaGrid mandates a distinctive label for every bus, branch, or generator. These labels are stored in dictionaries, functioning as pairs of strings and integers. The string signifies the exclusive label for the specific component, whereas the integer maintains an internal numbering of buses, branches, or generators.
+As we shown above, JuliaGrid mandates a distinctive label for every bus, branch, or generator. These labels are stored in orderdictionaries, functioning as pairs of strings and integers. The string signifies the exclusive label for the specific component, whereas the integer maintains an internal numbering of buses, branches, or generators.
 
 In contrast to the simple labeling approach, JuliaGrid offers several additional methods for labeling. The choice of method depends on the specific needs and can potentially be more straightforward.
 
@@ -448,13 +448,13 @@ For instance, the bus labels can be accessed using the variable:
 system.bus.label
 ```
 
-JuliaGrid utilizes an unordered dictionary format for storing labels, which enhances performance. If the objective is to obtain labels in the same order as the bus definitions sequence, the subsequent code can be employed:
+If the objective is to obtain labels in the same order as the bus definitions sequence, the subsequent code can be employed:
 ```@repl RetrieveLabels
-label = collect(keys(sort(system.bus.label; byvalue = true)))
+label = collect(keys(system.bus.label))
 ```
 Subsequently, users can match these labels with bus voltages, powers, and currents associated with buses. These values can be computed through various analyses available in JuliaGrid.
 
-This approach can also be extended to branch and generator labels by making use of the variables present within the `PowerSystem` composite type, namely `system.branch.label` or `system.generator.label`. These variables facilitate obtaining sequences of labels associated with these particular components of the power system.
+This approach can also be extended to branch and generator labels by making use of the variables present within the `PowerSystem` composite type, namely `system.branch.label` or `system.generator.label`.
 
 Moreover, the `from` and `to` keywords associated with branches are stored based on internally assigned numerical values linked to bus labels. These values are stored in the variable:
 ```@repl RetrieveLabels

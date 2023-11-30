@@ -71,7 +71,7 @@ function powerSystem()
     sp = spzeros(0, 0)
     ac = Array{ComplexF64,1}(undef, 0)
 
-    label = Dict{String, Int64}()
+    label = OrderedDict{String, Int64}()
 
     demand = BusDemand(af, copy(af))
     supply = BusSupply(copy(af), copy(af), copy(af))
@@ -118,7 +118,7 @@ function loadBus(system::PowerSystem, hdf5::HDF5.File)
 
     bus.layout.area = readHDF5(layouth5, "area", bus.number)
     bus.layout.lossZone = readHDF5(layouth5, "lossZone", bus.number)
-    bus.label = Dict{String,Int64}(); sizehint!(bus.label, bus.number)
+    bus.label = OrderedDict{String, Int64}(); sizehint!(bus.label, bus.number)
 
     label::Array{String,1} = read(hdf5["bus/label"])
     @inbounds for i = 1:bus.number
@@ -162,7 +162,7 @@ function loadBranch(system::PowerSystem, hdf5::HDF5.File)
     branch.number = length(branch.layout.to)
 
     branch.layout.status = readHDF5(layouth5, "status", branch.number)
-    branch.label = Dict(zip(read(hdf5["branch/label"]), collect(1:branch.number)))
+    branch.label = OrderedDict(zip(read(hdf5["branch/label"]), collect(1:branch.number)))
     branch.layout.label = read(layouth5["label"])
 
     parameterh5 = hdf5["branch/parameter"]
@@ -197,7 +197,7 @@ function loadGenerator(system::PowerSystem, hdf5::HDF5.File)
 
     generator.layout.area = readHDF5(layouth5, "area", generator.number)
     generator.layout.status = readHDF5(layouth5, "status", generator.number)
-    generator.label = Dict(zip(read(hdf5["generator/label"]), collect(1:generator.number)))
+    generator.label = OrderedDict(zip(read(hdf5["generator/label"]), collect(1:generator.number)))
     generator.layout.label = read(layouth5["label"])
 
     outputh5 = hdf5["generator/output"]
@@ -315,7 +315,7 @@ function loadBus(system::PowerSystem, busLine::Array{String,1})
     deg2rad = pi / 180
 
     bus.number = length(busLine)
-    bus.label = Dict{String,Int64}(); sizehint!(bus.label, bus.number)
+    bus.label = OrderedDict{String, Int64}(); sizehint!(bus.label, bus.number)
 
     bus.demand.active = fill(0.0, bus.number)
     bus.demand.reactive = similar(bus.demand.active)
@@ -388,7 +388,7 @@ function loadBranch(system::PowerSystem, branchLine::Array{String,1})
     deg2rad = pi / 180
 
     branch.number = length(branchLine)
-    branch.label = Dict{String,Int64}(); sizehint!(branch.label, branch.number)
+    branch.label = OrderedDict{String, Int64}(); sizehint!(branch.label, branch.number)
 
     branch.parameter.conductance = fill(0.0, branch.number)
     branch.parameter.resistance = similar(branch.parameter.conductance)
@@ -450,7 +450,7 @@ function loadGenerator(system::PowerSystem, generatorLine::Array{String,1}, gene
     basePowerInv = 1 / system.base.power.value
 
     generator.number = length(generatorLine)
-    generator.label = Dict{String,Int64}(); sizehint!(generator.label, generator.number)
+    generator.label = OrderedDict{String,Int64}(); sizehint!(generator.label, generator.number)
 
     generator.output.active = fill(0.0, generator.number)
     generator.output.reactive = similar(generator.output.active)

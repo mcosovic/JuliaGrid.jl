@@ -294,27 +294,24 @@ end
 ######### Print Data ##########
 import Base.print
 
-function print(io::IO, label::Dict{String, Int64}, data::Union{Array{Float64,1}, Array{Int64,1}, Array{Int8,1}})
-    names = collect(keys(sort(label; byvalue = true)))
-    for (k, i) in enumerate(data)
-        println(io::IO, names[k], ": ", i)
+function print(io::IO, label::OrderedDict{String, Int64}, data::Union{Array{Float64,1}, Array{Int64,1}, Array{Int8,1}})
+    for (key, value) in label
+        println(io::IO, key, ": ", data[value])
     end
 end
 
-function print(io::IO, label::Dict{String, Int64}, data1::Array{Float64,1}, data2::Array{Float64,1})
-    names = collect(keys(sort(label; byvalue = true)))
-    for i = 1:lastindex(names)
-        println(io::IO, names[i], ": ", data1[i], ", ", data2[i])
+function print(io::IO, label::OrderedDict{String, Int64}, data1::Array{Float64,1}, data2::Array{Float64,1})
+    for (key, value) in label
+        println(io::IO, key, ": ", data1[value], ", ", data2[value])
     end
 end
 
-function print(io::IO, label::Dict{String, Int64}, obj::Dict{Int64, JuMP.ConstraintRef})
-    names = collect(keys(sort(label; byvalue = true)))
-    for key in keys(sort(obj))
+function print(io::IO, label::OrderedDict{String, Int64}, obj::Dict{Int64, JuMP.ConstraintRef})
+    for (key, value) in label
         try
-            println(io::IO, names[key], ": ", obj[key])
+            println(io::IO, key, ": ", obj[value])
         catch
-            println(io::IO, "undefined")
+            # println(io::IO, "undefined")
         end
     end
 end
@@ -329,8 +326,8 @@ function print(io::IO, obj::Dict{Int64, JuMP.ConstraintRef})
     end
 end
 
-function print(io::IO, label::Dict{String, Int64}, obj::Dict{Int64, Array{JuMP.ConstraintRef,1}})
-    names = collect(keys(sort(label; byvalue = true)))
+function print(io::IO, label::OrderedDict{String, Int64}, obj::Dict{Int64, Array{JuMP.ConstraintRef,1}})
+    names = collect(keys(label))
     for key in keys(sort(obj))
         for cons in obj[key]
             try

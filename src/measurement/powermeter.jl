@@ -384,7 +384,7 @@ function addPowermeter!(system, device, measure, powerBus, powerFrom, powerTo, d
 
     deviceNumber = system.bus.number + 2 * system.branch.number
 
-    device.label = Dict{String,Int64}(); sizehint!(device.label, deviceNumber)
+    device.label = OrderedDict{String,Int64}(); sizehint!(device.label, deviceNumber)
 
     device.layout.index = fill(0, deviceNumber)
     device.layout.bus = fill(false, deviceNumber)

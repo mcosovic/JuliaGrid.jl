@@ -1,8 +1,10 @@
 module JuliaGrid
 
-using SparseArrays, LinearAlgebra, SuiteSparse, Random
-using JuMP
+using SparseArrays, LinearAlgebra, SuiteSparse
 using HDF5
+using JuMP
+using Random, OrderedCollections
+
 
 ######### Types and Constants ##########
 include("definition/internal.jl")
@@ -21,7 +23,7 @@ include("powerSystem/model.jl")
 export powerSystem, savePowerSystem
 export acModel!, dcModel!
 
-########## Power System Components ##########
+# ########## Power System Components ##########
 include("powerSystem/bus.jl")
 include("powerSystem/branch.jl")
 include("powerSystem/generator.jl")
