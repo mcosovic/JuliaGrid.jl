@@ -5,7 +5,6 @@ using HDF5
 using JuMP
 using Random, OrderedCollections
 
-
 ######### Types and Constants ##########
 include("definition/internal.jl")
 include("definition/system.jl")
@@ -65,7 +64,9 @@ export status!
 
 ######### State Estimation ##########
 include("stateEstimation/dcStateEstimation.jl")
+include("stateEstimation/badData.jl")
 export dcStateEstimation
+export badData!
 
 ########## Postprocessing ##########
 include("postprocessing/dcAnalysis.jl")

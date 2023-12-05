@@ -206,11 +206,26 @@ mutable struct DCOptimalPowerFlow <: DC
 end
 
 ########### DC State Estimation ###########
+mutable struct BadData
+    detect::Bool
+    maxNormalizedResidual::Float64
+    index::Int64
+    label::String
+end
+
+mutable struct DCStateEstimationLayout
+    index::Array{Int64,1}
+    device::Int64
+    wattmeter::Int64
+    pmu::Int64
+end
+
 mutable struct DCStateEstimationWLSMethod
     jacobian::SparseMatrixCSC{Float64,Int64}
     weight::Array{Float64,1}
     mean::Array{Float64,1}
     factorization::LULDLtQR
+    layout::DCStateEstimationLayout
     done::Bool
 end
 
@@ -218,6 +233,7 @@ struct DCStateEstimationWLS <: DCStateEstimation
     voltage::PolarAngle
     power::DCPowerSE
     method::DCStateEstimationWLSMethod
+    bad::BadData
 end
 
 struct VariableLAV
@@ -235,10 +251,12 @@ mutable struct DCStateEstimationMethodLAV
     variable::VariableLAV
     residual::Dict{Int64, JuMP.ConstraintRef}
     objective::JuMP.AffExpr
+    layout::DCStateEstimationLayout
 end
 
 struct DCStateEstimationLAV <: DCStateEstimation
     voltage::PolarAngle
     power::DCPowerSE
     method::DCStateEstimationMethodLAV
+    bad::BadData
 end
