@@ -103,19 +103,19 @@ function dcStateEstimation(system::PowerSystem, device::Measurement, (@nospecial
 
     anglex = @variable(jump, 0 <= anglex[i = 1:bus.number])
     angley = @variable(jump, 0 <= angley[i = 1:bus.number])
-    residualx = @variable(jump, 0 <= residualx[i = 1:number.device])
-    residualy = @variable(jump, 0 <= residualy[i = 1:number.device])
+    residualx = @variable(jump, 0 <= residualx[i = 1:layout.device])
+    residualy = @variable(jump, 0 <= residualy[i = 1:layout.device])
 
     fix(anglex[bus.layout.slack], 0.0; force = true)
     fix(angley[bus.layout.slack], bus.voltage.angle[bus.layout.slack]; force = true)
 
     residual = Dict{Int64, JuMP.ConstraintRef}()
     angleJacobian = jacobian * (angley - anglex)
-    for i = 1:number.device
+    for i = 1:layout.device
         residual[i] = @constraint(jump, angleJacobian[i] + residualy[i] - residualx[i] - mean[i] == 0.0)
     end
 
-    objective = @objective(jump, Min, sum(residualx[i] + residualy[i] for i = 1:number.device))
+    objective = @objective(jump, Min, sum(residualx[i] + residualy[i] for i = 1:layout.device))
 
     return DCStateEstimationLAV(
         PolarAngle(Float64[]),
