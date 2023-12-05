@@ -10,6 +10,9 @@ For further information on this topic, please see the [AC State Estimation](@ref
 ###### Solve DC State Estimation
 * [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimationWLS))
 
+###### Bad Data Analysis
+* [`badData!`](@ref badData!)
+
 ---
 
 ## Build DC State Estimation
@@ -22,4 +25,11 @@ dcStateEstimation
 ## Solve DC State Estimation
 ```@docs
 solve!(::PowerSystem, ::DCStateEstimationWLS)
+```
+
+---
+
+## Bad Data Analysis
+```@docs
+badData!
 ```

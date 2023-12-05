@@ -34,9 +34,9 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     analysisSE = dcStateEstimation(system14, device)
     solve!(system14, analysisSE)
 
-    _, maxNormResidual, _, label = badData(system14, device, analysisSE; threshold = 3.0)
-    @test label == "Wattmeter 2"
-    @test maxNormResidual == 829.9386701319687
+    badData!(system14, device, analysisSE; threshold = 3.0)
+    @test analysisSE.bad.label == "Wattmeter 2"
+    @test analysisSE.bad.maxNormalizedResidual == 829.9386701319687
     
     solve!(system14, analysisSE)
     @test analysis.voltage.angle ≈ analysisSE.voltage.angle
@@ -46,14 +46,14 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     analysisSE = dcStateEstimation(system14, device)
     solve!(system14, analysisSE)
 
-    _, maxNormResidual, _, label = badData(system14, device, analysisSE; threshold = 3.0)
-    @test label == "PMU 10"
-    @test maxNormResidual == 5186.377783410225
+    badData!(system14, device, analysisSE; threshold = 3.0)
+    @test analysisSE.bad.label == "PMU 10"
+    @test analysisSE.bad.maxNormalizedResidual == 5186.377783410225
 
     solve!(system14, analysisSE)
-    _, maxNormResidual, _, label = badData(system14, device, analysisSE; threshold = 3.0)
-    @test label == "Wattmeter 2"
-    @test maxNormResidual == 829.9362046685274
+    badData!(system14, device, analysisSE; threshold = 3.0)
+    @test analysisSE.bad.label == "Wattmeter 2"
+    @test analysisSE.bad.maxNormalizedResidual == 829.9362046685274
 
     solve!(system14, analysisSE)
     @test analysis.voltage.angle ≈ analysisSE.voltage.angle
