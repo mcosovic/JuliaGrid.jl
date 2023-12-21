@@ -249,6 +249,60 @@ function addBranch!(system::PowerSystem, analysis::ACOptimalPowerFlow;
     end
 end
 
+function addBranch!(system::PowerSystem, analysis::DCStateEstimationWLS;
+    label::L = missing, from::L, to::L, status::T = missing,
+    resistance::T = missing, reactance::T = missing, susceptance::T = missing,
+    conductance::T = missing, turnsRatio::T = missing, shiftAngle::T = missing,
+    minDiffAngle::T = missing, maxDiffAngle::T = missing,
+    longTerm::T = missing, shortTerm::T = missing, emergency::T = missing, type::T = missing)
+
+    dc = system.model.dc
+    branch = system.branch
+    method = analysis.method
+    
+    if isset(shiftAngle)
+        oldShiftAngleFrom = dc.shiftPower[system.bus.label[getLabel(system.bus, from, "bus")]]
+        oldShiftAngleTo = dc.shiftPower[system.bus.label[getLabel(system.bus, to, "bus")]]
+    end
+
+    addBranch!(system; label, from, to, status, resistance, reactance, susceptance,
+        conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, longTerm, shortTerm,
+        emergency, type)    
+        
+    if branch.layout.status[end] == 1
+        indexBus = Int64[]
+        if haskey(method.layout.wattmeter.bus, branch.layout.from[end]) 
+            push!(indexBus, branch.layout.from[end])
+            if isset(shiftAngle)
+                for indexWattmeter in method.layout.wattmeter.bus[branch.layout.from[end]] 
+                    method.mean[indexWattmeter] += oldShiftAngleFrom
+                end
+            end
+        end
+        if haskey(method.layout.wattmeter.bus, branch.layout.to[end])
+            push!(indexBus, branch.layout.to[end])
+            if isset(shiftAngle)
+                for indexWattmeter in method.layout.wattmeter.bus[branch.layout.to[end]] 
+                    method.mean[indexWattmeter] += oldShiftAngleTo
+                end
+            end
+        end
+        if !isempty(indexBus)
+            method.done = false
+            for index in indexBus
+                for indexWattmeter in method.layout.wattmeter.bus[index] 
+                    for j in dc.nodalMatrix.colptr[index]:(dc.nodalMatrix.colptr[index + 1] - 1)
+                        method.jacobian[indexWattmeter, dc.nodalMatrix.rowval[j]] = dc.nodalMatrix.nzval[j]
+                    end
+                    if isset(shiftAngle)
+                        method.mean[indexWattmeter] -= - dc.shiftPower[index] 
+                    end
+                end
+            end
+        end
+    end
+end
+
 """
     updateBranch!(system::PowerSystem, analysis::Analysis; kwargs...)
 
@@ -535,6 +589,69 @@ function updateBranch!(system::PowerSystem, analysis::ACOptimalPowerFlow;
         end
         if statusOld == 0 || (statusOld == 1 && diffAngle)
             addAngle(system, jump, variable.angle, constraint.voltage.angle, index)
+        end
+    end
+end
+
+function updateBranch!(system::PowerSystem, analysis::DCStateEstimationWLS;
+    label::L, status::T = missing, resistance::T = missing, reactance::T = missing,
+    susceptance::T = missing, conductance::T = missing, turnsRatio::T = missing,
+    shiftAngle::T = missing, minDiffAngle::T = missing, maxDiffAngle::T = missing,
+    longTerm::T = missing, shortTerm::T = missing, emergency::T = missing, type::T = missing)
+
+    dc = system.model.dc
+    branch = system.branch
+    method = analysis.method
+    
+    indexBranch = branch.label[getLabel(branch, label, "branch")]
+    indexBuses = [branch.layout.from[indexBranch]; branch.layout.to[indexBranch]]
+    oldShiftPower = [dc.shiftPower[indexBuses[1]]; dc.shiftPower[indexBuses[2]]]
+    oldShiftAdmittance = branch.parameter.shiftAngle[indexBranch] * dc.admittance[indexBranch]
+
+    updateBranch!(system; label, status, resistance, reactance, susceptance,
+    conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, longTerm, shortTerm,
+    emergency, type)
+
+    if isset(reactance) || isset(turnsRatio) || isset(shiftAngle) || isset(status)
+        if haskey(method.layout.wattmeter.from, indexBranch)
+            for indexWattmeter in method.layout.wattmeter.from[indexBranch] 
+                constStatus = constMeter(method.weight[indexWattmeter])
+               
+                if isset(reactance) || isset(turnsRatio) || isset(status)
+                    method.done = false
+                    method.jacobian[indexWattmeter, branch.layout.from[indexBranch]] = dc.admittance[indexBranch] * constStatus
+                    method.jacobian[indexWattmeter, branch.layout.to[indexBranch]] = -dc.admittance[indexBranch] * constStatus
+                end
+                method.mean[indexWattmeter] = ((method.mean[indexWattmeter] - oldShiftAdmittance) + branch.parameter.shiftAngle[indexBranch] * dc.admittance[indexBranch]) * constStatus 
+            end
+        end
+        if haskey(method.layout.wattmeter.to, indexBranch)
+            for indexWattmeter in method.layout.wattmeter.to[indexBranch] 
+                constStatus = constMeter(method.weight[indexWattmeter])
+                
+                if isset(reactance) || isset(turnsRatio) || isset(status)
+                    method.done = false
+                    method.jacobian[indexWattmeter, branch.layout.from[indexBranch]] = -dc.admittance[indexBranch] * constStatus
+                    method.jacobian[indexWattmeter, branch.layout.to[indexBranch]] = dc.admittance[indexBranch] * constStatus
+                end
+                method.mean[indexWattmeter] = ((method.mean[indexWattmeter] + oldShiftAdmittance) - branch.parameter.shiftAngle[indexBranch] * dc.admittance[indexBranch]) * constStatus 
+            end
+        end
+
+        for (k, indexBus) in enumerate(indexBuses)
+            if haskey(method.layout.wattmeter.bus, indexBus)
+                for indexWattmeter in method.layout.wattmeter.bus[indexBus]
+                    constStatus = constMeter(method.weight[indexWattmeter])
+                    
+                    if isset(reactance) || isset(turnsRatio) || isset(status)
+                        method.done = false
+                        for j in dc.nodalMatrix.colptr[indexBus]:(dc.nodalMatrix.colptr[indexBus + 1] - 1)
+                            method.jacobian[indexWattmeter, dc.nodalMatrix.rowval[j]] = dc.nodalMatrix.nzval[j] * constStatus
+                        end
+                    end
+                    method.mean[indexWattmeter] = (method.mean[indexWattmeter] + oldShiftPower[k] - dc.shiftPower[indexBus]) * constStatus
+                end
+            end
         end
     end
 end

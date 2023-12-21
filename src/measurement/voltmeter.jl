@@ -65,10 +65,10 @@ function addVoltmeter!(system::PowerSystem, device::Measurement;
     labelBus = getLabel(system.bus, bus, "bus")
     setLabel(voltmeter, label, default.label, labelBus)
 
-    index = system.bus.label[getLabel(system.bus, bus, "bus")]
-    push!(voltmeter.layout.index, index)
+    indexBus = system.bus.label[labelBus]
+    push!(voltmeter.layout.index, indexBus)
 
-    baseVoltageInv = 1 / (system.base.voltage.value[index] * system.base.voltage.prefix)
+    baseVoltageInv = 1 / (system.base.voltage.value[indexBus] * system.base.voltage.prefix)
     setMeter(voltmeter.magnitude, magnitude, variance, status, noise, default.variance,
         default.status, prefix.voltageMagnitude, baseVoltageInv)
 end

@@ -52,7 +52,7 @@ while analysis.bad.detect
 end
 ```
 """
-function badData!(system::PowerSystem, device::Measurement, analysis::DCStateEstimation; threshold = 3.0)
+function badData!(system::PowerSystem, device::Measurement, analysis::DCStateEstimationWLS; threshold = 3.0)
     bus = system.bus
     se = analysis.method
     bad = analysis.bad

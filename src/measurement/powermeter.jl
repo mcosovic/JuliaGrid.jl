@@ -396,11 +396,9 @@ function addPowermeter!(system, device, measure, powerBus, powerFrom, powerTo, d
     measure.status = fill(Int8(0), deviceNumber)
 
     basePowerInv = 1 / (system.base.power.value * system.base.power.prefix)
-    label = collect(keys(sort(system.bus.label; byvalue = true)))
-    @inbounds for i = 1:system.bus.number
+    @inbounds for (label, i) in system.bus.label
         device.number += 1
-        labelBus = getLabel(system.bus, label[i], "bus")
-        setLabel(device, missing, default.label, labelBus)
+        setLabel(device, missing, default.label, label)
 
         device.layout.index[i] = i
         device.layout.bus[i] = true
@@ -410,31 +408,26 @@ function addPowermeter!(system, device, measure, powerBus, powerFrom, powerTo, d
         measure.status[i] = statusBus
     end
 
-    count = 1
-    label = collect(keys(sort(system.branch.label; byvalue = true)))
-    @inbounds for i = (system.bus.number + 1):2:deviceNumber
-        labelBranch = getLabel(system.branch, label[count], "branch")
+    @inbounds for (label, i) in system.branch.label
+        device.number += 1
+        setLabel(device, missing, default.label, label; prefix = "From ")
+
+        device.layout.index[device.number] = i
+        device.layout.from[device.number] = true
+
+        measure.variance[device.number] = topu(varianceFrom, default.varianceFrom, prefixPower, basePowerInv)
+        measure.mean[device.number] = powerFrom[i] + measure.variance[device.number]^(1/2) * randn(1)[1]
+        measure.status[device.number] = statusFrom
 
         device.number += 1
-        setLabel(device, missing, default.label, labelBranch; prefix = "From ")
+        setLabel(device, missing, default.label, label; prefix = "To ")
 
-        device.number += 1
-        setLabel(device, missing, default.label, labelBranch; prefix = "To ")
+        device.layout.index[device.number] = i
+        device.layout.to[device.number] = true
 
-        device.layout.index[i] = count
-        device.layout.index[i + 1] = count
-        device.layout.from[i] = true
-        device.layout.to[i + 1] = true
-
-        measure.variance[i] = topu(varianceFrom, default.varianceFrom, prefixPower, basePowerInv)
-        measure.mean[i] = powerFrom[count] + measure.variance[i]^(1/2) * randn(1)[1]
-        measure.status[i] = statusFrom
-
-        measure.variance[i + 1] = topu(varianceTo, default.varianceTo, prefixPower, basePowerInv)
-        measure.mean[i + 1] = powerTo[count] + measure.variance[i + 1]^(1/2) * randn(1)[1]
-        measure.status[i + 1] = statusTo
-
-        count += 1
+        measure.variance[device.number] = topu(varianceTo, default.varianceTo, prefixPower, basePowerInv)
+        measure.mean[device.number] = powerTo[i] + measure.variance[device.number]^(1/2) * randn(1)[1]
+        measure.status[device.number] = statusTo
     end
 
     device.layout.label = device.number
@@ -491,6 +484,138 @@ function updateWattmeter!(system::PowerSystem, device::Measurement; label::L,
 
     updateMeter(wattmeter.active, index, active, variance, status, noise,
         prefix.activePower, basePowerInv)
+end
+
+function updateWattmeter!(system::PowerSystem, device::Measurement, analysis::DCStateEstimationWLS; 
+    label::L, active::T = missing, variance::T = missing, status::T = missing,
+    noise::Bool = template.wattmeter.noise)
+
+    dc = system.model.dc
+    wattmeter = device.wattmeter
+    method = analysis.method
+
+    indexWattmeter = wattmeter.label[getLabel(wattmeter, label, "wattmeter")]
+    basePowerInv = 1 / (system.base.power.value * system.base.power.prefix)
+
+    updateMeter(wattmeter.active, indexWattmeter, active, variance, status, noise,
+    prefix.activePower, basePowerInv)
+
+    constIf = constMeter(wattmeter.active.status[indexWattmeter])
+    if isset(status) || isset(active) || isset(variance)
+        if wattmeter.layout.bus[indexWattmeter] 
+            indexBus = wattmeter.layout.index[indexWattmeter]
+            if isset(status)
+                method.done = false
+                for j in dc.nodalMatrix.colptr[indexBus]:(dc.nodalMatrix.colptr[indexBus + 1] - 1)
+                    method.jacobian[indexWattmeter, dc.nodalMatrix.rowval[j]] = dc.nodalMatrix.nzval[j] * constIf
+                end
+            end
+            if isset(status) || isset(active)
+                method.mean[indexWattmeter] = (wattmeter.active.mean[indexWattmeter] - dc.shiftPower[indexBus] - system.bus.shunt.conductance[indexBus]) * constIf
+            end
+            if isset(status) || isset(variance)
+                method.weight[indexWattmeter] = constIf / wattmeter.active.variance[indexWattmeter]
+            end
+        else
+            indexBranch = wattmeter.layout.index[indexWattmeter]
+            if wattmeter.layout.from[indexWattmeter]
+                addmitance = dc.admittance[indexBranch] * constIf
+            else
+                addmitance = -dc.admittance[indexBranch] * constIf
+            end
+            if isset(status)
+                method.done = false
+                method.jacobian[indexWattmeter, system.branch.layout.from[indexBranch]] = addmitance 
+                method.jacobian[indexWattmeter, system.branch.layout.to[indexBranch]] = -addmitance
+            end
+            if isset(status) || isset(active)
+                method.mean[indexWattmeter] = wattmeter.active.mean[indexWattmeter] * constIf + system.branch.parameter.shiftAngle[indexBranch] * addmitance 
+            end
+            if isset(status) || isset(variance)
+                method.weight[indexWattmeter] = constIf / wattmeter.active.variance[indexWattmeter] 
+            end
+        end
+    end
+end
+
+function updateWattmeter!(system::PowerSystem, device::Measurement, analysis::DCStateEstimationLAV; 
+    label::L, active::T = missing, variance::T = missing, status::T = missing,
+    noise::Bool = template.wattmeter.noise)
+
+    dc = system.model.dc
+    wattmeter = device.wattmeter
+    method = analysis.method
+
+    indexWattmeter = wattmeter.label[getLabel(wattmeter, label, "wattmeter")]
+    basePowerInv = 1 / (system.base.power.value * system.base.power.prefix)
+
+    updateMeter(wattmeter.active, indexWattmeter, active, variance, status, noise,
+    prefix.activePower, basePowerInv)
+
+    if isset(status) || isset(active)
+        if wattmeter.layout.bus[indexWattmeter] 
+            indexBus = wattmeter.layout.index[indexWattmeter]
+        else
+            indexBranch = wattmeter.layout.index[indexWattmeter]
+            if wattmeter.layout.from[indexWattmeter] 
+                admittance = dc.admittance[indexBranch]
+            else
+                admittance = -dc.admittance[indexBranch]
+            end
+        end
+    end
+
+    if isset(status)
+        if wattmeter.active.status[indexWattmeter] == 1
+            if is_fixed(method.variable.residualx[indexWattmeter])
+                unfix(method.variable.residualx[indexWattmeter])
+                set_lower_bound(method.variable.residualx[indexWattmeter], 0.0)
+
+                unfix(method.variable.residualy[indexWattmeter])
+                set_lower_bound(method.variable.residualy[indexWattmeter], 0.0)
+
+                set_objective_coefficient(method.jump, method.variable.residualx[indexWattmeter], 1)
+                set_objective_coefficient(method.jump, method.variable.residualy[indexWattmeter], 1)
+            end
+
+            if wattmeter.layout.bus[indexWattmeter] 
+                angleJacobian = @expression(method.jump, AffExpr())
+                for j in dc.nodalMatrix.colptr[indexBus]:(dc.nodalMatrix.colptr[indexBus + 1] - 1)
+                    k = dc.nodalMatrix.rowval[j]
+                    add_to_expression!(angleJacobian, dc.nodalMatrix.nzval[j] * (method.variable.angley[k] - method.variable.anglex[k]))
+                end
+
+                remove!(method.jump, method.residual, indexWattmeter)
+                method.residual[indexWattmeter] = @constraint(method.jump, angleJacobian + method.variable.residualy[indexWattmeter] - method.variable.residualx[indexWattmeter] == 0.0)
+            else
+                from = system.branch.layout.from[indexBranch]
+                to =  system.branch.layout.to[indexBranch]
+                
+                angleJacobian = admittance * (method.variable.angley[from] - method.variable.anglex[from] - method.variable.angley[to] + method.variable.anglex[to])
+
+                remove!(method.jump, method.residual, indexWattmeter)
+                method.residual[indexWattmeter] = @constraint(method.jump, angleJacobian + method.variable.residualy[indexWattmeter] - method.variable.residualx[indexWattmeter] == 0.0)
+            end
+        else
+            remove!(method.jump, method.residual, indexWattmeter)
+
+            if !is_fixed(method.variable.residualx[indexWattmeter])
+                fix(method.variable.residualx[indexWattmeter], 0.0; force = true)
+                fix(method.variable.residualy[indexWattmeter], 0.0; force = true)
+            
+                set_objective_coefficient(method.jump, method.variable.residualx[indexWattmeter], 0)
+                set_objective_coefficient(method.jump, method.variable.residualy[indexWattmeter], 0)
+            end
+        end
+    end
+
+    if wattmeter.active.status[indexWattmeter] == 1 && (isset(status) || isset(active))
+        if wattmeter.layout.bus[indexWattmeter]
+            JuMP.set_normalized_rhs(method.residual[indexWattmeter], wattmeter.active.mean[indexWattmeter] - dc.shiftPower[indexBus] - system.bus.shunt.conductance[indexBus])
+        else
+            JuMP.set_normalized_rhs(method.residual[indexWattmeter], wattmeter.active.mean[indexWattmeter] + system.branch.parameter.shiftAngle[indexBranch] * admittance)
+        end
+    end
 end
 
 """

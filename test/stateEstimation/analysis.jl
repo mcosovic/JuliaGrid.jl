@@ -167,3 +167,68 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     solve!(system30, analysisQR)
     @test analysisLU.voltage.angle ≈ analysisQR.voltage.angle
 end
+
+@testset "DC State Estimation: Incomplete Set" begin
+    @default(template)
+    @default(unit)
+    
+    ############### Modified IEEE 14-bus Test Case ################
+    dcModel!(system14)
+    analysis = dcPowerFlow(system14)
+    solve!(system14, analysis)
+    power!(system14, analysis)
+
+    deviceAll = measurement()
+    devicePart = measurement()
+
+    ################ Wattmeters ################
+    for (key, value) in system14.bus.label
+        if value in [1; 5; 8]
+            addWattmeter!(system14, deviceAll; bus = key, active = analysis.power.injection.active[value], noise = false, status = 0)
+        else
+            addWattmeter!(system14, deviceAll; bus = key, active = analysis.power.injection.active[value], noise = false)
+            addWattmeter!(system14, devicePart; bus = key, active = analysis.power.injection.active[value], noise = false)
+        end
+    end
+
+    for (key, value) in system14.branch.label
+        if value in [4; 15; 18]
+            addWattmeter!(system14, deviceAll; from = key, active = analysis.power.from.active[value], noise = false, status = 0)
+        else
+            addWattmeter!(system14, deviceAll; from = key, active = analysis.power.from.active[value], noise = false)
+            addWattmeter!(system14, devicePart; from = key, active = analysis.power.from.active[value], noise = false)
+        end
+        if value in [4; 16; 19]
+            addWattmeter!(system14, deviceAll; to = key, active = analysis.power.to.active[value], noise = false, status = 0)
+        else
+            addWattmeter!(system14, deviceAll; to = key, active = analysis.power.to.active[value], noise = false)
+            addWattmeter!(system14, devicePart; to = key, active = analysis.power.to.active[value], noise = false)
+        end
+    end
+
+    analysisAll = dcStateEstimation(system14, deviceAll)
+    solve!(system14, analysisAll)
+
+    analysisPart = dcStateEstimation(system14, devicePart)
+    solve!(system14, analysisPart)
+
+    @test analysisAll.voltage.angle ≈ analysisPart.voltage.angle
+
+    ################ PMUs ################
+    for (key, value) in system14.bus.label
+        if value in [1; 6; 10; 14]
+            addPmu!(system14, deviceAll; bus = key, magnitude = 1.0, angle = analysis.voltage.angle[value], noise = false, statusAngle = 0)
+        else
+            addPmu!(system14, deviceAll; bus = key, magnitude = 1.0, angle = analysis.voltage.angle[value], noise = false)
+            addPmu!(system14, devicePart; bus = key, magnitude = 1.0, angle = analysis.voltage.angle[value], noise = false)        
+        end 
+    end
+
+    analysisAll = dcStateEstimation(system14, deviceAll)
+    solve!(system14, analysisAll)
+
+    analysisPart = dcStateEstimation(system14, devicePart)
+    solve!(system14, analysisPart)
+
+    @test analysisAll.voltage.angle ≈ analysisPart.voltage.angle
+end

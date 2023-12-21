@@ -129,9 +129,12 @@ function addBus!(system::PowerSystem, analysis::ACPowerFlow; kwargs...)
     throw(ErrorException("The AC power flow model cannot be reused when adding a new bus."))
 end
 
-######### Query About Bus ##########
 function addBus!(system::PowerSystem, analysis::DCOptimalPowerFlow; kwargs...)
     throw(ErrorException("The DC optimal power flow model cannot be reused when adding a new bus."))
+end
+
+function addBus!(system::PowerSystem, analysis::DCStateEstimation; kwargs...)
+    throw(ErrorException("The DC state estimation model cannot be reused when adding a new bus."))
 end
 
 """
@@ -440,6 +443,42 @@ function updateBus!(system::PowerSystem, analysis::ACOptimalPowerFlow;
 
     if bus.layout.type[index] == 3
         fix!(variable.angle[index], bus.voltage.angle[index], constraint.slack.angle, index)
+    end
+end
+
+function updateBus!(system::PowerSystem, analysis::DCStateEstimationWLS;
+    label::L, type::T = missing,
+    active::T = missing, reactive::T = missing,
+    conductance::T = missing, susceptance::T = missing,
+    magnitude::T = missing, angle::T = missing,
+    minMagnitude::T = missing, maxMagnitude::T = missing,
+    base::T = missing, area::T = missing, lossZone::T = missing)
+
+    bus = system.bus
+    method = analysis.method
+
+    indexBus = bus.label[getLabel(bus, label, "bus")]
+
+    if isset(type) && bus.layout.slack == indexBus && type != 3
+        throw(ErrorException("The DC state estimation model cannot be reused due to required bus type conversion."))
+    end
+
+    oldConductance = bus.shunt.conductance[indexBus]
+    oldSlackAngle = bus.voltage.angle[bus.layout.slack]
+
+    updateBus!(system; label, type, active, reactive, conductance, susceptance,
+    magnitude, angle, minMagnitude, maxMagnitude, base, area, lossZone)
+
+    if isset(conductance) && haskey(method.layout.wattmeter.bus, indexBus)
+        for indexWattmeter in method.layout.wattmeter.bus[indexBus]
+            method.mean[indexWattmeter] = (method.mean[indexWattmeter] + oldConductance) - bus.shunt.conductance[indexBus]
+        end
+    end
+
+    if bus.layout.slack == indexBus && isset(angle) 
+        for i = (method.layout.wattmeter.number + 1):method.layout.number
+            method.mean[i] = (method.mean[i] + oldSlackAngle) - bus.voltage.angle[bus.layout.slack] 
+        end
     end
 end
 

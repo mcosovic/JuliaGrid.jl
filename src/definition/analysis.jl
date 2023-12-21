@@ -213,11 +213,22 @@ mutable struct BadData
     label::String
 end
 
+mutable struct WattmeterLayout
+    bus::Dict{Int64,Array{Int64,1}}
+    from::Dict{Int64,Array{Int64,1}}
+    to::Dict{Int64,Array{Int64,1}}
+    number::Int64
+end
+
+mutable struct PMULayout
+    bus::Dict{Int64,Array{Int64,1}}
+    number::Int64
+end
+
 mutable struct DCStateEstimationLayout
-    index::Array{Int64,1}
-    device::Int64
-    wattmeter::Int64
-    pmu::Int64
+    wattmeter::WattmeterLayout
+    pmu::PMULayout
+    number::Int64
 end
 
 mutable struct DCStateEstimationWLSMethod
@@ -250,7 +261,6 @@ mutable struct DCStateEstimationMethodLAV
     jump::JuMP.Model
     variable::VariableLAV
     residual::Dict{Int64, JuMP.ConstraintRef}
-    objective::JuMP.AffExpr
     layout::DCStateEstimationLayout
 end
 

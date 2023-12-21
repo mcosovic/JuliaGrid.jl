@@ -77,20 +77,20 @@ function addAmmeter!(system::PowerSystem, device::Measurement;
     ammeter.number += 1
     labelBranch = getLabel(system.branch, location, "branch")
 
-    index = system.branch.label[getLabel(system.branch, location, "branch")]
-    push!(ammeter.layout.index, index)
+    indexBranch = system.branch.label[getLabel(system.branch, location, "branch")]
+    push!(ammeter.layout.index, indexBranch)
 
     basePowerInv = 1 / (system.base.power.value * system.base.power.prefix)
     if ammeter.layout.from[end]
         setLabel(ammeter, label, default.label, labelBranch; prefix = "From ")
         defaultVariance = default.varianceFrom
         defaultStatus = default.statusFrom
-        baseVoltage = system.base.voltage.value[system.branch.layout.from[index]] * system.base.voltage.prefix
+        baseVoltage = system.base.voltage.value[system.branch.layout.from[indexBranch]] * system.base.voltage.prefix
     else
         setLabel(ammeter, label, default.label, labelBranch; prefix = "To ")
         defaultVariance = default.varianceTo
         defaultStatus = default.statusTo
-        baseVoltage = system.base.voltage.value[system.branch.layout.to[index]] * system.base.voltage.prefix
+        baseVoltage = system.base.voltage.value[system.branch.layout.to[indexBranch]] * system.base.voltage.prefix
     end
 
     baseCurrentInv = baseCurrentInverse(basePowerInv, baseVoltage)
@@ -201,38 +201,34 @@ function addAmmeter!(system::PowerSystem, device::Measurement, analysis::AC;
     ammeter.magnitude.variance = similar(ammeter.magnitude.mean)
     ammeter.magnitude.status = fill(Int8(0), ammeterNumber)
 
-    count = 1
     basePowerInv = 1 / (system.base.power.value * system.base.power.prefix)
-    label = collect(keys(sort(system.branch.label; byvalue = true)))
-    @inbounds for i = 1:2:ammeterNumber
-        labelBranch = getLabel(system.branch, label[count], "branch")
+    @inbounds for (label, i) in system.branch.label
+        ammeter.number += 1
+        setLabel(ammeter, missing, default.label, label; prefix = "From ")
+
+        ammeter.layout.index[ammeter.number] = i
+        ammeter.layout.from[ammeter.number] = true
+
+        baseVoltage = system.base.voltage.value[system.branch.layout.from[i]] * system.base.voltage.prefix
+        baseCurrentInv = baseCurrentInverse(basePowerInv, baseVoltage)
+
+        ammeter.magnitude.variance[ammeter.number] = topu(varianceFrom, default.varianceFrom, prefix.currentMagnitude, baseCurrentInv)
+        ammeter.magnitude.mean[ammeter.number] = analysis.current.from.magnitude[i] + ammeter.magnitude.variance[ammeter.number]^(1/2) * randn(1)[1]
+        ammeter.magnitude.status[ammeter.number] = statusFrom
 
         ammeter.number += 1
-        setLabel(ammeter, missing, default.label, labelBranch; prefix = "From ")
+        setLabel(ammeter, missing, default.label, label; prefix = "To ")
 
-        ammeter.number += 1
-        setLabel(ammeter, missing, default.label, labelBranch; prefix = "To ")
+        ammeter.layout.index[ammeter.number] = i
+        ammeter.layout.to[ammeter.number] = true
 
-        ammeter.layout.index[i] = count
-        ammeter.layout.index[i + 1] = count
-        ammeter.layout.from[i] = true
-        ammeter.layout.to[i + 1] = true
-
-        baseVoltage = system.base.voltage.value[system.branch.layout.from[count]] * system.base.voltage.prefix
+        baseVoltage = system.base.voltage.value[system.branch.layout.to[i]] * system.base.voltage.prefix
         baseCurrentInv = baseCurrentInverse(basePowerInv, baseVoltage)
-        ammeter.magnitude.variance[i] = topu(varianceFrom, default.varianceFrom, prefix.currentMagnitude, baseCurrentInv)
-        ammeter.magnitude.mean[i] = analysis.current.from.magnitude[count] + ammeter.magnitude.variance[i]^(1/2) * randn(1)[1]
-        ammeter.magnitude.status[i] = statusFrom
 
-        baseVoltage = system.base.voltage.value[system.branch.layout.to[count]] * system.base.voltage.prefix
-        baseCurrentInv = baseCurrentInverse(basePowerInv, baseVoltage)
-        ammeter.magnitude.variance[i + 1] = topu(varianceTo, default.varianceTo, prefix.currentMagnitude, baseCurrentInv)
-        ammeter.magnitude.mean[i + 1] = analysis.current.to.magnitude[count] + ammeter.magnitude.variance[i + 1]^(1/2) * randn(1)[1]
-        ammeter.magnitude.status[i + 1] = statusTo
-
-        count += 1
+        ammeter.magnitude.variance[ammeter.number] = topu(varianceTo, default.varianceTo, prefix.currentMagnitude, baseCurrentInv)
+        ammeter.magnitude.mean[ammeter.number] = analysis.current.to.magnitude[i] + ammeter.magnitude.variance[ammeter.number]^(1/2) * randn(1)[1]
+        ammeter.magnitude.status[ammeter.number] = statusTo
     end
-
     ammeter.layout.label = ammeter.number
 end
 

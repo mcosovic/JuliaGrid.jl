@@ -29,7 +29,7 @@ system30 = powerSystem(string(pathData, "case30test.m"))
         addPmu!(system14, device; bus = key, magnitude = 1.0, angle = analysis.voltage.angle[value], noise = false)
     end
     
-    ####### WLS: One Outlier #######
+    ####### WLS LU: One Outlier #######
     updateWattmeter!(system14, device; label = "Wattmeter 2", active = 100, noise = false)
     analysisSE = dcStateEstimation(system14, device)
     solve!(system14, analysisSE)
@@ -41,9 +41,38 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     solve!(system14, analysisSE)
     @test analysis.voltage.angle ≈ analysisSE.voltage.angle
 
-    ####### WLS: Two Outliers #######
+    ####### WLS LU: Two Outliers #######
     updatePmu!(system14, device; label = "PMU 10", angle = 10pi, noise = false)
     analysisSE = dcStateEstimation(system14, device)
+    solve!(system14, analysisSE)
+
+    badData!(system14, device, analysisSE; threshold = 3.0)
+    @test analysisSE.bad.label == "PMU 10"
+    @test analysisSE.bad.maxNormalizedResidual ≈ 5186.3 atol = 1e-1
+
+    solve!(system14, analysisSE)
+    badData!(system14, device, analysisSE; threshold = 3.0)
+    @test analysisSE.bad.label == "Wattmeter 2"
+    @test analysisSE.bad.maxNormalizedResidual ≈ 829.9 atol = 1e-1
+
+    solve!(system14, analysisSE)
+    @test analysis.voltage.angle ≈ analysisSE.voltage.angle
+
+    ####### WLS QR: One Outlier #######
+    updatePmu!(system14, device; label = "PMU 10", angle = analysis.voltage.angle[10], noise = false)
+    analysisSE = dcStateEstimation(system14, device, QR)
+    solve!(system14, analysisSE)
+
+    badData!(system14, device, analysisSE; threshold = 3.0)
+    @test analysisSE.bad.label == "Wattmeter 2"
+    @test analysisSE.bad.maxNormalizedResidual ≈ 829.9 atol = 1e-1
+
+    solve!(system14, analysisSE)
+    @test analysis.voltage.angle ≈ analysisSE.voltage.angle
+
+    ####### WLS QR: Two Outliers #######
+    updatePmu!(system14, device; label = "PMU 10", angle = 10pi, noise = false)
+    analysisSE = dcStateEstimation(system14, device, QR)
     solve!(system14, analysisSE)
 
     badData!(system14, device, analysisSE; threshold = 3.0)
