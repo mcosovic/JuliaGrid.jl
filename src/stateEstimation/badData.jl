@@ -104,7 +104,7 @@ function badData!(system::PowerSystem, device::Measurement, analysis::DCStateEst
     h = se.jacobian * analysis.voltage.angle
     bad.maxNormalizedResidual = 0.0
     bad.index = 0
-    @inbounds for i = 1:se.layout.device
+    @inbounds for i = 1:se.number
         normResidual = abs(se.mean[i] - h[i]) / sqrt(abs((1 / se.weight[i]) - c[i]))
         if normResidual > bad.maxNormalizedResidual
             bad.maxNormalizedResidual = normResidual
@@ -128,10 +128,10 @@ function badData!(system::PowerSystem, device::Measurement, analysis::DCStateEst
     end
 
     bad.label = ""
-    if bad.index <= se.layout.wattmeter
-        (bad.label,_),_ = iterate(device.wattmeter.label, se.layout.index[bad.index])
+    if bad.index <= device.wattmeter.number
+        (bad.label,_),_ = iterate(device.wattmeter.label, bad.index)
     else
-        (bad.label,_),_ = iterate(device.pmu.label, se.layout.index[bad.index])
+        (bad.label,_),_ = iterate(device.pmu.label, bad.index - device.wattmeter.number)
     end
 end
 

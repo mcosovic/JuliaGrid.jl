@@ -213,30 +213,12 @@ mutable struct BadData
     label::String
 end
 
-mutable struct WattmeterLayout
-    bus::Dict{Int64,Array{Int64,1}}
-    from::Dict{Int64,Array{Int64,1}}
-    to::Dict{Int64,Array{Int64,1}}
-    number::Int64
-end
-
-mutable struct PMULayout
-    bus::Dict{Int64,Array{Int64,1}}
-    number::Int64
-end
-
-mutable struct DCStateEstimationLayout
-    wattmeter::WattmeterLayout
-    pmu::PMULayout
-    number::Int64
-end
-
 mutable struct DCStateEstimationWLSMethod
     jacobian::SparseMatrixCSC{Float64,Int64}
     weight::Array{Float64,1}
     mean::Array{Float64,1}
     factorization::LULDLtQR
-    layout::DCStateEstimationLayout
+    number::Int64
     done::Bool
 end
 
@@ -255,18 +237,17 @@ struct VariableLAV
 end
 
 mutable struct DCStateEstimationMethodLAV
-    jacobian::SparseMatrixCSC{Float64,Int64}
-    weight::Array{Float64,1}
-    mean::Array{Float64,1}
     jump::JuMP.Model
-    variable::VariableLAV
+    anglex::Array{JuMP.VariableRef,1}
+    angley::Array{JuMP.VariableRef,1}
+    residualx::Array{JuMP.VariableRef,1}
+    residualy::Array{JuMP.VariableRef,1}
     residual::Dict{Int64, JuMP.ConstraintRef}
-    layout::DCStateEstimationLayout
+    number::Int64
 end
 
 struct DCStateEstimationLAV <: DCStateEstimation
     voltage::PolarAngle
     power::DCPowerSE
     method::DCStateEstimationMethodLAV
-    bad::BadData
 end

@@ -685,32 +685,6 @@ function updateGenerator!(system::PowerSystem, analysis::ACOptimalPowerFlow;
     end
 end
 
-function updateGenerator!(system::PowerSystem, analysis::DCStateEstimationWLS;
-    label::L, area::T = missing, status::T = missing,
-    active::T = missing, reactive::T = missing, magnitude::T = missing,
-    minActive::T = missing, maxActive::T = missing, minReactive::T = missing,
-    maxReactive::T = missing, lowActive::T = missing, minLowReactive::T = missing,
-    maxLowReactive::T = missing, upActive::T = missing, minUpReactive::T = missing,
-    maxUpReactive::T = missing, loadFollowing::T = missing, reserve10min::T = missing,
-    reserve30min::T = missing, reactiveTimescale::T = missing)
-
-    generator = system.generator
-
-    if isset(status)
-        checkStatus(status)
-        index = generator.label[getLabel(generator, label, "generator")]
-        indexBus = generator.layout.bus[index]
-        if status == 0 && system.bus.layout.slack == indexBus && length(system.bus.supply.generator[indexBus]) == 1
-            throw(ErrorException("The DC state estimation model cannot be reused due to required bus type conversion."))
-        end
-    end
-
-    updateGenerator!(system; label, area, status, active, reactive, magnitude,
-        minActive, maxActive, minReactive, maxReactive, lowActive, minLowReactive,
-        maxLowReactive, upActive, minUpReactive, maxUpReactive, loadFollowing, reserve10min,
-        reserve30min, reactiveTimescale)
-end
-
 """
     @generator(kwargs...)
 

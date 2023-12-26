@@ -415,7 +415,7 @@ function updatePmu!(system::PowerSystem, device::Measurement, analysis::DCStateE
     statusMagnitude, statusAngle, noise)
 
     indexPmu = pmu.label[getLabel(pmu, label, "PMU")]   
-    if (isset(statusAngle) || isset(angle) || isset(varianceAngle)) && pmu.layout.bus[indexPmu]
+    if pmu.layout.bus[indexPmu] && (isset(statusAngle) || isset(angle) || isset(varianceAngle))
         constIf = constMeter(pmu.angle.status[indexPmu])
 
         indexBus = pmu.layout.index[indexPmu]
@@ -450,28 +450,28 @@ function updatePmu!(system::PowerSystem, device::Measurement, analysis::DCStateE
         if pmu.angle.status[indexPmu] == 1
             indexBus = pmu.layout.index[indexPmu]
             
-            if is_fixed(method.variable.residualx[index])
-                unfix(method.variable.residualx[index])
-                set_lower_bound(method.variable.residualx[index], 0.0)
+            if is_fixed(method.residualx[index])
+                unfix(method.residualx[index])
+                set_lower_bound(method.residualx[index], 0.0)
 
-                unfix(method.variable.residualy[index])
-                set_lower_bound(method.variable.residualy[index], 0.0)
+                unfix(method.residualy[index])
+                set_lower_bound(method.residualy[index], 0.0)
 
-                set_objective_coefficient(method.jump, method.variable.residualx[index], 1)
-                set_objective_coefficient(method.jump, method.variable.residualy[index], 1)
+                set_objective_coefficient(method.jump, method.residualx[index], 1)
+                set_objective_coefficient(method.jump, method.residualy[index], 1)
             end
 
             remove!(method.jump, method.residual, index)
-            method.residual[index] = @constraint(method.jump, method.variable.angley[indexBus] - method.variable.anglex[indexBus] + method.variable.residualy[index] - method.variable.residualx[index] == 0.0)
+            method.residual[index] = @constraint(method.jump, method.angley[indexBus] - method.anglex[indexBus] + method.residualy[index] - method.residualx[index] == 0.0)
         else
             remove!(method.jump, method.residual, index)
 
-            if !is_fixed(method.variable.residualx[index])
-                fix(method.variable.residualx[index], 0.0; force = true)
-                fix(method.variable.residualy[index], 0.0; force = true)
+            if !is_fixed(method.residualx[index])
+                fix(method.residualx[index], 0.0; force = true)
+                fix(method.residualy[index], 0.0; force = true)
             
-                set_objective_coefficient(method.jump, method.variable.residualx[index], 0)
-                set_objective_coefficient(method.jump, method.variable.residualy[index], 0)
+                set_objective_coefficient(method.jump, method.residualx[index], 0)
+                set_objective_coefficient(method.jump, method.residualy[index], 0)
             end
         end
     end

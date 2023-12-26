@@ -495,10 +495,9 @@ function updateWattmeter!(system::PowerSystem, device::Measurement, analysis::DC
     method = analysis.method
 
     indexWattmeter = wattmeter.label[getLabel(wattmeter, label, "wattmeter")]
-    basePowerInv = 1 / (system.base.power.value * system.base.power.prefix)
 
     updateMeter(wattmeter.active, indexWattmeter, active, variance, status, noise,
-    prefix.activePower, basePowerInv)
+    prefix.activePower, 1 / (system.base.power.value * system.base.power.prefix))
 
     constIf = constMeter(wattmeter.active.status[indexWattmeter])
     if isset(status) || isset(active) || isset(variance)
@@ -567,44 +566,44 @@ function updateWattmeter!(system::PowerSystem, device::Measurement, analysis::DC
 
     if isset(status)
         if wattmeter.active.status[indexWattmeter] == 1
-            if is_fixed(method.variable.residualx[indexWattmeter])
-                unfix(method.variable.residualx[indexWattmeter])
-                set_lower_bound(method.variable.residualx[indexWattmeter], 0.0)
+            if is_fixed(method.residualx[indexWattmeter])
+                unfix(method.residualx[indexWattmeter])
+                set_lower_bound(method.residualx[indexWattmeter], 0.0)
 
-                unfix(method.variable.residualy[indexWattmeter])
-                set_lower_bound(method.variable.residualy[indexWattmeter], 0.0)
+                unfix(method.residualy[indexWattmeter])
+                set_lower_bound(method.residualy[indexWattmeter], 0.0)
 
-                set_objective_coefficient(method.jump, method.variable.residualx[indexWattmeter], 1)
-                set_objective_coefficient(method.jump, method.variable.residualy[indexWattmeter], 1)
+                set_objective_coefficient(method.jump, method.residualx[indexWattmeter], 1)
+                set_objective_coefficient(method.jump, method.residualy[indexWattmeter], 1)
             end
 
             if wattmeter.layout.bus[indexWattmeter] 
                 angleJacobian = @expression(method.jump, AffExpr())
                 for j in dc.nodalMatrix.colptr[indexBus]:(dc.nodalMatrix.colptr[indexBus + 1] - 1)
                     k = dc.nodalMatrix.rowval[j]
-                    add_to_expression!(angleJacobian, dc.nodalMatrix.nzval[j] * (method.variable.angley[k] - method.variable.anglex[k]))
+                    add_to_expression!(angleJacobian, dc.nodalMatrix.nzval[j] * (method.angley[k] - method.anglex[k]))
                 end
 
                 remove!(method.jump, method.residual, indexWattmeter)
-                method.residual[indexWattmeter] = @constraint(method.jump, angleJacobian + method.variable.residualy[indexWattmeter] - method.variable.residualx[indexWattmeter] == 0.0)
+                method.residual[indexWattmeter] = @constraint(method.jump, angleJacobian + method.residualy[indexWattmeter] - method.residualx[indexWattmeter] == 0.0)
             else
                 from = system.branch.layout.from[indexBranch]
                 to =  system.branch.layout.to[indexBranch]
                 
-                angleJacobian = admittance * (method.variable.angley[from] - method.variable.anglex[from] - method.variable.angley[to] + method.variable.anglex[to])
+                angleJacobian = admittance * (method.angley[from] - method.anglex[from] - method.angley[to] + method.anglex[to])
 
                 remove!(method.jump, method.residual, indexWattmeter)
-                method.residual[indexWattmeter] = @constraint(method.jump, angleJacobian + method.variable.residualy[indexWattmeter] - method.variable.residualx[indexWattmeter] == 0.0)
+                method.residual[indexWattmeter] = @constraint(method.jump, angleJacobian + method.residualy[indexWattmeter] - method.residualx[indexWattmeter] == 0.0)
             end
         else
             remove!(method.jump, method.residual, indexWattmeter)
 
-            if !is_fixed(method.variable.residualx[indexWattmeter])
-                fix(method.variable.residualx[indexWattmeter], 0.0; force = true)
-                fix(method.variable.residualy[indexWattmeter], 0.0; force = true)
+            if !is_fixed(method.residualx[indexWattmeter])
+                fix(method.residualx[indexWattmeter], 0.0; force = true)
+                fix(method.residualy[indexWattmeter], 0.0; force = true)
             
-                set_objective_coefficient(method.jump, method.variable.residualx[indexWattmeter], 0)
-                set_objective_coefficient(method.jump, method.variable.residualy[indexWattmeter], 0)
+                set_objective_coefficient(method.jump, method.residualx[indexWattmeter], 0)
+                set_objective_coefficient(method.jump, method.residualy[indexWattmeter], 0)
             end
         end
     end
