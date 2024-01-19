@@ -21,7 +21,7 @@ Similar to the explanation provided in the [Bus Type Modification](@ref DCBusTyp
 
 ---
 
-## [WLS State Estimation Solution](@id WLSStateEstimationSolutionManual)
+## [WLS State Estimation Solution](@id DCWLSStateEstimationSolutionManual)
 To solve the DC state estimation and derive weighted least-squares (WLS) estimates using JuliaGrid, the process initiates by defining the composite types `PowerSystem` and `Measurement`. Here is an illustrative example:
 ```@example WLSDCStateEstimationSolution
 using JuliaGrid # hide
@@ -41,6 +41,7 @@ dcModel!(system)
 
 device = measurement()
 
+@wattmeter(label = "Watmetter ?: !")
 addWattmeter!(system, device; bus = "Bus 1", active = 0.13, variance = 1e-3)
 addWattmeter!(system, device; bus = "Bus 3", active = -0.02, variance = 1e-2)
 addWattmeter!(system, device; from = "Branch 1", active = 0.04, variance = 1e-4)
@@ -85,7 +86,45 @@ nothing # hide
 
 ---
 
-## [LAV State Estimation Solution](@id LAVtateEstimationSolutionManual)
+## [Bad Data Detection](@id DCBadDataDetectionManual)
+After acquiring the WLS solution using the [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimationWLS)) function, users can conduct bad data analysis employing the largest normalized residual test. Continuing with our defined power system and measurement set, let us introduce a new wattmeter. Upon proceeding to find the solution for this updated state:
+```@example WLSDCStateEstimationSolution
+addWattmeter!(system, device; from = "Branch 2", active = 4.1, variance = 1e-4)
+
+analysis = dcStateEstimation(system, device)
+solve!(system, analysis)
+nothing # hide
+```
+
+Following the solution acquisition, we can verify the presence of erroneous data. Detection of such data is determined by the `threshold` keyword. If the largest normalized residual's value exceeds the threshold, the measurement will be identified as bad data and consequently removed from the DC state estimation model:
+```@example WLSDCStateEstimationSolution
+badData!(system, device, analysis; threshold = 4.0)
+nothing # hide
+```
+
+Users can examine the data obtained from the bad data analysis:
+```@repl WLSDCStateEstimationSolution
+analysis.bad.detect
+analysis.bad.maxNormalizedResidual
+analysis.bad.label
+```
+Therefore, upon detecting bad data, the `detect` variable will hold `true`. The `maxNormalizedResidual` variable retains the value of the largest normalized residual, while the `label` contains the label of the measurement identified as bad data.
+
+JuliaGrid optimizes the algorithm for efficiency by not outright removing measurements from matrices and vectors. Instead, it sets non-zero elements to zero. The variable `index` contains positions within the vectors `weight` and `mean` that will be reset to zero. Additionally, it stores the row index within the jacobian matrix where non-zero elements will be adjusted to zero. Here is an example:
+```@repl WLSDCStateEstimationSolution
+analysis.bad.index
+analysis.method.jacobian
+```
+
+Hence, after removing bad data, a new estimate can be computed without considering this specific measurement:
+```@example WLSDCStateEstimationSolution
+solve!(system, analysis)
+nothing # hide
+```
+
+---
+
+## [LAV State Estimation Solution](@id DCLAVtateEstimationSolutionManual)
 The LAV method presents an alternative estimation technique known for its increased robustness compared to WLS. While the WLS method relies on specific assumptions regarding measurement errors, robust estimators like LAV are designed to maintain unbiasedness even in the presence of various types of measurement errors and outliers. This characteristic often eliminates the need for extensive bad data processing procedures [[1, Ch. 6]](@ref DCStateEstimationReferenceManual). However, it is important to note that achieving robustness typically involves increased computational complexity.
 
 To obtain an LAV estimator, users need to employ one of the [solvers](https://jump.dev/JuMP.jl/stable/packages/solvers/) listed in the JuMP documentation. In many common scenarios, the Ipopt solver proves sufficient to obtain a solution:

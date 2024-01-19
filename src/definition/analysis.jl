@@ -251,3 +251,15 @@ struct DCStateEstimationLAV <: DCStateEstimation
     power::DCPowerSE
     method::DCStateEstimationMethodLAV
 end
+
+mutable struct TieData
+    bus::Set{Int64}
+    branch::Set{Int64}
+    injection::Array{Int64,1}
+end
+
+mutable struct Observability
+    island::Array{Array{Int64,1},1}
+    bus::Array{Int64,1}
+    tie::TieData
+end

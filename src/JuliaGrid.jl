@@ -5,6 +5,7 @@ using HDF5
 using JuMP
 using Random, OrderedCollections
 
+
 ######### Types and Constants ##########
 include("definition/internal.jl")
 include("definition/system.jl")
@@ -22,7 +23,7 @@ include("powerSystem/model.jl")
 export powerSystem, savePowerSystem
 export acModel!, dcModel!
 
-# ########## Power System Components ##########
+########## Power System Components ##########
 include("powerSystem/bus.jl")
 include("powerSystem/branch.jl")
 include("powerSystem/generator.jl")
@@ -65,8 +66,9 @@ export status!
 ######### State Estimation ##########
 include("stateEstimation/dcStateEstimation.jl")
 include("stateEstimation/badData.jl")
+include("stateEstimation/observability.jl")
 export dcStateEstimation
-export badData!
+export island, badData!
 
 ########## Postprocessing ##########
 include("postprocessing/dcAnalysis.jl")
