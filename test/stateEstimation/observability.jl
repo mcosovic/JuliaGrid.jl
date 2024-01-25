@@ -162,7 +162,7 @@
         addWattmeter!(system14, pseudo; label = "Pseudo $key", to = key, active = analysis.power.to.active[value], noise = false)
     end
 
-    restoration!(system14, device, pseudo, islands)
+    restorationGram!(system14, device, pseudo, islands)
     analysisSE = dcStateEstimation(system14, device)
     solve!(system14, analysisSE)
     @test analysisSE.voltage.angle ≈ analysis.voltage.angle
