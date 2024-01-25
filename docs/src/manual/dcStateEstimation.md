@@ -98,7 +98,7 @@ nothing # hide
 
 Following the solution acquisition, we can verify the presence of erroneous data. Detection of such data is determined by the `threshold` keyword. If the largest normalized residual's value exceeds the threshold, the measurement will be identified as bad data and consequently removed from the DC state estimation model:
 ```@example WLSDCStateEstimationSolution
-badData!(system, device, analysis; threshold = 4.0)
+residualTest!(system, device, analysis; threshold = 4.0)
 nothing # hide
 ```
 

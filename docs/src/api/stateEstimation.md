@@ -4,6 +4,11 @@ For further information on this topic, please see the [AC State Estimation](@ref
 
 ---
 
+###### Observability Analysis
+* [`islandTopologicalFlow`](@ref islandTopologicalFlow(::PowerSystem, ::Wattmeter))
+* [`islandTopological`](@ref islandTopological(::PowerSystem, ::Wattmeter))
+* [`restorationGram!`](@ref restorationGram!(::PowerSystem, ::Measurement, ::Measurement, ::IslandWatt))
+
 ###### Build DC State Estimation
 * [`dcStateEstimation`](@ref dcStateEstimation)
 
@@ -11,9 +16,19 @@ For further information on this topic, please see the [AC State Estimation](@ref
 * [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimationWLS))
 
 ###### Bad Data Analysis
-* [`badData!`](@ref badData!)
+* [`residualTest!`](@ref residualTest!)
 
 ---
+
+## Observability Analysis
+```@docs
+islandTopologicalFlow(::PowerSystem, ::Wattmeter)
+islandTopological(::PowerSystem, ::Wattmeter)
+restorationGram!(::PowerSystem, ::Measurement, ::Measurement, ::IslandWatt)
+```
+
+---
+
 
 ## Build DC State Estimation
 ```@docs
@@ -31,5 +46,5 @@ solve!(::PowerSystem, ::DCStateEstimationWLS)
 
 ## Bad Data Analysis
 ```@docs
-badData!
+residualTest!
 ```

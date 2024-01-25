@@ -5,7 +5,6 @@ using HDF5
 using JuMP
 using Random, OrderedCollections
 
-
 ######### Types and Constants ##########
 include("definition/internal.jl")
 include("definition/system.jl")
@@ -67,8 +66,8 @@ export status!
 include("stateEstimation/dcStateEstimation.jl")
 include("stateEstimation/badData.jl")
 include("stateEstimation/observability.jl")
-export dcStateEstimation
-export island, badData!
+export dcStateEstimation, residualTest!
+export islandTopologicalFlow, islandTopological, restorationGram!
 
 ########## Postprocessing ##########
 include("postprocessing/dcAnalysis.jl")

@@ -1,5 +1,5 @@
 """
-    badData!(system::PowerSystem, device::Measurement, analysis::DCStateEstimation; threshold)
+    residualTest!(system::PowerSystem, device::Measurement, analysis::DCStateEstimation; threshold)
 
 The function conducts bad data detection and identification using the largest normalized 
 residual test, subsequently removing measurement outliers from the measurement set. It can 
@@ -35,7 +35,7 @@ device = measurement("measurement14.h5")
 analysis = dcStateEstimation(system, device)
 solve!(system, analysis)
 
-badData!(system, device, analysis; threshold = 4.0)
+residualTest!(system, device, analysis; threshold = 4.0)
 solve!(system, analysis)
 ```
 
@@ -48,11 +48,11 @@ analysis = dcStateEstimation(system, device)
 
 while analysis.bad.detect
     solve!(system, analysis)
-    badData!(system, device, analysis; threshold = 4.0)
+    residualTest!(system, device, analysis; threshold = 4.0)
 end
 ```
 """
-function badData!(system::PowerSystem, device::Measurement, analysis::DCStateEstimationWLS; threshold = 3.0)
+function residualTest!(system::PowerSystem, device::Measurement, analysis::DCStateEstimationWLS; threshold = 3.0)
     bus = system.bus
     se = analysis.method
     bad = analysis.bad

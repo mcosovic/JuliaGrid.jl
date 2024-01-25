@@ -34,7 +34,7 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     analysisSE = dcStateEstimation(system14, device)
     solve!(system14, analysisSE)
 
-    badData!(system14, device, analysisSE; threshold = 3.0)
+    residualTest!(system14, device, analysisSE; threshold = 3.0)
     @test analysisSE.bad.label == "Wattmeter 2"
     @test analysisSE.bad.maxNormalizedResidual ≈ 829.9 atol = 1e-1
     
@@ -46,12 +46,12 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     analysisSE = dcStateEstimation(system14, device)
     solve!(system14, analysisSE)
 
-    badData!(system14, device, analysisSE; threshold = 3.0)
+    residualTest!(system14, device, analysisSE; threshold = 3.0)
     @test analysisSE.bad.label == "PMU 10"
     @test analysisSE.bad.maxNormalizedResidual ≈ 5186.3 atol = 1e-1
 
     solve!(system14, analysisSE)
-    badData!(system14, device, analysisSE; threshold = 3.0)
+    residualTest!(system14, device, analysisSE; threshold = 3.0)
     @test analysisSE.bad.label == "Wattmeter 2"
     @test analysisSE.bad.maxNormalizedResidual ≈ 829.9 atol = 1e-1
 
@@ -63,7 +63,7 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     analysisSE = dcStateEstimation(system14, device, QR)
     solve!(system14, analysisSE)
 
-    badData!(system14, device, analysisSE; threshold = 3.0)
+    residualTest!(system14, device, analysisSE; threshold = 3.0)
     @test analysisSE.bad.label == "Wattmeter 2"
     @test analysisSE.bad.maxNormalizedResidual ≈ 829.9 atol = 1e-1
 
@@ -75,12 +75,12 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     analysisSE = dcStateEstimation(system14, device, QR)
     solve!(system14, analysisSE)
 
-    badData!(system14, device, analysisSE; threshold = 3.0)
+    residualTest!(system14, device, analysisSE; threshold = 3.0)
     @test analysisSE.bad.label == "PMU 10"
     @test analysisSE.bad.maxNormalizedResidual ≈ 5186.3 atol = 1e-1
 
     solve!(system14, analysisSE)
-    badData!(system14, device, analysisSE; threshold = 3.0)
+    residualTest!(system14, device, analysisSE; threshold = 3.0)
     @test analysisSE.bad.label == "Wattmeter 2"
     @test analysisSE.bad.maxNormalizedResidual ≈ 829.9 atol = 1e-1
 

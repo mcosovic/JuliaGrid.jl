@@ -3,6 +3,7 @@ export NewtonRaphson, FastNewtonRaphson, GaussSeidel, DCPowerFlow
 export DCOptimalPowerFlow, ACOptimalPowerFlow
 export DCStateEstimation, DCStateEstimationWLS, DCStateEstimationLAV
 export LU, QR, LDLt, Factorization
+export Island, IslandWatt, IslandVar
 
 ########### Abstract Types ###########
 abstract type AC end
@@ -258,7 +259,15 @@ mutable struct TieData
     injection::Array{Int64,1}
 end
 
-mutable struct Observability
+abstract type Island end
+
+mutable struct IslandWatt <: Island
+    island::Array{Array{Int64,1},1}
+    bus::Array{Int64,1}
+    tie::TieData
+end
+
+mutable struct IslandVar <: Island
     island::Array{Array{Int64,1},1}
     bus::Array{Int64,1}
     tie::TieData

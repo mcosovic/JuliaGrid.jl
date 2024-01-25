@@ -191,14 +191,6 @@ function dcStateEstimation(system::PowerSystem, device::Measurement, factorizati
     )
 end
 
-function dcStateEstimation(system::PowerSystem, device::Measurement, pseudo::Measurement, islands::Observability, factorization::Type{<:Union{QR, LDLt, LU}} = LU; threshold = 1e-5)
-    if size(islands.island, 1) > 1
-        restoration!(system, device, pseudo, islands, threshold)
-    end
-    dcStateEstimation(system, device, factorization)
-end
-
-
 function dcStateEstimation(system::PowerSystem, device::Measurement, (@nospecialize optimizerFactory);
     bridge::Bool = true, name::Bool = true)
 
