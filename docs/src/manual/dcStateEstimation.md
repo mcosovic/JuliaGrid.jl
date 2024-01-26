@@ -14,6 +14,14 @@ Additionally, there are specialized functions dedicated to calculating specific 
 * [`fromPower`](@ref fromPower(::PowerSystem, ::DCStateEstimation)),
 * [`toPower`](@ref toPower(::PowerSystem, ::DCStateEstimation)).
 
+Furthermore, users can initiate observability analysis to detect observable islands and restore observability before executing the function [`dcStateEstimation`](@ref dcStateEstimation):
+* [`islandTopologicalFlow`](@ref islandTopologicalFlow(::PowerSystem, ::Wattmeter)),
+* [`islandTopological`](@ref islandTopological(::PowerSystem, ::Wattmeter)),
+* [`restorationGram!`](@ref restorationGram!(::PowerSystem, ::Measurement, ::Measurement, ::IslandWatt)).
+
+Finally, after executing the function [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimationWLS)), where the user employs the WLS method, the user has the ability to check if the measurement set contains outliers throughout bad data analysis and remove those measurements using:
+* [`residualTest!`](@ref residualTest!).
+
 ---
 
 ## [Bus Type Modification](@id DCSEBusTypeModificationManual)
@@ -21,8 +29,111 @@ Similar to the explanation provided in the [Bus Type Modification](@ref DCBusTyp
 
 ---
 
+## [Observability Analysis](@id DCSEObservabilityAnalysisManual)
+To initiate the power system with measurements at specific locations, follow the provided example code:
+```@example DCSEObservabilityAnalysis
+using JuliaGrid # hide
+@default(unit) # hide
+@default(template) # hide
+
+system = powerSystem()
+
+addBus!(system; label = "Bus 1", type = 3)
+addBus!(system; label = "Bus 2", type = 1, active = 0.1)
+addBus!(system; label = "Bus 3", type = 1, active = 0.05)
+addBus!(system; label = "Bus 4", type = 1, active = 0.05)
+addBus!(system; label = "Bus 5", type = 1, active = 0.05)
+addBus!(system; label = "Bus 6", type = 1, active = 0.05)
+addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.05)
+addBranch!(system; label = "Branch 2", from = "Bus 2", to = "Bus 3", reactance = 0.01)
+addBranch!(system; label = "Branch 3", from = "Bus 3", to = "Bus 5", reactance = 0.01)
+addBranch!(system; label = "Branch 4", from = "Bus 3", to = "Bus 4", reactance = 0.01)
+addBranch!(system; label = "Branch 5", from = "Bus 5", to = "Bus 6", reactance = 0.01)
+addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 3.2)
+
+device = measurement()
+
+@wattmeter(label = "Wattmeter ?: !")
+addWattmeter!(system, device; from = "Branch 1", active = 0.31, variance = 1e-4)
+addWattmeter!(system, device; from = "Branch 3", active = 0.09, variance = 1e-4)
+addWattmeter!(system, device; bus = "Bus 3", active = -0.05, variance = 1e-4)
+addWattmeter!(system, device; bus = "Bus 3", active = -0.05, variance = 1e-4)
+
+nothing # hide
+``` 
+
+Attempting to solve this system immediately may not be possible because the gain matrix will be singular. To avoid this situation, users can perform observability analysis. The first step is to define the observable islands. JuliaGrid provides users with the option to obtain two types of observable islands: flow observable islands or maximal observable islands. The choice depends on the structure of the power system and available measurements. Detecting just flow observable islands reduces complexity in the island detection function but increases complexity in the restoration function. 
+
+---
+
+##### Flow Observable Islands
+Now, let us identify flow observable islands:
+```@example DCSEObservabilityAnalysis
+flowIslands = islandTopologicalFlow(system, device.wattmeter)
+
+nothing # hide
+``` 
+
+As a result, we have identified four flow observable islands. The first island is formed by `Bus 1` and `Bus 2`, the second island is formed by `Bus 3` and `Bus 5`, while `Bus 4` and `Bus 6` constitute the third and fourth islands, respectively:
+```@repl DCSEObservabilityAnalysis
+flowIslands.island
+nothing # hide
+```
+
+---
+
+##### Maximal Observable Islands
+Following that, we will instruct the user on obtaining maximal observable islands:
+```@example DCSEObservabilityAnalysis
+maxIslands = islandTopological(system, device.wattmeter)
+
+nothing # hide
+``` 
+
+The outcome reveals the identification of two maximal observable islands:
+```@repl DCSEObservabilityAnalysis
+maxIslands.island
+nothing # hide
+```
+It is evident that upon comparing this result with the flow observable islands, the merging of the two injection measurements at `Bus 3` consolidated the first, second, and third flow observable islands into a single island.
+
+---
+
+##### Restore Observability
+To reinstate observability, the user needs to identify either flow or maximal observable islands and establish a set of pseudo-measurements. Let us create that set:
+```@example DCSEObservabilityAnalysis
+pseudo = measurement()
+
+addWattmeter!(system, pseudo; label = "Pseudo 1", bus = "Bus 1", active = 0.31)
+addWattmeter!(system, pseudo; label = "Pseudo 2", bus = "Bus 6", active = -0.05)
+nothing # hide
+``` 
+
+!!! note "Info"
+    The labels for specific pseudo-measurements must differ from those defined in the measurements stored in the `device` set. This is necessary because the next step involves adding pseudo-measurements to the `device` set.
+
+Subsequently, the user can execute the [`restorationGram!`](@ref restorationGram!(::PowerSystem, ::Measurement, ::Measurement, ::IslandWatt)) function:
+```@example DCSEObservabilityAnalysis
+restorationGram!(system, device, pseudo, maxIslands)
+nothing # hide
+``` 
+
+This function attempts to restore observability using pseudo-measurements. As a result, the `Pseudo 2` measurement restores observability, and this measurement is added to the device variable, which holds actual measurements:
+```@repl DCSEObservabilityAnalysis
+device.wattmeter.label
+nothing # hide
+```
+Consequently, the power system becomes observable, allowing the user to proceed with forming the DC state estimation model and solving it. Ensuring the observability of the system does not guarantee obtaining accurate estimates of the state variables. Numerical ill-conditioning may adversely impact the state estimation algorithm. However, in most cases, efficient estimation becomes feasible when the system is observable. [[1]](@ref DCStateEstimationReferenceManual). 
+
+Additionally, it is worth mentioning that restoration might encounter difficulties due to the default zero pivot threshold set at `1e-5`. This threshold can be modified using the [`restorationGram!`](@ref restorationGram!(::PowerSystem, ::Measurement, ::Measurement, ::IslandWatt)) function.
+
+!!! note "Info"
+    Additionally, during the restoration step, the user can define bus voltage angle measurements from PMUs that will also participate in the restoration step. In this case, the system can become observable even if there are still more islands.
+
+---
+
 ## [WLS State Estimation Solution](@id DCWLSStateEstimationSolutionManual)
-To solve the DC state estimation and derive weighted least-squares (WLS) estimates using JuliaGrid, the process initiates by defining the composite types `PowerSystem` and `Measurement`. Here is an illustrative example:
+To solve the DC state estimation and derive WLS estimates using JuliaGrid, the process initiates by defining the composite types `PowerSystem` and `Measurement`. Here is an illustrative example:
 ```@example WLSDCStateEstimationSolution
 using JuliaGrid # hide
 @default(unit) # hide
@@ -41,7 +152,7 @@ dcModel!(system)
 
 device = measurement()
 
-@wattmeter(label = "Watmetter ?: !")
+@wattmeter(label = "Wattmeter ?")
 addWattmeter!(system, device; bus = "Bus 1", active = 0.13, variance = 1e-3)
 addWattmeter!(system, device; bus = "Bus 3", active = -0.02, variance = 1e-2)
 addWattmeter!(system, device; from = "Branch 1", active = 0.04, variance = 1e-4)
@@ -77,7 +188,7 @@ nothing # hide
 ---
 
 ##### Orthogonal Factorization
-When users opt for orthogonal factorization, specifying the `QR` argument in the [`dcStateEstimation`](@ref dcStateEstimation) function, they are not solely choosing to solve the WLS problem using QR factorization. Instead, JuliaGrid implements a more robust approach to obtain the WLS estimator, especially beneficial when significant differences exist among measurement variances [[1, Sec. 3.2]](@ref DCStateEstimationReferenceManual). To derive this estimator, execute the following sequence of functions:
+When users opt for orthogonal factorization, specifying the `QR` argument in the [`dcStateEstimation`](@ref dcStateEstimation) function, they are not solely choosing to solve the WLS problem using QR factorization. Instead, JuliaGrid implements a more robust approach to obtain the WLS estimator, especially beneficial when significant differences exist among measurement variances [[2, Sec. 3.2]](@ref DCStateEstimationReferenceManual). To derive this estimator, execute the following sequence of functions:
 ```@example WLSDCStateEstimationSolution
 analysis = dcStateEstimation(system, device, QR)
 solve!(system, analysis)
@@ -125,7 +236,7 @@ nothing # hide
 ---
 
 ## [LAV State Estimation Solution](@id DCLAVtateEstimationSolutionManual)
-The LAV method presents an alternative estimation technique known for its increased robustness compared to WLS. While the WLS method relies on specific assumptions regarding measurement errors, robust estimators like LAV are designed to maintain unbiasedness even in the presence of various types of measurement errors and outliers. This characteristic often eliminates the need for extensive bad data processing procedures [[1, Ch. 6]](@ref DCStateEstimationReferenceManual). However, it is important to note that achieving robustness typically involves increased computational complexity.
+The LAV method presents an alternative estimation technique known for its increased robustness compared to WLS. While the WLS method relies on specific assumptions regarding measurement errors, robust estimators like LAV are designed to maintain unbiasedness even in the presence of various types of measurement errors and outliers. This characteristic often eliminates the need for extensive bad data processing procedures [[2, Ch. 6]](@ref DCStateEstimationReferenceManual). However, it is important to note that achieving robustness typically involves increased computational complexity.
 
 To obtain an LAV estimator, users need to employ one of the [solvers](https://jump.dev/JuMP.jl/stable/packages/solvers/) listed in the JuMP documentation. In many common scenarios, the Ipopt solver proves sufficient to obtain a solution:
 ```@example WLSDCStateEstimationSolution
@@ -137,6 +248,53 @@ JuMP.set_silent(analysis.method.jump) # hide
 solve!(system, analysis)
 nothing # hide
 ```
+
+---
+
+## [Measurement Set Alteration](@id DCMeasurementsAlterationManual)
+After users define the `Measurement` type using the [`measurement`](@ref measurement) function and the `DCStateEstimation` type using the [`dcStateEstimation`](@ref dcStateEstimation) function, they acquire the capability to modify measurements. As a result, there is no need to recreate the `DCStateEstimation` model from scratch. This streamlined process is facilitated by directly supplying the `DCStateEstimation` type as an argument to functions responsible for updating measurement devices. 
+
+The addition of new measurements after the creation of `DCStateEstimation` is not practical in terms of reusing the `DCStateEstimation` type. Instead, we recommend that users create a final set of measurements and then utilize update functions to manage devices, either putting them in-service or out-of-service throughout the process.
+
+---
+
+##### Reusing WLS Matrix Factorization 
+To elaborate further, let us continue with the previous example, where we establish a measurement set. Once again, we create the `DCStateEstimation` measurement model in the WLS framework and solve the problem:
+```@example WLSDCStateEstimationSolution
+analysis = dcStateEstimation(system, device)
+solve!(system, analysis)
+nothing # hide
+```
+
+Now, our objective is to find a solution that involves modifications such as altering measurement values. For instance:
+```@example WLSDCStateEstimationSolution
+updateWattmeter!(system, device, analysis; label = "Wattmeter 2", active = -0.015)
+updateWattmeter!(system, device, analysis; label = "Wattmeter 3", active = 0.03)
+nothing # hide
+```
+
+These updates will affect both the `Measurement` and the `DCStateEstimation` types. Now, we can solve the problem once again: 
+```@example WLSDCStateEstimationSolution
+solve!(system, analysis)
+nothing # hide
+```
+
+In this case, JuliaGrid will reuse the matrix factorization from the previous call of the [`solve!`](@ref solve!(::PowerSystem, ::DCPowerFlow)) function, providing a more efficient solution.
+
+---
+
+##### Sequential WLS Matrix Factorization
+If the user opts to modify the status of measurement devices or measurement variances, reusing the nodal matrix factorization becomes impractical. In this scenario, JuliaGrid will need to repeat the factorization step while ensuring the delivery of an accurate solution. Nevertheless, the user can effortlessly execute [`solve!`](@ref solve!(::PowerSystem, ::DCPowerFlow)) as demonstrated below:
+```@example WLSDCStateEstimationSolution
+updateWattmeter!(system, device, analysis; label = "Wattmeter 3", variance = 1e-3)
+
+solve!(system, analysis)
+```
+
+--- 
+
+##### LAV State Estimation
+Certainly, when a user creates an optimization problem using the LAV method, they can update measurement devices without the need to recreate the model from scratch, similar to the explanation provided for the WLS state estimation. This streamlined process allows for efficient modifications while retaining the existing optimization framework.
 
 ---
 
@@ -185,11 +343,10 @@ active = toPower(system, analysis; label = "Branch 2")
 
 ---
 
+
 ## [References](@id DCStateEstimationReferenceManual)
-[1] A. Abur and A. Exposito, *Power System State Estimation: Theory and Implementation*, ser. Power Engineering. Taylor & Francis, 2004.
+[1] G. N. Korres, *Observability analysis based on echelon form of a reduced dimensional Jacobian matrix*, IEEE Trans. Power Syst., vol. 26, no. 4, pp. 2572–2573, 2011. 
 
-
-
-
+[2] A. Abur and A. Exposito, *Power System State Estimation: Theory and Implementation*, ser. Power Engineering. Taylor & Francis, 2004.
 
 

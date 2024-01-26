@@ -428,6 +428,7 @@ function updatePmu!(system::PowerSystem, device::Measurement, analysis::DCStateE
             method.mean[index] = (pmu.angle.mean[indexPmu] - system.bus.voltage.angle[system.bus.layout.slack]) * constIf
         end
         if isset(statusAngle) || isset(varianceAngle)
+            method.done = false
             method.weight[index] = constIf / pmu.angle.variance[indexPmu] 
         end
     end

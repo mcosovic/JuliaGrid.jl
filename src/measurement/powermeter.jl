@@ -513,6 +513,7 @@ function updateWattmeter!(system::PowerSystem, device::Measurement, analysis::DC
                 method.mean[indexWattmeter] = (wattmeter.active.mean[indexWattmeter] - dc.shiftPower[indexBus] - system.bus.shunt.conductance[indexBus]) * constIf
             end
             if isset(status) || isset(variance)
+                method.done = false
                 method.weight[indexWattmeter] = constIf / wattmeter.active.variance[indexWattmeter]
             end
         else
@@ -531,6 +532,7 @@ function updateWattmeter!(system::PowerSystem, device::Measurement, analysis::DC
                 method.mean[indexWattmeter] = wattmeter.active.mean[indexWattmeter] * constIf + system.branch.parameter.shiftAngle[indexBranch] * addmitance 
             end
             if isset(status) || isset(variance)
+                method.done = false
                 method.weight[indexWattmeter] = constIf / wattmeter.active.variance[indexWattmeter] 
             end
         end

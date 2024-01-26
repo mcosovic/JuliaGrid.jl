@@ -15,6 +15,7 @@ abstract type QR <: Factorization end
 abstract type LU <: Factorization end
 abstract type LDLt <: Factorization end
 abstract type DCStateEstimation <: DC end
+abstract type Island end
 
 ########### Powers in the AC Framework ###########
 mutable struct Power
@@ -258,8 +259,6 @@ mutable struct TieData
     branch::Set{Int64}
     injection::Array{Int64,1}
 end
-
-abstract type Island end
 
 mutable struct IslandWatt <: Island
     island::Array{Array{Int64,1},1}
