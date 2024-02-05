@@ -307,7 +307,7 @@ To obtain the solution, JuliaGrid avoids materializing the orthogonal matrix ``\
 --- 
 
 ## [Bad Data Processing](@id DCSEBadDataTutorials)
-Besides the state estimation algorithm, one of the essential state estimation routines is the bad data processing, whose main task is to detect and identify measurement errors, and eliminate them if possible. This is usually done by processing the measurement residuals [[1, Ch. 5]](@ref refrestestimate), and typically, the largest normalized residual test is used to identify bad data. The largest normalized residual test is performed after we obtained the solution of the state estimation in the repetitive process of identifying and eliminating bad data measurements one after another [[2]](@ref refrestestimate). 
+Besides the state estimation algorithm, one of the essential state estimation routines is the bad data processing, whose main task is to detect and identify measurement errors, and eliminate them if possible. This is usually done by processing the measurement residuals [[1, Ch. 5]](@ref DCSEReferenceTutorials), and typically, the largest normalized residual test is used to identify bad data. The largest normalized residual test is performed after we obtained the solution of the state estimation in the repetitive process of identifying and eliminating bad data measurements one after another [[2]](@ref DCSEReferenceTutorials). 
 
 To illustrate this process, let us introduce a new measurement that contains an obvious outlier:
 ```@example DCSETutorial
@@ -586,7 +586,7 @@ As a consequence, the power system is divided into ``m`` islands. Subsequently, 
 * bus voltage angle measurements.
 These measurements are retained from the phase where we identify observable islands and are crucial in determining whether or not we need additional pseudo-measurements to be included in the measurement set ``\mathcal{M}``. In this specific example, we do not have active power injection measurements at tie buses remaining after the identification of maximal observable islands. However, if we proceed with flow observable islands to the restoration step, we will have two injection measurements at `Bus 3`.
 
-However, let us introduce the matrix ``\mathbf W_{\text{r}} \in \mathbb{R}^{r \times m}``, where ``r = |\mathcal{M}_\text{r}|``. This matrix can be conceptualized as the coefficient matrix of a reduced network with ``m`` columns corresponding to islands and ``r`` rows associated with the set ``\mathcal{M}_\text{r}``. The measurement functions linked to the set ``\mathcal{M}_\text{r}`` define the coefficient matrix ``\mathbf H_\text{r}``, and the matrix ``\mathbf W_{\text{r}}`` can be constructed by summing the columns of ``\mathbf H_\text{r}`` that belong to a specific island [[6]](@ref refrestestimate).
+However, let us introduce the matrix ``\mathbf W_{\text{r}} \in \mathbb{R}^{r \times m}``, where ``r = |\mathcal{M}_\text{r}|``. This matrix can be conceptualized as the coefficient matrix of a reduced network with ``m`` columns corresponding to islands and ``r`` rows associated with the set ``\mathcal{M}_\text{r}``. The measurement functions linked to the set ``\mathcal{M}_\text{r}`` define the coefficient matrix ``\mathbf H_\text{r}``, and the matrix ``\mathbf W_{\text{r}}`` can be constructed by summing the columns of ``\mathbf H_\text{r}`` that belong to a specific island [[6]](@ref DCSEReferenceTutorials).
 
 Subsequently, we require the set of pseudo-measurements ``\mathcal{M}_\text{p}``. For instance, let us define this set as follows:
 ```@example DCSEObservability
