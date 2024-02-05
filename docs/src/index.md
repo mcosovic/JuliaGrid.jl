@@ -96,6 +96,22 @@ solve!(system, analysis)                          # Compute new solution in the 
 
 ---
 
+#### DC State Estimation
+```julia
+using JuliaGrid
+
+system = powerSystem("case14.h5")            # Build the power system model
+device = measurement("measurement14.h5")     # Build the measurement model
+
+analysis = dcStateEstimation(system, device) # Initialize the DC state estimation model
+solve!(system, analysis)                     # Compute estimate of bus voltage angles
+
+residualTest!(system, device, analysis)      # Perform bad data analysis and remove outliers  
+solve!(system, analysis)                     # Compute estimate of bus voltage angles
+```
+
+---
+
 #### Contributors
  - [Ognjen Kundacina](https://www.linkedin.com/in/ognjen-kundacina-machine-learning-guy/) - The Institute for Artificial Intelligence Research and Development of Serbia
  - [Muhamed Delalic](https://www.linkedin.com/in/muhameddelalic/) - University of Sarajevo, Bosnia and Herzegovina

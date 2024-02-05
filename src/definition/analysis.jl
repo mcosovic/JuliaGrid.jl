@@ -216,7 +216,7 @@ mutable struct BadData
 end
 
 mutable struct DCStateEstimationWLSMethod
-    jacobian::SparseMatrixCSC{Float64,Int64}
+    coefficient::SparseMatrixCSC{Float64,Int64}
     weight::Array{Float64,1}
     mean::Array{Float64,1}
     factorization::LULDLtQR

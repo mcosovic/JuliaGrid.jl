@@ -506,7 +506,7 @@ function updateWattmeter!(system::PowerSystem, device::Measurement, analysis::DC
             if isset(status)
                 method.done = false
                 for j in dc.nodalMatrix.colptr[indexBus]:(dc.nodalMatrix.colptr[indexBus + 1] - 1)
-                    method.jacobian[indexWattmeter, dc.nodalMatrix.rowval[j]] = dc.nodalMatrix.nzval[j] * constIf
+                    method.coefficient[indexWattmeter, dc.nodalMatrix.rowval[j]] = dc.nodalMatrix.nzval[j] * constIf
                 end
             end
             if isset(status) || isset(active)
@@ -525,8 +525,8 @@ function updateWattmeter!(system::PowerSystem, device::Measurement, analysis::DC
             end
             if isset(status)
                 method.done = false
-                method.jacobian[indexWattmeter, system.branch.layout.from[indexBranch]] = addmitance 
-                method.jacobian[indexWattmeter, system.branch.layout.to[indexBranch]] = -addmitance
+                method.coefficient[indexWattmeter, system.branch.layout.from[indexBranch]] = addmitance 
+                method.coefficient[indexWattmeter, system.branch.layout.to[indexBranch]] = -addmitance
             end
             if isset(status) || isset(active)
                 method.mean[indexWattmeter] = wattmeter.active.mean[indexWattmeter] * constIf + system.branch.parameter.shiftAngle[indexBranch] * addmitance 
@@ -583,7 +583,7 @@ function updateWattmeter!(system::PowerSystem, device::Measurement, analysis::DC
                 angleJacobian = @expression(method.jump, AffExpr())
                 for j in dc.nodalMatrix.colptr[indexBus]:(dc.nodalMatrix.colptr[indexBus + 1] - 1)
                     k = dc.nodalMatrix.rowval[j]
-                    add_to_expression!(angleJacobian, dc.nodalMatrix.nzval[j] * (method.angley[k] - method.anglex[k]))
+                    add_to_expression!(angleJacobian, dc.nodalMatrix.nzval[j] * (method.anglex[k] - method.angley[k]))
                 end
 
                 remove!(method.jump, method.residual, indexWattmeter)
@@ -592,7 +592,7 @@ function updateWattmeter!(system::PowerSystem, device::Measurement, analysis::DC
                 from = system.branch.layout.from[indexBranch]
                 to =  system.branch.layout.to[indexBranch]
                 
-                angleJacobian = admittance * (method.angley[from] - method.anglex[from] - method.angley[to] + method.anglex[to])
+                angleJacobian = admittance * (method.anglex[from] - method.angley[from] - method.anglex[to] + method.angley[to])
 
                 remove!(method.jump, method.residual, indexWattmeter)
                 method.residual[indexWattmeter] = @constraint(method.jump, angleJacobian + method.residualy[indexWattmeter] - method.residualx[indexWattmeter] == 0.0)

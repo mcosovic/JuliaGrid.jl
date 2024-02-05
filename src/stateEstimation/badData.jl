@@ -1,5 +1,6 @@
 """
-    residualTest!(system::PowerSystem, device::Measurement, analysis::DCStateEstimation; threshold)
+    residualTest!(system::PowerSystem, device::Measurement, analysis::DCStateEstimation; 
+        threshold)
 
 The function conducts bad data detection and identification using the largest normalized 
 residual test, subsequently removing measurement outliers from the measurement set. It can 
@@ -15,7 +16,7 @@ normalized residual surpasses this threshold, the measurement is flagged as bad 
 default threshold value is set to `threshold = 3.0`.
 
 # Updates
-In case bad data is detected, the function removes measurements from the `jacobian` matrix, 
+In case bad data is detected, the function removes measurements from the `coefficient` matrix, 
 `weight`, and `mean` vectors within the `DCStateEstimation` type. Additionally, it marks 
 the respective measurement within the `Measurement` type as out-of-service.
 
@@ -93,15 +94,15 @@ function residualTest!(system::PowerSystem, device::Measurement, analysis::DCSta
     gainInverse = sparseinv(L, U, d, p, q, Rs, R)
 
     ########## Diagonal entries of residual matrix ##########
-    JGi = se.jacobian * gainInverse
-    idx = findall(!iszero, se.jacobian)
-    c = fill(0.0, size(se.jacobian, 1))
+    JGi = se.coefficient * gainInverse
+    idx = findall(!iszero, se.coefficient)
+    c = fill(0.0, size(se.coefficient, 1))
     for i in idx
-        c[i[1]] += JGi[i] * se.jacobian[i]
+        c[i[1]] += JGi[i] * se.coefficient[i]
     end
 
     ########## Largest normalized residual ##########
-    h = se.jacobian * analysis.voltage.angle
+    h = se.coefficient * analysis.voltage.angle
     bad.maxNormalizedResidual = 0.0
     bad.index = 0
     @inbounds for i = 1:se.number
@@ -118,9 +119,9 @@ function residualTest!(system::PowerSystem, device::Measurement, analysis::DCSta
     if bad.maxNormalizedResidual > threshold
         bad.detect = true
 
-        colIndecies = findall(!iszero, se.jacobian[bad.index, :])
+        colIndecies = findall(!iszero, se.coefficient[bad.index, :])
         for col in colIndecies
-            se.jacobian[bad.index, col] = 0.0
+            se.coefficient[bad.index, col] = 0.0
         end
         se.mean[bad.index] = 0.0
         se.weight[bad.index] = 0.0 

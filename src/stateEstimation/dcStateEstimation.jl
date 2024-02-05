@@ -209,9 +209,9 @@ function dcStateEstimation(system::PowerSystem, device::Measurement, (@nospecial
     residualx = @variable(jump, 0 <= residualx[i = 1:deviceNumber])
     residualy = @variable(jump, 0 <= residualy[i = 1:deviceNumber])
 
-    fix(anglex[bus.layout.slack], 0.0; force = true)
-    fix(angley[bus.layout.slack], bus.voltage.angle[bus.layout.slack]; force = true)
-
+    fix(anglex[bus.layout.slack], bus.voltage.angle[bus.layout.slack]; force = true)
+    fix(angley[bus.layout.slack], 0.0; force = true)
+    
     objective = @expression(jump, AffExpr())
     residual = Dict{Int64, JuMP.ConstraintRef}()
     for (i, k) in enumerate(wattmeter.layout.index)
@@ -220,7 +220,7 @@ function dcStateEstimation(system::PowerSystem, device::Measurement, (@nospecial
                 angleJacobian = @expression(jump, AffExpr())
                 for j in dc.nodalMatrix.colptr[k]:(dc.nodalMatrix.colptr[k + 1] - 1)
                     col = dc.nodalMatrix.rowval[j]
-                    add_to_expression!(angleJacobian, dc.nodalMatrix.nzval[j] * (angley[col] - anglex[col]))
+                    add_to_expression!(angleJacobian, dc.nodalMatrix.nzval[j] * (anglex[col] - angley[col]))
                 end
                 residual[i] = @constraint(jump, angleJacobian + residualy[i] - residualx[i] - wattmeter.active.mean[i] + dc.shiftPower[k] + bus.shunt.conductance[k] == 0.0)
             else
@@ -232,7 +232,7 @@ function dcStateEstimation(system::PowerSystem, device::Measurement, (@nospecial
                 else
                     admittance = -dc.admittance[k]
                 end
-                angleJacobian = admittance * (angley[from] - anglex[from] - angley[to] + anglex[to]) 
+                angleJacobian = admittance * (anglex[from] - angley[from] - anglex[to] + angley[to]) 
                 residual[i] = @constraint(jump, angleJacobian + residualy[i] - residualx[i] - wattmeter.active.mean[i] - branch.parameter.shiftAngle[k] * admittance == 0.0)
             end
             add_to_expression!(objective, residualx[i] + residualy[i])
@@ -247,7 +247,7 @@ function dcStateEstimation(system::PowerSystem, device::Measurement, (@nospecial
             if pmu.angle.status[i] == 1
                 busIndex = pmu.layout.index[i]
                 add_to_expression!(objective, residualx[k] + residualy[k])
-                residual[k] = @constraint(jump, angley[busIndex] - anglex[busIndex] + residualy[k] - residualx[k] - pmu.angle.mean[i] == 0.0)
+                residual[k] = @constraint(jump, anglex[busIndex] - angley[busIndex] + residualy[k] - residualx[k] - pmu.angle.mean[i] == 0.0)
             else
                 fix(residualx[k], 0.0; force = true)
                 fix(residualy[k], 0.0; force = true)
@@ -286,12 +286,24 @@ By computing the bus voltage angles, the function solves the DC state estimation
 The resulting bus voltage angles are stored in the `voltage` field of the `DCStateEstimation` 
 type.
 
-# Example
+# Examples
+Solving the DC state estimation model with WLS:
 ```jldoctest
 system = powerSystem("case14.h5")
 device = measurement("measurement14.h5")
 
 analysis = dcStateEstimation(system, device)
+solve!(system, analysis)
+```
+
+Solving the DC state estimation model with LAV:
+```jldoctest
+using Ipopt
+
+system = powerSystem("case14.h5")
+device = measurement("measurement14.h5")
+
+analysis = dcStateEstimation(system, device, Ipopt.Optimizer)
 solve!(system, analysis)
 ```
 """
@@ -322,7 +334,7 @@ function solve!(system::PowerSystem, analysis::DCStateEstimationLAV)
     JuMP.optimize!(se.jump)
 
     for i = 1:system.bus.number
-        analysis.voltage.angle[i] = value(se.angley[i]::JuMP.VariableRef) - value(se.anglex[i]::JuMP.VariableRef)
+        analysis.voltage.angle[i] = value(se.anglex[i]::JuMP.VariableRef) - value(se.angley[i]::JuMP.VariableRef)
     end
 end
 
@@ -338,7 +350,7 @@ function dcStateEstimationSolution(system::PowerSystem, analysis::DCStateEstimat
         gain = dcGain(analysis, bus.layout.slack)
         se.factorization = sparseFactorization(gain, se.factorization)
     end
-    b = transpose(se.jacobian) * precision * se.mean
+    b = transpose(se.coefficient) * precision * se.mean
 
     analysis.voltage.angle = sparseSolution(analysis.voltage.angle, b, se.factorization)
 end
@@ -352,7 +364,7 @@ function dcStateEstimationSolution(system::PowerSystem, analysis::DCStateEstimat
     if !se.done
         se.done = true
 
-        jacobianScale = precision * se.jacobian
+        jacobianScale = precision * se.coefficient
         se.factorization = sparseFactorization(jacobianScale, se.factorization)
     end
     analysis.voltage.angle = sparseSolution(analysis.voltage.angle, precision * se.mean, se.factorization)
@@ -361,10 +373,10 @@ end
 function deleteSlackJacobian(analysis::DCStateEstimation, slack::Int64)
     se = analysis.method
 
-    slackRange = se.jacobian.colptr[slack]:(se.jacobian.colptr[slack + 1] - 1)
-    elementsRemove = se.jacobian.nzval[slackRange]
+    slackRange = se.coefficient.colptr[slack]:(se.coefficient.colptr[slack + 1] - 1)
+    elementsRemove = se.coefficient.nzval[slackRange]
     @inbounds for i in slackRange
-        se.jacobian.nzval[i] = 0.0
+        se.coefficient.nzval[i] = 0.0
     end
 
     return slackRange, elementsRemove
@@ -373,7 +385,7 @@ end
 function dcGain(analysis::DCStateEstimation, slack::Int64)
     se = analysis.method
 
-    gain = transpose(se.jacobian) * spdiagm(0 => se.weight) * se.jacobian
+    gain = transpose(se.coefficient) * spdiagm(0 => se.weight) * se.coefficient
     gain[slack, slack] = 1.0
 
     return gain
@@ -383,7 +395,7 @@ function restoreSlackJacobian(analysis::DCStateEstimation, slackRange::UnitRange
     se = analysis.method
 
     @inbounds for (k, i) in enumerate(slackRange)
-        se.jacobian[se.jacobian.rowval[i], slack] = elementsRemove[k]
+        se.coefficient[se.coefficient.rowval[i], slack] = elementsRemove[k]
     end 
 end
 

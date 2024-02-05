@@ -183,7 +183,7 @@ nothing # hide
 ```
 
 !!! note "Info"
-    We recommend that readers refer to the tutorial on [DC State Estimation] for insights into the implementation.
+    We recommend that readers refer to the tutorial on [DC State Estimation](@ref DCSEModelTutorials) for insights into the implementation.
 
 ---
 
@@ -221,10 +221,10 @@ analysis.bad.label
 ```
 Therefore, upon detecting bad data, the `detect` variable will hold `true`. The `maxNormalizedResidual` variable retains the value of the largest normalized residual, while the `label` contains the label of the measurement identified as bad data.
 
-JuliaGrid optimizes the algorithm for efficiency by not outright removing measurements from matrices and vectors. Instead, it sets non-zero elements to zero. The variable `index` contains positions within the vectors `weight` and `mean` that will be reset to zero. Additionally, it stores the row index within the jacobian matrix where non-zero elements will be adjusted to zero. Here is an example:
+JuliaGrid optimizes the algorithm for efficiency by not outright removing measurements from matrices and vectors. Instead, it sets non-zero elements to zero. The variable `index` contains positions within the vectors `weight` and `mean` that will be reset to zero. Additionally, it stores the row index within the coefficient matrix where non-zero elements will be adjusted to zero. Here is an example:
 ```@repl WLSDCStateEstimationSolution
 analysis.bad.index
-analysis.method.jacobian
+analysis.method.coefficient
 ```
 
 Hence, after removing bad data, a new estimate can be computed without considering this specific measurement:
@@ -248,6 +248,15 @@ JuMP.set_silent(analysis.method.jump) # hide
 solve!(system, analysis)
 nothing # hide
 ```
+
+---
+
+##### Setup Starting Primal Values
+In JuliaGrid, the assignment of starting primal values for optimization variables takes place when the [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimationWLS)) function is executed. Starting primal values are determined based on the `voltage` fields within the `DCStateEstimation` type. By default, these values are initially established using the the initial bus voltage angles from `PowerSystem` type:
+```@repl WLSDCStateEstimationSolution
+print(system.bus.label, analysis.voltage.angle)
+```
+You have the flexibility to adjust these values to your specifications, and they will be utilized as the starting primal values when you run the [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimationWLS)) function.
 
 ---
 

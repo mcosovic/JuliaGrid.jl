@@ -370,7 +370,7 @@ restoring observability include active power measurements and bus voltage angle 
 from the `pseudo` variable. Conversely, if the abstract type `Island` is derived from 
 varmeters, candidates for restoring observability encompass reactive power measurements 
 and bus voltage magnitude measurements from the `pseudo` variable. This method relies on 
-reduced Jacobian matrices and the Gram matrix. 
+reduced coefficient matrices and the Gram matrix. 
 
 It is important to note that the device labels in the `device` and `pseudo` variables must 
 be different to enable the function to successfully incorporate measurements from `pseudo` 

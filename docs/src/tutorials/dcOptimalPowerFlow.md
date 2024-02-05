@@ -29,13 +29,13 @@ nothing # hide
 
 To review, we can conceptualize the bus/branch model as the graph denoted by ``\mathcal{G} = (\mathcal{N}, \mathcal{E})``, where we have the set of buses ``\mathcal{N} = \{1, \dots, n\}``, and the set of branches ``\mathcal{E} \subseteq \mathcal{N} \times \mathcal{N}`` within the power system. This can be visualized as follows:
 ```@repl DCOptimalPowerFlow
-𝒩 = collect(keys(sort(system.bus.label)))
+𝒩 = collect(keys(system.bus.label))
 ℰ = [𝒩[system.branch.layout.from] 𝒩[system.branch.layout.to]]
 ```
 
 Moreover, we identify the set of generators as ``\mathcal{S} = \{1, \dots, n_g\}`` within the power system. For the specific example at hand, it can be represented as:
 ```@repl DCOptimalPowerFlow
-𝒮 = collect(keys(sort(system.generator.label)))
+𝒮 = collect(keys(system.generator.label))
 ```
 
 !!! ukw "Notation"

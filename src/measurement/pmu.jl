@@ -422,7 +422,7 @@ function updatePmu!(system::PowerSystem, device::Measurement, analysis::DCStateE
         index = indexPmu + device.wattmeter.number
     
         if isset(statusAngle)
-            method.jacobian[index, indexBus] = constIf
+            method.coefficient[index, indexBus] = constIf
         end
         if isset(statusAngle) || isset(angle)
             method.mean[index] = (pmu.angle.mean[indexPmu] - system.bus.voltage.angle[system.bus.layout.slack]) * constIf
@@ -463,7 +463,7 @@ function updatePmu!(system::PowerSystem, device::Measurement, analysis::DCStateE
             end
 
             remove!(method.jump, method.residual, index)
-            method.residual[index] = @constraint(method.jump, method.angley[indexBus] - method.anglex[indexBus] + method.residualy[index] - method.residualx[index] == 0.0)
+            method.residual[index] = @constraint(method.jump, method.anglex[indexBus] - method.angley[indexBus] + method.residualy[index] - method.residualx[index] == 0.0)
         else
             remove!(method.jump, method.residual, index)
 
