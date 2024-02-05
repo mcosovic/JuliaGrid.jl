@@ -33,6 +33,7 @@ The given example provides the set of buses ``\mathcal{N}``  and the set of bran
 𝒩 = collect(keys(sort(system.bus.label)))
 ℰ = [𝒩[system.branch.layout.from] 𝒩[system.branch.layout.to]]
 ```
+---
 
 !!! ukw "Notation"
     In this section, when referring to a vector ``\mathbf{a}``, we use the notation ``\mathbf{a} = [a_{ij}]``, where ``a_{ij}`` represents the generic element associated with the branch ``(i,j) \in \mathcal{E}``.
@@ -284,7 +285,7 @@ The positive active power value ``{P}_{\text{sh}i} > 0`` indicates that the shun
 ---
 
 ## [DC Model](@id DCModelTutorials)
-The DC model is obtained by linearisation of the nonlinear model, and it provides an approximate solution. In the typical operating conditions, the difference of bus voltage angles between adjacent buses ``(i,j) \in \mathcal{E}`` is very small ``\theta_{i}-\theta_{j} \approx 0``, which implies ``\cos \theta_{ij}\approx 1`` and ``\sin \theta_{ij} \approx \theta_{ij}``. Further, all bus voltage magnitudes are ``V_i \approx 1``, ``i \in \mathcal{N}``, and all branch shunt admittances and branch resistances can be neglected. This implies that the DC model ignores the reactive powers and transmission losses and takes into account only the active powers. Therefore, the DC power flow takes only bus voltage angles ``\bm \theta`` as variables. To create vectors and matrices related to DC or linear analyses, JuliaGrid uses the function [`dcModel!`](@ref dcModel!). Therefore, we can continue with the previous example:
+The DC model is obtained by linearisation of the nonlinear model, and it provides an approximate solution. In the typical operating conditions, the difference of bus voltage angles between adjacent buses ``(i,j) \in \mathcal{E}`` is very small ``\theta_{i}-\theta_{j} \approx 0``, which implies ``\cos \theta_{ij}\approx 1`` and ``\sin \theta_{ij} \approx \theta_{ij}``. Further, all bus voltage magnitudes are ``V_i \approx 1``, ``i \in \mathcal{N}``, and all branch shunt admittances and branch resistances can be neglected. This implies that the DC model ignores the reactive powers and transmission losses and takes into account only the active powers. Therefore, the DC power flow takes only bus voltage angles ``\bm \Theta`` as variables. To create vectors and matrices related to DC or linear analyses, JuliaGrid uses the function [`dcModel!`](@ref dcModel!). Therefore, we can continue with the previous example:
 ```@example ACDCModel
 dcModel!(system)
 nothing # hide
@@ -437,9 +438,9 @@ The system of equations can be written in the matrix form:
 
 Next, the system of equations for ``i=1,\dots,n`` can be written in the matrix form:
 ```math
-  \mathbf {P} = \mathbf{B} \bm {\theta} + \mathbf{P_\text{tr}} + \mathbf{P}_\text{sh},
+  \mathbf {P} = \mathbf{B} \bm {\Theta} + \mathbf{P_\text{tr}} + \mathbf{P}_\text{sh},
 ```
-where ``\bm \theta \in \mathbb{R}^{n}`` is the vector of bus voltage angles.
+where ``\bm \Theta \in \mathbb{R}^{n}`` is the vector of bus voltage angles.
 
 The vector ``\mathbf {P} \in \mathbb{R}^{n}`` contains active power injections at buses caused by generators and demands. In JuliaGrid, the vector can be recovered using a command:
 ```@repl ACDCModel

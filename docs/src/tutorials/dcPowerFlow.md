@@ -31,6 +31,8 @@ To review, we can conceptualize the bus/branch model as the graph denoted by ``\
 ℰ = [𝒩[system.branch.layout.from] 𝒩[system.branch.layout.to]]
 ```
 
+---
+
 !!! ukw "Notation"
     In this section, when referring to a vector ``\mathbf{a}``, we use the notation ``\mathbf{a} = [a_{i}]`` or ``\mathbf{a} = [a_{ij}]``, where ``a_i`` represents the element associated with bus ``i \in \mathcal{N}``, and ``a_{ij}`` represents the element associated with branch ``(i,j) \in \mathcal{E}``.
 
@@ -39,7 +41,7 @@ To review, we can conceptualize the bus/branch model as the graph denoted by ``\
 ## [Power Flow Solution](@id DCPowerFlowSolutionTutorials)
 As discussed in section [DC Model](@ref DCModelTutorials), the DC power flow problem can be represented by a set of linear equations given by:
 ```math
-  \mathbf {P} = \mathbf{B} \bm {\theta} + \mathbf{P_\text{tr}} + \mathbf{P}_\text{sh}.
+  \mathbf {P} = \mathbf{B} \bm {\Theta} + \mathbf{P_\text{tr}} + \mathbf{P}_\text{sh}.
 ```
 
 ---
@@ -53,7 +55,7 @@ nothing # hide
 
 The DC power flow solution is obtained through a non-iterative approach by solving the system of linear equations:
 ```math
-    \bm {\theta} = \mathbf{B}^{-1}(\mathbf {P} - \mathbf{P_\text{tr}} - \mathbf{P}_\text{sh}).
+    \bm {\Theta} = \mathbf{B}^{-1}(\mathbf {P} - \mathbf{P_\text{tr}} - \mathbf{P}_\text{sh}).
 ```
 
 JuliaGrid begins the process by establishing the DC power flow framework:
@@ -77,11 +79,11 @@ The factorization of the nodal matrix can be accessed using:
 𝐔 = analysis.method.factorization.U
 ```
 
-It is important to note that the slack bus voltage angle is excluded from the vector ``\bm{\theta}`` only during the computation step. As a analysis, the corresponding elements in the vectors ``\mathbf {P}``, ``\mathbf{P_\text{tr}}``, ``\mathbf{P}_\text{sh}``, and the corresponding row and column of the matrix ``\mathbf{B}`` are removed. It is worth mentioning that this process is handled internally, and the stored elements remain unchanged.
+It is important to note that the slack bus voltage angle is excluded from the vector ``\bm{\Theta}`` only during the computation step. As a analysis, the corresponding elements in the vectors ``\mathbf {P}``, ``\mathbf{P_\text{tr}}``, ``\mathbf{P}_\text{sh}``, and the corresponding row and column of the matrix ``\mathbf{B}`` are removed. It is worth mentioning that this process is handled internally, and the stored elements remain unchanged.
 
 Finally, the resulting bus voltage angles are saved in the vector as follows:
 ```@repl PowerFlowSolutionDC
-𝛉 = analysis.voltage.angle
+𝚯 = analysis.voltage.angle
 ```
 
 ---

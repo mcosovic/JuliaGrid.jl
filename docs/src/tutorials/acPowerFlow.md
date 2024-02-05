@@ -34,6 +34,8 @@ To review, we can conceptualize the bus/branch model as the graph denoted by ``\
 ℰ = [𝒩[system.branch.layout.from] 𝒩[system.branch.layout.to]]
 ```
 
+---
+
 !!! ukw "Notation"
     In this section, when referring to a vector ``\mathbf{a}``, we use the notation ``\mathbf{a} = [a_{i}]`` or ``\mathbf{a} = [a_{ij}]``, where ``a_i`` represents the element associated with bus ``i \in \mathcal{N}``, and ``a_{ij}`` represents the element associated with branch ``(i,j) \in \mathcal{E}``.
 
@@ -157,10 +159,10 @@ acModel!(system)
 analysis = newtonRaphson(system)
 nothing # hide
 ```
-This results in the creation of the starting vectors of bus voltage magnitudes ``\mathbf{V}^{(0)}`` and angles ``\bm{\theta}^{(0)}``, as shown below:
+This results in the creation of the starting vectors of bus voltage magnitudes ``\mathbf{V}^{(0)}`` and angles ``\bm{\Theta}^{(0)}``, as shown below:
 ```@repl PowerFlowSolution
 𝐕⁽⁰⁾ = analysis.voltage.magnitude
-𝛉⁽⁰⁾ = analysis.voltage.angle
+𝚯⁽⁰⁾ = analysis.voltage.angle
 ```
 Here, we utilize a "flat start" approach in our method. It is important to keep in mind that when dealing with initial conditions in this manner, the Newton-Raphson method may encounter difficulties.
 
@@ -222,10 +224,10 @@ Finally, the function [`solve!`](@ref solve!(::PowerSystem, ::NewtonRaphson)) ad
 ```math
   \mathbf {x}^{(\nu)} = \mathbf {x}^{(\nu-1)} + \mathbf \Delta \mathbf {x}^{(\nu-1)}.
 ```
-The bus voltage magnitudes ``\mathbf{V} = [V_i]`` and angles ``\bm{\theta} = [\theta_i]`` are then updated based on the obtained solution ``\mathbf {x}``. It is important to note that only the voltage magnitudes related to demand buses and angles related to demand and generator buses are updated; not all values are updated. Therefore, the final solution obtained by JuliaGrid is stored in the following vectors:
+The bus voltage magnitudes ``\mathbf{V} = [V_i]`` and angles ``\bm{\Theta} = [\theta_i]`` are then updated based on the obtained solution ``\mathbf {x}``. It is important to note that only the voltage magnitudes related to demand buses and angles related to demand and generator buses are updated; not all values are updated. Therefore, the final solution obtained by JuliaGrid is stored in the following vectors:
 ```@repl PowerFlowSolution
 𝐕 = analysis.voltage.magnitude
-𝛉 = analysis.voltage.angle
+𝚯 = analysis.voltage.angle
 ```
 
 ----
@@ -529,10 +531,10 @@ When a user creates the fast Newton-Raphson method in JuliaGrid, the Jacobian ma
 𝐁₂ = analysis.method.reactive.jacobian
 ```
 
-Additionally, during this stage, JuliaGrid generates the starting vectors for bus voltage magnitudes ``\mathbf{V}^{(0)}`` and angles ``\bm{\theta}^{(0)}`` as demonstrated below:
+Additionally, during this stage, JuliaGrid generates the starting vectors for bus voltage magnitudes ``\mathbf{V}^{(0)}`` and angles ``\bm{\Theta}^{(0)}`` as demonstrated below:
 ```@repl PowerFlowSolution
 𝐕⁽⁰⁾ = analysis.voltage.magnitude
-𝛉⁽⁰⁾ = analysis.voltage.angle
+𝚯⁽⁰⁾ = analysis.voltage.angle
 ```
 
 ---
@@ -608,7 +610,7 @@ The solution is then updated as follows:
 ```
 It is important to note that only the voltage angles related to demand and generator buses are updated, while the vector of bus voltage angles of all buses is stored:
 ```@repl PowerFlowSolution
-𝛉 = analysis.voltage.angle
+𝚯 = analysis.voltage.angle
 ```
 
 The fast Newton-Raphson method then solves the equation:
@@ -666,10 +668,10 @@ analysis = gaussSeidel(system)
 nothing # hide
 ```
 
-This results in the creation of the starting vectors of bus voltage magnitudes ``\mathbf{V}^{(0)}`` and angles ``\bm{\theta}^{(0)}``, as shown below:
+This results in the creation of the starting vectors of bus voltage magnitudes ``\mathbf{V}^{(0)}`` and angles ``\bm{\Theta}^{(0)}``, as shown below:
 ```@repl PowerFlowSolution
 𝐕⁽⁰⁾ = analysis.voltage.magnitude
-𝛉⁽⁰⁾ = analysis.voltage.angle
+𝚯⁽⁰⁾ = analysis.voltage.angle
 ```
 
 ---
@@ -727,7 +729,7 @@ The obtained voltage magnitude may not be equal to the magnitude specified for t
 JuliaGrid stores the final results in vectors that contain all bus voltage magnitudes and angles:
 ```@repl PowerFlowSolution
 𝐕 = analysis.voltage.magnitude
-𝛉 = analysis.voltage.angle
+𝚯 = analysis.voltage.angle
 ```
 
 ---

@@ -59,13 +59,13 @@ As a result, JuliaGrid is capable of conducting DC state estimation utilizing a 
 ---
 
 ## [State Estimation Model](@id DCSEModelTutorials)
-In accordance with the [DC Model](@ref DCModelTutorials), the DC state estimation is derived through the linearization of the non-linear model. In this linearized model, all bus voltage magnitudes are assumed to be ``V_i \approx 1``, ``i \in \mathcal{N}``. Additionally, shunt elements and branch resistances are neglected. This simplification implies that the DC model disregards reactive powers and transmission losses, focusing solely on active powers. Consequently, the DC state estimation considers only bus voltage angles, represented as ``\bm \theta``, as the state variables. As a result, the total number of state variables is ``n-1``, with one voltage angle corresponding to the slack bus.
+In accordance with the [DC Model](@ref DCModelTutorials), the DC state estimation is derived through the linearization of the non-linear model. In this linearized model, all bus voltage magnitudes are assumed to be ``V_i \approx 1``, ``i \in \mathcal{N}``. Additionally, shunt elements and branch resistances are neglected. This simplification implies that the DC model disregards reactive powers and transmission losses, focusing solely on active powers. Consequently, the DC state estimation considers only bus voltage angles, represented as ``\mathbf x \equiv \bm {\Theta}``, as the state variables. As a result, the total number of state variables is ``n-1``, with one voltage angle corresponding to the slack bus.
 
 Within the JuliaGrid framework for DC state estimation, the methodology encompasses both active power flow and injection measurements from the set ``\mathcal{P}``, along with bus voltage angle measurements represented by the set ``\bar{\mathcal{P}}``. These measurements contribute to the construction of a linear system of equations:
 ```math
-    \mathbf{z}=\mathbf{h}(\bm \theta)+\mathbf{u},
+    \mathbf{z}=\mathbf{h}(\bm {\Theta})+\mathbf{u},
 ```
-where ``\mathbf{h}(\bm \theta)=`` ``[h_1(\bm \theta)``, ``\dots``, ``h_k(\bm \theta)]^{{T}}`` is the vector of linear measurement functions, ``\mathbf{z} = [z_1,\dots,z_k]^{\mathrm{T}}`` is the vector of measurement values, and ``\mathbf{u} = [u_1,\dots,u_k]^{\mathrm{T}}`` is the vector of uncorrelated measurement errors, and this defines the vector of measurement variances ``\mathbf{v} = [v_1,\dots,v_k]^{\mathrm{T}}``, where ``k = |\mathcal{M}|``. 
+where ``\mathbf{h}(\bm {\Theta})=`` ``[h_1(\bm {\Theta})``, ``\dots``, ``h_k(\bm {\Theta})]^{{T}}`` is the vector of linear measurement functions, ``\mathbf{z} = [z_1,\dots,z_k]^{\mathrm{T}}`` is the vector of measurement values, and ``\mathbf{u} = [u_1,\dots,u_k]^{\mathrm{T}}`` is the vector of uncorrelated measurement errors, and this defines the vector of measurement variances ``\mathbf{v} = [v_1,\dots,v_k]^{\mathrm{T}}``, where ``k = |\mathcal{M}|``. 
 
 Therefore, the linear system of equations can be represented based on the specific devices from which measurements originate, whether wattmeters or PMUs:
 ```math
@@ -74,8 +74,8 @@ Therefore, the linear system of equations can be represented based on the specif
       \mathbf{z}_{\bar{\mathcal{P}}}
     \end{bmatrix} =
     \begin{bmatrix}    	 
-      \mathbf{h}_\mathcal{P}(\bm \theta)\\[3pt]
-      \mathbf{h}_{\bar{\mathcal{P}}}(\bm \theta)
+      \mathbf{h}_\mathcal{P}(\bm {\Theta})\\[3pt]
+      \mathbf{h}_{\bar{\mathcal{P}}}(\bm {\Theta})
     \end{bmatrix} + 
     \begin{bmatrix}    	 
       \mathbf{u}_\mathcal{P}\\[3pt]
@@ -83,12 +83,12 @@ Therefore, the linear system of equations can be represented based on the specif
     \end{bmatrix}
 ```
 
-In summary, upon user definition of the measurement devices, each ``i``-th measurement device is linked to the measurement function ``h_i(\bm \theta)``, the corresponding measurement value ``z_i``, and the measurement variance ``v_i``.
+In summary, upon user definition of the measurement devices, each ``i``-th measurement device is linked to the measurement function ``h_i(\bm {\Theta})``, the corresponding measurement value ``z_i``, and the measurement variance ``v_i``.
 
 ---
 
 ##### Active Power Flow Measurement Functions
-The vector ``\mathbf{h}_\mathcal{P}(\bm \theta)`` comprises functions representing active power flow measurements. Following the guidelines outlined in the [DC Model](@ref DCBranchNetworkEquationsTutorials), the functions describing active power flows at the branch ``(i,j) \in \mathcal{E}`` at the "from" and "to" bus ends are defined as follows:
+The vector ``\mathbf{h}_\mathcal{P}(\bm {\Theta})`` comprises functions representing active power flow measurements. Following the guidelines outlined in the [DC Model](@ref DCBranchNetworkEquationsTutorials), the functions describing active power flows at the branch ``(i,j) \in \mathcal{E}`` at the "from" and "to" bus ends are defined as follows:
 ```math
   \begin{aligned}
     h_{P_{ij}}(\cdot) &= \cfrac{1}{\tau_{ij} x_{ij}} (\theta_{i} -\theta_{j}-\phi_{ij})\\
@@ -99,7 +99,7 @@ The vector ``\mathbf{h}_\mathcal{P}(\bm \theta)`` comprises functions representi
 ---
 
 ##### Active Power Injection Measurement Functions
-Moreover, the vector ``\mathbf{h}_\mathcal{P}(\bm \theta)`` incorporates functions designed for measuring active power injections. Utilizing the [DC Model](@ref DCNodalNetworkEquationsTutorials), the function defining the active power injection into bus ``i \in \mathcal{N}`` can be derived as follows:
+Moreover, the vector ``\mathbf{h}_\mathcal{P}(\bm {\Theta})`` incorporates functions designed for measuring active power injections. Utilizing the [DC Model](@ref DCNodalNetworkEquationsTutorials), the function defining the active power injection into bus ``i \in \mathcal{N}`` can be derived as follows:
 ```math
    h_{P_{i}}(\cdot) = B_{ii}\theta_i + \sum_{j \in \mathcal{N}_i \setminus i} {B}_{ij} \theta_j + P_{\text{tr}i} + P_{\text{sh}i},
 ```
@@ -108,7 +108,7 @@ where ``\mathcal{N}_i \setminus i`` contains buses incident to bus ``i``, exclud
 ---
 
 ##### Bus Voltage Angle Measurement Functions
-The vector ``\mathbf{h}_{\bar{\mathcal{P}}}(\bm \theta)`` comprises functions for measuring bus voltage angles. The function defining the bus voltage angle at bus ``i \in \mathcal{N}`` is straightforward:
+The vector ``\mathbf{h}_{\bar{\mathcal{P}}}(\bm {\Theta})`` comprises functions for measuring bus voltage angles. The function defining the bus voltage angle at bus ``i \in \mathcal{N}`` is straightforward:
 ```math
     h_{\theta_{i}}(\cdot) = \theta_{i}.
 ```
@@ -133,7 +133,7 @@ Similarly, the vectors containing the measurement values ``\mathbf{z}_{\bar{\mat
 ## [WLS State Estimation](@id DCSEWLSStateEstimationTutorials)
 The solution to the DC state estimation problem is determined by solving the linear weighted least-squares (WLS) problem, represented by the following formula:
 ```math
-	\mathbf H^{T} \bm \Sigma^{-1} \mathbf H \bm \theta = \mathbf H^{T} \bm \Sigma^{-1} (\mathbf z - \mathbf{c}).
+	\mathbf H^{T} \bm \Sigma^{-1} \mathbf H \bm {\Theta} = \mathbf H^{T} \bm \Sigma^{-1} (\mathbf z - \mathbf{c}).
 ```
 Here, the vector of measurement values ``\mathbf z \in \mathbb {R}^{k}``, the vector of constant terms ``\mathbf c \in \mathbb {R}^{k}``, the coefficient matrix ``\mathbf {H} \in \mathbb {R}^{k \times n}``, and the diagonal measurement error covariance matrix ``\bm \Sigma \in \mathbb {R}^{k \times k}``, where the diagonal elements hold measurement variances, are defined as follows:
 ```math
@@ -226,7 +226,7 @@ In the context of the power system, where phase-shifting transformers and shunt 
 ##### Estimate of State Variables
 Once the model is established, we solve the WLS equation to derive the estimate of bus voltage angles:
 ```math
-	\hat{\bm \theta} = [\mathbf H^{T} \bm \Sigma^{-1} \mathbf H]^{-1} \mathbf H^{T} \bm \Sigma^{-1} (\mathbf z - \mathbf{c}).
+	\hat{\bm {\Theta}} = [\mathbf H^{T} \bm \Sigma^{-1} \mathbf H]^{-1} \mathbf H^{T} \bm \Sigma^{-1} (\mathbf z - \mathbf{c}).
 ```
 
 This process is executed using the [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimationWLS)) function:
@@ -248,9 +248,9 @@ Access to the factorized gain matrix is available through:
 𝐔 = analysis.method.factorization.U
 ```
 
-Finally, the estimated bus voltage angles ``\hat{\bm \theta} = [\hat{\theta}_i]``, ``i \in \mathcal{N}``, can be retrieved using the variable:
+Finally, the estimated bus voltage angles ``\hat{\bm {\Theta}} = [\hat{\theta}_i]``, ``i \in \mathcal{N}``, can be retrieved using the variable:
 ```@repl DCSETutorial
-𝛉 = analysis.voltage.angle
+𝚯 = analysis.voltage.angle
 ```
 
 It is essential to note that the slack bus voltage angle is temporarily excluded from the gain matrix ``\mathbf G`` during computation. It is important to emphasize that this internal handling does not alter the stored elements, such as the coefficient matrix.
@@ -266,16 +266,16 @@ nothing # hide
 
 To explain the method, we begin with the WLS equation:
 ```math
-	\mathbf H^{T} \mathbf W \mathbf H \bm \theta = \mathbf H^{T} \mathbf W (\mathbf z - \mathbf{c}),
+	\mathbf H^{T} \mathbf W \mathbf H \bm {\Theta} = \mathbf H^{T} \mathbf W (\mathbf z - \mathbf{c}),
 ```
 where ``\mathbf W = \bm \Sigma^{-1}``. Subsequently, we can write:
 ```math
-  \left({\mathbf W^{1/2}} \mathbf H\right)^{T}  {\mathbf W^{1/2}} \mathbf H  \bm \theta = \left({\mathbf W^{1/2}} \mathbf H\right)^{T} {\mathbf W^{1/2}} (\mathbf z - \mathbf{c}).
+  \left({\mathbf W^{1/2}} \mathbf H\right)^{T}  {\mathbf W^{1/2}} \mathbf H  \bm {\Theta} = \left({\mathbf W^{1/2}} \mathbf H\right)^{T} {\mathbf W^{1/2}} (\mathbf z - \mathbf{c}).
 ```
 
 Consequently, we have:
 ```math
-  \bar{\mathbf{H}}^{T}  \bar{\mathbf{H}} \bm \theta = \bar{\mathbf{H}}^{T}  \bar{\mathbf{z}}, 
+  \bar{\mathbf{H}}^{T}  \bar{\mathbf{H}} \bm {\Theta} = \bar{\mathbf{H}}^{T}  \bar{\mathbf{z}}, 
 ```
 where:
 ```math
@@ -299,9 +299,9 @@ Access to the factorized matrix is possible through:
 𝐑 = analysis.method.factorization.R
 ```
 
-To obtain the solution, JuliaGrid avoids materializing the orthogonal matrix ``\mathbf{Q}`` and proceeds to solve the system, resulting in the estimate of state variables ``\hat{\bm \theta} = [\hat{\theta}_i]``, where ``i \in \mathcal{N}``:
+To obtain the solution, JuliaGrid avoids materializing the orthogonal matrix ``\mathbf{Q}`` and proceeds to solve the system, resulting in the estimate of state variables ``\hat{\bm {\Theta}} = [\hat{\theta}_i]``, where ``i \in \mathcal{N}``:
 ```@repl DCSETutorial
-𝛉 = analysis.voltage.angle
+𝚯 = analysis.voltage.angle
 ```
 
 --- 
@@ -331,7 +331,7 @@ nothing # hide
 
 In this step, we employ the largest normalized residual test, guided by the analysis outlined in [[1, Sec. 5.7]](@ref DCSEReferenceTutorials). To be more precise, we compute all measurement residuals based on the obtained estimate of state variables:
 ```math
-    r_{i} = z_i - h_i(\hat {\bm \theta}), \;\;\; i \in \mathcal{M}.
+    r_{i} = z_i - h_i(\hat {\bm {\Theta}}), \;\;\; i \in \mathcal{M}.
 ```
 
 The normalized residuals for all measurements are computed as follows:
@@ -400,49 +400,49 @@ The least absolute value (LAV) method provides an alternative estimation approac
 
 It can be demonstrated that the problem can be expressed as a linear programming problem. This section outlines the method as described in [[1, Sec. 6.5]](@ref DCSEReferenceTutorials). To revisit, we consider the system of linear equations:
 ```math
-  \mathbf{z}=\mathbf{h}(\bm \theta)+\mathbf{u}.
+  \mathbf{z}=\mathbf{h}(\bm {\Theta})+\mathbf{u}.
 ```
 
 Subsequently, the LAV state estimator is derived as the solution to the optimization problem:
 ```math
   \begin{aligned}
-    \text{minimize}& \;\;\; \mathbf a^T |\mathbf r(\bm \theta)|\\
-    \text{subject\;to}& \;\;\; \mathbf{z} - \mathbf{H}\bm \theta =\mathbf r(\mathbf x).
+    \text{minimize}& \;\;\; \mathbf a^T |\mathbf r(\bm {\Theta})|\\
+    \text{subject\;to}& \;\;\; \mathbf{z} - \mathbf{H}\bm {\Theta} =\mathbf r(\mathbf x).
   \end{aligned}
 ```
-Here, ``\mathbf a \in \mathbb {R}^{k}`` is the vector with all entries equal to one, and ``\mathbf r (\bm \theta)`` represents the vector of measurement residuals. Additionally, we introduce ``\bm \eta``:
+Here, ``\mathbf a \in \mathbb {R}^{k}`` is the vector with all entries equal to one, and ``\mathbf r (\bm {\Theta})`` represents the vector of measurement residuals. Additionally, we introduce ``\bm \eta``:
 ```math
-  |\mathbf r(\bm \theta)| \preceq \bm \eta,
+  |\mathbf r(\bm {\Theta})| \preceq \bm \eta,
 ```
 and replace the above inequality with two equalities using the introduction of two non-negative slack variables ``\mathbf q \in \mathbb {R}_{\ge 0}^{k}`` and ``\mathbf w \in \mathbb {R}_{\ge 0}^{k}``:
 ```math
   \begin{aligned}
-    \mathbf r(\bm \theta) - \mathbf q &= -\bm \eta \\
-    \mathbf r(\bm \theta) + \mathbf w &= \bm \eta.
+    \mathbf r(\bm {\Theta}) - \mathbf q &= -\bm \eta \\
+    \mathbf r(\bm {\Theta}) + \mathbf w &= \bm \eta.
   \end{aligned}
 ```
 
 Let us now define four additional non-negative variables:
 ```math
-    \bm \theta_x \in \mathbb {R}_{\ge 0}^{n}; \;\;\; \bm \theta_y  \in \mathbb {R}_{\ge 0}^{n}; \;\;\;  
+    \bm {\Theta}_x \in \mathbb {R}_{\ge 0}^{n}; \;\;\; \bm {\Theta}_y  \in \mathbb {R}_{\ge 0}^{n}; \;\;\;  
     \mathbf {r}_x \in \mathbb {R}_{\ge 0}^{k}; \;\;\; \mathbf {r}_y \in \mathbb {R}_{\ge 0}^{k},
 ```
 where:
 ```math
-    \bm {\theta} = \bm \theta_x - \bm \theta_y; \;\;\; \mathbf r(\bm {\theta}) = \mathbf {r}_x - \mathbf {r}_y\\
+    \bm {\Theta} = \bm {\Theta}_x - \bm {\Theta}_y; \;\;\; \mathbf r(\bm {\Theta}) = \mathbf {r}_x - \mathbf {r}_y\\
     \mathbf {r}_x = \cfrac{1}{2} \mathbf q; \;\;\;  \mathbf {r}_y = \cfrac{1}{2} \mathbf w.
 ```
 Then, the above two equalities become:
 ```math
   \begin{aligned}
-    \mathbf r(\bm {\theta}) - 2\mathbf {r}_x &= -2\bm \eta \\
-    \mathbf r(\bm {\theta}) + 2 \mathbf {r}_y &= 2\bm \eta,
+    \mathbf r(\bm {\Theta}) - 2\mathbf {r}_x &= -2\bm \eta \\
+    \mathbf r(\bm {\Theta}) + 2 \mathbf {r}_y &= 2\bm \eta,
   \end{aligned}
 ```
 that is:
 ```math
   \begin{aligned}
-    \mathbf {r}_x + \mathbf {r}_y = \bm \eta; \;\;\; \mathbf r(\bm {\theta}) = \mathbf {r}_x - \mathbf {r}_y.
+    \mathbf {r}_x + \mathbf {r}_y = \bm \eta; \;\;\; \mathbf r(\bm {\Theta}) = \mathbf {r}_x - \mathbf {r}_y.
   \end{aligned}
 ```
 
@@ -450,8 +450,8 @@ Hence, the optimization problem can be written:
 ```math
   \begin{aligned}
     \text{minimize}& \;\;\; \mathbf a^T (\mathbf {r}_x + \mathbf {r}_y)\\
-    \text{subject\;to}& \;\;\; \mathbf{H}(\bm \theta_x - \bm \theta_y) + \mathbf {r}_x - \mathbf {r}_y = \mathbf{z}   \\
-                       & \;\;\; \bm \theta_x \succeq \mathbf 0, \; \bm \theta_y \succeq \mathbf 0 \\
+    \text{subject\;to}& \;\;\; \mathbf{H}(\bm {\Theta}_x - \bm {\Theta}_y) + \mathbf {r}_x - \mathbf {r}_y = \mathbf{z}   \\
+                       & \;\;\; \bm {\Theta}_x \succeq \mathbf 0, \; \bm {\Theta}_y \succeq \mathbf 0 \\
                        & \;\;\; \mathbf {r}_x \succeq \mathbf 0, \; \mathbf {r}_y \succeq \mathbf 0.
   \end{aligned}
 ```
@@ -473,12 +473,12 @@ nothing # hide
 ```
 As a result, we obtain optimal values for the four additional non-negative variables, while the state estimator is obtained by:
 ```math
-    \hat{\bm \theta} = \bm \theta_x - \bm \theta_y.
+    \hat{\bm {\Theta}} = \bm {\Theta}_x - \bm {\Theta}_y.
 ```
 
-Users can retrieve the estimated bus voltage angles ``\hat{\bm \theta} = [\hat{\theta}_i]``, ``i \in \mathcal{N}``, using the variable:
+Users can retrieve the estimated bus voltage angles ``\hat{\bm {\Theta}} = [\hat{\theta}_i]``, ``i \in \mathcal{N}``, using the variable:
 ```@repl DCSETutorial
-𝛉 = analysis.voltage.angle
+𝚯 = analysis.voltage.angle
 ```
 
 ---

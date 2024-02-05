@@ -38,18 +38,20 @@ Moreover, we identify the set of generators as ``\mathcal{S} = \{1, \dots, n_g\}
 𝒮 = collect(keys(system.generator.label))
 ```
 
+---
+
 !!! ukw "Notation"
     In this section, when referring to a vector ``\mathbf{a}``, we use the notation ``\mathbf{a} = [a_{i}]`` or ``\mathbf{a} = [a_{ij}]``, where ``a_i`` represents the element associated with bus ``i \in \mathcal{N}`` or generator ``i \in \mathcal{S}``, while ``a_{ij}`` denotes the element associated with branch ``(i,j) \in \mathcal{E}``.
 
 ---
 
 ## [Optimal Power Flow Model](@id DCOptimalPowerFlowModelTutorials)
-In the DC optimal power flow, the active power outputs of the generators ``\mathbf {P}_{\text{g}} = [{P}_{\text{g}i}]``, ``i \in \mathcal{S}``, are represented as linear functions of the bus voltage angles ``\boldsymbol{\theta} = [{\theta}_{i}]``, ``i \in \mathcal{N}``. Therefore, the optimization variables in this model are the active power outputs of the generators and the bus voltage angles. The DC optimal power flow model has the form:
+In the DC optimal power flow, the active power outputs of the generators ``\mathbf {P}_{\text{g}} = [{P}_{\text{g}i}]``, ``i \in \mathcal{S}``, are represented as linear functions of the bus voltage angles ``\bm{\Theta} = [{\theta}_{i}]``, ``i \in \mathcal{N}``. Therefore, the optimization variables in this model are the active power outputs of the generators and the bus voltage angles. The DC optimal power flow model has the form:
 ```math
 \begin{aligned}
     & {\text{minimize}} & & \sum_{i \in \mathcal{S}} f_i(P_{\text{g}i}) \\
     & \text{subject\;to} & &  \theta_i - \theta_{\text{slack}} = 0,\;\;\; i \in \mathcal{N_{\text{sb}}}  \\[3pt]
-    & & & h_{P_i}(\mathbf {P}_{\text{g}}, \boldsymbol{\theta}) = 0,\;\;\;  \forall i \in \mathcal{N} \\[3pt]
+    & & & h_{P_i}(\mathbf {P}_{\text{g}}, \bm{\Theta}) = 0,\;\;\;  \forall i \in \mathcal{N} \\[3pt]
     & & & \theta_{ij}^\text{min} \leq \theta_i - \theta_j \leq \theta_{ij}^\text{max},\;\;\; \forall (i,j) \in \mathcal{E} \\[3pt]
     & & &  - P_{ij}^{\text{max}} \leq h_{P_{ij}}(\theta_i, \theta_j) \leq P_{ij}^{\text{max}},\;\;\; \forall (i,j) \in \mathcal{E} \\[3pt]
     & & & P_{\text{g}i}^\text{min} \leq P_{\text{g}i} \leq P_{\text{g}i}^\text{max} ,\;\;\; \forall i \in \mathcal{S}.
@@ -76,10 +78,10 @@ nothing # hide
 ---
 
 ##### Optimization Variables
-Hence, the variables in this model encompass the active power outputs of the generators denoted as ``\mathbf{P}_{\text{g}} = [{P}_{\text{g}i}]``, where ``i \in \mathcal{S}``, and the bus voltage angles represented by ``\boldsymbol{\theta} = [{\theta}_{i}]``, where ``i \in \mathcal{N}``. You can access these variables using the following code:
+Hence, the variables in this model encompass the active power outputs of the generators denoted as ``\mathbf{P}_{\text{g}} = [{P}_{\text{g}i}]``, where ``i \in \mathcal{S}``, and the bus voltage angles represented by ``\bm{\Theta} = [{\theta}_{i}]``, where ``i \in \mathcal{N}``. You can access these variables using the following code:
 ```@repl DCOptimalPowerFlow
 𝐏ₒ = analysis.variable.active
-𝛉 = analysis.variable.angle
+𝚯 = analysis.variable.angle
 ```
 
 ---
@@ -179,11 +181,11 @@ print(analysis.constraint.slack.angle)
 ##### Active Power Balance Constraints
 The second equality constraint in the optimization problem is associated with the active power balance equation denoted as ``h_{P_i}(\mathbf x)`` for each bus ``i \in \mathcal{N}``:
 ```math
-h_{P_i}(\mathbf {P}_{\text{g}}, \boldsymbol{\theta}) = 0,\;\;\;  \forall i \in \mathcal{N}.
+h_{P_i}(\mathbf {P}_{\text{g}}, \bm{\Theta}) = 0,\;\;\;  \forall i \in \mathcal{N}.
 ```
 The equation is derived using the [Nodal Network Equations](@ref DCNodalNetworkEquationsTutorials) and can be represented as:
 ```math
-h_{P_i}(\mathbf {P}_{\text{g}}, \boldsymbol{\theta}) = \sum_{k \in \mathcal{S}_i} P_{\text{g}k} - \sum_{k = 1}^n {B}_{ik} \theta_k - P_{\text{d}i} - P_{\text{sh}i} - P_{\text{tr}i}.
+h_{P_i}(\mathbf {P}_{\text{g}}, \bm{\Theta}) = \sum_{k \in \mathcal{S}_i} P_{\text{g}k} - \sum_{k = 1}^n {B}_{ik} \theta_k - P_{\text{d}i} - P_{\text{sh}i} - P_{\text{tr}i}.
 ```
 In this equation, the set ``\mathcal{S}_i \subseteq \mathcal{S}`` encompasses all generators connected to bus ``i \in \mathcal{N}``, and ``P_{\text{g}k}`` represents the active power output of the ``k``-th generator within the set ``\mathcal{S}_i``. More precisely, the variable ``P_{\text{g}k}`` represents the optimization variable, as well as the bus voltage angle ``\theta_k``.
 
@@ -206,9 +208,9 @@ The inequality constraint related to the minimum and maximum bus voltage angle d
 ```math
 \theta_{ij}^\text{min} \leq \theta_i - \theta_j \leq \theta_{ij}^\text{max},\;\;\; \forall (i,j) \in \mathcal{E},
 ```
-where ``\theta_{ij}^\text{min}`` represents the minimum, while ``\theta_{ij}^\text{max}`` represents the maximum of the angle difference between adjacent buses. The values representing the voltage angle difference, denoted as ``\boldsymbol{\theta}_{\text{lm}} = [\theta_{ij}^\text{min}, \theta_{ij}^\text{max}]``, ``(i,j) \in \mathcal{E}``, are provided as follows:
+where ``\theta_{ij}^\text{min}`` represents the minimum, while ``\theta_{ij}^\text{max}`` represents the maximum of the angle difference between adjacent buses. The values representing the voltage angle difference, denoted as ``\bm{\Theta}_{\text{lm}} = [\theta_{ij}^\text{min}, \theta_{ij}^\text{max}]``, ``(i,j) \in \mathcal{E}``, are provided as follows:
 ```@repl DCOptimalPowerFlow
-𝛉ₗₘ = [system.branch.voltage.minDiffAngle system.branch.voltage.maxDiffAngle]
+𝚯ₗₘ = [system.branch.voltage.minDiffAngle system.branch.voltage.maxDiffAngle]
 ```
 
 To retrieve this inequality constraint from the model and access the corresponding variable, you can use the following code:
@@ -271,9 +273,9 @@ Therefore, to get the vector of output active power of generators ``\mathbf{P}_{
 𝐏ₒ = analysis.power.generator.active
 ```
 
-Further, the resulting bus voltage angles ``\bm{\theta} = [\theta_{i}]``, ``i \in \mathcal{N}``, are saved in the vector as follows:
+Further, the resulting bus voltage angles ``\bm{\Theta} = [\theta_{i}]``, ``i \in \mathcal{N}``, are saved in the vector as follows:
 ```@repl DCOptimalPowerFlow
-𝛉 = analysis.voltage.angle
+𝚯 = analysis.voltage.angle
 ```
 
 ---
