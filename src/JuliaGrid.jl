@@ -1,4 +1,9 @@
-module JuliaGrid
+module JuliaGridTest
+
+
+using JuliaGrid 
+using Test, Ipopt, HiGHS, GLPK
+
 
 using SparseArrays, LinearAlgebra, SuiteSparse
 using HDF5
@@ -64,9 +69,11 @@ export status!
 
 ######### State Estimation ##########
 include("stateEstimation/dcStateEstimation.jl")
+include("stateEstimation/pmuStateEstimation.jl")
 include("stateEstimation/badData.jl")
 include("stateEstimation/observability.jl")
 export dcStateEstimation, residualTest!
+export pmuStateEstimation, pmuPlacment
 export islandTopologicalFlow, islandTopological, restorationGram!
 
 ########## Postprocessing ##########
@@ -76,4 +83,53 @@ export power!, current!
 export injectionPower, supplyPower, shuntPower, fromPower, toPower, chargingPower, seriesPower, generatorPower
 export injectionCurrent, fromCurrent, toCurrent, seriesCurrent
 
-end # JuliaGrid 
+pathData = "D:/My Drive/16. GitHub/JuliaGrid.jl/test/data/"
+
+
+######## Path to Test Data ##########
+pathData = abspath(joinpath(dirname(Base.find_package("JuliaGrid")), ".."), "test/data/")
+
+######## Equality of Structs ##########
+function equalStruct(a::S, b::S) where S
+    for name in fieldnames(S)
+        @test getfield(a, name) == getfield(b, name)
+    end
+end
+
+function approxStruct(a::S, b::S) where S
+    for name in fieldnames(S)
+        @test getfield(a, name) ≈ getfield(b, name)
+    end
+end
+
+function approxStruct(a::S, b::S, atol::Float64) where S
+    for name in fieldnames(S)
+        @test getfield(a, name) ≈ getfield(b, name) atol = atol
+    end
+end
+
+######## Power System ##########
+include("D:/My Drive/16. GitHub/JuliaGrid.jl/test/powerSystem/loadSave.jl")
+include("D:/My Drive/16. GitHub/JuliaGrid.jl/test/powerSystem/buildUpdate.jl")
+
+# ######## Power flow ##########
+include("D:/My Drive/16. GitHub/JuliaGrid.jl/test/powerFlow/analysis.jl")
+include("D:/My Drive/16. GitHub/JuliaGrid.jl/test/powerFlow/reusing.jl")
+include("D:/My Drive/16. GitHub/JuliaGrid.jl/test/powerFlow/limits.jl")
+
+######## Optimal Power flow ##########
+include("D:/My Drive/16. GitHub/JuliaGrid.jl/test/optimalPowerFlow/analysis.jl")
+include("D:/My Drive/16. GitHub/JuliaGrid.jl/test/optimalPowerFlow/reusing.jl")
+
+######## Measurement ##########
+include("D:/My Drive/16. GitHub/JuliaGrid.jl/test/measurement/loadSave.jl")
+include("D:/My Drive/16. GitHub/JuliaGrid.jl/test/measurement/buildUpdate.jl")
+
+######## State Estimation ##########
+include("D:/My Drive/16. GitHub/JuliaGrid.jl/test/stateEstimation/analysis.jl")
+include("D:/My Drive/16. GitHub/JuliaGrid.jl/test/stateEstimation/reusing.jl")
+include("D:/My Drive/16. GitHub/JuliaGrid.jl/test/stateEstimation/badData.jl")
+include("D:/My Drive/16. GitHub/JuliaGrid.jl/test/stateEstimation/observability.jl")
+include("D:/My Drive/16. GitHub/JuliaGrid.jl/test/stateEstimation/pmuPlacement.jl")
+
+end

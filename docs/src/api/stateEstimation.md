@@ -9,6 +9,15 @@ For further information on this topic, please see the [AC State Estimation](@ref
 * [`islandTopological`](@ref islandTopological(::PowerSystem, ::Wattmeter))
 * [`restorationGram!`](@ref restorationGram!(::PowerSystem, ::Measurement, ::Measurement, ::IslandWatt))
 
+###### Optimal PMU Placement
+* [`pmuPlacment`](@ref pmuPlacment)
+
+###### Build PMU State Estimation
+* [`pmuStateEstimation`](@ref pmuStateEstimation)
+
+###### Solve PMU State Estimation
+* [`solve!`](@ref solve!(::PowerSystem, ::PMUStateEstimationWLS{LinearWLS}))
+
 ###### Build DC State Estimation
 * [`dcStateEstimation`](@ref dcStateEstimation)
 
@@ -29,6 +38,26 @@ restorationGram!(::PowerSystem, ::Measurement, ::Measurement, ::IslandWatt)
 
 ---
 
+## Optimal PMU Placement
+```@docs
+pmuPlacment
+```
+
+---
+
+## Build PMU State Estimation
+```@docs
+pmuStateEstimation
+```
+
+---
+
+## Solve PMU State Estimation
+```@docs
+solve!(::PowerSystem, ::PMUStateEstimationWLS{LinearWLS})
+```
+
+---
 
 ## Build DC State Estimation
 ```@docs

@@ -14,12 +14,13 @@ electrical quantities:
 - `to`: active and reactive power flows at the "to" bus end of each branch;
 - `charging`: active and reactive power values linked with branch charging admittances for each branch;
 - `series` active and reactive power losses through each branch series impedance;
-- `generator`: produced active and reactive power outputs of each generator.
+- `generator`: produced active and reactive power outputs of each generator (not for `ACStateEstimation`).
 
 # Abstract type
 The abstract type `AC` can have the following subtypes:
 - `ACPowerFlow`: computes the powers within the AC power flow;
-- `ACOptimalPowerFlow`: computes the powers within the AC optimal power flow.
+- `ACOptimalPowerFlow`: computes the powers within the AC optimal power flow;
+- `ACStateEstimation`: computes the powers within the nonlinear state estimation or linear with PMUs only.
 
 # Examples
 Compute powers after obtaining the AC power flow solution:
@@ -284,6 +285,80 @@ function power!(system::PowerSystem, analysis::ACOptimalPowerFlow)
     end
 end
 
+function power!(system::PowerSystem, analysis::PMUStateEstimation)
+    ac = system.model.ac
+    voltage = analysis.voltage
+    power = analysis.power
+    parameter = system.branch.parameter
+    errorVoltage(voltage.magnitude)
+
+    power.injection.active = fill(0.0, system.bus.number)
+    power.injection.reactive = fill(0.0, system.bus.number)
+    power.shunt.active = fill(0.0, system.bus.number)
+    power.shunt.reactive = fill(0.0, system.bus.number)
+    power.supply.active = fill(0.0, system.bus.number)
+    power.supply.reactive = fill(0.0, system.bus.number)
+    @inbounds for i = 1:system.bus.number
+        voltageBus = voltage.magnitude[i] * exp(im * voltage.angle[i])
+
+        powerShunt = voltageBus * conj(voltageBus * (system.bus.shunt.conductance[i] + im * system.bus.shunt.susceptance[i]))
+        power.shunt.active[i] = real(powerShunt)
+        power.shunt.reactive[i] = imag(powerShunt)
+
+        I = 0.0 + im * 0.0
+        for j in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
+            k = ac.nodalMatrix.rowval[j]
+            I += ac.nodalMatrixTranspose.nzval[j] * voltage.magnitude[k] * exp(im * voltage.angle[k])
+        end
+
+        powerInjection = conj(I) * voltageBus
+        power.injection.active[i] = real(powerInjection)
+        power.injection.reactive[i] = imag(powerInjection)
+
+        power.supply.active[i] = power.injection.active[i] + system.bus.demand.active[i]
+        power.supply.reactive[i] = power.injection.reactive[i] + system.bus.demand.reactive[i]
+    end
+
+    power.from.active = fill(0.0, system.branch.number)
+    power.from.reactive = fill(0.0, system.branch.number)
+    power.to.active = fill(0.0, system.branch.number)
+    power.to.reactive = fill(0.0, system.branch.number)
+    power.charging.active = fill(0.0, system.branch.number)
+    power.charging.reactive = fill(0.0, system.branch.number)
+    power.series.active = fill(0.0, system.branch.number)
+    power.series.reactive = fill(0.0, system.branch.number)
+    @inbounds for i = 1:system.branch.number
+        if system.branch.layout.status[i] == 1
+            from = system.branch.layout.from[i]
+            to = system.branch.layout.to[i]
+
+            voltageFrom = voltage.magnitude[from] * exp(im * voltage.angle[from])
+            voltageTo = voltage.magnitude[to] * exp(im * voltage.angle[to])
+
+            powerFrom = voltageFrom * conj(voltageFrom * ac.nodalFromFrom[i] + voltageTo * ac.nodalFromTo[i])
+            power.from.active[i] = real(powerFrom)
+            power.from.reactive[i] = imag(powerFrom)
+
+            powerTo = voltageTo * conj(voltageFrom * ac.nodalToFrom[i] + voltageTo * ac.nodalToTo[i])
+            power.to.active[i] = real(powerTo)
+            power.to.reactive[i] = imag(powerTo)
+
+            turnsRatioInv = 1 / parameter.turnsRatio[i]
+            transformerRatio = turnsRatioInv * exp(-im * parameter.shiftAngle[i])
+
+            voltageSeries = transformerRatio * voltageFrom - voltageTo
+            series = voltageSeries * conj(ac.admittance[i] * voltageSeries)
+            power.series.active[i] = real(series)
+            power.series.reactive[i] = imag(series)
+
+            admittanceConj = 0.5 * conj(system.branch.parameter.conductance[i] + im * system.branch.parameter.susceptance[i])
+            charging = admittanceConj * ((turnsRatioInv * voltage.magnitude[from])^2 + voltage.magnitude[to]^2)
+            power.charging.active[i] = real(charging)
+            power.charging.reactive[i] = imag(charging)
+        end
+    end
+end
+
 """
     injectionPower(system::PowerSystem, analysis::AC, label)
 
@@ -421,6 +496,13 @@ function supplyPower(system::PowerSystem, analysis::ACOptimalPowerFlow; label)
     end
 
     return supplyActive, supplyReactive
+end
+
+function supplyPower(system::PowerSystem, analysis::PMUStateEstimation; label)
+    index = system.bus.label[getLabel(system.bus, label, "bus")]
+    active, reactive = injectionPower(system, analysis; label = label)
+
+    return active + system.bus.demand.active[index], reactive + system.bus.demand.reactive[index]
 end
 
 """
