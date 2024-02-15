@@ -1,7 +1,7 @@
 using JuliaGrid
 using HDF5
 using Test
-using JuMP, HiGHS, Ipopt
+using JuMP, HiGHS, Ipopt, GLPK
 
 ######## Path to Test Data ##########
 pathData = abspath(joinpath(dirname(Base.find_package("JuliaGrid")), ".."), "test/data/")
