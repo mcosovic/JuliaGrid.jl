@@ -3,7 +3,7 @@ export NewtonRaphson, FastNewtonRaphson, GaussSeidel, DCPowerFlow
 export DCOptimalPowerFlow, ACOptimalPowerFlow
 export DCStateEstimation, DCStateEstimationWLS, DCStateEstimationLAV
 export PMUStateEstimation, PMUStateEstimationWLS, PMUStateEstimationLAV
-export LU, QR, LDLt, Factorization, Orthogonal
+export LU, QR, LDLt, Factorization, Orthogonal, LinearWLS, LinearOrthogonal
 export Island, IslandWatt, IslandVar
 export PlacementPMU
 

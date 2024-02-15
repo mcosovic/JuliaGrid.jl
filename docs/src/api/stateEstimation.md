@@ -13,7 +13,7 @@ For further information on this topic, please see the [AC State Estimation](@ref
 * [`dcStateEstimation`](@ref dcStateEstimation)
 
 ###### Solve DC State Estimation
-* [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimationWLS))
+* [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimationWLS{LinearWLS}))
 
 ###### Bad Data Analysis
 * [`residualTest!`](@ref residualTest!)
@@ -39,7 +39,7 @@ dcStateEstimation
 
 ## Solve DC State Estimation
 ```@docs
-solve!(::PowerSystem, ::DCStateEstimationWLS)
+solve!(::PowerSystem, ::DCStateEstimationWLS{LinearWLS})
 ```
 
 ---

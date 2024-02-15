@@ -3,7 +3,7 @@ To perform the DC power flow, you first need to have the `PowerSystem` composite
 * [`dcStateEstimation`](@ref dcStateEstimation).
 
 For resolving the DC state estimation problem employing either the weighted least-squares (WLS) or the least absolute value (LAV) approach and obtaining bus voltage angles, utilize the following function:
-* [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimationWLS)).
+* [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimationWLS{LinearWLS})).
 
 After obtaining the solution for DC state estimation, JuliaGrid offers a post-processing analysis function to compute active powers associated with buses and branches:
 * [`power!`](@ref power!(::PowerSystem, ::DCStateEstimation)).
@@ -19,7 +19,7 @@ Furthermore, users can initiate observability analysis to detect observable isla
 * [`islandTopological`](@ref islandTopological(::PowerSystem, ::Wattmeter)),
 * [`restorationGram!`](@ref restorationGram!(::PowerSystem, ::Measurement, ::Measurement, ::IslandWatt)).
 
-Finally, after executing the function [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimationWLS)), where the user employs the WLS method, the user has the ability to check if the measurement set contains outliers throughout bad data analysis and remove those measurements using:
+Finally, after executing the function [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimationWLS{LinearWLS})), where the user employs the WLS method, the user has the ability to check if the measurement set contains outliers throughout bad data analysis and remove those measurements using:
 * [`residualTest!`](@ref residualTest!).
 
 ---
@@ -170,7 +170,7 @@ nothing # hide
 !!! tip "Tip"
     Here, the user triggers LU factorization as the default method for solving the DC state estimation problem. However, the user also has the option to select alternative factorization methods such as `LDLt` or `QR`, for instance.
 
-To obtain the bus voltage angles, the [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimationWLS)) function can be invoked as shown:
+To obtain the bus voltage angles, the [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimationWLS{LinearWLS})) function can be invoked as shown:
 ```@example WLSDCStateEstimationSolution
 solve!(system, analysis)
 nothing # hide
@@ -200,7 +200,7 @@ nothing # hide
 ---
 
 ## [Bad Data Detection](@id DCBadDataDetectionManual)
-After acquiring the WLS solution using the [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimationWLS)) function, users can conduct bad data analysis employing the largest normalized residual test. Continuing with our defined power system and measurement set, let us introduce a new wattmeter. Upon proceeding to find the solution for this updated state:
+After acquiring the WLS solution using the [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimationWLS{LinearWLS})) function, users can conduct bad data analysis employing the largest normalized residual test. Continuing with our defined power system and measurement set, let us introduce a new wattmeter. Upon proceeding to find the solution for this updated state:
 ```@example WLSDCStateEstimationSolution
 addWattmeter!(system, device; from = "Branch 2", active = 4.1, variance = 1e-4)
 
@@ -254,11 +254,11 @@ nothing # hide
 ---
 
 ##### Setup Starting Primal Values
-In JuliaGrid, the assignment of starting primal values for optimization variables takes place when the [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimationWLS)) function is executed. Starting primal values are determined based on the `voltage` fields within the `DCStateEstimation` type. By default, these values are initially established using the the initial bus voltage angles from `PowerSystem` type:
+In JuliaGrid, the assignment of starting primal values for optimization variables takes place when the [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimationWLS{LinearWLS})) function is executed. Starting primal values are determined based on the `voltage` fields within the `DCStateEstimation` type. By default, these values are initially established using the the initial bus voltage angles from `PowerSystem` type:
 ```@repl WLSDCStateEstimationSolution
 print(system.bus.label, analysis.voltage.angle)
 ```
-You have the flexibility to adjust these values to your specifications, and they will be utilized as the starting primal values when you run the [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimationWLS)) function.
+You have the flexibility to adjust these values to your specifications, and they will be utilized as the starting primal values when you run the [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimationWLS{LinearWLS})) function.
 
 ---
 
