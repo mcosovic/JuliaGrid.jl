@@ -351,7 +351,8 @@ function pmuStateEstimation(system::PowerSystem, device::Measurement, (@nospecia
     @objective(jump, Min, objective)
 
     return PMUStateEstimationLAV(
-        Polar(Float64[], Float64[]),
+        Polar(system.bus.voltage.magnitude, 
+            system.bus.voltage.angle),
         PowerSE(
             Cartesian(Float64[], Float64[]),
             Cartesian(Float64[], Float64[]),
