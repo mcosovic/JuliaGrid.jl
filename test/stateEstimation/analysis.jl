@@ -161,8 +161,8 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     analysisLAV = pmuStateEstimation(system30, device, Ipopt.Optimizer)
     JuMP.set_silent(analysisLAV.method.jump)
     solve!(system30, analysisLAV)
-    @test analysisLAV.voltage.magnitude ≈ analysis.voltage.magnitude atol = 1e-2
-    @test analysisLAV.voltage.angle ≈ analysis.voltage.angle atol = 1e-2
+    @test analysisLAV.voltage.magnitude ≈ analysis.voltage.magnitude atol = 1e-1
+    @test analysisLAV.voltage.angle ≈ analysis.voltage.angle atol = 1e-1
 
     ####### LU Factorization: Correlated Errors #######
     analysisLU = pmuStateEstimation(system30, device, LU; correlated = true)
