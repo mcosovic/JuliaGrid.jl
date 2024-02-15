@@ -486,8 +486,8 @@ function restorationGram!(system::PowerSystem, device::Measurement, pseudo::Meas
         end
     end
     numberIsland = size(islands.island, 1)
-    reducedJacobian = sparse(row, col, jac, row[end], numberIsland)
-    reducedGain = reducedJacobian * reducedJacobian'
+    reducedCoefficient = sparse(row, col, jac, row[end], numberIsland)
+    reducedGain = reducedCoefficient * reducedCoefficient'
 
     F = qr(Matrix(reducedGain))
     R = F.R

@@ -223,6 +223,13 @@ function checkLocation(device, bus, from, to)
     return location
 end
 
+function checkBranchMeter(status::Int8, label::String)
+    if status == 0
+        throw(ErrorException("The branch labelled as $label is currently out-of-service, making it impossible to include the measurement device."))
+    end
+end
+
+
 ######### Set Mean, Variance, and Status ##########
 function setMeter(device::GaussMeter, mean::T, variance::T, status::T, noise::Bool,
     defVariance::ContainerTemplate, defStatus::Int8, prefixLive::Float64, baseInv::Float64)

@@ -18,6 +18,9 @@ Once the `Measurement` type has been established, we can incorporate voltmeters,
 
 Additionally, JuliaGrid provides macros [`@voltmeter`](@ref @voltmeter), [`@ammeter`](@ref @ammeter), [`@wattmeter`](@ref @wattmeter), [`@varmeter`](@ref @varmeter), and [`@pmu`](@ref @pmu) to define templates that aid in creating measurement devices. These templates help avoid entering the same parameters repeatedly.
 
+!!! tip "Info"
+    Note that measurement devices related to branches can only be added if the branch is in-service.
+
 Moreover, it is feasible to modify the parameters of measurement devices. When these functions are executed, all relevant fields within the `Measurement` composite type will be automatically updated. These functions include:
 * [`updateVoltmeter!`](@ref updateVoltmeter!),
 * [`updateAmmeter!`](@ref updateAmmeter!),
@@ -37,6 +40,7 @@ Furthermore, we provide users with the ability to modify each specific measureme
 * [`statusWattmeter!`](@ref statusWattmeter!),
 * [`statusVarmeter!`](@ref statusVarmeter!),
 * [`statusPmu!`](@ref statusPmu!).
+
 
 ---
 

@@ -101,6 +101,7 @@ function addPmu!(system::PowerSystem, device::Measurement;
     else
         labelBranch = getLabel(system.branch, location, "branch")
         index = system.branch.label[labelBranch]
+        checkBranchMeter(system.branch.layout.status[index], labelBranch)
         if pmu.layout.from[end]
             setLabel(pmu, label, default.label, labelBranch; prefix = "From ")
             defaultVarianceMagnitude = default.varianceMagnitudeFrom
@@ -259,7 +260,7 @@ function addPmu!(system::PowerSystem, device::Measurement, analysis::AC;
     statusAngleTo = unitless(statusAngleTo, default.statusAngleTo)
     checkStatus(statusAngleTo)
 
-    pmuNumber = system.bus.number + 2 * system.branch.number
+    pmuNumber = system.bus.number + 2 * system.branch.layout.inservice
     pmu.label = OrderedDict{String,Int64}(); sizehint!(pmu.label, pmuNumber)
 
     pmu.layout.index = fill(0, pmuNumber)
@@ -294,39 +295,41 @@ function addPmu!(system::PowerSystem, device::Measurement, analysis::AC;
 
     basePowerInv = 1 / (system.base.power.value * system.base.power.prefix)
     @inbounds for (label, i) in system.branch.label
-        pmu.number += 1
-        setLabel(pmu, missing, default.label, label; prefix = "From ")
+        if system.branch.layout.status[i] == 1
+            pmu.number += 1
+            setLabel(pmu, missing, default.label, label; prefix = "From ")
         
-        pmu.layout.index[pmu.number] = i
-        pmu.layout.from[pmu.number] = true
+            pmu.layout.index[pmu.number] = i
+            pmu.layout.from[pmu.number] = true
         
-        baseVoltage = system.base.voltage.value[system.branch.layout.from[i]] * system.base.voltage.prefix
-        baseCurrentInv = baseCurrentInverse(basePowerInv, baseVoltage)
+            baseVoltage = system.base.voltage.value[system.branch.layout.from[i]] * system.base.voltage.prefix
+            baseCurrentInv = baseCurrentInverse(basePowerInv, baseVoltage)
 
-        pmu.magnitude.variance[pmu.number] = topu(varianceMagnitudeFrom, default.varianceMagnitudeFrom, prefix.currentMagnitude, baseCurrentInv)
-        pmu.magnitude.mean[pmu.number] = analysis.current.from.magnitude[i] + pmu.magnitude.variance[pmu.number]^(1/2) * randn(1)[1]
-        pmu.magnitude.status[pmu.number] = statusMagnitudeFrom
+            pmu.magnitude.variance[pmu.number] = topu(varianceMagnitudeFrom, default.varianceMagnitudeFrom, prefix.currentMagnitude, baseCurrentInv)
+            pmu.magnitude.mean[pmu.number] = analysis.current.from.magnitude[i] + pmu.magnitude.variance[pmu.number]^(1/2) * randn(1)[1]
+            pmu.magnitude.status[pmu.number] = statusMagnitudeFrom
 
-        pmu.angle.variance[pmu.number] = topu(varianceAngleFrom, default.varianceAngleFrom, prefix.currentAngle, 1.0)
-        pmu.angle.mean[pmu.number] = analysis.current.from.angle[i] + pmu.angle.variance[pmu.number]^(1/2) * randn(1)[1]
-        pmu.angle.status[pmu.number] = statusAngleFrom
+            pmu.angle.variance[pmu.number] = topu(varianceAngleFrom, default.varianceAngleFrom, prefix.currentAngle, 1.0)
+            pmu.angle.mean[pmu.number] = analysis.current.from.angle[i] + pmu.angle.variance[pmu.number]^(1/2) * randn(1)[1]
+            pmu.angle.status[pmu.number] = statusAngleFrom
 
-        pmu.number += 1
-        setLabel(pmu, missing, default.label, label; prefix = "To ")
+            pmu.number += 1
+            setLabel(pmu, missing, default.label, label; prefix = "To ")
 
-        pmu.layout.index[pmu.number] = i
-        pmu.layout.to[pmu.number] = true
+            pmu.layout.index[pmu.number] = i
+            pmu.layout.to[pmu.number] = true
         
-        baseVoltage = system.base.voltage.value[system.branch.layout.to[i]] * system.base.voltage.prefix
-        baseCurrentInv = baseCurrentInverse(basePowerInv, baseVoltage)
+            baseVoltage = system.base.voltage.value[system.branch.layout.to[i]] * system.base.voltage.prefix
+            baseCurrentInv = baseCurrentInverse(basePowerInv, baseVoltage)
 
-        pmu.magnitude.variance[pmu.number] = topu(varianceMagnitudeTo, default.varianceMagnitudeTo, prefix.currentMagnitude, baseCurrentInv)
-        pmu.magnitude.mean[pmu.number] = analysis.current.to.magnitude[i] + pmu.magnitude.variance[pmu.number]^(1/2) * randn(1)[1]
-        pmu.magnitude.status[pmu.number] = statusMagnitudeTo
+            pmu.magnitude.variance[pmu.number] = topu(varianceMagnitudeTo, default.varianceMagnitudeTo, prefix.currentMagnitude, baseCurrentInv)
+            pmu.magnitude.mean[pmu.number] = analysis.current.to.magnitude[i] + pmu.magnitude.variance[pmu.number]^(1/2) * randn(1)[1]
+            pmu.magnitude.status[pmu.number] = statusMagnitudeTo
 
-        pmu.angle.variance[pmu.number] = topu(varianceAngleTo, default.varianceAngleTo, prefix.currentAngle, 1.0)
-        pmu.angle.mean[pmu.number] = analysis.current.to.angle[i] + pmu.angle.variance[pmu.number]^(1/2) * randn(1)[1]
-        pmu.angle.status[pmu.number] = statusAngleTo
+            pmu.angle.variance[pmu.number] = topu(varianceAngleTo, default.varianceAngleTo, prefix.currentAngle, 1.0)
+            pmu.angle.mean[pmu.number] = analysis.current.to.angle[i] + pmu.angle.variance[pmu.number]^(1/2) * randn(1)[1]
+            pmu.angle.status[pmu.number] = statusAngleTo
+        end
     end
 
     pmu.layout.label = pmu.number
@@ -429,7 +432,7 @@ function updatePmu!(system::PowerSystem, device::Measurement, analysis::DCStateE
         end
         if isset(statusAngle) || isset(varianceAngle)
             method.done = false
-            method.weight[index] = constIf / pmu.angle.variance[indexPmu] 
+            method.precision.nzval[index] = 1 / pmu.angle.variance[indexPmu] 
         end
     end
 end
@@ -463,7 +466,7 @@ function updatePmu!(system::PowerSystem, device::Measurement, analysis::DCStateE
             end
 
             remove!(method.jump, method.residual, index)
-            method.residual[index] = @constraint(method.jump, method.anglex[indexBus] - method.angley[indexBus] + method.residualy[index] - method.residualx[index] == 0.0)
+            method.residual[index] = @constraint(method.jump, method.statex[indexBus] - method.statey[indexBus] + method.residualy[index] - method.residualx[index] == 0.0)
         else
             remove!(method.jump, method.residual, index)
 

@@ -97,6 +97,9 @@ function addBranch!(system::PowerSystem;
 
     push!(branch.layout.status, unitless(status, default.status))
     checkStatus(branch.layout.status[end])
+    if branch.layout.status[end] == 1
+        branch.layout.inservice += 1
+    end
 
     push!(branch.parameter.turnsRatio, unitless(turnsRatio, default.turnsRatio))
 
@@ -249,88 +252,88 @@ function addBranch!(system::PowerSystem, analysis::ACOptimalPowerFlow;
     end
 end
 
-function addBranch!(system::PowerSystem, analysis::DCStateEstimationWLS;
-    label::L = missing, from::L, to::L, status::T = missing,
-    resistance::T = missing, reactance::T = missing, susceptance::T = missing,
-    conductance::T = missing, turnsRatio::T = missing, shiftAngle::T = missing,
-    minDiffAngle::T = missing, maxDiffAngle::T = missing,
-    longTerm::T = missing, shortTerm::T = missing, emergency::T = missing, type::T = missing)
+# function addBranch!(system::PowerSystem, analysis::DCStateEstimationWLS;
+#     label::L = missing, from::L, to::L, status::T = missing,
+#     resistance::T = missing, reactance::T = missing, susceptance::T = missing,
+#     conductance::T = missing, turnsRatio::T = missing, shiftAngle::T = missing,
+#     minDiffAngle::T = missing, maxDiffAngle::T = missing,
+#     longTerm::T = missing, shortTerm::T = missing, emergency::T = missing, type::T = missing)
 
-    dc = system.model.dc
-    branch = system.branch
-    method = analysis.method
+#     dc = system.model.dc
+#     branch = system.branch
+#     method = analysis.method
     
-    if isset(shiftAngle)
-        oldShiftAngleFrom = dc.shiftPower[system.bus.label[getLabel(system.bus, from, "bus")]]
-        oldShiftAngleTo = dc.shiftPower[system.bus.label[getLabel(system.bus, to, "bus")]]
-    end
+#     if isset(shiftAngle)
+#         oldShiftAngleFrom = dc.shiftPower[system.bus.label[getLabel(system.bus, from, "bus")]]
+#         oldShiftAngleTo = dc.shiftPower[system.bus.label[getLabel(system.bus, to, "bus")]]
+#     end
 
-    addBranch!(system; label, from, to, status, resistance, reactance, susceptance,
-        conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, longTerm, shortTerm,
-        emergency, type)    
+#     addBranch!(system; label, from, to, status, resistance, reactance, susceptance,
+#         conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, longTerm, shortTerm,
+#         emergency, type)    
         
-    if branch.layout.status[end] == 1
-        indexBus = Int64[]
-        if haskey(method.layout.wattmeter.bus, branch.layout.from[end]) 
-            push!(indexBus, branch.layout.from[end])
-            if isset(shiftAngle) 
-                for indexWattmeter in method.layout.wattmeter.bus[branch.layout.from[end]] 
-                    if method.weight[indexWattmeter] != 0.0
-                        method.mean[indexWattmeter] += oldShiftAngleFrom
-                    end
-                end
-            end
-        end
-        if haskey(method.layout.wattmeter.bus, branch.layout.to[end])
-            push!(indexBus, branch.layout.to[end])
-            if isset(shiftAngle)
-                for indexWattmeter in method.layout.wattmeter.bus[branch.layout.to[end]] 
-                    if method.weight[indexWattmeter] != 0.0
-                        method.mean[indexWattmeter] += oldShiftAngleTo
-                    end
-                end
-            end
-        end
-        if !isempty(indexBus)
-            method.done = false
-            for index in indexBus
-                for indexWattmeter in method.layout.wattmeter.bus[index] 
-                    if method.weight[indexWattmeter] != 0.0
-                        for j in dc.nodalMatrix.colptr[index]:(dc.nodalMatrix.colptr[index + 1] - 1)
-                            method.jacobian[indexWattmeter, dc.nodalMatrix.rowval[j]] = dc.nodalMatrix.nzval[j]
-                        end
-                        if isset(shiftAngle)
-                            method.mean[indexWattmeter] -= - dc.shiftPower[index] 
-                        end
-                    end
-                end
-            end
-        end
-    end
-end
+#     if branch.layout.status[end] == 1
+#         indexBus = Int64[]
+#         if haskey(method.layout.wattmeter.bus, branch.layout.from[end]) 
+#             push!(indexBus, branch.layout.from[end])
+#             if isset(shiftAngle) 
+#                 for indexWattmeter in method.layout.wattmeter.bus[branch.layout.from[end]] 
+#                     if method.weight[indexWattmeter] != 0.0
+#                         method.mean[indexWattmeter] += oldShiftAngleFrom
+#                     end
+#                 end
+#             end
+#         end
+#         if haskey(method.layout.wattmeter.bus, branch.layout.to[end])
+#             push!(indexBus, branch.layout.to[end])
+#             if isset(shiftAngle)
+#                 for indexWattmeter in method.layout.wattmeter.bus[branch.layout.to[end]] 
+#                     if method.weight[indexWattmeter] != 0.0
+#                         method.mean[indexWattmeter] += oldShiftAngleTo
+#                     end
+#                 end
+#             end
+#         end
+#         if !isempty(indexBus)
+#             method.done = false
+#             for index in indexBus
+#                 for indexWattmeter in method.layout.wattmeter.bus[index] 
+#                     if method.weight[indexWattmeter] != 0.0
+#                         for j in dc.nodalMatrix.colptr[index]:(dc.nodalMatrix.colptr[index + 1] - 1)
+#                             method.jacobian[indexWattmeter, dc.nodalMatrix.rowval[j]] = dc.nodalMatrix.nzval[j]
+#                         end
+#                         if isset(shiftAngle)
+#                             method.mean[indexWattmeter] -= - dc.shiftPower[index] 
+#                         end
+#                     end
+#                 end
+#             end
+#         end
+#     end
+# end
 
-function addBranch!(system::PowerSystem, analysis::DCStateEstimationLAV;
-    label::L = missing, from::L, to::L, status::T = missing,
-    resistance::T = missing, reactance::T = missing, susceptance::T = missing,
-    conductance::T = missing, turnsRatio::T = missing, shiftAngle::T = missing,
-    minDiffAngle::T = missing, maxDiffAngle::T = missing,
-    longTerm::T = missing, shortTerm::T = missing, emergency::T = missing, type::T = missing)
+# function addBranch!(system::PowerSystem, analysis::DCStateEstimationLAV;
+#     label::L = missing, from::L, to::L, status::T = missing,
+#     resistance::T = missing, reactance::T = missing, susceptance::T = missing,
+#     conductance::T = missing, turnsRatio::T = missing, shiftAngle::T = missing,
+#     minDiffAngle::T = missing, maxDiffAngle::T = missing,
+#     longTerm::T = missing, shortTerm::T = missing, emergency::T = missing, type::T = missing)
 
-    dc = system.model.dc
-    branch = system.branch
-    method = analysis.method
+#     dc = system.model.dc
+#     branch = system.branch
+#     method = analysis.method
     
-    if isset(shiftAngle)
-        oldShiftAngleFrom = dc.shiftPower[system.bus.label[getLabel(system.bus, from, "bus")]]
-        oldShiftAngleTo = dc.shiftPower[system.bus.label[getLabel(system.bus, to, "bus")]]
-    end
+#     if isset(shiftAngle)
+#         oldShiftAngleFrom = dc.shiftPower[system.bus.label[getLabel(system.bus, from, "bus")]]
+#         oldShiftAngleTo = dc.shiftPower[system.bus.label[getLabel(system.bus, to, "bus")]]
+#     end
 
-    addBranch!(system; label, from, to, status, resistance, reactance, susceptance,
-        conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, longTerm, shortTerm,
-        emergency, type)    
+#     addBranch!(system; label, from, to, status, resistance, reactance, susceptance,
+#         conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, longTerm, shortTerm,
+#         emergency, type)    
         
-    if branch.layout.status[end] == 1
-        indexBus = Int64[]
+    # if branch.layout.status[end] == 1
+    #     indexBus = Int64[]
     #     if haskey(method.layout.wattmeter.bus, branch.layout.from[end]) 
     #         push!(indexBus, branch.layout.from[end])
     #         if isset(shiftAngle)
@@ -360,8 +363,8 @@ function addBranch!(system::PowerSystem, analysis::DCStateEstimationLAV;
     #             end
     #         end
     #     end
-    end
-end
+#     end
+# end
 
 """
     updateBranch!(system::PowerSystem, analysis::Analysis; kwargs...)
@@ -421,6 +424,12 @@ function updateBranch!(system::PowerSystem;
 
     basePowerInv = 1 / (system.base.power.value * system.base.power.prefix)
     parameter = isset(resistance) || isset(reactance) || isset(conductance) || isset(susceptance) || isset(turnsRatio) || isset(shiftAngle)
+
+    if status == 1 && branch.layout.status[index] == 0
+        branch.layout.inservice += 1
+    elseif status == 0 && branch.layout.status[index] == 1
+        branch.layout.inservice -= 1
+    end
 
     if branch.layout.status[index] == 1
         if status == 0 || (status == 1 && parameter)

@@ -187,10 +187,12 @@ nothing # hide
 
 ---
 
-##### Orthogonal Factorization
-When users opt for orthogonal factorization, specifying the `QR` argument in the [`dcStateEstimation`](@ref dcStateEstimation) function, they are not solely choosing to solve the WLS problem using QR factorization. Instead, JuliaGrid implements a more robust approach to obtain the WLS estimator, especially beneficial when significant differences exist among measurement variances [[2, Sec. 3.2]](@ref DCStateEstimationReferenceManual). To derive this estimator, execute the following sequence of functions:
+##### Alternative Formulation
+The resolution of the WLS state estimation problem using the conventional method typically progresses smoothly. However, it is widely acknowledged that in certain situations common to real-world systems, this method can be vulnerable to numerical instabilities. Such conditions might impede the algorithm from converging to a satisfactory solution. In such cases, users may opt for an alternative formulation of the WLS state estimation, namely, employing an approach called orthogonal factorization [[3, Sec. 3.2]](@ref DCStateEstimationReferenceManual).
+
+Specifically, by specifying the `Orthogonal` argument in the [`dcStateEstimation`](@ref dcStateEstimation) function, JuliaGrid implements a more robust approach to obtain the WLS estimator, which proves particularly beneficial when substantial differences exist among measurement variances. To derive this estimator, execute the following sequence of functions:
 ```@example WLSDCStateEstimationSolution
-analysis = dcStateEstimation(system, device, QR)
+analysis = dcStateEstimation(system, device, Orthogonal)
 solve!(system, analysis)
 nothing # hide
 ```

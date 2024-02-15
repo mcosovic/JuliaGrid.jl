@@ -142,6 +142,8 @@
 
     ############### Test Case 3 ################
     system14 = powerSystem(string(pathData, "case14test.m"))
+    updateBranch!(system14, label = 3, status = 1)
+    updateBranch!(system14, label = 18, status = 1)
     dcModel!(system14)
     analysis = dcPowerFlow(system14)
     solve!(system14, analysis)

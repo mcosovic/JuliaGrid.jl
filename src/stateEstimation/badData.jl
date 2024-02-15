@@ -16,9 +16,9 @@ normalized residual surpasses this threshold, the measurement is flagged as bad 
 default threshold value is set to `threshold = 3.0`.
 
 # Updates
-In case bad data is detected, the function removes measurements from the `coefficient` matrix, 
-`weight`, and `mean` vectors within the `DCStateEstimation` type. Additionally, it marks 
-the respective measurement within the `Measurement` type as out-of-service.
+In case bad data is detected, the function removes measurements from the `coefficient` and 
+`precision` matrices, and `mean` vector within the `DCStateEstimation` type. Additionally, 
+it marks the respective measurement within the `Measurement` type as out-of-service.
 
 Furthermore, the variable `bad` within the `DCStateEstimation` type stores information 
 regarding bad data detection and identification:
@@ -58,7 +58,7 @@ function residualTest!(system::PowerSystem, device::Measurement, analysis::DCSta
     se = analysis.method
     bad = analysis.bad
 
-    slackRange, elementsRemove = deleteSlackJacobian(analysis, bus.layout.slack)
+    slackRange, elementsRemove = deleteSlackCoefficient(analysis, bus.layout.slack)
     gain = dcGain(analysis, bus.layout.slack)
 
     if !isa(se.factorization, SuiteSparse.UMFPACK.UmfpackLU{Float64, Int64}) 
@@ -106,14 +106,14 @@ function residualTest!(system::PowerSystem, device::Measurement, analysis::DCSta
     bad.maxNormalizedResidual = 0.0
     bad.index = 0
     @inbounds for i = 1:se.number
-        normResidual = abs(se.mean[i] - h[i]) / sqrt(abs((1 / se.weight[i]) - c[i]))
+        normResidual = abs(se.mean[i] - h[i]) / sqrt(abs((1 / se.precision.nzval[i]) - c[i]))
         if normResidual > bad.maxNormalizedResidual
             bad.maxNormalizedResidual = normResidual
             bad.index = i
         end
     end
 
-    restoreSlackJacobian(analysis, slackRange, elementsRemove, bus.layout.slack)
+    restoreSlackCoefficient(analysis, slackRange, elementsRemove, bus.layout.slack)
     
     bad.detect = false
     if bad.maxNormalizedResidual > threshold
@@ -124,7 +124,7 @@ function residualTest!(system::PowerSystem, device::Measurement, analysis::DCSta
             se.coefficient[bad.index, col] = 0.0
         end
         se.mean[bad.index] = 0.0
-        se.weight[bad.index] = 0.0 
+        se.precision.nzval[bad.index] = 0.0 
         se.done = false     
     end
 

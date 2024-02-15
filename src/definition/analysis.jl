@@ -2,8 +2,10 @@ export AC, DC, ACPowerFlow, OptimalPowerFlow
 export NewtonRaphson, FastNewtonRaphson, GaussSeidel, DCPowerFlow
 export DCOptimalPowerFlow, ACOptimalPowerFlow
 export DCStateEstimation, DCStateEstimationWLS, DCStateEstimationLAV
-export LU, QR, LDLt, Factorization
+export PMUStateEstimation, PMUStateEstimationWLS, PMUStateEstimationLAV
+export LU, QR, LDLt, Factorization, Orthogonal
 export Island, IslandWatt, IslandVar
+export PlacementPMU
 
 ########### Abstract Types ###########
 abstract type AC end
@@ -15,7 +17,9 @@ abstract type QR <: Factorization end
 abstract type LU <: Factorization end
 abstract type LDLt <: Factorization end
 abstract type DCStateEstimation <: DC end
+abstract type PMUStateEstimation <: AC end
 abstract type Island end
+abstract type Orthogonal end
 
 ########### Powers in the AC Framework ###########
 mutable struct Power
@@ -52,6 +56,17 @@ mutable struct DCPowerSE
     supply::CartesianReal
     from::CartesianReal
     to::CartesianReal
+end
+
+########### Powers in the Legacy and PMU SE Framework ###########
+mutable struct PowerSE
+    injection::Cartesian
+    supply::Cartesian
+    shunt::Cartesian
+    from::Cartesian
+    to::Cartesian
+    series::Cartesian
+    charging::Cartesian
 end
 
 ########### Newton-Raphson ###########
@@ -215,33 +230,35 @@ mutable struct BadData
     label::String
 end
 
-mutable struct DCStateEstimationWLSMethod
+mutable struct LinearWLS
     coefficient::SparseMatrixCSC{Float64,Int64}
-    weight::Array{Float64,1}
+    precision::SparseMatrixCSC{Float64,Int64}
     mean::Array{Float64,1}
     factorization::LULDLtQR
     number::Int64
     done::Bool
 end
 
-struct DCStateEstimationWLS <: DCStateEstimation
+mutable struct LinearOrthogonal
+    coefficient::SparseMatrixCSC{Float64,Int64}
+    precision::SparseMatrixCSC{Float64,Int64}
+    mean::Array{Float64,1}
+    factorization::SuiteSparse.SPQR.QRSparse{Float64, Int64}
+    number::Int64
+    done::Bool
+end
+
+struct DCStateEstimationWLS{T <: Union{LinearWLS, LinearOrthogonal}} <: DCStateEstimation
     voltage::PolarAngle
     power::DCPowerSE
-    method::DCStateEstimationWLSMethod
+    method::T
     bad::BadData
 end
 
-struct VariableLAV
-    anglex::Array{JuMP.VariableRef,1}
-    angley::Array{JuMP.VariableRef,1}
-    residualx::Array{JuMP.VariableRef,1}
-    residualy::Array{JuMP.VariableRef,1}
-end
-
-mutable struct DCStateEstimationMethodLAV
+mutable struct LAVMethod
     jump::JuMP.Model
-    anglex::Array{JuMP.VariableRef,1}
-    angley::Array{JuMP.VariableRef,1}
+    statex::Array{JuMP.VariableRef,1}
+    statey::Array{JuMP.VariableRef,1}
     residualx::Array{JuMP.VariableRef,1}
     residualy::Array{JuMP.VariableRef,1}
     residual::Dict{Int64, JuMP.ConstraintRef}
@@ -251,7 +268,7 @@ end
 struct DCStateEstimationLAV <: DCStateEstimation
     voltage::PolarAngle
     power::DCPowerSE
-    method::DCStateEstimationMethodLAV
+    method::LAVMethod
 end
 
 mutable struct TieData
@@ -270,4 +287,23 @@ mutable struct IslandVar <: Island
     island::Array{Array{Int64,1},1}
     bus::Array{Int64,1}
     tie::TieData
+end
+
+struct PMUStateEstimationWLS{T <: Union{LinearWLS, LinearOrthogonal}} <: PMUStateEstimation
+    voltage::Polar
+    power::PowerSE
+    method::T
+    bad::BadData
+end
+
+struct PMUStateEstimationLAV <: PMUStateEstimation
+    voltage::Polar
+    power::PowerSE
+    method::LAVMethod
+end
+
+mutable struct PlacementPMU
+    bus::OrderedDict{String,Int64}
+    from::OrderedDict{String,Int64}
+    to::OrderedDict{String,Int64}
 end

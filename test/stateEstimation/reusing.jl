@@ -36,11 +36,11 @@ system14 = powerSystem(string(pathData, "case14test.m"))
             addWattmeter!(system14, device; from = key, active = rand(1)[], noise = false)
         elseif value == 15
             addWattmeter!(system14, device; from = key, active = analysis.power.from.active[value], noise = false, status = 0)
-        elseif value == 18
+        elseif value == 17
             addWattmeter!(system14, device; from = key, active = rand(1)[], variance = 1e-5)
         elseif value == 20
             addWattmeter!(system14, device; from = key, active = rand(1)[])            
-        else
+        elseif system14.branch.layout.status[value] == 1
             addWattmeter!(system14, device; from = key, active = analysis.power.from.active[value], noise = false)
         end
        
@@ -52,7 +52,7 @@ system14 = powerSystem(string(pathData, "case14test.m"))
             addWattmeter!(system14, device; to = key, active = rand(1)[], variance = 1e-5)
         elseif value == 19
             addWattmeter!(system14, device; to = key, active = rand(1)[])            
-        else
+        elseif system14.branch.layout.status[value] == 1
             addWattmeter!(system14, device; to = key, active = analysis.power.to.active[value], noise = false)
         end
     end
@@ -83,7 +83,7 @@ system14 = powerSystem(string(pathData, "case14test.m"))
  
     updateWattmeter!(system14, device; label = "From 4", status = 0)
     updateWattmeter!(system14, device; label = "From 15", status = 1)
-    updateWattmeter!(system14, device; label = "From 18", active = analysis.power.from.active[18], variance = 1e-2, noise = false)
+    updateWattmeter!(system14, device; label = "From 17", active = analysis.power.from.active[17], variance = 1e-2, noise = false)
     updateWattmeter!(system14, device; label = "From 20", active = analysis.power.from.active[20], noise = false)
  
     updateWattmeter!(system14, device; label = "To 5", status = 0)
@@ -106,7 +106,7 @@ system14 = powerSystem(string(pathData, "case14test.m"))
     solve!(system14, analysisLAVUpdate)
     @test analysisLAVUpdate.voltage.angle ≈ analysis.voltage.angle
  
-    ###### Update Devices and Original WLS Model #######
+    ##### Update Devices and Original WLS Model #######
     updateWattmeter!(system14, device, analysisWLS; label = 1, status = 0)
     updateWattmeter!(system14, device, analysisWLS; label = 3, status = 1)
     updateWattmeter!(system14, device, analysisWLS; label = 5, active = analysis.power.injection.active[5], variance = 1e-2, noise = false)
@@ -114,7 +114,7 @@ system14 = powerSystem(string(pathData, "case14test.m"))
  
     updateWattmeter!(system14, device, analysisWLS; label = "From 4", status = 0)
     updateWattmeter!(system14, device, analysisWLS; label = "From 15", status = 1)
-    updateWattmeter!(system14, device, analysisWLS; label = "From 18", active = analysis.power.from.active[18], variance = 1e-2, noise = false)
+    updateWattmeter!(system14, device, analysisWLS; label = "From 17", active = analysis.power.from.active[17], variance = 1e-2, noise = false)
     updateWattmeter!(system14, device, analysisWLS; label = "From 20", active = analysis.power.from.active[20], noise = false)
  
     updateWattmeter!(system14, device, analysisWLS; label = "To 5", status = 0)
@@ -147,7 +147,7 @@ system14 = powerSystem(string(pathData, "case14test.m"))
  
     updateWattmeter!(system14, device, analysisLAV; label = "From 4", status = 0)
     updateWattmeter!(system14, device, analysisLAV; label = "From 15", status = 1)
-    updateWattmeter!(system14, device, analysisLAV; label = "From 18", active = analysis.power.from.active[18], variance = 1e-2, noise = false)
+    updateWattmeter!(system14, device, analysisLAV; label = "From 17", active = analysis.power.from.active[17], variance = 1e-2, noise = false)
     updateWattmeter!(system14, device, analysisLAV; label = "From 20", active = analysis.power.from.active[20], noise = false)
  
     updateWattmeter!(system14, device, analysisLAV; label = "To 5", status = 0)

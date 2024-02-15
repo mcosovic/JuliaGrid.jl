@@ -22,8 +22,10 @@ system30 = powerSystem(string(pathData, "case30test.m"))
         addWattmeter!(system14, device; bus = key, active = analysis.power.injection.active[value], noise = false)
     end
     for (key, value) in system14.branch.label
-        addWattmeter!(system14, device; from = key, active = analysis.power.from.active[value], noise = false)
-        addWattmeter!(system14, device; to = key, active = analysis.power.to.active[value], noise = false) 
+        if system14.branch.layout.status[value] == 1
+            addWattmeter!(system14, device; from = key, active = analysis.power.from.active[value], noise = false)
+            addWattmeter!(system14, device; to = key, active = analysis.power.to.active[value], noise = false) 
+        end
     end
     for (key, value) in system14.bus.label
         addPmu!(system14, device; bus = key, magnitude = 1.0, angle = analysis.voltage.angle[value], noise = false)
@@ -58,9 +60,9 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     solve!(system14, analysisSE)
     @test analysis.voltage.angle ≈ analysisSE.voltage.angle
 
-    ####### WLS QR: One Outlier #######
+    ####### WLS Orthogonal: One Outlier #######
     updatePmu!(system14, device; label = "PMU 10", angle = analysis.voltage.angle[10], noise = false)
-    analysisSE = dcStateEstimation(system14, device, QR)
+    analysisSE = dcStateEstimation(system14, device, Orthogonal)
     solve!(system14, analysisSE)
 
     residualTest!(system14, device, analysisSE; threshold = 3.0)
@@ -70,9 +72,9 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     solve!(system14, analysisSE)
     @test analysis.voltage.angle ≈ analysisSE.voltage.angle
 
-    ####### WLS QR: Two Outliers #######
+    ####### WLS Orthogonal: Two Outliers #######
     updatePmu!(system14, device; label = "PMU 10", angle = 10pi, noise = false)
-    analysisSE = dcStateEstimation(system14, device, QR)
+    analysisSE = dcStateEstimation(system14, device, Orthogonal)
     solve!(system14, analysisSE)
 
     residualTest!(system14, device, analysisSE; threshold = 3.0)

@@ -54,7 +54,6 @@ function dcPowerFlow(system::PowerSystem, factorization::Type{<:Union{QR, LDLt, 
     end
 
     method = Dict(LU => lu, LDLt => ldlt, QR => qr)
-
     return DCPowerFlow(
         PolarAngle(Float64[]),
         DCPower(

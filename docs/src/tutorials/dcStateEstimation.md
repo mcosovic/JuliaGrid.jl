@@ -206,10 +206,10 @@ Each row in the matrix corresponds to a specific measurement. The first ``|\math
 
 ---
 
-##### Covariance Matrix
-JuliaGrid does not store the covariance matrix ``\bm \Sigma``. Instead, we store a vector of weights, which essentially represents the main diagonal of the matrix ``\bm \Sigma^{-1}``. The order of these values corresponds to the description provided for the coefficient matrix. Users can access these values using the following command:
+##### Precision Matrix
+JuliaGrid opts not to retain the covariance matrix ``\bm \Sigma`` but rather stores its inverse, the precision or weighting matrix denoted as ``\mathbf W = \bm \Sigma^{-1}``. The order of these values corresponds to the description provided for the coefficient matrix. Users can access these values using the following command:
 ```@repl DCSETutorial
-𝐰 = analysis.method.weight
+𝐖 = analysis.method.precison
 ```
 
 ---
@@ -257,10 +257,12 @@ It is essential to note that the slack bus voltage angle is temporarily excluded
 
 --- 
 
-## [Orthogonal WLS State Estimation](@id DCSEOrthogonalWLSStateEstimationTutorials)
-To mitigate ill-conditioned scenarios caused by very large differences between measurement variances, users can solve the WLS problem using an approach that enforces orthogonal factorization:
+##### [Alternative Formulation](@id DCSEOrthogonalWLSStateEstimationTutorials)
+The resolution of the WLS state estimation problem using the conventional method typically progresses smoothly. However, it is widely acknowledged that in certain situations common to real-world systems, this method can be vulnerable to numerical instabilities. Such conditions might impede the algorithm from converging to a satisfactory solution. In such cases, users may opt for an alternative formulation of the WLS state estimation, namely, employing an approach called orthogonal factorization [[1, Sec. 3.2]](@ref DCStateEstimationReferenceManual).
+
+To address ill-conditioned situations arising from significant differences in measurement variances, users can employ an alternative approach:
 ```@example DCSETutorial
-analysis = dcStateEstimation(system, device, QR)
+analysis = dcStateEstimation(system, device, Orthogonal)
 nothing # hide
 ```
 

@@ -7,15 +7,15 @@ The function sets up the framework to solve the DC state estimation.
 This function requires the `PowerSystem` and `Measurement` composite types to establish the 
 framework. 
 
-Additionally, the inclusion of the `method` parameter is not obligatory. It offers a range 
-of techniques for resolving DC state estimation. To tackle the weighted least-squares (WLS) 
-issue, users have the option to employ standard factorization methods like `LU` or `LDLt`, 
-but only when the gain matrix is symmetrical. For a more resilient solution in situations 
-involving ill-conditioned data, particularly when significant differences in variances 
-exist, choosing the `QR` factorization method is recommended.
+Moreover, the presence of the `method` parameter is not mandatory. It provides various 
+approaches for addressing DC state estimation. To address the WLS state estimation method, 
+users can opt to utilize factorization techniques to decompose the gain matrix, such as 
+`LU`, `QR`, or `LDLt`, especially when the gain matrix is symmetric. Opting for the 
+`Orthogonal` method is advisable for a more robust solution in scenarios involving 
+ill-conditioned data, particularly when substantial variations in variances are present.
 
-Moreover, instead of solving the WLS state estimation problem, users can utilize the least 
-absolute value (LAV) method to find an estimator. This can be achieved by selecting one of 
+Alternatively, instead of solving the WLS state estimation problem, users can utilize the 
+LAV method to find an estimator. This can be achieved by selecting one of 
 the [optimization solvers](https://jump.dev/JuMP.jl/stable/packages/solvers/), 
 where typically `Ipopt.Optimizer` suffices for common scenarios.
 
@@ -37,8 +37,8 @@ the following fields:
 - `bad`: the variable linked to identifying bad data within the measurement set. 
 
 # Examples
-Establish the DC state estimation WLS framework that will be solved using the default LU 
-factorization:
+Set up the DC state estimation WLS framework to be solved using the default LU factorization 
+method:
 ```jldoctest
 system = powerSystem("case14.h5")
 device = measurement("measurement14.h5")
@@ -46,16 +46,15 @@ device = measurement("measurement14.h5")
 analysis = dcStateEstimation(system, device)
 ```
 
-Establish the DC state estimation WLS framework that will be solved using the QR 
-factorization:
+Set up the DC state estimation WLS framework to be solved using the orthogonal method:
 ```jldoctest
 system = powerSystem("case14.h5")
 device = measurement("measurement14.h5")
 
-analysis = dcStateEstimation(system, device, QR)
+analysis = dcStateEstimation(system, device, Orthogonal)
 ```
 
-Establish the DC state estimation LAV framework:
+Set up the DC state estimation LAV framework:
 ```jldoctest
 using Ipopt
 
@@ -66,6 +65,44 @@ analysis = dcStateEstimation(system, device, Ipopt.Optimizer)
 ```
 """
 function dcStateEstimation(system::PowerSystem, device::Measurement, factorization::Type{<:Union{QR, LDLt, LU}} = LU)
+    coefficient, mean, precision, badData, power = dcStateEstimationWLS(system, device)
+
+    method = Dict(LU => lu, LDLt => ldlt, QR => qr)
+    return DCStateEstimationWLS(
+        PolarAngle(Float64[]),
+        power,
+        LinearWLS(
+            coefficient,
+            precision,
+            mean,
+            get(method, factorization, lu)(sparse(Matrix(1.0I, 1, 1))),
+            device.wattmeter.number + device.pmu.number,
+            false
+        ),
+        badData
+    )
+end
+
+function dcStateEstimation(system::PowerSystem, device::Measurement, method::Type{<:Orthogonal})
+    coefficient, mean, precision, badData, power = dcStateEstimationWLS(system, device)
+
+    method = Dict(LU => lu, LDLt => ldlt, QR => qr)
+    return DCStateEstimationWLS(
+        PolarAngle(Float64[]),
+        power,
+        LinearOrthogonal(
+            coefficient,
+            precision,
+            mean,
+            qr(sparse(Matrix(1.0I, 1, 1))),
+            device.wattmeter.number + device.pmu.number,
+            false
+        ),
+        badData
+    )
+end
+
+function dcStateEstimationWLS(system::PowerSystem, device::Measurement)
     dc = system.model.dc
     bus = system.bus
     branch = system.branch
@@ -102,12 +139,14 @@ function dcStateEstimation(system::PowerSystem, device::Measurement, factorizati
     deviceNumber = wattmeter.number + pmu.number
     row = fill(0, nonZeroElement) 
     col = similar(row)
-    jac = fill(0.0, nonZeroElement)
+    coeff = fill(0.0, nonZeroElement)
     mean = fill(0.0, deviceNumber)
-    weight = similar(mean)
+    precision = spdiagm(0 => mean)
 
     count = 1
     for (i, k) in enumerate(wattmeter.layout.index)
+        precision.nzval[i] = (1 / wattmeter.active.variance[i])
+        
         if wattmeter.active.status[i] == 1
             constIf = 1
         else
@@ -118,11 +157,10 @@ function dcStateEstimation(system::PowerSystem, device::Measurement, factorizati
             for j in dc.nodalMatrix.colptr[k]:(dc.nodalMatrix.colptr[k + 1] - 1)
                 row[count] = i
                 col[count] = dc.nodalMatrix.rowval[j]
-                jac[count] = dc.nodalMatrix.nzval[j] * constIf
+                coeff[count] = dc.nodalMatrix.nzval[j] * constIf
                 count += 1
             end
             mean[i] = (wattmeter.active.mean[i] - dc.shiftPower[k] - bus.shunt.conductance[k]) * constIf
-            weight[i] = (1 / wattmeter.active.variance[i]) * constIf
         else
             if wattmeter.layout.from[i]
                 addmitance = dc.admittance[k] * constIf
@@ -132,14 +170,13 @@ function dcStateEstimation(system::PowerSystem, device::Measurement, factorizati
 
             row[count] = i
             col[count] = branch.layout.from[k]
-            jac[count] = addmitance
+            coeff[count] = addmitance
             count += 1
             row[count] = i
             col[count] = branch.layout.to[k]
-            jac[count] = -addmitance
+            coeff[count] = -addmitance
 
             mean[i] = (wattmeter.active.mean[i] + branch.parameter.shiftAngle[k] * addmitance) * constIf
-            weight[i] = (1 / wattmeter.active.variance[i]) * constIf
             
             count += 1
         end
@@ -156,39 +193,20 @@ function dcStateEstimation(system::PowerSystem, device::Measurement, factorizati
 
             row[count] = rowindex
             col[count] = pmu.layout.index[i]
-            jac[count] = constIf
+            coeff[count] = constIf
 
             mean[rowindex] = (pmu.angle.mean[i] - bus.voltage.angle[bus.layout.slack]) * constIf
-            weight[rowindex] = (1 / pmu.angle.variance[i]) * constIf
+            precision.nzval[rowindex] = (1 / pmu.angle.variance[i])
             
             count += 1; rowindex += 1
         end
     end
 
-    method = Dict(LU => lu, LDLt => ldlt, QR => qr)
-    return DCStateEstimationWLS(
-        PolarAngle(Float64[]),
-        DCPowerSE(
-            CartesianReal(Float64[]),
-            CartesianReal(Float64[]),
-            CartesianReal(Float64[]),
-            CartesianReal(Float64[]),
-        ),
-        DCStateEstimationWLSMethod(
-            sparse(row, col, jac, deviceNumber, bus.number),
-            weight,
-            mean,
-            get(method, factorization, lu)(sparse(Matrix(1.0I, 1, 1))),
-            deviceNumber,
-            false
-        ),
-        BadData(
-            true, 
-            0.0, 
-            0, 
-            ""
-        )
-    )
+    coefficient = sparse(row, col, coeff, deviceNumber, bus.number)
+    badData = BadData(true, 0.0, 0, "")
+    power = DCPowerSE(CartesianReal(Float64[]), CartesianReal(Float64[]), CartesianReal(Float64[]), CartesianReal(Float64[]))
+
+   return coefficient, mean, precision, badData, power
 end
 
 function dcStateEstimation(system::PowerSystem, device::Measurement, (@nospecialize optimizerFactory);
@@ -204,25 +222,25 @@ function dcStateEstimation(system::PowerSystem, device::Measurement, (@nospecial
     jump = JuMP.Model(optimizerFactory; add_bridges = bridge)
     set_string_names_on_creation(jump, name)
 
-    anglex = @variable(jump, 0 <= anglex[i = 1:bus.number])
-    angley = @variable(jump, 0 <= angley[i = 1:bus.number])
+    statex = @variable(jump, 0 <= statex[i = 1:bus.number])
+    statey = @variable(jump, 0 <= statey[i = 1:bus.number])
     residualx = @variable(jump, 0 <= residualx[i = 1:deviceNumber])
     residualy = @variable(jump, 0 <= residualy[i = 1:deviceNumber])
 
-    fix(anglex[bus.layout.slack], bus.voltage.angle[bus.layout.slack]; force = true)
-    fix(angley[bus.layout.slack], 0.0; force = true)
+    fix(statex[bus.layout.slack], bus.voltage.angle[bus.layout.slack]; force = true)
+    fix(statey[bus.layout.slack], 0.0; force = true)
     
     objective = @expression(jump, AffExpr())
     residual = Dict{Int64, JuMP.ConstraintRef}()
     for (i, k) in enumerate(wattmeter.layout.index)
         if device.wattmeter.active.status[i] == 1
             if wattmeter.layout.bus[i]
-                angleJacobian = @expression(jump, AffExpr())
+                angleCoeff = @expression(jump, AffExpr())
                 for j in dc.nodalMatrix.colptr[k]:(dc.nodalMatrix.colptr[k + 1] - 1)
                     col = dc.nodalMatrix.rowval[j]
-                    add_to_expression!(angleJacobian, dc.nodalMatrix.nzval[j] * (anglex[col] - angley[col]))
+                    add_to_expression!(angleCoeff, dc.nodalMatrix.nzval[j] * (statex[col] - statey[col]))
                 end
-                residual[i] = @constraint(jump, angleJacobian + residualy[i] - residualx[i] - wattmeter.active.mean[i] + dc.shiftPower[k] + bus.shunt.conductance[k] == 0.0)
+                residual[i] = @constraint(jump, angleCoeff + residualy[i] - residualx[i] - wattmeter.active.mean[i] + dc.shiftPower[k] + bus.shunt.conductance[k] == 0.0)
             else
                 from = branch.layout.from[k]
                 to = branch.layout.from[k]
@@ -232,8 +250,8 @@ function dcStateEstimation(system::PowerSystem, device::Measurement, (@nospecial
                 else
                     admittance = -dc.admittance[k]
                 end
-                angleJacobian = admittance * (anglex[from] - angley[from] - anglex[to] + angley[to]) 
-                residual[i] = @constraint(jump, angleJacobian + residualy[i] - residualx[i] - wattmeter.active.mean[i] - branch.parameter.shiftAngle[k] * admittance == 0.0)
+                angleCoeff = admittance * (statex[from] - statey[from] - statex[to] + statey[to]) 
+                residual[i] = @constraint(jump, angleCoeff + residualy[i] - residualx[i] - wattmeter.active.mean[i] - branch.parameter.shiftAngle[k] * admittance == 0.0)
             end
             add_to_expression!(objective, residualx[i] + residualy[i])
         else
@@ -247,7 +265,7 @@ function dcStateEstimation(system::PowerSystem, device::Measurement, (@nospecial
             if pmu.angle.status[i] == 1
                 busIndex = pmu.layout.index[i]
                 add_to_expression!(objective, residualx[k] + residualy[k])
-                residual[k] = @constraint(jump, anglex[busIndex] - angley[busIndex] + residualy[k] - residualx[k] - pmu.angle.mean[i] == 0.0)
+                residual[k] = @constraint(jump, statex[busIndex] - statey[busIndex] + residualy[k] - residualx[k] - pmu.angle.mean[i] == 0.0)
             else
                 fix(residualx[k], 0.0; force = true)
                 fix(residualy[k], 0.0; force = true)
@@ -265,10 +283,10 @@ function dcStateEstimation(system::PowerSystem, device::Measurement, (@nospecial
             CartesianReal(Float64[]),
             CartesianReal(Float64[]),
         ),
-        DCStateEstimationMethodLAV(
+        LAVMethod(
             jump,
-            anglex,
-            angley,
+            statex,
+            statey,
             residualx,
             residualy,
             residual,
@@ -307,12 +325,21 @@ analysis = dcStateEstimation(system, device, Ipopt.Optimizer)
 solve!(system, analysis)
 ```
 """
-function solve!(system::PowerSystem, analysis::DCStateEstimationWLS)
+function solve!(system::PowerSystem, analysis::DCStateEstimationWLS{LinearWLS})
     se = analysis.method
     bus = system.bus
 
-    slackRange, elementsRemove = deleteSlackJacobian(analysis, bus.layout.slack)
-    dcStateEstimationSolution(system, analysis, se.factorization)
+    slackRange, elementsRemove = deleteSlackCoefficient(analysis, bus.layout.slack)
+
+    if !se.done
+        se.done = true
+
+        gain = dcGain(analysis, bus.layout.slack)
+        se.factorization = sparseFactorization(gain, se.factorization)
+    end
+    b = transpose(se.coefficient) * se.precision * se.mean
+
+    analysis.voltage.angle = sparseSolution(analysis.voltage.angle, b, se.factorization)
 
     analysis.voltage.angle[bus.layout.slack] = 0.0
     if bus.voltage.angle[bus.layout.slack] != 0.0
@@ -321,56 +348,54 @@ function solve!(system::PowerSystem, analysis::DCStateEstimationWLS)
         end
     end
 
-    restoreSlackJacobian(analysis, slackRange, elementsRemove, bus.layout.slack)
+    restoreSlackCoefficient(analysis, slackRange, elementsRemove, bus.layout.slack)
+end
+
+function solve!(system::PowerSystem, analysis::DCStateEstimationWLS{LinearOrthogonal})
+    se = analysis.method
+    bus = system.bus
+
+    slackRange, elementsRemove = deleteSlackCoefficient(analysis, bus.layout.slack)
+
+    @inbounds for i = 1:se.number
+        se.precision.nzval[i] = sqrt(se.precision.nzval[i])
+    end
+
+    if !se.done
+        se.done = true
+
+        coefficientScale = se.precision * se.coefficient
+        se.factorization = sparseFactorization(coefficientScale, se.factorization)
+    end
+    analysis.voltage.angle = sparseSolution(analysis.voltage.angle, se.precision * se.mean, se.factorization)
+
+    analysis.voltage.angle[bus.layout.slack] = 0.0
+    @inbounds for i = 1:bus.number
+        analysis.voltage.angle[i] += bus.voltage.angle[bus.layout.slack]
+    end
+
+    @inbounds for i = 1:se.number
+        se.precision.nzval[i] ^= 2
+    end
+
+    restoreSlackCoefficient(analysis, slackRange, elementsRemove, bus.layout.slack)
 end
 
 function solve!(system::PowerSystem, analysis::DCStateEstimationLAV)
     se = analysis.method
     
     @inbounds for i = 1:system.bus.number
-        JuMP.set_start_value(se.angley[i]::JuMP.VariableRef, analysis.voltage.angle[i])
+        JuMP.set_start_value(se.statex[i]::JuMP.VariableRef, analysis.voltage.angle[i])
     end
 
     JuMP.optimize!(se.jump)
 
     for i = 1:system.bus.number
-        analysis.voltage.angle[i] = value(se.anglex[i]::JuMP.VariableRef) - value(se.angley[i]::JuMP.VariableRef)
+        analysis.voltage.angle[i] = value(se.statex[i]::JuMP.VariableRef) - value(se.statey[i]::JuMP.VariableRef)
     end
 end
 
-########### DC State Estimation WLS Solution by LU or LDLt Factorization ###########
-function dcStateEstimationSolution(system::PowerSystem, analysis::DCStateEstimationWLS, factorization::LULDLt)
-    se = analysis.method
-    bus = system.bus
-
-    precision = spdiagm(0 => se.weight)
-    if !se.done
-        se.done = true
-
-        gain = dcGain(analysis, bus.layout.slack)
-        se.factorization = sparseFactorization(gain, se.factorization)
-    end
-    b = transpose(se.coefficient) * precision * se.mean
-
-    analysis.voltage.angle = sparseSolution(analysis.voltage.angle, b, se.factorization)
-end
-
-########### DC State Estimation WLS Solution by QR Factorization ###########
-function dcStateEstimationSolution(system::PowerSystem, analysis::DCStateEstimationWLS, factorization::SuiteSparse.SPQR.QRSparse{Float64, Int64})
-    se = analysis.method
-    bus = system.bus
-
-    precision = spdiagm(0 => sqrt.(se.weight))
-    if !se.done
-        se.done = true
-
-        jacobianScale = precision * se.coefficient
-        se.factorization = sparseFactorization(jacobianScale, se.factorization)
-    end
-    analysis.voltage.angle = sparseSolution(analysis.voltage.angle, precision * se.mean, se.factorization)
-end
-
-function deleteSlackJacobian(analysis::DCStateEstimation, slack::Int64)
+function deleteSlackCoefficient(analysis::DCStateEstimation, slack::Int64)
     se = analysis.method
 
     slackRange = se.coefficient.colptr[slack]:(se.coefficient.colptr[slack + 1] - 1)
@@ -385,13 +410,13 @@ end
 function dcGain(analysis::DCStateEstimation, slack::Int64)
     se = analysis.method
 
-    gain = transpose(se.coefficient) * spdiagm(0 => se.weight) * se.coefficient
+    gain = transpose(se.coefficient) * se.precision * se.coefficient
     gain[slack, slack] = 1.0
 
     return gain
 end
 
-function restoreSlackJacobian(analysis::DCStateEstimation, slackRange::UnitRange{Int64}, elementsRemove::Array{Float64,1}, slack::Int64)
+function restoreSlackCoefficient(analysis::DCStateEstimation, slackRange::UnitRange{Int64}, elementsRemove::Array{Float64,1}, slack::Int64)
     se = analysis.method
 
     @inbounds for (k, i) in enumerate(slackRange)
