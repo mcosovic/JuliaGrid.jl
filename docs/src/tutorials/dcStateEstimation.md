@@ -209,7 +209,7 @@ Each row in the matrix corresponds to a specific measurement. The first ``|\math
 ##### Precision Matrix
 JuliaGrid opts not to retain the covariance matrix ``\bm \Sigma`` but rather stores its inverse, the precision or weighting matrix denoted as ``\mathbf W = \bm \Sigma^{-1}``. The order of these values corresponds to the description provided for the coefficient matrix. Users can access these values using the following command:
 ```@repl DCSETutorial
-𝐖 = analysis.method.precison
+𝐖 = analysis.method.precision
 ```
 
 ---
