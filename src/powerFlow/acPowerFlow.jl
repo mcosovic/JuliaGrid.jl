@@ -350,7 +350,7 @@ end
             ),
             pqIndex,
             pvpqIndex,
-            false,
+            -1,
             bx
         )
     )
@@ -749,8 +749,8 @@ function solve!(system::PowerSystem, analysis::FastNewtonRaphson)
     pq = analysis.method.pq
     pvpq = analysis.method.pvpq
 
-    if !analysis.method.done
-        analysis.method.done = true
+    if system.model.ac.model != analysis.method.model
+        analysis.method.model = copy(system.model.ac.model)
         active.factorization = sparseFactorization(active.jacobian, active.factorization)
         reactive.factorization = sparseFactorization(reactive.jacobian, reactive.factorization)
     end

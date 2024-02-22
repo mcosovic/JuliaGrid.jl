@@ -9,23 +9,21 @@ For further information on this topic, please see the [AC State Estimation](@ref
 * [`islandTopological`](@ref islandTopological(::PowerSystem, ::Wattmeter))
 * [`restorationGram!`](@ref restorationGram!(::PowerSystem, ::Measurement, ::Measurement, ::IslandWatt))
 
-###### Optimal PMU Placement
-* [`pmuPlacment`](@ref pmuPlacment)
 
-###### Build PMU State Estimation
+
+###### PMU State Estimation
 * [`pmuStateEstimation`](@ref pmuStateEstimation)
-
-###### Solve PMU State Estimation
 * [`solve!`](@ref solve!(::PowerSystem, ::PMUStateEstimationWLS{LinearWLS}))
 
-###### Build DC State Estimation
+###### DC State Estimation
 * [`dcStateEstimation`](@ref dcStateEstimation)
-
-###### Solve DC State Estimation
 * [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimationWLS{LinearWLS}))
 
 ###### Bad Data Analysis
 * [`residualTest!`](@ref residualTest!)
+
+###### Utility Function
+* [`pmuPlacement`](@ref pmuPlacement)
 
 ---
 
@@ -38,42 +36,31 @@ restorationGram!(::PowerSystem, ::Measurement, ::Measurement, ::IslandWatt)
 
 ---
 
-## Optimal PMU Placement
-```@docs
-pmuPlacment
-```
-
----
-
-## Build PMU State Estimation
+## PMU State Estimation
 ```@docs
 pmuStateEstimation
-```
-
----
-
-## Solve PMU State Estimation
-```@docs
 solve!(::PowerSystem, ::PMUStateEstimationWLS{LinearWLS})
 ```
 
 ---
 
-## Build DC State Estimation
+## DC State Estimation
 ```@docs
 dcStateEstimation
-```
-
----
-
-## Solve DC State Estimation
-```@docs
 solve!(::PowerSystem, ::DCStateEstimationWLS{LinearWLS})
 ```
 
 ---
 
+
 ## Bad Data Analysis
 ```@docs
 residualTest!
+```
+
+---
+
+## Utility Function
+```@docs
+pmuPlacement
 ```

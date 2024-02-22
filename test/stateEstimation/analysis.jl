@@ -194,10 +194,8 @@ system30 = powerSystem(string(pathData, "case30test.m"))
         addWattmeter!(system14, device; bus = key, active = analysis.power.injection.active[value], noise = false)
     end
     for (key, value) in system14.branch.label
-        if system14.branch.layout.status[value] == 1
-            addWattmeter!(system14, device; from = key, active = analysis.power.from.active[value], noise = false)
-            addWattmeter!(system14, device; to = key, active = analysis.power.to.active[value], noise = false) 
-        end
+        addWattmeter!(system14, device; from = key, active = analysis.power.from.active[value], noise = false)
+        addWattmeter!(system14, device; to = key, active = analysis.power.to.active[value], noise = false) 
     end
 
     ####### LU Factorization #######
@@ -278,10 +276,8 @@ system30 = powerSystem(string(pathData, "case30test.m"))
         addWattmeter!(system30, device; bus = key, active = analysis.power.injection.active[value], variance = 1e-6)
     end
     for (key, value) in system30.branch.label
-        if system30.branch.layout.status[value] == 1
-            addWattmeter!(system30, device; from = key, active = analysis.power.from.active[value], variance = 1e-7)
-            addWattmeter!(system30, device; to = key, active = analysis.power.to.active[value], variance = 1e-8) 
-        end
+        addWattmeter!(system30, device; from = key, active = analysis.power.from.active[value], variance = 1e-7)
+        addWattmeter!(system30, device; to = key, active = analysis.power.to.active[value], variance = 1e-8) 
     end
 
     ####### LU Factorization #######
@@ -382,6 +378,8 @@ end
     
     ############### Modified IEEE 14-bus Test Case ################
     dcModel!(system14)
+    updateBranch!(system14; label = 4, status = 0)
+    updateBranch!(system14; label = 15, status = 0)
     analysis = dcPowerFlow(system14)
     solve!(system14, analysis)
     power!(system14, analysis)
@@ -402,13 +400,13 @@ end
     for (key, value) in system14.branch.label
         if value in [4; 15; 19]
             addWattmeter!(system14, deviceAll; from = key, active = analysis.power.from.active[value], noise = false, status = 0)
-        elseif system14.branch.layout.status[value] == 1
+        else
             addWattmeter!(system14, deviceAll; from = key, active = analysis.power.from.active[value], noise = false)
             addWattmeter!(system14, devicePart; from = key, active = analysis.power.from.active[value], noise = false)
         end
         if value in [4; 16; 20]
             addWattmeter!(system14, deviceAll; to = key, active = analysis.power.to.active[value], noise = false, status = 0)
-        elseif system14.branch.layout.status[value] == 1
+        else
             addWattmeter!(system14, deviceAll; to = key, active = analysis.power.to.active[value], noise = false)
             addWattmeter!(system14, devicePart; to = key, active = analysis.power.to.active[value], noise = false)
         end
@@ -445,4 +443,44 @@ end
     analysisOrt = dcStateEstimation(system14, devicePart, Orthogonal)
     solve!(system14, analysisOrt)
     @test analysisAll.voltage.angle ≈ analysisOrt.voltage.angle
+
+    analysisLAV = dcStateEstimation(system14, devicePart, Ipopt.Optimizer)
+    JuMP.set_silent(analysisLAV.method.jump)
+    solve!(system14, analysisLAV)
+    @test analysisAll.voltage.angle ≈ analysisLAV.voltage.angle
+
+    ############### Modified IEEE 30-bus Test Case ################
+    dcModel!(system30)
+    updateBranch!(system30; label = 2, status = 0)
+    updateBranch!(system30; label = 21, status = 0)
+    analysis = dcPowerFlow(system30)
+    solve!(system30, analysis)
+    power!(system30, analysis)
+
+    ################ Measurements ################
+    device = measurement()
+    for (key, value) in system30.bus.label
+        addWattmeter!(system30, device; bus = key, active = analysis.power.injection.active[value], noise = false)
+    end
+    for (key, value) in system30.branch.label
+        addWattmeter!(system30, device; from = key, active = analysis.power.from.active[value], noise = false)
+        addWattmeter!(system30, device; to = key, active = analysis.power.to.active[value], noise = false)
+    end
+    for (key, value) in system30.bus.label
+        addPmu!(system30, device; bus = key, magnitude = 1.0, angle = analysis.voltage.angle[value], noise = false)
+    end
+    status!(system30, device; inservice = 100)
+
+    analysisLU = dcStateEstimation(system30, device)
+    solve!(system30, analysisLU)
+    @test analysis.voltage.angle ≈ analysisLU.voltage.angle
+
+    analysisOrt = dcStateEstimation(system30, device, Orthogonal)
+    solve!(system30, analysisOrt)
+    @test analysis.voltage.angle ≈ analysisOrt.voltage.angle
+
+    analysisLAV = dcStateEstimation(system30, device, Ipopt.Optimizer)
+    JuMP.set_silent(analysisLAV.method.jump)
+    solve!(system30, analysisLAV)
+    @test analysis.voltage.angle ≈ analysisLAV.voltage.angle
 end

@@ -106,7 +106,6 @@ function addGenerator!(system::PowerSystem;
         push!(system.bus.supply.generator[busIndex], generator.number)
         system.bus.supply.active[busIndex] += generator.output.active[end]
         system.bus.supply.reactive[busIndex] += generator.output.reactive[end]
-        generator.layout.inservice += 1
     end
 
     push!(generator.capability.minActive, topu(minActive, default.minActive, prefix.activePower, basePowerInv))
@@ -323,7 +322,6 @@ function updateGenerator!(system::PowerSystem;
             bus.supply.reactive[indexBus] -= generator.output.reactive[index]
         end
         if status == 0
-            generator.layout.inservice -= 1
             for (k, i) in enumerate(bus.supply.generator[indexBus])
                 if i == index
                     deleteat!(bus.supply.generator[indexBus], k)
@@ -348,7 +346,6 @@ function updateGenerator!(system::PowerSystem;
             bus.supply.reactive[indexBus] += generator.output.reactive[index]
         end
         if generator.layout.status[index] == 0
-            generator.layout.inservice += 1
             position = searchsortedfirst(bus.supply.generator[indexBus], index)
             insert!(bus.supply.generator[indexBus], position, index)
         end

@@ -54,10 +54,12 @@ end
 ```
 """
 function residualTest!(system::PowerSystem, device::Measurement, analysis::DCStateEstimationWLS; threshold = 3.0)
+    errorVoltage(analysis.voltage.angle)
+
     bus = system.bus
     se = analysis.method
     bad = analysis.bad
-
+    
     slackRange, elementsRemove = deleteSlackCoefficient(analysis, bus.layout.slack)
     gain = dcGain(analysis, bus.layout.slack)
 
@@ -117,22 +119,23 @@ function residualTest!(system::PowerSystem, device::Measurement, analysis::DCSta
     
     bad.detect = false
     if bad.maxNormalizedResidual > threshold
+        se.run = true
         bad.detect = true
 
         colIndecies = findall(!iszero, se.coefficient[bad.index, :])
         for col in colIndecies
             se.coefficient[bad.index, col] = 0.0
         end
-        se.mean[bad.index] = 0.0
-        se.precision.nzval[bad.index] = 0.0 
-        se.done = false     
+        se.mean[bad.index] = 0.0 
     end
 
     bad.label = ""
     if bad.index <= device.wattmeter.number
-        (bad.label,_),_ = iterate(device.wattmeter.label, bad.index)
+        (bad.label, index),_ = iterate(device.wattmeter.label, bad.index)
+        device.wattmeter.active.status[index] = 0
     else
-        (bad.label,_),_ = iterate(device.pmu.label, bad.index - device.wattmeter.number)
+        (bad.label,index),_ = iterate(device.pmu.label, bad.index - device.wattmeter.number)
+        device.pmu.angle.status[index] = 0
     end
 end
 

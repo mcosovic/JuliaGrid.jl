@@ -4,64 +4,49 @@ For further information on this topic, please see the [AC Power Flow](@ref ACPow
 
 ---
 
-###### Build AC Power Flow
+###### AC Power Flow
 * [`newtonRaphson`](@ref newtonRaphson)
 * [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX)
 * [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB)
 * [`gaussSeidel`](@ref gaussSeidel)
-
-###### Solve AC Power Flow
 * [`mismatch!`](@ref mismatch!(::PowerSystem, ::NewtonRaphson))
 * [`solve!`](@ref solve!(::PowerSystem, ::NewtonRaphson))
 
-###### Additional AC Functions
+
+###### DC Power Flow
+* [`dcPowerFlow`](@ref dcPowerFlow)
+* [`solve!`](@ref solve!(::PowerSystem, ::DCPowerFlow))
+
+###### Utility Functions
 * [`reactiveLimit!`](@ref reactiveLimit!)
 * [`adjustAngle!`](@ref adjustAngle!) 
 * [`startingVoltage!`](@ref startingVoltage!) 
 
-###### Build DC Power Flow
-* [`dcPowerFlow`](@ref dcPowerFlow)
-
-###### Solve DC Power Flow
-* [`solve!`](@ref solve!(::PowerSystem, ::DCPowerFlow))
- 
 ---
 
-## Build AC Power Flow
+## AC Power Flow
 ```@docs
 newtonRaphson
 fastNewtonRaphsonBX
 fastNewtonRaphsonXB
 gaussSeidel
-```
-
----
-
-## Solve AC Power Flow
-```@docs
 mismatch!(::PowerSystem, ::NewtonRaphson)
 solve!(::PowerSystem, ::NewtonRaphson)
 ```
 
 ---
 
-## Additional AC Functions
+## DC Power Flow
+```@docs
+dcPowerFlow
+solve!(::PowerSystem, ::DCPowerFlow)
+```
+
+---
+
+## Utility Functions
 ```@docs
 reactiveLimit!
 adjustAngle!
 startingVoltage!
-```
-
----
-
-## Build DC Power Flow
-```@docs
-dcPowerFlow
-```
-
----
-
-## Solve DC Power Flow
-```@docs
-solve!(::PowerSystem, ::DCPowerFlow)
 ```

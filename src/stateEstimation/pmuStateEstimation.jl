@@ -99,7 +99,9 @@ function pmuStateEstimation(system::PowerSystem, device::Measurement, factorizat
             mean,
             get(method, factorization, lu)(sparse(Matrix(1.0I, 1, 1))),
             2 * device.pmu.number,
-            false
+            -1,
+            true,
+            correlated
         ),
         badData
     )
@@ -117,6 +119,8 @@ function pmuStateEstimation(system::PowerSystem, device::Measurement, method::Ty
             mean,
             qr(sparse(Matrix(1.0I, 1, 1))),
             2 * device.pmu.number,
+            -1,
+            true,
             false
         ),
         badData
@@ -409,9 +413,8 @@ function solve!(system::PowerSystem, analysis::PMUStateEstimationWLS{LinearWLS})
     se = analysis.method
     bus = system.bus
 
-    if !se.done
-        se.done = true
-
+    if se.run || ac.model != se.model
+        saveRelease(system, analysis)
         gain = transpose(se.coefficient) * se.precision * se.coefficient
         se.factorization = sparseFactorization(gain, se.factorization)
     end
@@ -440,9 +443,8 @@ function solve!(system::PowerSystem, analysis::PMUStateEstimationWLS{LinearOrtho
         se.precision.nzval[i] = sqrt(se.precision.nzval[i])
     end
 
-    if !se.done
-        se.done = true
-
+    if se.run || ac.model != se.model
+        saveRelease(system, analysis)
         coefficientScale = se.precision * se.coefficient
         se.factorization = sparseFactorization(coefficientScale, se.factorization)
     end
@@ -487,7 +489,7 @@ function solve!(system::PowerSystem, analysis::PMUStateEstimationLAV)
 end
 
 """
-    pmuPlacment(system::PowerSystem, optimizer; bridge)
+    pmuPlacement(system::PowerSystem, optimizer; bridge)
 
 The function determines the optimal placement of PMUs through integer linear programming. 
 Specifically, it identifies the minimum set of PMU locations required for effective power 
@@ -535,7 +537,7 @@ If = analysis.current.from.magnitude
 It = analysis.current.to.magnitude
 ψt = analysis.current.to.angle
 
-placement = pmuPlacment(system, GLPK.Optimizer)
+placement = pmuPlacement(system, GLPK.Optimizer)
 device = measurement()
 
 @pmu(label = "PMU ?: !")
@@ -550,7 +552,7 @@ for (label, i) in placement.to
 end
 ```
 """
-function pmuPlacment(system::PowerSystem, (@nospecialize optimizerFactory);
+function pmuPlacement(system::PowerSystem, (@nospecialize optimizerFactory);
     bridge::Bool = true)
 
     placementPmu = PlacementPMU(
@@ -613,4 +615,9 @@ function invCovarianceBlock!(precision::SparseMatrixCSC{Float64,Int64}, variance
     precision[index + 1, index] = precision[index, index + 1]
     precision[index, index] = (L1inv - L2 * precision[index, index + 1]) * L1inv
     precision[index + 1, index + 1] = L3inv2
+end
+
+function saveRelease(system::PowerSystem, analysis::PMUStateEstimation)
+    analysis.method.model = copy(system.model.ac.model)
+    analysis.method.run = false
 end

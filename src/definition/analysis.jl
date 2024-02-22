@@ -99,7 +99,7 @@ mutable struct FastNewtonRaphsonMethod
     reactive::FastNewtonRaphsonModel
     pq::Array{Int64,1}
     pvpq::Array{Int64,1}
-    done::Bool
+    model::Int64
     const bx::Bool
 end
 
@@ -127,7 +127,7 @@ end
 ########### DC Power Flow ###########
 mutable struct DCPowerFlowMethod
     factorization::LULDLtQR
-    done::Bool
+    model::Int64
 end
 
 struct DCPowerFlow <: DC
@@ -236,7 +236,9 @@ mutable struct LinearWLS
     mean::Array{Float64,1}
     factorization::LULDLtQR
     number::Int64
-    done::Bool
+    model::Int64
+    run::Bool
+    correlated::Bool
 end
 
 mutable struct LinearOrthogonal
@@ -245,7 +247,9 @@ mutable struct LinearOrthogonal
     mean::Array{Float64,1}
     factorization::SuiteSparse.SPQR.QRSparse{Float64, Int64}
     number::Int64
-    done::Bool
+    model::Int64
+    run::Bool
+    correlated::Bool
 end
 
 struct DCStateEstimationWLS{T <: Union{LinearWLS, LinearOrthogonal}} <: DCStateEstimation

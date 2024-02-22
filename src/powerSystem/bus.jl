@@ -111,12 +111,12 @@ function addBus!(system::PowerSystem;
     push!(bus.supply.reactive, 0.0)
 
     if !isempty(system.model.ac.nodalMatrix)
-        nilModel!(system, :acModelEmpty)
+        acModelEmpty!(system.model.ac)
         @info("The current AC model field has been completely erased.")
     end
 
     if !isempty(system.model.dc.nodalMatrix)
-        nilModel!(system, :dcModelEmpty)
+        dcModelEmpty!(system.model.dc)
         @info("The current DC model field has been completely erased.")
     end
 end
@@ -212,6 +212,8 @@ function updateBus!(system::PowerSystem;
 
     if isset(conductance) || isset(susceptance)
         if !isempty(ac.nodalMatrix)
+            ac.model += 1
+
             admittance = complex(bus.shunt.conductance[index], bus.shunt.susceptance[index])
             ac.nodalMatrix[index, index] -= admittance
             ac.nodalMatrixTranspose[index, index] -= admittance
@@ -273,7 +275,7 @@ function updateBus!(system::PowerSystem, analysis::DCPowerFlow;
     end
 
     updateBus!(system; label, type, active, reactive, conductance, susceptance,
-        magnitude, angle, minMagnitude, maxMagnitude, base, area, lossZone)
+    magnitude, angle, minMagnitude, maxMagnitude, base, area, lossZone)
 end
 
 function updateBus!(system::PowerSystem, analysis::NewtonRaphson;
@@ -292,7 +294,7 @@ function updateBus!(system::PowerSystem, analysis::NewtonRaphson;
     end
 
     updateBus!(system; label, type, active, reactive, conductance, susceptance,
-        magnitude, angle, minMagnitude, maxMagnitude, base, area, lossZone)
+    magnitude, angle, minMagnitude, maxMagnitude, base, area, lossZone)
 
     if isset(magnitude) && bus.layout.type[index] == 1
         analysis.voltage.magnitude[index] = bus.voltage.magnitude[index]
@@ -323,7 +325,7 @@ function updateBus!(system::PowerSystem, analysis::FastNewtonRaphson;
     end
 
     updateBus!(system; label, type, active, reactive, conductance, susceptance,
-        magnitude, angle, minMagnitude, maxMagnitude, base, area, lossZone)
+    magnitude, angle, minMagnitude, maxMagnitude, base, area, lossZone)
 
     if isset(magnitude) && bus.layout.type[index] == 1
         analysis.voltage.magnitude[index] = bus.voltage.magnitude[index]
@@ -333,7 +335,6 @@ function updateBus!(system::PowerSystem, analysis::FastNewtonRaphson;
     end
 
     if isset(susceptance) && bus.layout.type[index] == 1 && oldSusceptance != bus.shunt.susceptance[index]
-        method.done = false
         method.reactive.jacobian[method.pq[index], method.pq[index]] -= oldSusceptance
         method.reactive.jacobian[method.pq[index], method.pq[index]] += bus.shunt.susceptance[index]
     end
@@ -355,7 +356,7 @@ function updateBus!(system::PowerSystem, analysis::GaussSeidel;
     end
 
     updateBus!(system; label, type, active, reactive, conductance, susceptance,
-        magnitude, angle, minMagnitude, maxMagnitude, base, area, lossZone)
+    magnitude, angle, minMagnitude, maxMagnitude, base, area, lossZone)
 
     if isset(magnitude) || isset(angle)
         if isset(magnitude) && bus.layout.type[index] == 1
@@ -381,7 +382,7 @@ function updateBus!(system::PowerSystem, analysis::DCOptimalPowerFlow;
     typeOld = bus.layout.type[index]
 
     updateBus!(system; label, type, active, reactive, conductance, susceptance,
-        magnitude, angle, minMagnitude, maxMagnitude, base, area, lossZone)
+    magnitude, angle, minMagnitude, maxMagnitude, base, area, lossZone)
 
     if isset(conductance) || isset(active)
         updateBalance(system, analysis, index; rhs = true)
@@ -417,7 +418,7 @@ function updateBus!(system::PowerSystem, analysis::ACOptimalPowerFlow;
     typeOld = bus.layout.type[index]
 
     updateBus!(system; label, type, active, reactive, conductance, susceptance,
-        magnitude, angle, minMagnitude, maxMagnitude, base, area, lossZone)
+    magnitude, angle, minMagnitude, maxMagnitude, base, area, lossZone)
 
     activeUpdate = isset(conductance) || isset(susceptance) || isset(active)
     reactiveupdate = isset(conductance) || isset(susceptance) || isset(reactive)

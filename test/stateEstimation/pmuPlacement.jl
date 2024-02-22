@@ -6,7 +6,7 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     @default(unit)
 
     ################ Modified IEEE 14-bus Test Case ################
-    placement = pmuPlacment(system14, GLPK.Optimizer)
+    placement = pmuPlacement(system14, GLPK.Optimizer)
     @test collect(keys(placement.bus)) == ["1"; "4"; "16"; "7"; "9"]
     @test collect(keys(placement.from)) == ["1"; "2"; "7"; "8"; "9"; "11"; "12"; "13"; "14"; "15"; "16"; "17"]
     @test collect(keys(placement.to)) == ["4"; "6"; "10"; "8"; "9"; "15"]
@@ -29,7 +29,7 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     end
     current!(system14, analysis)
 
-    placement = pmuPlacment(system14, GLPK.Optimizer)
+    placement = pmuPlacement(system14, GLPK.Optimizer)
     device = measurement()
     for (key, value) in placement.bus
         addPmu!(system14, device; bus = key, magnitude = analysis.voltage.magnitude[value], angle = analysis.voltage.angle[value], noise = false)
@@ -59,7 +59,7 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     end
     current!(system30, analysis)
 
-    placement = pmuPlacment(system30, GLPK.Optimizer)
+    placement = pmuPlacement(system30, GLPK.Optimizer)
     device = measurement()
     for (key, value) in placement.bus
         addPmu!(system30, device; bus = key, magnitude = analysis.voltage.magnitude[value], angle = analysis.voltage.angle[value], noise = false)

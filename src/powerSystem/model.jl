@@ -59,6 +59,7 @@ end
 @inline function acNodalUpdate!(system::PowerSystem, index::Int64)
     ac = system.model.ac
     layout = system.branch.layout
+    ac.model += 1
 
     from = layout.from[index]
     to = layout.to[index]
@@ -138,18 +139,14 @@ function dcModel!(system::PowerSystem)
 end
 
 ######### Update DC Nodal Matrix ##########
-function dcNodalShiftUpdate!(system, index::Int64)
+function dcNodalUpdate!(system, index::Int64)
     dc = system.model.dc
     layout = system.branch.layout
-    parameter = system.branch.parameter
+    dc.model += 1
 
     from = layout.from[index]
     to = layout.to[index]
     admittance = dc.admittance[index]
-
-    shift = parameter.shiftAngle[index] * admittance
-    dc.shiftPower[from] -= shift
-    dc.shiftPower[to] += shift
 
     dc.nodalMatrix[from, from] += admittance
     dc.nodalMatrix[to, to] += admittance
@@ -157,68 +154,65 @@ function dcNodalShiftUpdate!(system, index::Int64)
     dc.nodalMatrix[to, from] -= admittance
 end
 
-######### Update DC Parameters ##########
-@inline function dcParameterUpdate!(system::PowerSystem, index::Int64)
+######### Update DC Shift Power ##########
+function dcShiftUpdate!(system, index::Int64)
+    dc = system.model.dc
+    layout = system.branch.layout
+
+    shift = system.branch.parameter.shiftAngle[index] * dc.admittance[index]
+    dc.shiftPower[layout.from[index]] -= shift
+    dc.shiftPower[layout.to[index]] += shift
+end
+
+######### Update DC Admittance ##########
+@inline function dcAdmittanceUpdate!(system::PowerSystem, status::Union{Int8, Int64}, index::Int64)
     dc = system.model.dc
     parameter = system.branch.parameter
 
-    dc.admittance[index] = 1 / (parameter.turnsRatio[index] * parameter.reactance[index])
+    dc.admittance[index] = status / (parameter.turnsRatio[index] * parameter.reactance[index])
 end
 
 ######### Expelling Elements from the AC or DC Model ##########
-function nilModel!(system::PowerSystem, flag::Symbol; index::Int64 = 0)
-    dc = system.model.dc
-    ac = system.model.ac
+function acPushZeros!(ac::ACModel)
+    push!(ac.admittance, 0.0 + im * 0.0)
+    push!(ac.nodalToTo, 0.0 + im * 0.0)
+    push!(ac.nodalFromFrom, 0.0 + im * 0.0)
+    push!(ac.nodalFromTo, 0.0 + im * 0.0)
+    push!(ac.nodalToFrom, 0.0 + im * 0.0)
+end
 
-    if flag == :dcModelEmpty
-        dc.nodalMatrix = spzeros(0, 0)
-        dc.admittance =  Array{Float64,1}(undef, 0)
-        dc.shiftPower = Array{Float64,1}(undef, 0)
-    end
+function acSubtractAdmittances!(ac::ACModel, index::Int64)
+    ac.nodalFromFrom[index] = -ac.nodalFromFrom[index]
+    ac.nodalFromTo[index] = -ac.nodalFromTo[index]
+    ac.nodalToTo[index] = -ac.nodalToTo[index]
+    ac.nodalToFrom[index] = -ac.nodalToFrom[index]
+    ac.admittance[index] = -ac.admittance[index]
+end
 
-    if flag == :acModelEmpty
-        ac.nodalMatrix = spzeros(0, 0)
-        ac.nodalMatrixTranspose = spzeros(0, 0)
-        ac.nodalToTo =  Array{ComplexF64,1}(undef, 0)
-        ac.nodalFromFrom = Array{ComplexF64,1}(undef, 0)
-        ac.nodalFromTo = Array{ComplexF64,1}(undef, 0)
-        ac.nodalToFrom = Array{ComplexF64,1}(undef, 0)
-        ac.admittance = Array{ComplexF64,1}(undef, 0)
-    end
+function acSetZeros!(ac::ACModel, index::Int64)
+    ac.nodalFromFrom[index] = 0.0 + im * 0.0
+    ac.nodalFromTo[index] = 0.0 + im * 0.0
+    ac.nodalToTo[index] = 0.0 + im * 0.0
+    ac.nodalToFrom[index] = 0.0 + im * 0.0
+    ac.admittance[index] = 0.0 + im * 0.0
+end
 
-    if flag == :dcModelZeros
-        dc.admittance[index] = 0.0
-    end
+function acModelEmpty!(ac::ACModel)
+    ac.model += 1
 
-    if flag == :acModelZeros
-        ac.nodalFromFrom[index] = 0.0 + im * 0.0
-        ac.nodalFromTo[index] = 0.0 + im * 0.0
-        ac.nodalToTo[index] = 0.0 + im * 0.0
-        ac.nodalToFrom[index] = 0.0 + im * 0.0
-        ac.admittance[index] = 0.0 + im * 0.0
-    end
+    ac.nodalMatrix = spzeros(0, 0)
+    ac.nodalMatrixTranspose = spzeros(0, 0)
+    ac.nodalToTo =  Array{ComplexF64,1}(undef, 0)
+    ac.nodalFromFrom = Array{ComplexF64,1}(undef, 0)
+    ac.nodalFromTo = Array{ComplexF64,1}(undef, 0)
+    ac.nodalToFrom = Array{ComplexF64,1}(undef, 0)
+    ac.admittance = Array{ComplexF64,1}(undef, 0)
+end
 
-    if flag == :dcModelPushZeros
-        push!(dc.admittance, 0.0)
-    end
+function dcModelEmpty!(dc::DCModel)
+    dc.model += 1
 
-    if flag == :acModelPushZeros
-        push!(ac.admittance, 0.0 + im * 0.0)
-        push!(ac.nodalToTo, 0.0 + im * 0.0)
-        push!(ac.nodalFromFrom, 0.0 + im * 0.0)
-        push!(ac.nodalFromTo, 0.0 + im * 0.0)
-        push!(ac.nodalToFrom, 0.0 + im * 0.0)
-    end
-
-    if flag == :dcModelDeprive
-        dc.admittance[index] = -dc.admittance[index]
-    end
-
-    if flag == :acModelDeprive
-        ac.nodalFromFrom[index] = -ac.nodalFromFrom[index]
-        ac.nodalFromTo[index] = -ac.nodalFromTo[index]
-        ac.nodalToTo[index] = -ac.nodalToTo[index]
-        ac.nodalToFrom[index] = -ac.nodalToFrom[index]
-        ac.admittance[index] = -ac.admittance[index]
-    end
+    dc.nodalMatrix = spzeros(0, 0)
+    dc.admittance =  Array{Float64,1}(undef, 0)
+    dc.shiftPower = Array{Float64,1}(undef, 0)
 end

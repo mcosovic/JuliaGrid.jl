@@ -68,7 +68,7 @@ include("stateEstimation/pmuStateEstimation.jl")
 include("stateEstimation/badData.jl")
 include("stateEstimation/observability.jl")
 export dcStateEstimation, residualTest!
-export pmuStateEstimation, pmuPlacment
+export pmuStateEstimation, pmuPlacement
 export islandTopologicalFlow, islandTopological, restorationGram!
 
 ########## Postprocessing ##########

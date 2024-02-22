@@ -338,7 +338,7 @@ In this step, we employ the largest normalized residual test, guided by the anal
 
 The normalized residuals for all measurements are computed as follows:
 ```math
-    c_{i} = \cfrac{|r_i|}{\sqrt{C_{ii}}} = \cfrac{|r_i|}{\sqrt{S_{ii}\Sigma_{ii}}}, \;\;\; i \in \mathcal{M},
+    \bar{r}_{i} = \cfrac{|r_i|}{\sqrt{C_{ii}}} = \cfrac{|r_i|}{\sqrt{S_{ii}\Sigma_{ii}}}, \;\;\; i \in \mathcal{M},
 ```
 
 In this equation, we denote the diagonal entries of the residual covariance matrix ``\mathbf C \in \mathbb{R}^{k \times k}`` as ``C_{ii} = S_{ii}\Sigma_{ii}``, where ``S_{ii}`` is the diagonal entry of the residual sensitivity matrix ``\mathbf S`` representing the sensitivity of the measurement residuals to the measurement errors. For this specific configuration, the relationship is expressed as:
@@ -349,7 +349,7 @@ It is important to note that only the diagonal entries of ``\mathbf C`` are requ
 
 The subsequent step involves selecting the largest normalized residual, and the ``j``-th measurement is then suspected as bad data and potentially removed from the measurement set ``\mathcal{M}``:  
 ```math
-    c_j = \text{max} \{c_i, i \in \mathcal{M} \},
+    \bar{r}_{j} = \text{max} \{\bar{r}_{i}, i \in \mathcal{M} \},
 ```
 
 Users can access this information using the variable:
@@ -357,9 +357,9 @@ Users can access this information using the variable:
 analysis.bad.maxNormalizedResidual
 ```
 
-If the largest normalized residual, denoted as ``c_j``, satisfies the inequality:
+If the largest normalized residual, denoted as ``\bar{r}_{j}``, satisfies the inequality:
 ```math
-    c_{j} \ge \epsilon,
+    \bar{r}_{j} \ge \epsilon,
 ```
 the corresponding measurement is identified as bad data and subsequently removed. In this example, the bad data identification `threshold` is set to ``\epsilon = 4``. Users can verify the satisfaction of this inequality by inspecting the variable:
 ```@repl DCSETutorial
@@ -408,19 +408,19 @@ It can be demonstrated that the problem can be expressed as a linear programming
 Subsequently, the LAV state estimator is derived as the solution to the optimization problem:
 ```math
   \begin{aligned}
-    \text{minimize}& \;\;\; \mathbf a^T |\mathbf r(\bm {\Theta})|\\
-    \text{subject\;to}& \;\;\; \mathbf{z} - \mathbf{H}\bm {\Theta} =\mathbf r(\mathbf x).
+    \text{minimize}& \;\;\; \mathbf a^T |\mathbf r|\\
+    \text{subject\;to}& \;\;\; \mathbf{z} - \mathbf{H}\bm {\Theta} - \mathbf{c} =\mathbf r.
   \end{aligned}
 ```
-Here, ``\mathbf a \in \mathbb {R}^{k}`` is the vector with all entries equal to one, and ``\mathbf r (\bm {\Theta})`` represents the vector of measurement residuals. Additionally, we introduce ``\bm \eta``:
+Here, ``\mathbf a \in \mathbb {R}^{k}`` is the vector with all entries equal to one, and ``\mathbf r`` represents the vector of measurement residuals. Let ``\bm \eta`` be defined in a manner that ensures:
 ```math
-  |\mathbf r(\bm {\Theta})| \preceq \bm \eta,
+  |\mathbf r| \preceq \bm \eta,
 ```
 and replace the above inequality with two equalities using the introduction of two non-negative slack variables ``\mathbf q \in \mathbb {R}_{\ge 0}^{k}`` and ``\mathbf w \in \mathbb {R}_{\ge 0}^{k}``:
 ```math
   \begin{aligned}
-    \mathbf r(\bm {\Theta}) - \mathbf q &= -\bm \eta \\
-    \mathbf r(\bm {\Theta}) + \mathbf w &= \bm \eta.
+    \mathbf r - \mathbf q &= -\bm \eta \\
+    \mathbf r + \mathbf w &= \bm \eta.
   \end{aligned}
 ```
 
@@ -431,20 +431,20 @@ Let us now define four additional non-negative variables:
 ```
 where:
 ```math
-    \bm {\Theta} = \bm {\Theta}_x - \bm {\Theta}_y; \;\;\; \mathbf r(\bm {\Theta}) = \mathbf {r}_x - \mathbf {r}_y\\
+    \bm {\Theta} = \bm {\Theta}_x - \bm {\Theta}_y; \;\;\; \mathbf r = \mathbf {r}_x - \mathbf {r}_y\\
     \mathbf {r}_x = \cfrac{1}{2} \mathbf q; \;\;\;  \mathbf {r}_y = \cfrac{1}{2} \mathbf w.
 ```
 Then, the above two equalities become:
 ```math
   \begin{aligned}
-    \mathbf r(\bm {\Theta}) - 2\mathbf {r}_x &= -2\bm \eta \\
-    \mathbf r(\bm {\Theta}) + 2 \mathbf {r}_y &= 2\bm \eta,
+    \mathbf r - 2\mathbf {r}_x &= -2\bm \eta \\
+    \mathbf r + 2 \mathbf {r}_y &= 2\bm \eta,
   \end{aligned}
 ```
 that is:
 ```math
   \begin{aligned}
-    \mathbf {r}_x + \mathbf {r}_y = \bm \eta; \;\;\; \mathbf r(\bm {\Theta}) = \mathbf {r}_x - \mathbf {r}_y.
+    \mathbf {r}_x + \mathbf {r}_y = \bm \eta; \;\;\; \mathbf r = \mathbf {r}_x - \mathbf {r}_y.
   \end{aligned}
 ```
 
@@ -452,7 +452,7 @@ Hence, the optimization problem can be written:
 ```math
   \begin{aligned}
     \text{minimize}& \;\;\; \mathbf a^T (\mathbf {r}_x + \mathbf {r}_y)\\
-    \text{subject\;to}& \;\;\; \mathbf{H}(\bm {\Theta}_x - \bm {\Theta}_y) + \mathbf {r}_x - \mathbf {r}_y = \mathbf{z}   \\
+    \text{subject\;to}& \;\;\; \mathbf{H}(\bm {\Theta}_x - \bm {\Theta}_y) + \mathbf {r}_x - \mathbf {r}_y = \mathbf{z} - \mathbf{c}   \\
                        & \;\;\; \bm {\Theta}_x \succeq \mathbf 0, \; \bm {\Theta}_y \succeq \mathbf 0 \\
                        & \;\;\; \mathbf {r}_x \succeq \mathbf 0, \; \mathbf {r}_y \succeq \mathbf 0.
   \end{aligned}

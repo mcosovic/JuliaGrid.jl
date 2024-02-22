@@ -68,7 +68,6 @@ mutable struct BranchLayout
     from::Array{Int64,1}
     to::Array{Int64,1}
     status::Array{Int8,1}
-    inservice::Int64
     label::Int64
 end
 
@@ -126,7 +125,6 @@ mutable struct GeneratorLayout
     bus::Array{Int64,1}
     area::Array{Float64,1}
     status::Array{Int8,1}
-    inservice::Int64
     label::Int64
 end
 
@@ -164,6 +162,7 @@ mutable struct DCModel
     nodalMatrix::SparseMatrixCSC{Float64,Int64}
     admittance::Array{Float64,1}
     shiftPower::Array{Float64,1}
+    model::Int64
 end
 
 ########### AC Model ###########
@@ -175,6 +174,7 @@ mutable struct ACModel
     nodalToTo::Array{ComplexF64,1}
     nodalToFrom::Array{ComplexF64,1}
     admittance::Array{ComplexF64,1}
+    model::Int64
 end
 
 ########### Model ###########

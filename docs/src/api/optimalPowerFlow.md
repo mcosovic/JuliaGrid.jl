@@ -4,51 +4,36 @@ For further information on this topic, please see the [AC Optimal Power Flow](@r
 
 ---
 
-###### Build AC Optimal Power Flow
+###### AC Optimal Power Flow
 * [`acOptimalPowerFlow`](@ref acOptimalPowerFlow)
-
-###### Solve AC Optimal Power Flow
 * [`solve!`](@ref solve!(::PowerSystem, ::ACOptimalPowerFlow))
 
-###### Build DC Optimal Power Flow
+###### DC Optimal Power Flow
 * [`dcOptimalPowerFlow`](@ref dcOptimalPowerFlow)
-
-###### Solve DC Optimal Power Flow
 * [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow))
 
-###### Additional Function
+###### Utility Function
 * [`startingPrimal!`](@ref startingPrimal!(::PowerSystem, ::ACOptimalPowerFlow)) 
+
 ---
 
-## Build AC Optimal Power Flow
+## AC Optimal Power Flow
 ```@docs
 acOptimalPowerFlow
-```
-
----
-
-## Solve AC Optimal Power Flow
-```@docs
 solve!(::PowerSystem, ::ACOptimalPowerFlow)
 ```
 
 ---
 
-## Build DC Optimal Power Flow
+## DC Optimal Power Flow
 ```@docs
 dcOptimalPowerFlow
-```
-
----
-
-## Solve DC Optimal Power Flow
-```@docs
 solve!(::PowerSystem, ::DCOptimalPowerFlow)
 ```
 
 ---
 
-## Additional Function
+## Utility Function
 ```@docs
 startingPrimal!(::PowerSystem, ::ACOptimalPowerFlow)
 ```

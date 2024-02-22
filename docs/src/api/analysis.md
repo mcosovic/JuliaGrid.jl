@@ -6,8 +6,6 @@ In the following section, we have provided a list of functions that can be utili
 
 ###### AC Power Analysis
 * [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow))
-
-###### AC Power Breakdown Analysis
 * [`injectionPower`](@ref injectionPower(::PowerSystem, ::AC))
 * [`supplyPower`](@ref supplyPower(::PowerSystem, ::ACPowerFlow))
 * [`shuntPower`](@ref shuntPower(::PowerSystem, ::AC))
@@ -17,10 +15,9 @@ In the following section, we have provided a list of functions that can be utili
 * [`chargingPower`](@ref chargingPower(::PowerSystem, ::AC))
 * [`generatorPower`](@ref generatorPower(::PowerSystem, ::ACPowerFlow))
 
+
 ###### AC Current Analysis
 * [`current!`](@ref current!(::PowerSystem, ::AC))
-
-###### AC Current Breakdown Analysis
 * [`injectionCurrent`](@ref injectionCurrent(::PowerSystem, ::AC))
 * [`fromCurrent`](@ref fromCurrent(::PowerSystem, ::AC))
 * [`toCurrent`](@ref toCurrent(::PowerSystem, ::AC))
@@ -28,8 +25,6 @@ In the following section, we have provided a list of functions that can be utili
 
 ###### DC Power Analysis
 * [`power!`](@ref power!(::PowerSystem, ::DCPowerFlow))
-
-###### DC Power Breakdown Analysis
 * [`injectionPower`](@ref injectionPower(::PowerSystem, ::DCPowerFlow))
 * [`supplyPower`](@ref supplyPower(::PowerSystem, ::DCPowerFlow))
 * [`fromPower`](@ref fromPower(::PowerSystem, ::DC))
@@ -42,12 +37,6 @@ In the following section, we have provided a list of functions that can be utili
 ## [AC Power Analysis](@id ACPowerAnalysisAPI)
 ```@docs
 power!(::PowerSystem, ::ACPowerFlow)
-```
-
----
-
-## [AC Power Breakdown Analysis](@id ACPowerBreakdownAnalysisAPI)
-```@docs
 injectionPower(::PowerSystem, ::AC)
 supplyPower(::PowerSystem, ::ACPowerFlow)
 shuntPower(::PowerSystem, ::AC)
@@ -63,12 +52,6 @@ generatorPower(::PowerSystem, ::ACPowerFlow)
 ## [AC Current Analysis](@id ACCurrentAnalysisAPI)
 ```@docs
 current!(::PowerSystem, ::AC)
-```
-
----
-
-## [AC Current Breakdown Analysis](@id ACCurrentBreakdownAnalysisAPI)
-```@docs
 injectionCurrent(::PowerSystem, ::AC)
 fromCurrent(::PowerSystem, ::AC)
 toCurrent(::PowerSystem, ::AC)
@@ -80,12 +63,6 @@ seriesCurrent(::PowerSystem, ::AC)
 ## [DC Power Analysis](@id DCPowerAnalysisAPI)
 ```@docs
 power!(::PowerSystem, ::DCPowerFlow)
-```
-
----
-
-## [DC Power Breakdown Analysis](@id DCPowerBreakdownAnalysisAPI)
-```@docs
 injectionPower(::PowerSystem, ::DCPowerFlow)
 supplyPower(::PowerSystem, ::DCPowerFlow)
 fromPower(::PowerSystem, ::DC)

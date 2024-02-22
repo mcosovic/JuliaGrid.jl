@@ -223,13 +223,6 @@ function checkLocation(device, bus, from, to)
     return location
 end
 
-function checkBranchMeter(status::Int8, label::String)
-    if status == 0
-        throw(ErrorException("The branch labelled as $label is currently out-of-service, making it impossible to include the measurement device."))
-    end
-end
-
-
 ######### Set Mean, Variance, and Status ##########
 function setMeter(device::GaussMeter, mean::T, variance::T, status::T, noise::Bool,
     defVariance::ContainerTemplate, defStatus::Int8, prefixLive::Float64, baseInv::Float64)
@@ -265,6 +258,30 @@ function updateMeter(device::GaussMeter, index::Int64, mean::T, variance::T,
     if isset(status)
         checkStatus(status)
         device.status[index] = status
+    end
+end
+
+function removeDeviceLAV(method::LAVMethod, indexDevice::Int64)
+    remove!(method.jump, method.residual, indexDevice)
+
+    if !is_fixed(method.residualx[indexDevice])
+        fix(method.residualx[indexDevice], 0.0; force = true)
+        fix(method.residualy[indexDevice], 0.0; force = true)
+            
+        set_objective_coefficient(method.jump, method.residualx[indexDevice], 0)
+        set_objective_coefficient(method.jump, method.residualy[indexDevice], 0)
+    end
+end
+
+function addDeviceLAV(method::LAVMethod, indexDevice::Int64)
+    if is_fixed(method.residualx[indexDevice])
+        unfix(method.residualx[indexDevice])
+        unfix(method.residualy[indexDevice])
+        set_lower_bound(method.residualx[indexDevice], 0.0)
+        set_lower_bound(method.residualy[indexDevice], 0.0)
+
+        set_objective_coefficient(method.jump, method.residualx[indexDevice], 1)
+        set_objective_coefficient(method.jump, method.residualy[indexDevice], 1)
     end
 end
 

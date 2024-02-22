@@ -62,7 +62,9 @@ addWattmeter!(system, device; bus = "Bus 3", active = -0.05, variance = 1e-4)
 nothing # hide
 ``` 
 
-Attempting to solve this system immediately may not be possible because the gain matrix will be singular. To avoid this situation, users can perform observability analysis. The first step is to define the observable islands. JuliaGrid provides users with the option to obtain two types of observable islands: flow observable islands or maximal observable islands. The choice depends on the structure of the power system and available measurements. Detecting just flow observable islands reduces complexity in the island detection function but increases complexity in the restoration function. 
+Attempting to solve this system immediately may not be possible because the gain matrix will be singular. To avoid this situation, users can perform observability analysis. The first step is to define the observable islands. 
+
+JuliaGrid provides users with the option to obtain two types of observable islands: flow observable islands or maximal observable islands. The choice depends on the structure of the power system and available measurements. Detecting just flow observable islands reduces complexity in the island detection function but increases complexity in the restoration function. 
 
 ---
 
@@ -104,8 +106,8 @@ To reinstate observability, the user needs to identify either flow or maximal ob
 ```@example DCSEObservabilityAnalysis
 pseudo = measurement()
 
-addWattmeter!(system, pseudo; label = "Pseudo 1", bus = "Bus 1", active = 0.31)
-addWattmeter!(system, pseudo; label = "Pseudo 2", bus = "Bus 6", active = -0.05)
+addWattmeter!(system, pseudo; label = "Pseudo-Wattmeter 1", bus = "Bus 1", active = 0.31)
+addWattmeter!(system, pseudo; label = "Pseudo-Wattmeter 2", bus = "Bus 6", active = -0.05)
 nothing # hide
 ``` 
 
@@ -118,7 +120,7 @@ restorationGram!(system, device, pseudo, maxIslands)
 nothing # hide
 ``` 
 
-This function attempts to restore observability using pseudo-measurements. As a result, the `Pseudo 2` measurement restores observability, and this measurement is added to the device variable, which holds actual measurements:
+This function attempts to restore observability using pseudo-measurements. As a result, the `Pseudo-Wattmeter 2` measurement restores observability, and this measurement is added to the device variable, which holds actual measurements:
 ```@repl DCSEObservabilityAnalysis
 device.wattmeter.label
 nothing # hide
@@ -128,7 +130,7 @@ Consequently, the power system becomes observable, allowing the user to proceed 
 Additionally, it is worth mentioning that restoration might encounter difficulties due to the default zero pivot threshold set at `1e-5`. This threshold can be modified using the [`restorationGram!`](@ref restorationGram!(::PowerSystem, ::Measurement, ::Measurement, ::IslandWatt)) function.
 
 !!! note "Info"
-    Additionally, during the restoration step, the user can define bus voltage angle measurements from PMUs that will also participate in the restoration step. In this case, the system can become observable even if there are still more islands.
+    During the restoration step, the user can define bus voltage angles from PMUs that will also participate in the restoration step. In this case, the system can become observable even if there are still more islands.
 
 ---
 
@@ -168,7 +170,7 @@ nothing # hide
 ```
 
 !!! tip "Tip"
-    Here, the user triggers LU factorization as the default method for solving the DC state estimation problem. However, the user also has the option to select alternative factorization methods such as `LDLt` or `QR`, for instance.
+    Here, the user triggers LU factorization as the default method for solving the DC state estimation problem. However, the user also has the option to select alternative factorization methods such as `LDLt` or `QR`.
 
 To obtain the bus voltage angles, the [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimationWLS{LinearWLS})) function can be invoked as shown:
 ```@example WLSDCStateEstimationSolution
@@ -188,9 +190,9 @@ nothing # hide
 ---
 
 ##### Alternative Formulation
-The resolution of the WLS state estimation problem using the conventional method typically progresses smoothly. However, it is widely acknowledged that in certain situations common to real-world systems, this method can be vulnerable to numerical instabilities. Such conditions might impede the algorithm from converging to a satisfactory solution. In such cases, users may opt for an alternative formulation of the WLS state estimation, namely, employing an approach called orthogonal factorization [[3, Sec. 3.2]](@ref DCStateEstimationReferenceManual).
+The resolution of the WLS state estimation problem using the conventional method typically progresses smoothly. However, it is widely acknowledged that in certain situations common to real-world systems, this method can be vulnerable to numerical instabilities. Such conditions might impede the algorithm from finding a satisfactory solution. In such cases, users may opt for an alternative formulation of the WLS state estimation, namely, employing an approach called orthogonal factorization [[3, Sec. 3.2]](@ref DCStateEstimationReferenceManual).
 
-Specifically, by specifying the `Orthogonal` argument in the [`dcStateEstimation`](@ref dcStateEstimation) function, JuliaGrid implements a more robust approach to obtain the WLS estimator, which proves particularly beneficial when substantial differences exist among measurement variances. To derive this estimator, execute the following sequence of functions:
+Specifically, by specifying the `Orthogonal` argument in the [`dcStateEstimation`](@ref dcStateEstimation) function, JuliaGrid implements a more robust approach to obtain the WLS estimator, which proves particularly beneficial when substantial differences exist among measurement variances:
 ```@example WLSDCStateEstimationSolution
 analysis = dcStateEstimation(system, device, Orthogonal)
 solve!(system, analysis)
@@ -221,11 +223,12 @@ analysis.bad.detect
 analysis.bad.maxNormalizedResidual
 analysis.bad.label
 ```
-Therefore, upon detecting bad data, the `detect` variable will hold `true`. The `maxNormalizedResidual` variable retains the value of the largest normalized residual, while the `label` contains the label of the measurement identified as bad data.
+Hence, upon detecting bad data, the `detect` variable will hold `true`. The `maxNormalizedResidual` variable retains the value of the largest normalized residual, while the `label` contains the label of the measurement identified as bad data. JuliaGrid will mark the respective measurements as out-of-service within the `Measurement` type.
 
-JuliaGrid optimizes the algorithm for efficiency by not outright removing measurements from matrices and vectors. Instead, it sets non-zero elements to zero. The variable `index` contains positions within the vectors `weight` and `mean` that will be reset to zero. Additionally, it stores the row index within the coefficient matrix where non-zero elements will be adjusted to zero. Here is an example:
+Moreover, JuliaGrid will adjust the coefficient matrix and mean vector within the `DCStateEstimation` type based on measurements now designated as out-of-service. To optimize the algorithm's efficiency, JuliaGrid resets non-zero elements to zero in the coefficient matrix and mean vector. The `index` variable denotes positions within the mean vector that will be reset to zero. Additionally, it records the row index within the coefficient matrix where non-zero elements will be adjusted to zero. Here's an illustration:
 ```@repl WLSDCStateEstimationSolution
 analysis.bad.index
+analysis.method.mean
 analysis.method.coefficient
 ```
 
@@ -262,42 +265,98 @@ You have the flexibility to adjust these values to your specifications, and they
 
 ---
 
-## [Measurement Set Alteration](@id DCMeasurementsAlterationManual)
-After users define the `Measurement` type using the [`measurement`](@ref measurement) function and the `DCStateEstimation` type using the [`dcStateEstimation`](@ref dcStateEstimation) function, they acquire the capability to modify measurements. As a result, there is no need to recreate the `DCStateEstimation` model from scratch. This streamlined process is facilitated by directly supplying the `DCStateEstimation` type as an argument to functions responsible for updating measurement devices. 
+## [Measurement Set Update](@id DCMeasurementsAlterationManual)
+After establishing the `Measurement` composite type using the [`measurement`](@ref measurement) function, users gain the capability to incorporate new measurement devices or update existing ones. 
+
+Once updates are completed, users can seamlessly progress towards generating the `DCStateEstimation` type using the [`dcStateEstimation`](@ref dcStateEstimation) function. Ultimately, resolving the DC state estimation is achieved through the utilization of the [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimationWLS{LinearWLS})) function:
+```@example WLSDCStateEstimationSolution
+using JuliaGrid # hide
+@default(unit) # hide
+@default(template) # hide
+
+system = powerSystem()
+addBus!(system; label = "Bus 1", type = 3)
+addBus!(system; label = "Bus 2", type = 1, active = 0.1)
+addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.5)
+addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 0.1)
+dcModel!(system)
+
+device = measurement()
+@wattmeter(label = "Wattmeter ?")
+addWattmeter!(system, device; bus = "Bus 2", active = -0.11, variance = 1e-3)
+addWattmeter!(system, device; from = "Branch 1", active = 0.09, variance = 1e-4)
+
+analysis = dcStateEstimation(system, device)
+solve!(system, analysis)
+
+addWattmeter!(system, device; to = "Branch 1", active = -0.12, variance = 1e-4)
+updateWattmeter!(system, device; label = "Wattmeter 1", status = 0)
+updateWattmeter!(system, device; label = "Wattmeter 2", active = 0.095, noise = false)
+
+analysis = dcStateEstimation(system, device)
+solve!(system, analysis)
+
+nothing # hide
+```
+
+!!! note "Info"
+    This method removes the need to restart and recreate the `Measurement` type from the beginning when implementing changes to the existing measurement set.
+
+---
+
+## [State Estimation Update](@id DCStateEstimationUpdateManual)
+An advanced methodology involves users establishing the `DCStateEstimation` composite type using [`dcStateEstimation`](@ref dcStateEstimation) just once. After this initial setup, users can seamlessly modify existing measurement devices without the need to recreate the `DCStateEstimation` type.
+
+This advancement extends beyond the previous scenario where recreating the `Measurement` type was unnecessary, to now include the scenario where `DCStateEstimation` also does not need to be recreated. Such efficiency can be particularly advantageous in cases where JuliaGrid can reuse gain matrix factorization.
 
 The addition of new measurements after the creation of `DCStateEstimation` is not practical in terms of reusing the `DCStateEstimation` type. Instead, we recommend that users create a final set of measurements and then utilize update functions to manage devices, either putting them in-service or out-of-service throughout the process.
+
+!!! note "Info"
+    This method removes the need to restart and recreate both the `Measurement` and the `DCStateEstimation` from the beginning when implementing changes to the existing measurement set.
 
 ---
 
 ##### Reusing WLS Matrix Factorization 
-To elaborate further, let us continue with the previous example, where we establish a measurement set. Once again, we create the `DCStateEstimation` measurement model in the WLS framework and solve the problem:
+Drawing from the preceding example, our focus now shifts to finding a solution involving modifications that entail adjusting the measurement value of the `Wattmeter 2`. It is important to note that these adjustments do not impact the variance or status of the measurement device, which can affect the gain matrix. To resolve this updated system, users can simply execute the [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimationWLS{LinearWLS})) function:
 ```@example WLSDCStateEstimationSolution
+using JuliaGrid # hide
+@default(unit) # hide
+@default(template) # hide
+
+system = powerSystem()
+addBus!(system; label = "Bus 1", type = 3)
+addBus!(system; label = "Bus 2", type = 1, active = 0.1)
+addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.5)
+addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 0.1)
+dcModel!(system)
+
+device = measurement()
+@wattmeter(label = "Wattmeter ?")
+addWattmeter!(system, device; bus = "Bus 2", active = -0.11, variance = 1e-3)
+addWattmeter!(system, device; from = "Branch 1", active = 0.09, variance = 1e-4)
+
 analysis = dcStateEstimation(system, device)
 solve!(system, analysis)
-nothing # hide
-```
 
-Now, our objective is to find a solution that involves modifications such as altering measurement values. For instance:
-```@example WLSDCStateEstimationSolution
-updateWattmeter!(system, device, analysis; label = "Wattmeter 2", active = -0.015)
-updateWattmeter!(system, device, analysis; label = "Wattmeter 3", active = 0.03)
-nothing # hide
-```
+updateWattmeter!(system, device, analysis; label = "Wattmeter 2", active = 0.091)
 
-These updates will affect both the `Measurement` and the `DCStateEstimation` types. Now, we can solve the problem once again: 
-```@example WLSDCStateEstimationSolution
 solve!(system, analysis)
 nothing # hide
 ```
 
-In this case, JuliaGrid will reuse the matrix factorization from the previous call of the [`solve!`](@ref solve!(::PowerSystem, ::DCPowerFlow)) function, providing a more efficient solution.
+!!! note "Info"
+    In this scenario, JuliaGrid will recognize instances where the user has not modified parameters that impact the gain matrix. Consequently, JuliaGrid will leverage the previously performed gain matrix factorization, resulting in a significantly faster solution compared to recomputing the factorization.
 
 ---
 
 ##### Sequential WLS Matrix Factorization
-If the user opts to modify the status of measurement devices or measurement variances, reusing the nodal matrix factorization becomes impractical. In this scenario, JuliaGrid will need to repeat the factorization step while ensuring the delivery of an accurate solution. Nevertheless, the user can effortlessly execute [`solve!`](@ref solve!(::PowerSystem, ::DCPowerFlow)) as demonstrated below:
+If the user opts to modify the measurement variances or status of measurement devices, reusing the gain matrix factorization becomes impractical. In this scenario, JuliaGrid will need to repeat the factorization step while ensuring the delivery of an accurate solution. 
+
+Although computational gains are diminished compared to the previous case, users can still avoid recreating the `DCStateEstimation` type and effortlessly execute the [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimationWLS{LinearWLS})) function, as demonstrated below:
+
 ```@example WLSDCStateEstimationSolution
-updateWattmeter!(system, device, analysis; label = "Wattmeter 3", variance = 1e-3)
+updateWattmeter!(system, device, analysis; label = "Wattmeter 1", variance = 1e-2)
+updateWattmeter!(system, device, analysis; label = "Wattmeter 2", status = 1)
 
 solve!(system, analysis)
 ```
@@ -305,7 +364,36 @@ solve!(system, analysis)
 --- 
 
 ##### LAV State Estimation
-Certainly, when a user creates an optimization problem using the LAV method, they can update measurement devices without the need to recreate the model from scratch, similar to the explanation provided for the WLS state estimation. This streamlined process allows for efficient modifications while retaining the existing optimization framework.
+When a user creates an optimization problem using the LAV method, they can update measurement devices without the need to recreate the model from scratch, similar to the explanation provided for the WLS state estimation. This streamlined process allows for efficient modifications while retaining the existing optimization framework:
+```@example WLSDCStateEstimationSolution
+using Ipopt
+using JuliaGrid # hide
+@default(unit) # hide
+@default(template) # hide
+
+system = powerSystem()
+addBus!(system; label = "Bus 1", type = 3)
+addBus!(system; label = "Bus 2", type = 1, active = 0.1)
+addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.5)
+addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 0.1)
+dcModel!(system)
+
+device = measurement()
+@wattmeter(label = "Wattmeter ?")
+addWattmeter!(system, device; bus = "Bus 2", active = -0.11, variance = 1e-3)
+addWattmeter!(system, device; from = "Branch 1", active = 0.09, variance = 1e-4)
+
+analysis = dcStateEstimation(system, device, Ipopt.Optimizer)
+JuMP.set_silent(analysis.method.jump) # hide
+solve!(system, analysis)
+
+updateWattmeter!(system, device, analysis; label = "Wattmeter 1", status = 0)
+updateWattmeter!(system, device, analysis; label = "Wattmeter 2", active = -0.12)
+
+solve!(system, analysis)
+
+nothing # hide
+```
 
 ---
 
@@ -348,8 +436,8 @@ active = supplyPower(system, analysis; label = "Bus 1")
 ##### Active Power Flow
 Similarly, we can compute the active power flow at both the "from" and "to" bus ends of the specific branch by utilizing the provided functions below:
 ```@repl WLSDCStateEstimationSolution
-active = fromPower(system, analysis; label = "Branch 2")
-active = toPower(system, analysis; label = "Branch 2")
+active = fromPower(system, analysis; label = "Branch 1")
+active = toPower(system, analysis; label = "Branch 1")
 ```
 
 ---

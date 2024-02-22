@@ -364,7 +364,7 @@ end
     @default(unit)
     @default(template)
     
-    ################ Reusing First Pass ################
+    ################ First Pass ################
     system = powerSystem(string(pathData, "case14test.m"))
 
     updateBus!(system; label = 1, active = 0.15, conductance = 0.16)
@@ -393,7 +393,9 @@ end
     
     solve!(resystem, reusing)
     power!(resystem, reusing)
-    
+    releaseSystem = copy(resystem.model.dc.model)
+    releaseReusing = copy(reusing.method.model)
+
     ####### Compare Voltages and Powers #######
     @test analysis.voltage.angle ≈ reusing.voltage.angle
     @test analysis.power.injection.active ≈ reusing.power.injection.active
@@ -401,11 +403,36 @@ end
     @test analysis.power.from.active ≈ reusing.power.from.active
     @test analysis.power.to.active ≈ reusing.power.to.active
     @test analysis.power.generator.active ≈ reusing.power.generator.active
+    
+    ################ Second Pass ################
+    updateBus!(system; label = 3, active = 0.25, susceptance = 0.21)
+    updateBus!(system; label = 4, conductance = 0.21)
+    updateBranch!(system; label = 4, shiftAngle = -1.2)
+    updateGenerator!(system; label = 8, active = 1.2)
 
-    ################ Reusing Second Pass ################
+    dcModel!(system)
+    analysis = dcPowerFlow(system)
+    solve!(system, analysis)
+
+    ####### Reuse Model #######
+    updateBus!(resystem, reusing; label = 3, active = 0.25, susceptance = 0.21)
+    updateBus!(resystem, reusing; label = 4, conductance = 0.21)
+    updateBranch!(resystem, reusing; label = 4, shiftAngle = -1.2)
+    updateGenerator!(resystem, reusing; label = 8, active = 1.2)
+    
+    solve!(resystem, reusing)
+
+    ####### Compare Voltages #######
+    @test analysis.voltage.angle ≈ reusing.voltage.angle
+    @test releaseSystem == resystem.model.dc.model
+    @test releaseReusing == reusing.method.model
+
+    ################ Third Pass ################
     updateBus!(system; label = 2, active = 0.15, susceptance = 0.16, type = 2)
-    addBranch!(system, reusing; from = 16, to = 7, reactance = 0.03)
-    updateBranch!(system, reusing; label = 14, status = 1, reactance = 0.03)
+    addBranch!(system; from = 16, to = 7, reactance = 0.03)
+    updateBranch!(system; label = 14, status = 1, reactance = 0.03)
+    updateBranch!(system; label = 10, status = 0, reactance = 0.03)
+    updateBranch!(system; label = 3, status = 1)
     addGenerator!(system; bus = 2, active = 0.8)
     updateGenerator!(system; label = 9, status = 0)
     updateGenerator!(system; label = 1, status = 1)
@@ -416,10 +443,12 @@ end
     solve!(system, analysis)
     power!(system, analysis)
 
-    ####### Reuse Model #######
+    ###### Reuse Model #######
     updateBus!(resystem, reusing; label = 2, active = 0.15, susceptance = 0.16, type = 2)
     addBranch!(resystem, reusing; from = 16, to = 7, reactance = 0.03)
     updateBranch!(resystem, reusing; label = 14, status = 1, reactance = 0.03)
+    updateBranch!(resystem, reusing; label = 10, status = 0, reactance = 0.03)
+    updateBranch!(resystem, reusing; label = 3, status = 1)
     addGenerator!(resystem, reusing; bus = 2, active = 0.8)
     updateGenerator!(resystem, reusing; label = 9, status = 0)
     updateGenerator!(resystem, reusing; label = 1, status = 1)
@@ -428,11 +457,13 @@ end
     solve!(resystem, reusing)
     power!(resystem, reusing)
 
-    ####### Compare Voltages and Powers #######
+    ###### Compare Voltages and Powers #######
     @test analysis.voltage.angle ≈ reusing.voltage.angle
     @test analysis.power.injection.active ≈ reusing.power.injection.active
     @test analysis.power.supply.active ≈ reusing.power.supply.active
     @test analysis.power.from.active ≈ reusing.power.from.active
     @test analysis.power.to.active ≈ reusing.power.to.active
     @test analysis.power.generator.active ≈ reusing.power.generator.active
+    @test releaseSystem != resystem.model.dc.model
+    @test releaseReusing != reusing.method.model
 end

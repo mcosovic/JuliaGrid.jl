@@ -7,7 +7,9 @@ system14 = powerSystem(string(pathData, "case14test.m"))
     ############### Modified IEEE 14-bus Test Case ################
     updateBus!(system14; label = 1, type = 2)
     updateBus!(system14; label = 3, type = 3, angle = -0.17)
- 
+    updateBranch!(system14; label = 7, status = 0)
+    updateBranch!(system14; label = 12, status = 0)
+
     dcModel!(system14)
     analysis = dcPowerFlow(system14)
     solve!(system14, analysis)
@@ -40,7 +42,7 @@ system14 = powerSystem(string(pathData, "case14test.m"))
             addWattmeter!(system14, device; from = key, active = rand(1)[], variance = 1e-5)
         elseif value == 20
             addWattmeter!(system14, device; from = key, active = rand(1)[])            
-        elseif system14.branch.layout.status[value] == 1
+        else
             addWattmeter!(system14, device; from = key, active = analysis.power.from.active[value], noise = false)
         end
        
@@ -52,7 +54,7 @@ system14 = powerSystem(string(pathData, "case14test.m"))
             addWattmeter!(system14, device; to = key, active = rand(1)[], variance = 1e-5)
         elseif value == 19
             addWattmeter!(system14, device; to = key, active = rand(1)[])            
-        elseif system14.branch.layout.status[value] == 1
+        else
             addWattmeter!(system14, device; to = key, active = analysis.power.to.active[value], noise = false)
         end
     end
@@ -139,7 +141,7 @@ system14 = powerSystem(string(pathData, "case14test.m"))
     solve!(system14, analysisWLS)
     @test analysisWLS.voltage.angle ≈ analysis.voltage.angle
  
-    ##### Update Devices and Original LAV Model #######
+    #### Update Devices and Original LAV Model #######
     updateWattmeter!(system14, device, analysisLAV; label = 1, status = 0)
     updateWattmeter!(system14, device, analysisLAV; label = 3, status = 1)
     updateWattmeter!(system14, device, analysisLAV; label = 5, active = analysis.power.injection.active[5], variance = 1e-2, noise = false)

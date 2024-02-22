@@ -500,15 +500,15 @@ function restorationGram!(system::PowerSystem, device::Measurement, pseudo::Meas
                 if pseudo.wattmeter.layout.bus[indexDevice]
                     (labelBus,_),_ = iterate(system.bus.label, indexBusBranch)
                     addWattmeter!(system, device; bus = labelBus, label = labelWattmeter, noise = false,
-                        active = pseudo.wattmeter.active.mean[indexDevice], variance = pseudo.wattmeter.active.variance[indexDevice])
+                    active = pseudo.wattmeter.active.mean[indexDevice], variance = pseudo.wattmeter.active.variance[indexDevice])
                 else
                     (labelBranch,_),_ = iterate(system.branch.label, indexBusBranch)
                     if pseudo.wattmeter.layout.from[indexDevice]
                         addWattmeter!(system, device; from = labelBranch, label = labelWattmeter, noise = false,
-                            active = pseudo.wattmeter.active.mean[indexDevice], variance = pseudo.wattmeter.active.variance[indexDevice])
+                        active = pseudo.wattmeter.active.mean[indexDevice], variance = pseudo.wattmeter.active.variance[indexDevice])
                     else
                         addWattmeter!(system, device; to = labelBranch, label = labelWattmeter, noise = false,
-                            active = pseudo.wattmeter.active.mean[indexDevice], variance = pseudo.wattmeter.active.variance[indexDevice])
+                        active = pseudo.wattmeter.active.mean[indexDevice], variance = pseudo.wattmeter.active.variance[indexDevice])
                     end
                 end 
             else
@@ -517,8 +517,8 @@ function restorationGram!(system::PowerSystem, device::Measurement, pseudo::Meas
                 (labelPmu,_),_ = iterate(pseudo.pmu.label, indexDevice)
                 (labelBus,_),_ = iterate(system.bus.label, indexBus)
                 addPmu!(system, device; bus = labelBus, label = labelPmu, noise = false,
-                    magnitude = pseudo.pmu.magnitude.mean[indexDevice], varianceMagnitude = pseudo.pmu.magnitude.variance[indexDevice],
-                    angle = pseudo.pmu.angle.mean[indexDevice], varianceAngle = pseudo.pmu.angle.variance[indexDevice])
+                magnitude = pseudo.pmu.magnitude.mean[indexDevice], varianceMagnitude = pseudo.pmu.magnitude.variance[indexDevice],
+                angle = pseudo.pmu.angle.mean[indexDevice], varianceAngle = pseudo.pmu.angle.variance[indexDevice])
             end
         end
     end

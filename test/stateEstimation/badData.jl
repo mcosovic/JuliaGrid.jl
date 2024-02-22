@@ -44,6 +44,7 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     @test analysis.voltage.angle ≈ analysisSE.voltage.angle
 
     ####### WLS LU: Two Outliers #######
+    updateWattmeter!(system14, device; label = "Wattmeter 2", status = 1)
     updatePmu!(system14, device; label = "PMU 10", angle = 10pi, noise = false)
     analysisSE = dcStateEstimation(system14, device)
     solve!(system14, analysisSE)
@@ -61,7 +62,8 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     @test analysis.voltage.angle ≈ analysisSE.voltage.angle
 
     ####### WLS Orthogonal: One Outlier #######
-    updatePmu!(system14, device; label = "PMU 10", angle = analysis.voltage.angle[10], noise = false)
+    updateWattmeter!(system14, device; label = "Wattmeter 2", status = 1)
+    updatePmu!(system14, device; label = "PMU 10", statusAngle = 1, angle = analysis.voltage.angle[10], noise = false)
     analysisSE = dcStateEstimation(system14, device, Orthogonal)
     solve!(system14, analysisSE)
 
@@ -73,6 +75,7 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     @test analysis.voltage.angle ≈ analysisSE.voltage.angle
 
     ####### WLS Orthogonal: Two Outliers #######
+    updateWattmeter!(system14, device; label = "Wattmeter 2", status = 1)
     updatePmu!(system14, device; label = "PMU 10", angle = 10pi, noise = false)
     analysisSE = dcStateEstimation(system14, device, Orthogonal)
     solve!(system14, analysisSE)

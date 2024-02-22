@@ -82,20 +82,20 @@ function powerSystem()
     parameter = BranchParameter(copy(af), copy(af), copy(af), copy(af), copy(af), copy(af))
     flow = BranchFlow(copy(af), copy(af), copy(af), copy(ai8))
     voltageBranch = BranchVoltage(copy(af), copy(af))
-    layoutBranch = BranchLayout(copy(ai), copy(ai), copy(ai8), 0, 0)
+    layoutBranch = BranchLayout(copy(ai), copy(ai), copy(ai8), 0)
 
     output = GeneratorOutput(copy(af), copy(af))
     capability = GeneratorCapability(copy(af), copy(af), copy(af), copy(af), copy(af), copy(af), copy(af), copy(af), copy(af), copy(af))
     ramping = GeneratorRamping(copy(af), copy(af), copy(af), copy(af))
     cost = GeneratorCost(Cost(copy(ai8), [], []), Cost(copy(ai), [], []))
     voltageGenerator =  GeneratorVoltage(copy(af))
-    layoutGenerator = GeneratorLayout(copy(ai), copy(af), copy(ai8), 0, 0)
+    layoutGenerator = GeneratorLayout(copy(ai), copy(af), copy(ai8), 0)
 
     basePower = BasePower(1e8, "VA", 1.0)
     baseVoltage = BaseVoltage(copy(af), "V", 1.0)
 
-    acModel = ACModel(copy(sp), copy(sp), ac, copy(ac), copy(ac), copy(ac), copy(ac))
-    dcModel = DCModel(sp, copy(af), copy(af))
+    acModel = ACModel(copy(sp), copy(sp), ac, copy(ac), copy(ac), copy(ac), copy(ac), 0)
+    dcModel = DCModel(sp, copy(af), copy(af), 0)
 
     return PowerSystem(
         Bus(label, demand, supply, shunt, voltageBus, layoutBus, 0),
@@ -160,7 +160,6 @@ function loadBranch(system::PowerSystem, hdf5::HDF5.File)
     branch.layout.from = read(layouth5, "from")
     branch.layout.to = read(layouth5, "to")
     branch.number = length(branch.layout.to)
-    branch.layout.inservice = attributes(hdf5)["number of in-service branches"][]
 
     branch.layout.status = readHDF5(layouth5, "status", branch.number)
     branch.label = OrderedDict(zip(read(hdf5["branch/label"]), collect(1:branch.number)))
@@ -198,7 +197,6 @@ function loadGenerator(system::PowerSystem, hdf5::HDF5.File)
 
     generator.layout.area = readHDF5(layouth5, "area", generator.number)
     generator.layout.status = readHDF5(layouth5, "status", generator.number)
-    generator.layout.inservice = attributes(hdf5)["number of in-service generators"][]
     generator.label = OrderedDict(zip(read(hdf5["generator/label"]), collect(1:generator.number)))
     generator.layout.label = read(layouth5["label"])
 
@@ -436,10 +434,6 @@ function loadBranch(system::PowerSystem, branchLine::Array{String,1})
         branch.voltage.maxDiffAngle[k] = parse(Float64, data[13]) * deg2rad
 
         branch.layout.status[k] = parse(Int8, data[11])
-        if branch.layout.status[k] == 1
-            branch.layout.inservice += 1
-        end
-
         branch.layout.from[k] = system.bus.label[data[1]]
         branch.layout.to[k] = system.bus.label[data[2]]
     end
@@ -519,7 +513,6 @@ function loadGenerator(system::PowerSystem, generatorLine::Array{String,1}, gene
             push!(system.bus.supply.generator[i], k)
             system.bus.supply.active[i] += generator.output.active[k]
             system.bus.supply.reactive[i] += generator.output.reactive[k]
-            generator.layout.inservice += 1
         end
     end
     generator.layout.label = generator.number

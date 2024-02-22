@@ -77,6 +77,8 @@ function dcStateEstimation(system::PowerSystem, device::Measurement, factorizati
             mean,
             get(method, factorization, lu)(sparse(Matrix(1.0I, 1, 1))),
             device.wattmeter.number + device.pmu.number,
+            -1,
+            true,
             false
         ),
         badData
@@ -96,6 +98,8 @@ function dcStateEstimation(system::PowerSystem, device::Measurement, method::Typ
             mean,
             qr(sparse(Matrix(1.0I, 1, 1))),
             device.wattmeter.number + device.pmu.number,
+            -1,
+            true,
             false
         ),
         badData
@@ -147,25 +151,22 @@ function dcStateEstimationWLS(system::PowerSystem, device::Measurement)
     for (i, k) in enumerate(wattmeter.layout.index)
         precision.nzval[i] = (1 / wattmeter.active.variance[i])
         
-        if wattmeter.active.status[i] == 1
-            constIf = 1
-        else
-            constIf = 0
-        end
-
+        status = wattmeter.active.status[i]
         if wattmeter.layout.bus[i]
             for j in dc.nodalMatrix.colptr[k]:(dc.nodalMatrix.colptr[k + 1] - 1)
                 row[count] = i
                 col[count] = dc.nodalMatrix.rowval[j]
-                coeff[count] = dc.nodalMatrix.nzval[j] * constIf
+                coeff[count] = status * dc.nodalMatrix.nzval[j] 
                 count += 1
             end
-            mean[i] = (wattmeter.active.mean[i] - dc.shiftPower[k] - bus.shunt.conductance[k]) * constIf
+            mean[i] = status * (wattmeter.active.mean[i] - dc.shiftPower[k] - bus.shunt.conductance[k])
         else
+            status = wattmeter.active.status[i] * branch.layout.status[k]
+
             if wattmeter.layout.from[i]
-                addmitance = dc.admittance[k] * constIf
+                addmitance = status * dc.admittance[k]
             else
-                addmitance = -dc.admittance[k] * constIf
+                addmitance = -status * dc.admittance[k]
             end
 
             row[count] = i
@@ -176,26 +177,23 @@ function dcStateEstimationWLS(system::PowerSystem, device::Measurement)
             col[count] = branch.layout.to[k]
             coeff[count] = -addmitance
 
-            mean[i] = (wattmeter.active.mean[i] + branch.parameter.shiftAngle[k] * addmitance) * constIf
+            mean[i] = status * (wattmeter.active.mean[i] + branch.parameter.shiftAngle[k] * addmitance) 
             
             count += 1
         end
     end
 
     rowindex = wattmeter.number + 1
+    slackAngle = bus.voltage.angle[bus.layout.slack]
     for i = 1:pmu.number
         if pmu.layout.bus[i]
-            if pmu.angle.status[i] == 1
-                constIf = 1
-            else
-                constIf = 0
-            end
-
+            status = pmu.angle.status[i]
+            
             row[count] = rowindex
             col[count] = pmu.layout.index[i]
-            coeff[count] = constIf
+            coeff[count] = status
 
-            mean[rowindex] = (pmu.angle.mean[i] - bus.voltage.angle[bus.layout.slack]) * constIf
+            mean[rowindex] = status * (pmu.angle.mean[i] - slackAngle)
             precision.nzval[rowindex] = (1 / pmu.angle.variance[i])
             
             count += 1; rowindex += 1
@@ -227,7 +225,7 @@ function dcStateEstimation(system::PowerSystem, device::Measurement, (@nospecial
     residualx = @variable(jump, 0 <= residualx[i = 1:deviceNumber])
     residualy = @variable(jump, 0 <= residualy[i = 1:deviceNumber])
 
-    fix(statex[bus.layout.slack], bus.voltage.angle[bus.layout.slack]; force = true)
+    fix(statex[bus.layout.slack], 0.0; force = true)
     fix(statey[bus.layout.slack], 0.0; force = true)
     
     objective = @expression(jump, AffExpr())
@@ -240,10 +238,11 @@ function dcStateEstimation(system::PowerSystem, device::Measurement, (@nospecial
                     col = dc.nodalMatrix.rowval[j]
                     add_to_expression!(angleCoeff, dc.nodalMatrix.nzval[j] * (statex[col] - statey[col]))
                 end
-                residual[i] = @constraint(jump, angleCoeff + residualy[i] - residualx[i] - wattmeter.active.mean[i] + dc.shiftPower[k] + bus.shunt.conductance[k] == 0.0)
-            else
+                residual[i] = @constraint(jump, angleCoeff + residualx[i] - residualy[i] - wattmeter.active.mean[i] + dc.shiftPower[k] + bus.shunt.conductance[k] == 0.0)
+                add_to_expression!(objective, residualx[i] + residualy[i])
+            elseif branch.layout.status[k] == 1
                 from = branch.layout.from[k]
-                to = branch.layout.from[k]
+                to = branch.layout.to[k]
 
                 if wattmeter.layout.from[i]
                     admittance = dc.admittance[k] 
@@ -251,21 +250,25 @@ function dcStateEstimation(system::PowerSystem, device::Measurement, (@nospecial
                     admittance = -dc.admittance[k]
                 end
                 angleCoeff = admittance * (statex[from] - statey[from] - statex[to] + statey[to]) 
-                residual[i] = @constraint(jump, angleCoeff + residualy[i] - residualx[i] - wattmeter.active.mean[i] - branch.parameter.shiftAngle[k] * admittance == 0.0)
+                residual[i] = @constraint(jump, angleCoeff + residualx[i] - residualy[i] - wattmeter.active.mean[i] - branch.parameter.shiftAngle[k] * admittance == 0.0)
+                add_to_expression!(objective, residualx[i] + residualy[i])
+            else
+                fix(residualx[i], 0.0; force = true)
+                fix(residualy[i], 0.0; force = true)
             end
-            add_to_expression!(objective, residualx[i] + residualy[i])
         else
             fix(residualx[i], 0.0; force = true)
             fix(residualy[i], 0.0; force = true)
         end
     end
 
+    slackAngle = bus.voltage.angle[bus.layout.slack]
     for (i, k) in enumerate(wattmeter.number + 1:deviceNumber)
         if pmu.layout.bus[i] 
             if pmu.angle.status[i] == 1
                 busIndex = pmu.layout.index[i]
                 add_to_expression!(objective, residualx[k] + residualy[k])
-                residual[k] = @constraint(jump, statex[busIndex] - statey[busIndex] + residualy[k] - residualx[k] - pmu.angle.mean[i] == 0.0)
+                residual[k] = @constraint(jump, statex[busIndex] - statey[busIndex] + residualx[k] - residualy[k] - pmu.angle.mean[i] + slackAngle == 0.0)
             else
                 fix(residualx[k], 0.0; force = true)
                 fix(residualy[k], 0.0; force = true)
@@ -328,12 +331,13 @@ solve!(system, analysis)
 function solve!(system::PowerSystem, analysis::DCStateEstimationWLS{LinearWLS})
     se = analysis.method
     bus = system.bus
+    dc = system.model.dc
+    slackAngle = bus.voltage.angle[bus.layout.slack]
 
     slackRange, elementsRemove = deleteSlackCoefficient(analysis, bus.layout.slack)
 
-    if !se.done
-        se.done = true
-
+    if se.run || dc.model != se.model
+        saveRelease(system, analysis)
         gain = dcGain(analysis, bus.layout.slack)
         se.factorization = sparseFactorization(gain, se.factorization)
     end
@@ -342,9 +346,9 @@ function solve!(system::PowerSystem, analysis::DCStateEstimationWLS{LinearWLS})
     analysis.voltage.angle = sparseSolution(analysis.voltage.angle, b, se.factorization)
 
     analysis.voltage.angle[bus.layout.slack] = 0.0
-    if bus.voltage.angle[bus.layout.slack] != 0.0
+    if slackAngle != 0.0
         @inbounds for i = 1:bus.number
-            analysis.voltage.angle[i] += bus.voltage.angle[bus.layout.slack]
+            analysis.voltage.angle[i] += slackAngle
         end
     end
 
@@ -354,6 +358,8 @@ end
 function solve!(system::PowerSystem, analysis::DCStateEstimationWLS{LinearOrthogonal})
     se = analysis.method
     bus = system.bus
+    dc = system.model.dc
+    slackAngle = bus.voltage.angle[bus.layout.slack]
 
     slackRange, elementsRemove = deleteSlackCoefficient(analysis, bus.layout.slack)
 
@@ -361,17 +367,18 @@ function solve!(system::PowerSystem, analysis::DCStateEstimationWLS{LinearOrthog
         se.precision.nzval[i] = sqrt(se.precision.nzval[i])
     end
 
-    if !se.done
-        se.done = true
-
+    if se.run || dc.model != se.model
+        saveRelease(system, analysis)
         coefficientScale = se.precision * se.coefficient
         se.factorization = sparseFactorization(coefficientScale, se.factorization)
     end
     analysis.voltage.angle = sparseSolution(analysis.voltage.angle, se.precision * se.mean, se.factorization)
 
     analysis.voltage.angle[bus.layout.slack] = 0.0
-    @inbounds for i = 1:bus.number
-        analysis.voltage.angle[i] += bus.voltage.angle[bus.layout.slack]
+    if slackAngle != 0.0
+        @inbounds for i = 1:bus.number
+            analysis.voltage.angle[i] += slackAngle
+        end
     end
 
     @inbounds for i = 1:se.number
@@ -383,15 +390,16 @@ end
 
 function solve!(system::PowerSystem, analysis::DCStateEstimationLAV)
     se = analysis.method
-    
+    slackAngle = system.bus.voltage.angle[system.bus.layout.slack]
+
     @inbounds for i = 1:system.bus.number
-        JuMP.set_start_value(se.statex[i]::JuMP.VariableRef, analysis.voltage.angle[i])
+        JuMP.set_start_value(se.statex[i]::JuMP.VariableRef, analysis.voltage.angle[i] - slackAngle)
     end
 
     JuMP.optimize!(se.jump)
 
     for i = 1:system.bus.number
-        analysis.voltage.angle[i] = value(se.statex[i]::JuMP.VariableRef) - value(se.statey[i]::JuMP.VariableRef)
+        analysis.voltage.angle[i] = value(se.statex[i]::JuMP.VariableRef) - value(se.statey[i]::JuMP.VariableRef) + slackAngle
     end
 end
 
@@ -424,12 +432,7 @@ function restoreSlackCoefficient(analysis::DCStateEstimation, slackRange::UnitRa
     end 
 end
 
-function constMeter(flag::Union{Int8, Float64})
-    if flag == 0
-        constIf = 0.0
-    else
-        constIf = 1.0
-    end
-
-    return constIf
+function saveRelease(system::PowerSystem, analysis::DCStateEstimation)
+    analysis.method.model = copy(system.model.dc.model)
+    analysis.method.run = false
 end

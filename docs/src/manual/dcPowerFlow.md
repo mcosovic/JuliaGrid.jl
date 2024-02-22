@@ -117,25 +117,78 @@ nothing # hide
 ```
 
 !!! note "Info"
-    We recommend that readers refer to the tutorial on [DC Power Flow Analysis](@ref DCPowerFlowTutorials) for insights into the implementation.
+    For implementation insights, we suggest referring to the tutorial on [DC Power Flow Analysis](@ref DCPowerFlowTutorials).
 
 ---
 
-## [Power System Alteration](@id DCPowerSystemAlterationManual)
-Once users have established the `PowerSystem` composite type and the `dc` model using the [`dcModel!`](@ref dcModel!) function, users gain the ability to include new branches and generators. They can also modify buses, branches, and generators while progressing to generate the `DCPowerFlow` composite type via the [`dcPowerFlow`](@ref dcPowerFlow) function. Finally, the resolution of the DC power flow is achieved by employing the [`solve!`](@ref solve!(::PowerSystem, ::DCPowerFlow)) function. This process eliminates the necessity to start over and recreate the `PowerSystem` and `dc` model from scratch.
+## [Power System Update](@id DCPowerSystemAlterationManual)
+After establishing the `PowerSystem` composite type using the [`powerSystem`](@ref powerSystem) function and configuring the `dc` model with [`dcModel!`](@ref dcModel!), users gain the capability to incorporate new branches and generators. Furthermore, they can adjust buses, branches, and generators.
 
-However, once users establish the `DCPowerFlow` composite type using [`dcPowerFlow`](@ref dcPowerFlow), they also acquire the flexibility to seamlessly incorporate new branches and generators, along with the capability to modify buses, branches, and generators. This extends the previous scenario where there was no need to recreate the `PowerSystem` and `dc` model, and similarly, the `DCPowerFlow` composite type does not require recreation from scratch. This efficient process is facilitated by directly supplying the `PowerSystem` and `DCPowerFlow` composite types as arguments to functions responsible for adding or updating power system components.
+Once updates are completed, users can seamlessly progress towards generating the `DCPowerFlow` composite type using the [`dcPowerFlow`](@ref dcPowerFlow) function. Ultimately, resolving the DC power flow is achieved through the utilization of the [`solve!`](@ref solve!(::PowerSystem, ::DCPowerFlow)) function:
+```@example DCPowerFlowSolution
+using JuliaGrid # hide
+@default(unit) # hide
+@default(template) # hide
+
+system = powerSystem()
+addBus!(system; label = "Bus 1", type = 3)
+addBus!(system; label = "Bus 2", type = 2, active = 2.1)
+addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.05)
+addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 3.2)
+dcModel!(system)
+
+analysis = dcPowerFlow(system)
+solve!(system, analysis)
+
+updateBus!(system; label = "Bus 2", active = 0.4)
+addBranch!(system; label = "Branch 2", from = "Bus 1", to = "Bus 2", reactance = 0.15)
+updateBranch!(system; label = "Branch 1", status = 0)
+addGenerator!(system; label = "Generator 2", bus = "Bus 2", active = 1.5)
+updateGenerator!(system; label = "Generator 1", active = 1.9)
+
+analysis = dcPowerFlow(system)
+solve!(system, analysis)
+nothing # hide
+```
+
+!!! note "Info"
+    This method removes the need to restart and recreate the `PowerSystem` within the `dc` model from the beginning when implementing changes to the existing power system.
+
+---
+
+## [Power Flow Update](@id DCPowerFlowUpdateManual)
+An advanced methodology involves users establishing the `DCPowerFlow` composite type using [`dcPowerFlow`](@ref dcPowerFlow) just once. After this initial setup, users can seamlessly integrate new branches and generators, and also have the capability to modify buses, branches, and generators, all without the need to recreate the `DCPowerFlow` type. 
+
+This advancement extends beyond the previous scenario where recreating the `PowerSystem` and `dc` model was unnecessary, to now include the scenario where `DCPowerFlow` also does not need to be recreated. Such efficiency can be particularly advantageous in cases where JuliaGrid can reuse nodal matrix factorization.
+
+!!! note "Info"
+    This method removes the need to restart and recreate both the `PowerSystem` within the `dc` model and the `DCPowerFlow` from the beginning when implementing changes to the existing power system.
 
 ---
 
 ##### Reusing Matrix Factorization
-To further illustrate, let us continue with the previous example. Now, we aim to seek a solution where modifications involve altering the active power demand at `Bus 2`, adjusting the output power of `Generator 1`, and introducing a new generator at `Bus 2`. It is important to note that these adjustments do not affect the branches leaving the nodal matrix unchanged. To solve this system, executing the [`solve!`](@ref solve!(::PowerSystem, ::DCPowerFlow)) function is sufficient:
+Drawing from the preceding example, our focus now shifts to finding a solution involving modifications that entail adjusting the active power demand at `Bus 2`, introducing a new generator at `Bus 2`, and fine-tuning the output power of `Generator 1`. It is important to note that these adjustments do not impact the branches leaving the nodal matrix unchanged. To resolve this updated system, users can simply execute the [`solve!`](@ref solve!(::PowerSystem, ::DCPowerFlow)) function:
 ```@example DCPowerFlowSolution
+using JuliaGrid # hide
+@default(unit) # hide
+@default(template) # hide
+
+system = powerSystem()
+addBus!(system; label = "Bus 1", type = 3)
+addBus!(system; label = "Bus 2", type = 2, active = 2.1)
+addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.05)
+addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 3.2)
+dcModel!(system)
+
+analysis = dcPowerFlow(system)
+solve!(system, analysis)
+
 updateBus!(system, analysis; label = "Bus 2", active = 0.4)
-updateGenerator!(system, analysis; label = "Generator 1", active = 1.9)
 addGenerator!(system, analysis; label = "Generator 2", bus = "Bus 2", active = 1.5)
+updateGenerator!(system, analysis; label = "Generator 1", active = 1.9)
 
 solve!(system, analysis)
+nothing # hide
 ```
 
 !!! note "Info"
@@ -144,10 +197,12 @@ solve!(system, analysis)
 ---
 
 ##### Sequential Matrix Factorization
-Should the user decide to modify branch parameters by adding or updating branches, reusing the nodal matrix factorization becomes impractical. In this scenario, JuliaGrid will need to repeat the factorization step while ensuring the delivery of an accurate solution. Thus, the user can still effortlessly execute [`solve!`](@ref solve!(::PowerSystem, ::DCPowerFlow)) as demonstrated below:
+Continuing from the previous example, suppose we opt to adjust branch parameters by adding or updating branches. In such cases, reusing the nodal matrix factorization becomes impractical. In this scenario, JuliaGrid will repeat the factorization process while ensuring the delivery of an accurate solution.
+
+Although computational gains are diminished compared to the previous case, users can still avoid recreating the `DCPowerFlow` type and effortlessly execute the [`solve!`](@ref solve!(::PowerSystem, ::DCPowerFlow)) function, as demonstrated below:
 ```@example DCPowerFlowSolution
-addBranch!(system, analysis; label = "Branch 4", from = "Bus 3", to = "Bus 2", reactance = 1)
-updateBranch!(system, analysis; label = "Branch 3", status = 0)
+addBranch!(system, analysis; label = "Branch 2", from = "Bus 1", to = "Bus 2", reactance = 1)
+updateBranch!(system, analysis; label = "Branch 1", status = 0)
 
 solve!(system, analysis)
 ```
@@ -155,7 +210,9 @@ solve!(system, analysis)
 ---
 
 ##### Limitations
-The [`dcPowerFlow`](@ref dcPowerFlow) function oversees bus type validations, as detailed in the [Bus Type Modification](@ref DCBusTypeModificationManual) section. Consequently, if a user intends to change the slack bus or leaves an existing slack bus without a generator, proceeding directly to the [`solve!`](@ref solve!(::PowerSystem, ::DCPowerFlow)) function is not feasible. In these instances, JuliaGrid will raise an error:
+The [`dcPowerFlow`](@ref dcPowerFlow) function oversees bus type validations, as detailed in the [Bus Type Modification](@ref DCBusTypeModificationManual) section. Consequently, if a user intends to change the slack bus or leaves an existing slack bus without a generator, proceeding directly to the [`solve!`](@ref solve!(::PowerSystem, ::DCPowerFlow)) function is not feasible. 
+
+In these instances, JuliaGrid will raise an error:
 ```@repl DCPowerFlowSolution
 updateGenerator!(system, analysis; label = "Generator 1", status = 0)
 ```
@@ -163,13 +220,13 @@ updateGenerator!(system, analysis; label = "Generator 1", status = 0)
 Now, the user must execute the [`dcPowerFlow`](@ref dcPowerFlow) function instead of attempting to reuse the `DCPowerFlow` type:
 ```julia DCPowerFlowSolution
 updateGenerator!(system; label = "Generator 1", status = 0)
-analysis = dcPowerFlow(system)
 
+analysis = dcPowerFlow(system)
 solve!(system, analysis)
 ```
 
 !!! note "Info"
-    Upon creating the `PowerSystem` and `DCPowerFlow` composite types, users maintain the capability to add or modify buses, branches, and generators before directly proceeding to utilize the [`solve!`](@ref solve!(::PowerSystem, ::DCPowerFlow)) function. When the user's adjustments result in a valid solution, JuliaGrid will execute the essential sequence of functions accordingly. However, in cases where modifications are incompatible, such as altering the slack bus or when it should be changed, JuliaGrid will raise an error, preventing users from obtaining erroneous results. This mechanism ensures accuracy and avoids misleading outcomes due to incompatible modifications.
+    After creating the `PowerSystem` and `DCPowerFlow` types, users can add or modify buses, branches, and generators before directly using the [`solve!`](@ref solve!(::PowerSystem, ::DCPowerFlow)) function. JuliaGrid automatically executes the necessary functions when adjustments lead to a valid solution. However, if modifications are incompatible, like changing the slack bus, JuliaGrid raises an error to prevent misleading outcomes, ensuring accuracy.
 
 ---
 
