@@ -213,7 +213,7 @@ function pmuStateEstimationWLS(system::PowerSystem, device::Measurement, correla
             row[count + 7] = rowindex + 1
             col[count + 7] = branch.layout.to[k]
 
-            if pmu.magnitude.status[i] == 1 && pmu.angle.status[i] == 1 && branch.layout.status[k] == 1
+            if pmu.magnitude.status[i] == 1 && pmu.angle.status[i] == 1 
                 gij = real(ac.admittance[k])
                 bij = imag(ac.admittance[k])
                 bsi = 0.5 * branch.parameter.susceptance[k]
@@ -260,7 +260,7 @@ function pmuStateEstimationWLS(system::PowerSystem, device::Measurement, correla
     end
 
     coefficient = sparse(row, col, coeff, 2 * pmu.number, 2 * bus.number)
-    badData = BadData(true, 0.0, 0, "")
+    badData = BadData(true, 0.0, "", 0)
     power = PowerSE(Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), 
         Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]))
 
@@ -288,8 +288,8 @@ function pmuStateEstimation(system::PowerSystem, device::Measurement, (@nospecia
     residual = Dict{Int64, JuMP.ConstraintRef}()
     count = 1
     for (i, k) in enumerate(pmu.layout.index)
-        if pmu.layout.bus[i] 
-            if pmu.magnitude.status[i] == 1 && pmu.angle.status[i] == 1
+        if pmu.magnitude.status[i] == 1 && pmu.angle.status[i] == 1 
+            if pmu.layout.bus[i]
                 cosAngle = cos(pmu.angle.mean[i])
                 sinAngle = sin(pmu.angle.mean[i])
 
@@ -298,13 +298,6 @@ function pmuStateEstimation(system::PowerSystem, device::Measurement, (@nospecia
                 residual[count] = @constraint(jump, statex[busIndex] - statey[busIndex] + residualx[count] - residualy[count] - pmu.magnitude.mean[i] * cosAngle == 0.0)
                 residual[count + 1] = @constraint(jump, statex[busIndex + bus.number] - statey[busIndex + bus.number] + residualx[count + 1] - residualy[count + 1] - pmu.magnitude.mean[i] * sinAngle == 0.0)
             else
-                fix(residualx[count], 0.0; force = true)
-                fix(residualy[count], 0.0; force = true)
-                fix(residualx[count + 1], 0.0; force = true)
-                fix(residualy[count + 1], 0.0; force = true)
-            end
-        else
-            if pmu.magnitude.status[i] == 1 && pmu.angle.status[i] == 1 && branch.layout.status[k] == 1
                 add_to_expression!(objective, residualx[count] + residualy[count] + residualx[count + 1] + residualy[count + 1])
 
                 gij = real(ac.admittance[k])
@@ -342,12 +335,12 @@ function pmuStateEstimation(system::PowerSystem, device::Measurement, (@nospecia
                     residual[count] = @constraint(jump, a1 * Vrei + a2 * Vimi + a3 * Vrej + a4 * Vimj + residualx[count] - residualy[count] - pmu.magnitude.mean[i] * cosAngle == 0.0)
                     residual[count + 1] = @constraint(jump, -a2 * Vrei + a1 * Vimi - a4 * Vrej + a3 * Vimj + residualx[count + 1] - residualy[count + 1] - pmu.magnitude.mean[i] * sinAngle == 0.0)
                 end
-            else
-                fix(residualx[count], 0.0; force = true)
-                fix(residualy[count], 0.0; force = true)
-                fix(residualx[count + 1], 0.0; force = true)
-                fix(residualy[count + 1], 0.0; force = true)
             end
+        else
+            fix(residualx[count], 0.0; force = true)
+            fix(residualy[count], 0.0; force = true)
+            fix(residualx[count + 1], 0.0; force = true)
+            fix(residualy[count + 1], 0.0; force = true)
         end
         count += 2
     end
@@ -413,11 +406,8 @@ function solve!(system::PowerSystem, analysis::PMUStateEstimationWLS{LinearWLS})
     se = analysis.method
     bus = system.bus
 
-    if se.run || ac.model != se.model
-        saveRelease(system, analysis)
-        gain = transpose(se.coefficient) * se.precision * se.coefficient
-        se.factorization = sparseFactorization(gain, se.factorization)
-    end
+    gain = transpose(se.coefficient) * se.precision * se.coefficient
+    se.factorization = sparseFactorization(gain, se.factorization)
     b = transpose(se.coefficient) * se.precision * se.mean
 
     voltageRectangular = sparseSolution(fill(0.0, 2 * bus.number), b, se.factorization)
@@ -440,15 +430,11 @@ function solve!(system::PowerSystem, analysis::PMUStateEstimationWLS{LinearOrtho
     bus = system.bus
 
     for i = 1:se.number
-        se.precision.nzval[i] = sqrt(se.precision.nzval[i])
+        se.precision.nzval[i] = (se.precision.nzval[i])^(1/2)
     end
 
-    if se.run || ac.model != se.model
-        saveRelease(system, analysis)
-        coefficientScale = se.precision * se.coefficient
-        se.factorization = sparseFactorization(coefficientScale, se.factorization)
-    end
-
+    coefficientScale = se.precision * se.coefficient
+    se.factorization = sparseFactorization(coefficientScale, se.factorization)
     voltageRectangular = sparseSolution(fill(0.0, 2 * bus.number), se.precision * se.mean, se.factorization)
 
     if isempty(analysis.voltage.magnitude)
@@ -460,6 +446,9 @@ function solve!(system::PowerSystem, analysis::PMUStateEstimationWLS{LinearOrtho
         voltage = complex(voltageRectangular[i], voltageRectangular[i + bus.number])
         analysis.voltage.magnitude[i] = abs(voltage)
         analysis.voltage.angle[i] = angle(voltage)
+    end
+
+    for i = 1:se.number
         se.precision.nzval[i] = se.precision.nzval[i]^2
     end
 end
@@ -615,9 +604,4 @@ function invCovarianceBlock!(precision::SparseMatrixCSC{Float64,Int64}, variance
     precision[index + 1, index] = precision[index, index + 1]
     precision[index, index] = (L1inv - L2 * precision[index, index + 1]) * L1inv
     precision[index + 1, index + 1] = L3inv2
-end
-
-function saveRelease(system::PowerSystem, analysis::PMUStateEstimation)
-    analysis.method.model = copy(system.model.ac.model)
-    analysis.method.run = false
 end

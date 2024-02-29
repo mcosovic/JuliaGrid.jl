@@ -41,7 +41,10 @@ function islandTopologicalFlow(system::PowerSystem, wattmeter::Wattmeter)
     observe = IslandWatt([], Int64[], TieData(Set{Int64}(), Set{Int64}(), Int64[]))
     rowval, colptr = connectionObservability(system)
 
-    commponetTie(system, observe, wattmeter)
+    connectedComponents(system, observe, wattmeter.layout, wattmeter.active.status, wattmeter.number)
+    tieBusBranch(system, observe)
+    tieInjection(observe, wattmeter.layout,  wattmeter.active.status, wattmeter.number)
+
     mergePairs(system.bus, wattmeter.layout, observe, rowval, colptr)
 
     return observe 
@@ -51,7 +54,10 @@ function islandTopologicalFlow(system::PowerSystem, varmeter::Varmeter)
     observe = IslandVar([], Int64[], TieData(Set{Int64}(), Set{Int64}(), Int64[]))
     rowval, colptr = connectionObservability(system)
 
-    commponetTie(system, observe, device.varmeter)
+    connectedComponents(system, observe, varmeter.layout, varmeter.reactive.status, varmeter.number)
+    tieBusBranch(system, observe)
+    tieInjection(observe, varmeter.layout,  varmeter.reactive.status, varmeter.number)
+
     mergePairs(system.bus, device.varmeter.layout, observe, rowval, colptr)
 
     return observe 
@@ -101,20 +107,23 @@ function islandTopological(system::PowerSystem, wattmeter::Wattmeter)
     observe = IslandWatt([], Int64[], TieData(Set{Int64}(), Set{Int64}(), Int64[]))
     rowval, colptr = connectionObservability(system)
 
-    commponetTie(system, observe, wattmeter)
+    connectedComponents(system, observe, wattmeter.layout, wattmeter.active.status, wattmeter.number)
+    tieBusBranch(system, observe)
+    tieInjection(observe, wattmeter.layout,  wattmeter.active.status, wattmeter.number)
+
     mergePairs(system.bus, wattmeter.layout, observe, rowval, colptr)
     mergeFlowIslands(system, wattmeter.layout, observe, rowval, colptr)
 
     return observe 
 end
 
-function commponetTie(system::PowerSystem, observe::Island, device::Wattmeter)
+function connectedComponents(system::PowerSystem, observe::Island, deviceLayout::MultiLayoutMeter, status::Array{Int8,1}, deviceNumber::Int64)
     bus = system.bus
     branch = system.branch
 
     nonZeroElement = 0 
-    @inbounds for i = 1:device.number
-        if !device.layout.bus[i] && device.active.status[i] == 1 && branch.layout.status[device.layout.index[i]] == 1
+    @inbounds for i = 1:deviceNumber
+        if !deviceLayout.bus[i] && status[i] == 1 && branch.layout.status[deviceLayout.index[i]] == 1
             nonZeroElement += 4 
         end
     end
@@ -122,8 +131,8 @@ function commponetTie(system::PowerSystem, observe::Island, device::Wattmeter)
     row = fill(0, nonZeroElement) 
     col = similar(row)
     index = 0
-    @inbounds for (i, k) in enumerate(device.layout.index)
-        if !device.layout.bus[i] && device.active.status[i] == 1 && branch.layout.status[k] == 1
+    @inbounds for (i, k) in enumerate(deviceLayout.index)
+        if !deviceLayout.bus[i] && status[i] == 1 && branch.layout.status[k] == 1
             row[index + 1] = branch.layout.from[k]
             row[index + 2] = branch.layout.from[k]
             row[index + 3] = branch.layout.to[k]
@@ -164,6 +173,10 @@ function commponetTie(system::PowerSystem, observe::Island, device::Wattmeter)
     @inbounds for (k, i) in enumerate(observe.bus)
         push!(observe.island[i], k)
     end
+end
+
+function tieBusBranch(system::PowerSystem, observe::Island)
+    branch = system.branch
 
     observe.tie.bus = Set{Int64}()
     observe.tie.branch = Set{Int64}()
@@ -174,10 +187,12 @@ function commponetTie(system::PowerSystem, observe::Island, device::Wattmeter)
             push!(observe.tie.bus, branch.layout.to[i])
         end
     end
+end
 
+function tieInjection(observe::Island, deviceLayout::MultiLayoutMeter, status::Array{Int8,1}, deviceNumber::Int64)
     observe.tie.injection = Array{Int64,1}()
-    @inbounds for i = 1:device.number
-        if device.layout.bus[i] && device.active.status[i] == 1 && (device.layout.index[i] in observe.tie.bus)
+    @inbounds for i = 1:deviceNumber
+        if deviceLayout.bus[i] && status[i] == 1 && (deviceLayout.index[i] in observe.tie.bus)
             push!(observe.tie.injection, i)
         end
     end
@@ -493,30 +508,29 @@ function restorationGram!(system::PowerSystem, device::Measurement, pseudo::Meas
     R = F.R
     @inbounds for (k, i) = enumerate((numberTie + 1):rowIndex)
         if abs(R[i, i]) > threshold
+            indexDevice = pseudoDevice[k] 
             if k <= numberPseudoWattmeter
-                indexDevice = pseudoDevice[k]
                 indexBusBranch = pseudo.wattmeter.layout.index[indexDevice]
                 (labelWattmeter,_),_ = iterate(pseudo.wattmeter.label, indexDevice)
                 if pseudo.wattmeter.layout.bus[indexDevice]
                     (labelBus,_),_ = iterate(system.bus.label, indexBusBranch)
-                    addWattmeter!(system, device; bus = labelBus, label = labelWattmeter, noise = false,
+                    addWattmeter!(system, device; bus = labelBus, label = labelWattmeter, noise = false, status = 1,
                     active = pseudo.wattmeter.active.mean[indexDevice], variance = pseudo.wattmeter.active.variance[indexDevice])
                 else
                     (labelBranch,_),_ = iterate(system.branch.label, indexBusBranch)
                     if pseudo.wattmeter.layout.from[indexDevice]
-                        addWattmeter!(system, device; from = labelBranch, label = labelWattmeter, noise = false,
+                        addWattmeter!(system, device; from = labelBranch, label = labelWattmeter, noise = false, status = 1,
                         active = pseudo.wattmeter.active.mean[indexDevice], variance = pseudo.wattmeter.active.variance[indexDevice])
                     else
-                        addWattmeter!(system, device; to = labelBranch, label = labelWattmeter, noise = false,
+                        addWattmeter!(system, device; to = labelBranch, label = labelWattmeter, noise = false, status = 1,
                         active = pseudo.wattmeter.active.mean[indexDevice], variance = pseudo.wattmeter.active.variance[indexDevice])
                     end
                 end 
             else
-                indexDevice = pseudoDevice[k]  
                 indexBus = pseudo.pmu.layout.index[indexDevice]
                 (labelPmu,_),_ = iterate(pseudo.pmu.label, indexDevice)
                 (labelBus,_),_ = iterate(system.bus.label, indexBus)
-                addPmu!(system, device; bus = labelBus, label = labelPmu, noise = false,
+                addPmu!(system, device; bus = labelBus, label = labelPmu, noise = false, statusAngle = 1,
                 magnitude = pseudo.pmu.magnitude.mean[indexDevice], varianceMagnitude = pseudo.pmu.magnitude.variance[indexDevice],
                 angle = pseudo.pmu.angle.mean[indexDevice], varianceAngle = pseudo.pmu.angle.variance[indexDevice])
             end

@@ -1,5 +1,5 @@
 """
-    residualTest!(system::PowerSystem, device::Measurement, analysis::DCStateEstimation; 
+    residualTest!(system::PowerSystem, device::Measurement, analysis::StateEstimation; 
         threshold)
 
 The function conducts bad data detection and identification using the largest normalized 
@@ -7,9 +7,11 @@ residual test, subsequently removing measurement outliers from the measurement s
 be executed after obtaining estimation solutions.
 
 # Arguments
-This function necessitates the composite types `PowerSystem`, `Measurement`, and 
-`DCStateEstimation` to detect and identify bad data.
-
+This function requires the composite types `PowerSystem` and `Measurement`, along with an 
+abstract type. The abstract type `StateEstimation` can have the following subtypes:
+- `DCStateEstimation`: conducts bad data analysis within DC state estimation;
+- `PMUStateEstimation`: conducts bad data analysis within PMU state estimation.
+ 
 # Keyword
 The keyword `threshold` establishes the identification threshold. If the largest 
 normalized residual surpasses this threshold, the measurement is flagged as bad data. The 
@@ -20,12 +22,12 @@ In case bad data is detected, the function removes measurements from the `coeffi
 `precision` matrices, and `mean` vector within the `DCStateEstimation` type. Additionally, 
 it marks the respective measurement within the `Measurement` type as out-of-service.
 
-Furthermore, the variable `bad` within the `DCStateEstimation` type stores information 
+Furthermore, the variable `outlier` within the `StateEstimation` type stores information 
 regarding bad data detection and identification:
 - `detect`: returns `true` after the function's execution if bad data is detected;
 - `maxNormalizedResidual`: denotes the value of the largest normalized residual;
-- `index`: represents the index of the bad data associated with the `DCStateEstimation` type;
-- `label`: signifies the label of the bad data.
+- `label`: signifies the label of the bad data;
+- `index`: represents the index of the bad data.
 
 # Example
 Obtaining the solution after detecting and removing bad data:
@@ -58,7 +60,7 @@ function residualTest!(system::PowerSystem, device::Measurement, analysis::DCSta
 
     bus = system.bus
     se = analysis.method
-    bad = analysis.bad
+    bad = analysis.outlier
     
     slackRange, elementsRemove = deleteSlackCoefficient(analysis, bus.layout.slack)
     gain = dcGain(analysis, bus.layout.slack)
@@ -132,10 +134,113 @@ function residualTest!(system::PowerSystem, device::Measurement, analysis::DCSta
     bad.label = ""
     if bad.index <= device.wattmeter.number
         (bad.label, index),_ = iterate(device.wattmeter.label, bad.index)
-        device.wattmeter.active.status[index] = 0
+        if bad.detect
+            device.wattmeter.active.status[index] = 0
+        end
     else
         (bad.label,index),_ = iterate(device.pmu.label, bad.index - device.wattmeter.number)
-        device.pmu.angle.status[index] = 0
+        if bad.detect
+            device.pmu.angle.status[index] = 0
+        end
+    end
+end
+
+function residualTest!(system::PowerSystem, device::Measurement, analysis::PMUStateEstimationWLS; threshold = 3.0)
+    errorVoltage(analysis.voltage.angle)
+
+    bus = system.bus
+    se = analysis.method
+    bad = analysis.outlier
+    
+
+    gain = transpose(se.coefficient) * se.precision * se.coefficient
+    if !isa(se.factorization, SuiteSparse.UMFPACK.UmfpackLU{Float64, Int64}) 
+        F = lu(gain)
+    else 
+        F = se.factorization
+    end
+
+    ########## Construct Factorization ##########
+    L, U, p, q, Rss = F.:(:)
+    U = copy(transpose(U))
+    d = fill(0.0, 2 * bus.number)
+    Rs = fill(0.0, 2 * bus.number)
+
+    for i = 1:2 * bus.number
+        Rs[i] = Rss[p[i]]
+        d[i] = U[i, i]
+        U[i, i] = 0.0
+        L[i, i] = 0.0
+        for j = U.colptr[i]:(U.colptr[i + 1] - 1)
+            if i != U.rowval[j]
+                U.nzval[j] = U.nzval[j] / d[i]
+            end
+        end
+    end
+    dropzeros!(U)
+    dropzeros!(L)
+    S = gain[p, q]
+    S = S + transpose(S)
+
+    parent = etree(S)
+    R = symbfact(S, parent)
+    gainInverse = sparseinv(L, U, d, p, q, Rs, R)
+
+    ########## Diagonal entries of residual matrix ##########
+    JGi = se.coefficient * gainInverse
+    idx = findall(!iszero, se.coefficient)
+    c = fill(0.0, size(se.coefficient, 1))
+    for i in idx
+        c[i[1]] += JGi[i] * se.coefficient[i]
+    end
+
+    ########## Largest normalized residual ##########
+    voltageRe = analysis.voltage.magnitude .* cos.(analysis.voltage.angle)
+    voltageIm = analysis.voltage.magnitude .* sin.(analysis.voltage.angle)
+    h = se.coefficient * [voltageRe; voltageIm]
+    bad.maxNormalizedResidual = 0.0
+    bad.index = 0
+    @inbounds for i = 1:se.number
+        normResidual = abs(se.mean[i] - h[i]) / sqrt(abs((1 / se.precision.nzval[i]) - c[i]))
+        if normResidual > bad.maxNormalizedResidual
+            bad.maxNormalizedResidual = normResidual
+            bad.index = i
+        end
+    end
+
+    bad.detect = false
+    if bad.maxNormalizedResidual > threshold
+        bad.detect = true
+
+        if bad.index % 2 == 0
+            alsoBad = bad.index - 1
+        else
+            alsoBad = bad.index + 1
+        end
+
+        colIndecies = findall(!iszero, se.coefficient[bad.index, :])
+        for col in colIndecies
+            se.coefficient[bad.index, col] = 0.0
+        end
+        se.mean[bad.index] = 0.0 
+
+        colIndecies = findall(!iszero, se.coefficient[alsoBad, :])
+        for col in colIndecies
+            se.coefficient[alsoBad, col] = 0.0
+        end
+        se.mean[alsoBad] = 0.0 
+    end
+
+    if bad.index % 2 == 0
+        pmuIndex = trunc(Int, bad.index / 2)
+    else
+        pmuIndex = trunc(Int, (bad.index + 1) / 2) 
+    end
+
+    (bad.label, ),_ = iterate(device.pmu.label, pmuIndex)
+    if bad.detect
+        device.pmu.magnitude.status[pmuIndex] = 0
+        device.pmu.angle.status[pmuIndex] = 0
     end
 end
 

@@ -394,7 +394,7 @@ end
     solve!(resystem, reusing)
     power!(resystem, reusing)
     releaseSystem = copy(resystem.model.dc.model)
-    releaseReusing = copy(reusing.method.model)
+    releaseReusing = copy(reusing.method.dcmodel)
 
     ####### Compare Voltages and Powers #######
     @test analysis.voltage.angle ≈ reusing.voltage.angle
@@ -425,7 +425,7 @@ end
     ####### Compare Voltages #######
     @test analysis.voltage.angle ≈ reusing.voltage.angle
     @test releaseSystem == resystem.model.dc.model
-    @test releaseReusing == reusing.method.model
+    @test releaseReusing == reusing.method.dcmodel
 
     ################ Third Pass ################
     updateBus!(system; label = 2, active = 0.15, susceptance = 0.16, type = 2)
@@ -465,5 +465,5 @@ end
     @test analysis.power.to.active ≈ reusing.power.to.active
     @test analysis.power.generator.active ≈ reusing.power.generator.active
     @test releaseSystem != resystem.model.dc.model
-    @test releaseReusing != reusing.method.model
+    @test releaseReusing != reusing.method.dcmodel
 end

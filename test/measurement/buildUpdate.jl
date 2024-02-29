@@ -70,50 +70,55 @@
     pmuMagnitudeTo = deviceAll.pmu.magnitude.mean[deviceAll.pmu.layout.to]
     pmuAngleTo = deviceAll.pmu.angle.mean[deviceAll.pmu.layout.to]
 
+    count = 0
     for (key, value) in system.branch.label
+        if system.branch.layout.status[value] == 1
+            count += 1
+
             addAmmeter!(system, device; from = key, magnitude = analysis.current.from.magnitude[value], noise = false)
             @test device.ammeter.magnitude.mean[end] == analysis.current.from.magnitude[value]
-            @test device.ammeter.magnitude.mean[end] ≈ currentMagnitudeFrom[value] atol = 1e-16
+            @test device.ammeter.magnitude.mean[end] ≈ currentMagnitudeFrom[count] atol = 1e-16
             @test device.ammeter.magnitude.status[end] == 0
-    
+
             addAmmeter!(system, device; to = key, magnitude = analysis.current.to.magnitude[value])
             @test device.ammeter.magnitude.mean[end] ≈ analysis.current.to.magnitude[value] atol = 1e-16
-            @test device.ammeter.magnitude.mean[end] ≈ currentMagnitudeTo[value] atol = 1e-16
+            @test device.ammeter.magnitude.mean[end] ≈ currentMagnitudeTo[count] atol = 1e-16
             @test device.ammeter.magnitude.status[end] == 1
     
             addWattmeter!(system, device; from = key, active = analysis.power.from.active[value])
             @test device.wattmeter.active.mean[end] ≈ analysis.power.from.active[value] atol = 1e-16
-            @test device.wattmeter.active.mean[end] ≈ activeFrom[value] atol = 1e-16
+            @test device.wattmeter.active.mean[end] ≈ activeFrom[count] atol = 1e-16
             @test device.wattmeter.active.status[end] == 1
     
             addWattmeter!(system, device; from = key, active = analysis.power.to.active[value], noise = false)
             @test device.wattmeter.active.mean[end] == analysis.power.to.active[value]
-            @test device.wattmeter.active.mean[end] ≈ activeTo[value] atol = 1e-16
+            @test device.wattmeter.active.mean[end] ≈ activeTo[count] atol = 1e-16
             @test device.wattmeter.active.status[end] == 1
     
             addVarmeter!(system, device; from = key, reactive = analysis.power.from.reactive[value])
             @test device.varmeter.reactive.mean[end] ≈ analysis.power.from.reactive[value] atol = 1e-16
-            @test device.varmeter.reactive.mean[end] ≈ reactiveFrom[value] atol = 1e-16
+            @test device.varmeter.reactive.mean[end] ≈ reactiveFrom[count] atol = 1e-16
             @test device.varmeter.reactive.status[end] == 1
     
             addVarmeter!(system, device; to = key, reactive = analysis.power.to.reactive[value])
             @test device.varmeter.reactive.mean[end] ≈ analysis.power.to.reactive[value] atol = 1e-16
-            @test device.varmeter.reactive.mean[end] ≈ reactiveTo[value] atol = 1e-16
+            @test device.varmeter.reactive.mean[end] ≈ reactiveTo[count] atol = 1e-16
             @test device.varmeter.reactive.status[end] == 0
     
             addPmu!(system, device; from = key, magnitude = analysis.current.from.magnitude[value], angle = analysis.current.from.angle[value])
             @test device.pmu.magnitude.mean[end] ≈ analysis.current.from.magnitude[value] atol = 1e-16
-            @test device.pmu.magnitude.mean[end] ≈ pmuMagnitudeFrom[value] atol = 1e-16
+            @test device.pmu.magnitude.mean[end] ≈ pmuMagnitudeFrom[count] atol = 1e-16
             @test device.pmu.angle.mean[end] ≈ analysis.current.from.angle[value] atol = 1e-16
-            @test device.pmu.angle.mean[end] ≈ pmuAngleFrom[value] atol = 1e-16
+            @test device.pmu.angle.mean[end] ≈ pmuAngleFrom[count] atol = 1e-16
             @test device.pmu.magnitude.status[end] == 1
     
             addPmu!(system, device; to = key, magnitude = analysis.current.to.magnitude[value], angle = analysis.current.to.angle[value])
             @test device.pmu.magnitude.mean[end] ≈ analysis.current.to.magnitude[value] atol = 1e-16
-            @test device.pmu.magnitude.mean[end] ≈ pmuMagnitudeTo[value] atol = 1e-16
+            @test device.pmu.magnitude.mean[end] ≈ pmuMagnitudeTo[count] atol = 1e-16
             @test device.pmu.angle.mean[end] ≈ analysis.current.to.angle[value] atol = 1e-16
-            @test device.pmu.angle.mean[end] ≈ pmuAngleTo[value] atol = 1e-16
+            @test device.pmu.angle.mean[end] ≈ pmuAngleTo[count] atol = 1e-16
             @test device.pmu.magnitude.status[end] == 1
+        end  
     end
     
     ############### Update Voltmeter ################
@@ -328,7 +333,7 @@ end
     @test sum(device.ammeter.magnitude.status) == 18
     
     statusAmmeter!(system, device; outservice = 4)
-    @test sum(device.ammeter.magnitude.status) == 36
+    @test sum(device.ammeter.magnitude.status) == 32
     
     statusAmmeter!(system, device; redundancy = 1.1)
     @test sum(device.ammeter.magnitude.status) == round(1.1 * stateVariable)
@@ -339,8 +344,8 @@ end
     @test sum(device.ammeter.magnitude.status[layout.to]) == 4
     
     statusAmmeter!(system, device; outserviceFrom = 5, outserviceTo = 3)
-    @test sum(device.ammeter.magnitude.status[layout.from]) == 15
-    @test sum(device.ammeter.magnitude.status[layout.to]) == 17
+    @test sum(device.ammeter.magnitude.status[layout.from]) == 13
+    @test sum(device.ammeter.magnitude.status[layout.to]) == 15
     
     statusAmmeter!(system, device; redundancyFrom = 0.5, redundancyTo = 0.2)
     @test sum(device.ammeter.magnitude.status[layout.from]) == round(0.5 * stateVariable)
@@ -353,7 +358,7 @@ end
     @test sum(device.wattmeter.active.status) == 14
     
     statusWattmeter!(system, device; outservice = 40)
-    @test sum(device.wattmeter.active.status) == 14
+    @test sum(device.wattmeter.active.status) == 10
     
     statusWattmeter!(system, device; redundancy = 1.8)
     @test sum(device.wattmeter.active.status) == round(1.8 * stateVariable)
@@ -366,8 +371,8 @@ end
     
     statusWattmeter!(system, device; outserviceBus = 14, outserviceFrom = 15, outserviceTo = 17)
     @test sum(device.wattmeter.active.status[layout.bus]) == 0
-    @test sum(device.wattmeter.active.status[layout.from]) == 5
-    @test sum(device.wattmeter.active.status[layout.to]) == 3
+    @test sum(device.wattmeter.active.status[layout.from]) == 3
+    @test sum(device.wattmeter.active.status[layout.to]) == 1
     
     statusWattmeter!(system, device; redundancyBus = 0.1, redundancyFrom = 0.3, redundancyTo = 0.4)
     @test sum(device.wattmeter.active.status[layout.bus]) == round(0.1 * stateVariable)
@@ -381,7 +386,7 @@ end
     @test sum(device.varmeter.reactive.status) == 1
     
     statusVarmeter!(system, device; outservice = 30)
-    @test sum(device.varmeter.reactive.status) == 24
+    @test sum(device.varmeter.reactive.status) == 20
     
     statusVarmeter!(system, device; redundancy = 1.2)
     @test sum(device.varmeter.reactive.status) == round(1.2 * stateVariable)
@@ -394,8 +399,8 @@ end
     
     statusVarmeter!(system, device; outserviceBus = 0, outserviceFrom = 10, outserviceTo = 2)
     @test sum(device.varmeter.reactive.status[layout.bus]) == 14
-    @test sum(device.varmeter.reactive.status[layout.from]) == 10
-    @test sum(device.varmeter.reactive.status[layout.to]) == 18
+    @test sum(device.varmeter.reactive.status[layout.from]) == 8
+    @test sum(device.varmeter.reactive.status[layout.to]) == 16
     
     statusVarmeter!(system, device; redundancyBus = 0.2, redundancyFrom = 0.1, redundancyTo = 0.3)
     @test sum(device.varmeter.reactive.status[layout.bus]) == round(0.2 * stateVariable)
@@ -411,7 +416,7 @@ end
     
     statusPmu!(system, device; outservice = 40)
     @test device.pmu.magnitude.status == device.pmu.angle.status
-    @test sum(device.pmu.magnitude.status) == 14
+    @test sum(device.pmu.magnitude.status) == 10
     
     statusPmu!(system, device; redundancy = 0.2)
     @test device.pmu.magnitude.status == device.pmu.angle.status
@@ -427,8 +432,8 @@ end
     statusPmu!(system, device; outserviceBus = 6, outserviceFrom = 10, outserviceTo = 15)
     @test device.pmu.magnitude.status == device.pmu.angle.status
     @test sum(device.pmu.magnitude.status[layout.bus]) == 8
-    @test sum(device.pmu.magnitude.status[layout.from]) == 10
-    @test sum(device.pmu.magnitude.status[layout.to]) == 5
+    @test sum(device.pmu.magnitude.status[layout.from]) == 8
+    @test sum(device.pmu.magnitude.status[layout.to]) == 3
     
     statusPmu!(system, device; redundancyBus = 0.3, redundancyFrom = 0.2, redundancyTo = 0.4)
     @test device.pmu.magnitude.status == device.pmu.angle.status
@@ -447,7 +452,7 @@ end
     @test device.pmu.magnitude.status == device.pmu.angle.status
     @test sum(device.voltmeter.magnitude.status) + sum(device.ammeter.magnitude.status) +
     sum(device.wattmeter.active.status) + sum(device.varmeter.reactive.status) + 
-    sum(device.pmu.magnitude.status) == 116    
+    sum(device.pmu.magnitude.status) == 100    
     
     status!(system, device; redundancy = 3.1)
     @test device.pmu.magnitude.status == device.pmu.angle.status

@@ -161,7 +161,7 @@ function dcStateEstimationWLS(system::PowerSystem, device::Measurement)
             end
             mean[i] = status * (wattmeter.active.mean[i] - dc.shiftPower[k] - bus.shunt.conductance[k])
         else
-            status = wattmeter.active.status[i] * branch.layout.status[k]
+            status = wattmeter.active.status[i]
 
             if wattmeter.layout.from[i]
                 addmitance = status * dc.admittance[k]
@@ -201,7 +201,7 @@ function dcStateEstimationWLS(system::PowerSystem, device::Measurement)
     end
 
     coefficient = sparse(row, col, coeff, deviceNumber, bus.number)
-    badData = BadData(true, 0.0, 0, "")
+    badData = BadData(true, 0.0, "", 0)
     power = DCPowerSE(CartesianReal(Float64[]), CartesianReal(Float64[]), CartesianReal(Float64[]), CartesianReal(Float64[]))
 
    return coefficient, mean, precision, badData, power
@@ -240,7 +240,7 @@ function dcStateEstimation(system::PowerSystem, device::Measurement, (@nospecial
                 end
                 residual[i] = @constraint(jump, angleCoeff + residualx[i] - residualy[i] - wattmeter.active.mean[i] + dc.shiftPower[k] + bus.shunt.conductance[k] == 0.0)
                 add_to_expression!(objective, residualx[i] + residualy[i])
-            elseif branch.layout.status[k] == 1
+            else
                 from = branch.layout.from[k]
                 to = branch.layout.to[k]
 
@@ -252,9 +252,6 @@ function dcStateEstimation(system::PowerSystem, device::Measurement, (@nospecial
                 angleCoeff = admittance * (statex[from] - statey[from] - statex[to] + statey[to]) 
                 residual[i] = @constraint(jump, angleCoeff + residualx[i] - residualy[i] - wattmeter.active.mean[i] - branch.parameter.shiftAngle[k] * admittance == 0.0)
                 add_to_expression!(objective, residualx[i] + residualy[i])
-            else
-                fix(residualx[i], 0.0; force = true)
-                fix(residualy[i], 0.0; force = true)
             end
         else
             fix(residualx[i], 0.0; force = true)

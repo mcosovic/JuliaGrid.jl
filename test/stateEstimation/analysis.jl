@@ -28,10 +28,8 @@ system30 = powerSystem(string(pathData, "case30test.m"))
         addPmu!(system14, device; bus = key, magnitude = analysis.voltage.magnitude[value], angle = analysis.voltage.angle[value], noise = false)
     end
     for (key, value) in system14.branch.label
-        if system14.branch.layout.status[value] == 1
-            addPmu!(system14, device; from = key, magnitude = analysis.current.from.magnitude[value], angle = analysis.current.from.angle[value], noise = false)
-            addPmu!(system14, device; to = key, magnitude = analysis.current.to.magnitude[value], angle = analysis.current.to.angle[value], noise = false) 
-        end
+        addPmu!(system14, device; from = key, magnitude = analysis.current.from.magnitude[value], angle = analysis.current.from.angle[value], noise = false)
+        addPmu!(system14, device; to = key, magnitude = analysis.current.to.magnitude[value], angle = analysis.current.to.angle[value], noise = false) 
     end
 
     ####### LU Factorization #######
@@ -139,10 +137,8 @@ system30 = powerSystem(string(pathData, "case30test.m"))
         addPmu!(system30, device; bus = key, magnitude = analysis.voltage.magnitude[value], angle = analysis.voltage.angle[value], varianceAngle = 1e-6, varianceMagnitude = varianceAngle = 1e-5)
     end
     for (key, value) in system30.branch.label
-        if system30.branch.layout.status[value] == 1
-            addPmu!(system30, device; from = key, magnitude = analysis.current.from.magnitude[value], angle = analysis.current.from.angle[value], varianceAngle = 1e-7, varianceMagnitude = varianceAngle = 1e-6)
-            addPmu!(system30, device; to = key, magnitude = analysis.current.to.magnitude[value], angle = analysis.current.to.angle[value], varianceAngle = 1e-4, varianceMagnitude = varianceAngle = 1e-5) 
-        end
+        addPmu!(system30, device; from = key, magnitude = analysis.current.from.magnitude[value], angle = analysis.current.from.angle[value], varianceAngle = 1e-7, varianceMagnitude = varianceAngle = 1e-6)
+        addPmu!(system30, device; to = key, magnitude = analysis.current.to.magnitude[value], angle = analysis.current.to.angle[value], varianceAngle = 1e-4, varianceMagnitude = varianceAngle = 1e-5) 
     end
 
     ####### LU Factorization #######

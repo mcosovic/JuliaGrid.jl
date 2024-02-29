@@ -1,5 +1,132 @@
 system14 = powerSystem(string(pathData, "case14test.m"))
 
+@testset "Reusing Meters PMU State Estimation" begin
+    @default(template)
+    @default(unit)
+
+    ################ Modified IEEE 14-bus Test Case ################
+    acModel!(system14)
+    analysis = newtonRaphson(system14)
+    iteration = 0
+    for i = 1:1000
+        stopping = mismatch!(system14, analysis)
+        if all(stopping .< 1e-8)
+            break
+        end
+        solve!(system14, analysis)
+    end
+    current!(system14, analysis)
+
+    ####### Measurements #######
+    device = measurement()
+ 
+    placement = pmuPlacement(system14, GLPK.Optimizer)
+    device = measurement()
+    @pmu(label = "!")
+    for (key, value) in placement.bus
+        if value == 1
+            addPmu!(system14, device; bus = key, magnitude = rand(1)[], angle = analysis.voltage.angle[value], noise = false)
+        elseif value == 4
+            addPmu!(system14, device; bus = key, magnitude = analysis.voltage.magnitude[value], angle = rand(1)[], statusMagnitude = 0, noise = false)
+        elseif value == 6
+            addPmu!(system14, device; bus = key, magnitude = rand(1)[], angle = rand(1)[], statusAngle = 0, noise = false)
+        else
+            addPmu!(system14, device; bus = key, magnitude = analysis.voltage.magnitude[value], angle = analysis.voltage.angle[value], noise = false)
+        end
+    end
+
+    for (key, value) in placement.from
+        if value == 8
+            addPmu!(system14, device; from = key, magnitude = rand(1)[], angle = rand(1)[], noise = false)
+        elseif value == 9
+            addPmu!(system14, device; from = key, magnitude = analysis.current.from.magnitude[value], angle = analysis.current.from.angle[value], statusAngle = 0, statusMagnitude = 0, noise = false)
+        elseif value == 12
+            addPmu!(system14, device; from = key, magnitude = analysis.current.from.magnitude[value], angle = rand(1)[], noise = false)
+        else
+            addPmu!(system14, device; from = key, magnitude = analysis.current.from.magnitude[value], angle = analysis.current.from.angle[value], noise = false)
+        end
+    end
+    for (key, value) in placement.to
+        if value == 4
+            addPmu!(system14, device; to = key, magnitude = rand(1)[], angle = analysis.current.to.angle[value], noise = false) 
+        elseif value == 10
+            addPmu!(system14, device; to = key, magnitude = analysis.current.to.magnitude[value], angle = rand(1)[], noise = false) 
+        elseif value == 15
+            addPmu!(system14, device; to = key, magnitude = analysis.current.to.magnitude[value], angle = analysis.current.to.angle[value],  statusAngle = 0, noise = false) 
+        else
+            addPmu!(system14, device; to = key, magnitude = analysis.current.to.magnitude[value], angle = analysis.current.to.angle[value], noise = false) 
+        end
+    end
+
+    ####### Original Device, WLS and LAV Models #######
+    deviceWLS = deepcopy(device)
+    deviceLAV = deepcopy(device)
+    analysisWLS = pmuStateEstimation(system14, device)
+    analysisLAV = pmuStateEstimation(system14, device, Ipopt.Optimizer)
+
+    ####### Update Just PMUs #######
+    updatePmu!(system14, device; label = 1, magnitude = analysis.voltage.magnitude[1], noise = false)
+    updatePmu!(system14, device; label = 4, angle = analysis.voltage.angle[4], statusMagnitude = 1, noise = false)
+    updatePmu!(system14, device; label = 16,  magnitude = analysis.voltage.magnitude[6], angle = analysis.voltage.angle[6], statusAngle = 1, noise = false)
+
+    updatePmu!(system14, device; label = "From 8", magnitude = analysis.current.from.magnitude[8], angle = analysis.current.from.angle[8], noise = false)
+    updatePmu!(system14, device; label = "From 9", statusAngle = 1, statusMagnitude = 1)
+    updatePmu!(system14, device; label = "From 12", angle = analysis.current.from.angle[12], noise = false)
+
+    updatePmu!(system14, device; label = "To 4", magnitude = analysis.current.to.magnitude[4], noise = false)
+    updatePmu!(system14, device; label = "To 10", angle = analysis.current.to.angle[10], noise = false)
+    updatePmu!(system14, device; label = "To 15", statusAngle = 1)
+
+    ####### Solve Updated WLS and LAV Models #######
+    analysisWLSUpdate = pmuStateEstimation(system14, device)
+    solve!(system14, analysisWLSUpdate)
+    @test analysisWLSUpdate.voltage.magnitude ≈ analysis.voltage.magnitude
+    @test analysisWLSUpdate.voltage.angle ≈ analysis.voltage.angle
+    
+    analysisLAVUpdate = pmuStateEstimation(system14, device, Ipopt.Optimizer)
+    JuMP.set_silent(analysisLAVUpdate.method.jump)
+    solve!(system14, analysisLAVUpdate)
+    @test analysisLAVUpdate.voltage.magnitude ≈ analysis.voltage.magnitude
+    @test analysisLAVUpdate.voltage.angle ≈ analysis.voltage.angle
+
+
+    ##### Update Devices and Original WLS Model #######
+    updatePmu!(system14, deviceWLS, analysisWLS; label = 1, magnitude = analysis.voltage.magnitude[1], noise = false)
+    updatePmu!(system14, deviceWLS, analysisWLS; label = 4, angle = analysis.voltage.angle[4], statusMagnitude = 1, noise = false)
+    updatePmu!(system14, deviceWLS, analysisWLS; label = 16,  magnitude = analysis.voltage.magnitude[6], angle = analysis.voltage.angle[6], statusAngle = 1, noise = false)
+
+    updatePmu!(system14, deviceWLS, analysisWLS; label = "From 8", magnitude = analysis.current.from.magnitude[8], angle = analysis.current.from.angle[8], noise = false)
+    updatePmu!(system14, deviceWLS, analysisWLS; label = "From 9", statusAngle = 1, statusMagnitude = 1)
+    updatePmu!(system14, deviceWLS, analysisWLS; label = "From 12", angle = analysis.current.from.angle[12], noise = false)
+
+    updatePmu!(system14, deviceWLS, analysisWLS; label = "To 4", magnitude = analysis.current.to.magnitude[4], noise = false)
+    updatePmu!(system14, deviceWLS, analysisWLS; label = "To 10", angle = analysis.current.to.angle[10], noise = false)
+    updatePmu!(system14, deviceWLS, analysisWLS; label = "To 15", statusAngle = 1)
+
+    solve!(system14, analysisWLS)
+    @test analysisWLS.voltage.magnitude ≈ analysis.voltage.magnitude
+    @test analysisWLS.voltage.angle ≈ analysis.voltage.angle
+
+    #### Update Devices and Original LAV Model #######
+    updatePmu!(system14, deviceLAV, analysisLAV; label = 1, magnitude = analysis.voltage.magnitude[1], noise = false)
+    updatePmu!(system14, deviceLAV, analysisLAV; label = 4, angle = analysis.voltage.angle[4], statusMagnitude = 1, noise = false)
+    updatePmu!(system14, deviceLAV, analysisLAV; label = 16,  magnitude = analysis.voltage.magnitude[6], angle = analysis.voltage.angle[6], statusAngle = 1, noise = false)
+
+    updatePmu!(system14, deviceLAV, analysisLAV; label = "From 8", magnitude = analysis.current.from.magnitude[8], angle = analysis.current.from.angle[8], noise = false)
+    updatePmu!(system14, deviceLAV, analysisLAV; label = "From 9", statusAngle = 1, statusMagnitude = 1)
+    updatePmu!(system14, deviceLAV, analysisLAV; label = "From 12", angle = analysis.current.from.angle[12], noise = false)
+
+    updatePmu!(system14, deviceLAV, analysisLAV; label = "To 4", magnitude = analysis.current.to.magnitude[4], noise = false)
+    updatePmu!(system14, deviceLAV, analysisLAV; label = "To 10", angle = analysis.current.to.angle[10], noise = false)
+    updatePmu!(system14, deviceLAV, analysisLAV; label = "To 15", statusAngle = 1)
+
+    JuMP.set_silent(analysisLAV.method.jump)
+    solve!(system14, analysisLAV)
+    @test analysisLAV.voltage.magnitude ≈ analysis.voltage.magnitude
+    @test analysisLAV.voltage.angle ≈ analysis.voltage.angle
+end
+
+system14 = powerSystem(string(pathData, "case14test.m"))
 @testset "Reusing Meters DC State Estimation" begin
     @default(template)
     @default(unit)
@@ -133,8 +260,8 @@ system14 = powerSystem(string(pathData, "case14test.m"))
     updateWattmeter!(system14, device, analysisWLS; label = 4, status = 1)
     updateWattmeter!(system14, device, analysisWLS; label = "From 2", status = 0)
     updateWattmeter!(system14, device, analysisWLS; label = "From 2", status = 1)
-    updateWattmeter!(system14, device, analysisWLS; label = "To 12", status = 0)
-    updateWattmeter!(system14, device, analysisWLS; label = "To 12", status = 1)
+    updateWattmeter!(system14, device, analysisWLS; label = "To 13", status = 0)
+    updateWattmeter!(system14, device, analysisWLS; label = "To 13", status = 1)
     updatePmu!(system14, device, analysisWLS; label = 10, statusAngle = 0)
     updatePmu!(system14, device, analysisWLS; label = 10, statusAngle = 1)
  
@@ -166,8 +293,8 @@ system14 = powerSystem(string(pathData, "case14test.m"))
     updateWattmeter!(system14, device, analysisLAV; label = 4, status = 1)
     updateWattmeter!(system14, device, analysisLAV; label = "From 2", status = 0)
     updateWattmeter!(system14, device, analysisLAV; label = "From 2", status = 1)
-    updateWattmeter!(system14, device, analysisLAV; label = "To 12", status = 0)
-    updateWattmeter!(system14, device, analysisLAV; label = "To 12", status = 1)
+    updateWattmeter!(system14, device, analysisLAV; label = "To 13", status = 0)
+    updateWattmeter!(system14, device, analysisLAV; label = "To 13", status = 1)
     updatePmu!(system14, device, analysisLAV; label = 10, statusAngle = 0)
     updatePmu!(system14, device, analysisLAV; label = 10, statusAngle = 1)
  

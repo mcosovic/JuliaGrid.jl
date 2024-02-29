@@ -219,15 +219,15 @@ nothing # hide
 
 Users can examine the data obtained from the bad data analysis:
 ```@repl WLSDCStateEstimationSolution
-analysis.bad.detect
-analysis.bad.maxNormalizedResidual
-analysis.bad.label
+analysis.outlier.detect
+analysis.outlier.maxNormalizedResidual
+analysis.outlier.label
 ```
 Hence, upon detecting bad data, the `detect` variable will hold `true`. The `maxNormalizedResidual` variable retains the value of the largest normalized residual, while the `label` contains the label of the measurement identified as bad data. JuliaGrid will mark the respective measurements as out-of-service within the `Measurement` type.
 
 Moreover, JuliaGrid will adjust the coefficient matrix and mean vector within the `DCStateEstimation` type based on measurements now designated as out-of-service. To optimize the algorithm's efficiency, JuliaGrid resets non-zero elements to zero in the coefficient matrix and mean vector. The `index` variable denotes positions within the mean vector that will be reset to zero. Additionally, it records the row index within the coefficient matrix where non-zero elements will be adjusted to zero. Here's an illustration:
 ```@repl WLSDCStateEstimationSolution
-analysis.bad.index
+analysis.outlier.index
 analysis.method.mean
 analysis.method.coefficient
 ```

@@ -68,6 +68,7 @@ mutable struct BranchLayout
     from::Array{Int64,1}
     to::Array{Int64,1}
     status::Array{Int8,1}
+    inservice::Int64
     label::Int64
 end
 
@@ -125,6 +126,7 @@ mutable struct GeneratorLayout
     bus::Array{Int64,1}
     area::Array{Float64,1}
     status::Array{Int8,1}
+    inservice::Int64
     label::Int64
 end
 

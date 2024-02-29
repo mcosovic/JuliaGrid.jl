@@ -372,8 +372,10 @@ function saveMainAttribute(system::PowerSystem, file, reference::String, note::S
     attrs(file)["number of buses"] = system.bus.number
     attrs(file)["number of shunt elements"] = shuntNumber
     attrs(file)["number of branches"] = system.branch.number
+    attrs(file)["number of in-service branches"] = system.branch.layout.inservice
     attrs(file)["number of transformers"] = transformerNumber
     attrs(file)["number of generators"] = system.generator.number
+    attrs(file)["number of in-service generators"] = system.generator.layout.inservice
 
     if !isempty(reference)
         attrs(file)["reference"] = reference

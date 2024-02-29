@@ -176,24 +176,25 @@ function checkStatus(status)
 end
 
 ######### Check Location ##########
-function checkLocation(device, from, to)
+function checkLocation(from, to)
     if isset(from) && isset(to)
         throw(ErrorException("The concurrent definition of the location keywords is not allowed."))
     elseif ismissing(from) && ismissing(to)
         throw(ErrorException("At least one of the location keywords must be provided."))
     end
 
+    fromFlag = false
+    toFlag = false
+
     if isset(from)
         location = from
-        push!(device.layout.from, true)
-        push!(device.layout.to, false)
+        fromFlag = true
     else
         location = to
-        push!(device.layout.from, false)
-        push!(device.layout.to, true)
+        toFlag = true
     end
 
-    return location
+    return location, fromFlag, toFlag
 end
 
 function checkLocation(device, bus, from, to)
@@ -203,24 +204,22 @@ function checkLocation(device, bus, from, to)
         throw(ErrorException("At least one of the location keywords must be provided."))
     end
 
+    busFlag = false
+    fromFlag = false
+    toFlag = false
+    
     if isset(bus)
         location = bus
-        push!(device.layout.bus, true)
-        push!(device.layout.from, false)
-        push!(device.layout.to, false)
+        busFlag = true
     elseif isset(from)
         location = from
-        push!(device.layout.bus, false)
-        push!(device.layout.from, true)
-        push!(device.layout.to, false)
+        fromFlag = true
     else
         location = to
-        push!(device.layout.bus, false)
-        push!(device.layout.from, false)
-        push!(device.layout.to, true)
+        toFlag = true
     end
 
-    return location
+    return location, busFlag, fromFlag, toFlag
 end
 
 ######### Set Mean, Variance, and Status ##########

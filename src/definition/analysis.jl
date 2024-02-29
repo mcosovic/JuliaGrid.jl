@@ -99,7 +99,7 @@ mutable struct FastNewtonRaphsonMethod
     reactive::FastNewtonRaphsonModel
     pq::Array{Int64,1}
     pvpq::Array{Int64,1}
-    model::Int64
+    acmodel::Int64
     const bx::Bool
 end
 
@@ -127,7 +127,7 @@ end
 ########### DC Power Flow ###########
 mutable struct DCPowerFlowMethod
     factorization::LULDLtQR
-    model::Int64
+    dcmodel::Int64
 end
 
 struct DCPowerFlow <: DC
@@ -226,8 +226,8 @@ end
 mutable struct BadData
     detect::Bool
     maxNormalizedResidual::Float64
-    index::Int64
     label::String
+    index::Int64
 end
 
 mutable struct LinearWLS
@@ -256,7 +256,7 @@ struct DCStateEstimationWLS{T <: Union{LinearWLS, LinearOrthogonal}} <: DCStateE
     voltage::PolarAngle
     power::DCPowerSE
     method::T
-    bad::BadData
+    outlier::BadData
 end
 
 mutable struct LAVMethod
@@ -297,7 +297,7 @@ struct PMUStateEstimationWLS{T <: Union{LinearWLS, LinearOrthogonal}} <: PMUStat
     voltage::Polar
     power::PowerSE
     method::T
-    bad::BadData
+    outlier::BadData
 end
 
 struct PMUStateEstimationLAV <: PMUStateEstimation

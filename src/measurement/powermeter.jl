@@ -152,20 +152,31 @@ end
 function addPowerMeter!(system, device, measure, default, prefixPower, label, bus, from, to,
     power, variance, status, noise)
     
-    device.number += 1
-    location = checkLocation(device, bus, from, to)
+    location, busFlag, fromFlag, toFlag = checkLocation(device, bus, from, to)
 
-    if device.layout.bus[end]
-        labelBus = getLabel(system.bus, location, "bus")
-        index = system.bus.label[labelBus]
-        setLabel(device, label, default.label, labelBus)
-
-        defaultVariance = default.varianceBus
-        defaultStatus = default.statusBus
-    else
+    branchFlag = false
+    if !busFlag 
         labelBranch = getLabel(system.branch, location, "branch")
         index = system.branch.label[labelBranch]
-        if device.layout.from[end]
+        if system.branch.layout.status[index] == 1
+            branchFlag = true
+        end
+    end
+
+    if busFlag || branchFlag
+        device.number += 1
+        push!(device.layout.bus, busFlag)
+        push!(device.layout.from, fromFlag)
+        push!(device.layout.to, toFlag)
+
+        if busFlag
+            labelBus = getLabel(system.bus, location, "bus")
+            index = system.bus.label[labelBus]
+            setLabel(device, label, default.label, labelBus)
+
+            defaultVariance = default.varianceBus
+            defaultStatus = default.statusBus
+        elseif fromFlag
             setLabel(device, label, default.label, labelBranch; prefix = "From ")
             defaultVariance = default.varianceFrom
             defaultStatus = default.statusFrom
@@ -174,12 +185,11 @@ function addPowerMeter!(system, device, measure, default, prefixPower, label, bu
             defaultVariance = default.varianceTo
             defaultStatus = default.statusTo
         end
-    end
-    push!(device.layout.index, index)
+        push!(device.layout.index, index)
 
-    basePowerInv = 1 / (system.base.power.value * system.base.power.prefix)
-    setMeter(measure, power, variance, status, noise, defaultVariance,
-        defaultStatus, prefixPower, basePowerInv)
+        basePowerInv = 1 / (system.base.power.value * system.base.power.prefix)
+        setMeter(measure, power, variance, status, noise, defaultVariance, defaultStatus, prefixPower, basePowerInv)
+    end
 end
 
 """
@@ -382,7 +392,7 @@ function addPowermeter!(system, device, measure, powerBus, powerFrom, powerTo, d
     statusTo = unitless(statusTo, default.statusTo)
     checkStatus(statusTo)
 
-    deviceNumber = system.bus.number + 2 * system.branch.number
+    deviceNumber = system.bus.number + 2 * system.branch.layout.inservice
 
     device.label = OrderedDict{String,Int64}(); sizehint!(device.label, deviceNumber)
 
@@ -409,25 +419,27 @@ function addPowermeter!(system, device, measure, powerBus, powerFrom, powerTo, d
     end
 
     @inbounds for (label, i) in system.branch.label
-        device.number += 1
-        setLabel(device, missing, default.label, label; prefix = "From ")
+        if system.branch.layout.status[i] == 1
+            device.number += 1
+            setLabel(device, missing, default.label, label; prefix = "From ")
 
-        device.layout.index[device.number] = i
-        device.layout.from[device.number] = true
+            device.layout.index[device.number] = i
+            device.layout.from[device.number] = true
 
-        measure.variance[device.number] = topu(varianceFrom, default.varianceFrom, prefixPower, basePowerInv)
-        measure.mean[device.number] = powerFrom[i] + measure.variance[device.number]^(1/2) * randn(1)[1]
-        measure.status[device.number] = statusFrom
+            measure.variance[device.number] = topu(varianceFrom, default.varianceFrom, prefixPower, basePowerInv)
+            measure.mean[device.number] = powerFrom[i] + measure.variance[device.number]^(1/2) * randn(1)[1]
+            measure.status[device.number] = statusFrom
 
-        device.number += 1
-        setLabel(device, missing, default.label, label; prefix = "To ")
+            device.number += 1
+            setLabel(device, missing, default.label, label; prefix = "To ")
 
-        device.layout.index[device.number] = i
-        device.layout.to[device.number] = true
+            device.layout.index[device.number] = i
+            device.layout.to[device.number] = true
 
-        measure.variance[device.number] = topu(varianceTo, default.varianceTo, prefixPower, basePowerInv)
-        measure.mean[device.number] = powerTo[i] + measure.variance[device.number]^(1/2) * randn(1)[1]
-        measure.status[device.number] = statusTo
+            measure.variance[device.number] = topu(varianceTo, default.varianceTo, prefixPower, basePowerInv)
+            measure.mean[device.number] = powerTo[i] + measure.variance[device.number]^(1/2) * randn(1)[1]
+            measure.status[device.number] = statusTo
+        end
     end
 
     device.layout.label = device.number

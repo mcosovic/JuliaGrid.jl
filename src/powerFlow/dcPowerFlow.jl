@@ -94,7 +94,7 @@ function solve!(system::PowerSystem, analysis::DCPowerFlow)
         b[i] -= bus.demand.active[i] + bus.shunt.conductance[i] + system.model.dc.shiftPower[i]
     end
 
-    if system.model.dc.model != analysis.method.model
+    if system.model.dc.model != analysis.method.dcmodel
         dcPowerFlowFactorization(system, analysis)
     end
     analysis.voltage.angle = sparseSolution(analysis.voltage.angle, b, analysis.method.factorization)
@@ -112,7 +112,7 @@ end
 function dcPowerFlowFactorization(system::PowerSystem, analysis::DCPowerFlow)
     dc = system.model.dc
     bus = system.bus
-    analysis.method.model = copy(system.model.dc.model)
+    analysis.method.dcmodel = copy(system.model.dc.model)
 
     slackRange = dc.nodalMatrix.colptr[bus.layout.slack]:(dc.nodalMatrix.colptr[bus.layout.slack + 1] - 1)
     elementsRemove = dc.nodalMatrix.nzval[slackRange]

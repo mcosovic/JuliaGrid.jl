@@ -97,6 +97,10 @@ function addBranch!(system::PowerSystem;
 
     push!(branch.layout.status, unitless(status, default.status))
     checkStatus(branch.layout.status[end])
+    if branch.layout.status[end] == 1
+        branch.layout.inservice += 1
+    end
+
     push!(branch.parameter.turnsRatio, unitless(turnsRatio, default.turnsRatio))
 
     basePowerInv = 1 / (system.base.power.value * system.base.power.prefix)
@@ -153,7 +157,7 @@ function addBranch!(system::PowerSystem, analysis::DCPowerFlow;
 
     addBranch!(system; label, from, to, status, resistance, reactance, susceptance,
         conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, longTerm, shortTerm,
-        emergency, type)       
+        emergency, type)
 end
 
 function addBranch!(system::PowerSystem, analysis::Union{NewtonRaphson, GaussSeidel};
@@ -305,6 +309,12 @@ function updateBranch!(system::PowerSystem;
     basePowerInv = 1 / (system.base.power.value * system.base.power.prefix)
     dcAdmittance = isset(reactance) || isset(turnsRatio) 
     parameter = dcAdmittance || isset(resistance) || isset(conductance) || isset(susceptance) || isset(shiftAngle)
+
+    if status == 1 && branch.layout.status[index] == 0
+        branch.layout.inservice += 1
+    elseif status == 0 && branch.layout.status[index] == 1
+        branch.layout.inservice -= 1
+    end
 
     if !isempty(dc.nodalMatrix)
         if branch.layout.status[index] == 1 && (status == 0 || (status == 1 && dcAdmittance || isset(shiftAngle)))

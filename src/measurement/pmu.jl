@@ -82,54 +82,67 @@ function addPmu!(system::PowerSystem, device::Measurement;
     pmu = device.pmu
     default = template.pmu
 
-    pmu.number += 1
-    location = checkLocation(pmu, bus, from, to)
+    location, busFlag, fromFlag, toFlag = checkLocation(pmu, bus, from, to)
 
-    if pmu.layout.bus[end]
-        labelBus = getLabel(system.bus, location, "bus")
-        index = system.bus.label[labelBus]
-        setLabel(pmu, label, default.label, labelBus)
-
-        defaultVarianceMagnitude = default.varianceMagnitudeBus
-        defaultVarianceAngle = default.varianceAngleBus
-        defaultMagnitudeStatus = default.statusMagnitudeBus
-        defaultAngleStatus = default.statusAngleBus
-
-        prefixMagnitude = prefix.voltageMagnitude
-        prefixAngle = prefix.voltageAngle
-        baseInv = 1 / (system.base.voltage.value[index] * system.base.voltage.prefix)
-    else
+    branchFlag = false
+    if !busFlag 
         labelBranch = getLabel(system.branch, location, "branch")
         index = system.branch.label[labelBranch]
-        if pmu.layout.from[end]
-            setLabel(pmu, label, default.label, labelBranch; prefix = "From ")
-            defaultVarianceMagnitude = default.varianceMagnitudeFrom
-            defaultVarianceAngle = default.varianceAngleFrom
-            defaultMagnitudeStatus = default.statusMagnitudeFrom
-            defaultAngleStatus = default.statusAngleFrom
-
-            baseVoltage = system.base.voltage.value[system.branch.layout.from[index]] * system.base.voltage.prefix
-        else
-            setLabel(pmu, label, default.label, labelBranch; prefix = "To ")
-            defaultVarianceMagnitude = default.varianceMagnitudeTo
-            defaultVarianceAngle = default.varianceAngleTo
-            defaultMagnitudeStatus = default.statusMagnitudeTo
-            defaultAngleStatus = default.statusAngleTo
-
-            baseVoltage = system.base.voltage.value[system.branch.layout.to[index]] * system.base.voltage.prefix
+        if system.branch.layout.status[index] == 1
+            branchFlag = true
         end
-        prefixMagnitude = prefix.currentMagnitude
-        prefixAngle = prefix.currentAngle
-        basePowerInv = 1 / (system.base.power.value * system.base.power.prefix)
-        baseInv = baseCurrentInverse(basePowerInv, baseVoltage)
     end
-    push!(pmu.layout.index, index)
 
-    setMeter(pmu.magnitude, magnitude, varianceMagnitude, statusMagnitude, noise,
-        defaultVarianceMagnitude, defaultMagnitudeStatus, prefixMagnitude, baseInv)
+    if busFlag || branchFlag
+        pmu.number += 1
+        push!(pmu.layout.bus, busFlag)
+        push!(pmu.layout.from, fromFlag)
+        push!(pmu.layout.to, toFlag)
 
-    setMeter(pmu.angle, angle, varianceAngle, statusAngle, noise, defaultVarianceAngle,
-        defaultAngleStatus, prefixAngle, 1.0)
+        if busFlag
+            labelBus = getLabel(system.bus, location, "bus")
+            index = system.bus.label[labelBus]
+            setLabel(pmu, label, default.label, labelBus)
+
+            defaultVarianceMagnitude = default.varianceMagnitudeBus
+            defaultVarianceAngle = default.varianceAngleBus
+            defaultMagnitudeStatus = default.statusMagnitudeBus
+            defaultAngleStatus = default.statusAngleBus
+
+            prefixMagnitude = prefix.voltageMagnitude
+            prefixAngle = prefix.voltageAngle
+            baseInv = 1 / (system.base.voltage.value[index] * system.base.voltage.prefix)
+        else
+            if fromFlag
+                setLabel(pmu, label, default.label, labelBranch; prefix = "From ")
+                defaultVarianceMagnitude = default.varianceMagnitudeFrom
+                defaultVarianceAngle = default.varianceAngleFrom
+                defaultMagnitudeStatus = default.statusMagnitudeFrom
+                defaultAngleStatus = default.statusAngleFrom
+
+                baseVoltage = system.base.voltage.value[system.branch.layout.from[index]] * system.base.voltage.prefix
+            else
+                setLabel(pmu, label, default.label, labelBranch; prefix = "To ")
+                defaultVarianceMagnitude = default.varianceMagnitudeTo
+                defaultVarianceAngle = default.varianceAngleTo
+                defaultMagnitudeStatus = default.statusMagnitudeTo
+                defaultAngleStatus = default.statusAngleTo
+
+                baseVoltage = system.base.voltage.value[system.branch.layout.to[index]] * system.base.voltage.prefix
+            end
+            prefixMagnitude = prefix.currentMagnitude
+            prefixAngle = prefix.currentAngle
+            basePowerInv = 1 / (system.base.power.value * system.base.power.prefix)
+            baseInv = baseCurrentInverse(basePowerInv, baseVoltage)
+        end
+        push!(pmu.layout.index, index)
+
+        setMeter(pmu.magnitude, magnitude, varianceMagnitude, statusMagnitude, noise,
+            defaultVarianceMagnitude, defaultMagnitudeStatus, prefixMagnitude, baseInv)
+
+        setMeter(pmu.angle, angle, varianceAngle, statusAngle, noise, defaultVarianceAngle,
+            defaultAngleStatus, prefixAngle, 1.0)
+    end
 end
 
 """
@@ -259,7 +272,7 @@ function addPmu!(system::PowerSystem, device::Measurement, analysis::AC;
     statusAngleTo = unitless(statusAngleTo, default.statusAngleTo)
     checkStatus(statusAngleTo)
 
-    pmuNumber = system.bus.number + 2 * system.branch.number
+    pmuNumber = system.bus.number + 2 * system.branch.layout.inservice
     pmu.label = OrderedDict{String,Int64}(); sizehint!(pmu.label, pmuNumber)
 
     pmu.layout.index = fill(0, pmuNumber)
@@ -294,39 +307,41 @@ function addPmu!(system::PowerSystem, device::Measurement, analysis::AC;
 
     basePowerInv = 1 / (system.base.power.value * system.base.power.prefix)
     @inbounds for (label, i) in system.branch.label
-        pmu.number += 1
-        setLabel(pmu, missing, default.label, label; prefix = "From ")
+        if system.branch.layout.status[i] == 1
+            pmu.number += 1
+            setLabel(pmu, missing, default.label, label; prefix = "From ")
         
-        pmu.layout.index[pmu.number] = i
-        pmu.layout.from[pmu.number] = true
+            pmu.layout.index[pmu.number] = i
+            pmu.layout.from[pmu.number] = true
         
-        baseVoltage = system.base.voltage.value[system.branch.layout.from[i]] * system.base.voltage.prefix
-        baseCurrentInv = baseCurrentInverse(basePowerInv, baseVoltage)
+            baseVoltage = system.base.voltage.value[system.branch.layout.from[i]] * system.base.voltage.prefix
+            baseCurrentInv = baseCurrentInverse(basePowerInv, baseVoltage)
 
-        pmu.magnitude.variance[pmu.number] = topu(varianceMagnitudeFrom, default.varianceMagnitudeFrom, prefix.currentMagnitude, baseCurrentInv)
-        pmu.magnitude.mean[pmu.number] = analysis.current.from.magnitude[i] + pmu.magnitude.variance[pmu.number]^(1/2) * randn(1)[1]
-        pmu.magnitude.status[pmu.number] = statusMagnitudeFrom
+            pmu.magnitude.variance[pmu.number] = topu(varianceMagnitudeFrom, default.varianceMagnitudeFrom, prefix.currentMagnitude, baseCurrentInv)
+            pmu.magnitude.mean[pmu.number] = analysis.current.from.magnitude[i] + pmu.magnitude.variance[pmu.number]^(1/2) * randn(1)[1]
+            pmu.magnitude.status[pmu.number] = statusMagnitudeFrom
 
-        pmu.angle.variance[pmu.number] = topu(varianceAngleFrom, default.varianceAngleFrom, prefix.currentAngle, 1.0)
-        pmu.angle.mean[pmu.number] = analysis.current.from.angle[i] + pmu.angle.variance[pmu.number]^(1/2) * randn(1)[1]
-        pmu.angle.status[pmu.number] = statusAngleFrom
+            pmu.angle.variance[pmu.number] = topu(varianceAngleFrom, default.varianceAngleFrom, prefix.currentAngle, 1.0)
+            pmu.angle.mean[pmu.number] = analysis.current.from.angle[i] + pmu.angle.variance[pmu.number]^(1/2) * randn(1)[1]
+            pmu.angle.status[pmu.number] = statusAngleFrom
 
-        pmu.number += 1
-        setLabel(pmu, missing, default.label, label; prefix = "To ")
+            pmu.number += 1
+            setLabel(pmu, missing, default.label, label; prefix = "To ")
 
-        pmu.layout.index[pmu.number] = i
-        pmu.layout.to[pmu.number] = true
+            pmu.layout.index[pmu.number] = i
+            pmu.layout.to[pmu.number] = true
         
-        baseVoltage = system.base.voltage.value[system.branch.layout.to[i]] * system.base.voltage.prefix
-        baseCurrentInv = baseCurrentInverse(basePowerInv, baseVoltage)
+            baseVoltage = system.base.voltage.value[system.branch.layout.to[i]] * system.base.voltage.prefix
+            baseCurrentInv = baseCurrentInverse(basePowerInv, baseVoltage)
 
-        pmu.magnitude.variance[pmu.number] = topu(varianceMagnitudeTo, default.varianceMagnitudeTo, prefix.currentMagnitude, baseCurrentInv)
-        pmu.magnitude.mean[pmu.number] = analysis.current.to.magnitude[i] + pmu.magnitude.variance[pmu.number]^(1/2) * randn(1)[1]
-        pmu.magnitude.status[pmu.number] = statusMagnitudeTo
+            pmu.magnitude.variance[pmu.number] = topu(varianceMagnitudeTo, default.varianceMagnitudeTo, prefix.currentMagnitude, baseCurrentInv)
+            pmu.magnitude.mean[pmu.number] = analysis.current.to.magnitude[i] + pmu.magnitude.variance[pmu.number]^(1/2) * randn(1)[1]
+            pmu.magnitude.status[pmu.number] = statusMagnitudeTo
 
-        pmu.angle.variance[pmu.number] = topu(varianceAngleTo, default.varianceAngleTo, prefix.currentAngle, 1.0)
-        pmu.angle.mean[pmu.number] = analysis.current.to.angle[i] + pmu.angle.variance[pmu.number]^(1/2) * randn(1)[1]
-        pmu.angle.status[pmu.number] = statusAngleTo
+            pmu.angle.variance[pmu.number] = topu(varianceAngleTo, default.varianceAngleTo, prefix.currentAngle, 1.0)
+            pmu.angle.mean[pmu.number] = analysis.current.to.angle[i] + pmu.angle.variance[pmu.number]^(1/2) * randn(1)[1]
+            pmu.angle.status[pmu.number] = statusAngleTo
+        end
     end
 
     pmu.layout.label = pmu.number
@@ -469,63 +484,195 @@ function updatePmu!(system::PowerSystem, device::Measurement, analysis::DCStateE
     end
 end   
 
-# function updatePmu!(system::PowerSystem, device::Measurement, analysis::PMUStateEstimationWLS; 
-#     label::L, magnitude::T = missing, angle::T = missing, varianceMagnitude::T = missing,
-#     varianceAngle::T = missing, statusMagnitude::T = missing, statusAngle::T = missing,
-#     noise::Bool = template.pmu.noise)
+function updatePmu!(system::PowerSystem, device::Measurement, analysis::PMUStateEstimationWLS; 
+    label::L, magnitude::T = missing, angle::T = missing, varianceMagnitude::T = missing,
+    varianceAngle::T = missing, statusMagnitude::T = missing, statusAngle::T = missing,
+    noise::Bool = template.pmu.noise)
 
-#     pmu = device.pmu
-#     method = analysis.method
+    bus = system.bus
+    branch = system.branch
+    ac = system.model.ac
+    pmu = device.pmu
+    method = analysis.method
+    index = pmu.label[getLabel(pmu, label, "PMU")]  
+    statusOld = pmu.magnitude.status[index] & pmu.angle.status[index]
 
-#     updatePmu!(system, device; label, magnitude, angle, varianceMagnitude, varianceAngle, 
-#     statusMagnitude, statusAngle, noise)
+    updatePmu!(system, device; label, magnitude, angle, varianceMagnitude, varianceAngle, 
+    statusMagnitude, statusAngle, noise)
 
-#     index = pmu.label[getLabel(pmu, label, "PMU")]   
+    statusNew = pmu.magnitude.status[index] & pmu.angle.status[index]
+    mean = isset(magnitude) || isset(angle)
+    variance = isset(varianceMagnitude) || isset(varianceAngle)
+    cosAngle = cos(pmu.angle.mean[index])
+    sinAngle = sin(pmu.angle.mean[index])
+    rowIndexRe = 2 * index - 1
 
-#     cosAngle = cos(pmu.angle.mean[index])
-#     sinAngle = sin(pmu.angle.mean[index])
+    if mean || variance
+        varianceRe = pmu.magnitude.variance[index] * cosAngle^2 + pmu.angle.variance[index] * (pmu.magnitude.mean[index] * sinAngle)^2
+        varianceIm = pmu.magnitude.variance[index] * sinAngle^2 + pmu.angle.variance[index] * (pmu.magnitude.mean[index] * cosAngle)^2
 
-#     if isset(varianceMagnitude) || isset(varianceAngle)
-#         method.done = false
+        if method.correlated
+            covariance = sinAngle * cosAngle * (pmu.magnitude.variance[index] - pmu.angle.variance[index] * pmu.magnitude.mean[index]^2)
+            invCovarianceBlock!(method.precision, varianceRe, varianceIm, covariance, rowIndexRe)
+        else
+            method.precision.nzval[rowIndexRe] = 1 / varianceRe
+            method.precision.nzval[rowIndexRe + 1] = 1 / varianceIm
+        end   
+    end
 
-#         varianceRe = pmu.magnitude.variance[index] * cosAngle^2 + pmu.angle.variance[index] * (pmu.magnitude.mean[index] * sinAngle)^2
-#         varianceIm = pmu.magnitude.variance[index] * sinAngle^2 + pmu.angle.variance[index] * (pmu.magnitude.mean[index] * cosAngle)^2
+    if statusNew != statusOld || mean
+        if statusNew == 1 && (pmu.layout.bus[index] || branch.layout.status[pmu.layout.index[index]] == 1)
+            method.mean[rowIndexRe] = pmu.magnitude.mean[index] * cosAngle 
+            method.mean[rowIndexRe + 1] = pmu.magnitude.mean[index] * sinAngle 
+        else
+            method.mean[rowIndexRe] = 0.0
+            method.mean[rowIndexRe + 1] = 0.0
+        end
+    end
 
-#         if method.correlated
-#             covariance = sinAngle * cosAngle * (pmu.magnitude.variance[index] - pmu.angle.variance[index] * pmu.magnitude.mean[index]^2)
-#             invCovarianceBlock!(method.precision, varianceRe, varianceIm, covariance, index)
-#         else
-#             method.precision.nzval[index] = 1 / varianceRe
-#             method.precision.nzval[index + 1] = 1 / varianceIm
-#         end
-#     end
+    if statusNew != statusOld
+        if pmu.layout.bus[index] 
+            if statusNew == 1
+                method.coefficient[rowIndexRe, pmu.layout.index[index]] = 1.0
+                method.coefficient[rowIndexRe + 1, pmu.layout.index[index] + bus.number] = 1.0
+            else
+                method.coefficient[rowIndexRe, pmu.layout.index[index]] = 0.0
+                method.coefficient[rowIndexRe + 1, pmu.layout.index[index] + bus.number] = 0.0
+            end
+        else
+            k = pmu.layout.index[index]
+            from = branch.layout.from[k]
+            to = branch.layout.to[k]
+            if statusNew == 1 && branch.layout.status[k] == 1
+                gij = real(ac.admittance[k])
+                bij = imag(ac.admittance[k])
+                cosShift = cos(branch.parameter.shiftAngle[k])
+                sinShift = sin(branch.parameter.shiftAngle[k])
+                turnsRatioInv = 1 / branch.parameter.turnsRatio[k]
 
-#     if isset(magnitude) || isset(angle)
-#         k = pmu.layout.index[index]
-#         if pmu.magnitude.status[index] == 1 && pmu.angle.status[index] == 1 && (pmu.layout.bus[index] || branch.layout.status[k] == 1)
-#             method.mean[index] = pmu.magnitude.mean[index] * cosAngle 
-#             method.mean[index + 1] = pmu.magnitude.mean[index] * sinAngle 
-#         else
-#             method.mean[index] = 0.0
-#             method.mean[index + 1] = 0.0
-#         end
-#     end
+                if pmu.layout.from[index]
+                    method.coefficient[rowIndexRe, from] = turnsRatioInv^2 * (gij + 0.5 * branch.parameter.conductance[k])
+                    method.coefficient[rowIndexRe + 1, from + bus.number] = method.coefficient[rowIndexRe, from]
 
-#     if isset(statusAngle) || isset(statusMagnitude)
-#         if pmu.magnitude.status[index] == 1 && pmu.angle.status[index] == 1
+                    method.coefficient[rowIndexRe, to] = -turnsRatioInv * (gij * cosShift - bij * sinShift)
+                    method.coefficient[rowIndexRe + 1, to + bus.number] =  method.coefficient[rowIndexRe, to]
 
-#         end
-#     #     if pmu.layout.bus[index]
-#     #         method.coefficient[]
-#     #     end
-#     #     # if pmu.magnitude.status[index] == 1 && pmu.angle.status[index] == 1 && system.branch.layout.status[k] == 1
+                    method.coefficient[rowIndexRe, from + bus.number] = -turnsRatioInv^2 * (bij + 0.5 * branch.parameter.susceptance[k])
+                    method.coefficient[rowIndexRe + 1, from] = -method.coefficient[rowIndexRe, from + bus.number]
 
-#     #     # end
-#     end
+                    method.coefficient[rowIndexRe, to + bus.number] = turnsRatioInv * (bij * cosShift + gij * sinShift)
+                    method.coefficient[rowIndexRe + 1, to] = -method.coefficient[rowIndexRe, to + bus.number]
+                else
+                    method.coefficient[rowIndexRe, from] = -turnsRatioInv * (gij * cosShift + bij * sinShift)
+                    method.coefficient[rowIndexRe + 1, from + bus.number] = method.coefficient[rowIndexRe, from]
 
+                    method.coefficient[rowIndexRe, to] = gij + 0.5 * branch.parameter.conductance[k]
+                    method.coefficient[rowIndexRe + 1, to + bus.number] =  method.coefficient[rowIndexRe, to]
+
+                    method.coefficient[rowIndexRe, from + bus.number] = turnsRatioInv * (bij * cosShift - gij * sinShift)
+                    method.coefficient[rowIndexRe + 1, from] = -method.coefficient[rowIndexRe, from + bus.number]
+
+                    method.coefficient[rowIndexRe, to + bus.number] = -bij - 0.5 * branch.parameter.susceptance[k]
+                    method.coefficient[rowIndexRe + 1, to] = -method.coefficient[rowIndexRe, to + bus.number]
+                end
+            else
+                method.coefficient[rowIndexRe, from] = 0.0
+                method.coefficient[rowIndexRe + 1, from + bus.number] = 0.0
+                method.coefficient[rowIndexRe, to] = 0.0
+                method.coefficient[rowIndexRe + 1, to + bus.number] = 0.0
+                method.coefficient[rowIndexRe, from + bus.number] = 0.0
+                method.coefficient[rowIndexRe + 1, from] = 0.0
+                method.coefficient[rowIndexRe, to + bus.number] = 0.0
+                method.coefficient[rowIndexRe + 1, to] = 0.0
+            end
+        end
+    end 
+end
+
+function updatePmu!(system::PowerSystem, device::Measurement, analysis::PMUStateEstimationLAV; 
+    label::L, magnitude::T = missing, angle::T = missing, varianceMagnitude::T = missing,
+    varianceAngle::T = missing, statusMagnitude::T = missing, statusAngle::T = missing,
+    noise::Bool = template.pmu.noise)
+
+    bus = system.bus
+    branch = system.branch
+    ac = system.model.ac
+    pmu = device.pmu
+    method = analysis.method
+    index = pmu.label[getLabel(pmu, label, "PMU")]  
+    statusOld = pmu.magnitude.status[index] & pmu.angle.status[index]
+
+    updatePmu!(system, device; label, magnitude, angle, varianceMagnitude, varianceAngle, 
+    statusMagnitude, statusAngle, noise)
+
+    statusNew = pmu.magnitude.status[index] & pmu.angle.status[index]
+    mean = isset(magnitude) || isset(angle)
+    cosAngle = cos(pmu.angle.mean[index])
+    sinAngle = sin(pmu.angle.mean[index])
+    rowIndexRe = 2 * index - 1
+
+    if statusOld == 0 && statusNew == 1
+        if pmu.layout.bus[index]
+            addDeviceLAV(method, rowIndexRe)
+            addDeviceLAV(method, rowIndexRe + 1)
+
+            indexBus = pmu.layout.index[index]
+            method.residual[rowIndexRe] = @constraint(method.jump, method.statex[indexBus] - method.statey[indexBus] + method.residualx[rowIndexRe] - method.residualy[rowIndexRe] == 0.0)
+            method.residual[rowIndexRe + 1] = @constraint(method.jump, method.statex[indexBus + bus.number] - method.statey[indexBus + bus.number] + method.residualx[rowIndexRe + 1] - method.residualy[rowIndexRe + 1] == 0.0)
+        else
+            k = pmu.layout.index[index]
+            if branch.layout.status[k] == 1
+                from = branch.layout.from[k]
+                to = branch.layout.to[k]
+
+                addDeviceLAV(method, rowIndexRe)
+                addDeviceLAV(method, rowIndexRe + 1)
+
+                gij = real(ac.admittance[k])
+                bij = imag(ac.admittance[k])
+                cosShift = cos(branch.parameter.shiftAngle[k])
+                sinShift = sin(branch.parameter.shiftAngle[k])
+                turnsRatioInv = 1 / branch.parameter.turnsRatio[k]
     
-# end
+                Vrei = method.statex[from] - method.statey[from]
+                Vimi = method.statex[from + bus.number] - method.statey[from + bus.number]
+                Vrej = method.statex[to] - method.statey[to]
+                Vimj = method.statex[to + bus.number] - method.statey[to + bus.number]
+    
+                cosAngle = cos(pmu.angle.mean[index])
+                sinAngle = sin(pmu.angle.mean[index])
+    
+                if pmu.layout.from[k]
+                    a1 = turnsRatioInv^2 * gij
+                    a2 = -turnsRatioInv^2 * (bij + 0.5 * branch.parameter.susceptance[k]) 
+                    a3 = -turnsRatioInv * (gij * cosShift - bij * sinShift)
+                    a4 = turnsRatioInv * (bij * cosShift + gij * sinShift) 
+    
+                    method.residual[rowIndexRe] = @constraint(method.jump, a1 * Vrei + a2 * Vimi + a3 * Vrej + a4 * Vimj + method.residualx[rowIndexRe] - method.residualy[rowIndexRe] - pmu.magnitude.mean[index] * cosAngle == 0.0)
+                    method.residual[rowIndexRe + 1] = @constraint(method.jump, -a2 * Vrei + a1 * Vimi - a4 * Vrej + a3 * Vimj + method.residualx[rowIndexRe + 1] - method.residualy[rowIndexRe + 1] - pmu.magnitude.mean[index] * sinAngle == 0.0)
+                else
+                    a1 = -turnsRatioInv * (gij * cosShift + bij * sinShift)
+                    a2 = turnsRatioInv * (bij * cosShift - gij * sinShift)
+                    a3 = gij
+                    a4 = -bij - 0.5 * branch.parameter.susceptance[k]
+    
+                    method.residual[rowIndexRe] = @constraint(method.jump, a1 * Vrei + a2 * Vimi + a3 * Vrej + a4 * Vimj + method.residualx[rowIndexRe] - method.residualy[rowIndexRe] - pmu.magnitude.mean[index] * cosAngle == 0.0)
+                    method.residual[rowIndexRe + 1] = @constraint(method.jump, -a2 * Vrei + a1 * Vimi - a4 * Vrej + a3 * Vimj + method.residualx[rowIndexRe + 1] - method.residualy[rowIndexRe + 1] - pmu.magnitude.mean[index] * sinAngle == 0.0)
+                end
+            end
+        end
+    end
 
+    if statusOld == 1 && statusNew == 0
+        removeDeviceLAV(method, rowIndexRe)
+        removeDeviceLAV(method, rowIndexRe + 1)
+    end
+
+    if statusNew == 1 && mean
+        JuMP.set_normalized_rhs(method.residual[rowIndexRe], pmu.magnitude.mean[index] * cosAngle)
+        JuMP.set_normalized_rhs(method.residual[rowIndexRe + 1], pmu.magnitude.mean[index] * sinAngle)
+    end
+end   
 
 """
     @pmu(label, varianceMagnitudeBus, statusMagnitudeBus, varianceAngleBus, statusAngleBus,
