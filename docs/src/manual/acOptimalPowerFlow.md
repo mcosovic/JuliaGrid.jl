@@ -8,6 +8,8 @@ To perform the AC optimal power flow, you first need to have the `PowerSystem` c
 To solve the AC optimal power flow problem and acquire bus voltage magnitudes and angles, and generator active and reactive power outputs, make use of the following function:
 * [`solve!`](@ref solve!(::PowerSystem, ::ACOptimalPowerFlow)).
 
+---
+
 After obtaining the AC optimal power flow solution, JuliaGrid offers post-processing analysis functions for calculating powers and currents associated with buses and branches:
 * [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)),
 * [`current!`](@ref current!(::PowerSystem, ::ACPowerFlow)).

@@ -9,6 +9,8 @@ JuliaGrid supports two modes for populating the `Measurement` type: using built-
 It is recommended to use the HDF5 format for large-scale systems. To facilitate this, JuliaGrid has the function:
 * [`saveMeasurement`](@ref saveMeasurement).
 
+---
+
 Once the `Measurement` type has been established, we can incorporate voltmeters, ammeters, wattmeters, varmeters, and PMUs using the following functions:
 * [`addVoltmeter!`](@ref addVoltmeter!),
 * [`addAmmeter!`](@ref addAmmeter!),
@@ -30,6 +32,8 @@ Moreover, it is feasible to modify the parameters of measurement devices. When t
 
 !!! tip "Tip"
     The functions for adding or updating measurement devices serve a dual purpose. While their primary function is to modify the `Measurement` composite type, they are also designed to accept various analysis models like AC or DC state estimation models. When feasible, these functions not only modify the `Measurement` type but also adapt the analysis model, often resulting in improved computational efficiency. Detailed instructions on utilizing this feature can be found in dedicated manuals for specific analyses.
+
+---
 
 Finally, the user has the capability to randomly alter the measurement set by activating or deactivating devices through the following function:
 * [`status!`](@ref status!).

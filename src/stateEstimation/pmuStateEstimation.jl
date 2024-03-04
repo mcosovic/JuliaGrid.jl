@@ -87,12 +87,13 @@ analysis = pmuStateEstimation(system, device, Ipopt.Optimizer)
 ```
 """
 function pmuStateEstimation(system::PowerSystem, device::Measurement, factorization::Type{<:Union{QR, LDLt, LU}} = LU; correlated = false)
-    coefficient, mean, precision, badData, power = pmuStateEstimationWLS(system, device, correlated)
+    coefficient, mean, precision, badData, power, current = pmuStateEstimationWLS(system, device, correlated)
 
     method = Dict(LU => lu, LDLt => ldlt, QR => qr)
     return PMUStateEstimationWLS(
         Polar(Float64[], Float64[]),
         power,
+        current, 
         LinearWLS(
             coefficient,
             precision,
@@ -108,11 +109,12 @@ function pmuStateEstimation(system::PowerSystem, device::Measurement, factorizat
 end
 
 function pmuStateEstimation(system::PowerSystem, device::Measurement, method::Type{<:Orthogonal})
-    coefficient, mean, precision, badData, power = pmuStateEstimationWLS(system, device, false)
+    coefficient, mean, precision, badData, power, current = pmuStateEstimationWLS(system, device, false)
 
     return PMUStateEstimationWLS(
         Polar(Float64[], Float64[]),
         power,
+        current,
         LinearOrthogonal(
             coefficient,
             precision,
@@ -263,8 +265,9 @@ function pmuStateEstimationWLS(system::PowerSystem, device::Measurement, correla
     badData = BadData(true, 0.0, "", 0)
     power = PowerSE(Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), 
         Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]))
+    current = Current(Polar(Float64[], Float64[]), Polar(Float64[], Float64[]), Polar(Float64[], Float64[]), Polar(Float64[], Float64[]))       
 
-    return coefficient, mean, precision, badData, power
+    return coefficient, mean, precision, badData, power, current
 end
 
 function pmuStateEstimation(system::PowerSystem, device::Measurement, (@nospecialize optimizerFactory);
@@ -358,6 +361,12 @@ function pmuStateEstimation(system::PowerSystem, device::Measurement, (@nospecia
             Cartesian(Float64[], Float64[]),
             Cartesian(Float64[], Float64[]),
             Cartesian(Float64[], Float64[])
+        ),
+        Current(
+            Polar(Float64[], Float64[]),
+            Polar(Float64[], Float64[]),
+            Polar(Float64[], Float64[]),
+            Polar(Float64[], Float64[])
         ),
         LAVMethod(
             jump,

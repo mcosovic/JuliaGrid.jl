@@ -296,6 +296,7 @@ end
 struct PMUStateEstimationWLS{T <: Union{LinearWLS, LinearOrthogonal}} <: PMUStateEstimation
     voltage::Polar
     power::PowerSE
+    current::Current
     method::T
     outlier::BadData
 end
@@ -303,6 +304,7 @@ end
 struct PMUStateEstimationLAV <: PMUStateEstimation
     voltage::Polar
     power::PowerSE
+    current::Current
     method::LAVMethod
 end
 

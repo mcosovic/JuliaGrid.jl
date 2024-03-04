@@ -9,6 +9,12 @@ These functions will set up the AC power flow framework. To obtain bus voltages 
 * [`mismatch!`](@ref mismatch!(::PowerSystem, ::NewtonRaphson)),
 * [`solve!`](@ref solve!(::PowerSystem, ::NewtonRaphson)).
 
+Additionally, the package provides two functions for reactive power limit validation of generators and adjusting the voltage angles to match an arbitrary bus angle:
+* [`reactiveLimit!`](@ref reactiveLimit!),
+* [`adjustAngle!`](@ref adjustAngle!).
+
+---
+
 After obtaining the AC power flow solution, JuliaGrid offers post-processing analysis functions for calculating powers and currents associated with buses, branches, or generators:
 * [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)),
 * [`current!`](@ref current!(::PowerSystem, ::AC)).
@@ -28,10 +34,6 @@ Likewise, there are specialized functions dedicated to calculating specific type
 * [`fromCurrent`](@ref fromCurrent(::PowerSystem, ::AC)),
 * [`toCurrent`](@ref toCurrent(::PowerSystem, ::AC)),
 * [`seriesCurrent`](@ref seriesCurrent(::PowerSystem, ::AC)).
-
-Additionally, the package provides two functions for reactive power limit validation of generators and adjusting the voltage angles to match an arbitrary bus angle:
-* [`reactiveLimit!`](@ref reactiveLimit!),
-* [`adjustAngle!`](@ref adjustAngle!).
 
 ---
 

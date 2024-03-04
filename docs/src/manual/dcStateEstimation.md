@@ -1,9 +1,19 @@
 # [DC State Estimation](@id DCStateEstimationManual)
-To perform the DC power flow, you first need to have the `PowerSystem` composite type that has been created with the `dc` model, alongside the `Measurement` composite type that retains measurement data. Subsequently, we can formulate the DC state estimation model encapsulated within the abstract type `DCStateEstimation` using the subsequent function:
+To perform the DC state estimation, you first need to have the `PowerSystem` composite type that has been created with the `dc` model, alongside the `Measurement` composite type that retains measurement data. Subsequently, we can formulate the DC state estimation model encapsulated within the abstract type `DCStateEstimation` using the subsequent function:
 * [`dcStateEstimation`](@ref dcStateEstimation).
 
 For resolving the DC state estimation problem employing either the weighted least-squares (WLS) or the least absolute value (LAV) approach and obtaining bus voltage angles, utilize the following function:
 * [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimationWLS{LinearWLS})).
+
+After executing the function [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimationWLS{LinearWLS})), where the user employs the WLS method, the user has the ability to check if the measurement set contains outliers throughout bad data analysis and remove those measurements using:
+* [`residualTest!`](@ref residualTest!).
+
+Moreover, before executing the [`dcStateEstimation`](@ref dcStateEstimation) function, users can initiate observability analysis to identify observable islands and restore observability by employing:
+* [`islandTopologicalFlow`](@ref islandTopologicalFlow(::PowerSystem, ::Wattmeter)),
+* [`islandTopological`](@ref islandTopological(::PowerSystem, ::Wattmeter)),
+* [`restorationGram!`](@ref restorationGram!(::PowerSystem, ::Measurement, ::Measurement, ::IslandWatt)).
+
+---
 
 After obtaining the solution for DC state estimation, JuliaGrid offers a post-processing analysis function to compute active powers associated with buses and branches:
 * [`power!`](@ref power!(::PowerSystem, ::DCStateEstimation)).
@@ -13,14 +23,6 @@ Additionally, there are specialized functions dedicated to calculating specific 
 * [`supplyPower`](@ref supplyPower(::PowerSystem, ::DCStateEstimation)),
 * [`fromPower`](@ref fromPower(::PowerSystem, ::DCStateEstimation)),
 * [`toPower`](@ref toPower(::PowerSystem, ::DCStateEstimation)).
-
-Furthermore, users can initiate observability analysis to detect observable islands and restore observability before executing the function [`dcStateEstimation`](@ref dcStateEstimation):
-* [`islandTopologicalFlow`](@ref islandTopologicalFlow(::PowerSystem, ::Wattmeter)),
-* [`islandTopological`](@ref islandTopological(::PowerSystem, ::Wattmeter)),
-* [`restorationGram!`](@ref restorationGram!(::PowerSystem, ::Measurement, ::Measurement, ::IslandWatt)).
-
-Finally, after executing the function [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimationWLS{LinearWLS})), where the user employs the WLS method, the user has the ability to check if the measurement set contains outliers throughout bad data analysis and remove those measurements using:
-* [`residualTest!`](@ref residualTest!).
 
 ---
 
@@ -190,7 +192,7 @@ nothing # hide
 ---
 
 ##### Alternative Formulation
-The resolution of the WLS state estimation problem using the conventional method typically progresses smoothly. However, it is widely acknowledged that in certain situations common to real-world systems, this method can be vulnerable to numerical instabilities. Such conditions might impede the algorithm from finding a satisfactory solution. In such cases, users may opt for an alternative formulation of the WLS state estimation, namely, employing an approach called orthogonal factorization [[3, Sec. 3.2]](@ref DCStateEstimationReferenceManual).
+The resolution of the WLS state estimation problem using the conventional method typically progresses smoothly. However, it is widely acknowledged that in certain situations common to real-world systems, this method can be vulnerable to numerical instabilities. Such conditions might impede the algorithm from finding a satisfactory solution. In such cases, users may opt for an alternative formulation of the WLS state estimation, namely, employing an approach called orthogonal factorization [[2, Sec. 3.2]](@ref DCStateEstimationReferenceManual).
 
 Specifically, by specifying the `Orthogonal` argument in the [`dcStateEstimation`](@ref dcStateEstimation) function, JuliaGrid implements a more robust approach to obtain the WLS estimator, which proves particularly beneficial when substantial differences exist among measurement variances:
 ```@example WLSDCStateEstimationSolution
@@ -250,7 +252,6 @@ using JuMP  # hide
 
 analysis = dcStateEstimation(system, device, Ipopt.Optimizer)
 JuMP.set_silent(analysis.method.jump) # hide
-solve!(system, analysis)
 nothing # hide
 ```
 
@@ -261,7 +262,22 @@ In JuliaGrid, the assignment of starting primal values for optimization variable
 ```@repl WLSDCStateEstimationSolution
 print(system.bus.label, analysis.voltage.angle)
 ```
-You have the flexibility to adjust these values to your specifications, and they will be utilized as the starting primal values when you run the [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimationWLS{LinearWLS})) function.
+Users have the flexibility to customize these values according to their requirements, and they will be utilized as the starting primal values when executing the [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimationWLS{LinearWLS})) function.
+
+---
+
+##### Solution
+To solve the formulated LAV state estimation model, simply execute the following function:
+```@example WLSDCStateEstimationSolution
+solve!(system, analysis)
+nothing # hide
+```
+
+Upon obtaining the solution, access the bus voltage angles using:
+```@repl WLSDCStateEstimationSolution
+print(system.bus.label, analysis.voltage.angle)
+nothing # hide
+```
 
 ---
 

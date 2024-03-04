@@ -1,6 +1,6 @@
 # [Power System Model](@id PowerSystemModelManual)
 
-The JuliaGrid supports the composite type `PowerSystem` to preserve power system data, with the following fields: `bus`, `branch`, `generator`, `base`, and `model`. The fields `bus`, `branch`, and `generator` hold data related to buses, branches, and generators, respectively. The `base` field stores base values for power and voltages, with the default being three-phase power measured in volt-amperes for the base power and line-to-line voltages measured in volts for base voltages. The `model` stores vectors and matrices that are related to the topology and parameters of the power system.
+The JuliaGrid supports the composite type `PowerSystem` to preserve power system data, with the following fields: `bus`, `branch`, `generator`, `base`, and `model`. The fields `bus`, `branch`, and `generator` hold data related to buses, branches, and generators, respectively. The `base` field stores base values for power and voltages, with the default being three-phase power measured in volt-amperes for the base power and line-to-line voltages measured in volts for base voltages. Within the `model` field, there are `ac` and `dc` subfields that store vectors and matrices pertinent to the power system's topology and parameters, and these are utilized in either the AC or DC framework.
 
 The composite type `PowerSystem` can be created using a function:
 * [`powerSystem`](@ref powerSystem).
@@ -9,15 +9,17 @@ JuliaGrid supports three modes for populating the `PowerSystem` type: using buil
 It is recommended to use the HDF5 format for large-scale systems. To facilitate this, JuliaGrid has the function:
 * [`savePowerSystem`](@ref savePowerSystem).
 
+Additionally, users can generate vectors and matrices based on the power system topology and parameters using the following functions:
+* [`acModel!`](@ref acModel!),
+* [`dcModel!`](@ref dcModel!).
+
+---
+
 Once the `PowerSystem` type is created, you can add buses, branches, and generators using the following functions:
 * [`addBus!`](@ref addBus!),
 * [`addBranch!`](@ref addBranch!),
 * [`addGenerator!`](@ref addGenerator!).
-Additionally, JuliaGrid provides macros [`@bus`](@ref @bus), [`@branch`](@ref @branch), and [`@generator`](@ref @generator) to define templates that aid in creating buses, branches, and generators. These templates help avoid entering the same parameters repeatedly.
-
-To create vectors and matrices based on the power system topology and parameters, you can use the following functions:
-* [`acModel!`](@ref acModel!),
-* [`dcModel!`](@ref dcModel!).
+JuliaGrid also provides macros [`@bus`](@ref @bus), [`@branch`](@ref @branch), and [`@generator`](@ref @generator) to define templates that aid in creating buses, branches, and generators. These templates help avoid entering the same parameters repeatedly.
 
 Moreover, it is feasible to modify the parameters of buses, branches, and generators. When these functions are executed, all relevant fields within the `PowerSystem` composite type will be automatically updated, encompassing the `ac` and `dc` fields as well. These functions include:
 * [`updateBus!`](@ref updateBus!),

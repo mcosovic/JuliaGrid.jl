@@ -7,6 +7,8 @@ To perform the DC optimal power flow, you first need to have the `PowerSystem` c
 To solve the DC optimal power flow problem and acquire bus voltage angles and generator active power outputs, make use of the following function:
 * [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow)).
 
+---
+
 After obtaining the solution for DC optimal power flow, JuliaGrid offers a post-processing analysis function to compute powers associated with buses and branches:
 * [`power!`](@ref power!(::PowerSystem, ::DCPowerFlow)).
 
