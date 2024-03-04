@@ -20,6 +20,7 @@ makedocs(
              "AC Optimal Power Flow" => "manual/acOptimalPowerFlow.md",
              "DC Optimal Power Flow" => "manual/dcOptimalPowerFlow.md",
              "Measurement Model" => "manual/measurementModel.md",
+             "PMU State Estimation" => "manual/pmuStateEstimation.md",
              "DC State Estimation" => "manual/dcStateEstimation.md"],
         "Tutorials" =>
             ["AC and DC Model" => "tutorials/acdcModel.md",
