@@ -135,7 +135,7 @@ nothing # hide
 !!! tip "Tip"
     Here, the user triggers LU factorization as the default method for solving the PMU state estimation problem. However, the user also has the option to select alternative factorization methods such as `LDLt` or `QR`:
     ```@example PMUOptimalPlacement
-    analysis = pmuStateEstimation(system, device, LDLt)
+    analysis = pmuStateEstimation(system, device, QR)
     ```  
 
 To obtain the bus voltage magnitudes and angles, the [`solve!`](@ref solve!(::PowerSystem, ::PMUStateEstimationWLS{LinearWLS})) function can be invoked as shown:
