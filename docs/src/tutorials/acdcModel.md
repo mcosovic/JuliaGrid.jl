@@ -41,7 +41,7 @@ The given example provides the set of buses ``\mathcal{N}``  and the set of bran
 ---
 
 ## [AC Model](@id ACModelTutorials)
-JuliaGrid is based on common network elements and benefits from the unified branch model to perform various analyses based on the system of nonlinear equations. To generate matrices and vectors for AC or nonlinear analysis, JuliaGrid employs the [`acModel!`](@ref acModel!) function. To demonstrate the usage of this function, consider the power system defined in the previous example. In order to apply the [`acModel!`](@ref acModel!) function to this power system, the following code can be executed:
+JuliaGrid is based on common network elements and benefits from the unified branch model to perform various analyses based on the system of nonlinear equations. To generate matrices and vectors for AC or nonlinear analysis, JuliaGrid employs the [`acModel!`](@ref acModel!) function. To demonstrate the usage of this function, consider the power system defined in the previous example. In order to apply the [`acModel!`](@ref acModel!) function to this power system:
 ```@example ACDCModel
 acModel!(system)
 nothing #hide
@@ -112,11 +112,11 @@ The currents flowing through shunt admittances denoted as ``y_{\text{s}ij}`` are
     \bar{I}_{\text{s}j} &=  y_{\text{s}ij}\bar{V}_{j},\;\;\; (i,j) \in \mathcal{E}.
   \end{aligned}
 ```
-With these specified currents in place, it becomes straightforward to compute both the total active and reactive power that branch shunt elements demand and inject concerning the power system. This can be expressed as follows:
+With these specified currents in place, it becomes straightforward to compute both the total active and reactive power that branch shunt elements demand and inject concerning the power system:
 ```math
   S_{\text{s}ij} = P_{\text{s}ij} + \text{j} Q_{\text{s}ij} = \alpha_{ij} \bar{V}_{i} \bar{I}_{\text{s}i}^* + \bar{V}_{j} \bar{I}_{\text{s}j}^* = y_{\text{s}ij}^*(\alpha_{ij}^2 {V}_{i}^2 + {V}_{j}^2),\;\;\; (i,j) \in \mathcal{E}.
 ```
-For real branch sections, the reactive power is negative, ``Q_{\text{s}ij}``, signifying that the branch injects reactive power due to its capacitive nature. The negative sign implies that the power flow direction opposes the assumed direction set by the currents ``\bar{I}_{\text{s}i}`` and ``\bar{I}_{\text{s}j}``. Additionally, the active power, ``P_{\text{s}ij}`` represents active losses within the branch shunt admittances.
+For real branch sections, the reactive power is negative, ``Q_{\text{s}ij}``, signifying that the branch injects reactive power due to its capacitive nature. The negative sign implies that the power flow direction opposes the assumed direction set by the currents ``\bar{I}_{\text{s}i}`` and ``\bar{I}_{\text{s}j}``. The active power, ``P_{\text{s}ij}`` represents active losses within the branch shunt admittances.
 
 ---
 
@@ -280,7 +280,7 @@ In conclusion, based on the previous analysis, we can determine the active and r
   {S}_{\text{sh}i} = {P}_{\text{sh}i} + \text{j}{Q}_{\text{sh}i} = \bar{V}_{i}\bar{I}_{\text{sh}i}^* = {y}_{\text{sh}i}^*{V}_{i}^2,\;\;\; i \in \mathcal{N}.
 ```
 
-The positive active power value ``{P}_{\text{sh}i} > 0`` indicates that the shunt element is consuming active power. In terms of power flow, this signifies that active power flows from bus ``i \in \mathcal{N}`` towards the ground. On the other hand, a negative reactive power value ``{Q}_{\text{sh}i} < 0`` suggests that the shunt element is injecting reactive power into the power system. This implies that the direction of reactive power is from the ground to bus ``i \in \mathcal{N}``, illustrating the capacitive nature of the shunt component. Conversely, if ``{Q}_{\text{sh}i} > 0``, it indicates an inductive characteristic, implying that the shunt component is absorbing reactive power. In this case, the reactive power flows from bus ``i \in \mathcal{N}`` towards the ground.
+The positive active power value ``{P}_{\text{sh}i} > 0`` indicates that the shunt element is consuming active power. In terms of power flow, this signifies that active power flows from bus ``i \in \mathcal{N}`` towards the ground. A negative reactive power value ``{Q}_{\text{sh}i} < 0`` suggests that the shunt element is injecting reactive power into the power system. This implies that the direction of reactive power is from the ground to bus ``i \in \mathcal{N}``, illustrating the capacitive nature of the shunt component. Conversely, if ``{Q}_{\text{sh}i} > 0``, it indicates an inductive characteristic, implying that the shunt component is absorbing reactive power. In this case, the reactive power flows from bus ``i \in \mathcal{N}`` towards the ground.
 
 ---
 
@@ -478,7 +478,7 @@ The sparse nodal matrix ``\mathbf{B}`` is stored in the `dc` field, and we can a
 ---
 
 ##### [Bus Injection](@id DCBusInjectionTutorials)
-From the previous analysis, the calculation of active power injection at each bus is expressed by the following equation:
+From the previous analysis, the calculation of active power injection at each bus is expressed by:
 ```math
     P_i = \sum_{j = 1}^n {B}_{ij} \theta_j + P_{\text{tr}i} + P_{\text{sh}i},\;\;\; i \in \mathcal{N}.
 ```

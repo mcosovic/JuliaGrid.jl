@@ -8,6 +8,10 @@ For further information on this topic, please see the [Power System Model](@ref 
 * [`powerSystem`](@ref powerSystem)
 * [`savePowerSystem`](@ref savePowerSystem)
 
+###### AC and DC Model
+* [`acModel!`](@ref acModel!)
+* [`dcModel!`](@ref dcModel!)
+
 ###### Bus
 * [`addBus!`](@ref addBus!)
 * [`updateBus!`](@ref updateBus!)
@@ -24,9 +28,7 @@ For further information on this topic, please see the [Power System Model](@ref 
 * [`cost!`](@ref cost!)
 * [`@generator`](@ref @generator)
 
-###### AC and DC Model
-* [`acModel!`](@ref acModel!)
-* [`dcModel!`](@ref dcModel!)
+
 
 ---
 
@@ -34,6 +36,14 @@ For further information on this topic, please see the [Power System Model](@ref 
 ```@docs
 powerSystem
 savePowerSystem
+```
+
+---
+
+## AC and DC Model
+```@docs
+acModel!
+dcModel!
 ```
 
 ---
@@ -64,10 +74,4 @@ cost!
 @generator
 ```
 
----
 
-## AC and DC Model
-```@docs
-acModel!
-dcModel!
-```

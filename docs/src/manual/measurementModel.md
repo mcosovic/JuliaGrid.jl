@@ -4,21 +4,21 @@ The JuliaGrid supports the composite type `Measurement` to preserve measurement 
 
 The composite type `Measurement` can be created using a function:
 * [`measurement`](@ref measurement).
-JuliaGrid supports two modes for populating the `Measurement` type: using built-in functions, and using HDF5 file format.
+JuliaGrid supports two modes for populating the `Measurement` type: using built-in functions or using HDF5 files.
 
 It is recommended to use the HDF5 format for large-scale systems. To facilitate this, JuliaGrid has the function:
 * [`saveMeasurement`](@ref saveMeasurement).
 
 ---
 
-Once the `Measurement` type has been established, we can incorporate voltmeters, ammeters, wattmeters, varmeters, and PMUs using the following functions:
+Once the `Measurement` type has been established, we can incorporate voltmeters, ammeters, wattmeters, varmeters, and phasor measurement units (PMUs) using the following functions:
 * [`addVoltmeter!`](@ref addVoltmeter!),
 * [`addAmmeter!`](@ref addAmmeter!),
 * [`addWattmeter!`](@ref addWattmeter!),
 * [`addVarmeter!`](@ref addVarmeter!),
 * [`addPmu!`](@ref addPmu!).
 
-Additionally, JuliaGrid provides macros [`@voltmeter`](@ref @voltmeter), [`@ambmeter`](@ref @ammeter), [`@wattmeter`](@ref @wattmeter), [`@varmeter`](@ref @varmeter), and [`@pmu`](@ref @pmu) to define templates that aid in creating measurement devices. These templates help avoid entering the same parameters repeatedly.
+Also, JuliaGrid provides macros [`@voltmeter`](@ref @voltmeter), [`@ambmeter`](@ref @ammeter), [`@wattmeter`](@ref @wattmeter), [`@varmeter`](@ref @varmeter), and [`@pmu`](@ref @pmu) to define templates that aid in creating measurement devices. These templates help avoid entering the same parameters repeatedly.
 
 !!! note "Info" 
     It is important to note that measurement devices associated with branches can only be incorporated if the branch is in-service. This reflects JuliaGrid's approach to mimic a network topology processor, where logical data analysis configures the energized components of the power system.
@@ -31,7 +31,7 @@ Moreover, it is feasible to modify the parameters of measurement devices. When t
 * [`updatePmu!`](@ref updatePmu!).
 
 !!! tip "Tip"
-    The functions for adding or updating measurement devices serve a dual purpose. While their primary function is to modify the `Measurement` composite type, they are also designed to accept various analysis models like AC or DC state estimation models. When feasible, these functions not only modify the `Measurement` type but also adapt the analysis model, often resulting in improved computational efficiency. Detailed instructions on utilizing this feature can be found in dedicated manuals for specific analyses.
+    The functions for updating measurement devices serve a dual purpose. While their primary function is to modify the `Measurement` composite type, they are also designed to accept various analysis models like AC or DC state estimation models. When feasible, these functions not only modify the `Measurement` type but also adapt the analysis model, often resulting in improved computational efficiency. Detailed instructions on utilizing this feature can be found in dedicated manuals for specific analyses.
 
 ---
 
@@ -53,7 +53,7 @@ The [`measurement`](@ref measurement) function generates the `Measurement` compo
 ---
 
 ##### HDF5 File
-In order to use the HDF5 file as input to create the `Measurement` object, it is necessary to have saved the data using the [`saveMeasurement`](@ref saveMeasurement) function beforehand. As an example, let us say we saved the measurements as `measurements14.h5` in the directory `C:\hdf5`. In this case, the following Julia code can be used to construct the `Measurement` composite type:
+In order to use the HDF5 file as input to create the `Measurement` type, it is necessary to have saved the data using the [`saveMeasurement`](@ref saveMeasurement) function beforehand. Let us say we saved the measurements as `measurements14.h5` in the directory `C:\hdf5`. Then, the following code can be used to construct the `Measurement` type:
 ```julia
 device = measurement("C:/hdf5/measurements14.h5")
 ```
@@ -316,7 +316,7 @@ JuliaGrid will still store the values in the per-unit system:
 ---
 
 ## [Add PMU](@id AddPMUManual)
-Users have the capability to incorporate PMUs (Phasor Measurement Units) into either an existing measurement type or create one from scratch by utilizing the [`addPmu!`](@ref addPmu!) function, as demonstrated in the following example:
+Users have the capability to incorporate PMUs into either an existing measurement type or create one from scratch by utilizing the [`addPmu!`](@ref addPmu!) function, as demonstrated in the following example:
 ```@example addPmu
 using JuliaGrid # hide
 
@@ -350,7 +350,7 @@ The measurement values for the first and third PMUs incorporate white Gaussian n
 ---
 
 ##### Customizing Input Units for Keywords
-By default, the `magnitude` and `varianceMagnitude` keywords are expected to be provided in per-unit (pu), while the `angle` and `varianceAngle` keywords are expected to be provided in radians (rad). However, users have the flexibility to express these values in different units, such as volts (V) and degrees (deg) if the PMU is set to a bus, or amperes (A) and degrees (deg) if the PMU is set to a branch. This flexibility is demonstrated in the following example:
+By default, the `magnitude` and `varianceMagnitude` keywords are expected to be provided in per-unit (pu), while the `angle` and `varianceAngle` keywords are expected to be provided in radians (rad). However, users have the flexibility to express these values in different units, such as volts (V) and degrees (deg) if the PMU is set to a bus, or amperes (A) and degrees (deg) if the PMU is set to a branch. This flexibility is demonstrated in the following:
 ```@example addPmuSI
 using JuliaGrid # hide
 @default(unit)  # hide
@@ -387,7 +387,7 @@ When utilizing the [`addVoltmeter!`](@ref addVoltmeter!) function, the default v
 
 Similarly, for the [`addAmmeter!`](@ref addAmmeter!) function, the default variances are established at `variance = 1e-2` per-unit, and the operational statuses are configured to `status = 1`. This means that if a user places an ammeter at either the "from" or "to" bus end of a branch, the default settings are identical. However, as we will explain in the following subsection, users have the flexibility to fine-tune these default values, differentiating between the two locations.
 
-In alignment with ammeters, the [`addWattmeter!`](@ref addWattmeter!) and [`addVarmeter!`](@ref addVarmeter!) functions feature default variances set at `variance = 1e-2` per-unit, and statuses are automatically assigned as `status = 1`, regardless of whether the wattmeter or varmeter is placed at the bus, the "from" bus end, or the "to" bus end. Once again, users have the ability to customize these default values, making distinctions between the three positions of the measurement devices.
+In alignment with ammeters, the [`addWattmeter!`](@ref addWattmeter!) and [`addVarmeter!`](@ref addVarmeter!) functions feature default variances set at `variance = 1e-2` per-unit, and statuses are automatically assigned as `status = 1`, regardless of whether the wattmeter or varmeter is placed at the bus, the "from" bus end, or the "to" bus end. Users have the ability to customize these default values, making distinctions between the three positions of the measurement devices.
 
 
 For the [`addPmu!`](@ref addPmu!) function, variances for both magnitude and angle measurements are standardized to `varianceMagnitude = 1e-5` and `varianceAngle = 1e-5` in per-units. Likewise, operational statuses are uniformly set to `statusMagnitude = 1` and `statusAngle = 1`, regardless of whether the PMU is positioned on the bus, the "from" bus end, or the "to" bus end. Once more, users retain the option to tailor these default values to their specific needs, allowing for distinctions between these three locations of the measurement devices.
@@ -566,12 +566,12 @@ addWattmeter!(system, device; label = "Wattmeter 5", from = "Branch 2", active =
 nothing # hide
 ```
 
-To access the wattmeter labels, you can use the variable:
+To access the wattmeter labels, we can use the variable:
 ```@repl retrievingLabels
 device.wattmeter.label
 ```
 
-JuliaGrid utilizes an unordered dictionary format for storing labels, which improves performance. If you need to obtain labels in the same order as the wattmeter definitions sequence, you can use the following code:
+JuliaGrid utilizes an unordered dictionary format for storing labels, which improves performance. If we need to obtain labels in the same order as the wattmeter definitions sequence, we can use the following code:
 ```@repl retrievingLabels
 label = collect(keys(device.wattmeter.label))
 ```
@@ -583,7 +583,7 @@ label[device.wattmeter.layout.from]
 label[device.wattmeter.layout.to]
 ```
 
-Furthermore, when using the [`addWattmeter!`](@ref addWattmeter!) function, the labels for the keywords `bus`, `from`, and `to` are stored internally as numerical values. To retrieve bus labels, you can follow this procedure:
+Furthermore, when using the [`addWattmeter!`](@ref addWattmeter!) function, the labels for the keywords `bus`, `from`, and `to` are stored internally as numerical values. To retrieve bus labels, we can follow this procedure:
 ```@repl retrievingLabels
 label = collect(keys(system.bus.label));
 label[device.wattmeter.layout.index[device.wattmeter.layout.bus]]

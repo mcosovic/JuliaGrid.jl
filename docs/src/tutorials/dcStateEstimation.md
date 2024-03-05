@@ -130,7 +130,7 @@ Similarly, the vectors containing the measurement values ``\mathbf{z}_{\bar{\mat
 
 --- 
 
-## [WLS State Estimation](@id DCSEWLSStateEstimationTutorials)
+## [Weighted Least-squares Estimation](@id DCSEWLSStateEstimationTutorials)
 The solution to the DC state estimation problem is determined by solving the linear weighted least-squares (WLS) problem, represented by the following formula:
 ```math
 	\mathbf H^{T} \bm \Sigma^{-1} \mathbf H \bm {\Theta} = \mathbf H^{T} \bm \Sigma^{-1} (\mathbf z - \mathbf{c}).
@@ -163,7 +163,7 @@ The inclusion of the vector ``\mathbf{c}_\mathcal{P}`` is necessary due to the f
 ---
 
 ##### Implementation
-JuliaGrid initiates the DC state estimation framework by setting up the WLS model, as illustrated in the following code segment:
+JuliaGrid initiates the DC state estimation framework by setting up the WLS model, as illustrated in the following:
 ```@example DCSETutorial
 analysis = dcStateEstimation(system, device)
 nothing # hide
@@ -397,7 +397,7 @@ analysis.outlier.detect
 
 --- 
 
-## [LAV State Estimation](@id DCSELAVTutorials)
+## [Least Absolute Value Estimation](@id DCSELAVTutorials)
 The least absolute value (LAV) method provides an alternative estimation approach that is considered more robust in comparison to the WLS method. The WLS state estimation problem relies on specific assumptions about measurement errors, whereas robust estimators aim to remain unbiased even in the presence of various types of measurement errors and outliers. This characteristic eliminates the need for bad data processing, as discussed in [[1, Ch. 6]](@ref DCSEReferenceTutorials). It is important to note that robustness often comes at the cost of increased computational complexity.
 
 It can be demonstrated that the problem can be expressed as a linear programming problem. This section outlines the method as described in [[1, Sec. 6.5]](@ref DCSEReferenceTutorials). To revisit, we consider the system of linear equations:
@@ -534,7 +534,7 @@ The selection between them relies on the power system's structure and the availa
 ---
 
 ##### Flow Observale Islands
-To identify flow observable islands, JuliaGrid employs a topological method outlined in [[5]](@ref DCSEReferenceTutorials). The process begins with the examination of all active power flow measurements from wattmeters, aiming to determine the largest sets of connected buses within the network linked by branches with active power flow measurements. Subsequently, the analysis considers individual boundary or tie active power injection measurements, involving two islands that may potentially be merged into a single observable island. The user can initiate this process by calling the following function:
+To identify flow observable islands, JuliaGrid employs a topological method outlined in [[5]](@ref DCSEReferenceTutorials). The process begins with the examination of all active power flow measurements from wattmeters, aiming to determine the largest sets of connected buses within the network linked by branches with active power flow measurements. Subsequently, the analysis considers individual boundary or tie active power injection measurements, involving two islands that may potentially be merged into a single observable island. The user can initiate this process by calling the function:
 ```@example DCSEObservability
 islands = islandTopologicalFlow(system, device.wattmeter)
 nothing # hide
@@ -605,7 +605,7 @@ Next, we define the reduced coefficient matrix ``\mathbf W_{\text{p}} \in \mathb
 * bus voltage angle measurements,
 where ``p = |\mathcal{M}_\text{p}|``. In the current example, the pseudo-measurement `Pseudo 2` will contribute to the construction of the matrix ``\mathbf W_{\text{p}}``. Similar to the previous case, measurement functions linked to the set ``\mathcal{M}_\text{p}`` define the coefficient matrix ``\mathbf H_\text{p}``, and the matrix ``\mathbf W_{\text{p}}`` can be viewed as the sum of the columns of ``\mathbf H_\text{p}`` belonging to a specific flow island. Additionally, users have the option to include bus voltage angle measurements from PMUs. In this scenario, restoration can be conducted without merging observable islands into one island, as each island becomes globally observable when one angle is known.
 
-Additionally, it is important to note that during the restoration step, JuliaGrid initially processes active power measurements and subsequently handles bus voltage angle measurements if they are present in the set of pseudo-measurements. Consequently, users can execute the observability restoration procedure with the following command:
+Additionally, it is important to note that during the restoration step, JuliaGrid initially processes active power measurements and subsequently handles bus voltage angle measurements if they are present in the set of pseudo-measurements. Consequently, users can execute the observability restoration procedure with the following:
 ```@example DCSEObservability
 restorationGram!(system, device, pseudo, islands; threshold = 1e-6)
 nothing # hide
@@ -678,7 +678,7 @@ We can determine the active power supplied by generators to the buses by summing
 ```math
     P_{\text{p}i} = P_i + P_{\text{d}i},\;\;\; i \in \mathcal{N}.
 ```
-The vector of active power injected by generators to the buses, denoted by ``\mathbf{P}_{\text{p}} = [P_{\text{p}i}]``, can be obtained using the following command:
+The vector of active power injected by generators to the buses, denoted by ``\mathbf{P}_{\text{p}} = [P_{\text{p}i}]``, can be obtained using:
 ```@repl DCSEObservability
 𝐏ₚ = analysis.power.supply.active
 ```
@@ -686,12 +686,12 @@ The vector of active power injected by generators to the buses, denoted by ``\ma
 ---
 
 ##### Power Flows
-The resulting [active power flows](@ref DCBranchNetworkEquationsTutorials) are stored as the vector ``\mathbf{P}_{\text{i}} = [P_{ij}]``, which can be retrieved using the following command:
+The resulting [active power flows](@ref DCBranchNetworkEquationsTutorials) are stored as the vector ``\mathbf{P}_{\text{i}} = [P_{ij}]``, which can be retrieved using:
 ```@repl DCSEObservability
 𝐏ᵢ = analysis.power.from.active
 ```
 
-Similarly, the resulting [active power flows](@ref DCBranchNetworkEquationsTutorials) are stored as the vector ``\mathbf{P}_{\text{j}} = [P_{ji}]``, which can be retrieved using the following command:
+Similarly, the resulting [active power flows](@ref DCBranchNetworkEquationsTutorials) are stored as the vector ``\mathbf{P}_{\text{j}} = [P_{ji}]``, which can be retrieved using:
 ```@repl DCSEObservability
 𝐏ⱼ = analysis.power.to.active
 ```

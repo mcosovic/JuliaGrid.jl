@@ -1,5 +1,5 @@
 # [DC Power Flow](@id DCPowerFlowManual)
-To perform the DC power flow, you first need to have the `PowerSystem` composite type that has been created with the `dc` model. Following that, you can construct the power flow model encapsulated within the `DCPowerFlow` composite type by employing the following function:
+To perform the DC power flow, we first need to have the `PowerSystem` composite type that has been created with the `dc` model. Following that, we can construct the power flow model encapsulated within the `DCPowerFlow` composite type by employing the following function:
 * [`dcPowerFlow`](@ref dcPowerFlow).
 
 To solve the DC power flow problem and acquire bus voltage angles, make use of the following function:
@@ -124,9 +124,9 @@ nothing # hide
 ---
 
 ## [Power System Update](@id DCPowerSystemAlterationManual)
-After establishing the `PowerSystem` composite type using the [`powerSystem`](@ref powerSystem) function and configuring the `dc` model with [`dcModel!`](@ref dcModel!), users gain the capability to incorporate new branches and generators. Furthermore, they can adjust buses, branches, and generators.
+After establishing the `PowerSystem` composite type using the [`powerSystem`](@ref powerSystem) function and configuring the DC model with [`dcModel!`](@ref dcModel!), users gain the capability to incorporate new branches and generators. Furthermore, they can adjust buses, branches, and generators.
 
-Once updates are completed, users can seamlessly progress towards generating the `DCPowerFlow` composite type using the [`dcPowerFlow`](@ref dcPowerFlow) function. Ultimately, resolving the DC power flow is achieved through the utilization of the [`solve!`](@ref solve!(::PowerSystem, ::DCPowerFlow)) function:
+Once updates are completed, users can progress towards generating the `DCPowerFlow` type using the [`dcPowerFlow`](@ref dcPowerFlow) function. Ultimately, resolving the DC power flow is achieved through the utilization of the [`solve!`](@ref solve!(::PowerSystem, ::DCPowerFlow)) function:
 ```@example DCPowerFlowSolution
 using JuliaGrid # hide
 @default(unit) # hide
@@ -154,22 +154,16 @@ nothing # hide
 ```
 
 !!! note "Info"
-    This method removes the need to restart and recreate the `PowerSystem` within the `dc` model from the beginning when implementing changes to the existing power system.
+    This method removes the need to restart and recreate the `PowerSystem` within the `dc` field from the beginning when implementing changes to the existing power system.
 
 ---
 
 ## [Power Flow Update](@id DCPowerFlowUpdateManual)
-An advanced methodology involves users establishing the `DCPowerFlow` composite type using [`dcPowerFlow`](@ref dcPowerFlow) just once. After this initial setup, users can seamlessly integrate new branches and generators, and also have the capability to modify buses, branches, and generators, all without the need to recreate the `DCPowerFlow` type. 
+An advanced methodology involves users establishing the `DCPowerFlow` composite type using [`dcPowerFlow`](@ref dcPowerFlow) just once. After this initial setup, users can integrate new branches and generators, and also have the capability to modify buses, branches, and generators, all without the need to recreate the `DCPowerFlow` type. 
 
-This advancement extends beyond the previous scenario where recreating the `PowerSystem` and `dc` model was unnecessary, to now include the scenario where `DCPowerFlow` also does not need to be recreated. Such efficiency can be particularly advantageous in cases where JuliaGrid can reuse nodal matrix factorization.
+This advancement extends beyond the previous scenario where recreating the `PowerSystem` and DC model was unnecessary, to now include the scenario where `DCPowerFlow` also does not need to be recreated. Such efficiency can be particularly advantageous in cases where JuliaGrid can reuse nodal matrix factorization.
 
-!!! note "Info"
-    This method removes the need to restart and recreate both the `PowerSystem` within the `dc` model and the `DCPowerFlow` from the beginning when implementing changes to the existing power system.
-
----
-
-##### Reusing Matrix Factorization
-Drawing from the preceding example, our focus now shifts to finding a solution involving modifications that entail adjusting the active power demand at `Bus 2`, introducing a new generator at `Bus 2`, and fine-tuning the output power of `Generator 1`. It is important to note that these adjustments do not impact the branches leaving the nodal matrix unchanged. To resolve this updated system, users can simply execute the [`solve!`](@ref solve!(::PowerSystem, ::DCPowerFlow)) function:
+By modifying the previous example, we observe that we now create the `DCPowerFlow` type only once:
 ```@example DCPowerFlowSolution
 using JuliaGrid # hide
 @default(unit) # hide
@@ -185,9 +179,28 @@ dcModel!(system)
 analysis = dcPowerFlow(system)
 solve!(system, analysis)
 
-updateBus!(system, analysis; label = "Bus 2", active = 0.4)
-addGenerator!(system, analysis; label = "Generator 2", bus = "Bus 2", active = 1.5)
-updateGenerator!(system, analysis; label = "Generator 1", active = 1.9)
+updateBus!(system; label = "Bus 2", active = 0.4)
+addBranch!(system; label = "Branch 2", from = "Bus 1", to = "Bus 2", reactance = 0.15)
+updateBranch!(system; label = "Branch 1", status = 0)
+addGenerator!(system; label = "Generator 2", bus = "Bus 2", active = 1.5)
+updateGenerator!(system; label = "Generator 1", active = 1.9)
+
+solve!(system, analysis)
+nothing # hide
+```
+
+!!! note "Info"
+    This method removes the need to restart and recreate both the `PowerSystem` within the `dc` model and the `DCPowerFlow` from the beginning when implementing changes to the existing power system.
+
+---
+
+##### Reusing Matrix Factorization
+Drawing from the preceding example, our focus now shifts to finding a solution involving modifications that entail adjusting the active power demand at `Bus 2`, introducing a new generator at `Bus 2`, and fine-tuning the output power of `Generator 1`. It is important to note that these adjustments do not impact the branches leaving the nodal matrix unchanged. To resolve this updated system, users can simply execute the [`solve!`](@ref solve!(::PowerSystem, ::DCPowerFlow)) function:
+```@example DCPowerFlowSolution
+
+updateBus!(system, analysis; label = "Bus 2", active = 0.2)
+addGenerator!(system, analysis; label = "Generator 3", bus = "Bus 2", active = 0.3)
+updateGenerator!(system, analysis; label = "Generator 1", active = 2.1)
 
 solve!(system, analysis)
 nothing # hide
@@ -195,19 +208,6 @@ nothing # hide
 
 !!! note "Info"
     In this scenario, JuliaGrid will recognize instances where the user has not modified branch parameters affecting the nodal matrix. Consequently, JuliaGrid will leverage the previously performed nodal matrix factorization, resulting in a significantly faster solution compared to recomputing the factorization.
-
----
-
-##### Sequential Matrix Factorization
-Continuing from the previous example, suppose we opt to adjust branch parameters by adding or updating branches. In such cases, reusing the nodal matrix factorization becomes impractical. In this scenario, JuliaGrid will repeat the factorization process while ensuring the delivery of an accurate solution.
-
-Although computational gains are diminished compared to the previous case, users can still avoid recreating the `DCPowerFlow` type and effortlessly execute the [`solve!`](@ref solve!(::PowerSystem, ::DCPowerFlow)) function, as demonstrated below:
-```@example DCPowerFlowSolution
-addBranch!(system, analysis; label = "Branch 2", from = "Bus 1", to = "Bus 2", reactance = 1)
-updateBranch!(system, analysis; label = "Branch 1", status = 0)
-
-solve!(system, analysis)
-```
 
 ---
 
@@ -233,7 +233,7 @@ solve!(system, analysis)
 ---
 
 ## [Power Analysis](@id DCPowerAnalysisManual)
-After obtaining the solution from the DC power flow, we can calculate powers related to buses, branches, and generators using the [`power!`](@ref power!(::PowerSystem, ::DCPowerFlow)) function. For instance, let us consider the power system for which we obtained the DC power flow solution:
+After obtaining the solution, we can calculate powers related to buses, branches, and generators using the [`power!`](@ref power!(::PowerSystem, ::DCPowerFlow)) function. For example, let us consider the power system for which we obtained the DC power flow solution:
 ```@example ComputationPowersCurrentsLosses
 using JuliaGrid # hide
 @default(unit) # hide

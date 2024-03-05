@@ -2,7 +2,7 @@
 
 JuliaGrid utilizes the [JuMP](https://jump.dev/JuMP.jl/stable/) package to construct optimal power flow models, allowing users to manipulate these models using the standard functions provided by JuMP. As a result, JuliaGrid supports popular [solvers](https://jump.dev/JuMP.jl/stable/packages/solvers/) mentioned in the JuMP documentation to solve the optimization problem.
 
-To perform the AC optimal power flow, you first need to have the `PowerSystem` composite type that has been created with the `ac` model. After that, create the `ACOptimalPowerFlow` composite type to establish the AC optimal power flow framework using the function:
+To perform the AC optimal power flow, we first need to have the `PowerSystem` composite type that has been created with the AC model. After that, create the `ACOptimalPowerFlow` composite type to establish the AC optimal power flow framework using the function:
 * [`acOptimalPowerFlow`](@ref acOptimalPowerFlow).
 
 To solve the AC optimal power flow problem and acquire bus voltage magnitudes and angles, and generator active and reactive power outputs, make use of the following function:
@@ -33,7 +33,7 @@ Likewise, there are specialized functions dedicated to calculating specific type
 ---
 
 ## [Optimal Power Flow Model](@id ACOptimalPowerFlowModelManual)
-To set up the AC optimal power flow, we begin by creating the model. To illustrate this, consider the following example:
+To set up the AC optimal power flow, we begin by creating the model. To illustrate this, consider the following:
 ```@example ACOptimalPowerFlow
 using JuliaGrid # hide
 using JuMP, Ipopt
@@ -105,7 +105,7 @@ JuMP.is_valid(analysis.jump, newVariable)
 ---
 
 ##### Delete Variables
-The variable can be deleted, but this operation is only applicable if the objective function is either affine or quadratic. To achieve this, you can utilize the [`delete`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.delete) function provided by the JuMP package, as demonstrated below:
+The variable can be deleted, but this operation is only applicable if the objective function is either affine or quadratic. To achieve this, we can utilize the [`delete`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.delete) function provided by the JuMP, as demonstrated below:
 ```@example ACOptimalPowerFlow
 JuMP.delete(analysis.jump, newVariable)
 ```
@@ -124,7 +124,7 @@ fieldnames(typeof(analysis.constraint))
 ```
 
 !!! note "Info"
-    We recommend that readers refer to the tutorial on [AC Optimal Power Flow](@ref ACOptimalPowerFlowTutorials) for insights into the implementation.
+    We suggest that readers refer to the tutorial on [AC Optimal Power Flow](@ref ACOptimalPowerFlowTutorials) for insights into the implementation.
 
 ---
 
@@ -151,17 +151,17 @@ print(system.bus.label, analysis.constraint.slack.angle)
 ##### Power Balance Constraints
 The `balance` field contains references to the equality constraints associated with the active and reactive power balance equations defined for each bus. These constraints ensure that the total active and reactive power injected by the generators matches the total active and reactive power demanded at each bus.
 
-The constant term in the active power balance equations is determined by the `active` keyword within the [`addBus!`](@ref addBus!) function, which defines the active power demanded at the bus. You can access the references to the active power balance constraints using the following code snippet:
+The constant term in the active power balance equations is determined by the `active` keyword within the [`addBus!`](@ref addBus!) function, which defines the active power demanded at the bus. We can access the references to the active power balance constraints using the following code snippet:
 ```@repl ACOptimalPowerFlow
 print(system.bus.label, analysis.constraint.balance.active)
 ```
 
-Similarly, the constant term in the reactive power balance equations is determined by the `reactive` keyword within the [`addBus!`](@ref addBus!) function, which defines the reactive power demanded at the bus. You can access the references to the reactive power balance constraints using the following code snippet:
+Similarly, the constant term in the reactive power balance equations is determined by the `reactive` keyword within the [`addBus!`](@ref addBus!) function, which defines the reactive power demanded at the bus. We can access the references to the reactive power balance constraints using the following code snippet:
 ```@repl ACOptimalPowerFlow
 print(system.bus.label, analysis.constraint.balance.reactive)
 ```
 
-During the execution of functions that add or update power system components, these constraints are automatically adjusted to reflect the current configuration of the power system. An example of this adaptability is demonstrated below:
+During the execution of functions that add or update power system components, these constraints are automatically adjusted to reflect the current configuration of the power system, for example:
 ```@example ACOptimalPowerFlow
 updateBus!(system, analysis; label = "Bus 2", active = 0.5)
 updateBranch!(system, analysis; label = "Branch 1", reactance = 0.25)
@@ -178,7 +178,7 @@ print(system.bus.label, analysis.constraint.balance.active)
 ##### Voltage Constraints
 The `voltage` field within the model contains references to the inequality constraints associated with the voltage magnitude and voltage angle difference limits. These constraints ensure that the bus voltage magnitudes and the angle differences between the "from" and "to" bus ends of each branch are within specified limits.
 
-The minimum and maximum bus voltage magnitude limits are set using the `minMagnitude` and `maxMagnitude` keywords within the [`addBus!`](@ref addBus!) function. The constraints associated with these limits can be accessed using the following code snippet:
+The minimum and maximum bus voltage magnitude limits are set using the `minMagnitude` and `maxMagnitude` keywords within the [`addBus!`](@ref addBus!) function. The constraints associated with these limits can be accessed using:
 ```@repl ACOptimalPowerFlow
 print(system.bus.label, analysis.constraint.voltage.magnitude)
 ```
@@ -205,20 +205,20 @@ print(system.branch.label, analysis.constraint.voltage.angle)
 ---
 
 ##### Flow Constraints
-The `flow` field contains references to the inequality constraints associated with the apparent power flow, active power flow, or current magnitude limits at the "from" and "to" bus ends of each branch. The type which one of the constraint will be applied is defined according to the `type` keyword within the [`addBranch!`](@ref addBranch!) function, `type = 1` for the apparent power flow, `type = 2` for the active power flow, or `type = 3` for the current magnitude. These limits are specified using the `longTerm` keyword within the [`addBranch!`](@ref addBranch!) function.
+The `flow` field contains references to the inequality constraints associated with the apparent power flow, active power flow, or current flow magnitude limits at the "from" and "to" bus ends of each branch. The type which one of the constraint will be applied is defined according to the `type` keyword within the [`addBranch!`](@ref addBranch!) function, `type = 1` for the apparent power flow, `type = 2` for the active power flow, or `type = 3` for the current flow magnitude. These limits are specified using the `longTerm` keyword within the [`addBranch!`](@ref addBranch!) function.
 
-By default, the `longTerm` keyword is linked to apparent power (`type = 1`). However, in the example, we configured it to use active power flow by setting `type = 2`. To access the flow constraints of branches at the "from" bus end, you can utilize the following code snippet:
+By default, the `longTerm` keyword is linked to apparent power (`type = 1`). However, in the example, we configured it to use active power flow by setting `type = 2`. To access the flow constraints of branches at the "from" bus end, we can utilize the following code snippet:
 ```@repl ACOptimalPowerFlow
 print(system.branch.label, analysis.constraint.flow.from)
 ```
 
-Similarly, to access the "to" bus end flow constraints of branches you can use the following code snippet:
+Similarly, to access the "to" bus end flow constraints of branches we can use the following code snippet:
 ```@repl ACOptimalPowerFlow
 print(system.branch.label, analysis.constraint.flow.to)
 ```
 Please note that if the flow constraints are set to `longTerm = 0.0` for the corresponding branch, JuliGrid will omit the corresponding inequality constraint.
 
-Additionally, by employing the [`updateBranch!`](@ref updateBranch!) function, you have the ability to modify these specific constraints, for example:
+Additionally, by employing the [`updateBranch!`](@ref updateBranch!) function, we have the ability to modify these specific constraints:
 ```@example ACOptimalPowerFlow
 updateBranch!(system, analysis; label = "Branch 1", reactance = 0.8, longTerm = 0.14)
 nothing # hide
@@ -235,17 +235,17 @@ print(system.branch.label, analysis.constraint.flow.to)
 ##### Power Capability Constraints
 The `capability` field contains references to the inequality constraints associated with the minimum and maximum active and reactive power outputs of the generators.
 
-The constraints associated with the minimum and maximum active power output limits of the generators are defined using the `minActive` and `maxActive` keywords within the [`addGenerator!`](@ref addGenerator!) function. To access the constraints associated with these limits, you can use the following code snippet:
+The constraints associated with the minimum and maximum active power output limits of the generators are defined using the `minActive` and `maxActive` keywords within the [`addGenerator!`](@ref addGenerator!) function. To access the constraints associated with these limits, we can use the following code snippet:
 ```@repl ACOptimalPowerFlow
 print(system.generator.label, analysis.constraint.capability.active)
 ```
 
-Similarly, the constraints associated with the minimum and maximum reactive power output limits of the generators are specified using the `minReactive` and `maxReactive` keywords within the [`addGenerator!`](@ref addGenerator!) function. To access these constraints, you can use the following code snippet:
+Similarly, the constraints associated with the minimum and maximum reactive power output limits of the generators are specified using the `minReactive` and `maxReactive` keywords within the [`addGenerator!`](@ref addGenerator!) function. To access these constraints, we can use the following code snippet:
 ```@repl ACOptimalPowerFlow
 print(system.generator.label, analysis.constraint.capability.reactive)
 ```
 
-As demonstrated, the active and reactive power outputs of `Generator 1` and `Generator 2` are currently fixed at zero due to previous actions that set these generators out-of-service. However, you can modify these specific constraints by utilizing the [`updateGenerator!`](@ref updateGenerator!) function, as shown below:
+As demonstrated, the active and reactive power outputs of `Generator 1` and `Generator 2` are currently fixed at zero due to previous actions that set these generators out-of-service. However, we can modify these specific constraints by utilizing the [`updateGenerator!`](@ref updateGenerator!) function, as shown below:
 ```@example ACOptimalPowerFlow
 updateGenerator!(system, analysis; label = "Generator 1", status = 1)
 updateGenerator!(system, analysis; label = "Generator 2", status = 1, minActive = 0.1)
@@ -280,14 +280,14 @@ analysis.variable.actwise[2]
 
 
 ##### Add Constraints
-Users can effortlessly introduce additional constraints into the defined AC optimal power flow model by utilizing the [`addBranch!`](@ref addBranch!) or [`addGenerator!`](@ref addGenerator!) functions. Specifically, if a user wishes to include a new branch or generator in an already defined `PowerSystem` and `ACOptimalPowerFlow` type, using these functions will automatically add and update all constraints:
+Users can effortlessly introduce additional constraints into the defined AC optimal power flow model by utilizing the [`addBranch!`](@ref addBranch!) or [`addGenerator!`](@ref addGenerator!) functions. Specifically, if a user wishes to include a new branch or generator in an already defined `PowerSystem` and `ACOptimalPowerFlow` type:
 ```@example ACOptimalPowerFlow
 addBranch!(system, analysis; label = "Branch 2", from = "Bus 1", to = "Bus 2", reactance = 1)
 addGenerator!(system, analysis; label = "Generator 3", bus = "Bus 2", active = 2, status = 1)
 nothing # hide
 ```
 
-This will affect all constraints related to branches and generators, but it will also update balance constraints to configure the optimization model to match the current state of the power system. For example, you can observe the following updated constraints:
+This will affect all constraints related to branches and generators, but it will also update balance constraints to configure the optimization model to match the current state of the power system. For example, we can observe the following updated constraints:
 ```@repl ACOptimalPowerFlow
 print(system.branch.label, analysis.constraint.voltage.angle)
 print(system.generator.label, analysis.constraint.capability.active)
@@ -307,7 +307,7 @@ nothing # hide
 ##### Delete Constraints
 To delete a constraint, users can make use of the [`delete`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.delete) function from the JuMP package. When handling constraints that have been internally created, users can refer to the constraint references stored in the `constraint` field of the `ACOptimalPowerFlow` type.
 
-For example, if the intention is to eliminate constraints related to the capability of `Generator 3`, the following code snippet can be employed:
+For example, if the intention is to eliminate constraints related to the capability of `Generator 3`, we can use:
 ```@example ACOptimalPowerFlow
 JuMP.delete(analysis.jump, analysis.constraint.capability.active[3])
 nothing # hide
@@ -331,7 +331,7 @@ JuliaGrid also stores the objective function in a separate variable, which can b
 ---
 
 ##### Update Objective Function
-By utilizing the [`cost!`](@ref cost!) functions, users have the flexibility to modify the objective function by adjusting polynomial or linear piecewise cost coefficients or by changing the type of polynomial or linear piecewise function employed. For instance, consider `Generator 1`, which originally employs a quadratic polynomial cost function for active power. You can redefine the cost function for this generator as a cubic polynomial and thereby define a nonlinear objective function, as shown below:
+By utilizing the [`cost!`](@ref cost!) functions, users have the flexibility to modify the objective function by adjusting polynomial or linear piecewise coefficients or by changing the type of polynomial or linear piecewise function employed. For example, consider `Generator 1`, which employs a quadratic polynomial cost function for active power. We can redefine the cost function for this generator as a cubic polynomial and thereby define a nonlinear objective function:
 ```@example ACOptimalPowerFlow
 cost!(system, analysis; label = "Generator 1", active = 2, polynomial = [631; 257; 40; 5.0])
 nothing # hide
@@ -347,13 +347,13 @@ JuMP.objective_function(analysis.jump)
 ##### User-Defined Objective Function
 Users can modify the objective function using the [`set_objective_function`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.set_objective_function) function from the JuMP package. This operation is considered destructive because it is independent of power system data; however, in certain scenarios, it may be more straightforward than using the [`cost!`](@ref cost!) function for updates. Moreover, using this methodology, users can combine a defined function with a newly defined expression.
 
-In this context, we can utilize the saved objective function within the `objective` field of the `ACOptimalPowerFlow` type. For example, you can easily eliminate nonlinear parts and alter the quadratic component of the objective as follows:
+In this context, we can utilize the saved objective function within the `objective` field of the `ACOptimalPowerFlow` type. For example, we can easily eliminate nonlinear parts and alter the quadratic component of the objective:
 ```@example ACOptimalPowerFlow
 expr = 5.0 * analysis.variable.active[1] * analysis.variable.active[1]
 JuMP.set_objective_function(analysis.jump, analysis.objective.quadratic - expr)
 ```
 
-You can now observe the updated objective function as follows:
+We can now observe the updated objective function as follows:
 ```@repl ACOptimalPowerFlow
 JuMP.objective_function(analysis.jump)
 ```
@@ -367,7 +367,7 @@ generator = analysis.power.generator;
 print(system.generator.label, generator.active, generator.reactive)
 print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
 ```
-You have the flexibility to adjust these values to your specifications, and they will be utilized as the starting primal values when you run the [`solve!`](@ref solve!(::PowerSystem, ::ACOptimalPowerFlow)) function.
+Users have the flexibility to adjust these values according to their specifications, which will then be used as the starting primal values when executing the [`solve!`](@ref solve!(::PowerSystem, ::ACOptimalPowerFlow)) function.
 
 ---
 
@@ -401,7 +401,7 @@ end
 ---
 
 ## [Optimal Power Flow Solution](@id ACOptimalPowerFlowSolutionManual)
-To establish the AC optimal power flow problem, you can utilize the [`acOptimalPowerFlow`](@ref acOptimalPowerFlow) function. After setting up the problem, you can use the [`solve!`](@ref solve!(::PowerSystem, ::ACOptimalPowerFlow)) function to compute the optimal values for the active and reactive power outputs of the generators and the bus voltage magnitudes angles. Also, to turn off the solver output within the REPL, we use the [`set_silent`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.set_silent) function before calling [`solve!`](@ref solve!(::PowerSystem, ::ACOptimalPowerFlow)) function. Here is an example:
+To establish the AC optimal power flow problem, we can utilize the [`acOptimalPowerFlow`](@ref acOptimalPowerFlow) function. After setting up the problem, we can use the [`solve!`](@ref solve!(::PowerSystem, ::ACOptimalPowerFlow)) function to compute the optimal values for the active and reactive power outputs of the generators and the bus voltage magnitudes angles. Also, to turn off the solver output within the REPL, we use the [`set_silent`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.set_silent) function before calling [`solve!`](@ref solve!(::PowerSystem, ::ACOptimalPowerFlow)) function. Here is an example:
 ```julia ACOptimalPowerFlow
 JuMP.set_silent(analysis.jump)
 solve!(system, analysis)
@@ -412,7 +412,7 @@ solve!(system, analysis)
 nothing # hide
 ```
 
-By executing this function, you will obtain the solution with the optimal values for the active power outputs of the generators and the bus voltage angles:
+By executing this function, we will obtain the solution with the optimal values for the active power outputs of the generators and the bus voltage angles:
 ```@repl ACOptimalPowerFlow
 generator = analysis.power.generator;
 print(system.generator.label, generator.active, generator.reactive)
@@ -422,7 +422,7 @@ print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
 ---
 
 ##### Objective Value
-To obtain the objective value of the optimal power flow solution, you can use the [`objective_value`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.objective_value) function:
+To obtain the objective value of the optimal power flow solution, we can use the [`objective_value`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.objective_value) function:
 ```@repl ACOptimalPowerFlow
 JuMP.objective_value(analysis.jump)
 ```
@@ -563,12 +563,12 @@ To calculate the total active and reactive power linked with branch charging adm
 active, reactive = chargingPower(system, analysis; label = "Branch 1")
 ```
 
-Active powers indicate active losses within the branch's charging or shunt admittances. Moreover, charging admittances injected reactive powers into the power system due to their capacitive nature, as denoted by a negative sign.
+Active powers indicate active losses within the branch's charging admittances. Moreover, charging admittances injected reactive powers into the power system due to their capacitive nature, as denoted by a negative sign.
 
 ---
 
 ##### Active and Reactive Power at Series Impedance
-To calculate the active and reactive power across the series impedance of the particular branch, the function can be used:
+To calculate the active and reactive power across the series impedance of the branch, the function can be used:
 ```@repl ACOptimalPowerFlowPower
 active, reactive = seriesPower(system, analysis; label = "Branch 2")
 ```
@@ -586,7 +586,7 @@ magnitude, angle = injectionCurrent(system, analysis; label = "Bus 1")
 ---
 
 ##### Current Flow
-We can compute the current flow at both the "from" and "to" bus ends of the specific branch by utilizing the provided functions below:
+We can compute the current flow at both the "from" and "to" bus ends of the specific branch by using:
 ```@repl ACOptimalPowerFlowPower
 magnitude, angle = fromCurrent(system, analysis; label = "Branch 2")
 magnitude, angle = toCurrent(system, analysis; label = "Branch 2")
@@ -595,7 +595,7 @@ magnitude, angle = toCurrent(system, analysis; label = "Branch 2")
 ---
 
 ##### Current Through Series Impedance
-To calculate the current passing through the series impedance of the branch in the direction from the "from" bus end to the "to" bus end, you can use the following function:
+To calculate the current passing through the series impedance of the branch in the direction from the "from" bus end to the "to" bus end, we can use the following function:
 ```@repl ACOptimalPowerFlowPower
 magnitude, angle = seriesCurrent(system, analysis; label = "Branch 2")
 ```

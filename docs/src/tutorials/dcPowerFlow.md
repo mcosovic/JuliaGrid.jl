@@ -39,7 +39,7 @@ To review, we can conceptualize the bus/branch model as the graph denoted by ``\
 ---
 
 ## [Power Flow Solution](@id DCPowerFlowSolutionTutorials)
-As discussed in section [DC Model](@ref DCModelTutorials), the DC power flow problem can be represented by a set of linear equations given by:
+As discussed in section [DC Model](@ref DCModelTutorials), the DC power flow problem can be represented by a set of linear equations:
 ```math
   \mathbf {P} = \mathbf{B} \bm {\Theta} + \mathbf{P_\text{tr}} + \mathbf{P}_\text{sh}.
 ```
@@ -121,12 +121,12 @@ where ``P_{\text{d}i}`` represents the active power demanded by consumers at the
 ---
 
 ##### Power Flows
-The resulting [active power flows](@ref DCBranchNetworkEquationsTutorials) are stored as the vector ``\mathbf{P}_{\text{i}} = [P_{ij}]``, which can be retrieved using the following command:
+The resulting [active power flows](@ref DCBranchNetworkEquationsTutorials) are stored as the vector ``\mathbf{P}_{\text{i}} = [P_{ij}]``, which can be retrieved using:
 ```@repl PowerFlowSolutionDC
 𝐏ᵢ = analysis.power.from.active
 ```
 
-Similarly, the resulting [active power flows](@ref DCBranchNetworkEquationsTutorials) are stored as the vector ``\mathbf{P}_{\text{j}} = [P_{ji}]``, which can be retrieved using the following command:
+Similarly, the resulting [active power flows](@ref DCBranchNetworkEquationsTutorials) are stored as the vector ``\mathbf{P}_{\text{j}} = [P_{ji}]``, which can be retrieved using:
 ```@repl PowerFlowSolutionDC
 𝐏ⱼ = analysis.power.to.active
 ```
@@ -134,7 +134,7 @@ Similarly, the resulting [active power flows](@ref DCBranchNetworkEquationsTutor
 ---
 
 ##### Generators Power Outputs
-The output active power of each generator located at bus ``i \in \mathcal{N}_{\text{pv}} \cup \mathcal{N}_{\text{pq}}`` is equal to the active power specified in the input data. If there are multiple generators, their output active powers are also equal to the active powers specified in the input data. However, the output active power of a generator located at the slack bus is determined as:
+The output active power of each generator located at bus ``i \in \mathcal{N}_{\text{pv}} \cup \mathcal{N}_{\text{pq}}`` is equal to the active power specified in the input data. If there are multiple generators, their output active powers are also equal to the active powers specified in the input data. However, the output active power of a generator located at the slack bus will be:
 ```math
     P_{\text{g}i} = P_i + P_{\text{d}i},\;\;\; i \in \mathcal{N}_{\text{sb}}.
 ```

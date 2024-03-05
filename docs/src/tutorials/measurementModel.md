@@ -49,7 +49,7 @@ Each legacy measurement and each magnitude or angle measurement from PMUs is ass
 ```
 where ``v_i`` is the measurement variance defined by the measurement error ``u_i``, and the measurement function ``h_i(\mathbf{x})`` connects the vector of state variables ``\mathbf{x}`` to the value of the ``i``-th measurement. 
 
-As we can observe, when defining the system of equations, it is essential to have measurement values represented by ``\mathbf{z}``. In JuliaGrid, users have the option to either directly specify measurement values or artificially generate the vector ``[z_1,\dots,z_k]``. This generation process involves introducing white Gaussian noise with variances ``[v_1, \dots, v_k]`` and adding it to the provided values ``[e_1, \dots, e_k]``, typically representing the exact values of the respective electrical quantities:
+When defining the system of equations, it is essential to have measurement values represented by ``\mathbf{z}``. In JuliaGrid, users have the option to either directly specify measurement values or artificially generate the vector ``[z_1,\dots,z_k]``. This generation process involves introducing white Gaussian noise with variances ``[v_1, \dots, v_k]`` and adding it to the provided values ``[e_1, \dots, e_k]``, typically representing the exact values of the respective electrical quantities:
 ```math
   \epsilon_i \sim \mathcal{N}(0,\,v_i) \\[5pt]
   z_i = e_i + \epsilon_i.

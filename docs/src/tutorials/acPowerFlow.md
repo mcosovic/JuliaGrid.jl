@@ -1,6 +1,5 @@
 # [AC Power Flow](@id ACPowerFlowTutorials)
-
-JuliaGrid utilizes standard network components and leverages the [Unified Branch Model](@ref UnifiedBranchModelTutorials) to perform power flow analysis, enabling the definition of load profiles, generator capacities, voltage specifications, contingency analysis, and planning.
+JuliaGrid uses standard network components and the [Unified Branch Model](@ref UnifiedBranchModelTutorials) for power flow analysis, allowing load profiles, generator capacities, voltage specifications, contingency analysis, and planning to be defined efficiently.
 
 To begin, the `PowerSystem` composite type must be provided to JuliaGrid through the use of the [`powerSystem`](@ref powerSystem) function, as illustrated by the following example:
 ```@example PowerFlowSolution
@@ -93,7 +92,7 @@ Furthermore, the active power injections ``{P}_{i}`` and reactive power injectio
 ```
 where ``{P}_{\text{d}i}`` and ``{Q}_{\text{d}i}`` denote the active and reactive power demanded at the bus ``i \in \mathcal{N}``, while ``{P}_{\text{p}i}`` and ``{Q}_{\text{p}i}`` correspond to the active and reactive power produced by the generators at the bus ``i \in \mathcal{N}``.
 
-To provide a more comprehensive understanding, it is important to note that each bus ``i \in \mathcal{N}`` has the capacity to host multiple generators. This scenario can be conceptualized by introducing the set ``\mathcal{S}_i``, which encompasses all generators connected to bus ``i \in \mathcal{N}``. With this perspective in mind, we can calculate the values of ``{P}_{\text{p}i}`` and ``{Q}_{\text{p}i}`` as follows:
+To provide a more comprehensive understanding, it is important to note that each bus ``i \in \mathcal{N}`` has the capacity to host multiple generators. This scenario can be conceptualized by introducing the set ``\mathcal{S}_i``, which encompasses all generators connected to bus ``i \in \mathcal{N}``. With this perspective, we can calculate the values of ``{P}_{\text{p}i}`` and ``{Q}_{\text{p}i}`` as follows:
 ```math
   \begin{aligned}
   	P_{\text{p}i} &= \sum_{k \in \mathcal{S}_i} P_{\text{g}k}\\
@@ -130,12 +129,12 @@ As detailed in the [Nodal Network Equations](@ref FlowNodalNetworkEquationsTutor
 	\end{aligned}
 ```
 
-Using the above equations, we can define the active power injection function for demand and generator buses as follows:
+Using the above equations, we can define the active power injection function for demand and generator buses:
 ```math
   f_{P_i}(\mathbf x) = {V}_{i}\sum\limits_{j=1}^n {V}_{j}(G_{ij}\cos\theta_{ij}+B_{ij}\sin\theta_{ij}) - {P}_{i} = 0,
   \;\;\; \forall i \in \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}},
 ```
-and the reactive power injection function for demand buses as follows:
+and the reactive power injection function for demand buses:
 ```math
   f_{Q_i}(\mathbf x) = {V}_{i}\sum\limits_{j=1}^n {V}_{j}(G_{ij}\sin\theta_{ij}-B_{ij}\cos\theta_{ij}) - {Q}_{i} = 0,
   \;\;\; \forall i \in \mathcal{N}_{\text{pq}}.
@@ -201,7 +200,7 @@ In addition to computing the mismatches in active and reactive power injection, 
   \max \{|f_{Q_i}(\mathbf x^{(\nu-1)})|,\; \forall i \in \mathcal{N}_{\text{pq}} \} < \epsilon.
 ```
 
-Next, the function [`solve!`](@ref solve!(::PowerSystem, ::NewtonRaphson)) computes the increments of bus voltage angle and magnitude at each iteration using the equation:
+Next, the function [`solve!`](@ref solve!(::PowerSystem, ::NewtonRaphson)) computes the increments of bus voltage angle and magnitude at each iteration using:
 ```math
   \mathbf{\Delta} \mathbf{x}^{(\nu-1)} = -\mathbf{J}(\mathbf{x}^{(\nu-1)})^{-1} \mathbf{f}(\mathbf{x}^{(\nu-1)}),
 ```
@@ -210,7 +209,7 @@ where ``\mathbf{\Delta} \mathbf{x} = [\mathbf \Delta \mathbf x_a, \mathbf \Delta
 !!! tip "Tip"
     By default, JuliaGrid uses LU factorization as the primary method for factorizing the Jacobian matrix ``\mathbf{J} = \mathbf{L}\mathbf{U}``, aiming to compute the increments. Nevertheless, users have the flexibility to opt for QR factorization as an alternative method.
 
-These values are stored in the `ACPowerFlow` abstract type and can be accessed after each iteration using the following commands:
+These values are stored in the `ACPowerFlow` abstract type and can be accessed after each iteration:
 ```@repl PowerFlowSolution
 𝚫𝐱 = analysis.method.increment
 𝐉 = analysis.method.jacobian
@@ -525,7 +524,7 @@ nothing # hide
 ---
 
 ##### Initialization
-When a user creates the fast Newton-Raphson method in JuliaGrid, the Jacobian matrices ``\mathbf{B}_1`` and ``\mathbf{B}_2`` are formed to correspond to the active and reactive power equations, respectively. You can access these matrices using the following commands:
+When a user creates the fast Newton-Raphson method in JuliaGrid, the Jacobian matrices ``\mathbf{B}_1`` and ``\mathbf{B}_2`` are formed to correspond to the active and reactive power equations, respectively:
 ```@repl PowerFlowSolution
 𝐁₁ = analysis.method.active.jacobian
 𝐁₂ = analysis.method.reactive.jacobian
@@ -589,7 +588,7 @@ Next, the function [`solve!`](@ref solve!(::PowerSystem, ::NewtonRaphson)) compu
   \mathbf \Delta \mathbf x_a^{(\nu-1)} = \mathbf{B}_1^{-1} \mathbf{h}_{P}(\mathbf x_a^{(\nu-1)}, \mathbf x_m^{(\nu-1)}).
 ```
 
-To obtain the voltage angle increments, JuliaGrid initially performs LU factorization on the Jacobian matrix ``\mathbf{B}_1 = \mathbf{L}_1\mathbf{U}_1``. This factorization is executed only once and is utilized in each iteration of the fast Newton-Raphson algorithm:
+To obtain the voltage angle increments, JuliaGrid initially performs LU factorization on the Jacobian matrix ``\mathbf{B}_1 = \mathbf{L}_1\mathbf{U}_1``. This factorization is executed only once and is utilized in each iteration of the algorithm:
 ```@repl PowerFlowSolution
 𝐋₁ = analysis.method.active.factorization.L
 𝐔₁ = analysis.method.active.factorization.U
@@ -599,7 +598,7 @@ To obtain the voltage angle increments, JuliaGrid initially performs LU factoriz
     By default, JuliaGrid uses LU factorization as the primary method for factorizing Jacobian matrix. Nevertheless, users have the flexibility to opt for QR factorization as an alternative method.
 
 
-The vector of increments that corresponds to the active power equations can be accessed using the following command:
+The vector of increments that corresponds to the active power equations can be accessed using:
 ```@repl PowerFlowSolution
 𝚫𝐱ₐ = analysis.method.active.increment
 ```
@@ -624,7 +623,7 @@ Similarly to the previous instance, JuliaGrid initially executes LU factorizatio
 𝐔₂ = analysis.method.reactive.factorization.U
 ```
 
-The vector of increments that corresponds to the reactive power equations can be accessed using the following command:
+The vector of increments that corresponds to the reactive power equations can be accessed using:
 ```@repl PowerFlowSolution
 𝚫𝐱ₘ = analysis.method.active.increment
 ```
@@ -656,7 +655,7 @@ In its expanded form, this can be written as:
 
 While the Gauss-Seidel method directly solves the system of equations, it suffers from very slow convergence, which increases almost linearly with the system size, necessitating numerous iterations to obtain the desired solution [[4]](@ref PowerFlowSolutionReferenceTutorials). Moreover, the convergence time of the Gauss-Seidel method increases significantly for large-scale systems and can face convergence issues for systems with high active power transfers. Nevertheless, power flow programs utilize both the Gauss-Seidel and Newton-Raphson methods in a complementary manner. Specifically, the Gauss-Seidel method is employed to obtain a quick approximate solution from a "flat start", while the Newton-Raphson method is utilized to obtain the final accurate solution [[5]](@ref PowerFlowSolutionReferenceTutorials).
 
-The Gauss-Seidel method is typically based on the system of equations with ``n`` complex equations, one of which represents the slack bus. As a result, one equation can be eliminated, resulting in a power flow problem with ``n-1`` equations.
+The Gauss-Seidel method is usually applied to a system of ``n`` complex equations, where one represents the slack bus. Consequently, one equation can be eliminated, resulting in a power flow problem with ``n-1`` equations.
 
 ---
 
@@ -780,7 +779,7 @@ The [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)) function in JuliaGrid 
 ```math
   P_{\text{p}i} = P_i + P_{\text{d}i},\;\;\; i \in \mathcal{N}_{\text{sb}},
 ```
-where ``P_{\text{d}i}`` represents the active power demanded by consumers at the slack bus. The active power injections from the generators at each bus are stored as the vector, denoted by ``\mathbf{P}_{\text{p}} = [P_{\text{p}i}]``, can be obtained using the following command:
+where ``P_{\text{d}i}`` represents the active power demanded by consumers at the slack bus. The active power injections from the generators at each bus are stored as the vector, denoted by ``\mathbf{P}_{\text{p}} = [P_{\text{p}i}]``, can be obtained using:
 ```@repl PowerFlowSolution
 𝐏ₚ = analysis.power.supply.active
 ```
@@ -856,7 +855,7 @@ The output reactive powers of each generator located at the bus is obtained as:
 ```
 If there are multiple generators at the same bus, the reactive power is allocated proportionally among the generators based on their reactive power capabilities.
 
-To retrieve the vector of reactive power outputs of generators, denoted as ``\mathbf{Q}_{\text{g}} = [Q_{\text{g}i}]``, ``i \in \mathcal{S}``, users can utilize the following command:
+To retrieve the vector of reactive power outputs of generators, denoted as ``\mathbf{Q}_{\text{g}} = [Q_{\text{g}i}]``, ``i \in \mathcal{S}``, users can utilize:
 ```@repl PowerFlowSolution
 𝐐ₒ = analysis.power.generator.reactive
 ```

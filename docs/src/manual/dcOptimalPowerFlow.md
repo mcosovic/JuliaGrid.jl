@@ -1,7 +1,7 @@
 # [DC Optimal Power Flow](@id DCOptimalPowerFlowManual)
 Similar to [AC Optimal Power Flow](@ref ACOptimalPowerFlowManual), JuliaGrid utilizes the [JuMP](https://jump.dev/JuMP.jl/stable/) package to construct optimal power flow models, enabling users to manipulate these models using the standard functions provided by JuMP. JuliaGrid supports popular [solvers](https://jump.dev/JuMP.jl/stable/packages/solvers/) mentioned in the JuMP documentation to solve the optimization problem.
 
-To perform the DC optimal power flow, you first need to have the `PowerSystem` composite type that has been created with the `dc` model. After that, create the `DCOptimalPowerFlow` composite type to establish the DC optimal power flow framework using the function:
+To perform the DC optimal power flow, we first need to have the `PowerSystem` composite type that has been created with the DC model. After that, create the `DCOptimalPowerFlow` composite type to establish the DC optimal power flow framework using the function:
 * [`dcOptimalPowerFlow`](@ref dcOptimalPowerFlow).
 
 To solve the DC optimal power flow problem and acquire bus voltage angles and generator active power outputs, make use of the following function:
@@ -21,7 +21,7 @@ Additionally, there are specialized functions dedicated to calculating specific 
 ---
 
 ## [Optimal Power Flow Model](@id DCOptimalPowerFlowModelManual)
-To set up the DC optimal power flow, we begin by creating the model. To illustrate this, consider the following example:
+To set up the DC optimal power flow, we begin by creating the model. To illustrate this, consider the following:
 ```@example DCOptimalPowerFlow
 using JuliaGrid # hide
 using JuMP, HiGHS
@@ -61,7 +61,7 @@ nothing # hide
 ---
 
 ## [Optimization Variables](@id DCOptimizationVariablesManual)
-In the DC optimal power flow, the active power outputs of the generators are represented as linear functions of the bus voltage angles. Therefore, the variables in this model are the active power outputs of the generators and the bus voltage angles:
+In DC optimal power flow, generator active power outputs are linear functions of bus voltage angles. Thus, the model's variables include generator active power outputs and bus voltage angles:
 ```@repl DCOptimalPowerFlow
 JuMP.all_variables(analysis.jump)
 ```
@@ -109,7 +109,7 @@ fieldnames(typeof(analysis.constraint))
 ```
 
 !!! note "Info"
-    We recommend that readers refer to the tutorial on [DC Optimal Power Flow](@ref DCOptimalPowerFlowTutorials) for insights into the implementation.
+    We suggest that readers refer to the tutorial on [DC Optimal Power Flow](@ref DCOptimalPowerFlowTutorials) for insights into the implementation.
 
 ---
 
@@ -137,7 +137,7 @@ The `balance` field contains references to the equality constraints associated w
 print(system.bus.label, analysis.constraint.balance.active)
 ```
 
-During the execution of functions that add or update power system components, these constraints are automatically adjusted to reflect the current configuration of the power system. An example of this adaptability is demonstrated below:
+During the execution of functions that add or update power system components, these constraints are automatically adjusted to reflect the current configuration of the power system, for example:
 ```@example DCOptimalPowerFlow
 updateBus!(system, analysis; label = "Bus 3", active = 0.1)
 updateGenerator!(system, analysis; label = "Generator 2", status = 0)
@@ -158,7 +158,7 @@ print(system.branch.label, analysis.constraint.voltage.angle)
 
 Please note that if the limit constraints are set to `minDiffAngle = -2π` and `maxDiffAngle = 2π` for the corresponding branch, JuliGrid will omit the corresponding inequality constraint.
 
-Additionally, by employing the [`updateBranch!`](@ref updateBranch!) function, you have the ability to modify these specific constraints as follows:
+Additionally, by employing the [`updateBranch!`](@ref updateBranch!) function, we have the ability to modify these constraints as follows:
 ```@example DCOptimalPowerFlow
 updateBranch!(system, analysis; label = "Branch 1", minDiffAngle = -1.7, maxDiffAngle = 1.7)
 nothing # hide
@@ -172,13 +172,13 @@ print(system.branch.label, analysis.constraint.voltage.angle)
 ---
 
 ##### Active Power Flow Constraints
-The `flow` field contains references to the inequality constraints associated with the active power flow limits at the "from" and "to" bus ends of each branch. These limits are specified using the `longTerm` keyword within the [`addBranch!`](@ref addBranch!) function:
+The `flow` field refers to the inequality constraints linked to active power flow limits at the "from" and "to" bus ends of each branch. These limits are set using the `longTerm` keyword in the [`addBranch!`](@ref addBranch!) function:
 ```@repl DCOptimalPowerFlow
 print(system.branch.label, analysis.constraint.flow.active)
 ```
 Please note that if the limit constraints are set to `longTerm = 0.0` for the corresponding branch, JuliGrid will omit the corresponding inequality constraint.
 
-Additionally, by employing the [`updateBranch!`](@ref updateBranch!) function, you have the ability to modify these specific constraints, for example:
+By employing the [`updateBranch!`](@ref updateBranch!) function, we have the ability to modify these specific constraints, for example:
 ```@example DCOptimalPowerFlow
 updateBranch!(system, analysis; label = "Branch 1", status = 0)
 updateBranch!(system, analysis; label = "Branch 2", reactance = 0.03, longTerm = 0.14)
@@ -198,7 +198,7 @@ The `capability` field contains references to the inequality constraints associa
 print(system.generator.label, analysis.constraint.capability.active)
 ```
 
-As demonstrated, the active power output of `Generator 2` is currently fixed at zero due to the earlier action of setting this generator out-of-service. Consequently, you can adjust these specific constraints using the [`updateGenerator!`](@ref updateGenerator!) function, for example:
+As demonstrated, the active power output of `Generator 2` is currently fixed at zero due to the earlier action of setting this generator out-of-service. Consequently, we can adjust these specific constraints using the [`updateGenerator!`](@ref updateGenerator!) function, for example:
 ```@example DCOptimalPowerFlow
 updateGenerator!(system, analysis; label = "Generator 2", status = 1, maxActive = 0.5)
 nothing # hide
@@ -224,7 +224,7 @@ It is worth noting that these constraints can also be automatically updated usin
 ---
 
 ##### Add Constraints
-Users can effortlessly introduce additional constraints into the defined DC optimal power flow model by utilizing the [`addBranch!`](@ref addBranch!) or [`addGenerator!`](@ref addGenerator!) functions. Specifically, if a user wishes to include a new branch or generator in an already defined `PowerSystem` and `DCOptimalPowerFlow` type, using these functions will automatically add and update all constraints:
+Users can effortlessly introduce additional constraints into the defined DC optimal power flow model by utilizing the [`addBranch!`](@ref addBranch!) or [`addGenerator!`](@ref addGenerator!) functions. Specifically, if a user wishes to include a new branch or generator in an already defined `PowerSystem` and `DCOptimalPowerFlow` type:
 ```@example DCOptimalPowerFlow
 addBranch!(system, analysis; label = "Branch 4", from = "Bus 1", to = "Bus 2", reactance = 1)
 addGenerator!(system, analysis; label = "Generator 4", bus = "Bus 1", maxActive = 0.2)
@@ -294,7 +294,7 @@ expr = 100.2 * analysis.variable.active[1] * analysis.variable.active[1] + 123
 JuMP.set_objective_function(analysis.jump, analysis.objective - expr)
 ```
 
-You can now observe the updated objective function as follows:
+We can now observe the updated objective function as follows:
 ```@repl DCOptimalPowerFlow
 JuMP.objective_function(analysis.jump)
 ```
@@ -307,7 +307,7 @@ In JuliaGrid, the assignment of starting primal values for optimization variable
 print(system.generator.label, analysis.power.generator.active)
 print(system.bus.label, analysis.voltage.angle)
 ```
-You have the flexibility to adjust these values to your specifications, and they will be utilized as the starting primal values when you run the [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow)) function.
+Users have the flexibility to adjust these values according to their specifications, which will then be used as the starting primal values when executing the [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow)) function.
 
 ---
 
@@ -332,14 +332,14 @@ end
 ---
 
 ## [Optimal Power Flow Solution](@id DCOptimalPowerFlowSolutionManual)
-To establish the DC optimal power flow problem, you can utilize the [`dcOptimalPowerFlow`](@ref dcOptimalPowerFlow) function. After setting up the problem, you can use the [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow)) function to compute the optimal values for the active power outputs of the generators and the bus voltage angles. Also, to turn off the solver output within the REPL, we use the [`set_silent`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.set_silent) function before calling [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow)) function. Here is an example:
+To establish the DC optimal power flow problem, we can utilize the [`dcOptimalPowerFlow`](@ref dcOptimalPowerFlow) function. After setting up the problem, we can use the [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow)) function to compute the optimal values for the active power outputs of the generators and the bus voltage angles. Also, to turn off the solver output within the REPL, we use the [`set_silent`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.set_silent) function before calling [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow)) function. Here is an example:
 ```@example DCOptimalPowerFlow
 JuMP.set_silent(analysis.jump)
 solve!(system, analysis)
 nothing # hide
 ```
 
-By executing this function, you will obtain the solution with the optimal values for the active power outputs of the generators and the bus voltage angles:
+By executing this function, we will obtain the solution with the optimal values for the active power outputs of the generators and the bus voltage angles:
 ```@repl DCOptimalPowerFlow
 print(system.generator.label, analysis.power.generator.active)
 print(system.bus.label, analysis.voltage.angle)
@@ -348,7 +348,7 @@ print(system.bus.label, analysis.voltage.angle)
 ---
 
 ##### Objective Value
-To obtain the objective value of the optimal power flow solution, you can use the [`objective_value`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.objective_value) function:
+To obtain the objective value of the optimal power flow solution, we can use the [`objective_value`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.objective_value) function:
 ```@repl DCOptimalPowerFlow
 JuMP.objective_value(analysis.jump)
 ```

@@ -1,11 +1,18 @@
 JuliaGrid
 =============
 
-JuliaGrid is an open-source and easy-to-use simulation tool and solver developed for researchers and educators. It is available as a Julia package, and its source code is released under the MIT License. JuliaGrid primarily focuses on steady-state power system analyses, providing a versatile set of algorithms while also allowing for easy manipulation of both the power system configuration and the analyses involved.
+JuliaGrid is an open-source and easy-to-use simulation tool and solver developed for researchers and educators. It is available as a Julia package, and its source code is released under the MIT License. JuliaGrid primarily focuses on steady-state power system analyses, providing a versatile set of algorithms while also allowing for easy manipulation of power system configurations, measurement data, and the analyses involved.
 
-Our documentation is divided into three distinct categories. The manual provides users with guidance on using available functions, explaining the expected outcomes, and offering instructions for modifying power system configurations and specific analyses. The tutorials delve deeper into the mathematical implementation of algorithms, allowing users to gain an in-depth understanding of the formulas behind various functions. Lastly, the API references offer a comprehensive list of functions within the package, categorized according to specific analyses.
+Our documentation is divided into three distinct categories: 
+* The manual provides users with guidance on using available functions, explaining the expected outcomes, and offering instructions for modifying power system configurations, measurement data, and specific analyses. 
+* The tutorials delve deeper into the mathematical implementation of algorithms, allowing users to gain an in-depth understanding of the formulas behind various functions. 
+* Lastly, the API references offer a comprehensive list of functions within the package, categorized according to specific analyses.
 
-In order to encourage code reusability and give users the ability to customize their analyses as required, we deconstruct specific analyses. However, the overall logic can be simplified as follows: users should initially build a power system, then select between the AC or DC model, define the specific type of analysis, and ultimately, solve the generated framework.
+In order to encourage code reusability and give users the ability to customize their analyses as required, we deconstruct specific analyses. However, the overall logic can be simplified as follows: 
+* Users start by constructing a power system (and measurement data if state estimation analyses are involved).
+* They then choose between the AC or DC model.
+* Next, users define the specific type of analysis. 
+* Ultimately, they solve the generated framework.
 
 Below, we have provided a list of examples to assist users in getting started with the JuliaGrid package. These examples highlight some of the possibilities that the package offers.
 
@@ -96,21 +103,41 @@ solve!(system, analysis)                          # Compute new solution in the 
 
 ---
 
+#### PMU State Estimation
+```julia
+using JuliaGrid
+
+system = powerSystem("case14.h5")             # Build the power system model
+device = measurement("measurement14.h5")      # Build the measurement model
+acModel!(system)                              # Generate matrices and vectors in the AC model
+
+analysis = pmuStateEstimation(system, device) # Initialize the PMU state estimation model
+solve!(system, analysis)                      # Compute estimate of bus voltages
+
+updatePmu!(system, device, analysis; label = 1, angle = 0.0) # Update phasor measurement 
+
+solve!(system, analysis)                     # Compute estimate of bus voltages
+```
+
+---
+
 #### DC State Estimation
 ```julia
 using JuliaGrid
 
 system = powerSystem("case14.h5")            # Build the power system model
 device = measurement("measurement14.h5")     # Build the measurement model
+dcModel!(system)                             # Generate matrices and vectors in DC model
 
 analysis = dcStateEstimation(system, device) # Initialize the DC state estimation model
 solve!(system, analysis)                     # Compute estimate of bus voltage angles
 
-residualTest!(system, device, analysis)      # Perform bad data analysis and remove outliers  
+residualTest!(system, device, analysis)      # Perform bad data analysis and remove outlier 
 solve!(system, analysis)                     # Compute estimate of bus voltage angles
 ```
 
 ---
+
 
 #### Contributors
  - [Ognjen Kundacina](https://www.linkedin.com/in/ognjen-kundacina-machine-learning-guy/) - The Institute for Artificial Intelligence Research and Development of Serbia

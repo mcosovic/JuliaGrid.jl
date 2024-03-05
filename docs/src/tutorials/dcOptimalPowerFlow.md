@@ -46,7 +46,7 @@ Moreover, we identify the set of generators as ``\mathcal{S} = \{1, \dots, n_g\}
 ---
 
 ## [Optimal Power Flow Model](@id DCOptimalPowerFlowModelTutorials)
-In the DC optimal power flow, the active power outputs of the generators ``\mathbf {P}_{\text{g}} = [{P}_{\text{g}i}]``, ``i \in \mathcal{S}``, are represented as linear functions of the bus voltage angles ``\bm{\Theta} = [{\theta}_{i}]``, ``i \in \mathcal{N}``. Therefore, the optimization variables in this model are the active power outputs of the generators and the bus voltage angles. The DC optimal power flow model has the form:
+In the DC optimal power flow, the active power outputs of the generators ``\mathbf {P}_{\text{g}} = [{P}_{\text{g}i}]``, ``i \in \mathcal{S}``, are represented as linear functions of the bus voltage angles ``\bm{\Theta} = [{\theta}_{i}]``, ``i \in \mathcal{N}``. Thus, the optimization variables in this model are the active power outputs of the generators and the bus voltage angles. The DC optimal power flow model has the form:
 ```math
 \begin{aligned}
     & {\text{minimize}} & & \sum_{i \in \mathcal{S}} f_i(P_{\text{g}i}) \\
@@ -63,7 +63,7 @@ Essentially, the DC optimal power flow is focused on the minimization of the obj
 ---
 
 ##### Build Optimal Power Flow Model
-To build the DC optimal power flow model, we must first load the power system and establish the DC model using the following function:
+To build the DC optimal power flow model, we must first load the power system and establish the DC model using:
 ```@example DCOptimalPowerFlow
 dcModel!(system)
 nothing # hide
@@ -139,7 +139,7 @@ Consequently, for a piecewise cost function denoted as ``f_i(P_{\text{g}i})`` wi
 ```math
 \cfrac{f_i(P_{\text{g}i,j+1}) - f_i(P_{\text{g}i,j})}{P_{\text{g}i,j+1} - P_{\text{g}i,j}}(P_{\text{g}i} - P_{\text{g}i,j}) + f_i(P_{\text{g}i,j}) \leq H_i ,\;\;\;j = 1,\dots,k,
 ```
-where ``H_i`` represents the helper variable. To finalize this method, we simply need to include the helper variable ``H_i`` in the objective function. This approach in JuliaGrid efficiently handles linear piecewise cost functions, providing the flexibility to capture nonlinear characteristics while still benefiting from the advantages of linear optimization techniques.
+where ``H_i`` represents the helper variable. To finalize this method, we simply need to include the helper variable ``H_i`` in the objective function. This approach efficiently handles linear piecewise cost functions, providing the flexibility to capture nonlinear characteristics while still benefiting from the advantages of linear optimization techniques.
 
 As an example, in the provided case study, the helper variable is defined as follows:
 ```@repl DCOptimalPowerFlow
@@ -189,14 +189,14 @@ h_{P_i}(\mathbf {P}_{\text{g}}, \bm{\Theta}) = \sum_{k \in \mathcal{S}_i} P_{\te
 ```
 In this equation, the set ``\mathcal{S}_i \subseteq \mathcal{S}`` encompasses all generators connected to bus ``i \in \mathcal{N}``, and ``P_{\text{g}k}`` represents the active power output of the ``k``-th generator within the set ``\mathcal{S}_i``. More precisely, the variable ``P_{\text{g}k}`` represents the optimization variable, as well as the bus voltage angle ``\theta_k``.
 
-The constant terms in these equations are determined by the active power demand at bus ``P_{\text{d}i}``, the active power demanded by the shunt element ``P_{\text{sh}i}``, and power related to the shift angle of the phase transformers ``P_{\text{tr}i}``. The values representing these constant terms ``\mathbf{P}_{\text{d}} = [P_{\text{d}i}]``, ``\mathbf{P}_{\text{sh}} = [P_{\text{sh}i}]``, and ``\mathbf{P}_{\text{tr}} = [P_{\text{tr}i}]``, ``i, \in \mathcal{N}``, can be accessed as follows:
+The constant terms in these equations are determined by the active power demand at bus ``P_{\text{d}i}``, the active power demanded by the shunt element ``P_{\text{sh}i}``, and power related to the shift angle of the phase transformers ``P_{\text{tr}i}``. The values representing these constant terms ``\mathbf{P}_{\text{d}} = [P_{\text{d}i}]``, ``\mathbf{P}_{\text{sh}} = [P_{\text{sh}i}]``, and ``\mathbf{P}_{\text{tr}} = [P_{\text{tr}i}]``, ``i, \in \mathcal{N}``, can be accessed:
 ```@repl DCOptimalPowerFlow
 𝐏ₒ = system.bus.demand.active
 𝐏ₛₕ = system.bus.shunt.conductance
 𝐏ₜᵣ = system.model.dc.shiftPower
 ```
 
-To retrieve this equality constraint from the model and access the corresponding variable, you can use the following code:
+To retrieve this equality constraint from the model and access the corresponding variable, we can use:
 ```@repl DCOptimalPowerFlow
 print(analysis.constraint.balance.active)
 ```
@@ -213,7 +213,7 @@ where ``\theta_{ij}^\text{min}`` represents the minimum, while ``\theta_{ij}^\te
 𝚯ₗₘ = [system.branch.voltage.minDiffAngle system.branch.voltage.maxDiffAngle]
 ```
 
-To retrieve this inequality constraint from the model and access the corresponding variable, you can use the following code:
+To retrieve this inequality constraint from the model and access the corresponding variable, we can use:
 ```@repl DCOptimalPowerFlow
 print(analysis.constraint.voltage.angle)
 ```
@@ -230,7 +230,7 @@ Here, the lower and upper bounds are determined based on the vector ``\mathbf{P}
 𝐏ₘₐₓ = system.branch.flow.longTerm
 ```
 
-The active power flow at branch ``(i,j) \in \mathcal{E}`` can be derived using the [Branch Network Equations](@ref DCBranchNetworkEquationsTutorials) and is given by the equation:
+The active power flow at branch ``(i,j) \in \mathcal{E}`` can be derived using the [Branch Network Equations](@ref DCBranchNetworkEquationsTutorials) and is given by:
 ```math
 h_{P_{ij}}(\theta_i, \theta_j) = \frac{1}{\tau_{ij} x_{ij} }(\theta_i - \theta_j - \phi_{ij}).
 ```
@@ -268,7 +268,7 @@ solve!(system, analysis)
 nothing # hide
 ```
 
-Therefore, to get the vector of output active power of generators ``\mathbf{P}_{\text{g}} = [P_{\text{g}i}]``, ``i \in \mathcal{S}``, you can use the following command:
+Therefore, to get the vector of output active power of generators ``\mathbf{P}_{\text{g}} = [P_{\text{g}i}]``, ``i \in \mathcal{S}``, we can use:
 ```@repl DCOptimalPowerFlow
 𝐏ₒ = analysis.power.generator.active
 ```
@@ -313,12 +313,12 @@ Here, ``P_{\text{g}k}`` represents the active power output of the ``k``-th gener
 ---
 
 ##### Power Flows
-The resulting [active power flows](@ref DCBranchNetworkEquationsTutorials) are stored as the vector ``\mathbf{P}_{\text{i}} = [P_{ij}]``, which can be retrieved using the following command:
+The resulting [active power flows](@ref DCBranchNetworkEquationsTutorials) are stored as the vector ``\mathbf{P}_{\text{i}} = [P_{ij}]``, which can be retrieved using:
 ```@repl DCOptimalPowerFlow
 𝐏ᵢ = analysis.power.from.active
 ```
 
-Similarly, the resulting [active power flows](@ref DCBranchNetworkEquationsTutorials) are stored as the vector ``\mathbf{P}_{\text{j}} = [P_{ji}]``, which can be retrieved using the following command:
+Similarly, the resulting [active power flows](@ref DCBranchNetworkEquationsTutorials) are stored as the vector ``\mathbf{P}_{\text{j}} = [P_{ji}]``, which can be retrieved using:
 ```@repl DCOptimalPowerFlow
 𝐏ⱼ = analysis.power.to.active
 ```

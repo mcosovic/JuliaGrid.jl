@@ -1,5 +1,5 @@
 # [PMU State Estimation](@id PMUStateEstimationManual)
-To perform linear state estimation solely based on PMU data, the initial requirement is to have the `PowerSystem` composite type configured with the `ac` model, along with the `Measurement` composite type storing measurement data. Subsequently, we can formulate the PMU state estimation model encapsulated within the abstract type `PMUStateEstimation` using the subsequent function:
+To perform linear state estimation solely based on PMU data, the initial requirement is to have the `PowerSystem` composite type configured with the AC model, along with the `Measurement` composite type storing measurement data. Subsequently, we can formulate the PMU state estimation model encapsulated within the abstract type `PMUStateEstimation` using the subsequent function:
 * [`pmuStateEstimation`](@ref pmuStateEstimation).
 
 For resolving the PMU state estimation problem employing either the weighted least-squares (WLS) or the least absolute value (LAV) approach and obtaining bus voltage magnitudes and angles, utilize the following function:
@@ -35,11 +35,13 @@ Likewise, there are specialized functions dedicated to calculating specific type
 ---
 
 ## [Optimal PMU Placement](@id OptimalPMUPlacementManual)
-Let us define the `PowerSystem` composite type and perform an AC power flow analysis solely for generating data to artificially create measurement values later:
+Let us define the `PowerSystem` composite type and perform the AC power flow analysis solely for generating data to artificially create measurement values later:
 ```@example PMUOptimalPlacement
 using JuliaGrid # hide
 @default(unit) # hide
 @default(template) # hide
+@branch(resistance = 0.02, conductance = 1e-4, susceptance = 0.04)
+@generator(reactive = 0.1)
 
 system = powerSystem()
 
@@ -50,7 +52,7 @@ addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance =
 addBranch!(system; label = "Branch 2", from = "Bus 1", to = "Bus 2", reactance = 0.01)
 addBranch!(system; label = "Branch 3", from = "Bus 2", to = "Bus 3", reactance = 0.04)
 addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 3.2)
-addGenerator!(system; label = "Generator 2", bus = "Bus 2", active = 3.2)
+addGenerator!(system; label = "Generator 2", bus = "Bus 2", active = 2.1)
 acModel!(system)
 
 analysis = newtonRaphson(system)
@@ -94,11 +96,11 @@ placement.to
 ---
 
 ##### Measurement Data
-Based on the obtained placement of PMUs and using data from the AC power flow, we can construct the `Measurement` composite type:
+Using PMU placement and AC power flow data, we can create the `Measurement` composite type:
 ```@example PMUOptimalPlacement
 device = measurement()
 
-@pmu(label = "PMU ?")
+@pmu(label = "PMU ? - !")
 for (bus, k) in placement.bus
     addPmu!(system, device; bus = bus, magnitude = 𝐕[k], angle = 𝛉[k], noise = false)
 end
@@ -122,15 +124,19 @@ print(device.pmu.label, device.pmu.angle.mean)
 
 ---
 
-## [WLS State Estimation Solution](@id PMUWLSStateEstimationSolutionManual)
-Let us continius previus example, where we defined `PowerSystem` and  `Measurement` types. The [`pmuStateEstimation`](@ref pmuStateEstimation) function serves to establish the PMU state estimation problem:    
+
+## [Weighted Least-squares Estimator](@id PMUWLSStateEstimationSolutionManual)
+Let us continue with the previous example, where we defined the `PowerSystem` and `Measurement` types. To establish the PMU state estimation model, we will use the [`pmuStateEstimation`](@ref pmuStateEstimation) function: 
 ```@example PMUOptimalPlacement
 analysis = pmuStateEstimation(system, device)
 nothing # hide
 ```
 
 !!! tip "Tip"
-    Here, the user triggers LU factorization as the default method for solving the PMU state estimation problem. However, the user also has the option to select alternative factorization methods such as `LDLt` or `QR`.
+    Here, the user triggers LU factorization as the default method for solving the PMU state estimation problem. However, the user also has the option to select alternative factorization methods such as `LDLt` or `QR`:
+    ```@example PMUOptimalPlacement
+    analysis = pmuStateEstimation(system, device, LDLt)
+    ```  
 
 To obtain the bus voltage magnitudes and angles, the [`solve!`](@ref solve!(::PowerSystem, ::PMUStateEstimationWLS{LinearWLS})) function can be invoked as shown:
 ```@example PMUOptimalPlacement
@@ -188,7 +194,7 @@ nothing # hide
 
 ---
 
-## [Bad Data Detection](@id PMUBadDataDetectionManual)
+## [Bad Data Processing](@id PMUBadDataDetectionManual)
 After acquiring the WLS solution using the [`solve!`](@ref solve!(::PowerSystem, ::PMUStateEstimationWLS{LinearWLS})) function, users can conduct bad data analysis employing the largest normalized residual test. Continuing with our defined power system and measurement set, let us introduce a new phasor measurement. Upon proceeding to find the solution for this updated state:
 ```@example PMUOptimalPlacement
 addPmu!(system, device; bus = "Bus 3", magnitude = 3.2, angle = 0.0, noise = false)
@@ -198,7 +204,7 @@ solve!(system, analysis)
 nothing # hide
 ```
 
-Following the solution acquisition, we can verify the presence of erroneous data. Detection of such data is determined by the `threshold` keyword. If the largest normalized residual's value exceeds the threshold, the measurement will be identified as bad data and consequently removed from the DC state estimation model:
+Following the solution acquisition, we can verify the presence of erroneous data. Detection of such data is determined by the `threshold` keyword. If the largest normalized residual's value exceeds the threshold, the measurement will be identified as bad data and consequently removed from the PMU state estimation model:
 ```@example PMUOptimalPlacement
 residualTest!(system, device, analysis; threshold = 4.0)
 nothing # hide
@@ -213,13 +219,13 @@ analysis.outlier.label
 
 Hence, upon detecting bad data, the `detect` variable will hold `true`. The `maxNormalizedResidual` variable retains the value of the largest normalized residual, while the `label` contains the label of the measurement identified as bad data. JuliaGrid will mark the respective phasor measurement as out-of-service within the `Measurement` type.
 
-Moreover, JuliaGrid will adjust the coefficient matrix and mean vector within the `PMUStateEstimation` type based on measurements now designated as out-of-service. To optimize the algorithm's efficiency, JuliaGrid resets non-zero elements to zero in the coefficient matrix and mean vector. Here's an illustration:
+Moreover, JuliaGrid will adjust the coefficient matrix and mean vector within the `PMUStateEstimation` type based on measurements now designated as out-of-service. To optimize the algorithm's efficiency, JuliaGrid resets non-zero elements to zero in the coefficient matrix and mean vector:
 ```@repl PMUOptimalPlacement
 analysis.method.mean
 analysis.method.coefficient
 ```
 
-Hence, after removing bad data, a new estimate can be computed without considering this specific phasor measurement:
+After removing bad data, a new estimate can be computed without considering this specific phasor measurement:
 ```@example PMUOptimalPlacement
 solve!(system, analysis)
 nothing # hide
@@ -227,7 +233,7 @@ nothing # hide
 
 ---
 
-## [LAV State Estimation Solution](@id PMULAVtateEstimationSolutionManual)
+## [Least Absolute Value Estimator](@id PMULAVtateEstimationSolutionManual)
 The LAV method presents an alternative estimation technique known for its increased robustness compared to WLS. While the WLS method relies on specific assumptions regarding measurement errors, robust estimators like LAV are designed to maintain unbiasedness even in the presence of various types of measurement errors and outliers. This characteristic often eliminates the need for extensive bad data processing procedures [[1, Ch. 6]](@ref PMUStateEstimationReferenceManual). However, it is important to note that achieving robustness typically involves increased computational complexity.
 
 To obtain an LAV estimator, users need to employ one of the [solvers](https://jump.dev/JuMP.jl/stable/packages/solvers/) listed in the JuMP documentation. In many common scenarios, the Ipopt solver proves sufficient to obtain a solution:
@@ -334,7 +340,7 @@ nothing # hide
 
 --- 
 
-##### LAV State Estimation
+##### Least Absolute Value Estimator
 When a user creates an optimization problem using the LAV method, they can update measurement devices without the need to recreate the model from scratch, similar to the explanation provided for the WLS state estimation. This streamlined process allows for efficient modifications while retaining the existing optimization framework:
 ```@example WLSPMUStateEstimationSolution
 using Ipopt
@@ -432,12 +438,12 @@ To calculate the active and reactive power linked with branch charging admittanc
 active, reactive = chargingPower(system, analysis; label = "Branch 1")
 ```
 
-Active powers indicate active losses within the branch's charging or shunt admittances. Moreover, charging admittances injected reactive powers into the power system due to their capacitive nature, as denoted by a negative sign.
+Active powers indicate active losses within the branch's charging admittances. Moreover, charging admittances injected reactive powers into the power system due to their capacitive nature, as denoted by a negative sign.
 
 ---
 
 ##### Active and Reactive Power at Series Impedance
-To calculate the active and reactive power across the series impedance of the particular branch, the function can be used:
+To calculate the active and reactive power across the series impedance of the branch, the function can be used:
 ```@repl WLSPMUStateEstimationSolution
 active, reactive = seriesPower(system, analysis; label = "Branch 2")
 ```
@@ -464,7 +470,7 @@ magnitude, angle = toCurrent(system, analysis; label = "Branch 2")
 ---
 
 ##### Current Through Series Impedance
-To calculate the current passing through the series impedance of the branch in the direction from the "from" bus end to the "to" bus end, you can use the following function:
+To calculate the current passing through the series impedance of the branch in the direction from the "from" bus end to the "to" bus end, we can use the following function:
 ```@repl WLSPMUStateEstimationSolution
 magnitude, angle = seriesCurrent(system, analysis; label = "Branch 2")
 ```

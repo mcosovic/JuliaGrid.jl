@@ -1,5 +1,5 @@
 # [DC State Estimation](@id DCStateEstimationManual)
-To perform the DC state estimation, you first need to have the `PowerSystem` composite type that has been created with the `dc` model, alongside the `Measurement` composite type that retains measurement data. Subsequently, we can formulate the DC state estimation model encapsulated within the abstract type `DCStateEstimation` using the subsequent function:
+To perform the DC state estimation, we first need to have the `PowerSystem` composite type that has been created with the DC model, alongside the `Measurement` composite type that retains measurement data. Subsequently, we can formulate the DC state estimation model encapsulated within the abstract type `DCStateEstimation` using:
 * [`dcStateEstimation`](@ref dcStateEstimation).
 
 For resolving the DC state estimation problem employing either the weighted least-squares (WLS) or the least absolute value (LAV) approach and obtaining bus voltage angles, utilize the following function:
@@ -27,7 +27,7 @@ Additionally, there are specialized functions dedicated to calculating specific 
 ---
 
 ## [Bus Type Modification](@id DCSEBusTypeModificationManual)
-Similar to the explanation provided in the [Bus Type Modification](@ref DCBusTypeModificationManual) section, when executing the [`dcStateEstimation`](@ref dcStateEstimation) function, the initially designated slack bus undergoes evaluation and may be adjusted. If the bus designated as the slack bus (`type = 3`) lacks a connected in-service generator, its type will be changed to the demand bus (`type = 1`). Conversely, the first generator bus (`type = 2`) with an active in-service generator linked to it will be reassigned as the new slack bus (`type = 3`).
+Just like in the [Bus Type Modification](@ref DCBusTypeModificationManual) section, when running the [`dcStateEstimation`](@ref dcStateEstimation) function, the initially assigned slack bus is evaluated and may be altered. If the designated slack bus (`type = 3`) lacks a connected in-service generator, it will be changed to a demand bus (`type = 1`). Conversely, the first generator bus (`type = 2`) with an active in-service generator linked to it will be reassigned as the new slack bus (`type = 3`).
 
 ---
 
@@ -78,7 +78,8 @@ flowIslands = islandTopologicalFlow(system, device.wattmeter)
 nothing # hide
 ``` 
 
-As a result, we have identified four flow observable islands. The first island is formed by `Bus 1` and `Bus 2`, the second island is formed by `Bus 3` and `Bus 5`, while `Bus 4` and `Bus 6` constitute the third and fourth islands, respectively:
+
+As a result, four flow observable islands are identified: `Bus 1` and `Bus 2` form the first island, `Bus 3` and `Bus 5` form the second island, and `Bus 4` and `Bus 6` constitute the third and fourth islands, respectively:
 ```@repl DCSEObservabilityAnalysis
 flowIslands.island
 nothing # hide
@@ -122,7 +123,7 @@ restorationGram!(system, device, pseudo, maxIslands)
 nothing # hide
 ``` 
 
-This function attempts to restore observability using pseudo-measurements. As a result, the `Pseudo-Wattmeter 2` measurement restores observability, and this measurement is added to the device variable, which holds actual measurements:
+This function attempts to restore observability using pseudo-measurements. As a result, the `Pseudo-Wattmeter 2` measurement restores observability, and this measurement is added to the `device` variable:
 ```@repl DCSEObservabilityAnalysis
 device.wattmeter.label
 nothing # hide
@@ -136,7 +137,7 @@ Additionally, it is worth mentioning that restoration might encounter difficulti
 
 ---
 
-## [WLS State Estimation Solution](@id DCWLSStateEstimationSolutionManual)
+## [Weighted Least-squares Estimator](@id DCWLSStateEstimationSolutionManual)
 To solve the DC state estimation and derive WLS estimates using JuliaGrid, the process initiates by defining the composite types `PowerSystem` and `Measurement`. Here is an illustrative example:
 ```@example WLSDCStateEstimationSolution
 using JuliaGrid # hide
@@ -172,7 +173,10 @@ nothing # hide
 ```
 
 !!! tip "Tip"
-    Here, the user triggers LU factorization as the default method for solving the DC state estimation problem. However, the user also has the option to select alternative factorization methods such as `LDLt` or `QR`.
+    Here, the user triggers LU factorization as the default method for solving the DC state estimation problem. However, the user also has the option to select alternative factorization methods such as `LDLt` or `QR`:
+    ```@example WLSDCStateEstimationSolution
+    analysis = dcStateEstimation(system, device, LDLt)
+    ```
 
 To obtain the bus voltage angles, the [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimationWLS{LinearWLS})) function can be invoked as shown:
 ```@example WLSDCStateEstimationSolution
@@ -203,7 +207,7 @@ nothing # hide
 
 ---
 
-## [Bad Data Detection](@id DCBadDataDetectionManual)
+## [Bad Data Processing](@id DCBadDataDetectionManual)
 After acquiring the WLS solution using the [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimationWLS{LinearWLS})) function, users can conduct bad data analysis employing the largest normalized residual test. Continuing with our defined power system and measurement set, let us introduce a new wattmeter. Upon proceeding to find the solution for this updated state:
 ```@example WLSDCStateEstimationSolution
 addWattmeter!(system, device; from = "Branch 2", active = 4.1, variance = 1e-4)
@@ -242,7 +246,7 @@ nothing # hide
 
 ---
 
-## [LAV State Estimation Solution](@id DCLAVtateEstimationSolutionManual)
+## [Least Absolute Value Estimator](@id DCLAVtateEstimationSolutionManual)
 The LAV method presents an alternative estimation technique known for its increased robustness compared to WLS. While the WLS method relies on specific assumptions regarding measurement errors, robust estimators like LAV are designed to maintain unbiasedness even in the presence of various types of measurement errors and outliers. This characteristic often eliminates the need for extensive bad data processing procedures [[2, Ch. 6]](@ref DCStateEstimationReferenceManual). However, it is important to note that achieving robustness typically involves increased computational complexity.
 
 To obtain an LAV estimator, users need to employ one of the [solvers](https://jump.dev/JuMP.jl/stable/packages/solvers/) listed in the JuMP documentation. In many common scenarios, the Ipopt solver proves sufficient to obtain a solution:
@@ -307,7 +311,7 @@ solve!(system, analysis)
 
 addWattmeter!(system, device; to = "Branch 1", active = -0.12, variance = 1e-4)
 updateWattmeter!(system, device; label = "Wattmeter 1", status = 0)
-updateWattmeter!(system, device; label = "Wattmeter 2", active = 0.095, noise = false)
+updateWattmeter!(system, device; label = "Wattmeter 2", active = 0.1, noise = false)
 
 analysis = dcStateEstimation(system, device)
 solve!(system, analysis)
@@ -327,13 +331,7 @@ This advancement extends beyond the previous scenario where recreating the `Meas
 
 The addition of new measurements after the creation of `DCStateEstimation` is not practical in terms of reusing the `DCStateEstimation` type. Instead, we recommend that users create a final set of measurements and then utilize update functions to manage devices, either putting them in-service or out-of-service throughout the process.
 
-!!! note "Info"
-    This method removes the need to restart and recreate both the `Measurement` and the `DCStateEstimation` from the beginning when implementing changes to the existing measurement set.
-
----
-
-##### Reusing WLS Matrix Factorization 
-Drawing from the preceding example, our focus now shifts to finding a solution involving modifications that entail adjusting the measurement value of the `Wattmeter 2`. It is important to note that these adjustments do not impact the variance or status of the measurement device, which can affect the gain matrix. To resolve this updated system, users can simply execute the [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimationWLS{LinearWLS})) function:
+By modifying the previous example, we observe that we now create the `DCStateEstimation` type only once:
 ```@example WLSDCStateEstimationSolution
 using JuliaGrid # hide
 @default(unit) # hide
@@ -354,6 +352,26 @@ addWattmeter!(system, device; from = "Branch 1", active = 0.09, variance = 1e-4)
 analysis = dcStateEstimation(system, device)
 solve!(system, analysis)
 
+updateWattmeter!(system, device, analysis; label = "Wattmeter 1", status = 0)
+updateWattmeter!(system, device, analysis; label = "Wattmeter 2", active = 0.1, noise = false)
+
+solve!(system, analysis)
+
+nothing # hide
+```
+
+!!! note "Info"
+    This method removes the need to restart and recreate both the `Measurement` and the `DCStateEstimation` from the beginning when implementing changes to the existing measurement set.
+
+---
+
+##### Reusing Weighted Least-squares Matrix Factorization 
+Drawing from the preceding example, our focus now shifts to finding a solution involving modifications that entail adjusting the measurement value of the `Wattmeter 2`. It is important to note that these adjustments do not impact the variance or status of the measurement device, which can affect the gain matrix. To resolve this updated system, users can simply execute the [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimationWLS{LinearWLS})) function:
+```@example WLSDCStateEstimationSolution
+using JuliaGrid # hide
+@default(unit) # hide
+@default(template) # hide
+
 updateWattmeter!(system, device, analysis; label = "Wattmeter 2", active = 0.091)
 
 solve!(system, analysis)
@@ -365,21 +383,7 @@ nothing # hide
 
 ---
 
-##### Sequential WLS Matrix Factorization
-If the user opts to modify the measurement variances or status of measurement devices, reusing the gain matrix factorization becomes impractical. In this scenario, JuliaGrid will need to repeat the factorization step while ensuring the delivery of an accurate solution. 
-
-Although computational gains are diminished compared to the previous case, users can still avoid recreating the `DCStateEstimation` type and effortlessly execute the [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimationWLS{LinearWLS})) function, as demonstrated below:
-
-```@example WLSDCStateEstimationSolution
-updateWattmeter!(system, device, analysis; label = "Wattmeter 1", variance = 1e-2)
-updateWattmeter!(system, device, analysis; label = "Wattmeter 2", status = 1)
-
-solve!(system, analysis)
-```
-
---- 
-
-##### LAV State Estimation
+##### Least Absolute Value Estimator
 When a user creates an optimization problem using the LAV method, they can update measurement devices without the need to recreate the model from scratch, similar to the explanation provided for the WLS state estimation. This streamlined process allows for efficient modifications while retaining the existing optimization framework:
 ```@example WLSDCStateEstimationSolution
 using Ipopt

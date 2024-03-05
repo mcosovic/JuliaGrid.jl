@@ -69,7 +69,7 @@ In essence, the AC optimal power flow aims to minimize the objective function as
 ---
 
 ##### Build Optimal Power Flow Model
-To build the AC optimal power flow model, we must first load the power system and establish the AC model using the following function:
+To build the AC optimal power flow model, we must first load the power system and establish the AC model:
 ```@example ACOptimalPowerFlow
 acModel!(system)
 nothing # hide
@@ -154,7 +154,7 @@ Hence, for a piecewise cost function denoted as ``f_i(P_{\text{g}i})`` with ``k`
 ```math
 \cfrac{f_i(P_{\text{g}i,j+1}) - f_i(P_{\text{g}i,j})}{P_{\text{g}i,j+1} - P_{\text{g}i,j}}(P_{\text{g}i} - P_{\text{g}i,j}) + f_i(P_{\text{g}i,j}) \leq H_i ,\;\;\;j = 1,\dots,k,
 ```
-where ``H_i`` represents the helper variable. To finalize this method, we simply need to include the helper variable ``H_i`` in the objective function. This approach in JuliaGrid efficiently handles linear piecewise cost functions, providing the flexibility to capture nonlinear characteristics while still benefiting from the advantages of linear optimization techniques.
+where ``H_i`` represents the helper variable. To finalize this method, we simply need to include the helper variable ``H_i`` in the objective function. This approach efficiently handles linear piecewise cost functions, providing the flexibility to capture nonlinear characteristics while still benefiting from the advantages of linear optimization techniques.
 
 As an example, in the provided case study, the helper variable is defined as follows:
 ```@repl ACOptimalPowerFlow
@@ -505,11 +505,11 @@ The function stores the computed powers in the rectangular coordinate system. It
 ---
 
 ##### [Generator Power Injections](@id OptGeneratorPowerInjectionsManual)
-The [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)) function in JuliaGrid also provides the computation of active and reactive power injections from the generators at each bus. To calculate the active power supplied by generators to the buses, one can simply sum the active power outputs of the generators obtained from the AC optimal power flow. This can be represented as follows:
+The [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)) function in JuliaGrid also provides the computation of active and reactive power injections from the generators at each bus. To calculate the active power supplied by generators to the buses, one can simply sum the active power outputs of the generators obtained from the AC optimal power flow. This can be represented as:
 ```math
     P_{\text{p}i} = \sum_{k \in \mathcal{S}_i} P_{\text{g}k},\;\;\; \forall i \in \mathcal{N},
 ```
-where the set ``\mathcal{S}_i \subseteq \mathcal{S}`` encompasses all generators connected to bus ``i \in \mathcal{N}``. The active power injections from the generators at each bus are stored as a vector denoted by ``\mathbf{P}_{\text{p}} = [P_{\text{p}i}]``, and can be obtained using the following command:
+where the set ``\mathcal{S}_i \subseteq \mathcal{S}`` encompasses all generators connected to bus ``i \in \mathcal{N}``. The active power injections from the generators at each bus are stored as a vector denoted by ``\mathbf{P}_{\text{p}} = [P_{\text{p}i}]``, and can be obtained using:
 ```@repl ACOptimalPowerFlow
 𝐏ₚ = analysis.power.supply.active
 ```
