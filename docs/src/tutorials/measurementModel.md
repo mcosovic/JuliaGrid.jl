@@ -27,16 +27,31 @@ Our goal is to monitor the power system, and this process involves collecting me
 ## Power System Monitoring
 Measurement data is obtained through two main technologies: SCADA (Supervisory Control and Data Acquisition) and WAMS (Wide Area Measurement System). These technologies enable the collection of a wide range of measurements distributed throughout the power system. This extensive dataset allows us to employ state estimation algorithms to obtain the present state of the power system, in contrast to power flow algorithms, which are typically used for offline analyses. To commence, we will represent the entire set of measurements as ``\mathcal{M}``.
 
+---
+
+##### SCADA Measurements
 SCADA provides legacy measurements with low sampling rates, making them unsuitable for capturing real-time system dynamics. It provides a snapshot of the power system's state, with delays measured in seconds and minutes. These legacy measurements, which are subsets of the measurement set ``\mathcal{M}``, encompass:
-* set of voltmeters ``\mathcal{V}`` measuring bus voltage magnitudes,
-* set of ammeters ``\mathcal{I}`` measuring branch current magnitudes,
-* set of wattmeters ``\mathcal{P}`` measuring active power of bus injections and branch flows,
-* set of varmeters ``\mathcal{Q}`` measuring reactive power of bus injections and branch flows. 
+* set of bus voltage magnitude measurements ``\mathcal{V}`` provided by voltmeters,
+* set of branch current magnitude measurements ``\mathcal{I}`` provided by ammeters,
+* set of active power injection and branch flow measurements ``\mathcal{P}`` provided by wattmeters,
+* set of reactive power injection and branch flow measurements ``\mathcal{Q}`` provided by varmeters.
 
-In contrast, WAMS technology employs PMUs (Phasor Measurement Units) to deliver data with high sampling rates, typically ranging between 10 ms and 20 ms. This capability enables real-time monitoring of the system. The inclusion of PMU measurements further extends the measurement set ``\mathcal{M}`` in the following manner:
-* set of PMUs ``\bar{\mathcal{P}}`` measuring bus voltage and branch current phasors.
-Each phasor measurement is represented by a pair of measurements within the polar coordinate system. To be specific, a PMU's phasor measurement comprises a magnitude, equal to the root mean square value of the signal, and a phase angle [[1, Sec. 5.6]](@ref MeasurementModelReferenceTutorials). Measurement errors are associated with both the magnitude and angle of the phasor. Consequently, PMUs provide phasor measurements in polar coordinates. Additionally, PMU outputs can be observed in rectangular coordinates, encompassing the real and imaginary components of the bus voltage and branch current phasors. However, in this scenario, both measurements may be influenced by correlated measurement errors [[1, Sec. 7.3]](@ref MeasurementModelReferenceTutorials).
+---
 
+##### WAMS Measurements
+In contrast, WAMS technology utilizes PMUs (Phasor Measurement Units) to provide data with high sampling rates, typically ranging between 10 ms and 20 ms. This capability facilitates real-time monitoring of the system, as PMUs measure both bus voltage and branch current phasors.
+
+Each phasor measurement is represented by a pair of measurements within the polar coordinate system. To be specific, a PMU's phasor measurement comprises a magnitude, equal to the effective or root mean square value of the signal, and a phase angle [[1, Sec. 5.6]](@ref MeasurementModelReferenceTutorials). Measurement errors are associated with both the magnitude and angle of the phasor.  Consequently, PMUs deliver phasor measurements in polar coordinates. In this context, phasor measurement extends the measurement set ``\mathcal{M}`` in the following manner:
+* set of bus voltage and branch current magnitude measurements ``\bar{\mathcal{P}}_M``,
+* set of bus voltage and branch current angle measurements ``\bar{\mathcal{P}}_A``.
+
+Additionally, PMU outputs can be observed in rectangular coordinates, encompassing the real and imaginary components of the bus voltage and branch current phasors. However, in this scenario, both measurements may be influenced by correlated measurement errors [[1, Sec. 7.3]](@ref MeasurementModelReferenceTutorials). Nevertheless, in most cases, these measurements are also viewed as uncorrelated. In this case, phasor measurement extends the measurement set ``\mathcal{M}`` as follows:
+* set of real components of bus voltage and branch current phasor measurements ``\bar{\mathcal{P}}_R``,
+* set of imaginary components of bus voltage and branch current phasor measurements ``\bar{\mathcal{P}}_I``.
+
+---
+
+##### Measurement Model
 The measurement model, as defined by the measurement set ``\mathcal{M}``, can be expressed as a system of equations [[2]](@ref MeasurementModelReferenceTutorials): 
 ```math
   \mathbf{z}=\mathbf{h}(\mathbf{x})+\mathbf{u},
@@ -58,7 +73,7 @@ When defining the system of equations, it is essential to have measurement value
 ---
 
 ##### Voltmeters
-To begin, let us introduce the set of voltmeters ``\mathcal{V} \subset \mathcal{M}`` to measure bus voltage magnitudes:
+To begin, we introduce the set of bus voltage magnitude measurements ``\mathcal{V} \subset \mathcal{M}`` provided by voltmeters:
 ```@example measurementModelTutorials
 addVoltmeter!(system, device; bus = "Bus 1", magnitude = 1.1)
 addVoltmeter!(system, device; bus = "Bus 3", magnitude = 1.0)
@@ -75,7 +90,7 @@ The vectors of measurement values ``\mathbf{z}_\mathcal{V}`` and variances ``\ma
 ---
 
 ##### Ammeters
-Subsequently, we incorporate the set of ammeters ``\mathcal{I} \subset \mathcal{M}`` to measure branch current magnitudes:
+Subsequently, we incorporate the set of branch current magnitude measurements ``\mathcal{I} \subset \mathcal{M}`` provided by ammeters:
 ```@example measurementModelTutorials
 addAmmeter!(system, device; from = "Branch 1", magnitude = 0.3, noise = false)
 addAmmeter!(system, device; to = "Branch 2", magnitude = 0.2, variance = 1e-3)
@@ -92,7 +107,7 @@ The vectors of measurement values ``\mathbf{z}_\mathcal{I}`` and variances ``\ma
 ---
 
 ##### Wattmeters
-Next, should there be a need to measure active power injections at buses and active power flows at branches, users can include the set of wattmeters ``\mathcal{P} \subset \mathcal{M}``:
+Subsequently, users have the option to incorporate wattmeters, which measure active power injections at buses and active power flows at branches, thus forming the set ``\mathcal{P} \subset \mathcal{M}``:
 ```@example measurementModelTutorials
 addWattmeter!(system, device; bus = "Bus 1", active = 0.1, variance = 1e-4)
 addWattmeter!(system, device; to = "Branch 2", active = 0.2, variance = 1e-3)
@@ -110,7 +125,7 @@ The vectors of measurement values ``\mathbf{z}_\mathcal{P}`` and variances ``\ma
 ---
 
 ##### Varmeters
-In a similar fashion, if there is a need to measure reactive power injections at buses and reactive power flows at branches, users can include the set of varmeters ``\mathcal{Q} \subset \mathcal{M}``:
+In a similar fashion, users have the option to incorporate varmeters, which measure reactive power injections at buses and reactive power flows at branches, thus forming the set ``\mathcal{Q} \subset \mathcal{M}``:
 ```@example measurementModelTutorials
 addVarmeter!(system, device; bus = "Bus 3", reactive = 0.2, variance = 1e-4)
 addVarmeter!(system, device; from = "Branch 2", reactive = 0.03, variance = 1e-3)
@@ -128,7 +143,7 @@ The vectors of measurement values ``\mathbf{z}_\mathcal{Q}`` and variances ``\ma
 ---
 
 ##### PMUs
-The PMUs are responsible for measuring voltage and current phasors in the polar coordinate system, or they can be represented by magnitude and angle with corresponding variances for these two quantities. When PMUs are installed on buses, they measure bus voltage phasors, and when installed on branches, they measure current voltage phasors. This allows us to incorporate a set of PMUs ``\bar{\mathcal{P}} \subset \mathcal{M}``:
+The PMUs are responsible for measuring voltage and current phasors in the polar coordinate system, or they can be represented by magnitude and angle with corresponding variances for these two quantities. When PMUs are installed on buses, they measure bus voltage phasors, and when installed on branches, they measure current voltage phasors. Let us incorporate PMUs:
 ```@example measurementModelTutorials
 addPmu!(system, device; bus = "Bus 1", magnitude = 1.1, angle = 0.0)
 addPmu!(system, device; bus = "Bus 2", magnitude = 1.2, angle = 0.1, varianceMagnitude = 1e-6)
@@ -138,10 +153,16 @@ addPmu!(system, device; to = "Branch 3", magnitude = 0.1, angle = -0.3, noise = 
 nothing  # hide
 ```
 
-The vectors of measurement values ``\mathbf{z}_{\bar{\mathcal{P}}}`` and variances ``\mathbf{v}_{\bar{\mathcal{P}}}`` are stored in the following variables:
+The magnitude measurements constitute the set ``\bar{\mathcal{P}}_M \subset \mathcal{M}``, where the vectors of measurement values ``\mathbf{z}_{\bar{\mathcal{P}}_M}`` and variances ``\mathbf{v}_{\bar{\mathcal{P}}_M}`` are stored in the following variables:
 ```@repl measurementModelTutorials
-𝐳ₚ = [device.pmu.magnitude.mean; device.pmu.angle.mean]
-𝐯ₚ = [device.pmu.magnitude.variance; device.pmu.angle.variance]
+𝐳ₚₘ = device.pmu.magnitude.mean
+𝐯ₚₘ = device.pmu.magnitude.variance
+```
+
+Subsequently, angle measurements form the set ``\bar{\mathcal{P}}_A \subset \mathcal{M}``, with the vectors of measurement values ``\mathbf{z}_{\bar{\mathcal{P}}_A}`` and variances ``\mathbf{v}_{\bar{\mathcal{P}}_A}`` stored in the following variables:
+```@repl measurementModelTutorials
+𝐳ₚₐ = device.pmu.angle.mean
+𝐯ₚₐ = device.pmu.angle.variance
 ```
 
 ---
@@ -166,7 +187,7 @@ We can find this solution by maximizing the likelihood function ``\mathcal{L}(\m
 	\mathrm{arg} \max_{\mathbf{x}} \prod_{i=1}^k \mathcal{N}(z_i|\mathbf{x},v_i).
 ```
 
-It can be demonstrated that the solution to the maximum a posteriori problem can be obtained by solving the following optimization problem, commonly referred to as the weighted least-squares problem [[6, Sec. 9.3]](@ref MeasurementModelReferenceTutorials):
+It can be demonstrated that the solution to the maximum a posteriori problem can be obtained by solving the following optimization problem, commonly referred to as the weighted least-squares problem [[5, Sec. 9.3]](@ref MeasurementModelReferenceTutorials):
 ```math
 	\hat{\mathbf x} = \mathrm{arg}\min_{\mathbf{x}} \sum_{i=1}^k\cfrac{[z_i-h_i(\mathbf x)]^2}{v_i}.
 ```
@@ -183,6 +204,5 @@ The state estimate, denoted as ``\hat{\mathbf x}``, resulting from the solution 
 
 [4] D. Barber, *Bayesian Reasoning and Machine Learning*, Cambridge University Press, 2012.
 
-[5] A. Wood and B. Wollenberg, *Power Generation, Operation, and Control*, ser. A Wiley-Interscience publication. Wiley, 1996.
+[5] A. Wood and B. Wollenberg, *Power Generation, Operation, and Control*, Wiley, 1996.
 
-[6] A. Wood and B. Wollenberg, *Power Generation, Operation, and Control*, ser. A Wiley-Interscience publication. Wiley, 1996.

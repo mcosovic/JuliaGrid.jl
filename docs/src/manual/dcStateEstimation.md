@@ -174,7 +174,7 @@ nothing # hide
 
 !!! tip "Tip"
     Here, the user triggers LU factorization as the default method for solving the DC state estimation problem. However, the user also has the option to select alternative factorization methods such as `LDLt` or `QR`:
-    ```@example WLSDCStateEstimationSolution
+    ```julia WLSDCStateEstimationSolution
     analysis = dcStateEstimation(system, device, LDLt)
     ```
 
@@ -464,8 +464,8 @@ active = toPower(system, analysis; label = "Branch 1")
 
 
 ## [References](@id DCStateEstimationReferenceManual)
-[1] G. N. Korres, *Observability analysis based on echelon form of a reduced dimensional Jacobian matrix*, IEEE Trans. Power Syst., vol. 26, no. 4, pp. 2572–2573, 2011. 
+[1] G. Korres, *Observability analysis based on echelon form of a reduced dimensional Jacobian matrix*, IEEE Trans. Power Syst., vol. 26, no. 4, pp. 2572–2573, 2011. 
 
-[2] A. Abur and A. Exposito, *Power System State Estimation: Theory and Implementation*, ser. Power Engineering. Taylor & Francis, 2004.
+[2] A. Abur and A. Exposito, *Power System State Estimation: Theory and Implementation*, Taylor & Francis, 2004.
 
 

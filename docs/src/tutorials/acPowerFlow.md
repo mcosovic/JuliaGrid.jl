@@ -920,7 +920,7 @@ To obtain the vectors of magnitudes ``\mathbf{I}_{\text{l}} = [I_{\text{l}ij}]``
 ---
 
 ## [References](@id PowerFlowSolutionReferenceTutorials)
-[1] A. Wood and B. Wollenberg, *Power Generation, Operation, and Control*, ser. A Wiley-Interscience publication. Wiley, 1996.
+[1] A. Wood and B. Wollenberg, *Power Generation, Operation, and Control*, Wiley, 1996.
 
 [2] G. Andersson, *Modelling and analysis of electric power systems*, EEH-Power Systems Laboratory, Swiss Federal Institute of Technology (ETH), Zürich, Switzerland (2008).
 

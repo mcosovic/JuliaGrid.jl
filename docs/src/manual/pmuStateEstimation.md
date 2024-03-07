@@ -134,7 +134,7 @@ nothing # hide
 
 !!! tip "Tip"
     Here, the user triggers LU factorization as the default method for solving the PMU state estimation problem. However, the user also has the option to select alternative factorization methods such as `LDLt` or `QR`:
-    ```@example PMUOptimalPlacement
+    ```julia PMUOptimalPlacement
     analysis = pmuStateEstimation(system, device, QR)
     ```  
 
@@ -150,7 +150,7 @@ print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
 ```
 
 !!! note "Info"
-    We recommend that readers refer to the tutorial on [PMU State Estimation] for insights into the implementation.
+    We recommend that readers refer to the tutorial on [PMU State Estimation](@ref PMUStateEstimationTutorials) for insights into the implementation.
 
 ---
 
@@ -478,7 +478,7 @@ magnitude, angle = seriesCurrent(system, analysis; label = "Branch 2")
 ---
 
 ## [References](@id PMUStateEstimationReferenceManual)
-[1] A. Abur and A. Exposito, *Power System State Estimation: Theory and Implementation*, ser. Power Engineering. Taylor & Francis, 2004.
+[1] A. Abur and A. Exposito, *Power System State Estimation: Theory and Implementation*, Taylor & Francis, 2004.
 
 
 

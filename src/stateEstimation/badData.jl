@@ -201,7 +201,7 @@ function residualTest!(system::PowerSystem, device::Measurement, analysis::PMUSt
     bad.maxNormalizedResidual = 0.0
     bad.index = 0
     @inbounds for i = 1:se.number
-        normResidual = abs(se.mean[i] - h[i]) / sqrt(abs((1 / se.precision.nzval[i]) - c[i]))
+        normResidual = abs(se.mean[i] - h[i]) / sqrt(abs((1 / se.precision[i, i]) - c[i]))
         if normResidual > bad.maxNormalizedResidual
             bad.maxNormalizedResidual = normResidual
             bad.index = i

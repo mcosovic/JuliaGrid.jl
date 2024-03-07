@@ -23,12 +23,13 @@ makedocs(
              "PMU State Estimation" => "manual/pmuStateEstimation.md",
              "DC State Estimation" => "manual/dcStateEstimation.md"],
         "Tutorials" =>
-            ["AC and DC Model" => "tutorials/acdcModel.md",
+            ["Power System Model" => "tutorials/powerSystemModel.md",
              "AC Power Flow" => "tutorials/acPowerFlow.md",
              "DC Power Flow" => "tutorials/dcPowerFlow.md",
              "AC Optimal Power Flow" => "tutorials/acOptimalPowerFlow.md",
              "DC Optimal Power Flow" => "tutorials/dcOptimalPowerFlow.md",
              "Measurement Model" => "tutorials/measurementModel.md",
+             "PMU State Estimation" => "tutorials/pmuStateEstimation.md",
              "DC State Estimation" => "tutorials/dcStateEstimation.md"],
         "API Reference" =>
             ["Power System Model" => "api/powerSystemModel.md",

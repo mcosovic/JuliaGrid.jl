@@ -1,5 +1,4 @@
 # [DC State Estimation](@id DCStateEstimationTutorials)
-
 To initiate the process, let us construct the `PowerSystem` composite type and formulate the DC model:
 ```@example DCSETutorial
 using JuliaGrid # hide
@@ -28,7 +27,7 @@ To review, we can conceptualize the bus/branch model as the graph denoted by ``\
 
 ---
 
-Subsequently, we will establish the `Measurement` composite type and incorporate a set of active power measurements into the graph ``\mathcal{G}``. These measurements are conceptualized through a set of wattmeters ``\mathcal{P}``:
+Subsequently, we will establish the `Measurement` composite type and incorporate a set of active power measurements ``\mathcal{P}`` into the graph ``\mathcal{G}``. These measurements are acquired using wattmeters:
 ```@example DCSETutorial
 device = measurement()
 
@@ -40,7 +39,9 @@ addWattmeter!(system, device; to = 1, active = -0.28, variance = 1e-4, noise = f
 nothing # hide
 ```
 
-In typical scenarios, the DC state estimation model relies solely on active power measurements. However, we allow the possibility for the user to include bus voltage angle measurements from PMUs, represented as the set ``\bar{\mathcal{P}}``:
+---
+
+In typical scenarios, the DC state estimation model relies solely on active power measurements. However, we allow the possibility for the user to include bus voltage angle measurements from PMUs, represented as the set ``\bar{\mathcal{P}}_A``:
 ```@example DCSETutorial
 @pmu(label = "PMU ?", varianceAngleBus = 1e-5)
 addPmu!(system, device; bus = 2, magnitude = 1.0, angle = -0.06, noise = false)
@@ -49,7 +50,7 @@ addPmu!(system, device; bus = 3, magnitude = 1.0, angle = -0.12, noise = false)
 nothing # hide
 ```
 
-As a result, JuliaGrid is capable of conducting DC state estimation utilizing a set of measurement devices denoted as ``\mathcal{M} = \mathcal{P} \cup \bar{\mathcal{P}}``, which includes active power flow and injection measurements obtained from wattmeters, as well as bus voltage angle measurements from PMUs.
+As a result, JuliaGrid is capable of conducting DC state estimation utilizing a set of measurement devices denoted as ``\mathcal{M} = \mathcal{P} \cup \bar{\mathcal{P}}_A``, which includes active power flow and injection measurements obtained from wattmeters, as well as bus voltage angle measurements from PMUs.
 
 ---
 
@@ -61,7 +62,7 @@ As a result, JuliaGrid is capable of conducting DC state estimation utilizing a 
 ## [State Estimation Model](@id DCSEModelTutorials)
 In accordance with the [DC Model](@ref DCModelTutorials), the DC state estimation is derived through the linearization of the non-linear model. In this linearized model, all bus voltage magnitudes are assumed to be ``V_i \approx 1``, ``i \in \mathcal{N}``. Additionally, shunt elements and branch resistances are neglected. This simplification implies that the DC model disregards reactive powers and transmission losses, focusing solely on active powers. Consequently, the DC state estimation considers only bus voltage angles, represented as ``\mathbf x \equiv \bm {\Theta}``, as the state variables. As a result, the total number of state variables is ``n-1``, with one voltage angle corresponding to the slack bus.
 
-Within the JuliaGrid framework for DC state estimation, the methodology encompasses both active power flow and injection measurements from the set ``\mathcal{P}``, along with bus voltage angle measurements represented by the set ``\bar{\mathcal{P}}``. These measurements contribute to the construction of a linear system of equations:
+Within the JuliaGrid framework for DC state estimation, the methodology encompasses both active power flow and injection measurements from the set ``\mathcal{P}``, along with bus voltage angle measurements represented by the set ``\bar{\mathcal{P}}_A``. These measurements contribute to the construction of a linear system of equations:
 ```math
     \mathbf{z}=\mathbf{h}(\bm {\Theta})+\mathbf{u},
 ```
@@ -71,15 +72,15 @@ Therefore, the linear system of equations can be represented based on the specif
 ```math
     \begin{bmatrix}    	 
       \mathbf{z}_\mathcal{P}\\[3pt]
-      \mathbf{z}_{\bar{\mathcal{P}}}
+      \mathbf{z}_{\bar{\mathcal{P}}_A}
     \end{bmatrix} =
     \begin{bmatrix}    	 
       \mathbf{h}_\mathcal{P}(\bm {\Theta})\\[3pt]
-      \mathbf{h}_{\bar{\mathcal{P}}}(\bm {\Theta})
+      \mathbf{h}_{\bar{\mathcal{P}}_A}(\bm {\Theta})
     \end{bmatrix} + 
     \begin{bmatrix}    	 
       \mathbf{u}_\mathcal{P}\\[3pt]
-      \mathbf{u}_{\bar{\mathcal{P}}}
+      \mathbf{u}_{\bar{\mathcal{P}}_A}
     \end{bmatrix}
 ```
 
@@ -108,7 +109,7 @@ where ``\mathcal{N}_i \setminus i`` contains buses incident to bus ``i``, exclud
 ---
 
 ##### Bus Voltage Angle Measurement Functions
-The vector ``\mathbf{h}_{\bar{\mathcal{P}}}(\bm {\Theta})`` comprises functions for measuring bus voltage angles. The function defining the bus voltage angle at bus ``i \in \mathcal{N}`` is straightforward:
+The vector ``\mathbf{h}_{\bar{\mathcal{P}}_A}(\bm {\Theta})`` comprises functions for measuring bus voltage angles. The function defining the bus voltage angle at bus ``i \in \mathcal{N}`` is straightforward:
 ```math
     h_{\theta_{i}}(\cdot) = \theta_{i}.
 ```
@@ -122,10 +123,10 @@ The vectors containing the measurement values ``\mathbf{z}_\mathcal{P} = [z_i]``
 𝐯ₚ = device.wattmeter.active.variance
 ```
 
-Similarly, the vectors containing the measurement values ``\mathbf{z}_{\bar{\mathcal{P}}} = [z_i]`` and variances ``\mathbf{v}_{\bar{\mathcal{P}}} = [v_i]`` for PMUs, where ``i \in \bar{\mathcal{P}}``, are stored in the variables:
+Similarly, the vectors containing the measurement values ``\mathbf{z}_{\bar{\mathcal{P}}_A} = [z_i]`` and variances ``\mathbf{v}_{\bar{\mathcal{P}}_A} = [v_i]`` for PMUs, where ``i \in \bar{\mathcal{P}}_A``, are stored in the variables:
 ```@repl DCSETutorial
-𝐳̄ₚ = device.pmu.angle.mean
-𝐯̄ₚ = device.pmu.angle.variance
+𝐳ₚₐ = device.pmu.angle.mean
+𝐯ₚₐ = device.pmu.angle.variance
 ```
 
 --- 
@@ -140,25 +141,25 @@ Here, the vector of measurement values ``\mathbf z \in \mathbb {R}^{k}``, the ve
     \mathbf z =
     \begin{bmatrix}    	 
       \mathbf{z}_\mathcal{P}\\[3pt]
-      \mathbf{z}_{\bar{\mathcal{P}}}
+      \mathbf{z}_{\bar{\mathcal{P}}_A}
     \end{bmatrix}; \;\;\;
     \mathbf c =
     \begin{bmatrix}    	 
       \mathbf{c}_\mathcal{P}\\[3pt]
-      \mathbf{c}_{\bar{\mathcal{P}}}\\[3pt]
+      \mathbf{c}_{\bar{\mathcal{P}}_A}\\[3pt]
     \end{bmatrix}; \;\;\;
     \mathbf H =
     \begin{bmatrix}
       \mathbf {H}_\mathcal{P} \\[3pt]
-      \mathbf {H}_{\bar{\mathcal{P}}}
+      \mathbf {H}_{\bar{\mathcal{P}}_A}
 	\end{bmatrix}; \;\;\;
   \bm \Sigma = 	
     \begin{bmatrix}
 	   \bm \Sigma_\mathcal{P} & \mathbf{0} \\
-     \mathbf{0} & \bm \Sigma_{\bar{\mathcal{P}}} 
+     \mathbf{0} & \bm \Sigma_{\bar{\mathcal{P}}_A} 
 	\end{bmatrix}.
 ```
-The inclusion of the vector ``\mathbf{c}_\mathcal{P}`` is necessary due to the fact that measurement functions associated with active power measurements may include constant terms, especially when there are non-zero shift angles of transformers or shunt elements in the system consuming active powers, as evident from the provided measurement functions. On the other hand, the presence of ``\mathbf{c}_{\bar{\mathcal{P}}}`` is required when the angle of the slack bus is non-zero.
+The inclusion of the vector ``\mathbf{c}_\mathcal{P}`` is necessary due to the fact that measurement functions associated with active power measurements may include constant terms, especially when there are non-zero shift angles of transformers or shunt elements in the system consuming active powers, as evident from the provided measurement functions. On the other hand, the presence of ``\mathbf{c}_{\bar{\mathcal{P}}_A}`` is required when the angle of the slack bus is non-zero.
 
 ---
 
@@ -202,7 +203,7 @@ Using the above-described equations, JuliaGrid forms the coefficient matrix ``\m
 ```@repl DCSETutorial
 𝐇 = analysis.method.coefficient
 ```
-Each row in the matrix corresponds to a specific measurement. The first ``|\mathcal{P}|`` rows correspond to wattmeters, ordered as users add wattmeters, while the last ``|{\bar{\mathcal{P}}}|`` rows correspond to PMUs, also in the order users add PMUs.
+Each row in the matrix corresponds to a specific measurement. The first ``|\mathcal{P}|`` rows correspond to wattmeters, ordered as users add wattmeters, while the last ``|{\bar{\mathcal{P}}_A}|`` rows correspond to PMUs, also in the order users add PMUs.
 
 ---
 
@@ -699,9 +700,9 @@ Similarly, the resulting [active power flows](@ref DCBranchNetworkEquationsTutor
 ---
 
 ## [References](@id DCSEReferenceTutorials)
-[1] A. Abur and A. Exposito, *Power System State Estimation: Theory and Implementation*, ser. Power Engineering. Taylor & Francis, 2004.
+[1] A. Abur and A. Exposito, *Power System State Estimation: Theory and Implementation*, Taylor & Francis, 2004.
 
-[2] G. N. Korres, "A distributed multiarea state estimation," *IEEE Trans. Power Syst.*, vol. 26, no. 1, pp. 73–84, Feb. 2011.
+[2] G. Korres, "A distributed multiarea state estimation," *IEEE Trans. Power Syst.*, vol. 26, no. 1, pp. 73–84, Feb. 2011.
 
 [3] M. Cosovic, M. Delalic, D. Raca, and D. Vukobratovic, "Observability analysis for large-scale power systems using factor graphs," *IEEE Trans. Power Syst.*, 36(5), 4791-4799.
 
