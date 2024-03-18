@@ -42,7 +42,7 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     end
 
     ####### LU Factorization #######
-    analysisLU = pmuStateEstimation(system14, device, LU)
+    analysisLU = pmuWlsStateEstimation(system14, device, LU)
     solve!(system14, analysisLU)
     @test analysisLU.voltage.magnitude ≈ analysis.voltage.magnitude
     @test analysisLU.voltage.angle ≈ analysis.voltage.angle
@@ -72,7 +72,7 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     end
 
     ####### LU Factorization #######
-    analysisLU = pmuStateEstimation(system30, device, LU)
+    analysisLU = pmuWlsStateEstimation(system30, device, LU)
     solve!(system30, analysisLU)
     @test analysisLU.voltage.magnitude ≈ analysis.voltage.magnitude
     @test analysisLU.voltage.angle ≈ analysis.voltage.angle

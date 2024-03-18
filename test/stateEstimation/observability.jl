@@ -85,7 +85,7 @@
     addPmu!(system, pseudo; label = "T7", bus = "Bus 7", magnitude = 1.1, angle = 0.1, varianceMagnitude = 1e-3)
 
     restorationGram!(system, device, pseudo, islands)
-    analysis = dcStateEstimation(system, device)
+    analysis = dcWlsStateEstimation(system, device)
 
     pseudoSet = ["P1"; "P2"; "P5"; "P9"; "P10"]
     for key in keys(device.wattmeter.label)
@@ -137,7 +137,7 @@
     addWattmeter!(system, pseudo; label = "P3", bus = "Bus 3", active = 0.04, variance = 1e-4)
 
     restorationGram!(system, device, pseudo, islands)
-    analysis = dcStateEstimation(system, device)
+    analysis = dcWlsStateEstimation(system, device)
     @test device.wattmeter.label["P3"] == 17
 
     ############### Test Case 3 ################
@@ -165,7 +165,7 @@
     end
 
     restorationGram!(system14, device, pseudo, islands)
-    analysisSE = dcStateEstimation(system14, device)
+    analysisSE = dcWlsStateEstimation(system14, device)
     solve!(system14, analysisSE)
     @test analysisSE.voltage.angle ≈ analysis.voltage.angle
 
@@ -185,7 +185,7 @@
         addWattmeter!(system14, pseudo; label = "Pseudo $key", bus = key, active = analysis.power.injection.active[value], noise = false)
     end
     restorationGram!(system14, device, pseudo, islands)
-    analysisSE = dcStateEstimation(system14, device)
+    analysisSE = dcWlsStateEstimation(system14, device)
     solve!(system14, analysisSE)
     @test analysisSE.voltage.angle ≈ analysis.voltage.angle
 
@@ -205,7 +205,7 @@
         addPmu!(system14, pseudo; label = "Pseudo $key", bus = key, magnitude = 1, varianceMagnitude = 1, angle = analysis.voltage.angle[value], noise = false)
     end
     restorationGram!(system14, device, pseudo, islands)
-    analysisSE = dcStateEstimation(system14, device)
+    analysisSE = dcWlsStateEstimation(system14, device)
     solve!(system14, analysisSE)
     @test analysisSE.voltage.angle ≈ analysis.voltage.angle
 end

@@ -285,34 +285,43 @@ function addDeviceLAV(method::LAVMethod, indexDevice::Int64)
 end
 
 ######### Factorizations ##########
-function sparseFactorization(A::SparseMatrixCSC{Float64,Int64}, type::SuiteSparse.UMFPACK.UmfpackLU{Float64, Int64})
+function sparseFactorization(A::SparseMatrixCSC{Float64,Int64}, factorization::SuiteSparse.UMFPACK.UmfpackLU{Float64, Int64})
     return lu(A)
 end
 
-function sparseFactorization(A::SparseMatrixCSC{Float64,Int64}, type::SuiteSparse.CHOLMOD.Factor{Float64})
+function sparseFactorization!(A::SparseMatrixCSC{Float64,Int64}, factorization::SuiteSparse.UMFPACK.UmfpackLU{Float64, Int64})
+    lu!(factorization, A)
+end
+
+function sparseFactorization(A::SparseMatrixCSC{Float64,Int64}, factorization::SuiteSparse.CHOLMOD.Factor{Float64})
     return ldlt(A)
 end
 
-function sparseFactorization(A::SparseMatrixCSC{Float64,Int64}, type::SuiteSparse.SPQR.QRSparse{Float64, Int64})
+function sparseFactorization!(A::SparseMatrixCSC{Float64,Int64}, factorization::SuiteSparse.CHOLMOD.Factor{Float64})
+    return ldlt!(factorization, A)
+end
+
+
+function sparseFactorization(A::SparseMatrixCSC{Float64,Int64}, factorization::SuiteSparse.SPQR.QRSparse{Float64, Int64})
     return qr(A)
 end
 
-########### Solution using LU Factorization ###########
+function sparseFactorization!(A::SparseMatrixCSC{Float64,Int64}, factorization::SuiteSparse.SPQR.QRSparse{Float64, Int64})
+    return qr(A)
+end
+
+########### Solutions ###########
 function sparseSolution(x::Array{Float64,1}, b::Array{Float64,1}, factor::SuiteSparse.UMFPACK.UmfpackLU{Float64, Int64})
     if isempty(x)
         x = fill(0.0, size(factor.L, 2)) 
     end
 
     ldiv!(x, factor, b)
-
-    return x
 end
 
-########### Solution using LDLt or QR Factorization ###########
 function sparseSolution(x::Array{Float64,1}, b::Array{Float64,1}, factor::Union{SuiteSparse.SPQR.QRSparse{Float64, Int64}, SuiteSparse.CHOLMOD.Factor{Float64}})
     return x = factor \ b 
 end
-
 
 ######### Print Data ##########
 import Base.print

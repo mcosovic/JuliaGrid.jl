@@ -61,8 +61,8 @@ system14 = powerSystem(string(pathData, "case14test.m"))
     ####### Original Device, WLS and LAV Models #######
     deviceWLS = deepcopy(device)
     deviceLAV = deepcopy(device)
-    analysisWLS = pmuStateEstimation(system14, device)
-    analysisLAV = pmuStateEstimation(system14, device, Ipopt.Optimizer)
+    analysisWLS = pmuWlsStateEstimation(system14, device)
+    analysisLAV = pmuLavStateEstimation(system14, device, Ipopt.Optimizer)
 
     ####### Update Just PMUs #######
     updatePmu!(system14, device; label = 1, magnitude = analysis.voltage.magnitude[1], noise = false)
@@ -78,12 +78,12 @@ system14 = powerSystem(string(pathData, "case14test.m"))
     updatePmu!(system14, device; label = "To 15", statusAngle = 1)
 
     ####### Solve Updated WLS and LAV Models #######
-    analysisWLSUpdate = pmuStateEstimation(system14, device)
+    analysisWLSUpdate = pmuWlsStateEstimation(system14, device)
     solve!(system14, analysisWLSUpdate)
     @test analysisWLSUpdate.voltage.magnitude ≈ analysis.voltage.magnitude
     @test analysisWLSUpdate.voltage.angle ≈ analysis.voltage.angle
     
-    analysisLAVUpdate = pmuStateEstimation(system14, device, Ipopt.Optimizer)
+    analysisLAVUpdate = pmuLavStateEstimation(system14, device, Ipopt.Optimizer)
     JuMP.set_silent(analysisLAVUpdate.method.jump)
     solve!(system14, analysisLAVUpdate)
     @test analysisLAVUpdate.voltage.magnitude ≈ analysis.voltage.magnitude
@@ -201,8 +201,8 @@ system14 = powerSystem(string(pathData, "case14test.m"))
     end
  
     ####### Original WLS and LAV Models #######
-    analysisWLS = dcStateEstimation(system14, device)
-    analysisLAV = dcStateEstimation(system14, device, Ipopt.Optimizer)
+    analysisWLS = dcWlsStateEstimation(system14, device)
+    analysisLAV = dcLavStateEstimation(system14, device, Ipopt.Optimizer)
  
     ####### Update Only Devices #######
     updateWattmeter!(system14, device; label = 1, status = 0)
@@ -226,11 +226,11 @@ system14 = powerSystem(string(pathData, "case14test.m"))
     updatePmu!(system14, device; label = 13, angle = analysis.voltage.angle[13], noise = false)
  
     ####### Solve Updated WLS and LAV Models #######
-    analysisWLSUpdate = dcStateEstimation(system14, device)
+    analysisWLSUpdate = dcWlsStateEstimation(system14, device)
     solve!(system14, analysisWLSUpdate)
     @test analysisWLSUpdate.voltage.angle ≈ analysis.voltage.angle
  
-    analysisLAVUpdate = dcStateEstimation(system14, device, Ipopt.Optimizer)
+    analysisLAVUpdate = dcLavStateEstimation(system14, device, Ipopt.Optimizer)
     JuMP.set_silent(analysisLAVUpdate.method.jump)
     solve!(system14, analysisLAVUpdate)
     @test analysisLAVUpdate.voltage.angle ≈ analysis.voltage.angle

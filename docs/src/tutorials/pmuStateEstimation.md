@@ -210,7 +210,7 @@ Here, ``\mathbf z \in \mathbb {R}^{k}`` denotes the vector of measurement values
 ##### Implementation
 JuliaGrid initiates the PMU state estimation framework by setting up the WLS model, as illustrated in the following:
 ```@example PMUSETutorial
-analysis = pmuStateEstimation(system, device)
+analysis = pmuWlsStateEstimation(system, device)
 nothing # hide
 ```
 
@@ -286,7 +286,7 @@ JuliaGrid opts not to retain the covariance matrix ``\bm \Sigma`` but rather sto
 
 The precision matrix maintains a diagonal form, implying that correlations between the real and imaginary parts of the phasor measurements are disregarded. To account for these correlations, users can execute:
 ```@example PMUSETutorial
-analysis = pmuStateEstimation(system, device; correlated = true)
+analysis = pmuWlsStateEstimation(system, device; correlated = true)
 nothing # hide
 ```
 
@@ -352,7 +352,7 @@ The resolution of the WLS state estimation problem using the conventional method
 
 To address ill-conditioned situations arising from significant differences in measurement variances, users can employ an alternative approach:
 ```@example PMUSETutorial
-analysis = pmuStateEstimation(system, device, Orthogonal)
+analysis = pmuWlsStateEstimation(system, device, Orthogonal)
 nothing # hide
 ```
 
@@ -411,7 +411,7 @@ nothing # hide
 
 Subsequently, we will construct the WLS state estimation model and solve it:
 ```@example PMUSETutorial
-analysis = pmuStateEstimation(system, device)
+analysis = pmuWlsStateEstimation(system, device)
 solve!(system, analysis)
 nothing # hide
 ```
@@ -554,7 +554,7 @@ To form the above optimization problem, the user can call the following function
 using Ipopt
 using JuMP # hide
 
-analysis = pmuStateEstimation(system, device, Ipopt.Optimizer)
+analysis = pmuLavStateEstimation(system, device, Ipopt.Optimizer)
 nothing # hide
 ```
 

@@ -146,7 +146,8 @@ function newtonRaphson(system::PowerSystem, factorization::Type{<:Union{QR, LU}}
             increment,
             get(method, factorization, lu)(sparse(Matrix(1.0I, 1, 1))),
             pqIndex,
-            pvpqIndex
+            pvpqIndex,
+            -1
         )
     )
 end
@@ -350,6 +351,7 @@ end
             ),
             pqIndex,
             pvpqIndex,
+            -1,
             -1,
             bx
         )
@@ -726,7 +728,13 @@ function solve!(system::PowerSystem, analysis::NewtonRaphson)
         end
     end
 
-    analysis.method.factorization = sparseFactorization(jacobian, analysis.method.factorization)
+    if ac.pattern != analysis.method.pattern
+        analysis.method.pattern = copy(system.model.ac.pattern)
+        analysis.method.factorization = sparseFactorization(jacobian, analysis.method.factorization)
+    else
+        analysis.method.factorization = sparseFactorization!(jacobian, analysis.method.factorization)
+    end
+
     analysis.method.increment = sparseSolution(analysis.method.increment, analysis.method.mismatch, analysis.method.factorization)
 
     @inbounds for i = 1:bus.number
@@ -751,8 +759,14 @@ function solve!(system::PowerSystem, analysis::FastNewtonRaphson)
 
     if system.model.ac.model != analysis.method.acmodel
         analysis.method.acmodel = copy(system.model.ac.model)
-        active.factorization = sparseFactorization(active.jacobian, active.factorization)
-        reactive.factorization = sparseFactorization(reactive.jacobian, reactive.factorization)
+        if ac.pattern != analysis.method.pattern
+            analysis.method.pattern = copy(system.model.ac.pattern)
+            active.factorization = sparseFactorization(active.jacobian, active.factorization)
+            reactive.factorization = sparseFactorization(reactive.jacobian, reactive.factorization)
+        else
+            active.factorization = sparseFactorization!(active.jacobian, active.factorization)
+            reactive.factorization = sparseFactorization!(reactive.jacobian, reactive.factorization)
+        end
     end
 
     active.increment = sparseSolution(active.increment, active.mismatch, active.factorization)
@@ -820,7 +834,6 @@ function solve!(system::PowerSystem, analysis::GaussSeidel)
         analysis.voltage.angle[i] = angle(voltage[i])
     end
 end
-
 
 """
     reactiveLimit!(system::PowerSystem, analysis::ACPowerFlow)

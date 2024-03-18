@@ -1,12 +1,12 @@
 """
-    pmuStateEstimation(system::PowerSystem, device::Measurement, method; correlated)
+    pmuWlsStateEstimation(system::PowerSystem, device::Measurement, method; correlated)
 
 The function sets up the framework to solve the linear state estimation model with PMUs 
 only, where the vector of state variables is given in rectangular coordinates.
 
 # Arguments
-This function establishes the framework by requiring the `PowerSystem` and `Measurement` 
-composite types.
+This function requires the `PowerSystem` and `Measurement` composite types to establish 
+the PMU WLS state estimation framework. 
 
 Moreover, the presence of the `method` parameter is not mandatory. It provides various 
 approaches for addressing PMU state estimation. To address the WLS state estimation method, 
@@ -15,17 +15,12 @@ users can opt to utilize factorization techniques to decompose the gain matrix, 
 `Orthogonal` method is advisable for a more robust solution in scenarios involving 
 ill-conditioned data, particularly when substantial variations in variances are present.
 
-Alternatively, instead of solving the WLS state estimation problem, users can utilize the 
-LAV method to find an estimator. This can be achieved by selecting one of 
-the [optimization solvers](https://jump.dev/JuMP.jl/stable/packages/solvers/), 
-where typically `Ipopt.Optimizer` suffices for common scenarios.
-
 If the `method` parameter is not provided, the default method for solving the PMU 
 estimation will be LU factorization using the WLS framework.
 
 # Keyword
 The boolean keyword `correlated` defines the correlation between measurement errors of a 
-single PMU and is only relevant for WLS state estimation.
+single PMU.
 
 When `correlated = false`, which is the default setting, the measurement errors of a 
 single PMU are not correlated. This results in the covariance matrix maintaining a 
@@ -75,18 +70,8 @@ device = measurement("measurement14.h5")
 
 analysis = pmuStateEstimation(system, device, Orthogonal)
 ```
-
-Set up the PMU state estimation LAV framework:
-```jldoctest
-using Ipopt
-
-system = powerSystem("case14.h5")
-device = measurement("measurement14.h5")
-
-analysis = pmuStateEstimation(system, device, Ipopt.Optimizer)
-```
 """
-function pmuStateEstimation(system::PowerSystem, device::Measurement, factorization::Type{<:Union{QR, LDLt, LU}} = LU; correlated = false)
+function pmuWlsStateEstimation(system::PowerSystem, device::Measurement, factorization::Type{<:Union{QR, LDLt, LU}} = LU; correlated = false)
     coefficient, mean, precision, badData, power, current = pmuStateEstimationWLS(system, device, correlated)
 
     method = Dict(LU => lu, LDLt => ldlt, QR => qr)
@@ -108,7 +93,7 @@ function pmuStateEstimation(system::PowerSystem, device::Measurement, factorizat
     )
 end
 
-function pmuStateEstimation(system::PowerSystem, device::Measurement, method::Type{<:Orthogonal})
+function pmuWlsStateEstimation(system::PowerSystem, device::Measurement, method::Type{<:Orthogonal})
     coefficient, mean, precision, badData, power, current = pmuStateEstimationWLS(system, device, false)
 
     return PMUStateEstimationWLS(
@@ -270,7 +255,46 @@ function pmuStateEstimationWLS(system::PowerSystem, device::Measurement, correla
     return coefficient, mean, precision, badData, power, current
 end
 
-function pmuStateEstimation(system::PowerSystem, device::Measurement, (@nospecialize optimizerFactory);
+
+"""
+    pmuLavStateEstimation(system::PowerSystem, device::Measurement, method)
+
+The function sets up the framework to solve the linear state estimation model with PMUs 
+only, where the vector of state variables is given in rectangular coordinates.
+
+# Arguments
+This function requires the `PowerSystem` and `Measurement` composite types to establish 
+the PMU LAV state estimation framework. The LAV method offers increased robustness 
+compared to WLS, ensuring unbiasedness even in the presence of various measurement errors 
+and outliers.
+    
+Users can employ the LAV method to find an estimator by choosing one of the available 
+[optimization solvers](https://jump.dev/JuMP.jl/stable/packages/solvers/). Typically, 
+`Ipopt.Optimizer` suffices for most scenarios.
+
+# Updates
+If the AC model has not been created, the function will automatically trigger an update of 
+the `ac` field within the `PowerSystem` composite type.
+
+# Returns
+The function returns an instance of the `DCStateEstimation` abstract type, which includes 
+the following fields:
+- `voltage`: the variable allocated to store the bus voltage magnitudes and angles;
+- `power`: the variable allocated to store the active and reactive powers;
+- `method`: the system model vectors and matrices, or alternatively, the optimization model;
+- `bad`: the variable linked to identifying bad data within the measurement set. 
+
+# Example
+```jldoctest
+using Ipopt
+
+system = powerSystem("case14.h5")
+device = measurement("measurement14.h5")
+
+analysis = pmuStateEstimation(system, device, Ipopt.Optimizer)
+```
+"""
+function pmuLavStateEstimation(system::PowerSystem, device::Measurement, (@nospecialize optimizerFactory);
     bridge::Bool = true, name::Bool = true)
 
     bus = system.bus
@@ -351,8 +375,10 @@ function pmuStateEstimation(system::PowerSystem, device::Measurement, (@nospecia
     @objective(jump, Min, objective)
 
     return PMUStateEstimationLAV(
-        Polar(system.bus.voltage.magnitude, 
-            system.bus.voltage.angle),
+        Polar(
+            copy(system.bus.voltage.magnitude), 
+            copy(system.bus.voltage.angle)
+        ),
         PowerSE(
             Cartesian(Float64[], Float64[]),
             Cartesian(Float64[], Float64[]),
@@ -416,7 +442,13 @@ function solve!(system::PowerSystem, analysis::PMUStateEstimationWLS{LinearWLS})
     bus = system.bus
 
     gain = transpose(se.coefficient) * se.precision * se.coefficient
-    se.factorization = sparseFactorization(gain, se.factorization)
+
+    if analysis.method.pattern == -1
+        analysis.method.pattern = 0
+        se.factorization = sparseFactorization(gain, se.factorization)
+    else
+        se.factorization = sparseFactorization!(gain, se.factorization)
+    end
     b = transpose(se.coefficient) * se.precision * se.mean
 
     voltageRectangular = sparseSolution(fill(0.0, 2 * bus.number), b, se.factorization)

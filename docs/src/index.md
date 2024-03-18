@@ -111,7 +111,7 @@ system = powerSystem("case14.h5")             # Build the power system model
 device = measurement("measurement14.h5")      # Build the measurement model
 acModel!(system)                              # Generate matrices and vectors in the AC model
 
-analysis = pmuStateEstimation(system, device) # Initialize the PMU state estimation model
+analysis = pmuWlsStateEstimation(system, device) # Initialize the WLS state estimation model
 solve!(system, analysis)                      # Compute estimate of bus voltages
 
 updatePmu!(system, device, analysis; label = 1, angle = 0.0) # Update phasor measurement 
@@ -129,7 +129,7 @@ system = powerSystem("case14.h5")            # Build the power system model
 device = measurement("measurement14.h5")     # Build the measurement model
 dcModel!(system)                             # Generate matrices and vectors in DC model
 
-analysis = dcStateEstimation(system, device) # Initialize the DC state estimation model
+analysis = dcWlsStateEstimation(system, device) # Initialize the WLS state estimation model
 solve!(system, analysis)                     # Compute estimate of bus voltage angles
 
 residualTest!(system, device, analysis)      # Perform bad data analysis and remove outlier 

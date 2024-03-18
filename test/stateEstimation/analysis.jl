@@ -1,6 +1,72 @@
 system14 = powerSystem(string(pathData, "case14test.m"))
 system30 = powerSystem(string(pathData, "case30test.m"))
 
+# @testset "Nonlinear State Estimation" begin
+#     @default(template)
+#     @default(unit)
+    
+#     ################ Modified IEEE 14-bus Test Case ################
+#     updateBus!(system14; label = 1, type = 2)
+#     updateBus!(system14; label = 3, type = 3, angle = -0.25)
+#     updateBranch!(system14; label = 3, conductance = 0.01)
+#     updateBranch!(system14; label = 6, conductance = 0.05)
+    
+#     acModel!(system14)
+#     analysis = newtonRaphson(system14)
+#     for i = 1:1000
+#         stopping = mismatch!(system14, analysis)
+#         if all(stopping .< 1e-8)
+#             break
+#         end
+#         solve!(system14, analysis)
+#     end
+#     power!(system14, analysis)
+#     current!(system14, analysis)
+    
+#     device = measurement()
+#     for (key, value) in system14.bus.label
+#         addVoltmeter!(system14, device; bus = key, magnitude = analysis.voltage.magnitude[value], noise = false)
+#         addWattmeter!(system14, device; bus = key, active = analysis.power.injection.active[value], noise = false)
+#         addVarmeter!(system14, device; bus = key, reactive = analysis.power.injection.reactive[value], noise = false)
+#         addPmu!(system14, device; bus = key, magnitude = analysis.voltage.magnitude[value], angle = analysis.voltage.angle[value], noise = false)
+#     end
+    
+#     for (key, value) in system14.branch.label
+#         addWattmeter!(system14, device; from = key, active = analysis.power.from.active[value], noise = false)
+#         addWattmeter!(system14, device; to = key, active = analysis.power.to.active[value], noise = false)
+#         addVarmeter!(system14, device; from = key, reactive = analysis.power.from.reactive[value], noise = false)
+#         addVarmeter!(system14, device; to = key, reactive = analysis.power.to.reactive[value], noise = false)
+#         addAmmeter!(system14, device; from = key, magnitude = analysis.current.from.magnitude[value], noise = false)
+#         addAmmeter!(system14, device; to = key, magnitude = analysis.current.to.magnitude[value], noise = false)
+#         addPmu!(system14, device; from = key, magnitude = analysis.current.from.magnitude[value], angle = analysis.current.from.angle[value], noise = false, statusAngle = 0)
+#         addPmu!(system14, device; to = key, magnitude = analysis.current.to.magnitude[value], angle = analysis.current.to.angle[value], noise = false, statusAngle = 0)
+#     end
+    
+#     ####### LU Factorization #######
+#     analysisLU = acStateEstimation(system14, device, LU)
+#     for iteration = 1:20
+#         stopping = solve!(system14, analysisLU)
+#         if stopping < 1e-8
+#             break
+#         end
+#     end
+#     @test analysisLU.voltage.magnitude ≈ analysis.voltage.magnitude
+#     @test analysisLU.voltage.angle ≈ analysis.voltage.angle
+    
+#     ###### QR Factorization #######
+#     analysisQR = acStateEstimation(system14, device, QR)
+#     for iteration = 1:20
+#         stopping = solve!(system14, analysisQR)
+#         if stopping < 1e-8
+#             break
+#         end
+#     end
+#     solve!(system14, analysisQR)
+#     @test analysisQR.voltage.magnitude ≈ analysis.voltage.magnitude
+#     @test analysisQR.voltage.angle ≈ analysis.voltage.angle
+# end
+
+
 @testset "PMU State Estimation" begin
     @default(template)
     @default(unit)
@@ -33,38 +99,38 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     end
 
     ####### LU Factorization #######
-    analysisLU = pmuStateEstimation(system14, device, LU)
+    analysisLU = pmuWlsStateEstimation(system14, device, LU)
     solve!(system14, analysisLU)
     @test analysisLU.voltage.magnitude ≈ analysis.voltage.magnitude
     @test analysisLU.voltage.angle ≈ analysis.voltage.angle
 
     ###### QR Factorization #######
-    analysisQR = pmuStateEstimation(system14, device, QR)
+    analysisQR = pmuWlsStateEstimation(system14, device, QR)
     solve!(system14, analysisQR)
     @test analysisQR.voltage.magnitude ≈ analysis.voltage.magnitude
     @test analysisQR.voltage.angle ≈ analysis.voltage.angle
    
     ####### Orthogonal Method #######
-    analysisOrt = pmuStateEstimation(system14, device, Orthogonal)
+    analysisOrt = pmuWlsStateEstimation(system14, device, Orthogonal)
     solve!(system14, analysisOrt)
     @test analysisOrt.voltage.magnitude ≈ analysis.voltage.magnitude
     @test analysisOrt.voltage.angle ≈ analysis.voltage.angle
 
     ####### LAV #######
-    analysisLAV = pmuStateEstimation(system14, device, Ipopt.Optimizer)
+    analysisLAV = pmuLavStateEstimation(system14, device, Ipopt.Optimizer)
     JuMP.set_silent(analysisLAV.method.jump)
     solve!(system14, analysisLAV)
     @test analysisLAV.voltage.magnitude ≈ analysis.voltage.magnitude
     @test analysisLAV.voltage.angle ≈ analysis.voltage.angle 
     
     ####### LU Factorization: Correlated Errors #######
-    analysisLU = pmuStateEstimation(system14, device, LU; correlated = true)
+    analysisLU = pmuWlsStateEstimation(system14, device, LU; correlated = true)
     solve!(system14, analysisLU)
     @test analysisLU.voltage.magnitude ≈ analysis.voltage.magnitude
     @test analysisLU.voltage.angle ≈ analysis.voltage.angle
 
     ####### QR Factorization: Correlated Errors #######
-    analysisQR = pmuStateEstimation(system14, device, QR; correlated = true)
+    analysisQR = pmuWlsStateEstimation(system14, device, QR; correlated = true)
     solve!(system14, analysisQR)
     @test analysisQR.voltage.magnitude ≈ analysis.voltage.magnitude
     @test analysisQR.voltage.angle ≈ analysis.voltage.angle
@@ -142,26 +208,26 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     end
 
     ####### LU Factorization #######
-    analysisLU = pmuStateEstimation(system30, device, LU)
+    analysisLU = pmuWlsStateEstimation(system30, device, LU)
     solve!(system30, analysisLU)
     @test analysisLU.voltage.magnitude ≈ analysis.voltage.magnitude atol = 1e-2
     @test analysisLU.voltage.angle ≈ analysis.voltage.angle atol = 1e-2
         
     ####### Orthogonal Method #######
-    analysisOrt = pmuStateEstimation(system30, device, Orthogonal)
+    analysisOrt = pmuWlsStateEstimation(system30, device, Orthogonal)
     solve!(system30, analysisOrt)
     @test analysisOrt.voltage.magnitude ≈ analysis.voltage.magnitude atol = 1e-2
     @test analysisOrt.voltage.angle ≈ analysis.voltage.angle atol = 1e-2
 
     ####### LAV #######
-    analysisLAV = pmuStateEstimation(system30, device, Ipopt.Optimizer)
+    analysisLAV = pmuLavStateEstimation(system30, device, Ipopt.Optimizer)
     JuMP.set_silent(analysisLAV.method.jump)
     solve!(system30, analysisLAV)
     @test analysisLAV.voltage.magnitude ≈ analysis.voltage.magnitude atol = 1e-1
     @test analysisLAV.voltage.angle ≈ analysis.voltage.angle atol = 1e-1
 
     ####### LU Factorization: Correlated Errors #######
-    analysisLU = pmuStateEstimation(system30, device, LU; correlated = true)
+    analysisLU = pmuWlsStateEstimation(system30, device, LU; correlated = true)
     solve!(system30, analysisLU)
     @test analysisLU.voltage.magnitude ≈ analysis.voltage.magnitude atol = 1e-2
     @test analysisLU.voltage.angle ≈ analysis.voltage.angle atol = 1e-2
@@ -195,22 +261,22 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     end
 
     ####### LU Factorization #######
-    analysisLU = dcStateEstimation(system14, device, LU)
+    analysisLU = dcWlsStateEstimation(system14, device, LU)
     solve!(system14, analysisLU)
     @test analysisLU.voltage.angle ≈ analysis.voltage.angle
 
     ###### QR Factorization #######
-    analysisQR = dcStateEstimation(system14, device, QR)
+    analysisQR = dcWlsStateEstimation(system14, device, QR)
     solve!(system14, analysisQR)
     @test analysisQR.voltage.angle ≈ analysis.voltage.angle
 
     ####### Orthogonal Method #######
-    analysisOrt = dcStateEstimation(system14, device, Orthogonal)
+    analysisOrt = dcWlsStateEstimation(system14, device, Orthogonal)
     solve!(system14, analysisOrt)
     @test analysisOrt.voltage.angle ≈ analysis.voltage.angle 
 
     ####### LAV #######
-    analysisLAV = dcStateEstimation(system14, device, Ipopt.Optimizer)
+    analysisLAV = dcLavStateEstimation(system14, device, Ipopt.Optimizer)
     JuMP.set_silent(analysisLAV.method.jump)
     solve!(system14, analysisLAV)
     @test analysisLAV.voltage.angle ≈ analysis.voltage.angle
@@ -221,22 +287,22 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     end
 
     ####### LU Factorization #######
-    analysisLU = dcStateEstimation(system14, device, LU)
+    analysisLU = dcWlsStateEstimation(system14, device, LU)
     solve!(system14, analysisLU)
     @test analysisLU.voltage.angle ≈ analysis.voltage.angle
 
     ####### QR Factorization #######
-    analysisQR = dcStateEstimation(system14, device, QR)
+    analysisQR = dcWlsStateEstimation(system14, device, QR)
     solve!(system14, analysisQR)
     @test analysisQR.voltage.angle ≈ analysis.voltage.angle
 
     ####### Orthogonal Method #######
-    analysisOrt = dcStateEstimation(system14, device, Orthogonal)
+    analysisOrt = dcWlsStateEstimation(system14, device, Orthogonal)
     solve!(system14, analysisOrt)
     @test analysisOrt.voltage.angle ≈ analysis.voltage.angle 
 
     ####### LAV #######
-    analysisLAV = dcStateEstimation(system14, device, Ipopt.Optimizer)
+    analysisLAV = dcLavStateEstimation(system14, device, Ipopt.Optimizer)
     JuMP.set_silent(analysisLAV.method.jump)
     solve!(system14, analysisLAV)
     @test analysisLAV.voltage.angle ≈ analysis.voltage.angle
@@ -277,22 +343,22 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     end
 
     ####### LU Factorization #######
-    analysisLU = dcStateEstimation(system30, device, LU)
+    analysisLU = dcWlsStateEstimation(system30, device, LU)
     solve!(system30, analysisLU)
     @test analysisLU.voltage.angle ≈ analysis.voltage.angle atol = 1e-2
 
     ####### QR Factorization #######
-    analysisQR = dcStateEstimation(system30, device, QR)
+    analysisQR = dcWlsStateEstimation(system30, device, QR)
     solve!(system30, analysisQR)
     @test analysisQR.voltage.angle ≈ analysis.voltage.angle atol = 1e-2
 
     ####### Orthogonal Method #######
-    analysisOrt = dcStateEstimation(system30, device, Orthogonal)
+    analysisOrt = dcWlsStateEstimation(system30, device, Orthogonal)
     solve!(system30, analysisOrt)
     @test analysisOrt.voltage.angle ≈ analysis.voltage.angle atol = 1e-2 
 
     ####### LAV #######
-    analysisLAV = dcStateEstimation(system30, device, Ipopt.Optimizer)
+    analysisLAV = dcLavStateEstimation(system30, device, Ipopt.Optimizer)
     JuMP.set_silent(analysisLAV.method.jump)
     solve!(system30, analysisLAV)
     @test analysisLAV.voltage.angle ≈ analysis.voltage.angle atol = 1e-2
@@ -303,22 +369,22 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     end
 
     ####### LU Factorization #######
-    analysisLU = dcStateEstimation(system30, device, LU)
+    analysisLU = dcWlsStateEstimation(system30, device, LU)
     solve!(system30, analysisLU)
     @test analysisLU.voltage.angle ≈ analysis.voltage.angle atol = 1e-2
 
     ####### QR Factorization #######
-    analysisQR = dcStateEstimation(system30, device, QR)
+    analysisQR = dcWlsStateEstimation(system30, device, QR)
     solve!(system30, analysisQR)
     @test analysisQR.voltage.angle ≈ analysis.voltage.angle atol = 1e-2
 
     ####### Orthogonal Method #######
-    analysisOrt = dcStateEstimation(system30, device, Orthogonal)
+    analysisOrt = dcWlsStateEstimation(system30, device, Orthogonal)
     solve!(system30, analysisOrt)
     @test analysisOrt.voltage.angle ≈ analysis.voltage.angle atol = 1e-2 
 
     ####### LAV #######
-    analysisLAV = dcStateEstimation(system30, device, Ipopt.Optimizer)
+    analysisLAV = dcLavStateEstimation(system30, device, Ipopt.Optimizer)
     JuMP.set_silent(analysisLAV.method.jump)
     solve!(system30, analysisLAV)
     @test analysisLAV.voltage.angle ≈ analysis.voltage.angle atol = 1e-2
@@ -342,28 +408,28 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     ################ Wattmeters ################
     addWattmeter!(system30, device, analysis; varianceBus = 1e-2, varianceFrom = 1e-3, varianceTo = 1e-4)
 
-    analysisLU = dcStateEstimation(system30, device, LU)
+    analysisLU = dcWlsStateEstimation(system30, device, LU)
     solve!(system30, analysisLU)
 
-    analysisQR = dcStateEstimation(system30, device, QR)
+    analysisQR = dcWlsStateEstimation(system30, device, QR)
     solve!(system30, analysisQR)
     @test analysisLU.voltage.angle ≈ analysisQR.voltage.angle
 
-    analysisOrt = dcStateEstimation(system30, device, Orthogonal)
+    analysisOrt = dcWlsStateEstimation(system30, device, Orthogonal)
     solve!(system30, analysisOrt)
     @test analysisLU.voltage.angle ≈ analysisOrt.voltage.angle
 
     ################ PMUs ################
     addPmu!(system30, device, analysis; varianceAngleBus = 1e-5)
 
-    analysisLU = dcStateEstimation(system30, device, LU)
+    analysisLU = dcWlsStateEstimation(system30, device, LU)
     solve!(system30, analysisLU)
 
-    analysisQR = dcStateEstimation(system30, device, QR)
+    analysisQR = dcWlsStateEstimation(system30, device, QR)
     solve!(system30, analysisQR)
     @test analysisLU.voltage.angle ≈ analysisQR.voltage.angle
 
-    analysisOrt = dcStateEstimation(system30, device, Orthogonal)
+    analysisOrt = dcWlsStateEstimation(system30, device, Orthogonal)
     solve!(system30, analysisOrt)
     @test analysisLU.voltage.angle ≈ analysisOrt.voltage.angle
 end
@@ -408,14 +474,14 @@ end
         end
     end
 
-    analysisAll = dcStateEstimation(system14, deviceAll)
+    analysisAll = dcWlsStateEstimation(system14, deviceAll)
     solve!(system14, analysisAll)
 
-    analysisLU = dcStateEstimation(system14, devicePart)
+    analysisLU = dcWlsStateEstimation(system14, devicePart)
     solve!(system14, analysisLU)
     @test analysisAll.voltage.angle ≈ analysisLU.voltage.angle
 
-    analysisOrt = dcStateEstimation(system14, devicePart, Orthogonal)
+    analysisOrt = dcWlsStateEstimation(system14, devicePart, Orthogonal)
     solve!(system14, analysisOrt)
     @test analysisAll.voltage.angle ≈ analysisOrt.voltage.angle
 
@@ -429,18 +495,18 @@ end
         end 
     end
 
-    analysisAll = dcStateEstimation(system14, deviceAll)
+    analysisAll = dcWlsStateEstimation(system14, deviceAll)
     solve!(system14, analysisAll)
 
-    analysisLU = dcStateEstimation(system14, devicePart)
+    analysisLU = dcWlsStateEstimation(system14, devicePart)
     solve!(system14, analysisLU)
     @test analysisAll.voltage.angle ≈ analysisLU.voltage.angle
 
-    analysisOrt = dcStateEstimation(system14, devicePart, Orthogonal)
+    analysisOrt = dcWlsStateEstimation(system14, devicePart, Orthogonal)
     solve!(system14, analysisOrt)
     @test analysisAll.voltage.angle ≈ analysisOrt.voltage.angle
 
-    analysisLAV = dcStateEstimation(system14, devicePart, Ipopt.Optimizer)
+    analysisLAV = dcLavStateEstimation(system14, devicePart, Ipopt.Optimizer)
     JuMP.set_silent(analysisLAV.method.jump)
     solve!(system14, analysisLAV)
     @test analysisAll.voltage.angle ≈ analysisLAV.voltage.angle
@@ -467,15 +533,15 @@ end
     end
     status!(system30, device; inservice = 100)
 
-    analysisLU = dcStateEstimation(system30, device)
+    analysisLU = dcWlsStateEstimation(system30, device)
     solve!(system30, analysisLU)
     @test analysis.voltage.angle ≈ analysisLU.voltage.angle
 
-    analysisOrt = dcStateEstimation(system30, device, Orthogonal)
+    analysisOrt = dcWlsStateEstimation(system30, device, Orthogonal)
     solve!(system30, analysisOrt)
     @test analysis.voltage.angle ≈ analysisOrt.voltage.angle
 
-    analysisLAV = dcStateEstimation(system30, device, Ipopt.Optimizer)
+    analysisLAV = dcWlsStateEstimation(system30, device, Ipopt.Optimizer)
     JuMP.set_silent(analysisLAV.method.jump)
     solve!(system30, analysisLAV)
     @test analysis.voltage.angle ≈ analysisLAV.voltage.angle

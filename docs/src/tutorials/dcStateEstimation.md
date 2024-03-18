@@ -166,7 +166,7 @@ The inclusion of the vector ``\mathbf{c}_\mathcal{P}`` is necessary due to the f
 ##### Implementation
 JuliaGrid initiates the DC state estimation framework by setting up the WLS model, as illustrated in the following:
 ```@example DCSETutorial
-analysis = dcStateEstimation(system, device)
+analysis = dcWlsStateEstimation(system, device)
 nothing # hide
 ```
 
@@ -263,7 +263,7 @@ The resolution of the WLS state estimation problem using the conventional method
 
 To address ill-conditioned situations arising from significant differences in measurement variances, users can employ an alternative approach:
 ```@example DCSETutorial
-analysis = dcStateEstimation(system, device, Orthogonal)
+analysis = dcWlsStateEstimation(system, device, Orthogonal)
 nothing # hide
 ```
 
@@ -321,7 +321,7 @@ nothing # hide
 
 Subsequently, we will construct the WLS state estimation model and solve it:
 ```@example DCSETutorial
-analysis = dcStateEstimation(system, device)
+analysis = dcWlsStateEstimation(system, device)
 solve!(system, analysis)
 nothing # hide
 ```
@@ -464,7 +464,7 @@ To form the above optimization problem, the user can call the following function
 using Ipopt
 using JuMP # hide
 
-analysis = dcStateEstimation(system, device, Ipopt.Optimizer)
+analysis = dcLavStateEstimation(system, device, Ipopt.Optimizer)
 nothing # hide
 ```
 
@@ -647,7 +647,7 @@ nothing # hide
 
 Next, we can construct the DC state estimation model and resolve it to obtain estimates of bus voltage angles:
 ```@example DCSEObservability
-analysis = dcStateEstimation(system, device)
+analysis = dcWlsStateEstimation(system, device)
 solve!(system, analysis)
 nothing # hide
 ```

@@ -131,19 +131,19 @@ function addBranch!(system::PowerSystem;
     push!(branch.flow.shortTerm, topu(shortTerm, default.shortTerm, prefixLive, basePowerInv))
     push!(branch.flow.emergency, topu(emergency, default.emergency, prefixLive, basePowerInv))
 
+    if !isempty(system.model.ac.nodalMatrix)
+        acPushZeros!(system.model.ac)
+        if branch.layout.status[branch.number] == 1
+            acParameterUpdate!(system, branch.number)
+            acNodalUpdate!(system, branch.number)
+        end
+    end
     if !isempty(system.model.dc.nodalMatrix)
         push!(system.model.dc.admittance, 0.0)
         dcAdmittanceUpdate!(system, branch.layout.status[branch.number], branch.number)
         if system.model.dc.admittance[branch.number] != 0
             dcShiftUpdate!(system, branch.number)
             dcNodalUpdate!(system, branch.number)
-        end
-    end
-    if !isempty(system.model.ac.nodalMatrix)
-        acPushZeros!(system.model.ac)
-        if branch.layout.status[branch.number] == 1
-            acParameterUpdate!(system, branch.number)
-            acNodalUpdate!(system, branch.number)
         end
     end
 end
@@ -156,8 +156,8 @@ function addBranch!(system::PowerSystem, analysis::DCPowerFlow;
     longTerm::T = missing, shortTerm::T = missing, emergency::T = missing, type::T = missing)
 
     addBranch!(system; label, from, to, status, resistance, reactance, susceptance,
-        conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, longTerm, shortTerm,
-        emergency, type)
+    conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, longTerm, shortTerm,
+    emergency, type)
 end
 
 function addBranch!(system::PowerSystem, analysis::Union{NewtonRaphson, GaussSeidel};
@@ -168,8 +168,8 @@ function addBranch!(system::PowerSystem, analysis::Union{NewtonRaphson, GaussSei
     longTerm::T = missing, shortTerm::T = missing, emergency::T = missing, type::T = missing)
 
     addBranch!(system; label, from, to, status, resistance, reactance, susceptance,
-        conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, longTerm, shortTerm,
-        emergency, type)
+    conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, longTerm, shortTerm,
+    emergency, type)
 end
 
 function addBranch!(system::PowerSystem, analysis::FastNewtonRaphson;     
@@ -206,8 +206,8 @@ function addBranch!(system::PowerSystem, analysis::DCOptimalPowerFlow;
     variable = analysis.variable
 
     addBranch!(system; label, from, to, status, resistance, reactance, susceptance,
-        conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, longTerm, shortTerm,
-        emergency, type)
+    conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, longTerm, shortTerm,
+    emergency, type)
 
     if branch.layout.status[end] == 1
         from = branch.layout.from[end]
@@ -235,8 +235,8 @@ function addBranch!(system::PowerSystem, analysis::ACOptimalPowerFlow;
     variable = analysis.variable
 
     addBranch!(system; label, from, to, status, resistance, reactance, susceptance,
-        conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, longTerm, shortTerm,
-        emergency, type)
+    conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, longTerm, shortTerm,
+    emergency, type)
 
     if branch.layout.status[end] == 1
         from = branch.layout.from[end]
@@ -316,6 +316,14 @@ function updateBranch!(system::PowerSystem;
         branch.layout.inservice -= 1
     end
 
+    if !isempty(ac.nodalMatrix)
+        if branch.layout.status[index] == 1 && (status == 0 || (status == 1 && parameter))
+            acSubtractAdmittances!(ac, index)
+            acNodalUpdate!(system, index)
+            acSetZeros!(ac, index)
+        end
+    end
+
     if !isempty(dc.nodalMatrix)
         if branch.layout.status[index] == 1 && (status == 0 || (status == 1 && dcAdmittance || isset(shiftAngle)))
             dc.admittance[index] = -dc.admittance[index]
@@ -324,14 +332,6 @@ function updateBranch!(system::PowerSystem;
                 dcNodalUpdate!(system, index)
             end
             dc.admittance[index] = 0.0
-        end
-    end
-
-    if !isempty(ac.nodalMatrix)
-        if branch.layout.status[index] == 1 && (status == 0 || (status == 1 && parameter))
-            acSubtractAdmittances!(ac, index)
-            acNodalUpdate!(system, index)
-            acSetZeros!(ac, index)
         end
     end
 
@@ -361,6 +361,13 @@ function updateBranch!(system::PowerSystem;
         end
     end
 
+    if !isempty(ac.nodalMatrix)
+        if status == 1 && (branch.layout.status[index] == 0 || (branch.layout.status[index] == 1 && parameter))
+            acParameterUpdate!(system, index)
+            acNodalUpdate!(system, index)
+        end
+    end
+
     if !isempty(dc.nodalMatrix)
         if status == 1 && (branch.layout.status[index] == 0 || (branch.layout.status[index] == 1 && dcAdmittance || isset(shiftAngle)))
             dcAdmittanceUpdate!(system, status, index)
@@ -368,13 +375,6 @@ function updateBranch!(system::PowerSystem;
             if status == 1 && (branch.layout.status[index] == 0 || (branch.layout.status[index] == 1 && dcAdmittance))
                 dcNodalUpdate!(system, index)
             end
-        end
-    end
-
-    if !isempty(ac.nodalMatrix)
-        if status == 1 && (branch.layout.status[index] == 0 || (branch.layout.status[index] == 1 && parameter))
-            acParameterUpdate!(system, index)
-            acNodalUpdate!(system, index)
         end
     end
 
@@ -516,8 +516,8 @@ function updateBranch!(system::PowerSystem, analysis::ACOptimalPowerFlow;
     statusOld = branch.layout.status[index]
 
     updateBranch!(system; label, status, resistance, reactance, susceptance,
-        conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, longTerm, shortTerm,
-        emergency, type)
+    conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, longTerm, shortTerm,
+    emergency, type)
 
     parameter = isset(resistance) || isset(reactance) || isset(conductance) || isset(susceptance) || isset(turnsRatio) || isset(shiftAngle)
     diffAngle = isset(minDiffAngle) || isset(maxDiffAngle)

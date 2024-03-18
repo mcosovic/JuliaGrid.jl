@@ -65,6 +65,7 @@ function dcPowerFlow(system::PowerSystem, factorization::Type{<:Union{QR, LDLt, 
         ),
         DCPowerFlowMethod(
             get(method, factorization, lu)(sparse(Matrix(1.0I, 1, 1))), 
+            -1,
             -1)
     )
 end
@@ -88,6 +89,7 @@ solve!(system, analysis)
 """
 function solve!(system::PowerSystem, analysis::DCPowerFlow)
     bus = system.bus
+    dc = system.model.dc
 
     b = copy(bus.supply.active)
     @inbounds for i = 1:bus.number
@@ -95,37 +97,35 @@ function solve!(system::PowerSystem, analysis::DCPowerFlow)
     end
 
     if system.model.dc.model != analysis.method.dcmodel
-        dcPowerFlowFactorization(system, analysis)
+        analysis.method.dcmodel = copy(system.model.dc.model)
+
+        slackRange = dc.nodalMatrix.colptr[bus.layout.slack]:(dc.nodalMatrix.colptr[bus.layout.slack + 1] - 1)
+        elementsRemove = dc.nodalMatrix.nzval[slackRange]
+        @inbounds for i in slackRange
+            dc.nodalMatrix[dc.nodalMatrix.rowval[i], bus.layout.slack] = 0.0
+            dc.nodalMatrix[bus.layout.slack, dc.nodalMatrix.rowval[i]] = 0.0
+        end
+        dc.nodalMatrix[bus.layout.slack, bus.layout.slack] = 1.0
+    
+        if dc.pattern != analysis.method.pattern
+            analysis.method.pattern = copy(system.model.dc.pattern)
+            analysis.method.factorization = sparseFactorization(dc.nodalMatrix, analysis.method.factorization)
+        else
+            analysis.method.factorization = sparseFactorization!(dc.nodalMatrix, analysis.method.factorization)
+        end
+
+        @inbounds for (k, i) in enumerate(slackRange)
+            dc.nodalMatrix[dc.nodalMatrix.rowval[i], bus.layout.slack] = elementsRemove[k]
+            dc.nodalMatrix[bus.layout.slack, dc.nodalMatrix.rowval[i]] = elementsRemove[k]
+        end 
     end
+
     analysis.voltage.angle = sparseSolution(analysis.voltage.angle, b, analysis.method.factorization)
 
     analysis.voltage.angle[bus.layout.slack] = 0.0
-
     if bus.voltage.angle[bus.layout.slack] != 0.0
         @inbounds for i = 1:bus.number
             analysis.voltage.angle[i] += bus.voltage.angle[bus.layout.slack]
         end
     end
-end
-
-########### Nodal Matrix Factorization ###########
-function dcPowerFlowFactorization(system::PowerSystem, analysis::DCPowerFlow)
-    dc = system.model.dc
-    bus = system.bus
-    analysis.method.dcmodel = copy(system.model.dc.model)
-
-    slackRange = dc.nodalMatrix.colptr[bus.layout.slack]:(dc.nodalMatrix.colptr[bus.layout.slack + 1] - 1)
-    elementsRemove = dc.nodalMatrix.nzval[slackRange]
-    @inbounds for i in slackRange
-        dc.nodalMatrix[dc.nodalMatrix.rowval[i], bus.layout.slack] = 0.0
-        dc.nodalMatrix[bus.layout.slack, dc.nodalMatrix.rowval[i]] = 0.0
-    end
-    dc.nodalMatrix[bus.layout.slack, bus.layout.slack] = 1.0
-
-    analysis.method.factorization = sparseFactorization(dc.nodalMatrix, analysis.method.factorization)
-
-    @inbounds for (k, i) in enumerate(slackRange)
-        dc.nodalMatrix[dc.nodalMatrix.rowval[i], bus.layout.slack] = elementsRemove[k]
-        dc.nodalMatrix[bus.layout.slack, dc.nodalMatrix.rowval[i]] = elementsRemove[k]
-    end 
 end

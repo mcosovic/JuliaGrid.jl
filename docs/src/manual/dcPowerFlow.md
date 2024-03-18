@@ -179,19 +179,19 @@ dcModel!(system)
 analysis = dcPowerFlow(system)
 solve!(system, analysis)
 
-updateBus!(system; label = "Bus 2", active = 0.4)
-addBranch!(system; label = "Branch 2", from = "Bus 1", to = "Bus 2", reactance = 0.15)
-updateBranch!(system; label = "Branch 1", status = 0)
-addGenerator!(system; label = "Generator 2", bus = "Bus 2", active = 1.5)
-updateGenerator!(system; label = "Generator 1", active = 1.9)
+updateBus!(system, analysis; label = "Bus 2", active = 0.4)
+addBranch!(system, analysis; label = "Branch 2", from = "Bus 1", to = "Bus 2", reactance = .1)
+updateBranch!(system, analysis; label = "Branch 1", status = 0)
+addGenerator!(system, analysis; label = "Generator 2", bus = "Bus 2", active = 1.5)
+updateGenerator!(system, analysis; label = "Generator 1", active = 1.9)
 
 solve!(system, analysis)
 nothing # hide
 ```
 
 !!! note "Info"
-    This method removes the need to restart and recreate both the `PowerSystem` within the `dc` model and the `DCPowerFlow` from the beginning when implementing changes to the existing power system.
-
+    This method removes the need to restart and recreate both the `PowerSystem` within the `dc` field and the `DCPowerFlow` from the beginning when implementing changes to the existing power system. Additionally, JuliaGrid can reuse symbolic factorizations of LU or LDLt, as long as the nonzero pattern of the nodal matrix remains consistent between power system configurations. 
+    
 ---
 
 ##### Reusing Matrix Factorization

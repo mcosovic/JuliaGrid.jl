@@ -165,6 +165,7 @@ mutable struct DCModel
     admittance::Array{Float64,1}
     shiftPower::Array{Float64,1}
     model::Int64
+    pattern::Int64
 end
 
 ########### AC Model ###########
@@ -177,6 +178,7 @@ mutable struct ACModel
     nodalToFrom::Array{ComplexF64,1}
     admittance::Array{ComplexF64,1}
     model::Int64
+    pattern::Int64
 end
 
 ########### Model ###########

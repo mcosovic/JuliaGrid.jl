@@ -3,6 +3,7 @@ export NewtonRaphson, FastNewtonRaphson, GaussSeidel, DCPowerFlow
 export DCOptimalPowerFlow, ACOptimalPowerFlow
 export DCStateEstimation, DCStateEstimationWLS, DCStateEstimationLAV
 export PMUStateEstimation, PMUStateEstimationWLS, PMUStateEstimationLAV
+export ACStateEstimation, ACStateEstimationWLS, ACStateEstimationLAV
 export LU, QR, LDLt, Factorization, Orthogonal, LinearWLS, LinearOrthogonal
 export Island, IslandWatt, IslandVar
 export PlacementPMU
@@ -18,6 +19,7 @@ abstract type LU <: Factorization end
 abstract type LDLt <: Factorization end
 abstract type DCStateEstimation <: DC end
 abstract type PMUStateEstimation <: AC end
+abstract type ACStateEstimation <: AC end
 abstract type Island end
 abstract type Orthogonal end
 
@@ -77,6 +79,7 @@ mutable struct NewtonRaphsonMethod
     factorization::LUQR
     pq::Array{Int64,1}
     pvpq::Array{Int64,1} 
+    pattern::Int64
 end
 
 struct NewtonRaphson <: ACPowerFlow
@@ -100,6 +103,7 @@ mutable struct FastNewtonRaphsonMethod
     pq::Array{Int64,1}
     pvpq::Array{Int64,1}
     acmodel::Int64
+    pattern::Int64
     const bx::Bool
 end
 
@@ -128,6 +132,7 @@ end
 mutable struct DCPowerFlowMethod
     factorization::LULDLtQR
     dcmodel::Int64
+    pattern::Int64
 end
 
 struct DCPowerFlow <: DC
@@ -236,7 +241,7 @@ mutable struct LinearWLS
     mean::Array{Float64,1}
     factorization::LULDLtQR
     number::Int64
-    model::Int64
+    pattern::Int64
     run::Bool
     correlated::Bool
 end
@@ -247,7 +252,7 @@ mutable struct LinearOrthogonal
     mean::Array{Float64,1}
     factorization::SuiteSparse.SPQR.QRSparse{Float64, Int64}
     number::Int64
-    model::Int64
+    pattern::Int64
     run::Bool
     correlated::Bool
 end
@@ -293,6 +298,7 @@ mutable struct IslandVar <: Island
     tie::TieData
 end
 
+########### PMU State Estimation ###########
 struct PMUStateEstimationWLS{T <: Union{LinearWLS, LinearOrthogonal}} <: PMUStateEstimation
     voltage::Polar
     power::PowerSE
@@ -312,4 +318,31 @@ mutable struct PlacementPMU
     bus::OrderedDict{String,Int64}
     from::OrderedDict{String,Int64}
     to::OrderedDict{String,Int64}
+end
+
+########### AC State Estimation ###########
+mutable struct NonlinearWLS
+    jacobian::SparseMatrixCSC{Float64,Int64}
+    precision::SparseMatrixCSC{Float64,Int64}
+    mean::Array{Float64,1}
+    residual::Array{Float64,1}
+    increment::Array{Float64,1}
+    factorization::LULDLtQR
+    type::Array{Int8,1}
+    index::Array{Int64,1}
+    range::Array{Int64,1}
+    pattern::Int64
+end
+
+mutable struct NonlinearOrthogonal
+    coefficient::SparseMatrixCSC{Float64,Int64}
+    precision::SparseMatrixCSC{Float64,Int64}
+    mean::Array{Float64,1}
+end
+
+struct ACStateEstimationWLS{T <: Union{NonlinearWLS, NonlinearOrthogonal}} <: ACStateEstimation
+    voltage::Polar
+    power::PowerSE
+    current::Current
+    method::T
 end

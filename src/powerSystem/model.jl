@@ -59,6 +59,7 @@ end
 @inline function acNodalUpdate!(system::PowerSystem, index::Int64)
     ac = system.model.ac
     layout = system.branch.layout
+    filledElements = nnz(ac.nodalMatrix)
     ac.model += 1
 
     from = layout.from[index]
@@ -73,6 +74,10 @@ end
     ac.nodalMatrix[to, from] += ac.nodalToFrom[index]
     ac.nodalMatrixTranspose[to, from] += ac.nodalFromTo[index]
     ac.nodalMatrixTranspose[from, to] += ac.nodalToFrom[index]
+
+    if filledElements != nnz(ac.nodalMatrix)
+        ac.pattern += 1
+    end
 end
 
 ######### Update AC Parameters ##########
@@ -142,8 +147,9 @@ end
 function dcNodalUpdate!(system, index::Int64)
     dc = system.model.dc
     layout = system.branch.layout
+    filledElements = nnz(dc.nodalMatrix)
     dc.model += 1
-
+    
     from = layout.from[index]
     to = layout.to[index]
     admittance = dc.admittance[index]
@@ -152,6 +158,10 @@ function dcNodalUpdate!(system, index::Int64)
     dc.nodalMatrix[to, to] += admittance
     dc.nodalMatrix[from, to] -= admittance
     dc.nodalMatrix[to, from] -= admittance
+
+    if filledElements != nnz(dc.nodalMatrix)
+        dc.pattern += 1
+    end
 end
 
 ######### Update DC Shift Power ##########
@@ -199,6 +209,7 @@ end
 
 function acModelEmpty!(ac::ACModel)
     ac.model += 1
+    ac.pattern += 1
 
     ac.nodalMatrix = spzeros(0, 0)
     ac.nodalMatrixTranspose = spzeros(0, 0)
@@ -211,6 +222,7 @@ end
 
 function dcModelEmpty!(dc::DCModel)
     dc.model += 1
+    dc.pattern += 1
 
     dc.nodalMatrix = spzeros(0, 0)
     dc.admittance =  Array{Float64,1}(undef, 0)

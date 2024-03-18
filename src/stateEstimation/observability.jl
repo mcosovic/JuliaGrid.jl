@@ -566,13 +566,25 @@ function connectionObservability(system::PowerSystem)
     end
 
     if !isempty(model.dc.nodalMatrix)
+        filledElements = nnz(model.dc.nodalMatrix)
+
         dropzeros!(model.dc.nodalMatrix)
         rowval = model.dc.nodalMatrix.rowval
         colptr = model.dc.nodalMatrix.colptr
+
+        if filledElements != nnz(model.dc.nodalMatrix)
+            model.dc.pattern += 1
+        end
     else
+        filledElements = nnz(model.ac.nodalMatrix)
+
         dropzeros!(model.ac.nodalMatrix)
         rowval = model.ac.nodalMatrix.rowval
         colptr = model.ac.nodalMatrix.colptr
+
+        if filledElements != nnz(model.ac.nodalMatrix)
+            model.ac.pattern += 1
+        end
     end
 
     return rowval, colptr

@@ -94,8 +94,8 @@ function powerSystem()
     basePower = BasePower(1e8, "VA", 1.0)
     baseVoltage = BaseVoltage(copy(af), "V", 1.0)
 
-    acModel = ACModel(copy(sp), copy(sp), ac, copy(ac), copy(ac), copy(ac), copy(ac), 0)
-    dcModel = DCModel(sp, copy(af), copy(af), 0)
+    acModel = ACModel(copy(sp), copy(sp), ac, copy(ac), copy(ac), copy(ac), copy(ac), 0, 0)
+    dcModel = DCModel(sp, copy(af), copy(af), 0, 0)
 
     return PowerSystem(
         Bus(label, demand, supply, shunt, voltageBus, layoutBus, 0),

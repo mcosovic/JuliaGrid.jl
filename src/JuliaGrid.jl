@@ -63,17 +63,18 @@ export addPmu!, updatePmu!, statusPmu!, @pmu
 export status!
 
 ######### State Estimation ##########
-include("stateEstimation/dcStateEstimation.jl")
+include("stateEstimation/acStateEstimation.jl")
 include("stateEstimation/pmuStateEstimation.jl")
+include("stateEstimation/dcStateEstimation.jl")
 include("stateEstimation/badData.jl")
 include("stateEstimation/observability.jl")
-export dcStateEstimation, residualTest!
-export pmuStateEstimation, pmuPlacement
+export pmuWlsStateEstimation, pmuLavStateEstimation, pmuPlacement
+export dcWlsStateEstimation, dcLavStateEstimation, residualTest!
 export islandTopologicalFlow, islandTopological, restorationGram!
 
 ########## Postprocessing ##########
-include("postprocessing/dcAnalysis.jl")
 include("postprocessing/acAnalysis.jl")
+include("postprocessing/dcAnalysis.jl")
 export power!, current!
 export injectionPower, supplyPower, shuntPower, fromPower, toPower, chargingPower, seriesPower, generatorPower
 export injectionCurrent, fromCurrent, toCurrent, seriesCurrent
