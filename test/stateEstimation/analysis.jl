@@ -541,7 +541,7 @@ end
     solve!(system30, analysisOrt)
     @test analysis.voltage.angle ≈ analysisOrt.voltage.angle
 
-    analysisLAV = dcWlsStateEstimation(system30, device, Ipopt.Optimizer)
+    analysisLAV = dcLavStateEstimation(system30, device, Ipopt.Optimizer)
     JuMP.set_silent(analysisLAV.method.jump)
     solve!(system30, analysisLAV)
     @test analysis.voltage.angle ≈ analysisLAV.voltage.angle
