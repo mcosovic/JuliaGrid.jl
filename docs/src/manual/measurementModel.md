@@ -331,8 +331,8 @@ device = measurement()
 addPmu!(system, device; bus = "Bus 1", magnitude = 1.1, angle = 0.1, varianceMagnitude = 1e-3)
 addPmu!(system, device; from = "Branch 1", magnitude = 1.0, angle = -0.2, noise = false)
 addPmu!(system, device; to = "Branch 1", magnitude = 0.9, angle = 0.0, varianceAngle = 1e-3)
-addPmu!(system, device; to = "Bus 2", magnitude = 0.95, angle = 0.1, correlated = true)
-addPmu!(system, device; to = "Bus 2", magnitude = 0.9, angle = 0.0, polar = false)
+addPmu!(system, device; bus = "Bus 2", magnitude = 0.95, angle = 0.1, correlated = true)
+addPmu!(system, device; bus = "Bus 2", magnitude = 0.9, angle = 0.0, polar = false)
 
 ```
 
