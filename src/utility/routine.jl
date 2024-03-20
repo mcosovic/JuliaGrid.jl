@@ -384,6 +384,6 @@ function print(io::IO, obj::Dict{Int64, Array{JuMP.ConstraintRef,1}})
 end
 
 ######### Check Input Data ##########
-function isset(input::Union{L, T})
+function isset(input::Union{L, T, B})
     return !ismissing(input)
 end

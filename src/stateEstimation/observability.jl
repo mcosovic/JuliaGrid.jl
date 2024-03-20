@@ -117,7 +117,7 @@ function islandTopological(system::PowerSystem, wattmeter::Wattmeter)
     return observe 
 end
 
-function connectedComponents(system::PowerSystem, observe::Island, deviceLayout::MultiLayoutMeter, status::Array{Int8,1}, deviceNumber::Int64)
+function connectedComponents(system::PowerSystem, observe::Island, deviceLayout::PowermeterLayout, status::Array{Int8,1}, deviceNumber::Int64)
     bus = system.bus
     branch = system.branch
 
@@ -189,7 +189,7 @@ function tieBusBranch(system::PowerSystem, observe::Island)
     end
 end
 
-function tieInjection(observe::Island, deviceLayout::MultiLayoutMeter, status::Array{Int8,1}, deviceNumber::Int64)
+function tieInjection(observe::Island, deviceLayout::PowermeterLayout, status::Array{Int8,1}, deviceNumber::Int64)
     observe.tie.injection = Array{Int64,1}()
     @inbounds for i = 1:deviceNumber
         if deviceLayout.bus[i] && status[i] == 1 && (deviceLayout.index[i] in observe.tie.bus)
@@ -198,7 +198,7 @@ function tieInjection(observe::Island, deviceLayout::MultiLayoutMeter, status::A
     end
 end
 
-function mergePairs(bus::Bus, layout::MultiLayoutMeter, observe::Island, rowval::Array{Int64,1}, colptr::Array{Int64,1})
+function mergePairs(bus::Bus, layout::PowermeterLayout, observe::Island, rowval::Array{Int64,1}, colptr::Array{Int64,1})
     merge = true
     flag = false
     con = fill(false, bus.number)
@@ -244,7 +244,7 @@ function mergePairs(bus::Bus, layout::MultiLayoutMeter, observe::Island, rowval:
     end
 end
 
-function mergeFlowIslands(system::PowerSystem, layout::MultiLayoutMeter, observe::Island, rowval::Array{Int64,1}, colptr::Array{Int64,1})
+function mergeFlowIslands(system::PowerSystem, layout::PowermeterLayout, observe::Island, rowval::Array{Int64,1}, colptr::Array{Int64,1})
     bus = system.bus
     branch = system.branch
 

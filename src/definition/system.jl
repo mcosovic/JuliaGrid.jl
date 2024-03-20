@@ -203,19 +203,19 @@ mutable struct GaussMeter
     status::Array{Int8,1}
 end
 
-mutable struct BusLayoutMeter
+mutable struct VoltmeterLayout
     index::Array{Int64,1}
     label::Int64
 end
 
-mutable struct BranchLayoutMeter
+mutable struct AmmeterLayout
     index::Array{Int64,1}
     from::Array{Bool,1}
     to::Array{Bool,1}
     label::Int64
 end
 
-mutable struct MultiLayoutMeter
+mutable struct PowermeterLayout
     index::Array{Int64,1}
     bus::Array{Bool,1}
     from::Array{Bool,1}
@@ -223,38 +223,41 @@ mutable struct MultiLayoutMeter
     label::Int64
 end
 
+mutable struct PmuLayout
+    index::Array{Int64,1}
+    bus::Array{Bool,1}
+    from::Array{Bool,1}
+    to::Array{Bool,1}
+    correlated::Array{Bool,1}
+    polar::Array{Bool,1}
+    label::Int64
+end
+
 mutable struct Voltmeter
     label::OrderedDict{String,Int64}
     magnitude::GaussMeter
-    layout::BusLayoutMeter
+    layout::VoltmeterLayout
     number::Int64
 end
 
 mutable struct Ammeter
     label::OrderedDict{String,Int64}
     magnitude::GaussMeter
-    layout::BranchLayoutMeter
-    number::Int64
-end
-
-mutable struct MultiMeter
-    label::OrderedDict{String,Int64}
-    power::GaussMeter
-    layout::MultiLayoutMeter
+    layout::AmmeterLayout
     number::Int64
 end
 
 mutable struct Wattmeter
     label::OrderedDict{String,Int64}
     active::GaussMeter
-    layout::MultiLayoutMeter
+    layout::PowermeterLayout
     number::Int64
 end
 
 mutable struct Varmeter
     label::OrderedDict{String,Int64}
     reactive::GaussMeter
-    layout::MultiLayoutMeter
+    layout::PowermeterLayout
     number::Int64
 end
 
@@ -262,7 +265,7 @@ mutable struct PMU
     label::OrderedDict{String,Int64}
     magnitude::GaussMeter
     angle::GaussMeter
-    layout::MultiLayoutMeter
+    layout::PmuLayout
     number::Int64
 end
 

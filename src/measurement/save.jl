@@ -92,6 +92,8 @@ function savePmu(pmu::PMU, file)
         saveLayout(pmu.layout.bus, file; fid = "pmu/layout/bus")
         saveLayout(pmu.layout.from, file; fid = "pmu/layout/from")
         saveLayout(pmu.layout.to, file; fid = "pmu/layout/to")
+        saveLayout(pmu.layout.correlated, file; fid = "pmu/layout/correlated")
+        saveLayout(pmu.layout.polar, file; fid = "pmu/layout/polar")
     end
 end
 

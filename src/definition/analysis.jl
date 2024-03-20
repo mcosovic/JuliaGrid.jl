@@ -243,7 +243,6 @@ mutable struct LinearWLS
     number::Int64
     pattern::Int64
     run::Bool
-    correlated::Bool
 end
 
 mutable struct LinearOrthogonal
@@ -254,7 +253,6 @@ mutable struct LinearOrthogonal
     number::Int64
     pattern::Int64
     run::Bool
-    correlated::Bool
 end
 
 struct DCStateEstimationWLS{T <: Union{LinearWLS, LinearOrthogonal}} <: DCStateEstimation

@@ -1,5 +1,5 @@
 """
-    pmuWlsStateEstimation(system::PowerSystem, device::Measurement, method; correlated)
+    pmuWlsStateEstimation(system::PowerSystem, device::Measurement, method)
 
 The function sets up the framework to solve the linear state estimation model with PMUs 
 only, where the vector of state variables is given in rectangular coordinates.
@@ -17,20 +17,6 @@ ill-conditioned data, particularly when substantial variations in variances are 
 
 If the `method` parameter is not provided, the default method for solving the PMU 
 estimation will be LU factorization using the WLS framework.
-
-# Keyword
-The boolean keyword `correlated` defines the correlation between measurement errors of a 
-single PMU.
-
-When `correlated = false`, which is the default setting, the measurement errors of a 
-single PMU are not correlated. This results in the covariance matrix maintaining a 
-diagonal form. In this case, users can also run the `Orthogonal` method to find the 
-estimate of state variables.
-    
-On the other hand, when `correlated = true`, the covariance matrix does not maintain a 
-diagonal form. Instead, it becomes a block diagonal matrix due to the correlation between 
-measurement errors, and in this case, the `Orthogonal` method is not allowed. Users can 
-then use LU, QR, or LDLt factorization over the gain matrix to obtain the solution.
 
 # Updates
 If the AC model has not been created, the function will automatically trigger an update of 
@@ -54,15 +40,6 @@ device = measurement("measurement14.h5")
 analysis = pmuStateEstimation(system, device)
 ```
 
-Set up the PMU state estimation WLS framework to be solved using the default LU factorization 
-method, where measurement errors are correlated:
-```jldoctest
-system = powerSystem("case14.h5")
-device = measurement("measurement14.h5")
-
-analysis = pmuStateEstimation(system, device; correlated = true)
-```
-
 Set up the PMU state estimation WLS framework to be solved using the orthogonal method:
 ```jldoctest
 system = powerSystem("case14.h5")
@@ -71,8 +48,8 @@ device = measurement("measurement14.h5")
 analysis = pmuStateEstimation(system, device, Orthogonal)
 ```
 """
-function pmuWlsStateEstimation(system::PowerSystem, device::Measurement, factorization::Type{<:Union{QR, LDLt, LU}} = LU; correlated = false)
-    coefficient, mean, precision, badData, power, current = pmuStateEstimationWLS(system, device, correlated)
+function pmuWlsStateEstimation(system::PowerSystem, device::Measurement, factorization::Type{<:Union{QR, LDLt, LU}} = LU)
+    coefficient, mean, precision, badData, power, current = pmuStateEstimationWLS(system, device)
 
     method = Dict(LU => lu, LDLt => ldlt, QR => qr)
     return PMUStateEstimationWLS(
@@ -87,14 +64,13 @@ function pmuWlsStateEstimation(system::PowerSystem, device::Measurement, factori
             2 * device.pmu.number,
             -1,
             true,
-            correlated
         ),
         badData
     )
 end
 
 function pmuWlsStateEstimation(system::PowerSystem, device::Measurement, method::Type{<:Orthogonal})
-    coefficient, mean, precision, badData, power, current = pmuStateEstimationWLS(system, device, false)
+    coefficient, mean, precision, badData, power, current = pmuStateEstimationWLS(system, device)
 
     return PMUStateEstimationWLS(
         Polar(Float64[], Float64[]),
@@ -108,13 +84,12 @@ function pmuWlsStateEstimation(system::PowerSystem, device::Measurement, method:
             2 * device.pmu.number,
             -1,
             true,
-            false
         ),
         badData
     )
 end
 
-function pmuStateEstimationWLS(system::PowerSystem, device::Measurement, correlated::Bool)
+function pmuStateEstimationWLS(system::PowerSystem, device::Measurement)
     ac = system.model.ac
     bus = system.bus
     branch = system.branch
@@ -125,28 +100,33 @@ function pmuStateEstimationWLS(system::PowerSystem, device::Measurement, correla
     end
 
     nonZeroElement = 0 
+    nonZeroPrecision = 0
     for i = 1:pmu.number
         if pmu.layout.bus[i]
             nonZeroElement += 2
         else
             nonZeroElement += 8 
         end
+
+        if pmu.layout.correlated[i]
+            nonZeroPrecision += 4
+        else
+            nonZeroPrecision += 2
+        end
     end
 
-    row = fill(0, nonZeroElement) 
-    col = similar(row)
+    rowCoeff = fill(0, nonZeroElement) 
+    colCoeff = similar(rowCoeff)
     coeff = fill(0.0, nonZeroElement)
     mean = fill(0.0, 2 * pmu.number)
 
-    if correlated
-        temp = sparse([1.0 1.0; 1.0 1.0])
-        precision = blockdiag([temp for _ in 1:pmu.number]...)
-    else
-        precision = spdiagm(0 => mean)
-    end
+    rowPrec = fill(0, nonZeroPrecision) 
+    colPrec = similar(rowPrec)
+    valPrec = fill(0.0, nonZeroPrecision)
 
     count = 1
     rowindex = 1
+    cntPrec = 1
     for (i, k) in enumerate(pmu.layout.index)
         cosAngle = cos(pmu.angle.mean[i])
         sinAngle = sin(pmu.angle.mean[i])
@@ -154,19 +134,26 @@ function pmuStateEstimationWLS(system::PowerSystem, device::Measurement, correla
         varianceRe = pmu.magnitude.variance[i] * cosAngle^2 + pmu.angle.variance[i] * (pmu.magnitude.mean[i] * sinAngle)^2
         varianceIm = pmu.magnitude.variance[i] * sinAngle^2 + pmu.angle.variance[i] * (pmu.magnitude.mean[i] * cosAngle)^2
 
-        if correlated
+        if pmu.layout.correlated[i]
             covariance = sinAngle * cosAngle * (pmu.magnitude.variance[i] - pmu.angle.variance[i] * pmu.magnitude.mean[i]^2)
-            invCovarianceBlock!(precision, varianceRe, varianceIm, covariance, rowindex)
+            rowPrec, colPrec, valPrec, cntPrec = invCovarianceBlock(rowPrec, colPrec, valPrec, cntPrec, varianceRe, varianceIm, covariance, rowindex)
         else
-            precision.nzval[rowindex] = 1 / varianceRe
-            precision.nzval[rowindex + 1] = 1 / varianceIm
+            rowPrec[cntPrec] = rowindex
+            colPrec[cntPrec] = rowindex
+            valPrec[cntPrec] = 1 / varianceRe
+
+            rowPrec[cntPrec + 1] = rowindex + 1
+            colPrec[cntPrec + 1] = rowindex + 1
+            valPrec[cntPrec + 1] = 1 / varianceIm
+
+            cntPrec += 2
         end
 
         if pmu.layout.bus[i]
-            row[count] = rowindex
-            col[count] = pmu.layout.index[i]
-            row[count + 1] = rowindex + 1
-            col[count + 1] = pmu.layout.index[i] + bus.number
+            rowCoeff[count] = rowindex
+            colCoeff[count] = pmu.layout.index[i]
+            rowCoeff[count + 1] = rowindex + 1
+            colCoeff[count + 1] = pmu.layout.index[i] + bus.number
             if pmu.magnitude.status[i] == 1 && pmu.angle.status[i] == 1
                 coeff[count] = 1.0
                 coeff[count + 1] = 1.0
@@ -180,25 +167,25 @@ function pmuStateEstimationWLS(system::PowerSystem, device::Measurement, correla
             count += 2
             rowindex += 2
         else
-            row[count] = rowindex 
-            col[count] = branch.layout.from[k]
-            row[count + 1] = rowindex + 1 
-            col[count + 1] = branch.layout.from[k] + bus.number
+            rowCoeff[count] = rowindex 
+            colCoeff[count] = branch.layout.from[k]
+            rowCoeff[count + 1] = rowindex + 1 
+            colCoeff[count + 1] = branch.layout.from[k] + bus.number
 
-            row[count + 2] = rowindex;
-            col[count + 2] = branch.layout.to[k]
-            row[count + 3] = rowindex + 1
-            col[count + 3] = branch.layout.to[k] + bus.number
+            rowCoeff[count + 2] = rowindex;
+            colCoeff[count + 2] = branch.layout.to[k]
+            rowCoeff[count + 3] = rowindex + 1
+            colCoeff[count + 3] = branch.layout.to[k] + bus.number
 
-            row[count + 4] = rowindex
-            col[count + 4] = branch.layout.from[k] + bus.number
-            row[count + 5] = rowindex + 1
-            col[count + 5] = branch.layout.from[k]
+            rowCoeff[count + 4] = rowindex
+            colCoeff[count + 4] = branch.layout.from[k] + bus.number
+            rowCoeff[count + 5] = rowindex + 1
+            colCoeff[count + 5] = branch.layout.from[k]
 
-            row[count + 6] = rowindex
-            col[count + 6] = branch.layout.to[k] + bus.number
-            row[count + 7] = rowindex + 1
-            col[count + 7] = branch.layout.to[k]
+            rowCoeff[count + 6] = rowindex
+            colCoeff[count + 6] = branch.layout.to[k] + bus.number
+            rowCoeff[count + 7] = rowindex + 1
+            colCoeff[count + 7] = branch.layout.to[k]
 
             if pmu.magnitude.status[i] == 1 && pmu.angle.status[i] == 1 
                 gij = real(ac.admittance[k])
@@ -246,7 +233,9 @@ function pmuStateEstimationWLS(system::PowerSystem, device::Measurement, correla
         end
     end
 
-    coefficient = sparse(row, col, coeff, 2 * pmu.number, 2 * bus.number)
+    coefficient = sparse(rowCoeff, colCoeff, coeff, 2 * pmu.number, 2 * bus.number)
+    precision = sparse(rowPrec, colPrec, valPrec, 2 * pmu.number, 2 * pmu.number)
+ 
     badData = BadData(true, 0.0, "", 0)
     power = PowerSE(Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), 
         Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]))
@@ -470,8 +459,13 @@ function solve!(system::PowerSystem, analysis::PMUStateEstimationWLS{LinearOrtho
     se = analysis.method
     bus = system.bus
 
-    for i = 1:se.number
-        se.precision.nzval[i] = (se.precision.nzval[i])^(1/2)
+    for i = 1:2:(se.number)
+        se.precision[i, i] = se.precision[i, i]^(1/2)
+        se.precision[i + 1, i + 1] = se.precision[i + 1, i + 1]^(1/2)
+
+        if se.precision[i + 1, i] != 0.0 || se.precision[i, i + 1] != 0.0
+            throw(ErrorException("The precision matrix is non-diagonal, therefore preventing the use of the orthogonal method.")) 
+        end
     end
 
     coefficientScale = se.precision * se.coefficient
@@ -490,7 +484,7 @@ function solve!(system::PowerSystem, analysis::PMUStateEstimationWLS{LinearOrtho
     end
 
     for i = 1:se.number
-        se.precision.nzval[i] = se.precision.nzval[i]^2
+        se.precision[i, i] = se.precision[i, i]^2
     end
 end
 
@@ -594,6 +588,7 @@ function pmuPlacement(system::PowerSystem, (@nospecialize optimizerFactory);
     bus = system.bus
     branch = system.branch
     ac = system.model.ac
+    filledElements = nnz(ac.nodalMatrix)
 
     if isempty(ac.nodalMatrix)
         acModel!(system)
@@ -605,6 +600,11 @@ function pmuPlacement(system::PowerSystem, (@nospecialize optimizerFactory);
     placement = @variable(jump, 0 <= placement[i = 1:bus.number] <= 1, Int)
 
     dropzeros!(ac.nodalMatrix)
+    
+    if filledElements != nnz(ac.nodalMatrix)
+        ac.pattern += 1
+    end
+
     for i = 1:bus.number
         angleJacobian = @expression(jump, AffExpr())
         for j in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
@@ -636,13 +636,28 @@ function pmuPlacement(system::PowerSystem, (@nospecialize optimizerFactory);
     return placementPmu
 end
 
-function invCovarianceBlock!(precision::SparseMatrixCSC{Float64,Int64}, varianceRe::Float64, varianceIm::Float64, covariance::Float64, index::Int64)
+function invCovarianceBlock(rowPrec::Array{Int64,1}, colPrec::Array{Int64,1}, valPrec::Array{Float64,1}, cntPrec::Int64, varianceRe::Float64, varianceIm::Float64, covariance::Float64, rowindex::Int64)
     L1inv = 1 / sqrt(varianceRe)
     L2 = covariance * L1inv
     L3inv2 = 1 / (varianceIm - L2^2)
 
-    precision[index, index + 1] = (- L2 * L1inv) * L3inv2
-    precision[index + 1, index] = precision[index, index + 1]
-    precision[index, index] = (L1inv - L2 * precision[index, index + 1]) * L1inv
-    precision[index + 1, index + 1] = L3inv2
+    rowPrec[cntPrec] = rowindex
+    colPrec[cntPrec] = rowindex + 1
+    valPrec[cntPrec] = (- L2 * L1inv) * L3inv2
+
+    rowPrec[cntPrec + 1] = rowindex + 1
+    colPrec[cntPrec + 1] = rowindex
+    valPrec[cntPrec + 1] = valPrec[cntPrec]
+
+    rowPrec[cntPrec + 2] = rowindex
+    colPrec[cntPrec + 2] = rowindex
+    valPrec[cntPrec + 2] = (L1inv - L2 * valPrec[cntPrec]) * L1inv
+
+    rowPrec[cntPrec + 3] = rowindex + 1
+    colPrec[cntPrec + 3] = rowindex + 1
+    valPrec[cntPrec + 3] = L3inv2   
+
+    cntPrec += 4
+
+    return rowPrec, colPrec, valPrec, cntPrec 
 end

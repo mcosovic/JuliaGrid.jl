@@ -286,7 +286,7 @@ JuliaGrid opts not to retain the covariance matrix ``\bm \Sigma`` but rather sto
 
 The precision matrix maintains a diagonal form, implying that correlations between the real and imaginary parts of the phasor measurements are disregarded. To account for these correlations, users can execute:
 ```@example PMUSETutorial
-analysis = pmuWlsStateEstimation(system, device; correlated = true)
+analysis = pmuWlsStateEstimation(system, device)
 nothing # hide
 ```
 

@@ -163,7 +163,7 @@ analysis.method.precision
 
 While this approach is suitable for many scenarios, linear PMU state estimation relies on transforming from polar to rectangular coordinate systems. Consequently, measurement errors from a single PMU become correlated due to this transformation. This correlation results in the covariance matrix, and hence the precision matrix, no longer maintaining a diagonal form but instead becoming a block diagonal matrix. To account for this, the user can execute the WLS state estimation model as follows:
 ```@example PMUOptimalPlacement
-analysis = pmuWlsStateEstimation(system, device; correlated = true)
+analysis = pmuWlsStateEstimation(system, device)
 nothing # hide
 ```
 

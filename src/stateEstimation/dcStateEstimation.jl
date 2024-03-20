@@ -64,7 +64,6 @@ function dcWlsStateEstimation(system::PowerSystem, device::Measurement, factoriz
             device.wattmeter.number + device.pmu.number,
             -1,
             true,
-            false
         ),
         badData
     )
@@ -85,7 +84,6 @@ function dcWlsStateEstimation(system::PowerSystem, device::Measurement, method::
             device.wattmeter.number + device.pmu.number,
             -1,
             true,
-            false
         ),
         badData
     )

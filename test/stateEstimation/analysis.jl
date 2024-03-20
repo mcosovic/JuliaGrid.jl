@@ -66,6 +66,8 @@ system30 = powerSystem(string(pathData, "case30test.m"))
 #     @test analysisQR.voltage.angle ≈ analysis.voltage.angle
 # end
 
+system14 = powerSystem(string(pathData, "case14test.m"))
+system30 = powerSystem(string(pathData, "case30test.m"))
 
 @testset "PMU State Estimation" begin
     @default(template)
@@ -123,18 +125,6 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     @test analysisLAV.voltage.magnitude ≈ analysis.voltage.magnitude
     @test analysisLAV.voltage.angle ≈ analysis.voltage.angle 
     
-    ####### LU Factorization: Correlated Errors #######
-    analysisLU = pmuWlsStateEstimation(system14, device, LU; correlated = true)
-    solve!(system14, analysisLU)
-    @test analysisLU.voltage.magnitude ≈ analysis.voltage.magnitude
-    @test analysisLU.voltage.angle ≈ analysis.voltage.angle
-
-    ####### QR Factorization: Correlated Errors #######
-    analysisQR = pmuWlsStateEstimation(system14, device, QR; correlated = true)
-    solve!(system14, analysisQR)
-    @test analysisQR.voltage.magnitude ≈ analysis.voltage.magnitude
-    @test analysisQR.voltage.angle ≈ analysis.voltage.angle
-
     ####### Compare Powers #######
     power!(system14, analysisQR)
     @test analysisQR.power.injection.active ≈ analysis.power.injection.active
@@ -200,10 +190,10 @@ system30 = powerSystem(string(pathData, "case30test.m"))
 
     device = measurement()
     for (key, value) in system30.bus.label
-        addPmu!(system30, device; bus = key, magnitude = analysis.voltage.magnitude[value], angle = analysis.voltage.angle[value], varianceAngle = 1e-6, varianceMagnitude = varianceAngle = 1e-5)
+        addPmu!(system30, device; bus = key, magnitude = analysis.voltage.magnitude[value], angle = analysis.voltage.angle[value], varianceAngle = 1e-6, varianceMagnitude = varianceAngle = 1e-5, correlated = true)
     end
     for (key, value) in system30.branch.label
-        addPmu!(system30, device; from = key, magnitude = analysis.current.from.magnitude[value], angle = analysis.current.from.angle[value], varianceAngle = 1e-7, varianceMagnitude = varianceAngle = 1e-6)
+        addPmu!(system30, device; from = key, magnitude = analysis.current.from.magnitude[value], angle = analysis.current.from.angle[value], varianceAngle = 1e-7, varianceMagnitude = varianceAngle = 1e-6, correlated = true)
         addPmu!(system30, device; to = key, magnitude = analysis.current.to.magnitude[value], angle = analysis.current.to.angle[value], varianceAngle = 1e-4, varianceMagnitude = varianceAngle = 1e-5) 
     end
 
@@ -213,30 +203,17 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     @test analysisLU.voltage.magnitude ≈ analysis.voltage.magnitude atol = 1e-2
     @test analysisLU.voltage.angle ≈ analysis.voltage.angle atol = 1e-2
         
-    ####### Orthogonal Method #######
-    analysisOrt = pmuWlsStateEstimation(system30, device, Orthogonal)
-    solve!(system30, analysisOrt)
-    @test analysisOrt.voltage.magnitude ≈ analysis.voltage.magnitude atol = 1e-2
-    @test analysisOrt.voltage.angle ≈ analysis.voltage.angle atol = 1e-2
-
     ####### LAV #######
     analysisLAV = pmuLavStateEstimation(system30, device, Ipopt.Optimizer)
     JuMP.set_silent(analysisLAV.method.jump)
     solve!(system30, analysisLAV)
     @test analysisLAV.voltage.magnitude ≈ analysis.voltage.magnitude atol = 1e-1
     @test analysisLAV.voltage.angle ≈ analysis.voltage.angle atol = 1e-1
-
-    ####### LU Factorization: Correlated Errors #######
-    analysisLU = pmuWlsStateEstimation(system30, device, LU; correlated = true)
-    solve!(system30, analysisLU)
-    @test analysisLU.voltage.magnitude ≈ analysis.voltage.magnitude atol = 1e-2
-    @test analysisLU.voltage.angle ≈ analysis.voltage.angle atol = 1e-2
 end
 
 
 system14 = powerSystem(string(pathData, "case14test.m"))
 system30 = powerSystem(string(pathData, "case30test.m"))
-
 @testset "DC State Estimation" begin
     @default(template)
     @default(unit)

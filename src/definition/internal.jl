@@ -3,6 +3,7 @@ const N = Union{Float64, Int64}
 const T = Union{Float64, Int64, Int8, Missing}
 const L = Union{String, Int64, Missing}
 const S = Union{Int64, Missing}
+const B = Union{Bool, Missing}
 const LUQR = Union{SuiteSparse.UMFPACK.UmfpackLU{Float64, Int64}, SuiteSparse.SPQR.QRSparse{Float64, Int64}}
 const LULDLt = Union{SuiteSparse.CHOLMOD.Factor{Float64}, SuiteSparse.UMFPACK.UmfpackLU{Float64, Int64}}
 const LULDLtQR = Union{SuiteSparse.CHOLMOD.Factor{Float64}, LUQR}
@@ -167,6 +168,8 @@ Base.@kwdef mutable struct PmuTemplate
     statusMagnitudeTo::Int8 = Int8(1)
     statusAngleTo::Int8 = Int8(1)
     label::String = "?"
+    correlated::Bool = false
+    polar::Bool = true
     noise::Bool = true
 end
 

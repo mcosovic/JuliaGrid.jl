@@ -832,7 +832,7 @@ cost!(system; label = "Generator 1", active = 2, polynomial = [0.11; 5.0; 150.0]
 ```
 """
 function cost!(system::PowerSystem; label::L,
-    active::T = missing,  reactive::T = missing,
+    active::T = missing, reactive::T = missing,
     polynomial::Array{Float64,1} = Array{Float64}(undef, 0),
     piecewise::Array{Float64,2} = Array{Float64}(undef, 0, 0))
 

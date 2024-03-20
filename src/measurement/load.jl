@@ -66,17 +66,18 @@ function measurement()
     ai8 = Array{Int8,1}(undef, 0)
     ab = Array{Bool,1}(undef, 0)
 
-    busLayout = BusLayoutMeter(copy(ai), 0)
-    branchLayout = BranchLayoutMeter(copy(ai), copy(ai), copy(ab), 0)
-    layout = MultiLayoutMeter(copy(ai), copy(ab), copy(ab), copy(ab), 0)
+    voltLayout = VoltmeterLayout(copy(ai), 0)
+    ammLayout = AmmeterLayout(copy(ai), copy(ai), copy(ab), 0)
+    powerLayout = PowermeterLayout(copy(ai), copy(ab), copy(ab), copy(ab), 0)
+    pmuLayout = PmuLayout(copy(ai), copy(ab), copy(ab), copy(ab), copy(ab), copy(ab), 0)
     gauss = GaussMeter(copy(af), copy(af), copy(ai8))
 
     return Measurement(
-        Voltmeter(copy(label), deepcopy(gauss), busLayout, 0),
-        Ammeter(copy(label), deepcopy(gauss), branchLayout, 0),
-        Wattmeter(copy(label), deepcopy(gauss), deepcopy(layout), 0),
-        Varmeter(copy(label), deepcopy(gauss), deepcopy(layout), 0),
-        PMU(copy(label), deepcopy(gauss), deepcopy(gauss), deepcopy(layout), 0)
+        Voltmeter(copy(label), deepcopy(gauss), voltLayout, 0),
+        Ammeter(copy(label), deepcopy(gauss), ammLayout, 0),
+        Wattmeter(copy(label), deepcopy(gauss), deepcopy(powerLayout), 0),
+        Varmeter(copy(label), deepcopy(gauss), deepcopy(powerLayout), 0),
+        PMU(copy(label), deepcopy(gauss), deepcopy(gauss), deepcopy(pmuLayout), 0)
     )
 end
 
@@ -169,5 +170,7 @@ function loadPmu(device::Measurement, hdf5::HDF5.File)
         pmu.layout.bus = readHDF5(layout, "bus", pmu.number)
         pmu.layout.from = readHDF5(layout, "from", pmu.number)
         pmu.layout.to = readHDF5(layout, "to", pmu.number)
+        pmu.layout.correlated = readHDF5(layout, "correlated", pmu.number)
+        pmu.layout.polar = readHDF5(layout, "polar", pmu.number)
     end
 end

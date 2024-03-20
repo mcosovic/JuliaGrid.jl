@@ -21,8 +21,8 @@
     
     @pmu(label = "!", statusAngleTo = 0, varianceMagnitudeTo = 1e-3)
     addPmu!(system, device; bus = 9, magnitude = 1.6, angle = -0.1, noise = false, statusAngle = 1)
-    addPmu!(system, device; from = 14, magnitude = 1.2, angle = -0.2, varianceMagnitude = 1e-4)
-    addPmu!(system, device; to = 19, magnitude = 0.3, angle = 0.1, statusMagnitude = 0)
+    addPmu!(system, device; from = 14, magnitude = 1.2, angle = -0.2, varianceMagnitude = 1e-4, polar = false)
+    addPmu!(system, device; to = 19, magnitude = 0.3, angle = 0.1, statusMagnitude = 0, correlated = true)
     
     saveMeasurement(device; path = string(pathData, "measurement14.h5"))
     deviceLoad = measurement(string(pathData, "measurement14.h5"))

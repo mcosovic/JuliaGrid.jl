@@ -1,6 +1,7 @@
 """
     addPmu!(system::PowerSystem, device::Measurement; label, bus, from, to, magnitude,
-        varianceMagnitude, statusMagnitude, angle, varianceAngle, statusAngle, noise)
+        varianceMagnitude, statusMagnitude, angle, varianceAngle, statusAngle, 
+        noise, correlated, polar)
 
 The function adds a new PMU to the `Measurement` composite type within a given `PowerSystem`
 type. The PMU can be added to an already defined bus or branch. When defining the PMU, it
@@ -26,17 +27,23 @@ The PMU is defined with the following keywords:
 * `noise`: specifies how to generate the measurement means:
   * `noise = true`: adds white Gaussian noises with variances to the `magnitude` and `angle`;
   * `noise = false`: uses the `magnitude` and `angle` values only.
+* `correlated`: chooses the correlation among errors of the PMU for algorithms utilizing rectangular coordinates:
+  * `correlated = true`: considers correlated errors;
+  * `correlated = false`: disregards correlations between errors;
+* `polar`: chooses the coordinate system for including phasor measurements in AC state estimation:
+  * `polar = true`: adopts the polar coordinate system;
+  * `polar = false`: adopts the rectangular coordinate system.
 
 # Updates
 The function updates the `pmu` field of the `Measurement` composite type.
 
 # Default Settings
 Default settings for certain keywords are as follows: `varianceMagnitude = 1e-5`,
-`statusMagnitude = 1`, `varianceAngle = 1e-5`, `statusAngle = 1`, and `noise = true`,
-which apply to PMUs located at the bus, as well as at both the "from" and "to" bus ends.
-Users can fine-tune these settings by explicitly specifying the variance and status for
-PMUs positioned at the buses, "from" bus ends, or "to" bus ends of branches using the
-[`@pmu`](@ref @pmu) macro.
+`statusMagnitude = 1`, `varianceAngle = 1e-5`, `statusAngle = 1`, `noise = true`,
+`correlated = false`, and `polar = true`, which apply to PMUs located at the bus, as well 
+as at both the "from" and "to" bus ends. Users can fine-tune these settings by explicitly 
+specifying the variance and status for PMUs positioned at the buses, "from" bus ends, or 
+"to" bus ends of branches using the [`@pmu`](@ref @pmu) macro.
 
 # Units
 The default units for the `magnitude`, `varianceMagnitude`, and `angle`, `varianceAngle`
@@ -77,7 +84,8 @@ addPmu!(system, device; label = "PMU 2", from = "Branch 1", magnitude = 481.1, a
 function addPmu!(system::PowerSystem, device::Measurement;
     label::L = missing, bus::L = missing, from::L = missing, to::L = missing,
     magnitude::T, angle::T, varianceMagnitude::T = missing, varianceAngle::T = missing,
-    statusMagnitude::T = missing, statusAngle::T = missing, noise::Bool = template.pmu.noise)
+    statusMagnitude::T = missing, statusAngle::T = missing, noise::Bool = template.pmu.noise,
+    correlated::Bool = template.pmu.correlated, polar::Bool = template.pmu.polar)
 
     pmu = device.pmu
     default = template.pmu
@@ -136,6 +144,8 @@ function addPmu!(system::PowerSystem, device::Measurement;
             baseInv = baseCurrentInverse(basePowerInv, baseVoltage)
         end
         push!(pmu.layout.index, index)
+        push!(pmu.layout.correlated, correlated)
+        push!(pmu.layout.polar, polar)
 
         setMeter(pmu.magnitude, magnitude, varianceMagnitude, statusMagnitude, noise,
             defaultVarianceMagnitude, defaultMagnitudeStatus, prefixMagnitude, baseInv)
@@ -149,7 +159,8 @@ end
     addPmu!(system::PowerSystem, device::Measurement, analysis::AC;
         varianceMagnitudeBus, statusMagnitudeBus, varianceAngleBus, statusAngleBus,
         varianceMagnitudeFrom, statusMagnitudeFrom, varianceAngleFrom, statusAngleFrom,
-        varianceMagnitudeTo, statusMagnitudeTo, varianceAngleTo, statusAngleTo)
+        varianceMagnitudeTo, statusMagnitudeTo, varianceAngleTo, statusAngleTo,
+        correlated, polar)
 
 The function incorporates PMUs into the `Measurement` composite type for every bus and
 branch within the `PowerSystem` type. These measurements are derived from the exact bus
@@ -182,14 +193,21 @@ Users have the option to configure the following keywords:
 * `varianceAngleTo` (rad or deg): variance of PMU angle measurements at the "to" bus ends;
 * `statusAngleTo`: the operating status of PMU angle measurements at the "to" bus ends:
   * `statusAngleTo = 1`: in-service;
-  * `statusAngleTo = 0`: out-of-service.
+  * `statusAngleTo = 0`: out-of-service;
+* `correlated`: chooses the correlation among errors of the PMU for algorithms utilizing rectangular coordinates:
+  * `correlated = true`: considers correlated errors;
+  * `correlated = false`: disregards correlations between errors;
+* `polar`: chooses the coordinate system for including phasor measurements in AC state estimation:
+  * `polar = true`: adopts the polar coordinate system;
+  * `polar = false`: adopts the rectangular coordinate system.
 
 # Updates
 The function updates the `pmu` field of the `Measurement` composite type.
 
 # Default Settings
 Default settings for variance keywords are established at `1e-5`, with all statuses set to
-`1`. Users can change these default settings using the [`@pmu`](@ref @pmu) macro.
+`1`, and `rectangular = false`. Users can change these default settings using the 
+[`@pmu`](@ref @pmu) macro.
 
 # Units
 The default units for the variance keywords are in per-units (pu) and radians (rad). However,
@@ -245,7 +263,8 @@ function addPmu!(system::PowerSystem, device::Measurement, analysis::AC;
     varianceMagnitudeFrom::T = missing, varianceAngleFrom::T = missing,
     statusMagnitudeFrom::T = missing, statusAngleFrom::T = missing,
     varianceMagnitudeTo::T = missing, varianceAngleTo::T = missing,
-    statusMagnitudeTo::T = missing, statusAngleTo::T = missing)
+    statusMagnitudeTo::T = missing, statusAngleTo::T = missing,
+    correlated::Bool = template.pmu.correlated, polar::Bool = template.pmu.polar)
 
     if isempty(analysis.voltage.magnitude)
         throw(ErrorException("The voltages cannot be found."))
@@ -279,6 +298,8 @@ function addPmu!(system::PowerSystem, device::Measurement, analysis::AC;
     pmu.layout.bus = fill(false, pmuNumber)
     pmu.layout.from = fill(false, pmuNumber)
     pmu.layout.to = fill(false, pmuNumber)
+    pmu.layout.correlated = fill(correlated, pmuNumber)
+    pmu.layout.polar = fill(polar, pmuNumber)
 
     pmu.magnitude.mean = fill(0.0, pmuNumber)
     pmu.magnitude.variance = similar(pmu.magnitude.mean)
@@ -388,7 +409,7 @@ updatePmu!(system, device; label = "PMU 1", magnitude = 1.05, noise = false)
 function updatePmu!(system::PowerSystem, device::Measurement; label::L,
     magnitude::T = missing, angle::T = missing, varianceMagnitude::T = missing,
     varianceAngle::T = missing, statusMagnitude::T = missing, statusAngle::T = missing,
-    noise::Bool = template.pmu.noise)
+    noise::Bool = template.pmu.noise, correlated::B = missing, polar::B = missing)
 
     pmu = device.pmu
 
@@ -411,6 +432,13 @@ function updatePmu!(system::PowerSystem, device::Measurement; label::L,
         baseInv = baseCurrentInverse(basePowerInv, baseVoltage)
     end
 
+    if isset(correlated)
+        pmu.layout.correlated[index] = correlated
+    end
+    if isset(polar)
+        pmu.layout.polar[index] = polar
+    end
+
     updateMeter(pmu.magnitude, index, magnitude, varianceMagnitude, statusMagnitude, noise,
         prefixMagnitude, baseInv)
 
@@ -421,7 +449,7 @@ end
 function updatePmu!(system::PowerSystem, device::Measurement, analysis::DCStateEstimationWLS; 
     label::L, magnitude::T = missing, angle::T = missing, varianceMagnitude::T = missing,
     varianceAngle::T = missing, statusMagnitude::T = missing, statusAngle::T = missing,
-    noise::Bool = template.pmu.noise)
+    noise::Bool = template.pmu.noise, correlated::B = missing, polar::B = missing)
 
     pmu = device.pmu
     method = analysis.method
@@ -431,7 +459,7 @@ function updatePmu!(system::PowerSystem, device::Measurement, analysis::DCStateE
     oldVariance = pmu.angle.variance[indexPmu]
 
     updatePmu!(system, device; label, magnitude, angle, varianceMagnitude, varianceAngle, 
-    statusMagnitude, statusAngle, noise)
+    statusMagnitude, statusAngle, noise, correlated, polar)
 
     if pmu.layout.bus[indexPmu] 
         newStatus = pmu.angle.status[indexPmu]
@@ -457,13 +485,13 @@ end
 function updatePmu!(system::PowerSystem, device::Measurement, analysis::DCStateEstimationLAV; 
     label::L, magnitude::T = missing, angle::T = missing, varianceMagnitude::T = missing,
     varianceAngle::T = missing, statusMagnitude::T = missing, statusAngle::T = missing,
-    noise::Bool = template.pmu.noise)
+    noise::Bool = template.pmu.noise, correlated::B = missing, polar::B = missing)
 
     pmu = device.pmu
     method = analysis.method
 
     updatePmu!(system, device; label, magnitude, angle, varianceMagnitude, varianceAngle, 
-    statusMagnitude, statusAngle, noise)
+    statusMagnitude, statusAngle, noise, correlated, polar)
 
     indexPmu = pmu.label[getLabel(pmu, label, "PMU")]
     index = indexPmu + device.wattmeter.number
@@ -487,7 +515,7 @@ end
 function updatePmu!(system::PowerSystem, device::Measurement, analysis::PMUStateEstimationWLS; 
     label::L, magnitude::T = missing, angle::T = missing, varianceMagnitude::T = missing,
     varianceAngle::T = missing, statusMagnitude::T = missing, statusAngle::T = missing,
-    noise::Bool = template.pmu.noise)
+    noise::Bool = template.pmu.noise, correlated::B = missing, polar::B = missing)
 
     bus = system.bus
     branch = system.branch
@@ -496,9 +524,10 @@ function updatePmu!(system::PowerSystem, device::Measurement, analysis::PMUState
     method = analysis.method
     index = pmu.label[getLabel(pmu, label, "PMU")]  
     statusOld = pmu.magnitude.status[index] & pmu.angle.status[index]
+    correlatedOld = pmu.layout.correlated[index]
 
     updatePmu!(system, device; label, magnitude, angle, varianceMagnitude, varianceAngle, 
-    statusMagnitude, statusAngle, noise)
+    statusMagnitude, statusAngle, noise, correlated, polar)
 
     statusNew = pmu.magnitude.status[index] & pmu.angle.status[index]
     mean = isset(magnitude) || isset(angle)
@@ -507,16 +536,25 @@ function updatePmu!(system::PowerSystem, device::Measurement, analysis::PMUState
     sinAngle = sin(pmu.angle.mean[index])
     rowIndexRe = 2 * index - 1
 
-    if mean || variance
+    if mean || variance || (pmu.layout.correlated[index] != correlatedOld)
         varianceRe = pmu.magnitude.variance[index] * cosAngle^2 + pmu.angle.variance[index] * (pmu.magnitude.mean[index] * sinAngle)^2
         varianceIm = pmu.magnitude.variance[index] * sinAngle^2 + pmu.angle.variance[index] * (pmu.magnitude.mean[index] * cosAngle)^2
+        if pmu.layout.correlated[index]
+            L1inv = 1 / sqrt(varianceRe)
+            L2 = (sinAngle * cosAngle * (pmu.magnitude.variance[index] - pmu.angle.variance[index] * pmu.magnitude.mean[index]^2)) * L1inv
+            L3inv2 = 1 / (varianceIm - L2^2)
 
-        if method.correlated
-            covariance = sinAngle * cosAngle * (pmu.magnitude.variance[index] - pmu.angle.variance[index] * pmu.magnitude.mean[index]^2)
-            invCovarianceBlock!(method.precision, varianceRe, varianceIm, covariance, rowIndexRe)
+            method.precision[rowIndexRe, rowIndexRe + 1] = (- L2 * L1inv) * L3inv2
+            method.precision[rowIndexRe + 1, rowIndexRe] = method.precision[rowIndexRe, rowIndexRe + 1]
+            method.precision[rowIndexRe, rowIndexRe] = (L1inv - L2 * method.precision[rowIndexRe, rowIndexRe + 1]) * L1inv
+            method.precision[rowIndexRe + 1, rowIndexRe + 1] = L3inv2
         else
-            method.precision.nzval[rowIndexRe] = 1 / varianceRe
-            method.precision.nzval[rowIndexRe + 1] = 1 / varianceIm
+            method.precision[rowIndexRe, rowIndexRe] = 1 / varianceRe
+            method.precision[rowIndexRe + 1, rowIndexRe + 1] = 1 / varianceIm
+            if correlatedOld
+                method.precision[rowIndexRe, rowIndexRe + 1] = 0.0
+                method.precision[rowIndexRe + 1, rowIndexRe] = 0.0
+            end
         end   
     end
 
@@ -592,7 +630,7 @@ end
 function updatePmu!(system::PowerSystem, device::Measurement, analysis::PMUStateEstimationLAV; 
     label::L, magnitude::T = missing, angle::T = missing, varianceMagnitude::T = missing,
     varianceAngle::T = missing, statusMagnitude::T = missing, statusAngle::T = missing,
-    noise::Bool = template.pmu.noise)
+    noise::Bool = template.pmu.noise, correlated::B = missing, polar::B = missing)
 
     bus = system.bus
     branch = system.branch
@@ -603,7 +641,7 @@ function updatePmu!(system::PowerSystem, device::Measurement, analysis::PMUState
     statusOld = pmu.magnitude.status[index] & pmu.angle.status[index]
 
     updatePmu!(system, device; label, magnitude, angle, varianceMagnitude, varianceAngle, 
-    statusMagnitude, statusAngle, noise)
+    statusMagnitude, statusAngle, noise, correlated, polar)
 
     statusNew = pmu.magnitude.status[index] & pmu.angle.status[index]
     mean = isset(magnitude) || isset(angle)
@@ -677,7 +715,8 @@ end
 """
     @pmu(label, varianceMagnitudeBus, statusMagnitudeBus, varianceAngleBus, statusAngleBus,
         varianceMagnitudeFrom, statusMagnitudeFrom, varianceAngleFrom, statusAngleFrom,
-        varianceMagnitudeTo, statusMagnitudeTo, varianceAngleTo, statusAngleTo, noise)
+        varianceMagnitudeTo, statusMagnitudeTo, varianceAngleTo, statusAngleTo, noise,
+        correlated, olar)
 
 The macro generates a template for a PMU, which can be utilized to define a PMU using the
 [`addPmu!`](@ref addPmu!) function.
@@ -691,8 +730,9 @@ at both the "from" bus ends of the branches using the `varianceMagnitudeFrom`,
 `varianceAngleFrom`, `statusMagnitudeFrom`, and `statusAngleFrom` keywords. For PMUs
 located at the "to" bus ends of the branches, users can use the `varianceMagnitudeTo`,
 `varianceAngleTo`, `statusMagnitudeTo`, and `statusAngleTo` keywords. Additionally, users
-can configure the pattern for labels using the `label` keyword and specify the type of
-`noise`.
+can configure the pattern for labels using the `label` keyword. specify the type of
+`noise`, and indicate the `correlated` and `polar` system utilized for managing phasors 
+during state estimation.
 
 # Units
 By default, the units for variances are per-units (pu) and radians (rad). However, users
@@ -760,6 +800,10 @@ macro pmu(kwargs...)
                     setfield!(template.pmu, parameter, Int8(eval(kwarg.args[2])))
                 elseif parameter == :noise
                     setfield!(template.pmu, parameter, Bool(eval(kwarg.args[2])))
+                elseif parameter == :correlated
+                    setfield!(template.pmu, parameter, Bool(eval(kwarg.args[2])))
+                elseif parameter == :polar
+                    setfield!(template.pmu, parameter, Bool(eval(kwarg.args[2])))    
                 elseif parameter == :label
                     label = string(kwarg.args[2])
                     if contains(label, "?") || contains(label, "!")

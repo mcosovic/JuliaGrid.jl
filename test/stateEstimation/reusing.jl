@@ -27,7 +27,7 @@ system14 = powerSystem(string(pathData, "case14test.m"))
         if value == 1
             addPmu!(system14, device; bus = key, magnitude = rand(1)[], angle = analysis.voltage.angle[value], noise = false)
         elseif value == 4
-            addPmu!(system14, device; bus = key, magnitude = analysis.voltage.magnitude[value], angle = rand(1)[], statusMagnitude = 0, noise = false)
+            addPmu!(system14, device; bus = key, magnitude = analysis.voltage.magnitude[value], angle = rand(1)[], statusMagnitude = 0, noise = false, correlated = true)
         elseif value == 6
             addPmu!(system14, device; bus = key, magnitude = rand(1)[], angle = rand(1)[], statusAngle = 0, noise = false)
         else
@@ -41,7 +41,7 @@ system14 = powerSystem(string(pathData, "case14test.m"))
         elseif value == 9
             addPmu!(system14, device; from = key, magnitude = analysis.current.from.magnitude[value], angle = analysis.current.from.angle[value], statusAngle = 0, statusMagnitude = 0, noise = false)
         elseif value == 12
-            addPmu!(system14, device; from = key, magnitude = analysis.current.from.magnitude[value], angle = rand(1)[], noise = false)
+            addPmu!(system14, device; from = key, magnitude = analysis.current.from.magnitude[value], angle = rand(1)[], noise = false, correlated = true)
         else
             addPmu!(system14, device; from = key, magnitude = analysis.current.from.magnitude[value], angle = analysis.current.from.angle[value], noise = false)
         end
@@ -89,7 +89,6 @@ system14 = powerSystem(string(pathData, "case14test.m"))
     @test analysisLAVUpdate.voltage.magnitude ≈ analysis.voltage.magnitude
     @test analysisLAVUpdate.voltage.angle ≈ analysis.voltage.angle
 
-
     ##### Update Devices and Original WLS Model #######
     updatePmu!(system14, deviceWLS, analysisWLS; label = 1, magnitude = analysis.voltage.magnitude[1], noise = false)
     updatePmu!(system14, deviceWLS, analysisWLS; label = 4, angle = analysis.voltage.angle[4], statusMagnitude = 1, noise = false)
@@ -124,6 +123,36 @@ system14 = powerSystem(string(pathData, "case14test.m"))
     solve!(system14, analysisLAV)
     @test analysisLAV.voltage.magnitude ≈ analysis.voltage.magnitude
     @test analysisLAV.voltage.angle ≈ analysis.voltage.angle
+
+    ####### Check Precision Matrix #######
+    precision = copy(analysisWLS.method.precision)
+
+    updatePmu!(system14, deviceWLS, analysisWLS; label = 4, correlated = false)
+    @test analysisWLS.method.precision[5, 4] == 0.0
+    @test analysisWLS.method.precision[4, 5] == 0.0
+    
+    updatePmu!(system14, deviceWLS, analysisWLS; label = 4, correlated = true)
+    @test analysisWLS.method.precision[4, 4] ≈ precision[4, 4]
+    @test analysisWLS.method.precision[4, 5] ≈ precision[4, 5]
+    @test analysisWLS.method.precision[5, 5] ≈ precision[5, 5]
+    @test analysisWLS.method.precision[5, 4] ≈ precision[5, 4]
+    
+    updatePmu!(system14, deviceWLS, analysisWLS; label = "From 12", angle = -5.5, correlated = false)
+    @test analysisWLS.method.precision[23, 24] == 0.0
+    @test analysisWLS.method.precision[24, 23] == 0.0
+    
+    updatePmu!(system14, deviceWLS, analysisWLS; label = "From 12", angle = analysis.current.from.angle[12], noise = false, correlated = true)
+    @test analysisWLS.method.precision[23, 23] ≈ precision[23, 23]
+    @test analysisWLS.method.precision[23, 24] ≈ precision[23, 24]
+    @test analysisWLS.method.precision[24, 24] ≈ precision[24, 24]
+    @test analysisWLS.method.precision[24, 23] ≈ precision[24, 23]
+    
+    updatePmu!(system14, deviceWLS, analysisWLS; label = "From 11", correlated = true)
+    updatePmu!(system14, deviceWLS, analysisWLS; label = "From 11", correlated = false)
+    @test analysisWLS.method.precision[21, 21] ≈ precision[21, 21]
+    @test analysisWLS.method.precision[22, 22] ≈ precision[22, 22]
+    @test analysisWLS.method.precision[21, 22] == 0.0
+    @test analysisWLS.method.precision[22, 21] == 0.0
 end
 
 system14 = powerSystem(string(pathData, "case14test.m"))

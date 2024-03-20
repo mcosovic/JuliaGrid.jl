@@ -331,12 +331,15 @@ device = measurement()
 addPmu!(system, device; bus = "Bus 1", magnitude = 1.1, angle = 0.1, varianceMagnitude = 1e-3)
 addPmu!(system, device; from = "Branch 1", magnitude = 1.0, angle = -0.2, noise = false)
 addPmu!(system, device; to = "Branch 1", magnitude = 0.9, angle = 0.0, varianceAngle = 1e-3)
+addPmu!(system, device; to = "Bus 2", magnitude = 0.95, angle = 0.1, correlated = true)
+addPmu!(system, device; to = "Bus 2", magnitude = 0.9, angle = 0.0, polar = false)
+
 ```
 
 !!! note "Info"
     While the typical understanding of a PMU encompasses a device that measures the bus voltage phasor and all branch current phasors incident to the bus, we have chosen to deconstruct this concept to offer users increased flexibility. As a result, our approach yields PMUs that measure individual phasors, each described with magnitude and angle, along with corresponding variances, all presented in the polar coordinate system.
 
-In this context, one PMU has been added to measure the bus voltage phasor at `Bus 1`, as indicated by the use of the `bus` keyword. Additionally, two PMUs have been introduced to measure the branch current phasors on both sides of `Branch 1` using the `from` and `to` keywords.
+In this context, three PMUs has been added to measure the bus voltage phasors at `Bus 1` and `Bus 2`, as indicated by the use of the `bus` keyword. Additionally, two PMUs have been introduced to measure the branch current phasors on both sides of `Branch 1` using the `from` and `to` keywords.
 
 The measurement values for the first and third PMUs incorporate white Gaussian noise with `varianceMagnitude` and `varianceAngle` added to the `magnitude` and `angle` values, respectively. It is worth noting that for the first PMU, we do not specify the `varianceAngle`, and for the third PMU, we do not specify `varianceMagnitude`, relying on their default settings, which are both equal to `1e-5`. In the case of the second PMU, we assume that we already possess the measurement values defined by `magnitude` and `angle`. This is achieved by setting `noise = false`, and the variances for this PMU also rely on their default settings. As a result, we observe the following outcomes:
 ```@repl addPmu
@@ -346,6 +349,15 @@ The measurement values for the first and third PMUs incorporate white Gaussian n
 
 !!! note "Info"
     We recommend reading the documentation for the [`addPmu!`](@ref addPmu!) function, where we have provided a list of the keywords that can be used.
+    
+---
+
+##### Coordinate Systems and Correlated Measurement Errors
+By employing the keywords `correlated` and `polar`, we determine the manner in which phasor measurements are integrated into various state estimation algorithms. This approach provides users with the flexibility to choose the coordinate system and error correlation specifically for each phasor measurement.
+
+Initially, in linear state estimation using PMUs exclusively, all phasor measurements are depicted in the rectangular coordinate system. Subsequently, the `correlated` keyword can be utilized to consider or disregard correlations between measurement errors. For instance, setting `correlated = true` (as demonstrated for the fourth PMU) leads to the covariance matrix losing its diagonal form.
+
+Subsequently, in AC state estimation, phasor measurements can be included in either the polar or rectangular coordinate systems. Thus, by employing `polar = false` (as demonstrated for the fifth PMU), we opt to include the measurement in its rectangular form, while neglecting correlations between measurement errors. However, if `correlated = true` is also set, correlations are taken into account for the AC state estimation, resulting in the covariance matrix losing its diagonal form in this case as well. It is worth noting that representing measurements in rectangular coordinates resolves ill-conditioned problems arising from small current magnitudes in polar coordinates.
 
 ---
 
@@ -389,8 +401,7 @@ Similarly, for the [`addAmmeter!`](@ref addAmmeter!) function, the default varia
 
 In alignment with ammeters, the [`addWattmeter!`](@ref addWattmeter!) and [`addVarmeter!`](@ref addVarmeter!) functions feature default variances set at `variance = 1e-2` per-unit, and statuses are automatically assigned as `status = 1`, regardless of whether the wattmeter or varmeter is placed at the bus, the "from" bus end, or the "to" bus end. Users have the ability to customize these default values, making distinctions between the three positions of the measurement devices.
 
-
-For the [`addPmu!`](@ref addPmu!) function, variances for both magnitude and angle measurements are standardized to `varianceMagnitude = 1e-5` and `varianceAngle = 1e-5` in per-units. Likewise, operational statuses are uniformly set to `statusMagnitude = 1` and `statusAngle = 1`, regardless of whether the PMU is positioned on the bus, the "from" bus end, or the "to" bus end. Once more, users retain the option to tailor these default values to their specific needs, allowing for distinctions between these three locations of the measurement devices.
+For the [`addPmu!`](@ref addPmu!) function, variances for both magnitude and angle measurements are standardized to `varianceMagnitude = 1e-5` and `varianceAngle = 1e-5` in per-units. Likewise, operational statuses are uniformly set to `statusMagnitude = 1` and `statusAngle = 1`, and the coordinate system used for AC state estimation is consistently set to polar, regardless of whether the PMU is positioned on the bus, the "from" bus end, or the "to" bus end. Once more, users retain the option to tailor these default values to their specific needs, allowing for distinctions between these three locations of the measurement devices.
 
 Across all measurement devices, the method for generating measurement means is established as `noise = true`. This signifies that measurement means are created by introducing white Gaussian noises, with the specified `variance` value added to the intended measurement value, as defined by the `magnitude`, `angle`, `active`, or `reactive` keywords.
 
