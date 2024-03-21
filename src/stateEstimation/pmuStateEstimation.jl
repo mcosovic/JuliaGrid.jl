@@ -292,6 +292,10 @@ function pmuLavStateEstimation(system::PowerSystem, device::Measurement, (@nospe
     pmu = device.pmu
     measureNumber = 2 * pmu.number
 
+    if isempty(ac.nodalMatrix)
+        acModel!(system)
+    end
+
     jump = JuMP.Model(optimizerFactory; add_bridges = bridge)
     set_string_names_on_creation(jump, name)
 
@@ -568,7 +572,7 @@ for branch in keys(placement.from)
 end
 for branch in keys(placement.to)
     Iji, ψji = toCurrent(system, analysis; label = branch) 
-    addPmu!(system, device; to = label, magnitude = Iji, angle = ψji)
+    addPmu!(system, device; to = branch, magnitude = Iji, angle = ψji)
 end
 ```
 """

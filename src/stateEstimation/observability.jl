@@ -416,7 +416,7 @@ pseudo = measurement("pseudomeasurement14.h5")
 islands = islandTopological(system, device.wattmeter)
 restorationGram!(system, device, pseudo, islands)
 
-analysis = dcStateEstimation(system, device)
+analysis = dcWlsStateEstimation(system, device)
 solve!(system, analysis)
 ```
 """
