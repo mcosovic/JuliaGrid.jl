@@ -237,6 +237,10 @@ function dcLavStateEstimation(system::PowerSystem, device::Measurement, (@nospec
     pmu = device.pmu
     deviceNumber = wattmeter.number + pmu.number
 
+    if isempty(dc.nodalMatrix)
+        dcModel!(system)
+    end
+
     jump = JuMP.Model(optimizerFactory; add_bridges = bridge)
     set_string_names_on_creation(jump, name)
 

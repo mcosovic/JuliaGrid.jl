@@ -1,6 +1,6 @@
 # [State Estimation](@id StateEstimationAPI)
 
-For further information on this topic, please see the [AC State Estimation](@ref DCStateEstimationManual) or [DC State Estimation](@ref DCStateEstimationManual) sections of the Manual. Below, we have provided a list of functions that can be utilized for power flow analysis.
+For further information on this topic, please see the [PMU State Estimation](@ref PMUStateEstimationManual) or [DC State Estimation](@ref DCStateEstimationManual) sections of the Manual. Below, we have provided a list of functions that can be utilized for power flow analysis.
 
 ---
 
@@ -22,6 +22,13 @@ For further information on this topic, please see the [AC State Estimation](@ref
 
 ###### Bad Data Analysis
 * [`residualTest!`](@ref residualTest!)
+
+---
+
+To load state estimation API functionalities into the current scope, utilize the following command:
+```@example LoadApi
+using JuliaGrid
+```
 
 ---
 

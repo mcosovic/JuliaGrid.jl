@@ -41,6 +41,13 @@ For further information on this topic, please see the [Measurement Model](@ref M
 
 ---
 
+To load measurement model API functionalities into the current scope, utilize the following command:
+```@example LoadApi
+using JuliaGrid
+```
+
+---
+
 ## Measurement Data
 ```@docs
 measurement

@@ -18,6 +18,13 @@ For further information on this topic, please see the [Power System Model](@ref 
 
 ---
 
+To load power system model API functionalities into the current scope, utilize the following command:
+```@example LoadApi
+using JuliaGrid
+```
+
+---
+
 ## Base Units
 ```@docs
 @base

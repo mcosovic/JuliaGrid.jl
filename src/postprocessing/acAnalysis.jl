@@ -41,6 +41,8 @@ power!(system, analysis)
 
 Compute powers after obtaining the AC optimal power flow solution:
 ```jldoctest
+using Ipopt
+
 system = powerSystem("case14.h5")
 acModel!(system)
 
@@ -389,6 +391,8 @@ active, reactive = injectionPower(system, analysis; label = 1)
 
 Compute powers after obtaining the AC optimal power flow solution:
 ```jldoctest
+using Ipopt
+
 system = powerSystem("case14.h5")
 acModel!(system)
 
@@ -445,6 +449,8 @@ active, reactive = supplyPower(system, analysis; label = 1)
 
 Compute powers after obtaining the AC optimal power flow solution:
 ```jldoctest
+using Ipopt
+
 system = powerSystem("case14.h5")
 acModel!(system)
 
@@ -536,6 +542,8 @@ active, reactive = shuntPower(system, analysis; label = 9)
 
 Compute powers after obtaining the AC optimal power flow solution:
 ```jldoctest
+using Ipopt
+
 system = powerSystem("case14.h5")
 acModel!(system)
 
@@ -584,6 +592,8 @@ active, reactive = fromPower(system, analysis; label = 2)
 
 Compute powers after obtaining the AC optimal power flow solution:
 ```jldoctest
+using Ipopt
+
 system = powerSystem("case14.h5")
 acModel!(system)
 
@@ -645,6 +655,8 @@ active, reactive = toPower(system, analysis; label = 2)
 
 Compute powers after obtaining the AC optimal power flow solution:
 ```jldoctest
+using Ipopt
+
 system = powerSystem("case14.h5")
 acModel!(system)
 
@@ -706,6 +718,8 @@ active, reactive = chargingPower(system, analysis; label = 2)
 
 Compute powers after obtaining the AC optimal power flow solution:
 ```jldoctest
+using Ipopt
+
 system = powerSystem("case14.h5")
 acModel!(system)
 
@@ -765,6 +779,8 @@ active, reactive = seriesPower(system, analysis; label = 2)
 
 Compute powers after obtaining the AC optimal power flow solution:
 ```jldoctest
+using Ipopt
+
 system = powerSystem("case14.h5")
 acModel!(system)
 
@@ -828,6 +844,8 @@ active, reactive = generatorPower(system, analysis; label = 1)
 
 Compute powers after obtaining the AC optimal power flow solution:
 ```jldoctest
+using Ipopt
+
 system = powerSystem("case14.h5")
 acModel!(system)
 
@@ -975,6 +993,8 @@ current!(system, analysis)
 
 Compute currents after obtaining the AC optimal power flow solution:
 ```jldoctest
+using Ipopt
+
 system = powerSystem("case14.h5")
 acModel!(system)
 
@@ -1063,6 +1083,8 @@ magnitude, angle = injectionCurrent(system, analysis; label = 1)
 
 Compute the current after obtaining the AC optimal power flow solution:
 ```jldoctest
+using Ipopt
+
 system = powerSystem("case14.h5")
 acModel!(system)
 
@@ -1118,6 +1140,8 @@ magnitude, angle = fromCurrent(system, analysis; label = 2)
 
 Compute the current after obtaining the AC optimal power flow solution:
 ```jldoctest
+using Ipopt
+
 system = powerSystem("case14.h5")
 acModel!(system)
 
@@ -1179,6 +1203,8 @@ magnitude, angle = toCurrent(system, analysis; label = 2)
 
 Compute the current after obtaining the AC optimal power flow solution:
 ```jldoctest
+using Ipopt
+
 system = powerSystem("case14.h5")
 acModel!(system)
 
@@ -1241,6 +1267,8 @@ magnitude, angle = seriesCurrent(system, analysis; label = 2)
 
 Compute the current after obtaining the AC optimal power flow solution:
 ```jldoctest
+using Ipopt
+
 system = powerSystem("case14.h5")
 acModel!(system)
 

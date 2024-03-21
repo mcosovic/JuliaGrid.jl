@@ -24,6 +24,13 @@ For further information on this topic, please see the [AC Power Flow](@ref ACPow
 
 ---
 
+To load power flow API functionalities into the current scope, utilize the following command:
+```@example LoadApi
+using JuliaGrid
+```
+
+---
+
 ## AC Power Flow
 ```@docs
 newtonRaphson

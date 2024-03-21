@@ -32,6 +32,8 @@ power!(system, analysis)
 
 Compute powers after obtaining the DC optimal power flow solution:
 ```jldoctest
+using HiGHS
+
 system = powerSystem("case14.h5")
 dcModel!(system)
 
@@ -45,7 +47,7 @@ Compute powers after obtaining the DC state estimation solution:
 system = powerSystem("case14.h5")
 device = measurement("measurement14.h5")
 
-analysis = dcStateEstimation(system, device)
+analysis = dcWlsStateEstimation(system, device)
 solve!(system, analysis)
 power!(system, analysis)
 ```
@@ -153,6 +155,8 @@ injection = injectionPower(system, analysis; label = 2)
 
 Compute the active power after obtaining the DC optimal power flow solution:
 ```jldoctest
+using HiGHS
+
 system = powerSystem("case14.h5")
 dcModel!(system)
 
@@ -166,7 +170,7 @@ Compute the active power after obtaining the DC state estimation solution:
 system = powerSystem("case14.h5")
 device = measurement("measurement14.h5")
 
-analysis = dcStateEstimation(system, device)
+analysis = dcWlsStateEstimation(system, device)
 solve!(system, analysis)
 injection = injectionPower(system, analysis; label = 2)
 ```
@@ -247,6 +251,8 @@ supply = supplyPower(system, analysis; label = 2)
 
 Compute the active power after obtaining the DC optimal power flow solution:
 ```jldoctest
+using HiGHS
+
 system = powerSystem("case14.h5")
 dcModel!(system)
 
@@ -260,7 +266,7 @@ Compute the active power after obtaining the DC state estimation solution:
 system = powerSystem("case14.h5")
 device = measurement("measurement14.h5")
 
-analysis = dcStateEstimation(system, device)
+analysis = dcWlsStateEstimation(system, device)
 solve!(system, analysis)
 supply = supplyPower(system, analysis; label = 2)
 ```
@@ -340,6 +346,8 @@ from = fromPower(system, analysis; label = 2)
 
 Compute the active power after obtaining the DC optimal power flow solution:
 ```jldoctest
+using HiGHS
+
 system = powerSystem("case14.h5")
 dcModel!(system)
 
@@ -353,7 +361,7 @@ Compute the active power after obtaining the DC state estimation solution:
 system = powerSystem("case14.h5")
 device = measurement("measurement14.h5")
 
-analysis = dcStateEstimation(system, device)
+analysis = dcWlsStateEstimation(system, device)
 solve!(system, analysis)
 from = fromPower(system, analysis; label = 2)
 ```
@@ -393,6 +401,8 @@ to = toPower(system, analysis; label = 2)
 
 Compute the active power after obtaining the DC optimal power flow solution:
 ```jldoctest
+using HiGHS
+
 system = powerSystem("case14.h5")
 dcModel!(system)
 
@@ -446,6 +456,8 @@ generator = generatorPower(system, analysis; label = 1)
 Compute the active power after obtaining the DC optimal power flow
 solution:
 ```jldoctest
+using HiGHS
+
 system = powerSystem("case14.h5")
 dcModel!(system)
 

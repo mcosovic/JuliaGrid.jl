@@ -17,6 +17,13 @@ For further information on this topic, please see the [AC Optimal Power Flow](@r
 
 ---
 
+To load optimal power flow API functionalities into the current scope, one can employ the following command:
+```@example LoadApi
+using JuliaGrid, Ipopt, HiGHS
+```
+
+---
+
 ## AC Optimal Power Flow
 ```@docs
 acOptimalPowerFlow
