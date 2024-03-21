@@ -176,7 +176,7 @@ Upon inspection, it becomes evident that the precision matrix no longer maintain
 analysis.method.precision
 ```
 
-Subsequently, we can address this new scenario and observe that the impact on the solution is nearly negligible for our measurement dataset:
+Subsequently, we can address this new scenario and observe the solution:
 ```@repl PMUOptimalPlacement
 solve!(system, analysis)
 print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
