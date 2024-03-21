@@ -63,7 +63,6 @@ export addPmu!, updatePmu!, statusPmu!, @pmu
 export status!
 
 ######### State Estimation ##########
-include("stateEstimation/acStateEstimation.jl")
 include("stateEstimation/pmuStateEstimation.jl")
 include("stateEstimation/dcStateEstimation.jl")
 include("stateEstimation/badData.jl")
