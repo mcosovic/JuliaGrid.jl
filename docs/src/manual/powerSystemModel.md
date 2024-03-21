@@ -633,7 +633,7 @@ system.model.ac.nodalMatrix
 
 ##### Drop Zeros
 After the last execution of the [`updateBranch!`](@ref updateBranch!) function, the nodal matrices will contain zeros, as demonstrated in the code example. If needed, the user can remove these zeros using the `dropZeros!` function, as shown below:
-```@repl updateSystem
+```@example updateSystem
 dropZeros!(system.model.ac)
 
 nothing # hide
