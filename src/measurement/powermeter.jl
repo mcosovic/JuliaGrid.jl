@@ -393,8 +393,8 @@ function addPowermeter!(system, device, measure, powerBus, powerFrom, powerTo, d
     checkStatus(statusTo)
 
     deviceNumber = system.bus.number + 2 * system.branch.layout.inservice
-
     device.label = OrderedDict{String,Int64}(); sizehint!(device.label, deviceNumber)
+    device.number = 0
 
     device.layout.index = fill(0, deviceNumber)
     device.layout.bus = fill(false, deviceNumber)

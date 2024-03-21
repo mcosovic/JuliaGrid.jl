@@ -36,7 +36,7 @@ Likewise, there are specialized functions dedicated to calculating specific type
 ---
 
 ## [Optimal PMU Placement](@id OptimalPMUPlacementManual)
-Let us define the `PowerSystem` composite type and perform the AC power flow analysis solely for generating data to artificially create measurement values later:
+Let us define the `PowerSystem` composite type and perform the AC power flow analysis solely for generating data to artificially create measurement values:
 ```@example PMUOptimalPlacement
 using JuliaGrid # hide
 @default(unit) # hide
@@ -65,12 +65,6 @@ end
 nothing # hide
 ```
 
-As a result, we have obtained bus voltage magnitudes and angles, which we will utilize to artificially define measurement values for the corresponding power system:
-```@repl PMUOptimalPlacement
-𝐕 = analysis.voltage.magnitude
-𝛉 = analysis.voltage.angle
-```
-
 ---
 
 ##### Optimal Solution
@@ -97,13 +91,14 @@ placement.to
 ---
 
 ##### Measurement Data
-Using PMU placement and AC power flow data, we can create the `Measurement` composite type:
+Utilizing PMU placement and AC power flow data, which serves as the source for measurement values in this scenario, we can construct the `Measurement` composite type as follows:
 ```@example PMUOptimalPlacement
 device = measurement()
 
-@pmu(label = "PMU ? - !")
+@pmu(label = "PMU ? (!)")
 for (bus, k) in placement.bus
-    addPmu!(system, device; bus = bus, magnitude = 𝐕[k], angle = 𝛉[k], noise = false)
+    Vᵢ, θᵢ = analysis.voltage.magnitude[k], analysis.voltage.angle[k]
+    addPmu!(system, device; bus = bus, magnitude = Vᵢ, angle = θᵢ, noise = false)
 end
 for branch in keys(placement.from)
     Iᵢⱼ, ψᵢⱼ = fromCurrent(system, analysis; label = branch)
@@ -161,13 +156,22 @@ In the above approach, we assume that measurement errors from a single PMU are u
 analysis.method.precision
 ```
 
-While this approach is suitable for many scenarios, linear PMU state estimation relies on transforming from polar to rectangular coordinate systems. Consequently, measurement errors from a single PMU become correlated due to this transformation. This correlation results in the covariance matrix, and hence the precision matrix, no longer maintaining a diagonal form but instead becoming a block diagonal matrix. To account for this, the user can execute the WLS state estimation model as follows:
+While this approach is suitable for many scenarios, linear PMU state estimation relies on transforming from polar to rectangular coordinate systems. Consequently, measurement errors from a single PMU become correlated due to this transformation. This correlation results in the covariance matrix, and hence the precision matrix, no longer maintaining a diagonal form but instead becoming a block diagonal matrix. 
+
+To accommodate this, users have the option to consider correlation when adding each PMU to the `Measurement` type. For instance, let us add a new PMU while considering correlation:
+```@example PMUOptimalPlacement
+addPmu!(system, device; bus = "Bus 1", magnitude = 1, angle = 0, correlated = true)
+
+nothing # hide
+```
+
+Following this, we recreate the WLS state estimation model:
 ```@example PMUOptimalPlacement
 analysis = pmuWlsStateEstimation(system, device)
 nothing # hide
 ```
 
-Now, we observe that the precision matrix no longer maintains a diagonal form:
+Upon inspection, it becomes evident that the precision matrix no longer maintains a diagonal structure:
 ```@repl PMUOptimalPlacement
 analysis.method.precision
 ```
@@ -183,15 +187,19 @@ print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
 ##### Alternative Formulation
 The resolution of the WLS state estimation problem using the conventional method typically progresses smoothly. However, it is widely acknowledged that in certain situations common to real-world systems, this method can be vulnerable to numerical instabilities. Such conditions might impede the algorithm from finding a satisfactory solution. In such cases, users may opt for an alternative formulation of the WLS state estimation, namely, employing an approach called orthogonal factorization [[1, Sec. 3.2]](@ref PMUStateEstimationReferenceManual).
 
-Specifically, by specifying the `Orthogonal` argument in the [`pmuWlsStateEstimation`](@ref pmuWlsStateEstimation) function, JuliaGrid implements a more robust approach to obtain the WLS estimator, which proves particularly beneficial when substantial differences exist among measurement variances:
+This approach is suitable when measurement errors are uncorrelated, and the precision matrix remains diagonal. Therefore, as a preliminary step, we need to eliminate the correlation, as we did previously:
+```@example PMUOptimalPlacement
+updatePmu!(system, device; label = "PMU 5 (Bus 1)", correlated = false)
+
+nothing # hide
+```
+
+Subsequently, by specifying the `Orthogonal` argument in the [`pmuWlsStateEstimation`](@ref pmuWlsStateEstimation) function, JuliaGrid implements a more robust approach to obtain the WLS estimator, which proves particularly beneficial when substantial differences exist among measurement variances:
 ```@example PMUOptimalPlacement
 analysis = pmuWlsStateEstimation(system, device, Orthogonal)
 solve!(system, analysis)
 nothing # hide
 ```
-
-!!! note "Info"
-    This method is applicable when measurement errors are uncorrelated and the precision matrix remains diagonal.
 
 ---
 

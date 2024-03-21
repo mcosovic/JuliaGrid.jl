@@ -37,7 +37,6 @@ device = measurement()
 
 @pmu(label = "PMU ?")
 addPmu!(system, device; bus = 1, magnitude = 1.0, angle = 0.0, noise = false)
-addPmu!(system, device; bus = 2, magnitude = 1.02, angle = 0.01, noise = false)
 addPmu!(system, device; from = 2, magnitude = 1.2, angle = -3.0, noise = false)
 addPmu!(system, device; to = 3, magnitude = 0.5, angle = 3.1, noise = false)
 
@@ -283,14 +282,22 @@ JuliaGrid opts not to retain the covariance matrix ``\bm \Sigma`` but rather sto
 ```@repl PMUSETutorial
 𝐖 = analysis.method.precision
 ```
+The precision matrix maintains a diagonal form, implying that correlations between the real and imaginary parts of the phasor measurements are disregarded. 
 
-The precision matrix maintains a diagonal form, implying that correlations between the real and imaginary parts of the phasor measurements are disregarded. To account for these correlations, users can execute:
+To accommodate correlations, users have the option to consider correlation when adding each PMU to the `Measurement` type. For instance, let us add a new PMU while considering correlation:
+```@example PMUSETutorial
+addPmu!(system, device; bus = 2, magnitude = 1.02, angle = 0.015, correlated = true)
+
+nothing # hide
+```
+
+Following this, we recreate the WLS state estimation model:
 ```@example PMUSETutorial
 analysis = pmuWlsStateEstimation(system, device)
 nothing # hide
 ```
 
-In this case, the precision matrix no longer maintains a diagonal form, instead, it becomes a block diagonal matrix:
+Upon inspection, it becomes evident that the precision matrix no longer maintains a diagonal structure:
 ```@repl PMUSETutorial
 𝐖 = analysis.method.precision
 ```
@@ -347,8 +354,12 @@ The estimated bus voltage magnitudes ``\hat{\mathbf V} = [V_i]`` and angles ``\h
 ##### [Alternative Formulation](@id PMUSEOrthogonalWLSStateEstimationTutorials)
 The resolution of the WLS state estimation problem using the conventional method typically progresses smoothly. However, it is widely acknowledged that in certain situations common to real-world systems, this method can be vulnerable to numerical instabilities. Such conditions might impede the algorithm from converging to a satisfactory solution. In such cases, users may opt for an alternative formulation of the WLS state estimation, namely, employing an approach called orthogonal factorization [[2, Sec. 3.2]](@ref DCStateEstimationReferenceManual). 
 
-!!! note "Info"
-    It is important to note that this method is only applicable when the covariance matrix maintains a diagonal form, neglecting correlated measurements.
+This approach is suitable when measurement errors are uncorrelated, and the precision matrix remains diagonal. Therefore, as a preliminary step, we need to eliminate the correlation, as we did previously:
+```@example PMUSETutorial
+updatePmu!(system, device; label = "PMU 4", correlated = false)
+
+nothing # hide
+```
 
 To address ill-conditioned situations arising from significant differences in measurement variances, users can employ an alternative approach:
 ```@example PMUSETutorial

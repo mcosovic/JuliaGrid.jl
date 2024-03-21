@@ -275,6 +275,7 @@ function addPmu!(system::PowerSystem, device::Measurement, analysis::AC;
 
     pmu = device.pmu
     default = template.pmu
+    pmu.number = 0
 
     statusMagnitudeBus = unitless(statusMagnitudeBus, default.statusMagnitudeBus)
     checkStatus(statusMagnitudeBus)

@@ -185,7 +185,8 @@ function addAmmeter!(system::PowerSystem, device::Measurement, analysis::AC;
 
     ammeter = device.ammeter
     default = template.ammeter
-
+    ammeter.number = 0
+    
     statusFrom = unitless(statusFrom, default.statusFrom)
     checkStatus(statusFrom)
 
