@@ -1,29 +1,30 @@
 """
     pmuWlsStateEstimation(system::PowerSystem, device::Measurement, method)
 
-The function sets up the framework to solve the linear state estimation model with PMUs 
-only, where the vector of state variables is given in rectangular coordinates.
+The function establishes the linear WLS model for state estimation with PMUs only. In this 
+model, the vector of state variables contains bus voltage magnitudes and angles, given in 
+rectangular coordinates.
 
 # Arguments
 This function requires the `PowerSystem` and `Measurement` composite types to establish 
-the PMU WLS state estimation framework. 
+the WLS state estimation model. 
 
-Moreover, the presence of the `method` parameter is not mandatory. It provides various 
-approaches for addressing PMU state estimation. To address the WLS state estimation method, 
-users can opt to utilize factorization techniques to decompose the gain matrix, such as 
-`LU`, `QR`, or `LDLt`, especially when the gain matrix is symmetric. Opting for the 
-`Orthogonal` method is advisable for a more robust solution in scenarios involving 
-ill-conditioned data, particularly when substantial variations in variances are present.
+Moreover, the presence of the `method` parameter is not mandatory. To address the WLS 
+state estimation method, users can opt to utilize factorization techniques to decompose 
+the gain matrix, such as `LU`, `QR`, or `LDLt` especially when the gain matrix is symmetric. 
+Opting for the `Orthogonal` method is advisable for a more robust solution in scenarios 
+involving ill-conditioned data, particularly when substantial variations in variances are 
+present.
 
-If the `method` parameter is not provided, the default method for solving the PMU 
-estimation will be LU factorization using the WLS framework.
+If the user does not provide the `method`, the default method for solving the estimation 
+model will be LU factorization.
 
 # Updates
 If the AC model has not been created, the function will automatically trigger an update of 
 the `ac` field within the `PowerSystem` composite type.
 
 # Returns
-The function returns an instance of the `DCStateEstimation` abstract type, which includes 
+The function returns an instance of the `PMUStateEstimation` abstract type, which includes 
 the following fields:
 - `voltage`: the variable allocated to store the bus voltage magnitudes and angles;
 - `power`: the variable allocated to store the active and reactive powers;
@@ -31,21 +32,20 @@ the following fields:
 - `bad`: the variable linked to identifying bad data within the measurement set. 
 
 # Examples
-Set up the PMU state estimation WLS framework to be solved using the default LU factorization 
-method:
+Set up the PMU state estimation model to be solved using the default LU factorization:
 ```jldoctest
 system = powerSystem("case14.h5")
 device = measurement("measurement14.h5")
 
-analysis = pmuStateEstimation(system, device)
+analysis = pmuWlsStateEstimation(system, device)
 ```
 
-Set up the PMU state estimation WLS framework to be solved using the orthogonal method:
+Set up the PMU state estimation model to be solved using the orthogonal method:
 ```jldoctest
 system = powerSystem("case14.h5")
 device = measurement("measurement14.h5")
 
-analysis = pmuStateEstimation(system, device, Orthogonal)
+analysis = pmuWlsStateEstimation(system, device, Orthogonal)
 ```
 """
 function pmuWlsStateEstimation(system::PowerSystem, device::Measurement, factorization::Type{<:Union{QR, LDLt, LU}} = LU)
@@ -246,16 +246,17 @@ end
 
 
 """
-    pmuLavStateEstimation(system::PowerSystem, device::Measurement, method)
+    pmuLavStateEstimation(system::PowerSystem, device::Measurement, optimizer)
 
-The function sets up the framework to solve the linear state estimation model with PMUs 
-only, where the vector of state variables is given in rectangular coordinates.
+The function establishes the LAV model for state estimation with PMUs only. In this 
+model, the vector of state variables contains bus voltage magnitudes and angles, given in 
+rectangular coordinates.
 
 # Arguments
 This function requires the `PowerSystem` and `Measurement` composite types to establish 
-the PMU LAV state estimation framework. The LAV method offers increased robustness 
-compared to WLS, ensuring unbiasedness even in the presence of various measurement errors 
-and outliers.
+the LAV state estimation model. The LAV method offers increased robustness compared 
+to WLS, ensuring unbiasedness even in the presence of various measurement errors and 
+outliers.
     
 Users can employ the LAV method to find an estimator by choosing one of the available 
 [optimization solvers](https://jump.dev/JuMP.jl/stable/packages/solvers/). Typically, 
@@ -266,12 +267,11 @@ If the AC model has not been created, the function will automatically trigger an
 the `ac` field within the `PowerSystem` composite type.
 
 # Returns
-The function returns an instance of the `DCStateEstimation` abstract type, which includes 
+The function returns an instance of the `PMUStateEstimation` abstract type, which includes 
 the following fields:
 - `voltage`: the variable allocated to store the bus voltage magnitudes and angles;
 - `power`: the variable allocated to store the active and reactive powers;
-- `method`: the system model vectors and matrices, or alternatively, the optimization model;
-- `bad`: the variable linked to identifying bad data within the measurement set. 
+- `method`: the optimization model.
 
 # Example
 ```jldoctest
@@ -280,7 +280,7 @@ using Ipopt
 system = powerSystem("case14.h5")
 device = measurement("measurement14.h5")
 
-analysis = pmuStateEstimation(system, device, Ipopt.Optimizer)
+analysis = pmuLavStateEstimation(system, device, Ipopt.Optimizer)
 ```
 """
 function pmuLavStateEstimation(system::PowerSystem, device::Measurement, (@nospecialize optimizerFactory);
@@ -398,31 +398,31 @@ end
 """
     solve!(system::PowerSystem, analysis::PMUStateEstimation)
 
-This function computes the bus voltage magnitudes and angles to solve the state estimation 
-problem exclusively using PMU data.
+By computing the bus voltage magnitudes and angles, the function solves the PMU state 
+estimation model.
 
 # Updates
 The resulting bus voltage magnitudes and angles are stored in the `voltage` field of the 
 `PMUStateEstimation` type.
 
 # Examples
-Solving the PMU state estimation model with WLS:
+Solving the PMU state estimation model using the WLS method:
 ```jldoctest
 system = powerSystem("case14.h5")
 device = measurement("measurement14.h5")
 
-analysis = pmuStateEstimation(system, device)
+analysis = pmuWlsStateEstimation(system, device)
 solve!(system, analysis)
 ```
 
-Solving the PMU state estimation model with LAV:
+Solving the PMU state estimation model using the LAV method:
 ```jldoctest
 using Ipopt
 
 system = powerSystem("case14.h5")
 device = measurement("measurement14.h5")
 
-analysis = pmuStateEstimation(system, device, Ipopt.Optimizer)
+analysis = pmuLavStateEstimation(system, device, Ipopt.Optimizer)
 solve!(system, analysis)
 ```
 """
@@ -554,25 +554,21 @@ analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
 solve!(system, analysis)
 current!(system, analysis)
 
-V = analysis.voltage.magnitude
-θ = analysis.voltage.angle
-If = analysis.current.from.magnitude
-ψf = analysis.current.from.angle
-It = analysis.current.to.magnitude
-ψt = analysis.current.to.angle
-
 placement = pmuPlacement(system, GLPK.Optimizer)
 device = measurement()
 
 @pmu(label = "PMU ?: !")
-for (label, i) in placement.bus
-    addPmu!(system, device; bus = label, magnitude = V[i], angle = θ[i])
+for (bus, i) in placement.bus
+    Vi, θi = analysis.voltage.magnitude[i], analysis.voltage.angle[i]
+    addPmu!(system, device; bus = bus, magnitude = Vi, angle = θi)
 end
-for (label, i) in placement.from
-    addPmu!(system, device; from = label, magnitude = If[i], angle = ψf[i])
+for branch in keys(placement.from)
+    Iij, ψij = fromCurrent(system, analysis; label = branch) 
+    addPmu!(system, device; from = branch, magnitude = Iij, angle = ψij)
 end
-for (label, i) in placement.to
-    addPmu!(system, device; to = label, magnitude = It[i], angle = ψt[i])
+for branch in keys(placement.to)
+    Iji, ψji = toCurrent(system, analysis; label = branch) 
+    addPmu!(system, device; to = label, magnitude = Iji, angle = ψji)
 end
 ```
 """

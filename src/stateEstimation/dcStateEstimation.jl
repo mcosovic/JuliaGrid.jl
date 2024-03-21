@@ -1,21 +1,22 @@
 """
     dcWlsStateEstimation(system::PowerSystem, device::Measurement, method)
 
-The function sets up the framework to solve the DC state estimation.
+The function establishes the WLS model for DC state estimation, where the vector of state 
+variables contains only bus voltage angles.
 
 # Arguments
 This function requires the `PowerSystem` and `Measurement` composite types to establish 
-the DC WLS state estimation framework. 
+the WLS state estimation model. 
 
-Moreover, the presence of the `method` parameter is not mandatory. It provides various 
-approaches for addressing DC state estimation. To address the WLS state estimation method, 
-users can opt to utilize factorization techniques to decompose the gain matrix, such as 
-`LU`, `QR`, or `LDLt`, especially when the gain matrix is symmetric. Opting for the 
-`Orthogonal` method is advisable for a more robust solution in scenarios involving 
-ill-conditioned data, particularly when substantial variations in variances are present.
+Moreover, the presence of the `method` parameter is not mandatory. To address the WLS 
+state estimation method, users can opt to utilize factorization techniques to decompose 
+the gain matrix, such as `LU`, `QR`, or `LDLt` especially when the gain matrix is symmetric. 
+Opting for the `Orthogonal` method is advisable for a more robust solution in scenarios 
+involving ill-conditioned data, particularly when substantial variations in variances are 
+present.
 
-If the user does not provide the `method`, the default method for solving the DC estimation 
-will be LU factorization.
+If the user does not provide the `method`, the default method for solving the estimation 
+model will be LU factorization.
 
 # Updates
 If the DC model was not created, the function will automatically initiate an update of the
@@ -32,21 +33,20 @@ the following fields:
 - `bad`: the variable linked to identifying bad data within the measurement set. 
 
 # Examples
-Set up the DC state estimation WLS framework to be solved using the default LU factorization 
-method:
+Set up the DC state estimation model to be solved using the default LU factorization:
 ```jldoctest
 system = powerSystem("case14.h5")
 device = measurement("measurement14.h5")
 
-analysis = dcStateEstimation(system, device)
+analysis = dcWlsStateEstimation(system, device)
 ```
 
-Set up the DC state estimation WLS framework to be solved using the orthogonal method:
+Set up the DC state estimation model to be solved using the orthogonal method:
 ```jldoctest
 system = powerSystem("case14.h5")
 device = measurement("measurement14.h5")
 
-analysis = dcStateEstimation(system, device, Orthogonal)
+analysis = dcWlsStateEstimation(system, device, Orthogonal)
 ```
 """
 function dcWlsStateEstimation(system::PowerSystem, device::Measurement, factorization::Type{<:Union{QR, LDLt, LU, Orthogonal}} = LU)
@@ -189,13 +189,14 @@ function dcStateEstimationWLS(system::PowerSystem, device::Measurement)
 end
 
 """
-    dcLavStateEstimation(system::PowerSystem, device::Measurement, method)
+    dcLavStateEstimation(system::PowerSystem, device::Measurement, optimizer)
 
-The function sets up the framework to solve the DC state estimation.
+The function establishes the LAV model for DC state estimation, where the vector of state 
+variables contains only bus voltage angles.
 
 # Arguments
 This function requires the `PowerSystem` and `Measurement` composite types to establish 
-the DC LAV state estimation framework. The LAV method offers increased robustness compared 
+the LAV state estimation model. The LAV method offers increased robustness compared 
 to WLS, ensuring unbiasedness even in the presence of various measurement errors and 
 outliers.
 
@@ -214,8 +215,7 @@ The function returns an instance of the `DCStateEstimation` abstract type, which
 the following fields:
 - `voltage`: the variable allocated to store the bus voltage angles;
 - `power`: the variable allocated to store the active powers;
-- `method`: the system model vectors and matrices, or alternatively, the optimization model;
-- `bad`: the variable linked to identifying bad data within the measurement set. 
+- `method`: the optimization model.
 
 # Example
 ```jldoctest
@@ -224,7 +224,7 @@ using Ipopt
 system = powerSystem("case14.h5")
 device = measurement("measurement14.h5")
 
-analysis = dcStateEstimation(system, device, Ipopt.Optimizer)
+analysis = dcLavStateEstimation(system, device, Ipopt.Optimizer)
 ```
 """
 function dcLavStateEstimation(system::PowerSystem, device::Measurement, (@nospecialize optimizerFactory);
@@ -318,30 +318,30 @@ end
 """
     solve!(system::PowerSystem, analysis::DCStateEstimation)
 
-By computing the bus voltage angles, the function solves the DC state estimation problem.
+By computing the bus voltage angles, the function solves the DC state estimation model.
 
 # Updates
 The resulting bus voltage angles are stored in the `voltage` field of the `DCStateEstimation` 
 type.
 
 # Examples
-Solving the DC state estimation model with WLS:
+Solving the DC state estimation model using the WLS method:
 ```jldoctest
 system = powerSystem("case14.h5")
 device = measurement("measurement14.h5")
 
-analysis = dcStateEstimation(system, device)
+analysis = dcWlsStateEstimation(system, device)
 solve!(system, analysis)
 ```
 
-Solving the DC state estimation model with LAV:
+Solving the DC state estimation model using the LAV method:
 ```jldoctest
 using Ipopt
 
 system = powerSystem("case14.h5")
 device = measurement("measurement14.h5")
 
-analysis = dcStateEstimation(system, device, Ipopt.Optimizer)
+analysis = dcLavStateEstimation(system, device, Ipopt.Optimizer)
 solve!(system, analysis)
 ```
 """

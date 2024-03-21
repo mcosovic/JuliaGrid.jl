@@ -4,7 +4,7 @@
 
 The function conducts bad data detection and identification using the largest normalized 
 residual test, subsequently removing measurement outliers from the measurement set. It can 
-be executed after obtaining estimation solutions.
+be executed after obtaining WLS estimator.
 
 # Arguments
 This function requires the composite types `PowerSystem` and `Measurement`, along with an 
@@ -35,7 +35,7 @@ Obtaining the solution after detecting and removing bad data:
 system = powerSystem("case14.h5")
 device = measurement("measurement14.h5")
 
-analysis = dcStateEstimation(system, device)
+analysis = dcWlsStateEstimation(system, device)
 solve!(system, analysis)
 
 residualTest!(system, device, analysis; threshold = 4.0)
@@ -47,7 +47,7 @@ Obtaining the solution while bad data is detected:
 system = powerSystem("case14.h5")
 device = measurement("measurement14.h5")
 
-analysis = dcStateEstimation(system, device)
+analysis = dcWlsStateEstimation(system, device)
 
 while analysis.bad.detect
     solve!(system, analysis)
