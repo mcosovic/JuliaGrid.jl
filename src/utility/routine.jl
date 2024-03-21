@@ -387,3 +387,23 @@ end
 function isset(input::Union{L, T, B})
     return !ismissing(input)
 end
+
+######### Drop Zeros ##########
+function dropZeros!(dc::DCModel)
+    filledElements = nnz(dc.nodalMatrix)
+    dropzeros!(dc.nodalMatrix)
+
+    if filledElements != nnz(dc.nodalMatrix)
+        dc.pattern += 1
+    end 
+end
+
+function dropZeros!(ac::ACModel)
+    filledElements = nnz(ac.nodalMatrix)
+    dropzeros!(ac.nodalMatrix)
+    dropzeros!(ac.nodalMatrixTranspose)
+
+    if filledElements != nnz(ac.nodalMatrix)
+        ac.pattern += 1
+    end 
+end

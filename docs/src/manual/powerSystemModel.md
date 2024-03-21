@@ -632,14 +632,15 @@ system.model.ac.nodalMatrix
 ---
 
 ##### Drop Zeros
-After the last execution of the [`updateBranch!`](@ref updateBranch!) function, the nodal matrices will contain zeros, as demonstrated in the code example. If needed, the user can remove these zeros using the `dropzeros!` function, as shown below:
+After the last execution of the [`updateBranch!`](@ref updateBranch!) function, the nodal matrices will contain zeros, as demonstrated in the code example. If needed, the user can remove these zeros using the `dropZeros!` function, as shown below:
 ```@repl updateSystem
-using SparseArrays
-dropzeros!(system.model.ac.nodalMatrix)
+dropZeros!(system.model.ac)
+
+nothing # hide
 ```
 
 !!! note "Info"
-    It should be noted that in simulations conducted with the JuliaGrid package, the accuracy of the results will not be affected by leaving zeros.
+    It is worth mentioning that in simulations conducted with the JuliaGrid package, the precision of the outcomes remains unaffected even if zero entries are retained. However, we recommend users utilize this function instead of `dropzeros!` from the SuiteSparse package to ensure seamless functioning of all JuliaGrid functionalities.
 
 ---
 
