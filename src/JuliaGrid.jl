@@ -20,7 +20,7 @@ include("powerSystem/load.jl")
 include("powerSystem/save.jl")
 include("powerSystem/model.jl")
 export powerSystem, savePowerSystem
-export acModel!, dcModel!
+export acModel!, dcModel!, dropZeros!
 
 ########## Power System Components ##########
 include("powerSystem/bus.jl")
