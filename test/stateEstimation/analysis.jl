@@ -1,7 +1,6 @@
 system14 = powerSystem(string(pathData, "case14test.m"))
 system30 = powerSystem(string(pathData, "case30test.m"))
 
-
 @testset "Nonlinear State Estimation" begin
     @default(template)
     @default(unit)
@@ -276,6 +275,7 @@ end
 
 system14 = powerSystem(string(pathData, "case14test.m"))
 system30 = powerSystem(string(pathData, "case30test.m"))
+
 @testset "DC State Estimation" begin
     @default(template)
     @default(unit)
@@ -472,6 +472,9 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     solve!(system30, analysisOrt)
     @test analysisLU.voltage.angle ≈ analysisOrt.voltage.angle
 end
+
+system14 = powerSystem(string(pathData, "case14test.m"))
+system30 = powerSystem(string(pathData, "case30test.m"))
 
 @testset "DC State Estimation: Incomplete Set" begin
     @default(template)
