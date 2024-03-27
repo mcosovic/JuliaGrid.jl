@@ -20,7 +20,7 @@ include("powerSystem/load.jl")
 include("powerSystem/save.jl")
 include("powerSystem/model.jl")
 export powerSystem, savePowerSystem
-export acModel!, dcModel!, dropZeros!
+export acModel!, dcModel!
 
 ########## Power System Components ##########
 include("powerSystem/bus.jl")
@@ -63,10 +63,12 @@ export addPmu!, updatePmu!, statusPmu!, @pmu
 export status!
 
 ######### State Estimation ##########
+include("stateEstimation/acStateEstimation.jl")
 include("stateEstimation/pmuStateEstimation.jl")
 include("stateEstimation/dcStateEstimation.jl")
 include("stateEstimation/badData.jl")
 include("stateEstimation/observability.jl")
+export gaussNewton
 export pmuWlsStateEstimation, pmuLavStateEstimation, pmuPlacement
 export dcWlsStateEstimation, dcLavStateEstimation, residualTest!
 export islandTopologicalFlow, islandTopological, restorationGram!

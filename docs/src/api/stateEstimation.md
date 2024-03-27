@@ -9,6 +9,10 @@ For further information on this topic, please see the [PMU State Estimation](@re
 * [`islandTopological`](@ref islandTopological(::PowerSystem, ::Wattmeter))
 * [`restorationGram!`](@ref restorationGram!(::PowerSystem, ::Measurement, ::Measurement, ::IslandWatt))
 
+###### AC State Estimation
+* [`gaussNewton`](@ref gaussNewton)
+* [`solve!`](@ref solve!(::PowerSystem, ::ACStateEstimationWLS{NonlinearWLS}))
+
 ###### PMU State Estimation
 * [`pmuPlacement`](@ref pmuPlacement)
 * [`pmuWlsStateEstimation`](@ref pmuWlsStateEstimation)
@@ -37,6 +41,15 @@ using JuliaGrid
 islandTopologicalFlow(::PowerSystem, ::Wattmeter)
 islandTopological(::PowerSystem, ::Wattmeter)
 restorationGram!(::PowerSystem, ::Measurement, ::Measurement, ::IslandWatt)
+```
+
+---
+
+## AC State Estimation
+```@docs
+gaussNewton
+dcLavStateEstimation
+solve!(::PowerSystem, ::ACStateEstimationWLS{NonlinearWLS})
 ```
 
 ---

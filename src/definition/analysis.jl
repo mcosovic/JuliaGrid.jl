@@ -3,7 +3,7 @@ export NewtonRaphson, FastNewtonRaphson, GaussSeidel, DCPowerFlow
 export DCOptimalPowerFlow, ACOptimalPowerFlow
 export DCStateEstimation, DCStateEstimationWLS, DCStateEstimationLAV
 export PMUStateEstimation, PMUStateEstimationWLS, PMUStateEstimationLAV
-export ACStateEstimation, ACStateEstimationWLS, ACStateEstimationLAV
+export ACStateEstimation, ACStateEstimationWLS, ACStateEstimationLAV, NonlinearWLS
 export LU, QR, LDLt, Factorization, Orthogonal, LinearWLS, LinearOrthogonal
 export Island, IslandWatt, IslandVar
 export PlacementPMU
@@ -343,4 +343,12 @@ struct ACStateEstimationWLS{T <: Union{NonlinearWLS, NonlinearOrthogonal}} <: AC
     power::PowerSE
     current::Current
     method::T
+end
+
+mutable struct SparseModel
+    row::Array{Int64,1}
+    col::Array{Int64,1}
+    val::Array{Float64,1}
+    cnt::Int64
+    idx::Int64
 end

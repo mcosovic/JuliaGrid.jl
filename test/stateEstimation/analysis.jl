@@ -1,70 +1,132 @@
 system14 = powerSystem(string(pathData, "case14test.m"))
 system30 = powerSystem(string(pathData, "case30test.m"))
 
-# @testset "Nonlinear State Estimation" begin
-#     @default(template)
-#     @default(unit)
+
+@testset "Nonlinear State Estimation" begin
+    @default(template)
+    @default(unit)
     
-#     ################ Modified IEEE 14-bus Test Case ################
-#     updateBus!(system14; label = 1, type = 2)
-#     updateBus!(system14; label = 3, type = 3, angle = -0.25)
-#     updateBranch!(system14; label = 3, conductance = 0.01)
-#     updateBranch!(system14; label = 6, conductance = 0.05)
+    ################ Modified IEEE 14-bus Test Case ################
+    updateBus!(system14; label = 1, type = 2)
+    updateBus!(system14; label = 3, type = 3, angle = -0.25)
+    updateBranch!(system14; label = 3, conductance = 0.01)
+    updateBranch!(system14; label = 6, conductance = 0.05)
     
-#     acModel!(system14)
-#     analysis = newtonRaphson(system14)
-#     for i = 1:1000
-#         stopping = mismatch!(system14, analysis)
-#         if all(stopping .< 1e-8)
-#             break
-#         end
-#         solve!(system14, analysis)
-#     end
-#     power!(system14, analysis)
-#     current!(system14, analysis)
+    acModel!(system14)
+    analysis = newtonRaphson(system14)
+    for i = 1:1000
+        stopping = mismatch!(system14, analysis)
+        if all(stopping .< 1e-8)
+            break
+        end
+        solve!(system14, analysis)
+    end
+    power!(system14, analysis)
+    current!(system14, analysis)
     
-#     device = measurement()
-#     for (key, value) in system14.bus.label
-#         addVoltmeter!(system14, device; bus = key, magnitude = analysis.voltage.magnitude[value], noise = false)
-#         addWattmeter!(system14, device; bus = key, active = analysis.power.injection.active[value], noise = false)
-#         addVarmeter!(system14, device; bus = key, reactive = analysis.power.injection.reactive[value], noise = false)
-#         addPmu!(system14, device; bus = key, magnitude = analysis.voltage.magnitude[value], angle = analysis.voltage.angle[value], noise = false)
-#     end
+    device = measurement()
+    for (key, value) in system14.bus.label
+        addVoltmeter!(system14, device; bus = key, magnitude = analysis.voltage.magnitude[value], noise = false)
+        addWattmeter!(system14, device; bus = key, active = analysis.power.injection.active[value], noise = false)
+        addVarmeter!(system14, device; bus = key, reactive = analysis.power.injection.reactive[value], noise = false)
+        addPmu!(system14, device; bus = key, magnitude = analysis.voltage.magnitude[value], angle = analysis.voltage.angle[value], noise = false)
+        addPmu!(system14, device; bus = key, magnitude = analysis.voltage.magnitude[value], angle = analysis.voltage.angle[value], noise = false, polar = false)
+    end
     
-#     for (key, value) in system14.branch.label
-#         addWattmeter!(system14, device; from = key, active = analysis.power.from.active[value], noise = false)
-#         addWattmeter!(system14, device; to = key, active = analysis.power.to.active[value], noise = false)
-#         addVarmeter!(system14, device; from = key, reactive = analysis.power.from.reactive[value], noise = false)
-#         addVarmeter!(system14, device; to = key, reactive = analysis.power.to.reactive[value], noise = false)
-#         addAmmeter!(system14, device; from = key, magnitude = analysis.current.from.magnitude[value], noise = false)
-#         addAmmeter!(system14, device; to = key, magnitude = analysis.current.to.magnitude[value], noise = false)
-#         addPmu!(system14, device; from = key, magnitude = analysis.current.from.magnitude[value], angle = analysis.current.from.angle[value], noise = false, statusAngle = 0)
-#         addPmu!(system14, device; to = key, magnitude = analysis.current.to.magnitude[value], angle = analysis.current.to.angle[value], noise = false, statusAngle = 0)
-#     end
+    for (key, value) in system14.branch.label
+        addWattmeter!(system14, device; from = key, active = analysis.power.from.active[value], noise = false)
+        addWattmeter!(system14, device; to = key, active = analysis.power.to.active[value], noise = false)
+        addVarmeter!(system14, device; from = key, reactive = analysis.power.from.reactive[value], noise = false)
+        addVarmeter!(system14, device; to = key, reactive = analysis.power.to.reactive[value], noise = false)
+        addAmmeter!(system14, device; from = key, magnitude = analysis.current.from.magnitude[value], noise = false)
+        addAmmeter!(system14, device; to = key, magnitude = analysis.current.to.magnitude[value], noise = false)
+        addPmu!(system14, device; from = key, magnitude = analysis.current.from.magnitude[value], angle = analysis.current.from.angle[value], noise = false, statusAngle = 0)
+        addPmu!(system14, device; to = key, magnitude = analysis.current.to.magnitude[value], angle = analysis.current.to.angle[value], noise = false, statusAngle = 0)
+        addPmu!(system14, device; from = key, magnitude = analysis.current.from.magnitude[value], angle = analysis.current.from.angle[value], noise = false, polar = false)
+        addPmu!(system14, device; to = key, magnitude = analysis.current.to.magnitude[value], angle = analysis.current.to.angle[value], noise = false, polar = false)
+    end
     
-#     ####### LU Factorization #######
-#     analysisLU = acStateEstimation(system14, device, LU)
-#     for iteration = 1:20
-#         stopping = solve!(system14, analysisLU)
-#         if stopping < 1e-8
-#             break
-#         end
-#     end
-#     @test analysisLU.voltage.magnitude ≈ analysis.voltage.magnitude
-#     @test analysisLU.voltage.angle ≈ analysis.voltage.angle
+    ####### LU Factorization #######
+    analysisLU = gaussNewton(system14, device, LU)
+    for iteration = 1:20
+        stopping = solve!(system14, analysisLU)
+        if stopping < 1e-8
+            break
+        end
+    end
+    @test analysisLU.voltage.magnitude ≈ analysis.voltage.magnitude
+    @test analysisLU.voltage.angle ≈ analysis.voltage.angle
     
-#     ###### QR Factorization #######
-#     analysisQR = acStateEstimation(system14, device, QR)
-#     for iteration = 1:20
-#         stopping = solve!(system14, analysisQR)
-#         if stopping < 1e-8
-#             break
-#         end
-#     end
-#     solve!(system14, analysisQR)
-#     @test analysisQR.voltage.magnitude ≈ analysis.voltage.magnitude
-#     @test analysisQR.voltage.angle ≈ analysis.voltage.angle
-# end
+    ###### QR Factorization #######
+    analysisQR = gaussNewton(system14, device, QR)
+    for iteration = 1:100
+        stopping = solve!(system14, analysisQR)
+        if stopping < 1e-8
+            break
+        end
+    end
+    solve!(system14, analysisQR)
+    @test analysisQR.voltage.magnitude ≈ analysis.voltage.magnitude
+    @test analysisQR.voltage.angle ≈ analysis.voltage.angle
+
+    ################ Modified IEEE 30-bus Test Case ################
+    acModel!(system30)
+    analysis = newtonRaphson(system30)
+    for i = 1:100
+        stopping = mismatch!(system30, analysis)
+        if all(stopping .< 1e-8)
+            break
+        end
+        solve!(system30, analysis)
+    end
+    power!(system30, analysis)
+    current!(system30, analysis)
+  
+    device = measurement()
+    for (key, value) in system30.bus.label
+        addVoltmeter!(system30, device; bus = key, magnitude = analysis.voltage.magnitude[value], noise = false)
+        addWattmeter!(system30, device; bus = key, active = analysis.power.injection.active[value], noise = false)
+        addVarmeter!(system30, device; bus = key, reactive = analysis.power.injection.reactive[value], noise = false)
+        addPmu!(system30, device; bus = key, magnitude = analysis.voltage.magnitude[value], angle = analysis.voltage.angle[value], noise = false)
+        addPmu!(system30, device; bus = key, magnitude = analysis.voltage.magnitude[value], angle = analysis.voltage.angle[value], noise = false, polar = false)
+    end
+
+    for (key, value) in system30.branch.label
+        addWattmeter!(system30, device; from = key, active = analysis.power.from.active[value], noise = false)
+        addWattmeter!(system30, device; to = key, active = analysis.power.to.active[value], noise = false)
+        addVarmeter!(system30, device; from = key, reactive = analysis.power.from.reactive[value], noise = false)
+        addVarmeter!(system30, device; to = key, reactive = analysis.power.to.reactive[value], noise = false)
+        addAmmeter!(system30, device; from = key, magnitude = analysis.current.from.magnitude[value], noise = false)
+        addAmmeter!(system30, device; to = key, magnitude = analysis.current.to.magnitude[value], noise = false)
+        addPmu!(system30, device; from = key, magnitude = analysis.current.from.magnitude[value], angle = analysis.current.from.angle[value], noise = false)
+        addPmu!(system30, device; to = key, magnitude = analysis.current.to.magnitude[value], angle = analysis.current.to.angle[value], noise = false)
+        addPmu!(system30, device; from = key, magnitude = analysis.current.from.magnitude[value], angle = analysis.current.from.angle[value], noise = false, polar = false)
+        addPmu!(system30, device; to = key, magnitude = analysis.current.to.magnitude[value], angle = analysis.current.to.angle[value], noise = false, polar = false)
+    end
+
+    ####### LU Factorization #######
+    analysisLU = gaussNewton(system30, device, LU)
+    for iteration = 1:200
+        stopping = solve!(system30, analysisLU)
+        if stopping < 1e-12
+            break
+        end
+    end
+    @test analysisLU.voltage.magnitude ≈ analysis.voltage.magnitude
+    @test analysisLU.voltage.angle ≈ analysis.voltage.angle
+     
+    ###### QR Factorization #######
+    analysisQR = gaussNewton(system30, device, QR)
+    for iteration = 1:200
+        stopping = solve!(system30, analysisQR)
+        if stopping < 1e-12
+            break
+        end
+    end
+    solve!(system30, analysisQR)
+    @test analysisQR.voltage.magnitude ≈ analysis.voltage.magnitude
+    @test analysisQR.voltage.angle ≈ analysis.voltage.angle
+end
 
 system14 = powerSystem(string(pathData, "case14test.m"))
 system30 = powerSystem(string(pathData, "case30test.m"))
