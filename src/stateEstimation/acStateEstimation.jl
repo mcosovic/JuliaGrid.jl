@@ -49,7 +49,7 @@ analysis = gaussNewton(system, device, Orthogonal)
 ```
 """
 function gaussNewton(system::PowerSystem, device::Measurement, factorization::Type{<:Union{QR, LDLt, LU}} = LU)
-    jacobian, mean, precision, residual, type, index, range, power, current = acStateEstimationWLS(system, device)
+    jacobian, mean, precision, residual, type, index, range, power, current, _ = acStateEstimationWLS(system, device)
 
     method = Dict(LU => lu, LDLt => ldlt, QR => qr)
     return ACStateEstimationWLS(
@@ -74,6 +74,35 @@ function gaussNewton(system::PowerSystem, device::Measurement, factorization::Ty
     )
 end
 
+function gaussNewton(system::PowerSystem, device::Measurement, method::Type{<:Orthogonal})
+    jacobian, mean, precision, residual, type, index, range, power, current, correlated = acStateEstimationWLS(system, device)
+
+    if correlated
+        throw(ErrorException("The precision matrix is non-diagonal, therefore preventing the use of the orthogonal method.")) 
+    end
+
+    return ACStateEstimationWLS(
+        Polar(
+            copy(system.bus.voltage.magnitude), 
+            copy(system.bus.voltage.angle)
+        ),
+        power,
+        current, 
+        NonlinearOrthogonal(
+            jacobian,
+            precision,
+            mean,
+            residual,
+            fill(0.0, 2 * system.bus.number),
+            qr(sparse(Matrix(1.0I, 1, 1))),
+            type,
+            index,
+            range,
+            -1
+        )
+    )
+end
+
 function acStateEstimationWLS(system::PowerSystem, device::Measurement)
     ac = system.model.ac
     bus = system.bus
@@ -83,6 +112,7 @@ function acStateEstimationWLS(system::PowerSystem, device::Measurement)
     wattmeter = device.wattmeter
     varmeter = device.varmeter
     pmu = device.pmu
+    correlated = false
 
     if bus.layout.slack == 0
         throw(ErrorException("The slack bus is missing."))
@@ -215,6 +245,7 @@ function acStateEstimationWLS(system::PowerSystem, device::Measurement)
             varianceRe = pmu.magnitude.variance[i] * cosAngle^2 + pmu.angle.variance[i] * (pmu.magnitude.mean[i] * sinAngle)^2
             varianceIm = pmu.magnitude.variance[i] * sinAngle^2 + pmu.angle.variance[i] * (pmu.magnitude.mean[i] * cosAngle)^2
             if pmu.layout.correlated[i]
+                correlated = true
                 covariance = sinAngle * cosAngle * (pmu.magnitude.variance[i] - pmu.angle.variance[i] * pmu.magnitude.mean[i]^2)
                 prec = precisionBlock(prec, varianceRe, varianceIm, covariance)
             else
@@ -247,120 +278,334 @@ function acStateEstimationWLS(system::PowerSystem, device::Measurement)
         Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]))
     current = Current(Polar(Float64[], Float64[]), Polar(Float64[], Float64[]), Polar(Float64[], Float64[]), Polar(Float64[], Float64[]))      
 
-   return jacobian, mean, precision, fill(0.0, measureNumber), type, index, range, power, current
+   return jacobian, mean, precision, fill(0.0, measureNumber), type, index, range, power, current, correlated
 end
 
-function typeIndex(jac::SparseModel, type::Array{Int8,1}, index::Array{Int64,1}, status::Int8, bus::Int64, a::Int64)
-    type[jac.idx] = status * a
-    index[jac.idx] = bus
+"""
+    acLavStateEstimation(system::PowerSystem, device::Measurement, optimizer)
 
-    return type, index
-end
+The function sets up the the LAV method to solve the nonlinaer or AC state estimation 
+model, where the vector of state variables is given in polar coordinates.
 
-function typeIndex(jac::SparseModel, type::Array{Int8,1}, index::Array{Int64,1}, status::Int8, location::Bool, branch::Int64, a::Int64, b::Int64)
-    index[jac.idx] = branch
-
-    if location
-        type[jac.idx] = status * a
-    else
-        type[jac.idx] = status * b
-    end
-
-    return type, index
-end
-
-function jacobianInitialize(jac::SparseModel, val::Int8, col::Int64)
-    jac.row[jac.cnt] = jac.idx
-    jac.col[jac.cnt] = col
-    jac.val[jac.cnt] = val
-
-    jac.cnt += 1
-    jac.idx += 1
-
-    return jac
-end
-
-function jacobianInitialize(jac::SparseModel, nodalMatrix::SparseMatrixCSC{ComplexF64,Int64}, bus::Int64, busNumber::Int64)
-    for j in nodalMatrix.colptr[bus]:(nodalMatrix.colptr[bus + 1] - 1)
-        jac.row[jac.cnt] = jac.idx
-        jac.col[jac.cnt] = nodalMatrix.rowval[j]
-        jac.row[jac.cnt + 1] = jac.idx
-        jac.col[jac.cnt + 1] = nodalMatrix.rowval[j] + busNumber
-        
-        jac.cnt += 2 
-    end
-        
-    jac.idx += 1
-
-    return jac
-end
-
-function jacobianInitialize(jac::SparseModel, from::Int64, to::Int64, busNumber::Int64)
-    jac.row[jac.cnt] = jac.idx
-    jac.col[jac.cnt] = from
-    jac.row[jac.cnt + 1] = jac.idx
-    jac.col[jac.cnt + 1] = to
-    jac.row[jac.cnt + 2] = jac.idx
-    jac.col[jac.cnt + 2] = from + busNumber
-    jac.row[jac.cnt + 3] = jac.idx
-    jac.col[jac.cnt + 3] = to + busNumber
-
-    jac.idx += 1
-    jac.cnt += 4
-
-    return jac
-end
-
-function jacobianInitialize(jac::SparseModel, bus::Int64, busNumber::Int64)
-    jac.row[jac.cnt] = jac.idx
-    jac.col[jac.cnt] = bus
-
-    jac.row[jac.cnt + 1] = jac.idx
-    jac.col[jac.cnt + 1] = bus + busNumber
-
-    jac.idx += 1
-    jac.cnt += 2
+# Arguments
+This function requires the `PowerSystem` and `Measurement` composite types to establish 
+the LAV state estimation model. The LAV method offers increased robustness compared 
+to WLS, ensuring unbiasedness even in the presence of various measurement errors and 
+outliers.
     
-    return jac
+Users can employ the LAV method to find an estimator by choosing one of the available 
+[optimization solvers](https://jump.dev/JuMP.jl/stable/packages/solvers/). Typically, 
+`Ipopt.Optimizer` suffices for most scenarios.
+
+# Updates
+If the AC model has not been created, the function will automatically trigger an update of 
+the `ac` field within the `PowerSystem` composite type.
+
+# Returns
+The function returns an instance of the `PMUStateEstimation` abstract type, which includes 
+the following fields:
+- `voltage`: the variable allocated to store the bus voltage magnitudes and angles;
+- `power`: the variable allocated to store the active and reactive powers;
+- `method`: the optimization model.
+
+# Example
+```jldoctest
+using Ipopt
+
+system = powerSystem("case14.h5")
+device = measurement("measurement14.h5")
+
+analysis = acLavStateEstimation(system, device, Ipopt.Optimizer)
+```
+"""
+function acLavStateEstimation(system::PowerSystem, device::Measurement, (@nospecialize optimizerFactory);
+    bridge::Bool = true, name::Bool = true)
+
+    ac = system.model.ac
+    bus = system.bus
+    branch = system.branch
+    voltmeter = device.voltmeter
+    ammeter = device.ammeter
+    wattmeter = device.wattmeter
+    varmeter = device.varmeter
+    pmu = device.pmu
+
+    measureNumber = voltmeter.number + ammeter.number + wattmeter.number + varmeter.number + 2 * pmu.number
+
+    if isempty(ac.nodalMatrix)
+        acModel!(system)
+    end
+
+    jump = JuMP.Model(optimizerFactory; add_bridges = bridge)
+    set_string_names_on_creation(jump, name)
+
+    statex = @variable(jump, 0 <= magnitudex[i = 1:(2 * bus.number)])
+    statey = @variable(jump, 0 <= magnitudey[i = 1:(2 * bus.number)])
+
+    anglex = @view(statex[1:bus.number])
+    magnitudex = @view(statex[(bus.number + 1):end])
+    angley = @view(statey[1:bus.number])
+    magnitudey = @view(statey[(bus.number + 1):end])
+
+    residualx = @variable(jump, 0 <= residualx[i = 1:measureNumber])
+    residualy = @variable(jump, 0 <= residualy[i = 1:measureNumber])
+
+    fix(anglex[bus.layout.slack], 0.0; force = true)
+    fix(angley[bus.layout.slack], 0.0; force = true)
+
+    objective = @expression(jump, AffExpr())
+    residual = Dict{Int64, JuMP.ConstraintRef}()
+    
+    for (k, index) in enumerate(voltmeter.layout.index)
+        if voltmeter.magnitude.status[k] == 1
+            add_to_expression!(objective, residualx[k] + residualy[k])
+            residual[k] = @constraint(jump, magnitudex[index] - magnitudey[index] + residualx[k] - residualy[k] - voltmeter.magnitude.mean[k] == 0.0)
+        else
+            fix!(residualx, residualy, k)
+        end
+    end
+
+    idx = voltmeter.number + 1
+    for (k, index) in enumerate(wattmeter.layout.index)
+        if wattmeter.active.status[k] == 1
+            add_to_expression!(objective, residualx[idx] + residualy[idx])
+
+            if wattmeter.layout.bus[k]
+                Vi = magnitudex[index] - magnitudey[index]
+                expr = @expression(jump, Vi * real(ac.nodalMatrixTranspose[index, index]))
+                
+                for ptr in ac.nodalMatrix.colptr[index]:(ac.nodalMatrix.colptr[index + 1] - 1)
+                    j = ac.nodalMatrix.rowval[ptr]
+                    if index != j
+                        Gij = real(ac.nodalMatrixTranspose.nzval[ptr])
+                        Bij = imag(ac.nodalMatrixTranspose.nzval[ptr])
+                        cosAngle = @expression(jump, cos(anglex[index] - angley[index] - anglex[j] + angley[j]))
+                        sinAngle = @expression(jump, sin(anglex[index] - angley[index] - anglex[j] + angley[j]))
+                        expr = @expression(jump, expr + (magnitudex[j] - magnitudey[j]) * (Gij * cosAngle + Bij * sinAngle))
+                    end
+                end
+                residual[idx] = @constraint(jump, Vi * expr + residualx[idx] - residualy[idx] - wattmeter.active.mean[k] == 0)
+            else
+                i, j, gij, bij, gsi, _, tij, Fij = branchParameter(branch, ac, index)
+
+                Vi = magnitudex[i] - magnitudey[i]
+                Vj = magnitudex[j] - magnitudey[j]
+                cosAngle = @expression(jump, cos(anglex[i] - angley[i] - anglex[j] + angley[j] - Fij))
+                sinAngle = @expression(jump, sin(anglex[i] - angley[i] - anglex[j] + angley[j] - Fij))
+                
+                if wattmeter.layout.from[k]
+                    residual[idx] = @constraint(jump, (gij + gsi) * tij^2 * Vi^2 - tij * (gij * cosAngle + bij * sinAngle) * Vi * Vj + residualx[idx] - residualy[idx] - wattmeter.active.mean[k] == 0)
+                else
+                    residual[idx] = @constraint(jump, (gij + gsi) * Vj^2 - tij * (gij * cosAngle - bij * sinAngle) * Vi * Vj + residualx[idx] - residualy[idx] - wattmeter.active.mean[k] == 0)   
+                end
+            end
+        else
+            fix!(residualx, residualy, idx)
+        end
+        idx += 1
+    end
+
+    for (k, index) in enumerate(varmeter.layout.index)
+        if varmeter.reactive.status[k] == 1
+            add_to_expression!(objective, residualx[idx] + residualy[idx])
+
+            if varmeter.layout.bus[k]
+                Vi = magnitudex[index] - magnitudey[index]
+                expr = @expression(jump, -Vi * imag(ac.nodalMatrixTranspose[index, index]))
+                
+                for ptr in ac.nodalMatrix.colptr[index]:(ac.nodalMatrix.colptr[index + 1] - 1)
+                    j = ac.nodalMatrix.rowval[ptr]
+                    if index != j
+                        Gij = real(ac.nodalMatrixTranspose.nzval[ptr])
+                        Bij = imag(ac.nodalMatrixTranspose.nzval[ptr])
+                        cosAngle = @expression(jump, cos(anglex[index] - angley[index] - anglex[j] + angley[j]))
+                        sinAngle = @expression(jump, sin(anglex[index] - angley[index] - anglex[j] + angley[j]))
+                        expr = @expression(jump, expr + (magnitudex[j] - magnitudey[j]) * (Gij * sinAngle - Bij * cosAngle))
+                    end
+                end
+                residual[idx] = @constraint(jump, Vi * expr + residualx[idx] - residualy[idx] - varmeter.reactive.mean[k] == 0)
+            else
+                i, j, gij, bij, _, bsi, tij, Fij = branchParameter(branch, ac, index)
+                Vi = magnitudex[i] - magnitudey[i]
+                Vj = magnitudex[j] - magnitudey[j]
+                cosAngle = @expression(jump, cos(anglex[i] - angley[i] - anglex[j] + angley[j] - Fij))
+                sinAngle = @expression(jump, sin(anglex[i] - angley[i] - anglex[j] + angley[j] - Fij))
+
+                if varmeter.layout.from[k]
+                    residual[idx] = @constraint(jump, - (bij + bsi) * tij^2 * Vi^2 - tij * (gij * sinAngle - bij * cosAngle) * Vi * Vj + residualx[idx] - residualy[idx] - varmeter.reactive.mean[k] == 0)
+                else
+                    residual[idx] = @constraint(jump, - (bij + bsi) * Vj^2 + tij * (gij * sinAngle + bij * cosAngle) * Vi * Vj + residualx[idx] - residualy[idx] - varmeter.reactive.mean[k] == 0)   
+                end
+            end
+        else
+            fix!(residualx, residualy, idx)
+        end
+        idx += 1
+    end
+
+    for (k, index) in enumerate(ammeter.layout.index)
+        if ammeter.magnitude.status[k] == 1
+            add_to_expression!(objective, residualx[idx] + residualy[idx])
+
+            i, j, gij, bij, gsi, bsi, tij, Fij = branchParameter(branch, ac, index)
+            Vi = magnitudex[i] - magnitudey[i]
+            Vj = magnitudex[j] - magnitudey[j]
+            cosAngle = @expression(jump, cos(anglex[i] - angley[i] - anglex[j] + angley[j] - Fij))
+            sinAngle = @expression(jump, sin(anglex[i] - angley[i] - anglex[j] + angley[j] - Fij))
+            
+            if ammeter.layout.from[k]
+                A, B, C, D = IijCoeff(gij, gsi, bij, bsi, tij)
+                residual[idx] = @constraint(jump, sqrt(A * Vi^2 + B * Vj^2 - 2 * Vi * Vj * (C * cosAngle - D * sinAngle)) + residualx[idx] - residualy[idx] - ammeter.magnitude.mean[k] == 0)
+            else
+                A, B, C, D = IjiCoeff(gij, gsi, bij, bsi, tij)
+                residual[idx] = @constraint(jump, sqrt(A * Vi^2 + B * Vj^2 - 2 * Vi * Vj * (C * cosAngle + D * sinAngle)) + residualx[idx] - residualy[idx] - ammeter.magnitude.mean[k] == 0)   
+            end
+        else
+            fix!(residualx, residualy, idx)
+        end
+        idx += 1
+    end
+
+    for (k, index) in enumerate(pmu.layout.index)
+        if pmu.layout.polar[k]
+            if pmu.layout.bus[k]
+                if pmu.magnitude.status[k] == 1
+                    add_to_expression!(objective, residualx[idx] + residualy[idx])
+                    residual[idx] = @constraint(jump, magnitudex[index] - magnitudey[index] + residualx[idx] - residualy[idx] - pmu.magnitude.mean[k] == 0.0)
+                else
+                    fix!(residualx, residualy, idx)
+                end
+
+                if pmu.angle.status[k] == 1
+                    add_to_expression!(objective, residualx[idx + 1] + residualy[idx + 1])
+                    residual[idx + 1] = @constraint(jump, anglex[index] - angley[index] + residualx[idx + 1] - residualy[idx + 1] - pmu.angle.mean[k] == 0.0)
+                else
+                    fix!(residualx, residualy, idx + 1)
+                end
+            else
+                if pmu.magnitude.status[k] == 1
+                    add_to_expression!(objective, residualx[idx] + residualy[idx])
+
+                    i, j, gij, bij, gsi, bsi, tij, Fij = branchParameter(branch, ac, index)
+                    cosAngle = @expression(jump, cos(anglex[i] - angley[i] - anglex[j] + angley[j] - Fij))
+                    sinAngle = @expression(jump, sin(anglex[i] - angley[i] - anglex[j] + angley[j] - Fij))
+                    Vi = magnitudex[i] - magnitudey[i]
+                    Vj = magnitudex[j] - magnitudey[j]
+
+                    if pmu.layout.from[k]
+                        A, B, C, D = IijCoeff(gij, gsi, bij, bsi, tij)
+                        residual[idx] = @constraint(jump, sqrt(A * Vi^2 + B * Vj^2 - 2 * Vi * Vj * (C * cosAngle - D * sinAngle)) + residualx[idx] - residualy[idx] - pmu.magnitude.mean[k] == 0)
+                    else
+                        A, B, C, D = IjiCoeff(gij, gsi, bij, bsi, tij)
+                        residual[idx] = @constraint(jump, sqrt(A * Vi^2 + B * Vj^2 - 2 * Vi * Vj * (C * cosAngle + D * sinAngle)) + residualx[idx] - residualy[idx] - pmu.magnitude.mean[k] == 0)   
+                    end
+                else
+                    fix!(residualx, residualy, idx)
+                end
+
+                if pmu.angle.status[k] == 1
+                    add_to_expression!(objective, residualx[idx + 1] + residualy[idx + 1])
+
+                    i, j, gij, bij, gsi, bsi, tij, Fij = branchParameter(branch, ac, index)
+                    θi = anglex[i] - angley[i]
+                    θj = anglex[j] - angley[j]
+                    Vi = magnitudex[i] - magnitudey[i]
+                    Vj = magnitudex[j] - magnitudey[j]
+
+                    if pmu.layout.from[k]
+                        A, B, C, D = FijCoeff(gij, gsi, bij, bsi, tij)
+                        IijRe = @expression(jump, (A * cos(θi) - B * sin(θi)) * Vi - (C * cos(θj + Fij) - D * sin(θj + Fij)) * Vj)
+                        IijIm = @expression(jump, (A * sin(θi) + B * cos(θi)) * Vi - (C * sin(θj + Fij) + D * cos(θj + Fij)) * Vj)
+
+                        residual[idx + 1] = @constraint(jump, atan(IijIm, IijRe) + residualx[idx + 1] - residualy[idx + 1] - pmu.angle.mean[k] == 0)  
+                    else
+                        A, B, C, D = FjiCoeff(gij, gsi, bij, bsi, tij)
+                        IijRe = @expression(jump, (A * cos(θj) - B * sin(θj)) * Vj - (C * cos(θi - Fij) - D * sin(θi - Fij)) * Vi)
+                        IijIm = @expression(jump, (A * sin(θj) + B * cos(θj)) * Vj - (C * sin(θi - Fij) + D * cos(θi - Fij)) * Vi)
+
+                        residual[idx + 1] = @constraint(jump, atan(IijIm, IijRe) + residualx[idx + 1] - residualy[idx + 1] - pmu.angle.mean[k] == 0)
+                    end
+                else
+                    fix!(residualx, residualy, idx + 1)
+                end
+            end
+        else
+            if pmu.magnitude.status[k] == 1 && pmu.angle.status[k] == 1
+                add_to_expression!(objective, residualx[idx] + residualy[idx])
+                add_to_expression!(objective, residualx[idx + 1] + residualy[idx + 1])
+
+                if pmu.layout.bus[k]
+                    Vi = magnitudex[index] - magnitudey[index]
+                    cosAngle = @expression(jump, cos(anglex[index] - angley[index]))
+                    sinAngle = @expression(jump, sin(anglex[index] - angley[index]))
+
+                    residual[idx] = @constraint(jump, Vi * cosAngle + residualx[idx] - residualy[idx] - pmu.magnitude.mean[k] * cos(pmu.angle.mean[k]) == 0.0)
+                    residual[idx + 1] = @constraint(jump, Vi * sinAngle + residualx[idx + 1] - residualy[idx + 1] - pmu.magnitude.mean[k] * sin(pmu.angle.mean[k]) == 0.0)
+                else
+                    i, j, gij, bij, gsi, bsi, tij, Fij = branchParameter(branch, ac, index)
+                    θi = anglex[i] - angley[i]
+                    θj = anglex[j] - angley[j]
+                    Vi = magnitudex[i] - magnitudey[i]
+                    Vj = magnitudex[j] - magnitudey[j]
+                    
+                    if pmu.layout.from[k]
+                        A, B, C, D = FijCoeff(gij, gsi, bij, bsi, tij)
+                        residual[idx] = @constraint(jump, (A * cos(θi) - B * sin(θi)) * Vi - (C * cos(θj + Fij) - D * sin(θj + Fij)) * Vj + residualx[idx] - residualy[idx] - pmu.magnitude.mean[k] * cos(pmu.angle.mean[k]) == 0.0)
+                    else
+                        A, B, C, D = FjiCoeff(gij, gsi, bij, bsi, tij)
+                        residual[idx] = @constraint(jump, (A * cos(θj) - B * sin(θj)) * Vj - (C * cos(θi - Fij) - D * sin(θi - Fij)) * Vi + residualx[idx] - residualy[idx] - pmu.magnitude.mean[k] * cos(pmu.angle.mean[k]) == 0.0)   
+                    end
+
+                    if pmu.layout.from[k]
+                        A, B, C, D = FijCoeff(gij, gsi, bij, bsi, tij)
+                        residual[idx + 1] = @constraint(jump, (A * sin(θi) + B * cos(θi)) * Vi - (C * sin(θj + Fij) + D * cos(θj + Fij)) * Vj + residualx[idx + 1] - residualy[idx + 1] - pmu.magnitude.mean[k] * sin(pmu.angle.mean[k]) == 0.0)
+                    else
+                        A, B, C, D = FjiCoeff(gij, gsi, bij, bsi, tij)
+                        residual[idx + 1] = @constraint(jump, (A * sin(θj) + B * cos(θj)) * Vj - (C * sin(θi - Fij) + D * cos(θi - Fij)) * Vi + residualx[idx + 1] - residualy[idx + 1] - pmu.magnitude.mean[k] * sin(pmu.angle.mean[k]) == 0.0)   
+                    end
+                end
+            else
+                fix!(residualx, residualy, idx)
+                fix!(residualx, residualy, idx + 1)
+            end
+        end
+        idx += 2
+    end
+
+    @objective(jump, Min, objective)
+
+    return ACStateEstimationLAV(
+        Polar(
+            copy(system.bus.voltage.magnitude), 
+            copy(system.bus.voltage.angle)
+        ),
+        PowerSE(
+            Cartesian(Float64[], Float64[]),
+            Cartesian(Float64[], Float64[]),
+            Cartesian(Float64[], Float64[]),
+            Cartesian(Float64[], Float64[]),
+            Cartesian(Float64[], Float64[]),
+            Cartesian(Float64[], Float64[]),
+            Cartesian(Float64[], Float64[])
+        ),
+        Current(
+            Polar(Float64[], Float64[]),
+            Polar(Float64[], Float64[]),
+            Polar(Float64[], Float64[]),
+            Polar(Float64[], Float64[])
+        ),
+        LAVMethod(
+            jump,
+            statex,
+            statey,
+            residualx,
+            residualy,
+            residual,
+            measureNumber
+        )
+    )
 end
 
-function precisionDiagonal(prec::SparseModel, variance::Float64)
-    prec.row[prec.cnt] = prec.idx
-    prec.col[prec.cnt] = prec.idx
-    prec.val[prec.cnt] = 1 / variance
-
-    prec.cnt += 1
-    prec.idx += 1
-
-    return prec
-end
-
-function precisionBlock(prec::SparseModel, varianceRe::Float64, varianceIm::Float64, covariance::Float64)
-    L1inv = 1 / sqrt(varianceRe)
-    L2 = covariance * L1inv
-    L3inv2 = 1 / (varianceIm - L2^2)
-
-    prec.row[prec.cnt] = prec.idx
-    prec.col[prec.cnt] = prec.idx + 1
-    prec.val[prec.cnt] = (- L2 * L1inv) * L3inv2
-
-    prec.row[prec.cnt + 1] = prec.idx + 1
-    prec.col[prec.cnt + 1] = prec.idx
-    prec.val[prec.cnt + 1] = prec.val[prec.cnt]
-
-    prec.row[prec.cnt + 2] = prec.idx
-    prec.col[prec.cnt + 2] = prec.idx
-    prec.val[prec.cnt + 2] = (L1inv - L2 * prec.val[prec.cnt]) * L1inv
-
-    prec.row[prec.cnt + 3] = prec.idx + 1
-    prec.col[prec.cnt + 3] = prec.idx + 1
-    prec.val[prec.cnt + 3] = L3inv2   
-
-    prec.cnt += 4
-    prec.idx += 2
-
-    return prec 
-end
 
 """
     solve!(system::PowerSystem, analysis::ACStateEstimation)
@@ -388,6 +633,111 @@ end
 ```
 """
 function solve!(system::PowerSystem, analysis::ACStateEstimationWLS{NonlinearWLS})
+    normalEquation!(system, analysis)
+
+    bus = system.bus
+    se = analysis.method
+    jacobian = se.jacobian
+
+    slackRange = jacobian.colptr[bus.layout.slack]:(jacobian.colptr[bus.layout.slack + 1] - 1)
+    elementsRemove = jacobian.nzval[slackRange]
+    @inbounds for (k, i) in enumerate(slackRange)
+        jacobian[jacobian.rowval[i], bus.layout.slack] = 0.0
+    end
+    gain = (transpose(jacobian) * se.precision * jacobian) 
+    gain[bus.layout.slack, bus.layout.slack] = 1.0
+  
+    if se.pattern == -1
+        se.pattern = 0
+        se.factorization = sparseFactorization(gain, se.factorization)
+    else
+        se.factorization = sparseFactorization!(gain, se.factorization)
+    end
+
+    se.increment = sparseSolution(se.increment, transpose(jacobian) * se.precision * se.residual, se.factorization)
+
+    @inbounds for (k, i) in enumerate(slackRange)
+        jacobian[jacobian.rowval[i], bus.layout.slack] = elementsRemove[k]
+    end 
+
+    se.increment[bus.layout.slack] = 0.0
+    maxAbsIncrement = 0.0
+    @inbounds for i = 1:bus.number
+        analysis.voltage.angle[i] = analysis.voltage.angle[i] + se.increment[i]
+        analysis.voltage.magnitude[i] = analysis.voltage.magnitude[i] + se.increment[i + bus.number]
+
+        maxAbsIncrement = max(maxAbsIncrement, abs(se.increment[i]), abs(se.increment[i + bus.number]))
+    end
+
+    return maxAbsIncrement
+end
+
+function solve!(system::PowerSystem, analysis::ACStateEstimationWLS{NonlinearOrthogonal})
+    normalEquation!(system, analysis)
+
+    bus = system.bus
+    se = analysis.method
+    jacobian = se.jacobian
+
+    @inbounds for i = 1:lastindex(se.mean)
+        se.precision.nzval[i] = sqrt(se.precision.nzval[i])
+    end
+
+    slackRange = jacobian.colptr[bus.layout.slack]:(jacobian.colptr[bus.layout.slack + 1] - 1)
+    elementsRemove = jacobian.nzval[slackRange]
+    @inbounds for (k, i) in enumerate(slackRange)
+        jacobian[jacobian.rowval[i], bus.layout.slack] = 0.0
+    end
+
+    JacobianScale = se.precision * se.jacobian
+    if se.pattern == -1
+        se.pattern = 0
+        se.factorization = sparseFactorization(JacobianScale, se.factorization)
+    else
+        se.factorization = sparseFactorization!(JacobianScale, se.factorization)
+    end
+    
+    se.increment = sparseSolution(se.increment, se.precision * se.residual, se.factorization)
+
+    @inbounds for (k, i) in enumerate(slackRange)
+        jacobian[jacobian.rowval[i], bus.layout.slack] = elementsRemove[k]
+    end 
+
+    se.increment[bus.layout.slack] = 0.0
+    maxAbsIncrement = 0.0
+    @inbounds for i = 1:bus.number
+        analysis.voltage.angle[i] = analysis.voltage.angle[i] + se.increment[i]
+        analysis.voltage.magnitude[i] = analysis.voltage.magnitude[i] + se.increment[i + bus.number]
+
+        maxAbsIncrement = max(maxAbsIncrement, abs(se.increment[i]), abs(se.increment[i + bus.number]))
+    end
+
+    @inbounds for i = 1:lastindex(se.mean)
+        se.precision.nzval[i] ^= 2
+    end
+
+    return maxAbsIncrement
+end
+
+function solve!(system::PowerSystem, analysis::ACStateEstimationLAV)
+    se = analysis.method
+    bus = system.bus
+
+    @inbounds for i = 1:bus.number
+        JuMP.set_start_value(se.statex[i]::JuMP.VariableRef, bus.voltage.angle[i])
+        JuMP.set_start_value(se.statex[i + bus.number]::JuMP.VariableRef, bus.voltage.magnitude[i])
+    end
+
+    JuMP.optimize!(se.jump)
+
+    for i = 1:bus.number
+        analysis.voltage.angle[i] = value(se.statex[i]::JuMP.VariableRef) - value(se.statey[i]::JuMP.VariableRef)
+        analysis.voltage.magnitude[i] = value(se.statex[i + bus.number]::JuMP.VariableRef) - value(se.statey[i + bus.number]::JuMP.VariableRef)
+        
+    end
+end
+
+function normalEquation!(system::PowerSystem, analysis::ACStateEstimationWLS)
     ac = system.model.ac
     bus = system.bus
     branch = system.branch
@@ -453,7 +803,10 @@ function solve!(system::PowerSystem, analysis::ACStateEstimationWLS{NonlinearWLS
                 end
 
             else
-                i, j, gij, bij, gsi, bsi, tij, Fij, cosAngle, sinAngle = branchParameter(branch, ac, voltage, index)
+                i, j, gij, bij, gsi, bsi, tij, Fij = branchParameter(branch, ac, index)
+
+                cosAngle = cos(voltage.angle[i] - voltage.angle[j] - Fij)
+                sinAngle = sin(voltage.angle[i] - voltage.angle[j] - Fij)
 
                 if se.type[row] == 3 # Pᵢⱼ
                     if col == branch.layout.from[index]
@@ -647,41 +1000,121 @@ function solve!(system::PowerSystem, analysis::ACStateEstimationWLS{NonlinearWLS
             se.residual[row] = se.mean[row] - voltage.angle[se.index[row]]
         end
     end
- 
-    slackRange = jacobian.colptr[bus.layout.slack]:(jacobian.colptr[bus.layout.slack + 1] - 1)
-    elementsRemove = jacobian.nzval[slackRange]
-    @inbounds for (k, i) in enumerate(slackRange)
-        jacobian[jacobian.rowval[i], bus.layout.slack] = 0.0
-    end
-    gain = (transpose(jacobian) * se.precision * jacobian) 
-    gain[bus.layout.slack, bus.layout.slack] = 1.0
-  
-    if se.pattern == -1
-        se.pattern = 0
-        se.factorization = sparseFactorization(gain, se.factorization)
-    else
-        se.factorization = sparseFactorization!(gain, se.factorization)
-    end
-
-    se.increment = sparseSolution(se.increment, transpose(jacobian) * se.precision * se.residual, se.factorization)
-
-    @inbounds for (k, i) in enumerate(slackRange)
-        jacobian[jacobian.rowval[i], bus.layout.slack] = elementsRemove[k]
-    end 
-
-    se.increment[bus.layout.slack] = 0.0
-    maxAbsIncrement = 0.0
-    @inbounds for i = 1:bus.number
-        analysis.voltage.angle[i] = analysis.voltage.angle[i] + se.increment[i]
-        analysis.voltage.magnitude[i] = analysis.voltage.magnitude[i] + se.increment[i + bus.number]
-
-        maxAbsIncrement = max(maxAbsIncrement, abs(se.increment[i]), abs(se.increment[i + bus.number]))
-    end
-
-    return maxAbsIncrement
 end
 
-function branchParameter(branch::Branch, ac::ACModel, voltage::Polar, index::Int64)
+function typeIndex(jac::SparseModel, type::Array{Int8,1}, index::Array{Int64,1}, status::Int8, bus::Int64, a::Int64)
+    type[jac.idx] = status * a
+    index[jac.idx] = bus
+
+    return type, index
+end
+
+function typeIndex(jac::SparseModel, type::Array{Int8,1}, index::Array{Int64,1}, status::Int8, location::Bool, branch::Int64, a::Int64, b::Int64)
+    index[jac.idx] = branch
+
+    if location
+        type[jac.idx] = status * a
+    else
+        type[jac.idx] = status * b
+    end
+
+    return type, index
+end
+
+function jacobianInitialize(jac::SparseModel, val::Int8, col::Int64)
+    jac.row[jac.cnt] = jac.idx
+    jac.col[jac.cnt] = col
+    jac.val[jac.cnt] = val
+
+    jac.cnt += 1
+    jac.idx += 1
+
+    return jac
+end
+
+function jacobianInitialize(jac::SparseModel, nodalMatrix::SparseMatrixCSC{ComplexF64,Int64}, bus::Int64, busNumber::Int64)
+    for j in nodalMatrix.colptr[bus]:(nodalMatrix.colptr[bus + 1] - 1)
+        jac.row[jac.cnt] = jac.idx
+        jac.col[jac.cnt] = nodalMatrix.rowval[j]
+        jac.row[jac.cnt + 1] = jac.idx
+        jac.col[jac.cnt + 1] = nodalMatrix.rowval[j] + busNumber
+        
+        jac.cnt += 2 
+    end
+        
+    jac.idx += 1
+
+    return jac
+end
+
+function jacobianInitialize(jac::SparseModel, from::Int64, to::Int64, busNumber::Int64)
+    jac.row[jac.cnt] = jac.idx
+    jac.col[jac.cnt] = from
+    jac.row[jac.cnt + 1] = jac.idx
+    jac.col[jac.cnt + 1] = to
+    jac.row[jac.cnt + 2] = jac.idx
+    jac.col[jac.cnt + 2] = from + busNumber
+    jac.row[jac.cnt + 3] = jac.idx
+    jac.col[jac.cnt + 3] = to + busNumber
+
+    jac.idx += 1
+    jac.cnt += 4
+
+    return jac
+end
+
+function jacobianInitialize(jac::SparseModel, bus::Int64, busNumber::Int64)
+    jac.row[jac.cnt] = jac.idx
+    jac.col[jac.cnt] = bus
+
+    jac.row[jac.cnt + 1] = jac.idx
+    jac.col[jac.cnt + 1] = bus + busNumber
+
+    jac.idx += 1
+    jac.cnt += 2
+    
+    return jac
+end
+
+function precisionDiagonal(prec::SparseModel, variance::Float64)
+    prec.row[prec.cnt] = prec.idx
+    prec.col[prec.cnt] = prec.idx
+    prec.val[prec.cnt] = 1 / variance
+
+    prec.cnt += 1
+    prec.idx += 1
+
+    return prec
+end
+
+function precisionBlock(prec::SparseModel, varianceRe::Float64, varianceIm::Float64, covariance::Float64)
+    L1inv = 1 / sqrt(varianceRe)
+    L2 = covariance * L1inv
+    L3inv2 = 1 / (varianceIm - L2^2)
+
+    prec.row[prec.cnt] = prec.idx
+    prec.col[prec.cnt] = prec.idx + 1
+    prec.val[prec.cnt] = (- L2 * L1inv) * L3inv2
+
+    prec.row[prec.cnt + 1] = prec.idx + 1
+    prec.col[prec.cnt + 1] = prec.idx
+    prec.val[prec.cnt + 1] = prec.val[prec.cnt]
+
+    prec.row[prec.cnt + 2] = prec.idx
+    prec.col[prec.cnt + 2] = prec.idx
+    prec.val[prec.cnt + 2] = (L1inv - L2 * prec.val[prec.cnt]) * L1inv
+
+    prec.row[prec.cnt + 3] = prec.idx + 1
+    prec.col[prec.cnt + 3] = prec.idx + 1
+    prec.val[prec.cnt + 3] = L3inv2   
+
+    prec.cnt += 4
+    prec.idx += 2
+
+    return prec 
+end
+
+function branchParameter(branch::Branch, ac::ACModel, index::Int64)
     i = branch.layout.from[index]  
     j = branch.layout.to[index]
     gij = real(ac.admittance[index])
@@ -690,10 +1123,8 @@ function branchParameter(branch::Branch, ac::ACModel, voltage::Polar, index::Int
     bsi = 0.5 * branch.parameter.susceptance[index]
     tij = 1 / branch.parameter.turnsRatio[index]
     Fij = branch.parameter.shiftAngle[index]
-    cosAngle = cos(voltage.angle[i] - voltage.angle[j] - Fij)
-    sinAngle = sin(voltage.angle[i] - voltage.angle[j] - Fij)
 
-    return i, j, gij, bij, gsi, bsi, tij, Fij, cosAngle, sinAngle
+    return i, j, gij, bij, gsi, bsi, tij, Fij
 end
 
 function IijCoeff(gij::Float64, gsi::Float64, bij::Float64, bsi::Float64, tij::Float64)
@@ -731,3 +1162,9 @@ function FjiCoeff(gij::Float64, gsi::Float64, bij::Float64, bsi::Float64, tij::F
 
     return A, B, C, D
 end
+
+function fix!(residualx::Vector{JuMP.VariableRef}, residualy::Vector{JuMP.VariableRef}, index::Int64)
+    fix(residualx[index], 0.0; force = true)
+    fix(residualy[index], 0.0; force = true)   
+end
+

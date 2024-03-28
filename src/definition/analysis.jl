@@ -333,9 +333,16 @@ mutable struct NonlinearWLS
 end
 
 mutable struct NonlinearOrthogonal
-    coefficient::SparseMatrixCSC{Float64,Int64}
+    jacobian::SparseMatrixCSC{Float64,Int64}
     precision::SparseMatrixCSC{Float64,Int64}
     mean::Array{Float64,1}
+    residual::Array{Float64,1}
+    increment::Array{Float64,1}
+    factorization::SuiteSparse.SPQR.QRSparse{Float64, Int64}
+    type::Array{Int8,1}
+    index::Array{Int64,1}
+    range::Array{Int64,1}
+    pattern::Int64
 end
 
 struct ACStateEstimationWLS{T <: Union{NonlinearWLS, NonlinearOrthogonal}} <: ACStateEstimation
@@ -351,4 +358,11 @@ mutable struct SparseModel
     val::Array{Float64,1}
     cnt::Int64
     idx::Int64
+end
+
+struct ACStateEstimationLAV <: ACStateEstimation
+    voltage::Polar
+    power::PowerSE
+    current::Current
+    method::LAVMethod
 end

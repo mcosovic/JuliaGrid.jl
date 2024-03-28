@@ -125,6 +125,36 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     solve!(system30, analysisQR)
     @test analysisQR.voltage.magnitude ≈ analysis.voltage.magnitude
     @test analysisQR.voltage.angle ≈ analysis.voltage.angle
+
+    ####### Orthogonal Method #######
+    device = measurement()
+    for (key, value) in system30.bus.label
+        addVoltmeter!(system30, device; bus = key, magnitude = analysis.voltage.magnitude[value], noise = false)
+        addWattmeter!(system30, device; bus = key, active = analysis.power.injection.active[value], noise = false)
+        addVarmeter!(system30, device; bus = key, reactive = analysis.power.injection.reactive[value], noise = false)
+        addPmu!(system30, device; bus = key, magnitude = analysis.voltage.magnitude[value], angle = analysis.voltage.angle[value], noise = false)
+    end
+
+    for (key, value) in system30.branch.label
+        addWattmeter!(system30, device; from = key, active = analysis.power.from.active[value], noise = false)
+        addWattmeter!(system30, device; to = key, active = analysis.power.to.active[value], noise = false)
+        addVarmeter!(system30, device; from = key, reactive = analysis.power.from.reactive[value], noise = false)
+        addVarmeter!(system30, device; to = key, reactive = analysis.power.to.reactive[value], noise = false)
+        addAmmeter!(system30, device; from = key, magnitude = analysis.current.from.magnitude[value], noise = false)
+        addAmmeter!(system30, device; to = key, magnitude = analysis.current.to.magnitude[value], noise = false)
+        addPmu!(system30, device; from = key, magnitude = analysis.current.from.magnitude[value], angle = analysis.current.from.angle[value], noise = false, varianceAngle = 1e-1, varianceMagnitude = 1e-1)
+        addPmu!(system30, device; to = key, magnitude = analysis.current.to.magnitude[value], angle = analysis.current.to.angle[value], noise = false, varianceAngle = 1e-1, varianceMagnitude = 1e-1)
+    end
+
+    analysisOrt = gaussNewton(system30, device, Orthogonal)
+    for iteration = 1:200
+        stopping = solve!(system30, analysisOrt)
+        if stopping < 1e-12
+            break
+        end
+    end
+    @test analysisOrt.voltage.magnitude ≈ analysis.voltage.magnitude
+    @test analysisOrt.voltage.angle ≈ analysis.voltage.angle    
 end
 
 system14 = powerSystem(string(pathData, "case14test.m"))

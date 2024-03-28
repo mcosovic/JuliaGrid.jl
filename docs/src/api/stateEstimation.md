@@ -48,6 +48,7 @@ restorationGram!(::PowerSystem, ::Measurement, ::Measurement, ::IslandWatt)
 ## AC State Estimation
 ```@docs
 gaussNewton
+acLavStateEstimation
 solve!(::PowerSystem, ::ACStateEstimationWLS{NonlinearWLS})
 ```
 

@@ -49,7 +49,7 @@ analysis = pmuWlsStateEstimation(system, device, Orthogonal)
 ```
 """
 function pmuWlsStateEstimation(system::PowerSystem, device::Measurement, factorization::Type{<:Union{QR, LDLt, LU}} = LU)
-    coefficient, mean, precision, badData, power, current = pmuStateEstimationWLS(system, device)
+    coefficient, mean, precision, badData, power, current, _ = pmuStateEstimationWLS(system, device)
 
     method = Dict(LU => lu, LDLt => ldlt, QR => qr)
     return PMUStateEstimationWLS(
@@ -70,8 +70,12 @@ function pmuWlsStateEstimation(system::PowerSystem, device::Measurement, factori
 end
 
 function pmuWlsStateEstimation(system::PowerSystem, device::Measurement, method::Type{<:Orthogonal})
-    coefficient, mean, precision, badData, power, current = pmuStateEstimationWLS(system, device)
+    coefficient, mean, precision, badData, power, current, correlated = pmuStateEstimationWLS(system, device)
 
+    if correlated
+        throw(ErrorException("The precision matrix is non-diagonal, therefore preventing the use of the orthogonal method.")) 
+    end
+    
     return PMUStateEstimationWLS(
         Polar(Float64[], Float64[]),
         power,
@@ -94,6 +98,7 @@ function pmuStateEstimationWLS(system::PowerSystem, device::Measurement)
     bus = system.bus
     branch = system.branch
     pmu = device.pmu
+    correlated = false
 
     if isempty(ac.nodalMatrix)
         acModel!(system)
@@ -135,6 +140,7 @@ function pmuStateEstimationWLS(system::PowerSystem, device::Measurement)
         varianceIm = pmu.magnitude.variance[i] * sinAngle^2 + pmu.angle.variance[i] * (pmu.magnitude.mean[i] * cosAngle)^2
 
         if pmu.layout.correlated[i]
+            correlated = true
             covariance = sinAngle * cosAngle * (pmu.magnitude.variance[i] - pmu.angle.variance[i] * pmu.magnitude.mean[i]^2)
             rowPrec, colPrec, valPrec, cntPrec = invCovarianceBlock(rowPrec, colPrec, valPrec, cntPrec, varianceRe, varianceIm, covariance, rowindex)
         else
@@ -241,9 +247,8 @@ function pmuStateEstimationWLS(system::PowerSystem, device::Measurement)
         Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]))
     current = Current(Polar(Float64[], Float64[]), Polar(Float64[], Float64[]), Polar(Float64[], Float64[]), Polar(Float64[], Float64[]))       
 
-    return coefficient, mean, precision, badData, power, current
+    return coefficient, mean, precision, badData, power, current, correlated
 end
-
 
 """
     pmuLavStateEstimation(system::PowerSystem, device::Measurement, optimizer)
@@ -463,13 +468,8 @@ function solve!(system::PowerSystem, analysis::PMUStateEstimationWLS{LinearOrtho
     se = analysis.method
     bus = system.bus
 
-    for i = 1:2:(se.number)
-        se.precision[i, i] = se.precision[i, i]^(1/2)
-        se.precision[i + 1, i + 1] = se.precision[i + 1, i + 1]^(1/2)
-
-        if se.precision[i + 1, i] != 0.0 || se.precision[i, i + 1] != 0.0
-            throw(ErrorException("The precision matrix is non-diagonal, therefore preventing the use of the orthogonal method.")) 
-        end
+    for i = 1:se.number
+        se.precision.nzval[i] = sqrt(se.precision.nzval[i])
     end
 
     coefficientScale = se.precision * se.coefficient
@@ -488,7 +488,7 @@ function solve!(system::PowerSystem, analysis::PMUStateEstimationWLS{LinearOrtho
     end
 
     for i = 1:se.number
-        se.precision[i, i] = se.precision[i, i]^2
+        se.precision.nzval[i] ^= 2
     end
 end
 
