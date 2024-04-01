@@ -1028,7 +1028,7 @@ for i = 1:10
 end
 ```
 """
-function startingVoltage!(system::PowerSystem, analysis::ACPowerFlow{Union{NewtonRaphson, FastNewtonRaphson}})
+function startingVoltage!(system::PowerSystem, analysis::ACPowerFlow{T}) where T <: Union{NewtonRaphson, FastNewtonRaphson}
     @inbounds for i = 1:system.bus.number
         if !isempty(system.bus.supply.generator[i]) && system.bus.layout.type[i] != 1
             analysis.voltage.magnitude[i] = system.generator.voltage.magnitude[system.bus.supply.generator[i][1]]

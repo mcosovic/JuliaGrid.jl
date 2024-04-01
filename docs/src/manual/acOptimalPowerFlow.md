@@ -76,7 +76,7 @@ nothing # hide
 ## [Optimization Variables](@id ACOptimizationVariablesManual)
 In the AC optimal power flow model, the active and reactive power outputs of the generators are expressed as nonlinear functions of the bus voltage magnitudes and angles. As a result, the variables in this model include the active and reactive power outputs of the generators, as well as the bus voltage magnitudes and angles:
 ```@repl ACOptimalPowerFlow
-JuMP.all_variables(analysis.jump)
+JuMP.all_variables(analysis.method.jump)
 ```
 
 It is important to note that this is not a comprehensive set of optimization variables. When the cost function is defined as a linear piecewise function comprising multiple segments, as illustrated in the case of the active power output cost for `Generator 2`, JuliaGrid automatically generates helper optimization variables named `actwise` and `reactwise`, and formulates a set of linear constraints to effectively address these cost functions. It is worth emphasizing that in instances where a linear piecewise cost function consists of only a single segment, as demonstrated by the reactive power output cost of `Generator 2`, the function is modelled as a standard linear function, obviating the need for additional helper optimization variables.
@@ -85,7 +85,7 @@ For the sake of simplicity, we initially assume that both generators are out-of-
 
 Please be aware that JuliaGrid maintains references to all variables, which are categorized into six fields:
 ```@repl ACOptimalPowerFlow
-fieldnames(typeof(analysis.variable))
+fieldnames(typeof(analysis.method.variable))
 ```
 
 ---
@@ -93,13 +93,13 @@ fieldnames(typeof(analysis.variable))
 ##### Add Variables
 The user has the ability to easily add new variables to the defined AC optimal power flow model by using the [`@variable`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.@variable) macro from the JuMP package. Here is an example:
 ```@example ACOptimalPowerFlow
-JuMP.@variable(analysis.jump, newVariable)
+JuMP.@variable(analysis.method.jump, newVariable)
 nothing # hide
 ```
 
 We can verify that the new variable is included in the defined model by using the function:
 ```@repl ACOptimalPowerFlow
-JuMP.is_valid(analysis.jump, newVariable)
+JuMP.is_valid(analysis.method.jump, newVariable)
 ```
 
 ---
@@ -107,12 +107,12 @@ JuMP.is_valid(analysis.jump, newVariable)
 ##### Delete Variables
 The variable can be deleted, but this operation is only applicable if the objective function is either affine or quadratic. To achieve this, we can utilize the [`delete`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.delete) function provided by the JuMP, as demonstrated below:
 ```@example ACOptimalPowerFlow
-JuMP.delete(analysis.jump, newVariable)
+JuMP.delete(analysis.method.jump, newVariable)
 ```
 
 After deletion, the variable is no longer part of the model:
 ```@repl ACOptimalPowerFlow
-JuMP.is_valid(analysis.jump, newVariable)
+JuMP.is_valid(analysis.method.jump, newVariable)
 ```
 
 ---
@@ -120,7 +120,7 @@ JuMP.is_valid(analysis.jump, newVariable)
 ## [Constraint Functions](@id DCConstraintFunctionsManual)
 JuliaGrid keeps track of all the references to internally formed constraints in the `constraint` field of the `ACOptimalPowerFlow` composite type. These constraints are divided into six fields:
 ```@repl ACOptimalPowerFlow
-fieldnames(typeof(analysis.constraint))
+fieldnames(typeof(analysis.method.constraint))
 ```
 
 !!! note "Info"
@@ -131,7 +131,7 @@ fieldnames(typeof(analysis.constraint))
 ##### Slack Bus Constraint
 The `slack` field contains a reference to the equality constraint associated with the fixed bus voltage angle value of the slack bus. This constraint is set within the [`addBus!`](@ref addBus!) function using the `angle` keyword:
 ```@repl ACOptimalPowerFlow
-print(system.bus.label, analysis.constraint.slack.angle)
+print(system.bus.label, analysis.method.constraint.slack.angle)
 ```
 
 Users have the flexibility to modify this constraint by changing which bus serves as the slack bus and by adjusting the value of the bus angle. This can be achieved using the [`updateBus!`](@ref updateBus!) function, for example:
@@ -143,7 +143,7 @@ nothing # hide
 
 Subsequently, the updated slack constraint can be inspected as follows:
 ```@repl ACOptimalPowerFlow
-print(system.bus.label, analysis.constraint.slack.angle)
+print(system.bus.label, analysis.method.constraint.slack.angle)
 ```
 
 ---
@@ -153,12 +153,12 @@ The `balance` field contains references to the equality constraints associated w
 
 The constant term in the active power balance equations is determined by the `active` keyword within the [`addBus!`](@ref addBus!) function, which defines the active power demanded at the bus. We can access the references to the active power balance constraints using the following code snippet:
 ```@repl ACOptimalPowerFlow
-print(system.bus.label, analysis.constraint.balance.active)
+print(system.bus.label, analysis.method.constraint.balance.active)
 ```
 
 Similarly, the constant term in the reactive power balance equations is determined by the `reactive` keyword within the [`addBus!`](@ref addBus!) function, which defines the reactive power demanded at the bus. We can access the references to the reactive power balance constraints using the following code snippet:
 ```@repl ACOptimalPowerFlow
-print(system.bus.label, analysis.constraint.balance.reactive)
+print(system.bus.label, analysis.method.constraint.balance.reactive)
 ```
 
 During the execution of functions that add or update power system components, these constraints are automatically adjusted to reflect the current configuration of the power system, for example:
@@ -170,7 +170,7 @@ nothing # hide
 
 For example, the updated set of active power balance constraints can be examined as follows:
 ```@repl ACOptimalPowerFlow
-print(system.bus.label, analysis.constraint.balance.active)
+print(system.bus.label, analysis.method.constraint.balance.active)
 ```
 
 ---
@@ -180,12 +180,12 @@ The `voltage` field within the model contains references to the inequality const
 
 The minimum and maximum bus voltage magnitude limits are set using the `minMagnitude` and `maxMagnitude` keywords within the [`addBus!`](@ref addBus!) function. The constraints associated with these limits can be accessed using:
 ```@repl ACOptimalPowerFlow
-print(system.bus.label, analysis.constraint.voltage.magnitude)
+print(system.bus.label, analysis.method.constraint.voltage.magnitude)
 ```
 
 Similarly, the minimum and maximum voltage angle difference limits between the "from" and "to" bus ends of each branch are set using the `minDiffAngle` and `maxDiffAngle` keywords within the [`addBranch!`](@ref addBranch!) function. The constraints associated with these limits can be accessed using the following code snippet:
 ```@repl ACOptimalPowerFlow
-print(system.branch.label, analysis.constraint.voltage.angle)
+print(system.branch.label, analysis.method.constraint.voltage.angle)
 ```
 Please note that if the limit constraints are set to `minDiffAngle = -2π` and `maxDiffAngle = 2π` for the corresponding branch, JuliGrid will omit the corresponding inequality constraint.
 
@@ -198,8 +198,8 @@ nothing # hide
 
 Subsequently, the updated set of constraints can be examined as follows:
 ```@repl ACOptimalPowerFlow
-print(system.bus.label, analysis.constraint.voltage.magnitude)
-print(system.branch.label, analysis.constraint.voltage.angle)
+print(system.bus.label, analysis.method.constraint.voltage.magnitude)
+print(system.branch.label, analysis.method.constraint.voltage.angle)
 ```
 
 ---
@@ -209,12 +209,12 @@ The `flow` field contains references to the inequality constraints associated wi
 
 By default, the `longTerm` keyword is linked to apparent power (`type = 1`). However, in the example, we configured it to use active power flow by setting `type = 2`. To access the flow constraints of branches at the "from" bus end, we can utilize the following code snippet:
 ```@repl ACOptimalPowerFlow
-print(system.branch.label, analysis.constraint.flow.from)
+print(system.branch.label, analysis.method.constraint.flow.from)
 ```
 
 Similarly, to access the "to" bus end flow constraints of branches we can use the following code snippet:
 ```@repl ACOptimalPowerFlow
-print(system.branch.label, analysis.constraint.flow.to)
+print(system.branch.label, analysis.method.constraint.flow.to)
 ```
 Please note that if the flow constraints are set to `longTerm = 0.0` for the corresponding branch, JuliGrid will omit the corresponding inequality constraint.
 
@@ -226,8 +226,8 @@ nothing # hide
 
 The updated set of flow constraints can be examined as follows:
 ```@repl ACOptimalPowerFlow
-print(system.branch.label, analysis.constraint.flow.from)
-print(system.branch.label, analysis.constraint.flow.to)
+print(system.branch.label, analysis.method.constraint.flow.from)
+print(system.branch.label, analysis.method.constraint.flow.to)
 ```
 
 ---
@@ -237,12 +237,12 @@ The `capability` field contains references to the inequality constraints associa
 
 The constraints associated with the minimum and maximum active power output limits of the generators are defined using the `minActive` and `maxActive` keywords within the [`addGenerator!`](@ref addGenerator!) function. To access the constraints associated with these limits, we can use the following code snippet:
 ```@repl ACOptimalPowerFlow
-print(system.generator.label, analysis.constraint.capability.active)
+print(system.generator.label, analysis.method.constraint.capability.active)
 ```
 
 Similarly, the constraints associated with the minimum and maximum reactive power output limits of the generators are specified using the `minReactive` and `maxReactive` keywords within the [`addGenerator!`](@ref addGenerator!) function. To access these constraints, we can use the following code snippet:
 ```@repl ACOptimalPowerFlow
-print(system.generator.label, analysis.constraint.capability.reactive)
+print(system.generator.label, analysis.method.constraint.capability.reactive)
 ```
 
 As demonstrated, the active and reactive power outputs of `Generator 1` and `Generator 2` are currently fixed at zero due to previous actions that set these generators out-of-service. However, we can modify these specific constraints by utilizing the [`updateGenerator!`](@ref updateGenerator!) function, as shown below:
@@ -254,8 +254,8 @@ nothing # hide
 
 Subsequently, the updated set of constraints can be examined as follows:
 ```@repl ACOptimalPowerFlow
-print(system.generator.label, analysis.constraint.capability.active)
-print(system.generator.label, analysis.constraint.capability.reactive)
+print(system.generator.label, analysis.method.constraint.capability.active)
+print(system.generator.label, analysis.method.constraint.capability.reactive)
 ```
 
 !!! note "Info"
@@ -266,14 +266,14 @@ print(system.generator.label, analysis.constraint.capability.reactive)
 ##### Power Piecewise Constraints
 In the context of cost modelling, the `piecewise` field acts as a reference to the inequality constraints associated with linear piecewise cost functions. These constraints are established using the [`cost!`](@ref cost!) function, with `active = 1` or `reactive = 1` specified when working with linear piecewise cost functions that consist of multiple segments. In our example, only the active power cost of `Generator 2` is modelled as a linear piecewise function with two segments, and JuliaGrid takes care of setting up the appropriate inequality constraints for each segment:
 ```@repl ACOptimalPowerFlow
-print(system.generator.label, analysis.constraint.piecewise.active)
+print(system.generator.label, analysis.method.constraint.piecewise.active)
 ```
 
-It is worth noting that these constraints can also be automatically updated using the [`cost!`](@ref cost!) function. Readers can find more details in the section discussing the objective function. 
+It is worth noting that these constraints can also be automatically updated using the [`cost!`](@ref cost!) function. Readers can find more details in the section discussing the objective function.
 
 As mentioned at the beginning, a linear piecewise cost functions with multiple segments will also introduce helper variables that are added to the objective function. In this specific example, the helper variable is:
 ```@repl ACOptimalPowerFlow
-analysis.variable.actwise[2]
+analysis.method.variable.actwise[2]
 ```
 
 ---
@@ -289,8 +289,8 @@ nothing # hide
 
 This will affect all constraints related to branches and generators, but it will also update balance constraints to configure the optimization model to match the current state of the power system. For example, we can observe the following updated constraints:
 ```@repl ACOptimalPowerFlow
-print(system.branch.label, analysis.constraint.voltage.angle)
-print(system.generator.label, analysis.constraint.capability.active)
+print(system.branch.label, analysis.method.constraint.voltage.angle)
+print(system.generator.label, analysis.method.constraint.capability.active)
 ```
 
 ---
@@ -298,7 +298,7 @@ print(system.generator.label, analysis.constraint.capability.active)
 ##### Add User-Defined Constraints
 Users also have the option to include their custom constraints within the established AC optimal power flow model by employing the [`@constraint`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.@constraint) macro. For example, the addition of a new constraint can be achieved as follows:
 ```@example ACOptimalPowerFlow
-JuMP.@constraint(analysis.jump, 0.0 <= analysis.variable.active[3] <= 0.3)
+JuMP.@constraint(analysis.method.jump, 0.0 <= analysis.method.variable.active[3] <= 0.3)
 nothing # hide
 ```
 
@@ -309,7 +309,7 @@ To delete a constraint, users can make use of the [`delete`](https://jump.dev/Ju
 
 For example, if the intention is to eliminate constraints related to the capability of `Generator 3`, we can use:
 ```@example ACOptimalPowerFlow
-JuMP.delete(analysis.jump, analysis.constraint.capability.active[3])
+JuMP.delete(analysis.method.jump, analysis.method.constraint.capability.active[3])
 nothing # hide
 ```
 
@@ -323,7 +323,7 @@ The objective function of the AC optimal power flow is formulated using polynomi
 
 In the provided example, the objective function to be minimized in order to obtain optimal values for the active and reactive power outputs of the generators, as well as the bus voltage magnitudes and angles, is as follows:
 ```@repl ACOptimalPowerFlow
-JuMP.objective_function(analysis.jump)
+JuMP.objective_function(analysis.method.jump)
 ```
 
 JuliaGrid also stores the objective function in a separate variable, which can be accessed by referring to the variable `analysis.objective`. In this variable, the objective function is organized in a way that separates the quadratic and nonlinear components of the objective function.
@@ -339,7 +339,7 @@ nothing # hide
 
 This leads to an updated objective function, which can be examined as follows:
 ```@repl ACOptimalPowerFlow
-JuMP.objective_function(analysis.jump)
+JuMP.objective_function(analysis.method.jump)
 ```
 
 ---
@@ -349,13 +349,13 @@ Users can modify the objective function using the [`set_objective_function`](htt
 
 In this context, we can utilize the saved objective function within the `objective` field of the `ACOptimalPowerFlow` type. For example, we can easily eliminate nonlinear parts and alter the quadratic component of the objective:
 ```@example ACOptimalPowerFlow
-expr = 5.0 * analysis.variable.active[1] * analysis.variable.active[1]
-JuMP.set_objective_function(analysis.jump, analysis.objective.quadratic - expr)
+expr = 5.0 * analysis.method.variable.active[1] * analysis.method.variable.active[1]
+JuMP.set_objective_function(analysis.method.jump, analysis.method.objective.quadratic - expr)
 ```
 
 We can now observe the updated objective function as follows:
 ```@repl ACOptimalPowerFlow
-JuMP.objective_function(analysis.jump)
+JuMP.objective_function(analysis.method.jump)
 ```
 
 ---
@@ -403,11 +403,11 @@ end
 ## [Optimal Power Flow Solution](@id ACOptimalPowerFlowSolutionManual)
 To establish the AC optimal power flow problem, we can utilize the [`acOptimalPowerFlow`](@ref acOptimalPowerFlow) function. After setting up the problem, we can use the [`solve!`](@ref solve!(::PowerSystem, ::ACOptimalPowerFlow)) function to compute the optimal values for the active and reactive power outputs of the generators and the bus voltage magnitudes angles. Also, to turn off the solver output within the REPL, we use the [`set_silent`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.set_silent) function before calling [`solve!`](@ref solve!(::PowerSystem, ::ACOptimalPowerFlow)) function. Here is an example:
 ```julia ACOptimalPowerFlow
-JuMP.set_silent(analysis.jump)
+JuMP.set_silent(analysis.method.jump)
 solve!(system, analysis)
 ```
 ```@setup ACOptimalPowerFlow
-JuMP.set_silent(analysis.jump)
+JuMP.set_silent(analysis.method.jump)
 solve!(system, analysis)
 nothing # hide
 ```
@@ -424,7 +424,7 @@ print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
 ##### Objective Value
 To obtain the objective value of the optimal power flow solution, we can use the [`objective_value`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.objective_value) function:
 ```@repl ACOptimalPowerFlow
-JuMP.objective_value(analysis.jump)
+JuMP.objective_value(analysis.method.jump)
 ```
 
 ---
@@ -498,7 +498,7 @@ cost!(system; label = "Generator 2", active = 1, piecewise = [10.8 12.3; 14.7 16
 acModel!(system)
 
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
-JuMP.set_silent(analysis.jump) # hide
+JuMP.set_silent(analysis.method.jump) # hide
 solve!(system, analysis)
 
 nothing # hide

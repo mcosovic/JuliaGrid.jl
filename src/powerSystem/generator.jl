@@ -879,7 +879,6 @@ function cost!(system::PowerSystem, analysis::DCOptimalPowerFlow; label::L,
     jump = analysis.method.jump
     constraint = analysis.method.constraint
     variable = analysis.method.variable
-    objective = analysis.method.objective
 
     dropZero = false
     index = generator.label[getLabel(generator, label, "generator")]
@@ -890,7 +889,7 @@ function cost!(system::PowerSystem, analysis::DCOptimalPowerFlow; label::L,
             remove!(jump, constraint.piecewise.active, index)
         else
             dropZero = true
-            objective -= costOld
+            analysis.method.objective -= costOld
         end
     end
 
@@ -901,23 +900,23 @@ function cost!(system::PowerSystem, analysis::DCOptimalPowerFlow; label::L,
 
         if isPowerwiseNew
             if !isPowerwiseOld
-                addPowerwise(jump, objective, variable.actwise, index; name = "actwise")
+                addPowerwise(jump, analysis.method.objective, variable.actwise, index; name = "actwise")
             end
             addPiecewise(jump, variable.active[index], variable.actwise[index], constraint.piecewise.active, generator.cost.active.piecewise[index], size(generator.cost.active.piecewise[index], 1), index)
         else
             if isPowerwiseOld
                 dropZero = true
-                add_to_expression!(objective, -variable.actwise[index])
+                add_to_expression!(analysis.method.objective, -variable.actwise[index])
                 remove!(jump, variable.actwise, index)
             end
-            objective += costNew
+            analysis.method.objective += costNew
         end
     end
 
     if dropZero
-        drop_zeros!(objective)
+        drop_zeros!(analysis.method.objective)
     end
-    JuMP.set_objective_function(jump, objective)
+    JuMP.set_objective_function(jump, analysis.method.objective)
 end
 
 function cost!(system::PowerSystem, analysis::ACOptimalPowerFlow; label::L,
