@@ -499,7 +499,6 @@ function updateGenerator!(system::PowerSystem, analysis::DCOptimalPowerFlow;
     jump = analysis.method.jump
     constraint = analysis.method.constraint
     variable = analysis.method.variable
-    objective = analysis.method.objective
 
     index = generator.label[getLabel(generator, label, "generator")]
     indexBus = generator.layout.bus[index]
@@ -519,13 +518,13 @@ function updateGenerator!(system::PowerSystem, analysis::DCOptimalPowerFlow;
 
         if isPowerwise
             remove!(jump, constraint.piecewise.active, index)
-            add_to_expression!(objective, -variable.actwise[index])
+            add_to_expression!(analysis.method.objective, -variable.actwise[index])
             remove!(jump, variable.actwise, index)
         else
-            objective -= cost
+            analysis.method.objective -= cost
         end
-        drop_zeros!(objective)
-        JuMP.set_objective_function(jump, objective)
+        drop_zeros!(analysis.method.objective)
+        JuMP.set_objective_function(jump, analysis.method.objective)
 
         remove!(jump, constraint.capability.active, index)
         updateBalance(system, analysis, indexBus; power = 0, genIndex = index)
@@ -536,12 +535,12 @@ function updateGenerator!(system::PowerSystem, analysis::DCOptimalPowerFlow;
         cost, isPowerwise = costExpr(generator.cost.active, variable.active[index], index, label)
 
         if isPowerwise
-            addPowerwise(jump, objective, variable.actwise, index; name = "actwise")
+            addPowerwise(jump, analysis.method.objective, variable.actwise, index; name = "actwise")
             addPiecewise(jump, variable.active[index], variable.actwise[index], constraint.piecewise.active, generator.cost.active.piecewise[index], size(generator.cost.active.piecewise[index], 1), index)
         else
-            objective += cost
+            analysis.method.objective += cost
         end
-        JuMP.set_objective_function(jump, objective)
+        JuMP.set_objective_function(jump, analysis.method.objective)
 
         updateBalance(system, analysis, indexBus; power = 1, genIndex = index)
         remove!(jump, constraint.capability.active, index)
