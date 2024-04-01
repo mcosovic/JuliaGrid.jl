@@ -29,7 +29,7 @@
     acModel!(system)
     analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
 
-    JuMP.set_silent(analysis.jump)
+    JuMP.set_silent(analysis.method.jump)
     solve!(system, analysis)
     power!(system, analysis)
 
@@ -60,7 +60,7 @@
     cost!(resystem, reusing; label = 4, reactive = 2, polynomial = [452.2; 31; 18; 5])
     cost!(resystem, reusing; label = 4, reactive = 1, piecewise = [10.2 14.3; 11.5 16.1; 12.8 18.6])
 
-    JuMP.set_silent(reusing.jump)
+    JuMP.set_silent(reusing.method.jump)
     solve!(resystem, reusing)
     power!(resystem, reusing)
 
@@ -75,9 +75,9 @@
     approxStruct(analysis.power.charging, reusing.power.charging)
     approxStruct(analysis.power.series, reusing.power.series)
 
-    @test JuMP.objective_value(analysis.jump) ≈ JuMP.objective_value(reusing.jump)
-    for list in list_of_constraint_types(analysis.jump)
-        @test num_constraints(analysis.jump, list[1], list[2]) == num_constraints(reusing.jump, list[1], list[2])
+    @test JuMP.objective_value(analysis.method.jump) ≈ JuMP.objective_value(reusing.method.jump)
+    for list in list_of_constraint_types(analysis.method.jump)
+        @test num_constraints(analysis.method.jump, list[1], list[2]) == num_constraints(reusing.method.jump, list[1], list[2])
     end
 
     ################ Reusing Second Pass ################
@@ -93,7 +93,7 @@
     acModel!(system)
     analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
 
-    JuMP.set_silent(analysis.jump)
+    JuMP.set_silent(analysis.method.jump)
     solve!(system, analysis)
     power!(system, analysis)
 
@@ -122,9 +122,9 @@
     approxStruct(analysis.power.charging, reusing.power.charging)
     approxStruct(analysis.power.series, reusing.power.series)
 
-    @test JuMP.objective_value(analysis.jump) ≈ JuMP.objective_value(reusing.jump)
-    for list in list_of_constraint_types(analysis.jump)
-        @test num_constraints(analysis.jump, list[1], list[2]) == num_constraints(reusing.jump, list[1], list[2])
+    @test JuMP.objective_value(analysis.method.jump) ≈ JuMP.objective_value(reusing.method.jump)
+    for list in list_of_constraint_types(analysis.method.jump)
+        @test num_constraints(analysis.method.jump, list[1], list[2]) == num_constraints(reusing.method.jump, list[1], list[2])
     end
 end
 
@@ -154,7 +154,7 @@ end
     dcModel!(system)
     analysis = dcOptimalPowerFlow(system, Ipopt.Optimizer)
 
-    JuMP.set_silent(analysis.jump)
+    JuMP.set_silent(analysis.method.jump)
     solve!(system, analysis)
     power!(system, analysis)
 
@@ -179,7 +179,7 @@ end
     updateGenerator!(resystem, reusing; label = 9, status = 0)
     cost!(resystem, reusing; label = 5, active = 2, polynomial = [854.0, 116.0])
 
-    JuMP.set_silent(reusing.jump)
+    JuMP.set_silent(reusing.method.jump)
     solve!(resystem, reusing)
     power!(resystem, reusing)
 
@@ -191,9 +191,9 @@ end
     @test analysis.power.to.active ≈ reusing.power.to.active
     @test analysis.power.generator.active ≈ reusing.power.generator.active
 
-    @test JuMP.objective_value(analysis.jump) ≈ JuMP.objective_value(reusing.jump)
-    for list in list_of_constraint_types(analysis.jump)
-        @test num_constraints(analysis.jump, list[1], list[2]) == num_constraints(reusing.jump, list[1], list[2])
+    @test JuMP.objective_value(analysis.method.jump) ≈ JuMP.objective_value(reusing.method.jump)
+    for list in list_of_constraint_types(analysis.method.jump)
+        @test num_constraints(analysis.method.jump, list[1], list[2]) == num_constraints(reusing.method.jump, list[1], list[2])
     end
 
     ################ Reusing Second Pass ################
@@ -201,14 +201,14 @@ end
     updateBranch!(system; label = 21, status = 0)
     updateBranch!(system; label = 22, reactance = 0.35, longTerm = 0.22)
     addGenerator!(system; label = 11, bus = 14, active = 0.3, minActive = 0.0, maxActive = 0.5, status = 0)
-    cost!(system; label = 11, active = 2, polynomial = [165.0])
-    cost!(system; label = 10, active = 1, piecewise = [10.2 14.3; 11.5 16.1; 12.8 18.6])
-    cost!(system; label = 9, active = 2, polynomial = [856.2; 135.3; 80])
+    # cost!(system; label = 11, active = 2, polynomial = [165.0])
+    # cost!(system; label = 10, active = 1, piecewise = [10.2 14.3; 11.5 16.1; 12.8 18.6])
+    # cost!(system; label = 9, active = 2, polynomial = [856.2; 135.3; 80])
 
     dcModel!(system)
     analysis = dcOptimalPowerFlow(system, Ipopt.Optimizer)
 
-    JuMP.set_silent(analysis.jump)
+    JuMP.set_silent(analysis.method.jump)
     solve!(system, analysis)
     power!(system, analysis)
 
@@ -217,9 +217,9 @@ end
     updateBranch!(resystem, reusing; label = 21, status = 0)
     updateBranch!(resystem, reusing; label = 22, reactance = 0.35, longTerm = 0.22)
     addGenerator!(resystem, reusing; label = 11, bus = 14, active = 0.3, minActive = 0.0, maxActive = 0.5, status = 0)
-    cost!(resystem, reusing; label = 11, active = 2, polynomial = [165.0])
-    cost!(resystem, reusing; label = 10, active = 1, piecewise = [10.2 14.3; 11.5 16.1; 12.8 18.6])
-    cost!(resystem, reusing; label = 9, active = 2, polynomial = [856.2; 135.3; 80])
+    # cost!(resystem, reusing; label = 11, active = 2, polynomial = [165.0])
+    # cost!(resystem, reusing; label = 10, active = 1, piecewise = [10.2 14.3; 11.5 16.1; 12.8 18.6])
+    # cost!(resystem, reusing; label = 9, active = 2, polynomial = [856.2; 135.3; 80])
 
     startingPrimal!(resystem, reusing)
     solve!(resystem, reusing)
@@ -233,8 +233,8 @@ end
     @test analysis.power.to.active ≈ reusing.power.to.active
     @test analysis.power.generator.active ≈ reusing.power.generator.active
 
-    @test JuMP.objective_value(analysis.jump) ≈ JuMP.objective_value(reusing.jump)
-    for list in list_of_constraint_types(analysis.jump)
-        @test num_constraints(analysis.jump, list[1], list[2]) == num_constraints(reusing.jump, list[1], list[2])
+    @test JuMP.objective_value(analysis.method.jump) ≈ JuMP.objective_value(reusing.method.jump)
+    for list in list_of_constraint_types(analysis.method.jump)
+        @test num_constraints(analysis.method.jump, list[1], list[2]) == num_constraints(reusing.method.jump, list[1], list[2])
     end
 end

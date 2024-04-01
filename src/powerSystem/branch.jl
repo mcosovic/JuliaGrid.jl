@@ -76,11 +76,11 @@ addBranch!(system; from = "Bus 1", to = "Bus 2", reactance = 0.12, shiftAngle = 
 ```
 """
 function addBranch!(system::PowerSystem;
-    label::L = missing, from::L, to::L, status::T = missing,
-    resistance::T = missing, reactance::T = missing, susceptance::T = missing,
-    conductance::T = missing, turnsRatio::T = missing, shiftAngle::T = missing,
-    minDiffAngle::T = missing, maxDiffAngle::T = missing,
-    longTerm::T = missing, shortTerm::T = missing, emergency::T = missing, type::T = missing)
+    label::L = missing, from::L, to::L, status::A = missing,
+    resistance::A = missing, reactance::A = missing, susceptance::A = missing,
+    conductance::A = missing, turnsRatio::A = missing, shiftAngle::A = missing,
+    minDiffAngle::A = missing, maxDiffAngle::A = missing,
+    longTerm::A = missing, shortTerm::A = missing, emergency::A = missing, type::A = missing)
 
     branch = system.branch
     default = template.branch
@@ -149,35 +149,35 @@ function addBranch!(system::PowerSystem;
 end
 
 function addBranch!(system::PowerSystem, analysis::DCPowerFlow;
-    label::L = missing, from::L, to::L, status::T = missing,
-    resistance::T = missing, reactance::T = missing, susceptance::T = missing,
-    conductance::T = missing, turnsRatio::T = missing, shiftAngle::T = missing,
-    minDiffAngle::T = missing, maxDiffAngle::T = missing,
-    longTerm::T = missing, shortTerm::T = missing, emergency::T = missing, type::T = missing)
+    label::L = missing, from::L, to::L, status::A = missing,
+    resistance::A = missing, reactance::A = missing, susceptance::A = missing,
+    conductance::A = missing, turnsRatio::A = missing, shiftAngle::A = missing,
+    minDiffAngle::A = missing, maxDiffAngle::A = missing,
+    longTerm::A = missing, shortTerm::A = missing, emergency::A = missing, type::A = missing)
 
     addBranch!(system; label, from, to, status, resistance, reactance, susceptance,
     conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, longTerm, shortTerm,
     emergency, type)
 end
 
-function addBranch!(system::PowerSystem, analysis::Union{NewtonRaphson, GaussSeidel};
-    label::L = missing, from::L, to::L, status::T = missing,
-    resistance::T = missing, reactance::T = missing, susceptance::T = missing,
-    conductance::T = missing, turnsRatio::T = missing, shiftAngle::T = missing,
-    minDiffAngle::T = missing, maxDiffAngle::T = missing,
-    longTerm::T = missing, shortTerm::T = missing, emergency::T = missing, type::T = missing)
+function addBranch!(system::PowerSystem, analysis::Union{ACPowerFlow{NewtonRaphson}, ACPowerFlow{GaussSeidel}};
+    label::L = missing, from::L, to::L, status::A = missing,
+    resistance::A = missing, reactance::A = missing, susceptance::A = missing,
+    conductance::A = missing, turnsRatio::A = missing, shiftAngle::A = missing,
+    minDiffAngle::A = missing, maxDiffAngle::A = missing,
+    longTerm::A = missing, shortTerm::A = missing, emergency::A = missing, type::A = missing)
 
     addBranch!(system; label, from, to, status, resistance, reactance, susceptance,
     conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, longTerm, shortTerm,
     emergency, type)
 end
 
-function addBranch!(system::PowerSystem, analysis::FastNewtonRaphson;     
-    label::L = missing, from::L, to::L, status::T = missing,
-    resistance::T = missing, reactance::T = missing, susceptance::T = missing,
-    conductance::T = missing, turnsRatio::T = missing, shiftAngle::T = missing,
-    minDiffAngle::T = missing, maxDiffAngle::T = missing,
-    longTerm::T = missing, shortTerm::T = missing, emergency::T = missing, type::T = missing)
+function addBranch!(system::PowerSystem, analysis::ACPowerFlow{FastNewtonRaphson};
+    label::L = missing, from::L, to::L, status::A = missing,
+    resistance::A = missing, reactance::A = missing, susceptance::A = missing,
+    conductance::A = missing, turnsRatio::A = missing, shiftAngle::A = missing,
+    minDiffAngle::A = missing, maxDiffAngle::A = missing,
+    longTerm::A = missing, shortTerm::A = missing, emergency::A = missing, type::A = missing)
 
     bus = system.bus
     branch = system.branch
@@ -194,16 +194,16 @@ function addBranch!(system::PowerSystem, analysis::FastNewtonRaphson;
 end
 
 function addBranch!(system::PowerSystem, analysis::DCOptimalPowerFlow;
-    label::L = missing, from::L, to::L, status::T = missing,
-    resistance::T = missing, reactance::T = missing, susceptance::T = missing,
-    conductance::T = missing, turnsRatio::T = missing, shiftAngle::T = missing,
-    minDiffAngle::T = missing, maxDiffAngle::T = missing,
-    longTerm::T = missing, shortTerm::T = missing, emergency::T = missing, type::T = missing)
+    label::L = missing, from::L, to::L, status::A = missing,
+    resistance::A = missing, reactance::A = missing, susceptance::A = missing,
+    conductance::A = missing, turnsRatio::A = missing, shiftAngle::A = missing,
+    minDiffAngle::A = missing, maxDiffAngle::A = missing,
+    longTerm::A = missing, shortTerm::A = missing, emergency::A = missing, type::A = missing)
 
     branch = system.branch
-    jump = analysis.jump
-    constraint = analysis.constraint
-    variable = analysis.variable
+    jump = analysis.method.jump
+    constraint = analysis.method.constraint
+    variable = analysis.method.variable
 
     addBranch!(system; label, from, to, status, resistance, reactance, susceptance,
     conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, longTerm, shortTerm,
@@ -223,16 +223,16 @@ function addBranch!(system::PowerSystem, analysis::DCOptimalPowerFlow;
 end
 
 function addBranch!(system::PowerSystem, analysis::ACOptimalPowerFlow;
-    label::L = missing, from::L, to::L, status::T = missing,
-    resistance::T = missing, reactance::T = missing, susceptance::T = missing,
-    conductance::T = missing, turnsRatio::T = missing, shiftAngle::T = missing,
-    minDiffAngle::T = missing, maxDiffAngle::T = missing,
-    longTerm::T = missing, shortTerm::T = missing, emergency::T = missing, type::T = missing)
+    label::L = missing, from::L, to::L, status::A = missing,
+    resistance::A = missing, reactance::A = missing, susceptance::A = missing,
+    conductance::A = missing, turnsRatio::A = missing, shiftAngle::A = missing,
+    minDiffAngle::A = missing, maxDiffAngle::A = missing,
+    longTerm::A = missing, shortTerm::A = missing, emergency::A = missing, type::A = missing)
 
     branch = system.branch
-    jump = analysis.jump
-    constraint = analysis.constraint
-    variable = analysis.variable
+    jump = analysis.method.jump
+    constraint = analysis.method.constraint
+    variable = analysis.method.variable
 
     addBranch!(system; label, from, to, status, resistance, reactance, susceptance,
     conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, longTerm, shortTerm,
@@ -290,10 +290,10 @@ updateBranch!(system; label = "Branch 1", reactance = 0.02, susceptance = 0.062)
 ```
 """
 function updateBranch!(system::PowerSystem;
-    label::L, status::T = missing, resistance::T = missing, reactance::T = missing,
-    susceptance::T = missing, conductance::T = missing, turnsRatio::T = missing,
-    shiftAngle::T = missing, minDiffAngle::T = missing, maxDiffAngle::T = missing,
-    longTerm::T = missing, shortTerm::T = missing, emergency::T = missing, type::T = missing)
+    label::L, status::A = missing, resistance::A = missing, reactance::A = missing,
+    susceptance::A = missing, conductance::A = missing, turnsRatio::A = missing,
+    shiftAngle::A = missing, minDiffAngle::A = missing, maxDiffAngle::A = missing,
+    longTerm::A = missing, shortTerm::A = missing, emergency::A = missing, type::A = missing)
 
     branch = system.branch
     ac = system.model.ac
@@ -307,7 +307,7 @@ function updateBranch!(system::PowerSystem;
     checkStatus(status)
 
     basePowerInv = 1 / (system.base.power.value * system.base.power.prefix)
-    dcAdmittance = isset(reactance) || isset(turnsRatio) 
+    dcAdmittance = isset(reactance) || isset(turnsRatio)
     parameter = dcAdmittance || isset(resistance) || isset(conductance) || isset(susceptance) || isset(shiftAngle)
 
     if status == 1 && branch.layout.status[index] == 0
@@ -410,37 +410,37 @@ function updateBranch!(system::PowerSystem;
 end
 
 function updateBranch!(system::PowerSystem, analysis::DCPowerFlow;
-    label::L, status::T = missing, resistance::T = missing, reactance::T = missing,
-    susceptance::T = missing, conductance::T = missing, turnsRatio::T = missing,
-    shiftAngle::T = missing, minDiffAngle::T = missing, maxDiffAngle::T = missing,
-    longTerm::T = missing, shortTerm::T = missing, emergency::T = missing, type::T = missing)
+    label::L, status::A = missing, resistance::A = missing, reactance::A = missing,
+    susceptance::A = missing, conductance::A = missing, turnsRatio::A = missing,
+    shiftAngle::A = missing, minDiffAngle::A = missing, maxDiffAngle::A = missing,
+    longTerm::A = missing, shortTerm::A = missing, emergency::A = missing, type::A = missing)
 
     updateBranch!(system; label, status, resistance, reactance, susceptance,
     conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, longTerm, shortTerm,
     emergency, type)
 end
 
-function updateBranch!(system::PowerSystem, analysis::Union{NewtonRaphson, GaussSeidel};
-    label::L, status::T = missing, resistance::T = missing, reactance::T = missing,
-    susceptance::T = missing, conductance::T = missing, turnsRatio::T = missing,
-    shiftAngle::T = missing, minDiffAngle::T = missing, maxDiffAngle::T = missing,
-    longTerm::T = missing, shortTerm::T = missing, emergency::T = missing, type::T = missing)
+function updateBranch!(system::PowerSystem, analysis::Union{ACPowerFlow{NewtonRaphson}, ACPowerFlow{GaussSeidel}};
+    label::L, status::A = missing, resistance::A = missing, reactance::A = missing,
+    susceptance::A = missing, conductance::A = missing, turnsRatio::A = missing,
+    shiftAngle::A = missing, minDiffAngle::A = missing, maxDiffAngle::A = missing,
+    longTerm::A = missing, shortTerm::A = missing, emergency::A = missing, type::A = missing)
 
     updateBranch!(system; label, status, resistance, reactance, susceptance,
     conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, longTerm, shortTerm,
     emergency, type)
 end
 
-function updateBranch!(system::PowerSystem, analysis::FastNewtonRaphson;
-    label::L, status::T = missing, resistance::T = missing, reactance::T = missing,
-    susceptance::T = missing, conductance::T = missing, turnsRatio::T = missing,
-    shiftAngle::T = missing, minDiffAngle::T = missing, maxDiffAngle::T = missing,
-    longTerm::T = missing, shortTerm::T = missing, emergency::T = missing, type::T = missing)
+function updateBranch!(system::PowerSystem, analysis::ACPowerFlow{FastNewtonRaphson};
+    label::L, status::A = missing, resistance::A = missing, reactance::A = missing,
+    susceptance::A = missing, conductance::A = missing, turnsRatio::A = missing,
+    shiftAngle::A = missing, minDiffAngle::A = missing, maxDiffAngle::A = missing,
+    longTerm::A = missing, shortTerm::A = missing, emergency::A = missing, type::A = missing)
 
     branch = system.branch
     index = branch.label[getLabel(branch, label, "branch")]
 
-    if branch.layout.status[index] == 1 
+    if branch.layout.status[index] == 1
         fastNewtonRaphsonJacobian(system, analysis, index, -1)
     end
 
@@ -454,15 +454,15 @@ function updateBranch!(system::PowerSystem, analysis::FastNewtonRaphson;
 end
 
 function updateBranch!(system::PowerSystem, analysis::DCOptimalPowerFlow;
-    label::L, status::T = missing, resistance::T = missing, reactance::T = missing,
-    susceptance::T = missing, conductance::T = missing, turnsRatio::T = missing,
-    shiftAngle::T = missing, minDiffAngle::T = missing, maxDiffAngle::T = missing,
-    longTerm::T = missing, shortTerm::T = missing, emergency::T = missing, type::T = missing)
+    label::L, status::A = missing, resistance::A = missing, reactance::A = missing,
+    susceptance::A = missing, conductance::A = missing, turnsRatio::A = missing,
+    shiftAngle::A = missing, minDiffAngle::A = missing, maxDiffAngle::A = missing,
+    longTerm::A = missing, shortTerm::A = missing, emergency::A = missing, type::A = missing)
 
     branch = system.branch
-    jump = analysis.jump
-    constraint = analysis.constraint
-    variable = analysis.variable
+    jump = analysis.method.jump
+    constraint = analysis.method.constraint
+    variable = analysis.method.variable
 
     index = branch.label[getLabel(branch, label, "branch")]
     statusOld = branch.layout.status[index]
@@ -502,15 +502,15 @@ function updateBranch!(system::PowerSystem, analysis::DCOptimalPowerFlow;
 end
 
 function updateBranch!(system::PowerSystem, analysis::ACOptimalPowerFlow;
-    label::L, status::T = missing, resistance::T = missing, reactance::T = missing,
-    susceptance::T = missing, conductance::T = missing, turnsRatio::T = missing,
-    shiftAngle::T = missing, minDiffAngle::T = missing, maxDiffAngle::T = missing,
-    longTerm::T = missing, shortTerm::T = missing, emergency::T = missing, type::T = missing)
+    label::L, status::A = missing, resistance::A = missing, reactance::A = missing,
+    susceptance::A = missing, conductance::A = missing, turnsRatio::A = missing,
+    shiftAngle::A = missing, minDiffAngle::A = missing, maxDiffAngle::A = missing,
+    longTerm::A = missing, shortTerm::A = missing, emergency::A = missing, type::A = missing)
 
     branch = system.branch
-    jump = analysis.jump
-    constraint = analysis.constraint
-    variable = analysis.variable
+    jump = analysis.method.jump
+    constraint = analysis.method.constraint
+    variable = analysis.method.variable
 
     index = branch.label[getLabel(branch, label, "branch")]
     statusOld = branch.layout.status[index]

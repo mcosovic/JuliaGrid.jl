@@ -2,8 +2,8 @@
     addVoltmeter!(system::PowerSystem, device::Measurement; label, bus, magnitude, variance,
         noise, status)
 
-The function adds a new voltmeter that measures bus voltage magnitude to the `Measurement` 
-composite type within a given `PowerSystem` type. The voltmeter can be added to an already 
+The function adds a new voltmeter that measures bus voltage magnitude to the `Measurement`
+composite type within a given `PowerSystem` type. The voltmeter can be added to an already
 defined bus.
 
 # Keywords
@@ -23,7 +23,7 @@ The voltmeter is defined with the following keywords:
 The function updates the `voltmeter` field of the `Measurement` composite type.
 
 # Default Settings
-Default settings for certain keywords are as follows: `variance = 1e-2`, `noise = true`, 
+Default settings for certain keywords are as follows: `variance = 1e-2`, `noise = true`,
 `status = 1`, and users can modify these default settings using the
 [`@voltmeter`](@ref @voltmeter) macro.
 
@@ -55,7 +55,7 @@ addVoltmeter!(system, device; label = "Voltmeter 1", bus = "Bus 1", magnitude = 
 ```
 """
 function addVoltmeter!(system::PowerSystem, device::Measurement;
-    label::L = missing, bus::L, magnitude::T, variance::T = missing, status::T = missing,
+    label::L = missing, bus::L, magnitude::A, variance::A = missing, status::A = missing,
     noise::Bool = template.voltmeter.noise)
 
     voltmeter = device.voltmeter
@@ -78,7 +78,7 @@ end
 
 The function incorporates voltmeters into the `Measurement` composite type for every bus
 within the `PowerSystem` type. These measurements are derived from the exact bus voltage
-magnitudes defined in the `AC` abstract type. These exact values are perturbed by white 
+magnitudes defined in the `AC` abstract type. These exact values are perturbed by white
 Gaussian noise with the specified `variance` to obtain measurement data.
 
 # Keywords
@@ -99,12 +99,7 @@ can modify these default settings using the [`@voltmeter`](@ref @voltmeter) macr
 By default, the unit for `variance` is per-unit (pu). However, users can choose to use
 volts (V) as the units by applying the [`@voltage`](@ref @voltage) macro.
 
-# Abstract type
-The abstract type `AC` can have the following subtypes:
-- `ACPowerFlow`: generates measurements uses AC power flow results;
-- `ACOptimalPowerFlow`: generates measurements uses AC optimal power flow results.
-
-# Examples
+# Example
 Adding voltmeters using exact values from the AC power flow:
 ```jldoctest
 system = powerSystem("case14.h5")
@@ -124,23 +119,9 @@ device = measurement()
 @voltmeter(label = "Voltmeter ?")
 addVoltmeter!(system, device, analysis; variance = 1e-3)
 ```
-
-Adding voltmeters using exact values from the AC optimal power flow:
-```jldoctest
-system = powerSystem("case14.h5")
-acModel!(system)
-
-analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
-solve!(system, analysis)
-
-device = measurement()
-
-@voltmeter(label = "Voltmeter ?")
-addVoltmeter!(system, device, analysis; variance = 1e-3)
-```
 """
 function addVoltmeter!(system::PowerSystem, device::Measurement, analysis::AC;
-    variance::T = missing, status::T = missing)
+    variance::A = missing, status::A = missing)
 
     voltmeter = device.voltmeter
     default = template.voltmeter
@@ -208,7 +189,7 @@ updateVoltmeter!(system, device; label = "Voltmeter 1", magnitude = 0.9, noise =
 ```
 """
 function updateVoltmeter!(system::PowerSystem, device::Measurement; label::L,
-    magnitude::T = missing, variance::T = missing, status::T = missing,
+    magnitude::A = missing, variance::A = missing, status::A = missing,
     noise::Bool = template.voltmeter.noise)
 
     voltmeter = device.voltmeter

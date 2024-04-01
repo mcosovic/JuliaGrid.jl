@@ -3,7 +3,7 @@
         variance, noise, status)
 
 The function adds a new wattmeter that measures active power injection or active power flow
-to the `Measurement` composite type within a given `PowerSystem` type. The wattmeter can 
+to the `Measurement` composite type within a given `PowerSystem` type. The wattmeter can
 be added to an already defined bus or branch.
 
 # Keywords
@@ -25,10 +25,10 @@ The wattmeter is defined with the following keywords:
 The function updates the `wattmeter` field of the `Measurement` composite type.
 
 # Default Settings
-Default settings for certain keywords are as follows: `variance = 1e-2`, `noise = true`, 
-and `status = 1`, which apply to wattmeters located at the bus, as well as at both the 
-"from" and "to" bus ends. Users can fine-tune these settings by explicitly specifying the 
-variance and status for wattmeters positioned at the buses, "from" bus ends, or "to" bus 
+Default settings for certain keywords are as follows: `variance = 1e-2`, `noise = true`,
+and `status = 1`, which apply to wattmeters located at the bus, as well as at both the
+"from" and "to" bus ends. Users can fine-tune these settings by explicitly specifying the
+variance and status for wattmeters positioned at the buses, "from" bus ends, or "to" bus
 ends of branches using the [`@wattmeter`](@ref @wattmeter) macro.
 
 # Units
@@ -66,10 +66,10 @@ addWattmeter!(system, device; label = "Wattmeter 2", from = "Branch 1", active =
 """
 function addWattmeter!(system::PowerSystem, device::Measurement;
     label::L = missing, bus::L = missing, from::L = missing, to::L = missing,
-    active::T, variance::T = missing, status::T = missing,
+    active::A, variance::A = missing, status::A = missing,
     noise::Bool = template.wattmeter.noise)
 
-    addPowerMeter!(system, device.wattmeter, device.wattmeter.active, template.wattmeter, 
+    addPowerMeter!(system, device.wattmeter, device.wattmeter.active, template.wattmeter,
         prefix.activePower, label, bus, from, to, active, variance, status, noise)
 end
 
@@ -77,8 +77,8 @@ end
     addVarmeter!(system::PowerSystem, device::Measurement; label, bus, from, to, reactive,
         variance, noise, status)
 
-The function adds a new varmeter that measures reactivepower injection or reactive power 
-flow to the `Measurement` composite type within a given `PowerSystem` type. The varmeter 
+The function adds a new varmeter that measures reactivepower injection or reactive power
+flow to the `Measurement` composite type within a given `PowerSystem` type. The varmeter
 can be added to an already defined bus or branch.
 
 # Keywords
@@ -100,10 +100,10 @@ The varmeter is defined with the following keywords:
 The function updates the `varmeter` field of the `Measurement` composite type.
 
 # Default Settings
-Default settings for certain keywords are as follows: `variance = 1e-2`, `noise = true`, 
-and `status = 1`, which apply to varmeters located at the bus, as well as at both the 
-"from" and "to" bus ends. Users can fine-tune these settings by explicitly specifying the 
-variance and status for varmeters positioned at the buses, "from" bus ends, or "to" bus 
+Default settings for certain keywords are as follows: `variance = 1e-2`, `noise = true`,
+and `status = 1`, which apply to varmeters located at the bus, as well as at both the
+"from" and "to" bus ends. Users can fine-tune these settings by explicitly specifying the
+variance and status for varmeters positioned at the buses, "from" bus ends, or "to" bus
 ends of branches using the [`@varmeter`](@ref @varmeter) macro.
 
 # Units
@@ -141,21 +141,21 @@ addVarmeter!(system, device; label = "Varmeter 2", from = "Branch 1", reactive =
 """
 function addVarmeter!(system::PowerSystem, device::Measurement;
     label::L = missing, bus::L = missing, from::L = missing, to::L = missing,
-    reactive::T, variance::T = missing, status::T = missing,
+    reactive::A, variance::A = missing, status::A = missing,
     noise::Bool = template.varmeter.noise)
 
-    addPowerMeter!(system, device.varmeter, device.varmeter.reactive, template.varmeter, 
+    addPowerMeter!(system, device.varmeter, device.varmeter.reactive, template.varmeter,
         prefix.reactivePower, label, bus, from, to, reactive, variance, status, noise)
 end
 
 ######### Add Wattmeter or Varmeter ##########
 function addPowerMeter!(system, device, measure, default, prefixPower, label, bus, from, to,
     power, variance, status, noise)
-    
+
     location, busFlag, fromFlag, toFlag = checkLocation(device, bus, from, to)
 
     branchFlag = false
-    if !busFlag 
+    if !busFlag
         labelBranch = getLabel(system.branch, location, "branch")
         index = system.branch.label[labelBranch]
         if system.branch.layout.status[index] == 1
@@ -199,7 +199,7 @@ end
 The function incorporates wattmeters into the `Measurement` composite type for every bus
 and branch within the `PowerSystem` type. These measurements are derived from the exact
 active power injections at buses and active power flows in branches defined in the `AC`
-abstract type. These exact values are perturbed by white Gaussian noise with the specified 
+abstract type. These exact values are perturbed by white Gaussian noise with the specified
 `variance` to obtain measurement data.
 
 # Keywords
@@ -230,12 +230,7 @@ The default units for the `varianceBus`, `varianceFrom`, and `varianceTo` keywor
 per-units (pu). However, users can choose to use watts (W) as the units by applying the
 [`@power`](@ref @power) macro.
 
-# Abstract type
-The abstract type `AC` can have the following subtypes:
-- `ACPowerFlow`: generates measurements uses AC power flow results;
-- `ACOptimalPowerFlow`: generates measurements uses AC optimal power flow results.
-
-# Examples
+# Example
 Adding wattmeters using exact values from the AC power flow:
 ```jldoctest
 system = powerSystem("case14.h5")
@@ -256,31 +251,16 @@ device = measurement()
 @wattmeter(label = "Wattmeter ?")
 addWattmeter!(system, device, analysis; varianceBus = 1e-3, statusFrom = 0)
 ```
-
-Adding wattmeters using exact values from the AC optimal power flow:
-```jldoctest
-system = powerSystem("case14.h5")
-acModel!(system)
-
-analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
-solve!(system, analysis)
-power!(system, analysis)
-
-device = measurement()
-
-@wattmeter(label = "Wattmeter ?")
-addWattmeter!(system, device, analysis; varianceBus = 1e-3, statusFrom = 0)
-```
 """
 function addWattmeter!(system::PowerSystem, device::Measurement, analysis::AC;
-    varianceBus::T = missing, varianceFrom::T = missing, varianceTo::T = missing,
-    statusBus::T = missing, statusFrom::T = missing, statusTo::T = missing)
+    varianceBus::A = missing, varianceFrom::A = missing, varianceTo::A = missing,
+    statusBus::A = missing, statusFrom::A = missing, statusTo::A = missing)
 
     wattmeter = device.wattmeter
     power = analysis.power
 
     addPowermeter!(system, wattmeter, wattmeter.active, power.injection.active,
-        power.from.active, power.to.active, template.wattmeter, prefix.activePower, 
+        power.from.active, power.to.active, template.wattmeter, prefix.activePower,
         varianceBus, varianceFrom, varianceTo, statusBus, statusFrom, statusTo)
 end
 
@@ -291,7 +271,7 @@ end
 The function incorporates varmeters into the `Measurement` composite type for every bus
 and branch within the `PowerSystem` type. These measurements are derived from the exact
 reactive power injections at buses and reactive power flows in branches defined in the `AC`
-abstract type. These exact values are perturbed by white Gaussian noise with the specified 
+abstract type. These exact values are perturbed by white Gaussian noise with the specified
 `variance` to obtain measurement data.
 
 # Keywords
@@ -321,12 +301,7 @@ The default units for the `varianceBus`, `varianceFrom`, and `varianceTo` keywor
 per-units (pu). However, users can choose to use volt-amperes reactive (VAr) as the units
 by applying the [`@power`](@ref @power) macro.
 
-# Abstract type
-The abstract type `AC` can have the following subtypes:
-- `ACPowerFlow`: generates measurements uses AC power flow results;
-- `ACOptimalPowerFlow`: generates measurements uses AC optimal power flow results.
-
-# Examples
+# Example
 Adding varmeters using exact values from the AC power flow:
 ```jldoctest
 system = powerSystem("case14.h5")
@@ -347,36 +322,21 @@ device = measurement()
 @varmeter(label = "Varmeter ?")
 addVarmeter!(system, device, analysis; varianceFrom = 1e-3, statusBus = 0)
 ```
-
-Adding varmeters using exact values from the AC optimal power flow:
-```jldoctest
-system = powerSystem("case14.h5")
-acModel!(system)
-
-analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
-solve!(system, analysis)
-power!(system, analysis)
-
-device = measurement()
-
-@varmeter(label = "Varmeter ?")
-addVarmeter!(system, device, analysis; varianceFrom = 1e-3, statusBus = 0)
-```
 """
 function addVarmeter!(system::PowerSystem, device::Measurement, analysis::AC;
-    varianceBus::T = missing, varianceFrom::T = missing, varianceTo::T = missing,
-    statusBus::T = missing, statusFrom::T = missing, statusTo::T = missing)
+    varianceBus::A = missing, varianceFrom::A = missing, varianceTo::A = missing,
+    statusBus::A = missing, statusFrom::A = missing, statusTo::A = missing)
 
     varmeter = device.varmeter
     power = analysis.power
 
-    addPowermeter!(system, varmeter, varmeter.reactive, power.injection.reactive, power.from.reactive, 
-        power.to.reactive, template.varmeter, prefix.reactivePower, varianceBus, varianceFrom, varianceTo, 
+    addPowermeter!(system, varmeter, varmeter.reactive, power.injection.reactive, power.from.reactive,
+        power.to.reactive, template.varmeter, prefix.reactivePower, varianceBus, varianceFrom, varianceTo,
         statusBus, statusFrom, statusTo)
 end
 
 ######### Add Group of Wattmeters or Varmeters ##########
-function addPowermeter!(system, device, measure, powerBus, powerFrom, powerTo, default, 
+function addPowermeter!(system, device, measure, powerBus, powerFrom, powerTo, default,
     prefixPower, varianceBus, varianceFrom, varianceTo, statusBus, statusFrom, statusTo)
 
     if isempty(powerBus)
@@ -486,7 +446,7 @@ updateWattmeter!(system, device; label = "Wattmeter 1", active = 1.2, variance =
 ```
 """
 function updateWattmeter!(system::PowerSystem, device::Measurement; label::L,
-    active::T = missing, variance::T = missing, status::T = missing,
+    active::A = missing, variance::A = missing, status::A = missing,
     noise::Bool = template.wattmeter.noise)
 
     wattmeter = device.wattmeter
@@ -498,9 +458,9 @@ function updateWattmeter!(system::PowerSystem, device::Measurement; label::L,
         prefix.activePower, basePowerInv)
 end
 
-function updateWattmeter!(system::PowerSystem, device::Measurement, analysis::DCStateEstimationWLS; 
-    label::L, active::T = missing, variance::T = missing, status::T = missing,
-    noise::Bool = template.wattmeter.noise)
+function updateWattmeter!(system::PowerSystem, device::Measurement, analysis::DCStateEstimation{LinearWLS{T}};
+    label::L, active::A = missing, variance::A = missing, status::A = missing,
+    noise::Bool = template.wattmeter.noise) where T <: Union{Normal, Orthogonal}
 
     dc = system.model.dc
     wattmeter = device.wattmeter
@@ -517,9 +477,9 @@ function updateWattmeter!(system::PowerSystem, device::Measurement, analysis::DC
     if oldStatus != newStatus || oldVariance != wattmeter.active.variance[indexWattmeter]
         method.run = true
     end
-    
+
     if isset(status) || isset(active)
-        if wattmeter.layout.bus[indexWattmeter] 
+        if wattmeter.layout.bus[indexWattmeter]
             indexBus = wattmeter.layout.index[indexWattmeter]
             if isset(status)
                 for j in dc.nodalMatrix.colptr[indexBus]:(dc.nodalMatrix.colptr[indexBus + 1] - 1)
@@ -533,23 +493,23 @@ function updateWattmeter!(system::PowerSystem, device::Measurement, analysis::DC
             if wattmeter.layout.from[indexWattmeter]
                 addmitance = newStatus * dc.admittance[indexBranch]
             else
-                addmitance = -newStatus * dc.admittance[indexBranch] 
+                addmitance = -newStatus * dc.admittance[indexBranch]
             end
             if isset(status)
-                method.coefficient[indexWattmeter, system.branch.layout.from[indexBranch]] = addmitance 
+                method.coefficient[indexWattmeter, system.branch.layout.from[indexBranch]] = addmitance
                 method.coefficient[indexWattmeter, system.branch.layout.to[indexBranch]] = -addmitance
             end
             method.mean[indexWattmeter] = newStatus * (wattmeter.active.mean[indexWattmeter] + system.branch.parameter.shiftAngle[indexBranch] * addmitance)
         end
     end
-    
+
     if isset(variance)
         method.precision.nzval[indexWattmeter] = 1 / wattmeter.active.variance[indexWattmeter]
     end
 end
 
-function updateWattmeter!(system::PowerSystem, device::Measurement, analysis::DCStateEstimationLAV; 
-    label::L, active::T = missing, variance::T = missing, status::T = missing,
+function updateWattmeter!(system::PowerSystem, device::Measurement, analysis::DCStateEstimation{LAV};
+    label::L, active::A = missing, variance::A = missing, status::A = missing,
     noise::Bool = template.wattmeter.noise)
 
     dc = system.model.dc
@@ -563,11 +523,11 @@ function updateWattmeter!(system::PowerSystem, device::Measurement, analysis::DC
     prefix.activePower, basePowerInv)
 
     if isset(status) || isset(active)
-        if wattmeter.layout.bus[indexWattmeter] 
+        if wattmeter.layout.bus[indexWattmeter]
             indexBus = wattmeter.layout.index[indexWattmeter]
         else
             indexBranch = wattmeter.layout.index[indexWattmeter]
-            if wattmeter.layout.from[indexWattmeter] 
+            if wattmeter.layout.from[indexWattmeter]
                 admittance = dc.admittance[indexBranch]
             else
                 admittance = -dc.admittance[indexBranch]
@@ -579,7 +539,7 @@ function updateWattmeter!(system::PowerSystem, device::Measurement, analysis::DC
         if wattmeter.active.status[indexWattmeter] == 1
             addDeviceLAV(method, indexWattmeter)
 
-            if wattmeter.layout.bus[indexWattmeter] 
+            if wattmeter.layout.bus[indexWattmeter]
                 angleCoeff = @expression(method.jump, AffExpr())
                 for j in dc.nodalMatrix.colptr[indexBus]:(dc.nodalMatrix.colptr[indexBus + 1] - 1)
                     k = dc.nodalMatrix.rowval[j]
@@ -591,7 +551,7 @@ function updateWattmeter!(system::PowerSystem, device::Measurement, analysis::DC
             elseif system.branch.layout.status[indexBranch] == 1
                 from = system.branch.layout.from[indexBranch]
                 to =  system.branch.layout.to[indexBranch]
-                
+
                 angleCoeff = admittance * (method.statex[from] - method.statey[from] - method.statex[to] + method.statey[to])
 
                 remove!(method.jump, method.residual, indexWattmeter)
@@ -654,7 +614,7 @@ updateVarmeter!(system, device; label = "Varmeter 1", reactive = 1.2, variance =
 ```
 """
 function updateVarmeter!(system::PowerSystem, device::Measurement; label::L,
-    reactive::T = missing, variance::T = missing, status::T = missing,
+    reactive::A = missing, variance::A = missing, status::A = missing,
     noise::Bool = template.varmeter.noise)
 
     varmeter = device.varmeter

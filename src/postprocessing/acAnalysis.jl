@@ -2,11 +2,11 @@
     power!(system::PowerSystem, analysis::AC)
 
 The function computes the active and reactive powers associated with buses, branches, and
-generators in the AC framework.
+generators for AC analysis.
 
 # Updates
-This function updates the `power` field of the `AC` abstract type by computing the following
-electrical quantities:
+This function updates the `power` field of the `AC` abstract type by computing the
+following electrical quantities:
 - `injection`: active and reactive power bus injections;
 - `supply`: active and reactive power bus injections from the generators;
 - `shunt`: active and reactive power values associated with shunt element at each bus;
@@ -14,15 +14,9 @@ electrical quantities:
 - `to`: active and reactive power flows at the "to" bus end of each branch;
 - `charging`: active and reactive power values linked with branch charging admittances for each branch;
 - `series` active and reactive power losses through each branch series impedance;
-- `generator`: produced active and reactive power outputs of each generator (not for `ACStateEstimation`).
+- `generator`: produced active and reactive power outputs of each generator (not for state estimation).
 
-# Abstract type
-The abstract type `AC` can have the following subtypes:
-- `ACPowerFlow`: computes the powers within the AC power flow;
-- `ACOptimalPowerFlow`: computes the powers within the AC optimal power flow;
-- `ACStateEstimation`: computes the powers within the nonlinear state estimation or linear with PMUs only.
-
-# Examples
+# Example
 Compute powers after obtaining the AC power flow solution:
 ```jldoctest
 system = powerSystem("case14.h5")
@@ -36,18 +30,6 @@ for i = 1:10
     end
     solve!(system, analysis)
 end
-power!(system, analysis)
-```
-
-Compute powers after obtaining the AC optimal power flow solution:
-```jldoctest
-using Ipopt
-
-system = powerSystem("case14.h5")
-acModel!(system)
-
-analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
-solve!(system, analysis)
 power!(system, analysis)
 ```
 """
@@ -367,12 +349,7 @@ end
 The function returns the active and reactive power injections associated with a specific
 bus in the AC framework. The `label` keyword argument must match an existing bus label.
 
-# Abstract type
-The abstract type `AC` can have the following subtypes:
-- `ACPowerFlow`: computes the powers within the AC power flow;
-- `ACOptimalPowerFlow`: computes the powers within the AC optimal power flow.
-
-# Examples
+# Example
 Compute powers after obtaining the AC power flow solution:
 ```jldoctest
 system = powerSystem("case14.h5")
@@ -386,18 +363,6 @@ for i = 1:10
     end
     solve!(system, analysis)
 end
-active, reactive = injectionPower(system, analysis; label = 1)
-```
-
-Compute powers after obtaining the AC optimal power flow solution:
-```jldoctest
-using Ipopt
-
-system = powerSystem("case14.h5")
-acModel!(system)
-
-analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
-solve!(system, analysis)
 active, reactive = injectionPower(system, analysis; label = 1)
 ```
 """
@@ -421,16 +386,11 @@ end
 """
     supplyPower(system::PowerSystem, analysis::AC, label)
 
-The function returns the active and reactive power injections from the generators associated
-with a specific bus in the AC framework. The `label` keyword argument must match an existing
-bus label.
+The function returns the active and reactive power injections from the generators
+associated with a specific bus in the AC framework. The `label` keyword argument must
+match an existing bus label.
 
-# Abstract type
-The abstract type `AC` can have the following subtypes:
-- `ACPowerFlow`: computes the powers within the AC power flow;
-- `ACOptimalPowerFlow`: computes the powers within the AC optimal power flow.
-
-# Examples
+# Example
 Compute powers after obtaining the AC power flow solution:
 ```jldoctest
 system = powerSystem("case14.h5")
@@ -444,18 +404,6 @@ for i = 1:10
     end
     solve!(system, analysis)
 end
-active, reactive = supplyPower(system, analysis; label = 1)
-```
-
-Compute powers after obtaining the AC optimal power flow solution:
-```jldoctest
-using Ipopt
-
-system = powerSystem("case14.h5")
-acModel!(system)
-
-analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
-solve!(system, analysis)
 active, reactive = supplyPower(system, analysis; label = 1)
 ```
 """
@@ -515,15 +463,10 @@ end
     shuntPower(system::PowerSystem, analysis::AC, label)
 
 The function returns the active and reactive power values of the shunt element associated
-with a specific bus in the AC framework. The `label` keyword argument must match an existing
-bus label.
+with a specific bus in the AC framework. The `label` keyword argument must match an
+existing bus label.
 
-# Abstract type
-The abstract type `AC` can have the following subtypes:
-- `ACPowerFlow`: computes the powers within the AC power flow;
-- `ACOptimalPowerFlow`: computes the powers within the AC optimal power flow.
-
-# Examples
+# Example
 Compute powers after obtaining the AC power flow solution:
 ```jldoctest
 system = powerSystem("case14.h5")
@@ -539,17 +482,6 @@ for i = 1:10
 end
 active, reactive = shuntPower(system, analysis; label = 9)
 ```
-
-Compute powers after obtaining the AC optimal power flow solution:
-```jldoctest
-using Ipopt
-
-system = powerSystem("case14.h5")
-acModel!(system)
-
-analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
-solve!(system, analysis)
-active, reactive = shuntPower(system, analysis; label = 9)
 ```
 """
 function shuntPower(system::PowerSystem, analysis::AC; label)
@@ -568,12 +500,7 @@ The function returns the active and reactive power flows at the "from" bus end a
 with a specific branch in the AC framework. The `label` keyword argument must match an
 existing branch label.
 
-# Abstract type
-The abstract type `AC` can have the following subtypes:
-- `ACPowerFlow`: computes the powers within the AC power flow;
-- `ACOptimalPowerFlow`: computes the powers within the AC optimal power flow.
-
-# Examples
+# Example
 Compute powers after obtaining the AC power flow solution:
 ```jldoctest
 system = powerSystem("case14.h5")
@@ -587,18 +514,6 @@ for i = 1:10
     end
     solve!(system, analysis)
 end
-active, reactive = fromPower(system, analysis; label = 2)
-```
-
-Compute powers after obtaining the AC optimal power flow solution:
-```jldoctest
-using Ipopt
-
-system = powerSystem("case14.h5")
-acModel!(system)
-
-analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
-solve!(system, analysis)
 active, reactive = fromPower(system, analysis; label = 2)
 ```
 """
@@ -631,11 +546,6 @@ The function returns the active and reactive power flows at the "to" bus end ass
 with a specific branch in the AC framework. The `label` keyword argument must match an
 existing branch label.
 
-# Abstract type
-The abstract type `AC` can have the following subtypes:
-- `ACPowerFlow`: computes the powers within the AC power flow;
-- `ACOptimalPowerFlow`: computes the powers within the AC optimal power flow.
-
 # Examples
 Compute powers after obtaining the AC power flow solution:
 ```jldoctest
@@ -650,18 +560,6 @@ for i = 1:10
     end
     solve!(system, analysis)
 end
-active, reactive = toPower(system, analysis; label = 2)
-```
-
-Compute powers after obtaining the AC optimal power flow solution:
-```jldoctest
-using Ipopt
-
-system = powerSystem("case14.h5")
-acModel!(system)
-
-analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
-solve!(system, analysis)
 active, reactive = toPower(system, analysis; label = 2)
 ```
 """
@@ -694,11 +592,6 @@ The function returns the active and reactive power values associated with the ch
 admittances of a specific branch in the AC framework. The `label` keyword argument must
 correspond to an existing branch label.
 
-# Abstract type
-The abstract type `AC` can have the following subtypes:
-- `ACPowerFlow`: computes the power within the AC power flow;
-- `ACOptimalPowerFlow`: computes the power within the AC optimal power flow.
-
 # Examples
 Compute powers after obtaining the AC power flow solution:
 ```jldoctest
@@ -713,18 +606,6 @@ for i = 1:10
     end
     solve!(system, analysis)
 end
-active, reactive = chargingPower(system, analysis; label = 2)
-```
-
-Compute powers after obtaining the AC optimal power flow solution:
-```jldoctest
-using Ipopt
-
-system = powerSystem("case14.h5")
-acModel!(system)
-
-analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
-solve!(system, analysis)
 active, reactive = chargingPower(system, analysis; label = 2)
 ```
 """
@@ -755,12 +636,7 @@ The function returns the active and reactive power losses across the series impe
 a specific branch within the AC framework. The `label` keyword argument should correspond
 to an existing branch label.
 
-# Abstract type
-The abstract type `AC` can have the following subtypes:
-- `ACPowerFlow`: computes the power within the AC power flow;
-- `ACOptimalPowerFlow`: computes the power within the AC optimal power flow.
-
-# Examples
+# Example
 Compute powers after obtaining the AC power flow solution:
 ```jldoctest
 system = powerSystem("case14.h5")
@@ -774,18 +650,6 @@ for i = 1:10
     end
     solve!(system, analysis)
 end
-active, reactive = seriesPower(system, analysis; label = 2)
-```
-
-Compute powers after obtaining the AC optimal power flow solution:
-```jldoctest
-using Ipopt
-
-system = powerSystem("case14.h5")
-acModel!(system)
-
-analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
-solve!(system, analysis)
 active, reactive = seriesPower(system, analysis; label = 2)
 ```
 """
@@ -820,10 +684,6 @@ end
 The function returns the active and reactive powers associated with a specific generator
 in the AC framework. The `label` keyword argument must match an existing generator label.
 
-# Abstract type
-The abstract type `AC` can have the following subtypes:
-- `ACPowerFlow`: computes the powers within the AC power flow;
-- `ACOptimalPowerFlow`: computes the powers within the AC optimal power flow.
 
 # Examples
 Compute powers after obtaining the AC power flow solution
@@ -839,18 +699,6 @@ for i = 1:10
     end
     solve!(system, analysis)
 end
-active, reactive = generatorPower(system, analysis; label = 1)
-```
-
-Compute powers after obtaining the AC optimal power flow solution:
-```jldoctest
-using Ipopt
-
-system = powerSystem("case14.h5")
-acModel!(system)
-
-analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
-solve!(system, analysis)
 active, reactive = generatorPower(system, analysis; label = 1)
 ```
 """
@@ -959,8 +807,8 @@ end
 """
     current!(system::PowerSystem, analysis::AC)
 
-The function computes the currents in the polar coordinate system associated with buses and
-branches in the AC framework.
+The function computes the currents in the polar coordinate system associated with buses
+and branches in the AC framework.
 
 # Updates
 This function calculates various electrical quantities in the polar coordinate system:
@@ -969,28 +817,7 @@ This function calculates various electrical quantities in the polar coordinate s
 - `to`: current flows at each "to" bus end of the branch;
 - `series`: current flows through the series impedance of the branch in the direction from the "from" bus end to the "to" bus end of the branch.
 
-# Abstract type
-The abstract type `AC` can have the following subtypes:
-- `ACPowerFlow`: computes the currents within the AC power flow;
-- `ACOptimalPowerFlow`: computes the currents within the AC optimal power flow.
-
-# Examples
-Compute currents after obtaining the AC power flow solution:
-```jldoctest
-system = powerSystem("case14.h5")
-acModel!(system)
-
-analysis = newtonRaphson(system)
-for i = 1:10
-    stopping = mismatch!(system, analysis)
-    if all(stopping .< 1e-8)
-        break
-    end
-    solve!(system, analysis)
-end
-current!(system, analysis)
-```
-
+# Example
 Compute currents after obtaining the AC optimal power flow solution:
 ```jldoctest
 using Ipopt
@@ -1056,31 +883,11 @@ end
 """
     injectionCurrent(system::PowerSystem, analysis::AC; label)
 
-The function returns the current injection in the polar coordinate system associated with a
-specific bus in the AC framework. The `label` keyword argument must match an existing bus label.
+The function returns the current injection in the polar coordinate system associated with
+a specific bus in the AC framework. The `label` keyword argument must match an existing
+bus label.
 
-# Abstract type
-The abstract type `AC` can have the following subtypes:
-- `ACPowerFlow`: computes the current within the AC power flow;
-- `ACOptimalPowerFlow`: computes the current within the AC optimal power flow.
-
-# Examples
-Compute the current after obtaining the AC power flow solution:
-```jldoctest
-system = powerSystem("case14.h5")
-acModel!(system)
-
-analysis = newtonRaphson(system)
-for i = 1:10
-    stopping = mismatch!(system, analysis)
-    if all(stopping .< 1e-8)
-        break
-    end
-    solve!(system, analysis)
-end
-magnitude, angle = injectionCurrent(system, analysis; label = 1)
-```
-
+# Example
 Compute the current after obtaining the AC optimal power flow solution:
 ```jldoctest
 using Ipopt
@@ -1116,28 +923,7 @@ The function returns the current in the polar coordinate system at the "from" bu
 associated with a specific branch in the AC framework. The `label` keyword argument must
 match an existing branch label.
 
-# Abstract type
-The abstract type `AC` can have the following subtypes:
-- `ACPowerFlow`: computes the current within the AC power flow;
-- `ACOptimalPowerFlow`: computes the current within the AC optimal power flow.
-
-# Examples
-Compute the current after obtaining the AC power flow solution:
-```jldoctest
-system = powerSystem("case14.h5")
-acModel!(system)
-
-analysis = newtonRaphson(system)
-for i = 1:10
-    stopping = mismatch!(system, analysis)
-    if all(stopping .< 1e-8)
-        break
-    end
-    solve!(system, analysis)
-end
-magnitude, angle = fromCurrent(system, analysis; label = 2)
-```
-
+# Example
 Compute the current after obtaining the AC optimal power flow solution:
 ```jldoctest
 using Ipopt
@@ -1179,28 +965,7 @@ The function returns the current in the polar coordinate system at the "to" bus 
 associated with a specific branch in the AC framework. The `label` keyword argument must
 match an existing branch label.
 
-# Abstract type
-The abstract type `AC` can have the following subtypes:
-- `ACPowerFlow`: computes the current within the AC power flow;
-- `ACOptimalPowerFlow`: computes the current within the AC optimal power flow.
-
-# Examples
-Compute the current after obtaining the AC power flow solution:
-```jldoctest
-system = powerSystem("case14.h5")
-acModel!(system)
-
-analysis = newtonRaphson(system)
-for i = 1:10
-    stopping = mismatch!(system, analysis)
-    if all(stopping .< 1e-8)
-        break
-    end
-    solve!(system, analysis)
-end
-magnitude, angle = toCurrent(system, analysis; label = 2)
-```
-
+# Example
 Compute the current after obtaining the AC optimal power flow solution:
 ```jldoctest
 using Ipopt
@@ -1243,28 +1008,7 @@ associated with a specific branch in the direction from the "from" bus end to th
 end of the branch within the AC framework. The `label` keyword argument must  match an
 existing branch label.
 
-# Abstract type
-The abstract type `AC` can have the following subtypes:
-- `ACPowerFlow`: computes the current within the AC power flow;
-- `ACOptimalPowerFlow`: computes the current within the AC optimal power flow.
-
-# Examples
-Compute the current after obtaining the AC power flow solution:
-```jldoctest
-system = powerSystem("case14.h5")
-acModel!(system)
-
-analysis = newtonRaphson(system)
-for i = 1:10
-    stopping = mismatch!(system, analysis)
-    if all(stopping .< 1e-8)
-        break
-    end
-    solve!(system, analysis)
-end
-magnitude, angle = seriesCurrent(system, analysis; label = 2)
-```
-
+# Example
 Compute the current after obtaining the AC optimal power flow solution:
 ```jldoctest
 using Ipopt

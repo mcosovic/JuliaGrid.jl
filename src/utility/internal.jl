@@ -62,7 +62,7 @@ Changing the unit of `reactive` power unit is reflected in the following quantit
 * [`addBus!`](@ref addBus!), [`updateBus!`](@ref updateBus!), [`@bus`](@ref @bus): `reactive`, `susceptance`;
 * [`addGenerator!`](@ref addGenerator!), [`updateGenerator!`](@ref updateGenerator!), [`@generator`](@ref @generator): `reactive`, `minReactive`, `maxReactive`, `minLowReactive`, `maxLowReactive`, `minUpReactive`, `maxUpReactive`, `reactiveTimescale`;
 * [`cost!`](@ref cost!): if `reactive`: `piecewise`, `polynomial`;
-* [`addVarmeter!`](@ref addVarmeter!), [`updateVarmeter!`](@ref updateVarmeter!): `reactive`, `variance`; 
+* [`addVarmeter!`](@ref addVarmeter!), [`updateVarmeter!`](@ref updateVarmeter!): `reactive`, `variance`;
 * [`@varmeter`](@ref @varmeter): `varianceBus`, `varianceFrom`, `varianceTo`.
 
 Changing the unit of `apparent` power unit is reflected in the following quantities:
@@ -149,7 +149,7 @@ of current angle should be in radians (rad) or degrees (deg).
 Changing the unit of current `magnitude` is reflected in the following quantities:
 * [`addAmmeter!`](@ref addAmmeter!), [`updateAmmeter!`](@ref updateAmmeter!): `magnitude`, `variance`;
 * [`@ammeter`](@ref @ammeter): `varianceFrom`, `varianceTo`;
-* [`addPmu!`](@ref addPmu!), [`updatePmu!`](@ref updatePmu!): if `from` or `to`: `magnitude`, `varianceMagnitude`; 
+* [`addPmu!`](@ref addPmu!), [`updatePmu!`](@ref updatePmu!): if `from` or `to`: `magnitude`, `varianceMagnitude`;
 * [`@pmu`](@ref @pmu): `varianceMagnitudeFrom`, `varianceMagnitudeTo`.
 
 Changing the unit of current `angle` is reflected in the following quantities:

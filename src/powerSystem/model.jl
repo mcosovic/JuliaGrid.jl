@@ -1,12 +1,12 @@
 """
     acModel!(system::PowerSystem)
 
-The function generates vectors and matrices based on the power system topology and parameters
-associated with AC analyses.
+The function generates vectors and matrices based on the power system topology and
+parameters associated with AC analyses.
 
 # Updates
-The function modifies the `model.ac` field within the `PowerSystem` composite type, populating
-the following variables:
+The function updates the `model.ac` field within the `PowerSystem` composite type,
+populating the following variables:
 - `nodalMatrix`: the nodal matrix;
 - `nodalMatrixTranspose`: the transpose of the nodal matrix;
 - `nodalFromFrom`: the Y-parameters of the two-port branches;
@@ -98,12 +98,12 @@ end
 """
     dcModel!(system::PowerSystem)
 
-The function generates vectors and matrices based on the power system topology and parameters
-associated with DC analyses.
+The function generates vectors and matrices based on the power system topology and
+parameters associated with DC analyses.
 
 # Updates
-The function modifies the `model.dc` field within the `PowerSystem` composite type, populating
-the following variables:
+The function updates the `model.dc` field within the `PowerSystem` composite type,
+populating the following variables:
 - `nodalMatrix`: the nodal matrix;
 - `admittance`: the branch admittances;
 - `shiftPower`: the active powers related to phase-shifting transformers.
@@ -149,7 +149,7 @@ function dcNodalUpdate!(system, index::Int64)
     layout = system.branch.layout
     filledElements = nnz(dc.nodalMatrix)
     dc.model += 1
-    
+
     from = layout.from[index]
     to = layout.to[index]
     admittance = dc.admittance[index]

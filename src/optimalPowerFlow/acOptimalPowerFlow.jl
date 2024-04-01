@@ -1,34 +1,34 @@
 """
     acOptimalPowerFlow(system::PowerSystem, optimizer; bridge, name)
 
-The function takes the `PowerSystem` composite type as input to establish the structure for
-solving the AC optimal power flow. The `optimizer` argument is also required to create and
-solve the optimization problem. If the `ac` field within the `PowerSystem` composite type has
-not been created, the function will initiate an update automatically.
+The function sets up the optimization model for solving the AC optimal power flow problem.
 
-Additionally, the `optimizer` argument is a necessary component for formulating and solving the
-optimization problem. Specifically, JuliaGrid constructs the AC optimal power flow using the
-JuMP package and provides support for commonly employed solvers. For more detailed information,
+# Arguments
+The function requires the `PowerSystem` composite type to establish the framework. Next,
+the `optimizer` argument is also required to create and solve the optimization problem.
+Specifically, JuliaGrid constructs the AC optimal power flow using the JuMP package and
+provides support for commonly employed solvers. For more detailed information,
 please consult the [JuMP documenatation](https://jump.dev/JuMP.jl/stable/packages/solvers/).
 
+# Updates
+If the AC model has not been created, the function automatically initiates an update within
+the `ac` field of the `PowerSystem` type.
+
 # Keywords
-JuliaGrid offers the ability to manipulate the `jump` model based on the guidelines provided
-in the [JuMP documentation](https://jump.dev/JuMP.jl/stable/reference/models/). However,
-certain configurations may require different method calls, such as:
+JuliaGrid offers the ability to manipulate the `jump` model based on the guidelines
+providedin the [JuMP documentation](https://jump.dev/JuMP.jl/stable/reference/models/).
+However, certain configurations may require different method calls, such as:
 - `bridge`: used to manage the bridging mechanism;
 - `name`: used to manage the creation of string names.
 By default, these keyword settings are configured as `true`.
 
 # Returns
-The function returns an instance of the `ACOptimalPowerFlow` type, which includes the following
-fields:
+The function returns an instance of the `ACOptimalPowerFlow` type, which includes the
+following fields:
 - `voltage`: the bus voltage magnitudes and angles;
 - `power`: the variable allocated to store the active and reactive powers;
 - `current`: the variable allocated to store the currents;
-- `jump`: the JuMP model;
-- `variable`: holds the variable references to the JuMP model;
-- `constraint`: holds the constraint references to the JuMP model;
-- `objective`: holds the objective expression of the JuMP model.
+- `method`: the JuMP model, references to the variables, constraints, and objective.
 
 # Examples
 ```jldoctest
@@ -195,7 +195,7 @@ function acOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
             copy(bus.voltage.magnitude),
             copy(bus.voltage.angle)
         ),
-        Power(
+        ACPower(
             Cartesian(Float64[], Float64[]),
             Cartesian(Float64[], Float64[]),
             Cartesian(Float64[], Float64[]),
@@ -205,33 +205,36 @@ function acOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
             Cartesian(Float64[], Float64[]),
             Cartesian(copy(generator.output.active), copy(generator.output.reactive))
         ),
-        Current(
+        ACCurrent(
             Polar(Float64[], Float64[]),
             Polar(Float64[], Float64[]),
             Polar(Float64[], Float64[]),
             Polar(Float64[], Float64[])
         ),
-        jump,
-        ACVariable(
-            active,
-            reactive,
-            magnitude,
-            angle,
-            actwise,
-            reactwise),
-        Constraint(
-            PolarAngleRef(slack),
-            CartesianRef(balanceActive, balanceReactive),
-            PolarRef(voltageMagnitude, voltageAngle),
-            CartesianFlowRef(flowFrom, flowTo),
-            CapabilityRef(capabilityActive, capabilityReactive, lower, upper),
-            ACPiecewise(piecewiseActive, piecewiseReactive),
-        ),
-        ACObjective(
-            quadratic,
-            ACNonlinear(
-                nonLinActive,
-                nonLinReactive
+        ACOptimalPowerFlowMethod(
+            jump,
+            ACVariable(
+                active,
+                reactive,
+                magnitude,
+                angle,
+                actwise,
+                reactwise
+            ),
+            Constraint(
+                PolarAngleRef(slack),
+                CartesianRef(balanceActive, balanceReactive),
+                PolarRef(voltageMagnitude, voltageAngle),
+                CartesianFlowRef(flowFrom, flowTo),
+                CapabilityRef(capabilityActive, capabilityReactive, lower, upper),
+                ACPiecewise(piecewiseActive, piecewiseReactive),
+            ),
+            ACObjective(
+                quadratic,
+                ACNonlinear(
+                    nonLinActive,
+                    nonLinReactive
+                )
             )
         )
     )
@@ -240,13 +243,13 @@ end
 """
     solve!(system::PowerSystem, analysis::ACOptimalPowerFlow)
 
-The function determines the optimal power flow for AC systems, computing the magnitudes and
-angles of bus voltages, as well as generating active and reactive power values for each generator.
+The function solves the AC optimal power flow model, computing the magnitudes and angles
+of bus voltages, as well as generating active and reactive power values for each generator.
 
 # Updates
-The calculated voltage magnitudes and angles and active and reactive powers are then stored
+The calculated voltage magnitudes and angles and active and reactive powers are stored
 in the variables of the `voltage` and `power.generator` fields of the `ACOptimalPowerFlow`
-composite type.
+type.
 
 # Example
 ```jldoctest
@@ -258,7 +261,7 @@ solve!(system, analysis)
 ```
 """
 function solve!(system::PowerSystem, analysis::ACOptimalPowerFlow)
-    variable = analysis.variable
+    variable = analysis.method.variable
 
     @inbounds for i = 1:system.bus.number
         JuMP.set_start_value(variable.magnitude[i]::JuMP.VariableRef, analysis.voltage.magnitude[i])
@@ -269,7 +272,7 @@ function solve!(system::PowerSystem, analysis::ACOptimalPowerFlow)
         JuMP.set_start_value(variable.reactive[i]::JuMP.VariableRef, analysis.power.generator.reactive[i])
     end
 
-    JuMP.optimize!(analysis.jump)
+    JuMP.optimize!(analysis.method.jump)
 
     @inbounds for i = 1:system.bus.number
         analysis.voltage.magnitude[i] = value(variable.magnitude[i]::JuMP.VariableRef)
@@ -504,9 +507,9 @@ end
 function updateBalance(system::PowerSystem, analysis::ACOptimalPowerFlow, index::Int64; active = false, reactive = false)
     bus = system.bus
     ac = system.model.ac
-    jump = analysis.jump
-    constraint = analysis.constraint
-    variable = analysis.variable
+    jump = analysis.method.jump
+    constraint = analysis.method.constraint
+    variable = analysis.method.variable
 
     if active
         if is_valid(jump, constraint.balance.active[index])
@@ -558,26 +561,16 @@ function updateBalance(system::PowerSystem, analysis::ACOptimalPowerFlow, index:
 end
 
 """
-    startingPrimal!(system::PowerSystem, analysis::OptimalPowerFlow)
+    startingPrimal!(system::PowerSystem, analysis::ACOptimalPowerFlow)
 
-In the context of the `ACOptimalPowerFlow` composite type, this function retrieves the
-active and reactive power outputs of the generators, as well as the voltage magnitudes and
-angles from the `PowerSystem` composite type. It then assigns these values to the
-`ACOptimalPowerFlow` type, allowing users to initialize starting primal values as needed.
-
-For the `DCOptimalPowerFlow` composite type, this function retrieves the active power
-outputs of the generators and the bus voltage angles from the `PowerSystem` composite type.
-These values are then assigned to the `DCOptimalPowerFlow` type, enabling users to
-initialize starting primal values according to their requirements.
+The function retrieves the active and reactive power outputs of the generators, as well as
+the voltage magnitudes and angles from the `PowerSystem` composite type. It then assigns
+these values to the `ACOptimalPowerFlow` type, allowing users to initialize starting primal
+values as needed.
 
 # Updates
-This function only updates the `voltage` and `generator` fields of the `OptimalPowerFlow`
-abstract type.
-
-# Abstract type
-The abstract type `OptimalPowerFlow` can have the following subtypes:
-- `ACOptimalPowerFlow`: employed to initializing starting primal values within the AC optimal power flow;
-- `DCOptimalPowerFlow`: employed to initialize starting primal values within the DC optimal power flow.
+This function only updates the `voltage` and `generator` fields of the `ACOptimalPowerFlow`
+type.
 
 # Example
 ```jldoctest
@@ -601,14 +594,5 @@ function startingPrimal!(system::PowerSystem, analysis::ACOptimalPowerFlow)
     @inbounds for i = 1:system.generator.number
         analysis.power.generator.active[i] = system.generator.output.active[i]
         analysis.power.generator.reactive[i] = system.generator.output.reactive[i]
-    end
-end
-
-function startingPrimal!(system::PowerSystem, analysis::DCOptimalPowerFlow)
-    @inbounds for i = 1:system.bus.number
-        analysis.voltage.angle[i] = system.bus.voltage.angle[i]
-    end
-    @inbounds for i = 1:system.generator.number
-        analysis.power.generator.active[i] = system.generator.output.active[i]
     end
 end

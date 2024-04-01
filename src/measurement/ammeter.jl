@@ -2,9 +2,9 @@
     addAmmeter!(system::PowerSystem, device::Measurement; label, from, to, magnitude,
         variance, noise, status)
 
-The function adds a new ammeter that measures branch current magnitude to the 
-`Measurement` composite type within a given `PowerSystem` type. The ammeter can be added 
-to an already defined branch.
+The function adds a new ammeter that measures branch current magnitude to the `Measurement`
+type within a given `PowerSystem` type. The ammeter can be added to an already defined
+branch.
 
 # Keywords
 The ammeter is defined with the following keywords:
@@ -20,12 +20,11 @@ The ammeter is defined with the following keywords:
   * `status = 1`: in-service;
   * `status = 0`: out-of-service;
 
-
 # Updates
 The function updates the `ammeter` field of the `Measurement` composite type.
 
 # Default Settings
-Default settings for certain keywords are as follows: `variance = 1e-2`, `noise = true`, 
+Default settings for certain keywords are as follows: `variance = 1e-2`, `noise = true`,
 `status = 1`, which apply to ammeters located at both the "from" and "to" bus ends.
 Users can fine-tune these settings by explicitly specifying the variance and status for
 ammeters positioned on either the "from" or "to" bus ends of branches using the
@@ -66,7 +65,7 @@ addAmmeter!(system, device; label = "Ammeter 2", to = "Branch 1", magnitude = 43
 """
 function addAmmeter!(system::PowerSystem, device::Measurement;
     label::L = missing, from::L = missing, to::L = missing,
-    magnitude::T, variance::T = missing, status::T = missing,
+    magnitude::A, variance::A = missing, status::A = missing,
     noise::Bool = template.ammeter.noise)
 
     ammeter = device.ammeter
@@ -104,10 +103,10 @@ end
     addAmmeter!(system::PowerSystem, device::Measurement, analysis::AC; varianceFrom,
         statusFrom, varianceTo, statusTo)
 
-The function incorporates ammeters into the `Measurement` composite type for every branch
-within the `PowerSystem` type. These measurements are derived from the exact branch current
-magnitudes defined in the `AC` abstract type. These exact values are perturbed by white 
-Gaussian noise with the specified `variance` to obtain measurement data.
+The function incorporates ammeters into the `Measurement` type for every branch within the
+`PowerSystem` type. These measurements are derived from the exact branch current magnitudes
+defined in the `AC` abstract type. These exact values are perturbed by white Gaussian noise
+with the specified `variance` to obtain measurement data.
 
 # Keywords
 Users have the option to configure the following keywords:
@@ -133,12 +132,7 @@ The default units for the `varianceFrom` and `varianceTo` keywords are per-units
 However, users can choose to use amperes (A) as the units by applying the
 [`@current`](@ref @current) macro.
 
-# Abstract type
-The abstract type `AC` can have the following subtypes:
-- `ACPowerFlow`: generates measurements uses AC power flow results;
-- `ACOptimalPowerFlow`: generates measurements uses AC optimal power flow results.
-
-# Examples
+# Example
 Adding ammeters using exact values from the AC power flow:
 ```jldoctest
 system = powerSystem("case14.h5")
@@ -159,25 +153,10 @@ device = measurement()
 @ammeter(label = "Ammeter ?")
 addAmmeter!(system, device, analysis; varianceFrom = 1e-3, statusTo = 0)
 ```
-
-Adding ammeters using exact values from the AC optimal power flow:
-```jldoctest
-system = powerSystem("case14.h5")
-acModel!(system)
-
-analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
-solve!(system, analysis)
-current!(system, analysis)
-
-device = measurement()
-
-@ammeter(label = "Ammeter ?")
-addAmmeter!(system, device, analysis; varianceFrom = 1e-3, statusTo = 0)
-```
 """
 function addAmmeter!(system::PowerSystem, device::Measurement, analysis::AC;
-    varianceFrom::T = missing, varianceTo::T = missing,
-    statusFrom::T = missing, statusTo::T = missing)
+    varianceFrom::A = missing, varianceTo::A = missing,
+    statusFrom::A = missing, statusTo::A = missing)
 
     if isempty(analysis.current.from.magnitude)
         throw(ErrorException("The currents cannot be found."))
@@ -186,7 +165,7 @@ function addAmmeter!(system::PowerSystem, device::Measurement, analysis::AC;
     ammeter = device.ammeter
     default = template.ammeter
     ammeter.number = 0
-    
+
     statusFrom = unitless(statusFrom, default.statusFrom)
     checkStatus(statusFrom)
 
@@ -278,7 +257,7 @@ updateAmmeter!(system, device; label = "Ammeter 1", magnitude = 1.2, variance = 
 ```
 """
 function updateAmmeter!(system::PowerSystem, device::Measurement; label::L,
-    magnitude::T = missing, variance::T = missing, status::T = missing,
+    magnitude::A = missing, variance::A = missing, status::A = missing,
     noise::Bool = template.ammeter.noise)
 
     ammeter = device.ammeter

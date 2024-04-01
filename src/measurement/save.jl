@@ -1,12 +1,12 @@
 """
     saveMeasurement(device::Measurement; path::String, reference::String, note::String)
 
-The function saves the measurement's data in the HDF5 file using the fields `voltmeter`, 
+The function saves the measurement's data in the HDF5 file using the fields `voltmeter`,
 `ammeter`, `wattmeter`, `varmeter`, and `pmu` from the `Measurement` composite type.
 
 # Keywords
-The location and file name of the HDF5 file is specified by the mandatory keyword `path` in
-the format of `"path/name.h5"`. Additional information can be provided by the optional
+The location and file name of the HDF5 file is specified by the mandatory keyword `path`
+in the format of `"path/name.h5"`. Additional information can be provided by the optional
 keywords `reference` and `note`, which can be saved along with the power system data.
 
 # View HDF5 File

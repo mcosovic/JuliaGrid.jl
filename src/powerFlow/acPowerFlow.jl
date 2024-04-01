@@ -1,31 +1,30 @@
 """
     newtonRaphson(system::PowerSystem, factorization::Factorization)
 
-The function sets up the Newton-Raphson method to solve the AC power flow.    
+The function sets up the Newton-Raphson method to solve the AC power flow.
 
 # Arguments
-The function requires the `PowerSystem` composite type to establish the framework. 
-Moreover, the `Factorization` argument is optional and can be one of the following:
-  * `LU`: utilizes LU factorization to solve the linear system of equations within each iteration;
-  * `QR`: utilizes QR factorization to solve the linear system of equations within each iteration.
-If the user does not provide the `Factorization` composite type, the default solving method 
-will be LU factorization.
+The function requires the `PowerSystem` composite type to establish the framework. Next,
+the `Factorization` argument, while optional, determines the method used to solve the
+linear system of equations within each iteration. It can take one of the following values:
+- `LU`: utilizes LU factorization (default);
+- `QR`: utilizes QR factorization.
 
 # Updates
-If the AC model has not been created, the function automatically initiates an update within 
-the `ac` field of the `PowerSystem` composite type. It also performs a check on bus types 
-and rectifies any mistakes present.
+If the AC model has not been created, the function automatically initiates an update within
+the `ac` field of the `PowerSystem` type. It also performs a check on bus types and
+rectifies any mistakes present.
 
 # Returns
-The function returns an instance of the `NewtonRaphson` subtype of the abstract `ACPowerFlow`
-type, which includes the following fields:
+The function returns an instance of the `ACPowerFlow` type, which includes the following
+fields:
 - `voltage`: the bus voltage magnitudes and angles;
 - `power`: the variable allocated to store the active and reactive powers;
 - `current`: the variable allocated to store the currents;
-- `method`: the Jacobian matrix, its factorization, power injection mismatches, bus voltage increments, and indices.
+- `method`: the Jacobian matrix, its factorization, mismatches, increments, and indices.
 
 # Examples
-Set up the Newton-Raphson method using LU factorization within each iteration:
+Set up the Newton-Raphson method utilizing LU factorization:
 ```jldoctest
 system = powerSystem("case14.h5")
 acModel!(system)
@@ -33,7 +32,7 @@ acModel!(system)
 analysis = newtonRaphson(system)
 ```
 
-Set up the Newton-Raphson method using QR factorization within each iteration:
+Set up the Newton-Raphson method utilizing QR factorization:
 ```jldoctest
 system = powerSystem("case14.h5")
 acModel!(system)
@@ -119,12 +118,12 @@ function newtonRaphson(system::PowerSystem, factorization::Type{<:Union{QR, LU}}
     increment = fill(0.0, bus.number + pqNumber - 1)
 
     method = Dict(LU => lu, QR => qr)
-    return NewtonRaphson(
+    return ACPowerFlow(
         Polar(
             voltageMagnitude,
             voltageAngle
         ),
-        Power(
+        ACPower(
             Cartesian(Float64[], Float64[]),
             Cartesian(Float64[], Float64[]),
             Cartesian(Float64[], Float64[]),
@@ -134,13 +133,13 @@ function newtonRaphson(system::PowerSystem, factorization::Type{<:Union{QR, LU}}
             Cartesian(Float64[], Float64[]),
             Cartesian(Float64[], Float64[])
         ),
-        Current(
+        ACCurrent(
             Polar(Float64[], Float64[]),
             Polar(Float64[], Float64[]),
             Polar(Float64[], Float64[]),
             Polar(Float64[], Float64[])
         ),
-        NewtonRaphsonMethod(
+        NewtonRaphson(
             jacobian,
             mismatch,
             increment,
@@ -155,29 +154,28 @@ end
 """
     fastNewtonRaphsonBX(system::PowerSystem, factorization::Factorization)
 
-The function sets up the fast Newton-Raphson method of version BX to solve the AC power 
-flow. 
+The function sets up the fast Newton-Raphson method of version BX to solve the AC power
+flow.
 
 # Arguments
-The function requires the `PowerSystem` composite type to establish the framework. 
-Moreover, the `Factorization` argument is optional and can be one of the following:
-  * `LU`: utilizes LU factorization to factorize constant Jacobian matrices;
-  * `QR`: utilizes QR factorization to factorize constant Jacobian matrices.
-If the user does not provide the `Factorization` composite type, the default solving method 
-will be LU factorization.
+The function requires the `PowerSystem` composite type to establish the framework. Next,
+the `Factorization` argument, while optional, determines the method used to solve the
+linear system of equations within each iteration. It can take one of the following values:
+- `LU`: utilizes LU factorization (default);
+- `QR`: utilizes QR factorization.
 
 # Updates
-If the AC model has not been created, the function automatically initiates an update within 
-the `ac` field of the `PowerSystem` composite type. It also performs a check on bus types 
-and rectifies any mistakes present.
+If the AC model has not been created, the function automatically initiates an update within
+the `ac` field of the `PowerSystem` type. It also performs a check on bus types and
+rectifies any mistakes present.
 
 # Returns
-The function returns an instance of the `FastNewtonRaphson` subtype of the abstract `ACPowerFlow`
-type, which includes the following fields:
+The function returns an instance of the `ACPowerFlow` type, which includes the following
+fields:
 - `voltage`: the bus voltage magnitudes and angles;
 - `power`: the variable allocated to store the active and reactive powers;
 - `current`: the variable allocated to store the currents;
-- `method`: contains Jacobian matrices, its factorization, power injection mismatches, bus voltage increments, and indices.
+- `method`: the Jacobian matrices, their factorizations, mismatches, increments, and indices.
 
 # Examples
 Set up the fast Newton-Raphson method utilizing LU factorization:
@@ -205,29 +203,28 @@ end
 """
     fastNewtonRaphsonXB(system::PowerSystem, factorization::Factorization)
 
-The function sets up the fast Newton-Raphson method of version XB to solve the AC power 
-flow. 
+The function sets up the fast Newton-Raphson method of version XB to solve the AC power
+flow.
 
 # Arguments
-The function requires the `PowerSystem` composite type to establish the framework. 
-Moreover, the `Factorization` argument is optional and can be one of the following:
-  * `LU`: utilizes LU factorization to factorize constant Jacobian matrices;
-  * `QR`: utilizes QR factorization to factorize constant Jacobian matrices.
-If the user does not provide the `Factorization` composite type, the default solving method 
-will be LU factorization.
+The function requires the `PowerSystem` composite type to establish the framework. Next,
+the `Factorization` argument, while optional, determines the method used to solve the
+linear system of equations within each iteration. It can take one of the following values:
+- `LU`: utilizes LU factorization (default);
+- `QR`: utilizes QR factorization.
 
 # Updates
-If the AC model has not been created, the function automatically initiates an update within 
-the `ac` field of the `PowerSystem` composite type. It also performs a check on bus types 
-and rectifies any mistakes present.
+If the AC model has not been created, the function automatically initiates an update within
+the `ac` field of the `PowerSystem` type. It also performs a check on bus types and
+rectifies any mistakes present.
 
 # Returns
-The function returns an instance of the `FastNewtonRaphson` subtype of the abstract `ACPowerFlow`
-type, which includes the following fields:
+The function returns an instance of the `ACPowerFlow` type, which includes the following
+fields:
 - `voltage`: the bus voltage magnitudes and angles;
 - `power`: the variable allocated to store the active and reactive powers;
 - `current`: the variable allocated to store the currents;
-- `method`: contains Jacobian matrices, its factorization, power injection mismatches, bus voltage increments, and indices.
+- `method`: the Jacobian matrices, their factorizations, mismatches, increments, and indices.
 
 # Examples
 Set up the fast Newton-Raphson method utilizing LU factorization:
@@ -318,9 +315,9 @@ end
     incrementActive = fill(0.0, bus.number - 1)
 
     method = Dict(LU => lu, QR => qr)
-    analysis = FastNewtonRaphson(
+    analysis = ACPowerFlow(
         Polar(voltageMagnitude,voltageAngle),
-        Power(
+        ACPower(
             Cartesian(Float64[], Float64[]),
             Cartesian(Float64[], Float64[]),
             Cartesian(Float64[], Float64[]),
@@ -330,13 +327,13 @@ end
             Cartesian(Float64[], Float64[]),
             Cartesian(Float64[], Float64[])
         ),
-        Current(
+        ACCurrent(
             Polar(Float64[], Float64[]),
             Polar(Float64[], Float64[]),
             Polar(Float64[], Float64[]),
             Polar(Float64[], Float64[])
         ),
-        FastNewtonRaphsonMethod(
+        FastNewtonRaphson(
             FastNewtonRaphsonModel(
                 jacobianActive,
                 mismatchActive,
@@ -372,7 +369,7 @@ end
     return analysis
 end
 
-@inline function fastNewtonRaphsonJacobian(system::PowerSystem, analysis::FastNewtonRaphson, i::Int64, sign::Int64)
+@inline function fastNewtonRaphsonJacobian(system::PowerSystem, analysis::ACPowerFlow{FastNewtonRaphson}, i::Int64, sign::Int64)
     from = system.branch.layout.from[i]
     to = system.branch.layout.to[i]
 
@@ -427,14 +424,19 @@ end
 """
     gaussSeidel(system::PowerSystem)
 
-The function accepts the `PowerSystem` composite type as input and uses it to set up the
-Gauss-Seidel method to solve AC power flow. Additionally, if the AC model was not created, the
-function will automatically initiate an update of the `ac` field within the `PowerSystem`
-composite type.
+The function sets up the Gauss-Seidel to solve the AC power flow.
+
+# Arguments
+The function requires the `PowerSystem` composite type to establish the framework.
+
+# Updates
+If the AC model has not been created, the function automatically initiates an update within
+the `ac` field of the `PowerSystem` type. It also performs a check on bus types and
+rectifies any mistakes present.
 
 # Returns
-The function returns an instance of the `GaussSeidel` subtype of the abstract `ACPowerFlow`
-type, which includes the following fields:
+The function returns an instance of the `ACPowerFlow` type, which includes the following
+fields:
 - `voltage`: the bus voltage magnitudes and angles;
 - `power`: the variable allocated to store the active and reactive powers;
 - `current`: the variable allocated to store the currents;
@@ -469,10 +471,10 @@ function gaussSeidel(system::PowerSystem)
             push!(pvIndex, i)
         end
     end
-    
-    return GaussSeidel(
+
+    return ACPowerFlow(
         Polar(voltageMagnitude, voltageAngle),
-        Power(
+        ACPower(
             Cartesian(Float64[], Float64[]),
             Cartesian(Float64[], Float64[]),
             Cartesian(Float64[], Float64[]),
@@ -482,13 +484,13 @@ function gaussSeidel(system::PowerSystem)
             Cartesian(Float64[], Float64[]),
             Cartesian(Float64[], Float64[])
         ),
-        Current(
+        ACCurrent(
             Polar(Float64[], Float64[]),
             Polar(Float64[], Float64[]),
             Polar(Float64[], Float64[]),
             Polar(Float64[], Float64[])
         ),
-        GaussSeidelMethod(
+        GaussSeidel(
             voltage,
             pqIndex,
             pvIndex
@@ -496,29 +498,20 @@ function gaussSeidel(system::PowerSystem)
     )
 end
 
-
 """
     mismatch!(system::PowerSystem, analysis::ACPowerFlow)
 
-The function calculates both active and reactive power injection mismatches and returns
-their maximum absolute values, which can be utilized to terminate the iteration loop of
-methods employed to solve the AC power flow problem.
+The function calculates both active and reactive power injection mismatches.
 
 # Updates
 This function updates the mismatch variables in the Newton-Raphson and fast Newton-Raphson
 methods. It should be employed during the iteration loop before invoking the
-[`solve!`](@ref solve!(::PowerSystem, ::NewtonRaphson)) function.
+[`solve!`](@ref solve!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})) function.
 
-In contrast, the Gauss-Seidel method does not need mismatches to obtain bus voltages, but
-the maximum absolute values are commonly employed to stop the iteration loop. The function
-does not save any data and should be utilized during the iteration loop before invoking the
-[`solve!`](@ref solve!(::PowerSystem, ::NewtonRaphson)) function.
-
-# Abstract type
-The abstract type `ACPowerFlow` can have the following subtypes:
-- `NewtonRaphson`: computes the power mismatches within the Newton-Raphson method;
-- `FastNewtonRaphson`: computes the power mismatches within the fast Newton-Raphson method;
-- `GaussSeidel`: computes the power mismatches within the Gauss-Seidel method.
+# Returns
+The function returns maximum absolute values of the sctive and reactive power injection
+mismatches, which can be utilized to terminate the iteration loop of the Newton-Raphson,
+fast Newton-Raphson, or Gauss-Seidel methods employed to solve the AC power flow problem.
 
 # Example
 ```jldoctest
@@ -529,7 +522,7 @@ analysis = newtonRaphson(system)
 mismatch!(system, analysis)
 ```
 """
-function mismatch!(system::PowerSystem, analysis::NewtonRaphson)
+function mismatch!(system::PowerSystem, analysis::ACPowerFlow{NewtonRaphson})
     ac = system.model.ac
     bus = system.bus
     voltage = analysis.voltage
@@ -567,7 +560,7 @@ function mismatch!(system::PowerSystem, analysis::NewtonRaphson)
     return stopActive, stopReactive
 end
 
-function mismatch!(system::PowerSystem, analysis::FastNewtonRaphson)
+function mismatch!(system::PowerSystem, analysis::ACPowerFlow{FastNewtonRaphson})
     ac = system.model.ac
     bus = system.bus
 
@@ -606,7 +599,7 @@ function mismatch!(system::PowerSystem, analysis::FastNewtonRaphson)
     return stopActive, stopReactive
 end
 
-function mismatch!(system::PowerSystem, analysis::GaussSeidel)
+function mismatch!(system::PowerSystem, analysis::ACPowerFlow{GaussSeidel})
     ac = system.model.ac
     voltage = analysis.method.voltage
 
@@ -641,20 +634,14 @@ end
 """
     solve!(system::PowerSystem, analysis::ACPowerFlow)
 
-The function employs the Newton-Raphson, fast Newton-Raphson, or Gauss-Seidel method to solve
-the AC power flow problem and calculate bus voltage magnitudes and angles.
+The function employs the Newton-Raphson, fast Newton-Raphson, or Gauss-Seidel method to
+solve the AC power flow model and calculate bus voltage magnitudes and angles.
 
-After the [`mismatch!`](@ref mismatch!) function is called, this function should be executed to
-perform a single iteration of the method.
+After the [`mismatch!`](@ref mismatch!) function is called, this function should be
+executed to perform a single iteration of the method.
 
 # Updates
-The calculated voltages are stored in the `voltage` field of the `ACPowerFlow` abstract type.
-
-# Abstract type
-The abstract type `ACPowerFlow` can have the following subtypes:
-- `NewtonRaphson`: computes the bus voltages within the Newton-Raphson method;
-- `FastNewtonRaphson`: computes the bus voltages within the fast Newton-Raphson method;
-- `GaussSeidel`: computes the bus voltages within the Gauss-Seidel method.
+The calculated voltages are stored in the `voltage` field of the `ACPowerFlow` type.
 
 # Example
 ```jldoctest
@@ -671,7 +658,7 @@ for i = 1:10
 end
 ```
 """
-function solve!(system::PowerSystem, analysis::NewtonRaphson)
+function solve!(system::PowerSystem, analysis::ACPowerFlow{NewtonRaphson})
     ac = system.model.ac
     bus = system.bus
 
@@ -747,7 +734,7 @@ function solve!(system::PowerSystem, analysis::NewtonRaphson)
     end
 end
 
-function solve!(system::PowerSystem, analysis::FastNewtonRaphson)
+function solve!(system::PowerSystem, analysis::ACPowerFlow{FastNewtonRaphson})
     ac = system.model.ac
     bus = system.bus
 
@@ -800,7 +787,7 @@ function solve!(system::PowerSystem, analysis::FastNewtonRaphson)
     end
 end
 
-function solve!(system::PowerSystem, analysis::GaussSeidel)
+function solve!(system::PowerSystem, analysis::ACPowerFlow{GaussSeidel})
     ac = system.model.ac
     voltage = analysis.method.voltage
 
@@ -855,15 +842,9 @@ are modified. If the slack bus is converted, the `bus.layout.slack` field is cor
 adjusted.
 
 # Returns
-The function returns the `violate` variable to indicate which buses violate the limits,
-with -1 indicating a violation of the minimum limits and 1 indicating a violation of the
-maximum limits.
-
-# Abstract type
-The abstract type `ACPowerFlow` can have the following subtypes:
-- `NewtonRaphson`: computes the bus voltages within the Newton-Raphson method,
-- `FastNewtonRaphson`: computes the bus voltages within the fast Newton-Raphson method,
-- `GaussSeidel`: computes the bus voltages within the Gauss-Seidel method.
+The function returns the variable to indicate which buses violate the limits, with -1
+indicating a violation of the minimum limits and 1 indicating a violation of the maximum
+limits.
 
 # Example
 ```jldoctest
@@ -966,20 +947,14 @@ The function modifies the bus voltage angles based on a different slack bus than
 identified by the `bus.layout.slack` field.
 
 For instance, if the reactive power of the generator exceeds the limit on the slack bus,
-the [`reactiveLimit!`](@ref reactiveLimit!) function will change that bus to the demand bus
-and designate the first generator bus in the sequence as the new slack bus. After obtaining
-the updated AC power flow solution based on the new slack bus, it is possible to adjust the
-voltage angles to align with the angle of the original slack bus. The `slack` keyword
-specifies the bus label of the original slack bus.
+the [`reactiveLimit!`](@ref reactiveLimit!) function will change that bus to the demand
+bus and designate the first generator bus in the sequence as the new slack bus. After
+obtaining the updated AC power flow solution based on the new slack bus, it is possible to
+adjust the voltage angles to align with the angle of the original slack bus. The `slack`
+keyword specifies the bus label of the original slack bus.
 
 # Updates
-This function only updates the `voltage.angle` variable of the `ACPowerFlow` abstract type.
-
-# Abstract type
-The abstract type `ACPowerFlow` can have the following subtypes:
-- `NewtonRaphson`: computes the bus voltages within the Newton-Raphson method;
-- `FastNewtonRaphson`: computes the bus voltages within the fast Newton-Raphson method;
-- `GaussSeidel`: computes the bus voltages within the Gauss-Seidel method.
+This function only updates the `voltage.angle` variable of the `ACPowerFlow` type.
 
 # Example
 ```jldoctest
@@ -1021,17 +996,11 @@ end
     startingVoltage!(system::PowerSystem, analysis::ACPowerFlow)
 
 The function extracts bus voltage magnitudes and angles from the `PowerSystem` composite
-type and assigns them to the `ACPowerFlow` abstract type, enabling users to initialize
-voltage values as required.
+type and assigns them to the `ACPowerFlow` type, enabling users to initialize voltage
+values as required.
 
 # Updates
-This function only updates the `voltage` field of the `ACPowerFlow` abstract type.
-
-# Abstract type
-The abstract type `ACPowerFlow` can have the following subtypes:
-- `NewtonRaphson`: computes the bus voltages within the Newton-Raphson method;
-- `FastNewtonRaphson`: computes the bus voltages within the fast Newton-Raphson method;
-- `GaussSeidel`: computes the bus voltages within the Gauss-Seidel method.
+This function only updates the `voltage` field of the `ACPowerFlow` type.
 
 # Example
 ```jldoctest
@@ -1059,7 +1028,7 @@ for i = 1:10
 end
 ```
 """
-function startingVoltage!(system::PowerSystem, analysis::Union{NewtonRaphson, FastNewtonRaphson})
+function startingVoltage!(system::PowerSystem, analysis::ACPowerFlow{Union{NewtonRaphson, FastNewtonRaphson}})
     @inbounds for i = 1:system.bus.number
         if !isempty(system.bus.supply.generator[i]) && system.bus.layout.type[i] != 1
             analysis.voltage.magnitude[i] = system.generator.voltage.magnitude[system.bus.supply.generator[i][1]]
@@ -1070,7 +1039,7 @@ function startingVoltage!(system::PowerSystem, analysis::Union{NewtonRaphson, Fa
     end
 end
 
-function startingVoltage!(system::PowerSystem, analysis::GaussSeidel)
+function startingVoltage!(system::PowerSystem, analysis::ACPowerFlow{GaussSeidel})
     @inbounds for i = 1:system.bus.number
         if !isempty(system.bus.supply.generator[i]) && system.bus.layout.type[i] != 1
             analysis.voltage.magnitude[i] = system.generator.voltage.magnitude[system.bus.supply.generator[i][1]]

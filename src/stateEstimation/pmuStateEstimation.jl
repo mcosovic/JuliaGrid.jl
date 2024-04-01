@@ -1,35 +1,34 @@
 """
     pmuWlsStateEstimation(system::PowerSystem, device::Measurement, method)
 
-The function establishes the linear WLS model for state estimation with PMUs only. In this 
-model, the vector of state variables contains bus voltage magnitudes and angles, given in 
+The function establishes the linear WLS model for state estimation with PMUs only. In this
+model, the vector of state variables contains bus voltage magnitudes and angles, given in
 rectangular coordinates.
 
 # Arguments
-This function requires the `PowerSystem` and `Measurement` composite types to establish 
-the WLS state estimation model. 
+This function requires the `PowerSystem` and `Measurement` composite types to establish
+the WLS state estimation model.
 
-Moreover, the presence of the `method` parameter is not mandatory. To address the WLS 
-state estimation method, users can opt to utilize factorization techniques to decompose 
-the gain matrix, such as `LU`, `QR`, or `LDLt` especially when the gain matrix is symmetric. 
-Opting for the `Orthogonal` method is advisable for a more robust solution in scenarios 
-involving ill-conditioned data, particularly when substantial variations in variances are 
+Moreover, the presence of the `method` parameter is not mandatory. To address the WLS
+state estimation method, users can opt to utilize factorization techniques to decompose
+the gain matrix, such as `LU`, `QR`, or `LDLt` especially when the gain matrix is symmetric.
+Opting for the `Orthogonal` method is advisable for a more robust solution in scenarios
+involving ill-conditioned data, particularly when substantial variations in variances are
 present.
 
-If the user does not provide the `method`, the default method for solving the estimation 
+If the user does not provide the `method`, the default method for solving the estimation
 model will be LU factorization.
 
 # Updates
-If the AC model has not been created, the function will automatically trigger an update of 
+If the AC model has not been created, the function will automatically trigger an update of
 the `ac` field within the `PowerSystem` composite type.
 
 # Returns
-The function returns an instance of the `PMUStateEstimation` abstract type, which includes 
+The function returns an instance of the `PMUStateEstimation` abstract type, which includes
 the following fields:
 - `voltage`: the variable allocated to store the bus voltage magnitudes and angles;
 - `power`: the variable allocated to store the active and reactive powers;
-- `method`: the system model vectors and matrices, or alternatively, the optimization model;
-- `bad`: the variable linked to identifying bad data within the measurement set. 
+- `method`: the system model vectors and matrices and bad data.
 
 # Examples
 Set up the PMU state estimation model to be solved using the default LU factorization:
@@ -52,20 +51,20 @@ function pmuWlsStateEstimation(system::PowerSystem, device::Measurement, factori
     coefficient, mean, precision, badData, power, current, _ = pmuStateEstimationWLS(system, device)
 
     method = Dict(LU => lu, LDLt => ldlt, QR => qr)
-    return PMUStateEstimationWLS(
+    return PMUStateEstimation(
         Polar(Float64[], Float64[]),
         power,
-        current, 
-        LinearWLS(
+        current,
+        LinearWLS{Normal}(
             coefficient,
             precision,
             mean,
             get(method, factorization, lu)(sparse(Matrix(1.0I, 1, 1))),
+            badData,
             2 * device.pmu.number,
             -1,
             true,
-        ),
-        badData
+        )
     )
 end
 
@@ -73,23 +72,23 @@ function pmuWlsStateEstimation(system::PowerSystem, device::Measurement, method:
     coefficient, mean, precision, badData, power, current, correlated = pmuStateEstimationWLS(system, device)
 
     if correlated
-        throw(ErrorException("The precision matrix is non-diagonal, therefore preventing the use of the orthogonal method.")) 
+        throw(ErrorException("The precision matrix is non-diagonal, therefore preventing the use of the orthogonal method."))
     end
-    
-    return PMUStateEstimationWLS(
+
+    return PMUStateEstimation(
         Polar(Float64[], Float64[]),
         power,
         current,
-        LinearOrthogonal(
+        LinearWLS{Orthogonal}(
             coefficient,
             precision,
             mean,
             qr(sparse(Matrix(1.0I, 1, 1))),
+            badData,
             2 * device.pmu.number,
             -1,
             true,
-        ),
-        badData
+        )
     )
 end
 
@@ -104,13 +103,13 @@ function pmuStateEstimationWLS(system::PowerSystem, device::Measurement)
         acModel!(system)
     end
 
-    nonZeroElement = 0 
+    nonZeroElement = 0
     nonZeroPrecision = 0
     for i = 1:pmu.number
         if pmu.layout.bus[i]
             nonZeroElement += 2
         else
-            nonZeroElement += 8 
+            nonZeroElement += 8
         end
 
         if pmu.layout.correlated[i]
@@ -120,12 +119,12 @@ function pmuStateEstimationWLS(system::PowerSystem, device::Measurement)
         end
     end
 
-    rowCoeff = fill(0, nonZeroElement) 
+    rowCoeff = fill(0, nonZeroElement)
     colCoeff = similar(rowCoeff)
     coeff = fill(0.0, nonZeroElement)
     mean = fill(0.0, 2 * pmu.number)
 
-    rowPrec = fill(0, nonZeroPrecision) 
+    rowPrec = fill(0, nonZeroPrecision)
     colPrec = similar(rowPrec)
     valPrec = fill(0.0, nonZeroPrecision)
 
@@ -173,9 +172,9 @@ function pmuStateEstimationWLS(system::PowerSystem, device::Measurement)
             count += 2
             rowindex += 2
         else
-            rowCoeff[count] = rowindex 
+            rowCoeff[count] = rowindex
             colCoeff[count] = branch.layout.from[k]
-            rowCoeff[count + 1] = rowindex + 1 
+            rowCoeff[count + 1] = rowindex + 1
             colCoeff[count + 1] = branch.layout.from[k] + bus.number
 
             rowCoeff[count + 2] = rowindex;
@@ -193,7 +192,7 @@ function pmuStateEstimationWLS(system::PowerSystem, device::Measurement)
             rowCoeff[count + 7] = rowindex + 1
             colCoeff[count + 7] = branch.layout.to[k]
 
-            if pmu.magnitude.status[i] == 1 && pmu.angle.status[i] == 1 
+            if pmu.magnitude.status[i] == 1 && pmu.angle.status[i] == 1
                 gij = real(ac.admittance[k])
                 bij = imag(ac.admittance[k])
                 bsi = 0.5 * branch.parameter.susceptance[k]
@@ -227,12 +226,12 @@ function pmuStateEstimationWLS(system::PowerSystem, device::Measurement)
                     coeff[count + 6] = -bij - bsi
                     coeff[count + 7] = -coeff[count + 6]
                 end
-                
-                mean[rowindex] = pmu.magnitude.mean[i] * cosAngle 
-                mean[rowindex + 1] = pmu.magnitude.mean[i] * sinAngle 
+
+                mean[rowindex] = pmu.magnitude.mean[i] * cosAngle
+                mean[rowindex + 1] = pmu.magnitude.mean[i] * sinAngle
             else
                 coeff[count:(count + 7)] .= 0.0
-                mean[rowindex:(rowindex + 1)] .= 0.0 
+                mean[rowindex:(rowindex + 1)] .= 0.0
             end
             count += 8
             rowindex += 2
@@ -241,11 +240,11 @@ function pmuStateEstimationWLS(system::PowerSystem, device::Measurement)
 
     coefficient = sparse(rowCoeff, colCoeff, coeff, 2 * pmu.number, 2 * bus.number)
     precision = sparse(rowPrec, colPrec, valPrec, 2 * pmu.number, 2 * pmu.number)
- 
+
     badData = BadData(true, 0.0, "", 0)
-    power = PowerSE(Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), 
-        Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]))
-    current = Current(Polar(Float64[], Float64[]), Polar(Float64[], Float64[]), Polar(Float64[], Float64[]), Polar(Float64[], Float64[]))       
+    power = ACPower(Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]),
+        Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), nothing)
+    current = ACCurrent(Polar(Float64[], Float64[]), Polar(Float64[], Float64[]), Polar(Float64[], Float64[]), Polar(Float64[], Float64[]))
 
     return coefficient, mean, precision, badData, power, current, correlated
 end
@@ -253,26 +252,26 @@ end
 """
     pmuLavStateEstimation(system::PowerSystem, device::Measurement, optimizer)
 
-The function establishes the LAV model for state estimation with PMUs only. In this 
-model, the vector of state variables contains bus voltage magnitudes and angles, given in 
+The function establishes the LAV model for state estimation with PMUs only. In this
+model, the vector of state variables contains bus voltage magnitudes and angles, given in
 rectangular coordinates.
 
 # Arguments
-This function requires the `PowerSystem` and `Measurement` composite types to establish 
-the LAV state estimation model. The LAV method offers increased robustness compared 
-to WLS, ensuring unbiasedness even in the presence of various measurement errors and 
+This function requires the `PowerSystem` and `Measurement` composite types to establish
+the LAV state estimation model. The LAV method offers increased robustness compared
+to WLS, ensuring unbiasedness even in the presence of various measurement errors and
 outliers.
-    
-Users can employ the LAV method to find an estimator by choosing one of the available 
-[optimization solvers](https://jump.dev/JuMP.jl/stable/packages/solvers/). Typically, 
+
+Users can employ the LAV method to find an estimator by choosing one of the available
+[optimization solvers](https://jump.dev/JuMP.jl/stable/packages/solvers/). Typically,
 `Ipopt.Optimizer` suffices for most scenarios.
 
 # Updates
-If the AC model has not been created, the function will automatically trigger an update of 
+If the AC model has not been created, the function will automatically trigger an update of
 the `ac` field within the `PowerSystem` composite type.
 
 # Returns
-The function returns an instance of the `PMUStateEstimation` abstract type, which includes 
+The function returns an instance of the `PMUStateEstimation` abstract type, which includes
 the following fields:
 - `voltage`: the variable allocated to store the bus voltage magnitudes and angles;
 - `power`: the variable allocated to store the active and reactive powers;
@@ -313,7 +312,7 @@ function pmuLavStateEstimation(system::PowerSystem, device::Measurement, (@nospe
     residual = Dict{Int64, JuMP.ConstraintRef}()
     count = 1
     for (i, k) in enumerate(pmu.layout.index)
-        if pmu.magnitude.status[i] == 1 && pmu.angle.status[i] == 1 
+        if pmu.magnitude.status[i] == 1 && pmu.angle.status[i] == 1
             if pmu.layout.bus[i]
                 cosAngle = cos(pmu.angle.mean[i])
                 sinAngle = sin(pmu.angle.mean[i])
@@ -345,9 +344,9 @@ function pmuLavStateEstimation(system::PowerSystem, device::Measurement, (@nospe
 
                 if pmu.layout.from[i]
                     a1 = turnsRatioInv^2 * gij
-                    a2 = -turnsRatioInv^2 * (bij + bsi) 
+                    a2 = -turnsRatioInv^2 * (bij + bsi)
                     a3 = -turnsRatioInv * (gij * cosShift - bij * sinShift)
-                    a4 = turnsRatioInv * (bij * cosShift + gij * sinShift) 
+                    a4 = turnsRatioInv * (bij * cosShift + gij * sinShift)
 
                     residual[count] = @constraint(jump, a1 * Vrei + a2 * Vimi + a3 * Vrej + a4 * Vimj + residualx[count] - residualy[count] - pmu.magnitude.mean[i] * cosAngle == 0.0)
                     residual[count + 1] = @constraint(jump, -a2 * Vrei + a1 * Vimi - a4 * Vrej + a3 * Vimj + residualx[count + 1] - residualy[count + 1] - pmu.magnitude.mean[i] * sinAngle == 0.0)
@@ -372,27 +371,28 @@ function pmuLavStateEstimation(system::PowerSystem, device::Measurement, (@nospe
 
     @objective(jump, Min, objective)
 
-    return PMUStateEstimationLAV(
+    return PMUStateEstimation(
         Polar(
-            copy(system.bus.voltage.magnitude), 
+            copy(system.bus.voltage.magnitude),
             copy(system.bus.voltage.angle)
         ),
-        PowerSE(
+        ACPower(
             Cartesian(Float64[], Float64[]),
             Cartesian(Float64[], Float64[]),
             Cartesian(Float64[], Float64[]),
             Cartesian(Float64[], Float64[]),
             Cartesian(Float64[], Float64[]),
             Cartesian(Float64[], Float64[]),
-            Cartesian(Float64[], Float64[])
+            Cartesian(Float64[], Float64[]),
+            nothing
         ),
-        Current(
+        ACCurrent(
             Polar(Float64[], Float64[]),
             Polar(Float64[], Float64[]),
             Polar(Float64[], Float64[]),
             Polar(Float64[], Float64[])
         ),
-        LAVMethod(
+        LAV(
             jump,
             statex,
             statey,
@@ -407,11 +407,11 @@ end
 """
     solve!(system::PowerSystem, analysis::PMUStateEstimation)
 
-By computing the bus voltage magnitudes and angles, the function solves the PMU state 
+By computing the bus voltage magnitudes and angles, the function solves the PMU state
 estimation model.
 
 # Updates
-The resulting bus voltage magnitudes and angles are stored in the `voltage` field of the 
+The resulting bus voltage magnitudes and angles are stored in the `voltage` field of the
 `PMUStateEstimation` type.
 
 # Examples
@@ -435,7 +435,7 @@ analysis = pmuLavStateEstimation(system, device, Ipopt.Optimizer)
 solve!(system, analysis)
 ```
 """
-function solve!(system::PowerSystem, analysis::PMUStateEstimationWLS{LinearWLS})
+function solve!(system::PowerSystem, analysis::PMUStateEstimation{LinearWLS{Normal}})
     se = analysis.method
     bus = system.bus
 
@@ -464,7 +464,7 @@ function solve!(system::PowerSystem, analysis::PMUStateEstimationWLS{LinearWLS})
 end
 
 ########### PMU State Estimation WLS Solution by QR Factorization ###########
-function solve!(system::PowerSystem, analysis::PMUStateEstimationWLS{LinearOrthogonal})
+function solve!(system::PowerSystem, analysis::PMUStateEstimation{LinearWLS{Orthogonal}})
     se = analysis.method
     bus = system.bus
 
@@ -492,7 +492,7 @@ function solve!(system::PowerSystem, analysis::PMUStateEstimationWLS{LinearOrtho
     end
 end
 
-function solve!(system::PowerSystem, analysis::PMUStateEstimationLAV)
+function solve!(system::PowerSystem, analysis::PMUStateEstimation{LAV})
     se = analysis.method
     bus = system.bus
     @inbounds for i = 1:system.bus.number
@@ -519,21 +519,21 @@ end
 """
     pmuPlacement(system::PowerSystem, optimizer; bridge)
 
-The function determines the optimal placement of PMUs through integer linear programming. 
-Specifically, it identifies the minimum set of PMU locations required for effective power 
+The function determines the optimal placement of PMUs through integer linear programming.
+Specifically, it identifies the minimum set of PMU locations required for effective power
 system state estimation, ensuring observability with the least number of PMUs.
 
-The function accepts a `PowerSystem` composite type as input to establish the framework 
-for finding the optimal PMU placement. If the `ac` field within the `PowerSystem` 
+The function accepts a `PowerSystem` composite type as input to establish the framework
+for finding the optimal PMU placement. If the `ac` field within the `PowerSystem`
 composite type is not yet created, the function automatically initiates an update process.
-        
-Additionally, the `optimizer` argument is a crucial component for formulating and solving 
-the optimization problem. Typically, using the GLPK or HiGHS solver is sufficient. For 
-more detailed information, please refer to the JuMP 
+
+Additionally, the `optimizer` argument is a crucial component for formulating and solving
+the optimization problem. Typically, using the GLPK or HiGHS solver is sufficient. For
+more detailed information, please refer to the JuMP
 [JuMP documenatation](https://jump.dev/JuMP.jl/stable/packages/solvers/).
 
 # Keyword
-The `bridge` keyword enables users to manage the bridging mechanism within the JuMP 
+The `bridge` keyword enables users to manage the bridging mechanism within the JuMP
 package.
 
 # Returns
@@ -542,12 +542,12 @@ The function returns an instance of the `PlacementPMU` type, containing variable
 * `from`: branch labels with indices marking the positions of PMUs at "from" bus ends;
 * `to`: branch labels with indices marking the positions of PMUs at "to" bus ends.
 
-Note that if the conventional understanding of a PMU involves a device measuring the bus 
-voltage phasor and all branch current phasors incident to the bus, the result is saved 
-only in the bus variable. However, if we consider that a PMU measures individual phasors, 
-each described with magnitude and angle, then measurements are needed at each bus in the 
-`bus` variable, and each branch with positions given according to `from` and `to` 
-variables. 
+Note that if the conventional understanding of a PMU involves a device measuring the bus
+voltage phasor and all branch current phasors incident to the bus, the result is saved
+only in the bus variable. However, if we consider that a PMU measures individual phasors,
+each described with magnitude and angle, then measurements are needed at each bus in the
+`bus` variable, and each branch with positions given according to `from` and `to`
+variables.
 
 # Example
 ```jldoctest
@@ -567,11 +567,11 @@ for (bus, i) in placement.bus
     addPmu!(system, device; bus = bus, magnitude = Vi, angle = θi)
 end
 for branch in keys(placement.from)
-    Iij, ψij = fromCurrent(system, analysis; label = branch) 
+    Iij, ψij = fromCurrent(system, analysis; label = branch)
     addPmu!(system, device; from = branch, magnitude = Iij, angle = ψij)
 end
 for branch in keys(placement.to)
-    Iji, ψji = toCurrent(system, analysis; label = branch) 
+    Iji, ψji = toCurrent(system, analysis; label = branch)
     addPmu!(system, device; to = branch, magnitude = Iji, angle = ψji)
 end
 ```
@@ -580,8 +580,8 @@ function pmuPlacement(system::PowerSystem, (@nospecialize optimizerFactory);
     bridge::Bool = true)
 
     placementPmu = PlacementPMU(
-        OrderedDict{String, Int64}(), 
-        OrderedDict{String, Int64}(), 
+        OrderedDict{String, Int64}(),
+        OrderedDict{String, Int64}(),
         OrderedDict{String, Int64}()
     )
 
@@ -600,7 +600,7 @@ function pmuPlacement(system::PowerSystem, (@nospecialize optimizerFactory);
     placement = @variable(jump, 0 <= placement[i = 1:bus.number] <= 1, Int)
 
     dropzeros!(ac.nodalMatrix)
-    
+
     if filledElements != nnz(ac.nodalMatrix)
         ac.pattern += 1
     end
@@ -655,9 +655,9 @@ function invCovarianceBlock(rowPrec::Array{Int64,1}, colPrec::Array{Int64,1}, va
 
     rowPrec[cntPrec + 3] = rowindex + 1
     colPrec[cntPrec + 3] = rowindex + 1
-    valPrec[cntPrec + 3] = L3inv2   
+    valPrec[cntPrec + 3] = L3inv2
 
     cntPrec += 4
 
-    return rowPrec, colPrec, valPrec, cntPrec 
+    return rowPrec, colPrec, valPrec, cntPrec
 end

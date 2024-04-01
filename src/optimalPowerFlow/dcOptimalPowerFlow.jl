@@ -1,32 +1,33 @@
 """
     dcOptimalPowerFlow(system::PowerSystem, optimizer; bridge, name)
 
-The function takes the `PowerSystem` composite type as input to establish the structure for
-solving the DC optimal power flow. If the `dc` field within the `PowerSystem` composite
-type has not been created, the function will automatically  initiate an update process.
+The function sets up the optimization model for solving the DC optimal power flow problem.
 
-Additionally, the `optimizer` argument is a necessary component for formulating and solving the
-optimization problem. Specifically, JuliaGrid constructs the DC optimal power flow using the
-JuMP package and provides support for commonly employed solvers. For more detailed information,
+# Arguments
+The function requires the `PowerSystem` composite type to establish the framework. Next,
+the `optimizer` argument is also required to create and solve the optimization problem.
+Specifically, JuliaGrid constructs the AC optimal power flow using the JuMP package and
+provides support for commonly employed solvers. For more detailed information,
 please consult the [JuMP documenatation](https://jump.dev/JuMP.jl/stable/packages/solvers/).
 
+# Updates
+If the DC model has not been created, the function automatically initiates an update within
+the `dc` field of the `PowerSystem` type.
+
 # Keywords
-JuliaGrid offers the ability to manipulate the `jump` model based on the guidelines provided
-in the [JuMP documentation](https://jump.dev/JuMP.jl/stable/reference/models/). However,
-certain configurations may require different method calls, such as:
+JuliaGrid offers the ability to manipulate the `jump` model based on the guidelines
+providedin the [JuMP documentation](https://jump.dev/JuMP.jl/stable/reference/models/).
+However, certain configurations may require different method calls, such as:
 - `bridge`: used to manage the bridging mechanism;
 - `name`: used to manage the creation of string names.
 By default, these keyword settings are configured as `true`.
 
 # Returns
-The function returns an instance of the `DCOptimalPowerFlow` type, which includes the following
-fields:
+The function returns an instance of the `DCOptimalPowerFlow` type, which includes the
+following fields:
 - `voltage`: the variable allocated to store the bus voltage angle;
 - `power`: the variable allocated to store the active powers;
-- `jump`: the JuMP model;
-- `variable`: holds the variable references to the JuMP model;
-- `constraint`: holds the constraint references to the JuMP model;
-- `objective`: holds the objective expression of the JuMP model.
+- `method`: the JuMP model, references to the variables, constraints, and objective.
 
 # Examples
 ```jldoctest
@@ -122,33 +123,35 @@ function dcOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
             CartesianReal(Float64[]),
             CartesianReal(copy(generator.output.active))
         ),
-        jump,
-        DCVariable(
-            active,
-            angle,
-            actwise
-        ),
-        DCConstraint(
-            PolarAngleRef(slack),
-            CartesianRealRef(balance),
-            PolarAngleRef(voltage),
-            CartesianRealRef(flow),
-            CartesianRealRef(capability),
-            DCPiecewise(piecewise)
-        ),
-        objective
+        DCOptimalPowerFlowMethod(
+            jump,
+            DCVariable(
+                active,
+                angle,
+                actwise
+            ),
+            DCConstraint(
+                PolarAngleRef(slack),
+                CartesianRealRef(balance),
+                PolarAngleRef(voltage),
+                CartesianRealRef(flow),
+                CartesianRealRef(capability),
+                DCPiecewise(piecewise)
+            ),
+            objective
+        )
     )
 end
 
 """
     solve!(system::PowerSystem, analysis::DCOptimalPowerFlow)
 
-The function determines the optimal power flow for DC systems, computing the angles of bus
-voltages, as well as generating active power values for each generator.
+The function solves the DC optimal power flow model, computing the angles of bus voltages,
+as well as generating active power values for each generator.
 
 # Updates
 The calculated voltage angles and active powers are then stored in the variables of the
-`voltage` and `power.generator` fields of the `DCOptimalPowerFlow` composite type.
+`voltage` and `power.generator` fields of the `DCOptimalPowerFlow` type.
 
 # Example
 ```jldoctest
@@ -160,7 +163,7 @@ solve!(system, analysis)
 ```
 """
 function solve!(system::PowerSystem, analysis::DCOptimalPowerFlow)
-    variable = analysis.variable
+    variable = analysis.method.variable
 
     @inbounds for i = 1:system.bus.number
         JuMP.set_start_value(variable.angle[i]::JuMP.VariableRef, analysis.voltage.angle[i])
@@ -169,7 +172,7 @@ function solve!(system::PowerSystem, analysis::DCOptimalPowerFlow)
         JuMP.set_start_value(variable.active[i]::JuMP.VariableRef, analysis.power.generator.active[i])
     end
 
-    JuMP.optimize!(analysis.jump)
+    JuMP.optimize!(analysis.method.jump)
 
     @inbounds for i = 1:system.bus.number
         analysis.voltage.angle[i] = value(variable.angle[i]::JuMP.VariableRef)
@@ -206,9 +209,9 @@ end
 ######### Update Balance Constraints ##########
 function updateBalance(system::PowerSystem, analysis::DCOptimalPowerFlow, index::Int64; voltage = false, rhs = false, power = -1, genIndex = 0)
     dc = system.model.dc
-    jump = analysis.jump
-    constraint = analysis.constraint
-    variable = analysis.variable
+    jump = analysis.method.jump
+    constraint = analysis.method.constraint
+    variable = analysis.method.variable
 
     if haskey(constraint.balance.active, index) && is_valid(jump, constraint.balance.active[index])
         if voltage
@@ -269,3 +272,37 @@ function costExpr(cost::Cost, variable::JuMP.VariableRef, index::Int64, label::L
     return expr, isPowerwise, isNonLin
 end
 
+"""
+    startingPrimal!(system::PowerSystem, analysis::DCOptimalPowerFlow)
+
+The function retrieves the active power outputs of the generators and the bus voltage
+angles from the `PowerSystem` composite type. These values are then assigned to the
+`DCOptimalPowerFlow` type, enabling users to initialize starting primal values according
+to their requirements.
+
+# Updates
+This function only updates the `voltage` and `generator` fields of the `DCOptimalPowerFlow`
+type.
+
+# Example
+```jldoctest
+system = powerSystem("case14.h5")
+dcModel!(system)
+
+analysis = dcOptimalPowerFlow(system, Ipopt.Optimizer)
+solve!(system, analysis)
+
+updateBus!(system, analysis; label = 14, active = 0.1, angle = -0.17)
+
+startingPrimal!(system, analysis)
+solve!(system, analysis)
+```
+"""
+function startingPrimal!(system::PowerSystem, analysis::DCOptimalPowerFlow)
+    @inbounds for i = 1:system.bus.number
+        analysis.voltage.angle[i] = system.bus.voltage.angle[i]
+    end
+    @inbounds for i = 1:system.generator.number
+        analysis.power.generator.active[i] = system.generator.output.active[i]
+    end
+end

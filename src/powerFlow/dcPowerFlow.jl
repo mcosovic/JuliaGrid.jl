@@ -4,29 +4,28 @@
 The function sets up the framework to solve the DC power flow.
 
 # Arguments
-The function requires the `PowerSystem` composite type to establish the framework. 
-Moreover, the `Factorization` argument is optional and can be one of the following:
-  * `LU`: solves the DC power flow problem in-place using LU factorization;
-  * `LDLt`: solves the DC power flow problem using LDLt factorization;
-  * `QR`: solves the DC power flow problem using QR factorization.
-If the user does not provide the `Factorization` composite type, the default method for 
-solving the DC power flow will be LU factorization.
+The function requires the `PowerSystem` composite type to establish the framework. Next, 
+the `Factorization` argument, while optional, determines the method used to solve the 
+linear system of equations. It can take one of the following values:    
+- `LU`: utilizes LU factorization (default);
+- `LDLt`: utilizes LDLt factorization;
+- `QR`: utilizes QR factorization.
 
 # Updates
 If the DC model was not created, the function will automatically initiate an update of the
 `dc` field within the `PowerSystem` composite type. Additionally, if the slack bus lacks
-an in-service generator, JuliaGrid considers it a mistake and defines a new slack bus as the
-first generator bus with an in-service generator in the bus type list.
+an in-service generator, JuliaGrid considers it a mistake and defines a new slack bus as 
+the first generator bus with an in-service generator in the bus type list.
 
 # Returns
-The function returns an instance of the `DCPowerFlow` composite type, which includes the
-following fields:
+The function returns an instance of the `DCPowerFlow` type, which includes the following 
+fields:
 - `voltage`: the variable allocated to store the bus voltage angles;
 - `power`: the variable allocated to store the active powers;
 - `method`: the factorized nodal matrix.
 
 # Examples
-Establish the DC power flow framework that will be solved using the default LU factorization:
+Set up the DC power flow utilizing LU factorization:
 ```jldoctest
 system = powerSystem("case14.h5")
 dcModel!(system)
@@ -34,7 +33,7 @@ dcModel!(system)
 analysis = dcPowerFlow(system)
 ```
 
-Establish the DC power flow framework that will be solved using the QR factorization:
+Set up the DC power flow utilizing QR factorization:
 ```jldoctest
 system = powerSystem("case14.h5")
 dcModel!(system)
@@ -73,10 +72,10 @@ end
 """
     solve!(system::PowerSystem, analysis::DCPowerFlow)
 
-By computing the bus voltage angles, the function solves the DC power flow problem.
+The function solves the DC power flow model and calculates bus voltage angles.
 
 # Updates
-The resulting bus voltage angles are stored in the `voltage` field of the `DCPowerFlow` type.
+The calculated voltage angles are stored in the `voltage` field of the `DCPowerFlow` type.
 
 # Example
 ```jldoctest

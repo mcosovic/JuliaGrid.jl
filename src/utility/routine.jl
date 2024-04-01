@@ -120,7 +120,7 @@ function setLabel(component, label::Missing, default::String, key::String; prefi
             end
         end
     end
-    
+
     setindex!(component.label, component.number, label)
 end
 
@@ -207,7 +207,7 @@ function checkLocation(device, bus, from, to)
     busFlag = false
     fromFlag = false
     toFlag = false
-    
+
     if isset(bus)
         location = bus
         busFlag = true
@@ -223,7 +223,7 @@ function checkLocation(device, bus, from, to)
 end
 
 ######### Set Mean, Variance, and Status ##########
-function setMeter(device::GaussMeter, mean::T, variance::T, status::T, noise::Bool,
+function setMeter(device::GaussMeter, mean::A, variance::A, status::A, noise::Bool,
     defVariance::ContainerTemplate, defStatus::Int8, prefixLive::Float64, baseInv::Float64)
 
     push!(device.variance, topu(variance, defVariance, prefixLive, baseInv))
@@ -239,8 +239,8 @@ function setMeter(device::GaussMeter, mean::T, variance::T, status::T, noise::Bo
     checkStatus(device.status[end])
 end
 
-function updateMeter(device::GaussMeter, index::Int64, mean::T, variance::T,
-    status::T, noise::Bool, prefixLive::Float64, baseInv::Float64)
+function updateMeter(device::GaussMeter, index::Int64, mean::A, variance::A,
+    status::A, noise::Bool, prefixLive::Float64, baseInv::Float64)
 
     if isset(variance)
         device.variance[index] = topu(variance, prefixLive, baseInv)
@@ -260,19 +260,19 @@ function updateMeter(device::GaussMeter, index::Int64, mean::T, variance::T,
     end
 end
 
-function removeDeviceLAV(method::LAVMethod, indexDevice::Int64)
+function removeDeviceLAV(method::LAV, indexDevice::Int64)
     remove!(method.jump, method.residual, indexDevice)
 
     if !is_fixed(method.residualx[indexDevice])
         fix(method.residualx[indexDevice], 0.0; force = true)
         fix(method.residualy[indexDevice], 0.0; force = true)
-            
+
         set_objective_coefficient(method.jump, method.residualx[indexDevice], 0)
         set_objective_coefficient(method.jump, method.residualy[indexDevice], 0)
     end
 end
 
-function addDeviceLAV(method::LAVMethod, indexDevice::Int64)
+function addDeviceLAV(method::LAV, indexDevice::Int64)
     if is_fixed(method.residualx[indexDevice])
         unfix(method.residualx[indexDevice])
         unfix(method.residualy[indexDevice])
@@ -313,14 +313,14 @@ end
 ########### Solutions ###########
 function sparseSolution(x::Array{Float64,1}, b::Array{Float64,1}, factor::SuiteSparse.UMFPACK.UmfpackLU{Float64, Int64})
     if isempty(x)
-        x = fill(0.0, size(factor.L, 2)) 
+        x = fill(0.0, size(factor.L, 2))
     end
 
     ldiv!(x, factor, b)
 end
 
 function sparseSolution(x::Array{Float64,1}, b::Array{Float64,1}, factor::Union{SuiteSparse.SPQR.QRSparse{Float64, Int64}, SuiteSparse.CHOLMOD.Factor{Float64}})
-    return x = factor \ b 
+    return x = factor \ b
 end
 
 ######### Print Data ##########
@@ -384,7 +384,7 @@ function print(io::IO, obj::Dict{Int64, Array{JuMP.ConstraintRef,1}})
 end
 
 ######### Check Input Data ##########
-function isset(input::Union{L, T, B})
+function isset(input::Union{A, String, Bool})
     return !ismissing(input)
 end
 
@@ -395,7 +395,7 @@ function dropZeros!(dc::DCModel)
 
     if filledElements != nnz(dc.nodalMatrix)
         dc.pattern += 1
-    end 
+    end
 end
 
 function dropZeros!(ac::ACModel)
@@ -405,5 +405,5 @@ function dropZeros!(ac::ACModel)
 
     if filledElements != nnz(ac.nodalMatrix)
         ac.pattern += 1
-    end 
+    end
 end

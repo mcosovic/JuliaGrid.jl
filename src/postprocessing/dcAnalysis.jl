@@ -13,41 +13,13 @@ electrical quantities:
 - `to`: active power flows at each "to" bus end of the branch;
 - `generator`: output active powers of each generator (excluding for state estimation).
 
-# Abstract type
-The abstract type `DC` can have the following subtypes:
-- `DCPowerFlow`: computes the powers within the DC power flow;
-- `DCOptimalPowerFlow`: computes the powers within the DC optimal power flow;
-- `DCStateEstimation`: computes the powers within the DC state estimation.
-
-# Examples
+# Example
 Compute powers after obtaining the DC power flow solution:
 ```jldoctest
 system = powerSystem("case14.h5")
 dcModel!(system)
 
 analysis = dcPowerFlow(system)
-solve!(system, analysis)
-power!(system, analysis)
-```
-
-Compute powers after obtaining the DC optimal power flow solution:
-```jldoctest
-using HiGHS
-
-system = powerSystem("case14.h5")
-dcModel!(system)
-
-analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer)
-solve!(system, analysis)
-power!(system, analysis)
-```
-
-Compute powers after obtaining the DC state estimation solution:
-```jldoctest
-system = powerSystem("case14.h5")
-device = measurement("measurement14.h5")
-
-analysis = dcWlsStateEstimation(system, device)
 solve!(system, analysis)
 power!(system, analysis)
 ```
@@ -136,41 +108,13 @@ end
 The function returns the active power injection associated with a specific bus in the DC
 framework. The `label` keyword argument must match an existing bus label.
 
-# Abstract type
-The abstract type `DC` can have the following subtypes:
-- `DCPowerFlow`: computes the power within the DC power flow;
-- `DCOptimalPowerFlow`: computes the power within the DC optimal power flow;
-- `DCStateEstimation`: computes the power within the DC state estimation.
-
-# Examples
+# Example
 Compute the active power after obtaining the DC power flow solution:
 ```jldoctest
 system = powerSystem("case14.h5")
 dcModel!(system)
 
 analysis = dcPowerFlow(system)
-solve!(system, analysis)
-injection = injectionPower(system, analysis; label = 2)
-```
-
-Compute the active power after obtaining the DC optimal power flow solution:
-```jldoctest
-using HiGHS
-
-system = powerSystem("case14.h5")
-dcModel!(system)
-
-analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer)
-solve!(system, analysis)
-injection = injectionPower(system, analysis; label = 2)
-```
-
-Compute the active power after obtaining the DC state estimation solution:
-```jldoctest
-system = powerSystem("case14.h5")
-device = measurement("measurement14.h5")
-
-analysis = dcWlsStateEstimation(system, device)
 solve!(system, analysis)
 injection = injectionPower(system, analysis; label = 2)
 ```
@@ -232,41 +176,13 @@ The function returns the active power injection from the generators associated w
 specific bus in the DC framework. The `label` keyword argument must match an existing bus
 label.
 
-# Abstract type
-The abstract type `DC` can have the following subtypes:
-- `DCPowerFlow`: computes the power within the DC power flow,
-- `DCOptimalPowerFlow`: computes the power within the DC optimal power flow;
-- `DCStateEstimation`: computes the power within the DC state estimation.
-
-# Examples
+# Example
 Compute the active power after obtaining the DC power flow solution:
 ```jldoctest
 system = powerSystem("case14.h5")
 dcModel!(system)
 
 analysis = dcPowerFlow(system)
-solve!(system, analysis)
-supply = supplyPower(system, analysis; label = 2)
-```
-
-Compute the active power after obtaining the DC optimal power flow solution:
-```jldoctest
-using HiGHS
-
-system = powerSystem("case14.h5")
-dcModel!(system)
-
-analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer)
-solve!(system, analysis)
-supply = supplyPower(system, analysis; label = 2)
-```
-
-Compute the active power after obtaining the DC state estimation solution:
-```jldoctest
-system = powerSystem("case14.h5")
-device = measurement("measurement14.h5")
-
-analysis = dcWlsStateEstimation(system, device)
 solve!(system, analysis)
 supply = supplyPower(system, analysis; label = 2)
 ```
@@ -324,44 +240,17 @@ end
 """
     fromPower(system::PowerSystem, analysis::DC; label)
 
-The function returns the active power flow at the "from" bus end associated with a specific
-branch in the DC framework. The `label` keyword argument must match an existing branch label.
+The function returns the active power flow at the "from" bus end associated with a
+specific branch in the DC framework. The `label` keyword argument must match an existing
+branch label.
 
-# Abstract type
-The abstract type `DC` can have the following subtypes:
-- `DCPowerFlow`: computes the power within the DC power flow;
-- `DCOptimalPowerFlow`: computes the power within the DC optimal power flow;
-- `DCStateEstimation`: computes the power within the DC state estimation.
-
-# Examples
+# Example
 Compute the active power after obtaining the DC power flow solution:
 ```jldoctest
 system = powerSystem("case14.h5")
 dcModel!(system)
 
 analysis = dcPowerFlow(system)
-solve!(system, analysis)
-from = fromPower(system, analysis; label = 2)
-```
-
-Compute the active power after obtaining the DC optimal power flow solution:
-```jldoctest
-using HiGHS
-
-system = powerSystem("case14.h5")
-dcModel!(system)
-
-analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer)
-solve!(system, analysis)
-from = fromPower(system, analysis; label = 2)
-```
-
-Compute the active power after obtaining the DC state estimation solution:
-```jldoctest
-system = powerSystem("case14.h5")
-device = measurement("measurement14.h5")
-
-analysis = dcWlsStateEstimation(system, device)
 solve!(system, analysis)
 from = fromPower(system, analysis; label = 2)
 ```
@@ -380,43 +269,16 @@ end
     toPower(system::PowerSystem, analysis::DC; label)
 
 The function returns the active power flow at the "to" bus end associated with a specific
-branch in the DC framework. The `label` keyword argument must match an existing branch label.
+branch in the DC framework. The `label` keyword argument must match an existing branch
+label.
 
-# Abstract type
-The abstract type `DC` can have the following subtypes:
-- `DCPowerFlow`: computes the power within the DC power flow;
-- `DCOptimalPowerFlow`: computes the power within the DC optimal power flow;
-- `DCStateEstimation`: computes the power within the DC state estimation.
-
-# Examples
+# Example
 Compute the active power after obtaining the DC power flow solution:
 ```jldoctest
 system = powerSystem("case14.h5")
 dcModel!(system)
 
 analysis = dcPowerFlow(system)
-solve!(system, analysis)
-to = toPower(system, analysis; label = 2)
-```
-
-Compute the active power after obtaining the DC optimal power flow solution:
-```jldoctest
-using HiGHS
-
-system = powerSystem("case14.h5")
-dcModel!(system)
-
-analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer)
-solve!(system, analysis)
-to = toPower(system, analysis; label = 2)
-```
-
-Compute the active power after obtaining the DC state estimation solution:
-```jldoctest
-system = powerSystem("case14.h5")
-device = measurement("measurement14.h5")
-
-analysis = dcStateEstimation(system, device)
 solve!(system, analysis)
 to = toPower(system, analysis; label = 2)
 ```
@@ -437,11 +299,6 @@ end
 This function returns the output active power associated with a specific generator in the
 DC framework. The `label` keyword argument must match an existing generator label.
 
-# Abstract type
-The abstract type `DC` can have the following subtypes:
-- `DCPowerFlow`: computes the power within the DC power flow;
-- `DCOptimalPowerFlow`: computes the power within the DC optimal power flow.
-
 # Examples
 Compute the active power after obtaining the DC power flow solution:
 ```jldoctest
@@ -449,19 +306,6 @@ system = powerSystem("case14.h5")
 dcModel!(system)
 
 analysis = dcPowerFlow(system)
-solve!(system, analysis)
-generator = generatorPower(system, analysis; label = 1)
-```
-
-Compute the active power after obtaining the DC optimal power flow
-solution:
-```jldoctest
-using HiGHS
-
-system = powerSystem("case14.h5")
-dcModel!(system)
-
-analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer)
 solve!(system, analysis)
 generator = generatorPower(system, analysis; label = 1)
 ```

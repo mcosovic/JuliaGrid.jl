@@ -7,13 +7,12 @@ For further information on this topic, please see the [AC Optimal Power Flow](@r
 ###### AC Optimal Power Flow
 * [`acOptimalPowerFlow`](@ref acOptimalPowerFlow)
 * [`solve!`](@ref solve!(::PowerSystem, ::ACOptimalPowerFlow))
+* [`startingPrimal!`](@ref startingPrimal!(::PowerSystem, ::ACOptimalPowerFlow))
 
 ###### DC Optimal Power Flow
 * [`dcOptimalPowerFlow`](@ref dcOptimalPowerFlow)
 * [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow))
-
-###### Utility Function
-* [`startingPrimal!`](@ref startingPrimal!(::PowerSystem, ::ACOptimalPowerFlow)) 
+* [`startingPrimal!`](@ref startingPrimal!(::PowerSystem, ::DCOptimalPowerFlow))
 
 ---
 
@@ -28,6 +27,7 @@ using JuliaGrid, Ipopt, HiGHS
 ```@docs
 acOptimalPowerFlow
 solve!(::PowerSystem, ::ACOptimalPowerFlow)
+startingPrimal!(::PowerSystem, ::ACOptimalPowerFlow)
 ```
 
 ---
@@ -36,12 +36,6 @@ solve!(::PowerSystem, ::ACOptimalPowerFlow)
 ```@docs
 dcOptimalPowerFlow
 solve!(::PowerSystem, ::DCOptimalPowerFlow)
-```
-
----
-
-## Utility Function
-```@docs
-startingPrimal!(::PowerSystem, ::ACOptimalPowerFlow)
+startingPrimal!(::PowerSystem, ::DCOptimalPowerFlow)
 ```
 

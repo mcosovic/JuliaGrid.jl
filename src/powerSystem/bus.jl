@@ -56,12 +56,12 @@ addBus!(system; label = "Bus 1", active = 25.0, angle = 10.026, base = 132.0)
 ```
 """
 function addBus!(system::PowerSystem;
-    label::L = missing, type::T = missing,
-    active::T = missing, reactive::T = missing,
-    conductance::T = missing, susceptance::T = missing,
-    magnitude::T = missing, angle::T = missing,
-    minMagnitude::T = missing, maxMagnitude::T = missing,
-    base::T = missing, area::T = missing, lossZone::T = missing)
+    label::L = missing, type::A = missing,
+    active::A = missing, reactive::A = missing,
+    conductance::A = missing, susceptance::A = missing,
+    magnitude::A = missing, angle::A = missing,
+    minMagnitude::A = missing, maxMagnitude::A = missing,
+    base::A = missing, area::A = missing, lossZone::A = missing)
 
     bus = system.bus
     default = template.bus
@@ -174,12 +174,12 @@ updateBus!(system; label = "Bus 1", active = 0.15, susceptance = 0.15)
 ```
 """
 function updateBus!(system::PowerSystem;
-    label::L, type::T = missing,
-    active::T = missing, reactive::T = missing,
-    conductance::T = missing, susceptance::T = missing,
-    magnitude::T = missing, angle::T = missing,
-    minMagnitude::T = missing, maxMagnitude::T = missing,
-    base::T = missing, area::T = missing, lossZone::T = missing)
+    label::L, type::A = missing,
+    active::A = missing, reactive::A = missing,
+    conductance::A = missing, susceptance::A = missing,
+    magnitude::A = missing, angle::A = missing,
+    minMagnitude::A = missing, maxMagnitude::A = missing,
+    base::A = missing, area::A = missing, lossZone::A = missing)
 
     bus = system.bus
     ac = system.model.ac
@@ -260,12 +260,12 @@ function updateBus!(system::PowerSystem;
 end
 
 function updateBus!(system::PowerSystem, analysis::DCPowerFlow;
-    label::L, type::T = missing,
-    active::T = missing, reactive::T = missing,
-    conductance::T = missing, susceptance::T = missing,
-    magnitude::T = missing, angle::T = missing,
-    minMagnitude::T = missing, maxMagnitude::T = missing,
-    base::T = missing, area::T = missing, lossZone::T = missing)
+    label::L, type::A = missing,
+    active::A = missing, reactive::A = missing,
+    conductance::A = missing, susceptance::A = missing,
+    magnitude::A = missing, angle::A = missing,
+    minMagnitude::A = missing, maxMagnitude::A = missing,
+    base::A = missing, area::A = missing, lossZone::A = missing)
 
     bus = system.bus
     index = bus.label[getLabel(bus, label, "bus")]
@@ -278,13 +278,13 @@ function updateBus!(system::PowerSystem, analysis::DCPowerFlow;
     magnitude, angle, minMagnitude, maxMagnitude, base, area, lossZone)
 end
 
-function updateBus!(system::PowerSystem, analysis::NewtonRaphson;
-    label::L, type::T = missing,
-    active::T = missing, reactive::T = missing,
-    conductance::T = missing, susceptance::T = missing,
-    magnitude::T = missing, angle::T = missing,
-    minMagnitude::T = missing, maxMagnitude::T = missing,
-    base::T = missing, area::T = missing, lossZone::T = missing)
+function updateBus!(system::PowerSystem, analysis::ACPowerFlow{NewtonRaphson};
+    label::L, type::A = missing,
+    active::A = missing, reactive::A = missing,
+    conductance::A = missing, susceptance::A = missing,
+    magnitude::A = missing, angle::A = missing,
+    minMagnitude::A = missing, maxMagnitude::A = missing,
+    base::A = missing, area::A = missing, lossZone::A = missing)
 
     bus = system.bus
     index = bus.label[getLabel(bus, label, "bus")]
@@ -304,13 +304,13 @@ function updateBus!(system::PowerSystem, analysis::NewtonRaphson;
     end
 end
 
-function updateBus!(system::PowerSystem, analysis::FastNewtonRaphson;
-    label::L, type::T = missing,
-    active::T = missing, reactive::T = missing,
-    conductance::T = missing, susceptance::T = missing,
-    magnitude::T = missing, angle::T = missing,
-    minMagnitude::T = missing, maxMagnitude::T = missing,
-    base::T = missing, area::T = missing, lossZone::T = missing)
+function updateBus!(system::PowerSystem, analysis::ACPowerFlow{FastNewtonRaphson};
+    label::L, type::A = missing,
+    active::A = missing, reactive::A = missing,
+    conductance::A = missing, susceptance::A = missing,
+    magnitude::A = missing, angle::A = missing,
+    minMagnitude::A = missing, maxMagnitude::A = missing,
+    base::A = missing, area::A = missing, lossZone::A = missing)
 
     bus = system.bus
     method = analysis.method
@@ -340,13 +340,13 @@ function updateBus!(system::PowerSystem, analysis::FastNewtonRaphson;
     end
 end
 
-function updateBus!(system::PowerSystem, analysis::GaussSeidel;
-    label::L, type::T = missing,
-    active::T = missing, reactive::T = missing,
-    conductance::T = missing, susceptance::T = missing,
-    magnitude::T = missing, angle::T = missing,
-    minMagnitude::T = missing, maxMagnitude::T = missing,
-    base::T = missing, area::T = missing, lossZone::T = missing)
+function updateBus!(system::PowerSystem, analysis::ACPowerFlow{GaussSeidel};
+    label::L, type::A = missing,
+    active::A = missing, reactive::A = missing,
+    conductance::A = missing, susceptance::A = missing,
+    magnitude::A = missing, angle::A = missing,
+    minMagnitude::A = missing, maxMagnitude::A = missing,
+    base::A = missing, area::A = missing, lossZone::A = missing)
 
     bus = system.bus
     index = bus.label[getLabel(bus, label, "bus")]
@@ -370,12 +370,12 @@ function updateBus!(system::PowerSystem, analysis::GaussSeidel;
 end
 
 function updateBus!(system::PowerSystem, analysis::DCOptimalPowerFlow;
-    label::L, type::T = missing,
-    active::T = missing, reactive::T = missing,
-    conductance::T = missing, susceptance::T = missing,
-    magnitude::T = missing, angle::T = missing,
-    minMagnitude::T = missing, maxMagnitude::T = missing,
-    base::T = missing, area::T = missing, lossZone::T = missing)
+    label::L, type::A = missing,
+    active::A = missing, reactive::A = missing,
+    conductance::A = missing, susceptance::A = missing,
+    magnitude::A = missing, angle::A = missing,
+    minMagnitude::A = missing, maxMagnitude::A = missing,
+    base::A = missing, area::A = missing, lossZone::A = missing)
 
     bus = system.bus
     index = bus.label[getLabel(bus, label, "bus")]
@@ -393,26 +393,26 @@ function updateBus!(system::PowerSystem, analysis::DCOptimalPowerFlow;
     end
 
     if typeOld == 3 && bus.layout.type[index] != 3
-        unfix!(analysis.jump, analysis.variable.angle[index], analysis.constraint.slack.angle, index)
+        unfix!(analysis.method.jump, analysis.method.variable.angle[index], analysis.method.constraint.slack.angle, index)
     end
 
     if bus.layout.type[index] == 3
-        fix!(analysis.variable.angle[index], bus.voltage.angle[index], analysis.constraint.slack.angle, index)
+        fix!(analysis.method.variable.angle[index], bus.voltage.angle[index], analysis.method.constraint.slack.angle, index)
     end
 end
 
 function updateBus!(system::PowerSystem, analysis::ACOptimalPowerFlow;
-    label::L, type::T = missing,
-    active::T = missing, reactive::T = missing,
-    conductance::T = missing, susceptance::T = missing,
-    magnitude::T = missing, angle::T = missing,
-    minMagnitude::T = missing, maxMagnitude::T = missing,
-    base::T = missing, area::T = missing, lossZone::T = missing)
+    label::L, type::A = missing,
+    active::A = missing, reactive::A = missing,
+    conductance::A = missing, susceptance::A = missing,
+    magnitude::A = missing, angle::A = missing,
+    minMagnitude::A = missing, maxMagnitude::A = missing,
+    base::A = missing, area::A = missing, lossZone::A = missing)
 
     bus = system.bus
-    jump = analysis.jump
-    constraint = analysis.constraint
-    variable = analysis.variable
+    jump = analysis.method.jump
+    constraint = analysis.method.constraint
+    variable = analysis.method.variable
 
     index = bus.label[getLabel(bus, label, "bus")]
     typeOld = bus.layout.type[index]

@@ -1,9 +1,9 @@
 ########### Types ###########
-const N = Union{Float64, Int64}
-const T = Union{Float64, Int64, Int8, Missing}
-const L = Union{String, Int64, Missing}
-const S = Union{Int64, Missing}
+const A = Union{Float64, Int64, Missing}
 const B = Union{Bool, Missing}
+const C = Union{Int64, Missing}
+const L = Union{String, Int64, Missing}
+
 const LUQR = Union{SuiteSparse.UMFPACK.UmfpackLU{Float64, Int64}, SuiteSparse.SPQR.QRSparse{Float64, Int64}}
 const LULDLt = Union{SuiteSparse.CHOLMOD.Factor{Float64}, SuiteSparse.UMFPACK.UmfpackLU{Float64, Int64}}
 const LULDLtQR = Union{SuiteSparse.CHOLMOD.Factor{Float64}, LUQR}
@@ -52,6 +52,15 @@ end
 
 mutable struct CartesianRealRef
     active::Dict{Int64, JuMP.ConstraintRef}
+end
+
+########### Sparse Matrix Model ##########
+mutable struct SparseModel
+    row::Array{Int64,1}
+    col::Array{Int64,1}
+    val::Array{Float64,1}
+    cnt::Int64
+    idx::Int64
 end
 
 ########### Template ###########

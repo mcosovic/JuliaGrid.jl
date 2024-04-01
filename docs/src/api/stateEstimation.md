@@ -7,22 +7,22 @@ For further information on this topic, please see the [PMU State Estimation](@re
 ###### Observability Analysis
 * [`islandTopologicalFlow`](@ref islandTopologicalFlow(::PowerSystem, ::Wattmeter))
 * [`islandTopological`](@ref islandTopological(::PowerSystem, ::Wattmeter))
-* [`restorationGram!`](@ref restorationGram!(::PowerSystem, ::Measurement, ::Measurement, ::IslandWatt))
+* [`restorationGram!`](@ref restorationGram!(::PowerSystem, ::Measurement, ::Measurement, ::Island))
 
 ###### AC State Estimation
 * [`gaussNewton`](@ref gaussNewton)
-* [`solve!`](@ref solve!(::PowerSystem, ::ACStateEstimationWLS{NonlinearWLS}))
+* [`solve!`](@ref solve!(::PowerSystem, ::ACStateEstimation{NonlinearWLS{Normal}}))
 
 ###### PMU State Estimation
 * [`pmuPlacement`](@ref pmuPlacement)
 * [`pmuWlsStateEstimation`](@ref pmuWlsStateEstimation)
 * [`pmuLavStateEstimation`](@ref pmuLavStateEstimation)
-* [`solve!`](@ref solve!(::PowerSystem, ::PMUStateEstimationWLS{LinearWLS}))
+* [`solve!`](@ref solve!(::PowerSystem, ::PMUStateEstimation{LinearWLS{Normal}}))
 
 ###### DC State Estimation
 * [`dcWlsStateEstimation`](@ref dcWlsStateEstimation)
 * [`dcLavStateEstimation`](@ref dcLavStateEstimation)
-* [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimationWLS{LinearWLS}))
+* [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimation{LinearWLS{Normal}}))
 
 ###### Bad Data Analysis
 * [`residualTest!`](@ref residualTest!)
@@ -40,7 +40,7 @@ using JuliaGrid
 ```@docs
 islandTopologicalFlow(::PowerSystem, ::Wattmeter)
 islandTopological(::PowerSystem, ::Wattmeter)
-restorationGram!(::PowerSystem, ::Measurement, ::Measurement, ::IslandWatt)
+restorationGram!(::PowerSystem, ::Measurement, ::Measurement, ::Island)
 ```
 
 ---
@@ -49,7 +49,7 @@ restorationGram!(::PowerSystem, ::Measurement, ::Measurement, ::IslandWatt)
 ```@docs
 gaussNewton
 acLavStateEstimation
-solve!(::PowerSystem, ::ACStateEstimationWLS{NonlinearWLS})
+solve!(::PowerSystem, ::ACStateEstimation{NonlinearWLS{Normal}})
 ```
 
 ---
@@ -59,7 +59,7 @@ solve!(::PowerSystem, ::ACStateEstimationWLS{NonlinearWLS})
 pmuPlacement
 pmuWlsStateEstimation
 pmuLavStateEstimation
-solve!(::PowerSystem, ::PMUStateEstimationWLS{LinearWLS})
+solve!(::PowerSystem, ::PMUStateEstimation{LinearWLS{Normal}})
 ```
 
 ---
@@ -68,7 +68,7 @@ solve!(::PowerSystem, ::PMUStateEstimationWLS{LinearWLS})
 ```@docs
 dcWlsStateEstimation
 dcLavStateEstimation
-solve!(::PowerSystem, ::DCStateEstimationWLS{LinearWLS})
+solve!(::PowerSystem, ::DCStateEstimation{LinearWLS{Normal}})
 ```
 
 ---

@@ -9,18 +9,15 @@ For further information on this topic, please see the [AC Power Flow](@ref ACPow
 * [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX)
 * [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB)
 * [`gaussSeidel`](@ref gaussSeidel)
-* [`mismatch!`](@ref mismatch!(::PowerSystem, ::NewtonRaphson))
-* [`solve!`](@ref solve!(::PowerSystem, ::NewtonRaphson))
-
+* [`mismatch!`](@ref mismatch!(::PowerSystem, ::ACPowerFlow{NewtonRaphson}))
+* [`solve!`](@ref solve!(::PowerSystem, ::ACPowerFlow{NewtonRaphson}))
+* [`startingVoltage!`](@ref startingVoltage!)
+* [`reactiveLimit!`](@ref reactiveLimit!)
+* [`adjustAngle!`](@ref adjustAngle!)
 
 ###### DC Power Flow
 * [`dcPowerFlow`](@ref dcPowerFlow)
 * [`solve!`](@ref solve!(::PowerSystem, ::DCPowerFlow))
-
-###### Utility Functions
-* [`reactiveLimit!`](@ref reactiveLimit!)
-* [`adjustAngle!`](@ref adjustAngle!) 
-* [`startingVoltage!`](@ref startingVoltage!) 
 
 ---
 
@@ -37,8 +34,11 @@ newtonRaphson
 fastNewtonRaphsonBX
 fastNewtonRaphsonXB
 gaussSeidel
-mismatch!(::PowerSystem, ::NewtonRaphson)
-solve!(::PowerSystem, ::NewtonRaphson)
+mismatch!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})
+solve!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})
+startingVoltage!
+reactiveLimit!
+adjustAngle!
 ```
 
 ---
@@ -50,10 +50,3 @@ solve!(::PowerSystem, ::DCPowerFlow)
 ```
 
 ---
-
-## Utility Functions
-```@docs
-reactiveLimit!
-adjustAngle!
-startingVoltage!
-```

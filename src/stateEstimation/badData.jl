@@ -1,28 +1,28 @@
 """
-    residualTest!(system::PowerSystem, device::Measurement, analysis::StateEstimation; 
+    residualTest!(system::PowerSystem, device::Measurement, analysis::StateEstimation;
         threshold)
 
-The function conducts bad data detection and identification using the largest normalized 
-residual test, subsequently removing measurement outliers from the measurement set. It can 
+The function conducts bad data detection and identification using the largest normalized
+residual test, subsequently removing measurement outliers from the measurement set. It can
 be executed after obtaining WLS estimator.
 
 # Arguments
-This function requires the composite types `PowerSystem` and `Measurement`, along with an 
+This function requires the composite types `PowerSystem` and `Measurement`, along with an
 abstract type. The abstract type `StateEstimation` can have the following subtypes:
 - `DCStateEstimation`: conducts bad data analysis within DC state estimation;
 - `PMUStateEstimation`: conducts bad data analysis within PMU state estimation.
- 
+
 # Keyword
-The keyword `threshold` establishes the identification threshold. If the largest 
-normalized residual surpasses this threshold, the measurement is flagged as bad data. The 
+The keyword `threshold` establishes the identification threshold. If the largest
+normalized residual surpasses this threshold, the measurement is flagged as bad data. The
 default threshold value is set to `threshold = 3.0`.
 
 # Updates
-In case bad data is detected, the function removes measurements from the `coefficient` and 
-`precision` matrices, and `mean` vector within the `DCStateEstimation` type. Additionally, 
+In case bad data is detected, the function removes measurements from the `coefficient` and
+`precision` matrices, and `mean` vector within the `DCStateEstimation` type. Additionally,
 it marks the respective measurement within the `Measurement` type as out-of-service.
 
-Furthermore, the variable `outlier` within the `StateEstimation` type stores information 
+Furthermore, the variable `outlier` within the `StateEstimation` type stores information
 regarding bad data detection and identification:
 - `detect`: returns `true` after the function's execution if bad data is detected;
 - `maxNormalizedResidual`: denotes the value of the largest normalized residual;
@@ -55,19 +55,19 @@ while analysis.outlier.detect
 end
 ```
 """
-function residualTest!(system::PowerSystem, device::Measurement, analysis::DCStateEstimationWLS; threshold = 3.0)
+function residualTest!(system::PowerSystem, device::Measurement, analysis::DCStateEstimation{LinearWLS{T}}; threshold = 3.0)  where T <: Union{Normal, Orthogonal}
     errorVoltage(analysis.voltage.angle)
 
     bus = system.bus
     se = analysis.method
-    bad = analysis.outlier
-    
+    bad = analysis.method.outlier
+
     slackRange, elementsRemove = deleteSlackCoefficient(analysis, bus.layout.slack)
     gain = dcGain(analysis, bus.layout.slack)
 
-    if !isa(se.factorization, SuiteSparse.UMFPACK.UmfpackLU{Float64, Int64}) 
+    if !isa(se.factorization, SuiteSparse.UMFPACK.UmfpackLU{Float64, Int64})
         F = lu(gain)
-    else 
+    else
         F = se.factorization
     end
 
@@ -118,7 +118,7 @@ function residualTest!(system::PowerSystem, device::Measurement, analysis::DCSta
     end
 
     restoreSlackCoefficient(analysis, slackRange, elementsRemove, bus.layout.slack)
-    
+
     bad.detect = false
     if bad.maxNormalizedResidual > threshold
         se.run = true
@@ -128,7 +128,7 @@ function residualTest!(system::PowerSystem, device::Measurement, analysis::DCSta
         for col in colIndecies
             se.coefficient[bad.index, col] = 0.0
         end
-        se.mean[bad.index] = 0.0 
+        se.mean[bad.index] = 0.0
     end
 
     bad.label = ""
@@ -145,18 +145,18 @@ function residualTest!(system::PowerSystem, device::Measurement, analysis::DCSta
     end
 end
 
-function residualTest!(system::PowerSystem, device::Measurement, analysis::PMUStateEstimationWLS; threshold = 3.0)
+function residualTest!(system::PowerSystem, device::Measurement, analysis::PMUStateEstimation{LinearWLS{T}}; threshold = 3.0)  where T <: Union{Normal, Orthogonal}
     errorVoltage(analysis.voltage.angle)
 
     bus = system.bus
     se = analysis.method
-    bad = analysis.outlier
-    
+    bad = analysis.method.outlier
+
 
     gain = transpose(se.coefficient) * se.precision * se.coefficient
-    if !isa(se.factorization, SuiteSparse.UMFPACK.UmfpackLU{Float64, Int64}) 
+    if !isa(se.factorization, SuiteSparse.UMFPACK.UmfpackLU{Float64, Int64})
         F = lu(gain)
-    else 
+    else
         F = se.factorization
     end
 
@@ -222,19 +222,19 @@ function residualTest!(system::PowerSystem, device::Measurement, analysis::PMUSt
         for col in colIndecies
             se.coefficient[bad.index, col] = 0.0
         end
-        se.mean[bad.index] = 0.0 
+        se.mean[bad.index] = 0.0
 
         colIndecies = findall(!iszero, se.coefficient[alsoBad, :])
         for col in colIndecies
             se.coefficient[alsoBad, col] = 0.0
         end
-        se.mean[alsoBad] = 0.0 
+        se.mean[alsoBad] = 0.0
     end
 
     if bad.index % 2 == 0
         pmuIndex = trunc(Int, bad.index / 2)
     else
-        pmuIndex = trunc(Int, (bad.index + 1) / 2) 
+        pmuIndex = trunc(Int, (bad.index + 1) / 2)
     end
 
     (bad.label, ),_ = iterate(device.pmu.label, pmuIndex)
@@ -267,14 +267,14 @@ function etree(A)
     head = fill(0, n)
     next = fill(0, n)
     for j in n:-1:1
-        if parent[j] == 0 
-            continue 
+        if parent[j] == 0
+            continue
         end
         next[j] = head[parent[j]]
         head[parent[j]] = j
     end
     stack = Int64[]
-    for j in 1:n 
+    for j in 1:n
         if parent[j] != 0
             continue
         end
@@ -299,8 +299,8 @@ end
 # https://github.com/JuliaPackageMirrors/SuiteSparse.jl/blob/master/src/csparse.jl
 # Based on Direct Methods for Sparse Linear Systems, T. A. Davis, SIAM, Philadelphia, Sept. 2006.
 function symbfact(A, parent)
-    m, n = size(A) 
-    Ap = A.colptr 
+    m, n = size(A)
+    Ap = A.colptr
     Ai = A.rowval
     col = Int64[]; sizehint!(col, n)
     row = Int64[]; sizehint!(row, n)
@@ -311,8 +311,8 @@ function symbfact(A, parent)
         visited[k] = true
         for p in Ap[k]:(Ap[k + 1] - 1)
             i = Ai[p]
-            if i > k 
-                continue 
+            if i > k
+                continue
             end
             while !visited[i]
                 push!(col, i)

@@ -77,13 +77,13 @@ addGenerator!(system; bus = "Bus 1", active = 50, magnitude = 145.2)
 ```
 """
 function addGenerator!(system::PowerSystem;
-    label::L = missing, bus::L, area::T = missing, status::T = missing,
-    active::T = missing, reactive::T = missing, magnitude::T = missing,
-    minActive::T = missing, maxActive::T = missing, minReactive::T = missing,
-    maxReactive::T = missing, lowActive::T = missing, minLowReactive::T = missing,
-    maxLowReactive::T = missing, upActive::T = missing, minUpReactive::T = missing,
-    maxUpReactive::T = missing, loadFollowing::T = missing, reserve10min::T = missing,
-    reserve30min::T = missing, reactiveTimescale::T = missing)
+    label::L = missing, bus::L, area::A = missing, status::A = missing,
+    active::A = missing, reactive::A = missing, magnitude::A = missing,
+    minActive::A = missing, maxActive::A = missing, minReactive::A = missing,
+    maxReactive::A = missing, lowActive::A = missing, minLowReactive::A = missing,
+    maxLowReactive::A = missing, upActive::A = missing, minUpReactive::A = missing,
+    maxUpReactive::A = missing, loadFollowing::A = missing, reserve10min::A = missing,
+    reserve30min::A = missing, reactiveTimescale::A = missing)
 
     generator = system.generator
     default = template.generator
@@ -143,13 +143,13 @@ function addGenerator!(system::PowerSystem;
 end
 
 function addGenerator!(system::PowerSystem, analysis::DCPowerFlow;
-    label::L = missing, bus::L, area::T = missing, status::T = missing,
-    active::T = missing, reactive::T = missing, magnitude::T = missing,
-    minActive::T = missing, maxActive::T = missing, minReactive::T = missing,
-    maxReactive::T = missing, lowActive::T = missing, minLowReactive::T = missing,
-    maxLowReactive::T = missing, upActive::T = missing, minUpReactive::T = missing,
-    maxUpReactive::T = missing, loadFollowing::T = missing, reserve10min::T = missing,
-    reserve30min::T = missing, reactiveTimescale::T = missing)
+    label::L = missing, bus::L, area::A = missing, status::A = missing,
+    active::A = missing, reactive::A = missing, magnitude::A = missing,
+    minActive::A = missing, maxActive::A = missing, minReactive::A = missing,
+    maxReactive::A = missing, lowActive::A = missing, minLowReactive::A = missing,
+    maxLowReactive::A = missing, upActive::A = missing, minUpReactive::A = missing,
+    maxUpReactive::A = missing, loadFollowing::A = missing, reserve10min::A = missing,
+    reserve30min::A = missing, reactiveTimescale::A = missing)
 
     addGenerator!(system; label, bus, area, status, active, reactive, magnitude,
         minActive, maxActive, minReactive, maxReactive, lowActive, minLowReactive,
@@ -158,13 +158,13 @@ function addGenerator!(system::PowerSystem, analysis::DCPowerFlow;
 end
 
 function addGenerator!(system::PowerSystem, analysis::ACPowerFlow;
-    label::L = missing, bus::L, area::T = missing, status::T = missing,
-    active::T = missing, reactive::T = missing, magnitude::T = missing,
-    minActive::T = missing, maxActive::T = missing, minReactive::T = missing,
-    maxReactive::T = missing, lowActive::T = missing, minLowReactive::T = missing,
-    maxLowReactive::T = missing, upActive::T = missing, minUpReactive::T = missing,
-    maxUpReactive::T = missing, loadFollowing::T = missing, reserve10min::T = missing,
-    reserve30min::T = missing, reactiveTimescale::T = missing)
+    label::L = missing, bus::L, area::A = missing, status::A = missing,
+    active::A = missing, reactive::A = missing, magnitude::A = missing,
+    minActive::A = missing, maxActive::A = missing, minReactive::A = missing,
+    maxReactive::A = missing, lowActive::A = missing, minLowReactive::A = missing,
+    maxLowReactive::A = missing, upActive::A = missing, minUpReactive::A = missing,
+    maxUpReactive::A = missing, loadFollowing::A = missing, reserve10min::A = missing,
+    reserve30min::A = missing, reactiveTimescale::A = missing)
 
     addGenerator!(system; label, bus, area, status, active, reactive, magnitude,
         minActive, maxActive, minReactive, maxReactive, lowActive, minLowReactive,
@@ -173,13 +173,13 @@ function addGenerator!(system::PowerSystem, analysis::ACPowerFlow;
 end
 
 function addGenerator!(system::PowerSystem, analysis::DCOptimalPowerFlow;
-    label::L = missing, bus::L, area::T = missing, status::T = missing,
-    active::T = missing, reactive::T = missing, magnitude::T = missing,
-    minActive::T = missing, maxActive::T = missing, minReactive::T = missing,
-    maxReactive::T = missing, lowActive::T = missing, minLowReactive::T = missing,
-    maxLowReactive::T = missing, upActive::T = missing, minUpReactive::T = missing,
-    maxUpReactive::T = missing, loadFollowing::T = missing, reserve10min::T = missing,
-    reserve30min::T = missing, reactiveTimescale::T = missing)
+    label::L = missing, bus::L, area::A = missing, status::A = missing,
+    active::A = missing, reactive::A = missing, magnitude::A = missing,
+    minActive::A = missing, maxActive::A = missing, minReactive::A = missing,
+    maxReactive::A = missing, lowActive::A = missing, minLowReactive::A = missing,
+    maxLowReactive::A = missing, upActive::A = missing, minUpReactive::A = missing,
+    maxUpReactive::A = missing, loadFollowing::A = missing, reserve10min::A = missing,
+    reserve30min::A = missing, reactiveTimescale::A = missing)
 
     addGenerator!(system; label, bus, area, status, active, reactive, magnitude,
         minActive, maxActive, minReactive, maxReactive, lowActive, minLowReactive,
@@ -187,9 +187,9 @@ function addGenerator!(system::PowerSystem, analysis::DCOptimalPowerFlow;
         reserve30min, reactiveTimescale)
 
     generator = system.generator
-    jump = analysis.jump
-    constraint = analysis.constraint
-    variable = analysis.variable
+    jump = analysis.method.jump
+    constraint = analysis.method.constraint
+    variable = analysis.method.variable
 
     index = generator.number
 
@@ -205,13 +205,13 @@ function addGenerator!(system::PowerSystem, analysis::DCOptimalPowerFlow;
 end
 
 function addGenerator!(system::PowerSystem, analysis::ACOptimalPowerFlow;
-    label::L = missing, bus::L, area::T = missing, status::T = missing,
-    active::T = missing, reactive::T = missing, magnitude::T = missing,
-    minActive::T = missing, maxActive::T = missing, minReactive::T = missing,
-    maxReactive::T = missing, lowActive::T = missing, minLowReactive::T = missing,
-    maxLowReactive::T = missing, upActive::T = missing, minUpReactive::T = missing,
-    maxUpReactive::T = missing, loadFollowing::T = missing, reserve10min::T = missing,
-    reserve30min::T = missing, reactiveTimescale::T = missing)
+    label::L = missing, bus::L, area::A = missing, status::A = missing,
+    active::A = missing, reactive::A = missing, magnitude::A = missing,
+    minActive::A = missing, maxActive::A = missing, minReactive::A = missing,
+    maxReactive::A = missing, lowActive::A = missing, minLowReactive::A = missing,
+    maxLowReactive::A = missing, upActive::A = missing, minUpReactive::A = missing,
+    maxUpReactive::A = missing, loadFollowing::A = missing, reserve10min::A = missing,
+    reserve30min::A = missing, reactiveTimescale::A = missing)
 
     addGenerator!(system; label, bus, area, status, active, reactive, magnitude,
         minActive, maxActive, minReactive, maxReactive, lowActive, minLowReactive,
@@ -219,9 +219,9 @@ function addGenerator!(system::PowerSystem, analysis::ACOptimalPowerFlow;
         reserve30min, reactiveTimescale)
 
     generator = system.generator
-    jump = analysis.jump
-    constraint = analysis.constraint
-    variable = analysis.variable
+    jump = analysis.method.jump
+    constraint = analysis.method.constraint
+    variable = analysis.method.variable
 
     index = generator.number
 
@@ -239,21 +239,6 @@ function addGenerator!(system::PowerSystem, analysis::ACOptimalPowerFlow;
         fix!(variable.active[index], 0.0, constraint.capability.active, index)
         fix!(variable.reactive[index], 0.0, constraint.capability.reactive, index)
     end
-end
-
-function addGenerator!(system::PowerSystem, analysis::DCStateEstimationWLS;
-    label::L = missing, bus::L, area::T = missing, status::T = missing,
-    active::T = missing, reactive::T = missing, magnitude::T = missing,
-    minActive::T = missing, maxActive::T = missing, minReactive::T = missing,
-    maxReactive::T = missing, lowActive::T = missing, minLowReactive::T = missing,
-    maxLowReactive::T = missing, upActive::T = missing, minUpReactive::T = missing,
-    maxUpReactive::T = missing, loadFollowing::T = missing, reserve10min::T = missing,
-    reserve30min::T = missing, reactiveTimescale::T = missing)
-
-    addGenerator!(system; label, bus, area, status, active, reactive, magnitude,
-        minActive, maxActive, minReactive, maxReactive, lowActive, minLowReactive,
-        maxLowReactive, upActive, minUpReactive, maxUpReactive, loadFollowing, reserve10min,
-        reserve30min, reactiveTimescale)
 end
 
 """
@@ -295,13 +280,13 @@ updateGenerator!(system; label = "Generator 1", active = 0.6, reactive = 0.2)
 ```
 """
 function updateGenerator!(system::PowerSystem;
-    label::L, area::T = missing, status::T = missing,
-    active::T = missing, reactive::T = missing, magnitude::T = missing,
-    minActive::T = missing, maxActive::T = missing, minReactive::T = missing,
-    maxReactive::T = missing, lowActive::T = missing, minLowReactive::T = missing,
-    maxLowReactive::T = missing, upActive::T = missing, minUpReactive::T = missing,
-    maxUpReactive::T = missing, loadFollowing::T = missing, reserve10min::T = missing,
-    reserve30min::T = missing, reactiveTimescale::T = missing)
+    label::L, area::A = missing, status::A = missing,
+    active::A = missing, reactive::A = missing, magnitude::A = missing,
+    minActive::A = missing, maxActive::A = missing, minReactive::A = missing,
+    maxReactive::A = missing, lowActive::A = missing, minLowReactive::A = missing,
+    maxLowReactive::A = missing, upActive::A = missing, minUpReactive::A = missing,
+    maxUpReactive::A = missing, loadFollowing::A = missing, reserve10min::A = missing,
+    reserve30min::A = missing, reactiveTimescale::A = missing)
 
     bus = system.bus
     generator = system.generator
@@ -412,13 +397,13 @@ function updateGenerator!(system::PowerSystem;
 end
 
 function updateGenerator!(system::PowerSystem, analysis::DCPowerFlow;
-    label::L, area::T = missing, status::T = missing,
-    active::T = missing, reactive::T = missing, magnitude::T = missing,
-    minActive::T = missing, maxActive::T = missing, minReactive::T = missing,
-    maxReactive::T = missing, lowActive::T = missing, minLowReactive::T = missing,
-    maxLowReactive::T = missing, upActive::T = missing, minUpReactive::T = missing,
-    maxUpReactive::T = missing, loadFollowing::T = missing, reserve10min::T = missing,
-    reserve30min::T = missing, reactiveTimescale::T = missing)
+    label::L, area::A = missing, status::A = missing,
+    active::A = missing, reactive::A = missing, magnitude::A = missing,
+    minActive::A = missing, maxActive::A = missing, minReactive::A = missing,
+    maxReactive::A = missing, lowActive::A = missing, minLowReactive::A = missing,
+    maxLowReactive::A = missing, upActive::A = missing, minUpReactive::A = missing,
+    maxUpReactive::A = missing, loadFollowing::A = missing, reserve10min::A = missing,
+    reserve30min::A = missing, reactiveTimescale::A = missing)
 
     generator = system.generator
 
@@ -437,14 +422,14 @@ function updateGenerator!(system::PowerSystem, analysis::DCPowerFlow;
         reserve30min, reactiveTimescale)
 end
 
-function updateGenerator!(system::PowerSystem, analysis::Union{NewtonRaphson, FastNewtonRaphson};
-    label::L, area::T = missing, status::T = missing,
-    active::T = missing, reactive::T = missing, magnitude::T = missing,
-    minActive::T = missing, maxActive::T = missing, minReactive::T = missing,
-    maxReactive::T = missing, lowActive::T = missing, minLowReactive::T = missing,
-    maxLowReactive::T = missing, upActive::T = missing, minUpReactive::T = missing,
-    maxUpReactive::T = missing, loadFollowing::T = missing, reserve10min::T = missing,
-    reserve30min::T = missing, reactiveTimescale::T = missing)
+function updateGenerator!(system::PowerSystem, analysis::Union{ACPowerFlow{NewtonRaphson}, ACPowerFlow{FastNewtonRaphson}};
+    label::L, area::A = missing, status::A = missing,
+    active::A = missing, reactive::A = missing, magnitude::A = missing,
+    minActive::A = missing, maxActive::A = missing, minReactive::A = missing,
+    maxReactive::A = missing, lowActive::A = missing, minLowReactive::A = missing,
+    maxLowReactive::A = missing, upActive::A = missing, minUpReactive::A = missing,
+    maxUpReactive::A = missing, loadFollowing::A = missing, reserve10min::A = missing,
+    reserve30min::A = missing, reactiveTimescale::A = missing)
 
     generator = system.generator
 
@@ -468,14 +453,14 @@ function updateGenerator!(system::PowerSystem, analysis::Union{NewtonRaphson, Fa
      end
 end
 
-function updateGenerator!(system::PowerSystem, analysis::GaussSeidel;
-    label::L, area::T = missing, status::T = missing,
-    active::T = missing, reactive::T = missing, magnitude::T = missing,
-    minActive::T = missing, maxActive::T = missing, minReactive::T = missing,
-    maxReactive::T = missing, lowActive::T = missing, minLowReactive::T = missing,
-    maxLowReactive::T = missing, upActive::T = missing, minUpReactive::T = missing,
-    maxUpReactive::T = missing, loadFollowing::T = missing, reserve10min::T = missing,
-    reserve30min::T = missing, reactiveTimescale::T = missing)
+function updateGenerator!(system::PowerSystem, analysis::ACPowerFlow{GaussSeidel};
+    label::L, area::A = missing, status::A = missing,
+    active::A = missing, reactive::A = missing, magnitude::A = missing,
+    minActive::A = missing, maxActive::A = missing, minReactive::A = missing,
+    maxReactive::A = missing, lowActive::A = missing, minLowReactive::A = missing,
+    maxLowReactive::A = missing, upActive::A = missing, minUpReactive::A = missing,
+    maxUpReactive::A = missing, loadFollowing::A = missing, reserve10min::A = missing,
+    reserve30min::A = missing, reactiveTimescale::A = missing)
 
     bus = system.bus
     generator = system.generator
@@ -502,18 +487,19 @@ function updateGenerator!(system::PowerSystem, analysis::GaussSeidel;
 end
 
 function updateGenerator!(system::PowerSystem, analysis::DCOptimalPowerFlow;
-    label::L, area::T = missing, status::T = missing,
-    active::T = missing, reactive::T = missing, magnitude::T = missing,
-    minActive::T = missing, maxActive::T = missing, minReactive::T = missing,
-    maxReactive::T = missing, lowActive::T = missing, minLowReactive::T = missing,
-    maxLowReactive::T = missing, upActive::T = missing, minUpReactive::T = missing,
-    maxUpReactive::T = missing, loadFollowing::T = missing, reserve10min::T = missing,
-    reserve30min::T = missing, reactiveTimescale::T = missing)
+    label::L, area::A = missing, status::A = missing,
+    active::A = missing, reactive::A = missing, magnitude::A = missing,
+    minActive::A = missing, maxActive::A = missing, minReactive::A = missing,
+    maxReactive::A = missing, lowActive::A = missing, minLowReactive::A = missing,
+    maxLowReactive::A = missing, upActive::A = missing, minUpReactive::A = missing,
+    maxUpReactive::A = missing, loadFollowing::A = missing, reserve10min::A = missing,
+    reserve30min::A = missing, reactiveTimescale::A = missing)
 
     generator = system.generator
-    jump = analysis.jump
-    constraint = analysis.constraint
-    variable = analysis.variable
+    jump = analysis.method.jump
+    constraint = analysis.method.constraint
+    variable = analysis.method.variable
+    objective = analysis.method.objective
 
     index = generator.label[getLabel(generator, label, "generator")]
     indexBus = generator.layout.bus[index]
@@ -533,13 +519,13 @@ function updateGenerator!(system::PowerSystem, analysis::DCOptimalPowerFlow;
 
         if isPowerwise
             remove!(jump, constraint.piecewise.active, index)
-            add_to_expression!(analysis.objective, -variable.actwise[index])
+            add_to_expression!(objective, -variable.actwise[index])
             remove!(jump, variable.actwise, index)
         else
-            analysis.objective -= cost
+            objective -= cost
         end
-        drop_zeros!(analysis.objective)
-        JuMP.set_objective_function(jump, analysis.objective)
+        drop_zeros!(objective)
+        JuMP.set_objective_function(jump, objective)
 
         remove!(jump, constraint.capability.active, index)
         updateBalance(system, analysis, indexBus; power = 0, genIndex = index)
@@ -550,12 +536,12 @@ function updateGenerator!(system::PowerSystem, analysis::DCOptimalPowerFlow;
         cost, isPowerwise = costExpr(generator.cost.active, variable.active[index], index, label)
 
         if isPowerwise
-            addPowerwise(jump, analysis.objective, variable.actwise, index; name = "actwise")
+            addPowerwise(jump, objective, variable.actwise, index; name = "actwise")
             addPiecewise(jump, variable.active[index], variable.actwise[index], constraint.piecewise.active, generator.cost.active.piecewise[index], size(generator.cost.active.piecewise[index], 1), index)
         else
-            analysis.objective += cost
+            objective += cost
         end
-        JuMP.set_objective_function(jump, analysis.objective)
+        JuMP.set_objective_function(jump, objective)
 
         updateBalance(system, analysis, indexBus; power = 1, genIndex = index)
         remove!(jump, constraint.capability.active, index)
@@ -569,19 +555,19 @@ function updateGenerator!(system::PowerSystem, analysis::DCOptimalPowerFlow;
 end
 
 function updateGenerator!(system::PowerSystem, analysis::ACOptimalPowerFlow;
-    label::L, area::T = missing, status::T = missing,
-    active::T = missing, reactive::T = missing, magnitude::T = missing,
-    minActive::T = missing, maxActive::T = missing, minReactive::T = missing,
-    maxReactive::T = missing, lowActive::T = missing, minLowReactive::T = missing,
-    maxLowReactive::T = missing, upActive::T = missing, minUpReactive::T = missing,
-    maxUpReactive::T = missing, loadFollowing::T = missing, reserve10min::T = missing,
-    reserve30min::T = missing, reactiveTimescale::T = missing)
+    label::L, area::A = missing, status::A = missing,
+    active::A = missing, reactive::A = missing, magnitude::A = missing,
+    minActive::A = missing, maxActive::A = missing, minReactive::A = missing,
+    maxReactive::A = missing, lowActive::A = missing, minLowReactive::A = missing,
+    maxLowReactive::A = missing, upActive::A = missing, minUpReactive::A = missing,
+    maxUpReactive::A = missing, loadFollowing::A = missing, reserve10min::A = missing,
+    reserve30min::A = missing, reactiveTimescale::A = missing)
 
     generator = system.generator
-    jump = analysis.jump
-    constraint = analysis.constraint
-    variable = analysis.variable
-    objective = analysis.objective
+    jump = analysis.method.jump
+    constraint = analysis.method.constraint
+    variable = analysis.method.variable
+    objective = analysis.method.objective
 
     index = generator.label[getLabel(generator, label, "generator")]
     indexBus = generator.layout.bus[index]
@@ -832,7 +818,7 @@ cost!(system; label = "Generator 1", active = 2, polynomial = [0.11; 5.0; 150.0]
 ```
 """
 function cost!(system::PowerSystem; label::L,
-    active::T = missing, reactive::T = missing,
+    active::A = missing, reactive::A = missing,
     polynomial::Array{Float64,1} = Array{Float64}(undef, 0),
     piecewise::Array{Float64,2} = Array{Float64}(undef, 0, 0))
 
@@ -885,14 +871,15 @@ function cost!(system::PowerSystem; label::L,
 end
 
 function cost!(system::PowerSystem, analysis::DCOptimalPowerFlow; label::L,
-    active::T = missing,  reactive::T = missing,
+    active::A = missing, reactive::A = missing,
     polynomial::Array{Float64,1} = Array{Float64}(undef, 0),
     piecewise::Array{Float64,2} = Array{Float64}(undef, 0, 0))
 
     generator = system.generator
-    jump = analysis.jump
-    constraint = analysis.constraint
-    variable = analysis.variable
+    jump = analysis.method.jump
+    constraint = analysis.method.constraint
+    variable = analysis.method.variable
+    objective = analysis.method.objective
 
     dropZero = false
     index = generator.label[getLabel(generator, label, "generator")]
@@ -903,7 +890,7 @@ function cost!(system::PowerSystem, analysis::DCOptimalPowerFlow; label::L,
             remove!(jump, constraint.piecewise.active, index)
         else
             dropZero = true
-            analysis.objective -= costOld
+            objective -= costOld
         end
     end
 
@@ -914,36 +901,35 @@ function cost!(system::PowerSystem, analysis::DCOptimalPowerFlow; label::L,
 
         if isPowerwiseNew
             if !isPowerwiseOld
-                addPowerwise(jump, analysis.objective, variable.actwise, index; name = "actwise")
+                addPowerwise(jump, objective, variable.actwise, index; name = "actwise")
             end
             addPiecewise(jump, variable.active[index], variable.actwise[index], constraint.piecewise.active, generator.cost.active.piecewise[index], size(generator.cost.active.piecewise[index], 1), index)
         else
             if isPowerwiseOld
                 dropZero = true
-                add_to_expression!(analysis.objective, -variable.actwise[index])
+                add_to_expression!(objective, -variable.actwise[index])
                 remove!(jump, variable.actwise, index)
             end
-            analysis.objective += costNew
+            objective += costNew
         end
     end
 
     if dropZero
-        drop_zeros!(analysis.objective)
+        drop_zeros!(objective)
     end
-
-    JuMP.set_objective_function(jump, analysis.objective)
+    JuMP.set_objective_function(jump, objective)
 end
 
 function cost!(system::PowerSystem, analysis::ACOptimalPowerFlow; label::L,
-    active::T = missing,  reactive::T = missing,
+    active::A = missing,  reactive::A = missing,
     polynomial::Array{Float64,1} = Array{Float64}(undef, 0),
     piecewise::Array{Float64,2} = Array{Float64}(undef, 0, 0))
 
     generator = system.generator
-    jump = analysis.jump
-    constraint = analysis.constraint
-    variable = analysis.variable
-    objective = analysis.objective
+    jump = analysis.method.jump
+    constraint = analysis.method.constraint
+    variable = analysis.method.variable
+    objective = analysis.method.objective
 
     costActive = generator.cost.active
     costReactive = generator.cost.reactive

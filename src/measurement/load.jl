@@ -1,9 +1,9 @@
 """
     measurement(file::String)
 
-The function builds the composite type `Measurement` and populates `voltmeter`, `ammeter`, 
-`wattmeter`, `varmeter`, and `pmu` fields. In general, once the composite type `Measurement` 
-has been created, it is possible to add new measurement devices, or modify the parameters 
+The function builds the composite type `Measurement` and populates `voltmeter`, `ammeter`,
+`wattmeter`, `varmeter`, and `pmu` fields. In general, once the composite type `Measurement`
+has been created, it is possible to add new measurement devices, or modify the parameters
 of existing ones.
 
 # Argument
@@ -18,7 +18,7 @@ The `Measurement` composite type with the following fields:
 - `pmu`: bus voltage and branch current phasors measurements.
 
 # Units
-JuliaGrid stores all data in per-units and radians format. 
+JuliaGrid stores all data in per-units and radians format.
 
 # Example
 ```jldoctest

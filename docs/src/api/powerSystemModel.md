@@ -7,8 +7,6 @@ For further information on this topic, please see the [Power System Model](@ref 
 ###### Power System
 * [`powerSystem`](@ref powerSystem)
 * [`savePowerSystem`](@ref savePowerSystem)
-
-###### AC and DC Model
 * [`acModel!`](@ref acModel!)
 * [`dcModel!`](@ref dcModel!)
 
@@ -41,12 +39,6 @@ using JuliaGrid
 ```@docs
 powerSystem
 savePowerSystem
-```
-
----
-
-## AC and DC Model
-```@docs
 acModel!
 dcModel!
 ```

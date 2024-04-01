@@ -1,36 +1,35 @@
 """
     dcWlsStateEstimation(system::PowerSystem, device::Measurement, method)
 
-The function establishes the WLS model for DC state estimation, where the vector of state 
+The function establishes the WLS model for DC state estimation, where the vector of state
 variables contains only bus voltage angles.
 
 # Arguments
-This function requires the `PowerSystem` and `Measurement` composite types to establish 
-the WLS state estimation model. 
+This function requires the `PowerSystem` and `Measurement` composite types to establish
+the WLS state estimation model.
 
-Moreover, the presence of the `method` parameter is not mandatory. To address the WLS 
-state estimation method, users can opt to utilize factorization techniques to decompose 
-the gain matrix, such as `LU`, `QR`, or `LDLt` especially when the gain matrix is symmetric. 
-Opting for the `Orthogonal` method is advisable for a more robust solution in scenarios 
-involving ill-conditioned data, particularly when substantial variations in variances are 
+Moreover, the presence of the `method` parameter is not mandatory. To address the WLS
+state estimation method, users can opt to utilize factorization techniques to decompose
+the gain matrix, such as `LU`, `QR`, or `LDLt` especially when the gain matrix is symmetric.
+Opting for the `Orthogonal` method is advisable for a more robust solution in scenarios
+involving ill-conditioned data, particularly when substantial variations in variances are
 present.
 
-If the user does not provide the `method`, the default method for solving the estimation 
+If the user does not provide the `method`, the default method for solving the estimation
 model will be LU factorization.
 
 # Updates
 If the DC model was not created, the function will automatically initiate an update of the
 `dc` field within the `PowerSystem` composite type. Additionally, if the slack bus lacks
-an in-service generator, JuliaGrid considers it a mistake and defines a new slack bus as 
+an in-service generator, JuliaGrid considers it a mistake and defines a new slack bus as
 the first generator bus with an in-service generator in the bus type list.
 
 # Returns
-The function returns an instance of the `DCStateEstimation` abstract type, which includes 
+The function returns an instance of the `DCStateEstimation` abstract type, which includes
 the following fields:
 - `voltage`: the variable allocated to store the bus voltage angles;
 - `power`: the variable allocated to store the active powers;
-- `method`: the system model vectors and matrices, or alternatively, the optimization model;
-- `bad`: the variable linked to identifying bad data within the measurement set. 
+- `method`: the system model vectors and matrices and bad data.
 
 # Examples
 Set up the DC state estimation model to be solved using the default LU factorization:
@@ -53,19 +52,19 @@ function dcWlsStateEstimation(system::PowerSystem, device::Measurement, factoriz
     coefficient, mean, precision, badData, power = dcStateEstimationWLS(system, device)
 
     method = Dict(LU => lu, LDLt => ldlt, QR => qr, Orthogonal => qr)
-    return DCStateEstimationWLS(
+    return DCStateEstimation(
         PolarAngle(Float64[]),
         power,
-        LinearWLS(
+        LinearWLS{Normal}(
             coefficient,
             precision,
             mean,
             get(method, factorization, lu)(sparse(Matrix(1.0I, 1, 1))),
+            badData,
             device.wattmeter.number + device.pmu.number,
             -1,
             true,
-        ),
-        badData
+        )
     )
 end
 
@@ -73,19 +72,19 @@ function dcWlsStateEstimation(system::PowerSystem, device::Measurement, method::
     coefficient, mean, precision, badData, power = dcStateEstimationWLS(system, device)
 
     method = Dict(LU => lu, LDLt => ldlt, QR => qr)
-    return DCStateEstimationWLS(
+    return DCStateEstimation(
         PolarAngle(Float64[]),
         power,
-        LinearOrthogonal(
+        LinearWLS{Orthogonal}(
             coefficient,
             precision,
             mean,
             qr(sparse(Matrix(1.0I, 1, 1))),
+            badData,
             device.wattmeter.number + device.pmu.number,
             -1,
             true,
-        ),
-        badData
+        )
     )
 end
 
@@ -106,23 +105,23 @@ function dcStateEstimationWLS(system::PowerSystem, device::Measurement)
         changeSlackBus!(system)
     end
 
-    nonZeroElement = 0 
+    nonZeroElement = 0
     for (i, index) in enumerate(wattmeter.layout.index)
         if wattmeter.layout.bus[i]
             nonZeroElement += (dc.nodalMatrix.colptr[index + 1] - dc.nodalMatrix.colptr[index])
         else
-            nonZeroElement += 2 
+            nonZeroElement += 2
         end
     end
 
     for i = 1:pmu.number
         if pmu.layout.bus[i]
-            nonZeroElement += 1 
+            nonZeroElement += 1
         end
     end
 
     deviceNumber = wattmeter.number + pmu.number
-    row = fill(0, nonZeroElement) 
+    row = fill(0, nonZeroElement)
     col = similar(row)
     coeff = fill(0.0, nonZeroElement)
     mean = fill(0.0, deviceNumber)
@@ -131,13 +130,13 @@ function dcStateEstimationWLS(system::PowerSystem, device::Measurement)
     count = 1
     for (i, k) in enumerate(wattmeter.layout.index)
         precision.nzval[i] = (1 / wattmeter.active.variance[i])
-        
+
         status = wattmeter.active.status[i]
         if wattmeter.layout.bus[i]
             for j in dc.nodalMatrix.colptr[k]:(dc.nodalMatrix.colptr[k + 1] - 1)
                 row[count] = i
                 col[count] = dc.nodalMatrix.rowval[j]
-                coeff[count] = status * dc.nodalMatrix.nzval[j] 
+                coeff[count] = status * dc.nodalMatrix.nzval[j]
                 count += 1
             end
             mean[i] = status * (wattmeter.active.mean[i] - dc.shiftPower[k] - bus.shunt.conductance[k])
@@ -158,8 +157,8 @@ function dcStateEstimationWLS(system::PowerSystem, device::Measurement)
             col[count] = branch.layout.to[k]
             coeff[count] = -addmitance
 
-            mean[i] = status * (wattmeter.active.mean[i] + branch.parameter.shiftAngle[k] * addmitance) 
-            
+            mean[i] = status * (wattmeter.active.mean[i] + branch.parameter.shiftAngle[k] * addmitance)
+
             count += 1
         end
     end
@@ -169,21 +168,21 @@ function dcStateEstimationWLS(system::PowerSystem, device::Measurement)
     for i = 1:pmu.number
         if pmu.layout.bus[i]
             status = pmu.angle.status[i]
-            
+
             row[count] = rowindex
             col[count] = pmu.layout.index[i]
             coeff[count] = status
 
             mean[rowindex] = status * (pmu.angle.mean[i] - slackAngle)
             precision.nzval[rowindex] = (1 / pmu.angle.variance[i])
-            
+
             count += 1; rowindex += 1
         end
     end
 
     coefficient = sparse(row, col, coeff, deviceNumber, bus.number)
     badData = BadData(true, 0.0, "", 0)
-    power = DCPowerSE(CartesianReal(Float64[]), CartesianReal(Float64[]), CartesianReal(Float64[]), CartesianReal(Float64[]))
+    power = DCPower(CartesianReal(Float64[]), CartesianReal(Float64[]), CartesianReal(Float64[]), CartesianReal(Float64[]), nothing)
 
    return coefficient, mean, precision, badData, power
 end
@@ -191,27 +190,27 @@ end
 """
     dcLavStateEstimation(system::PowerSystem, device::Measurement, optimizer)
 
-The function establishes the LAV model for DC state estimation, where the vector of state 
+The function establishes the LAV model for DC state estimation, where the vector of state
 variables contains only bus voltage angles.
 
 # Arguments
-This function requires the `PowerSystem` and `Measurement` composite types to establish 
-the LAV state estimation model. The LAV method offers increased robustness compared 
-to WLS, ensuring unbiasedness even in the presence of various measurement errors and 
+This function requires the `PowerSystem` and `Measurement` composite types to establish
+the LAV state estimation model. The LAV method offers increased robustness compared
+to WLS, ensuring unbiasedness even in the presence of various measurement errors and
 outliers.
 
-Users can employ the LAV method to find an estimator by choosing one of the available 
-[optimization solvers](https://jump.dev/JuMP.jl/stable/packages/solvers/). Typically, 
+Users can employ the LAV method to find an estimator by choosing one of the available
+[optimization solvers](https://jump.dev/JuMP.jl/stable/packages/solvers/). Typically,
 `Ipopt.Optimizer` suffices for most scenarios.
 
 # Updates
 If the DC model was not created, the function will automatically initiate an update of the
 `dc` field within the `PowerSystem` composite type. Additionally, if the slack bus lacks
-an in-service generator, JuliaGrid considers it a mistake and defines a new slack bus as 
+an in-service generator, JuliaGrid considers it a mistake and defines a new slack bus as
 the first generator bus with an in-service generator in the bus type list.
 
 # Returns
-The function returns an instance of the `DCStateEstimation` abstract type, which includes 
+The function returns an instance of the `DCStateEstimation` abstract type, which includes
 the following fields:
 - `voltage`: the variable allocated to store the bus voltage angles;
 - `power`: the variable allocated to store the active powers;
@@ -251,7 +250,7 @@ function dcLavStateEstimation(system::PowerSystem, device::Measurement, (@nospec
 
     fix(statex[bus.layout.slack], 0.0; force = true)
     fix(statey[bus.layout.slack], 0.0; force = true)
-    
+
     objective = @expression(jump, AffExpr())
     residual = Dict{Int64, JuMP.ConstraintRef}()
     for (i, k) in enumerate(wattmeter.layout.index)
@@ -269,11 +268,11 @@ function dcLavStateEstimation(system::PowerSystem, device::Measurement, (@nospec
                 to = branch.layout.to[k]
 
                 if wattmeter.layout.from[i]
-                    admittance = dc.admittance[k] 
+                    admittance = dc.admittance[k]
                 else
                     admittance = -dc.admittance[k]
                 end
-                angleCoeff = admittance * (statex[from] - statey[from] - statex[to] + statey[to]) 
+                angleCoeff = admittance * (statex[from] - statey[from] - statex[to] + statey[to])
                 residual[i] = @constraint(jump, angleCoeff + residualx[i] - residualy[i] - wattmeter.active.mean[i] - branch.parameter.shiftAngle[k] * admittance == 0.0)
                 add_to_expression!(objective, residualx[i] + residualy[i])
             end
@@ -285,7 +284,7 @@ function dcLavStateEstimation(system::PowerSystem, device::Measurement, (@nospec
 
     slackAngle = bus.voltage.angle[bus.layout.slack]
     for (i, k) in enumerate(wattmeter.number + 1:deviceNumber)
-        if pmu.layout.bus[i] 
+        if pmu.layout.bus[i]
             if pmu.angle.status[i] == 1
                 busIndex = pmu.layout.index[i]
                 add_to_expression!(objective, residualx[k] + residualy[k])
@@ -299,15 +298,16 @@ function dcLavStateEstimation(system::PowerSystem, device::Measurement, (@nospec
 
     @objective(jump, Min, objective)
 
-    return DCStateEstimationLAV(
+    return DCStateEstimation(
         PolarAngle(copy(bus.voltage.angle)),
-        DCPowerSE(
+        DCPower(
             CartesianReal(Float64[]),
             CartesianReal(Float64[]),
             CartesianReal(Float64[]),
             CartesianReal(Float64[]),
+            nothing
         ),
-        LAVMethod(
+        LAV(
             jump,
             statex,
             statey,
@@ -325,7 +325,7 @@ end
 By computing the bus voltage angles, the function solves the DC state estimation model.
 
 # Updates
-The resulting bus voltage angles are stored in the `voltage` field of the `DCStateEstimation` 
+The resulting bus voltage angles are stored in the `voltage` field of the `DCStateEstimation`
 type.
 
 # Examples
@@ -349,14 +349,14 @@ analysis = dcLavStateEstimation(system, device, Ipopt.Optimizer)
 solve!(system, analysis)
 ```
 """
-function solve!(system::PowerSystem, analysis::DCStateEstimationWLS{LinearWLS})
+function solve!(system::PowerSystem, analysis::DCStateEstimation{LinearWLS{Normal}})
     se = analysis.method
     bus = system.bus
     slackAngle = bus.voltage.angle[bus.layout.slack]
 
     slackRange, elementsRemove = deleteSlackCoefficient(analysis, bus.layout.slack)
 
-    if se.run 
+    if se.run
         analysis.method.run = false
         gain = dcGain(analysis, bus.layout.slack)
 
@@ -381,7 +381,7 @@ function solve!(system::PowerSystem, analysis::DCStateEstimationWLS{LinearWLS})
     restoreSlackCoefficient(analysis, slackRange, elementsRemove, bus.layout.slack)
 end
 
-function solve!(system::PowerSystem, analysis::DCStateEstimationWLS{LinearOrthogonal})
+function solve!(system::PowerSystem, analysis::DCStateEstimation{LinearWLS{Orthogonal}})
     se = analysis.method
     bus = system.bus
     dc = system.model.dc
@@ -393,7 +393,7 @@ function solve!(system::PowerSystem, analysis::DCStateEstimationWLS{LinearOrthog
         se.precision.nzval[i] = sqrt(se.precision.nzval[i])
     end
 
-    if se.run 
+    if se.run
         analysis.method.run = false
         coefficientScale = se.precision * se.coefficient
         se.factorization = sparseFactorization(coefficientScale, se.factorization)
@@ -414,7 +414,7 @@ function solve!(system::PowerSystem, analysis::DCStateEstimationWLS{LinearOrthog
     restoreSlackCoefficient(analysis, slackRange, elementsRemove, bus.layout.slack)
 end
 
-function solve!(system::PowerSystem, analysis::DCStateEstimationLAV)
+function solve!(system::PowerSystem, analysis::DCStateEstimation{LAV})
     se = analysis.method
     slackAngle = system.bus.voltage.angle[system.bus.layout.slack]
 
@@ -455,6 +455,6 @@ function restoreSlackCoefficient(analysis::DCStateEstimation, slackRange::UnitRa
 
     @inbounds for (k, i) in enumerate(slackRange)
         se.coefficient[se.coefficient.rowval[i], slack] = elementsRemove[k]
-    end 
+    end
 end
 

@@ -1,9 +1,10 @@
 """
     powerSystem(file::String)
 
-The function builds the composite type `PowerSystem` and populates `bus`, `branch`, `generator`
-and `base` fields. In general, once the composite type `PowerSystem` has been created, it is
-possible to add new buses, branches, or generators, or modify the parameters of existing ones.
+The function builds the composite type `PowerSystem` and populates `bus`, `branch`,
+`generator` and `base` fields. Once the composite type `PowerSystem` has been created, it
+is possible to add new buses, branches, or generators, or modify the parameters of
+existing ones.
 
 # Argument
 - passing the path to the HDF5 file with the `.h5` extension,
@@ -15,12 +16,12 @@ The `PowerSystem` composite type with the following fields:
 - `branch`: data related to branches;
 - `generator`: data related to generators;
 - `base`: base power and base voltages;
-- `model`: data associated with AC (nonlinear) or DC (linear) analyses.
+- `model`: data associated with AC or DC analyses.
 
 # Units
-JuliaGrid stores all data in per-units and radians format which are fixed, the exceptions are
-base values in volt-amperes and volts. The prefixes for these base values can be changed using
-the [`@base`](@ref @base) macro.
+JuliaGrid stores all data in per-units and radians format which are fixed, the exceptions
+are base values in volt-amperes and volts. The prefixes for these base values can be
+changed using the [`@base`](@ref @base) macro.
 
 # Example
 ```jldoctest

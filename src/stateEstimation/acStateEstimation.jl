@@ -1,35 +1,34 @@
 """
     gaussNewton(system::PowerSystem, device::Measurement, method)
 
-The function sets up the the Gauss-Newton method to solve the nonlinaer or AC state 
-estimation model, where the vector of state variables is given in polar coordinates. The 
+The function sets up the the Gauss-Newton method to solve the nonlinaer or AC state
+estimation model, where the vector of state variables is given in polar coordinates. The
 Gauss-Newton method throuout iterations provied WLS estimator.
 
 # Arguments
-This function requires the `PowerSystem` and `Measurement` composite types to establish 
-the nonlinear WLS state estimation framework. 
+This function requires the `PowerSystem` and `Measurement` composite types to establish
+the nonlinear WLS state estimation framework.
 
-Moreover, the presence of the `method` parameter is not mandatory. To address the WLS 
-state estimation method, users can opt to utilize factorization techniques to decompose 
-the gain matrix, such as `LU`, `QR`, or `LDLt` especially when the gain matrix is symmetric. 
-Opting for the `Orthogonal` method is advisable for a more robust solution in scenarios 
-involving ill-conditioned data, particularly when substantial variations in variances are 
+Moreover, the presence of the `method` parameter is not mandatory. To address the WLS
+state estimation method, users can opt to utilize factorization techniques to decompose
+the gain matrix, such as `LU`, `QR`, or `LDLt` especially when the gain matrix is symmetric.
+Opting for the `Orthogonal` method is advisable for a more robust solution in scenarios
+involving ill-conditioned data, particularly when substantial variations in variances are
 present.
 
-If the user does not provide the `method`, the default method for solving the estimation 
+If the user does not provide the `method`, the default method for solving the estimation
 model will be LU factorization.
 
 # Updates
-If the AC model has not been created, the function will automatically trigger an update of 
+If the AC model has not been created, the function will automatically trigger an update of
 the `ac` field within the `PowerSystem` composite type.
 
 # Returns
-The function returns an instance of the `PMUStateEstimation` abstract type, which includes 
+The function returns an instance of the `PMUStateEstimation` abstract type, which includes
 the following fields:
 - `voltage`: the variable allocated to store the bus voltage magnitudes and angles;
 - `power`: the variable allocated to store the active and reactive powers;
-- `method`: the system model vectors and matrices, or alternatively, the optimization model;
-- `bad`: the variable linked to identifying bad data within the measurement set. 
+- `method`: the system model vectors and matrices and bad data.
 
 # Examples
 Set up the AC state estimation model to be solved using the default LU factorization:
@@ -52,14 +51,14 @@ function gaussNewton(system::PowerSystem, device::Measurement, factorization::Ty
     jacobian, mean, precision, residual, type, index, range, power, current, _ = acStateEstimationWLS(system, device)
 
     method = Dict(LU => lu, LDLt => ldlt, QR => qr)
-    return ACStateEstimationWLS(
+    return ACStateEstimation(
         Polar(
-            copy(system.bus.voltage.magnitude), 
+            copy(system.bus.voltage.magnitude),
             copy(system.bus.voltage.angle)
         ),
         power,
-        current, 
-        NonlinearWLS(
+        current,
+        NonlinearWLS{Normal}(
             jacobian,
             precision,
             mean,
@@ -78,17 +77,17 @@ function gaussNewton(system::PowerSystem, device::Measurement, method::Type{<:Or
     jacobian, mean, precision, residual, type, index, range, power, current, correlated = acStateEstimationWLS(system, device)
 
     if correlated
-        throw(ErrorException("The precision matrix is non-diagonal, therefore preventing the use of the orthogonal method.")) 
+        throw(ErrorException("The precision matrix is non-diagonal, therefore preventing the use of the orthogonal method."))
     end
 
-    return ACStateEstimationWLS(
+    return ACStateEstimation(
         Polar(
-            copy(system.bus.voltage.magnitude), 
+            copy(system.bus.voltage.magnitude),
             copy(system.bus.voltage.angle)
         ),
         power,
-        current, 
-        NonlinearOrthogonal(
+        current,
+        NonlinearWLS{Orthogonal}(
             jacobian,
             precision,
             mean,
@@ -132,7 +131,7 @@ function acStateEstimationWLS(system::PowerSystem, device::Measurement)
         if wattmeter.layout.bus[i]
             nonZeroJacobian += 2 * (ac.nodalMatrix.colptr[index + 1] - ac.nodalMatrix.colptr[index])
         else
-            nonZeroJacobian += 4 
+            nonZeroJacobian += 4
         end
     end
     for (i, index) in enumerate(varmeter.layout.index)
@@ -151,10 +150,10 @@ function acStateEstimationWLS(system::PowerSystem, device::Measurement)
                 nonZeroJacobian += 4
             end
         else
-            nonZeroJacobian += 8 
+            nonZeroJacobian += 8
         end
 
-        if !pmu.layout.polar[i] && pmu.layout.correlated[i]  
+        if !pmu.layout.polar[i] && pmu.layout.correlated[i]
             nonZeroPrecision += 2
         end
     end
@@ -162,7 +161,7 @@ function acStateEstimationWLS(system::PowerSystem, device::Measurement)
     jac = SparseModel(fill(0, nonZeroJacobian), fill(0, nonZeroJacobian), fill(0.0, nonZeroJacobian), 1, 1)
     prec = SparseModel(fill(0, nonZeroPrecision) , fill(0, nonZeroPrecision), fill(0.0, nonZeroPrecision), 1, 1)
     mean = fill(0.0, measureNumber)
-    
+
     type = fill(Int8(0), measureNumber)
     index = fill(0, measureNumber)
     range = fill(1, 6)
@@ -207,20 +206,20 @@ function acStateEstimationWLS(system::PowerSystem, device::Measurement)
     for (i, k) in enumerate(ammeter.layout.index)
         mean[jac.idx] = ammeter.magnitude.status[i] * ammeter.magnitude.mean[i]
         prec = precisionDiagonal(prec, ammeter.magnitude.variance[i])
-   
+
         type, index = typeIndex(jac, type, index, ammeter.magnitude.status[i], ammeter.layout.from[i], k, 8, 9)
         jac = jacobianInitialize(jac, branch.layout.from[k], branch.layout.to[k], bus.number)
     end
     range[5] = jac.idx
-    
+
     for (i, k) in enumerate(pmu.layout.index)
         if pmu.layout.polar[i]
             mean[jac.idx] = pmu.magnitude.status[i] * pmu.magnitude.mean[i]
             mean[jac.idx + 1] = pmu.angle.status[i] * pmu.angle.mean[i]
 
             prec = precisionDiagonal(prec, pmu.magnitude.variance[i])
-            prec = precisionDiagonal(prec, pmu.angle.variance[i])  
-            
+            prec = precisionDiagonal(prec, pmu.angle.variance[i])
+
             if pmu.layout.bus[i]
                 type, index = typeIndex(jac, type, index, pmu.magnitude.status[i], k, 10)
                 jac = jacobianInitialize(jac, pmu.magnitude.status[i], k + bus.number)
@@ -274,9 +273,9 @@ function acStateEstimationWLS(system::PowerSystem, device::Measurement)
     jacobian = sparse(jac.row, jac.col, jac.val, measureNumber, 2 * bus.number)
     precision = sparse(prec.row, prec.col, prec.val, measureNumber, measureNumber)
 
-    power = PowerSE(Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), 
-        Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]))
-    current = Current(Polar(Float64[], Float64[]), Polar(Float64[], Float64[]), Polar(Float64[], Float64[]), Polar(Float64[], Float64[]))      
+    power = ACPower(Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]),
+        Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), nothing)
+    current = ACCurrent(Polar(Float64[], Float64[]), Polar(Float64[], Float64[]), Polar(Float64[], Float64[]), Polar(Float64[], Float64[]))
 
    return jacobian, mean, precision, fill(0.0, measureNumber), type, index, range, power, current, correlated
 end
@@ -284,25 +283,25 @@ end
 """
     acLavStateEstimation(system::PowerSystem, device::Measurement, optimizer)
 
-The function sets up the the LAV method to solve the nonlinaer or AC state estimation 
+The function sets up the the LAV method to solve the nonlinaer or AC state estimation
 model, where the vector of state variables is given in polar coordinates.
 
 # Arguments
-This function requires the `PowerSystem` and `Measurement` composite types to establish 
-the LAV state estimation model. The LAV method offers increased robustness compared 
-to WLS, ensuring unbiasedness even in the presence of various measurement errors and 
+This function requires the `PowerSystem` and `Measurement` composite types to establish
+the LAV state estimation model. The LAV method offers increased robustness compared
+to WLS, ensuring unbiasedness even in the presence of various measurement errors and
 outliers.
-    
-Users can employ the LAV method to find an estimator by choosing one of the available 
-[optimization solvers](https://jump.dev/JuMP.jl/stable/packages/solvers/). Typically, 
+
+Users can employ the LAV method to find an estimator by choosing one of the available
+[optimization solvers](https://jump.dev/JuMP.jl/stable/packages/solvers/). Typically,
 `Ipopt.Optimizer` suffices for most scenarios.
 
 # Updates
-If the AC model has not been created, the function will automatically trigger an update of 
+If the AC model has not been created, the function will automatically trigger an update of
 the `ac` field within the `PowerSystem` composite type.
 
 # Returns
-The function returns an instance of the `PMUStateEstimation` abstract type, which includes 
+The function returns an instance of the `PMUStateEstimation` abstract type, which includes
 the following fields:
 - `voltage`: the variable allocated to store the bus voltage magnitudes and angles;
 - `power`: the variable allocated to store the active and reactive powers;
@@ -355,7 +354,7 @@ function acLavStateEstimation(system::PowerSystem, device::Measurement, (@nospec
 
     objective = @expression(jump, AffExpr())
     residual = Dict{Int64, JuMP.ConstraintRef}()
-    
+
     for (k, index) in enumerate(voltmeter.layout.index)
         if voltmeter.magnitude.status[k] == 1
             add_to_expression!(objective, residualx[k] + residualy[k])
@@ -373,7 +372,7 @@ function acLavStateEstimation(system::PowerSystem, device::Measurement, (@nospec
             if wattmeter.layout.bus[k]
                 Vi = magnitudex[index] - magnitudey[index]
                 expr = @expression(jump, Vi * real(ac.nodalMatrixTranspose[index, index]))
-                
+
                 for ptr in ac.nodalMatrix.colptr[index]:(ac.nodalMatrix.colptr[index + 1] - 1)
                     j = ac.nodalMatrix.rowval[ptr]
                     if index != j
@@ -392,11 +391,11 @@ function acLavStateEstimation(system::PowerSystem, device::Measurement, (@nospec
                 Vj = magnitudex[j] - magnitudey[j]
                 cosAngle = @expression(jump, cos(anglex[i] - angley[i] - anglex[j] + angley[j] - Fij))
                 sinAngle = @expression(jump, sin(anglex[i] - angley[i] - anglex[j] + angley[j] - Fij))
-                
+
                 if wattmeter.layout.from[k]
                     residual[idx] = @constraint(jump, (gij + gsi) * tij^2 * Vi^2 - tij * (gij * cosAngle + bij * sinAngle) * Vi * Vj + residualx[idx] - residualy[idx] - wattmeter.active.mean[k] == 0)
                 else
-                    residual[idx] = @constraint(jump, (gij + gsi) * Vj^2 - tij * (gij * cosAngle - bij * sinAngle) * Vi * Vj + residualx[idx] - residualy[idx] - wattmeter.active.mean[k] == 0)   
+                    residual[idx] = @constraint(jump, (gij + gsi) * Vj^2 - tij * (gij * cosAngle - bij * sinAngle) * Vi * Vj + residualx[idx] - residualy[idx] - wattmeter.active.mean[k] == 0)
                 end
             end
         else
@@ -412,7 +411,7 @@ function acLavStateEstimation(system::PowerSystem, device::Measurement, (@nospec
             if varmeter.layout.bus[k]
                 Vi = magnitudex[index] - magnitudey[index]
                 expr = @expression(jump, -Vi * imag(ac.nodalMatrixTranspose[index, index]))
-                
+
                 for ptr in ac.nodalMatrix.colptr[index]:(ac.nodalMatrix.colptr[index + 1] - 1)
                     j = ac.nodalMatrix.rowval[ptr]
                     if index != j
@@ -434,7 +433,7 @@ function acLavStateEstimation(system::PowerSystem, device::Measurement, (@nospec
                 if varmeter.layout.from[k]
                     residual[idx] = @constraint(jump, - (bij + bsi) * tij^2 * Vi^2 - tij * (gij * sinAngle - bij * cosAngle) * Vi * Vj + residualx[idx] - residualy[idx] - varmeter.reactive.mean[k] == 0)
                 else
-                    residual[idx] = @constraint(jump, - (bij + bsi) * Vj^2 + tij * (gij * sinAngle + bij * cosAngle) * Vi * Vj + residualx[idx] - residualy[idx] - varmeter.reactive.mean[k] == 0)   
+                    residual[idx] = @constraint(jump, - (bij + bsi) * Vj^2 + tij * (gij * sinAngle + bij * cosAngle) * Vi * Vj + residualx[idx] - residualy[idx] - varmeter.reactive.mean[k] == 0)
                 end
             end
         else
@@ -452,13 +451,13 @@ function acLavStateEstimation(system::PowerSystem, device::Measurement, (@nospec
             Vj = magnitudex[j] - magnitudey[j]
             cosAngle = @expression(jump, cos(anglex[i] - angley[i] - anglex[j] + angley[j] - Fij))
             sinAngle = @expression(jump, sin(anglex[i] - angley[i] - anglex[j] + angley[j] - Fij))
-            
+
             if ammeter.layout.from[k]
                 A, B, C, D = IijCoeff(gij, gsi, bij, bsi, tij)
                 residual[idx] = @constraint(jump, sqrt(A * Vi^2 + B * Vj^2 - 2 * Vi * Vj * (C * cosAngle - D * sinAngle)) + residualx[idx] - residualy[idx] - ammeter.magnitude.mean[k] == 0)
             else
                 A, B, C, D = IjiCoeff(gij, gsi, bij, bsi, tij)
-                residual[idx] = @constraint(jump, sqrt(A * Vi^2 + B * Vj^2 - 2 * Vi * Vj * (C * cosAngle + D * sinAngle)) + residualx[idx] - residualy[idx] - ammeter.magnitude.mean[k] == 0)   
+                residual[idx] = @constraint(jump, sqrt(A * Vi^2 + B * Vj^2 - 2 * Vi * Vj * (C * cosAngle + D * sinAngle)) + residualx[idx] - residualy[idx] - ammeter.magnitude.mean[k] == 0)
             end
         else
             fix!(residualx, residualy, idx)
@@ -497,7 +496,7 @@ function acLavStateEstimation(system::PowerSystem, device::Measurement, (@nospec
                         residual[idx] = @constraint(jump, sqrt(A * Vi^2 + B * Vj^2 - 2 * Vi * Vj * (C * cosAngle - D * sinAngle)) + residualx[idx] - residualy[idx] - pmu.magnitude.mean[k] == 0)
                     else
                         A, B, C, D = IjiCoeff(gij, gsi, bij, bsi, tij)
-                        residual[idx] = @constraint(jump, sqrt(A * Vi^2 + B * Vj^2 - 2 * Vi * Vj * (C * cosAngle + D * sinAngle)) + residualx[idx] - residualy[idx] - pmu.magnitude.mean[k] == 0)   
+                        residual[idx] = @constraint(jump, sqrt(A * Vi^2 + B * Vj^2 - 2 * Vi * Vj * (C * cosAngle + D * sinAngle)) + residualx[idx] - residualy[idx] - pmu.magnitude.mean[k] == 0)
                     end
                 else
                     fix!(residualx, residualy, idx)
@@ -517,7 +516,7 @@ function acLavStateEstimation(system::PowerSystem, device::Measurement, (@nospec
                         IijRe = @expression(jump, (A * cos(θi) - B * sin(θi)) * Vi - (C * cos(θj + Fij) - D * sin(θj + Fij)) * Vj)
                         IijIm = @expression(jump, (A * sin(θi) + B * cos(θi)) * Vi - (C * sin(θj + Fij) + D * cos(θj + Fij)) * Vj)
 
-                        residual[idx + 1] = @constraint(jump, atan(IijIm, IijRe) + residualx[idx + 1] - residualy[idx + 1] - pmu.angle.mean[k] == 0)  
+                        residual[idx + 1] = @constraint(jump, atan(IijIm, IijRe) + residualx[idx + 1] - residualy[idx + 1] - pmu.angle.mean[k] == 0)
                     else
                         A, B, C, D = FjiCoeff(gij, gsi, bij, bsi, tij)
                         IijRe = @expression(jump, (A * cos(θj) - B * sin(θj)) * Vj - (C * cos(θi - Fij) - D * sin(θi - Fij)) * Vi)
@@ -547,13 +546,13 @@ function acLavStateEstimation(system::PowerSystem, device::Measurement, (@nospec
                     θj = anglex[j] - angley[j]
                     Vi = magnitudex[i] - magnitudey[i]
                     Vj = magnitudex[j] - magnitudey[j]
-                    
+
                     if pmu.layout.from[k]
                         A, B, C, D = FijCoeff(gij, gsi, bij, bsi, tij)
                         residual[idx] = @constraint(jump, (A * cos(θi) - B * sin(θi)) * Vi - (C * cos(θj + Fij) - D * sin(θj + Fij)) * Vj + residualx[idx] - residualy[idx] - pmu.magnitude.mean[k] * cos(pmu.angle.mean[k]) == 0.0)
                     else
                         A, B, C, D = FjiCoeff(gij, gsi, bij, bsi, tij)
-                        residual[idx] = @constraint(jump, (A * cos(θj) - B * sin(θj)) * Vj - (C * cos(θi - Fij) - D * sin(θi - Fij)) * Vi + residualx[idx] - residualy[idx] - pmu.magnitude.mean[k] * cos(pmu.angle.mean[k]) == 0.0)   
+                        residual[idx] = @constraint(jump, (A * cos(θj) - B * sin(θj)) * Vj - (C * cos(θi - Fij) - D * sin(θi - Fij)) * Vi + residualx[idx] - residualy[idx] - pmu.magnitude.mean[k] * cos(pmu.angle.mean[k]) == 0.0)
                     end
 
                     if pmu.layout.from[k]
@@ -561,7 +560,7 @@ function acLavStateEstimation(system::PowerSystem, device::Measurement, (@nospec
                         residual[idx + 1] = @constraint(jump, (A * sin(θi) + B * cos(θi)) * Vi - (C * sin(θj + Fij) + D * cos(θj + Fij)) * Vj + residualx[idx + 1] - residualy[idx + 1] - pmu.magnitude.mean[k] * sin(pmu.angle.mean[k]) == 0.0)
                     else
                         A, B, C, D = FjiCoeff(gij, gsi, bij, bsi, tij)
-                        residual[idx + 1] = @constraint(jump, (A * sin(θj) + B * cos(θj)) * Vj - (C * sin(θi - Fij) + D * cos(θi - Fij)) * Vi + residualx[idx + 1] - residualy[idx + 1] - pmu.magnitude.mean[k] * sin(pmu.angle.mean[k]) == 0.0)   
+                        residual[idx + 1] = @constraint(jump, (A * sin(θj) + B * cos(θj)) * Vj - (C * sin(θi - Fij) + D * cos(θi - Fij)) * Vi + residualx[idx + 1] - residualy[idx + 1] - pmu.magnitude.mean[k] * sin(pmu.angle.mean[k]) == 0.0)
                     end
                 end
             else
@@ -574,27 +573,28 @@ function acLavStateEstimation(system::PowerSystem, device::Measurement, (@nospec
 
     @objective(jump, Min, objective)
 
-    return ACStateEstimationLAV(
+    return ACStateEstimation(
         Polar(
-            copy(system.bus.voltage.magnitude), 
+            copy(system.bus.voltage.magnitude),
             copy(system.bus.voltage.angle)
         ),
-        PowerSE(
+        ACPower(
             Cartesian(Float64[], Float64[]),
             Cartesian(Float64[], Float64[]),
             Cartesian(Float64[], Float64[]),
             Cartesian(Float64[], Float64[]),
             Cartesian(Float64[], Float64[]),
             Cartesian(Float64[], Float64[]),
-            Cartesian(Float64[], Float64[])
+            Cartesian(Float64[], Float64[]),
+            nothing
         ),
-        Current(
+        ACCurrent(
             Polar(Float64[], Float64[]),
             Polar(Float64[], Float64[]),
             Polar(Float64[], Float64[]),
             Polar(Float64[], Float64[])
         ),
-        LAVMethod(
+        LAV(
             jump,
             statex,
             statey,
@@ -610,11 +610,11 @@ end
 """
     solve!(system::PowerSystem, analysis::ACStateEstimation)
 
-By computing the bus voltage magnitudes and angles, the function solves the AC state 
+By computing the bus voltage magnitudes and angles, the function solves the AC state
 estimation model.
 
 # Updates
-The resulting bus voltage magnitudes and angles are stored in the `voltage` field of the 
+The resulting bus voltage magnitudes and angles are stored in the `voltage` field of the
 `ACStateEstimation` type.
 
 # Examples
@@ -632,7 +632,7 @@ for iteration = 1:20
 end
 ```
 """
-function solve!(system::PowerSystem, analysis::ACStateEstimationWLS{NonlinearWLS})
+function solve!(system::PowerSystem, analysis::ACStateEstimation{NonlinearWLS{Normal}})
     normalEquation!(system, analysis)
 
     bus = system.bus
@@ -644,9 +644,9 @@ function solve!(system::PowerSystem, analysis::ACStateEstimationWLS{NonlinearWLS
     @inbounds for (k, i) in enumerate(slackRange)
         jacobian[jacobian.rowval[i], bus.layout.slack] = 0.0
     end
-    gain = (transpose(jacobian) * se.precision * jacobian) 
+    gain = (transpose(jacobian) * se.precision * jacobian)
     gain[bus.layout.slack, bus.layout.slack] = 1.0
-  
+
     if se.pattern == -1
         se.pattern = 0
         se.factorization = sparseFactorization(gain, se.factorization)
@@ -658,7 +658,7 @@ function solve!(system::PowerSystem, analysis::ACStateEstimationWLS{NonlinearWLS
 
     @inbounds for (k, i) in enumerate(slackRange)
         jacobian[jacobian.rowval[i], bus.layout.slack] = elementsRemove[k]
-    end 
+    end
 
     se.increment[bus.layout.slack] = 0.0
     maxAbsIncrement = 0.0
@@ -672,7 +672,7 @@ function solve!(system::PowerSystem, analysis::ACStateEstimationWLS{NonlinearWLS
     return maxAbsIncrement
 end
 
-function solve!(system::PowerSystem, analysis::ACStateEstimationWLS{NonlinearOrthogonal})
+function solve!(system::PowerSystem, analysis::ACStateEstimation{NonlinearWLS{Orthogonal}})
     normalEquation!(system, analysis)
 
     bus = system.bus
@@ -696,12 +696,12 @@ function solve!(system::PowerSystem, analysis::ACStateEstimationWLS{NonlinearOrt
     else
         se.factorization = sparseFactorization!(JacobianScale, se.factorization)
     end
-    
+
     se.increment = sparseSolution(se.increment, se.precision * se.residual, se.factorization)
 
     @inbounds for (k, i) in enumerate(slackRange)
         jacobian[jacobian.rowval[i], bus.layout.slack] = elementsRemove[k]
-    end 
+    end
 
     se.increment[bus.layout.slack] = 0.0
     maxAbsIncrement = 0.0
@@ -719,7 +719,7 @@ function solve!(system::PowerSystem, analysis::ACStateEstimationWLS{NonlinearOrt
     return maxAbsIncrement
 end
 
-function solve!(system::PowerSystem, analysis::ACStateEstimationLAV)
+function solve!(system::PowerSystem, analysis::ACStateEstimation{LAV})
     se = analysis.method
     bus = system.bus
 
@@ -733,11 +733,11 @@ function solve!(system::PowerSystem, analysis::ACStateEstimationLAV)
     for i = 1:bus.number
         analysis.voltage.angle[i] = value(se.statex[i]::JuMP.VariableRef) - value(se.statey[i]::JuMP.VariableRef)
         analysis.voltage.magnitude[i] = value(se.statex[i + bus.number]::JuMP.VariableRef) - value(se.statey[i + bus.number]::JuMP.VariableRef)
-        
+
     end
 end
 
-function normalEquation!(system::PowerSystem, analysis::ACStateEstimationWLS)
+function normalEquation!(system::PowerSystem, analysis::ACStateEstimation)
     ac = system.model.ac
     bus = system.bus
     branch = system.branch
@@ -797,7 +797,7 @@ function normalEquation!(system::PowerSystem, analysis::ACStateEstimationWLS)
                     Bij = imag(ac.nodalMatrix[index, col])
                     cosAngle = cos(voltage.angle[index] - voltage.angle[col])
                     sinAngle = sin(voltage.angle[index] - voltage.angle[col])
-    
+
                     jacobian[row, col] = -voltage.magnitude[index] * voltage.magnitude[col] * (Gij * cosAngle + Bij * sinAngle)  # ∂Qᵢ / ∂θⱼ
                     jacobian[row, col + bus.number] = voltage.magnitude[index] * (Gij * sinAngle - Bij * cosAngle)               # ∂Qᵢ / ∂Vⱼ
                 end
@@ -821,7 +821,7 @@ function normalEquation!(system::PowerSystem, analysis::ACStateEstimationWLS)
 
                 elseif se.type[row] == 4 # Pⱼᵢ
                     if col == branch.layout.from[index]
-                        se.residual[row] = se.mean[row] - (gij + gsi) * voltage.magnitude[j]^2 + tij * (gij * cosAngle - bij * sinAngle) * voltage.magnitude[i] * voltage.magnitude[j] 
+                        se.residual[row] = se.mean[row] - (gij + gsi) * voltage.magnitude[j]^2 + tij * (gij * cosAngle - bij * sinAngle) * voltage.magnitude[i] * voltage.magnitude[j]
 
                         jacobian[row, col] = tij * (gij * sinAngle + bij * cosAngle) * voltage.magnitude[i] * voltage.magnitude[j]  # ∂Pⱼᵢ / ∂θᵢ
                         jacobian[row, col + bus.number] = -tij * (gij * cosAngle - bij * sinAngle) * voltage.magnitude[j]           # ∂Pⱼᵢ / ∂Vᵢ
@@ -840,17 +840,17 @@ function normalEquation!(system::PowerSystem, analysis::ACStateEstimationWLS)
                         jacobian[row, col] = tij * (gij * cosAngle + bij * sinAngle) * voltage.magnitude[i] * voltage.magnitude[j]  # ∂Qᵢⱼ / ∂θⱼ
                         jacobian[row, col + bus.number] = -tij * (gij * sinAngle - bij * cosAngle) * voltage.magnitude[i]           # ∂Qᵢⱼ / ∂Vⱼ
                     end
-                
-                elseif se.type[row] == 7 # Qⱼᵢ               
+
+                elseif se.type[row] == 7 # Qⱼᵢ
                     if col == branch.layout.from[index]
-                        se.residual[row] = se.mean[row] + (bij + bsi) * voltage.magnitude[j]^2 - tij * (gij * sinAngle + bij * cosAngle) * voltage.magnitude[i] * voltage.magnitude[j] 
+                        se.residual[row] = se.mean[row] + (bij + bsi) * voltage.magnitude[j]^2 - tij * (gij * sinAngle + bij * cosAngle) * voltage.magnitude[i] * voltage.magnitude[j]
 
                         jacobian[row, col] = tij * (gij * cosAngle - bij * sinAngle) * voltage.magnitude[i] * voltage.magnitude[j]  # ∂Qⱼᵢ / ∂θᵢ
                         jacobian[row, col + bus.number] = tij * (gij * sinAngle + bij * cosAngle) * voltage.magnitude[j]            # ∂Qⱼᵢ / ∂Vᵢ
                     else
                         jacobian[row, col] = -tij * (gij * cosAngle - bij * sinAngle) * voltage.magnitude[i] * voltage.magnitude[j]                                # ∂Qⱼᵢ / ∂θⱼ
                         jacobian[row, col + bus.number] = -2 * (bij + bsi) * voltage.magnitude[j] + tij * (gij * sinAngle + bij * cosAngle) * voltage.magnitude[i] # ∂Qⱼᵢ / ∂Vⱼ
-                    end  
+                    end
 
                 elseif se.type[row] == 8 # Iᵢⱼ
                     A, B, C, D = IijCoeff(gij, gsi, bij, bsi, tij)
@@ -864,7 +864,7 @@ function normalEquation!(system::PowerSystem, analysis::ACStateEstimationWLS)
                     else
                         jacobian[row, col] = - Iinv * (C * sinAngle + D * cosAngle) * voltage.magnitude[i] * voltage.magnitude[j]                   # ∂Iᵢⱼ / ∂θⱼ
                         jacobian[row, col + bus.number] = Iinv * (B * voltage.magnitude[j] - (C * cosAngle - D * sinAngle) * voltage.magnitude[i])  # ∂Iᵢⱼ / ∂Vⱼ
-                    end  
+                    end
 
                 elseif se.type[row] == 9 # Iⱼᵢ
                     A, B, C, D = IjiCoeff(gij, gsi, bij, bsi, tij)
@@ -882,12 +882,12 @@ function normalEquation!(system::PowerSystem, analysis::ACStateEstimationWLS)
 
                 elseif se.type[row] == 12 # ψᵢⱼ
                     A, B, C, D = FijCoeff(gij, gsi, bij, bsi, tij)
-                    
+
                     IijRe = (A * cos(voltage.angle[i]) - B * sin(voltage.angle[i])) * voltage.magnitude[i] - (C * cos(voltage.angle[j] + Fij) - D * sin(voltage.angle[j] + Fij)) * voltage.magnitude[j]
                     IijIm = (A * sin(voltage.angle[i]) + B * cos(voltage.angle[i])) * voltage.magnitude[i] - (C * sin(voltage.angle[j] + Fij) + D * cos(voltage.angle[j] + Fij)) * voltage.magnitude[j]
                     Iij = complex(IijRe, IijIm)
                     Iinv = 1 / (abs(Iij))^2
-                    
+
                     A, B, C, D = IijCoeff(gij, gsi, bij, bsi, tij)
                     if col == branch.layout.from[index]
                         se.residual[row] = se.mean[row] - angle(Iij)
@@ -897,7 +897,7 @@ function normalEquation!(system::PowerSystem, analysis::ACStateEstimationWLS)
                     else
                         jacobian[row, col] = Iinv * (B * voltage.magnitude[j]^2 - (C * cosAngle - D * sinAngle) * voltage.magnitude[i] * voltage.magnitude[j])  # ∂ψᵢⱼ / ∂θⱼ
                         jacobian[row, col + bus.number] = Iinv * (C * sinAngle + D * cosAngle) * voltage.magnitude[i]                                           # ∂ψᵢⱼ / ∂Vⱼ
-                    end    
+                    end
 
                 elseif se.type[row] == 13 # ψⱼᵢ
                     A, B, C, D = FjiCoeff(gij, gsi, bij, bsi, tij)
@@ -906,7 +906,7 @@ function normalEquation!(system::PowerSystem, analysis::ACStateEstimationWLS)
                     IijIm = (A * sin(voltage.angle[j]) + B * cos(voltage.angle[j])) * voltage.magnitude[j] - (C * sin(voltage.angle[i] - Fij) + D * cos(voltage.angle[i] - Fij)) * voltage.magnitude[i]
                     Iij = complex(IijRe, IijIm)
                     Iinv = 1 / (abs(Iij))^2
-                
+
                     A, B, C, D = IjiCoeff(gij, gsi, bij, bsi, tij)
                     if col == branch.layout.from[index]
                         se.residual[row] = se.mean[row] - angle(Iij)
@@ -916,19 +916,19 @@ function normalEquation!(system::PowerSystem, analysis::ACStateEstimationWLS)
                     else
                         jacobian[row, col] = Iinv * (B * voltage.magnitude[j]^2 - (C * cosAngle + D * sinAngle) * voltage.magnitude[i] * voltage.magnitude[j])  # ∂ψⱼᵢ / ∂θⱼ
                         jacobian[row, col + bus.number] = Iinv * (C * sinAngle - D * cosAngle) * voltage.magnitude[i]                                           # ∂ψⱼᵢ / ∂Vⱼ
-                    end 
+                    end
 
                 elseif se.type[row] == 14 # ℜ(Vᵢ)
                     se.residual[row] = se.mean[row] - voltage.magnitude[index] * cos(voltage.angle[index])
 
                     jacobian[row, col] = -voltage.magnitude[index] * sin(voltage.angle[index])  # ∂ℜ(Vᵢ) / ∂θᵢ
-                    jacobian[row, col + bus.number] = cos(voltage.angle[index])                 # ∂ℜ(Vᵢ) / ∂Vᵢ   
+                    jacobian[row, col + bus.number] = cos(voltage.angle[index])                 # ∂ℜ(Vᵢ) / ∂Vᵢ
 
-                elseif se.type[row] == 15 # ℑ(Vᵢ)  
-                    se.residual[row] = se.mean[row] - voltage.magnitude[index] * sin(voltage.angle[index])  
+                elseif se.type[row] == 15 # ℑ(Vᵢ)
+                    se.residual[row] = se.mean[row] - voltage.magnitude[index] * sin(voltage.angle[index])
 
                     jacobian[row, col] = voltage.magnitude[index] * cos(voltage.angle[index])  # ∂ℑ(Vᵢ) / ∂θᵢ
-                    jacobian[row, col + bus.number] = sin(voltage.angle[index])                # ∂ℑ(Vᵢ) / ∂Vᵢ 
+                    jacobian[row, col + bus.number] = sin(voltage.angle[index])                # ∂ℑ(Vᵢ) / ∂Vᵢ
 
                 elseif se.type[row] == 16 # ℜ(Iᵢⱼ)
                     A, B, C, D = FijCoeff(gij, gsi, bij, bsi, tij)
@@ -941,8 +941,8 @@ function normalEquation!(system::PowerSystem, analysis::ACStateEstimationWLS)
                     else
                         jacobian[row, col] = (C * sin(voltage.angle[j] + Fij) + D * cos(voltage.angle[j] + Fij)) * voltage.magnitude[j]  # ∂ℜ(Iᵢⱼ) / ∂θⱼ
                         jacobian[row, col + bus.number] = -C * cos(voltage.angle[j] + Fij) + D * sin(voltage.angle[j] + Fij)             # ∂ℜ(Iᵢⱼ) / ∂Vⱼ
-                    end  
-                    
+                    end
+
                 elseif se.type[row] == 18 # ℑ(Iᵢⱼ)
                     A, B, C, D = FijCoeff(gij, gsi, bij, bsi, tij)
 
@@ -954,7 +954,7 @@ function normalEquation!(system::PowerSystem, analysis::ACStateEstimationWLS)
                     else
                         jacobian[row, col] = (-C * cos(voltage.angle[j] + Fij) + D * sin(voltage.angle[j] + Fij)) * voltage.magnitude[j]  # ∂ℑ(Iᵢⱼ) / ∂θⱼ
                         jacobian[row, col + bus.number] = - C * sin(voltage.angle[j] + Fij) - D * cos(voltage.angle[j] + Fij)             # ∂ℑ(Iᵢⱼ) / ∂Vⱼ
-                    end 
+                    end
 
                 elseif se.type[row] == 17 # ℜ(Iⱼᵢ)
                     A, B, C, D = FjiCoeff(gij, gsi, bij, bsi, tij)
@@ -967,8 +967,8 @@ function normalEquation!(system::PowerSystem, analysis::ACStateEstimationWLS)
                     else
                         jacobian[row, col] = -(A * sin(voltage.angle[j]) + B * cos(voltage.angle[j])) * voltage.magnitude[j]        # ∂ℜ(Iⱼᵢ) / ∂θⱼ
                         jacobian[row, col + bus.number] = A * cos(voltage.angle[j]) - B * sin(voltage.angle[j])                     # ∂ℜ(Iⱼᵢ) / ∂Vⱼ
-                    end 
-                
+                    end
+
                 elseif se.type[row] == 19 # ℑ(Iⱼᵢ)
                     A, B, C, D = FjiCoeff(gij, gsi, bij, bsi, tij)
 
@@ -980,7 +980,7 @@ function normalEquation!(system::PowerSystem, analysis::ACStateEstimationWLS)
                     else
                         jacobian[row, col] = (A * cos(voltage.angle[j]) - B * sin(voltage.angle[j])) * voltage.magnitude[j]               # ∂ℑ(Iⱼᵢ) / ∂θⱼ
                         jacobian[row, col + bus.number] = A * sin(voltage.angle[j]) + B * cos(voltage.angle[j])                           # ∂ℑ(Iⱼᵢ) / ∂Vⱼ
-                    end     
+                    end
 
                 end
             end
@@ -1038,10 +1038,10 @@ function jacobianInitialize(jac::SparseModel, nodalMatrix::SparseMatrixCSC{Compl
         jac.col[jac.cnt] = nodalMatrix.rowval[j]
         jac.row[jac.cnt + 1] = jac.idx
         jac.col[jac.cnt + 1] = nodalMatrix.rowval[j] + busNumber
-        
-        jac.cnt += 2 
+
+        jac.cnt += 2
     end
-        
+
     jac.idx += 1
 
     return jac
@@ -1072,7 +1072,7 @@ function jacobianInitialize(jac::SparseModel, bus::Int64, busNumber::Int64)
 
     jac.idx += 1
     jac.cnt += 2
-    
+
     return jac
 end
 
@@ -1106,16 +1106,16 @@ function precisionBlock(prec::SparseModel, varianceRe::Float64, varianceIm::Floa
 
     prec.row[prec.cnt + 3] = prec.idx + 1
     prec.col[prec.cnt + 3] = prec.idx + 1
-    prec.val[prec.cnt + 3] = L3inv2   
+    prec.val[prec.cnt + 3] = L3inv2
 
     prec.cnt += 4
     prec.idx += 2
 
-    return prec 
+    return prec
 end
 
 function branchParameter(branch::Branch, ac::ACModel, index::Int64)
-    i = branch.layout.from[index]  
+    i = branch.layout.from[index]
     j = branch.layout.to[index]
     gij = real(ac.admittance[index])
     bij = imag(ac.admittance[index])
@@ -1128,7 +1128,7 @@ function branchParameter(branch::Branch, ac::ACModel, index::Int64)
 end
 
 function IijCoeff(gij::Float64, gsi::Float64, bij::Float64, bsi::Float64, tij::Float64)
-    A = tij^4 * ((gij + gsi)^2 + (bij + bsi)^2) 
+    A = tij^4 * ((gij + gsi)^2 + (bij + bsi)^2)
     B = tij^2 * (gij^2 + bij^2)
     C = tij^3 * (gij * (gij + gsi) + bij * (bij + bsi))
     D = tij^3 * (gij * bsi - bij * gsi)
@@ -1148,7 +1148,7 @@ end
 function FijCoeff(gij::Float64, gsi::Float64, bij::Float64, bsi::Float64, tij::Float64)
     A = tij^2 * (gij + gsi)
     B = tij^2 * (bij + bsi)
-    C = tij * gij 
+    C = tij * gij
     D = tij * bij
 
     return A, B, C, D
@@ -1157,7 +1157,7 @@ end
 function FjiCoeff(gij::Float64, gsi::Float64, bij::Float64, bsi::Float64, tij::Float64)
     A = gij + gsi
     B = bij + bsi
-    C = tij * gij 
+    C = tij * gij
     D = tij * bij
 
     return A, B, C, D
@@ -1165,6 +1165,6 @@ end
 
 function fix!(residualx::Vector{JuMP.VariableRef}, residualy::Vector{JuMP.VariableRef}, index::Int64)
     fix(residualx[index], 0.0; force = true)
-    fix(residualy[index], 0.0; force = true)   
+    fix(residualy[index], 0.0; force = true)
 end
 
