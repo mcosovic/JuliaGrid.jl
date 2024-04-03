@@ -30,6 +30,7 @@ system30 = powerSystem(string(pathData, "case30test.m"))
         addVarmeter!(system14, device; bus = key, reactive = analysis.power.injection.reactive[value], noise = false)
         addPmu!(system14, device; bus = key, magnitude = analysis.voltage.magnitude[value], angle = analysis.voltage.angle[value], noise = false)
         addPmu!(system14, device; bus = key, magnitude = analysis.voltage.magnitude[value], angle = analysis.voltage.angle[value], noise = false, polar = false)
+        addPmu!(system14, device; bus = key, magnitude = analysis.voltage.magnitude[value], angle = analysis.voltage.angle[value], noise = false, polar = false, correlated = true)
     end
 
     for (key, value) in system14.branch.label
@@ -43,6 +44,8 @@ system30 = powerSystem(string(pathData, "case30test.m"))
         addPmu!(system14, device; to = key, magnitude = analysis.current.to.magnitude[value], angle = analysis.current.to.angle[value], noise = false, statusAngle = 0)
         addPmu!(system14, device; from = key, magnitude = analysis.current.from.magnitude[value], angle = analysis.current.from.angle[value], noise = false, polar = false)
         addPmu!(system14, device; to = key, magnitude = analysis.current.to.magnitude[value], angle = analysis.current.to.angle[value], noise = false, polar = false)
+        addPmu!(system14, device; from = key, magnitude = analysis.current.from.magnitude[value], angle = analysis.current.from.angle[value], noise = false, polar = false, correlated = true)
+        addPmu!(system14, device; to = key, magnitude = analysis.current.to.magnitude[value], angle = analysis.current.to.angle[value], noise = false, polar = false, correlated = true)
     end
 
     ####### LU Factorization #######
@@ -68,7 +71,36 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     @test analysisQR.voltage.magnitude ≈ analysis.voltage.magnitude
     @test analysisQR.voltage.angle ≈ analysis.voltage.angle
 
+    ####### LAV #######
+    analysisLAV = acLavStateEstimation(system14, device, Ipopt.Optimizer)
+    JuMP.set_silent(analysisLAV.method.jump)
+    solve!(system14, analysisLAV)
+    @test analysisLAV.voltage.magnitude ≈ analysis.voltage.magnitude
+    @test analysisLAV.voltage.angle ≈ analysis.voltage.angle
+
     ####### Orthogonal Method #######
+    device = measurement()
+    for (key, value) in system14.bus.label
+        addVoltmeter!(system14, device; bus = key, magnitude = analysis.voltage.magnitude[value], noise = false)
+        addWattmeter!(system14, device; bus = key, active = analysis.power.injection.active[value], noise = false)
+        addVarmeter!(system14, device; bus = key, reactive = analysis.power.injection.reactive[value], noise = false)
+        addPmu!(system14, device; bus = key, magnitude = analysis.voltage.magnitude[value], angle = analysis.voltage.angle[value], noise = false)
+        addPmu!(system14, device; bus = key, magnitude = analysis.voltage.magnitude[value], angle = analysis.voltage.angle[value], noise = false, polar = false)
+    end
+
+    for (key, value) in system14.branch.label
+        addWattmeter!(system14, device; from = key, active = analysis.power.from.active[value], noise = false)
+        addWattmeter!(system14, device; to = key, active = analysis.power.to.active[value], noise = false)
+        addVarmeter!(system14, device; from = key, reactive = analysis.power.from.reactive[value], noise = false)
+        addVarmeter!(system14, device; to = key, reactive = analysis.power.to.reactive[value], noise = false)
+        addAmmeter!(system14, device; from = key, magnitude = analysis.current.from.magnitude[value], noise = false)
+        addAmmeter!(system14, device; to = key, magnitude = analysis.current.to.magnitude[value], noise = false)
+        addPmu!(system14, device; from = key, magnitude = analysis.current.from.magnitude[value], angle = analysis.current.from.angle[value], noise = false, statusAngle = 0)
+        addPmu!(system14, device; to = key, magnitude = analysis.current.to.magnitude[value], angle = analysis.current.to.angle[value], noise = false, statusAngle = 0)
+        addPmu!(system14, device; from = key, magnitude = analysis.current.from.magnitude[value], angle = analysis.current.from.angle[value], noise = false, polar = false)
+        addPmu!(system14, device; to = key, magnitude = analysis.current.to.magnitude[value], angle = analysis.current.to.angle[value], noise = false, polar = false)
+    end
+
     analysisOrt = gaussNewton(system14, device, Orthogonal)
     for iteration = 1:100
         stopping = solve!(system14, analysisOrt)
@@ -79,13 +111,6 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     solve!(system14, analysisOrt)
     @test analysisOrt.voltage.magnitude ≈ analysis.voltage.magnitude
     @test analysisOrt.voltage.angle ≈ analysis.voltage.angle
-
-    ####### LAV #######
-    analysisLAV = acLavStateEstimation(system14, device, Ipopt.Optimizer)
-    JuMP.set_silent(analysisLAV.method.jump)
-    solve!(system14, analysisLAV)
-    @test analysisLAV.voltage.magnitude ≈ analysis.voltage.magnitude
-    @test analysisLAV.voltage.angle ≈ analysis.voltage.angle
 
     ################ Modified IEEE 30-bus Test Case ################
     acModel!(system30)
