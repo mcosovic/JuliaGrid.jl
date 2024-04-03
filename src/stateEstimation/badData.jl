@@ -55,7 +55,7 @@ while analysis.outlier.detect
 end
 ```
 """
-function residualTest!(system::PowerSystem, device::Measurement, analysis::DCStateEstimation{LinearWLS{T}}; threshold = 3.0)  where T <: Union{Normal, Orthogonal}
+function residualTest!(system::PowerSystem, device::Measurement, analysis::DCStateEstimation{LinearWLS{T}}; threshold = 3.0) where T <: Union{Normal, Orthogonal}
     errorVoltage(analysis.voltage.angle)
 
     bus = system.bus

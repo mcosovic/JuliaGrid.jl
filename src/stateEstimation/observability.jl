@@ -1,15 +1,15 @@
 """
-    islandTopologicalFlow(system::PowerSystem, meter::Wattmeter)
+    islandTopologicalFlow(system::PowerSystem, device::Measurement)
 
-The function employs a topological method to identify observable islands solely through
-active power flow measurements from the `Wattmeter` type. This results in the formation of
-disconnected and loop-free subgraphs. To be more specific, the function utilizes wattmeters
-strategically placed on the branches to detect observable islands. To elaborate
-further, this approach detects islands based on the linear decoupled measurement model.
+The function utilizes a topological approach to detect flow observable islands, resulting
+in the formation of disconnected and loop-free subgraphs. It is assumed that active and
+reactive power measurements are paired, indicating a standard observability analysis. In
+this analysis, islands formed by active power measurements correspond to those formed by
+reactive power measurements.
 
 # Arguments
-To define flow observable islands, this function requires the composite types `PowerSystem`
-and `Wattmeter`.
+To define flow observable islands, this function necessitates the composite types
+`PowerSystem` and `Measurement`.
 
 # Returns
 The function returns an type `Island`, containing information about the islands:
@@ -18,24 +18,26 @@ The function returns an type `Island`, containing information about the islands:
 * `tie`: tie data associated with buses and branches.
 
 # Examples
-Find flow islands for the given set of measurement data using wattmeters:
+Find flow islands for the provided set of measurements:
 ```jldoctest
 system = powerSystem("case14.h5")
 device = measurement("measurement14.h5")
 statusWattmeter!(system, device; inservice = 15)
+device.varmeter.reactive.status = copy(device.wattmeter.active.status)
 
-islands = islandTopologicalFlow(system, device.wattmeter)
+islands = islandTopologicalFlow(system, device)
 ```
 """
-function islandTopologicalFlow(system::PowerSystem, wattmeter::Wattmeter)
+function islandTopologicalFlow(system::PowerSystem, device::Measurement)
     observe = Island([], Int64[], TieData(Set{Int64}(), Set{Int64}(), Int64[]))
     rowval, colptr = connectionObservability(system)
 
-    connectedComponents(system, observe, wattmeter.layout, wattmeter.active.status, wattmeter.number)
+    connectedComponents(system, observe, device.wattmeter.layout, device.wattmeter.active.status, device.wattmeter.number)
     tieBusBranch(system, observe)
-    tieInjection(observe, wattmeter.layout,  wattmeter.active.status, wattmeter.number)
+    tieInjection(observe, device.wattmeter.layout, device.wattmeter.active.status, device.wattmeter.number)
 
-    mergePairs(system.bus, wattmeter.layout, observe, rowval, colptr)
+    mergePairs(system.bus, device.wattmeter.layout, observe, rowval, colptr)
+    tieBusBranch(system, observe)
 
     return observe
 end
@@ -43,16 +45,18 @@ end
 """
     islandTopological(system::PowerSystem, meter::Wattmeter)
 
-The function employs a topological method to identify maximal observable islands solely
-through active power measurements from the `Wattmeter` type. Specifically, it employs
-wattmeters positioned on the branches to pinpoint flow observable islands. Subsequently,
-these islands are merged based on the available injection measurements obtained from the
-wattmeters. To elaborate further, this approach detects islands based on the linear
-decoupled measurement model.
+The function employs a topological method to identify maximal observable islands.
+Specifically, it employs measurements positioned on the branches to pinpoint flow
+observable islands. Subsequently, these islands are merged based on the available
+injection measurements.
+
+It is assumed that active and reactive power measurements are paired, indicating a
+standard observability analysis. In this analysis, islands formed by active power
+measurements correspond to those formed by reactive power measurements.
 
 # Arguments
-To define maximal flow observable islands, this function requires the composite types
-`PowerSystem` and `Wattmeter`.
+To define flow observable islands, this function necessitates the composite types
+`PowerSystem` and `Measurement`.
 
 # Returns
 The function returns an abstract type `Island`, containing information about the islands:
@@ -61,25 +65,26 @@ The function returns an abstract type `Island`, containing information about the
 * `tie`: tie data associated with buses and branches.
 
 # Examples
-Find maximal islands for the given set of measurement data using wattmeters:
+Find maximal islands for the provided set of measurements:
 ```jldoctest
 system = powerSystem("case14.h5")
 device = measurement("measurement14.h5")
-statusWattmeter!(system, device; inservice = 12)
+statusWattmeter!(system, device; inservice = 15)
+device.varmeter.reactive.status = copy(device.wattmeter.active.status)
 
-islands = islandTopological(system, device.wattmeter)
+islands = islandTopological(system, device)
 ```
 """
-function islandTopological(system::PowerSystem, wattmeter::Wattmeter)
+function islandTopological(system::PowerSystem, device::Measurement)
     observe = Island([], Int64[], TieData(Set{Int64}(), Set{Int64}(), Int64[]))
     rowval, colptr = connectionObservability(system)
 
-    connectedComponents(system, observe, wattmeter.layout, wattmeter.active.status, wattmeter.number)
+    connectedComponents(system, observe, device.wattmeter.layout, device.wattmeter.active.status, device.wattmeter.number)
     tieBusBranch(system, observe)
-    tieInjection(observe, wattmeter.layout,  wattmeter.active.status, wattmeter.number)
+    tieInjection(observe, device.wattmeter.layout, device.wattmeter.active.status, device.wattmeter.number)
 
-    mergePairs(system.bus, wattmeter.layout, observe, rowval, colptr)
-    mergeFlowIslands(system, wattmeter.layout, observe, rowval, colptr)
+    mergePairs(system.bus, device.wattmeter.layout, observe, rowval, colptr)
+    mergeFlowIslands(system, device.wattmeter.layout, observe, rowval, colptr)
 
     return observe
 end
@@ -170,6 +175,7 @@ function mergePairs(bus::Bus, layout::PowermeterLayout, observe::Island, rowval:
     flag = false
     con = fill(false, bus.number)
     removeIsland = fill(false, size(observe.island, 1))
+
     @inbounds while merge
         merge = false
         for (k, i) in enumerate(observe.tie.injection)
@@ -202,7 +208,7 @@ function mergePairs(bus::Bus, layout::PowermeterLayout, observe::Island, rowval:
     end
     deleteat!(observe.island, removeIsland)
 
-    if flag && size(observe.island, 1) != 1
+    if flag
         @inbounds for (k, island) in enumerate(observe.island)
             for i in island
                 observe.bus[i] = k
@@ -388,122 +394,110 @@ solve!(system, analysis)
 function restorationGram!(system::PowerSystem, device::Measurement, pseudo::Measurement, islands::Island; threshold::Float64 = 1e-5)
     bus = system.bus
     branch = system.branch
-    wattmeter = device.wattmeter
     rowval, colptr = connectionObservability(system)
 
-    row = Array{Int64,1}()
-    col = Array{Int64,1}()
-    jac = Array{Float64,1}()
+    jac = SparseModel(Array{Int64,1}(), Array{Int64,1}(), Array{Float64,1}(), 0, length(islands.tie.injection))
     con = fill(false, bus.number)
+
     for (k, i) in enumerate(islands.tie.injection)
-        busIndex = wattmeter.layout.index[i]
-        row, col, jac, con = addTieInjection(rowval, colptr, islands, busIndex, k, con, row, col, jac)
+        busIndex = device.wattmeter.layout.index[i]
+        jac, con = addTieInjection(rowval, colptr, islands, busIndex, k, jac, con)
     end
 
-    rowIndex = length(islands.tie.injection)
-    pmuIsland = Set{Int64}()
     for i = 1:device.pmu.number
-        if device.pmu.layout.bus[i] && device.pmu.angle.status[i] == 1
-            busIndex = device.pmu.layout.index[i]
-            island = islands.bus[busIndex]
-
-            rowIndex += 1
-            push!(row, rowIndex)
-            push!(col, island)
-            push!(jac, 1)
-            push!(pmuIsland, island)
+        if device.pmu.layout.bus[i] && device.pmu.angle.status[i] == 1 && device.pmu.magnitude.status[i] == 1
+            island = islands.bus[device.pmu.layout.index[i]]
+            pushDirect!(jac, island)
         end
     end
 
-    rowIndex += 1
-    push!(row, rowIndex)
-    push!(col, islands.bus[system.bus.layout.slack])
-    push!(jac, 1)
-    push!(pmuIsland, islands.bus[system.bus.layout.slack])
+    island = islands.bus[system.bus.layout.slack]
+    pushDirect!(jac, island)
 
-    numberTie = copy(rowIndex)
+    numberTie = copy(jac.idx)
 
     pseudoDevice = Int64[]
     for (k, index) in enumerate(pseudo.wattmeter.layout.index)
         if pseudo.wattmeter.active.status[k] == 1
             if pseudo.wattmeter.layout.bus[k]
                 if index in islands.tie.bus
-                    rowIndex += 1
-                    row, col, jac, con = addTieInjection(rowval, colptr, islands, index, rowIndex, con, row, col, jac)
+                    jac.idx += 1
+                    jac, con = addTieInjection(rowval, colptr, islands, index, jac.idx, jac, con)
                     push!(pseudoDevice, k)
                 end
             else
                 if index in islands.tie.branch && branch.layout.status[index] == 1
                     fromIsland = islands.bus[branch.layout.from[index]]
                     toIsland = islands.bus[branch.layout.to[index]]
-
-                    rowIndex += 1
-                    push!(row, rowIndex)
-                    push!(col, fromIsland)
-                    push!(jac, 1)
-                    push!(row, rowIndex)
-                    push!(col, toIsland)
-                    push!(jac, -1)
-
+                    pushIndirect!(jac, fromIsland, toIsland)
                     push!(pseudoDevice, k)
                 end
             end
         end
     end
-    numberPseudoWattmeter = length(pseudoDevice)
+    numberPseudoPower = length(pseudoDevice)
 
     for i = 1:pseudo.pmu.number
-        if pseudo.pmu.layout.bus[i] && pseudo.pmu.angle.status[i] == 1
-            busIndex = pseudo.pmu.layout.index[i]
-            island = islands.bus[busIndex]
-
-            rowIndex += 1
-            push!(row, rowIndex)
-            push!(col, island)
-            push!(jac, 1)
-
+        if pseudo.pmu.layout.bus[i] && pseudo.pmu.angle.status[i] == 1 && pseudo.pmu.magnitude.status[i] == 1
+            island = islands.bus[pseudo.pmu.layout.index[i]]
+            pushDirect!(jac, island)
             push!(pseudoDevice, i)
         end
     end
+
     numberIsland = size(islands.island, 1)
-    reducedCoefficient = sparse(row, col, jac, row[end], numberIsland)
+    reducedCoefficient = sparse(jac.row, jac.col, jac.val, jac.row[end], numberIsland)
     reducedGain = reducedCoefficient * reducedCoefficient'
 
     F = qr(Matrix(reducedGain))
     R = F.R
-    @inbounds for (k, i) = enumerate((numberTie + 1):rowIndex)
+
+    @inbounds for (k, i) = enumerate((numberTie + 1):jac.idx)
         if abs(R[i, i]) > threshold
-            indexDevice = pseudoDevice[k]
-            if k <= numberPseudoWattmeter
-                indexBusBranch = pseudo.wattmeter.layout.index[indexDevice]
-                (labelWattmeter,_),_ = iterate(pseudo.wattmeter.label, indexDevice)
-                if pseudo.wattmeter.layout.bus[indexDevice]
+            indexPseudo = pseudoDevice[k]
+            if k <= numberPseudoPower
+                indexBusBranch = pseudo.wattmeter.layout.index[indexPseudo]
+                (labelWattmeter,_),_ = iterate(pseudo.wattmeter.label, indexPseudo)
+                (labelVarmeter,_),_ = iterate(pseudo.varmeter.label, indexPseudo)
+
+                if pseudo.wattmeter.layout.bus[indexPseudo]
                     (labelBus,_),_ = iterate(system.bus.label, indexBusBranch)
+
                     addWattmeter!(system, device; bus = labelBus, label = labelWattmeter, noise = false, status = 1,
-                    active = pseudo.wattmeter.active.mean[indexDevice], variance = pseudo.wattmeter.active.variance[indexDevice])
+                    active = pseudo.wattmeter.active.mean[indexPseudo], variance = pseudo.wattmeter.active.variance[indexPseudo])
+
+                    addVarmeter!(system, device; bus = labelBus, label = labelVarmeter, noise = false, status = 1,
+                    reactive = pseudo.varmeter.reactive.mean[indexPseudo], variance = pseudo.varmeter.reactive.variance[indexPseudo])
                 else
                     (labelBranch,_),_ = iterate(system.branch.label, indexBusBranch)
-                    if pseudo.wattmeter.layout.from[indexDevice]
+                    if pseudo.wattmeter.layout.from[indexPseudo]
                         addWattmeter!(system, device; from = labelBranch, label = labelWattmeter, noise = false, status = 1,
-                        active = pseudo.wattmeter.active.mean[indexDevice], variance = pseudo.wattmeter.active.variance[indexDevice])
+                        active = pseudo.wattmeter.active.mean[indexPseudo], variance = pseudo.wattmeter.active.variance[indexPseudo])
+
+                        addVarmeter!(system, device; from = labelBranch, label = labelVarmeter, noise = false, status = 1,
+                        reactive = pseudo.varmeter.reactive.mean[indexPseudo], variance = pseudo.varmeter.reactive.variance[indexPseudo])
                     else
                         addWattmeter!(system, device; to = labelBranch, label = labelWattmeter, noise = false, status = 1,
-                        active = pseudo.wattmeter.active.mean[indexDevice], variance = pseudo.wattmeter.active.variance[indexDevice])
+                        active = pseudo.wattmeter.active.mean[indexPseudo], variance = pseudo.wattmeter.active.variance[indexPseudo])
+
+                        addVarmeter!(system, device; to = labelBranch, label = labelVarmeter, noise = false, status = 1,
+                        reactive = pseudo.varmeter.reactive.mean[indexPseudo], variance = pseudo.varmeter.reactive.variance[indexPseudo])
                     end
                 end
             else
-                indexBus = pseudo.pmu.layout.index[indexDevice]
-                (labelPmu,_),_ = iterate(pseudo.pmu.label, indexDevice)
+                indexBus = pseudo.pmu.layout.index[indexPseudo]
+                (labelPmu,_),_ = iterate(pseudo.pmu.label, indexPseudo)
                 (labelBus,_),_ = iterate(system.bus.label, indexBus)
-                addPmu!(system, device; bus = labelBus, label = labelPmu, noise = false, statusAngle = 1,
-                magnitude = pseudo.pmu.magnitude.mean[indexDevice], varianceMagnitude = pseudo.pmu.magnitude.variance[indexDevice],
-                angle = pseudo.pmu.angle.mean[indexDevice], varianceAngle = pseudo.pmu.angle.variance[indexDevice])
+
+                addPmu!(system, device; bus = labelBus, label = labelPmu, noise = false, statusAngle = 1, statusMagnitude = 1,
+                magnitude = pseudo.pmu.magnitude.mean[indexPseudo], varianceMagnitude = pseudo.pmu.magnitude.variance[indexPseudo],
+                angle = pseudo.pmu.angle.mean[indexPseudo], varianceAngle = pseudo.pmu.angle.variance[indexPseudo])
             end
         end
     end
 end
 
-function addTieInjection(rowval, colptr, islands, busIndex, k, con, row, col, jac)
+function addTieInjection(rowval, colptr, islands, busIndex, k, jac, con)
     island = islands.bus[busIndex]
     conection = rowval[colptr[busIndex]:(colptr[busIndex + 1] - 1)]
 
@@ -511,23 +505,23 @@ function addTieInjection(rowval, colptr, islands, busIndex, k, con, row, col, ja
     con[islands.island[island]] .= false
     incidentToIslands = islands.bus[con]
     for i in incidentToIslands
-        push!(row, k)
-        push!(col, i)
-        push!(jac, -1)
+        push!(jac.row, k)
+        push!(jac.col, i)
+        push!(jac.val, -1)
     end
-    push!(row, k)
-    push!(col, island)
-    push!(jac, length(incidentToIslands))
+    push!(jac.row, k)
+    push!(jac.col, island)
+    push!(jac.val, length(incidentToIslands))
     con[conection] .= false
 
-    return row, col, jac, con
+    return jac, con
 end
 
 function connectionObservability(system::PowerSystem)
     model = system.model
 
     if isempty(model.dc.nodalMatrix) && isempty(model.ac.nodalMatrix)
-        dcModel!(system)
+        acModel!(system)
     end
 
     if !isempty(model.dc.nodalMatrix)
@@ -554,3 +548,21 @@ function connectionObservability(system::PowerSystem)
 
     return rowval, colptr
 end
+
+function pushDirect!(jac::SparseModel, island::Int64)
+    jac.idx += 1
+    push!(jac.row, jac.idx)
+    push!(jac.col, island)
+    push!(jac.val, 1)
+end
+
+function pushIndirect!(jac::SparseModel, fromIsland::Int64, toIsland::Int64)
+    jac.idx += 1
+    push!(jac.row, jac.idx)
+    push!(jac.col, fromIsland)
+    push!(jac.val, 1)
+    push!(jac.row, jac.idx)
+    push!(jac.col, toIsland)
+    push!(jac.val, -1)
+end
+
