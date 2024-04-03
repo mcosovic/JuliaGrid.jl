@@ -488,7 +488,7 @@ Users can retrieve the estimated bus voltage angles ``\hat{\bm {\Theta}} = [\hat
 
 ## [Power Analysis](@id DCSEPowerAnalysisTutorials)
 After obtaining the solution from the DC state estimation, we can calculate powers related to buses and branches using the [`power!`](@ref power!(::PowerSystem, ::DC)) function:
-```@example DCSEObservability
+```@example DCSETutorial
 power!(system, analysis)
 nothing # hide
 ```
@@ -500,7 +500,7 @@ nothing # hide
 
 ##### Power Injections
 [Active power injections](@ref DCBusInjectionTutorials) are stored as the vector ``\mathbf{P} = [P_i]``, and can be retrieved using the following commands:
-```@repl DCSEObservability
+```@repl DCSETutorial
 𝐏 = analysis.power.injection.active
 ```
 
@@ -512,7 +512,7 @@ We can determine the active power supplied by generators to the buses by summing
     P_{\text{p}i} = P_i + P_{\text{d}i},\;\;\; i \in \mathcal{N}.
 ```
 The vector of active power injected by generators to the buses, denoted by ``\mathbf{P}_{\text{p}} = [P_{\text{p}i}]``, can be obtained using:
-```@repl DCSEObservability
+```@repl DCSETutorial
 𝐏ₚ = analysis.power.supply.active
 ```
 
@@ -520,12 +520,12 @@ The vector of active power injected by generators to the buses, denoted by ``\ma
 
 ##### Power Flows
 The resulting [active power flows](@ref DCBranchNetworkEquationsTutorials) are stored as the vector ``\mathbf{P}_{\text{i}} = [P_{ij}]``, which can be retrieved using:
-```@repl DCSEObservability
+```@repl DCSETutorial
 𝐏ᵢ = analysis.power.from.active
 ```
 
 Similarly, the resulting [active power flows](@ref DCBranchNetworkEquationsTutorials) are stored as the vector ``\mathbf{P}_{\text{j}} = [P_{ji}]``, which can be retrieved using:
-```@repl DCSEObservability
+```@repl DCSETutorial
 𝐏ⱼ = analysis.power.to.active
 ```
 
