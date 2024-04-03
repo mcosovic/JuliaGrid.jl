@@ -349,7 +349,7 @@ function acLavStateEstimation(system::PowerSystem, device::Measurement, (@nospec
     residualx = @variable(jump, 0 <= residualx[i = 1:measureNumber])
     residualy = @variable(jump, 0 <= residualy[i = 1:measureNumber])
 
-    fix(anglex[bus.layout.slack], 0.0; force = true)
+    fix(anglex[bus.layout.slack], bus.voltage.angle[bus.layout.slack]; force = true)
     fix(angley[bus.layout.slack], 0.0; force = true)
 
     objective = @expression(jump, AffExpr())
@@ -454,7 +454,7 @@ function acLavStateEstimation(system::PowerSystem, device::Measurement, (@nospec
 
             if ammeter.layout.from[k]
                 A, B, C, D = IijCoeff(gij, gsi, bij, bsi, tij)
-                residual[idx] = @constraint(jump, sqrt(A * Vi^2 + B * Vj^2 - 2 * Vi * Vj * (C * cosAngle - D * sinAngle)) + residualx[idx] - residualy[idx] - ammeter.magnitude.mean[k] == 0)
+                residual[idx] = @constraint(jump, sqrt(A * Vi^2 + B * Vj^2 - 2 * Vi * Vj * (C * cosAngle - D * sinAngle)) + (residualx[idx] - residualy[idx] - ammeter.magnitude.mean[k]) == 0)
             else
                 A, B, C, D = IjiCoeff(gij, gsi, bij, bsi, tij)
                 residual[idx] = @constraint(jump, sqrt(A * Vi^2 + B * Vj^2 - 2 * Vi * Vj * (C * cosAngle + D * sinAngle)) + residualx[idx] - residualy[idx] - ammeter.magnitude.mean[k] == 0)

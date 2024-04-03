@@ -1,16 +1,16 @@
 system14 = powerSystem(string(pathData, "case14test.m"))
 system30 = powerSystem(string(pathData, "case30test.m"))
 
-@testset "Nonlinear State Estimation" begin
+@testset "AC State Estimation" begin
     @default(template)
     @default(unit)
-    
-    ################ Modified IEEE 14-bus Test Case ################
+
+    ############### Modified IEEE 14-bus Test Case ################
     updateBus!(system14; label = 1, type = 2)
     updateBus!(system14; label = 3, type = 3, angle = -0.25)
     updateBranch!(system14; label = 3, conductance = 0.01)
     updateBranch!(system14; label = 6, conductance = 0.05)
-    
+
     acModel!(system14)
     analysis = newtonRaphson(system14)
     for i = 1:1000
@@ -22,7 +22,7 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     end
     power!(system14, analysis)
     current!(system14, analysis)
-    
+
     device = measurement()
     for (key, value) in system14.bus.label
         addVoltmeter!(system14, device; bus = key, magnitude = analysis.voltage.magnitude[value], noise = false)
@@ -31,7 +31,7 @@ system30 = powerSystem(string(pathData, "case30test.m"))
         addPmu!(system14, device; bus = key, magnitude = analysis.voltage.magnitude[value], angle = analysis.voltage.angle[value], noise = false)
         addPmu!(system14, device; bus = key, magnitude = analysis.voltage.magnitude[value], angle = analysis.voltage.angle[value], noise = false, polar = false)
     end
-    
+
     for (key, value) in system14.branch.label
         addWattmeter!(system14, device; from = key, active = analysis.power.from.active[value], noise = false)
         addWattmeter!(system14, device; to = key, active = analysis.power.to.active[value], noise = false)
@@ -44,7 +44,7 @@ system30 = powerSystem(string(pathData, "case30test.m"))
         addPmu!(system14, device; from = key, magnitude = analysis.current.from.magnitude[value], angle = analysis.current.from.angle[value], noise = false, polar = false)
         addPmu!(system14, device; to = key, magnitude = analysis.current.to.magnitude[value], angle = analysis.current.to.angle[value], noise = false, polar = false)
     end
-    
+
     ####### LU Factorization #######
     analysisLU = gaussNewton(system14, device, LU)
     for iteration = 1:20
@@ -55,7 +55,7 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     end
     @test analysisLU.voltage.magnitude ≈ analysis.voltage.magnitude
     @test analysisLU.voltage.angle ≈ analysis.voltage.angle
-    
+
     ###### QR Factorization #######
     analysisQR = gaussNewton(system14, device, QR)
     for iteration = 1:100
@@ -67,6 +67,25 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     solve!(system14, analysisQR)
     @test analysisQR.voltage.magnitude ≈ analysis.voltage.magnitude
     @test analysisQR.voltage.angle ≈ analysis.voltage.angle
+
+    ####### Orthogonal Method #######
+    analysisOrt = gaussNewton(system14, device, Orthogonal)
+    for iteration = 1:100
+        stopping = solve!(system14, analysisOrt)
+        if stopping < 1e-8
+            break
+        end
+    end
+    solve!(system14, analysisOrt)
+    @test analysisOrt.voltage.magnitude ≈ analysis.voltage.magnitude
+    @test analysisOrt.voltage.angle ≈ analysis.voltage.angle
+
+    ####### LAV #######
+    analysisLAV = acLavStateEstimation(system14, device, Ipopt.Optimizer)
+    JuMP.set_silent(analysisLAV.method.jump)
+    solve!(system14, analysisLAV)
+    @test analysisLAV.voltage.magnitude ≈ analysis.voltage.magnitude
+    @test analysisLAV.voltage.angle ≈ analysis.voltage.angle
 
     ################ Modified IEEE 30-bus Test Case ################
     acModel!(system30)
@@ -80,7 +99,7 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     end
     power!(system30, analysis)
     current!(system30, analysis)
-  
+
     device = measurement()
     for (key, value) in system30.bus.label
         addVoltmeter!(system30, device; bus = key, magnitude = analysis.voltage.magnitude[value], noise = false)
@@ -113,7 +132,7 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     end
     @test analysisLU.voltage.magnitude ≈ analysis.voltage.magnitude
     @test analysisLU.voltage.angle ≈ analysis.voltage.angle
-     
+
     ###### QR Factorization #######
     analysisQR = gaussNewton(system30, device, QR)
     for iteration = 1:200
@@ -154,7 +173,33 @@ system30 = powerSystem(string(pathData, "case30test.m"))
         end
     end
     @test analysisOrt.voltage.magnitude ≈ analysis.voltage.magnitude
-    @test analysisOrt.voltage.angle ≈ analysis.voltage.angle    
+    @test analysisOrt.voltage.angle ≈ analysis.voltage.angle
+
+
+    ####### LAV #######
+    device = measurement()
+    for (key, value) in system30.bus.label
+        addVoltmeter!(system30, device; bus = key, magnitude = analysis.voltage.magnitude[value], noise = false)
+        addWattmeter!(system30, device; bus = key, active = analysis.power.injection.active[value], noise = false)
+        addVarmeter!(system30, device; bus = key, reactive = analysis.power.injection.reactive[value], noise = false)
+        addPmu!(system30, device; bus = key, magnitude = analysis.voltage.magnitude[value], angle = analysis.voltage.angle[value], noise = false)
+        addPmu!(system30, device; bus = key, magnitude = analysis.voltage.magnitude[value], angle = analysis.voltage.angle[value], noise = false, polar = false)
+    end
+
+    for (key, value) in system30.branch.label
+        addWattmeter!(system30, device; from = key, active = analysis.power.from.active[value], noise = false)
+        addWattmeter!(system30, device; to = key, active = analysis.power.to.active[value], noise = false)
+        addVarmeter!(system30, device; from = key, reactive = analysis.power.from.reactive[value], noise = false)
+        addVarmeter!(system30, device; to = key, reactive = analysis.power.to.reactive[value], noise = false)
+        addPmu!(system30, device; from = key, magnitude = analysis.current.from.magnitude[value], angle = analysis.current.from.angle[value], noise = false, polar = false)
+        addPmu!(system30, device; to = key, magnitude = analysis.current.to.magnitude[value], angle = analysis.current.to.angle[value], noise = false, polar = false)
+    end
+
+    analysisLAV = acLavStateEstimation(system30, device, Ipopt.Optimizer)
+    JuMP.set_silent(analysisLAV.method.jump)
+    solve!(system30, analysisLAV)
+    @test analysisLAV.voltage.magnitude ≈ analysis.voltage.magnitude
+    @test analysisLAV.voltage.angle ≈ analysis.voltage.angle
 end
 
 system14 = powerSystem(string(pathData, "case14test.m"))
@@ -188,7 +233,7 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     end
     for (key, value) in system14.branch.label
         addPmu!(system14, device; from = key, magnitude = analysis.current.from.magnitude[value], angle = analysis.current.from.angle[value], noise = false)
-        addPmu!(system14, device; to = key, magnitude = analysis.current.to.magnitude[value], angle = analysis.current.to.angle[value], noise = false) 
+        addPmu!(system14, device; to = key, magnitude = analysis.current.to.magnitude[value], angle = analysis.current.to.angle[value], noise = false)
     end
 
     ####### LU Factorization #######
@@ -202,7 +247,7 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     solve!(system14, analysisQR)
     @test analysisQR.voltage.magnitude ≈ analysis.voltage.magnitude
     @test analysisQR.voltage.angle ≈ analysis.voltage.angle
-   
+
     ####### Orthogonal Method #######
     analysisOrt = pmuWlsStateEstimation(system14, device, Orthogonal)
     solve!(system14, analysisOrt)
@@ -214,8 +259,8 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     JuMP.set_silent(analysisLAV.method.jump)
     solve!(system14, analysisLAV)
     @test analysisLAV.voltage.magnitude ≈ analysis.voltage.magnitude
-    @test analysisLAV.voltage.angle ≈ analysis.voltage.angle 
-    
+    @test analysisLAV.voltage.angle ≈ analysis.voltage.angle
+
     ####### Compare Powers #######
     power!(system14, analysisQR)
     @test analysisQR.power.injection.active ≈ analysis.power.injection.active
@@ -238,35 +283,35 @@ system30 = powerSystem(string(pathData, "case30test.m"))
         active, reactive = injectionPower(system14, analysisQR; label = key)
         @test active ≈ analysis.power.injection.active[value] atol = 1e-6
         @test reactive ≈ analysis.power.injection.reactive[value] atol = 1e-6
-        
+
         active, reactive = supplyPower(system14, analysisQR; label = key)
         @test active ≈ analysis.power.supply.active[value] atol = 1e-6
         @test reactive ≈ analysis.power.supply.reactive[value] atol = 1e-6
 
-        active, reactive = shuntPower(system14, analysisQR; label = key) 
+        active, reactive = shuntPower(system14, analysisQR; label = key)
         @test active ≈ analysis.power.shunt.active[value] atol = 1e-6
         @test reactive ≈ analysis.power.shunt.reactive[value] atol = 1e-6
     end
 
     ####### Compare Branch Powers #######
     for (key, value) in system14.branch.label
-        active, reactive = fromPower(system14, analysisQR; label = key) 
+        active, reactive = fromPower(system14, analysisQR; label = key)
         @test active ≈ analysis.power.from.active[value] atol = 1e-6
         @test reactive ≈ analysis.power.from.reactive[value] atol = 1e-6
 
-        active, reactive = toPower(system14, analysisQR; label = key) 
+        active, reactive = toPower(system14, analysisQR; label = key)
         @test active ≈ analysis.power.to.active[value] atol = 1e-6
         @test reactive ≈ analysis.power.to.reactive[value] atol = 1e-6
 
-        active, reactive = seriesPower(system14, analysisQR; label = key) 
+        active, reactive = seriesPower(system14, analysisQR; label = key)
         @test active ≈ analysis.power.series.active[value] atol = 1e-6
         @test reactive ≈ analysis.power.series.reactive[value] atol = 1e-6
 
-        active, reactive = chargingPower(system14, analysisQR; label = key) 
+        active, reactive = chargingPower(system14, analysisQR; label = key)
         @test active ≈ analysis.power.charging.active[value] atol = 1e-6
         @test reactive ≈ analysis.power.charging.reactive[value] atol = 1e-6
-    end   
-    
+    end
+
     ################ Modified IEEE 30-bus Test Case ################
     acModel!(system30)
     analysis = newtonRaphson(system30)
@@ -285,7 +330,7 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     end
     for (key, value) in system30.branch.label
         addPmu!(system30, device; from = key, magnitude = analysis.current.from.magnitude[value], angle = analysis.current.from.angle[value], varianceAngle = 1e-7, varianceMagnitude = varianceAngle = 1e-6, correlated = true)
-        addPmu!(system30, device; to = key, magnitude = analysis.current.to.magnitude[value], angle = analysis.current.to.angle[value], varianceAngle = 1e-4, varianceMagnitude = varianceAngle = 1e-5) 
+        addPmu!(system30, device; to = key, magnitude = analysis.current.to.magnitude[value], angle = analysis.current.to.angle[value], varianceAngle = 1e-4, varianceMagnitude = varianceAngle = 1e-5)
     end
 
     ####### LU Factorization #######
@@ -293,7 +338,7 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     solve!(system30, analysisLU)
     @test analysisLU.voltage.magnitude ≈ analysis.voltage.magnitude atol = 1e-2
     @test analysisLU.voltage.angle ≈ analysis.voltage.angle atol = 1e-2
-        
+
     ####### LAV #######
     analysisLAV = pmuLavStateEstimation(system30, device, Ipopt.Optimizer)
     JuMP.set_silent(analysisLAV.method.jump)
@@ -309,7 +354,7 @@ system30 = powerSystem(string(pathData, "case30test.m"))
 @testset "DC State Estimation" begin
     @default(template)
     @default(unit)
-    
+
     ############### Modified IEEE 14-bus Test Case ################
     updateBus!(system14; label = 1, type = 2)
     updateBus!(system14; label = 3, type = 3, angle = -0.17)
@@ -326,7 +371,7 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     end
     for (key, value) in system14.branch.label
         addWattmeter!(system14, device; from = key, active = analysis.power.from.active[value], noise = false)
-        addWattmeter!(system14, device; to = key, active = analysis.power.to.active[value], noise = false) 
+        addWattmeter!(system14, device; to = key, active = analysis.power.to.active[value], noise = false)
     end
 
     ####### LU Factorization #######
@@ -342,7 +387,7 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     ####### Orthogonal Method #######
     analysisOrt = dcWlsStateEstimation(system14, device, Orthogonal)
     solve!(system14, analysisOrt)
-    @test analysisOrt.voltage.angle ≈ analysis.voltage.angle 
+    @test analysisOrt.voltage.angle ≈ analysis.voltage.angle
 
     ####### LAV #######
     analysisLAV = dcLavStateEstimation(system14, device, Ipopt.Optimizer)
@@ -368,7 +413,7 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     ####### Orthogonal Method #######
     analysisOrt = dcWlsStateEstimation(system14, device, Orthogonal)
     solve!(system14, analysisOrt)
-    @test analysisOrt.voltage.angle ≈ analysis.voltage.angle 
+    @test analysisOrt.voltage.angle ≈ analysis.voltage.angle
 
     ####### LAV #######
     analysisLAV = dcLavStateEstimation(system14, device, Ipopt.Optimizer)
@@ -408,7 +453,7 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     end
     for (key, value) in system30.branch.label
         addWattmeter!(system30, device; from = key, active = analysis.power.from.active[value], variance = 1e-7)
-        addWattmeter!(system30, device; to = key, active = analysis.power.to.active[value], variance = 1e-8) 
+        addWattmeter!(system30, device; to = key, active = analysis.power.to.active[value], variance = 1e-8)
     end
 
     ####### LU Factorization #######
@@ -424,7 +469,7 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     ####### Orthogonal Method #######
     analysisOrt = dcWlsStateEstimation(system30, device, Orthogonal)
     solve!(system30, analysisOrt)
-    @test analysisOrt.voltage.angle ≈ analysis.voltage.angle atol = 1e-2 
+    @test analysisOrt.voltage.angle ≈ analysis.voltage.angle atol = 1e-2
 
     ####### LAV #######
     analysisLAV = dcLavStateEstimation(system30, device, Ipopt.Optimizer)
@@ -450,7 +495,7 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     ####### Orthogonal Method #######
     analysisOrt = dcWlsStateEstimation(system30, device, Orthogonal)
     solve!(system30, analysisOrt)
-    @test analysisOrt.voltage.angle ≈ analysis.voltage.angle atol = 1e-2 
+    @test analysisOrt.voltage.angle ≈ analysis.voltage.angle atol = 1e-2
 
     ####### LAV #######
     analysisLAV = dcLavStateEstimation(system30, device, Ipopt.Optimizer)
@@ -509,7 +554,7 @@ system30 = powerSystem(string(pathData, "case30test.m"))
 @testset "DC State Estimation: Incomplete Set" begin
     @default(template)
     @default(unit)
-    
+
     ############### Modified IEEE 14-bus Test Case ################
     dcModel!(system14)
     updateBranch!(system14; label = 4, status = 0)
@@ -563,8 +608,8 @@ system30 = powerSystem(string(pathData, "case30test.m"))
             addPmu!(system14, deviceAll; bus = key, magnitude = 1.0, angle = analysis.voltage.angle[value], noise = false, statusAngle = 0)
         else
             addPmu!(system14, deviceAll; bus = key, magnitude = 1.0, angle = analysis.voltage.angle[value], noise = false)
-            addPmu!(system14, devicePart; bus = key, magnitude = 1.0, angle = analysis.voltage.angle[value], noise = false)        
-        end 
+            addPmu!(system14, devicePart; bus = key, magnitude = 1.0, angle = analysis.voltage.angle[value], noise = false)
+        end
     end
 
     analysisAll = dcWlsStateEstimation(system14, deviceAll)
