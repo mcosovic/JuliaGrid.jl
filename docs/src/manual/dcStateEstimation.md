@@ -10,8 +10,8 @@ After executing the function [`solve!`](@ref solve!(::PowerSystem, ::DCStateEsti
 * [`residualTest!`](@ref residualTest!).
 
 Moreover, before the creating `DCStateEstimation` type, users can initiate observability analysis to identify observable islands and restore observability by employing:
-* [`islandTopologicalFlow`](@ref islandTopologicalFlow(::PowerSystem, ::Wattmeter)),
-* [`islandTopological`](@ref islandTopological(::PowerSystem, ::Wattmeter)),
+* [`islandTopologicalFlow`](@ref islandTopologicalFlow(::PowerSystem, ::Measurement)),
+* [`islandTopological`](@ref islandTopological(::PowerSystem, ::Measurement)),
 * [`restorationGram!`](@ref restorationGram!(::PowerSystem, ::Measurement, ::Measurement, ::Island)).
 
 ---

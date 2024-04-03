@@ -5,8 +5,8 @@ For further information on this topic, please see the [PMU State Estimation](@re
 ---
 
 ###### Observability Analysis
-* [`islandTopologicalFlow`](@ref islandTopologicalFlow(::PowerSystem, ::Wattmeter))
-* [`islandTopological`](@ref islandTopological(::PowerSystem, ::Wattmeter))
+* [`islandTopologicalFlow`](@ref islandTopologicalFlow(::PowerSystem, ::Measurement))
+* [`islandTopological`](@ref islandTopological(::PowerSystem, ::Measurement))
 * [`restorationGram!`](@ref restorationGram!(::PowerSystem, ::Measurement, ::Measurement, ::Island))
 
 ###### AC State Estimation
@@ -38,8 +38,8 @@ using JuliaGrid
 
 ## Observability Analysis
 ```@docs
-islandTopologicalFlow(::PowerSystem, ::Wattmeter)
-islandTopological(::PowerSystem, ::Wattmeter)
+islandTopologicalFlow(::PowerSystem, ::Measurement)
+islandTopological(::PowerSystem, ::Measurement)
 restorationGram!(::PowerSystem, ::Measurement, ::Measurement, ::Island)
 ```
 
