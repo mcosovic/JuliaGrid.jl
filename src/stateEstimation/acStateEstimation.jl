@@ -119,7 +119,7 @@ function acStateEstimationWLS(system::PowerSystem, device::Measurement)
     if isempty(ac.nodalMatrix)
         acModel!(system)
     end
-    if isempty(system.bus.supply.generator[system.bus.layout.slack])
+    if isempty(bus.supply.generator[bus.layout.slack])
         changeSlackBus!(system)
     end
 
@@ -329,11 +329,17 @@ function acLavStateEstimation(system::PowerSystem, device::Measurement, (@nospec
     varmeter = device.varmeter
     pmu = device.pmu
 
-    measureNumber = voltmeter.number + ammeter.number + wattmeter.number + varmeter.number + 2 * pmu.number
-
+    if bus.layout.slack == 0
+        throw(ErrorException("The slack bus is missing."))
+    end
     if isempty(ac.nodalMatrix)
         acModel!(system)
     end
+    if isempty(bus.supply.generator[bus.layout.slack])
+        changeSlackBus!(system)
+    end
+
+    measureNumber = voltmeter.number + ammeter.number + wattmeter.number + varmeter.number + 2 * pmu.number
 
     jump = JuMP.Model(optimizerFactory; add_bridges = bridge)
     set_string_names_on_creation(jump, name)
@@ -625,7 +631,7 @@ device = measurement("measurement14.h5")
 
 analysis = gaussNewton(system, device)
 for iteration = 1:20
-    stopping = solve!(system14, analysis)
+    stopping = solve!(system, analysis)
     if stopping < 1e-8
         break
     end

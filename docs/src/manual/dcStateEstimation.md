@@ -13,6 +13,7 @@ Moreover, before the creating `DCStateEstimation` type, users can initiate obser
 * [`islandTopologicalFlow`](@ref islandTopologicalFlow(::PowerSystem, ::Measurement)),
 * [`islandTopological`](@ref islandTopological(::PowerSystem, ::Measurement)),
 * [`restorationGram!`](@ref restorationGram!(::PowerSystem, ::Measurement, ::Measurement, ::Island)).
+For more detailed information, users can refer to the [Observability Analysis](@ref ACSEObservabilityAnalysisManual) section within AC state estimation documentation. It is worth noting that when the system becomes observable within the AC model, it will also be observable within the DC state estimation model.
 
 ---
 
@@ -128,7 +129,7 @@ Hence, upon detecting bad data, the `detect` variable will hold `true`. The `max
 
 Moreover, JuliaGrid will adjust the coefficient matrix and mean vector within the `DCStateEstimation` type based on measurements now designated as out-of-service. To optimize the algorithm's efficiency, JuliaGrid resets non-zero elements to zero in the coefficient matrix and mean vector. The `index` variable denotes positions within the mean vector that will be reset to zero. Additionally, it records the row index within the coefficient matrix where non-zero elements will be adjusted to zero. Here's an illustration:
 ```@repl WLSDCStateEstimationSolution
-analysis.outlier.index
+analysis.method.outlier.index
 analysis.method.mean
 analysis.method.coefficient
 ```

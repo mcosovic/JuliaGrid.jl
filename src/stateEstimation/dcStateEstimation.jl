@@ -236,8 +236,14 @@ function dcLavStateEstimation(system::PowerSystem, device::Measurement, (@nospec
     pmu = device.pmu
     deviceNumber = wattmeter.number + pmu.number
 
+    if bus.layout.slack == 0
+        throw(ErrorException("The slack bus is missing."))
+    end
     if isempty(dc.nodalMatrix)
         dcModel!(system)
+    end
+    if isempty(bus.supply.generator[bus.layout.slack])
+        changeSlackBus!(system)
     end
 
     jump = JuMP.Model(optimizerFactory; add_bridges = bridge)

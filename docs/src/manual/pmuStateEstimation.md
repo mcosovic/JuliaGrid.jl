@@ -1,7 +1,7 @@
 # [PMU State Estimation](@id PMUStateEstimationManual)
 To perform linear state estimation solely based on PMU data, the initial requirement is to have the `PowerSystem` composite type configured with the AC model, along with the `Measurement` composite type storing measurement data. Subsequently, we can formulate either the weighted least-squares (WLS) or the least absolute value (LAV) PMU state estimation model encapsulated within the abstract type `PMUStateEstimation` using:
 * [`pmuWlsStateEstimation`](@ref pmuWlsStateEstimation),
-* [`pmuLavStateEstimation`](@ref pmuLavStateEstimation),
+* [`pmuLavStateEstimation`](@ref pmuLavStateEstimation).
 
 For resolving the PMU state estimation problem and obtaining bus voltage magnitudes and angles, utilize the following function:
 * [`solve!`](@ref solve!(::PowerSystem, ::PMUStateEstimation{LinearWLS{Normal}})).
