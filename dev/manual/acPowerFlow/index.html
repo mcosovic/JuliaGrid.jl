@@ -8,7 +8,6 @@ addBus!(system; label = &quot;Bus 3&quot;, type = 2)
 addGenerator!(system; bus = &quot;Bus 2&quot;)
 
 acModel!(system)
-
 analysis = newtonRaphson(system)</code></pre><p>Initially, the <code>Bus 1</code> is set as the slack bus (<code>type = 3</code>), and the <code>Bus 2</code> and <code>Bus 3</code> are generator buses (<code>type = 2</code>). However, the <code>Bus 3</code> does not have a generator, and JuliaGrid considers this a mistake and changes the corresponding bus to a demand bus (<code>type = 1</code>).</p><p>After this step, JuliaGrid verifies the slack bus. Initially, the slack bus (<code>type = 3</code>) corresponds to <code>Bus 1</code>, but since it does not have an in-service generator connected to it, JuliaGrid recognizes it as an error. Therefore, JuliaGrid assigns a new slack bus from the available generator buses (<code>type = 2</code>) that have connected in-service generators. In this specific example, <code>Bus 2</code> becomes the new slack bus.</p><p>As a result, we can observe the updated array of bus types:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; print(system.bus.label, system.bus.layout.type)</code><code class="nohighlight hljs ansi" style="display:block;">Bus 1: 1
 Bus 2: 3
 Bus 3: 1</code></pre><p>Note that, if a bus is initially defined as the demand bus (<code>type = 1</code>) and later a generator is added to it, the bus type will not be changed to the generator bus (<code>type = 2</code>). Instead, it will remain as a demand bus.</p><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p>The type of only those buses that are defined as generator buses (<code>type = 2</code>) but do not have a connected in-service generator will be changed to demand buses (<code>type = 1</code>).</p><p>The bus that is defined as the slack bus (<code>type = 3</code>) but lacks a connected in-service generator will have its type changed to the demand bus (<code>type = 1</code>). Meanwhile, the first generator bus (<code>type = 2</code>) with an in-service generator connected to it will be assigned as the new slack bus (<code>type = 3</code>).</p></div></div><hr/><h2 id="SetupStartingVoltagesManual"><a class="docs-heading-anchor" href="#SetupStartingVoltagesManual">Setup Starting Voltages</a><a id="SetupStartingVoltagesManual-1"></a><a class="docs-heading-anchor-permalink" href="#SetupStartingVoltagesManual" title="Permalink"></a></h2><p>To begin analysing the AC power flow in JuliaGrid, we must first establish the <code>PowerSystem</code> composite type and define the AC model by calling the <a href="../../api/powerSystemModel/#JuliaGrid.acModel!"><code>acModel!</code></a> function. Once the power system is set up, we can select one of the available methods for solving the AC power flow problem, such as <a href="../../api/powerFlow/#JuliaGrid.newtonRaphson"><code>newtonRaphson</code></a>, <a href="../../api/powerFlow/#JuliaGrid.fastNewtonRaphsonBX"><code>fastNewtonRaphsonBX</code></a>, <a href="../../api/powerFlow/#JuliaGrid.fastNewtonRaphsonXB"><code>fastNewtonRaphsonXB</code></a>, or <a href="../../api/powerFlow/#JuliaGrid.gaussSeidel"><code>gaussSeidel</code></a>.</p><p>Assuming we have selected the Newton-Raphson method, we can use the following code snippet:</p><pre><code class="language-julia hljs">system = powerSystem()
@@ -22,7 +21,6 @@ addGenerator!(system; bus = &quot;Bus 2&quot;, magnitude = 1.1)
 addGenerator!(system; bus = &quot;Bus 3&quot;, magnitude = 1.2)
 
 acModel!(system)
-
 analysis = newtonRaphson(system)</code></pre><p>Here, in this code snippet, the function <a href="../../api/powerFlow/#JuliaGrid.newtonRaphson"><code>newtonRaphson</code></a> generates starting voltage vectors in polar coordinates, where the magnitudes and angles are constructed as:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)</code><code class="nohighlight hljs ansi" style="display:block;">Bus 1: 1.3, 0.0
 Bus 2: 0.9, -0.1
 Bus 3: 1.2, -0.2</code></pre><p>The starting voltage magnitudes are determined by a combination of the initial values specified within the buses and the setpoints provided within the generators:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; [system.bus.voltage.magnitude system.generator.voltage.magnitude]</code><code class="nohighlight hljs ansi" style="display:block;">3×2 Matrix{Float64}:
@@ -93,16 +91,17 @@ for iteration = 1:100
         break
     end
     solve!(system, analysis)
-end</code></pre><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p>The functions <a href="../../api/powerFlow/#JuliaGrid.newtonRaphson"><code>newtonRaphson</code></a>, <a href="../../api/powerFlow/#JuliaGrid.fastNewtonRaphsonBX"><code>fastNewtonRaphsonBX</code></a>, <a href="../../api/powerFlow/#JuliaGrid.fastNewtonRaphsonXB"><code>fastNewtonRaphsonXB</code></a>, or <a href="../../api/powerFlow/#JuliaGrid.gaussSeidel"><code>gaussSeidel</code></a> only modify the <code>PowerSystem</code> type to eliminate mistakes in the bus types as explained in the section <a href="#BusTypeModificationManual">Bus Type Modification</a>. Further, the functions <a href="../../api/powerFlow/#JuliaGrid.mismatch!-Tuple{PowerSystem, ACPowerFlow{NewtonRaphson}}"><code>mismatch!</code></a> and <a href="../../api/powerFlow/#JuliaGrid.solve!-Tuple{PowerSystem, ACPowerFlow{NewtonRaphson}}"><code>solve!</code></a> do not modify the <code>PowerSystem</code> type at all. Therefore, it is safe to use the same <code>PowerSystem</code> type for multiple analyses once it has been created.</p></div></div><hr/><h2 id="ACPowerSystemAlterationManual"><a class="docs-heading-anchor" href="#ACPowerSystemAlterationManual">Power System Update</a><a id="ACPowerSystemAlterationManual-1"></a><a class="docs-heading-anchor-permalink" href="#ACPowerSystemAlterationManual" title="Permalink"></a></h2><p>After establishing the <code>PowerSystem</code> composite type using the <a href="../../api/powerSystemModel/#JuliaGrid.powerSystem"><code>powerSystem</code></a> function and configuring the AC model with <a href="../../api/powerSystemModel/#JuliaGrid.acModel!"><code>acModel!</code></a>, users gain the capability to incorporate new branches and generators. Furthermore, they can adjust buses, branches, and generators.</p><p>Once updates are done, users can progress towards generating the <code>ACPowerFlow</code> type using the <a href="../../api/powerFlow/#JuliaGrid.newtonRaphson"><code>newtonRaphson</code></a>, <a href="../../api/powerFlow/#JuliaGrid.fastNewtonRaphsonBX"><code>fastNewtonRaphsonBX</code></a>, <a href="../../api/powerFlow/#JuliaGrid.fastNewtonRaphsonXB"><code>fastNewtonRaphsonXB</code></a>, or <a href="../../api/powerFlow/#JuliaGrid.gaussSeidel"><code>gaussSeidel</code></a> function. Ultimately, resolving the AC power flow is achieved through the utilization of the <a href="../../api/powerFlow/#JuliaGrid.mismatch!-Tuple{PowerSystem, ACPowerFlow{NewtonRaphson}}"><code>mismatch!</code></a> and <a href="../../api/powerFlow/#JuliaGrid.solve!-Tuple{PowerSystem, ACPowerFlow{NewtonRaphson}}"><code>solve!</code></a> functions:</p><pre><code class="language-julia hljs">@branch(resistance = 0.02, conductance = 1e-4, susceptance = 0.04)
-@generator(active = 3.2)
+end</code></pre><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p>The functions <a href="../../api/powerFlow/#JuliaGrid.newtonRaphson"><code>newtonRaphson</code></a>, <a href="../../api/powerFlow/#JuliaGrid.fastNewtonRaphsonBX"><code>fastNewtonRaphsonBX</code></a>, <a href="../../api/powerFlow/#JuliaGrid.fastNewtonRaphsonXB"><code>fastNewtonRaphsonXB</code></a>, or <a href="../../api/powerFlow/#JuliaGrid.gaussSeidel"><code>gaussSeidel</code></a> only modify the <code>PowerSystem</code> type to eliminate mistakes in the bus types as explained in the section <a href="#BusTypeModificationManual">Bus Type Modification</a>. Further, the functions <a href="../../api/powerFlow/#JuliaGrid.mismatch!-Tuple{PowerSystem, ACPowerFlow{NewtonRaphson}}"><code>mismatch!</code></a> and <a href="../../api/powerFlow/#JuliaGrid.solve!-Tuple{PowerSystem, ACPowerFlow{NewtonRaphson}}"><code>solve!</code></a> do not modify the <code>PowerSystem</code> type at all. Therefore, it is safe to use the same <code>PowerSystem</code> type for multiple analyses once it has been created.</p></div></div><hr/><h2 id="ACPowerSystemAlterationManual"><a class="docs-heading-anchor" href="#ACPowerSystemAlterationManual">Power System Update</a><a id="ACPowerSystemAlterationManual-1"></a><a class="docs-heading-anchor-permalink" href="#ACPowerSystemAlterationManual" title="Permalink"></a></h2><p>After establishing the <code>PowerSystem</code> composite type using the <a href="../../api/powerSystemModel/#JuliaGrid.powerSystem"><code>powerSystem</code></a> function and configuring the AC model with <a href="../../api/powerSystemModel/#JuliaGrid.acModel!"><code>acModel!</code></a>, users gain the capability to incorporate new branches and generators. Furthermore, they can adjust buses, branches, and generators.</p><p>Once updates are done, users can progress towards generating the <code>ACPowerFlow</code> type using the <a href="../../api/powerFlow/#JuliaGrid.newtonRaphson"><code>newtonRaphson</code></a>, <a href="../../api/powerFlow/#JuliaGrid.fastNewtonRaphsonBX"><code>fastNewtonRaphsonBX</code></a>, <a href="../../api/powerFlow/#JuliaGrid.fastNewtonRaphsonXB"><code>fastNewtonRaphsonXB</code></a>, or <a href="../../api/powerFlow/#JuliaGrid.gaussSeidel"><code>gaussSeidel</code></a> function. Ultimately, resolving the AC power flow is achieved through the utilization of the <a href="../../api/powerFlow/#JuliaGrid.mismatch!-Tuple{PowerSystem, ACPowerFlow{NewtonRaphson}}"><code>mismatch!</code></a> and <a href="../../api/powerFlow/#JuliaGrid.solve!-Tuple{PowerSystem, ACPowerFlow{NewtonRaphson}}"><code>solve!</code></a> functions:</p><pre><code class="language-julia hljs">system = powerSystem()
 
-system = powerSystem()
 addBus!(system; label = &quot;Bus 1&quot;, type = 3, active = 0.5, magnitude = 0.9, angle = 0.0)
 addBus!(system; label = &quot;Bus 2&quot;, type = 1, reactive = 0.05, magnitude = 1.1, angle = -0.1)
-addBranch!(system; label = &quot;Branch 1&quot;, from = &quot;Bus 1&quot;, to = &quot;Bus 2&quot;, reactance = 0.05)
-addGenerator!(system; label = &quot;Generator 1&quot;, bus = &quot;Bus 1&quot;, magnitude = 1.1)
-acModel!(system)
 
+@branch(resistance = 0.02, conductance = 1e-4, susceptance = 0.04)
+addBranch!(system; label = &quot;Branch 1&quot;, from = &quot;Bus 1&quot;, to = &quot;Bus 2&quot;, reactance = 0.05)
+
+addGenerator!(system; label = &quot;Generator 1&quot;, bus = &quot;Bus 1&quot;, magnitude = 1.1, active = 3.2)
+
+acModel!(system)
 analysis = newtonRaphson(system)
 for iteration = 1:100
     mismatch!(system, analysis)
@@ -110,8 +109,10 @@ for iteration = 1:100
 end
 
 updateBus!(system; label = &quot;Bus 2&quot;, active = 0.2)
+
 addBranch!(system; label = &quot;Branch 2&quot;, from = &quot;Bus 1&quot;, to = &quot;Bus 2&quot;, reactance = 1)
 updateBranch!(system; label = &quot;Branch 1&quot;, status = 0)
+
 addGenerator!(system; label = &quot;Generator 2&quot;, bus = &quot;Bus 1&quot;, active = 0.2)
 updateGenerator!(system; label = &quot;Generator 1&quot;, active = 0.3)
 
@@ -119,16 +120,17 @@ analysis = newtonRaphson(system)
 for iteration = 1:100
     mismatch!(system, analysis)
     solve!(system, analysis)
-end</code></pre><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p>This method removes the need to restart and recreate the <code>PowerSystem</code> within the <code>ac</code> field from the beginning when implementing changes to the existing power system.</p></div></div><hr/><h2 id="ACPowerFlowUpdateManual"><a class="docs-heading-anchor" href="#ACPowerFlowUpdateManual">Power Flow Update</a><a id="ACPowerFlowUpdateManual-1"></a><a class="docs-heading-anchor-permalink" href="#ACPowerFlowUpdateManual" title="Permalink"></a></h2><p>An advanced methodology involves users establishing the <code>ACPowerFlow</code> type using using <a href="../../api/powerFlow/#JuliaGrid.newtonRaphson"><code>newtonRaphson</code></a>, <a href="../../api/powerFlow/#JuliaGrid.fastNewtonRaphsonBX"><code>fastNewtonRaphsonBX</code></a>, <a href="../../api/powerFlow/#JuliaGrid.fastNewtonRaphsonXB"><code>fastNewtonRaphsonXB</code></a>, or <a href="../../api/powerFlow/#JuliaGrid.gaussSeidel"><code>gaussSeidel</code></a> just once. After this initial setup, users can integrate new branches and generators, and also have the capability to modify buses, branches, and generators, all without the need to recreate the <code>ACPowerFlow</code> type.</p><p>This advancement extends beyond the previous scenario where recreating the <code>PowerSystem</code> and AC model was unnecessary, to now include the scenario where <code>ACPowerFlow</code> also does not need to be recreated. Such efficiency proves particularly beneficial in cases where JuliaGrid can reuse established Jacobian matrices or even factorizations, especially when users choose the fast Newton-Raphson method.</p><p>By modifying the previous example, we observe that we now create the <code>ACPowerFlow</code> type only once using the <a href="../../api/powerFlow/#JuliaGrid.newtonRaphson"><code>newtonRaphson</code></a> function. This approach allows us to circumvent the need for reinitializing the Jacobian matrix, enabling us to proceed directly with iterations:</p><pre><code class="language-julia hljs">@branch(resistance = 0.02, conductance = 1e-4, susceptance = 0.04)
-@generator(active = 3.2)
+end</code></pre><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p>This method removes the need to restart and recreate the <code>PowerSystem</code> within the <code>ac</code> field from the beginning when implementing changes to the existing power system.</p></div></div><hr/><h2 id="ACPowerFlowUpdateManual"><a class="docs-heading-anchor" href="#ACPowerFlowUpdateManual">Power Flow Update</a><a id="ACPowerFlowUpdateManual-1"></a><a class="docs-heading-anchor-permalink" href="#ACPowerFlowUpdateManual" title="Permalink"></a></h2><p>An advanced methodology involves users establishing the <code>ACPowerFlow</code> type using using <a href="../../api/powerFlow/#JuliaGrid.newtonRaphson"><code>newtonRaphson</code></a>, <a href="../../api/powerFlow/#JuliaGrid.fastNewtonRaphsonBX"><code>fastNewtonRaphsonBX</code></a>, <a href="../../api/powerFlow/#JuliaGrid.fastNewtonRaphsonXB"><code>fastNewtonRaphsonXB</code></a>, or <a href="../../api/powerFlow/#JuliaGrid.gaussSeidel"><code>gaussSeidel</code></a> just once. After this initial setup, users can integrate new branches and generators, and also have the capability to modify buses, branches, and generators, all without the need to recreate the <code>ACPowerFlow</code> type.</p><p>This advancement extends beyond the previous scenario where recreating the <code>PowerSystem</code> and AC model was unnecessary, to now include the scenario where <code>ACPowerFlow</code> also does not need to be recreated. Such efficiency proves particularly beneficial in cases where JuliaGrid can reuse established Jacobian matrices or even factorizations, especially when users choose the fast Newton-Raphson method.</p><p>By modifying the previous example, we observe that we now create the <code>ACPowerFlow</code> type only once using the <a href="../../api/powerFlow/#JuliaGrid.newtonRaphson"><code>newtonRaphson</code></a> function. This approach allows us to circumvent the need for reinitializing the Jacobian matrix, enabling us to proceed directly with iterations:</p><pre><code class="language-julia hljs">system = powerSystem()
 
-system = powerSystem()
 addBus!(system; label = &quot;Bus 1&quot;, type = 3, active = 0.5, magnitude = 0.9, angle = 0.0)
 addBus!(system; label = &quot;Bus 2&quot;, type = 1, reactive = 0.05, magnitude = 1.1, angle = -0.1)
-addBranch!(system; label = &quot;Branch 1&quot;, from = &quot;Bus 1&quot;, to = &quot;Bus 2&quot;, reactance = 0.05)
-addGenerator!(system; label = &quot;Generator 1&quot;, bus = &quot;Bus 1&quot;, magnitude = 1.1)
-acModel!(system)
 
+@branch(resistance = 0.02, conductance = 1e-4, susceptance = 0.04)
+addBranch!(system; label = &quot;Branch 1&quot;, from = &quot;Bus 1&quot;, to = &quot;Bus 2&quot;, reactance = 0.05)
+
+addGenerator!(system; label = &quot;Generator 1&quot;, bus = &quot;Bus 1&quot;, magnitude = 1.1, active = 3.2)
+
+acModel!(system)
 analysis = newtonRaphson(system)
 for iteration = 1:100
     mismatch!(system, analysis)
@@ -136,8 +138,10 @@ for iteration = 1:100
 end
 
 updateBus!(system, analysis; label = &quot;Bus 2&quot;, active = 0.2)
+
 addBranch!(system, analysis; label = &quot;Branch 2&quot;, from = &quot;Bus 1&quot;, to = &quot;Bus 2&quot;, reactance = 1)
 updateBranch!(system, analysis; label = &quot;Branch 1&quot;, status = 0)
+
 addGenerator!(system, analysis; label = &quot;Generator 2&quot;, bus = &quot;Bus 1&quot;, active = 0.2)
 updateGenerator!(system, analysis; label = &quot;Generator 1&quot;, active = 0.3)
 
@@ -176,8 +180,6 @@ addBranch!(system; label = &quot;Branch 3&quot;, from = &quot;Bus 2&quot;, to = 
 
 addGenerator!(system; label = &quot;Generator 1&quot;, bus = &quot;Bus 1&quot;, active = 3.2)
 
-acModel!(system)
-
 analysis = newtonRaphson(system)
 for iteration = 1:100
     stopping = mismatch!(system, analysis)
@@ -207,8 +209,6 @@ addBranch!(system; from = &quot;Bus 2&quot;, to = &quot;Bus 4&quot;, reactance =
 addGenerator!(system; label = &quot;Generator 1&quot;, bus = &quot;Bus 1&quot;)
 addGenerator!(system; label = &quot;Generator 2&quot;, bus = &quot;Bus 3&quot;, reactive = 0.8)
 addGenerator!(system; label = &quot;Generator 3&quot;, bus = &quot;Bus 4&quot;, reactive = 0.9)
-
-acModel!(system)
 
 analysis = newtonRaphson(system)
 for iteration = 1:100
@@ -255,8 +255,6 @@ addBranch!(system; from = &quot;Bus 2&quot;, to = &quot;Bus 4&quot;, reactance =
 addGenerator!(system; label = &quot;Generator 1&quot;, bus = &quot;Bus 1&quot;, maxReactive = 0.2)
 addGenerator!(system; label = &quot;Generator 2&quot;, bus = &quot;Bus 4&quot;, reactive = 0.3)
 
-acModel!(system)
-
 analysis = newtonRaphson(system)
 for iteration = 1:100
     stopping = mismatch!(system, analysis)
@@ -281,4 +279,4 @@ Bus 3: 0.010695706661591614
 Bus 4: 0.0</code></pre><p>We can observe that the angles have been calculated based on the new slack bus. JuliaGrid offers the function to adjust these angles to match the original slack bus as follows:</p><pre><code class="language-julia hljs">adjustAngle!(system, analysis; slack = &quot;Bus 1&quot;)</code></pre><p>Here, the <code>slack</code> keyword should correspond to the label of the slack bus. After executing the above code, the updated results can be viewed:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; print(system.bus.label, analysis.voltage.angle)</code><code class="nohighlight hljs ansi" style="display:block;">Bus 1: 0.0
 Bus 2: -0.013015872071430151
 Bus 3: -0.0028853575840858247
-Bus 4: -0.013581064245677439</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../">« Introduction</a><a class="docs-footer-nextpage" href="../dcPowerFlow/">DC Power Flow »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.3.0 on <span class="colophon-date" title="Wednesday 3 April 2024 15:12">Wednesday 3 April 2024</span>. Using Julia version 1.8.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+Bus 4: -0.013581064245677439</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../">« Introduction</a><a class="docs-footer-nextpage" href="../dcPowerFlow/">DC Power Flow »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.3.0 on <span class="colophon-date" title="Friday 5 April 2024 09:14">Friday 5 April 2024</span>. Using Julia version 1.8.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
