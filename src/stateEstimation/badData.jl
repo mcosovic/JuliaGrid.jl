@@ -340,8 +340,10 @@ function residualTest!(system::PowerSystem, device::Measurement, analysis::ACSta
         badIndex = bad.index - device.voltmeter.number - device.wattmeter.number - device.varmeter.number - device.ammeter.number
         if badIndex % 2 == 0
             pmuIndex = trunc(Int, badIndex / 2)
+            alsoBad = bad.index - 1
         else
             pmuIndex = trunc(Int, (badIndex + 1) / 2)
+            alsoBad = bad.index + 1
         end
 
         (bad.label, index),_ = iterate(device.pmu.label, pmuIndex)
@@ -355,8 +357,18 @@ function residualTest!(system::PowerSystem, device::Measurement, analysis::ACSta
             else
                 device.pmu.magnitude.status[index] = 0
                 device.pmu.angle.status[index] = 0
+
+                se.mean[alsoBad] = 0.0
+                se.residual[alsoBad] = 0.0
+                se.type[alsoBad] = 0
             end
         end
+    end
+
+    if bad.detect
+        se.mean[bad.index] = 0.0
+        se.residual[bad.index] = 0.0
+        se.type[bad.index] = 0
     end
 end
 

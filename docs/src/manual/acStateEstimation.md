@@ -188,15 +188,19 @@ addBranch!(system; label = "Branch 3", from = "Bus 2", to = "Bus 3", reactance =
 
 addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 3.2, reactive = 0.3)
 
+@wattmeter(label = "Wattmeter ? (!)")
 addWattmeter!(system, device; from = "Branch 1", active = 1.046, noise = false)
 addWattmeter!(system, device; bus = "Bus 2", active = -0.1, noise = false)
 
+@varmeter(label = "Varmeter ? (!)")
 addVarmeter!(system, device; from = "Branch 1", reactive = 0.059, noise = false)
 addVarmeter!(system, device; bus = "Bus 2", reactive = -0.01, noise = false)
 
+@ammeter(label = "Ammeter ? (!)")
 addAmmeter!(system, device; from = "Branch 3", magnitude = 0.947, noise = false)
 addAmmeter!(system, device; to = "Branch 2", magnitude = 1.674, noise = false)
 
+@voltmeter(label = "Voltmeter ? (!)")
 addVoltmeter!(system, device; bus = "Bus 1", magnitude = 1.0, noise = false)
 
 nothing # hide
@@ -277,6 +281,7 @@ In the example above, we focus on solving the AC state estimation solely with SC
 
 The most straightforward approach is to include these measurements in the polar coordinate system. For instance:
 ```@example ACSEWLS
+@pmu(label = "PMU ? (!)")
 addPmu!(system, device; from = "Branch 1", magnitude = 1.048, angle = -0.057)
 
 nothing # hide
@@ -319,6 +324,89 @@ analysis.method.precision
 
 ---
 
+##### Alternative Formulation
+The resolution of the WLS state estimation problem using the conventional method typically progresses smoothly. However, it is widely acknowledged that in certain situations common to real-world systems, this method can be vulnerable to numerical instabilities. Such conditions might impede the algorithm from finding a satisfactory solution. In such cases, users may opt for an alternative formulation of the WLS state estimation, namely, employing an approach called orthogonal factorization [[5, Sec. 3.2]](@ref ACStateEstimationReferenceManual).
+
+This approach is suitable when measurement errors are uncorrelated, and the precision matrix remains diagonal. Therefore, as a preliminary step, we need to eliminate the correlation, as we did previously:
+```@example ACSEWLS
+updatePmu!(system, device; label = "PMU 3 (Bus 3)", correlated = false)
+
+nothing # hide
+```
+
+Subsequently, by specifying the `Orthogonal` argument in the [`gaussNewton`](@ref gaussNewton) function, JuliaGrid implements a more robust approach to obtain the WLS estimator, which proves particularly beneficial when substantial differences exist among measurement variances:
+```@example ACSEWLS
+analysis = gaussNewton(system, device, Orthogonal)
+for iteration = 1:20
+    stopping = solve!(system, analysis)
+    if stopping < 1e-8
+        break
+    end
+end
+nothing # hide
+```
+
+---
+
+## [Bad Data Processing](@id ACBadDataDetectionManual)
+After acquiring the WLS solution using the Gauss-Newton method, users can conduct bad data analysis employing the largest normalized residual test. Continuing with our defined power system and measurement set, let us introduce a new measurement. Upon proceeding to find the solution for this updated state:
+```@example ACSEWLS
+addWattmeter!(system, device; from = "Branch 2", active = 31.1)
+
+analysis = gaussNewton(system, device)
+for iteration = 1:20
+    stopping = solve!(system, analysis)
+    if stopping < 1e-8
+        break
+    end
+end
+nothing # hide
+```
+
+Here, we can observe the impact of the outlier on the solution:
+```@repl ACSEWLS
+print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
+```
+
+Following the solution acquisition, we can verify the presence of erroneous data. Detection of such data is determined by the `threshold` keyword. If the largest normalized residual's value exceeds the threshold, the measurement will be identified as bad data and consequently removed from the PMU state estimation model:
+```@example ACSEWLS
+residualTest!(system, device, analysis; threshold = 4.0)
+nothing # hide
+```
+
+Users can examine the data obtained from the bad data analysis:
+```@repl ACSEWLS
+analysis.method.outlier.detect
+analysis.method.outlier.maxNormalizedResidual
+analysis.method.outlier.label
+```
+
+Hence, upon detecting bad data, the `detect` variable will hold `true`. The `maxNormalizedResidual` variable retains the value of the largest normalized residual, while the `label` contains the label of the measurement identified as bad data. JuliaGrid will mark the respective measurement as out-of-service within the `Measurement` type.
+
+After removing bad data, a new estimate can be computed without considering this specific measurement. The user has the option to either restart the [`gaussNewton`](@ref gaussNewton) function or proceed directly to the iteration loop. However, if the latter option is chosen, using voltages obtained with outlier presence as the starting point could significantly impede algorithm convergence. To avoid this undesirable outcome, the user should first establish a new starting point and commence the iteration procedure. For instance:
+```@example ACSEWLS
+for i = 1:system.bus.number
+    analysis.voltage.magnitude[i] = system.bus.voltage.magnitude[i]
+    analysis.voltage.angle[i] = system.bus.voltage.angle[i]
+end
+
+for iteration = 1:20
+    stopping = solve!(system, analysis)
+    if stopping < 1e-8
+        break
+    end
+end
+nothing # hide
+```
+
+Consequently, we obtain a new solution devoid of the impact of the outlier measurement:
+Here, we can observe solutin impact with bad measurments:
+```@repl ACSEWLS
+print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
+```
+
+---
+
 ## [References](@id ACStateEstimationReferenceManual)
 [1] G. Korres, *Observability analysis based on echelon form of a reduced dimensional Jacobian matrix*, IEEE Trans. Power Syst., vol. 26, no. 4, pp. 2572–2573, 2011.
 
@@ -327,3 +415,5 @@ analysis.method.precision
 [3] A. Gomez-Exposito, A. Abur, P. Rousseaux, A. de la Villa Jaen, and C. Gomez-Quiles, *On the use of PMUs in power system state estimation*, Proc. IEEE PSCC, 2011.
 
 [4] M. Zhou, V. A. Centeno, J. S. Thorp, and A. G. Phadke, *An alternative for including phasor measurements in state estimators*, IEEE Trans. Power Syst., vol. 21, no. 4, 2006.
+
+[5] A. Abur and A. Exposito, *Power System State Estimation: Theory and Implementation*, Taylor & Francis, 2004.
