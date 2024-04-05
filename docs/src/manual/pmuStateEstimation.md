@@ -41,20 +41,21 @@ Let us define the `PowerSystem` composite type and perform the AC power flow ana
 using JuliaGrid # hide
 @default(unit) # hide
 @default(template) # hide
-@branch(resistance = 0.02, conductance = 1e-4, susceptance = 0.04)
-@generator(reactive = 0.1)
 
 system = powerSystem()
 
 addBus!(system; label = "Bus 1", type = 3, active = 0.5)
 addBus!(system; label = "Bus 2", type = 1, reactive = 0.05)
 addBus!(system; label = "Bus 3", type = 1, active = 0.5)
+
+@branch(resistance = 0.02, conductance = 1e-4, susceptance = 0.04)
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.05)
 addBranch!(system; label = "Branch 2", from = "Bus 1", to = "Bus 2", reactance = 0.01)
 addBranch!(system; label = "Branch 3", from = "Bus 2", to = "Bus 3", reactance = 0.04)
+
+@generator(reactive = 0.1)
 addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 3.2)
 addGenerator!(system; label = "Generator 2", bus = "Bus 2", active = 2.1)
-acModel!(system)
 
 analysis = newtonRaphson(system)
 for iteration = 1:10
@@ -293,15 +294,17 @@ using JuliaGrid # hide
 @default(template) # hide
 
 system = powerSystem()
+device = measurement()
+
 addBus!(system; label = "Bus 1", type = 3, active = 0.5)
 addBus!(system; label = "Bus 2", type = 1, reactive = 0.05)
 addBus!(system; label = "Bus 3", type = 1, active = 0.5)
+
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.05)
 addBranch!(system; label = "Branch 2", from = "Bus 2", to = "Bus 3", reactance = 0.04)
-addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 3.2)
-acModel!(system)
 
-device = measurement()
+addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 3.2)
+
 @pmu(label = "PMU ?")
 addPmu!(system, device; bus = "Bus 1", magnitude = 1.0, angle = 0.0, noise = false)
 addPmu!(system, device; bus = "Bus 2", magnitude = 0.98, angle = -0.023)
@@ -359,15 +362,17 @@ using JuMP # hide
 @default(template) # hide
 
 system = powerSystem()
+device = measurement()
+
 addBus!(system; label = "Bus 1", type = 3, active = 0.5)
 addBus!(system; label = "Bus 2", type = 1, reactive = 0.05)
 addBus!(system; label = "Bus 3", type = 1, active = 0.5)
+
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.05)
 addBranch!(system; label = "Branch 2", from = "Bus 2", to = "Bus 3", reactance = 0.04)
-addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 3.2)
-acModel!(system)
 
-device = measurement()
+addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 3.2)
+
 @pmu(label = "PMU ?")
 addPmu!(system, device; bus = "Bus 1", magnitude = 1.0, angle = 0.0, noise = false)
 addPmu!(system, device; bus = "Bus 2", magnitude = 0.98, angle = -0.023)

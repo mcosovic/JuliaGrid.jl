@@ -49,12 +49,8 @@ using JuliaGrid # hide
 @default(unit) # hide
 @default(template) # hide
 
-@branch(resistance = 0.02, conductance = 1e-4, susceptance = 0.04)
-@generator(reactive = 0.1)
-@wattmeter(label = "Wattmeter ? (!)")
-@varmeter(label = "Varmeter ? (!)")
-
 system = powerSystem()
+device = measurement()
 
 addBus!(system; label = "Bus 1", type = 3)
 addBus!(system; label = "Bus 2", type = 1, active = 0.1)
@@ -62,26 +58,27 @@ addBus!(system; label = "Bus 3", type = 1, active = 0.05)
 addBus!(system; label = "Bus 4", type = 1, active = 0.05)
 addBus!(system; label = "Bus 5", type = 1, active = 0.05)
 addBus!(system; label = "Bus 6", type = 1, active = 0.05)
+
+@branch(resistance = 0.02, conductance = 1e-4, susceptance = 0.04)
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.05)
 addBranch!(system; label = "Branch 2", from = "Bus 2", to = "Bus 3", reactance = 0.01)
 addBranch!(system; label = "Branch 3", from = "Bus 3", to = "Bus 5", reactance = 0.01)
 addBranch!(system; label = "Branch 4", from = "Bus 3", to = "Bus 4", reactance = 0.01)
 addBranch!(system; label = "Branch 5", from = "Bus 5", to = "Bus 6", reactance = 0.01)
-addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 3.2)
 
-device = measurement()
+addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 3.2, reactive = 0.1)
 
-addWattmeter!(system, device; from = "Branch 1", active = 0.31)
-addVarmeter!(system, device; from = "Branch 1", reactive = -0.19)
+addWattmeter!(system, device; label = "Wattmeter 1", from = "Branch 1", active = 0.31)
+addVarmeter!(system, device; label = "Varmeter 1", from = "Branch 1", reactive = -0.19)
 
-addWattmeter!(system, device; from = "Branch 3", active = 0.09)
-addVarmeter!(system, device; from = "Branch 3", reactive = -0.08)
+addWattmeter!(system, device; label = "Wattmeter 2", from = "Branch 3", active = 0.09)
+addVarmeter!(system, device; label = "Varmeter 2", from = "Branch 3", reactive = -0.08)
 
-addWattmeter!(system, device; bus = "Bus 3", active = -0.05)
-addVarmeter!(system, device; bus = "Bus 3", reactive = 0.0)
+addWattmeter!(system, device; label = "Wattmeter 3", bus = "Bus 3", active = -0.05)
+addVarmeter!(system, device; label = "Varmeter 3", bus = "Bus 3", reactive = 0.0)
 
-addWattmeter!(system, device; bus = "Bus 3", active = -0.04)
-addVarmeter!(system, device; bus = "Bus 3", reactive = 0.0001)
+addWattmeter!(system, device; label = "Wattmeter 4", bus = "Bus 3", active = -0.04)
+addVarmeter!(system, device; label = "Varmeter 4", bus = "Bus 3", reactive = 0.0001)
 
 nothing # hide
 ```
@@ -161,9 +158,172 @@ device.wattmeter.label
 device.varmeter.label
 nothing # hide
 ```
-Consequently, the power system becomes observable, allowing the user to proceed with forming the AC state estimation model and solving it. Ensuring the observability of the system does not guarantee obtaining accurate estimates of the state variables. Numerical ill-conditioning may adversely impact the state estimation algorithm. However, in most cases, efficient estimation becomes feasible when the system is observable. [[1]](@ref DCStateEstimationReferenceManual).
+Consequently, the power system becomes observable, allowing the user to proceed with forming the AC state estimation model and solving it. Ensuring the observability of the system does not guarantee obtaining accurate estimates of the state variables. Numerical ill-conditioning may adversely impact the state estimation algorithm. However, in most cases, efficient estimation becomes feasible when the system is observable [[1]](@ref ACStateEstimationReferenceManual).
 
 Additionally, it is worth mentioning that restoration might encounter difficulties due to the default zero pivot threshold set at `1e-5`. This threshold can be modified using the [`restorationGram!`](@ref restorationGram!(::PowerSystem, ::Measurement, ::Measurement, ::Island)) function.
 
 !!! note "Info"
     During the restoration step, if users define bus phasor measurements at any point, these measurements will be considered. Consequently, the system may achieve observability even if multiple islands persist.
+
+---
+
+## [Weighted Least-squares Estimator](@id ACLSStateEstimationSolutionManual)
+To begin, we will define the `PowerSystem` and `Measurement` types. Within the measurement set, we choose to utilize measurement values by setting `noise = false`:
+```@example ACSEWLS
+using JuliaGrid # hide
+@default(unit) # hide
+@default(template) # hide
+
+system = powerSystem()
+device = measurement()
+
+addBus!(system; label = "Bus 1", type = 3)
+addBus!(system; label = "Bus 2", type = 1, active = 0.1, reactive = 0.01)
+addBus!(system; label = "Bus 3", type = 1, active = 2.5, reactive = 0.2)
+
+@branch(resistance = 0.02, conductance = 1e-4, susceptance = 0.04)
+addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.05)
+addBranch!(system; label = "Branch 2", from = "Bus 1", to = "Bus 3", reactance = 0.05)
+addBranch!(system; label = "Branch 3", from = "Bus 2", to = "Bus 3", reactance = 0.03)
+
+addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 3.2, reactive = 0.3)
+
+addWattmeter!(system, device; from = "Branch 1", active = 1.046, noise = false)
+addWattmeter!(system, device; bus = "Bus 2", active = -0.1, noise = false)
+
+addVarmeter!(system, device; from = "Branch 1", reactive = 0.059, noise = false)
+addVarmeter!(system, device; bus = "Bus 2", reactive = -0.01, noise = false)
+
+addAmmeter!(system, device; from = "Branch 3", magnitude = 0.947, noise = false)
+addAmmeter!(system, device; to = "Branch 2", magnitude = 1.674, noise = false)
+
+addVoltmeter!(system, device; bus = "Bus 1", magnitude = 1.0, noise = false)
+
+nothing # hide
+```
+
+Next, to establish the AC state estimation model, we will utilize the [`gaussNewton`](@ref gaussNewton) function:
+```@example ACSEWLS
+analysis = gaussNewton(system, device)
+nothing # hide
+```
+
+!!! tip "Tip"
+    Here, the user triggers LU factorization as the default method for solving the system of linear equations within each iteration of the Gauss-Newton method. However, the user also has the option to select alternative factorization methods such as `LDLt` or `QR`:
+    ```julia ACSEObservabilityAnalysis
+    analysis = gaussNewton(system, device, QR)
+    ```
+
+---
+
+##### Setup Starting Voltages
+The initial voltages for the Gauss-Newton method are determined based on the specified initial voltage magnitudes and angles within the buses of the `PowerSystem` type. These values are then forwarded to the `ACStateEstimation` during the execution of the [`gaussNewton`] function. Therefore, the starting voltages in this example are as follows:
+```@repl ACSEWLS
+print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
+```
+
+Users have the flexibility to modify these vectors according to their own requirements in order to adjust the starting voltages. For instance, users can conduct an initial AC power flow analysis and utilize the obtained solution as the starting voltages for AC state estimation:
+```@example ACSEWLS
+powerFlow = newtonRaphson(system)
+for iteration = 1:10
+    mismatch!(system, powerFlow)
+    solve!(system, powerFlow)
+end
+
+for i = 1:system.bus.number
+    analysis.voltage.magnitude[i] = powerFlow.voltage.magnitude[i]
+    analysis.voltage.angle[i] = powerFlow.voltage.angle[i]
+end
+
+nothing # hide
+```
+
+---
+
+##### State Estimator
+To conduct an iterative process using the Gauss-Newton method, it is essential to include the [`solve!`](@ref solve!(::PowerSystem, ::ACStateEstimation{NonlinearWLS{Normal}})) function inside the iteration loop. For example:
+```@example ACSEWLS
+for iteration = 1:20
+    solve!(system, analysis)
+end
+nothing # hide
+```
+
+Once the state estimator is obtained, users can access the bus voltage magnitudes and angles using:
+```@repl ACSEWLS
+print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
+```
+
+---
+
+##### Breaking the Iterative Process
+The iterative process can be terminated using the [`solve!`](@ref solve!(::PowerSystem, ::ACStateEstimation{NonlinearWLS{Normal}})) function. The following code demonstrates how to utilize this function to break out of the iteration loop:
+```@example ACSEWLS
+analysis = gaussNewton(system, device)
+for iteration = 1:20
+    stopping = solve!(system, analysis)
+    if stopping < 1e-8
+        break
+    end
+end
+nothing # hide
+```
+The [`solve!`](@ref solve!(::PowerSystem, ::ACStateEstimation{NonlinearWLS{Normal}})) function returns the maximum absolute values of the state variable increment, which are commonly used as a convergence criterion in the iterative Gauss-Newton algorithm.
+
+---
+
+##### Inclusion of PMUs in Polar Coordinates
+In the example above, we focus on solving the AC state estimation solely with SCADA measurements. However, users can also incorporate PMUs into the AC state estimation, and several methods exist for achieving this.
+
+The most straightforward approach is to include these measurements in the polar coordinate system. For instance:
+```@example ACSEWLS
+addPmu!(system, device; from = "Branch 1", magnitude = 1.048, angle = -0.057)
+
+nothing # hide
+```
+This inclusion of PMUs provides more accurate state estimates compared to rectangular inclusion but demands longer computing time. PMUs are handled in the same manner as SCADA measurements. However, this approach is susceptible to ill-conditioned problems arising in polar coordinates due to small values of current magnitudes [[2, 3]](@ref ACStateEstimationReferenceManual).
+
+---
+
+##### Inclusion of PMUs in Rectangular Coordinates
+The second approach to include PMUs is in the rectangular coordinate system, by setting `polar = false`:
+```@example ACSEWLS
+addPmu!(system, device; to = "Branch 1", magnitude = 1.05, angle = 3.04, polar = false)
+
+nothing # hide
+```
+
+!!! note "Info"
+    It is important to note that with each individual phasor measurement, we can set the coordinate system, providing flexibility to include some in polar and some in rectangular systems.
+
+In the case of the rectangular system, inclusion resolves ill-conditioned problems arising in polar coordinates due to small values of current magnitudes. However, this approach's main disadvantage is related to measurement errors, as measurement errors correspond to polar coordinates. Therefore, the covariance matrix must be transformed from polar to rectangular coordinates [[4]](@ref ACStateEstimationReferenceManual). As a result, measurement errors of a single PMU are correlated, and the covariance matrix does not have a diagonal form. Despite that, the measurement error covariance matrix is usually considered as a diagonal matrix, affecting the accuracy of the SE.
+
+In the example above, we specifically include PMUs where measurement error correlations are disregarded. This is evident through the precision matrix, which maintains a diagonal form:
+```@repl ACSEWLS
+analysis = gaussNewton(system, device);
+analysis.method.precision
+```
+
+Lastly, we incorporate correlation into our model by adding new PMUs with the desired error correlation:
+```@example ACSEWLS
+addPmu!(system, device; bus = "Bus 3", magnitude = 1, angle = 0, polar = false, correlated = true)
+
+nothing # hide
+```
+
+Now, we can observe the precision matrix that does not hold a diagonal form:
+```@repl ACSEWLS
+analysis = gaussNewton(system, device);
+analysis.method.precision
+```
+
+---
+
+## [References](@id ACStateEstimationReferenceManual)
+[1] G. Korres, *Observability analysis based on echelon form of a reduced dimensional Jacobian matrix*, IEEE Trans. Power Syst., vol. 26, no. 4, pp. 2572–2573, 2011.
+
+[2] G. N. Korres and N. M. Manousakis, *State estimation and observability analysis for phasor measurement unit measured systems*, IET Gener. Transm. Dis., vol. 6, no. 9, 2012.
+
+[3] A. Gomez-Exposito, A. Abur, P. Rousseaux, A. de la Villa Jaen, and C. Gomez-Quiles, *On the use of PMUs in power system state estimation*, Proc. IEEE PSCC, 2011.
+
+[4] M. Zhou, V. A. Centeno, J. S. Thorp, and A. G. Phadke, *An alternative for including phasor measurements in state estimators*, IEEE Trans. Power Syst., vol. 21, no. 4, 2006.

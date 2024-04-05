@@ -418,8 +418,6 @@ addGenerator!(system; label = "Generator 2", bus = "Bus 2", active = 0.2, maxAct
 cost!(system; label = "Generator 1", active = 2, polynomial = [1100.2; 500; 80])
 cost!(system; label = "Generator 2", active = 1, piecewise = [10.8 12.3; 14.7 16.8])
 
-dcModel!(system)
-
 analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer)
 JuMP.set_silent(analysis.method.jump) # hide
 solve!(system, analysis)

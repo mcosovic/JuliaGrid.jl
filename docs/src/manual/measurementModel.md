@@ -20,7 +20,7 @@ Once the `Measurement` type has been established, we can incorporate voltmeters,
 
 Also, JuliaGrid provides macros [`@voltmeter`](@ref @voltmeter), [`@ambmeter`](@ref @ammeter), [`@wattmeter`](@ref @wattmeter), [`@varmeter`](@ref @varmeter), and [`@pmu`](@ref @pmu) to define templates that aid in creating measurement devices. These templates help avoid entering the same parameters repeatedly.
 
-!!! note "Info" 
+!!! note "Info"
     It is important to note that measurement devices associated with branches can only be incorporated if the branch is in-service. This reflects JuliaGrid's approach to mimic a network topology processor, where logical data analysis configures the energized components of the power system.
 
 Moreover, it is feasible to modify the parameters of measurement devices. When these functions are executed, all relevant fields within the `Measurement` composite type will be automatically updated. These functions include:
@@ -66,12 +66,11 @@ To start building a model from the ground up, the initial step involves construc
 using JuliaGrid # hide
 
 system = powerSystem()
+device = measurement()
 
 addBus!(system; label = "Bus 1")
 addBus!(system; label = "Bus 2")
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.12)
-
-device = measurement()
 
 addVoltmeter!(system, device; bus = "Bus 1", magnitude = 1.0, variance = 1e-3)
 addWattmeter!(system, device; from = "Branch 1", active = 0.2, variance = 1e-4)
@@ -107,10 +106,9 @@ We have the option to add voltmeters to a loaded measurement type or to one crea
 using JuliaGrid # hide
 
 system = powerSystem()
+device = measurement()
 
 addBus!(system; label = "Bus 1")
-
-device = measurement()
 
 addVoltmeter!(system, device; bus = "Bus 1", magnitude = 0.9, variance = 1e-4)
 addVoltmeter!(system, device; bus = "Bus 1", magnitude = 1.0, variance = 1e-3, noise = false)
@@ -134,11 +132,11 @@ By default, the `magnitude` and `variance` keywords are expected to be provided 
 using JuliaGrid # hide
 
 @voltage(kV, rad, V)
+
 system = powerSystem()
+device = measurement()
 
 addBus!(system; label = "Bus 1", base = 135e3)
-
-device = measurement()
 
 addVoltmeter!(system, device; bus = "Bus 1", magnitude = 121.5, variance = 0.0135)
 addVoltmeter!(system, device; bus = "Bus 1", magnitude = 135, variance = 0.135, noise = false)
@@ -157,12 +155,11 @@ Users can introduce ammeters into either an existing measurement type or one tha
 using JuliaGrid # hide
 
 system = powerSystem()
+device = measurement()
 
 addBus!(system; label = "Bus 1")
 addBus!(system; label = "Bus 2")
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.12)
-
-device = measurement()
 
 addAmmeter!(system, device; from = "Branch 1", magnitude = 0.8, variance = 1e-3)
 addAmmeter!(system, device; to = "Branch 1", magnitude = 0.9, variance = 1e-1, noise = false)
@@ -186,13 +183,13 @@ By default, the `magnitude` and `variance` keywords are expected to be provided 
 using JuliaGrid # hide
 @default(unit)  # hide
 @current(A, rad)
+
 system = powerSystem()
+device = measurement()
 
 addBus!(system; label = "Bus 1", base = 135e3)
 addBus!(system; label = "Bus 2", base = 135e3)
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.12)
-
-device = measurement()
 
 addAmmeter!(system, device; from = "Branch 1", magnitude = 342.13, variance = 0.428)
 addAmmeter!(system, device; to = "Branch 1", magnitude = 385, variance = 42.8, noise = false)
@@ -211,12 +208,11 @@ Users can include wattmeters in either an existing measurement type or one that 
 using JuliaGrid # hide
 
 system = powerSystem()
+device = measurement()
 
 addBus!(system; label = "Bus 1")
 addBus!(system; label = "Bus 2")
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.12)
-
-device = measurement()
 
 addWattmeter!(system, device; bus = "Bus 1", active = 0.6, variance = 1e-3)
 addWattmeter!(system, device; from = "Branch 1", active = 0.3, variance = 1e-3)
@@ -241,13 +237,13 @@ By default, the `active` and `variance` keywords are expected to be provided in 
 using JuliaGrid # hide
 @default(unit)  # hide
 @power(MW, pu, pu)
+
 system = powerSystem()
+device = measurement()
 
 addBus!(system; label = "Bus 1")
 addBus!(system; label = "Bus 2")
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.12)
-
-device = measurement()
 
 addWattmeter!(system, device; bus = "Bus 1", active = 60, variance = 1e-1)
 addWattmeter!(system, device; from = "Branch 1", active = 30, variance = 1e-1)
@@ -267,12 +263,11 @@ To include varmeters, the same approach as described in the [Add Wattmeter](@ref
 using JuliaGrid # hide
 
 system = powerSystem()
+device = measurement()
 
 addBus!(system; label = "Bus 1")
 addBus!(system; label = "Bus 2")
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.12)
-
-device = measurement()
 
 addVarmeter!(system, device; bus = "Bus 1", reactive = 0.2, variance = 1e-3)
 addVarmeter!(system, device; from = "Branch 1", reactive = 0.1, variance = 1e-3)
@@ -295,13 +290,13 @@ Just as we explained for the previous device, users have the flexibility to sele
 using JuliaGrid # hide
 @default(unit)  # hide
 @power(pu, MVAr, pu)
+
 system = powerSystem()
+device = measurement()
 
 addBus!(system; label = "Bus 1")
 addBus!(system; label = "Bus 2")
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.12)
-
-device = measurement()
 
 addVarmeter!(system, device; bus = "Bus 1", reactive = 20, variance = 1e-1)
 addVarmeter!(system, device; from = "Branch 1", reactive = 10, variance = 1e-1)
@@ -321,12 +316,11 @@ Users have the capability to incorporate PMUs into either an existing measuremen
 using JuliaGrid # hide
 
 system = powerSystem()
+device = measurement()
 
 addBus!(system; label = "Bus 1")
 addBus!(system; label = "Bus 2")
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.12)
-
-device = measurement()
 
 addPmu!(system, device; bus = "Bus 1", magnitude = 1.1, angle = 0.1, varianceMagnitude = 1e-3)
 addPmu!(system, device; from = "Branch 1", magnitude = 1.0, angle = -0.2, noise = false)
@@ -346,7 +340,7 @@ The measurement values for the first and third PMUs incorporate white Gaussian n
 
 !!! note "Info"
     We recommend reading the documentation for the [`addPmu!`](@ref addPmu!) function, where we have provided a list of the keywords that can be used.
-    
+
 ---
 
 ##### Coordinate Systems and Correlated Measurement Errors
@@ -377,13 +371,13 @@ using JuliaGrid # hide
 @default(unit)  # hide
 @voltage(kV, deg, V)
 @current(A, deg)
+
 system = powerSystem()
+device = measurement()
 
 addBus!(system; label = "Bus 1", base = 135e3)
 addBus!(system; label = "Bus 2", base = 135e3)
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.12)
-
-device = measurement()
 
 addPmu!(system, device; bus = "Bus 1", magnitude = 148.5, angle = 5.73, varianceAngle = 0.06)
 addPmu!(system, device; from = "Branch 1", magnitude = 167.35, angle = -11.46, noise = false)
@@ -422,12 +416,11 @@ In JuliaGrid, users have the flexibility to customize default values and assign 
 using JuliaGrid # hide
 
 system = powerSystem()
+device = measurement()
 
 addBus!(system; label = "Bus 1")
 addBus!(system; label = "Bus 2")
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.12)
-
-device = measurement()
 
 @voltmeter(variance = 1e-4, noise = false)
 addVoltmeter!(system, device; label = "Voltmeter 1", bus = "Bus 1", magnitude = 1.0)
@@ -499,12 +492,11 @@ using JuliaGrid # hide
 @default(template) # hide
 
 system = powerSystem()
+device = measurement()
 
 addBus!(system; label = "Bus 1")
 addBus!(system; label = "Bus 2")
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.12)
-
-device = measurement()
 
 addVoltmeter!(system, device; label = 1, bus = "Bus 1", magnitude = 1.0)
 
@@ -524,12 +516,11 @@ using JuliaGrid # hide
 @default(template) # hide
 
 system = powerSystem()
+device = measurement()
 
 addBus!(system; label = "Bus 1")
 addBus!(system; label = "Bus 2")
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.12)
-
-device = measurement()
 
 @voltmeter(label = "Voltmeter ?")
 addVoltmeter!(system, device; bus = "Bus 1", magnitude = 1.0)
@@ -569,13 +560,12 @@ Let us explore how to retrieve stored labels. Consider the following model:
 using JuliaGrid # hide
 
 system = powerSystem()
+device = measurement()
 
 addBus!(system; label = "Bus 1")
 addBus!(system; label = "Bus 2")
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.12)
 addBranch!(system; label = "Branch 2", from = "Bus 2", to = "Bus 1", reactance = 0.14)
-
-device = measurement()
 
 addWattmeter!(system, device; label = "Wattmeter 2", bus = "Bus 2", active = 0.6)
 addWattmeter!(system, device; label = "Wattmeter 1", bus = "Bus 1", active = 0.2)
@@ -635,6 +625,7 @@ using JuliaGrid # hide
 @default(template) # hide
 
 system = powerSystem()
+device = measurement()
 
 addBus!(system; label = "Bus 1", type = 3, active = 0.5, magnitude = 0.9, angle = 0.0)
 addBus!(system; label = "Bus 2", type = 1, reactive = 0.05, magnitude = 1.1, angle = -0.1)
@@ -648,8 +639,6 @@ addBranch!(system; label = "Branch 3", from = "Bus 2", to = "Bus 3", reactance =
 addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 0.2)
 addGenerator!(system; label = "Generator 2", bus = "Bus 2", active = 1.2)
 
-acModel!(system)
-
 analysis = newtonRaphson(system)
 for iteration = 1:100
     stopping = mismatch!(system, analysis)
@@ -660,8 +649,6 @@ for iteration = 1:100
 end
 power!(system, analysis)
 current!(system, analysis)
-
-device = measurement()
 
 @voltmeter(label = "!")
 addVoltmeter!(system, device, analysis; variance = 1e-3)
@@ -680,7 +667,7 @@ addPmu!(system, device, analysis; varianceMagnitudeBus = 1e-3)
 
 nothing  # hide
 ```
-In this example, we add voltmeters to all buses, ammeters to all branches on both sides of each branch, wattmeters, varmeters, and PMUs to all buses and on both sides of each branch. 
+In this example, we add voltmeters to all buses, ammeters to all branches on both sides of each branch, wattmeters, varmeters, and PMUs to all buses and on both sides of each branch.
 
 It is important to note that JuliaGrid follows a specific order: it first adds bus measurements, then branch measurements. For branches, it adds measurement located at the "from" bus end, and immediately after, measurement at the "to" bus end. This process is repeated for all branches.
 
@@ -774,6 +761,7 @@ using JuliaGrid # hide
 @default(template) # hide
 
 system = powerSystem()
+device = measurement()
 
 addBus!(system; label = "Bus 1", type = 3, active = 0.5, magnitude = 0.9, angle = 0.0)
 addBus!(system; label = "Bus 2", type = 1, reactive = 0.05, magnitude = 1.1, angle = -0.1)
@@ -787,8 +775,6 @@ addBranch!(system; label = "Branch 3", from = "Bus 2", to = "Bus 3", reactance =
 addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 0.2)
 addGenerator!(system; label = "Generator 2", bus = "Bus 2", active = 1.2)
 
-acModel!(system)
-
 analysis = newtonRaphson(system)
 for iteration = 1:100
     stopping = mismatch!(system, analysis)
@@ -800,8 +786,6 @@ end
 power!(system, analysis)
 current!(system, analysis)
 
-device = measurement()
-
 addVoltmeter!(system, device, analysis)
 addAmmeter!(system, device, analysis)
 addPmu!(system, device, analysis)
@@ -812,7 +796,7 @@ nothing  # hide
 ---
 
 ##### Activating Devices
-As a starting point, we create the measurement set where all devices are set to in-service mode based on default settings. In this instance, we generate the measurement set comprising 3 voltmeters, 6 ammeters, and 9 PMUs. 
+As a starting point, we create the measurement set where all devices are set to in-service mode based on default settings. In this instance, we generate the measurement set comprising 3 voltmeters, 6 ammeters, and 9 PMUs.
 
 Subsequently, we offer users the ability to manipulate the status of in-service devices using the [`status!`](@ref status!) function. For example, within this set, if we wish to have only 12 out of the total 18 devices in-service while the rest are out-of-service, we can accomplish this as follows:
 ```@example measurementSet

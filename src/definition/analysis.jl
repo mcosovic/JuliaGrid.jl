@@ -225,6 +225,7 @@ mutable struct NonlinearWLS{T <: Union{Normal, Orthogonal}}
     residual::Array{Float64,1}
     increment::Array{Float64,1}
     factorization::LULDLtQR
+    outlier::BadData
     type::Array{Int8,1}
     index::Array{Int64,1}
     range::Array{Int64,1}

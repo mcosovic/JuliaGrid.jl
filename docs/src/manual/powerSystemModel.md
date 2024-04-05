@@ -506,7 +506,7 @@ nothing # hide
 ```
 
 !!! tip "Tip"
-    In all instances documented, we explicitly refer to these functions by their names, although it is not obligatory. If a user initiates any of the various AC or DC analyses without having previously created the AC or DC model using the [`acModel!`](@ref acModel!) or [`dcModel!`](@ref dcModel!) function, the relevant function for setting the analysis will automatically generate the AC or DC model.
+    In many instances throughout the JuliaGrid documentation, we explicitly mention these functions by their names, although it is not mandatory. If a user begins any of the various AC or DC analyses without having previously established the AC or DC model using the [`acModel!`](@ref acModel!) or [`dcModel!`](@ref dcModel!) function, the respective function for setting the analysis will automatically create the AC or DC model.
 
 The nodal matrices are one of the components of both the AC and DC models and are stored in the variables:
 ```@repl ACDCModel

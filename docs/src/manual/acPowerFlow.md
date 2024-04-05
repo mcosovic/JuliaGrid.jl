@@ -51,7 +51,6 @@ addBus!(system; label = "Bus 3", type = 2)
 addGenerator!(system; bus = "Bus 2")
 
 acModel!(system)
-
 analysis = newtonRaphson(system)
 ```
 
@@ -73,7 +72,6 @@ addBus!(system; label = "Bus 3", type = 2)
 addGenerator!(system; bus = "Bus 2")
 
 acModel!(system)
-
 analysis = newtonRaphson(system)
 ```
 
@@ -111,7 +109,6 @@ addGenerator!(system; bus = "Bus 2", magnitude = 1.1)
 addGenerator!(system; bus = "Bus 3", magnitude = 1.2)
 
 acModel!(system)
-
 analysis = newtonRaphson(system)
 
 nothing # hide
@@ -313,16 +310,18 @@ using JuliaGrid # hide
 @default(unit) # hide
 @default(template) # hide
 
-@branch(resistance = 0.02, conductance = 1e-4, susceptance = 0.04)
-@generator(active = 3.2)
 
 system = powerSystem()
+
 addBus!(system; label = "Bus 1", type = 3, active = 0.5, magnitude = 0.9, angle = 0.0)
 addBus!(system; label = "Bus 2", type = 1, reactive = 0.05, magnitude = 1.1, angle = -0.1)
-addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.05)
-addGenerator!(system; label = "Generator 1", bus = "Bus 1", magnitude = 1.1)
-acModel!(system)
 
+@branch(resistance = 0.02, conductance = 1e-4, susceptance = 0.04)
+addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.05)
+
+addGenerator!(system; label = "Generator 1", bus = "Bus 1", magnitude = 1.1, active = 3.2)
+
+acModel!(system)
 analysis = newtonRaphson(system)
 for iteration = 1:100
     mismatch!(system, analysis)
@@ -330,8 +329,10 @@ for iteration = 1:100
 end
 
 updateBus!(system; label = "Bus 2", active = 0.2)
+
 addBranch!(system; label = "Branch 2", from = "Bus 1", to = "Bus 2", reactance = 1)
 updateBranch!(system; label = "Branch 1", status = 0)
+
 addGenerator!(system; label = "Generator 2", bus = "Bus 1", active = 0.2)
 updateGenerator!(system; label = "Generator 1", active = 0.3)
 
@@ -361,16 +362,17 @@ using JuliaGrid # hide
 @default(unit) # hide
 @default(template) # hide
 
-@branch(resistance = 0.02, conductance = 1e-4, susceptance = 0.04)
-@generator(active = 3.2)
-
 system = powerSystem()
+
 addBus!(system; label = "Bus 1", type = 3, active = 0.5, magnitude = 0.9, angle = 0.0)
 addBus!(system; label = "Bus 2", type = 1, reactive = 0.05, magnitude = 1.1, angle = -0.1)
-addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.05)
-addGenerator!(system; label = "Generator 1", bus = "Bus 1", magnitude = 1.1)
-acModel!(system)
 
+@branch(resistance = 0.02, conductance = 1e-4, susceptance = 0.04)
+addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.05)
+
+addGenerator!(system; label = "Generator 1", bus = "Bus 1", magnitude = 1.1, active = 3.2)
+
+acModel!(system)
 analysis = newtonRaphson(system)
 for iteration = 1:100
     mismatch!(system, analysis)
@@ -378,8 +380,10 @@ for iteration = 1:100
 end
 
 updateBus!(system, analysis; label = "Bus 2", active = 0.2)
+
 addBranch!(system, analysis; label = "Branch 2", from = "Bus 1", to = "Bus 2", reactance = 1)
 updateBranch!(system, analysis; label = "Branch 1", status = 0)
+
 addGenerator!(system, analysis; label = "Generator 2", bus = "Bus 1", active = 0.2)
 updateGenerator!(system, analysis; label = "Generator 1", active = 0.3)
 
@@ -495,8 +499,6 @@ addBranch!(system; label = "Branch 2", from = "Bus 1", to = "Bus 2", reactance =
 addBranch!(system; label = "Branch 3", from = "Bus 2", to = "Bus 3", reactance = 0.04)
 
 addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 3.2)
-
-acModel!(system)
 
 analysis = newtonRaphson(system)
 for iteration = 1:100
@@ -642,8 +644,6 @@ addGenerator!(system; label = "Generator 1", bus = "Bus 1")
 addGenerator!(system; label = "Generator 2", bus = "Bus 3", reactive = 0.8)
 addGenerator!(system; label = "Generator 3", bus = "Bus 4", reactive = 0.9)
 
-acModel!(system)
-
 analysis = newtonRaphson(system)
 for iteration = 1:100
     stopping = mismatch!(system, analysis)
@@ -725,8 +725,6 @@ addBranch!(system; from = "Bus 2", to = "Bus 4", reactance = 0.004)
 
 addGenerator!(system; label = "Generator 1", bus = "Bus 1", maxReactive = 0.2)
 addGenerator!(system; label = "Generator 2", bus = "Bus 4", reactive = 0.3)
-
-acModel!(system)
 
 analysis = newtonRaphson(system)
 for iteration = 1:100

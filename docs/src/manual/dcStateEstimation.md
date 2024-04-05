@@ -41,17 +41,17 @@ using JuliaGrid # hide
 @default(template) # hide
 
 system = powerSystem()
+device = measurement()
 
 addBus!(system; label = "Bus 1", type = 3)
 addBus!(system; label = "Bus 2", type = 1, active = 0.1)
 addBus!(system; label = "Bus 3", type = 1, active = 0.05)
+
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.05)
 addBranch!(system; label = "Branch 2", from = "Bus 1", to = "Bus 3", reactance = 0.01)
 addBranch!(system; label = "Branch 3", from = "Bus 2", to = "Bus 3", reactance = 0.01)
-addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 3.2)
-dcModel!(system)
 
-device = measurement()
+addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 3.2)
 
 @wattmeter(label = "Wattmeter ?")
 addWattmeter!(system, device; bus = "Bus 1", active = 0.13, variance = 1e-3)
@@ -191,13 +191,15 @@ using JuliaGrid # hide
 @default(template) # hide
 
 system = powerSystem()
+device = measurement()
+
 addBus!(system; label = "Bus 1", type = 3)
 addBus!(system; label = "Bus 2", type = 1, active = 0.1)
-addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.5)
-addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 0.1)
-dcModel!(system)
 
-device = measurement()
+addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.5)
+
+addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 0.1)
+
 @wattmeter(label = "Wattmeter ?")
 addWattmeter!(system, device; bus = "Bus 2", active = -0.11, variance = 1e-3)
 addWattmeter!(system, device; from = "Branch 1", active = 0.09, variance = 1e-4)
@@ -234,13 +236,15 @@ using JuliaGrid # hide
 @default(template) # hide
 
 system = powerSystem()
+device = measurement()
+
 addBus!(system; label = "Bus 1", type = 3)
 addBus!(system; label = "Bus 2", type = 1, active = 0.1)
-addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.5)
-addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 0.1)
-dcModel!(system)
 
-device = measurement()
+addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.5)
+
+addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 0.1)
+
 @wattmeter(label = "Wattmeter ?")
 addWattmeter!(system, device; bus = "Bus 2", active = -0.11, variance = 1e-3)
 addWattmeter!(system, device; from = "Branch 1", active = 0.09, variance = 1e-4)
@@ -288,13 +292,15 @@ using JuliaGrid # hide
 @default(template) # hide
 
 system = powerSystem()
+device = measurement()
+
 addBus!(system; label = "Bus 1", type = 3)
 addBus!(system; label = "Bus 2", type = 1, active = 0.1)
-addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.5)
-addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 0.1)
-dcModel!(system)
 
-device = measurement()
+addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.5)
+
+addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 0.1)
+
 @wattmeter(label = "Wattmeter ?")
 addWattmeter!(system, device; bus = "Bus 2", active = -0.11, variance = 1e-3)
 addWattmeter!(system, device; from = "Branch 1", active = 0.09, variance = 1e-4)
