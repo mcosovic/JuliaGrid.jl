@@ -596,7 +596,7 @@ JuliaGrid utilizes the optimal PMU placement algorithm proposed in [[4]](@ref PM
     \text{subject\;to}& \;\;\; \mathbf A \mathbf d \ge \mathbf a.
   \end{aligned}
 ```
-Here, the vector \mathbf ``d = [d_1,\dots,d_n]^T`` serves as the optimization variable, where ``d_i \in \mathbb{F} = \{0,1\}`` is the PMU placement or a binary decision variable associated with the bus ``i \in \mathcal{N}``. The all-one vector ``\mathbf a`` is of dimension ``n``. The binary connectivity matrix ``\mathbf A \in \mathbb{F}^{n \times n}`` can be directly derived from the bus nodal matrix ``\mathbf Y`` by converting its entries into binary form [[5]](@ref PMUSEReferenceTutorials).
+Here, the vector ``\mathbf d = [d_1,\dots,d_n]^T`` serves as the optimization variable, where ``d_i \in \mathbb{F} = \{0,1\}`` is the PMU placement or a binary decision variable associated with the bus ``i \in \mathcal{N}``. The all-one vector ``\mathbf a`` is of dimension ``n``. The binary connectivity matrix ``\mathbf A \in \mathbb{F}^{n \times n}`` can be directly derived from the bus nodal matrix ``\mathbf Y`` by converting its entries into binary form [[5]](@ref PMUSEReferenceTutorials).
 
 Consequently, we obtain the binary vector ``\mathbf d = [d_1,\dots,d_n]^T``, where ``d_i = 1``, ``i \in \mathcal{N}``, suggests that a PMU should be placed at bus ``i``. The primary aim of PMU placement in the power system is to determine a minimal set of PMUs such that the entire system is observable without relying on traditional measurements [[4]](@ref PMUSEReferenceTutorials). Specifically, when we observe ``d_i = 1``, it indicates that the PMU is installed at bus ``i \in \mathcal{N}`` to measure bus voltage phasor and also to measure all current phasors across branches incident to bus ``i``.
 

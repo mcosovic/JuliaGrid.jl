@@ -70,7 +70,7 @@ function addWattmeter!(system::PowerSystem, device::Measurement;
     noise::Bool = template.wattmeter.noise)
 
     addPowerMeter!(system, device.wattmeter, device.wattmeter.active, template.wattmeter,
-        prefix.activePower, label, bus, from, to, active, variance, status, noise)
+    prefix.activePower, label, bus, from, to, active, variance, status, noise)
 end
 
 """
@@ -145,7 +145,7 @@ function addVarmeter!(system::PowerSystem, device::Measurement;
     noise::Bool = template.varmeter.noise)
 
     addPowerMeter!(system, device.varmeter, device.varmeter.reactive, template.varmeter,
-        prefix.reactivePower, label, bus, from, to, reactive, variance, status, noise)
+    prefix.reactivePower, label, bus, from, to, reactive, variance, status, noise)
 end
 
 ######### Add Wattmeter or Varmeter ##########
@@ -188,6 +188,7 @@ function addPowerMeter!(system, device, measure, default, prefixPower, label, bu
         push!(device.layout.index, index)
 
         basePowerInv = 1 / (system.base.power.value * system.base.power.prefix)
+
         setMeter(measure, power, variance, status, noise, defaultVariance, defaultStatus, prefixPower, basePowerInv)
     end
 end
@@ -260,8 +261,8 @@ function addWattmeter!(system::PowerSystem, device::Measurement, analysis::AC;
     power = analysis.power
 
     addPowermeter!(system, wattmeter, wattmeter.active, power.injection.active,
-        power.from.active, power.to.active, template.wattmeter, prefix.activePower,
-        varianceBus, varianceFrom, varianceTo, statusBus, statusFrom, statusTo)
+    power.from.active, power.to.active, template.wattmeter, prefix.activePower,
+    varianceBus, varianceFrom, varianceTo, statusBus, statusFrom, statusTo)
 end
 
 """
@@ -331,8 +332,8 @@ function addVarmeter!(system::PowerSystem, device::Measurement, analysis::AC;
     power = analysis.power
 
     addPowermeter!(system, varmeter, varmeter.reactive, power.injection.reactive, power.from.reactive,
-        power.to.reactive, template.varmeter, prefix.reactivePower, varianceBus, varianceFrom, varianceTo,
-        statusBus, statusFrom, statusTo)
+    power.to.reactive, template.varmeter, prefix.reactivePower, varianceBus, varianceFrom, varianceTo,
+    statusBus, statusFrom, statusTo)
 end
 
 ######### Add Group of Wattmeters or Varmeters ##########
@@ -455,7 +456,80 @@ function updateWattmeter!(system::PowerSystem, device::Measurement; label::L,
     basePowerInv = 1 / (system.base.power.value * system.base.power.prefix)
 
     updateMeter(wattmeter.active, index, active, variance, status, noise,
-        prefix.activePower, basePowerInv)
+    prefix.activePower, basePowerInv)
+end
+
+function updateWattmeter!(system::PowerSystem, device::Measurement, analysis::ACStateEstimation{NonlinearWLS{T}};
+    label::L, active::A = missing, variance::A = missing, status::A = missing,
+    noise::Bool = template.wattmeter.noise) where T <: Union{Normal, Orthogonal}
+
+    bus = system.bus
+    branch = system.branch
+    ac = system.model.ac
+    wattmeter = device.wattmeter
+    se = analysis.method
+
+    indexWattmeter = wattmeter.label[getLabel(wattmeter, label, "wattmeter")]
+    indexBusBranch = wattmeter.layout.index[indexWattmeter]
+    idx = device.voltmeter.number + indexWattmeter
+
+    updateMeter(wattmeter.active, indexWattmeter, active, variance, status, noise,
+    prefix.activePower, 1 / (system.base.power.value * system.base.power.prefix))
+
+    if wattmeter.active.status[indexWattmeter] == 1
+        if wattmeter.layout.bus[indexWattmeter]
+            se.type[idx] = 2
+        elseif wattmeter.layout.from[indexWattmeter]
+            se.type[idx] = 3
+        else
+            se.type[idx] = 4
+        end
+        se.mean[idx] = wattmeter.active.mean[indexWattmeter]
+    else
+        if wattmeter.layout.bus[indexWattmeter]
+            for k in ac.nodalMatrix.colptr[indexBusBranch]:(ac.nodalMatrix.colptr[indexBusBranch + 1] - 1)
+                j = ac.nodalMatrix.rowval[k]
+                se.jacobian[idx, j] = 0.0
+                se.jacobian[idx, bus.number + j] = 0.0
+            end
+        else
+            se.jacobian[idx, branch.layout.from[indexBusBranch]] = 0.0
+            se.jacobian[idx, bus.number + branch.layout.from[indexBusBranch]] = 0.0
+            se.jacobian[idx, branch.layout.to[indexBusBranch]] = 0.0
+            se.jacobian[idx, bus.number + branch.layout.to[indexBusBranch]] = 0.0
+        end
+        se.mean[idx] = 0.0
+        se.residual[idx] = 0.0
+        se.type[idx] = 0
+    end
+
+    if isset(variance)
+        se.precision[idx, idx] = 1 / wattmeter.active.variance[indexWattmeter]
+    end
+end
+
+function updateWattmeter!(system::PowerSystem, device::Measurement, analysis::ACStateEstimation{LAV};
+    label::L, active::A = missing, variance::A = missing, status::A = missing,
+    noise::Bool = template.wattmeter.noise)
+
+    wattmeter = device.wattmeter
+    se = analysis.method
+
+    indexWattmeter = wattmeter.label[getLabel(wattmeter, label, "wattmeter")]
+    indexBusBranch = wattmeter.layout.index[indexWattmeter]
+    idx = device.voltmeter.number + indexWattmeter
+
+    updateMeter(wattmeter.active, indexWattmeter, active, variance, status, noise,
+    prefix.activePower, 1 / (system.base.power.value * system.base.power.prefix))
+
+    if wattmeter.active.status[indexWattmeter] == 1
+        addDeviceLAV(se, idx)
+
+        remove!(se.jump, se.residual, idx)
+        addWattmeterResidual!(system, wattmeter, se, indexBusBranch, idx, indexWattmeter)
+    else
+        removeDeviceLAV(se, idx)
+    end
 end
 
 function updateWattmeter!(system::PowerSystem, device::Measurement, analysis::DCStateEstimation{LinearWLS{T}};
@@ -623,7 +697,80 @@ function updateVarmeter!(system::PowerSystem, device::Measurement; label::L,
     basePowerInv = 1 / (system.base.power.value * system.base.power.prefix)
 
     updateMeter(varmeter.reactive, index, reactive, variance, status, noise,
-        prefix.reactivePower, basePowerInv)
+    prefix.reactivePower, basePowerInv)
+end
+
+function updateVarmeter!(system::PowerSystem, device::Measurement, analysis::ACStateEstimation{NonlinearWLS{T}};
+    label::L, reactive::A = missing, variance::A = missing, status::A = missing,
+    noise::Bool = template.varmeter.noise) where T <: Union{Normal, Orthogonal}
+
+    bus = system.bus
+    branch = system.branch
+    ac = system.model.ac
+    varmeter = device.varmeter
+    se = analysis.method
+
+    indexVarmeter = varmeter.label[getLabel(varmeter, label, "varmeter")]
+    indexBusBranch = varmeter.layout.index[indexVarmeter]
+    idx = device.voltmeter.number + device.wattmeter.number + indexVarmeter
+
+    updateMeter(varmeter.reactive, indexVarmeter, reactive, variance, status, noise,
+    prefix.reactivePower,  1 / (system.base.power.value * system.base.power.prefix))
+
+    if varmeter.reactive.status[indexVarmeter] == 1
+        if varmeter.layout.bus[indexVarmeter]
+            se.type[idx] = 5
+        elseif varmeter.layout.from[indexVarmeter]
+            se.type[idx] = 6
+        else
+            se.type[idx] = 7
+        end
+        se.mean[idx] = varmeter.reactive.mean[indexVarmeter]
+    else
+        if varmeter.layout.bus[indexVarmeter]
+            for k in ac.nodalMatrix.colptr[indexBusBranch]:(ac.nodalMatrix.colptr[indexBusBranch + 1] - 1)
+                j = ac.nodalMatrix.rowval[k]
+                se.jacobian[idx, j] = 0.0
+                se.jacobian[idx, bus.number + j] = 0.0
+            end
+        else
+            se.jacobian[idx, branch.layout.from[indexBusBranch]] = 0.0
+            se.jacobian[idx, bus.number + branch.layout.from[indexBusBranch]] = 0.0
+            se.jacobian[idx, branch.layout.to[indexBusBranch]] = 0.0
+            se.jacobian[idx, bus.number + branch.layout.to[indexBusBranch]] = 0.0
+        end
+        se.mean[idx] = 0.0
+        se.residual[idx] = 0.0
+        se.type[idx] = 0
+    end
+
+    if isset(variance)
+        se.precision[idx, idx] = 1 / varmeter.reactive.variance[indexVarmeter]
+    end
+end
+
+function updateVarmeter!(system::PowerSystem, device::Measurement, analysis::ACStateEstimation{LAV};
+    label::L, reactive::A = missing, variance::A = missing, status::A = missing,
+    noise::Bool = template.varmeter.noise)
+
+    varmeter = device.varmeter
+    se = analysis.method
+
+    indexVarmeter = varmeter.label[getLabel(varmeter, label, "varmeter")]
+    indexBusBranch = varmeter.layout.index[indexVarmeter]
+    idx = device.voltmeter.number + device.wattmeter.number + indexVarmeter
+
+    updateMeter(varmeter.reactive, indexVarmeter, reactive, variance, status, noise,
+    prefix.reactivePower, 1 / (system.base.power.value * system.base.power.prefix))
+
+    if varmeter.reactive.status[indexVarmeter] == 1
+        addDeviceLAV(se, idx)
+
+        remove!(se.jump, se.residual, idx)
+        addVarmeterResidual!(system, varmeter, se, indexBusBranch, idx, indexVarmeter)
+    else
+        removeDeviceLAV(se, idx)
+    end
 end
 
 """

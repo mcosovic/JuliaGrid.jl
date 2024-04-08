@@ -95,6 +95,7 @@ function addAmmeter!(system::PowerSystem, device::Measurement;
         end
 
         baseCurrentInv = baseCurrentInverse(basePowerInv, baseVoltage)
+
         setMeter(ammeter.magnitude, magnitude, variance, status, noise, defaultVariance, defaultStatus, prefix.currentMagnitude, baseCurrentInv)
     end
 end
@@ -274,7 +275,83 @@ function updateAmmeter!(system::PowerSystem, device::Measurement; label::L,
     baseCurrentInv = baseCurrentInverse(basePowerInv, baseVoltage)
 
     updateMeter(ammeter.magnitude, index, magnitude, variance, status, noise,
-        prefix.currentMagnitude, baseCurrentInv)
+    prefix.currentMagnitude, baseCurrentInv)
+end
+
+function updateAmmeter!(system::PowerSystem, device::Measurement, analysis::ACStateEstimation{NonlinearWLS{T}};
+    label::L, magnitude::A = missing, variance::A = missing, status::A = missing,
+    noise::Bool = template.ammeter.noise) where T <: Union{Normal, Orthogonal}
+
+    bus = system.bus
+    branch = system.branch
+    ammeter = device.ammeter
+    se = analysis.method
+
+    indexAmmeter = ammeter.label[getLabel(ammeter, label, "ammeter")]
+    indexBranch = ammeter.layout.index[indexAmmeter]
+    idx = device.voltmeter.number + device.wattmeter.number + device.ammeter.number + indexAmmeter
+
+    basePowerInv = 1 / (system.base.power.value * system.base.power.prefix)
+    if ammeter.layout.from[indexAmmeter]
+        baseVoltage = system.base.voltage.value[system.branch.layout.from[indexBranch]] * system.base.voltage.prefix
+    else
+        baseVoltage = system.base.voltage.value[system.branch.layout.to[indexBranch]] * system.base.voltage.prefix
+    end
+
+    updateMeter(ammeter.magnitude, indexAmmeter, magnitude, variance, status, noise,
+    prefix.currentMagnitude, baseCurrentInverse(basePowerInv, baseVoltage))
+
+    if ammeter.magnitude.status[indexAmmeter] == 1
+        if ammeter.layout.from[indexAmmeter]
+            se.type[idx] = 8
+        else
+            se.type[idx] = 9
+        end
+        se.mean[idx] = ammeter.magnitude.mean[indexAmmeter]
+    else
+        se.jacobian[idx, branch.layout.from[indexBranch]] = 0.0
+        se.jacobian[idx, bus.number + branch.layout.from[indexBranch]] = 0.0
+        se.jacobian[idx, branch.layout.to[indexBranch]] = 0.0
+        se.jacobian[idx, bus.number + branch.layout.to[indexBranch]] = 0.0
+        se.mean[idx] = 0.0
+        se.residual[idx] = 0.0
+        se.type[idx] = 0
+    end
+
+    if isset(variance)
+        se.precision[idx, idx] = 1 / ammeter.magnitude.variance[indexAmmeter]
+    end
+end
+
+function updateAmmeter!(system::PowerSystem, device::Measurement, analysis::ACStateEstimation{LAV};
+    label::L, magnitude::A = missing, variance::A = missing, status::A = missing,
+    noise::Bool = template.ammeter.noise)
+
+    ammeter = device.ammeter
+    se = analysis.method
+
+    indexAmmeter = ammeter.label[getLabel(ammeter, label, "ammeter")]
+    indexBranch = ammeter.layout.index[indexAmmeter]
+    idx = device.voltmeter.number + device.wattmeter.number + device.varmeter.number + indexAmmeter
+
+    basePowerInv = 1 / (system.base.power.value * system.base.power.prefix)
+    if ammeter.layout.from[indexAmmeter]
+        baseVoltage = system.base.voltage.value[system.branch.layout.from[indexBranch]] * system.base.voltage.prefix
+    else
+        baseVoltage = system.base.voltage.value[system.branch.layout.to[indexBranch]] * system.base.voltage.prefix
+    end
+
+    updateMeter(ammeter.magnitude, indexAmmeter, magnitude, variance, status, noise,
+    prefix.currentMagnitude, baseCurrentInverse(basePowerInv, baseVoltage))
+
+    if ammeter.magnitude.status[indexAmmeter] == 1
+        addDeviceLAV(se, idx)
+
+        remove!(se.jump, se.residual, idx)
+        addAmmeterResidual!(system, ammeter, se, indexBranch, idx, indexAmmeter)
+    else
+        removeDeviceLAV(se, idx)
+    end
 end
 
 """

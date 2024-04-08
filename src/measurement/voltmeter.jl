@@ -69,8 +69,9 @@ function addVoltmeter!(system::PowerSystem, device::Measurement;
     push!(voltmeter.layout.index, indexBus)
 
     baseVoltageInv = 1 / (system.base.voltage.value[indexBus] * system.base.voltage.prefix)
+
     setMeter(voltmeter.magnitude, magnitude, variance, status, noise, default.variance,
-        default.status, prefix.voltageMagnitude, baseVoltageInv)
+    default.status, prefix.voltageMagnitude, baseVoltageInv)
 end
 
 """
@@ -196,11 +197,67 @@ function updateVoltmeter!(system::PowerSystem, device::Measurement; label::L,
 
     index = voltmeter.label[getLabel(voltmeter, label, "voltmeter")]
     indexBus = voltmeter.layout.index[index]
+    baseVoltageInv = 1 / (system.base.voltage.value[indexBus] * system.base.voltage.prefix)
+
+    updateMeter(voltmeter.magnitude, index, magnitude, variance, status, noise,
+    prefix.voltageMagnitude, baseVoltageInv)
+end
+
+function updateVoltmeter!(system::PowerSystem, device::Measurement, analysis::ACStateEstimation{NonlinearWLS{T}}; label::L,
+    magnitude::A = missing, variance::A = missing, status::A = missing,
+    noise::Bool = template.voltmeter.noise) where T <: Union{Normal, Orthogonal}
+
+    voltmeter = device.voltmeter
+    se = analysis.method
+
+    index = voltmeter.label[getLabel(voltmeter, label, "voltmeter")]
+    indexBus = voltmeter.layout.index[index]
+    baseVoltageInv = 1 / (system.base.voltage.value[indexBus] * system.base.voltage.prefix)
+
+    updateMeter(voltmeter.magnitude, index, magnitude, variance, status, noise,
+    prefix.voltageMagnitude, baseVoltageInv)
+
+    indexBus += system.bus.number
+    if voltmeter.magnitude.status[index] == 1
+        se.jacobian[index, indexBus] = 1.0
+        se.mean[index] = voltmeter.magnitude.mean[index]
+        se.type[index] = 1
+    else
+        se.jacobian[index, indexBus] = 0.0
+        se.mean[index] = 0.0
+        se.residual[index] = 0.0
+        se.type[index] = 0
+    end
+
+    if isset(variance)
+        se.precision[index, index] = 1 / voltmeter.magnitude.variance[index]
+    end
+end
+
+function updateVoltmeter!(system::PowerSystem, device::Measurement, analysis::ACStateEstimation{LAV}; label::L,
+    magnitude::A = missing, variance::A = missing, status::A = missing,
+    noise::Bool = template.voltmeter.noise)
+
+    voltmeter = device.voltmeter
+    se = analysis.method
+
+    index = voltmeter.label[getLabel(voltmeter, label, "voltmeter")]
+    indexBus = voltmeter.layout.index[index]
 
     baseVoltageInv = 1 / (system.base.voltage.value[indexBus] * system.base.voltage.prefix)
 
     updateMeter(voltmeter.magnitude, index, magnitude, variance, status, noise,
-        prefix.voltageMagnitude, baseVoltageInv)
+    prefix.voltageMagnitude, baseVoltageInv)
+
+    if voltmeter.magnitude.status[index] == 1
+        indexBus += system.bus.number
+        addDeviceLAV(se, index)
+
+        remove!(se.jump, se.residual, index)
+        se.residual[index] = @constraint(se.jump, se.statex[indexBus] - se.statey[indexBus] + se.residualy[index] - se.residualx[index] - voltmeter.magnitude.mean[index] == 0.0)
+    else
+        removeDeviceLAV(se, index)
+    end
 end
 
 """

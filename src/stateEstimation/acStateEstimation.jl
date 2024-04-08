@@ -345,31 +345,30 @@ function acLavStateEstimation(system::PowerSystem, device::Measurement, (@nospec
     measureNumber = voltmeter.number + ammeter.number + wattmeter.number + varmeter.number + 2 * pmu.number
 
     jump = JuMP.Model(optimizerFactory; add_bridges = bridge)
-    set_string_names_on_creation(jump, name)
+    se = LAV(
+        jump,
+        @variable(jump, 0 <= statex[i = 1:(2 * bus.number)]),
+        @variable(jump, 0 <= statey[i = 1:(2 * bus.number)]),
+        @variable(jump, 0 <= residualx[i = 1:measureNumber]),
+        @variable(jump, 0 <= residualy[i = 1:measureNumber]),
+        Dict{Int64, JuMP.ConstraintRef}(),
+        measureNumber
+    )
 
-    statex = @variable(jump, 0 <= magnitudex[i = 1:(2 * bus.number)])
-    statey = @variable(jump, 0 <= magnitudey[i = 1:(2 * bus.number)])
+    set_string_names_on_creation(se.jump, name)
 
-    anglex = @view(statex[1:bus.number])
-    magnitudex = @view(statex[(bus.number + 1):end])
-    angley = @view(statey[1:bus.number])
-    magnitudey = @view(statey[(bus.number + 1):end])
+    fix(se.statex[bus.layout.slack], bus.voltage.angle[bus.layout.slack]; force = true)
+    fix(se.statey[bus.layout.slack], 0.0; force = true)
 
-    residualx = @variable(jump, 0 <= residualx[i = 1:measureNumber])
-    residualy = @variable(jump, 0 <= residualy[i = 1:measureNumber])
-
-    fix(anglex[bus.layout.slack], bus.voltage.angle[bus.layout.slack]; force = true)
-    fix(angley[bus.layout.slack], 0.0; force = true)
-
-    objective = @expression(jump, AffExpr())
-    residual = Dict{Int64, JuMP.ConstraintRef}()
+    objective = @expression(se.jump, AffExpr())
 
     for (k, index) in enumerate(voltmeter.layout.index)
+        index += bus.number
         if voltmeter.magnitude.status[k] == 1
-            add_to_expression!(objective, residualx[k] + residualy[k])
-            residual[k] = @constraint(jump, magnitudex[index] - magnitudey[index] + residualx[k] - residualy[k] - voltmeter.magnitude.mean[k] == 0.0)
+            add_to_expression!(objective, se.residualx[k] + se.residualy[k])
+            se.residual[k] = @constraint(se.jump, se.statex[index] - se.statey[index] + se.residualx[k] - se.residualy[k] - voltmeter.magnitude.mean[k] == 0.0)
         else
-            fix!(residualx, residualy, k)
+            fix!(se.residualx, se.residualy, k)
         end
     end
 
@@ -377,38 +376,9 @@ function acLavStateEstimation(system::PowerSystem, device::Measurement, (@nospec
     for (k, index) in enumerate(wattmeter.layout.index)
         if wattmeter.active.status[k] == 1
             add_to_expression!(objective, residualx[idx] + residualy[idx])
-
-            if wattmeter.layout.bus[k]
-                Vi = magnitudex[index] - magnitudey[index]
-                expr = @expression(jump, Vi * real(ac.nodalMatrixTranspose[index, index]))
-
-                for ptr in ac.nodalMatrix.colptr[index]:(ac.nodalMatrix.colptr[index + 1] - 1)
-                    j = ac.nodalMatrix.rowval[ptr]
-                    if index != j
-                        Gij = real(ac.nodalMatrixTranspose.nzval[ptr])
-                        Bij = imag(ac.nodalMatrixTranspose.nzval[ptr])
-                        cosAngle = @expression(jump, cos(anglex[index] - angley[index] - anglex[j] + angley[j]))
-                        sinAngle = @expression(jump, sin(anglex[index] - angley[index] - anglex[j] + angley[j]))
-                        expr = @expression(jump, expr + (magnitudex[j] - magnitudey[j]) * (Gij * cosAngle + Bij * sinAngle))
-                    end
-                end
-                residual[idx] = @constraint(jump, Vi * expr + residualx[idx] - residualy[idx] - wattmeter.active.mean[k] == 0)
-            else
-                i, j, gij, bij, gsi, _, tij, Fij = branchParameter(branch, ac, index)
-
-                Vi = magnitudex[i] - magnitudey[i]
-                Vj = magnitudex[j] - magnitudey[j]
-                cosAngle = @expression(jump, cos(anglex[i] - angley[i] - anglex[j] + angley[j] - Fij))
-                sinAngle = @expression(jump, sin(anglex[i] - angley[i] - anglex[j] + angley[j] - Fij))
-
-                if wattmeter.layout.from[k]
-                    residual[idx] = @constraint(jump, (gij + gsi) * tij^2 * Vi^2 - tij * (gij * cosAngle + bij * sinAngle) * Vi * Vj + residualx[idx] - residualy[idx] - wattmeter.active.mean[k] == 0)
-                else
-                    residual[idx] = @constraint(jump, (gij + gsi) * Vj^2 - tij * (gij * cosAngle - bij * sinAngle) * Vi * Vj + residualx[idx] - residualy[idx] - wattmeter.active.mean[k] == 0)
-                end
-            end
+            addWattmeterResidual!(system, wattmeter, se, index, idx, k)
         else
-            fix!(residualx, residualy, idx)
+            fix!(se.residualx, se.residualy, idx)
         end
         idx += 1
     end
@@ -416,37 +386,9 @@ function acLavStateEstimation(system::PowerSystem, device::Measurement, (@nospec
     for (k, index) in enumerate(varmeter.layout.index)
         if varmeter.reactive.status[k] == 1
             add_to_expression!(objective, residualx[idx] + residualy[idx])
-
-            if varmeter.layout.bus[k]
-                Vi = magnitudex[index] - magnitudey[index]
-                expr = @expression(jump, -Vi * imag(ac.nodalMatrixTranspose[index, index]))
-
-                for ptr in ac.nodalMatrix.colptr[index]:(ac.nodalMatrix.colptr[index + 1] - 1)
-                    j = ac.nodalMatrix.rowval[ptr]
-                    if index != j
-                        Gij = real(ac.nodalMatrixTranspose.nzval[ptr])
-                        Bij = imag(ac.nodalMatrixTranspose.nzval[ptr])
-                        cosAngle = @expression(jump, cos(anglex[index] - angley[index] - anglex[j] + angley[j]))
-                        sinAngle = @expression(jump, sin(anglex[index] - angley[index] - anglex[j] + angley[j]))
-                        expr = @expression(jump, expr + (magnitudex[j] - magnitudey[j]) * (Gij * sinAngle - Bij * cosAngle))
-                    end
-                end
-                residual[idx] = @constraint(jump, Vi * expr + residualx[idx] - residualy[idx] - varmeter.reactive.mean[k] == 0)
-            else
-                i, j, gij, bij, _, bsi, tij, Fij = branchParameter(branch, ac, index)
-                Vi = magnitudex[i] - magnitudey[i]
-                Vj = magnitudex[j] - magnitudey[j]
-                cosAngle = @expression(jump, cos(anglex[i] - angley[i] - anglex[j] + angley[j] - Fij))
-                sinAngle = @expression(jump, sin(anglex[i] - angley[i] - anglex[j] + angley[j] - Fij))
-
-                if varmeter.layout.from[k]
-                    residual[idx] = @constraint(jump, - (bij + bsi) * tij^2 * Vi^2 - tij * (gij * sinAngle - bij * cosAngle) * Vi * Vj + residualx[idx] - residualy[idx] - varmeter.reactive.mean[k] == 0)
-                else
-                    residual[idx] = @constraint(jump, - (bij + bsi) * Vj^2 + tij * (gij * sinAngle + bij * cosAngle) * Vi * Vj + residualx[idx] - residualy[idx] - varmeter.reactive.mean[k] == 0)
-                end
-            end
+            addVarmeterResidual!(system, varmeter, se, index, idx, k)
         else
-            fix!(residualx, residualy, idx)
+            fix!(se.residualx, se.residualy, idx)
         end
         idx += 1
     end
@@ -454,22 +396,9 @@ function acLavStateEstimation(system::PowerSystem, device::Measurement, (@nospec
     for (k, index) in enumerate(ammeter.layout.index)
         if ammeter.magnitude.status[k] == 1
             add_to_expression!(objective, residualx[idx] + residualy[idx])
-
-            i, j, gij, bij, gsi, bsi, tij, Fij = branchParameter(branch, ac, index)
-            Vi = magnitudex[i] - magnitudey[i]
-            Vj = magnitudex[j] - magnitudey[j]
-            cosAngle = @expression(jump, cos(anglex[i] - angley[i] - anglex[j] + angley[j] - Fij))
-            sinAngle = @expression(jump, sin(anglex[i] - angley[i] - anglex[j] + angley[j] - Fij))
-
-            if ammeter.layout.from[k]
-                A, B, C, D = IijCoeff(gij, gsi, bij, bsi, tij)
-                residual[idx] = @constraint(jump, sqrt(A * Vi^2 + B * Vj^2 - 2 * Vi * Vj * (C * cosAngle - D * sinAngle)) + (residualx[idx] - residualy[idx] - ammeter.magnitude.mean[k]) == 0)
-            else
-                A, B, C, D = IjiCoeff(gij, gsi, bij, bsi, tij)
-                residual[idx] = @constraint(jump, sqrt(A * Vi^2 + B * Vj^2 - 2 * Vi * Vj * (C * cosAngle + D * sinAngle)) + residualx[idx] - residualy[idx] - ammeter.magnitude.mean[k] == 0)
-            end
+            addAmmeterResidual!(system, ammeter, se, index, idx, k)
         else
-            fix!(residualx, residualy, idx)
+            fix!(se.residualx, se.residualy, idx)
         end
         idx += 1
     end
@@ -478,109 +407,47 @@ function acLavStateEstimation(system::PowerSystem, device::Measurement, (@nospec
         if pmu.layout.polar[k]
             if pmu.layout.bus[k]
                 if pmu.magnitude.status[k] == 1
-                    add_to_expression!(objective, residualx[idx] + residualy[idx])
-                    residual[idx] = @constraint(jump, magnitudex[index] - magnitudey[index] + residualx[idx] - residualy[idx] - pmu.magnitude.mean[k] == 0.0)
+                    add_to_expression!(objective, se.residualx[idx] + se.residualy[idx])
+                    se.residual[idx] = @constraint(se.jump, se.statex[index + bus.number] - se.statey[index + bus.number] + se.residualx[idx] - se.residualy[idx] - pmu.magnitude.mean[k] == 0.0)
                 else
-                    fix!(residualx, residualy, idx)
+                    fix!(se.residualx, se.residualy, idx)
                 end
 
                 if pmu.angle.status[k] == 1
-                    add_to_expression!(objective, residualx[idx + 1] + residualy[idx + 1])
-                    residual[idx + 1] = @constraint(jump, anglex[index] - angley[index] + residualx[idx + 1] - residualy[idx + 1] - pmu.angle.mean[k] == 0.0)
+                    add_to_expression!(objective, se.residualx[idx + 1] + se.residualy[idx + 1])
+                    se.residual[idx + 1] = @constraint(se.jump, se.statex[index] - se.statey[index] + se.residualx[idx + 1] - se.residualy[idx + 1] - pmu.angle.mean[k] == 0.0)
                 else
-                    fix!(residualx, residualy, idx + 1)
+                    fix!(se.residualx, se.residualy, idx + 1)
                 end
             else
                 if pmu.magnitude.status[k] == 1
-                    add_to_expression!(objective, residualx[idx] + residualy[idx])
-
-                    i, j, gij, bij, gsi, bsi, tij, Fij = branchParameter(branch, ac, index)
-                    cosAngle = @expression(jump, cos(anglex[i] - angley[i] - anglex[j] + angley[j] - Fij))
-                    sinAngle = @expression(jump, sin(anglex[i] - angley[i] - anglex[j] + angley[j] - Fij))
-                    Vi = magnitudex[i] - magnitudey[i]
-                    Vj = magnitudex[j] - magnitudey[j]
-
-                    if pmu.layout.from[k]
-                        A, B, C, D = IijCoeff(gij, gsi, bij, bsi, tij)
-                        residual[idx] = @constraint(jump, sqrt(A * Vi^2 + B * Vj^2 - 2 * Vi * Vj * (C * cosAngle - D * sinAngle)) + residualx[idx] - residualy[idx] - pmu.magnitude.mean[k] == 0)
-                    else
-                        A, B, C, D = IjiCoeff(gij, gsi, bij, bsi, tij)
-                        residual[idx] = @constraint(jump, sqrt(A * Vi^2 + B * Vj^2 - 2 * Vi * Vj * (C * cosAngle + D * sinAngle)) + residualx[idx] - residualy[idx] - pmu.magnitude.mean[k] == 0)
-                    end
+                    add_to_expression!(objective, se.residualx[idx] + se.residualy[idx])
+                    addPmuCurrentMagnitudeResidual!(system, pmu, se, index, idx, k)
                 else
-                    fix!(residualx, residualy, idx)
+                    fix!(se.residualx, se.residualy, idx)
                 end
 
                 if pmu.angle.status[k] == 1
-                    add_to_expression!(objective, residualx[idx + 1] + residualy[idx + 1])
-
-                    i, j, gij, bij, gsi, bsi, tij, Fij = branchParameter(branch, ac, index)
-                    θi = anglex[i] - angley[i]
-                    θj = anglex[j] - angley[j]
-                    Vi = magnitudex[i] - magnitudey[i]
-                    Vj = magnitudex[j] - magnitudey[j]
-
-                    if pmu.layout.from[k]
-                        A, B, C, D = FijCoeff(gij, gsi, bij, bsi, tij)
-                        IijRe = @expression(jump, (A * cos(θi) - B * sin(θi)) * Vi - (C * cos(θj + Fij) - D * sin(θj + Fij)) * Vj)
-                        IijIm = @expression(jump, (A * sin(θi) + B * cos(θi)) * Vi - (C * sin(θj + Fij) + D * cos(θj + Fij)) * Vj)
-
-                        residual[idx + 1] = @constraint(jump, atan(IijIm, IijRe) + residualx[idx + 1] - residualy[idx + 1] - pmu.angle.mean[k] == 0)
-                    else
-                        A, B, C, D = FjiCoeff(gij, gsi, bij, bsi, tij)
-                        IijRe = @expression(jump, (A * cos(θj) - B * sin(θj)) * Vj - (C * cos(θi - Fij) - D * sin(θi - Fij)) * Vi)
-                        IijIm = @expression(jump, (A * sin(θj) + B * cos(θj)) * Vj - (C * sin(θi - Fij) + D * cos(θi - Fij)) * Vi)
-
-                        residual[idx + 1] = @constraint(jump, atan(IijIm, IijRe) + residualx[idx + 1] - residualy[idx + 1] - pmu.angle.mean[k] == 0)
-                    end
+                    add_to_expression!(objective, se.residualx[idx + 1] + se.residualy[idx + 1])
+                    addPmuCurrentAngleResidual!(system, pmu, se, index, idx, k)
                 else
-                    fix!(residualx, residualy, idx + 1)
+                    fix!(se.residualx, se.residualy, idx + 1)
                 end
             end
         else
             if pmu.magnitude.status[k] == 1 && pmu.angle.status[k] == 1
-                add_to_expression!(objective, residualx[idx] + residualy[idx])
-                add_to_expression!(objective, residualx[idx + 1] + residualy[idx + 1])
-
-                if pmu.layout.bus[k]
-                    Vi = magnitudex[index] - magnitudey[index]
-                    cosAngle = @expression(jump, cos(anglex[index] - angley[index]))
-                    sinAngle = @expression(jump, sin(anglex[index] - angley[index]))
-
-                    residual[idx] = @constraint(jump, Vi * cosAngle + residualx[idx] - residualy[idx] - pmu.magnitude.mean[k] * cos(pmu.angle.mean[k]) == 0.0)
-                    residual[idx + 1] = @constraint(jump, Vi * sinAngle + residualx[idx + 1] - residualy[idx + 1] - pmu.magnitude.mean[k] * sin(pmu.angle.mean[k]) == 0.0)
-                else
-                    i, j, gij, bij, gsi, bsi, tij, Fij = branchParameter(branch, ac, index)
-                    θi = anglex[i] - angley[i]
-                    θj = anglex[j] - angley[j]
-                    Vi = magnitudex[i] - magnitudey[i]
-                    Vj = magnitudex[j] - magnitudey[j]
-
-                    if pmu.layout.from[k]
-                        A, B, C, D = FijCoeff(gij, gsi, bij, bsi, tij)
-                        residual[idx] = @constraint(jump, (A * cos(θi) - B * sin(θi)) * Vi - (C * cos(θj + Fij) - D * sin(θj + Fij)) * Vj + residualx[idx] - residualy[idx] - pmu.magnitude.mean[k] * cos(pmu.angle.mean[k]) == 0.0)
-                    else
-                        A, B, C, D = FjiCoeff(gij, gsi, bij, bsi, tij)
-                        residual[idx] = @constraint(jump, (A * cos(θj) - B * sin(θj)) * Vj - (C * cos(θi - Fij) - D * sin(θi - Fij)) * Vi + residualx[idx] - residualy[idx] - pmu.magnitude.mean[k] * cos(pmu.angle.mean[k]) == 0.0)
-                    end
-
-                    if pmu.layout.from[k]
-                        A, B, C, D = FijCoeff(gij, gsi, bij, bsi, tij)
-                        residual[idx + 1] = @constraint(jump, (A * sin(θi) + B * cos(θi)) * Vi - (C * sin(θj + Fij) + D * cos(θj + Fij)) * Vj + residualx[idx + 1] - residualy[idx + 1] - pmu.magnitude.mean[k] * sin(pmu.angle.mean[k]) == 0.0)
-                    else
-                        A, B, C, D = FjiCoeff(gij, gsi, bij, bsi, tij)
-                        residual[idx + 1] = @constraint(jump, (A * sin(θj) + B * cos(θj)) * Vj - (C * sin(θi - Fij) + D * cos(θi - Fij)) * Vi + residualx[idx + 1] - residualy[idx + 1] - pmu.magnitude.mean[k] * sin(pmu.angle.mean[k]) == 0.0)
-                    end
-                end
+                add_to_expression!(objective, se.residualx[idx] + se.residualy[idx])
+                add_to_expression!(objective, se.residualx[idx + 1] + se.residualy[idx + 1])
+                addPmuCartesianResidual!(system, pmu, se, index, idx, k)
             else
-                fix!(residualx, residualy, idx)
-                fix!(residualx, residualy, idx + 1)
+                fix!(se.residualx, se.residualy, idx)
+                fix!(se.residualx, se.residualy, idx + 1)
             end
         end
         idx += 2
     end
 
-    @objective(jump, Min, objective)
+    @objective(se.jump, Min, objective)
 
     return ACStateEstimation(
         Polar(
@@ -603,18 +470,159 @@ function acLavStateEstimation(system::PowerSystem, device::Measurement, (@nospec
             Polar(Float64[], Float64[]),
             Polar(Float64[], Float64[])
         ),
-        LAV(
-            jump,
-            statex,
-            statey,
-            residualx,
-            residualy,
-            residual,
-            measureNumber
-        )
+        se
     )
 end
 
+function addWattmeterResidual!(system::PowerSystem, wattmeter::Wattmeter, se::LAV, index::Int64, idx::Int64, k::Int64)
+    if wattmeter.layout.bus[k]
+        Vi = se.statex[system.bus.number + index] - se.statey[system.bus.number + index]
+        expr = @expression(se.jump, Vi * real(system.model.ac.nodalMatrixTranspose[index, index]))
+
+        for ptr in system.model.ac.nodalMatrix.colptr[index]:(system.model.ac.nodalMatrix.colptr[index + 1] - 1)
+            j = system.model.ac.nodalMatrix.rowval[ptr]
+            if index != j
+                Gij = real(system.model.ac.nodalMatrixTranspose.nzval[ptr])
+                Bij = imag(system.model.ac.nodalMatrixTranspose.nzval[ptr])
+                cosAngle = @expression(se.jump, cos(se.statex[index] - se.statey[index] - se.statex[j] + se.statey[j]))
+                sinAngle = @expression(se.jump, sin(se.statex[index] - se.statey[index] - se.statex[j] + se.statey[j]))
+                expr = @expression(se.jump, expr + (se.statex[j + system.bus.number] - se.statey[j + system.bus.number]) * (Gij * cosAngle + Bij * sinAngle))
+            end
+        end
+        se.residual[idx] = @constraint(se.jump, Vi * expr + se.residualx[idx] - se.residualy[idx] - wattmeter.active.mean[k] == 0)
+    else
+        i, j, gij, bij, gsi, _, tij, Fij = branchParameter(system.branch, system.model.ac, index)
+
+        Vi = se.statex[system.bus.number + i] - se.statey[system.bus.number + i]
+        Vj = se.statex[system.bus.number + j] - se.statey[system.bus.number + j]
+        cosAngle = @expression(se.jump, cos(se.statex[i] - se.statey[i] - se.statex[j] + se.statey[j] - Fij))
+        sinAngle = @expression(se.jump, sin(se.statex[i] - se.statey[i] - se.statex[j] + se.statey[j] - Fij))
+
+        if wattmeter.layout.from[k]
+            se.residual[idx] = @constraint(se.jump, (gij + gsi) * tij^2 * Vi^2 - tij * (gij * cosAngle + bij * sinAngle) * Vi * Vj + se.residualx[idx] - se.residualy[idx] - wattmeter.active.mean[k] == 0)
+        else
+            se.residual[idx] = @constraint(se.jump, (gij + gsi) * Vj^2 - tij * (gij * cosAngle - bij * sinAngle) * Vi * Vj + se.residualx[idx] - se.residualy[idx] - wattmeter.active.mean[k] == 0)
+        end
+    end
+end
+
+function addVarmeterResidual!(system::PowerSystem, varmeter::Varmeter, se::LAV, index::Int64, idx::Int64, k::Int64)
+    if varmeter.layout.bus[k]
+        Vi = se.statex[system.bus.number + index] - se.statey[system.bus.number + index]
+        expr = @expression(se.jump, -Vi * imag(system.model.ac.nodalMatrixTranspose[index, index]))
+
+        for ptr in system.model.ac.nodalMatrix.colptr[index]:(system.model.ac.nodalMatrix.colptr[index + 1] - 1)
+            j = system.model.ac.nodalMatrix.rowval[ptr]
+            if index != j
+                Gij = real(system.model.ac.nodalMatrixTranspose.nzval[ptr])
+                Bij = imag(system.model.ac.nodalMatrixTranspose.nzval[ptr])
+                cosAngle = @expression(se.jump, cos(se.statex[index] - se.statey[index] - se.statex[j] + se.statey[j]))
+                sinAngle = @expression(se.jump, sin(se.statex[index] - se.statey[index] - se.statex[j] + se.statey[j]))
+                expr = @expression(se.jump, expr + (se.statex[j + system.bus.number] - se.statey[j + system.bus.number]) * (Gij * sinAngle - Bij * cosAngle))
+            end
+        end
+        se.residual[idx] = @constraint(se.jump, Vi * expr + se.residualx[idx] - se.residualy[idx] - varmeter.reactive.mean[k] == 0)
+    else
+        i, j, gij, bij, _, bsi, tij, Fij = branchParameter(system.branch, system.model.ac, index)
+
+        Vi = se.statex[system.bus.number + i] - se.statey[system.bus.number + i]
+        Vj = se.statex[system.bus.number + j] - se.statey[system.bus.number + j]
+        cosAngle = @expression(se.jump, cos(se.statex[i] - se.statey[i] - se.statex[j] + se.statey[j] - Fij))
+        sinAngle = @expression(se.jump, sin(se.statex[i] - se.statey[i] - se.statex[j] + se.statey[j] - Fij))
+
+        if varmeter.layout.from[k]
+            se.residual[idx] = @constraint(se.jump, - (bij + bsi) * tij^2 * Vi^2 - tij * (gij * sinAngle - bij * cosAngle) * Vi * Vj + se.residualx[idx] - se.residualy[idx] - varmeter.reactive.mean[k] == 0)
+        else
+            se.residual[idx] = @constraint(se.jump, - (bij + bsi) * Vj^2 + tij * (gij * sinAngle + bij * cosAngle) * Vi * Vj + se.residualx[idx] - se.residualy[idx] - varmeter.reactive.mean[k] == 0)
+        end
+    end
+end
+
+function addAmmeterResidual!(system::PowerSystem, ammeter::Ammeter, se::LAV, index::Int64, idx::Int64, k::Int64)
+    i, j, gij, bij, gsi, bsi, tij, Fij = branchParameter(system.branch, system.model.ac, index)
+
+    Vi = se.statex[system.bus.number + i] - se.statey[system.bus.number + i]
+    Vj = se.statex[system.bus.number + j] - se.statey[system.bus.number + j]
+    cosAngle = @expression(se.jump, cos(se.statex[i] - se.statey[i] - se.statex[j] + se.statey[j] - Fij))
+    sinAngle = @expression(se.jump, sin(se.statex[i] - se.statey[i] - se.statex[j] + se.statey[j] - Fij))
+
+    if ammeter.layout.from[k]
+        A, B, C, D = IijCoeff(gij, gsi, bij, bsi, tij)
+        se.residual[idx] = @constraint(se.jump, sqrt(A * Vi^2 + B * Vj^2 - 2 * Vi * Vj * (C * cosAngle - D * sinAngle)) + (se.residualx[idx] - se.residualy[idx] - ammeter.magnitude.mean[k]) == 0)
+    else
+        A, B, C, D = IjiCoeff(gij, gsi, bij, bsi, tij)
+        se.residual[idx] = @constraint(se.jump, sqrt(A * Vi^2 + B * Vj^2 - 2 * Vi * Vj * (C * cosAngle + D * sinAngle)) + se.residualx[idx] - se.residualy[idx] - ammeter.magnitude.mean[k] == 0)
+    end
+end
+
+function addPmuCurrentMagnitudeResidual!(system::PowerSystem, pmu::PMU, se::LAV, index::Int64, idx::Int64, k::Int64)
+    i, j, gij, bij, gsi, bsi, tij, Fij = branchParameter(system.branch, system.model.ac, index)
+
+    Vi = se.statex[system.bus.number + i] - se.statey[system.bus.number + i]
+    Vj = se.statex[system.bus.number + j] - se.statey[system.bus.number + j]
+    cosAngle = @expression(se.jump, cos(se.statex[i] - se.statey[i] - se.statex[j] + se.statey[j] - Fij))
+    sinAngle = @expression(se.jump, sin(se.statex[i] - se.statey[i] - se.statex[j] + se.statey[j] - Fij))
+
+    if pmu.layout.from[k]
+        A, B, C, D = IijCoeff(gij, gsi, bij, bsi, tij)
+        se.residual[idx] = @constraint(se.jump, sqrt(A * Vi^2 + B * Vj^2 - 2 * Vi * Vj * (C * cosAngle - D * sinAngle)) + se.residualx[idx] - se.residualy[idx] - pmu.magnitude.mean[k] == 0)
+    else
+        A, B, C, D = IjiCoeff(gij, gsi, bij, bsi, tij)
+        se.residual[idx] = @constraint(se.jump, sqrt(A * Vi^2 + B * Vj^2 - 2 * Vi * Vj * (C * cosAngle + D * sinAngle)) + se.residualx[idx] - se.residualy[idx] - pmu.magnitude.mean[k] == 0)
+    end
+end
+
+function addPmuCurrentAngleResidual!(system::PowerSystem, pmu::PMU, se::LAV, index::Int64, idx::Int64, k::Int64)
+    i, j, gij, bij, gsi, bsi, tij, Fij = branchParameter(system.branch, system.model.ac, index)
+
+    Vi = se.statex[system.bus.number + i] - se.statey[system.bus.number + i]
+    Vj = se.statex[system.bus.number + j] - se.statey[system.bus.number + j]
+    θi = se.statex[i] - se.statey[i]
+    θj = se.statex[j] - se.statey[j]
+
+    if pmu.layout.from[k]
+        A, B, C, D = FijCoeff(gij, gsi, bij, bsi, tij)
+        IijRe = @expression(se.jump, (A * cos(θi) - B * sin(θi)) * Vi - (C * cos(θj + Fij) - D * sin(θj + Fij)) * Vj)
+        IijIm = @expression(se.jump, (A * sin(θi) + B * cos(θi)) * Vi - (C * sin(θj + Fij) + D * cos(θj + Fij)) * Vj)
+
+        se.residual[idx + 1] = @constraint(se.jump, atan(IijIm, IijRe) + se.residualx[idx + 1] - se.residualy[idx + 1] - pmu.angle.mean[k] == 0)
+    else
+        A, B, C, D = FjiCoeff(gij, gsi, bij, bsi, tij)
+        IijRe = @expression(se.jump, (A * cos(θj) - B * sin(θj)) * Vj - (C * cos(θi - Fij) - D * sin(θi - Fij)) * Vi)
+        IijIm = @expression(se.jump, (A * sin(θj) + B * cos(θj)) * Vj - (C * sin(θi - Fij) + D * cos(θi - Fij)) * Vi)
+
+        se.residual[idx + 1] = @constraint(se.jump, atan(IijIm, IijRe) + se.residualx[idx + 1] - se.residualy[idx + 1] - pmu.angle.mean[k] == 0)
+    end
+end
+
+function addPmuCartesianResidual!(system::PowerSystem, pmu::PMU, se::LAV, index::Int64, idx::Int64, k::Int64)
+    if pmu.layout.bus[k]
+        Vi = se.statex[system.bus.number + index] - se.statey[system.bus.number + index]
+        cosAngle = @expression(se.jump, cos(se.statex[index] - se.statey[index]))
+        sinAngle = @expression(se.jump, sin(se.statex[index] - se.statey[index]))
+
+        se.residual[idx] = @constraint(se.jump, Vi * cosAngle + se.residualx[idx] - se.residualy[idx] - pmu.magnitude.mean[k] * cos(pmu.angle.mean[k]) == 0.0)
+        se.residual[idx + 1] = @constraint(se.jump, Vi * sinAngle + se.residualx[idx + 1] - se.residualy[idx + 1] - pmu.magnitude.mean[k] * sin(pmu.angle.mean[k]) == 0.0)
+    else
+        i, j, gij, bij, gsi, bsi, tij, Fij = branchParameter(system.branch, system.model.ac, index)
+
+        Vi = se.statex[system.bus.number + i] - se.statey[system.bus.number + i]
+        Vj = se.statex[system.bus.number + j] - se.statey[system.bus.number + j]
+        θi = se.statex[i] - se.statey[i]
+        θj = se.statex[j] - se.statey[j]
+
+        if pmu.layout.from[k]
+            A, B, C, D = FijCoeff(gij, gsi, bij, bsi, tij)
+            se.residual[idx] = @constraint(se.jump, (A * cos(θi) - B * sin(θi)) * Vi - (C * cos(θj + Fij) - D * sin(θj + Fij)) * Vj + se.residualx[idx] - se.residualy[idx] - pmu.magnitude.mean[k] * cos(pmu.angle.mean[k]) == 0.0)
+            se.residual[idx + 1] = @constraint(se.jump, (A * sin(θi) + B * cos(θi)) * Vi - (C * sin(θj + Fij) + D * cos(θj + Fij)) * Vj + se.residualx[idx + 1] - se.residualy[idx + 1] - pmu.magnitude.mean[k] * sin(pmu.angle.mean[k]) == 0.0)
+        else
+            A, B, C, D = FjiCoeff(gij, gsi, bij, bsi, tij)
+            se.residual[idx] = @constraint(se.jump, (A * cos(θj) - B * sin(θj)) * Vj - (C * cos(θi - Fij) - D * sin(θi - Fij)) * Vi + se.residualx[idx] - se.residualy[idx] - pmu.magnitude.mean[k] * cos(pmu.angle.mean[k]) == 0.0)
+            se.residual[idx + 1] = @constraint(se.jump, (A * sin(θj) + B * cos(θj)) * Vj - (C * sin(θi - Fij) + D * cos(θi - Fij)) * Vi + se.residualx[idx + 1] - se.residualy[idx + 1] - pmu.magnitude.mean[k] * sin(pmu.angle.mean[k]) == 0.0)
+
+        end
+    end
+end
 
 """
     solve!(system::PowerSystem, analysis::ACStateEstimation)

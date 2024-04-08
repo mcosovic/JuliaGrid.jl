@@ -261,8 +261,7 @@ nothing # hide
 ##### Setup Starting Primal Values
 In JuliaGrid, the assignment of starting primal values for optimization variables takes place when the [`solve!`](@ref solve!(::PowerSystem, ::PMUStateEstimation{LinearWLS{Normal}})) function is executed. Starting primal values are determined based on the `voltage` fields within the `PMUStateEstimation` type. By default, these values are initially established using the the initial bus voltage magnitudes and angles from `PowerSystem` type:
 ```@repl PMUOptimalPlacement
-print(system.bus.label, analysis.voltage.magnitude)
-print(system.bus.label, analysis.voltage.angle)
+print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
 ```
 
 Users have the flexibility to customize these values according to their requirements, and they will be utilized as the starting primal values when executing the [`solve!`](@ref solve!(::PowerSystem, ::PMUStateEstimation{LinearWLS{Normal}})) function. It is important to note that JuliaGrid utilizes the provided data to set starting primal values in the rectangular coordinate system.

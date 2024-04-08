@@ -407,6 +407,110 @@ print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
 
 ---
 
+## [Least Absolute Value Estimator](@id PMULAVtateEstimationSolutionManual)
+The LAV method presents an alternative estimation technique known for its increased robustness compared to WLS. While the WLS method relies on specific assumptions regarding measurement errors, robust estimators like LAV are designed to maintain unbiasedness even in the presence of various types of measurement errors and outliers. This characteristic often eliminates the need for extensive bad data processing procedures [[5, Ch. 6]](@ref ACStateEstimationReferenceManual). However, it is important to note that achieving robustness typically involves increased computational complexity.
+
+To obtain an LAV estimator, users need to employ one of the [solvers](https://jump.dev/JuMP.jl/stable/packages/solvers/) listed in the JuMP documentation. In many common scenarios, the Ipopt solver proves sufficient to obtain a solution:
+```@example ACSEWLS
+using Ipopt
+using JuMP  # hide
+
+analysis = acLavStateEstimation(system, device, Ipopt.Optimizer)
+JuMP.set_silent(analysis.method.jump) # hide
+nothing # hide
+```
+
+---
+
+##### Setup Starting Primal Values
+In JuliaGrid, the assignment of starting primal values for optimization variables takes place when the [`solve!`](@ref solve!(::PowerSystem, ::ACStateEstimation{NonlinearWLS{Normal}})) function is executed. Starting primal values are determined based on the `voltage` fields within the `ACStateEstimation` type. By default, these values are initially established using the the initial bus voltage magnitudes and angles from `PowerSystem` type:
+```@repl ACSEWLS
+print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
+```
+
+Users have the flexibility to customize these values according to their requirements, and they will be utilized as the starting primal values when executing the [`solve!`](@ref solve!(::PowerSystem, ::ACStateEstimation{NonlinearWLS{Normal}})) function.
+
+---
+
+##### Solution
+To solve the formulated LAV state estimation model, simply execute the following function:
+```@example ACSEWLS
+solve!(system, analysis)
+nothing # hide
+```
+
+Upon obtaining the solution, access the bus voltage magnitudes and angles using:
+```@repl ACSEWLS
+print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
+nothing # hide
+```
+
+---
+
+## [Measurement Set Update](@id ACMeasurementsAlterationManual)
+After establishing the `Measurement` composite type using the [`measurement`](@ref measurement) function, users gain the capability to incorporate new measurement devices or update existing ones.
+
+Once updates are completed, users can seamlessly progress towards generating the `ACStateEstimation` type using the [`gaussNewton`](@ref gaussNewton) or [`acLavStateEstimation`](@ref acLavStateEstimation) function. Ultimately, resolving the AC state estimation is achieved through the utilization of the [`solve!`](@ref solve!(::PowerSystem, ::ACStateEstimation{NonlinearWLS{Normal}})) function:
+```@example WLSPMUStateEstimationSolution
+using JuliaGrid # hide
+@default(unit) # hide
+@default(template) # hide
+
+system = powerSystem()
+device = measurement()
+
+addBus!(system; label = "Bus 1", type = 3)
+addBus!(system; label = "Bus 2", type = 1, active = 0.1, reactive = 0.01)
+addBus!(system; label = "Bus 3", type = 1, active = 2.5, reactive = 0.2)
+
+@branch(resistance = 0.02, conductance = 1e-4, susceptance = 0.04)
+addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.05)
+addBranch!(system; label = "Branch 2", from = "Bus 1", to = "Bus 3", reactance = 0.05)
+addBranch!(system; label = "Branch 3", from = "Bus 2", to = "Bus 3", reactance = 0.03)
+
+addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 3.2, reactive = 0.3)
+
+@wattmeter(label = "Wattmeter ? (!)")
+addWattmeter!(system, device; from = "Branch 1", active = 1.046, noise = false)
+addWattmeter!(system, device; bus = "Bus 2", active = -0.1, noise = false)
+
+@varmeter(label = "Varmeter ? (!)")
+addVarmeter!(system, device; from = "Branch 1", reactive = 0.059, noise = false)
+addVarmeter!(system, device; bus = "Bus 2", reactive = -0.01, noise = false)
+
+@voltmeter(label = "Voltmeter ? (!)")
+addVoltmeter!(system, device; bus = "Bus 1", magnitude = 1.0, noise = false)
+
+analysis = gaussNewton(system, device)
+for iteration = 1:20
+    stopping = solve!(system, analysis)
+    if stopping < 1e-8
+        break
+    end
+end
+
+addWattmeter!(system, device; from = "Branch 3", active = 0.924)
+updateWattmeter!(system, device; label = "Wattmeter 2 (Bus 2)", variance = 1e-3)
+
+addVarmeter!(system, device; to = "Branch 3", reactive = -0.044, variance = 1e-5)
+updateVarmeter!(system, device; label = "Varmeter 2 (Bus 2)", reactive = -0.011)
+
+analysis = gaussNewton(system, device)
+for iteration = 1:20
+    stopping = solve!(system, analysis)
+    if stopping < 1e-8
+        break
+    end
+end
+
+nothing # hide
+```
+
+!!! note "Info"
+    This method removes the need to restart and recreate the `Measurement` type from the beginning when implementing changes to the existing measurement set.
+
+---
+
 ## [References](@id ACStateEstimationReferenceManual)
 [1] G. Korres, *Observability analysis based on echelon form of a reduced dimensional Jacobian matrix*, IEEE Trans. Power Syst., vol. 26, no. 4, pp. 2572–2573, 2011.
 
