@@ -191,7 +191,7 @@ using JuliaGrid # hide
 @default(template) # hide
 
 system = powerSystem()
-device = measurement()
+device = measurement() # Establishing Measurement type
 
 addBus!(system; label = "Bus 1", type = 3)
 addBus!(system; label = "Bus 2", type = 1, active = 0.1)
@@ -204,14 +204,14 @@ addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 0.1)
 addWattmeter!(system, device; bus = "Bus 2", active = -0.11, variance = 1e-3)
 addWattmeter!(system, device; from = "Branch 1", active = 0.09, variance = 1e-4)
 
-analysis = dcWlsStateEstimation(system, device)
+analysis = dcWlsStateEstimation(system, device) # Establishing DCStateEstimation type
 solve!(system, analysis)
 
 addWattmeter!(system, device; to = "Branch 1", active = -0.12, variance = 1e-4)
 updateWattmeter!(system, device; label = "Wattmeter 1", status = 0)
 updateWattmeter!(system, device; label = "Wattmeter 2", active = 0.1, noise = false)
 
-analysis = dcWlsStateEstimation(system, device)
+analysis = dcWlsStateEstimation(system, device) # Establishing DCStateEstimation type
 solve!(system, analysis)
 
 nothing # hide
@@ -227,16 +227,20 @@ An advanced methodology involves users establishing the `DCStateEstimation` comp
 
 This advancement extends beyond the previous scenario where recreating the `Measurement` type was unnecessary, to now include the scenario where `DCStateEstimation` also does not need to be recreated. Such efficiency can be particularly advantageous in cases where JuliaGrid can reuse gain matrix factorization.
 
-The addition of new measurements after the creation of `DCStateEstimation` is not practical in terms of reusing the `DCStateEstimation` type. Instead, we recommend that users create a final set of measurements and then utilize update functions to manage devices, either putting them in-service or out-of-service throughout the process.
+!!! tip "Tip"
+    The addition of new measurements after the creation of `DCStateEstimation` is not practical in terms of reusing this type. Instead, we recommend that users create a final set of measurements and then utilize update functions to manage devices, either putting them in-service or out-of-service throughout the process.
 
-By modifying the previous example, we observe that we now create the `DCStateEstimation` type only once:
+---
+
+##### Weighted Least-squares Estimator
+We can modify the prior example to achieve the same model without establishing `DCStateEstimation` twice:
 ```@example WLSDCStateEstimationSolution
 using JuliaGrid # hide
 @default(unit) # hide
 @default(template) # hide
 
 system = powerSystem()
-device = measurement()
+device = measurement() # Establishing Measurement type
 
 addBus!(system; label = "Bus 1", type = 3)
 addBus!(system; label = "Bus 2", type = 1, active = 0.1)
@@ -248,13 +252,16 @@ addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 0.1)
 @wattmeter(label = "Wattmeter ?")
 addWattmeter!(system, device; bus = "Bus 2", active = -0.11, variance = 1e-3)
 addWattmeter!(system, device; from = "Branch 1", active = 0.09, variance = 1e-4)
+addWattmeter!(system, device; to = "Branch 1", active = -0.12, variance = 1e-4, status = 0)
 
-analysis = dcWlsStateEstimation(system, device)
+analysis = dcWlsStateEstimation(system, device) # Establishing DCStateEstimation type
 solve!(system, analysis)
 
-updateWattmeter!(system, device, analysis; label = "Wattmeter 1", status = 0)
-updateWattmeter!(system, device, analysis; label = "Wattmeter 2", active = 0.1, noise = false)
+updateWattmeter!(system, device; label = "Wattmeter 1", status = 0)
+updateWattmeter!(system, device; label = "Wattmeter 2", active = 0.1, noise = false)
+updateWattmeter!(system, device; label = "Wattmeter 3", status = 1)
 
+# Re-establishing DCStateEstimation type is not necessary, we update the once-created type.
 solve!(system, analysis)
 
 nothing # hide
@@ -284,38 +291,7 @@ nothing # hide
 ---
 
 ##### Least Absolute Value Estimator
-When a user creates an optimization problem using the LAV method, they can update measurement devices without the need to recreate the model from scratch, similar to the explanation provided for the WLS state estimation. This streamlined process allows for efficient modifications while retaining the existing optimization framework:
-```@example WLSDCStateEstimationSolution
-using Ipopt
-using JuliaGrid # hide
-@default(unit) # hide
-@default(template) # hide
-
-system = powerSystem()
-device = measurement()
-
-addBus!(system; label = "Bus 1", type = 3)
-addBus!(system; label = "Bus 2", type = 1, active = 0.1)
-
-addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.5)
-
-addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 0.1)
-
-@wattmeter(label = "Wattmeter ?")
-addWattmeter!(system, device; bus = "Bus 2", active = -0.11, variance = 1e-3)
-addWattmeter!(system, device; from = "Branch 1", active = 0.09, variance = 1e-4)
-
-analysis = dcLavStateEstimation(system, device, Ipopt.Optimizer)
-JuMP.set_silent(analysis.method.jump) # hide
-solve!(system, analysis)
-
-updateWattmeter!(system, device, analysis; label = "Wattmeter 1", status = 0)
-updateWattmeter!(system, device, analysis; label = "Wattmeter 2", active = -0.12)
-
-solve!(system, analysis)
-
-nothing # hide
-```
+The same methodology can be applied to the LAV method, thereby circumventing the need to construct an optimization model from scratch.
 
 ---
 

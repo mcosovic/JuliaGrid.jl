@@ -293,30 +293,31 @@ using JuliaGrid # hide
 @default(template) # hide
 
 system = powerSystem()
-device = measurement()
+device = measurement() # Establishing Measurement type
 
-addBus!(system; label = "Bus 1", type = 3, active = 0.5)
-addBus!(system; label = "Bus 2", type = 1, reactive = 0.05)
-addBus!(system; label = "Bus 3", type = 1, active = 0.5)
+addBus!(system; label = "Bus 1", type = 3)
+addBus!(system; label = "Bus 2", type = 1, active = 0.1, reactive = 0.01)
+addBus!(system; label = "Bus 3", type = 1, active = 2.5, reactive = 0.2)
 
+@branch(resistance = 0.02, conductance = 1e-4, susceptance = 0.04)
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.05)
-addBranch!(system; label = "Branch 2", from = "Bus 2", to = "Bus 3", reactance = 0.04)
+addBranch!(system; label = "Branch 2", from = "Bus 2", to = "Bus 3", reactance = 0.03)
 
-addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 3.2)
+addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 3.2, reactive = 0.3)
 
 @pmu(label = "PMU ?")
 addPmu!(system, device; bus = "Bus 1", magnitude = 1.0, angle = 0.0, noise = false)
 addPmu!(system, device; bus = "Bus 2", magnitude = 0.98, angle = -0.023)
 addPmu!(system, device; from = "Branch 2", magnitude = 0.5, angle = -0.05)
 
-analysis = pmuWlsStateEstimation(system, device)
+analysis = pmuWlsStateEstimation(system, device) # Establishing PMUStateEstimation type
 solve!(system, analysis)
 
 addPmu!(system, device; to = "Branch 2", magnitude = 0.5, angle = 3.1)
-updatePmu!(system, device; label = "PMU 1", varianceMagnitude = 1e-8, varianceAngle = 1e-8)
+updatePmu!(system, device; label = "PMU 1", varianceMagnitude = 1e-8)
 updatePmu!(system, device; label = "PMU 3", statusMagnitude = 0, statusAngle = 0)
 
-analysis = pmuWlsStateEstimation(system, device)
+analysis = pmuWlsStateEstimation(system, device) # Establishing PMUStateEstimation type
 solve!(system, analysis)
 
 nothing # hide
@@ -332,62 +333,57 @@ An advanced methodology involves users establishing the `PMUStateEstimation` com
 
 This advancement extends beyond the previous scenario where recreating the `Measurement` type was unnecessary, to now include the scenario where `PMUStateEstimation` also does not need to be recreated.
 
-The addition of new measurements after the creation of `PMUStateEstimation` is not practical in terms of reusing the `PMUStateEstimation` type. Instead, we recommend that users create a final set of measurements and then utilize update functions to manage devices, either putting them in-service or out-of-service throughout the process.
+!!! tip "Tip"
+    The addition of new measurements after the creation of `PMUStateEstimation` is not practical in terms of reusing the `PMUStateEstimation` type. Instead, we recommend that users create a final set of measurements and then utilize update functions to manage devices, either putting them in-service or out-of-service throughout the process.
+
+---
+
+##### Weighted Least-squares Estimator
+We can modify the prior example to achieve the same model without establishing `PMUStateEstimation` twice:
+```@example WLSPMUStateEstimationSolution
+using JuliaGrid # hide
+@default(unit) # hide
+@default(template) # hide
+
+system = powerSystem()
+device = measurement() # Establishing Measurement type
+
+addBus!(system; label = "Bus 1", type = 3)
+addBus!(system; label = "Bus 2", type = 1, active = 0.1, reactive = 0.01)
+addBus!(system; label = "Bus 3", type = 1, active = 2.5, reactive = 0.2)
+
+@branch(resistance = 0.02, conductance = 1e-4, susceptance = 0.04)
+addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.05)
+addBranch!(system; label = "Branch 2", from = "Bus 2", to = "Bus 3", reactance = 0.03)
+
+addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 3.2, reactive = 0.3)
+
+@pmu(label = "PMU ?")
+addPmu!(system, device; bus = "Bus 1", magnitude = 1.0, angle = 0.0, noise = false)
+addPmu!(system, device; bus = "Bus 2", magnitude = 0.98, angle = -0.023)
+addPmu!(system, device; from = "Branch 2", magnitude = 0.5, angle = -0.05)
+addPmu!(system, device; to = "Branch 2", magnitude = 0.5, angle = 3.1, statusAngle = 0)
+
+analysis = pmuWlsStateEstimation(system, device) # Establishing PMUStateEstimation type
+solve!(system, analysis)
+
+updatePmu!(system, device, analysis; label = "PMU 1", varianceMagnitude = 1e-8)
+updatePmu!(system, device, analysis; label = "PMU 3", statusMagnitude = 0, statusAngle = 0)
+updatePmu!(system, device, analysis; label = "PMU 4", statusAngle = 1)
+
+# Re-establishing PMUStateEstimation type is not necessary, we update the once-created type.
+solve!(system, analysis)
+
+nothing # hide
+```
 
 !!! note "Info"
     This method removes the need to restart and recreate both the `Measurement` and the `PMUStateEstimation` from the beginning when implementing changes to the existing measurement set. Next, JuliaGrid can reuse symbolic factorizations of LU or LDLt, as long as the nonzero pattern of the gain matrix remains consistent.
 
 ---
 
-Continious previus example, we demonstrated the approche where we reuse `PMUStateEstimation` type:
-```@example WLSPMUStateEstimationSolution
-updatePmu!(system, device, analysis; label = "PMU 2", magnitude = 0.99, angle = 3.05)
-updatePmu!(system, device, analysis; label = "PMU 3", statusMagnitude = 1, statusAngle = 1)
-
-solve!(system, analysis)
-
-nothing # hide
-```
-
----
-
 ##### Least Absolute Value Estimator
-When a user creates an optimization problem using the LAV method, they can update measurement devices without the need to recreate the model from scratch, similar to the explanation provided for the WLS state estimation. This streamlined process allows for efficient modifications while retaining the existing optimization framework:
-```@example WLSPMUStateEstimationSolution
-using Ipopt
-using JuliaGrid # hide
-using JuMP # hide
-@default(unit) # hide
-@default(template) # hide
-
-system = powerSystem()
-device = measurement()
-
-addBus!(system; label = "Bus 1", type = 3, active = 0.5)
-addBus!(system; label = "Bus 2", type = 1, reactive = 0.05)
-addBus!(system; label = "Bus 3", type = 1, active = 0.5)
-
-addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.05)
-addBranch!(system; label = "Branch 2", from = "Bus 2", to = "Bus 3", reactance = 0.04)
-
-addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 3.2)
-
-@pmu(label = "PMU ?")
-addPmu!(system, device; bus = "Bus 1", magnitude = 1.0, angle = 0.0, noise = false)
-addPmu!(system, device; bus = "Bus 2", magnitude = 0.98, angle = -0.023)
-addPmu!(system, device; from = "Branch 2", magnitude = 0.5, angle = -0.05)
-
-analysis = pmuLavStateEstimation(system, device, Ipopt.Optimizer)
-JuMP.set_silent(analysis.method.jump) # hide
-solve!(system, analysis)
-
-updatePmu!(system, device, analysis; label = "PMU 2", magnitude = 0.99, angle = 3.05)
-updatePmu!(system, device, analysis; label = "PMU 3", statusMagnitude = 1, statusAngle = 1)
-
-solve!(system, analysis)
-
-nothing # hide
-```
+The same methodology can be applied to the LAV method, thereby circumventing the need to construct an optimization model from scratch.
 
 ---
 
@@ -406,7 +402,7 @@ print(system.branch.label, analysis.current.to.angle)
 ```
 
 !!! note "Info"
-    To better understand the powers and currents associated with buses and generators that are calculated by the [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)) and [`current!`](@ref current!(::PowerSystem, ::AC)) functions, we suggest referring to the tutorials on [PMU State Estimation].
+    To better understand the powers and currents associated with buses and branches that are calculated by the [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)) and [`current!`](@ref current!(::PowerSystem, ::AC)) functions, we suggest referring to the tutorials on [PMU State Estimation](@ref PMUPowerAnalysisTutorials).
 
 To compute specific quantities for particular components, rather than calculating powers or currents for all components, users can utilize one of the provided functions below.
 
