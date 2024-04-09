@@ -269,7 +269,7 @@ function power!(system::PowerSystem, analysis::ACOptimalPowerFlow)
     end
 end
 
-function power!(system::PowerSystem, analysis::PMUStateEstimation)
+function power!(system::PowerSystem, analysis::Union{PMUStateEstimation, ACStateEstimation})
     ac = system.model.ac
     voltage = analysis.voltage
     power = analysis.power
@@ -452,7 +452,7 @@ function supplyPower(system::PowerSystem, analysis::ACOptimalPowerFlow; label)
     return supplyActive, supplyReactive
 end
 
-function supplyPower(system::PowerSystem, analysis::PMUStateEstimation; label)
+function supplyPower(system::PowerSystem, analysis::Union{PMUStateEstimation, ACStateEstimation}; label)
     index = system.bus.label[getLabel(system.bus, label, "bus")]
     active, reactive = injectionPower(system, analysis; label = label)
 
