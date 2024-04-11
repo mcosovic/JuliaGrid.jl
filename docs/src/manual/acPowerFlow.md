@@ -1,5 +1,5 @@
 # [AC Power Flow](@id ACPowerFlowManual)
-To perform the AC power flow analysis, we will first need the `PowerSystem` composite type that has been created with the `ac` model. Following that, we can construct the power flow model encapsulated within the `ACPowerFlow` abstract type by employing one of the following functions:
+To perform the AC power flow analysis, we will first need the `PowerSystem` composite type that has been created with the AC model. Following that, we can construct the power flow model encapsulated within the `ACPowerFlow` abstract type by employing one of the following functions:
 * [`newtonRaphson`](@ref newtonRaphson),
 * [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX),
 * [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB),
@@ -311,7 +311,7 @@ using JuliaGrid # hide
 @default(template) # hide
 
 
-system = powerSystem()
+system = powerSystem() # Initializing a PowerSystem instance
 
 addBus!(system; label = "Bus 1", type = 3, active = 0.5, magnitude = 0.9, angle = 0.0)
 addBus!(system; label = "Bus 2", type = 1, reactive = 0.05, magnitude = 1.1, angle = -0.1)
@@ -322,7 +322,7 @@ addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance =
 addGenerator!(system; label = "Generator 1", bus = "Bus 1", magnitude = 1.1, active = 3.2)
 
 acModel!(system)
-analysis = newtonRaphson(system)
+analysis = newtonRaphson(system) # Creating ACPowerFlow for the defined power system
 for iteration = 1:100
     mismatch!(system, analysis)
     solve!(system, analysis)
@@ -336,7 +336,7 @@ updateBranch!(system; label = "Branch 1", status = 0)
 addGenerator!(system; label = "Generator 2", bus = "Bus 1", active = 0.2)
 updateGenerator!(system; label = "Generator 1", active = 0.3)
 
-analysis = newtonRaphson(system)
+analysis = newtonRaphson(system) # Creating ACPowerFlow for the updated power system
 for iteration = 1:100
     mismatch!(system, analysis)
     solve!(system, analysis)
@@ -362,7 +362,7 @@ using JuliaGrid # hide
 @default(unit) # hide
 @default(template) # hide
 
-system = powerSystem()
+system = powerSystem() # Initializing a PowerSystem instance
 
 addBus!(system; label = "Bus 1", type = 3, active = 0.5, magnitude = 0.9, angle = 0.0)
 addBus!(system; label = "Bus 2", type = 1, reactive = 0.05, magnitude = 1.1, angle = -0.1)
@@ -373,7 +373,7 @@ addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance =
 addGenerator!(system; label = "Generator 1", bus = "Bus 1", magnitude = 1.1, active = 3.2)
 
 acModel!(system)
-analysis = newtonRaphson(system)
+analysis = newtonRaphson(system) # Creating ACPowerFlow for the defined power system
 for iteration = 1:100
     mismatch!(system, analysis)
     solve!(system, analysis)
@@ -387,6 +387,7 @@ updateBranch!(system, analysis; label = "Branch 1", status = 0)
 addGenerator!(system, analysis; label = "Generator 2", bus = "Bus 1", active = 0.2)
 updateGenerator!(system, analysis; label = "Generator 1", active = 0.3)
 
+# No need for re-creation; we have already updated the existing ACPowerFlow instance
 for iteration = 1:100
     mismatch!(system, analysis)
     solve!(system, analysis)

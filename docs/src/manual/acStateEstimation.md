@@ -38,7 +38,7 @@ Likewise, there are specialized functions dedicated to calculating specific type
 ---
 
 ## [Bus Type Modification](@id ACSEBusTypeModificationManual)
-In AC state estimation, it is necessary to designate a slack bus, where the bus voltage angle is known. Therefore, when executing the [`gaussNewton`](@ref gaussNewton) or [`acLavStateEstimation`](@ref acLavStateEstimation) function, the initially assigned slack bus is evaluated and may be altered. If the designated slack bus (`type = 3`) lacks a connected in-service generator, it will be changed to a demand bus (`type = 1`). Conversely, the first generator bus (`type = 2`) with an active in-service generator linked to it will be reassigned as the new slack bus (`type = 3`).
+In AC state estimation, it is necessary to designate a slack bus, where the bus voltage angle is known. Therefore, when establishing the `ACStateEstimation` type, the initially assigned slack bus is evaluated and may be altered. If the designated slack bus (`type = 3`) lacks a connected in-service generator, it will be changed to a demand bus (`type = 1`). Conversely, the first generator bus (`type = 2`) with an active in-service generator linked to it will be reassigned as the new slack bus (`type = 3`).
 
 ---
 
@@ -457,7 +457,7 @@ using JuliaGrid # hide
 @default(template) # hide
 
 system = powerSystem()
-device = measurement() # Establishing Measurement type
+device = measurement() # Initializing a Measurement instance
 
 addBus!(system; label = "Bus 1", type = 3)
 addBus!(system; label = "Bus 2", type = 1, active = 0.1, reactive = 0.01)
@@ -484,7 +484,7 @@ addVarmeter!(system, device; bus = "Bus 2", reactive = -0.01)
 @pmu(label = "PMU ? (!)")
 addPmu!(system, device; bus = "Bus 2", magnitude = 0.976, angle = -0.052)
 
-analysis = gaussNewton(system, device) # Establishing ACStateEstimation type
+analysis = gaussNewton(system, device) # Creating ACStateEstimation for the defined model
 for iteration = 1:20
     stopping = solve!(system, analysis)
     if stopping < 1e-8
@@ -500,7 +500,7 @@ updateVarmeter!(system, device; label = "Varmeter 2 (Bus 2)", reactive = -0.011)
 
 updatePmu!(system, device; label = "PMU 1 (Bus 2)", polar = false)
 
-analysis = gaussNewton(system, device) # Establishing ACStateEstimation type
+analysis = gaussNewton(system, device) # Creating ACStateEstimation for the updated model
 for iteration = 1:20
     stopping = solve!(system, analysis)
     if stopping < 1e-8
@@ -534,7 +534,7 @@ using JuliaGrid # hide
 @default(template) # hide
 
 system = powerSystem()
-device = measurement() # Establishing Measurement type
+device = measurement() # Initializing a Measurement instance
 
 addBus!(system; label = "Bus 1", type = 3)
 addBus!(system; label = "Bus 2", type = 1, active = 0.1, reactive = 0.01)
@@ -563,7 +563,7 @@ addVarmeter!(system, device; to = "Branch 3", reactive = -0.044, variance = 1e-5
 @pmu(label = "PMU ? (!)")
 addPmu!(system, device; bus = "Bus 2", magnitude = 0.976, angle = -0.052)
 
-analysis = gaussNewton(system, device) # Establishing ACStateEstimation type
+analysis = gaussNewton(system, device) # Creating ACStateEstimation for the defined model
 for iteration = 1:20
     stopping = solve!(system, analysis)
     if stopping < 1e-8
@@ -579,7 +579,7 @@ updateVarmeter!(system, device, analysis; label = "Varmeter 2 (Bus 2)", reactive
 
 updatePmu!(system, device, analysis; label = "PMU 1 (Bus 2)", polar = false)
 
-# Re-establishing ACStateEstimation type is not necessary, we update the once-created type.
+# No need for re-creation; we have already updated the existing ACStateEstimation instance
 for iteration = 1:20
     stopping = solve!(system, analysis)
     if stopping < 1e-8

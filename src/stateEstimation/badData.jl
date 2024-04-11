@@ -49,7 +49,7 @@ device = measurement("measurement14.h5")
 
 analysis = dcWlsStateEstimation(system, device)
 
-while analysis.outlier.detect
+while analysis.method.outlier.detect
     solve!(system, analysis)
     residualTest!(system, device, analysis; threshold = 4.0)
 end

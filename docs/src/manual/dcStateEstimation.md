@@ -29,7 +29,7 @@ Additionally, there are specialized functions dedicated to calculating specific 
 ---
 
 ## [Bus Type Modification](@id DCSEBusTypeModificationManual)
-Just like in the [Bus Type Modification](@ref DCBusTypeModificationManual) section, when running the [`dcWlsStateEstimation`](@ref dcWlsStateEstimation) or [`dcLavStateEstimation`](@ref dcLavStateEstimation)  function, the initially assigned slack bus is evaluated and may be altered. If the designated slack bus (`type = 3`) lacks a connected in-service generator, it will be changed to a demand bus (`type = 1`). Conversely, the first generator bus (`type = 2`) with an active in-service generator linked to it will be reassigned as the new slack bus (`type = 3`).
+Just like in the [Bus Type Modification](@ref DCBusTypeModificationManual) section, when establishing the `DCStateEstimation` type, the initially assigned slack bus is evaluated and may be altered. If the designated slack bus (`type = 3`) lacks a connected in-service generator, it will be changed to a demand bus (`type = 1`). Conversely, the first generator bus (`type = 2`) with an active in-service generator linked to it will be reassigned as the new slack bus (`type = 3`).
 
 ---
 
@@ -191,7 +191,7 @@ using JuliaGrid # hide
 @default(template) # hide
 
 system = powerSystem()
-device = measurement() # Establishing Measurement type
+device = measurement() # Initializing a Measurement instance
 
 addBus!(system; label = "Bus 1", type = 3)
 addBus!(system; label = "Bus 2", type = 1, active = 0.1)
@@ -204,14 +204,14 @@ addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 0.1)
 addWattmeter!(system, device; bus = "Bus 2", active = -0.11, variance = 1e-3)
 addWattmeter!(system, device; from = "Branch 1", active = 0.09, variance = 1e-4)
 
-analysis = dcWlsStateEstimation(system, device) # Establishing DCStateEstimation type
+analysis = dcWlsStateEstimation(system, device) # Creating DCStateEstimation for the model
 solve!(system, analysis)
 
 addWattmeter!(system, device; to = "Branch 1", active = -0.12, variance = 1e-4)
 updateWattmeter!(system, device; label = "Wattmeter 1", status = 0)
 updateWattmeter!(system, device; label = "Wattmeter 2", active = 0.1, noise = false)
 
-analysis = dcWlsStateEstimation(system, device) # Establishing DCStateEstimation type
+analysis = dcWlsStateEstimation(system, device) # Creating DCStateEstimation for new model
 solve!(system, analysis)
 
 nothing # hide
@@ -240,7 +240,7 @@ using JuliaGrid # hide
 @default(template) # hide
 
 system = powerSystem()
-device = measurement() # Establishing Measurement type
+device = measurement() # Initializing a Measurement instance
 
 addBus!(system; label = "Bus 1", type = 3)
 addBus!(system; label = "Bus 2", type = 1, active = 0.1)
@@ -254,14 +254,14 @@ addWattmeter!(system, device; bus = "Bus 2", active = -0.11, variance = 1e-3)
 addWattmeter!(system, device; from = "Branch 1", active = 0.09, variance = 1e-4)
 addWattmeter!(system, device; to = "Branch 1", active = -0.12, variance = 1e-4, status = 0)
 
-analysis = dcWlsStateEstimation(system, device) # Establishing DCStateEstimation type
+analysis = dcWlsStateEstimation(system, device) # Creating DCStateEstimation for the model
 solve!(system, analysis)
 
 updateWattmeter!(system, device; label = "Wattmeter 1", status = 0)
 updateWattmeter!(system, device; label = "Wattmeter 2", active = 0.1, noise = false)
 updateWattmeter!(system, device; label = "Wattmeter 3", status = 1)
 
-# Re-establishing DCStateEstimation type is not necessary, we update the once-created type.
+# No need for re-creation; we have already updated the existing DCStateEstimation instance
 solve!(system, analysis)
 
 nothing # hide

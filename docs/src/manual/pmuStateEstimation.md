@@ -293,7 +293,7 @@ using JuliaGrid # hide
 @default(template) # hide
 
 system = powerSystem()
-device = measurement() # Establishing Measurement type
+device = measurement() # Initializing a Measurement instance
 
 addBus!(system; label = "Bus 1", type = 3)
 addBus!(system; label = "Bus 2", type = 1, active = 0.1, reactive = 0.01)
@@ -310,14 +310,14 @@ addPmu!(system, device; bus = "Bus 1", magnitude = 1.0, angle = 0.0, noise = fal
 addPmu!(system, device; bus = "Bus 2", magnitude = 0.98, angle = -0.023)
 addPmu!(system, device; from = "Branch 2", magnitude = 0.5, angle = -0.05)
 
-analysis = pmuWlsStateEstimation(system, device) # Establishing PMUStateEstimation type
+analysis = pmuWlsStateEstimation(system, device) # Creating PMUStateEstimation for the model
 solve!(system, analysis)
 
 addPmu!(system, device; to = "Branch 2", magnitude = 0.5, angle = 3.1)
 updatePmu!(system, device; label = "PMU 1", varianceMagnitude = 1e-8)
 updatePmu!(system, device; label = "PMU 3", statusMagnitude = 0, statusAngle = 0)
 
-analysis = pmuWlsStateEstimation(system, device) # Establishing PMUStateEstimation type
+analysis = pmuWlsStateEstimation(system, device) # Creating PMUStateEstimation for new model
 solve!(system, analysis)
 
 nothing # hide
@@ -346,7 +346,7 @@ using JuliaGrid # hide
 @default(template) # hide
 
 system = powerSystem()
-device = measurement() # Establishing Measurement type
+device = measurement() # Initializing a Measurement instance
 
 addBus!(system; label = "Bus 1", type = 3)
 addBus!(system; label = "Bus 2", type = 1, active = 0.1, reactive = 0.01)
@@ -364,14 +364,14 @@ addPmu!(system, device; bus = "Bus 2", magnitude = 0.98, angle = -0.023)
 addPmu!(system, device; from = "Branch 2", magnitude = 0.5, angle = -0.05)
 addPmu!(system, device; to = "Branch 2", magnitude = 0.5, angle = 3.1, statusAngle = 0)
 
-analysis = pmuWlsStateEstimation(system, device) # Establishing PMUStateEstimation type
+analysis = pmuWlsStateEstimation(system, device) # Creating PMUStateEstimation for the model
 solve!(system, analysis)
 
 updatePmu!(system, device, analysis; label = "PMU 1", varianceMagnitude = 1e-8)
 updatePmu!(system, device, analysis; label = "PMU 3", statusMagnitude = 0, statusAngle = 0)
 updatePmu!(system, device, analysis; label = "PMU 4", statusAngle = 1)
 
-# Re-establishing PMUStateEstimation type is not necessary, we update the once-created type.
+# No need for re-creation; we have already updated the existing PMUStateEstimation instance
 solve!(system, analysis)
 
 nothing # hide
