@@ -322,22 +322,22 @@ function residualTest!(system::PowerSystem, device::Measurement, analysis::ACSta
             device.voltmeter.magnitude.status[index] = 0
         end
     elseif se.range[2] <= bad.index < se.range[3]
-        (bad.label, index),_ = iterate(device.ammeter.label, bad.index - device.voltmeter.number - device.wattmeter.number - device.varmeter.number)
+        (bad.label, index),_ = iterate(device.ammeter.label, bad.index - device.voltmeter.number)
         if bad.detect
             device.ammeter.magnitude.status[index] = 0
         end
     elseif se.range[3] <= bad.index < se.range[4]
-        (bad.label, index),_ = iterate(device.wattmeter.label, bad.index - device.voltmeter.number)
+        (bad.label, index),_ = iterate(device.wattmeter.label, bad.index - device.voltmeter.number - device.ammeter.number)
         if bad.detect
             device.wattmeter.active.status[index] = 0
         end
     elseif se.range[4] <= bad.index < se.range[5]
-        (bad.label, index),_ = iterate(device.varmeter.label, bad.index - device.voltmeter.number - device.wattmeter.number)
+        (bad.label, index),_ = iterate(device.varmeter.label, bad.index - device.voltmeter.number - device.ammeter.number - device.wattmeter.number)
         if bad.detect
             device.varmeter.reactive.status[index] = 0
         end
     elseif se.range[5] <= bad.index < se.range[6]
-        badIndex = bad.index - device.voltmeter.number - device.wattmeter.number - device.varmeter.number - device.ammeter.number
+        badIndex = bad.index - device.voltmeter.number - device.ammeter.number - device.wattmeter.number - device.varmeter.number
         if badIndex % 2 == 0
             pmuIndex = trunc(Int, badIndex / 2)
             alsoBad = bad.index - 1
