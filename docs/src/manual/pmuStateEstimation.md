@@ -83,7 +83,7 @@ The `placement` variable contains data regarding the optimal placement of measur
 placement.bus
 ```
 
-This PMU installed at `Bus 2` will measure the bus voltage phasor at the corresponding bus and all current phasors at the branches incident to `Bus 2` located at the "from" or "to" bus ends:
+This PMU installed at `Bus 2` will measure the bus voltage phasor at the corresponding bus and all current phasors at the branches incident to `Bus 2` located at the from-bus or to-bus ends:
 ```@repl PMUOptimalPlacement
 placement.from
 placement.to
@@ -395,7 +395,7 @@ current!(system, analysis)
 nothing # hide
 ```
 
-For instance, if we want to show the active power injections at each bus and the current flow angles at each "to" bus end of the branch, we can employ the following code:
+For instance, if we want to show the active power injections at each bus and the current flow angles at each to-bus end of the branch, we can employ the following code:
 ```@repl WLSPMUStateEstimationSolution
 print(system.bus.label, analysis.power.injection.active)
 print(system.branch.label, analysis.current.to.angle)
@@ -433,7 +433,7 @@ active, reactive = shuntPower(system, analysis; label = "Bus 3")
 ---
 
 ##### Active and Reactive Power Flow
-Similarly, we can compute the active and reactive power flow at both the "from" and "to" bus ends of the specific branch by utilizing the provided functions below:
+Similarly, we can compute the active and reactive power flow at both the from-bus and to-bus ends of the specific branch by utilizing the provided functions below:
 ```@repl WLSPMUStateEstimationSolution
 active, reactive = fromPower(system, analysis; label = "Branch 2")
 active, reactive = toPower(system, analysis; label = "Branch 2")
@@ -470,7 +470,7 @@ magnitude, angle = injectionCurrent(system, analysis; label = "Bus 1")
 ---
 
 ##### Current Flow
-We can compute the current flow at both the "from" and "to" bus ends of the specific branch by utilizing the provided functions below:
+We can compute the current flow at both the from-bus and to-bus ends of the specific branch by utilizing the provided functions below:
 ```@repl WLSPMUStateEstimationSolution
 magnitude, angle = fromCurrent(system, analysis; label = "Branch 2")
 magnitude, angle = toCurrent(system, analysis; label = "Branch 2")
@@ -479,7 +479,7 @@ magnitude, angle = toCurrent(system, analysis; label = "Branch 2")
 ---
 
 ##### Current Through Series Impedance
-To calculate the current passing through the series impedance of the branch in the direction from the "from" bus end to the "to" bus end, we can use the following function:
+To calculate the current passing through the series impedance of the branch in the direction from the from-bus end to the to-bus end, we can use the following function:
 ```@repl WLSPMUStateEstimationSolution
 magnitude, angle = seriesCurrent(system, analysis; label = "Branch 2")
 ```

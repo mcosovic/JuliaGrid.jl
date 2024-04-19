@@ -12,8 +12,8 @@ or the branch current magnitude and angle if the PMU is located at a branch.
 The PMU is defined with the following keywords:
 * `label`: a unique label for the PMU;
 * `bus`: the label of the bus if the PMU is located at the bus;
-* `from`: the label of the branch if the PMU is located at the "from" bus end;
-* `to`: the label of the branch if the PMU is located at the "to" bus end;
+* `from`: the label of the branch if the PMU is located at the from-bus end;
+* `to`: the label of the branch if the PMU is located at the to-bus end;
 * `magnitude` (pu or V, A): the bus voltage or branch current magnitude value;
 * `varianceMagnitude` (pu or V, A): the magnitude measurement variance;
 * `statusMagnitude`: the operating status of PMU magnitude measurement:
@@ -41,9 +41,9 @@ The function updates the `pmu` field of the `Measurement` composite type.
 Default settings for certain keywords are as follows: `varianceMagnitude = 1e-5`,
 `statusMagnitude = 1`, `varianceAngle = 1e-5`, `statusAngle = 1`, `noise = true`,
 `correlated = false`, and `polar = true`, which apply to PMUs located at the bus, as well
-as at both the "from" and "to" bus ends. Users can fine-tune these settings by explicitly
-specifying the variance and status for PMUs positioned at the buses, "from" bus ends, or
-"to" bus ends of branches using the [`@pmu`](@ref @pmu) macro.
+as at both the from-bus and to-bus ends. Users can fine-tune these settings by explicitly
+specifying the variance and status for PMUs positioned at the buses, from-bus ends, or
+to-bus ends of branches using the [`@pmu`](@ref @pmu) macro.
 
 # Units
 The default units for the `magnitude`, `varianceMagnitude`, and `angle`, `varianceAngle`
@@ -178,20 +178,20 @@ Users have the option to configure the following keywords:
 * `statusAngleBus`: the operating status of PMU agle measurements at buses:
   * `statusAngleBus = 1`: in-service;
   * `statusAngleBus = 0`: out-of-service;
-* `varianceMagnitudeFrom` (pu or A): variance of PMU magnitude measurements at the "from" bus ends;
-* `statusMagnitudeFrom`: the operating status of PMU magnitude measurements at the "from" bus ends:
+* `varianceMagnitudeFrom` (pu or A): variance of PMU magnitude measurements at the from-bus ends;
+* `statusMagnitudeFrom`: the operating status of PMU magnitude measurements at the from-bus ends:
   * `statusMagnitudeFrom = 1`: in-service;
   * `statusMagnitudeFrom = 0`: out-of-service;
-* `varianceAngleFrom` (rad or deg): variance of PMU angle measurements at the "from" bus ends;
-* `statusAngleFrom`: the operating status of PMU angle measurements at the "from" bus ends:
+* `varianceAngleFrom` (rad or deg): variance of PMU angle measurements at the from-bus ends;
+* `statusAngleFrom`: the operating status of PMU angle measurements at the from-bus ends:
   * `statusAngleFrom = 1`: in-service;
   * `statusAngleFrom = 0`: out-of-service;
-* `varianceMagnitudeTo` (pu or A): variance of PMU magnitude measurements at the "to" bus ends;
-* `statusMagnitudeTo`: the operating status of PMU magnitude measurements at the "to" bus ends:
+* `varianceMagnitudeTo` (pu or A): variance of PMU magnitude measurements at the to-bus ends;
+* `statusMagnitudeTo`: the operating status of PMU magnitude measurements at the to-bus ends:
   * `statusMagnitudeTo = 1`: in-service;
   * `statusMagnitudeTo = 0`: out-of-service;
-* `varianceAngleTo` (rad or deg): variance of PMU angle measurements at the "to" bus ends;
-* `statusAngleTo`: the operating status of PMU angle measurements at the "to" bus ends:
+* `varianceAngleTo` (rad or deg): variance of PMU angle measurements at the to-bus ends;
+* `statusAngleTo`: the operating status of PMU angle measurements at the to-bus ends:
   * `statusAngleTo = 1`: in-service;
   * `statusAngleTo = 0`: out-of-service;
 * `correlated`: chooses the correlation among errors of the PMU for algorithms utilizing rectangular coordinates:
@@ -702,11 +702,15 @@ function updatePmu!(system::PowerSystem, device::Measurement, analysis::ACStateE
     pmu = device.pmu
     se = analysis.method
 
+    indexPmu = pmu.label[getLabel(pmu, label, "PMU")]
+    indexBusBranch = pmu.layout.index[indexPmu]
+
+    polarOld = pmu.layout.polar[indexPmu]
+    correlatedOld = pmu.layout.correlated[indexPmu]
+
     updatePmu!(system, device; label, magnitude, angle, varianceMagnitude, varianceAngle,
     statusMagnitude, statusAngle, noise, correlated, polar)
 
-    indexPmu = pmu.label[getLabel(pmu, label, "PMU")]
-    indexBusBranch = pmu.layout.index[indexPmu]
     idx = device.voltmeter.number + device.wattmeter.number + device.varmeter.number + device.ammeter.number + (2 * indexPmu - 1)
 
     if pmu.layout.polar[indexPmu]
@@ -800,35 +804,36 @@ function updatePmu!(system::PowerSystem, device::Measurement, analysis::ACStateE
     end
 
     if pmu.layout.polar[indexPmu]
-        if isset(varianceMagnitude)
-            se.precision[idx, idx] = 1 / pmu.magnitude.variance[indexPmu]
-        end
-        if isset(varianceAngle)
-            se.precision[idx + 1, idx + 1] = 1 / pmu.angle.variance[indexPmu]
+        se.precision[idx, idx] = 1 / pmu.magnitude.variance[indexPmu]
+        se.precision[idx + 1, idx + 1] = 1 / pmu.angle.variance[indexPmu]
+
+        if correlatedOld
+            se.precision[idx, idx + 1] = 0.0
+            se.precision[idx + 1, idx] = 0.0
         end
     else
-        if isset(varianceMagnitude) || isset(varianceAngle)
-            cosAngle = cos(pmu.angle.mean[indexPmu])
-            sinAngle = sin(pmu.angle.mean[indexPmu])
+        cosAngle = cos(pmu.angle.mean[indexPmu])
+        sinAngle = sin(pmu.angle.mean[indexPmu])
 
-            varianceRe = pmu.magnitude.variance[indexPmu] * cosAngle^2 + pmu.angle.variance[indexPmu] * (pmu.magnitude.mean[indexPmu] * sinAngle)^2
-            varianceIm = pmu.magnitude.variance[indexPmu] * sinAngle^2 + pmu.angle.variance[indexPmu] * (pmu.magnitude.mean[indexPmu] * cosAngle)^2
-            if pmu.layout.correlated[indexPmu]
-                covariance = sinAngle * cosAngle * (pmu.magnitude.variance[indexPmu] - pmu.angle.variance[indexPmu] * pmu.magnitude.mean[indexPmu]^2)
+        varianceRe = pmu.magnitude.variance[indexPmu] * cosAngle^2 + pmu.angle.variance[indexPmu] * (pmu.magnitude.mean[indexPmu] * sinAngle)^2
+        varianceIm = pmu.magnitude.variance[indexPmu] * sinAngle^2 + pmu.angle.variance[indexPmu] * (pmu.magnitude.mean[indexPmu] * cosAngle)^2
+        if pmu.layout.correlated[indexPmu]
+            covariance = sinAngle * cosAngle * (pmu.magnitude.variance[indexPmu] - pmu.angle.variance[indexPmu] * pmu.magnitude.mean[indexPmu]^2)
 
-                L1inv = 1 / sqrt(varianceRe)
-                L2 = covariance * L1inv
-                L3inv2 = 1 / (varianceIm - L2^2)
+            L1inv = 1 / sqrt(varianceRe)
+            L2 = covariance * L1inv
+            L3inv2 = 1 / (varianceIm - L2^2)
 
-                se.precision[idx, idx + 1] = (- L2 * L1inv) * L3inv2
-                se.precision[idx + 1, idx] = se.precision[idx, idx + 1]
+            se.precision[idx, idx + 1] = (- L2 * L1inv) * L3inv2
+            se.precision[idx + 1, idx] = se.precision[idx, idx + 1]
 
-                se.precision[idx, idx] = (L1inv - L2 * se.precision[idx, idx + 1]) * L1inv
-                se.precision[idx + 1, idx + 1] = L3inv2
-            else
-                se.precision[idx, idx] = 1 / varianceRe
-                se.precision[idx + 1, idx + 1] = 1 / varianceIm
-            end
+            se.precision[idx, idx] = (L1inv - L2 * se.precision[idx, idx + 1]) * L1inv
+            se.precision[idx + 1, idx + 1] = L3inv2
+        else
+            se.precision[idx, idx] = 1 / varianceRe
+            se.precision[idx + 1, idx + 1] = 1 / varianceIm
+            se.precision[idx, idx + 1] = 0.0
+            se.precision[idx + 1, idx] = 0.0
         end
     end
 end
@@ -916,9 +921,9 @@ To establish the PMU template, users have the option to set default values for m
 and angle variances, as well as statuses for each component of the phasor. This can be
 done for PMUs located at the buses using the `varianceMagnitudeBus`, `varianceAngleBus`,
 `statusMagnitudeBus`, and `statusAngleBus` keywords. The same configuration can be applied
-at both the "from" bus ends of the branches using the `varianceMagnitudeFrom`,
+at both the from-bus ends of the branches using the `varianceMagnitudeFrom`,
 `varianceAngleFrom`, `statusMagnitudeFrom`, and `statusAngleFrom` keywords. For PMUs
-located at the "to" bus ends of the branches, users can use the `varianceMagnitudeTo`,
+located at the to-bus ends of the branches, users can use the `varianceMagnitudeTo`,
 `varianceAngleTo`, `statusMagnitudeTo`, and `statusAngleTo` keywords. Additionally, users
 can configure the pattern for labels using the `label` keyword. specify the type of
 `noise`, and indicate the `correlated` and `polar` system utilized for managing phasors

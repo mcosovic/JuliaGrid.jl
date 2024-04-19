@@ -310,7 +310,7 @@ active = supplyPower(system, analysis; label = "Bus 1")
 ---
 
 ##### Active Power Flow
-Similarly, we can compute the active power flow at both the "from" and "to" bus ends of the specific branch by utilizing the provided functions below:
+Similarly, we can compute the active power flow at both the from-bus and to-bus ends of the specific branch by utilizing the provided functions below:
 ```@repl ComputationPowersCurrentsLosses
 active = fromPower(system, analysis; label = "Branch 2")
 active = toPower(system, analysis; label = "Branch 2")

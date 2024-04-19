@@ -63,8 +63,8 @@ The complex power injection denoted by ``S_i`` comprises of both the active powe
 With the recognition that ``Y_{ij} =  G_{ij} + \text{j}B_{ij}`` and ``\bar{V}_{j} = V_j \text{e}^{\text{j}\theta_{j}}``, and by defining ``\theta_{ij} = \theta_{i} - \theta_{j}``,  we can break down the above equation into its real and imaginary parts, resulting in two equations that describe bus ``i \in \mathcal{N}`` as follows:
 ```math
   \begin{aligned}
-    {P}_{i} &={V}_{i}\sum\limits_{j=1}^n {V}_{j} (G_{ij}\cos\theta_{ij}+B_{ij}\sin\theta_{ij})\\
-    {Q}_{i} &={V}_{i}\sum\limits_{j=1}^n {V}_{j} (G_{ij}\sin\theta_{ij}-B_{ij}\cos\theta_{ij}).
+    {P}_{i} &={V}_{i}\sum\limits_{j=1}^n (G_{ij}\cos\theta_{ij}+B_{ij}\sin\theta_{ij})V_j\\
+    {Q}_{i} &={V}_{i}\sum\limits_{j=1}^n (G_{ij}\sin\theta_{ij}-B_{ij}\cos\theta_{ij})V_j.
 	\end{aligned}
 ```
 
@@ -116,7 +116,7 @@ The Newton-Raphson method is commonly used in AC power flow calculations due to 
   \mathbf{f}(\mathbf{x}) = \mathbf{0}.
 ```
 This, in turn, allows for the determination of the unknown voltage magnitudes and angles of buses, represented by the state vector ``\mathbf x = [\mathbf x_a, \mathbf x_m]^T``. The state vector comprises two components:
-* ``\mathbf x_a \in \mathbb{R}^{n-1}``, which holds the bus voltage angles of demand and generator buses, represented by ``\mathbf x_a = [\theta_i]``, where ``i \in \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}}``;
+* ``\mathbf x_a \in \mathbb{R}^{n-1}``, which holds the bus voltage angles of demand and generator buses, represented by ``\mathbf x_a = [\theta_i]``, where ``i \in \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}}``,
 * ``\mathbf x_m \in \mathbb{R}^{n_{\text{pq}}}``, which holds the bus voltage magnitudes of demand buses, represented by ``\mathbf x_m = [V_i]``, where ``i \in \mathcal{N}_{\text{pq}}``, and ``n_{\text{pq}} = |\mathcal{N}_{\text{pq}}|``.
 
 Knowing the voltage magnitudes and angles for certain types of buses is a consequence of the structure of the state vector ``\mathbf x``. Specifically, the voltage magnitude and angle at the slack bus are known, as well as the voltage magnitude at generator buses.
@@ -124,19 +124,19 @@ Knowing the voltage magnitudes and angles for certain types of buses is a conseq
 As detailed in the [Nodal Network Equations](@ref FlowNodalNetworkEquationsTutorials) section of this manual, the expressions for active and reactive power injection are as follows:
 ```math
   \begin{aligned}
-    {P}_{i} &={V}_{i}\sum\limits_{j=1}^n {V}_{j} (G_{ij}\cos\theta_{ij}+B_{ij}\sin\theta_{ij})\\
-    {Q}_{i} &={V}_{i}\sum\limits_{j=1}^n {V}_{j} (G_{ij}\sin\theta_{ij}-B_{ij}\cos\theta_{ij}).
+    {P}_{i} &={V}_{i}\sum\limits_{j=1}^n (G_{ij}\cos\theta_{ij}+B_{ij}\sin\theta_{ij})V_j\\
+    {Q}_{i} &={V}_{i}\sum\limits_{j=1}^n (G_{ij}\sin\theta_{ij}-B_{ij}\cos\theta_{ij})V_j.
 	\end{aligned}
 ```
 
 Using the above equations, we can define the active power injection function for demand and generator buses:
 ```math
-  f_{P_i}(\mathbf x) = {V}_{i}\sum\limits_{j=1}^n {V}_{j}(G_{ij}\cos\theta_{ij}+B_{ij}\sin\theta_{ij}) - {P}_{i} = 0,
+  f_{P_i}(\mathbf x) = {V}_{i}\sum\limits_{j=1}^n (G_{ij}\cos\theta_{ij}+B_{ij}\sin\theta_{ij})V_j - {P}_{i} = 0,
   \;\;\; \forall i \in \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}},
 ```
 and the reactive power injection function for demand buses:
 ```math
-  f_{Q_i}(\mathbf x) = {V}_{i}\sum\limits_{j=1}^n {V}_{j}(G_{ij}\sin\theta_{ij}-B_{ij}\cos\theta_{ij}) - {Q}_{i} = 0,
+  f_{Q_i}(\mathbf x) = {V}_{i}\sum\limits_{j=1}^n (G_{ij}\sin\theta_{ij}-B_{ij}\cos\theta_{ij})V_j - {Q}_{i} = 0,
   \;\;\; \forall i \in \mathcal{N}_{\text{pq}}.
 ```
 
@@ -181,12 +181,12 @@ end
 
 The [`mismatch!`](@ref mismatch!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})) function calculates the mismatch in active power injection for demand and generator buses and the mismatch in reactive power injection for demand buses at each iteration ``\nu = \{1, 2, \dots\}``. The equations used for these computations are:
 ```math
-  f_{P_i}(\mathbf x^{(\nu-1)}) = {V}_{i}^{(\nu-1)}\sum\limits_{j=1}^n {V}_{j}^{(\nu-1)}(G_{ij}\cos\theta_{ij}^{(\nu-1)}+B_{ij}\sin\theta_{ij}^{(\nu-1)}) - {P}_{i},
+  f_{P_i}(\mathbf x^{(\nu-1)}) = {V}_{i}^{(\nu-1)}\sum\limits_{j=1}^n (G_{ij}\cos\theta_{ij}^{(\nu-1)}+B_{ij}\sin\theta_{ij}^{(\nu-1)}){V}_{j}^{(\nu-1)} - {P}_{i},
   \;\;\; \forall i \in \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}},
 ```
 as well as the reactive power injection mismatch for demand buses:
 ```math
-  f_{Q_i}(\mathbf x^{(\nu-1)}) = {V}_{i}^{(\nu)}\sum\limits_{j=1}^n {V}_{j}^{(\nu-1)}(G_{ij}\sin\theta_{ij}^{(\nu-1)}-B_{ij}\cos\theta_{ij}^{(\nu-1)}) - {Q}_{i},
+  f_{Q_i}(\mathbf x^{(\nu-1)}) = {V}_{i}^{(\nu)}\sum\limits_{j=1}^n (G_{ij}\sin\theta_{ij}^{(\nu-1)}-B_{ij}\cos\theta_{ij}^{(\nu-1)}){V}_{j}^{(\nu-1)} - {Q}_{i},
   \;\;\; \forall i \in \mathcal{N}_{\text{pq}}.
 ```
 The resulting vector from these calculations is stored in the `mismatch` variable of the `ACPowerFlow` abstract type and can be accessed through the following line of code:
@@ -229,7 +229,7 @@ The bus voltage magnitudes ``\mathbf{V} = [V_i]`` and angles ``\bm{\Theta} = [\t
 𝚯 = analysis.voltage.angle
 ```
 
-----
+---
 
 ##### Jacobian Matrix
 To complete the tutorial on the Newton-Raphson method, we will now describe the Jacobian matrix and provide the equations involved in its evolution. Without loss of generality, we assume that the slack bus is the first bus, followed by the set of demand buses and the set of generator buses:
@@ -243,8 +243,8 @@ To complete the tutorial on the Newton-Raphson method, we will now describe the 
 where ``\mathcal{N} = \mathcal{N}_{\text{sb}} \cup \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}}``. Therefore, we can express:
 ```math
   \begin{aligned}
-    \mathbf x_a &= [\theta_2,\dots,\theta_n]^T; \;\;\;\;\;\; \mathbf \Delta \mathbf x_a = [\Delta \theta_2,\dots,\Delta \theta_n]^T \\
-    \mathbf x_m &= [V_2,\dots,V_{m}]^T; \;\;\; \mathbf \Delta \mathbf x_m = [\Delta V_2,\dots,\Delta V_{m}]^T.
+    \mathbf x_a &= [\theta_2,\dots,\theta_n]^T, \;\;\;\;\;\; \mathbf \Delta \mathbf x_a = [\Delta \theta_2,\dots,\Delta \theta_n]^T \\
+    \mathbf x_m &= [V_2,\dots,V_{m}]^T, \;\;\; \mathbf \Delta \mathbf x_m = [\Delta V_2,\dots,\Delta V_{m}]^T.
   \end{aligned}
 ```
 
@@ -287,37 +287,26 @@ where diagonal elements of the Jacobian sub-matrices are defined as follows:
 ```math
   \begin{aligned}
   \cfrac{\mathrm \partial{{f_{P_i}}(\mathbf x^{(\nu)})}} {\mathrm \partial \theta_{i}} &=
-  {V}_{i}^{(\nu)}\sum\limits_{j=1}^n {V}_{j}^{(\nu)}(-G_{ij}
-  \sin\theta_{ij}^{(\nu)}+B_{ij}\cos\theta_{ij}^{(\nu)}) - ({V}_{i}^{(\nu)})^2B_{ii}\\
-  \cfrac{\mathrm \partial{{f_{P_i}}(\mathbf x^{(\nu)})}}
-  {\mathrm \partial V_{i}^{(\nu)}} &= \sum\limits_{
-  j=1}^n {V}_{j}^{(\nu)}(G_{ij}\cos
-  \theta_{ij}^{(\nu)}+B_{ij}\sin\theta_{ij}^{(\nu)})+{V}_{i}^{(\nu)} G_{ii}\\
-  \cfrac{\mathrm \partial{{f_{Q_i}}(\mathbf x^{(\nu)})}}
-  {\mathrm \partial \theta_{i}}&={V}_{i}^{(\nu)}
-  \sum\limits_{j=1}^n {V}_{j}^{(\nu)}
-  (G_{ij}\cos\theta_{ij}^{(\nu)}+B_{ij}\sin\theta_{ij}^{(\nu)})- ({V}_{i}^{(\nu)})^2G_{ii}\\
-  \cfrac{\mathrm \partial{{f_{Q_i}}(\mathbf x^{(\nu)})}}
-  {\mathrm \partial V_{i}}&=\sum\limits_{j=1
-  }^n {V}_{j}^{(\nu)}(G_{ij}\sin\theta_{ij}^{(\nu)}-
-  B_{ij}\cos\theta_{ij}^{(\nu)})-{V}_{i}^{(\nu)} B_{ii},
+  {V}_{i}^{(\nu)}\sum\limits_{j=1}^n (-G_{ij}\sin\theta_{ij}^{(\nu)}+B_{ij}\cos\theta_{ij}^{(\nu)}){V}_{j}^{(\nu)} - B_{ii}({V}_{i}^{(\nu)})^2\\
+  \cfrac{\mathrm \partial{{f_{P_i}}(\mathbf x^{(\nu)})}}{\mathrm \partial V_{i}^{(\nu)}} &=
+  \sum\limits_{j=1}^n (G_{ij}\cos\theta_{ij}^{(\nu)}+B_{ij}\sin\theta_{ij}^{(\nu)}){V}_{j}^{(\nu)} + G_{ii}{V}_{i}^{(\nu)}\\
+  \cfrac{\mathrm \partial{{f_{Q_i}}(\mathbf x^{(\nu)})}} {\mathrm \partial \theta_{i}} &=
+  {V}_{i}^{(\nu)} \sum\limits_{j=1}^n (G_{ij}\cos\theta_{ij}^{(\nu)}+B_{ij}\sin\theta_{ij}^{(\nu)}){V}_{j}^{(\nu)} - G_{ii}({V}_{i}^{(\nu)})^2\\
+  \cfrac{\mathrm \partial{{f_{Q_i}}(\mathbf x^{(\nu)})}}{\mathrm \partial V_{i}} &=
+  \sum\limits_{j=1}^n (G_{ij}\sin\theta_{ij}^{(\nu)}-B_{ij}\cos\theta_{ij}^{(\nu)}){V}_{j}^{(\nu)} - B_{ii}{V}_{i}^{(\nu)},
   \end{aligned}
 ```
 while non-diagonal elements of the Jacobian sub-matrices are:
 ```math
   \begin{aligned}
-  \cfrac{\mathrm \partial{{f_{P_i}}(\mathbf x^{(\nu)})}}
-  {\mathrm \partial \theta_{j}}&={V}_{i}^{(\nu)}{V}_{j}^{(\nu)}
-  (G_{ij}\sin\theta_{ij}^{(\nu)}-B_{ij}\cos\theta_{ij}^{(\nu)})\\
-  \cfrac{\mathrm \partial{{f_{P_i}}(\mathbf x^{(\nu)})}}
-  {\mathrm \partial V_{j}^{(\nu)}} &= {V}_{i}^{(\nu)}(G_{ij}\cos
-  \theta_{ij}^{(\nu)}+B_{ij}\sin\theta_{ij}^{(\nu)})\\
-  \cfrac{\mathrm \partial{{f_{Q_i}}(\mathbf x^{(\nu)})}}
-  {\mathrm \partial \theta_{j}}&={V}_{i}^{(\nu)}{V}_{j}^{(\nu)}
-  (-G_{ij}\cos\theta_{ij}^{(\nu)} -B_{ij}\sin\theta_{ij}^{(\nu)})\\
-  \cfrac{\mathrm \partial{{f_{Q_i}}(\mathbf x^{(\nu)})}}{\mathrm
-  \partial V_{j}}&={V}_{i}^{(\nu)}(G_{ij}\sin\theta_{ij}^{(\nu)}-
-  B_{ij}\cos\theta_{ij}^{(\nu)}).
+  \cfrac{\mathrm \partial{{f_{P_i}}(\mathbf x^{(\nu)})}}{\mathrm \partial \theta_{j}} &=
+  (G_{ij}\sin\theta_{ij}^{(\nu)}-B_{ij}\cos\theta_{ij}^{(\nu)}){V}_{i}^{(\nu)}{V}_{j}^{(\nu)}\\
+  \cfrac{\mathrm \partial{{f_{P_i}}(\mathbf x^{(\nu)})}}{\mathrm \partial V_{j}^{(\nu)}} &=
+  (G_{ij}\cos\theta_{ij}^{(\nu)}+B_{ij}\sin\theta_{ij}^{(\nu)}){V}_{i}^{(\nu)}\\
+  \cfrac{\mathrm \partial{{f_{Q_i}}(\mathbf x^{(\nu)})}}{\mathrm \partial \theta_{j}} &=
+  -(G_{ij}\cos\theta_{ij}^{(\nu)} + B_{ij}\sin\theta_{ij}^{(\nu)}){V}_{i}^{(\nu)}{V}_{j}^{(\nu)}\\
+  \cfrac{\mathrm \partial{{f_{Q_i}}(\mathbf x^{(\nu)})}}{\mathrm\partial V_{j}} &=
+  (G_{ij}\sin\theta_{ij}^{(\nu)}-B_{ij}\cos\theta_{ij}^{(\nu)}){V}_{i}^{(\nu)}.
   \end{aligned}
 ```
 
@@ -374,6 +363,7 @@ To examine the problem, it is helpful to express it as:
     \Delta V_{m} \cfrac{\mathrm \partial{{f_{Q_{m}}}(\mathbf x)}}{\mathrm \partial V_{m}}.
   \end{aligned}
 ```
+
 Firstly, the second part of the expressions is expanded as follows:
 ```math
   \begin{aligned}
@@ -388,41 +378,36 @@ Firstly, the second part of the expressions is expanded as follows:
   \cfrac{\mathrm \partial{{f_{Q_{m}}}(\mathbf x)}}{\mathrm \partial V_{m}}.
   \end{aligned}
 ```
+
 Next, the Jacobian elements are derived. To achieve this, we can use the expressions defined for the Newton-Raphson method. For demand buses, the above expansions are applied as:
 ```math
   \begin{aligned}
   \cfrac{\mathrm \partial{{f_{P_i}}(\mathbf x)}} {\mathrm \partial \theta_{i}} &=
-  {V}_{i}\sum\limits_{j=1}^n {V}_{j}(-G_{ij}
-  \sin\theta_{ij}+B_{ij}\cos\theta_{ij}) - {V}_{i}^2B_{ii}\\
-  \cfrac{\mathrm \partial{{f_{P_i}}(\mathbf x)}}
-  {\mathrm \partial \theta_{j}}&={V}_{i}{V}_{j}
-  (G_{ij}\sin\theta_{ij}-B_{ij}\cos\theta_{ij})\\
-  V_i \cfrac{\mathrm \partial{{f_{Q_i}}(\mathbf x)}}
-  {\mathrm \partial V_{i}} &= V_i\sum\limits_{j=1
-  }^n {V}_{j}(G_{ij}\sin\theta_{ij}-
-  B_{ij}\cos\theta_{ij})-{V}_{i}^2 B_{ii}\\
-  V_j \cfrac{\mathrm \partial{{f_{Q_i}}(\mathbf x)}}{\mathrm
-  \partial V_{j}} &= {V}_{i}V_j (G_{ij}\sin\theta_{ij}-
-  B_{ij}\cos\theta_{ij}).
+  {V}_{i}\sum\limits_{j=1}^n (-G_{ij}\sin\theta_{ij}+B_{ij}\cos\theta_{ij}){V}_{j} - B_{ii}{V}_{i}^2\\
+  \cfrac{\mathrm \partial{{f_{P_i}}(\mathbf x)}}{\mathrm \partial \theta_{j}} &=
+  (G_{ij}\sin\theta_{ij}-B_{ij}\cos\theta_{ij}){V}_{i}{V}_{j}\\
+  V_i \cfrac{\mathrm \partial{{f_{Q_i}}(\mathbf x)}}{\mathrm \partial V_{i}} &=
+  V_i\sum\limits_{j=1}^n (G_{ij}\sin\theta_{ij}-B_{ij}\cos\theta_{ij}){V}_{j} - B_{ii}{V}_{i}^2\\
+  V_j \cfrac{\mathrm \partial{{f_{Q_i}}(\mathbf x)}}{\mathrm\partial V_{j}} &=
+   (G_{ij}\sin\theta_{ij}-B_{ij}\cos\theta_{ij}) V_i V_j.
   \end{aligned}
 ```
+
 As the definition of reactive power is given by the equation:
 ```math
-  {Q}_{i} ={V}_{i}\sum\limits_{j=1}^n {V}_{j}(G_{ij}\sin\theta_{ij}-B_{ij}\cos\theta_{ij}),
+  {Q}_{i} ={V}_{i}\sum\limits_{j=1}^n (G_{ij}\sin\theta_{ij}-B_{ij}\cos\theta_{ij})V_j,
 ```
 the Jacobian elements can be expressed in the following manner:
 ```math
   \begin{aligned}
   \cfrac{\mathrm \partial{{f_{P_i}}(\mathbf x)}} {\mathrm \partial \theta_{i}} &=
-  -Q_i - {V}_{i}^2B_{ii}\\
-  \cfrac{\mathrm \partial{{f_{P_i}}(\mathbf x)}}
-  {\mathrm \partial \theta_{j}}&={V}_{i}{V}_{j}
-  (G_{ij}\sin\theta_{ij}-B_{ij}\cos\theta_{ij})\\
-  V_i \cfrac{\mathrm \partial{{f_{Q_i}}(\mathbf x)}}
-  {\mathrm \partial V_{i}} &= Q_i-{V}_{i}^2 B_{ii}\\
-  V_j \cfrac{\mathrm \partial{{f_{Q_i}}(\mathbf x)}}{\mathrm
-  \partial V_{j}} &= {V}_{i}V_j (G_{ij}\sin\theta_{ij}-
-  B_{ij}\cos\theta_{ij}).
+  -Q_i - B_{ii}{V}_{i}^2\\
+  \cfrac{\mathrm \partial{{f_{P_i}}(\mathbf x)}}{\mathrm \partial \theta_{j}} &=
+  (G_{ij}\sin\theta_{ij}-B_{ij}\cos\theta_{ij}) V_i V_j\\
+  V_i \cfrac{\mathrm \partial{{f_{Q_i}}(\mathbf x)}}{\mathrm \partial V_{i}} &=
+  Q_i - B_{ii} V_i^2\\
+  V_j \cfrac{\mathrm \partial{{f_{Q_i}}(\mathbf x)}}{\mathrm\partial V_{j}} &=
+  (G_{ij}\sin\theta_{ij} - B_{ij}\cos\theta_{ij}) V_i V_j.
   \end{aligned}
 ```
 
@@ -434,45 +419,43 @@ The decoupled model is established through the following approximations:
     Q_i << B_{ii}V_i^2.
   \end{aligned}
 ```
+
 Thus, when the approximations are made, the Jacobian elements are simplified, resulting in the decoupled model where the Jacobian elements are:
 ```math
   \begin{aligned}
-  \cfrac{\mathrm \partial{{f_{P_i}}(\mathbf x)}} {\mathrm \partial \theta_{i}} &= -{V}_{i}^2B_{ii}\\
-  \cfrac{\mathrm \partial{{f_{P_i}}(\mathbf x)}} {\mathrm \partial \theta_{j}} &= -{V}_{i}{V}_{j}B_{ij}\\
-  V_i \cfrac{\mathrm \partial{{f_{Q_i}}(\mathbf x)}} {\mathrm \partial V_{i}} &= -{V}_{i}^2B_{ii}\\
-  V_j \cfrac{\mathrm \partial{{f_{Q_i}}(\mathbf x)}}{\mathrm\partial V_{j}} &=  -{V}_{i}{V}_{j}B_{ij}.
+  \cfrac{\mathrm \partial{{f_{P_i}}(\mathbf x)}} {\mathrm \partial \theta_{i}} &= -B_{ii}{V}_{i}^2\\
+  \cfrac{\mathrm \partial{{f_{P_i}}(\mathbf x)}} {\mathrm \partial \theta_{j}} &= -B_{ij}{V}_{i}{V}_{j}\\
+  V_i \cfrac{\mathrm \partial{{f_{Q_i}}(\mathbf x)}} {\mathrm \partial V_{i}} &= -B_{ii}{V}_{i}^2\\
+  V_j \cfrac{\mathrm \partial{{f_{Q_i}}(\mathbf x)}}{\mathrm\partial V_{j}} &= -B_{ij}{V}_{i}{V}_{j}.
   \end{aligned}
 ```
+
 Thus, the initial system of equations becomes:
 ```math
   \begin{aligned}
-    {f}_{P_2}(\mathbf x) &= {V}_{2}^2B_{22} \Delta \theta_2 + \cdots + {V}_{2}{V}_{n}B_{2n} \Delta \theta_n \\
+    {f}_{P_2}(\mathbf x) &= B_{22} \Delta \theta_2 {V}_{2}^2 + \cdots + B_{2n} \Delta \theta_n {V}_{2}{V}_{n} \\
     & \vdots \\
-    {f}_{P_n}(\mathbf x) &= {V}_{2}{V}_{n}B_{n2} \Delta \theta_2 + \cdots + {V}_{n}^2B_{nn} \Delta \theta_n \\
-    {f}_{Q_2}(\mathbf x) &= {V}_{2}^2B_{22} \cfrac{\Delta V_2}{V_2} + \cdots +
-     {V}_{2}V_{m}B_{2m} \cfrac{\Delta V_{m}}{V_{m}} \\
+    {f}_{P_n}(\mathbf x) &= B_{n2} \Delta \theta_2 {V}_{2}{V}_{n} + \cdots + B_{nn} \Delta \theta_n {V}_{n}^2 \\
+    {f}_{Q_2}(\mathbf x) &= B_{22} \cfrac{\Delta V_2}{V_2} {V}_{2}^2 + \cdots + B_{2m} \cfrac{\Delta V_{m}}{V_{m}} {V}_{2}V_{m} \\
     & \vdots \\
-    {f}_{Q_{m}}(\mathbf x) &= {V}_{2}V_{m}B_{m2} \cfrac{\Delta V_2}{V_2} + \cdots +
-    V_{m}^2 B_{mm} \cfrac{\Delta V_{m}}{V_{m}}.
+    {f}_{Q_{m}}(\mathbf x) &= B_{m2} \cfrac{\Delta V_2}{V_2} {V}_{2}V_{m} + \cdots + B_{mm} \cfrac{\Delta V_{m}}{V_{m}} V_{m}^2.
   \end{aligned}
 ```
 Using ``V_j \approx 1``, wherein ``V_i^2 = V_iV_j, j=i``, the first part of the equations can be simplified to:
 ```math
   \begin{aligned}
-    {f}_{P_2}(\mathbf x) &= {V}_{2}B_{22} \Delta \theta_2 + \cdots + {V}_{2}B_{2n} \Delta \theta_n \\
+    {f}_{P_2}(\mathbf x) &= B_{22} \Delta \theta_2 {V}_{2} + \cdots + B_{2n} \Delta \theta_n {V}_{2}\\
     & \vdots \\
-    {f}_{P_n}(\mathbf x) &= {V}_{n}B_{n2} \Delta \theta_2 + \cdots + {V}_{n}B_{nn} \Delta \theta_n.
+    {f}_{P_n}(\mathbf x) &= B_{n2} \Delta \theta_2 {V}_{n} + \cdots + B_{nn} \Delta \theta_n {V}_{n}.
   \end{aligned}
 ```
 Similarly, the second part of the equations can be simplified to:
 ```math
   \begin{aligned}
-    {f}_{Q_2}(\mathbf x) &= {V}_{2}B_{22} \Delta V_2 + \cdots +
-     V_2 B_{2m} \Delta V_{m}
+    {f}_{Q_2}(\mathbf x) &= B_{22} {V}_{2} \Delta V_2 + \cdots + B_{2m} V_2 \Delta V_{m}
     \\
     & \vdots \\
-    {f}_{Q_{m}}(\mathbf x) &= V_{m}B_{m2} \Delta V_2 + \cdots +
-    V_{m} B_{mm} \Delta V_{m}.
+    {f}_{Q_{m}}(\mathbf x) &= B_{m2} V_{m} \Delta V_2 + \cdots + B_{mm} V_{m} \Delta V_{m}.
   \end{aligned}
 ```
 
@@ -553,22 +536,22 @@ end
 The functions ``\mathbf{f}_{P}(\mathbf x)`` and ``\mathbf{f}_{Q}(\mathbf x)`` remain free of approximations, with only the calculation of the state variable increments affected [[2]](@ref PowerFlowSolutionReferenceTutorials). As a result, we still use the following equations to compute the mismatches:
 ```math
   \begin{aligned}
-    f_{P_i}(\mathbf x) &= {V}_{i}\sum\limits_{j=1}^n {V}_{j}(G_{ij}\cos\theta_{ij}+B_{ij}\sin\theta_{ij}) - {P}_{i} = 0,
+    f_{P_i}(\mathbf x) &= {V}_{i}\sum\limits_{j=1}^n (G_{ij}\cos\theta_{ij}+B_{ij}\sin\theta_{ij})V_j - {P}_{i} = 0,
     \;\;\; \forall i \in \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}}\\
-    f_{Q_i}(\mathbf x) &= {V}_{i}\sum\limits_{j=1}^n {V}_{j} (G_{ij}\sin\theta_{ij}-B_{ij}\cos\theta_{ij}) - {Q}_{i} = 0,
+    f_{Q_i}(\mathbf x) &= {V}_{i}\sum\limits_{j=1}^n (G_{ij}\sin\theta_{ij}-B_{ij}\cos\theta_{ij})V_j - {Q}_{i} = 0,
     \;\;\; \forall i \in \mathcal{N}_{\text{pq}}.
   \end{aligned}
 ```
 Therefore, the [`mismatch!`](@ref mismatch!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})) function calculates the mismatch in active power injection for demand and generator buses and the mismatch in reactive power injection for demand buses at each iteration ``\nu = \{1, 2, \dots\}``:
 ```math
   {h}_{P_i}(\mathbf {x}^{(\nu-1)}) =
-  \sum\limits_{j=1}^n {V}_{j}^{(\nu-1)}(G_{ij}\cos\theta_{ij}^{(\nu-1)}+B_{ij}\sin\theta_{ij}^{(\nu-1)}) - \cfrac{{P}_{i}}{{V}_{i}^{(\nu-1)}},
+  \sum\limits_{j=1}^n (G_{ij}\cos\theta_{ij}^{(\nu-1)}+B_{ij}\sin\theta_{ij}^{(\nu-1)}){V}_{j}^{(\nu-1)} - \cfrac{{P}_{i}}{{V}_{i}^{(\nu-1)}},
   \;\;\; \forall i \in \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}},
 ```
 and in reactive power injection for PQ buses as:
 ```math
     {h}_{Q_i}(\mathbf {x}^{(\nu-1)}) =
-    \sum\limits_{j=1}^n {V}_{j}^{(\nu-1)} (G_{ij}\sin\theta_{ij}^{(\nu-1)}-B_{ij}\cos\theta_{ij}^{(\nu-1)}) - \cfrac{{Q}_{i}}{{V}_{i}^{(\nu-1)}},
+    \sum\limits_{j=1}^n (G_{ij}\sin\theta_{ij}^{(\nu-1)}-B_{ij}\cos\theta_{ij}^{(\nu-1)}){V}_{j}^{(\nu-1)} - \cfrac{{Q}_{i}}{{V}_{i}^{(\nu-1)}},
     \;\;\; \forall i \in \mathcal{N}_{\text{pq}}.
 ```
 The resulting vectors from these calculations are stored in the `ACPowerFlow` abstract type and can be accessed through the following:
@@ -749,12 +732,12 @@ The function stores the computed powers in the rectangular coordinate system. It
 | [Shunt elements](@ref BusShuntElementTutorials)             | ``\mathbf{P}_{\text{sh}} = [{P}_{\text{sh}i}]`` | ``\mathbf{Q}_{\text{sh}} = [{Q}_{\text{sh}i}]`` |
 
 
-| Branch                                                       | Active                                       | Reactive                                     |
-|:-------------------------------------------------------------|:---------------------------------------------|:---------------------------------------------|
-| ["From" bus end flows](@ref BranchNetworkEquationsTutorials) | ``\mathbf{P}_{\text{i}} = [P_{ij}]``         | ``\mathbf{Q}_{\text{i}} = [Q_{ij}]``         |
-| ["To" bus end flows](@ref BranchNetworkEquationsTutorials)   | ``\mathbf{P}_{\text{j}} = [P_{ji}]``         | ``\mathbf{Q}_{\text{j}} = [Q_{ji}]``         |
-| [Shunt elements](@ref BranchShuntElementsTutorials)          | ``\mathbf{P}_{\text{s}} = [P_{\text{s}ij}]`` | ``\mathbf{P}_{\text{s}} = [P_{\text{s}ij}]`` |
-| [Series elements](@ref BranchSeriesElementTutorials)         | ``\mathbf{P}_{\text{l}} = [P_{\text{l}ij}]`` | ``\mathbf{Q}_{\text{l}} = [Q_{\text{l}ij}]`` |
+| Branch                                                     | Active                                       | Reactive                                     |
+|:-----------------------------------------------------------|:---------------------------------------------|:---------------------------------------------|
+| [From-bus end flows](@ref BranchNetworkEquationsTutorials) | ``\mathbf{P}_{\text{i}} = [P_{ij}]``         | ``\mathbf{Q}_{\text{i}} = [Q_{ij}]``         |
+| [To-bus end flows](@ref BranchNetworkEquationsTutorials)   | ``\mathbf{P}_{\text{j}} = [P_{ji}]``         | ``\mathbf{Q}_{\text{j}} = [Q_{ji}]``         |
+| [Shunt elements](@ref BranchShuntElementsTutorials)        | ``\mathbf{P}_{\text{s}} = [P_{\text{s}ij}]`` | ``\mathbf{P}_{\text{s}} = [P_{\text{s}ij}]`` |
+| [Series elements](@ref BranchSeriesElementTutorials)       | ``\mathbf{P}_{\text{l}} = [P_{\text{l}ij}]`` | ``\mathbf{Q}_{\text{l}} = [Q_{\text{l}ij}]`` |
 
 | Generator                                   | Active                                       | Reactive                                     |
 |:--------------------------------------------|:---------------------------------------------|:---------------------------------------------|
@@ -805,13 +788,13 @@ where ``Q_{\text{d}i}`` represents the reactive power demanded by consumers at t
 ---
 
 ##### Power Flows
-The resulting [active and reactive power flows](@ref BranchNetworkEquationsTutorials) at each "from" bus end are stored as the vectors ``\mathbf{P}_{\text{i}} = [P_{ij}]`` and ``\mathbf{Q}_{\text{i}} = [Q_{ij}],`` respectively, and can be retrieved using the following commands:
+The resulting [active and reactive power flows](@ref BranchNetworkEquationsTutorials) at each from-bus end are stored as the vectors ``\mathbf{P}_{\text{i}} = [P_{ij}]`` and ``\mathbf{Q}_{\text{i}} = [Q_{ij}],`` respectively, and can be retrieved using the following commands:
 ```@repl PowerFlowSolution
 𝐏ᵢ = analysis.power.from.active
 𝐐ᵢ = analysis.power.from.reactive
 ```
 
-Similarly, the vectors of [active and reactive power flows](@ref BranchNetworkEquationsTutorials) at the "to" bus end are stored as ``\mathbf{P}_{\text{j}} = [P_{ji}]`` and ``\mathbf{Q}_{\text{j}} = [Q_{ji}]``, respectively, and can be retrieved using the following code:
+Similarly, the vectors of [active and reactive power flows](@ref BranchNetworkEquationsTutorials) at the to-bus end are stored as ``\mathbf{P}_{\text{j}} = [P_{ji}]`` and ``\mathbf{Q}_{\text{j}} = [Q_{ji}]``, respectively, and can be retrieved using the following code:
 ```@repl PowerFlowSolution
 𝐏ⱼ = analysis.power.to.active
 𝐐ⱼ = analysis.power.to.reactive
@@ -875,11 +858,11 @@ The function stores the computed currents in the polar coordinate system. It cal
 |:------------------------------------------|:-----------------------|:-------------------------|
 | [Injections](@ref BusInjectionsTutorials) | ``\mathbf{I} = [I_i]`` | ``\bm{\psi} = [\psi_i]`` |
 
-| Branch                                                       | Magnitude                                    | Angle                                          |
-|:-------------------------------------------------------------|:---------------------------------------------|:-----------------------------------------------|
-| ["From" bus end flows](@ref BranchNetworkEquationsTutorials) | ``\mathbf{I}_{\text{i}} = [I_{ij}]``         | ``\bm{\psi}_{\text{i}} = [\psi_{ij}]``         |
-| ["To" bus end flows](@ref BranchNetworkEquationsTutorials)   | ``\mathbf{I}_{\text{j}} = [I_{ji}]``         | ``\bm{\psi}_{\text{j}} = [\psi_{ji}]``         |
-| [Series elements](@ref BranchSeriesElementTutorials)         | ``\mathbf{I}_{\text{l}} = [I_{\text{l}ij}]`` | ``\bm{\psi}_{\text{l}} = [\psi_{\text{l}ij}]`` |
+| Branch                                                     | Magnitude                                    | Angle                                          |
+|:-----------------------------------------------------------|:---------------------------------------------|:-----------------------------------------------|
+| [From-bus end flows](@ref BranchNetworkEquationsTutorials) | ``\mathbf{I}_{\text{i}} = [I_{ij}]``         | ``\bm{\psi}_{\text{i}} = [\psi_{ij}]``         |
+| [To-bus end flows](@ref BranchNetworkEquationsTutorials)   | ``\mathbf{I}_{\text{j}} = [I_{ji}]``         | ``\bm{\psi}_{\text{j}} = [\psi_{ji}]``         |
+| [Series elements](@ref BranchSeriesElementTutorials)       | ``\mathbf{I}_{\text{l}} = [I_{\text{l}ij}]`` | ``\bm{\psi}_{\text{l}} = [\psi_{\text{l}ij}]`` |
 
 !!! note "Info"
     For a clear comprehension of the equations, symbols presented in this section, as well as for a better grasp of power directions, please refer to the [Unified Branch Model](@ref UnifiedBranchModelTutorials).

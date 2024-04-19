@@ -322,19 +322,19 @@ function residualTest!(system::PowerSystem, device::Measurement, analysis::ACSta
             device.voltmeter.magnitude.status[index] = 0
         end
     elseif se.range[2] <= bad.index < se.range[3]
+        (bad.label, index),_ = iterate(device.ammeter.label, bad.index - device.voltmeter.number - device.wattmeter.number - device.varmeter.number)
+        if bad.detect
+            device.ammeter.magnitude.status[index] = 0
+        end
+    elseif se.range[3] <= bad.index < se.range[4]
         (bad.label, index),_ = iterate(device.wattmeter.label, bad.index - device.voltmeter.number)
         if bad.detect
             device.wattmeter.active.status[index] = 0
         end
-    elseif se.range[3] <= bad.index < se.range[4]
+    elseif se.range[4] <= bad.index < se.range[5]
         (bad.label, index),_ = iterate(device.varmeter.label, bad.index - device.voltmeter.number - device.wattmeter.number)
         if bad.detect
             device.varmeter.reactive.status[index] = 0
-        end
-    elseif se.range[4] <= bad.index < se.range[5]
-        (bad.label, index),_ = iterate(device.ammeter.label, bad.index - device.voltmeter.number - device.wattmeter.number - device.varmeter.number)
-        if bad.detect
-            device.ammeter.magnitude.status[index] = 0
         end
     elseif se.range[5] <= bad.index < se.range[6]
         badIndex = bad.index - device.voltmeter.number - device.wattmeter.number - device.varmeter.number - device.ammeter.number
@@ -349,7 +349,7 @@ function residualTest!(system::PowerSystem, device::Measurement, analysis::ACSta
         (bad.label, index),_ = iterate(device.pmu.label, pmuIndex)
         if bad.detect
             if device.pmu.layout.polar[index]
-                if se.type[bad.index] in [8; 9; 10]
+                if se.type[bad.index] in [2; 3; 10]
                     device.pmu.magnitude.status[index] = 0
                 else
                     device.pmu.angle.status[index] = 0

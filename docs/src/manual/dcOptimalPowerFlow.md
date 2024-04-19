@@ -151,7 +151,7 @@ print(system.bus.label, analysis.method.constraint.balance.active)
 ---
 
 ##### Voltage Angle Difference Constraints
-The `voltage` field contains references to the inequality constraints associated with the minimum and maximum bus voltage angle difference between the "from" and "to" bus ends of each branch. These values are specified using the `minDiffAngle` and `maxDiffAngle` keywords within the [`addBranch!`](@ref addBranch!) function:
+The `voltage` field contains references to the inequality constraints associated with the minimum and maximum bus voltage angle difference between the from-bus and to-bus ends of each branch. These values are specified using the `minDiffAngle` and `maxDiffAngle` keywords within the [`addBranch!`](@ref addBranch!) function:
 ```@repl DCOptimalPowerFlow
 print(system.branch.label, analysis.method.constraint.voltage.angle)
 ```
@@ -172,7 +172,7 @@ print(system.branch.label, analysis.method.constraint.voltage.angle)
 ---
 
 ##### Active Power Flow Constraints
-The `flow` field refers to the inequality constraints linked to active power flow limits at the "from" and "to" bus ends of each branch. These limits are set using the `longTerm` keyword in the [`addBranch!`](@ref addBranch!) function:
+The `flow` field refers to the inequality constraints linked to active power flow limits at the from-bus and to-bus ends of each branch. These limits are set using the `longTerm` keyword in the [`addBranch!`](@ref addBranch!) function:
 ```@repl DCOptimalPowerFlow
 print(system.branch.label, analysis.method.constraint.flow.active)
 ```
@@ -431,7 +431,7 @@ power!(system, analysis)
 nothing # hide
 ```
 
-Finally, to display the active power injections at each bus and active power flows at each "from" bus end of the branch, we can use the following code:
+Finally, to display the active power injections at each bus and active power flows at each from-bus end of the branch, we can use the following code:
 ```@repl DCOptimalPowerFlowPower
 print(system.bus.label, analysis.power.injection.active)
 print(system.branch.label, analysis.power.from.active)
@@ -461,7 +461,7 @@ active = supplyPower(system, analysis; label = "Bus 2")
 ---
 
 ##### Active Power Flow
-Similarly, we can compute the active power flow at both the "from" and "to" bus ends of the specific branch by utilizing the provided functions below:
+Similarly, we can compute the active power flow at both the from-bus and to-bus ends of the specific branch by utilizing the provided functions below:
 ```@repl DCOptimalPowerFlowPower
 active = fromPower(system, analysis; label = "Branch 2")
 active = toPower(system, analysis; label = "Branch 2")

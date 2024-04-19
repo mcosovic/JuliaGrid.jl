@@ -96,7 +96,7 @@ The DC optimal power flow in JuliaGrid allows the cost function ``f_i(P_{\text{g
 ```math
 \begin{aligned}
   f_i(P_{\text{g}i}) &= a_1P_{\text{g}i} + a_0 \\
-  f_i(P_{\text{g}i}) &= a_2 P_{\text{g}i}^2 + a_1P_{\text{g}i} + a_0 \\
+  f_i(P_{\text{g}i}) &= a_2 P_{\text{g}i}^2 + a_1P_{\text{g}i} + a_0.
 \end{aligned}
 ```
 
@@ -110,7 +110,7 @@ Furthermore, it is worth noting that the function can be given simply as a const
 When utilizing the [`cost!`](@ref cost!) function within JuliaGrid, employing the `polynomial` keyword results in the polynomial being constructed with coefficients ordered from the highest degree to the lowest. For instance, in the provided case study, we created a quadratic polynomial represented as:
 ```math
 \begin{aligned}
-  f_1(P_{\text{g}1}) &= 1100.2 P_{\text{g}1}^2 + 500 P_{\text{g}1} + 80
+  f_1(P_{\text{g}1}) &= 1100.2 P_{\text{g}1}^2 + 500 P_{\text{g}1} + 80.
 \end{aligned}
 ```
 To access these coefficients, users can utilize the variable:
@@ -204,7 +204,7 @@ print(analysis.method.constraint.balance.active)
 ---
 
 ##### Voltage Angle Difference Constraints
-The inequality constraint related to the minimum and maximum bus voltage angle difference between the "from" and "to" bus ends of each branch is defined as follows:
+The inequality constraint related to the minimum and maximum bus voltage angle difference between the from-bus and to-bus ends of each branch is defined as follows:
 ```math
 \theta_{ij}^\text{min} \leq \theta_i - \theta_j \leq \theta_{ij}^\text{max},\;\;\; \forall (i,j) \in \mathcal{E},
 ```

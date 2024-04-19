@@ -520,7 +520,7 @@ current!(system, analysis)
 nothing # hide
 ```
 
-For instance, if we want to show the active power injections at each bus and the current flow angles at each "to" bus end of the branch, we can employ the following code:
+For instance, if we want to show the active power injections at each bus and the current flow angles at each to-bus end of the branch, we can employ the following code:
 ```@repl ComputationPowersCurrentsLosses
 print(system.bus.label, analysis.power.injection.active)
 print(system.branch.label, analysis.current.to.angle)
@@ -559,7 +559,7 @@ active, reactive = shuntPower(system, analysis; label = "Bus 3")
 ---
 
 ##### Active and Reactive Power Flow
-Similarly, we can compute the active and reactive power flow at both the "from" and "to" bus ends of the specific branch by utilizing the provided functions below:
+Similarly, we can compute the active and reactive power flow at both the from-bus and to-bus ends of the specific branch by utilizing the provided functions below:
 ```@repl ComputationPowersCurrentsLosses
 active, reactive = fromPower(system, analysis; label = "Branch 2")
 active, reactive = toPower(system, analysis; label = "Branch 2")
@@ -604,7 +604,7 @@ magnitude, angle = injectionCurrent(system, analysis; label = "Bus 1")
 ---
 
 ##### Current Flow
-We can compute the current flow at both the "from" and "to" bus ends of the specific branch by utilizing the provided functions below:
+We can compute the current flow at both the from-bus and to-bus ends of the specific branch by utilizing the provided functions below:
 ```@repl ComputationPowersCurrentsLosses
 magnitude, angle = fromCurrent(system, analysis; label = "Branch 2")
 magnitude, angle = toCurrent(system, analysis; label = "Branch 2")
@@ -613,7 +613,7 @@ magnitude, angle = toCurrent(system, analysis; label = "Branch 2")
 ---
 
 ##### Current Through Series Impedance
-To calculate the current passing through the series impedance of the branch in the direction from the "from" bus end to the "to" bus end, we can use the following function:
+To calculate the current passing through the series impedance of the branch in the direction from the from-bus end to the to-bus end, we can use the following function:
 ```@repl ComputationPowersCurrentsLosses
 magnitude, angle = seriesCurrent(system, analysis; label = "Branch 2")
 ```

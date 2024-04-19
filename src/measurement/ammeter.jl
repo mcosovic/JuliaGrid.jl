@@ -9,8 +9,8 @@ branch.
 # Keywords
 The ammeter is defined with the following keywords:
 * `label`: a unique label for the ammeter;
-* `from`: the label of the branch if the ammeter is located at the "from" bus end;
-* `to`: the label of the branch if the ammeter is located at the "to" bus end;
+* `from`: the label of the branch if the ammeter is located at the from-bus end;
+* `to`: the label of the branch if the ammeter is located at the to-bus end;
 * `magnitude` (pu or A): the branch current magnitude value;
 * `variance` (pu or A): the variance of the branch current magnitude measurement;
 * `noise`: specifies how to generate the measurement mean:
@@ -25,9 +25,9 @@ The function updates the `ammeter` field of the `Measurement` composite type.
 
 # Default Settings
 Default settings for certain keywords are as follows: `variance = 1e-2`, `noise = true`,
-`status = 1`, which apply to ammeters located at both the "from" and "to" bus ends.
+`status = 1`, which apply to ammeters located at both the from-bus and to-bus ends.
 Users can fine-tune these settings by explicitly specifying the variance and status for
-ammeters positioned on either the "from" or "to" bus ends of branches using the
+ammeters positioned on either the from-bus or to-bus ends of branches using the
 [`@ammeter`](@ref @ammeter) macro.
 
 # Units
@@ -111,12 +111,12 @@ with the specified `variance` to obtain measurement data.
 
 # Keywords
 Users have the option to configure the following keywords:
-* `varianceFrom` (pu or A): the measurement variance for ammeters at the "from" bus ends;
-* `statusFrom`: the operating status of the ammeters at the "from" bus ends:
+* `varianceFrom` (pu or A): the measurement variance for ammeters at the from-bus ends;
+* `statusFrom`: the operating status of the ammeters at the from-bus ends:
   * `statusFrom = 1`: in-service;
   * `statusFrom = 0`: out-of-service;
-* `varianceTo` (pu or A): the measurement variance for ammeters at the "to" bus ends;
-* `statusTo`: the operating status of the ammeters at the "to" bus ends:
+* `varianceTo` (pu or A): the measurement variance for ammeters at the to-bus ends;
+* `statusTo`: the operating status of the ammeters at the to-bus ends:
   * `statusTo = 1`: in-service;
   * `statusTo = 0`: out-of-service.
 
@@ -289,7 +289,7 @@ function updateAmmeter!(system::PowerSystem, device::Measurement, analysis::ACSt
 
     indexAmmeter = ammeter.label[getLabel(ammeter, label, "ammeter")]
     indexBranch = ammeter.layout.index[indexAmmeter]
-    idx = device.voltmeter.number + device.wattmeter.number + device.ammeter.number + indexAmmeter
+    idx = device.voltmeter.number + indexAmmeter
 
     basePowerInv = 1 / (system.base.power.value * system.base.power.prefix)
     if ammeter.layout.from[indexAmmeter]
@@ -303,9 +303,9 @@ function updateAmmeter!(system::PowerSystem, device::Measurement, analysis::ACSt
 
     if ammeter.magnitude.status[indexAmmeter] == 1
         if ammeter.layout.from[indexAmmeter]
-            se.type[idx] = 8
+            se.type[idx] = 2
         else
-            se.type[idx] = 9
+            se.type[idx] = 3
         end
         se.mean[idx] = ammeter.magnitude.mean[indexAmmeter]
     else
@@ -332,7 +332,7 @@ function updateAmmeter!(system::PowerSystem, device::Measurement, analysis::ACSt
 
     indexAmmeter = ammeter.label[getLabel(ammeter, label, "ammeter")]
     indexBranch = ammeter.layout.index[indexAmmeter]
-    idx = device.voltmeter.number + device.wattmeter.number + device.varmeter.number + indexAmmeter
+    idx = device.voltmeter.number + indexAmmeter
 
     basePowerInv = 1 / (system.base.power.value * system.base.power.prefix)
     if ammeter.layout.from[indexAmmeter]
@@ -362,7 +362,7 @@ using the [`addAmmeter!`](@ref addAmmeter!) function.
 
 # Keywords
 To establish the ammeter template, users can set default variance and status values for
-ammeters at both the "from" and "to" bus ends of branches using `varianceFrom` and
+ammeters at both the from-bus and to-bus ends of branches using `varianceFrom` and
 `statusFrom` for the former and `varianceTo` and `statusTo` for the latter. Users can also
 configure label patterns with the `label` keyword, as well as specify the `noise` type.
 

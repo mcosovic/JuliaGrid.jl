@@ -10,8 +10,8 @@ following electrical quantities:
 - `injection`: active and reactive power bus injections;
 - `supply`: active and reactive power bus injections from the generators;
 - `shunt`: active and reactive power values associated with shunt element at each bus;
-- `from`: active and reactive power flows at the "from" bus end of each branch;
-- `to`: active and reactive power flows at the "to" bus end of each branch;
+- `from`: active and reactive power flows at the from-bus end of each branch;
+- `to`: active and reactive power flows at the to-bus end of each branch;
 - `charging`: active and reactive power values linked with branch charging admittances for each branch;
 - `series` active and reactive power losses through each branch series impedance;
 - `generator`: produced active and reactive power outputs of each generator (not for state estimation).
@@ -496,7 +496,7 @@ end
 """
     fromPower(system::PowerSystem, analysis::AC; label)
 
-The function returns the active and reactive power flows at the "from" bus end associated
+The function returns the active and reactive power flows at the from-bus end associated
 with a specific branch in the AC framework. The `label` keyword argument must match an
 existing branch label.
 
@@ -542,7 +542,7 @@ end
 """
     toPower(system::PowerSystem, analysis::AC; label)
 
-The function returns the active and reactive power flows at the "to" bus end associated
+The function returns the active and reactive power flows at the to-bus end associated
 with a specific branch in the AC framework. The `label` keyword argument must match an
 existing branch label.
 
@@ -813,9 +813,9 @@ and branches in the AC framework.
 # Updates
 This function calculates various electrical quantities in the polar coordinate system:
 - `injection`: current injections at each bus;
-- `from`: current flows at each "from" bus end of the branch;
-- `to`: current flows at each "to" bus end of the branch;
-- `series`: current flows through the series impedance of the branch in the direction from the "from" bus end to the "to" bus end of the branch.
+- `from`: current flows at each from-bus end of the branch;
+- `to`: current flows at each to-bus end of the branch;
+- `series`: current flows through the series impedance of the branch in the direction from the from-bus end to the to-bus end of the branch.
 
 # Example
 Compute currents after obtaining the AC optimal power flow solution:
@@ -919,7 +919,7 @@ end
 """
     fromCurrent(system::PowerSystem, analysis::AC; label)
 
-The function returns the current in the polar coordinate system at the "from" bus end
+The function returns the current in the polar coordinate system at the from-bus end
 associated with a specific branch in the AC framework. The `label` keyword argument must
 match an existing branch label.
 
@@ -961,7 +961,7 @@ end
 """
     toCurrent(system::PowerSystem, analysis::AC; label)
 
-The function returns the current in the polar coordinate system at the "to" bus end
+The function returns the current in the polar coordinate system at the to-bus end
 associated with a specific branch in the AC framework. The `label` keyword argument must
 match an existing branch label.
 
@@ -1004,7 +1004,7 @@ end
     seriesCurrent(system::PowerSystem, analysis::AC; label)
 
 The function returns the current in the polar coordinate system through series impedance
-associated with a specific branch in the direction from the "from" bus end to the "to" bus
+associated with a specific branch in the direction from the from-bus end to the to-bus
 end of the branch within the AC framework. The `label` keyword argument must  match an
 existing branch label.
 

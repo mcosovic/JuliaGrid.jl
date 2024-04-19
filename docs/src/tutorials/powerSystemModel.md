@@ -53,7 +53,7 @@ nothing #hide
 The equivalent unified ``\pi``-model for a branch ``(i,j) \in \mathcal{E}`` incident to the buses ``\{i,j\} \in \mathcal{N}`` is shown in Figure 1.
 ```@raw html
 <img src="../../assets/pi_model.svg" class="center" width="600"/>
-<figcaption>Figure 1: The equivalent branch model, where the transformer is located at "from" bus end of the branch.</figcaption>
+<figcaption>Figure 1: The equivalent branch model, where the transformer is located at from-bus end of the branch.</figcaption>
 &nbsp;
 ```
 
@@ -94,7 +94,7 @@ The transformer complex ratio ``\alpha_{ij}`` is defined:
 ```math
   \alpha_{ij} = \cfrac{1}{\tau_{ij}}e^{-\text{j}\phi_{ij}},
 ```
-where ``\tau_{ij} \neq 0`` is a transformer turns ratio, while ``\phi_{ij}`` is a transformer phase shift angle, always located "from" bus end of the branch. Note, if ``\tau_{ij} = 1`` and ``\phi_{ij} = 0`` the model describes the line. In-phase transformers are defined if ``\tau_{ij} \neq 1``, ``\phi_{ij} = 0``, and ``y_{\text{s}ij} = 0``, while phase-shifting transformers are obtained if ``\tau_{ij} \neq 1``, ``\phi_{ij} \neq 0``, and ``y_{\text{s}ij} = 0``.
+where ``\tau_{ij} \neq 0`` is a transformer turns ratio, while ``\phi_{ij}`` is a transformer phase shift angle, always located from-bus end of the branch. Note, if ``\tau_{ij} = 1`` and ``\phi_{ij} = 0`` the model describes the line. In-phase transformers are defined if ``\tau_{ij} \neq 1``, ``\phi_{ij} = 0``, and ``y_{\text{s}ij} = 0``, while phase-shifting transformers are obtained if ``\tau_{ij} \neq 1``, ``\phi_{ij} \neq 0``, and ``y_{\text{s}ij} = 0``.
 
 These transformer parameters are stored in the vectors ``\bm{\tau} = [\tau_{ij}]`` and ``\bm{\phi} = [\phi_{ij}]``, respectively:
 ```@repl ACDCModel
@@ -157,17 +157,17 @@ The admittance parameters are stored in the vectors ``\mathbf{y}_{\text{ii}} = [
 𝐲ⱼⱼ = system.model.ac.nodalToTo
 ```
 
-In this context, we have easily derived the active and reactive power flow at the "from" bus end, denoted as ``i \in \mathcal{N}``, of the branch ``(i,j) \in \mathcal{E}``:
+In this context, we have easily derived the active and reactive power flow at the from-bus end, denoted as ``i \in \mathcal{N}``, of the branch ``(i,j) \in \mathcal{E}``:
 ```math
   S_{ij} = P_{ij} + \text{j}Q_{ij} = \bar{V}_{i}\left[\cfrac{1}{\tau_{ij}^2}({y}_{ij} + y_{\text{s}ij}) \bar{V}_{i} - \alpha_{ij}^*{y}_{ij} \bar{V}_{j}\right]^*,\;\;\; (i,j) \in \mathcal{E}.
 ```
 
-Similarly, we can determine the active and reactive power flow at the "to" bus end, denoted as ``j \in \mathcal{N}``, of the branch ``(i,j) \in \mathcal{E}``:
+Similarly, we can determine the active and reactive power flow at the to-bus end, denoted as ``j \in \mathcal{N}``, of the branch ``(i,j) \in \mathcal{E}``:
 ```math
   {S}_{ji} = P_{ji} + \text{j}Q_{ji} = \bar{V}_{j} \left[-\alpha_{ij}{y}_{ij} \bar{V}_{i} + ({y}_{ij} + y_{\text{s}ij}) \bar{V}_{j}\right]^*,\;\;\; (i,j) \in \mathcal{E}.
 ```
 
-Positive values of active or reactive power, such as ``P_{ij} > 0`` or ``Q_{ij} > 0``, indicate power flow originating from the "from" bus and moving towards the "to" bus, following the direction of the current ``\bar{I}_{ij}``. Conversely, negative values, like ``P_{ij} < 0`` or ``Q_{ij} < 0``, signify power flow in the opposite direction. The same principles apply to ``P_{ji} > 0`` or ``Q_{ji} > 0``, indicating power flow from the "to" bus to the "from" bus, aligned with the current ``\bar{I}_{ji}``, while negative values, ``P_{ji} < 0`` or ``Q_{ji} < 0``, denote the reverse flow direction.
+Positive values of active or reactive power, such as ``P_{ij} > 0`` or ``Q_{ij} > 0``, indicate power flow originating from the from-bus and moving towards the to-bus, following the direction of the current ``\bar{I}_{ij}``. Conversely, negative values, like ``P_{ij} < 0`` or ``Q_{ij} < 0``, signify power flow in the opposite direction. The same principles apply to ``P_{ji} > 0`` or ``Q_{ji} > 0``, indicating power flow from the to-bus to the from-bus, aligned with the current ``\bar{I}_{ji}``, while negative values, ``P_{ji} < 0`` or ``Q_{ji} < 0``, denote the reverse flow direction.
 
 ---
 

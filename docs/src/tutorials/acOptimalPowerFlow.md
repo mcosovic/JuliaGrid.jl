@@ -203,7 +203,7 @@ h_{P_i}(\mathbf {P}_{\text{g}}, \mathbf {V}, \bm{\Theta}) = 0,\;\;\;  \forall i 
 
 The active power balance equation is derived using the [Bus Injections](@ref BusInjectionsTutorials) and can be represented as:
 ```math
-h_{P_i}(\mathbf {P}_{\text{g}}, \mathbf {V}, \bm{\Theta}) = {V}_{i}\sum\limits_{j=1}^n {V}_{j} (G_{ij}\cos\theta_{ij}+B_{ij}\sin\theta_{ij}) - \sum_{k \in \mathcal{S}_i} P_{\text{g}k} + P_{\text{d}i}.
+h_{P_i}(\mathbf {P}_{\text{g}}, \mathbf {V}, \bm{\Theta}) = {V}_{i}\sum\limits_{j=1}^n (G_{ij}\cos\theta_{ij}+B_{ij}\sin\theta_{ij})V_j - \sum_{k \in \mathcal{S}_i} P_{\text{g}k} + P_{\text{d}i}.
 ```
 In this equation, the set ``\mathcal{S}_i \subseteq \mathcal{S}`` encompasses all generators connected to bus ``i \in \mathcal{N}``, and ``P_{\text{g}k}`` represents the active power output of the ``k``-th generator within the set ``\mathcal{S}_i``. More Precisely, the variable ``P_{\text{g}k}`` represents the optimization variable, along with the bus voltage angles ``\theta_{ij} = \theta_i - \theta_j`` and the bus voltage magnitudes ``V_i`` and ``V_j``.
 
@@ -225,7 +225,7 @@ h_{Q_i}(\mathbf {Q}_{\text{g}}, \mathbf {V}, \bm{\Theta}) = 0,\;\;\;  \forall i 
 ```
 The reactive power balance equation is derived using the [Bus Injections](@ref BusInjectionsTutorials) and can be represented as:
 ```math
-h_{Q_i}(\mathbf {Q}_{\text{g}}, \mathbf {V}, \bm{\Theta}) = {V}_{i}\sum\limits_{j=1}^n {V}_{j} (G_{ij}\sin\theta_{ij}-B_{ij}\cos\theta_{ij}) - \sum_{k \in \mathcal{S}_i} Q_{\text{g}k} + Q_{\text{d}i}.
+h_{Q_i}(\mathbf {Q}_{\text{g}}, \mathbf {V}, \bm{\Theta}) = {V}_{i}\sum\limits_{j=1}^n (G_{ij}\sin\theta_{ij}-B_{ij}\cos\theta_{ij})V_j - \sum_{k \in \mathcal{S}_i} Q_{\text{g}k} + Q_{\text{d}i}.
 ```
 Similarly, as mentioned earlier for active power, ``Q_{\text{g}k}`` represents the reactive power output of the ``k``-th generator within the set ``\mathcal{S}_i``. The variable ``Q_{\text{g}k}`` serves as optimization variable, as well as the bus voltage angles ``\theta_{ij} = \theta_i - \theta_j``, and the bus voltage magnitudes ``V_i`` and ``V_j``.
 
@@ -256,7 +256,7 @@ To retrieve this inequality constraint from the model, we can use the following 
 print(analysis.method.constraint.voltage.magnitude)
 ```
 
-The inequality constraint related to the minimum and maximum bus voltage angle difference between the "from" and "to" bus ends of each branch is defined as follows:
+The inequality constraint related to the minimum and maximum bus voltage angle difference between the from-bus and to-bus ends of each branch is defined as follows:
 ```math
 \theta_{ij}^\text{min} \leq \theta_i - \theta_j \leq \theta_{ij}^\text{max},\;\;\; \forall (i,j) \in \mathcal{E},
 ```
@@ -273,7 +273,7 @@ print(analysis.method.constraint.voltage.angle)
 ---
 
 ##### Flow Constraints
-The inequality constraints related to the branch flow ratings can be associated with the limits on apparent power flow, active power flow, or current magnitude at the "from" and "to" bus ends of each branch. The type of constraint applied is determined by the `type` keyword within the [`addBranch!`](@ref addBranch!) function. Specifically, `type = 1` is used for apparent power flow, `type = 2` for active power flow, and `type = 3` for current magnitude. These constraints can be expressed using the equations ``h_{ij}(\mathbf {V}, \bm{\Theta})`` and ``h_{ji}(\mathbf {V}, \bm{\Theta})``, representing the rating constraints at the "from" and "to" bus ends of each branch, respectively:
+The inequality constraints related to the branch flow ratings can be associated with the limits on apparent power flow, active power flow, or current magnitude at the from-bus and to-bus ends of each branch. The type of constraint applied is determined by the `type` keyword within the [`addBranch!`](@ref addBranch!) function. Specifically, `type = 1` is used for apparent power flow, `type = 2` for active power flow, and `type = 3` for current magnitude. These constraints can be expressed using the equations ``h_{ij}(\mathbf {V}, \bm{\Theta})`` and ``h_{ji}(\mathbf {V}, \bm{\Theta})``, representing the rating constraints at the from-bus and to-bus ends of each branch, respectively:
 ```math
 \begin{aligned}
     h_{ij}(\mathbf {V}, \bm{\Theta}) \leq F_{ij}^{\text{max}},\;\;\; \forall (i,j) \in \mathcal{E} \\
@@ -285,7 +285,7 @@ These rating constraints ensure that the power flow or current in each branch do
 𝐅ₘₐₓ = system.branch.flow.longTerm
 ```
 
-By default, the rating constraints are associated with the apparent power flow (`type = 1`) at the "from" and "to" bus ends of each branch. These constraints are defined using the following equations:
+By default, the rating constraints are associated with the apparent power flow (`type = 1`) at the from-bus and to-bus ends of each branch. These constraints are defined using the following equations:
 ```math
 \begin{aligned}
     h_{ij}(\mathbf {V}, \bm{\Theta}) = \sqrt{  A_{ij} V_i^4 + B_{ij} V_i^2 V_j^2 - 2 V_i^3 V_j [C_{ij} \cos(\theta_{ij} - \phi_{ij}) + D_{ij} \sin(\theta_{ij} - \phi_{ij})] } \\
@@ -312,7 +312,7 @@ Additionally, the values of ``\bar{g}_{ij}`` and ``\bar{b}_{ij}`` are given by:
  \end{aligned}
 ```
 
-Since the quantity under the square root is always positive, these constraints are implemented by squaring them for computational efficiency. Thus, the squared rating constraints for the apparent power flow at the "from" and "to" bus ends of each branch can be expressed as follows:
+Since the quantity under the square root is always positive, these constraints are implemented by squaring them for computational efficiency. Thus, the squared rating constraints for the apparent power flow at the from-bus and to-bus ends of each branch can be expressed as follows:
 ```math
 \begin{aligned}
     h_{ij}(\mathbf {V}, \bm{\Theta})^2 \leq (F_{ij}^{\text{max}})^2, \;\;\; \forall (i,j) \in \mathcal{E} \\
@@ -320,7 +320,7 @@ Since the quantity under the square root is always positive, these constraints a
 \end{aligned}
 ```
 
-The second option is to define the `longTerm` keyword for the active power flow constraints (`type = 2`) at the "from" and "to" bus ends of each branch. In this case, the constraints are implemented without squaring the equations, but rather as they are originally defined:
+The second option is to define the `longTerm` keyword for the active power flow constraints (`type = 2`) at the from-bus and to-bus ends of each branch. In this case, the constraints are implemented without squaring the equations, but rather as they are originally defined:
 ```math
   \begin{aligned}
     h_{ij}(\mathbf {V}, \bm{\Theta}) &=
@@ -331,17 +331,17 @@ The second option is to define the `longTerm` keyword for the active power flow 
   \end{aligned}
 ```
 
-In our example, we have chosen to utilize this type of flow constraints. To access the flow constraints of branches at the "from" bus end, you can use the following code snippet:
+In our example, we have chosen to utilize this type of flow constraints. To access the flow constraints of branches at the from-bus end, you can use the following code snippet:
 ```@repl ACOptimalPowerFlow
 print(analysis.method.constraint.flow.from)
 ```
 
-Similarly, to acces the "to" bus end flow constraints of branches you can use the following code snippet:
+Similarly, to acces the to-bus end flow constraints of branches you can use the following code snippet:
 ```@repl ACOptimalPowerFlow
 print(analysis.method.constraint.flow.to)
 ```
 
-The last option involves defining the `longTerm` keyword for the current magnitude constraints (`type = 3`) at the "from" and "to" bus ends of each branch. In this case, the constraints are implemented as follows:
+The last option involves defining the `longTerm` keyword for the current magnitude constraints (`type = 3`) at the from-bus and to-bus ends of each branch. In this case, the constraints are implemented as follows:
 ```math
   \begin{aligned}
     h_{ij}(\mathbf {V}, \bm{\Theta}) &= \sqrt{A_{ij}V_i^2 + B_{ij}V_j^2 - 2V_iV_j[C_{ij} \cos(\theta_{ij} - \phi_{ij}) + D_{ij}\sin(\theta_{ij} - \phi_{ij})]} \\
@@ -483,12 +483,12 @@ The function stores the computed powers in the rectangular coordinate system. It
 | [Shunt elements](@ref BusShuntElementTutorials)                | ``\mathbf{P}_{\text{sh}} = [{P}_{\text{sh}i}]`` | ``\mathbf{Q}_{\text{sh}} = [{Q}_{\text{sh}i}]`` |
 
 
-| Branch                                                       | Active                                       | Reactive                                     |
-|:-------------------------------------------------------------|:---------------------------------------------|:---------------------------------------------|
-| ["From" bus end flows](@ref BranchNetworkEquationsTutorials) | ``\mathbf{P}_{\text{i}} = [P_{ij}]``         | ``\mathbf{Q}_{\text{i}} = [Q_{ij}]``         |
-| ["To" bus end flows](@ref BranchNetworkEquationsTutorials)   | ``\mathbf{P}_{\text{j}} = [P_{ji}]``         | ``\mathbf{Q}_{\text{j}} = [Q_{ji}]``         |
-| [Shunt elements](@ref BranchShuntElementsTutorials)          | ``\mathbf{P}_{\text{s}} = [P_{\text{s}ij}]`` | ``\mathbf{P}_{\text{s}} = [P_{\text{s}ij}]`` |
-| [Series elements](@ref BranchSeriesElementTutorials)         | ``\mathbf{P}_{\text{l}} = [P_{\text{l}ij}]`` | ``\mathbf{Q}_{\text{l}} = [Q_{\text{l}ij}]`` |
+| Branch                                                     | Active                                       | Reactive                                     |
+|:-----------------------------------------------------------|:---------------------------------------------|:---------------------------------------------|
+| [From-bus end flows](@ref BranchNetworkEquationsTutorials) | ``\mathbf{P}_{\text{i}} = [P_{ij}]``         | ``\mathbf{Q}_{\text{i}} = [Q_{ij}]``         |
+| [To-bus end flows](@ref BranchNetworkEquationsTutorials)   | ``\mathbf{P}_{\text{j}} = [P_{ji}]``         | ``\mathbf{Q}_{\text{j}} = [Q_{ji}]``         |
+| [Shunt elements](@ref BranchShuntElementsTutorials)        | ``\mathbf{P}_{\text{s}} = [P_{\text{s}ij}]`` | ``\mathbf{P}_{\text{s}} = [P_{\text{s}ij}]`` |
+| [Series elements](@ref BranchSeriesElementTutorials)       | ``\mathbf{P}_{\text{l}} = [P_{\text{l}ij}]`` | ``\mathbf{Q}_{\text{l}} = [Q_{\text{l}ij}]`` |
 
 !!! note "Info"
     For a clear comprehension of the equations, symbols presented in this section, as well as for a better grasp of power directions, please refer to the [Unified Branch Model](@ref UnifiedBranchModelTutorials).
@@ -535,13 +535,13 @@ The vector of these reactive power injections by the generators to the buses, de
 ---
 
 ##### Power Flows
-The resulting [active and reactive power flows](@ref BranchNetworkEquationsTutorials) at each "from" bus end are stored as the vectors ``\mathbf{P}_{\text{i}} = [P_{ij}]`` and ``\mathbf{Q}_{\text{i}} = [Q_{ij}],`` respectively, and can be retrieved using the following commands:
+The resulting [active and reactive power flows](@ref BranchNetworkEquationsTutorials) at each from-bus end are stored as the vectors ``\mathbf{P}_{\text{i}} = [P_{ij}]`` and ``\mathbf{Q}_{\text{i}} = [Q_{ij}],`` respectively, and can be retrieved using the following commands:
 ```@repl ACOptimalPowerFlow
 𝐏ᵢ = analysis.power.from.active
 𝐐ᵢ = analysis.power.from.reactive
 ```
 
-Similarly, the vectors of [active and reactive power flows](@ref BranchNetworkEquationsTutorials) at the "to" bus end are stored as ``\mathbf{P}_{\text{j}} = [P_{ji}]`` and ``\mathbf{Q}_{\text{j}} = [Q_{ji}]``, respectively, and can be retrieved using the following code:
+Similarly, the vectors of [active and reactive power flows](@ref BranchNetworkEquationsTutorials) at the to-bus end are stored as ``\mathbf{P}_{\text{j}} = [P_{ji}]`` and ``\mathbf{Q}_{\text{j}} = [Q_{ji}]``, respectively, and can be retrieved using the following code:
 ```@repl ACOptimalPowerFlow
 𝐏ⱼ = analysis.power.to.active
 𝐐ⱼ = analysis.power.to.reactive
@@ -580,11 +580,11 @@ The function stores the computed currents in the polar coordinate system. It cal
 |:------------------------------------------|:-----------------------|:-------------------------|
 | [Injections](@ref BusInjectionsTutorials) | ``\mathbf{I} = [I_i]`` | ``\bm{\psi} = [\psi_i]`` |
 
-| Branch                                                       | Magnitude                                    | Angle                                          |
-|:-------------------------------------------------------------|:---------------------------------------------|:-----------------------------------------------|
-| ["From" bus end flows](@ref BranchNetworkEquationsTutorials) | ``\mathbf{I}_{\text{i}} = [I_{ij}]``         | ``\bm{\psi}_{\text{i}} = [\psi_{ij}]``         |
-| ["To" bus end flows](@ref BranchNetworkEquationsTutorials)   | ``\mathbf{I}_{\text{j}} = [I_{ji}]``         | ``\bm{\psi}_{\text{j}} = [\psi_{ji}]``         |
-| [Series elements](@ref BranchSeriesElementTutorials)         | ``\mathbf{I}_{\text{l}} = [I_{\text{l}ij}]`` | ``\bm{\psi}_{\text{l}} = [\psi_{\text{l}ij}]`` |
+| Branch                                                     | Magnitude                                    | Angle                                          |
+|:-----------------------------------------------------------|:---------------------------------------------|:-----------------------------------------------|
+| [From-bus end flows](@ref BranchNetworkEquationsTutorials) | ``\mathbf{I}_{\text{i}} = [I_{ij}]``         | ``\bm{\psi}_{\text{i}} = [\psi_{ij}]``         |
+| [To-bus end flows](@ref BranchNetworkEquationsTutorials)   | ``\mathbf{I}_{\text{j}} = [I_{ji}]``         | ``\bm{\psi}_{\text{j}} = [\psi_{ji}]``         |
+| [Series elements](@ref BranchSeriesElementTutorials)       | ``\mathbf{I}_{\text{l}} = [I_{\text{l}ij}]`` | ``\bm{\psi}_{\text{l}} = [\psi_{\text{l}ij}]`` |
 
 !!! note "Info"
     For a clear comprehension of the equations, symbols presented in this section, as well as for a better grasp of power directions, please refer to the [Unified Branch Model](@ref UnifiedBranchModelTutorials).

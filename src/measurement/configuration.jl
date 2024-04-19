@@ -139,14 +139,14 @@ or out-of-service states based on specified keywords.
 # Keywords
 These keywords allow the user to configure the ammeter set as follows:
 * `inservice`: sets the number of in-service ammeters or allows fine-tuning:
-  * `inserviceFrom`: sets only ammeters loacted at the "from" bus end;
-  * `inserviceTo`: sets only ammeters loacted at the "to" bus end;
+  * `inserviceFrom`: sets only ammeters loacted at the from-bus end;
+  * `inserviceTo`: sets only ammeters loacted at the to-bus end;
 * `outservice`: sets the number of out-of-service ammeters or allows fine-tuning:
-  * `outserviceFrom`: sets only ammeters loacted at the "from" bus end;
-  * `outserviceTo`: sets only ammeters loacted at the "to" bus end;
+  * `outserviceFrom`: sets only ammeters loacted at the from-bus end;
+  * `outserviceTo`: sets only ammeters loacted at the to-bus end;
 * `redundancy`: determines in-service ammeters based on redundancy or allows fine-tuning:
-  * `redundancyFrom`: determines only ammeters loacted at the "from" bus end;
-  * `redundancyTo`: determines only ammeters loacted at the "to" bus end.
+  * `redundancyFrom`: determines only ammeters loacted at the from-bus end;
+  * `redundancyTo`: determines only ammeters loacted at the to-bus end.
 
 In case a user employs multiple keywords from the set `inservice`, `outservice`, and
 `redundancy`, only the first keyword in the hierarchical order will be taken into
@@ -226,16 +226,16 @@ in-service or out-of-service states based on specified keywords.
 These keywords allow the user to configure the wattmeter set as follows:
 * `inservice`: sets the number of in-service wattmeters or allows fine-tuning:
   * `inserviceBus`: sets only wattmeters loacted at the bus;
-  * `inserviceFrom`: sets only wattmeters loacted at the "from" bus end;
-  * `inserviceTo`: sets only wattmeters loacted at the "to" bus end;
+  * `inserviceFrom`: sets only wattmeters loacted at the from-bus end;
+  * `inserviceTo`: sets only wattmeters loacted at the to-bus end;
 * `outservice`: sets the number of out-of-service wattmeters or allows fine-tuning:
   * `outserviceBus`: sets only wattmeters loacted at the bus;
-  * `outserviceFrom`: sets only wattmeters loacted at the "from" bus end;
-  * `outserviceTo`: sets only wattmeters loacted at the "to" bus end;
+  * `outserviceFrom`: sets only wattmeters loacted at the from-bus end;
+  * `outserviceTo`: sets only wattmeters loacted at the to-bus end;
 * `redundancy`: determines in-service wattmeters based on redundancy or allows fine-tuning:
   * `redundancyBus`: determines only wattmeters loacted at the bus;
-  * `redundancyFrom`: determines only wattmeters loacted at the "from" bus end;
-  * `redundancyTo`: determines only wattmeters loacted at the "to" bus end.
+  * `redundancyFrom`: determines only wattmeters loacted at the from-bus end;
+  * `redundancyTo`: determines only wattmeters loacted at the to-bus end.
 
 In case a user employs multiple keywords from the set `inservice`, `outservice`, and
 `redundancy`, only the first keyword in the hierarchical order will be taken into
@@ -324,16 +324,16 @@ in-service or out-of-service states based on specified keywords.
 These keywords allow the user to configure the varmeter set as follows:
 * `inservice`: sets the number of in-service varmeters or allows fine-tuning:
   * `inserviceBus`: sets only varmeters loacted at the bus;
-  * `inserviceFrom`: sets only varmeters loacted at the "from" bus end;
-  * `inserviceTo`: sets only varmeters loacted at the "to" bus end;
+  * `inserviceFrom`: sets only varmeters loacted at the from-bus end;
+  * `inserviceTo`: sets only varmeters loacted at the to-bus end;
 * `outservice`: sets the number of out-of-service varmeters or allows fine-tuning:
   * `outserviceBus`: sets only varmeters loacted at the bus;
-  * `outserviceFrom`: sets only varmeters loacted at the "from" bus end;
-  * `outserviceTo`: sets only varmeters loacted at the "to" bus end;
+  * `outserviceFrom`: sets only varmeters loacted at the from-bus end;
+  * `outserviceTo`: sets only varmeters loacted at the to-bus end;
 * `redundancy`: determines in-service varmeters based on redundancy or allows fine-tuning:
   * `redundancyBus`: determines only varmeters loacted at the bus;
-  * `redundancyFrom`: determines only varmeters loacted at the "from" bus end;
-  * `redundancyTo`: determines only varmeters loacted at the "to" bus end.
+  * `redundancyFrom`: determines only varmeters loacted at the from-bus end;
+  * `redundancyTo`: determines only varmeters loacted at the to-bus end.
 
 In case a user employs multiple keywords from the set `inservice`, `outservice`, and
 `redundancy`, only the first keyword in the hierarchical order will be taken into
@@ -423,16 +423,16 @@ refer to PMU, we encompass both magnitude and angle measurements.
 These keywords allow the user to configure the PMU set as follows:
 * `inservice`: sets the number of in-service PMUs or allows fine-tuning:
   * `inserviceBus`: sets only PMUs loacted at the bus;
-  * `inserviceFrom`: sets only PMUs loacted at the "from" bus end;
-  * `inserviceTo`: sets only PMUs loacted at the "to" bus end;
+  * `inserviceFrom`: sets only PMUs loacted at the from-bus end;
+  * `inserviceTo`: sets only PMUs loacted at the to-bus end;
 * `outservice`: sets the number of out-of-service PMUs or allows fine-tuning:
   * `outserviceBus`: sets only PMUs loacted at the bus;
-  * `outserviceFrom`: sets only PMUs loacted at the "from" bus end;
-  * `outserviceTo`: sets only PMUs loacted at the "to" bus end;
+  * `outserviceFrom`: sets only PMUs loacted at the from-bus end;
+  * `outserviceTo`: sets only PMUs loacted at the to-bus end;
 * `redundancy`: determines in-service PMUs based on redundancy or allows fine-tuning:
   * `redundancyBus`: determines only PMUs loacted at the bus;
-  * `redundancyFrom`: determines only PMUs loacted at the "from" bus end;
-  * `redundancyTo`: determines only PMUs loacted at the "to" bus end.
+  * `redundancyFrom`: determines only PMUs loacted at the from-bus end;
+  * `redundancyTo`: determines only PMUs loacted at the to-bus end.
 
 In case a user employs multiple keywords from the set `inservice`, `outservice`, and
 `redundancy`, only the first keyword in the hierarchical order will be taken into

@@ -104,7 +104,6 @@ system14 = powerSystem(string(pathData, "case14test.m"))
         end
     end
 
-
     ####### Original WLS and LAV Models #######
     analysisWLS = gaussNewton(system14, device)
     analysisLAV = acLavStateEstimation(system14, device, Ipopt.Optimizer)

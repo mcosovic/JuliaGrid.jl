@@ -10,8 +10,8 @@ be added to an already defined bus or branch.
 The wattmeter is defined with the following keywords:
 * `label`: a unique label for the wattmeter;
 * `bus`: the label of the bus if the wattmeter is located at the bus;
-* `from`: the label of the branch if the wattmeter is located at the "from" bus end;
-* `to`: the label of the branch if the wattmeter is located at the "to" bus end;
+* `from`: the label of the branch if the wattmeter is located at the from-bus end;
+* `to`: the label of the branch if the wattmeter is located at the to-bus end;
 * `active` (pu or W): the active power value;
 * `variance` (pu or W): the variance of the active power measurement;
 * `noise`: specifies how to generate the measurement mean:
@@ -27,8 +27,8 @@ The function updates the `wattmeter` field of the `Measurement` composite type.
 # Default Settings
 Default settings for certain keywords are as follows: `variance = 1e-2`, `noise = true`,
 and `status = 1`, which apply to wattmeters located at the bus, as well as at both the
-"from" and "to" bus ends. Users can fine-tune these settings by explicitly specifying the
-variance and status for wattmeters positioned at the buses, "from" bus ends, or "to" bus
+from-bus and to-bus ends. Users can fine-tune these settings by explicitly specifying the
+variance and status for wattmeters positioned at the buses, from-bus ends, or to-bus
 ends of branches using the [`@wattmeter`](@ref @wattmeter) macro.
 
 # Units
@@ -85,8 +85,8 @@ can be added to an already defined bus or branch.
 The varmeter is defined with the following keywords:
 * `label`: a unique label for the varmeter;
 * `bus`: the label of the bus if the varmeter is located at the bus;
-* `from`: the label of the branch if the varmeter is located at the "from" bus end;
-* `to`: the label of the branch if the varmeter is located at the "to" bus end;
+* `from`: the label of the branch if the varmeter is located at the from-bus end;
+* `to`: the label of the branch if the varmeter is located at the to-bus end;
 * `reactive` (pu or VAr): the reactive power value;
 * `variance` (pu or VAr): the variance of the reactive power measurement;
 * `noise`: specifies how to generate the measurement mean:
@@ -102,8 +102,8 @@ The function updates the `varmeter` field of the `Measurement` composite type.
 # Default Settings
 Default settings for certain keywords are as follows: `variance = 1e-2`, `noise = true`,
 and `status = 1`, which apply to varmeters located at the bus, as well as at both the
-"from" and "to" bus ends. Users can fine-tune these settings by explicitly specifying the
-variance and status for varmeters positioned at the buses, "from" bus ends, or "to" bus
+from-bus and to-bus ends. Users can fine-tune these settings by explicitly specifying the
+variance and status for varmeters positioned at the buses, from-bus ends, or to-bus
 ends of branches using the [`@varmeter`](@ref @varmeter) macro.
 
 # Units
@@ -209,12 +209,12 @@ Users have the option to configure the following keywords:
 * `statusBus`: the operating status of the wattmeters at the buses:
   * `statusBus = 1`: in-service;
   * `statusBus = 0`: out-of-service;
-* `varianceFrom` (pu or W): the measurement variance for wattmeters at the "from" bus ends;
-* `statusFrom`: the operating status of the wattmeters at the "from" bus ends:
+* `varianceFrom` (pu or W): the measurement variance for wattmeters at the from-bus ends;
+* `statusFrom`: the operating status of the wattmeters at the from-bus ends:
   * `statusFrom = 1`: in-service;
   * `statusFrom = 0`: out-of-service;
-* `varianceTo` (pu or W): the measurement variance for wattmeters at the "to" bus ends;
-* `statusTo`: the operating status of the wattmeters at the "to" bus ends:
+* `varianceTo` (pu or W): the measurement variance for wattmeters at the to-bus ends;
+* `statusTo`: the operating status of the wattmeters at the to-bus ends:
   * `statusTo = 1`: in-service;
   * `statusTo = 0`: out-of-service.
 
@@ -280,12 +280,12 @@ abstract type. These exact values are perturbed by white Gaussian noise with the
 * `statusBus`: the operating status of the varmeters at the buses:
   * `statusBus = 1`: in-service;
   * `statusBus = 0`: out-of-service;
-* `varianceFrom` (pu or VAr): the measurement variance for varmeters at the "from" bus ends;
-* `statusFrom`: the operating status of the varmeters at the "from" bus ends:
+* `varianceFrom` (pu or VAr): the measurement variance for varmeters at the from-bus ends;
+* `statusFrom`: the operating status of the varmeters at the from-bus ends:
   * `statusFrom = 1`: in-service;
   * `statusFrom = 0`: out-of-service;
-* `varianceTo` (pu or VAr): the measurement variance for varmeters at the "to" bus ends;
-* `statusTo`: the operating status of the varmeters at the "to" bus ends:
+* `varianceTo` (pu or VAr): the measurement variance for varmeters at the to-bus ends;
+* `statusTo`: the operating status of the varmeters at the to-bus ends:
   * `statusTo = 1`: in-service;
   * `statusTo = 0`: out-of-service.
 
@@ -471,18 +471,18 @@ function updateWattmeter!(system::PowerSystem, device::Measurement, analysis::AC
 
     indexWattmeter = wattmeter.label[getLabel(wattmeter, label, "wattmeter")]
     indexBusBranch = wattmeter.layout.index[indexWattmeter]
-    idx = device.voltmeter.number + indexWattmeter
+    idx = device.voltmeter.number + device.ammeter.number + indexWattmeter
 
     updateMeter(wattmeter.active, indexWattmeter, active, variance, status, noise,
     prefix.activePower, 1 / (system.base.power.value * system.base.power.prefix))
 
     if wattmeter.active.status[indexWattmeter] == 1
         if wattmeter.layout.bus[indexWattmeter]
-            se.type[idx] = 2
-        elseif wattmeter.layout.from[indexWattmeter]
-            se.type[idx] = 3
-        else
             se.type[idx] = 4
+        elseif wattmeter.layout.from[indexWattmeter]
+            se.type[idx] = 5
+        else
+            se.type[idx] = 6
         end
         se.mean[idx] = wattmeter.active.mean[indexWattmeter]
     else
@@ -517,7 +517,7 @@ function updateWattmeter!(system::PowerSystem, device::Measurement, analysis::AC
 
     indexWattmeter = wattmeter.label[getLabel(wattmeter, label, "wattmeter")]
     indexBusBranch = wattmeter.layout.index[indexWattmeter]
-    idx = device.voltmeter.number + indexWattmeter
+    idx = device.voltmeter.number + device.ammeter.number + indexWattmeter
 
     updateMeter(wattmeter.active, indexWattmeter, active, variance, status, noise,
     prefix.activePower, 1 / (system.base.power.value * system.base.power.prefix))
@@ -712,18 +712,18 @@ function updateVarmeter!(system::PowerSystem, device::Measurement, analysis::ACS
 
     indexVarmeter = varmeter.label[getLabel(varmeter, label, "varmeter")]
     indexBusBranch = varmeter.layout.index[indexVarmeter]
-    idx = device.voltmeter.number + device.wattmeter.number + indexVarmeter
+    idx = device.voltmeter.number + device.ammeter.number + device.wattmeter.number + indexVarmeter
 
     updateMeter(varmeter.reactive, indexVarmeter, reactive, variance, status, noise,
     prefix.reactivePower,  1 / (system.base.power.value * system.base.power.prefix))
 
     if varmeter.reactive.status[indexVarmeter] == 1
         if varmeter.layout.bus[indexVarmeter]
-            se.type[idx] = 5
-        elseif varmeter.layout.from[indexVarmeter]
-            se.type[idx] = 6
-        else
             se.type[idx] = 7
+        elseif varmeter.layout.from[indexVarmeter]
+            se.type[idx] = 8
+        else
+            se.type[idx] = 9
         end
         se.mean[idx] = varmeter.reactive.mean[indexVarmeter]
     else
@@ -758,7 +758,7 @@ function updateVarmeter!(system::PowerSystem, device::Measurement, analysis::ACS
 
     indexVarmeter = varmeter.label[getLabel(varmeter, label, "varmeter")]
     indexBusBranch = varmeter.layout.index[indexVarmeter]
-    idx = device.voltmeter.number + device.wattmeter.number + indexVarmeter
+    idx = device.voltmeter.number + device.ammeter.number + device.wattmeter.number + indexVarmeter
 
     updateMeter(varmeter.reactive, indexVarmeter, reactive, variance, status, noise,
     prefix.reactivePower, 1 / (system.base.power.value * system.base.power.prefix))
@@ -782,7 +782,7 @@ using the [`addWattmeter!`](@ref addWattmeter!) function.
 
 # Keywords
 To establish the wattmeter template, users can set default variance and status values for
-wattmeters at buses using `varianceBus` and `statusBus`, and at both the "from" and "to" bus
+wattmeters at buses using `varianceBus` and `statusBus`, and at both the from-bus and to-bus
 ends of branches using `varianceFrom` and `statusFrom` for the former and `varianceTo` and
 `statusTo` for the latter. Users can also configure label patterns with the `label` keyword,
 as well as specify the `noise` type.
@@ -863,7 +863,7 @@ using the [`addVarmeter!`](@ref addVarmeter!) function.
 
 # Keywords
 To establish the varmeter template, users can set default variance and status values for
-varmeters at buses using `varianceBus` and `statusBus`, and at both the "from" and "to" bus
+varmeters at buses using `varianceBus` and `statusBus`, and at both the from-bus and to-bus
 ends of branches using `varianceFrom` and `statusFrom` for the former and `varianceTo` and
 `statusTo` for the latter. Users can also configure label patterns with the `label` keyword,
 as well as specify the `noise` type.

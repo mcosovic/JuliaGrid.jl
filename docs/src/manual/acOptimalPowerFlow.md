@@ -176,14 +176,14 @@ print(system.bus.label, analysis.method.constraint.balance.active)
 ---
 
 ##### Voltage Constraints
-The `voltage` field within the model contains references to the inequality constraints associated with the voltage magnitude and voltage angle difference limits. These constraints ensure that the bus voltage magnitudes and the angle differences between the "from" and "to" bus ends of each branch are within specified limits.
+The `voltage` field within the model contains references to the inequality constraints associated with the voltage magnitude and voltage angle difference limits. These constraints ensure that the bus voltage magnitudes and the angle differences between the from-bus and to-bus ends of each branch are within specified limits.
 
 The minimum and maximum bus voltage magnitude limits are set using the `minMagnitude` and `maxMagnitude` keywords within the [`addBus!`](@ref addBus!) function. The constraints associated with these limits can be accessed using:
 ```@repl ACOptimalPowerFlow
 print(system.bus.label, analysis.method.constraint.voltage.magnitude)
 ```
 
-Similarly, the minimum and maximum voltage angle difference limits between the "from" and "to" bus ends of each branch are set using the `minDiffAngle` and `maxDiffAngle` keywords within the [`addBranch!`](@ref addBranch!) function. The constraints associated with these limits can be accessed using the following code snippet:
+Similarly, the minimum and maximum voltage angle difference limits between the from-bus and to-bus ends of each branch are set using the `minDiffAngle` and `maxDiffAngle` keywords within the [`addBranch!`](@ref addBranch!) function. The constraints associated with these limits can be accessed using the following code snippet:
 ```@repl ACOptimalPowerFlow
 print(system.branch.label, analysis.method.constraint.voltage.angle)
 ```
@@ -205,14 +205,14 @@ print(system.branch.label, analysis.method.constraint.voltage.angle)
 ---
 
 ##### Flow Constraints
-The `flow` field contains references to the inequality constraints associated with the apparent power flow, active power flow, or current flow magnitude limits at the "from" and "to" bus ends of each branch. The type which one of the constraint will be applied is defined according to the `type` keyword within the [`addBranch!`](@ref addBranch!) function, `type = 1` for the apparent power flow, `type = 2` for the active power flow, or `type = 3` for the current flow magnitude. These limits are specified using the `longTerm` keyword within the [`addBranch!`](@ref addBranch!) function.
+The `flow` field contains references to the inequality constraints associated with the apparent power flow, active power flow, or current flow magnitude limits at the from-bus and to-bus ends of each branch. The type which one of the constraint will be applied is defined according to the `type` keyword within the [`addBranch!`](@ref addBranch!) function, `type = 1` for the apparent power flow, `type = 2` for the active power flow, or `type = 3` for the current flow magnitude. These limits are specified using the `longTerm` keyword within the [`addBranch!`](@ref addBranch!) function.
 
-By default, the `longTerm` keyword is linked to apparent power (`type = 1`). However, in the example, we configured it to use active power flow by setting `type = 2`. To access the flow constraints of branches at the "from" bus end, we can utilize the following code snippet:
+By default, the `longTerm` keyword is linked to apparent power (`type = 1`). However, in the example, we configured it to use active power flow by setting `type = 2`. To access the flow constraints of branches at the from-bus end, we can utilize the following code snippet:
 ```@repl ACOptimalPowerFlow
 print(system.branch.label, analysis.method.constraint.flow.from)
 ```
 
-Similarly, to access the "to" bus end flow constraints of branches we can use the following code snippet:
+Similarly, to access the to-bus end flow constraints of branches we can use the following code snippet:
 ```@repl ACOptimalPowerFlow
 print(system.branch.label, analysis.method.constraint.flow.to)
 ```
@@ -509,7 +509,7 @@ current!(system, analysis)
 nothing # hide
 ```
 
-For instance, if we want to show the active power injections at each bus and the current flow magnitudes at each "from" bus end of the branch, we can employ the following code:
+For instance, if we want to show the active power injections at each bus and the current flow magnitudes at each from-bus end of the branch, we can employ the following code:
 ```@repl ACOptimalPowerFlowPower
 print(system.bus.label, analysis.power.injection.active)
 print(system.branch.label, analysis.current.from.magnitude)
@@ -547,7 +547,7 @@ active, reactive = shuntPower(system, analysis; label = "Bus 2")
 ---
 
 ##### Active and Reactive Power Flow
-Similarly, we can compute the active and reactive power flow at both the "from" and "to" bus ends of the specific branch by utilizing the provided functions below:
+Similarly, we can compute the active and reactive power flow at both the from-bus and to-bus ends of the specific branch by utilizing the provided functions below:
 ```@repl ACOptimalPowerFlowPower
 active, reactive = fromPower(system, analysis; label = "Branch 2")
 active, reactive = toPower(system, analysis; label = "Branch 2")
@@ -584,7 +584,7 @@ magnitude, angle = injectionCurrent(system, analysis; label = "Bus 1")
 ---
 
 ##### Current Flow
-We can compute the current flow at both the "from" and "to" bus ends of the specific branch by using:
+We can compute the current flow at both the from-bus and to-bus ends of the specific branch by using:
 ```@repl ACOptimalPowerFlowPower
 magnitude, angle = fromCurrent(system, analysis; label = "Branch 2")
 magnitude, angle = toCurrent(system, analysis; label = "Branch 2")
@@ -593,7 +593,7 @@ magnitude, angle = toCurrent(system, analysis; label = "Branch 2")
 ---
 
 ##### Current Through Series Impedance
-To calculate the current passing through the series impedance of the branch in the direction from the "from" bus end to the "to" bus end, we can use the following function:
+To calculate the current passing through the series impedance of the branch in the direction from the from-bus end to the to-bus end, we can use the following function:
 ```@repl ACOptimalPowerFlowPower
 magnitude, angle = seriesCurrent(system, analysis; label = "Branch 2")
 ```

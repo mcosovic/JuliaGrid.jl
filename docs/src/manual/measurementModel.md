@@ -81,7 +81,7 @@ In this context, we have created the voltmeter responsible for measuring the mag
 [device.voltmeter.magnitude.mean device.voltmeter.magnitude.variance]
 ```
 
-Furthermore, we have established the wattmeter to measure the active power flow at the "from" bus end of `Branch 1`, with corresponding mean and variance values also expressed in per-units:
+Furthermore, we have established the wattmeter to measure the active power flow at the from-bus end of `Branch 1`, with corresponding mean and variance values also expressed in per-units:
 ```@repl buildModelScratch
 [device.wattmeter.active.mean device.wattmeter.active.variance]
 ```
@@ -165,7 +165,7 @@ addAmmeter!(system, device; from = "Branch 1", magnitude = 0.8, variance = 1e-3)
 addAmmeter!(system, device; to = "Branch 1", magnitude = 0.9, variance = 1e-1, noise = false)
 ```
 
-In this scenario, we have established one ammeter to measure the branch current magnitude at the "from" bus end of `Branch 1`, as indicated by the use of the `from` keyword. Similarly, we have added an ammeter to measure the branch current magnitude at the "to" bus end of the branch by utilizing the `to` keyword.
+In this scenario, we have established one ammeter to measure the branch current magnitude at the from-bus end of `Branch 1`, as indicated by the use of the `from` keyword. Similarly, we have added an ammeter to measure the branch current magnitude at the to-bus end of the branch by utilizing the `to` keyword.
 
 The first ammeter's measurement value is created by adding white Gaussian noise with the `variance` to the `magnitude` value. In contrast, for the second ammeter, we assume that we already know the measurement value, defined by the `magnitude`. This is achieved by setting `noise = false`. These actions yield the following results:
 ```@repl addAmmeter
@@ -400,11 +400,11 @@ The functions [`addVoltmeter!`](@ref addVoltmeter!), [`addAmmeter!`](@ref addAmm
 ##### Default Keyword Values
 When utilizing the [`addVoltmeter!`](@ref addVoltmeter!) function, the default variance is set to `variance = 1e-2` per-unit, and the voltmeter's operational status is automatically assumed to be in-service, as indicated by the setting of `status = 1`.
 
-Similarly, for the [`addAmmeter!`](@ref addAmmeter!) function, the default variances are established at `variance = 1e-2` per-unit, and the operational statuses are configured to `status = 1`. This means that if a user places an ammeter at either the "from" or "to" bus end of a branch, the default settings are identical. However, as we will explain in the following subsection, users have the flexibility to fine-tune these default values, differentiating between the two locations.
+Similarly, for the [`addAmmeter!`](@ref addAmmeter!) function, the default variances are established at `variance = 1e-2` per-unit, and the operational statuses are configured to `status = 1`. This means that if a user places an ammeter at either the from-bus or to-bus end of a branch, the default settings are identical. However, as we will explain in the following subsection, users have the flexibility to fine-tune these default values, differentiating between the two locations.
 
-In alignment with ammeters, the [`addWattmeter!`](@ref addWattmeter!) and [`addVarmeter!`](@ref addVarmeter!) functions feature default variances set at `variance = 1e-2` per-unit, and statuses are automatically assigned as `status = 1`, regardless of whether the wattmeter or varmeter is placed at the bus, the "from" bus end, or the "to" bus end. Users have the ability to customize these default values, making distinctions between the three positions of the measurement devices.
+In alignment with ammeters, the [`addWattmeter!`](@ref addWattmeter!) and [`addVarmeter!`](@ref addVarmeter!) functions feature default variances set at `variance = 1e-2` per-unit, and statuses are automatically assigned as `status = 1`, regardless of whether the wattmeter or varmeter is placed at the bus, the from-bus end, or the to-bus end. Users have the ability to customize these default values, making distinctions between the three positions of the measurement devices.
 
-For the [`addPmu!`](@ref addPmu!) function, variances for both magnitude and angle measurements are standardized to `varianceMagnitude = 1e-5` and `varianceAngle = 1e-5` in per-units. Likewise, operational statuses are uniformly set to `statusMagnitude = 1` and `statusAngle = 1`, regardless of whether the PMU is positioned on the bus, the "from" bus end, or the "to" bus end. Once more, users retain the option to tailor these default values to their specific needs, allowing for distinctions between these three locations of the measurement devices. Additionally, the coordinate system utilized for AC state estimation is consistently configured with `polar = true`, while correlation in the rectangular system is disabled with `correlated = false`.
+For the [`addPmu!`](@ref addPmu!) function, variances for both magnitude and angle measurements are standardized to `varianceMagnitude = 1e-5` and `varianceAngle = 1e-5` in per-units. Likewise, operational statuses are uniformly set to `statusMagnitude = 1` and `statusAngle = 1`, regardless of whether the PMU is positioned on the bus, the from-bus end, or the to-bus end. Once more, users retain the option to tailor these default values to their specific needs, allowing for distinctions between these three locations of the measurement devices. Additionally, the coordinate system utilized for AC state estimation is consistently configured with `polar = true`, while correlation in the rectangular system is disabled with `correlated = false`.
 
 Across all measurement devices, the method for generating measurement means is established as `noise = true`. This signifies that measurement means are created by introducing white Gaussian noises, with the specified `variance` value added to the intended measurement value, as defined by the `magnitude`, `angle`, `active`, or `reactive` keywords.
 
@@ -445,7 +445,7 @@ addPmu!(system, device; label = "PMU 2", from = "Branch 1", magnitude = 1.0, ang
 addPmu!(system, device; label = "PMU 3", to = "Branch 1", magnitude = 0.9, angle = 0.0)
 ```
 
-For instance, when adding a wattmeter to the bus, the `varianceBus = 1e-3` will be applied, or if it is added to the "from" bus end of the branch, these wattmeters will be set as out-of-service according to `statusFrom = 0`.
+For instance, when adding a wattmeter to the bus, the `varianceBus = 1e-3` will be applied, or if it is added to the from-bus end of the branch, these wattmeters will be set as out-of-service according to `statusFrom = 0`.
 
 Similarly, when adding a PMU to the bus, the variance of the bus voltage magnitude will be defined in accordance with `varianceMagnitudeBus = 1e-4`, while the bus voltage angle measurements will be configured as out-of-service based on the `statusAngleBus = 0`.
 
@@ -586,7 +586,7 @@ JuliaGrid utilizes an unordered dictionary format for storing labels, which impr
 label = collect(keys(device.wattmeter.label))
 ```
 
-To isolate the wattmeters located at the buses, both at the "from" and "to" bus ends of branches, users can accomplish this by employing the following code:
+To isolate the wattmeters located at the buses, both at the from-bus and to-bus ends of branches, users can accomplish this by employing the following code:
 ```@repl retrievingLabels
 label[device.wattmeter.layout.bus]
 label[device.wattmeter.layout.from]
@@ -669,7 +669,7 @@ nothing  # hide
 ```
 In this example, we add voltmeters to all buses, ammeters to all branches on both sides of each branch, wattmeters, varmeters, and PMUs to all buses and on both sides of each branch.
 
-It is important to note that JuliaGrid follows a specific order: it first adds bus measurements, then branch measurements. For branches, it adds measurement located at the "from" bus end, and immediately after, measurement at the "to" bus end. This process is repeated for all branches.
+It is important to note that JuliaGrid follows a specific order: it first adds bus measurements, then branch measurements. For branches, it adds measurement located at the from-bus end, and immediately after, measurement at the to-bus end. This process is repeated for all branches.
 
 ---
 
@@ -714,7 +714,7 @@ updateAmmeter!(system, device; label = "From Branch 2", magnitude = 1.2, varianc
 updateAmmeter!(system, device; label = "To Branch 2", status = 0)
 nothing  # hide
 ```
-In this example, we make adjustments to the measurement and variance values of the ammeter located at `Branch 2`, specifically at the "from" bus end. Next, we deactivate the ammeter at the same branch on the "to" bus end.
+In this example, we make adjustments to the measurement and variance values of the ammeter located at `Branch 2`, specifically at the from-bus end. Next, we deactivate the ammeter at the same branch on the to-bus end.
 
 ---
 
@@ -726,7 +726,7 @@ updateWattmeter!(system, device; label = "From Branch 1", active = 0.7, noise = 
 updateWattmeter!(system, device; label = "To Branch 1", variance = 1e-6)
 nothing  # hide
 ```
-In this particular case, we modify the measurement and variance values for the wattmeter located at `Bus 1`. As for the wattmeter loacated at `Branch 1` on the "from" bus end, we opt for a precise active power flow measurement value. Finally, the wattmeter at `Branch 1` on the "to" bus end retains its measurement value while only the measurement variance is adjusted.
+In this particular case, we modify the measurement and variance values for the wattmeter located at `Bus 1`. As for the wattmeter loacated at `Branch 1` on the from-bus end, we opt for a precise active power flow measurement value. Finally, the wattmeter at `Branch 1` on the to-bus end retains its measurement value while only the measurement variance is adjusted.
 
 ---
 
@@ -748,7 +748,7 @@ updatePmu!(system, device; label = "Bus 1", magnitude = 1.05, noise = false)
 updatePmu!(system, device; label = "From Branch 1", varianceAngle = 1e-6)
 nothing  # hide
 ```
-In this example, we adjust the magnitude measurement value of the PMU situated at `Bus 1`, and this measurement is now generated without the use of white Gaussian noise. For the PMU positioned at `Branch 1` on the "from" bus end, we maintain the existing measurement values and solely modify the angle measurement variance.
+In this example, we adjust the magnitude measurement value of the PMU situated at `Bus 1`, and this measurement is now generated without the use of white Gaussian noise. For the PMU positioned at `Branch 1` on the from-bus end, we maintain the existing measurement values and solely modify the angle measurement variance.
 
 
 ---

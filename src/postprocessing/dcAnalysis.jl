@@ -9,8 +9,8 @@ This function updates the `power` field of the DC abstract type by computing the
 electrical quantities:
 - `injection`: active power injections at each bus;
 - `supply`: active power injections from the generators at each bus;
-- `from`: active power flows at each "from" bus end of the branch;
-- `to`: active power flows at each "to" bus end of the branch;
+- `from`: active power flows at each from-bus end of the branch;
+- `to`: active power flows at each to-bus end of the branch;
 - `generator`: output active powers of each generator (excluding for state estimation).
 
 # Example
@@ -240,7 +240,7 @@ end
 """
     fromPower(system::PowerSystem, analysis::DC; label)
 
-The function returns the active power flow at the "from" bus end associated with a
+The function returns the active power flow at the from-bus end associated with a
 specific branch in the DC framework. The `label` keyword argument must match an existing
 branch label.
 
@@ -268,7 +268,7 @@ end
 """
     toPower(system::PowerSystem, analysis::DC; label)
 
-The function returns the active power flow at the "to" bus end associated with a specific
+The function returns the active power flow at the to-bus end associated with a specific
 branch in the DC framework. The `label` keyword argument must match an existing branch
 label.
 

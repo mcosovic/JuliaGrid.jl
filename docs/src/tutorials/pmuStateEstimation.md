@@ -8,16 +8,15 @@ using JuliaGrid # hide
 system = powerSystem()
 
 addBus!(system; label = 1, type = 3, active = 0.5)
-addBus!(system; label = 2, type = 1, reactive = 0.05)
+addBus!(system; label = 2, type = 1, reactive = 0.3)
 addBus!(system; label = 3, type = 1, active = 0.5)
 
 @branch(resistance = 0.02, susceptance = 0.04)
-addBranch!(system; label = 1, from = 1, to = 2, reactance = 0.05)
-addBranch!(system; label = 2, from = 1, to = 2, reactance = 0.01)
-addBranch!(system; label = 3, from = 2, to = 3, reactance = 0.04)
+addBranch!(system; label = 1, from = 1, to = 2, reactance = 0.6)
+addBranch!(system; label = 2, from = 1, to = 3, reactance = 0.7)
+addBranch!(system; label = 3, from = 2, to = 3, reactance = 0.2)
 
-addGenerator!(system; label = 1, bus = 1, active = 3.2, reactive = 0.1)
-addGenerator!(system; label = 2, bus = 2, active = 2.1, reactive = 0.1)
+addGenerator!(system; label = 1, bus = 1, active = 3.2, reactive = 0.2)
 
 acModel!(system)
 nothing # hide
@@ -31,20 +30,11 @@ To review, we can conceptualize the bus/branch model as the graph denoted by ``\
 
 ---
 
-Next, we will define the `Measurement` type and integrate phasor measurements into the graph ``\mathcal{G}``. These measurements, facilitated by a set of PMUs, capture both bus voltage and branch current phasors:
+Following that, we will introduce the `Measurement` type and incorporate a set of PMUs ``\mathcal{M} \equiv \bar{\mathcal{P}}`` into the graph ``\mathcal{G}``, capture both bus voltage and branch current phasors. PMUs are capable of integration into linear PMU state estimation in rectangular coordinates. This process of adding measurement devices will be carried out in the [State Estimation Model](@ref PMUSEModelTutorials) section. Currently, we are only initializing the `Measurement` type at this stage:
 ```@example PMUSETutorial
 device = measurement()
-
-@pmu(label = "PMU ?")
-addPmu!(system, device; bus = 1, magnitude = 1.0, angle = 0.0, noise = false)
-addPmu!(system, device; from = 2, magnitude = 1.2, angle = -3.0, noise = false)
-addPmu!(system, device; to = 3, magnitude = 0.5, angle = 3.1, noise = false)
-
 nothing # hide
 ```
-
-In PMU state estimation, phasor measurements are observed in rectangular coordinates, where both the real and imaginary parts of bus voltage and branch current phasors are considered as measurements. Thus, we observe sets of measurements that capture the real part of phasors ``\bar{\mathcal{P}}_R`` and the imaginary part of phasors ``\bar{\mathcal{P}}_I``. These two sets collectively form the set of measurements ``\mathcal{M}``.
-
 
 ---
 
@@ -54,127 +44,90 @@ In PMU state estimation, phasor measurements are observed in rectangular coordin
 ---
 
 ## [State Estimation Model](@id PMUSEModelTutorials)
-Phasor measurements obtained from PMUs are represented in the polar coordinate system, where PMUs measure the magnitude and phase angle of bus voltages or branch currents:
-```@repl PMUSETutorial
-print(device.pmu.label, device.pmu.magnitude.mean, device.pmu.angle.mean)
-```
+Initially, PMUs output phasor measurements in polar coordinates. However, these measurements can be interpreted in rectangular coordinates, where the real and imaginary parts of bus voltages and branch current phasors serve as measurements. This results in a vector of state variables in rectangular coordinates ``\mathbf x \equiv[\mathbf{V}_\text{re},\mathbf{V}_\text{im}]``:
+* ``\mathbf{V}_\mathrm{re} =\big[\Re(\bar{V}_1),\dots,\Re(\bar{V}_n)\big]^T``, representing the real parts of complex bus voltages,
+* ``\mathbf{V}_\mathrm{im} =\big[\Im(\bar{V}_1),\dots,\Im(\bar{V}_n)\big]^T``, representing the imaginary parts of complex bus voltages.
 
-Measurement variances are also linked with the magnitude and angle of the phasors:
-```@repl PMUSETutorial
-print(device.pmu.label, device.pmu.magnitude.variance, device.pmu.angle.variance)
-```
+Consequently, the total number of state variables is ``2n``. It is worth noting that in this approach to state estimation, we do not require the slack bus. Therefore, this selection of state variables leads to linear measurement functions, simplifying the state estimation model into a linear form.
 
-Thus, PMUs initially output phasor measurements in polar coordinates. However, these can be interpreted in rectangular coordinates, where the real and imaginary parts of bus voltage and branch current phasors serve as measurements. This yields a vector of state variables in rectangular coordinates ``\mathbf x \equiv[\mathbf{V}_\text{re},\mathbf{V}_\text{im}]``:
-```math
-  \begin{aligned}
-    \mathbf{V}_\mathrm{re}&=\big[\Re(\bar{V}_1),\dots,\Re(\bar{V}_n)\big]^T\\
-	  \mathbf{V}_\mathrm{im}&=\big[\Im(\bar{V}_1),\dots,\Im(\bar{V}_n)\big]^T.
-  \end{aligned}
-```
-This approach yields linear measurement functions, facilitating a linear state estimation model.
 
 The primary drawback of this method stems from measurement errors, which are associated with polar coordinates. Consequently, the covariance matrix must be transformed from polar to rectangular coordinates. As a result, errors from a single PMU are correlated, leading to a non-diagonal covariance matrix. Despite this, the covariance matrix is commonly treated as diagonal, impacting the accuracy of the state estimation in such scenarios.
 
 Hence, the model includes real and imaginary parts of bus voltage and current phasor measurements from the set ``\mathcal{M}``, contributing to the formulation of a linear system of equations:
 ```math
-  \mathbf{z}=\mathbf{h}(\mathbf x) + \mathbf{u} + \mathbf{w}.
+  \mathbf{z}=\mathbf{h}(\mathbf x) + \mathbf{u}.
 ```
-Here, ``\mathbf{h}(\mathbf x)= [h_1(\mathbf x), \dots, h_k(\mathbf x)]^{{T}}`` represents the vector of linear measurement functions, while ``\mathbf{z} = [z_1,\dots,z_k]^{\mathrm{T}}`` denotes the vector of measurement values. The vector of uncorrelated measurement errors is denoted as ``\mathbf{u} = [u_1,\dots,u_k]^{\mathrm{T}}``, defining the vector of measurement variances as ``\mathbf{v} = [v_1,\dots,v_k]^{\mathrm{T}}``. The vector ``\mathbf{w} = [w_1,\dots,w_k]^{\mathrm{T}}`` encapsulates the correlation between measurement errors. Finally, it is important to note that the number of equations is equal to ``k = 2|\bar{\mathcal{P}}|``.
 
-In summary, upon defining the PMU, each ``i``-th PMU is associated with two measurement functions ``h_{2i-1}(\mathbf x)``, ``h_{2i}(\mathbf x)``, along with their corresponding measurement values ``z_{2i-1}``, ``z_{2i}``, and the respective variances ``v_{2i-1}``, ``v_{2i}``.
+Here, ``\mathbf{h}(\mathbf {x})= [h_1(\mathbf {x})``, ``\dots``, ``h_k(\mathbf {x})]^{{T}}`` represents the vector of linear measurement functions, where ``k`` is the number of measurement functions, ``\mathbf{z} = [z_1,\dots,z_k]^{T}`` denotes the vector of measurement values, and ``\mathbf{u} = [u_1,\dots,u_k]^T`` represents the vector of measurement errors. It is worth noting that the number of equations in the system is equal to ``k = 2|\bar{\mathcal{P}}|``.
+
+These errors are assumed to follow a Gaussian distribution with a zero-mean and covariance matrix ``\bm \Sigma``. The diagonal elements of ``\bm \Sigma`` correspond to the measurement variances ``\mathbf{v} = [v_1,\dots,v_k]^T``, while the off-diagonal elements represent the covariances between the measurement errors ``\mathbf{w} = [w_1,\dots,w_k]^{T}``.
+
+In summary, upon defining the PMU, each ``i``-th PMU is associated with two measurement functions ``h_{2i-1}(\mathbf x)``, ``h_{2i}(\mathbf x)``, along with their respective measurement values ``z_{2i-1}``, ``z_{2i}``, as well as their variances ``v_{2i-1}``, ``v_{2i}``, and possibly covariances ``w_{2i-1}``, ``w_{2i}``.
 
 ---
 
-##### Bus Voltage Phasor Measurement Functions
-The vector ``\mathbf{h}(\mathbf x)`` comprises functions representing bus voltage phasor measurements. When the state vector is presented in the rectangular coordinate system, the real and imaginary components of the phasor directly define these measurement functions. Therefore, the functions defining the bus voltage phasor measurement at bus ``i \in \mathcal{N}`` can be expressed as follows:
+##### Bus Voltage Phasor Measurements
+When a PMU ``(V_i, \theta_i) \in \bar{\mathcal{P}}`` is introduced at bus ``i \in \mathcal{N}`` in this type of state estimation, users specify the measurement values, variances, and measurement functions of vectors as follows:
+```math
+    \mathbf{z} = [z_{\Re(\bar{V}_{i})}, z_{\Im(\bar{V}_{i})}], \;\;\; \mathbf{v} = [v_{\Re(\bar{V}_{i})}, v_{\Im(\bar{V}_{i})}], \;\;\; \mathbf{h}(\mathbf {x}) = [h_{\Re(\bar{V}_{i})}(\mathbf {x}), h_{\Im(\bar{V}_{i})}(\mathbf {x})].
+```
+
+For example:
+```@example PMUSETutorial
+addPmu!(system, device; label = "V₂, θ₂", bus = 2, magnitude = 0.9, varianceMagnitude = 1e-5,
+angle = -0.1, varianceAngle = 1e-5)
+nothing # hide
+```
+
+Here, measurement values are obtained according to:
 ```math
   \begin{aligned}
-    h_{\Re(\bar{V}_i)}(\cdot) &= \Re(\bar{V}_i)\\
-    h_{\Im(\bar{V}_i)}(\cdot) &= \Im(\bar{V}_i).
+    z_{\Re(\bar{V}_i)} = z_{V_i} \cos z_{\theta_i}\\
+    z_{\Im(\bar{V}_i)} = z_{V_i} \sin z_{\theta_i}.
   \end{aligned}
 ```
 
----
-
-##### Branch Current Phasor Measurement Functions
-Furthermore, the vector ``\mathbf{h}(\mathbf x)`` encompasses functions representing branch current phasor measurements. In accordance with the guidelines provided in the [AC Model](@ref ACModelTutorials), the functions delineating the real and imaginary components of the phasor at the branch ``(i,j) \in \mathcal{E}`` at the "from" and "to" bus ends are as follows:
-```math
-  h_{\Re(\bar{I}_{ij})}(\cdot) = g \Re(\bar{V}_i) - b \Im(\bar{V}_i) -
-  \left(g_\tau \cos\phi_{ij} - b_\tau \sin \phi_{ij}\right) \Re(\bar{V}_j) +
-  \left(g_\tau\sin \phi_{ij} + b_\tau\cos \phi_{ij} \right) \Im(\bar{V}_j)
-```
-
-```math
-  h_{\Im(\bar{I}_{ij})}(\cdot) = b \Re(\bar{V}_i) + g \Im(\bar{V}_i) -
-  \left(g_\tau \sin \phi_{ij} + b_\tau \cos\phi_{ij}\right) \Re(\bar{V}_j) -
-  \left(g_\tau\cos \phi_{ij} - b_\tau\sin \phi_{ij} \right)\Im(\bar{V}_j)
-```
-
-```math
-  h_{\Re(\bar{I}_{ji})}(\cdot) = \tau_{ij}^2 g \Re(\bar{V}_j) - \tau_{ij}^2 b \Im(\bar{V}_j) -
-  \left(g_\tau \cos\phi_{ij} + b_\tau \sin \phi_{ij}\right) \Re(\bar{V}_i) -
-  \left( g_\tau\sin \phi_{ij} - b_\tau\cos \phi_{ij} \right) \Im(\bar{V}_i)
-```
-
-```math
-  h_{\Im(\bar{I}_{ji})}(\cdot) = \tau_{ij}^2 b \Re(\bar{V}_j) + \tau_{ij}^2 g \Im(\bar{V}_j) +
-  \left(g_\tau \sin \phi_{ij} - b_\tau \cos\phi_{ij} \right) \Re(\bar{V}_i) -
-  \left(g_\tau\cos \phi_{ij} + b_\tau\sin \phi_{ij}\right) \Im(\bar{V}_i),
-```
-where:
+Utilizing the classical theory of propagation of uncertainty [[1]](@ref PMUSEReferenceTutorials), the variances can be calculated as follows:
 ```math
   \begin{aligned}
-    g = \cfrac{g_{ij} + g_{\text{s}ij}}{\tau_{ij}^2},\;\;\;
-    b = \cfrac{b_{ij}+b_{\text{s}ij}} {\tau_{ij}^2},\;\;\;
-    g_\tau = \cfrac{g_{ij}}{\tau_{ij}},\;\;\;
-    b_\tau = \cfrac{b_{ij}}{\tau_{ij}}.
-  \end{aligned}
-```
-
----
-
-##### Measurement Values
-Recall that the PMU provides measurements as magnitude and phase angle. This implies that when we measure the bus voltage phasor at bus ``i \in \mathcal{N}``, we obtain the magnitude ``z_{V_i}`` and the angle ``z_{\theta_i}``, while measuring the current at branch ``(i,j) \in \mathcal{E}``, we get the magnitude ``z_{I_{ij}}`` and the angle ``z_{\psi_{ij}}`` at the "from" bus end or ``z_{I_{ji}}`` and ``z_{\psi_{ji}}`` at the "to" bus end of the branch. These measurements must be transformed from polar to rectangular coordinates. Consequently, the vector ``\mathbf{z}`` comprises the following measurement values:
-```math
-  \begin{aligned}
-    z_{\Re(\bar{V}_i)} = z_{V_i} \cos z_{\theta_i}; \;\;\; z_{\Im(\bar{V}_i)} = z_{V_i} \sin z_{\theta_i} \\
-    z_{\Re(\bar{I}_{ij})} = z_{I_{ij}} \cos z_{\psi_{ij}}; \;\;\; z_{\Im(\bar{I}_{ij})} = z_{I_{ij}} \sin z_{\psi_{ij}} \\
-    z_{\Re(\bar{I}_{ji})} = z_{I_{ji}} \cos z_{\psi_{ji}}; \;\;\; z_{\Im(\bar{I}_{ji})} = z_{I_{ji}} \sin z_{\psi_{ji}}.
-  \end{aligned}
-```
-
----
-
-##### Measurement Varinces
-Similarly, we need to calculate variances in the rectangular coordinate system. For instance, when we measure the bus voltage phasor at bus ``i \in \mathcal{N}``, we obtain variances related to measurements of the magnitude ``v_{V_i}`` and the angle ``v_{\theta_i}``. Utilizing the classical theory of propagation of uncertainty [[1]](@ref PMUSEReferenceTutorials), the variance related to the measurement value ``z_{\Re(\bar{V}_i)}`` can be calculated as follows:
-```math
-    v_{\Re(\bar{V}_i)} =
-    v_{V_i} \left[ \cfrac{\mathrm \partial} {\mathrm \partial z_{V_i}} (z_{V_i} \cos z_{\theta_i}) \right] +
-    v_{\theta_i} \left[ \cfrac{\mathrm \partial} {\mathrm \partial z_{\theta_i}} (z_{V_i} \cos z_{\theta_i})\right] =
-    v_{V_i} (\cos z_{\theta_i}) + v_{\theta_i} (z_{V_i} \sin z_{\theta_i}).
-```
-Using analogy, we can write:
-```math
-  \begin{aligned}
+    v_{\Re(\bar{V}_i)} &=
+    v_{V_i} \left[ \cfrac{\mathrm \partial} {\mathrm \partial z_{V_i}} (z_{V_i} \cos z_{\theta_i}) \right]^2 +
+    v_{\theta_i} \left[ \cfrac{\mathrm \partial} {\mathrm \partial z_{\theta_i}} (z_{V_i} \cos z_{\theta_i})\right]^2 =
+    v_{V_i} (\cos z_{\theta_i})^2 + v_{\theta_i} (z_{V_i} \sin z_{\theta_i})^2\\
     v_{\Im(\bar{V}_i)} &=
-    v_{V_i} (\sin z_{\theta_i}) + v_{\theta_i} (z_{V_i} \cos z_{\theta_i}) \\
-    v_{\Re(\bar{I}_{ij})} & =
-    v_{I_{ij}} (\cos z_{\psi_{ij}}) + v_{\psi_{ij}} (z_{I_{ij}} \sin z_{\psi_{ij}}) \\
-    v_{\Im(\bar{I}_{ij})} &=
-    v_{I_{ij}} (\sin z_{\psi_{ij}}) + v_{\psi_{ij}} (z_{I_{ij}} \cos z_{\psi_{ij}}) \\
-    v_{\Re(\bar{I}_{ji})} &=
-    v_{I_{ji}} (\cos z_{\psi_{ji}}) + v_{\psi_{ji}} (z_{I_{ji}} \sin z_{\psi_{ji}}) \\
-    v_{\Im(\bar{I}_{ji})} &=
-    v_{I_{ji}} (\sin z_{\psi_{ji}}) + v_{\psi_{ji}} (z_{I_{ji}} \cos z_{\psi_{ji}}).
+     v_{V_i} \left[ \cfrac{\mathrm \partial} {\mathrm \partial z_{V_i}} (z_{V_i} \sin z_{\theta_i}) \right]^2 +
+    v_{\theta_i} \left[ \cfrac{\mathrm \partial} {\mathrm \partial z_{\theta_i}} (z_{V_i} \sin z_{\theta_i})\right]^2 =
+    v_{V_i} (\sin z_{\theta_i})^2 + v_{\theta_i} (z_{V_i} \cos z_{\theta_i})^2.
   \end{aligned}
 ```
 
----
-
-##### Measurement Covarinces
-Once again, let us consider the bus voltage phasor measurement at bus ``i \in \mathcal{N}``. The covariances corresponding to that measurement in the rectangular coordinate system can be obtained using the equation:
+Lastly, the functions defining the bus voltage phasor measurement are:
 ```math
-    v_{\Re(\bar{V}_i), \Im(\bar{V}_i)} = v_{\Im(\bar{V}_i), \Re(\bar{V}_i)} =
+  \begin{aligned}
+    h_{\Re(\bar{V}_i)}(\mathbf x) &= \Re(\bar{V}_i)\\
+    h_{\Im(\bar{V}_i)}(\mathbf x) &= \Im(\bar{V}_i).
+  \end{aligned}
+```
+
+The coefficient expressions for measurement functions are as follows:
+```math
+  \cfrac{\mathrm \partial{h_{\Re(\bar{V}_i)}(\mathbf x)}}{\mathrm \partial \Re(\bar{V}_i)}=1, \;\;\;
+  \cfrac{\mathrm \partial{h_{\Im(\bar{V}_i)}(\mathbf x)}}{\mathrm \partial \Im(\bar{V}_i)}=1.\;\;\;
+```
+
+In the previous example, the user neglects the covariances between the real and imaginary parts of the measurement. However, if desired, the user can also include them in the state estimation model by specifying the covariances of the vector:
+```math
+    \mathbf{w}_{\bar{\mathcal{P}}} = [w_{\Re(\bar{V}_{i})}, w_{\Im(\bar{V}_{i})}].
+```
+```@example PMUSETutorial
+addPmu!(system, device; label = "V₃, θ₃", bus = 3, magnitude = 0.9, varianceMagnitude = 1e-5,
+angle = -0.2, varianceAngle = 1e-5, correlated = true)
+nothing # hide
+```
+
+Then, the covariances are obtained as follows:
+```math
+    w_{\Re(\bar{V}_{i})} = w_{\Im(\bar{V}_{i})} =
     v_{V_i} \cfrac{\mathrm \partial} {\mathrm \partial z_{V_i}} (z_{V_i} \cos z_{\theta_i})
     \cfrac{\mathrm \partial} {\mathrm \partial z_{V_i}} (z_{V_i} \sin z_{\theta_i})  +
     v_{\theta_i} \cfrac{\mathrm \partial} {\mathrm \partial z_{\theta_i}} (z_{V_i} \cos z_{\theta_i})
@@ -182,17 +135,158 @@ Once again, let us consider the bus voltage phasor measurement at bus ``i \in \m
 ```
 which results in the solution:
 ```math
-    v_{\Re(\bar{V}_i), \Im(\bar{V}_i)} = v_{\Im(\bar{V}_i), \Re(\bar{V}_i)} =
-    \cos z_{\theta_i} \sin z_{\theta_i}(v_{V_i} - v_{\theta_i} z_{V_i}).
+    w_{\Re(\bar{V}_{i})} = w_{\Im(\bar{V}_{i})} = \cos z_{\theta_i} \sin z_{\theta_i}(v_{V_i} - v_{\theta_i} z_{V_i}^2).
 ```
-Similarly, for the branch current phasor measurements, we can write:
+
+---
+
+##### From-Bus End Current Phasor Measurements
+If the user chooses to include phasor measurement ``(I_{ij}, \psi_{ij}) \in \bar{\mathcal{P}}`` in the state estimation model, the user will specify the measurement values, variances, and measurement functions of vectors:
+```math
+    \mathbf{z} = [z_{\Re(\bar{I}_{ij})}, z_{\Im(\bar{I}_{ij})}], \;\;\; \mathbf{v} = [v_{\Re(\bar{I}_{ij})}, v_{\Im(\bar{I}_{ij})}], \;\;\; \mathbf{h}(\mathbf {x}) = [h_{\Re(\bar{I}_{ij})}(\mathbf {x}), h_{\Im(\bar{I}_{ij})}(\mathbf {x})].
+```
+
+For example:
+```@example PMUSETutorial
+addPmu!(system, device; label = "I₂₃, ψ₂₃", from = 3, magnitude = 0.3, varianceMagnitude = 1,
+angle = 0.4, varianceAngle = 1e-4)
+nothing # hide
+```
+
+Here, measurement values are obtained according to:
 ```math
   \begin{aligned}
-    v_{\Re(\bar{I}_{ij}), \Im(\bar{I}_{ij})} &= v_{\Im(\bar{I}_{ij}), \Re(\bar{I}_{ij})}  =
-    \sin z_{\psi_{ij}} \cos z_{\psi_{ij}}(v_{I_{ij}}  - v_{\psi_{ij}} z_{I_{ij}}) \\
-   v_{\Re(\bar{I}_{ji}), \Im(\bar{I}_{ji})} &= v_{\Im(\bar{I}_{ji}), \Re(\bar{I}_{ji})}  =
-    \sin z_{\psi_{ji}} \cos z_{\psi_{ji}}(v_{I_{ji}}  - v_{\psi_{ij}} z_{I_{ji}}).
+    z_{\Re(\bar{I}_{ij})} = z_{I_{ij}} \cos z_{\psi_{ij}}\\
+    z_{\Im(\bar{I}_{ij})} = z_{I_{ij}} \sin z_{\psi_{ij}}.
   \end{aligned}
+```
+
+Utilizing the classical theory of propagation of uncertainty [[1]](@ref ACSEReferenceTutorials), the variances can be calculated as follows:
+```math
+  \begin{aligned}
+    v_{\Re(\bar{I}_{ij})} & = v_{I_{ij}} (\cos z_{\psi_{ij}})^2 + v_{\psi_{ij}} (z_{I_{ij}} \sin z_{\psi_{ij}})^2 \\
+    v_{\Im(\bar{I}_{ij})} &= v_{I_{ij}} (\sin z_{\psi_{ij}})^2 + v_{\psi_{ij}} (z_{I_{ij}} \cos z_{\psi_{ij}})^2.
+  \end{aligned}
+```
+
+The functions defining the current phasor measurement at the from-bus end are:
+```math
+  \begin{aligned}
+    h_{\Re(\bar{I}_{ij})}(\mathbf x) &= A \Re(\bar{V}_i) - B \Im(\bar{V}_i) - \left(C \cos\phi_{ij} - D \sin \phi_{ij}\right) \Re(\bar{V}_j) + \left(C\sin \phi_{ij} + D\cos \phi_{ij} \right) \Im(\bar{V}_j) \\
+    h_{\Im(\bar{I}_{ij})}(\mathbf x) &= B \Re(\bar{V}_i) + A \Im(\bar{V}_i) - \left(C \sin \phi_{ij} + D \cos\phi_{ij}\right) \Re(\bar{V}_j) - \left(C\cos \phi_{ij} - D\sin \phi_{ij} \right)\Im(\bar{V}_j),
+  \end{aligned}
+```
+where:
+```math
+  \begin{aligned}
+    A = \cfrac{g_{ij} + g_{\text{s}ij}}{\tau_{ij}^2},\;\;\;
+    B = \cfrac{b_{ij}+b_{\text{s}ij}} {\tau_{ij}^2},\;\;\;
+    C = \cfrac{g_{ij}}{\tau_{ij}},\;\;\;
+    D = \cfrac{b_{ij}}{\tau_{ij}}.
+  \end{aligned}
+```
+
+The coefficient expressions for measurement functions are as follows:
+```math
+  \begin{aligned}
+  \cfrac{\mathrm \partial{h_{\Re(\bar{I}_{ij})}(\mathbf x)}}{\mathrm \partial \Re(\bar{V}_i)} &=
+  \cfrac{\mathrm \partial{h_{\Im(\bar{I}_{ij})}(\mathbf x)}}{\mathrm \partial \Im(\bar{V}_i)} = A \\
+  \cfrac{\mathrm \partial{h_{\Re(\bar{I}_{ij})}(\mathbf x)}} {\mathrm \partial \Re(\bar{V}_j)} &=
+  \cfrac{\mathrm \partial{h_{\Im(\bar{I}_{ij})}(\mathbf x)}} {\mathrm \partial \Im(\bar{V}_j)} =
+  - \left(C \cos\phi_{ij} - D \sin \phi_{ij}\right)\\
+  \cfrac{\mathrm \partial{h_{\Re(\bar{I}_{ij})}(\mathbf x)}}{\mathrm \partial \Im(\bar{V}_i)} &=-
+  \cfrac{\mathrm \partial{h_{\Im(\bar{I}_{ij})}(\mathbf x)}}{\mathrm \partial \Re(\bar{V}_i)} =
+  -B \\
+  \cfrac{\mathrm \partial{h_{\Re(\bar{I}_{ij})}(\mathbf x)}}{\mathrm \partial \Im(\bar{V}_j)} &= -
+  \cfrac{\mathrm \partial{h_{\Im(\bar{I}_{ij})}(\mathbf x)}}{\mathrm \partial\Re(\bar{V}_j)} =
+  \left(C\sin \phi_{ij} + D \cos \phi_{ij} \right),
+  \end{aligned}
+```
+
+In the previous example, the user neglects the covariances between the real and imaginary parts of the measurement. However, if desired, the user can also include them in the state estimation model by specifying the covariances of the vector:
+```math
+    \mathbf{w}_{\bar{\mathcal{P}}} = [w_{\Re(\bar{I}_{ij})}, w_{\Im(\bar{I}_{ij})}].
+```
+```@example PMUSETutorial
+addPmu!(system, device; label = "I₁₃, ψ₁₃", from = 2, magnitude = 0.3, varianceMagnitude = 1,
+angle = -0.5, varianceAngle = 1e-5, correlated = true)
+nothing # hide
+```
+
+Then, the covariances are obtained as follows:
+```math
+   w_{\Re(\bar{I}_{ij})} = w_{\Im(\bar{I}_{ij})} = \sin z_{\psi_{ij}} \cos z_{\psi_{ij}}(v_{I_{ij}}  - v_{\psi_{ij}} z_{I_{ij}}^2).
+```
+
+---
+
+##### To-Bus End Current Phasor Measurements
+If the user chooses to include phasor measurement ``(I_{ji}, \psi_{ji}) \in \bar{\mathcal{P}}`` in the state estimation model, the user will specify the measurement values, variances, and measurement functions of vectors:
+```math
+    \mathbf{z} = [z_{\Re(\bar{I}_{ji})}, z_{\Im(\bar{I}_{ji})}], \;\;\; \mathbf{v} = [v_{\Re(\bar{I}_{ji})}, v_{\Im(\bar{I}_{ji})}], \;\;\; \mathbf{h}(\mathbf {x}) = [h_{\Re(\bar{I}_{ji})}(\mathbf {x}), h_{\Im(\bar{I}_{ji})}(\mathbf {x})].
+```
+
+For example:
+```@example PMUSETutorial
+addPmu!(system, device; label = "I₃₂, ψ₃₂", to = 3, magnitude = 0.3, varianceMagnitude = 1e-5,
+angle = -2.9, varianceAngle = 1e-5)
+nothing # hide
+```
+
+Here, measurement values are obtained according to:
+```math
+  \begin{aligned}
+    z_{\Re(\bar{I}_{ji})} = z_{I_{ji}} \cos z_{\psi_{ji}}\\
+    z_{\Im(\bar{I}_{ji})} = z_{I_{ji}} \sin z_{\psi_{ji}}.
+  \end{aligned}
+```
+
+The variances can be calculated as follows:
+```math
+  \begin{aligned}
+    v_{\Re(\bar{I}_{ji})} &= v_{I_{ji}} (\cos z_{\psi_{ji}})^2 + v_{\psi_{ji}} (z_{I_{ji}} \sin z_{\psi_{ji}})^2 \\
+    v_{\Im(\bar{I}_{ji})} &= v_{I_{ji}} (\sin z_{\psi_{ji}})^2 + v_{\psi_{ji}} (z_{I_{ji}} \cos z_{\psi_{ji}})^2.
+  \end{aligned}
+```
+
+The functions defining the current phasor measurement at the to-bus end are:
+```math
+  \begin{aligned}
+    h_{\Re(\bar{I}_{ji})}(\mathbf x) &= \tau_{ij}^2 A \Re(\bar{V}_j) - \tau_{ij}^2 B \Im(\bar{V}_j) - \left(C \cos\phi_{ij} + D \sin \phi_{ij}\right) \Re(\bar{V}_i) - \left( C\sin \phi_{ij} - D\cos \phi_{ij} \right) \Im(\bar{V}_i)\\
+    h_{\Im(\bar{I}_{ji})}(\mathbf x) &= \tau_{ij}^2 B \Re(\bar{V}_j) + \tau_{ij}^2 A \Im(\bar{V}_j) + \left(C \sin \phi_{ij} - D \cos\phi_{ij} \right) \Re(\bar{V}_i) - \left(C\cos \phi_{ij} + D\sin \phi_{ij}\right) \Im(\bar{V}_i).
+  \end{aligned}
+```
+
+The coefficient expressions for measurement functions are as follows:
+```math
+  \begin{aligned}
+  \cfrac{\mathrm \partial{h_{\Re(\bar{I}_{ji})}(\mathbf x)}}{\mathrm \partial \Re(\bar{V}_i)} &=
+  \cfrac{\mathrm \partial{h_{\Im(\bar{I}_{ji})}(\mathbf x)}}{\mathrm \partial \Im(\bar{V}_i)} =
+  - \left(C \cos\phi_{ij} + D \sin \phi_{ij}\right)\\
+  \cfrac{\mathrm \partial{h_{\Re(\bar{I}_{ji})}(\mathbf x)}} {\mathrm \partial \Re(\bar{V}_j)} &=
+  \cfrac{\mathrm \partial{h_{\Im(\bar{I}_{ji})}(\mathbf x)}} {\mathrm \partial \Im(\bar{V}_j)} = \tau_{ij}^2A\\
+  \cfrac{\mathrm \partial{h_{\Re(\bar{I}_{ji})}(\mathbf x)}}{\mathrm \partial \Im(\bar{V}_i)} &= -
+  \cfrac{\mathrm \partial{h_{\Im(\bar{I}_{ji})}(\mathbf x)}}{\mathrm \partial \Re(\bar{V}_i)} =
+  -\left(C\sin \phi_{ij} - D\cos \phi_{ij} \right) \\
+  \cfrac{\mathrm \partial{h_{\Re(\bar{I}_{ji})}(\mathbf x)}}{\mathrm \partial \Im(\bar{V}_j)} &= -
+  \cfrac{\mathrm \partial{h_{\Im(\bar{I}_{ji})}(\mathbf x)}}{\mathrm \partial \Re(\bar{V}_j)} =
+  -\tau_{ij}^2B.
+  \end{aligned}
+```
+
+As before, we are neglecting the covariances between the real and imaginary parts of the measurement. If desired, we can include them in the state estimation model by specifying the covariances of the vector:
+```math
+    \mathbf{w}_{\bar{\mathcal{P}}} = [w_{\Re(\bar{I}_{ji})}, w_{\Im(\bar{I}_{ji})}].
+```
+```@example PMUSETutorial
+addPmu!(system, device; label = "I₃₁, ψ₃₁", to = 2, magnitude = 0.3, varianceMagnitude = 1e-5,
+angle = 2.5, varianceAngle = 1e-5, correlated = true)
+nothing # hide
+```
+
+Then, the covariances are obtained as follows:
+```math
+   w_{\Re(\bar{I}_{ji})} = w_{\Im(\bar{I}_{ji})} = \sin z_{\psi_{ji}} \cos z_{\psi_{ji}}(v_{I_{ji}} - v_{\psi_{ji}} z_{I_{ji}}^2).
 ```
 
 ---
@@ -216,59 +310,6 @@ nothing # hide
 ---
 
 ##### Coefficient Matrix
-In JuliaGrid, the coefficient matrix is constructed using measurement functions. For bus voltage phasor measurements, the coefficient expressions for the measurement function`` h_{\Re(\bar{V}_i)}(\cdot)`` are as follows:
-```math
-  \begin{aligned}
-   	\cfrac{\mathrm \partial{h_{\Re(\bar{V}_i)}(\cdot)}}{\mathrm \partial \Re(\bar{V}_i)}=1; \;\;\;
-    \cfrac{\mathrm \partial{h_{\Re(\bar{V}_i)}(\cdot)}}{\mathrm \partial \Re(\bar{V}_j)}=0 \\
-   	\cfrac{\mathrm \partial{h_{\Re(\bar{V}_i)}(\cdot)}}{\mathrm \partial \Im(\bar{V}_i)}=0;\;\;\;
-    \cfrac{\mathrm \partial{h_{\Re(\bar{V}_i)}(\cdot)}}{\mathrm \partial \Im(\bar{V}_j)}=0.
-  \end{aligned}
-```
-
-Similarly, for the measurement function ``h_{\Im(\bar{V}_i)}(\cdot)``, the coefficients are:
-```math
-  \begin{aligned}
-   	\cfrac{\mathrm \partial{h_{\Im(\bar{V}_i)}(\cdot)}}{\mathrm \partial \Re(\bar{V}_i)}=0;\;\;\;
-    \cfrac{\mathrm \partial{h_{\Im(\bar{V}_i)}(\cdot)}}{\mathrm \partial \Re(\bar{V}_j)}=0 \\
-   	\cfrac{\mathrm \partial{h_{\Im(\bar{V}_i)}(\cdot)}}{\mathrm \partial \Im(\bar{V}_i)}=1;\;\;\;
-    \cfrac{\mathrm \partial{h_{\Im(\bar{V}_i)}(\cdot)}}{\mathrm \partial \Im(\bar{V}_j)}=0.
-  \end{aligned}
-```
-
-Furthermore, for the measurement functions ``h_{\Re(\bar{I}_{ij})}(\cdot)`` and ``h_{\Im(\bar{I}_{ij})}(\cdot)``, the coefficients are:
-```math
-  \begin{aligned}
-  \cfrac{\mathrm \partial{h_{\Re(\bar{I}_{ij})}(\cdot)}}{\mathrm \partial \Re(\bar{V}_i)} &=
-  \cfrac{\mathrm \partial{h_{\Im(\bar{I}_{ij})}(\cdot)}}{\mathrm \partial \Im(\bar{V}_i)} = g \\
-  \cfrac{\mathrm \partial{h_{\Re(\bar{I}_{ij})}(\cdot)}} {\mathrm \partial \Re(\bar{V}_j)} &=
-  \cfrac{\mathrm \partial{h_{\Im(\bar{I}_{ij})}(\cdot)}} {\mathrm \partial \Im(\bar{V}_j)} =
-  - \left(g_\tau \cos\phi_{ij} - b_\tau \sin \phi_{ij}\right)\\
-  \cfrac{\mathrm \partial{h_{\Re(\bar{I}_{ij})}(\cdot)}}{\mathrm \partial \Im(\bar{V}_i)} &=-
-  \cfrac{\mathrm \partial{h_{\Im(\bar{I}_{ij})}(\cdot)}}{\mathrm \partial \Re(\bar{V}_i)} =
-  -b \\
-  \cfrac{\mathrm \partial{h_{\Re(\bar{I}_{ij})}(\cdot)}}{\mathrm \partial \Im(\bar{V}_j)} &= -
-  \cfrac{\mathrm \partial{h_{\Im(\bar{I}_{ij})}(\cdot)}}{\mathrm \partial\Re(\bar{V}_j)} =
-  \left(g_\tau\sin \phi_{ij} + b_\tau \cos \phi_{ij} \right),
-  \end{aligned}
-```
-and for the measurement functions ``h_{\Re(\bar{I}_{ji})}(\cdot)`` and ``h_{\Im(\bar{I}_{ji})}(\cdot)``, the coefficients are:
-```math
-  \begin{aligned}
-  \cfrac{\mathrm \partial{h_{\Re(\bar{I}_{ji})}(\cdot)}}{\mathrm \partial \Re(\bar{V}_i)} &=
-  \cfrac{\mathrm \partial{h_{\Im(\bar{I}_{ji})}(\cdot)}}{\mathrm \partial \Im(\bar{V}_i)} =
-  - \left(g_\tau \cos\phi_{ij} + b_\tau \sin \phi_{ij}\right)\\
-  \cfrac{\mathrm \partial{h_{\Re(\bar{I}_{ji})}(\cdot)}} {\mathrm \partial \Re(\bar{V}_j)} &=
-  \cfrac{\mathrm \partial{h_{\Im(\bar{I}_{ji})}(\cdot)}} {\mathrm \partial \Im(\bar{V}_j)} = \tau_{ij}^2g\\
-  \cfrac{\mathrm \partial{h_{\Re(\bar{I}_{ji})}(\cdot)}}{\mathrm \partial \Im(\bar{V}_i)} &= -
-  \cfrac{\mathrm \partial{h_{\Im(\bar{I}_{ji})}(\cdot)}}{\mathrm \partial \Re(\bar{V}_i)} =
-  -\left(g_\tau\sin \phi_{ij} - b_\tau\cos \phi_{ij} \right) \\
-  \cfrac{\mathrm \partial{h_{\Re(\bar{I}_{ji})}(\cdot)}}{\mathrm \partial \Im(\bar{V}_j)} &= -
-  \cfrac{\mathrm \partial{h_{\Im(\bar{I}_{ji})}(\cdot)}}{\mathrm \partial \Re(\bar{V}_j)} =
-  -\tau_{ij}^2b.
-  \end{aligned}
-```
-
 Using the above-described equations, JuliaGrid forms the coefficient matrix ``\mathbf{H} \in \mathbb{R}^{k \times 2n}``:
 ```@repl PMUSETutorial
 𝐇 = analysis.method.coefficient
@@ -282,11 +323,16 @@ JuliaGrid opts not to retain the covariance matrix ``\bm \Sigma`` but rather sto
 ```@repl PMUSETutorial
 𝐖 = analysis.method.precision
 ```
-The precision matrix maintains a diagonal form, implying that correlations between the real and imaginary parts of the phasor measurements are disregarded.
 
-To accommodate correlations, users have the option to consider correlation when adding each PMU to the `Measurement` type. For instance, let us add a new PMU while considering correlation:
+The precision matrix does not maintain a diagonal form, indicating that correlations between the real and imaginary parts of the phasor measurements are included in the model. To ignore these correlations, simply omit the `correlated` keyword within the function that adds a PMU. For example:
 ```@example PMUSETutorial
-addPmu!(system, device; bus = 2, magnitude = 1.02, angle = 0.015, correlated = true)
+device = measurement()
+
+@pmu(label = "PMU ?", noise = false)
+addPmu!(system, device; bus = 1, magnitude = 1.0, angle = 0.0)
+addPmu!(system, device; bus = 2, magnitude = 0.87, angle = -0.15)
+addPmu!(system, device; from = 1, magnitude = 0.30, angle = -0.71)
+addPmu!(system, device; from = 2, magnitude = 0.31, angle = -0.49)
 
 nothing # hide
 ```
@@ -297,7 +343,7 @@ analysis = pmuWlsStateEstimation(system, device)
 nothing # hide
 ```
 
-Upon inspection, it becomes evident that the precision matrix no longer maintains a diagonal structure:
+Upon inspection, it becomes evident that the precision matrix maintains a diagonal structure:
 ```@repl PMUSETutorial
 𝐖 = analysis.method.precision
 ```
@@ -310,6 +356,7 @@ To retrieve the vector ``\mathbf z``, containing the means of Gaussian distribut
 𝐳 = analysis.method.mean
 ```
 These values represent measurement values in the rectangular coordinate system as described earlier.
+
 
 ---
 
@@ -340,7 +387,7 @@ Access to the factorized gain matrix is available through:
 
 Finally, JuliaGrid obtains the solution in the rectangular coordinate system and then transforms these solutions into the standard form given in the polar coordinate system.
 
-The estimated bus voltage magnitudes ``\hat{\mathbf V} = [V_i]`` and angles ``\hat{\bm {\Theta}} = [\hat{\theta}_i]``, ``i \in \mathcal{N}``, can be retrieved using the variables:
+The estimated bus voltage magnitudes ``\hat{\mathbf V} = [\hat{V}_i]`` and angles ``\hat{\bm {\Theta}} = [\hat{\theta}_i]``, ``i \in \mathcal{N}``, can be retrieved using the variables:
 ```@repl PMUSETutorial
 𝐕 = analysis.voltage.magnitude
 𝚯 = analysis.voltage.angle
@@ -352,14 +399,7 @@ The estimated bus voltage magnitudes ``\hat{\mathbf V} = [V_i]`` and angles ``\h
 ---
 
 ##### [Alternative Formulation](@id PMUSEOrthogonalWLSStateEstimationTutorials)
-The resolution of the WLS state estimation problem using the conventional method typically progresses smoothly. However, it is widely acknowledged that in certain situations common to real-world systems, this method can be vulnerable to numerical instabilities. Such conditions might impede the algorithm from converging to a satisfactory solution. In such cases, users may opt for an alternative formulation of the WLS state estimation, namely, employing an approach called orthogonal factorization [[2, Sec. 3.2]](@ref DCStateEstimationReferenceManual).
-
-This approach is suitable when measurement errors are uncorrelated, and the precision matrix remains diagonal. Therefore, as a preliminary step, we need to eliminate the correlation, as we did previously:
-```@example PMUSETutorial
-updatePmu!(system, device; label = "PMU 4", correlated = false)
-
-nothing # hide
-```
+The resolution of the WLS state estimation problem using the conventional method typically progresses smoothly. However, it is widely acknowledged that in certain situations common to real-world systems, this method can be vulnerable to numerical instabilities. Such conditions might impede the algorithm from converging to a satisfactory solution. In such cases, users may opt for an alternative formulation of the WLS state estimation, namely, employing an approach called orthogonal factorization [[2, Sec. 3.2]](@ref DCStateEstimationReferenceManual). This approach is suitable when measurement errors are uncorrelated, and the precision matrix remains diagonal.
 
 To address ill-conditioned situations arising from significant differences in measurement variances, users can employ an alternative approach:
 ```@example PMUSETutorial
@@ -402,7 +442,7 @@ Access to the factorized matrix is possible through:
 𝐑 = analysis.method.factorization.R
 ```
 
-To obtain the solution, JuliaGrid avoids materializing the orthogonal matrix ``\mathbf{Q}`` and proceeds to solve the system, resulting in the estimate of bus voltage magnitudes ``\hat{\mathbf V} = [V_i]`` and angles ``\hat{\bm {\Theta}} = [\hat{\theta}_i]``, where ``i \in \mathcal{N}``:
+To obtain the solution, JuliaGrid avoids materializing the orthogonal matrix ``\mathbf{Q}`` and proceeds to solve the system, resulting in the estimate of bus voltage magnitudes ``\hat{\mathbf V} = [\hat{V}_i]`` and angles ``\hat{\bm {\Theta}} = [\hat{\theta}_i]``, where ``i \in \mathcal{N}``:
 ```@repl PMUSETutorial
 𝐕 = analysis.voltage.magnitude
 𝚯 = analysis.voltage.angle
@@ -415,7 +455,7 @@ Besides the state estimation algorithm, one of the essential state estimation ro
 
 To illustrate this process, let us introduce a new measurement that contains an obvious outlier:
 ```@example PMUSETutorial
-addPmu!(system, device; bus = 3, magnitude = 2.5, angle = 0.0, noise = false)
+addPmu!(system, device; bus = 3, magnitude = 2.5, angle = 0.1)
 
 nothing # hide
 ```
@@ -440,7 +480,7 @@ In this step, we employ the largest normalized residual test, guided by the anal
 
 The normalized residuals for all measurements are computed as follows:
 ```math
-    \bar{r}_{i} = \cfrac{|r_i|}{\sqrt{C_{ii}}} = \cfrac{|r_i|}{\sqrt{S_{ii}\Sigma_{ii}}}, \;\;\; i \in \mathcal{M},
+    \bar{r}_{i} = \cfrac{|r_i|}{\sqrt{C_{ii}}} = \cfrac{|r_i|}{\sqrt{S_{ii}\Sigma_{ii}}}, \;\;\; i \in \mathcal{M}.
 ```
 
 In this equation, we denote the diagonal entries of the residual covariance matrix ``\mathbf C \in \mathbb{R}^{k \times k}`` as ``C_{ii} = S_{ii}\Sigma_{ii}``, where ``S_{ii}`` is the diagonal entry of the residual sensitivity matrix ``\mathbf S`` representing the sensitivity of the measurement residuals to the measurement errors. For this specific configuration, the relationship is expressed as:
@@ -451,7 +491,7 @@ It is important to note that only the diagonal entries of ``\mathbf C`` are requ
 
 The subsequent step involves selecting the largest normalized residual, and the ``j``-th measurement is then suspected as bad data and potentially removed from the measurement set ``\mathcal{M}``:
 ```math
-    \bar{r}_{j} = \text{max} \{\bar{r}_{i}, i \in \mathcal{M} \},
+    \bar{r}_{j} = \text{max} \{\bar{r}_{i}, i \in \mathcal{M} \}.
 ```
 
 Users can access this information using the variable:
@@ -528,13 +568,13 @@ and replace the above inequality with two equalities using the introduction of t
 
 Let us now define four additional non-negative variables:
 ```math
-    \mathbf x_x \in \mathbb {R}_{\ge 0}^{n}; \;\;\; \mathbf x_y  \in \mathbb {R}_{\ge 0}^{n}; \;\;\;
-    \mathbf {r}_x \in \mathbb {R}_{\ge 0}^{k}; \;\;\; \mathbf {r}_y \in \mathbb {R}_{\ge 0}^{k},
+    \mathbf x_x \in \mathbb {R}_{\ge 0}^{n}, \;\;\; \mathbf x_y  \in \mathbb {R}_{\ge 0}^{n}, \;\;\;
+    \mathbf {r}_x \in \mathbb {R}_{\ge 0}^{k}, \;\;\; \mathbf {r}_y \in \mathbb {R}_{\ge 0}^{k},
 ```
 where:
 ```math
-    \mathbf x = \mathbf x_x - \mathbf x_y; \;\;\; \mathbf r = \mathbf {r}_x - \mathbf {r}_y\\
-    \mathbf {r}_x = \cfrac{1}{2} \mathbf q; \;\;\;  \mathbf {r}_y = \cfrac{1}{2} \mathbf w.
+    \mathbf x = \mathbf x_x - \mathbf x_y, \;\;\; \mathbf r = \mathbf {r}_x - \mathbf {r}_y\\
+    \mathbf {r}_x = \cfrac{1}{2} \mathbf q, \;\;\;  \mathbf {r}_y = \cfrac{1}{2} \mathbf w.
 ```
 Then, the above two equalities become:
 ```math
@@ -546,7 +586,7 @@ Then, the above two equalities become:
 that is:
 ```math
   \begin{aligned}
-    \mathbf {r}_x + \mathbf {r}_y = \bm \eta; \;\;\; \mathbf r = \mathbf {r}_x - \mathbf {r}_y.
+    \mathbf {r}_x + \mathbf {r}_y = \bm \eta, \;\;\; \mathbf r = \mathbf {r}_x - \mathbf {r}_y.
   \end{aligned}
 ```
 
@@ -580,7 +620,7 @@ As a result, we obtain optimal values for the four additional non-negative varia
     \hat{\mathbf x} = \mathbf x_x - \mathbf x_y.
 ```
 
-Users can retrieve the estimated bus voltage magnitudes ``\hat{\mathbf V} = [V_i]`` and angles ``\hat{\bm {\Theta}} = [\hat{\theta}_i]``, ``i \in \mathcal{N}``, using:
+Users can retrieve the estimated bus voltage magnitudes ``\hat{\mathbf V} = [\hat{V}_i]`` and angles ``\hat{\bm {\Theta}} = [\hat{\theta}_i]``, ``i \in \mathcal{N}``, using:
 ```@repl PMUSETutorial
 𝐕 = analysis.voltage.magnitude
 𝚯 = analysis.voltage.angle
@@ -600,12 +640,28 @@ Here, the vector ``\mathbf d = [d_1,\dots,d_n]^T`` serves as the optimization va
 
 Consequently, we obtain the binary vector ``\mathbf d = [d_1,\dots,d_n]^T``, where ``d_i = 1``, ``i \in \mathcal{N}``, suggests that a PMU should be placed at bus ``i``. The primary aim of PMU placement in the power system is to determine a minimal set of PMUs such that the entire system is observable without relying on traditional measurements [[4]](@ref PMUSEReferenceTutorials). Specifically, when we observe ``d_i = 1``, it indicates that the PMU is installed at bus ``i \in \mathcal{N}`` to measure bus voltage phasor and also to measure all current phasors across branches incident to bus ``i``.
 
-To execute optimal PMU placement, users can utilize the following function:
+Determining the optimal PMU placement involves analyzing the created power system. For example:
 ```@example PMUSETutorial
 using GLPK
+using JuliaGrid # hide
+@default(unit) # hide
+@default(template) # hide
 
+system = powerSystem()
+
+addBus!(system; label = 1, type = 3, active = 0.5)
+addBus!(system; label = 2, type = 1, reactive = 0.3)
+addBus!(system; label = 3, type = 1, active = 0.5)
+
+@branch(resistance = 0.02, susceptance = 0.04)
+addBranch!(system; label = 1, from = 1, to = 2, reactance = 0.6)
+addBranch!(system; label = 2, from = 1, to = 2, reactance = 0.7)
+addBranch!(system; label = 3, from = 2, to = 3, reactance = 0.2)
+
+addGenerator!(system; label = 1, bus = 1, active = 3.2, reactive = 0.2)
+
+acModel!(system)
 placement = pmuPlacement(system, GLPK.Optimizer)
-
 nothing # hide
 ```
 
@@ -614,7 +670,7 @@ The `placement` variable contains data regarding the optimal placement of measur
 placement.bus
 ```
 
-This PMU installed at bus `2` will measure the bus voltage phasor at the corresponding bus and all current phasors at the branches incident to bus `2` located at the "from" or "to" bus ends. These data are stored in the variables:
+This PMU installed at bus `2` will measure the bus voltage phasor at the corresponding bus and all current phasors at the branches incident to bus `2` located at the from-bus or to-bus ends. These data are stored in the variables:
 ```@repl PMUSETutorial
 placement.from
 placement.to
@@ -641,8 +697,8 @@ The function stores the computed powers in the rectangular coordinate system. It
 
 | Branch                                                       | Active                                       | Reactive                                     |
 |:-------------------------------------------------------------|:---------------------------------------------|:---------------------------------------------|
-| ["From" bus end flows](@ref BranchNetworkEquationsTutorials) | ``\mathbf{P}_{\text{i}} = [P_{ij}]``         | ``\mathbf{Q}_{\text{i}} = [Q_{ij}]``         |
-| ["To" bus end flows](@ref BranchNetworkEquationsTutorials)   | ``\mathbf{P}_{\text{j}} = [P_{ji}]``         | ``\mathbf{Q}_{\text{j}} = [Q_{ji}]``         |
+| [From-bus end flows](@ref BranchNetworkEquationsTutorials) | ``\mathbf{P}_{\text{i}} = [P_{ij}]``         | ``\mathbf{Q}_{\text{i}} = [Q_{ij}]``         |
+| [To-bus end flows](@ref BranchNetworkEquationsTutorials)   | ``\mathbf{P}_{\text{j}} = [P_{ji}]``         | ``\mathbf{Q}_{\text{j}} = [Q_{ji}]``         |
 | [Shunt elements](@ref BranchShuntElementsTutorials)          | ``\mathbf{P}_{\text{s}} = [P_{\text{s}ij}]`` | ``\mathbf{P}_{\text{s}} = [P_{\text{s}ij}]`` |
 | [Series elements](@ref BranchSeriesElementTutorials)         | ``\mathbf{P}_{\text{l}} = [P_{\text{l}ij}]`` | ``\mathbf{Q}_{\text{l}} = [Q_{\text{l}ij}]`` |
 
@@ -687,13 +743,13 @@ The active and reactive power injections from the generators at each bus are sto
 ---
 
 ##### Power Flows
-The resulting [active and reactive power flows](@ref BranchNetworkEquationsTutorials) at each "from" bus end are stored as the vectors ``\mathbf{P}_{\text{i}} = [P_{ij}]`` and ``\mathbf{Q}_{\text{i}} = [Q_{ij}],`` respectively, and can be retrieved using the following commands:
+The resulting [active and reactive power flows](@ref BranchNetworkEquationsTutorials) at each from-bus end are stored as the vectors ``\mathbf{P}_{\text{i}} = [P_{ij}]`` and ``\mathbf{Q}_{\text{i}} = [Q_{ij}],`` respectively, and can be retrieved using the following commands:
 ```@repl PMUSETutorial
 𝐏ᵢ = analysis.power.from.active
 𝐐ᵢ = analysis.power.from.reactive
 ```
 
-Similarly, the vectors of [active and reactive power flows](@ref BranchNetworkEquationsTutorials) at the "to" bus end are stored as ``\mathbf{P}_{\text{j}} = [P_{ji}]`` and ``\mathbf{Q}_{\text{j}} = [Q_{ji}]``, respectively, and can be retrieved using the following code:
+Similarly, the vectors of [active and reactive power flows](@ref BranchNetworkEquationsTutorials) at the to-bus end are stored as ``\mathbf{P}_{\text{j}} = [P_{ji}]`` and ``\mathbf{Q}_{\text{j}} = [Q_{ji}]``, respectively, and can be retrieved using the following code:
 ```@repl PMUSETutorial
 𝐏ⱼ = analysis.power.to.active
 𝐐ⱼ = analysis.power.to.reactive
@@ -732,11 +788,11 @@ The function stores the computed currents in the polar coordinate system. It cal
 |:------------------------------------------|:-----------------------|:-------------------------|
 | [Injections](@ref BusInjectionsTutorials) | ``\mathbf{I} = [I_i]`` | ``\bm{\psi} = [\psi_i]`` |
 
-| Branch                                                       | Magnitude                                    | Angle                                          |
-|:-------------------------------------------------------------|:---------------------------------------------|:-----------------------------------------------|
-| ["From" bus end flows](@ref BranchNetworkEquationsTutorials) | ``\mathbf{I}_{\text{i}} = [I_{ij}]``         | ``\bm{\psi}_{\text{i}} = [\psi_{ij}]``         |
-| ["To" bus end flows](@ref BranchNetworkEquationsTutorials)   | ``\mathbf{I}_{\text{j}} = [I_{ji}]``         | ``\bm{\psi}_{\text{j}} = [\psi_{ji}]``         |
-| [Series elements](@ref BranchSeriesElementTutorials)         | ``\mathbf{I}_{\text{l}} = [I_{\text{l}ij}]`` | ``\bm{\psi}_{\text{l}} = [\psi_{\text{l}ij}]`` |
+| Branch                                                     | Magnitude                                    | Angle                                          |
+|:-----------------------------------------------------------|:---------------------------------------------|:-----------------------------------------------|
+| [From-bus end flows](@ref BranchNetworkEquationsTutorials) | ``\mathbf{I}_{\text{i}} = [I_{ij}]``         | ``\bm{\psi}_{\text{i}} = [\psi_{ij}]``         |
+| [To-bus end flows](@ref BranchNetworkEquationsTutorials)   | ``\mathbf{I}_{\text{j}} = [I_{ji}]``         | ``\bm{\psi}_{\text{j}} = [\psi_{ji}]``         |
+| [Series elements](@ref BranchSeriesElementTutorials)       | ``\mathbf{I}_{\text{l}} = [I_{\text{l}ij}]`` | ``\bm{\psi}_{\text{l}} = [\psi_{\text{l}ij}]`` |
 
 !!! note "Info"
     For a clear comprehension of the equations, symbols presented in this section, as well as for a better grasp of power directions, please refer to the [Unified Branch Model](@ref UnifiedBranchModelTutorials).
