@@ -403,7 +403,7 @@ macro default(mode::Symbol)
 
         template.voltmeter.status = Int8(1)
         template.voltmeter.label = "?"
-        template.voltmeter.noise = true
+        template.voltmeter.noise = false
     end
 
     if mode == :template || mode == :ammeter
@@ -416,7 +416,7 @@ macro default(mode::Symbol)
       template.ammeter.statusTo = Int8(1)
 
       template.ammeter.label = "?"
-      template.ammeter.noise = true
+      template.ammeter.noise = false
     end
 
     if mode == :template || mode == :wattmeter
@@ -432,7 +432,7 @@ macro default(mode::Symbol)
       template.wattmeter.statusTo = Int8(1)
 
       template.wattmeter.label = "?"
-      template.wattmeter.noise = true
+      template.wattmeter.noise = false
     end
 
     if mode == :template || mode == :varmeter
@@ -448,7 +448,7 @@ macro default(mode::Symbol)
       template.varmeter.statusTo = Int8(1)
 
       template.varmeter.label = "?"
-      template.varmeter.noise = true
+      template.varmeter.noise = false
     end
 
     if mode == :template || mode == :pmu
@@ -477,7 +477,7 @@ macro default(mode::Symbol)
       template.pmu.statusAngleTo = Int8(1)
 
       template.pmu.label = "?"
-      template.pmu.noise = true
+      template.pmu.noise = false
       template.pmu.correlated = false
       template.pmu.polar = true
     end

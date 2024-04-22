@@ -1,5 +1,5 @@
 # [AC Power Flow](@id ACPowerFlowManual)
-To perform the AC power flow analysis, we will first need the `PowerSystem` composite type that has been created with the AC model. Following that, we can construct the power flow model encapsulated within the `ACPowerFlow` abstract type by employing one of the following functions:
+To perform the AC power flow analysis, we will first need the `PowerSystem` composite type that has been created with the AC model. Following that, we can construct the power flow model encapsulated within the `ACPowerFlow` type by employing one of the following functions:
 * [`newtonRaphson`](@ref newtonRaphson),
 * [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX),
 * [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB),
@@ -38,7 +38,7 @@ Likewise, there are specialized functions dedicated to calculating specific type
 ---
 
 ## [Bus Type Modification](@id BusTypeModificationManual)
-Depending on how the system is constructed, the types of buses that are initially set are checked and can be changed during the initialization process, using one of the available functions such as [`newtonRaphson`](@ref newtonRaphson), [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX), [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB), or [`gaussSeidel`](@ref gaussSeidel).
+Depending on how the system is constructed, the types of buses that are initially set are checked and can be changed during the construction of the `ACPowerFlow` type.
 
 Assuming the Newton-Raphson method has been chosen, to explain the details, we can observe a power system with only buses and generator:
 ```julia
@@ -172,7 +172,7 @@ The starting voltage values are:
 print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
 ```
 
-Consequently, when using the Newton-Raphson method, the iteration begins with a fixed set of voltage magnitude values that remain constant throughout the iteration process. The remaining values are initialized as part of the "flat start" approach.
+Consequently, the iteration begins with a fixed set of voltage magnitude values that remain constant throughout the iteration process. The remaining values are initialized as part of the "flat start" approach.
 
 ---
 
@@ -250,7 +250,7 @@ In these examples, the algorithms run until the specified number of iterations i
 ---
 
 ##### Breaking the Iterative Process
-We can terminate the iterative process using the [`mismatch!`](@ref mismatch!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})) function. The following code shows an example of how to use the the function to break out of the iteration loop:
+We can terminate the iterative process using the [`mismatch!`](@ref mismatch!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})) function. The following code shows an example of how to use the function to break out of the iteration loop:
 ```@example ACPowerFlowSolution
 analysis = newtonRaphson(system)
 for iteration = 1:100
@@ -270,7 +270,9 @@ The [`mismatch!`](@ref mismatch!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})) f
 ---
 
 ##### Combining Methods
-The `PowerSystem` type, once created, can be shared among different methods, offering several advantages. For instance, while the Gauss-Seidel method is commonly used to swiftly derive an approximate solution, the Newton-Raphson method is favored for obtaining precise final solutions. Hence, a strategy involves employing the Gauss-Seidel method for a limited number of iterations, followed by initializing the Newton-Raphson method with the voltages obtained from the Gauss-Seidel method, leveraging it as a starting point for further refinement:
+The `PowerSystem` type, once created, can be shared among different methods, offering several advantages.
+
+For instance, while the Gauss-Seidel method is commonly used to swiftly derive an approximate solution, the Newton-Raphson method is favored for obtaining precise final solutions. Hence, a strategy involves employing the Gauss-Seidel method for a limited number of iterations, followed by initializing the Newton-Raphson method with the voltages obtained from the Gauss-Seidel method, leveraging it as a starting point for further refinement:
 ```@example ACPowerFlowSolution
 gs = gaussSeidel(system)
 for iteration = 1:3
@@ -311,7 +313,7 @@ using JuliaGrid # hide
 @default(template) # hide
 
 
-system = powerSystem() # Initializing a PowerSystem instance
+system = powerSystem() # <- Initializing a PowerSystem instance
 
 addBus!(system; label = "Bus 1", type = 3, active = 0.5, magnitude = 0.9, angle = 0.0)
 addBus!(system; label = "Bus 2", type = 1, reactive = 0.05, magnitude = 1.1, angle = -0.1)
@@ -322,7 +324,7 @@ addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance =
 addGenerator!(system; label = "Generator 1", bus = "Bus 1", magnitude = 1.1, active = 3.2)
 
 acModel!(system)
-analysis = newtonRaphson(system) # Creating ACPowerFlow for the defined power system
+analysis = newtonRaphson(system) # <- Creating ACPowerFlow for the defined power system
 for iteration = 1:100
     mismatch!(system, analysis)
     solve!(system, analysis)
@@ -336,7 +338,7 @@ updateBranch!(system; label = "Branch 1", status = 0)
 addGenerator!(system; label = "Generator 2", bus = "Bus 1", active = 0.2)
 updateGenerator!(system; label = "Generator 1", active = 0.3)
 
-analysis = newtonRaphson(system) # Creating ACPowerFlow for the updated power system
+analysis = newtonRaphson(system) # <- Creating ACPowerFlow for the updated power system
 for iteration = 1:100
     mismatch!(system, analysis)
     solve!(system, analysis)
@@ -362,7 +364,7 @@ using JuliaGrid # hide
 @default(unit) # hide
 @default(template) # hide
 
-system = powerSystem() # Initializing a PowerSystem instance
+system = powerSystem() # <- Initializing a PowerSystem instance
 
 addBus!(system; label = "Bus 1", type = 3, active = 0.5, magnitude = 0.9, angle = 0.0)
 addBus!(system; label = "Bus 2", type = 1, reactive = 0.05, magnitude = 1.1, angle = -0.1)
@@ -373,7 +375,7 @@ addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance =
 addGenerator!(system; label = "Generator 1", bus = "Bus 1", magnitude = 1.1, active = 3.2)
 
 acModel!(system)
-analysis = newtonRaphson(system) # Creating ACPowerFlow for the defined power system
+analysis = newtonRaphson(system) # <- Creating ACPowerFlow for the defined power system
 for iteration = 1:100
     mismatch!(system, analysis)
     solve!(system, analysis)
@@ -387,7 +389,7 @@ updateBranch!(system, analysis; label = "Branch 1", status = 0)
 addGenerator!(system, analysis; label = "Generator 2", bus = "Bus 1", active = 0.2)
 updateGenerator!(system, analysis; label = "Generator 1", active = 0.3)
 
-# No need for re-creation; we have already updated the existing ACPowerFlow instance
+# <- No need for re-creation; we have already updated the existing ACPowerFlow instance
 for iteration = 1:100
     mismatch!(system, analysis)
     solve!(system, analysis)
@@ -465,7 +467,7 @@ In such scenarios, JuliaGrid will raise an error:
 updateBus!(system, analysis; label = "Bus 2", type = 2)
 ```
 
-Therefore, the user must follow the proper sequence by executing the [`newtonRaphson`](@ref newtonRaphson), [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX), [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB), or [`gaussSeidel`](@ref gaussSeidel) function instead of trying to reuse these types, for example:
+In this scenario, the user must execute the [`newtonRaphson`](@ref newtonRaphson), [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX), [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB), or [`gaussSeidel`](@ref gaussSeidel) function instead of trying to reuse them, for example:
 ```@example ACPowerFlowSolution
 updateBus!(system; label = "Bus 2", type = 2)
 
@@ -520,7 +522,7 @@ current!(system, analysis)
 nothing # hide
 ```
 
-For instance, if we want to show the active power injections at each bus and the current flow angles at each to-bus end of the branch, we can employ the following code:
+For instance, if we want to show the active power injections and the to-bus current angles, we can employ the following code:
 ```@repl ComputationPowersCurrentsLosses
 print(system.bus.label, analysis.power.injection.active)
 print(system.branch.label, analysis.current.to.angle)

@@ -14,15 +14,14 @@ After obtaining the AC optimal power flow solution, JuliaGrid offers post-proces
 * [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)),
 * [`current!`](@ref current!(::PowerSystem, ::ACPowerFlow)).
 
-Furthermore, there are specialized functions dedicated to calculating specific types of powers related to particular buses, branches, or generators:
+Furthermore, there are specialized functions dedicated to calculating specific types of powers related to particular buses and branches:
 * [`injectionPower`](@ref injectionPower(::PowerSystem, ::AC)),
 * [`supplyPower`](@ref supplyPower(::PowerSystem, ::ACPowerFlow)),
 * [`shuntPower`](@ref shuntPower(::PowerSystem, ::AC)),
 * [`fromPower`](@ref fromPower(::PowerSystem, ::AC)),
 * [`toPower`](@ref toPower(::PowerSystem, ::AC)),
 * [`seriesPower`](@ref seriesPower(::PowerSystem, ::AC)),
-* [`chargingPower`](@ref chargingPower(::PowerSystem, ::AC)),
-* [`generatorPower`](@ref generatorPower(::PowerSystem, ::ACPowerFlow)).
+* [`chargingPower`](@ref chargingPower(::PowerSystem, ::AC)).
 
 Likewise, there are specialized functions dedicated to calculating specific types of currents related to particular buses or branches:
 * [`injectionCurrent`](@ref injectionCurrent(::PowerSystem, ::AC)),
@@ -79,9 +78,9 @@ In the AC optimal power flow model, the active and reactive power outputs of the
 JuMP.all_variables(analysis.method.jump)
 ```
 
-It is important to note that this is not a comprehensive set of optimization variables. When the cost function is defined as a linear piecewise function comprising multiple segments, as illustrated in the case of the active power output cost for `Generator 2`, JuliaGrid automatically generates helper optimization variables named `actwise` and `reactwise`, and formulates a set of linear constraints to effectively address these cost functions. It is worth emphasizing that in instances where a linear piecewise cost function consists of only a single segment, as demonstrated by the reactive power output cost of `Generator 2`, the function is modelled as a standard linear function, obviating the need for additional helper optimization variables.
+It is important to note that this is not a comprehensive set of optimization variables. When the cost function is defined as a linear piecewise function comprising multiple segments, as illustrated in the case of the active power output cost for `Generator 2`, JuliaGrid automatically generates helper optimization variables named `actwise` and `reactwise`, and formulates a set of linear constraints to effectively address these cost functions. For the sake of simplicity, we initially assume that `Generator 2` is out-of-service. Consequently, the helper variable is not included in the set of optimization variables. However, as we progress through this manual, we will activate the generator, introducing the helper variable and additional constraints to the optimization model.
 
-For the sake of simplicity, we initially assume that both generators are out-of-service. Consequently, the helper variable is not included in the set of optimization variables. However, as we progress through this manual, we will activate the generators, introducing helper variables and additional constraints to the optimization model.
+It is worth emphasizing that in instances where a linear piecewise cost function consists of only a single segment, as demonstrated by the reactive power output cost of `Generator 2`, the function is modelled as a standard linear function, obviating the need for additional helper optimization variables.
 
 Please be aware that JuliaGrid maintains references to all variables, which are categorized into six fields:
 ```@repl ACOptimalPowerFlow
@@ -187,7 +186,9 @@ Similarly, the minimum and maximum voltage angle difference limits between the f
 ```@repl ACOptimalPowerFlow
 print(system.branch.label, analysis.method.constraint.voltage.angle)
 ```
-Please note that if the limit constraints are set to `minDiffAngle = -2π` and `maxDiffAngle = 2π` for the corresponding branch, JuliGrid will omit the corresponding inequality constraint.
+
+!!! note "Info"
+    Please note that if the limit constraints are set to `minDiffAngle = -2π` and `maxDiffAngle = 2π` for the corresponding branch, JuliGrid will omit the corresponding inequality constraint.
 
 Additionally, by employing the [`updateBus!`](@ref updateBus!) and [`updateBranch!`](@ref updateBranch!) functions, user has the ability to modify these specific constraints as follows:
 ```@example ACOptimalPowerFlow
@@ -216,7 +217,9 @@ Similarly, to access the to-bus end flow constraints of branches we can use the 
 ```@repl ACOptimalPowerFlow
 print(system.branch.label, analysis.method.constraint.flow.to)
 ```
-Please note that if the flow constraints are set to `longTerm = 0.0` for the corresponding branch, JuliGrid will omit the corresponding inequality constraint.
+
+!!! note "Info"
+    Please note that if the flow constraints are set to `longTerm = 0.0` for the corresponding branch, JuliGrid will omit the corresponding inequality constraint.
 
 Additionally, by employing the [`updateBranch!`](@ref updateBranch!) function, we have the ability to modify these specific constraints:
 ```@example ACOptimalPowerFlow
@@ -412,7 +415,7 @@ solve!(system, analysis)
 nothing # hide
 ```
 
-By executing this function, we will obtain the solution with the optimal values for the active power outputs of the generators and the bus voltage angles:
+By executing this function, we will obtain the solution with the optimal values for the active and reactive power outputs of the generators, as well as the bus voltage magnitudes and angles.
 ```@repl ACOptimalPowerFlow
 generator = analysis.power.generator;
 print(system.generator.label, generator.active, generator.reactive)
@@ -434,7 +437,6 @@ Utilizing the `ACOptimalPowerFlow` type and proceeding directly to the solver of
 
 In the previous example, we obtained the following solution:
 ```@repl ACOptimalPowerFlow
-generator = analysis.power.generator;
 print(system.generator.label, generator.active, generator.reactive)
 print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
 ```
@@ -469,10 +471,10 @@ print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
 ---
 
 ## [Power and Current Analysis](@id ACOptimalPowerCurrentAnalysisManual)
-After obtaining the solution from the AC optimal power flow, we can calculate various electrical quantities related to buses, branches, and generators using the [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)) and [`current!`](@ref current!(::PowerSystem, ::AC)) functions. For instance, let us consider the power system for which we obtained the AC optimal power flow solution:
+After obtaining the solution from the AC optimal power flow, we can calculate various electrical quantities related to buses and branches using the [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)) and [`current!`](@ref current!(::PowerSystem, ::AC)) functions. For instance, let us consider the power system for which we obtained the AC optimal power flow solution:
 ```@example ACOptimalPowerFlowPower
-using JuliaGrid # hide
-using JuMP, Ipopt
+using JuliaGrid, JuMP # hide
+using Ipopt
 
 @default(unit) # hide
 @default(template) # hide
@@ -509,7 +511,7 @@ current!(system, analysis)
 nothing # hide
 ```
 
-For instance, if we want to show the active power injections at each bus and the current flow magnitudes at each from-bus end of the branch, we can employ the following code:
+For instance, if we want to show the active power injections and the from-bus current magnitudes, we can employ:
 ```@repl ACOptimalPowerFlowPower
 print(system.bus.label, analysis.power.injection.active)
 print(system.branch.label, analysis.current.from.magnitude)

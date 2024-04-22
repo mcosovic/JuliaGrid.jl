@@ -130,7 +130,7 @@ using JuliaGrid # hide
 @default(unit) # hide
 @default(template) # hide
 
-system = powerSystem() # Initializing a PowerSystem instance
+system = powerSystem() # <- Initializing a PowerSystem instance
 
 addBus!(system; label = "Bus 1", type = 3)
 addBus!(system; label = "Bus 2", type = 2, active = 2.1)
@@ -140,7 +140,7 @@ addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance =
 addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 3.2)
 
 dcModel!(system)
-analysis = dcPowerFlow(system) # Creating DCPowerFlow for the defined power system
+analysis = dcPowerFlow(system) # <- Creating DCPowerFlow for the defined power system
 solve!(system, analysis)
 
 updateBus!(system; label = "Bus 2", active = 0.4)
@@ -151,7 +151,7 @@ updateBranch!(system; label = "Branch 1", status = 0)
 addGenerator!(system; label = "Generator 2", bus = "Bus 2", active = 1.5)
 updateGenerator!(system; label = "Generator 1", active = 1.9)
 
-analysis = dcPowerFlow(system) # Creating DCPowerFlow for the updated power system
+analysis = dcPowerFlow(system) # <- Creating DCPowerFlow for the updated power system
 solve!(system, analysis)
 nothing # hide
 ```
@@ -172,7 +172,7 @@ using JuliaGrid # hide
 @default(unit) # hide
 @default(template) # hide
 
-system = powerSystem() # Initializing a PowerSystem instance
+system = powerSystem() # <- Initializing a PowerSystem instance
 
 addBus!(system; label = "Bus 1", type = 3)
 addBus!(system; label = "Bus 2", type = 2, active = 2.1)
@@ -182,7 +182,7 @@ addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance =
 addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 3.2)
 
 dcModel!(system)
-analysis = dcPowerFlow(system) # Creating DCPowerFlow for the defined power system
+analysis = dcPowerFlow(system) # <- Creating DCPowerFlow for the defined power system
 solve!(system, analysis)
 
 updateBus!(system, analysis; label = "Bus 2", active = 0.4)
@@ -193,7 +193,7 @@ updateBranch!(system, analysis; label = "Branch 1", status = 0)
 addGenerator!(system, analysis; label = "Generator 2", bus = "Bus 2", active = 1.5)
 updateGenerator!(system, analysis; label = "Generator 1", active = 1.9)
 
-# No need for re-creation; we have already updated the existing DCPowerFlow instance
+# <- No need for re-creation; we have already updated the existing DCPowerFlow instance
 solve!(system, analysis)
 nothing # hide
 ```

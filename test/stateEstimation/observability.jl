@@ -163,18 +163,18 @@
 
     device = measurement()
     for (key, value) in system14.bus.label
-        addWattmeter!(system14, device; bus = key, active = analysis.power.injection.active[value], noise = false)
+        addWattmeter!(system14, device; bus = key, active = analysis.power.injection.active[value])
     end
     for (key, value) in system14.branch.label
-        addWattmeter!(system14, device; from = key, active = analysis.power.from.active[value], noise = false)
+        addWattmeter!(system14, device; from = key, active = analysis.power.from.active[value])
     end
     statusWattmeter!(system14, device; inservice = 10)
     islands = islandTopological(system14, device)
 
     pseudo = measurement()
     for (key, value) in system14.branch.label
-        addWattmeter!(system14, pseudo; label = "Pseudo $key", to = key, active = analysis.power.to.active[value], noise = false)
-        addVarmeter!(system14, pseudo; label = "Pseudo $key", to = key, reactive = analysis.power.to.active[value], noise = false)
+        addWattmeter!(system14, pseudo; label = "Pseudo $key", to = key, active = analysis.power.to.active[value])
+        addVarmeter!(system14, pseudo; label = "Pseudo $key", to = key, reactive = analysis.power.to.active[value])
     end
 
     restorationGram!(system14, device, pseudo, islands)
@@ -185,18 +185,18 @@
     ############### Test Case 4 ################
     device = measurement()
     for (key, value) in system14.bus.label
-        addWattmeter!(system14, device; bus = key, active = analysis.power.injection.active[value], noise = false)
+        addWattmeter!(system14, device; bus = key, active = analysis.power.injection.active[value])
     end
     for (key, value) in system14.branch.label
-        addWattmeter!(system14, device; from = key, active = analysis.power.from.active[value], noise = false)
+        addWattmeter!(system14, device; from = key, active = analysis.power.from.active[value])
     end
     statusWattmeter!(system14, device; inservice = 8)
     islands = islandTopological(system14, device)
 
     pseudo = measurement()
     for (key, value) in system14.bus.label
-        addWattmeter!(system14, pseudo; label = "Pseudo $key", bus = key, active = analysis.power.injection.active[value], noise = false)
-        addVarmeter!(system14, pseudo; label = "Pseudo $key", bus = key, reactive = analysis.power.injection.active[value], noise = false)
+        addWattmeter!(system14, pseudo; label = "Pseudo $key", bus = key, active = analysis.power.injection.active[value])
+        addVarmeter!(system14, pseudo; label = "Pseudo $key", bus = key, reactive = analysis.power.injection.active[value])
     end
     restorationGram!(system14, device, pseudo, islands)
     analysisSE = dcWlsStateEstimation(system14, device)
@@ -206,17 +206,17 @@
     ############### Test Case 5 ################
     device = measurement()
     for (key, value) in system14.bus.label
-        addWattmeter!(system14, device; bus = key, active = analysis.power.injection.active[value], noise = false)
+        addWattmeter!(system14, device; bus = key, active = analysis.power.injection.active[value])
     end
     for (key, value) in system14.branch.label
-        addWattmeter!(system14, device; from = key, active = analysis.power.from.active[value], noise = false)
+        addWattmeter!(system14, device; from = key, active = analysis.power.from.active[value])
     end
     statusWattmeter!(system14, device; inservice = 11)
     islands = islandTopological(system14, device)
 
     pseudo = measurement()
     for (key, value) in system14.bus.label
-        addPmu!(system14, pseudo; label = "Pseudo $key", bus = key, magnitude = 1, varianceMagnitude = 1, angle = analysis.voltage.angle[value], noise = false)
+        addPmu!(system14, pseudo; label = "Pseudo $key", bus = key, magnitude = 1, varianceMagnitude = 1, angle = analysis.voltage.angle[value])
     end
     restorationGram!(system14, device, pseudo, islands)
     analysisSE = dcWlsStateEstimation(system14, device)

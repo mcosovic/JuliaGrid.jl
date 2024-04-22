@@ -32,13 +32,13 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     placement = pmuPlacement(system14, GLPK.Optimizer)
     device = measurement()
     for (key, value) in placement.bus
-        addPmu!(system14, device; bus = key, magnitude = analysis.voltage.magnitude[value], angle = analysis.voltage.angle[value], noise = false)
+        addPmu!(system14, device; bus = key, magnitude = analysis.voltage.magnitude[value], angle = analysis.voltage.angle[value])
     end
     for (key, value) in placement.from
-        addPmu!(system14, device; from = key, magnitude = analysis.current.from.magnitude[value], angle = analysis.current.from.angle[value], noise = false)
+        addPmu!(system14, device; from = key, magnitude = analysis.current.from.magnitude[value], angle = analysis.current.from.angle[value])
     end
     for (key, value) in placement.to
-        addPmu!(system14, device; to = key, magnitude = analysis.current.to.magnitude[value], angle = analysis.current.to.angle[value], noise = false) 
+        addPmu!(system14, device; to = key, magnitude = analysis.current.to.magnitude[value], angle = analysis.current.to.angle[value])
     end
 
     ####### LU Factorization #######
@@ -62,13 +62,13 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     placement = pmuPlacement(system30, GLPK.Optimizer)
     device = measurement()
     for (key, value) in placement.bus
-        addPmu!(system30, device; bus = key, magnitude = analysis.voltage.magnitude[value], angle = analysis.voltage.angle[value], noise = false)
+        addPmu!(system30, device; bus = key, magnitude = analysis.voltage.magnitude[value], angle = analysis.voltage.angle[value])
     end
     for (key, value) in placement.from
-        addPmu!(system30, device; from = key, magnitude = analysis.current.from.magnitude[value], angle = analysis.current.from.angle[value], noise = false)
+        addPmu!(system30, device; from = key, magnitude = analysis.current.from.magnitude[value], angle = analysis.current.from.angle[value])
     end
     for (key, value) in placement.to
-        addPmu!(system30, device; to = key, magnitude = analysis.current.to.magnitude[value], angle = analysis.current.to.angle[value], noise = false) 
+        addPmu!(system30, device; to = key, magnitude = analysis.current.to.magnitude[value], angle = analysis.current.to.angle[value])
     end
 
     ####### LU Factorization #######

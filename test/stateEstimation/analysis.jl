@@ -25,27 +25,27 @@ system30 = powerSystem(string(pathData, "case30test.m"))
 
     device = measurement()
     for (key, value) in system14.bus.label
-        addVoltmeter!(system14, device; bus = key, magnitude = analysis.voltage.magnitude[value], noise = false)
-        addWattmeter!(system14, device; bus = key, active = analysis.power.injection.active[value], noise = false)
-        addVarmeter!(system14, device; bus = key, reactive = analysis.power.injection.reactive[value], noise = false)
-        addPmu!(system14, device; bus = key, magnitude = analysis.voltage.magnitude[value], angle = analysis.voltage.angle[value], noise = false)
-        addPmu!(system14, device; bus = key, magnitude = analysis.voltage.magnitude[value], angle = analysis.voltage.angle[value], noise = false, polar = false)
-        addPmu!(system14, device; bus = key, magnitude = analysis.voltage.magnitude[value], angle = analysis.voltage.angle[value], noise = false, polar = false, correlated = true)
+        addVoltmeter!(system14, device; bus = key, magnitude = analysis.voltage.magnitude[value])
+        addWattmeter!(system14, device; bus = key, active = analysis.power.injection.active[value])
+        addVarmeter!(system14, device; bus = key, reactive = analysis.power.injection.reactive[value])
+        addPmu!(system14, device; bus = key, magnitude = analysis.voltage.magnitude[value], angle = analysis.voltage.angle[value])
+        addPmu!(system14, device; bus = key, magnitude = analysis.voltage.magnitude[value], angle = analysis.voltage.angle[value], polar = false)
+        addPmu!(system14, device; bus = key, magnitude = analysis.voltage.magnitude[value], angle = analysis.voltage.angle[value], polar = false, correlated = true)
     end
 
     for (key, value) in system14.branch.label
-        addWattmeter!(system14, device; from = key, active = analysis.power.from.active[value], noise = false)
-        addWattmeter!(system14, device; to = key, active = analysis.power.to.active[value], noise = false)
-        addVarmeter!(system14, device; from = key, reactive = analysis.power.from.reactive[value], noise = false)
-        addVarmeter!(system14, device; to = key, reactive = analysis.power.to.reactive[value], noise = false)
-        addAmmeter!(system14, device; from = key, magnitude = analysis.current.from.magnitude[value], noise = false)
-        addAmmeter!(system14, device; to = key, magnitude = analysis.current.to.magnitude[value], noise = false)
-        addPmu!(system14, device; from = key, magnitude = analysis.current.from.magnitude[value], angle = analysis.current.from.angle[value], noise = false, statusAngle = 0)
-        addPmu!(system14, device; to = key, magnitude = analysis.current.to.magnitude[value], angle = analysis.current.to.angle[value], noise = false, statusAngle = 0)
-        addPmu!(system14, device; from = key, magnitude = analysis.current.from.magnitude[value], angle = analysis.current.from.angle[value], noise = false, polar = false)
-        addPmu!(system14, device; to = key, magnitude = analysis.current.to.magnitude[value], angle = analysis.current.to.angle[value], noise = false, polar = false)
-        addPmu!(system14, device; from = key, magnitude = analysis.current.from.magnitude[value], angle = analysis.current.from.angle[value], noise = false, polar = false, correlated = true)
-        addPmu!(system14, device; to = key, magnitude = analysis.current.to.magnitude[value], angle = analysis.current.to.angle[value], noise = false, polar = false, correlated = true)
+        addWattmeter!(system14, device; from = key, active = analysis.power.from.active[value])
+        addWattmeter!(system14, device; to = key, active = analysis.power.to.active[value])
+        addVarmeter!(system14, device; from = key, reactive = analysis.power.from.reactive[value])
+        addVarmeter!(system14, device; to = key, reactive = analysis.power.to.reactive[value])
+        addAmmeter!(system14, device; from = key, magnitude = analysis.current.from.magnitude[value])
+        addAmmeter!(system14, device; to = key, magnitude = analysis.current.to.magnitude[value])
+        addPmu!(system14, device; from = key, magnitude = analysis.current.from.magnitude[value], angle = analysis.current.from.angle[value], statusAngle = 0)
+        addPmu!(system14, device; to = key, magnitude = analysis.current.to.magnitude[value], angle = analysis.current.to.angle[value], statusAngle = 0)
+        addPmu!(system14, device; from = key, magnitude = analysis.current.from.magnitude[value], angle = analysis.current.from.angle[value], polar = false)
+        addPmu!(system14, device; to = key, magnitude = analysis.current.to.magnitude[value], angle = analysis.current.to.angle[value], polar = false)
+        addPmu!(system14, device; from = key, magnitude = analysis.current.from.magnitude[value], angle = analysis.current.from.angle[value], polar = false, correlated = true)
+        addPmu!(system14, device; to = key, magnitude = analysis.current.to.magnitude[value], angle = analysis.current.to.angle[value], polar = false, correlated = true)
     end
 
     ####### LU Factorization #######
@@ -81,24 +81,24 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     ####### Orthogonal Method #######
     device = measurement()
     for (key, value) in system14.bus.label
-        addVoltmeter!(system14, device; bus = key, magnitude = analysis.voltage.magnitude[value], noise = false)
-        addWattmeter!(system14, device; bus = key, active = analysis.power.injection.active[value], noise = false)
-        addVarmeter!(system14, device; bus = key, reactive = analysis.power.injection.reactive[value], noise = false)
-        addPmu!(system14, device; bus = key, magnitude = analysis.voltage.magnitude[value], angle = analysis.voltage.angle[value], noise = false)
-        addPmu!(system14, device; bus = key, magnitude = analysis.voltage.magnitude[value], angle = analysis.voltage.angle[value], noise = false, polar = false)
+        addVoltmeter!(system14, device; bus = key, magnitude = analysis.voltage.magnitude[value])
+        addWattmeter!(system14, device; bus = key, active = analysis.power.injection.active[value])
+        addVarmeter!(system14, device; bus = key, reactive = analysis.power.injection.reactive[value])
+        addPmu!(system14, device; bus = key, magnitude = analysis.voltage.magnitude[value], angle = analysis.voltage.angle[value])
+        addPmu!(system14, device; bus = key, magnitude = analysis.voltage.magnitude[value], angle = analysis.voltage.angle[value], polar = false)
     end
 
     for (key, value) in system14.branch.label
-        addWattmeter!(system14, device; from = key, active = analysis.power.from.active[value], noise = false)
-        addWattmeter!(system14, device; to = key, active = analysis.power.to.active[value], noise = false)
-        addVarmeter!(system14, device; from = key, reactive = analysis.power.from.reactive[value], noise = false)
-        addVarmeter!(system14, device; to = key, reactive = analysis.power.to.reactive[value], noise = false)
-        addAmmeter!(system14, device; from = key, magnitude = analysis.current.from.magnitude[value], noise = false)
-        addAmmeter!(system14, device; to = key, magnitude = analysis.current.to.magnitude[value], noise = false)
-        addPmu!(system14, device; from = key, magnitude = analysis.current.from.magnitude[value], angle = analysis.current.from.angle[value], noise = false, statusAngle = 0)
-        addPmu!(system14, device; to = key, magnitude = analysis.current.to.magnitude[value], angle = analysis.current.to.angle[value], noise = false, statusAngle = 0)
-        addPmu!(system14, device; from = key, magnitude = analysis.current.from.magnitude[value], angle = analysis.current.from.angle[value], noise = false, polar = false)
-        addPmu!(system14, device; to = key, magnitude = analysis.current.to.magnitude[value], angle = analysis.current.to.angle[value], noise = false, polar = false)
+        addWattmeter!(system14, device; from = key, active = analysis.power.from.active[value])
+        addWattmeter!(system14, device; to = key, active = analysis.power.to.active[value])
+        addVarmeter!(system14, device; from = key, reactive = analysis.power.from.reactive[value])
+        addVarmeter!(system14, device; to = key, reactive = analysis.power.to.reactive[value])
+        addAmmeter!(system14, device; from = key, magnitude = analysis.current.from.magnitude[value])
+        addAmmeter!(system14, device; to = key, magnitude = analysis.current.to.magnitude[value])
+        addPmu!(system14, device; from = key, magnitude = analysis.current.from.magnitude[value], angle = analysis.current.from.angle[value], statusAngle = 0)
+        addPmu!(system14, device; to = key, magnitude = analysis.current.to.magnitude[value], angle = analysis.current.to.angle[value], statusAngle = 0)
+        addPmu!(system14, device; from = key, magnitude = analysis.current.from.magnitude[value], angle = analysis.current.from.angle[value], polar = false)
+        addPmu!(system14, device; to = key, magnitude = analysis.current.to.magnitude[value], angle = analysis.current.to.angle[value], polar = false)
     end
 
     analysisOrt = gaussNewton(system14, device, Orthogonal)
@@ -127,24 +127,24 @@ system30 = powerSystem(string(pathData, "case30test.m"))
 
     device = measurement()
     for (key, value) in system30.bus.label
-        addVoltmeter!(system30, device; bus = key, magnitude = analysis.voltage.magnitude[value], noise = false)
-        addWattmeter!(system30, device; bus = key, active = analysis.power.injection.active[value], noise = false)
-        addVarmeter!(system30, device; bus = key, reactive = analysis.power.injection.reactive[value], noise = false)
-        addPmu!(system30, device; bus = key, magnitude = analysis.voltage.magnitude[value], angle = analysis.voltage.angle[value], noise = false)
-        addPmu!(system30, device; bus = key, magnitude = analysis.voltage.magnitude[value], angle = analysis.voltage.angle[value], noise = false, polar = false)
+        addVoltmeter!(system30, device; bus = key, magnitude = analysis.voltage.magnitude[value])
+        addWattmeter!(system30, device; bus = key, active = analysis.power.injection.active[value])
+        addVarmeter!(system30, device; bus = key, reactive = analysis.power.injection.reactive[value])
+        addPmu!(system30, device; bus = key, magnitude = analysis.voltage.magnitude[value], angle = analysis.voltage.angle[value])
+        addPmu!(system30, device; bus = key, magnitude = analysis.voltage.magnitude[value], angle = analysis.voltage.angle[value], polar = false)
     end
 
     for (key, value) in system30.branch.label
-        addWattmeter!(system30, device; from = key, active = analysis.power.from.active[value], noise = false)
-        addWattmeter!(system30, device; to = key, active = analysis.power.to.active[value], noise = false)
-        addVarmeter!(system30, device; from = key, reactive = analysis.power.from.reactive[value], noise = false)
-        addVarmeter!(system30, device; to = key, reactive = analysis.power.to.reactive[value], noise = false)
-        addAmmeter!(system30, device; from = key, magnitude = analysis.current.from.magnitude[value], noise = false)
-        addAmmeter!(system30, device; to = key, magnitude = analysis.current.to.magnitude[value], noise = false)
-        addPmu!(system30, device; from = key, magnitude = analysis.current.from.magnitude[value], angle = analysis.current.from.angle[value], noise = false)
-        addPmu!(system30, device; to = key, magnitude = analysis.current.to.magnitude[value], angle = analysis.current.to.angle[value], noise = false)
-        addPmu!(system30, device; from = key, magnitude = analysis.current.from.magnitude[value], angle = analysis.current.from.angle[value], noise = false, polar = false)
-        addPmu!(system30, device; to = key, magnitude = analysis.current.to.magnitude[value], angle = analysis.current.to.angle[value], noise = false, polar = false)
+        addWattmeter!(system30, device; from = key, active = analysis.power.from.active[value])
+        addWattmeter!(system30, device; to = key, active = analysis.power.to.active[value])
+        addVarmeter!(system30, device; from = key, reactive = analysis.power.from.reactive[value])
+        addVarmeter!(system30, device; to = key, reactive = analysis.power.to.reactive[value])
+        addAmmeter!(system30, device; from = key, magnitude = analysis.current.from.magnitude[value])
+        addAmmeter!(system30, device; to = key, magnitude = analysis.current.to.magnitude[value])
+        addPmu!(system30, device; from = key, magnitude = analysis.current.from.magnitude[value], angle = analysis.current.from.angle[value])
+        addPmu!(system30, device; to = key, magnitude = analysis.current.to.magnitude[value], angle = analysis.current.to.angle[value])
+        addPmu!(system30, device; from = key, magnitude = analysis.current.from.magnitude[value], angle = analysis.current.from.angle[value], polar = false)
+        addPmu!(system30, device; to = key, magnitude = analysis.current.to.magnitude[value], angle = analysis.current.to.angle[value], polar = false)
     end
 
     ####### LU Factorization #######
@@ -173,21 +173,21 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     ####### Orthogonal Method #######
     device = measurement()
     for (key, value) in system30.bus.label
-        addVoltmeter!(system30, device; bus = key, magnitude = analysis.voltage.magnitude[value], noise = false)
-        addWattmeter!(system30, device; bus = key, active = analysis.power.injection.active[value], noise = false)
-        addVarmeter!(system30, device; bus = key, reactive = analysis.power.injection.reactive[value], noise = false)
-        addPmu!(system30, device; bus = key, magnitude = analysis.voltage.magnitude[value], angle = analysis.voltage.angle[value], noise = false)
+        addVoltmeter!(system30, device; bus = key, magnitude = analysis.voltage.magnitude[value])
+        addWattmeter!(system30, device; bus = key, active = analysis.power.injection.active[value])
+        addVarmeter!(system30, device; bus = key, reactive = analysis.power.injection.reactive[value])
+        addPmu!(system30, device; bus = key, magnitude = analysis.voltage.magnitude[value], angle = analysis.voltage.angle[value])
     end
 
     for (key, value) in system30.branch.label
-        addWattmeter!(system30, device; from = key, active = analysis.power.from.active[value], noise = false)
-        addWattmeter!(system30, device; to = key, active = analysis.power.to.active[value], noise = false)
-        addVarmeter!(system30, device; from = key, reactive = analysis.power.from.reactive[value], noise = false)
-        addVarmeter!(system30, device; to = key, reactive = analysis.power.to.reactive[value], noise = false)
-        addAmmeter!(system30, device; from = key, magnitude = analysis.current.from.magnitude[value], noise = false)
-        addAmmeter!(system30, device; to = key, magnitude = analysis.current.to.magnitude[value], noise = false)
-        addPmu!(system30, device; from = key, magnitude = analysis.current.from.magnitude[value], angle = analysis.current.from.angle[value], noise = false, varianceAngle = 1e-1, varianceMagnitude = 1e-1)
-        addPmu!(system30, device; to = key, magnitude = analysis.current.to.magnitude[value], angle = analysis.current.to.angle[value], noise = false, varianceAngle = 1e-1, varianceMagnitude = 1e-1)
+        addWattmeter!(system30, device; from = key, active = analysis.power.from.active[value])
+        addWattmeter!(system30, device; to = key, active = analysis.power.to.active[value])
+        addVarmeter!(system30, device; from = key, reactive = analysis.power.from.reactive[value])
+        addVarmeter!(system30, device; to = key, reactive = analysis.power.to.reactive[value])
+        addAmmeter!(system30, device; from = key, magnitude = analysis.current.from.magnitude[value])
+        addAmmeter!(system30, device; to = key, magnitude = analysis.current.to.magnitude[value])
+        addPmu!(system30, device; from = key, magnitude = analysis.current.from.magnitude[value], angle = analysis.current.from.angle[value], varianceAngle = 1e-1, varianceMagnitude = 1e-1)
+        addPmu!(system30, device; to = key, magnitude = analysis.current.to.magnitude[value], angle = analysis.current.to.angle[value], varianceAngle = 1e-1, varianceMagnitude = 1e-1)
     end
 
     analysisOrt = gaussNewton(system30, device, Orthogonal)
@@ -204,20 +204,20 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     ####### LAV #######
     device = measurement()
     for (key, value) in system30.bus.label
-        addVoltmeter!(system30, device; bus = key, magnitude = analysis.voltage.magnitude[value], noise = false)
-        addWattmeter!(system30, device; bus = key, active = analysis.power.injection.active[value], noise = false)
-        addVarmeter!(system30, device; bus = key, reactive = analysis.power.injection.reactive[value], noise = false)
-        addPmu!(system30, device; bus = key, magnitude = analysis.voltage.magnitude[value], angle = analysis.voltage.angle[value], noise = false)
-        addPmu!(system30, device; bus = key, magnitude = analysis.voltage.magnitude[value], angle = analysis.voltage.angle[value], noise = false, polar = false)
+        addVoltmeter!(system30, device; bus = key, magnitude = analysis.voltage.magnitude[value])
+        addWattmeter!(system30, device; bus = key, active = analysis.power.injection.active[value])
+        addVarmeter!(system30, device; bus = key, reactive = analysis.power.injection.reactive[value])
+        addPmu!(system30, device; bus = key, magnitude = analysis.voltage.magnitude[value], angle = analysis.voltage.angle[value])
+        addPmu!(system30, device; bus = key, magnitude = analysis.voltage.magnitude[value], angle = analysis.voltage.angle[value], polar = false)
     end
 
     for (key, value) in system30.branch.label
-        addWattmeter!(system30, device; from = key, active = analysis.power.from.active[value], noise = false)
-        addWattmeter!(system30, device; to = key, active = analysis.power.to.active[value], noise = false)
-        addVarmeter!(system30, device; from = key, reactive = analysis.power.from.reactive[value], noise = false)
-        addVarmeter!(system30, device; to = key, reactive = analysis.power.to.reactive[value], noise = false)
-        addPmu!(system30, device; from = key, magnitude = analysis.current.from.magnitude[value], angle = analysis.current.from.angle[value], noise = false, polar = false)
-        addPmu!(system30, device; to = key, magnitude = analysis.current.to.magnitude[value], angle = analysis.current.to.angle[value], noise = false, polar = false)
+        addWattmeter!(system30, device; from = key, active = analysis.power.from.active[value])
+        addWattmeter!(system30, device; to = key, active = analysis.power.to.active[value])
+        addVarmeter!(system30, device; from = key, reactive = analysis.power.from.reactive[value])
+        addVarmeter!(system30, device; to = key, reactive = analysis.power.to.reactive[value])
+        addPmu!(system30, device; from = key, magnitude = analysis.current.from.magnitude[value], angle = analysis.current.from.angle[value], polar = false)
+        addPmu!(system30, device; to = key, magnitude = analysis.current.to.magnitude[value], angle = analysis.current.to.angle[value], polar = false)
     end
 
     analysisLAV = acLavStateEstimation(system30, device, Ipopt.Optimizer)
@@ -254,11 +254,11 @@ system30 = powerSystem(string(pathData, "case30test.m"))
 
     device = measurement()
     for (key, value) in system14.bus.label
-        addPmu!(system14, device; bus = key, magnitude = analysis.voltage.magnitude[value], angle = analysis.voltage.angle[value], noise = false)
+        addPmu!(system14, device; bus = key, magnitude = analysis.voltage.magnitude[value], angle = analysis.voltage.angle[value])
     end
     for (key, value) in system14.branch.label
-        addPmu!(system14, device; from = key, magnitude = analysis.current.from.magnitude[value], angle = analysis.current.from.angle[value], noise = false)
-        addPmu!(system14, device; to = key, magnitude = analysis.current.to.magnitude[value], angle = analysis.current.to.angle[value], noise = false)
+        addPmu!(system14, device; from = key, magnitude = analysis.current.from.magnitude[value], angle = analysis.current.from.angle[value])
+        addPmu!(system14, device; to = key, magnitude = analysis.current.to.magnitude[value], angle = analysis.current.to.angle[value])
     end
 
     ####### LU Factorization #######
@@ -351,11 +351,11 @@ system30 = powerSystem(string(pathData, "case30test.m"))
 
     device = measurement()
     for (key, value) in system30.bus.label
-        addPmu!(system30, device; bus = key, magnitude = analysis.voltage.magnitude[value], angle = analysis.voltage.angle[value], varianceAngle = 1e-6, varianceMagnitude = varianceAngle = 1e-5, correlated = true)
+        addPmu!(system30, device; bus = key, magnitude = analysis.voltage.magnitude[value], angle = analysis.voltage.angle[value], varianceAngle = 1e-6, varianceMagnitude = varianceAngle = 1e-5, correlated = true, noise = true)
     end
     for (key, value) in system30.branch.label
-        addPmu!(system30, device; from = key, magnitude = analysis.current.from.magnitude[value], angle = analysis.current.from.angle[value], varianceAngle = 1e-7, varianceMagnitude = varianceAngle = 1e-6, correlated = true)
-        addPmu!(system30, device; to = key, magnitude = analysis.current.to.magnitude[value], angle = analysis.current.to.angle[value], varianceAngle = 1e-4, varianceMagnitude = varianceAngle = 1e-5)
+        addPmu!(system30, device; from = key, magnitude = analysis.current.from.magnitude[value], angle = analysis.current.from.angle[value], varianceAngle = 1e-7, varianceMagnitude = varianceAngle = 1e-6, correlated = true, noise = true)
+        addPmu!(system30, device; to = key, magnitude = analysis.current.to.magnitude[value], angle = analysis.current.to.angle[value], varianceAngle = 1e-4, varianceMagnitude = varianceAngle = 1e-5, noise = true)
     end
 
     ####### LU Factorization #######
@@ -392,11 +392,11 @@ system30 = powerSystem(string(pathData, "case30test.m"))
 
     ################ Wattmeters ################
     for (key, value) in system14.bus.label
-        addWattmeter!(system14, device; bus = key, active = analysis.power.injection.active[value], noise = false)
+        addWattmeter!(system14, device; bus = key, active = analysis.power.injection.active[value])
     end
     for (key, value) in system14.branch.label
-        addWattmeter!(system14, device; from = key, active = analysis.power.from.active[value], noise = false)
-        addWattmeter!(system14, device; to = key, active = analysis.power.to.active[value], noise = false)
+        addWattmeter!(system14, device; from = key, active = analysis.power.from.active[value])
+        addWattmeter!(system14, device; to = key, active = analysis.power.to.active[value])
     end
 
     ####### LU Factorization #######
@@ -422,7 +422,7 @@ system30 = powerSystem(string(pathData, "case30test.m"))
 
     ################ PMUs ################
     for (key, value) in system14.bus.label
-        addPmu!(system14, device; bus = key, magnitude = 1.0, angle = analysis.voltage.angle[value], noise = false)
+        addPmu!(system14, device; bus = key, magnitude = 1.0, angle = analysis.voltage.angle[value])
     end
 
     ####### LU Factorization #######
@@ -474,11 +474,11 @@ system30 = powerSystem(string(pathData, "case30test.m"))
 
     ################ Wattmeters ################
     for (key, value) in system30.bus.label
-        addWattmeter!(system30, device; bus = key, active = analysis.power.injection.active[value], variance = 1e-6)
+        addWattmeter!(system30, device; bus = key, active = analysis.power.injection.active[value], variance = 1e-6, noise = true)
     end
     for (key, value) in system30.branch.label
-        addWattmeter!(system30, device; from = key, active = analysis.power.from.active[value], variance = 1e-7)
-        addWattmeter!(system30, device; to = key, active = analysis.power.to.active[value], variance = 1e-8)
+        addWattmeter!(system30, device; from = key, active = analysis.power.from.active[value], variance = 1e-7, noise = true)
+        addWattmeter!(system30, device; to = key, active = analysis.power.to.active[value], variance = 1e-8, noise = true)
     end
 
     ####### LU Factorization #######
@@ -504,7 +504,7 @@ system30 = powerSystem(string(pathData, "case30test.m"))
 
     ################ PMUs ################
     for (key, value) in system14.bus.label
-        addPmu!(system14, device; bus = key, magnitude = 1.0, angle = analysis.voltage.angle[value], varianceAngle = 1e-9)
+        addPmu!(system14, device; bus = key, magnitude = 1.0, angle = analysis.voltage.angle[value], varianceAngle = 1e-9, noise = true)
     end
 
     ####### LU Factorization #######
@@ -594,25 +594,25 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     ################ Wattmeters ################
     for (key, value) in system14.bus.label
         if value in [1; 5; 8]
-            addWattmeter!(system14, deviceAll; bus = key, active = analysis.power.injection.active[value], noise = false, status = 0)
+            addWattmeter!(system14, deviceAll; bus = key, active = analysis.power.injection.active[value], status = 0)
         else
-            addWattmeter!(system14, deviceAll; bus = key, active = analysis.power.injection.active[value], noise = false)
-            addWattmeter!(system14, devicePart; bus = key, active = analysis.power.injection.active[value], noise = false)
+            addWattmeter!(system14, deviceAll; bus = key, active = analysis.power.injection.active[value])
+            addWattmeter!(system14, devicePart; bus = key, active = analysis.power.injection.active[value])
         end
     end
 
     for (key, value) in system14.branch.label
         if value in [4; 15; 19]
-            addWattmeter!(system14, deviceAll; from = key, active = analysis.power.from.active[value], noise = false, status = 0)
+            addWattmeter!(system14, deviceAll; from = key, active = analysis.power.from.active[value], status = 0)
         else
-            addWattmeter!(system14, deviceAll; from = key, active = analysis.power.from.active[value], noise = false)
-            addWattmeter!(system14, devicePart; from = key, active = analysis.power.from.active[value], noise = false)
+            addWattmeter!(system14, deviceAll; from = key, active = analysis.power.from.active[value])
+            addWattmeter!(system14, devicePart; from = key, active = analysis.power.from.active[value])
         end
         if value in [4; 16; 20]
-            addWattmeter!(system14, deviceAll; to = key, active = analysis.power.to.active[value], noise = false, status = 0)
+            addWattmeter!(system14, deviceAll; to = key, active = analysis.power.to.active[value], status = 0)
         else
-            addWattmeter!(system14, deviceAll; to = key, active = analysis.power.to.active[value], noise = false)
-            addWattmeter!(system14, devicePart; to = key, active = analysis.power.to.active[value], noise = false)
+            addWattmeter!(system14, deviceAll; to = key, active = analysis.power.to.active[value])
+            addWattmeter!(system14, devicePart; to = key, active = analysis.power.to.active[value])
         end
     end
 
@@ -630,10 +630,10 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     ################ PMUs ################
     for (key, value) in system14.bus.label
         if value in [1; 6; 10; 14]
-            addPmu!(system14, deviceAll; bus = key, magnitude = 1.0, angle = analysis.voltage.angle[value], noise = false, statusAngle = 0)
+            addPmu!(system14, deviceAll; bus = key, magnitude = 1.0, angle = analysis.voltage.angle[value], statusAngle = 0)
         else
-            addPmu!(system14, deviceAll; bus = key, magnitude = 1.0, angle = analysis.voltage.angle[value], noise = false)
-            addPmu!(system14, devicePart; bus = key, magnitude = 1.0, angle = analysis.voltage.angle[value], noise = false)
+            addPmu!(system14, deviceAll; bus = key, magnitude = 1.0, angle = analysis.voltage.angle[value])
+            addPmu!(system14, devicePart; bus = key, magnitude = 1.0, angle = analysis.voltage.angle[value])
         end
     end
 
@@ -664,14 +664,14 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     ################ Measurements ################
     device = measurement()
     for (key, value) in system30.bus.label
-        addWattmeter!(system30, device; bus = key, active = analysis.power.injection.active[value], noise = false)
+        addWattmeter!(system30, device; bus = key, active = analysis.power.injection.active[value])
     end
     for (key, value) in system30.branch.label
-        addWattmeter!(system30, device; from = key, active = analysis.power.from.active[value], noise = false)
-        addWattmeter!(system30, device; to = key, active = analysis.power.to.active[value], noise = false)
+        addWattmeter!(system30, device; from = key, active = analysis.power.from.active[value])
+        addWattmeter!(system30, device; to = key, active = analysis.power.to.active[value])
     end
     for (key, value) in system30.bus.label
-        addPmu!(system30, device; bus = key, magnitude = 1.0, angle = analysis.voltage.angle[value], noise = false)
+        addPmu!(system30, device; bus = key, magnitude = 1.0, angle = analysis.voltage.angle[value])
     end
     status!(system30, device; inservice = 100)
 

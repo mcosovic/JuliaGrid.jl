@@ -23,7 +23,7 @@ The voltmeter is defined with the following keywords:
 The function updates the `voltmeter` field of the `Measurement` composite type.
 
 # Default Settings
-Default settings for certain keywords are as follows: `variance = 1e-2`, `noise = true`,
+Default settings for certain keywords are as follows: `variance = 1e-2`, `noise = false`,
 `status = 1`, and users can modify these default settings using the
 [`@voltmeter`](@ref @voltmeter) macro.
 
@@ -186,7 +186,7 @@ device = measurement()
 addBus!(system; label = "Bus 1", base = 132e3)
 
 addVoltmeter!(system, device; label = "Voltmeter 1", bus = "Bus 1", magnitude = 1.1)
-updateVoltmeter!(system, device; label = "Voltmeter 1", magnitude = 0.9, noise = false)
+updateVoltmeter!(system, device; label = "Voltmeter 1", magnitude = 0.9)
 ```
 """
 function updateVoltmeter!(system::PowerSystem, device::Measurement; label::L,
@@ -282,7 +282,7 @@ device = measurement()
 
 addBus!(system; label = "Bus 1", base = 132e3)
 
-@voltmeter(label = "Voltmeter ?", variance = 1e-5, noise = false)
+@voltmeter(label = "Voltmeter ?", variance = 1e-5)
 addVoltmeter!(system, device; bus = "Bus 1", magnitude = 1.1)
 ```
 
@@ -294,7 +294,7 @@ device = measurement()
 
 addBus!(system; label = "Bus 1", base = 132.0)
 
-@voltmeter(label = "Voltmeter ?", variance = 0.00132, noise = false)
+@voltmeter(label = "Voltmeter ?", variance = 0.00132)
 addVoltmeter!(system, device; bus = "Bus 1", magnitude = 145.2)
 ```
 """

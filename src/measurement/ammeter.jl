@@ -24,7 +24,7 @@ The ammeter is defined with the following keywords:
 The function updates the `ammeter` field of the `Measurement` composite type.
 
 # Default Settings
-Default settings for certain keywords are as follows: `variance = 1e-2`, `noise = true`,
+Default settings for certain keywords are as follows: `variance = 1e-2`, `noise = false`,
 `status = 1`, which apply to ammeters located at both the from-bus and to-bus ends.
 Users can fine-tune these settings by explicitly specifying the variance and status for
 ammeters positioned on either the from-bus or to-bus ends of branches using the
@@ -381,7 +381,7 @@ addBus!(system; label = "Bus 1", base = 132e3)
 addBus!(system; label = "Bus 2", base = 132e3)
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.2)
 
-@ammeter(label = "Ammeter ?", varianceTo = 1e-3, statusTo = 0, noise = false)
+@ammeter(label = "Ammeter ?", varianceTo = 1e-3, statusTo = 0)
 addAmmeter!(system, device; to = "Branch 1", magnitude = 1.1)
 ```
 
@@ -395,7 +395,7 @@ addBus!(system; label = "Bus 1", base = 132e3)
 addBus!(system; label = "Bus 2", base = 132e3)
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.2)
 
-@ammeter(label = "Ammeter ?", varianceTo = 0.004374, statusTo = 0, noise = false)
+@ammeter(label = "Ammeter ?", varianceTo = 0.004374, statusTo = 0)
 addAmmeter!(system, device; label = "Ammeter 1", to = "Branch 1", magnitude = 481.125)
 ```
 """

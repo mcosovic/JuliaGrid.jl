@@ -4,7 +4,7 @@ Similar to [AC Optimal Power Flow](@ref ACOptimalPowerFlowManual), JuliaGrid uti
 To perform the DC optimal power flow, we first need to have the `PowerSystem` composite type that has been created with the DC model. After that, create the `DCOptimalPowerFlow` composite type to establish the DC optimal power flow framework using the function:
 * [`dcOptimalPowerFlow`](@ref dcOptimalPowerFlow).
 
-To solve the DC optimal power flow problem and acquire bus voltage angles and generator active power outputs, make use of the following function:
+To solve the DC optimal power flow problem and acquire generator active power outputs and bus voltage angles, make use of the following function:
 * [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow)).
 
 ---
@@ -66,7 +66,9 @@ In DC optimal power flow, generator active power outputs are linear functions of
 JuMP.all_variables(analysis.method.jump)
 ```
 
-Furthermore, it is important to highlight that when dealing with linear piecewise cost functions comprising multiple segments, as exemplified in the case of `Generator 3`, JuliaGrid automatically generates helper optimization variables, such as `actwise[3]`, and formulates a set of linear constraints to appropriately handle these cost functions. However, in instances where a linear piecewise cost function consists of only a single segment, as demonstrated by `Generator 2`, the function is modelled as a standard linear function, eliminating the necessity for additional helper optimization variables.
+It is important to highlight that when dealing with linear piecewise cost functions comprising multiple segments, as exemplified in the case of `Generator 3`, JuliaGrid automatically generates helper optimization variables, such as `actwise[3]`, and formulates a set of linear constraints to appropriately handle these cost functions.
+
+However, in instances where a linear piecewise cost function consists of only a single segment, as demonstrated by `Generator 2`, the function is modelled as a standard linear function, eliminating the necessity for additional helper optimization variables.
 
 Please note that JuliaGrid keeps references to all variables categorized into three fields:
 ```@repl DCOptimalPowerFlow
@@ -156,7 +158,8 @@ The `voltage` field contains references to the inequality constraints associated
 print(system.branch.label, analysis.method.constraint.voltage.angle)
 ```
 
-Please note that if the limit constraints are set to `minDiffAngle = -2π` and `maxDiffAngle = 2π` for the corresponding branch, JuliGrid will omit the corresponding inequality constraint.
+!!! note "Info"
+    Please note that if the limit constraints are set to `minDiffAngle = -2π` and `maxDiffAngle = 2π` for the corresponding branch, JuliGrid will omit the corresponding inequality constraint.
 
 Additionally, by employing the [`updateBranch!`](@ref updateBranch!) function, we have the ability to modify these constraints as follows:
 ```@example DCOptimalPowerFlow
@@ -176,7 +179,9 @@ The `flow` field refers to the inequality constraints linked to active power flo
 ```@repl DCOptimalPowerFlow
 print(system.branch.label, analysis.method.constraint.flow.active)
 ```
-Please note that if the limit constraints are set to `longTerm = 0.0` for the corresponding branch, JuliGrid will omit the corresponding inequality constraint.
+
+!!! note "Info"
+    Please note that if the limit constraints are set to `longTerm = 0.0` for the corresponding branch, JuliGrid will omit the corresponding inequality constraint.
 
 By employing the [`updateBranch!`](@ref updateBranch!) function, we have the ability to modify these specific constraints, for example:
 ```@example DCOptimalPowerFlow
@@ -397,8 +402,8 @@ print(system.bus.label, analysis.voltage.angle)
 ## [Power Analysis](@id DCOptimalPowerAnalysisManual)
 After obtaining the solution from the DC optimal power flow, we can calculate powers related to buses and branches using the [`power!`](@ref power!(::PowerSystem, ::DCPowerFlow)) function. For instance, let us consider the power system for which we obtained the DC optimal power flow solution:
 ```@example DCOptimalPowerFlowPower
-using JuliaGrid # hide
-using JuMP, HiGHS
+using JuliaGrid, JuMP # hide
+using HiGHS
 
 system = powerSystem()
 
@@ -431,7 +436,7 @@ power!(system, analysis)
 nothing # hide
 ```
 
-Finally, to display the active power injections at each bus and active power flows at each from-bus end of the branch, we can use the following code:
+Finally, to display the active power injections and from-bus active power flows, we can use the following code:
 ```@repl DCOptimalPowerFlowPower
 print(system.bus.label, analysis.power.injection.active)
 print(system.branch.label, analysis.power.from.active)

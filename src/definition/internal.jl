@@ -129,7 +129,7 @@ Base.@kwdef mutable struct VoltmeterTemplate
     variance::ContainerTemplate = ContainerTemplate(1e-2, true)
     status::Int8 = Int8(1)
     label::String = "?"
-    noise::Bool = true
+    noise::Bool = false
 end
 
 Base.@kwdef mutable struct AmmeterTemplate
@@ -138,7 +138,7 @@ Base.@kwdef mutable struct AmmeterTemplate
     statusFrom::Int8 = Int8(1)
     statusTo::Int8 = Int8(1)
     label::String = "?"
-    noise::Bool = true
+    noise::Bool = false
 end
 
 Base.@kwdef mutable struct WattmeterTemplate
@@ -149,7 +149,7 @@ Base.@kwdef mutable struct WattmeterTemplate
     statusFrom::Int8 = Int8(1)
     statusTo::Int8 = Int8(1)
     label::String = "?"
-    noise::Bool = true
+    noise::Bool = false
 end
 
 Base.@kwdef mutable struct VarmeterTemplate
@@ -160,7 +160,7 @@ Base.@kwdef mutable struct VarmeterTemplate
     statusFrom::Int8 = Int8(1)
     statusTo::Int8 = Int8(1)
     label::String = "?"
-    noise::Bool = true
+    noise::Bool = false
 end
 
 Base.@kwdef mutable struct PmuTemplate
@@ -179,7 +179,7 @@ Base.@kwdef mutable struct PmuTemplate
     label::String = "?"
     correlated::Bool = false
     polar::Bool = true
-    noise::Bool = true
+    noise::Bool = false
 end
 
 mutable struct Template

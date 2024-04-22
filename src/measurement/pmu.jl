@@ -39,7 +39,7 @@ The function updates the `pmu` field of the `Measurement` composite type.
 
 # Default Settings
 Default settings for certain keywords are as follows: `varianceMagnitude = 1e-5`,
-`statusMagnitude = 1`, `varianceAngle = 1e-5`, `statusAngle = 1`, `noise = true`,
+`statusMagnitude = 1`, `varianceAngle = 1e-5`, `statusAngle = 1`, `noise = false`,
 `correlated = false`, and `polar = true`, which apply to PMUs located at the bus, as well
 as at both the from-bus and to-bus ends. Users can fine-tune these settings by explicitly
 specifying the variance and status for PMUs positioned at the buses, from-bus ends, or
@@ -384,7 +384,7 @@ device = measurement()
 addBus!(system; label = "Bus 1", base = 132e3)
 
 addPmu!(system, device; label = "PMU 1", bus = "Bus 1", magnitude = 1.1, angle = -0.1)
-updatePmu!(system, device; label = "PMU 1", magnitude = 1.05, noise = false)
+updatePmu!(system, device; label = "PMU 1", magnitude = 1.05)
 ```
 """
 function updatePmu!(system::PowerSystem, device::Measurement; label::L,
@@ -947,7 +947,7 @@ addBus!(system; label = "Bus 2", base = 132e3)
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.2)
 
 @pmu(label = "PMU ?", varianceAngleBus = 1e-6, varianceMagnitudeFrom = 1e-4)
-addPmu!(system, device; bus = "Bus 1", magnitude = 1.1, angle = -0.1, noise = false)
+addPmu!(system, device; bus = "Bus 1", magnitude = 1.1, angle = -0.1)
 addPmu!(system, device; from = "Branch 1", magnitude = 1.1, angle = -0.2)
 ```
 
@@ -963,7 +963,7 @@ addBus!(system; label = "Bus 2", base = 132.0)
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.2)
 
 @pmu(label = "PMU ?", varianceAngleBus = 5.73e-5, varianceMagnitudeFrom = 0.0481)
-addPmu!(system, device; bus = "Bus 1", magnitude = 145.2, angle = -5.73, noise = false)
+addPmu!(system, device; bus = "Bus 1", magnitude = 145.2, angle = -5.73)
 addPmu!(system, device; from = "Branch 1", magnitude = 481.125, angle = -11.46)
 ```
 """

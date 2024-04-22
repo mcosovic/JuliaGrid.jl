@@ -24,20 +24,20 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     device = measurement()
     @varmeter(label = "Varmeter ?")
     for (key, value) in system14.bus.label
-        addVoltmeter!(system14, device; bus = key, magnitude = analysis.voltage.magnitude[value], noise = false)
-        addWattmeter!(system14, device; bus = key, active = analysis.power.injection.active[value], noise = false)
-        addVarmeter!(system14, device; bus = key, reactive = analysis.power.injection.reactive[value], noise = false)
+        addVoltmeter!(system14, device; bus = key, magnitude = analysis.voltage.magnitude[value])
+        addWattmeter!(system14, device; bus = key, active = analysis.power.injection.active[value])
+        addVarmeter!(system14, device; bus = key, reactive = analysis.power.injection.reactive[value])
     end
 
     for (key, value) in system14.branch.label
-        addWattmeter!(system14, device; from = key, active = analysis.power.from.active[value], noise = false)
-        addWattmeter!(system14, device; to = key, active = analysis.power.to.active[value], noise = false)
-        addVarmeter!(system14, device; from = key, reactive = analysis.power.from.reactive[value], noise = false)
-        addVarmeter!(system14, device; to = key, reactive = analysis.power.to.reactive[value], noise = false)
+        addWattmeter!(system14, device; from = key, active = analysis.power.from.active[value])
+        addWattmeter!(system14, device; to = key, active = analysis.power.to.active[value])
+        addVarmeter!(system14, device; from = key, reactive = analysis.power.from.reactive[value])
+        addVarmeter!(system14, device; to = key, reactive = analysis.power.to.reactive[value])
     end
 
     ####### WLS LU: One Outlier #######
-    updateVarmeter!(system14, device; label = "Varmeter 4", reactive = 10.25, noise = false)
+    updateVarmeter!(system14, device; label = "Varmeter 4", reactive = 10.25)
 
     analysisSE = gaussNewton(system14, device)
     for iteration = 1:20
@@ -64,11 +64,11 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     ###### WLS LU: Two Outliers #######
     @pmu(label = "PMU ?")
     for (key, value) in system14.bus.label
-        addPmu!(system14, device; bus = key, magnitude = analysis.voltage.magnitude[value], angle = analysis.voltage.angle[value], noise = false)
+        addPmu!(system14, device; bus = key, magnitude = analysis.voltage.magnitude[value], angle = analysis.voltage.angle[value])
     end
 
     updateVarmeter!(system14, device; label = "Varmeter 4", status = 1)
-    updatePmu!(system14, device; label = "PMU 10", magnitude = 30, noise = false)
+    updatePmu!(system14, device; label = "PMU 10", magnitude = 30)
 
     analysisSE = gaussNewton(system14, device)
     for iteration = 1:20
@@ -141,7 +141,7 @@ system30 = powerSystem(string(pathData, "case30test.m"))
 
     ####### PMU Rectangular #######
     for (key, value) in system14.branch.label
-        addPmu!(system14, device; from = key, magnitude = analysis.current.from.magnitude[value], angle = analysis.current.from.angle[value], noise = false, polar = false)
+        addPmu!(system14, device; from = key, magnitude = analysis.current.from.magnitude[value], angle = analysis.current.from.angle[value], polar = false)
     end
     updatePmu!(system14, device; label = "PMU 20", magnitude = 30)
 
@@ -190,15 +190,15 @@ end
     device = measurement()
     @pmu(label = "PMU ?")
     for (key, value) in system14.bus.label
-        addPmu!(system14, device; bus = key, magnitude = analysis.voltage.magnitude[value], angle = analysis.voltage.angle[value], noise = false)
+        addPmu!(system14, device; bus = key, magnitude = analysis.voltage.magnitude[value], angle = analysis.voltage.angle[value])
     end
     for (key, value) in system14.branch.label
-        addPmu!(system14, device; from = key, magnitude = analysis.current.from.magnitude[value], angle = analysis.current.from.angle[value], noise = false)
-        addPmu!(system14, device; to = key, magnitude = analysis.current.to.magnitude[value], angle = analysis.current.to.angle[value], noise = false)
+        addPmu!(system14, device; from = key, magnitude = analysis.current.from.magnitude[value], angle = analysis.current.from.angle[value])
+        addPmu!(system14, device; to = key, magnitude = analysis.current.to.magnitude[value], angle = analysis.current.to.angle[value])
     end
 
     ####### WLS LU: One Outlier #######
-    updatePmu!(system14, device; label = "PMU 2", magnitude = 15, noise = false)
+    updatePmu!(system14, device; label = "PMU 2", magnitude = 15)
     analysisSE = pmuWlsStateEstimation(system14, device)
     solve!(system14, analysisSE)
 
@@ -212,7 +212,7 @@ end
 
     ###### WLS LU: Two Outliers #######
     updatePmu!(system14, device; label = "PMU 2", statusAngle = 1, statusMagnitude = 1)
-    updatePmu!(system14, device; label = "PMU 20", angle = 10pi, magnitude = 30, noise = false)
+    updatePmu!(system14, device; label = "PMU 20", angle = 10pi, magnitude = 30)
     analysisSE = pmuWlsStateEstimation(system14, device)
     solve!(system14, analysisSE)
 
@@ -231,7 +231,7 @@ end
 
     ###### WLS Orthogonal: One Outlier #######
     updatePmu!(system14, device; label = "PMU 2", statusAngle = 1, statusMagnitude = 1)
-    updatePmu!(system14, device; label = "PMU 20", magnitude = analysis.current.to.magnitude[4], angle = analysis.current.to.angle[4], statusAngle = 1, statusMagnitude = 1, noise = false)
+    updatePmu!(system14, device; label = "PMU 20", magnitude = analysis.current.to.magnitude[4], angle = analysis.current.to.angle[4], statusAngle = 1, statusMagnitude = 1)
     analysisSE = pmuWlsStateEstimation(system14, device, Orthogonal)
     solve!(system14, analysisSE)
 
@@ -245,7 +245,7 @@ end
 
     ####### WLS Orthogonal: Two Outliers #######
     updatePmu!(system14, device; label = "PMU 2", statusAngle = 1, statusMagnitude = 1)
-    updatePmu!(system14, device; label = "PMU 20", angle = 10pi, magnitude = 30, noise = false)
+    updatePmu!(system14, device; label = "PMU 20", angle = 10pi, magnitude = 30)
     analysisSE = pmuWlsStateEstimation(system14, device, Orthogonal)
     solve!(system14, analysisSE)
 
@@ -281,18 +281,18 @@ end
     @wattmeter(label = "Wattmeter ?")
     @pmu(label = "PMU ?")
     for (key, value) in system14.bus.label
-        addWattmeter!(system14, device; bus = key, active = analysis.power.injection.active[value], noise = false)
+        addWattmeter!(system14, device; bus = key, active = analysis.power.injection.active[value])
     end
     for (key, value) in system14.branch.label
-        addWattmeter!(system14, device; from = key, active = analysis.power.from.active[value], noise = false)
-        addWattmeter!(system14, device; to = key, active = analysis.power.to.active[value], noise = false)
+        addWattmeter!(system14, device; from = key, active = analysis.power.from.active[value])
+        addWattmeter!(system14, device; to = key, active = analysis.power.to.active[value])
     end
     for (key, value) in system14.bus.label
-        addPmu!(system14, device; bus = key, magnitude = 1.0, angle = analysis.voltage.angle[value], noise = false)
+        addPmu!(system14, device; bus = key, magnitude = 1.0, angle = analysis.voltage.angle[value])
     end
 
     ####### WLS LU: One Outlier #######
-    updateWattmeter!(system14, device; label = "Wattmeter 2", active = 100, noise = false)
+    updateWattmeter!(system14, device; label = "Wattmeter 2", active = 100)
     analysisSE = dcWlsStateEstimation(system14, device)
     solve!(system14, analysisSE)
 
@@ -305,7 +305,7 @@ end
 
     ####### WLS LU: Two Outliers #######
     updateWattmeter!(system14, device; label = "Wattmeter 2", status = 1)
-    updatePmu!(system14, device; label = "PMU 10", angle = 10pi, noise = false)
+    updatePmu!(system14, device; label = "PMU 10", angle = 10pi)
     analysisSE = dcWlsStateEstimation(system14, device)
     solve!(system14, analysisSE)
 
@@ -323,7 +323,7 @@ end
 
     ####### WLS Orthogonal: One Outlier #######
     updateWattmeter!(system14, device; label = "Wattmeter 2", status = 1)
-    updatePmu!(system14, device; label = "PMU 10", statusAngle = 1, angle = analysis.voltage.angle[10], noise = false)
+    updatePmu!(system14, device; label = "PMU 10", statusAngle = 1, angle = analysis.voltage.angle[10])
     analysisSE = dcWlsStateEstimation(system14, device, Orthogonal)
     solve!(system14, analysisSE)
 
@@ -336,7 +336,7 @@ end
 
     ####### WLS Orthogonal: Two Outliers #######
     updateWattmeter!(system14, device; label = "Wattmeter 2", status = 1)
-    updatePmu!(system14, device; label = "PMU 10", angle = 10pi, noise = false)
+    updatePmu!(system14, device; label = "PMU 10", angle = 10pi)
     analysisSE = dcWlsStateEstimation(system14, device, Orthogonal)
     solve!(system14, analysisSE)
 

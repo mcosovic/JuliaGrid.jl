@@ -9,7 +9,7 @@ Our documentation is divided into three distinct categories:
 * Lastly, the API references offer a comprehensive list of functions within the package, categorized according to specific analyses.
 
 In order to encourage code reusability and give users the ability to customize their analyses as required, we deconstruct specific analyses. However, the overall logic can be simplified as follows:
-* Users start by constructing a power system (and measurement data if state estimation analyses are involved).
+* Users start by constructing a power system with/without measurement data.
 * They then choose between the AC or DC model.
 * Next, users define the specific type of analysis.
 * Ultimately, they solve the generated framework.
@@ -134,7 +134,6 @@ analysis = pmuWlsStateEstimation(system, device) # Initialize the WLS state esti
 solve!(system, analysis)                      # Compute estimate of bus voltages
 
 updatePmu!(system, device, analysis; label = 1, angle = 0.0) # Update phasor measurement
-
 solve!(system, analysis)                     # Compute estimate of bus voltages
 ```
 
@@ -161,5 +160,4 @@ solve!(system, analysis)                     # Compute estimate of bus voltage a
 #### Contributors
  - [Ognjen Kundacina](https://www.linkedin.com/in/ognjen-kundacina-machine-learning-guy/) - The Institute for Artificial Intelligence Research and Development of Serbia
  - [Muhamed Delalic](https://www.linkedin.com/in/muhameddelalic/) - University of Sarajevo, Bosnia and Herzegovina
- - Lin Zeng - Cornell University, Ithaca, NY, USA
  - [Mirsad Cosovic](https://www.linkedin.com/in/mirsad-cosovic-5a4972a9/) - University of Sarajevo, Bosnia and Herzegovina

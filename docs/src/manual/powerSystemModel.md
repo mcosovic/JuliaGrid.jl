@@ -34,7 +34,7 @@ Moreover, it is feasible to modify the parameters of buses, branches, and genera
 ---
 
 ## [Build Model](@id BuildModelManual)
-The [`powerSystem`](@ref powerSystem) function generates the `PowerSystem` composite type and requires a string-formatted path to either Matpower case or HDF5 files as input. Alternatively, the `PowerSystem` can be created without any initial data by initializing it as empty, allowing the user to construct the power system from scratch.
+The [`powerSystem`](@ref powerSystem) function generates the `PowerSystem` composite type and requires a string-formatted path to either Matpower cases or HDF5 files as input. Alternatively, the `PowerSystem` can be created without any initial data by initializing it as empty, allowing the user to construct the power system from scratch.
 
 ---
 
@@ -44,7 +44,7 @@ For example, to create the `PowerSystem` type using the Matpower case file for t
 system = powerSystem("C:/matpower/case14.m")
 ```
 
-In order to use the HDF5 file as input to create the `PowerSystem` object, it is necessary to have saved the data using the [`savePowerSystem`](@ref savePowerSystem) function beforehand. As an example, let us say we saved the power system as `case14.h5` in the directory `C:\hdf5`. In this case, the following Julia code can be used to construct the `PowerSystem` type:
+In order to use the HDF5 file as input to create the `PowerSystem` type, it is necessary to have saved the data using the [`savePowerSystem`](@ref savePowerSystem) function beforehand. As an example, let us say we saved the power system as `case14.h5` in the directory `C:\hdf5`. In this case, the following Julia code can be used to construct the `PowerSystem` type:
 ```julia
 system = powerSystem("C:/hdf5/case14.h5")
 ```
@@ -181,7 +181,7 @@ system.base.voltage.value, system.base.voltage.unit
 The branch can only be added once buses are defined, and the `from` and `to` keywords must match the bus labels already defined. For example:
 ```@example addBranch
 using JuliaGrid # hide
-@default(unit)  # hide
+@default(unit) # hide
 
 system = powerSystem()
 
@@ -254,7 +254,7 @@ The functions [`addBus!`](@ref addBus!), [`addBranch!`](@ref addBranch!), and [`
 ---
 
 ##### Default Keyword Values
-Regarding the [`addBus!`](@ref addBus!) function, the bus type is automatically configured as a demand bus with `type = 1`. The initial bus voltage magnitude is set to `magnitude = 1.0` per-unit, while the base voltage is established as `base = 138e3` volts. These predefined values are crucial to prevent potential issues during algorithm execution, particularly to avoid encountering a singular Jacobian when `magnitude = 0.0`. Additionally, the minimum and maximum bus voltage magnitudes are set to `minMagnitude = 0.9` per-unit and `maxMagnitude = 1.1` per-unit, respectively.
+Regarding the [`addBus!`](@ref addBus!) function, the bus type is automatically configured as a demand bus with `type = 1`. The initial bus voltage magnitude is set to `magnitude = 1.0` per-unit, while the base voltage is established as `base = 138e3` volts. Additionally, the minimum and maximum bus voltage magnitudes are set to `minMagnitude = 0.9` per-unit and `maxMagnitude = 1.1` per-unit, respectively.
 
 Transitioning to the [`addBranch!`](@ref addBranch!) function, the default operational status is `status = 1`, indicating that the branch is in-service. The off-nominal turns ratio for the transformer is specified as `turnsRatio = 1.0`, and the phase shift angle is set to `shiftAngle = 0.0`, collectively defining the line configuration with these standard settings. The flow rating is also configured as `type = 1`. Moreover, the minimum and maximum voltage angle differences between the from-bus and to-bus ends are set to `minDiffAngle = -2pi` and `maxDiffAngle = 2pi`, respectively.
 
@@ -281,8 +281,8 @@ addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2")
 addBranch!(system; label = "Branch 2", from = "Bus 1", to = "Bus 2", reactance = 0.06)
 
 @generator(magnitude = 1.1)
-addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 50)
-addGenerator!(system; label = "Generator 2", bus = "Bus 1", active = 20)
+addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 0.6)
+addGenerator!(system; label = "Generator 2", bus = "Bus 1", active = 0.2)
 
 nothing # hide
 ```
@@ -307,12 +307,10 @@ using JuliaGrid # hide
 system = powerSystem()
 
 @power(MW, MVAr, MVA)
-
 @bus(active = 100, reactive = 200)
 addBus!(system; label = "Bus 1")
 
 @power(pu, pu, pu)
-
 addBus!(system; label = "Bus 2", active = 0.5)
 
 nothing # hide
@@ -453,11 +451,10 @@ If the objective is to obtain labels in the same order as the bus definitions se
 ```@repl RetrieveLabels
 label = collect(keys(system.bus.label))
 ```
-Subsequently, users can match these labels with bus voltages, powers, and currents associated with buses. These values can be computed through various analyses available in JuliaGrid.
 
 This approach can also be extended to branch and generator labels by making use of the variables present within the `PowerSystem` composite type, namely `system.branch.label` or `system.generator.label`.
 
-Moreover, the `from` and `to` keywords associated with branches are stored based on internally assigned numerical values linked to bus labels. These values are stored in the variable:
+Moreover, the `from` and `to` keywords associated with branches are stored based on internally assigned numerical values linked to bus labels. These values are stored in variables:
 ```@repl RetrieveLabels
 [system.branch.layout.from system.branch.layout.to]
 ```
@@ -559,7 +556,7 @@ system.model.dc.nodalMatrix
 ---
 
 ## [Update Bus](@id UpdateBusManual)
-Once a bus has been added to the `PowerSystem` composite type, users have the flexibility to modify all parameters defined within the [`addBus!`](@ref addBus!) function. This means that the [`updateBus!`](@ref updateBus!) function not only updates the `PowerSystem` type but also, if AC and DC models have been created, automatically updates these models. This eliminates the need to recreate the AC and DC models from scratch.
+Once a bus has been added to the `PowerSystem` composite type, users have the flexibility to modify all parameters defined within the [`addBus!`](@ref addBus!) function. This means that when the [`updateBus!`](@ref updateBus!) function is used, the `PowerSystem` type within AC and DC models that have been created is updated. This eliminates the need to recreate the AC and DC models from scratch.
 
 To illustrate, let us consider the following power system:
 ```@example updateSystem
@@ -604,7 +601,7 @@ system.model.ac.nodalMatrix
 ---
 
 ## [Update Branch](@id UpdateBranchManual)
-Once a branch is added to the `PowerSystem` composite type, users can freely modify all parameters defined within the [`addBranch!`](@ref addBranch!) function. The [`updateBranch!`](@ref updateBranch!) function not only updates the `PowerSystem` type but also automatically updates the AC and DC models if they have been created.
+Once a branch has been added to the `PowerSystem` composite type, users have the flexibility to modify all parameters defined within the [`addBranch!`](@ref addBranch!) function. This means that when the [`updateBranch!`](@ref updateBranch!) function is used, the `PowerSystem` type within AC and DC models that have been created is updated. This eliminates the need to recreate the AC and DC models from scratch.
 
 To illustrate, let us continue with the previous example and modify the parameters of `Branch 1` as follows:
 ```@example updateSystem
@@ -645,7 +642,9 @@ nothing # hide
 ---
 
 ## [Update Generator](@id UpdateGeneratorManual)
-Finally, users can update all generator parameters defined within the [`addGenerator!`](@ref addGenerator!) function using the [`updateGenerator!`](@ref updateGenerator!) function. The execution of this function will affect all variables within the `PowerSystem` type. To put it succinctly, in addition to the `generator` field, JuliaGrid also retains variables associated with generators within the `bus` field. As an example, let us examine one of these variables and its values derived from a previous example:
+Finally, users can update all generator parameters defined within the [`addGenerator!`](@ref addGenerator!) function using the [`updateGenerator!`](@ref updateGenerator!) function. The execution of this function will affect all variables within the `PowerSystem` type.
+
+In short, in addition to the `generator` field, JuliaGrid also retains variables associated with generators within the `bus` field. As an example, let us examine one of these variables and its values derived from a previous example:
 ```@repl updateSystem
 system.bus.supply.active
 ```
