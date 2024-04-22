@@ -75,7 +75,8 @@ function addVoltmeter!(system::PowerSystem, device::Measurement;
 end
 
 """
-    addVoltmeter!(system::PowerSystem, device::Measurement, analysis::AC; variance, status)
+    addVoltmeter!(system::PowerSystem, device::Measurement, analysis::AC; variance, noise,
+        status)
 
 The function incorporates voltmeters into the `Measurement` composite type for every bus
 within the `PowerSystem` type. These measurements are derived from the exact bus voltage
@@ -85,6 +86,9 @@ Gaussian noise with the specified `variance` to obtain measurement data.
 # Keywords
 Users have the option to configure the following keywords:
 * `variance` (pu or V): the variance of bus voltage magnitude measurements;
+* `noise`: specifies how to generate the measurement mean:
+  * `noise = true`: adds white Gaussian noise with the `variance` to the voltage magnitudes;
+  * `noise = false`: uses the `magnitude` value only;
 * `status`: the operating status of the voltmeters:
   * `status = 1`: in-service;
   * `status = 0`: out-of-service.
@@ -93,8 +97,9 @@ Users have the option to configure the following keywords:
 The function updates the `voltmeter` field of the `Measurement` composite type.
 
 # Default Settings
-Default settings for keywords are as follows: `variance = 1e-2`, `status = 1`, and users
-can modify these default settings using the [`@voltmeter`](@ref @voltmeter) macro.
+Default settings for keywords are as follows: `variance = 1e-2`, `noise = false`, and
+`status = 1`, and users can modify these default settings using the
+[`@voltmeter`](@ref @voltmeter) macro.
 
 # Units
 By default, the unit for `variance` is per-unit (pu). However, users can choose to use
@@ -118,11 +123,11 @@ end
 device = measurement()
 
 @voltmeter(label = "Voltmeter ?")
-addVoltmeter!(system, device, analysis; variance = 1e-3)
+addVoltmeter!(system, device, analysis; variance = 1e-3, noise = true)
 ```
 """
 function addVoltmeter!(system::PowerSystem, device::Measurement, analysis::AC;
-    variance::A = missing, status::A = missing)
+    variance::A = missing, status::A = missing, noise::Bool = template.voltmeter.noise)
 
     voltmeter = device.voltmeter
     default = template.voltmeter
@@ -145,7 +150,11 @@ function addVoltmeter!(system::PowerSystem, device::Measurement, analysis::AC;
         setLabel(voltmeter, missing, default.label, labelBus)
 
         voltmeter.magnitude.variance[i] = topu(variance, default.variance, prefix.voltageMagnitude, prefixInv / system.base.voltage.value[i])
-        voltmeter.magnitude.mean[i] = analysis.voltage.magnitude[i] + voltmeter.magnitude.variance[i]^(1/2) * randn(1)[1]
+        if noise
+            voltmeter.magnitude.mean[i] = analysis.voltage.magnitude[i] + voltmeter.magnitude.variance[i]^(1/2) * randn(1)[1]
+        else
+            voltmeter.magnitude.mean[i] = analysis.voltage.magnitude[i]
+        end
     end
 
     voltmeter.layout.label = system.bus.number

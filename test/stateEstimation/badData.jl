@@ -64,7 +64,7 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     ###### WLS LU: Two Outliers #######
     @pmu(label = "PMU ?")
     for (key, value) in system14.bus.label
-        addPmu!(system14, device; bus = key, magnitude = analysis.voltage.magnitude[value], angle = analysis.voltage.angle[value])
+        addPmu!(system14, device; bus = key, magnitude = analysis.voltage.magnitude[value], angle = analysis.voltage.angle[value], polar = true)
     end
 
     updateVarmeter!(system14, device; label = "Varmeter 4", status = 1)
@@ -141,7 +141,7 @@ system30 = powerSystem(string(pathData, "case30test.m"))
 
     ####### PMU Rectangular #######
     for (key, value) in system14.branch.label
-        addPmu!(system14, device; from = key, magnitude = analysis.current.from.magnitude[value], angle = analysis.current.from.angle[value], polar = false)
+        addPmu!(system14, device; from = key, magnitude = analysis.current.from.magnitude[value], angle = analysis.current.from.angle[value])
     end
     updatePmu!(system14, device; label = "PMU 20", magnitude = 30)
 

@@ -178,7 +178,7 @@ Base.@kwdef mutable struct PmuTemplate
     statusAngleTo::Int8 = Int8(1)
     label::String = "?"
     correlated::Bool = false
-    polar::Bool = true
+    polar::Bool = false
     noise::Bool = false
 end
 

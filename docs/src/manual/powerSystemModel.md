@@ -347,7 +347,7 @@ nothing # hide
 ---
 
 ## [Labels](@id LabelsManual)
-As we shown above, JuliaGrid mandates a distinctive label for every bus, branch, or generator. These labels are stored in orderdictionaries, functioning as pairs of strings and integers. The string signifies the exclusive label for the specific component, whereas the integer maintains an internal numbering of buses, branches, or generators.
+As we shown above, JuliaGrid mandates a distinctive label for every bus, branch, or generator. These labels are stored in order dictionaries, functioning as pairs of strings and integers. The string signifies the exclusive label for the specific component, whereas the integer maintains an internal numbering of buses, branches, or generators.
 
 In contrast to the simple labeling approach, JuliaGrid offers several additional methods for labeling. The choice of method depends on the specific needs and can potentially be more straightforward.
 

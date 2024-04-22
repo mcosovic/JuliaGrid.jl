@@ -40,7 +40,7 @@ The function updates the `pmu` field of the `Measurement` composite type.
 # Default Settings
 Default settings for certain keywords are as follows: `varianceMagnitude = 1e-5`,
 `statusMagnitude = 1`, `varianceAngle = 1e-5`, `statusAngle = 1`, `noise = false`,
-`correlated = false`, and `polar = true`, which apply to PMUs located at the bus, as well
+`correlated = false`, and `polar = false`, which apply to PMUs located at the bus, as well
 as at both the from-bus and to-bus ends. Users can fine-tune these settings by explicitly
 specifying the variance and status for PMUs positioned at the buses, from-bus ends, or
 to-bus ends of branches using the [`@pmu`](@ref @pmu) macro.
@@ -160,7 +160,7 @@ end
         varianceMagnitudeBus, statusMagnitudeBus, varianceAngleBus, statusAngleBus,
         varianceMagnitudeFrom, statusMagnitudeFrom, varianceAngleFrom, statusAngleFrom,
         varianceMagnitudeTo, statusMagnitudeTo, varianceAngleTo, statusAngleTo,
-        correlated, polar)
+        correlated, polar, noise)
 
 The function incorporates PMUs into the `Measurement` composite type for every bus and
 branch within the `PowerSystem` type. These measurements are derived from the exact bus
@@ -199,15 +199,18 @@ Users have the option to configure the following keywords:
   * `correlated = false`: disregards correlations between errors;
 * `polar`: chooses the coordinate system for including phasor measurements in AC state estimation:
   * `polar = true`: adopts the polar coordinate system;
-  * `polar = false`: adopts the rectangular coordinate system.
+  * `polar = false`: adopts the rectangular coordinate system;
+* `noise`: specifies how to generate the measurement mean:
+  * `noise = true`: adds white Gaussian noise with the `variance` to the magnitudes and angles;
+  * `noise = false`: uses the `magnitude` value only.
 
 # Updates
 The function updates the `pmu` field of the `Measurement` composite type.
 
 # Default Settings
 Default settings for variance keywords are established at `1e-5`, with all statuses set to
-`1`, and `rectangular = false`. Users can change these default settings using the
-[`@pmu`](@ref @pmu) macro.
+`1`, `polar = false`, `correlated = false`, and `noise = false`. Users can change these
+default settings using the [`@pmu`](@ref @pmu) macro.
 
 # Units
 The default units for the variance keywords are in per-units (pu) and radians (rad). However,
@@ -244,7 +247,8 @@ function addPmu!(system::PowerSystem, device::Measurement, analysis::AC;
     statusMagnitudeFrom::A = missing, statusAngleFrom::A = missing,
     varianceMagnitudeTo::A = missing, varianceAngleTo::A = missing,
     statusMagnitudeTo::A = missing, statusAngleTo::A = missing,
-    correlated::Bool = template.pmu.correlated, polar::Bool = template.pmu.polar)
+    correlated::Bool = template.pmu.correlated, polar::Bool = template.pmu.polar,
+    noise::Bool = template.pmu.noise)
 
     if isempty(analysis.voltage.magnitude)
         throw(ErrorException("The voltages cannot be found."))
@@ -298,13 +302,19 @@ function addPmu!(system::PowerSystem, device::Measurement, analysis::AC;
         pmu.layout.index[i] = i
         pmu.layout.bus[i] = true
 
-        pmu.magnitude.variance[i] = topu(varianceMagnitudeBus, default.varianceMagnitudeBus, prefix.voltageMagnitude, prefixInv / system.base.voltage.value[i])
-        pmu.magnitude.mean[i] = analysis.voltage.magnitude[i] + pmu.magnitude.variance[i]^(1/2) * randn(1)[1]
         pmu.magnitude.status[i] = statusMagnitudeBus
-
-        pmu.angle.variance[i] = topu(varianceAngleBus, default.varianceAngleBus, prefix.voltageAngle, 1.0)
-        pmu.angle.mean[i] = analysis.voltage.angle[i] + pmu.angle.variance[i]^(1/2) * randn(1)[1]
         pmu.angle.status[i] = statusAngleBus
+
+        pmu.magnitude.variance[i] = topu(varianceMagnitudeBus, default.varianceMagnitudeBus, prefix.voltageMagnitude, prefixInv / system.base.voltage.value[i])
+        pmu.angle.variance[i] = topu(varianceAngleBus, default.varianceAngleBus, prefix.voltageAngle, 1.0)
+
+        if noise
+            pmu.magnitude.mean[i] = analysis.voltage.magnitude[i] + pmu.magnitude.variance[i]^(1/2) * randn(1)[1]
+            pmu.angle.mean[i] = analysis.voltage.angle[i] + pmu.angle.variance[i]^(1/2) * randn(1)[1]
+        else
+            pmu.magnitude.mean[i] = analysis.voltage.magnitude[i]
+            pmu.angle.mean[i] = analysis.voltage.angle[i]
+        end
     end
 
     basePowerInv = 1 / (system.base.power.value * system.base.power.prefix)
@@ -316,33 +326,41 @@ function addPmu!(system::PowerSystem, device::Measurement, analysis::AC;
             pmu.layout.index[pmu.number] = i
             pmu.layout.from[pmu.number] = true
 
-            baseVoltage = system.base.voltage.value[system.branch.layout.from[i]] * system.base.voltage.prefix
-            baseCurrentInv = baseCurrentInverse(basePowerInv, baseVoltage)
+            pmu.layout.index[pmu.number + 1] = i
+            pmu.layout.to[pmu.number + 1] = true
 
-            pmu.magnitude.variance[pmu.number] = topu(varianceMagnitudeFrom, default.varianceMagnitudeFrom, prefix.currentMagnitude, baseCurrentInv)
-            pmu.magnitude.mean[pmu.number] = analysis.current.from.magnitude[i] + pmu.magnitude.variance[pmu.number]^(1/2) * randn(1)[1]
             pmu.magnitude.status[pmu.number] = statusMagnitudeFrom
-
-            pmu.angle.variance[pmu.number] = topu(varianceAngleFrom, default.varianceAngleFrom, prefix.currentAngle, 1.0)
-            pmu.angle.mean[pmu.number] = analysis.current.from.angle[i] + pmu.angle.variance[pmu.number]^(1/2) * randn(1)[1]
             pmu.angle.status[pmu.number] = statusAngleFrom
+
+            pmu.magnitude.status[pmu.number + 1] = statusMagnitudeTo
+            pmu.angle.status[pmu.number + 1] = statusAngleTo
+
+            baseCurrentFromInv = baseCurrentInverse(basePowerInv, system.base.voltage.value[system.branch.layout.from[i]] * system.base.voltage.prefix)
+            pmu.magnitude.variance[pmu.number] = topu(varianceMagnitudeFrom, default.varianceMagnitudeFrom, prefix.currentMagnitude, baseCurrentFromInv)
+            pmu.angle.variance[pmu.number] = topu(varianceAngleFrom, default.varianceAngleFrom, prefix.currentAngle, 1.0)
+
+            baseCurrentToInv = baseCurrentInverse(basePowerInv, system.base.voltage.value[system.branch.layout.to[i]] * system.base.voltage.prefix)
+            pmu.magnitude.variance[pmu.number + 1] = topu(varianceMagnitudeTo, default.varianceMagnitudeTo, prefix.currentMagnitude, baseCurrentToInv)
+            pmu.angle.variance[pmu.number + 1] = topu(varianceAngleTo, default.varianceAngleTo, prefix.currentAngle, 1.0)
+
+
+            if noise
+                pmu.magnitude.mean[pmu.number] = analysis.current.from.magnitude[i] + pmu.magnitude.variance[pmu.number]^(1/2) * randn(1)[1]
+                pmu.angle.mean[pmu.number] = analysis.current.from.angle[i] + pmu.angle.variance[pmu.number]^(1/2) * randn(1)[1]
+
+                pmu.magnitude.mean[pmu.number + 1] = analysis.current.to.magnitude[i] + pmu.magnitude.variance[pmu.number + 1]^(1/2) * randn(1)[1]
+                pmu.angle.mean[pmu.number + 1] = analysis.current.to.angle[i] + pmu.angle.variance[pmu.number + 1]^(1/2) * randn(1)[1]
+
+            else
+                pmu.magnitude.mean[pmu.number] = analysis.current.from.magnitude[i]
+                pmu.angle.mean[pmu.number] = analysis.current.from.angle[i]
+
+                pmu.magnitude.mean[pmu.number + 1] = analysis.current.to.magnitude[i]
+                pmu.angle.mean[pmu.number + 1] = analysis.current.to.angle[i]
+            end
 
             pmu.number += 1
             setLabel(pmu, missing, default.label, label; prefix = "To ")
-
-            pmu.layout.index[pmu.number] = i
-            pmu.layout.to[pmu.number] = true
-
-            baseVoltage = system.base.voltage.value[system.branch.layout.to[i]] * system.base.voltage.prefix
-            baseCurrentInv = baseCurrentInverse(basePowerInv, baseVoltage)
-
-            pmu.magnitude.variance[pmu.number] = topu(varianceMagnitudeTo, default.varianceMagnitudeTo, prefix.currentMagnitude, baseCurrentInv)
-            pmu.magnitude.mean[pmu.number] = analysis.current.to.magnitude[i] + pmu.magnitude.variance[pmu.number]^(1/2) * randn(1)[1]
-            pmu.magnitude.status[pmu.number] = statusMagnitudeTo
-
-            pmu.angle.variance[pmu.number] = topu(varianceAngleTo, default.varianceAngleTo, prefix.currentAngle, 1.0)
-            pmu.angle.mean[pmu.number] = analysis.current.to.angle[i] + pmu.angle.variance[pmu.number]^(1/2) * randn(1)[1]
-            pmu.angle.status[pmu.number] = statusAngleTo
         end
     end
 

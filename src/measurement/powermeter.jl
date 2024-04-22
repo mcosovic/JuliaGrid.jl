@@ -195,7 +195,7 @@ end
 
 """
     addWattmeter!(system::PowerSystem, device::Measurement, analysis::AC;
-        varianceBus, statusBus, varianceFrom, statusFrom, varianceTo, statusTo)
+        varianceBus, statusBus, varianceFrom, statusFrom, varianceTo, statusTo, noise)
 
 The function incorporates wattmeters into the `Measurement` composite type for every bus
 and branch within the `PowerSystem` type. These measurements are derived from the exact
@@ -216,15 +216,19 @@ Users have the option to configure the following keywords:
 * `varianceTo` (pu or W): the measurement variance for wattmeters at the to-bus ends;
 * `statusTo`: the operating status of the wattmeters at the to-bus ends:
   * `statusTo = 1`: in-service;
-  * `statusTo = 0`: out-of-service.
+  * `statusTo = 0`: out-of-service;
+* `noise`: specifies how to generate the measurement mean:
+  * `noise = true`: adds white Gaussian noise with the `variance` to the active powers;
+  * `noise = false`: uses the `magnitude` value only.
 
 # Updates
 The function updates the `wattmeter` field of the `Measurement` composite type.
 
 # Default Settings
 Default settings for keywords are as follows: `varianceBus = 1e-2`, `statusBus = 1`,
-`varianceFrom = 1e-2`, `statusFrom = 1`, `varianceTo = 1e-2`, and `statusTo = 1`. Users
-can change these default settings using the [`@wattmeter`](@ref @wattmeter) macro.
+`varianceFrom = 1e-2`, `statusFrom = 1`, `varianceTo = 1e-2`, `statusTo = 1`, and
+`noise = false`. Users can change these default settings using the
+[`@wattmeter`](@ref @wattmeter) macro.
 
 # Units
 The default units for the `varianceBus`, `varianceFrom`, and `varianceTo` keywords are
@@ -255,19 +259,20 @@ addWattmeter!(system, device, analysis; varianceBus = 1e-3, statusFrom = 0)
 """
 function addWattmeter!(system::PowerSystem, device::Measurement, analysis::AC;
     varianceBus::A = missing, varianceFrom::A = missing, varianceTo::A = missing,
-    statusBus::A = missing, statusFrom::A = missing, statusTo::A = missing)
+    statusBus::A = missing, statusFrom::A = missing, statusTo::A = missing,
+    noise::Bool = template.wattmeter.noise)
 
     wattmeter = device.wattmeter
     power = analysis.power
 
     addPowermeter!(system, wattmeter, wattmeter.active, power.injection.active,
     power.from.active, power.to.active, template.wattmeter, prefix.activePower,
-    varianceBus, varianceFrom, varianceTo, statusBus, statusFrom, statusTo)
+    varianceBus, varianceFrom, varianceTo, statusBus, statusFrom, statusTo, noise)
 end
 
 """
     addVarmeter!(system::PowerSystem, device::Measurement, analysis::AC;
-        varianceBus, statusBus, varianceFrom, statusFrom, varianceTo, statusTo)
+        varianceBus, statusBus, varianceFrom, statusFrom, varianceTo, statusTo, noise)
 
 The function incorporates varmeters into the `Measurement` composite type for every bus
 and branch within the `PowerSystem` type. These measurements are derived from the exact
@@ -287,15 +292,19 @@ abstract type. These exact values are perturbed by white Gaussian noise with the
 * `varianceTo` (pu or VAr): the measurement variance for varmeters at the to-bus ends;
 * `statusTo`: the operating status of the varmeters at the to-bus ends:
   * `statusTo = 1`: in-service;
-  * `statusTo = 0`: out-of-service.
+  * `statusTo = 0`: out-of-service;
+* `noise`: specifies how to generate the measurement mean:
+  * `noise = true`: adds white Gaussian noise with the `variance` to the reactive powers;
+  * `noise = false`: uses the `magnitude` value only.
 
 # Updates
 The function updates the `varmeter` field of the `Measurement` composite type.
 
 # Default Settings
 Default settings for keywords are as follows: `varianceBus = 1e-2`, `statusBus = 1`,
-`varianceFrom = 1e-2`, `statusFrom = 1`, `varianceTo = 1e-2`, and `statusTo = 1`. Users
-can change these default settings using the [`@varmeter`](@ref @varmeter) macro.
+`varianceFrom = 1e-2`, `statusFrom = 1`, `varianceTo = 1e-2`, `statusTo = 1`, and
+`noise = false`. Users can change these default settings using the
+[`@varmeter`](@ref @varmeter) macro.
 
 # Units
 The default units for the `varianceBus`, `varianceFrom`, and `varianceTo` keywords are
@@ -326,19 +335,21 @@ addVarmeter!(system, device, analysis; varianceFrom = 1e-3, statusBus = 0)
 """
 function addVarmeter!(system::PowerSystem, device::Measurement, analysis::AC;
     varianceBus::A = missing, varianceFrom::A = missing, varianceTo::A = missing,
-    statusBus::A = missing, statusFrom::A = missing, statusTo::A = missing)
+    statusBus::A = missing, statusFrom::A = missing, statusTo::A = missing,
+    noise::Bool = template.varmeter.noise)
 
     varmeter = device.varmeter
     power = analysis.power
 
     addPowermeter!(system, varmeter, varmeter.reactive, power.injection.reactive, power.from.reactive,
     power.to.reactive, template.varmeter, prefix.reactivePower, varianceBus, varianceFrom, varianceTo,
-    statusBus, statusFrom, statusTo)
+    statusBus, statusFrom, statusTo, noise)
 end
 
 ######### Add Group of Wattmeters or Varmeters ##########
 function addPowermeter!(system, device, measure, powerBus, powerFrom, powerTo, default,
-    prefixPower, varianceBus, varianceFrom, varianceTo, statusBus, statusFrom, statusTo)
+    prefixPower, varianceBus, varianceFrom, varianceTo, statusBus, statusFrom, statusTo,
+    noise)
 
     if isempty(powerBus)
         throw(ErrorException("The powers cannot be found."))
@@ -374,9 +385,14 @@ function addPowermeter!(system, device, measure, powerBus, powerFrom, powerTo, d
         device.layout.index[i] = i
         device.layout.bus[i] = true
 
-        measure.variance[i] = topu(varianceBus, default.varianceBus, prefixPower, basePowerInv)
-        measure.mean[i] = powerBus[i] + measure.variance[i]^(1/2) * randn(1)[1]
         measure.status[i] = statusBus
+        measure.variance[i] = topu(varianceBus, default.varianceBus, prefixPower, basePowerInv)
+        if noise
+            measure.mean[i] = powerBus[i] + measure.variance[i]^(1/2) * randn(1)[1]
+        else
+            measure.mean[i] = powerBus[i]
+        end
+
     end
 
     @inbounds for (label, i) in system.branch.label
@@ -385,21 +401,27 @@ function addPowermeter!(system, device, measure, powerBus, powerFrom, powerTo, d
             setLabel(device, missing, default.label, label; prefix = "From ")
 
             device.layout.index[device.number] = i
+            device.layout.index[device.number + 1] = i
+
             device.layout.from[device.number] = true
+            device.layout.to[device.number + 1] = true
+
+            measure.status[device.number] = statusFrom
+            measure.status[device.number + 1] = statusTo
 
             measure.variance[device.number] = topu(varianceFrom, default.varianceFrom, prefixPower, basePowerInv)
-            measure.mean[device.number] = powerFrom[i] + measure.variance[device.number]^(1/2) * randn(1)[1]
-            measure.status[device.number] = statusFrom
+            measure.variance[device.number + 1] = topu(varianceTo, default.varianceTo, prefixPower, basePowerInv)
+
+            if noise
+                measure.mean[device.number] = powerFrom[i] + measure.variance[device.number]^(1/2) * randn(1)[1]
+                measure.mean[device.number + 1] = powerTo[i] + measure.variance[device.number + 1]^(1/2) * randn(1)[1]
+            else
+                measure.mean[device.number] = powerFrom[i]
+                measure.mean[device.number + 1] = powerTo[i]
+            end
 
             device.number += 1
             setLabel(device, missing, default.label, label; prefix = "To ")
-
-            device.layout.index[device.number] = i
-            device.layout.to[device.number] = true
-
-            measure.variance[device.number] = topu(varianceTo, default.varianceTo, prefixPower, basePowerInv)
-            measure.mean[device.number] = powerTo[i] + measure.variance[device.number]^(1/2) * randn(1)[1]
-            measure.status[device.number] = statusTo
         end
     end
 

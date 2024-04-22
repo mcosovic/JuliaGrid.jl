@@ -479,6 +479,6 @@ macro default(mode::Symbol)
       template.pmu.label = "?"
       template.pmu.noise = false
       template.pmu.correlated = false
-      template.pmu.polar = true
+      template.pmu.polar = false
     end
 end

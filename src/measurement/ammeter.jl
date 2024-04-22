@@ -102,7 +102,7 @@ end
 
 """
     addAmmeter!(system::PowerSystem, device::Measurement, analysis::AC; varianceFrom,
-        statusFrom, varianceTo, statusTo)
+        statusFrom, varianceTo, statusTo, noise)
 
 The function incorporates ammeters into the `Measurement` type for every branch within the
 `PowerSystem` type. These measurements are derived from the exact branch current magnitudes
@@ -118,15 +118,18 @@ Users have the option to configure the following keywords:
 * `varianceTo` (pu or A): the measurement variance for ammeters at the to-bus ends;
 * `statusTo`: the operating status of the ammeters at the to-bus ends:
   * `statusTo = 1`: in-service;
-  * `statusTo = 0`: out-of-service.
+  * `statusTo = 0`: out-of-service,
+* `noise`: specifies how to generate the measurement mean:
+  * `noise = true`: adds white Gaussian noise with the `variance` to the current magnitudes;
+  * `noise = false`: uses the `magnitude` value only.
 
 # Updates
 The function updates the `ammeter` field of the `Measurement` composite type.
 
 # Default Settings
 Default settings for keywords are as follows: `varianceFrom = 1e-2`, `statusFrom = 1`,
-`varianceTo = 1e-2`, and `statusTo = 1`. Users can change these default settings using the
-[`@ammeter`](@ref @ammeter) macro.
+`varianceTo = 1e-2`, `statusTo = 1`, and `noise = false`. Users can change these default
+settings using the [`@ammeter`](@ref @ammeter) macro.
 
 # Units
 The default units for the `varianceFrom` and `varianceTo` keywords are per-units (pu).
@@ -157,7 +160,7 @@ addAmmeter!(system, device, analysis; varianceFrom = 1e-3, statusTo = 0)
 """
 function addAmmeter!(system::PowerSystem, device::Measurement, analysis::AC;
     varianceFrom::A = missing, varianceTo::A = missing,
-    statusFrom::A = missing, statusTo::A = missing)
+    statusFrom::A = missing, statusTo::A = missing, noise::Bool = template.ammeter.noise)
 
     if isempty(analysis.current.from.magnitude)
         throw(ErrorException("The currents cannot be found."))
@@ -191,27 +194,30 @@ function addAmmeter!(system::PowerSystem, device::Measurement, analysis::AC;
             setLabel(ammeter, missing, default.label, label; prefix = "From ")
 
             ammeter.layout.index[ammeter.number] = i
+            ammeter.layout.index[ammeter.number + 1] = i
+
             ammeter.layout.from[ammeter.number] = true
+            ammeter.layout.to[ammeter.number + 1] = true
 
-            baseVoltage = system.base.voltage.value[system.branch.layout.from[i]] * system.base.voltage.prefix
-            baseCurrentInv = baseCurrentInverse(basePowerInv, baseVoltage)
-
-            ammeter.magnitude.variance[ammeter.number] = topu(varianceFrom, default.varianceFrom, prefix.currentMagnitude, baseCurrentInv)
-            ammeter.magnitude.mean[ammeter.number] = analysis.current.from.magnitude[i] + ammeter.magnitude.variance[ammeter.number]^(1/2) * randn(1)[1]
             ammeter.magnitude.status[ammeter.number] = statusFrom
+            ammeter.magnitude.status[ammeter.number + 1] = statusTo
+
+            baseCurrentFromInv = baseCurrentInverse(basePowerInv, system.base.voltage.value[system.branch.layout.from[i]] * system.base.voltage.prefix)
+            ammeter.magnitude.variance[ammeter.number] = topu(varianceFrom, default.varianceFrom, prefix.currentMagnitude, baseCurrentFromInv)
+
+            baseCurrentToInv = baseCurrentInverse(basePowerInv, system.base.voltage.value[system.branch.layout.to[i]] * system.base.voltage.prefix)
+            ammeter.magnitude.variance[ammeter.number + 1] = topu(varianceTo, default.varianceTo, prefix.currentMagnitude, baseCurrentToInv)
+
+            if noise
+                ammeter.magnitude.mean[ammeter.number] = analysis.current.from.magnitude[i] + ammeter.magnitude.variance[ammeter.number]^(1/2) * randn(1)[1]
+                ammeter.magnitude.mean[ammeter.number + 1] = analysis.current.to.magnitude[i] + ammeter.magnitude.variance[ammeter.number + 1]^(1/2) * randn(1)[1]
+            else
+                ammeter.magnitude.mean[ammeter.number] = analysis.current.from.magnitude[i]
+                ammeter.magnitude.mean[ammeter.number + 1] = analysis.current.to.magnitude[i]
+            end
 
             ammeter.number += 1
             setLabel(ammeter, missing, default.label, label; prefix = "To ")
-
-            ammeter.layout.index[ammeter.number] = i
-            ammeter.layout.to[ammeter.number] = true
-
-            baseVoltage = system.base.voltage.value[system.branch.layout.to[i]] * system.base.voltage.prefix
-            baseCurrentInv = baseCurrentInverse(basePowerInv, baseVoltage)
-
-            ammeter.magnitude.variance[ammeter.number] = topu(varianceTo, default.varianceTo, prefix.currentMagnitude, baseCurrentInv)
-            ammeter.magnitude.mean[ammeter.number] = analysis.current.to.magnitude[i] + ammeter.magnitude.variance[ammeter.number]^(1/2) * randn(1)[1]
-            ammeter.magnitude.status[ammeter.number] = statusTo
         end
     end
     ammeter.layout.label = ammeter.number
