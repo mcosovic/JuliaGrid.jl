@@ -68,7 +68,9 @@ With the recognition that ``Y_{ij} =  G_{ij} + \text{j}B_{ij}`` and ``\bar{V}_{j
 	\end{aligned}
 ```
 
-As demonstrated by the above equations, the bus ``i \in \mathcal{N}`` contains four unknown variables for bus  ``i \in \mathcal{N}``, namely the active power injection ``{P}_{i}``, reactive power injection ``{Q}_{i}``, bus voltage magnitude ``{V}_{i}``, and bus voltage angle ``{\theta}_{i}``. To solve these equations, it is necessary to specify two known variables. Although any two variables can be selected mathematically, the choice is determined by the devices that are connected to a particular bus. The standard options are listed in the table below, and these options are used to define the bus types [[1]](@ref PowerFlowSolutionReferenceTutorials).
+As demonstrated by the above equations, the bus ``i \in \mathcal{N}`` contains four unknown variables, namely the active power injection ``{P}_{i}``, reactive power injection ``{Q}_{i}``, bus voltage magnitude ``{V}_{i}``, and bus voltage angle ``{\theta}_{i}``.
+
+To solve these equations, it is necessary to specify two known variables. Although any two variables can be selected mathematically, the choice is determined by the devices that are connected to a particular bus. The standard options are listed in the table below, and these options are used to define the bus types [[1]](@ref PowerFlowSolutionReferenceTutorials).
 
 | Bus Type         | Label     | Known                       | Unknown                     |
 |:-----------------|----------:|----------------------------:|----------------------------:|
@@ -115,9 +117,9 @@ The Newton-Raphson method is commonly used in AC power flow calculations due to 
 ```math
   \mathbf{f}(\mathbf{x}) = \mathbf{0}.
 ```
-This, in turn, allows for the determination of the unknown voltage magnitudes and angles of buses, represented by the state vector ``\mathbf x = [\mathbf x_a, \mathbf x_m]^T``. The state vector comprises two components:
-* ``\mathbf x_a \in \mathbb{R}^{n-1}``, which holds the bus voltage angles of demand and generator buses, represented by ``\mathbf x_a = [\theta_i]``, where ``i \in \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}}``,
-* ``\mathbf x_m \in \mathbb{R}^{n_{\text{pq}}}``, which holds the bus voltage magnitudes of demand buses, represented by ``\mathbf x_m = [V_i]``, where ``i \in \mathcal{N}_{\text{pq}}``, and ``n_{\text{pq}} = |\mathcal{N}_{\text{pq}}|``.
+This, in turn, allows for the determination of the unknown voltage magnitudes and angles of buses, represented by the state vector ``\mathbf x = [\mathbf x_\text{a}, \mathbf x_\text{m}]^T``. The state vector comprises two components:
+* ``\mathbf x_\text{a} \in \mathbb{R}^{n-1}``, which holds the bus voltage angles of demand and generator buses, represented by ``\mathbf x_\text{a} = [\theta_i]``, where ``i \in \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}}``,
+* ``\mathbf x_\text{m} \in \mathbb{R}^{n_{\text{pq}}}``, which holds the bus voltage magnitudes of demand buses, represented by ``\mathbf x_\text{m} = [V_i]``, where ``i \in \mathcal{N}_{\text{pq}}``, and ``n_{\text{pq}} = |\mathcal{N}_{\text{pq}}|``.
 
 Knowing the voltage magnitudes and angles for certain types of buses is a consequence of the structure of the state vector ``\mathbf x``. Specifically, the voltage magnitude and angle at the slack bus are known, as well as the voltage magnitude at generator buses.
 
@@ -144,7 +146,7 @@ The active and reactive mismatches, often denoted as ``\Delta P_i(\mathbf x)`` a
 ```math
   \mathbf{f(x)} =
   \begin{bmatrix}
-    \mathbf{f}_{P}(\mathbf x) \\ \mathbf{f}_{Q}(\mathbf x)
+    \mathbf{f}_{\text{P}}(\mathbf x) \\ \mathbf{f}_{\text{Q}}(\mathbf x)
   \end{bmatrix} = \mathbf 0,
 ```
 where the first ``n - 1`` equations correspond to demand and generator buses, and the last ``n_{\text{pq}}`` equations correspond to demand buses.
@@ -204,7 +206,7 @@ Next, the function [`solve!`](@ref solve!(::PowerSystem, ::ACPowerFlow{NewtonRap
 ```math
   \mathbf{\Delta} \mathbf{x}^{(\nu-1)} = -\mathbf{J}(\mathbf{x}^{(\nu-1)})^{-1} \mathbf{f}(\mathbf{x}^{(\nu-1)}),
 ```
-where ``\mathbf{\Delta} \mathbf{x} = [\mathbf \Delta \mathbf x_a, \mathbf \Delta \mathbf x_m]^T`` consists of the vector of bus voltage angle increments ``\mathbf \Delta \mathbf x_a \in \mathbb{R}^{n-1}`` and bus voltage magnitude increments ``\mathbf \Delta \mathbf x_m \in \mathbb{R}^{n_{\text{pq}}}``, and ``\mathbf{J}(\mathbf{x}) \in \mathbb{R}^{n_{\text{u}} \times n_{\text{u}}}`` is the Jacobian matrix, ``n_{\text{u}} = n + n_{\text{pq}} - 1``.
+where ``\mathbf{\Delta} \mathbf{x} = [\mathbf \Delta \mathbf x_\text{a}, \mathbf \Delta \mathbf x_\text{m}]^T`` consists of the vector of bus voltage angle increments ``\mathbf \Delta \mathbf x_\text{a} \in \mathbb{R}^{n-1}`` and bus voltage magnitude increments ``\mathbf \Delta \mathbf x_\text{m} \in \mathbb{R}^{n_{\text{pq}}}``, and ``\mathbf{J}(\mathbf{x}) \in \mathbb{R}^{n_{\text{u}} \times n_{\text{u}}}`` is the Jacobian matrix, ``n_{\text{u}} = n + n_{\text{pq}} - 1``.
 
 !!! tip "Tip"
     By default, JuliaGrid uses LU factorization as the primary method for factorizing the Jacobian matrix ``\mathbf{J} = \mathbf{L}\mathbf{U}``, aiming to compute the increments. Nevertheless, users have the flexibility to opt for QR factorization as an alternative method.
@@ -217,7 +219,11 @@ These values are stored in the `ACPowerFlow` abstract type and can be accessed a
 𝐔 = analysis.method.factorization.U
 ```
 
-The JuliaGrid implementation of the AC power flow follows a specific order to store the increment and mismatch vectors. The first ``n-1`` elements of both vectors correspond to the demand and generator buses in the same order as they appear in the input data. This order is not obtained by first extracting the demand and then generator buses but by excluding the slack bus in the input data. The first ``n-1`` elements of the increment vector correspond to the voltage angle increments, while the first ``n-1`` elements of the mismatch vector correspond to the mismatch in active power injections. The last ``n_{\text{pq}}`` elements of the increment and mismatch vectors correspond to the demand buses in the order they appear in the input data. For the increment vector, it matches the bus voltage magnitude increments, while for the mismatch vector, it matches the mismatch in reactive power injections. As a analysis, this order defines the row and column order of the Jacobian matrix ``\mathbf{J}(\mathbf{x})``.
+The JuliaGrid implementation of the AC power flow follows a specific order to store the increment ``\mathbf{\Delta} \mathbf{x}`` and mismatch ``\mathbf{f(x)}`` vectors. The first ``n-1`` elements of both vectors correspond to the demand and generator buses in the same order as they appear in the input data. The first ``n-1`` elements of the increment vector ``\mathbf{\Delta} \mathbf{x}`` correspond to the voltage angle increments ``\mathbf \Delta \mathbf x_\text{a}``, while the first ``n-1`` elements of the mismatch vector ``\mathbf{f(x)}`` correspond to the mismatch in active power injections ``\mathbf{f}_{\text{P}}(\mathbf x)``.
+
+The last ``n_{\text{pq}}`` elements of the increment ``\mathbf{\Delta} \mathbf{x}`` and mismatch ``\mathbf{f(x)}`` vectors correspond to the demand buses in the order they appear in the input data. For the increment vector ``\mathbf{\Delta} \mathbf{x}``, it matches the bus voltage magnitude increments ``\mathbf \Delta \mathbf x_\text{m}``, while for the mismatch vector ``\mathbf{f(x)}``, it matches the mismatch in reactive power injections ``\mathbf{f}_{\text{Q}}(\mathbf x)``.
+
+These specified orders dictate the row and column order of the Jacobian matrix ``\mathbf{J}(\mathbf{x})``.
 
 Finally, the function [`solve!`](@ref solve!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})) adds the computed increment term to the previous solution to obtain a new solution:
 ```math
@@ -243,8 +249,8 @@ To complete the tutorial on the Newton-Raphson method, we will now describe the 
 where ``\mathcal{N} = \mathcal{N}_{\text{sb}} \cup \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}}``. Therefore, we can express:
 ```math
   \begin{aligned}
-    \mathbf x_a &= [\theta_2,\dots,\theta_n]^T, \;\;\;\;\;\; \mathbf \Delta \mathbf x_a = [\Delta \theta_2,\dots,\Delta \theta_n]^T \\
-    \mathbf x_m &= [V_2,\dots,V_{m}]^T, \;\;\; \mathbf \Delta \mathbf x_m = [\Delta V_2,\dots,\Delta V_{m}]^T.
+    \mathbf x_\text{a} &= [\theta_2,\dots,\theta_n]^T, \;\;\;\;\;\; \mathbf \Delta \mathbf x_\text{a} = [\Delta \theta_2,\dots,\Delta \theta_n]^T \\
+    \mathbf x_\text{m} &= [V_2,\dots,V_{m}]^T, \;\;\; \mathbf \Delta \mathbf x_\text{m} = [\Delta V_2,\dots,\Delta V_{m}]^T.
   \end{aligned}
 ```
 
@@ -322,10 +328,10 @@ The fast Newton-Raphson method involves decoupling the power flow equations. Nam
 	   \mathbf{J_{22}(x)}
   \end{bmatrix}
   \begin{bmatrix}
-    \mathbf \Delta \mathbf x_a \\ \mathbf \Delta \mathbf x_m
+    \mathbf \Delta \mathbf x_\text{a} \\ \mathbf \Delta \mathbf x_\text{m}
   \end{bmatrix}	+
   \begin{bmatrix}
-    \mathbf{f}_{P}(\mathbf x) \\ \mathbf{f}_{Q}(\mathbf x)
+    \mathbf{f}_{\text{P}}(\mathbf x) \\ \mathbf{f}_{\text{Q}}(\mathbf x)
   \end{bmatrix} = \mathbf 0,
 ```
 where the iteration index has been omitted for simplicity. However, in transmission grids, there exists a strong coupling between active powers and voltage angles, as well as between reactive powers and voltage magnitudes. To achieve decoupling, two conditions must be satisfied: first, the resistance values ``r_{ij}`` of the branches must be small compared to their reactance values ``x_{ij}``, and second, the angle differences must be small, i.e., ``\theta_{ij} \approx 0`` [[3]](@ref PowerFlowSolutionReferenceTutorials). Therefore, starting from the above equation, we have:
@@ -334,17 +340,17 @@ where the iteration index has been omitted for simplicity. However, in transmiss
     \mathbf{J_{11}(x)} & \mathbf{0} \\ \mathbf{0} & \mathbf{J_{22}(x)}
   \end{bmatrix}
   \begin{bmatrix}
-    \mathbf \Delta \mathbf x_a \\ \mathbf \Delta \mathbf x_m
+    \mathbf \Delta \mathbf x_\text{a} \\ \mathbf \Delta \mathbf x_\text{m}
   \end{bmatrix}	+
   \begin{bmatrix}
-    \mathbf{f}_{P}(\mathbf x) \\ \mathbf{f}_{Q}(\mathbf x)
+    \mathbf{f}_{\text{P}}(\mathbf x) \\ \mathbf{f}_{\text{Q}}(\mathbf x)
   \end{bmatrix} = \mathbf 0,
 ```
 which gives the decoupled system as follows:
 ```math
   \begin{aligned}
-    \mathbf{f}_{P}(\mathbf x) &= -\mathbf{J_{11}(x)} \mathbf \Delta \mathbf x_a \\
-    \mathbf{f}_{Q}(\mathbf x) &= -\mathbf{J_{22}(x)} \mathbf \Delta \mathbf x_m.
+    \mathbf{f}_{\text{P}}(\mathbf x) &= -\mathbf{J_{11}(x)} \mathbf \Delta \mathbf x_\text{a} \\
+    \mathbf{f}_{\text{Q}}(\mathbf x) &= -\mathbf{J_{22}(x)} \mathbf \Delta \mathbf x_\text{m}.
   \end{aligned}
 ```
 
@@ -471,11 +477,11 @@ The fast Newton-Raphson method is ultimately based on the system of equations pr
     B_{mm} \Delta V_{m}.
   \end{aligned}
 ```
-This system can be rewritten as:
+This system can be written as:
 ```math
   \begin{aligned}
-    \mathbf{h}_{P}(\mathbf x) &= \mathbf{B}_1 \mathbf \Delta \mathbf x_a \\
-    \mathbf{h}_{Q}(\mathbf x) &= \mathbf{B}_2 \mathbf \Delta \mathbf x_m.
+    \mathbf{h}_{\text{P}}(\mathbf x) &= \mathbf{B}_1 \mathbf \Delta \mathbf x_\text{a} \\
+    \mathbf{h}_{\text{Q}}(\mathbf x) &= \mathbf{B}_2 \mathbf \Delta \mathbf x_\text{m}.
   \end{aligned}
 ```
 One of the main advantages of this approach is that the Jacobian matrices ``\mathbf{B}_1`` and ``\mathbf{B}_2`` are constant and need only be formed once. Furthermore, this method can be used to define both the XB and BX versions of the fast Newton-Raphson method.
@@ -533,7 +539,7 @@ for iteration = 1:100
 end
 ```
 
-The functions ``\mathbf{f}_{P}(\mathbf x)`` and ``\mathbf{f}_{Q}(\mathbf x)`` remain free of approximations, with only the calculation of the state variable increments affected [[2]](@ref PowerFlowSolutionReferenceTutorials). As a result, we still use the following equations to compute the mismatches:
+The functions ``\mathbf{f}_{\text{P}}(\mathbf x)`` and ``\mathbf{f}_{\text{Q}}(\mathbf x)`` remain free of approximations, with only the calculation of the state variable increments affected [[2]](@ref PowerFlowSolutionReferenceTutorials). As a result, we still use the following equations to compute the mismatches:
 ```math
   \begin{aligned}
     f_{P_i}(\mathbf x) &= {V}_{i}\sum\limits_{j=1}^n (G_{ij}\cos\theta_{ij}+B_{ij}\sin\theta_{ij})V_j - {P}_{i} = 0,
@@ -544,16 +550,16 @@ The functions ``\mathbf{f}_{P}(\mathbf x)`` and ``\mathbf{f}_{Q}(\mathbf x)`` re
 ```
 Therefore, the [`mismatch!`](@ref mismatch!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})) function calculates the mismatch in active power injection for demand and generator buses and the mismatch in reactive power injection for demand buses at each iteration ``\nu = \{1, 2, \dots\}``:
 ```math
-  {h}_{P_i}(\mathbf {x}^{(\nu-1)}) =
-  \sum\limits_{j=1}^n (G_{ij}\cos\theta_{ij}^{(\nu-1)}+B_{ij}\sin\theta_{ij}^{(\nu-1)}){V}_{j}^{(\nu-1)} - \cfrac{{P}_{i}}{{V}_{i}^{(\nu-1)}},
-  \;\;\; \forall i \in \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}},
-```
-and in reactive power injection for PQ buses as:
-```math
-    {h}_{Q_i}(\mathbf {x}^{(\nu-1)}) =
+  \begin{aligned}
+    h_{P_i}(\mathbf {x}^{(\nu-1)}) &=
+    \sum\limits_{j=1}^n (G_{ij}\cos\theta_{ij}^{(\nu-1)}+B_{ij}\sin\theta_{ij}^{(\nu-1)}){V}_{j}^{(\nu-1)} - \cfrac{{P}_{i}}{{V}_{i}^{(\nu-1)}},
+    \;\;\; \forall i \in \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}} \\
+    h_{Q_i}(\mathbf {x}^{(\nu-1)}) &=
     \sum\limits_{j=1}^n (G_{ij}\sin\theta_{ij}^{(\nu-1)}-B_{ij}\cos\theta_{ij}^{(\nu-1)}){V}_{j}^{(\nu-1)} - \cfrac{{Q}_{i}}{{V}_{i}^{(\nu-1)}},
     \;\;\; \forall i \in \mathcal{N}_{\text{pq}}.
+  \end{aligned}
 ```
+
 The resulting vectors from these calculations are stored in the `ACPowerFlow` abstract type and can be accessed through the following:
 ```@repl PowerFlowSolution
 𝐡ₚ = analysis.method.active.increment
@@ -568,7 +574,7 @@ In addition to computing the mismatches in active and reactive power injection, 
 
 Next, the function [`solve!`](@ref solve!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})) computes the bus voltage angle increments:
 ```math
-  \mathbf \Delta \mathbf x_a^{(\nu-1)} = \mathbf{B}_1^{-1} \mathbf{h}_{P}(\mathbf x_a^{(\nu-1)}, \mathbf x_m^{(\nu-1)}).
+  \mathbf \Delta \mathbf x_\text{a}^{(\nu-1)} = \mathbf{B}_1^{-1} \mathbf{h}_{\text{P}}(\mathbf x^{(\nu-1)}).
 ```
 
 To obtain the voltage angle increments, JuliaGrid initially performs LU factorization on the Jacobian matrix ``\mathbf{B}_1 = \mathbf{L}_1\mathbf{U}_1``. This factorization is executed only once and is utilized in each iteration of the algorithm:
@@ -588,7 +594,7 @@ The vector of increments that corresponds to the active power equations can be a
 
 The solution is then updated as follows:
 ```math
-  \mathbf x_a^{(\nu)} = \mathbf x_a^{(\nu-1)} + \mathbf \Delta \mathbf x_a^{(\nu-1)}.
+  \mathbf x_\text{a}^{(\nu)} = \mathbf x_\text{a}^{(\nu-1)} + \mathbf \Delta \mathbf x_\text{a}^{(\nu-1)}.
 ```
 It is important to note that only the voltage angles related to demand and generator buses are updated, while the vector of bus voltage angles of all buses is stored:
 ```@repl PowerFlowSolution
@@ -597,7 +603,7 @@ It is important to note that only the voltage angles related to demand and gener
 
 The fast Newton-Raphson method then solves the equation:
 ```math
-  \mathbf \Delta \mathbf x_m^{(\nu-1)} = \mathbf{B}_2^{-1} \mathbf{h}_{Q}(\mathbf x_a^{(\nu)}, \mathbf x_m^{(\nu-1)}).
+  \mathbf \Delta \mathbf x_\text{m}^{(\nu-1)} = \mathbf{B}_2^{-1} \mathbf{h}_{\text{Q}}(\mathbf x^{(\nu)}).
 ```
 
 Similarly to the previous instance, JuliaGrid initially executes LU factorization on the Jacobian matrix ``\mathbf{B}_2 = \mathbf{L}_2\mathbf{U}_2``. However, it provides the flexibility for users to opt for QR factorization instead. This factorization occurs only once and is utilized in each iteration of the fast Newton-Raphson algorithm:
@@ -613,7 +619,7 @@ The vector of increments that corresponds to the reactive power equations can be
 
 Finally, the solution is updated as follows:
 ```math
-  \mathbf x_m^{(\nu)} = \mathbf x_m^{(\nu-1)} + \mathbf \Delta \mathbf x_m^{(\nu-1)}.
+  \mathbf x_\text{m}^{(\nu)} = \mathbf x_\text{m}^{(\nu-1)} + \mathbf \Delta \mathbf x_\text{m}^{(\nu-1)}.
 ```
 Again, it is important to note that only the the voltage magnitudes of demand buses are updated, while the vector of bus voltage magnitude for all buses is stored:
 ```@repl PowerFlowSolution
@@ -670,9 +676,9 @@ for iteration = 1:300
 end
 ```
 
-In contrast to the Newton-Raphson and Fast Newton-Raphson methods, the Gauss-Seidel method does not require the calculation of the mismatch in active and reactive power injection at each iteration. Instead, the [`mismatch!`](@ref mismatch!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})) function is used solely to verify the convergence criteria. At each iteration ``\nu = \{1, 2, \dots\}``, we calculate the active power injection mismatch for demand and generator buses, as shown below:
+In contrast to the Newton-Raphson and fast Newton-Raphson methods, the Gauss-Seidel method does not require the calculation of the mismatch in active and reactive power injection at each iteration. Instead, the [`mismatch!`](@ref mismatch!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})) function is used solely to verify the convergence criteria. At each iteration ``\nu = \{1, 2, \dots\}``, we calculate the active power injection mismatch for demand and generator buses, as shown below:
 ```math
-  {f}_{P_i}(\mathbf x^{(\nu-1)}) = \Re\{\bar{V}_i^{(\nu - 1)} \bar{I}_i^{*(\nu - 1)}\} - P_i, \;\;\; \forall i \in \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}},
+  {f}_{P_i}(\mathbf x^{(\nu-1)}) = \Re\{\bar{V}_i^{(\nu - 1)} \bar{I}_i^{*(\nu - 1)}\} - P_i, \;\;\; \forall i \in \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}}.
 ```
 We also compute the reactive power injection mismatch for demand buses, given by:
 ```math
@@ -682,7 +688,7 @@ We also compute the reactive power injection mismatch for demand buses, given by
 However, these mismatches are not stored as they are only used to obtain the maximum absolute values of these mismatches. The maximum values of these mismatches are used as termination criteria for the iteration loop if both are less than a predefined stopping criterion ``\epsilon``, as shown below:
 ```math
   \max \{|{f}_{P_i}(\mathbf x^{(\nu-1)})|,\; \forall i \in \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}} \} < \epsilon \\
-  \max \{|{f}_{Q_i}(\mathbf x^{(\nu-1)})|,\; \forall i \in \mathcal{N}_{\text{pq}} \} < \epsilon
+  \max \{|{f}_{Q_i}(\mathbf x^{(\nu-1)})|,\; \forall i \in \mathcal{N}_{\text{pq}} \} < \epsilon.
 ```
 
 After initializing complex bus voltages ``\bar{V}_i^{(0)}`` for all buses in the power system, the function [`solve!`](@ref solve!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})) proceeds to compute the voltages for demand buses using the Gauss-Seidel method:
@@ -794,7 +800,7 @@ The resulting [active and reactive power flows](@ref BranchNetworkEquationsTutor
 𝐐ᵢ = analysis.power.from.reactive
 ```
 
-Similarly, the vectors of [active and reactive power flows](@ref BranchNetworkEquationsTutorials) at the to-bus end are stored as ``\mathbf{P}_{\text{j}} = [P_{ji}]`` and ``\mathbf{Q}_{\text{j}} = [Q_{ji}]``, respectively, and can be retrieved using the following code:
+The vectors of [active and reactive power flows](@ref BranchNetworkEquationsTutorials) at the to-bus end are stored as ``\mathbf{P}_{\text{j}} = [P_{ji}]`` and ``\mathbf{Q}_{\text{j}} = [Q_{ji}]``, respectively, and can be retrieved using the following code:
 ```@repl PowerFlowSolution
 𝐏ⱼ = analysis.power.to.active
 𝐐ⱼ = analysis.power.to.reactive
