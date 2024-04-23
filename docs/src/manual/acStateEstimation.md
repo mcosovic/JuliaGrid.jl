@@ -43,7 +43,7 @@ In AC state estimation, it is necessary to designate a slack bus, where the bus 
 ---
 
 ## [Observability Analysis](@id ACSEObservabilityAnalysisManual)
-To initiate the power system with measurements at specific locations, follow the provided example code:
+To initiate the power system with measurements at specific locations, follow the provided example:
 ```@example ACSEObservabilityAnalysis
 using JuliaGrid # hide
 @default(unit) # hide
@@ -163,12 +163,12 @@ Consequently, the power system becomes observable, allowing the user to proceed 
 Additionally, it is worth mentioning that restoration might encounter difficulties due to the default zero pivot threshold set at `1e-5`. This threshold can be modified using the [`restorationGram!`](@ref restorationGram!(::PowerSystem, ::Measurement, ::Measurement, ::Island)) function.
 
 !!! note "Info"
-    During the restoration step, if users define bus phasor measurements at any point, these measurements will be considered. Consequently, the system may achieve observability even if multiple islands persist.
+    During the restoration step, if users define bus phasor measurements, these measurements will be considered. Consequently, the system may achieve observability even if multiple islands persist.
 
 ---
 
 ## [Weighted Least-squares Estimator](@id ACLSStateEstimationSolutionManual)
-To begin, we will define the `PowerSystem` and `Measurement` types. Within the measurement set, we opt to use measurement values by setting `noise = false`, which means we generate measurement values without zero-mean Gaussian noise, ensuring that the measurement values are precisely as defined in functions for adding devices:
+To begin, we will define the `PowerSystem` and `Measurement` types:
 ```@example ACSEWLS
 using JuliaGrid # hide
 @default(unit) # hide
@@ -188,18 +188,18 @@ addBranch!(system; label = "Branch 3", from = "Bus 2", to = "Bus 3", reactance =
 
 addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 3.2, reactive = 0.3)
 
-@voltmeter(label = "Voltmeter ? (!)", noise = false)
+@voltmeter(label = "Voltmeter ? (!)")
 addVoltmeter!(system, device; bus = "Bus 1", magnitude = 1.0, variance = 1e-2)
 
-@ammeter(label = "Ammeter ? (!)", noise = false)
+@ammeter(label = "Ammeter ? (!)")
 addAmmeter!(system, device; from = "Branch 3", magnitude = 0.947, variance = 1e-1)
 addAmmeter!(system, device; to = "Branch 2", magnitude = 1.674, variance = 1e-1)
 
-@wattmeter(label = "Wattmeter ? (!)", noise = false)
+@wattmeter(label = "Wattmeter ? (!)")
 addWattmeter!(system, device; from = "Branch 1", active = 1.046, variance = 1e-3)
 addWattmeter!(system, device; bus = "Bus 2", active = -0.1, variance = 2e-3)
 
-@varmeter(label = "Varmeter ? (!)", noise = false)
+@varmeter(label = "Varmeter ? (!)")
 addVarmeter!(system, device; from = "Branch 1", reactive = 0.059, variance = 1e-4)
 addVarmeter!(system, device; bus = "Bus 2", reactive = -0.01, variance = 1e-3)
 
@@ -215,7 +215,7 @@ nothing # hide
 !!! tip "Tip"
     Here, the user triggers LU factorization as the default method for solving the system of linear equations within each iteration of the Gauss-Newton method. However, the user also has the option to select alternative factorization methods such as `LDLt` or `QR`:
     ```julia ACSEObservabilityAnalysis
-    analysis = gaussNewton(system, device, QR)
+    analysis = gaussNewton(system, device, LDLt)
     ```
 
 ---
@@ -276,32 +276,18 @@ The [`solve!`](@ref solve!(::PowerSystem, ::ACStateEstimation{NonlinearWLS{Norma
 
 ---
 
-##### Inclusion of PMUs in Polar Coordinates
-In the example above, we focus on solving the AC state estimation solely with SCADA measurements. However, users can also incorporate PMUs into the AC state estimation, and several methods exist for achieving this.
-
-The most straightforward approach is to include these measurements in the polar coordinate system. For instance:
-```@example ACSEWLS
-@pmu(label = "PMU ? (!)", noise = false)
-addPmu!(system, device; from = "Branch 1", magnitude = 1.048, angle = -0.057)
-
-nothing # hide
-```
-This inclusion of PMUs provides more accurate state estimates compared to rectangular inclusion but demands longer computing time. PMUs are handled in the same manner as SCADA measurements. However, this approach is susceptible to ill-conditioned problems arising in polar coordinates due to small values of current magnitudes [[2, 3]](@ref ACStateEstimationReferenceManual).
-
----
-
 ##### Inclusion of PMUs in Rectangular Coordinates
-The second approach to include PMUs is in the rectangular coordinate system, by setting `polar = false`:
+In the example above, our focus is solely on solving the AC state estimation using SCADA measurements. However, users have the option to also integrate PMUs into the AC state estimation, either in the rectangular or polar coordinate system.
+
+The default approach is to include PMUs in the rectangular coordinate system:
 ```@example ACSEWLS
-addPmu!(system, device; to = "Branch 1", magnitude = 1.05, angle = 3.047, polar = false)
+@pmu(label = "PMU ? (!)")
+addPmu!(system, device; to = "Branch 1", magnitude = 1.05, angle = 3.047)
 
 nothing # hide
 ```
 
-!!! note "Info"
-    It is important to note that with each individual phasor measurement, we can set the coordinate system, providing flexibility to include some in polar and some in rectangular systems.
-
-In the case of the rectangular system, inclusion resolves ill-conditioned problems arising in polar coordinates due to small values of current magnitudes. However, this approach's main disadvantage is related to measurement errors, as measurement errors correspond to polar coordinates. Therefore, the covariance matrix must be transformed from polar to rectangular coordinates [[4]](@ref ACStateEstimationReferenceManual). As a result, measurement errors of a single PMU are correlated, and the covariance matrix does not have a diagonal form. Despite that, the measurement error covariance matrix is usually considered as a diagonal matrix, affecting the accuracy of the SE.
+In the case of the rectangular system, inclusion resolves ill-conditioned problems arising in polar coordinates due to small values of current magnitudes. However, this approach's main disadvantage is related to measurement errors, as measurement errors correspond to polar coordinates. Therefore, the covariance matrix must be transformed from polar to rectangular coordinates [[4]](@ref ACStateEstimationReferenceManual). As a result, measurement errors of a single PMU are correlated, and the covariance matrix does not have a diagonal form. Despite that, the measurement error covariance matrix is usually considered as a diagonal matrix, affecting the accuracy of the state estimation.
 
 In the example above, we specifically include PMUs where measurement error correlations are disregarded. This is evident through the precision matrix, which maintains a diagonal form:
 ```@repl ACSEWLS
@@ -309,9 +295,9 @@ analysis = gaussNewton(system, device);
 analysis.method.precision
 ```
 
-Lastly, we incorporate correlation into our model by adding new PMUs with the desired error correlation:
+Lastly, we incorporate correlation into our model by adding a new PMU with the desired error correlation:
 ```@example ACSEWLS
-addPmu!(system, device; bus = "Bus 3", magnitude = 1, angle = 0, polar = false, correlated = true)
+addPmu!(system, device; bus = "Bus 3", magnitude = 0.95, angle = -0.08, correlated = true)
 
 nothing # hide
 ```
@@ -324,12 +310,27 @@ analysis.method.precision
 
 ---
 
+##### Inclusion of PMUs in Polar Coordinates
+The second approach involves incorporating these measurements into the polar coordinate system. For instance:
+```@example ACSEWLS
+addPmu!(system, device; from = "Branch 1", magnitude = 1.048, angle = -0.057, polar = true)
+
+nothing # hide
+```
+
+This inclusion of PMUs provides more accurate state estimates compared to rectangular inclusion but demands longer computing time. PMUs are handled in the same manner as SCADA measurements. However, this approach is susceptible to ill-conditioned problems arising in polar coordinates due to small values of current magnitudes [[2, 3]](@ref ACStateEstimationReferenceManual).
+
+!!! note "Info"
+    It is important to note that with each individual phasor measurement, we can set the coordinate system, providing flexibility to include some in polar and some in rectangular systems.
+
+---
+
 ##### Alternative Formulation
 The resolution of the WLS state estimation problem using the conventional method typically progresses smoothly. However, it is widely acknowledged that in certain situations common to real-world systems, this method can be vulnerable to numerical instabilities. Such conditions might impede the algorithm from finding a satisfactory solution. In such cases, users may opt for an alternative formulation of the WLS state estimation, namely, employing an approach called orthogonal factorization [[5, Sec. 3.2]](@ref ACStateEstimationReferenceManual).
 
 This approach is suitable when measurement errors are uncorrelated, and the precision matrix remains diagonal. Therefore, as a preliminary step, we need to eliminate the correlation, as we did previously:
 ```@example ACSEWLS
-updatePmu!(system, device; label = "PMU 3 (Bus 3)", correlated = false)
+updatePmu!(system, device; label = "PMU 2 (Bus 3)", correlated = false)
 
 nothing # hide
 ```
@@ -400,7 +401,6 @@ nothing # hide
 ```
 
 Consequently, we obtain a new solution devoid of the impact of the outlier measurement:
-Here, we can observe solutin impact with bad measurments:
 ```@repl ACSEWLS
 print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
 ```
@@ -457,7 +457,7 @@ using JuliaGrid # hide
 @default(template) # hide
 
 system = powerSystem()
-device = measurement() # Initializing a Measurement instance
+device = measurement() # <- Initializing a Measurement instance
 
 addBus!(system; label = "Bus 1", type = 3)
 addBus!(system; label = "Bus 2", type = 1, active = 0.1, reactive = 0.01)
@@ -484,7 +484,7 @@ addVarmeter!(system, device; bus = "Bus 2", reactive = -0.01)
 @pmu(label = "PMU ? (!)")
 addPmu!(system, device; bus = "Bus 2", magnitude = 0.976, angle = -0.052)
 
-analysis = gaussNewton(system, device) # Creating ACStateEstimation for the defined model
+analysis = gaussNewton(system, device) # <- Creating ACStateEstimation for the defined model
 for iteration = 1:20
     stopping = solve!(system, analysis)
     if stopping < 1e-8
@@ -500,7 +500,7 @@ updateVarmeter!(system, device; label = "Varmeter 2 (Bus 2)", reactive = -0.011)
 
 updatePmu!(system, device; label = "PMU 1 (Bus 2)", polar = false)
 
-analysis = gaussNewton(system, device) # Creating ACStateEstimation for the updated model
+analysis = gaussNewton(system, device) # <- Creating ACStateEstimation for the updated model
 for iteration = 1:20
     stopping = solve!(system, analysis)
     if stopping < 1e-8
@@ -534,7 +534,7 @@ using JuliaGrid # hide
 @default(template) # hide
 
 system = powerSystem()
-device = measurement() # Initializing a Measurement instance
+device = measurement() # <- Initializing a Measurement instance
 
 addBus!(system; label = "Bus 1", type = 3)
 addBus!(system; label = "Bus 2", type = 1, active = 0.1, reactive = 0.01)
@@ -563,7 +563,7 @@ addVarmeter!(system, device; to = "Branch 3", reactive = -0.044, variance = 1e-5
 @pmu(label = "PMU ? (!)")
 addPmu!(system, device; bus = "Bus 2", magnitude = 0.976, angle = -0.052)
 
-analysis = gaussNewton(system, device) # Creating ACStateEstimation for the defined model
+analysis = gaussNewton(system, device) # <- Creating ACStateEstimation for the defined model
 for iteration = 1:20
     stopping = solve!(system, analysis)
     if stopping < 1e-8
@@ -579,7 +579,7 @@ updateVarmeter!(system, device, analysis; label = "Varmeter 2 (Bus 2)", reactive
 
 updatePmu!(system, device, analysis; label = "PMU 1 (Bus 2)", polar = false)
 
-# No need for re-creation; we have already updated the existing ACStateEstimation instance
+# <- No need for re-creation; we have already updated the existing ACStateEstimation instance
 for iteration = 1:20
     stopping = solve!(system, analysis)
     if stopping < 1e-8
@@ -601,21 +601,58 @@ The same methodology can be applied to the LAV method, thereby circumventing the
 ---
 
 ## [Power and Current Analysis](@id ACSEPowerCurrentAnalysisManual)
-After obtaining the solution from the AC state estimation, we can calculate various electrical quantities related to buses and branches using the [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)) and [`current!`](@ref current!(::PowerSystem, ::AC)) functions. To demonstrate this further, let us continue with our previous example by calculating powers and currents using the following functions:
+After obtaining the solution from the AC state estimation, we can calculate various electrical quantities related to buses and branches using the [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)) and [`current!`](@ref current!(::PowerSystem, ::AC)) functions. For instance, let us consider the model for which we obtained the AC state estimation solution:
+```@example WLSACStateEstimationSolution
+using JuliaGrid # hide
+@default(unit) # hide
+@default(template) # hide
+
+system = powerSystem()
+device = measurement()
+
+addBus!(system; label = "Bus 1", type = 3, susceptance = 0.002)
+addBus!(system; label = "Bus 2", type = 1, active = 0.1, reactive = 0.01)
+addBus!(system; label = "Bus 3", type = 1, active = 2.5, reactive = 0.2)
+
+@branch(resistance = 0.02, conductance = 1e-4, susceptance = 0.04)
+addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.05)
+addBranch!(system; label = "Branch 2", from = "Bus 1", to = "Bus 3", reactance = 0.05)
+addBranch!(system; label = "Branch 3", from = "Bus 2", to = "Bus 3", reactance = 0.03)
+
+addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 3.2, reactive = 0.3)
+
+addWattmeter!(system, device; from = "Branch 1", active = 1.046, variance = 1e-2)
+addWattmeter!(system, device; bus = "Bus 2", active = -0.1, variance = 1e-3)
+addWattmeter!(system, device; from = "Branch 3", active = 0.924, variance = 1e-3)
+
+addVarmeter!(system, device; from = "Branch 1", reactive = 0.059, variance = 1e-3)
+addVarmeter!(system, device; bus = "Bus 2", reactive = -0.01, variance = 1e-2)
+addVarmeter!(system, device; to = "Branch 3", reactive = -0.044, variance = 1e-3)
+
+analysis = gaussNewton(system, device)
+for iteration = 1:20
+    stopping = solve!(system, analysis)
+    if stopping < 1e-8
+        break
+    end
+end
+```
+
+We can now utilize the provided functions to compute powers and currents:
 ```@example WLSACStateEstimationSolution
 power!(system, analysis)
 current!(system, analysis)
 nothing # hide
 ```
 
-For instance, if we want to show the active power injections at each bus and the current flow angles at each from-bus end of the branch, we can employ the following code:
+For instance, if we want to show the active power injections and the from-bus current angles, we can employ the following code:
 ```@repl WLSACStateEstimationSolution
 print(system.bus.label, analysis.power.injection.active)
 print(system.branch.label, analysis.current.from.angle)
 ```
 
 !!! note "Info"
-    To better understand the powers and currents associated with buses and branches that are calculated by the [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)) and [`current!`](@ref current!(::PowerSystem, ::AC)) functions, we suggest referring to the tutorials on [AC State Estimation].
+    To better understand the powers and currents associated with buses and branches that are calculated by the [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)) and [`current!`](@ref current!(::PowerSystem, ::AC)) functions, we suggest referring to the tutorials on [AC State Estimation](@ref ACStateEstimationTutorials).
 
 To compute specific quantities for particular components, rather than calculating powers or currents for all components, users can utilize one of the provided functions below.
 
@@ -640,7 +677,7 @@ active, reactive = supplyPower(system, analysis; label = "Bus 1")
 ##### Active and Reactive Power at Shunt Element
 To calculate the active and reactive power associated with shunt element at a specific bus, the function can be used:
 ```@repl WLSACStateEstimationSolution
-active, reactive = shuntPower(system, analysis; label = "Bus 2")
+active, reactive = shuntPower(system, analysis; label = "Bus 1")
 ```
 
 ---

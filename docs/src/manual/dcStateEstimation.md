@@ -44,20 +44,20 @@ system = powerSystem()
 device = measurement()
 
 addBus!(system; label = "Bus 1", type = 3)
-addBus!(system; label = "Bus 2", type = 1, active = 0.1)
-addBus!(system; label = "Bus 3", type = 1, active = 0.05)
+addBus!(system; label = "Bus 2", type = 1, active = 0.2)
+addBus!(system; label = "Bus 3", type = 1, active = 0.4)
 
-addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.05)
-addBranch!(system; label = "Branch 2", from = "Bus 1", to = "Bus 3", reactance = 0.01)
-addBranch!(system; label = "Branch 3", from = "Bus 2", to = "Bus 3", reactance = 0.01)
+addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.5)
+addBranch!(system; label = "Branch 2", from = "Bus 1", to = "Bus 3", reactance = 0.2)
+addBranch!(system; label = "Branch 3", from = "Bus 2", to = "Bus 3", reactance = 0.3)
 
 addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 3.2)
 
 @wattmeter(label = "Wattmeter ?")
-addWattmeter!(system, device; bus = "Bus 1", active = 0.13, variance = 1e-3)
-addWattmeter!(system, device; bus = "Bus 3", active = -0.02, variance = 1e-2)
-addWattmeter!(system, device; from = "Branch 1", active = 0.04, variance = 1e-4)
-addWattmeter!(system, device; to = "Branch 2", active = -0.11, variance = 1e-4)
+addWattmeter!(system, device; bus = "Bus 1", active = 0.6, variance = 1e-3)
+addWattmeter!(system, device; bus = "Bus 3", active = -0.4, variance = 1e-2)
+addWattmeter!(system, device; from = "Branch 1", active = 0.18, variance = 1e-4)
+addWattmeter!(system, device; to = "Branch 2", active = -0.42, variance = 1e-4)
 
 nothing # hide
 ```
@@ -127,9 +127,8 @@ analysis.method.outlier.label
 ```
 Hence, upon detecting bad data, the `detect` variable will hold `true`. The `maxNormalizedResidual` variable retains the value of the largest normalized residual, while the `label` contains the label of the measurement identified as bad data. JuliaGrid will mark the respective measurements as out-of-service within the `Measurement` type.
 
-Moreover, JuliaGrid will adjust the coefficient matrix and mean vector within the `DCStateEstimation` type based on measurements now designated as out-of-service. To optimize the algorithm's efficiency, JuliaGrid resets non-zero elements to zero in the coefficient matrix and mean vector. The `index` variable denotes positions within the mean vector that will be reset to zero. Additionally, it records the row index within the coefficient matrix where non-zero elements will be adjusted to zero. Here's an illustration:
+Moreover, JuliaGrid will adjust the coefficient matrix and mean vector within the `DCStateEstimation` type based on measurements now designated as out-of-service. To optimize the algorithm's efficiency, JuliaGrid resets non-zero elements to zero in the coefficient matrix and mean vector, effectively removing the impact of the corresponding measurement on the solution:
 ```@repl WLSDCStateEstimationSolution
-analysis.method.outlier.index
 analysis.method.mean
 analysis.method.coefficient
 ```
@@ -191,7 +190,7 @@ using JuliaGrid # hide
 @default(template) # hide
 
 system = powerSystem()
-device = measurement() # Initializing a Measurement instance
+device = measurement() # <- Initializing a Measurement instance
 
 addBus!(system; label = "Bus 1", type = 3)
 addBus!(system; label = "Bus 2", type = 1, active = 0.1)
@@ -204,14 +203,14 @@ addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 0.1)
 addWattmeter!(system, device; bus = "Bus 2", active = -0.11, variance = 1e-3)
 addWattmeter!(system, device; from = "Branch 1", active = 0.09, variance = 1e-4)
 
-analysis = dcWlsStateEstimation(system, device) # Creating DCStateEstimation for the model
+analysis = dcWlsStateEstimation(system, device) # <- Creating DCStateEstimation for the model
 solve!(system, analysis)
 
 addWattmeter!(system, device; to = "Branch 1", active = -0.12, variance = 1e-4)
 updateWattmeter!(system, device; label = "Wattmeter 1", status = 0)
 updateWattmeter!(system, device; label = "Wattmeter 2", active = 0.1, noise = false)
 
-analysis = dcWlsStateEstimation(system, device) # Creating DCStateEstimation for new model
+analysis = dcWlsStateEstimation(system, device) # <- Creating DCStateEstimation for new model
 solve!(system, analysis)
 
 nothing # hide
@@ -240,7 +239,7 @@ using JuliaGrid # hide
 @default(template) # hide
 
 system = powerSystem()
-device = measurement() # Initializing a Measurement instance
+device = measurement() # <- Initializing a Measurement instance
 
 addBus!(system; label = "Bus 1", type = 3)
 addBus!(system; label = "Bus 2", type = 1, active = 0.1)
@@ -254,14 +253,14 @@ addWattmeter!(system, device; bus = "Bus 2", active = -0.11, variance = 1e-3)
 addWattmeter!(system, device; from = "Branch 1", active = 0.09, variance = 1e-4)
 addWattmeter!(system, device; to = "Branch 1", active = -0.12, variance = 1e-4, status = 0)
 
-analysis = dcWlsStateEstimation(system, device) # Creating DCStateEstimation for the model
+analysis = dcWlsStateEstimation(system, device) # <- Creating DCStateEstimation for the model
 solve!(system, analysis)
 
 updateWattmeter!(system, device; label = "Wattmeter 1", status = 0)
 updateWattmeter!(system, device; label = "Wattmeter 2", active = 0.1, noise = false)
 updateWattmeter!(system, device; label = "Wattmeter 3", status = 1)
 
-# No need for re-creation; we have already updated the existing DCStateEstimation instance
+# <- No need for re-creation; we have already updated the existing DCStateEstimation instance
 solve!(system, analysis)
 
 nothing # hide
@@ -296,7 +295,37 @@ The same methodology can be applied to the LAV method, thereby circumventing the
 ---
 
 ## [Power Analysis](@id DCSEPowerAnalysisManual)
-After obtaining the solution from the DC state estimation, calculating powers related to buses and branches is facilitated by using the [`power!`](@ref power!(::PowerSystem, ::DCStateEstimation)) function. To illustrate this with a continuation of our previous example, we can compute active powers using the following function:
+After obtaining the solution from the DC state estimation, calculating powers related to buses and branches is facilitated by using the [`power!`](@ref power!(::PowerSystem, ::DCStateEstimation)) function. For instance, let us consider the model for which we obtained the DC state estimation solution:
+```@example WLSDCStateEstimationSolution
+using JuliaGrid # hide
+@default(unit) # hide
+@default(template) # hide
+
+system = powerSystem()
+device = measurement()
+
+addBus!(system; label = "Bus 1", type = 3, conductance = 1e-3)
+addBus!(system; label = "Bus 2", type = 1, active = 0.2)
+addBus!(system; label = "Bus 3", type = 1, active = 0.4)
+
+addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.5)
+addBranch!(system; label = "Branch 2", from = "Bus 1", to = "Bus 3", reactance = 0.2)
+addBranch!(system; label = "Branch 3", from = "Bus 2", to = "Bus 3", reactance = 0.3)
+
+addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 3.2)
+
+addWattmeter!(system, device; bus = "Bus 1", active = 0.6, variance = 1e-3)
+addWattmeter!(system, device; bus = "Bus 3", active = -0.4, variance = 1e-2)
+addWattmeter!(system, device; from = "Branch 1", active = 0.18, variance = 1e-4)
+addWattmeter!(system, device; to = "Branch 2", active = -0.42, variance = 1e-4)
+
+analysis = dcWlsStateEstimation(system, device)
+solve!(system, analysis)
+
+nothing # hide
+```
+
+We can compute active powers using the following function:
 ```@example WLSDCStateEstimationSolution
 power!(system, analysis)
 

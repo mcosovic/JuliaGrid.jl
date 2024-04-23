@@ -16,10 +16,10 @@ The wattmeter is defined with the following keywords:
 * `variance` (pu or W): the variance of the active power measurement;
 * `noise`: specifies how to generate the measurement mean:
   * `noise = true`: adds white Gaussian noise with the `variance` to the `active`;
-  * `noise = false`: uses the `active` value only.
+  * `noise = false`: uses the `active` value only;
 * `status`: the operating status of the wattmeter:
   * `status = 1`: in-service;
-  * `status = 0`: out-of-service;
+  * `status = 0`: out-of-service.
 
 # Updates
 The function updates the `wattmeter` field of the `Measurement` composite type.
@@ -91,10 +91,10 @@ The varmeter is defined with the following keywords:
 * `variance` (pu or VAr): the variance of the reactive power measurement;
 * `noise`: specifies how to generate the measurement mean:
   * `noise = true`: adds white Gaussian noise with the `variance` to the `reactive`;
-  * `noise = false`: uses the `reactive` value only.
+  * `noise = false`: uses the `reactive` value only;
 * `status`: the operating status of the varmeter:
   * `status = 1`: in-service;
-  * `status = 0`: out-of-service;
+  * `status = 0`: out-of-service.
 
 # Updates
 The function updates the `varmeter` field of the `Measurement` composite type.

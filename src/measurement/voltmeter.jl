@@ -14,10 +14,10 @@ The voltmeter is defined with the following keywords:
 * `variance` (pu or V): the variance of the bus voltage magnitude measurement;
 * `noise`: specifies how to generate the measurement mean:
   * `noise = true`: adds white Gaussian noise with the `variance` to the `magnitude`;
-  * `noise = false`: uses the `magnitude` value only.
+  * `noise = false`: uses the `magnitude` value only;
 * `status`: the operating status of the voltmeter:
   * `status = 1`: in-service;
-  * `status = 0`: out-of-service;
+  * `status = 0`: out-of-service.
 
 # Updates
 The function updates the `voltmeter` field of the `Measurement` composite type.
@@ -80,8 +80,7 @@ end
 
 The function incorporates voltmeters into the `Measurement` composite type for every bus
 within the `PowerSystem` type. These measurements are derived from the exact bus voltage
-magnitudes defined in the `AC` abstract type. These exact values are perturbed by white
-Gaussian noise with the specified `variance` to obtain measurement data.
+magnitudes defined in the `AC` abstract type.
 
 # Keywords
 Users have the option to configure the following keywords:

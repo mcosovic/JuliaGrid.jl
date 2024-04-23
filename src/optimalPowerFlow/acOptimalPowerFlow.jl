@@ -243,13 +243,12 @@ end
 """
     solve!(system::PowerSystem, analysis::ACOptimalPowerFlow)
 
-The function solves the AC optimal power flow model, computing the magnitudes and angles
-of bus voltages, as well as generating active and reactive power values for each generator.
+The function solves the AC optimal power flow model, computing the active and reactive
+power outputs of the generators, as well as the bus voltage magnitudes and angles.
 
 # Updates
-The calculated voltage magnitudes and angles and active and reactive powers are stored
-in the variables of the `voltage` and `power.generator` fields of the `ACOptimalPowerFlow`
-type.
+The calculated active and reactive powers, as well as voltage magnitudes and angles, are
+stored in the `voltage` and `power.generator` fields of the `ACOptimalPowerFlow` type.
 
 # Example
 ```jldoctest

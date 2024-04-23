@@ -146,12 +146,12 @@ end
 """
     solve!(system::PowerSystem, analysis::DCOptimalPowerFlow)
 
-The function solves the DC optimal power flow model, computing the angles of bus voltages,
-as well as generating active power values for each generator.
+The function solves the DC optimal power flow model, computing the active power outputs of
+the generators, as well as the bus voltage angles.
 
 # Updates
-The calculated voltage angles and active powers are then stored in the variables of the
-`voltage` and `power.generator` fields of the `DCOptimalPowerFlow` type.
+The calculated active powers, as well as voltage angles, are stored in the `voltage` and
+`power.generator` fields of the `DCOptimalPowerFlow` type.
 
 # Example
 ```jldoctest

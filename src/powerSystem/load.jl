@@ -7,8 +7,9 @@ is possible to add new buses, branches, or generators, or modify the parameters 
 existing ones.
 
 # Argument
-- passing the path to the HDF5 file with the `.h5` extension,
-- passing the path to Matpower file with the `.m` extension.
+It requires a string path to:
+- the HDF5 file with the `.h5` extension,
+- the Matpower file with the `.m` extension.
 
 # Returns
 The `PowerSystem` composite type with the following fields:
@@ -16,7 +17,7 @@ The `PowerSystem` composite type with the following fields:
 - `branch`: data related to branches;
 - `generator`: data related to generators;
 - `base`: base power and base voltages;
-- `model`: data associated with AC or DC analyses.
+- `model`: data associated with AC and DC analyses.
 
 # Units
 JuliaGrid stores all data in per-units and radians format which are fixed, the exceptions

@@ -1,5 +1,5 @@
 # [PMU State Estimation](@id PMUStateEstimationManual)
-To perform linear state estimation solely based on PMU data, the initial requirement is to have the `PowerSystem` composite type configured with the AC model, along with the `Measurement` composite type storing measurement data. Subsequently, we can formulate either the weighted least-squares (WLS) or the least absolute value (LAV) PMU state estimation model encapsulated within the abstract type `PMUStateEstimation` using:
+To perform linear state estimation solely based on PMU data, the initial requirement is to have the `PowerSystem` composite type configured with the AC model, along with the `Measurement` composite type storing measurement data. Subsequently, we can formulate either the weighted least-squares (WLS) or the least absolute value (LAV) PMU state estimation model encapsulated within the type `PMUStateEstimation` using:
 * [`pmuWlsStateEstimation`](@ref pmuWlsStateEstimation),
 * [`pmuLavStateEstimation`](@ref pmuLavStateEstimation).
 
@@ -99,15 +99,15 @@ device = measurement()
 @pmu(label = "PMU ? (!)")
 for (bus, k) in placement.bus
     Vᵢ, θᵢ = analysis.voltage.magnitude[k], analysis.voltage.angle[k]
-    addPmu!(system, device; bus = bus, magnitude = Vᵢ, angle = θᵢ, noise = false)
+    addPmu!(system, device; bus = bus, magnitude = Vᵢ, angle = θᵢ)
 end
 for branch in keys(placement.from)
     Iᵢⱼ, ψᵢⱼ = fromCurrent(system, analysis; label = branch)
-    addPmu!(system, device; from = branch, magnitude = Iᵢⱼ, angle = ψᵢⱼ, noise = false)
+    addPmu!(system, device; from = branch, magnitude = Iᵢⱼ, angle = ψᵢⱼ)
 end
 for branch in keys(placement.to)
     Iⱼᵢ, ψⱼᵢ = toCurrent(system, analysis; label = branch)
-    addPmu!(system, device; to = branch, magnitude = Iⱼᵢ, angle = ψⱼᵢ, noise = false)
+    addPmu!(system, device; to = branch, magnitude = Iⱼᵢ, angle = ψⱼᵢ)
 end
 
 nothing # hide
@@ -115,8 +115,7 @@ nothing # hide
 
 For example, we can observe the obtained set of measurement values:
 ```@repl PMUOptimalPlacement
-print(device.pmu.label, device.pmu.magnitude.mean)
-print(device.pmu.label, device.pmu.angle.mean)
+print(device.pmu.label, device.pmu.magnitude.mean, device.pmu.angle.mean)
 ```
 
 ---
@@ -161,7 +160,7 @@ While this approach is suitable for many scenarios, linear PMU state estimation 
 
 To accommodate this, users have the option to consider correlation when adding each PMU to the `Measurement` type. For instance, let us add a new PMU while considering correlation:
 ```@example PMUOptimalPlacement
-addPmu!(system, device; bus = "Bus 1", magnitude = 1, angle = 0, correlated = true)
+addPmu!(system, device; bus = "Bus 3", magnitude = 1.01, angle = -0.005, correlated = true)
 
 nothing # hide
 ```
@@ -190,7 +189,7 @@ The resolution of the WLS state estimation problem using the conventional method
 
 This approach is suitable when measurement errors are uncorrelated, and the precision matrix remains diagonal. Therefore, as a preliminary step, we need to eliminate the correlation, as we did previously:
 ```@example PMUOptimalPlacement
-updatePmu!(system, device; label = "PMU 5 (Bus 1)", correlated = false)
+updatePmu!(system, device; label = "PMU 5 (Bus 3)", correlated = false)
 
 nothing # hide
 ```
@@ -229,7 +228,7 @@ analysis.method.outlier.label
 
 Hence, upon detecting bad data, the `detect` variable will hold `true`. The `maxNormalizedResidual` variable retains the value of the largest normalized residual, while the `label` contains the label of the measurement identified as bad data. JuliaGrid will mark the respective phasor measurement as out-of-service within the `Measurement` type.
 
-Moreover, JuliaGrid will adjust the coefficient matrix and mean vector within the `PMUStateEstimation` type based on measurements now designated as out-of-service. To optimize the algorithm's efficiency, JuliaGrid resets non-zero elements to zero in the coefficient matrix and mean vector:
+Moreover, JuliaGrid will adjust the coefficient matrix and mean vector within the `PMUStateEstimation` type based on measurements now designated as out-of-service. To optimize the algorithm's efficiency, JuliaGrid resets non-zero elements to zero in the coefficient matrix and mean vector, effectively removing the impact of the corresponding measurement on the solution:
 ```@repl PMUOptimalPlacement
 analysis.method.mean
 analysis.method.coefficient
@@ -293,7 +292,7 @@ using JuliaGrid # hide
 @default(template) # hide
 
 system = powerSystem()
-device = measurement() # Initializing a Measurement instance
+device = measurement() # <- Initializing a Measurement instance
 
 addBus!(system; label = "Bus 1", type = 3)
 addBus!(system; label = "Bus 2", type = 1, active = 0.1, reactive = 0.01)
@@ -306,18 +305,18 @@ addBranch!(system; label = "Branch 2", from = "Bus 2", to = "Bus 3", reactance =
 addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 3.2, reactive = 0.3)
 
 @pmu(label = "PMU ?")
-addPmu!(system, device; bus = "Bus 1", magnitude = 1.0, angle = 0.0, noise = false)
+addPmu!(system, device; bus = "Bus 1", magnitude = 1.0, angle = 0.0)
 addPmu!(system, device; bus = "Bus 2", magnitude = 0.98, angle = -0.023)
 addPmu!(system, device; from = "Branch 2", magnitude = 0.5, angle = -0.05)
 
-analysis = pmuWlsStateEstimation(system, device) # Creating PMUStateEstimation for the model
+analysis = pmuWlsStateEstimation(system, device) # <- Creating PMUStateEstimation for model
 solve!(system, analysis)
 
 addPmu!(system, device; to = "Branch 2", magnitude = 0.5, angle = 3.1)
 updatePmu!(system, device; label = "PMU 1", varianceMagnitude = 1e-8)
 updatePmu!(system, device; label = "PMU 3", statusMagnitude = 0, statusAngle = 0)
 
-analysis = pmuWlsStateEstimation(system, device) # Creating PMUStateEstimation for new model
+analysis = pmuWlsStateEstimation(system, device) #<- Creating PMUStateEstimation for new model
 solve!(system, analysis)
 
 nothing # hide
@@ -346,7 +345,7 @@ using JuliaGrid # hide
 @default(template) # hide
 
 system = powerSystem()
-device = measurement() # Initializing a Measurement instance
+device = measurement() # <- Initializing a Measurement instance
 
 addBus!(system; label = "Bus 1", type = 3)
 addBus!(system; label = "Bus 2", type = 1, active = 0.1, reactive = 0.01)
@@ -359,19 +358,19 @@ addBranch!(system; label = "Branch 2", from = "Bus 2", to = "Bus 3", reactance =
 addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 3.2, reactive = 0.3)
 
 @pmu(label = "PMU ?")
-addPmu!(system, device; bus = "Bus 1", magnitude = 1.0, angle = 0.0, noise = false)
+addPmu!(system, device; bus = "Bus 1", magnitude = 1.0, angle = 0.0)
 addPmu!(system, device; bus = "Bus 2", magnitude = 0.98, angle = -0.023)
 addPmu!(system, device; from = "Branch 2", magnitude = 0.5, angle = -0.05)
 addPmu!(system, device; to = "Branch 2", magnitude = 0.5, angle = 3.1, statusAngle = 0)
 
-analysis = pmuWlsStateEstimation(system, device) # Creating PMUStateEstimation for the model
+analysis = pmuWlsStateEstimation(system, device) # <- Creating PMUStateEstimation for model
 solve!(system, analysis)
 
 updatePmu!(system, device, analysis; label = "PMU 1", varianceMagnitude = 1e-8)
 updatePmu!(system, device, analysis; label = "PMU 3", statusMagnitude = 0, statusAngle = 0)
 updatePmu!(system, device, analysis; label = "PMU 4", statusAngle = 1)
 
-# No need for re-creation; we have already updated the existing PMUStateEstimation instance
+# <- No need for re-creation; we have already updated the existing PMUStateEstimation instance
 solve!(system, analysis)
 
 nothing # hide
@@ -388,17 +387,46 @@ The same methodology can be applied to the LAV method, thereby circumventing the
 ---
 
 ## [Power and Current Analysis](@id PMUSEPowerCurrentAnalysisManual)
-After obtaining the solution from the PMU state estimation, we can calculate various electrical quantities related to buses and branches using the [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)) and [`current!`](@ref current!(::PowerSystem, ::AC)) functions. For instance, To illustrate this with a continuation of our previous example, we can compute powers and currents using the following functions:
-```@example WLSPMUStateEstimationSolution
+After obtaining the solution from the PMU state estimation, we can calculate various electrical quantities related to buses and branches using the [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)) and [`current!`](@ref current!(::PowerSystem, ::AC)) functions. For instance, let us consider the model for which we obtained the PMU state estimation solution:
+```@example PMUStateEstimationSolution
+using JuliaGrid # hide
+@default(unit) # hide
+@default(template) # hide
+
+system = powerSystem()
+device = measurement()
+
+addBus!(system; label = "Bus 1", type = 3, susceptance = 0.002)
+addBus!(system; label = "Bus 2", type = 1, active = 0.1, reactive = 0.01)
+addBus!(system; label = "Bus 3", type = 1, active = 2.5, reactive = 0.2)
+
+@branch(resistance = 0.02, conductance = 1e-4, susceptance = 0.04)
+addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.05)
+addBranch!(system; label = "Branch 2", from = "Bus 1", to = "Bus 3", reactance = 0.05)
+addBranch!(system; label = "Branch 3", from = "Bus 2", to = "Bus 3", reactance = 0.03)
+
+addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 3.2, reactive = 0.3)
+
+addPmu!(system, device; bus = "Bus 1", magnitude = 1.0, angle = 0.0)
+addPmu!(system, device; bus = "Bus 2", magnitude = 0.97, angle = -0.051)
+addPmu!(system, device; from = "Branch 2", magnitude = 1.66, angle = -0.15)
+addPmu!(system, device; to = "Branch 2", magnitude = 1.67, angle = 2.96)
+
+analysis = pmuWlsStateEstimation(system, device)
+solve!(system, analysis)
+```
+
+We can now utilize the provided functions to compute powers and currents:
+```@example PMUStateEstimationSolution
 power!(system, analysis)
 current!(system, analysis)
 nothing # hide
 ```
 
-For instance, if we want to show the active power injections at each bus and the current flow angles at each to-bus end of the branch, we can employ the following code:
-```@repl WLSPMUStateEstimationSolution
+For instance, if we want to show the active power injections and the from-bus current magnitudes, we can employ the following code:
+```@repl PMUStateEstimationSolution
 print(system.bus.label, analysis.power.injection.active)
-print(system.branch.label, analysis.current.to.angle)
+print(system.branch.label, analysis.current.from.magnitude)
 ```
 
 !!! note "Info"
@@ -410,7 +438,7 @@ To compute specific quantities for particular components, rather than calculatin
 
 ##### Active and Reactive Power Injection
 To calculate the active and reactive power injection associated with a specific bus, the function can be used:
-```@repl WLSPMUStateEstimationSolution
+```@repl PMUStateEstimationSolution
 active, reactive = injectionPower(system, analysis; label = "Bus 1")
 ```
 
@@ -418,7 +446,7 @@ active, reactive = injectionPower(system, analysis; label = "Bus 1")
 
 ##### Active and Reactive Power Injection from Generators
 To calculate the active and reactive power injection from the generators at a specific bus, the function can be used:
-```@repl WLSPMUStateEstimationSolution
+```@repl PMUStateEstimationSolution
 active, reactive = supplyPower(system, analysis; label = "Bus 1")
 ```
 
@@ -426,15 +454,15 @@ active, reactive = supplyPower(system, analysis; label = "Bus 1")
 
 ##### Active and Reactive Power at Shunt Element
 To calculate the active and reactive power associated with shunt element at a specific bus, the function can be used:
-```@repl WLSPMUStateEstimationSolution
-active, reactive = shuntPower(system, analysis; label = "Bus 3")
+```@repl PMUStateEstimationSolution
+active, reactive = shuntPower(system, analysis; label = "Bus 1")
 ```
 
 ---
 
 ##### Active and Reactive Power Flow
 Similarly, we can compute the active and reactive power flow at both the from-bus and to-bus ends of the specific branch by utilizing the provided functions below:
-```@repl WLSPMUStateEstimationSolution
+```@repl PMUStateEstimationSolution
 active, reactive = fromPower(system, analysis; label = "Branch 2")
 active, reactive = toPower(system, analysis; label = "Branch 2")
 ```
@@ -443,7 +471,7 @@ active, reactive = toPower(system, analysis; label = "Branch 2")
 
 ##### Active and Reactive Power at Charging Admittances
 To calculate the active and reactive power linked with branch charging admittances of the particular branch, the function can be used:
-```@repl WLSPMUStateEstimationSolution
+```@repl PMUStateEstimationSolution
 active, reactive = chargingPower(system, analysis; label = "Branch 1")
 ```
 
@@ -453,7 +481,7 @@ Active powers indicate active losses within the branch's charging admittances. M
 
 ##### Active and Reactive Power at Series Impedance
 To calculate the active and reactive power across the series impedance of the branch, the function can be used:
-```@repl WLSPMUStateEstimationSolution
+```@repl PMUStateEstimationSolution
 active, reactive = seriesPower(system, analysis; label = "Branch 2")
 ```
 
@@ -463,7 +491,7 @@ The active power also considers active losses originating from the series resist
 
 ##### Current Injection
 To calculate the current injection associated with a specific bus, the function can be used:
-```@repl WLSPMUStateEstimationSolution
+```@repl PMUStateEstimationSolution
 magnitude, angle = injectionCurrent(system, analysis; label = "Bus 1")
 ```
 
@@ -471,7 +499,7 @@ magnitude, angle = injectionCurrent(system, analysis; label = "Bus 1")
 
 ##### Current Flow
 We can compute the current flow at both the from-bus and to-bus ends of the specific branch by utilizing the provided functions below:
-```@repl WLSPMUStateEstimationSolution
+```@repl PMUStateEstimationSolution
 magnitude, angle = fromCurrent(system, analysis; label = "Branch 2")
 magnitude, angle = toCurrent(system, analysis; label = "Branch 2")
 ```
@@ -480,7 +508,7 @@ magnitude, angle = toCurrent(system, analysis; label = "Branch 2")
 
 ##### Current Through Series Impedance
 To calculate the current passing through the series impedance of the branch in the direction from the from-bus end to the to-bus end, we can use the following function:
-```@repl WLSPMUStateEstimationSolution
+```@repl PMUStateEstimationSolution
 magnitude, angle = seriesCurrent(system, analysis; label = "Branch 2")
 ```
 

@@ -26,8 +26,8 @@ The PMU is defined with the following keywords:
   * `statusAngle = 0`: out-of-service;
 * `noise`: specifies how to generate the measurement means:
   * `noise = true`: adds white Gaussian noises with variances to the `magnitude` and `angle`;
-  * `noise = false`: uses the `magnitude` and `angle` values only.
-* `correlated`: chooses the correlation among errors of the PMU for algorithms utilizing rectangular coordinates:
+  * `noise = false`: uses the `magnitude` and `angle` values only;
+* `correlated`: specifies error correlation for PMUs for algorithms utilizing rectangular coordinates:
   * `correlated = true`: considers correlated errors;
   * `correlated = false`: disregards correlations between errors;
 * `polar`: chooses the coordinate system for including phasor measurements in AC state estimation:
@@ -194,7 +194,7 @@ Users have the option to configure the following keywords:
 * `statusAngleTo`: the operating status of PMU angle measurements at the to-bus ends:
   * `statusAngleTo = 1`: in-service;
   * `statusAngleTo = 0`: out-of-service;
-* `correlated`: chooses the correlation among errors of the PMU for algorithms utilizing rectangular coordinates:
+* `correlated`: specifies error correlation for PMUs for algorithms utilizing rectangular coordinates:
   * `correlated = true`: considers correlated errors;
   * `correlated = false`: disregards correlations between errors;
 * `polar`: chooses the coordinate system for including phasor measurements in AC state estimation:
@@ -929,7 +929,7 @@ end
     @pmu(label, varianceMagnitudeBus, statusMagnitudeBus, varianceAngleBus, statusAngleBus,
         varianceMagnitudeFrom, statusMagnitudeFrom, varianceAngleFrom, statusAngleFrom,
         varianceMagnitudeTo, statusMagnitudeTo, varianceAngleTo, statusAngleTo, noise,
-        correlated, olar)
+        correlated, polar)
 
 The macro generates a template for a PMU, which can be utilized to define a PMU using the
 [`addPmu!`](@ref addPmu!) function.
@@ -938,14 +938,18 @@ The macro generates a template for a PMU, which can be utilized to define a PMU 
 To establish the PMU template, users have the option to set default values for magnitude
 and angle variances, as well as statuses for each component of the phasor. This can be
 done for PMUs located at the buses using the `varianceMagnitudeBus`, `varianceAngleBus`,
-`statusMagnitudeBus`, and `statusAngleBus` keywords. The same configuration can be applied
-at both the from-bus ends of the branches using the `varianceMagnitudeFrom`,
-`varianceAngleFrom`, `statusMagnitudeFrom`, and `statusAngleFrom` keywords. For PMUs
-located at the to-bus ends of the branches, users can use the `varianceMagnitudeTo`,
-`varianceAngleTo`, `statusMagnitudeTo`, and `statusAngleTo` keywords. Additionally, users
-can configure the pattern for labels using the `label` keyword. specify the type of
-`noise`, and indicate the `correlated` and `polar` system utilized for managing phasors
-during state estimation.
+`statusMagnitudeBus`, and `statusAngleBus` keywords.
+
+The same configuration can be applied at both the from-bus ends of the branches using the
+`varianceMagnitudeFrom`, `varianceAngleFrom`, `statusMagnitudeFrom`, and `statusAngleFrom`
+keywords.
+
+For PMUs located at the to-bus ends of the branches, users can use the `varianceMagnitudeTo`,
+`varianceAngleTo`, `statusMagnitudeTo`, and `statusAngleTo` keywords.
+
+Additionally, users can configure the pattern for labels using the `label` keyword, specify
+the type of `noise`, and indicate the `correlated` and `polar` system utilized for
+managing phasors during state estimation.
 
 # Units
 By default, the units for variances are per-units (pu) and radians (rad). However, users

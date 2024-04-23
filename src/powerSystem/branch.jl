@@ -26,8 +26,8 @@ The branch is defined with the following keywords:
 * `susceptance` (pu or S): total shunt susceptance;
 * `turnsRatio`: transformer off-nominal turns ratio, equal to one for a line;
 * `shiftAngle` (rad or deg): transformer phase shift angle, where positive value defines delay;
-* `minDiffAngle` (rad or deg): minimum voltage angle difference value between from-bus and to-bus end;
-* `maxDiffAngle` (rad or deg): maximum voltage angle difference value between from-bus and to-bus end;
+* `minDiffAngle` (rad or deg): minimum voltage angle difference value between from-bus and to-bus ends;
+* `maxDiffAngle` (rad or deg): maximum voltage angle difference value between from-bus and to-bus ends;
 * `longTerm` (pu or VA, W): long-term flow rating (equal to zero for unlimited);
 * `shortTerm` (pu or VA, W): short-term flow rating (equal to zero for unlimited);
 * `emergency` (pu or VA, W): emergency flow rating (equal to zero for unlimited);

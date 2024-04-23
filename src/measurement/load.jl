@@ -7,7 +7,7 @@ has been created, it is possible to add new measurement devices, or modify the p
 of existing ones.
 
 # Argument
-- passing the path to the HDF5 file with the `.h5` extension.
+It requires a string path to the HDF5 file with the `.h5` extension.
 
 # Returns
 The `Measurement` composite type with the following fields:
@@ -15,7 +15,7 @@ The `Measurement` composite type with the following fields:
 - `ammeter`: branch current magnitude measurements;
 - `wattmeter`: active power injection and active power flow measurements;
 - `varmeter`: reactive power injection and reactive power flow measurements;
-- `pmu`: bus voltage and branch current phasors measurements.
+- `pmu`: bus voltage and branch current phasor measurements.
 
 # Units
 JuliaGrid stores all data in per-units and radians format.

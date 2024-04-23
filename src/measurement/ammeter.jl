@@ -15,10 +15,10 @@ The ammeter is defined with the following keywords:
 * `variance` (pu or A): the variance of the branch current magnitude measurement;
 * `noise`: specifies how to generate the measurement mean:
   * `noise = true`: adds white Gaussian noise with the `variance` to the `magnitude`;
-  * `noise = false`: uses the `magnitude` value only.
+  * `noise = false`: uses the `magnitude` value only;
 * `status`: the operating status of the ammeter:
   * `status = 1`: in-service;
-  * `status = 0`: out-of-service;
+  * `status = 0`: out-of-service.
 
 # Updates
 The function updates the `ammeter` field of the `Measurement` composite type.
@@ -118,7 +118,7 @@ Users have the option to configure the following keywords:
 * `varianceTo` (pu or A): the measurement variance for ammeters at the to-bus ends;
 * `statusTo`: the operating status of the ammeters at the to-bus ends:
   * `statusTo = 1`: in-service;
-  * `statusTo = 0`: out-of-service,
+  * `statusTo = 0`: out-of-service;
 * `noise`: specifies how to generate the measurement mean:
   * `noise = true`: adds white Gaussian noise with the `variance` to the current magnitudes;
   * `noise = false`: uses the `magnitude` value only.
