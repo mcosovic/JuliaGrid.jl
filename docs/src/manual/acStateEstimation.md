@@ -53,32 +53,39 @@ system = powerSystem()
 device = measurement()
 
 addBus!(system; label = "Bus 1", type = 3)
-addBus!(system; label = "Bus 2", type = 1, active = 0.1)
-addBus!(system; label = "Bus 3", type = 1, active = 0.05)
-addBus!(system; label = "Bus 4", type = 1, active = 0.05)
-addBus!(system; label = "Bus 5", type = 1, active = 0.05)
-addBus!(system; label = "Bus 6", type = 1, active = 0.05)
+addBus!(system; label = "Bus 2", type = 1, active = 0.1, reactive = 0.01)
+addBus!(system; label = "Bus 3", type = 2, active = 0.5, reactive = 0.01)
+addBus!(system; label = "Bus 4", type = 1, active = 0.2, reactive = 0.02)
+addBus!(system; label = "Bus 5", type = 1, active = 0.3, reactive = 0.03)
+addBus!(system; label = "Bus 6", type = 1, active = 0.1, reactive = 0.01)
+addBus!(system; label = "Bus 7", type = 1, active = 0.1, reactive = 0.01)
 
-@branch(resistance = 0.02, conductance = 1e-4, susceptance = 0.04)
+@branch(resistance = 0.02, conductance = 1e-4, susceptance = 0.002)
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.05)
 addBranch!(system; label = "Branch 2", from = "Bus 2", to = "Bus 3", reactance = 0.01)
-addBranch!(system; label = "Branch 3", from = "Bus 3", to = "Bus 5", reactance = 0.01)
-addBranch!(system; label = "Branch 4", from = "Bus 3", to = "Bus 4", reactance = 0.01)
-addBranch!(system; label = "Branch 5", from = "Bus 5", to = "Bus 6", reactance = 0.01)
+addBranch!(system; label = "Branch 3", from = "Bus 2", to = "Bus 5", reactance = 0.02)
+addBranch!(system; label = "Branch 4", from = "Bus 3", to = "Bus 4", reactance = 0.03)
+addBranch!(system; label = "Branch 5", from = "Bus 5", to = "Bus 6", reactance = 0.05)
+addBranch!(system; label = "Branch 6", from = "Bus 3", to = "Bus 5", reactance = 0.05)
+addBranch!(system; label = "Branch 7", from = "Bus 6", to = "Bus 7", reactance = 0.05)
 
-addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 3.2, reactive = 0.1)
+addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 4.2, reactive = 0.2)
+addGenerator!(system; label = "Generator 2", bus = "Bus 3", active = 0.2, reactive = 0.1)
 
-addWattmeter!(system, device; label = "Wattmeter 1", from = "Branch 1", active = 0.31)
-addVarmeter!(system, device; label = "Varmeter 1", from = "Branch 1", reactive = -0.19)
+addWattmeter!(system, device; label = "Wattmeter 1", from = "Branch 1", active = 1.15)
+addVarmeter!(system, device; label = "Varmeter 1", from = "Branch 1", reactive = -0.50)
 
-addWattmeter!(system, device; label = "Wattmeter 2", from = "Branch 3", active = 0.09)
-addVarmeter!(system, device; label = "Varmeter 2", from = "Branch 3", reactive = -0.08)
+addWattmeter!(system, device; label = "Wattmeter 2", from = "Branch 4", active = 0.20)
+addVarmeter!(system, device; label = "Varmeter 2", from = "Branch 4", reactive = -0.02)
 
-addWattmeter!(system, device; label = "Wattmeter 3", bus = "Bus 3", active = -0.05)
-addVarmeter!(system, device; label = "Varmeter 3", bus = "Bus 3", reactive = 0.0)
+addWattmeter!(system, device; label = "Wattmeter 3", from = "Branch 5", active = -0.20)
+addVarmeter!(system, device; label = "Varmeter 3", from = "Branch 5", reactive = 0.02)
 
-addWattmeter!(system, device; label = "Wattmeter 4", bus = "Bus 3", active = -0.04)
-addVarmeter!(system, device; label = "Varmeter 4", bus = "Bus 3", reactive = 0.0001)
+addWattmeter!(system, device; label = "Wattmeter 4", bus = "Bus 2", active = -0.1)
+addVarmeter!(system, device; label = "Varmeter 4", bus = "Bus 2", reactive = -0.01)
+
+addWattmeter!(system, device; label = "Wattmeter 5", bus = "Bus 3", active = -0.30)
+addVarmeter!(system, device; label = "Varmeter 5", bus = "Bus 3", reactive = 0.66)
 
 nothing # hide
 ```
@@ -97,7 +104,7 @@ islands = islandTopologicalFlow(system, device)
 nothing # hide
 ```
 
-As a result, four flow observable islands are identified: `Bus 1` and `Bus 2` form the first island, `Bus 3` and `Bus 5` form the second island, and `Bus 4` and `Bus 6` constitute the third and fourth islands, respectively:
+As a result, four flow observable islands are identified: `Bus 1` and `Bus 2` form the first island, `Bus 3` and `Bus 4` form the second island, `Bus 5` and `Bus 6` constitute the third island, while `Bus 7` form the fourth island:
 ```@repl ACSEObservabilityAnalysis
 islands.island
 nothing # hide
@@ -118,7 +125,7 @@ The outcome reveals the identification of two maximal observable islands:
 islands.island
 nothing # hide
 ```
-It is evident that upon comparing this result with the flow observable islands, the merging of the two injection measurements at `Bus 3` consolidated the first, second, and third flow observable islands into a single island.
+It is evident that upon comparing this result with the flow observable islands, the merging of the two injection measurements at `Bus 2` and `Bus 3` consolidated the first, second, and third flow observable islands into a single island.
 
 ---
 
@@ -130,21 +137,21 @@ addVoltmeter!(system, device; bus = "Bus 1", magnitude = 1.0)
 nothing # hide
 ```
 
-Subsequently, the user needs to establish a set of pseudomeasurements, where measurements must come in pairs as well. Let us create that set:
+Subsequently, the user needs to establish a set of pseudo-measurements, where measurements must come in pairs as well. Let us create that set:
 ```@example ACSEObservabilityAnalysis
 pseudo = measurement()
 
-addWattmeter!(system, pseudo; label = "Wattmeter 1 (Pseudo)", bus = "Bus 1", active = 0.31)
-addVarmeter!(system, pseudo; label = "Varmeter 1 (Pseudo)", bus = "Bus 1", reactive = -0.19)
+addWattmeter!(system, pseudo; label = "Pseudo-Wattmeter 1", bus = "Bus 1", active = 0.31)
+addVarmeter!(system, pseudo; label = "Pseudo-Varmeter 1", bus = "Bus 1", reactive = -0.19)
 
-addWattmeter!(system, pseudo; label = "Wattmeter 2 (Pseudo)", bus = "Bus 6", active = -0.05)
-addVarmeter!(system, pseudo; label = "Varmeter 2 (Pseudo)", bus = "Bus 6", reactive = 0.0)
+addWattmeter!(system, pseudo; label = "Pseudo-Wattmeter 2", from = "Branch 7", active = 0.10)
+addVarmeter!(system, pseudo; label = "Pseudo-Varmeter 2", from = "Branch 7", reactive = 0.01)
 
 nothing # hide
 ```
 
 !!! note "Info"
-    The labels for specific pseudomeasurements must differ from those defined in the measurements stored in the `device` set. This is necessary because the next step involves adding pseudomeasurements to the `device` set.
+    The labels for specific pseudo-measurements must differ from those defined in the measurements stored in the `device` set. This is necessary because the next step involves adding pseudo-measurements to the `device` set.
 
 Subsequently, the user can execute the [`restorationGram!`](@ref restorationGram!(::PowerSystem, ::Measurement, ::Measurement, ::Island)) function:
 ```@example ACSEObservabilityAnalysis
@@ -152,7 +159,7 @@ restorationGram!(system, device, pseudo, islands)
 nothing # hide
 ```
 
-This function attempts to restore observability using pseudomeasurements. As a result, the inclusion of measurements from `Wattmeter 2 (Pseudo)` and `Varmeter 2 (Pseudo)` facilitates observability restoration, and these measurements are subsequently added to the `device` variable:
+This function attempts to restore observability using pseudo-measurements. As a result, the inclusion of measurements from `Pseudo-Wattmeter 2` and `Pseudo-Varmeter 2` facilitates observability restoration, and these measurements are subsequently added to the `device` variable:
 ```@repl ACSEObservabilityAnalysis
 device.wattmeter.label
 device.varmeter.label
