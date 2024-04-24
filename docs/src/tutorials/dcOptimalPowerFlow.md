@@ -1,5 +1,6 @@
 # [DC Optimal Power Flow](@id DCOptimalPowerFlowTutorials)
-To begin, the `PowerSystem` composite type must be provided to JuliaGrid through the use of the [`powerSystem`](@ref powerSystem) function, as illustrated by the following example:
+
+To begin, let us generate the `PowerSystem` composite type, as illustrated by the following example:
 ```@example DCOptimalPowerFlow
 using JuliaGrid # hide
 using JuMP, HiGHS
@@ -27,13 +28,13 @@ cost!(system; label = 2, active = 1, piecewise =  [10.85 12.3; 14.77 16.8; 18 18
 nothing # hide
 ```
 
-To review, we can conceptualize the bus/branch model as the graph denoted by ``\mathcal{G} = (\mathcal{N}, \mathcal{E})``, where we have the set of buses ``\mathcal{N} = \{1, \dots, n\}``, and the set of branches ``\mathcal{E} \subseteq \mathcal{N} \times \mathcal{N}`` within the power system. This can be visualized as follows:
+To review, we can conceptualize the bus/branch model as the graph denoted by ``\mathcal{G} = (\mathcal{N}, \mathcal{E})``, where we have the set of buses ``\mathcal{N} = \{1, \dots, n\}``, and the set of branches ``\mathcal{E} \subseteq \mathcal{N} \times \mathcal{N}`` within the power system:
 ```@repl DCOptimalPowerFlow
 𝒩 = collect(keys(system.bus.label))
 ℰ = [𝒩[system.branch.layout.from] 𝒩[system.branch.layout.to]]
 ```
 
-Moreover, we identify the set of generators as ``\mathcal{S} = \{1, \dots, n_g\}`` within the power system. For the specific example at hand, it can be represented as:
+Moreover, we identify the set of generators as ``\mathcal{S} = \{1, \dots, n_\text{g}\}`` within the power system:
 ```@repl DCOptimalPowerFlow
 𝒮 = collect(keys(system.generator.label))
 ```
@@ -41,16 +42,18 @@ Moreover, we identify the set of generators as ``\mathcal{S} = \{1, \dots, n_g\}
 ---
 
 !!! ukw "Notation"
-    In this section, when referring to a vector ``\mathbf{a}``, we use the notation ``\mathbf{a} = [a_{i}]`` or ``\mathbf{a} = [a_{ij}]``, where ``a_i`` represents the element associated with bus ``i \in \mathcal{N}`` or generator ``i \in \mathcal{S}``, while ``a_{ij}`` denotes the element associated with branch ``(i,j) \in \mathcal{E}``.
+    Here, when referring to a vector ``\mathbf{a}``, we use the notation ``\mathbf{a} = [a_{i}]`` or ``\mathbf{a} = [a_{ij}]``, where ``a_i`` represents the element related with bus ``i \in \mathcal{N}`` or generator ``i \in \mathcal{S}``, while ``a_{ij}`` denotes the element related with branch ``(i,j) \in \mathcal{E}``.
 
 ---
 
 ## [Optimal Power Flow Model](@id DCOptimalPowerFlowModelTutorials)
-In the DC optimal power flow, the active power outputs of the generators ``\mathbf {P}_{\text{g}} = [{P}_{\text{g}i}]``, ``i \in \mathcal{S}``, are represented as linear functions of the bus voltage angles ``\bm{\Theta} = [{\theta}_{i}]``, ``i \in \mathcal{N}``. Thus, the optimization variables in this model are the active power outputs of the generators and the bus voltage angles. The DC optimal power flow model has the form:
+In the DC optimal power flow, the active power outputs of the generators ``\mathbf {P}_{\text{g}} = [{P}_{\text{g}i}]``, ``i \in \mathcal{S}``, are represented as linear functions of the bus voltage angles ``\bm{\Theta} = [{\theta}_{i}]``, ``i \in \mathcal{N}``. Thus, the optimization variables in this model are the active power outputs of the generators and the bus voltage angles.
+
+The DC optimal power flow model has the form:
 ```math
 \begin{aligned}
     & {\text{minimize}} & & \sum_{i \in \mathcal{S}} f_i(P_{\text{g}i}) \\
-    & \text{subject\;to} & &  \theta_i - \theta_{\text{slack}} = 0,\;\;\; i \in \mathcal{N_{\text{sb}}}  \\[3pt]
+    & \text{subject\;to} & &  \theta_i - \theta_{\text{s}} = 0,\;\;\; i \in \mathcal{N_{\text{sb}}}  \\[3pt]
     & & & h_{P_i}(\mathbf {P}_{\text{g}}, \bm{\Theta}) = 0,\;\;\;  \forall i \in \mathcal{N} \\[3pt]
     & & & \theta_{ij}^\text{min} \leq \theta_i - \theta_j \leq \theta_{ij}^\text{max},\;\;\; \forall (i,j) \in \mathcal{E} \\[3pt]
     & & &  - P_{ij}^{\text{max}} \leq h_{P_{ij}}(\theta_i, \theta_j) \leq P_{ij}^{\text{max}},\;\;\; \forall (i,j) \in \mathcal{E} \\[3pt]
@@ -78,7 +81,7 @@ nothing # hide
 ---
 
 ##### Optimization Variables
-Hence, the variables in this model encompass the active power outputs of the generators denoted as ``\mathbf{P}_{\text{g}} = [{P}_{\text{g}i}]``, where ``i \in \mathcal{S}``, and the bus voltage angles represented by ``\bm{\Theta} = [{\theta}_{i}]``, where ``i \in \mathcal{N}``. You can access these variables using the following code:
+Hence, the variables in this model encompass the active power outputs of the generators denoted as ``\mathbf{P}_{\text{g}} = [{P}_{\text{g}i}]``, where ``i \in \mathcal{S}``, and the bus voltage angles represented by ``\bm{\Theta} = [{\theta}_{i}]``, where ``i \in \mathcal{N}``. You can access these variables using the following:
 ```@repl DCOptimalPowerFlow
 𝐏ₒ = analysis.method.variable.active
 𝚯 = analysis.method.variable.angle
@@ -137,7 +140,7 @@ Similar to how convex linear piecewise functions are treated in the [AC Optimal 
 
 Consequently, for a piecewise cost function denoted as ``f_i(P_{\text{g}i})`` with ``k`` segments (where ``k > 1``), the ``j``-th segment, defined by the points ``[P_{\text{g}i,j}, f_i(P_{\text{g}i,j})]`` and ``[P_{\text{g}i,j+1}, f_i(P_{\text{g}i,j+1})]``, is characterized by the following inequality constraints:
 ```math
-\cfrac{f_i(P_{\text{g}i,j+1}) - f_i(P_{\text{g}i,j})}{P_{\text{g}i,j+1} - P_{\text{g}i,j}}(P_{\text{g}i} - P_{\text{g}i,j}) + f_i(P_{\text{g}i,j}) \leq H_i ,\;\;\;j = 1,\dots,k,
+\cfrac{f_i(P_{\text{g}i,j+1}) - f_i(P_{\text{g}i,j})}{P_{\text{g}i,j+1} - P_{\text{g}i,j}}(P_{\text{g}i} - P_{\text{g}i,j}) + f_i(P_{\text{g}i,j}) \leq H_i, \;\;\; i \in \mathcal{S}, \;\;\; j = 1,\dots,k,
 ```
 where ``H_i`` represents the helper variable. To finalize this method, we simply need to include the helper variable ``H_i`` in the objective function. This approach efficiently handles linear piecewise cost functions, providing the flexibility to capture nonlinear characteristics while still benefiting from the advantages of linear optimization techniques.
 
@@ -167,9 +170,9 @@ In the following section, we will examine the various constraints defined within
 ---
 
 ##### Slack Bus Constraint
-The first equality constraint is linked to the slack bus, where the bus voltage angle denoted as ``\theta_i`` is fixed to a constant value ``\theta_{\text{slack}}``. It can be expressed as follows:
+The first equality constraint is linked to the slack bus, where the bus voltage angle denoted as ``\theta_i`` is fixed to a constant value ``\theta_{\text{s}}``. It can be expressed as follows:
 ```math
-\theta_i - \theta_{\text{slack}} = 0,\;\;\; i \in \mathcal{N_{\text{sb}}},
+\theta_i - \theta_{\text{s}} = 0,\;\;\; i \in \mathcal{N_{\text{sb}}},
 ```
 where the set ``\mathcal{N}_{\text{sb}}`` contains the index of the slack bus. To access the equality constraint from the model, we can utilize the variable:
 ```@repl DCOptimalPowerFlow
@@ -179,11 +182,12 @@ print(analysis.method.constraint.slack.angle)
 ---
 
 ##### Active Power Balance Constraints
-The second equality constraint in the optimization problem is associated with the active power balance equation denoted as ``h_{P_i}(\mathbf x)`` for each bus ``i \in \mathcal{N}``:
+The second equality constraint in the optimization problem is associated with the active power balance equation:
 ```math
 h_{P_i}(\mathbf {P}_{\text{g}}, \bm{\Theta}) = 0,\;\;\;  \forall i \in \mathcal{N}.
 ```
-The equation is derived using the [Nodal Network Equations](@ref DCNodalNetworkEquationsTutorials) and can be represented as:
+
+As elaborated in the [Nodal Network Equations](@ref DCNodalNetworkEquationsTutorials) section, we can express the equation as follows:
 ```math
 h_{P_i}(\mathbf {P}_{\text{g}}, \bm{\Theta}) = \sum_{k \in \mathcal{S}_i} P_{\text{g}k} - \sum_{k = 1}^n {B}_{ik} \theta_k - P_{\text{d}i} - P_{\text{sh}i} - P_{\text{tr}i}.
 ```
@@ -196,7 +200,7 @@ The constant terms in these equations are determined by the active power demand 
 𝐏ₜᵣ = system.model.dc.shiftPower
 ```
 
-To retrieve this equality constraint from the model and access the corresponding variable, we can use:
+To retrieve constraints from the model, we can use:
 ```@repl DCOptimalPowerFlow
 print(analysis.method.constraint.balance.active)
 ```
@@ -213,7 +217,7 @@ where ``\theta_{ij}^\text{min}`` represents the minimum, while ``\theta_{ij}^\te
 𝚯ₗₘ = [system.branch.voltage.minDiffAngle system.branch.voltage.maxDiffAngle]
 ```
 
-To retrieve this inequality constraint from the model and access the corresponding variable, we can use:
+To retrieve constraints from the model, we can use:
 ```@repl DCOptimalPowerFlow
 print(analysis.method.constraint.voltage.angle)
 ```
@@ -235,7 +239,7 @@ The active power flow at branch ``(i,j) \in \mathcal{E}`` can be derived using t
 h_{P_{ij}}(\theta_i, \theta_j) = \frac{1}{\tau_{ij} x_{ij} }(\theta_i - \theta_j - \phi_{ij}).
 ```
 
-To retrieve this inequality constraint, we can use the following code:
+To retrieve constraints from the model, we can use:
 ```@repl DCOptimalPowerFlow
 print(analysis.method.constraint.flow.active)
 ```
@@ -253,9 +257,9 @@ In this representation, the lower and upper bounds are determined by the vector 
 𝐏ₗₘ = [system.generator.capability.minActive system.generator.capability.maxActive]
 ```
 
-To retrieve this equality constraint from the model, we can utilize the following code:
+To retrieve constraints from the model, we can use:
 ```@repl DCOptimalPowerFlow
-print(analysis.constraint.capability.active)
+print(analysis.method.constraint.capability.active)
 ```
 
 ---

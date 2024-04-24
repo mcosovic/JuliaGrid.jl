@@ -71,7 +71,7 @@ where ``v_i`` is the measurement variance defined by the measurement error ``u_i
 ---
 
 ##### Artificial Generation of Measurement Values
-When defining the system of equations, it is essential to have measurement values represented by ``\mathbf{z}``. In JuliaGrid, users have the option to either directly specify measurement values or artificially generate the vector ``[z_1,\dots,z_k]``. This generation process involves introducing white Gaussian noise with variances ``[v_1, \dots, v_k]`` and adding it to the provided values ``[e_1, \dots, e_k]``, typically representing the exact values of the respective electrical quantities:
+When defining the system of equations, it is essential to have measurement values represented by ``\mathbf{z}``. In JuliaGrid, users have the option to either directly specify measurement values or artificially generate the vector ``\mathbf{z}``. The artificial generation process involves setting the keyword `noise = true`, which introduces white Gaussian noise with variances ``[v_1, \dots, v_k]`` added to the provided values ``[e_1, \dots, e_k]``, typically representing the exact values of the respective electrical quantities:
 ```math
   \epsilon_i \sim \mathcal{N}(0,\,v_i) \\[5pt]
   z_i = e_i + \epsilon_i.
@@ -80,10 +80,10 @@ When defining the system of equations, it is essential to have measurement value
 ---
 
 ## Voltmeters
-A voltmeter ``V_i \in \mathcal{V}`` measures the bus voltage magnitude at bus ``i \in \mathcal{N}``. Let us introduce two voltmeters that measure voltage magnitudes at the first and third bus. For the first voltmeter, we artificially generate the measurement value, while for the second voltmeter, we exactly pass the measurement value:
+A voltmeter ``V_i \in \mathcal{V}`` measures the bus voltage magnitude at bus ``i \in \mathcal{N}``. Let us introduce two voltmeters that measure voltage magnitudes at the first and third bus. For the first voltmeter, we directly pass the measurement value, while for the second voltmeter, we generate the measurement value artificially:
 ```@example measurementModelTutorials
-addVoltmeter!(system, device; label = "V₁", bus = 1, magnitude = 1.1)
-addVoltmeter!(system, device; label = "V₃", bus = 3, magnitude = 1.0, noise = false)
+addVoltmeter!(system, device; label = "V₁", bus = 1, magnitude = 1.1, variance = 1e-3)
+addVoltmeter!(system, device; label = "V₃", bus = 3, magnitude = 1.0, noise = true)
 
 nothing  # hide
 ```
@@ -102,14 +102,14 @@ This set of voltmeters defines vectors of measurement values denoted as ``\mathb
 ---
 
 ## Ammeters
-An ammeter ``I_{ij} \in \mathcal{I}`` measures the magnitude of branch current at the from-bus end of the branch ``(i,j) \in \mathcal{E}``. Let us add this type of ammeter at the first branch between buses 1 and 2:
+An ammeter ``I_{ij} \in \mathcal{I}`` measures the magnitude of branch current at the from-bus end of the branch ``(i,j) \in \mathcal{E}``. Let us add this type of ammeter at the first branch between buses `1` and `2`:
 ```@example measurementModelTutorials
 addAmmeter!(system, device; label = "I₁₂", from = 1, magnitude = 0.3, variance = 1e-3)
 
 nothing  # hide
 ```
 
-Additionally, an ammeter can also measure the branch current magnitude at the to-bus end of the branch ``(i,j) \in \mathcal{E}``, denoted as ``I_{ji} \in \mathcal{I}``. For example, we can include this type of ammeter at the same branch:
+Additionally, an ammeter can measure the branch current magnitude at the to-bus end of the branch ``(i,j) \in \mathcal{E}``, denoted as ``I_{ji} \in \mathcal{I}``. For example, we can include this type of ammeter at the same branch:
 ```@example measurementModelTutorials
 addAmmeter!(system, device; label = "I₂₁", to = 1, magnitude = 0.2, variance = 1e-3)
 
@@ -181,7 +181,7 @@ nothing  # hide
 
 Moreover, a varmeter can also measure the reactive power flow at the to-bus end of the branch ``(i,j) \in \mathcal{E}``, denoted as ``Q_{ji} \in \mathcal{Q}``. For example, we can include this type of varmeter at the same branch:
 ```@example measurementModelTutorials
-addVarmeter!(system, device; label = "Q₂₁", to = 1, reactive = 0.03, noise = false)
+addVarmeter!(system, device; label = "Q₂₁", to = 1, reactive = 0.03, noise = true)
 
 nothing  # hide
 ```
@@ -204,7 +204,7 @@ PMUs measure voltage and current phasors in the polar coordinate system, thus ea
 
 A PMU ``(V_i, \theta_i) \in \bar{\mathcal{P}}`` measures the voltage phasor at bus ``i \in \mathcal{N}``. Let us integrate this type of PMU at the first bus:
 ```@example measurementModelTutorials
-addPmu!(system, device; label = "V₁, θ₁", bus = 1, magnitude = 1, angle = 0, noise = false)
+addPmu!(system, device; label = "V₁, θ₁", bus = 1, magnitude = 1, angle = 0, noise = true)
 
 nothing  # hide
 ```

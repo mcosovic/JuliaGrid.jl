@@ -1,6 +1,6 @@
 # [DC Power Flow](@id DCPowerFlowTutorials)
 
-JuliaGrid employs standard network components and the [Unified Branch Model](@ref UnifiedBranchModelTutorials) to obtain the DC power flow solution. To begin, the `PowerSystem` composite type must be provided to JuliaGrid through the use of the [`powerSystem`](@ref powerSystem) function, as illustrated by the following example:
+JuliaGrid employs standard network components and the [Unified Branch Model](@ref UnifiedBranchModelTutorials) to obtain the DC power flow solution. To begin, let us generate the `PowerSystem` composite type, as illustrated by the following example:
 ```@example PowerFlowSolutionDC
 using JuliaGrid # hide
 @default(unit) # hide

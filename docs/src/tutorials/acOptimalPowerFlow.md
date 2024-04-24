@@ -1,6 +1,6 @@
 # [AC Optimal Power Flow](@id ACOptimalPowerFlowTutorials)
 
-To begin, the `PowerSystem` composite type must be provided to JuliaGrid through the use of the [`powerSystem`](@ref powerSystem) function, as illustrated by the following example:
+To begin, let us generate the `PowerSystem` composite type, as illustrated by the following example:
 ```@example ACOptimalPowerFlow
 using JuliaGrid # hide
 using JuMP, Ipopt
@@ -29,13 +29,13 @@ cost!(system; label = 2, reactive = 2, polynomial = [2.0])
 nothing # hide
 ```
 
-To review, we can conceptualize the bus/branch model as the graph denoted by ``\mathcal{G} = (\mathcal{N}, \mathcal{E})``, where we have the set of buses ``\mathcal{N} = \{1, \dots, n\}``, and the set of branches ``\mathcal{E} \subseteq \mathcal{N} \times \mathcal{N}`` within the power system. This can be visualized as follows:
+To review, we can conceptualize the bus/branch model as the graph denoted by ``\mathcal{G} = (\mathcal{N}, \mathcal{E})``, where we have the set of buses ``\mathcal{N} = \{1, \dots, n\}``, and the set of branches ``\mathcal{E} \subseteq \mathcal{N} \times \mathcal{N}`` within the power system:
 ```@repl ACOptimalPowerFlow
 𝒩 = collect(keys(system.bus.label))
 ℰ = [𝒩[system.branch.layout.from] 𝒩[system.branch.layout.to]]
 ```
 
-Moreover, we identify the set of generators as ``\mathcal{S} = \{1, \dots, n_g\}`` within the power system. For the specific example at hand, it can be represented as:
+Moreover, we identify the set of generators as ``\mathcal{S} = \{1, \dots, n_\text{g}\}`` within the power system:
 ```@repl ACOptimalPowerFlow
 𝒮 = collect(keys(system.generator.label))
 ```
@@ -43,22 +43,24 @@ Moreover, we identify the set of generators as ``\mathcal{S} = \{1, \dots, n_g\}
 ---
 
 !!! ukw "Notation"
-    In this section, when referring to a vector ``\mathbf{a}``, we use the notation ``\mathbf{a} = [a_{i}]`` or ``\mathbf{a} = [a_{ij}]``, where ``a_i`` represents the element associated with bus ``i \in \mathcal{N}`` or generator ``i \in \mathcal{S}``, while ``a_{ij}`` denotes the element associated with branch ``(i,j) \in \mathcal{E}``.
+    Here, when referring to a vector ``\mathbf{a}``, we use the notation ``\mathbf{a} = [a_{i}]`` or ``\mathbf{a} = [a_{ij}]``, where ``a_i`` represents the element related with bus ``i \in \mathcal{N}`` or generator ``i \in \mathcal{S}``, while ``a_{ij}`` denotes the element related with branch ``(i,j) \in \mathcal{E}``.
 
 ---
 
 ## [Optimal Power Flow Model](@id ACOptimalPowerFlowModelTutorials)
-In the AC optimal power flow model, the active power outputs of the generators denoted as ``\mathbf {P}_{\text{g}} = [{P}_{\text{g}i}]``, ``i \in \mathcal{S}``, and reactive power outputs represented as ``\mathbf {Q}_{\text{g}} = [{Q}_{\text{g}i}]``, ``i \in \mathcal{S}``, are expressed as nonlinear functions of the bus voltage magnitudes ``\mathbf {V} = [{V}_{i}]``, ``i \in \mathcal{N}``, and angles ``\bm{\Theta} = [{\theta}_{i}]``, ``i \in \mathcal{N}``. Consequently, the optimization variables in this model consist of the active and reactive power outputs of the generators, as well as the bus voltage magnitudes and angles. The AC optimal power flow problem can be formulated as follows:
+In the AC optimal power flow model, the active and reactive power outputs of the generators, denoted as ``\mathbf {P}_{\text{g}} = [{P}_{\text{g}i}]`` and ``\mathbf {Q}_{\text{g}} = [{Q}_{\text{g}i}]``, where ``i \in \mathcal{S}``, are expressed as nonlinear functions of the bus voltage magnitudes and angles, denoted as ``\mathbf {V} = [{V}_{i}]`` and ``\bm{\Theta} = [{\theta}_{i}]``, where ``i \in \mathcal{N}``. Consequently, the optimization variables encompass the active and reactive power outputs of the generators, as well as the bus voltage magnitudes and angles.
+
+The AC optimal power flow problem can be formulated as follows:
 ```math
 \begin{aligned}
     & {\text{minimize}} & & \sum_{i \in \mathcal{S}} \left [ f_i(P_{\text{g}i}) + f_i(Q_{\text{g}i}) \right ] \\
-    & \text{subject\;to} & & \theta_i - \theta_{\text{slack}} = 0,\;\;\; i \in \mathcal{N_{\text{sb}}}  \\[4pt]
+    & \text{subject\;to} & & \theta_i - \theta_{\text{s}} = 0,\;\;\; i \in \mathcal{N_{\text{sb}}}  \\[5pt]
     & & & h_{P_i}(\mathbf {P}_{\text{g}}, \mathbf {V}, \bm{\Theta}) = 0,\;\;\;  \forall i \in \mathcal{N} \\
-    & & & h_{Q_i}(\mathbf {Q}_{\text{g}}, \mathbf {V}, \bm{\Theta}) = 0,\;\;\;  \forall i \in \mathcal{N} \\[4pt]
+    & & & h_{Q_i}(\mathbf {Q}_{\text{g}}, \mathbf {V}, \bm{\Theta}) = 0,\;\;\;  \forall i \in \mathcal{N} \\[5pt]
     & & & V_{i}^\text{min} \leq V_i \leq V_{i}^\text{max},\;\;\; \forall i \in \mathcal{N} \\
-    & & & \theta_{ij}^\text{min} \leq \theta_i - \theta_j \leq \theta_{ij}^\text{max},\;\;\; \forall (i,j) \in \mathcal{E} \\[4pt]
+    & & & \theta_{ij}^\text{min} \leq \theta_i - \theta_j \leq \theta_{ij}^\text{max},\;\;\; \forall (i,j) \in \mathcal{E} \\[5pt]
     & & & h_{ij}(\mathbf {V}, \bm{\Theta}) \leq F_{ij}^{\text{max}},\;\;\; \forall (i,j) \in \mathcal{E} \\
-    & & & h_{ji}(\mathbf {V}, \bm{\Theta}) \leq F_{ij}^{\text{max}},\;\;\; \forall (i,j) \in \mathcal{E} \\[4pt]
+    & & & h_{ji}(\mathbf {V}, \bm{\Theta}) \leq F_{ij}^{\text{max}},\;\;\; \forall (i,j) \in \mathcal{E} \\[5pt]
     & & & P_{\text{g}i}^\text{min} \leq P_{\text{g}i} \leq P_{\text{g}i}^\text{max} ,\;\;\; \forall i \in \mathcal{S} \\
     & & & Q_{\text{g}i}^\text{min} \leq Q_{\text{g}i} \leq Q_{\text{g}i}^\text{max} ,\;\;\; \forall i \in \mathcal{S}.
 \end{aligned}
@@ -95,14 +97,14 @@ Hence, the variables within this model encompass the active and reactive power o
 ---
 
 ## Objective Function
-The objective function represents the sum of the active and reactive power cost functions ``f_i(P_{\text{g}i})`` and ``f_i(Q_{\text{g}i})``, where ``i \in \mathcal{S}``, for each generator, where these cost functions can be polynomial or linear piecewise functions. Typically, the AC optimal power flow focuses on minimizing the cost of active power outputs only, but for comprehensive analysis, we also consider the costs associated with reactive power outputs.
+The objective function represents the sum of the active and reactive power cost functions ``f_i(P_{\text{g}i})`` and ``f_i(Q_{\text{g}i})``, where ``i \in \mathcal{S}``, for each generator, where these cost functions can be polynomial or linear piecewise. Typically, the AC optimal power flow focuses on minimizing the cost of active power outputs only, but for comprehensive analysis, we also consider the costs associated with reactive power outputs.
 
 ---
 
 ##### Polynomial Cost Function
 In the following analysis, we will focus on the cost function of generating active power, denoted as ``f_i(P_{\text{g}i})``. However, please note that the same analysis can be applied to the cost function ``f_i(Q_{\text{g}i})`` for reactive power.
 
-In the AC optimal power flow using JuliaGrid, the cost function ``f_i(P_{\text{g}i})`` can accept an ``n``-th degree polynomial form:
+In the AC optimal power flow, the cost function ``f_i(P_{\text{g}i})`` can be represented as an ``n``-th degree polynomial:
 ```math
 f_i(P_{\text{g}i}) = \sum_{k=0}^n a_k P_{\text{g}i}^k.
 ```
@@ -152,7 +154,7 @@ JuliaGrid handles convex linear piecewise functions using a constrained cost var
 
 Hence, for a piecewise cost function denoted as ``f_i(P_{\text{g}i})`` with ``k`` segments (where ``k > 1``), the ``j``-th segment, defined by the points ``[P_{\text{g}i,j}, f_i(P_{\text{g}i,j})]`` and ``[P_{\text{g}i,j+1}, f_i(P_{\text{g}i,j+1})]``, is characterized by the following inequality constraints:
 ```math
-\cfrac{f_i(P_{\text{g}i,j+1}) - f_i(P_{\text{g}i,j})}{P_{\text{g}i,j+1} - P_{\text{g}i,j}}(P_{\text{g}i} - P_{\text{g}i,j}) + f_i(P_{\text{g}i,j}) \leq H_i ,\;\;\;j = 1,\dots,k,
+\cfrac{f_i(P_{\text{g}i,j+1}) - f_i(P_{\text{g}i,j})}{P_{\text{g}i,j+1} - P_{\text{g}i,j}}(P_{\text{g}i} - P_{\text{g}i,j}) + f_i(P_{\text{g}i,j}) \leq H_i, \;\;\; i \in \mathcal{S}, \;\;\; j = 1,\dots,k,
 ```
 where ``H_i`` represents the helper variable. To finalize this method, we simply need to include the helper variable ``H_i`` in the objective function. This approach efficiently handles linear piecewise cost functions, providing the flexibility to capture nonlinear characteristics while still benefiting from the advantages of linear optimization techniques.
 
@@ -169,7 +171,7 @@ print(analysis.method.constraint.piecewise.active)
 ---
 
 ##### Objective Function
-As previously explained, the objective function relies on the defined polynomial or linear piecewise cost functions and represents the sum of these costs. In the provided example, the objective function that must be minimized to obtain the optimal values for the active and reactive power outputs of the generators and the bus voltage magnitudes and angles can be accessed using the following code:
+As previously explained, the objective function relies on the defined polynomial or linear piecewise cost functions and represents the sum of these costs. In the provided example, the objective function that must be minimized to obtain the optimal values for the active and reactive power outputs of the generators and the bus voltage magnitudes and angles can be accessed using the following:
 ```@repl ACOptimalPowerFlow
 JuMP.objective_function(analysis.method.jump)
 ```
@@ -182,9 +184,9 @@ In the following section, we will examine the various constraints defined within
 ---
 
 ##### Slack Bus Constraint
-The first equality constraint is linked to the slack bus, where the bus voltage angle denoted as ``\theta_i`` is fixed to a constant value ``\theta_{\text{slack}}``. It can be expressed as follows:
+The first equality constraint is linked to the slack bus, where the bus voltage angle denoted as ``\theta_i`` is fixed to a constant value ``\theta_{\text{s}}``. It can be expressed as follows:
 ```math
-\theta_i - \theta_{\text{slack}} = 0,\;\;\; i \in \mathcal{N_{\text{sb}}},
+\theta_i - \theta_{\text{s}} = 0,\;\;\; i \in \mathcal{N_{\text{sb}}},
 ```
 where the set ``\mathcal{N}_{\text{sb}}`` contains the index of the slack bus. To access the equality constraint from the model, we can utilize the variable:
 ```@repl ACOptimalPowerFlow
@@ -194,47 +196,52 @@ print(analysis.method.constraint.slack.angle)
 ---
 
 ##### Power Balance Constraints
-The second equality constraint in the optimization problem is associated with the active power balance equation denoted as ``h_{P_i}(\mathbf x)`` for each bus ``i \in \mathcal{N}``:
+The second equality constraint in the optimization problem is associated with the active power balance equation:
 ```math
 \begin{aligned}
 h_{P_i}(\mathbf {P}_{\text{g}}, \mathbf {V}, \bm{\Theta}) = 0,\;\;\;  \forall i \in \mathcal{N}.
 \end{aligned}
 ```
 
-The active power balance equation is derived using the [Bus Injections](@ref BusInjectionsTutorials) and can be represented as:
+As elaborated in the [Bus Injections](@ref BusInjectionsTutorials) section, we can express the equation as follows:
 ```math
 h_{P_i}(\mathbf {P}_{\text{g}}, \mathbf {V}, \bm{\Theta}) = {V}_{i}\sum\limits_{j=1}^n (G_{ij}\cos\theta_{ij}+B_{ij}\sin\theta_{ij})V_j - \sum_{k \in \mathcal{S}_i} P_{\text{g}k} + P_{\text{d}i}.
 ```
+
 In this equation, the set ``\mathcal{S}_i \subseteq \mathcal{S}`` encompasses all generators connected to bus ``i \in \mathcal{N}``, and ``P_{\text{g}k}`` represents the active power output of the ``k``-th generator within the set ``\mathcal{S}_i``. More Precisely, the variable ``P_{\text{g}k}`` represents the optimization variable, along with the bus voltage angles ``\theta_{ij} = \theta_i - \theta_j`` and the bus voltage magnitudes ``V_i`` and ``V_j``.
 
-The constant term is determined by the active power demand ``P_{\text{d}i}`` at bus ``i \in \mathcal{N}``. The values representing this constant term, denoted as ``\mathbf{P}_{\text{d}} = [P_{\text{d}i}]``, ``i, \in \mathcal{N}``, can be accessed using the following code:
+The constant term is determined by the active power demand ``P_{\text{d}i}`` at bus ``i \in \mathcal{N}``. The values representing this constant term, denoted as ``\mathbf{P}_{\text{d}} = [P_{\text{d}i}]``, ``i, \in \mathcal{N}``, can be accessed using the following:
 ```@repl ACOptimalPowerFlow
 𝐏ₒ = system.bus.demand.active
 ```
 
-You can access the references to the active power balance constraints using the following code snippet:
+We can access the references to the active power balance constraints using the following snippet:
 ```@repl ACOptimalPowerFlow
 print(analysis.method.constraint.balance.active)
 ```
 
-Similarly, the next constraint in the optimization problem is associated with the reactive power balance equation denoted as ``h_{Q_i}(\mathbf x)`` for each bus ``i \in \mathcal{N}``:
+---
+
+Similarly, the next constraint in the optimization problem is associated with the reactive power balance equation:
 ```math
 \begin{aligned}
 h_{Q_i}(\mathbf {Q}_{\text{g}}, \mathbf {V}, \bm{\Theta}) = 0,\;\;\;  \forall i \in \mathcal{N}.
 \end{aligned}
 ```
-The reactive power balance equation is derived using the [Bus Injections](@ref BusInjectionsTutorials) and can be represented as:
+
+As elaborated in the [Bus Injections](@ref BusInjectionsTutorials) section, we can express the equation as follows:
 ```math
 h_{Q_i}(\mathbf {Q}_{\text{g}}, \mathbf {V}, \bm{\Theta}) = {V}_{i}\sum\limits_{j=1}^n (G_{ij}\sin\theta_{ij}-B_{ij}\cos\theta_{ij})V_j - \sum_{k \in \mathcal{S}_i} Q_{\text{g}k} + Q_{\text{d}i}.
 ```
-Similarly, as mentioned earlier for active power, ``Q_{\text{g}k}`` represents the reactive power output of the ``k``-th generator within the set ``\mathcal{S}_i``. The variable ``Q_{\text{g}k}`` serves as optimization variable, as well as the bus voltage angles ``\theta_{ij} = \theta_i - \theta_j``, and the bus voltage magnitudes ``V_i`` and ``V_j``.
 
-The constant term is determined by the reactive power demand ``Q_{\text{d}i}`` at bus ``i \in \mathcal{N}``. The values representing this constant term, denoted as ``\mathbf{Q}_{\text{d}} = [Q_{\text{d}i}]``, ``i, \in \mathcal{N}``, can be accessed using the following code:
+As mentioned earlier for active power, ``Q_{\text{g}k}`` represents the reactive power output of the ``k``-th generator within the set ``\mathcal{S}_i``. The variable ``Q_{\text{g}k}`` serves as optimization variable, as well as the bus voltage angles ``\theta_{ij} = \theta_i - \theta_j``, and the bus voltage magnitudes ``V_i`` and ``V_j``.
+
+The constant term is determined by the reactive power demand ``Q_{\text{d}i}`` at bus ``i \in \mathcal{N}``. The values representing this constant term, denoted as ``\mathbf{Q}_{\text{d}} = [Q_{\text{d}i}]``, ``i, \in \mathcal{N}``, can be accessed using the following:
 ```@repl ACOptimalPowerFlow
 𝐐ₒ = system.bus.demand.reactive
 ```
 
-You can access the references to the reactive power balance constraints using the following code snippet:
+We can access the references to the reactive power balance constraints using the following snippet:
 ```@repl ACOptimalPowerFlow
 print(analysis.method.constraint.balance.reactive)
 ```
@@ -246,15 +253,17 @@ The inequality constraints associated with the voltage magnitude ensure that the
 ```math
 V_{i}^\text{min} \leq V_i \leq V_{i}^\text{max},\;\;\; \forall i \in \mathcal{N},
 ```
-where ``V_{i}^\text{min}`` represents the minimum voltage magnitude, and ``V_{i}^\text{max}`` represents the maximum voltage magnitude for bus ``i \in \mathcal{N}``. The values representing these voltage magnitude limits, denoted as ``\mathbf{V}_{\text{lm}} = [V_{i}^\text{min}, V_{i}^\text{max}]``, ``i \in \mathcal{N}``, can be accessed using the following code:
+where ``V_{i}^\text{min}`` represents the minimum voltage magnitude, and ``V_{i}^\text{max}`` represents the maximum voltage magnitude for bus ``i \in \mathcal{N}``. The values representing these voltage magnitude limits, denoted as ``\mathbf{V}_{\text{lm}} = [V_{i}^\text{min}, V_{i}^\text{max}]``, ``i \in \mathcal{N}``, can be accessed using the following:
 ```@repl ACOptimalPowerFlow
 𝐕ₗₘ = [system.bus.voltage.minMagnitude system.bus.voltage.maxMagnitude]
 ```
 
-To retrieve this inequality constraint from the model, we can use the following code:
+To retrieve this inequality constraint from the model, we can use the following:
 ```@repl ACOptimalPowerFlow
 print(analysis.method.constraint.voltage.magnitude)
 ```
+
+---
 
 The inequality constraint related to the minimum and maximum bus voltage angle difference between the from-bus and to-bus ends of each branch is defined as follows:
 ```math
@@ -265,7 +274,7 @@ where ``\theta_{ij}^\text{min}`` represents the minimum, while ``\theta_{ij}^\te
 𝚯ₗₘ = [system.branch.voltage.minDiffAngle system.branch.voltage.maxDiffAngle]
 ```
 
-To retrieve this inequality constraint from the model, we can use the following code:
+To retrieve this inequality constraint from the model, we can use the following:
 ```@repl ACOptimalPowerFlow
 print(analysis.method.constraint.voltage.angle)
 ```
@@ -273,7 +282,9 @@ print(analysis.method.constraint.voltage.angle)
 ---
 
 ##### Flow Constraints
-The inequality constraints related to the branch flow ratings can be associated with the limits on apparent power flow, active power flow, or current magnitude at the from-bus and to-bus ends of each branch. The type of constraint applied is determined by the `type` keyword within the [`addBranch!`](@ref addBranch!) function. Specifically, `type = 1` is used for apparent power flow, `type = 2` for active power flow, and `type = 3` for current magnitude. These constraints can be expressed using the equations ``h_{ij}(\mathbf {V}, \bm{\Theta})`` and ``h_{ji}(\mathbf {V}, \bm{\Theta})``, representing the rating constraints at the from-bus and to-bus ends of each branch, respectively:
+The inequality constraints related to the branch flow ratings can be associated with the limits on apparent power flow, active power flow, or current magnitude at the from-bus and to-bus ends of each branch. The type of constraint applied is determined by the `type` keyword within the [`addBranch!`](@ref addBranch!) function.
+
+Specifically, `type = 1` is used for apparent power flow, `type = 2` for active power flow, and `type = 3` for current magnitude. These constraints can be expressed using the equations ``h_{ij}(\mathbf {V}, \bm{\Theta})`` and ``h_{ji}(\mathbf {V}, \bm{\Theta})``, representing the rating constraints at the from-bus and to-bus ends of each branch, respectively:
 ```math
 \begin{aligned}
     h_{ij}(\mathbf {V}, \bm{\Theta}) \leq F_{ij}^{\text{max}},\;\;\; \forall (i,j) \in \mathcal{E} \\
@@ -285,31 +296,28 @@ These rating constraints ensure that the power flow or current in each branch do
 𝐅ₘₐₓ = system.branch.flow.longTerm
 ```
 
-By default, the rating constraints are associated with the apparent power flow (`type = 1`) at the from-bus and to-bus ends of each branch. These constraints are defined using the following equations:
+By default, JuliaGrid employs the rating constraints linked with the apparent power flow (type = 1). This constraint at the from-bus is specified as:
 ```math
-\begin{aligned}
-    h_{ij}(\mathbf {V}, \bm{\Theta}) = \sqrt{  A_{ij} V_i^4 + B_{ij} V_i^2 V_j^2 - 2 V_i^3 V_j [C_{ij} \cos(\theta_{ij} - \phi_{ij}) + D_{ij} \sin(\theta_{ij} - \phi_{ij})] } \\
-    h_{ji}(\mathbf {V}, \bm{\Theta}) = \sqrt{  A_{ji} V_j^4 + B_{ji} V_i^2 V_j^2 - 2 V_i V_j^3 [C_{ji} \cos(\theta_{ij} - \phi_{ij}) + D_{ij} \sin(\theta_{ij} - \phi_{ij})] },
-\end{aligned}
+    h_{ij}(\mathbf {V}, \bm{\Theta}) = \sqrt{  A_{ij} V_i^4 + B_{ij} V_i^2 V_j^2 - 2 [C_{ij} \cos(\theta_{ij} - \phi_{ij}) - D_{ij} \sin(\theta_{ij} - \phi_{ij})]V_i^3 V_j},
 ```
-where coefficients are:
+where:
 ```math
-\begin{aligned}
-    A_{ij} = \cfrac{\bar{g}_{ij}^2 + \bar{b}_{ij}^2}{\tau_{ij}^4},\;\;\;
-    B_{ij} = \cfrac{g_{ij}^2 + b_{ij}^2}{\tau_{ij}^2},\;\;\;
-    C_{ij} = \cfrac{g_{ij}\bar{g}_{ij} + b_{ij}\bar{b}_{ij}}{\tau_{ij}^3},\;\;\;
-    D_{ij} = \cfrac{b_{ij}\bar{g}_{ij} - g_{ij}\bar{b}_{ij}}{\tau_{ij}^3}\\
-    A_{ji} = \bar{g}_{ij}^2 + \bar{b}_{ij}^2,\;\;\;
-    B_{ji} = \cfrac{g_{ij}^2 + b_{ij}^2}{\tau_{ij}^2},\;\;\;
-    C_{ji} = \cfrac{g_{ij}\bar{g}_{ij} + b_{ij}\bar{b}_{ij}}{\tau_{ij}},\;\;\;
-    D_{ji} = \cfrac{g_{ij}\bar{b}_{ij} - b_{ij}\bar{g}_{ij}}{\tau_{ij}}.
- \end{aligned}
+  \begin{gathered}
+    A_{ij} = \cfrac{(g_{ij} + g_{\text{s}i})^2+(b_{ij}+b_{\text{s}i})^2}{\tau_{ij}^4}, \;\;\; B_{ij} =  \cfrac{g_{ij}^2+b_{ij}^2}{\tau_{ij}^2} \\
+    C_{ij} = \cfrac{g_{ij}(g_{ij}+g_{\text{s}i})+b_{ij}(b_{ij}+b_{\text{s}i})}{\tau_{ij}^3}, \;\;\; D_{ij} = \cfrac{g_{ij}b_{\text{s}i} - b_{ij}g_{\text{s}i}}{\tau_{ij}^3}.
+  \end{gathered}
 ```
-Additionally, the values of ``\bar{g}_{ij}`` and ``\bar{b}_{ij}`` are given by:
+
+Furthermore, this constraint at the to-bus is specified as:
 ```math
-\begin{aligned}
-    \bar{g}_{ij} = g_{ij} + g_{\text{s}ij},\;\;\;\bar{b}_{ij} = b_{ij} + b_{\text{s}ij}.
- \end{aligned}
+    h_{ji}(\mathbf {V}, \bm{\Theta}) = \sqrt{  A_{ji} V_j^4 + B_{ji} V_i^2 V_j^2 - 2 [C_{ji} \cos(\theta_{ij} - \phi_{ij}) + D_{ij} \sin(\theta_{ij} - \phi_{ij})]V_i V_j^3  },
+```
+where:
+```math
+  \begin{gathered}
+    A_{ji} = (g_{ij} + g_{\text{s}i})^2+(b_{ij}+b_{\text{s}i})^2, \;\;\; B_{ji} = \cfrac{g_{ij}^2+b_{ij}^2}{\tau_{ij}^2} \\
+    C_{ji} = \cfrac{g_{ij}(g_{ij}+g_{\text{s}i})+b_{ij}(b_{ij}+b_{\text{s}i})}{\tau_{ij}}, \;\;\; D_{ji} = \cfrac{g_{ij}b_{\text{s}i} - b_{ij}g_{\text{s}i}}{\tau_{ij}}.
+  \end{gathered}
 ```
 
 Since the quantity under the square root is always positive, these constraints are implemented by squaring them for computational efficiency. Thus, the squared rating constraints for the apparent power flow at the from-bus and to-bus ends of each branch can be expressed as follows:
@@ -320,7 +328,9 @@ Since the quantity under the square root is always positive, these constraints a
 \end{aligned}
 ```
 
-The second option is to define the `longTerm` keyword for the active power flow constraints (`type = 2`) at the from-bus and to-bus ends of each branch. In this case, the constraints are implemented without squaring the equations, but rather as they are originally defined:
+---
+
+The second option is to define the `longTerm` keyword for the active power flow constraints (`type = 2`) at the from-bus and to-bus ends of each branch:
 ```math
   \begin{aligned}
     h_{ij}(\mathbf {V}, \bm{\Theta}) &=
@@ -341,11 +351,13 @@ Similarly, to acces the to-bus end flow constraints of branches you can use the 
 print(analysis.method.constraint.flow.to)
 ```
 
+---
+
 The last option involves defining the `longTerm` keyword for the current magnitude constraints (`type = 3`) at the from-bus and to-bus ends of each branch. In this case, the constraints are implemented as follows:
 ```math
   \begin{aligned}
-    h_{ij}(\mathbf {V}, \bm{\Theta}) &= \sqrt{A_{ij}V_i^2 + B_{ij}V_j^2 - 2V_iV_j[C_{ij} \cos(\theta_{ij} - \phi_{ij}) + D_{ij}\sin(\theta_{ij} - \phi_{ij})]} \\
-    h_{ji}(\mathbf {V}, \bm{\Theta}) &= \sqrt{A_{ji}V_j^2 + B_{ji}V_i^2 - 2V_iV_j[C_{ji} \cos(\theta_{ij} - \phi_{ij}) + D_{ji}\sin(\theta_{ij} - \phi_{ij})]}.
+    h_{ij}(\mathbf {V}, \bm{\Theta}) &= \sqrt{A_{ij}V_i^2 + B_{ij}V_j^2 - 2[C_{ij} \cos(\theta_{ij} - \phi_{ij}) - D_{ij}\sin(\theta_{ij} - \phi_{ij})]V_iV_j} \\
+    h_{ji}(\mathbf {V}, \bm{\Theta}) &= \sqrt{A_{ji}V_j^2 + B_{ji}V_i^2 - 2[C_{ji} \cos(\theta_{ij} - \phi_{ij}) + D_{ji}\sin(\theta_{ij} - \phi_{ij})]V_iV_j}.
   \end{aligned}
 ```
 These coefficients remain the same as those specified for apparent powers. Similarly, for apparent power, these constraints are reformulated as squared inequalities:
@@ -364,30 +376,34 @@ The next set of constraints pertains to the minimum and maximum limits of active
 P_{\text{g}i}^\text{min} \leq P_{\text{g}i} \leq P_{\text{g}i}^\text{max} ,\;\;\; \forall i \in \mathcal{S}.
 ```
 
-In this representation, the lower and upper limits are determined by the vector ``\mathbf{P}_{\text{lm}} = [P_{\text{g}i}^\text{min}, P_{\text{g}i}^\text{max}]``, ``i \in \mathcal{S}``. We can access these bounds using the following variable:
+In this representation, the lower and upper limits are determined by the vector ``\mathbf{P}_{\text{lm}} = [P_{\text{g}i}^\text{min}, P_{\text{g}i}^\text{max}]``, ``i \in \mathcal{S}``. We can access these bounds using the following:
 ```@repl ACOptimalPowerFlow
 𝐏ₗₘ = [system.generator.capability.minActive system.generator.capability.maxActive]
 ```
 
-To access these constraints, you can utilize the following code snippet:
+To access these constraints, you can utilize the following snippet:
 ```@repl ACOptimalPowerFlow
 print(analysis.method.constraint.capability.active)
 ```
+
+---
 
 Similarly, constraints related to the minimum and maximum limits of reactive power outputs of the generators ensure that the reactive powers remain within specified boundaries:
 ```math
 Q_{\text{g}i}^\text{min} \leq Q_{\text{g}i} \leq Q_{\text{g}i}^\text{max} ,\;\;\; \forall i \in \mathcal{S}.
 ```
 
-Thus, the lower and upper limits are determined by the vector ``\mathbf{Q}_{\text{lm}} = [Q_{\text{g}i}^\text{min}, Q_{\text{g}i}^\text{max}]``, ``i \in \mathcal{S}``. We can access these bounds using the following variable:
+Thus, the lower and upper limits are determined by the vector ``\mathbf{Q}_{\text{lm}} = [Q_{\text{g}i}^\text{min}, Q_{\text{g}i}^\text{max}]``, ``i \in \mathcal{S}``. We can access these bounds using the following:
 ```@repl ACOptimalPowerFlow
 𝐐ₗₘ = [system.generator.capability.minReactive system.generator.capability.maxReactive]
 ```
 
-To access these constraints, you can use the following code snippet:
+To access these constraints, you can use the following snippet:
 ```@repl ACOptimalPowerFlow
 print(analysis.method.constraint.capability.reactive)
 ```
+
+---
 
 These capability limits of the generators define the feasible region, represented as a gray area in Figure 3, which forms the solution space for the active and reactive output powers of the generators.
 ```@raw html
@@ -428,7 +444,7 @@ To ensure numerical stability, these constraints are normalized by introducing t
 ```math
 \begin{aligned}
     s_1 = \sqrt{(Q_{\text{g}i,\text{low}}^\text{max} - Q_{\text{g}i,\text{up}}^\text{max})^2 + (P_{\text{g}i}^\text{up} - P_{\text{g}i}^\text{low})^2}\\
-    s_2 = \sqrt{(Q_{\text{g}i,\text{up}}^\text{min} - Q_{\text{g}i,\text{low}}^\text{min})^2 + (P_{\text{g}i}^\text{low} - P_{\text{g}i}^\text{up})^2}
+    s_2 = \sqrt{(Q_{\text{g}i,\text{up}}^\text{min} - Q_{\text{g}i,\text{low}}^\text{min})^2 + (P_{\text{g}i}^\text{low} - P_{\text{g}i}^\text{up})^2}.
 \end{aligned}
 ```
 

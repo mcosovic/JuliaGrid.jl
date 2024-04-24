@@ -246,10 +246,10 @@ The matrix ``\mathbf{Y} = \mathbf{G} + \text{j}\mathbf{B} \in \mathbb{C}^{n \tim
     ```
   * the non-diagonal elements, where ``i = e(1),\; j = e(2), \; e \in \mathcal{E}``, are equal to:
     ```math
-    Y_{ij} = G_{ij} + \text{j}B_{ij} = -\alpha_{ij}^*{y}_{ij}
-    ```
-    ```math
-    Y_{ji} = G_{ji} + \text{j}B_{ji} = -\alpha_{ij}{y}_{ij}.
+      \begin{aligned}
+        Y_{ij} &= G_{ij} + \text{j}B_{ij} = -\alpha_{ij}^*{y}_{ij} \\[3pt]
+        Y_{ji} &= G_{ji} + \text{j}B_{ji} = -\alpha_{ij}{y}_{ij}.
+      \end{aligned}
     ```
 
 When a branch is not incident (or adjacent) to a bus the corresponding element in the nodal admittance matrix ``\mathbf{Y}`` is equal to zero. The nodal admittance matrix ``\mathbf{Y}`` is a sparse (i.e., a small number of elements are non-zeros) for real-world power systems. Although it is often assumed that the matrix ``\mathbf{Y}`` is symmetrical, it is not a general case, for example, in the presence of phase shifting transformers the matrix ``\mathbf{Y}`` is not symmetrical [[2, Sec. 9.6]](@ref ACDCModelReferenceTutorials). JuliaGrid stores both the matrix ``\mathbf{Y}`` and its transpose ``\mathbf{Y}^T`` in the `ac` field of the `PowerSystem` composite type:
@@ -466,10 +466,10 @@ The bus or nodal matrix in the DC framework is given as ``\mathbf{B} \in \mathbb
     ```
   * the non-diagonal elements, where ``i = e(1),\; j = e(2), \; e \in \mathcal{E}``, are equal to:
     ```math
-    B_{ij} = -\cfrac{1}{\tau_{ij}x_{ij}}
-    ```
-    ```math
-    B_{ji} = -\cfrac{1}{\tau_{ij}x_{ij}}.
+      \begin{aligned}
+        B_{ij} &= -\cfrac{1}{\tau_{ij}x_{ij}} \\[3pt]
+        B_{ji} &= -\cfrac{1}{\tau_{ij}x_{ij}}.
+      \end{aligned}
     ```
 
 The sparse nodal matrix ``\mathbf{B}`` is stored in the `dc` field, and we can access it using:

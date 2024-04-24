@@ -438,17 +438,17 @@ function addFlow(system::PowerSystem, jump::JuMP.Model, magnitude::Vector{Variab
             Aij = βij^4 * ((gij + gsi)^2 + (bij + bsi)^2)
             Bij = βij^2 * (gij^2 + bij^2)
             Cij = βij^3 * (gij * (gij + gsi) + bij * (bij + bsi))
-            Dij = βij^3 * (bij * (gij + gsi) - gij * (bij + bsi))
+            Dij = βij^3 * (gij * bsi - bij * gsi)
 
             Aji = (gij + gsi)^2 + (bij + bsi)^2
             Cji = βij * (gij * (gij + gsi) + bij * (bij + bsi))
-            Dji = βij * (gij * (bij + bsi) - bij * (gij + gsi))
+            Dji = βij * (gij * bsi - bij * gsi)
 
             if branch.flow.type[i] == 1
-                refFrom[i] = @constraint(jump, Aij * Vi^4 + Bij * Vi^2 * Vj^2 - 2 * Vi^3 * Vj * (Cij * cosθ + Dij * sinθ) <= branch.flow.longTerm[i]^2)
+                refFrom[i] = @constraint(jump, Aij * Vi^4 + Bij * Vi^2 * Vj^2 - 2 * Vi^3 * Vj * (Cij * cosθ - Dij * sinθ) <= branch.flow.longTerm[i]^2)
                 refTo[i] = @constraint(jump, Aji * Vj^4 + Bij * Vi^2 * Vj^2 - 2 * Vi * Vj^3 * (Cji * cosθ + Dji * sinθ) <= branch.flow.longTerm[i]^2)
             elseif branch.flow.type[i] == 3
-                refFrom[i] = @constraint(jump, Aij * Vi^2 + Bij * Vj^2 - 2 * Vi * Vj * (Cij * cosθ + Dij * sinθ) <= branch.flow.longTerm[i]^2)
+                refFrom[i] = @constraint(jump, Aij * Vi^2 + Bij * Vj^2 - 2 * Vi * Vj * (Cij * cosθ - Dij * sinθ) <= branch.flow.longTerm[i]^2)
                 refTo[i] = @constraint(jump, Aji * Vj^2 + Bij * Vi^2 - 2 * Vi * Vj * (Cji * cosθ + Dji * sinθ) <= branch.flow.longTerm[i]^2)
             end
         elseif branch.flow.type[i] == 2

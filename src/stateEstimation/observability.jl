@@ -163,9 +163,11 @@ end
 
 function tieInjection(observe::Island, deviceLayout::PowermeterLayout, status::Array{Int8,1}, deviceNumber::Int64)
     observe.tie.injection = Array{Int64,1}()
+    alreadyAdd = Array{Int64,1}()
     @inbounds for i = 1:deviceNumber
-        if deviceLayout.bus[i] && status[i] == 1 && (deviceLayout.index[i] in observe.tie.bus)
+        if deviceLayout.bus[i] && status[i] == 1 && (deviceLayout.index[i] in observe.tie.bus) && !(deviceLayout.index[i] in alreadyAdd)
             push!(observe.tie.injection, i)
+            push!(alreadyAdd, deviceLayout.index[i])
         end
     end
 end
