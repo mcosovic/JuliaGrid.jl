@@ -30,7 +30,7 @@ To review, we can conceptualize the bus/branch model as the graph denoted by ``\
 
 ---
 
-Following that, we will introduce the `Measurement` type and incorporate a set of PMUs ``\mathcal{M} \equiv \bar{\mathcal{P}}`` into the graph ``\mathcal{G}``, capture both bus voltage and branch current phasors. PMUs are capable of integration into linear PMU state estimation in rectangular coordinates. This process of adding measurement devices will be carried out in the [State Estimation Model](@ref PMUSEModelTutorials) section. Currently, we are only initializing the `Measurement` type at this stage:
+Following that, we will introduce the `Measurement` type and incorporate a set of PMUs ``\mathcal{M} \equiv \bar{\mathcal{P}}`` into the graph ``\mathcal{G}``, capture both bus voltage and branch current phasors. . To construct the linear PMU state estimation model, we represent the vector of state variables, as well as phasor measurements, in the rectangular coordinate system. This process of adding measurement devices will be carried out in the [State Estimation Model](@ref PMUSEModelTutorials) section. Currently, we are only initializing the `Measurement` type at this stage:
 ```@example PMUSETutorial
 device = measurement()
 nothing # hide
@@ -39,16 +39,16 @@ nothing # hide
 ---
 
 !!! ukw "Notation"
-    In this section, when referring to a vector ``\mathbf{a}``, we use the notation ``\mathbf{a} = [a_{i}]`` or ``\mathbf{a} = [a_{ij}]``, where ``a_i`` represents the element associated with bus ``i \in \mathcal{N}`` or measurement ``i \in \mathcal{M}``, and ``a_{ij}`` represents the element associated with branch ``(i,j) \in \mathcal{E}``.
+    Here, when referring to a vector ``\mathbf{a}``, we use the notation ``\mathbf{a} = [a_{i}]`` or ``\mathbf{a} = [a_{ij}]``, where ``a_i`` represents the element related with bus ``i \in \mathcal{N}`` or measurement ``i \in \mathcal{M}``, while ``a_{ij}`` denotes the element related with branch ``(i,j) \in \mathcal{E}``.
 
 ---
 
 ## [State Estimation Model](@id PMUSEModelTutorials)
-Initially, PMUs output phasor measurements in polar coordinates. However, these measurements can be interpreted in rectangular coordinates, where the real and imaginary parts of bus voltages and branch current phasors serve as measurements. This results in a vector of state variables in rectangular coordinates ``\mathbf x \equiv[\mathbf{V}_\text{re},\mathbf{V}_\text{im}]``:
+Initially, PMUs output phasor measurements in polar coordinates. However, these measurements can be interpreted in rectangular coordinates, where the real and imaginary parts of bus voltages and branch current phasors serve as measurements. Additionally, to obtain the linear system of equations, we observe a vector of state variables in rectangular coordinates ``\mathbf x \equiv[\mathbf{V}_\text{re},\mathbf{V}_\text{im}]``:
 * ``\mathbf{V}_\mathrm{re} =\big[\Re(\bar{V}_1),\dots,\Re(\bar{V}_n)\big]^T``, representing the real parts of complex bus voltages,
 * ``\mathbf{V}_\mathrm{im} =\big[\Im(\bar{V}_1),\dots,\Im(\bar{V}_n)\big]^T``, representing the imaginary parts of complex bus voltages.
 
-Consequently, the total number of state variables is ``2n``. It is worth noting that in this approach to state estimation, we do not require the slack bus. Therefore, this selection of state variables leads to linear measurement functions, simplifying the state estimation model into a linear form.
+Consequently, the total number of state variables is ``2n``. It is worth noting that in this approach to state estimation, we do not require the slack bus.
 
 
 The primary drawback of this method stems from measurement errors, which are associated with polar coordinates. Consequently, the covariance matrix must be transformed from polar to rectangular coordinates. As a result, errors from a single PMU are correlated, leading to a non-diagonal covariance matrix. Despite this, the covariance matrix is commonly treated as diagonal, impacting the accuracy of the state estimation in such scenarios.
@@ -58,7 +58,7 @@ Hence, the model includes real and imaginary parts of bus voltage and current ph
   \mathbf{z}=\mathbf{h}(\mathbf x) + \mathbf{u}.
 ```
 
-Here, ``\mathbf{h}(\mathbf {x})= [h_1(\mathbf {x})``, ``\dots``, ``h_k(\mathbf {x})]^{{T}}`` represents the vector of linear measurement functions, where ``k`` is the number of measurement functions, ``\mathbf{z} = [z_1,\dots,z_k]^{T}`` denotes the vector of measurement values, and ``\mathbf{u} = [u_1,\dots,u_k]^T`` represents the vector of measurement errors. It is worth noting that the number of equations in the system is equal to ``k = 2|\bar{\mathcal{P}}|``.
+Here, ``\mathbf{h}(\mathbf {x})= [h_1(\mathbf {x})``, ``\dots``, ``h_k(\mathbf {x})]^{{T}}`` represents the vector of linear measurement functions, where ``k = 2|\bar{\mathcal{P}}|`` is the number of measurement functions, ``\mathbf{z} = [z_1,\dots,z_k]^{T}`` denotes the vector of measurement values, and ``\mathbf{u} = [u_1,\dots,u_k]^T`` represents the vector of measurement errors.
 
 These errors are assumed to follow a Gaussian distribution with a zero-mean and covariance matrix ``\bm \Sigma``. The diagonal elements of ``\bm \Sigma`` correspond to the measurement variances ``\mathbf{v} = [v_1,\dots,v_k]^T``, while the off-diagonal elements represent the covariances between the measurement errors ``\mathbf{w} = [w_1,\dots,w_k]^{T}``.
 
@@ -117,7 +117,7 @@ The coefficient expressions for measurement functions are as follows:
 
 In the previous example, the user neglects the covariances between the real and imaginary parts of the measurement. However, if desired, the user can also include them in the state estimation model by specifying the covariances of the vector:
 ```math
-    \mathbf{w}_{\bar{\mathcal{P}}} = [w_{\Re(\bar{V}_{i})}, w_{\Im(\bar{V}_{i})}].
+    \mathbf{w} = [w_{\Re(\bar{V}_{i})}, w_{\Im(\bar{V}_{i})}].
 ```
 ```@example PMUSETutorial
 addPmu!(system, device; label = "V₃, θ₃", bus = 3, magnitude = 0.9, varianceMagnitude = 1e-5,
@@ -199,13 +199,13 @@ The coefficient expressions for measurement functions are as follows:
   -B \\
   \cfrac{\mathrm \partial{h_{\Re(\bar{I}_{ij})}(\mathbf x)}}{\mathrm \partial \Im(\bar{V}_j)} &= -
   \cfrac{\mathrm \partial{h_{\Im(\bar{I}_{ij})}(\mathbf x)}}{\mathrm \partial\Re(\bar{V}_j)} =
-  \left(C\sin \phi_{ij} + D \cos \phi_{ij} \right),
+  \left(C\sin \phi_{ij} + D \cos \phi_{ij} \right).
   \end{aligned}
 ```
 
 In the previous example, the user neglects the covariances between the real and imaginary parts of the measurement. However, if desired, the user can also include them in the state estimation model by specifying the covariances of the vector:
 ```math
-    \mathbf{w}_{\bar{\mathcal{P}}} = [w_{\Re(\bar{I}_{ij})}, w_{\Im(\bar{I}_{ij})}].
+    \mathbf{w} = [w_{\Re(\bar{I}_{ij})}, w_{\Im(\bar{I}_{ij})}].
 ```
 ```@example PMUSETutorial
 addPmu!(system, device; label = "I₁₃, ψ₁₃", from = 2, magnitude = 0.3, varianceMagnitude = 1,
@@ -276,7 +276,7 @@ The coefficient expressions for measurement functions are as follows:
 
 As before, we are neglecting the covariances between the real and imaginary parts of the measurement. If desired, we can include them in the state estimation model by specifying the covariances of the vector:
 ```math
-    \mathbf{w}_{\bar{\mathcal{P}}} = [w_{\Re(\bar{I}_{ji})}, w_{\Im(\bar{I}_{ji})}].
+    \mathbf{w} = [w_{\Re(\bar{I}_{ji})}, w_{\Im(\bar{I}_{ji})}].
 ```
 ```@example PMUSETutorial
 addPmu!(system, device; label = "I₃₁, ψ₃₁", to = 2, magnitude = 0.3, varianceMagnitude = 1e-5,
@@ -361,7 +361,7 @@ These values represent measurement values in the rectangular coordinate system a
 ---
 
 ##### Estimate of State Variables
-Next, the WLS equation is solved to obtain the estimate of bus voltage magnitudes and angles:
+Next, the WLS equation is solved to obtain the estimate of state variables:
 ```math
 	\hat{\mathbf x} = [\mathbf H^{T} \bm \Sigma^{-1} \mathbf H]^{-1} \mathbf H^{T} \bm \Sigma^{-1} \mathbf z.
 ```
@@ -697,8 +697,8 @@ The function stores the computed powers in the rectangular coordinate system. It
 
 | Branch                                                       | Active                                       | Reactive                                     |
 |:-------------------------------------------------------------|:---------------------------------------------|:---------------------------------------------|
-| [From-bus end flows](@ref BranchNetworkEquationsTutorials) | ``\mathbf{P}_{\text{i}} = [P_{ij}]``         | ``\mathbf{Q}_{\text{i}} = [Q_{ij}]``         |
-| [To-bus end flows](@ref BranchNetworkEquationsTutorials)   | ``\mathbf{P}_{\text{j}} = [P_{ji}]``         | ``\mathbf{Q}_{\text{j}} = [Q_{ji}]``         |
+| [From-bus end flows](@ref BranchNetworkEquationsTutorials)   | ``\mathbf{P}_{\text{i}} = [P_{ij}]``         | ``\mathbf{Q}_{\text{i}} = [Q_{ij}]``         |
+| [To-bus end flows](@ref BranchNetworkEquationsTutorials)     | ``\mathbf{P}_{\text{j}} = [P_{ji}]``         | ``\mathbf{Q}_{\text{j}} = [Q_{ji}]``         |
 | [Shunt elements](@ref BranchShuntElementsTutorials)          | ``\mathbf{P}_{\text{s}} = [P_{\text{s}ij}]`` | ``\mathbf{P}_{\text{s}} = [P_{\text{s}ij}]`` |
 | [Series elements](@ref BranchSeriesElementTutorials)         | ``\mathbf{P}_{\text{l}} = [P_{\text{l}ij}]`` | ``\mathbf{Q}_{\text{l}} = [Q_{\text{l}ij}]`` |
 

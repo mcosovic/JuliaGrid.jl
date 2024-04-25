@@ -245,7 +245,7 @@ end
 mutable struct TieData
     bus::Set{Int64}
     branch::Set{Int64}
-    injection::Array{Int64,1}
+    injection::Set{Int64}
 end
 
 mutable struct Island

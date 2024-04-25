@@ -29,7 +29,7 @@ islands = islandTopologicalFlow(system, device)
 ```
 """
 function islandTopologicalFlow(system::PowerSystem, device::Measurement)
-    observe = Island([], Int64[], TieData(Set{Int64}(), Set{Int64}(), Int64[]))
+    observe = Island([], Int64[], TieData(Set{Int64}(), Set{Int64}(), Set{Int64}()))
     rowval, colptr = connectionObservability(system)
 
     connectedComponents(system, observe, device.wattmeter.layout, device.wattmeter.active.status, device.wattmeter.number)
@@ -76,7 +76,7 @@ islands = islandTopological(system, device)
 ```
 """
 function islandTopological(system::PowerSystem, device::Measurement)
-    observe = Island([], Int64[], TieData(Set{Int64}(), Set{Int64}(), Int64[]))
+    observe = Island([], Int64[], TieData(Set{Int64}(), Set{Int64}(), Set{Int64}()))
     rowval, colptr = connectionObservability(system)
 
     connectedComponents(system, observe, device.wattmeter.layout, device.wattmeter.active.status, device.wattmeter.number)
@@ -162,12 +162,11 @@ function tieBusBranch(system::PowerSystem, observe::Island)
 end
 
 function tieInjection(observe::Island, deviceLayout::PowermeterLayout, status::Array{Int8,1}, deviceNumber::Int64)
-    observe.tie.injection = Array{Int64,1}()
-    alreadyAdd = Array{Int64,1}()
+    observe.tie.injection = Set{Int64}()
+
     @inbounds for i = 1:deviceNumber
-        if deviceLayout.bus[i] && status[i] == 1 && (deviceLayout.index[i] in observe.tie.bus) && !(deviceLayout.index[i] in alreadyAdd)
-            push!(observe.tie.injection, i)
-            push!(alreadyAdd, deviceLayout.index[i])
+        if deviceLayout.bus[i] && status[i] == 1 && (deviceLayout.index[i] in observe.tie.bus)
+            push!(observe.tie.injection, deviceLayout.index[i])
         end
     end
 end
@@ -180,8 +179,7 @@ function mergePairs(bus::Bus, layout::PowermeterLayout, observe::Island, rowval:
 
     @inbounds while merge
         merge = false
-        for (k, i) in enumerate(observe.tie.injection)
-            busIndex = layout.index[i]
+        for busIndex in observe.tie.injection
             island = observe.bus[busIndex]
             conection = rowval[colptr[busIndex]:(colptr[busIndex + 1] - 1)]
 
@@ -200,7 +198,7 @@ function mergePairs(bus::Bus, layout::PowermeterLayout, observe::Island, rowval:
                     removeIsland[index] = true
                     flag = true
                 end
-                deleteat!(observe.tie.injection, k)
+                delete!(observe.tie.injection, busIndex)
                 merge = true
             end
         end
@@ -228,8 +226,7 @@ function mergeFlowIslands(system::PowerSystem, layout::PowermeterLayout, observe
         con = fill(false, bus.number)
         incidentToIslands = fill(Int64[], length(observe.tie.injection), 1)
 
-        for (k, i) in enumerate(observe.tie.injection)
-            busIndex = layout.index[i]
+        for (k, busIndex) in enumerate(observe.tie.injection)
             conection = rowval[colptr[busIndex]:(colptr[busIndex + 1] - 1)]
 
             con[conection] .= true
@@ -266,17 +263,20 @@ function mergeFlowIslands(system::PowerSystem, layout::PowermeterLayout, observe
         end
 
         removeInjection = Int64[]
-        for (k, i) in enumerate(observe.tie.injection)
-            busIndex = layout.index[i]
+        for busIndex in observe.tie.injection
+
             conection = rowval[colptr[busIndex]:(colptr[busIndex + 1] - 1)]
 
             con[conection] .= true
             if length(Set(observe.bus[con])) == 1
-                push!(removeInjection, k)
+                push!(removeInjection, busIndex)
             end
             con[conection] .= false
         end
-        deleteat!(observe.tie.injection, removeInjection)
+
+        for i in removeInjection
+            delete!(observe.tie.injection, i)
+        end
 
         mergePairs(bus, layout, observe, rowval, colptr)
     end
@@ -401,8 +401,7 @@ function restorationGram!(system::PowerSystem, device::Measurement, pseudo::Meas
     jac = SparseModel(Array{Int64,1}(), Array{Int64,1}(), Array{Float64,1}(), 0, length(islands.tie.injection))
     con = fill(false, bus.number)
 
-    for (k, i) in enumerate(islands.tie.injection)
-        busIndex = device.wattmeter.layout.index[i]
+    for (k, busIndex) in enumerate(islands.tie.injection)
         jac, con = addTieInjection(rowval, colptr, islands, busIndex, k, jac, con)
     end
 

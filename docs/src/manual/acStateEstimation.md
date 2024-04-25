@@ -92,6 +92,9 @@ nothing # hide
 
 Attempting to solve this system immediately may not be possible because the gain matrix will be singular. To avoid this situation, users can perform observability analysis. JuliaGrid employs standard observability analysis performed on the linear decoupled measurement model. Active power measurements from wattmeters are utilized to estimate bus voltage angles, while reactive power measurements from varmeters are used to estimate bus voltage magnitudes. This necessitates that measurements of active and reactive power come in pairs.
 
+!!! note "Info"
+    We suggest that readers refer to the tutorial on [Observability Analysis](@ref ACObservabilityAnalysisTutorials) for insights into the implementation.
+
 However, the initial step involves defining observable islands. JuliaGrid offers users two options for obtaining observable islands: flow observable islands or maximal observable islands. The selection depends on the power system's structure and available measurements. Identifying only flow observable islands reduces complexity in the island detection function but increases complexity in the restoration function.
 
 ---
@@ -125,7 +128,7 @@ The outcome reveals the identification of two maximal observable islands:
 islands.island
 nothing # hide
 ```
-It is evident that upon comparing this result with the flow observable islands, the merging of the two injection measurements at `Bus 2` and `Bus 3` consolidated the first, second, and third flow observable islands into a single island.
+It is evident that upon comparing this result with the flow islands, the merging of the two injection measurements at `Bus 2` and `Bus 3` consolidated the first, second, and third flow observable islands into a single island.
 
 ---
 
@@ -281,6 +284,9 @@ nothing # hide
 ```
 The [`solve!`](@ref solve!(::PowerSystem, ::ACStateEstimation{NonlinearWLS{Normal}})) function returns the maximum absolute values of the state variable increment, which are commonly used as a convergence criterion in the iterative Gauss-Newton algorithm.
 
+!!! note "Info"
+    We suggest that readers refer to the tutorial on [AC State Estimation](@ref ACStateEstimationTutorials) for insights into the implementation.
+
 ---
 
 ##### Inclusion of PMUs in Rectangular Coordinates
@@ -412,6 +418,9 @@ Consequently, we obtain a new solution devoid of the impact of the outlier measu
 print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
 ```
 
+!!! note "Info"
+    We suggest that readers refer to the tutorial on [Bad Data Processing](@ref ACBadDataTutorials) for insights into the implementation.
+
 ---
 
 ## [Least Absolute Value Estimator](@id PMULAVtateEstimationSolutionManual)
@@ -451,6 +460,9 @@ Upon obtaining the solution, access the bus voltage magnitudes and angles using:
 print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
 nothing # hide
 ```
+
+!!! note "Info"
+    We suggest that readers refer to the tutorial on [Least Absolute Value Estimation](@ref ACLAVTutorials) for insights into the implementation.
 
 ---
 

@@ -27,35 +27,16 @@ To review, we can conceptualize the bus/branch model as the graph denoted by ``\
 
 ---
 
-Subsequently, we will establish the `Measurement` composite type and incorporate a set of wattmeters ``\mathcal{P}`` into the graph ``\mathcal{G}`` to provide active power measurements:
+Following that, we will introduce the `Measurement` type and incorporate a set of measurement devices ``\mathcal{M}`` into the graph ``\mathcal{G}``. In typical scenarios, the DC state estimation model relies solely on active power measurements  originating from the set of wattmeters ``\mathcal{P}``. However, we provide the option for users to include measurements from the set of PMUs ``\bar{\mathcal{P}}``. Specifically, we utilize only the PMUs installed at the buses ``\bar{\mathcal{P}}_\text{b} \subset \bar{\mathcal{P}}`` that measure bus voltage angles. This process of adding measurement devices will be carried out in the [State Estimation Model](@ref DCSEModelTutorials) section. Currently, we are only initializing the `Measurement` type at this stage:
 ```@example DCSETutorial
 device = measurement()
-
-@wattmeter(label = "Wattmeter ?", noise = false)
-addWattmeter!(system, device; from = 1, active = 0.27, variance = 1e-4)
-addWattmeter!(system, device; bus = 3, active = -1.21, variance = 1e-3)
-addWattmeter!(system, device; to = 1, active = -0.28, variance = 1e-4)
-
 nothing # hide
 ```
-
----
-
-In typical scenarios, the DC state estimation model relies solely on active power measurements. However, we allow the possibility for the user to include bus voltage angle measurements from the set of PMUs ``\bar{\mathcal{P}}``. Specifically, we utilize only the PMUs installed at the buses ``\bar{\mathcal{P}}_\text{b} \subset \bar{\mathcal{P}}``:
-```@example DCSETutorial
-@pmu(label = "PMU ?", varianceAngleBus = 1e-5, noise = false)
-addPmu!(system, device; bus = 2, magnitude = 1.0, angle = -0.06)
-addPmu!(system, device; bus = 3, magnitude = 1.0, angle = -0.12)
-
-nothing # hide
-```
-
-As a result, JuliaGrid is capable of conducting DC state estimation utilizing a set of measurement devices denoted as ``\mathcal{M} = \mathcal{P} \cup \bar{\mathcal{P}_{b}}``, which includes active power flow and injection measurements obtained from wattmeters, as well as bus voltage angle measurements from PMUs.
 
 ---
 
 !!! ukw "Notation"
-    In this section, when referring to a vector ``\mathbf{a}``, we use the notation ``\mathbf{a} = [a_{i}]`` or ``\mathbf{a} = [a_{ij}]``, where ``a_i`` represents the element associated with bus ``i \in \mathcal{N}`` or measurement ``i \in \mathcal{M}``, and ``a_{ij}`` represents the element associated with branch ``(i,j) \in \mathcal{E}``.
+    Here, when referring to a vector ``\mathbf{a}``, we use the notation ``\mathbf{a} = [a_{i}]`` or ``\mathbf{a} = [a_{ij}]``, where ``a_i`` represents the element related with bus ``i \in \mathcal{N}`` or measurement ``i \in \mathcal{M}``, while ``a_{ij}`` denotes the element related with branch ``(i,j) \in \mathcal{E}``.
 
 ---
 
@@ -88,45 +69,102 @@ In summary, upon user definition of the measurement devices, each ``i``-th measu
 
 ---
 
-##### Active Power Flow Measurement Functions
-The vector ``\mathbf{h}_\mathcal{P}(\bm {\Theta})`` comprises functions representing active power flow measurements. Following the guidelines outlined in the [DC Model](@ref DCBranchNetworkEquationsTutorials), the functions describing active power flows at the branch ``(i,j) \in \mathcal{E}`` at the from-bus and to-bus ends are defined as follows:
+##### Active Power Injection Measurements
+When adding a wattmeter ``P_i \in \mathcal{P}`` at bus ``i \in \mathcal{N}``, users specify that the wattmeter measures active power injection and define measurement value, variance and measurement function of vectors:
+```math
+    \mathbf{z}_\mathcal{P} = [z_{P_{i}}], \;\;\; \mathbf{v}_\mathcal{P} = [v_{P_{i}}], \;\;\; \mathbf{h}_\mathcal{P}(\bm {\Theta}) = [h_{P_{i}}(\bm {\Theta})].
+```
+
+For example:
+```@example DCSETutorial
+addWattmeter!(system, device; label = "P₃", bus = 3, active = -1.30, variance = 1e-3)
+nothing # hide
+```
+
+Here, utilizing the [DC Model](@ref DCNodalNetworkEquationsTutorials), we derive the function defining the active power injection as follows:
+```math
+   h_{P_{i}}(\bm {\Theta}) = B_{ii}\theta_i + \sum_{j \in \mathcal{N}_i \setminus i} {B}_{ij} \theta_j + P_{\text{tr}i} + P_{\text{sh}i},
+```
+where ``\mathcal{N}_i \setminus i`` contains buses incident to bus ``i``, excluding bus ``i``, with the following coefficient expressions:
 ```math
   \begin{aligned}
-    h_{P_{ij}}(\cdot) &= \cfrac{1}{\tau_{ij} x_{ij}} (\theta_{i} -\theta_{j}-\phi_{ij})\\
-    h_{P_{ji}}(\cdot) &= -\cfrac{1}{\tau_{ij} x_{ij}} (\theta_{i} -\theta_{j}-\phi_{ij}).
+    \cfrac{\mathrm \partial{h_{P_{i}}(\bm {\Theta})}}{\mathrm \partial \theta_{i}} = B_{ii}, \;\;\;
+  \cfrac{\mathrm \partial{{h_{P_{i}}}(\bm {\Theta})}}{\mathrm \partial \theta_{j}} = {B}_{ij}.
   \end{aligned}
 ```
 
 ---
 
-##### Active Power Injection Measurement Functions
-Moreover, the vector ``\mathbf{h}_\mathcal{P}(\bm {\Theta})`` incorporates functions designed for measuring active power injections. Utilizing the [DC Model](@ref DCNodalNetworkEquationsTutorials), the function defining the active power injection into bus ``i \in \mathcal{N}`` can be derived as follows:
+##### From-Bus End Active Power Flow Measurements
+Additionally, when introducing a wattmeter at branch ``(i,j) \in \mathcal{E}``, users specify that the wattmeter measures active power flow. It can be positioned at the from-bus end, denoted as ``P_{ij} \in \mathcal{P}``, specifying the measurement value, variance and measurement function of vectors:
 ```math
-   h_{P_{i}}(\cdot) = B_{ii}\theta_i + \sum_{j \in \mathcal{N}_i \setminus i} {B}_{ij} \theta_j + P_{\text{tr}i} + P_{\text{sh}i},
+    \mathbf{z}_\mathcal{P} = [z_{P_{ij}}], \;\;\; \mathbf{v}_\mathcal{P} = [v_{P_{ij}}], \;\;\; \mathbf{h}_\mathcal{P}(\bm {\Theta}) = [h_{P_{ij}}(\bm {\Theta})].
 ```
-where ``\mathcal{N}_i \setminus i`` contains buses incident to bus ``i``, excluding bus ``i``.
+
+For example:
+```@example DCSETutorial
+addWattmeter!(system, device; label = "P₁₂", from = 1, active = 0.28, variance = 1e-4)
+nothing # hide
+```
+
+Here, the function describing active power flow at the from-bus end is defined as follows:
+```math
+  h_{P_{ij}}(\bm {\Theta}) = \cfrac{1}{\tau_{ij} x_{ij}} (\theta_{i} -\theta_{j}-\phi_{ij}),
+```
+with the following coefficient expressions:
+```math
+  \begin{aligned}
+    \cfrac{\mathrm \partial{h_{P_{ij}}(\bm {\Theta})}}{\mathrm \partial \theta_{i}} = \cfrac{1}{\tau_{ij} x_{ij}}, \;\;\;
+    \cfrac{\mathrm \partial{{h_{P_{ij}}}(\bm {\Theta})}}{\mathrm \partial \theta_{j}} = -\cfrac{1}{\tau_{ij} x_{ij}}.
+  \end{aligned}
+```
 
 ---
 
-##### Bus Voltage Angle Measurement Functions
-The vector ``\mathbf{h}_{\bar{\mathcal{P}}_\text{b}}(\bm {\Theta})`` comprises functions for measuring bus voltage angles. The function defining the bus voltage angle at bus ``i \in \mathcal{N}`` is straightforward:
+##### To-Bus End Active Power Flow Measurements
+Similarly, a wattmeter can be placed at the to-bus end, denoted as ``P_{ji} \in \mathcal{P}``, specifying the measurement value, variance and measurement function of vectors:
 ```math
-    h_{\theta_{i}}(\cdot) = \theta_{i}.
+    \mathbf{z}_\mathcal{P} = [z_{P_{ji}}], \;\;\; \mathbf{v}_\mathcal{P} = [v_{P_{ji}}], \;\;\; \mathbf{h}_\mathcal{P}(\bm {\Theta}) = [h_{P_{ji}}(\bm {\Theta})].
+```
+
+For example:
+```@example DCSETutorial
+addWattmeter!(system, device; label = "P₂₁", to = 1, active = -0.28, variance = 1e-4)
+nothing # hide
+```
+
+Thus, the function describing active power flow at the to-bus end is defined as follows:
+```math
+  h_{P_{ji}}(\bm {\Theta}) = -\cfrac{1}{\tau_{ij} x_{ij}} (\theta_{i} -\theta_{j}-\phi_{ij}),
+```
+with the following coefficient expressions:
+```math
+  \cfrac{\mathrm \partial{h_{P_{ji}}(\bm {\Theta})}}{\mathrm \partial \theta_{i}} = -\cfrac{1}{\tau_{ij} x_{ij}}, \;\;\;
+  \cfrac{\mathrm \partial{{h_{P_{ji}}}(\bm {\Theta})}}{\mathrm \partial \theta_{j}} = \cfrac{1}{\tau_{ij} x_{ij}}.
 ```
 
 ---
 
-##### Measurement Values and Variances
-The vectors containing the measurement values ``\mathbf{z}_\mathcal{P} = [z_i]`` and variances ``\mathbf{v}_\mathcal{P} = [v_i]`` for wattmeters, where ``i \in \mathcal{P}``, are stored in the variables:
-```@repl DCSETutorial
-𝐳ₚ = device.wattmeter.active.mean
-𝐯ₚ = device.wattmeter.active.variance
+##### Bus Voltage Angle Measurements
+If the user opts to include phasor measurements that measure bus voltage angle at bus ``i \in \mathcal{N}``, denoted as ``\theta_i \in \bar{\mathcal{P}}_\text{b}``, the user will specify the measurement values, variances, and measurement functions of vectors:
+```math
+    \mathbf{z}_{\bar{\mathcal{P}}_\text{b}} = [z_{\theta_i}], \;\;\; \mathbf{v}_{\bar{\mathcal{P}}_\text{b}} = [v_{\theta_i}], \;\;\; \mathbf{h}_{\bar{\mathcal{P}}_\text{b}}(\bm {\Theta}) = [h_{\theta_{i}}(\bm {\Theta})].
 ```
 
-Similarly, the vectors containing the measurement values ``\mathbf{z}_{\bar{\mathcal{P}}_\text{b}} = [z_i]`` and variances ``\mathbf{v}_{\bar{\mathcal{P}}_\text{b}} = [v_i]`` for PMUs, where ``i \in \bar{\mathcal{P}}_\text{b}``, are stored in the variables:
-```@repl DCSETutorial
-𝐳ₚₒ = device.pmu.angle.mean
-𝐯ₚₒ = device.pmu.angle.variance
+For example:
+```@example DCSETutorial
+addPmu!(system, device; label = "V₁, θ₁", bus = 1, magnitude = 1.0, varianceMagnitude = 1e-5,
+angle = 0, varianceAngle = 1e-6)
+nothing # hide
+```
+
+Here, the function defining the bus voltage angle measurement is straightforward:
+```math
+    h_{\theta_{i}}(\bm {\Theta}) = \theta_{i},
+```
+with the following coefficient expression:
+```math
+  \cfrac{\mathrm \partial{{h_{\theta_i}(\bm {\Theta})}}}{\mathrm \partial \theta_{i}}=1.
 ```
 
 ---
@@ -136,30 +174,10 @@ The solution to the DC state estimation problem is determined by solving the lin
 ```math
 	\mathbf H^{T} \bm \Sigma^{-1} \mathbf H \bm {\Theta} = \mathbf H^{T} \bm \Sigma^{-1} (\mathbf z - \mathbf{c}).
 ```
-Here, the vector of measurement values ``\mathbf z \in \mathbb {R}^{k}``, the vector of constant terms ``\mathbf c \in \mathbb {R}^{k}``, the coefficient matrix ``\mathbf {H} \in \mathbb {R}^{k \times n}``, and the diagonal measurement error covariance matrix ``\bm \Sigma \in \mathbb {R}^{k \times k}``, where the diagonal elements hold measurement variances, are defined as follows:
-```math
-    \mathbf z =
-    \begin{bmatrix}
-      \mathbf{z}_\mathcal{P}\\[3pt]
-      \mathbf{z}_{\bar{\mathcal{P}}_\text{b}}
-    \end{bmatrix}; \;\;\;
-    \mathbf c =
-    \begin{bmatrix}
-      \mathbf{c}_\mathcal{P}\\[3pt]
-      \mathbf{c}_{\bar{\mathcal{P}}_\text{b}}\\[3pt]
-    \end{bmatrix}; \;\;\;
-    \mathbf H =
-    \begin{bmatrix}
-      \mathbf {H}_\mathcal{P} \\[3pt]
-      \mathbf {H}_{\bar{\mathcal{P}}_\text{b}}
-	\end{bmatrix}; \;\;\;
-  \bm \Sigma =
-    \begin{bmatrix}
-	   \bm \Sigma_\mathcal{P} & \mathbf{0} \\
-     \mathbf{0} & \bm \Sigma_{\bar{\mathcal{P}}_\text{b}}
-	\end{bmatrix}.
-```
-The inclusion of the vector ``\mathbf{c}_\mathcal{P}`` is necessary due to the fact that measurement functions associated with active power measurements may include constant terms, especially when there are non-zero shift angles of transformers or shunt elements in the system consuming active powers, as evident from the provided measurement functions. On the other hand, the presence of ``\mathbf{c}_{\bar{\mathcal{P}}_\text{b}}`` is required when the angle of the slack bus is non-zero.
+
+Here, ``\mathbf z \in \mathbb {R}^{k}`` denotes the vector of measurement values, the vector ``\mathbf c \in \mathbb {R}^{k}`` holds constant terms, ``\mathbf {H} \in \mathbb {R}^{k \times (n-1)}`` represents the coefficient matrix, and ``\bm \Sigma \in \mathbb {R}^{k \times k}`` is the measurement error covariance matrix, where the diagonal elements hold measurement variances.
+
+The inclusion of the vector ``\mathbf{c}`` is necessary due to the fact that measurement functions associated with active power measurements may include constant terms, especially when there are non-zero shift angles of transformers or shunt elements in the system consuming active powers, as evident from the provided measurement functions.
 
 ---
 
@@ -173,33 +191,7 @@ nothing # hide
 ---
 
 ##### Coefficient Matrix
-To generate the coefficient matrix in JuliaGrid, measurement functions are utilized. Specifically, for active power flow measurements, the coefficient expressions corresponding to the measurement functions ``h_{P_{ij}}(\cdot)`` and ``h_{P_{ji}}(\cdot)`` are defined as follows:
-```math
-  \begin{aligned}
-    \cfrac{\mathrm \partial{h_{P_{ij}}(\cdot)}}{\mathrm \partial \theta_{i}} = \cfrac{1}{\tau_{ij} x_{ij}}; \;\;\;
-    \cfrac{\mathrm \partial{{h_{P_{ij}}}(\cdot)}}{\mathrm \partial \theta_{j}} = -\cfrac{1}{\tau_{ij} x_{ij}} \\
-    \cfrac{\mathrm \partial{h_{P_{ji}}(\cdot)}}{\mathrm \partial \theta_{i}} = -\cfrac{1}{\tau_{ij} x_{ij}}; \;\;\;
-  \cfrac{\mathrm \partial{{h_{P_{ji}}}(\cdot)}}{\mathrm \partial \theta_{j}} = \cfrac{1}{\tau_{ij} x_{ij}}.
-  \end{aligned}
-```
-
-Furthermore, for active power injection measurements, the coefficient expressions corresponding to the measurement function ``h_{P_{i}}(\cdot)`` are defined as follows:
-```math
-  \begin{aligned}
-    \cfrac{\mathrm \partial{h_{P_{i}}(\cdot)}}{\mathrm \partial \theta_{i}} = B_{ii}; \;\;\;
-  \cfrac{\mathrm \partial{{h_{P_{i}}}(\cdot)}}{\mathrm \partial \theta_{j}} = {B}_{ij}.
-  \end{aligned}
-```
-
-Lastly, for bus voltage angle measurements, the coefficient expressions are as follows:
-```math
-  \begin{aligned}
-    \cfrac{\mathrm \partial{h_{\theta_{i}}(\cdot)}}{\mathrm \partial \theta_{i}} = 1; \;\;\;
-    \cfrac{\mathrm \partial{{h_{\theta_{i}}}(\cdot)}}{\mathrm \partial \theta_{j}} = 0.
-  \end{aligned}
-```
-
-Using the above-described equations, JuliaGrid forms the coefficient matrix ``\mathbf{H} \in \mathbb{R}^{k \times n}``:
+Using the above-described equations, JuliaGrid forms the coefficient matrix ``\mathbf{H} \in \mathbb{R}^{k \times (n-1)}``:
 ```@repl DCSETutorial
 𝐇 = analysis.method.coefficient
 ```
@@ -254,7 +246,7 @@ Finally, the estimated bus voltage angles ``\hat{\bm {\Theta}} = [\hat{\theta}_i
 𝚯 = analysis.voltage.angle
 ```
 
-It is essential to note that the slack bus voltage angle is temporarily excluded from the gain matrix ``\mathbf G`` during computation. It is important to emphasize that this internal handling does not alter the stored elements, such as the coefficient matrix.
+It is essential to note that the slack bus voltage angle is temporarily excluded from the gain matrix ``\mathbf G`` during computation. It is important to emphasize that this internal handling does not alter the stored elements.
 
 ---
 
@@ -314,7 +306,7 @@ Besides the state estimation algorithm, one of the essential state estimation ro
 
 To illustrate this process, let us introduce a new measurement that contains an obvious outlier:
 ```@example DCSETutorial
-addWattmeter!(system, device; bus = 3, active = 5.1, variance = 1e-4, noise = false)
+addWattmeter!(system, device; label = "P₁", bus = 1, active = 13.1, variance = 1e-4)
 
 nothing # hide
 ```
