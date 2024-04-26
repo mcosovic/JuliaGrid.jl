@@ -28,7 +28,7 @@ The function returns an instance of the `PMUStateEstimation` abstract type, whic
 the following fields:
 - `voltage`: the variable allocated to store the bus voltage magnitudes and angles;
 - `power`: the variable allocated to store the active and reactive powers;
-- `method`: the system model vectors and matrices and bad data.
+- `method`: the system model vectors and matrices.
 
 # Examples
 Set up the PMU state estimation model to be solved using the default LU factorization:
@@ -48,7 +48,7 @@ analysis = pmuWlsStateEstimation(system, device, Orthogonal)
 ```
 """
 function pmuWlsStateEstimation(system::PowerSystem, device::Measurement, factorization::Type{<:Union{QR, LDLt, LU}} = LU)
-    coefficient, mean, precision, badData, power, current, _ = pmuStateEstimationWLS(system, device)
+    coefficient, mean, precision, power, current, _ = pmuStateEstimationWLS(system, device)
 
     method = Dict(LU => lu, LDLt => ldlt, QR => qr)
     return PMUStateEstimation(
@@ -60,7 +60,6 @@ function pmuWlsStateEstimation(system::PowerSystem, device::Measurement, factori
             precision,
             mean,
             get(method, factorization, lu)(sparse(Matrix(1.0I, 1, 1))),
-            badData,
             2 * device.pmu.number,
             -1,
             true,
@@ -69,7 +68,7 @@ function pmuWlsStateEstimation(system::PowerSystem, device::Measurement, factori
 end
 
 function pmuWlsStateEstimation(system::PowerSystem, device::Measurement, method::Type{<:Orthogonal})
-    coefficient, mean, precision, badData, power, current, correlated = pmuStateEstimationWLS(system, device)
+    coefficient, mean, precision, power, current, correlated = pmuStateEstimationWLS(system, device)
 
     if correlated
         throw(ErrorException("The precision matrix is non-diagonal, therefore preventing the use of the orthogonal method."))
@@ -84,7 +83,6 @@ function pmuWlsStateEstimation(system::PowerSystem, device::Measurement, method:
             precision,
             mean,
             qr(sparse(Matrix(1.0I, 1, 1))),
-            badData,
             2 * device.pmu.number,
             -1,
             true,
@@ -241,12 +239,11 @@ function pmuStateEstimationWLS(system::PowerSystem, device::Measurement)
     coefficient = sparse(rowCoeff, colCoeff, coeff, 2 * pmu.number, 2 * bus.number)
     precision = sparse(rowPrec, colPrec, valPrec, 2 * pmu.number, 2 * pmu.number)
 
-    badData = BadData(true, 0.0, "", 0)
     power = ACPower(Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]),
         Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), nothing)
     current = ACCurrent(Polar(Float64[], Float64[]), Polar(Float64[], Float64[]), Polar(Float64[], Float64[]), Polar(Float64[], Float64[]))
 
-    return coefficient, mean, precision, badData, power, current, correlated
+    return coefficient, mean, precision, power, current, correlated
 end
 
 """

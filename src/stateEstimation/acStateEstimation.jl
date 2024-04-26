@@ -28,7 +28,7 @@ The function returns an instance of the `PMUStateEstimation` abstract type, whic
 the following fields:
 - `voltage`: the variable allocated to store the bus voltage magnitudes and angles;
 - `power`: the variable allocated to store the active and reactive powers;
-- `method`: the system model vectors and matrices and bad data.
+- `method`: the system model vectors and matrices.
 
 # Examples
 Set up the AC state estimation model to be solved using the default LU factorization:
@@ -48,7 +48,7 @@ analysis = gaussNewton(system, device, Orthogonal)
 ```
 """
 function gaussNewton(system::PowerSystem, device::Measurement, factorization::Type{<:Union{QR, LDLt, LU}} = LU)
-    jacobian, mean, precision, residual, type, index, range, badData, power, current, _ = acStateEstimationWLS(system, device)
+    jacobian, mean, precision, residual, type, index, range, power, current, _ = acStateEstimationWLS(system, device)
 
     method = Dict(LU => lu, LDLt => ldlt, QR => qr)
     return ACStateEstimation(
@@ -65,7 +65,6 @@ function gaussNewton(system::PowerSystem, device::Measurement, factorization::Ty
             residual,
             fill(0.0, 2 * system.bus.number),
             get(method, factorization, lu)(sparse(Matrix(1.0I, 1, 1))),
-            badData,
             type,
             index,
             range,
@@ -75,7 +74,7 @@ function gaussNewton(system::PowerSystem, device::Measurement, factorization::Ty
 end
 
 function gaussNewton(system::PowerSystem, device::Measurement, method::Type{<:Orthogonal})
-    jacobian, mean, precision, residual, type, index, range, badData, power, current, correlated = acStateEstimationWLS(system, device)
+    jacobian, mean, precision, residual, type, index, range, power, current, correlated = acStateEstimationWLS(system, device)
 
     if correlated
         throw(ErrorException("The precision matrix is non-diagonal, therefore preventing the use of the orthogonal method."))
@@ -95,7 +94,6 @@ function gaussNewton(system::PowerSystem, device::Measurement, method::Type{<:Or
             residual,
             fill(0.0, 2 * system.bus.number),
             qr(sparse(Matrix(1.0I, 1, 1))),
-            badData,
             type,
             index,
             range,
@@ -275,12 +273,11 @@ function acStateEstimationWLS(system::PowerSystem, device::Measurement)
     jacobian = sparse(jac.row, jac.col, jac.val, measureNumber, 2 * bus.number)
     precision = sparse(prec.row, prec.col, prec.val, measureNumber, measureNumber)
 
-    badData = BadData(true, 0.0, "", 0)
     power = ACPower(Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]),
         Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), nothing)
     current = ACCurrent(Polar(Float64[], Float64[]), Polar(Float64[], Float64[]), Polar(Float64[], Float64[]), Polar(Float64[], Float64[]))
 
-   return jacobian, mean, precision, fill(0.0, measureNumber), type, index, range, badData, power, current, correlated
+   return jacobian, mean, precision, fill(0.0, measureNumber), type, index, range, power, current, correlated
 end
 
 """

@@ -320,7 +320,7 @@ nothing # hide
 
 Now, the bad data processing can be executed:
 ```@example DCSETutorial
-residualTest!(system, device, analysis; threshold = 4.0)
+outlier = residualTest!(system, device, analysis; threshold = 4.0)
 nothing # hide
 ```
 
@@ -347,7 +347,7 @@ The subsequent step involves selecting the largest normalized residual, and the 
 
 Users can access this information using the variable:
 ```@repl DCSETutorial
-analysis.method.outlier.maxNormalizedResidual
+outlier.maxNormalizedResidual
 ```
 
 If the largest normalized residual, denoted as ``\bar{r}_{j}``, satisfies the inequality:
@@ -356,12 +356,12 @@ If the largest normalized residual, denoted as ``\bar{r}_{j}``, satisfies the in
 ```
 the corresponding measurement is identified as bad data and subsequently removed. In this example, the bad data identification `threshold` is set to ``\epsilon = 4``. Users can verify the satisfaction of this inequality by inspecting the variable:
 ```@repl DCSETutorial
-analysis.method.outlier.detect
+outlier.detect
 ```
 
 This indicates that the measurement labeled as:
 ```@repl DCSETutorial
-analysis.method.outlier.label
+outlier.label
 ```
 is removed from the DC model and marked as out-of-service.
 
@@ -374,18 +374,18 @@ nothing # hide
 
 Following that, we check for outliers once more:
 ```@example DCSETutorial
-residualTest!(system, device, analysis; threshold = 4.0)
+outlier = residualTest!(system, device, analysis; threshold = 4.0)
 nothing # hide
 ```
 
 To examine the value:
 ```@repl DCSETutorial
-analysis.method.outlier.maxNormalizedResidual
+outlier.maxNormalizedResidual
 ```
 
 As this value is now less than the `threshold` ``\epsilon = 4``, the measurement is not removed, or there are no outliers. This can also be verified by observing the bad data flag:
 ```@repl DCSETutorial
-analysis.method.outlier.detect
+outlier.detect
 ```
 
 ---

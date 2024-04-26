@@ -215,15 +215,15 @@ nothing # hide
 
 Following the solution acquisition, we can verify the presence of erroneous data. Detection of such data is determined by the `threshold` keyword. If the largest normalized residual's value exceeds the threshold, the measurement will be identified as bad data and consequently removed from the PMU state estimation model:
 ```@example PMUOptimalPlacement
-residualTest!(system, device, analysis; threshold = 4.0)
+outlier = residualTest!(system, device, analysis; threshold = 4.0)
 nothing # hide
 ```
 
 Users can examine the data obtained from the bad data analysis:
 ```@repl PMUOptimalPlacement
-analysis.method.outlier.detect
-analysis.method.outlier.maxNormalizedResidual
-analysis.method.outlier.label
+outlier.detect
+outlier.maxNormalizedResidual
+outlier.label
 ```
 
 Hence, upon detecting bad data, the `detect` variable will hold `true`. The `maxNormalizedResidual` variable retains the value of the largest normalized residual, while the `label` contains the label of the measurement identified as bad data. JuliaGrid will mark the respective phasor measurement as out-of-service within the `Measurement` type.

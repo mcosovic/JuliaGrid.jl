@@ -46,9 +46,9 @@ system30 = powerSystem(string(pathData, "case30test.m"))
             break
         end
     end
-    residualTest!(system14, device, analysisSE; threshold = 3.0)
-    @test analysisSE.method.outlier.label == "Varmeter 4"
-    @test analysisSE.method.outlier.maxNormalizedResidual ≈ 52.5 atol = 1e-1
+    outlier = residualTest!(system14, device, analysisSE; threshold = 3.0)
+    @test outlier.label == "Varmeter 4"
+    @test outlier.maxNormalizedResidual ≈ 52.5 atol = 1e-1
 
     analysisSE = gaussNewton(system14, device)
     for iteration = 1:20
@@ -77,9 +77,9 @@ system30 = powerSystem(string(pathData, "case30test.m"))
             break
         end
     end
-    residualTest!(system14, device, analysisSE; threshold = 3.0)
-    @test analysisSE.method.outlier.label == "PMU 10"
-    @test analysisSE.method.outlier.maxNormalizedResidual ≈ 7713.26 atol = 1e-1
+    outlier = residualTest!(system14, device, analysisSE; threshold = 3.0)
+    @test outlier.label == "PMU 10"
+    @test outlier.maxNormalizedResidual ≈ 7713.26 atol = 1e-1
 
     analysisSE = gaussNewton(system14, device)
     for iteration = 1:20
@@ -88,9 +88,9 @@ system30 = powerSystem(string(pathData, "case30test.m"))
             break
         end
     end
-    residualTest!(system14, device, analysisSE; threshold = 3.0)
-    @test analysisSE.method.outlier.label == "Varmeter 4"
-    @test analysisSE.method.outlier.maxNormalizedResidual ≈ 78.3 atol = 1e-1
+    outlier = residualTest!(system14, device, analysisSE; threshold = 3.0)
+    @test outlier.label == "Varmeter 4"
+    @test outlier.maxNormalizedResidual ≈ 78.3 atol = 1e-1
 
     analysisSE = gaussNewton(system14, device)
     for iteration = 1:20
@@ -113,9 +113,9 @@ system30 = powerSystem(string(pathData, "case30test.m"))
             break
         end
     end
-    residualTest!(system14, device, analysisSE; threshold = 3.0)
-    @test analysisSE.method.outlier.label == "PMU 10"
-    @test analysisSE.method.outlier.maxNormalizedResidual ≈ 7713.26 atol = 1e-1
+    outlier = residualTest!(system14, device, analysisSE; threshold = 3.0)
+    @test outlier.label == "PMU 10"
+    @test outlier.maxNormalizedResidual ≈ 7713.26 atol = 1e-1
 
     analysisSE = gaussNewton(system14, device, Orthogonal)
     for iteration = 1:20
@@ -124,9 +124,9 @@ system30 = powerSystem(string(pathData, "case30test.m"))
             break
         end
     end
-    residualTest!(system14, device, analysisSE; threshold = 3.0)
-    @test analysisSE.method.outlier.label == "Varmeter 4"
-    @test analysisSE.method.outlier.maxNormalizedResidual ≈ 78.3 atol = 1e-1
+    outlier = residualTest!(system14, device, analysisSE; threshold = 3.0)
+    @test outlier.label == "Varmeter 4"
+    @test outlier.maxNormalizedResidual ≈ 78.3 atol = 1e-1
 
     analysisSE = gaussNewton(system14, device, Orthogonal)
     for iteration = 1:20
@@ -152,9 +152,9 @@ system30 = powerSystem(string(pathData, "case30test.m"))
             break
         end
     end
-    residualTest!(system14, device, analysisSE; threshold = 3.0)
-    @test analysisSE.method.outlier.label == "PMU 20"
-    @test analysisSE.method.outlier.maxNormalizedResidual ≈ 335.59 atol = 1e-1
+    outlier = residualTest!(system14, device, analysisSE; threshold = 3.0)
+    @test outlier.label == "PMU 20"
+    @test outlier.maxNormalizedResidual ≈ 335.59 atol = 1e-1
 
     analysisSE = gaussNewton(system14, device)
     for iteration = 1:20
@@ -202,9 +202,9 @@ end
     analysisSE = pmuWlsStateEstimation(system14, device)
     solve!(system14, analysisSE)
 
-    residualTest!(system14, device, analysisSE; threshold = 3.0)
-    @test analysisSE.method.outlier.label == "PMU 2"
-    @test analysisSE.method.outlier.maxNormalizedResidual ≈ 2606.8 atol = 1e-1
+    outlier = residualTest!(system14, device, analysisSE; threshold = 3.0)
+    @test outlier.label == "PMU 2"
+    @test outlier.maxNormalizedResidual ≈ 2606.8 atol = 1e-1
 
     solve!(system14, analysisSE)
     @test analysis.voltage.magnitude ≈ analysisSE.voltage.magnitude
@@ -216,14 +216,14 @@ end
     analysisSE = pmuWlsStateEstimation(system14, device)
     solve!(system14, analysisSE)
 
-    residualTest!(system14, device, analysisSE; threshold = 3.0)
-    @test analysisSE.method.outlier.label == "PMU 20"
-    @test analysisSE.method.outlier.maxNormalizedResidual ≈ 8853.2 atol = 1e-1
+    outlier = residualTest!(system14, device, analysisSE; threshold = 3.0)
+    @test outlier.label == "PMU 20"
+    @test outlier.maxNormalizedResidual ≈ 8853.2 atol = 1e-1
 
     solve!(system14, analysisSE)
-    residualTest!(system14, device, analysisSE; threshold = 3.0)
-    @test analysisSE.method.outlier.label == "PMU 2"
-    @test analysisSE.method.outlier.maxNormalizedResidual ≈ 2606.5 atol = 1e-1
+    outlier = residualTest!(system14, device, analysisSE; threshold = 3.0)
+    @test outlier.label == "PMU 2"
+    @test outlier.maxNormalizedResidual ≈ 2606.5 atol = 1e-1
 
     solve!(system14, analysisSE)
     @test analysis.voltage.magnitude ≈ analysisSE.voltage.magnitude
@@ -235,9 +235,9 @@ end
     analysisSE = pmuWlsStateEstimation(system14, device, Orthogonal)
     solve!(system14, analysisSE)
 
-    residualTest!(system14, device, analysisSE; threshold = 3.0)
-    @test analysisSE.method.outlier.label == "PMU 2"
-    @test analysisSE.method.outlier.maxNormalizedResidual ≈ 2606.8 atol = 1e-1
+    outlier = residualTest!(system14, device, analysisSE; threshold = 3.0)
+    @test outlier.label == "PMU 2"
+    @test outlier.maxNormalizedResidual ≈ 2606.8 atol = 1e-1
 
     solve!(system14, analysisSE)
     @test analysis.voltage.magnitude ≈ analysisSE.voltage.magnitude
@@ -249,14 +249,14 @@ end
     analysisSE = pmuWlsStateEstimation(system14, device, Orthogonal)
     solve!(system14, analysisSE)
 
-    residualTest!(system14, device, analysisSE; threshold = 3.0)
-    @test analysisSE.method.outlier.label == "PMU 20"
-    @test analysisSE.method.outlier.maxNormalizedResidual ≈ 8853.2 atol = 1e-1
+    outlier = residualTest!(system14, device, analysisSE; threshold = 3.0)
+    @test outlier.label == "PMU 20"
+    @test outlier.maxNormalizedResidual ≈ 8853.2 atol = 1e-1
 
     solve!(system14, analysisSE)
-    residualTest!(system14, device, analysisSE; threshold = 3.0)
-    @test analysisSE.method.outlier.label == "PMU 2"
-    @test analysisSE.method.outlier.maxNormalizedResidual ≈ 2606.5 atol = 1e-1
+    outlier = residualTest!(system14, device, analysisSE; threshold = 3.0)
+    @test outlier.label == "PMU 2"
+    @test outlier.maxNormalizedResidual ≈ 2606.5 atol = 1e-1
 
     solve!(system14, analysisSE)
     @test analysis.voltage.magnitude ≈ analysisSE.voltage.magnitude
@@ -296,9 +296,9 @@ end
     analysisSE = dcWlsStateEstimation(system14, device)
     solve!(system14, analysisSE)
 
-    residualTest!(system14, device, analysisSE; threshold = 3.0)
-    @test analysisSE.method.outlier.label == "Wattmeter 2"
-    @test analysisSE.method.outlier.maxNormalizedResidual ≈ 829.9 atol = 1e-1
+    outlier = residualTest!(system14, device, analysisSE; threshold = 3.0)
+    @test outlier.label == "Wattmeter 2"
+    @test outlier.maxNormalizedResidual ≈ 829.9 atol = 1e-1
 
     solve!(system14, analysisSE)
     @test analysis.voltage.angle ≈ analysisSE.voltage.angle
@@ -309,14 +309,14 @@ end
     analysisSE = dcWlsStateEstimation(system14, device)
     solve!(system14, analysisSE)
 
-    residualTest!(system14, device, analysisSE; threshold = 3.0)
-    @test analysisSE.method.outlier.label == "PMU 10"
-    @test analysisSE.method.outlier.maxNormalizedResidual ≈ 5186.3 atol = 1e-1
+    outlier = residualTest!(system14, device, analysisSE; threshold = 3.0)
+    @test outlier.label == "PMU 10"
+    @test outlier.maxNormalizedResidual ≈ 5186.3 atol = 1e-1
 
     solve!(system14, analysisSE)
-    residualTest!(system14, device, analysisSE; threshold = 3.0)
-    @test analysisSE.method.outlier.label == "Wattmeter 2"
-    @test analysisSE.method.outlier.maxNormalizedResidual ≈ 829.9 atol = 1e-1
+    outlier = residualTest!(system14, device, analysisSE; threshold = 3.0)
+    @test outlier.label == "Wattmeter 2"
+    @test outlier.maxNormalizedResidual ≈ 829.9 atol = 1e-1
 
     solve!(system14, analysisSE)
     @test analysis.voltage.angle ≈ analysisSE.voltage.angle
@@ -327,9 +327,9 @@ end
     analysisSE = dcWlsStateEstimation(system14, device, Orthogonal)
     solve!(system14, analysisSE)
 
-    residualTest!(system14, device, analysisSE; threshold = 3.0)
-    @test analysisSE.method.outlier.label == "Wattmeter 2"
-    @test analysisSE.method.outlier.maxNormalizedResidual ≈ 829.9 atol = 1e-1
+    outlier = residualTest!(system14, device, analysisSE; threshold = 3.0)
+    @test outlier.label == "Wattmeter 2"
+    @test outlier.maxNormalizedResidual ≈ 829.9 atol = 1e-1
 
     solve!(system14, analysisSE)
     @test analysis.voltage.angle ≈ analysisSE.voltage.angle
@@ -340,14 +340,14 @@ end
     analysisSE = dcWlsStateEstimation(system14, device, Orthogonal)
     solve!(system14, analysisSE)
 
-    residualTest!(system14, device, analysisSE; threshold = 3.0)
-    @test analysisSE.method.outlier.label == "PMU 10"
-    @test analysisSE.method.outlier.maxNormalizedResidual ≈ 5186.3 atol = 1e-1
+    outlier = residualTest!(system14, device, analysisSE; threshold = 3.0)
+    @test outlier.label == "PMU 10"
+    @test outlier.maxNormalizedResidual ≈ 5186.3 atol = 1e-1
 
     solve!(system14, analysisSE)
-    residualTest!(system14, device, analysisSE; threshold = 3.0)
-    @test analysisSE.method.outlier.label == "Wattmeter 2"
-    @test analysisSE.method.outlier.maxNormalizedResidual ≈ 829.9 atol = 1e-1
+    outlier = residualTest!(system14, device, analysisSE; threshold = 3.0)
+    @test outlier.label == "Wattmeter 2"
+    @test outlier.maxNormalizedResidual ≈ 829.9 atol = 1e-1
 
     solve!(system14, analysisSE)
     @test analysis.voltage.angle ≈ analysisSE.voltage.angle

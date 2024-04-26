@@ -25,11 +25,11 @@ an in-service generator, JuliaGrid considers it a mistake and defines a new slac
 the first generator bus with an in-service generator in the bus type list.
 
 # Returns
-The function returns an instance of the `DCStateEstimation` abstract type, which includes
-the following fields:
+The function returns an instance of the `DCStateEstimation` type, which includes the
+following fields:
 - `voltage`: the variable allocated to store the bus voltage angles;
 - `power`: the variable allocated to store the active powers;
-- `method`: the system model vectors and matrices and bad data.
+- `method`: the system model vectors and matrices.
 
 # Examples
 Set up the DC state estimation model to be solved using the default LU factorization:
@@ -49,7 +49,7 @@ analysis = dcWlsStateEstimation(system, device, Orthogonal)
 ```
 """
 function dcWlsStateEstimation(system::PowerSystem, device::Measurement, factorization::Type{<:Union{QR, LDLt, LU, Orthogonal}} = LU)
-    coefficient, mean, precision, badData, power = dcStateEstimationWLS(system, device)
+    coefficient, mean, precision, power = dcStateEstimationWLS(system, device)
 
     method = Dict(LU => lu, LDLt => ldlt, QR => qr, Orthogonal => qr)
     return DCStateEstimation(
@@ -60,7 +60,6 @@ function dcWlsStateEstimation(system::PowerSystem, device::Measurement, factoriz
             precision,
             mean,
             get(method, factorization, lu)(sparse(Matrix(1.0I, 1, 1))),
-            badData,
             device.wattmeter.number + device.pmu.number,
             -1,
             true,
@@ -69,7 +68,7 @@ function dcWlsStateEstimation(system::PowerSystem, device::Measurement, factoriz
 end
 
 function dcWlsStateEstimation(system::PowerSystem, device::Measurement, method::Type{<:Orthogonal})
-    coefficient, mean, precision, badData, power = dcStateEstimationWLS(system, device)
+    coefficient, mean, precision, power = dcStateEstimationWLS(system, device)
 
     method = Dict(LU => lu, LDLt => ldlt, QR => qr)
     return DCStateEstimation(
@@ -80,7 +79,6 @@ function dcWlsStateEstimation(system::PowerSystem, device::Measurement, method::
             precision,
             mean,
             qr(sparse(Matrix(1.0I, 1, 1))),
-            badData,
             device.wattmeter.number + device.pmu.number,
             -1,
             true,
@@ -181,10 +179,9 @@ function dcStateEstimationWLS(system::PowerSystem, device::Measurement)
     end
 
     coefficient = sparse(row, col, coeff, deviceNumber, bus.number)
-    badData = BadData(true, 0.0, "", 0)
     power = DCPower(CartesianReal(Float64[]), CartesianReal(Float64[]), CartesianReal(Float64[]), CartesianReal(Float64[]), nothing)
 
-   return coefficient, mean, precision, badData, power
+   return coefficient, mean, precision, power
 end
 
 """
