@@ -13,14 +13,14 @@ system30 = powerSystem(string(pathData, "case30test.m"))
                 break
             end
         end
-        @test analysisSE.voltage.magnitude ≈ analysis.voltage.magnitude
-        @test analysisSE.voltage.angle ≈ analysis.voltage.angle
+        @test analysisSE.voltage.magnitude ≈ analysis.voltage.magnitude atol = 1e-8
+        @test analysisSE.voltage.angle ≈ analysis.voltage.angle atol = 1e-8
 
         analysisLAV = acLavStateEstimation(system, device, Ipopt.Optimizer)
         JuMP.set_silent(analysisLAV.method.jump)
         solve!(system, analysisLAV)
-        @test analysisLAV.voltage.magnitude ≈ analysis.voltage.magnitude
-        @test analysisLAV.voltage.angle ≈ analysis.voltage.angle
+        @test analysisLAV.voltage.magnitude ≈ analysis.voltage.magnitude atol = 1e-8
+        @test analysisLAV.voltage.angle ≈ analysis.voltage.angle atol = 1e-8
     end
 
     ################ Modified IEEE 14-bus Test Case ################
