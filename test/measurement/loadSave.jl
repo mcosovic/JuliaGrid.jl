@@ -1,4 +1,4 @@
-@testset "Load and Save Measurements" begin
+@testset "Load and Save Measurement Data" begin
     system = powerSystem(string(pathData, "case14test.m"))
     device = measurement()
 
@@ -27,31 +27,31 @@
     saveMeasurement(device; path = string(pathData, "measurement14.h5"))
     deviceLoad = measurement(string(pathData, "measurement14.h5"))
 
-    ####### Voltmeter Data #######
+    ####### Test Voltmeter Data #######
     @test device.voltmeter.label == deviceLoad.voltmeter.label
     @test device.voltmeter.number == deviceLoad.voltmeter.number
     equalStruct(device.voltmeter.magnitude, deviceLoad.voltmeter.magnitude)
     equalStruct(device.voltmeter.layout, deviceLoad.voltmeter.layout)
 
-    ####### Ammeter Data #######
+    ####### Test Ammeter Data #######
     @test device.ammeter.label == deviceLoad.ammeter.label
     @test device.ammeter.number == deviceLoad.ammeter.number
     equalStruct(device.ammeter.magnitude, deviceLoad.ammeter.magnitude)
     equalStruct(device.ammeter.layout, deviceLoad.ammeter.layout)
 
-    ####### Wattmeter Data #######
+    ####### Test Wattmeter Data #######
     @test device.wattmeter.label == deviceLoad.wattmeter.label
     @test device.wattmeter.number == deviceLoad.wattmeter.number
     equalStruct(device.wattmeter.active, deviceLoad.wattmeter.active)
     equalStruct(device.wattmeter.layout, deviceLoad.wattmeter.layout)
 
-    ####### Varmeter Data #######
+    ####### Test Varmeter Data #######
     @test device.varmeter.label == deviceLoad.varmeter.label
     @test device.varmeter.number == deviceLoad.varmeter.number
     equalStruct(device.varmeter.reactive, deviceLoad.varmeter.reactive)
     equalStruct(device.varmeter.layout, deviceLoad.varmeter.layout)
 
-    ####### PMU Data #######
+    ####### Test PMU Data #######
     @test device.pmu.label == deviceLoad.pmu.label
     @test device.pmu.number == deviceLoad.pmu.number
     equalStruct(device.pmu.magnitude, deviceLoad.pmu.magnitude)

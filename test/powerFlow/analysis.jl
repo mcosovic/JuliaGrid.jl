@@ -15,6 +15,7 @@ system30 = powerSystem(string(pathData, "case30test.m"))
             break
         end
         solve!(system14, analysis)
+        iteration += 1
     end
     power!(system14, analysis)
     current!(system14, analysis)
@@ -23,9 +24,14 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     voltage = analysis.voltage
     current = analysis.current
 
-    ####### Compare Voltages and Powers #######
+    ####### Test Iteration Number #######
+    @test iteration == matpower14["iteration"][1]
+
+    ####### Test Voltages #######
     @test voltage.magnitude ≈ matpower14["voltageMagnitude"]
     @test voltage.angle ≈ matpower14["voltageAngle"]
+
+    ####### Test Powers #######
     @test power.injection.active ≈ matpower14["injectionActive"]
     @test power.injection.reactive ≈ matpower14["injectionReactive"]
     @test power.supply.active ≈ matpower14["supplyActive"]
@@ -42,7 +48,7 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     @test power.generator.active ≈ matpower14["generatorActive"]
     @test power.generator.reactive ≈ matpower14["generatorReactive"]
 
-    ####### Compare Currents #######
+    ####### Test Currents #######
     to = system14.branch.layout.to
     from = system14.branch.layout.from
 
@@ -62,7 +68,7 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     Sijb = complex.(power.series.active, power.series.reactive)
     @test current.series.magnitude .* exp.(-im * current.series.angle) ≈ Sijb ./ (ratio .* Vi - Vj)
 
-    ####### Compare Bus Powers and Currents #######
+    ####### Test Specific Bus Powers and Currents #######
     for (key, value) in system14.bus.label
         active, reactive = injectionPower(system14, analysis; label = key)
         @test active ≈ power.injection.active[value] atol = 1e-14
@@ -81,7 +87,7 @@ system30 = powerSystem(string(pathData, "case30test.m"))
         @test angle ≈ current.injection.angle[value]
     end
 
-    ####### Compare Branch Powers and Currents #######
+    ####### Test Specific Branch Powers and Currents #######
     for (key, value) in system14.branch.label
         active, reactive = fromPower(system14, analysis; label = key)
         @test active ≈ power.from.active[value]
@@ -112,7 +118,7 @@ system30 = powerSystem(string(pathData, "case30test.m"))
         @test angle ≈ current.series.angle[value]
     end
 
-    ####### Compare Generator Powers #######
+    ####### Test Specific Generator Powers #######
     for (key, value) in system14.generator.label
         active, reactive = generatorPower(system14, analysis; label = key)
         @test active ≈ power.generator.active[value]
@@ -129,6 +135,7 @@ system30 = powerSystem(string(pathData, "case30test.m"))
             break
         end
         solve!(system30, analysis)
+        iteration += 1
     end
     power!(system30, analysis)
     current!(system30, analysis)
@@ -137,9 +144,14 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     voltage = analysis.voltage
     current = analysis.current
 
-    ####### Compare Voltages and Powers #######
+    ####### Test Iteration Number #######
+    @test iteration == matpower30["iteration"][1]
+
+    ####### Test Voltages #######
     @test voltage.magnitude ≈ matpower30["voltageMagnitude"]
     @test voltage.angle ≈ matpower30["voltageAngle"]
+
+    ####### Test Powers #######
     @test power.injection.active ≈ matpower30["injectionActive"]
     @test power.injection.reactive ≈ matpower30["injectionReactive"]
     @test power.supply.active ≈ matpower30["supplyActive"]
@@ -156,7 +168,7 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     @test power.generator.active ≈ matpower30["generatorActive"]
     @test power.generator.reactive ≈ matpower30["generatorReactive"]
 
-    ####### Compare Currents #######
+    ####### Test Currents #######
     to = system30.branch.layout.to
     from = system30.branch.layout.from
 
@@ -176,7 +188,7 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     Sijb = complex.(power.series.active, power.series.reactive)
     @test current.series.magnitude .* exp.(-im * current.series.angle) ≈ Sijb ./ (ratio .* Vi - Vj)
 
-    ####### Compare Bus Powers and Currents #######
+    ####### Test Specific Bus Powers and Currents #######
     for (key, value) in system30.bus.label
         active, reactive = injectionPower(system30, analysis; label = key)
         @test active ≈ power.injection.active[value]
@@ -195,7 +207,7 @@ system30 = powerSystem(string(pathData, "case30test.m"))
         @test angle ≈ current.injection.angle[value]
     end
 
-    ####### Compare Branch Powers and Currents #######
+    ####### Test Specific Branch Powers and Currents #######
     for (key, value) in system30.branch.label
         active, reactive = fromPower(system30, analysis; label = key)
         @test active ≈ power.from.active[value]
@@ -225,8 +237,8 @@ system30 = powerSystem(string(pathData, "case30test.m"))
         @test magnitude ≈ current.series.magnitude[value]
         @test angle ≈ current.series.angle[value]
     end
-    
-    ####### Compare Currents #######
+
+    ####### Test Specific Generator Powers #######
     for (key, value) in system30.generator.label
         active, reactive = generatorPower(system30, analysis; label = key)
         @test active ≈ power.generator.active[value]
@@ -251,10 +263,12 @@ end
         iteration += 1
     end
 
-    ####### Compare Voltages and Iterations #######
+    ####### Test Iteration Number #######
+    @test iteration == matpower14["iteration"][1]
+
+    ####### Test Voltages #######
     @test analysis.voltage.magnitude ≈ matpower14["voltageMagnitude"]
     @test analysis.voltage.angle ≈ matpower14["voltageAngle"]
-    @test iteration == matpower14["iteration"][1]
 
     ################ Modified IEEE 30-bus Test Case ################
     acModel!(system30)
@@ -269,10 +283,12 @@ end
         iteration += 1
     end
 
-    ####### Compare Voltages and Iterations #######
+    ####### Test Iteration Number #######
+    @test iteration == matpower30["iteration"][1]
+
+    ####### Test Voltages #######
     @test analysis.voltage.magnitude ≈ matpower30["voltageMagnitude"]
     @test analysis.voltage.angle ≈ matpower30["voltageAngle"]
-    @test iteration == matpower30["iteration"][1]
 end
 
 @testset "Fast Newton-Raphson XB Method" begin
@@ -292,10 +308,12 @@ end
         iteration += 1
     end
 
-    ####### Compare Voltages and Iterations #######
+    ####### Test Iteration Number #######
+    @test iteration == matpower14["iteration"][1]
+
+    ####### Test Voltages #######
     @test analysis.voltage.magnitude ≈ matpower14["voltageMagnitude"]
     @test analysis.voltage.angle ≈ matpower14["voltageAngle"]
-    @test iteration == matpower14["iteration"][1]
 
     ################ Modified IEEE 30-bus Test Case ################
     acModel!(system30)
@@ -310,10 +328,12 @@ end
         iteration += 1
     end
 
-    ####### Compare Voltages and Iterations #######
+    ####### Test Iteration Number #######
+    @test iteration == matpower30["iteration"][1]
+
+    ####### Test Voltages #######
     @test analysis.voltage.magnitude ≈ matpower30["voltageMagnitude"]
     @test analysis.voltage.angle ≈ matpower30["voltageAngle"]
-    @test iteration == matpower30["iteration"][1]
 end
 
 @testset "Gauss-Seidel Method" begin
@@ -333,10 +353,12 @@ end
         iteration += 1
     end
 
-    ####### Compare Voltages and Iterations #######
+    ####### Test Iteration Number #######
+    @test iteration == matpower14["iteration"][1]
+
+    ####### Test Voltages #######
     @test analysis.voltage.magnitude ≈ matpower14["voltageMagnitude"]
     @test analysis.voltage.angle ≈ matpower14["voltageAngle"]
-    @test iteration == matpower14["iteration"][1]
 
     ################ Modified IEEE 30-bus Test Case ################
     acModel!(system30)
@@ -351,18 +373,23 @@ end
         iteration += 1
     end
 
-    ####### Compare Voltages and Iterations #######
+    ####### Test Iteration Number #######
+    @test iteration == matpower30["iteration"][1]
+
+    ####### Test Voltages #######
     @test analysis.voltage.magnitude ≈ matpower30["voltageMagnitude"]
     @test analysis.voltage.angle ≈ matpower30["voltageAngle"]
-    @test iteration == matpower30["iteration"][1]
 end
 
-@testset "Compare AC Methods" begin
-    system14.branch.parameter.conductance[14] = 0.052
-    system14.branch.parameter.conductance[7] = 0.083
-    system14.branch.parameter.conductance[1] = 0.58
+@testset "Compare AC Power Flows Methods" begin
+    @default(unit)
+    @default(template)
 
     ################ Modified IEEE 14-bus Test Case ################
+    updateBranch!(system14; label = 1, conductance = 0.58)
+    updateBranch!(system14; label = 7, conductance = 0.083)
+    updateBranch!(system14; label = 14, conductance = 0.052)
+
     acModel!(system14)
     nr = newtonRaphson(system14)
     for i = 1:1000
@@ -400,7 +427,57 @@ end
         solve!(system14, gs)
     end
 
-    ####### Compare Voltages #######
+    ####### Test Voltages #######
+    @test nr.voltage.magnitude ≈ fnrBX.voltage.magnitude
+    @test nr.voltage.angle ≈ fnrBX.voltage.angle
+    @test nr.voltage.magnitude ≈ fnrXB.voltage.magnitude
+    @test nr.voltage.angle ≈ fnrXB.voltage.angle
+    @test nr.voltage.magnitude ≈ gs.voltage.magnitude
+    @test nr.voltage.angle ≈ gs.voltage.angle
+
+    ################ Modified IEEE 30-bus Test Case ################
+    updateBranch!(system30; label = 2, conductance = 0.01)
+    updateBranch!(system30; label = 5, conductance = 1e-4)
+    updateBranch!(system30; label = 18, conductance = 0.5)
+
+    acModel!(system30)
+    nr = newtonRaphson(system30)
+    for i = 1:1000
+        stopping = mismatch!(system30, nr)
+        if all(stopping .< 1e-8)
+            break
+        end
+        solve!(system30, nr)
+    end
+
+    fnrBX = fastNewtonRaphsonBX(system30)
+    for i = 1:1000
+        stopping = mismatch!(system30, fnrBX)
+        if all(stopping .< 1e-8)
+            break
+        end
+        solve!(system30, fnrBX)
+    end
+
+    fnrXB = fastNewtonRaphsonXB(system30)
+    for i = 1:1000
+        stopping = mismatch!(system30, fnrXB)
+        if all(stopping .< 1e-8)
+            break
+        end
+        solve!(system30, fnrXB)
+    end
+
+    gs = gaussSeidel(system30)
+    for i = 1:3000
+        stopping = mismatch!(system30, gs)
+        if all(stopping .< 1e-9)
+            break
+        end
+        solve!(system30, gs)
+    end
+
+    ####### Test Voltages #######
     @test nr.voltage.magnitude ≈ fnrBX.voltage.magnitude
     @test nr.voltage.angle ≈ fnrBX.voltage.angle
     @test nr.voltage.magnitude ≈ fnrXB.voltage.magnitude
@@ -419,27 +496,29 @@ end
     solve!(system14, analysis)
     power!(system14, analysis)
 
-    ####### Compare Voltages and Powers #######
+    ####### Test Voltage Angles #######
     @test analysis.voltage.angle ≈ matpower14["voltage"]
+
+    ####### Test Active Powers #######
     @test analysis.power.injection.active ≈ matpower14["injection"]
     @test analysis.power.supply.active ≈ matpower14["supply"]
     @test analysis.power.from.active ≈ matpower14["from"]
     @test analysis.power.to.active ≈ -matpower14["from"]
     @test analysis.power.generator.active ≈ matpower14["generator"]
 
-    ####### Compare Bus Powers #######
+    ####### Test Specific Bus Active Powers #######
     for (key, value) in system14.bus.label
         @test injectionPower(system14, analysis; label = key) ≈ matpower14["injection"][value] atol = 1e-14
         @test supplyPower(system14, analysis; label = key) ≈ matpower14["supply"][value] atol = 1e-14
     end
 
-    ####### Compare Branch Powers #######
+    ####### Test Specific Branch Active Powers #######
     for (key, value) in system14.branch.label
         @test fromPower(system14, analysis; label = key) ≈ matpower14["from"][value] atol = 1e-14
         @test toPower(system14, analysis; label = key) ≈ -matpower14["from"][value] atol = 1e-14
     end
 
-    ####### Compare Generator Powers #######
+    ####### Test Specific Generator Active Powers #######
     for (key, value) in system14.generator.label
         @test generatorPower(system14, analysis; label = key) ≈ matpower14["generator"][value] atol = 1e-14
     end
@@ -450,27 +529,29 @@ end
     solve!(system30, analysis)
     power!(system30, analysis)
 
-    ####### Compare Voltages and Powers #######
+    ####### Test Voltage Angles #######
     @test analysis.voltage.angle ≈ matpower30["voltage"]
+
+    ####### Test Active Powers #######
     @test analysis.power.injection.active ≈ matpower30["injection"]
     @test analysis.power.supply.active ≈ matpower30["supply"]
     @test analysis.power.from.active ≈ matpower30["from"]
     @test analysis.power.to.active ≈ -matpower30["from"]
     @test analysis.power.generator.active ≈ matpower30["generator"]
 
-    ####### Compare Bus Powers #######
+    ####### Test Specific Bus Active Powers #######
     for (key, value) in system30.bus.label
         @test injectionPower(system30, analysis; label = key) ≈ matpower30["injection"][value] atol = 1e-14
         @test supplyPower(system30, analysis; label = key) ≈ matpower30["supply"][value] atol = 1e-14
     end
 
-    ####### Compare Branch Powers #######
+    ####### Test Specific Branch Active Powers #######
     for (key, value) in system30.branch.label
         @test fromPower(system30, analysis; label = key) ≈ matpower30["from"][value] atol = 1e-14
         @test toPower(system30, analysis; label = key) ≈ -matpower30["from"][value] atol = 1e-14
     end
 
-    ####### Compare Generator Powers #######
+    ####### Test Specific Generator Active Powers #######
     for (key, value) in system30.generator.label
         @test generatorPower(system30, analysis; label = key) ≈ matpower30["generator"][value] atol = 1e-14
     end

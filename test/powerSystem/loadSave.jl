@@ -1,50 +1,50 @@
-@testset "Load and Save Power System" begin
-    systemMat = powerSystem(string(pathData, "case14test.m"))
-    @base(systemMat, MVA, kV)
+@testset "Load and Save Power System Data" begin
+    systemMatlab = powerSystem(string(pathData, "case14test.m"))
+    @base(systemMatlab, MVA, kV)
 
-    savePowerSystem(systemMat; path = string(pathData, "case14test.h5"))
-    systemH5 = powerSystem(string(pathData, "case14test.h5"))
-    @base(systemH5, MVA, kV)
+    savePowerSystem(systemMatlab; path = string(pathData, "case14test.h5"))
+    systemHDF5 = powerSystem(string(pathData, "case14test.h5"))
+    @base(systemHDF5, MVA, kV)
 
-    ####### Bus Data #######
-    @test systemMat.bus.label == systemH5.bus.label
-    @test systemMat.bus.number == systemH5.bus.number
+    ####### Test Bus Data #######
+    @test systemMatlab.bus.label == systemHDF5.bus.label
+    @test systemMatlab.bus.number == systemHDF5.bus.number
 
-    equalStruct(systemMat.bus.demand, systemH5.bus.demand)
-    equalStruct(systemMat.bus.supply, systemH5.bus.supply)
-    equalStruct(systemMat.bus.shunt, systemH5.bus.shunt)
-    equalStruct(systemMat.bus.voltage, systemH5.bus.voltage)
-    equalStruct(systemMat.bus.layout, systemH5.bus.layout)
+    equalStruct(systemMatlab.bus.demand, systemHDF5.bus.demand)
+    equalStruct(systemMatlab.bus.supply, systemHDF5.bus.supply)
+    equalStruct(systemMatlab.bus.shunt, systemHDF5.bus.shunt)
+    equalStruct(systemMatlab.bus.voltage, systemHDF5.bus.voltage)
+    equalStruct(systemMatlab.bus.layout, systemHDF5.bus.layout)
 
-    ####### Branch Data #######
-    @test systemMat.branch.label == systemH5.branch.label
-    @test systemMat.branch.number == systemH5.branch.number
+    ####### Test Branch Data #######
+    @test systemMatlab.branch.label == systemHDF5.branch.label
+    @test systemMatlab.branch.number == systemHDF5.branch.number
 
-    equalStruct(systemMat.branch.parameter, systemH5.branch.parameter)
-    equalStruct(systemMat.branch.flow, systemH5.branch.flow)
-    equalStruct(systemMat.branch.voltage, systemH5.branch.voltage)
-    equalStruct(systemMat.branch.layout, systemH5.branch.layout)
+    equalStruct(systemMatlab.branch.parameter, systemHDF5.branch.parameter)
+    equalStruct(systemMatlab.branch.flow, systemHDF5.branch.flow)
+    equalStruct(systemMatlab.branch.voltage, systemHDF5.branch.voltage)
+    equalStruct(systemMatlab.branch.layout, systemHDF5.branch.layout)
 
-    ####### Generator Data #######
-    @test systemMat.generator.label == systemH5.generator.label
-    @test systemMat.generator.number == systemH5.generator.number
+    ####### Test Generator Data #######
+    @test systemMatlab.generator.label == systemHDF5.generator.label
+    @test systemMatlab.generator.number == systemHDF5.generator.number
 
-    equalStruct(systemMat.generator.output, systemH5.generator.output)
-    equalStruct(systemMat.generator.capability, systemH5.generator.capability)
-    equalStruct(systemMat.generator.ramping, systemH5.generator.ramping)
-    equalStruct(systemMat.generator.voltage, systemH5.generator.voltage)
-    equalStruct(systemMat.generator.cost.active, systemH5.generator.cost.active)
-    equalStruct(systemMat.generator.cost.reactive, systemH5.generator.cost.reactive)
-    equalStruct(systemMat.generator.layout, systemH5.generator.layout)
+    equalStruct(systemMatlab.generator.output, systemHDF5.generator.output)
+    equalStruct(systemMatlab.generator.capability, systemHDF5.generator.capability)
+    equalStruct(systemMatlab.generator.ramping, systemHDF5.generator.ramping)
+    equalStruct(systemMatlab.generator.voltage, systemHDF5.generator.voltage)
+    equalStruct(systemMatlab.generator.cost.active, systemHDF5.generator.cost.active)
+    equalStruct(systemMatlab.generator.cost.reactive, systemHDF5.generator.cost.reactive)
+    equalStruct(systemMatlab.generator.layout, systemHDF5.generator.layout)
 
-    ####### Base Power #######
-    equalStruct(systemMat.base.power, systemH5.base.power)
-    equalStruct(systemMat.base.voltage, systemH5.base.voltage)
+    ####### Test Base Data #######
+    equalStruct(systemMatlab.base.power, systemHDF5.base.power)
+    equalStruct(systemMatlab.base.voltage, systemHDF5.base.voltage)
 
-    @test systemMat.base.power.value == 100.0
-    @test systemMat.base.power.unit == "MVA"
-    @test systemMat.base.power.prefix == 1e6
-    @test all(systemMat.base.voltage.value .== 138.0)
-    @test systemMat.base.voltage.unit == "kV"
-    @test systemMat.base.voltage.prefix == 1e3
+    @test systemMatlab.base.power.value == 100.0
+    @test systemMatlab.base.power.unit == "MVA"
+    @test systemMatlab.base.power.prefix == 1e6
+    @test all(systemMatlab.base.voltage.value .== 138.0)
+    @test systemMatlab.base.voltage.unit == "kV"
+    @test systemMatlab.base.voltage.prefix == 1e3
 end

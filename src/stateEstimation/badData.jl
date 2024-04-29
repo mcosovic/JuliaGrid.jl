@@ -288,6 +288,10 @@ function residualTest!(system::PowerSystem, device::Measurement, analysis::ACSta
         se.type[bad.index] = 0
     end
 
+    @inbounds for (k, i) in enumerate(slackRange)
+        se.jacobian[se.jacobian.rowval[i], bus.layout.slack] = elementsRemove[k]
+    end
+
     return bad
 end
 

@@ -1,4 +1,4 @@
-@testset "Build and Update Power System in Per-Units" begin
+@testset "Build and Update Power System Data in Per-Units" begin
     system = powerSystem(string(pathData, "build.m"))
     rad = pi / 180
 
@@ -38,7 +38,7 @@
     cost!(systemPU; label = 3, active = 2, polynomial = [0.0266666667 * 100^2; 20 * 100; 2])
     cost!(systemPU; label = 4, active = 2, polynomial = [30.0 * 100; 5])
 
-    ####### Bus Data #######
+    ####### Test Bus Data #######
     @test system.bus.label == systemPU.bus.label
     @test system.bus.number == systemPU.bus.number
 
@@ -48,7 +48,7 @@
     approxStruct(system.bus.voltage, systemPU.bus.voltage)
     equalStruct(system.bus.layout, systemPU.bus.layout)
 
-    ####### Branch Data #######
+    ####### Test Branch Data #######
     @test system.branch.label == systemPU.branch.label
     @test system.branch.number == systemPU.branch.number
 
@@ -57,7 +57,7 @@
     equalStruct(system.branch.voltage, systemPU.branch.voltage)
     equalStruct(system.branch.layout, systemPU.branch.layout)
 
-    ####### Generator Data #######
+    ####### Test Generator Data #######
     @test system.generator.label == systemPU.generator.label
     @test system.generator.number == systemPU.generator.number
 
@@ -67,7 +67,7 @@
     equalStruct(system.generator.cost.active, systemPU.generator.cost.active)
     equalStruct(system.generator.layout, systemPU.generator.layout)
 
-    ####### Base Power #######
+    ####### Test Base Data #######
     equalStruct(system.base.power, systemPU.base.power)
     equalStruct(system.base.voltage, systemPU.base.voltage)
 
@@ -97,7 +97,7 @@
 
     cost!(systemPU; label = 4, active = 2, polynomial = [0.3 * 100^2; 15 * 100; 5])
 
-    ####### Bus Data #######
+    ####### Test Bus Data #######
     @test system.bus.label == systemPU.bus.label
     @test system.bus.number == systemPU.bus.number
 
@@ -107,7 +107,7 @@
     approxStruct(system.bus.voltage, systemPU.bus.voltage)
     equalStruct(system.bus.layout, systemPU.bus.layout)
 
-    ####### Branch Data #######
+    ####### Test Branch Data #######
     @test system.branch.label == systemPU.branch.label
     @test system.branch.number == systemPU.branch.number
 
@@ -116,7 +116,7 @@
     equalStruct(system.branch.voltage, systemPU.branch.voltage)
     equalStruct(system.branch.layout, systemPU.branch.layout)
 
-    ####### Generator Data #######
+    ####### Test Generator Data #######
     @test system.generator.label == systemPU.generator.label
     @test system.generator.number == systemPU.generator.number
 
@@ -126,12 +126,12 @@
     equalStruct(system.generator.cost.active, systemPU.generator.cost.active)
     equalStruct(system.generator.layout, systemPU.generator.layout)
 
-    ####### Base Power #######
+    ####### Test Base Data #######
     equalStruct(system.base.power, systemPU.base.power)
     equalStruct(system.base.voltage, systemPU.base.voltage)
 end
 
-@testset "Build and Update Power System in SI Units" begin
+@testset "Build and Update Power System Data in SI Units" begin
     system = powerSystem(string(pathData, "build.m"))
     @base(system, MVA, kV)
 
@@ -182,7 +182,7 @@ end
     cost!(systemSI; label = 3, active = 2, polynomial = [0.0266666667e-6; 20e-3; 2])
     cost!(systemSI; label = 4, active = 2, polynomial = [30.0e-3; 5])
 
-    ####### Bus Data #######
+    ####### Test Bus Data #######
     @test system.bus.label == systemSI.bus.label
     @test system.bus.number == systemSI.bus.number
 
@@ -192,7 +192,7 @@ end
     approxStruct(system.bus.voltage, systemSI.bus.voltage)
     equalStruct(system.bus.layout, systemSI.bus.layout)
 
-    ####### Branch Data #######
+    ####### Test Branch Data #######
     @test system.branch.label == systemSI.branch.label
     @test system.branch.number == systemSI.branch.number
 
@@ -201,7 +201,7 @@ end
     equalStruct(system.branch.voltage, systemSI.branch.voltage)
     equalStruct(system.branch.layout, systemSI.branch.layout)
 
-    ####### Generator Data #######
+    ####### Test Generator Data #######
     @test system.generator.label == systemSI.generator.label
     @test system.generator.number == systemSI.generator.number
 
@@ -211,7 +211,7 @@ end
     approxStruct(system.generator.cost.active, systemSI.generator.cost.active)
     equalStruct(system.generator.layout, systemSI.generator.layout)
 
-    ####### Base Power #######
+    ####### Test Base Data #######
     equalStruct(system.base.power, systemSI.base.power)
     equalStruct(system.base.voltage, systemSI.base.voltage)
 
@@ -246,7 +246,7 @@ end
 
     cost!(systemSI; label = 4, active = 2, polynomial = [0.3e-6; 15e-3; 5])
 
-    ####### Bus Data #######
+    ####### Test Bus Data #######
     @test system.bus.label == systemSI.bus.label
     @test system.bus.number == systemSI.bus.number
 
@@ -256,7 +256,7 @@ end
     approxStruct(system.bus.voltage, systemSI.bus.voltage)
     equalStruct(system.bus.layout, systemSI.bus.layout)
 
-    ####### Branch Data #######
+    ####### Test Branch Data #######
     @test system.branch.label == systemSI.branch.label
     @test system.branch.number == systemSI.branch.number
 
@@ -265,7 +265,7 @@ end
     equalStruct(system.branch.voltage, systemSI.branch.voltage)
     equalStruct(system.branch.layout, systemSI.branch.layout)
 
-    ####### Generator Data #######
+    ####### Test Generator Data #######
     @test system.generator.label == systemSI.generator.label
     @test system.generator.number == systemSI.generator.number
 
@@ -275,7 +275,7 @@ end
     approxStruct(system.generator.cost.active, systemSI.generator.cost.active)
     equalStruct(system.generator.layout, systemSI.generator.layout)
 
-    ####### Base Power #######
+    ####### Test Base Data #######
     equalStruct(system.base.power, systemSI.base.power)
     equalStruct(system.base.voltage, systemSI.base.voltage)
 end

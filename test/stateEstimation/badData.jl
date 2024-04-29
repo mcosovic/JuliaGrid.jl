@@ -1,11 +1,10 @@
 system14 = powerSystem(string(pathData, "case14test.m"))
 system30 = powerSystem(string(pathData, "case30test.m"))
-
 @testset "AC State Estimation: Bad Data" begin
     @default(template)
     @default(unit)
 
-    ############### Modified IEEE 14-bus Test Case ################
+    ############### Modified IEEE 14-bus Test Case ###############
     updateBus!(system14; label = 1, type = 2)
     updateBus!(system14; label = 3, type = 3, angle = -0.17)
 
@@ -36,7 +35,7 @@ system30 = powerSystem(string(pathData, "case30test.m"))
         addVarmeter!(system14, device; to = key, reactive = analysis.power.to.reactive[value])
     end
 
-    ####### WLS LU: One Outlier #######
+    ####### Test One Outlier #######
     updateVarmeter!(system14, device; label = "Varmeter 4", reactive = 10.25)
 
     analysisSE = gaussNewton(system14, device)
@@ -60,8 +59,7 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     @test analysis.voltage.magnitude ≈ analysisSE.voltage.magnitude
     @test analysis.voltage.angle ≈ analysisSE.voltage.angle
 
-
-    ###### WLS LU: Two Outliers #######
+    ###### Test Two Outliers #######
     @pmu(label = "PMU ?")
     for (key, value) in system14.bus.label
         addPmu!(system14, device; bus = key, magnitude = analysis.voltage.magnitude[value], angle = analysis.voltage.angle[value], polar = true)
@@ -102,7 +100,7 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     @test analysis.voltage.magnitude ≈ analysisSE.voltage.magnitude
     @test analysis.voltage.angle ≈ analysisSE.voltage.angle
 
-    ####### WLS Orthogonal: Two Outliers #######
+    ####### Test Orthogonal Method with Two Outliers #######
     updateVarmeter!(system14, device; label = "Varmeter 4", status = 1)
     updatePmu!(system14, device; label = "PMU 10", statusMagnitude = 1)
 
@@ -138,8 +136,7 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     @test analysis.voltage.magnitude ≈ analysisSE.voltage.magnitude
     @test analysis.voltage.angle ≈ analysisSE.voltage.angle
 
-
-    ####### PMU Rectangular #######
+    ####### Test PMU Rectangular with One Outlier #######
     for (key, value) in system14.branch.label
         addPmu!(system14, device; from = key, magnitude = analysis.current.from.magnitude[value], angle = analysis.current.from.angle[value])
     end
@@ -171,7 +168,7 @@ end
     @default(template)
     @default(unit)
 
-    ############### Modified IEEE 14-bus Test Case ################
+    ############### Modified IEEE 14-bus Test Case ###############
     updateBus!(system14; label = 1, type = 2)
     updateBus!(system14; label = 3, type = 3, angle = -0.17)
 
@@ -197,7 +194,7 @@ end
         addPmu!(system14, device; to = key, magnitude = analysis.current.to.magnitude[value], angle = analysis.current.to.angle[value])
     end
 
-    ####### WLS LU: One Outlier #######
+    ####### Test One Outlier #######
     updatePmu!(system14, device; label = "PMU 2", magnitude = 15)
     analysisSE = pmuWlsStateEstimation(system14, device)
     solve!(system14, analysisSE)
@@ -210,7 +207,7 @@ end
     @test analysis.voltage.magnitude ≈ analysisSE.voltage.magnitude
     @test analysis.voltage.angle ≈ analysisSE.voltage.angle
 
-    ###### WLS LU: Two Outliers #######
+    ###### Test Two Outliers #######
     updatePmu!(system14, device; label = "PMU 2", statusAngle = 1, statusMagnitude = 1)
     updatePmu!(system14, device; label = "PMU 20", angle = 10pi, magnitude = 30)
     analysisSE = pmuWlsStateEstimation(system14, device)
@@ -229,7 +226,7 @@ end
     @test analysis.voltage.magnitude ≈ analysisSE.voltage.magnitude
     @test analysis.voltage.angle ≈ analysisSE.voltage.angle
 
-    ###### WLS Orthogonal: One Outlier #######
+    ####### Test Orthogonal Method with One Outlier #######
     updatePmu!(system14, device; label = "PMU 2", statusAngle = 1, statusMagnitude = 1)
     updatePmu!(system14, device; label = "PMU 20", magnitude = analysis.current.to.magnitude[4], angle = analysis.current.to.angle[4], statusAngle = 1, statusMagnitude = 1)
     analysisSE = pmuWlsStateEstimation(system14, device, Orthogonal)
@@ -243,7 +240,7 @@ end
     @test analysis.voltage.magnitude ≈ analysisSE.voltage.magnitude
     @test analysis.voltage.angle ≈ analysisSE.voltage.angle
 
-    ####### WLS Orthogonal: Two Outliers #######
+    ####### Test Orthogonal Method with Two Outliers #######
     updatePmu!(system14, device; label = "PMU 2", statusAngle = 1, statusMagnitude = 1)
     updatePmu!(system14, device; label = "PMU 20", angle = 10pi, magnitude = 30)
     analysisSE = pmuWlsStateEstimation(system14, device, Orthogonal)
@@ -267,7 +264,7 @@ end
     @default(template)
     @default(unit)
 
-    ############### Modified IEEE 14-bus Test Case ################
+    ############### Modified IEEE 14-bus Test Case ###############
     updateBus!(system14; label = 1, type = 2)
     updateBus!(system14; label = 3, type = 3, angle = -0.17)
 
@@ -277,7 +274,6 @@ end
     power!(system14, analysis)
     device = measurement()
 
-    ################ Wattmeters ################
     @wattmeter(label = "Wattmeter ?")
     @pmu(label = "PMU ?")
     for (key, value) in system14.bus.label
@@ -291,7 +287,7 @@ end
         addPmu!(system14, device; bus = key, magnitude = 1.0, angle = analysis.voltage.angle[value])
     end
 
-    ####### WLS LU: One Outlier #######
+    ####### Test One Outlier #######
     updateWattmeter!(system14, device; label = "Wattmeter 2", active = 100)
     analysisSE = dcWlsStateEstimation(system14, device)
     solve!(system14, analysisSE)
@@ -303,7 +299,7 @@ end
     solve!(system14, analysisSE)
     @test analysis.voltage.angle ≈ analysisSE.voltage.angle
 
-    ####### WLS LU: Two Outliers #######
+    ####### Test Two Outliers #######
     updateWattmeter!(system14, device; label = "Wattmeter 2", status = 1)
     updatePmu!(system14, device; label = "PMU 10", angle = 10pi)
     analysisSE = dcWlsStateEstimation(system14, device)
@@ -321,7 +317,7 @@ end
     solve!(system14, analysisSE)
     @test analysis.voltage.angle ≈ analysisSE.voltage.angle
 
-    ####### WLS Orthogonal: One Outlier #######
+    ####### Test Orthogonal Method with One Outlier #######
     updateWattmeter!(system14, device; label = "Wattmeter 2", status = 1)
     updatePmu!(system14, device; label = "PMU 10", statusAngle = 1, angle = analysis.voltage.angle[10])
     analysisSE = dcWlsStateEstimation(system14, device, Orthogonal)
@@ -334,7 +330,7 @@ end
     solve!(system14, analysisSE)
     @test analysis.voltage.angle ≈ analysisSE.voltage.angle
 
-    ####### WLS Orthogonal: Two Outliers #######
+    ####### Test Orthogonal Method with Two Outliers #######
     updateWattmeter!(system14, device; label = "Wattmeter 2", status = 1)
     updatePmu!(system14, device; label = "PMU 10", angle = 10pi)
     analysisSE = dcWlsStateEstimation(system14, device, Orthogonal)
