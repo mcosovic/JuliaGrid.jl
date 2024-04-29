@@ -2,6 +2,7 @@ using JuliaGrid
 using HDF5
 using Test
 using JuMP, HiGHS, Ipopt, GLPK
+using SparseArrays, LinearAlgebra, SuiteSparse
 
 ######## Path to Test Data ##########
 pathData = abspath(joinpath(dirname(Base.find_package("JuliaGrid")), ".."), "test/data/")
