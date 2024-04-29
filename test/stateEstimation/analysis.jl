@@ -404,8 +404,7 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     covariance[6,5] = covariance[5,6]
 
     analysis = gaussNewton(system, device)
-    W = sparse(inv(covariance))
-    @test W.nzval ≈ analysis.method.precision.nzval
+    @test inv(covariance) ≈ Matrix(analysis.method.precision)
 end
 
 system14 = powerSystem(string(pathData, "case14test.m"))
@@ -530,7 +529,6 @@ system30 = powerSystem(string(pathData, "case30test.m"))
         addPmu!(system14, device; to = key, magnitude = analysis.current.to.magnitude[value], angle = analysis.current.to.angle[value], correlated = true)
     end
     pmuStateEstimationTest(system14, device, analysis)
-
 
     ################ Modified IEEE 30-bus Test Case ################
     acModel!(system30)
