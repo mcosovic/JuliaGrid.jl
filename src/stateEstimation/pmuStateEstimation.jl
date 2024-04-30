@@ -2,8 +2,8 @@
     pmuWlsStateEstimation(system::PowerSystem, device::Measurement, method)
 
 The function establishes the linear WLS model for state estimation with PMUs only. In this
-model, the vector of state variables contains bus voltage magnitudes and angles, given in
-rectangular coordinates.
+model, the vector of state variables contains bus voltages, given in rectangular
+coordinates.
 
 # Arguments
 This function requires the `PowerSystem` and `Measurement` composite types to establish
@@ -26,9 +26,9 @@ the `ac` field within the `PowerSystem` composite type.
 # Returns
 The function returns an instance of the `PMUStateEstimation` abstract type, which includes
 the following fields:
-- `voltage`: the variable allocated to store the bus voltage magnitudes and angles;
-- `power`: the variable allocated to store the active and reactive powers;
-- `method`: the system model vectors and matrices.
+- `voltage`: The variable allocated to store the bus voltage magnitudes and angles.
+- `power`: The variable allocated to store the active and reactive powers.
+- `method`: The system model vectors and matrices.
 
 # Examples
 Set up the PMU state estimation model to be solved using the default LU factorization:
@@ -250,8 +250,8 @@ end
     pmuLavStateEstimation(system::PowerSystem, device::Measurement, optimizer)
 
 The function establishes the LAV model for state estimation with PMUs only. In this
-model, the vector of state variables contains bus voltage magnitudes and angles, given in
-rectangular coordinates.
+model, the vector of state variables contains bus voltages, given in rectangular
+coordinates.
 
 # Arguments
 This function requires the `PowerSystem` and `Measurement` composite types to establish
@@ -270,9 +270,9 @@ the `ac` field within the `PowerSystem` composite type.
 # Returns
 The function returns an instance of the `PMUStateEstimation` abstract type, which includes
 the following fields:
-- `voltage`: the variable allocated to store the bus voltage magnitudes and angles;
-- `power`: the variable allocated to store the active and reactive powers;
-- `method`: the optimization model.
+- `voltage`: The variable allocated to store the bus voltage magnitudes and angles.
+- `power`: The variable allocated to store the active and reactive powers.
+- `method`: The optimization model.
 
 # Example
 ```jldoctest
@@ -412,7 +412,7 @@ The resulting bus voltage magnitudes and angles are stored in the `voltage` fiel
 `PMUStateEstimation` type.
 
 # Examples
-Solving the PMU state estimation model using the WLS method:
+Solving the PMU state estimation model and obtaining the WLS estimator:
 ```jldoctest
 system = powerSystem("case14.h5")
 device = measurement("measurement14.h5")
@@ -421,7 +421,7 @@ analysis = pmuWlsStateEstimation(system, device)
 solve!(system, analysis)
 ```
 
-Solving the PMU state estimation model using the LAV method:
+Solving the PMU state estimation model and obtaining the LAV estimator:
 ```jldoctest
 using Ipopt
 
@@ -535,9 +535,9 @@ package.
 
 # Returns
 The function returns an instance of the `PlacementPMU` type, containing variables such as:
-* `bus`: bus labels with indices marking the positions of PMUs at buses;
-* `from`: branch labels with indices marking the positions of PMUs at "from" bus ends;
-* `to`: branch labels with indices marking the positions of PMUs at "to" bus ends.
+* `bus`: Bus labels with indices marking the positions of PMUs at buses.
+* `from`: Branch labels with indices marking the positions of PMUs at from-bus ends.
+* `to`: Branch labels with indices marking the positions of PMUs at to-bus ends.
 
 Note that if the conventional understanding of a PMU involves a device measuring the bus
 voltage phasor and all branch current phasors incident to the bus, the result is saved
@@ -551,12 +551,13 @@ variables.
 using GLPK, Ipopt
 
 system = powerSystem("case14.h5")
+device = measurement()
+
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
 solve!(system, analysis)
 current!(system, analysis)
 
 placement = pmuPlacement(system, GLPK.Optimizer)
-device = measurement()
 
 @pmu(label = "PMU ?: !")
 for (bus, i) in placement.bus

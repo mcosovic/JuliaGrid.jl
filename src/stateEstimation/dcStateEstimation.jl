@@ -27,9 +27,9 @@ the first generator bus with an in-service generator in the bus type list.
 # Returns
 The function returns an instance of the `DCStateEstimation` type, which includes the
 following fields:
-- `voltage`: the variable allocated to store the bus voltage angles;
-- `power`: the variable allocated to store the active powers;
-- `method`: the system model vectors and matrices.
+- `voltage`: The variable allocated to store the bus voltage angles.
+- `power`: The variable allocated to store the active powers.
+- `method`: The system model vectors and matrices.
 
 # Examples
 Set up the DC state estimation model to be solved using the default LU factorization:
@@ -209,9 +209,9 @@ the first generator bus with an in-service generator in the bus type list.
 # Returns
 The function returns an instance of the `DCStateEstimation` abstract type, which includes
 the following fields:
-- `voltage`: the variable allocated to store the bus voltage angles;
-- `power`: the variable allocated to store the active powers;
-- `method`: the optimization model.
+- `voltage`: The variable allocated to store the bus voltage angles.
+- `power`: The variable allocated to store the active powers.
+- `method`: The optimization model.
 
 # Example
 ```jldoctest
@@ -332,7 +332,7 @@ The resulting bus voltage angles are stored in the `voltage` field of the `DCSta
 type.
 
 # Examples
-Solving the DC state estimation model using the WLS method:
+Solving the DC state estimation model and obtaining the WLS estimator:
 ```jldoctest
 system = powerSystem("case14.h5")
 device = measurement("measurement14.h5")
@@ -341,7 +341,7 @@ analysis = dcWlsStateEstimation(system, device)
 solve!(system, analysis)
 ```
 
-Solving the DC state estimation model using the LAV method:
+Solving the DC state estimation model and obtaining the LAV estimator:
 ```jldoctest
 using Ipopt
 

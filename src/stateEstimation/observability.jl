@@ -13,15 +13,15 @@ To define flow observable islands, this function necessitates the composite type
 
 # Returns
 The function returns an type `Island`, containing information about the islands:
-* `island`: a list enumerating observable islands with indices of buses;
-* `bus`: the positions of buses in relation to each island;
-* `tie`: tie data associated with buses and branches.
+* `island`: List enumerating observable islands with indices of buses.
+* `bus`: Positions of buses in relation to each island.
+* `tie`: Tie data associated with buses and branches.
 
-# Examples
-Find flow islands for the provided set of measurements:
+# Example
 ```jldoctest
 system = powerSystem("case14.h5")
 device = measurement("measurement14.h5")
+
 statusWattmeter!(system, device; inservice = 15)
 device.varmeter.reactive.status = copy(device.wattmeter.active.status)
 
@@ -43,12 +43,11 @@ function islandTopologicalFlow(system::PowerSystem, device::Measurement)
 end
 
 """
-    islandTopological(system::PowerSystem, meter::Wattmeter)
+    islandTopological(system::PowerSystem, meter::Measurement)
 
 The function employs a topological method to identify maximal observable islands.
-Specifically, it employs measurements positioned on the branches to pinpoint flow
-observable islands. Subsequently, these islands are merged based on the available
-injection measurements.
+Specifically, it employs active power measurements to pinpoint flow observable islands.
+Subsequently, these islands are merged based on the available injection measurements.
 
 It is assumed that active and reactive power measurements are paired, indicating a
 standard observability analysis. In this analysis, islands formed by active power
@@ -59,16 +58,16 @@ To define flow observable islands, this function necessitates the composite type
 `PowerSystem` and `Measurement`.
 
 # Returns
-The function returns an abstract type `Island`, containing information about the islands:
-* `island`: a list enumerating observable islands with indices of buses;
-* `bus`: the positions of buses in relation to each island;
-* `tie`: tie data associated with buses and branches.
+The function returns an type `Island`, containing information about the islands:
+* `island`: List enumerating observable islands with indices of buses.
+* `bus`: Positions of buses in relation to each island.
+* `tie`: Tie data associated with buses and branches.
 
-# Examples
-Find maximal islands for the provided set of measurements:
+# Example
 ```jldoctest
 system = powerSystem("case14.h5")
 device = measurement("measurement14.h5")
+
 statusWattmeter!(system, device; inservice = 15)
 device.varmeter.reactive.status = copy(device.wattmeter.active.status)
 
@@ -355,20 +354,11 @@ end
 
 Upon identifying the `islands`, the function incorporates measurements from the available
 pseudo-measurements in the `pseudo` variable into the `device` variable to reinstate
-observability. If the abstract type `Island` is derived from wattmeters, candidates for
-restoring observability include active power measurements and bus voltage angle
-measurements from the `pseudo` variable. This method relies on reduced coefficient matrices
-and the Gram matrix.
+observability. This method relies on reduced coefficient matrices and the Gram matrix.
 
 It is important to note that the device labels in the `device` and `pseudo` variables must
 be different to enable the function to successfully incorporate measurements from `pseudo`
 into the `device` set of measurements.
-
-# Arguments
-This function requires the composite types `PowerSystem` and `device`, which holds
-measurements from which the `islands` variable is obtained. To restore observability, the
-function uses measurements from the `pseudo` variable and adds a non-redundant set from it
-to the `device` variable.
 
 # Keyword
 The keyword threshold defines the zero pivot threshold value with a default value of `1e-5`.
@@ -378,19 +368,15 @@ More precisely, all computed pivots less than this value will be treated as zero
 The function updates the `device` variable of the `Measurement` composite type.
 
 # Example
-Restore observability for DC state estimation:
 ```jldoctest
 system = powerSystem("case14.h5")
 device = measurement("measurement14.h5")
-statusWattmeter!(system, device; inservice = 10)
-statusPmu!(system, device; inservice = 0)
-
 pseudo = measurement("pseudomeasurement14.h5")
-islands = islandTopological(system, device.wattmeter)
-restorationGram!(system, device, pseudo, islands)
 
-analysis = dcWlsStateEstimation(system, device)
-solve!(system, analysis)
+statusWattmeter!(system, device; inservice = 10)
+islands = islandTopological(system, device)
+
+restorationGram!(system, device, pseudo, islands)
 ```
 """
 function restorationGram!(system::PowerSystem, device::Measurement, pseudo::Measurement, islands::Island; threshold::Float64 = 1e-5)

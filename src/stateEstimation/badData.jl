@@ -7,11 +7,11 @@ residual test, subsequently removing measurement outliers from the measurement s
 be executed after obtaining WLS estimator.
 
 # Arguments
-This function requires the composite types `PowerSystem` and `Measurement`, along with an
-abstract type. The abstract type `StateEstimation` can have the following subtypes:
-- `ACStateEstimation`: conducts bad data analysis within AC state estimation;
-- `PMUStateEstimation`: conducts bad data analysis within PMU state estimation;
-- `DCStateEstimation`: conducts bad data analysis within DC state estimation.
+This function requires the types `PowerSystem`, `Measurement`, and `StateEstimation`. The
+]abstract type `StateEstimation` can have the following subtypes:
+- `ACStateEstimation`: Conducts bad data analysis within AC state estimation.
+- `PMUStateEstimation`: Conducts bad data analysis within PMU state estimation.
+- `DCStateEstimation`: Conducts bad data analysis within DC state estimation.
 
 # Keyword
 The keyword `threshold` establishes the identification threshold. If the largest
@@ -19,19 +19,21 @@ normalized residual surpasses this threshold, the measurement is flagged as bad 
 default threshold value is set to `threshold = 3.0`.
 
 # Updates
-In case bad data is detected, the function removes measurements from the `coefficient` and
-`precision` matrices, and `mean` vector within the `DCStateEstimation` type. Additionally,
-it marks the respective measurement within the `Measurement` type as out-of-service.
+If bad data is detected, the function flags the corresponding measurement within the
+`Measurement` type as out-of-service.
+
+Moreover, for `DCStateEstimation` and `PMUStateEstimation` types, the function removes
+the corresponding measurement from the coefficient matrix and mean vector. This facilitates
+direct progress to the function that solves the state estimation problem.
 
 # Returns
 The function returns an instance of the `BadData` type, which includes:
-- `detect`: returns `true` after the function's execution if bad data is detected;
-- `maxNormalizedResidual`: denotes the value of the largest normalized residual;
-- `label`: signifies the label of the bad data;
-- `index`: represents the index of the bad data.
+- `detect`: Returns `true` after the function's execution if bad data is detected.
+- `maxNormalizedResidual`: Denotes the value of the largest normalized residual.
+- `label`: Signifies the label of the bad data.
+- `index`: Represents the index of the bad data.
 
 # Example
-Obtaining the solution after detecting and removing bad data:
 ```jldoctest
 system = powerSystem("case14.h5")
 device = measurement("measurement14.h5")

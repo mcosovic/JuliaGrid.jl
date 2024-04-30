@@ -24,11 +24,11 @@ If the AC model has not been created, the function will automatically trigger an
 the `ac` field within the `PowerSystem` composite type.
 
 # Returns
-The function returns an instance of the `PMUStateEstimation` abstract type, which includes
-the following fields:
-- `voltage`: the variable allocated to store the bus voltage magnitudes and angles;
-- `power`: the variable allocated to store the active and reactive powers;
-- `method`: the system model vectors and matrices.
+The function returns an instance of the `ACStateEstimation` type, which includes the
+following fields:
+- `voltage`: The variable allocated to store the bus voltage magnitudes and angles.
+- `power`: The variable allocated to store the active and reactive powers.
+- `method`: The system model vectors and matrices.
 
 # Examples
 Set up the AC state estimation model to be solved using the default LU factorization:
@@ -301,11 +301,11 @@ If the AC model has not been created, the function will automatically trigger an
 the `ac` field within the `PowerSystem` composite type.
 
 # Returns
-The function returns an instance of the `PMUStateEstimation` abstract type, which includes
-the following fields:
-- `voltage`: the variable allocated to store the bus voltage magnitudes and angles;
-- `power`: the variable allocated to store the active and reactive powers;
-- `method`: the optimization model.
+The function returns an instance of the `ACStateEstimation` type, which includes the
+following fields:
+- `voltage`: The variable allocated to store the bus voltage magnitudes and angles.
+- `power`: The variable allocated to store the active and reactive powers.
+- `method`: The optimization model.
 
 # Example
 ```jldoctest
@@ -644,6 +644,17 @@ for iteration = 1:20
         break
     end
 end
+```
+
+Solving the AC state estimation model and obtaining the LAV estimator:
+```jldoctest
+using Ipopt
+
+system = powerSystem("case14.h5")
+device = measurement("measurement14.h5")
+
+analysis = acLavStateEstimation(system, device, Ipopt.Optimizer)
+solve!(system, analysis)
 ```
 """
 function solve!(system::PowerSystem, analysis::ACStateEstimation{NonlinearWLS{Normal}})
