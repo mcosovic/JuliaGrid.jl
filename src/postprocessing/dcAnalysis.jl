@@ -7,14 +7,13 @@ within the DC analysis framework.
 # Updates
 This function updates the `power` field of the DC abstract type by computing the following
 electrical quantities:
-- `injection`: active power injections at each bus;
-- `supply`: active power injections from the generators at each bus;
-- `from`: active power flows at each from-bus end of the branch;
-- `to`: active power flows at each to-bus end of the branch;
-- `generator`: output active powers of each generator (excluding for state estimation).
+- `injection`: Active power injections at each bus.
+- `supply`: Active power injections from the generators at each bus.
+- `from`: Active power flows at each from-bus end of the branch.
+- `to`: Active power flows at each to-bus end of the branch.
+- `generator`: Output active powers of each generator (excluding for state estimation).
 
 # Example
-Compute powers after obtaining the DC power flow solution:
 ```jldoctest
 system = powerSystem("case14.h5")
 dcModel!(system)
@@ -109,7 +108,6 @@ The function returns the active power injection associated with a specific bus i
 framework. The `label` keyword argument must match an existing bus label.
 
 # Example
-Compute the active power after obtaining the DC power flow solution:
 ```jldoctest
 system = powerSystem("case14.h5")
 dcModel!(system)
@@ -177,7 +175,6 @@ specific bus in the DC framework. The `label` keyword argument must match an exi
 label.
 
 # Example
-Compute the active power after obtaining the DC power flow solution:
 ```jldoctest
 system = powerSystem("case14.h5")
 dcModel!(system)
@@ -245,7 +242,6 @@ specific branch in the DC framework. The `label` keyword argument must match an 
 branch label.
 
 # Example
-Compute the active power after obtaining the DC power flow solution:
 ```jldoctest
 system = powerSystem("case14.h5")
 dcModel!(system)
@@ -273,7 +269,6 @@ branch in the DC framework. The `label` keyword argument must match an existing 
 label.
 
 # Example
-Compute the active power after obtaining the DC power flow solution:
 ```jldoctest
 system = powerSystem("case14.h5")
 dcModel!(system)
@@ -299,8 +294,7 @@ end
 This function returns the output active power associated with a specific generator in the
 DC framework. The `label` keyword argument must match an existing generator label.
 
-# Examples
-Compute the active power after obtaining the DC power flow solution:
+# Example
 ```jldoctest
 system = powerSystem("case14.h5")
 dcModel!(system)

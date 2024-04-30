@@ -7,17 +7,16 @@ generators for AC analysis.
 # Updates
 This function updates the `power` field of the `AC` abstract type by computing the
 following electrical quantities:
-- `injection`: active and reactive power bus injections;
-- `supply`: active and reactive power bus injections from the generators;
-- `shunt`: active and reactive power values associated with shunt element at each bus;
-- `from`: active and reactive power flows at the from-bus end of each branch;
-- `to`: active and reactive power flows at the to-bus end of each branch;
-- `charging`: active and reactive power values linked with branch charging admittances for each branch;
-- `series` active and reactive power losses through each branch series impedance;
-- `generator`: produced active and reactive power outputs of each generator (not for state estimation).
+- `injection`: Active and reactive power bus injections.
+- `supply`: Active and reactive power bus injections from the generators.
+- `shunt`: Active and reactive power values associated with shunt element at each bus.
+- `from`: Active and reactive power flows at the from-bus end of each branch.
+- `to`: Active and reactive power flows at the to-bus end of each branch.
+- `charging`: Active and reactive power values linked with branch charging admittances for each branch.
+- `series` Active and reactive power losses through each branch series impedance.
+- `generator`: Produced active and reactive power outputs of each generator (not for state estimation).
 
 # Example
-Compute powers after obtaining the AC power flow solution:
 ```jldoctest
 system = powerSystem("case14.h5")
 acModel!(system)
@@ -350,7 +349,6 @@ The function returns the active and reactive power injections associated with a 
 bus in the AC framework. The `label` keyword argument must match an existing bus label.
 
 # Example
-Compute powers after obtaining the AC power flow solution:
 ```jldoctest
 system = powerSystem("case14.h5")
 acModel!(system)
@@ -391,7 +389,6 @@ associated with a specific bus in the AC framework. The `label` keyword argument
 match an existing bus label.
 
 # Example
-Compute powers after obtaining the AC power flow solution:
 ```jldoctest
 system = powerSystem("case14.h5")
 acModel!(system)
@@ -467,7 +464,6 @@ with a specific bus in the AC framework. The `label` keyword argument must match
 existing bus label.
 
 # Example
-Compute powers after obtaining the AC power flow solution:
 ```jldoctest
 system = powerSystem("case14.h5")
 acModel!(system)
@@ -501,7 +497,6 @@ with a specific branch in the AC framework. The `label` keyword argument must ma
 existing branch label.
 
 # Example
-Compute powers after obtaining the AC power flow solution:
 ```jldoctest
 system = powerSystem("case14.h5")
 acModel!(system)
@@ -546,8 +541,7 @@ The function returns the active and reactive power flows at the to-bus end assoc
 with a specific branch in the AC framework. The `label` keyword argument must match an
 existing branch label.
 
-# Examples
-Compute powers after obtaining the AC power flow solution:
+# Example
 ```jldoctest
 system = powerSystem("case14.h5")
 acModel!(system)
@@ -592,8 +586,7 @@ The function returns the active and reactive power values associated with the ch
 admittances of a specific branch in the AC framework. The `label` keyword argument must
 correspond to an existing branch label.
 
-# Examples
-Compute powers after obtaining the AC power flow solution:
+# Example
 ```jldoctest
 system = powerSystem("case14.h5")
 acModel!(system)
@@ -637,7 +630,6 @@ a specific branch within the AC framework. The `label` keyword argument should c
 to an existing branch label.
 
 # Example
-Compute powers after obtaining the AC power flow solution:
 ```jldoctest
 system = powerSystem("case14.h5")
 acModel!(system)
@@ -684,9 +676,7 @@ end
 The function returns the active and reactive powers associated with a specific generator
 in the AC framework. The `label` keyword argument must match an existing generator label.
 
-
-# Examples
-Compute powers after obtaining the AC power flow solution
+# Example
 ```jldoctest
 system = powerSystem("case14.h5")
 acModel!(system)
@@ -812,13 +802,12 @@ and branches in the AC framework.
 
 # Updates
 This function calculates various electrical quantities in the polar coordinate system:
-- `injection`: current injections at each bus;
-- `from`: current flows at each from-bus end of the branch;
-- `to`: current flows at each to-bus end of the branch;
-- `series`: current flows through the series impedance of the branch in the direction from the from-bus end to the to-bus end of the branch.
+- `injection`: Current injections at each bus.
+- `from`: Current flows at each from-bus end of the branch.
+- `to`: Current flows at each to-bus end of the branch.
+- `series`: Current flows through the series impedance of the branch in the direction from the from-bus end to the to-bus end of the branch.
 
 # Example
-Compute currents after obtaining the AC optimal power flow solution:
 ```jldoctest
 using Ipopt
 
@@ -888,7 +877,6 @@ a specific bus in the AC framework. The `label` keyword argument must match an e
 bus label.
 
 # Example
-Compute the current after obtaining the AC optimal power flow solution:
 ```jldoctest
 using Ipopt
 
@@ -924,7 +912,6 @@ associated with a specific branch in the AC framework. The `label` keyword argum
 match an existing branch label.
 
 # Example
-Compute the current after obtaining the AC optimal power flow solution:
 ```jldoctest
 using Ipopt
 
@@ -966,7 +953,6 @@ associated with a specific branch in the AC framework. The `label` keyword argum
 match an existing branch label.
 
 # Example
-Compute the current after obtaining the AC optimal power flow solution:
 ```jldoctest
 using Ipopt
 
@@ -1009,7 +995,6 @@ end of the branch within the AC framework. The `label` keyword argument must  ma
 existing branch label.
 
 # Example
-Compute the current after obtaining the AC optimal power flow solution:
 ```jldoctest
 using Ipopt
 

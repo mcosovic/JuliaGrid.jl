@@ -251,19 +251,19 @@ end
 The macro is designed to reset various settings to their default values.
 
 The `mode` argument can take on the following values:
-* `unit`: resets all units to their default settings;
-* `power`: sets active, reactive, and apparent power to per-units;
-* `voltage`: sets voltage magnitude to per-unit and voltage angle to radian;
-* `parameter`: sets impedance and admittance to per-units;
-* `template`: resets bus, branch, generator, voltmeter, ammeter, wattmeter, varmeter, and pmu templates to their default settings;
-* `bus`: resets the bus template to its default settings;
-* `branch`: resets the branch template to its default settings;
-* `generator`: resets the generator template to its default settings;
-* `voltmeter`: resets the voltmeter template to its default settings;
-* `ammeter`: resets the ammeter template to its default settings;
-* `wattmeter`: resets the wattmeter template to its default settings;
-* `varmeter`: resets the varmeter template to its default settings;
-* `pmu`: resets the pmu template to its default settings.
+* `unit`: Resets all units to their default settings.
+* `power`: Sets active, reactive, and apparent power to per-units.
+* `voltage`: Sets voltage magnitude to per-unit and voltage angle to radian.
+* `parameter`: Sets impedance and admittance to per-units.
+* `template`: Resets bus, branch, generator, voltmeter, ammeter, wattmeter, varmeter, and pmu templates to their default settings.
+* `bus`: Resets the bus template to its default settings.
+* `branch`: Resets the branch template to its default settings.
+* `generator`: Resets the generator template to its default settings.
+* `voltmeter`: Resets the voltmeter template to its default settings.
+* `ammeter`: Resets the ammeter template to its default settings.
+* `wattmeter`: Resets the wattmeter template to its default settings.
+* `varmeter`: Resets the varmeter template to its default settings.
+* `pmu`: Resets the pmu template to its default settings.
 
 # Example
 ```jldoctest
