@@ -39,7 +39,7 @@ device = measurement("measurement14.h5")
 analysis = gaussNewton(system, device)
 ```
 
-Set up the ACC state estimation model to be solved using the orthogonal method:
+Set up the AC state estimation model to be solved using the orthogonal method:
 ```jldoctest
 system = powerSystem("case14.h5")
 device = measurement("measurement14.h5")
