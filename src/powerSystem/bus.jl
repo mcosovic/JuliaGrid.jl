@@ -6,22 +6,22 @@ The function adds a new bus to the `PowerSystem` composite type.
 
 # Keywords
 The bus is defined with the following keywords:
-* `label`: a unique label for the bus;
-* `type`: the bus type:
-  * `type = 1`: demand bus (PQ);
-  * `type = 2`: generator bus (PV);
-  * `type = 3`: slack bus (Vθ);
-* `active` (pu or W): the active power demand at the bus;
-* `reactive` (pu or VAr): the reactive power demand at the bus;
-* `conductance` (pu or W): the active power demanded of the shunt element;
-* `susceptance` (pu or VAr): the reactive power injected/demanded of the shunt element;
-* `magnitude` (pu or V): the initial value of the voltage magnitude;
-* `angle` (rad or deg): the initial value of the voltage angle;
-* `minMagnitude` (pu or V): the minimum voltage magnitude value;
-* `maxMagnitude` (pu or V): the maximum voltage magnitude value;
-* `base` (V): the voltage base value;
-* `area`: the area number;
-* `lossZone`: the loss zone.
+* `label`: Unique label for the bus.
+* `type`: Bus type:
+  * `type = 1`: demand bus (PQ),
+  * `type = 2`: generator bus (PV),
+  * `type = 3`: slack bus (Vθ).
+* `active` (pu or W): Active power demand at the bus.
+* `reactive` (pu or VAr): Reactive power demand at the bus.
+* `conductance` (pu or W): Active power demanded of the shunt element.
+* `susceptance` (pu or VAr): Reactive power injected/demanded of the shunt element.
+* `magnitude` (pu or V): Initial value of the bus voltage magnitude.
+* `angle` (rad or deg): Initial value of the bus voltage angle.
+* `minMagnitude` (pu or V): Minimum bus voltage magnitude value.
+* `maxMagnitude` (pu or V): Maximum bus voltage magnitude value.
+* `base` (V): Voltage base value.
+* `area`: Area number.
+* `lossZone`: Loss zone.
 
 # Updates
 The function updates the `bus` field of the `PowerSystem` composite type.

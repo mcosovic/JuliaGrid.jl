@@ -15,29 +15,29 @@ for completely reconstructing vectors and matrices when adding a new generator.
 
 # Keywords
 The generator is defined with the following keywords:
-* `label`: a unique label for the generator;
-* `bus`: the label of the bus to which the generator is connected;
-* `status`: the operating status of the generator:
-  * `status = 1`: in-service;
-  * `status = 0`: out-of-service;
-* `active` (pu or W): output active power;
-* `reactive` (pu or VAr): output reactive power;
-* `magnitude` (pu or V): voltage magnitude setpoint;
-* `minActive` (pu or W): minimum allowed output active power value;
-* `maxActive` (pu or W): maximum allowed output active power value;
-* `minReactive` (pu or VAr): minimum allowed output reactive power value;
-* `maxReactive` (pu or VAr): maximum allowed output reactive power value;
-* `lowActive` (pu or W): lower allowed active power output value of PQ capability curve;
-* `minLowReactive` (pu or VAr): minimum allowed reactive power output value at `lowActive` value;
-* `maxLowReactive` (pu or VAr): maximum allowed reactive power output value at `lowActive` value;
-* `upActive` (pu or W): upper allowed active power output value of PQ capability curve;
-* `minUpReactive` (pu or VAr): minimum allowed reactive power output value at `upActive` value;
-* `maxUpReactive` (pu or VAr): maximum allowed reactive power output value at `upActive` value;
-* `loadFollowing` (pu/min or W/min): ramp rate for load following/AG;
-* `reserve10min` (pu or W): ramp rate for 10-minute reserves;
-* `reserve30min` (pu or W): ramp rate for 30-minute reserves;
-* `reactiveTimescale` (pu/min or VAr/min): ramp rate for reactive power, two seconds timescale;
-* `area`: area participation factor.
+* `label`: Unique label for the generator.
+* `bus`: Label of the bus to which the generator is connected.
+* `status`: Operating status of the generator:
+  * `status = 1`: in-service,
+  * `status = 0`: out-of-service.
+* `active` (pu or W): Output active power.
+* `reactive` (pu or VAr): Output reactive power.
+* `magnitude` (pu or V): Voltage magnitude setpoint.
+* `minActive` (pu or W): Minimum allowed output active power value.
+* `maxActive` (pu or W): Maximum allowed output active power value.
+* `minReactive` (pu or VAr): Minimum allowed output reactive power value.
+* `maxReactive` (pu or VAr): Maximum allowed output reactive power value.
+* `lowActive` (pu or W): Lower allowed active power output value of PQ capability curve.
+* `minLowReactive` (pu or VAr): Minimum allowed reactive power output value at `lowActive` value.
+* `maxLowReactive` (pu or VAr): Maximum allowed reactive power output value at `lowActive` value.
+* `upActive` (pu or W): Upper allowed active power output value of PQ capability curve.
+* `minUpReactive` (pu or VAr): Minimum allowed reactive power output value at `upActive` value.
+* `maxUpReactive` (pu or VAr): Maximum allowed reactive power output value at `upActive` value.
+* `loadFollowing` (pu/min or W/min): Ramp rate for load following/AG.
+* `reserve10min` (pu or W): Ramp rate for 10-minute reserves.
+* `reserve30min` (pu or W): Ramp rate for 30-minute reserves.
+* `reactiveTimescale` (pu/min or VAr/min): Ramp rate for reactive power, two seconds timescale.
+* `area`: Area participation factor.
 
 # Updates
 The function updates the `generator` field within the `PowerSystem` composite type, and in
@@ -770,19 +770,19 @@ for completely reconstructing vectors and matrices when adding a new branch.
 
 # Keywords
 The function accepts five keywords:
-* `label`: corresponds to the already defined generator label;
-* `active`: cost model:
-  * `active = 1`: adding or updating cost for the active power, and piecewise linear is being used;
-  * `active = 2`: adding or updating cost for the active power, and polynomial is being used;
-* `reactive`: cost model:
-  * `reactive = 1`: adding or updating cost for the reactive power, and piecewise linear is being used;
-  * `reactive = 2`: adding or updating cost for the reactive power, and polynomial is being used;
-* `piecewise`: cost model defined by input-output points given as `Array{Float64,2}`:
-  * first column (pu, W or VAr): active or reactive power output of the generator;
-  * second column (💵/hr): cost for the specified active or reactive power output;
-* `polynomial`: n-th degree polynomial coefficients given as `Array{Float64,1}`:
-  * first element (💵/puⁿhr, 💵/Wⁿhr or 💵/VArⁿhr): coefficient of the n-th degree term, ...;
-  * penultimate element (💵/puhr, 💵/Whr or 💵/VArhr): coefficient of the first degree term;
+* `label`: Corresponds to the already defined generator label.
+* `active`: Cost model:
+  * `active = 1`: adding or updating cost for the active power, and piecewise linear is being used,
+  * `active = 2`: adding or updating cost for the active power, and polynomial is being used.
+* `reactive`: Cost model:
+  * `reactive = 1`: adding or updating cost for the reactive power, and piecewise linear is being used,
+  * `reactive = 2`: adding or updating cost for the reactive power, and polynomial is being used.
+* `piecewise`: Cost model defined by input-output points given as `Array{Float64,2}`:
+  * first column (pu, W or VAr): active or reactive power output of the generator,
+  * second column (💵/hr): cost for the specified active or reactive power output.
+* `polynomial`: The n-th degree polynomial coefficients given as `Array{Float64,1}`:
+  * first element (💵/puⁿhr, 💵/Wⁿhr or 💵/VArⁿhr): coefficient of the n-th degree term, ....,
+  * penultimate element (💵/puhr, 💵/Whr or 💵/VArhr): coefficient of the first degree term.
   * last element (💵/hr): constant coefficient.
 
 # Updates

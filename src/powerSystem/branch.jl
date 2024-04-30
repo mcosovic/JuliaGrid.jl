@@ -14,26 +14,26 @@ for completely reconstructing vectors and matrices when adding a new branch.
 
 # Keywords
 The branch is defined with the following keywords:
-* `label`: a unique label for the branch;
-* `from`: from-bus label, corresponds to the bus label;
-* `to`: to-bus label, corresponds to the bus label;
-* `status`: operating status of the branch:
-  * `status = 1`: in-service;
-  * `status = 0`: out-of-service;
-* `resistance` (pu or Ω): series resistance;
-* `reactance` (pu or Ω): series reactance;
-* `conductance` (pu or S): total shunt conductance;
-* `susceptance` (pu or S): total shunt susceptance;
-* `turnsRatio`: transformer off-nominal turns ratio, equal to one for a line;
-* `shiftAngle` (rad or deg): transformer phase shift angle, where positive value defines delay;
-* `minDiffAngle` (rad or deg): minimum voltage angle difference value between from-bus and to-bus ends;
-* `maxDiffAngle` (rad or deg): maximum voltage angle difference value between from-bus and to-bus ends;
-* `longTerm` (pu or VA, W): long-term flow rating (equal to zero for unlimited);
-* `shortTerm` (pu or VA, W): short-term flow rating (equal to zero for unlimited);
-* `emergency` (pu or VA, W): emergency flow rating (equal to zero for unlimited);
+* `label`: Unique label for the branch.
+* `from`: From-bus label, corresponds to the bus label.
+* `to`: To-bus label, corresponds to the bus label.
+* `status`: Operating status of the branch:
+  * `status = 1`: in-service,
+  * `status = 0`: out-of-service.
+* `resistance` (pu or Ω): Series resistance.
+* `reactance` (pu or Ω): Series reactance.
+* `conductance` (pu or S): Total shunt conductance.
+* `susceptance` (pu or S): Total shunt susceptance.
+* `turnsRatio`: Transformer off-nominal turns ratio, equal to one for a line.
+* `shiftAngle` (rad or deg): Transformer phase shift angle, where positive value defines delay.
+* `minDiffAngle` (rad or deg): Minimum voltage angle difference value between from-bus and to-bus ends.
+* `maxDiffAngle` (rad or deg): Maximum voltage angle difference value between from-bus and to-bus ends.
+* `longTerm` (pu or VA, W): Long-term flow rating (equal to zero for unlimited).
+* `shortTerm` (pu or VA, W): Short-term flow rating (equal to zero for unlimited).
+* `emergency` (pu or VA, W): Emergency flow rating (equal to zero for unlimited).
 * `type`: types of `longTerm`, `shortTerm`, and `emergency` flow ratings:
-  * `type = 1`: apparent power flow (pu or VA);
-  * `type = 2`: active power flow (pu or W);
+  * `type = 1`: apparent power flow (pu or VA),
+  * `type = 2`: active power flow (pu or W),
   * `type = 3`: current magnitude flow (pu or VA at 1 pu voltage).
 
 # Updates

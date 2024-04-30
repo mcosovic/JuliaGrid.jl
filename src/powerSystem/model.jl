@@ -7,13 +7,13 @@ parameters associated with AC analyses.
 # Updates
 The function updates the `model.ac` field within the `PowerSystem` composite type,
 populating the following variables:
-- `nodalMatrix`: the nodal matrix;
-- `nodalMatrixTranspose`: the transpose of the nodal matrix;
-- `nodalFromFrom`: the Y-parameters of the two-port branches;
-- `nodalFromTo`: the Y-parameters of the two-port branches;
-- `nodalToTo`: the Y-parameters of the two-port branches;
-- `nodalToFrom`: the Y-parameters of the two-port branches;
-- `admittance`: the branch admittances.
+- `nodalMatrix`: The nodal matrix.
+- `nodalMatrixTranspose`: The transpose of the nodal matrix.
+- `nodalFromFrom`: The Y-parameters of the two-port branches.
+- `nodalFromTo`: The Y-parameters of the two-port branches.
+- `nodalToTo`: The Y-parameters of the two-port branches.
+- `nodalToFrom`: The Y-parameters of the two-port branches.
+- `admittance`: The branch admittances.
 
 # Example
 ```jldoctest
@@ -104,9 +104,9 @@ parameters associated with DC analyses.
 # Updates
 The function updates the `model.dc` field within the `PowerSystem` composite type,
 populating the following variables:
-- `nodalMatrix`: the nodal matrix;
-- `admittance`: the branch admittances;
-- `shiftPower`: the active powers related to phase-shifting transformers.
+- `nodalMatrix`: The nodal matrix.
+- `admittance`: The branch admittances.
+- `shiftPower`: The active powers related to phase-shifting transformers.
 
 # Example
 ```jldoctest

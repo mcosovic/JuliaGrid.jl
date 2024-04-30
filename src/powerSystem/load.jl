@@ -13,11 +13,11 @@ It requires a string path to:
 
 # Returns
 The `PowerSystem` composite type with the following fields:
-- `bus`: data related to buses;
-- `branch`: data related to branches;
-- `generator`: data related to generators;
-- `base`: base power and base voltages;
-- `model`: data associated with AC and DC analyses.
+- `bus`: Data related to buses.
+- `branch`: Data related to branches.
+- `generator`: Data related to generators.
+- `base`: Base power and base voltages.
+- `model`: Data associated with AC and DC analyses.
 
 # Units
 JuliaGrid stores all data in per-units and radians format which are fixed, the exceptions
