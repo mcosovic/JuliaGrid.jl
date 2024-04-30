@@ -28,9 +28,9 @@ The branch is defined with the following keywords:
 * `shiftAngle` (rad or deg): Transformer phase shift angle, where positive value defines delay.
 * `minDiffAngle` (rad or deg): Minimum voltage angle difference value between from-bus and to-bus ends.
 * `maxDiffAngle` (rad or deg): Maximum voltage angle difference value between from-bus and to-bus ends.
-* `longTerm` (pu or VA, W): Long-term flow rating (equal to zero for unlimited).
-* `shortTerm` (pu or VA, W): Short-term flow rating (equal to zero for unlimited).
-* `emergency` (pu or VA, W): Emergency flow rating (equal to zero for unlimited).
+* `longTerm` (pu, VA or W): Long-term flow rating (equal to zero for unlimited).
+* `shortTerm` (pu, VA or W): Short-term flow rating (equal to zero for unlimited).
+* `emergency` (pu, VA or W): Emergency flow rating (equal to zero for unlimited).
 * `type`: types of `longTerm`, `shortTerm`, and `emergency` flow ratings:
   * `type = 1`: apparent power flow (pu or VA),
   * `type = 2`: active power flow (pu or W),

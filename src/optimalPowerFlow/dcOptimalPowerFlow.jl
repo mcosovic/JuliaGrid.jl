@@ -18,19 +18,21 @@ the `dc` field of the `PowerSystem` type.
 JuliaGrid offers the ability to manipulate the `jump` model based on the guidelines
 providedin the [JuMP documentation](https://jump.dev/JuMP.jl/stable/reference/models/).
 However, certain configurations may require different method calls, such as:
-- `bridge`: used to manage the bridging mechanism;
-- `name`: used to manage the creation of string names.
+- `bridge`: manage the bridging mechanism,
+- `name`: manage the creation of string names.
 By default, these keyword settings are configured as `true`.
 
 # Returns
 The function returns an instance of the `DCOptimalPowerFlow` type, which includes the
 following fields:
-- `voltage`: the variable allocated to store the bus voltage angle;
-- `power`: the variable allocated to store the active powers;
-- `method`: the JuMP model, references to the variables, constraints, and objective.
+- `voltage`: The variable allocated to store the bus voltage angle,
+- `power`: The variable allocated to store the active powers,
+- `method`: The JuMP model, references to the variables, constraints, and objective.
 
-# Examples
+# Example
 ```jldoctest
+using HiGHS
+
 system = powerSystem("case14.h5")
 dcModel!(system)
 
@@ -150,11 +152,13 @@ The function solves the DC optimal power flow model, computing the active power 
 the generators, as well as the bus voltage angles.
 
 # Updates
-The calculated active powers, as well as voltage angles, are stored in the `voltage` and
-`power.generator` fields of the `DCOptimalPowerFlow` type.
+The calculated active powers, as well as voltage angles, are stored in the
+`power.generator` and `voltage` fields of the `DCOptimalPowerFlow` type.
 
 # Example
 ```jldoctest
+using HiGHS
+
 system = powerSystem("case14.h5")
 dcModel!(system)
 
@@ -286,10 +290,12 @@ type.
 
 # Example
 ```jldoctest
+using HiGHS
+
 system = powerSystem("case14.h5")
 dcModel!(system)
 
-analysis = dcOptimalPowerFlow(system, Ipopt.Optimizer)
+analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer)
 solve!(system, analysis)
 
 updateBus!(system, analysis; label = 14, active = 0.1, angle = -0.17)

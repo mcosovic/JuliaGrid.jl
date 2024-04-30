@@ -4,25 +4,25 @@
 The function sets up the framework to solve the DC power flow.
 
 # Arguments
-The function requires the `PowerSystem` composite type to establish the framework. Next, 
-the `Factorization` argument, while optional, determines the method used to solve the 
-linear system of equations. It can take one of the following values:    
-- `LU`: utilizes LU factorization (default);
-- `LDLt`: utilizes LDLt factorization;
+The function requires the `PowerSystem` composite type to establish the framework. Next,
+the `Factorization` argument, while optional, determines the method used to solve the
+linear system of equations. It can take one of the following values:
+- `LU`: utilizes LU factorization (default),
+- `LDLt`: utilizes LDLt factorization,
 - `QR`: utilizes QR factorization.
 
 # Updates
 If the DC model was not created, the function will automatically initiate an update of the
 `dc` field within the `PowerSystem` composite type. Additionally, if the slack bus lacks
-an in-service generator, JuliaGrid considers it a mistake and defines a new slack bus as 
+an in-service generator, JuliaGrid considers it a mistake and defines a new slack bus as
 the first generator bus with an in-service generator in the bus type list.
 
 # Returns
-The function returns an instance of the `DCPowerFlow` type, which includes the following 
+The function returns an instance of the `DCPowerFlow` type, which includes the following
 fields:
-- `voltage`: the variable allocated to store the bus voltage angles;
-- `power`: the variable allocated to store the active powers;
-- `method`: the factorized nodal matrix.
+- `voltage`: The variable allocated to store the bus voltage angles.
+- `power`: The variable allocated to store the active powers.
+- `method`: The factorized nodal matrix.
 
 # Examples
 Set up the DC power flow utilizing LU factorization:
@@ -63,7 +63,7 @@ function dcPowerFlow(system::PowerSystem, factorization::Type{<:Union{QR, LDLt, 
             CartesianReal(Float64[])
         ),
         DCPowerFlowMethod(
-            get(method, factorization, lu)(sparse(Matrix(1.0I, 1, 1))), 
+            get(method, factorization, lu)(sparse(Matrix(1.0I, 1, 1))),
             -1,
             -1)
     )
@@ -105,7 +105,7 @@ function solve!(system::PowerSystem, analysis::DCPowerFlow)
             dc.nodalMatrix[bus.layout.slack, dc.nodalMatrix.rowval[i]] = 0.0
         end
         dc.nodalMatrix[bus.layout.slack, bus.layout.slack] = 1.0
-    
+
         if dc.pattern != analysis.method.pattern
             analysis.method.pattern = copy(system.model.dc.pattern)
             analysis.method.factorization = sparseFactorization(dc.nodalMatrix, analysis.method.factorization)
@@ -116,7 +116,7 @@ function solve!(system::PowerSystem, analysis::DCPowerFlow)
         @inbounds for (k, i) in enumerate(slackRange)
             dc.nodalMatrix[dc.nodalMatrix.rowval[i], bus.layout.slack] = elementsRemove[k]
             dc.nodalMatrix[bus.layout.slack, dc.nodalMatrix.rowval[i]] = elementsRemove[k]
-        end 
+        end
     end
 
     analysis.voltage.angle = sparseSolution(analysis.voltage.angle, b, analysis.method.factorization)

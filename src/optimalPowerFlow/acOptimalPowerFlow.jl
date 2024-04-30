@@ -18,20 +18,22 @@ the `ac` field of the `PowerSystem` type.
 JuliaGrid offers the ability to manipulate the `jump` model based on the guidelines
 providedin the [JuMP documentation](https://jump.dev/JuMP.jl/stable/reference/models/).
 However, certain configurations may require different method calls, such as:
-- `bridge`: used to manage the bridging mechanism;
-- `name`: used to manage the creation of string names.
+- `bridge`: manage the bridging mechanism,
+- `name`: manage the creation of string names.
 By default, these keyword settings are configured as `true`.
 
 # Returns
 The function returns an instance of the `ACOptimalPowerFlow` type, which includes the
 following fields:
-- `voltage`: the bus voltage magnitudes and angles;
-- `power`: the variable allocated to store the active and reactive powers;
-- `current`: the variable allocated to store the currents;
-- `method`: the JuMP model, references to the variables, constraints, and objective.
+- `voltage`: The bus voltage magnitudes and angles.
+- `power`: The variable allocated to store the active and reactive powers.
+- `current`: The variable allocated to store the currents.
+- `method`: The JuMP model, references to the variables, constraints, and objective.
 
-# Examples
+# Example
 ```jldoctest
+using Ipopt
+
 system = powerSystem("case14.h5")
 acModel!(system)
 
@@ -248,10 +250,12 @@ power outputs of the generators, as well as the bus voltage magnitudes and angle
 
 # Updates
 The calculated active and reactive powers, as well as voltage magnitudes and angles, are
-stored in the `voltage` and `power.generator` fields of the `ACOptimalPowerFlow` type.
+stored in the `power.generator` and `voltage` fields of the `ACOptimalPowerFlow` type.
 
 # Example
 ```jldoctest
+using Ipopt
+
 system = powerSystem("case14.h5")
 acModel!(system)
 
@@ -573,6 +577,8 @@ type.
 
 # Example
 ```jldoctest
+using Ipopt
+
 system = powerSystem("case14.h5")
 acModel!(system)
 

@@ -7,7 +7,7 @@ The function sets up the Newton-Raphson method to solve the AC power flow.
 The function requires the `PowerSystem` composite type to establish the framework. Next,
 the `Factorization` argument, while optional, determines the method used to solve the
 linear system of equations within each iteration. It can take one of the following values:
-- `LU`: utilizes LU factorization (default);
+- `LU`: utilizes LU factorization (default),
 - `QR`: utilizes QR factorization.
 
 # Updates
@@ -18,10 +18,10 @@ rectifies any mistakes present.
 # Returns
 The function returns an instance of the `ACPowerFlow` type, which includes the following
 fields:
-- `voltage`: the bus voltage magnitudes and angles;
-- `power`: the variable allocated to store the active and reactive powers;
-- `current`: the variable allocated to store the currents;
-- `method`: the Jacobian matrix, its factorization, mismatches, increments, and indices.
+- `voltage`: The bus voltage magnitudes and angles.
+- `power`: The variable allocated to store the active and reactive powers.
+- `current`: The variable allocated to store the currents.
+- `method`: The Jacobian matrix, its factorization, mismatches, increments, and indices.
 
 # Examples
 Set up the Newton-Raphson method utilizing LU factorization:
@@ -161,7 +161,7 @@ flow.
 The function requires the `PowerSystem` composite type to establish the framework. Next,
 the `Factorization` argument, while optional, determines the method used to solve the
 linear system of equations within each iteration. It can take one of the following values:
-- `LU`: utilizes LU factorization (default);
+- `LU`: utilizes LU factorization (default),
 - `QR`: utilizes QR factorization.
 
 # Updates
@@ -172,10 +172,10 @@ rectifies any mistakes present.
 # Returns
 The function returns an instance of the `ACPowerFlow` type, which includes the following
 fields:
-- `voltage`: the bus voltage magnitudes and angles;
-- `power`: the variable allocated to store the active and reactive powers;
-- `current`: the variable allocated to store the currents;
-- `method`: the Jacobian matrices, their factorizations, mismatches, increments, and indices.
+- `voltage`: The bus voltage magnitudes and angles.
+- `power`: The variable allocated to store the active and reactive powers.
+- `current`: The variable allocated to store the currents.
+- `method`: The Jacobian matrices, their factorizations, mismatches, increments, and indices.
 
 # Examples
 Set up the fast Newton-Raphson method utilizing LU factorization:
@@ -210,7 +210,7 @@ flow.
 The function requires the `PowerSystem` composite type to establish the framework. Next,
 the `Factorization` argument, while optional, determines the method used to solve the
 linear system of equations within each iteration. It can take one of the following values:
-- `LU`: utilizes LU factorization (default);
+- `LU`: utilizes LU factorization (default),
 - `QR`: utilizes QR factorization.
 
 # Updates
@@ -221,10 +221,10 @@ rectifies any mistakes present.
 # Returns
 The function returns an instance of the `ACPowerFlow` type, which includes the following
 fields:
-- `voltage`: the bus voltage magnitudes and angles;
-- `power`: the variable allocated to store the active and reactive powers;
-- `current`: the variable allocated to store the currents;
-- `method`: the Jacobian matrices, their factorizations, mismatches, increments, and indices.
+- `voltage`: The bus voltage magnitudes and angles.
+- `power`: The variable allocated to store the active and reactive powers.
+- `current`: The variable allocated to store the currents.
+- `method`: The Jacobian matrices, their factorizations, mismatches, increments, and indices.
 
 # Examples
 Set up the fast Newton-Raphson method utilizing LU factorization:
@@ -437,10 +437,10 @@ rectifies any mistakes present.
 # Returns
 The function returns an instance of the `ACPowerFlow` type, which includes the following
 fields:
-- `voltage`: the bus voltage magnitudes and angles;
-- `power`: the variable allocated to store the active and reactive powers;
-- `current`: the variable allocated to store the currents;
-- `method`: contains the bus complex voltages and indices.
+- `voltage`: The bus voltage magnitudes and angles.
+- `power`: The variable allocated to store the active and reactive powers.
+- `current`: The variable allocated to store the currents.
+- `method`: The bus complex voltages and indices.
 
 # Example
 ```jldoctest
@@ -833,13 +833,16 @@ demand buses.
 
 # Updates
 The function assigns values to the `generator.output.active` and `bus.supply.active`
-variables of the `PowerSystem` type. Additionally, it examines the reactive powers of the
-generator and adjusts them to their maximum or minimum values if they exceed the specified
-threshold. Subsequently, the `generator.output.reactive` variable of the `PowerSystem` type
-is modified accordingly. As a result of this adjustment, the `bus.supply.reactive` variable
-of the `PowerSystem` type is also updated, and the bus types specified in `bus.layout.type`
-are modified. If the slack bus is converted, the `bus.layout.slack` field is correspondingly
-adjusted.
+variables of the `PowerSystem` type.
+
+Additionally, it examines the reactive powers of the generators and adjusts them to their
+maximum or minimum values if they exceed the specified threshold. This results in the
+modification of the` generator.output.reactive` variable of the `PowerSystem` type
+accordingly.
+
+As a result of this adjustment, the `bus.supply.reactive` variable is also updated, and
+the bus types specified in `bus.layout.type` are modified. If the slack bus is converted,
+the `bus.layout.slack` field is correspondingly adjusted.
 
 # Returns
 The function returns the variable to indicate which buses violate the limits, with -1
@@ -950,8 +953,10 @@ For instance, if the reactive power of the generator exceeds the limit on the sl
 the [`reactiveLimit!`](@ref reactiveLimit!) function will change that bus to the demand
 bus and designate the first generator bus in the sequence as the new slack bus. After
 obtaining the updated AC power flow solution based on the new slack bus, it is possible to
-adjust the voltage angles to align with the angle of the original slack bus. The `slack`
-keyword specifies the bus label of the original slack bus.
+adjust the voltage angles to align with the angle of the original slack bus.
+
+# Keyword
+The `slack` keyword specifies the bus label for which we want to adjust voltage angles.
 
 # Updates
 This function only updates the `voltage.angle` variable of the `ACPowerFlow` type.
