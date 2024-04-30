@@ -3,35 +3,35 @@
         varianceMagnitude, statusMagnitude, angle, varianceAngle, statusAngle,
         noise, correlated, polar)
 
-The function adds a new PMU to the `Measurement` composite type within a given `PowerSystem`
-type. The PMU can be added to an already defined bus or branch. When defining the PMU, it
+The function adds a new PMU to the `Measurement` type within a given `PowerSystem` type.
+The PMU can be added to an already defined bus or branch. When defining the PMU, it
 is essential to provide the bus voltage magnitude and angle if the PMU is located at a bus
 or the branch current magnitude and angle if the PMU is located at a branch.
 
 # Keywords
 The PMU is defined with the following keywords:
-* `label`: a unique label for the PMU;
-* `bus`: the label of the bus if the PMU is located at the bus;
-* `from`: the label of the branch if the PMU is located at the from-bus end;
-* `to`: the label of the branch if the PMU is located at the to-bus end;
-* `magnitude` (pu or V, A): the bus voltage or branch current magnitude value;
-* `varianceMagnitude` (pu or V, A): the magnitude measurement variance;
-* `statusMagnitude`: the operating status of PMU magnitude measurement:
-  * `statusMagnitude = 1`: in-service;
-  * `statusMagnitude = 0`: out-of-service;
-* `angle` (rad or deg): the bus voltage or branch current angle value;
-* `varianceAngle` (rad or deg): the angle measurement variance;
-* `statusAngle`: the operating status of PMU angle measurement:
-  * `statusAngle = 1`: in-service;
-  * `statusAngle = 0`: out-of-service;
-* `noise`: specifies how to generate the measurement means:
-  * `noise = true`: adds white Gaussian noises with variances to the `magnitude` and `angle`;
-  * `noise = false`: uses the `magnitude` and `angle` values only;
-* `correlated`: specifies error correlation for PMUs for algorithms utilizing rectangular coordinates:
-  * `correlated = true`: considers correlated errors;
-  * `correlated = false`: disregards correlations between errors;
-* `polar`: chooses the coordinate system for including phasor measurements in AC state estimation:
-  * `polar = true`: adopts the polar coordinate system;
+* `label`: Unique label for the PMU.
+* `bus`: Label of the bus if the PMU is located at the bus.
+* `from`: Label of the branch if the PMU is located at the from-bus end.
+* `to`: Label of the branch if the PMU is located at the to-bus end.
+* `magnitude` (pu or V, A): Bus voltage or branch current magnitude value.
+* `varianceMagnitude` (pu or V, A): Magnitude measurement variance.
+* `statusMagnitude`: Operating status of the magnitude measurement:
+  * `statusMagnitude = 1`: in-service,
+  * `statusMagnitude = 0`: out-of-service.
+* `angle` (rad or deg): Bus voltage or branch current angle value.
+* `varianceAngle` (rad or deg): Angle measurement variance.
+* `statusAngle`: Operating status of the angle measurement:
+  * `statusAngle = 1`: in-service,
+  * `statusAngle = 0`: out-of-service.
+* `noise`: Specifies how to generate the measurement means:
+  * `noise = true`: adds white Gaussian noises with variances to the `magnitude` and `angle`,
+  * `noise = false`: uses the `magnitude` and `angle` values only.
+* `correlated`: Specifies error correlation for PMUs for algorithms utilizing rectangular coordinates:
+  * `correlated = true`: considers correlated errors,
+  * `correlated = false`: disregards correlations between errors.
+* `polar`: Chooses the coordinate system for including phasor measurements in AC state estimation:
+  * `polar = true`: adopts the polar coordinate system,
   * `polar = false`: adopts the rectangular coordinate system.
 
 # Updates
@@ -165,44 +165,43 @@ end
 The function incorporates PMUs into the `Measurement` composite type for every bus and
 branch within the `PowerSystem` type. These measurements are derived from the exact bus
 voltage magnitudes and angles, as well as branch current magnitudes and angles defined in
-the `AC` abstract type. These exact values are then perturbed by white Gaussian noise with
-the specified `varianceMagnitude` and `varianceAngle` to obtain measurement data.
+the `AC` abstract type.
 
 # Keywords
 Users have the option to configure the following keywords:
-* `varianceMagnitudeBus` (pu or V): variance of PMU magnitude measurements at buses;
-* `statusMagnitudeBus`: the operating status of PMU magnitude measurements at buses:
-  * `statusMagnitudeBus = 1`: in-service;
-  * `statusMagnitudeBus = 0`: out-of-service;
-* `varianceAngleBus` (rad or deg): variance of PMU angle measurements at buses;
-* `statusAngleBus`: the operating status of PMU agle measurements at buses:
-  * `statusAngleBus = 1`: in-service;
-  * `statusAngleBus = 0`: out-of-service;
-* `varianceMagnitudeFrom` (pu or A): variance of PMU magnitude measurements at the from-bus ends;
-* `statusMagnitudeFrom`: the operating status of PMU magnitude measurements at the from-bus ends:
-  * `statusMagnitudeFrom = 1`: in-service;
-  * `statusMagnitudeFrom = 0`: out-of-service;
-* `varianceAngleFrom` (rad or deg): variance of PMU angle measurements at the from-bus ends;
-* `statusAngleFrom`: the operating status of PMU angle measurements at the from-bus ends:
-  * `statusAngleFrom = 1`: in-service;
-  * `statusAngleFrom = 0`: out-of-service;
-* `varianceMagnitudeTo` (pu or A): variance of PMU magnitude measurements at the to-bus ends;
-* `statusMagnitudeTo`: the operating status of PMU magnitude measurements at the to-bus ends:
-  * `statusMagnitudeTo = 1`: in-service;
-  * `statusMagnitudeTo = 0`: out-of-service;
-* `varianceAngleTo` (rad or deg): variance of PMU angle measurements at the to-bus ends;
-* `statusAngleTo`: the operating status of PMU angle measurements at the to-bus ends:
-  * `statusAngleTo = 1`: in-service;
-  * `statusAngleTo = 0`: out-of-service;
-* `correlated`: specifies error correlation for PMUs for algorithms utilizing rectangular coordinates:
-  * `correlated = true`: considers correlated errors;
-  * `correlated = false`: disregards correlations between errors;
-* `polar`: chooses the coordinate system for including phasor measurements in AC state estimation:
-  * `polar = true`: adopts the polar coordinate system;
-  * `polar = false`: adopts the rectangular coordinate system;
-* `noise`: specifies how to generate the measurement mean:
-  * `noise = true`: adds white Gaussian noise with the `variance` to the magnitudes and angles;
-  * `noise = false`: uses the `magnitude` value only.
+* `varianceMagnitudeBus` (pu or V): Variance of magnitude measurements at buses.
+* `statusMagnitudeBus`: Operating status of magnitude measurements at buses:
+  * `statusMagnitudeBus = 1`: in-service,
+  * `statusMagnitudeBus = 0`: out-of-service.
+* `varianceAngleBus` (rad or deg): Variance of angle measurements at buses.
+* `statusAngleBus`: Operating status of agle measurements at buses:
+  * `statusAngleBus = 1`: in-service,
+  * `statusAngleBus = 0`: out-of-service.
+* `varianceMagnitudeFrom` (pu or A): Variance of magnitude measurements at the from-bus ends.
+* `statusMagnitudeFrom`: Operating status of magnitude measurements at the from-bus ends:
+  * `statusMagnitudeFrom = 1`: in-service,
+  * `statusMagnitudeFrom = 0`: out-of-service.
+* `varianceAngleFrom` (rad or deg): Variance of angle measurements at the from-bus ends.
+* `statusAngleFrom`: Operating status of angle measurements at the from-bus ends:
+  * `statusAngleFrom = 1`: in-service,
+  * `statusAngleFrom = 0`: out-of-service.
+* `varianceMagnitudeTo` (pu or A): Variance of magnitude measurements at the to-bus ends.
+* `statusMagnitudeTo`: Operating status of magnitude measurements at the to-bus ends:
+  * `statusMagnitudeTo = 1`: in-service,
+  * `statusMagnitudeTo = 0`: out-of-service.
+* `varianceAngleTo` (rad or deg): Variance of angle measurements at the to-bus ends.
+* `statusAngleTo`: Operating status of angle measurements at the to-bus ends:
+  * `statusAngleTo = 1`: in-service,
+  * `statusAngleTo = 0`: out-of-service.
+* `correlated`: Specifies error correlation for PMUs for algorithms utilizing rectangular coordinates:
+  * `correlated = true`: considers correlated errors,
+  * `correlated = false`: disregards correlations between errors.
+* `polar`: Chooses the coordinate system for including phasor measurements in AC state estimation:
+  * `polar = true`: adopts the polar coordinate system,
+  * `polar = false`: adopts the rectangular coordinate system.
+* `noise`: Specifies how to generate the measurement mean:
+  * `noise = true`: adds white Gaussian noise with the `variance` to the magnitudes and angles,
+  * `noise = false`: uses the exact magnitude and angles values.
 
 # Updates
 The function updates the `pmu` field of the `Measurement` composite type.
@@ -219,11 +218,11 @@ a bus using the [`@voltage`](@ref @voltage) macro, or amperes (A) and degrees (d
 the PMU is located at a branch through the use of the [`@current`](@ref @current) macro.
 
 # Example
-Adding PMUs using exact values from the AC power flow:
 ```jldoctest
 system = powerSystem("case14.h5")
-acModel!(system)
+device = measurement()
 
+acModel!(system)
 analysis = newtonRaphson(system)
 for i = 1:10
     stopping = mismatch!(system, analysis)
@@ -233,8 +232,6 @@ for i = 1:10
     solve!(system, analysis)
 end
 current!(system, analysis)
-
-device = measurement()
 
 @pmu(label = "PMU ?")
 addPmu!(system, device, analysis; varianceMagnitudeBus = 1e-3)

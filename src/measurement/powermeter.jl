@@ -3,22 +3,22 @@
         variance, noise, status)
 
 The function adds a new wattmeter that measures active power injection or active power flow
-to the `Measurement` composite type within a given `PowerSystem` type. The wattmeter can
-be added to an already defined bus or branch.
+to the `Measurement` type within a given `PowerSystem` type. The wattmeter can be added to
+an already defined bus or branch.
 
 # Keywords
 The wattmeter is defined with the following keywords:
-* `label`: a unique label for the wattmeter;
-* `bus`: the label of the bus if the wattmeter is located at the bus;
-* `from`: the label of the branch if the wattmeter is located at the from-bus end;
-* `to`: the label of the branch if the wattmeter is located at the to-bus end;
-* `active` (pu or W): the active power value;
-* `variance` (pu or W): the variance of the active power measurement;
-* `noise`: specifies how to generate the measurement mean:
-  * `noise = true`: adds white Gaussian noise with the `variance` to the `active`;
-  * `noise = false`: uses the `active` value only;
-* `status`: the operating status of the wattmeter:
-  * `status = 1`: in-service;
+* `label`: Unique label for the wattmeter.
+* `bus`: Label of the bus if the wattmeter is located at the bus.
+* `from`: Label of the branch if the wattmeter is located at the from-bus end.
+* `to`: Label of the branch if the wattmeter is located at the to-bus end.
+* `active` (pu or W): Active power value.
+* `variance` (pu or W): Variance of the active power measurement.
+* `noise`: Specifies how to generate the measurement mean:
+  * `noise = true`: adds white Gaussian noise with the `variance` to the `active`,
+  * `noise = false`: uses the `active` value only.
+* `status`: Operating status of the wattmeter:
+  * `status = 1`: in-service,
   * `status = 0`: out-of-service.
 
 # Updates
@@ -77,23 +77,23 @@ end
     addVarmeter!(system::PowerSystem, device::Measurement; label, bus, from, to, reactive,
         variance, noise, status)
 
-The function adds a new varmeter that measures reactivepower injection or reactive power
-flow to the `Measurement` composite type within a given `PowerSystem` type. The varmeter
-can be added to an already defined bus or branch.
+The function adds a new varmeter that measures reactive power injection or reactive power
+flow to the `Measurement` type within a given `PowerSystem` type. The varmeter can be added
+to an already defined bus or branch.
 
 # Keywords
 The varmeter is defined with the following keywords:
-* `label`: a unique label for the varmeter;
-* `bus`: the label of the bus if the varmeter is located at the bus;
-* `from`: the label of the branch if the varmeter is located at the from-bus end;
-* `to`: the label of the branch if the varmeter is located at the to-bus end;
-* `reactive` (pu or VAr): the reactive power value;
-* `variance` (pu or VAr): the variance of the reactive power measurement;
-* `noise`: specifies how to generate the measurement mean:
-  * `noise = true`: adds white Gaussian noise with the `variance` to the `reactive`;
-  * `noise = false`: uses the `reactive` value only;
-* `status`: the operating status of the varmeter:
-  * `status = 1`: in-service;
+* `label`: Unique label for the varmeter.
+* `bus`: Label of the bus if the varmeter is located at the bus.
+* `from`: Label of the branch if the varmeter is located at the from-bus end.
+* `to`: Label of the branch if the varmeter is located at the to-bus end.
+* `reactive` (pu or VAr): Reactive power value.
+* `variance` (pu or VAr): Variance of the reactive power measurement.
+* `noise`: Specifies how to generate the measurement mean:
+  * `noise = true`: adds white Gaussian noise with the `variance` to the `reactive`,
+  * `noise = false`: uses the `reactive` value only.
+* `status`: Operating status of the varmeter:
+  * `status = 1`: in-service,
   * `status = 0`: out-of-service.
 
 # Updates
@@ -200,26 +200,25 @@ end
 The function incorporates wattmeters into the `Measurement` composite type for every bus
 and branch within the `PowerSystem` type. These measurements are derived from the exact
 active power injections at buses and active power flows in branches defined in the `AC`
-abstract type. These exact values are perturbed by white Gaussian noise with the specified
-`variance` to obtain measurement data.
+abstract type.
 
 # Keywords
 Users have the option to configure the following keywords:
-* `varianceBus` (pu or W): the measurement variance for wattmeters at the buses;
-* `statusBus`: the operating status of the wattmeters at the buses:
-  * `statusBus = 1`: in-service;
-  * `statusBus = 0`: out-of-service;
-* `varianceFrom` (pu or W): the measurement variance for wattmeters at the from-bus ends;
-* `statusFrom`: the operating status of the wattmeters at the from-bus ends:
-  * `statusFrom = 1`: in-service;
-  * `statusFrom = 0`: out-of-service;
-* `varianceTo` (pu or W): the measurement variance for wattmeters at the to-bus ends;
-* `statusTo`: the operating status of the wattmeters at the to-bus ends:
-  * `statusTo = 1`: in-service;
-  * `statusTo = 0`: out-of-service;
-* `noise`: specifies how to generate the measurement mean:
-  * `noise = true`: adds white Gaussian noise with the `variance` to the active powers;
-  * `noise = false`: uses the `magnitude` value only.
+* `varianceBus` (pu or W): Measurement variance for wattmeters at the buses.
+* `statusBus`: Operating status of the wattmeters at the buses:
+  * `statusBus = 1`: in-service,
+  * `statusBus = 0`: out-of-service.
+* `varianceFrom` (pu or W): Measurement variance for wattmeters at the from-bus ends.
+* `statusFrom`: Operating status of the wattmeters at the from-bus ends:
+  * `statusFrom = 1`: in-service,
+  * `statusFrom = 0`: out-of-service.
+* `varianceTo` (pu or W): Measurement variance for wattmeters at the to-bus ends.
+* `statusTo`: Operating status of the wattmeters at the to-bus ends:
+  * `statusTo = 1`: in-service,
+  * `statusTo = 0`: out-of-service.
+* `noise`: Specifies how to generate the measurement mean:
+  * `noise = true`: adds white Gaussian noise with the `variance` to the active powers,
+  * `noise = false`: uses the exact active power values.
 
 # Updates
 The function updates the `wattmeter` field of the `Measurement` composite type.
@@ -236,11 +235,11 @@ per-units (pu). However, users can choose to use watts (W) as the units by apply
 [`@power`](@ref @power) macro.
 
 # Example
-Adding wattmeters using exact values from the AC power flow:
 ```jldoctest
 system = powerSystem("case14.h5")
-acModel!(system)
+device = measurement()
 
+acModel!(system)
 analysis = newtonRaphson(system)
 for i = 1:10
     stopping = mismatch!(system, analysis)
@@ -250,8 +249,6 @@ for i = 1:10
     solve!(system, analysis)
 end
 power!(system, analysis)
-
-device = measurement()
 
 @wattmeter(label = "Wattmeter ?")
 addWattmeter!(system, device, analysis; varianceBus = 1e-3, statusFrom = 0)
@@ -277,25 +274,24 @@ end
 The function incorporates varmeters into the `Measurement` composite type for every bus
 and branch within the `PowerSystem` type. These measurements are derived from the exact
 reactive power injections at buses and reactive power flows in branches defined in the `AC`
-abstract type. These exact values are perturbed by white Gaussian noise with the specified
-`variance` to obtain measurement data.
+abstract type.
 
 # Keywords
-* `varianceBus` (pu or VAr): the measurement variance for varmeters at the buses;
-* `statusBus`: the operating status of the varmeters at the buses:
-  * `statusBus = 1`: in-service;
-  * `statusBus = 0`: out-of-service;
-* `varianceFrom` (pu or VAr): the measurement variance for varmeters at the from-bus ends;
-* `statusFrom`: the operating status of the varmeters at the from-bus ends:
-  * `statusFrom = 1`: in-service;
-  * `statusFrom = 0`: out-of-service;
-* `varianceTo` (pu or VAr): the measurement variance for varmeters at the to-bus ends;
-* `statusTo`: the operating status of the varmeters at the to-bus ends:
-  * `statusTo = 1`: in-service;
-  * `statusTo = 0`: out-of-service;
-* `noise`: specifies how to generate the measurement mean:
-  * `noise = true`: adds white Gaussian noise with the `variance` to the reactive powers;
-  * `noise = false`: uses the `magnitude` value only.
+* `varianceBus` (pu or VAr): Measurement variance for varmeters at the buses.
+* `statusBus`: Operating status of the varmeters at the buses:
+  * `statusBus = 1`: in-service,
+  * `statusBus = 0`: out-of-service.
+* `varianceFrom` (pu or VAr): Measurement variance for varmeters at the from-bus ends.
+* `statusFrom`: Operating status of the varmeters at the from-bus ends:
+  * `statusFrom = 1`: in-service,
+  * `statusFrom = 0`: out-of-service.
+* `varianceTo` (pu or VAr): Measurement variance for varmeters at the to-bus ends.
+* `statusTo`: Operating status of the varmeters at the to-bus ends:
+  * `statusTo = 1`: in-service,
+  * `statusTo = 0`: out-of-service.
+* `noise`: Specifies how to generate the measurement mean:
+  * `noise = true`: adds white Gaussian noise with the `variance` to the reactive powers,
+  * `noise = false`: uses the exact reactive power values.
 
 # Updates
 The function updates the `varmeter` field of the `Measurement` composite type.
@@ -312,11 +308,11 @@ per-units (pu). However, users can choose to use volt-amperes reactive (VAr) as 
 by applying the [`@power`](@ref @power) macro.
 
 # Example
-Adding varmeters using exact values from the AC power flow:
 ```jldoctest
 system = powerSystem("case14.h5")
-acModel!(system)
+device = measurement()
 
+acModel!(system)
 analysis = newtonRaphson(system)
 for i = 1:10
     stopping = mismatch!(system, analysis)
@@ -326,8 +322,6 @@ for i = 1:10
     solve!(system, analysis)
 end
 power!(system, analysis)
-
-device = measurement()
 
 @varmeter(label = "Varmeter ?")
 addVarmeter!(system, device, analysis; varianceFrom = 1e-3, statusBus = 0)

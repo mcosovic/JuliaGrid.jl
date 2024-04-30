@@ -31,8 +31,6 @@ following fields:
 
 # Example
 ```jldoctest
-using HiGHS
-
 system = powerSystem("case14.h5")
 dcModel!(system)
 
@@ -157,8 +155,6 @@ The calculated active powers, as well as voltage angles, are stored in the
 
 # Example
 ```jldoctest
-using HiGHS
-
 system = powerSystem("case14.h5")
 dcModel!(system)
 
@@ -290,8 +286,6 @@ type.
 
 # Example
 ```jldoctest
-using HiGHS
-
 system = powerSystem("case14.h5")
 dcModel!(system)
 

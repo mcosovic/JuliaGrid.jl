@@ -11,11 +11,11 @@ It requires a string path to the HDF5 file with the `.h5` extension.
 
 # Returns
 The `Measurement` composite type with the following fields:
-- `voltmeter`: bus voltage magnitude measurements;
-- `ammeter`: branch current magnitude measurements;
-- `wattmeter`: active power injection and active power flow measurements;
-- `varmeter`: reactive power injection and reactive power flow measurements;
-- `pmu`: bus voltage and branch current phasor measurements.
+- `voltmeter`: Bus voltage magnitude measurements.
+- `ammeter`: Branch current magnitude measurements.
+- `wattmeter`: Active power injection and active power flow measurements.
+- `varmeter`: Reactive power injection and reactive power flow measurements.
+- `pmu`: Bus voltage and branch current phasor measurements.
 
 # Units
 JuliaGrid stores all data in per-units and radians format.

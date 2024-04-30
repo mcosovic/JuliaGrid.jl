@@ -3,20 +3,20 @@
         noise, status)
 
 The function adds a new voltmeter that measures bus voltage magnitude to the `Measurement`
-composite type within a given `PowerSystem` type. The voltmeter can be added to an already
+type within a given `PowerSystem` type. The voltmeter can be added to an already
 defined bus.
 
 # Keywords
 The voltmeter is defined with the following keywords:
-* `label`: a unique label for the voltmeter;
-* `bus`: the label of the bus to which the voltmeter is connected;
-* `magnitude` (pu or V): the bus voltage magnitude value;
-* `variance` (pu or V): the variance of the bus voltage magnitude measurement;
-* `noise`: specifies how to generate the measurement mean:
-  * `noise = true`: adds white Gaussian noise with the `variance` to the `magnitude`;
-  * `noise = false`: uses the `magnitude` value only;
-* `status`: the operating status of the voltmeter:
-  * `status = 1`: in-service;
+* `label`: Unique label for the voltmeter.
+* `bus`: Label of the bus to which the voltmeter is connected.
+* `magnitude` (pu or V): Bus voltage magnitude value.
+* `variance` (pu or V): Variance of the bus voltage magnitude measurement.
+* `noise`: Specifies how to generate the measurement mean:
+  * `noise = true`: adds white Gaussian noise with the `variance` to the `magnitude`,
+  * `noise = false`: uses the `magnitude` value only.
+* `status`: Operating status of the voltmeter:
+  * `status = 1`: in-service,
   * `status = 0`: out-of-service.
 
 # Updates
@@ -84,12 +84,12 @@ magnitudes defined in the `AC` abstract type.
 
 # Keywords
 Users have the option to configure the following keywords:
-* `variance` (pu or V): the variance of bus voltage magnitude measurements;
-* `noise`: specifies how to generate the measurement mean:
-  * `noise = true`: adds white Gaussian noise with the `variance` to the voltage magnitudes;
-  * `noise = false`: uses the `magnitude` value only;
-* `status`: the operating status of the voltmeters:
-  * `status = 1`: in-service;
+* `variance` (pu or V): Variance of bus voltage magnitude measurements.
+* `noise`: Specifies how to generate the measurement mean:
+  * `noise = true`: adds white Gaussian noise with the `variance` to the voltage magnitudes,
+  * `noise = false`: uses the exact voltage magnitude values.
+* `status`: Operating status of the voltmeters:
+  * `status = 1`: in-service,
   * `status = 0`: out-of-service.
 
 # Updates
@@ -105,11 +105,11 @@ By default, the unit for `variance` is per-unit (pu). However, users can choose 
 volts (V) as the units by applying the [`@voltage`](@ref @voltage) macro.
 
 # Example
-Adding voltmeters using exact values from the AC power flow:
 ```jldoctest
 system = powerSystem("case14.h5")
-acModel!(system)
+device = measurement()
 
+acModel!(system)
 analysis = newtonRaphson(system)
 for i = 1:10
     stopping = mismatch!(system, analysis)
@@ -118,8 +118,6 @@ for i = 1:10
     end
     solve!(system, analysis)
 end
-
-device = measurement()
 
 @voltmeter(label = "Voltmeter ?")
 addVoltmeter!(system, device, analysis; variance = 1e-3, noise = true)

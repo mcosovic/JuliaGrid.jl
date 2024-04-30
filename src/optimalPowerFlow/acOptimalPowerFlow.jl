@@ -32,8 +32,6 @@ following fields:
 
 # Example
 ```jldoctest
-using Ipopt
-
 system = powerSystem("case14.h5")
 acModel!(system)
 
@@ -254,8 +252,6 @@ stored in the `power.generator` and `voltage` fields of the `ACOptimalPowerFlow`
 
 # Example
 ```jldoctest
-using Ipopt
-
 system = powerSystem("case14.h5")
 acModel!(system)
 
@@ -577,8 +573,6 @@ type.
 
 # Example
 ```jldoctest
-using Ipopt
-
 system = powerSystem("case14.h5")
 acModel!(system)
 

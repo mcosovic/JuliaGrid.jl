@@ -8,16 +8,16 @@ branch.
 
 # Keywords
 The ammeter is defined with the following keywords:
-* `label`: a unique label for the ammeter;
-* `from`: the label of the branch if the ammeter is located at the from-bus end;
-* `to`: the label of the branch if the ammeter is located at the to-bus end;
-* `magnitude` (pu or A): the branch current magnitude value;
-* `variance` (pu or A): the variance of the branch current magnitude measurement;
-* `noise`: specifies how to generate the measurement mean:
-  * `noise = true`: adds white Gaussian noise with the `variance` to the `magnitude`;
-  * `noise = false`: uses the `magnitude` value only;
-* `status`: the operating status of the ammeter:
-  * `status = 1`: in-service;
+* `label`: Unique label for the ammeter.
+* `from`: Label of the branch if the ammeter is located at the from-bus end.
+* `to`: Label of the branch if the ammeter is located at the to-bus end.
+* `magnitude` (pu or A): Branch current magnitude value.
+* `variance` (pu or A): Variance of the branch current magnitude measurement.
+* `noise`: Specifies how to generate the measurement mean:
+  * `noise = true`: adds white Gaussian noise with the `variance` to the `magnitude`,
+  * `noise = false`: uses the `magnitude` value only.
+* `status`: Operating status of the ammeter:
+  * `status = 1`: in-service,
   * `status = 0`: out-of-service.
 
 # Updates
@@ -106,22 +106,21 @@ end
 
 The function incorporates ammeters into the `Measurement` type for every branch within the
 `PowerSystem` type. These measurements are derived from the exact branch current magnitudes
-defined in the `AC` abstract type. These exact values are perturbed by white Gaussian noise
-with the specified `variance` to obtain measurement data.
+defined in the `AC` abstract type.
 
 # Keywords
 Users have the option to configure the following keywords:
-* `varianceFrom` (pu or A): the measurement variance for ammeters at the from-bus ends;
-* `statusFrom`: the operating status of the ammeters at the from-bus ends:
-  * `statusFrom = 1`: in-service;
-  * `statusFrom = 0`: out-of-service;
-* `varianceTo` (pu or A): the measurement variance for ammeters at the to-bus ends;
-* `statusTo`: the operating status of the ammeters at the to-bus ends:
-  * `statusTo = 1`: in-service;
-  * `statusTo = 0`: out-of-service;
-* `noise`: specifies how to generate the measurement mean:
-  * `noise = true`: adds white Gaussian noise with the `variance` to the current magnitudes;
-  * `noise = false`: uses the `magnitude` value only.
+* `varianceFrom` (pu or A): Measurement variance for ammeters at the from-bus ends.
+* `statusFrom`: Operating status of the ammeters at the from-bus ends:
+  * `statusFrom = 1`: in-service,
+  * `statusFrom = 0`: out-of-service.
+* `varianceTo` (pu or A): Measurement variance for ammeters at the to-bus ends.
+* `statusTo`: Operating status of the ammeters at the to-bus ends:
+  * `statusTo = 1`: in-service,
+  * `statusTo = 0`: out-of-service.
+* `noise`: Specifies how to generate the measurement mean:
+  * `noise = true`: adds white Gaussian noise with the `variance` to the current magnitudes,
+  * `noise = false`: uses the exact current magnitude values.
 
 # Updates
 The function updates the `ammeter` field of the `Measurement` composite type.
@@ -137,11 +136,11 @@ However, users can choose to use amperes (A) as the units by applying the
 [`@current`](@ref @current) macro.
 
 # Example
-Adding ammeters using exact values from the AC power flow:
 ```jldoctest
 system = powerSystem("case14.h5")
-acModel!(system)
+device = measurement()
 
+acModel!(system)
 analysis = newtonRaphson(system)
 for i = 1:10
     stopping = mismatch!(system, analysis)
@@ -151,8 +150,6 @@ for i = 1:10
     solve!(system, analysis)
 end
 current!(system, analysis)
-
-device = measurement()
 
 @ammeter(label = "Ammeter ?")
 addAmmeter!(system, device, analysis; varianceFrom = 1e-3, statusTo = 0)

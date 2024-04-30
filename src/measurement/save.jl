@@ -15,13 +15,16 @@ software.
 
 # Example
 ```jldoctest
+using Ipopt
+
 system = powerSystem("case14.m")
+device = measurement()
+
 acModel!(system)
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
 solve!(system, analysis)
 power!(system, analysis)
 
-device = measurement()
 addVoltmeter!(system, device, analysis)
 addWattmeter!(system, device, analysis)
 
