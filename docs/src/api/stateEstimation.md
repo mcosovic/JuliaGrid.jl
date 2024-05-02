@@ -11,6 +11,7 @@ For further information on this topic, please see the [AC State Estimation](@ref
 
 ###### AC State Estimation
 * [`gaussNewton`](@ref gaussNewton)
+* [`acLavStateEstimation`](@ref acLavStateEstimation)
 * [`solve!`](@ref solve!(::PowerSystem, ::ACStateEstimation{NonlinearWLS{Normal}}))
 
 ###### PMU State Estimation
