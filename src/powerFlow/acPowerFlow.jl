@@ -424,7 +424,7 @@ end
 """
     gaussSeidel(system::PowerSystem)
 
-The function sets up the Gauss-Seidel to solve the AC power flow.
+The function sets up the Gauss-Seidel method to solve the AC power flow.
 
 # Arguments
 The function requires the `PowerSystem` composite type to establish the framework.
@@ -509,7 +509,7 @@ methods. It should be employed during the iteration loop before invoking the
 [`solve!`](@ref solve!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})) function.
 
 # Returns
-The function returns maximum absolute values of the sctive and reactive power injection
+The function returns maximum absolute values of the active and reactive power injection
 mismatches, which can be utilized to terminate the iteration loop of the Newton-Raphson,
 fast Newton-Raphson, or Gauss-Seidel methods employed to solve the AC power flow problem.
 
@@ -837,7 +837,7 @@ variables of the `PowerSystem` type.
 
 Additionally, it examines the reactive powers of the generators and adjusts them to their
 maximum or minimum values if they exceed the specified threshold. This results in the
-modification of the` generator.output.reactive` variable of the `PowerSystem` type
+modification of the variable `generator.output.reactive` of the `PowerSystem` type
 accordingly.
 
 As a result of this adjustment, the `bus.supply.reactive` variable is also updated, and

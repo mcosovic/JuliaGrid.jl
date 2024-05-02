@@ -48,5 +48,3 @@ adjustAngle!
 dcPowerFlow
 solve!(::PowerSystem, ::DCPowerFlow)
 ```
-
----

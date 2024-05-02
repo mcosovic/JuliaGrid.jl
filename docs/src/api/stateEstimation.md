@@ -74,7 +74,6 @@ solve!(::PowerSystem, ::DCStateEstimation{LinearWLS{Normal}})
 
 ---
 
-
 ## Bad Data Analysis
 ```@docs
 residualTest!

@@ -31,7 +31,7 @@ The branch is defined with the following keywords:
 * `longTerm` (pu, VA or W): Long-term flow rating (equal to zero for unlimited).
 * `shortTerm` (pu, VA or W): Short-term flow rating (equal to zero for unlimited).
 * `emergency` (pu, VA or W): Emergency flow rating (equal to zero for unlimited).
-* `type`: types of `longTerm`, `shortTerm`, and `emergency` flow ratings:
+* `type`: Types of `longTerm`, `shortTerm`, and `emergency` flow ratings:
   * `type = 1`: apparent power flow (pu or VA),
   * `type = 2`: active power flow (pu or W),
   * `type = 3`: current magnitude flow (pu or VA at 1 pu voltage).

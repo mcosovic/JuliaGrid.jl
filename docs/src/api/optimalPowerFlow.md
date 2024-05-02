@@ -38,4 +38,3 @@ dcOptimalPowerFlow
 solve!(::PowerSystem, ::DCOptimalPowerFlow)
 startingPrimal!(::PowerSystem, ::DCOptimalPowerFlow)
 ```
-

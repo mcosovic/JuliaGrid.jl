@@ -70,5 +70,3 @@ updateGenerator!
 cost!
 @generator
 ```
-
-

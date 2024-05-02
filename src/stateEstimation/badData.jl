@@ -8,7 +8,7 @@ be executed after obtaining WLS estimator.
 
 # Arguments
 This function requires the types `PowerSystem`, `Measurement`, and `StateEstimation`. The
-]abstract type `StateEstimation` can have the following subtypes:
+abstract type `StateEstimation` can have the following subtypes:
 - `ACStateEstimation`: Conducts bad data analysis within AC state estimation.
 - `PMUStateEstimation`: Conducts bad data analysis within PMU state estimation.
 - `DCStateEstimation`: Conducts bad data analysis within DC state estimation.
