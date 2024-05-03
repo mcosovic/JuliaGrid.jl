@@ -8,7 +8,7 @@ Our documentation is divided into three distinct categories:
 * The tutorials delve deeper into the mathematical implementation of algorithms, allowing users to gain an in-depth understanding of the formulas behind various functions.
 * Lastly, the API references offer a comprehensive list of functions within the package, categorized according to specific analyses.
 
-In order to encourage code reusability and give users the ability to customize their analyses as required, we deconstruct specific analyses. However, the overall logic can be simplified as follows:
+In order to encourage code reusability and give users the ability to customize their analyses as required, we decompose specific analyses. However, the overall logic can be simplified as follows:
 * Users start by constructing a power system with/without measurement data.
 * They then choose between the AC or DC model.
 * Next, users define the specific type of analysis.
@@ -38,6 +38,7 @@ analysis = newtonRaphson(system)           # Initialize the Newton-Raphson metho
 for iteration = 1:10                       # Begin the iteration loop
     stopping = mismatch!(system, analysis) # Compute power mismatches
     if all(stopping .< 1e-8)               # Check if the stopping criterion is met
+        println("Solution Found.")         # Output message indicating convergence
         break                              # Stop the iteration loop if the criterion is met
     end
     solve!(system, analysis)               # Compute bus voltages
@@ -115,6 +116,7 @@ analysis = gaussNewton(system, device)   # Initialize the AC state estimation mo
 for iteration = 1:20                     # Begin the iteration loop
     stopping = solve!(system, analysis)  # Compute estimate of bus voltages
     if stopping < 1e-8                   # Check if the stopping criterion is met
+        println("Solution Found.")       # Output message indicating convergence
         break                            # Stop the iteration loop if the criterion is met
     end
 end

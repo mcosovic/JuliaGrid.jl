@@ -1,5 +1,5 @@
 # [Power System Model](@id PowerSystemModelManual)
-The JuliaGrid supports the composite type `PowerSystem` to preserve power system data, with the following fields: `bus`, `branch`, `generator`, `base`, and `model`. The fields `bus`, `branch`, and `generator` hold data related to buses, branches, and generators, respectively. The `base` field stores base values for power and voltages, with the default being three-phase power measured in volt-amperes for the base power and line-to-line voltages measured in volts for base voltages. Within the `model` field, there are `ac` and `dc` subfields that store vectors and matrices pertinent to the power system's topology and parameters, and these are utilized in either the AC or DC framework.
+JuliaGrid supports the composite type `PowerSystem` to preserve power system data, with the following fields: `bus`, `branch`, `generator`, `base`, and `model`. The `bus`, `branch`, and `generator` fields hold data related to buses, branches, and generators, respectively. The `base` field stores base values for power and voltages, with the default being three-phase power measured in volt-amperes for the base power and line-to-line voltages measured in volts for base voltages. Within the `model` field, the `ac` and `dc` subfields store vectors and matrices pertinent to the power system's topology and parameters, and these are utilized in either the AC or DC framework.
 
 The composite type `PowerSystem` can be created using a function:
 * [`powerSystem`](@ref powerSystem).
@@ -14,7 +14,7 @@ Upon creation of the `PowerSystem` type, users can generate vectors and matrices
 
 ---
 
-Once the `PowerSystem` type is created, user can add buses, branches, generators, or manage costs associated with the output powers of the generators, using the following functions:
+Once the `PowerSystem` type is created, users can add buses, branches, generators, or manage costs associated with the output powers of the generators, using the following functions:
 * [`addBus!`](@ref addBus!),
 * [`addBranch!`](@ref addBranch!),
 * [`addGenerator!`](@ref addGenerator!),
