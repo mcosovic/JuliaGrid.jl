@@ -3,16 +3,16 @@
 Pkg.add(&quot;JuliaGrid&quot;)</code></pre><hr/><h4 id="AC-Power-Flow"><a class="docs-heading-anchor" href="#AC-Power-Flow">AC Power Flow</a><a id="AC-Power-Flow-1"></a><a class="docs-heading-anchor-permalink" href="#AC-Power-Flow" title="Permalink"></a></h4><pre><code class="language-julia hljs">using JuliaGrid
 
 system = powerSystem(&quot;case14.h5&quot;)          # Build the power system model
-acModel!(system)                           # Generate matrices and vectors in the AC model
+acModel!(system)                           # Create matrices and vectors for the AC model
 
-analysis = newtonRaphson(system)           # Initialize the Newton-Raphson method
+analysis = newtonRaphson(system)           # Build the Newton-Raphson method
 for iteration = 1:10                       # Begin the iteration loop
     stopping = mismatch!(system, analysis) # Compute power mismatches
     if all(stopping .&lt; 1e-8)               # Check if the stopping criterion is met
         println(&quot;Solution Found.&quot;)         # Output message indicating convergence
         break                              # Stop the iteration loop if the criterion is met
     end
-    solve!(system, analysis)               # Compute bus voltages
+    solve!(system, analysis)               # Compute bus voltage magnitudes and angles
 end
 
 power!(system, analysis)                   # Compute powers within the power system
@@ -20,42 +20,40 @@ current!(system, analysis)                 # Compute currents within the power s
 
 @power(MW, MVAr, MVA)                    # Specify the power units for input data
 system = powerSystem(&quot;case14.h5&quot;)        # Build the power system model
-dcModel!(system)                         # Generate matrices and vectors in the DC model
+dcModel!(system)                         # Create matrices and vectors for the DC model
 
-analysis = dcPowerFlow(system)           # Initialize the DC power flow analysis
+analysis = dcPowerFlow(system)           # Build the DC power flow analysis
 solve!(system, analysis)                 # Compute bus voltage angles
 
-@generator(active = 20)                  # Define a template for generators
-addGenerator!(system, analysis; bus = 1) # Add a new generator into the power system
-solve!(system, analysis)                 # Compute bus voltage angles in the updated setup</code></pre><hr/><h4 id="AC-Optimal-Power-Flow"><a class="docs-heading-anchor" href="#AC-Optimal-Power-Flow">AC Optimal Power Flow</a><a id="AC-Optimal-Power-Flow-1"></a><a class="docs-heading-anchor-permalink" href="#AC-Optimal-Power-Flow" title="Permalink"></a></h4><pre><code class="language-julia hljs">using JuliaGrid, Ipopt
+@generator(active = 20)                  # Define the template for generators
+addGenerator!(system, analysis; bus = 1) # Add the new generator to the power system
+solve!(system, analysis)                 # Recompute bus voltage angles with the updated model</code></pre><hr/><h4 id="AC-Optimal-Power-Flow"><a class="docs-heading-anchor" href="#AC-Optimal-Power-Flow">AC Optimal Power Flow</a><a id="AC-Optimal-Power-Flow-1"></a><a class="docs-heading-anchor-permalink" href="#AC-Optimal-Power-Flow" title="Permalink"></a></h4><pre><code class="language-julia hljs">using JuliaGrid, Ipopt
 
 system = powerSystem(&quot;case14.h5&quot;)              # Build the power system model
-acModel!(system)                               # Generate matrices and vectors in the AC model
+acModel!(system)                               # Create matrices and vectors for the AC model
 
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer) # Build the AC optimal power flow model
 solve!(system, analysis)                       # Compute generator powers and bus voltages
 
 current!(system, analysis)                     # Compute currents within the power system
 
-@branch(resistance = 0.01, reactance = 0.2)    # Define a new template for branches
-addBranch!(system, analysis; from = 1, to = 5) # Add a new branch into the power system
-solve!(system, analysis)                       # Compute a new solution in the updated setup</code></pre><hr/><h4 id="DC-Optimal-Power-Flow"><a class="docs-heading-anchor" href="#DC-Optimal-Power-Flow">DC Optimal Power Flow</a><a id="DC-Optimal-Power-Flow-1"></a><a class="docs-heading-anchor-permalink" href="#DC-Optimal-Power-Flow" title="Permalink"></a></h4><pre><code class="language-julia hljs">using JuliaGrid, HiGHS
+@branch(resistance = 0.01, reactance = 0.2)    # Define the new template for branches
+addBranch!(system, analysis; from = 1, to = 5) # Add the new branch to the power system
+solve!(system, analysis)                       # Recompute the solution with the updated model</code></pre><hr/><h4 id="DC-Optimal-Power-Flow"><a class="docs-heading-anchor" href="#DC-Optimal-Power-Flow">DC Optimal Power Flow</a><a id="DC-Optimal-Power-Flow-1"></a><a class="docs-heading-anchor-permalink" href="#DC-Optimal-Power-Flow" title="Permalink"></a></h4><pre><code class="language-julia hljs">using JuliaGrid, HiGHS
 
-system = powerSystem(&quot;case14.h5&quot;)                 # Build the power system model
-dcModel!(system)                                  # Generate matrices and vectors in DC model
+system = powerSystem(&quot;case14.h5&quot;) # Build the power system model
+dcModel!(system)                  # Create matrices and vectors for the DC model
 
 analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer) # Build the DC optimal power flow model
-solve!(system, analysis)                          # Compute generator powers and bus voltages
+solve!(system, analysis)          # Compute generator powers and bus voltages
 
-updateBus!(system, analysis; label = 1, type = 1) # Modify the existing bus
-updateBus!(system, analysis; label = 2, type = 3) # Designate the new slack bus
-solve!(system, analysis)                          # Compute new solution in the updated setup</code></pre><hr/><h4 id="AC-State-Estimation"><a class="docs-heading-anchor" href="#AC-State-Estimation">AC State Estimation</a><a id="AC-State-Estimation-1"></a><a class="docs-heading-anchor-permalink" href="#AC-State-Estimation" title="Permalink"></a></h4><pre><code class="language-julia hljs">using JuliaGrid
+power!(system, analysis)          # Compute active powers within the power system</code></pre><hr/><h4 id="AC-State-Estimation"><a class="docs-heading-anchor" href="#AC-State-Estimation">AC State Estimation</a><a id="AC-State-Estimation-1"></a><a class="docs-heading-anchor-permalink" href="#AC-State-Estimation" title="Permalink"></a></h4><pre><code class="language-julia hljs">using JuliaGrid
 
 system = powerSystem(&quot;case14.h5&quot;)        # Build the power system model
 device = measurement(&quot;measurement14.h5&quot;) # Build the measurement model
-acModel!(system)                         # Generate matrices and vectors in the AC model
+acModel!(system)                         # Create matrices and vectors for the AC model
 
-analysis = gaussNewton(system, device)   # Initialize the AC state estimation model
+analysis = gaussNewton(system, device)   # Build the AC state estimation model
 for iteration = 1:20                     # Begin the iteration loop
     stopping = solve!(system, analysis)  # Compute estimate of bus voltages
     if stopping &lt; 1e-8                   # Check if the stopping criterion is met
@@ -64,22 +62,22 @@ for iteration = 1:20                     # Begin the iteration loop
     end
 end</code></pre><hr/><h4 id="PMU-State-Estimation"><a class="docs-heading-anchor" href="#PMU-State-Estimation">PMU State Estimation</a><a id="PMU-State-Estimation-1"></a><a class="docs-heading-anchor-permalink" href="#PMU-State-Estimation" title="Permalink"></a></h4><pre><code class="language-julia hljs">using JuliaGrid
 
-system = powerSystem(&quot;case14.h5&quot;)             # Build the power system model
-device = measurement(&quot;measurement14.h5&quot;)      # Build the measurement model
-acModel!(system)                              # Generate matrices and vectors in the AC model
+system = powerSystem(&quot;case14.h5&quot;)        # Build the power system model
+device = measurement(&quot;measurement14.h5&quot;) # Build the measurement model
+acModel!(system)                         # Create matrices and vectors for the AC model
 
-analysis = pmuWlsStateEstimation(system, device) # Initialize the WLS state estimation model
-solve!(system, analysis)                      # Compute estimate of bus voltages
+analysis = pmuWlsStateEstimation(system, device) # Build the PMU state estimation model
+solve!(system, analysis)                 # Compute estimate of bus voltages
 
 updatePmu!(system, device, analysis; label = 1, angle = 0.0) # Update phasor measurement
-solve!(system, analysis)                     # Compute estimate of bus voltages</code></pre><hr/><h4 id="DC-State-Estimation"><a class="docs-heading-anchor" href="#DC-State-Estimation">DC State Estimation</a><a id="DC-State-Estimation-1"></a><a class="docs-heading-anchor-permalink" href="#DC-State-Estimation" title="Permalink"></a></h4><pre><code class="language-julia hljs">using JuliaGrid
+solve!(system, analysis)                 # Recompute the solution with the updated model</code></pre><hr/><h4 id="DC-State-Estimation"><a class="docs-heading-anchor" href="#DC-State-Estimation">DC State Estimation</a><a id="DC-State-Estimation-1"></a><a class="docs-heading-anchor-permalink" href="#DC-State-Estimation" title="Permalink"></a></h4><pre><code class="language-julia hljs">using JuliaGrid
 
-system = powerSystem(&quot;case14.h5&quot;)            # Build the power system model
-device = measurement(&quot;measurement14.h5&quot;)     # Build the measurement model
-dcModel!(system)                             # Generate matrices and vectors in DC model
+system = powerSystem(&quot;case14.h5&quot;)        # Build the power system model
+device = measurement(&quot;measurement14.h5&quot;) # Build the measurement model
+dcModel!(system)                         # Create matrices and vectors for the DC model
 
-analysis = dcWlsStateEstimation(system, device) # Initialize the WLS state estimation model
-solve!(system, analysis)                     # Compute estimate of bus voltage angles
+analysis = dcWlsStateEstimation(system, device) # Build the DC state estimation model
+solve!(system, analysis)                 # Compute estimate of bus voltage angles
 
-residualTest!(system, device, analysis)      # Perform bad data analysis and remove outlier
-solve!(system, analysis)                     # Compute estimate of bus voltage angles</code></pre><hr/><h4 id="Contributors"><a class="docs-heading-anchor" href="#Contributors">Contributors</a><a id="Contributors-1"></a><a class="docs-heading-anchor-permalink" href="#Contributors" title="Permalink"></a></h4><ul><li><a href="https://www.linkedin.com/in/ognjen-kundacina-machine-learning-guy/">Ognjen Kundacina</a> - The Institute for Artificial Intelligence Research and Development of Serbia</li><li><a href="https://www.linkedin.com/in/muhameddelalic/">Muhamed Delalic</a> - University of Sarajevo, Bosnia and Herzegovina</li><li><a href="https://www.linkedin.com/in/mirsad-cosovic-5a4972a9/">Mirsad Cosovic</a> - University of Sarajevo, Bosnia and Herzegovina</li></ul></article><nav class="docs-footer"><a class="docs-footer-nextpage" href="manual/powerSystemModel/">Power System Model »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.4.1 on <span class="colophon-date" title="Friday 3 May 2024 10:49">Friday 3 May 2024</span>. Using Julia version 1.8.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+residualTest!(system, device, analysis)  # Perform bad data analysis and remove outlier
+solve!(system, analysis)                 # Recompute bus voltage angles with the updated model</code></pre><hr/><h4 id="Contributors"><a class="docs-heading-anchor" href="#Contributors">Contributors</a><a id="Contributors-1"></a><a class="docs-heading-anchor-permalink" href="#Contributors" title="Permalink"></a></h4><ul><li><a href="https://www.linkedin.com/in/ognjen-kundacina-machine-learning-guy/">Ognjen Kundacina</a> - The Institute for Artificial Intelligence Research and Development of Serbia</li><li><a href="https://www.linkedin.com/in/muhameddelalic/">Muhamed Delalic</a> - University of Sarajevo, Bosnia and Herzegovina</li><li><a href="https://www.linkedin.com/in/mirsad-cosovic-5a4972a9/">Mirsad Cosovic</a> - University of Sarajevo, Bosnia and Herzegovina</li></ul></article><nav class="docs-footer"><a class="docs-footer-nextpage" href="manual/powerSystemModel/">Power System Model »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.4.1 on <span class="colophon-date" title="Wednesday 8 May 2024 13:02">Wednesday 8 May 2024</span>. Using Julia version 1.8.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
