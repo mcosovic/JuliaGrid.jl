@@ -1,7 +1,7 @@
 # [Power System Model](@id PowerSystemModelManual)
-JuliaGrid supports the composite type `PowerSystem` to preserve power system data, with the following fields: `bus`, `branch`, `generator`, `base`, and `model`. The `bus`, `branch`, and `generator` fields hold data related to buses, branches, and generators, respectively. The `base` field stores base values for power and voltages, with the default being three-phase power measured in volt-amperes for the base power and line-to-line voltages measured in volts for base voltages. Within the `model` field, the `ac` and `dc` subfields store vectors and matrices pertinent to the power system's topology and parameters, and these are utilized in either the AC or DC framework.
+JuliaGrid supports the type `PowerSystem` to preserve power system data, with the following fields: `bus`, `branch`, `generator`, `base`, and `model`. The `bus`, `branch`, and `generator` fields hold data related to buses, branches, and generators, respectively. The `base` field stores base values for power and voltages, with the default being three-phase power measured in volt-amperes for the base power and line-to-line voltages measured in volts for base voltages. Within the `model` field, the `ac` and `dc` subfields store vectors and matrices pertinent to the power system's topology and parameters, and these are utilized in either the AC or DC framework.
 
-The composite type `PowerSystem` can be created using a function:
+The type `PowerSystem` can be created using a function:
 * [`powerSystem`](@ref powerSystem).
 JuliaGrid supports three modes for populating the `PowerSystem` type: using built-in functions, using HDF5 file format, and using [Matpower](https://matpower.org) case files.
 
@@ -22,18 +22,18 @@ Once the `PowerSystem` type is created, users can add buses, branches, generator
 
 JuliaGrid also provides macros [`@bus`](@ref @bus), [`@branch`](@ref @branch), and [`@generator`](@ref @generator) to define templates that aid in creating buses, branches, and generators. These templates help avoid entering the same parameters repeatedly.
 
-Moreover, it is feasible to modify the parameters of buses, branches, and generators. When these functions are executed, all relevant fields within the `PowerSystem` composite type will be automatically updated, encompassing the `ac` and `dc` fields as well. These functions include:
+Moreover, it is feasible to modify the parameters of buses, branches, and generators. When these functions are executed, all relevant fields within the `PowerSystem` type will be automatically updated, encompassing the `ac` and `dc` fields as well. These functions include:
 * [`updateBus!`](@ref updateBus!),
 * [`updateBranch!`](@ref updateBranch!),
 * [`updateGenerator!`](@ref updateGenerator!).
 
 !!! tip "Tip"
-    The functions [`addBranch!`](@ref addBranch!), [`addGenerator!`](@ref addGenerator!), [`updateBus!`](@ref updateBus!), [`updateBranch!`](@ref updateBranch!), [`updateGenerator!`](@ref updateGenerator!), and [`cost!`](@ref cost!) serve a dual purpose. While their primary function is to modify the `PowerSystem` composite type, they are also designed to accept various analysis models like AC or DC power flow models. When feasible, these functions not only modify the `PowerSystem` type but also adapt the analysis model, often resulting in improved computational efficiency. Detailed instructions on utilizing this feature can be found in dedicated manuals for specific analyses.
+    The functions [`addBranch!`](@ref addBranch!), [`addGenerator!`](@ref addGenerator!), [`updateBus!`](@ref updateBus!), [`updateBranch!`](@ref updateBranch!), [`updateGenerator!`](@ref updateGenerator!), and [`cost!`](@ref cost!) serve a dual purpose. While their primary function is to modify the `PowerSystem` type, they are also designed to accept various analysis models like AC or DC power flow models. When feasible, these functions not only modify the `PowerSystem` type but also adapt the analysis model, often resulting in improved computational efficiency. Detailed instructions on utilizing this feature can be found in dedicated manuals for specific analyses.
 
 ---
 
 ## [Build Model](@id BuildModelManual)
-The [`powerSystem`](@ref powerSystem) function generates the `PowerSystem` composite type and requires a string-formatted path to either Matpower cases or HDF5 files as input. Alternatively, the `PowerSystem` can be created without any initial data by initializing it as empty, allowing the user to construct the power system from scratch.
+The [`powerSystem`](@ref powerSystem) function generates the `PowerSystem` type and requires a string-formatted path to either Matpower cases or HDF5 files as input. Alternatively, the `PowerSystem` can be created without any initial data by initializing it as empty, allowing the user to construct the power system from scratch.
 
 ---
 
@@ -46,7 +46,6 @@ system = powerSystem("C:/matpower/case14.m")
 ---
 
 ##### HDF5 File
-
 In order to use the HDF5 file as input to create the `PowerSystem` type, it is necessary to have saved the data using the [`savePowerSystem`](@ref savePowerSystem) function beforehand. As an example, let us say we saved the power system as `case14.h5` in the directory `C:\hdf5`. In this case, the following Julia code can be used to construct the `PowerSystem` type:
 ```julia
 system = powerSystem("C:/hdf5/case14.h5")
@@ -73,7 +72,7 @@ addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance =
 ---
 
 ##### Internal Unit System
-The `PowerSystem` composite type stores all electrical quantities in per-units and radians, except for the base values of power and voltages. The base power value is expressed in volt-amperes, while the base voltages are given in volts.
+The `PowerSystem` type stores all electrical quantities in per-units and radians, except for the base values of power and voltages. The base power value is expressed in volt-amperes, while the base voltages are given in volts.
 
 ---
 
@@ -152,7 +151,6 @@ nothing # hide
 ```
 
 This practical example showcases the customization approach. For keywords tied to active powers, the unit is set as megawatts (MW), while reactive powers employ megavolt-amperes reactive (MVAr). Apparent power, on the other hand, employs per-units (pu). As for keywords concerning voltage magnitude, per-units (pu) remain the choice, but voltage angle mandates degrees (deg). Lastly, the input unit for base voltage is elected to be kilovolts (kV).
-
 
 Now we can create identical two buses as before using new system of units as follows:
 ```@example addBusUnit
@@ -468,7 +466,7 @@ If the objective is to obtain labels in the same order as the bus definitions se
 label = collect(keys(system.bus.label))
 ```
 
-This approach can also be extended to branch and generator labels by making use of the variables present within the `PowerSystem` composite type, namely `system.branch.label` or `system.generator.label`.
+This approach can also be extended to branch and generator labels by making use of the variables present within the `PowerSystem` type, namely `system.branch.label` or `system.generator.label`.
 
 Moreover, the `from` and `to` keywords associated with branches are stored based on internally assigned numerical values linked to bus labels. These values are stored in variables:
 ```@repl RetrieveLabels
@@ -575,7 +573,7 @@ system.model.dc.nodalMatrix
 ---
 
 ## [Update Bus](@id UpdateBusManual)
-Once a bus has been added to the `PowerSystem` composite type, users have the flexibility to modify all parameters defined within the [`addBus!`](@ref addBus!) function. This means that when the [`updateBus!`](@ref updateBus!) function is used, the `PowerSystem` type within AC and DC models that have been created is updated. This eliminates the need to recreate the AC and DC models from scratch.
+Once a bus has been added to the `PowerSystem` type, users have the flexibility to modify all parameters defined within the [`addBus!`](@ref addBus!) function. This means that when the [`updateBus!`](@ref updateBus!) function is used, the `PowerSystem` type within AC and DC models that have been created is updated. This eliminates the need to recreate the AC and DC models from scratch.
 
 To illustrate, let us consider the following power system:
 ```@example updateSystem
@@ -620,7 +618,7 @@ system.model.ac.nodalMatrix
 ---
 
 ## [Update Branch](@id UpdateBranchManual)
-Once a branch has been added to the `PowerSystem` composite type, users have the flexibility to modify all parameters defined within the [`addBranch!`](@ref addBranch!) function. This means that when the [`updateBranch!`](@ref updateBranch!) function is used, the `PowerSystem` type within AC and DC models that have been created is updated. This eliminates the need to recreate the AC and DC models from scratch.
+Once a branch has been added to the `PowerSystem` type, users have the flexibility to modify all parameters defined within the [`addBranch!`](@ref addBranch!) function. This means that when the [`updateBranch!`](@ref updateBranch!) function is used, the `PowerSystem` type within AC and DC models that have been created is updated. This eliminates the need to recreate the AC and DC models from scratch.
 
 To illustrate, let us continue with the previous example and modify the parameters of `Branch 1` as follows:
 ```@example updateSystem
@@ -681,7 +679,7 @@ As we can see, executing the function triggers an update of the observed variabl
 system.bus.supply.active
 ```
 
-Hence, this function ensures the adjustment of generator parameters and updates all fields of the `PowerSystem` composite type affected by them.
+Hence, this function ensures the adjustment of generator parameters and updates all fields of the `PowerSystem` type affected by them.
 
 ---
 

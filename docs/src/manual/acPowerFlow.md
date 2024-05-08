@@ -317,7 +317,6 @@ using JuliaGrid # hide
 @default(unit) # hide
 @default(template) # hide
 
-
 system = powerSystem() # <- Initialize the PowerSystem instance
 
 addBus!(system; label = "Bus 1", type = 3, active = 0.5, magnitude = 0.9, angle = 0.0)
@@ -697,7 +696,6 @@ for iteration = 1:100
     end
     solve!(system, analysis)
 end
-
 nothing # hide
 ```
 
@@ -742,7 +740,6 @@ for iteration = 1:100
     end
     solve!(system, analysis)
 end
-
 nothing # hide
 ```
 
