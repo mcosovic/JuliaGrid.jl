@@ -1,5 +1,5 @@
 # [AC Power Flow](@id ACPowerFlowManual)
-To perform the AC power flow analysis, we will first need the `PowerSystem` composite type that has been created with the AC model. Following that, we can construct the power flow model encapsulated within the `ACPowerFlow` type by employing one of the following functions:
+To perform the AC power flow analysis, we will first need the `PowerSystem` type that has been created with the AC model. Following that, we can construct the power flow model encapsulated within the `ACPowerFlow` type by employing one of the following functions:
 * [`newtonRaphson`](@ref newtonRaphson),
 * [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX),
 * [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB),
@@ -40,7 +40,7 @@ Likewise, there are specialized functions dedicated to calculating specific type
 ## [Bus Type Modification](@id BusTypeModificationManual)
 Depending on how the system is constructed, the types of buses that are initially set are checked and can be changed during the construction of the `ACPowerFlow` type.
 
-Assuming the Newton-Raphson method has been chosen, to explain the details, we can observe a power system with only buses and generator:
+Assuming the Newton-Raphson method has been chosen, to explain the details, we can observe a power system:
 ```julia
 system = powerSystem()
 
@@ -90,7 +90,7 @@ Note that, if a bus is initially defined as the demand bus (`type = 1`) and late
 ---
 
 ## [Setup Starting Voltages](@id SetupStartingVoltagesManual)
-To begin analysing the AC power flow in JuliaGrid, we must first establish the `PowerSystem` composite type and define the AC model by calling the [`acModel!`](@ref acModel!) function. Once the power system is set up, we can select one of the available methods for solving the AC power flow problem, such as [`newtonRaphson`](@ref newtonRaphson), [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX), [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB), or [`gaussSeidel`](@ref gaussSeidel).
+To begin analysing the AC power flow in JuliaGrid, we must first establish the `PowerSystem` type and define the AC model by calling the [`acModel!`](@ref acModel!) function. Once the power system is set up, we can select one of the available methods for solving the AC power flow problem, such as [`newtonRaphson`](@ref newtonRaphson), [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX), [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB), or [`gaussSeidel`](@ref gaussSeidel).
 
 Assuming we have selected the Newton-Raphson method, we can use the following code snippet:
 ```@example initializeACPowerFlow
@@ -180,7 +180,7 @@ Consequently, the iteration begins with a fixed set of voltage magnitude values 
 ---
 
 ## [Power Flow Solution](@id ACPowerFlowSolutionManual)
-To solve the AC power flow problem using JuliaGrid, we first need to create the `PowerSystem` composite type and define the AC model by calling the [`acModel!`](@ref acModel!) function. Here is an example:
+To solve the AC power flow problem using JuliaGrid, we first need to create the `PowerSystem` type and define the AC model by calling the [`acModel!`](@ref acModel!) function. Here is an example:
 ```@example ACPowerFlowSolution
 using JuliaGrid # hide
 @default(unit) # hide
@@ -259,6 +259,7 @@ analysis = newtonRaphson(system)
 for iteration = 1:100
     stopping = mismatch!(system, analysis)
     if all(stopping .< 1e-8)
+        println("Solution Found.")
         break
     end
     solve!(system, analysis)
@@ -279,7 +280,7 @@ The `PowerSystem` type, once created, can be shared among different methods, off
 For instance, while the Gauss-Seidel method is commonly used to swiftly derive an approximate solution, the Newton-Raphson method is favored for obtaining precise final solutions. Hence, a strategy involves employing the Gauss-Seidel method for a limited number of iterations, followed by initializing the Newton-Raphson method with the voltages obtained from the Gauss-Seidel method, leveraging it as a starting point for further refinement:
 ```@example ACPowerFlowSolution
 gs = gaussSeidel(system)
-for iteration = 1:3
+for iteration = 1:5
     solve!(system, gs)
 end
 ```
@@ -308,7 +309,7 @@ end
 ---
 
 ## [Power System Update](@id ACPowerSystemAlterationManual)
-After establishing the `PowerSystem` composite type using the [`powerSystem`](@ref powerSystem) function and configuring the AC model with [`acModel!`](@ref acModel!), users gain the capability to incorporate new branches and generators. Furthermore, they can adjust buses, branches, and generators.
+After establishing the `PowerSystem` type using the [`powerSystem`](@ref powerSystem) function and configuring the AC model with [`acModel!`](@ref acModel!), users gain the capability to incorporate new branches and generators. Furthermore, they can adjust buses, branches, and generators.
 
 Once updates are done, users can progress towards generating the `ACPowerFlow` type using the [`newtonRaphson`](@ref newtonRaphson), [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX), [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB), or [`gaussSeidel`](@ref gaussSeidel) function. Ultimately, resolving the AC power flow is achieved through the utilization of the [`mismatch!`](@ref mismatch!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})) and [`solve!`](@ref solve!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})) functions:
 ```@example ACPowerFlowSolution
@@ -317,7 +318,7 @@ using JuliaGrid # hide
 @default(template) # hide
 
 
-system = powerSystem() # <- Initializing a PowerSystem instance
+system = powerSystem() # <- Initialize the PowerSystem instance
 
 addBus!(system; label = "Bus 1", type = 3, active = 0.5, magnitude = 0.9, angle = 0.0)
 addBus!(system; label = "Bus 2", type = 1, reactive = 0.05, magnitude = 1.1, angle = -0.1)
@@ -328,7 +329,7 @@ addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance =
 addGenerator!(system; label = "Generator 1", bus = "Bus 1", magnitude = 1.1, active = 3.2)
 
 acModel!(system)
-analysis = newtonRaphson(system) # <- Creating ACPowerFlow for the defined power system
+analysis = newtonRaphson(system) # <- Build ACPowerFlow for the defined power system
 for iteration = 1:100
     mismatch!(system, analysis)
     solve!(system, analysis)
@@ -342,7 +343,7 @@ updateBranch!(system; label = "Branch 1", status = 0)
 addGenerator!(system; label = "Generator 2", bus = "Bus 1", active = 0.2)
 updateGenerator!(system; label = "Generator 1", active = 0.3)
 
-analysis = newtonRaphson(system) # <- Creating ACPowerFlow for the updated power system
+analysis = newtonRaphson(system) # <- Build ACPowerFlow for the updated power system
 for iteration = 1:100
     mismatch!(system, analysis)
     solve!(system, analysis)
@@ -367,7 +368,7 @@ using JuliaGrid # hide
 @default(unit) # hide
 @default(template) # hide
 
-system = powerSystem() # <- Initializing a PowerSystem instance
+system = powerSystem() # <- Initialize the PowerSystem instance
 
 addBus!(system; label = "Bus 1", type = 3, active = 0.5, magnitude = 0.9, angle = 0.0)
 addBus!(system; label = "Bus 2", type = 1, reactive = 0.05, magnitude = 1.1, angle = -0.1)
@@ -378,7 +379,7 @@ addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance =
 addGenerator!(system; label = "Generator 1", bus = "Bus 1", magnitude = 1.1, active = 3.2)
 
 acModel!(system)
-analysis = newtonRaphson(system) # <- Creating ACPowerFlow for the defined power system
+analysis = newtonRaphson(system) # <- Build ACPowerFlow for the defined power system
 for iteration = 1:100
     mismatch!(system, analysis)
     solve!(system, analysis)
@@ -392,7 +393,7 @@ updateBranch!(system, analysis; label = "Branch 1", status = 0)
 addGenerator!(system, analysis; label = "Generator 2", bus = "Bus 1", active = 0.2)
 updateGenerator!(system, analysis; label = "Generator 1", active = 0.3)
 
-# <- No need for re-creation; we have already updated the existing ACPowerFlow instance
+# <- No need for re-build; we have already updated the existing ACPowerFlow instance
 for iteration = 1:100
     mismatch!(system, analysis)
     solve!(system, analysis)
@@ -435,7 +436,7 @@ nothing # hide
 ---
 
 ##### Warm Start
-In these scenarios, users leverage the previously created `PowerSystem` composite type with the AC model and also reuse the `ACPowerFlow` type, proceeding directly to the iterations. This approach offers the advantage of a "warm start", wherein the initial voltages for the subsequent iteration step align with the solution from the previous iteration step. This alignment facilitates an efficient continuation of the power flow analysis.
+In these scenarios, users leverage the previously created `PowerSystem` type with the AC model and also reuse the `ACPowerFlow` type, proceeding directly to the iterations. This approach offers the advantage of a "warm start", wherein the initial voltages for the subsequent iteration step align with the solution from the previous iteration step. This alignment facilitates an efficient continuation of the power flow analysis.
 
 Let us now make another alteration on the power system:
 ```@example ACPowerFlowSolution
@@ -706,7 +707,7 @@ violate = reactiveLimit!(system, analysis)
 ```
 
 !!! note "Info"
-    The [`reactiveLimit!`](@ref reactiveLimit!) function changes the `PowerSystem` composite type deliberately because it is intended to help users create the power system where all reactive power outputs of the generators are within limits.
+    The [`reactiveLimit!`](@ref reactiveLimit!) function changes the `PowerSystem` type deliberately because it is intended to help users create the power system where all reactive power outputs of the generators are within limits.
 
 ---
 
