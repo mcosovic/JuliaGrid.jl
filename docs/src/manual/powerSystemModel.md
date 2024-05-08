@@ -37,11 +37,15 @@ The [`powerSystem`](@ref powerSystem) function generates the `PowerSystem` compo
 
 ---
 
-##### Matpower or HDF5 File
+##### Matpower File
 For example, to create the `PowerSystem` type using the Matpower case file for the IEEE 14-bus test case, which is named `case14.m` and located in the folder `C:\matpower`, the following Julia code can be used:
 ```julia
 system = powerSystem("C:/matpower/case14.m")
 ```
+
+---
+
+##### HDF5 File
 
 In order to use the HDF5 file as input to create the `PowerSystem` type, it is necessary to have saved the data using the [`savePowerSystem`](@ref savePowerSystem) function beforehand. As an example, let us say we saved the power system as `case14.h5` in the directory `C:\hdf5`. In this case, the following Julia code can be used to construct the `PowerSystem` type:
 ```julia
@@ -80,13 +84,13 @@ system.base.power.value, system.base.power.unit
 system.base.voltage.value, system.base.voltage.unit
 ```
 
-By using the [`@base`](@ref @base) macro, users can change the prefixes of the base units. For instance, if the user wishes to convert base power and base voltage values to megavolt-amperes (MVA) and kilovolts (kV) respectively, they can execute the following macro:
+By using the [`@base`](@ref @base) macro, users can change the prefixes of the base units. For instance, if useres wish to convert base power and base voltage values to megavolt-amperes (MVA) and kilovolts (kV) respectively, they can execute the following macro:
 ```@example buildModelScratch
 @base(system, MVA, kV)
 nothing # hide
 ```
 
-Upon execution of the macro, the base power and voltage values and units will be modified accordingly:
+After executing the macro, the base power and voltage values and their units will be modified accordingly:
 ```@repl buildModelScratch
 system.base.power.value, system.base.power.unit
 system.base.voltage.value, system.base.voltage.unit
@@ -122,7 +126,7 @@ In this case, we have created two buses where the active power demanded by the c
 system.bus.demand.active
 ```
 
-It is worth noting that the `base` keyword is used to specify the base voltages, and its default input unit is in volts (V).
+It is worth noting that the `base` keyword is used to specify the base voltages, and its default input unit is in volts (V):
 ```@repl addBus
 system.base.voltage.value, system.base.voltage.unit
 ```
@@ -147,7 +151,7 @@ using JuliaGrid # hide
 nothing # hide
 ```
 
-This practical example showcases the customization approach. For keywords tied to active powers, the unit is set as megawatts (MW), while reactive powers employ megavolt-amperes reactive (MVAr). Apparent power, on the other hand, employs per-units (pu). As for keywords concerning voltage magnitude, per-units (pu) remain the choice, but voltage angle mandates degrees (deg). Lastly, the input unit for base voltage is elected to be kilovolts (kV). This unit configuration will be applied throughout subsequent function calls after the unit definitions are established.
+This practical example showcases the customization approach. For keywords tied to active powers, the unit is set as megawatts (MW), while reactive powers employ megavolt-amperes reactive (MVAr). Apparent power, on the other hand, employs per-units (pu). As for keywords concerning voltage magnitude, per-units (pu) remain the choice, but voltage angle mandates degrees (deg). Lastly, the input unit for base voltage is elected to be kilovolts (kV).
 
 
 Now we can create identical two buses as before using new system of units as follows:
@@ -182,7 +186,7 @@ system.base.voltage.value, system.base.voltage.unit
 ---
 
 ## [Add Branch](@id AddBranchManual)
-The branch can only be added once buses are defined, and the `from` and `to` keywords must match the bus labels already defined. For example:
+The branch connecting two buses can be added once those buses are defined, and the `from` and `to` keywords must correspond to labels of those buses. For example:
 ```@example addBranch
 using JuliaGrid # hide
 @default(unit) # hide
@@ -229,7 +233,7 @@ It is important to note that, when working with impedance and admittance values 
 ---
 
 ## [Add Generator](@id AddGeneratorManual)
-After defining the buses, generators can be added to the power system. Each generator must have a unique label, and the `bus` keyword should correspond to the unique label of the bus it is connected to. For instance:
+The generator connected to a bus can be added once the bus is defined. Each generator must have a unique label, and the `bus` keyword should correspond to the unique label of the bus it is connected to. For instance:
 ```@example addGenerator
 using JuliaGrid # hide
 @default(unit) # hide
@@ -404,7 +408,7 @@ addGenerator!(system; bus = 2, active = 0.5, reactive = 0.1)
 nothing # hide
 ```
 
-This example presents the same power system as before. In the previous example, we used an ordered set of increasing integers for labels, in line with JuliaGrid's automatic labeling behavior when the label keyword is omitted.
+This example presents the same power system as before. In the previous example, we used an ordered set of increasing integers for labels, in line with automatic labeling behavior when the `label` keyword is omitted.
 
 ---
 
@@ -487,7 +491,7 @@ label[system.generator.layout.bus]
 ```
 
 !!! tip "Tip"
-    JuliaGrid offers the capability to print labels alongside various types of data, such as power system parameters, voltages, powers, currents, or constraints used in optimal power flow analyses. For instance, users can use the following code to print labels in combination with specific data:
+    JuliaGrid offers the capability to print labels alongside various types of data, such as power system parameters, voltages, powers, currents, or constraints used in optimal power flow analyses. For instance:
     ```@repl RetrieveLabels
     print(system.branch.label, system.branch.parameter.reactance)
     ```
@@ -531,7 +535,7 @@ system.model.dc.nodalMatrix
 ---
 
 ##### New Branch Triggers Model Update
-We can execute the [`acModel!`](@ref acModel!) and [`dcModel!`](@ref dcModel!) functions after defining the final number of buses, and each new branch added will trigger an update of the AC and DC vectors and matrices. Here is an example:
+We can execute the [`acModel!`](@ref acModel!) and [`dcModel!`](@ref dcModel!) functions after defining the final number of buses, and each new branch added will trigger an update of the AC and DC matrices and vectors. Here is an example:
 ```@example ACDCModelUpdate
 using JuliaGrid # hide
 

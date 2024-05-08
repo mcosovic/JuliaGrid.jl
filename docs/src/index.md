@@ -32,16 +32,16 @@ Pkg.add("JuliaGrid")
 using JuliaGrid
 
 system = powerSystem("case14.h5")          # Build the power system model
-acModel!(system)                           # Generate matrices and vectors in the AC model
+acModel!(system)                           # Create matrices and vectors for the AC model
 
-analysis = newtonRaphson(system)           # Initialize the Newton-Raphson method
+analysis = newtonRaphson(system)           # Build the Newton-Raphson method
 for iteration = 1:10                       # Begin the iteration loop
     stopping = mismatch!(system, analysis) # Compute power mismatches
     if all(stopping .< 1e-8)               # Check if the stopping criterion is met
         println("Solution Found.")         # Output message indicating convergence
         break                              # Stop the iteration loop if the criterion is met
     end
-    solve!(system, analysis)               # Compute bus voltages
+    solve!(system, analysis)               # Compute bus voltage magnitudes and angles
 end
 
 power!(system, analysis)                   # Compute powers within the power system
@@ -56,14 +56,14 @@ using JuliaGrid
 
 @power(MW, MVAr, MVA)                    # Specify the power units for input data
 system = powerSystem("case14.h5")        # Build the power system model
-dcModel!(system)                         # Generate matrices and vectors in the DC model
+dcModel!(system)                         # Create matrices and vectors for the DC model
 
-analysis = dcPowerFlow(system)           # Initialize the DC power flow analysis
+analysis = dcPowerFlow(system)           # Build the DC power flow analysis
 solve!(system, analysis)                 # Compute bus voltage angles
 
-@generator(active = 20)                  # Define a template for generators
-addGenerator!(system, analysis; bus = 1) # Add a new generator into the power system
-solve!(system, analysis)                 # Compute bus voltage angles in the updated setup
+@generator(active = 20)                  # Define the template for generators
+addGenerator!(system, analysis; bus = 1) # Add the new generator to the power system
+solve!(system, analysis)                 # Recompute bus voltage angles with the updated model
 ```
 
 ---
@@ -73,16 +73,16 @@ solve!(system, analysis)                 # Compute bus voltage angles in the upd
 using JuliaGrid, Ipopt
 
 system = powerSystem("case14.h5")              # Build the power system model
-acModel!(system)                               # Generate matrices and vectors in the AC model
+acModel!(system)                               # Create matrices and vectors for the AC model
 
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer) # Build the AC optimal power flow model
 solve!(system, analysis)                       # Compute generator powers and bus voltages
 
 current!(system, analysis)                     # Compute currents within the power system
 
-@branch(resistance = 0.01, reactance = 0.2)    # Define a new template for branches
-addBranch!(system, analysis; from = 1, to = 5) # Add a new branch into the power system
-solve!(system, analysis)                       # Compute a new solution in the updated setup
+@branch(resistance = 0.01, reactance = 0.2)    # Define the new template for branches
+addBranch!(system, analysis; from = 1, to = 5) # Add the new branch to the power system
+solve!(system, analysis)                       # Recompute the solution with the updated model
 ```
 
 ---
@@ -91,15 +91,13 @@ solve!(system, analysis)                       # Compute a new solution in the u
 ```julia
 using JuliaGrid, HiGHS
 
-system = powerSystem("case14.h5")                 # Build the power system model
-dcModel!(system)                                  # Generate matrices and vectors in DC model
+system = powerSystem("case14.h5") # Build the power system model
+dcModel!(system)                  # Create matrices and vectors for the DC model
 
 analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer) # Build the DC optimal power flow model
-solve!(system, analysis)                          # Compute generator powers and bus voltages
+solve!(system, analysis)          # Compute generator powers and bus voltages
 
-updateBus!(system, analysis; label = 1, type = 1) # Modify the existing bus
-updateBus!(system, analysis; label = 2, type = 3) # Designate the new slack bus
-solve!(system, analysis)                          # Compute new solution in the updated setup
+power!(system, analysis)          # Compute active powers within the power system
 ```
 
 ---
@@ -110,9 +108,9 @@ using JuliaGrid
 
 system = powerSystem("case14.h5")        # Build the power system model
 device = measurement("measurement14.h5") # Build the measurement model
-acModel!(system)                         # Generate matrices and vectors in the AC model
+acModel!(system)                         # Create matrices and vectors for the AC model
 
-analysis = gaussNewton(system, device)   # Initialize the AC state estimation model
+analysis = gaussNewton(system, device)   # Build the AC state estimation model
 for iteration = 1:20                     # Begin the iteration loop
     stopping = solve!(system, analysis)  # Compute estimate of bus voltages
     if stopping < 1e-8                   # Check if the stopping criterion is met
@@ -128,15 +126,15 @@ end
 ```julia
 using JuliaGrid
 
-system = powerSystem("case14.h5")             # Build the power system model
-device = measurement("measurement14.h5")      # Build the measurement model
-acModel!(system)                              # Generate matrices and vectors in the AC model
+system = powerSystem("case14.h5")        # Build the power system model
+device = measurement("measurement14.h5") # Build the measurement model
+acModel!(system)                         # Create matrices and vectors for the AC model
 
-analysis = pmuWlsStateEstimation(system, device) # Initialize the WLS state estimation model
-solve!(system, analysis)                      # Compute estimate of bus voltages
+analysis = pmuWlsStateEstimation(system, device) # Build the PMU state estimation model
+solve!(system, analysis)                 # Compute estimate of bus voltages
 
 updatePmu!(system, device, analysis; label = 1, angle = 0.0) # Update phasor measurement
-solve!(system, analysis)                     # Compute estimate of bus voltages
+solve!(system, analysis)                 # Recompute the solution with the updated model
 ```
 
 ---
@@ -145,15 +143,15 @@ solve!(system, analysis)                     # Compute estimate of bus voltages
 ```julia
 using JuliaGrid
 
-system = powerSystem("case14.h5")            # Build the power system model
-device = measurement("measurement14.h5")     # Build the measurement model
-dcModel!(system)                             # Generate matrices and vectors in DC model
+system = powerSystem("case14.h5")        # Build the power system model
+device = measurement("measurement14.h5") # Build the measurement model
+dcModel!(system)                         # Create matrices and vectors for the DC model
 
-analysis = dcWlsStateEstimation(system, device) # Initialize the WLS state estimation model
-solve!(system, analysis)                     # Compute estimate of bus voltage angles
+analysis = dcWlsStateEstimation(system, device) # Build the DC state estimation model
+solve!(system, analysis)                 # Compute estimate of bus voltage angles
 
-residualTest!(system, device, analysis)      # Perform bad data analysis and remove outlier
-solve!(system, analysis)                     # Compute estimate of bus voltage angles
+residualTest!(system, device, analysis)  # Perform bad data analysis and remove outlier
+solve!(system, analysis)                 # Recompute bus voltage angles with the updated model
 ```
 
 ---

@@ -117,8 +117,8 @@ nothing # hide
 Here, in this code snippet, the function [`newtonRaphson`](@ref newtonRaphson) generates starting voltage vectors in polar coordinates, where the magnitudes and angles are constructed as:
 ```@repl initializeACPowerFlow
 print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
-
 ```
+
 The starting voltage magnitudes are determined by a combination of the initial values specified within the buses and the setpoints provided within the generators:
 ```@repl initializeACPowerFlow
 [system.bus.voltage.magnitude system.generator.voltage.magnitude]
@@ -135,6 +135,7 @@ system.bus.voltage.angle
     On the other hand, the slack bus (`type = 3`) always requires an in-service generator. The starting value of the voltage magnitude at the slack bus is determined exclusively by the setpoints provided within the generators connected to it. This is a result of the slack bus having a known voltage magnitude that must be maintained.
 
     If there are multiple generators connected to the generator or slack bus, the initial voltage magnitude will align with the magnitude setpoint specified for the first in-service generator in the list.
+
 ---
 
 ##### Custom Starting Voltages
@@ -157,6 +158,7 @@ acModel!(system)
 
 nothing # hide
 ```
+
 Now, the user can initiate a "flat start", this can be easily done as follows:
 ```@example initializeACPowerFlowFlat
 for i = 1:system.bus.number
@@ -167,6 +169,7 @@ end
 analysis = newtonRaphson(system)
 nothing # hide
 ```
+
 The starting voltage values are:
 ```@repl initializeACPowerFlowFlat
 print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
@@ -262,6 +265,7 @@ for iteration = 1:100
 end
 nothing # hide
 ```
+
 The [`mismatch!`](@ref mismatch!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})) function returns the maximum absolute values of active and reactive power injection mismatches, which are commonly used as a convergence criterion in iterative AC power flow algorithms. Note that the function can also be used to terminate the loop when using the Gauss-Seidel method, even though it is not required.
 
 !!! tip "Tip"
@@ -354,7 +358,6 @@ nothing # hide
 
 ## [Power Flow Update](@id ACPowerFlowUpdateManual)
 An advanced methodology involves users establishing the `ACPowerFlow` type using using [`newtonRaphson`](@ref newtonRaphson), [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX), [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB), or [`gaussSeidel`](@ref gaussSeidel) just once. After this initial setup, users can integrate new branches and generators, and also have the capability to modify buses, branches, and generators, all without the need to recreate the `ACPowerFlow` type.
-
 
 This advancement extends beyond the previous scenario where recreating the `PowerSystem` and AC model was unnecessary, to now include the scenario where `ACPowerFlow` also does not need to be recreated. Such efficiency proves particularly beneficial in cases where JuliaGrid can reuse established Jacobian matrices or even factorizations, especially when users choose the fast Newton-Raphson method.
 
@@ -452,6 +455,7 @@ If users prefer to set starting voltages according to the typical scenario, they
 ```@example ACPowerFlowSolution
 startingVoltage!(system, analysis)
 ```
+
 Now, we have starting voltages defined exclusively according to the `PowerSystem`. These values are exactly the same as if we executed the [`newtonRaphson`](@ref newtonRaphson), [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX), [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB), or [`gaussSeidel`](@ref gaussSeidel) function after all the updates we performed:
 ```@repl ACPowerFlowSolution
 print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
@@ -526,7 +530,6 @@ For instance, if we want to show the active power injections and the to-bus curr
 ```@repl ComputationPowersCurrentsLosses
 print(system.bus.label, analysis.power.injection.active)
 print(system.branch.label, analysis.current.to.angle)
-
 ```
 
 !!! note "Info"
@@ -660,6 +663,7 @@ violate = reactiveLimit!(system, analysis)
 
 nothing # hide
 ```
+
 The output reactive power of the observed generators is subject to limits which are defined as follows:
 ```@repl GeneratorReactivePowerLimits
 [system.generator.capability.minReactive system.generator.capability.maxReactive]
@@ -695,6 +699,7 @@ end
 
 nothing # hide
 ```
+
 Once the simulation is complete, we can verify that all generator reactive power outputs now satisfy the limits by checking the violate variable again:
 ```@repl GeneratorReactivePowerLimits
 violate = reactiveLimit!(system, analysis)
@@ -704,7 +709,6 @@ violate = reactiveLimit!(system, analysis)
     The [`reactiveLimit!`](@ref reactiveLimit!) function changes the `PowerSystem` composite type deliberately because it is intended to help users create the power system where all reactive power outputs of the generators are within limits.
 
 ---
-
 
 ##### New Slack Bus
 Looking at the following code example, we can see that the output limits of the generator are set only for `Generator 1` that is connected to the slack bus:
@@ -745,6 +749,7 @@ Upon checking the limits, we can observe that the slack bus has been transformed
 ```@repl NewSlackBus
 violate = reactiveLimit!(system, analysis)
 ```
+
 Here, the generator connected to the slack bus is violating the minimum reactive power limit, which indicates the need to convert the slack bus. It is important to note that the new slack bus can be created only from the generator bus (`type = 2`). We will now perform another AC power flow analysis on the modified system using the following:
 ```@example NewSlackBus
 analysis = newtonRaphson(system)
@@ -761,12 +766,13 @@ After examining the bus voltages, we will focus on the angles:
 ```@repl NewSlackBus
 print(system.bus.label, analysis.voltage.angle)
 ```
+
 We can observe that the angles have been calculated based on the new slack bus. JuliaGrid offers the function to adjust these angles to match the original slack bus as follows:
 ```@example NewSlackBus
 adjustAngle!(system, analysis; slack = "Bus 1")
 ```
 
-Here, the `slack` keyword should correspond to the label of the slack bus. After executing the above code, the updated results can be viewed:
+After executing the above code, the updated results can be viewed:
 ```@repl NewSlackBus
 print(system.bus.label, analysis.voltage.angle)
 ```
