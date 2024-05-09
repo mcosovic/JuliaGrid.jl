@@ -110,7 +110,6 @@ addGenerator!(system; bus = "Bus 3", magnitude = 1.2)
 
 acModel!(system)
 analysis = newtonRaphson(system)
-
 nothing # hide
 ```
 
@@ -155,7 +154,6 @@ addGenerator!(system; bus = "Bus 1", magnitude = 1.1)
 addGenerator!(system; bus = "Bus 3", magnitude = 1.2)
 
 acModel!(system)
-
 nothing # hide
 ```
 
@@ -202,7 +200,6 @@ addGenerator!(system; label = "Generator 1", bus = "Bus 1", magnitude = 1.1)
 addGenerator!(system; label = "Generator 2", bus = "Bus 2", magnitude = 1.2)
 
 acModel!(system)
-
 nothing # hide
 ```
 
@@ -347,7 +344,6 @@ for iteration = 1:100
     mismatch!(system, analysis)
     solve!(system, analysis)
 end
-
 nothing # hide
 ```
 
@@ -441,7 +437,6 @@ Let us now make another alteration on the power system:
 ```@example ACPowerFlowSolution
 updateBus!(system, analysis; label = "Bus 1", active = 0.1, magnitude = 0.95, angle = -0.07)
 updateGenerator!(system, analysis; label = "Generator 2", reactive = 0.2, magnitude = 1.1)
-
 nothing # hide
 ```
 
@@ -515,7 +510,6 @@ for iteration = 1:100
     end
     solve!(system, analysis)
 end
-
 nothing # hide
 ```
 
@@ -660,7 +654,6 @@ for iteration = 1:100
 end
 
 violate = reactiveLimit!(system, analysis)
-
 nothing # hide
 ```
 

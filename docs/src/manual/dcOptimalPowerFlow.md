@@ -1,7 +1,7 @@
 # [DC Optimal Power Flow](@id DCOptimalPowerFlowManual)
 Similar to [AC Optimal Power Flow](@ref ACOptimalPowerFlowManual), JuliaGrid utilizes the [JuMP](https://jump.dev/JuMP.jl/stable/) package to construct optimal power flow models, enabling users to manipulate these models using the standard functions provided by JuMP. JuliaGrid supports popular [solvers](https://jump.dev/JuMP.jl/stable/packages/solvers/) mentioned in the JuMP documentation to solve the optimization problem.
 
-To perform the DC optimal power flow, we first need to have the `PowerSystem` composite type that has been created with the DC model. After that, create the `DCOptimalPowerFlow` composite type to establish the DC optimal power flow framework using the function:
+To perform the DC optimal power flow, we first need to have the `PowerSystem` type that has been created with the DC model. After that, create the `DCOptimalPowerFlow` type to establish the DC optimal power flow framework using the function:
 * [`dcOptimalPowerFlow`](@ref dcOptimalPowerFlow).
 
 To solve the DC optimal power flow problem and acquire generator active power outputs and bus voltage angles, make use of the following function:
@@ -47,14 +47,12 @@ cost!(system; label = "Generator 2", active = 1, piecewise = [8.0 11.0; 14.0 17.
 cost!(system; label = "Generator 3", active = 1, piecewise = [6.8 12.3; 8.7 16.8; 11.2 19.8])
 
 dcModel!(system)
-
 nothing # hide
 ```
 
 Next, the [`dcOptimalPowerFlow`](@ref dcOptimalPowerFlow) function is utilized to formulate the DC optimal power flow problem:
 ```@example DCOptimalPowerFlow
 analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer)
-
 nothing # hide
 ```
 
@@ -105,7 +103,7 @@ JuMP.is_valid(analysis.method.jump, newVariable)
 ---
 
 ## [Constraint Functions](@id DCConstraintFunctionsManual)
-JuliGrid keeps track of all the references to internally formed constraints in the `constraint` field of the `DCOptimalPowerFlow` composite type. These constraints are divided into six fields:
+JuliGrid keeps track of all the references to internally formed constraints in the `constraint` field of the `DCOptimalPowerFlow` type. These constraints are divided into six fields:
 ```@repl DCOptimalPowerFlow
 fieldnames(typeof(analysis.method.constraint))
 ```
@@ -203,7 +201,7 @@ The `capability` field contains references to the inequality constraints associa
 print(system.generator.label, analysis.method.constraint.capability.active)
 ```
 
-As demonstrated, the active power output of `Generator 2` is currently fixed at zero due to the earlier action of setting this generator out-of-service. Consequently, we can adjust these specific constraints using the [`updateGenerator!`](@ref updateGenerator!) function, for example:
+As demonstrated, the active power output of `Generator 2` is currently fixed at zero due to the earlier action of setting this generator out-of-service. Let us adjust this specific constraint using the [`updateGenerator!`](@ref updateGenerator!) function:
 ```@example DCOptimalPowerFlow
 updateGenerator!(system, analysis; label = "Generator 2", status = 1, maxActive = 0.5)
 nothing # hide
@@ -375,7 +373,7 @@ updateGenerator!(system, analysis; label = "Generator 2", maxActive = 0.08)
 nothing # hide
 ```
 
-Next, solve this new power system. During the execution of the [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow)) function, the primal starting values will first be set, and these values will be defined according to the values given above.
+Next, solve this new power system. During the execution of the [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow)) function, the primal starting values will first be set, and these values will be defined according to the values given above:
 ```@example DCOptimalPowerFlow
 solve!(system, analysis)
 ```
@@ -386,7 +384,7 @@ print(system.generator.label, analysis.power.generator.active)
 print(system.bus.label, analysis.voltage.angle)
 ```
 
-Users retain the flexibility to reset these initial primal values to their default configurations at any juncture. This can be accomplished by utilizing the active power outputs of the generators and the initial bus voltage angles extracted from the `PowerSystem` composite type, employing the [`startingPrimal!`](@ref startingPrimal!) function:
+Users retain the flexibility to reset these initial primal values to their default configurations at any juncture. This can be accomplished by utilizing the active power outputs of the generators and the initial bus voltage angles extracted from the `PowerSystem` type, employing the [`startingPrimal!`](@ref startingPrimal!) function:
 ```@example DCOptimalPowerFlow
 startingPrimal!(system, analysis)
 ```
@@ -426,7 +424,6 @@ cost!(system; label = "Generator 2", active = 1, piecewise = [10.8 12.3; 14.7 16
 analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer)
 JuMP.set_silent(analysis.method.jump) # hide
 solve!(system, analysis)
-
 nothing # hide
 ```
 

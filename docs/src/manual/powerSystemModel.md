@@ -242,7 +242,6 @@ addBus!(system; label = "Bus 1")
 addBus!(system; label = "Bus 2")
 
 addGenerator!(system; label = "Generator 1", bus = "Bus 2", active = 0.5, reactive = 0.1)
-
 nothing # hide
 ```
 
@@ -293,7 +292,6 @@ addBranch!(system; label = "Branch 2", from = "Bus 1", to = "Bus 2", reactance =
 @generator(magnitude = 1.1)
 addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 0.6)
 addGenerator!(system; label = "Generator 2", bus = "Bus 1", active = 0.2)
-
 nothing # hide
 ```
 
@@ -323,7 +321,6 @@ addBus!(system; label = "Bus 1")
 
 @power(pu, pu, pu)
 addBus!(system; label = "Bus 2", active = 0.5)
-
 nothing # hide
 ```
 
@@ -380,7 +377,6 @@ addBus!(system; label = 2, type = 1, angle = -0.2)
 addBranch!(system; label = 1, from = 1, to = 2, reactance = 0.12)
 
 addGenerator!(system; label = 1, bus = 2, active = 0.5, reactive = 0.1)
-
 nothing # hide
 ```
 
@@ -402,7 +398,6 @@ addBus!(system; type = 1, angle = -0.2)
 addBranch!(system; from = 1, to = 2, reactance = 0.12)
 
 addGenerator!(system; bus = 2, active = 0.5, reactive = 0.1)
-
 nothing # hide
 ```
 
@@ -428,7 +423,6 @@ addBranch!(system; from = "Bus 1 HV", to = "Bus 2 HV", reactance = 0.12)
 
 @generator(label = "Generator ?")
 addGenerator!(system; bus = "Bus 2 HV", active = 0.5, reactive = 0.1)
-
 nothing # hide
 ```
 
@@ -452,7 +446,6 @@ addBranch!(system; label = "Branch 1", from = "Bus 2", to = "Bus 3", reactance =
 
 addGenerator!(system; label = "Generator 2", bus = "Bus 1")
 addGenerator!(system; label = "Generator 1", bus = "Bus 3")
-
 nothing # hide
 ```
 
@@ -514,7 +507,6 @@ addBranch!(system; from = "Bus 2", to = "Bus 3", resistance = 0.008, reactance =
 
 acModel!(system)
 dcModel!(system)
-
 nothing # hide
 ```
 
@@ -548,7 +540,6 @@ dcModel!(system)
 
 addBranch!(system; from = "Bus 1", to = "Bus 2", reactance = 0.12, shiftAngle = 0.1745)
 addBranch!(system; from = "Bus 2", to = "Bus 3", resistance = 0.008, reactance = 0.05)
-
 nothing # hide
 ```
 
@@ -594,7 +585,6 @@ addGenerator!(system; label = "Generator 2", bus = "Bus 1", active = 0.2)
 
 acModel!(system)
 dcModel!(system)
-
 nothing # hide
 ```
 
@@ -606,7 +596,6 @@ system.model.ac.nodalMatrix
 Now, let us add a shunt element to `Bus 2`:
 ```@example updateSystem
 updateBus!(system; label = "Bus 2", conductance = 0.4, susceptance = 0.5)
-
 nothing # hide
 ```
 
@@ -623,7 +612,6 @@ Once a branch has been added to the `PowerSystem` type, users have the flexibili
 To illustrate, let us continue with the previous example and modify the parameters of `Branch 1` as follows:
 ```@example updateSystem
 updateBranch!(system; label = "Branch 1", resistance = 0.012, reactance = 0.3)
-
 nothing # hide
 ```
 
@@ -635,7 +623,6 @@ system.model.ac.nodalMatrix
 Next, let us switch the status of `Branch 2` from in-service to out-of-service:
 ```@example updateSystem
 updateBranch!(system; label = "Branch 2", status = 0)
-
 nothing # hide
 ```
 
@@ -650,7 +637,6 @@ system.model.ac.nodalMatrix
 After the last execution of the [`updateBranch!`](@ref updateBranch!) function, the nodal matrices will contain zeros, as demonstrated in the code example. If needed, the user can remove these zeros using the `dropZeros!` function, as shown below:
 ```@example updateSystem
 dropZeros!(system.model.ac)
-
 nothing # hide
 ```
 
@@ -670,7 +656,6 @@ system.bus.supply.active
 Next, we will change the active output power of `Generator 1`:
 ```@example updateSystem
 updateGenerator!(system; label = "Generator 1", active = 0.9)
-
 nothing # hide
 ```
 
@@ -696,7 +681,6 @@ addBus!(system; label = "Bus 1")
 addBus!(system; label = "Bus 2")
 
 addGenerator!(system; label = "Generator 1", bus = "Bus 2")
-
 nothing # hide
 ```
 
@@ -736,7 +720,6 @@ system.generator.cost.reactive.piecewise
 Changing input units from per-units (pu) can be particularly useful since cost functions are usually related to SI units of powers. Let us set active powers in megawatts (MW) and reactive powers in megavolt-amperes reactive (MVAr) :
 ```@example addActiveCost
 @power(MW, MVAr, pu)
-
 nothing # hide
 ```
 

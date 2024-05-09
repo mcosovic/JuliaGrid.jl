@@ -1,5 +1,5 @@
 # [PMU State Estimation](@id PMUStateEstimationManual)
-To perform linear state estimation solely based on PMU data, the initial requirement is to have the `PowerSystem` composite type configured with the AC model, along with the `Measurement` composite type storing measurement data. Subsequently, we can formulate either the weighted least-squares (WLS) or the least absolute value (LAV) PMU state estimation model encapsulated within the type `PMUStateEstimation` using:
+To perform linear state estimation solely based on PMU data, the initial requirement is to have the `PowerSystem` type configured with the AC model, along with the `Measurement` type storing measurement data. Subsequently, we can formulate either the weighted least-squares (WLS) or the least absolute value (LAV) PMU state estimation model encapsulated within the type `PMUStateEstimation` using:
 * [`pmuWlsStateEstimation`](@ref pmuWlsStateEstimation),
 * [`pmuLavStateEstimation`](@ref pmuLavStateEstimation).
 
@@ -36,7 +36,7 @@ Likewise, there are specialized functions dedicated to calculating specific type
 ---
 
 ## [Optimal PMU Placement](@id OptimalPMUPlacementManual)
-Let us define the `PowerSystem` composite type and perform the AC power flow analysis solely for generating data to artificially create measurement values:
+Let us define the `PowerSystem` type and perform the AC power flow analysis solely for generating data to artificially create measurement values:
 ```@example PMUOptimalPlacement
 using JuliaGrid # hide
 @default(unit) # hide
@@ -62,19 +62,17 @@ for iteration = 1:10
     mismatch!(system, analysis)
     solve!(system, analysis)
 end
-
 nothing # hide
 ```
 
 ---
 
 ##### Optimal Solution
-Upon defining the `PowerSystem` composite type, JuliaGrid provides the possibility to determine the minimal number of PMUs required for system observability using the [`pmuPlacement`](@ref pmuPlacement) function:
+Upon defining the `PowerSystem` type, JuliaGrid provides the possibility to determine the minimal number of PMUs required for system observability using the [`pmuPlacement`](@ref pmuPlacement) function:
 ```@example PMUOptimalPlacement
 using GLPK
 
 placement = pmuPlacement(system, GLPK.Optimizer)
-
 nothing # hide
 ```
 
@@ -89,10 +87,13 @@ placement.from
 placement.to
 ```
 
+!!! note "Info"
+    We suggest that readers refer to the tutorial on [Optimal PMU Placement](@ref optimalpmu) for insights into the implementation.
+
 ---
 
 ##### Measurement Data
-Utilizing PMU placement and AC power flow data, which serves as the source for measurement values in this scenario, we can construct the `Measurement` composite type as follows:
+Utilizing PMU placement and AC power flow data, which serves as the source for measurement values in this scenario, we can construct the `Measurement` type as follows:
 ```@example PMUOptimalPlacement
 device = measurement()
 
@@ -109,7 +110,6 @@ for branch in keys(placement.to)
     Iⱼᵢ, ψⱼᵢ = toCurrent(system, analysis; label = branch)
     addPmu!(system, device; to = branch, magnitude = Iⱼᵢ, angle = ψⱼᵢ)
 end
-
 nothing # hide
 ```
 
@@ -119,7 +119,6 @@ print(device.pmu.label, device.pmu.magnitude.mean, device.pmu.angle.mean)
 ```
 
 ---
-
 
 ## [Weighted Least-squares Estimator](@id PMUWLSStateEstimationSolutionManual)
 Let us continue with the previous example, where we defined the `PowerSystem` and `Measurement` types. To establish the PMU state estimation model, we will use the [`pmuWlsStateEstimation`](@ref pmuWlsStateEstimation) function:
@@ -161,7 +160,6 @@ While this approach is suitable for many scenarios, linear PMU state estimation 
 To accommodate this, users have the option to consider correlation when adding each PMU to the `Measurement` type. For instance, let us add a new PMU while considering correlation:
 ```@example PMUOptimalPlacement
 addPmu!(system, device; bus = "Bus 3", magnitude = 1.01, angle = -0.005, correlated = true)
-
 nothing # hide
 ```
 
@@ -190,7 +188,6 @@ The resolution of the WLS state estimation problem using the conventional method
 This approach is suitable when measurement errors are uncorrelated, and the precision matrix remains diagonal. Therefore, as a preliminary step, we need to eliminate the correlation, as we did previously:
 ```@example PMUOptimalPlacement
 updatePmu!(system, device; label = "PMU 5 (Bus 3)", correlated = false)
-
 nothing # hide
 ```
 
@@ -240,6 +237,9 @@ solve!(system, analysis)
 nothing # hide
 ```
 
+!!! note "Info"
+    We suggest that readers refer to the tutorial on [Bad Data Processing](@ref PMUSEBadDataTutorials) for insights into the implementation.
+
 ---
 
 ## [Least Absolute Value Estimator](@id PMULAVtateEstimationSolutionManual)
@@ -280,10 +280,13 @@ print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
 nothing # hide
 ```
 
+!!! note "Info"
+    We suggest that readers refer to the tutorial on [Least Absolute Value Estimation](@ref PMUSELAVTutorials) for insights into the implementation.
+
 ---
 
 ## [Measurement Set Update](@id PMUMeasurementsAlterationManual)
-After establishing the `Measurement` composite type using the [`measurement`](@ref measurement) function, users gain the capability to incorporate new measurement devices or update existing ones.
+After establishing the `Measurement` type using the [`measurement`](@ref measurement) function, users gain the capability to incorporate new measurement devices or update existing ones.
 
 Once updates are completed, users can seamlessly progress towards generating the `PMUStateEstimation` type using the [`pmuWlsStateEstimation`](@ref pmuWlsStateEstimation) or [`pmuLavStateEstimation`](@ref pmuLavStateEstimation) function. Ultimately, resolving the PMU state estimation is achieved through the utilization of the [`solve!`](@ref solve!(::PowerSystem, ::PMUStateEstimation{LinearWLS{Normal}})) function:
 ```@example WLSPMUStateEstimationSolution
@@ -292,7 +295,7 @@ using JuliaGrid # hide
 @default(template) # hide
 
 system = powerSystem()
-device = measurement() # <- Initializing a Measurement instance
+device = measurement() # <- Initialize the Measurement instance
 
 addBus!(system; label = "Bus 1", type = 3)
 addBus!(system; label = "Bus 2", type = 1, active = 0.1, reactive = 0.01)
@@ -309,16 +312,15 @@ addPmu!(system, device; bus = "Bus 1", magnitude = 1.0, angle = 0.0)
 addPmu!(system, device; bus = "Bus 2", magnitude = 0.98, angle = -0.023)
 addPmu!(system, device; from = "Branch 2", magnitude = 0.5, angle = -0.05)
 
-analysis = pmuWlsStateEstimation(system, device) # <- Creating PMUStateEstimation for model
+analysis = pmuWlsStateEstimation(system, device) # <- Build PMUStateEstimation for the model
 solve!(system, analysis)
 
 addPmu!(system, device; to = "Branch 2", magnitude = 0.5, angle = 3.1)
 updatePmu!(system, device; label = "PMU 1", varianceMagnitude = 1e-8)
 updatePmu!(system, device; label = "PMU 3", statusMagnitude = 0, statusAngle = 0)
 
-analysis = pmuWlsStateEstimation(system, device) #<- Creating PMUStateEstimation for new model
+analysis = pmuWlsStateEstimation(system, device) # <- Build PMUStateEstimation for new model
 solve!(system, analysis)
-
 nothing # hide
 ```
 
@@ -328,16 +330,13 @@ nothing # hide
 ---
 
 ## [State Estimation Update](@id PMUStateEstimationUpdateManual)
-An advanced methodology involves users establishing the `PMUStateEstimation` composite type using [`pmuWlsStateEstimation`](@ref pmuWlsStateEstimation) or [`pmuLavStateEstimation`](@ref pmuLavStateEstimation) just once. After this initial setup, users can seamlessly modify existing measurement devices without the need to recreate the `PMUStateEstimation` type.
+An advanced methodology involves users establishing the `PMUStateEstimation` type using [`pmuWlsStateEstimation`](@ref pmuWlsStateEstimation) or [`pmuLavStateEstimation`](@ref pmuLavStateEstimation) just once. After this initial setup, users can seamlessly modify existing measurement devices without the need to recreate the `PMUStateEstimation` type.
 
 This advancement extends beyond the previous scenario where recreating the `Measurement` type was unnecessary, to now include the scenario where `PMUStateEstimation` also does not need to be recreated.
 
 !!! tip "Tip"
     The addition of new measurements after the creation of `PMUStateEstimation` is not practical in terms of reusing the `PMUStateEstimation` type. Instead, we recommend that users create a final set of measurements and then utilize update functions to manage devices, either putting them in-service or out-of-service throughout the process.
 
----
-
-##### Weighted Least-squares Estimator
 We can modify the prior example to achieve the same model without establishing `PMUStateEstimation` twice:
 ```@example WLSPMUStateEstimationSolution
 using JuliaGrid # hide
@@ -345,7 +344,7 @@ using JuliaGrid # hide
 @default(template) # hide
 
 system = powerSystem()
-device = measurement() # <- Initializing a Measurement instance
+device = measurement() # <- Initialize the Measurement instance
 
 addBus!(system; label = "Bus 1", type = 3)
 addBus!(system; label = "Bus 2", type = 1, active = 0.1, reactive = 0.01)
@@ -363,26 +362,20 @@ addPmu!(system, device; bus = "Bus 2", magnitude = 0.98, angle = -0.023)
 addPmu!(system, device; from = "Branch 2", magnitude = 0.5, angle = -0.05)
 addPmu!(system, device; to = "Branch 2", magnitude = 0.5, angle = 3.1, statusAngle = 0)
 
-analysis = pmuWlsStateEstimation(system, device) # <- Creating PMUStateEstimation for model
+analysis = pmuWlsStateEstimation(system, device) # <- Build PMUStateEstimation for the model
 solve!(system, analysis)
 
 updatePmu!(system, device, analysis; label = "PMU 1", varianceMagnitude = 1e-8)
 updatePmu!(system, device, analysis; label = "PMU 3", statusMagnitude = 0, statusAngle = 0)
 updatePmu!(system, device, analysis; label = "PMU 4", statusAngle = 1)
 
-# <- No need for re-creation; we have already updated the existing PMUStateEstimation instance
+# <- No need for re-build; we have already updated the existing PMUStateEstimation instance
 solve!(system, analysis)
-
 nothing # hide
 ```
 
 !!! note "Info"
-    This method removes the need to restart and recreate both the `Measurement` and the `PMUStateEstimation` from the beginning when implementing changes to the existing measurement set. Next, JuliaGrid can reuse symbolic factorizations of LU or LDLt, as long as the nonzero pattern of the gain matrix remains consistent.
-
----
-
-##### Least Absolute Value Estimator
-The same methodology can be applied to the LAV method, thereby circumventing the need to construct an optimization model from scratch.
+    This method removes the need to rebuild both the `Measurement` and the `PMUStateEstimation` from the beginning when implementing changes to the existing measurement set. In the scenario of employing the WLS model, JuliaGrid can reuse the symbolic factorizations of LU or LDLt, provided that the nonzero pattern of the gain matrix remains unchanged.
 
 ---
 
@@ -516,7 +509,3 @@ magnitude, angle = seriesCurrent(system, analysis; label = "Branch 2")
 
 ## [References](@id PMUStateEstimationReferenceManual)
 [1] A. Abur and A. Exposito, *Power System State Estimation: Theory and Implementation*, Taylor & Francis, 2004.
-
-
-
-

@@ -1,8 +1,7 @@
 # [Measurement Model](@id MeasurementModelManual)
+The JuliaGrid supports the type `Measurement` to preserve measurement data, with the following fields: `voltmeter`, `ammeter`, `wattmeter`, `varmeter`, and `pmu`. These fields contain information pertaining to measurements such as bus voltage magnitude, branch current magnitude, active power flow and injection, reactive power flow and injection measurements, and measurements of bus voltage and branch current phasors.
 
-The JuliaGrid supports the composite type `Measurement` to preserve measurement data, with the following fields: `voltmeter`, `ammeter`, `wattmeter`, `varmeter`, and `pmu`. These fields contain information pertaining to measurements such as bus voltage magnitude, branch current magnitude, active power flow and injection, reactive power flow and injection measurements, and measurements of bus voltage and branch current phasors.
-
-The composite type `Measurement` can be created using a function:
+The type `Measurement` can be created using a function:
 * [`measurement`](@ref measurement).
 JuliaGrid supports two modes for populating the `Measurement` type: using built-in functions or using HDF5 files.
 
@@ -23,7 +22,7 @@ Also, JuliaGrid provides macros [`@voltmeter`](@ref @voltmeter), [`@ambmeter`](@
 !!! note "Info"
     It is important to note that measurement devices associated with branches can only be incorporated if the branch is in-service. This reflects JuliaGrid's approach to mimic a network topology processor, where logical data analysis configures the energized components of the power system.
 
-Moreover, it is feasible to modify the parameters of measurement devices. When these functions are executed, all relevant fields within the `Measurement` composite type will be automatically updated. These functions include:
+Moreover, it is feasible to modify the parameters of measurement devices. When these functions are executed, all relevant fields within the `Measurement` type will be automatically updated. These functions include:
 * [`updateVoltmeter!`](@ref updateVoltmeter!),
 * [`updateAmmeter!`](@ref updateAmmeter!),
 * [`updateWattmeter!`](@ref updateWattmeter!),
@@ -31,7 +30,7 @@ Moreover, it is feasible to modify the parameters of measurement devices. When t
 * [`updatePmu!`](@ref updatePmu!).
 
 !!! tip "Tip"
-    The functions for updating measurement devices serve a dual purpose. While their primary function is to modify the `Measurement` composite type, they are also designed to accept various analysis models like AC or DC state estimation models. When feasible, these functions not only modify the `Measurement` type but also adapt the analysis model, often resulting in improved computational efficiency. Detailed instructions on utilizing this feature can be found in dedicated manuals for specific analyses.
+    The functions for updating measurement devices serve a dual purpose. While their primary function is to modify the `Measurement` type, they are also designed to accept various analysis models like AC or DC state estimation models. When feasible, these functions not only modify the `Measurement` type but also adapt the analysis model, often resulting in improved computational efficiency. Detailed instructions on utilizing this feature can be found in dedicated manuals for specific analyses.
 
 ---
 
@@ -48,7 +47,7 @@ Furthermore, we provide users with the ability to modify each specific measureme
 ---
 
 ## [Build Model](@id BuildMeasurementModelManual)
-The [`measurement`](@ref measurement) function generates the `Measurement` composite type and requires a string-formatted path to HDF5 files as input. Alternatively, the `Measurement` can be created without any initial data by initializing it as empty, allowing the user to construct the measurements from scratch.
+The [`measurement`](@ref measurement) function generates the `Measurement` type and requires a string-formatted path to HDF5 files as input. Alternatively, the `Measurement` can be created without any initial data by initializing it as empty, allowing the user to construct the measurements from scratch.
 
 ---
 
@@ -356,7 +355,10 @@ addPmu!(system, device; bus = "Bus 2", magnitude = 0.9, angle = 0, polar = true)
 
 In the case of linear state estimation using PMUs only, both PMUs will be integrated into the rectangular coordinate system because the `polar` keyword is only related to AC state estimation. The treatment of the first PMU assumes error correlation between the real and imaginary parts. Conversely, the treatment of the second PMU assumes no correlation, as it defaults to `correlated = false`.
 
-Next, in AC state estimation, the first PMU measurement will be integrated into the rectangular coordinate system where correlation between the real and imaginary parts exists. The second PMU will be integrated in the polar coordinate system. It is noteworthy that representing measurements in polar coordinates can cause ill-conditioned problems arising from small current magnitudes.
+Next, in AC state estimation, the first PMU measurement will be integrated into the rectangular coordinate system where correlation between the real and imaginary parts exists. The second PMU will be integrated in the polar coordinate system.
+
+!!! tip "Tip"
+    It is noteworthy that expressing current phasor measurements in polar coordinates can lead to ill-conditioned problems due to small current magnitudes, whereas using rectangular representation can resolve this issue.
 
 ---
 
@@ -498,7 +500,6 @@ addVoltmeter!(system, device; label = 1, bus = "Bus 1", magnitude = 1.0)
 
 addAmmeter!(system, device; label = 1, from = "Branch 1", magnitude = 1.1)
 addAmmeter!(system, device; label = 2, to = "Branch 1", magnitude = 0.9)
-
 nothing # hide
 ```
 
@@ -529,7 +530,6 @@ addAmmeter!(system, device; to = "Branch 1", magnitude = 0.9)
 @wattmeter(label = "Wattmeter ?: !")
 addWattmeter!(system, device; bus = "Bus 1", active = 0.6)
 addWattmeter!(system, device; from = "Branch 1", active = 0.3)
-
 nothing # hide
 ```
 
@@ -568,7 +568,6 @@ addWattmeter!(system, device; label = "Wattmeter 1", bus = "Bus 1", active = 0.2
 addWattmeter!(system, device; label = "Wattmeter 4", from = "Branch 1", active = 0.3)
 addWattmeter!(system, device; label = "Wattmeter 3", to = "Branch 1", active = 0.1)
 addWattmeter!(system, device; label = "Wattmeter 5", from = "Branch 2", active = 0.1)
-
 nothing # hide
 ```
 
@@ -582,7 +581,7 @@ If we need to obtain labels in the same order as the wattmeter definitions seque
 label = collect(keys(device.wattmeter.label))
 ```
 
-To isolate the wattmeters located at the buses, both at the from-bus and to-bus ends of branches, users can accomplish this by employing the following code:
+To isolate the wattmeters positioned either at the buses or at the ends of branches (from-bus or to-bus), users can achieve this using the following code:
 ```@repl retrievingLabels
 label[device.wattmeter.layout.bus]
 label[device.wattmeter.layout.from]
@@ -660,7 +659,6 @@ addVarmeter!(system, device, analysis; varianceFrom = 1e-3, statusBus = 0)
 
 @pmu(label = "!", polar = true)
 addPmu!(system, device, analysis; varianceMagnitudeBus = 1e-3)
-
 nothing  # hide
 ```
 
@@ -686,14 +684,13 @@ for (label, index) in system.branch.label
     addWattmeter!(system, device; from = label, active = Pᵢⱼ[index], status = 0)
     addWattmeter!(system, device; to = label, active = Pⱼᵢ[index])
 end
-
 nothing  # hide
 ```
 
 ---
 
 ## [Update Devices](@id UpdateMeasurementDevicesManual)
-After the addition of measurement devices to the `Measurement` composite type, users possess the flexibility to modify all parameters as defined in the function that added these measurement devices.
+After the addition of measurement devices to the `Measurement` type, users possess the flexibility to modify all parameters as defined in the function that added these measurement devices.
 
 ---
 
@@ -753,7 +750,7 @@ In this example, we adjust the magnitude measurement value of the PMU located at
 ---
 
 ## [Measurement Set](@id MeasurementSetManual)
-Once measurement devices are integrated into the `Measurement` composite type, we empower users to create measurement sets in a randomized manner. To be more precise, users can manipulate the status of devices, activating or deactivating them according to specific settings. To illustrate this feature, let us first create a measurement set using the following example:
+Once measurement devices are integrated into the `Measurement` type, we empower users to create measurement sets in a randomized manner. To be more precise, users can manipulate the status of devices, activating or deactivating them according to specific settings. To illustrate this feature, let us first create a measurement set using the following example:
 ```@example measurementSet
 using JuliaGrid # hide
 @default(unit) # hide
@@ -788,7 +785,6 @@ current!(system, analysis)
 addVoltmeter!(system, device, analysis)
 addAmmeter!(system, device, analysis)
 addPmu!(system, device, analysis)
-
 nothing  # hide
 ```
 

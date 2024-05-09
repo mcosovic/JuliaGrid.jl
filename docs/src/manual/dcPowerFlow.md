@@ -261,21 +261,18 @@ addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 3.2)
 
 analysis = dcPowerFlow(system)
 solve!(system, analysis)
-
 nothing # hide
 ```
 
 Now we can calculate the active powers using the following function:
 ```@example ComputationPowersCurrentsLosses
 power!(system, analysis)
-
 nothing # hide
 ```
 
 Next, let us convert the base power unit to megavolt-amperes (MVA):
 ```@example ComputationPowersCurrentsLosses
 @base(system, MVA, V)
-
 nothing # hide
 ```
 

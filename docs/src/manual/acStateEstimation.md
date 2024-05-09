@@ -1,5 +1,5 @@
 # [AC State Estimation](@id ACStateEstimationManual)
-To perform nonlinear or AC state estimation, the initial requirement is to have the `PowerSystem` composite type configured with the AC model, along with the `Measurement` composite type storing measurement data. Next, we can develop either the weighted least-squares (WLS) model, utilizing the Gauss-Newton method, or the least absolute value (LAV) model. These models are encapsulated within the `ACStateEstimation` type:
+To perform nonlinear or AC state estimation, the initial requirement is to have the `PowerSystem` type configured with the AC model, along with the `Measurement` type storing measurement data. Next, we can develop either the weighted least-squares (WLS) model, utilizing the Gauss-Newton method, or the least absolute value (LAV) model. These models are encapsulated within the `ACStateEstimation` type:
 * [`gaussNewton`](@ref gaussNewton),
 * [`acLavStateEstimation`](@ref acLavStateEstimation).
 
@@ -86,11 +86,12 @@ addVarmeter!(system, device; label = "Varmeter 4", bus = "Bus 2", reactive = -0.
 
 addWattmeter!(system, device; label = "Wattmeter 5", bus = "Bus 3", active = -0.30)
 addVarmeter!(system, device; label = "Varmeter 5", bus = "Bus 3", reactive = 0.66)
-
 nothing # hide
 ```
 
-Attempting to solve this system immediately may not be possible because the gain matrix will be singular. To avoid this situation, users can perform observability analysis. JuliaGrid employs standard observability analysis performed on the linear decoupled measurement model. Active power measurements from wattmeters are utilized to estimate bus voltage angles, while reactive power measurements from varmeters are used to estimate bus voltage magnitudes. This necessitates that measurements of active and reactive power come in pairs.
+Attempting to solve this system immediately may not be possible because the gain matrix will be singular. To avoid this situation, users can perform observability analysis.
+
+JuliaGrid employs standard observability analysis performed on the linear decoupled measurement model. Active power measurements from wattmeters are utilized to estimate bus voltage angles, while reactive power measurements from varmeters are used to estimate bus voltage magnitudes. This necessitates that measurements of active and reactive power come in pairs.
 
 !!! note "Info"
     We suggest that readers refer to the tutorial on [Observability Analysis](@ref ACObservabilityAnalysisTutorials) for insights into the implementation.
@@ -103,7 +104,6 @@ However, the initial step involves defining observable islands. JuliaGrid offers
 Now, let us identify flow observable islands:
 ```@example ACSEObservabilityAnalysis
 islands = islandTopologicalFlow(system, device)
-
 nothing # hide
 ```
 
@@ -119,7 +119,6 @@ nothing # hide
 Following that, we will instruct the user on obtaining maximal observable islands:
 ```@example ACSEObservabilityAnalysis
 islands = islandTopological(system, device)
-
 nothing # hide
 ```
 
@@ -136,7 +135,6 @@ It is evident that upon comparing this result with the flow islands, the merging
 Before commencing the restoration of observability in the context of the linear decoupled measurement model and observability analysis, it is imperative to ensure that the system possesses one bus voltage magnitude measurement. This necessity arises from the fact that observable islands are identified based on wattmeters, where wattmeters are tasked with estimating voltage angles. Since one voltage angle is already known from the slack bus, the same principle should be applied to bus voltage magnitudes. Therefore, to address this requirement, we add:
 ```@example ACSEObservabilityAnalysis
 addVoltmeter!(system, device; bus = "Bus 1", magnitude = 1.0)
-
 nothing # hide
 ```
 
@@ -149,7 +147,6 @@ addVarmeter!(system, pseudo; label = "Pseudo-Varmeter 1", bus = "Bus 1", reactiv
 
 addWattmeter!(system, pseudo; label = "Pseudo-Wattmeter 2", from = "Branch 7", active = 0.10)
 addVarmeter!(system, pseudo; label = "Pseudo-Varmeter 2", from = "Branch 7", reactive = 0.01)
-
 nothing # hide
 ```
 
@@ -212,7 +209,6 @@ addWattmeter!(system, device; bus = "Bus 2", active = -0.1, variance = 2e-3)
 @varmeter(label = "Varmeter ? (!)")
 addVarmeter!(system, device; from = "Branch 1", reactive = 0.059, variance = 1e-4)
 addVarmeter!(system, device; bus = "Bus 2", reactive = -0.01, variance = 1e-3)
-
 nothing # hide
 ```
 
@@ -248,7 +244,6 @@ for i = 1:system.bus.number
     analysis.voltage.magnitude[i] = powerFlow.voltage.magnitude[i]
     analysis.voltage.angle[i] = powerFlow.voltage.angle[i]
 end
-
 nothing # hide
 ```
 
@@ -277,6 +272,7 @@ analysis = gaussNewton(system, device)
 for iteration = 1:20
     stopping = solve!(system, analysis)
     if stopping < 1e-8
+        println("Solution Found.")
         break
     end
 end
@@ -296,7 +292,6 @@ The default approach is to include PMUs in the rectangular coordinate system:
 ```@example ACSEWLS
 @pmu(label = "PMU ? (!)")
 addPmu!(system, device; to = "Branch 1", magnitude = 1.05, angle = 3.047)
-
 nothing # hide
 ```
 
@@ -311,7 +306,6 @@ analysis.method.precision
 Lastly, we incorporate correlation into our model by adding a new PMU with the desired error correlation:
 ```@example ACSEWLS
 addPmu!(system, device; bus = "Bus 3", magnitude = 0.95, angle = -0.08, correlated = true)
-
 nothing # hide
 ```
 
@@ -327,14 +321,13 @@ analysis.method.precision
 The second approach involves incorporating these measurements into the polar coordinate system. For instance:
 ```@example ACSEWLS
 addPmu!(system, device; from = "Branch 1", magnitude = 1.048, angle = -0.057, polar = true)
-
 nothing # hide
 ```
 
 This inclusion of PMUs provides more accurate state estimates compared to rectangular inclusion but demands longer computing time. PMUs are handled in the same manner as SCADA measurements. However, this approach is susceptible to ill-conditioned problems arising in polar coordinates due to small values of current magnitudes [[2, 3]](@ref ACStateEstimationReferenceManual).
 
-!!! note "Info"
-    It is important to note that with each individual phasor measurement, we can set the coordinate system, providing flexibility to include some in polar and some in rectangular systems.
+!!! tip "Tip"
+    It is important to note that with each individual phasor measurement, we can set the coordinate system, providing flexibility to include some in polar and some in rectangular systems. This flexibility is particularly valuable because bus voltage phasor measurements are preferably included in a polar coordinate system, while current phasor measurements are best suited to a rectangular coordinate system.
 
 ---
 
@@ -344,7 +337,6 @@ The resolution of the WLS state estimation problem using the conventional method
 This approach is suitable when measurement errors are uncorrelated, and the precision matrix remains diagonal. Therefore, as a preliminary step, we need to eliminate the correlation, as we did previously:
 ```@example ACSEWLS
 updatePmu!(system, device; label = "PMU 2 (Bus 3)", correlated = false)
-
 nothing # hide
 ```
 
@@ -467,7 +459,7 @@ nothing # hide
 ---
 
 ## [Measurement Set Update](@id ACMeasurementsAlterationManual)
-After establishing the `Measurement` composite type using the [`measurement`](@ref measurement) function, users gain the capability to incorporate new measurement devices or update existing ones.
+After establishing the `Measurement` type using the [`measurement`](@ref measurement) function, users gain the capability to incorporate new measurement devices or update existing ones.
 
 Once updates are completed, users can seamlessly progress towards generating the `ACStateEstimation` type using the [`gaussNewton`](@ref gaussNewton) or [`acLavStateEstimation`](@ref acLavStateEstimation) function. Ultimately, resolving the AC state estimation is achieved through the utilization of the [`solve!`](@ref solve!(::PowerSystem, ::ACStateEstimation{NonlinearWLS{Normal}})) function:
 ```@example WLSACStateEstimationSolution
@@ -476,7 +468,7 @@ using JuliaGrid # hide
 @default(template) # hide
 
 system = powerSystem()
-device = measurement() # <- Initializing a Measurement instance
+device = measurement() # <- Initialize the Measurement instance
 
 addBus!(system; label = "Bus 1", type = 3)
 addBus!(system; label = "Bus 2", type = 1, active = 0.1, reactive = 0.01)
@@ -503,7 +495,7 @@ addVarmeter!(system, device; bus = "Bus 2", reactive = -0.01)
 @pmu(label = "PMU ? (!)")
 addPmu!(system, device; bus = "Bus 2", magnitude = 0.976, angle = -0.052)
 
-analysis = gaussNewton(system, device) # <- Creating ACStateEstimation for the defined model
+analysis = gaussNewton(system, device) # <- Build ACStateEstimation for the defined model
 for iteration = 1:20
     stopping = solve!(system, analysis)
     if stopping < 1e-8
@@ -519,14 +511,13 @@ updateVarmeter!(system, device; label = "Varmeter 2 (Bus 2)", reactive = -0.011)
 
 updatePmu!(system, device; label = "PMU 1 (Bus 2)", polar = false)
 
-analysis = gaussNewton(system, device) # <- Creating ACStateEstimation for the updated model
+analysis = gaussNewton(system, device) # <- Build ACStateEstimation for the updated model
 for iteration = 1:20
     stopping = solve!(system, analysis)
     if stopping < 1e-8
         break
     end
 end
-
 nothing # hide
 ```
 
@@ -536,16 +527,13 @@ nothing # hide
 ---
 
 ## [State Estimation Update](@id ACStateEstimationUpdateManual)
-An advanced methodology involves users establishing the `ACStateEstimation` composite type using [`gaussNewton`](@ref gaussNewton) or [`acLavStateEstimation`](@ref acLavStateEstimation) just once. After this initial setup, users can seamlessly modify existing measurement devices without the need to recreate the `ACStateEstimation` type.
+An advanced methodology involves users establishing the `ACStateEstimation` type using [`gaussNewton`](@ref gaussNewton) or [`acLavStateEstimation`](@ref acLavStateEstimation) just once. After this initial setup, users can seamlessly modify existing measurement devices without the need to recreate the `ACStateEstimation` type.
 
 This advancement extends beyond the previous scenario where recreating the `Measurement` type was unnecessary, to now include the scenario where `ACStateEstimation` also does not need to be recreated.
 
 !!! tip "Tip"
     The addition of new measurements after the creation of `ACStateEstimation` is not practical in terms of reusing this type. Instead, we recommend that users create a final set of measurements and then utilize update functions to manage devices, either putting them in-service or out-of-service throughout the process.
 
----
-
-##### Weighted Least-squares Estimator
 We can modify the prior example to achieve the same model without establishing `ACStateEstimation` twice:
 ```@example WLSACStateEstimationSolution
 using JuliaGrid # hide
@@ -553,7 +541,7 @@ using JuliaGrid # hide
 @default(template) # hide
 
 system = powerSystem()
-device = measurement() # <- Initializing a Measurement instance
+device = measurement() # <- Initialize the Measurement instance
 
 addBus!(system; label = "Bus 1", type = 3)
 addBus!(system; label = "Bus 2", type = 1, active = 0.1, reactive = 0.01)
@@ -582,7 +570,7 @@ addVarmeter!(system, device; to = "Branch 3", reactive = -0.044, variance = 1e-5
 @pmu(label = "PMU ? (!)")
 addPmu!(system, device; bus = "Bus 2", magnitude = 0.976, angle = -0.052)
 
-analysis = gaussNewton(system, device) # <- Creating ACStateEstimation for the defined model
+analysis = gaussNewton(system, device) # <- Build ACStateEstimation for the defined model
 for iteration = 1:20
     stopping = solve!(system, analysis)
     if stopping < 1e-8
@@ -598,24 +586,18 @@ updateVarmeter!(system, device, analysis; label = "Varmeter 2 (Bus 2)", reactive
 
 updatePmu!(system, device, analysis; label = "PMU 1 (Bus 2)", polar = false)
 
-# <- No need for re-creation; we have already updated the existing ACStateEstimation instance
+# <- No need for re-build; we have already updated the existing ACStateEstimation instance
 for iteration = 1:20
     stopping = solve!(system, analysis)
     if stopping < 1e-8
         break
     end
 end
-
 nothing # hide
 ```
 
 !!! note "Info"
-    This method removes the need to restart and recreate both the `Measurement` and the `ACStateEstimation` from the beginning when implementing changes to the existing measurement set. Subsequently, JuliaGrid can leverage the symbolic factorizations of LU or LDLt, provided that the nonzero pattern of the gain matrix remains unchanged. This method avoids the need to initialize the AC state estimation model from scratch.
-
----
-
-##### Least Absolute Value Estimator
-The same methodology can be applied to the LAV method, thereby circumventing the need to construct an optimization model from scratch.
+    This method removes the need to rebuild both the `Measurement` and the `ACStateEstimation` from the beginning when implementing changes to the existing measurement set. In the scenario of employing the WLS model, JuliaGrid can reuse the symbolic factorizations of LU or LDLt, provided that the nonzero pattern of the gain matrix remains unchanged.
 
 ---
 
@@ -754,7 +736,6 @@ magnitude, angle = seriesCurrent(system, analysis; label = "Branch 2")
 ```
 
 ---
-
 
 ## [References](@id ACStateEstimationReferenceManual)
 [1] G. Korres, *Observability analysis based on echelon form of a reduced dimensional Jacobian matrix*, IEEE Trans. Power Syst., vol. 26, no. 4, pp. 2572–2573, 2011.

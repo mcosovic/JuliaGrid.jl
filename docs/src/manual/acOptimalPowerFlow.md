@@ -1,8 +1,7 @@
 # [AC Optimal Power Flow](@id ACOptimalPowerFlowManual)
-
 JuliaGrid utilizes the [JuMP](https://jump.dev/JuMP.jl/stable/) package to construct optimal power flow models, allowing users to manipulate these models using the standard functions provided by JuMP. As a result, JuliaGrid supports popular [solvers](https://jump.dev/JuMP.jl/stable/packages/solvers/) mentioned in the JuMP documentation to solve the optimization problem.
 
-To perform the AC optimal power flow, we first need to have the `PowerSystem` composite type that has been created with the AC model. After that, create the `ACOptimalPowerFlow` composite type to establish the AC optimal power flow framework using the function:
+To perform the AC optimal power flow, we first need to have the `PowerSystem` type that has been created with the AC model. After that, create the `ACOptimalPowerFlow` type to establish the AC optimal power flow framework using the function:
 * [`acOptimalPowerFlow`](@ref acOptimalPowerFlow).
 
 To solve the AC optimal power flow problem and acquire bus voltage magnitudes and angles, and generator active and reactive power outputs, make use of the following function:
@@ -59,14 +58,12 @@ cost!(system; label = "Generator 1", reactive = 2, polynomial = [2.0])
 cost!(system; label = "Generator 2", reactive = 1, piecewise = [2.0 4.0; 6.0 8.0])
 
 acModel!(system)
-
 nothing # hide
 ```
 
 Next, the [`acOptimalPowerFlow`](@ref acOptimalPowerFlow) function is utilized to formulate the AC optimal power flow problem:
 ```@example ACOptimalPowerFlow
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
-
 nothing # hide
 ```
 
@@ -117,7 +114,7 @@ JuMP.is_valid(analysis.method.jump, newVariable)
 ---
 
 ## [Constraint Functions](@id DCConstraintFunctionsManual)
-JuliaGrid keeps track of all the references to internally formed constraints in the `constraint` field of the `ACOptimalPowerFlow` composite type. These constraints are divided into six fields:
+JuliaGrid keeps track of all the references to internally formed constraints in the `constraint` field of the `ACOptimalPowerFlow` type. These constraints are divided into six fields:
 ```@repl ACOptimalPowerFlow
 fieldnames(typeof(analysis.method.constraint))
 ```
@@ -206,9 +203,14 @@ print(system.branch.label, analysis.method.constraint.voltage.angle)
 ---
 
 ##### Flow Constraints
-The `flow` field contains references to the inequality constraints associated with the apparent power flow, active power flow, or current flow magnitude limits at the from-bus and to-bus ends of each branch. The type which one of the constraint will be applied is defined according to the `type` keyword within the [`addBranch!`](@ref addBranch!) function, `type = 1` for the apparent power flow, `type = 2` for the active power flow, or `type = 3` for the current flow magnitude. These limits are specified using the `longTerm` keyword within the [`addBranch!`](@ref addBranch!) function.
+The `flow` field contains references to the inequality constraints associated with the apparent power flow, active power flow, or current flow magnitude limits at the from-bus and to-bus ends of each branch. The type which one of the constraint will be applied is defined according to the `type` keyword within the [`addBranch!`](@ref addBranch!) function:
+* `type = 1` for the apparent power flow,
+* `type = 2` for the active power flow,
+* `type = 3` for the current flow magnitude.
 
-By default, the `longTerm` keyword is linked to apparent power (`type = 1`). However, in the example, we configured it to use active power flow by setting `type = 2`. To access the flow constraints of branches at the from-bus end, we can utilize the following code snippet:
+These limits are specified using the `longTerm` keyword within the [`addBranch!`](@ref addBranch!) function. By default, the `longTerm` keyword is linked to apparent power (`type = 1`).
+
+However, in the example, we configured it to use active power flow by setting `type = 2`. To access the flow constraints of branches at the from-bus end, we can utilize the following code snippet:
 ```@repl ACOptimalPowerFlow
 print(system.branch.label, analysis.method.constraint.flow.from)
 ```
@@ -262,12 +264,14 @@ print(system.generator.label, analysis.method.constraint.capability.reactive)
 ```
 
 !!! note "Info"
-    This representation may not provide the most accurate portrayal of the generator's power output behavior. In reality, there is a tradeoff between the active and reactive power outputs of the generators, and JuliaGrid has the capability to integrate this tradeoff into the optimization model. For more details, please refer to the tutorial on [Power Capability Constraints](@ref ACPowerCapabilityConstraintsTutorials).
+    This representation may not fully capture the generator's power output behavior due to the tradeoff between active and reactive power outputs. JuliaGrid can incorporate this tradeoff in its optimization model. For more information, see the tutorial on [Power Capability Constraints](@ref ACPowerCapabilityConstraintsTutorials).
 
 ---
 
 ##### Power Piecewise Constraints
-In the context of cost modelling, the `piecewise` field acts as a reference to the inequality constraints associated with linear piecewise cost functions. These constraints are established using the [`cost!`](@ref cost!) function, with `active = 1` or `reactive = 1` specified when working with linear piecewise cost functions that consist of multiple segments. In our example, only the active power cost of `Generator 2` is modelled as a linear piecewise function with two segments, and JuliaGrid takes care of setting up the appropriate inequality constraints for each segment:
+In the context of cost modelling, the `piecewise` field acts as a reference to the inequality constraints associated with linear piecewise cost functions. These constraints are established using the [`cost!`](@ref cost!) function, with `active = 1` or `reactive = 1` specified when working with linear piecewise cost functions that consist of multiple segments.
+
+In our example, only the active power cost of `Generator 2` is modelled as a linear piecewise function with two segments, and JuliaGrid takes care of setting up the appropriate inequality constraints for each segment:
 ```@repl ACOptimalPowerFlow
 print(system.generator.label, analysis.method.constraint.piecewise.active)
 ```
@@ -280,7 +284,6 @@ analysis.method.variable.actwise[2]
 ```
 
 ---
-
 
 ##### Add Constraints
 Users can effortlessly introduce additional constraints into the defined AC optimal power flow model by utilizing the [`addBranch!`](@ref addBranch!) or [`addGenerator!`](@ref addGenerator!) functions. Specifically, if a user wishes to include a new branch or generator in an already defined `PowerSystem` and `ACOptimalPowerFlow` type:
@@ -446,7 +449,7 @@ Now, let us introduce changes to the power system from the previous example:
 updateGenerator!(system, analysis; label = "Generator 2", maxActive = 0.08)
 ```
 
-Next, solve this new power system. During the execution of the [`solve!`](@ref solve!(::PowerSystem, ::ACOptimalPowerFlow)) function, the primal starting values will first be set, and these values will be defined according to the values given above.
+Next, solve this new power system. During the execution of the [`solve!`](@ref solve!(::PowerSystem, ::ACOptimalPowerFlow)) function, the primal starting values will first be set, and these values will be defined according to the values given above:
 ```@example ACOptimalPowerFlow
 solve!(system, analysis)
 ```
@@ -457,7 +460,7 @@ print(system.generator.label, generator.active, generator.reactive)
 print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
 ```
 
-Users retain the flexibility to reset these initial primal values to their default configurations at any juncture. This can be accomplished by utilizing the active and reactive power outputs of the generators and the initial bus voltage magnitudes and angles extracted from the `PowerSystem` composite type, employing the [`startingPrimal!`](@ref startingPrimal!) function:
+Users retain the flexibility to reset these initial primal values to their default configurations at any juncture. This can be accomplished by utilizing the active and reactive power outputs of the generators and the initial bus voltage magnitudes and angles extracted from the `PowerSystem` type, employing the [`startingPrimal!`](@ref startingPrimal!) function:
 ```@example ACOptimalPowerFlow
 startingPrimal!(system, analysis)
 ```
@@ -500,7 +503,6 @@ cost!(system; label = "Generator 2", active = 1, piecewise = [10.8 12.3; 14.7 16
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
 JuMP.set_silent(analysis.method.jump) # hide
 solve!(system, analysis)
-
 nothing # hide
 ```
 
