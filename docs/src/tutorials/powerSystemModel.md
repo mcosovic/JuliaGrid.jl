@@ -28,7 +28,7 @@ addGenerator!(system; bus = 1, active = 40.0, reactive = 42.4)
 nothing #hide
 ```
 
-The given example provides the set of buses ``\mathcal{N}``  and the set of branches ``\mathcal{E}``:
+The given example provides the set of buses ``\mathcal{N}`` and the set of branches ``\mathcal{E}``:
 ```@repl ACDCModel
 𝒩 = collect(keys(system.bus.label))
 ℰ = [𝒩[system.branch.layout.from] 𝒩[system.branch.layout.to]]
@@ -63,8 +63,7 @@ The equivalent unified ``\pi``-model for a branch ``(i,j) \in \mathcal{E}`` inci
 
 The branch series admittance ``y_{ij}`` is inversely proportional to the branch series impedance ``z_{ij}``:
 ```math
-  y_{ij} = \frac{1}{z_{ij}} =
-  \frac{1}{{r_{ij}} + \text{j}x_{ij}} =
+  y_{ij} = \frac{1}{z_{ij}} = \frac{1}{r_{ij} + \text{j}x_{ij}} =
   \frac{r_{ij}}{r_{ij}^2 + x_{ij}^2} - \text{j}\frac{x_{ij}}{r_{ij}^2 + x_{ij}^2} = g_{ij} + \text{j}b_{ij},
 ```
 where ``r_{ij}`` is a resistance, ``x_{ij}`` is a reactance, ``g_{ij}`` is a conductance and ``b_{ij}`` is a susceptance of the branch.
@@ -82,7 +81,7 @@ Moreover, the `ac` field stores the computed vector of branch series admittances
 
 The branch shunt admittance ``y_{\text{s}ij}`` is equal to:
 ```math
-y_{\text{s}ij} = g_{\text{s}ij} + \text{j} b_{\text{s}ij},
+y_{\text{s}ij} = g_{\text{s}ij} + \text{j}b_{\text{s}ij},
 ```
 where ``g_{\text{s}ij}`` represents the shunt conductance of the branch, and ``b_{\text{s}ij}`` represents the shunt susceptance. Both of these values are positive for real line sections. It is worth noting that while the shunt conductance ``g_{\text{s}ij}`` is often insignificantly small and can be ignored in many cases, it is included in the analyses to ensure comprehensive consideration of all potential scenarios.
 
@@ -110,14 +109,14 @@ These transformer parameters are stored in the vectors ``\bm{\tau} = [\tau_{ij}]
 The currents flowing through shunt admittances denoted as ``y_{\text{s}ij}`` are defined as follows:
 ```math
   \begin{aligned}
-    \bar{I}_{\text{s}i} &= \alpha_{ij} y_{\text{s}ij}\bar{V}_{i},\;\;\; (i,j) \in \mathcal{E} \\
-    \bar{I}_{\text{s}j} &= y_{\text{s}ij}\bar{V}_{j},\;\;\; (i,j) \in \mathcal{E}.
+    \bar{I}_{\text{s}i} &= \alpha_{ij} y_{\text{s}ij}\bar{V}_i, \;\;\; (i,j) \in \mathcal{E} \\
+    \bar{I}_{\text{s}j} &= y_{\text{s}ij}\bar{V}_j, \;\;\; (i,j) \in \mathcal{E}.
   \end{aligned}
 ```
 
 With these specified currents in place, it becomes straightforward to compute both the total active and reactive power that branch shunt elements demand and inject concerning the power system:
 ```math
-  S_{\text{s}ij} = P_{\text{s}ij} + \text{j} Q_{\text{s}ij} = \alpha_{ij} \bar{V}_{i} \bar{I}_{\text{s}i}^* + \bar{V}_{j} \bar{I}_{\text{s}j}^* = y_{\text{s}ij}^*(\alpha_{ij}^2 {V}_{i}^2 + {V}_{j}^2),\;\;\; (i,j) \in \mathcal{E}.
+  S_{\text{s}ij} = P_{\text{s}ij} + \text{j}Q_{\text{s}ij} = \alpha_{ij} \bar{V}_i \bar{I}_{\text{s}i}^* + \bar{V}_j \bar{I}_{\text{s}j}^* = y_{\text{s}ij}^*(\alpha_{ij}^2 {V}_i^2 + {V}_j^2), \;\;\; (i,j) \in \mathcal{E}.
 ```
 
 For real branch sections, the reactive power is negative, ``Q_{\text{s}ij} < 0``, signifying that the branch injects reactive power due to its capacitive nature. The negative sign implies that the power flow direction opposes the assumed direction set by the currents ``\bar{I}_{\text{s}i}`` and ``\bar{I}_{\text{s}j}``. The active power ``P_{\text{s}ij}`` represents active losses within the branch shunt admittances.
@@ -127,12 +126,12 @@ For real branch sections, the reactive power is negative, ``Q_{\text{s}ij} < 0``
 ##### [Branch Series Element](@id BranchSeriesElementTutorials)
 The current flowing through a series admittance, denoted as ``y_{ij}``, is defined as follows:
 ```math
-    \bar{I}_{\text{l}ij} = \alpha_{ij} y_{ij}\bar{V}_{i} - y_{ij}\bar{V}_{i},\;\;\; (i,j) \in \mathcal{E}.
+    \bar{I}_{\text{l}ij} = \alpha_{ij} y_{ij}\bar{V}_i - y_{ij}\bar{V}_i, \;\;\; (i,j) \in \mathcal{E}.
 ```
 
 Consequently, the active and reactive power associated with the branch series element are as follows:
 ```math
-  S_{\text{l}ij} = P_{\text{l}ij} + \text{j} Q_{\text{l}ij} = (\alpha_{ij} \bar{V}_{i} - \bar{V}_{j}) \bar{I}_{\text{l}ij}^* = y_{ij}^* (\alpha_{ij} \bar{V}_{i} - \bar{V}_{j}) (\alpha_{ij} \bar{V}_{i} - \bar{V}_{j})^* ,\;\;\; (i,j) \in \mathcal{E}.
+  S_{\text{l}ij} = P_{\text{l}ij} + \text{j}Q_{\text{l}ij} = (\alpha_{ij} \bar{V}_i - \bar{V}_j) \bar{I}_{\text{l}ij}^* = y_{ij}^* (\alpha_{ij} \bar{V}_i - \bar{V}_j) (\alpha_{ij} \bar{V}_i - \bar{V}_j)^*, \;\;\; (i,j) \in \mathcal{E}.
 ```
 
 The active power ``P_{\text{l}ij}`` accounts for losses originating from the resistance ``r_{ij}`` of the branch, while the reactive power ``Q_{\text{l}ij}`` represents losses resulting from the inductive characteristics of the impedance defined by reactance ``x_{ij}``. This can be observed when the reactive power is positive ``Q_{\text{l}ij} > 0``.
@@ -150,7 +149,7 @@ Using Kirchhoff's circuit laws, the branch model can be described by complex exp
     -\alpha_{ij}{y}_{ij} & {y}_{ij} + y_{\text{s}ij}
   \end{bmatrix}
   \begin{bmatrix}
-    \bar{V}_{i} \\ \bar{V}_{j}
+    \bar{V}_i \\ \bar{V}_j
   \end{bmatrix}.
 ```
 
@@ -164,12 +163,12 @@ The admittance parameters are stored in the vectors ``\mathbf{y}_{\text{ii}} = [
 
 In this context, we have easily derived the active and reactive power flow at the from-bus end of the branch:
 ```math
-  S_{ij} = P_{ij} + \text{j}Q_{ij} = \bar{V}_{i}\left[\cfrac{1}{\tau_{ij}^2}({y}_{ij} + y_{\text{s}ij}) \bar{V}_{i} - \alpha_{ij}^*{y}_{ij} \bar{V}_{j}\right]^*,\;\;\; (i,j) \in \mathcal{E}.
+  S_{ij} = P_{ij} + \text{j}Q_{ij} = \bar{V}_i \left[\cfrac{1}{\tau_{ij}^2}({y}_{ij} + y_{\text{s}ij}) \bar{V}_i - \alpha_{ij}^*{y}_{ij} \bar{V}_j\right]^*, \;\;\; (i,j) \in \mathcal{E}.
 ```
 
 Similarly, we can determine the active and reactive power flow at the to-bus end of the branch:
 ```math
-  {S}_{ji} = P_{ji} + \text{j}Q_{ji} = \bar{V}_{j} \left[-\alpha_{ij}{y}_{ij} \bar{V}_{i} + ({y}_{ij} + y_{\text{s}ij}) \bar{V}_{j}\right]^*,\;\;\; (i,j) \in \mathcal{E}.
+  {S}_{ji} = P_{ji} + \text{j}Q_{ji} = \bar{V}_j \left[-\alpha_{ij}{y}_{ij} \bar{V}_i + ({y}_{ij} + y_{\text{s}ij}) \bar{V}_j\right]^*, \;\;\; (i,j) \in \mathcal{E}.
 ```
 
 Positive values of active or reactive power, ``P_{ij} > 0`` or ``Q_{ij} > 0``, indicate power flow originating from the from-bus and moving towards the to-bus, following the direction of the current ``\bar{I}_{ij}``. Conversely, negative values, ``P_{ij} < 0`` or ``Q_{ij} < 0``, signify power flow in the opposite direction. The same principles apply to ``P_{ji} > 0`` or ``Q_{ji} > 0``, indicating power flow from the to-bus to the from-bus, aligned with the current ``\bar{I}_{ji}``, while negative values, ``P_{ji} < 0`` or ``Q_{ji} < 0``, denote the reverse flow direction.
@@ -197,7 +196,7 @@ According to the [Branch Network Equations](@ref BranchNetworkEquationsTutorials
     -\alpha_{12}{y}_{12} & {y}_{12} + y_{\text{s}12}
   \end{bmatrix}
   \begin{bmatrix}
-    \bar{V}_{1} \\ \bar{V}_{2}
+    \bar{V}_1 \\ \bar{V}_2
   \end{bmatrix}
 ```
 ```math
@@ -209,25 +208,24 @@ According to the [Branch Network Equations](@ref BranchNetworkEquationsTutorials
     -\alpha_{23}{y}_{23} & {y}_{23} + y_{\text{s}23}
   \end{bmatrix}
   \begin{bmatrix}
-    \bar{V}_{2} \\ \bar{V}_{3}
+    \bar{V}_2 \\ \bar{V}_3
   \end{bmatrix}.
 ```
 
 The complex current injections at buses are:
 ```math
   \begin{aligned}
-    \bar{I}_{1} &= \bar{I}_{12} = \cfrac{1}{\tau_{12}^2}({y}_{12} + y_{\text{s}12}) \bar{V}_{1} -\alpha_{12}^*{y}_{12} \bar{V}_{2} \\
-    \bar{I}_{2} &= \bar{I}_{21} + \bar{I}_{23} + \bar{I}_{\text{sh}2} =
-    -\alpha_{12}{y}_{12} \bar{V}_{1} + ({y}_{12} + y_{\text{s}12}) \bar{V}_{2} +
-    \cfrac{1}{\tau_{23}^2}({y}_{23} + y_{\text{s}23}) \bar{V}_{2} -\alpha_{23}^*{y}_{23} \bar{V}_{3} + {y}_{\text{sh}2} \bar{V}_2 \\
-    \bar{I}_{3} &= \bar{I}_{32} = -\alpha_{23}{y}_{23} \bar{V}_{2} + ({y}_{23} + y_{\text{s}23}) \bar{V}_{3}.
+    \bar{I}_1 &= \bar{I}_{12} = \cfrac{1}{\tau_{12}^2}({y}_{12} + y_{\text{s}12}) \bar{V}_1 -\alpha_{12}^*{y}_{12} \bar{V}_2 \\
+    \bar{I}_2 &= \bar{I}_{21} + \bar{I}_{23} + \bar{I}_{\text{sh}2} = -\alpha_{12}{y}_{12} \bar{V}_1 + ({y}_{12} + y_{\text{s}12}) \bar{V}_2 +
+    \cfrac{1}{\tau_{23}^2}({y}_{23} + y_{\text{s}23}) \bar{V}_2 -\alpha_{23}^*{y}_{23} \bar{V}_3 + {y}_{\text{sh}2} \bar{V}_2 \\
+    \bar{I}_3 &= \bar{I}_{32} = -\alpha_{23}{y}_{23} \bar{V}_2 + ({y}_{23} + y_{\text{s}23}) \bar{V}_3.
   \end{aligned}
 ```
 
 The system of equations can be written in the matrix form:
 ```math
   \begin{bmatrix}
-    \bar{I}_{1} \\ \bar{I}_{2} \\ \bar{I}_{3}
+    \bar{I}_1 \\ \bar{I}_2 \\ \bar{I}_3
   \end{bmatrix} =
   \begin{bmatrix}
     \cfrac{1}{\tau_{12}^2}({y}_{12} + y_{\text{s}12}) & -\alpha_{12}^*{y}_{12} & 0 \\
@@ -235,7 +233,7 @@ The system of equations can be written in the matrix form:
     0 & -\alpha_{23}{y}_{23} & {y}_{23} + y_{\text{s}23}
   \end{bmatrix}
   \begin{bmatrix}
-    \bar{V}_{1} \\ \bar{V}_{2} \\ \bar{V}_{3}
+    \bar{V}_1 \\ \bar{V}_2 \\ \bar{V}_3
   \end{bmatrix}.
 ```
 
@@ -257,7 +255,7 @@ where ``\mathbf {\bar {V}} \in \mathbb{C}^{n}`` is the vector of bus complex vol
       \end{aligned}
     ```
 
-When a branch is not incident (or adjacent) to a bus the corresponding element in the nodal admittance matrix ``\mathbf{Y}`` is equal to zero. The nodal admittance matrix ``\mathbf{Y}`` is a sparse (i.e., a small number of elements are non-zeros) for real-world power systems. Although it is often assumed that the matrix ``\mathbf{Y}`` is symmetrical, it is not a general case, for example, in the presence of phase shifting transformers the matrix ``\mathbf{Y}`` is not symmetrical [[2, Sec. 9.6]](@ref ACDCModelReferenceTutorials). JuliaGrid stores both the matrix ``\mathbf{Y}`` and its transpose ``\mathbf{Y}^T`` in the `ac` field of the `PowerSystem` composite type:
+When a branch is not incident (or adjacent) to a bus the corresponding element in the nodal admittance matrix ``\mathbf{Y}`` is equal to zero. The nodal admittance matrix ``\mathbf{Y}`` is a sparse (i.e., a small number of elements are non-zeros) for real-world power systems. Although it is often assumed that the matrix ``\mathbf{Y}`` is symmetrical, it is not a general case, for example, in the presence of phase shifting transformers the matrix ``\mathbf{Y}`` is not symmetrical [[2, Sec. 9.6]](@ref ACDCModelReferenceTutorials). JuliaGrid stores both the matrix ``\mathbf{Y}`` and its transpose ``\mathbf{Y}^T`` in the `ac` field of the `PowerSystem` type:
 ```@repl ACDCModel
 𝐘 = system.model.ac.nodalMatrix
 𝐘ᵀ = system.model.ac.nodalMatrixTranspose
@@ -268,12 +266,12 @@ When a branch is not incident (or adjacent) to a bus the corresponding element i
 ##### [Bus Injections](@id BusInjectionsTutorials)
 From the previous analysis, we can determine the complex current injection at each bus as follows:
 ```math
-  \bar{I}_{i} = \sum\limits_{j = 1}^n {Y}_{ij} \bar{V}_{j},\;\;\; i \in \mathcal{N}.
+  \bar{I}_i = \sum\limits_{j = 1}^n {Y}_{ij} \bar{V}_j, \;\;\; i \in \mathcal{N}.
 ```
 
 Furthermore, the calculation of active and reactive power injection at each bus is expressed by the following equation:
 ```math
-    {S}_{i} = P_i + \text{j}Q_i = \bar{V}_{i}\sum\limits_{j = 1}^n {Y}_{ij}^* \bar{V}_{j}^*,\;\;\; i \in \mathcal{N}.
+    {S}_i = P_i + \text{j}Q_i = \bar{V}_i \sum\limits_{j = 1}^n {Y}_{ij}^* \bar{V}_{j}^*, \;\;\; i \in \mathcal{N}.
 ```
 
 When the values of active or reactive power are positive, ``P_i > 0`` or ``Q_i > 0``, it indicates that the bus is supplying power into the power system. Conversely, negative values, ``P_i < 0`` or ``Q_i < 0``, suggest that the bus is drawing active or reactive power from the power system.
@@ -283,7 +281,7 @@ When the values of active or reactive power are positive, ``P_i > 0`` or ``Q_i >
 ##### [Bus Shunt Element](@id BusShuntElementTutorials)
 In conclusion, based on the previous analysis, we can determine the active and reactive power at the shunt element of each bus using the following equation:
 ```math
-  {S}_{\text{sh}i} = {P}_{\text{sh}i} + \text{j}{Q}_{\text{sh}i} = \bar{V}_{i}\bar{I}_{\text{sh}i}^* = {y}_{\text{sh}i}^*{V}_{i}^2,\;\;\; i \in \mathcal{N}.
+  {S}_{\text{sh}i} = {P}_{\text{sh}i} + \text{j}{Q}_{\text{sh}i} = \bar{V}_{i}\bar{I}_{\text{sh}i}^* = {y}_{\text{sh}i}^*{V}_{i}^2, \;\;\; i \in \mathcal{N}.
 ```
 
 The positive active power value ``{P}_{\text{sh}i} > 0`` indicates that the shunt element is consuming active power. In terms of power flow, this signifies that active power flows from bus ``i \in \mathcal{N}`` towards the ground. A negative reactive power value ``{Q}_{\text{sh}i} < 0`` suggests that the shunt element is injecting reactive power into the power system. This implies that the direction of reactive power is from the ground to bus ``i \in \mathcal{N}``, illustrating the capacitive nature of the shunt component. Conversely, if ``{Q}_{\text{sh}i} > 0``, it indicates an inductive characteristic, implying that the shunt component is absorbing reactive power.
@@ -293,7 +291,7 @@ The positive active power value ``{P}_{\text{sh}i} > 0`` indicates that the shun
 ## [DC Model](@id DCModelTutorials)
 The DC model is obtained by linearisation of the nonlinear model, and it provides an approximate solution. In the typical operating conditions, the difference of bus voltage angles between adjacent buses ``(i,j) \in \mathcal{E}`` is very small ``\theta_{i}-\theta_{j} \approx 0``, which implies ``\cos (\theta_{i}-\theta_{j})\approx 1`` and ``\sin (\theta_{i}-\theta_{j}) \approx \theta_{i}-\theta_{j}``. Further, all bus voltage magnitudes are ``V_i \approx 1``, ``i \in \mathcal{N}``, and all branch shunt admittances and branch resistances can be neglected. This implies that the DC model ignores the reactive powers and transmission losses and takes into account only the active powers.
 
-Therefore, the DC power flow takes only bus voltage angles ``\bm \Theta`` as variables. To create vectors and matrices related to DC or linear analyses, JuliaGrid uses the function [`dcModel!`](@ref dcModel!):
+Therefore, the DC power flow takes only bus voltage angles ``\bm \Theta \in \mathbb{R}^{n}`` as variables. To create vectors and matrices related to DC or linear analyses, JuliaGrid uses the function [`dcModel!`](@ref dcModel!):
 ```@example ACDCModel
 dcModel!(system)
 nothing # hide
@@ -329,7 +327,7 @@ The active power flows are derived as follows:
   \begin{aligned}
     P_{ij} &= \Re\{\bar{V}_{i}\bar{I}_{ij}^*\} =
     \Re \left\{\text{j}\cfrac{1}{x_{ij}}
-    \left[\cfrac{1}{\tau_{ij}^2} - \cfrac{1}{\tau_{ij}}e^{\text{j}(\theta_i - \theta_j - \phi_{ij})} \right]  \right\} \\
+    \left[\cfrac{1}{\tau_{ij}^2} - \cfrac{1}{\tau_{ij}}e^{\text{j}(\theta_i - \theta_j - \phi_{ij})} \right] \right\} \\
     P_{ji} &= \Re\{\bar{V}_{j}\bar{I}_{ji}^*\} =
     \Re \left\{\text{j}\cfrac{1}{x_{ij}}
    \left[1-\cfrac{1}{\tau_{ij}}e^{\text{j}(-\theta_i +\theta_j + \phi_{ij})} \right]  \right\}.
@@ -343,7 +341,7 @@ The real components are:
     P_{ji} &=\cfrac{1}{\tau_{ij}x_{ij}} \sin(\theta_{j} -\theta_{i}+\phi_{ij}) \approx -\cfrac{1}{\tau_{ij} x_{ij}} (\theta_{i} - \theta_{j}-\phi_{ij}),
   \end{aligned}
 ```
-where ``{1}/({\tau_{ij} x_{ij}})`` represents the branch admittance in the DC framework. To recall, the `PowerSystem` composite type stores the reactances as vector ``\mathbf{x} = [x_{ij}]`` in the variable:
+where ``{1}/({\tau_{ij} x_{ij}})`` represents the branch admittance in the DC framework. To recall, the `PowerSystem` type stores the reactances as vector ``\mathbf{x} = [x_{ij}]`` in the variable:
 ```@repl ACDCModel
 𝐱 = system.branch.parameter.reactance
 ```
@@ -491,7 +489,7 @@ The sparse nodal matrix ``\mathbf{B}`` is stored in the `dc` field, and we can a
 ##### [Bus Injection](@id DCBusInjectionTutorials)
 From the previous analysis, the calculation of active power injection at each bus is expressed by:
 ```math
-    P_i = \sum_{j = 1}^n {B}_{ij} \theta_j + P_{\text{tr}i} + P_{\text{sh}i},\;\;\; i \in \mathcal{N}.
+    P_i = \sum_{j = 1}^n {B}_{ij} \theta_j + P_{\text{tr}i} + P_{\text{sh}i}, \;\;\; i \in \mathcal{N}.
 ```
 
 ---

@@ -178,7 +178,6 @@ system14 = powerSystem(string(pathData, "case14test.m"))
     @test analysisLAVUpdate.voltage.magnitude ≈ analysis.voltage.magnitude
     @test analysisLAVUpdate.voltage.angle ≈ analysis.voltage.angle
 
-
     ##### Update Devices and Original WLS Model #######
     updateVoltmeter!(system14, device, analysisWLS; label = 1, status = 0)
     updateVoltmeter!(system14, device, analysisWLS; label = 3, status = 1)

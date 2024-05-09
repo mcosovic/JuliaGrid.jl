@@ -1,5 +1,5 @@
 # [PMU State Estimation](@id PMUStateEstimationTutorials)
-To initiate the process, let us construct the `PowerSystem` composite type and formulate the AC model:
+To initiate the process, let us construct the `PowerSystem` type and formulate the AC model:
 ```@example PMUSETutorial
 using JuliaGrid # hide
 @default(unit) # hide
@@ -49,7 +49,6 @@ Initially, PMUs output phasor measurements in polar coordinates. However, these 
 * ``\mathbf{V}_\mathrm{im} =\big[\Im(\bar{V}_1),\dots,\Im(\bar{V}_n)\big]^T``, representing the imaginary parts of complex bus voltages.
 
 Consequently, the total number of state variables is ``2n``. It is worth noting that in this approach to state estimation, we do not require the slack bus.
-
 
 The primary drawback of this method stems from measurement errors, which are associated with polar coordinates. Consequently, the covariance matrix must be transformed from polar to rectangular coordinates. As a result, errors from a single PMU are correlated, leading to a non-diagonal covariance matrix. Despite this, the covariance matrix is commonly treated as diagonal, impacting the accuracy of the state estimation in such scenarios.
 
@@ -333,7 +332,6 @@ addPmu!(system, device; bus = 1, magnitude = 1.0, angle = 0.0)
 addPmu!(system, device; bus = 2, magnitude = 0.87, angle = -0.15)
 addPmu!(system, device; from = 1, magnitude = 0.30, angle = -0.71)
 addPmu!(system, device; from = 2, magnitude = 0.31, angle = -0.49)
-
 nothing # hide
 ```
 
@@ -356,7 +354,6 @@ To retrieve the vector ``\mathbf z``, containing the means of Gaussian distribut
 𝐳 = analysis.method.mean
 ```
 These values represent measurement values in the rectangular coordinate system as described earlier.
-
 
 ---
 
@@ -456,7 +453,6 @@ Besides the state estimation algorithm, one of the essential state estimation ro
 To illustrate this process, let us introduce a new measurement that contains an obvious outlier:
 ```@example PMUSETutorial
 addPmu!(system, device; bus = 3, magnitude = 2.5, angle = 0.1)
-
 nothing # hide
 ```
 
@@ -513,7 +509,6 @@ This indicates that the measurement labeled as:
 outlier.label
 ```
 is removed from the PMU model and marked as out-of-service. Specifically, either the real or imaginary part of the corresponding measurement is identified as the outlier. Consequently, both parts of the measurement are removed from the PMU state estimation model.
-
 
 Subsequently, we can immediately solve the system again, but this time without the removed measurement:
 ```@example PMUSETutorial
@@ -678,7 +673,6 @@ placement.to
 
 ---
 
-
 ## [Power Analysis](@id PMUPowerAnalysisTutorials)
 Once the computation of voltage magnitudes and angles at each bus is completed, various electrical quantities can be determined. JuliaGrid offers the [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)) function, which enables the calculation of powers associated with buses and branches. Here is an example code snippet demonstrating its usage:
 ```@example PMUSETutorial
@@ -693,7 +687,6 @@ The function stores the computed powers in the rectangular coordinate system. It
 | [Injections](@ref BusInjectionsTutorials)                      | ``\mathbf{P} = [P_i]``                          | ``\mathbf{Q} = [Q_i]``                          |
 | [Generator injections](@ref PMUGeneratorPowerInjectionsManual) | ``\mathbf{P}_{\text{p}} = [P_{\text{p}i}]``     | ``\mathbf{Q}_{\text{p}} = [Q_{\text{p}i}]``     |
 | [Shunt elements](@ref BusShuntElementTutorials)                | ``\mathbf{P}_{\text{sh}} = [{P}_{\text{sh}i}]`` | ``\mathbf{Q}_{\text{sh}} = [{Q}_{\text{sh}i}]`` |
-
 
 | Branch                                                       | Active                                       | Reactive                                     |
 |:-------------------------------------------------------------|:---------------------------------------------|:---------------------------------------------|
@@ -843,5 +836,3 @@ To obtain the vectors of magnitudes ``\mathbf{I}_{\text{l}} = [I_{\text{l}ij}]``
 [4] B. Gou, "Optimal placement of PMUs by integer linear programming," *IEEE Trans. Power Syst.*, vol. 23, no. 3, pp. 1525–1526, Aug. 2008.
 
 [5] B. Xu and A. Abur, "Observability analysis and measurement placement for systems with PMUs," *in Proc. IEEE PES PSCE*, New York, NY, 2004, pp. 943-946 vol.2.
-
-

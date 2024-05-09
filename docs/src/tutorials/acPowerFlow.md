@@ -1,7 +1,7 @@
 # [AC Power Flow](@id ACPowerFlowTutorials)
 JuliaGrid uses standard network components and the [Unified Branch Model](@ref UnifiedBranchModelTutorials) for power flow analysis, allowing load profiles, generator capacities, voltage specifications, contingency analysis, and planning to be defined efficiently.
 
-To begin, let us generate the `PowerSystem` composite type, as illustrated by the following example:
+To begin, let us generate the `PowerSystem` type, as illustrated by the following example:
 ```@example PowerFlowSolution
 using JuliaGrid # hide
 @default(unit) # hide

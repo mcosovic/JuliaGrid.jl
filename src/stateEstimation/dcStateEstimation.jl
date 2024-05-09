@@ -460,4 +460,3 @@ function restoreSlackCoefficient(analysis::DCStateEstimation, slackRange::UnitRa
         se.coefficient[se.coefficient.rowval[i], slack] = elementsRemove[k]
     end
 end
-

@@ -1,5 +1,4 @@
 # [Power Flow](@id PowerFlowAPI)
-
 For further information on this topic, please see the [AC Power Flow](@ref ACPowerFlowManual) or [DC Power Flow](@ref DCPowerFlowManual) sections of the Manual. Below, we have provided a list of functions that can be utilized for power flow analysis.
 
 ---

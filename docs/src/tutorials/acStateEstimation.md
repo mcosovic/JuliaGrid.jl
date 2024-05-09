@@ -1,5 +1,5 @@
 # [AC State Estimation](@id ACStateEstimationTutorials)
-To initiate the process, let us construct the `PowerSystem` composite type and formulate the AC model:
+To initiate the process, let us construct the `PowerSystem` type and formulate the AC model:
 ```@example ACSETutorial
 using JuliaGrid # hide
 @default(unit) # hide
@@ -774,7 +774,6 @@ addVarmeter!(system, device; from = 1, reactive = 0.2, variance = 1e-4)
 @pmu(label = "PMU ?")
 addPmu!(system, device; bus = 1, magnitude = 1.0, angle = 0, polar = true)
 addPmu!(system, device; bus = 3, magnitude = 0.9, angle = -0.2)
-
 nothing # hide
 ```
 
@@ -838,7 +837,6 @@ The Jacobian matrix and factorized gain matrix are stored in the `ACStateEstimat
 𝐔 = analysis.method.factorization.U
 ```
 
-
 Then finally, the function computes the vector of state variable increments using the equation:
 ```math
 		\mathbf \Delta \mathbf x^{(\nu)} = \mathbf G (\mathbf x^{(\nu)})^{-1} \mathbf J (\mathbf x^{(\nu)})^{T} \bm \Sigma^{-1} \mathbf r (\mathbf x^{(\nu)})
@@ -901,7 +899,6 @@ The resolution of the WLS state estimation problem using the conventional method
 This approach is suitable when measurement errors are uncorrelated, and the precision matrix remains diagonal. Therefore, as a preliminary step, we need to eliminate the correlation, as we did previously:
 ```@example ACSETutorial
 updatePmu!(system, device; label = "PMU 2", correlated = false)
-
 nothing # hide
 ```
 
@@ -963,7 +960,6 @@ Besides the state estimation algorithm, one of the essential state estimation ro
 To illustrate this process, let us introduce a new measurement that contains an obvious outlier:
 ```@example ACSETutorial
 addWattmeter!(system, device; bus = 3, active = 5.1, variance = 1e-3)
-
 nothing # hide
 ```
 
@@ -1111,7 +1107,6 @@ Next, we define a vector of state variables according to two additional nonnegat
     \mathbf x = \overline{\mathbf x} - \underline{\mathbf x}
 ```
 
-
 Hence, the optimization problem can be written:
 ```math
   \begin{aligned}
@@ -1147,8 +1142,6 @@ Users can retrieve the estimated bus voltage magnitudes ``\hat{\mathbf V} = [\ha
 𝐕 = analysis.voltage.magnitude
 𝚯 = analysis.voltage.angle
 ```
-
----
 
 ---
 
@@ -1193,7 +1186,6 @@ addVarmeter!(system, device; label = "Varmeter 2", bus = "Bus 2", reactive = -0.
 
 addWattmeter!(system, device; label = "Wattmeter 3", bus = "Bus 3", active = -0.30)
 addVarmeter!(system, device; label = "Varmeter 3", bus = "Bus 3", reactive = 0.52)
-
 nothing # hide
 ```
 
@@ -1215,14 +1207,12 @@ nothing # hide
 As a result, four flow observable islands are identified. The first island comprises `Bus 1` and `Bus 2`, while the second, third, and fourth islands consist of `Bus 3`, `Bus 4`, and `Bus 5`, respectively:
 ```@repl ACObservability
 islands.island
-nothing # hide
 ```
 
 Additionally, users can inspect the tie buses and branches resulting from the observability analysis we conducted:
 ```@repl ACObservability
 islands.tie.bus
 islands.tie.branch
-nothing # hide
 ```
 This tie data will be utilized throughout the restoration step, where we introduce pseudo-measurements to merge the observable flow islands obtained.
 
@@ -1238,7 +1228,6 @@ nothing # hide
 The outcome reveals the identification of two maximal observable islands:
 ```@repl ACObservability
 islands.island
-nothing # hide
 ```
 It is evident that upon comparing this result with the flow islands, the merging of the two injection measurements at `Bus 2` and `Bus 3` consolidated the first, second, and third flow observable islands into a single island.
 
@@ -1246,7 +1235,6 @@ Here we can observe tie data:
 ```@repl ACObservability
 islands.tie.bus
 islands.tie.branch
-nothing # hide
 ```
 Compared to the tie data obtained after detecting flow observable islands, we now have a smaller set, indicating that the restoration step will be more computationally efficient.
 
@@ -1256,7 +1244,6 @@ Compared to the tie data obtained after detecting flow observable islands, we no
 Before commencing the restoration of observability in the context of the linear decoupled measurement model and observability analysis, it is imperative to ensure that the system possesses one bus voltage magnitude measurement. This necessity arises from the fact that observable islands are identified based on wattmeters, where wattmeters are tasked with estimating voltage angles. Since one voltage angle is already known from the slack bus, the same principle should be applied to bus voltage magnitudes. Therefore, to address this requirement, we add:
 ```@example ACObservability
 addVoltmeter!(system, device; bus = "Bus 1", magnitude = 1.0)
-
 nothing # hide
 ```
 
@@ -1266,7 +1253,6 @@ The outcome of the island detection step results in the power system being divid
 * active power injection measurements at tie buses,
 * bus voltage phasor measurements.
 These measurements are retained from the phase where we identify observable islands and are crucial in determining whether or not we need additional pseudo-measurements to be included in the measurement set ``\mathcal{M}``. In this specific example, we do not have active power injection measurements at tie buses remaining after the identification of maximal observable islands. However, if we proceed with flow observable islands to the restoration step, we will have two injection measurements at `Bus 2` and `Bus 3`.
-
 
 However, let us introduce the matrix ``\mathbf M_{\text{r}} \in \mathbb{R}^{r \times m}``, where ``r = |\mathcal{M}_\text{r}|``. This matrix can be conceptualized as the coefficient matrix of a reduced network with ``m`` columns corresponding to islands and ``r`` rows associated with the set ``\mathcal{M}_\text{r}``. More precisely, if we construct the coefficient matrix ``\mathbf H_\text{r}`` linked to the set ``\mathcal{M}_\text{r}`` in the DC framework, the matrix ``\mathbf M_{\text{r}}`` can be constructed by summing the columns of ``\mathbf H_\text{r}`` that belong to a specific island [[9]](@ref ACSEReferenceTutorials).
 
@@ -1316,7 +1302,6 @@ Finally, the `Pseudo-Wattmeter 2`, and consequently `Pseudo-Varmeter 2` measurem
 ```@repl ACObservability
 device.wattmeter.label
 device.varmeter.label
-nothing # hide
 ```
 
 Here, we can confirm that the new measurement set establishes the observable system formed by a single island:
@@ -1354,7 +1339,6 @@ The function stores the computed powers in the rectangular coordinate system. It
 | [Injections](@ref BusInjectionsTutorials)                     | ``\mathbf{P} = [P_i]``                          | ``\mathbf{Q} = [Q_i]``                          |
 | [Generator injections](@ref ACGeneratorPowerInjectionsManual) | ``\mathbf{P}_{\text{p}} = [P_{\text{p}i}]``     | ``\mathbf{Q}_{\text{p}} = [Q_{\text{p}i}]``     |
 | [Shunt elements](@ref BusShuntElementTutorials)               | ``\mathbf{P}_{\text{sh}} = [{P}_{\text{sh}i}]`` | ``\mathbf{Q}_{\text{sh}} = [{Q}_{\text{sh}i}]`` |
-
 
 | Branch                                                     | Active                                       | Reactive                                     |
 |:-----------------------------------------------------------|:---------------------------------------------|:---------------------------------------------|
@@ -1512,4 +1496,3 @@ To obtain the vectors of magnitudes ``\mathbf{I}_{\text{l}} = [I_{\text{l}ij}]``
 [8] H. Horisberger, "Observability analysis for power systems with measurement deficiencies," *IFAC Proceedings Volumes*, vol. 18, no. 7, pp.51–58, 1985.
 
 [9] N. M. Manousakis and G. N. Korres, "Observability analysis for power systems including conventional and phasor measurements," *in Proc. MedPower 2010*, Agia Napa, 2010, pp. 1-8.
-

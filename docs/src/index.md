@@ -156,7 +156,6 @@ solve!(system, analysis)                 # Recompute bus voltage angles with the
 
 ---
 
-
 #### Contributors
  - [Ognjen Kundacina](https://www.linkedin.com/in/ognjen-kundacina-machine-learning-guy/) - The Institute for Artificial Intelligence Research and Development of Serbia
  - [Muhamed Delalic](https://www.linkedin.com/in/muhameddelalic/) - University of Sarajevo, Bosnia and Herzegovina

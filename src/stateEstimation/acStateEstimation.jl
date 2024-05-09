@@ -1195,4 +1195,3 @@ function fix!(residualx::Vector{JuMP.VariableRef}, residualy::Vector{JuMP.Variab
     fix(residualx[index], 0.0; force = true)
     fix(residualy[index], 0.0; force = true)
 end
-

@@ -1,5 +1,4 @@
 # [Configuration Setup](@id configurationSetupAPI)
-
 For further information on this topic, please see the [Power System Model](@ref PowerSystemModelManual) or [Measurement Model](@ref MeasurementModelManual) sections of the Manual. Please note that when using macros, they modify variables within the current scope.
 
 ---

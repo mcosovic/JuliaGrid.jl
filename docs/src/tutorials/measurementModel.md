@@ -16,7 +16,6 @@ addBus!(system; label = 3)
 addBranch!(system; label = 1, from = 1, to = 2)
 addBranch!(system; label = 2, from = 1, to = 3)
 addBranch!(system; label = 3, from = 2, to = 3)
-
 nothing  # hide
 ```
 
@@ -46,7 +45,6 @@ In contrast, WAMS technology utilizes PMUs (Phasor Measurement Units) to provide
 
 !!! ukw "Notation"
     In this section, when referring to a vector ``\mathbf{a}``, we use the notation ``\mathbf{a} = [a_{i}]``, where ``a_i`` represents the element associated measurement ``i \in \mathcal{M}``.
-
 
 ---
 
@@ -84,7 +82,6 @@ A voltmeter ``V_i \in \mathcal{V}`` measures the bus voltage magnitude at bus ``
 ```@example measurementModelTutorials
 addVoltmeter!(system, device; label = "V₁", bus = 1, magnitude = 1.1, variance = 1e-3)
 addVoltmeter!(system, device; label = "V₃", bus = 3, magnitude = 1.0, noise = true)
-
 nothing  # hide
 ```
 
@@ -105,14 +102,12 @@ This set of voltmeters defines vectors of measurement values denoted as ``\mathb
 An ammeter ``I_{ij} \in \mathcal{I}`` measures the magnitude of branch current at the from-bus end of the branch ``(i,j) \in \mathcal{E}``. Let us add this type of ammeter at the first branch between buses `1` and `2`:
 ```@example measurementModelTutorials
 addAmmeter!(system, device; label = "I₁₂", from = 1, magnitude = 0.3, variance = 1e-3)
-
 nothing  # hide
 ```
 
 Additionally, an ammeter can measure the branch current magnitude at the to-bus end of the branch ``(i,j) \in \mathcal{E}``, denoted as ``I_{ji} \in \mathcal{I}``. For example, we can include this type of ammeter at the same branch:
 ```@example measurementModelTutorials
 addAmmeter!(system, device; label = "I₂₁", to = 1, magnitude = 0.2, variance = 1e-3)
-
 nothing  # hide
 ```
 
@@ -133,21 +128,18 @@ This set of ammeters defines vectors of measurement values denoted as ``\mathbf{
 A wattmeter ``P_{i} \in \mathcal{P}`` measures the active power injection at bus ``i \in \mathcal{N}``. Hence, let us add it to the second bus:
 ```@example measurementModelTutorials
 addWattmeter!(system, device; label = "P₂", bus = 2, active = 0.1, variance = 1e-4)
-
 nothing  # hide
 ```
 
 Next, a wattmeter denoted as ``P_{ij} \in \mathcal{P}`` measures the active power flow at the from-bus end of the branch ``(i,j) \in \mathcal{E}``. Let us add this type of wattmeter at the second branch:
 ```@example measurementModelTutorials
 addWattmeter!(system, device; label = "P₁₃", from = 2, active = 0.2, variance = 1e-3)
-
 nothing  # hide
 ```
 
 Moreover, a wattmeter can also measure the active power flow at the to-bus end of the branch ``(i,j) \in \mathcal{E}``, denoted as ``P_{ji} \in \mathcal{P}``. For example, we can include this type of wattmeter at the same branch:
 ```@example measurementModelTutorials
 addWattmeter!(system, device; label = "P₃₁", to = 2, active = 0.3, variance = 1e-3)
-
 nothing  # hide
 ```
 
@@ -168,21 +160,18 @@ This set of wattmeters defines vectors of measurement values denoted as ``\mathb
 A varmeter ``Q_{i} \in \mathcal{Q}`` measures the reactive power injection at bus ``i \in \mathcal{N}``. Hence, let us add it to the first bus:
 ```@example measurementModelTutorials
 addVarmeter!(system, device; label = "Q₁", bus = 1, reactive = 0.01, variance = 1e-2)
-
 nothing  # hide
 ```
 
 Next, a varmeter denoted as ``Q_{ij} \in \mathcal{Q}`` measures the reactive power flow at the from-bus end of the branch ``(i,j) \in \mathcal{E}``. Let us add this type of varmeter at the first branch:
 ```@example measurementModelTutorials
 addVarmeter!(system, device; label = "Q₁₂", from = 1, reactive = 0.02, variance = 1e-3)
-
 nothing  # hide
 ```
 
 Moreover, a varmeter can also measure the reactive power flow at the to-bus end of the branch ``(i,j) \in \mathcal{E}``, denoted as ``Q_{ji} \in \mathcal{Q}``. For example, we can include this type of varmeter at the same branch:
 ```@example measurementModelTutorials
 addVarmeter!(system, device; label = "Q₂₁", to = 1, reactive = 0.03, noise = true)
-
 nothing  # hide
 ```
 
@@ -205,21 +194,18 @@ PMUs measure voltage and current phasors in the polar coordinate system, thus ea
 A PMU ``(V_i, \theta_i) \in \bar{\mathcal{P}}`` measures the voltage phasor at bus ``i \in \mathcal{N}``. Let us integrate this type of PMU at the first bus:
 ```@example measurementModelTutorials
 addPmu!(system, device; label = "V₁, θ₁", bus = 1, magnitude = 1, angle = 0, noise = true)
-
 nothing  # hide
 ```
 
 Next, a PMU ``(I_{ij}, \psi_{ij}) \in \bar{\mathcal{P}}`` measures the branch current magnitude at the from-bus end of the branch ``(i,j) \in \mathcal{E}``. Let us add this type of PMU at the first branch:
 ```@example measurementModelTutorials
 addPmu!(system, device; label = "I₁₂, ψ₁₂", from = 1, magnitude = 0.2, angle = -0.1)
-
 nothing  # hide
 ```
 
 Moreover, a PMU can measure the branch current magnitude at the to-bus end of the branch ``(i,j) \in \mathcal{E}``, denoted as ``(I_{ji}, \psi_{ji}) \in \bar{\mathcal{P}}``. For example, let us include this type of PMU at the same branch:
 ```@example measurementModelTutorials
 addPmu!(system, device; label = "I₂₁, ψ₂₁", to = 1, magnitude = 0.3, angle = -0.2)
-
 nothing  # hide
 ```
 
@@ -227,7 +213,6 @@ Consequently, we establish the set of PMUs ``\bar{\mathcal{P}} \subset \mathcal{
 ```@repl measurementModelTutorials
 𝒫̄ = collect(keys(device.pmu.label))
 ```
-
 
 This set of PMUs establishes vectors representing measurement magnitudes and angles ``\mathbf{z}_{\bar{\mathcal{P}}} = [z_i, z_j]``, along with their corresponding variances ``\mathbf{v}_{\bar{\mathcal{P}}} = [v_i, v_j]``, where ``(i, j) \in \bar{\mathcal{P}}``. These values can be accessed as:
 ```@repl measurementModelTutorials
@@ -266,10 +251,10 @@ It can be demonstrated that the solution to the maximum a posteriori problem can
 ```math
 	\hat{\mathbf x} = \mathrm{arg}\min_{\mathbf{x}} \sum_{i=1}^k\cfrac{[z_i-h_i(\mathbf x)]^2}{v_i}.
 ```
+
 The state estimate, denoted as ``\hat{\mathbf x}``, resulting from the solution to the above optimization problem, is known as the weighted least-squares estimator. Both the maximum likelihood and weighted least-squares estimators are equivalent to the maximum a posteriori solution [[4, Sec. 8.6]](@ref MeasurementModelReferenceTutorials).
 
 ---
-
 
 ## [References](@id MeasurementModelReferenceTutorials)
 [1] F. C. Schweppe and D. B. Rom, "Power system static-state estimation, part II: Approximate model," *IEEE Trans. Power Syst.*, vol. PAS-89, no. 1, pp. 125-130, Jan. 1970.
@@ -281,4 +266,3 @@ The state estimate, denoted as ``\hat{\mathbf x}``, resulting from the solution 
 [4] D. Barber, *Bayesian Reasoning and Machine Learning*, Cambridge University Press, 2012.
 
 [5] A. Wood and B. Wollenberg, *Power Generation, Operation, and Control*, Wiley, 1996.
-

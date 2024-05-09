@@ -344,7 +344,6 @@ function addCapability(jump::JuMP.Model, variable::VariableRef, ref::Dict{Int64,
     return jump, ref
 end
 
-
 ######### Voltage Magnitude Constraints ##########
 function addMagnitude(system::PowerSystem, jump::JuMP.Model, magnitude::Vector{VariableRef}, ref::Dict{Int64, JuMP.ConstraintRef}, index::Int64)
     bus = system.bus

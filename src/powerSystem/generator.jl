@@ -653,7 +653,6 @@ function updateGenerator!(system::PowerSystem, analysis::ACOptimalPowerFlow;
 
         @objective(jump, Min, objective.quadratic + sum(objective.nonlinear.active[i] for i in keys(objective.nonlinear.active)) + sum(objective.nonlinear.reactive[i] for i in keys(objective.nonlinear.reactive)))
 
-
         remove!(jump, constraint.capability.active, index)
         remove!(jump, constraint.capability.reactive, index)
         addCapability(jump, variable.active[index], constraint.capability.active, generator.capability.minActive, generator.capability.maxActive, index)

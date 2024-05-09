@@ -142,7 +142,6 @@ nothing # hide
 !!! note "Info"
     We suggest that readers refer to the tutorial on [Bad Data Processing](@ref DCSEBadDataTutorials) for insights into the implementation.
 
-
 ---
 
 ## [Least Absolute Value Estimator](@id DCLAVtateEstimationSolutionManual)

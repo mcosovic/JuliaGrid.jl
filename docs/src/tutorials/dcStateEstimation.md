@@ -1,5 +1,5 @@
 # [DC State Estimation](@id DCStateEstimationTutorials)
-To initiate the process, let us construct the `PowerSystem` composite type and formulate the DC model:
+To initiate the process, let us construct the `PowerSystem` type and formulate the DC model:
 ```@example DCSETutorial
 using JuliaGrid # hide
 @default(unit) # hide
@@ -307,7 +307,6 @@ Besides the state estimation algorithm, one of the essential state estimation ro
 To illustrate this process, let us introduce a new measurement that contains an obvious outlier:
 ```@example DCSETutorial
 addWattmeter!(system, device; label = "P₁", bus = 1, active = 13.1, variance = 1e-4)
-
 nothing # hide
 ```
 
@@ -364,7 +363,6 @@ This indicates that the measurement labeled as:
 outlier.label
 ```
 is removed from the DC model and marked as out-of-service.
-
 
 Subsequently, we can immediately solve the system again, but this time without the removed measurement:
 ```@example DCSETutorial

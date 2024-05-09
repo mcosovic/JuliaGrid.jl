@@ -340,7 +340,6 @@ function addPmu!(system::PowerSystem, device::Measurement, analysis::AC;
             pmu.magnitude.variance[pmu.number + 1] = topu(varianceMagnitudeTo, default.varianceMagnitudeTo, prefix.currentMagnitude, baseCurrentToInv)
             pmu.angle.variance[pmu.number + 1] = topu(varianceAngleTo, default.varianceAngleTo, prefix.currentAngle, 1.0)
 
-
             if noise
                 pmu.magnitude.mean[pmu.number] = analysis.current.from.magnitude[i] + pmu.magnitude.variance[pmu.number]^(1/2) * randn(1)[1]
                 pmu.angle.mean[pmu.number] = analysis.current.from.angle[i] + pmu.angle.variance[pmu.number]^(1/2) * randn(1)[1]

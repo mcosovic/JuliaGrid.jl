@@ -1,6 +1,5 @@
 # [DC Optimal Power Flow](@id DCOptimalPowerFlowTutorials)
-
-To begin, let us generate the `PowerSystem` composite type, as illustrated by the following example:
+To begin, let us generate the `PowerSystem`  type, as illustrated by the following example:
 ```@example DCOptimalPowerFlow
 using JuliaGrid # hide
 using JuMP, HiGHS
@@ -24,7 +23,6 @@ addGenerator!(system; label = 2, bus = 2, active = 0.2, maxActive = 0.3)
 
 cost!(system; label = 1, active = 2, polynomial = [1100.2; 500; 80])
 cost!(system; label = 2, active = 1, piecewise =  [10.85 12.3; 14.77 16.8; 18 18.1])
-
 nothing # hide
 ```
 
@@ -326,7 +324,3 @@ Similarly, the resulting [active power flows](@ref DCBranchNetworkEquationsTutor
 ```@repl DCOptimalPowerFlow
 𝐏ⱼ = analysis.power.to.active
 ```
-
-
-
-

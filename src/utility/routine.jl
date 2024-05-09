@@ -301,7 +301,6 @@ function sparseFactorization!(A::SparseMatrixCSC{Float64,Int64}, factorization::
     return ldlt!(factorization, A)
 end
 
-
 function sparseFactorization(A::SparseMatrixCSC{Float64,Int64}, factorization::SuiteSparse.SPQR.QRSparse{Float64, Int64})
     return qr(A)
 end

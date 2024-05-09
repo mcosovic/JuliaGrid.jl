@@ -1,6 +1,5 @@
 # [AC Optimal Power Flow](@id ACOptimalPowerFlowTutorials)
-
-To begin, let us generate the `PowerSystem` composite type, as illustrated by the following example:
+To begin, let us generate the `PowerSystem` type, as illustrated by the following example:
 ```@example ACOptimalPowerFlow
 using JuliaGrid # hide
 using JuMP, Ipopt
@@ -25,7 +24,6 @@ cost!(system; label = 2, active = 1, piecewise =  [10.8 12.3; 14.7 16.8; 18 18.1
 
 cost!(system; label = 1, reactive = 1, piecewise = [10.0 20.0; 20.0 40.0])
 cost!(system; label = 2, reactive = 2, polynomial = [2.0])
-
 nothing # hide
 ```
 
@@ -498,7 +496,6 @@ The function stores the computed powers in the rectangular coordinate system. It
 | [Generator injections](@ref OptGeneratorPowerInjectionsManual) | ``\mathbf{P}_{\text{p}} = [P_{\text{p}i}]``     | ``\mathbf{Q}_{\text{p}} = [Q_{\text{p}i}]``     |
 | [Shunt elements](@ref BusShuntElementTutorials)                | ``\mathbf{P}_{\text{sh}} = [{P}_{\text{sh}i}]`` | ``\mathbf{Q}_{\text{sh}} = [{Q}_{\text{sh}i}]`` |
 
-
 | Branch                                                     | Active                                       | Reactive                                     |
 |:-----------------------------------------------------------|:---------------------------------------------|:---------------------------------------------|
 | [From-bus end flows](@ref BranchNetworkEquationsTutorials) | ``\mathbf{P}_{\text{i}} = [P_{ij}]``         | ``\mathbf{Q}_{\text{i}} = [Q_{ij}]``         |
@@ -642,4 +639,3 @@ To obtain the vectors of magnitudes ``\mathbf{I}_{\text{l}} = [I_{\text{l}ij}]``
 
 ## [References](@id ACOptimalPowerFlowSolutionReferenceTutorials)
 [1] R. D. Zimmerman, C. E. Murillo-Sanchez, *MATPOWER User’s Manual*, Version 7.0. 2019.
-

@@ -552,4 +552,3 @@ function pushIndirect!(jac::SparseModel, fromIsland::Int64, toIsland::Int64)
     push!(jac.col, toIsland)
     push!(jac.val, -1)
 end
-
