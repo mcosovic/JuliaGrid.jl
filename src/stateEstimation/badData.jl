@@ -68,7 +68,7 @@ function residualTest!(system::PowerSystem, device::Measurement, analysis::DCSta
     JGi = se.coefficient * gainInverse
     idx = findall(!iszero, se.coefficient)
     c = fill(0.0, size(se.coefficient, 1))
-    for i in idx
+    @inbounds for i in idx
         c[i[1]] += JGi[i] * se.coefficient[i]
     end
 
@@ -91,7 +91,7 @@ function residualTest!(system::PowerSystem, device::Measurement, analysis::DCSta
         bad.detect = true
 
         colIndecies = findall(!iszero, se.coefficient[bad.index, :])
-        for col in colIndecies
+        @inbounds for col in colIndecies
             se.coefficient[bad.index, col] = 0.0
         end
         se.mean[bad.index] = 0.0
@@ -133,7 +133,7 @@ function residualTest!(system::PowerSystem, device::Measurement, analysis::PMUSt
     JGi = se.coefficient * gainInverse
     idx = findall(!iszero, se.coefficient)
     c = fill(0.0, size(se.coefficient, 1))
-    for i in idx
+    @inbounds for i in idx
         c[i[1]] += JGi[i] * se.coefficient[i]
     end
 
@@ -161,7 +161,7 @@ function residualTest!(system::PowerSystem, device::Measurement, analysis::PMUSt
         end
 
         colIndecies = findall(!iszero, se.coefficient[bad.index, :])
-        for col in colIndecies
+        @inbounds for col in colIndecies
             se.coefficient[bad.index, col] = 0.0
         end
         se.mean[bad.index] = 0.0
@@ -217,7 +217,7 @@ function residualTest!(system::PowerSystem, device::Measurement, analysis::ACSta
     JGi = se.jacobian * gainInverse
     idx = findall(!iszero, se.jacobian)
     c = fill(0.0, size(se.jacobian, 1))
-    for i in idx
+    @inbounds for i in idx
         c[i[1]] += JGi[i] * se.jacobian[i]
     end
 
@@ -335,7 +335,7 @@ function etree(A)
     n = size(A, 2)
     parent = fill(0, n)
     ancestor = fill(0, n)
-    for k in 1:n, p in A.colptr[k]:(A.colptr[k + 1] - 1)
+    @inbounds for k in 1:n, p in A.colptr[k]:(A.colptr[k + 1] - 1)
         i = A.rowval[p]
         while i != 0 && i < k
             inext = ancestor[i]
@@ -349,7 +349,7 @@ function etree(A)
 
     head = fill(0, n)
     next = fill(0, n)
-    for j in n:-1:1
+    @inbounds for j in n:-1:1
         if parent[j] == 0
             continue
         end
@@ -357,7 +357,7 @@ function etree(A)
         head[parent[j]] = j
     end
     stack = Int64[]
-    for j in 1:n
+    @inbounds for j in 1:n
         if parent[j] != 0
             continue
         end
@@ -389,7 +389,7 @@ function symbfact(A, parent)
     row = Int64[]; sizehint!(row, n)
 
     visited = falses(n)
-    for k = 1:m
+    @inbounds for k = 1:m
         visited = falses(n)
         visited[k] = true
         for p in Ap[k]:(Ap[k + 1] - 1)
@@ -413,7 +413,7 @@ end
 ### The sparse inverse subset of a real sparse square matrix
 # Copyright 2011, Timothy A. Davis
 # http://www.suitesparse.com
-@inbounds function sparseinv(L, U, d, p, q, Rs, R)
+function sparseinv(L, U, d, p, q, Rs, R)
     Zpattern = R + R'
     n = size(Zpattern, 1)
 
@@ -428,7 +428,7 @@ end
     Zcolptr = Zpattern.colptr
     Zrowval = Zpattern.rowval
     flag = true
-    for j = 1:n
+    @inbounds for j = 1:n
         pdiag = -1
         for p = Zcolptr[j]:(Zcolptr[j + 1] - 1)
             if pdiag == -1 && Zrowval[p] == j
@@ -443,7 +443,7 @@ end
         Zdiagp[j] = pdiag
     end
 
-    if flag
+    @inbounds if flag
         for k = 1:n
             Lmunch[k] = L.colptr[k + 1] - 1
         end
@@ -486,7 +486,7 @@ end
     end
 
     idx = findall(!iszero, Zpattern)
-    for (k, i) in enumerate(idx)
+    @inbounds for (k, i) in enumerate(idx)
         Zpattern[i] = Zx[k]
     end
 

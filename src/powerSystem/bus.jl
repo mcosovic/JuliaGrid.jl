@@ -71,7 +71,7 @@ function addBus!(system::PowerSystem;
 
     push!(bus.layout.type, unitless(type, default.type))
     if !(bus.layout.type[end] in [1, 2, 3])
-        throw(ErrorException("The value $type of the type keyword is illegal."))
+        throw(ErrorException("The value $type of the bus type keyword is illegal."))
     end
     if bus.layout.type[end] == 3
         if bus.layout.slack != 0

@@ -450,7 +450,7 @@ function updateGenerator!(system::PowerSystem, analysis::Union{ACPowerFlow{Newto
     if system.bus.layout.type[indexBus] in [2, 3]
         index = system.bus.supply.generator[indexBus][1]
         analysis.voltage.magnitude[indexBus] = generator.voltage.magnitude[index]
-     end
+    end
 end
 
 function updateGenerator!(system::PowerSystem, analysis::ACPowerFlow{GaussSeidel};

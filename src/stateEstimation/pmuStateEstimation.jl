@@ -103,7 +103,7 @@ function pmuStateEstimationWLS(system::PowerSystem, device::Measurement)
 
     nonZeroElement = 0
     nonZeroPrecision = 0
-    for i = 1:pmu.number
+    @inbounds for i = 1:pmu.number
         if pmu.layout.bus[i]
             nonZeroElement += 2
         else
@@ -129,7 +129,7 @@ function pmuStateEstimationWLS(system::PowerSystem, device::Measurement)
     count = 1
     rowindex = 1
     cntPrec = 1
-    for (i, k) in enumerate(pmu.layout.index)
+    @inbounds for (i, k) in enumerate(pmu.layout.index)
         cosAngle = cos(pmu.angle.mean[i])
         sinAngle = sin(pmu.angle.mean[i])
 
@@ -308,7 +308,7 @@ function pmuLavStateEstimation(system::PowerSystem, device::Measurement, (@nospe
     objective = @expression(jump, AffExpr())
     residual = Dict{Int64, JuMP.ConstraintRef}()
     count = 1
-    for (i, k) in enumerate(pmu.layout.index)
+    @inbounds for (i, k) in enumerate(pmu.layout.index)
         if pmu.magnitude.status[i] == 1 && pmu.angle.status[i] == 1
             if pmu.layout.bus[i]
                 cosAngle = cos(pmu.angle.mean[i])
@@ -453,7 +453,7 @@ function solve!(system::PowerSystem, analysis::PMUStateEstimation{LinearWLS{Norm
         analysis.voltage.angle = similar(analysis.voltage.magnitude)
     end
 
-    for i = 1:bus.number
+    @inbounds for i = 1:bus.number
         voltage = complex(voltageRectangular[i], voltageRectangular[i + bus.number])
         analysis.voltage.magnitude[i] = abs(voltage)
         analysis.voltage.angle[i] = angle(voltage)
@@ -465,7 +465,7 @@ function solve!(system::PowerSystem, analysis::PMUStateEstimation{LinearWLS{Orth
     se = analysis.method
     bus = system.bus
 
-    for i = 1:se.number
+    @inbounds for i = 1:se.number
         se.precision.nzval[i] = sqrt(se.precision.nzval[i])
     end
 
@@ -478,13 +478,13 @@ function solve!(system::PowerSystem, analysis::PMUStateEstimation{LinearWLS{Orth
         analysis.voltage.angle = similar(analysis.voltage.magnitude)
     end
 
-    for i = 1:bus.number
+    @inbounds for i = 1:bus.number
         voltage = complex(voltageRectangular[i], voltageRectangular[i + bus.number])
         analysis.voltage.magnitude[i] = abs(voltage)
         analysis.voltage.angle[i] = angle(voltage)
     end
 
-    for i = 1:se.number
+    @inbounds for i = 1:se.number
         se.precision.nzval[i] ^= 2
     end
 end
@@ -492,6 +492,7 @@ end
 function solve!(system::PowerSystem, analysis::PMUStateEstimation{LAV})
     se = analysis.method
     bus = system.bus
+
     @inbounds for i = 1:system.bus.number
         JuMP.set_start_value(se.statex[i]::JuMP.VariableRef, analysis.voltage.magnitude[i] * cos(analysis.voltage.angle[i]))
         JuMP.set_start_value(se.statex[i + bus.number]::JuMP.VariableRef, analysis.voltage.magnitude[i] * sin(analysis.voltage.angle[i]))
@@ -504,7 +505,7 @@ function solve!(system::PowerSystem, analysis::PMUStateEstimation{LAV})
         analysis.voltage.angle = similar(analysis.voltage.magnitude)
     end
 
-    for i = 1:bus.number
+    @inbounds for i = 1:bus.number
         voltageReal = value(se.statex[i]::JuMP.VariableRef) - value(se.statey[i]::JuMP.VariableRef)
         voltageImag = value(se.statex[i + bus.number]::JuMP.VariableRef) - value(se.statey[i + bus.number]::JuMP.VariableRef)
         voltage = complex(voltageReal, voltageImag)
@@ -603,7 +604,7 @@ function pmuPlacement(system::PowerSystem, (@nospecialize optimizerFactory);
         ac.pattern += 1
     end
 
-    for i = 1:bus.number
+    @inbounds for i = 1:bus.number
         angleJacobian = @expression(jump, AffExpr())
         for j in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
             k = ac.nodalMatrix.rowval[j]
@@ -615,7 +616,7 @@ function pmuPlacement(system::PowerSystem, (@nospecialize optimizerFactory);
     @objective(jump, Min, sum(placement))
     optimize!(jump)
 
-    for i = 1:bus.number
+    @inbounds for i = 1:bus.number
         if value(placement[i]) == 1
             placementPmu.bus[iterate(bus.label, i)[1][1]] = i
             for j = 1:branch.number

@@ -179,10 +179,7 @@ function addBranch!(system::PowerSystem, analysis::ACPowerFlow{FastNewtonRaphson
     minDiffAngle::A = missing, maxDiffAngle::A = missing,
     longTerm::A = missing, shortTerm::A = missing, emergency::A = missing, type::A = missing)
 
-    bus = system.bus
     branch = system.branch
-    active = analysis.method.active
-    reactive = analysis.method.reactive
 
     addBranch!(system; label, from, to, status, resistance, reactance, susceptance,
     conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, longTerm, shortTerm,
@@ -602,7 +599,7 @@ macro branch(kwargs...)
         parameter::Symbol = kwarg.args[1]
 
         if hasfield(BranchTemplate, parameter)
-            if !(parameter in [:status; :type; :label])
+            if !(parameter in [:status; :type; :label; :turnsRatio])
                 container::ContainerTemplate = getfield(template.branch, parameter)
                 if parameter in [:resistance; :reactance]
                     prefixLive = prefix.impedance
@@ -627,6 +624,8 @@ macro branch(kwargs...)
             else
                 if parameter == :status
                     setfield!(template.branch, parameter, Int8(eval(kwarg.args[2])))
+                elseif parameter == :turnsRatio
+                    setfield!(template.branch, parameter, Float64(eval(kwarg.args[2])))
                 elseif parameter == :label
                     label = string(kwarg.args[2])
                     if contains(label, "?")

@@ -104,7 +104,7 @@ function dcStateEstimationWLS(system::PowerSystem, device::Measurement)
     end
 
     nonZeroElement = 0
-    for (i, index) in enumerate(wattmeter.layout.index)
+    @inbounds for (i, index) in enumerate(wattmeter.layout.index)
         if wattmeter.layout.bus[i]
             nonZeroElement += (dc.nodalMatrix.colptr[index + 1] - dc.nodalMatrix.colptr[index])
         else
@@ -112,7 +112,7 @@ function dcStateEstimationWLS(system::PowerSystem, device::Measurement)
         end
     end
 
-    for i = 1:pmu.number
+    @inbounds for i = 1:pmu.number
         if pmu.layout.bus[i]
             nonZeroElement += 1
         end
@@ -126,7 +126,7 @@ function dcStateEstimationWLS(system::PowerSystem, device::Measurement)
     precision = spdiagm(0 => mean)
 
     count = 1
-    for (i, k) in enumerate(wattmeter.layout.index)
+    @inbounds for (i, k) in enumerate(wattmeter.layout.index)
         precision.nzval[i] = (1 / wattmeter.active.variance[i])
 
         status = wattmeter.active.status[i]
@@ -163,7 +163,7 @@ function dcStateEstimationWLS(system::PowerSystem, device::Measurement)
 
     rowindex = wattmeter.number + 1
     slackAngle = bus.voltage.angle[bus.layout.slack]
-    for i = 1:pmu.number
+    @inbounds for i = 1:pmu.number
         if pmu.layout.bus[i]
             status = pmu.angle.status[i]
 
@@ -256,7 +256,7 @@ function dcLavStateEstimation(system::PowerSystem, device::Measurement, (@nospec
 
     objective = @expression(jump, AffExpr())
     residual = Dict{Int64, JuMP.ConstraintRef}()
-    for (i, k) in enumerate(wattmeter.layout.index)
+    @inbounds for (i, k) in enumerate(wattmeter.layout.index)
         if device.wattmeter.active.status[i] == 1
             if wattmeter.layout.bus[i]
                 angleCoeff = @expression(jump, AffExpr())
@@ -286,7 +286,7 @@ function dcLavStateEstimation(system::PowerSystem, device::Measurement, (@nospec
     end
 
     slackAngle = bus.voltage.angle[bus.layout.slack]
-    for (i, k) in enumerate(wattmeter.number + 1:deviceNumber)
+    @inbounds for (i, k) in enumerate(wattmeter.number + 1:deviceNumber)
         if pmu.layout.bus[i]
             if pmu.angle.status[i] == 1
                 busIndex = pmu.layout.index[i]
@@ -427,7 +427,7 @@ function solve!(system::PowerSystem, analysis::DCStateEstimation{LAV})
 
     JuMP.optimize!(se.jump)
 
-    for i = 1:system.bus.number
+    @inbounds for i = 1:system.bus.number
         analysis.voltage.angle[i] = value(se.statex[i]::JuMP.VariableRef) - value(se.statey[i]::JuMP.VariableRef) + slackAngle
     end
 end

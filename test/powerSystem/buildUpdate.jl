@@ -279,3 +279,137 @@ end
     equalStruct(system.base.power, systemSI.base.power)
     equalStruct(system.base.voltage, systemSI.base.voltage)
 end
+
+@testset "Build Power System Data Using Macros" begin
+    @default(unit)
+    @default(template)
+    system = powerSystem()
+
+    ################ Bus Macro ################
+    @bus(label = "Bus ?", type = 2, active = 0.1, reactive = -0.2, conductance = 1e-2, susceptance = 1,
+    magnitude = 1.1, angle = 0.2, minMagnitude = 0.8, maxMagnitude = 0.9, base = 100e3, area = 2, lossZone = 3)
+
+    ####### Test Bus Data #######
+    addBus!(system)
+    @test system.bus.label["Bus 1"] == 1
+    @test system.bus.layout.type[1] == 2
+    @test system.bus.demand.active[1] == 0.1
+    @test system.bus.demand.reactive[1] == -0.2
+    @test system.bus.shunt.conductance[1] == 1e-2
+    @test system.bus.shunt.susceptance[1] == 1
+    @test system.bus.voltage.magnitude[1] == 1.1
+    @test system.bus.voltage.angle[1] == 0.2
+    @test system.bus.voltage.minMagnitude[1] == 0.8
+    @test system.bus.voltage.maxMagnitude[1] == 0.9
+    @test system.base.voltage.value[1] == 100e3
+    @test system.bus.layout.area[1] == 2
+    @test system.bus.layout.lossZone[1] == 3
+
+    addBus!(system; type = 1, active = 0.3, reactive = -0.3, conductance = 1e-3, susceptance = 2,
+    magnitude = 1.2, angle = 0.3, minMagnitude = 0.9, maxMagnitude = 1.1, base = 110e3, area = 3, lossZone = 4)
+    @test system.bus.label["Bus 2"] == 2
+    @test system.bus.layout.type[2] == 1
+    @test system.bus.demand.active[2] == 0.3
+    @test system.bus.demand.reactive[2] == -0.3
+    @test system.bus.shunt.conductance[2] == 1e-3
+    @test system.bus.shunt.susceptance[2] == 2
+    @test system.bus.voltage.magnitude[2] == 1.2
+    @test system.bus.voltage.angle[2] == 0.3
+    @test system.bus.voltage.minMagnitude[2] == 0.9
+    @test system.bus.voltage.maxMagnitude[2] == 1.1
+    @test system.base.voltage.value[2] == 110e3
+    @test system.bus.layout.area[2] == 3
+    @test system.bus.layout.lossZone[2] == 4
+
+    ################ Branch Macro ################
+    @branch(label = "Branch ?", status = 0, resistance = 0.1, reactance = 0.2, susceptance = 0.3,
+    conductance = 0.4, turnsRatio = 0.5, shiftAngle = 0.6, minDiffAngle = -1.0, maxDiffAngle = 1.0,
+    longTerm = 0.2, shortTerm = 0.3, emergency = 0.4, type = 2)
+
+    ####### Test Branch Data #######
+    addBranch!(system; from = "Bus 1", to = "Bus 2")
+    @test system.branch.label["Branch 1"] == 1
+    @test system.branch.layout.status[1] == 0
+    @test system.branch.parameter.resistance[1] == 0.1
+    @test system.branch.parameter.reactance[1] == 0.2
+    @test system.branch.parameter.susceptance[1] == 0.3
+    @test system.branch.parameter.conductance[1] == 0.4
+    @test system.branch.parameter.turnsRatio[1] == 0.5
+    @test system.branch.parameter.shiftAngle[1] == 0.6
+    @test system.branch.voltage.minDiffAngle[1] == -1
+    @test system.branch.voltage.maxDiffAngle[1] == 1
+    @test system.branch.flow.longTerm[1] == 0.2
+    @test system.branch.flow.shortTerm[1] == 0.3
+    @test system.branch.flow.emergency[1] == 0.4
+    @test system.branch.flow.type[1] == 2
+
+    addBranch!(system;  from = "Bus 1", to = "Bus 2", status = 1, resistance = 1.1, reactance = 1.2,
+    susceptance = 1.3, conductance = 1.4, turnsRatio = 1.5, shiftAngle = 1.6, minDiffAngle = -2.0,
+    maxDiffAngle = 2.0, longTerm = 1.2, shortTerm = 1.3, emergency = 1.4, type = 3)
+    @test system.branch.label["Branch 2"] == 2
+    @test system.branch.layout.status[2] == 1
+    @test system.branch.parameter.resistance[2] == 1.1
+    @test system.branch.parameter.reactance[2] == 1.2
+    @test system.branch.parameter.susceptance[2] == 1.3
+    @test system.branch.parameter.conductance[2] == 1.4
+    @test system.branch.parameter.turnsRatio[2] == 1.5
+    @test system.branch.parameter.shiftAngle[2] == 1.6
+    @test system.branch.voltage.minDiffAngle[2] == -2
+    @test system.branch.voltage.maxDiffAngle[2] == 2
+    @test system.branch.flow.longTerm[2] == 1.2
+    @test system.branch.flow.shortTerm[2] == 1.3
+    @test system.branch.flow.emergency[2] == 1.4
+    @test system.branch.flow.type[2] == 3
+
+    ################ Generator Macro ################
+    @generator(label = "Generator ?", area = 2, status = 0, active = 1.1, reactive = 1.2, magnitude = 0.5,
+    minActive = 0.1, maxActive = 0.2, minReactive = 0.3, maxReactive = 0.4, lowActive = 0.5, minLowReactive = 0.6,
+    maxLowReactive = 0.7, upActive = 0.8, minUpReactive = 0.9, maxUpReactive = 1.0, loadFollowing = 1.1,
+    reserve10min = 1.2, reserve30min = 1.3, reactiveTimescale = 1.4)
+
+    ####### Test Generator Data #######
+    addGenerator!(system; bus = "Bus 1")
+    @test system.generator.label["Generator 1"] == 1
+    @test system.generator.layout.status[1] == 0
+    @test system.generator.output.active[1] == 1.1
+    @test system.generator.output.reactive[1] == 1.2
+    @test system.generator.voltage.magnitude[1] == 0.5
+    @test system.generator.capability.minActive[1] == 0.1
+    @test system.generator.capability.maxActive[1] == 0.2
+    @test system.generator.capability.minReactive[1] == 0.3
+    @test system.generator.capability.maxReactive[1] == 0.4
+    @test system.generator.capability.lowActive[1] == 0.5
+    @test system.generator.capability.minLowReactive[1] == 0.6
+    @test system.generator.capability.maxLowReactive[1] == 0.7
+    @test system.generator.capability.upActive[1] == 0.8
+    @test system.generator.capability.minUpReactive[1] == 0.9
+    @test system.generator.capability.maxUpReactive[1] == 1.0
+    @test system.generator.ramping.loadFollowing[1] == 1.1
+    @test system.generator.ramping.reserve10min[1] == 1.2
+    @test system.generator.ramping.reserve30min[1] == 1.3
+    @test system.generator.ramping.reactiveTimescale[1] == 1.4
+
+    addGenerator!(system; label = "Generator 2", bus = "Bus 1", area = 1, status = 1, active = 2.1,
+    reactive = 2.2, magnitude = 1.5, minActive = 1.1, maxActive = 1.2, minReactive = 1.3, maxReactive = 1.4,
+    lowActive = 1.5, minLowReactive = 1.6, maxLowReactive = 1.7, upActive = 1.8, minUpReactive = 1.9,
+    maxUpReactive = 2.0, loadFollowing = 2.1, reserve10min = 2.2, reserve30min = 2.3, reactiveTimescale = 2.4)
+    @test system.generator.label["Generator 2"] == 2
+    @test system.generator.layout.status[2] == 1
+    @test system.generator.output.active[2] == 2.1
+    @test system.generator.output.reactive[2] == 2.2
+    @test system.generator.voltage.magnitude[2] == 1.5
+    @test system.generator.capability.minActive[2] == 1.1
+    @test system.generator.capability.maxActive[2] == 1.2
+    @test system.generator.capability.minReactive[2] == 1.3
+    @test system.generator.capability.maxReactive[2] == 1.4
+    @test system.generator.capability.lowActive[2] == 1.5
+    @test system.generator.capability.minLowReactive[2] == 1.6
+    @test system.generator.capability.maxLowReactive[2] == 1.7
+    @test system.generator.capability.upActive[2] == 1.8
+    @test system.generator.capability.minUpReactive[2] == 1.9
+    @test system.generator.capability.maxUpReactive[2] == 2.0
+    @test system.generator.ramping.loadFollowing[2] == 2.1
+    @test system.generator.ramping.reserve10min[2] == 2.2
+    @test system.generator.ramping.reserve30min[2] == 2.3
+    @test system.generator.ramping.reactiveTimescale[2] == 2.4
+end

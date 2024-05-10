@@ -2,6 +2,9 @@ system14 = powerSystem(string(pathData, "case14test.m"))
 system30 = powerSystem(string(pathData, "case30test.m"))
 
 @testset "Newton-Raphson Method" begin
+    @default(unit)
+    @default(template)
+
     matpower14 = h5read(string(pathData, "results.h5"), "case14test/newtonRaphson")
     matpower30 = h5read(string(pathData, "results.h5"), "case30test/newtonRaphson")
 

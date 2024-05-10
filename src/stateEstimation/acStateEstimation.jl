@@ -127,14 +127,14 @@ function acStateEstimationWLS(system::PowerSystem, device::Measurement)
     nonZeroJacobian = voltmeter.number + 4 * ammeter.number
     nonZeroPrecision = copy(measureNumber)
 
-    for (i, index) in enumerate(wattmeter.layout.index)
+    @inbounds for (i, index) in enumerate(wattmeter.layout.index)
         if wattmeter.layout.bus[i]
             nonZeroJacobian += 2 * (ac.nodalMatrix.colptr[index + 1] - ac.nodalMatrix.colptr[index])
         else
             nonZeroJacobian += 4
         end
     end
-    for (i, index) in enumerate(varmeter.layout.index)
+    @inbounds for (i, index) in enumerate(varmeter.layout.index)
         if varmeter.layout.bus[i]
             nonZeroJacobian += 2 * (ac.nodalMatrix.colptr[index + 1] - ac.nodalMatrix.colptr[index])
         else
@@ -142,7 +142,7 @@ function acStateEstimationWLS(system::PowerSystem, device::Measurement)
         end
     end
 
-    for i = 1:pmu.number
+    @inbounds for i = 1:pmu.number
         if pmu.layout.bus[i]
             if pmu.layout.polar[i]
                 nonZeroJacobian += 2
@@ -166,7 +166,7 @@ function acStateEstimationWLS(system::PowerSystem, device::Measurement)
     index = fill(0, measureNumber)
     range = fill(1, 6)
 
-    for (i, k) in enumerate(voltmeter.layout.index)
+    @inbounds for (i, k) in enumerate(voltmeter.layout.index)
         mean[i] = voltmeter.magnitude.status[i] * voltmeter.magnitude.mean[i]
         prec = precisionDiagonal(prec, voltmeter.magnitude.variance[i])
 
@@ -175,7 +175,7 @@ function acStateEstimationWLS(system::PowerSystem, device::Measurement)
     end
     range[2] = jac.idx
 
-    for (i, k) in enumerate(ammeter.layout.index)
+    @inbounds for (i, k) in enumerate(ammeter.layout.index)
         mean[jac.idx] = ammeter.magnitude.status[i] * ammeter.magnitude.mean[i]
         prec = precisionDiagonal(prec, ammeter.magnitude.variance[i])
 
@@ -184,7 +184,7 @@ function acStateEstimationWLS(system::PowerSystem, device::Measurement)
     end
     range[3] = jac.idx
 
-    for (i, k) in enumerate(wattmeter.layout.index)
+    @inbounds for (i, k) in enumerate(wattmeter.layout.index)
         mean[jac.idx] = wattmeter.active.status[i] * wattmeter.active.mean[i]
         prec = precisionDiagonal(prec, wattmeter.active.variance[i])
 
@@ -198,7 +198,7 @@ function acStateEstimationWLS(system::PowerSystem, device::Measurement)
     end
     range[4] = jac.idx
 
-    for (i, k) in enumerate(varmeter.layout.index)
+    @inbounds for (i, k) in enumerate(varmeter.layout.index)
         mean[jac.idx] = varmeter.reactive.status[i] * varmeter.reactive.mean[i]
         prec = precisionDiagonal(prec, varmeter.reactive.variance[i])
 
@@ -212,7 +212,7 @@ function acStateEstimationWLS(system::PowerSystem, device::Measurement)
     end
     range[5] = jac.idx
 
-    for (i, k) in enumerate(pmu.layout.index)
+    @inbounds for (i, k) in enumerate(pmu.layout.index)
         if pmu.layout.polar[i]
             mean[jac.idx] = pmu.magnitude.status[i] * pmu.magnitude.mean[i]
             mean[jac.idx + 1] = pmu.angle.status[i] * pmu.angle.mean[i]
@@ -359,7 +359,7 @@ function acLavStateEstimation(system::PowerSystem, device::Measurement, (@nospec
 
     objective = @expression(se.jump, AffExpr())
 
-    for (k, index) in enumerate(voltmeter.layout.index)
+    @inbounds for (k, index) in enumerate(voltmeter.layout.index)
         index += bus.number
         if voltmeter.magnitude.status[k] == 1
             add_to_expression!(objective, se.residualx[k] + se.residualy[k])
@@ -370,7 +370,7 @@ function acLavStateEstimation(system::PowerSystem, device::Measurement, (@nospec
     end
 
     idx = voltmeter.number + 1
-    for (k, index) in enumerate(ammeter.layout.index)
+    @inbounds for (k, index) in enumerate(ammeter.layout.index)
         if ammeter.magnitude.status[k] == 1
             add_to_expression!(objective, residualx[idx] + residualy[idx])
             addAmmeterResidual!(system, ammeter, se, index, idx, k)
@@ -380,7 +380,7 @@ function acLavStateEstimation(system::PowerSystem, device::Measurement, (@nospec
         idx += 1
     end
 
-    for (k, index) in enumerate(wattmeter.layout.index)
+    @inbounds for (k, index) in enumerate(wattmeter.layout.index)
         if wattmeter.active.status[k] == 1
             add_to_expression!(objective, residualx[idx] + residualy[idx])
             addWattmeterResidual!(system, wattmeter, se, index, idx, k)
@@ -390,7 +390,7 @@ function acLavStateEstimation(system::PowerSystem, device::Measurement, (@nospec
         idx += 1
     end
 
-    for (k, index) in enumerate(varmeter.layout.index)
+    @inbounds for (k, index) in enumerate(varmeter.layout.index)
         if varmeter.reactive.status[k] == 1
             add_to_expression!(objective, residualx[idx] + residualy[idx])
             addVarmeterResidual!(system, varmeter, se, index, idx, k)
@@ -400,7 +400,7 @@ function acLavStateEstimation(system::PowerSystem, device::Measurement, (@nospec
         idx += 1
     end
 
-    for (k, index) in enumerate(pmu.layout.index)
+    @inbounds for (k, index) in enumerate(pmu.layout.index)
         if pmu.layout.polar[k]
             if pmu.layout.bus[k]
                 if pmu.magnitude.status[k] == 1
@@ -476,7 +476,7 @@ function addWattmeterResidual!(system::PowerSystem, wattmeter::Wattmeter, se::LA
         Vi = se.statex[system.bus.number + index] - se.statey[system.bus.number + index]
         expr = @expression(se.jump, Vi * real(system.model.ac.nodalMatrixTranspose[index, index]))
 
-        for ptr in system.model.ac.nodalMatrix.colptr[index]:(system.model.ac.nodalMatrix.colptr[index + 1] - 1)
+        @inbounds for ptr in system.model.ac.nodalMatrix.colptr[index]:(system.model.ac.nodalMatrix.colptr[index + 1] - 1)
             j = system.model.ac.nodalMatrix.rowval[ptr]
             if index != j
                 Gij = real(system.model.ac.nodalMatrixTranspose.nzval[ptr])
@@ -508,7 +508,7 @@ function addVarmeterResidual!(system::PowerSystem, varmeter::Varmeter, se::LAV, 
         Vi = se.statex[system.bus.number + index] - se.statey[system.bus.number + index]
         expr = @expression(se.jump, -Vi * imag(system.model.ac.nodalMatrixTranspose[index, index]))
 
-        for ptr in system.model.ac.nodalMatrix.colptr[index]:(system.model.ac.nodalMatrix.colptr[index + 1] - 1)
+        @inbounds for ptr in system.model.ac.nodalMatrix.colptr[index]:(system.model.ac.nodalMatrix.colptr[index + 1] - 1)
             j = system.model.ac.nodalMatrix.rowval[ptr]
             if index != j
                 Gij = real(system.model.ac.nodalMatrixTranspose.nzval[ptr])
@@ -770,7 +770,7 @@ function normalEquation!(system::PowerSystem, analysis::ACStateEstimation)
     voltage = analysis.voltage
     jacobian = se.jacobian
 
-    for col = 1:bus.number
+    @inbounds for col = 1:bus.number
         for lin in jacobian.colptr[col]:(jacobian.colptr[col + 1] - 1)
             row = jacobian.rowval[lin]
             index = se.index[row]
@@ -1015,13 +1015,13 @@ function normalEquation!(system::PowerSystem, analysis::ACStateEstimation)
         end
     end
 
-    for row = se.range[1]:(se.range[2] - 1)
+    @inbounds for row = se.range[1]:(se.range[2] - 1)
         if se.type[row] == 1
             se.residual[row] = se.mean[row] - voltage.magnitude[se.index[row]]
         end
     end
 
-    for row = se.range[5]:(se.range[6] - 1)
+    @inbounds for row = se.range[5]:(se.range[6] - 1)
         if se.type[row] == 10
             se.residual[row] = se.mean[row] - voltage.magnitude[se.index[row]]
         elseif se.type[row] == 11
@@ -1061,7 +1061,7 @@ function jacobianInitialize(jac::SparseModel, val::Int8, col::Int64)
 end
 
 function jacobianInitialize(jac::SparseModel, nodalMatrix::SparseMatrixCSC{ComplexF64,Int64}, bus::Int64, busNumber::Int64)
-    for j in nodalMatrix.colptr[bus]:(nodalMatrix.colptr[bus + 1] - 1)
+    @inbounds for j in nodalMatrix.colptr[bus]:(nodalMatrix.colptr[bus + 1] - 1)
         jac.row[jac.cnt] = jac.idx
         jac.col[jac.cnt] = nodalMatrix.rowval[j]
         jac.row[jac.cnt + 1] = jac.idx

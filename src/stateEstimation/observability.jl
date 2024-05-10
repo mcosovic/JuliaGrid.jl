@@ -299,13 +299,13 @@ end
 
 function decisionTree(measurments::Matrix{Vector{Int64}})
     totalIslands = 0
-    for measurment in measurments
+    @inbounds for measurment in measurments
         for island in measurment
             totalIslands = max(totalIslands, island)
         end
     end
 
-    for t = 2:length(measurments)
+    @inbounds for t = 2:length(measurments)
         totalCombinations = combinations(length(measurments), t)
         for combination in totalCombinations
             if check(measurments, combination, totalIslands , t + 1)
@@ -318,7 +318,7 @@ function decisionTree(measurments::Matrix{Vector{Int64}})
 end
 
 function combinationsRecursive(position, value, result, max_n, k, accumulator)
-    for i = value:max_n
+    @inbounds for i = value:max_n
         result[position] = position + i
         if position < k
             combinationsRecursive(position + 1, i, result, max_n, k, accumulator)
@@ -339,7 +339,7 @@ end
 
 function check(measurments, indicies, total, required)
     appeared = zeros(Bool, total)
-    for index in indicies
+    @inbounds for index in indicies
         for island in measurments[index]
             appeared[island] = true
         end
@@ -387,11 +387,11 @@ function restorationGram!(system::PowerSystem, device::Measurement, pseudo::Meas
     jac = SparseModel(Array{Int64,1}(), Array{Int64,1}(), Array{Float64,1}(), 0, length(islands.tie.injection))
     con = fill(false, bus.number)
 
-    for (k, busIndex) in enumerate(islands.tie.injection)
+    @inbounds for (k, busIndex) in enumerate(islands.tie.injection)
         jac, con = addTieInjection(rowval, colptr, islands, busIndex, k, jac, con)
     end
 
-    for i = 1:device.pmu.number
+    @inbounds for i = 1:device.pmu.number
         if device.pmu.layout.bus[i] && device.pmu.angle.status[i] == 1 && device.pmu.magnitude.status[i] == 1
             island = islands.bus[device.pmu.layout.index[i]]
             pushDirect!(jac, island)
@@ -404,7 +404,7 @@ function restorationGram!(system::PowerSystem, device::Measurement, pseudo::Meas
     numberTie = copy(jac.idx)
 
     pseudoDevice = Int64[]
-    for (k, index) in enumerate(pseudo.wattmeter.layout.index)
+    @inbounds for (k, index) in enumerate(pseudo.wattmeter.layout.index)
         if pseudo.wattmeter.active.status[k] == 1
             if pseudo.wattmeter.layout.bus[k]
                 if index in islands.tie.bus
@@ -424,7 +424,7 @@ function restorationGram!(system::PowerSystem, device::Measurement, pseudo::Meas
     end
     numberPseudoPower = length(pseudoDevice)
 
-    for i = 1:pseudo.pmu.number
+    @inbounds for i = 1:pseudo.pmu.number
         if pseudo.pmu.layout.bus[i] && pseudo.pmu.angle.status[i] == 1 && pseudo.pmu.magnitude.status[i] == 1
             island = islands.bus[pseudo.pmu.layout.index[i]]
             pushDirect!(jac, island)
@@ -491,7 +491,7 @@ function addTieInjection(rowval, colptr, islands, busIndex, k, jac, con)
     con[conection] .= true
     con[islands.island[island]] .= false
     incidentToIslands = islands.bus[con]
-    for i in incidentToIslands
+    @inbounds for i in incidentToIslands
         push!(jac.row, k)
         push!(jac.col, i)
         push!(jac.val, -1)
