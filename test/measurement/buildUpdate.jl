@@ -315,7 +315,7 @@ end
     @test sum(device.voltmeter.magnitude.status) == round(0.5 * stateVariable)
 
     ####### Test Set of Ammeters #######
-    addAmmeter!(system, device, analysis)
+    addAmmeter!(system, device, analysis; noise = true)
 
     statusAmmeter!(system, device; inservice = 18)
     @test sum(device.ammeter.magnitude.status) == 18
@@ -340,7 +340,7 @@ end
     @test sum(device.ammeter.magnitude.status[layout.to]) == round(0.2 * stateVariable)
 
     ####### Test Set of Wattmeters #######
-    addWattmeter!(system, device, analysis)
+    addWattmeter!(system, device, analysis; noise = true)
 
     statusWattmeter!(system, device; inservice = 14)
     @test sum(device.wattmeter.active.status) == 14
@@ -368,7 +368,7 @@ end
     @test sum(device.wattmeter.active.status[layout.to]) == round(0.4 * stateVariable)
 
     ####### Test Set of Varmeters #######
-    addVarmeter!(system, device, analysis)
+    addVarmeter!(system, device, analysis; noise = true)
 
     statusVarmeter!(system, device; inservice = 1)
     @test sum(device.varmeter.reactive.status) == 1
@@ -396,7 +396,7 @@ end
     @test sum(device.varmeter.reactive.status[layout.to]) == round(0.3 * stateVariable)
 
     ####### Test Set of PMUs #######
-    addPmu!(system, device, analysis)
+    addPmu!(system, device, analysis; noise = true)
 
     statusPmu!(system, device; inservice = 10)
     @test device.pmu.magnitude.status == device.pmu.angle.status
@@ -447,4 +447,226 @@ end
     @test sum(device.voltmeter.magnitude.status) + sum(device.ammeter.magnitude.status) +
     sum(device.wattmeter.active.status) + sum(device.varmeter.reactive.status) +
     sum(device.pmu.magnitude.status) == round(3.1 * stateVariable)
+end
+
+@testset "Build Measurement Data Using Macros" begin
+    @default(template)
+    @default(unit)
+
+    system = powerSystem()
+    device = measurement()
+
+    addBus!(system; label = "Bus 1")
+    addBus!(system; label = "Bus 2")
+    addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.12)
+
+    ################ Voltmeter Macro ################
+    @voltmeter(label = "Voltmeter ?", variance = 1e-2, status = 0, noise = true)
+
+    ####### Test Voltmeter Data #######
+    addVoltmeter!(system, device; bus = "Bus 1", magnitude = 1.0)
+    @test device.voltmeter.label["Voltmeter 1"] == 1
+    @test device.voltmeter.magnitude.mean[1] != 1.0
+    @test device.voltmeter.magnitude.variance[1] == 1e-2
+    @test device.voltmeter.magnitude.status[1] == 0
+
+    addVoltmeter!(system, device; bus = "Bus 2", magnitude = 2.0, variance = 1e-3, status = 1, noise = false)
+    @test device.voltmeter.label["Voltmeter 2"] == 2
+    @test device.voltmeter.magnitude.mean[2] == 2.0
+    @test device.voltmeter.magnitude.variance[2] == 1e-3
+    @test device.voltmeter.magnitude.status[2] == 1
+
+    ################ Ammeter Macro ################
+    @ammeter(label = "Ammeter ?", varianceFrom = 1e-2, varianceTo = 1e-3, statusFrom = 1, statusTo = 0, noise = true)
+
+    ####### Test From-bus Ammeter Data #######
+    addAmmeter!(system, device; from = "Branch 1", magnitude = 1.0)
+    @test device.ammeter.label["Ammeter 1"] == 1
+    @test device.ammeter.magnitude.mean[1] != 1.0
+    @test device.ammeter.magnitude.variance[1] == 1e-2
+    @test device.ammeter.magnitude.status[1] == 1
+
+    addAmmeter!(system, device; from = "Branch 1", magnitude = 3.0, variance = 1e-4, status = 0, noise = false)
+    @test device.ammeter.label["Ammeter 2"] == 2
+    @test device.ammeter.magnitude.mean[2] == 3.0
+    @test device.ammeter.magnitude.variance[2] == 1e-4
+    @test device.ammeter.magnitude.status[2] == 0
+
+    ####### Test To-bus Ammeter Data #######
+    addAmmeter!(system, device; to = "Branch 1", magnitude = 2.0)
+    @test device.ammeter.label["Ammeter 3"] == 3
+    @test device.ammeter.magnitude.mean[3] != 2.0
+    @test device.ammeter.magnitude.variance[3] == 1e-3
+    @test device.ammeter.magnitude.status[3] == 0
+
+    addAmmeter!(system, device; to = "Branch 1", magnitude = 4.0, variance = 1e-5, status = 1, noise = false)
+    @test device.ammeter.label["Ammeter 4"] == 4
+    @test device.ammeter.magnitude.mean[4] == 4.0
+    @test device.ammeter.magnitude.variance[4] == 1e-5
+    @test device.ammeter.magnitude.status[4] == 1
+
+    ################ Wattmeter Macro ################
+    @wattmeter(label = "Wattmeter ?", varianceBus = 1e-1, varianceFrom = 1e-2, varianceTo = 1e-3, statusBus = 0, statusFrom = 1, statusTo = 0, noise = true)
+
+    ####### Test Bus Wattmeter Data #######
+    addWattmeter!(system, device; bus = "Bus 1", active = 1.0)
+    @test device.wattmeter.label["Wattmeter 1"] == 1
+    @test device.wattmeter.active.mean[1] != 1.0
+    @test device.wattmeter.active.variance[1] == 1e-1
+    @test device.wattmeter.active.status[1] == 0
+
+    addWattmeter!(system, device; bus = "Bus 1", active = 2.0, variance = 1, status = 1, noise = false)
+    @test device.wattmeter.label["Wattmeter 2"] == 2
+    @test device.wattmeter.active.mean[2] == 2.0
+    @test device.wattmeter.active.variance[2] == 1
+    @test device.wattmeter.active.status[2] == 1
+
+    ####### Test From-bus Wattmeter Data #######
+    addWattmeter!(system, device; from = "Branch 1", active = 5.0)
+    @test device.wattmeter.label["Wattmeter 3"] == 3
+    @test device.wattmeter.active.mean[3] != 5.0
+    @test device.wattmeter.active.variance[3] == 1e-2
+    @test device.wattmeter.active.status[3] == 1
+
+    addWattmeter!(system, device; from = "Branch 1", active = 6.0, variance = 2, status = 0, noise = false)
+    @test device.wattmeter.label["Wattmeter 4"] == 4
+    @test device.wattmeter.active.mean[4] == 6.0
+    @test device.wattmeter.active.variance[4] == 2
+    @test device.wattmeter.active.status[4] == 0
+
+    ####### Test To-bus Wattmeter Data #######
+    addWattmeter!(system, device; to = "Branch 1", active = 6.0)
+    @test device.wattmeter.label["Wattmeter 5"] == 5
+    @test device.wattmeter.active.mean[5] != 6.0
+    @test device.wattmeter.active.variance[5] == 1e-3
+    @test device.wattmeter.active.status[5] == 0
+
+    addWattmeter!(system, device; to = "Branch 1", active = 7.0, variance = 3, status = 1, noise = false)
+    @test device.wattmeter.label["Wattmeter 6"] == 6
+    @test device.wattmeter.active.mean[6] == 7.0
+    @test device.wattmeter.active.variance[6] == 3
+    @test device.wattmeter.active.status[6] == 1
+
+    ################ Varmeter Macro ################
+    @varmeter(label = "Varmeter ?", varianceBus = 1, varianceFrom = 2, varianceTo = 3, statusBus = 1, statusFrom = 0, statusTo = 1, noise = true)
+
+    ####### Test Bus Varmeter Data #######
+    addVarmeter!(system, device; bus = "Bus 1", reactive = 1.1)
+    @test device.varmeter.label["Varmeter 1"] == 1
+    @test device.varmeter.reactive.mean[1] != 1.1
+    @test device.varmeter.reactive.variance[1] == 1
+    @test device.varmeter.reactive.status[1] == 1
+
+    addVarmeter!(system, device; bus = "Bus 1", reactive = 2.1, variance = 10, status = 0, noise = false)
+    @test device.varmeter.label["Varmeter 2"] == 2
+    @test device.varmeter.reactive.mean[2] == 2.1
+    @test device.varmeter.reactive.variance[2] == 10
+    @test device.varmeter.reactive.status[2] == 0
+
+    ####### Test From-bus Varmeter Data #######
+    addVarmeter!(system, device; from = "Branch 1", reactive = 5.1)
+    @test device.varmeter.label["Varmeter 3"] == 3
+    @test device.varmeter.reactive.mean[3] != 5.1
+    @test device.varmeter.reactive.variance[3] == 2
+    @test device.varmeter.reactive.status[3] == 0
+
+    addVarmeter!(system, device; from = "Branch 1", reactive = 6.1, variance = 20, status = 1, noise = false)
+    @test device.varmeter.label["Varmeter 4"] == 4
+    @test device.varmeter.reactive.mean[4] == 6.1
+    @test device.varmeter.reactive.variance[4] == 20
+    @test device.varmeter.reactive.status[4] == 1
+
+    ####### Test To-bus Varmeter Data #######
+    addVarmeter!(system, device; to = "Branch 1", reactive = 6.1)
+    @test device.varmeter.label["Varmeter 5"] == 5
+    @test device.varmeter.reactive.mean[5] != 6.1
+    @test device.varmeter.reactive.variance[5] == 3
+    @test device.varmeter.reactive.status[5] == 1
+
+    addVarmeter!(system, device; to = "Branch 1", reactive = 7.1, variance = 30, status = 0, noise = false)
+    @test device.varmeter.label["Varmeter 6"] == 6
+    @test device.varmeter.reactive.mean[6] == 7.1
+    @test device.varmeter.reactive.variance[6] == 30
+    @test device.varmeter.reactive.status[6] == 0
+
+    ################ PMU Macro ################
+    @pmu(label = "PMU ?", noise = true, polar = true, correlated = true,
+    varianceMagnitudeBus = 10, varianceAngleBus = 20,
+    statusMagnitudeBus = 0, statusAngleBus = 1,
+    varianceMagnitudeFrom = 30, varianceAngleFrom = 40,
+    statusMagnitudeFrom = 1, statusAngleFrom = 0,
+    varianceMagnitudeTo = 50, varianceAngleTo = 60,
+    statusMagnitudeTo = 0, statusAngleTo = 0)
+
+    ####### Test Bus PMU Data #######
+    addPmu!(system, device; bus = "Bus 1", magnitude = 2, angle = 1)
+    @test device.pmu.label["PMU 1"] == 1
+    @test device.pmu.magnitude.mean[1] != 2
+    @test device.pmu.magnitude.variance[1] == 10
+    @test device.pmu.magnitude.status[1] == 0
+    @test device.pmu.angle.mean[1] != 1
+    @test device.pmu.angle.variance[1] == 20
+    @test device.pmu.angle.status[1] == 1
+    @test device.pmu.layout.polar[1] == true
+    @test device.pmu.layout.correlated[1] == true
+
+    addPmu!(system, device; bus = "Bus 1", noise = false, polar = false, correlated = false,
+    magnitude = 3, varianceMagnitude = 1e-1, statusMagnitude = 1, angle = 4, varianceAngle = 1e-2, statusAngle = 0)
+    @test device.pmu.label["PMU 2"] == 2
+    @test device.pmu.magnitude.mean[2] == 3
+    @test device.pmu.magnitude.variance[2] == 1e-1
+    @test device.pmu.magnitude.status[2] == 1
+    @test device.pmu.angle.mean[2] == 4
+    @test device.pmu.angle.variance[2] == 1e-2
+    @test device.pmu.angle.status[2] == 0
+    @test device.pmu.layout.polar[2] == false
+    @test device.pmu.layout.correlated[2] == false
+
+    ####### Test From-bus PMU Data #######
+    addPmu!(system, device; from = "Branch 1", magnitude = 5, angle = 6)
+    @test device.pmu.label["PMU 3"] == 3
+    @test device.pmu.magnitude.mean[3] != 5
+    @test device.pmu.magnitude.variance[3] == 30
+    @test device.pmu.magnitude.status[3] == 1
+    @test device.pmu.angle.mean[3] != 6
+    @test device.pmu.angle.variance[3] == 40
+    @test device.pmu.angle.status[3] == 0
+    @test device.pmu.layout.polar[3] == true
+    @test device.pmu.layout.correlated[3] == true
+
+    addPmu!(system, device; from = "Branch 1", noise = false, polar = false, correlated = false,
+    magnitude = 7, varianceMagnitude = 2e-1, statusMagnitude = 0, angle = 8, varianceAngle = 2e-2, statusAngle = 1)
+    @test device.pmu.label["PMU 4"] == 4
+    @test device.pmu.magnitude.mean[4] == 7
+    @test device.pmu.magnitude.variance[4] == 2e-1
+    @test device.pmu.magnitude.status[4] == 0
+    @test device.pmu.angle.mean[4] == 8
+    @test device.pmu.angle.variance[4] == 2e-2
+    @test device.pmu.angle.status[4] == 1
+    @test device.pmu.layout.polar[4] == false
+    @test device.pmu.layout.correlated[4] == false
+
+    ####### Test To-bus PMU Data #######
+    addPmu!(system, device; to = "Branch 1", magnitude = 500, angle = 600)
+    @test device.pmu.label["PMU 5"] == 5
+    @test device.pmu.magnitude.mean[5] != 500
+    @test device.pmu.magnitude.variance[5] == 50
+    @test device.pmu.magnitude.status[5] == 0
+    @test device.pmu.angle.mean[5] != 600
+    @test device.pmu.angle.variance[5] == 60
+    @test device.pmu.angle.status[5] == 0
+    @test device.pmu.layout.polar[5] == true
+    @test device.pmu.layout.correlated[5] == true
+
+    addPmu!(system, device; to = "Branch 1", noise = false, polar = false, correlated = false,
+    magnitude = 9, varianceMagnitude = 3e-1, statusMagnitude = 1, angle = 10, varianceAngle = 3e-2, statusAngle = 1)
+    @test device.pmu.label["PMU 6"] == 6
+    @test device.pmu.magnitude.mean[6] == 9
+    @test device.pmu.magnitude.variance[6] == 3e-1
+    @test device.pmu.magnitude.status[6] == 1
+    @test device.pmu.angle.mean[6] == 10
+    @test device.pmu.angle.variance[6] == 3e-2
+    @test device.pmu.angle.status[6] == 1
+    @test device.pmu.layout.polar[6] == false
+    @test device.pmu.layout.correlated[6] == false
 end
