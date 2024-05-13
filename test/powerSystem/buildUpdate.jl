@@ -413,3 +413,61 @@ end
     @test system.generator.ramping.reserve30min[2] == 2.3
     @test system.generator.ramping.reactiveTimescale[2] == 2.4
 end
+
+@testset "Test Errors and Messages" begin
+    @default(unit)
+    @default(template)
+    system = powerSystem()
+
+    addBus!(system; label = "Bus 1", type = 3)
+    addBus!(system; label = "Bus 2")
+    addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.12)
+    addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 0.2)
+
+    acModel!(system)
+    dcModel!(system)
+
+    dc = dcPowerFlow(system)
+    nr = newtonRaphson(system)
+    fnrxb = fastNewtonRaphsonXB(system)
+    fnrbx = fastNewtonRaphsonBX(system)
+    gs = gaussSeidel(system)
+
+    addBus!(system, label = "Bus 3")
+
+    ####### Test Deleting Models #######
+    @test isempty(system.model.ac.nodalMatrix) == true
+    @test isempty(system.model.ac.nodalMatrixTranspose) == true
+    @test isempty(system.model.ac.nodalFromFrom) == true
+    @test isempty(system.model.ac.nodalFromTo) == true
+    @test isempty(system.model.ac.nodalToFrom) == true
+    @test isempty(system.model.ac.nodalToTo) == true
+    @test isempty(system.model.ac.admittance) == true
+    @test system.model.ac.model == 1
+    @test system.model.ac.pattern == 1
+
+    @test isempty(system.model.dc.nodalMatrix) == true
+    @test isempty(system.model.dc.admittance) == true
+    @test isempty(system.model.dc.shiftPower) == true
+    @test system.model.dc.model == 1
+    @test system.model.dc.pattern == 1
+
+    ####### Test Bus Errors #######
+    @test_throws ErrorException addBus!(system; label = "Bus 1")
+    @test_throws ErrorException addBus!(system; label = "Bus 4", type = 4)
+    @test_throws ErrorException addBus!(system; label = "Bus 4", type = 3)
+    @test_throws ErrorException addBus!(system, dc; label = "Bus 4", active = 0.1)
+    @test_throws ErrorException addBus!(system, nr; label = "Bus 4", active = 0.1)
+    @test_throws ErrorException addBus!(system, fnrxb; label = "Bus 4", active = 0.1)
+    @test_throws ErrorException addBus!(system, fnrbx; label = "Bus 4", active = 0.1)
+    @test_throws ErrorException addBus!(system, gs; label = "Bus 4", active = 0.1)
+
+    @test_throws ErrorException updateBus!(system; label = "Bus 3", type = 3)
+    @test_throws ErrorException updateBus!(system, dc; label = "Bus 3", type = 3)
+    @test_throws ErrorException updateBus!(system, nr; label = "Bus 3", type = 3)
+    @test_throws ErrorException updateBus!(system, fnrxb; label = "Bus 3", type = 3)
+    @test_throws ErrorException updateBus!(system, fnrbx; label = "Bus 3", type = 3)
+    @test_throws ErrorException updateBus!(system, gs; label = "Bus 3", type = 3)
+
+    @test_throws LoadError @eval @bus(label = "Bus ?", typee = 1)
+end

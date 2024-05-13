@@ -1,14 +1,11 @@
-system14 = powerSystem(string(pathData, "case14test.m"))
-system30 = powerSystem(string(pathData, "case30test.m"))
-
 @testset "Newton-Raphson Method" begin
     @default(unit)
     @default(template)
 
-    matpower14 = h5read(string(pathData, "results.h5"), "case14test/newtonRaphson")
-    matpower30 = h5read(string(pathData, "results.h5"), "case30test/newtonRaphson")
-
     ################ Modified IEEE 14-bus Test Case ################
+    system14 = powerSystem(string(pathData, "case14test.m"))
+    matpower14 = h5read(string(pathData, "results.h5"), "case14test/newtonRaphson")
+
     acModel!(system14)
     analysis = newtonRaphson(system14, QR)
     iteration = 0
@@ -129,8 +126,12 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     end
 
     ################ Modified IEEE 30-bus Test Case ################
-    acModel!(system30)
+    system30 = powerSystem(string(pathData, "case30test.m"))
+    matpower30 = h5read(string(pathData, "results.h5"), "case30test/newtonRaphson")
+
     analysis = newtonRaphson(system30)
+    startMagnitude = copy(analysis.voltage.magnitude)
+    startAngle = copy(analysis.voltage.angle)
     iteration = 0
     for i = 1:1000
         stopping = mismatch!(system30, analysis)
@@ -247,13 +248,48 @@ system30 = powerSystem(string(pathData, "case30test.m"))
         @test active ≈ power.generator.active[value]
         @test reactive ≈ power.generator.reactive[value]
     end
+
+    ####### Test Starting Voltages #######
+    startingVoltage!(system30, analysis)
+    @test analysis.voltage.magnitude == startMagnitude
+    @test analysis.voltage.angle == startAngle
+
+    iteration = 0
+    for i = 1:1000
+        stopping = mismatch!(system30, analysis)
+        if all(stopping .< 1e-8)
+            break
+        end
+        solve!(system30, analysis)
+        iteration += 1
+    end
+    @test iteration == matpower30["iteration"][1]
+
+    ####### Test Slack Bus Changes #######
+    updateBus!(system30; label = 1, type = 2)
+    updateBus!(system30; label = 3, type = 3)
+
+    analysis = newtonRaphson(system30)
+    iteration = 0
+    for i = 1:1000
+        stopping = mismatch!(system30, analysis)
+        if all(stopping .< 1e-8)
+            break
+        end
+        solve!(system30, analysis)
+        iteration += 1
+    end
+
+    @test voltage.magnitude ≈ matpower30["voltageMagnitude"]
+    @test voltage.angle ≈ matpower30["voltageAngle"]
+    @test iteration == matpower30["iteration"][1]
 end
 
 @testset "Fast Newton-Raphson BX Method" begin
-    matpower14 = h5read(string(pathData, "results.h5"), "case14test/fastNewtonRaphsonBX")
-    matpower30 = h5read(string(pathData, "results.h5"), "case30test/fastNewtonRaphsonBX")
-
     ################ Modified IEEE 14-bus Test Case ################
+    system14 = powerSystem(string(pathData, "case14test.m"))
+    matpower14 = h5read(string(pathData, "results.h5"), "case14test/fastNewtonRaphsonBX")
+
     acModel!(system14)
     analysis = fastNewtonRaphsonBX(system14)
     iteration = 0
@@ -274,7 +310,9 @@ end
     @test analysis.voltage.angle ≈ matpower14["voltageAngle"]
 
     ################ Modified IEEE 30-bus Test Case ################
-    acModel!(system30)
+    system30 = powerSystem(string(pathData, "case30test.m"))
+    matpower30 = h5read(string(pathData, "results.h5"), "case30test/fastNewtonRaphsonBX")
+
     analysis = fastNewtonRaphsonBX(system30, QR)
     iteration = 0
     for i = 1:1000
@@ -292,13 +330,33 @@ end
     ####### Test Voltages #######
     @test analysis.voltage.magnitude ≈ matpower30["voltageMagnitude"]
     @test analysis.voltage.angle ≈ matpower30["voltageAngle"]
+
+    ####### Test Pattern Changes #######
+    updateBranch!(system30, analysis; label = 5, status = 0)
+    dropZeros!(system30.model.ac)
+    updateBranch!(system30, analysis; label = 5, status = 1)
+
+    startingVoltage!(system30, analysis)
+    iteration = 0
+    for i = 1:1000
+        stopping = mismatch!(system30, analysis)
+        if all(stopping .< 1e-8)
+            break
+        end
+        solve!(system30, analysis)
+        iteration += 1
+    end
+
+    @test iteration == matpower30["iteration"][1]
+    @test analysis.voltage.magnitude ≈ matpower30["voltageMagnitude"]
+    @test analysis.voltage.angle ≈ matpower30["voltageAngle"]
 end
 
 @testset "Fast Newton-Raphson XB Method" begin
-    matpower14 = h5read(string(pathData, "results.h5"), "case14test/fastNewtonRaphsonXB")
-    matpower30 = h5read(string(pathData, "results.h5"), "case30test/fastNewtonRaphsonXB")
-
     ################ Modified IEEE 14-bus Test Case ################
+    system14 = powerSystem(string(pathData, "case14test.m"))
+    matpower14 = h5read(string(pathData, "results.h5"), "case14test/fastNewtonRaphsonXB")
+
     acModel!(system14)
     analysis = fastNewtonRaphsonXB(system14)
     iteration = 0
@@ -319,7 +377,9 @@ end
     @test analysis.voltage.angle ≈ matpower14["voltageAngle"]
 
     ################ Modified IEEE 30-bus Test Case ################
-    acModel!(system30)
+    system30 = powerSystem(string(pathData, "case30test.m"))
+    matpower30 = h5read(string(pathData, "results.h5"), "case30test/fastNewtonRaphsonXB")
+
     analysis = fastNewtonRaphsonXB(system30, QR)
     iteration = 0
     for i = 1:1000
@@ -339,11 +399,13 @@ end
     @test analysis.voltage.angle ≈ matpower30["voltageAngle"]
 end
 
-@testset "Gauss-Seidel Method" begin
-    matpower14 = h5read(string(pathData, "results.h5"), "case14test/gaussSeidel")
-    matpower30 = h5read(string(pathData, "results.h5"), "case30test/gaussSeidel")
 
+
+@testset "Gauss-Seidel Method" begin
     ################ Modified IEEE 14-bus Test Case ################
+    system14 = powerSystem(string(pathData, "case14test.m"))
+    matpower14 = h5read(string(pathData, "results.h5"), "case14test/gaussSeidel")
+
     acModel!(system14)
     analysis = gaussSeidel(system14)
     iteration = 0
@@ -364,7 +426,9 @@ end
     @test analysis.voltage.angle ≈ matpower14["voltageAngle"]
 
     ################ Modified IEEE 30-bus Test Case ################
-    acModel!(system30)
+    system30 = powerSystem(string(pathData, "case30test.m"))
+    matpower30 = h5read(string(pathData, "results.h5"), "case30test/gaussSeidel")
+
     analysis = gaussSeidel(system30)
     iteration = 0
     for i = 1:1000
@@ -389,6 +453,8 @@ end
     @default(template)
 
     ################ Modified IEEE 14-bus Test Case ################
+    system14 = powerSystem(string(pathData, "case14test.m"))
+
     updateBranch!(system14; label = 1, conductance = 0.58)
     updateBranch!(system14; label = 7, conductance = 0.083)
     updateBranch!(system14; label = 14, conductance = 0.052)
@@ -439,6 +505,8 @@ end
     @test nr.voltage.angle ≈ gs.voltage.angle
 
     ################ Modified IEEE 30-bus Test Case ################
+    system30 = powerSystem(string(pathData, "case30test.m"))
+
     updateBranch!(system30; label = 2, conductance = 0.01)
     updateBranch!(system30; label = 5, conductance = 1e-4)
     updateBranch!(system30; label = 18, conductance = 0.5)
@@ -490,10 +558,10 @@ end
 end
 
 @testset "DC Power Flow" begin
-    matpower14 = h5read(string(pathData, "results.h5"), "case14test/dcPowerFlow")
-    matpower30 = h5read(string(pathData, "results.h5"), "case30test/dcPowerFlow")
-
     ################ Modified IEEE 14-bus Test Case ################
+    system14 = powerSystem(string(pathData, "case14test.m"))
+    matpower14 = h5read(string(pathData, "results.h5"), "case14test/dcPowerFlow")
+
     dcModel!(system14)
     analysis = dcPowerFlow(system14)
     solve!(system14, analysis)
@@ -527,7 +595,9 @@ end
     end
 
     ################ Modified IEEE 30-bus Test Case ################
-    dcModel!(system30)
+    system30 = powerSystem(string(pathData, "case30test.m"))
+    matpower30 = h5read(string(pathData, "results.h5"), "case30test/dcPowerFlow")
+
     analysis = dcPowerFlow(system30, LDLt)
     solve!(system30, analysis)
     power!(system30, analysis)
