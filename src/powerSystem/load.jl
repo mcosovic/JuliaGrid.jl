@@ -450,7 +450,7 @@ end
 ######## Load Generator Data from MATLAB File ##########
 function loadGenerator(system::PowerSystem, generatorLine::Array{String,1}, generatorCostLine::Array{String,1})
     if isempty(generatorLine)
-        throw(ErrorException("The branch data is missing."))
+        throw(ErrorException("The generator data is missing."))
     end
 
     generator = system.generator

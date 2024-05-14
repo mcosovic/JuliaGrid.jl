@@ -537,6 +537,10 @@ function statusAll(device::Measurement, service::C; initial::Int64, final::Int64
     varmeter = device.varmeter
     pmu = device.pmu
 
+    if service > voltmeter.number + ammeter.number + wattmeter.number + varmeter.number + pmu.number
+        throw(ErrorException("The total number of available devices is less than the requested number for a status change."))
+    end
+
     indices = [fill(1, voltmeter.number) collect(1:voltmeter.number);
        fill(2, ammeter.number) collect(1:ammeter.number);
        fill(3, wattmeter.number) collect(1:wattmeter.number);

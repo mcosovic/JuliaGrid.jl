@@ -449,7 +449,7 @@ end
     sum(device.pmu.magnitude.status) == round(3.1 * stateVariable)
 end
 
-@testset "Build Measurement Data Using Macros" begin
+@testset "Build Measurement Data in Per-Units Using Macros" begin
     @default(template)
     @default(unit)
 
@@ -669,4 +669,130 @@ end
     @test device.pmu.angle.status[6] == 1
     @test device.pmu.layout.polar[6] == false
     @test device.pmu.layout.correlated[6] == false
+end
+
+@testset "Build Measurement Data in SI Units Using Macros" begin
+    @default(unit)
+    @default(template)
+
+    ################ Build Power System ################
+    @power(MW, MVAr, GVA)
+    @voltage(kV, deg, kV)
+    @current(A, deg)
+
+    system = powerSystem()
+    device = measurement()
+    @base(system, MVA, kV)
+
+    addBus!(system; label = "Bus 1", base = 100)
+    addBus!(system; label = "Bus 2", base = 100)
+    addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.12)
+
+    ################ Test Voltmeter Macro ################
+    @voltmeter(label = "Voltmeter ?", variance = 1)
+
+    addVoltmeter!(system, device; bus = "Bus 1", magnitude = 100)
+    @test device.voltmeter.magnitude.mean[1] == 1.0
+    @test device.voltmeter.magnitude.variance[1] == 1e-2
+
+    ################ Test Ammeter Macro ################
+    @ammeter(label = "Ammeter ?", varianceFrom = 1e-2 * ((100 * 10^6) / (sqrt(3) * 100 * 10^3)))
+
+    addAmmeter!(system, device; from = "Branch 1", magnitude = (100 * 10^6) / (sqrt(3) * 100 * 10^3))
+    @test device.ammeter.magnitude.mean[1] ≈ 1.0
+    @test device.ammeter.magnitude.variance[1] ≈ 1e-2
+
+    ################ Test Wattmeter Macro ################
+    @wattmeter(label = "Wattmeter ?", varianceBus = 10)
+
+    addWattmeter!(system, device; bus = "Bus 1", active = 100)
+    @test device.wattmeter.active.mean[1] == 1.0
+    @test device.wattmeter.active.variance[1] == 1e-1
+
+    ################ Test Varmeter Macro ################
+    @varmeter(label = "Varmeter ?", varianceBus = 100)
+
+    addVarmeter!(system, device; bus = "Bus 1", reactive = 110)
+    @test device.varmeter.reactive.mean[1] == 1.1
+    @test device.varmeter.reactive.variance[1] == 1
+
+    ################ Test PMU Macro ################
+    @pmu(label = "PMU ?", varianceMagnitudeBus = 1e3, varianceAngleBus = 20 * 180 / pi,
+    varianceMagnitudeFrom = 30 * ((100 * 10^6) / (sqrt(3) * 100 * 10^3)), varianceAngleFrom = 40 * 180 / pi)
+
+    addPmu!(system, device; bus = "Bus 1", magnitude = 2e2, angle = 1 * 180 / pi)
+    @test device.pmu.magnitude.mean[1] == 2
+    @test device.pmu.magnitude.variance[1] == 10
+    @test device.pmu.angle.mean[1] == 1
+    @test device.pmu.angle.variance[1] == 20
+
+    addPmu!(system, device; from = "Branch 1", magnitude = 5 * ((100 * 10^6) / (sqrt(3) * 100 * 10^3)), angle = 6 * 180 / pi)
+    @test device.pmu.magnitude.mean[2] ≈ 5
+    @test device.pmu.magnitude.variance[2] ≈ 30
+    @test device.pmu.angle.mean[2] ≈ 6
+    @test device.pmu.angle.variance[2] ≈ 40
+end
+
+@testset "Test Errors and Messages" begin
+    @default(unit)
+    @default(template)
+    system = powerSystem()
+    device = measurement()
+
+    addBus!(system; label = "Bus 1", type = 3)
+    addBus!(system; label = "Bus 2")
+    addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.12)
+    addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 0.2)
+
+    analysis = newtonRaphson(system)
+    for iteration = 1:5
+        mismatch!(system, analysis)
+        solve!(system, analysis)
+    end
+
+    addVoltmeter!(system, device; label = "Voltmeter 1", bus = "Bus 1", magnitude = 1)
+    addAmmeter!(system, device; label = "Ammeter 1", from = "Branch 1", magnitude = 1)
+    addWattmeter!(system, device; label = "Wattmeter 1", from = "Branch 1", active = 1)
+    addVarmeter!(system, device; label = "Varmeter 1", from = "Branch 1", reactive = 1)
+    addPmu!(system, device; label = "PMU 1", bus = "Bus 1", magnitude = 1, angle = 1)
+
+    ####### Test Voltmeter Errors #######
+    @test_throws ErrorException("The label Voltmeter 1 is not unique.") addVoltmeter!(system, device; label = "Voltmeter 1", bus = "Bus 1", magnitude = 1)
+    @test_throws ErrorException("The status 2 is not allowed; it should be either in-service (1) or out-of-service (0).") addVoltmeter!(system, device; label = "Voltmeter 2", bus = "Bus 1", magnitude = 1, status = 2)
+
+    @test_throws LoadError @eval @voltmeter(label = "Voltmeter ?", means = 1)
+
+    ####### Test Ammeter Errors #######
+    @test_throws ErrorException("The label Ammeter 1 is not unique.") addAmmeter!(system, device; label = "Ammeter 1", from = "Branch 1", magnitude = 1)
+    @test_throws ErrorException("The currents cannot be found.") addAmmeter!(system, device, analysis)
+
+    @test_throws LoadError @eval @ammeter(label = "Ammeter ?", means = 1)
+
+    ####### Test Wattmeter Errors #######
+    @test_throws ErrorException("The label Wattmeter 1 is not unique.") addWattmeter!(system, device; label = "Wattmeter 1", from = "Branch 1", active = 1)
+    @test_throws ErrorException("The powers cannot be found.") addWattmeter!(system, device, analysis)
+
+    @test_throws LoadError @eval @wattmeter(label = "Wattmeter ?", means = 1)
+
+    ####### Test Varmeter Errors #######
+    @test_throws ErrorException("The label Varmeter 1 is not unique.") addVarmeter!(system, device; label = "Varmeter 1", from = "Branch 1", reactive = 1)
+    @test_throws ErrorException("The powers cannot be found.") addVarmeter!(system, device, analysis)
+
+    @test_throws LoadError @eval @varmeter(label = "Varmeter ?", means = 1)
+
+    ####### Test PMU Errors #######
+    @test_throws ErrorException("The label PMU 1 is not unique.") addPmu!(system, device; label = "PMU 1", bus = "Bus 1", magnitude = 1, angle = 1)
+    @test_throws ErrorException("The currents cannot be found.") addPmu!(system, device, analysis)
+
+    @test_throws LoadError @eval @pmu(label = "PMU ?", means = 1)
+
+    ####### Test Configuration Errors #######
+    @test_throws ErrorException("The total number of available devices is less than the requested number for a status change.") status!(system, device; inservice = 12)
+    @test_throws ErrorException("The total number of available devices is less than the requested number for a status change.") statusVoltmeter!(system, device; inservice = 12)
+    @test_throws ErrorException("The total number of available devices is less than the requested number for a status change.") statusPmu!(system, device; inservice = 12)
+    @test_throws ErrorException("The total number of available devices is less than the requested number for a status change.") statusAmmeter!(system, device; inserviceFrom = 12)
+    @test_throws ErrorException("The total number of available devices is less than the requested number for a status change.") statusPmu!(system, device; inserviceBus = 12)
+
+    ####### Test Load Errors #######
+    @test_throws DomainError(".m", "The extension .m is not supported.") measurement("case14.m")
 end

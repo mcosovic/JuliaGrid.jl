@@ -2,7 +2,7 @@
     systemMatlab = powerSystem(string(pathData, "case14test.m"))
     @base(systemMatlab, MVA, kV)
 
-    savePowerSystem(systemMatlab; path = string(pathData, "case14test.h5"))
+    savePowerSystem(systemMatlab; path = string(pathData, "case14test.h5"), reference = "IEEE 14", note = "Test Data")
     systemHDF5 = powerSystem(string(pathData, "case14test.h5"))
     @base(systemHDF5, MVA, kV)
 

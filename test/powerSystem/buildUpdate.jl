@@ -280,7 +280,7 @@ end
     equalStruct(system.base.voltage, systemSI.base.voltage)
 end
 
-@testset "Build Power System Data Using Macros" begin
+@testset "Build Power System Data in Per-Units Using Macros" begin
     @default(unit)
     @default(template)
     system = powerSystem()
@@ -414,6 +414,91 @@ end
     @test system.generator.ramping.reactiveTimescale[2] == 2.4
 end
 
+@testset "Build Power System Data in SI Units Using Macros" begin
+    @default(unit)
+    @default(template)
+
+    ################ Build Power System ################
+    @power(kW, MVAr, GVA)
+    @voltage(kV, deg, kV)
+    @parameter(Ω, S)
+
+    system = powerSystem()
+    @base(system, MVA, kV)
+
+    ################ Bus Macro ################
+    @bus(label = "Bus ?", type = 2, active = 1e4, reactive = -20, conductance = 1e3, susceptance = 100,
+    magnitude = 110, angle = 0.2 * 180 / pi, minMagnitude = 80, maxMagnitude = 90, base = 100, area = 2, lossZone = 3)
+
+    ####### Test Bus Data #######
+    addBus!(system)
+    @test system.bus.label["Bus 1"] == 1
+    @test system.bus.layout.type[1] == 2
+    @test system.bus.demand.active[1] == 0.1
+    @test system.bus.demand.reactive[1] == -0.2
+    @test system.bus.shunt.conductance[1] == 1e-2
+    @test system.bus.shunt.susceptance[1] == 1
+    @test system.bus.voltage.magnitude[1] == 1.1
+    @test system.bus.voltage.angle[1] == 0.2
+    @test system.bus.voltage.minMagnitude[1] == 0.8
+    @test system.bus.voltage.maxMagnitude[1] == 0.9
+    @test system.base.voltage.value[1] == 100
+    @test system.bus.layout.area[1] == 2
+    @test system.bus.layout.lossZone[1] == 3
+
+    ################ Branch Macro ################
+    addBus!(system)
+    @branch(label = "Branch ?", status = 0, resistance = 0.1 * (100e3 * 0.5)^2 / (100e6), reactance = 0.2 * (100e3 * 0.5)^2 / (100e6),
+    susceptance = 0.3 / ((100e3 * 0.5)^2 / (100e6)), conductance = 0.4 / ((100e3 * 0.5)^2 / (100e6)), turnsRatio = 0.5,
+    shiftAngle = 0.6 * 180 / pi, minDiffAngle = -1 * 180 / pi, maxDiffAngle = 1 * 180 / pi,
+    longTerm = 0.2e5, shortTerm = 0.3e5, emergency = 0.4e5, type = 2)
+
+    ####### Test Branch Data #######
+    addBranch!(system; from = "Bus 1", to = "Bus 2")
+    @test system.branch.label["Branch 1"] == 1
+    @test system.branch.layout.status[1] == 0
+    @test system.branch.parameter.resistance[1] == 0.1
+    @test system.branch.parameter.reactance[1] == 0.2
+    @test system.branch.parameter.susceptance[1] == 0.3
+    @test system.branch.parameter.conductance[1] == 0.4
+    @test system.branch.parameter.turnsRatio[1] == 0.5
+    @test system.branch.parameter.shiftAngle[1] == 0.6
+    @test system.branch.voltage.minDiffAngle[1] == -1
+    @test system.branch.voltage.maxDiffAngle[1] == 1
+    @test system.branch.flow.longTerm[1] == 0.2
+    @test system.branch.flow.shortTerm[1] == 0.3
+    @test system.branch.flow.emergency[1] == 0.4
+    @test system.branch.flow.type[1] == 2
+
+    ################ Generator Macro ################
+    @generator(label = "Generator ?", area = 2, status = 0, active = 1.1e5, reactive = 1.2e2, magnitude = 50,
+    minActive = 0.1e5, maxActive = 0.2e5, minReactive = 0.3e2, maxReactive = 0.4e2, lowActive = 0.5e5, minLowReactive = 0.6e2,
+    maxLowReactive = 0.7e2, upActive = 0.8e5, minUpReactive = 0.9e2, maxUpReactive = 1.0e2, loadFollowing = 1.1e5,
+    reserve10min = 1.2e5, reserve30min = 1.3e5, reactiveTimescale = 1.4e2)
+
+    ####### Test Generator Data #######
+    addGenerator!(system; bus = "Bus 1")
+    @test system.generator.label["Generator 1"] == 1
+    @test system.generator.layout.status[1] == 0
+    @test system.generator.output.active[1] == 1.1
+    @test system.generator.output.reactive[1] == 1.2
+    @test system.generator.voltage.magnitude[1] == 0.5
+    @test system.generator.capability.minActive[1] == 0.1
+    @test system.generator.capability.maxActive[1] == 0.2
+    @test system.generator.capability.minReactive[1] == 0.3
+    @test system.generator.capability.maxReactive[1] == 0.4
+    @test system.generator.capability.lowActive[1] == 0.5
+    @test system.generator.capability.minLowReactive[1] == 0.6
+    @test system.generator.capability.maxLowReactive[1] ≈ 0.7
+    @test system.generator.capability.upActive[1] == 0.8
+    @test system.generator.capability.minUpReactive[1] == 0.9
+    @test system.generator.capability.maxUpReactive[1] == 1.0
+    @test system.generator.ramping.loadFollowing[1] == 1.1
+    @test system.generator.ramping.reserve10min[1] == 1.2
+    @test system.generator.ramping.reserve30min[1] == 1.3
+    @test system.generator.ramping.reactiveTimescale[1] ≈ 1.4
+end
+
 @testset "Test Errors and Messages" begin
     @default(unit)
     @default(template)
@@ -453,21 +538,45 @@ end
     @test system.model.dc.pattern == 1
 
     ####### Test Bus Errors #######
-    @test_throws ErrorException addBus!(system; label = "Bus 1")
-    @test_throws ErrorException addBus!(system; label = "Bus 4", type = 4)
-    @test_throws ErrorException addBus!(system; label = "Bus 4", type = 3)
-    @test_throws ErrorException addBus!(system, dc; label = "Bus 4", active = 0.1)
-    @test_throws ErrorException addBus!(system, nr; label = "Bus 4", active = 0.1)
-    @test_throws ErrorException addBus!(system, fnrxb; label = "Bus 4", active = 0.1)
-    @test_throws ErrorException addBus!(system, fnrbx; label = "Bus 4", active = 0.1)
-    @test_throws ErrorException addBus!(system, gs; label = "Bus 4", active = 0.1)
+    @test_throws ErrorException("The label Bus 1 is not unique.") addBus!(system; label = "Bus 1")
+    @test_throws ErrorException("The value 4 of the bus type keyword is illegal.") addBus!(system; label = "Bus 4", type = 4)
+    @test_throws ErrorException("The slack bus has already been designated.") addBus!(system; label = "Bus 5", type = 3)
+    @test_throws ErrorException("The DC power flow model cannot be reused when adding a new bus.") addBus!(system, dc; label = "Bus 4", active = 0.1)
+    @test_throws ErrorException("The AC power flow model cannot be reused when adding a new bus.") addBus!(system, nr; label = "Bus 4", active = 0.1)
+    @test_throws ErrorException("The AC power flow model cannot be reused when adding a new bus.") addBus!(system, fnrxb; label = "Bus 4", active = 0.1)
+    @test_throws ErrorException("The AC power flow model cannot be reused when adding a new bus.") addBus!(system, fnrbx; label = "Bus 4", active = 0.1)
+    @test_throws ErrorException("The AC power flow model cannot be reused when adding a new bus.") addBus!(system, gs; label = "Bus 4", active = 0.1)
 
-    @test_throws ErrorException updateBus!(system; label = "Bus 3", type = 3)
-    @test_throws ErrorException updateBus!(system, dc; label = "Bus 3", type = 3)
-    @test_throws ErrorException updateBus!(system, nr; label = "Bus 3", type = 3)
-    @test_throws ErrorException updateBus!(system, fnrxb; label = "Bus 3", type = 3)
-    @test_throws ErrorException updateBus!(system, fnrbx; label = "Bus 3", type = 3)
-    @test_throws ErrorException updateBus!(system, gs; label = "Bus 3", type = 3)
+    @test_throws ErrorException("To set bus with label Bus 3 as the slack bus, reassign the current slack bus to either a generator or demand bus.") updateBus!(system; label = "Bus 3", type = 3)
+    @test_throws ErrorException("The DC power flow model cannot be reused due to required bus type conversion.") updateBus!(system, dc; label = "Bus 1", type = 1)
+    @test_throws ErrorException("The AC power flow model cannot be reused due to required bus type conversion.")  updateBus!(system, nr; label = "Bus 1", type = 1)
+    @test_throws ErrorException("The AC power flow model cannot be reused due to required bus type conversion.")  updateBus!(system, fnrxb; label = "Bus 1", type = 1)
+    @test_throws ErrorException("The AC power flow model cannot be reused due to required bus type conversion.")  updateBus!(system, fnrbx; label = "Bus 1", type = 1)
+    @test_throws ErrorException("The AC power flow model cannot be reused due to required bus type conversion.")  updateBus!(system, gs; label = "Bus 1", type = 1)
 
     @test_throws LoadError @eval @bus(label = "Bus ?", typee = 1)
+
+    ####### Test Branch Errors #######
+    @test_throws ErrorException("The label Branch 1 is not unique.") addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2")
+    @test_throws ErrorException("The provided value for the from or to keywords is not valid.") addBranch!(system; label = "Branch 2", from = "Bus 1", to = "Bus 1")
+    @test_throws ErrorException("At least one of the keywords resistance or reactance must be provided.") addBranch!(system; label = "Branch 3", from = "Bus 1", to = "Bus 2")
+    @test_throws ErrorException("The status 2 is not allowed; it should be either in-service (1) or out-of-service (0).") addBranch!(system; label = "Branch 4", from = "Bus 1", to = "Bus 2", resistance = 0.1, status = 2)
+
+    @test_throws LoadError @eval @branch(label = "Branch ?", resistances = 1)
+
+    ####### Test Generator Errors #######
+    @test_throws ErrorException("The label Generator 1 is not unique.") addGenerator!(system; label = "Generator 1", bus = "Bus 1")
+    @test_throws ErrorException("The status 2 is not allowed; it should be either in-service (1) or out-of-service (0).") addGenerator!(system; label = "Generator 2", bus = "Bus 1", status = 2)
+
+    @test_throws ErrorException("The DC power flow model cannot be reused due to required bus type conversion.") updateGenerator!(system, dc; label = "Generator 1", status = 0)
+    @test_throws ErrorException("The AC power flow model cannot be reused due to required bus type conversion.") updateGenerator!(system, nr; label = "Generator 1", status = 0)
+    @test_throws ErrorException("The AC power flow model cannot be reused due to required bus type conversion.") updateGenerator!(system, gs; label = "Generator 1", status = 0)
+
+    @test_throws ErrorException("The concurrent definition of the keywords active and reactive is not allowed.") cost!(system; label = "Generator 1", active = 2, reactive = 1, polynomial = [1100.0; 500.0; 150.0])
+    @test_throws ErrorException("The cost model is missing.") cost!(system; label = "Generator 1", polynomial = [1100.0; 500.0; 150.0])
+    @test_throws ErrorException("The model is not allowed; it should be either piecewise (1) or polynomial (2).") cost!(system; label = "Generator 1", active = 3, polynomial = [1100.0; 500.0; 150.0])
+    @test_throws ErrorException("An attempt to assign a polynomial function has been made, but the polynomial function does not exist.") cost!(system; label = "Generator 1", active = 2)
+    @test_throws ErrorException("An attempt to assign a piecewise function has been made, but the piecewise function does not exist.") cost!(system; label = "Generator 1", active = 1)
+
+    @test_throws LoadError @eval @generator(label = "Generator ?", actives = 1)
 end

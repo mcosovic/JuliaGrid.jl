@@ -825,7 +825,7 @@ function cost!(system::PowerSystem; label::L,
     elseif ismissing(active) && ismissing(reactive)
         throw(ErrorException("The cost model is missing."))
     elseif isset(active) && !(active in [1; 2]) || isset(reactive) && !(reactive in [1; 2])
-        throw(ErrorException("The model $model is not allowed; it should be either piecewise (1) or polynomial (2)."))
+        throw(ErrorException("The model is not allowed; it should be either piecewise (1) or polynomial (2)."))
     end
 
     index = system.generator.label[getLabel(system.generator, label, "generator")]
