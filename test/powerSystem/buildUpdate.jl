@@ -519,6 +519,7 @@ end
     gs = gaussSeidel(system)
 
     addBus!(system, label = "Bus 3")
+    addBus!(system, label = 4)
 
     ####### Test Deleting Models #######
     @test isempty(system.model.ac.nodalMatrix) == true
@@ -537,8 +538,19 @@ end
     @test system.model.dc.model == 1
     @test system.model.dc.pattern == 1
 
+    ####### Test Print #######
+    print1 = @capture_out print(system.bus.label, system.bus.voltage.magnitude)
+    @test print1 == "Bus 1: 1.0\nBus 2: 1.0\nBus 3: 1.0\n4: 1.0\n"
+
+    print2 = @capture_out print(system.bus.label, system.bus.voltage.magnitude, system.bus.voltage.angle)
+    @test print2 == "Bus 1: 1.0, 0.0\nBus 2: 1.0, 0.0\nBus 3: 1.0, 0.0\n4: 1.0, 0.0\n"
+
+    print3 = @capture_out print(system.bus.label, system.bus.layout.type)
+    @test print3 == "Bus 1: 3\nBus 2: 1\nBus 3: 1\n4: 1\n"
+
     ####### Test Bus Errors #######
     @test_throws ErrorException("The label Bus 1 is not unique.") addBus!(system; label = "Bus 1")
+    @test_throws ErrorException("The label 4 is not unique.") addBus!(system; label = 4)
     @test_throws ErrorException("The value 4 of the bus type keyword is illegal.") addBus!(system; label = "Bus 4", type = 4)
     @test_throws ErrorException("The slack bus has already been designated.") addBus!(system; label = "Bus 5", type = 3)
     @test_throws ErrorException("The DC power flow model cannot be reused when adding a new bus.") addBus!(system, dc; label = "Bus 4", active = 0.1)
@@ -548,6 +560,8 @@ end
     @test_throws ErrorException("The AC power flow model cannot be reused when adding a new bus.") addBus!(system, gs; label = "Bus 4", active = 0.1)
 
     @test_throws ErrorException("To set bus with label Bus 3 as the slack bus, reassign the current slack bus to either a generator or demand bus.") updateBus!(system; label = "Bus 3", type = 3)
+    @test_throws ErrorException("The bus label Bus 6 that has been specified does not exist within the available bus labels.") updateBus!(system; label = "Bus 6", active = 2)
+    @test_throws ErrorException("The bus label 2 that has been specified does not exist within the available bus labels.") updateBus!(system; label = 2, active = 2)
     @test_throws ErrorException("The DC power flow model cannot be reused due to required bus type conversion.") updateBus!(system, dc; label = "Bus 1", type = 1)
     @test_throws ErrorException("The AC power flow model cannot be reused due to required bus type conversion.")  updateBus!(system, nr; label = "Bus 1", type = 1)
     @test_throws ErrorException("The AC power flow model cannot be reused due to required bus type conversion.")  updateBus!(system, fnrxb; label = "Bus 1", type = 1)
@@ -579,4 +593,15 @@ end
     @test_throws ErrorException("An attempt to assign a piecewise function has been made, but the piecewise function does not exist.") cost!(system; label = "Generator 1", active = 1)
 
     @test_throws LoadError @eval @generator(label = "Generator ?", actives = 1)
+
+    ####### Test Unit Errors #######
+    @test_throws LoadError @eval @current(sA, deg)
+    @test_throws LoadError @eval @current(kV, deg)
+
+    ####### Test Voltage Errors #######
+    @test_throws ErrorException("The voltage values are missing.") power!(system, dc)
+
+    ####### Test Load Errors #######
+    @test_throws DomainError(".h6", "The extension .h6 is not supported.") powerSystem("case14.h6")
+    @test_throws DomainError("case15.h5", "The input data case15.h5 is not found.") powerSystem("case15.h5")
 end

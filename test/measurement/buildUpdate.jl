@@ -282,6 +282,19 @@ end
     @test device.pmu.angle.mean[5] == 3
     @test device.pmu.angle.variance[5] == 3
     @test device.pmu.angle.mean[6] == 3
+
+    ####### Test Multiple Labels #######
+    device = measurement()
+
+    @voltmeter(label = "!")
+    addVoltmeter!(system, device; bus = 1, magnitude = 1)
+    addVoltmeter!(system, device; bus = 1, magnitude = 1)
+    addVoltmeter!(system, device; bus = 1, magnitude = 1)
+
+    labels = collect(keys(device.voltmeter.label))
+    @test labels[1] == "1"
+    @test labels[2] == "1 (1)"
+    @test labels[3] == "1 (2)"
 end
 
 @testset "Build Random Measurement Set" begin
@@ -764,18 +777,23 @@ end
 
     ####### Test Ammeter Errors #######
     @test_throws ErrorException("The label Ammeter 1 is not unique.") addAmmeter!(system, device; label = "Ammeter 1", from = "Branch 1", magnitude = 1)
+    @test_throws ErrorException("At least one of the location keywords must be provided.") addAmmeter!(system, device; label = "Ammeter 1", magnitude = 1)
+    @test_throws ErrorException("The concurrent definition of the location keywords is not allowed.") addAmmeter!(system, device; label = "Ammeter 1", from = "Branch 1", to = "Branch 1", magnitude = 1)
     @test_throws ErrorException("The currents cannot be found.") addAmmeter!(system, device, analysis)
 
     @test_throws LoadError @eval @ammeter(label = "Ammeter ?", means = 1)
 
     ####### Test Wattmeter Errors #######
     @test_throws ErrorException("The label Wattmeter 1 is not unique.") addWattmeter!(system, device; label = "Wattmeter 1", from = "Branch 1", active = 1)
+    @test_throws ErrorException("The concurrent definition of the location keywords is not allowed.") addWattmeter!(system, device; label = "Wattmeter 1", from = "Branch 1", to = "Branch 1", active = 1)
+    @test_throws ErrorException("At least one of the location keywords must be provided.") addWattmeter!(system, device; label = "Wattmeter 1", active = 1)
     @test_throws ErrorException("The powers cannot be found.") addWattmeter!(system, device, analysis)
 
     @test_throws LoadError @eval @wattmeter(label = "Wattmeter ?", means = 1)
 
     ####### Test Varmeter Errors #######
     @test_throws ErrorException("The label Varmeter 1 is not unique.") addVarmeter!(system, device; label = "Varmeter 1", from = "Branch 1", reactive = 1)
+    @test_throws ErrorException("The concurrent definition of the location keywords is not allowed.") addVarmeter!(system, device; label = "Varmeter 1", from = "Branch 1", to = "Branch 1", bus = "Bus 1", reactive = 1)
     @test_throws ErrorException("The powers cannot be found.") addVarmeter!(system, device, analysis)
 
     @test_throws LoadError @eval @varmeter(label = "Varmeter ?", means = 1)

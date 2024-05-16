@@ -4,7 +4,6 @@ system14 = powerSystem(string(pathData, "case14optimal.m"))
     matpower14 = h5read(string(pathData, "results.h5"), "case14optimal/acOptimalPowerFlow")
 
     ######## Modified IEEE 14-bus Test Case ##########
-    acModel!(system14)
     analysis = acOptimalPowerFlow(system14, Ipopt.Optimizer)
     JuMP.set_silent(analysis.method.jump)
     solve!(system14, analysis)
@@ -155,7 +154,6 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     end
 
     ################ Modified IEEE 30-bus Test Case ################
-    dcModel!(system30)
     analysis = dcOptimalPowerFlow(system30, HiGHS.Optimizer)
     JuMP.set_silent(analysis.method.jump)
     solve!(system30, analysis)

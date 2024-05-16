@@ -331,7 +331,7 @@ function print(io::IO, label::OrderedDict{String, Int64}, data::Union{Array{Floa
     end
 end
 
-function print(io::IO, label::OrderedDict{String, Int64}, data1::Array{Float64,1}, data2::Array{Float64,1})
+function print(io::IO, label::OrderedDict{String, Int64}, data1::Union{Array{Float64,1}, Array{Int64,1}, Array{Int8,1}}, data2::Union{Array{Float64,1}, Array{Int64,1}, Array{Int8,1}})
     for (key, value) in label
         println(io::IO, key, ": ", data1[value], ", ", data2[value])
     end
@@ -342,7 +342,6 @@ function print(io::IO, label::OrderedDict{String, Int64}, obj::Dict{Int64, JuMP.
         try
             println(io::IO, key, ": ", obj[value])
         catch
-            # println(io::IO, "undefined")
         end
     end
 end
