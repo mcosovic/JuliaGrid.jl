@@ -1,5 +1,4 @@
 system14 = powerSystem(string(pathData, "case14optimal.m"))
-
 @testset "AC Optimal Power Flow" begin
     matpower14 = h5read(string(pathData, "results.h5"), "case14optimal/acOptimalPowerFlow")
 
@@ -111,6 +110,38 @@ system14 = powerSystem(string(pathData, "case14optimal.m"))
         @test active ≈ power.generator.active[value]
         @test reactive ≈ power.generator.reactive[value]
     end
+
+    ######## Active Power Flow Constraints ##########
+    matpower14 = h5read(string(pathData, "results.h5"), "case14optimal/acOptimalPowerFlowActive")
+    system14.branch.flow.type .= 2
+
+    analysis = acOptimalPowerFlow(system14, Ipopt.Optimizer)
+    JuMP.set_silent(analysis.method.jump)
+    solve!(system14, analysis)
+
+    ####### Test Voltages #######
+    @test analysis.voltage.magnitude ≈ matpower14["voltageMagnitude"] atol = 1e-6
+    @test analysis.voltage.angle ≈ matpower14["voltageAngle"] atol = 1e-6
+
+    ####### Test Powers #######
+    @test analysis.power.generator.active ≈ matpower14["generatorActive"] atol = 1e-6
+    @test analysis.power.generator.reactive ≈ matpower14["generatorReactive"] atol = 1e-6
+
+    ######## Current Magnitude Flow Constraints ##########
+    matpower14 = h5read(string(pathData, "results.h5"), "case14optimal/acOptimalPowerFlowCurrent")
+    system14.branch.flow.type .= 3
+
+    analysis = acOptimalPowerFlow(system14, Ipopt.Optimizer)
+    JuMP.set_silent(analysis.method.jump)
+    solve!(system14, analysis)
+
+    ####### Test Voltages #######
+    @test analysis.voltage.magnitude ≈ matpower14["voltageMagnitude"] atol = 1e-6
+    @test analysis.voltage.angle ≈ matpower14["voltageAngle"] atol = 1e-6
+
+    ####### Test Powers #######
+    @test analysis.power.generator.active ≈ matpower14["generatorActive"] atol = 1e-6
+    @test analysis.power.generator.reactive ≈ matpower14["generatorReactive"] atol = 1e-6
 end
 
 system14 = powerSystem(string(pathData, "case14test.m"))
@@ -185,4 +216,25 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     for (key, value) in system30.generator.label
         @test generatorPower(system30, analysis; label = key) ≈ analysis.power.generator.active[value]
     end
+end
+
+@testset "Test Errors" begin
+    @default(unit)
+    @default(template)
+    system = powerSystem()
+
+    addBus!(system; label = "Bus 1", type = 2)
+    addBus!(system; label = "Bus 2")
+    addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.12)
+    addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 0.2)
+
+    @test_throws ErrorException("The slack bus is missing.") dcOptimalPowerFlow(system, Ipopt.Optimizer)
+
+    cost!(system; label = "Generator 1", active = 1, piecewise = [5.1 6.2])
+    updateBus!(system; label = "Bus 1", type = 3)
+    @test_throws ErrorException("The generator labelled Generator 1 has a piecewise linear cost function with only one defined point.") dcOptimalPowerFlow(system, Ipopt.Optimizer)
+
+    cost!(system; label = "Generator 1", active = 1, piecewise = [5.1 6.2; 4.1 5.2])
+    dc = dcOptimalPowerFlow(system, Ipopt.Optimizer)
+    @test_throws ErrorException("The generator labelled Generator 1 has a piecewise linear cost function with only one defined point.") cost!(system, dc; label = "Generator 1", active = 1, piecewise = [5.1 6.2])
 end
