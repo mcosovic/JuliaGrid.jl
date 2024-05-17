@@ -75,9 +75,9 @@ function dcOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
                 elseif term == 1
                     add_to_expression!(objective, cost.polynomial[i][1])
                 elseif term > 3
-                    @info("The generator labelled $(iterate(generator.label, i)[1][1]) has a polynomial cost function of degree $(term-1), which is not included in the objective.")
+                    @info("The generator labeled $(iterate(generator.label, i)[1][1]) has a polynomial cost function of degree $(term-1), which is not included in the objective.")
                 else
-                    @info("The generator labelled $(iterate(generator.label, i)[1][1]) has an undefined polynomial cost function, which is not included in the objective.")
+                    @info("The generator labeled $(iterate(generator.label, i)[1][1]) has an undefined polynomial cost function, which is not included in the objective.")
                 end
             elseif cost.model[i] == 1
                 point = size(cost.piecewise[i], 1)
@@ -87,9 +87,9 @@ function dcOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
                     addPowerwise(jump, objective, actwise, i; name = "actwise")
                     addPiecewise(jump, active[i], actwise[i], piecewise, cost.piecewise[i], point, i)
                 elseif point == 1
-                    throw(ErrorException("The generator labelled $(iterate(generator.label, i)[1][1]) has a piecewise linear cost function with only one defined point."))
+                    throw(ErrorException("The generator labeled $(iterate(generator.label, i)[1][1]) has a piecewise linear cost function with only one defined point."))
                 else
-                    @info("The generator labelled $(iterate(generator.label, i)[1][1]) has an undefined piecewise linear cost function, which is not included in the objective.")
+                    @info("The generator labeled $(iterate(generator.label, i)[1][1]) has an undefined piecewise linear cost function, which is not included in the objective.")
                 end
             end
             addCapability(jump, active[i], capability, generator.capability.minActive, generator.capability.maxActive, i)
@@ -251,10 +251,10 @@ function costExpr(cost::Cost, variable::JuMP.VariableRef, index::Int64, label::L
                 polynomialQuadratic(expr, variable, cost.polynomial[index])
                 isNonLin = true
             else
-                @info("The generator labelled $label has a polynomial cost function of degree $(term-1), which is not included in the objective.")
+                @info("The generator labeled $label has a polynomial cost function of degree $(term-1), which is not included in the objective.")
             end
         else
-            @info("The generator labelled $label has an undefined polynomial cost function, which is not included in the objective.")
+            @info("The generator labeled $label has an undefined polynomial cost function, which is not included in the objective.")
         end
     elseif cost.model[index] == 1
         point = size(cost.piecewise[index], 1)
@@ -263,9 +263,9 @@ function costExpr(cost::Cost, variable::JuMP.VariableRef, index::Int64, label::L
         elseif point > 2
             isPowerwise = true
         elseif point == 1
-            throw(ErrorException("The generator labelled $label has a piecewise linear cost function with only one defined point."))
+            throw(ErrorException("The generator labeled $label has a piecewise linear cost function with only one defined point."))
         else
-            @info("The generator labelled $label has an undefined piecewise linear cost function, which is not included in the objective.")
+            @info("The generator labeled $label has an undefined piecewise linear cost function, which is not included in the objective.")
         end
     end
 

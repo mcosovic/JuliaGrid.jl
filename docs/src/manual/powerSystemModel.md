@@ -57,7 +57,7 @@ system = powerSystem("C:/hdf5/case14.h5")
 ---
 
 ##### Model from Scratch
-Alternatively, the model can be build from the scratch using built-in functions, for example:
+Alternatively, the model can be built from scratch using built-in functions, for example:
 ```@example buildModelScratch
 using JuliaGrid # hide
 
@@ -77,13 +77,13 @@ The `PowerSystem` type stores all electrical quantities in per-units and radians
 ---
 
 ##### Change Base Unit Prefixes
-As an example, executing the previous code snippet allows us to retrieve the base power and base voltage values along with their respective units, as shown below:
+As an example, the user can retrieve the base power and base voltage values along with their respective units, as shown below:
 ```@repl buildModelScratch
 system.base.power.value, system.base.power.unit
 system.base.voltage.value, system.base.voltage.unit
 ```
 
-By using the [`@base`](@ref @base) macro, users can change the prefixes of the base units. For instance, if useres wish to convert base power and base voltage values to megavolt-amperes (MVA) and kilovolts (kV) respectively, they can execute the following macro:
+By using the [`@base`](@ref @base) macro, users can change the prefixes of the base units. For instance, if users wish to convert base power and base voltage values to megavolt-amperes (MVA) and kilovolts (kV) respectively, they can execute the following macro:
 ```@example buildModelScratch
 @base(system, MVA, kV)
 nothing # hide
@@ -100,7 +100,7 @@ Therefore, by using the [`@base`](@ref @base) macro to modify the prefixes of th
 ---
 
 ## [Save Model](@id SaveModelManual)
-Once the `PowerSystem` type has been created using one of the methods outlined in [Build Model](@ref BuildModelManual), the current data can be stored in the HDF5 file by using [`savePowerSystem`](@ref savePowerSystem) function:
+Once the `PowerSystem` type has been created using one of the methods outlined in [Build Model](@ref BuildModelManual), the current data can be stored in the HDF5 file by using the [`savePowerSystem`](@ref savePowerSystem) function:
 ```julia
 savePowerSystem(system; path = "C:/matpower/case14.h5", reference = "IEEE 14-bus test case")
 ```
@@ -110,7 +110,7 @@ All electrical quantities saved in the HDF5 file are in per-units and radians, e
 ---
 
 ## [Add Bus](@id AddBusManual)
-We have the option to add buses to a loaded power system or to one created from scratch. As an illustration, we can initiate the `PowerSystem` type and then incorporate two buses by utilizing the [`addBus!`](@ref addBus!) function:
+The buses can be added both to the loaded power system, or to the one created from scratch. As an illustration, we can initiate the `PowerSystem` type and then incorporate two buses by utilizing the [`addBus!`](@ref addBus!) function:
 ```@example addBus
 using JuliaGrid # hide
 
@@ -130,7 +130,7 @@ It is worth noting that the `base` keyword is used to specify the base voltages,
 system.base.voltage.value, system.base.voltage.unit
 ```
 
-Finally, we set the bus voltage angle in radians for the `Bus 2` to its initial value:
+Also, we have defined the bus voltage angle in radians for `Bus 2` as its initial value:
 ```@repl addBus
 system.bus.voltage.angle
 ```
@@ -184,7 +184,7 @@ system.base.voltage.value, system.base.voltage.unit
 ---
 
 ## [Add Branch](@id AddBranchManual)
-The branch connecting two buses can be added once those buses are defined, and the `from` and `to` keywords must correspond to labels of those buses. For example:
+The branch connecting two buses can be added once those buses are defined, and `from` and `to` keywords must correspond to labels of those buses. For example:
 ```@example addBranch
 using JuliaGrid # hide
 @default(unit) # hide
@@ -208,7 +208,7 @@ system.branch.parameter.reactance
 ---
 
 ##### Customizing Input Units for Keywords
-To use units other than per-units (pu) and radians (rad), macros can be employed to change the input units. For example, if the need arises to use ohms (Ω), the macros below can be employed:
+To use units other than per-units (pu) and radians (rad), macros can be employed to change the input units. For example, if there is a need to use ohms (Ω), the macros below can be employed:
 ```@example addBranchUnit
 using JuliaGrid # hide
 @parameter(Ω, pu)
@@ -309,7 +309,7 @@ system.generator.voltage.magnitude
 ---
 
 ##### Customizing Input Units for Keywords
-The JuliaGrid requires users to specify electrical quantity-related keywords in per-units (pu) and radians (rad) by default. However, it provides macros, such as [`@power`](@ref @power), that allow users to specify other units:
+JuliaGrid requires users to specify electrical quantity-related keywords in per-units (pu) and radians (rad) by default. However, it provides macros, such as [`@power`](@ref @power), that allow users to specify other units:
 ```@example CreateBusTemplateUnits
 using JuliaGrid # hide
 
@@ -356,7 +356,7 @@ nothing # hide
 ---
 
 ## [Labels](@id LabelsManual)
-As we shown above, JuliaGrid mandates a distinctive label for every bus, branch, or generator. These labels are stored in order dictionaries, functioning as pairs of strings and integers. The string signifies the exclusive label for the specific component, whereas the integer maintains an internal numbering of buses, branches, or generators.
+As we have shown, JuliaGrid mandates a distinctive label for every bus, branch, or generator. These labels are stored in ordered dictionaries, functioning as pairs of strings and integers. The string signifies the exclusive label for the specific component, whereas the integer maintains an internal numbering of buses, branches, or generators.
 
 In contrast to the simple labeling approach, JuliaGrid offers several additional methods for labeling. The choice of method depends on the specific needs and can potentially be more straightforward.
 
@@ -380,7 +380,7 @@ addGenerator!(system; label = 1, bus = 2, active = 0.5, reactive = 0.1)
 nothing # hide
 ```
 
-In this example, we create two buses labelled as `1` and `2`. The branch is established between these two buses with a unique branch label of `1`. Finally, the generator is connected to the bus labelled `2` and has its distinct label set to `1`.
+In this example, we create two buses labeled as `1` and `2`. The branch is established between these two buses with a unique branch label of `1`. Finally, the generator is connected to the bus labeled `2` and has its distinct label set to `1`.
 
 ---
 
@@ -426,7 +426,7 @@ addGenerator!(system; bus = "Bus 2 HV", active = 0.5, reactive = 0.1)
 nothing # hide
 ```
 
-In this this example, two buses are generated and labeled as `Bus 1 HV` and `Bus 2 HV`, along with one branch and one generator labeled as `Branch 1` and `Generator 1`, respectively.
+In this example, two buses are generated and labeled as `Bus 1 HV` and `Bus 2 HV`, along with one branch and one generator labeled as `Branch 1` and `Generator 1`, respectively.
 
 ---
 
@@ -520,7 +520,7 @@ system.model.dc.nodalMatrix
 ```
 
 !!! note "Info"
-    The AC model is used for performing AC power flow, AC optimal power flow, AC state estimation, or state estimation with PMUs, whereas the DC model is essential for various DC or linear analyses. Consequently, once these models are developed, they can be applied to various types of simulations. We recommend that the reader refer to the tutorial on [AC and DC models](@ref ACDCModelTutorials).
+    The AC model is used for performing AC power flow, AC optimal power flow, AC state estimation, or state estimation with PMUs, whereas the DC model is essential for various DC or linear analyses. Consequently, once these models are developed, they can be applied to various types of simulations. We recommend that the reader refers to the tutorial on [AC and DC models](@ref ACDCModelTutorials).
 
 ---
 
@@ -554,7 +554,7 @@ system.model.dc.nodalMatrix
 ---
 
 ##### New Bus Triggers Model Erasure
-The AC and DC models must be defined when a finite number of buses are defined, otherwise, adding a new bus will delete them. For example, if we attempt to add a new bus to the `PowerSystem` type that was previously created, the current AC and DC models will be completely erased:
+The AC and DC models must be defined once a finite number of buses has been defined, otherwise, adding a new bus will delete them. For example, if we attempt to add a new bus to the `PowerSystem` type that was previously created, the current AC and DC models will be completely erased:
 ```@repl ACDCModelUpdate
 addBus!(system; label = "Bus 4", type = 2)
 system.model.ac.nodalMatrix
@@ -698,7 +698,7 @@ The default input units are in per-units (pu), with coefficients of the cost fun
 system.generator.cost.active.polynomial
 ```
 
-By setting `active = 2` within the function, we express our intent to specify the active power cost using the `active` key. By using a value of `2`, we signify our preference for employing a quadratic polynomial cost model for the associated generator. This flexibility proves invaluable when we have previously defined a piecewise linear cost function for the same generator. In such cases, we can set `active = 1` to utilize the piecewise linear cost function to represent the cost of the corresponding generators. Thus, we retain the freedom to choose between these two cost functions according to the requirements of our simulation. Additionally, users have the option to define both piecewise and polynomial costs within a single function call, further enhancing the versatility of the implementation.
+By setting `active = 2` within the function, we express our intent to specify the active power cost using the `active` key. By using a value of `2`, we signify our preference for employing a polynomial cost model for the associated generator. This flexibility is neccessary when we have also previously defined a piecewise linear cost function for the same generator. In such cases, we can set `active = 1` to utilize the piecewise linear cost function to represent the cost of the corresponding generators. Thus, we retain the freedom to choose between these two cost functions according to the requirements of our simulation. Additionally, users have the option to define both piecewise and polynomial costs within a single function call, further enhancing the versatility of the implementation.
 
 ---
 
