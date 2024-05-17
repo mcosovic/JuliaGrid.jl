@@ -218,7 +218,7 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     end
 end
 
-@testset "Test Errors" begin
+@testset "Test Errors and Messages" begin
     @default(unit)
     @default(template)
     system = powerSystem()
@@ -237,4 +237,18 @@ end
     cost!(system; label = "Generator 1", active = 1, piecewise = [5.1 6.2; 4.1 5.2])
     dc = dcOptimalPowerFlow(system, Ipopt.Optimizer)
     @test_throws ErrorException("The generator labelled Generator 1 has a piecewise linear cost function with only one defined point.") cost!(system, dc; label = "Generator 1", active = 1, piecewise = [5.1 6.2])
+
+    print1 = @capture_out print(dc.method.constraint.balance.active)
+    @test print1 == "active[1] - 8.333333333333334 angle[1] + 8.333333333333334 angle[2] == 0\n8.333333333333334 angle[1] - 8.333333333333334 angle[2] == 0\n"
+
+    print2 = @capture_out print(system.bus.label, dc.method.constraint.balance.active)
+    @test print2 == "Bus 1: active[1] - 8.333333333333334 angle[1] + 8.333333333333334 angle[2] == 0\nBus 2: 8.333333333333334 angle[1] - 8.333333333333334 angle[2] == 0\n"
+
+    cost!(system; label = "Generator 1", active = 1, piecewise = [1.1 2.2; 2.1 3.2; 4.1 5.2; 5.1 6.2])
+    dc = dcOptimalPowerFlow(system, Ipopt.Optimizer)
+    print3 = @capture_out print(system.generator.label, dc.method.constraint.piecewise.active)
+    @test print3 == "Generator 1: active[1] - actwise[1] <= -1.1\nGenerator 1: active[1] - actwise[1] <= -1.0999999999999996\nGenerator 1: active[1] - actwise[1] <= -1.1000000000000005\n"
+
+    print4 = @capture_out print(dc.method.constraint.piecewise.active)
+    @test print4 == "active[1] - actwise[1] <= -1.1\nactive[1] - actwise[1] <= -1.0999999999999996\nactive[1] - actwise[1] <= -1.1000000000000005\n"
 end

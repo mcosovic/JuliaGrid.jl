@@ -492,4 +492,9 @@ end
     ####### Test Release #######
     @test releaseSystem != resystem.model.dc.model
     @test releaseReusing != reusing.method.dcmodel
+
+    ####### Test Pattern Changes #######
+    dropZeros!(resystem.model.dc)
+    solve!(resystem, reusing)
+    @test analysis.voltage.angle ≈ reusing.voltage.angle
 end
