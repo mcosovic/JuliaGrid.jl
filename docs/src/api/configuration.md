@@ -1,4 +1,4 @@
-# [Configuration Setup](@id configurationSetupAPI)
+# [Setup and Print](@id configurationSetupAPI)
 For further information on this topic, please see the [Power System Model](@ref PowerSystemModelManual) or [Measurement Model](@ref MeasurementModelManual) sections of the Manual. Please note that when using macros, they modify variables within the current scope.
 
 ---
@@ -14,6 +14,11 @@ For further information on this topic, please see the [Power System Model](@ref 
 
 ###### Default Settings
 * [`@default`](@ref @default)
+
+###### Print
+* [`printBus`](@ref printBus)
+* [`printBranch`](@ref printBranch)
+* [`printGenerator`](@ref printGenerator)
 
 ---
 
@@ -44,4 +49,13 @@ using JuliaGrid
 ## Default Settings
 ```@docs
 @default
+```
+
+---
+
+### Print
+```@docs
+printBus
+printBranch
+printGenerator
 ```
