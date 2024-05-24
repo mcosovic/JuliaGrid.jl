@@ -241,12 +241,19 @@ Upon completion of the AC power flow analysis, the solution is conveyed through 
 print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
 ```
 
-The user has the option to print the results in any units that are set, for example:
+The user has the option to print the results in the REPL using any units that have been configured, such as:
 ```@repl ACPowerFlowSolution
 @voltage(pu, deg, V);
 printBus(system, analysis)
 
 @voltage(pu, rad, V) # hide
+```
+
+Moreover, users have the capability to redirect print output to a file. For instance, data can be saved in a text file as follows:
+```@julia
+open("bus_data.txt", "w") do file
+    printBus(system, analysis, file)
+end
 ```
 
 In contrast, the iterative loop of the Gauss-Seidel method does not require the [`mismatch!`](@ref mismatch!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})) function:

@@ -38,16 +38,16 @@ printBus(system, analysis)
 """
 function printBus(system::PowerSystem, analysis::AC, io::IO = stdout)
     format = printFormatBus(system, analysis)
-    Printf.@printf "\n"
+    Printf.@printf io "\n"
 
-    printBusLine(format, analysis)
+    printBusLine(format, analysis, io)
 
-    Printf.@printf("| %*s%s%*s | %*s%s%*s |",
+    Printf.@printf(io, "| %*s%s%*s | %*s%s%*s |",
         floor(Int, (format["length"][1] - 3) / 2), "", "Bus", ceil(Int, (format["length"][1] - 3) / 2) , "",
         floor(Int, (format["length"][2] + format["length"][3] - 4) / 2), "", "Voltage", ceil(Int, (format["length"][2] + format["length"][3] - 4) / 2) , "",
     )
     if format["power"]
-        Printf.@printf(" %*s%s%*s | %*s%s%*s | %*s%s%*s | %*s%s%*s |",
+        Printf.@printf(io, " %*s%s%*s | %*s%s%*s | %*s%s%*s | %*s%s%*s |",
             floor(Int, (format["length"][4] + format["length"][5] - 13) / 2), "", "Power Generation", ceil(Int, (format["length"][4] + format["length"][5] - 13) / 2) , "",
             floor(Int, (format["length"][6] + format["length"][7] - 9) / 2), "", "Power Demand", ceil(Int, (format["length"][6] + format["length"][7] - 9) / 2) , "",
             floor(Int, (format["length"][8] + format["length"][9] - 12) / 2), "", "Power Injection", ceil(Int, (format["length"][8] + format["length"][9] - 12) / 2) , "",
@@ -55,18 +55,18 @@ function printBus(system::PowerSystem, analysis::AC, io::IO = stdout)
         )
     end
     if format["current"]
-        Printf.@printf(" %*s%s%*s |",
+        Printf.@printf(io, " %*s%s%*s |",
             floor(Int, (format["length"][12] + format["length"][13] - 14) / 2), "", "Current Injection", ceil(Int, (format["length"][12] + format["length"][13] - 14) / 2) , ""
         )
     end
-    Printf.@printf "\n"
+    Printf.@printf io "\n"
 
-    Printf.@printf("| %*s | %*s |",
+    Printf.@printf(io, "| %*s | %*s |",
         format["length"][1], "",
         format["length"][2] + format["length"][3] + 3, "",
     )
     if format["power"]
-        Printf.@printf(" %*s | %*s | %*s | %*s |",
+        Printf.@printf(io, " %*s | %*s | %*s | %*s |",
             format["length"][4] + format["length"][5] + 3, "",
             format["length"][6] + format["length"][7] + 3, "",
             format["length"][8] + format["length"][9] + 3, "",
@@ -74,19 +74,19 @@ function printBus(system::PowerSystem, analysis::AC, io::IO = stdout)
         )
     end
     if format["current"]
-        Printf.@printf(" %*s |",
+        Printf.@printf(io, " %*s |",
             format["length"][12] + format["length"][13] + 3, "",
         )
     end
-    Printf.@printf "\n"
+    Printf.@printf io "\n"
 
-    Printf.@printf("| %*s | %*s | %*s ",
+    Printf.@printf(io, "| %*s | %*s | %*s ",
         format["length"][1], "",
         format["length"][2], "Magnitude",
         format["length"][3], "Angle",
     )
     if format["power"]
-        Printf.@printf("| %*s | %*s | %*s | %*s | %*s | %*s | %*s | %*s ",
+        Printf.@printf(io, "| %*s | %*s | %*s | %*s | %*s | %*s | %*s | %*s ",
             format["length"][4], "Active",
             format["length"][5], "Reactive",
             format["length"][6], "Active",
@@ -98,20 +98,20 @@ function printBus(system::PowerSystem, analysis::AC, io::IO = stdout)
         )
     end
     if format["current"]
-        Printf.@printf("| %*s | %*s ",
+        Printf.@printf(io, "| %*s | %*s ",
             format["length"][12], "Magnitude",
             format["length"][13], "Angle",
         )
     end
-    Printf.@printf "|\n"
+    Printf.@printf io "|\n"
 
-    Printf.@printf("| %*s | %*s | %*s ",
+    Printf.@printf(io, "| %*s | %*s | %*s ",
         format["length"][1], "",
         format["length"][2], "$(format["unit"][2])",
         format["length"][3], "$(format["unit"][3])",
     )
     if format["power"]
-        Printf.@printf("| %*s | %*s | %*s | %*s | %*s | %*s | %*s | %*s ",
+        Printf.@printf(io, "| %*s | %*s | %*s | %*s | %*s | %*s | %*s | %*s ",
             format["length"][4], "$(format["unit"][4])",
             format["length"][5], "$(format["unit"][5])",
             format["length"][6], "$(format["unit"][4])",
@@ -123,20 +123,20 @@ function printBus(system::PowerSystem, analysis::AC, io::IO = stdout)
         )
     end
     if format["current"]
-        Printf.@printf("| %*s | %*s ",
+        Printf.@printf(io, "| %*s | %*s ",
             format["length"][12], "$(format["unit"][6])",
             format["length"][13], "$(format["unit"][7])",
         )
     end
-    Printf.@printf "|\n"
+    Printf.@printf io "|\n"
 
-    Printf.@printf("|-%*s-|-%*s-|-%*s-",
+    Printf.@printf(io, "|-%*s-|-%*s-|-%*s-",
         format["length"][1], "-"^format["length"][1],
         format["length"][2], "-"^format["length"][2],
         format["length"][3], "-"^format["length"][3],
     )
     if format["power"]
-        Printf.@printf("|-%*s-|-%*s-|-%*s-|-%*s-|-%*s-|-%*s-|-%*s-|-%*s-",
+        Printf.@printf(io, "|-%*s-|-%*s-|-%*s-|-%*s-|-%*s-|-%*s-|-%*s-|-%*s-",
             format["length"][4], "-"^format["length"][4],
             format["length"][5], "-"^format["length"][5],
             format["length"][6], "-"^format["length"][6],
@@ -148,12 +148,12 @@ function printBus(system::PowerSystem, analysis::AC, io::IO = stdout)
         )
     end
     if format["current"]
-        Printf.@printf("|-%*s-|-%*s-",
+        Printf.@printf(io, "|-%*s-|-%*s-",
         format["length"][12], "-"^format["length"][12],
         format["length"][13], "-"^format["length"][13]
         )
     end
-    Printf.@printf "|\n"
+    Printf.@printf io "|\n"
 
     for (label, i) in system.bus.label
         if prefix.voltageMagnitude != 0.0
@@ -170,13 +170,13 @@ function printBus(system::PowerSystem, analysis::AC, io::IO = stdout)
             end
         end
 
-        Printf.@printf("| %*s | %*.4f | %*.4f ",
+        Printf.@printf(io, "| %*s | %*.4f | %*.4f ",
             format["length"][1], label,
             format["length"][2], voltageMagnitude,
             format["length"][3], analysis.voltage.angle[i] * format["scale"][3],
         )
         if format["power"]
-            Printf.@printf("| %*.4f | %*.4f | %*.4f | %*.4f | %*.4f | %*.4f | %*.4f | %*.4f ",
+            Printf.@printf(io, "| %*.4f | %*.4f | %*.4f | %*.4f | %*.4f | %*.4f | %*.4f | %*.4f ",
                 format["length"][4], analysis.power.supply.active[i] * format["scale"][4],
                 format["length"][5], analysis.power.supply.reactive[i] * format["scale"][5],
                 format["length"][6], system.bus.demand.active[i] * format["scale"][4],
@@ -188,78 +188,78 @@ function printBus(system::PowerSystem, analysis::AC, io::IO = stdout)
             )
         end
         if format["current"]
-            Printf.@printf("| %*.4f | %*.4f ",
+            Printf.@printf(io, "| %*.4f | %*.4f ",
             format["length"][12], currentMagnitude * format["scale"][6],
             format["length"][13], analysis.current.injection.angle[i] * format["scale"][7]
             )
         end
-        Printf.@printf "|\n"
+        Printf.@printf io "|\n"
     end
 
-    printBusLine(format, analysis)
+    printBusLine(format, analysis, io)
 end
 
 function printBus(system::PowerSystem, analysis::DC, io::IO = stdout)
     format = printFormatBus(system, analysis)
-    Printf.@printf "\n"
+    Printf.@printf io "\n"
 
-    printBusLine(format, analysis)
+    printBusLine(format, analysis, io)
 
-    Printf.@printf("| %*s | %*s ",
+    Printf.@printf(io, "| %*s | %*s ",
         format["length"][1], "Bus",
         format["length"][2], "Voltage Angle",
     )
     if format["power"]
-        Printf.@printf("| %*s | %*s | %*s ",
+        Printf.@printf(io, "| %*s | %*s | %*s ",
             format["length"][3], "Power Generation",
             format["length"][4], "Power Demand",
             format["length"][5], "Power Injection",
         )
     end
-    Printf.@printf "|\n"
+    Printf.@printf io "|\n"
 
-    Printf.@printf("| %*s | %*s ",
+    Printf.@printf(io, "| %*s | %*s ",
         format["length"][1], "",
         format["length"][2], "$(format["unit"][1])",
     )
     if format["power"]
-        Printf.@printf("| %*s | %*s | %*s ",
+        Printf.@printf(io, "| %*s | %*s | %*s ",
             format["length"][3], "$(format["unit"][2])",
             format["length"][4], "$(format["unit"][2])",
             format["length"][5], "$(format["unit"][2])",
         )
     end
-    Printf.@printf "|\n"
+    Printf.@printf io "|\n"
 
-    Printf.@printf("|-%*s-|-%*s-",
+    Printf.@printf(io, "|-%*s-|-%*s-",
         format["length"][1], "-"^format["length"][1],
         format["length"][2], "-"^format["length"][2],
     )
     if format["power"]
-        Printf.@printf("|-%*s-|-%*s-|-%*s-",
+        Printf.@printf(io, "|-%*s-|-%*s-|-%*s-",
             format["length"][3], "-"^format["length"][3],
             format["length"][4], "-"^format["length"][4],
             format["length"][5], "-"^format["length"][5],
         )
     end
-    Printf.@printf "|\n"
+    Printf.@printf io "|\n"
 
     for (label, i) in system.bus.label
-        Printf.@printf("| %*s | %*.4f ",
+        Printf.@printf(io, "| %*s | %*.4f ",
             format["length"][1], label,
             format["length"][2], analysis.voltage.angle[i] * format["scale"][1],
         )
         if format["power"]
-            Printf.@printf("| %*.4f | %*.4f | %*.4f ",
+            Printf.@printf(io, "| %*.4f | %*.4f | %*.4f ",
                 format["length"][3], analysis.power.supply.active[i] * format["scale"][2],
                 format["length"][4], system.bus.demand.active[i] * format["scale"][2],
                 format["length"][5], analysis.power.injection.active[i] * format["scale"][2],
             )
         end
-        Printf.@printf "|\n"
+        Printf.@printf io "|\n"
     end
 
-    printBusLine(format, analysis)
+    printBusLine(format, analysis, io)
 end
 
 """
@@ -304,14 +304,14 @@ function printBranch(system::PowerSystem, analysis::AC, io::IO = stdout)
     format = printFormatBranch(system, analysis)
 
     if format["power"] || format["current"]
-        Printf.@printf "\n"
+        Printf.@printf io "\n"
 
-        printBranchLine(format)
+        printBranchLine(format, io)
 
-        Printf.@printf("| %*s%s%*s ", floor(Int, (format["length"][1] - 6) / 2), "", "Branch", ceil(Int, (format["length"][1] - 6) / 2) , "",)
+        Printf.@printf(io, "| %*s%s%*s ", floor(Int, (format["length"][1] - 6) / 2), "", "Branch", ceil(Int, (format["length"][1] - 6) / 2) , "",)
 
         if format["power"]
-            Printf.@printf("| %*s%s%*s | %*s%s%*s | %*s%s%*s | %*s%s%*s ",
+            Printf.@printf(io, "| %*s%s%*s | %*s%s%*s | %*s%s%*s | %*s%s%*s ",
                 floor(Int, (format["length"][2] + format["length"][3] - 11) / 2), "", "From-Bus Power", ceil(Int, (format["length"][2] + format["length"][3] - 11) / 2) , "",
                 floor(Int, (format["length"][4] + format["length"][5] - 9) / 2), "", "To-Bus Power", ceil(Int, (format["length"][4] + format["length"][5] - 9) / 2) , "",
                 floor(Int, (format["length"][6] + format["length"][7] - 8) / 2), "", "Shunt Power", ceil(Int, (format["length"][6] + format["length"][7] - 8) / 2) , "",
@@ -319,19 +319,19 @@ function printBranch(system::PowerSystem, analysis::AC, io::IO = stdout)
             )
         end
         if format["current"]
-            Printf.@printf("| %*s%s%*s | %*s%s%*s | %*s%s%*s ",
+            Printf.@printf(io, "| %*s%s%*s | %*s%s%*s | %*s%s%*s ",
                 floor(Int, (format["length"][10] + format["length"][11] - 13) / 2), "", "From-Bus Current", ceil(Int, (format["length"][10] + format["length"][11] - 13) / 2) , "",
                 floor(Int, (format["length"][12] + format["length"][13] - 11) / 2), "", "To-Bus Current", ceil(Int, (format["length"][12] + format["length"][13] - 11) / 2) , "",
                 floor(Int, (format["length"][14] + format["length"][15] - 11) / 2), "", "Series Current", ceil(Int, (format["length"][14] + format["length"][15] - 11) / 2) , "",
             )
         end
-        Printf.@printf "|\n"
+        Printf.@printf io "|\n"
 
-        Printf.@printf("| %*s |",
+        Printf.@printf(io, "| %*s |",
             format["length"][1], "",
         )
         if format["power"]
-            Printf.@printf(" %*s | %*s | %*s | %*s |",
+            Printf.@printf(io, " %*s | %*s | %*s | %*s |",
                 format["length"][2] + format["length"][3] + 3, "",
                 format["length"][4] + format["length"][5] + 3, "",
                 format["length"][6] + format["length"][7] + 3, "",
@@ -339,18 +339,18 @@ function printBranch(system::PowerSystem, analysis::AC, io::IO = stdout)
             )
         end
         if format["current"]
-            Printf.@printf(" %*s | %*s | %*s |",
+            Printf.@printf(io, " %*s | %*s | %*s |",
                 format["length"][10] + format["length"][11] + 3, "",
                 format["length"][12] + format["length"][13] + 3, "",
                 format["length"][14] + format["length"][15] + 3, "",
             )
         end
-        Printf.@printf "\n"
+        Printf.@printf io "\n"
 
-        Printf.@printf("| %*s ", format["length"][1], "")
+        Printf.@printf(io, "| %*s ", format["length"][1], "")
 
         if format["power"]
-            Printf.@printf("| %*s | %*s | %*s | %*s | %*s | %*s | %*s | %*s ",
+            Printf.@printf(io, "| %*s | %*s | %*s | %*s | %*s | %*s | %*s | %*s ",
                 format["length"][2], "Active",
                 format["length"][3], "Reactive",
                 format["length"][4], "Active",
@@ -362,7 +362,7 @@ function printBranch(system::PowerSystem, analysis::AC, io::IO = stdout)
             )
         end
         if format["current"]
-            Printf.@printf("| %*s | %*s | %*s | %*s | %*s | %*s ",
+            Printf.@printf(io, "| %*s | %*s | %*s | %*s | %*s | %*s ",
                 format["length"][10], "Magnitude",
                 format["length"][11], "Angle",
                 format["length"][12], "Magnitude",
@@ -371,12 +371,12 @@ function printBranch(system::PowerSystem, analysis::AC, io::IO = stdout)
                 format["length"][15], "Angle",
             )
         end
-        Printf.@printf "|\n"
+        Printf.@printf io "|\n"
 
-        Printf.@printf("| %*s ", format["length"][1], "")
+        Printf.@printf(io, "| %*s ", format["length"][1], "")
 
         if format["power"]
-            Printf.@printf("| %*s | %*s | %*s | %*s | %*s | %*s | %*s | %*s ",
+            Printf.@printf(io, "| %*s | %*s | %*s | %*s | %*s | %*s | %*s | %*s ",
                 format["length"][2], "$(format["unit"][2])",
                 format["length"][3], "$(format["unit"][3])",
                 format["length"][4], "$(format["unit"][2])",
@@ -388,7 +388,7 @@ function printBranch(system::PowerSystem, analysis::AC, io::IO = stdout)
             )
         end
         if format["current"]
-            Printf.@printf("| %*s | %*s | %*s | %*s | %*s | %*s ",
+            Printf.@printf(io, "| %*s | %*s | %*s | %*s | %*s | %*s ",
                 format["length"][10], "$(format["unit"][4])",
                 format["length"][11], "$(format["unit"][5])",
                 format["length"][12], "$(format["unit"][4])",
@@ -397,12 +397,12 @@ function printBranch(system::PowerSystem, analysis::AC, io::IO = stdout)
                 format["length"][15], "$(format["unit"][5])",
             )
         end
-        Printf.@printf "|\n"
+        Printf.@printf io "|\n"
 
-        Printf.@printf("|-%*s-", format["length"][1], "-"^format["length"][1]
+        Printf.@printf(io, "|-%*s-", format["length"][1], "-"^format["length"][1]
         )
         if format["power"]
-            Printf.@printf("|-%*s-|-%*s-|-%*s-|-%*s-|-%*s-|-%*s-|-%*s-|-%*s-",
+            Printf.@printf(io, "|-%*s-|-%*s-|-%*s-|-%*s-|-%*s-|-%*s-|-%*s-|-%*s-",
                 format["length"][2], "-"^format["length"][2],
                 format["length"][3], "-"^format["length"][3],
                 format["length"][4], "-"^format["length"][4],
@@ -414,7 +414,7 @@ function printBranch(system::PowerSystem, analysis::AC, io::IO = stdout)
             )
         end
         if format["current"]
-            Printf.@printf("|-%*s-|-%*s-|-%*s-|-%*s-|-%*s-|-%*s-",
+            Printf.@printf(io, "|-%*s-|-%*s-|-%*s-|-%*s-|-%*s-|-%*s-",
                 format["length"][10], "-"^format["length"][10],
                 format["length"][11], "-"^format["length"][11],
                 format["length"][12], "-"^format["length"][12],
@@ -423,13 +423,13 @@ function printBranch(system::PowerSystem, analysis::AC, io::IO = stdout)
                 format["length"][15], "-"^format["length"][15],
             )
         end
-        Printf.@printf "|\n"
+        Printf.@printf io "|\n"
 
         for (label, i) in system.branch.label
-            Printf.@printf("| %*s ", format["length"][1], label)
+            Printf.@printf(io, "| %*s ", format["length"][1], label)
 
             if format["power"]
-                Printf.@printf("| %*.4f | %*.4f | %*.4f | %*.4f | %*.4f | %*.4f | %*.4f | %*.4f ",
+                Printf.@printf(io, "| %*.4f | %*.4f | %*.4f | %*.4f | %*.4f | %*.4f | %*.4f | %*.4f ",
                     format["length"][2], analysis.power.from.active[i] * format["scale"][2],
                     format["length"][3], analysis.power.from.reactive[i] * format["scale"][3],
                     format["length"][4], analysis.power.to.active[i] * format["scale"][2],
@@ -454,7 +454,7 @@ function printBranch(system::PowerSystem, analysis::AC, io::IO = stdout)
                     currentMagnitudeS = analysis.current.series.magnitude[i]
                 end
 
-                Printf.@printf("| %*.4f | %*.4f | %*.4f | %*.4f | %*.4f | %*.4f ",
+                Printf.@printf(io, "| %*.4f | %*.4f | %*.4f | %*.4f | %*.4f | %*.4f ",
                     format["length"][10], currentMagnitudeFrom * format["scale"][4],
                     format["length"][11], analysis.current.from.angle[i] * format["scale"][5],
                     format["length"][12], currentMagnitudeTo * format["scale"][4],
@@ -464,9 +464,9 @@ function printBranch(system::PowerSystem, analysis::AC, io::IO = stdout)
                 )
             end
 
-            Printf.@printf "|\n"
+            Printf.@printf io "|\n"
         end
-        printBranchLine(format)
+        printBranchLine(format, io)
     end
 end
 
@@ -474,37 +474,37 @@ function printBranch(system::PowerSystem, analysis::DC, io::IO = stdout)
     format = printFormatBranch(system, analysis)
 
     if format["power"]
-        Printf.@printf "\n"
+        Printf.@printf io "\n"
 
-        Printf.@printf "|%s|\n" "-"^(sum(format["length"]) + 8)
+        Printf.@printf io "|%s|\n" "-"^(sum(format["length"]) + 8)
 
-        Printf.@printf("| %*s | %*s | %*s |\n",
+        Printf.@printf(io, "| %*s | %*s | %*s |\n",
             format["length"][1], "Branch",
             format["length"][2], "From-Bus Power",
             format["length"][3], "To-Bus Power",
         )
 
-        Printf.@printf("| %*s | %*s | %*s |\n",
+        Printf.@printf(io, "| %*s | %*s | %*s |\n",
             format["length"][1], "",
             format["length"][2], "$(format["unit"])",
             format["length"][3], "$(format["unit"])",
         )
 
-        Printf.@printf("|-%*s-|-%*s-|-%*s-|\n",
+        Printf.@printf(io, "|-%*s-|-%*s-|-%*s-|\n",
             format["length"][1], "-"^format["length"][1],
             format["length"][2], "-"^format["length"][2],
             format["length"][3], "-"^format["length"][3],
         )
 
         for (label, i) in system.branch.label
-            Printf.@printf("| %*s | %*.4f | %*.4f |\n",
+            Printf.@printf(io, "| %*s | %*.4f | %*.4f |\n",
                 format["length"][1], label,
                 format["length"][2], analysis.power.from.active[i] * format["scale"],
                 format["length"][3], analysis.power.to.active[i] * format["scale"],
             )
         end
 
-        Printf.@printf "|%s|\n" "-"^(sum(format["length"]) + 8)
+        Printf.@printf io "|%s|\n" "-"^(sum(format["length"]) + 8)
     end
 end
 
@@ -550,46 +550,46 @@ function printGenerator(system::PowerSystem, analysis::AC, io::IO = stdout)
     format = printFormatGenerator(system, analysis)
 
     if format["power"]
-        Printf.@printf "\n"
+        Printf.@printf io "\n"
 
-        Printf.@printf "|%s|\n" "-"^(sum(format["length"]) + 8)
+        Printf.@printf io "|%s|\n" "-"^(sum(format["length"]) + 8)
 
-        Printf.@printf("| %*s%s%*s | %*s%s%*s |\n",
+        Printf.@printf(io, "| %*s%s%*s | %*s%s%*s |\n",
             floor(Int, (format["length"][1] - 9) / 2), "", "Generator", ceil(Int, (format["length"][1] - 9) / 2) , "",
             floor(Int, (format["length"][2] + format["length"][3] - 9) / 2), "", "Output Power", ceil(Int, (format["length"][2] + format["length"][3] - 9) / 2) , "",
         )
 
-        Printf.@printf("| %*s | %*s |\n",
+        Printf.@printf(io, "| %*s | %*s |\n",
             format["length"][1], "",
             format["length"][2] + format["length"][3] + 3, "")
 
-        Printf.@printf("| %*s | %*s | %*s |\n",
+        Printf.@printf(io, "| %*s | %*s | %*s |\n",
             format["length"][1], "",
             format["length"][2], "Active",
             format["length"][3], "Reactive",
         )
 
-        Printf.@printf("| %*s | %*s | %*s |\n",
+        Printf.@printf(io, "| %*s | %*s | %*s |\n",
             format["length"][1], "",
             format["length"][2], "$(format["unit"][1])",
             format["length"][3], "$(format["unit"][2])",
         )
 
-        Printf.@printf("|-%*s-|-%*s-|-%*s-|\n",
+        Printf.@printf(io, "|-%*s-|-%*s-|-%*s-|\n",
             format["length"][1], "-"^format["length"][1],
             format["length"][2], "-"^format["length"][2],
             format["length"][3], "-"^format["length"][3],
         )
 
         for (label, i) in system.generator.label
-            Printf.@printf("| %*s | %*.4f | %*.4f |\n",
+            Printf.@printf(io, "| %*s | %*.4f | %*.4f |\n",
                 format["length"][1], label,
                 format["length"][2], analysis.power.generator.active[i] * format["scale"][1],
                 format["length"][3], analysis.power.generator.reactive[i] * format["scale"][2],
             )
         end
 
-        Printf.@printf "|%s|\n" "-"^(sum(format["length"]) + 8)
+        Printf.@printf io "|%s|\n" "-"^(sum(format["length"]) + 8)
     end
 end
 
@@ -597,33 +597,33 @@ function printGenerator(system::PowerSystem, analysis::DC, io::IO = stdout)
     format = printFormatGenerator(system, analysis)
 
     if format["power"]
-        Printf.@printf "\n"
+        Printf.@printf io "\n"
 
-        Printf.@printf "|%s|\n" "-"^(sum(format["length"]) + 5)
+        Printf.@printf io "|%s|\n" "-"^(sum(format["length"]) + 5)
 
-        Printf.@printf("| %*s | %*s |\n",
+        Printf.@printf(io, "| %*s | %*s |\n",
             format["length"][1], "Generator",
             format["length"][2], "Output Power",
         )
 
-        Printf.@printf("| %*s | %*s |\n",
+        Printf.@printf(io, "| %*s | %*s |\n",
             format["length"][1], "",
             format["length"][2], "$(format["unit"])",
         )
 
-        Printf.@printf("|-%*s-|-%*s-|\n",
+        Printf.@printf(io, "|-%*s-|-%*s-|\n",
             format["length"][1], "-"^format["length"][1],
             format["length"][2], "-"^format["length"][2],
         )
 
         for (label, i) in system.generator.label
-            Printf.@printf("| %*s | %*.4f |\n",
+            Printf.@printf(io, "| %*s | %*.4f |\n",
                 format["length"][1], label,
                 format["length"][2], analysis.power.generator.active[i] * format["scale"],
             )
         end
 
-        Printf.@printf "|%s|\n" "-"^(sum(format["length"]) + 5)
+        Printf.@printf io "|%s|\n" "-"^(sum(format["length"]) + 5)
     end
 end
 
@@ -940,32 +940,32 @@ function printFormatGenerator(system::PowerSystem, analysis::DC)
     return format
 end
 
-function printBusLine(format::Dict{String, Any}, analysis::AC)
-    Printf.@printf "|%s" "-"^(sum(format["length"][1:3]) + 8)
+function printBusLine(format::Dict{String, Any}, analysis::AC, io)
+    Printf.@printf io "|%s" "-"^(sum(format["length"][1:3]) + 8)
     if format["power"]
-        Printf.@printf "%s" "-"^(sum(format["length"][4:11]) + 24)
+        Printf.@printf io "%s" "-"^(sum(format["length"][4:11]) + 24)
     end
     if format["current"]
-        Printf.@printf "%s" "-"^(sum(format["length"][12:13]) + 6)
+        Printf.@printf io "%s" "-"^(sum(format["length"][12:13]) + 6)
     end
-    Printf.@printf "|\n"
+    Printf.@printf io "|\n"
 end
 
-function printBusLine(format::Dict{String, Any}, analysis::DC)
-    Printf.@printf "|%s" "-"^(sum(format["length"][1:2]) + 5)
+function printBusLine(format::Dict{String, Any}, analysis::DC, io)
+    Printf.@printf io "|%s" "-"^(sum(format["length"][1:2]) + 5)
     if format["power"]
-        Printf.@printf "%s" "-"^(sum(format["length"][3:5]) + 9)
+        Printf.@printf io "%s" "-"^(sum(format["length"][3:5]) + 9)
     end
-    Printf.@printf "|\n"
+    Printf.@printf io "|\n"
 end
 
-function printBranchLine(format::Dict{String, Any})
-    Printf.@printf "|%s" "-"^(format["length"][1] + 2)
+function printBranchLine(format::Dict{String, Any}, io)
+    Printf.@printf io "|%s" "-"^(format["length"][1] + 2)
     if format["power"]
-        Printf.@printf "%s" "-"^(sum(format["length"][2:9]) + 24)
+        Printf.@printf io "%s" "-"^(sum(format["length"][2:9]) + 24)
     end
     if format["current"]
-        Printf.@printf "%s" "-"^(sum(format["length"][10:15]) + 18)
+        Printf.@printf io "%s" "-"^(sum(format["length"][10:15]) + 18)
     end
-    Printf.@printf "|\n"
+    Printf.@printf io "|\n"
 end
