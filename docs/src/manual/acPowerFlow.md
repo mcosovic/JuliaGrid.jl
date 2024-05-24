@@ -241,6 +241,14 @@ Upon completion of the AC power flow analysis, the solution is conveyed through 
 print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
 ```
 
+The user has the option to print the results in any units that are set, for example:
+```@repl ACPowerFlowSolution
+@voltage(pu, deg, V);
+printBus(system, analysis)
+
+@voltage(pu, rad, V) # hide
+```
+
 In contrast, the iterative loop of the Gauss-Seidel method does not require the [`mismatch!`](@ref mismatch!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})) function:
 ```@example ACPowerFlowSolution
 analysis = gaussSeidel(system)

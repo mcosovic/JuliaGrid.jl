@@ -285,6 +285,14 @@ print(system.branch.label, system.base.power.value * analysis.power.from.active)
 !!! note "Info"
     To better understand the powers associated with buses, branches and generators that are calculated by the [`power!`](@ref power!(::PowerSystem, ::DCPowerFlow)) function, we suggest referring to the tutorials on [DC Power Flow Analysis](@ref DCPowerAnalysisTutorials).
 
+The user has the option to print the results in any units that are set, for example:
+```@repl ComputationPowersCurrentsLosses
+@power(MW, pu, pu);
+printBus(system, analysis)
+
+@power(pu, pu, pu) # hide
+```
+
 To compute specific quantities for particular components, rather than calculating powers or currents for all components, users can utilize one of the provided functions below.
 
 ---
