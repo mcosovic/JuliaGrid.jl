@@ -46,6 +46,9 @@ end
 
 power!(system, analysis)                   # Compute powers within the power system
 current!(system, analysis)                 # Compute currents within the power system
+
+printBus(system, analysis)                 # Print electrical quantities related to buses
+printBranch(system, analysis)              # Print electrical quantities related to branches
 ```
 
 ---
@@ -64,6 +67,8 @@ solve!(system, analysis)                 # Compute bus voltage angles
 @generator(active = 20)                  # Define the template for generators
 addGenerator!(system, analysis; bus = 1) # Add the new generator to the power system
 solve!(system, analysis)                 # Recompute bus voltage angles with the updated model
+
+printGenerator(system, analysis)         # Print generator power outputs
 ```
 
 ---
@@ -98,6 +103,8 @@ analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer) # Build the DC optimal po
 solve!(system, analysis)          # Compute generator powers and bus voltages
 
 power!(system, analysis)          # Compute active powers within the power system
+
+printBranch(system, analysis)     # Print electrical quantities related to branches
 ```
 
 ---

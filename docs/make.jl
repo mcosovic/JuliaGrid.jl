@@ -46,7 +46,7 @@ makedocs(
             "Measurement Model" => "api/measurementModel.md",
             "State Estimation" => "api/stateEstimation.md",
             "Power and Current Analysis" => "api/analysis.md",
-            "Setup and Print" => "api/configuration.md"
+            "Setup and Print" => "api/setupPrint.md"
             ]
         ],
 )

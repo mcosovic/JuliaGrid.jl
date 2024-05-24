@@ -1,5 +1,5 @@
-# [Setup and Print](@id configurationSetupAPI)
-For further information on this topic, please see the [Power System Model](@ref PowerSystemModelManual) or [Measurement Model](@ref MeasurementModelManual) sections of the Manual. Please note that when using macros, they modify variables within the current scope.
+# [Setup and Print](@id setupPrintAPI)
+For further information on this topic, please see the [Power System Model](@ref PowerSystemModelManual) or [Measurement Model](@ref MeasurementModelManual) sections of the Manual. Please note that when using macros, they modify variables within the current scope. Print functions can be used to print results to the REPL, or users can redirect output to print results to a text file, for example.
 
 ---
 
