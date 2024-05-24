@@ -33,7 +33,7 @@ Just like in the [Bus Type Modification](@ref DCBusTypeModificationManual) secti
 
 ---
 
-## [Weighted Least-squares Estimator](@id DCWLSStateEstimationSolutionManual)
+## [Weighted Least-Squares Estimator](@id DCWLSStateEstimationSolutionManual)
 To solve the DC state estimation and derive WLS estimates using JuliaGrid, the process initiates by defining the types `PowerSystem` and `Measurement`. Here is an illustrative example:
 ```@example WLSDCStateEstimationSolution
 using JuliaGrid # hide
@@ -160,7 +160,7 @@ nothing # hide
 ---
 
 ##### Setup Starting Primal Values
-In JuliaGrid, the assignment of starting primal values for optimization variables takes place when the [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimation{LinearWLS{Normal}})) function is executed. Starting primal values are determined based on the `voltage` fields within the `DCStateEstimation` type. By default, these values are initially established using the the initial bus voltage angles from `PowerSystem` type:
+In JuliaGrid, the assignment of starting primal values for optimization variables takes place when the [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimation{LinearWLS{Normal}})) function is executed. Starting primal values are determined based on the `voltage` fields within the `DCStateEstimation` type. By default, these values are initially established using the initial bus voltage angles from `PowerSystem` type:
 ```@repl WLSDCStateEstimationSolution
 print(system.bus.label, analysis.voltage.angle)
 ```
@@ -272,7 +272,7 @@ nothing # hide
 
 ---
 
-##### Reusing Weighted Least-squares Matrix Factorization
+##### Reusing Weighted Least-Squares Matrix Factorization
 Drawing from the preceding example, our focus now shifts to finding a solution involving modifications that entail adjusting the measurement value of the `Wattmeter 2`. It is important to note that these adjustments do not impact the variance or status of the measurement device, which can affect the gain matrix. To resolve this updated system, users can simply execute the [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimation{LinearWLS{Normal}})) function:
 ```@example WLSDCStateEstimationSolution
 using JuliaGrid # hide

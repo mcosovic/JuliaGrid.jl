@@ -241,21 +241,6 @@ Upon completion of the AC power flow analysis, the solution is conveyed through 
 print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
 ```
 
-The user has the option to print the results in the REPL using any units that have been configured, such as:
-```@repl ACPowerFlowSolution
-@voltage(pu, deg, V);
-printBus(system, analysis)
-
-@voltage(pu, rad, V) # hide
-```
-
-Moreover, users have the capability to redirect print output to a file. For instance, data can be saved in a text file as follows:
-```@julia
-open("bus_data.txt", "w") do file
-    printBus(system, analysis, file)
-end
-```
-
 In contrast, the iterative loop of the Gauss-Seidel method does not require the [`mismatch!`](@ref mismatch!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})) function:
 ```@example ACPowerFlowSolution
 analysis = gaussSeidel(system)
@@ -268,6 +253,24 @@ In these examples, the algorithms run until the specified number of iterations i
 
 !!! note "Info"
     We recommend that the reader refer to the tutorial on [AC Power Flow Analysis](@ref ACPowerFlowTutorials), where we explain the implementation of the methods and algorithm structures in detail.
+
+---
+
+##### Print Results
+Users have the option to print the results in the REPL using any units that have been configured, such as:
+```@repl ACPowerFlowSolution
+@voltage(pu, deg, V);
+printBus(system, analysis)
+
+@voltage(pu, rad, V) # hide
+```
+
+Users can also redirect print output to a file. For example, data can be saved in a text file as follows:
+```@julia
+open("bus_data.txt", "w") do file
+    printBus(system, analysis, file)
+end
+```
 
 ---
 
@@ -541,6 +544,9 @@ power!(system, analysis)
 current!(system, analysis)
 nothing # hide
 ```
+
+!!! tip "Tip"
+    Using [`printBus`](@ref printBus), [`printBranch`](@ref printBranch), and [`printGenerator`](@ref printGenerator), the user can print obtained results in the REPL or redirect print output to a file.
 
 For instance, if we want to show the active power injections and the to-bus current angles, we can employ the following code:
 ```@repl ComputationPowersCurrentsLosses

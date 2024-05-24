@@ -96,7 +96,7 @@ JuliaGrid employs standard observability analysis performed on the linear decoup
 !!! note "Info"
     We suggest that readers refer to the tutorial on [Observability Analysis](@ref ACObservabilityAnalysisTutorials) for insights into the implementation.
 
-However, the initial step involves defining observable islands. JuliaGrid offers users two options for obtaining observable islands: flow observable islands or maximal observable islands. The selection depends on the power system's structure and available measurements. Identifying only flow observable islands reduces complexity in the island detection function but increases complexity in the restoration function.
+However, the initial step involves defining observable islands. JuliaGrid offers users two options for obtaining observable islands: flow observable islands or maximal observable islands. The selection depends on the power system's structure and available measurements. Identifying only flow observable islands reduces complexity in the island detection function, but increases complexity in the restoration function.
 
 ---
 
@@ -107,7 +107,7 @@ islands = islandTopologicalFlow(system, device)
 nothing # hide
 ```
 
-As a result, four flow observable islands are identified: `Bus 1` and `Bus 2` form the first island, `Bus 3` and `Bus 4` form the second island, `Bus 5` and `Bus 6` constitute the third island, while `Bus 7` form the fourth island:
+As a result, four flow observable islands are identified: `Bus 1` and `Bus 2` form the first island, `Bus 3` and `Bus 4` form the second island, `Bus 5` and `Bus 6` constitute the third island, while `Bus 7` forms the fourth island:
 ```@repl ACSEObservabilityAnalysis
 islands.island
 nothing # hide
@@ -174,7 +174,7 @@ Additionally, it is worth mentioning that restoration might encounter difficulti
 
 ---
 
-## [Weighted Least-squares Estimator](@id ACLSStateEstimationSolutionManual)
+## [Weighted Least-Squares Estimator](@id ACLSStateEstimationSolutionManual)
 To begin, we will define the `PowerSystem` and `Measurement` types:
 ```@example ACSEWLS
 using JuliaGrid # hide
@@ -324,7 +324,7 @@ addPmu!(system, device; from = "Branch 1", magnitude = 1.048, angle = -0.057, po
 nothing # hide
 ```
 
-This inclusion of PMUs provides more accurate state estimates compared to rectangular inclusion but demands longer computing time. PMUs are handled in the same manner as SCADA measurements. However, this approach is susceptible to ill-conditioned problems arising in polar coordinates due to small values of current magnitudes [[2, 3]](@ref ACStateEstimationReferenceManual).
+This inclusion of PMUs provides more accurate state estimates compared to rectangular inclusion, but demands longer computing time. PMUs are handled in the same manner as SCADA measurements. However, this approach is susceptible to ill-conditioned problems arising in polar coordinates due to small values of current magnitudes [[2, 3]](@ref ACStateEstimationReferenceManual).
 
 !!! tip "Tip"
     It is important to note that with each individual phasor measurement, we can set the coordinate system, providing flexibility to include some in polar and some in rectangular systems. This flexibility is particularly valuable because bus voltage phasor measurements are preferably included in a polar coordinate system, while current phasor measurements are best suited to a rectangular coordinate system.
@@ -431,7 +431,7 @@ nothing # hide
 ---
 
 ##### Setup Starting Primal Values
-In JuliaGrid, the assignment of starting primal values for optimization variables takes place when the [`solve!`](@ref solve!(::PowerSystem, ::ACStateEstimation{NonlinearWLS{Normal}})) function is executed. Starting primal values are determined based on the `voltage` fields within the `ACStateEstimation` type. By default, these values are initially established using the the initial bus voltage magnitudes and angles from `PowerSystem` type:
+In JuliaGrid, the assignment of starting primal values for optimization variables takes place when the [`solve!`](@ref solve!(::PowerSystem, ::ACStateEstimation{NonlinearWLS{Normal}})) function is executed. Starting primal values are determined based on the `voltage` fields within the `ACStateEstimation` type. By default, these values are initially established using the initial bus voltage magnitudes and angles from `PowerSystem` type:
 ```@repl ACSEWLS
 print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
 ```

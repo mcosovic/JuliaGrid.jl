@@ -612,7 +612,7 @@ This procedure is applicable to all measurement devices, including voltmeters, a
 
 ---
 
-## [Add Set of Devices](@id AddDeviceGroupsManual)
+## [Add Multiple Devices](@id AddDeviceGroupsManual)
 Users have the option to add measurement devices with data generated from one of the AC analyses, specifically, using results obtained from either AC power flow or AC optimal power flow. To do this, users simply need to provide the `AC` type as an argument to one of the functions responsible for adding measurement devices:
 ```@example addDeviceGroups
 using JuliaGrid # hide

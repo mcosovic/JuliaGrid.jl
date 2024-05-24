@@ -120,7 +120,7 @@ print(device.pmu.label, device.pmu.magnitude.mean, device.pmu.angle.mean)
 
 ---
 
-## [Weighted Least-squares Estimator](@id PMUWLSStateEstimationSolutionManual)
+## [Weighted Least-Squares Estimator](@id PMUWLSStateEstimationSolutionManual)
 Let us continue with the previous example, where we defined the `PowerSystem` and `Measurement` types. To establish the PMU state estimation model, we will use the [`pmuWlsStateEstimation`](@ref pmuWlsStateEstimation) function:
 ```@example PMUOptimalPlacement
 analysis = pmuWlsStateEstimation(system, device)
@@ -258,7 +258,7 @@ nothing # hide
 ---
 
 ##### Setup Starting Primal Values
-In JuliaGrid, the assignment of starting primal values for optimization variables takes place when the [`solve!`](@ref solve!(::PowerSystem, ::PMUStateEstimation{LinearWLS{Normal}})) function is executed. Starting primal values are determined based on the `voltage` fields within the `PMUStateEstimation` type. By default, these values are initially established using the the initial bus voltage magnitudes and angles from `PowerSystem` type:
+In JuliaGrid, the assignment of starting primal values for optimization variables takes place when the [`solve!`](@ref solve!(::PowerSystem, ::PMUStateEstimation{LinearWLS{Normal}})) function is executed. Starting primal values are determined based on the `voltage` fields within the `PMUStateEstimation` type. By default, these values are initially established using the initial bus voltage magnitudes and angles from `PowerSystem` type:
 ```@repl PMUOptimalPlacement
 print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
 ```
