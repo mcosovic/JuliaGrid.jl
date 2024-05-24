@@ -404,7 +404,7 @@ nothing # hide
 ```
 
 !!! note "Info"
-    This method removes the need to restart and recreate both the `PowerSystem` within the `ac` field and the `ACPowerFlow` from the beginning when implementing changes to the existing power system.
+    This concept removes the need to restart and recreate both the `PowerSystem` within the `ac` field and the `ACPowerFlow` from the beginning when implementing changes to the existing power system.
 
 ---
 

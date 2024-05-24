@@ -5,6 +5,7 @@ using HDF5
 using JuMP
 using Random, OrderedCollections
 
+import Printf
 
 ######### Types and Constants ##########
 include("definition/internal.jl")
@@ -14,7 +15,9 @@ include("definition/analysis.jl")
 ######### Utility ##########
 include("utility/routine.jl")
 include("utility/internal.jl")
+include("utility/print.jl")
 export @base, @power, @voltage, @current, @parameter, @default
+export printBus, printBranch, printGenerator
 
 ########## Power System ##########
 include("powerSystem/load.jl")
@@ -82,4 +85,3 @@ export injectionPower, supplyPower, shuntPower, fromPower, toPower, chargingPowe
 export injectionCurrent, fromCurrent, toCurrent, seriesCurrent
 
 end
-

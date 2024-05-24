@@ -325,7 +325,7 @@ nothing # hide
 ```
 
 !!! note "Info"
-    This method removes the need to restart and recreate the `Measurement` type from the beginning when implementing changes to the existing measurement set.
+    This concept removes the need to restart and recreate the `Measurement` type from the beginning when implementing changes to the existing measurement set.
 
 ---
 
@@ -375,7 +375,7 @@ nothing # hide
 ```
 
 !!! note "Info"
-    This method removes the need to rebuild both the `Measurement` and the `PMUStateEstimation` from the beginning when implementing changes to the existing measurement set. In the scenario of employing the WLS model, JuliaGrid can reuse the symbolic factorizations of LU or LDLt, provided that the nonzero pattern of the gain matrix remains unchanged.
+    This concept removes the need to rebuild both the `Measurement` and the `PMUStateEstimation` from the beginning when implementing changes to the existing measurement set. In the scenario of employing the WLS model, JuliaGrid can reuse the symbolic factorizations of LU or LDLt, provided that the nonzero pattern of the gain matrix remains unchanged.
 
 ---
 

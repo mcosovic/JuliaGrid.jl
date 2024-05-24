@@ -9,7 +9,7 @@ To solve the AC optimal power flow problem and acquire bus voltage magnitudes an
 
 ---
 
-After obtaining the AC optimal power flow solution, JuliaGrid offers post-processing analysis functions for calculating powers and currents associated with buses and branches:
+After obtaining the AC optimal power flow solution, JuliaGrid offers post-processing analysis functions to calculate powers and currents associated with buses and branches:
 * [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)),
 * [`current!`](@ref current!(::PowerSystem, ::ACPowerFlow)).
 
@@ -77,7 +77,7 @@ JuMP.all_variables(analysis.method.jump)
 
 It is important to note that this is not a comprehensive set of optimization variables. When the cost function is defined as a linear piecewise function comprising multiple segments, as illustrated in the case of the active power output cost for `Generator 2`, JuliaGrid automatically generates helper optimization variables named `actwise` and `reactwise`, and formulates a set of linear constraints to effectively address these cost functions. For the sake of simplicity, we initially assume that `Generator 2` is out-of-service. Consequently, the helper variable is not included in the set of optimization variables. However, as we progress through this manual, we will activate the generator, introducing the helper variable and additional constraints to the optimization model.
 
-It is worth emphasizing that in instances where a linear piecewise cost function consists of only a single segment, as demonstrated by the reactive power output cost of `Generator 2`, the function is modelled as a standard linear function, obviating the need for additional helper optimization variables.
+It is worth emphasizing that in instances where a linear piecewise cost function consists of only a single segment, as demonstrated by the reactive power output cost of `Generator 2`, the function is modeled as a standard linear function, obviating the need for additional helper optimization variables.
 
 Please be aware that JuliaGrid maintains references to all variables, which are categorized into six fields:
 ```@repl ACOptimalPowerFlow
@@ -164,7 +164,7 @@ updateBranch!(system, analysis; label = "Branch 1", reactance = 0.25)
 nothing # hide
 ```
 
-For example, the updated set of active power balance constraints can be examined as follows:
+The updated set of active power balance constraints can be examined as follows:
 ```@repl ACOptimalPowerFlow
 print(system.bus.label, analysis.method.constraint.balance.active)
 ```
@@ -187,7 +187,7 @@ print(system.branch.label, analysis.method.constraint.voltage.angle)
 !!! note "Info"
     Please note that if the limit constraints are set to `minDiffAngle = -2π` and `maxDiffAngle = 2π` for the corresponding branch, JuliGrid will omit the corresponding inequality constraint.
 
-Additionally, by employing the [`updateBus!`](@ref updateBus!) and [`updateBranch!`](@ref updateBranch!) functions, user has the ability to modify these specific constraints as follows:
+Additionally, by employing the [`updateBus!`](@ref updateBus!) and [`updateBranch!`](@ref updateBranch!) functions, the user has the ability to modify these specific constraints as follows:
 ```@example ACOptimalPowerFlow
 updateBus!(system, analysis; label = "Bus 1", minMagnitude = 1.0, maxMagnitude = 1.0)
 updateBranch!(system, analysis; label = "Branch 1", minDiffAngle = -1.7, maxDiffAngle = 1.7)
@@ -203,7 +203,7 @@ print(system.branch.label, analysis.method.constraint.voltage.angle)
 ---
 
 ##### Flow Constraints
-The `flow` field contains references to the inequality constraints associated with the apparent power flow, active power flow, or current flow magnitude limits at the from-bus and to-bus ends of each branch. The type which one of the constraint will be applied is defined according to the `type` keyword within the [`addBranch!`](@ref addBranch!) function:
+The `flow` field contains references to the inequality constraints associated with the apparent power flow, active power flow, or current flow magnitude limits at the from-bus and to-bus ends of each branch. The type to which one of the constraints will be applied is defined according to the `type` keyword within the [`addBranch!`](@ref addBranch!) function:
 * `type = 1` for the apparent power flow,
 * `type = 2` for the active power flow,
 * `type = 3` for the current flow magnitude.
@@ -269,16 +269,16 @@ print(system.generator.label, analysis.method.constraint.capability.reactive)
 ---
 
 ##### Power Piecewise Constraints
-In the context of cost modelling, the `piecewise` field acts as a reference to the inequality constraints associated with linear piecewise cost functions. These constraints are established using the [`cost!`](@ref cost!) function, with `active = 1` or `reactive = 1` specified when working with linear piecewise cost functions that consist of multiple segments.
+In the context of cost modeling, the `piecewise` field acts as a reference to the inequality constraints associated with linear piecewise cost functions. These constraints are established using the [`cost!`](@ref cost!) function, with `active = 1` or `reactive = 1` specified when working with linear piecewise cost functions that consist of multiple segments.
 
-In our example, only the active power cost of `Generator 2` is modelled as a linear piecewise function with two segments, and JuliaGrid takes care of setting up the appropriate inequality constraints for each segment:
+In our example, only the active power cost of `Generator 2` is modeled as a linear piecewise function with two segments, and JuliaGrid takes care of setting up the appropriate inequality constraints for each segment:
 ```@repl ACOptimalPowerFlow
 print(system.generator.label, analysis.method.constraint.piecewise.active)
 ```
 
 It is worth noting that these constraints can also be automatically updated using the [`cost!`](@ref cost!) function. Readers can find more details in the section discussing the objective function.
 
-As mentioned at the beginning, a linear piecewise cost functions with multiple segments will also introduce helper variables that are added to the objective function. In this specific example, the helper variable is:
+As mentioned at the beginning, linear piecewise cost functions with multiple segments will also introduce helper variables that are added to the objective function. In this specific example, the helper variable is:
 ```@repl ACOptimalPowerFlow
 analysis.method.variable.actwise[2]
 ```
@@ -449,7 +449,7 @@ Now, let us introduce changes to the power system from the previous example:
 updateGenerator!(system, analysis; label = "Generator 2", maxActive = 0.08)
 ```
 
-Next, solve this new power system. During the execution of the [`solve!`](@ref solve!(::PowerSystem, ::ACOptimalPowerFlow)) function, the primal starting values will first be set, and these values will be defined according to the values given above:
+Next, solve this new power system. During the execution of the [`solve!`](@ref solve!(::PowerSystem, ::ACOptimalPowerFlow)) function, the primal starting values will first be set to the values given above:
 ```@example ACOptimalPowerFlow
 solve!(system, analysis)
 ```

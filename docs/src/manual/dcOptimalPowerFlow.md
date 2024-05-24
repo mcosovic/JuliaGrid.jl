@@ -212,7 +212,7 @@ Subsequently, the updated set of active power capability constraints can be exam
 print(system.generator.label, analysis.method.constraint.capability.active)
 ```
 
-It is important to note that by bringing back `Generator 2` into service, it will also have an impact on the balance constraint, which will once again be influenced by the generator's output.
+It is important to note that bringing back `Generator 2` into service will also have an impact on the balance constraint, which will once again be influenced by the generator's output.
 
 ---
 
@@ -373,7 +373,7 @@ updateGenerator!(system, analysis; label = "Generator 2", maxActive = 0.08)
 nothing # hide
 ```
 
-Next, solve this new power system. During the execution of the [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow)) function, the primal starting values will first be set, and these values will be defined according to the values given above:
+Next, solve this new power system. During the execution of the [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow)) function, the primal starting values will first be set to the values given above:
 ```@example DCOptimalPowerFlow
 solve!(system, analysis)
 ```

@@ -5,7 +5,7 @@ The type `Measurement` can be created using a function:
 * [`measurement`](@ref measurement).
 JuliaGrid supports two modes for populating the `Measurement` type: using built-in functions or using HDF5 files.
 
-It is recommended to use the HDF5 format for large-scale systems. To facilitate this, JuliaGrid has the function:
+To work with HDF5 files, JuliaGrid provides the function:
 * [`saveMeasurement`](@ref saveMeasurement).
 
 ---
@@ -341,7 +341,7 @@ For the first and third PMUs, we assume that the measurement values are already 
 ---
 
 ##### Coordinate Systems and Correlated Measurement Errors
-When users add PMUs, the incorporation of these measurements into the state estimation model is always in the rectangular coordinate system. In this scenario, the real and imaginary components of the phasor measurements become correlated, although typically these correlations are disregarded. However, if users want to consider these error correlations, the keyword `correlated = true` is provided for support.
+When users add PMUs, the incorporation of these measurements into the state estimation model is always in the rectangular coordinate system. In this scenario, the real and imaginary components of the phasor measurements become correlated, although typically these correlations are disregarded [[1]](@ref MeasurementModelReferenceManual). However, if users want to consider these error correlations, the keyword `correlated = true` is provided for support.
 
 Further, in the AC state estimation model, users have the flexibility to integrate PMU outputs in the polar coordinate system by specifying `polar = true`.
 
@@ -483,7 +483,7 @@ In all the previous examples, with the exception of the last one, we relied on a
 ---
 
 ##### Integer-Based Labeling
-If users prefer to utilize integers as labels in various functions, this is acceptable. However, it is important to note that despite using integers, these labels are still stored as strings. Let us take a look at the following illustration:
+If users prefer to utilize integers as labels in various functions, this is acceptable. However, it is important to note that despite using integers, these labels are still stored as strings. For example:
 ```@example LabelInteger
 using JuliaGrid # hide
 @default(unit) # hide
@@ -506,7 +506,7 @@ nothing # hide
 ---
 
 ##### Automated Labeling Using Templates
-Furthermore, users can create labels using templates and include the symbol `?` an incremental set of integers at any position. In addition, users have the option to use the symbol `!` to insert the location of the measurement device into the label. For example:
+Furthermore, users can create labels using templates and include the symbol `?` to insert an incremental set of integers at any position. In addition, users have the option to use the symbol `!` to insert the location of the measurement device into the label. For example:
 ```@example LabelAutomaticTemplate
 using JuliaGrid # hide
 @default(unit) # hide
@@ -612,8 +612,8 @@ This procedure is applicable to all measurement devices, including voltmeters, a
 
 ---
 
-## [Add Device Groups](@id AddDeviceGroupsManual)
-Users have the option to add measurement devices with data generated from one of the AC analyses, specifically, using results obtained from either AC power flow or AC optimal power flow. To do this, users simply need to provide the `AC` abstract type as an argument to one of the functions responsible for adding measurement devices:
+## [Add Set of Devices](@id AddDeviceGroupsManual)
+Users have the option to add measurement devices with data generated from one of the AC analyses, specifically, using results obtained from either AC power flow or AC optimal power flow. To do this, users simply need to provide the `AC` type as an argument to one of the functions responsible for adding measurement devices:
 ```@example addDeviceGroups
 using JuliaGrid # hide
 @default(unit) # hide
@@ -671,7 +671,7 @@ For wattmeters, varmeters, and PMUs added to all buses and branches, we rely on 
 
 ---
 
-User has the option to employ an alternative method for adding groups of measurements, utilizing functions that add measurements individually. This approach may offer a more straightforward process. For example, to add wattmeters similarly to the procedure outlined above, we can employ the following:
+Users have the option to employ an alternative method for adding groups of measurements, utilizing functions that add measurements individually. This approach may offer a more straightforward process. For example, to add wattmeters similarly to the procedure outlined above, we can employ the following:
 ```@example addDeviceGroups
 Pᵢ = analysis.power.injection.active
 for (label, index) in system.bus.label
@@ -722,7 +722,7 @@ updateWattmeter!(system, device; label = "Bus 1", active = 1.2, variance = 1e-4)
 updateWattmeter!(system, device; label = "To Branch 1", variance = 1e-6)
 nothing  # hide
 ```
-In this case, we modify the measurement and variance values for the wattmeter located at `Bus 1`. The wattmeter at `Branch 1` on the to-bus end retains its measurement value while only the measurement variance is adjusted.
+In this case, we modify the measurement and variance values for the wattmeter located at `Bus 1`. The wattmeter at `Branch 1` on the to-bus end retains its measurement value, while only the measurement variance is adjusted.
 
 ---
 
@@ -833,3 +833,8 @@ status!(system, device; redundancy = 1.2)
 nothing  # hide
 ```
 Considering that the number of state variables is 5 (excluding the voltage angle related to the slack bus), using a redundancy value of 1.2 will result in 6 devices being set to in-service, while the remainder will be deactivated. As before, users can target specific devices or adjust settings as needed.
+
+---
+
+## [References](@id MeasurementModelReferenceManual)
+[1] A. Gomez-Exposito, A. Abur, P. Rousseaux, A. de la Villa Jaen, and C. Gomez-Quiles, *On the use of PMUs in power system state estimation*, Proc. IEEE PSCC, 2011.

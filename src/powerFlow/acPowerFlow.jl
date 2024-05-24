@@ -922,8 +922,7 @@ function reactiveLimit!(system::PowerSystem, analysis::ACPowerFlow)
                 if j == bus.layout.slack
                     for k = 1:bus.number
                         if bus.layout.type[k] == 2
-                            labels = collect(keys(sort(system.bus.label; byvalue = true)))
-                            @info("The slack bus labeled $(labels[j]) is converted to generator bus.\nThe bus labeled $(labels[k]) is the new slack bus.")
+                            @info("The slack bus labeled $(iterate(generator.label, j)[1][1]) is converted to generator bus.\nThe bus labeled $(iterate(generator.label, k)[1][1]) is the new slack bus.")
                             bus.layout.slack = k
                             bus.layout.type[k] = 3
                             break

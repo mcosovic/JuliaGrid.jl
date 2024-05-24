@@ -156,7 +156,7 @@ nothing # hide
 ```
 
 !!! note "Info"
-    This method removes the need to restart and recreate the `PowerSystem` within the `dc` field from the beginning when implementing changes to the existing power system.
+    This concept removes the need to restart and recreate the `PowerSystem` within the `dc` field from the beginning when implementing changes to the existing power system.
 
 ---
 
@@ -198,12 +198,12 @@ nothing # hide
 ```
 
 !!! note "Info"
-    This method removes the need to restart and recreate both the `PowerSystem` within the `dc` field and the `DCPowerFlow` from the beginning when implementing changes to the existing power system. Additionally, JuliaGrid can reuse symbolic factorizations of LU or LDLt, as long as the nonzero pattern of the nodal matrix remains consistent between power system configurations.
+    This concept removes the need to restart and recreate both the `PowerSystem` within the `dc` field and the `DCPowerFlow` from the beginning when implementing changes to the existing power system. Additionally, JuliaGrid can reuse symbolic factorizations of LU or LDLt, as long as the nonzero pattern of the nodal matrix remains consistent between power system configurations.
 
 ---
 
 ##### Reusing Matrix Factorization
-Drawing from the preceding example, our focus now shifts to finding a solution involving modifications that entail adjusting the active power demand at `Bus 2`, introducing a new generator at `Bus 2`, and fine-tuning the output power of `Generator 1`. It is important to note that these adjustments do not impact the branches leaving the nodal matrix unchanged. To resolve this updated system, users can simply execute the [`solve!`](@ref solve!(::PowerSystem, ::DCPowerFlow)) function:
+Drawing from the preceding example, our focus now shifts to finding a solution involving modifications that entail adjusting the active power demand at `Bus 2`, introducing a new generator at `Bus 2`, and fine-tuning the output power of `Generator 1`. It is important to note that these adjustments do not impact the branches, leaving the nodal matrix unchanged. To resolve this updated system, users can simply execute the [`solve!`](@ref solve!(::PowerSystem, ::DCPowerFlow)) function:
 ```@example DCPowerFlowSolution
 
 updateBus!(system, analysis; label = "Bus 2", active = 0.2)

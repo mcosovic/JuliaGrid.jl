@@ -405,3 +405,15 @@ function dropZeros!(ac::ACModel)
         ac.pattern += 1
     end
 end
+
+######### Find Key by Value ##########
+function findKey(dict::Dict{String, Float64}, value::Float64)
+    for (k, v) in dict
+        if v == value
+            return k
+            break
+        end
+    end
+
+    return ""
+end

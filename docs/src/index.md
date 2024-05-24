@@ -1,20 +1,20 @@
 JuliaGrid
 =============
 
-JuliaGrid is an open-source and easy-to-use simulation tool and solver developed for researchers and educators. It is available as a Julia package, and its source code is released under the MIT License. JuliaGrid primarily focuses on steady-state power system analyses, providing a versatile set of algorithms while also allowing for easy manipulation of power system configurations, measurement data, and the analyses involved.
+JuliaGrid is a fast, flexible and easy-to-use open-source tool for analysis and modification of power system configurations and measurement data. It represents a comprehensive framework for steady-state power system analysis written in the Julia programming language. The framework is available as a Julia package under MIT License. JuliaGrid is primarily designed for  researchers and academics, providing various state-of-the-art algorithms.
 
-Our documentation is divided into three distinct categories:
-* The manual provides users with guidance on using available functions, explaining the expected outcomes, and offering instructions for modifying power system configurations, measurement data, and specific analyses.
-* The tutorials delve deeper into the mathematical implementation of algorithms, allowing users to gain an in-depth understanding of the formulas behind various functions.
-* Lastly, the API references offer a comprehensive list of functions within the package, categorized according to specific analyses.
+JuliaGrid documentation consists of three main parts:
+* The manual provides users with guidance on how to use available functions, its return values, and offers instructions for modifying power system configurations, measurement data, and other user specific analysis.
+* The tutorials delve deeper into the theoretical underpinnings of state-of-the-art algorithms, allowing users to gain an in-depth understanding of the equations used in various functions.
+* API references offer a comprehensive list of objects, functions and methods within the package, categorised according to specific use-cases.
 
-In order to encourage code reusability and give users the ability to customize their analyses as required, we decompose specific analyses. However, the overall logic can be simplified as follows:
-* Users start by constructing a power system with/without measurement data.
-* They then choose between the AC or DC model.
-* Next, users define the specific type of analysis.
-* Ultimately, they solve the generated framework.
+The fremowork's architecture centres around code-reusability paradigm, allowing users a high level of customization for their experiments. To simplify, the overall logic for setting the experiments and its analysis can be as follows:
+* Users define a power system with/without measurement data.
+* Users select between the AC or DC model.
+* Users define the specific type of required analysis.
+* Finally, they solve the generated power system model.
 
-Below, we have provided a list of examples to assist users in getting started with the JuliaGrid package. These examples highlight some of the possibilities that the package offers.
+Below, we have provided a list of exhaustive examples in order to ease users in getting started with the JuliaGrid package. These examples highlight some of the functionalities that the framework offers.
 
 ---
 

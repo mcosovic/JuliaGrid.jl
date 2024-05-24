@@ -125,6 +125,11 @@
         @test reactive ≈ power.generator.reactive[value]
     end
 
+    ####### Test Print Data #######
+    @capture_out printBus(system14, analysis)
+    @capture_out printBranch(system14, analysis)
+    @capture_out printGenerator(system14, analysis)
+
     ################ Modified IEEE 30-bus Test Case ################
     system30 = powerSystem(string(pathData, "case30test.m"))
     matpower30 = h5read(string(pathData, "results.h5"), "case30test/newtonRaphson")
@@ -594,6 +599,11 @@ end
         @test generatorPower(system14, analysis; label = key) ≈ matpower14["generator"][value] atol = 1e-14
     end
 
+    ####### Test Print Data #######
+    @capture_out printBus(system14, analysis)
+    @capture_out printBranch(system14, analysis)
+    @capture_out printGenerator(system14, analysis)
+
     ################ Modified IEEE 30-bus Test Case ################
     system30 = powerSystem(string(pathData, "case30test.m"))
     matpower30 = h5read(string(pathData, "results.h5"), "case30test/dcPowerFlow")
@@ -629,3 +639,4 @@ end
         @test generatorPower(system30, analysis; label = key) ≈ matpower30["generator"][value] atol = 1e-14
     end
 end
+
