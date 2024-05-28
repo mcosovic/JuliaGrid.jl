@@ -1,5 +1,5 @@
 # [Power System Model](@id ACDCModelTutorials)
-The power system analyses commonly utilize the unified branch model that provides linear relationships between voltages and currents. However, as the focus is on power calculations rather than current calculations, the resulting equations become nonlinear, posing challenges in solving them [[1]](@ref ACDCModelReferenceTutorials). Hence, to accurately analyze power systems without any approximations, we use the AC model, which is a crucial component of our framework. In contrast, to obtain a linear system of equations for various DC analyses, we introduce approximations in the unified branch model, resulting in the DC model.
+Power system analyses commonly utilize the unified branch model that provides linear relationships between voltages and currents. However, as the focus is on power calculations rather than current calculations, the resulting equations become nonlinear, posing challenges in solving them [[1]](@ref ACDCModelReferenceTutorials). Hence, to accurately analyze power systems without any approximations, we use the AC model, which is a crucial component of our framework. In contrast, to obtain a linear system of equations for various DC analyses, we introduce approximations in the unified branch model, resulting in the DC model.
 
 !!! note "Info"
     In this section, we not only describe the AC and DC models derived from the unified branch model but also furnish the power and current equations utilized in all JuliaGrid analyses.
@@ -54,7 +54,7 @@ nothing #hide
 The equivalent unified ``\pi``-model for a branch ``(i,j) \in \mathcal{E}`` incident to the buses ``\{i,j\} \in \mathcal{N}`` is shown in Figure 1.
 ```@raw html
 <img src="../../assets/pi_model.svg" class="center" width="600"/>
-<figcaption>Figure 1: The equivalent branch model, where the transformer is located at from-bus end of the branch.</figcaption>
+<figcaption>Figure 1: The equivalent branch model, where the transformer is located at the from-bus end of the branch.</figcaption>
 &nbsp;
 ```
 
@@ -95,7 +95,7 @@ The transformer complex ratio ``\alpha_{ij}`` is defined:
 ```math
   \alpha_{ij} = \cfrac{1}{\tau_{ij}}e^{-\text{j}\phi_{ij}},
 ```
-where ``\tau_{ij} \neq 0`` is a transformer turns ratio, while ``\phi_{ij}`` is a transformer phase shift angle, always located from-bus end of the branch. Note, if ``\tau_{ij} = 1`` and ``\phi_{ij} = 0`` the model describes the line. In-phase transformers are defined if ``\tau_{ij} \neq 1``, ``\phi_{ij} = 0``, and ``y_{\text{s}ij} = 0``, while phase-shifting transformers are obtained if ``\tau_{ij} \neq 1``, ``\phi_{ij} \neq 0``, and ``y_{\text{s}ij} = 0``.
+where ``\tau_{ij} \neq 0`` is a transformer turns ratio, while ``\phi_{ij}`` is a transformer phase shift angle, always located at the from-bus end of the branch. Note, if ``\tau_{ij} = 1`` and ``\phi_{ij} = 0`` the model describes the line. In-phase transformers are defined if ``\tau_{ij} \neq 1``, ``\phi_{ij} = 0``, and ``y_{\text{s}ij} = 0``, while phase-shifting transformers are obtained if ``\tau_{ij} \neq 1``, ``\phi_{ij} \neq 0``, and ``y_{\text{s}ij} = 0``.
 
 These transformer parameters are stored in the vectors ``\bm{\tau} = [\tau_{ij}]`` and ``\bm{\phi} = [\phi_{ij}]``, respectively:
 ```@repl ACDCModel
@@ -129,7 +129,7 @@ The current flowing through a series admittance, denoted as ``y_{ij}``, is defin
     \bar{I}_{\text{l}ij} = \alpha_{ij} y_{ij}\bar{V}_i - y_{ij}\bar{V}_i, \;\;\; (i,j) \in \mathcal{E}.
 ```
 
-Consequently, the active and reactive power associated with the branch series element are as follows:
+Consequently, the active and reactive powers associated with the branch series element are as follows:
 ```math
   S_{\text{l}ij} = P_{\text{l}ij} + \text{j}Q_{\text{l}ij} = (\alpha_{ij} \bar{V}_i - \bar{V}_j) \bar{I}_{\text{l}ij}^* = y_{ij}^* (\alpha_{ij} \bar{V}_i - \bar{V}_j) (\alpha_{ij} \bar{V}_i - \bar{V}_j)^*, \;\;\; (i,j) \in \mathcal{E}.
 ```
@@ -255,7 +255,7 @@ where ``\mathbf {\bar {V}} \in \mathbb{C}^{n}`` is the vector of bus complex vol
       \end{aligned}
     ```
 
-When a branch is not incident (or adjacent) to a bus the corresponding element in the nodal admittance matrix ``\mathbf{Y}`` is equal to zero. The nodal admittance matrix ``\mathbf{Y}`` is a sparse (i.e., a small number of elements are non-zeros) for real-world power systems. Although it is often assumed that the matrix ``\mathbf{Y}`` is symmetrical, it is not a general case, for example, in the presence of phase shifting transformers the matrix ``\mathbf{Y}`` is not symmetrical [[2, Sec. 9.6]](@ref ACDCModelReferenceTutorials). JuliaGrid stores both the matrix ``\mathbf{Y}`` and its transpose ``\mathbf{Y}^T`` in the `ac` field of the `PowerSystem` type:
+When a branch is not incident (or adjacent) to a bus the corresponding element in the nodal admittance matrix ``\mathbf{Y}`` is equal to zero. The nodal admittance matrix ``\mathbf{Y}`` is sparse (i.e., a small number of elements are non-zeros) for real-world power systems. Although it is often assumed that the matrix ``\mathbf{Y}`` is symmetrical, it is not a general case. For example, in the presence of phase shifting transformers the matrix ``\mathbf{Y}`` is not symmetric [[2, Sec. 9.6]](@ref ACDCModelReferenceTutorials). JuliaGrid stores both the matrix ``\mathbf{Y}`` and its transpose ``\mathbf{Y}^T`` in the `ac` field of the `PowerSystem` type:
 ```@repl ACDCModel
 𝐘 = system.model.ac.nodalMatrix
 𝐘ᵀ = system.model.ac.nodalMatrixTranspose
@@ -274,12 +274,12 @@ Furthermore, the calculation of active and reactive power injection at each bus 
     {S}_i = P_i + \text{j}Q_i = \bar{V}_i \sum\limits_{j = 1}^n {Y}_{ij}^* \bar{V}_{j}^*, \;\;\; i \in \mathcal{N}.
 ```
 
-When the values of active or reactive power are positive, ``P_i > 0`` or ``Q_i > 0``, it indicates that the bus is supplying power into the power system. Conversely, negative values, ``P_i < 0`` or ``Q_i < 0``, suggest that the bus is drawing active or reactive power from the power system.
+Positive values of active or reactive powers, ``P_i > 0`` or ``Q_i > 0``, indicate that the bus is supplying power into the power system. Conversely, negative values, ``P_i < 0`` or ``Q_i < 0``, suggest that the bus is drawing active or reactive power from the power system.
 
 ---
 
 ##### [Bus Shunt Element](@id BusShuntElementTutorials)
-In conclusion, based on the previous analysis, we can determine the active and reactive power at the shunt element of each bus using the following equation:
+Based on the previous analysis, we can determine the active and reactive power at the shunt element of each bus using the following equation:
 ```math
   {S}_{\text{sh}i} = {P}_{\text{sh}i} + \text{j}{Q}_{\text{sh}i} = \bar{V}_{i}\bar{I}_{\text{sh}i}^* = {y}_{\text{sh}i}^*{V}_{i}^2, \;\;\; i \in \mathcal{N}.
 ```
@@ -289,7 +289,7 @@ The positive active power value ``{P}_{\text{sh}i} > 0`` indicates that the shun
 ---
 
 ## [DC Model](@id DCModelTutorials)
-The DC model is obtained by linearisation of the nonlinear model, and it provides an approximate solution. In the typical operating conditions, the difference of bus voltage angles between adjacent buses ``(i,j) \in \mathcal{E}`` is very small ``\theta_{i}-\theta_{j} \approx 0``, which implies ``\cos (\theta_{i}-\theta_{j})\approx 1`` and ``\sin (\theta_{i}-\theta_{j}) \approx \theta_{i}-\theta_{j}``. Further, all bus voltage magnitudes are ``V_i \approx 1``, ``i \in \mathcal{N}``, and all branch shunt admittances and branch resistances can be neglected. This implies that the DC model ignores the reactive powers and transmission losses and takes into account only the active powers.
+The DC model is obtained by linearization of the nonlinear model, and it provides an approximate solution. In the typical operating conditions, the difference of bus voltage angles between adjacent buses ``(i,j) \in \mathcal{E}`` is very small ``\theta_{i}-\theta_{j} \approx 0``, which implies ``\cos (\theta_{i}-\theta_{j})\approx 1`` and ``\sin (\theta_{i}-\theta_{j}) \approx \theta_{i}-\theta_{j}``. Further, all bus voltage magnitudes are ``V_i \approx 1``, ``i \in \mathcal{N}``, and all branch shunt admittances and branch resistances can be neglected. This implies that the DC model ignores the reactive powers and transmission losses and takes into account only the active powers.
 
 Therefore, the DC power flow takes only bus voltage angles ``\bm \Theta \in \mathbb{R}^{n}`` as variables. To create vectors and matrices related to DC or linear analyses, JuliaGrid uses the function [`dcModel!`](@ref dcModel!):
 ```@example ACDCModel

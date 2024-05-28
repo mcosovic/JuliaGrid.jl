@@ -1,5 +1,5 @@
 # [DC State Estimation](@id DCStateEstimationManual)
-To perform the DC state estimation, we first need to have the `PowerSystem` type that has been created with the DC model, alongside the `Measurement` type that retains measurement data. Subsequently, we can formulate either the weighted least-squares (WLS) or the least absolute value (LAV) DC state estimation model encapsulated within the abstract type `DCStateEstimation` using:
+To perform the DC state estimation, we first need to have the `PowerSystem` type that has been created with the DC model, alongside the `Measurement` type that retains measurement data. Subsequently, we can formulate either the weighted least-squares (WLS) or the least absolute value (LAV) DC state estimation model encapsulated within the type `DCStateEstimation` using:
 * [`dcWlsStateEstimation`](@ref dcWlsStateEstimation),
 * [`dcLavStateEstimation`](@ref dcLavStateEstimation).
 
@@ -9,7 +9,7 @@ For resolving the DC state estimation problem and obtaining bus voltage angles, 
 After executing the function [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimation{LinearWLS{Normal}})), where the user employs the WLS method, the user has the ability to check if the measurement set contains outliers throughout bad data analysis and remove those measurements using:
 * [`residualTest!`](@ref residualTest!).
 
-Moreover, before the creating `DCStateEstimation` type, users can initiate observability analysis to identify observable islands and restore observability by employing:
+Moreover, before creating the `DCStateEstimation` type, users can initiate observability analysis to identify observable islands and restore observability by employing:
 * [`islandTopologicalFlow`](@ref islandTopologicalFlow(::PowerSystem, ::Measurement)),
 * [`islandTopological`](@ref islandTopological(::PowerSystem, ::Measurement)),
 * [`restorationGram!`](@ref restorationGram!(::PowerSystem, ::Measurement, ::Measurement, ::Island)).
@@ -34,7 +34,7 @@ Just like in the [Bus Type Modification](@ref DCBusTypeModificationManual) secti
 ---
 
 ## [Weighted Least-Squares Estimator](@id DCWLSStateEstimationSolutionManual)
-To solve the DC state estimation and derive WLS estimates using JuliaGrid, the process initiates by defining the types `PowerSystem` and `Measurement`. Here is an illustrative example:
+To solve the DC state estimation and derive WLS estimates using JuliaGrid, the process initiates by defining `PowerSystem` and `Measurement` types. Here is an illustrative example:
 ```@example WLSDCStateEstimationSolution
 using JuliaGrid # hide
 @default(unit) # hide

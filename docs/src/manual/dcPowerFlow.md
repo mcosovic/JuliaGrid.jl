@@ -285,7 +285,7 @@ print(system.branch.label, system.base.power.value * analysis.power.from.active)
 ---
 
 ##### Print Results
-Users have the option to print the results in any units that are set, for example:
+Users have the option to print the results in the REPL using any units that have been configured, such as:
 ```@repl ComputationPowersCurrentsLosses
 @voltage(pu, deg, V);
 @power(MW, pu, pu);
