@@ -1,9 +1,9 @@
 """
     gaussNewton(system::PowerSystem, device::Measurement, method)
 
-The function sets up the the Gauss-Newton method to solve the nonlinaer or AC state
+The function sets up the Gauss-Newton method to solve the nonlinear or AC state
 estimation model, where the vector of state variables is given in polar coordinates. The
-Gauss-Newton method throuout iterations provied WLS estimator.
+Gauss-Newton method throughout iterations provided WLS estimator.
 
 # Arguments
 This function requires the `PowerSystem` and `Measurement` composite types to establish
@@ -283,7 +283,7 @@ end
 """
     acLavStateEstimation(system::PowerSystem, device::Measurement, optimizer)
 
-The function sets up the the LAV method to solve the nonlinaer or AC state estimation
+The function sets up the LAV method to solve the nonlinear or AC state estimation
 model, where the vector of state variables is given in polar coordinates.
 
 # Arguments

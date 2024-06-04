@@ -27,7 +27,7 @@ To review, we can conceptualize the bus/branch model as the graph denoted by ``\
 
 ---
 
-Following that, we will introduce the `Measurement` type and incorporate a set of measurement devices ``\mathcal{M}`` into the graph ``\mathcal{G}``. In typical scenarios, the DC state estimation model relies solely on active power measurements  originating from the set of wattmeters ``\mathcal{P}``. However, we provide the option for users to include measurements from the set of PMUs ``\bar{\mathcal{P}}``. Specifically, we utilize only the PMUs installed at the buses ``\bar{\mathcal{P}}_\text{b} \subset \bar{\mathcal{P}}`` that measure bus voltage angles. This process of adding measurement devices will be carried out in the [State Estimation Model](@ref DCSEModelTutorials) section. Currently, we are only initializing the `Measurement` type at this stage:
+Following that, we will introduce the `Measurement` type and incorporate a set of measurement devices ``\mathcal{M}`` into the graph ``\mathcal{G}``. In typical scenarios, the DC state estimation model relies solely on active power measurements  originating from the set of wattmeters ``\mathcal{P}``. However, we provide the option for users to include measurements from the set of PMUs ``\bar{\mathcal{P}}``. Specifically, we utilize only the PMUs installed at the buses ``\bar{\mathcal{P}}_\text{b} \subset \bar{\mathcal{P}}`` that measure bus voltage angles. This process of adding measurement devices will be carried out in the [State Estimation Model](@ref DCSEModelTutorials) section. Currently, we are only initializing the `Measurement` type:
 ```@example DCSETutorial
 device = measurement()
 nothing # hide
@@ -169,7 +169,7 @@ with the following coefficient expression:
 
 ---
 
-## [Weighted Least-squares Estimation](@id DCSEWLSStateEstimationTutorials)
+## [Weighted Least-Squares Estimation](@id DCSEWLSStateEstimationTutorials)
 The solution to the DC state estimation problem is determined by solving the linear weighted least-squares (WLS) problem, represented by the following formula:
 ```math
 	\mathbf H^{T} \bm \Sigma^{-1} \mathbf H \bm {\Theta} = \mathbf H^{T} \bm \Sigma^{-1} (\mathbf z - \mathbf{c}).
@@ -501,7 +501,7 @@ We can determine the active power supplied by generators to the buses by summing
 ```math
     P_{\text{p}i} = P_i + P_{\text{d}i},\;\;\; i \in \mathcal{N}.
 ```
-The vector of active power injected by generators to the buses, denoted by ``\mathbf{P}_{\text{p}} = [P_{\text{p}i}]``, can be obtained using:
+The vector of active power injected by generators into the buses, denoted by ``\mathbf{P}_{\text{p}} = [P_{\text{p}i}]``, can be obtained using:
 ```@repl DCSETutorial
 𝐏ₚ = analysis.power.supply.active
 ```

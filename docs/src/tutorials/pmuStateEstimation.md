@@ -30,7 +30,7 @@ To review, we can conceptualize the bus/branch model as the graph denoted by ``\
 
 ---
 
-Following that, we will introduce the `Measurement` type and incorporate a set of PMUs ``\mathcal{M} \equiv \bar{\mathcal{P}}`` into the graph ``\mathcal{G}``, capture both bus voltage and branch current phasors. . To construct the linear PMU state estimation model, we represent the vector of state variables, as well as phasor measurements, in the rectangular coordinate system. This process of adding measurement devices will be carried out in the [State Estimation Model](@ref PMUSEModelTutorials) section. Currently, we are only initializing the `Measurement` type at this stage:
+Following that, we will introduce the `Measurement` type and incorporate a set of PMUs ``\mathcal{M} \equiv \bar{\mathcal{P}}`` into the graph ``\mathcal{G}``, that capture both bus voltage and branch current phasors. To construct the linear PMU state estimation model, we represent the vector of state variables, as well as phasor measurements, in the rectangular coordinate system. This process of adding measurement devices will be carried out in the [State Estimation Model](@ref PMUSEModelTutorials) section. Currently, we are only initializing the `Measurement` type:
 ```@example PMUSETutorial
 device = measurement()
 nothing # hide
@@ -50,7 +50,7 @@ Initially, PMUs output phasor measurements in polar coordinates. However, these 
 
 Consequently, the total number of state variables is ``2n``. It is worth noting that in this approach to state estimation, we do not require the slack bus.
 
-The primary drawback of this method stems from measurement errors, which are associated with polar coordinates. Consequently, the covariance matrix must be transformed from polar to rectangular coordinates. As a result, errors from a single PMU are correlated, leading to a non-diagonal covariance matrix. Despite this, the covariance matrix is commonly treated as diagonal, impacting the accuracy of the state estimation in such scenarios.
+The primary drawback of this method stems from measurement errors, which are associated with polar coordinates. Consequently, the covariance matrix must be transformed from polar to rectangular coordinates. As a result, errors from a single PMU are correlated, leading to a non-diagonal covariance matrix. Despite this, the covariance matrix is commonly treated as diagonal, impacting the state estimation accuracy in such scenarios.
 
 Hence, the model includes real and imaginary parts of bus voltage and current phasor measurements from the set ``\mathcal{M}``, contributing to the formulation of a linear system of equations:
 ```math
@@ -59,7 +59,7 @@ Hence, the model includes real and imaginary parts of bus voltage and current ph
 
 Here, ``\mathbf{h}(\mathbf {x})= [h_1(\mathbf {x})``, ``\dots``, ``h_k(\mathbf {x})]^{{T}}`` represents the vector of linear measurement functions, where ``k = 2|\bar{\mathcal{P}}|`` is the number of measurement functions, ``\mathbf{z} = [z_1,\dots,z_k]^{T}`` denotes the vector of measurement values, and ``\mathbf{u} = [u_1,\dots,u_k]^T`` represents the vector of measurement errors.
 
-These errors are assumed to follow a Gaussian distribution with a zero-mean and covariance matrix ``\bm \Sigma``. The diagonal elements of ``\bm \Sigma`` correspond to the measurement variances ``\mathbf{v} = [v_1,\dots,v_k]^T``, while the off-diagonal elements represent the covariances between the measurement errors ``\mathbf{w} = [w_1,\dots,w_k]^{T}``.
+These errors are assumed to follow a Gaussian distribution with a zero mean and covariance matrix ``\bm \Sigma``. The diagonal elements of ``\bm \Sigma`` correspond to the measurement variances ``\mathbf{v} = [v_1,\dots,v_k]^T``, while the off-diagonal elements represent the covariances between the measurement errors ``\mathbf{w} = [w_1,\dots,w_k]^{T}``.
 
 In summary, upon defining the PMU, each ``i``-th PMU is associated with two measurement functions ``h_{2i-1}(\mathbf x)``, ``h_{2i}(\mathbf x)``, along with their respective measurement values ``z_{2i-1}``, ``z_{2i}``, as well as their variances ``v_{2i-1}``, ``v_{2i}``, and possibly covariances ``w_{2i-1}``, ``w_{2i}``.
 
@@ -114,7 +114,7 @@ The coefficient expressions for measurement functions are as follows:
   \cfrac{\mathrm \partial{h_{\Im(\bar{V}_i)}(\mathbf x)}}{\mathrm \partial \Im(\bar{V}_i)}=1.\;\;\;
 ```
 
-In the previous example, the user neglects the covariances between the real and imaginary parts of the measurement. However, if desired, the user can also include them in the state estimation model by specifying the covariances of the vector:
+In the previous example, the user neglected the covariances between the real and imaginary parts of the measurement. However, if desired, the user can also include them in the state estimation model by specifying the covariances of the vector:
 ```math
     \mathbf{w} = [w_{\Re(\bar{V}_{i})}, w_{\Im(\bar{V}_{i})}].
 ```
@@ -290,7 +290,7 @@ Then, the covariances are obtained as follows:
 
 ---
 
-## [Weighted Least-squares Estimation](@id PMUSEWLSStateEstimationTutorials)
+## [Weighted Least-Squares Estimation](@id PMUSEWLSStateEstimationTutorials)
 The solution to the PMU state estimation problem is determined by solving the linear weighted least-squares (WLS) problem, represented by the following formula:
 ```math
 	\mathbf H^{T} \bm \Sigma^{-1} \mathbf H \mathbf x = \mathbf H^{T} \bm \Sigma^{-1} \mathbf z.
@@ -633,7 +633,7 @@ JuliaGrid utilizes the optimal PMU placement algorithm proposed in [[4]](@ref PM
 ```
 Here, the vector ``\mathbf d = [d_1,\dots,d_n]^T`` serves as the optimization variable, where ``d_i \in \mathbb{F} = \{0,1\}`` is the PMU placement or a binary decision variable associated with the bus ``i \in \mathcal{N}``. The all-one vector ``\mathbf a`` is of dimension ``n``. The binary connectivity matrix ``\mathbf A \in \mathbb{F}^{n \times n}`` can be directly derived from the bus nodal matrix ``\mathbf Y`` by converting its entries into binary form [[5]](@ref PMUSEReferenceTutorials).
 
-Consequently, we obtain the binary vector ``\mathbf d = [d_1,\dots,d_n]^T``, where ``d_i = 1``, ``i \in \mathcal{N}``, suggests that a PMU should be placed at bus ``i``. The primary aim of PMU placement in the power system is to determine a minimal set of PMUs such that the entire system is observable without relying on traditional measurements [[4]](@ref PMUSEReferenceTutorials). Specifically, when we observe ``d_i = 1``, it indicates that the PMU is installed at bus ``i \in \mathcal{N}`` to measure bus voltage phasor and also to measure all current phasors across branches incident to bus ``i``.
+Consequently, we obtain the binary vector ``\mathbf d = [d_1,\dots,d_n]^T``, where ``d_i = 1``, ``i \in \mathcal{N}``, suggests that a PMU should be placed at bus ``i``. The primary aim of PMU placement in the power system is to determine a minimal set of PMUs such that the entire system is observable without relying on traditional measurements [[4]](@ref PMUSEReferenceTutorials). Specifically, when we observe ``d_i = 1``, it indicates that the PMU is installed at bus ``i \in \mathcal{N}`` to measure bus voltage phasor as well as all current phasors across branches incident to bus ``i``.
 
 Determining the optimal PMU placement involves analyzing the created power system. For example:
 ```@example PMUSETutorial
@@ -808,7 +808,7 @@ To obtain the vectors of magnitudes ``\mathbf{I}_{\text{i}} = [I_{ij}]`` and ang
 𝛙ᵢ = analysis.current.from.angle
 ```
 
-Similarly, we can obtain the vectors of magnitudes ``\mathbf{I}_{\text{j}} = [I_{ji}]`` and angles ``\bm{\psi}_{\text{j}} = [\psi_{ji}]`` of the resulting c[omplex current flows](@ref BranchNetworkEquationsTutorials) using the following code:
+Similarly, we can obtain the vectors of magnitudes ``\mathbf{I}_{\text{j}} = [I_{ji}]`` and angles ``\bm{\psi}_{\text{j}} = [\psi_{ji}]`` of the resulting [complex current flows](@ref BranchNetworkEquationsTutorials) using the following code:
 ```@repl PMUSETutorial
 𝐈ⱼ = analysis.current.to.magnitude
 𝛙ⱼ = analysis.current.to.angle

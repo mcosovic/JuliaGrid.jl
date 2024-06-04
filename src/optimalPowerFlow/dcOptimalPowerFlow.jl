@@ -6,9 +6,9 @@ The function sets up the optimization model for solving the DC optimal power flo
 # Arguments
 The function requires the `PowerSystem` composite type to establish the framework. Next,
 the `optimizer` argument is also required to create and solve the optimization problem.
-Specifically, JuliaGrid constructs the AC optimal power flow using the JuMP package and
+Specifically, JuliaGrid constructs the DC optimal power flow using the JuMP package and
 provides support for commonly employed solvers. For more detailed information,
-please consult the [JuMP documenatation](https://jump.dev/JuMP.jl/stable/packages/solvers/).
+please consult the [JuMP documentation](https://jump.dev/JuMP.jl/stable/packages/solvers/).
 
 # Updates
 If the DC model has not been created, the function automatically initiates an update within
@@ -16,7 +16,7 @@ the `dc` field of the `PowerSystem` type.
 
 # Keywords
 JuliaGrid offers the ability to manipulate the `jump` model based on the guidelines
-providedin the [JuMP documentation](https://jump.dev/JuMP.jl/stable/reference/models/).
+provided in the [JuMP documentation](https://jump.dev/JuMP.jl/stable/reference/models/).
 However, certain configurations may require different method calls, such as:
 - `bridge`: manage the bridging mechanism,
 - `name`: manage the creation of string names.

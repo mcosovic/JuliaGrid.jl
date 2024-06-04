@@ -47,7 +47,7 @@ elements can be modified using the macro.
 
 Prefixes must be specified according to the
 [SI prefixes](https://www.nist.gov/pml/owm/metric-si-prefixes) and should be included with
-the unit of `active` power (W), `reactive` power (VAr), or `apparent` power (VA). Also it
+the unit of `active` power (W), `reactive` power (VAr), or `apparent` power (VA). Also, it
 is a possible to combine SI units with/without prefixes with per-units (pu).
 
 Changing the unit of `active` power is reflected in the following quantities:

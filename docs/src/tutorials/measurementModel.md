@@ -38,7 +38,7 @@ SCADA provides legacy measurements with low sampling rates, making them unsuitab
 * a set of wattmeters ``\mathcal{P}`` for active power injection and flow measurements,
 * a set of varmeters ``\mathcal{Q}`` for reactive power injection and flow measurements.
 
-In contrast, WAMS technology utilizes PMUs (Phasor Measurement Units) to provide data with high sampling rates, typically ranging between 10 ms and 20 ms, facilitating real-time monitoring of the system. Therefore, PMUs expand the set ``\mathcal{M}`` as follows:
+In contrast, WAMS technology utilizes PMUs (Phasor Measurement Units) to provide data with high sampling rates, typically ranging between 10 and 20 ms, facilitating real-time monitoring of the system. Therefore, PMUs expand the set ``\mathcal{M}`` as follows:
 * a set of PMUs ``\bar{\mathcal{P}}`` for bus voltage and branch current phasor measurements.
 
 ---
@@ -53,14 +53,14 @@ The measurement model, as defined by the set ``\mathcal{M}``, can be expressed a
 ```math
     \mathbf{z}=\mathbf{h}(\mathbf {x}) + \mathbf{u},
 ```
-where ``\mathbf {x}=[x_1,\dots,x_{n}]^{T}`` is the vector of the state variables, ``\mathbf{h}(\mathbf{x})=`` ``[h_1(\mathbf{x})``, ``\dots``, ``h_k(\mathbf{x})]^{{T}}`` is the vector of measurement functions, ``\mathbf{z} = [z_1,\dots,z_k]^{\mathrm{T}}`` is the vector of measurement values, and ``\mathbf{u} = [u_1,\dots,u_k]^{\mathrm{T}}`` is the vector of measurement errors. In the context of transmission grids, this model is often an overdetermined system of equations ``(k>s)`` [[2, Sec. 2.1]](@ref MeasurementModelReferenceTutorials).
+where ``\mathbf {x}=[x_1,\dots,x_{n}]^{T}`` is the vector of state variables, ``\mathbf{h}(\mathbf{x})=`` ``[h_1(\mathbf{x})``, ``\dots``, ``h_k(\mathbf{x})]^{{T}}`` is the vector of measurement functions, ``\mathbf{z} = [z_1,\dots,z_k]^{\mathrm{T}}`` is the vector of measurement values, and ``\mathbf{u} = [u_1,\dots,u_k]^{\mathrm{T}}`` is the vector of measurement errors. In the context of transmission grids, this model is often an overdetermined system of equations ``(k>s)`` [[2, Sec. 2.1]](@ref MeasurementModelReferenceTutorials).
 
 These errors are assumed to follow a Gaussian distribution with a zero-mean and covariance matrix ``\bm \Sigma``. The diagonal elements of ``\bm \Sigma`` correspond to the measurement variances ``\mathbf{v} = [v_1,\dots,v_k]^T``, while the off-diagonal elements represent the covariances between the measurement errors ``\mathbf{w} = [w_1,\dots,w_k]^{T}``. These covariances exist only if PMUs are observed in rectangular coordinates and correlation is required.
 
 ---
 
 ##### Gaussian Probability Density Function
-Each legacy measurement and each magnitude or angle measurement from PMUs is associated with a measured value ``z_i``, a measurement error ``u_i``, and a measurement function ``h_i(\mathbf{x})``. Assuming that measurement errors ``u_i`` follow a zero-mean Gaussian distribution, the probability density function associated with the ``i``-th measurement is proportional to:
+Each legacy measurement and each magnitude or angle measurement from PMUs is associated with a measured value ``z_i``, a measurement error ``u_i``, and a measurement function ``h_i(\mathbf{x})``. Assuming that measurement errors ``u_i`` follow a zero mean Gaussian distribution, the probability density function associated with the ``i``-th measurement is proportional to:
 ```math
   \mathcal{N}(z_i|\mathbf{x},v_i) \propto \exp\Bigg\{\cfrac{[z_i-h_i(\mathbf{x})]^2}{2v_i}\Bigg\},
 ```
@@ -189,7 +189,7 @@ This set of varmeters defines vectors of measurement values denoted as ``\mathbf
 ---
 
 ## PMUs
-PMUs measure voltage and current phasors in the polar coordinate system, thus each PMU output represented by magnitude and angle along with corresponding variances [[3, Sec. 5.6]](@ref MeasurementModelReferenceTutorials). When installed on buses, they measure bus voltage phasors, while on branches, they measure current phasors.
+PMUs measure voltage and current phasors in the polar coordinate system, thus each PMU output is represented by magnitude and angle along with corresponding variances [[3, Sec. 5.6]](@ref MeasurementModelReferenceTutorials). When installed on buses, they measure bus voltage phasors, while on branches, they measure current phasors.
 
 A PMU ``(V_i, \theta_i) \in \bar{\mathcal{P}}`` measures the voltage phasor at bus ``i \in \mathcal{N}``. Let us integrate this type of PMU at the first bus:
 ```@example measurementModelTutorials

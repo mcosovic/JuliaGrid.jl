@@ -56,7 +56,7 @@ Within the JuliaGrid framework for AC state estimation, the methodology encompas
 
 Here, ``\mathbf{h}(\mathbf {x})= [h_1(\mathbf {x})``, ``\dots``, ``h_k(\mathbf {x})]^{{T}}`` represents the vector of nonlinear measurement functions, where ``k`` is the number of measurements, ``\mathbf{z} = [z_1,\dots,z_k]^{T}`` denotes the vector of measurement values, and ``\mathbf{u} = [u_1,\dots,u_k]^T`` represents the vector of measurement errors. It is worth noting that the number of equations in the system is equal to ``k = |\mathcal{V} \cup \mathcal{I} \cup \mathcal{P} \cup \mathcal{Q}| + 2|\bar{\mathcal{P}}|``.
 
-These errors are assumed to follow a Gaussian distribution with a zero-mean and covariance matrix ``\bm \Sigma``. The diagonal elements of ``\bm \Sigma`` correspond to the measurement variances ``\mathbf{v} = [v_1,\dots,v_k]^T``, while the off-diagonal elements represent the covariances between the measurement errors ``\mathbf{w} = [w_1,\dots,w_k]^{T}``. These covariances exist only if PMUs are observed in rectangular coordinates and correlation is required.
+These errors are assumed to follow a Gaussian distribution with a zero mean and covariance matrix ``\bm \Sigma``. The diagonal elements of ``\bm \Sigma`` correspond to the measurement variances ``\mathbf{v} = [v_1,\dots,v_k]^T``, while the off-diagonal elements represent the covariances between the measurement errors ``\mathbf{w} = [w_1,\dots,w_k]^{T}``. These covariances exist only if PMUs are observed in rectangular coordinates and correlation is required.
 
 Hence, the nonlinear system of equations is structured according to the specific devices:
 ```math
@@ -92,7 +92,7 @@ Typically, the AC state estimator is obtained using the Gauss-Newton method or i
 ---
 
 ##### Bus Voltage Magnitude Measurements
-When introducing a voltmeter ``V_i \in \mathcal{V}`` at bus ``i \in \mathcal{N}``, users specify the measurement value, variance and  measurement function of vectors:
+When introducing a voltmeter ``V_i \in \mathcal{V}`` at bus ``i \in \mathcal{N}``, users specify the measurement value, variance, and measurement function of vectors:
 ```math
     \mathbf{z}_\mathcal{V} = [z_{V_i}], \;\;\; \mathbf{v}_\mathcal{V} = [v_{V_i}], \;\;\; \mathbf{h}_\mathcal{V}(\mathbf {x}) = [h_{V_{i}}(\mathbf {x})].
 ```
@@ -116,7 +116,7 @@ with the following Jacobian expression:
 ---
 
 ##### [From-Bus End Current Magnitude Measurements](@id FromCurrentMagnitudeMeasurements)
-When introducing an ammeter at branch ``(i,j) \in \mathcal{E}``, it can be placed at the from-bus end, denoted as ``I_{ij} \in \mathcal{I}``, specifying the measurement value, variance and measurement function of vectors:
+When introducing an ammeter at branch ``(i,j) \in \mathcal{E}``, it can be placed at the from-bus end, denoted as ``I_{ij} \in \mathcal{I}``, specifying the measurement value, variance, and measurement function of vectors:
 ```math
     \mathbf{z}_\mathcal{I} = [z_{I_{ij}}], \;\;\; \mathbf{v}_\mathcal{I} = [v_{I_{ij}}], \;\;\; \mathbf{h}_\mathcal{I}(\mathbf {x}) = [h_{I_{ij}}(\mathbf {x})].
 ```
@@ -155,7 +155,7 @@ Jacobian expressions corresponding to the measurement function ``h_{I_{ij}}(\mat
 ---
 
 ##### [To-Bus End Current Magnitude Measurements](@id ToCurrentMagnitudeMeasurements)
-In addition to the scenario where we add ammeters at the from-bus end, an ammeter can also be positioned at the to-bus end, denoted as ``I_{ji} \in \mathcal{I}``, specifying the measurement value, variance and measurement function of vectors:
+In addition to the scenario where we add ammeters at the from-bus end, an ammeter can also be positioned at the to-bus end, denoted as ``I_{ji} \in \mathcal{I}``, specifying the measurement value, variance, and measurement function of vectors:
 ```math
     \mathbf{z}_\mathcal{I} = [z_{I_{ji}}], \;\;\; \mathbf{v}_\mathcal{I} = [v_{I_{ji}}], \;\;\; \mathbf{h}_\mathcal{I}(\mathbf {x}) = [h_{I_{ji}}(\mathbf {x})].
 ```
@@ -194,7 +194,7 @@ Jacobian expressions corresponding to the measurement function ``h_{I_{ji}}(\mat
 ---
 
 ##### Active Power Injection Measurements
-When adding a wattmeter ``P_i \in \mathcal{P}`` at bus ``i \in \mathcal{N}``, users specify that the wattmeter measures active power injection and define measurement value, variance and measurement function of vectors:
+When adding a wattmeter ``P_i \in \mathcal{P}`` at bus ``i \in \mathcal{N}``, users specify that the wattmeter measures active power injection and define measurement value, variance, and measurement function of vectors:
 ```math
     \mathbf{z}_\mathcal{P} = [z_{P_{i}}], \;\;\; \mathbf{v}_\mathcal{P} = [v_{P_{i}}], \;\;\; \mathbf{h}_\mathcal{P}(\mathbf {x}) = [h_{P_{i}}(\mathbf {x})].
 ```
@@ -226,7 +226,7 @@ where ``\mathcal{N}_i`` contains buses incident to bus ``i``, including bus ``i`
 ---
 
 ##### From-Bus End Active Power Flow Measurements
-Additionally, when introducing a wattmeter at branch ``(i,j) \in \mathcal{E}``, users specify that the wattmeter measures active power flow. It can be positioned at the from-bus end, denoted as ``P_{ij} \in \mathcal{P}``, specifying the measurement value, variance and measurement function of vectors:
+Additionally, when introducing a wattmeter at branch ``(i,j) \in \mathcal{E}``, users specify that the wattmeter measures active power flow. It can be positioned at the from-bus end, denoted as ``P_{ij} \in \mathcal{P}``, specifying the measurement value, variance, and measurement function of vectors:
 ```math
     \mathbf{z}_\mathcal{P} = [z_{P_{ij}}], \;\;\; \mathbf{v}_\mathcal{P} = [v_{P_{ij}}], \;\;\; \mathbf{h}_\mathcal{P}(\mathbf {x}) = [h_{P_{ij}}(\mathbf {x})].
 ```
@@ -258,7 +258,7 @@ with the following Jacobian expressions:
 ---
 
 ##### To-Bus End Active Power Flow Measurements
-Similarly, a wattmeter can be placed at the to-bus end, denoted as ``P_{ji} \in \mathcal{P}``, specifying the measurement value, variance and measurement function of vectors:
+Similarly, a wattmeter can be placed at the to-bus end, denoted as ``P_{ji} \in \mathcal{P}``, specifying the measurement value, variance, and measurement function of vectors:
 ```math
     \mathbf{z}_\mathcal{P} = [z_{P_{ji}}], \;\;\; \mathbf{v}_\mathcal{P} = [v_{P_{ji}}], \;\;\; \mathbf{h}_\mathcal{P}(\mathbf {x}) = [h_{P_{ji}}(\mathbf {x})].
 ```
@@ -289,7 +289,7 @@ with the following Jacobian expressions:
 ---
 
 ##### Reactive Power Injection Measurements
-When adding a varmeter ``Q_i \in \mathcal{Q}`` at bus ``i \in \mathcal{N}``, users specify that the varmeter measures reactive power injection and define the measurement value, variance and measurement function of vectors:
+When adding a varmeter ``Q_i \in \mathcal{Q}`` at bus ``i \in \mathcal{N}``, users specify that the varmeter measures reactive power injection and define the measurement value, variance, and measurement function of vectors:
 ```math
     \mathbf{z}_\mathcal{Q} = [z_{Q_{i}}], \;\;\; \mathbf{v}_\mathcal{Q} = [v_{Q_{i}}], \;\;\; \mathbf{h}_\mathcal{Q}(\mathbf {x}) = [h_{Q_{i}}(\mathbf {x})].
 ```
@@ -743,7 +743,7 @@ Jacobian expressions associated with the branch current magnitude function ``h_{
 
 ---
 
-## [Weighted Least-squares Estimation](@id ACSEWLSStateEstimationTutorials)
+## [Weighted Least-Squares Estimation](@id ACSEWLSStateEstimationTutorials)
 Given the available set of measurements ``\mathcal{M}``, the weighted least-squares estimator ``\hat{\mathbf x}``, i.e., the solution of the weighted least-squares problem, can be found using the Gauss-Newton method:
 ```math
 		\Big[\mathbf J (\mathbf x^{(\nu)})^{T} \bm \Sigma^{-1} \mathbf J (\mathbf x^{(\nu)})\Big] \mathbf \Delta \mathbf x^{(\nu)} =
@@ -754,7 +754,7 @@ Given the available set of measurements ``\mathcal{M}``, the weighted least-squa
 ```
 where ``\nu = \{0,1,2,\dots\} `` is the iteration index, ``\mathbf \Delta \mathbf x \in \mathbb {R}^{n_{\text{u}}} `` is the vector of increments of the state variables, ``\mathbf J (\mathbf x)\in \mathbb {R}^{k \times n_{\text{u}}}`` is the Jacobian matrix of measurement functions ``\mathbf h (\mathbf x)`` at ``\mathbf x=\mathbf x^{(\nu)}``, ``\bm \Sigma \in \mathbb {R}^{k \times k}`` is a measurement error covariance matrix, and ``\mathbf r (\mathbf x) = \mathbf{z} - \mathbf h (\mathbf x)`` is the vector of residuals [[2, Ch. 10]](@ref ACSEReferenceTutorials). It is worth noting that assuming uncorrelated measurement errors leads to a diagonal covariance matrix ``\bm \Sigma`` corresponding to measurement variances. However, when incorporating PMUs in a rectangular coordinate system and aiming to observe error correlation, this matrix loses its diagonal form.
 
-The non-linear or AC state estimation represents non-convex problem arising from the non-linear measurement functions [[3]](@ref ACSEReferenceTutorials). Due the fact that the values of state variables usually fluctuate in narrow boundaries, the non-linear model represents the mildly non-linear problem, where solutions are in a reasonable-sized neighborhood which enables the use of the Gauss-Newton method. The Gauss-Newton method can produce different rates of convergence, which can be anywhere from linear to quadratic [[4, Sec. 9.2]](@ref ACSEReferenceTutorials). The convergence rate in regards to power system state estimation depends of the topology and measurements, and if parameters are consistent (e.g., free bad data measurement set), the method shows near quadratic convergence rate [[2, Sec. 11.2]](@ref ACSEReferenceTutorials).
+The non-linear or AC state estimation represents a non-convex problem arising from the non-linear measurement functions [[3]](@ref ACSEReferenceTutorials). Due to the fact that the values of state variables usually fluctuate in narrow boundaries, the non-linear model represents the mildly non-linear problem, where solutions are in a reasonable-sized neighborhood which enables the use of the Gauss-Newton method. The Gauss-Newton method can produce different rates of convergence, which can be anywhere from linear to quadratic [[4, Sec. 9.2]](@ref ACSEReferenceTutorials). The convergence rate in regard to power system state estimation depends on the topology and measurements, and if parameters are consistent (e.g., free bad data measurement set), the method shows near quadratic convergence rate [[2, Sec. 11.2]](@ref ACSEReferenceTutorials).
 
 ---
 
@@ -1252,9 +1252,9 @@ After determining the islands, the observability analysis merges these islands i
 The outcome of the island detection step results in the power system being divided into ``m`` islands. Subsequently, we focus on the set of measurements ``\mathcal{M}_\text{r} \subset \mathcal{M}``, which exclusively consists of:
 * active power injection measurements at tie buses,
 * bus voltage phasor measurements.
-These measurements are retained from the phase where we identify observable islands and are crucial in determining whether or not we need additional pseudo-measurements to be included in the measurement set ``\mathcal{M}``. In this specific example, we do not have active power injection measurements at tie buses remaining after the identification of maximal observable islands. However, if we proceed with flow observable islands to the restoration step, we will have two injection measurements at `Bus 2` and `Bus 3`.
+These measurements are retained from the phase where we identify observable islands, and are crucial in determining whether we need additional pseudo-measurements to be included in the measurement set ``\mathcal{M}``. In this specific example, we do not have active power injection measurements at tie buses remaining after the identification of maximal observable islands. However, if we proceed with flow observable islands to the restoration step, we will have two injection measurements at `Bus 2` and `Bus 3`.
 
-However, let us introduce the matrix ``\mathbf M_{\text{r}} \in \mathbb{R}^{r \times m}``, where ``r = |\mathcal{M}_\text{r}|``. This matrix can be conceptualized as the coefficient matrix of a reduced network with ``m`` columns corresponding to islands and ``r`` rows associated with the set ``\mathcal{M}_\text{r}``. More precisely, if we construct the coefficient matrix ``\mathbf H_\text{r}`` linked to the set ``\mathcal{M}_\text{r}`` in the DC framework, the matrix ``\mathbf M_{\text{r}}`` can be constructed by summing the columns of ``\mathbf H_\text{r}`` that belong to a specific island [[9]](@ref ACSEReferenceTutorials).
+However, let us introduce the matrix ``\mathbf M_{\text{r}} \in \mathbb{R}^{r \times m}``, where ``r = |\mathcal{M}_\text{r}|``. This matrix can be conceptualized as the coefficient matrix of a reduced network, with ``m`` columns corresponding to islands and ``r`` rows associated with the set ``\mathcal{M}_\text{r}``. More precisely, if we construct the coefficient matrix ``\mathbf H_\text{r}`` linked to the set ``\mathcal{M}_\text{r}`` in the DC framework, the matrix ``\mathbf M_{\text{r}}`` can be constructed by summing the columns of ``\mathbf H_\text{r}`` that belong to a specific island [[9]](@ref ACSEReferenceTutorials).
 
 Subsequently, the user needs to establish a set of pseudo-measurements, where measurements must come in pairs as well. Let us create that set:
 ```@example ACObservability
@@ -1460,7 +1460,7 @@ To obtain the vectors of magnitudes ``\mathbf{I}_{\text{i}} = [I_{ij}]`` and ang
 𝛙ᵢ = analysis.current.from.angle
 ```
 
-Similarly, we can obtain the vectors of magnitudes ``\mathbf{I}_{\text{j}} = [I_{ji}]`` and angles ``\bm{\psi}_{\text{j}} = [\psi_{ji}]`` of the resulting c[omplex current flows](@ref BranchNetworkEquationsTutorials) using the following code:
+Similarly, we can obtain the vectors of magnitudes ``\mathbf{I}_{\text{j}} = [I_{ji}]`` and angles ``\bm{\psi}_{\text{j}} = [\psi_{ji}]`` of the resulting [complex current flows](@ref BranchNetworkEquationsTutorials) using the following code:
 ```@repl ACObservability
 𝐈ⱼ = analysis.current.to.magnitude
 𝛙ⱼ = analysis.current.to.angle

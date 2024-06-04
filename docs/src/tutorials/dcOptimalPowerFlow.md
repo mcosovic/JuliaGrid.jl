@@ -283,7 +283,7 @@ Further, the resulting bus voltage angles ``\bm{\Theta} = [\theta_{i}]``, ``i \i
 ---
 
 ## [Power Analysis](@id DCOptimalPowerAnalysisTutorials)
-After obtaining the solution from the DC optimal power flow, we can calculate powers related to buses and branches using the [`power!`](@ref power!(::PowerSystem, ::DC)) function:
+After obtaining the solution from the DC optimal power flow, we can calculate the powers related to buses and branches using the [`power!`](@ref power!(::PowerSystem, ::DC)) function:
 ```@example DCOptimalPowerFlow
 power!(system, analysis)
 nothing # hide
@@ -307,7 +307,7 @@ The active power supplied by generators to the buses can be calculated by summin
 ```math
     P_{\text{p}i} = \sum_{k=1}^{n_{\text{g}i}} P_{\text{g}k},\;\;\; \forall i \in \mathcal{N}.
 ```
-Here, ``P_{\text{g}k}`` represents the active power output of the ``k``-th generator connected to bus ``i \in \mathcal{N}``, and ``n_{\text{g}i}`` denotes the total number of generators connected to the same bus. We can obtain the vector of active power injected by generators to the buses, denoted as ``\mathbf{P}_{\text{p}} = [P_{\text{p}i}]``, using the following command:
+Here, ``P_{\text{g}k}`` represents the active power output of the ``k``-th generator connected to bus ``i \in \mathcal{N}``, and ``n_{\text{g}i}`` denotes the total number of generators connected to the same bus. We can obtain the vector of active powers injected by generators into the buses, denoted as ``\mathbf{P}_{\text{p}} = [P_{\text{p}i}]``, using the following command:
 ```@repl DCOptimalPowerFlow
 𝐏ₚ = analysis.power.supply.active
 ```
@@ -315,12 +315,12 @@ Here, ``P_{\text{g}k}`` represents the active power output of the ``k``-th gener
 ---
 
 ##### Power Flows
-The resulting [active power flows](@ref DCBranchNetworkEquationsTutorials) are stored as the vector ``\mathbf{P}_{\text{i}} = [P_{ij}]``, which can be retrieved using:
+The resulting [from-bus active power flows](@ref DCBranchNetworkEquationsTutorials) are stored as the vector ``\mathbf{P}_{\text{i}} = [P_{ij}]``, which can be retrieved using:
 ```@repl DCOptimalPowerFlow
 𝐏ᵢ = analysis.power.from.active
 ```
 
-Similarly, the resulting [active power flows](@ref DCBranchNetworkEquationsTutorials) are stored as the vector ``\mathbf{P}_{\text{j}} = [P_{ji}]``, which can be retrieved using:
+Similarly, the resulting [to-bus active power flows](@ref DCBranchNetworkEquationsTutorials) are stored as the vector ``\mathbf{P}_{\text{j}} = [P_{ji}]``, which can be retrieved using:
 ```@repl DCOptimalPowerFlow
 𝐏ⱼ = analysis.power.to.active
 ```

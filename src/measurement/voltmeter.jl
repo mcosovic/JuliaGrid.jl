@@ -80,7 +80,7 @@ end
 
 The function incorporates voltmeters into the `Measurement` composite type for every bus
 within the `PowerSystem` type. These measurements are derived from the exact bus voltage
-magnitudes defined in the `AC` abstract type.
+magnitudes defined in the `AC` type.
 
 # Keywords
 Users have the option to configure the following keywords:

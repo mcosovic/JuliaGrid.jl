@@ -56,7 +56,7 @@ Thus, for any given bus ``i \in \mathcal{N}``, we can express it as:
   \cfrac{S_{i}^*}{\bar{V}_{i}^*} = \sum_{j = 1}^n Y_{ij} \bar {V}_j.
 ```
 
-The complex power injection denoted by ``S_i`` comprises of both the active power ``P_i`` and reactive power ``Q_i``. This relationship can be represented as follows:
+The complex power injection denoted by ``S_i`` consists of both the active power ``P_i`` and reactive power ``Q_i``. This relationship can be represented as follows:
 ```math
   \cfrac{P_i - \text{j}Q_i}{\bar{V}_{i}} = \sum_{j = 1}^n Y_{ij} \bar {V}_j.
 ```
@@ -86,7 +86,7 @@ system.bus.layout.type
 
 It should be noted that JuliaGrid cannot handle systems with multiple slack buses. Additionally, when using functions such as [`newtonRaphson`](@ref newtonRaphson), [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX), [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB), and [`gaussSeidel`](@ref gaussSeidel), the bus type can be modified as discussed in the section on [Bus Type Modification](@ref BusTypeModificationManual).
 
-Furthermore, the active power injections ``{P}_{i}`` and reactive power injections ``{Q}_{i}`` can be expressed as:
+Furthermore, active power injections ``{P}_{i}`` and reactive power injections ``{Q}_{i}`` can be expressed as:
 ```math
   \begin{aligned}
   	P_{i} &= P_{\text{p}i} - P_{\text{d}i} \\
@@ -110,7 +110,7 @@ As a way to summarize, the power injection vectors, represented as ``\mathbf{P} 
 𝐐 = system.bus.supply.reactive - system.bus.demand.reactive
 ```
 
-When the active or reactive power values are positive, ``P_i > 0`` or ``Q_i > 0``, it signifies that power is being supplied into the power system from the specific bus. This indicates that the generators connected to this bus are producing more power than what the connected load is consuming. Conversely, negative values, ``P_i < 0`` or ``Q_i < 0``, indicate that the bus is drawing in active or reactive power from the power system. This suggests that the load's demand is exceeding the output from the generators.
+Positive active or reactive power values, ``P_i > 0`` or ``Q_i > 0``, signify that power is being supplied into the power system from the specific bus. This indicates that the generators connected to this bus are producing more power than what the connected load is consuming. Conversely, negative values, ``P_i < 0`` or ``Q_i < 0``, indicate that the bus is drawing in active or reactive power from the power system. This suggests that the load's demand is exceeding the output from the generators.
 
 ---
 
@@ -120,7 +120,7 @@ The Newton-Raphson method is commonly used in AC power flow calculations due to 
   \mathbf{f}(\mathbf{x}) = \mathbf{0}.
 ```
 
-This, in turn, allows for the determination of the unknown voltage magnitudes and angles of buses, represented by the state vector ``\mathbf x = [\mathbf x_\text{a}, \mathbf x_\text{m}]^T``. The state vector comprises two components:
+This, in turn, allows for the determination of unknown voltage magnitudes and angles of buses, represented by the state vector ``\mathbf x = [\mathbf x_\text{a}, \mathbf x_\text{m}]^T``. The state vector comprises two components:
 * ``\mathbf x_\text{a} \in \mathbb{R}^{n-1}``, which holds the bus voltage angles of demand and generator buses, represented by ``\mathbf x_\text{a} = [\theta_i]``, where ``i \in \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}}``,
 * ``\mathbf x_\text{m} \in \mathbb{R}^{n_{\text{pq}}}``, which holds the bus voltage magnitudes of demand buses, represented by ``\mathbf x_\text{m} = [V_i]``, where ``i \in \mathcal{N}_{\text{pq}}``, and ``n_{\text{pq}} = |\mathcal{N}_{\text{pq}}|``.
 
@@ -613,7 +613,7 @@ It is important to note that only the voltage angles related to demand and gener
 𝚯 = analysis.voltage.angle
 ```
 
-The fast Newton-Raphson method then solves the equation:
+After calculating the update for voltage angles, to calculate the magnitude updates the fast Newton-Raphson method then solves the equation:
 ```math
   \mathbf \Delta \mathbf x_\text{m}^{(\nu-1)} = \mathbf{B}_2^{-1} \mathbf{h}_{\text{Q}}(\mathbf x^{(\nu)}).
 ```
@@ -634,7 +634,7 @@ Finally, the solution is updated as follows:
   \mathbf x_\text{m}^{(\nu)} = \mathbf x_\text{m}^{(\nu-1)} + \mathbf \Delta \mathbf x_\text{m}^{(\nu-1)}.
 ```
 
-Again, it is important to note that only the the voltage magnitudes of demand buses are updated, while the vector of bus voltage magnitude for all buses is stored:
+Again, it is important to note that only the voltage magnitudes of demand buses are updated, while the vector of bus voltage magnitude for all buses is stored:
 ```@repl PowerFlowSolution
 𝐕 = analysis.voltage.magnitude
 ```
@@ -700,7 +700,7 @@ We also compute the reactive power injection mismatch for demand buses, given by
   {f}_{Q_i}(\mathbf x^{(\nu-1)}) = \Im\{\bar{V}_i^{(\nu - 1)} \bar{I}_i^{*(\nu - 1)}\} - Q_i, \;\;\; \forall i \in \mathcal{N}_{\text{pq}}.
 ```
 
-However, these mismatches are not stored as they are only used to obtain the maximum absolute values of these mismatches. The maximum values of these mismatches are used as termination criteria for the iteration loop if both are less than a predefined stopping criterion ``\epsilon``, as shown below:
+However, these mismatches are not stored, as they are only used to obtain the maximum absolute values of these mismatches. The maximum values of these mismatches are used as termination criteria for the iteration loop if both are less than a predefined stopping criterion ``\epsilon``, as shown below:
 ```math
   \max \{|{f}_{P_i}(\mathbf x^{(\nu-1)})|,\; \forall i \in \mathcal{N}_{\text{pq}} \cup \mathcal{N}_{\text{pv}} \} < \epsilon \\
   \max \{|{f}_{Q_i}(\mathbf x^{(\nu-1)})|,\; \forall i \in \mathcal{N}_{\text{pq}} \} < \epsilon.
@@ -907,7 +907,7 @@ To obtain the vectors of magnitudes ``\mathbf{I}_{\text{i}} = [I_{ij}]`` and ang
 𝛙ᵢ = analysis.current.from.angle
 ```
 
-Similarly, we can obtain the vectors of magnitudes ``\mathbf{I}_{\text{j}} = [I_{ji}]`` and angles ``\bm{\psi}_{\text{j}} = [\psi_{ji}]`` of the resulting c[omplex current flows](@ref BranchNetworkEquationsTutorials) using the following code:
+Similarly, we can obtain the vectors of magnitudes ``\mathbf{I}_{\text{j}} = [I_{ji}]`` and angles ``\bm{\psi}_{\text{j}} = [\psi_{ji}]`` of the resulting [complex current flows](@ref BranchNetworkEquationsTutorials) using the following code:
 ```@repl PowerFlowSolution
 𝐈ⱼ = analysis.current.to.magnitude
 𝛙ⱼ = analysis.current.to.angle

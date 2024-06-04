@@ -78,7 +78,7 @@ The factorization of the nodal matrix can be accessed using:
 𝐔 = analysis.method.factorization.U
 ```
 
-It is important to note that the slack bus voltage angle is excluded from the vector ``\bm{\Theta}`` only during the computation step. As a analysis, the corresponding elements in the vectors ``\mathbf {P}``, ``\mathbf{P_\text{tr}}``, ``\mathbf{P}_\text{sh}``, and the corresponding row and column of the matrix ``\mathbf{B}`` are removed. It is worth mentioning that this process is handled internally, and the stored elements remain unchanged.
+It is important to note that the slack bus voltage angle is excluded from the vector ``\bm{\Theta}`` only during the computation step. Consequently, the corresponding elements in the vectors ``\mathbf {P}``, ``\mathbf{P_\text{tr}}``, ``\mathbf{P}_\text{sh}``, and the corresponding row and column of the matrix ``\mathbf{B}`` are removed. It is worth mentioning that this process is handled internally, and the stored elements remain unchanged.
 
 Finally, the resulting bus voltage angles are saved in the vector as follows:
 ```@repl PowerFlowSolutionDC
@@ -112,7 +112,7 @@ The active power supplied by generators to the buses can be calculated by summin
 ```math
     P_{\text{p}i} = P_i + P_{\text{d}i},\;\;\; i \in \mathcal{N}_{\text{sb}},
 ```
-where ``P_{\text{d}i}`` represents the active power demanded by consumers at the slack bus. The vector of active power injected by generators to the buses, denoted by ``\mathbf{P}_{\text{p}} = [P_{\text{p}i}]``, can be obtained using the following command:
+where ``P_{\text{d}i}`` represents the active power demanded by consumers at the slack bus. The vector of active powers injected by generators into the buses, denoted by ``\mathbf{P}_{\text{p}} = [P_{\text{p}i}]``, can be obtained using the following command:
 ```@repl PowerFlowSolutionDC
 𝐏ₚ = analysis.power.supply.active
 ```
@@ -120,12 +120,12 @@ where ``P_{\text{d}i}`` represents the active power demanded by consumers at the
 ---
 
 ##### Power Flows
-The resulting [active power flows](@ref DCBranchNetworkEquationsTutorials) are stored as the vector ``\mathbf{P}_{\text{i}} = [P_{ij}]``, which can be retrieved using:
+The resulting [from-bus active power flows](@ref DCBranchNetworkEquationsTutorials) are stored as the vector ``\mathbf{P}_{\text{i}} = [P_{ij}]``, which can be retrieved using:
 ```@repl PowerFlowSolutionDC
 𝐏ᵢ = analysis.power.from.active
 ```
 
-Similarly, the resulting [active power flows](@ref DCBranchNetworkEquationsTutorials) are stored as the vector ``\mathbf{P}_{\text{j}} = [P_{ji}]``, which can be retrieved using:
+Similarly, the resulting [to-bus active power flows](@ref DCBranchNetworkEquationsTutorials) are stored as the vector ``\mathbf{P}_{\text{j}} = [P_{ji}]``, which can be retrieved using:
 ```@repl PowerFlowSolutionDC
 𝐏ⱼ = analysis.power.to.active
 ```

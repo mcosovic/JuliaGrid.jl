@@ -12,7 +12,7 @@ To define flow observable islands, this function necessitates the composite type
 `PowerSystem` and `Measurement`.
 
 # Returns
-The function returns an type `Island`, containing information about the islands:
+The function returns an `Island` type, containing information about the islands:
 * `island`: List enumerating observable islands with indices of buses.
 * `bus`: Positions of buses in relation to each island.
 * `tie`: Tie data associated with buses and branches.
@@ -58,7 +58,7 @@ To define flow observable islands, this function necessitates the composite type
 `PowerSystem` and `Measurement`.
 
 # Returns
-The function returns an type `Island`, containing information about the islands:
+The function returns an `Island` type, containing information about the islands:
 * `island`: List enumerating observable islands with indices of buses.
 * `bus`: Positions of buses in relation to each island.
 * `tie`: Tie data associated with buses and branches.
@@ -361,7 +361,7 @@ be different to enable the function to successfully incorporate measurements fro
 into the `device` set of measurements.
 
 # Keyword
-The keyword threshold defines the zero pivot threshold value with a default value of `1e-5`.
+The keyword threshold defines the zero pivot threshold value, with a default value of `1e-5`.
 More precisely, all computed pivots less than this value will be treated as zero pivots.
 
 # Updates

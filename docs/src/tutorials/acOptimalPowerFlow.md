@@ -64,7 +64,7 @@ The AC optimal power flow problem can be formulated as follows:
 \end{aligned}
 ```
 
-In essence, the AC optimal power flow aims to minimize the objective function associated with the costs of generator active and reactive power output while ensuring the fulfillment of all constraints. This optimization task plays a pivotal role in effectively managing electrical power systems. By striking a balance between cost reduction and constraint adherence, the AC optimal power flow contributes to efficient and reliable electricity supply in complex grid environments.
+In essence, the AC optimal power flow aims to minimize the objective function associated with the costs of generator's active and reactive power output while ensuring the fulfillment of all constraints. This optimization task plays a pivotal role in effectively managing electrical power systems. By striking a balance between cost reduction and constraint adherence, the AC optimal power flow contributes to efficient and reliable electricity supply in complex grid environments.
 
 ---
 
@@ -84,7 +84,7 @@ nothing # hide
 ---
 
 ##### Optimization Variables
-Hence, the variables within this model encompass the active and reactive power outputs of the generators, denoted as ``\mathbf{P}_{\text{g}} = [{P}_{\text{g}i}]`` and ``\mathbf{Q}_{\text{g}} = [{Q}_{\text{g}i}]``, where ``i \in \mathcal{S}``, and the bus voltage magnitudes and angles represented by ``\mathbf{V} = [V_{i}]`` and ``\bm{\Theta} = [{\theta}_{i}]``, where ``i \in \mathcal{N}``. We can access these variables using the following code:
+The variables within this model encompass the active and reactive power outputs of the generators, denoted as ``\mathbf{P}_{\text{g}} = [{P}_{\text{g}i}]`` and ``\mathbf{Q}_{\text{g}} = [{Q}_{\text{g}i}]``, where ``i \in \mathcal{S}``, and the bus voltage magnitudes and angles represented by ``\mathbf{V} = [V_{i}]`` and ``\bm{\Theta} = [{\theta}_{i}]``, where ``i \in \mathcal{N}``. We can access these variables using the following code:
 ```@repl ACOptimalPowerFlow
 𝐏ₒ = analysis.method.variable.active
 𝐐ₒ = analysis.method.variable.reactive
@@ -232,7 +232,7 @@ As elaborated in the [Bus Injections](@ref BusInjectionsTutorials) section, we c
 h_{Q_i}(\mathbf {Q}_{\text{g}}, \mathbf {V}, \bm{\Theta}) = {V}_{i}\sum\limits_{j=1}^n (G_{ij}\sin\theta_{ij}-B_{ij}\cos\theta_{ij})V_j - \sum_{k \in \mathcal{S}_i} Q_{\text{g}k} + Q_{\text{d}i}.
 ```
 
-As mentioned earlier for active power, ``Q_{\text{g}k}`` represents the reactive power output of the ``k``-th generator within the set ``\mathcal{S}_i``. The variable ``Q_{\text{g}k}`` serves as optimization variable, as well as the bus voltage angles ``\theta_{ij} = \theta_i - \theta_j``, and the bus voltage magnitudes ``V_i`` and ``V_j``.
+As mentioned earlier for active power, ``Q_{\text{g}k}`` represents the reactive power output of the ``k``-th generator within the set ``\mathcal{S}_i``. The variable ``Q_{\text{g}k}`` serves as an optimization variable, as well as the bus voltage angles ``\theta_{ij} = \theta_i - \theta_j``, and the bus voltage magnitudes ``V_i`` and ``V_j``.
 
 The constant term is determined by the reactive power demand ``Q_{\text{d}i}`` at bus ``i \in \mathcal{N}``. The values representing this constant term, denoted as ``\mathbf{Q}_{\text{d}} = [Q_{\text{d}i}]``, ``i, \in \mathcal{N}``, can be accessed using the following:
 ```@repl ACOptimalPowerFlow
@@ -344,7 +344,7 @@ In our example, we have chosen to utilize this type of flow constraints. To acce
 print(analysis.method.constraint.flow.from)
 ```
 
-Similarly, to acces the to-bus end flow constraints of branches you can use the following code snippet:
+Similarly, to access the to-bus end flow constraints of branches you can use the following code snippet:
 ```@repl ACOptimalPowerFlow
 print(analysis.method.constraint.flow.to)
 ```
@@ -620,7 +620,7 @@ To obtain the vectors of magnitudes ``\mathbf{I}_{\text{i}} = [I_{ij}]`` and ang
 𝛙ᵢ = analysis.current.from.angle
 ```
 
-Similarly, we can obtain the vectors of magnitudes ``\mathbf{I}_{\text{j}} = [I_{ji}]`` and angles ``\bm{\psi}_{\text{j}} = [\psi_{ji}]`` of the resulting c[omplex current flows](@ref BranchNetworkEquationsTutorials) using the following code:
+Similarly, we can obtain the vectors of magnitudes ``\mathbf{I}_{\text{j}} = [I_{ji}]`` and angles ``\bm{\psi}_{\text{j}} = [\psi_{ji}]`` of the resulting [complex current flows](@ref BranchNetworkEquationsTutorials) using the following code:
 ```@repl ACOptimalPowerFlow
 𝐈ⱼ = analysis.current.to.magnitude
 𝛙ⱼ = analysis.current.to.angle

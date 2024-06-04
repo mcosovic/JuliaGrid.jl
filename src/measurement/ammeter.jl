@@ -106,7 +106,7 @@ end
 
 The function incorporates ammeters into the `Measurement` type for every branch within the
 `PowerSystem` type. These measurements are derived from the exact branch current magnitudes
-defined in the `AC` abstract type.
+defined in the `AC` type.
 
 # Keywords
 Users have the option to configure the following keywords:
@@ -365,7 +365,7 @@ using the [`addAmmeter!`](@ref addAmmeter!) function.
 
 # Keywords
 To establish the ammeter template, users can set default variance and status values for
-ammeters at both the from-bus and to-bus ends of branches using `varianceFrom` and
+ammeters at both the from-bus and to-bus ends of branches, using `varianceFrom` and
 `statusFrom` for the former and `varianceTo` and `statusTo` for the latter. Users can also
 configure label patterns with the `label` keyword, as well as specify the `noise` type.
 

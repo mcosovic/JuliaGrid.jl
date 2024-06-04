@@ -165,7 +165,7 @@ end
 The function incorporates PMUs into the `Measurement` composite type for every bus and
 branch within the `PowerSystem` type. These measurements are derived from the exact bus
 voltage magnitudes and angles, as well as branch current magnitudes and angles defined in
-the `AC` abstract type.
+the `AC` type.
 
 # Keywords
 Users have the option to configure the following keywords:
@@ -174,7 +174,7 @@ Users have the option to configure the following keywords:
   * `statusMagnitudeBus = 1`: in-service,
   * `statusMagnitudeBus = 0`: out-of-service.
 * `varianceAngleBus` (rad or deg): Variance of angle measurements at buses.
-* `statusAngleBus`: Operating status of agle measurements at buses:
+* `statusAngleBus`: Operating status of angle measurements at buses:
   * `statusAngleBus = 1`: in-service,
   * `statusAngleBus = 0`: out-of-service.
 * `varianceMagnitudeFrom` (pu or A): Variance of magnitude measurements at the from-bus ends.

@@ -827,7 +827,7 @@ end
 
 The function verifies whether the generators in a power system exceed their reactive power
 limits. This is done by setting the reactive power of the generators to within the limits
-if they are violated, after determining the bus voltage magnitudes and angles. If the
+if they are violated after determining the bus voltage magnitudes and angles. If the
 limits are violated, the corresponding generator buses or the slack bus are converted to
 demand buses.
 

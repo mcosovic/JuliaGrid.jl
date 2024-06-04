@@ -527,7 +527,7 @@ composite type is not yet created, the function automatically initiates an updat
 
 Additionally, the `optimizer` argument is a crucial component for formulating and solving
 the optimization problem. Typically, using the GLPK or HiGHS solver is sufficient. For
-more detailed information, please refer to the JuMP
+more detailed information, please refer to the
 [JuMP documenatation](https://jump.dev/JuMP.jl/stable/packages/solvers/).
 
 # Keyword

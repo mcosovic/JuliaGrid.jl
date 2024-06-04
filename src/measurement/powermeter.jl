@@ -200,7 +200,7 @@ end
 The function incorporates wattmeters into the `Measurement` composite type for every bus
 and branch within the `PowerSystem` type. These measurements are derived from the exact
 active power injections at buses and active power flows in branches defined in the `AC`
-abstract type.
+type.
 
 # Keywords
 Users have the option to configure the following keywords:
@@ -274,7 +274,7 @@ end
 The function incorporates varmeters into the `Measurement` composite type for every bus
 and branch within the `PowerSystem` type. These measurements are derived from the exact
 reactive power injections at buses and reactive power flows in branches defined in the `AC`
-abstract type.
+type.
 
 # Keywords
 * `varianceBus` (pu or VAr): Measurement variance for varmeters at the buses.
