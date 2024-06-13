@@ -290,9 +290,9 @@ Users have the option to print the results in the REPL using any units that have
 @voltage(pu, deg, V);
 @power(MW, pu, pu);
 
-printBus(system, analysis)
-printBranch(system, analysis)
-printGenerator(system, analysis)
+printBusData(system, analysis)
+printBranchData(system, analysis)
+printGeneratorData(system, analysis)
 
 @voltage(pu, pu, V) # hide
 @power(pu, pu, pu) # hide
@@ -301,9 +301,9 @@ printGenerator(system, analysis)
 Users can also redirect print output to a file. For example, data can be saved in a text file as follows:
 ```@julia
 open("dcPowerFlow.txt", "w") do file
-    printBus(system, analysis, file)
-    printBranch(system, analysis, file)
-    printGenerator(system, analysis, file)
+    printBusData(system, analysis, file)
+    printBranchData(system, analysis, file)
+    printGeneratorData(system, analysis, file)
 end
 ```
 

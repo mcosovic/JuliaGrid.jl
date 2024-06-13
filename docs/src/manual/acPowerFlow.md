@@ -260,7 +260,7 @@ In these examples, the algorithms run until the specified number of iterations i
 Users have the option to print the results in the REPL using any units that have been configured, such as:
 ```@repl ACPowerFlowSolution
 @voltage(pu, deg, V);
-printBus(system, analysis)
+printBusData(system, analysis)
 
 @voltage(pu, rad, V) # hide
 ```
@@ -268,7 +268,7 @@ printBus(system, analysis)
 Users can also redirect print output to a file. For example, data can be saved in a text file as follows:
 ```@julia
 open("bus_data.txt", "w") do file
-    printBus(system, analysis, file)
+    printBusData(system, analysis, file)
 end
 ```
 
@@ -546,7 +546,7 @@ nothing # hide
 ```
 
 !!! tip "Tip"
-    Using [`printBus`](@ref printBus), [`printBranch`](@ref printBranch), and [`printGenerator`](@ref printGenerator), the user can print obtained results in the REPL or redirect print output to a file.
+    Using [`printBusData`](@ref printBusData), [`printBranchData`](@ref printBranchData), and [`printGeneratorData`](@ref printGeneratorData), the user can print obtained results in the REPL or redirect print output to a file.
 
 For instance, if we want to show the active power injections and the to-bus current angles, we can employ the following code:
 ```@repl ComputationPowersCurrentsLosses

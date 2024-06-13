@@ -16,9 +16,10 @@ For further information on this topic, please see the [Power System Model](@ref 
 * [`@default`](@ref @default)
 
 ###### Print
-* [`printBus`](@ref printBus)
-* [`printBranch`](@ref printBranch)
-* [`printGenerator`](@ref printGenerator)
+* [`printBusData`](@ref printBusData)
+* [`printBusSummary`](@ref printBusSummary)
+* [`printBranchData`](@ref printBranchData)
+* [`printGeneratorData`](@ref printGeneratorData)
 
 ---
 
@@ -55,7 +56,8 @@ using JuliaGrid
 
 ### Print
 ```@docs
-printBus
-printBranch
-printGenerator
+printBusData
+printBusSummary
+printBranchData
+printGeneratorData
 ```

@@ -126,9 +126,10 @@
     end
 
     ####### Test Print Data #######
-    @capture_out printBus(system14, analysis)
-    @capture_out printBranch(system14, analysis)
-    @capture_out printGenerator(system14, analysis)
+    @capture_out printBusData(system14, analysis)
+    @capture_out printBranchData(system14, analysis)
+    @capture_out printGeneratorData(system14, analysis)
+    @capture_out printBusSummary(system14, analysis)
 
     ################ Modified IEEE 30-bus Test Case ################
     system30 = powerSystem(string(pathData, "case30test.m"))
@@ -600,9 +601,9 @@ end
     end
 
     ####### Test Print Data #######
-    @capture_out printBus(system14, analysis)
-    @capture_out printBranch(system14, analysis)
-    @capture_out printGenerator(system14, analysis)
+    @capture_out printBusData(system14, analysis)
+    @capture_out printBranchData(system14, analysis)
+    @capture_out printGeneratorData(system14, analysis)
 
     ################ Modified IEEE 30-bus Test Case ################
     system30 = powerSystem(string(pathData, "case30test.m"))
