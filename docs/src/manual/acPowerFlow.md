@@ -261,8 +261,6 @@ Users have the option to print the results in the REPL using any units that have
 ```@repl ACPowerFlowSolution
 @voltage(pu, deg, V);
 printBusData(system, analysis)
-
-@voltage(pu, rad, V) # hide
 ```
 
 Users can also redirect print output to a file. For example, data can be saved in a text file as follows:
@@ -270,6 +268,13 @@ Users can also redirect print output to a file. For example, data can be saved i
 open("bus_data.txt", "w") do file
     printBusData(system, analysis, file)
 end
+```
+
+In addition, users have the option to generate a bus summary using the following function:
+```@repl ACPowerFlowSolution
+printBusSummary(system, analysis)
+
+@voltage(pu, rad, V) # hide
 ```
 
 ---

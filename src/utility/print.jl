@@ -1118,6 +1118,10 @@ function printFormatSummary(system::PowerSystem, analysis::AC)
             format["device"][1] += 1
         end
 
+        if system.bus.demand.active[i] != 0.0 || system.bus.demand.reactive[i] != 0.0
+            format["device"][2] += 1
+        end
+
         if system.bus.shunt.conductance[i] != 0.0 || system.bus.shunt.susceptance[i] != 0.0
             format["device"][3] += 1
         end
@@ -1129,7 +1133,6 @@ function printFormatSummary(system::PowerSystem, analysis::AC)
             end
 
             if system.bus.demand.active[i] != 0.0 || system.bus.demand.reactive[i] != 0.0
-                format["device"][2] += 1
                 minmaxsumPrint!(format["Pl"], system.bus.demand.active[i], i)
                 minmaxsumPrint!(format["Ql"], system.bus.demand.reactive[i], i)
             end
