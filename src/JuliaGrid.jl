@@ -18,7 +18,7 @@ include("utility/internal.jl")
 include("utility/print.jl")
 export @base, @power, @voltage, @current, @parameter, @default
 export printBusData, printBranchData, printGeneratorData
-export printBusSummary
+export printBusSummary, printBranchSummary, printGeneratorSummary
 
 ########## Power System ##########
 include("powerSystem/load.jl")
