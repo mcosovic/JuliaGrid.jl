@@ -15,11 +15,15 @@ For further information on this topic, please see the [Power System Model](@ref 
 ###### Default Settings
 * [`@default`](@ref @default)
 
-###### Print
+###### Print Data
 * [`printBusData`](@ref printBusData)
-* [`printBusSummary`](@ref printBusSummary)
 * [`printBranchData`](@ref printBranchData)
 * [`printGeneratorData`](@ref printGeneratorData)
+
+###### Print Summary
+* [`printBusSummary`](@ref printBusSummary)
+* [`printBranchSummary`](@ref printBranchSummary)
+* [`printGeneratorSummary`](@ref printGeneratorSummary)
 
 ---
 
@@ -54,10 +58,18 @@ using JuliaGrid
 
 ---
 
-### Print
+### Print Data
 ```@docs
 printBusData
-printBusSummary
 printBranchData
 printGeneratorData
+```
+
+---
+
+### Print Summary
+```@docs
+printBusSummary
+printBranchSummary
+printGeneratorSummary
 ```

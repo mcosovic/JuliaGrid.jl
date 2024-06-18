@@ -47,8 +47,8 @@ end
 power!(system, analysis)                   # Compute powers within the power system
 current!(system, analysis)                 # Compute currents within the power system
 
-printBus(system, analysis)                 # Print electrical quantities related to buses
-printBranch(system, analysis)              # Print electrical quantities related to branches
+printBusData(system, analysis)             # Print electrical quantities related to buses
+printBranchData(system, analysis)          # Print electrical quantities related to branches
 ```
 
 ---
@@ -68,7 +68,8 @@ solve!(system, analysis)                 # Compute bus voltage angles
 addGenerator!(system, analysis; bus = 1) # Add the new generator to the power system
 solve!(system, analysis)                 # Recompute bus voltage angles with the updated model
 
-printGenerator(system, analysis)         # Print generator power outputs
+printBusSummary(system, analysis)        # Print a summary of quantities related to buses
+printGeneratorData(system, analysis)     # Print generator power outputs
 ```
 
 ---
