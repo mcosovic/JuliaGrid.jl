@@ -25,7 +25,7 @@ printBusData(system, analysis)
 ```
 """
 function printBusData(system::PowerSystem, analysis::AC, io::IO = stdout)
-    scale = printScale(prefix)
+    scale = printScale(system, prefix)
     format = formatBusData(system, analysis, scale)
 
     maxLine = sum(format["length"][1:3]) + 8
@@ -196,7 +196,7 @@ function printBusData(system::PowerSystem, analysis::AC, io::IO = stdout)
 end
 
 function printBusData(system::PowerSystem, analysis::DC, io::IO = stdout)
-    scale = printScale(prefix)
+    scale = printScale(system, prefix)
     format = formatBusData(system, analysis, scale)
 
     maxLine = sum(format["length"][1:2]) + 5
@@ -291,7 +291,7 @@ printBranchData(system, analysis)
 ```
 """
 function printBranchData(system::PowerSystem, analysis::AC, io::IO = stdout)
-    scale = printScale(prefix)
+    scale = printScale(system, prefix)
     format = formatBranchData(system, analysis, scale)
 
     if format["power"] || format["current"]
@@ -468,7 +468,7 @@ function printBranchData(system::PowerSystem, analysis::AC, io::IO = stdout)
 end
 
 function printBranchData(system::PowerSystem, analysis::DC, io::IO = stdout)
-    scale = printScale(prefix)
+    scale = printScale(system, prefix)
     format = formatBranchData(system, analysis, scale)
 
     if format["power"]
@@ -537,7 +537,7 @@ printGeneratorData(system, analysis)
 ```
 """
 function printGeneratorData(system::PowerSystem, analysis::AC, io::IO = stdout)
-    scale = printScale(prefix)
+    scale = printScale(system, prefix)
     format = formatGeneratorData(system, analysis, scale)
 
     if format["power"]
@@ -592,7 +592,7 @@ function printGeneratorData(system::PowerSystem, analysis::AC, io::IO = stdout)
 end
 
 function printGeneratorData(system::PowerSystem, analysis::DC, io::IO = stdout)
-    scale = printScale(prefix)
+    scale = printScale(system, prefix)
     format = formatGeneratorData(system, analysis, scale)
 
     if format["power"]
@@ -890,7 +890,7 @@ printBusSummary(system, analysis)
 ```
 """
 function printBusSummary(system::PowerSystem, analysis::AC, io::IO = stdout)
-    scale = printScale(prefix)
+    scale = printScale(system, prefix)
     format = formatBusSummary(system, analysis, scale)
 
     Printf.@printf io "\n"
@@ -941,7 +941,7 @@ function printBusSummary(system::PowerSystem, analysis::AC, io::IO = stdout)
 end
 
 function printBusSummary(system::PowerSystem, analysis::DC, io::IO = stdout)
-    scale = printScale(prefix)
+    scale = printScale(system, prefix)
     format = formatBusSummary(system, analysis, scale)
 
     Printf.@printf io "\n"
@@ -1002,7 +1002,7 @@ printBranchSummary(system, analysis)
 ```
 """
 function printBranchSummary(system::PowerSystem, analysis::AC, io::IO = stdout)
-    scale = printScale(prefix)
+    scale = printScale(system, prefix)
     format = formatBranchSummary(system, analysis, scale)
 
     Printf.@printf io "\n"
@@ -1051,7 +1051,7 @@ function printBranchSummary(system::PowerSystem, analysis::AC, io::IO = stdout)
 end
 
 function printBranchSummary(system::PowerSystem, analysis::DC, io::IO = stdout)
-    scale = printScale(prefix)
+    scale = printScale(system, prefix)
     format = formatBranchSummary(system, analysis, scale)
 
     Printf.@printf io "\n"
@@ -1102,7 +1102,7 @@ printGeneratorSummary(system, analysis)
 ```
 """
 function printGeneratorSummary(system::PowerSystem, analysis::AC, io::IO = stdout)
-    scale = printScale(prefix)
+    scale = printScale(system, prefix)
     format = formatGeneratorSummary(system, analysis, scale)
 
     Printf.@printf io "\n"
@@ -1123,7 +1123,7 @@ function printGeneratorSummary(system::PowerSystem, analysis::AC, io::IO = stdou
 end
 
 function printGeneratorSummary(system::PowerSystem, analysis::DC, io::IO = stdout)
-    scale = printScale(prefix)
+    scale = printScale(system, prefix)
     format = formatGeneratorSummary(system, analysis, scale)
 
     Printf.@printf io "\n"
@@ -1647,7 +1647,7 @@ function printTitle(maxLine::Int64, title::String, io::IO)
     Printf.@printf(io, "|%s|\n", "-"^maxLine)
 end
 
-function printScale(prefix::PrefixLive)
+function printScale(system::PowerSystem, prefix::PrefixLive)
     scale = Dict(
         "voltageAngle" => 1.0,
         "activePower" => 1.0,
