@@ -556,6 +556,7 @@ print(system.branch.label, analysis.current.to.angle)
 Users can utilize any of the print functions mentioned in the [Print API Section](@ref setupPrintAPI) to print results. For example, to create a bus summary with the desired units, users can use the following function:
 ```@repl ComputationPowersCurrentsLosses
 @voltage(pu, deg, V);
+@power(MW, MVAr, pu);
 printBusSummary(system, analysis)
 @default(unit) # hide
 ```
