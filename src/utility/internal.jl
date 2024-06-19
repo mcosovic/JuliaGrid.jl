@@ -275,17 +275,23 @@ macro default(mode::Symbol)
         prefix.activePower = 0.0
         prefix.reactivePower = 0.0
         prefix.apparentPower = 0.0
+        unitList.activePowerLive = "pu"
+        unitList.reactivePowerLive = "pu"
     end
 
     if mode == :unit || mode == :voltage
         prefix.voltageMagnitude = 0.0
         prefix.voltageAngle = 0.0
         prefix.baseVoltage = 1.0
+        unitList.voltageMagnitudeLive = "pu"
+        unitList.voltageAngleLive = "rad"
     end
 
     if mode == :unit || mode == :current
         prefix.currentMagnitude = 0.0
         prefix.currentAngle = 0.0
+        unitList.currentMagnitudeLive = "pu"
+        unitList.currentAngleLive = "rad"
     end
 
     if mode == :unit || mode == :parameter
