@@ -285,7 +285,7 @@ print(system.branch.label, system.base.power.value * analysis.power.from.active)
 ---
 
 ##### Print Results
-Users have the option to print the results in the REPL using any units that have been configured, such as:
+Users can utilize any of the print functions mentioned in the [Print API Section](@ref setupPrintAPI) to print results. For example, users have the option to print the results in the REPL using any units that have been configured, such as:
 ```@repl ComputationPowersCurrentsLosses
 @voltage(pu, deg, V);
 @power(MW, pu, pu);
@@ -306,6 +306,8 @@ open("dcPowerFlow.txt", "w") do file
     printGeneratorData(system, analysis, file)
 end
 ```
+
+---
 
 !!! note "Info"
     To better understand the powers associated with buses, branches and generators that are calculated by the [`power!`](@ref power!(::PowerSystem, ::DCPowerFlow)) function, we suggest referring to the tutorials on [DC Power Flow Analysis](@ref DCPowerAnalysisTutorials).

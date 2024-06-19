@@ -515,16 +515,17 @@ using JuliaGrid # hide
 
 system = powerSystem()
 
-addBus!(system; label = "Bus 1", type = 3, active = 0.5)
-addBus!(system; label = "Bus 2", type = 1, reactive = 0.05, susceptance = 0.03)
-addBus!(system; label = "Bus 3", type = 1, active = 0.5, conductance = 0.02)
+addBus!(system; label = "Bus 1", type = 3, active = 0.6)
+addBus!(system; label = "Bus 2", type = 1, reactive = 0.1, susceptance = 0.03)
+addBus!(system; label = "Bus 3", type = 1, conductance = 0.02)
 
 @branch(resistance = 0.02, conductance = 1e-4, susceptance = 0.04)
-addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.05)
-addBranch!(system; label = "Branch 2", from = "Bus 1", to = "Bus 2", reactance = 0.01)
-addBranch!(system; label = "Branch 3", from = "Bus 2", to = "Bus 3", reactance = 0.04)
+addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.5)
+addBranch!(system; label = "Branch 2", from = "Bus 1", to = "Bus 2", reactance = 0.1)
+addBranch!(system; label = "Branch 3", from = "Bus 2", to = "Bus 3", reactance = 0.4)
 
-addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 3.2)
+addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 0.2)
+addGenerator!(system; label = "Generator 2", bus = "Bus 2", active = 1.0, reactive = 0.2)
 
 analysis = newtonRaphson(system)
 for iteration = 1:100
