@@ -261,6 +261,7 @@ Users have the option to print the results in the REPL using any units that have
 ```@repl ACPowerFlowSolution
 @voltage(pu, deg, V);
 printBusData(system, analysis)
+@voltage(pu, rad, V) # hide
 ```
 
 Users can also redirect print output to a file. For example, data can be saved in a text file as follows:
@@ -268,13 +269,6 @@ Users can also redirect print output to a file. For example, data can be saved i
 open("bus_data.txt", "w") do file
     printBusData(system, analysis, file)
 end
-```
-
-In addition, users have the option to generate a bus summary using the following function:
-```@repl ACPowerFlowSolution
-printBusSummary(system, analysis)
-
-@voltage(pu, rad, V) # hide
 ```
 
 ---
@@ -550,14 +544,23 @@ current!(system, analysis)
 nothing # hide
 ```
 
-!!! tip "Tip"
-    Using [`printBusData`](@ref printBusData), [`printBranchData`](@ref printBranchData), and [`printGeneratorData`](@ref printGeneratorData), the user can print obtained results in the REPL or redirect print output to a file.
-
 For instance, if we want to show the active power injections and the to-bus current angles, we can employ the following code:
 ```@repl ComputationPowersCurrentsLosses
 print(system.bus.label, analysis.power.injection.active)
 print(system.branch.label, analysis.current.to.angle)
 ```
+
+---
+
+##### Print Results
+Users can utilize any of the print functions mentioned in the [Print API Section](@ref setupPrintAPI) to print results. For example, to create a bus summary with the desired units, users can use the following function:
+```@repl ComputationPowersCurrentsLosses
+@voltage(pu, deg, V);
+printBusSummary(system, analysis)
+@default(unit) # hide
+```
+
+---
 
 !!! note "Info"
     To better understand the powers and currents associated with buses, branches and generators that are obtained by the [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)) and [`current!`](@ref current!(::PowerSystem, ::AC)) functions, we suggest referring to the tutorials on [AC Power Flow Analysis](@ref ACPowerFlowTutorials).
