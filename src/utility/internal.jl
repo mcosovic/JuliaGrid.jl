@@ -16,11 +16,11 @@ system = powerSystem("case14.h5")
 """
 macro base(system::Symbol, power::Symbol, voltage::Symbol)
     powerString = string(power)
-    suffixPower = parseSuffix(powerString, suffixList.basePower, "base power")
+    suffixPower = parseSuffix(powerString, unitList.basePower, "base power")
     prefixPower = parsePrefix(powerString, suffixPower)
 
     voltageString = string(voltage)
-    suffixVoltage = parseSuffix(voltageString, suffixList.baseVoltage, "base voltage")
+    suffixVoltage = parseSuffix(voltageString, unitList.baseVoltage, "base voltage")
     prefixVoltage = parsePrefix(voltageString, suffixVoltage)
 
     return quote
@@ -74,16 +74,16 @@ Changing the unit of `apparent` power unit is reflected in the following quantit
 ```
 """
 macro power(active::Symbol, reactive::Symbol, apparent::Symbol)
-    activeString = string(active)
-    suffixUser = parseSuffix(activeString, suffixList.activePower, "active power")
-    prefix.activePower = parsePrefix(activeString, suffixUser)
+    unitList.activePowerLive = string(active)
+    suffixUser = parseSuffix(unitList.activePowerLive, unitList.activePower, "active power")
+    prefix.activePower = parsePrefix(unitList.activePowerLive , suffixUser)
 
-    reactiveString = string(reactive)
-    suffixUser = parseSuffix(reactiveString, suffixList.reactivePower, "reactive power")
-    prefix.reactivePower = parsePrefix(reactiveString, suffixUser)
+    unitList.reactivePowerLive = string(reactive)
+    suffixUser = parseSuffix(unitList.reactivePowerLive, unitList.reactivePower, "reactive power")
+    prefix.reactivePower = parsePrefix(unitList.reactivePowerLive, suffixUser)
 
     apparentString = string(apparent)
-    suffixUser = parseSuffix(apparentString, suffixList.apparentPower, "apparent power")
+    suffixUser = parseSuffix(apparentString, unitList.apparentPower, "apparent power")
     prefix.apparentPower = parsePrefix(apparentString, suffixUser)
 end
 
@@ -121,16 +121,16 @@ Changing the unit prefix of voltage `base` is reflected in the following quantit
 ```
 """
 macro voltage(magnitude::Symbol, angle::Symbol, base::Symbol)
-    magnitudeString = string(magnitude)
-    suffixUser = parseSuffix(magnitudeString, suffixList.voltageMagnitude, "voltage magnitude")
-    prefix.voltageMagnitude = parsePrefix(magnitudeString, suffixUser)
+    unitList.voltageMagnitudeLive = string(magnitude)
+    suffixUser = parseSuffix(unitList.voltageMagnitudeLive, unitList.voltageMagnitude, "voltage magnitude")
+    prefix.voltageMagnitude = parsePrefix(unitList.voltageMagnitudeLive, suffixUser)
 
-    angleString = string(angle)
-    suffixUser = parseSuffix(angleString, suffixList.voltageAngle, "voltage angle")
-    prefix.voltageAngle = parsePrefix(angleString, suffixUser)
+    unitList.voltageAngleLive = string(angle)
+    suffixUser = parseSuffix(unitList.voltageAngleLive, unitList.voltageAngle, "voltage angle")
+    prefix.voltageAngle = parsePrefix(unitList.voltageAngleLive, suffixUser)
 
     baseString = string(base)
-    suffixUser = parseSuffix(baseString, suffixList.baseVoltage, "base voltage")
+    suffixUser = parseSuffix(baseString, unitList.baseVoltage, "base voltage")
     prefix.baseVoltage = parsePrefix(baseString, suffixUser)
 end
 
@@ -162,13 +162,13 @@ Changing the unit of current `angle` is reflected in the following quantities:
 ```
 """
 macro current(magnitude::Symbol, angle::Symbol)
-    magnitudeString = string(magnitude)
-    suffixUser = parseSuffix(magnitudeString, suffixList.currentMagnitude, "current magnitude")
-    prefix.currentMagnitude = parsePrefix(magnitudeString, suffixUser)
+    unitList.currentMagnitudeLive = string(magnitude)
+    suffixUser = parseSuffix(unitList.currentMagnitudeLive, unitList.currentMagnitude, "current magnitude")
+    prefix.currentMagnitude = parsePrefix(unitList.currentMagnitudeLive, suffixUser)
 
-    angleString = string(angle)
-    suffixUser = parseSuffix(angleString, suffixList.currentAngle, "current angle")
-    prefix.currentAngle = parsePrefix(angleString, suffixUser)
+    unitList.currentAngleLive = string(angle)
+    suffixUser = parseSuffix(unitList.currentAngleLive, unitList.currentAngle, "current angle")
+    prefix.currentAngle = parsePrefix(unitList.currentAngleLive, suffixUser)
 end
 
 """
@@ -201,18 +201,18 @@ Changing the units of `admittance` is reflected in the following quantities:
 """
 macro parameter(impedance::Symbol, admittance::Symbol)
     impedanceString = string(impedance)
-    suffixUser = parseSuffix(impedanceString, suffixList.impedance, "impedance")
+    suffixUser = parseSuffix(impedanceString, unitList.impedance, "impedance")
     prefix.impedance = parsePrefix(impedanceString, suffixUser)
 
     admittanceString = string(admittance)
-    suffixUser = parseSuffix(admittanceString, suffixList.admittance, "admittance")
+    suffixUser = parseSuffix(admittanceString, unitList.admittance, "admittance")
     prefix.admittance = parsePrefix(admittanceString, suffixUser)
 end
 
 ######### Parse Suffix (Unit) ##########
-function parseSuffix(input::String, suffixList, type::String)
+function parseSuffix(input::String, unitList, type::String)
     sufixUser = ""
-    @inbounds for i in suffixList
+    @inbounds for i in unitList
         if endswith(input, i)
             sufixUser = i
         end

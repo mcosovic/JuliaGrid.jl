@@ -233,7 +233,7 @@ const prefixList = Dict(
     )
 
 ########### List of Suffixes ###########
-Base.@kwdef struct SuffixList
+Base.@kwdef mutable struct UnitList
     basePower::Array{String,1} = ["VA"]
     baseVoltage::Array{String,1} = ["V"]
     activePower::Array{String,1} = ["W", "pu"]
@@ -245,8 +245,14 @@ Base.@kwdef struct SuffixList
     currentAngle::Array{String,1} = ["deg", "rad"]
     impedance::Array{String,1} = [string(:Ω), "pu"]
     admittance::Array{String,1} = ["S", "pu"]
+    voltageMagnitudeLive::String = "pu"
+    voltageAngleLive::String = "rad"
+    activePowerLive::String = "pu"
+    reactivePowerLive::String = "pu"
+    currentMagnitudeLive::String = "pu"
+    currentAngleLive::String = "rad"
 end
-suffixList = SuffixList()
+unitList = UnitList()
 
 ########### Live Prefix Values ###########
 Base.@kwdef mutable struct PrefixLive

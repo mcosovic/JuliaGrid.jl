@@ -25,7 +25,8 @@ printBusData(system, analysis)
 ```
 """
 function printBusData(system::PowerSystem, analysis::AC, io::IO = stdout)
-    format = printFormatBus(system, analysis)
+    scale = printScale(prefix)
+    format = formatBusData(system, analysis, scale)
 
     maxLine = sum(format["length"][1:3]) + 8
     if format["power"]
@@ -102,25 +103,25 @@ function printBusData(system::PowerSystem, analysis::AC, io::IO = stdout)
 
     Printf.@printf(io, "| %*s | %*s | %*s ",
         format["length"][1], "",
-        format["length"][2], "$(format["unit"][2])",
-        format["length"][3], "$(format["unit"][3])",
+        format["length"][2], "[$(unitList.voltageMagnitudeLive)]",
+        format["length"][3], "[$(unitList.voltageAngleLive)]",
     )
     if format["power"]
         Printf.@printf(io, "| %*s | %*s | %*s | %*s | %*s | %*s | %*s | %*s ",
-            format["length"][4], "$(format["unit"][4])",
-            format["length"][5], "$(format["unit"][5])",
-            format["length"][6], "$(format["unit"][4])",
-            format["length"][7], "$(format["unit"][5])",
-            format["length"][8], "$(format["unit"][4])",
-            format["length"][9], "$(format["unit"][5])",
-            format["length"][10], "$(format["unit"][4])",
-            format["length"][11], "$(format["unit"][5])",
+            format["length"][4], "[$(unitList.activePowerLive)]",
+            format["length"][5], "[$(unitList.reactivePowerLive)]",
+            format["length"][6], "[$(unitList.activePowerLive)]",
+            format["length"][7], "[$(unitList.reactivePowerLive)]",
+            format["length"][8], "[$(unitList.activePowerLive)]",
+            format["length"][9], "[$(unitList.reactivePowerLive)]",
+            format["length"][10], "[$(unitList.activePowerLive)]",
+            format["length"][11], "[$(unitList.reactivePowerLive)]",
         )
     end
     if format["current"]
         Printf.@printf(io, "| %*s | %*s ",
-            format["length"][12], "$(format["unit"][6])",
-            format["length"][13], "$(format["unit"][7])",
+            format["length"][12], "[$(unitList.currentMagnitudeLive)]",
+            format["length"][13], "[$(unitList.currentAngleLive)]",
         )
     end
     Printf.@printf io "|\n"
@@ -168,24 +169,24 @@ function printBusData(system::PowerSystem, analysis::AC, io::IO = stdout)
         Printf.@printf(io, "| %*s | %*.4f | %*.4f ",
             format["length"][1], label,
             format["length"][2], voltageMagnitude,
-            format["length"][3], analysis.voltage.angle[i] * format["scale"][3],
+            format["length"][3], analysis.voltage.angle[i] * scale["voltageAngle"],
         )
         if format["power"]
             Printf.@printf(io, "| %*.4f | %*.4f | %*.4f | %*.4f | %*.4f | %*.4f | %*.4f | %*.4f ",
-                format["length"][4], analysis.power.supply.active[i] * format["scale"][4],
-                format["length"][5], analysis.power.supply.reactive[i] * format["scale"][5],
-                format["length"][6], system.bus.demand.active[i] * format["scale"][4],
-                format["length"][7], system.bus.demand.reactive[i] * format["scale"][5],
-                format["length"][8], analysis.power.injection.active[i] * format["scale"][4],
-                format["length"][9], analysis.power.injection.reactive[i] * format["scale"][5],
-                format["length"][10], analysis.power.shunt.active[i] * format["scale"][4],
-                format["length"][11], analysis.power.shunt.reactive[i] * format["scale"][5],
+                format["length"][4], analysis.power.supply.active[i] * scale["activePower"],
+                format["length"][5], analysis.power.supply.reactive[i] * scale["reactivePower"],
+                format["length"][6], system.bus.demand.active[i] * scale["activePower"],
+                format["length"][7], system.bus.demand.reactive[i] * scale["reactivePower"],
+                format["length"][8], analysis.power.injection.active[i] * scale["activePower"],
+                format["length"][9], analysis.power.injection.reactive[i] * scale["reactivePower"],
+                format["length"][10], analysis.power.shunt.active[i] * scale["activePower"],
+                format["length"][11], analysis.power.shunt.reactive[i] * scale["reactivePower"],
             )
         end
         if format["current"]
             Printf.@printf(io, "| %*.4f | %*.4f ",
             format["length"][12], currentMagnitude,
-            format["length"][13], analysis.current.injection.angle[i] * format["scale"][7]
+            format["length"][13], analysis.current.injection.angle[i] * scale["currentAngle"]
             )
         end
         Printf.@printf io "|\n"
@@ -195,7 +196,8 @@ function printBusData(system::PowerSystem, analysis::AC, io::IO = stdout)
 end
 
 function printBusData(system::PowerSystem, analysis::DC, io::IO = stdout)
-    format = printFormatBus(system, analysis)
+    scale = printScale(prefix)
+    format = formatBusData(system, analysis, scale)
 
     maxLine = sum(format["length"][1:2]) + 5
     if format["power"]
@@ -220,13 +222,13 @@ function printBusData(system::PowerSystem, analysis::DC, io::IO = stdout)
 
     Printf.@printf(io, "| %*s | %*s ",
         format["length"][1], "",
-        format["length"][2], "Angle $(format["unit"][1])",
+        format["length"][2], "Angle [$(unitList.voltageAngleLive)]",
     )
     if format["power"]
         Printf.@printf(io, "| %*s | %*s | %*s ",
-            format["length"][3], "Active $(format["unit"][2])",
-            format["length"][4], "Active $(format["unit"][2])",
-            format["length"][5], "Active $(format["unit"][2])",
+            format["length"][3], "Active [$(unitList.activePowerLive)]",
+            format["length"][4], "Active [$(unitList.activePowerLive)]",
+            format["length"][5], "Active [$(unitList.activePowerLive)]",
         )
     end
     Printf.@printf io "|\n"
@@ -247,13 +249,13 @@ function printBusData(system::PowerSystem, analysis::DC, io::IO = stdout)
     for (label, i) in system.bus.label
         Printf.@printf(io, "| %*s | %*.4f ",
             format["length"][1], label,
-            format["length"][2], analysis.voltage.angle[i] * format["scale"][1],
+            format["length"][2], analysis.voltage.angle[i] * scale["voltageAngle"],
         )
         if format["power"]
             Printf.@printf(io, "| %*.4f | %*.4f | %*.4f ",
-                format["length"][3], analysis.power.supply.active[i] * format["scale"][2],
-                format["length"][4], system.bus.demand.active[i] * format["scale"][2],
-                format["length"][5], analysis.power.injection.active[i] * format["scale"][2],
+                format["length"][3], analysis.power.supply.active[i] * scale["activePower"],
+                format["length"][4], system.bus.demand.active[i] * scale["activePower"],
+                format["length"][5], analysis.power.injection.active[i] * scale["activePower"],
             )
         end
         Printf.@printf io "|\n"
@@ -289,7 +291,8 @@ printBranchData(system, analysis)
 ```
 """
 function printBranchData(system::PowerSystem, analysis::AC, io::IO = stdout)
-    format = printFormatBranch(system, analysis)
+    scale = printScale(prefix)
+    format = formatBranchData(system, analysis, scale)
 
     if format["power"] || format["current"]
         maxLine = format["length"][1] + format["length"][16] + 5
@@ -371,24 +374,24 @@ function printBranchData(system::PowerSystem, analysis::AC, io::IO = stdout)
 
         if format["power"]
             Printf.@printf(io, "| %*s | %*s | %*s | %*s | %*s | %*s | %*s | %*s ",
-                format["length"][2], "$(format["unit"][2])",
-                format["length"][3], "$(format["unit"][3])",
-                format["length"][4], "$(format["unit"][2])",
-                format["length"][5], "$(format["unit"][3])",
-                format["length"][6], "$(format["unit"][2])",
-                format["length"][7], "$(format["unit"][3])",
-                format["length"][8], "$(format["unit"][2])",
-                format["length"][9], "$(format["unit"][3])",
+                format["length"][2], "[$(unitList.activePowerLive)]",
+                format["length"][3], "[$(unitList.reactivePowerLive)]",
+                format["length"][4], "[$(unitList.activePowerLive)]",
+                format["length"][5], "[$(unitList.reactivePowerLive)]",
+                format["length"][6], "[$(unitList.activePowerLive)]",
+                format["length"][7], "[$(unitList.reactivePowerLive)]",
+                format["length"][8], "[$(unitList.activePowerLive)]",
+                format["length"][9], "[$(unitList.reactivePowerLive)]",
             )
         end
         if format["current"]
             Printf.@printf(io, "| %*s | %*s | %*s | %*s | %*s | %*s ",
-                format["length"][10], "$(format["unit"][4])",
-                format["length"][11], "$(format["unit"][5])",
-                format["length"][12], "$(format["unit"][4])",
-                format["length"][13], "$(format["unit"][5])",
-                format["length"][14], "$(format["unit"][4])",
-                format["length"][15], "$(format["unit"][5])",
+                format["length"][10], "[$(unitList.currentMagnitudeLive)]",
+                format["length"][11], "[$(unitList.currentAngleLive)]",
+                format["length"][12], "[$(unitList.currentMagnitudeLive)]",
+                format["length"][13], "[$(unitList.currentAngleLive)]",
+                format["length"][14], "[$(unitList.currentMagnitudeLive)]",
+                format["length"][15], "[$(unitList.currentAngleLive)]",
             )
         end
         Printf.@printf io "| %*s |\n" format["length"][16] ""
@@ -424,14 +427,14 @@ function printBranchData(system::PowerSystem, analysis::AC, io::IO = stdout)
 
             if format["power"]
                 Printf.@printf(io, "| %*.4f | %*.4f | %*.4f | %*.4f | %*.4f | %*.4f | %*.4f | %*.4f ",
-                    format["length"][2], analysis.power.from.active[i] * format["scale"][2],
-                    format["length"][3], analysis.power.from.reactive[i] * format["scale"][3],
-                    format["length"][4], analysis.power.to.active[i] * format["scale"][2],
-                    format["length"][5], analysis.power.to.reactive[i] * format["scale"][3],
-                    format["length"][6], analysis.power.charging.active[i] * format["scale"][2],
-                    format["length"][7], analysis.power.charging.reactive[i] * format["scale"][3],
-                    format["length"][8], analysis.power.series.active[i] * format["scale"][2],
-                    format["length"][9], analysis.power.series.reactive[i] * format["scale"][3],
+                    format["length"][2], analysis.power.from.active[i] * scale["activePower"],
+                    format["length"][3], analysis.power.from.reactive[i] * scale["reactivePower"],
+                    format["length"][4], analysis.power.to.active[i] * scale["activePower"],
+                    format["length"][5], analysis.power.to.reactive[i] * scale["reactivePower"],
+                    format["length"][6], analysis.power.charging.active[i] * scale["activePower"],
+                    format["length"][7], analysis.power.charging.reactive[i] * scale["reactivePower"],
+                    format["length"][8], analysis.power.series.active[i] * scale["activePower"],
+                    format["length"][9], analysis.power.series.reactive[i] * scale["reactivePower"],
                 )
             end
             if format["current"]
@@ -450,11 +453,11 @@ function printBranchData(system::PowerSystem, analysis::AC, io::IO = stdout)
 
                 Printf.@printf(io, "| %*.4f | %*.4f | %*.4f | %*.4f | %*.4f | %*.4f ",
                     format["length"][10], currentMagnitudeFrom,
-                    format["length"][11], analysis.current.from.angle[i] * format["scale"][5],
+                    format["length"][11], analysis.current.from.angle[i] * scale["currentAngle"],
                     format["length"][12], currentMagnitudeTo,
-                    format["length"][13], analysis.current.to.angle[i] * format["scale"][5],
+                    format["length"][13], analysis.current.to.angle[i] * scale["currentAngle"],
                     format["length"][14], currentMagnitudeS,
-                    format["length"][15], analysis.current.series.angle[i] * format["scale"][5]
+                    format["length"][15], analysis.current.series.angle[i] * scale["currentAngle"]
                 )
             end
 
@@ -465,7 +468,8 @@ function printBranchData(system::PowerSystem, analysis::AC, io::IO = stdout)
 end
 
 function printBranchData(system::PowerSystem, analysis::DC, io::IO = stdout)
-    format = printFormatBranch(system, analysis)
+    scale = printScale(prefix)
+    format = formatBranchData(system, analysis, scale)
 
     if format["power"]
         maxLine = sum(format["length"]) + 11
@@ -481,8 +485,8 @@ function printBranchData(system::PowerSystem, analysis::DC, io::IO = stdout)
 
         Printf.@printf(io, "| %*s | %*s | %*s | %*s |\n",
             format["length"][1], "",
-            format["length"][2], "Active $(format["unit"])",
-            format["length"][3], "Active $(format["unit"])",
+            format["length"][2], "Active [$(unitList.activePowerLive)]",
+            format["length"][3], "Active [$(unitList.activePowerLive)]",
             format["length"][4], "",
         )
 
@@ -496,8 +500,8 @@ function printBranchData(system::PowerSystem, analysis::DC, io::IO = stdout)
         for (label, i) in system.branch.label
             Printf.@printf(io, "| %*s | %*.4f | %*.4f | %*i |\n",
                 format["length"][1], label,
-                format["length"][2], analysis.power.from.active[i] * format["scale"],
-                format["length"][3], analysis.power.to.active[i] * format["scale"],
+                format["length"][2], analysis.power.from.active[i] * scale["activePower"],
+                format["length"][3], analysis.power.to.active[i] * scale["activePower"],
                 format["length"][4], system.branch.layout.status[i],
             )
         end
@@ -533,7 +537,8 @@ printGeneratorData(system, analysis)
 ```
 """
 function printGeneratorData(system::PowerSystem, analysis::AC, io::IO = stdout)
-    format = printFormatGenerator(system, analysis)
+    scale = printScale(prefix)
+    format = formatGeneratorData(system, analysis, scale)
 
     if format["power"]
         maxLine = sum(format["length"]) + 11
@@ -561,8 +566,8 @@ function printGeneratorData(system::PowerSystem, analysis::AC, io::IO = stdout)
 
         Printf.@printf(io, "| %*s | %*s | %*s | %*s |\n",
             format["length"][1], "",
-            format["length"][2], "$(format["unit"][1])",
-            format["length"][3], "$(format["unit"][2])",
+            format["length"][2], "[$(unitList.activePowerLive)]",
+            format["length"][3], "[$(unitList.reactivePowerLive)]",
             format["length"][4], ""
         )
 
@@ -576,8 +581,8 @@ function printGeneratorData(system::PowerSystem, analysis::AC, io::IO = stdout)
         for (label, i) in system.generator.label
             Printf.@printf(io, "| %*s | %*.4f | %*.4f | %*i |\n",
                 format["length"][1], label,
-                format["length"][2], analysis.power.generator.active[i] * format["scale"][1],
-                format["length"][3], analysis.power.generator.reactive[i] * format["scale"][2],
+                format["length"][2], analysis.power.generator.active[i] * scale["activePower"],
+                format["length"][3], analysis.power.generator.reactive[i] * scale["reactivePower"],
                 format["length"][4], system.generator.layout.status[i]
             )
         end
@@ -587,7 +592,8 @@ function printGeneratorData(system::PowerSystem, analysis::AC, io::IO = stdout)
 end
 
 function printGeneratorData(system::PowerSystem, analysis::DC, io::IO = stdout)
-    format = printFormatGenerator(system, analysis)
+    scale = printScale(prefix)
+    format = formatGeneratorData(system, analysis, scale)
 
     if format["power"]
         maxLine = sum(format["length"]) + 8
@@ -602,7 +608,7 @@ function printGeneratorData(system::PowerSystem, analysis::DC, io::IO = stdout)
 
         Printf.@printf(io, "| %*s | %*s | %*s |\n",
             format["length"][1], "",
-            format["length"][2], "Active $(format["unit"])",
+            format["length"][2], "Active [$(unitList.activePowerLive)]",
             format["length"][3], "",
         )
 
@@ -615,7 +621,7 @@ function printGeneratorData(system::PowerSystem, analysis::DC, io::IO = stdout)
         for (label, i) in system.generator.label
             Printf.@printf(io, "| %*s | %*.4f | %*i |\n",
                 format["length"][1], label,
-                format["length"][2], analysis.power.generator.active[i] * format["scale"],
+                format["length"][2], analysis.power.generator.active[i] * scale["activePower"],
                 format["length"][3], system.generator.layout.status[i]
             )
         end
@@ -624,81 +630,57 @@ function printGeneratorData(system::PowerSystem, analysis::DC, io::IO = stdout)
     end
 end
 
-function printFormatBus(system::PowerSystem, analysis::AC)
+function formatBusData(system::PowerSystem, analysis::AC, scale::Dict{String, Float64})
     errorVoltage(analysis.voltage.magnitude)
 
     format = Dict(
         "length" => [5; 9; 5; 6; 8; 6; 8; 6; 8; 6; 8; 9; 5],
-        "unit" => [""; "[pu]"; "[rad]"; "[pu]"; "[pu]"; "[pu]"; "[rad]"],
-        "scale" => [0.0; 0.0; 1.0; 1.0; 1.0; 1.0; 1.0],
         "power" => !isempty(analysis.power.injection.active),
         "current" => !isempty(analysis.current.injection.magnitude)
     )
 
-    if prefix.voltageMagnitude != 0.0
-        format["unit"][2] = "[$(findKey(prefixList, prefix.voltageMagnitude))V]"
-    else
+    if prefix.voltageMagnitude == 0.0
         maxV = maximum(analysis.voltage.magnitude)
         format["length"][2] = max(length(Printf.@sprintf("%.4f", maxV)), format["length"][2])
     end
 
-    if prefix.voltageAngle != 0.0
-        format["unit"][3] = "[deg]"
-        format["scale"][3] = 1 / prefix.voltageAngle
-    end
     minmaxT = extrema(analysis.voltage.angle)
-    format["length"][3] = max(length(Printf.@sprintf("%.4f", minmaxT[1] * format["scale"][3])), length(Printf.@sprintf("%.4f", minmaxT[2] * format["scale"][3])), format["length"][3])
+    format["length"][3] = max(length(Printf.@sprintf("%.4f", minmaxT[1] * scale["voltageAngle"])), length(Printf.@sprintf("%.4f", minmaxT[2] * scale["voltageAngle"])), format["length"][3])
 
     if format["power"]
-        if prefix.activePower != 0.0
-            format["unit"][4] = "[$(findKey(prefixList, prefix.activePower))W]"
-            format["scale"][4] = system.base.power.value * system.base.power.prefix / prefix.activePower
-        end
-
         minmaxPg = extrema(analysis.power.supply.active)
-        format["length"][4] = max(length(Printf.@sprintf("%.4f", minmaxPg[1] * format["scale"][4])), length(Printf.@sprintf("%.4f", minmaxPg[2] * format["scale"][4])), format["length"][4])
+        format["length"][4] = max(length(Printf.@sprintf("%.4f", minmaxPg[1] * scale["activePower"])), length(Printf.@sprintf("%.4f", minmaxPg[2] * scale["activePower"])), format["length"][4])
 
         minmaxPl = extrema(system.bus.demand.active)
-        format["length"][6] = max(length(Printf.@sprintf("%.4f", minmaxPl[1] * format["scale"][4])), length(Printf.@sprintf("%.4f", minmaxPl[2] * format["scale"][4])), format["length"][6])
+        format["length"][6] = max(length(Printf.@sprintf("%.4f", minmaxPl[1] * scale["activePower"])), length(Printf.@sprintf("%.4f", minmaxPl[2] * scale["activePower"])), format["length"][6])
 
         minmaxPi = extrema(analysis.power.injection.active)
-        format["length"][8] = max(length(Printf.@sprintf("%.4f", minmaxPi[1] * format["scale"][4])), length(Printf.@sprintf("%.4f", minmaxPi[2] * format["scale"][4])), format["length"][8])
+        format["length"][8] = max(length(Printf.@sprintf("%.4f", minmaxPi[1] * scale["activePower"])), length(Printf.@sprintf("%.4f", minmaxPi[2] * scale["activePower"])), format["length"][8])
 
         minmaxPsi = extrema(analysis.power.shunt.active)
-        format["length"][10] = max(length(Printf.@sprintf("%.4f", minmaxPsi[1] * format["scale"][4])), length(Printf.@sprintf("%.4f", minmaxPsi[2] * format["scale"][4])), format["length"][10])
-
-        if prefix.reactivePower != 0.0
-            format["unit"][5] = "[$(findKey(prefixList, prefix.reactivePower))VAr]"
-            format["scale"][5] = system.base.power.value * system.base.power.prefix / prefix.reactivePower
-        end
+        format["length"][10] = max(length(Printf.@sprintf("%.4f", minmaxPsi[1] * scale["activePower"])), length(Printf.@sprintf("%.4f", minmaxPsi[2] * scale["activePower"])), format["length"][10])
 
         minmaxQg = extrema(analysis.power.supply.reactive)
-        format["length"][5] = max(length(Printf.@sprintf("%.4f", minmaxQg[1] * format["scale"][5])), length(Printf.@sprintf("%.4f", minmaxQg[2] * format["scale"][5])), format["length"][5])
+        format["length"][5] = max(length(Printf.@sprintf("%.4f", minmaxQg[1] * scale["reactivePower"])), length(Printf.@sprintf("%.4f", minmaxQg[2] * scale["reactivePower"])), format["length"][5])
 
         minmaxQl = extrema(system.bus.demand.reactive)
-        format["length"][7] = max(length(Printf.@sprintf("%.4f", minmaxQl[1] * format["scale"][5])), length(Printf.@sprintf("%.4f", minmaxQl[2] * format["scale"][5])), format["length"][7])
+        format["length"][7] = max(length(Printf.@sprintf("%.4f", minmaxQl[1] * scale["reactivePower"])), length(Printf.@sprintf("%.4f", minmaxQl[2] * scale["reactivePower"])), format["length"][7])
 
         minmaxQi = extrema(analysis.power.injection.reactive)
-        format["length"][9] = max(length(Printf.@sprintf("%.4f", minmaxQi[1] * format["scale"][5])), length(Printf.@sprintf("%.4f", minmaxQi[2] * format["scale"][5])), format["length"][9])
+        format["length"][9] = max(length(Printf.@sprintf("%.4f", minmaxQi[1] * scale["reactivePower"])), length(Printf.@sprintf("%.4f", minmaxQi[2] * scale["reactivePower"])), format["length"][9])
 
         minmaxQsi = extrema(analysis.power.shunt.reactive)
-        format["length"][11] = max(length(Printf.@sprintf("%.4f", minmaxQsi[1] * format["scale"][5])), length(Printf.@sprintf("%.4f", minmaxQsi[2] * format["scale"][5])), format["length"][11])
+        format["length"][11] = max(length(Printf.@sprintf("%.4f", minmaxQsi[1] * scale["reactivePower"])), length(Printf.@sprintf("%.4f", minmaxQsi[2] * scale["reactivePower"])), format["length"][11])
     end
 
     if format["current"]
-        if prefix.currentMagnitude != 0.0
-            format["unit"][6] = "[$(findKey(prefixList, prefix.currentMagnitude))A]"
-        else
+        if prefix.currentMagnitude == 0.0
             maxI = maximum(analysis.current.injection.magnitude)
             format["length"][12] = max(length(Printf.@sprintf("%.4f", maxI)), format["length"][12])
         end
 
-        if prefix.currentAngle != 0.0
-            format["unit"][7] = "[deg]"
-            format["scale"][7] = 1 / prefix.currentAngle
-        end
         minmaxW = extrema(analysis.current.injection.angle)
-        format["length"][13] = max(length(Printf.@sprintf("%.4f", minmaxW[1] * format["scale"][7])), length(Printf.@sprintf("%.4f", minmaxW[2] * format["scale"][7])), format["length"][13])
+        format["length"][13] = max(length(Printf.@sprintf("%.4f", minmaxW[1] * scale["currentAngle"])), length(Printf.@sprintf("%.4f", minmaxW[2] * scale["currentAngle"])), format["length"][13])
     end
 
     @inbounds for (label, i) in system.bus.label
@@ -718,37 +700,26 @@ function printFormatBus(system::PowerSystem, analysis::AC)
     return format
 end
 
-function printFormatBus(system::PowerSystem, analysis::DC)
+function formatBusData(system::PowerSystem, analysis::DC, scale::Dict{String, Float64})
     errorVoltage(analysis.voltage.angle)
 
     format = Dict(
         "length" => [5; 11; 16; 12; 15],
-        "unit" => ["[rad]"; "[pu]"],
-        "scale" => [1.0; 1.0],
         "power" => !isempty(analysis.power.injection.active),
     )
 
-    if prefix.voltageAngle != 0.0
-        format["unit"][1] = "[deg]"
-        format["scale"][1] = 1 / prefix.voltageAngle
-    end
     minmaxT = extrema(analysis.voltage.angle)
-    format["length"][2] = max(length(Printf.@sprintf("%.4f", minmaxT[1] * format["scale"][1])), length(Printf.@sprintf("%.4f", minmaxT[2] * format["scale"][1])), format["length"][2])
+    format["length"][2] = max(length(Printf.@sprintf("%.4f", minmaxT[1] * scale["voltageAngle"])), length(Printf.@sprintf("%.4f", minmaxT[2] * scale["voltageAngle"])), format["length"][2])
 
     if format["power"]
-        if prefix.activePower != 0.0
-            format["unit"][2] = "[$(findKey(prefixList, prefix.activePower))W]"
-            format["scale"][2] = system.base.power.value * system.base.power.prefix / prefix.activePower
-        end
-
         minmaxPg = extrema(analysis.power.supply.active)
-        format["length"][3] = max(length(Printf.@sprintf("%.4f", minmaxPg[1] * format["scale"][2])), length(Printf.@sprintf("%.4f", minmaxPg[2] * format["scale"][2])), format["length"][3])
+        format["length"][3] = max(length(Printf.@sprintf("%.4f", minmaxPg[1] * scale["activePower"])), length(Printf.@sprintf("%.4f", minmaxPg[2] * scale["activePower"])), format["length"][3])
 
         minmaxPl = extrema(system.bus.demand.active)
-        format["length"][4] = max(length(Printf.@sprintf("%.4f", minmaxPl[1] * format["scale"][2])), length(Printf.@sprintf("%.4f", minmaxPl[2] * format["scale"][2])), format["length"][4])
+        format["length"][4] = max(length(Printf.@sprintf("%.4f", minmaxPl[1] * scale["activePower"])), length(Printf.@sprintf("%.4f", minmaxPl[2] * scale["activePower"])), format["length"][4])
 
         minmaxPi = extrema(analysis.power.injection.active)
-        format["length"][5] = max(length(Printf.@sprintf("%.4f", minmaxPi[1] * format["scale"][2])), length(Printf.@sprintf("%.4f", minmaxPi[2] * format["scale"][2])), format["length"][5])
+        format["length"][5] = max(length(Printf.@sprintf("%.4f", minmaxPi[1] * scale["activePower"])), length(Printf.@sprintf("%.4f", minmaxPi[2] * scale["activePower"])), format["length"][5])
     end
 
     @inbounds for (label, i) in system.bus.label
@@ -758,55 +729,41 @@ function printFormatBus(system::PowerSystem, analysis::DC)
     return format
 end
 
-function printFormatBranch(system::PowerSystem, analysis::AC)
+function formatBranchData(system::PowerSystem, analysis::AC, scale::Dict{String, Float64})
     format = Dict(
         "length" => [5; 6; 8; 6; 8; 6; 8; 6; 8; 9; 5; 9; 5; 9; 5; 6],
-        "unit" => [""; "[pu]"; "[pu]"; "[pu]"; "[rad]"],
-        "scale" => [0.0; 1.0; 1.0; 1.0; 1.0],
         "power" => !isempty(analysis.power.injection.active),
         "current" => !isempty(analysis.current.injection.magnitude)
     )
 
     if format["power"]
-        if prefix.activePower != 0.0
-            format["unit"][2] = "[$(findKey(prefixList, prefix.activePower))W]"
-            format["scale"][2] = system.base.power.value * system.base.power.prefix / prefix.activePower
-        end
-
         minmaxPij = extrema(analysis.power.from.active)
-        format["length"][2] = max(length(Printf.@sprintf("%.4f", minmaxPij[1] * format["scale"][2])), length(Printf.@sprintf("%.4f", minmaxPij[2] * format["scale"][2])), format["length"][2])
+        format["length"][2] = max(length(Printf.@sprintf("%.4f", minmaxPij[1] * scale["activePower"])), length(Printf.@sprintf("%.4f", minmaxPij[2] * scale["activePower"])), format["length"][2])
 
         minmaxPji = extrema(analysis.power.to.active)
-        format["length"][4] = max(length(Printf.@sprintf("%.4f", minmaxPji[1] * format["scale"][2])), length(Printf.@sprintf("%.4f", minmaxPji[2] * format["scale"][2])), format["length"][4])
+        format["length"][4] = max(length(Printf.@sprintf("%.4f", minmaxPji[1] * scale["activePower"])), length(Printf.@sprintf("%.4f", minmaxPji[2] * scale["activePower"])), format["length"][4])
 
         minmaxPsi = extrema(analysis.power.charging.active)
-        format["length"][6] = max(length(Printf.@sprintf("%.4f", minmaxPsi[1] * format["scale"][2])), length(Printf.@sprintf("%.4f", minmaxPsi[2] * format["scale"][2])), format["length"][6])
+        format["length"][6] = max(length(Printf.@sprintf("%.4f", minmaxPsi[1] * scale["activePower"])), length(Printf.@sprintf("%.4f", minmaxPsi[2] * scale["activePower"])), format["length"][6])
 
         minmaxPli = extrema(analysis.power.series.active)
-        format["length"][8] = max(length(Printf.@sprintf("%.4f", minmaxPli[1] * format["scale"][2])), length(Printf.@sprintf("%.4f", minmaxPli[2] * format["scale"][2])), format["length"][8])
-
-        if prefix.reactivePower != 0.0
-            format["unit"][3] = "[$(findKey(prefixList, prefix.reactivePower))VAr]"
-            format["scale"][3] = system.base.power.value * system.base.power.prefix / prefix.reactivePower
-        end
+        format["length"][8] = max(length(Printf.@sprintf("%.4f", minmaxPli[1] * scale["activePower"])), length(Printf.@sprintf("%.4f", minmaxPli[2] * scale["activePower"])), format["length"][8])
 
         minmaxQij = extrema(analysis.power.from.reactive)
-        format["length"][3] = max(length(Printf.@sprintf("%.4f", minmaxQij[1] * format["scale"][3])), length(Printf.@sprintf("%.4f", minmaxQij[2] * format["scale"][3])), format["length"][3])
+        format["length"][3] = max(length(Printf.@sprintf("%.4f", minmaxQij[1] * scale["reactivePower"])), length(Printf.@sprintf("%.4f", minmaxQij[2] * scale["reactivePower"])), format["length"][3])
 
         minmaxQji = extrema(analysis.power.to.reactive)
-        format["length"][5] = max(length(Printf.@sprintf("%.4f", minmaxQji[1] * format["scale"][3])), length(Printf.@sprintf("%.4f", minmaxQji[2] * format["scale"][3])), format["length"][5])
+        format["length"][5] = max(length(Printf.@sprintf("%.4f", minmaxQji[1] * scale["reactivePower"])), length(Printf.@sprintf("%.4f", minmaxQji[2] * scale["reactivePower"])), format["length"][5])
 
         minmaxQsi = extrema(analysis.power.charging.reactive)
-        format["length"][7] = max(length(Printf.@sprintf("%.4f", minmaxQsi[1] * format["scale"][3])), length(Printf.@sprintf("%.4f", minmaxQsi[2] * format["scale"][3])), format["length"][7])
+        format["length"][7] = max(length(Printf.@sprintf("%.4f", minmaxQsi[1] * scale["reactivePower"])), length(Printf.@sprintf("%.4f", minmaxQsi[2] * scale["reactivePower"])), format["length"][7])
 
         minmaxQli = extrema(analysis.power.series.reactive)
-        format["length"][9] = max(length(Printf.@sprintf("%.4f", minmaxQli[1] * format["scale"][3])), length(Printf.@sprintf("%.4f", minmaxQli[2] * format["scale"][3])), format["length"][9])
+        format["length"][9] = max(length(Printf.@sprintf("%.4f", minmaxQli[1] * scale["reactivePower"])), length(Printf.@sprintf("%.4f", minmaxQli[2] * scale["reactivePower"])), format["length"][9])
     end
 
     if format["current"]
-        if prefix.currentMagnitude != 0.0
-            format["unit"][4] = "[$(findKey(prefixList, prefix.currentMagnitude))A]"
-        else
+        if prefix.currentMagnitude == 0.0
             maxIij = maximum(analysis.current.from.magnitude)
             format["length"][10] = max(length(Printf.@sprintf("%.4f", maxIij)), format["length"][10])
 
@@ -817,19 +774,14 @@ function printFormatBranch(system::PowerSystem, analysis::AC)
             format["length"][14] = max(length(Printf.@sprintf("%.4f", maxIs)), format["length"][14])
         end
 
-        if prefix.currentAngle != 0.0
-            format["unit"][5] = "[deg]"
-            format["scale"][5] = 1 / prefix.currentAngle
-        end
-
         minmaxWij = extrema(analysis.current.from.angle)
-        format["length"][11] = max(length(Printf.@sprintf("%.4f", minmaxWij[1] * format["scale"][5])), length(Printf.@sprintf("%.4f", minmaxWij[2] * format["scale"][5])), format["length"][11])
+        format["length"][11] = max(length(Printf.@sprintf("%.4f", minmaxWij[1] * scale["currentAngle"])), length(Printf.@sprintf("%.4f", minmaxWij[2] * scale["currentAngle"])), format["length"][11])
 
         minmaxWji = extrema(analysis.current.to.angle)
-        format["length"][13] = max(length(Printf.@sprintf("%.4f", minmaxWji[1] * format["scale"][5])), length(Printf.@sprintf("%.4f", minmaxWji[2] * format["scale"][5])), format["length"][13])
+        format["length"][13] = max(length(Printf.@sprintf("%.4f", minmaxWji[1] * scale["currentAngle"])), length(Printf.@sprintf("%.4f", minmaxWji[2] * scale["currentAngle"])), format["length"][13])
 
         minmaxWs = extrema(analysis.current.series.angle)
-        format["length"][15] = max(length(Printf.@sprintf("%.4f", minmaxWs[1] * format["scale"][5])), length(Printf.@sprintf("%.4f", minmaxWs[2] * format["scale"][5])), format["length"][15])
+        format["length"][15] = max(length(Printf.@sprintf("%.4f", minmaxWs[1] * scale["currentAngle"])), length(Printf.@sprintf("%.4f", minmaxWs[2] * scale["currentAngle"])), format["length"][15])
     end
 
     @inbounds for (label, i) in system.branch.label
@@ -851,25 +803,18 @@ function printFormatBranch(system::PowerSystem, analysis::AC)
     return format
 end
 
-function printFormatBranch(system::PowerSystem, analysis::DC)
+function formatBranchData(system::PowerSystem, analysis::DC, scale::Dict{String, Float64})
     format = Dict(
         "length" => [5; 14; 12; 6],
-        "unit" => "[pu]",
-        "scale" => 1.0,
         "power" => !isempty(analysis.power.from.active),
     )
 
     if format["power"]
-        if prefix.activePower != 0.0
-            format["unit"] = "[$(findKey(prefixList, prefix.activePower))W]"
-            format["scale"] = system.base.power.value * system.base.power.prefix / prefix.activePower
-        end
-
         minmaxPij = extrema(analysis.power.from.active)
-        format["length"][2] = max(length(Printf.@sprintf("%.4f", minmaxPij[1] * format["scale"])), length(Printf.@sprintf("%.4f", minmaxPij[2] * format["scale"])), format["length"][2])
+        format["length"][2] = max(length(Printf.@sprintf("%.4f", minmaxPij[1] * scale["activePower"])), length(Printf.@sprintf("%.4f", minmaxPij[2] * scale["activePower"])), format["length"][2])
 
         minmaxPji = extrema(analysis.power.to.active)
-        format["length"][3] = max(length(Printf.@sprintf("%.4f", minmaxPji[1] * format["scale"])), length(Printf.@sprintf("%.4f", minmaxPji[2] * format["scale"])), format["length"][2])
+        format["length"][3] = max(length(Printf.@sprintf("%.4f", minmaxPji[1] * scale["activePower"])), length(Printf.@sprintf("%.4f", minmaxPji[2] * scale["activePower"])), format["length"][2])
     end
 
     @inbounds for (label, i) in system.branch.label
@@ -879,30 +824,18 @@ function printFormatBranch(system::PowerSystem, analysis::DC)
     return format
 end
 
-function printFormatGenerator(system::PowerSystem, analysis::AC)
+function formatGeneratorData(system::PowerSystem, analysis::AC, scale::Dict{String, Float64})
     format = Dict(
         "length" => [5; 6; 8; 6],
-        "unit" => ["[pu]"; "[pu]"],
-        "scale" => [1.0; 1.0],
         "power" => !isempty(analysis.power.generator.active)
     )
 
     if format["power"]
-        if prefix.activePower != 0.0
-            format["unit"][1] = "[$(findKey(prefixList, prefix.activePower))W]"
-            format["scale"][1] = system.base.power.value * system.base.power.prefix / prefix.activePower
-        end
-
         minmaxPg = extrema(analysis.power.generator.active)
-        format["length"][2] = max(length(Printf.@sprintf("%.4f", minmaxPg[1] * format["scale"][1])), length(Printf.@sprintf("%.4f", minmaxPg[2] * format["scale"][1])), format["length"][2])
-
-        if prefix.reactivePower != 0.0
-            format["unit"][2] = "[$(findKey(prefixList, prefix.reactivePower))VAr]"
-            format["scale"][2] = system.base.power.value * system.base.power.prefix / prefix.reactivePower
-        end
+        format["length"][2] = max(length(Printf.@sprintf("%.4f", minmaxPg[1] * scale["activePower"])), length(Printf.@sprintf("%.4f", minmaxPg[2] * scale["activePower"])), format["length"][2])
 
         minmaxQg = extrema(analysis.power.generator.reactive)
-        format["length"][3] = max(length(Printf.@sprintf("%.4f", minmaxQg[1] * format["scale"][2])), length(Printf.@sprintf("%.4f", minmaxQg[2] * format["scale"][2])), format["length"][3])
+        format["length"][3] = max(length(Printf.@sprintf("%.4f", minmaxQg[1] * scale["reactivePower"])), length(Printf.@sprintf("%.4f", minmaxQg[2] * scale["reactivePower"])), format["length"][3])
     end
 
     @inbounds for (label, i) in system.generator.label
@@ -912,22 +845,15 @@ function printFormatGenerator(system::PowerSystem, analysis::AC)
     return format
 end
 
-function printFormatGenerator(system::PowerSystem, analysis::DC)
+function formatGeneratorData(system::PowerSystem, analysis::DC, scale::Dict{String, Float64})
     format = Dict(
         "length" => [5; 12; 6],
-        "unit" => "[pu]",
-        "scale" => 1.0,
         "power" => !isempty(analysis.power.generator.active)
     )
 
     if format["power"]
-        if prefix.activePower != 0.0
-            format["unit"] = "[$(findKey(prefixList, prefix.activePower))W]"
-            format["scale"] = system.base.power.value * system.base.power.prefix / prefix.activePower
-        end
-
         minmaxPg = extrema(analysis.power.generator.active)
-        format["length"][2] = max(length(Printf.@sprintf("%.4f", minmaxPg[1] * format["scale"][1])), length(Printf.@sprintf("%.4f", minmaxPg[2] * format["scale"][1])), format["length"][2])
+        format["length"][2] = max(length(Printf.@sprintf("%.4f", minmaxPg[1] * scale["activePower"])), length(Printf.@sprintf("%.4f", minmaxPg[2] * scale["activePower"])), format["length"][2])
     end
 
     @inbounds for (label, i) in system.generator.label
@@ -964,7 +890,9 @@ printBusSummary(system, analysis)
 ```
 """
 function printBusSummary(system::PowerSystem, analysis::AC, io::IO = stdout)
-    format = printFormatBusSummary(system, analysis)
+    scale = printScale(prefix)
+    format = formatBusSummary(system, analysis, scale)
+
     Printf.@printf io "\n"
 
     maxLine = sum(format["length"][:]) + 34
@@ -977,43 +905,45 @@ function printBusSummary(system::PowerSystem, analysis::AC, io::IO = stdout)
     summaryHeader(io, maxLine, cutSentenceParts(sentence, maxLine - 2), "Bus Summary")
     summarySubheader(io, maxLine, format["length"])
 
-    summaryBlockHeader(io, format["length"], "Bus Voltage")
-    summaryBlock(io, format["V"], format["length"], format["unit"][1], "Magnitude")
-    summaryBlock(io, format["θ"], format["length"], format["unit"][2], "Angle"; line = true)
+    summaryBlockHeader(io, format["length"], "Bus Voltage", system.bus.number)
+    summaryBlock(io, format["V"], format["length"], unitList.voltageMagnitudeLive, "Magnitude")
+    summaryBlock(io, format["θ"], format["length"], unitList.voltageAngleLive, "Angle"; line = true)
 
     if format["power"]
         if format["device"][1] != 0
-            summaryBlockHeader(io, format["length"], "Power Generation")
-            summaryBlock(io, format["Ps"], format["length"], format["unit"][3], "Active")
-            summaryBlock(io, format["Qs"], format["length"], format["unit"][4], "Reactive"; line = true)
+            summaryBlockHeader(io, format["length"], "Power Generation", format["device"][1])
+            summaryBlock(io, format["Ps"], format["length"], unitList.activePowerLive, "Active")
+            summaryBlock(io, format["Qs"], format["length"], unitList.reactivePowerLive, "Reactive"; line = true)
         end
 
         if format["device"][2] != 0
-            summaryBlockHeader(io, format["length"], "Power Demand")
-            summaryBlock(io, format["Pl"], format["length"], format["unit"][3], "Active")
-            summaryBlock(io, format["Ql"], format["length"], format["unit"][4], "Reactive"; line = true)
+            summaryBlockHeader(io, format["length"], "Power Demand", format["device"][2])
+            summaryBlock(io, format["Pl"], format["length"], unitList.activePowerLive, "Active")
+            summaryBlock(io, format["Ql"], format["length"], unitList.reactivePowerLive, "Reactive"; line = true)
         end
 
-        summaryBlockHeader(io, format["length"], "Power Injection")
-        summaryBlock(io, format["Pi"], format["length"], format["unit"][3], "Active")
-        summaryBlock(io, format["Qi"], format["length"], format["unit"][4], "Reactive"; line = true)
+        summaryBlockHeader(io, format["length"], "Power Injection", system.bus.number)
+        summaryBlock(io, format["Pi"], format["length"], unitList.activePowerLive, "Active")
+        summaryBlock(io, format["Qi"], format["length"], unitList.reactivePowerLive, "Reactive"; line = true)
 
         if format["device"][3] != 0
-            summaryBlockHeader(io, format["length"], "Shunt Power")
-            summaryBlock(io, format["Ph"], format["length"], format["unit"][3], "Active")
-            summaryBlock(io, format["Qh"], format["length"], format["unit"][4], "Reactive"; line = true)
+            summaryBlockHeader(io, format["length"], "Shunt Power", format["device"][3])
+            summaryBlock(io, format["Ph"], format["length"], unitList.activePowerLive, "Active")
+            summaryBlock(io, format["Qh"], format["length"], unitList.reactivePowerLive, "Reactive"; line = true)
         end
     end
 
     if format["current"]
-        summaryBlockHeader(io, format["length"], "Shunt Power")
-        summaryBlock(io, format["I"], format["length"], format["unit"][5], "Magnitude")
-        summaryBlock(io, format["ψ"], format["length"], format["unit"][6], "Angle"; line = true)
+        summaryBlockHeader(io, format["length"], "Current Injection", system.bus.number)
+        summaryBlock(io, format["I"], format["length"], unitList.currentMagnitudeLive, "Magnitude")
+        summaryBlock(io, format["ψ"], format["length"], unitList.currentAngleLive, "Angle"; line = true)
     end
 end
 
 function printBusSummary(system::PowerSystem, analysis::DC, io::IO = stdout)
-    format = printFormatBusSummary(system, analysis)
+    scale = printScale(prefix)
+    format = formatBusSummary(system, analysis, scale)
+
     Printf.@printf io "\n"
 
     maxLine = sum(format["length"][:]) + 34
@@ -1026,22 +956,22 @@ function printBusSummary(system::PowerSystem, analysis::DC, io::IO = stdout)
     summaryHeader(io, maxLine, cutSentenceParts(sentence, maxLine - 2), "Bus Summary")
     summarySubheader(io, maxLine, format["length"])
 
-    summaryBlockHeader(io, format["length"], "Bus Voltage")
-    summaryBlock(io, format["θ"], format["length"], format["unit"][1], "Angle"; line = true)
+    summaryBlockHeader(io, format["length"], "Bus Voltage", system.bus.number)
+    summaryBlock(io, format["θ"], format["length"], unitList.voltageAngleLive, "Angle"; line = true)
 
     if format["power"]
         if format["device"][1] != 0
-            summaryBlockHeader(io, format["length"], "Power Generation")
-            summaryBlock(io, format["Ps"], format["length"], format["unit"][2], "Active"; line = true)
+            summaryBlockHeader(io, format["length"], "Power Generation", format["device"][1])
+            summaryBlock(io, format["Ps"], format["length"], unitList.activePowerLive, "Active"; line = true)
         end
 
         if format["device"][2] != 0
-            summaryBlockHeader(io, format["length"], "Power Demand")
-            summaryBlock(io, format["Pl"], format["length"], format["unit"][2], "Active"; line = true)
+            summaryBlockHeader(io, format["length"], "Power Demand", format["device"][2])
+            summaryBlock(io, format["Pl"], format["length"], unitList.activePowerLive, "Active"; line = true)
         end
 
-        summaryBlockHeader(io, format["length"], "Power Injection")
-        summaryBlock(io, format["Pi"], format["length"], format["unit"][2], "Active"; line = true)
+        summaryBlockHeader(io, format["length"], "Power Injection", system.bus.number)
+        summaryBlock(io, format["Pi"], format["length"], unitList.activePowerLive, "Active"; line = true)
     end
 end
 
@@ -1072,7 +1002,9 @@ printBranchSummary(system, analysis)
 ```
 """
 function printBranchSummary(system::PowerSystem, analysis::AC, io::IO = stdout)
-    format = printFormatBranchSummary(system, analysis)
+    scale = printScale(prefix)
+    format = formatBranchSummary(system, analysis, scale)
+
     Printf.@printf io "\n"
 
     maxLine = sum(format["length"][:]) + 34
@@ -1086,40 +1018,42 @@ function printBranchSummary(system::PowerSystem, analysis::AC, io::IO = stdout)
     summarySubheader(io, maxLine, format["length"])
 
     if format["power"]
-        summaryBlockHeader(io, format["length"], "From-Bus Power")
-        summaryBlock(io, format["Pij"], format["length"], format["unit"][1], "Active")
-        summaryBlock(io, format["Qij"], format["length"], format["unit"][2], "Reactive"; line = true)
+        summaryBlockHeader(io, format["length"], "From-Bus Power", system.branch.layout.inservice)
+        summaryBlock(io, format["Pij"], format["length"], unitList.activePowerLive, "Active")
+        summaryBlock(io, format["Qij"], format["length"], unitList.reactivePowerLive, "Reactive"; line = true)
 
-        summaryBlockHeader(io, format["length"], "To-Bus Power")
-        summaryBlock(io, format["Pji"], format["length"], format["unit"][1], "Active")
-        summaryBlock(io, format["Qji"], format["length"], format["unit"][2], "Reactive"; line = true)
+        summaryBlockHeader(io, format["length"], "To-Bus Power", system.branch.layout.inservice)
+        summaryBlock(io, format["Pji"], format["length"], unitList.activePowerLive, "Active")
+        summaryBlock(io, format["Qji"], format["length"], unitList.reactivePowerLive, "Reactive"; line = true)
 
-        summaryBlockHeader(io, format["length"], "Shunt Power")
-        summaryBlock(io, format["Pc"], format["length"], format["unit"][1], "Active")
-        summaryBlock(io, format["Qc"], format["length"], format["unit"][2], "Reactive"; line = true)
+        summaryBlockHeader(io, format["length"], "Shunt Power", format["device"][7])
+        summaryBlock(io, format["Pc"], format["length"], unitList.activePowerLive, "Active")
+        summaryBlock(io, format["Qc"], format["length"], unitList.reactivePowerLive, "Reactive"; line = true)
 
-        summaryBlockHeader(io, format["length"], "Series Power")
-        summaryBlock(io, format["Pl"], format["length"], format["unit"][1], "Active")
-        summaryBlock(io, format["Ql"], format["length"], format["unit"][2], "Reactive"; line = true)
+        summaryBlockHeader(io, format["length"], "Series Power", system.branch.layout.inservice)
+        summaryBlock(io, format["Pl"], format["length"], unitList.activePowerLive, "Active")
+        summaryBlock(io, format["Ql"], format["length"], unitList.reactivePowerLive, "Reactive"; line = true)
     end
 
     if format["current"]
-        summaryBlockHeader(io, format["length"], "From-Bus Current")
-        summaryBlock(io, format["Iij"], format["length"], format["unit"][3], "Magnitude")
-        summaryBlock(io, format["ψij"], format["length"], format["unit"][4], "Angle"; line = true)
+        summaryBlockHeader(io, format["length"], "From-Bus Current", system.branch.layout.inservice)
+        summaryBlock(io, format["Iij"], format["length"], unitList.currentMagnitudeLive, "Magnitude")
+        summaryBlock(io, format["ψij"], format["length"], unitList.currentAngleLive, "Angle"; line = true)
 
-        summaryBlockHeader(io, format["length"], "To-Bus Current")
-        summaryBlock(io, format["Iji"], format["length"], format["unit"][3], "Magnitude")
-        summaryBlock(io, format["ψji"], format["length"], format["unit"][4], "Angle"; line = true)
+        summaryBlockHeader(io, format["length"], "To-Bus Current", system.branch.layout.inservice)
+        summaryBlock(io, format["Iji"], format["length"], unitList.currentMagnitudeLive, "Magnitude")
+        summaryBlock(io, format["ψji"], format["length"], unitList.currentAngleLive, "Angle"; line = true)
 
-        summaryBlockHeader(io, format["length"], "Series Current")
-        summaryBlock(io, format["Is"], format["length"], format["unit"][3], "Magnitude")
-        summaryBlock(io, format["ψs"], format["length"], format["unit"][4], "Angle"; line = true)
+        summaryBlockHeader(io, format["length"], "Series Current", system.branch.layout.inservice)
+        summaryBlock(io, format["Is"], format["length"], unitList.currentMagnitudeLive, "Magnitude")
+        summaryBlock(io, format["ψs"], format["length"], unitList.currentAngleLive, "Angle"; line = true)
     end
 end
 
 function printBranchSummary(system::PowerSystem, analysis::DC, io::IO = stdout)
-    format = printFormatBranchSummary(system, analysis)
+    scale = printScale(prefix)
+    format = formatBranchSummary(system, analysis, scale)
+
     Printf.@printf io "\n"
 
     maxLine = sum(format["length"][:]) + 34
@@ -1133,11 +1067,11 @@ function printBranchSummary(system::PowerSystem, analysis::DC, io::IO = stdout)
     summarySubheader(io, maxLine, format["length"])
 
     if format["power"]
-        summaryBlockHeader(io, format["length"], "From-Bus Power")
-        summaryBlock(io, format["Pij"], format["length"], format["unit"][1], "Active"; line = true)
+        summaryBlockHeader(io, format["length"], "From-Bus Power", system.branch.layout.inservice)
+        summaryBlock(io, format["Pij"], format["length"], unitList.activePowerLive, "Active"; line = true)
 
-        summaryBlockHeader(io, format["length"], "To-Bus Power")
-        summaryBlock(io, format["Pji"], format["length"], format["unit"][1], "Active"; line = true)
+        summaryBlockHeader(io, format["length"], "To-Bus Power", system.branch.layout.inservice)
+        summaryBlock(io, format["Pji"], format["length"],unitList.activePowerLive, "Active"; line = true)
     end
 end
 
@@ -1168,7 +1102,9 @@ printGeneratorSummary(system, analysis)
 ```
 """
 function printGeneratorSummary(system::PowerSystem, analysis::AC, io::IO = stdout)
-    format = printFormatGeneratorSummary(system, analysis)
+    scale = printScale(prefix)
+    format = formatGeneratorSummary(system, analysis, scale)
+
     Printf.@printf io "\n"
 
     maxLine = sum(format["length"][:]) + 34
@@ -1180,14 +1116,16 @@ function printGeneratorSummary(system::PowerSystem, analysis::AC, io::IO = stdou
     summarySubheader(io, maxLine, format["length"])
 
     if format["power"]
-        summaryBlockHeader(io, format["length"], "Output Power")
-        summaryBlock(io, format["Pg"], format["length"], format["unit"][1], "Active")
-        summaryBlock(io, format["Qg"], format["length"], format["unit"][2], "Reactive"; line = true)
+        summaryBlockHeader(io, format["length"], "Output Power", system.generator.layout.inservice)
+        summaryBlock(io, format["Pg"], format["length"], unitList.activePowerLive, "Active")
+        summaryBlock(io, format["Qg"], format["length"], unitList.reactivePowerLive, "Reactive"; line = true)
     end
 end
 
 function printGeneratorSummary(system::PowerSystem, analysis::DC, io::IO = stdout)
-    format = printFormatGeneratorSummary(system, analysis)
+    scale = printScale(prefix)
+    format = formatGeneratorSummary(system, analysis, scale)
+
     Printf.@printf io "\n"
 
     maxLine = sum(format["length"][:]) + 34
@@ -1199,8 +1137,8 @@ function printGeneratorSummary(system::PowerSystem, analysis::DC, io::IO = stdou
     summarySubheader(io, maxLine, format["length"])
 
     if format["power"]
-        summaryBlockHeader(io, format["length"], "Output Power")
-        summaryBlock(io, format["Pg"], format["length"], format["unit"][1], "Active"; line = true)
+        summaryBlockHeader(io, format["length"], "Output Power", system.generator.layout.inservice )
+        summaryBlock(io, format["Pg"], format["length"], unitList.activePowerLive, "Active"; line = true)
     end
 end
 
@@ -1217,7 +1155,7 @@ Base.@kwdef mutable struct SummaryData
     strtotal::String = "-"
 end
 
-function printFormatBusSummary(system::PowerSystem, analysis::AC)
+function formatBusSummary(system::PowerSystem, analysis::AC, scale::Dict{String, Float64})
     format = Dict(
         "V" => SummaryData(), "θ" => SummaryData(),
         "Ps" => SummaryData(), "Qs" => SummaryData(),
@@ -1225,41 +1163,11 @@ function printFormatBusSummary(system::PowerSystem, analysis::AC)
         "Pi" => SummaryData(), "Qi" => SummaryData(),
         "Ph" => SummaryData(), "Qh" => SummaryData(),
         "I" => SummaryData(), "ψ" => SummaryData(),
-        "scale" => [1.0; 1.0; 1.0; 1.0; 1.0; 1.0],
-        "unit" => ["[pu]"; "[rad]"; "[pu]"; "[pu]"; "[pu]"; "[rad]"],
         "length" => [0; 0; 0; 0; 5],
         "device" => [0; 0; 0],
         "power" => !isempty(analysis.power.injection.active),
         "current" => !isempty(analysis.current.injection.magnitude)
     )
-
-    if prefix.voltageMagnitude != 0.0
-        format["unit"][1] = "[$(findKey(prefixList, prefix.voltageMagnitude))V]"
-    end
-
-    if prefix.voltageAngle != 0.0
-        format["unit"][2] = "[deg]"
-        format["scale"][2] = 1 / prefix.voltageAngle
-    end
-
-    if prefix.activePower != 0.0
-        format["unit"][3] = "[$(findKey(prefixList, prefix.activePower))W]"
-        format["scale"][3] = system.base.power.value * system.base.power.prefix / prefix.activePower
-    end
-
-    if prefix.reactivePower != 0.0
-        format["unit"][4] = "[$(findKey(prefixList, prefix.reactivePower))VAr]"
-        format["scale"][4] = system.base.power.value * system.base.power.prefix / prefix.reactivePower
-    end
-
-    if prefix.currentMagnitude != 0.0
-        format["unit"][5] = "[$(findKey(prefixList, prefix.currentMagnitude))A]"
-    end
-
-    if prefix.currentAngle != 0.0
-        format["unit"][6] = "[deg]"
-        format["scale"][6] = 1 / prefix.currentAngle
-    end
 
     for i = 1:system.bus.number
         if prefix.voltageMagnitude != 0.0
@@ -1315,59 +1223,47 @@ function printFormatBusSummary(system::PowerSystem, analysis::AC)
         end
     end
 
-    formatSummary!(format["V"], format["length"], system.bus.label, 1.0; total = false)
-    formatSummary!(format["θ"], format["length"], system.bus.label, format["scale"][2]; total = false)
+    formatSummary!(format["V"], format["length"], system.bus.label, 1.0; total = false, device = system.bus.number)
+    formatSummary!(format["θ"], format["length"], system.bus.label, scale["voltageAngle"]; total = false)
 
     if format["power"]
         if format["device"][1] != 0
-            formatSummary!(format["Ps"], format["length"], system.bus.label, format["scale"][3])
-            formatSummary!(format["Qs"], format["length"], system.bus.label, format["scale"][4])
+            formatSummary!(format["Ps"], format["length"], system.bus.label, scale["activePower"])
+            formatSummary!(format["Qs"], format["length"], system.bus.label, scale["reactivePower"]; device = format["device"][1])
         end
 
         if format["device"][2] != 0
-            formatSummary!(format["Pl"], format["length"], system.bus.label, format["scale"][3])
-            formatSummary!(format["Ql"], format["length"], system.bus.label, format["scale"][4])
+            formatSummary!(format["Pl"], format["length"], system.bus.label, scale["activePower"])
+            formatSummary!(format["Ql"], format["length"], system.bus.label, scale["reactivePower"]; device = format["device"][2])
         end
 
-        formatSummary!(format["Pi"], format["length"], system.bus.label, format["scale"][3])
-        formatSummary!(format["Qi"], format["length"], system.bus.label, format["scale"][4])
+        formatSummary!(format["Pi"], format["length"], system.bus.label, scale["activePower"])
+        formatSummary!(format["Qi"], format["length"], system.bus.label, scale["reactivePower"])
 
         if format["device"][3] != 0
-            formatSummary!(format["Ph"], format["length"], system.bus.label, format["scale"][3])
-            formatSummary!(format["Qh"], format["length"], system.bus.label, format["scale"][4])
+            formatSummary!(format["Ph"], format["length"], system.bus.label, scale["activePower"]; device = format["device"][3])
+            formatSummary!(format["Qh"], format["length"], system.bus.label, scale["reactivePower"])
         end
     end
 
     if format["current"]
-        formatSummary!(format["I"], format["length"], system.bus.label, format["scale"][5]; total = false)
-        formatSummary!(format["ψ"], format["length"], system.bus.label, format["scale"][6]; total = false)
+        formatSummary!(format["I"], format["length"], system.bus.label, 1.0; total = false)
+        formatSummary!(format["ψ"], format["length"], system.bus.label, scale["currentAngle"]; total = false)
     end
 
     return format
 end
 
-function printFormatBusSummary(system::PowerSystem, analysis::DC)
+function formatBusSummary(system::PowerSystem, analysis::DC, scale::Dict{String, Float64})
     format = Dict(
         "θ" => SummaryData(),
         "Ps" => SummaryData(),
         "Pl" => SummaryData(),
         "Pi" => SummaryData(),
-        "scale" => [1.0; 1.0],
-        "unit" => ["[rad]"; "[pu]"],
         "length" => [0; 0; 0; 0; 5],
         "device" => [0; 0; 0],
         "power" => !isempty(analysis.power.injection.active),
     )
-
-    if prefix.voltageAngle != 0.0
-        format["unit"][1] = "[deg]"
-        format["scale"][1] = 1 / prefix.voltageAngle
-    end
-
-    if prefix.activePower != 0.0
-        format["unit"][2] = "[$(findKey(prefixList, prefix.activePower))W]"
-        format["scale"][2] = system.base.power.value * system.base.power.prefix / prefix.activePower
-    end
 
     for i = 1:system.bus.number
         minmaxsumPrint!(format["θ"], analysis.voltage.angle[i], i)
@@ -1397,24 +1293,24 @@ function printFormatBusSummary(system::PowerSystem, analysis::DC)
         end
     end
 
-    formatSummary!(format["θ"], format["length"], system.bus.label, format["scale"][1]; total = false)
+    formatSummary!(format["θ"], format["length"], system.bus.label, scale["voltageAngle"]; total = false, device = system.bus.number)
 
     if format["power"]
         if format["device"][1] != 0
-            formatSummary!(format["Ps"], format["length"], system.bus.label, format["scale"][2])
+            formatSummary!(format["Ps"], format["length"], system.bus.label, scale["activePower"]; device = format["device"][1])
         end
 
         if format["device"][2] != 0
-            formatSummary!(format["Pl"], format["length"], system.bus.label, format["scale"][2])
+            formatSummary!(format["Pl"], format["length"], system.bus.label, scale["activePower"]; device = format["device"][2])
         end
 
-        formatSummary!(format["Pi"], format["length"], system.bus.label, format["scale"][2])
+        formatSummary!(format["Pi"], format["length"], system.bus.label, scale["activePower"])
     end
 
     return format
 end
 
-function printFormatBranchSummary(system::PowerSystem, analysis::AC)
+function formatBranchSummary(system::PowerSystem, analysis::AC, scale::Dict{String, Float64})
     format = Dict(
         "Pij" => SummaryData(), "Qij" => SummaryData(),
         "Pji" => SummaryData(), "Qji" => SummaryData(),
@@ -1424,32 +1320,11 @@ function printFormatBranchSummary(system::PowerSystem, analysis::AC)
         "Iij" => SummaryData(), "ψij" => SummaryData(),
         "Iji" => SummaryData(), "ψji" => SummaryData(),
         "Is" => SummaryData(), "ψs" => SummaryData(),
-        "scale" => [1.0; 1.0; 1.0; 1.0; 1.0; 1.0],
-        "unit" => ["[pu]"; "[rad]"; "[pu]"; "[pu]"; "[pu]"; "[rad]"],
         "length" => [0; 0; 0; 0; 5],
-        "device" => [0; 0; 0; 0; 0; 0],
+        "device" => [0; 0; 0; 0; 0; 0; 0],
         "power" => !isempty(analysis.power.injection.active),
         "current" => !isempty(analysis.current.injection.magnitude)
     )
-
-    if prefix.activePower != 0.0
-        format["unit"][1] = "[$(findKey(prefixList, prefix.activePower))W]"
-        format["scale"][1] = system.base.power.value * system.base.power.prefix / prefix.activePower
-    end
-
-    if prefix.reactivePower != 0.0
-        format["unit"][2] = "[$(findKey(prefixList, prefix.reactivePower))VAr]"
-        format["scale"][2] = system.base.power.value * system.base.power.prefix / prefix.reactivePower
-    end
-
-    if prefix.currentMagnitude != 0.0
-        format["unit"][3] = "[$(findKey(prefixList, prefix.currentMagnitude))A]"
-    end
-
-    if prefix.currentAngle != 0.0
-        format["unit"][4] = "[deg]"
-        format["scale"][4] = 1 / prefix.currentAngle
-    end
 
     for i = 1:system.branch.number
         if system.branch.parameter.turnsRatio[i] == 1 && system.branch.parameter.shiftAngle[i] == 0
@@ -1478,6 +1353,7 @@ function printFormatBranchSummary(system::PowerSystem, analysis::AC)
                 minmaxsumPrint!(format["Qji"], analysis.power.to.reactive[i], i)
 
                 if system.branch.parameter.conductance[i] != 0.0 || system.branch.parameter.susceptance[i] != 0.0
+                    format["device"][7] += 1
                     minmaxsumPrint!(format["Pc"], analysis.power.charging.active[i], i)
                     minmaxsumPrint!(format["Qc"], analysis.power.charging.reactive[i], i)
                 end
@@ -1512,48 +1388,41 @@ function printFormatBranchSummary(system::PowerSystem, analysis::AC)
     end
 
     if format["power"]
-        formatSummary!(format["Pij"], format["length"], system.branch.label, format["scale"][1]; total = false)
-        formatSummary!(format["Qij"], format["length"], system.branch.label, format["scale"][2]; total = false)
+        formatSummary!(format["Pij"], format["length"], system.branch.label, scale["activePower"]; total = false)
+        formatSummary!(format["Qij"], format["length"], system.branch.label, scale["reactivePower"]; total = false, device = system.branch.layout.inservice)
 
-        formatSummary!(format["Pji"], format["length"], system.branch.label, format["scale"][1]; total = false)
-        formatSummary!(format["Qji"], format["length"], system.branch.label, format["scale"][2]; total = false)
+        formatSummary!(format["Pji"], format["length"], system.branch.label, scale["activePower"]; total = false)
+        formatSummary!(format["Qji"], format["length"], system.branch.label, scale["reactivePower"]; total = false)
 
-        formatSummary!(format["Pc"], format["length"], system.branch.label, format["scale"][1])
-        formatSummary!(format["Qc"], format["length"], system.branch.label, format["scale"][2])
+        formatSummary!(format["Pc"], format["length"], system.branch.label, scale["activePower"])
+        formatSummary!(format["Qc"], format["length"], system.branch.label, scale["reactivePower"]; device = format["device"][7])
 
-        formatSummary!(format["Pl"], format["length"], system.branch.label, format["scale"][1])
-        formatSummary!(format["Ql"], format["length"], system.branch.label, format["scale"][2])
+        formatSummary!(format["Pl"], format["length"], system.branch.label, scale["activePower"])
+        formatSummary!(format["Ql"], format["length"], system.branch.label, scale["reactivePower"])
     end
 
     if format["current"]
-        formatSummary!(format["Iij"], format["length"], system.branch.label, format["scale"][3]; total = false)
-        formatSummary!(format["ψij"], format["length"], system.branch.label, format["scale"][4]; total = false)
+        formatSummary!(format["Iij"], format["length"], system.branch.label, 1.0; total = false)
+        formatSummary!(format["ψij"], format["length"], system.branch.label, scale["currentAngle"]; total = false)
 
-        formatSummary!(format["Iji"], format["length"], system.branch.label, format["scale"][3]; total = false)
-        formatSummary!(format["ψji"], format["length"], system.branch.label, format["scale"][4]; total = false)
+        formatSummary!(format["Iji"], format["length"], system.branch.label, 1.0; total = false)
+        formatSummary!(format["ψji"], format["length"], system.branch.label, scale["currentAngle"]; total = false)
 
-        formatSummary!(format["Is"], format["length"], system.branch.label, format["scale"][3]; total = false)
-        formatSummary!(format["ψs"], format["length"], system.branch.label, format["scale"][4]; total = false)
+        formatSummary!(format["Is"], format["length"], system.branch.label, 1.0; total = false)
+        formatSummary!(format["ψs"], format["length"], system.branch.label, scale["currentAngle"]; total = false)
     end
 
     return format
 end
 
-function printFormatBranchSummary(system::PowerSystem, analysis::DC)
+function formatBranchSummary(system::PowerSystem, analysis::DC, scale::Dict{String, Float64})
     format = Dict(
         "Pij" => SummaryData(),
         "Pji" => SummaryData(),
-        "scale" => [1.0],
-        "unit" => ["[pu]"],
         "length" => [0; 0; 0; 0; 5],
         "device" => [0; 0; 0; 0; 0; 0],
         "power" => !isempty(analysis.power.injection.active),
     )
-
-    if prefix.activePower != 0.0
-        format["unit"][1] = "[$(findKey(prefixList, prefix.activePower))W]"
-        format["scale"][1] = system.base.power.value * system.base.power.prefix / prefix.activePower
-    end
 
     for i = 1:system.branch.number
         if system.branch.parameter.turnsRatio[i] == 1 && system.branch.parameter.shiftAngle[i] == 0
@@ -1582,32 +1451,20 @@ function printFormatBranchSummary(system::PowerSystem, analysis::DC)
     end
 
     if format["power"]
-        formatSummary!(format["Pij"], format["length"], system.branch.label, format["scale"][1]; total = false)
-        formatSummary!(format["Pji"], format["length"], system.branch.label, format["scale"][1]; total = false)
+        formatSummary!(format["Pij"], format["length"], system.branch.label, scale["activePower"]; total = false)
+        formatSummary!(format["Pji"], format["length"], system.branch.label, scale["activePower"]; total = false, device = system.branch.layout.inservice)
     end
 
     return format
 end
 
-function printFormatGeneratorSummary(system::PowerSystem, analysis::AC)
+function formatGeneratorSummary(system::PowerSystem, analysis::AC, scale::Dict{String, Float64})
     format = Dict(
         "Pg" => SummaryData(), "Qg" => SummaryData(),
-        "scale" => [1.0; 1.0],
-        "unit" => ["[pu]"; "[pu]"],
         "length" => [0; 0; 0; 0; 5],
         "device" => [0; 0; 0],
         "power" => !isempty(analysis.power.generator.active),
     )
-
-    if prefix.activePower != 0.0
-        format["unit"][1] = "[$(findKey(prefixList, prefix.activePower))W]"
-        format["scale"][1] = system.base.power.value * system.base.power.prefix / prefix.activePower
-    end
-
-    if prefix.reactivePower != 0.0
-        format["unit"][2] = "[$(findKey(prefixList, prefix.reactivePower))VAr]"
-        format["scale"][2] = system.base.power.value * system.base.power.prefix / prefix.reactivePower
-    end
 
     if format["power"]
         for i = 1:system.generator.number
@@ -1616,27 +1473,20 @@ function printFormatGeneratorSummary(system::PowerSystem, analysis::AC)
                 minmaxsumPrint!(format["Qg"], analysis.power.generator.reactive[i], i)
             end
         end
-        formatSummary!(format["Pg"], format["length"], system.bus.label, format["scale"][1])
-        formatSummary!(format["Qg"], format["length"], system.bus.label, format["scale"][2])
+        formatSummary!(format["Pg"], format["length"], system.bus.label, scale["activePower"])
+        formatSummary!(format["Qg"], format["length"], system.bus.label, scale["reactivePower"]; device = system.generator.layout.inservice)
     end
 
     return format
 end
 
-function printFormatGeneratorSummary(system::PowerSystem, analysis::DC)
+function formatGeneratorSummary(system::PowerSystem, analysis::DC, scale::Dict{String, Float64})
     format = Dict(
         "Pg" => SummaryData(), "Qg" => SummaryData(),
-        "scale" => [1.0],
-        "unit" => ["[pu]"],
         "length" => [0; 0; 0; 0; 5],
         "device" => [0; 0; 0],
         "power" => !isempty(analysis.power.generator.active),
     )
-
-    if prefix.activePower != 0.0
-        format["unit"][1] = "[$(findKey(prefixList, prefix.activePower))W]"
-        format["scale"][1] = system.base.power.value * system.base.power.prefix / prefix.activePower
-    end
 
     if format["power"]
         for i = 1:system.generator.number
@@ -1644,7 +1494,7 @@ function printFormatGeneratorSummary(system::PowerSystem, analysis::DC)
                 minmaxsumPrint!(format["Pg"], analysis.power.generator.active[i], i)
             end
         end
-        formatSummary!(format["Pg"], format["length"], system.bus.label, format["scale"][1])
+        formatSummary!(format["Pg"], format["length"], system.bus.label, scale["activePower"]; device = system.generator.layout.inservice)
     end
 
     return format
@@ -1724,7 +1574,7 @@ function minmaxsumPrint!(data::SummaryData, value::Float64, i::Int64)
     data.total += value
 end
 
-function formatSummary!(data::SummaryData, span::Array{Int64,1}, label, scale; total = true)
+function formatSummary!(data::SummaryData, span::Array{Int64,1}, label, scale; total = true, device = 0)
     data.labelmin = iterate(label, data.idxMin)[1][1]
     data.strmin = Printf.@sprintf("%.4f", data.min * scale)
 
@@ -1739,6 +1589,10 @@ function formatSummary!(data::SummaryData, span::Array{Int64,1}, label, scale; t
     if total
         data.strtotal = Printf.@sprintf("%.4f", data.total * scale)
         span[5] = max(span[5], length(data.strtotal))
+    end
+
+    if device != 0
+        span[5] = max(span[5], length(Printf.@sprintf("%i", device)))
     end
 end
 
@@ -1761,17 +1615,17 @@ function summarySubheader(io::IO, maxLine::Int64, span::Array{Int64,1})
     Printf.@printf(io, "|%s|\n", "-"^maxLine)
 end
 
-function summaryBlockHeader(io::IO, span::Array{Int64,1}, header::String)
-    Printf.@printf(io, "| %s | %*s%s%*s | %*s%s%*s | %*s%s%*s |\n",
+function summaryBlockHeader(io::IO, span::Array{Int64,1}, header::String, total::Int64)
+    Printf.@printf(io, "| %s | %*s%s%*s | %*s%s%*s | %*i |\n",
         header * " "^(17 - length(header)),
         floor(Int, (span[1] + span[2] + 3) / 2), "", "", ceil(Int, (span[1] + span[2] + 3) / 2) , "",
         floor(Int, (span[3] + span[4] + 3) / 2), "", "", ceil(Int, (span[3] + span[4] + 3) / 2) , "",
-        floor(Int, (span[5]) / 2), "", "", ceil(Int, (span[5]) / 2) , "",
+        span[5], total,
     )
 end
 
 function summaryBlock(io::IO, data1::SummaryData, span::Array{Int64,1}, unit::String, subHeader1::String; line = false)
-    subHeader1 = string(" ", subHeader1, " ", unit)
+    subHeader1 = string(" ", subHeader1, " ", "[", unit, "]")
 
     Printf.@printf(io, "| %s | %*s | %*s | %*s | %*s | %*s |\n",
         subHeader1 * " "^(17 - length(subHeader1)),
@@ -1791,4 +1645,31 @@ function printTitle(maxLine::Int64, title::String, io::IO)
     Printf.@printf(io, "\n|%s|\n", "-"^maxLine)
     Printf.@printf(io, "| %s%*s|\n", title, maxLine - length(title) - 1, "")
     Printf.@printf(io, "|%s|\n", "-"^maxLine)
+end
+
+function printScale(prefix::PrefixLive)
+    scale = Dict(
+        "voltageAngle" => 1.0,
+        "activePower" => 1.0,
+        "reactivePower" => 1.0,
+        "currentAngle" => 1.0
+    )
+
+    if prefix.voltageAngle != 0.0
+        scale["voltageAngle"] = 1 / prefix.voltageAngle
+    end
+
+    if prefix.activePower != 0.0
+        scale["activePower"] = system.base.power.value * system.base.power.prefix / prefix.activePower
+    end
+
+    if prefix.reactivePower != 0.0
+        scale["reactivePower"] = system.base.power.value * system.base.power.prefix / prefix.reactivePower
+    end
+
+    if prefix.currentAngle != 0.0
+        scale["currentAngle"] = 1 / prefix.currentAngle
+    end
+
+    return scale
 end
