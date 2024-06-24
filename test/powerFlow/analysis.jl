@@ -125,12 +125,25 @@
         @test reactive ≈ power.generator.reactive[value]
     end
 
-    ####### Test Print Data #######
+    ####### Test Print Bus Data #######
     @capture_out printBusData(system14, analysis)
-    @capture_out printBranchData(system14, analysis)
-    @capture_out printGeneratorData(system14, analysis)
+    @capture_out printBusData(system14, analysis; label = 1, header = true)
+    @capture_out printBusData(system14, analysis; label = 2)
+    @capture_out printBusData(system14, analysis; label = 3, footer = true)
     @capture_out printBusSummary(system14, analysis)
+
+    ####### Test Print Branch Data #######
+    @capture_out printBranchData(system14, analysis)
+    @capture_out printBranchData(system14, analysis; label = 1, header = true)
+    @capture_out printBranchData(system14, analysis; label = 2)
+    @capture_out printBranchData(system14, analysis; label = 3, footer = true)
     @capture_out printBranchSummary(system14, analysis)
+
+    ####### Test Print Generator Data #######
+    @capture_out printGeneratorData(system14, analysis)
+    @capture_out printGeneratorData(system14, analysis; label = 1, header = true)
+    @capture_out printGeneratorData(system14, analysis; label = 2)
+    @capture_out printGeneratorData(system14, analysis; label = 3, footer = true)
     @capture_out printGeneratorSummary(system14, analysis)
 
     ################ Modified IEEE 30-bus Test Case ################
@@ -602,12 +615,25 @@ end
         @test generatorPower(system14, analysis; label = key) ≈ matpower14["generator"][value] atol = 1e-14
     end
 
-    ####### Test Print Data #######
+    ####### Test Print Bus Data #######
     @capture_out printBusData(system14, analysis)
-    @capture_out printBranchData(system14, analysis)
-    @capture_out printGeneratorData(system14, analysis)
+    @capture_out printBusData(system14, analysis; label = 1, header = true)
+    @capture_out printBusData(system14, analysis; label = 2)
+    @capture_out printBusData(system14, analysis; label = 3, footer = true)
     @capture_out printBusSummary(system14, analysis)
+
+    ####### Test Print Branch Data #######
+    @capture_out printBranchData(system14, analysis)
+    @capture_out printBranchData(system14, analysis; label = 1, header = true)
+    @capture_out printBranchData(system14, analysis; label = 2)
+    @capture_out printBranchData(system14, analysis; label = 3, footer = true)
     @capture_out printBranchSummary(system14, analysis)
+
+    ####### Test Print Generator Data #######
+    @capture_out printGeneratorData(system14, analysis)
+    @capture_out printGeneratorData(system14, analysis; label = 1, header = true)
+    @capture_out printGeneratorData(system14, analysis; label = 2)
+    @capture_out printGeneratorData(system14, analysis; label = 3, footer = true)
     @capture_out printGeneratorSummary(system14, analysis)
 
     ################ Modified IEEE 30-bus Test Case ################
