@@ -286,24 +286,23 @@ print(system.branch.label, system.base.power.value * analysis.power.from.active)
 
 ##### Print Results
 Users can utilize any of the print functions mentioned in the [Print API Section](@ref setupPrintAPI) to print results. For example, users have the option to print the results in the REPL using any units that have been configured, such as:
-```@repl ComputationPowersCurrentsLosses
-@voltage(pu, deg, V);
-@power(MW, pu, pu);
-
+```@example ComputationPowersCurrentsLosses
+@voltage(pu, deg, V)
+@power(MW, pu, pu)
 printBusData(system, analysis)
-printBranchData(system, analysis)
-printGeneratorData(system, analysis)
+```
 
-@voltage(pu, pu, V) # hide
-@power(pu, pu, pu) # hide
+Next, users can easily customize the print results for specific buses, for example:
+```julia
+printBusData(system, analysis; label = "Bus 1", header = true)
+printBusData(system, analysis; label = "Bus 2")
+printBusData(system, analysis; label = "Bus 3", footer = true)
 ```
 
 Users can also redirect print output to a file. For example, data can be saved in a text file as follows:
-```@julia
+```julia
 open("dcPowerFlow.txt", "w") do file
     printBusData(system, analysis, file)
-    printBranchData(system, analysis, file)
-    printGeneratorData(system, analysis, file)
 end
 ```
 
@@ -319,6 +318,8 @@ To compute specific quantities for particular components, rather than calculatin
 ##### Active Power Injection
 To calculate active power injection associated with a specific bus, the function can be used:
 ```@repl ComputationPowersCurrentsLosses
+@voltage(pu, pu, V) # hide
+@power(pu, pu, pu) # hide
 active = injectionPower(system, analysis; label = "Bus 1")
 ```
 
