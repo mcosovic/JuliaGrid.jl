@@ -309,7 +309,7 @@ end
 ---
 
 !!! note "Info"
-    To better understand the powers associated with buses, branches and generators that are calculated by the [`power!`](@ref power!(::PowerSystem, ::DCPowerFlow)) function, we suggest referring to the tutorials on [DC Power Flow Analysis](@ref DCPowerAnalysisTutorials).
+    To better understand the powers associated with buses, branches, and generators that are calculated by the [`power!`](@ref power!(::PowerSystem, ::DCPowerFlow)) function, we suggest referring to the tutorials on [DC Power Flow Analysis](@ref DCPowerAnalysisTutorials).
 
 To compute specific quantities for particular components, rather than calculating powers or currents for all components, users can utilize one of the provided functions below.
 
@@ -318,8 +318,6 @@ To compute specific quantities for particular components, rather than calculatin
 ##### Active Power Injection
 To calculate active power injection associated with a specific bus, the function can be used:
 ```@repl ComputationPowersCurrentsLosses
-@voltage(pu, pu, V) # hide
-@power(pu, pu, pu) # hide
 active = injectionPower(system, analysis; label = "Bus 1")
 ```
 
@@ -346,4 +344,6 @@ active = toPower(system, analysis; label = "Branch 2")
 Finally, we can compute the active power output of a particular generator using the function:
 ```@repl ComputationPowersCurrentsLosses
 active = generatorPower(system, analysis; label = "Generator 1")
+@voltage(pu, pu, V) # hide
+@power(pu, pu, pu) # hide
 ```

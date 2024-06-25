@@ -572,7 +572,7 @@ printBusSummary(system, analysis)
 ---
 
 !!! note "Info"
-    To better understand the powers and currents associated with buses, branches and generators that are obtained by the [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)) and [`current!`](@ref current!(::PowerSystem, ::AC)) functions, we suggest referring to the tutorials on [AC Power Flow Analysis](@ref ACPowerFlowTutorials).
+    To better understand the powers and currents associated with buses, branches, and generators that are obtained by the [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)) and [`current!`](@ref current!(::PowerSystem, ::AC)) functions, we suggest referring to the tutorials on [AC Power Flow Analysis](@ref ACPowerFlowTutorials).
 
 To compute specific quantities for particular components, rather than calculating powers or currents for all components, users can utilize one of the functions provided below.
 
