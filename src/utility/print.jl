@@ -1263,6 +1263,13 @@ end
 The function prints a summary of the electrical quantities related to branches. Optionally,
 an `IO` may be passed as the last argument to redirect the output.
 
+The summary includes average net active and reactive power flows, focusing on the minimum
+and maximum branch power flows. For instance, the average net active power flow is calculated
+as follows:
+```math
+  \bar {P}_{ij} = \frac{|{P}_{ij} -{P}_{ji}|}{2}.
+```
+
 !!! compat "Julia 1.10"
     The function [`printBranchSummary`](@ref printBranchSummary) requires Julia 1.10 or later.
 
@@ -1302,26 +1309,26 @@ function printBranchSummary(system::PowerSystem, analysis::AC, io::IO = stdout)
     if format["power"]
         if format["device"][4] != 0
             summaryBlockHeader(io, format["length"], format["Pline"].title, format["device"][4])
-            summaryBlock(io, format["Pline"], format["length"], unitList.activePowerLive, "Active")
-            summaryBlock(io, format["Qline"], format["length"], unitList.reactivePowerLive, "Reactive"; line = true)
+            summaryBlock(io, format["Pline"], format["length"], unitList.activePowerLive, "Net Active")
+            summaryBlock(io, format["Qline"], format["length"], unitList.reactivePowerLive, "Net Reactive"; line = true)
         end
 
         if format["device"][5] != 0
             summaryBlockHeader(io, format["length"], format["Pintr"].title, format["device"][5])
-            summaryBlock(io, format["Pintr"], format["length"], unitList.activePowerLive, "Active")
-            summaryBlock(io, format["Qintr"], format["length"], unitList.reactivePowerLive, "Reactive"; line = true)
+            summaryBlock(io, format["Pintr"], format["length"], unitList.activePowerLive, "Net Active")
+            summaryBlock(io, format["Qintr"], format["length"], unitList.reactivePowerLive, "Net Reactive"; line = true)
         end
 
         if format["device"][6] != 0
             summaryBlockHeader(io, format["length"], format["Pshtr"].title, format["device"][6])
-            summaryBlock(io, format["Pshtr"], format["length"], unitList.activePowerLive, "Active")
-            summaryBlock(io, format["Qshtr"], format["length"], unitList.reactivePowerLive, "Reactive"; line = true)
+            summaryBlock(io, format["Pshtr"], format["length"], unitList.activePowerLive, "Net Active")
+            summaryBlock(io, format["Qshtr"], format["length"], unitList.reactivePowerLive, "Net Reactive"; line = true)
         end
 
         if format["device"][8] != 0
             summaryBlockHeader(io, format["length"], format["Ptie"].title, format["device"][8])
-            summaryBlock(io, format["Ptie"], format["length"], unitList.activePowerLive, "Active")
-            summaryBlock(io, format["Qtie"], format["length"], unitList.reactivePowerLive, "Reactive"; line = true)
+            summaryBlock(io, format["Ptie"], format["length"], unitList.activePowerLive, "Net Active")
+            summaryBlock(io, format["Qtie"], format["length"], unitList.reactivePowerLive, "Net Reactive"; line = true)
         end
 
         if format["device"][7] != 0
@@ -1377,22 +1384,22 @@ function printBranchSummary(system::PowerSystem, analysis::DC, io::IO = stdout)
     if format["power"]
         if format["device"][4] != 0
             summaryBlockHeader(io, format["length"], format["Pline"].title, format["device"][4])
-            summaryBlock(io, format["Pline"], format["length"], unitList.activePowerLive, "Active"; line = true)
+            summaryBlock(io, format["Pline"], format["length"], unitList.activePowerLive, "Net Active"; line = true)
         end
 
         if format["device"][5] != 0
             summaryBlockHeader(io, format["length"], format["Pintr"].title, format["device"][5])
-            summaryBlock(io, format["Pintr"], format["length"], unitList.activePowerLive, "Active"; line = true)
+            summaryBlock(io, format["Pintr"], format["length"], unitList.activePowerLive, "Net Active"; line = true)
         end
 
         if format["device"][6] != 0
             summaryBlockHeader(io, format["length"], format["Pshtr"].title, format["device"][6])
-            summaryBlock(io, format["Pshtr"], format["length"], unitList.activePowerLive, "Active"; line = true)
+            summaryBlock(io, format["Pshtr"], format["length"], unitList.activePowerLive, "Net Active"; line = true)
         end
 
         if format["device"][7] != 0
             summaryBlockHeader(io, format["length"], format["Ptie"].title, format["device"][7])
-            summaryBlock(io, format["Ptie"], format["length"], unitList.activePowerLive, "Active"; line = true)
+            summaryBlock(io, format["Ptie"], format["length"], unitList.activePowerLive, "Net Active"; line = true)
         end
     end
 end
@@ -1765,6 +1772,8 @@ function formatBranchSummary(system::PowerSystem, analysis::AC, scale::Dict{Stri
         formatSummary!(format["ψshtr"], format["length"], system.branch.label, scale["currentAngle"], format["device"][6]; total = false)
     end
 
+    format["length"][6] = max(format["length"][6], length(" Net Reactive [$(unitList.reactivePowerLive)]"))
+
     return format
 end
 
@@ -1823,6 +1832,8 @@ function formatBranchSummary(system::PowerSystem, analysis::DC, scale::Dict{Stri
         formatSummary!(format["Pshtr"], format["length"], system.branch.label, scale["activePower"], format["device"][6]; total = false)
         formatSummary!(format["Ptie"], format["length"], system.branch.label, scale["activePower"], format["device"][7]; total = false)
     end
+
+    format["length"][6] = max(format["length"][6], length(" Net Active [$(unitList.activePowerLive)]"))
 
     return format
 end
