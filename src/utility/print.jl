@@ -1267,7 +1267,7 @@ The summary includes average net active and reactive power flows, focusing on th
 and maximum branch power flows. For instance, the average net active power flow is calculated
 as follows:
 ```math
-  \bar {P}_{ij} = \frac{|{P}_{ij} -{P}_{ji}|}{2}.
+  \\bar {P}_{ij} = \\frac{|{P}_{ij} - {P}_{ji}|}{2}.
 ```
 
 !!! compat "Julia 1.10"
