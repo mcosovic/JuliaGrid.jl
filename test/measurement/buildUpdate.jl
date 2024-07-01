@@ -192,9 +192,10 @@ end
 
     @bus(base = 0.23)
     @branch(reactance = 0.02)
-    addBus!(system; label = 1, active = 20.5, reactive = 11.2, magnitude = 126.5)
+    addBus!(system; label = 1, active = 20.5, reactive = 11.2, magnitude = 126.5, type = 3)
     addBus!(system; label = 2, magnitude = 95, angle = 2.4)
     addBranch!(system; label = 1, from = 1, to = 2)
+    addGenerator!(system; bus = 1)
     baseCurrent = system.base.power.value * system.base.power.prefix / (sqrt(3) * 0.23 * 10^6)
 
     ####### Test Voltmeter Data #######
@@ -282,6 +283,15 @@ end
     @test device.pmu.angle.mean[5] == 3
     @test device.pmu.angle.variance[5] == 3
     @test device.pmu.angle.mean[6] == 3
+
+    ####### Test Print Measurement Data #######
+    analysis = gaussNewton(system, device)
+
+    @capture_out printVoltmeterData(system, device, analysis)
+    @capture_out printAmmeterData(system, device, analysis)
+    @capture_out printWattmeterData(system, device, analysis)
+    @capture_out printVoltmeterData(system, device, analysis)
+    @capture_out printPmuData(system, device, analysis)
 
     ####### Test Multiple Labels #######
     device = measurement()
