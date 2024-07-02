@@ -146,6 +146,14 @@ In this example, we have chosen to specify `magnitude` and `variance` in kilovol
 
 ---
 
+##### Print Data
+Users have the option to print the voltmeter data in the REPL using any units that have been configured:
+```@example addVoltmeterSI
+printVoltmeterData(system, device)
+```
+
+---
+
 ## [Add Ammeter](@id AddAmmeterManual)
 Users can introduce ammeters into either an existing measurement type or one that they create from the ground up by making use of the [`addAmmeter!`](@ref addAmmeter!) function, as demonstrated in the following example:
 ```@example addAmmeter
@@ -195,6 +203,14 @@ addAmmeter!(system, device; to = "Branch 1", magnitude = 385, variance = 42.8, n
 In this example, we have opted to specify the `magnitude` and `variance` in amperes (A). It is worth noting that, despite using amperes as the input units, these keywords will still be stored in the per-unit system:
 ```@repl addAmmeterSI
 [device.ammeter.magnitude.mean device.ammeter.magnitude.variance]
+```
+
+---
+
+##### Print Data
+Users have the option to print the ammeter data in the REPL using any units that have been configured:
+```@example addAmmeterSI
+printAmmeterData(system, device)
 ```
 
 ---
@@ -254,6 +270,14 @@ In this example, we have chosen to specify the `active` and `variance` in megawa
 
 ---
 
+##### Print Data
+Users have the option to print the wattmeter data in the REPL using any units that have been configured:
+```@example addWattmeterSI
+printWattmeterData(system, device)
+```
+
+---
+
 ## [Add Varmeter](@id AddVarmeterManual)
 To include varmeters, the same approach as described in the [Add Wattmeter](@ref AddWattmeterManual) section can be applied, but here, we make use of the [`addVarmeter!`](@ref addVarmeter!) function, as demonstrated in the following example:
 ```@example addVarmeter
@@ -303,6 +327,14 @@ addVarmeter!(system, device; to = "Branch 1", reactive = 5, variance = 1e-1, noi
 JuliaGrid will still store the values in the per-unit system:
 ```@repl addVarmeterSI
 [device.varmeter.reactive.mean device.varmeter.reactive.variance]
+```
+
+---
+
+##### Print Data
+Users have the option to print the varmeter data in the REPL using any units that have been configured:
+```@example addVarmeterSI
+printVarmeterData(system, device)
 ```
 
 ---
@@ -386,6 +418,14 @@ In this example, we have opted to specify kilovolts (kV) and degrees (deg) for t
 ```@repl addPmuSI
 [device.pmu.magnitude.mean device.pmu.magnitude.variance]
 [device.pmu.angle.mean device.pmu.angle.variance]
+```
+
+---
+
+##### Print Data
+Users have the option to print the PMU data in the REPL using any units that have been configured:
+```@example addPmuSI
+printPmuData(system, device)
 ```
 
 ---
