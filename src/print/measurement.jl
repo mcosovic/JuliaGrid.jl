@@ -3,7 +3,8 @@
         label, header, footer, width)
 
 The function prints data related to voltmeters. Optionally, an `IO` may be passed as the
-last argument to redirect the output.
+last argument to redirect the output. Users can also omit the `Analysis` type to print
+only data related to the `Measurement` type.
 
 # Keywords
 The following keywords control the printed data:
@@ -39,12 +40,26 @@ printVoltmeterData(system, device, analysis; label = 6, width)
 printVoltmeterData(system, device, analysis; label = 8, width, footer = true)
 ```
 """
+function printVoltmeterData(system::PowerSystem, device::Measurement, io::IO = stdout;
+    label::L = missing, header::B = missing, footer::Bool = false,
+    width::Dict{String, Int64} = Dict{String, Int64}())
+
+    voltage = Polar(Float64[], Float64[])
+
+    _printVoltmeterData(system, device, voltage, io, label, header, footer, width)
+end
+
 function printVoltmeterData(system::PowerSystem, device::Measurement, analysis::AC, io::IO = stdout;
     label::L = missing, header::B = missing, footer::Bool = false,
     width::Dict{String, Int64} = Dict{String, Int64}())
 
+    _printVoltmeterData(system, device, analysis.voltage, io, label, header, footer, width)
+end
+
+function _printVoltmeterData(system::PowerSystem, device::Measurement, voltage::Polar, io::IO,
+    label::L, header::B, footer::Bool, width::Dict{String, Int64})
+
     voltmeter = device.voltmeter
-    voltage = analysis.voltage
 
     format = formatVoltmeterData(system, voltmeter, voltage, label, width)
     labels, header = toggleLabelHeader(label, voltmeter, voltmeter.label, header, "voltmeter")
@@ -98,7 +113,8 @@ end
         label, header, footer, width)
 
 The function prints data related to ammeters. Optionally, an `IO` may be passed as the
-last argument to redirect the output.
+last argument to redirect the output. Users can also omit the `Analysis` type to print
+only data related to the `Measurement` type.
 
 # Keywords
 The following keywords control the printed data:
@@ -134,12 +150,26 @@ printAmmeterData(system, device, analysis; label = "From 4", width)
 printAmmeterData(system, device, analysis; label = "From 6", width, footer = true)
 ```
 """
+function printAmmeterData(system::PowerSystem, device::Measurement, io::IO = stdout;
+    label::L = missing, header::B = missing, footer::Bool = false,
+    width::Dict{String, Int64} = Dict{String, Int64}())
+
+    current = ACCurrent(Polar(Float64[], Float64[]), Polar(Float64[], Float64[]), Polar(Float64[], Float64[]), Polar(Float64[], Float64[]))
+
+    _printAmmeterData(system, device, current, io, label, header, footer, width)
+end
+
 function printAmmeterData(system::PowerSystem, device::Measurement, analysis::AC, io::IO = stdout;
     label::L = missing, header::B = missing, footer::Bool = false,
     width::Dict{String, Int64} = Dict{String, Int64}())
 
+    _printAmmeterData(system, device, analysis.current, io, label, header, footer, width)
+end
+
+function _printAmmeterData(system::PowerSystem, device::Measurement, current::ACCurrent, io::IO,
+    label::L, header::B, footer::Bool, width::Dict{String, Int64})
+
     ammeter = device.ammeter
-    current = analysis.current
 
     format = formatAmmeterData(system, ammeter, current, label, width)
     labels, header = toggleLabelHeader(label, ammeter, ammeter.label, header, "ammeter")
@@ -205,7 +235,8 @@ end
         label, header, footer, width)
 
 The function prints data related to wattmeters. Optionally, an `IO` may be passed as the
-last argument to redirect the output.
+last argument to redirect the output. Users can also omit the `Analysis` type to print
+only data related to the `Measurement` type.
 
 # Keywords
 The following keywords control the printed data:
@@ -241,12 +272,28 @@ printWattmeterData(system, device, analysis; label = 5, width)
 printWattmeterData(system, device, analysis; label = 9, width, footer = true)
 ```
 """
+function printWattmeterData(system::PowerSystem, device::Measurement, io::IO = stdout;
+    label::L = missing, header::B = missing, footer::Bool = false,
+    width::Dict{String, Int64} = Dict{String, Int64}())
+
+    power = ACPower(Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]),
+        Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]),
+        Cartesian(Float64[], Float64[]), nothing)
+
+    _printWattmeterData(system, device, power, io, label, header, footer, width)
+end
+
 function printWattmeterData(system::PowerSystem, device::Measurement, analysis::AC, io::IO = stdout;
     label::L = missing, header::B = missing, footer::Bool = false,
     width::Dict{String, Int64} = Dict{String, Int64}())
 
+    _printWattmeterData(system, device, analysis.power, io, label, header, footer, width)
+end
+
+function _printWattmeterData(system::PowerSystem, device::Measurement, power::ACPower, io::IO,
+    label::L, header::B, footer::Bool, width::Dict{String, Int64})
+
     wattmeter = device.wattmeter
-    power = analysis.power
 
     scale = printScale(system, prefix)
     format = formatWattmeterData(system, wattmeter, power, scale, label, width)
@@ -289,7 +336,8 @@ end
         label, header, footer, width)
 
 The function prints data related to varmeters. Optionally, an `IO` may be passed as the
-last argument to redirect the output.
+last argument to redirect the output. Users can also omit the `Analysis` type to print
+only data related to the `Measurement` type.
 
 # Keywords
 The following keywords control the printed data:
@@ -325,12 +373,28 @@ printVarmeterData(system, device, analysis; label = 5, width)
 printVarmeterData(system, device, analysis; label = 9, width, footer = true)
 ```
 """
+function printVarmeterData(system::PowerSystem, device::Measurement, io::IO = stdout;
+    label::L = missing, header::B = missing, footer::Bool = false,
+    width::Dict{String, Int64} = Dict{String, Int64}())
+
+    power = ACPower(Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]),
+        Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]),
+        Cartesian(Float64[], Float64[]), nothing)
+
+    _printVarmeterData(system, device, power, io, label, header, footer, width)
+end
+
 function printVarmeterData(system::PowerSystem, device::Measurement, analysis::AC, io::IO = stdout;
     label::L = missing, header::B = missing, footer::Bool = false,
     width::Dict{String, Int64} = Dict{String, Int64}())
 
+    _printVarmeterData(system, device, analysis.power, io, label, header, footer, width)
+end
+
+function _printVarmeterData(system::PowerSystem, device::Measurement, power::ACPower, io::IO,
+    label::L, header::B, footer::Bool, width::Dict{String, Int64})
+
     varmeter = device.varmeter
-    power = analysis.power
 
     scale = printScale(system, prefix)
     format = formatVarmeterData(system, varmeter, power, scale, label, width)
@@ -374,7 +438,8 @@ end
         label, header, footer, width)
 
 The function prints data related to PMUs. Optionally, an `IO` may be passed as the last
-argument to redirect the output.
+argument to redirect the output. Users can also omit the `Analysis` type to print
+only data related to the `Measurement` type.
 
 # Keywords
 The following keywords control the printed data:
@@ -410,13 +475,27 @@ printPmuData(system, device, analysis; label = "From 4", width)
 printPmuData(system, device, analysis; label = "From 6", width, footer = true)
 ```
 """
+function printPmuData(system::PowerSystem, device::Measurement, io::IO = stdout;
+    label::L = missing, header::B = missing, footer::Bool = false,
+    width::Dict{String, Int64} = Dict{String, Int64}())
+
+    voltage = Polar(Float64[], Float64[])
+    current = ACCurrent(Polar(Float64[], Float64[]), Polar(Float64[], Float64[]), Polar(Float64[], Float64[]), Polar(Float64[], Float64[]))
+
+    _printPmuData(system, device, voltage, current, io, label, header, footer, width)
+end
+
 function printPmuData(system::PowerSystem, device::Measurement, analysis::AC, io::IO = stdout;
     label::L = missing, header::B = missing, footer::Bool = false,
     width::Dict{String, Int64} = Dict{String, Int64}())
 
+    _printPmuData(system, device, analysis.voltage, analysis.current, io, label, header, footer, width)
+end
+
+function _printPmuData(system::PowerSystem, device::Measurement, voltage::Polar, current::ACCurrent, io::IO,
+    label, header, footer, width::Dict{String, Int64})
+
     pmu = device.pmu
-    voltage = analysis.voltage
-    current = analysis.current
 
     scale = printScale(system, prefix)
     formatV, formatθ, formatI, formatψ = formatPmuData(system, pmu, voltage, current, scale, label, width)

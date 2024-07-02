@@ -65,7 +65,7 @@ using JuliaGrid
 
 ---
 
-## Print Power System Data
+## [Print Power System Data](@id PrintPowerSystemDataAPI)
 ```@docs
 printBusData
 printBranchData
@@ -74,7 +74,7 @@ printGeneratorData
 
 ---
 
-## Print Power System Summary
+## [Print Power System Summary](@id PrintPowerSystemSummaryAPI)
 ```@docs
 printBusSummary
 printBranchSummary

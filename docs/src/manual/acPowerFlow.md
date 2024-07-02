@@ -256,29 +256,6 @@ In these examples, the algorithms run until the specified number of iterations i
 
 ---
 
-##### Print Results
-Users have the option to print the results in the REPL using any units that have been configured, such as:
-```@example ACPowerFlowSolution
-@voltage(pu, deg, V)
-printBusData(system, analysis)
-```
-
-Next, users can easily customize the print results for specific buses, for example:
-```julia
-printBusData(system, analysis; label = "Bus 1", header = true)
-printBusData(system, analysis; label = "Bus 2")
-printBusData(system, analysis; label = "Bus 3", footer = true)
-```
-
-Users can also redirect print output to a file. For example, data can be saved in a text file as follows:
-```julia
-open("bus_data.txt", "w") do file
-    printBusData(system, analysis, file)
-end
-```
-
----
-
 ##### Breaking the Iterative Process
 We can terminate the iterative process using the [`mismatch!`](@ref mismatch!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})) function. The following code shows an example of how to use the function to break out of the iteration loop:
 ```@example ACPowerFlowSolution
@@ -333,6 +310,29 @@ end
 
 !!! note "Info"
     The functions [`newtonRaphson`](@ref newtonRaphson), [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX), [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB), or [`gaussSeidel`](@ref gaussSeidel) only modify the `PowerSystem` type to eliminate mistakes in the bus types as explained in the section [Bus Type Modification](@ref BusTypeModificationManual). Further, the functions [`mismatch!`](@ref mismatch!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})) and [`solve!`](@ref solve!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})) do not modify the `PowerSystem` type at all. Therefore, it is safe to use the same `PowerSystem` type for multiple analyses once it has been created.
+
+---
+
+##### Print Results
+Users have the option to print the results in the REPL using any units that have been configured, such as:
+```@example ACPowerFlowSolution
+@voltage(pu, deg, V)
+printBusData(system, analysis)
+```
+
+Next, users can easily customize the print results for specific buses, for example:
+```julia
+printBusData(system, analysis; label = "Bus 1", header = true)
+printBusData(system, analysis; label = "Bus 2")
+printBusData(system, analysis; label = "Bus 3", footer = true)
+```
+
+Users can also redirect print output to a file. For example, data can be saved in a text file as follows:
+```julia
+open("bus_data.txt", "w") do file
+    printBusData(system, analysis, file)
+end
+```
 
 ---
 
@@ -558,23 +558,19 @@ print(system.bus.label, analysis.power.injection.active)
 print(system.branch.label, analysis.current.to.angle)
 ```
 
+!!! note "Info"
+    To better understand the powers and currents associated with buses, branches, and generators that are obtained by the [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)) and [`current!`](@ref current!(::PowerSystem, ::AC)) functions, we suggest referring to the tutorials on [AC Power Flow Analysis](@ref ACPowerFlowTutorials).
+
 ---
 
 ##### Print Results
-Users can utilize any of the print functions mentioned in the [Print API Section](@ref setupPrintAPI) to print results. For example, to create a bus summary with the desired units, users can use the following function:
+Users can utilize any of the print functions outlined in the [Print Power System Data](@ref PrintPowerSystemDataAPI) or [Print Power System Summary](@ref PrintPowerSystemSummaryAPI). For example, to create a bus summary with the desired units, users can use the following function:
 ```@example ComputationPowersCurrentsLosses
 @voltage(pu, deg, V)
 @power(MW, MVAr, pu)
 printBusSummary(system, analysis)
 @default(unit) # hide
 ```
-
----
-
-!!! note "Info"
-    To better understand the powers and currents associated with buses, branches, and generators that are obtained by the [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)) and [`current!`](@ref current!(::PowerSystem, ::AC)) functions, we suggest referring to the tutorials on [AC Power Flow Analysis](@ref ACPowerFlowTutorials).
-
-To compute specific quantities for particular components, rather than calculating powers or currents for all components, users can utilize one of the functions provided below.
 
 ---
 

@@ -120,6 +120,29 @@ nothing # hide
 
 ---
 
+##### Print Results
+Users have the option to print the results in the REPL using any units that have been configured, such as:
+```@example DCPowerFlowSolution
+@voltage(pu, deg, V)
+printBusData(system, analysis)
+```
+
+Next, users can easily customize the print results for specific buses, for example:
+```julia
+printBusData(system, analysis; label = "Bus 1", header = true)
+printBusData(system, analysis; label = "Bus 2")
+printBusData(system, analysis; label = "Bus 3", footer = true)
+```
+
+Users can also redirect print output to a file. For example, data can be saved in a text file as follows:
+```julia
+open("bus_data.txt", "w") do file
+    printBusData(system, analysis, file)
+end
+```
+
+---
+
 ## [Power System Update](@id DCPowerSystemAlterationManual)
 After establishing the `PowerSystem` type using the [`powerSystem`](@ref powerSystem) function and configuring the DC model with [`dcModel!`](@ref dcModel!), users gain the capability to incorporate new branches and generators. Furthermore, they can adjust buses, branches, and generators.
 
@@ -282,14 +305,18 @@ print(system.bus.label, system.base.power.value * analysis.power.injection.activ
 print(system.branch.label, system.base.power.value * analysis.power.from.active)
 ```
 
+!!! note "Info"
+    To better understand the powers associated with buses, branches, and generators that are calculated by the [`power!`](@ref power!(::PowerSystem, ::DCPowerFlow)) function, we suggest referring to the tutorials on [DC Power Flow Analysis](@ref DCPowerAnalysisTutorials).
+
 ---
 
 ##### Print Results
-Users can utilize any of the print functions mentioned in the [Print API Section](@ref setupPrintAPI) to print results. For example, users have the option to print the results in the REPL using any units that have been configured, such as:
+Users can utilize any of the print functions outlined in the [Print Power System Data](@ref PrintPowerSystemDataAPI) or [Print Power System Summary](@ref PrintPowerSystemSummaryAPI). For example, users have the option to print the results in the REPL using any units that have been configured, such as:
 ```@example ComputationPowersCurrentsLosses
 @voltage(pu, deg, V)
 @power(MW, pu, pu)
 printBusData(system, analysis)
+@default(unit) # hide
 ```
 
 Next, users can easily customize the print results for specific buses, for example:
@@ -305,13 +332,6 @@ open("dcPowerFlow.txt", "w") do file
     printBusData(system, analysis, file)
 end
 ```
-
----
-
-!!! note "Info"
-    To better understand the powers associated with buses, branches, and generators that are calculated by the [`power!`](@ref power!(::PowerSystem, ::DCPowerFlow)) function, we suggest referring to the tutorials on [DC Power Flow Analysis](@ref DCPowerAnalysisTutorials).
-
-To compute specific quantities for particular components, rather than calculating powers or currents for all components, users can utilize one of the provided functions below.
 
 ---
 
