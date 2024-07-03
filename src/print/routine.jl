@@ -1,3 +1,17 @@
+Base.@kwdef mutable struct SummaryData
+    idxMin::Int64 = -1
+    min::Float64 = Inf
+    idxMax::Int64 = -1
+    max::Float64 = -Inf
+    total::Float64 = 0.0
+    strmin::String = ""
+    labelmin::String = ""
+    strmax::String = ""
+    labelmax::String = ""
+    strtotal::String = "-"
+    title::String = ""
+end
+
 function plosg(word::String, count::Int; pl = "es")
     if count == 1
         return word
@@ -71,7 +85,7 @@ function minmaxsumPrint!(data::SummaryData, value::Float64, i::Int64)
     data.total += value
 end
 
-function formatSummary!(data::SummaryData, span::Array{Int64,1}, label, scale, device; total = true)
+function formatSummary!(data::SummaryData, unitLive::String, span::Array{Int64,1}, label, scale, device; total = true)
     if device != 0
         data.labelmin = iterate(label, data.idxMin)[1][1]
         data.strmin = Printf.@sprintf("%.4f", data.min * scale)
@@ -90,6 +104,7 @@ function formatSummary!(data::SummaryData, span::Array{Int64,1}, label, scale, d
         end
 
         span[5] = max(span[5], length(Printf.@sprintf("%i", device)))
+        span[6] = max(span[6], length(unitLive))
 
         if !isempty(data.title)
             span[6] = max(span[6], length(data.title))
@@ -125,11 +140,9 @@ function summaryBlockHeader(io::IO, span::Array{Int64,1}, header::String, total:
     )
 end
 
-function summaryBlock(io::IO, data1::SummaryData, span::Array{Int64,1}, unit::String, subHeader1::String; line = false)
-    subHeader1 = string(" ", subHeader1, " ", "[", unit, "]")
-
+function summaryBlock(io::IO, data1::SummaryData, unitLive::String, span::Array{Int64,1}; line = false)
     Printf.@printf(io, "| %s | %*s | %*s | %*s | %*s | %*s |\n",
-        subHeader1 * " "^(span[6] - length(subHeader1)),
+        unitLive * " "^(span[6] - length(unitLive)),
         span[1], data1.labelmin,
         span[2], data1.strmin,
         span[3], data1.labelmax,
@@ -150,30 +163,34 @@ function printTitle(maxLine::Int64, title::String, header::Bool, io::IO)
 end
 
 function printScale(system::PowerSystem, prefix::PrefixLive)
-    scale = Dict(
-        "voltageAngle" => 1.0,
-        "activePower" => 1.0,
-        "reactivePower" => 1.0,
-        "currentAngle" => 1.0
+    return scale = Dict(
+        "θ" => prefix.voltageAngle != 0.0 ? 1 / prefix.voltageAngle : 1.0,
+        "P" => prefix.activePower != 0.0 ? system.base.power.value * system.base.power.prefix / prefix.activePower : 1.0,
+        "Q" => prefix.reactivePower != 0.0 ? system.base.power.value * system.base.power.prefix / prefix.reactivePower : 1.0,
+        "ψ" => prefix.currentAngle != 0.0 ? 1 / prefix.currentAngle : 1.0,
     )
+end
 
-    if prefix.voltageAngle != 0.0
-        scale["voltageAngle"] = 1 / prefix.voltageAngle
-    end
+function printUnitData(unitList::UnitList)
+    return unitData = Dict(
+        "V" => "[$(unitList.voltageMagnitudeLive)]",
+        "θ" => "[$(unitList.voltageAngleLive)]",
+        "P" => "[$(unitList.activePowerLive)]",
+        "Q" => "[$(unitList.reactivePowerLive)]",
+        "I" => "[$(unitList.currentMagnitudeLive)]",
+        "ψ" => "[$(unitList.currentAngleLive)]"
+    )
+end
 
-    if prefix.activePower != 0.0
-        scale["activePower"] = system.base.power.value * system.base.power.prefix / prefix.activePower
-    end
-
-    if prefix.reactivePower != 0.0
-        scale["reactivePower"] = system.base.power.value * system.base.power.prefix / prefix.reactivePower
-    end
-
-    if prefix.currentAngle != 0.0
-        scale["currentAngle"] = 1 / prefix.currentAngle
-    end
-
-    return scale
+function printUnitSummary(unitList::UnitList)
+    return unitSummury = Dict(
+        "V" => " Magnitude [$(unitList.voltageMagnitudeLive)]",
+        "θ" => " Angle [$(unitList.voltageAngleLive)]",
+        "P" => " Active [$(unitList.activePowerLive)]",
+        "Q" => " Reactive [$(unitList.reactivePowerLive)]",
+        "I" => " Magnitude [$(unitList.currentMagnitudeLive)]",
+        "ψ" => " Angle [$(unitList.currentAngleLive)]"
+    )
 end
 
 function toggleLabelHeader(label::L, container, labels::OrderedDict{String, Int64}, header::B, component::String)

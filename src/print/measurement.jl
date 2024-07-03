@@ -306,7 +306,7 @@ function _printWattmeterData(system::PowerSystem, device::Measurement, power::Un
 
         for (label, i) in labels
             estimate = findEstimate(wattmeter, power.injection.active, power.from.active, power.to.active, i)
-            printDevice(io, format, label, wattmeter.active, estimate, scale["activePower"], i, wattmeter.layout.index[i])
+            printDevice(io, format, label, wattmeter.active, estimate, scale["P"], i, wattmeter.layout.index[i])
         end
 
         if !isset(label) || footer
@@ -323,7 +323,7 @@ function formatWattmeterData(system::PowerSystem, wattmeter::Wattmeter, power::U
     if format["device"]
         for (label, i) in labels
             estimate = findEstimate(wattmeter, power.injection.active, power.from.active, power.to.active, i)
-            formatDevice(format, minmax, label, wattmeter.active, estimate, scale["activePower"], i, wattmeter.layout.index[i])
+            formatDevice(format, minmax, label, wattmeter.active, estimate, scale["P"], i, wattmeter.layout.index[i])
         end
         formatDevice(format, minmax)
     end
@@ -407,7 +407,7 @@ function _printVarmeterData(system::PowerSystem, device::Measurement, power::ACP
 
         for (label, i) in labels
             estimate = findEstimate(varmeter, power.injection.reactive, power.from.reactive, power.to.reactive, i)
-            printDevice(io, format, label, varmeter.reactive, estimate, scale["reactivePower"], i, varmeter.layout.index[i])
+            printDevice(io, format, label, varmeter.reactive, estimate, scale["Q"], i, varmeter.layout.index[i])
         end
 
         if !isset(label) || footer
@@ -424,7 +424,7 @@ function formatVarmeterData(system::PowerSystem, varmeter::Varmeter, power::ACPo
     if format["device"]
         for (label, i) in labels
             estimate = findEstimate(varmeter, power.injection.reactive, power.from.reactive, power.to.reactive, i)
-            formatDevice(format, minmax, label, varmeter.reactive, estimate, scale["reactivePower"], i, varmeter.layout.index[i])
+            formatDevice(format, minmax, label, varmeter.reactive, estimate, scale["Q"], i, varmeter.layout.index[i])
         end
 
         formatDevice(format, minmax)
@@ -527,7 +527,7 @@ function _printPmuData(system::PowerSystem, device::Measurement, voltage::Polar,
                 end
 
                 printDevice(io, formatV, label, pmu.magnitude, voltage.magnitude, scaleV, i, indexBus; newLine = false, last = false)
-                printDevice(io, formatθ, label, pmu.angle, voltage.angle, scale["voltageAngle"], i, indexBus; printLabel = false)
+                printDevice(io, formatθ, label, pmu.angle, voltage.angle, scale["θ"], i, indexBus; printLabel = false)
             end
         end
 
@@ -565,7 +565,7 @@ function _printPmuData(system::PowerSystem, device::Measurement, voltage::Polar,
                 printDevice(io, formatI, label, pmu.magnitude, estimate, scaleI, i, indexBranch; newLine = false, last = false)
 
                 estimate = findEstimate(pmu, current.from.angle, current.to.angle, i)
-                printDevice(io, formatψ, label, pmu.angle, estimate, scale["currentAngle"], i, indexBranch; printLabel = false)
+                printDevice(io, formatψ, label, pmu.angle, estimate, scale["ψ"], i, indexBranch; printLabel = false)
             end
         end
 
@@ -594,7 +594,7 @@ function _printPmuData(system::PowerSystem, device::Measurement, voltage::PolarA
         for (label, i) in labels
             if pmu.layout.bus[i]
                 indexBus = pmu.layout.index[i]
-                printDevice(io, format, label, pmu.angle, voltage.angle, scale["voltageAngle"], i, indexBus)
+                printDevice(io, format, label, pmu.angle, voltage.angle, scale["θ"], i, indexBus)
             end
         end
 
@@ -630,7 +630,7 @@ function formatPmuData(system::PowerSystem, pmu::PMU, voltage::Polar, current::A
                     scaleV = (system.base.voltage.value[indexBusBranch] * system.base.voltage.prefix) / prefix.voltageMagnitude
                 end
                 formatDevice(formatV, minmaxV, label, pmu.magnitude, voltage.magnitude, scaleV, i, indexBusBranch)
-                formatDevice(formatθ, minmaxθ, label, pmu.angle, voltage.angle, scale["voltageAngle"], i, indexBusBranch)
+                formatDevice(formatθ, minmaxθ, label, pmu.angle, voltage.angle, scale["θ"], i, indexBusBranch)
             else
                 if prefix.currentMagnitude != 0.0
                     if pmu.layout.from[i]
@@ -645,7 +645,7 @@ function formatPmuData(system::PowerSystem, pmu::PMU, voltage::Polar, current::A
                 formatDevice(formatI, minmaxI, label, pmu.magnitude, estimate, scaleI, i, indexBusBranch)
 
                 estimate = findEstimate(pmu, current.from.angle, current.to.angle, i)
-                formatDevice(formatψ, minmaxψ, label, pmu.angle, estimate, scale["currentAngle"], i, indexBusBranch)
+                formatDevice(formatψ, minmaxψ, label, pmu.angle, estimate, scale["ψ"], i, indexBusBranch)
             end
 
         end
@@ -677,7 +677,7 @@ function formatPmuData(system::PowerSystem, pmu::PMU, voltage::PolarAngle, scale
     if format["device"]
         for (label, i) in labels
             if pmu.layout.bus[i]
-                formatDevice(format, minmax, label, pmu.angle, voltage.angle, scale["voltageAngle"], i, pmu.layout.index[i])
+                formatDevice(format, minmax, label, pmu.angle, voltage.angle, scale["θ"], i, pmu.layout.index[i])
             end
         end
 

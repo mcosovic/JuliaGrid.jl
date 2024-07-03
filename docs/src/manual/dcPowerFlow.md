@@ -167,7 +167,7 @@ solve!(system, analysis)
 
 updateBus!(system; label = "Bus 2", active = 0.4)
 
-addBranch!(system; label = "Branch 2", from = "Bus 1", to = "Bus 2", reactance = 0.15)
+addBranch!(system; label = "Branch 2", from = "Bus 1", to = "Bus 2", reactance = 1)
 updateBranch!(system; label = "Branch 1", status = 0)
 
 addGenerator!(system; label = "Generator 2", bus = "Bus 2", active = 1.5)
@@ -209,7 +209,7 @@ solve!(system, analysis)
 
 updateBus!(system, analysis; label = "Bus 2", active = 0.4)
 
-addBranch!(system, analysis; label = "Branch 2", from = "Bus 1", to = "Bus 2", reactance = .1)
+addBranch!(system, analysis; label = "Branch 2", from = "Bus 1", to = "Bus 2", reactance = 1)
 updateBranch!(system, analysis; label = "Branch 1", status = 0)
 
 addGenerator!(system, analysis; label = "Generator 2", bus = "Bus 2", active = 1.5)

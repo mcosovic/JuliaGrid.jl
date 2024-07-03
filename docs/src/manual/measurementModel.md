@@ -351,9 +351,9 @@ addBus!(system; label = "Bus 1")
 addBus!(system; label = "Bus 2")
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.12)
 
-addPmu!(system, device; bus = "Bus 1", magnitude = 1.1, angle = 0.1, varianceMagnitude = 1e-3)
+addPmu!(system, device; bus = "Bus 1", magnitude = 1.1, angle = 0.1, varianceMagnitude = 0.1)
 addPmu!(system, device; from = "Branch 1", magnitude = 1.0, angle = -0.2, noise = true)
-addPmu!(system, device; to = "Branch 1", magnitude = 0.9, angle = 0.0, varianceAngle = 1e-2)
+addPmu!(system, device; to = "Branch 1", magnitude = 0.9, angle = 0.0, varianceAngle = 0.001)
 ```
 
 !!! note "Info"

@@ -34,21 +34,19 @@ using JuliaGrid
 system = powerSystem("case14.h5")          # Build the power system model
 acModel!(system)                           # Create matrices and vectors for the AC model
 
-analysis = newtonRaphson(system)           # Build the Newton-Raphson method
+analysis = newtonRaphson(system)           # Build the power flow model
 for iteration = 1:10                       # Begin the iteration loop
     stopping = mismatch!(system, analysis) # Compute power mismatches
     if all(stopping .< 1e-8)               # Check if the stopping criterion is met
         println("Solution Found.")         # Output message indicating convergence
-        break                              # Stop the iteration loop if the criterion is met
+        break                              # Stop iterations if the criterion is met
     end
-    solve!(system, analysis)               # Compute bus voltage magnitudes and angles
+    solve!(system, analysis)               # Compute voltage magnitudes and angles
 end
-
 power!(system, analysis)                   # Compute powers within the power system
 current!(system, analysis)                 # Compute currents within the power system
 
-printBusData(system, analysis)             # Print electrical quantities related to buses
-printBranchData(system, analysis)          # Print electrical quantities related to branches
+printBusData(system, analysis)             # Print data related to buses
 ```
 
 ---
@@ -61,15 +59,14 @@ using JuliaGrid
 system = powerSystem("case14.h5")        # Build the power system model
 dcModel!(system)                         # Create matrices and vectors for the DC model
 
-analysis = dcPowerFlow(system)           # Build the DC power flow analysis
-solve!(system, analysis)                 # Compute bus voltage angles
+analysis = dcPowerFlow(system)           # Build the power flow analysis
+solve!(system, analysis)                 # Compute voltage angles
 
 @generator(active = 20)                  # Define the template for generators
 addGenerator!(system, analysis; bus = 1) # Add the new generator to the power system
-solve!(system, analysis)                 # Recompute bus voltage angles with the updated model
+solve!(system, analysis)                 # Recompute voltage angles with the updated model
 
-printBusSummary(system, analysis)        # Print a summary of quantities related to buses
-printGeneratorData(system, analysis)     # Print generator power outputs
+printBusSummary(system, analysis)        # Print a summary of data related to buses
 ```
 
 ---
@@ -81,14 +78,13 @@ using JuliaGrid, Ipopt
 system = powerSystem("case14.h5")              # Build the power system model
 acModel!(system)                               # Create matrices and vectors for the AC model
 
-analysis = acOptimalPowerFlow(system, Ipopt.Optimizer) # Build the AC optimal power flow model
+analysis = acOptimalPowerFlow(system, Ipopt.Optimizer) # Build the optimal power flow model
 solve!(system, analysis)                       # Compute generator powers and bus voltages
-
 current!(system, analysis)                     # Compute currents within the power system
 
 @branch(resistance = 0.01, reactance = 0.2)    # Define the new template for branches
 addBranch!(system, analysis; from = 1, to = 5) # Add the new branch to the power system
-solve!(system, analysis)                       # Recompute the solution with the updated model
+solve!(system, analysis)                       # Recompute solutions with the updated model
 ```
 
 ---
@@ -100,12 +96,11 @@ using JuliaGrid, HiGHS
 system = powerSystem("case14.h5") # Build the power system model
 dcModel!(system)                  # Create matrices and vectors for the DC model
 
-analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer) # Build the DC optimal power flow model
+analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer) # Build the optimal power flow model
 solve!(system, analysis)          # Compute generator powers and bus voltages
-
 power!(system, analysis)          # Compute active powers within the power system
 
-printBranch(system, analysis)     # Print electrical quantities related to branches
+printBranch(system, analysis)     # Print data related to branches
 ```
 
 ---
@@ -114,20 +109,22 @@ printBranch(system, analysis)     # Print electrical quantities related to branc
 ```julia
 using JuliaGrid
 
-system = powerSystem("case14.h5")        # Build the power system model
-device = measurement("measurement14.h5") # Build the measurement model
-acModel!(system)                         # Create matrices and vectors for the AC model
+system = powerSystem("case14.h5")            # Build the power system model
+device = measurement("measurement14.h5")     # Build the measurement model
+acModel!(system)                             # Create matrices and vectors for the AC model
 
-analysis = gaussNewton(system, device)   # Build the AC state estimation model
-for iteration = 1:20                     # Begin the iteration loop
-    stopping = solve!(system, analysis)  # Compute estimate of bus voltages
-    if stopping < 1e-8                   # Check if the stopping criterion is met
-        println("Solution Found.")       # Output message indicating convergence
-        break                            # Stop the iteration loop if the criterion is met
+analysis = gaussNewton(system, device)       # Build the state estimation model
+for iteration = 1:20                         # Begin the iteration loop
+    stopping = solve!(system, analysis)      # Compute estimate of voltages
+    if stopping < 1e-8                       # Check if the stopping criterion is met
+        println("Solution Found.")           # Output message indicating convergence
+        break                                # Stop iterations if the criterion is met
     end
 end
-```
+power!(system, analysis)                     # Compute active powers within the power system
 
+printWattmeterData(system, device, analysis) # Print data related to wattmeters
+```
 ---
 
 #### PMU State Estimation
@@ -138,11 +135,13 @@ system = powerSystem("case14.h5")        # Build the power system model
 device = measurement("measurement14.h5") # Build the measurement model
 acModel!(system)                         # Create matrices and vectors for the AC model
 
-analysis = pmuWlsStateEstimation(system, device) # Build the PMU state estimation model
-solve!(system, analysis)                 # Compute estimate of bus voltages
+analysis = pmuWlsStateEstimation(system, device) # Build the state estimation model
+solve!(system, analysis)                 # Compute estimate of voltages
 
-updatePmu!(system, device, analysis; label = 1, angle = 0.0) # Update phasor measurement
+updatePmu!(system, device, analysis; label = "To 1", angle = 0.0) # Update phasor measurement
 solve!(system, analysis)                 # Recompute the solution with the updated model
+
+printPmuData(system, device, analysis)   # Print data related to PMUs
 ```
 
 ---
@@ -155,11 +154,11 @@ system = powerSystem("case14.h5")        # Build the power system model
 device = measurement("measurement14.h5") # Build the measurement model
 dcModel!(system)                         # Create matrices and vectors for the DC model
 
-analysis = dcWlsStateEstimation(system, device) # Build the DC state estimation model
-solve!(system, analysis)                 # Compute estimate of bus voltage angles
+analysis = dcWlsStateEstimation(system, device) # Build the state estimation model
+solve!(system, analysis)                 # Compute estimate of voltage angles
 
 residualTest!(system, device, analysis)  # Perform bad data analysis and remove outlier
-solve!(system, analysis)                 # Recompute bus voltage angles with the updated model
+solve!(system, analysis)                 # Recompute voltage angles with the updated model
 ```
 
 ---
