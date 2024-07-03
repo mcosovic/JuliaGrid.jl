@@ -49,7 +49,7 @@ function printVoltmeterData(system::PowerSystem, device::Measurement, io::IO = s
     _printVoltmeterData(system, device, voltage, io, label, header, footer, width)
 end
 
-function printVoltmeterData(system::PowerSystem, device::Measurement, analysis::AC, io::IO = stdout;
+function printVoltmeterData(system::PowerSystem, device::Measurement, analysis::Union{PMUStateEstimation, ACStateEstimation}, io::IO = stdout;
     label::L = missing, header::B = missing, footer::Bool = false,
     width::Dict{String, Int64} = Dict{String, Int64}())
 
@@ -159,7 +159,7 @@ function printAmmeterData(system::PowerSystem, device::Measurement, io::IO = std
     _printAmmeterData(system, device, current, io, label, header, footer, width)
 end
 
-function printAmmeterData(system::PowerSystem, device::Measurement, analysis::AC, io::IO = stdout;
+function printAmmeterData(system::PowerSystem, device::Measurement, analysis::Union{PMUStateEstimation, ACStateEstimation}, io::IO = stdout;
     label::L = missing, header::B = missing, footer::Bool = false,
     width::Dict{String, Int64} = Dict{String, Int64}())
 
@@ -283,14 +283,14 @@ function printWattmeterData(system::PowerSystem, device::Measurement, io::IO = s
     _printWattmeterData(system, device, power, io, label, header, footer, width)
 end
 
-function printWattmeterData(system::PowerSystem, device::Measurement, analysis::AC, io::IO = stdout;
+function printWattmeterData(system::PowerSystem, device::Measurement, analysis::Union{PMUStateEstimation, ACStateEstimation, DCStateEstimation}, io::IO = stdout;
     label::L = missing, header::B = missing, footer::Bool = false,
     width::Dict{String, Int64} = Dict{String, Int64}())
 
     _printWattmeterData(system, device, analysis.power, io, label, header, footer, width)
 end
 
-function _printWattmeterData(system::PowerSystem, device::Measurement, power::ACPower, io::IO,
+function _printWattmeterData(system::PowerSystem, device::Measurement, power::Union{ACPower, DCPower}, io::IO,
     label::L, header::B, footer::Bool, width::Dict{String, Int64})
 
     wattmeter = device.wattmeter
@@ -315,7 +315,7 @@ function _printWattmeterData(system::PowerSystem, device::Measurement, power::AC
     end
 end
 
-function formatWattmeterData(system::PowerSystem, wattmeter::Wattmeter, power::ACPower, scale::Dict{String, Float64}, label::L, width::Dict{String,Int64})
+function formatWattmeterData(system::PowerSystem, wattmeter::Wattmeter, power::Union{ACPower, DCPower}, scale::Dict{String, Float64}, label::L, width::Dict{String,Int64})
     format, minmax = formatDevice(wattmeter.active.mean, power.injection.active)
     format = formatWidth(format, width)
     labels = toggleLabel(label, wattmeter, wattmeter.label, "wattmeter")
@@ -384,7 +384,7 @@ function printVarmeterData(system::PowerSystem, device::Measurement, io::IO = st
     _printVarmeterData(system, device, power, io, label, header, footer, width)
 end
 
-function printVarmeterData(system::PowerSystem, device::Measurement, analysis::AC, io::IO = stdout;
+function printVarmeterData(system::PowerSystem, device::Measurement, analysis::Union{PMUStateEstimation, ACStateEstimation}, io::IO = stdout;
     label::L = missing, header::B = missing, footer::Bool = false,
     width::Dict{String, Int64} = Dict{String, Int64}())
 
@@ -485,11 +485,18 @@ function printPmuData(system::PowerSystem, device::Measurement, io::IO = stdout;
     _printPmuData(system, device, voltage, current, io, label, header, footer, width)
 end
 
-function printPmuData(system::PowerSystem, device::Measurement, analysis::AC, io::IO = stdout;
+function printPmuData(system::PowerSystem, device::Measurement, analysis::Union{PMUStateEstimation, ACStateEstimation}, io::IO = stdout;
     label::L = missing, header::B = missing, footer::Bool = false,
     width::Dict{String, Int64} = Dict{String, Int64}())
 
     _printPmuData(system, device, analysis.voltage, analysis.current, io, label, header, footer, width)
+end
+
+function printPmuData(system::PowerSystem, device::Measurement, analysis::DCStateEstimation, io::IO = stdout;
+    label::L = missing, header::B = missing, footer::Bool = false,
+    width::Dict{String, Int64} = Dict{String, Int64}())
+
+    _printPmuData(system, device, analysis.voltage, io, label, header, footer, width)
 end
 
 function _printPmuData(system::PowerSystem, device::Measurement, voltage::Polar, current::ACCurrent, io::IO,
@@ -570,6 +577,33 @@ function _printPmuData(system::PowerSystem, device::Measurement, voltage::Polar,
     end
 end
 
+function _printPmuData(system::PowerSystem, device::Measurement, voltage::PolarAngle, io::IO,
+    label, header, footer, width::Dict{String, Int64})
+
+    pmu = device.pmu
+
+    scale = printScale(system, prefix)
+    format = formatPmuData(system, pmu, voltage, scale, label, width)
+    labels, header = toggleLabelHeader(label, pmu, pmu.label, header, "pmu")
+
+    if format["device"]
+        maxLine = maxLineDevice(format)
+        printTitle(maxLine, "PMU Voltage Angle Data", header, io)
+        headerDevice(io, format, header, maxLine, label, unitList.voltageAngleLive)
+
+        for (label, i) in labels
+            if pmu.layout.bus[i]
+                indexBus = pmu.layout.index[i]
+                printDevice(io, format, label, pmu.angle, voltage.angle, scale["voltageAngle"], i, indexBus)
+            end
+        end
+
+        if !isset(label) || footer
+            Printf.@printf(io, "|%s|\n", "-"^maxLine)
+        end
+    end
+end
+
 function formatPmuData(system::PowerSystem, pmu::PMU, voltage::Polar, current::ACCurrent, scale::Dict{String, Float64}, label::L, width::Dict{String,Int64})
     formatV, minmaxV = formatDevice(pmu.magnitude.mean, voltage.magnitude)
     formatV = formatWidth(formatV, width)
@@ -632,6 +666,29 @@ function formatPmuData(system::PowerSystem, pmu::PMU, voltage::Polar, current::A
     end
 
     return formatV, formatθ, formatI, formatψ
+end
+
+function formatPmuData(system::PowerSystem, pmu::PMU, voltage::PolarAngle, scale::Dict{String, Float64}, label::L, width::Dict{String,Int64})
+    format, minmax = formatDevice(pmu.magnitude.mean, voltage.angle)
+    format = formatWidth(format, width)
+
+    labels = toggleLabel(label, pmu, pmu.label, "pmu")
+
+    if format["device"]
+        for (label, i) in labels
+            if pmu.layout.bus[i]
+                formatDevice(format, minmax, label, pmu.angle, voltage.angle, scale["voltageAngle"], i, pmu.layout.index[i])
+            end
+        end
+
+        if format["Label"] == 0
+            format["device"] = false
+        else
+            formatDevice(format, minmax)
+        end
+    end
+
+    return format
 end
 
 function formatDevice(deviceMean::Array{Float64,1}, analysisArray::Array{Float64,1})
@@ -856,7 +913,7 @@ function printDevice(io::IO, format::Dict{String,Integer}, label::L, meter::Gaus
         )
         if meter.status[i]  == 1
             Printf.@printf(io, " %*.4f |",
-                format["State Estimation Residual"], abs(estimate[j] - meter.mean[i]) * scale,
+                format["State Estimation Residual"], (meter.mean[i] - estimate[j]) * scale,
             )
         else
             Printf.@printf(io, " %*s |",
@@ -896,7 +953,8 @@ function formatDevice(format::Dict{String,Integer}, minmax::Dict{String, Float64
         minmax["minEstimate"] = min(estimate[j] * scale, minmax["minEstimate"])
 
         if meter.status[i] == 1
-            minmax["maxResidual"] = max(abs(estimate[j] - meter.mean[i]) * scale, minmax["maxResidual"])
+            minmax["minResidual"] = min((meter.mean[i] - estimate[j]) * scale, minmax["minResidual"])
+            minmax["maxResidual"] = max((meter.mean[i] - estimate[j]) * scale, minmax["maxResidual"])
         end
     end
 
@@ -910,7 +968,7 @@ function formatDevice(format::Dict{String,Integer}, minmax::Dict{String, Float64
 
     if format["analysis"]
         format["State Estimation Estimate"] = max(length(Printf.@sprintf("%.4f", minmax["maxEstimate"])), length(Printf.@sprintf("%.4f", minmax["minEstimate"])), format["State Estimation Estimate"])
-        format["State Estimation Residual"] = max(length(Printf.@sprintf("%.4f",  minmax["maxResidual"])), format["State Estimation Residual"])
+        format["State Estimation Residual"] = max(length(Printf.@sprintf("%.4f",  minmax["maxResidual"])), length(Printf.@sprintf("%.4f",  minmax["minResidual"])), format["State Estimation Residual"])
     end
 end
 

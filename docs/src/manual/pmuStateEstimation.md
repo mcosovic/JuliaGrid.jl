@@ -200,6 +200,33 @@ nothing # hide
 
 ---
 
+##### Print Results
+Users have the option to print the results in the REPL using any units that have been configured, such as:
+```@example PMUOptimalPlacement
+@voltage(pu, deg, V)
+printBusData(system, analysis)
+@default(unit) # hide
+```
+
+Next, users can easily customize the print results for specific buses, for example:
+```julia
+printBusData(system, analysis; label = "Bus 1", header = true)
+printBusData(system, analysis; label = "Bus 2")
+printBusData(system, analysis; label = "Bus 3", footer = true)
+```
+
+Users can also redirect print output to a file. For example, data can be saved in a text file as follows:
+```julia
+open("bus_data.txt", "w") do file
+    printBusData(system, analysis, file)
+end
+```
+
+!!! tip "Tip"
+    We also provide functions to print state estimation results, such as estimated values and residuals. For more details, users can consult the [Power and Current Analysis](@ref PMUSEPowerCurrentAnalysisManual) section of this manual.
+
+---
+
 ## [Bad Data Processing](@id PMUBadDataDetectionManual)
 After acquiring the WLS solution using the [`solve!`](@ref solve!(::PowerSystem, ::PMUStateEstimation{LinearWLS{Normal}})) function, users can conduct bad data analysis employing the largest normalized residual test. Continuing with our defined power system and measurement set, let us introduce a new phasor measurement. Upon proceeding to find the solution for this updated state:
 ```@example PMUOptimalPlacement
@@ -425,7 +452,15 @@ print(system.branch.label, analysis.current.from.magnitude)
 !!! note "Info"
     To better understand the powers and currents associated with buses and branches that are calculated by the [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)) and [`current!`](@ref current!(::PowerSystem, ::AC)) functions, we suggest referring to the tutorials on [PMU State Estimation](@ref PMUPowerAnalysisTutorials).
 
-To compute specific quantities for particular components, rather than calculating powers or currents for all components, users can utilize one of the provided functions below.
+---
+
+##### Print Results
+Users can utilize any of the print functions outlined in the [Print API](@ref setupPrintAPI). For example, to print state estimation data related to PMUs, we can use:
+```@example PMUStateEstimationSolution
+@voltage(pu, deg, V)
+printPmuData(system, device, analysis)
+@default(unit) # hide
+```
 
 ---
 

@@ -102,6 +102,33 @@ nothing # hide
 
 ---
 
+##### Print Results
+Users have the option to print the results in the REPL using any units that have been configured, such as:
+```@example WLSDCStateEstimationSolution
+@voltage(pu, deg, V)
+printBusData(system, analysis)
+@default(unit) # hide
+```
+
+Next, users can easily customize the print results for specific buses, for example:
+```julia
+printBusData(system, analysis; label = "Bus 1", header = true)
+printBusData(system, analysis; label = "Bus 2")
+printBusData(system, analysis; label = "Bus 3", footer = true)
+```
+
+Users can also redirect print output to a file. For example, data can be saved in a text file as follows:
+```julia
+open("bus_data.txt", "w") do file
+    printBusData(system, analysis, file)
+end
+```
+
+!!! tip "Tip"
+    We also provide functions to print state estimation results, such as estimated values and residuals. For more details, users can consult the [Power Analysis](@ref DCSEPowerAnalysisManual) section of this manual.
+
+---
+
 ## [Bad Data Processing](@id DCBadDataDetectionManual)
 After acquiring the WLS solution using the [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimation{LinearWLS{Normal}})) function, users can conduct bad data analysis employing the largest normalized residual test. Continuing with our defined power system and measurement set, let us introduce a new wattmeter. Upon proceeding to find the solution for this updated state:
 ```@example WLSDCStateEstimationSolution
@@ -334,7 +361,18 @@ print(system.bus.label, analysis.power.injection.active)
 !!! note "Info"
     To better understand the powers associated with buses, and branches that are calculated by the [`power!`](@ref power!(::PowerSystem, ::DCStateEstimation)) function, we suggest referring to the tutorials on.
 
-To calculate specific quantities related to particular buses or branches, rather than computing values for all buses and branches, users can utilize one of the provided functions below.
+---
+
+##### Print Results
+Users can utilize any of the print functions outlined in the [Print API](@ref setupPrintAPI) related to the DC analysis. For example, to print state estimation data related to wattmeters, we can use:
+```@example WLSDCStateEstimationSolution
+@power(MW, pu, pu)
+printWattmeterData(system, device, analysis)
+@default(unit) # hide
+```
+
+---
+
 
 ---
 
