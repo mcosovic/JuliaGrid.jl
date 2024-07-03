@@ -21,6 +21,8 @@ system30 = powerSystem(string(pathData, "case30test.m"))
         solve!(system, analysisLAV)
         @test analysisLAV.voltage.magnitude ≈ analysis.voltage.magnitude atol = 1e-6
         @test analysisLAV.voltage.angle ≈ analysis.voltage.angle atol = 1e-6
+
+        return analysisSE
     end
 
     ################ Modified IEEE 14-bus Test Case ################
@@ -53,12 +55,12 @@ system30 = powerSystem(string(pathData, "case30test.m"))
         addPmu!(system14, device; bus = key, magnitude = analysis.voltage.magnitude[value], angle = analysis.voltage.angle[value], statusMagnitude = 0, polar = true)
         addVoltmeter!(system14, device; bus = key, magnitude = analysis.voltage.magnitude[value], variance = 1e-3)
     end
-    acStateEstimationTest(system14, device, analysis)
+    analysisSE = acStateEstimationTest(system14, device, analysis)
 
-    @capture_out printVoltmeterData(system14, device, analysis)
-    @capture_out printVoltmeterData(system14, device, analysis; label = 1, header = true)
-    @capture_out printVoltmeterData(system14, device, analysis; label = 6)
-    @capture_out printVoltmeterData(system14, device, analysis; label = 8, footer = true)
+    @capture_out printVoltmeterData(system14, device, analysisSE)
+    @capture_out printVoltmeterData(system14, device, analysisSE; label = 1, header = true)
+    @capture_out printVoltmeterData(system14, device, analysisSE; label = 6)
+    @capture_out printVoltmeterData(system14, device, analysisSE; label = 8, footer = true)
 
     ######## Test Ammeter Measurements #######
     device = measurement()
@@ -69,12 +71,12 @@ system30 = powerSystem(string(pathData, "case30test.m"))
         addAmmeter!(system14, device; from = key, magnitude = analysis.current.from.magnitude[value], variance = 1e-3)
         addAmmeter!(system14, device; to = key, magnitude = analysis.current.to.magnitude[value], variance = 1e-3)
     end
-    acStateEstimationTest(system14, device, analysis)
+    analysisSE = acStateEstimationTest(system14, device, analysis)
 
-    @capture_out printAmmeterData(system14, device, analysis)
-    @capture_out printAmmeterData(system14, device, analysis; label = 1, header = true)
-    @capture_out printAmmeterData(system14, device, analysis; label = 6)
-    @capture_out printAmmeterData(system14, device, analysis; label = 8, footer = true)
+    @capture_out printAmmeterData(system14, device, analysisSE)
+    @capture_out printAmmeterData(system14, device, analysisSE; label = 1, header = true)
+    @capture_out printAmmeterData(system14, device, analysisSE; label = 6)
+    @capture_out printAmmeterData(system14, device, analysisSE; label = 8, footer = true)
 
     ######## Test Bus Wattmeter Measurements #######
     device = measurement()
@@ -82,12 +84,12 @@ system30 = powerSystem(string(pathData, "case30test.m"))
         addPmu!(system14, device; bus = key, magnitude = analysis.voltage.magnitude[value], angle = analysis.voltage.angle[value], statusAngle = 0, polar = true)
         addWattmeter!(system14, device; bus = key, active = analysis.power.injection.active[value], variance = 1e-3)
     end
-    acStateEstimationTest(system14, device, analysis)
+    analysisSE = acStateEstimationTest(system14, device, analysis)
 
-    @capture_out printWattmeterData(system14, device, analysis)
-    @capture_out printWattmeterData(system14, device, analysis; label = 1, header = true)
-    @capture_out printWattmeterData(system14, device, analysis; label = 6)
-    @capture_out printWattmeterData(system14, device, analysis; label = 8, footer = true)
+    @capture_out printWattmeterData(system14, device, analysisSE)
+    @capture_out printWattmeterData(system14, device, analysisSE; label = 1, header = true)
+    @capture_out printWattmeterData(system14, device, analysisSE; label = 6)
+    @capture_out printWattmeterData(system14, device, analysisSE; label = 8, footer = true)
 
     ######## Test Branch Wattmeter Measurements #######
     device = measurement()
@@ -98,12 +100,12 @@ system30 = powerSystem(string(pathData, "case30test.m"))
         addWattmeter!(system14, device; from = key, active = analysis.power.from.active[value], variance = 1e-3)
         addWattmeter!(system14, device; to = key, active = analysis.power.to.active[value], variance = 1e-3)
     end
-    acStateEstimationTest(system14, device, analysis)
+    analysisSE = acStateEstimationTest(system14, device, analysisSE)
 
-    @capture_out printWattmeterData(system14, device, analysis)
-    @capture_out printWattmeterData(system14, device, analysis; label = 1, header = true)
-    @capture_out printWattmeterData(system14, device, analysis; label = 6)
-    @capture_out printWattmeterData(system14, device, analysis; label = 8, footer = true)
+    @capture_out printWattmeterData(system14, device, analysisSE)
+    @capture_out printWattmeterData(system14, device, analysisSE; label = 1, header = true)
+    @capture_out printWattmeterData(system14, device, analysisSE; label = 6)
+    @capture_out printWattmeterData(system14, device, analysisSE; label = 8, footer = true)
 
     ######## Test Bus Varmeter Measurements #######
     device = measurement()
@@ -111,12 +113,12 @@ system30 = powerSystem(string(pathData, "case30test.m"))
         addPmu!(system14, device; bus = key, magnitude = analysis.voltage.magnitude[value], angle = analysis.voltage.angle[value], polar = true)
         addVarmeter!(system14, device; bus = key, reactive = analysis.power.injection.reactive[value], variance = 1e-3)
     end
-    acStateEstimationTest(system14, device, analysis)
+    analysisSE = acStateEstimationTest(system14, device, analysis)
 
-    @capture_out printVarmeterData(system14, device, analysis)
-    @capture_out printVarmeterData(system14, device, analysis; label = 1, header = true)
-    @capture_out printVarmeterData(system14, device, analysis; label = 6)
-    @capture_out printVarmeterData(system14, device, analysis; label = 8, footer = true)
+    @capture_out printVarmeterData(system14, device, analysisSE)
+    @capture_out printVarmeterData(system14, device, analysisSE; label = 1, header = true)
+    @capture_out printVarmeterData(system14, device, analysisSE; label = 6)
+    @capture_out printVarmeterData(system14, device, analysisSE; label = 8, footer = true)
 
     ######## Test Branch Varmeter Measurements #######
     device = measurement()
@@ -127,12 +129,12 @@ system30 = powerSystem(string(pathData, "case30test.m"))
         addVarmeter!(system14, device; from = key, reactive = analysis.power.from.reactive[value], variance = 1e-2)
         addVarmeter!(system14, device; to = key, reactive = analysis.power.to.reactive[value], variance = 1e-2)
     end
-    acStateEstimationTest(system14, device, analysis)
+    analysisSE = acStateEstimationTest(system14, device, analysis)
 
-    @capture_out printVarmeterData(system14, device, analysis)
-    @capture_out printVarmeterData(system14, device, analysis; label = 1, header = true)
-    @capture_out printVarmeterData(system14, device, analysis; label = 6)
-    @capture_out printVarmeterData(system14, device, analysis; label = 8, footer = true)
+    @capture_out printVarmeterData(system14, device, analysisSE)
+    @capture_out printVarmeterData(system14, device, analysisSE; label = 1, header = true)
+    @capture_out printVarmeterData(system14, device, analysisSE; label = 6)
+    @capture_out printVarmeterData(system14, device, analysisSE; label = 8, footer = true)
 
     ######## Test Bus Rectangular PMU Measurements #######
     device = measurement()
@@ -140,12 +142,12 @@ system30 = powerSystem(string(pathData, "case30test.m"))
         addPmu!(system14, device; bus = key, magnitude = analysis.voltage.magnitude[value], angle = analysis.voltage.angle[value])
         addPmu!(system14, device; bus = key, magnitude = analysis.voltage.magnitude[value], angle = analysis.voltage.angle[value], correlated = true)
     end
-    acStateEstimationTest(system14, device, analysis)
+    analysisSE = acStateEstimationTest(system14, device, analysis)
 
-    @capture_out printPmuData(system14, device, analysis)
-    @capture_out printPmuData(system14, device, analysis; label = 1, header = true)
-    @capture_out printPmuData(system14, device, analysis; label = 6)
-    @capture_out printPmuData(system14, device, analysis; label = 8, footer = true)
+    @capture_out printPmuData(system14, device, analysisSE)
+    @capture_out printPmuData(system14, device, analysisSE; label = 1, header = true)
+    @capture_out printPmuData(system14, device, analysisSE; label = 6)
+    @capture_out printPmuData(system14, device, analysisSE; label = 8, footer = true)
 
     ######## Test Branch Rectangular PMU Measurements #######
     device = measurement()
@@ -606,6 +608,8 @@ system30 = powerSystem(string(pathData, "case30test.m"))
         JuMP.set_silent(analysisLAV.method.jump)
         solve!(system, analysisLAV)
         @test analysisLAV.voltage.angle ≈ analysis.voltage.angle
+
+        return analysisSE
     end
 
     ############### Modified IEEE 14-bus Test Case ################
@@ -635,7 +639,12 @@ system30 = powerSystem(string(pathData, "case30test.m"))
         addWattmeter!(system14, device; from = key, active = analysis.power.from.active[value])
         addWattmeter!(system14, device; to = key, active = analysis.power.to.active[value])
     end
-    dcStateEstimationTest(system14, device, analysis)
+    analysisSE = dcStateEstimationTest(system14, device, analysis)
+
+    @capture_out printPmuData(system14, device, analysisSE)
+    @capture_out printPmuData(system14, device, analysisSE; label = 1, header = true)
+    @capture_out printPmuData(system14, device, analysisSE; label = 6)
+    @capture_out printPmuData(system14, device, analysisSE; label = 8, footer = true)
 
     ######## Test Wattmeters ########
     for (key, value) in system14.bus.label
@@ -645,7 +654,12 @@ system30 = powerSystem(string(pathData, "case30test.m"))
         addWattmeter!(system14, device; from = key, active = analysis.power.from.active[value])
         addWattmeter!(system14, device; to = key, active = analysis.power.to.active[value])
     end
-    dcStateEstimationTest(system14, device, analysis)
+    analysisSE = dcStateEstimationTest(system14, device, analysis)
+
+    @capture_out printWattmeterData(system14, device, analysisSE)
+    @capture_out printWattmeterData(system14, device, analysisSE; label = 1, header = true)
+    @capture_out printWattmeterData(system14, device, analysisSE; label = 6)
+    @capture_out printWattmeterData(system14, device, analysisSE; label = 8, footer = true)
 
     ###### Test QR Factorization #######
     analysisQR = dcWlsStateEstimation(system14, device, QR)
