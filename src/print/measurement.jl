@@ -1,6 +1,6 @@
 """
     printVoltmeterData(system::PowerSystem, device::Measurement, analysis::Analysis, io::IO;
-        label, header, footer, width)
+        label, header, footer, width, fmt)
 
 The function prints data related to voltmeters. Optionally, an `IO` may be passed as the
 last argument to redirect the output. Users can also omit the `Analysis` type to print
@@ -12,6 +12,7 @@ The following keywords control the printed data:
 * `header`: Toggles the printing of the header.
 * `footer`: Toggles the printing of the footer.
 * `width`: Specifies the preferred width of each column.
+* `fmt`: Specifies the preferred numeric format of each column.
 
 !!! compat "Julia 1.10"
     The function [`printBusData`](@ref printBusData) requires Julia 1.10 or later.
@@ -31,7 +32,8 @@ end
 power!(system, analysis)
 
 # Print data for all voltmeters
-printVoltmeterData(system, device, analysis)
+fmt = Dict("Measurement Variance" =>"%.4f")
+printVoltmeterData(system, device, analysis; fmt)
 
 # Print data for specific voltmeters
 width = Dict("Measurement Variance" => 9)
@@ -42,42 +44,42 @@ printVoltmeterData(system, device, analysis; label = 8, width, footer = true)
 """
 function printVoltmeterData(system::PowerSystem, device::Measurement, io::IO = stdout;
     label::L = missing, header::B = missing, footer::Bool = false,
-    width::Dict{String, Int64} = Dict{String, Int64}())
+    width::Dict{String, Int64} = Dict{String, Int64}(), fmt::Dict{String, String} = Dict{String, String}())
 
     voltage = Polar(Float64[], Float64[])
 
-    _printVoltmeterData(system, device, voltage, io, label, header, footer, width)
+    _printVoltmeterData(system, device, voltage, io, label, header, footer, width, fmt)
 end
 
 function printVoltmeterData(system::PowerSystem, device::Measurement, analysis::Union{PMUStateEstimation, ACStateEstimation}, io::IO = stdout;
     label::L = missing, header::B = missing, footer::Bool = false,
-    width::Dict{String, Int64} = Dict{String, Int64}())
+    width::Dict{String, Int64} = Dict{String, Int64}(), fmt::Dict{String, String} = Dict{String, String}())
 
-    _printVoltmeterData(system, device, analysis.voltage, io, label, header, footer, width)
+    _printVoltmeterData(system, device, analysis.voltage, io, label, header, footer, width, fmt)
 end
 
 function _printVoltmeterData(system::PowerSystem, device::Measurement, voltage::Polar, io::IO,
-    label::L, header::B, footer::Bool, width::Dict{String, Int64})
+    label::L, header::B, footer::Bool, width::Dict{String, Int64}, fmt::Dict{String, String})
 
     voltmeter = device.voltmeter
 
-    format = formatVoltmeterData(system, voltmeter, voltage, label, width)
+    width, fmt, deviceFlag, analysFlag = formatVoltmeterData(system, voltmeter, voltage, label, width, fmt)
     labels, header = toggleLabelHeader(label, voltmeter, voltmeter.label, header, "voltmeter")
 
-    if format["device"]
-        maxLine = maxLineDevice(format)
+    if deviceFlag
+        maxLine = maxLineDevice(width, analysFlag)
         printTitle(maxLine, "Voltmeter Data", header, io)
-        headerDevice(io, format, header, maxLine, label, unitList.voltageMagnitudeLive)
+        headerDevice(io, width, header, maxLine, label, unitList.voltageMagnitudeLive, analysFlag)
 
         scale = 1.0
         for (label, i) in labels
             indexBus = voltmeter.layout.index[i]
 
             if prefix.voltageMagnitude != 0.0
-                scale = (system.base.voltage.value[indexBus] * system.base.voltage.prefix) / prefix.voltageMagnitude
+                scale = scaleMagnitude(system.base.voltage, indexBus)
             end
 
-            printDevice(io, format, label, voltmeter.magnitude, voltage.magnitude, scale, i, indexBus)
+            printDevice(io, width, fmt, label, voltmeter.magnitude, voltage.magnitude, scale, i, indexBus, analysFlag)
         end
 
         if !isset(label) || footer
@@ -86,31 +88,31 @@ function _printVoltmeterData(system::PowerSystem, device::Measurement, voltage::
     end
 end
 
-function formatVoltmeterData(system::PowerSystem, voltmeter::Voltmeter, voltage::Polar, label::L, width::Dict{String,Int64})
-    format, minmax = formatDevice(voltmeter.magnitude.mean, voltage.magnitude)
-    format = formatWidth(format, width)
+function formatVoltmeterData(system::PowerSystem, voltmeter::Voltmeter, voltage::Polar, label::L, width::Dict{String, Int64}, fmt::Dict{String, String})
+    _width, _fmt, minmax, deviceFlag, analysFlag = formatDevice(voltmeter.magnitude.mean, voltage.magnitude)
+    width, fmt = printFormat(_width, width, _fmt, fmt)
     labels = toggleLabel(label, voltmeter, voltmeter.label, "voltmeter")
 
-    if format["device"]
+    if deviceFlag
         scale = 1.0
         for (label, i) in labels
             indexBus = voltmeter.layout.index[i]
 
             if prefix.voltageMagnitude != 0.0
-                scale = (system.base.voltage.value[indexBus] * system.base.voltage.prefix) / prefix.voltageMagnitude
+                scale = scaleMagnitude(system.base.voltage, indexBus)
             end
 
-            formatDevice(format, minmax, label, voltmeter.magnitude, voltage.magnitude, scale, i, indexBus)
+            formatDevice(width, minmax, label, voltmeter.magnitude, voltage.magnitude, scale, i, indexBus, analysFlag)
         end
-        formatDevice(format, minmax)
+        formatDevice(width, fmt, minmax, analysFlag)
     end
 
-    return format
+    return width, fmt, deviceFlag, analysFlag
 end
 
 """
     printAmmeterData(system::PowerSystem, device::Measurement, analysis::Analysis, io::IO;
-        label, header, footer, width)
+        label, header, footer, width, fmt)
 
 The function prints data related to ammeters. Optionally, an `IO` may be passed as the
 last argument to redirect the output. Users can also omit the `Analysis` type to print
@@ -122,6 +124,7 @@ The following keywords control the printed data:
 * `header`: Toggles the printing of the header.
 * `footer`: Toggles the printing of the footer.
 * `width`: Specifies the preferred width of each column.
+* `fmt`: Specifies the preferred numeric format of each column.
 
 !!! compat "Julia 1.10"
     The function [`printBusData`](@ref printBusData) requires Julia 1.10 or later.
@@ -141,7 +144,8 @@ end
 current!(system, analysis)
 
 # Print data for all ammeters
-printAmmeterData(system, device, analysis)
+fmt = Dict("Measurement Variance" =>"%.4f")
+printAmmeterData(system, device, analysis; fmt)
 
 # Print data for specific ammeters
 width = Dict("Measurement Variance" => 9)
@@ -152,32 +156,32 @@ printAmmeterData(system, device, analysis; label = "From 6", width, footer = tru
 """
 function printAmmeterData(system::PowerSystem, device::Measurement, io::IO = stdout;
     label::L = missing, header::B = missing, footer::Bool = false,
-    width::Dict{String, Int64} = Dict{String, Int64}())
+    width::Dict{String, Int64} = Dict{String, Int64}(), fmt::Dict{String, String} = Dict{String, String}())
 
     current = ACCurrent(Polar(Float64[], Float64[]), Polar(Float64[], Float64[]), Polar(Float64[], Float64[]), Polar(Float64[], Float64[]))
 
-    _printAmmeterData(system, device, current, io, label, header, footer, width)
+    _printAmmeterData(system, device, current, io, label, header, footer, width, fmt)
 end
 
 function printAmmeterData(system::PowerSystem, device::Measurement, analysis::Union{PMUStateEstimation, ACStateEstimation}, io::IO = stdout;
     label::L = missing, header::B = missing, footer::Bool = false,
-    width::Dict{String, Int64} = Dict{String, Int64}())
+    width::Dict{String, Int64} = Dict{String, Int64}(), fmt::Dict{String, String} = Dict{String, String}())
 
-    _printAmmeterData(system, device, analysis.current, io, label, header, footer, width)
+    _printAmmeterData(system, device, analysis.current, io, label, header, footer, width, fmt)
 end
 
 function _printAmmeterData(system::PowerSystem, device::Measurement, current::ACCurrent, io::IO,
-    label::L, header::B, footer::Bool, width::Dict{String, Int64})
+    label::L, header::B, footer::Bool, width::Dict{String, Int64}, fmt::Dict{String, String})
 
     ammeter = device.ammeter
 
-    format = formatAmmeterData(system, ammeter, current, label, width)
+    width, fmt, deviceFlag, analysFlag = formatAmmeterData(system, ammeter, current, label, width, fmt)
     labels, header = toggleLabelHeader(label, ammeter, ammeter.label, header, "ammeter")
 
-    if format["device"]
-        maxLine = maxLineDevice(format)
+    if deviceFlag
+        maxLine = maxLineDevice(width, analysFlag)
         printTitle(maxLine, "Ammeter Data", header, io)
-        headerDevice(io, format, header, maxLine, label, unitList.currentMagnitudeLive)
+        headerDevice(io, width, header, maxLine, label, unitList.currentMagnitudeLive, analysFlag)
 
         scale = 1.0
         for (label, i) in labels
@@ -185,15 +189,14 @@ function _printAmmeterData(system::PowerSystem, device::Measurement, current::AC
 
             if prefix.currentMagnitude != 0.0
                 if ammeter.layout.from[i]
-                    j = system.branch.layout.from[indexBranch]
+                    scale = scaleMagnitude(system, system.branch.layout.from[indexBranch])
                 else
-                    j = system.branch.layout.to[indexBranch]
+                    scale = scaleMagnitude(system, system.branch.layout.to[indexBranch])
                 end
-                scale = system.base.power.value * system.base.power.prefix / (sqrt(3) * system.base.voltage.value[j] * system.base.voltage.prefix * prefix.currentMagnitude)
             end
 
             estimate = findEstimate(ammeter, current.from.magnitude, current.to.magnitude, i)
-            printDevice(io, format, label, ammeter.magnitude, estimate, scale, i, indexBranch)
+            printDevice(io, width, fmt, label, ammeter.magnitude, estimate, scale, i, indexBranch, analysFlag)
         end
 
         if !isset(label) || footer
@@ -202,37 +205,36 @@ function _printAmmeterData(system::PowerSystem, device::Measurement, current::AC
     end
 end
 
-function formatAmmeterData(system::PowerSystem, ammeter::Ammeter, current::ACCurrent, label::L, width::Dict{String,Int64})
-    format, minmax = formatDevice(ammeter.magnitude.mean, current.from.magnitude)
-    format = formatWidth(format, width)
+function formatAmmeterData(system::PowerSystem, ammeter::Ammeter, current::ACCurrent, label::L, width::Dict{String, Int64}, fmt::Dict{String, String})
+    _width, _fmt, minmax, deviceFlag, analysFlag = formatDevice(ammeter.magnitude.mean, current.from.magnitude)
+    width, fmt = printFormat(_width, width, _fmt, fmt)
     labels = toggleLabel(label, ammeter, ammeter.label, "ammeter")
 
-    if format["device"]
+    if deviceFlag
         scale = 1.0
         for (label, i) in labels
             indexBranch = ammeter.layout.index[i]
 
             if prefix.currentMagnitude != 0.0
                 if ammeter.layout.from[i]
-                    j = system.branch.layout.from[indexBranch]
+                    scale = scaleMagnitude(system, system.branch.layout.from[indexBranch])
                 else
-                    j = system.branch.layout.to[indexBranch]
+                    scale = scaleMagnitude(system, system.branch.layout.to[indexBranch])
                 end
-                scale = system.base.power.value * system.base.power.prefix / (sqrt(3) * system.base.voltage.value[j] * system.base.voltage.prefix * prefix.currentMagnitude)
             end
 
             estimate = findEstimate(ammeter, current.from.magnitude, current.to.magnitude, i)
-            formatDevice(format, minmax, label, ammeter.magnitude, estimate, scale, i, indexBranch)
+            formatDevice(width, minmax, label, ammeter.magnitude, estimate, scale, i, indexBranch, analysFlag)
         end
-        formatDevice(format, minmax)
+        formatDevice(width, fmt, minmax, analysFlag)
     end
 
-    return format
+    return width, fmt, deviceFlag, analysFlag
 end
 
 """
     printWattmeterData(system::PowerSystem, device::Measurement, analysis::Analysis, io::IO;
-        label, header, footer, width)
+        label, header, footer, width, fmt)
 
 The function prints data related to wattmeters. Optionally, an `IO` may be passed as the
 last argument to redirect the output. Users can also omit the `Analysis` type to print
@@ -244,6 +246,7 @@ The following keywords control the printed data:
 * `header`: Toggles the printing of the header.
 * `footer`: Toggles the printing of the footer.
 * `width`: Specifies the preferred width of each column.
+* `fmt`: Specifies the preferred numeric format of each column.
 
 !!! compat "Julia 1.10"
     The function [`printBusData`](@ref printBusData) requires Julia 1.10 or later.
@@ -263,7 +266,8 @@ end
 power!(system, analysis)
 
 # Print data for all wattmeters
-printWattmeterData(system, device, analysis)
+fmt = Dict("Measurement Variance" =>"%.4f")
+printWattmeterData(system, device, analysis; fmt)
 
 # Print data for specific wattmeters
 width = Dict("Measurement Mean" => 7)
@@ -274,39 +278,39 @@ printWattmeterData(system, device, analysis; label = 9, width, footer = true)
 """
 function printWattmeterData(system::PowerSystem, device::Measurement, io::IO = stdout;
     label::L = missing, header::B = missing, footer::Bool = false,
-    width::Dict{String, Int64} = Dict{String, Int64}())
+    width::Dict{String, Int64} = Dict{String, Int64}(), fmt::Dict{String, String} = Dict{String, String}())
 
     power = ACPower(Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]),
         Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]),
         Cartesian(Float64[], Float64[]), nothing)
 
-    _printWattmeterData(system, device, power, io, label, header, footer, width)
+    _printWattmeterData(system, device, power, io, label, header, footer, width, fmt)
 end
 
 function printWattmeterData(system::PowerSystem, device::Measurement, analysis::Union{PMUStateEstimation, ACStateEstimation, DCStateEstimation}, io::IO = stdout;
     label::L = missing, header::B = missing, footer::Bool = false,
-    width::Dict{String, Int64} = Dict{String, Int64}())
+    width::Dict{String, Int64} = Dict{String, Int64}(), fmt::Dict{String, String} = Dict{String, String}())
 
-    _printWattmeterData(system, device, analysis.power, io, label, header, footer, width)
+    _printWattmeterData(system, device, analysis.power, io, label, header, footer, width, fmt)
 end
 
 function _printWattmeterData(system::PowerSystem, device::Measurement, power::Union{ACPower, DCPower}, io::IO,
-    label::L, header::B, footer::Bool, width::Dict{String, Int64})
+    label::L, header::B, footer::Bool, width::Dict{String, Int64}, fmt::Dict{String, String})
 
     wattmeter = device.wattmeter
 
     scale = printScale(system, prefix)
-    format = formatWattmeterData(system, wattmeter, power, scale, label, width)
+    width, fmt, deviceFlag, analysFlag = formatWattmeterData(system, wattmeter, power, scale, label, width, fmt)
     labels, header = toggleLabelHeader(label, wattmeter, wattmeter.label, header, "wattmeter")
 
-    if format["device"]
-        maxLine = maxLineDevice(format)
+    if deviceFlag
+        maxLine = maxLineDevice(width, analysFlag)
         printTitle(maxLine, "Wattmeter Data", header, io)
-        headerDevice(io, format, header, maxLine, label, unitList.activePowerLive)
+        headerDevice(io, width, header, maxLine, label, unitList.activePowerLive, analysFlag)
 
         for (label, i) in labels
             estimate = findEstimate(wattmeter, power.injection.active, power.from.active, power.to.active, i)
-            printDevice(io, format, label, wattmeter.active, estimate, scale["P"], i, wattmeter.layout.index[i])
+            printDevice(io, width, fmt, label, wattmeter.active, estimate, scale["P"], i, wattmeter.layout.index[i], analysFlag)
         end
 
         if !isset(label) || footer
@@ -315,25 +319,25 @@ function _printWattmeterData(system::PowerSystem, device::Measurement, power::Un
     end
 end
 
-function formatWattmeterData(system::PowerSystem, wattmeter::Wattmeter, power::Union{ACPower, DCPower}, scale::Dict{String, Float64}, label::L, width::Dict{String,Int64})
-    format, minmax = formatDevice(wattmeter.active.mean, power.injection.active)
-    format = formatWidth(format, width)
+function formatWattmeterData(system::PowerSystem, wattmeter::Wattmeter, power::Union{ACPower, DCPower}, scale::Dict{String, Float64}, label::L, width::Dict{String,Int64}, fmt::Dict{String, String})
+    _width, _fmt, minmax, deviceFlag, analysFlag = formatDevice(wattmeter.active.mean, power.injection.active)
+    width, fmt = printFormat(_width, width, _fmt, fmt)
     labels = toggleLabel(label, wattmeter, wattmeter.label, "wattmeter")
 
-    if format["device"]
+    if deviceFlag
         for (label, i) in labels
             estimate = findEstimate(wattmeter, power.injection.active, power.from.active, power.to.active, i)
-            formatDevice(format, minmax, label, wattmeter.active, estimate, scale["P"], i, wattmeter.layout.index[i])
+            formatDevice(width, minmax, label, wattmeter.active, estimate, scale["P"], i, wattmeter.layout.index[i], analysFlag)
         end
-        formatDevice(format, minmax)
+        formatDevice(width, fmt, minmax, analysFlag)
     end
 
-    return format
+    return width, fmt, deviceFlag, analysFlag
 end
 
 """
     printVarmeterData(system::PowerSystem, device::Measurement, analysis::Analysis, io::IO;
-        label, header, footer, width)
+        label, header, footer, width, fmt)
 
 The function prints data related to varmeters. Optionally, an `IO` may be passed as the
 last argument to redirect the output. Users can also omit the `Analysis` type to print
@@ -345,6 +349,7 @@ The following keywords control the printed data:
 * `header`: Toggles the printing of the header.
 * `footer`: Toggles the printing of the footer.
 * `width`: Specifies the preferred width of each column.
+* `fmt`: Specifies the preferred numeric format of each column.
 
 !!! compat "Julia 1.10"
     The function [`printBusData`](@ref printBusData) requires Julia 1.10 or later.
@@ -364,7 +369,8 @@ end
 power!(system, analysis)
 
 # Print data for all varmeters
-printVarmeterData(system, device, analysis)
+fmt = Dict("Measurement Variance" =>"%.4f")
+printVarmeterData(system, device, analysis; fmt)
 
 # Print data for specific varmeters
 width = Dict("Measurement Mean" => 7)
@@ -375,39 +381,39 @@ printVarmeterData(system, device, analysis; label = 9, width, footer = true)
 """
 function printVarmeterData(system::PowerSystem, device::Measurement, io::IO = stdout;
     label::L = missing, header::B = missing, footer::Bool = false,
-    width::Dict{String, Int64} = Dict{String, Int64}())
+    width::Dict{String, Int64} = Dict{String, Int64}(), fmt::Dict{String, String} = Dict{String, String}())
 
     power = ACPower(Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]),
         Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]),
         Cartesian(Float64[], Float64[]), nothing)
 
-    _printVarmeterData(system, device, power, io, label, header, footer, width)
+    _printVarmeterData(system, device, power, io, label, header, footer, width, fmt)
 end
 
 function printVarmeterData(system::PowerSystem, device::Measurement, analysis::Union{PMUStateEstimation, ACStateEstimation}, io::IO = stdout;
     label::L = missing, header::B = missing, footer::Bool = false,
-    width::Dict{String, Int64} = Dict{String, Int64}())
+    width::Dict{String, Int64} = Dict{String, Int64}(), fmt::Dict{String, String} = Dict{String, String}())
 
-    _printVarmeterData(system, device, analysis.power, io, label, header, footer, width)
+    _printVarmeterData(system, device, analysis.power, io, label, header, footer, width, fmt)
 end
 
 function _printVarmeterData(system::PowerSystem, device::Measurement, power::ACPower, io::IO,
-    label::L, header::B, footer::Bool, width::Dict{String, Int64})
+    label::L, header::B, footer::Bool, width::Dict{String, Int64}, fmt::Dict{String, String})
 
     varmeter = device.varmeter
 
     scale = printScale(system, prefix)
-    format = formatVarmeterData(system, varmeter, power, scale, label, width)
+    width, fmt, deviceFlag, analysFlag = formatVarmeterData(system, varmeter, power, scale, label, width, fmt)
     labels, header = toggleLabelHeader(label, varmeter, varmeter.label, header, "varmeter")
 
-    if format["device"]
-        maxLine = maxLineDevice(format)
+    if deviceFlag
+        maxLine = maxLineDevice(width, analysFlag)
         printTitle(maxLine, "Varmeter Data", header, io)
-        headerDevice(io, format, header, maxLine, label, unitList.reactivePowerLive)
+        headerDevice(io, width, header, maxLine, label, unitList.reactivePowerLive, analysFlag)
 
         for (label, i) in labels
             estimate = findEstimate(varmeter, power.injection.reactive, power.from.reactive, power.to.reactive, i)
-            printDevice(io, format, label, varmeter.reactive, estimate, scale["Q"], i, varmeter.layout.index[i])
+            printDevice(io, width, fmt, label, varmeter.reactive, estimate, scale["Q"], i, varmeter.layout.index[i], analysFlag)
         end
 
         if !isset(label) || footer
@@ -416,26 +422,25 @@ function _printVarmeterData(system::PowerSystem, device::Measurement, power::ACP
     end
 end
 
-function formatVarmeterData(system::PowerSystem, varmeter::Varmeter, power::ACPower, scale::Dict{String, Float64}, label::L, width::Dict{String,Int64})
-    format, minmax = formatDevice(varmeter.reactive.mean, power.injection.reactive)
-    format = formatWidth(format, width)
+function formatVarmeterData(system::PowerSystem, varmeter::Varmeter, power::ACPower, scale::Dict{String, Float64}, label::L, width::Dict{String,Int64}, fmt::Dict{String, String})
+    _width, _fmt, minmax, deviceFlag, analysFlag = formatDevice(varmeter.reactive.mean, power.injection.reactive)
+    width, fmt = printFormat(_width, width, _fmt, fmt)
     labels = toggleLabel(label, varmeter, varmeter.label, "varmeter")
 
-    if format["device"]
+    if deviceFlag
         for (label, i) in labels
             estimate = findEstimate(varmeter, power.injection.reactive, power.from.reactive, power.to.reactive, i)
-            formatDevice(format, minmax, label, varmeter.reactive, estimate, scale["Q"], i, varmeter.layout.index[i])
+            formatDevice(width, minmax, label, varmeter.reactive, estimate, scale["Q"], i, varmeter.layout.index[i], analysFlag)
         end
-
-        formatDevice(format, minmax)
+        formatDevice(width, fmt, minmax, analysFlag)
     end
 
-    return format
+    return width, fmt, deviceFlag, analysFlag
 end
 
 """
     printPmuData(system::PowerSystem, device::Measurement, analysis::Analysis, io::IO;
-        label, header, footer, width)
+        label, header, footer, width, fmt)
 
 The function prints data related to PMUs. Optionally, an `IO` may be passed as the last
 argument to redirect the output. Users can also omit the `Analysis` type to print
@@ -447,6 +452,7 @@ The following keywords control the printed data:
 * `header`: Toggles the printing of the header.
 * `footer`: Toggles the printing of the footer.
 * `width`: Specifies the preferred width of each column.
+* `fmt`: Specifies the preferred numeric format of each column.
 
 !!! compat "Julia 1.10"
     The function [`printPmuData`](@ref printPmuData) requires Julia 1.10 or later.
@@ -466,7 +472,8 @@ end
 current!(system, analysis)
 
 # Print data for all PMUs
-printPmuData(system, device, analysis)
+fmt = Dict("Measurement Variance" =>"%.5f")
+printPmuData(system, device, analysis; fmt)
 
 # Print data for specific PMUs
 width = Dict("Measurement Mean" => 7)
@@ -477,57 +484,58 @@ printPmuData(system, device, analysis; label = "From 6", width, footer = true)
 """
 function printPmuData(system::PowerSystem, device::Measurement, io::IO = stdout;
     label::L = missing, header::B = missing, footer::Bool = false,
-    width::Dict{String, Int64} = Dict{String, Int64}())
+    width::Dict{String, Int64} = Dict{String, Int64}(), fmt::Dict{String, String} = Dict{String, String}())
 
     voltage = Polar(Float64[], Float64[])
     current = ACCurrent(Polar(Float64[], Float64[]), Polar(Float64[], Float64[]), Polar(Float64[], Float64[]), Polar(Float64[], Float64[]))
 
-    _printPmuData(system, device, voltage, current, io, label, header, footer, width)
+    _printPmuData(system, device, voltage, current, io, label, header, footer, width, fmt)
 end
 
 function printPmuData(system::PowerSystem, device::Measurement, analysis::Union{PMUStateEstimation, ACStateEstimation}, io::IO = stdout;
     label::L = missing, header::B = missing, footer::Bool = false,
-    width::Dict{String, Int64} = Dict{String, Int64}())
+    width::Dict{String, Int64} = Dict{String, Int64}(), fmt::Dict{String, String} = Dict{String, String}())
 
-    _printPmuData(system, device, analysis.voltage, analysis.current, io, label, header, footer, width)
+    _printPmuData(system, device, analysis.voltage, analysis.current, io, label, header, footer, width, fmt)
 end
 
 function printPmuData(system::PowerSystem, device::Measurement, analysis::DCStateEstimation, io::IO = stdout;
     label::L = missing, header::B = missing, footer::Bool = false,
-    width::Dict{String, Int64} = Dict{String, Int64}())
+    width::Dict{String, Int64} = Dict{String, Int64}(), fmt::Dict{String, String} = Dict{String, String}())
 
-    _printPmuData(system, device, analysis.voltage, io, label, header, footer, width)
+    _printPmuData(system, device, analysis.voltage, io, label, header, footer, width, fmt)
 end
 
 function _printPmuData(system::PowerSystem, device::Measurement, voltage::Polar, current::ACCurrent, io::IO,
-    label, header, footer, width::Dict{String, Int64})
+    label, header, footer, width::Dict{String, Int64}, fmt::Dict{String, String})
 
     pmu = device.pmu
 
     scale = printScale(system, prefix)
-    formatV, formatθ, formatI, formatψ = formatPmuData(system, pmu, voltage, current, scale, label, width)
+    widthV, fmtV, deviceFlagV, analysFlagV, widthθ, fmtθ, widthI, fmtI, deviceFlagI, analysFlagI, widthψ, fmtψ = formatPmuData(system, pmu, voltage, current, scale, label, width, fmt)
     labels, header = toggleLabelHeader(label, pmu, pmu.label, header, "pmu")
 
-    if formatV["device"]
-        maxLineV = maxLineDevice(formatV)
-        maxLineθ = maxLineDevice(formatθ, label = false)
+    if deviceFlagV
+        maxLineV = maxLineDevice(widthV, analysFlagV)
+        maxLineθ = maxLineDevice(widthθ, analysFlagV; label = false)
         if header
             Printf.@printf(io, "\n|%s|%s|\n", "-"^maxLineV, "-"^(maxLineθ))
-            Printf.@printf(io, "| %s%*s| %s%*s|\n", "PMU Voltage Magnitude Data", maxLineV - length("PMU Voltage Magnitude Data") - 1, "", "PMU Voltage Angle Data", maxLineθ - length("PMU Voltage Angle Data") - 1, "")
+            Printf.@printf(io, "| %s%*s| %s%*s|\n", "PMU Voltage Magnitude Data", maxLineV - 27, "", "PMU Voltage Angle Data", maxLineθ - 23, "")
         end
 
-        headerDevice(io, formatV, formatθ, header, maxLineV, maxLineθ, label, unitList.voltageMagnitudeLive, unitList.voltageAngleLive)
+        headerDevice(io, widthV, widthθ, header, maxLineV, maxLineθ, label, unitList.voltageMagnitudeLive, unitList.voltageAngleLive, analysFlagV)
 
         scaleV = 1.0
         for (label, i) in labels
             if pmu.layout.bus[i]
                 indexBus = pmu.layout.index[i]
+
                 if prefix.voltageMagnitude != 0.0
-                    scaleV = (system.base.voltage.value[indexBus] * system.base.voltage.prefix) / prefix.voltageMagnitude
+                    scaleV = scaleMagnitude(system.base.voltage, indexBus)
                 end
 
-                printDevice(io, formatV, label, pmu.magnitude, voltage.magnitude, scaleV, i, indexBus; newLine = false, last = false)
-                printDevice(io, formatθ, label, pmu.angle, voltage.angle, scale["θ"], i, indexBus; printLabel = false)
+                printDevice(io, widthV, fmtV, label, pmu.magnitude, voltage.magnitude, scaleV, i, indexBus, analysFlagV; newLine = false, last = false)
+                printDevice(io, widthθ, fmtθ, label, pmu.angle, voltage.angle, scale["θ"], i, indexBus, analysFlagV; printLabel = false)
             end
         end
 
@@ -537,15 +545,15 @@ function _printPmuData(system::PowerSystem, device::Measurement, voltage::Polar,
         end
     end
 
-    if formatI["device"]
-        maxLineI = maxLineDevice(formatI)
-        maxLineψ = maxLineDevice(formatψ; label = false)
+    if deviceFlagI
+        maxLineI = maxLineDevice(widthI, analysFlagI)
+        maxLineψ = maxLineDevice(widthψ, analysFlagI; label = false)
         if header
             Printf.@printf(io, "\n|%s|%s|\n", "-"^maxLineI, "-"^(maxLineψ ))
-            Printf.@printf(io, "| %s%*s| %s%*s|\n", "PMU Current Magnitude Data", maxLineI - length("PMU Current Magnitude Data") - 1, "", "PMU Current Angle Data", maxLineψ - length("PMU Current Angle Data") - 1, "")
+            Printf.@printf(io, "| %s%*s| %s%*s|\n", "PMU Current Magnitude Data", maxLineI - 27, "", "PMU Current Angle Data", maxLineψ - 23, "")
         end
 
-        headerDevice(io, formatI, formatψ, header, maxLineI, maxLineψ, label, unitList.currentMagnitudeLive, unitList.currentAngleLive)
+        headerDevice(io, widthI, widthψ, header, maxLineI, maxLineψ, label, unitList.currentMagnitudeLive, unitList.currentAngleLive, analysFlagI)
 
         scaleI = 1.0
         for (label, i) in labels
@@ -554,18 +562,17 @@ function _printPmuData(system::PowerSystem, device::Measurement, voltage::Polar,
 
                 if prefix.currentMagnitude != 0.0
                     if pmu.layout.from[i]
-                        j = system.branch.layout.from[indexBranch]
+                        scaleI = scaleMagnitude(system, system.branch.layout.from[indexBranch])
                     else
-                        j = system.branch.layout.to[indexBranch]
+                        scaleI = scaleMagnitude(system, system.branch.layout.to[indexBranch])
                     end
-                    scaleI = system.base.power.value * system.base.power.prefix / (sqrt(3) * system.base.voltage.value[j] * system.base.voltage.prefix * prefix.currentMagnitude)
                 end
 
                 estimate = findEstimate(pmu, current.from.magnitude, current.to.magnitude, i)
-                printDevice(io, formatI, label, pmu.magnitude, estimate, scaleI, i, indexBranch; newLine = false, last = false)
+                printDevice(io, widthI, fmtI, label, pmu.magnitude, estimate, scaleI, i, indexBranch, analysFlagI; newLine = false, last = false)
 
                 estimate = findEstimate(pmu, current.from.angle, current.to.angle, i)
-                printDevice(io, formatψ, label, pmu.angle, estimate, scale["ψ"], i, indexBranch; printLabel = false)
+                printDevice(io, widthψ, fmtψ, label, pmu.angle, estimate, scale["ψ"], i, indexBranch, analysFlagI; printLabel = false)
             end
         end
 
@@ -578,23 +585,23 @@ function _printPmuData(system::PowerSystem, device::Measurement, voltage::Polar,
 end
 
 function _printPmuData(system::PowerSystem, device::Measurement, voltage::PolarAngle, io::IO,
-    label, header, footer, width::Dict{String, Int64})
+    label, header, footer, width::Dict{String, Int64}, fmt::Dict{String, String})
 
     pmu = device.pmu
 
     scale = printScale(system, prefix)
-    format = formatPmuData(system, pmu, voltage, scale, label, width)
+    width, fmt, deviceFlag, analysFlag = formatPmuData(system, pmu, voltage, scale, label, width, fmt)
     labels, header = toggleLabelHeader(label, pmu, pmu.label, header, "pmu")
 
-    if format["device"]
-        maxLine = maxLineDevice(format)
+    if deviceFlag
+        maxLine = maxLineDevice(width, analysFlag)
         printTitle(maxLine, "PMU Voltage Angle Data", header, io)
-        headerDevice(io, format, header, maxLine, label, unitList.voltageAngleLive)
+        headerDevice(io, width, header, maxLine, label, unitList.voltageAngleLive, analysFlag)
 
         for (label, i) in labels
             if pmu.layout.bus[i]
                 indexBus = pmu.layout.index[i]
-                printDevice(io, format, label, pmu.angle, voltage.angle, scale["θ"], i, indexBus)
+                printDevice(io, width, fmt, label, pmu.angle, voltage.angle, scale["θ"], i, indexBus, analysFlag)
             end
         end
 
@@ -604,22 +611,22 @@ function _printPmuData(system::PowerSystem, device::Measurement, voltage::PolarA
     end
 end
 
-function formatPmuData(system::PowerSystem, pmu::PMU, voltage::Polar, current::ACCurrent, scale::Dict{String, Float64}, label::L, width::Dict{String,Int64})
-    formatV, minmaxV = formatDevice(pmu.magnitude.mean, voltage.magnitude)
-    formatV = formatWidth(formatV, width)
+function formatPmuData(system::PowerSystem, pmu::PMU, voltage::Polar, current::ACCurrent, scale::Dict{String, Float64}, label::L, width::Dict{String,Int64}, fmt::Dict{String, String})
+    _width, _fmt, minmaxV, deviceFlagV, analysFlagV = formatDevice(pmu.magnitude.mean, voltage.magnitude)
+    widthV, fmtV = printFormat(_width, width, _fmt, fmt)
 
-    formatθ, minmaxθ = formatDevice(pmu.magnitude.mean, voltage.angle)
-    formatθ = formatWidth(formatθ, width)
+    _width, _fmt, minmaxθ, _, _ = formatDevice(pmu.magnitude.mean, voltage.angle)
+    widthθ, fmtθ = printFormat(_width, width, _fmt, fmt)
 
-    formatI, minmaxI = formatDevice(pmu.magnitude.mean, current.from.magnitude)
-    formatI = formatWidth(formatI, width)
+    _width, _fmt, minmaxI, deviceFlagI, analysFlagI = formatDevice(pmu.magnitude.mean, current.from.magnitude)
+    widthI, fmtI = printFormat(_width, width, _fmt, fmt)
 
-    formatψ, minmaxψ = formatDevice(pmu.magnitude.mean, current.from.angle)
-    formatψ = formatWidth(formatψ, width)
+    _width, _fmt, minmaxψ, _, _ = formatDevice(pmu.magnitude.mean, current.from.angle)
+    widthψ, fmtψ = printFormat(_width, width, _fmt, fmt)
 
     labels = toggleLabel(label, pmu, pmu.label, "pmu")
 
-    if formatV["device"]
+    if deviceFlagV
         scaleV = 1.0
         scaleI = 1.0
         for (label, i) in labels
@@ -627,81 +634,85 @@ function formatPmuData(system::PowerSystem, pmu::PMU, voltage::Polar, current::A
 
             if pmu.layout.bus[i]
                 if prefix.voltageMagnitude != 0.0
-                    scaleV = (system.base.voltage.value[indexBusBranch] * system.base.voltage.prefix) / prefix.voltageMagnitude
+                    scaleV = scaleMagnitude(system.base.voltage, indexBusBranch)
                 end
-                formatDevice(formatV, minmaxV, label, pmu.magnitude, voltage.magnitude, scaleV, i, indexBusBranch)
-                formatDevice(formatθ, minmaxθ, label, pmu.angle, voltage.angle, scale["θ"], i, indexBusBranch)
+
+                formatDevice(widthV, minmaxV, label, pmu.magnitude, voltage.magnitude, scaleV, i, indexBusBranch, analysFlagV)
+                formatDevice(widthθ, minmaxθ, label, pmu.angle, voltage.angle, scale["θ"], i, indexBusBranch, analysFlagV)
             else
                 if prefix.currentMagnitude != 0.0
                     if pmu.layout.from[i]
-                        j = system.branch.layout.from[indexBusBranch]
+                        scaleI = scaleMagnitude(system, system.branch.layout.from[indexBusBranch])
                     else
-                        j = system.branch.layout.to[indexBusBranch]
+                        scaleI = scaleMagnitude(system, system.branch.layout.to[indexBusBranch])
                     end
-                    scaleI = system.base.power.value * system.base.power.prefix / (sqrt(3) * system.base.voltage.value[j] * system.base.voltage.prefix * prefix.currentMagnitude)
                 end
 
                 estimate = findEstimate(pmu, current.from.magnitude, current.to.magnitude, i)
-                formatDevice(formatI, minmaxI, label, pmu.magnitude, estimate, scaleI, i, indexBusBranch)
+                formatDevice(widthI, minmaxI, label, pmu.magnitude, estimate, scaleI, i, indexBusBranch, analysFlagI)
 
                 estimate = findEstimate(pmu, current.from.angle, current.to.angle, i)
-                formatDevice(formatψ, minmaxψ, label, pmu.angle, estimate, scale["ψ"], i, indexBusBranch)
+                formatDevice(widthψ, minmaxψ, label, pmu.angle, estimate, scale["ψ"], i, indexBusBranch, analysFlagI)
             end
-
         end
 
-        if formatV["Label"] == 0
-            formatV["device"] = false
+        if widthV["Label"] == 0
+            deviceFlagV = false
         else
-            formatDevice(formatV, minmaxV)
-            formatDevice(formatθ, minmaxθ)
+            formatDevice(widthV, fmtV, minmaxV, analysFlagV)
+            formatDevice(widthθ, fmtθ, minmaxθ, analysFlagV)
         end
 
-        if formatI["Label"] == 0
-            formatI["device"] = false
+        if widthI["Label"] == 0
+            deviceFlagI = false
         else
-            formatDevice(formatI, minmaxI)
-            formatDevice(formatψ, minmaxψ)
+            formatDevice(widthI, fmtI, minmaxI, analysFlagI)
+            formatDevice(widthψ, fmtψ, minmaxψ, analysFlagI)
         end
     end
 
-    return formatV, formatθ, formatI, formatψ
+    return widthV, fmtV, deviceFlagV, analysFlagV, widthθ, fmtθ, widthI, fmtI, deviceFlagI, analysFlagI, widthψ, fmtψ
 end
 
-function formatPmuData(system::PowerSystem, pmu::PMU, voltage::PolarAngle, scale::Dict{String, Float64}, label::L, width::Dict{String,Int64})
-    format, minmax = formatDevice(pmu.magnitude.mean, voltage.angle)
-    format = formatWidth(format, width)
+function formatPmuData(system::PowerSystem, pmu::PMU, voltage::PolarAngle, scale::Dict{String, Float64}, label::L, width::Dict{String,Int64}, fmt::Dict{String, String})
+    _width, _fmt, minmax, deviceFlag, analysFlag = formatDevice(pmu.magnitude.mean, voltage.angle)
+    width, fmt = printFormat(_width, width, _fmt, fmt)
 
     labels = toggleLabel(label, pmu, pmu.label, "pmu")
 
-    if format["device"]
+    if deviceFlag
         for (label, i) in labels
             if pmu.layout.bus[i]
-                formatDevice(format, minmax, label, pmu.angle, voltage.angle, scale["θ"], i, pmu.layout.index[i])
+                formatDevice(width, minmax, label, pmu.angle, voltage.angle, scale["θ"], i, pmu.layout.index[i], analysFlag)
             end
         end
 
-        if format["Label"] == 0
-            format["device"] = false
+        if width["Label"] == 0
+            deviceFlag = false
         else
-            formatDevice(format, minmax)
+            formatDevice(width, fmt, minmax, analysFlag)
         end
     end
 
-    return format
+    return width, fmt, deviceFlag, analysFlag
 end
 
 function formatDevice(deviceMean::Array{Float64,1}, analysisArray::Array{Float64,1})
-    format = Dict(
-            "Label" => 0,
-            "Measurement Mean" => 4,
-            "Measurement Variance" => 8,
-            "State Estimation Estimate" => 8,
-            "State Estimation Residual" => 8,
-            "Status" => 6,
-            "device" => !isempty(deviceMean),
-            "analysis" => !isempty(analysisArray),
-        )
+    width = Dict(
+        "Label" => 0,
+        "Measurement Mean" => 4,
+        "Measurement Variance" => 8,
+        "State Estimation Estimate" => 8,
+        "State Estimation Residual" => 8,
+        "Status" => 6
+    )
+
+    fmt = Dict(
+        "Measurement Mean" => "%*.4f",
+        "Measurement Variance" => "%*.2e",
+        "State Estimation Estimate" => "%*.4f",
+        "State Estimation Residual" => "%*.4f"
+    )
 
     minmax = Dict(
         "minMean" => 0.0,
@@ -710,57 +721,57 @@ function formatDevice(deviceMean::Array{Float64,1}, analysisArray::Array{Float64
         "minEstimate" => 0.0,
         "maxEstimate" => 0.0,
         "minResidual" => 0.0,
-        "maxResidual" => 0.0,
+        "maxResidual" => 0.0
     )
 
-    return format, minmax
+    return width, fmt, minmax, !isempty(deviceMean), !isempty(analysisArray)
 end
 
-function headerDevice(io::IO, format::Dict{String, Integer}, header::Bool, maxLine::Int64, labelSet::L, unitLive::String)
+function headerDevice(io::IO, width::Dict{String, Int64}, header::Bool, maxLine::Int64, labelSet::L, unitLive::String, flag::Bool)
     if header
         Printf.@printf(io, "|%s|\n", "-"^maxLine)
-        printHeader1(io, format)
-        printHeader2(io, format)
-        printHeader3(io, format)
-        printHeader4(io, format, unitLive)
-        printHeader5(io, format)
+        printHeader1(io, width, flag)
+        printHeader2(io, width, flag)
+        printHeader3(io, width, flag)
+        printHeader4(io, width, unitLive, flag)
+        printHeader5(io, width, flag)
     elseif !isset(labelSet)
         Printf.@printf(io, "|%s|\n", "-"^maxLine)
     end
 end
 
-function headerDevice(io::IO, format1::Dict{String, Integer}, format2::Dict{String, Integer}, header::Bool, maxLine1::Int64, maxLine2::Int64, labelSet::L, unitLive1::String, unitLive2::String)
+function headerDevice(io::IO, width1::Dict{String, Int64}, width2::Dict{String, Int64}, header::Bool, maxLine1::Int64, maxLine2::Int64, labelSet::L, unitLive1::String, unitLive2::String, flag::Bool)
     if header
         Printf.@printf(io, "|%s|%s|\n", "-"^maxLine1, "-"^maxLine2)
-        printHeader1(io, format1; newLine = false, last = false)
-        printHeader1(io, format2; label = false)
-        printHeader2(io, format1; newLine = false, last = false)
-        printHeader2(io, format2; label = false)
-        printHeader3(io, format1; newLine = false, last = false)
-        printHeader3(io, format2; label = false)
-        printHeader4(io, format1, unitLive1; newLine = false, last = false)
-        printHeader4(io, format2, unitLive2; label = false)
-        printHeader5(io, format1; newLine = false, last = false)
-        printHeader5(io, format2; label = false)
+        printHeader1(io, width1, flag; newLine = false, last = false)
+        printHeader1(io, width2, flag; label = false)
+        printHeader2(io, width1, flag; newLine = false, last = false)
+        printHeader2(io, width2, flag; label = false)
+        printHeader3(io, width1, flag; newLine = false, last = false)
+        printHeader3(io, width2, flag; label = false)
+        printHeader4(io, width1, unitLive1, flag; newLine = false, last = false)
+        printHeader4(io, width2, unitLive2, flag; label = false)
+        printHeader5(io, width1, flag; newLine = false, last = false)
+        printHeader5(io, width2, flag; label = false)
     elseif !isset(labelSet)
         Printf.@printf(io, "|%s|%s|\n", "-"^maxLine1, "-"^(maxLine2 - 8))
     end
 end
 
-function printHeader1(io::IO, format::Dict{String, Integer}; label = true, newLine = true, last = true)
+function printHeader1(io::IO, width::Dict{String, Int64}, flag::Bool; label = true, newLine = true, last = true)
     if label
         Printf.@printf(io, "| %*s%s%*s ",
-            floor(Int, (format["Label"] - 5) / 2), "", "Label", ceil(Int, (format["Label"]  - 5) / 2) , "",
+            floor(Int, (width["Label"] - 5) / 2), "", "Label", ceil(Int, (width["Label"]  - 5) / 2) , "",
         )
     end
 
     Printf.@printf(io, "| %*s%s%*s |",
-        floor(Int, (format["Measurement Mean"] + format["Measurement Variance"] - 8) / 2), "", "Measurement", ceil(Int, (format["Measurement Mean"] + format["Measurement Variance"] - 8) / 2) , "",
+        floor(Int, (width["Measurement Mean"] + width["Measurement Variance"] - 8) / 2), "", "Measurement", ceil(Int, (width["Measurement Mean"] + width["Measurement Variance"] - 8) / 2) , "",
     )
 
-    if format["analysis"]
+    if flag
         Printf.@printf(io, " %*s%s%*s |",
-            floor(Int, (format["State Estimation Estimate"] + format["State Estimation Residual"] - 13) / 2), "", "State Estimation", ceil(Int, (format["State Estimation Estimate"] + format["State Estimation Residual"] - 13) / 2) , "",
+            floor(Int, (width["State Estimation Estimate"] + width["State Estimation Residual"] - 13) / 2), "", "State Estimation", ceil(Int, (width["State Estimation Estimate"] + width["State Estimation Residual"] - 13) / 2) , "",
         )
     end
 
@@ -775,21 +786,21 @@ function printHeader1(io::IO, format::Dict{String, Integer}; label = true, newLi
     end
 end
 
-function printHeader2(io::IO, format::Dict{String, Integer}; label = true, newLine = true, last = true)
+function printHeader2(io::IO, width::Dict{String, Int64}, flag::Bool; label = true, newLine = true, last = true)
     if label
-        Printf.@printf(io, "| %*s ", format["Label"], "")
+        Printf.@printf(io, "| %*s ", width["Label"], "")
     end
 
     Printf.@printf(io, "| %*s |",
-        format["Measurement Mean"] + format["Measurement Variance"] + 3, "",
+        width["Measurement Mean"] + width["Measurement Variance"] + 3, "",
     )
-    if format["analysis"]
+    if flag
         Printf.@printf(io, " %*s |",
-            format["State Estimation Estimate"] + format["State Estimation Residual"] + 3, "",
+            width["State Estimation Estimate"] + width["State Estimation Residual"] + 3, "",
         )
     end
 
-    Printf.@printf io " %*s " format["Status"] ""
+    Printf.@printf io " %*s " width["Status"] ""
 
     if last
         Printf.@printf io "|"
@@ -800,24 +811,24 @@ function printHeader2(io::IO, format::Dict{String, Integer}; label = true, newLi
     end
 end
 
-function printHeader3(io::IO, format::Dict{String, Integer}; label = true, newLine = true, last = true)
+function printHeader3(io::IO, width::Dict{String, Int64}, flag::Bool; label = true, newLine = true, last = true)
     if label
-        Printf.@printf(io, "| %*s ", format["Label"], "")
+        Printf.@printf(io, "| %*s ", width["Label"], "")
     end
 
     Printf.@printf(io, "| %*s | %*s |",
-        format["Measurement Mean"], "Mean",
-        format["Measurement Variance"], "Variance",
+        width["Measurement Mean"], "Mean",
+        width["Measurement Variance"], "Variance",
     )
 
-    if format["analysis"]
+    if flag
         Printf.@printf(io, " %*s | %*s |",
-            format["State Estimation Estimate"], "Estimate",
-            format["State Estimation Residual"], "Residual",
+            width["State Estimation Estimate"], "Estimate",
+            width["State Estimation Residual"], "Residual",
         )
     end
 
-    Printf.@printf io " %*s " format["Status"] ""
+    Printf.@printf io " %*s " width["Status"] ""
 
     if last
         Printf.@printf io "|"
@@ -828,24 +839,24 @@ function printHeader3(io::IO, format::Dict{String, Integer}; label = true, newLi
     end
 end
 
-function printHeader4(io::IO, format::Dict{String, Integer}, unitLive::String; label = true, newLine = true, last = true)
+function printHeader4(io::IO, width::Dict{String, Int64}, unitLive::String, flag::Bool; label = true, newLine = true, last = true)
     if label
-        Printf.@printf(io, "| %*s ", format["Label"], "")
+        Printf.@printf(io, "| %*s ", width["Label"], "")
     end
 
     Printf.@printf(io, "| %*s | %*s |",
-        format["Measurement Mean"], "[$unitLive]",
-        format["Measurement Variance"], "[$unitLive]",
+        width["Measurement Mean"], "[$unitLive]",
+        width["Measurement Variance"], "[$unitLive]",
     )
 
-    if format["analysis"]
+    if flag
         Printf.@printf(io, " %*s | %*s |",
-            format["State Estimation Estimate"], "[$unitLive]",
-            format["State Estimation Residual"], "[$unitLive]",
+            width["State Estimation Estimate"], "[$unitLive]",
+            width["State Estimation Residual"], "[$unitLive]",
         )
     end
 
-    Printf.@printf io " %*s " format["Status"] ""
+    Printf.@printf io " %*s " width["Status"] ""
 
     if last
         Printf.@printf io "|"
@@ -856,23 +867,23 @@ function printHeader4(io::IO, format::Dict{String, Integer}, unitLive::String; l
     end
 end
 
-function printHeader5(io::IO, format::Dict{String, Integer}; label = true, newLine = true, last = true)
+function printHeader5(io::IO, width::Dict{String, Int64}, flag::Bool; label = true, newLine = true, last = true)
     if label
-        Printf.@printf(io, "|-%*s-", format["Label"], "-"^format["Label"])
+        Printf.@printf(io, "|-%*s-", width["Label"], "-"^width["Label"])
     end
 
     Printf.@printf(io, "|-%*s-|-%*s-",
-        format["Measurement Mean"], "-"^format["Measurement Mean"],
-        format["Measurement Variance"], "-"^format["Measurement Variance"],
+        width["Measurement Mean"], "-"^width["Measurement Mean"],
+        width["Measurement Variance"], "-"^width["Measurement Variance"],
     )
-    if format["analysis"]
+    if flag
         Printf.@printf(io, "|-%*s-|-%*s-",
-            format["State Estimation Estimate"], "-"^format["State Estimation Estimate"],
-            format["State Estimation Residual"], "-"^format["State Estimation Residual"],
+            width["State Estimation Estimate"], "-"^width["State Estimation Estimate"],
+            width["State Estimation Residual"], "-"^width["State Estimation Residual"],
         )
     end
 
-    Printf.@printf io "|-%*s-" format["Status"] "-"^format["Status"]
+    Printf.@printf io "|-%*s-" width["Status"] "-"^width["Status"]
 
     if last
         Printf.@printf io "|"
@@ -883,46 +894,56 @@ function printHeader5(io::IO, format::Dict{String, Integer}; label = true, newLi
     end
 end
 
-function maxLineDevice(format::Dict{String,Integer}; label = true)
-    maxLine = format["Measurement Mean"] + format["Measurement Variance"] + format["Status"] + 8
+function maxLineDevice(width::Dict{String, Int64}, flag::Bool; label = true)
+    maxLine = width["Measurement Mean"] + width["Measurement Variance"] + width["Status"] + 8
 
-    if format["analysis"]
-        maxLine += format["State Estimation Estimate"] + format["State Estimation Residual"] + 6
+    if flag
+        maxLine += width["State Estimation Estimate"] + width["State Estimation Residual"] + 6
     end
 
     if label
-        maxLine += format["Label"] + 3
+        maxLine += width["Label"] + 3
     end
 
     return maxLine
 end
 
-function printDevice(io::IO, format::Dict{String,Integer}, label::L, meter::GaussMeter, estimate::Array{Float64,1}, scale::Float64, i::Int64, j::Int64; printLabel = true, newLine = true, last = true)
+function printDevice(io::IO, width::Dict{String, Int64}, fmt::Dict{String, String}, label::L, meter::GaussMeter, estimate::Array{Float64,1}, scale::Float64, i::Int64, j::Int64, flag::Bool; printLabel = true, newLine = true, last = true)
     if printLabel
-        Printf.@printf(io, "| %-*s ", format["Label"], label)
+        Printf.@printf(io, "| %-*s ", width["Label"], label)
     end
 
-    Printf.@printf(io, "| %*.4f | %*.4e |",
-        format["Measurement Mean"], meter.mean[i] * scale,
-        format["Measurement Variance"], meter.variance[i]  * scale,
+    print(io, Printf.format(
+        Printf.Format(
+            "| $(fmt["Measurement Mean"]) | $(fmt["Measurement Variance"]) |"
+        ),
+        width["Measurement Mean"], meter.mean[i] * scale,
+        width["Measurement Variance"], meter.variance[i]  * scale)
     )
 
-    if format["analysis"]
-        Printf.@printf(io, " %*.4f |",
-            format["State Estimation Estimate"], estimate[j] * scale,
+    if flag
+        print(io, Printf.format(
+            Printf.Format(
+                " $(fmt["State Estimation Estimate"]) |"
+            ),
+            width["State Estimation Estimate"], estimate[j] * scale)
         )
+
         if meter.status[i]  == 1
-            Printf.@printf(io, " %*.4f |",
-                format["State Estimation Residual"], (meter.mean[i] - estimate[j]) * scale,
+            print(io, Printf.format(
+                Printf.Format(
+                    " $(fmt["State Estimation Residual"]) |"
+                ),
+                width["State Estimation Residual"], (meter.mean[i] - estimate[j]) * scale)
             )
         else
             Printf.@printf(io, " %*s |",
-                format["State Estimation Residual"], "-",
+            width["State Estimation Residual"], "-",
             )
         end
     end
 
-    Printf.@printf(io, " %*i ", format["Status"], meter.status[i])
+    Printf.@printf(io, " %*i ", width["Status"], meter.status[i])
 
     if last
         Printf.@printf io "|"
@@ -943,12 +964,20 @@ function findEstimate(device, analysisBus::Array{Float64,1}, analysisFrom::Array
     end
 end
 
-function formatDevice(format::Dict{String,Integer}, minmax::Dict{String, Float64}, label::String, meter::GaussMeter, estimate::Array{Float64,1}, scale::Float64, i::Int64, j::Int64)
+function findEstimate(device, analysisFrom::Array{Float64,1}, analysisTo::Array{Float64,1}, i::Int64)
+    if device.layout.from[i]
+        return analysisFrom
+    else
+        return analysisTo
+    end
+end
+
+function formatDevice(width::Dict{String, Int64}, minmax::Dict{String, Float64}, label::String, meter::GaussMeter, estimate::Array{Float64,1}, scale::Float64, i::Int64, j::Int64, flag::Bool)
     minmax["maxMean"] = max(meter.mean[i] * scale, minmax["maxMean"])
     minmax["minMean"] = min(meter.mean[i] * scale, minmax["minMean"])
     minmax["maxVariance"] = max(meter.variance[i] * scale, minmax["maxVariance"])
 
-    if format["analysis"]
+    if flag
         minmax["maxEstimate"] = max(estimate[j] * scale, minmax["maxEstimate"])
         minmax["minEstimate"] = min(estimate[j] * scale, minmax["minEstimate"])
 
@@ -958,24 +987,33 @@ function formatDevice(format::Dict{String,Integer}, minmax::Dict{String, Float64
         end
     end
 
-    format["Label"] = max(length(label), format["Label"])
+    width["Label"] = max(textwidth(label), width["Label"])
 end
 
-function formatDevice(format::Dict{String,Integer}, minmax::Dict{String, Float64})
-    format["Label"] = max(format["Label"], 5)
-    format["Measurement Mean"] = max(length(Printf.@sprintf("%.4f", minmax["maxMean"])), length(Printf.@sprintf("%.4f", minmax["minMean"])), format["Measurement Mean"])
-    format["Measurement Variance"] = max(length(Printf.@sprintf("%.4e", minmax["maxVariance"])), format["Measurement Variance"])
+function formatDevice(width::Dict{String, Int64}, fmt::Dict{String, String}, minmax::Dict{String, Float64}, flag::Bool)
+    width["Label"] = max(width["Label"], 5)
 
-    if format["analysis"]
-        format["State Estimation Estimate"] = max(length(Printf.@sprintf("%.4f", minmax["maxEstimate"])), length(Printf.@sprintf("%.4f", minmax["minEstimate"])), format["State Estimation Estimate"])
-        format["State Estimation Residual"] = max(length(Printf.@sprintf("%.4f",  minmax["maxResidual"])), length(Printf.@sprintf("%.4f",  minmax["minResidual"])), format["State Estimation Residual"])
-    end
-end
+    width["Measurement Mean"] = max(
+        textwidth(Printf.format(Printf.Format(fmt["Measurement Mean"]), 0, minmax["maxMean"])),
+        textwidth(Printf.format(Printf.Format(fmt["Measurement Mean"]), 0, minmax["minMean"])),
+        width["Measurement Mean"]
+    )
 
-function findEstimate(device, analysisFrom::Array{Float64,1}, analysisTo::Array{Float64,1}, i::Int64)
-    if device.layout.from[i]
-        return analysisFrom
-    else
-        return analysisTo
+    width["Measurement Variance"] = max(
+        textwidth(Printf.format(Printf.Format(fmt["Measurement Variance"]), 0, minmax["maxVariance"])),
+        width["Measurement Variance"]
+    )
+
+    if flag
+        width["State Estimation Estimate"] = max(
+            textwidth(Printf.format(Printf.Format(fmt["State Estimation Estimate"]), 0, minmax["maxEstimate"])),
+            textwidth(Printf.format(Printf.Format(fmt["State Estimation Estimate"]), 0, minmax["minEstimate"])),
+            width["State Estimation Estimate"]
+        )
+        width["State Estimation Residual"] = max(
+            textwidth(Printf.format(Printf.Format(fmt["State Estimation Residual"]), 0, minmax["maxResidual"])),
+            textwidth(Printf.format(Printf.Format(fmt["State Estimation Residual"]), 0, minmax["minResidual"])),
+            width["State Estimation Residual"]
+        )
     end
 end

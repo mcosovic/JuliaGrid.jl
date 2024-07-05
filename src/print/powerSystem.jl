@@ -1,6 +1,6 @@
 """
     printBusData(system::PowerSystem, analysis::Analysis, io::IO;
-        label, header, footer, width)
+        label, header, footer, width, fmt)
 
 The function prints voltages, powers, and currents related to buses. Optionally, an `IO`
 may be passed as the last argument to redirect the output.
@@ -11,6 +11,7 @@ The following keywords control the printed data:
 * `header`: Toggles the printing of the header.
 * `footer`: Toggles the printing of the footer.
 * `width`: Specifies the preferred width of each column.
+* `fmt`: Specifies the preferred numeric format of each column.
 
 !!! compat "Julia 1.10"
     The function [`printBusData`](@ref printBusData) requires Julia 1.10 or later.
@@ -30,7 +31,8 @@ end
 power!(system, analysis)
 
 # Print data for all buses
-printBusData(system, analysis)
+fmt = Dict("Voltage Angle" => "%.2f")
+printBusData(system, analysis; fmt)
 
 # Print data for specific buses
 width = Dict("Power Injection Active" => 8)
@@ -42,22 +44,22 @@ printBusData(system, analysis; label = 14, width, footer = true)
 """
 function printBusData(system::PowerSystem, analysis::AC, io::IO = stdout;
     label::L = missing, header::B = missing, footer::Bool = false,
-    width::Dict{String, Int64} = Dict{String, Int64}())
+    width::Dict{String, Int64} = Dict{String, Int64}(), fmt::Dict{String, String} = Dict{String, String}())
 
     scale = printScale(system, prefix)
     unitData = printUnitData(unitList)
-    format = formatBusData(system, analysis, scale, label, width)
+    width, fmt, powerFlag, currentFlag = formatBusData(system, analysis, scale, label, width, fmt)
     labels, header = toggleLabelHeader(label, system.bus, system.bus.label, header, "bus")
 
-    maxLine = format["Label"] + format["Voltage Magnitude"] + format["Voltage Angle"] + 8
-    if format["power"]
-        maxLine += format["Power Generation Active"] + format["Power Generation Reactive"] +
-                   format["Power Demand Active"] + format["Power Demand Reactive"] +
-                   format["Power Injection Active"] + format["Power Injection Reactive"] +
-                   format["Shunt Power Active"] + format["Shunt Power Reactive"] + 24
+    maxLine = width["Label"] + width["Voltage Magnitude"] + width["Voltage Angle"] + 8
+    if powerFlag
+        maxLine += width["Power Generation Active"] + width["Power Generation Reactive"] +
+                   width["Power Demand Active"] + width["Power Demand Reactive"] +
+                   width["Power Injection Active"] + width["Power Injection Reactive"] +
+                   width["Shunt Power Active"] + width["Shunt Power Reactive"] + 24
     end
-    if format["current"]
-        maxLine += format["Current Injection Magnitude"] + format["Current Injection Angle"] + 6
+    if currentFlag
+        maxLine += width["Current Injection Magnitude"] + width["Current Injection Angle"] + 6
     end
 
     printTitle(maxLine, "Bus Data", header, io)
@@ -66,114 +68,114 @@ function printBusData(system::PowerSystem, analysis::AC, io::IO = stdout;
         Printf.@printf(io, "|%s|\n", "-"^maxLine)
 
         Printf.@printf(io, "| %*s%s%*s | %*s%s%*s |",
-            floor(Int, (format["Label"] - 5) / 2), "", "Label", ceil(Int, (format["Label"]  - 5) / 2) , "",
-            floor(Int, (format["Voltage Magnitude"] + format["Voltage Angle"] - 4) / 2), "", "Voltage", ceil(Int, (format["Voltage Magnitude"] + format["Voltage Angle"] - 4) / 2) , "",
+            floor(Int, (width["Label"] - 5) / 2), "", "Label", ceil(Int, (width["Label"]  - 5) / 2) , "",
+            floor(Int, (width["Voltage Magnitude"] + width["Voltage Angle"] - 4) / 2), "", "Voltage", ceil(Int, (width["Voltage Magnitude"] + width["Voltage Angle"] - 4) / 2) , "",
         )
-        if format["power"]
+        if powerFlag
             Printf.@printf(io, " %*s%s%*s | %*s%s%*s | %*s%s%*s | %*s%s%*s |",
-                floor(Int, (format["Power Generation Active"] + format["Power Generation Reactive"] - 13) / 2), "", "Power Generation", ceil(Int, (format["Power Generation Active"] + format["Power Generation Reactive"] - 13) / 2) , "",
-                floor(Int, (format["Power Demand Active"] + format["Power Demand Reactive"] - 9) / 2), "", "Power Demand", ceil(Int, (format["Power Demand Active"] + format["Power Demand Reactive"] - 9) / 2) , "",
-                floor(Int, (format["Power Injection Active"] + format["Power Injection Reactive"] - 12) / 2), "", "Power Injection", ceil(Int, (format["Power Injection Active"] + format["Power Injection Reactive"] - 12) / 2) , "",
-                floor(Int, (format["Shunt Power Active"] + format["Shunt Power Reactive"] - 8) / 2), "", "Shunt Power", ceil(Int, (format["Shunt Power Active"] + format["Shunt Power Reactive"] - 8) / 2) , "",
+                floor(Int, (width["Power Generation Active"] + width["Power Generation Reactive"] - 13) / 2), "", "Power Generation", ceil(Int, (width["Power Generation Active"] + width["Power Generation Reactive"] - 13) / 2) , "",
+                floor(Int, (width["Power Demand Active"] + width["Power Demand Reactive"] - 9) / 2), "", "Power Demand", ceil(Int, (width["Power Demand Active"] + width["Power Demand Reactive"] - 9) / 2) , "",
+                floor(Int, (width["Power Injection Active"] + width["Power Injection Reactive"] - 12) / 2), "", "Power Injection", ceil(Int, (width["Power Injection Active"] + width["Power Injection Reactive"] - 12) / 2) , "",
+                floor(Int, (width["Shunt Power Active"] + width["Shunt Power Reactive"] - 8) / 2), "", "Shunt Power", ceil(Int, (width["Shunt Power Active"] + width["Shunt Power Reactive"] - 8) / 2) , "",
             )
         end
-        if format["current"]
+        if currentFlag
             Printf.@printf(io, " %*s%s%*s |",
-                floor(Int, (format["Current Injection Magnitude"] + format["Current Injection Angle"] - 14) / 2), "", "Current Injection", ceil(Int, (format["Current Injection Magnitude"] + format["Current Injection Angle"] - 14) / 2) , ""
+                floor(Int, (width["Current Injection Magnitude"] + width["Current Injection Angle"] - 14) / 2), "", "Current Injection", ceil(Int, (width["Current Injection Magnitude"] + width["Current Injection Angle"] - 14) / 2) , ""
             )
         end
         Printf.@printf io "\n"
 
         Printf.@printf(io, "| %*s | %*s |",
-            format["Label"], "",
-            format["Voltage Magnitude"] + format["Voltage Angle"] + 3, "",
+            width["Label"], "",
+            width["Voltage Magnitude"] + width["Voltage Angle"] + 3, "",
         )
-        if format["power"]
+        if powerFlag
             Printf.@printf(io, " %*s | %*s | %*s | %*s |",
-                format["Power Generation Active"] + format["Power Generation Reactive"] + 3, "",
-                format["Power Demand Active"] + format["Power Demand Reactive"] + 3, "",
-                format["Power Injection Active"] + format["Power Injection Reactive"] + 3, "",
-                format["Shunt Power Active"] + format["Shunt Power Reactive"] + 3, "",
+                width["Power Generation Active"] + width["Power Generation Reactive"] + 3, "",
+                width["Power Demand Active"] + width["Power Demand Reactive"] + 3, "",
+                width["Power Injection Active"] + width["Power Injection Reactive"] + 3, "",
+                width["Shunt Power Active"] + width["Shunt Power Reactive"] + 3, "",
             )
         end
-        if format["current"]
+        if currentFlag
             Printf.@printf(io, " %*s |",
-                format["Current Injection Magnitude"] + format["Current Injection Angle"] + 3, "",
+                width["Current Injection Magnitude"] + width["Current Injection Angle"] + 3, "",
             )
         end
         Printf.@printf io "\n"
 
         Printf.@printf(io, "| %*s | %*s | %*s ",
-            format["Label"], "",
-            format["Voltage Magnitude"], "Magnitude",
-            format["Voltage Angle"], "Angle",
+            width["Label"], "",
+            width["Voltage Magnitude"], "Magnitude",
+            width["Voltage Angle"], "Angle",
         )
-        if format["power"]
+        if powerFlag
             Printf.@printf(io, "| %*s | %*s | %*s | %*s | %*s | %*s | %*s | %*s ",
-                format["Power Generation Active"], "Active",
-                format["Power Generation Reactive"], "Reactive",
-                format["Power Demand Active"], "Active",
-                format["Power Demand Reactive"], "Reactive",
-                format["Power Injection Active"], "Active",
-                format["Power Injection Reactive"], "Reactive",
-                format["Shunt Power Active"], "Active",
-                format["Shunt Power Reactive"], "Reactive",
+                width["Power Generation Active"], "Active",
+                width["Power Generation Reactive"], "Reactive",
+                width["Power Demand Active"], "Active",
+                width["Power Demand Reactive"], "Reactive",
+                width["Power Injection Active"], "Active",
+                width["Power Injection Reactive"], "Reactive",
+                width["Shunt Power Active"], "Active",
+                width["Shunt Power Reactive"], "Reactive",
             )
         end
-        if format["current"]
+        if currentFlag
             Printf.@printf(io, "| %*s | %*s ",
-                format["Current Injection Magnitude"], "Magnitude",
-                format["Current Injection Angle"], "Angle",
+                width["Current Injection Magnitude"], "Magnitude",
+                width["Current Injection Angle"], "Angle",
             )
         end
         Printf.@printf io "|\n"
 
         Printf.@printf(io, "| %*s | %*s | %*s ",
-            format["Label"], "",
-            format["Voltage Magnitude"], unitData["V"],
-            format["Voltage Angle"], unitData["θ"],
+            width["Label"], "",
+            width["Voltage Magnitude"], unitData["V"],
+            width["Voltage Angle"], unitData["θ"],
         )
-        if format["power"]
+        if powerFlag
             Printf.@printf(io, "| %*s | %*s | %*s | %*s | %*s | %*s | %*s | %*s ",
-                format["Power Generation Active"], unitData["P"],
-                format["Power Generation Reactive"], unitData["Q"],
-                format["Power Demand Active"], unitData["P"],
-                format["Power Demand Reactive"], unitData["Q"],
-                format["Power Injection Active"], unitData["P"],
-                format["Power Injection Reactive"], unitData["Q"],
-                format["Shunt Power Active"], unitData["P"],
-                format["Shunt Power Reactive"], unitData["Q"],
+                width["Power Generation Active"], unitData["P"],
+                width["Power Generation Reactive"], unitData["Q"],
+                width["Power Demand Active"], unitData["P"],
+                width["Power Demand Reactive"], unitData["Q"],
+                width["Power Injection Active"], unitData["P"],
+                width["Power Injection Reactive"], unitData["Q"],
+                width["Shunt Power Active"], unitData["P"],
+                width["Shunt Power Reactive"], unitData["Q"],
             )
         end
-        if format["current"]
+        if currentFlag
             Printf.@printf(io, "| %*s | %*s ",
-                format["Current Injection Magnitude"], unitData["I"],
-                format["Current Injection Angle"], unitData["ψ"],
+                width["Current Injection Magnitude"], unitData["I"],
+                width["Current Injection Angle"], unitData["ψ"],
             )
         end
         Printf.@printf io "|\n"
 
         Printf.@printf(io, "|-%*s-|-%*s-|-%*s-",
-            format["Label"], "-"^format["Label"],
-            format["Voltage Magnitude"], "-"^format["Voltage Magnitude"],
-            format["Voltage Angle"], "-"^format["Voltage Angle"],
+            width["Label"], "-"^width["Label"],
+            width["Voltage Magnitude"], "-"^width["Voltage Magnitude"],
+            width["Voltage Angle"], "-"^width["Voltage Angle"],
         )
-        if format["power"]
+        if powerFlag
             Printf.@printf(io, "|-%*s-|-%*s-|-%*s-|-%*s-|-%*s-|-%*s-|-%*s-|-%*s-",
-                format["Power Generation Active"], "-"^format["Power Generation Active"],
-                format["Power Generation Reactive"], "-"^format["Power Generation Reactive"],
-                format["Power Demand Active"], "-"^format["Power Demand Active"],
-                format["Power Demand Reactive"], "-"^format["Power Demand Reactive"],
-                format["Power Injection Active"], "-"^format["Power Injection Active"],
-                format["Power Injection Reactive"], "-"^format["Power Injection Reactive"],
-                format["Shunt Power Active"], "-"^format["Shunt Power Active"],
-                format["Shunt Power Reactive"], "-"^format["Shunt Power Reactive"],
+                width["Power Generation Active"], "-"^width["Power Generation Active"],
+                width["Power Generation Reactive"], "-"^width["Power Generation Reactive"],
+                width["Power Demand Active"], "-"^width["Power Demand Active"],
+                width["Power Demand Reactive"], "-"^width["Power Demand Reactive"],
+                width["Power Injection Active"], "-"^width["Power Injection Active"],
+                width["Power Injection Reactive"], "-"^width["Power Injection Reactive"],
+                width["Shunt Power Active"], "-"^width["Shunt Power Active"],
+                width["Shunt Power Reactive"], "-"^width["Shunt Power Reactive"],
             )
         end
-        if format["current"]
+        if currentFlag
             Printf.@printf(io, "|-%*s-|-%*s-",
-            format["Current Injection Magnitude"], "-"^format["Current Injection Magnitude"],
-            format["Current Injection Angle"], "-"^format["Current Injection Angle"]
+            width["Current Injection Magnitude"], "-"^width["Current Injection Magnitude"],
+            width["Current Injection Angle"], "-"^width["Current Injection Angle"]
             )
         end
         Printf.@printf io "|\n"
@@ -182,41 +184,40 @@ function printBusData(system::PowerSystem, analysis::AC, io::IO = stdout;
     end
 
     for (label, i) in labels
-        if prefix.voltageMagnitude != 0.0
-            voltageMagnitude = (analysis.voltage.magnitude[i]) * (system.base.voltage.value[i] * system.base.voltage.prefix) / prefix.voltageMagnitude
-        else
-            voltageMagnitude = analysis.voltage.magnitude[i]
-        end
-
-        if format["current"]
-            if  prefix.currentMagnitude != 0.0
-                currentMagnitude = analysis.current.injection.magnitude[i] * system.base.power.value * system.base.power.prefix / (sqrt(3) * system.base.voltage.value[i] * system.base.voltage.prefix * prefix.currentMagnitude)
-            else
-                currentMagnitude = analysis.current.injection.magnitude[i]
-            end
-        end
-
-        Printf.@printf(io, "| %-*s | %*.4f | %*.4f ",
-            format["Label"], label,
-            format["Voltage Magnitude"], voltageMagnitude,
-            format["Voltage Angle"], analysis.voltage.angle[i] * scale["θ"],
+        print(io, Printf.format(
+            Printf.Format(
+                "| %-*s | $(fmt["Voltage Magnitude"]) | $(fmt["Voltage Angle"]) "
+            ),
+            width["Label"], label,
+            width["Voltage Magnitude"], analysis.voltage.magnitude[i] * scaleMagnitude(prefix, system.base.voltage, i),
+            width["Voltage Angle"], analysis.voltage.angle[i] * scale["θ"])
         )
-        if format["power"]
-            Printf.@printf(io, "| %*.4f | %*.4f | %*.4f | %*.4f | %*.4f | %*.4f | %*.4f | %*.4f ",
-                format["Power Generation Active"], analysis.power.supply.active[i] * scale["P"],
-                format["Power Generation Reactive"], analysis.power.supply.reactive[i] * scale["Q"],
-                format["Power Demand Active"], system.bus.demand.active[i] * scale["P"],
-                format["Power Demand Reactive"], system.bus.demand.reactive[i] * scale["Q"],
-                format["Power Injection Active"], analysis.power.injection.active[i] * scale["P"],
-                format["Power Injection Reactive"], analysis.power.injection.reactive[i] * scale["Q"],
-                format["Shunt Power Active"], analysis.power.shunt.active[i] * scale["P"],
-                format["Shunt Power Reactive"], analysis.power.shunt.reactive[i] * scale["Q"],
+
+        if powerFlag
+            print(io, Printf.format(
+                Printf.Format(
+                    "| $(fmt["Power Generation Active"]) | $(fmt["Power Generation Reactive"]) " *
+                    "| $(fmt["Power Demand Active"]) | $(fmt["Power Demand Reactive"]) " *
+                    "| $(fmt["Power Injection Active"]) | $(fmt["Power Injection Reactive"]) " *
+                    "| $(fmt["Shunt Power Active"]) | $(fmt["Shunt Power Reactive"]) "
+                ),
+                width["Power Generation Active"], analysis.power.supply.active[i] * scale["P"],
+                width["Power Generation Reactive"], analysis.power.supply.reactive[i] * scale["Q"],
+                width["Power Demand Active"], system.bus.demand.active[i] * scale["P"],
+                width["Power Demand Reactive"], system.bus.demand.reactive[i] * scale["Q"],
+                width["Power Injection Active"], analysis.power.injection.active[i] * scale["P"],
+                width["Power Injection Reactive"], analysis.power.injection.reactive[i] * scale["Q"],
+                width["Shunt Power Active"], analysis.power.shunt.active[i] * scale["P"],
+                width["Shunt Power Reactive"], analysis.power.shunt.reactive[i] * scale["Q"])
             )
         end
-        if format["current"]
-            Printf.@printf(io, "| %*.4f | %*.4f ",
-            format["Current Injection Magnitude"], currentMagnitude,
-            format["Current Injection Angle"], analysis.current.injection.angle[i] * scale["ψ"]
+        if currentFlag
+            print(io, Printf.format(
+                Printf.Format(
+                    "| $(fmt["Current Injection Magnitude"]) | $(fmt["Current Injection Angle"]) "
+                ),
+                width["Current Injection Magnitude"], analysis.current.injection.magnitude[i] * scaleMagnitude(prefix, system, i),
+                width["Current Injection Angle"], analysis.current.injection.angle[i] * scale["ψ"])
             )
         end
         Printf.@printf io "|\n"
@@ -227,10 +228,10 @@ function printBusData(system::PowerSystem, analysis::AC, io::IO = stdout;
     end
 end
 
-function formatBusData(system::PowerSystem, analysis::AC, scale::Dict{String, Float64}, label::L, width::Dict{String,Int64})
+function formatBusData(system::PowerSystem, analysis::AC, scale::Dict{String, Float64}, label::L, width::Dict{String,Int64}, fmt::Dict{String,String})
     errorVoltage(analysis.voltage.magnitude)
 
-    format = Dict(
+    _width = Dict(
         "Label" => 5,
         "Voltage Magnitude" => 9,
         "Voltage Angle" => 5,
@@ -243,123 +244,108 @@ function formatBusData(system::PowerSystem, analysis::AC, scale::Dict{String, Fl
         "Shunt Power Active" => 6,
         "Shunt Power Reactive" => 8,
         "Current Injection Magnitude" => 9,
-        "Current Injection Angle" => 5,
-        "power" => !isempty(analysis.power.injection.active),
-        "current" => !isempty(analysis.current.injection.magnitude)
+        "Current Injection Angle" => 5
     )
-    format = formatWidth(format, width)
+
+    _fmt = Dict(
+        "Voltage Magnitude" => "%*.4f",
+        "Voltage Angle" => "%*.4f",
+        "Power Generation Active" => "%*.4f",
+        "Power Generation Reactive" => "%*.4f",
+        "Power Demand Active" => "%*.4f",
+        "Power Demand Reactive" => "%*.4f",
+        "Power Injection Active" => "%*.4f",
+        "Power Injection Reactive" => "%*.4f",
+        "Shunt Power Active" => "%*.4f",
+        "Shunt Power Reactive" => "%*.4f",
+        "Current Injection Magnitude" => "%*.4f",
+        "Current Injection Angle" => "%*.4f"
+    )
+
+    width, fmt = printFormat(_width, width, _fmt, fmt)
+
+    powerFlag = !isempty(analysis.power.injection.active)
+    currentFlag = !isempty(analysis.current.injection.magnitude)
 
     if isset(label)
-        i = system.bus.label[getLabel(system.bus, label, "bus")]
-        format["Label"] = max(length(label), format["Label"])
+        label = getLabel(system.bus, label, "bus")
+        i = system.bus.label[label]
 
-        if prefix.voltageMagnitude == 0.0
-            scaleV = 1.0
-        else
-            scaleV = (system.base.voltage.value[i] * system.base.voltage.prefix) / prefix.voltageMagnitude
+        width["Label"] = max(textwidth(label), width["Label"])
+
+        fmax(analysis.voltage.magnitude[i], scaleMagnitude(prefix, system.base.voltage, i), width, fmt, "Voltage Magnitude")
+        fmax(analysis.voltage.angle[i], scale["θ"], width, fmt, "Voltage Angle")
+
+        if powerFlag
+            fmax(analysis.power.supply.active[i], scale["P"], width, fmt, "Power Generation Active")
+            fmax(system.bus.demand.active[i], scale["P"], width, fmt, "Power Demand Active")
+            fmax(analysis.power.injection.active[i], scale["P"], width, fmt, "Power Injection Active")
+            fmax(analysis.power.shunt.active[i], scale["P"], width, fmt, "Shunt Power Active")
+
+            fmax(analysis.power.supply.reactive[i], scale["Q"], width, fmt, "Power Generation Reactive")
+            fmax(system.bus.demand.reactive[i], scale["Q"], width, fmt, "Power Demand Reactive")
+            fmax(analysis.power.injection.reactive[i], scale["Q"], width, fmt, "Power Injection Reactive")
+            fmax(analysis.power.shunt.reactive[i], scale["Q"], width, fmt, "Shunt Power Reactive")
         end
 
-        format["Voltage Magnitude"] = max(length(Printf.@sprintf("%.4f", analysis.voltage.magnitude[i] * scaleV)), format["Voltage Magnitude"])
-        format["Voltage Angle"] = max(length(Printf.@sprintf("%.4f", analysis.voltage.angle[i] * scale["θ"])), format["Voltage Angle"])
-
-        if format["power"]
-            format["Power Generation Active"] = max(length(Printf.@sprintf("%.4f", analysis.power.supply.active[i] * scale["P"])), format["Power Generation Active"])
-            format["Power Demand Active"] = max(length(Printf.@sprintf("%.4f", system.bus.demand.active[i] * scale["P"])), format["Power Demand Active"])
-            format["Power Injection Active"] = max(length(Printf.@sprintf("%.4f", analysis.power.injection.active[i] * scale["P"])), format["Power Injection Active"])
-            format["Shunt Power Active"] = max(length(Printf.@sprintf("%.4f", analysis.power.shunt.active[i] * scale["P"])), format["Shunt Power Active"])
-
-            format["Power Generation Reactive"] = max(length(Printf.@sprintf("%.4f", analysis.power.supply.reactive[i] * scale["Q"])), format["Power Generation Reactive"])
-            format["Power Demand Reactive"] = max(length(Printf.@sprintf("%.4f", system.bus.demand.reactive[i] * scale["Q"])), format["Power Demand Reactive"])
-            format["Power Injection Reactive"] = max(length(Printf.@sprintf("%.4f", analysis.power.injection.reactive[i] * scale["Q"])), format["Power Injection Reactive"])
-            format["Shunt Power Reactive"] = max(length(Printf.@sprintf("%.4f", analysis.power.shunt.reactive[i] * scale["Q"])), format["Shunt Power Reactive"])
-        end
-
-        if format["current"]
-            if prefix.currentMagnitude == 0.0
-                scaleI = 1.0
-            else
-                scaleI = system.base.power.value * system.base.power.prefix / (sqrt(3) * system.base.voltage.value[i] * system.base.voltage.prefix * prefix.currentMagnitude)
-            end
-
-            format["Current Injection Magnitude"] = max(length(Printf.@sprintf("%.4f", analysis.current.injection.magnitude[i] * scaleI)), format["Current Injection Magnitude"])
-            format["Current Injection Angle"] = max(length(Printf.@sprintf("%.4f", analysis.current.injection.angle[i] * scale["ψ"])), format["Current Injection Angle"])
+        if currentFlag
+            fmax(analysis.current.injection.magnitude[i], scaleMagnitude(prefix, system, i), width, fmt, "Current Injection Magnitude")
+            fmax(analysis.current.injection.angle[i], scale["ψ"], width, fmt, "Current Injection Angle")
         end
     else
         if prefix.voltageMagnitude == 0.0
-            maxV = maximum(analysis.voltage.magnitude)
-            format["Voltage Magnitude"] = max(length(Printf.@sprintf("%.4f", maxV)), format["Voltage Magnitude"])
+            fmax(analysis.voltage.magnitude, 1.0, width, fmt, "Voltage Magnitude")
+        end
+        fminmax(analysis.voltage.angle, scale["θ"], width, fmt, "Voltage Angle")
+
+        if powerFlag
+            fminmax(analysis.power.supply.active, scale["P"], width, fmt, "Power Generation Active")
+            fminmax(system.bus.demand.active, scale["P"], width, fmt, "Power Demand Active")
+            fminmax(analysis.power.injection.active, scale["P"], width, fmt, "Power Injection Active")
+            fminmax(analysis.power.shunt.active, scale["P"], width, fmt, "Shunt Power Active")
+
+            fminmax(analysis.power.supply.reactive, scale["Q"], width, fmt, "Power Generation Reactive")
+            fminmax(system.bus.demand.reactive, scale["Q"], width, fmt, "Power Demand Reactive")
+            fminmax(analysis.power.injection.reactive, scale["Q"], width, fmt, "Power Injection Reactive")
+            fminmax(analysis.power.shunt.reactive, scale["Q"], width, fmt, "Shunt Power Reactive")
         end
 
-        minmaxT = extrema(analysis.voltage.angle)
-        format["Voltage Angle"] = max(length(Printf.@sprintf("%.4f", minmaxT[1] * scale["θ"])), length(Printf.@sprintf("%.4f", minmaxT[2] * scale["θ"])), format["Voltage Angle"])
-
-        if format["power"]
-            minmaxPg = extrema(analysis.power.supply.active)
-            format["Power Generation Active"] = max(length(Printf.@sprintf("%.4f", minmaxPg[1] * scale["P"])), length(Printf.@sprintf("%.4f", minmaxPg[2] * scale["P"])), format["Power Generation Active"])
-
-            minmaxPl = extrema(system.bus.demand.active)
-            format["Power Demand Active"] = max(length(Printf.@sprintf("%.4f", minmaxPl[1] * scale["P"])), length(Printf.@sprintf("%.4f", minmaxPl[2] * scale["P"])), format["Power Demand Active"])
-
-            minmaxPi = extrema(analysis.power.injection.active)
-            format["Power Injection Active"] = max(length(Printf.@sprintf("%.4f", minmaxPi[1] * scale["P"])), length(Printf.@sprintf("%.4f", minmaxPi[2] * scale["P"])), format["Power Injection Active"])
-
-            minmaxPsi = extrema(analysis.power.shunt.active)
-            format["Shunt Power Active"] = max(length(Printf.@sprintf("%.4f", minmaxPsi[1] * scale["P"])), length(Printf.@sprintf("%.4f", minmaxPsi[2] * scale["P"])), format["Shunt Power Active"])
-
-            minmaxQg = extrema(analysis.power.supply.reactive)
-            format["Power Generation Reactive"] = max(length(Printf.@sprintf("%.4f", minmaxQg[1] * scale["Q"])), length(Printf.@sprintf("%.4f", minmaxQg[2] * scale["Q"])), format["Power Generation Reactive"])
-
-            minmaxQl = extrema(system.bus.demand.reactive)
-            format["Power Demand Reactive"] = max(length(Printf.@sprintf("%.4f", minmaxQl[1] * scale["Q"])), length(Printf.@sprintf("%.4f", minmaxQl[2] * scale["Q"])), format["Power Demand Reactive"])
-
-            minmaxQi = extrema(analysis.power.injection.reactive)
-            format["Power Injection Reactive"] = max(length(Printf.@sprintf("%.4f", minmaxQi[1] * scale["Q"])), length(Printf.@sprintf("%.4f", minmaxQi[2] * scale["Q"])), format["Power Injection Reactive"])
-
-            minmaxQsi = extrema(analysis.power.shunt.reactive)
-            format["Shunt Power Reactive"] = max(length(Printf.@sprintf("%.4f", minmaxQsi[1] * scale["Q"])), length(Printf.@sprintf("%.4f", minmaxQsi[2] * scale["Q"])), format["Shunt Power Reactive"])
-        end
-
-        if format["current"]
+        if currentFlag
             if prefix.currentMagnitude == 0.0
-                maxI = maximum(analysis.current.injection.magnitude)
-                format["Current Injection Magnitude"] = max(length(Printf.@sprintf("%.4f", maxI)), format["Current Injection Magnitude"])
+                fmax(analysis.current.injection.magnitude, 1.0, width, fmt, "Current Injection Magnitude")
             end
-
-            minmaxW = extrema(analysis.current.injection.angle)
-            format["Current Injection Angle"] = max(length(Printf.@sprintf("%.4f", minmaxW[1] * scale["ψ"])), length(Printf.@sprintf("%.4f", minmaxW[2] * scale["ψ"])), format["Current Injection Angle"])
+            fminmax(analysis.current.injection.angle, scale["ψ"], width, fmt, "Current Injection Angle")
         end
 
         @inbounds for (label, i) in system.bus.label
-            format["Label"] = max(length(label), format["Label"])
+            width["Label"] = max(textwidth(label), width["Label"])
 
             if prefix.voltageMagnitude != 0.0
-                scaleV = (system.base.voltage.value[i] * system.base.voltage.prefix) / prefix.voltageMagnitude
-                format["Voltage Magnitude"] = max(length(Printf.@sprintf("%.4f", analysis.voltage.magnitude[i] * scaleV)), format["Voltage Magnitude"])
+                fmax(analysis.voltage.magnitude[i], scaleMagnitude(system.base.voltage, i), width, fmt, "Voltage Magnitude")
             end
 
-            if format["current"] && prefix.currentMagnitude != 0.0
-                scaleI = system.base.power.value * system.base.power.prefix / (sqrt(3) * system.base.voltage.value[i] * system.base.voltage.prefix * prefix.currentMagnitude)
-                format["Current Injection Magnitude"] = max(length(Printf.@sprintf("%.4f", analysis.current.injection.magnitude[i] * scaleI)), format["Current Injection Magnitude"])
+            if currentFlag && prefix.currentMagnitude != 0.0
+                fmax(analysis.current.injection.magnitude[i], scaleMagnitude(system, i), width, fmt, "Current Injection Magnitude")
             end
         end
     end
 
-    return format
+    return width, fmt, powerFlag, currentFlag
 end
 
 function printBusData(system::PowerSystem, analysis::DC, io::IO = stdout;
     label::L = missing, header::B = missing, footer::Bool = false,
-    width::Dict{String, Int64} = Dict{String, Int64}())
+    width::Dict{String, Int64} = Dict{String, Int64}(), fmt::Dict{String, String} = Dict{String, String}())
 
     scale = printScale(system, prefix)
     unitData = printUnitData(unitList)
-    format = formatBusData(system, analysis, scale, label, width)
+    width, fmt, flag = formatBusData(system, analysis, scale, label, width, fmt)
     labels, header = toggleLabelHeader(label, system.bus, system.bus.label, header, "bus")
 
-    maxLine = format["Label"] + format["Voltage Angle"] + 5
-    if format["power"]
-        maxLine += format["Power Generation Active"] + format["Power Demand Active"] +
-                   format["Power Injection Active"] + 9
+    maxLine = width["Label"] + width["Voltage Angle"] + 5
+    if flag
+        maxLine += width["Power Generation Active"] + width["Power Demand Active"] +
+            width["Power Injection Active"] + 9
     end
 
     printTitle(maxLine, "Bus Data", header, io)
@@ -368,41 +354,41 @@ function printBusData(system::PowerSystem, analysis::DC, io::IO = stdout;
         Printf.@printf(io, "|%s|\n", "-"^maxLine)
 
         Printf.@printf(io, "| %*s%s%*s | %*s |",
-            floor(Int, (format["Label"] - 5) / 2), "", "Label", ceil(Int, (format["Label"] - 5) / 2) , "",
-            format["Voltage Angle"], "Voltage",
+            floor(Int, (width["Label"] - 5) / 2), "", "Label", ceil(Int, (width["Label"] - 5) / 2) , "",
+            width["Voltage Angle"], "Voltage",
         )
 
-        if format["power"]
+        if flag
             Printf.@printf(io, " %*s | %*s | %*s |",
-                format["Power Generation Active"], "Power Generation",
-                format["Power Demand Active"], "Power Demand",
-                format["Power Injection Active"], "Power Injection",
+                width["Power Generation Active"], "Power Generation",
+                width["Power Demand Active"], "Power Demand",
+                width["Power Injection Active"], "Power Injection",
             )
         end
         Printf.@printf io "\n"
 
         Printf.@printf(io, "| %*s | %*s ",
-            format["Label"], "",
-            format["Voltage Angle"], "Angle $(unitData["θ"])",
+            width["Label"], "",
+            width["Voltage Angle"], "Angle $(unitData["θ"])",
         )
-        if format["power"]
+        if flag
             Printf.@printf(io, "| %*s | %*s | %*s ",
-                format["Power Generation Active"], "Active $(unitData["P"])",
-                format["Power Demand Active"], "Active $(unitData["P"])",
-                format["Power Injection Active"], "Active $(unitData["P"])",
+                width["Power Generation Active"], "Active $(unitData["P"])",
+                width["Power Demand Active"], "Active $(unitData["P"])",
+                width["Power Injection Active"], "Active $(unitData["P"])",
             )
         end
         Printf.@printf io "|\n"
 
         Printf.@printf(io, "|-%*s-|-%*s-",
-            format["Label"], "-"^format["Label"],
-            format["Voltage Angle"], "-"^format["Voltage Angle"],
+            width["Label"], "-"^width["Label"],
+            width["Voltage Angle"], "-"^width["Voltage Angle"],
         )
-        if format["power"]
+        if flag
             Printf.@printf(io, "|-%*s-|-%*s-|-%*s-",
-                format["Power Generation Active"], "-"^format["Power Generation Active"],
-                format["Power Demand Active"], "-"^format["Power Demand Active"],
-                format["Power Injection Active"], "-"^format["Power Injection Active"],
+                width["Power Generation Active"], "-"^width["Power Generation Active"],
+                width["Power Demand Active"], "-"^width["Power Demand Active"],
+                width["Power Injection Active"], "-"^width["Power Injection Active"],
             )
         end
         Printf.@printf io "|\n"
@@ -411,15 +397,22 @@ function printBusData(system::PowerSystem, analysis::DC, io::IO = stdout;
     end
 
     for (label, i) in labels
-        Printf.@printf(io, "| %-*s | %*.4f ",
-            format["Label"], label,
-            format["Voltage Angle"], analysis.voltage.angle[i] * scale["θ"],
+        print(io, Printf.format(
+            Printf.Format(
+                "| %-*s | $(fmt["Voltage Angle"]) "
+            ),
+            width["Label"], label,
+            width["Voltage Angle"], analysis.voltage.angle[i] * scale["θ"])
         )
-        if format["power"]
-            Printf.@printf(io, "| %*.4f | %*.4f | %*.4f ",
-                format["Power Generation Active"], analysis.power.supply.active[i] * scale["P"],
-                format["Power Demand Active"], system.bus.demand.active[i] * scale["P"],
-                format["Power Injection Active"], analysis.power.injection.active[i] * scale["P"],
+
+        if flag
+            print(io, Printf.format(
+                Printf.Format(
+                    "| $(fmt["Power Generation Active"]) | $(fmt["Power Demand Active"]) | $(fmt["Power Injection Active"]) "
+                ),
+                width["Power Generation Active"], analysis.power.supply.active[i] * scale["P"],
+                width["Power Demand Active"], system.bus.demand.active[i] * scale["P"],
+                width["Power Injection Active"], analysis.power.injection.active[i] * scale["P"])
             )
         end
         Printf.@printf io "|\n"
@@ -430,55 +423,59 @@ function printBusData(system::PowerSystem, analysis::DC, io::IO = stdout;
     end
 end
 
-function formatBusData(system::PowerSystem, analysis::DC, scale::Dict{String, Float64}, label::L, width::Dict{String,Int64})
+function formatBusData(system::PowerSystem, analysis::DC, scale::Dict{String, Float64}, label::L, width::Dict{String, Int64}, fmt::Dict{String, String})
     errorVoltage(analysis.voltage.angle)
 
-    format = Dict(
+    _width = Dict(
         "Label" => 5,
         "Voltage Angle" => 11,
         "Power Generation Active" => 16,
         "Power Demand Active" => 12,
-        "Power Injection Active" => 15,
-        "power" => !isempty(analysis.power.injection.active),
+        "Power Injection Active" => 15
     )
-    format = formatWidth(format, width)
+
+    _fmt = Dict(
+        "Voltage Angle" => "%*.4f",
+        "Power Generation Active" => "%*.4f",
+        "Power Demand Active" => "%*.4f",
+        "Power Injection Active" => "%*.4f"
+    )
+
+    width, fmt = printFormat(_width, width, _fmt, fmt)
+    powerFlag = !isempty(analysis.power.injection.active)
 
     if isset(label)
-        i = system.bus.label[getLabel(system.bus, label, "bus")]
-        format["Label"] = max(length(label), format["Label"])
-        format["Voltage Angle"] = max(length(Printf.@sprintf("%.4f", analysis.voltage.angle[i] * scale["θ"])), format["Voltage Angle"])
+        label = getLabel(system.bus, label, "bus")
+        i = system.bus.label[label]
 
-        if format["power"]
-            format["Power Generation Active"] = max(length(Printf.@sprintf("%.4f",analysis.power.supply.active[i] * scale["P"])), format["Power Generation Active"])
-            format["Power Demand Active"] = max(length(Printf.@sprintf("%.4f", system.bus.demand.active[i] * scale["P"])), format["Power Demand Active"])
-            format["Power Injection Active"] = max(length(Printf.@sprintf("%.4f", analysis.power.injection.active[i] * scale["P"])), format["Power Injection Active"])
+        width["Label"] = max(textwidth(label), width["Label"])
+        fmax(analysis.voltage.angle[i], scale["θ"], width, fmt, "Voltage Angle")
+
+        if powerFlag
+            fmax(analysis.power.supply.active[i], scale["P"], width, fmt, "Power Generation Active")
+            fmax(system.bus.demand.active[i], scale["P"], width, fmt, "Power Demand Active")
+            fmax(analysis.power.injection.active[i], scale["P"], width, fmt, "Power Injection Active")
         end
     else
-        minmaxT = extrema(analysis.voltage.angle)
-        format["Voltage Angle"] = max(length(Printf.@sprintf("%.4f", minmaxT[1] * scale["θ"])), length(Printf.@sprintf("%.4f", minmaxT[2] * scale["θ"])), format["Voltage Angle"])
+        fminmax(analysis.voltage.angle, scale["θ"], width, fmt, "Voltage Angle")
 
-        if format["power"]
-            minmaxPg = extrema(analysis.power.supply.active)
-            format["Power Generation Active"] = max(length(Printf.@sprintf("%.4f", minmaxPg[1] * scale["P"])), length(Printf.@sprintf("%.4f", minmaxPg[2] * scale["P"])), format["Power Generation Active"])
-
-            minmaxPl = extrema(system.bus.demand.active)
-            format["Power Demand Active"] = max(length(Printf.@sprintf("%.4f", minmaxPl[1] * scale["P"])), length(Printf.@sprintf("%.4f", minmaxPl[2] * scale["P"])), format["Power Demand Active"])
-
-            minmaxPi = extrema(analysis.power.injection.active)
-            format["Power Injection Active"] = max(length(Printf.@sprintf("%.4f", minmaxPi[1] * scale["P"])), length(Printf.@sprintf("%.4f", minmaxPi[2] * scale["P"])), format["Power Injection Active"])
+        if powerFlag
+            fminmax(analysis.power.supply.active, scale["P"], width, fmt, "Power Generation Active")
+            fminmax(system.bus.demand.active, scale["P"], width, fmt, "Power Demand Active")
+            fminmax(analysis.power.injection.active, scale["P"], width, fmt, "Power Injection Active")
         end
 
         @inbounds for (label, i) in system.bus.label
-            format["Label"] = max(length(label), format["Label"])
+            width["Label"] = max(textwidth(label), width["Label"])
         end
     end
 
-    return format
+    return width, fmt, powerFlag
 end
 
 """
     printBranchData(system::PowerSystem, analysis::Analysis, io::IO;
-        label, header, footer, width)
+        label, header, footer, width, fmt)
 
 The function prints powers and currents related to branches. Optionally, an `IO` may be
 passed as the last argument to redirect the output.
@@ -489,6 +486,7 @@ The following keywords control the printed data:
 * `header`: Toggles the printing of the header.
 * `footer`: Toggles the printing of the footer.
 * `width`: Specifies the preferred width of each column.
+* `fmt`: Specifies the preferred numeric format of each column.
 
 !!! compat "Julia 1.10"
     The function [`printBranchData`](@ref printBranchData) requires Julia 1.10 or later.
@@ -508,7 +506,8 @@ end
 power!(system, analysis)
 
 # Print data for all branches
-printBranchData(system, analysis)
+fmt = Dict("From-Bus Power Active" => "%.2f", "From-Bus Power Reactive" => "%.2f")
+printBranchData(system, analysis; fmt)
 
 # Print data for specific branches
 width = Dict("From-Bus Power Active" => 7, "To-Bus Power Active" => 7)
@@ -520,25 +519,25 @@ printBranchData(system, analysis; label = 14, width, footer = true)
 """
 function printBranchData(system::PowerSystem, analysis::AC, io::IO = stdout;
     label::L = missing, header::B = missing, footer::Bool = false,
-    width::Dict{String, Int64} = Dict{String, Int64}())
+    width::Dict{String, Int64} = Dict{String, Int64}(), fmt::Dict{String, String} = Dict{String, String}())
 
     scale = printScale(system, prefix)
     unitData = printUnitData(unitList)
-    format = formatBranchData(system, analysis, scale, label, width)
+    width, fmt, powerFlag, currentFlag = formatBranchData(system, analysis, scale, label, width, fmt)
     labels, header = toggleLabelHeader(label, system.branch, system.branch.label, header, "branch")
 
-    if format["power"] || format["current"]
-        maxLine = format["Label"] + format["Status"] + 5
-        if format["power"]
-            maxLine += format["From-Bus Power Active"] + format["From-Bus Power Reactive"] +
-                       format["To-Bus Power Active"] + format["To-Bus Power Reactive"] +
-                       format["Shunt Power Active"] + format["Shunt Power Reactive"] +
-                       format["Series Power Active"] + format["Series Power Reactive"] + 24
+    if powerFlag || currentFlag
+        maxLine = width["Label"] + width["Status"] + 5
+        if powerFlag
+            maxLine += width["From-Bus Power Active"] + width["From-Bus Power Reactive"] +
+                       width["To-Bus Power Active"] + width["To-Bus Power Reactive"] +
+                       width["Shunt Power Active"] + width["Shunt Power Reactive"] +
+                       width["Series Power Active"] + width["Series Power Reactive"] + 24
         end
-        if format["current"]
-            maxLine += format["From-Bus Current Magnitude"] + format["From-Bus Current Angle"] +
-                       format["To-Bus Current Magnitude"] + format["To-Bus Current Angle"] +
-                       format["Series Current Magnitude"] + format["Series Current Angle"] + 18
+        if currentFlag
+            maxLine += width["From-Bus Current Magnitude"] + width["From-Bus Current Angle"] +
+                       width["To-Bus Current Magnitude"] + width["To-Bus Current Angle"] +
+                       width["Series Current Magnitude"] + width["Series Current Angle"] + 18
         end
 
         printTitle(maxLine, "Branch Data", header, io)
@@ -546,166 +545,165 @@ function printBranchData(system::PowerSystem, analysis::AC, io::IO = stdout;
         if header
             Printf.@printf(io, "|%s|\n", "-"^maxLine)
 
-            Printf.@printf(io, "| %*s%s%*s ", floor(Int, (format["Label"] - 5) / 2), "", "Label", ceil(Int, (format["Label"] - 5) / 2) , "",)
+            Printf.@printf(io, "| %*s%s%*s ", floor(Int, (width["Label"] - 5) / 2), "", "Label", ceil(Int, (width["Label"] - 5) / 2) , "",)
 
-            if format["power"]
+            if powerFlag
                 Printf.@printf(io, "| %*s%s%*s | %*s%s%*s | %*s%s%*s | %*s%s%*s ",
-                    floor(Int, (format["From-Bus Power Active"] + format["From-Bus Power Reactive"] - 11) / 2), "", "From-Bus Power", ceil(Int, (format["From-Bus Power Active"] + format["From-Bus Power Reactive"] - 11) / 2) , "",
-                    floor(Int, (format["To-Bus Power Active"] + format["To-Bus Power Reactive"] - 9) / 2), "", "To-Bus Power", ceil(Int, (format["To-Bus Power Active"] + format["To-Bus Power Reactive"] - 9) / 2) , "",
-                    floor(Int, (format["Shunt Power Active"] + format["Shunt Power Reactive"] - 8) / 2), "", "Shunt Power", ceil(Int, (format["Shunt Power Active"] + format["Shunt Power Reactive"] - 8) / 2) , "",
-                    floor(Int, (format["Series Power Active"] + format["Series Power Reactive"] - 9) / 2), "", "Series Power", ceil(Int, (format["Series Power Active"] + format["Series Power Reactive"] - 9) / 2) , "",
+                    floor(Int, (width["From-Bus Power Active"] + width["From-Bus Power Reactive"] - 11) / 2), "", "From-Bus Power", ceil(Int, (width["From-Bus Power Active"] + width["From-Bus Power Reactive"] - 11) / 2) , "",
+                    floor(Int, (width["To-Bus Power Active"] + width["To-Bus Power Reactive"] - 9) / 2), "", "To-Bus Power", ceil(Int, (width["To-Bus Power Active"] + width["To-Bus Power Reactive"] - 9) / 2) , "",
+                    floor(Int, (width["Shunt Power Active"] + width["Shunt Power Reactive"] - 8) / 2), "", "Shunt Power", ceil(Int, (width["Shunt Power Active"] + width["Shunt Power Reactive"] - 8) / 2) , "",
+                    floor(Int, (width["Series Power Active"] + width["Series Power Reactive"] - 9) / 2), "", "Series Power", ceil(Int, (width["Series Power Active"] + width["Series Power Reactive"] - 9) / 2) , "",
                 )
             end
-            if format["current"]
+            if currentFlag
                 Printf.@printf(io, "| %*s%s%*s | %*s%s%*s | %*s%s%*s ",
-                    floor(Int, (format["From-Bus Current Magnitude"] + format["From-Bus Current Angle"] - 13) / 2), "", "From-Bus Current", ceil(Int, (format["From-Bus Current Magnitude"] + format["From-Bus Current Angle"] - 13) / 2) , "",
-                    floor(Int, (format["To-Bus Current Magnitude"] + format["To-Bus Current Angle"] - 11) / 2), "", "To-Bus Current", ceil(Int, (format["To-Bus Current Magnitude"] + format["To-Bus Current Angle"] - 11) / 2) , "",
-                    floor(Int, (format["Series Current Magnitude"] + format["Series Current Angle"] - 11) / 2), "", "Series Current", ceil(Int, (format["Series Current Magnitude"] + format["Series Current Angle"] - 11) / 2) , "",
+                    floor(Int, (width["From-Bus Current Magnitude"] + width["From-Bus Current Angle"] - 13) / 2), "", "From-Bus Current", ceil(Int, (width["From-Bus Current Magnitude"] + width["From-Bus Current Angle"] - 13) / 2) , "",
+                    floor(Int, (width["To-Bus Current Magnitude"] + width["To-Bus Current Angle"] - 11) / 2), "", "To-Bus Current", ceil(Int, (width["To-Bus Current Magnitude"] + width["To-Bus Current Angle"] - 11) / 2) , "",
+                    floor(Int, (width["Series Current Magnitude"] + width["Series Current Angle"] - 11) / 2), "", "Series Current", ceil(Int, (width["Series Current Magnitude"] + width["Series Current Angle"] - 11) / 2) , "",
                 )
             end
             Printf.@printf io "| %s |\n" "Status"
 
             Printf.@printf(io, "| %*s |",
-                format["Label"], "",
+                width["Label"], "",
             )
-            if format["power"]
+            if powerFlag
                 Printf.@printf(io, " %*s | %*s | %*s | %*s |",
-                    format["From-Bus Power Active"] + format["From-Bus Power Reactive"] + 3, "",
-                    format["To-Bus Power Active"] + format["To-Bus Power Reactive"] + 3, "",
-                    format["Shunt Power Active"] + format["Shunt Power Reactive"] + 3, "",
-                    format["Series Power Active"] + format["Series Power Reactive"] + 3, "",
+                    width["From-Bus Power Active"] + width["From-Bus Power Reactive"] + 3, "",
+                    width["To-Bus Power Active"] + width["To-Bus Power Reactive"] + 3, "",
+                    width["Shunt Power Active"] + width["Shunt Power Reactive"] + 3, "",
+                    width["Series Power Active"] + width["Series Power Reactive"] + 3, "",
                 )
             end
-            if format["current"]
+            if currentFlag
                 Printf.@printf(io, " %*s | %*s | %*s |",
-                    format["From-Bus Current Magnitude"] + format["From-Bus Current Angle"] + 3, "",
-                    format["To-Bus Current Magnitude"] + format["To-Bus Current Angle"] + 3, "",
-                    format["Series Current Magnitude"] + format["Series Current Angle"] + 3, "",
+                    width["From-Bus Current Magnitude"] + width["From-Bus Current Angle"] + 3, "",
+                    width["To-Bus Current Magnitude"] + width["To-Bus Current Angle"] + 3, "",
+                    width["Series Current Magnitude"] + width["Series Current Angle"] + 3, "",
                 )
             end
-            Printf.@printf io " %*s |\n" format["Status"] ""
+            Printf.@printf io " %*s |\n" width["Status"] ""
 
-            Printf.@printf(io, "| %*s ", format["Label"], "")
+            Printf.@printf(io, "| %*s ", width["Label"], "")
 
-            if format["power"]
+            if powerFlag
                 Printf.@printf(io, "| %*s | %*s | %*s | %*s | %*s | %*s | %*s | %*s ",
-                    format["From-Bus Power Active"], "Active",
-                    format["From-Bus Power Reactive"], "Reactive",
-                    format["To-Bus Power Active"], "Active",
-                    format["To-Bus Power Reactive"], "Reactive",
-                    format["Shunt Power Active"], "Active",
-                    format["Shunt Power Reactive"], "Reactive",
-                    format["Series Power Active"], "Active",
-                    format["Series Power Reactive"], "Reactive",
+                    width["From-Bus Power Active"], "Active",
+                    width["From-Bus Power Reactive"], "Reactive",
+                    width["To-Bus Power Active"], "Active",
+                    width["To-Bus Power Reactive"], "Reactive",
+                    width["Shunt Power Active"], "Active",
+                    width["Shunt Power Reactive"], "Reactive",
+                    width["Series Power Active"], "Active",
+                    width["Series Power Reactive"], "Reactive",
                 )
             end
-            if format["current"]
+            if currentFlag
                 Printf.@printf(io, "| %*s | %*s | %*s | %*s | %*s | %*s ",
-                    format["From-Bus Current Magnitude"], "Magnitude",
-                    format["From-Bus Current Angle"], "Angle",
-                    format["To-Bus Current Magnitude"], "Magnitude",
-                    format["To-Bus Current Angle"], "Angle",
-                    format["Series Current Magnitude"], "Magnitude",
-                    format["Series Current Angle"], "Angle",
+                    width["From-Bus Current Magnitude"], "Magnitude",
+                    width["From-Bus Current Angle"], "Angle",
+                    width["To-Bus Current Magnitude"], "Magnitude",
+                    width["To-Bus Current Angle"], "Angle",
+                    width["Series Current Magnitude"], "Magnitude",
+                    width["Series Current Angle"], "Angle",
                 )
             end
-            Printf.@printf io "| %*s |\n" format["Status"] ""
+            Printf.@printf io "| %*s |\n" width["Status"] ""
 
-            Printf.@printf(io, "| %*s ", format["Label"], "")
+            Printf.@printf(io, "| %*s ", width["Label"], "")
 
-            if format["power"]
+            if powerFlag
                 Printf.@printf(io, "| %*s | %*s | %*s | %*s | %*s | %*s | %*s | %*s ",
-                    format["From-Bus Power Active"], unitData["P"],
-                    format["From-Bus Power Reactive"], unitData["Q"],
-                    format["To-Bus Power Active"], unitData["P"],
-                    format["To-Bus Power Reactive"], unitData["Q"],
-                    format["Shunt Power Active"], unitData["P"],
-                    format["Shunt Power Reactive"], unitData["Q"],
-                    format["Series Power Active"], unitData["P"],
-                    format["Series Power Reactive"], unitData["Q"],
+                    width["From-Bus Power Active"], unitData["P"],
+                    width["From-Bus Power Reactive"], unitData["Q"],
+                    width["To-Bus Power Active"], unitData["P"],
+                    width["To-Bus Power Reactive"], unitData["Q"],
+                    width["Shunt Power Active"], unitData["P"],
+                    width["Shunt Power Reactive"], unitData["Q"],
+                    width["Series Power Active"], unitData["P"],
+                    width["Series Power Reactive"], unitData["Q"],
                 )
             end
-            if format["current"]
+            if currentFlag
                 Printf.@printf(io, "| %*s | %*s | %*s | %*s | %*s | %*s ",
-                    format["From-Bus Current Magnitude"], unitData["I"],
-                    format["From-Bus Current Angle"], unitData["ψ"],
-                    format["To-Bus Current Magnitude"], unitData["I"],
-                    format["To-Bus Current Angle"], unitData["ψ"],
-                    format["Series Current Magnitude"], unitData["I"],
-                    format["Series Current Angle"], unitData["ψ"],
+                    width["From-Bus Current Magnitude"], unitData["I"],
+                    width["From-Bus Current Angle"], unitData["ψ"],
+                    width["To-Bus Current Magnitude"], unitData["I"],
+                    width["To-Bus Current Angle"], unitData["ψ"],
+                    width["Series Current Magnitude"], unitData["I"],
+                    width["Series Current Angle"], unitData["ψ"],
                 )
             end
-            Printf.@printf io "| %*s |\n" format["Status"] ""
+            Printf.@printf io "| %*s |\n" width["Status"] ""
 
-            Printf.@printf(io, "|-%*s-", format["Label"], "-"^format["Label"]
+            Printf.@printf(io, "|-%*s-", width["Label"], "-"^width["Label"]
             )
-            if format["power"]
+            if powerFlag
                 Printf.@printf(io, "|-%*s-|-%*s-|-%*s-|-%*s-|-%*s-|-%*s-|-%*s-|-%*s-",
-                    format["From-Bus Power Active"], "-"^format["From-Bus Power Active"],
-                    format["From-Bus Power Reactive"], "-"^format["From-Bus Power Reactive"],
-                    format["To-Bus Power Active"], "-"^format["To-Bus Power Active"],
-                    format["To-Bus Power Reactive"], "-"^format["To-Bus Power Reactive"],
-                    format["Shunt Power Active"], "-"^format["Shunt Power Active"],
-                    format["Shunt Power Reactive"], "-"^format["Shunt Power Reactive"],
-                    format["Series Power Active"], "-"^format["Series Power Active"],
-                    format["Series Power Reactive"], "-"^format["Series Power Reactive"],
+                    width["From-Bus Power Active"], "-"^width["From-Bus Power Active"],
+                    width["From-Bus Power Reactive"], "-"^width["From-Bus Power Reactive"],
+                    width["To-Bus Power Active"], "-"^width["To-Bus Power Active"],
+                    width["To-Bus Power Reactive"], "-"^width["To-Bus Power Reactive"],
+                    width["Shunt Power Active"], "-"^width["Shunt Power Active"],
+                    width["Shunt Power Reactive"], "-"^width["Shunt Power Reactive"],
+                    width["Series Power Active"], "-"^width["Series Power Active"],
+                    width["Series Power Reactive"], "-"^width["Series Power Reactive"],
                 )
             end
-            if format["current"]
+            if currentFlag
                 Printf.@printf(io, "|-%*s-|-%*s-|-%*s-|-%*s-|-%*s-|-%*s-",
-                    format["From-Bus Current Magnitude"], "-"^format["From-Bus Current Magnitude"],
-                    format["From-Bus Current Angle"], "-"^format["From-Bus Current Angle"],
-                    format["To-Bus Current Magnitude"], "-"^format["To-Bus Current Magnitude"],
-                    format["To-Bus Current Angle"], "-"^format["To-Bus Current Angle"],
-                    format["Series Current Magnitude"], "-"^format["Series Current Magnitude"],
-                    format["Series Current Angle"], "-"^format["Series Current Angle"],
+                    width["From-Bus Current Magnitude"], "-"^width["From-Bus Current Magnitude"],
+                    width["From-Bus Current Angle"], "-"^width["From-Bus Current Angle"],
+                    width["To-Bus Current Magnitude"], "-"^width["To-Bus Current Magnitude"],
+                    width["To-Bus Current Angle"], "-"^width["To-Bus Current Angle"],
+                    width["Series Current Magnitude"], "-"^width["Series Current Magnitude"],
+                    width["Series Current Angle"], "-"^width["Series Current Angle"],
                 )
             end
-            Printf.@printf io "|-%*s-|\n" format["Status"] "-"^format["Status"]
+            Printf.@printf io "|-%*s-|\n" width["Status"] "-"^width["Status"]
         elseif !isset(label)
             Printf.@printf(io, "|%s|\n", "-"^maxLine)
         end
 
         for (label, i) in labels
-            Printf.@printf(io, "| %*s ", format["Label"], label)
+            Printf.@printf(io, "| %-*s ", width["Label"], label)
 
-            if format["power"]
-                Printf.@printf(io, "| %*.4f | %*.4f | %*.4f | %*.4f | %*.4f | %*.4f | %*.4f | %*.4f ",
-                    format["From-Bus Power Active"], analysis.power.from.active[i] * scale["P"],
-                    format["From-Bus Power Reactive"], analysis.power.from.reactive[i] * scale["Q"],
-                    format["To-Bus Power Active"], analysis.power.to.active[i] * scale["P"],
-                    format["To-Bus Power Reactive"], analysis.power.to.reactive[i] * scale["Q"],
-                    format["Shunt Power Active"], analysis.power.charging.active[i] * scale["P"],
-                    format["Shunt Power Reactive"], analysis.power.charging.reactive[i] * scale["Q"],
-                    format["Series Power Active"], analysis.power.series.active[i] * scale["P"],
-                    format["Series Power Reactive"], analysis.power.series.reactive[i] * scale["Q"],
-                )
-            end
-            if format["current"]
-                if prefix.currentMagnitude != 0.0
-                    j = system.branch.layout.from[i]
-                    currentMagnitudeFrom = analysis.current.from.magnitude[i] * system.base.power.value * system.base.power.prefix / (sqrt(3) * system.base.voltage.value[j] * system.base.voltage.prefix * prefix.currentMagnitude)
-                    currentMagnitudeS = analysis.current.series.magnitude[i] * system.base.power.value * system.base.power.prefix / (sqrt(3) * system.base.voltage.value[j] * system.base.voltage.prefix * prefix.currentMagnitude)
-
-                    j = system.branch.layout.to[i]
-                    currentMagnitudeTo = analysis.current.to.magnitude[i] * system.base.power.value * system.base.power.prefix / (sqrt(3) * system.base.voltage.value[j] * system.base.voltage.prefix * prefix.currentMagnitude)
-                else
-                    currentMagnitudeFrom = analysis.current.from.magnitude[i]
-                    currentMagnitudeTo = analysis.current.to.magnitude[i]
-                    currentMagnitudeS = analysis.current.series.magnitude[i]
-                end
-
-                Printf.@printf(io, "| %*.4f | %*.4f | %*.4f | %*.4f | %*.4f | %*.4f ",
-                    format["From-Bus Current Magnitude"], currentMagnitudeFrom,
-                    format["From-Bus Current Angle"], analysis.current.from.angle[i] * scale["ψ"],
-                    format["To-Bus Current Magnitude"], currentMagnitudeTo,
-                    format["To-Bus Current Angle"], analysis.current.to.angle[i] * scale["ψ"],
-                    format["Series Current Magnitude"], currentMagnitudeS,
-                    format["Series Current Angle"], analysis.current.series.angle[i] * scale["ψ"]
+            if powerFlag
+                print(io, Printf.format(
+                    Printf.Format(
+                        "| $(fmt["From-Bus Power Active"]) | $(fmt["From-Bus Power Reactive"]) " *
+                        "| $(fmt["To-Bus Power Active"]) | $(fmt["To-Bus Power Reactive"]) " *
+                        "| $(fmt["Shunt Power Active"]) | $(fmt["Shunt Power Reactive"]) " *
+                        "| $(fmt["Series Power Active"]) | $(fmt["Series Power Reactive"]) "
+                    ),
+                    width["From-Bus Power Active"], analysis.power.from.active[i] * scale["P"],
+                    width["From-Bus Power Reactive"], analysis.power.from.reactive[i] * scale["Q"],
+                    width["To-Bus Power Active"], analysis.power.to.active[i] * scale["P"],
+                    width["To-Bus Power Reactive"], analysis.power.to.reactive[i] * scale["Q"],
+                    width["Shunt Power Active"], analysis.power.charging.active[i] * scale["P"],
+                    width["Shunt Power Reactive"], analysis.power.charging.reactive[i] * scale["Q"],
+                    width["Series Power Active"], analysis.power.series.active[i] * scale["P"],
+                    width["Series Power Reactive"], analysis.power.series.reactive[i] * scale["Q"])
                 )
             end
 
-            Printf.@printf(io, "| %*i |\n", format["Status"], system.branch.layout.status[i])
+            if currentFlag
+                print(io, Printf.format(
+                    Printf.Format(
+                        "| $(fmt["From-Bus Current Magnitude"]) | $(fmt["From-Bus Current Angle"]) " *
+                        "| $(fmt["To-Bus Current Magnitude"]) | $(fmt["To-Bus Current Angle"]) " *
+                        "| $(fmt["Series Current Magnitude"]) | $(fmt["Series Current Angle"]) "
+                    ),
+                    width["From-Bus Current Magnitude"], analysis.current.from.magnitude[i] * scaleMagnitude(prefix, system, system.branch.layout.from[i]),
+                    width["From-Bus Current Angle"], analysis.current.from.angle[i] * scale["ψ"],
+                    width["To-Bus Current Magnitude"], analysis.current.to.magnitude[i] * scaleMagnitude(prefix, system, system.branch.layout.to[i]),
+                    width["To-Bus Current Angle"], analysis.current.to.angle[i] * scale["ψ"],
+                    width["Series Current Magnitude"], analysis.current.series.magnitude[i] * scaleMagnitude(prefix, system, system.branch.layout.from[i]),
+                    width["Series Current Angle"], analysis.current.series.angle[i] * scale["ψ"])
+                )
+            end
+
+            Printf.@printf(io, "| %*i |\n", width["Status"], system.branch.layout.status[i])
         end
 
         if !isset(label) || footer
@@ -714,8 +712,8 @@ function printBranchData(system::PowerSystem, analysis::AC, io::IO = stdout;
     end
 end
 
-function formatBranchData(system::PowerSystem, analysis::AC, scale::Dict{String, Float64}, label::L, width::Dict{String,Int64})
-    format = Dict(
+function formatBranchData(system::PowerSystem, analysis::AC, scale::Dict{String, Float64}, label::L, width::Dict{String, Int64}, fmt::Dict{String, String})
+    _width = Dict(
         "Label" => 5,
         "From-Bus Power Active" => 6,
         "From-Bus Power Reactive" => 8,
@@ -731,125 +729,107 @@ function formatBranchData(system::PowerSystem, analysis::AC, scale::Dict{String,
         "To-Bus Current Angle" => 5,
         "Series Current Magnitude" => 9,
         "Series Current Angle" => 5,
-        "Status" => 6,
-        "power" => !isempty(analysis.power.from.active),
-        "current" => !isempty(analysis.current.from.magnitude)
+        "Status" => 6
     )
-    format = formatWidth(format, width)
+
+    _fmt = Dict(
+        "From-Bus Power Active" => "%*.4f",
+        "From-Bus Power Reactive" => "%*.4f",
+        "To-Bus Power Active" => "%*.4f",
+        "To-Bus Power Reactive" => "%*.4f",
+        "Shunt Power Active" => "%*.4f",
+        "Shunt Power Reactive" => "%*.4f",
+        "Series Power Active" => "%*.4f",
+        "Series Power Reactive" => "%*.4f",
+        "From-Bus Current Magnitude" => "%*.4f",
+        "From-Bus Current Angle" => "%*.4f",
+        "To-Bus Current Magnitude" => "%*.4f",
+        "To-Bus Current Angle" => "%*.4f",
+        "Series Current Magnitude" => "%*.4f",
+        "Series Current Angle" => "%*.4f"
+    )
+
+    width, fmt = printFormat(_width, width, _fmt, fmt)
+
+    powerFlag = !isempty(analysis.power.from.active)
+    currentFlag = !isempty(analysis.current.from.magnitude)
 
     if isset(label)
-        i = system.branch.label[getLabel(system.branch, label, "branch")]
-        format["Label"] = max(length(label), format["Label"])
+        label = getLabel(system.branch, label, "branch")
+        i = system.branch.label[label]
 
-        if format["power"]
-            format["From-Bus Power Active"] = max(length(Printf.@sprintf("%.4f", analysis.power.from.active[i] * scale["P"])), format["From-Bus Power Active"])
-            format["To-Bus Power Active"] = max(length(Printf.@sprintf("%.4f", analysis.power.to.active[i] * scale["P"])), format["To-Bus Power Active"])
-            format["Shunt Power Active"] = max(length(Printf.@sprintf("%.4f", analysis.power.charging.active[i] * scale["P"])), format["Shunt Power Active"])
-            format["Series Power Active"] = max(length(Printf.@sprintf("%.4f", analysis.power.series.active[i] * scale["P"])), format["Series Power Active"])
+        width["Label"] = max(textwidth(label), width["Label"])
 
-            format["From-Bus Power Reactive"] = max(length(Printf.@sprintf("%.4f", analysis.power.from.reactive[i] * scale["Q"])), format["From-Bus Power Reactive"])
-            format["To-Bus Power Reactive"] = max(length(Printf.@sprintf("%.4f", analysis.power.to.reactive[i] * scale["Q"])), format["To-Bus Power Reactive"])
-            format["Shunt Power Reactive"] = max(length(Printf.@sprintf("%.4f", analysis.power.charging.reactive[i] * scale["Q"])), format["Shunt Power Reactive"])
-            format["Series Power Reactive"] = max(length(Printf.@sprintf("%.4f", analysis.power.series.reactive[i] * scale["Q"])), format["Series Power Reactive"])
+        if powerFlag
+            fmax(analysis.power.from.active[i], scale["P"], width, fmt, "From-Bus Power Active")
+            fmax(analysis.power.to.active[i], scale["P"], width, fmt, "To-Bus Power Active")
+            fmax(analysis.power.charging.active[i], scale["P"], width, fmt, "Shunt Power Active")
+            fmax(analysis.power.series.active[i], scale["P"], width, fmt, "Series Power Active")
+
+            fmax(analysis.power.from.reactive[i], scale["Q"], width, fmt, "From-Bus Power Reactive")
+            fmax(analysis.power.to.reactive[i], scale["Q"], width, fmt, "To-Bus Power Reactive")
+            fmax(analysis.power.charging.reactive[i], scale["Q"], width, fmt, "Shunt Power Reactive")
+            fmax( analysis.power.series.reactive[i], scale["Q"], width, fmt, "Series Power Reactive")
         end
 
-        if format["current"]
-            if prefix.currentMagnitude == 0.0
-                scaleIij = 1.0
-                scaleIji = 1.0
-            else
-                scaleIij = system.base.power.value * system.base.power.prefix / (sqrt(3) * system.base.voltage.value[system.branch.layout.from[i]] * system.base.voltage.prefix * prefix.currentMagnitude)
-                scaleIji = system.base.power.value * system.base.power.prefix / (sqrt(3) * system.base.voltage.value[system.branch.layout.to[i]] * system.base.voltage.prefix * prefix.currentMagnitude)
-            end
+        if currentFlag
+            fmax(analysis.current.from.magnitude[i], scaleMagnitude(prefix, system, system.branch.layout.from[i]), width, fmt, "From-Bus Current Magnitude")
+            fmax(analysis.current.to.magnitude[i], scaleMagnitude(prefix, system, system.branch.layout.to[i]), width, fmt, "To-Bus Current Magnitude")
+            fmax(analysis.current.series.magnitude[i], scaleMagnitude(prefix, system, system.branch.layout.from[i]), width, fmt, "Series Current Magnitude")
 
-            format["From-Bus Current Magnitude"] = max(length(Printf.@sprintf("%.4f", analysis.current.from.magnitude[i] * scaleIij)), format["From-Bus Current Magnitude"])
-            format["To-Bus Current Magnitude"] = max(length(Printf.@sprintf("%.4f", analysis.current.to.magnitude[i] * scaleIji)), format["To-Bus Current Magnitude"])
-            format["Series Current Magnitude"] = max(length(Printf.@sprintf("%.4f", analysis.current.series.magnitude[i] * scaleIij)), format["Series Current Magnitude"])
-
-            format["From-Bus Current Angle"] = max(length(Printf.@sprintf("%.4f", analysis.current.from.angle[i] * scale["ψ"])), format["From-Bus Current Angle"])
-            format["To-Bus Current Angle"] = max(length(Printf.@sprintf("%.4f", analysis.current.to.angle[i] * scale["ψ"])), format["To-Bus Current Angle"])
-            format["Series Current Angle"] = max(length(Printf.@sprintf("%.4f", analysis.current.series.angle[i] * scale["ψ"])), format["Series Current Angle"])
+            fmax(analysis.current.from.angle[i], scale["ψ"], width, fmt, "From-Bus Current Angle")
+            fmax(analysis.current.to.angle[i], scale["ψ"], width, fmt, "To-Bus Current Angle")
+            fmax(analysis.current.series.angle[i], scale["ψ"], width, fmt, "Series Current Angle")
         end
     else
-        if format["power"]
-            minmaxPij = extrema(analysis.power.from.active)
-            format["From-Bus Power Active"] = max(length(Printf.@sprintf("%.4f", minmaxPij[1] * scale["P"])), length(Printf.@sprintf("%.4f", minmaxPij[2] * scale["P"])), format["From-Bus Power Active"])
+        if powerFlag
+            fminmax(analysis.power.from.active, scale["P"], width, fmt, "From-Bus Power Active")
+            fminmax(analysis.power.to.active, scale["P"], width, fmt, "To-Bus Power Active")
+            fminmax(analysis.power.charging.active, scale["P"], width, fmt, "Shunt Power Active")
+            fminmax(analysis.power.series.active, scale["P"], width, fmt, "Series Power Active")
 
-            minmaxPji = extrema(analysis.power.to.active)
-            format["To-Bus Power Active"] = max(length(Printf.@sprintf("%.4f", minmaxPji[1] * scale["P"])), length(Printf.@sprintf("%.4f", minmaxPji[2] * scale["P"])), format["To-Bus Power Active"])
-
-            minmaxPsi = extrema(analysis.power.charging.active)
-            format["Shunt Power Active"] = max(length(Printf.@sprintf("%.4f", minmaxPsi[1] * scale["P"])), length(Printf.@sprintf("%.4f", minmaxPsi[2] * scale["P"])), format["Shunt Power Active"])
-
-            minmaxPli = extrema(analysis.power.series.active)
-            format["Series Power Active"] = max(length(Printf.@sprintf("%.4f", minmaxPli[1] * scale["P"])), length(Printf.@sprintf("%.4f", minmaxPli[2] * scale["P"])), format["Series Power Active"])
-
-            minmaxQij = extrema(analysis.power.from.reactive)
-            format["From-Bus Power Reactive"] = max(length(Printf.@sprintf("%.4f", minmaxQij[1] * scale["Q"])), length(Printf.@sprintf("%.4f", minmaxQij[2] * scale["Q"])), format["From-Bus Power Reactive"])
-
-            minmaxQji = extrema(analysis.power.to.reactive)
-            format["To-Bus Power Reactive"] = max(length(Printf.@sprintf("%.4f", minmaxQji[1] * scale["Q"])), length(Printf.@sprintf("%.4f", minmaxQji[2] * scale["Q"])), format["To-Bus Power Reactive"])
-
-            minmaxQsi = extrema(analysis.power.charging.reactive)
-            format["Shunt Power Reactive"] = max(length(Printf.@sprintf("%.4f", minmaxQsi[1] * scale["Q"])), length(Printf.@sprintf("%.4f", minmaxQsi[2] * scale["Q"])), format["Shunt Power Reactive"])
-
-            minmaxQli = extrema(analysis.power.series.reactive)
-            format["Series Power Reactive"] = max(length(Printf.@sprintf("%.4f", minmaxQli[1] * scale["Q"])), length(Printf.@sprintf("%.4f", minmaxQli[2] * scale["Q"])), format["Series Power Reactive"])
+            fminmax(analysis.power.from.reactive, scale["Q"], width, fmt, "From-Bus Power Reactive")
+            fminmax(analysis.power.to.reactive, scale["Q"], width, fmt, "To-Bus Power Reactive")
+            fminmax(analysis.power.charging.reactive, scale["Q"], width, fmt, "Shunt Power Reactive")
+            fminmax( analysis.power.series.reactive, scale["Q"], width, fmt, "Series Power Reactive")
         end
 
-        if format["current"]
+        if currentFlag
             if prefix.currentMagnitude == 0.0
-                maxIij = maximum(analysis.current.from.magnitude)
-                format["From-Bus Current Magnitude"] = max(length(Printf.@sprintf("%.4f", maxIij)), format["From-Bus Current Magnitude"])
-
-                maxIji = maximum(analysis.current.to.magnitude)
-                format["To-Bus Current Magnitude"] = max(length(Printf.@sprintf("%.4f", maxIji)), format["To-Bus Current Magnitude"])
-
-                maxIs = maximum(analysis.current.series.magnitude)
-                format["Series Current Magnitude"] = max(length(Printf.@sprintf("%.4f", maxIs)), format["Series Current Magnitude"])
+                fmax(analysis.current.from.magnitude, 1.0, width, fmt, "From-Bus Current Magnitude")
+                fmax(analysis.current.to.magnitude, 1.0, width, fmt, "To-Bus Current Magnitude")
+                fmax(analysis.current.series.magnitude, 1.0, width, fmt, "Series Current Magnitude")
             end
-
-            minmaxWij = extrema(analysis.current.from.angle)
-            format["From-Bus Current Angle"] = max(length(Printf.@sprintf("%.4f", minmaxWij[1] * scale["ψ"])), length(Printf.@sprintf("%.4f", minmaxWij[2] * scale["ψ"])), format["From-Bus Current Angle"])
-
-            minmaxWji = extrema(analysis.current.to.angle)
-            format["To-Bus Current Angle"] = max(length(Printf.@sprintf("%.4f", minmaxWji[1] * scale["ψ"])), length(Printf.@sprintf("%.4f", minmaxWji[2] * scale["ψ"])), format["To-Bus Current Angle"])
-
-            minmaxWs = extrema(analysis.current.series.angle)
-            format["Series Current Angle"] = max(length(Printf.@sprintf("%.4f", minmaxWs[1] * scale["ψ"])), length(Printf.@sprintf("%.4f", minmaxWs[2] * scale["ψ"])), format["Series Current Angle"])
+            fminmax(analysis.current.from.angle, scale["ψ"], width, fmt, "From-Bus Current Angle")
+            fminmax(analysis.current.to.angle, scale["ψ"], width, fmt, "To-Bus Current Angle")
+            fminmax(analysis.current.series.angle, scale["ψ"], width, fmt, "Series Current Angle")
         end
 
         @inbounds for (label, i) in system.branch.label
-            format["Label"] = max(length(label), format["Label"])
+            width["Label"] = max(textwidth(label), width["Label"])
 
-            if format["current"] && prefix.currentMagnitude != 0.0
-                from = system.branch.layout.from[i]
-                scaleIij = system.base.power.value * system.base.power.prefix / (sqrt(3) * system.base.voltage.value[from] * system.base.voltage.prefix * prefix.currentMagnitude)
-                format["From-Bus Current Magnitude"] = max(length(Printf.@sprintf("%.4f", analysis.current.from.magnitude[i] * scaleIij)), format["From-Bus Current Magnitude"])
-
-                to = system.branch.layout.to[i]
-                scaleIji = system.base.power.value * system.base.power.prefix / (sqrt(3) * system.base.voltage.value[to] * system.base.voltage.prefix * prefix.currentMagnitude)
-                format["To-Bus Current Magnitude"] = max(length(Printf.@sprintf("%.4f", analysis.current.to.magnitude[i] * scaleIji)), format["To-Bus Current Magnitude"])
-
-                format["Series Current Magnitude"] = max(length(Printf.@sprintf("%.4f", analysis.current.series.magnitude[i] * scaleIij)), format["Series Current Magnitude"])
+            if currentFlag && prefix.currentMagnitude != 0.0
+                fmax(analysis.current.from.magnitude[i], scaleMagnitude(system, system.branch.layout.from[i]), width, fmt, "From-Bus Current Magnitude")
+                fmax(analysis.current.series.magnitude[i], scaleMagnitude(system, system.branch.layout.from[i]), width, fmt, "Series Current Magnitude")
+                fmax(analysis.current.to.magnitude[i], scaleMagnitude(system, system.branch.layout.to[i]), width, fmt, "To-Bus Current Magnitude")
             end
         end
     end
 
-    return format
+    return width, fmt, powerFlag, currentFlag
 end
 
 function printBranchData(system::PowerSystem, analysis::DC, io::IO = stdout;
     label::L = missing, header::B = missing, footer::Bool = false,
-    width::Dict{String, Int64} = Dict{String, Int64}())
+    width::Dict{String, Int64} = Dict{String, Int64}(), fmt::Dict{String, String} = Dict{String, String}())
 
     scale = printScale(system, prefix)
     unitData = printUnitData(unitList)
-    format = formatBranchData(system, analysis, scale, label, width)
+    width, fmt, flag = formatBranchData(system, analysis, scale, label, width, fmt)
     labels, header = toggleLabelHeader(label, system.branch, system.branch.label, header, "branch")
 
-    if format["power"]
-        maxLine = format["Label"] + format["From-Bus Power Active"] + format["To-Bus Power Active"] + format["Status"] + 11
+    if flag
+        maxLine = width["Label"] + width["From-Bus Power Active"] + width["To-Bus Power Active"] + width["Status"] + 11
 
         printTitle(maxLine, "Branch Data", header, io)
 
@@ -857,35 +837,38 @@ function printBranchData(system::PowerSystem, analysis::DC, io::IO = stdout;
             Printf.@printf(io, "|%s|\n", "-"^maxLine)
 
             Printf.@printf(io, "| %*s%s%*s | %*s | %*s | %*s |\n",
-                floor(Int, (format["Label"] - 5) / 2), "", "Label", ceil(Int, (format["Label"] - 5) / 2) , "",
-                format["From-Bus Power Active"], "From-Bus Power",
-                format["To-Bus Power Active"], "To-Bus Power",
-                format["Status"], "Status",
+                floor(Int, (width["Label"] - 5) / 2), "", "Label", ceil(Int, (width["Label"] - 5) / 2) , "",
+                width["From-Bus Power Active"], "From-Bus Power",
+                width["To-Bus Power Active"], "To-Bus Power",
+                width["Status"], "Status",
             )
 
             Printf.@printf(io, "| %*s | %*s | %*s | %*s |\n",
-                format["Label"], "",
-                format["From-Bus Power Active"], "Active $(unitData["P"])",
-                format["To-Bus Power Active"], "Active $(unitData["P"])",
-                format["Status"], "",
+                width["Label"], "",
+                width["From-Bus Power Active"], "Active $(unitData["P"])",
+                width["To-Bus Power Active"], "Active $(unitData["P"])",
+                width["Status"], "",
             )
 
             Printf.@printf(io, "|-%*s-|-%*s-|-%*s-|-%*s-|\n",
-                format["Label"], "-"^format["Label"],
-                format["From-Bus Power Active"], "-"^format["From-Bus Power Active"],
-                format["To-Bus Power Active"], "-"^format["To-Bus Power Active"],
-                format["Status"], "-"^format["Status"],
+                width["Label"], "-"^width["Label"],
+                width["From-Bus Power Active"], "-"^width["From-Bus Power Active"],
+                width["To-Bus Power Active"], "-"^width["To-Bus Power Active"],
+                width["Status"], "-"^width["Status"],
             )
         elseif !isset(label)
             Printf.@printf(io, "|%s|\n", "-"^maxLine)
         end
 
         for (label, i) in labels
-            Printf.@printf(io, "| %-*s | %*.4f | %*.4f | %*i |\n",
-                format["Label"], label,
-                format["From-Bus Power Active"], analysis.power.from.active[i] * scale["P"],
-                format["To-Bus Power Active"], analysis.power.to.active[i] * scale["P"],
-                format["Status"], system.branch.layout.status[i],
+            print(io, Printf.format(
+                Printf.Format(
+                    "| %-*s | $(fmt["From-Bus Power Active"]) | $(fmt["To-Bus Power Active"]) | %*i |\n"
+                ),
+                width["Label"], label,
+                width["From-Bus Power Active"], analysis.power.from.active[i] * scale["P"],
+                width["To-Bus Power Active"], analysis.power.to.active[i] * scale["P"],
+                width["Status"], system.branch.layout.status[i])
             )
         end
 
@@ -895,42 +878,47 @@ function printBranchData(system::PowerSystem, analysis::DC, io::IO = stdout;
     end
 end
 
-function formatBranchData(system::PowerSystem, analysis::DC, scale::Dict{String, Float64}, label::L, width::Dict{String,Int64})
-    format = Dict(
+function formatBranchData(system::PowerSystem, analysis::DC, scale::Dict{String, Float64}, label::L, width::Dict{String, Int64}, fmt::Dict{String, String})
+    _width = Dict(
         "Label" => 5,
         "From-Bus Power Active" => 14,
         "To-Bus Power Active" => 12,
-        "Status" => 6,
-        "power" => !isempty(analysis.power.from.active),
+        "Status" => 6
     )
-    format = formatWidth(format, width)
+
+    _fmt = Dict(
+        "From-Bus Power Active" => "%*.4f",
+        "To-Bus Power Active" => "%*.4f"
+    )
+
+    width, fmt = printFormat(_width, width, _fmt, fmt)
+    flag = !isempty(analysis.power.from.active)
 
     if isset(label)
-        i = system.branch.label[getLabel(system.branch, label, "branch")]
-        format["Label"] = max(length(label), format["Label"])
+        label = getLabel(system.branch, label, "branch")
+        i = system.branch.label[label]
 
-        format["From-Bus Power Active"] = max(length(Printf.@sprintf("%.4f", analysis.power.from.active[i] * scale["P"])), format["From-Bus Power Active"])
-        format["To-Bus Power Active"] = max(length(Printf.@sprintf("%.4f", analysis.power.to.active[i] * scale["P"])), format["To-Bus Power Active"])
+        width["Label"] = max(textwidth(label), width["Label"])
+
+        fmax(analysis.power.from.active[i], scale["P"], width, fmt, "From-Bus Power Active")
+        fmax(analysis.power.to.active[i], scale["P"], width, fmt, "To-Bus Power Active")
     else
-        if format["power"]
-            minmaxPij = extrema(analysis.power.from.active)
-            format["From-Bus Power Active"] = max(length(Printf.@sprintf("%.4f", minmaxPij[1] * scale["P"])), length(Printf.@sprintf("%.4f", minmaxPij[2] * scale["P"])), format["From-Bus Power Active"])
-
-            minmaxPji = extrema(analysis.power.to.active)
-            format["To-Bus Power Active"] = max(length(Printf.@sprintf("%.4f", minmaxPji[1] * scale["P"])), length(Printf.@sprintf("%.4f", minmaxPji[2] * scale["P"])), format["To-Bus Power Active"])
+        if flag
+            fminmax(analysis.power.from.active, scale["P"], width, fmt, "From-Bus Power Active")
+            fminmax(analysis.power.to.active, scale["P"], width, fmt, "To-Bus Power Active")
         end
 
         @inbounds for (label, i) in system.branch.label
-            format["Label"] = max(length(label), format["Label"])
+            width["Label"] = max(textwidth(label), width["Label"])
         end
     end
 
-    return format
+    return width, fmt, flag
 end
 
 """
     printGeneratorData(system::PowerSystem, analysis::Analysis, io::IO;
-        label, header, footer, width)
+        label, header, footer, width, fmt)
 
 The function prints powers related to generators. Optionally, an `IO` may be passed as the
 last argument to redirect the output.
@@ -941,6 +929,7 @@ The following keywords control the printed data:
 * `header`: Toggles the printing of the header.
 * `footer`: Toggles the printing of the footer.
 * `width`: Specifies the preferred width of each column.
+* `fmt`: Specifies the preferred numeric format of each column.
 
 !!! compat "Julia 1.10"
     The function [`printGeneratorData`](@ref printGeneratorData) requires Julia 1.10 or later.
@@ -960,7 +949,8 @@ end
 power!(system, analysis)
 
 # Print data for all generators
-printGeneratorData(system, analysis)
+fmt = Dict("Output Power Active" => "%.2f")
+printGeneratorData(system, analysis; fmt)
 
 # Print data for specific generators
 width = Dict("Output Power Active" => 7)
@@ -971,62 +961,65 @@ printGeneratorData(system, analysis; label = 5, width, footer = true)
 """
 function printGeneratorData(system::PowerSystem, analysis::AC, io::IO = stdout;
     label::L = missing, header::B = missing, footer::Bool = false,
-    width::Dict{String, Int64} = Dict{String, Int64}())
+    width::Dict{String, Int64} = Dict{String, Int64}(), fmt::Dict{String, String} = Dict{String, String}())
 
     scale = printScale(system, prefix)
     unitData = printUnitData(unitList)
-    format = formatGeneratorData(system, analysis, scale, label, width)
+    width, fmt, flag = formatGeneratorData(system, analysis, scale, label, width, fmt)
     labels, header = toggleLabelHeader(label, system.generator, system.generator.label, header, "generator")
 
-    if format["power"]
-        maxLine = format["Label"] + format["Output Power Active"] + format["Output Power Reactive"] + format["Status"] + 11
+    if flag
+        maxLine = width["Label"] + width["Output Power Active"] + width["Output Power Reactive"] + width["Status"] + 11
         printTitle(maxLine, "Generator Data", header, io)
 
         if header
             Printf.@printf(io, "|%s|\n", "-"^maxLine)
 
             Printf.@printf(io, "| %*s%s%*s | %*s%s%*s | %s |\n",
-                floor(Int, (format["Label"] - 5) / 2), "", "Label", ceil(Int, (format["Label"] - 5) / 2) , "",
-                floor(Int, (format["Output Power Active"] + format["Output Power Reactive"] - 9) / 2), "", "Output Power", ceil(Int, (format["Output Power Active"] + format["Output Power Reactive"] - 9) / 2) , "",
+                floor(Int, (width["Label"] - 5) / 2), "", "Label", ceil(Int, (width["Label"] - 5) / 2) , "",
+                floor(Int, (width["Output Power Active"] + width["Output Power Reactive"] - 9) / 2), "", "Output Power", ceil(Int, (width["Output Power Active"] + width["Output Power Reactive"] - 9) / 2) , "",
                 "Status"
             )
 
             Printf.@printf(io, "| %*s | %*s | %*s |\n",
-                format["Label"], "",
-                format["Output Power Active"] + format["Output Power Reactive"] + 3, "",
-                format["Status"], ""
+                width["Label"], "",
+                width["Output Power Active"] + width["Output Power Reactive"] + 3, "",
+                width["Status"], ""
             )
 
             Printf.@printf(io, "| %*s | %*s | %*s | %*s |\n",
-                format["Label"], "",
-                format["Output Power Active"], "Active",
-                format["Output Power Reactive"], "Reactive",
-                format["Status"], ""
+                width["Label"], "",
+                width["Output Power Active"], "Active",
+                width["Output Power Reactive"], "Reactive",
+                width["Status"], ""
             )
 
             Printf.@printf(io, "| %*s | %*s | %*s | %*s |\n",
-                format["Label"], "",
-                format["Output Power Active"], unitData["P"],
-                format["Output Power Reactive"], unitData["Q"],
-                format["Status"], ""
+                width["Label"], "",
+                width["Output Power Active"], unitData["P"],
+                width["Output Power Reactive"], unitData["Q"],
+                width["Status"], ""
             )
 
             Printf.@printf(io, "|-%*s-|-%*s-|-%*s-|-%*s-|\n",
-                format["Label"], "-"^format["Label"],
-                format["Output Power Active"], "-"^format["Output Power Active"],
-                format["Output Power Reactive"], "-"^format["Output Power Reactive"],
-                format["Status"], "-"^format["Status"],
+                width["Label"], "-"^width["Label"],
+                width["Output Power Active"], "-"^width["Output Power Active"],
+                width["Output Power Reactive"], "-"^width["Output Power Reactive"],
+                width["Status"], "-"^width["Status"],
             )
         elseif !isset(label)
             Printf.@printf(io, "|%s|\n", "-"^maxLine)
         end
 
         for (label, i) in labels
-            Printf.@printf(io, "| %-*s | %*.4f | %*.4f | %*i |\n",
-                format["Label"], label,
-                format["Output Power Active"], analysis.power.generator.active[i] * scale["P"],
-                format["Output Power Reactive"], analysis.power.generator.reactive[i] * scale["Q"],
-                format["Status"], system.generator.layout.status[i]
+            print(io, Printf.format(
+                Printf.Format(
+                    "| %-*s | $(fmt["Output Power Active"]) | $(fmt["Output Power Reactive"]) | %*i |\n"
+                ),
+                width["Label"], label,
+                width["Output Power Active"], analysis.power.generator.active[i] * scale["P"],
+                width["Output Power Reactive"], analysis.power.generator.reactive[i] * scale["Q"],
+                width["Status"], system.generator.layout.status[i])
             )
         end
 
@@ -1036,83 +1029,91 @@ function printGeneratorData(system::PowerSystem, analysis::AC, io::IO = stdout;
     end
 end
 
-function formatGeneratorData(system::PowerSystem, analysis::AC, scale::Dict{String, Float64}, label::L, width::Dict{String,Int64})
-    format = Dict(
+function formatGeneratorData(system::PowerSystem, analysis::AC, scale::Dict{String, Float64}, label::L, width::Dict{String, Int64}, fmt::Dict{String,String})
+    _width = Dict(
         "Label" => 5,
         "Output Power Active" => 6,
         "Output Power Reactive" => 8,
-        "Status" => 6,
-        "power" => !isempty(analysis.power.generator.active)
+        "Status" => 6
     )
-    format = formatWidth(format, width)
+
+    _fmt = Dict(
+        "Output Power Active" => "%*.4f",
+        "Output Power Reactive" => "%*.4f"
+    )
+
+    width, fmt = printFormat(_width, width, _fmt, fmt)
+    flag = !isempty(analysis.power.generator.active)
 
     if isset(label)
-        i = system.generator.label[getLabel(system.generator, label, "generator")]
-        format["Label"] = max(length(label), format["Label"])
+        label = getLabel(system.generator, label, "generator")
+        i = system.generator.label[label]
 
-        if format["power"]
-            format["Output Power Active"] = max(length(Printf.@sprintf("%.4f", analysis.power.generator.active[i] * scale["P"])), format["Output Power Active"])
-            format["Output Power Reactive"] = max(length(Printf.@sprintf("%.4f", analysis.power.generator.reactive[i] * scale["Q"])), format["Output Power Reactive"])
+        width["Label"] = max(textwidth(label), width["Label"])
+
+        if flag
+            fmax(analysis.power.generator.active[i], scale["P"], width, fmt, "Output Power Active")
+            fmax(analysis.power.generator.reactive[i], scale["Q"], width, fmt, "Output Power Reactive")
         end
     else
-        if format["power"]
-            minmaxPg = extrema(analysis.power.generator.active)
-            format["Output Power Active"] = max(length(Printf.@sprintf("%.4f", minmaxPg[1] * scale["P"])), length(Printf.@sprintf("%.4f", minmaxPg[2] * scale["P"])), format["Output Power Active"])
-
-            minmaxQg = extrema(analysis.power.generator.reactive)
-            format["Output Power Reactive"] = max(length(Printf.@sprintf("%.4f", minmaxQg[1] * scale["Q"])), length(Printf.@sprintf("%.4f", minmaxQg[2] * scale["Q"])), format["Output Power Reactive"])
+        if flag
+            fminmax(analysis.power.generator.active, scale["P"], width, fmt, "Output Power Active")
+            fminmax(analysis.power.generator.reactive, scale["Q"], width, fmt, "Output Power Reactive")
         end
 
         @inbounds for (label, i) in system.generator.label
-            format["Label"] = max(length(label), format["Label"])
+            width["Label"] = max(textwidth(label), width["Label"])
         end
     end
 
-    return format
+    return width, fmt, flag
 end
 
 function printGeneratorData(system::PowerSystem, analysis::DC, io::IO = stdout;
     label::L = missing, header::B = missing, footer::Bool = false,
-    width::Dict{String, Int64} = Dict{String, Int64}())
+    width::Dict{String, Int64} = Dict{String, Int64}(), fmt::Dict{String, String} = Dict{String, String}())
 
     scale = printScale(system, prefix)
     unitData = printUnitData(unitList)
-    format = formatGeneratorData(system, analysis, scale, label, width)
+    width, fmt, flag = formatGeneratorData(system, analysis, scale, label, width, fmt)
     labels, header = toggleLabelHeader(label, system.generator, system.generator.label, header, "generator")
 
-    if format["power"]
-        maxLine = format["Label"] + format["Output Power Active"] + format["Status"] + 8
+    if flag
+        maxLine = width["Label"] + width["Output Power Active"] + width["Status"] + 8
         printTitle(maxLine, "Generator Data", header, io)
 
         if header
             Printf.@printf(io, "|%s|\n", "-"^maxLine)
 
             Printf.@printf(io, "| %*s%s%*s | %*s | %s |\n",
-                floor(Int, (format["Label"] - 5) / 2), "", "Label", ceil(Int, (format["Label"] - 5) / 2) , "",
-                format["Output Power Active"], "Output Power",
+                floor(Int, (width["Label"] - 5) / 2), "", "Label", ceil(Int, (width["Label"] - 5) / 2) , "",
+                width["Output Power Active"], "Output Power",
                 "Status"
             )
 
             Printf.@printf(io, "| %*s | %*s | %*s |\n",
-                format["Label"], "",
-                format["Output Power Active"], "Active $(unitData["P"])",
-                format["Status"], "",
+                width["Label"], "",
+                width["Output Power Active"], "Active $(unitData["P"])",
+                width["Status"], "",
             )
 
             Printf.@printf(io, "|-%*s-|-%*s-|-%*s-|\n",
-                format["Label"], "-"^format["Label"],
-                format["Output Power Active"], "-"^format["Output Power Active"],
-                format["Status"], "-"^format["Status"],
+                width["Label"], "-"^width["Label"],
+                width["Output Power Active"], "-"^width["Output Power Active"],
+                width["Status"], "-"^width["Status"],
             )
         elseif !isset(label)
             Printf.@printf(io, "|%s|\n", "-"^maxLine)
         end
 
         for (label, i) in labels
-            Printf.@printf(io, "| %-*s | %*.4f | %*i |\n",
-                format["Label"], label,
-                format["Output Power Active"], analysis.power.generator.active[i] * scale["P"],
-                format["Status"], system.generator.layout.status[i]
+            print(io, Printf.format(
+                Printf.Format(
+                    "| %-*s | $(fmt["Output Power Active"]) | %*i |\n"
+                ),
+                width["Label"], label,
+                width["Output Power Active"], analysis.power.generator.active[i] * scale["P"],
+                width["Status"], system.generator.layout.status[i])
             )
         end
 
@@ -1122,33 +1123,40 @@ function printGeneratorData(system::PowerSystem, analysis::DC, io::IO = stdout;
     end
 end
 
-function formatGeneratorData(system::PowerSystem, analysis::DC, scale::Dict{String, Float64}, label::L, width::Dict{String,Int64})
-    format = Dict(
+function formatGeneratorData(system::PowerSystem, analysis::DC, scale::Dict{String, Float64}, label::L, width::Dict{String, Int64}, fmt::Dict{String, String})
+    _width = Dict(
         "Label" => 5,
         "Output Power Active" => 12,
-        "Status" => 6,
-        "power" => !isempty(analysis.power.generator.active)
+        "Status" => 6
     )
-    format = formatWidth(format, width)
+
+    _fmt = Dict(
+        "Output Power Active" => "%*.4f"
+    )
+
+    width, fmt = printFormat(_width, width, _fmt, fmt)
+    flag = !isempty(analysis.power.generator.active)
 
     if isset(label)
-        i = system.generator.label[getLabel(system.generator, label, "generator")]
-        format["Label"] = max(length(label), format["Label"])
-        if format["power"]
-            format["Output Power Active"] = max(length(Printf.@sprintf("%.4f", analysis.power.generator.active[i] * scale["P"])), format["Output Power Active"])
+        label = getLabel(system.generator, label, "generator")
+        i = system.generator.label[label]
+
+        width["Label"] = max(textwidth(label), width["Label"])
+
+        if flag
+            fmax(analysis.power.generator.active[i], scale["P"], width, fmt, "Output Power Active")
         end
     else
-        if format["power"]
-            minmaxPg = extrema(analysis.power.generator.active)
-            format["Output Power Active"] = max(length(Printf.@sprintf("%.4f", minmaxPg[1] * scale["P"])), length(Printf.@sprintf("%.4f", minmaxPg[2] * scale["P"])), format["Output Power Active"])
+        if flag
+            fminmax(analysis.power.generator.active, scale["P"], width, fmt, "Output Power Active")
         end
 
         @inbounds for (label, i) in system.generator.label
-            format["Label"] = max(length(label), format["Label"])
+            width["Label"] = max(textwidth(label), width["Label"])
         end
     end
 
-    return format
+    return width, fmt, flag
 end
 
 """
@@ -1229,6 +1237,8 @@ function printBusSummary(system::PowerSystem, analysis::AC, io::IO = stdout)
 end
 
 function formatBusSummary(system::PowerSystem, analysis::AC, scale::Dict{String, Float64})
+    unitLive = printUnitSummary(unitList)
+
     format = Dict(
         "V" => SummaryData(title = "Bus Voltage"),
         "θ" => SummaryData(),
@@ -1248,18 +1258,7 @@ function formatBusSummary(system::PowerSystem, analysis::AC, scale::Dict{String,
         "current" => !isempty(analysis.current.injection.magnitude)
     )
 
-    unitLive = printUnitSummary(unitList)
-
     for i = 1:system.bus.number
-        if prefix.voltageMagnitude != 0.0
-            voltageMagnitude = (analysis.voltage.magnitude[i]) * (system.base.voltage.value[i] * system.base.voltage.prefix) / prefix.voltageMagnitude
-        else
-            voltageMagnitude = analysis.voltage.magnitude[i]
-        end
-
-        minmaxsumPrint!(format["V"], voltageMagnitude, i)
-        minmaxsumPrint!(format["θ"], analysis.voltage.angle[i], i)
-
         if !isempty(system.bus.supply.generator[i])
             format["device"][1] += 1
         end
@@ -1271,6 +1270,9 @@ function formatBusSummary(system::PowerSystem, analysis::AC, scale::Dict{String,
         if system.bus.shunt.conductance[i] != 0.0 || system.bus.shunt.susceptance[i] != 0.0
             format["device"][3] += 1
         end
+
+        minmaxsumPrint!(format["V"], analysis.voltage.magnitude[i] * scaleMagnitude(prefix, system.base.voltage, i), i)
+        minmaxsumPrint!(format["θ"], analysis.voltage.angle[i], i)
 
         if format["power"]
             if !isempty(system.bus.supply.generator[i])
@@ -1293,13 +1295,7 @@ function formatBusSummary(system::PowerSystem, analysis::AC, scale::Dict{String,
         end
 
         if format["current"]
-            if prefix.currentMagnitude != 0.0
-                currentMagnitude = analysis.current.injection.magnitude[i] * system.base.power.value * system.base.power.prefix / (sqrt(3) * system.base.voltage.value[i] * system.base.voltage.prefix * prefix.currentMagnitude)
-            else
-                currentMagnitude = analysis.current.injection.magnitude[i]
-            end
-
-            minmaxsumPrint!(format["I"], currentMagnitude, i)
+            minmaxsumPrint!(format["I"], analysis.current.injection.magnitude[i] * scaleMagnitude(prefix, system, i), i)
             minmaxsumPrint!(format["ψ"], analysis.current.injection.angle[i], i)
         end
     end
@@ -1371,6 +1367,8 @@ function printBusSummary(system::PowerSystem, analysis::DC, io::IO = stdout)
 end
 
 function formatBusSummary(system::PowerSystem, analysis::DC, scale::Dict{String, Float64})
+    unitLive = printUnitSummary(unitList)
+
     format = Dict(
         "θ" => SummaryData(title = "Bus Voltage"),
         "Ps" => SummaryData(title = "Power Generation"),
@@ -1381,11 +1379,7 @@ function formatBusSummary(system::PowerSystem, analysis::DC, scale::Dict{String,
         "power" => !isempty(analysis.power.injection.active),
     )
 
-    unitLive = printUnitSummary(unitList)
-
     for i = 1:system.bus.number
-        minmaxsumPrint!(format["θ"], analysis.voltage.angle[i], i)
-
         if !isempty(system.bus.supply.generator[i])
             format["device"][1] += 1
         end
@@ -1397,6 +1391,8 @@ function formatBusSummary(system::PowerSystem, analysis::DC, scale::Dict{String,
         if system.bus.shunt.conductance[i] != 0.0 || system.bus.shunt.susceptance[i] != 0.0
             format["device"][3] += 1
         end
+
+        minmaxsumPrint!(format["θ"], analysis.voltage.angle[i], i)
 
         if format["power"]
             if !isempty(system.bus.supply.generator[i])
@@ -1537,6 +1533,8 @@ function printBranchSummary(system::PowerSystem, analysis::AC, io::IO = stdout)
 end
 
 function formatBranchSummary(system::PowerSystem, analysis::AC, scale::Dict{String, Float64})
+    unitLive = printUnitSummary(unitList)
+
     format = Dict(
         "Pline" => SummaryData(title = "Transmission Line Power"),
         "Qline" => SummaryData(),
@@ -1561,8 +1559,6 @@ function formatBranchSummary(system::PowerSystem, analysis::AC, scale::Dict{Stri
         "power" => !isempty(analysis.power.injection.active),
         "current" => !isempty(analysis.current.injection.magnitude)
     )
-
-    unitLive = printUnitSummary(unitList)
 
     for i = 1:system.branch.number
         if system.branch.parameter.turnsRatio[i] == 1 && system.branch.parameter.shiftAngle[i] == 0
@@ -1612,12 +1608,7 @@ function formatBranchSummary(system::PowerSystem, analysis::AC, scale::Dict{Stri
             end
 
             if format["current"]
-                from = system.branch.layout.from[i]
-                if prefix.currentMagnitude != 0.0
-                    currentSeries = analysis.current.series.magnitude[i] * system.base.power.value * system.base.power.prefix / (sqrt(3) * system.base.voltage.value[from] * system.base.voltage.prefix * prefix.currentMagnitude)
-                else
-                    currentSeries = analysis.current.series.magnitude[i]
-                end
+                currentSeries = analysis.current.series.magnitude[i] * scaleMagnitude(prefix, system,system.branch.layout.from[i])
 
                 if system.branch.parameter.turnsRatio[i] == 1 && system.branch.parameter.shiftAngle[i] == 0
                     minmaxsumPrint!(format["Iline"], currentSeries, i)
@@ -1664,7 +1655,7 @@ function formatBranchSummary(system::PowerSystem, analysis::AC, scale::Dict{Stri
         formatSummary!(format["ψshtr"], unitLive["ψ"], format["length"], system.branch.label, scale["ψ"], format["device"][6]; total = false)
     end
 
-    format["length"][6] = max(format["length"][6], length(" Net Reactive [$(unitList.reactivePowerLive)]"))
+    format["length"][6] = max(format["length"][6], textwidth(" Net Reactive [$(unitList.reactivePowerLive)]"))
 
     return format, unitLive
 end
@@ -1709,6 +1700,8 @@ function printBranchSummary(system::PowerSystem, analysis::DC, io::IO = stdout)
 end
 
 function formatBranchSummary(system::PowerSystem, analysis::DC, scale::Dict{String, Float64})
+    unitLive = printUnitSummary(unitList)
+
     format = Dict(
         "Pline" => SummaryData(title = "Transmission Line Power"),
         "Pintr" => SummaryData(title = "In-Phase Transformer Power"),
@@ -1720,8 +1713,6 @@ function formatBranchSummary(system::PowerSystem, analysis::DC, scale::Dict{Stri
         "device" => [0; 0; 0; 0; 0; 0; 0],
         "power" => !isempty(analysis.power.injection.active),
     )
-
-    unitLive = printUnitSummary(unitList)
 
     for i = 1:system.branch.number
         if system.branch.parameter.turnsRatio[i] == 1 && system.branch.parameter.shiftAngle[i] == 0
@@ -1766,7 +1757,7 @@ function formatBranchSummary(system::PowerSystem, analysis::DC, scale::Dict{Stri
         formatSummary!(format["Ptie"], unitLive["P"], format["length"], system.branch.label, scale["P"], format["device"][7]; total = false)
     end
 
-    format["length"][6] = max(format["length"][6], length(" Net Active [$(unitList.activePowerLive)]"))
+    format["length"][6] = max(format["length"][6], textwidth(" Net Active [$(unitList.activePowerLive)]"))
 
     return format, unitLive
 end
@@ -1819,6 +1810,8 @@ function printGeneratorSummary(system::PowerSystem, analysis::AC, io::IO = stdou
 end
 
 function formatGeneratorSummary(system::PowerSystem, analysis::AC, scale::Dict{String, Float64})
+    unitLive = printUnitSummary(unitList)
+
     format = Dict(
         "Pg" => SummaryData(title = "Output Power"),
         "Qg" => SummaryData(),
@@ -1826,8 +1819,6 @@ function formatGeneratorSummary(system::PowerSystem, analysis::AC, scale::Dict{S
         "device" => [0; 0; 0],
         "power" => !isempty(analysis.power.generator.active),
     )
-
-    unitLive = printUnitSummary(unitList)
 
     if format["power"]
         for i = 1:system.generator.number
@@ -1865,14 +1856,14 @@ function printGeneratorSummary(system::PowerSystem, analysis::DC, io::IO = stdou
 end
 
 function formatGeneratorSummary(system::PowerSystem, analysis::DC, scale::Dict{String, Float64})
+    unitLive = printUnitSummary(unitList)
+
     format = Dict(
         "Pg" => SummaryData(title = "Output Power"),
         "length" => [0; 0; 0; 0; 5; 0],
         "device" => [0; 0; 0],
         "power" => !isempty(analysis.power.generator.active),
     )
-
-    unitLive = printUnitSummary(unitList)
 
     if format["power"]
         for i = 1:system.generator.number
@@ -1884,4 +1875,26 @@ function formatGeneratorSummary(system::PowerSystem, analysis::DC, scale::Dict{S
     end
 
     return format, unitLive
+end
+
+
+function containerFormatData(analysis::DC)
+    width = Dict(
+        "Label" => 5,
+        "Voltage Angle" => 11,
+        "Power Generation Active" => 16,
+        "Power Demand Active" => 12,
+        "Power Injection Active" => 15,
+    )
+
+    fmt = Dict(
+        "Voltage Angle" => "%*.4f",
+        "Power Generation Active" => "%*.4f",
+        "Power Demand Active" => "%*.4f",
+        "Power Injection Active" => "%*.4f"
+    )
+
+    flag = Dict("power" => !isempty(analysis.power.injection.active))
+
+    return width, fmt, flag
 end
