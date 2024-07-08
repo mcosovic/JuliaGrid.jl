@@ -85,7 +85,7 @@ function minmaxsumPrint!(data::SummaryData, value::Float64, i::Int64)
     data.total += value
 end
 
-function formatSummary!(data::SummaryData, unitLive::String, span::Array{Int64,1}, label, scale, device; total = true)
+function formatSummary!(data::SummaryData, unitLive::String, width::Array{Int64,1}, label::OrderedDict{String, Int64}, scale::Float64, device::Int64; total::Bool = true)
     if device != 0
         data.labelmin = iterate(label, data.idxMin)[1][1]
         data.strmin = Printf.@sprintf("%.4f", data.min * scale)
@@ -93,21 +93,21 @@ function formatSummary!(data::SummaryData, unitLive::String, span::Array{Int64,1
         data.labelmax = iterate(label, data.idxMax)[1][1]
         data.strmax = Printf.@sprintf("%.4f", data.max * scale)
 
-        span[1] = max(span[1], textwidth(data.labelmin))
-        span[2] = max(span[2], textwidth(data.strmin))
-        span[3] = max(span[3], textwidth(data.labelmax))
-        span[4] = max(span[4], textwidth(data.strmax))
+        width[1] = max(width[1], textwidth(data.labelmin))
+        width[2] = max(width[2], textwidth(data.strmin))
+        width[3] = max(width[3], textwidth(data.labelmax))
+        width[4] = max(width[4], textwidth(data.strmax))
 
         if total
             data.strtotal = Printf.@sprintf("%.4f", data.total * scale)
-            span[5] = max(span[5], textwidth(data.strtotal))
+            width[5] = max(width[5], textwidth(data.strtotal))
         end
 
-        span[5] = max(span[5], textwidth(Printf.@sprintf("%i", device)))
-        span[6] = max(span[6], textwidth(unitLive))
+        width[5] = max(width[5], textwidth(Printf.@sprintf("%i", device)))
+        width[6] = max(width[6], textwidth(unitLive))
 
         if !isempty(data.title)
-            span[6] = max(span[6], textwidth(data.title))
+            width[6] = max(width[6], textwidth(data.title))
         end
     end
 end
@@ -140,7 +140,7 @@ function summaryBlockHeader(io::IO, span::Array{Int64,1}, header::String, total:
     )
 end
 
-function summaryBlock(io::IO, data1::SummaryData, unitLive::String, span::Array{Int64,1}; line = false)
+function summaryBlock(io::IO, data1::SummaryData, unitLive::String, span::Array{Int64,1}; line::Bool = false)
     Printf.@printf(io, "| %s | %*s | %*s | %*s | %*s | %*s |\n",
         unitLive * " "^(span[6] - textwidth(unitLive)),
         span[1], data1.labelmin,
@@ -219,7 +219,6 @@ function toggleLabel(label::L, container, labels::OrderedDict{String, Int64}, co
     return dictIterator
 end
 
-
 function fminmax(vector::Array{Float64}, scale::Float64, width::Dict{String, Int64}, fmt::Dict{String, String}, key::String)
     minmax = extrema(vector)
     width[key] = max(textwidth(Printf.format(Printf.Format(fmt[key]), 0, minmax[1] * scale)), textwidth(Printf.format(Printf.Format(fmt[key]), 0, minmax[2] * scale)), width[key])
@@ -234,42 +233,32 @@ function fmax(value::Float64, scale::Float64, width::Dict{String, Int64}, fmt::D
     width[key] = max(textwidth(Printf.format(Printf.Format(fmt[key]), 0, value * scale)), width[key])
 end
 
-function scaleMagnitude(prefix::PrefixLive, voltage::BaseVoltage)
-    if prefix.voltageMagnitude == 0.0
-        scaleV = 1.0
-    else
-        scaleV = (voltage.value * voltage.prefix) / prefix.voltageMagnitude
-    end
-
-    return scaleV
-end
-
-function scaleMagnitude(prefix::PrefixLive, voltage::BaseVoltage, i::Int64)
-    if prefix.voltageMagnitude == 0.0
-        scaleV = 1.0
-    else
-        scaleV = scaleMagnitude(voltage, i)
-    end
-
-    return scaleV
-end
-
-function scaleMagnitude(voltage::BaseVoltage, i::Int64)
+function scaleVoltage(voltage::BaseVoltage, prefix::PrefixLive, i::Int64)
     return (voltage.value[i] * voltage.prefix) / prefix.voltageMagnitude
 end
 
-function scaleMagnitude(prefix::PrefixLive, system::PowerSystem, i::Int64)
+function scaleVoltage(prefix::PrefixLive, voltage::BaseVoltage, i::Int64)
+    if prefix.voltageMagnitude == 0.0
+        scaleV = 1.0
+    else
+        scaleV = scaleVoltage(voltage, prefix, i)
+    end
+
+    return scaleV
+end
+
+function scaleCurrent(system::PowerSystem, prefix::PrefixLive, i::Int64)
+    return system.base.power.value * system.base.power.prefix / (sqrt(3) * system.base.voltage.value[i] * system.base.voltage.prefix * prefix.currentMagnitude)
+end
+
+function scaleCurrent(prefix::PrefixLive, system::PowerSystem, i::Int64)
     if prefix.currentMagnitude == 0.0
         scaleI = 1.0
     else
-        scaleI = scaleMagnitude(system, i)
+        scaleI = scaleCurrent(system, prefix, i)
     end
 
     return scaleI
-end
-
-function scaleMagnitude(system::PowerSystem, i::Int64)
-    return system.base.power.value * system.base.power.prefix / (sqrt(3) * system.base.voltage.value[i] * system.base.voltage.prefix * prefix.currentMagnitude)
 end
 
 function printFormat(_width::Dict{String, Int64}, width::Dict{String, Int64}, _fmt::Dict{String, String}, fmt::Dict{String, String})
@@ -302,4 +291,13 @@ function fmtRegex(fmt::String)
     else
         throw(ErrorException("Invalid format string: $fmt"))
     end
+end
+
+function initMax(value::Float64)
+    maxvalue = 0.0
+    if value != 0.0
+        maxvalue = -Inf
+    end
+
+    return maxvalue
 end
