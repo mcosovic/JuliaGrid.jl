@@ -282,7 +282,7 @@ function printWattmeterData(system::PowerSystem, device::Measurement, io::IO = s
 
     power = ACPower(Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]),
         Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]),
-        Cartesian(Float64[], Float64[]), nothing)
+        Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]))
 
     _printWattmeterData(system, device, power, io, label, prefix, header, footer, width, fmt)
 end
@@ -385,7 +385,7 @@ function printVarmeterData(system::PowerSystem, device::Measurement, io::IO = st
 
     power = ACPower(Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]),
         Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]),
-        Cartesian(Float64[], Float64[]), nothing)
+        Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]))
 
     _printVarmeterData(system, device, power, io, label, prefix, header, footer, width, fmt)
 end
