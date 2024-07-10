@@ -138,7 +138,7 @@ function addBus!(system::PowerSystem, analysis::DCStateEstimation; kwargs...)
 end
 
 """
-    updateBus!(system::PowerSystem, analysis::Analysis; kwargs...)
+    updateBus!(system::PowerSystem, [analysis::Analysis]; kwargs...)
 
 The function allows for the alteration of parameters for an existing bus.
 

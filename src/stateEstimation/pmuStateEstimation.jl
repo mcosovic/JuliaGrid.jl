@@ -1,5 +1,5 @@
 """
-    pmuWlsStateEstimation(system::PowerSystem, device::Measurement, method)
+    pmuWlsStateEstimation(system::PowerSystem, device::Measurement, [method = LU])
 
 The function establishes the linear WLS model for state estimation with PMUs only. In this
 model, the vector of state variables contains bus voltages, given in rectangular
@@ -47,12 +47,17 @@ device = measurement("measurement14.h5")
 analysis = pmuWlsStateEstimation(system, device, Orthogonal)
 ```
 """
-function pmuWlsStateEstimation(system::PowerSystem, device::Measurement, factorization::Type{<:Union{QR, LDLt, LU}} = LU)
-    coefficient, mean, precision, power, current, _ = pmuStateEstimationWLS(system, device)
+function pmuWlsStateEstimation(system::PowerSystem, device::Measurement,
+    factorization::Type{<:Union{QR, LDLt, LU}} = LU)
 
+    coefficient, mean, precision, power, current, _ = pmuStateEstimationWLS(system, device)
     method = Dict(LU => lu, LDLt => ldlt, QR => qr)
+
     return PMUStateEstimation(
-        Polar(Float64[], Float64[]),
+        Polar(
+            Float64[],
+            Float64[]
+        ),
         power,
         current,
         LinearWLS{Normal}(
@@ -68,6 +73,7 @@ function pmuWlsStateEstimation(system::PowerSystem, device::Measurement, factori
 end
 
 function pmuWlsStateEstimation(system::PowerSystem, device::Measurement, method::Type{<:Orthogonal})
+
     coefficient, mean, precision, power, current, correlated = pmuStateEstimationWLS(system, device)
 
     if correlated
@@ -97,9 +103,7 @@ function pmuStateEstimationWLS(system::PowerSystem, device::Measurement)
     pmu = device.pmu
     correlated = false
 
-    if isempty(ac.nodalMatrix)
-        acModel!(system)
-    end
+    model!(system, system.model.ac)
 
     nonZeroElement = 0
     nonZeroPrecision = 0
@@ -240,7 +244,7 @@ function pmuStateEstimationWLS(system::PowerSystem, device::Measurement)
     precision = sparse(rowPrec, colPrec, valPrec, 2 * pmu.number, 2 * pmu.number)
 
     power = ACPower(Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]),
-        Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), nothing)
+        Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]))
     current = ACCurrent(Polar(Float64[], Float64[]), Polar(Float64[], Float64[]), Polar(Float64[], Float64[]), Polar(Float64[], Float64[]))
 
     return coefficient, mean, precision, power, current, correlated
@@ -284,8 +288,8 @@ device = measurement("measurement14.h5")
 analysis = pmuLavStateEstimation(system, device, Ipopt.Optimizer)
 ```
 """
-function pmuLavStateEstimation(system::PowerSystem, device::Measurement, (@nospecialize optimizerFactory);
-    bridge::Bool = true, name::Bool = true)
+function pmuLavStateEstimation(system::PowerSystem, device::Measurement,
+    (@nospecialize optimizerFactory); bridge::Bool = true, name::Bool = true)
 
     bus = system.bus
     branch = system.branch
@@ -370,8 +374,8 @@ function pmuLavStateEstimation(system::PowerSystem, device::Measurement, (@nospe
 
     return PMUStateEstimation(
         Polar(
-            copy(system.bus.voltage.magnitude),
-            copy(system.bus.voltage.angle)
+            copy(bus.voltage.magnitude),
+            copy(bus.voltage.angle)
         ),
         ACPower(
             Cartesian(Float64[], Float64[]),
@@ -381,7 +385,7 @@ function pmuLavStateEstimation(system::PowerSystem, device::Measurement, (@nospe
             Cartesian(Float64[], Float64[]),
             Cartesian(Float64[], Float64[]),
             Cartesian(Float64[], Float64[]),
-            nothing
+            Cartesian(Float64[], Float64[])
         ),
         ACCurrent(
             Polar(Float64[], Float64[]),
@@ -575,8 +579,10 @@ for branch in keys(placement.to)
 end
 ```
 """
-function pmuPlacement(system::PowerSystem, (@nospecialize optimizerFactory);
-    bridge::Bool = true)
+function pmuPlacement(system::PowerSystem, (@nospecialize optimizerFactory); bridge::Bool = true)
+    bus = system.bus
+    branch = system.branch
+    ac = system.model.ac
 
     placementPmu = PlacementPMU(
         OrderedDict{String, Int64}(),
@@ -584,25 +590,12 @@ function pmuPlacement(system::PowerSystem, (@nospecialize optimizerFactory);
         OrderedDict{String, Int64}()
     )
 
-    bus = system.bus
-    branch = system.branch
-    ac = system.model.ac
-    filledElements = nnz(ac.nodalMatrix)
-
-    if isempty(ac.nodalMatrix)
-        acModel!(system)
-    end
+    model!(system, ac)
+    dropZeros!(ac)
 
     jump = JuMP.Model(optimizerFactory; add_bridges = bridge)
     set_string_names_on_creation(jump, false)
-
     placement = @variable(jump, 0 <= placement[i = 1:bus.number] <= 1, Int)
-
-    dropzeros!(ac.nodalMatrix)
-
-    if filledElements != nnz(ac.nodalMatrix)
-        ac.pattern += 1
-    end
 
     @inbounds for i = 1:bus.number
         angleJacobian = @expression(jump, AffExpr())

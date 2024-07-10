@@ -152,7 +152,7 @@ end
 function addPowerMeter!(system, device, measure, default, prefixPower, label, bus, from, to,
     power, variance, status, noise)
 
-    location, busFlag, fromFlag, toFlag = checkLocation(device, bus, from, to)
+    location, busFlag, fromFlag, toFlag = checkLocation(bus, from, to)
 
     branchFlag = false
     if !busFlag
@@ -423,7 +423,8 @@ function addPowermeter!(system, device, measure, powerBus, powerFrom, powerTo, d
 end
 
 """
-    updateWattmeter!(system::PowerSystem, device::Measurement, analysis::Analysis; kwargs...)
+    updateWattmeter!(system::PowerSystem, device::Measurement, [analysis::Analysis];
+        kwargs...)
 
 The function allows for the alteration of parameters for a wattmeter.
 
@@ -664,7 +665,8 @@ function updateWattmeter!(system::PowerSystem, device::Measurement, analysis::DC
 end
 
 """
-    updateVarmeter!(system::PowerSystem, device::Measurement, analysis::Analysis; kwargs...)
+    updateVarmeter!(system::PowerSystem, device::Measurement, [analysis::Analysis];
+        kwargs...)
 
 The function allows for the alteration of parameters for a varmeter.
 

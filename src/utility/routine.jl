@@ -42,7 +42,7 @@ end
 end
 
 ######### Error Voltage ##########
-@inline function errorVoltage(voltage)
+@inline function errorVoltage(voltage::Array{Float64,1})
     if isempty(voltage)
         error("The voltage values are missing.")
     end
@@ -69,7 +69,7 @@ function baseCurrentInverse(basePowerInv::Float64, baseVoltage::Float64)
 end
 
 ######### To Per-Units with Default Values ##########
-function topu(value, default, prefixLive, baseInv)
+function topu(value::A, default::ContainerTemplate, prefixLive::Float64, baseInv::Float64)
     if ismissing(value)
         if default.pu
             value = default.value
@@ -86,7 +86,7 @@ function topu(value, default, prefixLive, baseInv)
 end
 
 ######### To Per-Units Live ##########
-function topu(value, prefixLive, baseInv)
+function topu(value::A, prefixLive::Float64, baseInv::Float64)
     if prefixLive != 0.0
        value = (value * prefixLive) * baseInv
     end
@@ -95,7 +95,7 @@ function topu(value, prefixLive, baseInv)
 end
 
 ######### Unitless Quantities with Default Values ##########
-function unitless(value, default)
+function unitless(value::Union{A, Int8}, default::Union{A, Int8})
     if ismissing(value)
         value = default
     end
@@ -104,7 +104,7 @@ function unitless(value, default)
 end
 
 ######### Set Label ##########
-function setLabel(component, label::Missing, default::String, key::String; prefix::String = "")
+function setLabel(component::D, label::Missing, default::String, key::String; prefix::String = "")
     component.layout.label += 1
 
     if key in ["bus"; "branch"; "generator"]
@@ -124,7 +124,7 @@ function setLabel(component, label::Missing, default::String, key::String; prefi
     setindex!(component.label, component.number, label)
 end
 
-function setLabel(component, label::String, default::String, key::String; prefix::String = "")
+function setLabel(component::D, label::String, default::String, key::String; prefix::String = "")
     if haskey(component.label, label)
         throw(ErrorException("The label $label is not unique."))
     end
@@ -138,7 +138,7 @@ function setLabel(component, label::String, default::String, key::String; prefix
     setindex!(component.label, component.number, label)
 end
 
-function setLabel(component, label::Int64, default::String, key::String; prefix::String = "")
+function setLabel(component::D, label::Int64, default::String, key::String; prefix::String = "")
     labelString = string(label)
     if haskey(component.label, labelString)
         throw(ErrorException("The label $label is not unique."))
@@ -151,7 +151,7 @@ function setLabel(component, label::Int64, default::String, key::String; prefix:
 end
 
 ######### Get Label ##########
-function getLabel(container, label::String, name::String)
+function getLabel(container::D, label::String, name::String)
     if !haskey(container.label, label)
         throw(ErrorException("The $name label $label that has been specified does not exist within the available $name labels."))
     end
@@ -159,7 +159,7 @@ function getLabel(container, label::String, name::String)
     return label
 end
 
-function getLabel(container, label::Int64, name::String)
+function getLabel(container::D, label::Int64, name::String)
     label = string(label)
     if !haskey(container.label, label)
         throw(ErrorException("The $name label $label that has been specified does not exist within the available $name labels."))
@@ -169,14 +169,14 @@ function getLabel(container, label::Int64, name::String)
 end
 
 ######### Check Status ##########
-function checkStatus(status)
+function checkStatus(status::Union{Int64, Int8})
     if !(status in [0; 1])
         throw(ErrorException("The status $status is not allowed; it should be either in-service (1) or out-of-service (0)."))
     end
 end
 
 ######### Check Location ##########
-function checkLocation(from, to)
+function checkLocation(from::L, to::L)
     if isset(from) && isset(to)
         throw(ErrorException("The concurrent definition of the location keywords is not allowed."))
     elseif ismissing(from) && ismissing(to)
@@ -197,7 +197,7 @@ function checkLocation(from, to)
     return location, fromFlag, toFlag
 end
 
-function checkLocation(device, bus, from, to)
+function checkLocation(bus::L, from::L, to::L)
     if count(==(true), [isset(bus); isset(from); isset(to)]) > 1
         throw(ErrorException("The concurrent definition of the location keywords is not allowed."))
     elseif ismissing(bus) && ismissing(from) && ismissing(to)
@@ -322,6 +322,26 @@ function sparseSolution(x::Array{Float64,1}, b::Array{Float64,1}, factor::Union{
     return x = factor \ b
 end
 
+######### Check AC and DC Model ##########
+function model!(system::PowerSystem, model::ACModel)
+    if isempty(model.nodalMatrix)
+        acModel!(system)
+    end
+end
+
+function model!(system::PowerSystem, model::DCModel)
+    if isempty(model.nodalMatrix)
+        dcModel!(system)
+    end
+end
+
+######### Check Slack Bus ##########
+function checkSlackBus(system::PowerSystem)
+    if system.bus.layout.slack == 0
+        throw(ErrorException("The slack bus is missing."))
+    end
+end
+
 ######### Print Data ##########
 import Base.print
 
@@ -384,26 +404,6 @@ end
 ######### Check Input Data ##########
 function isset(input::Union{A, String, Bool})
     return !ismissing(input)
-end
-
-######### Drop Zeros ##########
-function dropZeros!(dc::DCModel)
-    filledElements = nnz(dc.nodalMatrix)
-    dropzeros!(dc.nodalMatrix)
-
-    if filledElements != nnz(dc.nodalMatrix)
-        dc.pattern += 1
-    end
-end
-
-function dropZeros!(ac::ACModel)
-    filledElements = nnz(ac.nodalMatrix)
-    dropzeros!(ac.nodalMatrix)
-    dropzeros!(ac.nodalMatrixTranspose)
-
-    if filledElements != nnz(ac.nodalMatrix)
-        ac.pattern += 1
-    end
 end
 
 ######### Find Key by Value ##########

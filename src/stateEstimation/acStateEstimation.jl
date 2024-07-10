@@ -1,5 +1,5 @@
 """
-    gaussNewton(system::PowerSystem, device::Measurement, method)
+    gaussNewton(system::PowerSystem, device::Measurement, [method = LU])
 
 The function sets up the Gauss-Newton method to solve the nonlinear or AC state
 estimation model, where the vector of state variables is given in polar coordinates. The
@@ -47,10 +47,12 @@ device = measurement("measurement14.h5")
 analysis = gaussNewton(system, device, Orthogonal)
 ```
 """
-function gaussNewton(system::PowerSystem, device::Measurement, factorization::Type{<:Union{QR, LDLt, LU}} = LU)
-    jacobian, mean, precision, residual, type, index, range, power, current, _ = acStateEstimationWLS(system, device)
+function gaussNewton(system::PowerSystem, device::Measurement,
+    factorization::Type{<:Union{QR, LDLt, LU}} = LU)
 
+    jacobian, mean, precision, residual, type, index, range, power, current, _ = acStateEstimationWLS(system, device)
     method = Dict(LU => lu, LDLt => ldlt, QR => qr)
+
     return ACStateEstimation(
         Polar(
             copy(system.bus.voltage.magnitude),
@@ -113,15 +115,9 @@ function acStateEstimationWLS(system::PowerSystem, device::Measurement)
     pmu = device.pmu
     correlated = false
 
-    if bus.layout.slack == 0
-        throw(ErrorException("The slack bus is missing."))
-    end
-    if isempty(ac.nodalMatrix)
-        acModel!(system)
-    end
-    if isempty(bus.supply.generator[bus.layout.slack])
-        changeSlackBus!(system)
-    end
+    checkSlackBus(system)
+    model!(system, ac)
+    changeSlackBus!(system)
 
     measureNumber = voltmeter.number + ammeter.number + wattmeter.number + varmeter.number + 2 * pmu.number
     nonZeroJacobian = voltmeter.number + 4 * ammeter.number
@@ -274,7 +270,7 @@ function acStateEstimationWLS(system::PowerSystem, device::Measurement)
     precision = sparse(prec.row, prec.col, prec.val, measureNumber, measureNumber)
 
     power = ACPower(Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]),
-        Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), nothing)
+        Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]))
     current = ACCurrent(Polar(Float64[], Float64[]), Polar(Float64[], Float64[]), Polar(Float64[], Float64[]), Polar(Float64[], Float64[]))
 
    return jacobian, mean, precision, fill(0.0, measureNumber), type, index, range, power, current, correlated
@@ -317,27 +313,20 @@ device = measurement("measurement14.h5")
 analysis = acLavStateEstimation(system, device, Ipopt.Optimizer)
 ```
 """
-function acLavStateEstimation(system::PowerSystem, device::Measurement, (@nospecialize optimizerFactory);
-    bridge::Bool = true, name::Bool = true)
+function acLavStateEstimation(system::PowerSystem, device::Measurement,
+    (@nospecialize optimizerFactory); bridge::Bool = true, name::Bool = true)
 
     ac = system.model.ac
     bus = system.bus
-    branch = system.branch
     voltmeter = device.voltmeter
     ammeter = device.ammeter
     wattmeter = device.wattmeter
     varmeter = device.varmeter
     pmu = device.pmu
 
-    if bus.layout.slack == 0
-        throw(ErrorException("The slack bus is missing."))
-    end
-    if isempty(ac.nodalMatrix)
-        acModel!(system)
-    end
-    if isempty(bus.supply.generator[bus.layout.slack])
-        changeSlackBus!(system)
-    end
+    checkSlackBus(system)
+    model!(system, ac)
+    changeSlackBus!(system)
 
     measureNumber = voltmeter.number + ammeter.number + wattmeter.number + varmeter.number + 2 * pmu.number
 
@@ -448,8 +437,8 @@ function acLavStateEstimation(system::PowerSystem, device::Measurement, (@nospec
 
     return ACStateEstimation(
         Polar(
-            copy(system.bus.voltage.magnitude),
-            copy(system.bus.voltage.angle)
+            copy(bus.voltage.magnitude),
+            copy(bus.voltage.angle)
         ),
         ACPower(
             Cartesian(Float64[], Float64[]),
@@ -459,7 +448,7 @@ function acLavStateEstimation(system::PowerSystem, device::Measurement, (@nospec
             Cartesian(Float64[], Float64[]),
             Cartesian(Float64[], Float64[]),
             Cartesian(Float64[], Float64[]),
-            nothing
+            Cartesian(Float64[], Float64[])
         ),
         ACCurrent(
             Polar(Float64[], Float64[]),

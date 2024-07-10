@@ -28,7 +28,7 @@ mutable struct ACPower
     to::Cartesian
     series::Cartesian
     charging::Cartesian
-    generator::Union{Cartesian, Nothing}
+    generator::Cartesian
 end
 
 ########### Currents in the AC Framework ###########
@@ -45,7 +45,7 @@ mutable struct DCPower
     supply::CartesianReal
     from::CartesianReal
     to::CartesianReal
-    generator::Union{CartesianReal, Nothing}
+    generator::CartesianReal
 end
 
 ########### Newton-Raphson ###########

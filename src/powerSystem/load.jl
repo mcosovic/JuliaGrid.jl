@@ -72,39 +72,45 @@ function powerSystem()
     ai8 = Array{Int8,1}(undef, 0)
     sp = spzeros(0, 0)
     ac = Array{ComplexF64,1}(undef, 0)
-
-    label = OrderedDict{String, Int64}()
-
-    demand = BusDemand(af, copy(af))
-    supply = BusSupply(copy(af), copy(af), copy(af))
-    shunt = BusShunt(copy(af), copy(af))
-    voltageBus = BusVoltage(copy(af), copy(af), copy(af), copy(af))
-    layoutBus = BusLayout(ai8, copy(ai), copy(ai), 0, 0)
-
-    parameter = BranchParameter(copy(af), copy(af), copy(af), copy(af), copy(af), copy(af))
-    flow = BranchFlow(copy(af), copy(af), copy(af), copy(ai8))
-    voltageBranch = BranchVoltage(copy(af), copy(af))
-    layoutBranch = BranchLayout(copy(ai), copy(ai), copy(ai8), 0, 0)
-
-    output = GeneratorOutput(copy(af), copy(af))
-    capability = GeneratorCapability(copy(af), copy(af), copy(af), copy(af), copy(af), copy(af), copy(af), copy(af), copy(af), copy(af))
-    ramping = GeneratorRamping(copy(af), copy(af), copy(af), copy(af))
-    cost = GeneratorCost(Cost(copy(ai8), [], []), Cost(copy(ai), [], []))
-    voltageGenerator =  GeneratorVoltage(copy(af))
-    layoutGenerator = GeneratorLayout(copy(ai), copy(af), copy(ai8), 0, 0)
-
-    basePower = BasePower(1e8, "VA", 1.0)
-    baseVoltage = BaseVoltage(copy(af), "V", 1.0)
-
-    acModel = ACModel(copy(sp), copy(sp), ac, copy(ac), copy(ac), copy(ac), copy(ac), 0, 0)
-    dcModel = DCModel(sp, copy(af), copy(af), 0, 0)
+    mf = Array{Array{Float64,1},1}(undef, 0)
 
     return PowerSystem(
-        Bus(label, demand, supply, shunt, voltageBus, layoutBus, 0),
-        Branch(copy(label), parameter, flow, voltageBranch, layoutBranch, 0),
-        Generator(copy(label), output, capability, ramping, voltageGenerator, cost, layoutGenerator, 0),
-        BaseData(basePower, baseVoltage),
-        Model(acModel, dcModel))
+        Bus(
+            OrderedDict{String, Int64}(),
+            BusDemand(af, copy(af)),
+            BusSupply(copy(af), copy(af), copy(af)),
+            BusShunt(copy(af), copy(af)),
+            BusVoltage(copy(af), copy(af), copy(af), copy(af)),
+            BusLayout(ai8, copy(ai), copy(ai), 0, 0),
+            0
+        ),
+        Branch(
+            OrderedDict{String, Int64}(),
+            BranchParameter(copy(af), copy(af), copy(af), copy(af), copy(af), copy(af)),
+            BranchFlow(copy(af), copy(af), copy(af), copy(ai8)),
+            BranchVoltage(copy(af), copy(af)),
+            BranchLayout(copy(ai), copy(ai), copy(ai8), 0, 0),
+            0
+        ),
+        Generator(
+            OrderedDict{String, Int64}(),
+            GeneratorOutput(copy(af), copy(af)),
+            GeneratorCapability(copy(af), copy(af), copy(af), copy(af), copy(af), copy(af), copy(af), copy(af), copy(af), copy(af)),
+            GeneratorRamping(copy(af), copy(af), copy(af), copy(af)),
+            GeneratorVoltage(copy(af)),
+            GeneratorCost(Cost(copy(ai8), copy(mf), copy(mf)), Cost(copy(ai), copy(mf), copy(mf))),
+            GeneratorLayout(copy(ai), copy(af), copy(ai8), 0, 0),
+            0
+        ),
+        BaseData(
+            BasePower(1e8, "VA", 1.0),
+            BaseVoltage(copy(af), "V", 1.0)
+        ),
+        Model(
+            ACModel(copy(sp), copy(sp), ac, copy(ac), copy(ac), copy(ac), copy(ac), 0, 0),
+            DCModel(sp, copy(af), copy(af), 0, 0)
+        )
+    )
 end
 
 ######## Load Bus Data from HDF5 File ##########

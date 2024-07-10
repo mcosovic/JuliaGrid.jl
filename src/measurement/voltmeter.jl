@@ -158,7 +158,8 @@ function addVoltmeter!(system::PowerSystem, device::Measurement, analysis::AC;
 end
 
 """
-    updateVoltmeter!(system::PowerSystem, device::Measurement, analysis::Analysis; kwargs...)
+    updateVoltmeter!(system::PowerSystem, device::Measurement, [analysis::Analysis];
+        kwargs...)
 
 The function allows for the alteration of parameters for a voltmeter.
 

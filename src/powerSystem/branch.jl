@@ -1,5 +1,5 @@
 """
-    addBranch!(system::PowerSystem, analysis::Analysis; label, from, to, status,
+    addBranch!(system::PowerSystem, [analysis::Analysis]; label, from, to, status,
         resistance, reactance, conductance, susceptance, turnsRatio, shiftAngle,
         minDiffAngle, maxDiffAngle, longTerm, shortTerm, emergency, type)
 
@@ -248,7 +248,7 @@ function addBranch!(system::PowerSystem, analysis::ACOptimalPowerFlow;
 end
 
 """
-    updateBranch!(system::PowerSystem, analysis::Analysis; kwargs...)
+    updateBranch!(system::PowerSystem, [analysis::Analysis]; kwargs...)
 
 The function allows for the alteration of parameters for an existing branch.
 

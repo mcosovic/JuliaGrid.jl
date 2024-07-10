@@ -1,5 +1,5 @@
 """
-    dcWlsStateEstimation(system::PowerSystem, device::Measurement, method)
+    dcWlsStateEstimation(system::PowerSystem, device::Measurement, [method = LU])
 
 The function establishes the WLS model for DC state estimation, where the vector of state
 variables contains only bus voltage angles.
@@ -48,10 +48,12 @@ device = measurement("measurement14.h5")
 analysis = dcWlsStateEstimation(system, device, Orthogonal)
 ```
 """
-function dcWlsStateEstimation(system::PowerSystem, device::Measurement, factorization::Type{<:Union{QR, LDLt, LU, Orthogonal}} = LU)
-    coefficient, mean, precision, power = dcStateEstimationWLS(system, device)
+function dcWlsStateEstimation(system::PowerSystem, device::Measurement,
+    factorization::Type{<:Union{QR, LDLt, LU, Orthogonal}} = LU)
 
+    coefficient, mean, precision, power = dcStateEstimationWLS(system, device)
     method = Dict(LU => lu, LDLt => ldlt, QR => qr, Orthogonal => qr)
+
     return DCStateEstimation(
         PolarAngle(Float64[]),
         power,
@@ -68,11 +70,13 @@ function dcWlsStateEstimation(system::PowerSystem, device::Measurement, factoriz
 end
 
 function dcWlsStateEstimation(system::PowerSystem, device::Measurement, method::Type{<:Orthogonal})
+
     coefficient, mean, precision, power = dcStateEstimationWLS(system, device)
 
-    method = Dict(LU => lu, LDLt => ldlt, QR => qr)
     return DCStateEstimation(
-        PolarAngle(Float64[]),
+        PolarAngle(
+            Float64[]
+        ),
         power,
         LinearWLS{Orthogonal}(
             coefficient,
@@ -93,15 +97,9 @@ function dcStateEstimationWLS(system::PowerSystem, device::Measurement)
     wattmeter = device.wattmeter
     pmu = device.pmu
 
-    if bus.layout.slack == 0
-        throw(ErrorException("The slack bus is missing."))
-    end
-    if isempty(dc.nodalMatrix)
-        dcModel!(system)
-    end
-    if isempty(system.bus.supply.generator[system.bus.layout.slack])
-        changeSlackBus!(system)
-    end
+    checkSlackBus(system)
+    model!(system, dc)
+    changeSlackBus!(system)
 
     nonZeroElement = 0
     @inbounds for (i, index) in enumerate(wattmeter.layout.index)
@@ -179,7 +177,7 @@ function dcStateEstimationWLS(system::PowerSystem, device::Measurement)
     end
 
     coefficient = sparse(row, col, coeff, deviceNumber, bus.number)
-    power = DCPower(CartesianReal(Float64[]), CartesianReal(Float64[]), CartesianReal(Float64[]), CartesianReal(Float64[]), nothing)
+    power = DCPower(CartesianReal(Float64[]), CartesianReal(Float64[]), CartesianReal(Float64[]), CartesianReal(Float64[]), CartesianReal(Float64[]))
 
    return coefficient, mean, precision, power
 end
@@ -223,8 +221,8 @@ device = measurement("measurement14.h5")
 analysis = dcLavStateEstimation(system, device, Ipopt.Optimizer)
 ```
 """
-function dcLavStateEstimation(system::PowerSystem, device::Measurement, (@nospecialize optimizerFactory);
-    bridge::Bool = true, name::Bool = true)
+function dcLavStateEstimation(system::PowerSystem, device::Measurement,
+    (@nospecialize optimizerFactory); bridge::Bool = true, name::Bool = true)
 
     bus = system.bus
     branch = system.branch
@@ -233,15 +231,9 @@ function dcLavStateEstimation(system::PowerSystem, device::Measurement, (@nospec
     pmu = device.pmu
     deviceNumber = wattmeter.number + pmu.number
 
-    if bus.layout.slack == 0
-        throw(ErrorException("The slack bus is missing."))
-    end
-    if isempty(dc.nodalMatrix)
-        dcModel!(system)
-    end
-    if isempty(bus.supply.generator[bus.layout.slack])
-        changeSlackBus!(system)
-    end
+    checkSlackBus(system)
+    model!(system, dc)
+    changeSlackBus!(system)
 
     jump = JuMP.Model(optimizerFactory; add_bridges = bridge)
     set_string_names_on_creation(jump, name)
@@ -302,13 +294,15 @@ function dcLavStateEstimation(system::PowerSystem, device::Measurement, (@nospec
     @objective(jump, Min, objective)
 
     return DCStateEstimation(
-        PolarAngle(copy(bus.voltage.angle)),
+        PolarAngle(
+            copy(bus.voltage.angle)
+        ),
         DCPower(
             CartesianReal(Float64[]),
             CartesianReal(Float64[]),
             CartesianReal(Float64[]),
             CartesianReal(Float64[]),
-            nothing
+            CartesianReal(Float64[])
         ),
         LAV(
             jump,
@@ -387,7 +381,6 @@ end
 function solve!(system::PowerSystem, analysis::DCStateEstimation{LinearWLS{Orthogonal}})
     se = analysis.method
     bus = system.bus
-    dc = system.model.dc
     slackAngle = bus.voltage.angle[bus.layout.slack]
 
     slackRange, elementsRemove = deleteSlackCoefficient(analysis, bus.layout.slack)

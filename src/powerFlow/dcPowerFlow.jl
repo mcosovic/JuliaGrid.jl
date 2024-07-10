@@ -1,5 +1,5 @@
 """
-    dcPowerFlow(system::PowerSystem, factorization::Factorization)
+    dcPowerFlow(system::PowerSystem, [factorization::Factorization = LU])
 
 The function sets up the framework to solve the DC power flow.
 
@@ -42,19 +42,15 @@ analysis = dcPowerFlow(system, QR)
 ```
 """
 function dcPowerFlow(system::PowerSystem, factorization::Type{<:Union{QR, LDLt, LU}} = LU)
-    if system.bus.layout.slack == 0
-        throw(ErrorException("The slack bus is missing."))
-    end
-    if isempty(system.model.dc.nodalMatrix)
-        dcModel!(system)
-    end
-    if isempty(system.bus.supply.generator[system.bus.layout.slack])
-        changeSlackBus!(system)
-    end
+    checkSlackBus(system)
+    model!(system, system.model.dc)
+    changeSlackBus!(system)
 
     method = Dict(LU => lu, LDLt => ldlt, QR => qr)
     return DCPowerFlow(
-        PolarAngle(Float64[]),
+        PolarAngle(
+            Float64[]
+        ),
         DCPower(
             CartesianReal(Float64[]),
             CartesianReal(Float64[]),
@@ -65,7 +61,8 @@ function dcPowerFlow(system::PowerSystem, factorization::Type{<:Union{QR, LDLt, 
         DCPowerFlowMethod(
             get(method, factorization, lu)(sparse(Matrix(1.0I, 1, 1))),
             -1,
-            -1)
+            -1
+        )
     )
 end
 

@@ -1,5 +1,5 @@
 """
-    addGenerator!(system::PowerSystem, analysis::Analysis; label, bus, status,
+    addGenerator!(system::PowerSystem, [analysis::Analysis]; label, bus, status,
         active, reactive, magnitude, minActive, maxActive, minReactive, maxReactive,
         lowActive, minLowReactive, maxLowReactive, upActive, minUpReactive, maxUpReactive,
         loadFollowing, reactiveTimescale, reserve10min, reserve30min, area)
@@ -242,7 +242,7 @@ function addGenerator!(system::PowerSystem, analysis::ACOptimalPowerFlow;
 end
 
 """
-    updateGenerator!(system::PowerSystem, analysis::Analysis; kwargs...)
+    updateGenerator!(system::PowerSystem, [analysis::Analysis]; kwargs...)
 
 The function allows for the alteration of parameters for an existing generator.
 
@@ -754,7 +754,7 @@ macro generator(kwargs...)
 end
 
 """
-    cost!(system::PowerSystem, analysis::Analysis; label, active, reactive,
+    cost!(system::PowerSystem, [analysis::Analysis]; label, active, reactive,
         piecewise, polynomial)
 
 The function either adds a new cost or modifies an existing one for the active or reactive

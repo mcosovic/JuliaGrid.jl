@@ -1,5 +1,5 @@
 """
-    printBusData(system::PowerSystem, analysis::Analysis, io::IO;
+    printBusData(system::PowerSystem, analysis::Analysis, [io::IO];
         label, header, footer, width, fmt)
 
 The function prints voltages, powers, and currents related to buses. Optionally, an `IO`
@@ -183,24 +183,23 @@ function printBusData(system::PowerSystem, analysis::AC, io::IO = stdout;
         Printf.@printf(io, "|%s|\n", "-"^maxLine)
     end
 
-    for (label, i) in labels
-        print(io, Printf.format(
-            Printf.Format(
-                "| %-*s | $(fmt["Voltage Magnitude"]) | $(fmt["Voltage Angle"]) "
-            ),
+    pfmt1 = Printf.Format("| %-*s | $(fmt["Voltage Magnitude"]) | $(fmt["Voltage Angle"]) ")
+    pfmt2 = Printf.Format(
+        "| $(fmt["Power Generation Active"]) | $(fmt["Power Generation Reactive"]) " *
+        "| $(fmt["Power Demand Active"]) | $(fmt["Power Demand Reactive"]) " *
+        "| $(fmt["Power Injection Active"]) | $(fmt["Power Injection Reactive"]) " *
+        "| $(fmt["Shunt Power Active"]) | $(fmt["Shunt Power Reactive"]) ")
+    pfmt3 = Printf.Format("| $(fmt["Current Injection Magnitude"]) | $(fmt["Current Injection Angle"]) ")
+
+    @inbounds for (label, i) in labels
+        print(io, Printf.format(pfmt1,
             width["Label"], label,
             width["Voltage Magnitude"], analysis.voltage.magnitude[i] * scaleVoltage(prefix, system.base.voltage, i),
             width["Voltage Angle"], analysis.voltage.angle[i] * scale["θ"])
         )
 
         if powerFlag
-            print(io, Printf.format(
-                Printf.Format(
-                    "| $(fmt["Power Generation Active"]) | $(fmt["Power Generation Reactive"]) " *
-                    "| $(fmt["Power Demand Active"]) | $(fmt["Power Demand Reactive"]) " *
-                    "| $(fmt["Power Injection Active"]) | $(fmt["Power Injection Reactive"]) " *
-                    "| $(fmt["Shunt Power Active"]) | $(fmt["Shunt Power Reactive"]) "
-                ),
+            print(io, Printf.format(pfmt2,
                 width["Power Generation Active"], analysis.power.supply.active[i] * scale["P"],
                 width["Power Generation Reactive"], analysis.power.supply.reactive[i] * scale["Q"],
                 width["Power Demand Active"], system.bus.demand.active[i] * scale["P"],
@@ -212,10 +211,7 @@ function printBusData(system::PowerSystem, analysis::AC, io::IO = stdout;
             )
         end
         if currentFlag
-            print(io, Printf.format(
-                Printf.Format(
-                    "| $(fmt["Current Injection Magnitude"]) | $(fmt["Current Injection Angle"]) "
-                ),
+            print(io, Printf.format(pfmt3,
                 width["Current Injection Magnitude"], analysis.current.injection.magnitude[i] * scaleCurrent(prefix, system, i),
                 width["Current Injection Angle"], analysis.current.injection.angle[i] * scale["ψ"])
             )
@@ -403,20 +399,17 @@ function printBusData(system::PowerSystem, analysis::DC, io::IO = stdout;
         Printf.@printf(io, "|%s|\n", "-"^maxLine)
     end
 
-    for (label, i) in labels
-        print(io, Printf.format(
-            Printf.Format(
-                "| %-*s | $(fmt["Voltage Angle"]) "
-            ),
+    pfmt1 = Printf.Format("| %-*s | $(fmt["Voltage Angle"]) ")
+    pfmt2 = Printf.Format("| $(fmt["Power Generation Active"]) | $(fmt["Power Demand Active"]) | $(fmt["Power Injection Active"]) ")
+
+    @inbounds for (label, i) in labels
+        print(io, Printf.format(pfmt1,
             width["Label"], label,
             width["Voltage Angle"], analysis.voltage.angle[i] * scale["θ"])
         )
 
         if flag
-            print(io, Printf.format(
-                Printf.Format(
-                    "| $(fmt["Power Generation Active"]) | $(fmt["Power Demand Active"]) | $(fmt["Power Injection Active"]) "
-                ),
+            print(io, Printf.format(pfmt2,
                 width["Power Generation Active"], analysis.power.supply.active[i] * scale["P"],
                 width["Power Demand Active"], system.bus.demand.active[i] * scale["P"],
                 width["Power Injection Active"], analysis.power.injection.active[i] * scale["P"])
@@ -481,7 +474,7 @@ function formatBusData(system::PowerSystem, analysis::DC, label::L, scale::Dict{
 end
 
 """
-    printBranchData(system::PowerSystem, analysis::Analysis, io::IO;
+    printBranchData(system::PowerSystem, analysis::Analysis, [io::IO];
         label, header, footer, width, fmt)
 
 The function prints powers and currents related to branches. Optionally, an `IO` may be
@@ -672,17 +665,22 @@ function printBranchData(system::PowerSystem, analysis::AC, io::IO = stdout;
             Printf.@printf(io, "|%s|\n", "-"^maxLine)
         end
 
-        for (label, i) in labels
+        pfmt1 = Printf.Format(
+            "| $(fmt["From-Bus Power Active"]) | $(fmt["From-Bus Power Reactive"]) " *
+            "| $(fmt["To-Bus Power Active"]) | $(fmt["To-Bus Power Reactive"]) " *
+            "| $(fmt["Shunt Power Active"]) | $(fmt["Shunt Power Reactive"]) " *
+            "| $(fmt["Series Power Active"]) | $(fmt["Series Power Reactive"]) ")
+
+        pfmt2 = Printf.Format(
+            "| $(fmt["From-Bus Current Magnitude"]) | $(fmt["From-Bus Current Angle"]) " *
+            "| $(fmt["To-Bus Current Magnitude"]) | $(fmt["To-Bus Current Angle"]) " *
+            "| $(fmt["Series Current Magnitude"]) | $(fmt["Series Current Angle"]) ")
+
+        @inbounds for (label, i) in labels
             Printf.@printf(io, "| %-*s ", width["Label"], label)
 
             if powerFlag
-                print(io, Printf.format(
-                    Printf.Format(
-                        "| $(fmt["From-Bus Power Active"]) | $(fmt["From-Bus Power Reactive"]) " *
-                        "| $(fmt["To-Bus Power Active"]) | $(fmt["To-Bus Power Reactive"]) " *
-                        "| $(fmt["Shunt Power Active"]) | $(fmt["Shunt Power Reactive"]) " *
-                        "| $(fmt["Series Power Active"]) | $(fmt["Series Power Reactive"]) "
-                    ),
+                print(io, Printf.format(pfmt1,
                     width["From-Bus Power Active"], analysis.power.from.active[i] * scale["P"],
                     width["From-Bus Power Reactive"], analysis.power.from.reactive[i] * scale["Q"],
                     width["To-Bus Power Active"], analysis.power.to.active[i] * scale["P"],
@@ -695,12 +693,7 @@ function printBranchData(system::PowerSystem, analysis::AC, io::IO = stdout;
             end
 
             if currentFlag
-                print(io, Printf.format(
-                    Printf.Format(
-                        "| $(fmt["From-Bus Current Magnitude"]) | $(fmt["From-Bus Current Angle"]) " *
-                        "| $(fmt["To-Bus Current Magnitude"]) | $(fmt["To-Bus Current Angle"]) " *
-                        "| $(fmt["Series Current Magnitude"]) | $(fmt["Series Current Angle"]) "
-                    ),
+                print(io, Printf.format(pfmt2,
                     width["From-Bus Current Magnitude"], analysis.current.from.magnitude[i] * scaleCurrent(prefix, system, system.branch.layout.from[i]),
                     width["From-Bus Current Angle"], analysis.current.from.angle[i] * scale["ψ"],
                     width["To-Bus Current Magnitude"], analysis.current.to.magnitude[i] * scaleCurrent(prefix, system, system.branch.layout.to[i]),
@@ -875,11 +868,10 @@ function printBranchData(system::PowerSystem, analysis::DC, io::IO = stdout;
             Printf.@printf(io, "|%s|\n", "-"^maxLine)
         end
 
-        for (label, i) in labels
-            print(io, Printf.format(
-                Printf.Format(
-                    "| %-*s | $(fmt["From-Bus Power Active"]) | $(fmt["To-Bus Power Active"]) | %*i |\n"
-                ),
+        pfmt1 = Printf.Format("| %-*s | $(fmt["From-Bus Power Active"]) | $(fmt["To-Bus Power Active"]) | %*i |\n")
+
+        @inbounds for (label, i) in labels
+            print(io, Printf.format(pfmt1,
                 width["Label"], label,
                 width["From-Bus Power Active"], analysis.power.from.active[i] * scale["P"],
                 width["To-Bus Power Active"], analysis.power.to.active[i] * scale["P"],
@@ -932,7 +924,7 @@ function formatBranchData(system::PowerSystem, analysis::DC, label::L, scale::Di
 end
 
 """
-    printGeneratorData(system::PowerSystem, analysis::Analysis, io::IO;
+    printGeneratorData(system::PowerSystem, analysis::Analysis, [io::IO];
         label, header, footer, width, fmt)
 
 The function prints powers related to generators. Optionally, an `IO` may be passed as the
@@ -1026,11 +1018,10 @@ function printGeneratorData(system::PowerSystem, analysis::AC, io::IO = stdout;
             Printf.@printf(io, "|%s|\n", "-"^maxLine)
         end
 
-        for (label, i) in labels
-            print(io, Printf.format(
-                Printf.Format(
-                    "| %-*s | $(fmt["Output Power Active"]) | $(fmt["Output Power Reactive"]) | %*i |\n"
-                ),
+        pfmt1 = Printf.Format("| %-*s | $(fmt["Output Power Active"]) | $(fmt["Output Power Reactive"]) | %*i |\n")
+
+        @inbounds for (label, i) in labels
+            print(io, Printf.format(pfmt1,
                 width["Label"], label,
                 width["Output Power Active"], analysis.power.generator.active[i] * scale["P"],
                 width["Output Power Reactive"], analysis.power.generator.reactive[i] * scale["Q"],
@@ -1121,11 +1112,10 @@ function printGeneratorData(system::PowerSystem, analysis::DC, io::IO = stdout;
             Printf.@printf(io, "|%s|\n", "-"^maxLine)
         end
 
-        for (label, i) in labels
-            print(io, Printf.format(
-                Printf.Format(
-                    "| %-*s | $(fmt["Output Power Active"]) | %*i |\n"
-                ),
+        pfmt1 = Printf.Format("| %-*s | $(fmt["Output Power Active"]) | %*i |\n")
+
+        @inbounds for (label, i) in labels
+            print(io, Printf.format(pfmt1,
                 width["Label"], label,
                 width["Output Power Active"], analysis.power.generator.active[i] * scale["P"],
                 width["Status"], system.generator.layout.status[i])
@@ -1175,7 +1165,7 @@ function formatGeneratorData(system::PowerSystem, analysis::DC, label::L, scale:
 end
 
 """
-    printBusSummary(system::PowerSystem, analysis::Analysis, io::IO)
+    printBusSummary(system::PowerSystem, analysis::Analysis, [io::IO])
 
 The function prints a summary of the electrical quantities related to buses. Optionally,
 an `IO` may be passed as the last argument to redirect the output.
@@ -1442,7 +1432,7 @@ function formatBusSummary(system::PowerSystem, analysis::DC, scale::Dict{String,
 end
 
 """
-    printBranchSummary(system::PowerSystem, analysis::Analysis, io::IO)
+    printBranchSummary(system::PowerSystem, analysis::Analysis, [io::IO])
 
 The function prints a summary of the electrical quantities related to branches. Optionally,
 an `IO` may be passed as the last argument to redirect the output.
@@ -1804,7 +1794,7 @@ function formatBranchSummary(system::PowerSystem, analysis::DC, scale::Dict{Stri
 end
 
 """
-    printGeneratorSummary(system::PowerSystem, analysis::Analysis, io::IO)
+    printGeneratorSummary(system::PowerSystem, analysis::Analysis, [io::IO])
 
 The function prints a summary of the electrical quantities related to generators.
 Optionally, an `IO` may be passed as the last argument to redirect the output.

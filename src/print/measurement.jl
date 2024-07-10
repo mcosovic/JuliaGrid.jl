@@ -1,6 +1,6 @@
 """
-    printVoltmeterData(system::PowerSystem, device::Measurement, analysis::Analysis, io::IO;
-        label, header, footer, width, fmt)
+    printVoltmeterData(system::PowerSystem, device::Measurement, [analysis::Analysis],
+        [io::IO]; label, header, footer, width, fmt)
 
 The function prints data related to voltmeters. Optionally, an `IO` may be passed as the
 last argument to redirect the output. Users can also omit the `Analysis` type to print
@@ -72,7 +72,7 @@ function _printVoltmeterData(system::PowerSystem, device::Measurement, voltage::
         headerDevice(io, width, header, maxLine, label, unitList.voltageMagnitudeLive, analysFlag)
 
         scale = 1.0
-        for (label, i) in labels
+        @inbounds for (label, i) in labels
             indexBus = voltmeter.layout.index[i]
 
             if prefix.voltageMagnitude != 0.0
@@ -95,7 +95,7 @@ function formatVoltmeterData(system::PowerSystem, voltmeter::Voltmeter, voltage:
 
     if deviceFlag
         scale = 1.0
-        for (label, i) in labels
+        @inbounds for (label, i) in labels
             indexBus = voltmeter.layout.index[i]
 
             if prefix.voltageMagnitude != 0.0
@@ -111,8 +111,8 @@ function formatVoltmeterData(system::PowerSystem, voltmeter::Voltmeter, voltage:
 end
 
 """
-    printAmmeterData(system::PowerSystem, device::Measurement, analysis::Analysis, io::IO;
-        label, header, footer, width, fmt)
+    printAmmeterData(system::PowerSystem, device::Measurement, [analysis::Analysis],
+        [io::IO]; label, header, footer, width, fmt)
 
 The function prints data related to ammeters. Optionally, an `IO` may be passed as the
 last argument to redirect the output. Users can also omit the `Analysis` type to print
@@ -184,7 +184,7 @@ function _printAmmeterData(system::PowerSystem, device::Measurement, current::AC
         headerDevice(io, width, header, maxLine, label, unitList.currentMagnitudeLive, analysFlag)
 
         scale = 1.0
-        for (label, i) in labels
+        @inbounds for (label, i) in labels
             indexBranch = ammeter.layout.index[i]
 
             if prefix.currentMagnitude != 0.0
@@ -212,7 +212,7 @@ function formatAmmeterData(system::PowerSystem, ammeter::Ammeter, current::ACCur
 
     if deviceFlag
         scale = 1.0
-        for (label, i) in labels
+        @inbounds for (label, i) in labels
             indexBranch = ammeter.layout.index[i]
 
             if prefix.currentMagnitude != 0.0
@@ -233,8 +233,8 @@ function formatAmmeterData(system::PowerSystem, ammeter::Ammeter, current::ACCur
 end
 
 """
-    printWattmeterData(system::PowerSystem, device::Measurement, analysis::Analysis, io::IO;
-        label, header, footer, width, fmt)
+    printWattmeterData(system::PowerSystem, device::Measurement, [analysis::Analysis],
+        [io::IO]; label, header, footer, width, fmt)
 
 The function prints data related to wattmeters. Optionally, an `IO` may be passed as the
 last argument to redirect the output. Users can also omit the `Analysis` type to print
@@ -308,7 +308,7 @@ function _printWattmeterData(system::PowerSystem, device::Measurement, power::Un
         printTitle(maxLine, "Wattmeter Data", header, io)
         headerDevice(io, width, header, maxLine, label, unitList.activePowerLive, analysFlag)
 
-        for (label, i) in labels
+        @inbounds for (label, i) in labels
             estimate = findEstimate(wattmeter, power.injection.active, power.from.active, power.to.active, i)
             printDevice(io, width, fmt, label, wattmeter.active, estimate, scale["P"], i, wattmeter.layout.index[i], analysFlag)
         end
@@ -325,7 +325,7 @@ function formatWattmeterData(system::PowerSystem, wattmeter::Wattmeter, power::U
     labels = toggleLabel(label, wattmeter, wattmeter.label, "wattmeter")
 
     if deviceFlag
-        for (label, i) in labels
+        @inbounds for (label, i) in labels
             estimate = findEstimate(wattmeter, power.injection.active, power.from.active, power.to.active, i)
             formatDevice(width, minmax, label, wattmeter.active, estimate, scale["P"], i, wattmeter.layout.index[i], analysFlag)
         end
@@ -336,8 +336,8 @@ function formatWattmeterData(system::PowerSystem, wattmeter::Wattmeter, power::U
 end
 
 """
-    printVarmeterData(system::PowerSystem, device::Measurement, analysis::Analysis, io::IO;
-        label, header, footer, width, fmt)
+    printVarmeterData(system::PowerSystem, device::Measurement,
+        [analysis::Analysis], [io::IO]; label, header, footer, width, fmt)
 
 The function prints data related to varmeters. Optionally, an `IO` may be passed as the
 last argument to redirect the output. Users can also omit the `Analysis` type to print
@@ -411,7 +411,7 @@ function _printVarmeterData(system::PowerSystem, device::Measurement, power::ACP
         printTitle(maxLine, "Varmeter Data", header, io)
         headerDevice(io, width, header, maxLine, label, unitList.reactivePowerLive, analysFlag)
 
-        for (label, i) in labels
+        @inbounds for (label, i) in labels
             estimate = findEstimate(varmeter, power.injection.reactive, power.from.reactive, power.to.reactive, i)
             printDevice(io, width, fmt, label, varmeter.reactive, estimate, scale["Q"], i, varmeter.layout.index[i], analysFlag)
         end
@@ -428,7 +428,7 @@ function formatVarmeterData(system::PowerSystem, varmeter::Varmeter, power::ACPo
     labels = toggleLabel(label, varmeter, varmeter.label, "varmeter")
 
     if deviceFlag
-        for (label, i) in labels
+        @inbounds for (label, i) in labels
             estimate = findEstimate(varmeter, power.injection.reactive, power.from.reactive, power.to.reactive, i)
             formatDevice(width, minmax, label, varmeter.reactive, estimate, scale["Q"], i, varmeter.layout.index[i], analysFlag)
         end
@@ -439,8 +439,8 @@ function formatVarmeterData(system::PowerSystem, varmeter::Varmeter, power::ACPo
 end
 
 """
-    printPmuData(system::PowerSystem, device::Measurement, analysis::Analysis, io::IO;
-        label, header, footer, width, fmt)
+    printPmuData(system::PowerSystem, device::Measurement,
+        [analysis::Analysis], [io::IO]; label, header, footer, width, fmt)
 
 The function prints data related to PMUs. Optionally, an `IO` may be passed as the last
 argument to redirect the output. Users can also omit the `Analysis` type to print
@@ -526,7 +526,7 @@ function _printPmuData(system::PowerSystem, device::Measurement, voltage::Polar,
         headerDevice(io, widthV, widthθ, header, maxLineV, maxLineθ, label, unitList.voltageMagnitudeLive, unitList.voltageAngleLive, analysFlagV)
 
         scaleV = 1.0
-        for (label, i) in labels
+        @inbounds for (label, i) in labels
             if pmu.layout.bus[i]
                 indexBus = pmu.layout.index[i]
 
@@ -556,7 +556,7 @@ function _printPmuData(system::PowerSystem, device::Measurement, voltage::Polar,
         headerDevice(io, widthI, widthψ, header, maxLineI, maxLineψ, label, unitList.currentMagnitudeLive, unitList.currentAngleLive, analysFlagI)
 
         scaleI = 1.0
-        for (label, i) in labels
+        @inbounds for (label, i) in labels
             if !pmu.layout.bus[i]
                 indexBranch = pmu.layout.index[i]
 
@@ -598,7 +598,7 @@ function _printPmuData(system::PowerSystem, device::Measurement, voltage::PolarA
         printTitle(maxLine, "PMU Voltage Angle Data", header, io)
         headerDevice(io, width, header, maxLine, label, unitList.voltageAngleLive, analysFlag)
 
-        for (label, i) in labels
+        @inbounds for (label, i) in labels
             if pmu.layout.bus[i]
                 indexBus = pmu.layout.index[i]
                 printDevice(io, width, fmt, label, pmu.angle, voltage.angle, scale["θ"], i, indexBus, analysFlag)
@@ -629,7 +629,7 @@ function formatPmuData(system::PowerSystem, pmu::PMU, voltage::Polar, current::A
     if deviceFlagV
         scaleV = 1.0
         scaleI = 1.0
-        for (label, i) in labels
+        @inbounds for (label, i) in labels
             indexBusBranch = pmu.layout.index[i]
 
             if pmu.layout.bus[i]
@@ -681,7 +681,7 @@ function formatPmuData(system::PowerSystem, pmu::PMU, voltage::PolarAngle, scale
     labels = toggleLabel(label, pmu, pmu.label, "pmu")
 
     if deviceFlag
-        for (label, i) in labels
+        @inbounds for (label, i) in labels
             if pmu.layout.bus[i]
                 formatDevice(width, minmax, label, pmu.angle, voltage.angle, scale["θ"], i, pmu.layout.index[i], analysFlag)
             end

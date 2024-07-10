@@ -48,12 +48,8 @@ function acOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
     costActive = generator.cost.active
     costReactive = generator.cost.reactive
 
-    if bus.layout.slack == 0
-        throw(ErrorException("The slack bus is missing."))
-    end
-    if isempty(system.model.ac.nodalMatrix)
-        acModel!(system)
-    end
+    checkSlackBus(system)
+    model!(system, system.model.ac)
 
     jump = JuMP.Model(optimizerFactory; add_bridges = bridge)
     set_string_names_on_creation(jump, name)

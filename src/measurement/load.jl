@@ -60,24 +60,43 @@ device = measurement()
 ```
 """
 function measurement()
-    label = OrderedDict{String, Int64}()
     af = Array{Float64,1}(undef, 0)
     ai = Array{Int64,1}(undef, 0)
     ai8 = Array{Int8,1}(undef, 0)
     ab = Array{Bool,1}(undef, 0)
 
-    voltLayout = VoltmeterLayout(copy(ai), 0)
-    ammLayout = AmmeterLayout(copy(ai), copy(ai), copy(ab), 0)
-    powerLayout = PowermeterLayout(copy(ai), copy(ab), copy(ab), copy(ab), 0)
-    pmuLayout = PmuLayout(copy(ai), copy(ab), copy(ab), copy(ab), copy(ab), copy(ab), 0)
-    gauss = GaussMeter(copy(af), copy(af), copy(ai8))
-
     return Measurement(
-        Voltmeter(copy(label), deepcopy(gauss), voltLayout, 0),
-        Ammeter(copy(label), deepcopy(gauss), ammLayout, 0),
-        Wattmeter(copy(label), deepcopy(gauss), deepcopy(powerLayout), 0),
-        Varmeter(copy(label), deepcopy(gauss), deepcopy(powerLayout), 0),
-        PMU(copy(label), deepcopy(gauss), deepcopy(gauss), deepcopy(pmuLayout), 0)
+        Voltmeter(
+            OrderedDict{String, Int64}(),
+            GaussMeter(copy(af), copy(af), copy(ai8)),
+            VoltmeterLayout(copy(ai), 0),
+            0
+        ),
+        Ammeter(
+            OrderedDict{String, Int64}(),
+            GaussMeter(copy(af), copy(af), copy(ai8)),
+            AmmeterLayout(copy(ai), copy(ai), copy(ab), 0),
+            0
+        ),
+        Wattmeter(
+            OrderedDict{String, Int64}(),
+            GaussMeter(copy(af), copy(af), copy(ai8)),
+            PowermeterLayout(copy(ai), copy(ab), copy(ab), copy(ab), 0),
+            0
+        ),
+        Varmeter(
+            OrderedDict{String, Int64}(),
+            GaussMeter(copy(af), copy(af), copy(ai8)),
+            PowermeterLayout(copy(ai), copy(ab), copy(ab), copy(ab), 0),
+            0
+        ),
+        PMU(
+            OrderedDict{String, Int64}(),
+            GaussMeter(copy(af), copy(af), copy(ai8)),
+            GaussMeter(copy(af), copy(af), copy(ai8)),
+            PmuLayout(copy(ai), copy(ab), copy(ab), copy(ab), copy(ab), copy(ab), 0),
+            0
+        )
     )
 end
 

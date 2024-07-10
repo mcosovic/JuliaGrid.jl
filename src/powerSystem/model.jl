@@ -228,3 +228,23 @@ function dcModelEmpty!(dc::DCModel)
     dc.admittance =  Array{Float64,1}(undef, 0)
     dc.shiftPower = Array{Float64,1}(undef, 0)
 end
+
+######### Drop Zeros ##########
+function dropZeros!(dc::DCModel)
+    filledElements = nnz(dc.nodalMatrix)
+    dropzeros!(dc.nodalMatrix)
+
+    if filledElements != nnz(dc.nodalMatrix)
+        dc.pattern += 1
+    end
+end
+
+function dropZeros!(ac::ACModel)
+    filledElements = nnz(ac.nodalMatrix)
+    dropzeros!(ac.nodalMatrix)
+    dropzeros!(ac.nodalMatrixTranspose)
+
+    if filledElements != nnz(ac.nodalMatrix)
+        ac.pattern += 1
+    end
+end

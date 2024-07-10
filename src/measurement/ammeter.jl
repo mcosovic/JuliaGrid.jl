@@ -221,7 +221,8 @@ function addAmmeter!(system::PowerSystem, device::Measurement, analysis::AC;
 end
 
 """
-    updateAmmeter!(system::PowerSystem, device::Measurement, analysis::Analysis; kwargs...)
+    updateAmmeter!(system::PowerSystem, device::Measurement, [analysis::Analysis];
+        kwargs...)
 
 The function allows for the alteration of parameters for an ammeter.
 

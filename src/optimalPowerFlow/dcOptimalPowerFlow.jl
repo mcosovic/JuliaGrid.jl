@@ -44,12 +44,8 @@ function dcOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
     generator = system.generator
     cost = generator.cost.active
 
-    if bus.layout.slack == 0
-        throw(ErrorException("The slack bus is missing."))
-    end
-    if isempty(system.model.dc.nodalMatrix)
-        dcModel!(system)
-    end
+    checkSlackBus(system)
+    model!(system, system.model.dc)
 
     jump = JuMP.Model(optimizerFactory; add_bridges = bridge)
     set_string_names_on_creation(jump, name)
@@ -115,7 +111,9 @@ function dcOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
     end
 
     return DCOptimalPowerFlow(
-        PolarAngle(copy(bus.voltage.angle)),
+        PolarAngle(
+            copy(bus.voltage.angle)
+        ),
         DCPower(
             CartesianReal(Float64[]),
             CartesianReal(Float64[]),

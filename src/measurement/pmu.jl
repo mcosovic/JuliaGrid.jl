@@ -90,7 +90,7 @@ function addPmu!(system::PowerSystem, device::Measurement;
     pmu = device.pmu
     default = template.pmu
 
-    location, busFlag, fromFlag, toFlag = checkLocation(pmu, bus, from, to)
+    location, busFlag, fromFlag, toFlag = checkLocation(bus, from, to)
 
     branchFlag = false
     if !busFlag
@@ -364,7 +364,8 @@ function addPmu!(system::PowerSystem, device::Measurement, analysis::AC;
 end
 
 """
-    updatePmu!(system::PowerSystem, device::Measurement, analysis::Analysis; kwargs...)
+    updatePmu!(system::PowerSystem, device::Measurement, [analysis::Analysis];
+        kwargs...)
 
 The function allows for the alteration of parameters for a PMU.
 

@@ -1,5 +1,5 @@
 """
-    newtonRaphson(system::PowerSystem, factorization::Factorization)
+    newtonRaphson(system::PowerSystem, [factorization::Factorization = LU])
 
 The function sets up the Newton-Raphson method to solve the AC power flow.
 
@@ -44,13 +44,8 @@ function newtonRaphson(system::PowerSystem, factorization::Type{<:Union{QR, LU}}
     ac = system.model.ac
     bus = system.bus
 
-    if bus.layout.slack == 0
-        throw(ErrorException("The slack bus is missing."))
-    end
-
-    if isempty(ac.nodalMatrix)
-        acModel!(system)
-    end
+    checkSlackBus(system)
+    model!(system, ac)
     voltageMagnitude, voltageAngle = initializeACPowerFlow(system)
 
     pqIndex = fill(0, bus.number)
@@ -152,7 +147,7 @@ function newtonRaphson(system::PowerSystem, factorization::Type{<:Union{QR, LU}}
 end
 
 """
-    fastNewtonRaphsonBX(system::PowerSystem, factorization::Factorization)
+    fastNewtonRaphsonBX(system::PowerSystem, [factorization::Factorization = LU])
 
 The function sets up the fast Newton-Raphson method of version BX to solve the AC power
 flow.
@@ -201,7 +196,7 @@ function fastNewtonRaphsonBX(system::PowerSystem, factorization::Type{<:Union{QR
 end
 
 """
-    fastNewtonRaphsonXB(system::PowerSystem, factorization::Factorization)
+    fastNewtonRaphsonXB(system::PowerSystem, [factorization::Factorization = LU])
 
 The function sets up the fast Newton-Raphson method of version XB to solve the AC power
 flow.
@@ -254,9 +249,8 @@ end
     branch = system.branch
     ac = system.model.ac
 
-    if isempty(ac.nodalMatrix)
-        acModel!(system)
-    end
+    checkSlackBus(system)
+    model!(system, ac)
     voltageMagnitude, voltageAngle = initializeACPowerFlow(system)
 
     pqIndex = fill(0, bus.number)
@@ -316,7 +310,10 @@ end
 
     method = Dict(LU => lu, QR => qr)
     analysis = ACPowerFlow(
-        Polar(voltageMagnitude,voltageAngle),
+        Polar(
+            voltageMagnitude,
+            voltageAngle
+        ),
         ACPower(
             Cartesian(Float64[], Float64[]),
             Cartesian(Float64[], Float64[]),
@@ -451,12 +448,11 @@ analysis = gaussSeidel(system)
 ```
 """
 function gaussSeidel(system::PowerSystem)
-    bus = system.bus
-
-    if isempty(system.model.ac.nodalMatrix)
-        acModel!(system)
-    end
+    checkSlackBus(system)
+    model!(system, system.model.ac)
     voltageMagnitude, voltageAngle = initializeACPowerFlow(system)
+
+    bus = system.bus
 
     voltage = zeros(ComplexF64, bus.number)
     pqIndex = Int64[]
@@ -473,7 +469,10 @@ function gaussSeidel(system::PowerSystem)
     end
 
     return ACPowerFlow(
-        Polar(voltageMagnitude, voltageAngle),
+        Polar(
+            voltageMagnitude,
+            voltageAngle
+        ),
         ACPower(
             Cartesian(Float64[], Float64[]),
             Cartesian(Float64[], Float64[]),
@@ -1068,26 +1067,26 @@ function initializeACPowerFlow(system::PowerSystem)
         end
     end
 
-    if isempty(system.bus.supply.generator[system.bus.layout.slack])
-        changeSlackBus!(system)
-    end
+    changeSlackBus!(system)
 
     return magnitude, angle
 end
 
 ########## Change Slack Bus ##########
 function changeSlackBus!(system::PowerSystem)
-    system.bus.layout.type[system.bus.layout.slack] = 1
-    @inbounds for i = 1:system.bus.number
-        if system.bus.layout.type[i] == 2 && !isempty(system.bus.supply.generator[i])
-            system.bus.layout.type[i] = 3
-            system.bus.layout.slack = i
-            @info("The bus with index $i is now the new slack bus since no in-service generator was available at the previous slack bus.")
-            break
+    if isempty(system.bus.supply.generator[system.bus.layout.slack])
+        system.bus.layout.type[system.bus.layout.slack] = 1
+        @inbounds for i = 1:system.bus.number
+            if system.bus.layout.type[i] == 2 && !isempty(system.bus.supply.generator[i])
+                system.bus.layout.type[i] = 3
+                system.bus.layout.slack = i
+                @info("The bus with index $i is now the new slack bus since no in-service generator was available at the previous slack bus.")
+                break
+            end
         end
-    end
 
-    if system.bus.layout.type[system.bus.layout.slack] == 1
-        throw(ErrorException("No generator buses with an in-service generator found in the power system. Slack bus definition not possible."))
+        if system.bus.layout.type[system.bus.layout.slack] == 1
+            throw(ErrorException("No generator buses with an in-service generator found in the power system. Slack bus definition not possible."))
+        end
     end
 end
