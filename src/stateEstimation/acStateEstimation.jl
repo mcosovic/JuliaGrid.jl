@@ -337,7 +337,7 @@ function acLavStateEstimation(system::PowerSystem, device::Measurement,
         @variable(jump, 0 <= statey[i = 1:(2 * bus.number)]),
         @variable(jump, 0 <= residualx[i = 1:measureNumber]),
         @variable(jump, 0 <= residualy[i = 1:measureNumber]),
-        Dict{Int64, JuMP.ConstraintRef}(),
+        Dict{Int64, ConstraintRef}(),
         measureNumber
     )
 
@@ -738,15 +738,15 @@ function solve!(system::PowerSystem, analysis::ACStateEstimation{LAV})
     bus = system.bus
 
     @inbounds for i = 1:bus.number
-        JuMP.set_start_value(se.statex[i]::JuMP.VariableRef, bus.voltage.angle[i])
-        JuMP.set_start_value(se.statex[i + bus.number]::JuMP.VariableRef, bus.voltage.magnitude[i])
+        set_start_value(se.statex[i]::VariableRef, bus.voltage.angle[i])
+        set_start_value(se.statex[i + bus.number]::VariableRef, bus.voltage.magnitude[i])
     end
 
-    JuMP.optimize!(se.jump)
+    optimize!(se.jump)
 
     for i = 1:bus.number
-        analysis.voltage.angle[i] = value(se.statex[i]::JuMP.VariableRef) - value(se.statey[i]::JuMP.VariableRef)
-        analysis.voltage.magnitude[i] = value(se.statex[i + bus.number]::JuMP.VariableRef) - value(se.statey[i + bus.number]::JuMP.VariableRef)
+        analysis.voltage.angle[i] = value(se.statex[i]::VariableRef) - value(se.statey[i]::VariableRef)
+        analysis.voltage.magnitude[i] = value(se.statex[i + bus.number]::VariableRef) - value(se.statey[i + bus.number]::VariableRef)
 
     end
 end
@@ -1180,7 +1180,7 @@ function FjiCoeff(gij::Float64, gsi::Float64, bij::Float64, bsi::Float64, tij::F
     return A, B, C, D
 end
 
-function fix!(residualx::Vector{JuMP.VariableRef}, residualy::Vector{JuMP.VariableRef}, index::Int64)
+function fix!(residualx::Vector{VariableRef}, residualy::Vector{VariableRef}, index::Int64)
     fix(residualx[index], 0.0; force = true)
     fix(residualy[index], 0.0; force = true)
 end

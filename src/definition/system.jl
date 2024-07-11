@@ -278,4 +278,6 @@ mutable struct Measurement
     pmu::PMU
 end
 
-const D = Union{Bus, Branch, Generator, Voltmeter, Ammeter, Wattmeter, Varmeter, PMU}
+########### Types ###########
+const P = Union{Bus, Branch, Generator}
+const M = Union{Voltmeter, Ammeter, Wattmeter, Varmeter, PMU}

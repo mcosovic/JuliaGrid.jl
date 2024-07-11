@@ -310,7 +310,7 @@ function pmuLavStateEstimation(system::PowerSystem, device::Measurement,
     residualy = @variable(jump, 0 <= residualy[i = 1:measureNumber])
 
     objective = @expression(jump, AffExpr())
-    residual = Dict{Int64, JuMP.ConstraintRef}()
+    residual = Dict{Int64, ConstraintRef}()
     count = 1
     @inbounds for (i, k) in enumerate(pmu.layout.index)
         if pmu.magnitude.status[i] == 1 && pmu.angle.status[i] == 1
@@ -498,11 +498,11 @@ function solve!(system::PowerSystem, analysis::PMUStateEstimation{LAV})
     bus = system.bus
 
     @inbounds for i = 1:system.bus.number
-        JuMP.set_start_value(se.statex[i]::JuMP.VariableRef, analysis.voltage.magnitude[i] * cos(analysis.voltage.angle[i]))
-        JuMP.set_start_value(se.statex[i + bus.number]::JuMP.VariableRef, analysis.voltage.magnitude[i] * sin(analysis.voltage.angle[i]))
+        set_start_value(se.statex[i]::VariableRef, analysis.voltage.magnitude[i] * cos(analysis.voltage.angle[i]))
+        set_start_value(se.statex[i + bus.number]::VariableRef, analysis.voltage.magnitude[i] * sin(analysis.voltage.angle[i]))
     end
 
-    JuMP.optimize!(se.jump)
+    optimize!(se.jump)
 
     if isempty(analysis.voltage.magnitude)
         analysis.voltage.magnitude = fill(0.0, bus.number)
@@ -510,8 +510,8 @@ function solve!(system::PowerSystem, analysis::PMUStateEstimation{LAV})
     end
 
     @inbounds for i = 1:bus.number
-        voltageReal = value(se.statex[i]::JuMP.VariableRef) - value(se.statey[i]::JuMP.VariableRef)
-        voltageImag = value(se.statex[i + bus.number]::JuMP.VariableRef) - value(se.statey[i + bus.number]::JuMP.VariableRef)
+        voltageReal = value(se.statex[i]::VariableRef) - value(se.statey[i]::VariableRef)
+        voltageImag = value(se.statex[i + bus.number]::VariableRef) - value(se.statey[i + bus.number]::VariableRef)
         voltage = complex(voltageReal, voltageImag)
         analysis.voltage.magnitude[i] = abs(voltage)
         analysis.voltage.angle[i] = angle(voltage)

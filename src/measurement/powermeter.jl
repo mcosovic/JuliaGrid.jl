@@ -149,8 +149,8 @@ function addVarmeter!(system::PowerSystem, device::Measurement;
 end
 
 ######### Add Wattmeter or Varmeter ##########
-function addPowerMeter!(system, device, measure, default, prefixPower, label, bus, from, to,
-    power, variance, status, noise)
+function addPowerMeter!(system::PowerSystem, device::Union{Wattmeter, Varmeter}, measure::GaussMeter, default::Union{WattmeterTemplate, VarmeterTemplate},
+    prefixPower::Float64, label::L, bus::L, from::L, to::L, power::A, variance::A, status::A, noise::Bool)
 
     location, busFlag, fromFlag, toFlag = checkLocation(bus, from, to)
 
@@ -341,9 +341,9 @@ function addVarmeter!(system::PowerSystem, device::Measurement, analysis::AC;
 end
 
 ######### Add Group of Wattmeters or Varmeters ##########
-function addPowermeter!(system, device, measure, powerBus, powerFrom, powerTo, default,
-    prefixPower, varianceBus, varianceFrom, varianceTo, statusBus, statusFrom, statusTo,
-    noise)
+function addPowermeter!(system::PowerSystem, device::Union{Wattmeter, Varmeter}, measure::GaussMeter, powerBus::Array{Float64,1},
+    powerFrom::Array{Float64,1}, powerTo::Array{Float64,1}, default::Union{WattmeterTemplate, VarmeterTemplate}, prefixPower::Float64,
+    varianceBus::A, varianceFrom::A, varianceTo::A, statusBus::A, statusFrom::A, statusTo::A, noise::Bool)
 
     if isempty(powerBus)
         throw(ErrorException("The powers cannot be found."))
@@ -657,9 +657,9 @@ function updateWattmeter!(system::PowerSystem, device::Measurement, analysis::DC
 
     if wattmeter.active.status[indexWattmeter] == 1 && (isset(status) || isset(active))
         if wattmeter.layout.bus[indexWattmeter]
-            JuMP.set_normalized_rhs(method.residual[indexWattmeter], wattmeter.active.mean[indexWattmeter] - dc.shiftPower[indexBus] - system.bus.shunt.conductance[indexBus])
+            set_normalized_rhs(method.residual[indexWattmeter], wattmeter.active.mean[indexWattmeter] - dc.shiftPower[indexBus] - system.bus.shunt.conductance[indexBus])
         elseif system.branch.layout.status[indexBranch] == 1
-            JuMP.set_normalized_rhs(method.residual[indexWattmeter], wattmeter.active.mean[indexWattmeter] + system.branch.parameter.shiftAngle[indexBranch] * admittance)
+            set_normalized_rhs(method.residual[indexWattmeter], wattmeter.active.mean[indexWattmeter] + system.branch.parameter.shiftAngle[indexBranch] * admittance)
         end
     end
 end

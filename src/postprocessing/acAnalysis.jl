@@ -364,7 +364,7 @@ end
 active, reactive = injectionPower(system, analysis; label = 1)
 ```
 """
-function injectionPower(system::PowerSystem, analysis::AC; label)
+function injectionPower(system::PowerSystem, analysis::AC; label::O)
     index = system.bus.label[getLabel(system.bus, label, "bus")]
     errorVoltage(analysis.voltage.magnitude)
 
@@ -404,7 +404,7 @@ end
 active, reactive = supplyPower(system, analysis; label = 1)
 ```
 """
-function supplyPower(system::PowerSystem, analysis::ACPowerFlow; label)
+function supplyPower(system::PowerSystem, analysis::ACPowerFlow; label::O)
     index = system.bus.label[getLabel(system.bus, label, "bus")]
     errorVoltage(analysis.voltage.magnitude)
 
@@ -435,7 +435,7 @@ function supplyPower(system::PowerSystem, analysis::ACPowerFlow; label)
     return supplyActive, supplyReactive
 end
 
-function supplyPower(system::PowerSystem, analysis::ACOptimalPowerFlow; label)
+function supplyPower(system::PowerSystem, analysis::ACOptimalPowerFlow; label::O)
     index = system.bus.label[getLabel(system.bus, label, "bus")]
     errorVoltage(analysis.voltage.magnitude)
 
@@ -449,7 +449,7 @@ function supplyPower(system::PowerSystem, analysis::ACOptimalPowerFlow; label)
     return supplyActive, supplyReactive
 end
 
-function supplyPower(system::PowerSystem, analysis::Union{PMUStateEstimation, ACStateEstimation}; label)
+function supplyPower(system::PowerSystem, analysis::Union{PMUStateEstimation, ACStateEstimation}; label::O)
     index = system.bus.label[getLabel(system.bus, label, "bus")]
     active, reactive = injectionPower(system, analysis; label = label)
 
@@ -480,7 +480,7 @@ active, reactive = shuntPower(system, analysis; label = 9)
 ```
 ```
 """
-function shuntPower(system::PowerSystem, analysis::AC; label)
+function shuntPower(system::PowerSystem, analysis::AC; label::O)
     index = system.bus.label[getLabel(system.bus, label, "bus")]
     errorVoltage(analysis.voltage.magnitude)
 
@@ -512,7 +512,7 @@ end
 active, reactive = fromPower(system, analysis; label = 2)
 ```
 """
-function fromPower(system::PowerSystem, analysis::AC; label)
+function fromPower(system::PowerSystem, analysis::AC; label::O)
     index = system.branch.label[getLabel(system.branch, label, "branch")]
     errorVoltage(analysis.voltage.magnitude)
 
@@ -557,7 +557,7 @@ end
 active, reactive = toPower(system, analysis; label = 2)
 ```
 """
-function toPower(system::PowerSystem, analysis::AC; label)
+function toPower(system::PowerSystem, analysis::AC; label::O)
     index = system.branch.label[getLabel(system.branch, label, "branch")]
     errorVoltage(analysis.voltage.magnitude)
 
@@ -602,7 +602,7 @@ end
 active, reactive = chargingPower(system, analysis; label = 2)
 ```
 """
-function chargingPower(system::PowerSystem, analysis::AC; label)
+function chargingPower(system::PowerSystem, analysis::AC; label::O)
     index = system.branch.label[getLabel(system.branch, label, "branch")]
     errorVoltage(analysis.voltage.magnitude)
 
@@ -645,7 +645,7 @@ end
 active, reactive = seriesPower(system, analysis; label = 2)
 ```
 """
-function seriesPower(system::PowerSystem, analysis::AC; label)
+function seriesPower(system::PowerSystem, analysis::AC; label::O)
     index = system.branch.label[getLabel(system.branch, label, "branch")]
     errorVoltage(analysis.voltage.magnitude)
 
@@ -692,7 +692,7 @@ end
 active, reactive = generatorPower(system, analysis; label = 1)
 ```
 """
-function generatorPower(system::PowerSystem, analysis::ACPowerFlow; label)
+function generatorPower(system::PowerSystem, analysis::ACPowerFlow; label::O)
     index = system.generator.label[getLabel(system.generator, label, "generator")]
     errorVoltage(analysis.voltage.magnitude)
 
@@ -787,7 +787,7 @@ function generatorPower(system::PowerSystem, analysis::ACPowerFlow; label)
     return powerActive, powerReactive
 end
 
-function generatorPower(system::PowerSystem, analysis::ACOptimalPowerFlow; label)
+function generatorPower(system::PowerSystem, analysis::ACOptimalPowerFlow; label::O)
     index = system.generator.label[getLabel(system.generator, label, "generator")]
     errorVoltage(analysis.voltage.angle)
 
@@ -888,7 +888,7 @@ solve!(system, analysis)
 magnitude, angle = injectionCurrent(system, analysis; label = 1)
 ```
 """
-function injectionCurrent(system::PowerSystem, analysis::AC; label)
+function injectionCurrent(system::PowerSystem, analysis::AC; label::O)
     index = system.bus.label[getLabel(system.bus, label, "bus")]
     errorVoltage(analysis.voltage.magnitude)
 
@@ -923,7 +923,7 @@ solve!(system, analysis)
 magnitude, angle = fromCurrent(system, analysis; label = 2)
 ```
 """
-function fromCurrent(system::PowerSystem, analysis::AC; label)
+function fromCurrent(system::PowerSystem, analysis::AC; label::O)
     index = system.branch.label[getLabel(system.branch, label, "branch")]
     errorVoltage(analysis.voltage.magnitude)
 
@@ -964,7 +964,7 @@ solve!(system, analysis)
 magnitude, angle = toCurrent(system, analysis; label = 2)
 ```
 """
-function toCurrent(system::PowerSystem, analysis::AC; label)
+function toCurrent(system::PowerSystem, analysis::AC; label::O)
     index = system.branch.label[getLabel(system.branch, label, "branch")]
     errorVoltage(analysis.voltage.magnitude)
 
@@ -1006,7 +1006,7 @@ solve!(system, analysis)
 magnitude, angle = seriesCurrent(system, analysis; label = 2)
 ```
 """
-function seriesCurrent(system::PowerSystem, analysis::AC; label)
+function seriesCurrent(system::PowerSystem, analysis::AC; label::O)
     index = system.branch.label[getLabel(system.branch, label, "branch")]
     errorVoltage(analysis.voltage.magnitude)
 

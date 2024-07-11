@@ -17,7 +17,7 @@ system30 = powerSystem(string(pathData, "case30test.m"))
         @test analysisSE.voltage.angle ≈ analysis.voltage.angle
 
         analysisLAV = acLavStateEstimation(system, device, Ipopt.Optimizer)
-        JuMP.set_silent(analysisLAV.method.jump)
+        set_silent(analysisLAV.method.jump)
         solve!(system, analysisLAV)
         @test analysisLAV.voltage.magnitude ≈ analysis.voltage.magnitude atol = 1e-6
         @test analysisLAV.voltage.angle ≈ analysis.voltage.angle atol = 1e-6
@@ -458,7 +458,7 @@ system30 = powerSystem(string(pathData, "case30test.m"))
         @test analysisSE.voltage.angle ≈ analysis.voltage.angle
 
         analysisLAV = pmuLavStateEstimation(system, device, Ipopt.Optimizer)
-        JuMP.set_silent(analysisLAV.method.jump)
+        set_silent(analysisLAV.method.jump)
         solve!(system, analysisLAV)
         @test analysisLAV.voltage.magnitude ≈ analysis.voltage.magnitude
         @test analysisLAV.voltage.angle ≈ analysis.voltage.angle
@@ -605,7 +605,7 @@ system30 = powerSystem(string(pathData, "case30test.m"))
         @test analysisSE.voltage.angle ≈ analysis.voltage.angle
 
         analysisLAV = dcLavStateEstimation(system, device, Ipopt.Optimizer)
-        JuMP.set_silent(analysisLAV.method.jump)
+        set_silent(analysisLAV.method.jump)
         solve!(system, analysisLAV)
         @test analysisLAV.voltage.angle ≈ analysis.voltage.angle
 

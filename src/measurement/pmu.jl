@@ -503,7 +503,7 @@ function updatePmu!(system::PowerSystem, device::Measurement, analysis::DCStateE
     end
 
     if pmu.layout.bus[indexPmu] && pmu.angle.status[indexPmu] == 1 && (isset(statusAngle) || isset(angle))
-        JuMP.set_normalized_rhs(method.residual[index], pmu.angle.mean[indexPmu] - system.bus.voltage.angle[system.bus.layout.slack])
+        set_normalized_rhs(method.residual[index], pmu.angle.mean[indexPmu] - system.bus.voltage.angle[system.bus.layout.slack])
     end
 end
 
@@ -702,8 +702,8 @@ function updatePmu!(system::PowerSystem, device::Measurement, analysis::PMUState
     end
 
     if statusNew == 1 && mean
-        JuMP.set_normalized_rhs(method.residual[rowIndexRe], pmu.magnitude.mean[index] * cosAngle)
-        JuMP.set_normalized_rhs(method.residual[rowIndexRe + 1], pmu.magnitude.mean[index] * sinAngle)
+        set_normalized_rhs(method.residual[rowIndexRe], pmu.magnitude.mean[index] * cosAngle)
+        set_normalized_rhs(method.residual[rowIndexRe + 1], pmu.magnitude.mean[index] * sinAngle)
     end
 end
 

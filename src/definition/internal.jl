@@ -2,11 +2,12 @@
 const A = Union{Float64, Int64, Missing}
 const B = Union{Bool, Missing}
 const C = Union{Int64, Missing}
-const L = Union{String, Int64, Missing}
+const O = Union{String, Int64}
+const L = Union{O, Missing}
 
-const LUQR = Union{SuiteSparse.UMFPACK.UmfpackLU{Float64, Int64}, SuiteSparse.SPQR.QRSparse{Float64, Int64}}
-const LULDLt = Union{SuiteSparse.CHOLMOD.Factor{Float64}, SuiteSparse.UMFPACK.UmfpackLU{Float64, Int64}}
-const LULDLtQR = Union{SuiteSparse.CHOLMOD.Factor{Float64}, LUQR}
+const LUQR = Union{UMFPACK.UmfpackLU{Float64, Int64}, SPQR.QRSparse{Float64, Int64}}
+const LULDLt = Union{CHOLMOD.Factor{Float64}, UMFPACK.UmfpackLU{Float64, Int64}}
+const LULDLtQR = Union{CHOLMOD.Factor{Float64}, LUQR}
 
 ########### Polar Coordinate ###########
 mutable struct Polar
@@ -19,12 +20,12 @@ mutable struct PolarAngle
 end
 
 mutable struct PolarRef
-    magnitude::Dict{Int64, JuMP.ConstraintRef}
-    angle::Dict{Int64, JuMP.ConstraintRef}
+    magnitude::Dict{Int64, ConstraintRef}
+    angle::Dict{Int64, ConstraintRef}
 end
 
 mutable struct PolarAngleRef
-    angle::Dict{Int64, JuMP.ConstraintRef}
+    angle::Dict{Int64, ConstraintRef}
 end
 
 ########### Cartesian Coordinate ###########
@@ -46,12 +47,12 @@ mutable struct CartesianImag
 end
 
 mutable struct CartesianRef
-    active::Dict{Int64, JuMP.ConstraintRef}
-    reactive::Dict{Int64, JuMP.ConstraintRef}
+    active::Dict{Int64, ConstraintRef}
+    reactive::Dict{Int64, ConstraintRef}
 end
 
 mutable struct CartesianRealRef
-    active::Dict{Int64, JuMP.ConstraintRef}
+    active::Dict{Int64, ConstraintRef}
 end
 
 ########### Sparse Matrix Model ##########

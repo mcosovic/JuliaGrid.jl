@@ -104,7 +104,7 @@ function unitless(value::Union{A, Int8}, default::Union{A, Int8})
 end
 
 ######### Set Label ##########
-function setLabel(component::D, label::Missing, default::String, key::String; prefix::String = "")
+function setLabel(component::Union{P,M}, label::Missing, default::String, key::String; prefix::String = "")
     component.layout.label += 1
 
     if key in ["bus"; "branch"; "generator"]
@@ -124,7 +124,7 @@ function setLabel(component::D, label::Missing, default::String, key::String; pr
     setindex!(component.label, component.number, label)
 end
 
-function setLabel(component::D, label::String, default::String, key::String; prefix::String = "")
+function setLabel(component::Union{P,M}, label::String, default::String, key::String; prefix::String = "")
     if haskey(component.label, label)
         throw(ErrorException("The label $label is not unique."))
     end
@@ -138,7 +138,7 @@ function setLabel(component::D, label::String, default::String, key::String; pre
     setindex!(component.label, component.number, label)
 end
 
-function setLabel(component::D, label::Int64, default::String, key::String; prefix::String = "")
+function setLabel(component::Union{P,M}, label::Int64, default::String, key::String; prefix::String = "")
     labelString = string(label)
     if haskey(component.label, labelString)
         throw(ErrorException("The label $label is not unique."))
@@ -151,7 +151,7 @@ function setLabel(component::D, label::Int64, default::String, key::String; pref
 end
 
 ######### Get Label ##########
-function getLabel(container::D, label::String, name::String)
+function getLabel(container::Union{P,M}, label::String, name::String)
     if !haskey(container.label, label)
         throw(ErrorException("The $name label $label that has been specified does not exist within the available $name labels."))
     end
@@ -159,7 +159,7 @@ function getLabel(container::D, label::String, name::String)
     return label
 end
 
-function getLabel(container::D, label::Int64, name::String)
+function getLabel(container::Union{P,M}, label::Int64, name::String)
     label = string(label)
     if !haskey(container.label, label)
         throw(ErrorException("The $name label $label that has been specified does not exist within the available $name labels."))
@@ -285,32 +285,32 @@ function addDeviceLAV(method::LAV, indexDevice::Int64)
 end
 
 ######### Factorizations ##########
-function sparseFactorization(A::SparseMatrixCSC{Float64,Int64}, factorization::SuiteSparse.UMFPACK.UmfpackLU{Float64, Int64})
+function sparseFactorization(A::SparseMatrixCSC{Float64,Int64}, factorization::UMFPACK.UmfpackLU{Float64, Int64})
     return lu(A)
 end
 
-function sparseFactorization!(A::SparseMatrixCSC{Float64,Int64}, factorization::SuiteSparse.UMFPACK.UmfpackLU{Float64, Int64})
+function sparseFactorization!(A::SparseMatrixCSC{Float64,Int64}, factorization::UMFPACK.UmfpackLU{Float64, Int64})
     lu!(factorization, A)
 end
 
-function sparseFactorization(A::SparseMatrixCSC{Float64,Int64}, factorization::SuiteSparse.CHOLMOD.Factor{Float64})
+function sparseFactorization(A::SparseMatrixCSC{Float64,Int64}, factorization::CHOLMOD.Factor{Float64})
     return ldlt(A)
 end
 
-function sparseFactorization!(A::SparseMatrixCSC{Float64,Int64}, factorization::SuiteSparse.CHOLMOD.Factor{Float64})
+function sparseFactorization!(A::SparseMatrixCSC{Float64,Int64}, factorization::CHOLMOD.Factor{Float64})
     return ldlt!(factorization, A)
 end
 
-function sparseFactorization(A::SparseMatrixCSC{Float64,Int64}, factorization::SuiteSparse.SPQR.QRSparse{Float64, Int64})
+function sparseFactorization(A::SparseMatrixCSC{Float64,Int64}, factorization::SPQR.QRSparse{Float64, Int64})
     return qr(A)
 end
 
-function sparseFactorization!(A::SparseMatrixCSC{Float64,Int64}, factorization::SuiteSparse.SPQR.QRSparse{Float64, Int64})
+function sparseFactorization!(A::SparseMatrixCSC{Float64,Int64}, factorization::SPQR.QRSparse{Float64, Int64})
     return qr(A)
 end
 
 ########### Solutions ###########
-function sparseSolution(x::Array{Float64,1}, b::Array{Float64,1}, factor::SuiteSparse.UMFPACK.UmfpackLU{Float64, Int64})
+function sparseSolution(x::Array{Float64,1}, b::Array{Float64,1}, factor::UMFPACK.UmfpackLU{Float64, Int64})
     if isempty(x)
         x = fill(0.0, size(factor.L, 2))
     end
@@ -318,7 +318,7 @@ function sparseSolution(x::Array{Float64,1}, b::Array{Float64,1}, factor::SuiteS
     ldiv!(x, factor, b)
 end
 
-function sparseSolution(x::Array{Float64,1}, b::Array{Float64,1}, factor::Union{SuiteSparse.SPQR.QRSparse{Float64, Int64}, SuiteSparse.CHOLMOD.Factor{Float64}})
+function sparseSolution(x::Array{Float64,1}, b::Array{Float64,1}, factor::Union{SPQR.QRSparse{Float64, Int64}, CHOLMOD.Factor{Float64}})
     return x = factor \ b
 end
 
@@ -357,7 +357,7 @@ function print(io::IO, label::OrderedDict{String, Int64}, data1::Union{Array{Flo
     end
 end
 
-function print(io::IO, label::OrderedDict{String, Int64}, obj::Dict{Int64, JuMP.ConstraintRef})
+function print(io::IO, label::OrderedDict{String, Int64}, obj::Dict{Int64, ConstraintRef})
     for (key, value) in label
         try
             println(io::IO, key, ": ", obj[value])
@@ -366,7 +366,7 @@ function print(io::IO, label::OrderedDict{String, Int64}, obj::Dict{Int64, JuMP.
     end
 end
 
-function print(io::IO, obj::Dict{Int64, JuMP.ConstraintRef})
+function print(io::IO, obj::Dict{Int64, ConstraintRef})
     for key in keys(sort(obj))
         try
             println(io::IO, obj[key])
@@ -376,7 +376,7 @@ function print(io::IO, obj::Dict{Int64, JuMP.ConstraintRef})
     end
 end
 
-function print(io::IO, label::OrderedDict{String, Int64}, obj::Dict{Int64, Array{JuMP.ConstraintRef,1}})
+function print(io::IO, label::OrderedDict{String, Int64}, obj::Dict{Int64, Array{ConstraintRef,1}})
     names = collect(keys(label))
     for key in keys(sort(obj))
         for cons in obj[key]
@@ -389,7 +389,7 @@ function print(io::IO, label::OrderedDict{String, Int64}, obj::Dict{Int64, Array
     end
 end
 
-function print(io::IO, obj::Dict{Int64, Array{JuMP.ConstraintRef,1}})
+function print(io::IO, obj::Dict{Int64, Array{ConstraintRef,1}})
     for key in keys(sort(obj))
         for cons in obj[key]
             try

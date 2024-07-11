@@ -244,7 +244,7 @@ function fastNewtonRaphsonXB(system::PowerSystem, factorization::Type{<:Union{QR
     return analysis
 end
 
-@inline function fastNewtonRaphsonModel(system::PowerSystem, factorization::Type{<:Union{QR, LU}}, bx)
+@inline function fastNewtonRaphsonModel(system::PowerSystem, factorization::Type{<:Union{QR, LU}}, bx::Bool)
     bus = system.bus
     branch = system.branch
     ac = system.model.ac

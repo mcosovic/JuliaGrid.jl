@@ -29,7 +29,7 @@
     acModel!(system)
     analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
 
-    JuMP.set_silent(analysis.method.jump)
+    set_silent(analysis.method.jump)
     solve!(system, analysis)
     power!(system, analysis)
 
@@ -60,7 +60,7 @@
     cost!(resystem, reusing; label = 4, reactive = 2, polynomial = [452.2; 31; 18; 5])
     cost!(resystem, reusing; label = 4, reactive = 1, piecewise = [10.2 14.3; 11.5 16.1; 12.8 18.6])
 
-    JuMP.set_silent(reusing.method.jump)
+    set_silent(reusing.method.jump)
     solve!(resystem, reusing)
     power!(resystem, reusing)
 
@@ -78,7 +78,7 @@
     approxStruct(analysis.power.series, reusing.power.series)
 
     ###### Test Objective #######
-    @test JuMP.objective_value(analysis.method.jump) ≈ JuMP.objective_value(reusing.method.jump)
+    @test objective_value(analysis.method.jump) ≈ objective_value(reusing.method.jump)
 
     ###### Test Number of Constraints #######
     for list in list_of_constraint_types(analysis.method.jump)
@@ -98,7 +98,7 @@
     acModel!(system)
     analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
 
-    JuMP.set_silent(analysis.method.jump)
+    set_silent(analysis.method.jump)
     solve!(system, analysis)
     power!(system, analysis)
 
@@ -130,7 +130,7 @@
     approxStruct(analysis.power.series, reusing.power.series)
 
     ###### Test Objective #######
-    @test JuMP.objective_value(analysis.method.jump) ≈ JuMP.objective_value(reusing.method.jump)
+    @test objective_value(analysis.method.jump) ≈ objective_value(reusing.method.jump)
 
     ###### Test Number of Constraints #######
     for list in list_of_constraint_types(analysis.method.jump)
@@ -164,7 +164,7 @@ end
     dcModel!(system)
     analysis = dcOptimalPowerFlow(system, Ipopt.Optimizer)
 
-    JuMP.set_silent(analysis.method.jump)
+    set_silent(analysis.method.jump)
     solve!(system, analysis)
     power!(system, analysis)
 
@@ -189,7 +189,7 @@ end
     updateGenerator!(resystem, reusing; label = 9, status = 0)
     cost!(resystem, reusing; label = 5, active = 2, polynomial = [854.0, 116.0])
 
-    JuMP.set_silent(reusing.method.jump)
+    set_silent(reusing.method.jump)
     solve!(resystem, reusing)
     power!(resystem, reusing)
 
@@ -204,7 +204,7 @@ end
     @test analysis.power.generator.active ≈ reusing.power.generator.active
 
     ###### Test Objective #######
-    @test JuMP.objective_value(analysis.method.jump) ≈ JuMP.objective_value(reusing.method.jump)
+    @test objective_value(analysis.method.jump) ≈ objective_value(reusing.method.jump)
 
     ###### Test Number of Constraints #######
     for list in list_of_constraint_types(analysis.method.jump)
@@ -223,7 +223,7 @@ end
     dcModel!(system)
     analysis = dcOptimalPowerFlow(system, Ipopt.Optimizer)
 
-    JuMP.set_silent(analysis.method.jump)
+    set_silent(analysis.method.jump)
     solve!(system, analysis)
     power!(system, analysis)
 
@@ -251,7 +251,7 @@ end
     @test analysis.power.generator.active ≈ reusing.power.generator.active
 
     ###### Test Objective #######
-    @test JuMP.objective_value(analysis.method.jump) ≈ JuMP.objective_value(reusing.method.jump)
+    @test objective_value(analysis.method.jump) ≈ objective_value(reusing.method.jump)
 
     ###### Test Number of Constraints #######
     for list in list_of_constraint_types(analysis.method.jump)

@@ -22,15 +22,15 @@ savePowerSystem(system; path = "D:/case14.h5")
 function savePowerSystem(system::PowerSystem; path::String, reference::String = "", note::String = "")
     file = h5open(path, "w")
         saveBase(system, file)
-        label, shuntNumber = saveBus(system, file)
-        transformerNumber = saveBranch(system, label, file)
-        saveGenerator(system, label, file)
+        shuntNumber = saveBus(system, file)
+        transformerNumber = saveBranch(system, file)
+        saveGenerator(system, file)
         saveMainAttribute(system, file, reference, note, transformerNumber, shuntNumber)
     close(file)
 end
 
 ######### Save Base Power ##########
-function saveBase(system::PowerSystem, file)
+function saveBase(system::PowerSystem, file::File)
     write(file, "base/power", system.base.power.value * system.base.power.prefix)
     attrs(file["base/power"])["unit"] = "volt-ampere (VA)"
     attrs(file["base/power"])["format"] = "number"
@@ -41,7 +41,7 @@ function saveBase(system::PowerSystem, file)
 end
 
 ######### Save Bus Data ##########
-function saveBus(system::PowerSystem, file)
+function saveBus(system::PowerSystem, file::File)
     demand = system.bus.demand
     shunt = system.bus.shunt
     voltage = system.bus.voltage
@@ -115,11 +115,11 @@ function saveBus(system::PowerSystem, file)
     attrs(file["bus/layout/lossZone"])["unit"] = "dimensionless"
     attrs(file["bus/layout/lossZone"])["format"] = format
 
-    return label, shuntNumber
+    return shuntNumber
 end
 
 ######### Save Branch Data ##########
-function saveBranch(system::PowerSystem, labelBus::Array{String,1}, file)
+function saveBranch(system::PowerSystem, file::File)
     parameter = system.branch.parameter
     flow = system.branch.flow
     voltage = system.branch.voltage
@@ -218,7 +218,7 @@ function saveBranch(system::PowerSystem, labelBus::Array{String,1}, file)
 end
 
 ######### Save Generator Data ##########
-function saveGenerator(system::PowerSystem, labelBus::Array{String,1}, file)
+function saveGenerator(system::PowerSystem, file::File)
     output = system.generator.output
     capability = system.generator.capability
     ramping = system.generator.ramping
@@ -368,7 +368,7 @@ function saveGenerator(system::PowerSystem, labelBus::Array{String,1}, file)
 end
 
 ######### Save Main Attributes ##########
-function saveMainAttribute(system::PowerSystem, file, reference::String, note::String, transformerNumber::Int64, shuntNumber::Int64)
+function saveMainAttribute(system::PowerSystem, file::File, reference::String, note::String, transformerNumber::Int64, shuntNumber::Int64)
     attrs(file)["number of buses"] = system.bus.number
     attrs(file)["number of shunt elements"] = shuntNumber
     attrs(file)["number of branches"] = system.branch.number
@@ -387,7 +387,7 @@ function saveMainAttribute(system::PowerSystem, file, reference::String, note::S
 end
 
 ######### Array Compression ##########
-function compresseArray(file, data, name::String)
+function compresseArray(file::File, data::Union{Array{Float64,1}, Array{Int64,1}, Array{Int8,1}}, name::String)
     format = "compressed"
 
     if !isempty(data)
@@ -412,7 +412,7 @@ function compresseArray(file, data, name::String)
 end
 
 ######### Save Polynomial Cost Terms ##########
-function savePolynomial(file, data, name::String)
+function savePolynomial(file::File, data::Array{Array{Float64,1},1}, name::String)
     format = "empty"
 
     highestPolynomial  = 0
@@ -443,7 +443,7 @@ function savePolynomial(file, data, name::String)
 end
 
 ######### Save Piecewise Cost Terms ##########
-function savePiecewise(file, data, name::String)
+function savePiecewise(file::File, data::Array{Array{Float64,2},1}, name::String)
     costNumber = size(data, 1)
     format = "empty"
 

@@ -101,7 +101,7 @@ function measurement()
 end
 
 ######## Load Label ##########
-function loadLabel(device, hdf5::HDF5.File; meter = "")
+function loadLabel(device::M, hdf5::File; meter::String = "")
     label::Array{String,1} = read(hdf5[string(meter, "/label")])
     device.number = length(label)
 
@@ -114,14 +114,14 @@ function loadLabel(device, hdf5::HDF5.File; meter = "")
 end
 
 ######## Load Mean, Variance, and Status ##########
-function loadMeter(meter, hdf5, number)
+function loadMeter(meter::GaussMeter, hdf5::Group, number::Int64)
     meter.mean = readHDF5(hdf5, "mean", number)
     meter.variance = readHDF5(hdf5, "variance", number)
     meter.status = readHDF5(hdf5, "status", number)
 end
 
 ######## Load Voltmeter ##########
-function loadVoltmeter(device::Measurement, hdf5::HDF5.File)
+function loadVoltmeter(device::Measurement, hdf5::File)
     if haskey(hdf5, "voltmeter")
         voltmeter = device.voltmeter
         loadLabel(voltmeter, hdf5; meter = "voltmeter")
@@ -133,7 +133,7 @@ function loadVoltmeter(device::Measurement, hdf5::HDF5.File)
 end
 
 ######## Load Ammeter ##########
-function loadAmmeter(device::Measurement, hdf5::HDF5.File)
+function loadAmmeter(device::Measurement, hdf5::File)
     if haskey(hdf5, "ammeter")
         ammeter = device.ammeter
         loadLabel(ammeter, hdf5; meter = "ammeter")
@@ -147,7 +147,7 @@ function loadAmmeter(device::Measurement, hdf5::HDF5.File)
 end
 
 ######## Load Wattmeter ##########
-function loadWattmeter(device::Measurement, hdf5::HDF5.File)
+function loadWattmeter(device::Measurement, hdf5::File)
     if haskey(hdf5, "wattmeter")
         wattmeter = device.wattmeter
         loadLabel(wattmeter, hdf5; meter = "wattmeter")
@@ -162,7 +162,7 @@ function loadWattmeter(device::Measurement, hdf5::HDF5.File)
 end
 
 ######## Load Varmeter ##########
-function loadVarmeter(device::Measurement, hdf5::HDF5.File)
+function loadVarmeter(device::Measurement, hdf5::File)
     if haskey(hdf5, "varmeter")
         varmeter = device.varmeter
         loadLabel(varmeter, hdf5; meter = "varmeter")
@@ -177,7 +177,7 @@ function loadVarmeter(device::Measurement, hdf5::HDF5.File)
 end
 
 ######## Load PMU ##########
-function loadPmu(device::Measurement, hdf5::HDF5.File)
+function loadPmu(device::Measurement, hdf5::File)
     if haskey(hdf5, "pmu")
         pmu = device.pmu
         loadLabel(pmu, hdf5; meter = "pmu")

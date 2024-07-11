@@ -247,7 +247,7 @@ function dcLavStateEstimation(system::PowerSystem, device::Measurement,
     fix(statey[bus.layout.slack], 0.0; force = true)
 
     objective = @expression(jump, AffExpr())
-    residual = Dict{Int64, JuMP.ConstraintRef}()
+    residual = Dict{Int64, ConstraintRef}()
     @inbounds for (i, k) in enumerate(wattmeter.layout.index)
         if device.wattmeter.active.status[i] == 1
             if wattmeter.layout.bus[i]
@@ -415,13 +415,13 @@ function solve!(system::PowerSystem, analysis::DCStateEstimation{LAV})
     slackAngle = system.bus.voltage.angle[system.bus.layout.slack]
 
     @inbounds for i = 1:system.bus.number
-        JuMP.set_start_value(se.statex[i]::JuMP.VariableRef, analysis.voltage.angle[i] - slackAngle)
+        set_start_value(se.statex[i]::VariableRef, analysis.voltage.angle[i] - slackAngle)
     end
 
-    JuMP.optimize!(se.jump)
+    optimize!(se.jump)
 
     @inbounds for i = 1:system.bus.number
-        analysis.voltage.angle[i] = value(se.statex[i]::JuMP.VariableRef) - value(se.statey[i]::JuMP.VariableRef) + slackAngle
+        analysis.voltage.angle[i] = value(se.statex[i]::VariableRef) - value(se.statey[i]::VariableRef) + slackAngle
     end
 end
 

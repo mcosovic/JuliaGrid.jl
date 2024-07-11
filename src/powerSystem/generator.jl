@@ -524,7 +524,7 @@ function updateGenerator!(system::PowerSystem, analysis::DCOptimalPowerFlow;
             analysis.method.objective -= cost
         end
         drop_zeros!(analysis.method.objective)
-        JuMP.set_objective_function(jump, analysis.method.objective)
+        set_objective_function(jump, analysis.method.objective)
 
         remove!(jump, constraint.capability.active, index)
         updateBalance(system, analysis, indexBus; power = 0, genIndex = index)
@@ -540,7 +540,7 @@ function updateGenerator!(system::PowerSystem, analysis::DCOptimalPowerFlow;
         else
             analysis.method.objective += cost
         end
-        JuMP.set_objective_function(jump, analysis.method.objective)
+        set_objective_function(jump, analysis.method.objective)
 
         updateBalance(system, analysis, indexBus; power = 1, genIndex = index)
         remove!(jump, constraint.capability.active, index)
@@ -914,11 +914,11 @@ function cost!(system::PowerSystem, analysis::DCOptimalPowerFlow; label::L,
     if dropZero
         drop_zeros!(analysis.method.objective)
     end
-    JuMP.set_objective_function(jump, analysis.method.objective)
+    set_objective_function(jump, analysis.method.objective)
 end
 
 function cost!(system::PowerSystem, analysis::ACOptimalPowerFlow; label::L,
-    active::A = missing,  reactive::A = missing,
+    active::A = missing, reactive::A = missing,
     polynomial::Array{Float64,1} = Array{Float64}(undef, 0),
     piecewise::Array{Float64,2} = Array{Float64}(undef, 0, 0))
 

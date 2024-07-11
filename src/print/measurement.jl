@@ -83,7 +83,7 @@ function _printVoltmeterData(system::PowerSystem, device::Measurement, voltage::
         end
 
         if !isset(label) || footer
-            Printf.@printf(io, "|%s|\n", "-"^maxLine)
+            @printf(io, "|%s|\n", "-"^maxLine)
         end
     end
 end
@@ -200,7 +200,7 @@ function _printAmmeterData(system::PowerSystem, device::Measurement, current::AC
         end
 
         if !isset(label) || footer
-            Printf.@printf(io, "|%s|\n", "-"^maxLine)
+            @printf(io, "|%s|\n", "-"^maxLine)
         end
     end
 end
@@ -300,7 +300,7 @@ function _printWattmeterData(system::PowerSystem, device::Measurement, power::Un
     wattmeter = device.wattmeter
 
     scale = printScale(system, prefix)
-    width, fmt, deviceFlag, analysFlag = formatWattmeterData(system, wattmeter, power, scale, label, prefix, width, fmt)
+    width, fmt, deviceFlag, analysFlag = formatWattmeterData(wattmeter, power, scale, label, width, fmt)
     labels, header = toggleLabelHeader(label, wattmeter, wattmeter.label, header, "wattmeter")
 
     if deviceFlag
@@ -314,12 +314,12 @@ function _printWattmeterData(system::PowerSystem, device::Measurement, power::Un
         end
 
         if !isset(label) || footer
-            Printf.@printf(io, "|%s|\n", "-"^maxLine)
+            @printf(io, "|%s|\n", "-"^maxLine)
         end
     end
 end
 
-function formatWattmeterData(system::PowerSystem, wattmeter::Wattmeter, power::Union{ACPower, DCPower}, scale::Dict{String, Float64}, label::L, prefix::PrefixLive, width::Dict{String,Int64}, fmt::Dict{String, String})
+function formatWattmeterData(wattmeter::Wattmeter, power::Union{ACPower, DCPower}, scale::Dict{String, Float64}, label::L, width::Dict{String,Int64}, fmt::Dict{String, String})
     _width, _fmt, minmax, deviceFlag, analysFlag = formatDevice(wattmeter.active.mean, power.injection.active)
     width, fmt = printFormat(_width, width, _fmt, fmt)
     labels = toggleLabel(label, wattmeter, wattmeter.label, "wattmeter")
@@ -403,7 +403,7 @@ function _printVarmeterData(system::PowerSystem, device::Measurement, power::ACP
     varmeter = device.varmeter
 
     scale = printScale(system, prefix)
-    width, fmt, deviceFlag, analysFlag = formatVarmeterData(system, varmeter, power, scale, label, prefix, width, fmt)
+    width, fmt, deviceFlag, analysFlag = formatVarmeterData(varmeter, power, scale, label, width, fmt)
     labels, header = toggleLabelHeader(label, varmeter, varmeter.label, header, "varmeter")
 
     if deviceFlag
@@ -417,12 +417,12 @@ function _printVarmeterData(system::PowerSystem, device::Measurement, power::ACP
         end
 
         if !isset(label) || footer
-            Printf.@printf(io, "|%s|\n", "-"^maxLine)
+            @printf(io, "|%s|\n", "-"^maxLine)
         end
     end
 end
 
-function formatVarmeterData(system::PowerSystem, varmeter::Varmeter, power::ACPower, scale::Dict{String, Float64}, label::L, prefix::PrefixLive, width::Dict{String,Int64}, fmt::Dict{String, String})
+function formatVarmeterData(varmeter::Varmeter, power::ACPower, scale::Dict{String, Float64}, label::L, width::Dict{String,Int64}, fmt::Dict{String, String})
     _width, _fmt, minmax, deviceFlag, analysFlag = formatDevice(varmeter.reactive.mean, power.injection.reactive)
     width, fmt = printFormat(_width, width, _fmt, fmt)
     labels = toggleLabel(label, varmeter, varmeter.label, "varmeter")
@@ -519,8 +519,8 @@ function _printPmuData(system::PowerSystem, device::Measurement, voltage::Polar,
         maxLineV = maxLineDevice(widthV, analysFlagV)
         maxLineθ = maxLineDevice(widthθ, analysFlagV; label = false)
         if header
-            Printf.@printf(io, "\n|%s|%s|\n", "-"^maxLineV, "-"^(maxLineθ))
-            Printf.@printf(io, "| %s%*s| %s%*s|\n", "PMU Voltage Magnitude Data", maxLineV - 27, "", "PMU Voltage Angle Data", maxLineθ - 23, "")
+            @printf(io, "\n|%s|%s|\n", "-"^maxLineV, "-"^(maxLineθ))
+            @printf(io, "| %s%*s| %s%*s|\n", "PMU Voltage Magnitude Data", maxLineV - 27, "", "PMU Voltage Angle Data", maxLineθ - 23, "")
         end
 
         headerDevice(io, widthV, widthθ, header, maxLineV, maxLineθ, label, unitList.voltageMagnitudeLive, unitList.voltageAngleLive, analysFlagV)
@@ -540,8 +540,8 @@ function _printPmuData(system::PowerSystem, device::Measurement, voltage::Polar,
         end
 
         if !isset(label) || footer
-            Printf.@printf(io, "|%s|", "-"^maxLineV)
-            Printf.@printf(io, "%s|\n", "-"^maxLineθ)
+            @printf(io, "|%s|", "-"^maxLineV)
+            @printf(io, "%s|\n", "-"^maxLineθ)
         end
     end
 
@@ -549,8 +549,8 @@ function _printPmuData(system::PowerSystem, device::Measurement, voltage::Polar,
         maxLineI = maxLineDevice(widthI, analysFlagI)
         maxLineψ = maxLineDevice(widthψ, analysFlagI; label = false)
         if header
-            Printf.@printf(io, "\n|%s|%s|\n", "-"^maxLineI, "-"^(maxLineψ ))
-            Printf.@printf(io, "| %s%*s| %s%*s|\n", "PMU Current Magnitude Data", maxLineI - 27, "", "PMU Current Angle Data", maxLineψ - 23, "")
+            @printf(io, "\n|%s|%s|\n", "-"^maxLineI, "-"^(maxLineψ ))
+            @printf(io, "| %s%*s| %s%*s|\n", "PMU Current Magnitude Data", maxLineI - 27, "", "PMU Current Angle Data", maxLineψ - 23, "")
         end
 
         headerDevice(io, widthI, widthψ, header, maxLineI, maxLineψ, label, unitList.currentMagnitudeLive, unitList.currentAngleLive, analysFlagI)
@@ -577,8 +577,8 @@ function _printPmuData(system::PowerSystem, device::Measurement, voltage::Polar,
         end
 
         if !isset(label) || footer
-            Printf.@printf(io, "|%s|", "-"^maxLineI)
-            Printf.@printf(io, "%s|\n", "-"^(maxLineψ))
+            @printf(io, "|%s|", "-"^maxLineI)
+            @printf(io, "%s|\n", "-"^(maxLineψ))
         end
 
     end
@@ -606,7 +606,7 @@ function _printPmuData(system::PowerSystem, device::Measurement, voltage::PolarA
         end
 
         if !isset(label) || footer
-            Printf.@printf(io, "|%s|\n", "-"^maxLine)
+            @printf(io, "|%s|\n", "-"^maxLine)
         end
     end
 end
@@ -729,20 +729,20 @@ end
 
 function headerDevice(io::IO, width::Dict{String, Int64}, header::Bool, maxLine::Int64, labelSet::L, unitLive::String, flag::Bool)
     if header
-        Printf.@printf(io, "|%s|\n", "-"^maxLine)
+        @printf(io, "|%s|\n", "-"^maxLine)
         printHeader1(io, width, flag)
         printHeader2(io, width, flag)
         printHeader3(io, width, flag)
         printHeader4(io, width, unitLive, flag)
         printHeader5(io, width, flag)
     elseif !isset(labelSet)
-        Printf.@printf(io, "|%s|\n", "-"^maxLine)
+        @printf(io, "|%s|\n", "-"^maxLine)
     end
 end
 
 function headerDevice(io::IO, width1::Dict{String, Int64}, width2::Dict{String, Int64}, header::Bool, maxLine1::Int64, maxLine2::Int64, labelSet::L, unitLive1::String, unitLive2::String, flag::Bool)
     if header
-        Printf.@printf(io, "|%s|%s|\n", "-"^maxLine1, "-"^maxLine2)
+        @printf(io, "|%s|%s|\n", "-"^maxLine1, "-"^maxLine2)
         printHeader1(io, width1, flag; newLine = false, last = false)
         printHeader1(io, width2, flag; label = false)
         printHeader2(io, width1, flag; newLine = false, last = false)
@@ -754,143 +754,143 @@ function headerDevice(io::IO, width1::Dict{String, Int64}, width2::Dict{String, 
         printHeader5(io, width1, flag; newLine = false, last = false)
         printHeader5(io, width2, flag; label = false)
     elseif !isset(labelSet)
-        Printf.@printf(io, "|%s|%s|\n", "-"^maxLine1, "-"^(maxLine2 - 8))
+        @printf(io, "|%s|%s|\n", "-"^maxLine1, "-"^(maxLine2 - 8))
     end
 end
 
 function printHeader1(io::IO, width::Dict{String, Int64}, flag::Bool; label::Bool = true, newLine::Bool = true, last::Bool = true)
     if label
-        Printf.@printf(io, "| %*s%s%*s ",
+        @printf(io, "| %*s%s%*s ",
             floor(Int, (width["Label"] - 5) / 2), "", "Label", ceil(Int, (width["Label"]  - 5) / 2) , "",
         )
     end
 
-    Printf.@printf(io, "| %*s%s%*s |",
+    @printf(io, "| %*s%s%*s |",
         floor(Int, (width["Measurement Mean"] + width["Measurement Variance"] - 8) / 2), "", "Measurement", ceil(Int, (width["Measurement Mean"] + width["Measurement Variance"] - 8) / 2) , "",
     )
 
     if flag
-        Printf.@printf(io, " %*s%s%*s |",
+        @printf(io, " %*s%s%*s |",
             floor(Int, (width["State Estimation Estimate"] + width["State Estimation Residual"] - 13) / 2), "", "State Estimation", ceil(Int, (width["State Estimation Estimate"] + width["State Estimation Residual"] - 13) / 2) , "",
         )
     end
 
-    Printf.@printf io " %s " "Status"
+    @printf io " %s " "Status"
 
     if last
-        Printf.@printf io "|"
+        @printf io "|"
     end
 
     if newLine
-        Printf.@printf io "\n"
+        @printf io "\n"
     end
 end
 
 function printHeader2(io::IO, width::Dict{String, Int64}, flag::Bool; label::Bool = true, newLine::Bool = true, last::Bool = true)
     if label
-        Printf.@printf(io, "| %*s ", width["Label"], "")
+        @printf(io, "| %*s ", width["Label"], "")
     end
 
-    Printf.@printf(io, "| %*s |",
+    @printf(io, "| %*s |",
         width["Measurement Mean"] + width["Measurement Variance"] + 3, "",
     )
     if flag
-        Printf.@printf(io, " %*s |",
+        @printf(io, " %*s |",
             width["State Estimation Estimate"] + width["State Estimation Residual"] + 3, "",
         )
     end
 
-    Printf.@printf io " %*s " width["Status"] ""
+    @printf io " %*s " width["Status"] ""
 
     if last
-        Printf.@printf io "|"
+        @printf io "|"
     end
 
     if newLine
-        Printf.@printf io "\n"
+        @printf io "\n"
     end
 end
 
 function printHeader3(io::IO, width::Dict{String, Int64}, flag::Bool; label::Bool = true, newLine::Bool = true, last::Bool = true)
     if label
-        Printf.@printf(io, "| %*s ", width["Label"], "")
+        @printf(io, "| %*s ", width["Label"], "")
     end
 
-    Printf.@printf(io, "| %*s | %*s |",
+    @printf(io, "| %*s | %*s |",
         width["Measurement Mean"], "Mean",
         width["Measurement Variance"], "Variance",
     )
 
     if flag
-        Printf.@printf(io, " %*s | %*s |",
+        @printf(io, " %*s | %*s |",
             width["State Estimation Estimate"], "Estimate",
             width["State Estimation Residual"], "Residual",
         )
     end
 
-    Printf.@printf io " %*s " width["Status"] ""
+    @printf io " %*s " width["Status"] ""
 
     if last
-        Printf.@printf io "|"
+        @printf io "|"
     end
 
     if newLine
-        Printf.@printf io "\n"
+        @printf io "\n"
     end
 end
 
 function printHeader4(io::IO, width::Dict{String, Int64}, unitLive::String, flag::Bool; label::Bool = true, newLine::Bool = true, last::Bool = true)
     if label
-        Printf.@printf(io, "| %*s ", width["Label"], "")
+        @printf(io, "| %*s ", width["Label"], "")
     end
 
-    Printf.@printf(io, "| %*s | %*s |",
+    @printf(io, "| %*s | %*s |",
         width["Measurement Mean"], "[$unitLive]",
         width["Measurement Variance"], "[$unitLive]",
     )
 
     if flag
-        Printf.@printf(io, " %*s | %*s |",
+        @printf(io, " %*s | %*s |",
             width["State Estimation Estimate"], "[$unitLive]",
             width["State Estimation Residual"], "[$unitLive]",
         )
     end
 
-    Printf.@printf io " %*s " width["Status"] ""
+    @printf io " %*s " width["Status"] ""
 
     if last
-        Printf.@printf io "|"
+        @printf io "|"
     end
 
     if newLine
-        Printf.@printf io "\n"
+        @printf io "\n"
     end
 end
 
 function printHeader5(io::IO, width::Dict{String, Int64}, flag::Bool; label::Bool = true, newLine::Bool = true, last::Bool = true)
     if label
-        Printf.@printf(io, "|-%*s-", width["Label"], "-"^width["Label"])
+        @printf(io, "|-%*s-", width["Label"], "-"^width["Label"])
     end
 
-    Printf.@printf(io, "|-%*s-|-%*s-",
+    @printf(io, "|-%*s-|-%*s-",
         width["Measurement Mean"], "-"^width["Measurement Mean"],
         width["Measurement Variance"], "-"^width["Measurement Variance"],
     )
     if flag
-        Printf.@printf(io, "|-%*s-|-%*s-",
+        @printf(io, "|-%*s-|-%*s-",
             width["State Estimation Estimate"], "-"^width["State Estimation Estimate"],
             width["State Estimation Residual"], "-"^width["State Estimation Residual"],
         )
     end
 
-    Printf.@printf io "|-%*s-" width["Status"] "-"^width["Status"]
+    @printf io "|-%*s-" width["Status"] "-"^width["Status"]
 
     if last
-        Printf.@printf io "|"
+        @printf io "|"
     end
 
     if newLine
-        Printf.@printf io "\n"
+        @printf io "\n"
     end
 end
 
@@ -908,13 +908,15 @@ function maxLineDevice(width::Dict{String, Int64}, flag::Bool; label::Bool = tru
     return maxLine
 end
 
-function printDevice(io::IO, width::Dict{String, Int64}, fmt::Dict{String, String}, label::String, meter::GaussMeter, estimate::Array{Float64,1}, scale::Float64, i::Int64, j::Int64, flag::Bool; printLabel::Bool = true, newLine::Bool = true, last::Bool = true)
+function printDevice(io::IO, width::Dict{String, Int64}, fmt::Dict{String, String}, label::String, meter::GaussMeter, estimate::Array{Float64,1},
+    scale::Float64, i::Int64, j::Int64, flag::Bool; printLabel::Bool = true, newLine::Bool = true, last::Bool = true)
+
     if printLabel
-        Printf.@printf(io, "| %-*s ", width["Label"], label)
+        @printf(io, "| %-*s ", width["Label"], label)
     end
 
-    print(io, Printf.format(
-        Printf.Format(
+    print(io, format(
+        Format(
             "| $(fmt["Measurement Mean"]) | $(fmt["Measurement Variance"]) |"
         ),
         width["Measurement Mean"], meter.mean[i] * scale,
@@ -922,39 +924,39 @@ function printDevice(io::IO, width::Dict{String, Int64}, fmt::Dict{String, Strin
     )
 
     if flag
-        print(io, Printf.format(
-            Printf.Format(
+        print(io, format(
+            Format(
                 " $(fmt["State Estimation Estimate"]) |"
             ),
             width["State Estimation Estimate"], estimate[j] * scale)
         )
 
         if meter.status[i]  == 1
-            print(io, Printf.format(
-                Printf.Format(
+            print(io, format(
+                Format(
                     " $(fmt["State Estimation Residual"]) |"
                 ),
                 width["State Estimation Residual"], (meter.mean[i] - estimate[j]) * scale)
             )
         else
-            Printf.@printf(io, " %*s |",
+            @printf(io, " %*s |",
             width["State Estimation Residual"], "-",
             )
         end
     end
 
-    Printf.@printf(io, " %*i ", width["Status"], meter.status[i])
+    @printf(io, " %*i ", width["Status"], meter.status[i])
 
     if last
-        Printf.@printf io "|"
+        @printf io "|"
     end
 
     if newLine
-        Printf.@printf io "\n"
+        @printf io "\n"
     end
 end
 
-function findEstimate(device, analysisBus::Array{Float64,1}, analysisFrom::Array{Float64,1}, analysisTo::Array{Float64,1}, i::Int64)
+function findEstimate(device::M, analysisBus::Array{Float64,1}, analysisFrom::Array{Float64,1}, analysisTo::Array{Float64,1}, i::Int64)
     if device.layout.bus[i]
         return analysisBus
     elseif device.layout.from[i]
@@ -964,7 +966,7 @@ function findEstimate(device, analysisBus::Array{Float64,1}, analysisFrom::Array
     end
 end
 
-function findEstimate(device, analysisFrom::Array{Float64,1}, analysisTo::Array{Float64,1}, i::Int64)
+function findEstimate(device::M, analysisFrom::Array{Float64,1}, analysisTo::Array{Float64,1}, i::Int64)
     if device.layout.from[i]
         return analysisFrom
     else
@@ -994,25 +996,25 @@ function formatDevice(width::Dict{String, Int64}, fmt::Dict{String, String}, min
     width["Label"] = max(width["Label"], 5)
 
     width["Measurement Mean"] = max(
-        textwidth(Printf.format(Printf.Format(fmt["Measurement Mean"]), 0, minmax["maxMean"])),
-        textwidth(Printf.format(Printf.Format(fmt["Measurement Mean"]), 0, minmax["minMean"])),
+        textwidth(format(Format(fmt["Measurement Mean"]), 0, minmax["maxMean"])),
+        textwidth(format(Format(fmt["Measurement Mean"]), 0, minmax["minMean"])),
         width["Measurement Mean"]
     )
 
     width["Measurement Variance"] = max(
-        textwidth(Printf.format(Printf.Format(fmt["Measurement Variance"]), 0, minmax["maxVariance"])),
+        textwidth(format(Format(fmt["Measurement Variance"]), 0, minmax["maxVariance"])),
         width["Measurement Variance"]
     )
 
     if flag
         width["State Estimation Estimate"] = max(
-            textwidth(Printf.format(Printf.Format(fmt["State Estimation Estimate"]), 0, minmax["maxEstimate"])),
-            textwidth(Printf.format(Printf.Format(fmt["State Estimation Estimate"]), 0, minmax["minEstimate"])),
+            textwidth(format(Format(fmt["State Estimation Estimate"]), 0, minmax["maxEstimate"])),
+            textwidth(format(Format(fmt["State Estimation Estimate"]), 0, minmax["minEstimate"])),
             width["State Estimation Estimate"]
         )
         width["State Estimation Residual"] = max(
-            textwidth(Printf.format(Printf.Format(fmt["State Estimation Residual"]), 0, minmax["maxResidual"])),
-            textwidth(Printf.format(Printf.Format(fmt["State Estimation Residual"]), 0, minmax["minResidual"])),
+            textwidth(format(Format(fmt["State Estimation Residual"]), 0, minmax["maxResidual"])),
+            textwidth(format(Format(fmt["State Estimation Residual"]), 0, minmax["minResidual"])),
             width["State Estimation Residual"]
         )
     end

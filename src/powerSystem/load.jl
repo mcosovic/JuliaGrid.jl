@@ -114,7 +114,7 @@ function powerSystem()
 end
 
 ######## Load Bus Data from HDF5 File ##########
-function loadBus(system::PowerSystem, hdf5::HDF5.File)
+function loadBus(system::PowerSystem, hdf5::File)
     if !haskey(hdf5, "bus")
         throw(ErrorException("The bus data is missing."))
     end
@@ -158,7 +158,7 @@ function loadBus(system::PowerSystem, hdf5::HDF5.File)
 end
 
 ######## Load Branch Data from HDF5 File ##########
-function loadBranch(system::PowerSystem, hdf5::HDF5.File)
+function loadBranch(system::PowerSystem, hdf5::File)
     if !haskey(hdf5, "branch")
         throw(ErrorException("The branch data is missing."))
     end
@@ -194,7 +194,7 @@ function loadBranch(system::PowerSystem, hdf5::HDF5.File)
 end
 
 ######## Load Generator Data from HDF5 File ##########
-function loadGenerator(system::PowerSystem, hdf5::HDF5.File)
+function loadGenerator(system::PowerSystem, hdf5::File)
     if !haskey(hdf5, "generator")
         throw(ErrorException("The generator data is missing."))
     end
@@ -254,7 +254,7 @@ function loadGenerator(system::PowerSystem, hdf5::HDF5.File)
 end
 
 ######## Load Base Power from HDF5 File ##########
-function loadBase(system::PowerSystem, hdf5::HDF5.File)
+function loadBase(system::PowerSystem, hdf5::File)
     if !haskey(hdf5, "base")
         throw(ErrorException("The base data is missing."))
     end
@@ -579,7 +579,7 @@ end
 end
 
 ######## Read Data From HDF5 File ##########
-@inline function readHDF5(group, key::String, number::Int64)
+@inline function readHDF5(group::Group, key::String, number::Int64)
     if length(group[key]) != 1
         data::Union{Array{Float64,1}, Array{Int64,1}, Array{Int8,1}, Array{Bool,1}} = read(group[key])
     else
@@ -590,11 +590,11 @@ end
 end
 
 ######## Check Matrix Float64 Data ##########
-@inline function loadPolynomial(group, key::String, number::Int64)
+@inline function loadPolynomial(group::Group, key::String, number::Int64)
     data = [Array{Float64}(undef, 0) for i = 1:number]
 
     if !isempty(group[key])
-        datah5 = HDF5.readmmap(group[key])
+        datah5 = readmmap(group[key])
         @inbounds for polynomial in eachcol(datah5)
             index = trunc(Int64, polynomial[1])
             indexCoeff = 2 + trunc(Int64, polynomial[2])
@@ -607,11 +607,11 @@ end
 end
 
 ######## Check Matrix Float64 Data ##########
-@inline function loadPiecewise(group, key::String, number::Int64)
+@inline function loadPiecewise(group::Group, key::String, number::Int64)
     data = [Array{Float64}(undef, 0, 0) for i = 1:number]
 
     if !isempty(group[key])
-        datah5 = HDF5.readmmap(group[key])
+        datah5 = readmmap(group[key])
 
         Nrow = size(datah5, 1)
         current_index = 1

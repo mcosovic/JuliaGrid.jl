@@ -8,7 +8,7 @@ The function requires the `PowerSystem` composite type to establish the framewor
 the `optimizer` argument is also required to create and solve the optimization problem.
 Specifically, JuliaGrid constructs the AC optimal power flow using the JuMP package and
 provides support for commonly employed solvers. For more detailed information,
-please consult the [JuMP documentation](https://jump.dev/JuMP.jl/stable/packages/solvers/).
+please consult the [JuMP documentation](https://jump.dev/jl/stable/packages/solvers/).
 
 # Updates
 If the AC model has not been created, the function automatically initiates an update within
@@ -16,7 +16,7 @@ the `ac` field of the `PowerSystem` type.
 
 # Keywords
 JuliaGrid offers the ability to manipulate the `jump` model based on the guidelines
-provided in the [JuMP documentation](https://jump.dev/JuMP.jl/stable/reference/models/).
+provided in the [JuMP documentation](https://jump.dev/jl/stable/reference/models/).
 However, certain configurations may require different method calls, such as:
 - `bridge`: manage the bridging mechanism,
 - `name`: manage the creation of string names.
@@ -63,16 +63,16 @@ function acOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
     slack = Dict(bus.layout.slack => FixRef(angle[bus.layout.slack]))
 
     quadratic = @expression(jump, QuadExpr())
-    nonLinActive = Dict{Int64, JuMP.NonlinearExpr}()
-    nonLinReactive = Dict{Int64, JuMP.NonlinearExpr}()
+    nonLinActive = Dict{Int64, NonlinearExpr}()
+    nonLinReactive = Dict{Int64, NonlinearExpr}()
     actwise = Dict{Int64, VariableRef}()
     reactwise = Dict{Int64, VariableRef}()
-    piecewiseActive = Dict{Int64, Array{JuMP.ConstraintRef,1}}()
-    piecewiseReactive = Dict{Int64, Array{JuMP.ConstraintRef,1}}()
-    capabilityActive = Dict{Int64, JuMP.ConstraintRef}()
-    capabilityReactive = Dict{Int64, JuMP.ConstraintRef}()
-    lower = Dict{Int64, JuMP.ConstraintRef}()
-    upper = Dict{Int64, JuMP.ConstraintRef}()
+    piecewiseActive = Dict{Int64, Array{ConstraintRef,1}}()
+    piecewiseReactive = Dict{Int64, Array{ConstraintRef,1}}()
+    capabilityActive = Dict{Int64, ConstraintRef}()
+    capabilityReactive = Dict{Int64, ConstraintRef}()
+    lower = Dict{Int64, ConstraintRef}()
+    upper = Dict{Int64, ConstraintRef}()
     @inbounds for i = 1:generator.number
         if generator.layout.status[i] == 1
             if costActive.model[i] == 2
@@ -142,9 +142,9 @@ function acOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
 
     @objective(jump, Min, quadratic + sum(nonLinActive[i] for i in keys(nonLinActive)) + sum(nonLinReactive[i] for i in keys(nonLinReactive)))
 
-    voltageAngle = Dict{Int64, JuMP.ConstraintRef}()
-    flowFrom = Dict{Int64, JuMP.ConstraintRef}()
-    flowTo = Dict{Int64, JuMP.ConstraintRef}()
+    voltageAngle = Dict{Int64, ConstraintRef}()
+    flowFrom = Dict{Int64, ConstraintRef}()
+    flowTo = Dict{Int64, ConstraintRef}()
     @inbounds for i = 1:branch.number
         if branch.layout.status[i] == 1
             addAngle(system, jump, angle, voltageAngle, i)
@@ -152,9 +152,9 @@ function acOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
         end
     end
 
-    balanceActive = Dict{Int64, JuMP.ConstraintRef}()
-    balanceReactive = Dict{Int64, JuMP.ConstraintRef}()
-    voltageMagnitude = Dict{Int64, JuMP.ConstraintRef}()
+    balanceActive = Dict{Int64, ConstraintRef}()
+    balanceReactive = Dict{Int64, ConstraintRef}()
+    voltageMagnitude = Dict{Int64, ConstraintRef}()
     @inbounds for i = 1:bus.number
         activeExpr = @expression(jump, magnitude[i] * real(ac.nodalMatrixTranspose[i, i]))
         reactiveExpr = @expression(jump, -magnitude[i] * imag(ac.nodalMatrixTranspose[i, i]))
@@ -259,23 +259,23 @@ function solve!(system::PowerSystem, analysis::ACOptimalPowerFlow)
     variable = analysis.method.variable
 
     @inbounds for i = 1:system.bus.number
-        JuMP.set_start_value(variable.magnitude[i]::JuMP.VariableRef, analysis.voltage.magnitude[i])
-        JuMP.set_start_value(variable.angle[i]::JuMP.VariableRef, analysis.voltage.angle[i])
+        set_start_value(variable.magnitude[i]::VariableRef, analysis.voltage.magnitude[i])
+        set_start_value(variable.angle[i]::VariableRef, analysis.voltage.angle[i])
     end
     @inbounds for i = 1:system.generator.number
-        JuMP.set_start_value(variable.active[i]::JuMP.VariableRef, analysis.power.generator.active[i])
-        JuMP.set_start_value(variable.reactive[i]::JuMP.VariableRef, analysis.power.generator.reactive[i])
+        set_start_value(variable.active[i]::VariableRef, analysis.power.generator.active[i])
+        set_start_value(variable.reactive[i]::VariableRef, analysis.power.generator.reactive[i])
     end
 
-    JuMP.optimize!(analysis.method.jump)
+    optimize!(analysis.method.jump)
 
     @inbounds for i = 1:system.bus.number
-        analysis.voltage.magnitude[i] = value(variable.magnitude[i]::JuMP.VariableRef)
-        analysis.voltage.angle[i] = value(variable.angle[i]::JuMP.VariableRef)
+        analysis.voltage.magnitude[i] = value(variable.magnitude[i]::VariableRef)
+        analysis.voltage.angle[i] = value(variable.angle[i]::VariableRef)
     end
     @inbounds for i = 1:system.generator.number
-        analysis.power.generator.active[i] = value(variable.active[i]::JuMP.VariableRef)
-        analysis.power.generator.reactive[i] = value(variable.reactive[i]::JuMP.VariableRef)
+        analysis.power.generator.active[i] = value(variable.active[i]::VariableRef)
+        analysis.power.generator.reactive[i] = value(variable.reactive[i]::VariableRef)
     end
 end
 
@@ -306,7 +306,7 @@ function piecewiseLinear(objective::QuadExpr, power::VariableRef, piecewise::Arr
 end
 
 ######## Add Helper Variable ##########
-function addPowerwise(jump::JuMP.Model, objective::QuadExpr, powerwise::Dict{Int64, VariableRef}, index::Int64; name)
+function addPowerwise(jump::JuMP.Model, objective::QuadExpr, powerwise::Dict{Int64, VariableRef}, index::Int64; name::String)
     powerwise[index] = @variable(jump, base_name = "$name[$index]")
     add_to_expression!(objective, powerwise[index])
 
@@ -314,10 +314,10 @@ function addPowerwise(jump::JuMP.Model, objective::QuadExpr, powerwise::Dict{Int
 end
 
 ######## Piecewise Constraints ##########
-function addPiecewise(jump::JuMP.Model, active::VariableRef, powerwise::VariableRef, ref::Dict{Int64, Array{JuMP.ConstraintRef,1}}, piecewise::Array{Float64,2}, point::Int64, index::Int64)
+function addPiecewise(jump::JuMP.Model, active::VariableRef, powerwise::VariableRef, ref::Dict{Int64, Array{ConstraintRef,1}}, piecewise::Array{Float64,2}, point::Int64, index::Int64)
     power = @view piecewise[:, 1]
     cost = @view piecewise[:, 2]
-    ref[index] = Array{JuMP.ConstraintRef}(undef, point - 1)
+    ref[index] = Array{ConstraintRef}(undef, point - 1)
     for j = 2:point
         slope = (cost[j] - cost[j-1]) / (power[j] - power[j-1])
         if slope == Inf
@@ -330,7 +330,7 @@ function addPiecewise(jump::JuMP.Model, active::VariableRef, powerwise::Variable
 end
 
 ######## Add Capability Constraints ##########
-function addCapability(jump::JuMP.Model, variable::VariableRef, ref::Dict{Int64, JuMP.ConstraintRef}, minPower::Array{Float64,1}, maxPower::Array{Float64,1}, index::Int64)
+function addCapability(jump::JuMP.Model, variable::VariableRef, ref::Dict{Int64, ConstraintRef}, minPower::Array{Float64,1}, maxPower::Array{Float64,1}, index::Int64)
     if minPower[index] != maxPower[index]
         ref[index] = @constraint(jump, minPower[index] <= variable <= maxPower[index])
     else
@@ -341,7 +341,7 @@ function addCapability(jump::JuMP.Model, variable::VariableRef, ref::Dict{Int64,
 end
 
 ######### Voltage Magnitude Constraints ##########
-function addMagnitude(system::PowerSystem, jump::JuMP.Model, magnitude::Vector{VariableRef}, ref::Dict{Int64, JuMP.ConstraintRef}, index::Int64)
+function addMagnitude(system::PowerSystem, jump::JuMP.Model, magnitude::Vector{VariableRef}, ref::Dict{Int64, ConstraintRef}, index::Int64)
     bus = system.bus
     if bus.voltage.minMagnitude[index] != bus.voltage.maxMagnitude[index]
         ref[index] = @constraint(jump, bus.voltage.minMagnitude[index] <= magnitude[index] <= bus.voltage.maxMagnitude[index])
@@ -353,7 +353,7 @@ function addMagnitude(system::PowerSystem, jump::JuMP.Model, magnitude::Vector{V
 end
 
 ######### Angle Difference Constraints ##########
-function addAngle(system::PowerSystem, jump::JuMP.Model, angle::Vector{VariableRef}, ref::Dict{Int64, JuMP.ConstraintRef}, index::Int64)
+function addAngle(system::PowerSystem, jump::JuMP.Model, angle::Vector{VariableRef}, ref::Dict{Int64, ConstraintRef}, index::Int64)
     branch = system.branch
     if branch.voltage.minDiffAngle[index] > -2*pi || branch.voltage.maxDiffAngle[index] < 2*pi
         ref[index] = @constraint(jump, branch.voltage.minDiffAngle[index] <= angle[branch.layout.from[index]] - angle[branch.layout.to[index]] <= branch.voltage.maxDiffAngle[index])
@@ -363,7 +363,7 @@ function addAngle(system::PowerSystem, jump::JuMP.Model, angle::Vector{VariableR
 end
 
 ######### Capability Curve Constraints ##########
-function capabilityCurve(system::PowerSystem, jump::JuMP.Model, active::Vector{VariableRef}, reactive::Vector{VariableRef}, lower::Dict{Int64, JuMP.ConstraintRef}, upper::Dict{Int64, JuMP.ConstraintRef}, i::Int64)
+function capabilityCurve(system::PowerSystem, jump::JuMP.Model, active::Vector{VariableRef}, reactive::Vector{VariableRef}, lower::Dict{Int64, ConstraintRef}, upper::Dict{Int64, ConstraintRef}, i::Int64)
     capability = system.generator.capability
 
     if capability.lowActive[i] != 0.0 || capability.upActive[i] != 0.0
@@ -409,7 +409,7 @@ function capabilityCurve(system::PowerSystem, jump::JuMP.Model, active::Vector{V
 end
 
 ######### Flow Constraints ##########
-function addFlow(system::PowerSystem, jump::JuMP.Model, magnitude::Vector{VariableRef}, angle::Vector{VariableRef}, refFrom::Dict{Int64, JuMP.ConstraintRef}, refTo::Dict{Int64, JuMP.ConstraintRef}, i::Int64)
+function addFlow(system::PowerSystem, jump::JuMP.Model, magnitude::Vector{VariableRef}, angle::Vector{VariableRef}, refFrom::Dict{Int64, ConstraintRef}, refTo::Dict{Int64, ConstraintRef}, i::Int64)
     branch = system.branch
     ac = system.model.ac
 
@@ -464,41 +464,41 @@ function addFlow(system::PowerSystem, jump::JuMP.Model, magnitude::Vector{Variab
 end
 
 ######### Fix and UnfixData ##########
-function fix!(variable::JuMP.VariableRef, value::Float64, ref::Dict{Int64, JuMP.ConstraintRef}, index::Int64)
-    JuMP.fix(variable, value)
-    ref[index] = JuMP.FixRef(variable)
+function fix!(variable::VariableRef, value::Float64, ref::Dict{Int64, ConstraintRef}, index::Int64)
+    fix(variable, value)
+    ref[index] = FixRef(variable)
 end
 
-function unfix!(jump::JuMP.Model, variable::JuMP.VariableRef, ref::Dict{Int64, JuMP.ConstraintRef}, index::Int64)
+function unfix!(jump::JuMP.Model, variable::VariableRef, ref::Dict{Int64, ConstraintRef}, index::Int64)
     if haskey(ref, index)
-        if JuMP.is_valid(jump, ref[index])
-            JuMP.unfix(variable)
+        if is_valid(jump, ref[index])
+            unfix(variable)
         end
         delete!(ref, index)
     end
 end
 
 ######### Remove Constraints ##########
-function remove!(jump::JuMP.Model, ref::Union{Dict{Int64, JuMP.ConstraintRef}, Dict{Int64, VariableRef}}, index::Int64)
+function remove!(jump::JuMP.Model, ref::Union{Dict{Int64, ConstraintRef}, Dict{Int64, VariableRef}}, index::Int64)
     if haskey(ref, index)
-        if JuMP.is_valid.(jump, ref[index])
-            JuMP.delete(jump, ref[index])
+        if is_valid.(jump, ref[index])
+            delete(jump, ref[index])
         end
         delete!(ref, index)
     end
 end
 
-function remove!(jump::JuMP.Model, ref::Dict{Int64, Array{JuMP.ConstraintRef,1}}, index::Int64)
+function remove!(jump::JuMP.Model, ref::Dict{Int64, Array{ConstraintRef,1}}, index::Int64)
     if haskey(ref, index)
-        if all(JuMP.is_valid.(jump, ref[index]))
-            JuMP.delete.(jump, ref[index])
+        if all(is_valid.(jump, ref[index]))
+            delete.(jump, ref[index])
         end
         delete!(ref, index)
     end
 end
 
 ######### Update Balance Constraints ##########
-function updateBalance(system::PowerSystem, analysis::ACOptimalPowerFlow, index::Int64; active = false, reactive = false)
+function updateBalance(system::PowerSystem, analysis::ACOptimalPowerFlow, index::Int64; active::Bool = false, reactive::Bool = false)
     bus = system.bus
     ac = system.model.ac
     jump = analysis.method.jump

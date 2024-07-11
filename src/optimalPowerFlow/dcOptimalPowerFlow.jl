@@ -8,7 +8,7 @@ The function requires the `PowerSystem` composite type to establish the framewor
 the `optimizer` argument is also required to create and solve the optimization problem.
 Specifically, JuliaGrid constructs the DC optimal power flow using the JuMP package and
 provides support for commonly employed solvers. For more detailed information,
-please consult the [JuMP documentation](https://jump.dev/JuMP.jl/stable/packages/solvers/).
+please consult the [JuMP documentation](https://jump.dev/jl/stable/packages/solvers/).
 
 # Updates
 If the DC model has not been created, the function automatically initiates an update within
@@ -16,7 +16,7 @@ the `dc` field of the `PowerSystem` type.
 
 # Keywords
 JuliaGrid offers the ability to manipulate the `jump` model based on the guidelines
-provided in the [JuMP documentation](https://jump.dev/JuMP.jl/stable/reference/models/).
+provided in the [JuMP documentation](https://jump.dev/jl/stable/reference/models/).
 However, certain configurations may require different method calls, such as:
 - `bridge`: manage the bridging mechanism,
 - `name`: manage the creation of string names.
@@ -58,8 +58,8 @@ function dcOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
 
     objective = @expression(jump, QuadExpr())
     actwise = Dict{Int64, VariableRef}()
-    piecewise = Dict{Int64, Array{JuMP.ConstraintRef,1}}()
-    capability = Dict{Int64, JuMP.ConstraintRef}()
+    piecewise = Dict{Int64, Array{ConstraintRef,1}}()
+    capability = Dict{Int64, ConstraintRef}()
     @inbounds for i = 1:generator.number
         if generator.layout.status[i] == 1
             if cost.model[i] == 2
@@ -96,13 +96,13 @@ function dcOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
 
     @objective(jump, Min, objective)
 
-    balance = Dict{Int64, JuMP.ConstraintRef}()
+    balance = Dict{Int64, ConstraintRef}()
     @inbounds for i = 1:bus.number
         addBalance(system, jump, active, angle, balance, i)
     end
 
-    flow = Dict{Int64, JuMP.ConstraintRef}()
-    voltage = Dict{Int64, JuMP.ConstraintRef}()
+    flow = Dict{Int64, ConstraintRef}()
+    voltage = Dict{Int64, ConstraintRef}()
     @inbounds for i = 1:system.branch.number
         if system.branch.layout.status[i] == 1
             addFlow(system, jump, angle, flow, i)
@@ -164,24 +164,24 @@ function solve!(system::PowerSystem, analysis::DCOptimalPowerFlow)
     variable = analysis.method.variable
 
     @inbounds for i = 1:system.bus.number
-        JuMP.set_start_value(variable.angle[i]::JuMP.VariableRef, analysis.voltage.angle[i])
+        set_start_value(variable.angle[i]::VariableRef, analysis.voltage.angle[i])
     end
     @inbounds for i = 1:system.generator.number
-        JuMP.set_start_value(variable.active[i]::JuMP.VariableRef, analysis.power.generator.active[i])
+        set_start_value(variable.active[i]::VariableRef, analysis.power.generator.active[i])
     end
 
-    JuMP.optimize!(analysis.method.jump)
+    optimize!(analysis.method.jump)
 
     @inbounds for i = 1:system.bus.number
-        analysis.voltage.angle[i] = value(variable.angle[i]::JuMP.VariableRef)
+        analysis.voltage.angle[i] = value(variable.angle[i]::VariableRef)
     end
     @inbounds for i = 1:system.generator.number
-        analysis.power.generator.active[i] = value(variable.active[i]::JuMP.VariableRef)
+        analysis.power.generator.active[i] = value(variable.active[i]::VariableRef)
     end
 end
 
 ######### Balance Constraints ##########
-function addBalance(system::PowerSystem, jump::JuMP.Model, active::Vector{VariableRef}, angle::Vector{VariableRef}, ref::Dict{Int64, JuMP.ConstraintRef}, i::Int64)
+function addBalance(system::PowerSystem, jump::JuMP.Model, active::Vector{VariableRef}, angle::Vector{VariableRef}, ref::Dict{Int64, ConstraintRef}, i::Int64)
     dc = system.model.dc
     expression = AffExpr()
     for j in dc.nodalMatrix.colptr[i]:(dc.nodalMatrix.colptr[i + 1] - 1)
@@ -194,7 +194,7 @@ function addBalance(system::PowerSystem, jump::JuMP.Model, active::Vector{Variab
 end
 
 ######### Flow Constraints ##########
-function addFlow(system::PowerSystem, jump::JuMP.Model, angle::Vector{VariableRef}, ref::Dict{Int64, JuMP.ConstraintRef}, index::Int64)
+function addFlow(system::PowerSystem, jump::JuMP.Model, angle::Vector{VariableRef}, ref::Dict{Int64, ConstraintRef}, index::Int64)
     branch = system.branch
     if branch.flow.longTerm[index] ≉  0 && branch.flow.longTerm[index] < 10^16
         restriction = branch.flow.longTerm[index] / system.model.dc.admittance[index]
@@ -205,7 +205,7 @@ function addFlow(system::PowerSystem, jump::JuMP.Model, angle::Vector{VariableRe
 end
 
 ######### Update Balance Constraints ##########
-function updateBalance(system::PowerSystem, analysis::DCOptimalPowerFlow, index::Int64; voltage = false, rhs = false, power = -1, genIndex = 0)
+function updateBalance(system::PowerSystem, analysis::DCOptimalPowerFlow, index::Int64; voltage::Bool = false, rhs::Bool = false, power::Int64 = -1, genIndex::Int64 = 0)
     dc = system.model.dc
     jump = analysis.method.jump
     constraint = analysis.method.constraint
@@ -215,15 +215,15 @@ function updateBalance(system::PowerSystem, analysis::DCOptimalPowerFlow, index:
         if voltage
             @inbounds for j in dc.nodalMatrix.colptr[index]:(dc.nodalMatrix.colptr[index + 1] - 1)
                 angle = variable.angle[dc.nodalMatrix.rowval[j]]
-                JuMP.set_normalized_coefficient(constraint.balance.active[index], angle, 0)
-                JuMP.set_normalized_coefficient(constraint.balance.active[index], angle, - dc.nodalMatrix.nzval[j])
+                set_normalized_coefficient(constraint.balance.active[index], angle, 0)
+                set_normalized_coefficient(constraint.balance.active[index], angle, - dc.nodalMatrix.nzval[j])
             end
         end
         if power in [0, 1]
-            JuMP.set_normalized_coefficient(constraint.balance.active[index], variable.active[genIndex], power)
+            set_normalized_coefficient(constraint.balance.active[index], variable.active[genIndex], power)
         end
         if rhs
-            JuMP.set_normalized_rhs(constraint.balance.active[index], system.bus.demand.active[index] + system.bus.shunt.conductance[index] + dc.shiftPower[index])
+            set_normalized_rhs(constraint.balance.active[index], system.bus.demand.active[index] + system.bus.shunt.conductance[index] + dc.shiftPower[index])
         end
     else
         addBalance(system, jump, variable.active, variable.angle, constraint.balance.active, index)
@@ -231,7 +231,7 @@ function updateBalance(system::PowerSystem, analysis::DCOptimalPowerFlow, index:
 end
 
 ######### Make Cost Expression ##########
-function costExpr(cost::Cost, variable::JuMP.VariableRef, index::Int64, label::L; ac = false)
+function costExpr(cost::Cost, variable::VariableRef, index::Int64, label::L; ac::Bool = false)
     isPowerwise = false
     isNonLin = false
     expr = QuadExpr()

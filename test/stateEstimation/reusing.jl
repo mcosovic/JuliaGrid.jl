@@ -173,7 +173,7 @@ system14 = powerSystem(string(pathData, "case14test.m"))
     @test analysisWLSUpdate.voltage.angle ≈ analysis.voltage.angle
 
     analysisLAVUpdate = acLavStateEstimation(system14, device, Ipopt.Optimizer)
-    JuMP.set_silent(analysisLAVUpdate.method.jump)
+    set_silent(analysisLAVUpdate.method.jump)
     solve!(system14, analysisLAVUpdate)
     @test analysisLAVUpdate.voltage.magnitude ≈ analysis.voltage.magnitude
     @test analysisLAVUpdate.voltage.angle ≈ analysis.voltage.angle
@@ -322,7 +322,7 @@ system14 = powerSystem(string(pathData, "case14test.m"))
     updatePmu!(system14, device, analysisLAV; label = "PMU 17 To", statusMagnitude = 1)
     updatePmu!(system14, device, analysisLAV; label = "PMU 17 To", correlated = true)
 
-    JuMP.set_silent(analysisLAV.method.jump)
+    set_silent(analysisLAV.method.jump)
     solve!(system14, analysisLAV)
     @test analysisLAV.voltage.magnitude ≈ analysis.voltage.magnitude
     @test analysisLAV.voltage.angle ≈ analysis.voltage.angle
@@ -413,7 +413,7 @@ system14 = powerSystem(string(pathData, "case14test.m"))
     @test analysisWLSUpdate.voltage.angle ≈ analysis.voltage.angle
 
     analysisLAVUpdate = pmuLavStateEstimation(system14, device, Ipopt.Optimizer)
-    JuMP.set_silent(analysisLAVUpdate.method.jump)
+    set_silent(analysisLAVUpdate.method.jump)
     solve!(system14, analysisLAVUpdate)
     @test analysisLAVUpdate.voltage.magnitude ≈ analysis.voltage.magnitude
     @test analysisLAVUpdate.voltage.angle ≈ analysis.voltage.angle
@@ -456,7 +456,7 @@ system14 = powerSystem(string(pathData, "case14test.m"))
     updatePmu!(system14, deviceLAV, analysisLAV; label = "To 15", statusMagnitude = 0)
     updatePmu!(system14, deviceLAV, analysisLAV; label = "To 15", statusMagnitude = 1)
 
-    JuMP.set_silent(analysisLAV.method.jump)
+    set_silent(analysisLAV.method.jump)
     solve!(system14, analysisLAV)
     @test analysisLAV.voltage.magnitude ≈ analysis.voltage.magnitude
     @test analysisLAV.voltage.angle ≈ analysis.voltage.angle
@@ -597,7 +597,7 @@ system14 = powerSystem(string(pathData, "case14test.m"))
     @test analysisWLSUpdate.voltage.angle ≈ analysis.voltage.angle
 
     analysisLAVUpdate = dcLavStateEstimation(system14, device, Ipopt.Optimizer)
-    JuMP.set_silent(analysisLAVUpdate.method.jump)
+    set_silent(analysisLAVUpdate.method.jump)
     solve!(system14, analysisLAVUpdate)
     @test analysisLAVUpdate.voltage.angle ≈ analysis.voltage.angle
 
@@ -664,7 +664,7 @@ system14 = powerSystem(string(pathData, "case14test.m"))
     updatePmu!(system14, device, analysisLAV; label = 10, statusAngle = 0)
     updatePmu!(system14, device, analysisLAV; label = 10, statusAngle = 1)
 
-    JuMP.set_silent(analysisLAV.method.jump)
+    set_silent(analysisLAV.method.jump)
     solve!(system14, analysisLAV)
     @test analysisLAV.voltage.angle ≈ analysis.voltage.angle
 end

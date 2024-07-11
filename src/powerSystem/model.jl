@@ -144,7 +144,7 @@ function dcModel!(system::PowerSystem)
 end
 
 ######### Update DC Nodal Matrix ##########
-function dcNodalUpdate!(system, index::Int64)
+function dcNodalUpdate!(system::PowerSystem, index::Int64)
     dc = system.model.dc
     layout = system.branch.layout
     filledElements = nnz(dc.nodalMatrix)
@@ -165,7 +165,7 @@ function dcNodalUpdate!(system, index::Int64)
 end
 
 ######### Update DC Shift Power ##########
-function dcShiftUpdate!(system, index::Int64)
+function dcShiftUpdate!(system::PowerSystem, index::Int64)
     dc = system.model.dc
     layout = system.branch.layout
 

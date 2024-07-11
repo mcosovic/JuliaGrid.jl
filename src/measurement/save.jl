@@ -42,19 +42,19 @@ function saveMeasurement(device::Measurement; path::String, reference::String = 
 end
 
 ######### Save Voltmeter ##########
-function saveVoltmeter(voltmeter::Voltmeter, file)
+function saveVoltmeter(voltmeter::Voltmeter, file::File)
     if voltmeter.number != 0
         saveLabel(voltmeter, file; fid = "voltmeter")
-        saveMeter(voltmeter, voltmeter.magnitude, file; name = "voltmeter/magnitude", si = "volt (V)")
+        saveMeter(voltmeter.magnitude, file; name = "voltmeter/magnitude", si = "volt (V)")
         saveLayout(voltmeter.layout.index, file; fid = "voltmeter/layout/index")
     end
 end
 
 ######### Save Ammeter ##########
-function saveAmmeter(ammeter::Ammeter, file)
+function saveAmmeter(ammeter::Ammeter, file::File)
     if ammeter.number != 0
         saveLabel(ammeter, file; fid = "ammeter")
-        saveMeter(ammeter, ammeter.magnitude, file; name = "ammeter/magnitude", si = "ampere (A)")
+        saveMeter(ammeter.magnitude, file; name = "ammeter/magnitude", si = "ampere (A)")
         saveLayout(ammeter.layout.index, file; fid = "ammeter/layout/index")
         saveLayout(ammeter.layout.from, file; fid = "ammeter/layout/from")
         saveLayout(ammeter.layout.to, file; fid = "ammeter/layout/to")
@@ -62,10 +62,10 @@ function saveAmmeter(ammeter::Ammeter, file)
 end
 
 ######### Save Wattmeter ##########
-function saveWattmeter(wattmeter::Wattmeter, file)
+function saveWattmeter(wattmeter::Wattmeter, file::File)
     if wattmeter.number != 0
         saveLabel(wattmeter, file; fid = "wattmeter")
-        saveMeter(wattmeter, wattmeter.active, file; name = "wattmeter/active", si = "watt (W)")
+        saveMeter(wattmeter.active, file; name = "wattmeter/active", si = "watt (W)")
         saveLayout(wattmeter.layout.index, file; fid = "wattmeter/layout/index")
         saveLayout(wattmeter.layout.bus, file; fid = "wattmeter/layout/bus")
         saveLayout(wattmeter.layout.from, file; fid = "wattmeter/layout/from")
@@ -74,10 +74,10 @@ function saveWattmeter(wattmeter::Wattmeter, file)
 end
 
 ######### Save Varmeter ##########
-function saveVarmeter(varmeter::Varmeter, file)
+function saveVarmeter(varmeter::Varmeter, file::File)
     if varmeter.number != 0
         saveLabel(varmeter, file; fid = "varmeter")
-        saveMeter(varmeter, varmeter.reactive, file; name = "varmeter/reactive", si = "volt-amperes reactive (VAr)")
+        saveMeter(varmeter.reactive, file; name = "varmeter/reactive", si = "volt-amperes reactive (VAr)")
         saveLayout(varmeter.layout.index, file; fid = "varmeter/layout/index")
         saveLayout(varmeter.layout.bus, file; fid = "varmeter/layout/bus")
         saveLayout(varmeter.layout.from, file; fid = "varmeter/layout/from")
@@ -86,11 +86,11 @@ function saveVarmeter(varmeter::Varmeter, file)
 end
 
 ######### Save PMU ##########
-function savePmu(pmu::PMU, file)
+function savePmu(pmu::PMU, file::File)
     if pmu.number != 0
         saveLabel(pmu, file; fid = "pmu")
-        saveMeter(pmu, pmu.magnitude, file; name = "pmu/magnitude", si = "volt (V) or ampere (A)")
-        saveMeter(pmu, pmu.angle, file; name = "pmu/angle", pu = "radian (rad)")
+        saveMeter(pmu.magnitude, file; name = "pmu/magnitude", si = "volt (V) or ampere (A)")
+        saveMeter(pmu.angle, file; name = "pmu/angle", pu = "radian (rad)")
         saveLayout(pmu.layout.index, file; fid = "pmu/layout/index")
         saveLayout(pmu.layout.bus, file; fid = "pmu/layout/bus")
         saveLayout(pmu.layout.from, file; fid = "pmu/layout/from")
@@ -101,7 +101,7 @@ function savePmu(pmu::PMU, file)
 end
 
 ######### Save Label ##########
-function saveLabel(device, file; fid = "")
+function saveLabel(device::M, file::File; fid::String = "")
     label = Array{String, 1}(undef, device.number)
     @inbounds for (key, value) in device.label
         label[value] = key
@@ -117,14 +117,14 @@ function saveLabel(device, file; fid = "")
 end
 
 ######### Save Layout ##########
-function saveLayout(layout, file; fid = "")
+function saveLayout(layout, file::File; fid::String = "")
     write(file, fid, layout)
     attrs(file[fid])["unit"] = "dimensionless"
     attrs(file[fid])["format"] = "expand"
 end
 
 ######### Save Mean, Variance, and Status ##########
-function saveMeter(device, meter, file; name = "", si = "", pu = "per-unit (pu)")
+function saveMeter(meter::GaussMeter, file::File; name::String = "", si::String = "", pu::String = "per-unit (pu)")
     fid = string(name, "/mean")
     format = compresseArray(file, meter.mean, fid)
     attrs(file[fid])["unit"] = pu

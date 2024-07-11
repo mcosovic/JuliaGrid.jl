@@ -36,7 +36,7 @@ function islandTopologicalFlow(system::PowerSystem, device::Measurement)
     tieBusBranch(system, observe)
     tieInjection(observe, device.wattmeter.layout, device.wattmeter.active.status, device.wattmeter.number)
 
-    mergePairs(system.bus, device.wattmeter.layout, observe, rowval, colptr)
+    mergePairs(system.bus, observe, rowval, colptr)
     tieBusBranch(system, observe)
 
     return observe
@@ -82,8 +82,8 @@ function islandTopological(system::PowerSystem, device::Measurement)
     tieBusBranch(system, observe)
     tieInjection(observe, device.wattmeter.layout, device.wattmeter.active.status, device.wattmeter.number)
 
-    mergePairs(system.bus, device.wattmeter.layout, observe, rowval, colptr)
-    mergeFlowIslands(system, device.wattmeter.layout, observe, rowval, colptr)
+    mergePairs(system.bus, observe, rowval, colptr)
+    mergeFlowIslands(system, observe, rowval, colptr)
 
     return observe
 end
@@ -170,7 +170,7 @@ function tieInjection(observe::Island, deviceLayout::PowermeterLayout, status::A
     end
 end
 
-function mergePairs(bus::Bus, layout::PowermeterLayout, observe::Island, rowval::Array{Int64,1}, colptr::Array{Int64,1})
+function mergePairs(bus::Bus, observe::Island, rowval::Array{Int64,1}, colptr::Array{Int64,1})
     merge = true
     flag = false
     con = fill(false, bus.number)
@@ -216,7 +216,7 @@ function mergePairs(bus::Bus, layout::PowermeterLayout, observe::Island, rowval:
     end
 end
 
-function mergeFlowIslands(system::PowerSystem, layout::PowermeterLayout, observe::Island, rowval::Array{Int64,1}, colptr::Array{Int64,1})
+function mergeFlowIslands(system::PowerSystem, observe::Island, rowval::Array{Int64,1}, colptr::Array{Int64,1})
     bus = system.bus
     branch = system.branch
 
@@ -277,7 +277,7 @@ function mergeFlowIslands(system::PowerSystem, layout::PowermeterLayout, observe
             delete!(observe.tie.injection, i)
         end
 
-        mergePairs(bus, layout, observe, rowval, colptr)
+        mergePairs(bus, observe, rowval, colptr)
     end
 
     observe.tie.bus = Set{Int64}()
@@ -317,7 +317,7 @@ function decisionTree(measurments::Matrix{Vector{Int64}})
     return false
 end
 
-function combinationsRecursive(position, value, result, max_n, k, accumulator)
+function combinationsRecursive(position::Int64, value::Int64, result::Array{Int64,1}, max_n::Int64, k::Int64, accumulator::Array{Array{Int64,1},1})
     @inbounds for i = value:max_n
         result[position] = position + i
         if position < k
@@ -328,7 +328,7 @@ function combinationsRecursive(position, value, result, max_n, k, accumulator)
     end
 end
 
-function combinations(n, k)
+function combinations(n::Int64, k::Int64)
     max_n = n - k
     accumulator = Array{Array{Int64,1},1}()
     result = zeros(Int64, k)
@@ -337,7 +337,7 @@ function combinations(n, k)
     return accumulator
 end
 
-function check(measurments, indicies, total, required)
+function check(measurments::Array{Array{Int64,1},2}, indicies::Array{Int64,1}, total::Int64, required::Int64)
     appeared = zeros(Bool, total)
     @inbounds for index in indicies
         for island in measurments[index]
@@ -484,7 +484,7 @@ function restorationGram!(system::PowerSystem, device::Measurement, pseudo::Meas
     end
 end
 
-function addTieInjection(rowval, colptr, islands, busIndex, k, jac, con)
+function addTieInjection(rowval::Array{Int64,1}, colptr::Array{Int64,1}, islands::Island, busIndex::Int64, k::Int64, jac::SparseModel, con::Array{Bool,1})
     island = islands.bus[busIndex]
     conection = rowval[colptr[busIndex]:(colptr[busIndex + 1] - 1)]
 

@@ -55,7 +55,7 @@ function residualTest!(system::PowerSystem, device::Measurement, analysis::DCSta
     slackRange, elementsRemove = deleteSlackCoefficient(analysis, bus.layout.slack)
     gain = dcGain(analysis, bus.layout.slack)
 
-    if !isa(se.factorization, SuiteSparse.UMFPACK.UmfpackLU{Float64, Int64})
+    if !isa(se.factorization, UMFPACK.UmfpackLU{Float64, Int64})
         F = lu(gain)
     else
         F = se.factorization
@@ -112,7 +112,7 @@ function residualTest!(system::PowerSystem, device::Measurement, analysis::DCSta
     return bad
 end
 
-function residualTest!(system::PowerSystem, device::Measurement, analysis::PMUStateEstimation{LinearWLS{T}}; threshold = 3.0)  where T <: Union{Normal, Orthogonal}
+function residualTest!(system::PowerSystem, device::Measurement, analysis::PMUStateEstimation{LinearWLS{T}}; threshold::Union{Float64, Int64} = 3.0)  where T <: Union{Normal, Orthogonal}
     errorVoltage(analysis.voltage.angle)
 
     bad = BadData(false, 0.0, "", 0)
@@ -120,7 +120,7 @@ function residualTest!(system::PowerSystem, device::Measurement, analysis::PMUSt
     se = analysis.method
 
     gain = transpose(se.coefficient) * se.precision * se.coefficient
-    if !isa(se.factorization, SuiteSparse.UMFPACK.UmfpackLU{Float64, Int64})
+    if !isa(se.factorization, UMFPACK.UmfpackLU{Float64, Int64})
         F = lu(gain)
     else
         F = se.factorization
@@ -188,7 +188,7 @@ function residualTest!(system::PowerSystem, device::Measurement, analysis::PMUSt
     return bad
 end
 
-function residualTest!(system::PowerSystem, device::Measurement, analysis::ACStateEstimation{NonlinearWLS{T}}; threshold = 3.0)  where T <: Union{Normal, Orthogonal}
+function residualTest!(system::PowerSystem, device::Measurement, analysis::ACStateEstimation{NonlinearWLS{T}}; threshold::Union{Float64, Int64} = 3.0)  where T <: Union{Normal, Orthogonal}
     errorVoltage(analysis.voltage.angle)
 
     bad = BadData(false, 0.0, "", 0)
@@ -298,7 +298,7 @@ function residualTest!(system::PowerSystem, device::Measurement, analysis::ACSta
 end
 
 ######### Sparse Matrix Inverese #########
-function sparseInverse(F::SuiteSparse.UMFPACK.UmfpackLU{Float64, Int64}, gain::SparseMatrixCSC{Float64,Int64}, variableNumber::Int64)
+function sparseInverse(F::UMFPACK.UmfpackLU{Float64, Int64}, gain::SparseMatrixCSC{Float64,Int64}, variableNumber::Int64)
     L, U, p, q, Rss = F.:(:)
     U = copy(transpose(U))
     d = fill(0.0, variableNumber)
@@ -331,7 +331,7 @@ end
 # Copyright (c) 2013-2014 Viral Shah, Douglas Bates and other contributors
 # https://github.com/JuliaPackageMirrors/SuiteSparse.jl/blob/master/src/csparse.jl
 # Based on Direct Methods for Sparse Linear Systems, T. A. Davis, SIAM, Philadelphia, Sept. 2006.
-function etree(A)
+function etree(A::SparseMatrixCSC{Float64,Int64})
     n = size(A, 2)
     parent = fill(0, n)
     ancestor = fill(0, n)
@@ -381,7 +381,7 @@ end
 # Copyright (c) 2013-2014 Viral Shah, Douglas Bates and other contributors
 # https://github.com/JuliaPackageMirrors/SuiteSparse.jl/blob/master/src/csparse.jl
 # Based on Direct Methods for Sparse Linear Systems, T. A. Davis, SIAM, Philadelphia, Sept. 2006.
-function symbfact(A, parent)
+function symbfact(A::SparseMatrixCSC{Float64,Int64}, parent::Array{Int64,1})
     m, n = size(A)
     Ap = A.colptr
     Ai = A.rowval
@@ -413,7 +413,7 @@ end
 ### The sparse inverse subset of a real sparse square matrix
 # Copyright 2011, Timothy A. Davis
 # http://www.suitesparse.com
-function sparseinv(L, U, d, p, q, Rs, R)
+function sparseinv(L::SparseMatrixCSC{Float64,Int64}, U::SparseMatrixCSC{Float64,Int64}, d::Array{Float64,1}, p::Array{Int64,1}, q::Array{Int64,1}, Rs::Array{Float64,1}, R::SparseMatrixCSC{Float64,Int64})
     Zpattern = R + R'
     n = size(Zpattern, 1)
 

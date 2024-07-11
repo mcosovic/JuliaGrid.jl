@@ -107,20 +107,20 @@ end
 
 ######### Constraints ##########
 struct CartesianFlowRef
-    from::Dict{Int64, JuMP.ConstraintRef}
-    to::Dict{Int64, JuMP.ConstraintRef}
+    from::Dict{Int64, ConstraintRef}
+    to::Dict{Int64, ConstraintRef}
 end
 
 struct ACPiecewise
-    active::Dict{Int64, Array{JuMP.ConstraintRef,1}}
-    reactive::Dict{Int64, Array{JuMP.ConstraintRef,1}}
+    active::Dict{Int64, Array{ConstraintRef,1}}
+    reactive::Dict{Int64, Array{ConstraintRef,1}}
 end
 
 struct CapabilityRef
-    active::Dict{Int64, JuMP.ConstraintRef}
-    reactive::Dict{Int64, JuMP.ConstraintRef}
-    lower::Dict{Int64, JuMP.ConstraintRef}
-    upper::Dict{Int64, JuMP.ConstraintRef}
+    active::Dict{Int64, ConstraintRef}
+    reactive::Dict{Int64, ConstraintRef}
+    lower::Dict{Int64, ConstraintRef}
+    upper::Dict{Int64, ConstraintRef}
 end
 
 struct Constraint
@@ -134,21 +134,21 @@ end
 
 ######### AC Optimal Power Flow ##########
 struct ACVariable
-    active::Array{JuMP.VariableRef,1}
-    reactive::Array{JuMP.VariableRef,1}
-    magnitude::Array{JuMP.VariableRef,1}
-    angle::Array{JuMP.VariableRef,1}
+    active::Array{VariableRef,1}
+    reactive::Array{VariableRef,1}
+    magnitude::Array{VariableRef,1}
+    angle::Array{VariableRef,1}
     actwise::Dict{Int64, VariableRef}
     reactwise::Dict{Int64, VariableRef}
 end
 
 struct ACNonlinear
-    active::Dict{Int64, JuMP.NonlinearExpr}
-    reactive::Dict{Int64, JuMP.NonlinearExpr}
+    active::Dict{Int64, NonlinearExpr}
+    reactive::Dict{Int64, NonlinearExpr}
 end
 
 mutable struct ACObjective
-    quadratic::JuMP.QuadExpr
+    quadratic::QuadExpr
     nonlinear::ACNonlinear
 end
 
@@ -168,13 +168,13 @@ end
 
 ######### DC Optimal Power Flow ##########
 struct DCVariable
-    active::Array{JuMP.VariableRef,1}
-    angle::Array{JuMP.VariableRef,1}
+    active::Array{VariableRef,1}
+    angle::Array{VariableRef,1}
     actwise::Dict{Int64, VariableRef}
 end
 
 struct DCPiecewise
-    active::Dict{Int64, Array{JuMP.ConstraintRef,1}}
+    active::Dict{Int64, Array{ConstraintRef,1}}
 end
 
 struct DCConstraint
@@ -190,7 +190,7 @@ mutable struct DCOptimalPowerFlowMethod
     jump::JuMP.Model
     variable::DCVariable
     constraint::DCConstraint
-    objective::JuMP.QuadExpr
+    objective::QuadExpr
 end
 
 mutable struct DCOptimalPowerFlow <: DC
@@ -232,11 +232,11 @@ end
 
 mutable struct LAV
     jump::JuMP.Model
-    statex::Array{JuMP.VariableRef,1}
-    statey::Array{JuMP.VariableRef,1}
-    residualx::Array{JuMP.VariableRef,1}
-    residualy::Array{JuMP.VariableRef,1}
-    residual::Dict{Int64, JuMP.ConstraintRef}
+    statex::Array{VariableRef,1}
+    statey::Array{VariableRef,1}
+    residualx::Array{VariableRef,1}
+    residualy::Array{VariableRef,1}
+    residual::Dict{Int64, ConstraintRef}
     number::Int64
 end
 

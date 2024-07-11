@@ -12,7 +12,7 @@ Base.@kwdef mutable struct SummaryData
     title::String = ""
 end
 
-function plosg(word::String, count::Int; pl = "es")
+function plosg(word::String, count::Int; pl::String = "es")
     if count == 1
         return word
     else
@@ -28,7 +28,7 @@ function isare(count::Int)
     end
 end
 
-function justifyLine(words::Vector{String}, max_length::Int)
+function justifyLine(words::Array{String,1}, max_length::Int64)
     if length(words) == 1
         return words[1]
     end
@@ -48,7 +48,7 @@ function justifyLine(words::Vector{String}, max_length::Int)
     return justified_line
 end
 
-function cutSentenceParts(sentence::String, max_points::Int)
+function cutSentenceParts(sentence::String, max_points::Int64)
     words = split(sentence)
     parts = String[]
     current_part = String[]
@@ -88,10 +88,10 @@ end
 function formatSummary!(data::SummaryData, unitLive::String, width::Array{Int64,1}, label::OrderedDict{String, Int64}, scale::Float64, device::Int64; total::Bool = true)
     if device != 0
         data.labelmin = iterate(label, data.idxMin)[1][1]
-        data.strmin = Printf.@sprintf("%.4f", data.min * scale)
+        data.strmin = @sprintf("%.4f", data.min * scale)
 
         data.labelmax = iterate(label, data.idxMax)[1][1]
-        data.strmax = Printf.@sprintf("%.4f", data.max * scale)
+        data.strmax = @sprintf("%.4f", data.max * scale)
 
         width[1] = max(width[1], textwidth(data.labelmin))
         width[2] = max(width[2], textwidth(data.strmin))
@@ -99,11 +99,11 @@ function formatSummary!(data::SummaryData, unitLive::String, width::Array{Int64,
         width[4] = max(width[4], textwidth(data.strmax))
 
         if total
-            data.strtotal = Printf.@sprintf("%.4f", data.total * scale)
+            data.strtotal = @sprintf("%.4f", data.total * scale)
             width[5] = max(width[5], textwidth(data.strtotal))
         end
 
-        width[5] = max(width[5], textwidth(Printf.@sprintf("%i", device)))
+        width[5] = max(width[5], textwidth(@sprintf("%i", device)))
         width[6] = max(width[6], textwidth(unitLive))
 
         if !isempty(data.title)
@@ -113,26 +113,26 @@ function formatSummary!(data::SummaryData, unitLive::String, width::Array{Int64,
 end
 
 function summaryHeader(io::IO, maxLine::Int64, sentence::Array{String,1}, header::String)
-    Printf.@printf(io, "|%s|\n", "-"^maxLine)
-    Printf.@printf(io, "| %s %*s |\n", header, maxLine - textwidth(header) - 3, "")
+    @printf(io, "|%s|\n", "-"^maxLine)
+    @printf(io, "| %s %*s |\n", header, maxLine - textwidth(header) - 3, "")
     for part in sentence
-        Printf.@printf(io, "| %s %*s|\n", part, maxLine - 2 - textwidth(part), "")
+        @printf(io, "| %s %*s|\n", part, maxLine - 2 - textwidth(part), "")
     end
-    Printf.@printf(io, "|%s|\n", "-"^maxLine)
+    @printf(io, "|%s|\n", "-"^maxLine)
 end
 
 function summarySubheader(io::IO, maxLine::Int64, span::Array{Int64,1})
-    Printf.@printf(io, "| %*s | %*s%s%*s | %*s%s%*s | %*s%s%*s |\n",
+    @printf(io, "| %*s | %*s%s%*s | %*s%s%*s | %*s%s%*s |\n",
         span[6], "",
         floor(Int, (span[1] + span[2] - 4) / 2), "", "Minimum", ceil(Int, (span[1] + span[2] - 4) / 2) , "",
         floor(Int, (span[3] + span[4] - 4) / 2), "", "Maximum", ceil(Int, (span[3] + span[4] - 4) / 2) , "",
         floor(Int, (span[5] - 5) / 2), "", "Total", ceil(Int, (span[5] - 5) / 2) , "",
     )
-    Printf.@printf(io, "|%s|\n", "-"^maxLine)
+    @printf(io, "|%s|\n", "-"^maxLine)
 end
 
 function summaryBlockHeader(io::IO, span::Array{Int64,1}, header::String, total::Int64)
-    Printf.@printf(io, "| %s | %*s%s%*s | %*s%s%*s | %*i |\n",
+    @printf(io, "| %s | %*s%s%*s | %*s%s%*s | %*i |\n",
         header * " "^(span[6] - textwidth(header)),
         floor(Int, (span[1] + span[2] + 3) / 2), "", "", ceil(Int, (span[1] + span[2] + 3) / 2) , "",
         floor(Int, (span[3] + span[4] + 3) / 2), "", "", ceil(Int, (span[3] + span[4] + 3) / 2) , "",
@@ -141,7 +141,7 @@ function summaryBlockHeader(io::IO, span::Array{Int64,1}, header::String, total:
 end
 
 function summaryBlock(io::IO, data1::SummaryData, unitLive::String, span::Array{Int64,1}; line::Bool = false)
-    Printf.@printf(io, "| %s | %*s | %*s | %*s | %*s | %*s |\n",
+    @printf(io, "| %s | %*s | %*s | %*s | %*s | %*s |\n",
         unitLive * " "^(span[6] - textwidth(unitLive)),
         span[1], data1.labelmin,
         span[2], data1.strmin,
@@ -151,14 +151,14 @@ function summaryBlock(io::IO, data1::SummaryData, unitLive::String, span::Array{
     )
 
     if line
-        Printf.@printf(io, "|%s|\n", "-"^(sum(span[:]) + 17))
+        @printf(io, "|%s|\n", "-"^(sum(span[:]) + 17))
     end
 end
 
 function printTitle(maxLine::Int64, title::String, header::Bool, io::IO)
     if header
-        Printf.@printf(io, "\n|%s|\n", "-"^maxLine)
-        Printf.@printf(io, "| %s%*s|\n", title, maxLine - textwidth(title) - 1, "")
+        @printf(io, "\n|%s|\n", "-"^maxLine)
+        @printf(io, "| %s%*s|\n", title, maxLine - textwidth(title) - 1, "")
     end
 end
 
@@ -193,7 +193,7 @@ function printUnitSummary(unitList::UnitList)
     )
 end
 
-function toggleLabelHeader(label::L, container, labels::OrderedDict{String, Int64}, header::B, component::String)
+function toggleLabelHeader(label::L, container::Union{P,M}, labels::OrderedDict{String, Int64}, header::B, component::String)
     if isset(label)
         dictIterator = Dict(getLabel(container, label, component) => labels[getLabel(container, label, component)])
         if !isset(header)
@@ -209,7 +209,7 @@ function toggleLabelHeader(label::L, container, labels::OrderedDict{String, Int6
     return dictIterator, header
 end
 
-function toggleLabel(label::L, container, labels::OrderedDict{String, Int64}, component::String)
+function toggleLabel(label::L, container::Union{P,M}, labels::OrderedDict{String, Int64}, component::String)
     if isset(label)
         dictIterator = Dict(getLabel(container, label, component) => labels[getLabel(container, label, component)])
     else
@@ -221,16 +221,16 @@ end
 
 function fminmax(vector::Array{Float64}, scale::Float64, width::Dict{String, Int64}, fmt::Dict{String, String}, key::String)
     minmax = extrema(vector)
-    width[key] = max(textwidth(Printf.format(Printf.Format(fmt[key]), 0, minmax[1] * scale)), textwidth(Printf.format(Printf.Format(fmt[key]), 0, minmax[2] * scale)), width[key])
+    width[key] = max(textwidth(format(Format(fmt[key]), 0, minmax[1] * scale)), textwidth(format(Format(fmt[key]), 0, minmax[2] * scale)), width[key])
 end
 
 function fmax(vector::Array{Float64}, scale::Float64, width::Dict{String, Int64}, fmt::Dict{String, String}, key::String)
     maxVal = maximum(vector)
-    width[key] = max(textwidth(Printf.format(Printf.Format(fmt[key]), 0, maxVal * scale)), width[key])
+    width[key] = max(textwidth(format(Format(fmt[key]), 0, maxVal * scale)), width[key])
 end
 
 function fmax(value::Float64, scale::Float64, width::Dict{String, Int64}, fmt::Dict{String, String}, key::String)
-    width[key] = max(textwidth(Printf.format(Printf.Format(fmt[key]), 0, value * scale)), width[key])
+    width[key] = max(textwidth(format(Format(fmt[key]), 0, value * scale)), width[key])
 end
 
 function scaleVoltage(voltage::BaseVoltage, prefix::PrefixLive, i::Int64)

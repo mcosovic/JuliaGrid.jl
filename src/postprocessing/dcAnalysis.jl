@@ -117,7 +117,7 @@ solve!(system, analysis)
 injection = injectionPower(system, analysis; label = 2)
 ```
 """
-function injectionPower(system::PowerSystem, analysis::DCPowerFlow; label)
+function injectionPower(system::PowerSystem, analysis::DCPowerFlow; label::O)
     index = system.bus.label[getLabel(system.bus, label, "bus")]
     errorVoltage(analysis.voltage.angle)
 
@@ -138,7 +138,7 @@ function injectionPower(system::PowerSystem, analysis::DCPowerFlow; label)
     return injectionActive
 end
 
-function injectionPower(system::PowerSystem, analysis::DCOptimalPowerFlow; label)
+function injectionPower(system::PowerSystem, analysis::DCOptimalPowerFlow; label::O)
     index = system.bus.label[getLabel(system.bus, label, "bus")]
     errorVoltage(analysis.voltage.angle)
 
@@ -150,7 +150,7 @@ function injectionPower(system::PowerSystem, analysis::DCOptimalPowerFlow; label
     return injectionActive
 end
 
-function injectionPower(system::PowerSystem, analysis::DCStateEstimation; label)
+function injectionPower(system::PowerSystem, analysis::DCStateEstimation; label::O)
     index = system.bus.label[getLabel(system.bus, label, "bus")]
     errorVoltage(analysis.voltage.angle)
 
@@ -184,7 +184,7 @@ solve!(system, analysis)
 supply = supplyPower(system, analysis; label = 2)
 ```
 """
-function supplyPower(system::PowerSystem, analysis::DCPowerFlow; label)
+function supplyPower(system::PowerSystem, analysis::DCPowerFlow; label::O)
     index = system.bus.label[getLabel(system.bus, label, "bus")]
     errorVoltage(analysis.voltage.angle)
 
@@ -205,7 +205,7 @@ function supplyPower(system::PowerSystem, analysis::DCPowerFlow; label)
     return supplyActive
 end
 
-function supplyPower(system::PowerSystem, analysis::DCOptimalPowerFlow; label)
+function supplyPower(system::PowerSystem, analysis::DCOptimalPowerFlow; label::O)
     index = system.bus.label[getLabel(system.bus, label, "bus")]
     errorVoltage(analysis.voltage.angle)
 
@@ -217,7 +217,7 @@ function supplyPower(system::PowerSystem, analysis::DCOptimalPowerFlow; label)
     return supplyActive
 end
 
-function supplyPower(system::PowerSystem, analysis::DCStateEstimation; label)
+function supplyPower(system::PowerSystem, analysis::DCStateEstimation; label::O)
     index = system.bus.label[getLabel(system.bus, label, "bus")]
     errorVoltage(analysis.voltage.angle)
 
@@ -251,7 +251,7 @@ solve!(system, analysis)
 from = fromPower(system, analysis; label = 2)
 ```
 """
-function fromPower(system::PowerSystem, analysis::DC; label)
+function fromPower(system::PowerSystem, analysis::DC; label::O)
     index = system.branch.label[getLabel(system.branch, label, "branch")]
     errorVoltage(analysis.voltage.angle)
 
@@ -278,7 +278,7 @@ solve!(system, analysis)
 to = toPower(system, analysis; label = 2)
 ```
 """
-function toPower(system::PowerSystem, analysis::DC; label)
+function toPower(system::PowerSystem, analysis::DC; label::O)
     index = system.branch.label[getLabel(system.branch, label, "branch")]
     errorVoltage(analysis.voltage.angle)
 
@@ -304,7 +304,7 @@ solve!(system, analysis)
 generator = generatorPower(system, analysis; label = 1)
 ```
 """
-function generatorPower(system::PowerSystem, analysis::DCPowerFlow; label)
+function generatorPower(system::PowerSystem, analysis::DCPowerFlow; label::O)
     index = system.generator.label[getLabel(system.generator, label, "generator")]
     errorVoltage(analysis.voltage.angle)
 
@@ -335,7 +335,7 @@ function generatorPower(system::PowerSystem, analysis::DCPowerFlow; label)
     return generatorActive
 end
 
-function generatorPower(system::PowerSystem, analysis::DCOptimalPowerFlow; label)
+function generatorPower(system::PowerSystem, analysis::DCOptimalPowerFlow; label::O)
     index = system.generator.label[getLabel(system.generator, label, "generator")]
     errorVoltage(analysis.voltage.angle)
 
