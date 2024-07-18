@@ -175,7 +175,7 @@ function formatBusData(system::PowerSystem, analysis::AC, label::L, scale::Dict{
         "Voltage Magnitude" => true,
         "Voltage Angle" => true,
         "Power Generation Active" => !isempty(power.supply.active),
-        "Power Generation Reactive" => isempty(power.supply.reactive),
+        "Power Generation Reactive" => !isempty(power.supply.reactive),
         "Power Demand Active" => !isempty(power.injection.active),
         "Power Demand Reactive" => !isempty(power.injection.reactive),
         "Power Injection Active" => !isempty(power.injection.active),
