@@ -459,8 +459,10 @@ Users can utilize any of the print functions outlined in the [Print API](@ref se
 ```@example PMUStateEstimationSolution
 @voltage(pu, deg, V)
 
+show = Dict("Status" => false)
 fmt = Dict("Measurement Mean" => "%.2f", "Measurement Variance" => "%.2e")
-printPmuData(system, device, analysis; fmt)
+
+printPmuData(system, device, analysis; fmt, show)
 @default(unit) # hide
 ```
 
