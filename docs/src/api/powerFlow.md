@@ -1,6 +1,11 @@
 # [Power Flow](@id PowerFlowAPI)
 For further information on this topic, please see the [AC Power Flow](@ref ACPowerFlowManual) or [DC Power Flow](@ref DCPowerFlowManual) sections of the Manual. Below, we have provided a list of functions that can be utilized for power flow analysis.
 
+To load power flow API functionalities into the current scope, utilize the following command:
+```@example LoadApi
+using JuliaGrid
+```
+
 ---
 
 ###### AC Power Flow
@@ -17,13 +22,6 @@ For further information on this topic, please see the [AC Power Flow](@ref ACPow
 ###### DC Power Flow
 * [`dcPowerFlow`](@ref dcPowerFlow)
 * [`solve!`](@ref solve!(::PowerSystem, ::DCPowerFlow))
-
----
-
-To load power flow API functionalities into the current scope, utilize the following command:
-```@example LoadApi
-using JuliaGrid
-```
 
 ---
 

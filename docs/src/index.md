@@ -100,7 +100,7 @@ analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer) # Build the optimal power
 solve!(system, analysis)          # Compute generator powers and bus voltages
 power!(system, analysis)          # Compute active powers within the power system
 
-printBranch(system, analysis)     # Print data related to branches
+printBranchData(system, analysis) # Print data related to branches
 ```
 
 ---

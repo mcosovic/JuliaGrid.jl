@@ -225,7 +225,7 @@ print(system.branch.label, analysis.method.constraint.flow.to)
 
 Additionally, by employing the [`updateBranch!`](@ref updateBranch!) function, we have the ability to modify these specific constraints:
 ```@example ACOptimalPowerFlow
-updateBranch!(system, analysis; label = "Branch 1", reactance = 0.8, longTerm = 0.14)
+updateBranch!(system, analysis; label = "Branch 1", reactance = 1.0, longTerm = 0.14)
 nothing # hide
 ```
 

@@ -155,11 +155,10 @@ function summaryBlock(io::IO, data1::SummaryData, unitLive::String, span::Array{
     end
 end
 
-function printTitle(maxLine::Int64, title::String, header::Bool, io::IO)
-    if header
-        @printf(io, "\n|%s|\n", "-"^maxLine)
-        @printf(io, "| %s%*s|\n", title, maxLine - textwidth(title) - 1, "")
-    end
+function printTitle(io::IO, maxLine::Int64, title::String)
+    @printf(io, "\n|%s|\n", "-"^maxLine)
+    @printf(io, "| %s%*s|\n", title, maxLine - textwidth(title) - 1, "")
+    @printf(io, "|%s|\n", "-"^maxLine)
 end
 
 function printScale(system::PowerSystem, prefix::PrefixLive)
@@ -219,18 +218,30 @@ function toggleLabel(label::L, container::Union{P,M}, labels::OrderedDict{String
     return dictIterator
 end
 
-function fminmax(vector::Array{Float64}, scale::Float64, width::Dict{String, Int64}, fmt::Dict{String, String}, key::String)
-    minmax = extrema(vector)
-    width[key] = max(textwidth(format(Format(fmt[key]), 0, minmax[1] * scale)), textwidth(format(Format(fmt[key]), 0, minmax[2] * scale)), width[key])
+function fminmax(fmt::Dict{String, String}, width::Dict{String, Int64}, show::Dict{String, Bool}, vector::Array{Float64,1}, scale::Float64, key::String)
+    if show[key]
+        minmax = extrema(vector)
+        width[key] = max(textwidth(format(Format(fmt[key]), 0, minmax[1] * scale)), textwidth(format(Format(fmt[key]), 0, minmax[2] * scale)), width[key])
+    end
 end
 
-function fmax(vector::Array{Float64}, scale::Float64, width::Dict{String, Int64}, fmt::Dict{String, String}, key::String)
-    maxVal = maximum(vector)
-    width[key] = max(textwidth(format(Format(fmt[key]), 0, maxVal * scale)), width[key])
+function fmax(fmt::Dict{String, String}, width::Dict{String, Int64}, show::Dict{String, Bool}, vector::Array{Float64,1}, scale::Float64, key::String)
+    if show[key]
+        maxVal = maximum(vector)
+        width[key] = max(textwidth(format(Format(fmt[key]), 0, maxVal * scale)), width[key])
+    end
 end
 
-function fmax(value::Float64, scale::Float64, width::Dict{String, Int64}, fmt::Dict{String, String}, key::String)
-    width[key] = max(textwidth(format(Format(fmt[key]), 0, value * scale)), width[key])
+function fmax(fmt::Dict{String, String}, width::Dict{String, Int64}, show::Dict{String, Bool}, vector::Array{Float64,1}, i::Int64, scale::Float64, key::String)
+    if show[key]
+        width[key] = max(textwidth(format(Format(fmt[key]), 0, vector[i] * scale)), width[key])
+    end
+end
+
+function fmax(fmt::Dict{String, String}, width::Dict{String, Int64}, show::Dict{String, Bool}, value::Float64, key::String)
+    if show[key]
+        width[key] = max(textwidth(format(Format(fmt[key]), 0, value)), width[key])
+    end
 end
 
 function scaleVoltage(voltage::BaseVoltage, prefix::PrefixLive, i::Int64)
@@ -261,7 +272,7 @@ function scaleCurrent(prefix::PrefixLive, system::PowerSystem, i::Int64)
     return scaleI
 end
 
-function printFormat(_width::Dict{String, Int64}, width::Dict{String, Int64}, _fmt::Dict{String, String}, fmt::Dict{String, String})
+function printFormat(_fmt::Dict{String, String}, fmt::Dict{String, String}, _width::Dict{String, Int64}, width::Dict{String, Int64}, _show::Dict{String, Bool}, show::Dict{String, Bool})
     @inbounds for (key, value) in fmt
         if haskey(_fmt, key)
             span, precision, specifier = fmtRegex(value)
@@ -279,7 +290,13 @@ function printFormat(_width::Dict{String, Int64}, width::Dict{String, Int64}, _f
         end
     end
 
-    return _width, _fmt
+    @inbounds for (key, value) in show
+        if haskey(_show, key)
+            _show[key] = _show[key] && value
+        end
+    end
+
+    return _fmt, _width, _show
 end
 
 function fmtRegex(fmt::String)
@@ -300,4 +317,28 @@ function initMax(value::Float64)
     end
 
     return maxvalue
+end
+
+function hasMorePrint(width::Dict{String, Int64}, show::Dict{String, Bool}, title::String)
+    hasMore = false
+    @inbounds for (key, value) in show
+        if value == true
+            hasMore = true
+            break
+        end
+    end
+
+    if !hasMore
+        width["Label"] = max(textwidth(title), width["Label"])
+    end
+
+    return hasMore
+end
+
+function titlemax(width::Dict{String, Int64}, show::Dict{String, Bool}, key1::String, key2::String, title::String)
+    if show[key1] && !show[key2]
+        width[key1] = max(textwidth(title), width[key1])
+    elseif !show[key1] && show[key2]
+        width[key2] = max(textwidth(title), width[key2])
+   end
 end

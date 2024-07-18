@@ -1,6 +1,11 @@
 # [Measurement Model](@id measurementModelAPI)
 For further information on this topic, please see the [Measurement Model](@ref MeasurementModelManual) section of the Manual. Below, we have provided a list of functions that can be used to create, save, and manipulate with measurement devices.
 
+To load measurement model API functionalities into the current scope, utilize the following command:
+```@example LoadApi
+using JuliaGrid
+```
+
 ---
 
 ###### Measurement Data
@@ -37,13 +42,6 @@ For further information on this topic, please see the [Measurement Model](@ref M
 * [`updatePmu!`](@ref updatePmu!)
 * [`statusPmu!`](@ref addPmu!)
 * [`@pmu`](@ref @pmu)
-
----
-
-To load measurement model API functionalities into the current scope, utilize the following command:
-```@example LoadApi
-using JuliaGrid
-```
 
 ---
 

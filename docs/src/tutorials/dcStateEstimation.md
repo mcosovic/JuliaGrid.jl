@@ -153,8 +153,8 @@ If the user opts to include phasor measurements that measure bus voltage angle a
 
 For example:
 ```@example DCSETutorial
-addPmu!(system, device; label = "V₁, θ₁", bus = 1, magnitude = 1.0, varianceMagnitude = 1e-5,
-angle = 0, varianceAngle = 1e-6)
+addPmu!(system, device; label = "V₁, θ₁", bus = 1, magnitude = 1.0, angle = 0,
+varianceMagnitude = 1e-5, varianceAngle = 1e-6)
 nothing # hide
 ```
 

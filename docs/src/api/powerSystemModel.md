@@ -1,6 +1,11 @@
 # [Power System Model](@id powerSystemModelAPI)
 For further information on this topic, please see the [Power System Model](@ref PowerSystemModelManual) section of the Manual. Below, we have provided a list of functions that can be used to create, save, and manipulate power system structures, as well as to build AC and DC models of power systems.
 
+To load power system model API functionalities into the current scope, utilize the following command:
+```@example LoadApi
+using JuliaGrid
+```
+
 ---
 
 ###### Power System
@@ -24,13 +29,6 @@ For further information on this topic, please see the [Power System Model](@ref 
 * [`updateGenerator!`](@ref updateGenerator!)
 * [`cost!`](@ref cost!)
 * [`@generator`](@ref @generator)
-
----
-
-To load power system model API functionalities into the current scope, utilize the following command:
-```@example LoadApi
-using JuliaGrid
-```
 
 ---
 

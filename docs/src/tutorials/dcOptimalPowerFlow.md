@@ -250,9 +250,9 @@ The inequality constraints associated with the minimum and maximum active power 
 P_{\text{g}i}^\text{min} \leq P_{\text{g}i} \leq P_{\text{g}i}^\text{max} ,\;\;\; \forall i \in \mathcal{S}.
 ```
 
-In this representation, the lower and upper bounds are determined by the vector ``\mathbf{P}_{\text{lm}} = [P_{\text{g}i}^\text{min}, P_{\text{g}i}^\text{max}]``, ``i \in \mathcal{S}``. We can access these bounds using the following variable:
+In this representation, the lower and upper bounds are determined by the vector ``\mathbf{P}_{\text{m}} = [P_{\text{g}i}^\text{min}, P_{\text{g}i}^\text{max}]``, ``i \in \mathcal{S}``. We can access these bounds using the following variable:
 ```@repl DCOptimalPowerFlow
-𝐏ₗₘ = [system.generator.capability.minActive system.generator.capability.maxActive]
+𝐏ₘ = [system.generator.capability.minActive system.generator.capability.maxActive]
 ```
 
 To retrieve constraints from the model, we can use:

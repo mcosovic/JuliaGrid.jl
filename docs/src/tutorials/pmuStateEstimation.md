@@ -73,8 +73,8 @@ When a PMU ``(V_i, \theta_i) \in \bar{\mathcal{P}}`` is introduced at bus ``i \i
 
 For example:
 ```@example PMUSETutorial
-addPmu!(system, device; label = "V₂, θ₂", bus = 2, magnitude = 0.9, varianceMagnitude = 1e-5,
-angle = -0.1, varianceAngle = 1e-5)
+addPmu!(system, device; label = "V₂, θ₂", bus = 2, magnitude = 0.9, angle = -0.1,
+varianceMagnitude = 1e-5, varianceAngle = 1e-5)
 nothing # hide
 ```
 
@@ -119,8 +119,8 @@ In the previous example, the user neglected the covariances between the real and
     \mathbf{w} = [w_{\Re(\bar{V}_{i})}, w_{\Im(\bar{V}_{i})}].
 ```
 ```@example PMUSETutorial
-addPmu!(system, device; label = "V₃, θ₃", bus = 3, magnitude = 0.9, varianceMagnitude = 1e-5,
-angle = -0.2, varianceAngle = 1e-5, correlated = true)
+addPmu!(system, device; label = "V₃, θ₃", bus = 3, magnitude = 0.9, angle = -0.2,
+varianceMagnitude = 1e-5, varianceAngle = 1e-5, correlated = true)
 nothing # hide
 ```
 
@@ -147,8 +147,8 @@ If the user chooses to include phasor measurement ``(I_{ij}, \psi_{ij}) \in \bar
 
 For example:
 ```@example PMUSETutorial
-addPmu!(system, device; label = "I₂₃, ψ₂₃", from = 3, magnitude = 0.3, varianceMagnitude = 1,
-angle = 0.4, varianceAngle = 1e-4)
+addPmu!(system, device; label = "I₂₃, ψ₂₃", from = 3, magnitude = 0.3, angle = 0.4,
+varianceMagnitude = 1e-3, varianceAngle = 1e-4)
 nothing # hide
 ```
 
@@ -207,8 +207,8 @@ In the previous example, the user neglects the covariances between the real and 
     \mathbf{w} = [w_{\Re(\bar{I}_{ij})}, w_{\Im(\bar{I}_{ij})}].
 ```
 ```@example PMUSETutorial
-addPmu!(system, device; label = "I₁₃, ψ₁₃", from = 2, magnitude = 0.3, varianceMagnitude = 1,
-angle = -0.5, varianceAngle = 1e-5, correlated = true)
+addPmu!(system, device; label = "I₁₃, ψ₁₃", from = 2, magnitude = 0.3, angle = -0.5,
+varianceMagnitude = 1e-5, varianceAngle = 1e-5, correlated = true)
 nothing # hide
 ```
 
@@ -227,8 +227,8 @@ If the user chooses to include phasor measurement ``(I_{ji}, \psi_{ji}) \in \bar
 
 For example:
 ```@example PMUSETutorial
-addPmu!(system, device; label = "I₃₂, ψ₃₂", to = 3, magnitude = 0.3, varianceMagnitude = 1e-5,
-angle = -2.9, varianceAngle = 1e-5)
+addPmu!(system, device; label = "I₃₂, ψ₃₂", to = 3, magnitude = 0.3, angle = -2.9,
+varianceMagnitude = 1e-5, varianceAngle = 1e-5)
 nothing # hide
 ```
 
@@ -278,8 +278,8 @@ As before, we are neglecting the covariances between the real and imaginary part
     \mathbf{w} = [w_{\Re(\bar{I}_{ji})}, w_{\Im(\bar{I}_{ji})}].
 ```
 ```@example PMUSETutorial
-addPmu!(system, device; label = "I₃₁, ψ₃₁", to = 2, magnitude = 0.3, varianceMagnitude = 1e-5,
-angle = 2.5, varianceAngle = 1e-5, correlated = true)
+addPmu!(system, device; label = "I₃₁, ψ₃₁", to = 2, magnitude = 0.3, angle = 2.5,
+varianceMagnitude = 1e-5, varianceAngle = 1e-5, correlated = true)
 nothing # hide
 ```
 

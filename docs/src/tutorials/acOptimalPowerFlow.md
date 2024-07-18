@@ -374,9 +374,9 @@ The next set of constraints pertains to the minimum and maximum limits of active
 P_{\text{g}i}^\text{min} \leq P_{\text{g}i} \leq P_{\text{g}i}^\text{max} ,\;\;\; \forall i \in \mathcal{S}.
 ```
 
-In this representation, the lower and upper limits are determined by the vector ``\mathbf{P}_{\text{lm}} = [P_{\text{g}i}^\text{min}, P_{\text{g}i}^\text{max}]``, ``i \in \mathcal{S}``. We can access these bounds using the following:
+In this representation, the lower and upper limits are determined by the vector ``\mathbf{P}_{\text{m}} = [P_{\text{g}i}^\text{min}, P_{\text{g}i}^\text{max}]``, ``i \in \mathcal{S}``. We can access these bounds using the following:
 ```@repl ACOptimalPowerFlow
-𝐏ₗₘ = [system.generator.capability.minActive system.generator.capability.maxActive]
+𝐏ₘ = [system.generator.capability.minActive, system.generator.capability.maxActive]
 ```
 
 To access these constraints, you can utilize the following snippet:
@@ -391,9 +391,9 @@ Similarly, constraints related to the minimum and maximum limits of reactive pow
 Q_{\text{g}i}^\text{min} \leq Q_{\text{g}i} \leq Q_{\text{g}i}^\text{max} ,\;\;\; \forall i \in \mathcal{S}.
 ```
 
-Thus, the lower and upper limits are determined by the vector ``\mathbf{Q}_{\text{lm}} = [Q_{\text{g}i}^\text{min}, Q_{\text{g}i}^\text{max}]``, ``i \in \mathcal{S}``. We can access these bounds using the following:
+Thus, the lower and upper limits are determined by the vector ``\mathbf{Q}_{\text{m}} = [Q_{\text{g}i}^\text{min}, Q_{\text{g}i}^\text{max}]``, ``i \in \mathcal{S}``. We can access these bounds using the following:
 ```@repl ACOptimalPowerFlow
-𝐐ₗₘ = [system.generator.capability.minReactive system.generator.capability.maxReactive]
+𝐐ₘ = [system.generator.capability.minReactive system.generator.capability.maxReactive]
 ```
 
 To access these constraints, you can use the following snippet:
