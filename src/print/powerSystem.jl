@@ -75,7 +75,7 @@ function printBusData(system::PowerSystem, analysis::AC, io::IO = stdout;
         printf(io, fmtCur[1], width, show, "Current Injection Magnitude", "", "Current Injection Angle", "")
         @printf io "\n"
 
-        @printf(io, "| %*s |", width["Label"], "Bus")
+        @printf(io, "| %*s |", width["Label"], "")
         printf(io, fmtVol[2], width, show, "Voltage Magnitude", "Magnitude", "Voltage Angle", "Angle")
         printf(io, fmtGen[2], width, show, "Power Generation Active", "Active", "Power Generation Reactive", "Reactive")
         printf(io, fmtDem[2], width, show, "Power Demand Active", "Active", "Power Demand Reactive", "Reactive")
