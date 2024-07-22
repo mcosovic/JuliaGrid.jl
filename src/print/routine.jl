@@ -155,10 +155,10 @@ function summaryBlock(io::IO, data1::SummaryData, unitLive::String, span::Array{
     end
 end
 
-function printTitle(io::IO, maxLine::Int64, title::String)
-    @printf(io, "\n|%s|\n", "-"^maxLine)
-    @printf(io, "| %s%*s|\n", title, maxLine - textwidth(title) - 1, "")
-    @printf(io, "|%s|\n", "-"^maxLine)
+function printTitle(io::IO, maxLine::Int64, delimiter::String, title::String)
+    print(io, format(Format("\n$delimiter%s$delimiter\n"), "-"^maxLine))
+    print(io, format(Format("$delimiter %s%*s$delimiter\n"), title, maxLine - textwidth(title) - 1, ""))
+    print(io, format(Format("$delimiter%s$delimiter\n"), "-"^maxLine))
 end
 
 function printScale(system::PowerSystem, prefix::PrefixLive)
@@ -192,20 +192,26 @@ function printUnitSummary(unitList::UnitList)
     )
 end
 
-function toggleLabelHeader(label::L, container::Union{P,M}, labels::OrderedDict{String, Int64}, header::B, component::String)
+function toggleLabelHeader(label::L, container::Union{P,M}, labels::OrderedDict{String, Int64}, header::B, footer::B, component::String)
     if isset(label)
         dictIterator = Dict(getLabel(container, label, component) => labels[getLabel(container, label, component)])
         if !isset(header)
             header = false
+        end
+        if !isset(footer)
+            footer = false
         end
     else
         dictIterator = labels
         if !isset(header)
             header = true
         end
+        if !isset(footer)
+            footer = true
+        end
     end
 
-    return dictIterator, header
+    return dictIterator, header, footer
 end
 
 function toggleLabel(label::L, container::Union{P,M}, labels::OrderedDict{String, Int64}, component::String)
@@ -272,21 +278,23 @@ function scaleCurrent(prefix::PrefixLive, system::PowerSystem, i::Int64)
     return scaleI
 end
 
-function printFormat(_fmt::Dict{String, String}, fmt::Dict{String, String}, _width::Dict{String, Int64}, width::Dict{String, Int64}, _show::Dict{String, Bool}, show::Dict{String, Bool})
+function printFormat(_fmt::Dict{String, String}, fmt::Dict{String, String}, _width::Dict{String, Int64}, width::Dict{String, Int64}, _show::Dict{String, Bool}, show::Dict{String, Bool}, style::Bool)
     @inbounds for (key, value) in fmt
         if haskey(_fmt, key)
             span, precision, specifier = fmtRegex(value)
             _fmt[key] = "%*." * precision * specifier
 
-            if !isempty(span)
+            if !isempty(span) && style
                 _width[key] = max(parse(Int, span), _width[key])
             end
         end
     end
 
-    @inbounds for (key, value) in width
-        if haskey(_width, key)
-            _width[key] = max(value, _width[key])
+    if style
+        @inbounds for (key, value) in width
+            if haskey(_width, key)
+                _width[key] = max(value, _width[key])
+            end
         end
     end
 
@@ -341,4 +349,130 @@ function titlemax(width::Dict{String, Int64}, show::Dict{String, Bool}, key1::St
     elseif !show[key1] && show[key2]
         width[key2] = max(textwidth(title), width[key2])
    end
+end
+
+function setupPrintSystem(fmt::Dict{String, String}, width::Dict{String, Int64}, show::Dict{String, Bool}, delimiter::String, style::Bool; label::Bool = true, dash::Bool = false)
+    pfmt = Dict{String, Format}()
+    maxLine = 0
+
+    if style
+        if label
+            pfmt["Label"] = Format("$delimiter %-*s $delimiter")
+            maxLine += width["Label"] + 2
+        end
+
+        for (key, value) in show
+            if value
+                pfmt[key] = Format(" $(fmt[key]) $delimiter")
+                maxLine += width[key] + 3
+            end
+        end
+
+        if dash
+            pfmt["Dash"] = Format(" %*s $delimiter")
+        end
+    else
+        if label
+            pfmt["Label"] = Format("%-*s")
+        end
+
+        for (key, value) in show
+            if value
+                pfmt[key] = Format("$delimiter$(fmt[key])")
+            end
+        end
+
+        if dash
+            pfmt["Dash"] = Format("$delimiter%*s")
+        end
+    end
+
+    return maxLine, pfmt
+end
+
+function printf(io::IO, fmt::Dict{String, Format}, show::Dict{String, Bool}, width::Dict{String, Int64}, vector::Array{Float64,1}, i::Int64, scale::Float64, key::String)
+    if show[key]
+        print(io, format(fmt[key], width[key], vector[i] * scale))
+    end
+end
+
+function printf(io::IO, fmt::Dict{String, Format}, show::Dict{String, Bool}, width::Dict{String, Int64}, vector::Array{Int8,1}, i::Int64, key::String)
+    if show[key]
+        print(io, format(fmt[key], width[key], vector[i]))
+    end
+end
+
+function printf(io::IO, fmt::Dict{String, Format}, show::Dict{String, Bool}, width::Dict{String, Int64}, vector1::Array{Float64,1}, vector2::Array{Float64,1}, i::Int64, j::Int64, scale::Float64, key::String)
+    if show[key]
+        print(io, format(fmt[key], width[key], (vector1[i] - vector2[j]) * scale))
+    end
+end
+
+function printf(io::IO, width::Dict{String, Int64}, show::Dict{String, Bool}, delimiter::String, key1::String, key2::String, title::String)
+    if show[key1] && show[key2]
+        print(io, format(Format(" %*s%s%*s $delimiter"), floor(Int, (width[key1] + width[key2] - textwidth(title) + 3) / 2), "", title, ceil(Int, (width[key1] + width[key2] - textwidth(title) + 3) / 2) , ""))
+        pfmt1 = Format(" %*s   %*s $delimiter")
+        pfmt2 = Format(" %*s $delimiter %*s $delimiter")
+        pfmt3 = Format("-%*s-$delimiter-%*s-$delimiter")
+    elseif show[key1]
+        pfmt1, pfmt2, pfmt3 = singleprintf(io, width, delimiter, key1, title)
+    elseif show[key2]
+        pfmt1, pfmt2, pfmt3 = singleprintf(io, width, delimiter, key2, title)
+    else
+        pfmt1, pfmt2, pfmt3 = Format(""), Format(""), Format("")
+    end
+
+    return pfmt1, pfmt2, pfmt3
+end
+
+function printf(io::IO, width::Dict{String, Int64}, show::Dict{String, Bool}, delimiter::String, key::String, title::String)
+    if show[key]
+        pfmt1, pfmt2, pfmt3 = singleprintf(io, width, delimiter, key, title)
+    else
+        pfmt1, pfmt2, pfmt3 = Format(""), Format(""), Format("")
+    end
+
+    return pfmt1, pfmt2, pfmt3
+end
+
+function singleprintf(io::IO, width::Dict{String, Int64}, delimiter::String, key::String, title::String)
+    print(io, format(Format(" %*s%s%*s $delimiter"), floor(Int, (width[key] - textwidth(title)) / 2), "", title, ceil(Int, (width[key] - textwidth(title)) / 2) , ""))
+    pfmt1 = Format(" %*s $delimiter")
+    pfmt2 = Format(" %*s $delimiter")
+    pfmt3 = Format("-%*s-$delimiter")
+
+    return pfmt1, pfmt2, pfmt3
+end
+
+function printf(io::IO, fmt::Format, width::Dict{String, Int64}, show::Dict{String, Bool}, key1::String, value1::String, key2::String, value2::String)
+    if show[key1] && show[key2]
+        print(io, format(fmt, width[key1], value1, width[key2], value2))
+    elseif show[key1]
+        print(io, format(fmt, width[key1], value1))
+    elseif show[key2]
+        print(io, format(fmt, width[key2], value2))
+    end
+end
+
+function printf(io::IO, show::Dict{String, Bool}, delimiter::String, key1::String, value1::String, key2::String, value2::String)
+    if show[key1] && show[key2]
+        print(io, format(Format("$delimiter%s$delimiter%s"), value1, value2))
+    elseif show[key1]
+        print(io, format(Format("$delimiter%s"), value1))
+    elseif show[key2]
+        print(io, format(Format("$delimiter%s"), value2))
+    end
+end
+
+
+function printf(io::IO, fmt::Format, width::Dict{String, Int64}, show::Dict{String, Bool}, key::String, value::String)
+    if show[key]
+        print(io, format(fmt, width[key], value))
+    end
+end
+
+function printf(io::IO, show::Dict{String, Bool}, delimiter::String, key::String, value::String)
+    if show[key]
+        print(io, format(Format("$delimiter%s"), value))
+    end
 end

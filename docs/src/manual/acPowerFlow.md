@@ -334,6 +334,14 @@ open("bus_data.txt", "w") do file
 end
 ```
 
+For CSV output, users should first generate a simple table with `style = false`, and then save it to a CSV file. For example:
+```julia
+using CSV
+
+data = take!(printBusData(system, analysis, IOBuffer(); style = false, delimiter = ","))
+CSV.write("bus_data.csv", CSV.File(data; delim = ","))
+```
+
 ---
 
 ## [Power System Update](@id ACPowerSystemAlterationManual)
