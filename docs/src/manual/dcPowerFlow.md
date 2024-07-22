@@ -125,6 +125,7 @@ Users have the option to print the results in the REPL using any units that have
 ```@example DCPowerFlowSolution
 @voltage(pu, deg, V)
 printBusData(system, analysis)
+nothing # hide
 ```
 
 Next, users can easily customize the print results for specific buses, for example:
@@ -136,7 +137,7 @@ printBusData(system, analysis; label = "Bus 3", footer = true)
 
 Users can also redirect print output to a file. For example, data can be saved in a text file as follows:
 ```julia
-open("bus_data.txt", "w") do file
+open("bus.txt", "w") do file
     printBusData(system, analysis, file)
 end
 ```
@@ -317,6 +318,7 @@ Users can utilize any of the print functions outlined in the [Print Power System
 @power(MW, pu, pu)
 printBusData(system, analysis)
 @default(unit) # hide
+nothing # hide
 ```
 
 Next, users can easily customize the print results for specific buses, for example:
@@ -331,6 +333,14 @@ Users can also redirect print output to a file. For example, data can be saved i
 open("dcPowerFlow.txt", "w") do file
     printBusData(system, analysis, file)
 end
+```
+
+For CSV output, users should first generate a simple table with `style = false`, and then save it to a CSV file:
+```julia
+using CSV
+
+data = take!(printBusData(system, analysis, IOBuffer(); style = false))
+CSV.write("bus.csv", CSV.File(data; delim = "|"))
 ```
 
 ---

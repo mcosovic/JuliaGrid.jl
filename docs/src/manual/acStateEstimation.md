@@ -371,7 +371,7 @@ printBusData(system, analysis; label = "Bus 3", footer = true)
 
 Users can also redirect print output to a file. For example, data can be saved in a text file as follows:
 ```julia
-open("bus_data.txt", "w") do file
+open("bus.txt", "w") do file
     printBusData(system, analysis, file)
 end
 ```
@@ -690,6 +690,15 @@ Users can utilize any of the print functions outlined in the [Print API](@ref se
 @power(MW, pu, pu)
 printWattmeterData(system, device, analysis)
 @default(unit) # hide
+nothing # hide
+```
+
+For CSV output, users should first generate a simple table with `style = false`, and then save it to a CSV file:
+```julia
+using CSV
+
+data = take!(printWattmeterData(system, device, analysis, IOBuffer(); style = false))
+CSV.write("wattmeter.csv", CSV.File(data; delim = "|"))
 ```
 
 ---

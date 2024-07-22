@@ -217,7 +217,7 @@ printBusData(system, analysis; label = "Bus 3", footer = true)
 
 Users can also redirect print output to a file. For example, data can be saved in a text file as follows:
 ```julia
-open("bus_data.txt", "w") do file
+open("bus.txt", "w") do file
     printBusData(system, analysis, file)
 end
 ```
@@ -464,6 +464,14 @@ fmt = Dict("Measurement Mean" => "%.2f", "Measurement Variance" => "%.2e")
 
 printPmuData(system, device, analysis; fmt, show)
 @default(unit) # hide
+```
+
+For CSV output, users should first generate a simple table with `style = false`, and then save it to a CSV file:
+```julia
+using CSV
+
+data = take!(printPmuData(system, device, analysis, IOBuffer(); style = false))
+CSV.write("pmu.csv", CSV.File(data; delim = "|"))
 ```
 
 ---
