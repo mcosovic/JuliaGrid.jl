@@ -1160,9 +1160,6 @@ printBusSummary(system, analysis)
 function printBusSummary(system::PowerSystem, analysis::AC, io::IO = stdout)
     scale = printScale(system, prefix)
     format, width, device, unitLive, powerFlag, currentFlag = formatBusSummary(system, analysis, scale)
-
-    @printf io "\n"
-
     maxLine = sum(width[:]) + 17
 
     sentence = "In the power system with $(system.bus.number) $(plosg("bus", system.bus.number)),
@@ -1309,9 +1306,6 @@ end
 function printBusSummary(system::PowerSystem, analysis::DC, io::IO = stdout)
     scale = printScale(system, prefix)
     format, width, device, unitLive, powerFlag = formatBusSummary(system, analysis, scale)
-
-    @printf io "\n"
-
     maxLine = sum(width[:]) + 17
 
     sentence = "In the power system with $(system.bus.number) $(plosg("bus", system.bus.number)),
@@ -1438,9 +1432,6 @@ printBranchSummary(system, analysis)
 function printBranchSummary(system::PowerSystem, analysis::AC, io::IO = stdout)
     scale = printScale(system, prefix)
     format, width, device, unitLive, powerFlag, currentFlag = formatBranchSummary(system, analysis, scale)
-
-    @printf io "\n"
-
     maxLine = sum(width[:]) + 17
 
     sentence = "The power system comprises $(system.branch.number) $(plosg("branch", system.branch.number)), of which $(system.branch.layout.inservice) $(isare(system.branch.layout.inservice)) in-service.
@@ -1655,9 +1646,6 @@ end
 function printBranchSummary(system::PowerSystem, analysis::DC, io::IO = stdout)
     scale = printScale(system, prefix)
     format, width, device, unitLive, powerFlag = formatBranchSummary(system, analysis, scale)
-
-    @printf io "\n"
-
     maxLine = sum(width[:]) + 17
 
     sentence = "The power system comprises $(system.branch.number) $(plosg("branch", system.branch.number)), of which $(system.branch.layout.inservice) $(isare(system.branch.layout.inservice)) in-service.
@@ -1797,9 +1785,6 @@ printGeneratorSummary(system, analysis)
 function printGeneratorSummary(system::PowerSystem, analysis::AC, io::IO = stdout)
     scale = printScale(system, prefix)
     format, width, unitLive, powerFlag = formatGeneratorSummary(system, analysis, scale)
-
-    @printf io "\n"
-
     maxLine = sum(width[:]) + 17
 
     sentence = "The power system comprises $(system.generator.number) $(plosg("generator", system.generator.number; pl = "s")),
@@ -1847,9 +1832,6 @@ end
 function printGeneratorSummary(system::PowerSystem, analysis::DC, io::IO = stdout)
     scale = printScale(system, prefix)
     format, width, unitLive, powerFlag = formatGeneratorSummary(system, analysis, scale)
-
-    @printf io "\n"
-
     maxLine = sum(width[:]) + 17
 
     sentence = "The power system comprises $(system.generator.number) $(plosg("generator", system.generator.number; pl = "s")),
