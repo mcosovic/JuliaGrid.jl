@@ -106,12 +106,21 @@ function printBusData(system::PowerSystem, analysis::AC, io::IO = stdout; label:
             printf(io, fmtCur[3], width, show, "Current Injection Magnitude", "-"^width["Current Injection Magnitude"], "Current Injection Angle", "-"^width["Current Injection Angle"])
         else
             print(io, format(Format("%s"), "Bus Label"))
-            printf(io, show, delimiter, "Voltage Magnitude", "Voltage Magnitude $(unitData["V"])", "Voltage Angle", "Voltage Angle $(unitData["θ"])")
-            printf(io, show, delimiter, "Power Generation Active", "Active Power Generation $(unitData["P"])", "Power Generation Reactive", "Reactive Power Generation $(unitData["Q"])")
-            printf(io, show, delimiter, "Power Demand Active", "Active Power Demand $(unitData["P"])", "Power Demand Reactive", "Reactive Power Demand $(unitData["Q"])")
-            printf(io, show, delimiter, "Power Injection Active", "Active Power Injection $(unitData["P"])", "Power Injection Reactive", "Reactive Power Injection $(unitData["Q"])")
-            printf(io, show, delimiter, "Shunt Power Active", "Active Shunt Power $(unitData["P"])", "Shunt Power Reactive", "Reactive Shunt Power $(unitData["Q"])")
-            printf(io, show, delimiter, "Current Injection Magnitude", "Current Injection Magnitude $(unitData["I"])", "Current Injection Angle", "Current Injection Angle $(unitData["ψ"])")
+            printf(io, show, delimiter, "Voltage Magnitude", "Voltage Magnitude", "Voltage Angle", "Voltage Angle")
+            printf(io, show, delimiter, "Power Generation Active", "Active Power Generation", "Power Generation Reactive", "Reactive Power Generation")
+            printf(io, show, delimiter, "Power Demand Active", "Active Power Demand", "Power Demand Reactive", "Reactive Power Demand")
+            printf(io, show, delimiter, "Power Injection Active", "Active Power Injection", "Power Injection Reactive", "Reactive Power Injection")
+            printf(io, show, delimiter, "Shunt Power Active", "Shunt Active Power", "Shunt Power Reactive", "Shunt Reactive Power")
+            printf(io, show, delimiter, "Current Injection Magnitude", "Current Injection Magnitude", "Current Injection Angle", "Current Injection Angle")
+            @printf io "\n"
+
+            print(io, format(Format("%s"), ""))
+            printf(io, show, delimiter, "Voltage Magnitude", unitData["V"], "Voltage Angle", unitData["θ"])
+            printf(io, show, delimiter, "Power Generation Active", unitData["P"], "Power Generation Reactive", unitData["Q"])
+            printf(io, show, delimiter, "Power Demand Active", unitData["P"], "Power Demand Reactive", unitData["Q"])
+            printf(io, show, delimiter, "Power Injection Active", unitData["P"], "Power Injection Reactive", unitData["Q"])
+            printf(io, show, delimiter, "Shunt Power Active", unitData["P"], "Shunt Power Reactive", unitData["Q"])
+            printf(io, show, delimiter, "Current Injection Magnitude", unitData["I"], "Current Injection Angle", unitData["ψ"])
         end
         @printf io "\n"
     end
@@ -322,10 +331,17 @@ function printBusData(system::PowerSystem, analysis::DC, io::IO = stdout; label:
             printf(io, fmtInj[3], width, show, "Power Injection Active", "-"^width["Power Injection Active"])
         else
             print(io, format(Format("%s"), "Bus Label"))
-            printf(io, show, delimiter, "Voltage Angle", "Voltage Angle $(unitData["θ"])")
-            printf(io, show, delimiter, "Power Generation Active", "Active Power Generation $(unitData["P"])")
-            printf(io, show, delimiter, "Power Demand Active", "Active Power Demand $(unitData["P"])")
-            printf(io, show, delimiter, "Power Injection Active", "Active Power Injection $(unitData["P"])")
+            printf(io, show, delimiter, "Voltage Angle", "Voltage Angle")
+            printf(io, show, delimiter, "Power Generation Active", "Active Power Generation")
+            printf(io, show, delimiter, "Power Demand Active", "Active Power Demand")
+            printf(io, show, delimiter, "Power Injection Active", "Active Power Injection")
+            @printf io "\n"
+
+            print(io, format(Format("%s"), ""))
+            printf(io, show, delimiter, "Voltage Angle", unitData["θ"])
+            printf(io, show, delimiter, "Power Generation Active", unitData["P"])
+            printf(io, show, delimiter, "Power Demand Active", unitData["P"])
+            printf(io, show, delimiter, "Power Injection Active", unitData["P"])
         end
         @printf io "\n"
     end
@@ -529,14 +545,25 @@ function printBranchData(system::PowerSystem, analysis::AC, io::IO = stdout; lab
             printf(io, fmtStatus[3], width, show, "Status", "-"^width["Status"])
         else
             print(io, format(Format("%s"), "Branch Label"))
-            printf(io, show, delimiter, "From-Bus Power Active", "Active Power From-Bus $(unitData["P"])", "From-Bus Power Reactive", "Reactive Power From-Bus $(unitData["Q"])")
-            printf(io, show, delimiter, "To-Bus Power Active", "Active Power To-Bus $(unitData["P"])", "To-Bus Power Reactive", "Reactive Power To-Bus $(unitData["Q"])")
-            printf(io, show, delimiter, "Shunt Power Active", "Active Shunt Power $(unitData["P"])", "Shunt Power Reactive", "Reactive Shunt Power $(unitData["Q"])")
-            printf(io, show, delimiter, "Series Power Active", "Active Series Power $(unitData["P"])", "Series Power Reactive", "Reactive Series Power $(unitData["Q"])")
-            printf(io, show, delimiter, "From-Bus Current Magnitude", "From-Bus Current Magnitude $(unitData["I"])", "From-Bus Current Angle", "From-Bus Current Angle $(unitData["ψ"])")
-            printf(io, show, delimiter, "To-Bus Current Magnitude", "To-Bus Current Magnitude $(unitData["I"])", "To-Bus Current Angle", "To-Bus Current Angle $(unitData["ψ"])")
-            printf(io, show, delimiter, "Series Current Magnitude", "Series Current Magnitude $(unitData["I"])", "Series Current Angle", "Series Current Angle $(unitData["ψ"])")
+            printf(io, show, delimiter, "From-Bus Power Active", "From-Bus Active Power", "From-Bus Power Reactive", "From-Bus Reactive Power")
+            printf(io, show, delimiter, "To-Bus Power Active", "To-Bus Active Power", "To-Bus Power Reactive", "To-Bus Reactive Power")
+            printf(io, show, delimiter, "Shunt Power Active", "Shunt Active Power", "Shunt Power Reactive", "Shunt Reactive Power")
+            printf(io, show, delimiter, "Series Power Active", "Series Active Power", "Series Power Reactive", "Series Reactive Power")
+            printf(io, show, delimiter, "From-Bus Current Magnitude", "From-Bus Current Magnitude", "From-Bus Current Angle", "From-Bus Current Angle")
+            printf(io, show, delimiter, "To-Bus Current Magnitude", "To-Bus Current Magnitude", "To-Bus Current Angle", "To-Bus Current Angle")
+            printf(io, show, delimiter, "Series Current Magnitude", "Series Current Magnitude", "Series Current Angle", "Series Current Angle")
             printf(io, show, delimiter, "Status", "Status")
+            @printf io "\n"
+
+            print(io, format(Format("%s"), ""))
+            printf(io, show, delimiter, "From-Bus Power Active", unitData["P"], "From-Bus Power Reactive", unitData["Q"])
+            printf(io, show, delimiter, "To-Bus Power Active", unitData["P"], "To-Bus Power Reactive", unitData["Q"])
+            printf(io, show, delimiter, "Shunt Power Active", unitData["P"], "Shunt Power Reactive", unitData["Q"])
+            printf(io, show, delimiter, "Series Power Active", unitData["P"], "Series Power Reactive", unitData["Q"])
+            printf(io, show, delimiter, "From-Bus Current Magnitude", unitData["I"], "From-Bus Current Angle", unitData["ψ"])
+            printf(io, show, delimiter, "To-Bus Current Magnitude", unitData["I"], "To-Bus Current Angle", unitData["ψ"])
+            printf(io, show, delimiter, "Series Current Magnitude", unitData["I"], "Series Current Angle", unitData["ψ"])
+            printf(io, show, delimiter, "Status", "")
         end
         @printf io "\n"
     end
@@ -754,9 +781,15 @@ function printBranchData(system::PowerSystem, analysis::DC, io::IO = stdout; lab
             printf(io, fmtSt[3], width, show, "Status", "-"^width["Status"])
         else
             print(io, format(Format("%s"), "Branch Label"))
-            printf(io, show, delimiter, "From-Bus Power Active", "Active Power From-Bus $(unitData["P"])")
-            printf(io, show, delimiter, "To-Bus Power Active", "Active Power To-Bus $(unitData["P"])")
+            printf(io, show, delimiter, "From-Bus Power Active", "From-Bus Active Power")
+            printf(io, show, delimiter, "To-Bus Power Active", "To-Bus Active Power")
             printf(io, show, delimiter, "Status", "Status")
+            @printf io "\n"
+
+            print(io, format(Format("%s"), ""))
+            printf(io, show, delimiter, "From-Bus Power Active", unitData["P"])
+            printf(io, show, delimiter, "To-Bus Power Active", unitData["P"])
+            printf(io, show, delimiter, "Status", "")
         end
         @printf io "\n"
     end
@@ -890,7 +923,7 @@ function printGeneratorData(system::PowerSystem, analysis::AC, io::IO = stdout; 
             printTitle(io, maxLine, delimiter, "Generator Data")
 
             print(io, format(Format("$delimiter %*s%s%*s $delimiter"), floor(Int, (width["Label"] - 5) / 2), "", "Label", ceil(Int, (width["Label"] - 5) / 2) , ""))
-            fmtOut = printf(io, width, show, delimiter, "Output Power Active", "Output Power Reactive", "Output Power")
+            fmtOut = printf(io, width, show, delimiter, "Output Power Active", "Output Power Reactive", "Power Output")
             fmtSta = printf(io, width, show, delimiter, "Status", "Status")
             @printf io "\n"
 
@@ -914,8 +947,13 @@ function printGeneratorData(system::PowerSystem, analysis::AC, io::IO = stdout; 
             printf(io, fmtSta[3], width, show, "Status", "-"^width["Status"])
         else
             print(io, format(Format("%s"), "Generator Label"))
-            printf(io, show, delimiter, "Output Power Active", "Active Output Power $(unitData["P"])", "Output Power Reactive", "Reactive Output Power $(unitData["Q"])")
+            printf(io, show, delimiter, "Output Power Active", "Active Power Output", "Output Power Reactive", "Reactive Power Output")
             printf(io, show, delimiter, "Status", "Status")
+            @printf io "\n"
+
+            print(io, format(Format("%s"), ""))
+            printf(io, show, delimiter, "Output Power Active", unitData["P"], "Output Power Reactive", unitData["Q"])
+            printf(io, show, delimiter, "Status", "")
         end
         @printf io "\n"
     end
@@ -1000,7 +1038,7 @@ function printGeneratorData(system::PowerSystem, analysis::DC, io::IO = stdout; 
             printTitle(io, maxLine, delimiter, "Generator Data")
 
             print(io, format(Format("$delimiter %*s%s%*s $delimiter"), floor(Int, (width["Label"] - 5) / 2), "", "Label", ceil(Int, (width["Label"] - 5) / 2) , ""))
-            fmtOut = printf(io, width, show, delimiter, "Output Power Active", "Output Power")
+            fmtOut = printf(io, width, show, delimiter, "Output Power Active", "Power Output")
             fmtSta = printf(io, width, show, delimiter, "Status", "Status")
             @printf io "\n"
 
@@ -1024,8 +1062,13 @@ function printGeneratorData(system::PowerSystem, analysis::DC, io::IO = stdout; 
             printf(io, fmtSta[3], width, show, "Status", "-"^width["Status"])
         else
             print(io, format(Format("%s"), "Generator Label"))
-            printf(io, show, delimiter, "Output Power Active", "Active Output Power $(unitData["P"])")
+            printf(io, show, delimiter, "Output Power Active", "Active Power Output")
             printf(io, show, delimiter, "Status", "Status")
+            @printf io "\n"
+
+            print(io, format(Format("%s"), ""))
+            printf(io, show, delimiter, "Output Power Active", unitData["P"])
+            printf(io, show, delimiter, "Status", "")
         end
         @printf io "\n"
     end

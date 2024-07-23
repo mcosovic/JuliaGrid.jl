@@ -156,7 +156,7 @@ function summaryBlock(io::IO, data1::SummaryData, unitLive::String, span::Array{
 end
 
 function printTitle(io::IO, maxLine::Int64, delimiter::String, title::String)
-    print(io, format(Format("\n$delimiter%s$delimiter\n"), "-"^maxLine))
+    print(io, format(Format("$delimiter%s$delimiter\n"), "-"^maxLine))
     print(io, format(Format("$delimiter %s%*s$delimiter\n"), title, maxLine - textwidth(title) - 1, ""))
     print(io, format(Format("$delimiter%s$delimiter\n"), "-"^maxLine))
 end

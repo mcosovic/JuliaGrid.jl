@@ -861,7 +861,6 @@ function formatDevice(meter::GaussMeter, analysisArray::Array{Float64,1}, style:
     return fmt, width, show, minval, maxval
 end
 
-
 function headerDevice(io::IO, width::Dict{String, Int64}, show::Dict{String, Bool}, delimiter::String, unitLive::String)
     fmtMes, fmtEst, fmtSta = printHeader1(io, width, show, delimiter)
     printHeader2(io, width, show, fmtMes, fmtEst, fmtSta, delimiter)
@@ -872,9 +871,15 @@ end
 
 function headerDevice(io::IO, show::Dict{String, Bool}, delimiter::String, unitLive::String, device::String)
     print(io, format(Format("%s"), "$device Label"))
-    printf(io, show, delimiter, "Measurement Mean", "Measurement Mean [$unitLive]", "Measurement Variance", "Measurement Variance [$unitLive]")
-    printf(io, show, delimiter, "State Estimation Estimate", "State Estimation Estimate [$unitLive]", "State Estimation Residual", "State Estimation Residual [$unitLive]")
+    printf(io, show, delimiter, "Measurement Mean", "Measurement Mean", "Measurement Variance", "Measurement Variance")
+    printf(io, show, delimiter, "State Estimation Estimate", "State Estimation Estimate", "State Estimation Residual", "State Estimation Residual")
     printf(io, show, delimiter, "Status", "Status")
+    @printf io "\n"
+
+    print(io, format(Format("%s"), ""))
+    printf(io, show, delimiter, "Measurement Mean", "[$unitLive]", "Measurement Variance", "[$unitLive]")
+    printf(io, show, delimiter, "State Estimation Estimate", "[$unitLive]", "State Estimation Residual", "[$unitLive]")
+    printf(io, show, delimiter, "Status", "")
     @printf io "\n"
 end
 
@@ -915,13 +920,24 @@ function headerDevice(io::IO, show1::Dict{String, Bool}, show2::Dict{String, Boo
     hasMore::Bool, device::String)
 
     print(io, format(Format("%s"), "$device Label"))
-    printf(io, show1, delimiter, "Measurement Mean", "Magnitude Measurement Mean [$unitLive1]", "Measurement Variance", "Magnitude Measurement Variance [$unitLive1]")
-    printf(io, show1, delimiter, "State Estimation Estimate", "Magnitude State Estimation Estimate [$unitLive1]", "State Estimation Residual", "Magnitude State Estimation Residual [$unitLive1]")
+    printf(io, show1, delimiter, "Measurement Mean", "Magnitude Measurement Mean", "Measurement Variance", "Magnitude Measurement Variance")
+    printf(io, show1, delimiter, "State Estimation Estimate", "Magnitude State Estimation Estimate", "State Estimation Residual", "Magnitude State Estimation Residual")
     printf(io, show1, delimiter, "Status", "Magnitude Status")
     if hasMore
-        printf(io, show2, delimiter, "Measurement Mean", "Angle Measurement Mean [$unitLive2]", "Measurement Variance", "Angle Measurement Variance [$unitLive2]")
-        printf(io, show2, delimiter, "State Estimation Estimate", "Angle State Estimation Estimate [$unitLive2]", "State Estimation Residual", "Angle State Estimation Residual [$unitLive2]")
+        printf(io, show2, delimiter, "Measurement Mean", "Angle Measurement Mean", "Measurement Variance", "Angle Measurement Variance")
+        printf(io, show2, delimiter, "State Estimation Estimate", "Angle State Estimation Estimate", "State Estimation Residual", "Angle State Estimation Residual")
         printf(io, show2, delimiter, "Status", "Angle Status")
+    end
+    @printf io "\n"
+
+    print(io, format(Format("%s"), ""))
+    printf(io, show1, delimiter, "Measurement Mean", "[$unitLive1]", "Measurement Variance", "[$unitLive1]")
+    printf(io, show1, delimiter, "State Estimation Estimate", "[$unitLive1]", "State Estimation Residual", "[$unitLive1]")
+    printf(io, show1, delimiter, "Status", "")
+    if hasMore
+        printf(io, show2, delimiter, "Measurement Mean", "[$unitLive2]", "Measurement Variance", "[$unitLive2]")
+        printf(io, show2, delimiter, "State Estimation Estimate", "[$unitLive2]", "State Estimation Residual", "[$unitLive2]")
+        printf(io, show2, delimiter, "Status", "")
     end
     @printf io "\n"
 end
