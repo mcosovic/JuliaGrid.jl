@@ -697,8 +697,9 @@ For CSV output, users should first generate a simple table with `style = false`,
 ```julia
 using CSV
 
-data = take!(printWattmeterData(system, device, analysis, IOBuffer(); style = false))
-CSV.write("wattmeter.csv", CSV.File(data; delim = "|"))
+io = IOBuffer()
+printWattmeterData(system, device, analysis, io; style = false)
+CSV.write("bus.csv", CSV.File(take!(io); delim = "|"))
 ```
 
 ---

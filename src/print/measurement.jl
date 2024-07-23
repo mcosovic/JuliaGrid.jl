@@ -52,14 +52,14 @@ function printVoltmeterData(system::PowerSystem, device::Measurement, io::IO = s
 
     voltage = Polar(Float64[], Float64[])
 
-    return io = _printVoltmeterData(system, device, voltage, io, label, prefix, header, footer, fmt, width, show, delimiter, style)
+    _printVoltmeterData(system, device, voltage, io, label, prefix, header, footer, fmt, width, show, delimiter, style)
 end
 
 function printVoltmeterData(system::PowerSystem, device::Measurement, analysis::Union{PMUStateEstimation, ACStateEstimation}, io::IO = stdout;
     label::L = missing, header::B = missing, footer::B = missing, delimiter::String = "|", fmt::Dict{String, String} = Dict{String, String}(),
     width::Dict{String, Int64} = Dict{String, Int64}(), show::Dict{String, Bool} = Dict{String, Bool}(), style::Bool = true)
 
-    return io = _printVoltmeterData(system, device, analysis.voltage, io, label, prefix, header, footer, fmt, width, show, delimiter, style)
+    _printVoltmeterData(system, device, analysis.voltage, io, label, prefix, header, footer, fmt, width, show, delimiter, style)
 end
 
 function _printVoltmeterData(system::PowerSystem, device::Measurement, voltage::Polar, io::IO, label::L, prefix::PrefixLive,
@@ -95,8 +95,6 @@ function _printVoltmeterData(system::PowerSystem, device::Measurement, voltage::
             print(io, format(Format("$delimiter%s$delimiter\n"), "-"^maxLine))
         end
     end
-
-    return io
 end
 
 function formatVoltmeterData(system::PowerSystem, voltmeter::Voltmeter, voltage::Polar, label::L, prefix::PrefixLive,
@@ -179,14 +177,14 @@ function printAmmeterData(system::PowerSystem, device::Measurement, io::IO = std
 
     current = ACCurrent(Polar(Float64[], Float64[]), Polar(Float64[], Float64[]), Polar(Float64[], Float64[]), Polar(Float64[], Float64[]))
 
-    return io = _printAmmeterData(system, device, current, io, label, prefix, header, footer, fmt, width, show, delimiter, style)
+    _printAmmeterData(system, device, current, io, label, prefix, header, footer, fmt, width, show, delimiter, style)
 end
 
 function printAmmeterData(system::PowerSystem, device::Measurement, analysis::Union{PMUStateEstimation, ACStateEstimation}, io::IO = stdout;
     label::L = missing, header::B = missing, footer::B = missing, delimiter::String = "|", fmt::Dict{String, String} = Dict{String, String}(),
     width::Dict{String, Int64} = Dict{String, Int64}(), show::Dict{String, Bool} = Dict{String, Bool}(), style::Bool = true)
 
-    return io = _printAmmeterData(system, device, analysis.current, io, label, prefix, header, footer, fmt, width, show, delimiter, style)
+    _printAmmeterData(system, device, analysis.current, io, label, prefix, header, footer, fmt, width, show, delimiter, style)
 end
 
 function _printAmmeterData(system::PowerSystem, device::Measurement, current::ACCurrent, io::IO, label::L, prefix::PrefixLive,
@@ -228,8 +226,6 @@ function _printAmmeterData(system::PowerSystem, device::Measurement, current::AC
             print(io, format(Format("$delimiter%s$delimiter\n"), "-"^maxLine))
         end
     end
-
-    return io
 end
 
 function formatAmmeterData(system::PowerSystem, ammeter::Ammeter, current::ACCurrent, label::L, prefix::PrefixLive,
@@ -320,14 +316,14 @@ function printWattmeterData(system::PowerSystem, device::Measurement, io::IO = s
         Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]),
         Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]))
 
-    return io = _printWattmeterData(system, device, power, io, label, prefix, header, footer, fmt, width, show, delimiter, style)
+    _printWattmeterData(system, device, power, io, label, prefix, header, footer, fmt, width, show, delimiter, style)
 end
 
 function printWattmeterData(system::PowerSystem, device::Measurement, analysis::Union{PMUStateEstimation, ACStateEstimation, DCStateEstimation}, io::IO = stdout;
     label::L = missing, header::B = missing, footer::B = missing, delimiter::String = "|", fmt::Dict{String, String} = Dict{String, String}(),
     width::Dict{String, Int64} = Dict{String, Int64}(), show::Dict{String, Bool} = Dict{String, Bool}(), style::Bool = true)
 
-    return io = _printWattmeterData(system, device, analysis.power, io, label, prefix, header, footer, fmt, width, show, delimiter, style)
+    _printWattmeterData(system, device, analysis.power, io, label, prefix, header, footer, fmt, width, show, delimiter, style)
 end
 
 function _printWattmeterData(system::PowerSystem, device::Measurement, power::Union{ACPower, DCPower}, io::IO, label::L, prefix::PrefixLive,
@@ -360,8 +356,6 @@ function _printWattmeterData(system::PowerSystem, device::Measurement, power::Un
             print(io, format(Format("$delimiter%s$delimiter\n"), "-"^maxLine))
         end
     end
-
-    return io
 end
 
 function formatWattmeterData(wattmeter::Wattmeter, power::Union{ACPower, DCPower}, scale::Dict{String, Float64}, label::L,
@@ -441,14 +435,14 @@ function printVarmeterData(system::PowerSystem, device::Measurement, io::IO = st
         Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]),
         Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]))
 
-    return io = _printVarmeterData(system, device, power, io, label, prefix, header, footer, fmt, width, show, delimiter, style)
+    _printVarmeterData(system, device, power, io, label, prefix, header, footer, fmt, width, show, delimiter, style)
 end
 
 function printVarmeterData(system::PowerSystem, device::Measurement, analysis::Union{PMUStateEstimation, ACStateEstimation}, io::IO = stdout;
     label::L = missing, header::B = missing, footer::B = missing, delimiter::String = "|", fmt::Dict{String, String} = Dict{String, String}(),
     width::Dict{String, Int64} = Dict{String, Int64}(), show::Dict{String, Bool} = Dict{String, Bool}(), style::Bool = true)
 
-    return io = _printVarmeterData(system, device, analysis.power, io, label, prefix, header, footer, fmt, width, show, delimiter, style)
+    _printVarmeterData(system, device, analysis.power, io, label, prefix, header, footer, fmt, width, show, delimiter, style)
 end
 
 function _printVarmeterData(system::PowerSystem, device::Measurement, power::ACPower, io::IO, label::L, prefix::PrefixLive,
@@ -481,8 +475,6 @@ function _printVarmeterData(system::PowerSystem, device::Measurement, power::ACP
             print(io, format(Format("$delimiter%s$delimiter\n"), "-"^maxLine))
         end
     end
-
-    return io
 end
 
 function formatVarmeterData(varmeter::Varmeter, power::ACPower, scale::Dict{String, Float64}, label::L,
@@ -561,21 +553,21 @@ function printPmuData(system::PowerSystem, device::Measurement, io::IO = stdout;
     voltage = Polar(Float64[], Float64[])
     current = ACCurrent(Polar(Float64[], Float64[]), Polar(Float64[], Float64[]), Polar(Float64[], Float64[]), Polar(Float64[], Float64[]))
 
-    return io = _printPmuData(system, device, voltage, current, io, label, prefix, header, footer, fmt, width, show, delimiter, style)
+    _printPmuData(system, device, voltage, current, io, label, prefix, header, footer, fmt, width, show, delimiter, style)
 end
 
 function printPmuData(system::PowerSystem, device::Measurement, analysis::Union{PMUStateEstimation, ACStateEstimation}, io::IO = stdout;
     label::L = missing, header::B = missing, footer::B = missing, delimiter::String = "|", fmt::Dict{String, String} = Dict{String, String}(),
     width::Dict{String, Int64} = Dict{String, Int64}(), show::Dict{String, Bool} = Dict{String, Bool}(), style::Bool = true)
 
-    return io = _printPmuData(system, device, analysis.voltage, analysis.current, io, label, prefix, header, footer, fmt, width, show, delimiter, style)
+    _printPmuData(system, device, analysis.voltage, analysis.current, io, label, prefix, header, footer, fmt, width, show, delimiter, style)
 end
 
 function printPmuData(system::PowerSystem, device::Measurement, analysis::DCStateEstimation, io::IO = stdout; label::L = missing,
     header::B = missing, footer::B = missing, delimiter::String = "|", fmt::Dict{String, String} = Dict{String, String}(),
     width::Dict{String, Int64} = Dict{String, Int64}(), show::Dict{String, Bool} = Dict{String, Bool}(), style::Bool = true)
 
-    return io = _printPmuData(system, device, analysis.voltage, io, label, prefix, header, footer, fmt, width, show, delimiter, style)
+    _printPmuData(system, device, analysis.voltage, io, label, prefix, header, footer, fmt, width, show, delimiter, style)
 end
 
 function _printPmuData(system::PowerSystem, device::Measurement, voltage::Polar, current::ACCurrent, io::IO, label::L, prefix::PrefixLive,
@@ -671,8 +663,6 @@ function _printPmuData(system::PowerSystem, device::Measurement, voltage::Polar,
             @printf(io, "\n")
         end
     end
-
-    return io
 end
 
 function _printPmuData(system::PowerSystem, device::Measurement, voltage::PolarAngle, io::IO, label::L, prefix::PrefixLive,
@@ -711,8 +701,6 @@ function _printPmuData(system::PowerSystem, device::Measurement, voltage::PolarA
             print(io, format(Format("$delimiter%s$delimiter\n"), "-"^maxLine))
         end
     end
-
-    return io
 end
 
 function formatPmuData(system::PowerSystem, pmu::PMU, voltage::Polar, current::ACCurrent, scale::Dict{String, Float64}, label::L,

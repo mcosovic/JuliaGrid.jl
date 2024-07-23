@@ -470,8 +470,9 @@ For CSV output, users should first generate a simple table with `style = false`,
 ```julia
 using CSV
 
-data = take!(printPmuData(system, device, analysis, IOBuffer(); style = false))
-CSV.write("pmu.csv", CSV.File(data; delim = "|"))
+io = IOBuffer()
+printPmuData(system, device, analysis, io; style = false)
+CSV.write("bus.csv", CSV.File(take!(io); delim = "|"))
 ```
 
 ---

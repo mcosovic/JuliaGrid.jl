@@ -149,8 +149,6 @@ function printBusData(system::PowerSystem, analysis::AC, io::IO = stdout; label:
     if footer && style
         print(io, format(Format("$delimiter%s$delimiter\n"), "-"^maxLine))
     end
-
-    return io
 end
 
 function formatBusData(system::PowerSystem, analysis::AC, label::L, scale::Dict{String, Float64}, prefix::PrefixLive,
@@ -361,8 +359,6 @@ function printBusData(system::PowerSystem, analysis::DC, io::IO = stdout; label:
     if footer && style
         print(io, format(Format("$delimiter%s$delimiter\n"), "-"^maxLine))
     end
-
-    return io
 end
 
 function formatBusData(system::PowerSystem, analysis::DC, label::L, scale::Dict{String, Float64},
@@ -595,8 +591,6 @@ function printBranchData(system::PowerSystem, analysis::AC, io::IO = stdout; lab
     if footer && style
         print(io, format(Format("$delimiter%s$delimiter\n"), "-"^maxLine))
     end
-
-    return io
 end
 
 function formatBranchData(system::PowerSystem, analysis::AC, label::L, scale::Dict{String, Float64}, prefix::PrefixLive,
@@ -808,8 +802,6 @@ function printBranchData(system::PowerSystem, analysis::DC, io::IO = stdout; lab
     if footer && style
         print(io, format(Format("$delimiter%s$delimiter\n"), "-"^maxLine))
     end
-
-    return io
 end
 
 function formatBranchData(system::PowerSystem, analysis::DC, label::L, scale::Dict{String, Float64},
@@ -969,8 +961,6 @@ function printGeneratorData(system::PowerSystem, analysis::AC, io::IO = stdout; 
     if footer && style
         print(io, format(Format("$delimiter%s$delimiter\n"), "-"^maxLine))
     end
-
-    return io
 end
 
 function formatGeneratorData(system::PowerSystem, analysis::AC, label::L, scale::Dict{String, Float64},
@@ -1083,8 +1073,6 @@ function printGeneratorData(system::PowerSystem, analysis::DC, io::IO = stdout; 
     if footer && style
         print(io, format(Format("$delimiter%s$delimiter\n"), "-"^maxLine))
     end
-
-    return io
 end
 
 function formatGeneratorData(system::PowerSystem, analysis::DC, label::L, scale::Dict{String, Float64},
@@ -1203,8 +1191,6 @@ function printBusSummary(system::PowerSystem, analysis::AC, io::IO = stdout)
         summaryBlock(io, format["I"], unitLive["I"], width)
         summaryBlock(io, format["ψ"], unitLive["ψ"], width; line = true)
     end
-
-    return io
 end
 
 function formatBusSummary(system::PowerSystem, analysis::AC, scale::Dict{String, Float64})
@@ -1333,8 +1319,6 @@ function printBusSummary(system::PowerSystem, analysis::DC, io::IO = stdout)
         summaryBlockHeader(io, width, format["Pi"].title, system.bus.number)
         summaryBlock(io, format["Pi"], unitLive["P"], width; line = true)
     end
-
-    return io
 end
 
 function formatBusSummary(system::PowerSystem, analysis::DC, scale::Dict{String, Float64})
@@ -1499,8 +1483,6 @@ function printBranchSummary(system::PowerSystem, analysis::AC, io::IO = stdout)
             summaryBlock(io, format["ψshtr"], unitLive["ψ"], width; line = true)
         end
     end
-
-    return io
 end
 
 function formatBranchSummary(system::PowerSystem, analysis::AC, scale::Dict{String, Float64})
@@ -1677,8 +1659,6 @@ function printBranchSummary(system::PowerSystem, analysis::DC, io::IO = stdout)
             summaryBlock(io, format["Ptie"], " Net" * unitLive["P"], width; line = true)
         end
     end
-
-    return io
 end
 
 function formatBranchSummary(system::PowerSystem, analysis::DC, scale::Dict{String, Float64})
@@ -1798,8 +1778,6 @@ function printGeneratorSummary(system::PowerSystem, analysis::AC, io::IO = stdou
         summaryBlock(io, format["Pg"], unitLive["P"], width)
         summaryBlock(io, format["Qg"], unitLive["Q"], width; line = true)
     end
-
-    return io
 end
 
 function formatGeneratorSummary(system::PowerSystem, analysis::AC, scale::Dict{String, Float64})
@@ -1844,8 +1822,6 @@ function printGeneratorSummary(system::PowerSystem, analysis::DC, io::IO = stdou
         summaryBlockHeader(io, width, format["Pg"].title, system.generator.layout.inservice)
         summaryBlock(io, format["Pg"], unitLive["P"], width; line = true)
     end
-
-    return io
 end
 
 function formatGeneratorSummary(system::PowerSystem, analysis::DC, scale::Dict{String, Float64})

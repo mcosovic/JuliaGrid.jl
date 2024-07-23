@@ -339,8 +339,9 @@ For CSV output, users should first generate a simple table with `style = false`,
 ```julia
 using CSV
 
-data = take!(printBusData(system, analysis, IOBuffer(); style = false))
-CSV.write("bus.csv", CSV.File(data; delim = "|"))
+io = IOBuffer()
+printBusData(system, analysis, io; style = false)
+CSV.write("bus.csv", CSV.File(take!(io); delim = "|"))
 ```
 
 ---

@@ -330,7 +330,7 @@ printBusData(system, analysis; label = "Bus 3", footer = true)
 
 Users can also redirect print output to a file. For example, data can be saved in a text file as follows:
 ```julia
-open("dcPowerFlow.txt", "w") do file
+open("bus.txt", "w") do file
     printBusData(system, analysis, file)
 end
 ```
@@ -339,8 +339,9 @@ For CSV output, users should first generate a simple table with `style = false`,
 ```julia
 using CSV
 
-data = take!(printBusData(system, analysis, IOBuffer(); style = false))
-CSV.write("bus.csv", CSV.File(data; delim = "|"))
+io = IOBuffer()
+printBusData(system, analysis, io; style = false)
+CSV.write("bus.csv", CSV.File(take!(io); delim = "|"))
 ```
 
 ---
