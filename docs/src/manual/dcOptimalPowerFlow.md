@@ -358,6 +358,14 @@ JuMP.objective_value(analysis.method.jump)
 
 ---
 
+##### Lagrange Multipliers
+To obtain the values of dual variables or Lagrange multipliers, which generally represent the shadow prices or marginal costs associated with constraints, users can use the [`dual`](https://jump.dev/JuMP.jl/stable/api/JuMP/#dual) function, for example:
+```@repl DCOptimalPowerFlow
+JuMP.dual(analysis.method.constraint.balance.active[3])
+```
+
+---
+
 ##### Warm Start
 Utilizing the `DCOptimalPowerFlow` type and proceeding directly to the solver offers the advantage of a "warm start". In this scenario, the starting primal values for the subsequent solving step correspond to the solution obtained from the previous step.
 
