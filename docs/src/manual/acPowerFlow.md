@@ -313,7 +313,7 @@ end
 
 ---
 
-##### Print Results
+##### Print Results in the REPL
 Users have the option to print the results in the REPL using any units that have been configured, such as:
 ```@example ACPowerFlowSolution
 @voltage(pu, deg, V)
@@ -328,6 +328,9 @@ printBusData(system, analysis; label = "Bus 2")
 printBusData(system, analysis; label = "Bus 3", footer = true)
 ```
 
+---
+
+##### Save Results to a File
 Users can also redirect print output to a file. For example, data can be saved in a text file as follows:
 ```julia
 open("bus.txt", "w") do file
@@ -335,6 +338,9 @@ open("bus.txt", "w") do file
 end
 ```
 
+---
+
+##### Save Results to a CSV File
 For CSV output, users should first generate a simple table with `style = false`, and then save it to a CSV file:
 ```julia
 using CSV
@@ -573,7 +579,7 @@ print(system.branch.label, analysis.current.to.angle)
 
 ---
 
-##### Print Results
+##### Print Results in the REPL
 Users can utilize any of the print functions outlined in the [Print Power System Data](@ref PrintPowerSystemDataAPI) or [Print Power System Summary](@ref PrintPowerSystemSummaryAPI). For example, to create a bus summary with the desired units, users can use the following function:
 ```@example ComputationPowersCurrentsLosses
 @voltage(pu, deg, V)

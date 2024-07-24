@@ -146,7 +146,7 @@ In this example, we have chosen to specify `magnitude` and `variance` in kilovol
 
 ---
 
-##### Print Data
+##### Print Data in the REPL
 Users have the option to print the voltmeter data in the REPL using any units that have been configured:
 ```@example addVoltmeterSI
 printVoltmeterData(system, device)
@@ -208,7 +208,7 @@ In this example, we have opted to specify the `magnitude` and `variance` in ampe
 
 ---
 
-##### Print Data
+##### Print Data in the REPL
 Users have the option to print the ammeter data in the REPL using any units that have been configured:
 ```@example addAmmeterSI
 printAmmeterData(system, device)
@@ -272,7 +272,7 @@ In this example, we have chosen to specify the `active` and `variance` in megawa
 
 ---
 
-##### Print Data
+##### Print Data in the REPL
 Users have the option to print the wattmeter data in the REPL using any units that have been configured:
 ```@example addWattmeterSI
 printWattmeterData(system, device)
@@ -334,7 +334,7 @@ JuliaGrid will still store the values in the per-unit system:
 
 ---
 
-##### Print Data
+##### Print Data in the REPL
 Users have the option to print the varmeter data in the REPL using any units that have been configured:
 ```@example addVarmeterSI
 printVarmeterData(system, device)
@@ -426,7 +426,7 @@ In this example, we have opted to specify kilovolts (kV) and degrees (deg) for t
 
 ---
 
-##### Print Data
+##### Print Data in the REPL
 Users have the option to print the PMU data in the REPL using any units that have been configured:
 ```@example addPmuSI
 printPmuData(system, device; width = Dict("Measurement Mean" => 8))

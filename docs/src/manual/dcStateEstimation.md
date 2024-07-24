@@ -102,7 +102,7 @@ nothing # hide
 
 ---
 
-##### Print Results
+##### Print Results in the REPL
 Users have the option to print the results in the REPL using any units that have been configured, such as:
 ```@example WLSDCStateEstimationSolution
 @voltage(pu, deg, V)
@@ -117,6 +117,9 @@ printBusData(system, analysis; label = "Bus 2")
 printBusData(system, analysis; label = "Bus 3", footer = true)
 ```
 
+---
+
+##### Save Results to a File
 Users can also redirect print output to a file. For example, data can be saved in a text file as follows:
 ```julia
 open("bus.txt", "w") do file
@@ -363,7 +366,7 @@ print(system.bus.label, analysis.power.injection.active)
 
 ---
 
-##### Print Results
+##### Print Results in the REPL
 Users can utilize any of the print functions outlined in the [Print API](@ref setupPrintAPI) related to the DC analysis. For example, to print state estimation data related to wattmeters, we can use:
 ```@example WLSDCStateEstimationSolution
 @power(MW, pu, pu)
@@ -371,6 +374,9 @@ printWattmeterData(system, device, analysis)
 @default(unit) # hide
 ```
 
+---
+
+##### Save Results to a CSV File
 For CSV output, users should first generate a simple table with `style = false`, and then save it to a CSV file:
 ```julia
 using CSV
@@ -379,9 +385,6 @@ io = IOBuffer()
 printWattmeterData(system, device, analysis, io; style = false)
 CSV.write("bus.csv", CSV.File(take!(io); delim = "|"))
 ```
-
----
-
 
 ---
 
