@@ -168,7 +168,6 @@ analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer)
 solve!(system, analysis)
 ```
 """
-
 function solve!(system::PowerSystem, analysis::DCOptimalPowerFlow)
     variable = analysis.method.variable
     constraint = analysis.method.constraint
