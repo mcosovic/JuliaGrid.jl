@@ -181,12 +181,12 @@ function solve!(system::PowerSystem, analysis::DCOptimalPowerFlow)
     end
 
     try
-        setdual!(constraint.slack.angle, dual.slack.angle)
-        setdual!(constraint.balance.active, dual.balance.active)
-        setdual!(constraint.voltage.angle, dual.voltage.angle)
-        setdual!(constraint.flow.active, dual.flow.active)
-        setdual!(constraint.capability.active, dual.capability.active)
-        setdual!(constraint.piecewise.active, dual.piecewise.active)
+        setdual!(analysis.method.jump, constraint.slack.angle, dual.slack.angle)
+        setdual!(analysis.method.jump, constraint.balance.active, dual.balance.active)
+        setdual!(analysis.method.jump, constraint.voltage.angle, dual.voltage.angle)
+        setdual!(analysis.method.jump, constraint.flow.active, dual.flow.active)
+        setdual!(analysis.method.jump, constraint.capability.active, dual.capability.active)
+        setdual!(analysis.method.jump, constraint.piecewise.active, dual.piecewise.active)
     catch
     end
 
@@ -200,12 +200,12 @@ function solve!(system::PowerSystem, analysis::DCOptimalPowerFlow)
     end
 
     if has_duals(analysis.method.jump)
-        dual!(constraint.slack.angle, dual.slack.angle)
-        dual!(constraint.balance.active, dual.balance.active)
-        dual!(constraint.voltage.angle, dual.voltage.angle)
-        dual!(constraint.flow.active, dual.flow.active)
-        dual!(constraint.capability.active, dual.capability.active)
-        dual!(constraint.piecewise.active, dual.piecewise.active)
+        dual!(analysis.method.jump, constraint.slack.angle, dual.slack.angle)
+        dual!(analysis.method.jump, constraint.balance.active, dual.balance.active)
+        dual!(analysis.method.jump, constraint.voltage.angle, dual.voltage.angle)
+        dual!(analysis.method.jump, constraint.flow.active, dual.flow.active)
+        dual!(analysis.method.jump, constraint.capability.active, dual.capability.active)
+        dual!(analysis.method.jump, constraint.piecewise.active, dual.piecewise.active)
     end
 end
 

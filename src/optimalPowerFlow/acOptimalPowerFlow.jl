@@ -279,19 +279,19 @@ function solve!(system::PowerSystem, analysis::ACOptimalPowerFlow)
     end
 
     try
-        setdual!(constraint.slack.angle, dual.slack.angle)
-        setdual!(constraint.balance.active, dual.balance.active)
-        setdual!(constraint.balance.reactive, dual.balance.reactive)
-        setdual!(constraint.voltage.magnitude, dual.voltage.magnitude)
-        setdual!(constraint.voltage.angle, dual.voltage.angle)
-        setdual!(constraint.flow.from, dual.flow.from)
-        setdual!(constraint.flow.to, dual.flow.to)
-        setdual!(constraint.capability.active, dual.capability.active)
-        setdual!(constraint.capability.reactive, dual.capability.reactive)
-        setdual!(constraint.capability.lower, dual.capability.lower)
-        setdual!(constraint.capability.upper, dual.capability.upper)
-        setdual!(constraint.piecewise.active, dual.piecewise.active)
-        setdual!(constraint.piecewise.reactive, dual.piecewise.reactive)
+        setdual!(analysis.method.jump, constraint.slack.angle, dual.slack.angle)
+        setdual!(analysis.method.jump, constraint.balance.active, dual.balance.active)
+        setdual!(analysis.method.jump, constraint.balance.reactive, dual.balance.reactive)
+        setdual!(analysis.method.jump, constraint.voltage.magnitude, dual.voltage.magnitude)
+        setdual!(analysis.method.jump, constraint.voltage.angle, dual.voltage.angle)
+        setdual!(analysis.method.jump, constraint.flow.from, dual.flow.from)
+        setdual!(analysis.method.jump, constraint.flow.to, dual.flow.to)
+        setdual!(analysis.method.jump, constraint.capability.active, dual.capability.active)
+        setdual!(analysis.method.jump, constraint.capability.reactive, dual.capability.reactive)
+        setdual!(analysis.method.jump, constraint.capability.lower, dual.capability.lower)
+        setdual!(analysis.method.jump, constraint.capability.upper, dual.capability.upper)
+        setdual!(analysis.method.jump, constraint.piecewise.active, dual.piecewise.active)
+        setdual!(analysis.method.jump, constraint.piecewise.reactive, dual.piecewise.reactive)
     catch
     end
 
@@ -308,48 +308,56 @@ function solve!(system::PowerSystem, analysis::ACOptimalPowerFlow)
     end
 
     if has_duals(analysis.method.jump)
-        dual!(constraint.slack.angle, dual.slack.angle)
-        dual!(constraint.balance.active, dual.balance.active)
-        dual!(constraint.balance.reactive, dual.balance.reactive)
-        dual!(constraint.voltage.magnitude, dual.voltage.magnitude)
-        dual!(constraint.voltage.angle, dual.voltage.angle)
-        dual!(constraint.flow.from, dual.flow.from)
-        dual!(constraint.flow.to, dual.flow.to)
-        dual!(constraint.capability.active, dual.capability.active)
-        dual!(constraint.capability.reactive, dual.capability.reactive)
-        dual!(constraint.capability.lower, dual.capability.lower)
-        dual!(constraint.capability.upper, dual.capability.upper)
-        dual!(constraint.piecewise.active, dual.piecewise.active)
-        dual!(constraint.piecewise.reactive, dual.piecewise.reactive)
+        dual!(analysis.method.jump, constraint.slack.angle, dual.slack.angle)
+        dual!(analysis.method.jump, constraint.balance.active, dual.balance.active)
+        dual!(analysis.method.jump, constraint.balance.reactive, dual.balance.reactive)
+        dual!(analysis.method.jump, constraint.voltage.magnitude, dual.voltage.magnitude)
+        dual!(analysis.method.jump, constraint.voltage.angle, dual.voltage.angle)
+        dual!(analysis.method.jump, constraint.flow.from, dual.flow.from)
+        dual!(analysis.method.jump, constraint.flow.to, dual.flow.to)
+        dual!(analysis.method.jump, constraint.capability.active, dual.capability.active)
+        dual!(analysis.method.jump, constraint.capability.reactive, dual.capability.reactive)
+        dual!(analysis.method.jump, constraint.capability.lower, dual.capability.lower)
+        dual!(analysis.method.jump, constraint.capability.upper, dual.capability.upper)
+        dual!(analysis.method.jump, constraint.piecewise.active, dual.piecewise.active)
+        dual!(analysis.method.jump, constraint.piecewise.reactive, dual.piecewise.reactive)
     end
 end
 
-function dual!(constraint::Dict{Int64, ConstraintRef}, dual::Dict{Int64, Float64})
+function dual!(jump::JuMP.Model, constraint::Dict{Int64, ConstraintRef}, dual::Dict{Int64, Float64})
     @inbounds for (i, value) in constraint
-        dual[i] = JuMP.dual(value::ConstraintRef)
-    end
-end
-
-function dual!(constraint::Dict{Int64, Array{ConstraintRef,1}}, dual::Dict{Int64, Array{Float64,1}})
-    @inbounds for (i, value) in constraint
-        n = length(value)
-        dual[i] = fill(0.0, n)
-        for j = 1:n
-            dual[i][j] = JuMP.dual(value[j]::ConstraintRef)
+        if is_valid(jump, value)
+            dual[i] = JuMP.dual(value::ConstraintRef)
         end
     end
 end
 
-function setdual!(constraint::Dict{Int64, ConstraintRef}, dual::Dict{Int64, Float64})
-    @inbounds for (i, value) in dual
-        set_dual_start_value(constraint[i], value)
+function dual!(jump::JuMP.Model, constraint::Dict{Int64, Array{ConstraintRef,1}}, dual::Dict{Int64, Array{Float64,1}})
+    @inbounds for (i, value) in constraint
+        n = length(value)
+        dual[i] = fill(0.0, n)
+        for j = 1:n
+            if is_valid(jump, value[j])
+                dual[i][j] = JuMP.dual(value[j]::ConstraintRef)
+            end
+        end
     end
 end
 
-function setdual!(constraint::Dict{Int64, Array{ConstraintRef,1}}, dual::Dict{Int64, Array{Float64,1}})
+function setdual!(jump::JuMP.Model, constraint::Dict{Int64, ConstraintRef}, dual::Dict{Int64, Float64})
+    @inbounds for (i, value) in dual
+        if is_valid(jump, constraint[i])
+            set_dual_start_value(constraint[i], value)
+        end
+    end
+end
+
+function setdual!(jump::JuMP.Model, constraint::Dict{Int64, Array{ConstraintRef,1}}, dual::Dict{Int64, Array{Float64,1}})
     @inbounds for (i, value) in dual
         for j in eachindex(value)
-            set_dual_start_value(constraint[i][j], value[j])
+            if is_valid(jump, constraint[i][j])
+                set_dual_start_value(constraint[i][j], value[j])
+            end
         end
     end
 end
