@@ -136,6 +136,14 @@ function dcOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
                 CartesianRealRef(capability),
                 DCPiecewise(piecewise)
             ),
+            DCDual(
+                PolarAngleDual(Dict{Int64, Float64}()),
+                CartesianRealDual(Dict{Int64, Float64}()),
+                PolarAngleDual(Dict{Int64, Float64}()),
+                CartesianRealDual(Dict{Int64, Float64}()),
+                CartesianRealDual(Dict{Int64, Float64}()),
+                DCPiecewiseDual(Dict{Int64, Array{Float64,1}}())
+            ),
             objective
         )
     )
@@ -160,14 +168,27 @@ analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer)
 solve!(system, analysis)
 ```
 """
+
 function solve!(system::PowerSystem, analysis::DCOptimalPowerFlow)
     variable = analysis.method.variable
+    constraint = analysis.method.constraint
+    dual = analysis.method.dual
 
     @inbounds for i = 1:system.bus.number
         set_start_value(variable.angle[i]::VariableRef, analysis.voltage.angle[i])
     end
     @inbounds for i = 1:system.generator.number
         set_start_value(variable.active[i]::VariableRef, analysis.power.generator.active[i])
+    end
+
+    try
+        setdual!(constraint.slack.angle, dual.slack.angle)
+        setdual!(constraint.balance.active, dual.balance.active)
+        setdual!(constraint.voltage.angle, dual.voltage.angle)
+        setdual!(constraint.flow.active, dual.flow.active)
+        setdual!(constraint.capability.active, dual.capability.active)
+        setdual!(constraint.piecewise.active, dual.piecewise.active)
+    catch
     end
 
     optimize!(analysis.method.jump)
@@ -177,6 +198,15 @@ function solve!(system::PowerSystem, analysis::DCOptimalPowerFlow)
     end
     @inbounds for i = 1:system.generator.number
         analysis.power.generator.active[i] = value(variable.active[i]::VariableRef)
+    end
+
+    if has_duals(analysis.method.jump)
+        dual!(constraint.slack.angle, dual.slack.angle)
+        dual!(constraint.balance.active, dual.balance.active)
+        dual!(constraint.voltage.angle, dual.voltage.angle)
+        dual!(constraint.flow.active, dual.flow.active)
+        dual!(constraint.capability.active, dual.capability.active)
+        dual!(constraint.piecewise.active, dual.piecewise.active)
     end
 end
 

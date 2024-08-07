@@ -225,6 +225,14 @@ function acOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
                 CapabilityRef(capabilityActive, capabilityReactive, lower, upper),
                 ACPiecewise(piecewiseActive, piecewiseReactive),
             ),
+            Dual(
+                PolarAngleDual(Dict{Int64, Float64}()),
+                CartesianDual(Dict{Int64, Float64}(), Dict{Int64, Float64}()),
+                PolarDual(Dict{Int64, Float64}(), Dict{Int64, Float64}()),
+                CartesianFlowDual(Dict{Int64, Float64}(), Dict{Int64, Float64}()),
+                CapabilityDual(Dict{Int64, Float64}(), Dict{Int64, Float64}(), Dict{Int64, Float64}(), Dict{Int64, Float64}()),
+                ACPiecewiseDual(Dict{Int64, Array{Float64,1}}(), Dict{Int64, Array{Float64,1}}())
+            ),
             ACObjective(
                 quadratic,
                 ACNonlinear(
@@ -257,14 +265,34 @@ solve!(system, analysis)
 """
 function solve!(system::PowerSystem, analysis::ACOptimalPowerFlow)
     variable = analysis.method.variable
+    constraint = analysis.method.constraint
+    dual = analysis.method.dual
 
     @inbounds for i = 1:system.bus.number
-        set_start_value(variable.magnitude[i]::VariableRef, analysis.voltage.magnitude[i])
-        set_start_value(variable.angle[i]::VariableRef, analysis.voltage.angle[i])
+        set_start_value(variable.magnitude[i]::VariableRef, analysis.voltage.magnitude[i]::Float64)
+        set_start_value(variable.angle[i]::VariableRef, analysis.voltage.angle[i]::Float64)
     end
+
     @inbounds for i = 1:system.generator.number
         set_start_value(variable.active[i]::VariableRef, analysis.power.generator.active[i])
         set_start_value(variable.reactive[i]::VariableRef, analysis.power.generator.reactive[i])
+    end
+
+    try
+        setdual!(constraint.slack.angle, dual.slack.angle)
+        setdual!(constraint.balance.active, dual.balance.active)
+        setdual!(constraint.balance.reactive, dual.balance.reactive)
+        setdual!(constraint.voltage.magnitude, dual.voltage.magnitude)
+        setdual!(constraint.voltage.angle, dual.voltage.angle)
+        setdual!(constraint.flow.from, dual.flow.from)
+        setdual!(constraint.flow.to, dual.flow.to)
+        setdual!(constraint.capability.active, dual.capability.active)
+        setdual!(constraint.capability.reactive, dual.capability.reactive)
+        setdual!(constraint.capability.lower, dual.capability.lower)
+        setdual!(constraint.capability.upper, dual.capability.upper)
+        setdual!(constraint.piecewise.active, dual.piecewise.active)
+        setdual!(constraint.piecewise.reactive, dual.piecewise.reactive)
+    catch
     end
 
     optimize!(analysis.method.jump)
@@ -273,9 +301,56 @@ function solve!(system::PowerSystem, analysis::ACOptimalPowerFlow)
         analysis.voltage.magnitude[i] = value(variable.magnitude[i]::VariableRef)
         analysis.voltage.angle[i] = value(variable.angle[i]::VariableRef)
     end
+
     @inbounds for i = 1:system.generator.number
         analysis.power.generator.active[i] = value(variable.active[i]::VariableRef)
         analysis.power.generator.reactive[i] = value(variable.reactive[i]::VariableRef)
+    end
+
+    if has_duals(analysis.method.jump)
+        dual!(constraint.slack.angle, dual.slack.angle)
+        dual!(constraint.balance.active, dual.balance.active)
+        dual!(constraint.balance.reactive, dual.balance.reactive)
+        dual!(constraint.voltage.magnitude, dual.voltage.magnitude)
+        dual!(constraint.voltage.angle, dual.voltage.angle)
+        dual!(constraint.flow.from, dual.flow.from)
+        dual!(constraint.flow.to, dual.flow.to)
+        dual!(constraint.capability.active, dual.capability.active)
+        dual!(constraint.capability.reactive, dual.capability.reactive)
+        dual!(constraint.capability.lower, dual.capability.lower)
+        dual!(constraint.capability.upper, dual.capability.upper)
+        dual!(constraint.piecewise.active, dual.piecewise.active)
+        dual!(constraint.piecewise.reactive, dual.piecewise.reactive)
+    end
+end
+
+function dual!(constraint::Dict{Int64, ConstraintRef}, dual::Dict{Int64, Float64})
+    @inbounds for (i, value) in constraint
+        dual[i] = JuMP.dual(value::ConstraintRef)
+    end
+end
+
+function dual!(constraint::Dict{Int64, Array{ConstraintRef,1}}, dual::Dict{Int64, Array{Float64,1}})
+    @inbounds for (i, value) in constraint
+        n = length(value)
+        dual[i] = fill(0.0, n)
+        for j = 1:n
+            dual[i][j] = JuMP.dual(value[j]::ConstraintRef)
+        end
+    end
+end
+
+function setdual!(constraint::Dict{Int64, ConstraintRef}, dual::Dict{Int64, Float64})
+    @inbounds for (i, value) in dual
+        set_dual_start_value(constraint[i], value)
+    end
+end
+
+function setdual!(constraint::Dict{Int64, Array{ConstraintRef,1}}, dual::Dict{Int64, Array{Float64,1}})
+    @inbounds for (i, value) in dual
+        for j in eachindex(value)
+            set_dual_start_value(constraint[i][j], value[j])
+        end
     end
 end
 

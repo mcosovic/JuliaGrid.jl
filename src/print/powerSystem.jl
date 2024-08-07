@@ -228,7 +228,7 @@ function formatBusData(system::PowerSystem, analysis::AC, label::L, scale::Dict{
             fmax(fmt, width, show, current.injection.magnitude, i, scaleCurrent(prefix, system, i), "Current Injection Magnitude")
             fmax(fmt, width, show, current.injection.angle, i, scale["ψ"], "Current Injection Angle")
         else
-            maxV = initMax(prefix.currentMagnitude)
+            maxV = initMax(prefix.voltageMagnitude)
             maxI = initMax(prefix.currentMagnitude)
 
             @inbounds for (label, i) in system.bus.label

@@ -134,6 +134,7 @@ system14 = powerSystem(string(pathData, "case14optimal.m"))
     analysis = acOptimalPowerFlow(system14, Ipopt.Optimizer)
     set_silent(analysis.method.jump)
     solve!(system14, analysis)
+    solve!(system14, analysis)
 
     ####### Test Voltages #######
     @test analysis.voltage.magnitude ≈ matpower14["voltageMagnitude"] atol = 1e-6
@@ -187,6 +188,7 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     ################ Modified IEEE 30-bus Test Case ################
     analysis = dcOptimalPowerFlow(system30, HiGHS.Optimizer)
     set_silent(analysis.method.jump)
+    solve!(system30, analysis)
     solve!(system30, analysis)
     power!(system30, analysis)
 

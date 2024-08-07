@@ -435,8 +435,8 @@ JuMP.objective_value(analysis.method.jump)
 
 ---
 
-##### Lagrange Multipliers
-To obtain the values of dual variables or Lagrange multipliers, which generally represent the shadow prices or marginal costs associated with constraints, users can use the [`dual`](https://jump.dev/JuMP.jl/stable/api/JuMP/#dual) function, for example:
+##### Dual Variables
+To obtain the values of dual variables, also known as Lagrange multipliers or Kuhn-Tucker multipliers, which represent the shadow prices or marginal costs associated with constraints, users can use the [`dual`](https://jump.dev/JuMP.jl/stable/api/JuMP/#dual) function:
 ```@repl ACOptimalPowerFlow
 JuMP.dual(analysis.method.constraint.balance.active[1])
 ```

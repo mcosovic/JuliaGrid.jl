@@ -111,9 +111,19 @@ struct CartesianFlowRef
     to::Dict{Int64, ConstraintRef}
 end
 
+struct CartesianFlowDual
+    from::Dict{Int64, Float64}
+    to::Dict{Int64, Float64}
+end
+
 struct ACPiecewise
     active::Dict{Int64, Array{ConstraintRef,1}}
     reactive::Dict{Int64, Array{ConstraintRef,1}}
+end
+
+struct ACPiecewiseDual
+    active::Dict{Int64, Array{Float64,1}}
+    reactive::Dict{Int64, Array{Float64,1}}
 end
 
 struct CapabilityRef
@@ -123,6 +133,13 @@ struct CapabilityRef
     upper::Dict{Int64, ConstraintRef}
 end
 
+struct CapabilityDual
+    active::Dict{Int64, Float64}
+    reactive::Dict{Int64, Float64}
+    lower::Dict{Int64, Float64}
+    upper::Dict{Int64, Float64}
+end
+
 struct Constraint
     slack::PolarAngleRef
     balance::CartesianRef
@@ -130,6 +147,15 @@ struct Constraint
     flow::CartesianFlowRef
     capability::CapabilityRef
     piecewise::ACPiecewise
+end
+
+struct Dual
+    slack::PolarAngleDual
+    balance::CartesianDual
+    voltage::PolarDual
+    flow::CartesianFlowDual
+    capability::CapabilityDual
+    piecewise::ACPiecewiseDual
 end
 
 ######### AC Optimal Power Flow ##########
@@ -156,6 +182,7 @@ mutable struct ACOptimalPowerFlowMethod
     jump::JuMP.Model
     variable::ACVariable
     constraint::Constraint
+    dual::Dual
     objective::ACObjective
 end
 
@@ -177,6 +204,10 @@ struct DCPiecewise
     active::Dict{Int64, Array{ConstraintRef,1}}
 end
 
+struct DCPiecewiseDual
+    active::Dict{Int64, Array{Float64,1}}
+end
+
 struct DCConstraint
     slack::PolarAngleRef
     balance::CartesianRealRef
@@ -186,10 +217,20 @@ struct DCConstraint
     piecewise::DCPiecewise
 end
 
+struct DCDual
+    slack::PolarAngleDual
+    balance::CartesianRealDual
+    voltage::PolarAngleDual
+    flow::CartesianRealDual
+    capability::CartesianRealDual
+    piecewise::DCPiecewiseDual
+end
+
 mutable struct DCOptimalPowerFlowMethod
     jump::JuMP.Model
     variable::DCVariable
     constraint::DCConstraint
+    dual::DCDual
     objective::QuadExpr
 end
 

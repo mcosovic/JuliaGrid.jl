@@ -24,8 +24,17 @@ mutable struct PolarRef
     angle::Dict{Int64, ConstraintRef}
 end
 
+mutable struct PolarDual
+    magnitude::Dict{Int64, Float64}
+    angle::Dict{Int64, Float64}
+end
+
 mutable struct PolarAngleRef
     angle::Dict{Int64, ConstraintRef}
+end
+
+mutable struct PolarAngleDual
+    angle::Dict{Int64, Float64}
 end
 
 ########### Cartesian Coordinate ###########
@@ -49,6 +58,15 @@ end
 mutable struct CartesianRef
     active::Dict{Int64, ConstraintRef}
     reactive::Dict{Int64, ConstraintRef}
+end
+
+mutable struct CartesianDual
+    active::Dict{Int64, Float64}
+    reactive::Dict{Int64, Float64}
+end
+
+mutable struct CartesianRealDual
+    active::Dict{Int64, Float64}
 end
 
 mutable struct CartesianRealRef

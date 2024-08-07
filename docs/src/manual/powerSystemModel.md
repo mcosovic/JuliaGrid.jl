@@ -693,7 +693,7 @@ cost!(system; label = "Generator 1", active = 2, polynomial = [1100.0; 500.0; 15
 ```
 In essence, what we have accomplished is the establishment of a cost function depicted as ``f(P_{\text{g}1}) = 1100 P_{\text{g}1}^2 + 500 P_{\text{g}1} + 150`` through the code provided. In general, when constructing a polynomial cost function, the coefficients must be ordered from the highest degree to the lowest.
 
-The default input units are in per-units (pu), with coefficients of the cost function having units of currency/pu²hr for 1100, currency/puhr for 500, and currency/hr for 150. Therefore, the coefficients are stored exactly as entered:
+The default input units are in per-units (pu), with coefficients of the cost function having units of currency/pu²-hr for 1100, currency/pu-hr for 500, and currency/hr for 150. Therefore, the coefficients are stored exactly as entered:
 ```@repl addActiveCost
 system.generator.cost.active.polynomial
 ```
