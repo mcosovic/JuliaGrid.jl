@@ -673,3 +673,44 @@ function startingPrimal!(system::PowerSystem, analysis::ACOptimalPowerFlow)
         analysis.power.generator.reactive[i] = system.generator.output.reactive[i]
     end
 end
+
+"""
+    startingDual!(system::PowerSystem, analysis::ACOptimalPowerFlow)
+
+The function removes all values of the dual variables.
+
+# Updates
+This function only updates the `dual` field of the `ACOptimalPowerFlow`
+type.
+
+# Example
+```jldoctest
+system = powerSystem("case14.h5")
+acModel!(system)
+
+analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
+solve!(system, analysis)
+
+updateBus!(system, analysis; label = 14, reactive = 0.13, magnitude = 1.2, angle = -0.17)
+
+startingDual!(system, analysis)
+solve!(system, analysis)
+```
+"""
+function startingDual!(system::PowerSystem, analysis::ACOptimalPowerFlow)
+    dual = analysis.method.dual
+
+    dual.slack.angle = Dict{Int64, Float64}()
+    dual.balance.active = Dict{Int64, Float64}()
+    dual.balance.reactive = Dict{Int64, Float64}()
+    dual.voltage.magnitude = Dict{Int64, Float64}()
+    dual.voltage.angle = Dict{Int64, Float64}()
+    dual.flow.from = Dict{Int64, Float64}()
+    dual.flow.to = Dict{Int64, Float64}()
+    dual.capability.active = Dict{Int64, Float64}()
+    dual.capability.reactive = Dict{Int64, Float64}()
+    dual.capability.lower = Dict{Int64, Float64}()
+    dual.capability.upper = Dict{Int64, Float64}()
+    dual.piecewise.active = Dict{Int64, Array{Float64,1}}()
+    dual.piecewise.reactive = Dict{Int64, Array{Float64,1}}()
+end

@@ -357,7 +357,7 @@ function print(io::IO, label::OrderedDict{String, Int64}, data1::Union{Array{Flo
     end
 end
 
-function print(io::IO, label::OrderedDict{String, Int64}, obj::Dict{Int64, ConstraintRef})
+function print(io::IO, label::OrderedDict{String, Int64}, obj::Union{Dict{Int64, ConstraintRef}, Dict{Int64, Float64}})
     for (key, value) in label
         try
             println(io::IO, key, ": ", obj[value])
@@ -365,6 +365,7 @@ function print(io::IO, label::OrderedDict{String, Int64}, obj::Dict{Int64, Const
         end
     end
 end
+
 
 function print(io::IO, obj::Dict{Int64, ConstraintRef})
     for key in keys(sort(obj))

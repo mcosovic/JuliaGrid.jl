@@ -111,7 +111,7 @@ struct CartesianFlowRef
     to::Dict{Int64, ConstraintRef}
 end
 
-struct CartesianFlowDual
+mutable struct CartesianFlowDual
     from::Dict{Int64, Float64}
     to::Dict{Int64, Float64}
 end
@@ -121,7 +121,7 @@ struct ACPiecewise
     reactive::Dict{Int64, Array{ConstraintRef,1}}
 end
 
-struct ACPiecewiseDual
+mutable struct ACPiecewiseDual
     active::Dict{Int64, Array{Float64,1}}
     reactive::Dict{Int64, Array{Float64,1}}
 end
@@ -133,7 +133,7 @@ struct CapabilityRef
     upper::Dict{Int64, ConstraintRef}
 end
 
-struct CapabilityDual
+mutable struct CapabilityDual
     active::Dict{Int64, Float64}
     reactive::Dict{Int64, Float64}
     lower::Dict{Int64, Float64}
