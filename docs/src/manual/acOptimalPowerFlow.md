@@ -503,6 +503,7 @@ The primal starting values will now be identical to those that would be obtained
 Using the [`startingDual!`](@ref startingDual!) function, users can clear all dual variable values, resetting them to their default state:
 ```@example ACOptimalPowerFlow
 startingDual!(system, analysis)
+nothing # hide
 ```
 
 ---
