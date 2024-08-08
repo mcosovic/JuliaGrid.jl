@@ -204,7 +204,7 @@ struct DCPiecewise
     active::Dict{Int64, Array{ConstraintRef,1}}
 end
 
-struct DCPiecewiseDual
+mutable struct DCPiecewiseDual
     active::Dict{Int64, Array{Float64,1}}
 end
 
