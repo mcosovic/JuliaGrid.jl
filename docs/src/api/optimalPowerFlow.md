@@ -18,6 +18,7 @@ using JuliaGrid, Ipopt, HiGHS
 * [`dcOptimalPowerFlow`](@ref dcOptimalPowerFlow)
 * [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow))
 * [`startingPrimal!`](@ref startingPrimal!(::PowerSystem, ::DCOptimalPowerFlow))
+* [`startingDual!`](@ref startingDual!(::PowerSystem, ::DCOptimalPowerFlow))
 
 ---
 
@@ -36,4 +37,5 @@ startingDual!(::PowerSystem, ::ACOptimalPowerFlow)
 dcOptimalPowerFlow
 solve!(::PowerSystem, ::DCOptimalPowerFlow)
 startingPrimal!(::PowerSystem, ::DCOptimalPowerFlow)
+startingDual!(::PowerSystem, ::DCOptimalPowerFlow)
 ```

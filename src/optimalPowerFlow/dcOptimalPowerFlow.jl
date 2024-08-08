@@ -333,3 +333,37 @@ function startingPrimal!(system::PowerSystem, analysis::DCOptimalPowerFlow)
         analysis.power.generator.active[i] = system.generator.output.active[i]
     end
 end
+
+"""
+    startingDual!(system::PowerSystem, analysis::DCOptimalPowerFlow)
+
+The function removes all values of the dual variables.
+
+# Updates
+This function only updates the `dual` field of the `DCOptimalPowerFlow`
+type.
+
+# Example
+```jldoctest
+system = powerSystem("case14.h5")
+dcModel!(system)
+
+analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer)
+solve!(system, analysis)
+
+updateBus!(system, analysis; label = 14, active = 0.1, angle = -0.17)
+
+startingDual!(system, analysis)
+solve!(system, analysis)
+```
+"""
+function startingDual!(system::PowerSystem, analysis::DCOptimalPowerFlow)
+    dual = analysis.method.dual
+
+    dual.slack.angle = Dict{Int64, Float64}()
+    dual.balance.active = Dict{Int64, Float64}()
+    dual.voltage.angle = Dict{Int64, Float64}()
+    dual.flow.active = Dict{Int64, Float64}()
+    dual.capability.active = Dict{Int64, Float64}()
+    dual.piecewise.active = Dict{Int64, Array{Float64,1}}()
+end
