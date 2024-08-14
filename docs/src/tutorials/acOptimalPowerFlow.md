@@ -57,8 +57,8 @@ The AC optimal power flow problem can be formulated as follows:
     & & & h_{Q_i}(\mathbf {Q}_{\text{g}}, \mathbf {V}, \bm{\Theta}) = 0,\;\;\;  \forall i \in \mathcal{N} \\[5pt]
     & & & V_{i}^\text{min} \leq V_i \leq V_{i}^\text{max},\;\;\; \forall i \in \mathcal{N} \\
     & & & \theta_{ij}^\text{min} \leq \theta_i - \theta_j \leq \theta_{ij}^\text{max},\;\;\; \forall (i,j) \in \mathcal{E} \\[5pt]
-    & & & h_{ij}(\mathbf {V}, \bm{\Theta}) \leq F_{ij}^{\text{max}},\;\;\; \forall (i,j) \in \mathcal{E} \\
-    & & & h_{ji}(\mathbf {V}, \bm{\Theta}) \leq F_{ij}^{\text{max}},\;\;\; \forall (i,j) \in \mathcal{E} \\[5pt]
+    & & & |h_{ij}(\mathbf {V}, \bm{\Theta})| \leq F_{ij}^{\text{max}},\;\;\; \forall (i,j) \in \mathcal{E} \\
+    & & & |h_{ji}(\mathbf {V}, \bm{\Theta})| \leq F_{ij}^{\text{max}},\;\;\; \forall (i,j) \in \mathcal{E} \\[5pt]
     & & & P_{\text{g}i}^\text{min} \leq P_{\text{g}i} \leq P_{\text{g}i}^\text{max} ,\;\;\; \forall i \in \mathcal{S} \\
     & & & Q_{\text{g}i}^\text{min} \leq Q_{\text{g}i} \leq Q_{\text{g}i}^\text{max} ,\;\;\; \forall i \in \mathcal{S}.
 \end{aligned}
@@ -285,8 +285,8 @@ The inequality constraints related to the branch flow ratings can be associated 
 Specifically, `type = 1` is used for apparent power flow, `type = 2` for active power flow, and `type = 3` for current magnitude. These constraints can be expressed using the equations ``h_{ij}(\mathbf {V}, \bm{\Theta})`` and ``h_{ji}(\mathbf {V}, \bm{\Theta})``, representing the rating constraints at the from-bus and to-bus ends of each branch, respectively:
 ```math
 \begin{aligned}
-    h_{ij}(\mathbf {V}, \bm{\Theta}) \leq F_{ij}^{\text{max}},\;\;\; \forall (i,j) \in \mathcal{E} \\
-    h_{ji}(\mathbf {V}, \bm{\Theta}) \leq F_{ij}^{\text{max}},\;\;\; \forall (i,j) \in \mathcal{E}.
+    |h_{ij}(\mathbf {V}, \bm{\Theta})| \leq F_{ij}^{\text{max}},\;\;\; \forall (i,j) \in \mathcal{E} \\
+    |h_{ji}(\mathbf {V}, \bm{\Theta})| \leq F_{ij}^{\text{max}},\;\;\; \forall (i,j) \in \mathcal{E}.
 \end{aligned}
 ```
 These rating constraints ensure that the power flow or current in each branch does not exceed the specified limits, helping to maintain the security and reliability of the power system. The upper bounds are determined based on the vector ``\mathbf{F}_{\text{max}} = [F_{ij}^\text{max}]``, ``(i,j) \in \mathcal{E}``. These bounds can be accessed using the following variable:
@@ -294,7 +294,7 @@ These rating constraints ensure that the power flow or current in each branch do
 𝐅ₘₐₓ = system.branch.flow.longTerm
 ```
 
-By default, JuliaGrid employs the rating constraints linked with the apparent power flow (type = 1). This constraint at the from-bus is specified as:
+By default, JuliaGrid employs the rating constraints linked with the apparent power flow (`type = 1`). This constraint at the from-bus is specified as:
 ```math
     h_{ij}(\mathbf {V}, \bm{\Theta}) = \sqrt{  A_{ij} V_i^4 + B_{ij} V_i^2 V_j^2 - 2 [C_{ij} \cos(\theta_{ij} - \phi_{ij}) - D_{ij} \sin(\theta_{ij} - \phi_{ij})]V_i^3 V_j},
 ```
@@ -316,14 +316,6 @@ where:
     A_{ji} = (g_{ij} + g_{\text{s}i})^2+(b_{ij}+b_{\text{s}i})^2, \;\;\; B_{ji} = \cfrac{g_{ij}^2+b_{ij}^2}{\tau_{ij}^2} \\
     C_{ji} = \cfrac{g_{ij}(g_{ij}+g_{\text{s}i})+b_{ij}(b_{ij}+b_{\text{s}i})}{\tau_{ij}}, \;\;\; D_{ji} = \cfrac{g_{ij}b_{\text{s}i} - b_{ij}g_{\text{s}i}}{\tau_{ij}}.
   \end{gathered}
-```
-
-Since the quantity under the square root is always positive, these constraints are implemented by squaring them for computational efficiency. Thus, the squared rating constraints for the apparent power flow at the from-bus and to-bus ends of each branch can be expressed as follows:
-```math
-\begin{aligned}
-    h_{ij}(\mathbf {V}, \bm{\Theta})^2 \leq (F_{ij}^{\text{max}})^2, \;\;\; \forall (i,j) \in \mathcal{E} \\
-    h_{ji}(\mathbf {V}, \bm{\Theta})^2 \leq (F_{ij}^{\text{max}})^2, \;\;\; \forall (i,j) \in \mathcal{E}.
-\end{aligned}
 ```
 
 ---
@@ -357,13 +349,6 @@ The last option involves defining the `longTerm` keyword for the current magnitu
     h_{ij}(\mathbf {V}, \bm{\Theta}) &= \sqrt{A_{ij}V_i^2 + B_{ij}V_j^2 - 2[C_{ij} \cos(\theta_{ij} - \phi_{ij}) - D_{ij}\sin(\theta_{ij} - \phi_{ij})]V_iV_j} \\
     h_{ji}(\mathbf {V}, \bm{\Theta}) &= \sqrt{A_{ji}V_j^2 + B_{ji}V_i^2 - 2[C_{ji} \cos(\theta_{ij} - \phi_{ij}) + D_{ji}\sin(\theta_{ij} - \phi_{ij})]V_iV_j}.
   \end{aligned}
-```
-These coefficients remain the same as those specified for apparent powers. Similarly, for apparent power, these constraints are reformulated as squared inequalities:
-```math
-\begin{aligned}
-    h_{ij}(\mathbf {V}, \bm{\Theta})^2 \leq (F_{ij}^{\text{max}})^2, \;\;\; \forall (i,j) \in \mathcal{E} \\
-    h_{ji}(\mathbf {V}, \bm{\Theta})^2 \leq (F_{ij}^{\text{max}})^2, \;\;\; \forall (i,j) \in \mathcal{E}.
-\end{aligned}
 ```
 
 ---
