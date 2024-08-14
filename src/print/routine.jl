@@ -166,6 +166,7 @@ function printScale(system::PowerSystem, prefix::PrefixLive)
         "θ" => prefix.voltageAngle != 0.0 ? 1 / prefix.voltageAngle : 1.0,
         "P" => prefix.activePower != 0.0 ? system.base.power.value * system.base.power.prefix / prefix.activePower : 1.0,
         "Q" => prefix.reactivePower != 0.0 ? system.base.power.value * system.base.power.prefix / prefix.reactivePower : 1.0,
+        "S" => prefix.apparentPower != 0.0 ? system.base.power.value * system.base.power.prefix / prefix.apparentPower : 1.0,
         "ψ" => prefix.currentAngle != 0.0 ? 1 / prefix.currentAngle : 1.0,
     )
 end
@@ -343,14 +344,6 @@ function hasMorePrint(width::Dict{String, Int64}, show::Dict{String, Bool}, titl
     return hasMore
 end
 
-function titlemax(width::Dict{String, Int64}, show::Dict{String, Bool}, key1::String, key2::String, title::String)
-    if show[key1] && !show[key2]
-        width[key1] = max(textwidth(title), width[key1])
-    elseif !show[key1] && show[key2]
-        width[key2] = max(textwidth(title), width[key2])
-   end
-end
-
 function setupPrintSystem(fmt::Dict{String, String}, width::Dict{String, Int64}, show::Dict{String, Bool}, delimiter::String, style::Bool; label::Bool = true, dash::Bool = false)
     pfmt = Dict{String, Format}()
     maxLine = 0
@@ -393,6 +386,18 @@ end
 function printf(io::IO, fmt::Dict{String, Format}, show::Dict{String, Bool}, width::Dict{String, Int64}, vector::Array{Float64,1}, i::Int64, scale::Float64, key::String)
     if show[key]
         print(io, format(fmt[key], width[key], vector[i] * scale))
+    end
+end
+
+function printf(io::IO, fmt::Dict{String, Format}, show::Dict{String, Bool}, width::Dict{String, Int64}, dual::Dict{Int64, Float64}, i::Int64, scale::Float64, key::String)
+    if show[key]
+        print(io, format(fmt[key], width[key], dual[i] / scale))
+    end
+end
+
+function printf(io::IO, fmt::Dict{String, Format}, show::Dict{String, Bool}, width::Dict{String, Int64}, constraint::Dict{Int64, ConstraintRef}, i::Int64, scale::Float64, key::String)
+    if show[key]
+        print(io, format(fmt[key], width[key], value(constraint[i]) * scale))
     end
 end
 
@@ -475,4 +480,97 @@ function printf(io::IO, show::Dict{String, Bool}, delimiter::String, key::String
     if show[key]
         print(io, format(Format("$delimiter%s"), value))
     end
+end
+
+function printf(io::IO, width::Dict{String, Int64}, show::Dict{String, Bool}, delimiter::String, key1::String, key2::String, key3::String, key4::String, title::String)
+    countTrue = show[key1] + show[key2] + show[key3] + show[key4]
+    span = width[key1] * show[key1] + width[key2] * show[key2] + width[key3] * show[key3] + width[key4] * show[key4]
+
+    if countTrue == 4
+        span += 9
+    elseif countTrue == 3
+        span += 6
+    elseif countTrue == 2
+        span += 3
+    end
+
+    if countTrue != 0
+        print(io, format(Format(" %*s%s%*s $delimiter"), floor(Int, (span - textwidth(title)) / 2), "", title, ceil(Int, (span - textwidth(title)) / 2) , ""))
+    end
+
+    return span
+end
+
+function printf(io::IO, fmt::Format, span::Int64)
+    if span != 0
+        print(io, format(fmt, span, ""))
+    end
+end
+
+function titlemax(width::Dict{String, Int64}, show::Dict{String, Bool}, key1::String, key2::String, title::String)
+    if show[key1] && !show[key2]
+        width[key1] = max(textwidth(title), width[key1])
+    elseif !show[key1] && show[key2]
+        width[key2] = max(textwidth(title), width[key2])
+    elseif show[key1] && show[key2]
+        if width[key1] + width[key2] < textwidth(title)
+            width[key2] = max(textwidth(title) - width[key1] - 3, width[key2])
+        end
+   end
+end
+
+function titlemax(width::Dict{String, Int64}, show::Dict{String, Bool}, key1::String, key2::String, key3::String, key4::String, title::String)
+    countTrue = show[key1] + show[key2] + show[key3] + show[key4]
+
+    if countTrue == 1
+        if show[key1]
+            width[key1] = max(textwidth(title), width[key1])
+        elseif show[key2]
+            width[key2] = max(textwidth(title), width[key2])
+        elseif show[key3]
+            width[key3] = max(textwidth(title), width[key3])
+        elseif show[key4]
+            width[key4] = max(textwidth(title), width[key4])
+        end
+    elseif countTrue == 2
+        if width[key1] * show[key1] +  width[key2] * show[key2] + width[key3] * show[key3] +  width[key4] * show[key4] < textwidth(title)
+            if show[key4]
+                width[key4] = max(textwidth(title) - width[key1] * show[key1] - width[key2] * show[key2] - width[key3] * show[key3] - 3, width[key4])
+            elseif show[key3]
+                width[key3] = max(textwidth(title) - width[key1] * show[key1] - width[key2] * show[key2] - width[key4] * show[key4] - 3, width[key3])
+            elseif show[key2]
+                width[key2] = max(textwidth(title) - width[key1] * show[key1] - width[key3] * show[key3] - width[key4] * show[key4] - 3, width[key2])
+            end
+        end
+    end
+end
+
+function minmaxPrimal(show::Dict{String, Bool}, constraint::ConstraintRef, scale::Float64, minmaxprimal::Array{Float64,1}, key::String)
+    if show[key]
+        primalValue = value(constraint) * scale
+        minmaxprimal[1] = max(primalValue, minmaxprimal[1])
+        minmaxprimal[2] = min(primalValue, minmaxprimal[2])
+    end
+
+    return minmaxprimal
+end
+
+function minmaxDual(show::Dict{String, Bool}, dual::Float64, scale::Float64, minmaxdual::Array{Float64,1}, key::String)
+    if show[key]
+        dualValue = dual / scale
+        minmaxdual[1] = max(dualValue, minmaxdual[1])
+        minmaxdual[2] = min(dualValue, minmaxdual[2])
+    end
+
+    return minmaxdual
+end
+
+function minmaxValue(show::Dict{String, Bool}, vector::Array{Float64,1}, i::Int64, scale::Float64, minmavalue::Array{Float64,1}, key::String)
+    if show[key]
+        val = vector[i] * scale
+        minmavalue[1] = max(val, minmavalue[1])
+        minmavalue[2] = min(val, minmavalue[2])
+    end
+
+    return minmavalue
 end

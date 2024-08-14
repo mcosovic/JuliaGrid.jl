@@ -82,9 +82,9 @@ macro power(active::Symbol, reactive::Symbol, apparent::Symbol)
     suffixUser = parseSuffix(unitList.reactivePowerLive, unitList.reactivePower, "reactive power")
     prefix.reactivePower = parsePrefix(unitList.reactivePowerLive, suffixUser)
 
-    apparentString = string(apparent)
-    suffixUser = parseSuffix(apparentString, unitList.apparentPower, "apparent power")
-    prefix.apparentPower = parsePrefix(apparentString, suffixUser)
+    unitList.apparentPowerLive = string(apparent)
+    suffixUser = parseSuffix(unitList.apparentPowerLive, unitList.apparentPower, "apparent power")
+    prefix.apparentPower = parsePrefix(unitList.apparentPowerLive, suffixUser)
 end
 
 """

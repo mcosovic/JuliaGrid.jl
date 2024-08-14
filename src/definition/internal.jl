@@ -268,6 +268,7 @@ Base.@kwdef mutable struct UnitList
     voltageAngleLive::String = "rad"
     activePowerLive::String = "pu"
     reactivePowerLive::String = "pu"
+    apparentPowerLive::String = "pu"
     currentMagnitudeLive::String = "pu"
     currentAngleLive::String = "rad"
 end

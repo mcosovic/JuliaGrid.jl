@@ -523,22 +523,22 @@ function addFlow(system::PowerSystem, jump::JuMP.Model, magnitude::Vector{Variab
             Dji = βij * (gij * bsi - bij * gsi)
 
             if branch.flow.type[i] == 1
-                refFrom[i] = @constraint(jump, Aij * Vi^4 + Bij * Vi^2 * Vj^2 - 2 * Vi^3 * Vj * (Cij * cosθ - Dij * sinθ) <= branch.flow.longTerm[i]^2)
-                refTo[i] = @constraint(jump, Aji * Vj^4 + Bij * Vi^2 * Vj^2 - 2 * Vi * Vj^3 * (Cji * cosθ + Dji * sinθ) <= branch.flow.longTerm[i]^2)
+                refFrom[i] = @constraint(jump, 0 <= sqrt(Aij * Vi^4 + Bij * Vi^2 * Vj^2 - 2 * Vi^3 * Vj * (Cij * cosθ - Dij * sinθ)) <= branch.flow.longTerm[i])
+                refTo[i] = @constraint(jump, 0 <= sqrt(Aji * Vj^4 + Bij * Vi^2 * Vj^2 - 2 * Vi * Vj^3 * (Cji * cosθ + Dji * sinθ)) <= branch.flow.longTerm[i])
             elseif branch.flow.type[i] == 3
-                refFrom[i] = @constraint(jump, Aij * Vi^2 + Bij * Vj^2 - 2 * Vi * Vj * (Cij * cosθ - Dij * sinθ) <= branch.flow.longTerm[i]^2)
-                refTo[i] = @constraint(jump, Aji * Vj^2 + Bij * Vi^2 - 2 * Vi * Vj * (Cji * cosθ + Dji * sinθ) <= branch.flow.longTerm[i]^2)
+                refFrom[i] = @constraint(jump,  0 <= sqrt(Aij * Vi^2 + Bij * Vj^2 - 2 * Vi * Vj * (Cij * cosθ - Dij * sinθ)) <= branch.flow.longTerm[i])
+                refTo[i] = @constraint(jump,  0 <= sqrt(Aji * Vj^2 + Bij * Vi^2 - 2 * Vi * Vj * (Cji * cosθ + Dji * sinθ)) <= branch.flow.longTerm[i])
             end
         elseif branch.flow.type[i] == 2
             if gij != 0 && bij != 0
-                refFrom[i] = @constraint(jump, βij^2 * (gij + gsi) * Vi^2 - βij * Vi * Vj * (gij * cosθ + bij * sinθ) <= branch.flow.longTerm[i])
-                refTo[i] = @constraint(jump, (gij + gsi) * Vj^2 - βij * Vi * Vj * (gij * cosθ - bij * sinθ) <= branch.flow.longTerm[i])
+                refFrom[i] = @constraint(jump, -branch.flow.longTerm[i] <= βij^2 * (gij + gsi) * Vi^2 - βij * Vi * Vj * (gij * cosθ + bij * sinθ) <= branch.flow.longTerm[i])
+                refTo[i] = @constraint(jump, -branch.flow.longTerm[i] <= (gij + gsi) * Vj^2 - βij * Vi * Vj * (gij * cosθ - bij * sinθ) <= branch.flow.longTerm[i])
             elseif gij != 0
-                refFrom[i] = @constraint(jump, βij^2 * (gij + gsi) * Vi^2 - βij * Vi * Vj * gij * cosθ  <= branch.flow.longTerm[i])
-                refTo[i] = @constraint(jump, (gij + gsi) * Vj^2 - βij * Vi * Vj * gij * cosθ <= branch.flow.longTerm[i])
+                refFrom[i] = @constraint(jump, -branch.flow.longTerm[i] <= βij^2 * (gij + gsi) * Vi^2 - βij * Vi * Vj * gij * cosθ  <= branch.flow.longTerm[i])
+                refTo[i] = @constraint(jump, -branch.flow.longTerm[i] <= (gij + gsi) * Vj^2 - βij * Vi * Vj * gij * cosθ <= branch.flow.longTerm[i])
             elseif bij != 0
-                refFrom[i] = @constraint(jump, βij^2 * (gij + gsi) * Vi^2 - βij * Vi * Vj * bij * sinθ <= branch.flow.longTerm[i])
-                refTo[i] = @constraint(jump, (gij + gsi) * Vj^2 + βij * Vi * Vj * bij * sinθ <= branch.flow.longTerm[i])
+                refFrom[i] = @constraint(jump, -branch.flow.longTerm[i] <= βij^2 * (gij + gsi) * Vi^2 - βij * Vi * Vj * bij * sinθ <= branch.flow.longTerm[i])
+                refTo[i] = @constraint(jump, -branch.flow.longTerm[i] <= (gij + gsi) * Vj^2 + βij * Vi * Vj * bij * sinθ <= branch.flow.longTerm[i])
             end
         end
     end
