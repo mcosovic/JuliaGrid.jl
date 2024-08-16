@@ -179,7 +179,7 @@ print(system.branch.label, analysis.method.constraint.flow.active)
 ```
 
 !!! note "Info"
-    Please note that if the flow constraints are set to `minFromBus = 0.0` and `maxFromBus = 0.0` for the corresponding branch, JuliGrid will omit the corresponding inequality constraint at the from-bus end of the branch.
+    If the branch flow limits are set to `minFromBus = 0.0` and `maxFromBus = 0.0` for the corresponding branch, JuliGrid will omit the corresponding inequality constraint.
 
 By employing the [`updateBranch!`](@ref updateBranch!) function, we have the ability to modify these specific constraints, for example:
 ```@example DCOptimalPowerFlow

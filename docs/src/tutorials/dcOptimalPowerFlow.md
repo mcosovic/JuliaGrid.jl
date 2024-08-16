@@ -228,9 +228,9 @@ The inequality constraint related to active power flow is used to represent ther
 P_{ij}^{\text{min}} \leq h_{P_{ij}}(\theta_i, \theta_j) \leq P_{ij}^{\text{max}},\;\;\; \forall (i,j) \in \mathcal{E}.
 ```
 
-The branch flow limits at the from-bus, denoted as ``\mathbf{F}_{\text{f}} = [F_{ij}^\text{min}, F_{ij}^\text{max}]`` , can be retrieved as follows:
+The branch flow limits at the from-bus, denoted as ``\mathbf{P}_{\text{f}} = [P_{ij}^\text{min}, P_{ij}^\text{max}]`` , can be retrieved as follows:
 ```@repl DCOptimalPowerFlow
-𝐅ₒ = [system.branch.flow.minFromBus system.branch.flow.maxFromBus]
+𝐏ₒ = [system.branch.flow.minFromBus system.branch.flow.maxFromBus]
 ```
 
 The active power flow at branch ``(i,j) \in \mathcal{E}`` can be derived using the [Branch Network Equations](@ref DCBranchNetworkEquationsTutorials) and is given by:
