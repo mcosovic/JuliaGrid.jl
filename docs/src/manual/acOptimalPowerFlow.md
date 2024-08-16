@@ -144,7 +144,7 @@ print(system.bus.label, analysis.method.constraint.slack.angle)
 
 ---
 
-##### Power Balance Constraints
+##### Bus Power Balance Constraints
 The `balance` field contains references to the equality constraints associated with the active and reactive power balance equations defined for each bus. These constraints ensure that the total active and reactive power injected by the generators matches the total active and reactive power demanded at each bus.
 
 The constant term in the active power balance equations is determined by the `active` keyword within the [`addBus!`](@ref addBus!) function, which defines the active power demanded at the bus. We can access the references to the active power balance constraints using the following code snippet:
@@ -171,7 +171,7 @@ print(system.bus.label, analysis.method.constraint.balance.active)
 
 ---
 
-##### Voltage Constraints
+##### Bus Voltage Constraints
 The `voltage` field within the model contains references to the inequality constraints associated with the voltage magnitude and voltage angle difference limits. These constraints ensure that the bus voltage magnitudes and the angle differences between the from-bus and to-bus ends of each branch are within specified limits.
 
 The minimum and maximum bus voltage magnitude limits are set using the `minMagnitude` and `maxMagnitude` keywords within the [`addBus!`](@ref addBus!) function. The constraints associated with these limits can be accessed using:
@@ -202,7 +202,7 @@ print(system.branch.label, analysis.method.constraint.voltage.angle)
 
 ---
 
-##### Flow Constraints
+##### [Branch Flow Constraints](@id ACBranchFlowConstraintsManual)
 The `flow` field contains references to the inequality constraints associated with the apparent power flow, active power flow, or current flow magnitude limits at the from-bus and to-bus ends of each branch. The type to which one of the constraints will be applied is defined according to the `type` keyword within the [`addBranch!`](@ref addBranch!) function:
 * `type = 1` for the apparent power flow,
 * `type = 2` for the active power flow,
@@ -235,7 +235,7 @@ print(system.branch.label, analysis.method.constraint.flow.to)
 
 ---
 
-##### Power Capability Constraints
+##### Generator Power Capability Constraints
 The `capability` field contains references to the inequality constraints associated with the minimum and maximum active and reactive power outputs of the generators.
 
 The constraints associated with the minimum and maximum active power output limits of the generators are defined using the `minActive` and `maxActive` keywords within the [`addGenerator!`](@ref addGenerator!) function. To access the constraints associated with these limits, we can use the following code snippet:

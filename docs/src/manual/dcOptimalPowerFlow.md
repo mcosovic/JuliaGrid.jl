@@ -32,7 +32,7 @@ addBus!(system; label = "Bus 1", type = 3, angle = 0.17)
 addBus!(system; label = "Bus 2", active = 0.1, conductance = 0.04)
 addBus!(system; label = "Bus 3", active = 0.05)
 
-@branch(minDiffAngle = -3.1, maxDiffAngle = 3.1, maxFromBus = 0.12)
+@branch(minDiffAngle = -3.1, maxDiffAngle = 3.1, minFromBus = -0.12, maxFromBus = 0.12)
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.05)
 addBranch!(system; label = "Branch 2", from = "Bus 1", to = "Bus 3", reactance = 0.01)
 addBranch!(system; label = "Branch 3", from = "Bus 2", to = "Bus 3", reactance = 0.01)
@@ -131,7 +131,7 @@ print(system.bus.label, analysis.method.constraint.slack.angle)
 
 ---
 
-##### Active Power Balance Constraints
+##### Bus Active Power Balance Constraints
 The `balance` field contains references to the equality constraints associated with the active power balance equations defined for each bus. The constant terms in these equations are determined by the `active` and `conductance` keywords within the [`addBus!`](@ref addBus!) function. Additionally, if there are phase shift transformers in the system, the constant terms can also be affected by the `shiftAngle` keyword within the [`addBranch!`](@ref addBranch!) function:
 ```@repl DCOptimalPowerFlow
 print(system.bus.label, analysis.method.constraint.balance.active)
@@ -150,7 +150,7 @@ print(system.bus.label, analysis.method.constraint.balance.active)
 
 ---
 
-##### Voltage Angle Difference Constraints
+##### Bus Voltage Angle Difference Constraints
 The `voltage` field contains references to the inequality constraints associated with the minimum and maximum bus voltage angle difference between the from-bus and to-bus ends of each branch. These values are specified using the `minDiffAngle` and `maxDiffAngle` keywords within the [`addBranch!`](@ref addBranch!) function:
 ```@repl DCOptimalPowerFlow
 print(system.branch.label, analysis.method.constraint.voltage.angle)
@@ -172,14 +172,14 @@ print(system.branch.label, analysis.method.constraint.voltage.angle)
 
 ---
 
-##### Active Power Flow Constraints
-The `flow` field refers to the inequality constraints linked to active power flow limits at the from-bus and to-bus ends of each branch. These limits are set using the `longTerm` keyword in the [`addBranch!`](@ref addBranch!) function:
+##### Branch Active Power Flow Constraints
+The `flow` field refers to the inequality constraints associated with active power flow limits at the from-bus end of each branch. These limits are set using the `minFromBus` and `maxFromBus` keywords in the [`addBranch!`](@ref addBranch!) function:
 ```@repl DCOptimalPowerFlow
 print(system.branch.label, analysis.method.constraint.flow.active)
 ```
 
 !!! note "Info"
-    Please note that if the limit constraints are set to `longTerm = 0.0` for the corresponding branch, JuliGrid will omit the corresponding inequality constraint.
+    Please note that if the flow constraints are set to `minFromBus = 0.0` and `maxFromBus = 0.0` for the corresponding branch, JuliGrid will omit the corresponding inequality constraint at the from-bus end of the branch.
 
 By employing the [`updateBranch!`](@ref updateBranch!) function, we have the ability to modify these specific constraints, for example:
 ```@example DCOptimalPowerFlow
@@ -195,7 +195,7 @@ print(system.branch.label, analysis.method.constraint.flow.active)
 
 ---
 
-##### Active Power Capability Constraints
+##### Generator Active Power Capability Constraints
 The `capability` field contains references to the inequality constraints associated with the minimum and maximum active power outputs of the generators. These limits are specified using the `minActive` and `maxActive` keywords within the [`addGenerator!`](@ref addGenerator!) function:
 ```@repl DCOptimalPowerFlow
 print(system.generator.label, analysis.method.constraint.capability.active)
@@ -450,7 +450,7 @@ addBus!(system; label = "Bus 1", type = 3, angle = 0.17)
 addBus!(system; label = "Bus 2", active = 0.1, conductance = 0.04)
 addBus!(system; label = "Bus 3", active = 0.05)
 
-@branch(minDiffAngle = -pi, maxDiffAngle = pi, maxFromBus = 0.12)
+@branch(minDiffAngle = -pi, maxDiffAngle = pi, minFromBus = -0.12, maxFromBus = 0.12)
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.05)
 addBranch!(system; label = "Branch 2", from = "Bus 1", to = "Bus 3", reactance = 0.01)
 addBranch!(system; label = "Branch 3", from = "Bus 2", to = "Bus 3", reactance = 0.01)

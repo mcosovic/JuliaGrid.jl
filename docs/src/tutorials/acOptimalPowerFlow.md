@@ -57,8 +57,8 @@ The AC optimal power flow problem can be formulated as follows:
     & & & h_{Q_i}(\mathbf {Q}_{\text{g}}, \mathbf {V}, \bm{\Theta}) = 0,\;\;\;  \forall i \in \mathcal{N} \\[5pt]
     & & & V_{i}^\text{min} \leq V_i \leq V_{i}^\text{max},\;\;\; \forall i \in \mathcal{N} \\
     & & & \theta_{ij}^\text{min} \leq \theta_i - \theta_j \leq \theta_{ij}^\text{max},\;\;\; \forall (i,j) \in \mathcal{E} \\[5pt]
-    & & & |h_{ij}(\mathbf {V}, \bm{\Theta})| \leq F_{ij}^{\text{max}},\;\;\; \forall (i,j) \in \mathcal{E} \\
-    & & & |h_{ji}(\mathbf {V}, \bm{\Theta})| \leq F_{ij}^{\text{max}},\;\;\; \forall (i,j) \in \mathcal{E} \\[5pt]
+    & & & F_{ij}^{\text{min}} \leq h_{ij}(\mathbf {V}, \bm{\Theta}) \leq F_{ij}^{\text{max}},\;\;\; \forall (i,j) \in \mathcal{E} \\
+    & & & F_{ji}^{\text{min}} \leq h_{ji}(\mathbf {V}, \bm{\Theta}) \leq F_{ji}^{\text{max}},\;\;\; \forall (i,j) \in \mathcal{E} \\[5pt]
     & & & P_{\text{g}i}^\text{min} \leq P_{\text{g}i} \leq P_{\text{g}i}^\text{max} ,\;\;\; \forall i \in \mathcal{S} \\
     & & & Q_{\text{g}i}^\text{min} \leq Q_{\text{g}i} \leq Q_{\text{g}i}^\text{max} ,\;\;\; \forall i \in \mathcal{S}.
 \end{aligned}
@@ -193,7 +193,7 @@ print(analysis.method.constraint.slack.angle)
 
 ---
 
-##### Power Balance Constraints
+##### Bus Power Balance Constraints
 The second equality constraint in the optimization problem is associated with the active power balance equation:
 ```math
 \begin{aligned}
@@ -246,7 +246,7 @@ print(analysis.method.constraint.balance.reactive)
 
 ---
 
-##### Voltage Constraints
+##### Bus Voltage Constraints
 The inequality constraints associated with the voltage magnitude ensure that the bus voltage magnitudes are within specified limits:
 ```math
 V_{i}^\text{min} \leq V_i \leq V_{i}^\text{max},\;\;\; \forall i \in \mathcal{N},
@@ -279,19 +279,21 @@ print(analysis.method.constraint.voltage.angle)
 
 ---
 
-##### Flow Constraints
+##### Branch Flow Constraints
 The inequality constraints related to the branch flow ratings can be associated with the limits on apparent power flow, active power flow, or current magnitude at the from-bus and to-bus ends of each branch. The type of constraint applied is determined by the `type` keyword within the [`addBranch!`](@ref addBranch!) function.
 
 Specifically, `type = 1` is used for apparent power flow, `type = 2` for active power flow, and `type = 3` for current magnitude. These constraints can be expressed using the equations ``h_{ij}(\mathbf {V}, \bm{\Theta})`` and ``h_{ji}(\mathbf {V}, \bm{\Theta})``, representing the rating constraints at the from-bus and to-bus ends of each branch, respectively:
 ```math
 \begin{aligned}
-    |h_{ij}(\mathbf {V}, \bm{\Theta})| \leq F_{ij}^{\text{max}},\;\;\; \forall (i,j) \in \mathcal{E} \\
-    |h_{ji}(\mathbf {V}, \bm{\Theta})| \leq F_{ij}^{\text{max}},\;\;\; \forall (i,j) \in \mathcal{E}.
+    F_{ij}^{\text{min}} \leq h_{ij}(\mathbf {V}, \bm{\Theta}) \leq F_{ij}^{\text{max}},\;\;\; \forall (i,j) \in \mathcal{E} \\
+    F_{ji}^{\text{min}} \leq h_{ji}(\mathbf {V}, \bm{\Theta}) \leq F_{ji}^{\text{max}},\;\;\; \forall (i,j) \in \mathcal{E}.
 \end{aligned}
 ```
-These rating constraints ensure that the power flow or current in each branch does not exceed the specified limits, helping to maintain the security and reliability of the power system. The upper bounds are determined based on the vector ``\mathbf{F}_{\text{max}} = [F_{ij}^\text{max}]``, ``(i,j) \in \mathcal{E}``. These bounds can be accessed using the following variable:
+
+The branch flow limits at the from-bus and to-bus ends, denoted as ``\mathbf{F}_{\text{f}} = [F_{ij}^\text{min}, F_{ij}^\text{max}]`` and ``\mathbf{F}_{\text{t}} = [F_{ji}^\text{min}, F_{ji}^\text{max}]``, ``(i,j) \in \mathcal{E}``, can be retrieved as follows:
 ```@repl ACOptimalPowerFlow
-𝐅ₘₐₓ = system.branch.flow.maxFromBus
+𝐅ₒ = [system.branch.flow.minFromBus system.branch.flow.maxFromBus]
+𝐅ₜ = [system.branch.flow.minToBus system.branch.flow.maxToBus]
 ```
 
 By default, JuliaGrid employs the rating constraints linked with the apparent power flow (`type = 1`). This constraint at the from-bus is specified as:
@@ -320,7 +322,7 @@ where:
 
 ---
 
-The second option is to define the `longTerm` keyword for the active power flow constraints (`type = 2`) at the from-bus and to-bus ends of each branch:
+The second option is to define the limit keywords for active power flow constraints (`type = 2`) at the from-bus and to-bus ends of each branch:
 ```math
   \begin{aligned}
     h_{ij}(\mathbf {V}, \bm{\Theta}) &=
@@ -343,7 +345,7 @@ print(analysis.method.constraint.flow.to)
 
 ---
 
-The last option involves defining the `longTerm` keyword for the current magnitude constraints (`type = 3`) at the from-bus and to-bus ends of each branch. In this case, the constraints are implemented as follows:
+The last option involves defining the limit keywords for current magnitude constraints (`type = 3`) at the from-bus and to-bus ends of each branch. In this case, the constraints are implemented as follows:
 ```math
   \begin{aligned}
     h_{ij}(\mathbf {V}, \bm{\Theta}) &= \sqrt{A_{ij}V_i^2 + B_{ij}V_j^2 - 2[C_{ij} \cos(\theta_{ij} - \phi_{ij}) - D_{ij}\sin(\theta_{ij} - \phi_{ij})]V_iV_j} \\
@@ -353,7 +355,7 @@ The last option involves defining the `longTerm` keyword for the current magnitu
 
 ---
 
-##### [Power Capability Constraints](@id ACPowerCapabilityConstraintsTutorials)
+##### [Generator Power Capability Constraints](@id ACPowerCapabilityConstraintsTutorials)
 The next set of constraints pertains to the minimum and maximum limits of active and reactive power outputs of the generators. These constraints ensure that the power outputs of the generators remain within specified bounds:
 ```math
 P_{\text{g}i}^\text{min} \leq P_{\text{g}i} \leq P_{\text{g}i}^\text{max} ,\;\;\; \forall i \in \mathcal{S}.

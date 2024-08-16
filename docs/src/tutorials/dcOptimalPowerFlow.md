@@ -54,7 +54,7 @@ The DC optimal power flow model has the form:
     & \text{subject\;to} & &  \theta_i - \theta_{\text{s}} = 0,\;\;\; i \in \mathcal{N_{\text{sb}}}  \\[3pt]
     & & & h_{P_i}(\mathbf {P}_{\text{g}}, \bm{\Theta}) = 0,\;\;\;  \forall i \in \mathcal{N} \\[3pt]
     & & & \theta_{ij}^\text{min} \leq \theta_i - \theta_j \leq \theta_{ij}^\text{max},\;\;\; \forall (i,j) \in \mathcal{E} \\[3pt]
-    & & &  - P_{ij}^{\text{max}} \leq h_{P_{ij}}(\theta_i, \theta_j) \leq P_{ij}^{\text{max}},\;\;\; \forall (i,j) \in \mathcal{E} \\[3pt]
+    & & &  P_{ij}^{\text{min}} \leq h_{P_{ij}}(\theta_i, \theta_j) \leq P_{ij}^{\text{max}},\;\;\; \forall (i,j) \in \mathcal{E} \\[3pt]
     & & & P_{\text{g}i}^\text{min} \leq P_{\text{g}i} \leq P_{\text{g}i}^\text{max} ,\;\;\; \forall i \in \mathcal{S}.
 \end{aligned}
 ```
@@ -179,7 +179,7 @@ print(analysis.method.constraint.slack.angle)
 
 ---
 
-##### Active Power Balance Constraints
+##### Bus Active Power Balance Constraints
 The second equality constraint in the optimization problem is associated with the active power balance equation:
 ```math
 h_{P_i}(\mathbf {P}_{\text{g}}, \bm{\Theta}) = 0,\;\;\;  \forall i \in \mathcal{N}.
@@ -205,7 +205,7 @@ print(analysis.method.constraint.balance.active)
 
 ---
 
-##### Voltage Angle Difference Constraints
+##### Bus Voltage Angle Difference Constraints
 The inequality constraint related to the minimum and maximum bus voltage angle difference between the from-bus and to-bus ends of each branch is defined as follows:
 ```math
 \theta_{ij}^\text{min} \leq \theta_i - \theta_j \leq \theta_{ij}^\text{max},\;\;\; \forall (i,j) \in \mathcal{E},
@@ -222,14 +222,15 @@ print(analysis.method.constraint.voltage.angle)
 
 ---
 
-##### Active Power Flow Constraints
+##### Branch Active Power Flow Constraints
 The inequality constraint related to active power flow is used to represent thermal limits on power transmission. This constraint is defined as follows:
 ```math
-- P_{ij}^{\text{max}} \leq h_{P_{ij}}(\theta_i, \theta_j) \leq P_{ij}^{\text{max}},\;\;\; \forall (i,j) \in \mathcal{E}.
+P_{ij}^{\text{min}} \leq h_{P_{ij}}(\theta_i, \theta_j) \leq P_{ij}^{\text{max}},\;\;\; \forall (i,j) \in \mathcal{E}.
 ```
-Here, the lower and upper bounds are determined based on the vector ``\mathbf{P}_{\text{max}} = [P_{ij}^\text{max}]``, ``(i,j) \in \mathcal{E}``. These bounds can be accessed using the following variable:
+
+The branch flow limits at the from-bus, denoted as ``\mathbf{F}_{\text{f}} = [F_{ij}^\text{min}, F_{ij}^\text{max}]`` , can be retrieved as follows:
 ```@repl DCOptimalPowerFlow
-𝐏ₘₐₓ = system.branch.flow.maxFromBus
+𝐅ₒ = [system.branch.flow.minFromBus system.branch.flow.maxFromBus]
 ```
 
 The active power flow at branch ``(i,j) \in \mathcal{E}`` can be derived using the [Branch Network Equations](@ref DCBranchNetworkEquationsTutorials) and is given by:
@@ -244,7 +245,7 @@ print(analysis.method.constraint.flow.active)
 
 ---
 
-##### Active Power Capability Constraints
+##### Generator Active Power Capability Constraints
 The inequality constraints associated with the minimum and maximum active power outputs of the generators are defined as follows:
 ```math
 P_{\text{g}i}^\text{min} \leq P_{\text{g}i} \leq P_{\text{g}i}^\text{max} ,\;\;\; \forall i \in \mathcal{S}.
