@@ -32,7 +32,7 @@ addBus!(system; label = "Bus 1", type = 3, angle = 0.17)
 addBus!(system; label = "Bus 2", active = 0.1, conductance = 0.04)
 addBus!(system; label = "Bus 3", active = 0.05)
 
-@branch(minDiffAngle = -3.1, maxDiffAngle = 3.1, longTerm = 0.12)
+@branch(minDiffAngle = -3.1, maxDiffAngle = 3.1, maxFromBus = 0.12)
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.05)
 addBranch!(system; label = "Branch 2", from = "Bus 1", to = "Bus 3", reactance = 0.01)
 addBranch!(system; label = "Branch 3", from = "Bus 2", to = "Bus 3", reactance = 0.01)
@@ -184,7 +184,7 @@ print(system.branch.label, analysis.method.constraint.flow.active)
 By employing the [`updateBranch!`](@ref updateBranch!) function, we have the ability to modify these specific constraints, for example:
 ```@example DCOptimalPowerFlow
 updateBranch!(system, analysis; label = "Branch 1", status = 0)
-updateBranch!(system, analysis; label = "Branch 2", reactance = 0.03, longTerm = 0.14)
+updateBranch!(system, analysis; label = "Branch 2", reactance = 0.03, maxFromBus = 0.14)
 nothing # hide
 ```
 
@@ -450,7 +450,7 @@ addBus!(system; label = "Bus 1", type = 3, angle = 0.17)
 addBus!(system; label = "Bus 2", active = 0.1, conductance = 0.04)
 addBus!(system; label = "Bus 3", active = 0.05)
 
-@branch(minDiffAngle = -pi, maxDiffAngle = pi, longTerm = 0.12)
+@branch(minDiffAngle = -pi, maxDiffAngle = pi, maxFromBus = 0.12)
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.05)
 addBranch!(system; label = "Branch 2", from = "Bus 1", to = "Bus 3", reactance = 0.01)
 addBranch!(system; label = "Branch 3", from = "Bus 2", to = "Bus 3", reactance = 0.01)

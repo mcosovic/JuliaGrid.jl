@@ -112,9 +112,10 @@ Base.@kwdef mutable struct BranchTemplate
     shiftAngle::ContainerTemplate = ContainerTemplate()
     minDiffAngle::ContainerTemplate = ContainerTemplate(-2*pi, true)
     maxDiffAngle::ContainerTemplate = ContainerTemplate(2*pi, true)
-    longTerm::ContainerTemplate = ContainerTemplate()
-    shortTerm::ContainerTemplate = ContainerTemplate()
-    emergency::ContainerTemplate = ContainerTemplate()
+    minFromBus::ContainerTemplate = ContainerTemplate()
+    maxFromBus::ContainerTemplate = ContainerTemplate()
+    minToBus::ContainerTemplate = ContainerTemplate()
+    maxToBus::ContainerTemplate = ContainerTemplate()
     label::String = "?"
     turnsRatio::Float64 = 1.0
     status::Int8 = Int8(1)

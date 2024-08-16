@@ -13,7 +13,7 @@ addBus!(system; label = 1, type = 3, active = 0.1, angle = -0.1)
 addBus!(system; label = 2, reactive = 0.01, magnitude = 1.1)
 
 @branch(minDiffAngle = -pi, maxDiffAngle = pi, reactance = 0.5, type = 2)
-addBranch!(system; label = 1, from = 1, to = 2, longTerm = 0.15)
+addBranch!(system; label = 1, from = 1, to = 2, maxFromBus = 0.15, maxToBus = 0.15)
 
 @generator(maxActive = 0.5, minReactive = -0.1, maxReactive = 0.1)
 addGenerator!(system; label = 1, bus = 1, active = 0.4, reactive = 0.2)
@@ -291,7 +291,7 @@ Specifically, `type = 1` is used for apparent power flow, `type = 2` for active 
 ```
 These rating constraints ensure that the power flow or current in each branch does not exceed the specified limits, helping to maintain the security and reliability of the power system. The upper bounds are determined based on the vector ``\mathbf{F}_{\text{max}} = [F_{ij}^\text{max}]``, ``(i,j) \in \mathcal{E}``. These bounds can be accessed using the following variable:
 ```@repl ACOptimalPowerFlow
-𝐅ₘₐₓ = system.branch.flow.longTerm
+𝐅ₘₐₓ = system.branch.flow.maxFromBus
 ```
 
 By default, JuliaGrid employs the rating constraints linked with the apparent power flow (`type = 1`). This constraint at the from-bus is specified as:

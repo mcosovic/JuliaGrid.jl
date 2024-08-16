@@ -1,7 +1,7 @@
 """
     addBranch!(system::PowerSystem, [analysis::Analysis]; label, from, to, status,
         resistance, reactance, conductance, susceptance, turnsRatio, shiftAngle,
-        minDiffAngle, maxDiffAngle, longTerm, shortTerm, emergency, type)
+        minDiffAngle, maxDiffAngle, minFromBus, maxFromBus, minToBus, maxToBus, type)
 
 The function adds a new branch to the `PowerSystem` composite type. A branch can be added
 between already defined buses.
@@ -28,13 +28,14 @@ The branch is defined with the following keywords:
 * `shiftAngle` (rad or deg): Transformer phase shift angle, where positive value defines delay.
 * `minDiffAngle` (rad or deg): Minimum voltage angle difference value between from-bus and to-bus ends.
 * `maxDiffAngle` (rad or deg): Maximum voltage angle difference value between from-bus and to-bus ends.
-* `longTerm` (pu, VA or W): Long-term flow rating (equal to zero for unlimited).
-* `shortTerm` (pu, VA or W): Short-term flow rating (equal to zero for unlimited).
-* `emergency` (pu, VA or W): Emergency flow rating (equal to zero for unlimited).
-* `type`: Types of `longTerm`, `shortTerm`, and `emergency` flow ratings:
+* `minFromBus` (pu, VA, W, or A): Minimum branch flow rating at the from-bus end.
+* `maxFromBus` (pu, VA, W, or A): Maximum branch flow rating at the from-bus end.
+* `minToBus` (pu, VA, W, or A): Minimum branch flow rating at the to-bus end.
+* `maxToBus` (pu, VA, W, or A): Maximum branch flow rating at the to-bus end.
+* `type`: Types of `minFromBus`, `maxFromBus`, `minToBus`, and `maxToBus` branch flow ratings:
   * `type = 1`: apparent power flow (pu or VA),
   * `type = 2`: active power flow (pu or W),
-  * `type = 3`: current magnitude flow (pu or VA at 1 pu voltage).
+  * `type = 3`: current magnitude flow (pu or A).
 
 # Updates
 The function updates the `branch` field within the `PowerSystem` composite type, and in
@@ -51,7 +52,8 @@ utilizing the [`@branch`](@ref @branch) macro.
 # Units
 The default units for the keyword parameters are per-units (pu) and radians (rad). However,
 the user can choose to use other units besides per-units and radians by utilizing macros such
-as [`@power`](@ref @power), [`@voltage`](@ref @voltage), and [`@parameter`](@ref @parameter).
+as [`@power`](@ref @power), [`@voltage`](@ref @voltage), [`@current`](@ref @current), and
+[`@parameter`](@ref @parameter).
 
 # Examples
 Adding a branch using the default unit system:
@@ -79,8 +81,8 @@ function addBranch!(system::PowerSystem;
     label::L = missing, from::L, to::L, status::A = missing,
     resistance::A = missing, reactance::A = missing, susceptance::A = missing,
     conductance::A = missing, turnsRatio::A = missing, shiftAngle::A = missing,
-    minDiffAngle::A = missing, maxDiffAngle::A = missing,
-    longTerm::A = missing, shortTerm::A = missing, emergency::A = missing, type::A = missing)
+    minDiffAngle::A = missing, maxDiffAngle::A = missing, minFromBus::A = missing,
+    maxFromBus::A = missing, minToBus::A = missing, maxToBus::A = missing, type::A = missing)
 
     branch = system.branch
     default = template.branch
@@ -122,14 +124,23 @@ function addBranch!(system::PowerSystem;
     push!(branch.voltage.maxDiffAngle, topu(maxDiffAngle, default.maxDiffAngle, prefix.voltageAngle, 1.0))
 
     push!(branch.flow.type, unitless(type, default.type))
-    if branch.flow.type[end] == 2
-        prefixLive = prefix.activePower
-    else
+    if branch.flow.type[end] == 1
         prefixLive = prefix.apparentPower
+        baseInvFrom = basePowerInv
+        baseInvTo = basePowerInv
+    elseif branch.flow.type[end] == 2
+        prefixLive = prefix.activePower
+        baseInvFrom = basePowerInv
+        baseInvTo = basePowerInv
+    elseif branch.flow.type[end] == 3
+        prefixLive = prefix.currentMagnitude
+        baseInvFrom = baseCurrentInverse(basePowerInv, system.base.voltage.value[branch.layout.from[end]] * system.base.voltage.prefix)
+        baseInvTo = baseCurrentInverse(basePowerInv, system.base.voltage.value[branch.layout.to[end]] * system.base.voltage.prefix)
     end
-    push!(branch.flow.longTerm, topu(longTerm, default.longTerm, prefixLive, basePowerInv))
-    push!(branch.flow.shortTerm, topu(shortTerm, default.shortTerm, prefixLive, basePowerInv))
-    push!(branch.flow.emergency, topu(emergency, default.emergency, prefixLive, basePowerInv))
+    push!(branch.flow.minFromBus, topu(minFromBus, default.minFromBus, prefixLive, baseInvFrom))
+    push!(branch.flow.maxFromBus, topu(maxFromBus, default.maxFromBus, prefixLive, baseInvFrom))
+    push!(branch.flow.minToBus, topu(minToBus, default.minToBus, prefixLive, baseInvTo))
+    push!(branch.flow.maxToBus, topu(maxToBus, default.maxToBus, prefixLive, baseInvTo))
 
     if !isempty(system.model.ac.nodalMatrix)
         acPushZeros!(system.model.ac)
@@ -152,38 +163,38 @@ function addBranch!(system::PowerSystem, analysis::DCPowerFlow;
     label::L = missing, from::L, to::L, status::A = missing,
     resistance::A = missing, reactance::A = missing, susceptance::A = missing,
     conductance::A = missing, turnsRatio::A = missing, shiftAngle::A = missing,
-    minDiffAngle::A = missing, maxDiffAngle::A = missing,
-    longTerm::A = missing, shortTerm::A = missing, emergency::A = missing, type::A = missing)
+    minDiffAngle::A = missing, maxDiffAngle::A = missing, minFromBus::A = missing,
+    maxFromBus::A = missing, minToBus::A = missing, maxToBus::A = missing, type::A = missing)
 
     addBranch!(system; label, from, to, status, resistance, reactance, susceptance,
-    conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, longTerm, shortTerm,
-    emergency, type)
+    conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, minFromBus, maxFromBus,
+    minToBus, maxToBus, type)
 end
 
 function addBranch!(system::PowerSystem, analysis::Union{ACPowerFlow{NewtonRaphson}, ACPowerFlow{GaussSeidel}};
     label::L = missing, from::L, to::L, status::A = missing,
     resistance::A = missing, reactance::A = missing, susceptance::A = missing,
     conductance::A = missing, turnsRatio::A = missing, shiftAngle::A = missing,
-    minDiffAngle::A = missing, maxDiffAngle::A = missing,
-    longTerm::A = missing, shortTerm::A = missing, emergency::A = missing, type::A = missing)
+    minDiffAngle::A = missing, maxDiffAngle::A = missing, minFromBus::A = missing,
+    maxFromBus::A = missing, minToBus::A = missing, maxToBus::A = missing, type::A = missing)
 
     addBranch!(system; label, from, to, status, resistance, reactance, susceptance,
-    conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, longTerm, shortTerm,
-    emergency, type)
+    conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, minFromBus, maxFromBus,
+    minToBus, maxToBus, type)
 end
 
 function addBranch!(system::PowerSystem, analysis::ACPowerFlow{FastNewtonRaphson};
     label::L = missing, from::L, to::L, status::A = missing,
     resistance::A = missing, reactance::A = missing, susceptance::A = missing,
     conductance::A = missing, turnsRatio::A = missing, shiftAngle::A = missing,
-    minDiffAngle::A = missing, maxDiffAngle::A = missing,
-    longTerm::A = missing, shortTerm::A = missing, emergency::A = missing, type::A = missing)
+    minDiffAngle::A = missing, maxDiffAngle::A = missing, minFromBus::A = missing,
+    maxFromBus::A = missing, minToBus::A = missing, maxToBus::A = missing, type::A = missing)
 
     branch = system.branch
 
     addBranch!(system; label, from, to, status, resistance, reactance, susceptance,
-    conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, longTerm, shortTerm,
-    emergency, type)
+    conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, minFromBus, maxFromBus,
+    minToBus, maxToBus, type)
 
     if branch.layout.status[branch.number] == 1
         fastNewtonRaphsonJacobian(system, analysis, branch.number, 1)
@@ -194,8 +205,8 @@ function addBranch!(system::PowerSystem, analysis::DCOptimalPowerFlow;
     label::L = missing, from::L, to::L, status::A = missing,
     resistance::A = missing, reactance::A = missing, susceptance::A = missing,
     conductance::A = missing, turnsRatio::A = missing, shiftAngle::A = missing,
-    minDiffAngle::A = missing, maxDiffAngle::A = missing,
-    longTerm::A = missing, shortTerm::A = missing, emergency::A = missing, type::A = missing)
+    minDiffAngle::A = missing, maxDiffAngle::A = missing, minFromBus::A = missing,
+    maxFromBus::A = missing, minToBus::A = missing, maxToBus::A = missing, type::A = missing)
 
     branch = system.branch
     jump = analysis.method.jump
@@ -203,8 +214,8 @@ function addBranch!(system::PowerSystem, analysis::DCOptimalPowerFlow;
     variable = analysis.method.variable
 
     addBranch!(system; label, from, to, status, resistance, reactance, susceptance,
-    conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, longTerm, shortTerm,
-    emergency, type)
+    conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, minFromBus, maxFromBus,
+    minToBus, maxToBus, type)
 
     if branch.layout.status[end] == 1
         from = branch.layout.from[end]
@@ -223,8 +234,8 @@ function addBranch!(system::PowerSystem, analysis::ACOptimalPowerFlow;
     label::L = missing, from::L, to::L, status::A = missing,
     resistance::A = missing, reactance::A = missing, susceptance::A = missing,
     conductance::A = missing, turnsRatio::A = missing, shiftAngle::A = missing,
-    minDiffAngle::A = missing, maxDiffAngle::A = missing,
-    longTerm::A = missing, shortTerm::A = missing, emergency::A = missing, type::A = missing)
+    minDiffAngle::A = missing, maxDiffAngle::A = missing, minFromBus::A = missing,
+    maxFromBus::A = missing, minToBus::A = missing, maxToBus::A = missing, type::A = missing)
 
     branch = system.branch
     jump = analysis.method.jump
@@ -232,8 +243,8 @@ function addBranch!(system::PowerSystem, analysis::ACOptimalPowerFlow;
     variable = analysis.method.variable
 
     addBranch!(system; label, from, to, status, resistance, reactance, susceptance,
-    conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, longTerm, shortTerm,
-    emergency, type)
+    conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, minFromBus, maxFromBus,
+    minToBus, maxToBus, type)
 
     if branch.layout.status[end] == 1
         from = branch.layout.from[end]
@@ -290,7 +301,8 @@ function updateBranch!(system::PowerSystem;
     label::L, status::A = missing, resistance::A = missing, reactance::A = missing,
     susceptance::A = missing, conductance::A = missing, turnsRatio::A = missing,
     shiftAngle::A = missing, minDiffAngle::A = missing, maxDiffAngle::A = missing,
-    longTerm::A = missing, shortTerm::A = missing, emergency::A = missing, type::A = missing)
+    minFromBus::A = missing, maxFromBus::A = missing, minToBus::A = missing,
+    maxToBus::A = missing, type::A = missing)
 
     branch = system.branch
     ac = system.model.ac
@@ -388,20 +400,32 @@ function updateBranch!(system::PowerSystem;
         branch.flow.type[index] = type
     end
 
-    if isset(longTerm) || isset(shortTerm) || isset(emergency)
-        if branch.flow.type[index] == 2
-            prefixLive = prefix.activePower
-        else
+    if isset(minFromBus) || isset(maxFromBus) || isset(minToBus) || isset(maxToBus)
+        if branch.flow.type[index] == 1
             prefixLive = prefix.apparentPower
+            baseInvFrom = basePowerInv
+            baseInvTo = basePowerInv
+        elseif branch.flow.type[index] == 2
+            prefixLive = prefix.activePower
+            baseInvFrom = basePowerInv
+            baseInvTo = basePowerInv
+        elseif branch.flow.type[index] == 3
+            prefixLive = prefix.currentMagnitude
+            baseInvFrom = baseCurrentInverse(basePowerInv, system.base.voltage.value[branch.layout.from[index]] * system.base.voltage.prefix)
+            baseInvTo = baseCurrentInverse(basePowerInv, system.base.voltage.value[branch.layout.to[index]] * system.base.voltage.prefix)
         end
-        if isset(longTerm)
-            branch.flow.longTerm[index] = topu(longTerm, prefixLive, basePowerInv)
+
+        if isset(minFromBus)
+            branch.flow.minFromBus[index] = topu(minFromBus, prefixLive, baseInvFrom)
         end
-        if isset(shortTerm)
-            branch.flow.shortTerm[index] = topu(shortTerm, prefixLive, basePowerInv)
+        if isset(maxFromBus)
+            branch.flow.maxFromBus[index] = topu(maxFromBus, prefixLive, baseInvFrom)
         end
-        if isset(emergency)
-            branch.flow.emergency[index] = topu(emergency, prefixLive, basePowerInv)
+        if isset(minToBus)
+            branch.flow.minToBus[index] = topu(minToBus, prefixLive, baseInvTo)
+        end
+        if isset(maxToBus)
+            branch.flow.maxToBus[index] = topu(maxToBus, prefixLive, baseInvTo)
         end
     end
 end
@@ -410,29 +434,32 @@ function updateBranch!(system::PowerSystem, analysis::DCPowerFlow;
     label::L, status::A = missing, resistance::A = missing, reactance::A = missing,
     susceptance::A = missing, conductance::A = missing, turnsRatio::A = missing,
     shiftAngle::A = missing, minDiffAngle::A = missing, maxDiffAngle::A = missing,
-    longTerm::A = missing, shortTerm::A = missing, emergency::A = missing, type::A = missing)
+    minFromBus::A = missing, maxFromBus::A = missing, minToBus::A = missing,
+    maxToBus::A = missing, type::A = missing)
 
     updateBranch!(system; label, status, resistance, reactance, susceptance,
-    conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, longTerm, shortTerm,
-    emergency, type)
+    conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, minFromBus, maxFromBus,
+    minToBus, maxToBus, type)
 end
 
 function updateBranch!(system::PowerSystem, analysis::Union{ACPowerFlow{NewtonRaphson}, ACPowerFlow{GaussSeidel}};
     label::L, status::A = missing, resistance::A = missing, reactance::A = missing,
     susceptance::A = missing, conductance::A = missing, turnsRatio::A = missing,
     shiftAngle::A = missing, minDiffAngle::A = missing, maxDiffAngle::A = missing,
-    longTerm::A = missing, shortTerm::A = missing, emergency::A = missing, type::A = missing)
+    minFromBus::A = missing, maxFromBus::A = missing, minToBus::A = missing,
+    maxToBus::A = missing, type::A = missing)
 
     updateBranch!(system; label, status, resistance, reactance, susceptance,
-    conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, longTerm, shortTerm,
-    emergency, type)
+    conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, minFromBus, maxFromBus,
+    minToBus, maxToBus, type)
 end
 
 function updateBranch!(system::PowerSystem, analysis::ACPowerFlow{FastNewtonRaphson};
     label::L, status::A = missing, resistance::A = missing, reactance::A = missing,
     susceptance::A = missing, conductance::A = missing, turnsRatio::A = missing,
     shiftAngle::A = missing, minDiffAngle::A = missing, maxDiffAngle::A = missing,
-    longTerm::A = missing, shortTerm::A = missing, emergency::A = missing, type::A = missing)
+    minFromBus::A = missing, maxFromBus::A = missing, minToBus::A = missing,
+    maxToBus::A = missing, type::A = missing)
 
     branch = system.branch
     index = branch.label[getLabel(branch, label, "branch")]
@@ -442,8 +469,8 @@ function updateBranch!(system::PowerSystem, analysis::ACPowerFlow{FastNewtonRaph
     end
 
     updateBranch!(system; label, status, resistance, reactance, susceptance,
-    conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, longTerm, shortTerm,
-    emergency, type)
+    conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, minFromBus, maxFromBus,
+    minToBus, maxToBus, type)
 
     if branch.layout.status[index] == 1
         fastNewtonRaphsonJacobian(system, analysis, index, 1)
@@ -454,7 +481,8 @@ function updateBranch!(system::PowerSystem, analysis::DCOptimalPowerFlow;
     label::L, status::A = missing, resistance::A = missing, reactance::A = missing,
     susceptance::A = missing, conductance::A = missing, turnsRatio::A = missing,
     shiftAngle::A = missing, minDiffAngle::A = missing, maxDiffAngle::A = missing,
-    longTerm::A = missing, shortTerm::A = missing, emergency::A = missing, type::A = missing)
+    minFromBus::A = missing, maxFromBus::A = missing, minToBus::A = missing,
+    maxToBus::A = missing, type::A = missing)
 
     branch = system.branch
     jump = analysis.method.jump
@@ -465,12 +493,12 @@ function updateBranch!(system::PowerSystem, analysis::DCOptimalPowerFlow;
     statusOld = branch.layout.status[index]
 
     updateBranch!(system; label, status, resistance, reactance, susceptance,
-    conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, longTerm, shortTerm,
-    emergency, type)
+    conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, minFromBus, maxFromBus,
+    minToBus, maxToBus, type)
 
     parameter = isset(reactance) || isset(turnsRatio) || isset(shiftAngle)
     diffAngle = isset(minDiffAngle) || isset(maxDiffAngle)
-    long = isset(longTerm)
+    long = isset(minFromBus) || isset(maxFromBus) || isset(minToBus) || isset(maxToBus)
 
     from = branch.layout.from[index]
     to = branch.layout.to[index]
@@ -502,7 +530,8 @@ function updateBranch!(system::PowerSystem, analysis::ACOptimalPowerFlow;
     label::L, status::A = missing, resistance::A = missing, reactance::A = missing,
     susceptance::A = missing, conductance::A = missing, turnsRatio::A = missing,
     shiftAngle::A = missing, minDiffAngle::A = missing, maxDiffAngle::A = missing,
-    longTerm::A = missing, shortTerm::A = missing, emergency::A = missing, type::A = missing)
+    minFromBus::A = missing, maxFromBus::A = missing, minToBus::A = missing,
+    maxToBus::A = missing, type::A = missing)
 
     branch = system.branch
     jump = analysis.method.jump
@@ -513,12 +542,12 @@ function updateBranch!(system::PowerSystem, analysis::ACOptimalPowerFlow;
     statusOld = branch.layout.status[index]
 
     updateBranch!(system; label, status, resistance, reactance, susceptance,
-    conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, longTerm, shortTerm,
-    emergency, type)
+    conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, minFromBus, maxFromBus,
+    minToBus, maxToBus, type)
 
     parameter = isset(resistance) || isset(reactance) || isset(conductance) || isset(susceptance) || isset(turnsRatio) || isset(shiftAngle)
     diffAngle = isset(minDiffAngle) || isset(maxDiffAngle)
-    long = isset(longTerm) || isset(type)
+    long = isset(minFromBus) || isset(maxFromBus) || isset(minToBus) || isset(maxToBus) || isset(type)
 
     from = branch.layout.from[index]
     to = branch.layout.to[index]
@@ -607,7 +636,7 @@ macro branch(kwargs...)
                     prefixLive = prefix.admittance
                 elseif parameter in [:shiftAngle; :minDiffAngle; :maxDiffAngle]
                     prefixLive = prefix.voltageAngle
-                elseif parameter in [:longTerm; :shortTerm; :emergency]
+                elseif parameter in [:minFromBus; :maxFromBus; :minToBus; :maxToBus]
                     if template.branch.type in [1, 3]
                         prefixLive = prefix.apparentPower
                     elseif template.branch.type == 2

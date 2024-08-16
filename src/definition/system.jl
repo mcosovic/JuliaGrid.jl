@@ -54,9 +54,10 @@ mutable struct BranchParameter
 end
 
 mutable struct BranchFlow
-    longTerm::Array{Float64,1}
-    shortTerm::Array{Float64,1}
-    emergency::Array{Float64,1}
+    minFromBus::Array{Float64,1}
+    maxFromBus::Array{Float64,1}
+    minToBus::Array{Float64,1}
+    maxToBus::Array{Float64,1}
     type::Array{Int8,1}
 end
 

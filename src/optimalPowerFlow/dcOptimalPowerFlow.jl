@@ -223,11 +223,11 @@ function addBalance(system::PowerSystem, jump::JuMP.Model, active::Vector{Variab
 end
 
 ######### Flow Constraints ##########
-function addFlow(system::PowerSystem, jump::JuMP.Model, angle::Vector{VariableRef}, ref::Dict{Int64, ConstraintRef}, index::Int64)
+function addFlow(system::PowerSystem, jump::JuMP.Model, angle::Vector{VariableRef}, ref::Dict{Int64, ConstraintRef}, i::Int64)
     branch = system.branch
-    if branch.flow.longTerm[index] ≉  0 && branch.flow.longTerm[index] < 10^16
-        restriction = branch.flow.longTerm[index] / system.model.dc.admittance[index]
-        ref[index] = @constraint(jump, - restriction + branch.parameter.shiftAngle[index] <= angle[branch.layout.from[index]] - angle[branch.layout.to[index]] <= restriction + branch.parameter.shiftAngle[index])
+
+    if branch.flow.minFromBus[i] != 0.0 || branch.flow.maxFromBus[i] != 0.0
+        ref[i] = @constraint(jump, branch.flow.minFromBus[i] <= system.model.dc.admittance[i] * (angle[branch.layout.from[i]] - angle[branch.layout.to[i]] - branch.parameter.shiftAngle[i]) <= branch.flow.maxFromBus[i])
     end
 
     return jump, ref

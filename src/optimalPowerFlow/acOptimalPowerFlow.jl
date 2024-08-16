@@ -496,7 +496,10 @@ function addFlow(system::PowerSystem, jump::JuMP.Model, magnitude::Vector{Variab
     branch = system.branch
     ac = system.model.ac
 
-    if branch.flow.longTerm[i] ≉  0 && branch.flow.longTerm[i] < 10^16
+    fromBus = branch.flow.minFromBus[i] != 0.0 || branch.flow.maxFromBus[i] != 0.0
+    toBus = branch.flow.minToBus[i] != 0.0 || branch.flow.maxToBus[i] != 0.0
+
+    if fromBus || toBus
         from = branch.layout.from[i]
         to = branch.layout.to[i]
 
@@ -523,22 +526,42 @@ function addFlow(system::PowerSystem, jump::JuMP.Model, magnitude::Vector{Variab
             Dji = βij * (gij * bsi - bij * gsi)
 
             if branch.flow.type[i] == 1
-                refFrom[i] = @constraint(jump, 0 <= sqrt(Aij * Vi^4 + Bij * Vi^2 * Vj^2 - 2 * Vi^3 * Vj * (Cij * cosθ - Dij * sinθ)) <= branch.flow.longTerm[i])
-                refTo[i] = @constraint(jump, 0 <= sqrt(Aji * Vj^4 + Bij * Vi^2 * Vj^2 - 2 * Vi * Vj^3 * (Cji * cosθ + Dji * sinθ)) <= branch.flow.longTerm[i])
+                if fromBus
+                    refFrom[i] = @constraint(jump, branch.flow.minFromBus[i] <= sqrt(Aij * Vi^4 + Bij * Vi^2 * Vj^2 - 2 * Vi^3 * Vj * (Cij * cosθ - Dij * sinθ)) <= branch.flow.maxFromBus[i])
+                end
+                if toBus
+                    refTo[i] = @constraint(jump, branch.flow.minToBus[i] <= sqrt(Aji * Vj^4 + Bij * Vi^2 * Vj^2 - 2 * Vi * Vj^3 * (Cji * cosθ + Dji * sinθ)) <= branch.flow.maxToBus[i])
+                end
             elseif branch.flow.type[i] == 3
-                refFrom[i] = @constraint(jump,  0 <= sqrt(Aij * Vi^2 + Bij * Vj^2 - 2 * Vi * Vj * (Cij * cosθ - Dij * sinθ)) <= branch.flow.longTerm[i])
-                refTo[i] = @constraint(jump,  0 <= sqrt(Aji * Vj^2 + Bij * Vi^2 - 2 * Vi * Vj * (Cji * cosθ + Dji * sinθ)) <= branch.flow.longTerm[i])
+                if fromBus
+                    refFrom[i] = @constraint(jump, branch.flow.minFromBus[i] <= sqrt(Aij * Vi^2 + Bij * Vj^2 - 2 * Vi * Vj * (Cij * cosθ - Dij * sinθ)) <= branch.flow.maxFromBus[i])
+                end
+                if toBus
+                    refTo[i] = @constraint(jump, branch.flow.minToBus[i] <= sqrt(Aji * Vj^2 + Bij * Vi^2 - 2 * Vi * Vj * (Cji * cosθ + Dji * sinθ)) <= branch.flow.maxToBus[i])
+                end
             end
         elseif branch.flow.type[i] == 2
             if gij != 0 && bij != 0
-                refFrom[i] = @constraint(jump, -branch.flow.longTerm[i] <= βij^2 * (gij + gsi) * Vi^2 - βij * Vi * Vj * (gij * cosθ + bij * sinθ) <= branch.flow.longTerm[i])
-                refTo[i] = @constraint(jump, -branch.flow.longTerm[i] <= (gij + gsi) * Vj^2 - βij * Vi * Vj * (gij * cosθ - bij * sinθ) <= branch.flow.longTerm[i])
+                if fromBus
+                    refFrom[i] = @constraint(jump, branch.flow.minFromBus[i] <= βij^2 * (gij + gsi) * Vi^2 - βij * Vi * Vj * (gij * cosθ + bij * sinθ) <= branch.flow.maxFromBus[i])
+                end
+                if toBus
+                    refTo[i] = @constraint(jump, branch.flow.minToBus[i] <= (gij + gsi) * Vj^2 - βij * Vi * Vj * (gij * cosθ - bij * sinθ) <= branch.flow.maxToBus[i])
+                end
             elseif gij != 0
-                refFrom[i] = @constraint(jump, -branch.flow.longTerm[i] <= βij^2 * (gij + gsi) * Vi^2 - βij * Vi * Vj * gij * cosθ  <= branch.flow.longTerm[i])
-                refTo[i] = @constraint(jump, -branch.flow.longTerm[i] <= (gij + gsi) * Vj^2 - βij * Vi * Vj * gij * cosθ <= branch.flow.longTerm[i])
+                if fromBus
+                    refFrom[i] = @constraint(jump, branch.flow.minFromBus[i] <= βij^2 * (gij + gsi) * Vi^2 - βij * Vi * Vj * gij * cosθ <= branch.flow.maxFromBus[i])
+                end
+                if toBus
+                    refTo[i] = @constraint(jump, branch.flow.minToBus[i] <= (gij + gsi) * Vj^2 - βij * Vi * Vj * gij * cosθ <= branch.flow.maxToBus[i])
+                end
             elseif bij != 0
-                refFrom[i] = @constraint(jump, -branch.flow.longTerm[i] <= βij^2 * (gij + gsi) * Vi^2 - βij * Vi * Vj * bij * sinθ <= branch.flow.longTerm[i])
-                refTo[i] = @constraint(jump, -branch.flow.longTerm[i] <= (gij + gsi) * Vj^2 + βij * Vi * Vj * bij * sinθ <= branch.flow.longTerm[i])
+                if fromBus
+                    refFrom[i] = @constraint(jump, branch.flow.minFromBus[i] <= βij^2 * (gij + gsi) * Vi^2 - βij * Vi * Vj * bij * sinθ <= branch.flow.maxFromBus[i])
+                end
+                if toBus
+                    refTo[i] = @constraint(jump, branch.flow.minToBus[i] <= (gij + gsi) * Vj^2 + βij * Vi * Vj * bij * sinθ <= branch.flow.maxToBus[i])
+                end
             end
         end
     end

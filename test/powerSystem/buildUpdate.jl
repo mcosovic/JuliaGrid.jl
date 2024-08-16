@@ -21,11 +21,11 @@
     addBranch!(systemPU; from = 8, to = 5, susceptance = 0, turnsRatio = 0.956, shiftAngle = 2.2 * rad)
     addBranch!(systemPU; from = "5", to = "6", susceptance = 0, turnsRatio = 1.05)
     addBranch!(systemPU; from = 4, to = 6, resistance = 0.17, reactance = 0.31, status = 0)
-    addBranch!(systemPU; from = 5, to = 7, resistance = 0.01, reactance = 0.05, shortTerm = 0.05)
+    addBranch!(systemPU; from = 5, to = 7, resistance = 0.01, reactance = 0.05)
     addBranch!(systemPU; from = 2, to = 9, reactance = 0.06, susceptance = 0, turnsRatio = 1.073)
     addBranch!(systemPU; from = 2, to = 7, resistance = 0.05, reactance = 0.02, status = 0)
-    addBranch!(systemPU; from = 1, to = 2, resistance = 0.07, reactance = 0.09, longTerm = 0.1)
-    addBranch!(systemPU; from = 4, to = 9, resistance = 0.08, reactance = 0.30, emergency = 0.03)
+    addBranch!(systemPU; from = 1, to = 2, resistance = 0.07, reactance = 0.09, minFromBus = -0.1, maxFromBus = 0.1, minToBus = -0.1, maxToBus = 0.1)
+    addBranch!(systemPU; from = 4, to = 9, resistance = 0.08, reactance = 0.30)
 
     @generator(label = "?")
     addGenerator!(systemPU; bus = "1", active = 3.7, maxReactive = 1.75, maxActive = 4.72)
@@ -84,7 +84,7 @@
     updateBranch!(systemPU; label = 2, status = 0)
     updateBranch!(systemPU; label = 1, status = 0, resistance = 0.05, turnsRatio = 0.89, shiftAngle = 1.2 * rad)
     updateBranch!(systemPU; label = 8, minDiffAngle = -2 * rad, maxDiffAngle = rad)
-    updateBranch!(systemPU; label = 7, longTerm = 5, shortTerm = 2, emergency = 4, type = 1)
+    updateBranch!(systemPU; label = 7, minFromBus = -5, maxFromBus = 5, minToBus = -5, maxToBus = 5, type = 1)
 
     updateGenerator!(systemPU; label = 2, status = 1, magnitude = 1.2)
     updateGenerator!(systemPU; label = 4, status = 1, active = 0.1, reactive = 0.2)
@@ -166,11 +166,11 @@ end
     addBranch!(systemSI; from = 8, to = 5, resistance = 0.09 * Zb1, reactance = 0.02 * Zb1, susceptance = 0, turnsRatio = 0.956, shiftAngle = 2.2)
     addBranch!(systemSI; from = 5, to = 6, resistance = 0.09 * Zb2, reactance = 0.02 * Zb2, susceptance = 0, turnsRatio = 1.05)
     addBranch!(systemSI; from = 4, to = 6, resistance = 0.17 * Zb3, reactance = 0.31 * Zb3, susceptance = 0.14 / Zb3, status = 0)
-    addBranch!(systemSI; from = 5, to = 7, resistance = 0.01 * Zb3, reactance = 0.05 * Zb3, susceptance = 0.14 / Zb3, shortTerm = 5e-3)
+    addBranch!(systemSI; from = 5, to = 7, resistance = 0.01 * Zb3, reactance = 0.05 * Zb3, susceptance = 0.14 / Zb3)
     addBranch!(systemSI; from = 2, to = 9, resistance = 0.09 * Zb4, reactance = 0.06 * Zb4, susceptance = 0, turnsRatio = 1.073)
     addBranch!(systemSI; from = 2, to = 7, resistance = 0.05 * Zb5, reactance = 0.02 * Zb5, susceptance = 0.14 / Zb5, status = 0)
-    addBranch!(systemSI; from = 1, to = 2, resistance = 0.07 * Zb3, reactance = 0.09 * Zb3, susceptance = 0.14 / Zb3, longTerm = 10e-3)
-    addBranch!(systemSI; from = 4, to = 9, resistance = 0.08 * Zb3, reactance = 0.30 * Zb3, susceptance = 0.14 / Zb3,  emergency = 3e-3)
+    addBranch!(systemSI; from = 1, to = 2, resistance = 0.07 * Zb3, reactance = 0.09 * Zb3, susceptance = 0.14 / Zb3, minFromBus = -10e-3, maxFromBus = 10e-3, minToBus = -10e-3, maxToBus = 10e-3)
+    addBranch!(systemSI; from = 4, to = 9, resistance = 0.08 * Zb3, reactance = 0.30 * Zb3, susceptance = 0.14 / Zb3)
 
     addGenerator!(systemSI; bus = 1, active = 370e3, maxReactive = 175, maxActive = 472e3)
     addGenerator!(systemSI; bus = 2, active = 210e3, magnitude = 1.1 * 115, maxActive = 316e3, status = 0)
@@ -233,7 +233,7 @@ end
     updateBranch!(systemSI; label = 2, status = 0)
     updateBranch!(systemSI; label = 1, status = 0, resistance = 0.05 * Zb3, turnsRatio = 0.89, shiftAngle = 1.2)
     updateBranch!(systemSI; label = 8, minDiffAngle = -2, maxDiffAngle = 1)
-    updateBranch!(systemSI; label = 7, longTerm = 0.5, shortTerm = 0.2, emergency = 0.4, type = 1)
+    updateBranch!(systemSI; label = 7, minFromBus = -0.5, maxFromBus = 0.5, minToBus = -0.5, maxToBus = 0.5, type = 1)
 
     updateGenerator!(systemSI; label = 2, status = 1, magnitude = 1.2 * 120)
     updateGenerator!(systemSI; label = 4, status = 1, active = 10e3, reactive = 20)
@@ -324,7 +324,7 @@ end
     ################ Branch Macro ################
     @branch(label = "Branch ?", status = 0, resistance = 0.1, reactance = 0.2, susceptance = 0.3,
     conductance = 0.4, turnsRatio = 0.5, shiftAngle = 0.6, minDiffAngle = -1.0, maxDiffAngle = 1.0,
-    longTerm = 0.2, shortTerm = 0.3, emergency = 0.4, type = 2)
+    minFromBus = -0.2, maxFromBus = 0.2, minToBus = -0.3, maxToBus = 0.3, type = 2)
 
     ####### Test Branch Data #######
     addBranch!(system; from = "Bus 1", to = "Bus 2")
@@ -338,14 +338,15 @@ end
     @test system.branch.parameter.shiftAngle[1] == 0.6
     @test system.branch.voltage.minDiffAngle[1] == -1
     @test system.branch.voltage.maxDiffAngle[1] == 1
-    @test system.branch.flow.longTerm[1] == 0.2
-    @test system.branch.flow.shortTerm[1] == 0.3
-    @test system.branch.flow.emergency[1] == 0.4
+    @test system.branch.flow.minFromBus[1] == -0.2
+    @test system.branch.flow.maxFromBus[1] == 0.2
+    @test system.branch.flow.minToBus[1] == -0.3
+    @test system.branch.flow.maxToBus[1] == 0.3
     @test system.branch.flow.type[1] == 2
 
-    addBranch!(system;  from = "Bus 1", to = "Bus 2", status = 1, resistance = 1.1, reactance = 1.2,
+    addBranch!(system; from = "Bus 1", to = "Bus 2", status = 1, resistance = 1.1, reactance = 1.2,
     susceptance = 1.3, conductance = 1.4, turnsRatio = 1.5, shiftAngle = 1.6, minDiffAngle = -2.0,
-    maxDiffAngle = 2.0, longTerm = 1.2, shortTerm = 1.3, emergency = 1.4, type = 3)
+    maxDiffAngle = 2.0, minFromBus = -1.2, maxFromBus = 1.2, minToBus = -1.3, maxToBus = 1.3, type = 3)
     @test system.branch.label["Branch 2"] == 2
     @test system.branch.layout.status[2] == 1
     @test system.branch.parameter.resistance[2] == 1.1
@@ -356,9 +357,10 @@ end
     @test system.branch.parameter.shiftAngle[2] == 1.6
     @test system.branch.voltage.minDiffAngle[2] == -2
     @test system.branch.voltage.maxDiffAngle[2] == 2
-    @test system.branch.flow.longTerm[2] == 1.2
-    @test system.branch.flow.shortTerm[2] == 1.3
-    @test system.branch.flow.emergency[2] == 1.4
+    @test system.branch.flow.minFromBus[2] == -1.2
+    @test system.branch.flow.maxFromBus[2] == 1.2
+    @test system.branch.flow.minToBus[2] == -1.3
+    @test system.branch.flow.maxToBus[2] == 1.3
     @test system.branch.flow.type[2] == 3
 
     ################ Generator Macro ################
@@ -451,7 +453,7 @@ end
     @branch(label = "Branch ?", status = 0, resistance = 0.1 * (100e3 * 0.5)^2 / (100e6), reactance = 0.2 * (100e3 * 0.5)^2 / (100e6),
     susceptance = 0.3 / ((100e3 * 0.5)^2 / (100e6)), conductance = 0.4 / ((100e3 * 0.5)^2 / (100e6)), turnsRatio = 0.5,
     shiftAngle = 0.6 * 180 / pi, minDiffAngle = -1 * 180 / pi, maxDiffAngle = 1 * 180 / pi,
-    longTerm = 0.2e5, shortTerm = 0.3e5, emergency = 0.4e5, type = 2)
+    minFromBus = -0.2e5, maxFromBus = 0.2e5, minToBus = 0.3e5, maxToBus = 0.4e5, type = 2)
 
     ####### Test Branch Data #######
     addBranch!(system; from = "Bus 1", to = "Bus 2")
@@ -465,9 +467,10 @@ end
     @test system.branch.parameter.shiftAngle[1] == 0.6
     @test system.branch.voltage.minDiffAngle[1] == -1
     @test system.branch.voltage.maxDiffAngle[1] == 1
-    @test system.branch.flow.longTerm[1] == 0.2
-    @test system.branch.flow.shortTerm[1] == 0.3
-    @test system.branch.flow.emergency[1] == 0.4
+    @test system.branch.flow.minFromBus[1] == -0.2
+    @test system.branch.flow.maxFromBus[1] == 0.2
+    @test system.branch.flow.minToBus[1] == 0.3
+    @test system.branch.flow.maxToBus[1] == 0.4
     @test system.branch.flow.type[1] == 2
 
     ################ Generator Macro ################

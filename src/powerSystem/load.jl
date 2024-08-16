@@ -87,7 +87,7 @@ function powerSystem()
         Branch(
             OrderedDict{String, Int64}(),
             BranchParameter(copy(af), copy(af), copy(af), copy(af), copy(af), copy(af)),
-            BranchFlow(copy(af), copy(af), copy(af), copy(ai8)),
+            BranchFlow(copy(af), copy(af), copy(af), copy(af), copy(ai8)),
             BranchVoltage(copy(af), copy(af)),
             BranchLayout(copy(ai), copy(ai), copy(ai8), 0, 0),
             0
@@ -187,9 +187,10 @@ function loadBranch(system::PowerSystem, hdf5::File)
     branch.voltage.maxDiffAngle = readHDF5(voltageh5, "maxDiffAngle", branch.number)
 
     flowh5 = hdf5["branch/flow"]
-    branch.flow.longTerm = readHDF5(flowh5, "longTerm", branch.number)
-    branch.flow.shortTerm = readHDF5(flowh5, "shortTerm", branch.number)
-    branch.flow.emergency = readHDF5(flowh5, "emergency", branch.number)
+    branch.flow.minFromBus = readHDF5(flowh5, "minFromBus", branch.number)
+    branch.flow.maxFromBus = readHDF5(flowh5, "maxFromBus", branch.number)
+    branch.flow.minToBus = readHDF5(flowh5, "minToBus", branch.number)
+    branch.flow.maxToBus = readHDF5(flowh5, "maxToBus", branch.number)
     branch.flow.type = readHDF5(flowh5, "type", branch.number)
 end
 
@@ -410,9 +411,10 @@ function loadBranch(system::PowerSystem, branchLine::Array{String,1})
     branch.voltage.minDiffAngle = similar(branch.parameter.conductance)
     branch.voltage.maxDiffAngle = similar(branch.parameter.resistance)
 
-    branch.flow.longTerm = similar(branch.parameter.conductance)
-    branch.flow.shortTerm = similar(branch.parameter.conductance)
-    branch.flow.emergency = similar(branch.parameter.conductance)
+    branch.flow.minFromBus = similar(branch.parameter.conductance)
+    branch.flow.maxFromBus = similar(branch.parameter.conductance)
+    branch.flow.minToBus = similar(branch.parameter.conductance)
+    branch.flow.maxToBus = similar(branch.parameter.conductance)
     branch.flow.type = fill(Int8(1), branch.number)
 
     branch.layout.from = fill(0, branch.number)
@@ -436,9 +438,11 @@ function loadBranch(system::PowerSystem, branchLine::Array{String,1})
         end
         branch.parameter.shiftAngle[k] = parse(Float64, data[10]) * deg2rad
 
-        branch.flow.longTerm[k] = parse(Float64, data[6]) * basePowerInv
-        branch.flow.shortTerm[k] = parse(Float64, data[7]) * basePowerInv
-        branch.flow.emergency[k] = parse(Float64, data[8]) * basePowerInv
+        longTerm = parse(Float64, data[6]) * basePowerInv
+        branch.flow.minFromBus[k] = -longTerm
+        branch.flow.maxFromBus[k] = longTerm
+        branch.flow.minToBus[k] = -longTerm
+        branch.flow.maxToBus[k] = longTerm
 
         branch.voltage.minDiffAngle[k] = parse(Float64, data[12]) * deg2rad
         branch.voltage.maxDiffAngle[k] = parse(Float64, data[13]) * deg2rad

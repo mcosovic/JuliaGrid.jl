@@ -171,20 +171,25 @@ function saveBranch(system::PowerSystem, file::File)
     attrs(file["branch/voltage/maxDiffAngle"])["unit"] = "radian (rad)"
     attrs(file["branch/voltage/maxDiffAngle"])["format"] = format
 
-    format = compresseArray(file, flow.longTerm, "branch/flow/longTerm")
-    attrs(file["branch/flow/longTerm"])["unit"] = "per-unit (pu)"
-    attrs(file["branch/flow/longTerm"])["SI unit"] = "volt-ampere (VA) or watt (W)"
-    attrs(file["branch/flow/longTerm"])["format"] = format
+    format = compresseArray(file, flow.minFromBus, "branch/flow/minFromBus")
+    attrs(file["branch/flow/minFromBus"])["unit"] = "per-unit (pu)"
+    attrs(file["branch/flow/minFromBus"])["SI unit"] = "volt-ampere (VA), watt (W), or ampere (A)"
+    attrs(file["branch/flow/minFromBus"])["format"] = format
 
-    format = compresseArray(file, flow.shortTerm, "branch/flow/shortTerm")
-    attrs(file["branch/flow/shortTerm"])["unit"] = "per-unit (pu)"
-    attrs(file["branch/flow/shortTerm"])["SI unit"] = "volt-ampere (VA) or watt (W)"
-    attrs(file["branch/flow/shortTerm"])["format"] = format
+    format = compresseArray(file, flow.maxFromBus, "branch/flow/maxFromBus")
+    attrs(file["branch/flow/maxFromBus"])["unit"] = "per-unit (pu)"
+    attrs(file["branch/flow/maxFromBus"])["SI unit"] = "volt-ampere (VA), watt (W), or ampere (A)"
+    attrs(file["branch/flow/maxFromBus"])["format"] = format
 
-    format = compresseArray(file, flow.emergency, "branch/flow/emergency")
-    attrs(file["branch/flow/emergency"])["unit"] = "per-unit (pu)"
-    attrs(file["branch/flow/emergency"])["SI unit"] = "volt-ampere (VA) or watt (W)"
-    attrs(file["branch/flow/emergency"])["format"] = format
+    format = compresseArray(file, flow.minToBus, "branch/flow/minToBus")
+    attrs(file["branch/flow/minToBus"])["unit"] = "per-unit (pu)"
+    attrs(file["branch/flow/minToBus"])["SI unit"] = "volt-ampere (VA), watt (W), or ampere (A)"
+    attrs(file["branch/flow/minToBus"])["format"] = format
+
+    format = compresseArray(file, flow.maxToBus, "branch/flow/maxToBus")
+    attrs(file["branch/flow/maxToBus"])["unit"] = "per-unit (pu)"
+    attrs(file["branch/flow/maxToBus"])["SI unit"] = "volt-ampere (VA), watt (W), or ampere (A)"
+    attrs(file["branch/flow/maxToBus"])["format"] = format
 
     format = compresseArray(file, flow.type, "branch/flow/type")
     attrs(file["branch/flow/type"])["apparent power flow"] = 1

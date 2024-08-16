@@ -13,9 +13,9 @@ addBus!(system; label = 2, type = 2, active = 0.1, conductance = 0.04)
 addBus!(system; label = 3, type = 1, active = 0.05)
 
 @branch(minDiffAngle = -pi, maxDiffAngle = pi)
-addBranch!(system; label = 1, from = 1, to = 2, reactance = 0.05, longTerm = 0.15)
-addBranch!(system; label = 2, from = 1, to = 3, reactance = 0.01, longTerm = 0.10)
-addBranch!(system; label = 3, from = 2, to = 3, reactance = 0.01, longTerm = 0.25)
+addBranch!(system; label = 1, from = 1, to = 2, reactance = 0.05, maxFromBus = 0.15)
+addBranch!(system; label = 2, from = 1, to = 3, reactance = 0.01, maxFromBus = 0.10)
+addBranch!(system; label = 3, from = 2, to = 3, reactance = 0.01, maxFromBus = 0.25)
 
 @generator(minActive = 0.0)
 addGenerator!(system; label = 1, bus = 1, active = 3.2, maxActive = 0.5)
@@ -229,7 +229,7 @@ The inequality constraint related to active power flow is used to represent ther
 ```
 Here, the lower and upper bounds are determined based on the vector ``\mathbf{P}_{\text{max}} = [P_{ij}^\text{max}]``, ``(i,j) \in \mathcal{E}``. These bounds can be accessed using the following variable:
 ```@repl DCOptimalPowerFlow
-𝐏ₘₐₓ = system.branch.flow.longTerm
+𝐏ₘₐₓ = system.branch.flow.maxFromBus
 ```
 
 The active power flow at branch ``(i,j) \in \mathcal{E}`` can be derived using the [Branch Network Equations](@ref DCBranchNetworkEquationsTutorials) and is given by:

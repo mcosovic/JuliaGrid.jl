@@ -45,7 +45,7 @@ addBus!(system; label = "Bus 1", type = 3, active = 0.1, angle = -0.1)
 addBus!(system; label = "Bus 2", reactive = 0.01, magnitude = 1.1)
 
 @branch(minDiffAngle = -pi, maxDiffAngle = pi, reactance = 0.5, type = 2)
-addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", longTerm = 0.15)
+addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", maxFromBus = 0.15)
 
 @generator(maxActive = 0.5, minReactive = -0.1, maxReactive = 0.1, status = 0)
 addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 0.4, reactive = 0.2)
@@ -208,24 +208,19 @@ The `flow` field contains references to the inequality constraints associated wi
 * `type = 2` for the active power flow,
 * `type = 3` for the current flow magnitude.
 
-These limits are specified using the `longTerm` keyword within the [`addBranch!`](@ref addBranch!) function. By default, the `longTerm` keyword is linked to apparent power (`type = 1`).
+These limits are specified using the `minFromBus`, `maxFromBus`, `minToBus` and `maxToBus` keywords within the [`addBranch!`](@ref addBranch!) function. By default, these limit keywords are associated with apparent power (`type = 1`).
 
 However, in the example, we configured it to use active power flow by setting `type = 2`. To access the flow constraints of branches at the from-bus end, we can utilize the following code snippet:
 ```@repl ACOptimalPowerFlow
 print(system.branch.label, analysis.method.constraint.flow.from)
 ```
 
-Similarly, to access the to-bus end flow constraints of branches we can use the following code snippet:
-```@repl ACOptimalPowerFlow
-print(system.branch.label, analysis.method.constraint.flow.to)
-```
-
 !!! note "Info"
-    Please note that if the flow constraints are set to `longTerm = 0.0` for the corresponding branch, JuliGrid will omit the corresponding inequality constraint.
+    Please note that if the flow constraints are set to `minFromBus = 0.0` and `maxFromBus = 0.0` for the corresponding branch, JuliGrid will omit the corresponding inequality constraint at the from-bus end of the branch. The same applies to the to-bus end if `minToBus = 0.0` and `maxToBus = 0.0` are set.
 
 Additionally, by employing the [`updateBranch!`](@ref updateBranch!) function, we have the ability to modify these specific constraints:
 ```@example ACOptimalPowerFlow
-updateBranch!(system, analysis; label = "Branch 1", reactance = 1.0, longTerm = 0.14)
+updateBranch!(system, analysis; label = "Branch 1", minFromBus = -0.15, maxToBus = 0.15)
 nothing # hide
 ```
 
@@ -234,6 +229,9 @@ The updated set of flow constraints can be examined as follows:
 print(system.branch.label, analysis.method.constraint.flow.from)
 print(system.branch.label, analysis.method.constraint.flow.to)
 ```
+
+!!! tip "Tip"
+    In typical scenarios, `minFromBus` is equal to `minToBus`, and `maxFromBus` is equal to `maxToBus`. However, we allow these values to be defined separately for greater flexibility, enabling, among other things, the option to apply constraints on only one side of the branch.
 
 ---
 
@@ -529,9 +527,9 @@ addBus!(system; label = "Bus 2", active = 0.1, reactive = 0.01, conductance = 0.
 addBus!(system; label = "Bus 3", active = 0.05, reactive = 0.02)
 
 @branch(resistance = 0.5, reactance = 1.0, conductance = 1e-4, susceptance = 0.01)
-addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", longTerm = 0.15)
-addBranch!(system; label = "Branch 2", from = "Bus 1", to = "Bus 3", longTerm = 0.10)
-addBranch!(system; label = "Branch 3", from = "Bus 2", to = "Bus 3", longTerm = 0.25)
+addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", maxFromBus = 0.15)
+addBranch!(system; label = "Branch 2", from = "Bus 1", to = "Bus 3", maxFromBus = 0.10)
+addBranch!(system; label = "Branch 3", from = "Bus 2", to = "Bus 3", maxFromBus = 0.25)
 
 @generator(maxActive = 0.5, minReactive = -0.1, maxReactive = 0.1)
 addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 3.2, reactive = 0.5)

@@ -52,7 +52,7 @@ is a possible to combine SI units with/without prefixes with per-units (pu).
 
 Changing the unit of `active` power is reflected in the following quantities:
 * [`addBus!`](@ref addBus!), [`updateBus!`](@ref updateBus!), [`@bus`](@ref @bus): `active`, `conductance`;
-* [`addBranch!`](@ref addBranch!), [`updateBranch!`](@ref updateBranch!), [`@branch`](@ref @branch): if `type = 2`: `longTerm`, `shortTerm`, `emergency`;
+* [`addBranch!`](@ref addBranch!), [`updateBranch!`](@ref updateBranch!), [`@branch`](@ref @branch): if `type = 2`: `minFromBus`, `maxFromBus`, `minToBus`, `maxToBus`;
 * [`addGenerator!`](@ref addGenerator!), [`updateGenerator!`](@ref updateGenerator!), [`@generator`](@ref @generator): `active`, `minActive`, `maxActive`, `lowActive`, `upActive`, `loadFollowing`, `reserve10min`, `reserve30min`;
 * [`cost!`](@ref cost!): if `active`: `piecewise`, `polynomial`;
 * [`addWattmeter!`](@ref addWattmeter!), [`updateWattmeter!`](@ref updateWattmeter!): `active`, `variance`;
@@ -66,7 +66,7 @@ Changing the unit of `reactive` power unit is reflected in the following quantit
 * [`@varmeter`](@ref @varmeter): `varianceBus`, `varianceFrom`, `varianceTo`.
 
 Changing the unit of `apparent` power unit is reflected in the following quantities:
-* [`addBranch!`](@ref addBranch!), [`updateBranch!`](@ref updateBranch!), [`@branch`](@ref @branch): if `type = 1` or `type = 3`: `longTerm`, `shortTerm`, `emergency`.
+* [`addBranch!`](@ref addBranch!), [`updateBranch!`](@ref updateBranch!), [`@branch`](@ref @branch): if `type = 1`: `minFromBus`, `maxFromBus`, `minToBus`, `maxToBus`.
 
 # Example
 ```jldoctest
@@ -147,6 +147,7 @@ Alternatively, the unit of current `magnitude` can be expressed in per-unit (pu)
 of current angle should be in radians (rad) or degrees (deg).
 
 Changing the unit of current `magnitude` is reflected in the following quantities:
+* [`addBranch!`](@ref addBranch!), [`updateBranch!`](@ref updateBranch!), [`@branch`](@ref @branch): if `type = 3`: `minFromBus`, `maxFromBus`, `minToBus`, `maxToBus`.
 * [`addAmmeter!`](@ref addAmmeter!), [`updateAmmeter!`](@ref updateAmmeter!): `magnitude`, `variance`;
 * [`@ammeter`](@ref @ammeter): `varianceFrom`, `varianceTo`;
 * [`addPmu!`](@ref addPmu!), [`updatePmu!`](@ref updatePmu!): if `from` or `to`: `magnitude`, `varianceMagnitude`;
@@ -344,12 +345,14 @@ macro default(mode::Symbol)
         template.branch.maxDiffAngle.value = 2*pi
         template.branch.maxDiffAngle.pu = true
 
-        template.branch.longTerm.value = 0.0
-        template.branch.longTerm.pu = true
-        template.branch.shortTerm.value = 0.0
-        template.branch.shortTerm.pu = true
-        template.branch.emergency.value = 0.0
-        template.branch.emergency.pu = true
+        template.branch.minFromBus.value = 0.0
+        template.branch.minFromBus.pu = true
+        template.branch.maxFromBus.value = 0.0
+        template.branch.maxFromBus.pu = true
+        template.branch.minToBus.value = 0.0
+        template.branch.minToBus.pu = true
+        template.branch.maxToBus.value = 0.0
+        template.branch.maxToBus.pu = true
 
         template.branch.label = "?"
         template.branch.turnsRatio = 1.0
