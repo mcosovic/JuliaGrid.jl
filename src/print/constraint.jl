@@ -913,7 +913,7 @@ function formatGeneratorConstraint(system::PowerSystem, analysis::ACOptimalPower
             minmaxQprimal = [-Inf; Inf]
             minmaxQdual = [-Inf; Inf]
 
-            @inbounds for (label, i) in system.bus.label
+            @inbounds for (label, i) in system.generator.label
                 width["Label"] = max(textwidth(label), width["Label"])
 
                 if haskey(constraint.capability.active, i) && is_valid(analysis.method.jump, constraint.capability.active[i])

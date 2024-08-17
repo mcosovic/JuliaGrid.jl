@@ -474,7 +474,6 @@ We also obtained all dual values. Here, we list only the dual variables for one 
 ```@repl ACOptimalPowerFlow
 print(system.generator.label, analysis.method.dual.capability.active)
 ```
-
 ---
 
 ##### Modify Optimal Power Flow
@@ -492,6 +491,45 @@ As a result, we obtain a new solution:
 ```@repl ACOptimalPowerFlow
 print(system.generator.label, generator.active, generator.reactive)
 print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
+```
+
+---
+
+##### Print Results in the REPL
+Users can utilize the functions [`printBusData`](@ref printBusData) and [`printGeneratorData`](@ref printGeneratorData) to display results. Additionally, to print bus, branch, or generator-related constraint data with the desired units, users can utilize any of the functions provided in the [Print Constraint Data](@ref PrintConstraintDataAPI) section. For example:
+```@example ACOptimalPowerFlow
+@power(MW, MVAr, pu)
+show = Dict("Active Power Balance Solution" => false, "Active Power Balance Dual" => false)
+printBusConstraint(system, analysis; show)
+nothing # hide
+```
+
+Next, users can easily customize the print results for specific constraint, for example:
+```julia
+printBusConstraint(system, analysis; label = "Bus 1", header = true)
+printBusConstraint(system, analysis; label = "Bus 2", footer = true)
+```
+
+---
+
+##### Save Results to a File
+Users can also redirect print output to a file. For example, data can be saved in a text file as follows:
+```julia
+open("bus.txt", "w") do file
+    printBusConstraint(system, analysis, file)
+end
+```
+
+---
+
+##### Save Results to a CSV File
+For CSV output, users should first generate a simple table with `style = false`, and then save it to a CSV file:
+```julia
+using CSV
+
+io = IOBuffer()
+printBusConstraint(system, analysis, io; style = false)
+CSV.write("constraint.csv", CSV.File(take!(io); delim = "|"))
 ```
 
 ---
