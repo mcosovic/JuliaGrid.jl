@@ -420,8 +420,6 @@ end
     @test analysis.voltage.angle ≈ matpower30["voltageAngle"]
 end
 
-
-
 @testset "Gauss-Seidel Method" begin
     ################ Modified IEEE 14-bus Test Case ################
     system14 = powerSystem(string(pathData, "case14test.m"))

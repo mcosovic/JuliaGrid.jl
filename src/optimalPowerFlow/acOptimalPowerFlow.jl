@@ -516,6 +516,9 @@ function addFlow(system::PowerSystem, jump::JuMP.Model, magnitude::Vector{Variab
         βij = 1 / branch.parameter.turnsRatio[i]
 
         if branch.flow.type[i] == 1 || branch.flow.type[i] == 3
+            minFromLimit, fromBus = checkMinFlowLimit(branch.flow.minFromBus[i], branch.flow.maxFromBus[i], fromBus)
+            minToLimit, toBus = checkMinFlowLimit(branch.flow.minToBus[i], branch.flow.maxToBus[i], toBus)
+
             Aij = βij^4 * ((gij + gsi)^2 + (bij + bsi)^2)
             Bij = βij^2 * (gij^2 + bij^2)
             Cij = βij^3 * (gij * (gij + gsi) + bij * (bij + bsi))
@@ -527,17 +530,17 @@ function addFlow(system::PowerSystem, jump::JuMP.Model, magnitude::Vector{Variab
 
             if branch.flow.type[i] == 1
                 if fromBus
-                    refFrom[i] = @constraint(jump, branch.flow.minFromBus[i] <= sqrt(Aij * Vi^4 + Bij * Vi^2 * Vj^2 - 2 * Vi^3 * Vj * (Cij * cosθ - Dij * sinθ)) <= branch.flow.maxFromBus[i])
+                    refFrom[i] = @constraint(jump, minFromLimit <= sqrt(Aij * Vi^4 + Bij * Vi^2 * Vj^2 - 2 * Vi^3 * Vj * (Cij * cosθ - Dij * sinθ)) <= branch.flow.maxFromBus[i])
                 end
                 if toBus
-                    refTo[i] = @constraint(jump, branch.flow.minToBus[i] <= sqrt(Aji * Vj^4 + Bij * Vi^2 * Vj^2 - 2 * Vi * Vj^3 * (Cji * cosθ + Dji * sinθ)) <= branch.flow.maxToBus[i])
+                    refTo[i] = @constraint(jump, minToLimit <= sqrt(Aji * Vj^4 + Bij * Vi^2 * Vj^2 - 2 * Vi * Vj^3 * (Cji * cosθ + Dji * sinθ)) <= branch.flow.maxToBus[i])
                 end
             elseif branch.flow.type[i] == 3
                 if fromBus
-                    refFrom[i] = @constraint(jump, branch.flow.minFromBus[i] <= sqrt(Aij * Vi^2 + Bij * Vj^2 - 2 * Vi * Vj * (Cij * cosθ - Dij * sinθ)) <= branch.flow.maxFromBus[i])
+                    refFrom[i] = @constraint(jump, minFromLimit <= sqrt(Aij * Vi^2 + Bij * Vj^2 - 2 * Vi * Vj * (Cij * cosθ - Dij * sinθ)) <= branch.flow.maxFromBus[i])
                 end
                 if toBus
-                    refTo[i] = @constraint(jump, branch.flow.minToBus[i] <= sqrt(Aji * Vj^2 + Bij * Vi^2 - 2 * Vi * Vj * (Cji * cosθ + Dji * sinθ)) <= branch.flow.maxToBus[i])
+                    refTo[i] = @constraint(jump, minToLimit <= sqrt(Aji * Vj^2 + Bij * Vi^2 - 2 * Vi * Vj * (Cji * cosθ + Dji * sinθ)) <= branch.flow.maxToBus[i])
                 end
             end
         elseif branch.flow.type[i] == 2
@@ -658,6 +661,20 @@ function updateBalance(system::PowerSystem, analysis::ACOptimalPowerFlow, index:
     if reactive
         constraint.balance.reactive[index] = @constraint(jump, sum(variable.reactive[k] for k in bus.supply.generator[index]) - variable.magnitude[index] * reactiveExpr == bus.demand.reactive[index])
     end
+end
+
+function checkMinFlowLimit(minLimit::Float64, maxLimit::Float64, flag::Bool)
+    if minLimit < 0.0
+        newMinLimit = 0.0
+    else
+        newMinLimit = minLimit
+    end
+
+    if newMinLimit == 0.0 && maxLimit == 0.0
+        flag = false
+    end
+
+    return newMinLimit, flag
 end
 
 """

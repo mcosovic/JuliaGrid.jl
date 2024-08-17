@@ -106,7 +106,7 @@ struct DCPowerFlow <: DC
 end
 
 ######### Constraints ##########
-struct CartesianFlowRef
+mutable struct CartesianFlowRef
     from::Dict{Int64, ConstraintRef}
     to::Dict{Int64, ConstraintRef}
 end

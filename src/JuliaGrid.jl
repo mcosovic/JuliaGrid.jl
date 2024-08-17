@@ -23,10 +23,12 @@ export @base, @power, @voltage, @current, @parameter, @default
 
 ######### Print ##########
 include("print/powerSystem.jl")
+include("print/constraint.jl")
 include("print/measurement.jl")
 include("print/routine.jl")
 export printBusData, printBranchData, printGeneratorData
 export printBusSummary, printBranchSummary, printGeneratorSummary
+export printBusConstraint, printBranchConstraint, printGeneratorConstraint
 export printVoltmeterData, printAmmeterData, printWattmeterData, printVarmeterData, printPmuData
 
 ########## Power System ##########
@@ -55,7 +57,7 @@ export dcPowerFlow
 ######### Optimal Power Flow ##########
 include("optimalPowerFlow/acOptimalPowerFlow.jl")
 include("optimalPowerFlow/dcOptimalPowerFlow.jl")
-export acOptimalPowerFlow, startingPrimal!, startingDual!
+export acOptimalPowerFlow, startingPrimal!
 export dcOptimalPowerFlow
 
 ######### Measurement ##########

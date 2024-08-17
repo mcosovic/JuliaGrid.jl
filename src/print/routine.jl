@@ -413,6 +413,12 @@ function printf(io::IO, fmt::Dict{String, Format}, show::Dict{String, Bool}, wid
     end
 end
 
+function printf(io::IO, fmt::Dict{String, Format}, show::Dict{String, Bool}, width::Dict{String, Int64}, value::Float64, key::String)
+    if show[key]
+        print(io, format(fmt[key], width[key], value))
+    end
+end
+
 function printf(io::IO, width::Dict{String, Int64}, show::Dict{String, Bool}, delimiter::String, key1::String, key2::String, title::String)
     if show[key1] && show[key2]
         print(io, format(Format(" %*s%s%*s $delimiter"), floor(Int, (width[key1] + width[key2] - textwidth(title) + 3) / 2), "", title, ceil(Int, (width[key1] + width[key2] - textwidth(title) + 3) / 2) , ""))
@@ -532,14 +538,19 @@ function titlemax(width::Dict{String, Int64}, show::Dict{String, Bool}, key1::St
         elseif show[key4]
             width[key4] = max(textwidth(title), width[key4])
         end
-    elseif countTrue == 2
+    elseif countTrue == 2 || countTrue == 3
         if width[key1] * show[key1] +  width[key2] * show[key2] + width[key3] * show[key3] +  width[key4] * show[key4] < textwidth(title)
+            if countTrue == 2
+                space = 3
+            else
+                space = 6
+            end
             if show[key4]
-                width[key4] = max(textwidth(title) - width[key1] * show[key1] - width[key2] * show[key2] - width[key3] * show[key3] - 3, width[key4])
+                width[key4] = max(textwidth(title) - width[key1] * show[key1] - width[key2] * show[key2] - width[key3] * show[key3] - space, width[key4])
             elseif show[key3]
-                width[key3] = max(textwidth(title) - width[key1] * show[key1] - width[key2] * show[key2] - width[key4] * show[key4] - 3, width[key3])
+                width[key3] = max(textwidth(title) - width[key1] * show[key1] - width[key2] * show[key2] - width[key4] * show[key4] - space, width[key3])
             elseif show[key2]
-                width[key2] = max(textwidth(title) - width[key1] * show[key1] - width[key3] * show[key3] - width[key4] * show[key4] - 3, width[key2])
+                width[key2] = max(textwidth(title) - width[key1] * show[key1] - width[key3] * show[key3] - width[key4] * show[key4] - space, width[key2])
             end
         end
     end

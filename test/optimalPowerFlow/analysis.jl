@@ -111,6 +111,24 @@ system14 = powerSystem(string(pathData, "case14optimal.m"))
         @test reactive ≈ power.generator.reactive[value]
     end
 
+    ####### Test Print Bus Constraint Data #######
+    @capture_out printBusConstraint(system14, analysis)
+    @capture_out printBusConstraint(system14, analysis; label = 1, header = true)
+    @capture_out printBusConstraint(system14, analysis; label = 2)
+    @capture_out printBusConstraint(system14, analysis; label = 3, footer = true)
+
+    ####### Test Print Branch Constraint Data #######
+    @capture_out printBranchConstraint(system14, analysis)
+    @capture_out printBranchConstraint(system14, analysis; label = 1, header = true)
+    @capture_out printBranchConstraint(system14, analysis; label = 2)
+    @capture_out printBranchConstraint(system14, analysis; label = 3, footer = true)
+
+    ####### Test Print Generator Constraint Data #######
+    @capture_out printGeneratorConstraint(system14, analysis)
+    @capture_out printGeneratorConstraint(system14, analysis; label = 1, header = true)
+    @capture_out printGeneratorConstraint(system14, analysis; label = 2)
+    @capture_out printGeneratorConstraint(system14, analysis; label = 3, footer = true)
+
     ######## Active Power Flow Constraints ##########
     matpower14 = h5read(string(pathData, "results.h5"), "case14optimal/acOptimalPowerFlowActive")
     system14.branch.flow.type .= 2
