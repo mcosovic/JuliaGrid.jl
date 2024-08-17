@@ -566,9 +566,9 @@ function minmaxPrimal(show::Dict{String, Bool}, constraint::ConstraintRef, scale
     return minmaxprimal
 end
 
-function minmaxDual(show::Dict{String, Bool}, dual::Float64, scale::Float64, minmaxdual::Array{Float64,1}, key::String)
-    if show[key]
-        dualValue = dual / scale
+function minmaxDual(show::Dict{String, Bool}, dual::Dict{Int64, Float64}, i::Int64, scale::Float64, minmaxdual::Array{Float64,1}, key::String)
+    if show[key] && haskey(dual, i)
+        dualValue = dual[i] / scale
         minmaxdual[1] = max(dualValue, minmaxdual[1])
         minmaxdual[2] = min(dualValue, minmaxdual[2])
     end
