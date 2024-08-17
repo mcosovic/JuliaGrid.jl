@@ -380,6 +380,44 @@ analysis.method.dual.balance.active[1]
 
 ---
 
+##### Print Results in the REPL
+Users can utilize the functions [`printBusData`](@ref printBusData) and [`printGeneratorData`](@ref printGeneratorData) to display results. Additionally, to print bus, branch, or generator-related constraint data with the desired units, users can utilize any of the functions provided in the [Print Constraint Data](@ref PrintConstraintDataAPI) section. For example:
+```@example DCOptimalPowerFlow
+@power(MW, MVAr, pu)
+printBusConstraint(system, analysis)
+nothing # hide
+```
+
+Next, users can easily customize the print results for specific constraint, for example:
+```julia
+printBusConstraint(system, analysis; label = "Bus 1", header = true)
+printBusConstraint(system, analysis; label = "Bus 2", footer = true)
+```
+
+---
+
+##### Save Results to a File
+Users can also redirect print output to a file. For example, data can be saved in a text file as follows:
+```julia
+open("bus.txt", "w") do file
+    printBusConstraint(system, analysis, file)
+end
+```
+
+---
+
+##### Save Results to a CSV File
+For CSV output, users should first generate a simple table with `style = false`, and then save it to a CSV file:
+```julia
+using CSV
+
+io = IOBuffer()
+printBusConstraint(system, analysis, io; style = false)
+CSV.write("constraint.csv", CSV.File(take!(io); delim = "|"))
+```
+
+---
+
 ## Primal and Dual Warm Start
 Utilizing the `DCOptimalPowerFlow` type and proceeding directly to the solver offers the advantage of a "warm start". In this scenario, the starting primal and dual values for the subsequent solving step correspond to the solution obtained from the previous step.
 
@@ -483,7 +521,17 @@ print(system.branch.label, analysis.power.from.active)
 !!! note "Info"
     To better understand the powers associated with buses and branches that are calculated by the [`power!`](@ref power!(::PowerSystem, ::DCPowerFlow)) function, we suggest referring to the tutorials on [DC Optimal Power Flow](@ref DCOptimalPowerAnalysisTutorials).
 
-To compute specific quantities for particular components, rather than calculating powers or currents for all components, users can utilize one of the provided functions below.
+---
+
+##### Print Results in the REPL
+Users can utilize any of the print functions outlined in the [Print Power System Data](@ref PrintPowerSystemDataAPI) or [Print Power System Summary](@ref PrintPowerSystemSummaryAPI). For example, to create a bus data with the desired units, users can use the following function:
+```@example DCOptimalPowerFlowPower
+@voltage(pu, deg, V)
+@power(MW, MVAr, pu)
+printBusData(system, analysis)
+@default(unit) # hide
+nothing # hide
+```
 
 ---
 
