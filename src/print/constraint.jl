@@ -1,5 +1,5 @@
 """
-    printBusConstraint(system::PowerSystem, analysis::ACOptimalPowerFlow, [io::IO];
+    printBusConstraint(system::PowerSystem, analysis::OptimalPowerFlow, [io::IO];
         label, header, footer, delimiter, fmt, width, show, style)
 
 The function prints constraint data related to buses. Optionally, an `IO` may be passed as the
@@ -415,7 +415,7 @@ function formatBusConstraint(system::PowerSystem, analysis::DCOptimalPowerFlow, 
 end
 
 """
-    printBranchConstraint(system::PowerSystem, analysis::ACOptimalPowerFlow, [io::IO];
+    printBranchConstraint(system::PowerSystem, analysis::OptimalPowerFlow, [io::IO];
         label, header, footer, delimiter, fmt, width, show, style)
 
 The function prints constraint data related to branches. Optionally, an `IO` may be passed as
@@ -1057,7 +1057,7 @@ function branchConstraintHeader(io::IO, width::Dict{String, Int64}, show::Dict{S
 end
 
 """
-    printGeneratorConstraint(system::PowerSystem, analysis::ACOptimalPowerFlow, [io::IO];
+    printGeneratorConstraint(system::PowerSystem, analysis::OptimalPowerFlow, [io::IO];
         label, header, footer, delimiter, fmt, width, show, style)
 
 The function prints constraint data related to generators. Optionally, an `IO` may be passed as
