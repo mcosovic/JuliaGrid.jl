@@ -185,11 +185,11 @@ function formatBusConstraint(system::PowerSystem, analysis::ACOptimalPowerFlow, 
         "Voltage Magnitude Minimum" => !isempty(constraint.voltage.magnitude),
         "Voltage Magnitude Solution" => !isempty(constraint.voltage.magnitude),
         "Voltage Magnitude Maximum" => !isempty(constraint.voltage.magnitude),
-        "Voltage Magnitude Dual" => !isempty(constraint.voltage.magnitude),
+        "Voltage Magnitude Dual" => !isempty(dual.voltage.magnitude),
         "Active Power Balance Solution" => !isempty(constraint.balance.active),
-        "Active Power Balance Dual" => !isempty(constraint.balance.active),
+        "Active Power Balance Dual" => !isempty(dual.balance.active),
         "Reactive Power Balance Solution" => !isempty(constraint.balance.reactive),
-        "Reactive Power Balance Dual" => !isempty(constraint.balance.reactive)
+        "Reactive Power Balance Dual" => !isempty(dual.balance.reactive)
     )
 
     fmt, width, show = printFormat(_fmt, fmt, _width, width, _show, show, style)
@@ -205,17 +205,23 @@ function formatBusConstraint(system::PowerSystem, analysis::ACOptimalPowerFlow, 
                 fmax(fmt, width, show, system.bus.voltage.minMagnitude, i, scaleVoltage(prefix, system.base.voltage, i), "Voltage Magnitude Minimum")
                 fmax(fmt, width, show, voltage.magnitude, i, scaleVoltage(prefix, system.base.voltage, i), "Voltage Magnitude Solution")
                 fmax(fmt, width, show, system.bus.voltage.maxMagnitude, i, scaleVoltage(prefix, system.base.voltage, i), "Voltage Magnitude Maximum")
-                fmax(fmt, width, show, dual.voltage.magnitude[i] / scaleVoltage(prefix, system.base.voltage, i), "Voltage Magnitude Dual")
+                if haskey(dual.voltage.magnitude, i)
+                    fmax(fmt, width, show, dual.voltage.magnitude[i] / scaleVoltage(prefix, system.base.voltage, i), "Voltage Magnitude Dual")
+                end
             end
 
             if haskey(constraint.balance.active, i) && is_valid(analysis.method.jump, constraint.balance.active[i])
                 fmax(fmt, width, show, value(constraint.balance.active[i]) * scale["P"], "Active Power Balance Solution")
-                fmax(fmt, width, show, dual.balance.active[i] / scale["P"], "Active Power Balance Dual")
+                if haskey(dual.balance.active, i)
+                    fmax(fmt, width, show, dual.balance.active[i] / scale["P"], "Active Power Balance Dual")
+                end
             end
 
             if haskey(constraint.balance.reactive, i) && is_valid(analysis.method.jump, constraint.balance.reactive[i])
                 fmax(fmt, width, show, value(constraint.balance.reactive[i]) * scale["Q"], "Reactive Power Balance Solution")
-                fmax(fmt, width, show, dual.balance.reactive[i] / scale["Q"], "Reactive Power Balance Dual")
+                if haskey(dual.balance.reactive, i)
+                    fmax(fmt, width, show, dual.balance.reactive[i] / scale["Q"], "Reactive Power Balance Dual")
+                end
             end
         else
             maxVmin = initMax(prefix.voltageMagnitude)
@@ -231,17 +237,23 @@ function formatBusConstraint(system::PowerSystem, analysis::ACOptimalPowerFlow, 
                 width["Label"] = max(textwidth(label), width["Label"])
 
                 if haskey(constraint.voltage.magnitude, i) && is_valid(analysis.method.jump, constraint.voltage.magnitude[i])
-                    minmaxDual(show, dual.voltage.magnitude[i], scaleVoltage(prefix, system.base.voltage, i), minmaxVdual, "Voltage Magnitude Dual")
+                    if haskey(dual.voltage.magnitude, i)
+                        minmaxDual(show, dual.voltage.magnitude[i], scaleVoltage(prefix, system.base.voltage, i), minmaxVdual, "Voltage Magnitude Dual")
+                    end
                 end
 
                 if haskey(constraint.balance.active, i) && is_valid(analysis.method.jump, constraint.balance.active[i])
                     minmaxPrimal(show, constraint.balance.active[i], scale["P"], minmaxPprimal, "Active Power Balance Solution")
-                    minmaxDual(show, dual.balance.active[i], scale["P"], minmaxPdual, "Active Power Balance Dual")
+                    if haskey(dual.balance.active, i)
+                        minmaxDual(show, dual.balance.active[i], scale["P"], minmaxPdual, "Active Power Balance Dual")
+                    end
                 end
 
                 if haskey(constraint.balance.reactive, i) && is_valid(analysis.method.jump, constraint.balance.reactive[i])
                     minmaxPrimal(show, constraint.balance.reactive[i], scale["Q"], minmaxQprimal, "Reactive Power Balance Solution")
-                    minmaxDual(show, dual.balance.reactive[i], scale["Q"], minmaxQdual, "Reactive Power Balance Dual")
+                    if haskey(dual.balance.reactive, i)
+                        minmaxDual(show, dual.balance.reactive[i], scale["Q"], minmaxQdual, "Reactive Power Balance Dual")
+                    end
                 end
 
                 if prefix.voltageMagnitude != 0.0
@@ -455,15 +467,15 @@ function formatBranchConstraint(system::PowerSystem, analysis::ACOptimalPowerFlo
         "Voltage Angle Difference Minimum" => !isempty(constraint.voltage.angle),
         "Voltage Angle Difference Solution" => !isempty(constraint.voltage.angle),
         "Voltage Angle Difference Maximum" => !isempty(constraint.voltage.angle),
-        "Voltage Angle Difference Dual" => !isempty(constraint.voltage.angle),
+        "Voltage Angle Difference Dual" => !isempty(dual.voltage.angle),
         "From-Bus Flow Minimum" => !isempty(constraint.flow.from),
         "From-Bus Flow Solution" => !isempty(constraint.flow.from),
         "From-Bus Flow Maximum" => !isempty(constraint.flow.from),
-        "From-Bus Flow Dual" => !isempty(constraint.flow.from),
+        "From-Bus Flow Dual" => !isempty(dual.flow.from),
         "To-Bus Flow Minimum" => !isempty(constraint.flow.to),
         "To-Bus Flow Solution" => !isempty(constraint.flow.to),
         "To-Bus Flow Maximum" => !isempty(constraint.flow.to),
-        "To-Bus Flow Dual" => !isempty(constraint.flow.to),
+        "To-Bus Flow Dual" => !isempty(dual.flow.to),
     )
 
     fmt, width, show = printFormat(_fmt, fmt, _width, width, _show, show, style)
@@ -496,7 +508,9 @@ function formatBranchConstraint(system::PowerSystem, analysis::ACOptimalPowerFlo
                 fmax(fmt, width, show, system.branch.voltage.minDiffAngle, i, scale["θ"], "Voltage Angle Difference Minimum")
                 fmax(fmt, width, show, value(constraint.voltage.angle[i]) * scale["θ"], "Voltage Angle Difference Solution")
                 fmax(fmt, width, show, system.branch.voltage.maxDiffAngle, i, scale["θ"], "Voltage Angle Difference Maximum")
-                fmax(fmt, width, show, dual.voltage.angle[i] / scale["θ"], "Voltage Angle Difference Dual")
+                if haskey(dual.voltage.angle, i)
+                    fmax(fmt, width, show, dual.voltage.angle[i] / scale["θ"], "Voltage Angle Difference Dual")
+                end
             end
 
             if haskey(constraint.flow.from, i) && is_valid(analysis.method.jump, constraint.flow.from[i])
@@ -505,7 +519,9 @@ function formatBranchConstraint(system::PowerSystem, analysis::ACOptimalPowerFlo
                 end
                 fmax(fmt, width, show, value(constraint.flow.from[i]) * scaleFlowFrom, "From-Bus Flow Solution")
                 fmax(fmt, width, show,system.branch.flow.maxFromBus, i, scaleFlowFrom, "From-Bus Flow Maximum")
-                fmax(fmt, width, show, dual.flow.from[i] / scaleFlowFrom, "From-Bus Flow Dual")
+                if haskey(dual.flow.from, i)
+                    fmax(fmt, width, show, dual.flow.from[i] / scaleFlowFrom, "From-Bus Flow Dual")
+                end
             end
 
             if haskey(constraint.flow.to, i) && is_valid(analysis.method.jump, constraint.flow.to[i])
@@ -514,7 +530,9 @@ function formatBranchConstraint(system::PowerSystem, analysis::ACOptimalPowerFlo
                 end
                 fmax(fmt, width, show, value(constraint.flow.to[i]) * scaleFlowTo, "To-Bus Flow Solution")
                 fmax(fmt, width, show,system.branch.flow.maxToBus, i, scaleFlowTo, "To-Bus Flow Maximum")
-                fmax(fmt, width, show, dual.flow.to[i] / scaleFlowTo, "To-Bus Flow Dual")
+                if haskey(dual.flow.to, i)
+                    fmax(fmt, width, show, dual.flow.to[i] / scaleFlowTo, "To-Bus Flow Dual")
+                end
             end
         else
             minmaxθprimal = [-Inf; Inf]
@@ -533,7 +551,9 @@ function formatBranchConstraint(system::PowerSystem, analysis::ACOptimalPowerFlo
 
                 if haskey(constraint.voltage.angle, i) && is_valid(analysis.method.jump, constraint.voltage.angle[i])
                     minmaxPrimal(show, constraint.voltage.angle[i], scale["θ"], minmaxθprimal, "Voltage Angle Difference Solution")
-                    minmaxDual(show, dual.voltage.angle[i], scale["θ"], minmaxθdual, "Voltage Angle Difference Dual")
+                    if haskey(dual.voltage.angle, i)
+                        minmaxDual(show, dual.voltage.angle[i], scale["θ"], minmaxθdual, "Voltage Angle Difference Dual")
+                    end
                 end
 
                 if system.branch.flow.type[i] == 1
@@ -556,7 +576,9 @@ function formatBranchConstraint(system::PowerSystem, analysis::ACOptimalPowerFlo
                     end
                     minmaxPrimal(show, constraint.flow.from[i], scaleFlowFrom, minmaxFprimal, "From-Bus Flow Solution")
                     minmaxValue(show, system.branch.flow.maxFromBus, i, scaleFlowFrom, minmaxFmax, "From-Bus Flow Maximum")
-                    minmaxDual(show, dual.flow.from[i], scaleFlowFrom, minmaxFdual, "From-Bus Flow Dual")
+                    if haskey(dual.flow.from, i)
+                        minmaxDual(show, dual.flow.from[i], scaleFlowFrom, minmaxFdual, "From-Bus Flow Dual")
+                    end
                 end
 
                 if haskey(constraint.flow.to, i) && is_valid(analysis.method.jump, constraint.flow.to[i])
@@ -565,7 +587,9 @@ function formatBranchConstraint(system::PowerSystem, analysis::ACOptimalPowerFlo
                     end
                     minmaxPrimal(show, constraint.flow.to[i], scaleFlowTo, minmaxTprimal, "To-Bus Flow Solution")
                     minmaxValue(show, system.branch.flow.maxToBus, i, scaleFlowTo, minmaxTmax, "To-Bus Flow Maximum")
-                    minmaxDual(show, dual.flow.to[i], scaleFlowTo, minmaxTdual, "To-Bus Flow Dual")
+                    if haskey(dual.flow.to, i)
+                        minmaxDual(show, dual.flow.to[i], scaleFlowTo, minmaxTdual, "To-Bus Flow Dual")
+                    end
                 end
             end
 
@@ -878,11 +902,11 @@ function formatGeneratorConstraint(system::PowerSystem, analysis::ACOptimalPower
         "Active Power Capability Minimum" => !isempty(constraint.capability.active),
         "Active Power Capability Solution" => !isempty(constraint.capability.active),
         "Active Power Capability Maximum" => !isempty(constraint.capability.active),
-        "Active Power Capability Dual" => !isempty(constraint.capability.active),
+        "Active Power Capability Dual" => !isempty(dual.capability.active),
         "Reactive Power Capability Minimum" => !isempty(constraint.capability.reactive),
         "Reactive Power Capability Solution" => !isempty(constraint.capability.reactive),
         "Reactive Power Capability Maximum" => !isempty(constraint.capability.reactive),
-        "Reactive Power Capability Dual" => !isempty(constraint.capability.reactive)
+        "Reactive Power Capability Dual" => !isempty(dual.capability.reactive)
     )
 
     fmt, width, show = printFormat(_fmt, fmt, _width, width, _show, show, style)
@@ -898,14 +922,18 @@ function formatGeneratorConstraint(system::PowerSystem, analysis::ACOptimalPower
                 fmax(fmt, width, show, system.generator.capability.minActive, i, scale["P"], "Active Power Capability Minimum")
                 fmax(fmt, width, show, value(constraint.capability.active[i]) * scale["P"], "Active Power Capability Solution")
                 fmax(fmt, width, show, system.generator.capability.maxActive, i, scale["P"], "Active Power Capability Maximum")
-                fmax(fmt, width, show, dual.capability.active[i] / scale["P"], "Active Power Capability Dual")
+                if haskey(dual.capability.active, i)
+                    fmax(fmt, width, show, dual.capability.active[i] / scale["P"], "Active Power Capability Dual")
+                end
             end
 
             if haskey(constraint.capability.reactive, i) && is_valid(analysis.method.jump, constraint.capability.reactive[i])
                 fmax(fmt, width, show, system.generator.capability.minReactive, i, scale["Q"], "Reactive Power Capability Minimum")
                 fmax(fmt, width, show, value(constraint.capability.reactive[i]) * scale["Q"], "Reactive Power Capability Solution")
                 fmax(fmt, width, show, system.generator.capability.maxReactive, i, scale["Q"], "Reactive Power Capability Maximum")
-                fmax(fmt, width, show, dual.capability.reactive[i] / scale["Q"], "Reactive Power Capability Dual")
+                if haskey(dual.capability.reactive, i)
+                    fmax(fmt, width, show, dual.capability.reactive[i] / scale["Q"], "Reactive Power Capability Dual")
+                end
             end
         else
             minmaxPprimal = [-Inf; Inf]
@@ -918,12 +946,16 @@ function formatGeneratorConstraint(system::PowerSystem, analysis::ACOptimalPower
 
                 if haskey(constraint.capability.active, i) && is_valid(analysis.method.jump, constraint.capability.active[i])
                     minmaxPrimal(show, constraint.capability.active[i], scale["P"], minmaxPprimal, "Active Power Capability Solution")
-                    minmaxDual(show, dual.capability.active[i], scale["P"], minmaxPdual, "Active Power Capability Dual")
+                    if haskey(dual.capability.active, i)
+                        minmaxDual(show, dual.capability.active[i], scale["P"], minmaxPdual, "Active Power Capability Dual")
+                    end
                 end
 
                 if haskey(constraint.capability.reactive, i) && is_valid(analysis.method.jump, constraint.capability.reactive[i])
                     minmaxPrimal(show, constraint.capability.reactive[i], scale["Q"], minmaxQprimal, "Reactive Power Capability Solution")
-                    minmaxDual(show, dual.capability.reactive[i], scale["Q"], minmaxQdual, "Reactive Power Capability Dual")
+                    if haskey(dual.capability.reactive, i)
+                        minmaxDual(show, dual.capability.reactive[i], scale["Q"], minmaxQdual, "Reactive Power Capability Dual")
+                    end
                 end
             end
 

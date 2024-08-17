@@ -455,6 +455,45 @@ analysis.method.dual.balance.active[1]
 
 ---
 
+##### Print Results in the REPL
+Users can utilize the functions [`printBusData`](@ref printBusData) and [`printGeneratorData`](@ref printGeneratorData) to display results. Additionally, to print bus, branch, or generator-related constraint data with the desired units, users can utilize any of the functions provided in the [Print Constraint Data](@ref PrintConstraintDataAPI) section. For example:
+```@example ACOptimalPowerFlow
+@power(MW, MVAr, pu)
+show = Dict("Active Power Balance Solution" => false, "Active Power Balance Dual" => false)
+printBusConstraint(system, analysis; show)
+nothing # hide
+```
+
+Next, users can easily customize the print results for specific constraint, for example:
+```julia
+printBusConstraint(system, analysis; label = "Bus 1", header = true)
+printBusConstraint(system, analysis; label = "Bus 2", footer = true)
+```
+
+---
+
+##### Save Results to a File
+Users can also redirect print output to a file. For example, data can be saved in a text file as follows:
+```julia
+open("bus.txt", "w") do file
+    printBusConstraint(system, analysis, file)
+end
+```
+
+---
+
+##### Save Results to a CSV File
+For CSV output, users should first generate a simple table with `style = false`, and then save it to a CSV file:
+```julia
+using CSV
+
+io = IOBuffer()
+printBusConstraint(system, analysis, io; style = false)
+CSV.write("constraint.csv", CSV.File(take!(io); delim = "|"))
+```
+
+---
+
 ## Primal and Dual Warm Start
 Utilizing the `ACOptimalPowerFlow` type and proceeding directly to the solver offers the advantage of a "warm start". In this scenario, the starting primal and dual values for the subsequent solving step correspond to the solution obtained from the previous step.
 
@@ -491,45 +530,6 @@ As a result, we obtain a new solution:
 ```@repl ACOptimalPowerFlow
 print(system.generator.label, generator.active, generator.reactive)
 print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
-```
-
----
-
-##### Print Results in the REPL
-Users can utilize the functions [`printBusData`](@ref printBusData) and [`printGeneratorData`](@ref printGeneratorData) to display results. Additionally, to print bus, branch, or generator-related constraint data with the desired units, users can utilize any of the functions provided in the [Print Constraint Data](@ref PrintConstraintDataAPI) section. For example:
-```@example ACOptimalPowerFlow
-@power(MW, MVAr, pu)
-show = Dict("Active Power Balance Solution" => false, "Active Power Balance Dual" => false)
-printBusConstraint(system, analysis; show)
-nothing # hide
-```
-
-Next, users can easily customize the print results for specific constraint, for example:
-```julia
-printBusConstraint(system, analysis; label = "Bus 1", header = true)
-printBusConstraint(system, analysis; label = "Bus 2", footer = true)
-```
-
----
-
-##### Save Results to a File
-Users can also redirect print output to a file. For example, data can be saved in a text file as follows:
-```julia
-open("bus.txt", "w") do file
-    printBusConstraint(system, analysis, file)
-end
-```
-
----
-
-##### Save Results to a CSV File
-For CSV output, users should first generate a simple table with `style = false`, and then save it to a CSV file:
-```julia
-using CSV
-
-io = IOBuffer()
-printBusConstraint(system, analysis, io; style = false)
-CSV.write("constraint.csv", CSV.File(take!(io); delim = "|"))
 ```
 
 ---
@@ -598,7 +598,19 @@ print(system.branch.label, analysis.current.from.magnitude)
 !!! note "Info"
     To better understand the powers and current associated with buses and branches that are calculated by the [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)) and [`current!`](@ref current!(::PowerSystem, ::AC)) functions, we suggest referring to the tutorials on [AC Optimal Power Flow](@ref ACOptimalPowerFlowTutorials).
 
-To compute specific quantities for particular components, rather than calculating powers or currents for all components, users can utilize one of the provided functions below.
+---
+
+##### Print Results in the REPL
+Users can utilize any of the print functions outlined in the [Print Power System Data](@ref PrintPowerSystemDataAPI) or [Print Power System Summary](@ref PrintPowerSystemSummaryAPI). For example, to create a bus data with the desired units, users can use the following function:
+```@example ACOptimalPowerFlowPower
+@voltage(pu, deg, V)
+@power(MW, MVAr, pu)
+show = Dict("Power Generation Active" => false, "Power Generation Reactive" => false,
+            "Current Injection Magnitude" => false, "Current Injection Angle" => false)
+printBusData(system, analysis; show)
+@default(unit) # hide
+nothing # hide
+```
 
 ---
 
