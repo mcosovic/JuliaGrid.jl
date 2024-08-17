@@ -57,7 +57,7 @@ export dcPowerFlow
 ######### Optimal Power Flow ##########
 include("optimalPowerFlow/acOptimalPowerFlow.jl")
 include("optimalPowerFlow/dcOptimalPowerFlow.jl")
-export acOptimalPowerFlow, startingPrimal!
+export acOptimalPowerFlow, startingPrimal!, startingDual!
 export dcOptimalPowerFlow
 
 ######### Measurement ##########
