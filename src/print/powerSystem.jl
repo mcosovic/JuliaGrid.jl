@@ -11,9 +11,9 @@ The following keywords control the printed data:
 * `header`: Toggles the printing of the header.
 * `footer`: Toggles the printing of the footer.
 * `delimiter`: Sets the column delimiter.
-* `fmt`: Specifies the preferred numeric format of each column.
-* `width`: Specifies the preferred width of each column.
-* `show`: Toggles the printing of each column.
+* `fmt`: Specifies the preferred numeric formats for the columns.
+* `width`: Specifies the preferred widths for the columns.
+* `show`: Toggles the printing of the columns.
 * `style`: Prints either a stylish table or a simple table suitable for easy export.
 
 !!! compat "Julia 1.10"
@@ -40,7 +40,7 @@ printBusData(system, analysis; fmt, show)
 
 # Print data for specific buses
 delimiter = " "
-width = Dict("Power Injection Active" => 8)
+width = Dict("Voltage" => 9, "Power Injection Active" => 9)
 printBusData(system, analysis; label = 2, delimiter, width, header = true)
 printBusData(system, analysis; label = 10, delimiter, width)
 printBusData(system, analysis; label = 12, delimiter, width)
@@ -159,15 +159,7 @@ function formatBusData(system::PowerSystem, analysis::AC, label::L, scale::Dict{
     power = analysis.power
     current = analysis.current
 
-    mshow = Dict(
-        "Voltage" => true,
-        "Power Generation" => true,
-        "Power Demand" => true,
-        "Power Injection" => true,
-        "Shunt Power" => true,
-        "Current Injection" => true
-    )
-    mfmt = Dict(
+    _fmt = Dict(
         "Voltage" => "",
         "Power Generation" => "",
         "Power Demand" => "",
@@ -175,50 +167,66 @@ function formatBusData(system::PowerSystem, analysis::AC, label::L, scale::Dict{
         "Shunt Power" => "",
         "Current Injection" => "",
     )
-    mshow, mfmt = printFormat(mshow, show, mfmt, fmt)
-
     _width = Dict(
-        "Label" => 5 * style,
-        "Voltage Magnitude" => 9 * style,
-        "Voltage Angle" => 5 * style,
-        "Power Generation Active" => 6 * style,
-        "Power Generation Reactive" => 8 * style,
-        "Power Demand Active" => 6 * style,
-        "Power Demand Reactive" => 8 * style,
-        "Power Injection Active" => 6 * style,
-        "Power Injection Reactive" => 8 * style,
-        "Shunt Power Active" => 6 * style,
-        "Shunt Power Reactive" => 8 * style,
-        "Current Injection Magnitude" => 9 * style,
-        "Current Injection Angle" => 5 * style
-    )
-    _fmt = Dict(
-        "Voltage Magnitude" => isempty(mfmt["Voltage"]) ? "%*.4f" : mfmt["Voltage"],
-        "Voltage Angle" => isempty(mfmt["Voltage"]) ? "%*.4f" : mfmt["Voltage"],
-        "Power Generation Active" => isempty(mfmt["Power Generation"]) ? "%*.4f" : mfmt["Power Generation"],
-        "Power Generation Reactive" => isempty(mfmt["Power Generation"]) ? "%*.4f" : mfmt["Power Generation"],
-        "Power Demand Active" => isempty(mfmt["Power Demand"]) ? "%*.4f" : mfmt["Power Demand"],
-        "Power Demand Reactive" => isempty(mfmt["Power Demand"]) ? "%*.4f" : mfmt["Power Demand"],
-        "Power Injection Active" => isempty(mfmt["Power Injection"]) ? "%*.4f" : mfmt["Power Injection"],
-        "Power Injection Reactive" => isempty(mfmt["Power Injection"]) ? "%*.4f" : mfmt["Power Injection"],
-        "Shunt Power Active" => isempty(mfmt["Shunt Power"]) ? "%*.4f" : mfmt["Shunt Power"],
-        "Shunt Power Reactive" => isempty(mfmt["Shunt Power"]) ? "%*.4f" : mfmt["Shunt Power"],
-        "Current Injection Magnitude" => isempty(mfmt["Current Injection"]) ? "%*.4f" : mfmt["Current Injection"],
-        "Current Injection Angle" => isempty(mfmt["Current Injection"]) ? "%*.4f" : mfmt["Current Injection"]
+        "Voltage" => 0,
+        "Power Generation" => 0,
+        "Power Demand" => 0,
+        "Power Injection" => 0,
+        "Shunt Power" => 0,
+        "Current Injection" => 0
     )
     _show = Dict(
-        "Voltage Magnitude" => true & mshow["Voltage"],
-        "Voltage Angle" => true & mshow["Voltage"],
-        "Power Generation Active" => !isempty(power.supply.active) & mshow["Power Generation"],
-        "Power Generation Reactive" => !isempty(power.supply.reactive) & mshow["Power Generation"],
-        "Power Demand Active" => !isempty(power.injection.active) & mshow["Power Demand"],
-        "Power Demand Reactive" => !isempty(power.injection.reactive) & mshow["Power Demand"],
-        "Power Injection Active" => !isempty(power.injection.active) & mshow["Power Injection"],
-        "Power Injection Reactive" => !isempty(power.injection.reactive) & mshow["Power Injection"],
-        "Shunt Power Active" => !isempty(power.shunt.active) & mshow["Shunt Power"],
-        "Shunt Power Reactive" => !isempty(power.shunt.reactive) & mshow["Shunt Power"],
-        "Current Injection Magnitude" => !isempty(current.injection.magnitude) & mshow["Current Injection"],
-        "Current Injection Angle" => !isempty(current.injection.angle) & mshow["Current Injection"]
+        "Voltage" => true,
+        "Power Generation" => true,
+        "Power Demand" => true,
+        "Power Injection" => true,
+        "Shunt Power" => true,
+        "Current Injection" => true
+    )
+    _fmt, _width, _show = printFormat(_fmt, fmt, _width, width, _show, show, style)
+
+    _fmt = Dict(
+        "Voltage Magnitude" => _fmt_(_fmt["Voltage"], "%*.4f"),
+        "Voltage Angle" => _fmt_(_fmt["Voltage"], "%*.4f"),
+        "Power Generation Active" => _fmt_(_fmt["Power Generation"], "%*.4f"),
+        "Power Generation Reactive" => _fmt_(_fmt["Power Generation"], "%*.4f"),
+        "Power Demand Active" => _fmt_(_fmt["Power Demand"], "%*.4f"),
+        "Power Demand Reactive" => _fmt_(_fmt["Power Demand"], "%*.4f"),
+        "Power Injection Active" => _fmt_(_fmt["Power Injection"], "%*.4f"),
+        "Power Injection Reactive" => _fmt_(_fmt["Power Injection"], "%*.4f"),
+        "Shunt Power Active" => _fmt_(_fmt["Shunt Power"], "%*.4f"),
+        "Shunt Power Reactive" => _fmt_(_fmt["Shunt Power"], "%*.4f"),
+        "Current Injection Magnitude" => _fmt_(_fmt["Current Injection"], "%*.4f"),
+        "Current Injection Angle" => _fmt_(_fmt["Current Injection"], "%*.4f")
+    )
+    _width = Dict(
+        "Label" => 5 * style,
+        "Voltage Magnitude" => _width_(_width["Voltage"], 9, style),
+        "Voltage Angle" => _width_(_width["Voltage"], 5, style),
+        "Power Generation Active" => _width_(_width["Power Generation"], 6, style),
+        "Power Generation Reactive" => _width_(_width["Power Generation"], 8, style),
+        "Power Demand Active" => _width_(_width["Power Demand"], 6, style),
+        "Power Demand Reactive" => _width_(_width["Power Demand"], 8, style),
+        "Power Injection Active" => _width_(_width["Power Injection"], 6, style),
+        "Power Injection Reactive" => _width_(_width["Power Injection"], 8, style),
+        "Shunt Power Active" => _width_(_width["Shunt Power"], 6, style),
+        "Shunt Power Reactive" => _width_(_width["Shunt Power"], 8, style),
+        "Current Injection Magnitude" => _width_(_width["Current Injection"], 9, style),
+        "Current Injection Angle" => _width_(_width["Current Injection"], 5, style)
+    )
+    _show = Dict(
+        "Voltage Magnitude" => _show_(voltage.magnitude, _show["Voltage"]),
+        "Voltage Angle" => _show_(voltage.angle, _show["Voltage"]),
+        "Power Generation Active" => _show_(power.supply.active, _show["Power Generation"]),
+        "Power Generation Reactive" => _show_(power.supply.reactive, _show["Power Generation"]),
+        "Power Demand Active" => _show_(system.bus.demand.active, _show["Power Demand"]),
+        "Power Demand Reactive" => _show_(system.bus.demand.reactive, _show["Power Demand"]),
+        "Power Injection Active" => _show_(power.injection.active, _show["Power Injection"]),
+        "Power Injection Reactive" => _show_(power.injection.reactive, _show["Power Injection"]),
+        "Shunt Power Active" => _show_(power.shunt.active, _show["Shunt Power"]),
+        "Shunt Power Reactive" => _show_(power.shunt.reactive, _show["Shunt Power"]),
+        "Current Injection Magnitude" => _show_(current.injection.magnitude, _show["Current Injection"]),
+        "Current Injection Angle" => _show_(current.injection.angle, _show["Current Injection"])
     )
     fmt, width, show = printFormat(_fmt, fmt, _width, width, _show, show, style)
 
@@ -383,38 +391,44 @@ function formatBusData(system::PowerSystem, analysis::DC, label::L, scale::Dict{
     voltage = analysis.voltage
     power = analysis.power
 
-    mshow = Dict(
-        "Voltage" => true,
-        "Power Generation" => true,
-        "Power Demand" => true,
-        "Power Injection" => true,
-    )
-    mfmt = Dict(
+    _fmt = Dict(
         "Voltage" => "",
         "Power Generation" => "",
         "Power Demand" => "",
         "Power Injection" => "",
     )
-    mshow, mfmt = printFormat(mshow, show, mfmt, fmt)
-
     _width = Dict(
-        "Label" => 5 * style,
-        "Voltage Angle" => 7 * style,
-        "Power Generation Active" => 16 * style,
-        "Power Demand Active" => 12 * style,
-        "Power Injection Active" => 15 * style
-    )
-    _fmt = Dict(
-        "Voltage Angle" => isempty(mfmt["Voltage"]) ? "%*.4f" : mfmt["Voltage"],
-        "Power Generation Active" => isempty(mfmt["Power Generation"]) ? "%*.4f" : mfmt["Power Generation"],
-        "Power Demand Active" => isempty(mfmt["Power Demand"]) ? "%*.4f" : mfmt["Power Demand"],
-        "Power Injection Active" => isempty(mfmt["Power Injection"]) ? "%*.4f" : mfmt["Power Injection"]
+        "Voltage" => 0,
+        "Power Generation" => 0,
+        "Power Demand" => 0,
+        "Power Injection" => 0,
     )
     _show = Dict(
-        "Voltage Angle" => true & mshow["Voltage"],
-        "Power Generation Active" => !isempty(power.supply.active) & mshow["Power Generation"],
-        "Power Demand Active" => !isempty(power.injection.active) & mshow["Power Demand"],
-        "Power Injection Active" => !isempty(power.injection.active) & mshow["Power Injection"],
+        "Voltage" => true,
+        "Power Generation" => true,
+        "Power Demand" => true,
+        "Power Injection" => true,
+    )
+    _fmt, _width, _show = printFormat(_fmt, fmt, _width, width, _show, show, style)
+
+    _fmt = Dict(
+        "Voltage Angle" => _fmt_(_fmt["Voltage"], "%*.4f"),
+        "Power Generation Active" => _fmt_(_fmt["Power Generation"], "%*.4f"),
+        "Power Demand Active" => _fmt_(_fmt["Power Demand"], "%*.4f"),
+        "Power Injection Active" => _fmt_(_fmt["Power Injection"], "%*.4f")
+    )
+    _width = Dict(
+        "Label" => 5 * style,
+        "Voltage Angle" => _width_(_width["Voltage"], 7, style),
+        "Power Generation Active" => _width_(_width["Power Generation"], 16, style),
+        "Power Demand Active" => _width_(_width["Power Demand"], 12, style),
+        "Power Injection Active" => _width_(_width["Power Injection"], 15, style)
+    )
+    _show = Dict(
+        "Voltage Angle" => _show_(voltage.angle, _show["Voltage"]),
+        "Power Generation Active" => _show_(power.supply.active, _show["Power Generation"]),
+        "Power Demand Active" => _show_(system.bus.demand.active, _show["Power Demand"]),
+        "Power Injection Active" => _show_(power.injection.active, _show["Power Injection"])
     )
     fmt, width, show = printFormat(_fmt, fmt, _width, width, _show, show, style)
 
@@ -461,9 +475,9 @@ The following keywords control the printed data:
 * `header`: Toggles the printing of the header.
 * `footer`: Toggles the printing of the footer.
 * `delimiter`: Sets the column delimiter.
-* `fmt`: Specifies the preferred numeric format of each column.
-* `width`: Specifies the preferred width of each column.
-* `show`: Toggles the printing of each column.
+* `fmt`: Specifies the preferred numeric formats for the columns.
+* `width`: Specifies the preferred widths for the columns.
+* `show`: Toggles the printing of the columns.
 * `style`: Prints either a stylish table or a simple table suitable for easy export.
 
 !!! compat "Julia 1.10"
@@ -490,7 +504,7 @@ printBranchData(system, analysis; fmt, show)
 
 # Print data for specific branches
 delimiter = " "
-width = Dict("From-Bus Power Active" => 7, "To-Bus Power Active" => 7)
+width = Dict("From-Bus Power" => 9, "To-Bus Power Active" => 9)
 printBranchData(system, analysis; label = 2, delimiter, width, header = true)
 printBranchData(system, analysis; label = 10, delimiter, width)
 printBranchData(system, analysis; label = 12, delimiter, width)
@@ -624,16 +638,7 @@ function formatBranchData(system::PowerSystem, analysis::AC, label::L, scale::Di
     power = analysis.power
     current = analysis.current
 
-    mshow = Dict(
-        "From-Bus Power" => true,
-        "To-Bus Power" => true,
-        "Shunt Power" => true,
-        "Series Power" => true,
-        "From-Bus Current" => true,
-        "To-Bus Current" => true,
-        "Series Current" => true,
-    )
-    mfmt = Dict(
+    _fmt = Dict(
         "From-Bus Power" => "",
         "To-Bus Power" => "",
         "Shunt Power" => "",
@@ -642,58 +647,76 @@ function formatBranchData(system::PowerSystem, analysis::AC, label::L, scale::Di
         "To-Bus Current" => "",
         "Series Current" => "",
     )
-    mshow, mfmt = printFormat(mshow, show, mfmt, fmt)
-
     _width = Dict(
-        "Label" => 5 * style,
-        "From-Bus Power Active" => 6 * style,
-        "From-Bus Power Reactive" => 8 * style,
-        "To-Bus Power Active" => 6 * style,
-        "To-Bus Power Reactive" => 8 * style,
-        "Shunt Power Active" => 6 * style,
-        "Shunt Power Reactive" => 8 * style,
-        "Series Power Active" => 6 * style,
-        "Series Power Reactive" => 8 * style,
-        "From-Bus Current Magnitude" => 9 * style,
-        "From-Bus Current Angle" => 5 * style,
-        "To-Bus Current Magnitude" => 9 * style,
-        "To-Bus Current Angle" => 5 * style,
-        "Series Current Magnitude" => 9 * style,
-        "Series Current Angle" => 5 * style,
-        "Status" => 6 * style
-    )
-    _fmt = Dict(
-        "From-Bus Power Active" => isempty(mfmt["From-Bus Power"]) ? "%*.4f" : mfmt["From-Bus Power"],
-        "From-Bus Power Reactive" => isempty(mfmt["From-Bus Power"]) ? "%*.4f" : mfmt["From-Bus Power"],
-        "To-Bus Power Active" => isempty(mfmt["To-Bus Power"]) ? "%*.4f" : mfmt["To-Bus Power"],
-        "To-Bus Power Reactive" => isempty(mfmt["To-Bus Power"]) ? "%*.4f" : mfmt["To-Bus Power"],
-        "Shunt Power Active" => isempty(mfmt["Shunt Power"]) ? "%*.4f" : mfmt["Shunt Power"],
-        "Shunt Power Reactive" => isempty(mfmt["Shunt Power"]) ? "%*.4f" : mfmt["Shunt Power"],
-        "Series Power Active" => isempty(mfmt["Series Power"]) ? "%*.4f" : mfmt["Series Power"],
-        "Series Power Reactive" => isempty(mfmt["Series Power"]) ? "%*.4f" : mfmt["Series Power"],
-        "From-Bus Current Magnitude" => isempty(mfmt["From-Bus Current"]) ? "%*.4f" : mfmt["From-Bus Current"],
-        "From-Bus Current Angle" => isempty(mfmt["From-Bus Current"]) ? "%*.4f" : mfmt["From-Bus Current"],
-        "To-Bus Current Magnitude" => isempty(mfmt["To-Bus Current"]) ? "%*.4f" : mfmt["To-Bus Current"],
-        "To-Bus Current Angle" => isempty(mfmt["To-Bus Current"]) ? "%*.4f" : mfmt["To-Bus Current"],
-        "Series Current Magnitude" => isempty(mfmt["Series Current"]) ? "%*.4f" : mfmt["Series Current"],
-        "Series Current Angle" => isempty(mfmt["Series Current"]) ? "%*.4f" : mfmt["Series Current"],
-        "Status" => "%*i"
+        "From-Bus Power" => 0,
+        "To-Bus Power" => 0,
+        "Shunt Power" => 0,
+        "Series Power" => 0,
+        "From-Bus Current" => 0,
+        "To-Bus Current" => 0,
+        "Series Current" => 0,
     )
     _show = Dict(
-        "From-Bus Power Active" => !isempty(power.from.active) & mshow["From-Bus Power"],
-        "From-Bus Power Reactive" => !isempty(power.from.reactive) & mshow["From-Bus Power"],
-        "To-Bus Power Active" => !isempty(power.to.active) & mshow["To-Bus Power"],
-        "To-Bus Power Reactive" => !isempty(power.to.reactive) & mshow["To-Bus Power"],
-        "Shunt Power Active" => !isempty(power.charging.active) & mshow["Shunt Power"],
-        "Shunt Power Reactive" => !isempty(power.charging.reactive) & mshow["Shunt Power"],
-        "Series Power Active" => !isempty(power.series.active) & mshow["Series Power"],
-        "Series Power Reactive" => !isempty(power.series.reactive) & mshow["Series Power"],
-        "From-Bus Current Magnitude" => !isempty(current.from.magnitude) & mshow["From-Bus Current"],
-        "From-Bus Current Angle" => !isempty(current.from.angle) & mshow["From-Bus Current"],
-        "To-Bus Current Magnitude" => !isempty(current.to.magnitude) & mshow["To-Bus Current"],
-        "To-Bus Current Angle" => !isempty(current.to.angle) & mshow["To-Bus Current"],
-        "Series Current Magnitude" => !isempty(current.series.magnitude) & mshow["Series Current"],
-        "Series Current Angle" => !isempty(current.series.angle) & mshow["Series Current"],
+        "From-Bus Power" => true,
+        "To-Bus Power" => true,
+        "Shunt Power" => true,
+        "Series Power" => true,
+        "From-Bus Current" => true,
+        "To-Bus Current" => true,
+        "Series Current" => true,
+    )
+    _fmt, _width, _show = printFormat(_fmt, fmt, _width, width, _show, show, style)
+
+    _fmt = Dict(
+        "From-Bus Power Active" => _fmt_(_fmt["From-Bus Power"], "%*.4f"),
+        "From-Bus Power Reactive" => _fmt_(_fmt["From-Bus Power"], "%*.4f"),
+        "To-Bus Power Active" => _fmt_(_fmt["To-Bus Power"], "%*.4f"),
+        "To-Bus Power Reactive" => _fmt_(_fmt["To-Bus Power"], "%*.4f"),
+        "Shunt Power Active" => _fmt_(_fmt["Shunt Power"], "%*.4f"),
+        "Shunt Power Reactive" => _fmt_(_fmt["Shunt Power"], "%*.4f"),
+        "Series Power Active" => _fmt_(_fmt["Series Power"], "%*.4f"),
+        "Series Power Reactive" => _fmt_(_fmt["Series Power"], "%*.4f"),
+        "From-Bus Current Magnitude" => _fmt_(_fmt["From-Bus Current"], "%*.4f"),
+        "From-Bus Current Angle" => _fmt_(_fmt["From-Bus Current"], "%*.4f"),
+        "To-Bus Current Magnitude" => _fmt_(_fmt["To-Bus Current"], "%*.4f"),
+        "To-Bus Current Angle" => _fmt_(_fmt["To-Bus Current"], "%*.4f"),
+        "Series Current Magnitude" => _fmt_(_fmt["Series Current"], "%*.4f"),
+        "Series Current Angle" => _fmt_(_fmt["Series Current"], "%*.4f"),
+        "Status" => "%*i"
+    )
+    _width = Dict(
+        "Label" => 5 * style,
+        "From-Bus Power Active" => _width_(_width["From-Bus Power"], 6, style),
+        "From-Bus Power Reactive" => _width_(_width["From-Bus Power"], 8, style),
+        "To-Bus Power Active" => _width_(_width["To-Bus Power"], 6, style),
+        "To-Bus Power Reactive" => _width_(_width["To-Bus Power"], 8, style),
+        "Shunt Power Active" => _width_(_width["Shunt Power"], 6, style),
+        "Shunt Power Reactive" => _width_(_width["Shunt Power"], 8, style),
+        "Series Power Active" => _width_(_width["Series Power"], 6, style),
+        "Series Power Reactive" => _width_(_width["Series Power"], 8, style),
+        "From-Bus Current Magnitude" => _width_(_width["From-Bus Current"], 9, style),
+        "From-Bus Current Angle" => _width_(_width["From-Bus Current"], 5, style),
+        "To-Bus Current Magnitude" => _width_(_width["To-Bus Current"], 9, style),
+        "To-Bus Current Angle" => _width_(_width["To-Bus Current"], 5, style),
+        "Series Current Magnitude" => _width_(_width["Series Current"], 9, style),
+        "Series Current Angle" => _width_(_width["Series Current"], 5, style),
+        "Status" => 6 * style
+    )
+    _show = Dict(
+        "From-Bus Power Active" => _show_(power.from.active, _show["From-Bus Power"]),
+        "From-Bus Power Reactive" => _show_(power.from.reactive, _show["From-Bus Power"]),
+        "To-Bus Power Active" => _show_(power.to.active, _show["To-Bus Power"]),
+        "To-Bus Power Reactive" => _show_(power.to.reactive, _show["To-Bus Power"]),
+        "Shunt Power Active" => _show_(power.charging.active, _show["Shunt Power"]),
+        "Shunt Power Reactive" => _show_(power.charging.reactive, _show["Shunt Power"]),
+        "Series Power Active" => _show_(power.series.active, _show["Series Power"]),
+        "Series Power Reactive" => _show_(power.series.reactive, _show["Series Power"]),
+        "From-Bus Current Magnitude" => _show_(current.from.magnitude, _show["From-Bus Current"]),
+        "From-Bus Current Angle" => _show_(current.from.angle, _show["From-Bus Current"]),
+        "To-Bus Current Magnitude" => _show_(current.to.magnitude, _show["To-Bus Current"]),
+        "To-Bus Current Angle" => _show_(current.to.angle, _show["To-Bus Current"]),
+        "Series Current Magnitude" => _show_(current.series.magnitude, _show["Series Current"]),
+        "Series Current Angle" => _show_(current.series.angle, _show["Series Current"]),
         "Status" => true
     )
     fmt, width, show = printFormat(_fmt, fmt, _width, width, _show, show, style)
@@ -848,32 +871,37 @@ end
 
 function formatBranchData(system::PowerSystem, analysis::DC, label::L, scale::Dict{String, Float64},
     fmt::Dict{String, String}, width::Dict{String, Int64}, show::Dict{String, Bool}, style::Bool)
+
     power = analysis.power
 
-    mshow = Dict(
-        "From-Bus Power" => true,
-        "To-Bus Power" => true,
-    )
-    mfmt = Dict(
+    _fmt = Dict(
         "From-Bus Power" => "",
         "To-Bus Power" => "",
     )
-    mshow, mfmt = printFormat(mshow, show, mfmt, fmt)
-
     _width = Dict(
-        "Label" => 5 * style,
-        "From-Bus Power Active" => 14 * style,
-        "To-Bus Power Active" => 12 * style,
-        "Status" => 6 * style
-    )
-    _fmt = Dict(
-        "From-Bus Power Active" => isempty(mfmt["From-Bus Power"]) ? "%*.4f" : mfmt["From-Bus Power"],
-        "To-Bus Power Active" => isempty(mfmt["To-Bus Power"]) ? "%*.4f" : mfmt["To-Bus Power"],
-        "Status" => "%*i"
+        "From-Bus Power" => 0,
+        "To-Bus Power" => 0,
     )
     _show = Dict(
-        "From-Bus Power Active" => !isempty(power.from.active) & mshow["From-Bus Power"],
-        "To-Bus Power Active" => !isempty(power.to.active) & mshow["To-Bus Power"],
+        "From-Bus Power" => true,
+        "To-Bus Power" => true,
+    )
+    _fmt, _width, _show = printFormat(_fmt, fmt, _width, width, _show, show, style)
+
+    _fmt = Dict(
+        "From-Bus Power Active" => _fmt_(_fmt["From-Bus Power"], "%*.4f"),
+        "To-Bus Power Active" => _fmt_(_fmt["To-Bus Power"], "%*.4f"),
+        "Status" => "%*i"
+    )
+    _width = Dict(
+        "Label" => 5 * style,
+        "From-Bus Power Active" => _width_(_width["From-Bus Power"], 14, style),
+        "To-Bus Power Active" => _width_(_width["To-Bus Power"], 12, style),
+        "Status" => 6 * style
+    )
+    _show = Dict(
+        "From-Bus Power Active" => _show_(power.from.active, _show["From-Bus Power"]),
+        "To-Bus Power Active" => _show_(power.to.active, _show["To-Bus Power"]),
         "Status" => true
     )
     fmt, width, show = printFormat(_fmt, fmt, _width, width, _show, show, style)
@@ -914,9 +942,9 @@ The following keywords control the printed data:
 * `header`: Toggles the printing of the header.
 * `footer`: Toggles the printing of the footer.
 * `delimiter`: Sets the column delimiter.
-* `fmt`: Specifies the preferred numeric format of each column.
-* `width`: Specifies the preferred width of each column.
-* `show`: Toggles the printing of each column.
+* `fmt`: Specifies the preferred numeric formats for the columns.
+* `width`: Specifies the preferred widths for the columns.
+* `show`: Toggles the printing of the columns.
 * `style`: Prints either a stylish table or a simple table suitable for easy export.
 
 !!! compat "Julia 1.10"
@@ -1017,28 +1045,31 @@ function formatGeneratorData(system::PowerSystem, analysis::AC, label::L, scale:
 
     power = analysis.power
 
-    mshow = Dict(
-        "Power Output" => true,
-    )
-    mfmt = Dict(
+    _fmt = Dict(
         "Power Output" => "",
     )
-    mshow, mfmt = printFormat(mshow, show, mfmt, fmt)
-
     _width = Dict(
-        "Label" => 5 * style,
-        "Power Output Active" => 6 * style,
-        "Power Output Reactive" => 8 * style,
-        "Status" => 6 * style
-    )
-    _fmt = Dict(
-        "Power Output Active" => isempty(mfmt["Power Output"]) ? "%*.4f" : mfmt["Power Output"],
-        "Power Output Reactive" => isempty(mfmt["Power Output"]) ? "%*.4f" : mfmt["Power Output"],
-        "Status" => "%*i"
+        "Power Output" => 0,
     )
     _show = Dict(
-        "Power Output Active" => !isempty(power.generator.active) & mshow["Power Output"],
-        "Power Output Reactive" => !isempty(power.generator.reactive) & mshow["Power Output"],
+        "Power Output" => true,
+    )
+    _fmt, _width, _show = printFormat(_fmt, fmt, _width, width, _show, show, style)
+
+    _fmt = Dict(
+        "Power Output Active" => _fmt_(_fmt["Power Output"], "%*.4f"),
+        "Power Output Reactive" => _fmt_(_fmt["Power Output"], "%*.4f"),
+        "Status" => "%*i"
+    )
+    _width = Dict(
+        "Label" => 5 * style,
+        "Power Output Active" => _width_(_width["Power Output"], 6, style),
+        "Power Output Reactive" => _width_(_width["Power Output"], 8, style),
+        "Status" => 6 * style
+    )
+    _show = Dict(
+        "Power Output Active" => _show_(power.generator.active, _show["Power Output"]),
+        "Power Output Reactive" => _show_(power.generator.reactive, _show["Power Output"]),
         "Status" => true
     )
     fmt, width, show = printFormat(_fmt, fmt, _width, width, _show, show, style)
@@ -1134,25 +1165,28 @@ function formatGeneratorData(system::PowerSystem, analysis::DC, label::L, scale:
 
     power = analysis.power
 
-    mshow = Dict(
-        "Power Output" => true,
-    )
-    mfmt = Dict(
+    _fmt = Dict(
         "Power Output" => "",
     )
-    mshow, mfmt = printFormat(mshow, show, mfmt, fmt)
-
     _width = Dict(
-        "Label" => 5 * style,
-        "Power Output Active" => 12 * style,
-        "Status" => 6 * style
-    )
-    _fmt = Dict(
-        "Power Output Active" => isempty(mfmt["Power Output"]) ? "%*.4f" : mfmt["Power Output"],
-        "Status" => "%*i"
+        "Power Output" => 0,
     )
     _show = Dict(
-        "Power Output Active" => !isempty(power.generator.active) & mshow["Power Output"],
+        "Power Output" => true,
+    )
+    _fmt, _width, _show = printFormat(_fmt, fmt, _width, width, _show, show, style)
+
+    _fmt = Dict(
+        "Power Output Active" => _fmt_(_fmt["Power Output"], "%*.4f"),
+        "Status" => "%*i"
+    )
+    _width = Dict(
+        "Label" => 5 * style,
+        "Power Output Active" => _width_(_width["Power Output"], 12, style),
+        "Status" => 6 * style
+    )
+    _show = Dict(
+        "Power Output Active" => _show_(power.generator.active, _show["Power Output"]),
         "Status" => true
     )
     fmt, width, show = printFormat(_fmt, fmt, _width, width, _show, show, style)

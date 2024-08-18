@@ -294,7 +294,7 @@ function printFormat(_fmt::Dict{String, String}, fmt::Dict{String, String}, _wid
     if style
         @inbounds for (key, value) in width
             if haskey(_width, key)
-                _width[key] = max(value, _width[key])
+                _width[key] = max(value - 2, _width[key])
             end
         end
     end
@@ -308,21 +308,16 @@ function printFormat(_fmt::Dict{String, String}, fmt::Dict{String, String}, _wid
     return _fmt, _width, _show
 end
 
-function printFormat(_show::Dict{String, Bool}, show::Dict{String, Bool}, _fmt::Dict{String, String}, fmt::Dict{String, String})
-    @inbounds for (key, value) in fmt
-        if haskey(_fmt, key)
-            _, precision, specifier = fmtRegex(value)
-            _fmt[key] = "%*." * precision * specifier
-        end
-    end
+function _fmt_(_fmt::String, format::String)
+    return isempty(_fmt) ? format : _fmt
+end
 
-    @inbounds for (key, value) in show
-        if haskey(_show, key)
-            _show[key] = value
-        end
-    end
+function _width_(_width::Int64, span::Int64, style::Bool)
+    return max(span, _width) * style
+end
 
-    return _show, _fmt
+function _show_(value::Union{Array{Float64,1}, Dict{Int64, ConstraintRef}, Dict{Int64, Float64}}, _show2::Bool)
+    return !isempty(value) & _show2
 end
 
 function fmtRegex(fmt::String)

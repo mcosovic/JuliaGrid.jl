@@ -12,9 +12,9 @@ The following keywords control the printed data:
 * `header`: Toggles the printing of the header.
 * `footer`: Toggles the printing of the footer.
 * `delimiter`: Sets the column delimiter.
-* `fmt`: Specifies the preferred numeric format of each column.
-* `width`: Specifies the preferred width of each column.
-* `show`: Toggles the printing of each column.
+* `fmt`: Specifies the preferred numeric formats for the columns.
+* `width`: Specifies the preferred widths for the columns.
+* `show`: Toggles the printing of the columns.
 * `style`: Prints either a stylish table or a simple table suitable for easy export.
 
 !!! compat "Julia 1.10"
@@ -40,7 +40,7 @@ show = Dict("State Estimation Residual" => false)
 printVoltmeterData(system, device, analysis; fmt, show, delimiter = " ")
 
 # Print data for specific voltmeters
-width = Dict("Measurement Variance" => 9)
+width = Dict("Measurement" => 9, "State Estimation Estimate" => 11)
 printVoltmeterData(system, device, analysis; label = 1, width, header = true)
 printVoltmeterData(system, device, analysis; label = 6, width)
 printVoltmeterData(system, device, analysis; label = 8, width, footer = true)
@@ -100,7 +100,7 @@ end
 function formatVoltmeterData(system::PowerSystem, voltmeter::Voltmeter, voltage::Polar, label::L, prefix::PrefixLive,
     fmt::Dict{String, String}, width::Dict{String, Int64}, show::Dict{String, Bool}, style::Bool)
 
-    _fmt, _width, _show, minval, maxval = formatDevice(fmt, show, voltmeter.magnitude, voltage.magnitude, style)
+    _fmt, _width, _show, minval, maxval = formatDevice(fmt, width, show, voltmeter.magnitude, voltage.magnitude, style)
     if !isempty(voltmeter.label)
         fmt, width, show = printFormat(_fmt, fmt, _width, width, _show, show, style)
         labels = toggleLabel(label, voltmeter, voltmeter.label, "voltmeter")
@@ -137,9 +137,9 @@ The following keywords control the printed data:
 * `header`: Toggles the printing of the header.
 * `footer`: Toggles the printing of the footer.
 * `delimiter`: Sets the column delimiter.
-* `fmt`: Specifies the preferred numeric format of each column.
-* `width`: Specifies the preferred width of each column.
-* `show`: Toggles the printing of each column.
+* `fmt`: Specifies the preferred numeric formats for the columns.
+* `width`: Specifies the preferred widths for the columns.
+* `show`: Toggles the printing of the columns.
 * `style`: Prints either a stylish table or a simple table suitable for easy export.
 
 !!! compat "Julia 1.10"
@@ -165,7 +165,7 @@ show = Dict("State Estimation Residual" => false)
 printAmmeterData(system, device, analysis; fmt, show, delimiter = " ")
 
 # Print data for specific ammeters
-width = Dict("Measurement Variance" => 9)
+width = Dict("Measurement" => 9, "State Estimation Estimate" => 11)
 printAmmeterData(system, device, analysis; label = "From 1", width, header = true)
 printAmmeterData(system, device, analysis; label = "From 4", width)
 printAmmeterData(system, device, analysis; label = "From 6", width, footer = true)
@@ -231,7 +231,7 @@ end
 function formatAmmeterData(system::PowerSystem, ammeter::Ammeter, current::ACCurrent, label::L, prefix::PrefixLive,
     fmt::Dict{String, String}, width::Dict{String, Int64}, show::Dict{String, Bool}, style::Bool)
 
-    _fmt, _width, _show, minval, maxval = formatDevice(fmt, show, ammeter.magnitude, current.from.magnitude, style)
+    _fmt, _width, _show, minval, maxval = formatDevice(fmt, width, show, ammeter.magnitude, current.from.magnitude, style)
     if !isempty(ammeter.label)
         fmt, width, show = printFormat(_fmt, fmt, _width, width, _show, show, style)
         labels = toggleLabel(label, ammeter, ammeter.label, "ammeter")
@@ -273,9 +273,9 @@ The following keywords control the printed data:
 * `header`: Toggles the printing of the header.
 * `footer`: Toggles the printing of the footer.
 * `delimiter`: Sets the column delimiter.
-* `fmt`: Specifies the preferred numeric format of each column.
-* `width`: Specifies the preferred width of each column.
-* `show`: Toggles the printing of each column.
+* `fmt`: Specifies the preferred numeric formats for the columns.
+* `width`: Specifies the preferred widths for the columns.
+* `show`: Toggles the printing of the columns.
 * `style`: Prints either a stylish table or a simple table suitable for easy export.
 
 !!! compat "Julia 1.10"
@@ -301,7 +301,7 @@ show = Dict("State Estimation Residual" => false)
 printWattmeterData(system, device, analysis; fmt, show, delimiter = " ")
 
 # Print data for specific wattmeters
-width = Dict("Measurement Mean" => 7)
+width = Dict("Measurement" => 9, "State Estimation Estimate" => 11)
 printWattmeterData(system, device, analysis; label = 2, width, header = true)
 printWattmeterData(system, device, analysis; label = 5, width)
 printWattmeterData(system, device, analysis; label = 9, width, footer = true)
@@ -360,7 +360,7 @@ end
 function formatWattmeterData(wattmeter::Wattmeter, power::Union{ACPower, DCPower}, scale::Dict{String, Float64}, label::L,
     fmt::Dict{String, String}, width::Dict{String,Int64}, show::Dict{String, Bool}, style::Bool)
 
-    _fmt, _width, _show, mival, maxval = formatDevice(fmt, show, wattmeter.active, power.injection.active, style)
+    _fmt, _width, _show, mival, maxval = formatDevice(fmt, width, show, wattmeter.active, power.injection.active, style)
     if !isempty(wattmeter.label)
         fmt, width, show = printFormat(_fmt, fmt, _width, width, _show, show, style)
         labels = toggleLabel(label, wattmeter, wattmeter.label, "wattmeter")
@@ -391,9 +391,9 @@ The following keywords control the printed data:
 * `header`: Toggles the printing of the header.
 * `footer`: Toggles the printing of the footer.
 * `delimiter`: Sets the column delimiter.
-* `fmt`: Specifies the preferred numeric format of each column.
-* `width`: Specifies the preferred width of each column.
-* `show`: Toggles the printing of each column.
+* `fmt`: Specifies the preferred numeric formats for the columns.
+* `width`: Specifies the preferred widths for the columns.
+* `show`: Toggles the printing of the columns.
 * `style`: Prints either a stylish table or a simple table suitable for easy export.
 
 !!! compat "Julia 1.10"
@@ -419,7 +419,7 @@ show = Dict("State Estimation Residual" => false)
 printVarmeterData(system, device, analysis; fmt, show, delimiter = " ")
 
 # Print data for specific varmeters
-width = Dict("Measurement Mean" => 7)
+width = Dict("Measurement" => 9, "State Estimation Estimate" => 11)
 printVarmeterData(system, device, analysis; label = 2, width, header = true)
 printVarmeterData(system, device, analysis; label = 5, width)
 printVarmeterData(system, device, analysis; label = 9, width, footer = true)
@@ -478,7 +478,7 @@ end
 function formatVarmeterData(varmeter::Varmeter, power::ACPower, scale::Dict{String, Float64}, label::L,
     fmt::Dict{String, String}, width::Dict{String,Int64}, show::Dict{String, Bool}, style::Bool)
 
-    _fmt, _width, _show, mival, maxval = formatDevice(fmt, show, varmeter.reactive, power.injection.reactive, style)
+    _fmt, _width, _show, mival, maxval = formatDevice(fmt, width, show, varmeter.reactive, power.injection.reactive, style)
     if !isempty(varmeter.label)
         fmt, width, show = printFormat(_fmt, fmt, _width, width, _show, show, style)
         labels = toggleLabel(label, varmeter, varmeter.label, "varmeter")
@@ -509,9 +509,9 @@ The following keywords control the printed data:
 * `header`: Toggles the printing of the header.
 * `footer`: Toggles the printing of the footer.
 * `delimiter`: Sets the column delimiter.
-* `fmt`: Specifies the preferred numeric format of each column.
-* `width`: Specifies the preferred width of each column.
-* `show`: Toggles the printing of each column.
+* `fmt`: Specifies the preferred numeric formats for the columns.
+* `width`: Specifies the preferred widths for the columns.
+* `show`: Toggles the printing of the columns.
 * `style`: Prints either a stylish table or a simple table suitable for easy export.
 
 !!! compat "Julia 1.10"
@@ -537,7 +537,7 @@ show = Dict("State Estimation Residual" => false)
 printPmuData(system, device, analysis; fmt, show, delimiter = " ")
 
 # Print data for specific PMUs
-width = Dict("Measurement Mean" => 7)
+width = Dict("Measurement" => 9, "State Estimation Estimate" => 11)
 printPmuData(system, device, analysis; label = "From 1", width, header = true)
 printPmuData(system, device, analysis; label = "From 4", width)
 printPmuData(system, device, analysis; label = "From 6", width, footer = true)
@@ -703,14 +703,14 @@ end
 function formatPmuData(system::PowerSystem, pmu::PMU, voltage::Polar, current::ACCurrent, scale::Dict{String, Float64}, label::L,
     prefix::PrefixLive, fmt::Dict{String, String}, width::Dict{String, Int64}, show::Dict{String, Bool}, style::Bool)
 
-    _fmt, _width, _show, minV, maxV = formatDevice(fmt, show, pmu.magnitude, voltage.magnitude, style)
+    _fmt, _width, _show, minV, maxV = formatDevice(fmt, width, show, pmu.magnitude, voltage.magnitude, style)
     fmt, widthV, showV = printFormat(_fmt, fmt, _width, width, _show, show, style)
-    _, _width, _show, minθ, maxθ = formatDevice(fmt, show, pmu.angle, voltage.angle, style)
+    _, _width, _show, minθ, maxθ = formatDevice(fmt, width, show, pmu.angle, voltage.angle, style)
     _, widthθ, showθ = printFormat(Dict{String, String}(), Dict{String, String}(), _width, width, _show, show, style)
 
-    _, _width, _show, minI, maxI = formatDevice(fmt, show, pmu.magnitude, current.from.magnitude, style)
+    _, _width, _show, minI, maxI = formatDevice(fmt, width, show, pmu.magnitude, current.from.magnitude, style)
     _, widthI, showI = printFormat(Dict{String, String}(), Dict{String, String}(), _width, width, _show, show, style)
-    _, _width, _show, minψ, maxψ = formatDevice(fmt, show, pmu.angle, current.from.angle, style)
+    _, _width, _show, minψ, maxψ = formatDevice(fmt, width, show, pmu.angle, current.from.angle, style)
     _, widthψ, showψ = printFormat(Dict{String, String}(), Dict{String, String}(), _width, width, _show, show, style)
 
     if !isempty(pmu.label)
@@ -776,7 +776,7 @@ end
 function formatPmuData(system::PowerSystem, pmu::PMU, voltage::PolarAngle, scale::Dict{String, Float64}, label::L, prefix::PrefixLive,
     fmt::Dict{String, String}, width::Dict{String, Int64}, show::Dict{String, Bool}, style::Bool)
 
-    _fmt, _width, _show, minval, maxval = formatDevice(fmt, show, pmu.angle, voltage.angle, style)
+    _fmt, _width, _show, minval, maxval = formatDevice(fmt, width, show, pmu.angle, voltage.angle, style)
 
     if !isempty(pmu.label)
         fmt, width, show = printFormat(_fmt, fmt, _width, width, _show, show, style)
@@ -805,37 +805,41 @@ function formatPmuData(system::PowerSystem, pmu::PMU, voltage::PolarAngle, scale
     return fmt, width, show, _show
 end
 
-function formatDevice(fmt::Dict{String, String}, show::Dict{String, Bool}, meter::GaussMeter, analysisArray::Array{Float64,1}, style::Bool)
-    mshow = Dict(
-        "Measurement" => true,
-        "State Estimation" => true,
-    )
-    mfmt = Dict(
+function formatDevice(fmt::Dict{String, String}, width::Dict{String, Int64}, show::Dict{String, Bool}, meter::GaussMeter, analysisArray::Array{Float64,1}, style::Bool)
+    _fmt = Dict(
         "Measurement" => "",
         "State Estimation" => "",
     )
-    mshow, mfmt = printFormat(mshow, show, mfmt, fmt)
-
-    width = Dict(
-        "Label" => 0,
-        "Measurement Mean" => 4 * style,
-        "Measurement Variance" => 8 * style,
-        "State Estimation Estimate" => 8 * style,
-        "State Estimation Residual" => 8 * style,
-        "Status" => 6 * style
+    _width = Dict(
+        "Measurement" => 0,
+        "State Estimation" => 0,
     )
+    _show = Dict(
+        "Measurement" => true,
+        "State Estimation" => true,
+    )
+    _fmt, _width, _show = printFormat(_fmt, fmt, _width, width, _show, show, style)
+
     fmt = Dict(
-        "Measurement Mean" => isempty(mfmt["Measurement"]) ? "%*.4f" : mfmt["Measurement"],
-        "Measurement Variance" => isempty(mfmt["Measurement"]) ? "%*.2e" : mfmt["Measurement"],
-        "State Estimation Estimate" => isempty(mfmt["State Estimation"]) ? "%*.4f" : mfmt["State Estimation"],
-        "State Estimation Residual" => isempty(mfmt["State Estimation"]) ? "%*.4f" : mfmt["State Estimation"],
+        "Measurement Mean" => _fmt_(_fmt["Measurement"], "%*.4f"),
+        "Measurement Variance" => _fmt_(_fmt["Measurement"], "%*.2e"),
+        "State Estimation Estimate" => _fmt_(_fmt["State Estimation"], "%*.4f"),
+        "State Estimation Residual" => _fmt_(_fmt["State Estimation"], "%*.4f"),
         "Status" => "%*i"
     )
+    width = Dict(
+        "Label" => 0,
+        "Measurement Mean" => _width_(_width["Measurement"], 4, style),
+        "Measurement Variance" => _width_(_width["Measurement"], 8, style),
+        "State Estimation Estimate" => _width_(_width["State Estimation"], 8, style),
+        "State Estimation Residual" => _width_(_width["State Estimation"], 8, style),
+        "Status" => 6 * style
+    )
     show = Dict(
-        "Measurement Mean" => !isempty(meter.mean) & mshow["Measurement"],
-        "Measurement Variance" => !isempty(meter.variance) & mshow["Measurement"],
-        "State Estimation Estimate" => !isempty(analysisArray) & mshow["State Estimation"],
-        "State Estimation Residual" => !isempty(analysisArray) & mshow["State Estimation"],
+        "Measurement Mean" => _show_(meter.mean, _show["Measurement"]),
+        "Measurement Variance" => _show_(meter.variance, _show["Measurement"]),
+        "State Estimation Estimate" => _show_(analysisArray, _show["State Estimation"]),
+        "State Estimation Residual" => _show_(analysisArray, _show["State Estimation"]),
         "Status" => !isempty(meter.status)
     )
 

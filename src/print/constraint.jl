@@ -11,9 +11,9 @@ The following keywords control the printed data:
 * `header`: Toggles the printing of the header.
 * `footer`: Toggles the printing of the footer.
 * `delimiter`: Sets the column delimiter.
-* `fmt`: Specifies the preferred numeric format of each column.
-* `width`: Specifies the preferred width of each column.
-* `show`: Toggles the printing of each column.
+* `fmt`: Specifies the preferred numeric formats for the columns.
+* `width`: Specifies the preferred widths for the columns.
+* `show`: Toggles the printing of the columns.
 * `style`: Prints either a stylish table or a simple table suitable for easy export.
 
 !!! compat "Julia 1.10"
@@ -21,6 +21,8 @@ The following keywords control the printed data:
 
 # Example
 ```jldoctest
+using Ipopt
+
 system = powerSystem("case14.h5")
 
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
@@ -33,7 +35,7 @@ printBusConstraint(system, analysis; fmt, show)
 
 # Print data for specific buses
 delimiter = " "
-width = Dict("Voltage Magnitude Dual" => 8)
+width = Dict("Voltage Magnitude" => 8, "Active Power Balance Solution" => 12)
 printBusConstraint(system, analysis; label = 2, delimiter, width, header = true)
 printBusConstraint(system, analysis; label = 10, delimiter, width)
 printBusConstraint(system, analysis; label = 14, delimiter, width, footer = true)
@@ -158,48 +160,53 @@ function formatBusConstraint(system::PowerSystem, analysis::ACOptimalPowerFlow, 
     constraint = analysis.method.constraint
     dual = analysis.method.dual
 
-    mshow = Dict(
-        "Voltage Magnitude" => true,
-        "Active Power Balance" => true,
-        "Reactive Power Balance" => true,
-    )
-    mfmt = Dict(
+    _fmt = Dict(
         "Voltage Magnitude" => "",
         "Active Power Balance" => "",
         "Reactive Power Balance" => "",
     )
-    mshow, mfmt = printFormat(mshow, show, mfmt, fmt)
-
     _width = Dict(
-        "Label" => 5 * style,
-        "Voltage Magnitude Minimum" => 7 * style,
-        "Voltage Magnitude Solution" => 8 * style,
-        "Voltage Magnitude Maximum" => 7 * style,
-        "Voltage Magnitude Dual" => textwidth("[\$/$(unitList.voltageMagnitudeLive)-hr]") * style,
-        "Active Power Balance Solution" => 8 * style,
-        "Active Power Balance Dual" => textwidth("[\$/$(unitList.activePowerLive)-hr]") * style,
-        "Reactive Power Balance Solution" => 8 * style,
-        "Reactive Power Balance Dual" => textwidth("[\$/$(unitList.reactivePowerLive)-hr]") * style
-    )
-    _fmt = Dict(
-        "Voltage Magnitude Minimum" => isempty(mfmt["Voltage Magnitude"]) ? "%*.4f" : mfmt["Voltage Magnitude"],
-        "Voltage Magnitude Solution" => isempty(mfmt["Voltage Magnitude"]) ? "%*.4f" : mfmt["Voltage Magnitude"],
-        "Voltage Magnitude Maximum" => isempty(mfmt["Voltage Magnitude"]) ? "%*.4f" : mfmt["Voltage Magnitude"],
-        "Voltage Magnitude Dual" => isempty(mfmt["Voltage Magnitude"]) ? "%*.4f" : mfmt["Voltage Magnitude"],
-        "Active Power Balance Solution" => isempty(mfmt["Active Power Balance"]) ? "%*.4f" : mfmt["Active Power Balance"],
-        "Active Power Balance Dual" => isempty(mfmt["Active Power Balance"]) ? "%*.4f" : mfmt["Active Power Balance"],
-        "Reactive Power Balance Solution" => isempty(mfmt["Reactive Power Balance"]) ? "%*.4f" : mfmt["Reactive Power Balance"],
-        "Reactive Power Balance Dual" => isempty(mfmt["Reactive Power Balance"]) ? "%*.4f" : mfmt["Reactive Power Balance"]
+        "Voltage Magnitude" => 0,
+        "Active Power Balance" => 0,
+        "Reactive Power Balance" => 0,
     )
     _show = Dict(
-        "Voltage Magnitude Minimum" => !isempty(constraint.voltage.magnitude) & mshow["Voltage Magnitude"],
-        "Voltage Magnitude Solution" => !isempty(constraint.voltage.magnitude) & mshow["Voltage Magnitude"],
-        "Voltage Magnitude Maximum" => !isempty(constraint.voltage.magnitude) & mshow["Voltage Magnitude"],
-        "Voltage Magnitude Dual" => !isempty(dual.voltage.magnitude) & mshow["Voltage Magnitude"],
-        "Active Power Balance Solution" => !isempty(constraint.balance.active) & mshow["Active Power Balance"],
-        "Active Power Balance Dual" => !isempty(dual.balance.active) & mshow["Active Power Balance"],
-        "Reactive Power Balance Solution" => !isempty(constraint.balance.reactive) & mshow["Reactive Power Balance"],
-        "Reactive Power Balance Dual" => !isempty(dual.balance.reactive) & mshow["Reactive Power Balance"]
+        "Voltage Magnitude" => true,
+        "Active Power Balance" => true,
+        "Reactive Power Balance" => true,
+    )
+    _fmt, _width, _show = printFormat(_fmt, fmt, _width, width, _show, show, style)
+
+    _fmt = Dict(
+        "Voltage Magnitude Minimum" => _fmt_(_fmt["Voltage Magnitude"], "%*.4f"),
+        "Voltage Magnitude Solution" => _fmt_(_fmt["Voltage Magnitude"], "%*.4f"),
+        "Voltage Magnitude Maximum" => _fmt_(_fmt["Voltage Magnitude"], "%*.4f"),
+        "Voltage Magnitude Dual" => _fmt_(_fmt["Voltage Magnitude"], "%*.4f"),
+        "Active Power Balance Solution" => _fmt_(_fmt["Active Power Balance"], "%*.4f"),
+        "Active Power Balance Dual" => _fmt_(_fmt["Active Power Balance"], "%*.4f"),
+        "Reactive Power Balance Solution" => _fmt_(_fmt["Reactive Power Balance"], "%*.4f"),
+        "Reactive Power Balance Dual" => _fmt_(_fmt["Reactive Power Balance"], "%*.4f")
+    )
+    _width = Dict(
+        "Label" => 5 * style,
+        "Voltage Magnitude Minimum" => _width_(_width["Voltage Magnitude"], 7, style),
+        "Voltage Magnitude Solution" => _width_(_width["Voltage Magnitude"], 8, style),
+        "Voltage Magnitude Maximum" => _width_(_width["Voltage Magnitude"], 7, style),
+        "Voltage Magnitude Dual" => _width_(_width["Voltage Magnitude"], textwidth("[\$/$(unitList.voltageMagnitudeLive)-hr]"), style),
+        "Active Power Balance Solution" => _width_(_width["Active Power Balance"], 8, style),
+        "Active Power Balance Dual" => _width_(_width["Active Power Balance"], textwidth("[\$/$(unitList.activePowerLive)-hr]"), style),
+        "Reactive Power Balance Solution" => _width_(_width["Reactive Power Balance"], 8, style),
+        "Reactive Power Balance Dual" => _width_(_width["Reactive Power Balance"], textwidth("[\$/$(unitList.reactivePowerLive)-hr]"), style)
+    )
+    _show = Dict(
+        "Voltage Magnitude Minimum" => _show_(constraint.voltage.magnitude, _show["Voltage Magnitude"]),
+        "Voltage Magnitude Solution" => _show_(constraint.voltage.magnitude, _show["Voltage Magnitude"]),
+        "Voltage Magnitude Maximum" => _show_(constraint.voltage.magnitude, _show["Voltage Magnitude"]),
+        "Voltage Magnitude Dual" => _show_(dual.voltage.magnitude, _show["Voltage Magnitude"]),
+        "Active Power Balance Solution" => _show_(constraint.balance.active, _show["Active Power Balance"]),
+        "Active Power Balance Dual" => _show_(dual.balance.active, _show["Active Power Balance"]),
+        "Reactive Power Balance Solution" => _show_(constraint.balance.reactive, _show["Reactive Power Balance"]),
+        "Reactive Power Balance Dual" => _show_(dual.balance.reactive, _show["Reactive Power Balance"])
     )
     fmt, width, show = printFormat(_fmt, fmt, _width, width, _show, show, style)
 
@@ -367,26 +374,29 @@ function formatBusConstraint(system::PowerSystem, analysis::DCOptimalPowerFlow, 
     constraint = analysis.method.constraint
     dual = analysis.method.dual
 
-    mshow = Dict(
-        "Active Power Balance" => true
-    )
-    mfmt = Dict(
+    _fmt = Dict(
         "Active Power Balance" => ""
     )
-    mshow, mfmt = printFormat(mshow, show, mfmt, fmt)
-
     _width = Dict(
-        "Label" => 5 * style,
-        "Active Power Balance Solution" => 8 * style,
-        "Active Power Balance Dual" => textwidth("[\$/$(unitList.activePowerLive)-hr]") * style,
-    )
-    _fmt = Dict(
-        "Active Power Balance Solution" => isempty(mfmt["Active Power Balance"]) ? "%*.4f" : mfmt["Active Power Balance"],
-        "Active Power Balance Dual" => isempty(mfmt["Active Power Balance"]) ? "%*.4f" : mfmt["Active Power Balance"],
+        "Active Power Balance" => 0
     )
     _show = Dict(
-        "Active Power Balance Solution" => !isempty(constraint.balance.active) & mshow["Active Power Balance"],
-        "Active Power Balance Dual" => !isempty(dual.balance.active) & mshow["Active Power Balance"],
+        "Active Power Balance" => true
+    )
+    _fmt, _width, _show = printFormat(_fmt, fmt, _width, width, _show, show, style)
+
+    _fmt = Dict(
+        "Active Power Balance Solution" => _fmt_(_fmt["Active Power Balance"], "%*.4f"),
+        "Active Power Balance Dual" => _fmt_(_fmt["Active Power Balance"], "%*.4f")
+    )
+    _width = Dict(
+        "Label" => 5 * style,
+        "Active Power Balance Solution" => _width_(_width["Active Power Balance"], 8, style),
+        "Active Power Balance Dual" => _width_(_width["Active Power Balance"], textwidth("[\$/$(unitList.activePowerLive)-hr]"), style)
+    )
+    _show = Dict(
+        "Active Power Balance Solution" => _show_(constraint.balance.active, _show["Active Power Balance"]),
+        "Active Power Balance Dual" => _show_(dual.balance.active, _show["Active Power Balance"])
     )
     fmt, width, show = printFormat(_fmt, fmt, _width, width, _show, show, style)
 
@@ -441,9 +451,9 @@ The following keywords control the printed data:
 * `header`: Toggles the printing of the header.
 * `footer`: Toggles the printing of the footer.
 * `delimiter`: Sets the column delimiter.
-* `fmt`: Specifies the preferred numeric format of each column.
-* `width`: Specifies the preferred width of each column.
-* `show`: Toggles the printing of each column.
+* `fmt`: Specifies the preferred numeric formats for the columns.
+* `width`: Specifies the preferred widths for the columns.
+* `show`: Toggles the printing of the columns.
 * `style`: Prints either a stylish table or a simple table suitable for easy export.
 
 !!! compat "Julia 1.10"
@@ -465,7 +475,7 @@ printBranchConstraint(system, analysis; fmt, show)
 
 # Print data for specific branches
 delimiter = " "
-width = Dict("From-Bus Flow Dual" => 11)
+width = Dict("From-Bus Flow" => 11, "To-Bus Flow Dual" => 11)
 printBranchConstraint(system, analysis; label = 4, delimiter, width, header = true)
 printBranchConstraint(system, analysis; label = 9, delimiter, width, footer = true)
 ```
@@ -570,60 +580,65 @@ function formatBranchConstraint(system::PowerSystem, analysis::ACOptimalPowerFlo
     constraint = analysis.method.constraint
     dual = analysis.method.dual
 
-    mshow = Dict(
-        "Voltage Angle Difference" => true,
-        "From-Bus Flow" => true,
-        "To-Bus Flow" => true,
-    )
-    mfmt = Dict(
+    _fmt = Dict(
         "Voltage Angle Difference" => "",
         "From-Bus Flow" => "",
         "To-Bus Flow" => "",
     )
-    mshow, mfmt = printFormat(mshow, show, mfmt, fmt)
-
     _width = Dict(
-        "Label" => 5 * style,
-        "Voltage Angle Difference Minimum" => 7 * style,
-        "Voltage Angle Difference Solution" => 8 * style,
-        "Voltage Angle Difference Maximum" => 7 * style,
-        "Voltage Angle Difference Dual" => textwidth("[\$/$(unitList.voltageAngleLive)-hr]") * style,
-        "From-Bus Flow Minimum" => 7 * style,
-        "From-Bus Flow Solution" => 8 * style,
-        "From-Bus Flow Maximum" => 7 * style,
-        "From-Bus Flow Dual" => 10 * style,
-        "To-Bus Flow Minimum" => 7 * style,
-        "To-Bus Flow Solution" => 8 * style,
-        "To-Bus Flow Maximum" => 7 * style,
-        "To-Bus Flow Dual" => 10 * style,
-    )
-    _fmt = Dict(
-        "Voltage Angle Difference Minimum" => isempty(mfmt["Voltage Angle Difference"]) ? "%*.4f" : mfmt["Voltage Angle Difference"],
-        "Voltage Angle Difference Solution" => isempty(mfmt["Voltage Angle Difference"]) ? "%*.4f" : mfmt["Voltage Angle Difference"],
-        "Voltage Angle Difference Maximum" => isempty(mfmt["Voltage Angle Difference"]) ? "%*.4f" : mfmt["Voltage Angle Difference"],
-        "Voltage Angle Difference Dual" => isempty(mfmt["Voltage Angle Difference"]) ? "%*.4f" : mfmt["Voltage Angle Difference"],
-        "From-Bus Flow Minimum" => isempty(mfmt["From-Bus Flow"]) ? "%*.4f" : mfmt["From-Bus Flow"],
-        "From-Bus Flow Solution" => isempty(mfmt["From-Bus Flow"]) ? "%*.4f" : mfmt["From-Bus Flow"],
-        "From-Bus Flow Maximum" => isempty(mfmt["From-Bus Flow"]) ? "%*.4f" : mfmt["From-Bus Flow"],
-        "From-Bus Flow Dual" => isempty(mfmt["From-Bus Flow"]) ? "%*.4f" : mfmt["From-Bus Flow"],
-        "To-Bus Flow Minimum" => isempty(mfmt["To-Bus Flow"]) ? "%*.4f" : mfmt["To-Bus Flow"],
-        "To-Bus Flow Solution" => isempty(mfmt["To-Bus Flow"]) ? "%*.4f" : mfmt["To-Bus Flow"],
-        "To-Bus Flow Maximum" => isempty(mfmt["To-Bus Flow"]) ? "%*.4f" : mfmt["To-Bus Flow"],
-        "To-Bus Flow Dual" => isempty(mfmt["To-Bus Flow"]) ? "%*.4f" : mfmt["To-Bus Flow"],
+        "Voltage Angle Difference" => 0,
+        "From-Bus Flow" => 0,
+        "To-Bus Flow" => 0,
     )
     _show = Dict(
-        "Voltage Angle Difference Minimum" => !isempty(constraint.voltage.angle) & mshow["Voltage Angle Difference"],
-        "Voltage Angle Difference Solution" => !isempty(constraint.voltage.angle) & mshow["Voltage Angle Difference"],
-        "Voltage Angle Difference Maximum" => !isempty(constraint.voltage.angle) & mshow["Voltage Angle Difference"],
-        "Voltage Angle Difference Dual" => !isempty(dual.voltage.angle) & mshow["Voltage Angle Difference"],
-        "From-Bus Flow Minimum" => !isempty(constraint.flow.from) & mshow["From-Bus Flow"],
-        "From-Bus Flow Solution" => !isempty(constraint.flow.from) & mshow["From-Bus Flow"],
-        "From-Bus Flow Maximum" => !isempty(constraint.flow.from) & mshow["From-Bus Flow"],
-        "From-Bus Flow Dual" => !isempty(dual.flow.from) & mshow["From-Bus Flow"],
-        "To-Bus Flow Minimum" => !isempty(constraint.flow.to) & mshow["To-Bus Flow"],
-        "To-Bus Flow Solution" => !isempty(constraint.flow.to) & mshow["To-Bus Flow"],
-        "To-Bus Flow Maximum" => !isempty(constraint.flow.to) & mshow["To-Bus Flow"],
-        "To-Bus Flow Dual" => !isempty(dual.flow.to) & mshow["To-Bus Flow"],
+        "Voltage Angle Difference" => true,
+        "From-Bus Flow" => true,
+        "To-Bus Flow" => true,
+    )
+    _fmt, _width, _show = printFormat(_fmt, fmt, _width, width, _show, show, style)
+
+    _fmt = Dict(
+        "Voltage Angle Difference Minimum" => _fmt_(_fmt["Voltage Angle Difference"], "%*.4f"),
+        "Voltage Angle Difference Solution" => _fmt_(_fmt["Voltage Angle Difference"], "%*.4f"),
+        "Voltage Angle Difference Maximum" => _fmt_(_fmt["Voltage Angle Difference"], "%*.4f"),
+        "Voltage Angle Difference Dual" => _fmt_(_fmt["Voltage Angle Difference"], "%*.4f"),
+        "From-Bus Flow Minimum" => _fmt_(_fmt["From-Bus Flow"], "%*.4f"),
+        "From-Bus Flow Solution" => _fmt_(_fmt["From-Bus Flow"], "%*.4f"),
+        "From-Bus Flow Maximum" => _fmt_(_fmt["From-Bus Flow"], "%*.4f"),
+        "From-Bus Flow Dual" => _fmt_(_fmt["From-Bus Flow"], "%*.4f"),
+        "To-Bus Flow Minimum" => _fmt_(_fmt["To-Bus Flow"], "%*.4f"),
+        "To-Bus Flow Solution" => _fmt_(_fmt["To-Bus Flow"], "%*.4f"),
+        "To-Bus Flow Maximum" => _fmt_(_fmt["To-Bus Flow"], "%*.4f"),
+        "To-Bus Flow Dual" => _fmt_(_fmt["To-Bus Flow"], "%*.4f"),
+    )
+    _width = Dict(
+        "Label" => 5 * style,
+        "Voltage Angle Difference Minimum" => _width_(_width["Voltage Angle Difference"], 7, style),
+        "Voltage Angle Difference Solution" => _width_(_width["Voltage Angle Difference"], 8, style),
+        "Voltage Angle Difference Maximum" => _width_(_width["Voltage Angle Difference"], 7, style),
+        "Voltage Angle Difference Dual" => _width_(_width["Voltage Angle Difference"], textwidth("[\$/$(unitList.voltageAngleLive)-hr]"), style),
+        "From-Bus Flow Minimum" => _width_(_width["From-Bus Flow"], 7, style),
+        "From-Bus Flow Solution" => _width_(_width["From-Bus Flow"], 8, style),
+        "From-Bus Flow Maximum" => _width_(_width["From-Bus Flow"], 7, style),
+        "From-Bus Flow Dual" => _width_(_width["From-Bus Flow"], 10, style),
+        "To-Bus Flow Minimum" => _width_(_width["To-Bus Flow"], 7, style),
+        "To-Bus Flow Solution" => _width_(_width["To-Bus Flow"], 8, style),
+        "To-Bus Flow Maximum" => _width_(_width["To-Bus Flow"], 7, style),
+        "To-Bus Flow Dual" => _width_(_width["To-Bus Flow"], 10, style),
+    )
+    _show = Dict(
+        "Voltage Angle Difference Minimum" => _show_(constraint.voltage.angle, _show["Voltage Angle Difference"]),
+        "Voltage Angle Difference Solution" => _show_(constraint.voltage.angle, _show["Voltage Angle Difference"]),
+        "Voltage Angle Difference Maximum" => _show_(constraint.voltage.angle, _show["Voltage Angle Difference"]),
+        "Voltage Angle Difference Dual" => _show_(dual.voltage.angle, _show["Voltage Angle Difference"]),
+        "From-Bus Flow Minimum" => _show_(constraint.flow.from, _show["From-Bus Flow"]),
+        "From-Bus Flow Solution" => _show_(constraint.flow.from, _show["From-Bus Flow"]),
+        "From-Bus Flow Maximum" => _show_(constraint.flow.from, _show["From-Bus Flow"]),
+        "From-Bus Flow Dual" => _show_(dual.flow.from, _show["From-Bus Flow"]),
+        "To-Bus Flow Minimum" => _show_(constraint.flow.to, _show["To-Bus Flow"]),
+        "To-Bus Flow Solution" => _show_(constraint.flow.to, _show["To-Bus Flow"]),
+        "To-Bus Flow Maximum" => _show_(constraint.flow.to, _show["To-Bus Flow"]),
+        "To-Bus Flow Dual" => _show_(dual.flow.to, _show["To-Bus Flow"]),
     )
     fmt, width, show = printFormat(_fmt, fmt, _width, width, _show, show, style)
 
@@ -893,46 +908,50 @@ function formatBranchConstraint(system::PowerSystem, analysis::DCOptimalPowerFlo
     constraint = analysis.method.constraint
     dual = analysis.method.dual
 
-    mshow = Dict(
-        "Voltage Angle Difference" => true,
-        "From-Bus Active Power Flow" => true,
-    )
-    mfmt = Dict(
+    _fmt = Dict(
         "Voltage Angle Difference" => "",
         "From-Bus Active Power Flow" => "",
     )
-    mshow, mfmt = printFormat(mshow, show, mfmt, fmt)
-
     _width = Dict(
-        "Label" => 5 * style,
-        "Voltage Angle Difference Minimum" => 7 * style,
-        "Voltage Angle Difference Solution" => 8 * style,
-        "Voltage Angle Difference Maximum" => 7 * style,
-        "Voltage Angle Difference Dual" => textwidth("[\$/$(unitList.voltageAngleLive)-hr]") * style,
-        "From-Bus Active Power Flow Minimum" => 7 * style,
-        "From-Bus Active Power Flow Solution" => 8 * style,
-        "From-Bus Active Power Flow Maximum" => 7 * style,
-        "From-Bus Active Power Flow Dual" => textwidth("[\$/$(unitList.activePowerLive)-hr]") * style,
-    )
-    _fmt = Dict(
-        "Voltage Angle Difference Minimum" => isempty(mfmt["Voltage Angle Difference"]) ? "%*.4f" : mfmt["Voltage Angle Difference"],
-        "Voltage Angle Difference Solution" => isempty(mfmt["Voltage Angle Difference"]) ? "%*.4f" : mfmt["Voltage Angle Difference"],
-        "Voltage Angle Difference Maximum" => isempty(mfmt["Voltage Angle Difference"]) ? "%*.4f" : mfmt["Voltage Angle Difference"],
-        "Voltage Angle Difference Dual" => isempty(mfmt["Voltage Angle Difference"]) ? "%*.4f" : mfmt["Voltage Angle Difference"],
-        "From-Bus Active Power Flow Minimum" => isempty(mfmt["From-Bus Active Power Flow"]) ? "%*.4f" : mfmt["From-Bus Active Power Flow"],
-        "From-Bus Active Power Flow Solution" => isempty(mfmt["From-Bus Active Power Flow"]) ? "%*.4f" : mfmt["From-Bus Active Power Flow"],
-        "From-Bus Active Power Flow Maximum" => isempty(mfmt["From-Bus Active Power Flow"]) ? "%*.4f" : mfmt["From-Bus Active Power Flow"],
-        "From-Bus Active Power Flow Dual" => isempty(mfmt["From-Bus Active Power Flow"]) ? "%*.4f" : mfmt["From-Bus Active Power Flow"],
+        "Voltage Angle Difference" => 0,
+        "From-Bus Active Power Flow" => 0,
     )
     _show = Dict(
-        "Voltage Angle Difference Minimum" => !isempty(constraint.voltage.angle) & mshow["Voltage Angle Difference"],
-        "Voltage Angle Difference Solution" => !isempty(constraint.voltage.angle) & mshow["Voltage Angle Difference"],
-        "Voltage Angle Difference Maximum" => !isempty(constraint.voltage.angle) & mshow["Voltage Angle Difference"],
-        "Voltage Angle Difference Dual" => !isempty(dual.voltage.angle) & mshow["Voltage Angle Difference"],
-        "From-Bus Active Power Flow Minimum" => !isempty(constraint.flow.active) & mshow["From-Bus Active Power Flow"],
-        "From-Bus Active Power Flow Solution" => !isempty(constraint.flow.active) & mshow["From-Bus Active Power Flow"],
-        "From-Bus Active Power Flow Maximum" => !isempty(constraint.flow.active) & mshow["From-Bus Active Power Flow"],
-        "From-Bus Active Power Flow Dual" => !isempty(dual.flow.active) & mshow["From-Bus Active Power Flow"],
+        "Voltage Angle Difference" => true,
+        "From-Bus Active Power Flow" => true,
+    )
+    _fmt, _width, _show = printFormat(_fmt, fmt, _width, width, _show, show, style)
+
+    _fmt = Dict(
+        "Voltage Angle Difference Minimum" => _fmt_(_fmt["Voltage Angle Difference"], "%*.4f"),
+        "Voltage Angle Difference Solution" => _fmt_(_fmt["Voltage Angle Difference"], "%*.4f"),
+        "Voltage Angle Difference Maximum" => _fmt_(_fmt["Voltage Angle Difference"], "%*.4f"),
+        "Voltage Angle Difference Dual" => _fmt_(_fmt["Voltage Angle Difference"], "%*.4f"),
+        "From-Bus Active Power Flow Minimum" => _fmt_(_fmt["From-Bus Active Power Flow"], "%*.4f"),
+        "From-Bus Active Power Flow Solution" => _fmt_(_fmt["From-Bus Active Power Flow"], "%*.4f"),
+        "From-Bus Active Power Flow Maximum" => _fmt_(_fmt["From-Bus Active Power Flow"], "%*.4f"),
+        "From-Bus Active Power Flow Dual" => _fmt_(_fmt["From-Bus Active Power Flow"], "%*.4f")
+    )
+    _width = Dict(
+        "Label" => 5 * style,
+        "Voltage Angle Difference Minimum" => _width_(_width["Voltage Angle Difference"], 7, style),
+        "Voltage Angle Difference Solution" => _width_(_width["Voltage Angle Difference"], 8, style),
+        "Voltage Angle Difference Maximum" => _width_(_width["Voltage Angle Difference"], 7, style),
+        "Voltage Angle Difference Dual" => _width_(_width["Voltage Angle Difference"], textwidth("[\$/$(unitList.voltageAngleLive)-hr]") , style),
+        "From-Bus Active Power Flow Minimum" => _width_(_width["From-Bus Active Power Flow"], 7, style),
+        "From-Bus Active Power Flow Solution" => _width_(_width["From-Bus Active Power Flow"], 8, style),
+        "From-Bus Active Power Flow Maximum" => _width_(_width["From-Bus Active Power Flow"], 7, style),
+        "From-Bus Active Power Flow Dual" => _width_(_width["From-Bus Active Power Flow"], textwidth("[\$/$(unitList.activePowerLive)-hr]"), style)
+    )
+    _show = Dict(
+        "Voltage Angle Difference Minimum" => _show_(constraint.voltage.angle, _show["Voltage Angle Difference"]),
+        "Voltage Angle Difference Solution" => _show_(constraint.voltage.angle, _show["Voltage Angle Difference"]),
+        "Voltage Angle Difference Maximum" => _show_(constraint.voltage.angle, _show["Voltage Angle Difference"]),
+        "Voltage Angle Difference Dual" => _show_(dual.voltage.angle, _show["Voltage Angle Difference"]),
+        "From-Bus Active Power Flow Minimum" => _show_(constraint.flow.active, _show["From-Bus Active Power Flow"]),
+        "From-Bus Active Power Flow Solution" => _show_(constraint.flow.active, _show["From-Bus Active Power Flow"]),
+        "From-Bus Active Power Flow Maximum" => _show_(constraint.flow.active, _show["From-Bus Active Power Flow"]),
+        "From-Bus Active Power Flow Dual" => _show_(dual.flow.active, _show["From-Bus Active Power Flow"])
     )
     fmt, width, show = printFormat(_fmt, fmt, _width, width, _show, show, style)
 
@@ -1099,9 +1118,9 @@ The following keywords control the printed data:
 * `header`: Toggles the printing of the header.
 * `footer`: Toggles the printing of the footer.
 * `delimiter`: Sets the column delimiter.
-* `fmt`: Specifies the preferred numeric format of each column.
-* `width`: Specifies the preferred width of each column.
-* `show`: Toggles the printing of each column.
+* `fmt`: Specifies the preferred numeric formats for the columns.
+* `width`: Specifies the preferred widths for the columns.
+* `show`: Toggles the printing of the columns.
 * `style`: Prints either a stylish table or a simple table suitable for easy export.
 
 !!! compat "Julia 1.10"
@@ -1121,7 +1140,7 @@ printGeneratorConstraint(system, analysis; fmt, show)
 
 # Print data for specific generators
 delimiter = " "
-width = Dict("Reactive Power Capability Dual" => 10)
+width = Dict("Active Power Capability" => 11, "Reactive Power Capability Dual" => 10)
 printGeneratorConstraint(system, analysis; label = 2, delimiter, width, header = true)
 printGeneratorConstraint(system, analysis; label = 3, delimiter, width)
 printGeneratorConstraint(system, analysis; label = 5, delimiter, width, footer = true)
@@ -1246,46 +1265,50 @@ function formatGeneratorConstraint(system::PowerSystem, analysis::ACOptimalPower
     constraint = analysis.method.constraint
     dual = analysis.method.dual
 
-    mshow = Dict(
-        "Active Power Capability" => true,
-        "Reactive Power Capability" => true,
-    )
-    mfmt = Dict(
+    _fmt = Dict(
         "Active Power Capability" => "",
         "Reactive Power Capability" => "",
     )
-    mshow, mfmt = printFormat(mshow, show, mfmt, fmt)
-
     _width = Dict(
-        "Label" => 5 * style,
-        "Active Power Capability Minimum" => 7 * style,
-        "Active Power Capability Solution" => 8 * style,
-        "Active Power Capability Maximum" => 7 * style,
-        "Active Power Capability Dual" => textwidth("[\$/$(unitList.activePowerLive)-hr]") * style,
-        "Reactive Power Capability Minimum" => 7 * style,
-        "Reactive Power Capability Solution" => 8 * style,
-        "Reactive Power Capability Maximum" => 7 * style,
-        "Reactive Power Capability Dual" => textwidth("[\$/$(unitList.reactivePowerLive)-hr]") * style
-    )
-    _fmt = Dict(
-        "Active Power Capability Minimum" => isempty(mfmt["Active Power Capability"]) ? "%*.4f" : mfmt["Active Power Capability"],
-        "Active Power Capability Solution" => isempty(mfmt["Active Power Capability"]) ? "%*.4f" : mfmt["Active Power Capability"],
-        "Active Power Capability Maximum" => isempty(mfmt["Active Power Capability"]) ? "%*.4f" : mfmt["Active Power Capability"],
-        "Active Power Capability Dual" => isempty(mfmt["Active Power Capability"]) ? "%*.4f" : mfmt["Active Power Capability"],
-        "Reactive Power Capability Minimum" => isempty(mfmt["Reactive Power Capability"]) ? "%*.4f" : mfmt["Reactive Power Capability"],
-        "Reactive Power Capability Solution" => isempty(mfmt["Reactive Power Capability"]) ? "%*.4f" : mfmt["Reactive Power Capability"],
-        "Reactive Power Capability Maximum" => isempty(mfmt["Reactive Power Capability"]) ? "%*.4f" : mfmt["Reactive Power Capability"],
-        "Reactive Power Capability Dual" => isempty(mfmt["Reactive Power Capability"]) ? "%*.4f" : mfmt["Reactive Power Capability"]
+        "Active Power Capability" => 0,
+        "Reactive Power Capability" => 0,
     )
     _show = Dict(
-        "Active Power Capability Minimum" => !isempty(constraint.capability.active) & mshow["Active Power Capability"],
-        "Active Power Capability Solution" => !isempty(constraint.capability.active) & mshow["Active Power Capability"],
-        "Active Power Capability Maximum" => !isempty(constraint.capability.active) & mshow["Active Power Capability"],
-        "Active Power Capability Dual" => !isempty(dual.capability.active) & mshow["Active Power Capability"],
-        "Reactive Power Capability Minimum" => !isempty(constraint.capability.reactive) & mshow["Reactive Power Capability"],
-        "Reactive Power Capability Solution" => !isempty(constraint.capability.reactive) & mshow["Reactive Power Capability"],
-        "Reactive Power Capability Maximum" => !isempty(constraint.capability.reactive) & mshow["Reactive Power Capability"],
-        "Reactive Power Capability Dual" => !isempty(dual.capability.reactive) & mshow["Reactive Power Capability"]
+        "Active Power Capability" => true,
+        "Reactive Power Capability" => true,
+    )
+    _fmt, _width, _show = printFormat(_fmt, fmt, _width, width, _show, show, style)
+
+    _fmt = Dict(
+        "Active Power Capability Minimum" => _fmt_(_fmt["Active Power Capability"], "%*.4f"),
+        "Active Power Capability Solution" => _fmt_(_fmt["Active Power Capability"], "%*.4f"),
+        "Active Power Capability Maximum" => _fmt_(_fmt["Active Power Capability"], "%*.4f"),
+        "Active Power Capability Dual" => _fmt_(_fmt["Active Power Capability"], "%*.4f"),
+        "Reactive Power Capability Minimum" => _fmt_(_fmt["Reactive Power Capability"], "%*.4f"),
+        "Reactive Power Capability Solution" => _fmt_(_fmt["Reactive Power Capability"], "%*.4f"),
+        "Reactive Power Capability Maximum" => _fmt_(_fmt["Reactive Power Capability"], "%*.4f"),
+        "Reactive Power Capability Dual" => _fmt_(_fmt["Reactive Power Capability"], "%*.4f")
+    )
+    _width = Dict(
+        "Label" => 5 * style,
+        "Active Power Capability Minimum" => _width_(_width["Active Power Capability"], 7, style),
+        "Active Power Capability Solution" => _width_(_width["Active Power Capability"], 8, style),
+        "Active Power Capability Maximum" => _width_(_width["Active Power Capability"], 7, style),
+        "Active Power Capability Dual" => _width_(_width["Active Power Capability"], textwidth("[\$/$(unitList.activePowerLive)-hr]"), style),
+        "Reactive Power Capability Minimum" => _width_(_width["Reactive Power Capability"], 7, style),
+        "Reactive Power Capability Solution" => _width_(_width["Reactive Power Capability"], 8, style),
+        "Reactive Power Capability Maximum" => _width_(_width["Reactive Power Capability"], 7, style),
+        "Reactive Power Capability Dual" => _width_(_width["Reactive Power Capability"], textwidth("[\$/$(unitList.reactivePowerLive)-hr]"), style)
+    )
+    _show = Dict(
+        "Active Power Capability Minimum" => _show_(constraint.capability.active, _show["Active Power Capability"]),
+        "Active Power Capability Solution" => _show_(constraint.capability.active, _show["Active Power Capability"]),
+        "Active Power Capability Maximum" => _show_(constraint.capability.active, _show["Active Power Capability"]),
+        "Active Power Capability Dual" => _show_(dual.capability.active, _show["Active Power Capability"]),
+        "Reactive Power Capability Minimum" => _show_(constraint.capability.reactive, _show["Reactive Power Capability"]),
+        "Reactive Power Capability Solution" => _show_(constraint.capability.reactive, _show["Reactive Power Capability"]),
+        "Reactive Power Capability Maximum" => _show_(constraint.capability.reactive, _show["Reactive Power Capability"]),
+        "Reactive Power Capability Dual" => _show_(dual.capability.reactive, _show["Reactive Power Capability"])
     )
     fmt, width, show = printFormat(_fmt, fmt, _width, width, _show, show, style)
 
@@ -1440,32 +1463,35 @@ function formatGeneratorConstraint(system::PowerSystem, analysis::DCOptimalPower
     constraint = analysis.method.constraint
     dual = analysis.method.dual
 
-    mshow = Dict(
-        "Active Power Capability" => true
-    )
-    mfmt = Dict(
+    _fmt = Dict(
         "Active Power Capability" => ""
     )
-    mshow, mfmt = printFormat(mshow, show, mfmt, fmt)
-
     _width = Dict(
-        "Label" => 5 * style,
-        "Active Power Capability Minimum" => 7 * style,
-        "Active Power Capability Solution" => 8 * style,
-        "Active Power Capability Maximum" => 7 * style,
-        "Active Power Capability Dual" => textwidth("[\$/$(unitList.activePowerLive)-hr]") * style
-    )
-    _fmt = Dict(
-        "Active Power Capability Minimum" => isempty(mfmt["Active Power Capability"]) ? "%*.4f" : mfmt["Active Power Capability"],
-        "Active Power Capability Solution" => isempty(mfmt["Active Power Capability"]) ? "%*.4f" : mfmt["Active Power Capability"],
-        "Active Power Capability Maximum" => isempty(mfmt["Active Power Capability"]) ? "%*.4f" : mfmt["Active Power Capability"],
-        "Active Power Capability Dual" => isempty(mfmt["Active Power Capability"]) ? "%*.4f" : mfmt["Active Power Capability"]
+        "Active Power Capability" => 0
     )
     _show = Dict(
-        "Active Power Capability Minimum" => !isempty(constraint.capability.active) & mshow["Active Power Capability"],
-        "Active Power Capability Solution" => !isempty(constraint.capability.active) & mshow["Active Power Capability"],
-        "Active Power Capability Maximum" => !isempty(constraint.capability.active) & mshow["Active Power Capability"],
-        "Active Power Capability Dual" => !isempty(dual.capability.active) & mshow["Active Power Capability"]
+        "Active Power Capability" => true
+    )
+    _fmt, _width, _show = printFormat(_fmt, fmt, _width, width, _show, show, style)
+
+    _fmt = Dict(
+        "Active Power Capability Minimum" => _fmt_(_fmt["Active Power Capability"], "%*.4f"),
+        "Active Power Capability Solution" => _fmt_(_fmt["Active Power Capability"], "%*.4f"),
+        "Active Power Capability Maximum" => _fmt_(_fmt["Active Power Capability"], "%*.4f"),
+        "Active Power Capability Dual" => _fmt_(_fmt["Active Power Capability"], "%*.4f")
+    )
+    _width = Dict(
+        "Label" => 5 * style,
+        "Active Power Capability Minimum" => _width_(_width["Active Power Capability"], 7, style),
+        "Active Power Capability Solution" => _width_(_width["Active Power Capability"], 8, style),
+        "Active Power Capability Maximum" => _width_(_width["Active Power Capability"], 7, style),
+        "Active Power Capability Dual" => _width_(_width["Active Power Capability"], textwidth("[\$/$(unitList.activePowerLive)-hr]"), style)
+    )
+    _show = Dict(
+        "Active Power Capability Minimum" => _show_(constraint.capability.active, _show["Active Power Capability"]),
+        "Active Power Capability Solution" => _show_(constraint.capability.active, _show["Active Power Capability"]),
+        "Active Power Capability Maximum" => _show_(constraint.capability.active, _show["Active Power Capability"]),
+        "Active Power Capability Dual" => _show_(dual.capability.active, _show["Active Power Capability"])
     )
     fmt, width, show = printFormat(_fmt, fmt, _width, width, _show, show, style)
 
