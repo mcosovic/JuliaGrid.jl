@@ -368,10 +368,10 @@ function formatBusConstraint(system::PowerSystem, analysis::DCOptimalPowerFlow, 
     dual = analysis.method.dual
 
     mshow = Dict(
-        "Active Power Balance" => true,
+        "Active Power Balance" => true
     )
     mfmt = Dict(
-        "Active Power Balance" => "",
+        "Active Power Balance" => ""
     )
     mshow, mfmt = printFormat(mshow, show, mfmt, fmt)
 
@@ -381,8 +381,8 @@ function formatBusConstraint(system::PowerSystem, analysis::DCOptimalPowerFlow, 
         "Active Power Balance Dual" => textwidth("[\$/$(unitList.activePowerLive)-hr]") * style,
     )
     _fmt = Dict(
-        "Active Power Balance Solution" => isempty(mfmt[""]) ? "%*.4f" : mfmt["Active Power Balance"],
-        "Active Power Balance Dual" => isempty(mfmt[""]) ? "%*.4f" : mfmt["Active Power Balance"],
+        "Active Power Balance Solution" => isempty(mfmt["Active Power Balance"]) ? "%*.4f" : mfmt["Active Power Balance"],
+        "Active Power Balance Dual" => isempty(mfmt["Active Power Balance"]) ? "%*.4f" : mfmt["Active Power Balance"],
     )
     _show = Dict(
         "Active Power Balance Solution" => !isempty(constraint.balance.active) & mshow["Active Power Balance"],
