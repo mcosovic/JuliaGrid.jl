@@ -461,6 +461,8 @@ The following keywords control the printed data:
 
 # Example
 ```jldoctest
+using Ipopt
+
 system = powerSystem("case14.h5")
 updateBranch!(system; label = 4, maxFromBus = 0.4, maxToBus = 0.5)
 updateBranch!(system; label = 9, minFromBus = 0.1, maxFromBus = 0.3)
@@ -1128,13 +1130,15 @@ The following keywords control the printed data:
 
 # Example
 ```jldoctest
+using Ipopt
+
 system = powerSystem("case14.h5")
 
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
 solve!(system, analysis)
 
 # Print data for all generators
-fmt = Dict("Active Power Capability" => "%.2f", "Active Power Capability Minimum" => "%.6f")
+fmt = Dict("Active Power Capability" => "%.2f")
 show = Dict("Reactive Power Capability" => false, "Active Power Capability Dual" => false)
 printGeneratorConstraint(system, analysis; fmt, show)
 
