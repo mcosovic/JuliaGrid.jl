@@ -35,7 +35,7 @@ end
 power!(system, analysis)
 
 # Print data for all voltmeters
-fmt = Dict("Measurement Variance" => "%.4f")
+fmt = Dict("Measurement" => "%.2f", "State Estimation Estimate" => "%.6f")
 show = Dict("State Estimation Residual" => false)
 printVoltmeterData(system, device, analysis; fmt, show, delimiter = " ")
 
@@ -100,7 +100,7 @@ end
 function formatVoltmeterData(system::PowerSystem, voltmeter::Voltmeter, voltage::Polar, label::L, prefix::PrefixLive,
     fmt::Dict{String, String}, width::Dict{String, Int64}, show::Dict{String, Bool}, style::Bool)
 
-    _fmt, _width, _show, minval, maxval = formatDevice(voltmeter.magnitude, voltage.magnitude, style)
+    _fmt, _width, _show, minval, maxval = formatDevice(fmt, show, voltmeter.magnitude, voltage.magnitude, style)
     if !isempty(voltmeter.label)
         fmt, width, show = printFormat(_fmt, fmt, _width, width, _show, show, style)
         labels = toggleLabel(label, voltmeter, voltmeter.label, "voltmeter")
@@ -160,7 +160,7 @@ end
 current!(system, analysis)
 
 # Print data for all ammeters
-fmt = Dict("Measurement Variance" =>"%.4f")
+fmt = Dict("Measurement" => "%.2f", "State Estimation Estimate" => "%.6f")
 show = Dict("State Estimation Residual" => false)
 printAmmeterData(system, device, analysis; fmt, show, delimiter = " ")
 
@@ -231,8 +231,7 @@ end
 function formatAmmeterData(system::PowerSystem, ammeter::Ammeter, current::ACCurrent, label::L, prefix::PrefixLive,
     fmt::Dict{String, String}, width::Dict{String, Int64}, show::Dict{String, Bool}, style::Bool)
 
-    _fmt, _width, _show, minval, maxval = formatDevice(ammeter.magnitude, current.from.magnitude, style)
-
+    _fmt, _width, _show, minval, maxval = formatDevice(fmt, show, ammeter.magnitude, current.from.magnitude, style)
     if !isempty(ammeter.label)
         fmt, width, show = printFormat(_fmt, fmt, _width, width, _show, show, style)
         labels = toggleLabel(label, ammeter, ammeter.label, "ammeter")
@@ -297,7 +296,7 @@ end
 power!(system, analysis)
 
 # Print data for all wattmeters
-fmt = Dict("Measurement Variance" => "%.4f")
+fmt = Dict("Measurement" => "%.2f", "State Estimation Estimate" => "%.6f")
 show = Dict("State Estimation Residual" => false)
 printWattmeterData(system, device, analysis; fmt, show, delimiter = " ")
 
@@ -361,8 +360,7 @@ end
 function formatWattmeterData(wattmeter::Wattmeter, power::Union{ACPower, DCPower}, scale::Dict{String, Float64}, label::L,
     fmt::Dict{String, String}, width::Dict{String,Int64}, show::Dict{String, Bool}, style::Bool)
 
-    _fmt, _width, _show, mival, maxval = formatDevice(wattmeter.active, power.injection.active, style)
-
+    _fmt, _width, _show, mival, maxval = formatDevice(fmt, show, wattmeter.active, power.injection.active, style)
     if !isempty(wattmeter.label)
         fmt, width, show = printFormat(_fmt, fmt, _width, width, _show, show, style)
         labels = toggleLabel(label, wattmeter, wattmeter.label, "wattmeter")
@@ -416,7 +414,7 @@ end
 power!(system, analysis)
 
 # Print data for all varmeters
-fmt = Dict("Measurement Variance" => "%.4f")
+fmt = Dict("Measurement" => "%.2f", "State Estimation Estimate" => "%.6f")
 show = Dict("State Estimation Residual" => false)
 printVarmeterData(system, device, analysis; fmt, show, delimiter = " ")
 
@@ -480,8 +478,7 @@ end
 function formatVarmeterData(varmeter::Varmeter, power::ACPower, scale::Dict{String, Float64}, label::L,
     fmt::Dict{String, String}, width::Dict{String,Int64}, show::Dict{String, Bool}, style::Bool)
 
-    _fmt, _width, _show, mival, maxval = formatDevice(varmeter.reactive, power.injection.reactive, style)
-
+    _fmt, _width, _show, mival, maxval = formatDevice(fmt, show, varmeter.reactive, power.injection.reactive, style)
     if !isempty(varmeter.label)
         fmt, width, show = printFormat(_fmt, fmt, _width, width, _show, show, style)
         labels = toggleLabel(label, varmeter, varmeter.label, "varmeter")
@@ -535,7 +532,7 @@ end
 current!(system, analysis)
 
 # Print data for all PMUs
-fmt = Dict("Measurement Variance" => "%.5f")
+fmt = Dict("Measurement" => "%.2f", "State Estimation Estimate" => "%.6f")
 show = Dict("State Estimation Residual" => false)
 printPmuData(system, device, analysis; fmt, show, delimiter = " ")
 
@@ -706,14 +703,14 @@ end
 function formatPmuData(system::PowerSystem, pmu::PMU, voltage::Polar, current::ACCurrent, scale::Dict{String, Float64}, label::L,
     prefix::PrefixLive, fmt::Dict{String, String}, width::Dict{String, Int64}, show::Dict{String, Bool}, style::Bool)
 
-    _fmt, _width, _show, minV, maxV = formatDevice(pmu.magnitude, voltage.magnitude, style)
+    _fmt, _width, _show, minV, maxV = formatDevice(fmt, show, pmu.magnitude, voltage.magnitude, style)
     fmt, widthV, showV = printFormat(_fmt, fmt, _width, width, _show, show, style)
-    _, _width, _show, minθ, maxθ = formatDevice(pmu.angle, voltage.angle, style)
+    _, _width, _show, minθ, maxθ = formatDevice(fmt, show, pmu.angle, voltage.angle, style)
     _, widthθ, showθ = printFormat(Dict{String, String}(), Dict{String, String}(), _width, width, _show, show, style)
 
-    _, _width, _show, minI, maxI = formatDevice(pmu.magnitude, current.from.magnitude, style)
+    _, _width, _show, minI, maxI = formatDevice(fmt, show, pmu.magnitude, current.from.magnitude, style)
     _, widthI, showI = printFormat(Dict{String, String}(), Dict{String, String}(), _width, width, _show, show, style)
-    _, _width, _show, minψ, maxψ = formatDevice(pmu.angle, current.from.angle, style)
+    _, _width, _show, minψ, maxψ = formatDevice(fmt, show, pmu.angle, current.from.angle, style)
     _, widthψ, showψ = printFormat(Dict{String, String}(), Dict{String, String}(), _width, width, _show, show, style)
 
     if !isempty(pmu.label)
@@ -744,6 +741,8 @@ function formatPmuData(system::PowerSystem, pmu::PMU, voltage::Polar, current::A
 
                     estimate = findEstimate(pmu, current.from.magnitude, current.to.magnitude, i)
                     formatDevice(widthI, showI, minI, maxI, label, pmu.magnitude, estimate, scaleI, i, indexBusBranch)
+
+                    estimate = findEstimate(pmu, current.from.angle, current.to.angle, i)
                     formatDevice(widthψ, showψ, minψ, maxψ, label, pmu.angle, estimate, scale["ψ"], i, indexBusBranch)
                 end
             end
@@ -777,7 +776,7 @@ end
 function formatPmuData(system::PowerSystem, pmu::PMU, voltage::PolarAngle, scale::Dict{String, Float64}, label::L, prefix::PrefixLive,
     fmt::Dict{String, String}, width::Dict{String, Int64}, show::Dict{String, Bool}, style::Bool)
 
-    _fmt, _width, _show, minval, maxval = formatDevice(pmu.angle, voltage.angle, style)
+    _fmt, _width, _show, minval, maxval = formatDevice(fmt, show, pmu.angle, voltage.angle, style)
 
     if !isempty(pmu.label)
         fmt, width, show = printFormat(_fmt, fmt, _width, width, _show, show, style)
@@ -806,7 +805,17 @@ function formatPmuData(system::PowerSystem, pmu::PMU, voltage::PolarAngle, scale
     return fmt, width, show, _show
 end
 
-function formatDevice(meter::GaussMeter, analysisArray::Array{Float64,1}, style::Bool)
+function formatDevice(fmt::Dict{String, String}, show::Dict{String, Bool}, meter::GaussMeter, analysisArray::Array{Float64,1}, style::Bool)
+    mshow = Dict(
+        "Measurement" => true,
+        "State Estimation" => true,
+    )
+    mfmt = Dict(
+        "Measurement" => "",
+        "State Estimation" => "",
+    )
+    mshow, mfmt = printFormat(mshow, show, mfmt, fmt)
+
     width = Dict(
         "Label" => 0,
         "Measurement Mean" => 4 * style,
@@ -815,35 +824,32 @@ function formatDevice(meter::GaussMeter, analysisArray::Array{Float64,1}, style:
         "State Estimation Residual" => 8 * style,
         "Status" => 6 * style
     )
-
     fmt = Dict(
-        "Measurement Mean" => "%*.4f",
-        "Measurement Variance" => "%*.2e",
-        "State Estimation Estimate" => "%*.4f",
-        "State Estimation Residual" => "%*.4f",
+        "Measurement Mean" => isempty(mfmt["Measurement"]) ? "%*.4f" : mfmt["Measurement"],
+        "Measurement Variance" => isempty(mfmt["Measurement"]) ? "%*.2e" : mfmt["Measurement"],
+        "State Estimation Estimate" => isempty(mfmt["State Estimation"]) ? "%*.4f" : mfmt["State Estimation"],
+        "State Estimation Residual" => isempty(mfmt["State Estimation"]) ? "%*.4f" : mfmt["State Estimation"],
         "Status" => "%*i"
     )
-
     show = Dict(
-        "Measurement Mean" => !isempty(meter.mean),
-        "Measurement Variance" => !isempty(meter.variance),
-        "State Estimation Estimate" => !isempty(analysisArray),
-        "State Estimation Residual" => !isempty(analysisArray),
+        "Measurement Mean" => !isempty(meter.mean) & mshow["Measurement"],
+        "Measurement Variance" => !isempty(meter.variance) & mshow["Measurement"],
+        "State Estimation Estimate" => !isempty(analysisArray) & mshow["State Estimation"],
+        "State Estimation Residual" => !isempty(analysisArray) & mshow["State Estimation"],
         "Status" => !isempty(meter.status)
     )
 
     minval = Dict(
-        "Measurement Mean" => 0.0,
-        "Measurement Variance" => 0.0,
-        "State Estimation Estimate" => 0.0,
-        "State Estimation Residual" => 0.0,
+        "Measurement Mean" => Inf,
+        "Measurement Variance" => Inf,
+        "State Estimation Estimate" => Inf,
+        "State Estimation Residual" => Inf,
     )
-
     maxval = Dict(
-        "Measurement Mean" => 0.0,
-        "Measurement Variance" => 0.0,
-        "State Estimation Estimate" => 0.0,
-        "State Estimation Residual" => 0.0,
+        "Measurement Mean" => -Inf,
+        "Measurement Variance" => -Inf,
+        "State Estimation Estimate" => -Inf,
+        "State Estimation Residual" => -Inf,
     )
 
     return fmt, width, show, minval, maxval
@@ -1084,7 +1090,7 @@ function formatDevice(fmt::Dict{String, String}, width::Dict{String, Int64}, sho
     pmuData = false
     for key in keys(minval)
         if show[key]
-            width[key] = max( textwidth(format(Format(fmt[key]), 0, minval[key])), textwidth(format(Format(fmt[key]), 0, maxval[key])), width[key])
+            width[key] = max(textwidth(format(Format(fmt[key]), 0, minval[key])), textwidth(format(Format(fmt[key]), 0, maxval[key])), width[key])
             pmuData = true
         end
     end

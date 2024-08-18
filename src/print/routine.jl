@@ -308,6 +308,23 @@ function printFormat(_fmt::Dict{String, String}, fmt::Dict{String, String}, _wid
     return _fmt, _width, _show
 end
 
+function printFormat(_show::Dict{String, Bool}, show::Dict{String, Bool}, _fmt::Dict{String, String}, fmt::Dict{String, String})
+    @inbounds for (key, value) in fmt
+        if haskey(_fmt, key)
+            _, precision, specifier = fmtRegex(value)
+            _fmt[key] = "%*." * precision * specifier
+        end
+    end
+
+    @inbounds for (key, value) in show
+        if haskey(_show, key)
+            _show[key] = value
+        end
+    end
+
+    return _show, _fmt
+end
+
 function fmtRegex(fmt::String)
     regexPattern = r"%(\d*)\.?(\d+)?([a-zA-Z])"
     matchRresult = match(regexPattern, fmt)
