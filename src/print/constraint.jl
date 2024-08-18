@@ -27,8 +27,8 @@ analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
 solve!(system, analysis)
 
 # Print data for all buses
-fmt = Dict("Active Power Balance Solution" => "%.2e")
-show = Dict("Voltage Magnitude Minimum" => false)
+fmt = Dict("Active Power Balance" => "%.2e", "Reactive Power Balance Dual" => "%.4e")
+show = Dict("Voltage Magnitude" => false, "Reactive Power Balance Solution" => false)
 printBusConstraint(system, analysis; fmt, show)
 
 # Print data for specific buses
@@ -1115,8 +1115,8 @@ analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
 solve!(system, analysis)
 
 # Print data for all generators
-fmt = Dict("Active Power Capability" => "%.2f", "Active Power Capability Dual" => "%.6f")
-show = Dict("Reactive Power Capability" => false, "Active Power Capability Minimum" => false)
+fmt = Dict("Active Power Capability" => "%.2f", "Active Power Capability Minimum" => "%.6f")
+show = Dict("Reactive Power Capability" => false, "Active Power Capability Dual" => false)
 printGeneratorConstraint(system, analysis; fmt, show)
 
 # Print data for specific generators

@@ -34,8 +34,8 @@ end
 power!(system, analysis)
 
 # Print data for all buses
-fmt = Dict("Active Power Balance" => "%.2e", "Reactive Power Balance Dual" => "%.4e")
-show = Dict("Voltage Magnitude" => false, "Reactive Power Balance Solution" => false)
+fmt = Dict("Power Demand" => "%.2f", "Voltage Magnitude" => "%.2f")
+show = Dict("Power Injection" => false, "Power Generation Reactive" => false)
 printBusData(system, analysis; fmt, show)
 
 # Print data for specific buses

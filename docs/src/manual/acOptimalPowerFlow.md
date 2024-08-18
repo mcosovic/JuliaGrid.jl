@@ -459,7 +459,7 @@ analysis.method.dual.balance.active[1]
 Users can utilize the functions [`printBusData`](@ref printBusData) and [`printGeneratorData`](@ref printGeneratorData) to display results. Additionally, to print bus, branch, or generator-related constraint data with the desired units, users can utilize any of the functions provided in the [Print Constraint Data](@ref PrintConstraintDataAPI) section. For example:
 ```@example ACOptimalPowerFlow
 @power(MW, MVAr, pu)
-show = Dict("Active Power Balance Solution" => false, "Active Power Balance Dual" => false)
+show = Dict("Active Power Balance" => false)
 printBusConstraint(system, analysis; show)
 nothing # hide
 ```
@@ -605,8 +605,7 @@ Users can utilize any of the print functions outlined in the [Print Power System
 ```@example ACOptimalPowerFlowPower
 @voltage(pu, deg, V)
 @power(MW, MVAr, pu)
-show = Dict("Power Generation Active" => false, "Power Generation Reactive" => false,
-            "Current Injection Magnitude" => false, "Current Injection Angle" => false)
+show = Dict("Power Generation" => false, "Current Injection" => false)
 printBusData(system, analysis; show)
 @default(unit) # hide
 nothing # hide
