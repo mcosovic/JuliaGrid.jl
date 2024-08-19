@@ -219,8 +219,8 @@ function formatBusData(system::PowerSystem, analysis::AC, label::L, scale::Dict{
         "Voltage Angle" => _show_(voltage.angle, _show["Voltage"]),
         "Power Generation Active" => _show_(power.supply.active, _show["Power Generation"]),
         "Power Generation Reactive" => _show_(power.supply.reactive, _show["Power Generation"]),
-        "Power Demand Active" => _show_(system.bus.demand.active, _show["Power Demand"]),
-        "Power Demand Reactive" => _show_(system.bus.demand.reactive, _show["Power Demand"]),
+        "Power Demand Active" => _show_(power.injection.active, _show["Power Demand"]),
+        "Power Demand Reactive" => _show_(power.injection.reactive, _show["Power Demand"]),
         "Power Injection Active" => _show_(power.injection.active, _show["Power Injection"]),
         "Power Injection Reactive" => _show_(power.injection.reactive, _show["Power Injection"]),
         "Shunt Power Active" => _show_(power.shunt.active, _show["Shunt Power"]),
@@ -427,7 +427,7 @@ function formatBusData(system::PowerSystem, analysis::DC, label::L, scale::Dict{
     _show = Dict(
         "Voltage Angle" => _show_(voltage.angle, _show["Voltage"]),
         "Power Generation Active" => _show_(power.supply.active, _show["Power Generation"]),
-        "Power Demand Active" => _show_(system.bus.demand.active, _show["Power Demand"]),
+        "Power Demand Active" => _show_(power.injection.active, _show["Power Demand"]),
         "Power Injection Active" => _show_(power.injection.active, _show["Power Injection"])
     )
     fmt, width, show = printFormat(_fmt, fmt, _width, width, _show, show, style)
