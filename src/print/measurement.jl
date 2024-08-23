@@ -100,7 +100,7 @@ function formatVoltmeterData(system::PowerSystem, voltmeter::Voltmeter, voltage:
     fmt::Dict{String, String}, width::Dict{String, Int64}, show::Dict{String, Bool}, unitList::UnitList, style::Bool, type::String)
 
     device = !isempty(voltmeter.label)
-    state = !isempty(voltmeter.magnitude.mean)
+    state = !isempty(voltage.magnitude)
 
     fmt, width, show, subheader, unit, empty, minval, maxval = formatDevice(fmt, width, show, unitList.voltageMagnitudeLive, device, state, style, type)
     if device
