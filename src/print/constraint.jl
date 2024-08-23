@@ -11,7 +11,7 @@ The following keywords control the printed data:
 * `header`: Toggles the printing of the header.
 * `footer`: Toggles the printing of the footer.
 * `delimiter`: Sets the column delimiter.
-* `fmt`: Specifies the preferred numeric formats for the columns.
+* `fmt`: Specifies the preferred numeric formats or alignments for the columns.
 * `width`: Specifies the preferred widths for the columns.
 * `show`: Toggles the printing of the columns.
 * `style`: Prints either a stylish table or a simple table suitable for easy export.
@@ -45,110 +45,92 @@ function printBusConstraint(system::PowerSystem, analysis::ACOptimalPowerFlow, i
     header::B = missing, footer::B = missing, delimiter::String = "|", fmt::Dict{String, String} = Dict{String, String}(),
     width::Dict{String, Int64} = Dict{String, Int64}(), show::Dict{String, Bool} = Dict{String, Bool}(), style::Bool = true)
 
-    scale = printScale(system, prefix)
-    unitData = printUnitData(unitList)
-    fmt, width, show = formatBusConstraint(system, analysis, label, scale, prefix, fmt, width, show, style)
-    maxLine, pfmt = setupPrintSystem(fmt, width, show, delimiter, style; dash = true)
-    labels, header, footer = toggleLabelHeader(label, system.bus, system.bus.label, header, footer, "bus")
-
     constraint = analysis.method.constraint
     dual = analysis.method.dual
-    if header
-        if style
-            printTitle(io, maxLine, delimiter, "Bus Constraint Data")
 
-            print(io, format(Format("$delimiter %*s%s%*s $delimiter"), floor(Int, (width["Label"] - 5) / 2), "", "Label", ceil(Int, (width["Label"] - 5) / 2) , ""))
-            span = printf(io, width, show, delimiter, "Voltage Magnitude Minimum", "Voltage Magnitude Solution", "Voltage Magnitude Maximum", "Voltage Magnitude Dual", "Voltage Magnitude")
-            fmtAct = printf(io, width, show, delimiter, "Active Power Balance Solution", "Active Power Balance Dual", "Active Power Balance")
-            fmtRea = printf(io, width, show, delimiter, "Reactive Power Balance Solution", "Reactive Power Balance Dual", "Reactive Power Balance")
+    scale = printScale(system, prefix)
+    fmt, width, show, subheader, unit, empty, printing = formatBusConstraint(system, analysis, label, scale, prefix, fmt, width, show, style)
+
+    if printing
+        maxLine, pfmt, hfmt = setupPrintSystem(fmt, width, show, delimiter, style)
+        labels, header, footer = toggleLabelHeader(label, system.bus, system.bus.label, header, footer, "bus")
+
+        if header
+            if style
+                printTitle(io, maxLine, delimiter, "Bus Constraint Data")
+
+                print(io, delimiter)
+                widthLab = printf(io, width, show, delimiter, "Label", "Label")
+                widthMag = printf(io, width, show, delimiter, "Voltage Magnitude", "Voltage Magnitude Minimum", "Voltage Magnitude Solution", "Voltage Magnitude Maximum", "Voltage Magnitude Dual")
+                widthAct = printf(io, width, show, delimiter, "Active Power Balance", "Active Power Balance Solution", "Active Power Balance Dual")
+                widthRea = printf(io, width, show, delimiter, "Reactive Power Balance", "Reactive Power Balance Solution", "Reactive Power Balance Dual")
+                @printf io "\n"
+
+                print(io, delimiter)
+                printf(io, hfmt["Empty"], widthLab)
+                printf(io, hfmt["Empty"], widthMag)
+                printf(io, hfmt["Empty"], widthAct)
+                printf(io, hfmt["Empty"], widthRea)
+                @printf io "\n"
+            end
+
+            printf(io, hfmt, width, show, subheader, "Label")
+            printf(io, hfmt, width, show, subheader, "Voltage Magnitude Minimum", "Voltage Magnitude Solution", "Voltage Magnitude Maximum", "Voltage Magnitude Dual")
+            printf(io, hfmt, width, show, subheader, "Active Power Balance Solution", "Active Power Balance Dual")
+            printf(io, hfmt, width, show, subheader, "Reactive Power Balance Solution", "Reactive Power Balance Dual")
             @printf io "\n"
 
-            fmt = Format(" %*s $delimiter")
-            print(io, format(Format("$delimiter %*s $delimiter"), width["Label"], ""))
-            printf(io, fmt, span)
-            printf(io, fmtAct[1], width, show, "Active Power Balance Solution", "", "Active Power Balance Dual", "")
-            printf(io, fmtRea[1], width, show, "Reactive Power Balance Solution", "", "Reactive Power Balance Dual", "")
+            printf(io, hfmt, width, show, unit, "Label")
+            printf(io, hfmt, width, show, unit, "Voltage Magnitude Minimum", "Voltage Magnitude Solution", "Voltage Magnitude Maximum", "Voltage Magnitude Dual")
+            printf(io, hfmt, width, show, unit, "Active Power Balance Solution", "Active Power Balance Dual")
+            printf(io, hfmt, width, show, unit, "Reactive Power Balance Solution", "Reactive Power Balance Dual")
             @printf io "\n"
 
-            print(io, format(Format("$delimiter %*s $delimiter"), width["Label"], ""))
-            printf(io, fmt, width, show, "Voltage Magnitude Minimum", "Minimum")
-            printf(io, fmt, width, show, "Voltage Magnitude Solution", "Solution")
-            printf(io, fmt, width, show, "Voltage Magnitude Maximum", "Maximum")
-            printf(io, fmt, width, show, "Voltage Magnitude Dual", "Dual")
-            printf(io, fmtAct[2], width, show, "Active Power Balance Solution", "Solution", "Active Power Balance Dual", "Dual")
-            printf(io, fmtRea[2], width, show, "Reactive Power Balance Solution", "Solution", "Reactive Power Balance Dual", "Dual")
-            @printf io "\n"
+            if style
+                print(io, delimiter)
+                printf(io, hfmt["Break"], width, show, "Label")
+                printf(io, hfmt["Break"], width, show, "Voltage Magnitude Minimum", "Voltage Magnitude Solution", "Voltage Magnitude Maximum", "Voltage Magnitude Dual")
+                printf(io, hfmt["Break"], width, show, "Active Power Balance Solution", "Active Power Balance Dual")
+                printf(io, hfmt["Break"], width, show, "Reactive Power Balance Solution", "Reactive Power Balance Dual")
 
-            print(io, format(Format("$delimiter %*s $delimiter"), width["Label"], ""))
-            printf(io, fmt, width, show, "Voltage Magnitude Minimum", unitData["V"])
-            printf(io, fmt, width, show, "Voltage Magnitude Solution", unitData["V"])
-            printf(io, fmt, width, show, "Voltage Magnitude Maximum", unitData["V"])
-            printf(io, fmt, width, show, "Voltage Magnitude Dual", "[\$/$(unitList.voltageMagnitudeLive)-hr]")
-            printf(io, fmtAct[2], width, show, "Active Power Balance Solution", unitData["P"], "Active Power Balance Dual", "[\$/$(unitList.activePowerLive)-hr]")
-            printf(io, fmtRea[2], width, show, "Reactive Power Balance Solution", unitData["Q"], "Reactive Power Balance Dual", "[\$/$(unitList.reactivePowerLive)-hr]")
-            @printf io "\n"
-
-            fmt =  Format("-%*s-$delimiter")
-            print(io, format(Format("$delimiter-%s-$delimiter"), "-"^width["Label"]))
-            printf(io, fmt, width, show, "Voltage Magnitude Minimum", "-"^width["Voltage Magnitude Minimum"])
-            printf(io, fmt, width, show, "Voltage Magnitude Solution", "-"^width["Voltage Magnitude Solution"])
-            printf(io, fmt, width, show, "Voltage Magnitude Maximum", "-"^width["Voltage Magnitude Maximum"])
-            printf(io, fmt, width, show, "Voltage Magnitude Dual", "-"^width["Voltage Magnitude Dual"])
-            printf(io, fmtAct[3], width, show, "Active Power Balance Solution", "-"^width["Active Power Balance Solution"], "Active Power Balance Dual", "-"^width["Active Power Balance Dual"])
-            printf(io, fmtRea[3], width, show, "Reactive Power Balance Solution", "-"^width["Reactive Power Balance Solution"], "Reactive Power Balance Dual", "-"^width["Reactive Power Balance Dual"])
-        else
-            print(io, format(Format("%s"), "Bus Label"))
-            printf(io, show, delimiter, "Voltage Magnitude Minimum", "Voltage Magnitude Minimum", "Voltage Magnitude Solution", "Voltage Magnitude Solution")
-            printf(io, show, delimiter, "Voltage Magnitude Maximum", "Voltage Magnitude Maximum", "Voltage Magnitude Dual", "Voltage Magnitude Dual")
-            printf(io, show, delimiter, "Active Power Balance Solution", "Active Power Balance Solution", "Active Power Balance Dual", "Active Power Balance Dual")
-            printf(io, show, delimiter, "Reactive Power Balance Solution", "Reactive Power Balance Solution", "Reactive Power Balance Dual", "Reactive Power Balance Dual")
-            @printf io "\n"
-
-            print(io, format(Format("%s"), ""))
-            printf(io, show, delimiter, "Voltage Magnitude Minimum", unitData["V"], "Voltage Magnitude Solution", unitData["V"])
-            printf(io, show, delimiter, "Voltage Magnitude Maximum", unitData["V"], "Voltage Magnitude Dual", "[\$/$(unitList.voltageMagnitudeLive)-hr]")
-            printf(io, show, delimiter, "Active Power Balance Solution", unitData["P"], "Active Power Balance Dual", "[\$/$(unitList.activePowerLive)-hr]")
-            printf(io, show, delimiter, "Reactive Power Balance Solution", unitData["P"], "Reactive Power Balance Dual", "[\$/$(unitList.reactivePowerLive)-hr]")
-        end
-        @printf io "\n"
-    end
-
-    @inbounds for (label, i) in labels
-        print(io, format(pfmt["Label"], width["Label"], label))
-
-        if haskey(constraint.voltage.magnitude, i) && is_valid(analysis.method.jump, constraint.voltage.magnitude[i])
-            printf(io, pfmt, show, width, system.bus.voltage.minMagnitude, i, scaleVoltage(prefix, system.base.voltage, i), "Voltage Magnitude Minimum")
-            printf(io, pfmt, show, width, analysis.voltage.magnitude, i, scaleVoltage(prefix, system.base.voltage, i), "Voltage Magnitude Solution")
-            printf(io, pfmt, show, width, system.bus.voltage.maxMagnitude, i, scaleVoltage(prefix, system.base.voltage, i), "Voltage Magnitude Maximum")
-            printf(io, pfmt, show, width, dual.voltage.magnitude, i, scaleVoltage(prefix, system.base.voltage, i), "Voltage Magnitude Dual")
-        else
-            printf(io, pfmt["Dash"], width, show, "Voltage Magnitude Minimum", "-")
-            printf(io, pfmt["Dash"], width, show, "Voltage Magnitude Solution", "-")
-            printf(io, pfmt["Dash"], width, show, "Voltage Magnitude Maximum", "-")
-            printf(io, pfmt["Dash"], width, show, "Voltage Magnitude Dual", "-")
+                @printf io "\n"
+            end
         end
 
-        if haskey(constraint.balance.active, i) && is_valid(analysis.method.jump, constraint.balance.active[i])
-            printf(io, pfmt, show, width, constraint.balance.active, i, scale["P"], "Active Power Balance Solution")
-            printf(io, pfmt, show, width, dual.balance.active, i, scale["P"], "Active Power Balance Dual")
-        else
-            printf(io, pfmt["Dash"], width, show, "Active Power Balance Solution", "-")
-            printf(io, pfmt["Dash"], width, show, "Active Power Balance Dual", "-")
+        @inbounds for (label, i) in labels
+            if checkLine(analysis.method.jump, i, constraint.voltage.magnitude, constraint.balance.active, constraint.balance.reactive)
+                continue
+            end
+
+            printf(io, pfmt, show, width, label, "Label")
+
+            if haskey(constraint.voltage.magnitude, i) && is_valid(analysis.method.jump, constraint.voltage.magnitude[i])
+                printf(io, pfmt, show, width, system.bus.voltage.minMagnitude, i, scaleVoltage(prefix, system.base.voltage, i), "Voltage Magnitude Minimum")
+                printf(io, pfmt, show, width, analysis.voltage.magnitude, i, scaleVoltage(prefix, system.base.voltage, i), "Voltage Magnitude Solution")
+                printf(io, pfmt, show, width, system.bus.voltage.maxMagnitude, i, scaleVoltage(prefix, system.base.voltage, i), "Voltage Magnitude Maximum")
+                printf(io, pfmt, show, width, dual.voltage.magnitude, i, scaleVoltage(prefix, system.base.voltage, i), "Voltage Magnitude Dual")
+            else
+                printf(io, hfmt, width, show, empty, "Voltage Magnitude Minimum", "Voltage Magnitude Solution", "Voltage Magnitude Maximum", "Voltage Magnitude Dual")
+            end
+
+            if haskey(constraint.balance.active, i) && is_valid(analysis.method.jump, constraint.balance.active[i])
+                printf(io, pfmt, show, width, constraint.balance.active, i, scale["P"], "Active Power Balance Solution")
+                printf(io, pfmt, show, width, dual.balance.active, i, scale["P"], "Active Power Balance Dual")
+            else
+                printf(io, hfmt, width, show, empty, "Active Power Balance Solution", "Active Power Balance Dual")
+            end
+
+            if haskey(constraint.balance.reactive, i) && is_valid(analysis.method.jump, constraint.balance.reactive[i])
+                printf(io, pfmt, show, width, constraint.balance.reactive, i, scale["Q"], "Reactive Power Balance Solution")
+                printf(io, pfmt, show, width, dual.balance.reactive, i, scale["Q"], "Reactive Power Balance Dual")
+            else
+                printf(io, hfmt, width, show, empty, "Reactive Power Balance Solution", "Reactive Power Balance Dual")
+            end
+
+            @printf io "\n"
         end
 
-        if haskey(constraint.balance.reactive, i) &&  is_valid(analysis.method.jump, constraint.balance.reactive[i])
-            printf(io, pfmt, show, width, constraint.balance.reactive, i, scale["Q"], "Reactive Power Balance Solution")
-            printf(io, pfmt, show, width, dual.balance.reactive, i, scale["Q"], "Reactive Power Balance Dual")
-        else
-            printf(io, pfmt["Dash"], width, show, "Reactive Power Balance Solution", "-")
-            printf(io, pfmt["Dash"], width, show, "Reactive Power Balance Dual", "-")
-        end
-
-        @printf io "\n"
-    end
-
-    if footer && style
-        print(io, format(Format("$delimiter%s$delimiter\n"), "-"^maxLine))
+        printf(io, delimiter, footer, style, maxLine)
     end
 end
 
@@ -161,52 +143,87 @@ function formatBusConstraint(system::PowerSystem, analysis::ACOptimalPowerFlow, 
     dual = analysis.method.dual
 
     _fmt = Dict(
-        "Voltage Magnitude" => "",
-        "Active Power Balance" => "",
-        "Reactive Power Balance" => "",
+        "Voltage Magnitude"      => "",
+        "Active Power Balance"   => "",
+        "Reactive Power Balance" => ""
     )
     _width = Dict(
-        "Voltage Magnitude" => 0,
-        "Active Power Balance" => 0,
-        "Reactive Power Balance" => 0,
+        "Voltage Magnitude"      => 0,
+        "Active Power Balance"   => 0,
+        "Reactive Power Balance" => 0
     )
-    _show = Dict(
-        "Voltage Magnitude" => true,
-        "Active Power Balance" => true,
-        "Reactive Power Balance" => true,
+    _show = OrderedDict(
+        "Voltage Magnitude"      => true,
+        "Active Power Balance"   => true,
+        "Reactive Power Balance" => true
     )
     _fmt, _width, _show = printFormat(_fmt, fmt, _width, width, _show, show, style)
 
+    subheader = Dict(
+        "Label"                           => _header_("", "Label", style),
+        "Voltage Magnitude Minimum"       => _header_("Minimum", "Voltage Magnitude Minimum", style),
+        "Voltage Magnitude Solution"      => _header_("Solution", "Voltage Magnitude Solution", style),
+        "Voltage Magnitude Maximum"       => _header_("Maximum", "Voltage Magnitude Maximum", style),
+        "Voltage Magnitude Dual"          => _header_("Dual", "Voltage Magnitude Dual", style),
+        "Active Power Balance Solution"   => _header_("Solution", "Active Power Balance Solution", style),
+        "Active Power Balance Dual"       => _header_("Dual", "Active Power Balance Dual", style),
+        "Reactive Power Balance Solution" => _header_("Solution", "Reactive Power Balance Solution", style),
+        "Reactive Power Balance Dual"     => _header_("Dual", "Reactive Power Balance Dual", style),
+    )
+    unit = Dict(
+        "Label"                           => "",
+        "Voltage Magnitude Minimum"       => "[$(unitList.voltageMagnitudeLive)]",
+        "Voltage Magnitude Solution"      => "[$(unitList.voltageMagnitudeLive)]",
+        "Voltage Magnitude Maximum"       => "[$(unitList.voltageMagnitudeLive)]",
+        "Voltage Magnitude Dual"          => "[\$/$(unitList.voltageMagnitudeLive)-hr]",
+        "Active Power Balance Solution"   => "[$(unitList.activePowerLive)]",
+        "Active Power Balance Dual"       => "[\$/$(unitList.activePowerLive)-hr]",
+        "Reactive Power Balance Solution" => "[$(unitList.reactivePowerLive)]",
+        "Reactive Power Balance Dual"     => "[\$/$(unitList.reactivePowerLive)-hr]"
+    )
+    empty = Dict(
+        "Label"                           => "",
+        "Voltage Magnitude Minimum"       => "",
+        "Voltage Magnitude Solution"      => "",
+        "Voltage Magnitude Maximum"       => "",
+        "Voltage Magnitude Dual"          => "",
+        "Active Power Balance Solution"   => "",
+        "Active Power Balance Dual"       => "",
+        "Reactive Power Balance Solution" => "",
+        "Reactive Power Balance Dual"     => "",
+    )
     _fmt = Dict(
-        "Voltage Magnitude Minimum" => _fmt_(_fmt["Voltage Magnitude"], "%*.4f"),
-        "Voltage Magnitude Solution" => _fmt_(_fmt["Voltage Magnitude"], "%*.4f"),
-        "Voltage Magnitude Maximum" => _fmt_(_fmt["Voltage Magnitude"], "%*.4f"),
-        "Voltage Magnitude Dual" => _fmt_(_fmt["Voltage Magnitude"], "%*.4f"),
-        "Active Power Balance Solution" => _fmt_(_fmt["Active Power Balance"], "%*.4f"),
-        "Active Power Balance Dual" => _fmt_(_fmt["Active Power Balance"], "%*.4f"),
-        "Reactive Power Balance Solution" => _fmt_(_fmt["Reactive Power Balance"], "%*.4f"),
-        "Reactive Power Balance Dual" => _fmt_(_fmt["Reactive Power Balance"], "%*.4f")
+        "Label"                           => "%-*s",
+        "Voltage Magnitude Minimum"       => _fmt_(_fmt["Voltage Magnitude"]),
+        "Voltage Magnitude Solution"      => _fmt_(_fmt["Voltage Magnitude"]),
+        "Voltage Magnitude Maximum"       => _fmt_(_fmt["Voltage Magnitude"]),
+        "Voltage Magnitude Dual"          => _fmt_(_fmt["Voltage Magnitude"]),
+        "Active Power Balance Solution"   => _fmt_(_fmt["Active Power Balance"]),
+        "Active Power Balance Dual"       => _fmt_(_fmt["Active Power Balance"]),
+        "Reactive Power Balance Solution" => _fmt_(_fmt["Reactive Power Balance"]),
+        "Reactive Power Balance Dual"     => _fmt_(_fmt["Reactive Power Balance"])
     )
     _width = Dict(
-        "Label" => 5 * style,
-        "Voltage Magnitude Minimum" => _width_(_width["Voltage Magnitude"], 7, style),
-        "Voltage Magnitude Solution" => _width_(_width["Voltage Magnitude"], 8, style),
-        "Voltage Magnitude Maximum" => _width_(_width["Voltage Magnitude"], 7, style),
-        "Voltage Magnitude Dual" => _width_(_width["Voltage Magnitude"], textwidth("[\$/$(unitList.voltageMagnitudeLive)-hr]"), style),
-        "Active Power Balance Solution" => _width_(_width["Active Power Balance"], 8, style),
-        "Active Power Balance Dual" => _width_(_width["Active Power Balance"], textwidth("[\$/$(unitList.activePowerLive)-hr]"), style),
+        "Label"                           => 5 * style,
+        "Voltage Magnitude Minimum"       => _width_(_width["Voltage Magnitude"], 7, style),
+        "Voltage Magnitude Solution"      => _width_(_width["Voltage Magnitude"], 8, style),
+        "Voltage Magnitude Maximum"       => _width_(_width["Voltage Magnitude"], 7, style),
+        "Voltage Magnitude Dual"          => _width_(_width["Voltage Magnitude"], textwidth(unit["Voltage Magnitude Dual"]), style),
+        "Active Power Balance Solution"   => _width_(_width["Active Power Balance"], 8, style),
+        "Active Power Balance Dual"       => _width_(_width["Active Power Balance"], textwidth(unit["Active Power Balance Dual"]), style),
         "Reactive Power Balance Solution" => _width_(_width["Reactive Power Balance"], 8, style),
-        "Reactive Power Balance Dual" => _width_(_width["Reactive Power Balance"], textwidth("[\$/$(unitList.reactivePowerLive)-hr]"), style)
+        "Reactive Power Balance Dual"     => _width_(_width["Reactive Power Balance"], textwidth(unit["Reactive Power Balance Dual"]), style)
     )
-    _show = Dict(
-        "Voltage Magnitude Minimum" => _show_(constraint.voltage.magnitude, _show["Voltage Magnitude"]),
-        "Voltage Magnitude Solution" => _show_(constraint.voltage.magnitude, _show["Voltage Magnitude"]),
-        "Voltage Magnitude Maximum" => _show_(constraint.voltage.magnitude, _show["Voltage Magnitude"]),
-        "Voltage Magnitude Dual" => _show_(dual.voltage.magnitude, _show["Voltage Magnitude"]),
-        "Active Power Balance Solution" => _show_(constraint.balance.active, _show["Active Power Balance"]),
-        "Active Power Balance Dual" => _show_(dual.balance.active, _show["Active Power Balance"]),
-        "Reactive Power Balance Solution" => _show_(constraint.balance.reactive, _show["Reactive Power Balance"]),
-        "Reactive Power Balance Dual" => _show_(dual.balance.reactive, _show["Reactive Power Balance"])
+    _show = OrderedDict(
+        "Label"                           => anycons(analysis.method.jump, constraint.voltage.magnitude, constraint.balance.active, constraint.balance.reactive),
+        "Voltage Magnitude Minimum"       => _show_(_show["Voltage Magnitude"], constraint.voltage.magnitude),
+        "Voltage Magnitude Solution"      => _show_(_show["Voltage Magnitude"], constraint.voltage.magnitude),
+        "Voltage Magnitude Maximum"       => _show_(_show["Voltage Magnitude"], constraint.voltage.magnitude),
+        "Voltage Magnitude Dual"          => _show_(_show["Voltage Magnitude"], dual.voltage.magnitude),
+        "Active Power Balance Solution"   => _show_(_show["Active Power Balance"], constraint.balance.active),
+        "Active Power Balance Dual"       => _show_(_show["Active Power Balance"], dual.balance.active),
+        "Reactive Power Balance Solution" => _show_(_show["Reactive Power Balance"], constraint.balance.reactive),
+        "Reactive Power Balance Dual"     => _show_(_show["Reactive Power Balance"], dual.balance.reactive)
     )
     fmt, width, show = printFormat(_fmt, fmt, _width, width, _show, show, style)
 
@@ -240,36 +257,36 @@ function formatBusConstraint(system::PowerSystem, analysis::ACOptimalPowerFlow, 
                 end
             end
         else
-            maxVmin = initMax(prefix.voltageMagnitude)
-            maxVopt = initMax(prefix.voltageMagnitude)
-            maxVmax = initMax(prefix.voltageMagnitude)
-            minmaxVdual = [-Inf; Inf]
-            minmaxPprimal = [-Inf; Inf]
-            minmaxPdual = [-Inf; Inf]
-            minmaxQprimal = [-Inf; Inf]
-            minmaxQdual = [-Inf; Inf]
+            Vmin = initMax(prefix.voltageMagnitude)
+            Vopt = initMax(prefix.voltageMagnitude)
+            Vmax = initMax(prefix.voltageMagnitude)
+            Vdul = [-Inf; Inf]
+            Popt = [-Inf; Inf]
+            Pdul = [-Inf; Inf]
+            Qopt = [-Inf; Inf]
+            Qdul = [-Inf; Inf]
 
             @inbounds for (label, i) in system.bus.label
                 width["Label"] = max(textwidth(label), width["Label"])
 
                 if haskey(constraint.voltage.magnitude, i) && is_valid(analysis.method.jump, constraint.voltage.magnitude[i])
-                    minmaxDual(show, dual.voltage.magnitude, i, scaleVoltage(prefix, system.base.voltage, i), minmaxVdual, "Voltage Magnitude Dual")
+                    minmaxDual(show, dual.voltage.magnitude, i, scaleVoltage(prefix, system.base.voltage, i), Vdul, "Voltage Magnitude Dual")
                 end
 
                 if haskey(constraint.balance.active, i) && is_valid(analysis.method.jump, constraint.balance.active[i])
-                    minmaxPrimal(show, constraint.balance.active[i], scale["P"], minmaxPprimal, "Active Power Balance Solution")
-                    minmaxDual(show, dual.balance.active, i, scale["P"], minmaxPdual, "Active Power Balance Dual")
+                    minmaxPrimal(show, constraint.balance.active[i], scale["P"], Popt, "Active Power Balance Solution")
+                    minmaxDual(show, dual.balance.active, i, scale["P"], Pdul, "Active Power Balance Dual")
                 end
 
                 if haskey(constraint.balance.reactive, i) && is_valid(analysis.method.jump, constraint.balance.reactive[i])
-                    minmaxPrimal(show, constraint.balance.reactive[i], scale["Q"], minmaxQprimal, "Reactive Power Balance Solution")
-                    minmaxDual(show, dual.balance.reactive, i, scale["Q"], minmaxQdual, "Reactive Power Balance Dual")
+                    minmaxPrimal(show, constraint.balance.reactive[i], scale["Q"], Qopt, "Reactive Power Balance Solution")
+                    minmaxDual(show, dual.balance.reactive, i, scale["Q"], Qdul, "Reactive Power Balance Dual")
                 end
 
                 if prefix.voltageMagnitude != 0.0
-                    maxVmin = max(system.bus.voltage.minMagnitude[i] * scaleVoltage(system.base.voltage, prefix, i), maxVmin)
-                    maxVopt = max(voltage.magnitude[i] * scaleVoltage(system.base.voltage, prefix, i), maxVopt)
-                    maxVmax = max(system.bus.voltage.maxMagnitude[i] * scaleVoltage(system.base.voltage, prefix, i), maxVmax)
+                    Vmin = max(system.bus.voltage.minMagnitude[i] * scaleVoltage(system.base.voltage, prefix, i), Vmin)
+                    Vopt = max(voltage.magnitude[i] * scaleVoltage(system.base.voltage, prefix, i), Vopt)
+                    Vmax = max(system.bus.voltage.maxMagnitude[i] * scaleVoltage(system.base.voltage, prefix, i), Vmax)
                 end
             end
 
@@ -278,91 +295,89 @@ function formatBusConstraint(system::PowerSystem, analysis::ACOptimalPowerFlow, 
                 fmax(fmt, width, show, voltage.magnitude, 1.0, "Voltage Magnitude Solution")
                 fmax(fmt, width, show, system.bus.voltage.minMagnitude, 1.0, "Voltage Magnitude Maximum")
             else
-                fmax(fmt, width, show, maxVmin, "Voltage Magnitude Minimum")
-                fmax(fmt, width, show, maxVopt, "Voltage Magnitude Solution")
-                fmax(fmt, width, show, maxVmax, "Voltage Magnitude Maximum")
+                fmax(fmt, width, show, Vmin, "Voltage Magnitude Minimum")
+                fmax(fmt, width, show, Vopt, "Voltage Magnitude Solution")
+                fmax(fmt, width, show, Vmax, "Voltage Magnitude Maximum")
             end
-            fminmax(fmt, width, show, minmaxVdual, 1.0, "Voltage Magnitude Dual")
+            fminmax(fmt, width, show, Vdul, 1.0, "Voltage Magnitude Dual")
 
-            fminmax(fmt, width, show, minmaxPprimal, 1.0, "Active Power Balance Solution")
-            fminmax(fmt, width, show, minmaxPdual, 1.0, "Active Power Balance Dual")
+            fminmax(fmt, width, show, Popt, 1.0, "Active Power Balance Solution")
+            fminmax(fmt, width, show, Pdul, 1.0, "Active Power Balance Dual")
 
-            fminmax(fmt, width, show, minmaxQprimal, 1.0, "Reactive Power Balance Solution")
-            fminmax(fmt, width, show, minmaxQdual, 1.0, "Reactive Power Balance Dual")
+            fminmax(fmt, width, show, Qopt, 1.0, "Reactive Power Balance Solution")
+            fminmax(fmt, width, show, Qdul, 1.0, "Reactive Power Balance Dual")
         end
 
-        hasMorePrint(width, show, "Bus Constraint Data")
-        titlemax(width, show, "Voltage Magnitude Minimum", "Voltage Magnitude Solution", "Voltage Magnitude Maximum", "Voltage Magnitude Dual", "Voltage Magnitude")
-        titlemax(width, show, "Active Power Balance Solution", "Active Power Balance Dual", "Active Power Balance")
-        titlemax(width, show, "Reactive Power Balance Solution", "Reactive Power Balance Dual", "Reactive Power Balance")
+        titlemax(width, show, "Voltage Magnitude", "Voltage Magnitude Minimum", "Voltage Magnitude Solution", "Voltage Magnitude Maximum", "Voltage Magnitude Dual")
+        titlemax(width, show, "Active Power Balance", "Active Power Balance Solution", "Active Power Balance Dual")
+        titlemax(width, show, "Reactive Power Balance", "Reactive Power Balance Solution", "Reactive Power Balance Dual")
     end
 
-    return fmt, width, show
+    printing = howManyPrint(width, show, style, "Bus Constraint Data")
+
+    return fmt, width, show, subheader, unit, empty, printing
 end
 
 function printBusConstraint(system::PowerSystem, analysis::DCOptimalPowerFlow, io::IO = stdout; label::L = missing,
     header::B = missing, footer::B = missing, delimiter::String = "|", fmt::Dict{String, String} = Dict{String, String}(),
     width::Dict{String, Int64} = Dict{String, Int64}(), show::Dict{String, Bool} = Dict{String, Bool}(), style::Bool = true)
 
-    scale = printScale(system, prefix)
-    unitData = printUnitData(unitList)
-    fmt, width, show = formatBusConstraint(system, analysis, label, scale, prefix, fmt, width, show, style)
-    maxLine, pfmt = setupPrintSystem(fmt, width, show, delimiter, style; dash = true)
-    labels, header, footer = toggleLabelHeader(label, system.bus, system.bus.label, header, footer, "bus")
-
     constraint = analysis.method.constraint
     dual = analysis.method.dual
-    if header
-        if style
-            printTitle(io, maxLine, delimiter, "Bus Constraint Data")
 
-            print(io, format(Format("$delimiter %*s%s%*s $delimiter"), floor(Int, (width["Label"] - 5) / 2), "", "Label", ceil(Int, (width["Label"] - 5) / 2) , ""))
-            fmtAct = printf(io, width, show, delimiter, "Active Power Balance Solution", "Active Power Balance Dual", "Active Power Balance")
+    scale = printScale(system, prefix)
+    fmt, width, show, subheader, unit, printing = formatBusConstraint(system, analysis, label, scale, prefix, fmt, width, show, style)
+
+    if printing
+        maxLine, pfmt, hfmt = setupPrintSystem(fmt, width, show, delimiter, style)
+        labels, header, footer = toggleLabelHeader(label, system.bus, system.bus.label, header, footer, "bus")
+
+        if header
+            if style
+                printTitle(io, maxLine, delimiter, "Bus Constraint Data")
+
+                print(io, delimiter)
+                widthLab = printf(io, width, show, delimiter, "Label", "Label")
+                widthAct = printf(io, width, show, delimiter, "Active Power Balance", "Active Power Balance Solution", "Active Power Balance Dual")
+                @printf io "\n"
+
+                print(io, delimiter)
+                printf(io, hfmt["Empty"], widthLab)
+                printf(io, hfmt["Empty"], widthAct)
+                @printf io "\n"
+            end
+
+            printf(io, hfmt, width, show, subheader, "Label")
+            printf(io, hfmt, width, show, subheader, "Active Power Balance Solution", "Active Power Balance Dual")
             @printf io "\n"
 
-            fmt = Format(" %*s $delimiter")
-            print(io, format(Format("$delimiter %*s $delimiter"), width["Label"], ""))
-            printf(io, fmtAct[1], width, show, "Active Power Balance Solution", "", "Active Power Balance Dual", "")
+            printf(io, hfmt, width, show, unit, "Label")
+            printf(io, hfmt, width, show, unit, "Active Power Balance Solution", "Active Power Balance Dual")
             @printf io "\n"
 
-            print(io, format(Format("$delimiter %*s $delimiter"), width["Label"], ""))
-            printf(io, fmtAct[2], width, show, "Active Power Balance Solution", "Solution", "Active Power Balance Dual", "Dual")
-            @printf io "\n"
-
-            print(io, format(Format("$delimiter %*s $delimiter"), width["Label"], ""))
-            printf(io, fmtAct[2], width, show, "Active Power Balance Solution", unitData["P"], "Active Power Balance Dual", "[\$/$(unitList.activePowerLive)-hr]")
-            @printf io "\n"
-
-            fmt =  Format("-%*s-$delimiter")
-            print(io, format(Format("$delimiter-%s-$delimiter"), "-"^width["Label"]))
-            printf(io, fmtAct[3], width, show, "Active Power Balance Solution", "-"^width["Active Power Balance Solution"], "Active Power Balance Dual", "-"^width["Active Power Balance Dual"])
-        else
-            print(io, format(Format("%s"), "Bus Label"))
-            printf(io, show, delimiter, "Active Power Balance Solution", "Active Power Balance Solution", "Active Power Balance Dual", "Active Power Balance Dual")
-            @printf io "\n"
-
-            print(io, format(Format("%s"), ""))
-            printf(io, show, delimiter, "Active Power Balance Solution", unitData["P"], "Active Power Balance Dual", "[\$/$(unitList.activePowerLive)-hr]")
+            if style
+                print(io, delimiter)
+                printf(io, hfmt["Break"], width, show, "Label")
+                printf(io, hfmt["Break"], width, show, "Active Power Balance Solution", "Active Power Balance Dual")
+                @printf io "\n"
+            end
         end
-        @printf io "\n"
-    end
+        @inbounds for (label, i) in labels
+            if checkLine(analysis.method.jump, i, constraint.balance.active)
+                continue
+            end
 
-    @inbounds for (label, i) in labels
-        print(io, format(pfmt["Label"], width["Label"], label))
+            printf(io, pfmt, show, width, label, "Label")
 
-        if haskey(constraint.balance.active, i) && is_valid(analysis.method.jump, constraint.balance.active[i])
-            printf(io, pfmt, show, width, constraint.balance.active, i, scale["P"], "Active Power Balance Solution")
-            printf(io, pfmt, show, width, dual.balance.active, i, scale["P"], "Active Power Balance Dual")
-        else
-            printf(io, pfmt["Dash"], width, show, "Active Power Balance Solution", "-")
-            printf(io, pfmt["Dash"], width, show, "Active Power Balance Dual", "-")
+            if haskey(constraint.balance.active, i) && is_valid(analysis.method.jump, constraint.balance.active[i])
+                printf(io, pfmt, show, width, constraint.balance.active, i, scale["P"], "Active Power Balance Solution")
+                printf(io, pfmt, show, width, dual.balance.active, i, scale["P"], "Active Power Balance Dual")
+            end
+
+            @printf io "\n"
         end
 
-        @printf io "\n"
-    end
-
-    if footer && style
-        print(io, format(Format("$delimiter%s$delimiter\n"), "-"^maxLine))
+        printf(io, delimiter, footer, style, maxLine)
     end
 end
 
@@ -380,23 +395,35 @@ function formatBusConstraint(system::PowerSystem, analysis::DCOptimalPowerFlow, 
     _width = Dict(
         "Active Power Balance" => 0
     )
-    _show = Dict(
+    _show = OrderedDict(
         "Active Power Balance" => true
     )
     _fmt, _width, _show = printFormat(_fmt, fmt, _width, width, _show, show, style)
 
+    subheader = Dict(
+        "Label"                         => _header_("", "Label", style),
+        "Active Power Balance Solution" => _header_("Solution", "Active Power Balance Solution", style),
+        "Active Power Balance Dual"     => _header_("Dual", "Active Power Balance Dual", style),
+    )
+    unit = Dict(
+        "Label"                         => "",
+        "Active Power Balance Solution" => "[$(unitList.activePowerLive)]",
+        "Active Power Balance Dual"     => "[\$/$(unitList.activePowerLive)-hr]",
+    )
     _fmt = Dict(
-        "Active Power Balance Solution" => _fmt_(_fmt["Active Power Balance"], "%*.4f"),
-        "Active Power Balance Dual" => _fmt_(_fmt["Active Power Balance"], "%*.4f")
+        "Label"                         => "%-*s",
+        "Active Power Balance Solution" => _fmt_(_fmt["Active Power Balance"]),
+        "Active Power Balance Dual"     => _fmt_(_fmt["Active Power Balance"])
     )
     _width = Dict(
-        "Label" => 5 * style,
+        "Label"                         => 5 * style,
         "Active Power Balance Solution" => _width_(_width["Active Power Balance"], 8, style),
-        "Active Power Balance Dual" => _width_(_width["Active Power Balance"], textwidth("[\$/$(unitList.activePowerLive)-hr]"), style)
+        "Active Power Balance Dual"     => _width_(_width["Active Power Balance"], textwidth("[\$/$(unitList.activePowerLive)-hr]"), style)
     )
-    _show = Dict(
-        "Active Power Balance Solution" => _show_(constraint.balance.active, _show["Active Power Balance"]),
-        "Active Power Balance Dual" => _show_(dual.balance.active, _show["Active Power Balance"])
+    _show = OrderedDict(
+        "Label"                         => anycons(analysis.method.jump, constraint.balance.active),
+        "Active Power Balance Solution" => _show_(_show["Active Power Balance"], constraint.balance.active),
+        "Active Power Balance Dual"     => _show_(_show["Active Power Balance"], dual.balance.active)
     )
     fmt, width, show = printFormat(_fmt, fmt, _width, width, _show, show, style)
 
@@ -414,28 +441,28 @@ function formatBusConstraint(system::PowerSystem, analysis::DCOptimalPowerFlow, 
                 end
             end
         else
-            minmaxPprimal = [-Inf; Inf]
-            minmaxPdual = [-Inf; Inf]
+            Popt = [-Inf; Inf]
+            Pdul = [-Inf; Inf]
 
             @inbounds for (label, i) in system.bus.label
                 width["Label"] = max(textwidth(label), width["Label"])
 
                 if haskey(constraint.balance.active, i) && is_valid(analysis.method.jump, constraint.balance.active[i])
-                    minmaxPrimal(show, constraint.balance.active[i], scale["P"], minmaxPprimal, "Active Power Balance Solution")
-                    minmaxDual(show, dual.balance.active, i, scale["P"], minmaxPdual, "Active Power Balance Dual")
+                    minmaxPrimal(show, constraint.balance.active[i], scale["P"], Popt, "Active Power Balance Solution")
+                    minmaxDual(show, dual.balance.active, i, scale["P"], Pdul, "Active Power Balance Dual")
                 end
             end
 
-            fminmax(fmt, width, show, minmaxPprimal, 1.0, "Active Power Balance Solution")
-            fminmax(fmt, width, show, minmaxPdual, 1.0, "Active Power Balance Dual")
-
+            fminmax(fmt, width, show, Popt, 1.0, "Active Power Balance Solution")
+            fminmax(fmt, width, show, Pdul, 1.0, "Active Power Balance Dual")
         end
 
-        hasMorePrint(width, show, "Bus Constraint Data")
-        titlemax(width, show, "Active Power Balance Solution", "Active Power Balance Dual", "Active Power Balance")
+        titlemax(width, show, "Active Power Balance", "Active Power Balance Solution", "Active Power Balance Dual")
     end
 
-    return fmt, width, show
+    printing = howManyPrint(width, show, style, "Bus Constraint Data")
+
+    return fmt, width, show, subheader, unit, printing
 end
 
 """
@@ -451,7 +478,7 @@ The following keywords control the printed data:
 * `header`: Toggles the printing of the header.
 * `footer`: Toggles the printing of the footer.
 * `delimiter`: Sets the column delimiter.
-* `fmt`: Specifies the preferred numeric formats for the columns.
+* `fmt`: Specifies the preferred numeric formats or alignments for the columns.
 * `width`: Specifies the preferred widths for the columns.
 * `show`: Toggles the printing of the columns.
 * `style`: Prints either a stylish table or a simple table suitable for easy export.
@@ -464,6 +491,8 @@ The following keywords control the printed data:
 using Ipopt
 
 system = powerSystem("case14.h5")
+updateBranch!(system; label = 3, minDiffAngle = 0.05, maxDiffAngle = 1.5)
+updateBranch!(system; label = 4, minDiffAngle = 0.05, maxDiffAngle = 1.1)
 updateBranch!(system; label = 4, maxFromBus = 0.4, maxToBus = 0.5)
 updateBranch!(system; label = 9, minFromBus = 0.1, maxFromBus = 0.3)
 
@@ -471,14 +500,15 @@ analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
 solve!(system, analysis)
 
 # Print data for all branches
-fmt = Dict("From-Bus Flow" => "%.2f", "From-Bus Flow Dual" => "%.5f")
-show = Dict("To-Bus Flow" => false, "From-Bus Flow Minimum" => false)
+fmt = Dict("Voltage Angle Difference" => "%.2f")
+show = Dict("To-Bus Apparent Power Flow Dual" => false)
 printBranchConstraint(system, analysis; fmt, show)
 
 # Print data for specific branches
 delimiter = " "
-width = Dict("From-Bus Flow" => 11, "To-Bus Flow Dual" => 11)
-printBranchConstraint(system, analysis; label = 4, delimiter, width, header = true)
+width = Dict("From-Bus Apparent Power Flow" => 13, "Voltage Angle Difference Dual" => 12)
+printBranchConstraint(system, analysis; label = 3, delimiter, width, header = true)
+printBranchConstraint(system, analysis; label = 4, delimiter, width)
 printBranchConstraint(system, analysis; label = 9, delimiter, width, footer = true)
 ```
 """
@@ -486,96 +516,129 @@ function printBranchConstraint(system::PowerSystem, analysis::ACOptimalPowerFlow
     header::B = missing, footer::B = missing, delimiter::String = "|", fmt::Dict{String, String} = Dict{String, String}(),
     width::Dict{String, Int64} = Dict{String, Int64}(), show::Dict{String, Bool} = Dict{String, Bool}(), style::Bool = true)
 
-    scale = printScale(system, prefix)
-    unitData = printUnitData(unitList)
-    fmt, width, show, typeFlow = formatBranchConstraint(system, analysis, label, scale, prefix, fmt, width, show, style)
-    maxLine, pfmt = setupPrintSystem(fmt, width, show, delimiter, style; dash = true)
-    labels, header, footer = toggleLabelHeader(label, system.branch, system.branch.label, header, footer, "branch")
-
     constraint = analysis.method.constraint
     dual = analysis.method.dual
-    if header && style
-        printTitle(io, maxLine, delimiter, "Branch Constraint Data")
-    end
 
-    for (key, value) in typeFlow
-        if value == 1
-            scaleFlowFrom = scale["S"]
-            scaleFlowTo = scale["S"]
-            unitFlow = unitList.apparentPowerLive
-        elseif value == 2
-            scaleFlowFrom = scale["P"]
-            scaleFlowTo = scale["P"]
-            unitFlow = unitList.activePowerLive
-        elseif value == 3
-            unitFlow = unitList.currentMagnitudeLive
-        end
-        branchConstraintHeader(io, width, show, delimiter, unitData, unitList, unitFlow, key, header, style)
+    scale = printScale(system, prefix)
+    types, typeVec = checkFlowType(system, analysis.method.jump, constraint.voltage.angle, constraint.flow.from, constraint.flow.to)
 
-        @inbounds for (label, i) in labels
-            if system.branch.flow.type[i] == value
-                if value == 3
-                    scaleFlowFrom = scaleCurrent(prefix, system, system.branch.layout.from[i])
-                    scaleFlowTo = scaleCurrent(prefix, system, system.branch.layout.to[i])
-                end
-                print(io, format(pfmt["Label"], width["Label"], label))
+    for (k, type) in enumerate(types)
+        flow, unitFlow = flowType(type, unitList)
+        _fmt, _width, _show, subheader, unit, empty, printing = formatBranchConstraint(system, analysis, label, scale, prefix, fmt, width, show, style, type, typeVec, flow, unitFlow)
 
-                if haskey(constraint.voltage.angle, i) && is_valid(analysis.method.jump, constraint.voltage.angle[i])
-                    printf(io, pfmt, show, width, system.branch.voltage.minDiffAngle, i, scale["θ"], "Voltage Angle Difference Minimum")
-                    printf(io, pfmt, show, width, constraint.voltage.angle, i, scale["θ"], "Voltage Angle Difference Solution")
-                    printf(io, pfmt, show, width, system.branch.voltage.maxDiffAngle, i, scale["θ"], "Voltage Angle Difference Maximum")
-                    printf(io, pfmt, show, width, dual.voltage.angle, i, scale["θ"], "Voltage Angle Difference Dual")
-                else
-                    printf(io, pfmt["Dash"], width, show, "Voltage Angle Difference Minimum", "-")
-                    printf(io, pfmt["Dash"], width, show, "Voltage Angle Difference Solution", "-")
-                    printf(io, pfmt["Dash"], width, show, "Voltage Angle Difference Maximum", "-")
-                    printf(io, pfmt["Dash"], width, show, "Voltage Angle Difference Dual", "-")
+        if printing
+            maxLine, pfmt, hfmt = setupPrintSystem(_fmt, _width, _show, delimiter, style)
+            labels, header, footer = toggleLabelHeader(label, system.bus, system.bus.label, header, footer, "bus")
+
+            if header
+                if style
+                    printTitle(io, maxLine, delimiter, "Branch Constraint Data")
+
+                    print(io, delimiter)
+                    widthLab = printf(io, _width, _show, delimiter, "Label", "Label")
+                    widthAng = printf(io, _width, _show, delimiter, "Voltage Angle Difference", "Voltage Angle Difference Minimum", "Voltage Angle Difference Solution", "Voltage Angle Difference Maximum", "Voltage Angle Difference Dual")
+                    widthFrf = printf(io, _width, _show, delimiter, "From-Bus $flow", "From-Bus $flow Minimum", "From-Bus $flow Solution", "From-Bus $flow Maximum", "From-Bus $flow Dual")
+                    widthTof = printf(io, _width, _show, delimiter, "To-Bus $flow", "To-Bus $flow Minimum", "To-Bus $flow Solution", "To-Bus $flow Maximum", "To-Bus $flow Dual")
+                    @printf io "\n"
+
+                    print(io, delimiter)
+                    printf(io, hfmt["Empty"], widthLab)
+                    printf(io, hfmt["Empty"], widthAng)
+                    printf(io, hfmt["Empty"], widthFrf)
+                    printf(io, hfmt["Empty"], widthTof)
+                    @printf io "\n"
                 end
 
-                if haskey(constraint.flow.from, i) && is_valid(analysis.method.jump, constraint.flow.from[i])
-                    if !((system.branch.flow.type[i] == 1 || system.branch.flow.type[i] == 3) && system.branch.flow.minFromBus[i] < 0)
-                        printf(io, pfmt, show, width, system.branch.flow.minFromBus, i, scaleFlowFrom, "From-Bus Flow Minimum")
-                    else
-                        printf(io, pfmt, show, width, 0.0, "From-Bus Flow Minimum")
-                    end
-                    printf(io, pfmt, show, width, constraint.flow.from, i, scaleFlowFrom, "From-Bus Flow Solution")
-                    printf(io, pfmt, show, width, system.branch.flow.maxFromBus, i, scaleFlowFrom, "From-Bus Flow Maximum")
-                    printf(io, pfmt, show, width, dual.flow.from, i, scaleFlowFrom, "From-Bus Flow Dual")
-                else
-                    printf(io, pfmt["Dash"], width, show, "From-Bus Flow Minimum", "-")
-                    printf(io, pfmt["Dash"], width, show, "From-Bus Flow Solution", "-")
-                    printf(io, pfmt["Dash"], width, show, "From-Bus Flow Maximum", "-")
-                    printf(io, pfmt["Dash"], width, show, "From-Bus Flow Dual", "-")
-                end
-
-                if haskey(constraint.flow.to, i) && is_valid(analysis.method.jump, constraint.flow.to[i])
-                    if !((system.branch.flow.type[i] == 1 || system.branch.flow.type[i] == 3) && system.branch.flow.minToBus[i] < 0)
-                        printf(io, pfmt, show, width, system.branch.flow.minToBus, i, scaleFlowTo, "To-Bus Flow Minimum")
-                    else
-                        printf(io, pfmt, show, width, 0.0, "To-Bus Flow Minimum")
-                    end
-
-                    printf(io, pfmt, show, width, constraint.flow.to, i, scaleFlowTo, "To-Bus Flow Solution")
-                    printf(io, pfmt, show, width, system.branch.flow.maxToBus, i, scaleFlowTo, "To-Bus Flow Maximum")
-                    printf(io, pfmt, show, width, dual.flow.to, i, scaleFlowTo, "To-Bus Flow Dual")
-                else
-                    printf(io, pfmt["Dash"], width, show, "To-Bus Flow Minimum", "-")
-                    printf(io, pfmt["Dash"], width, show, "To-Bus Flow Solution", "-")
-                    printf(io, pfmt["Dash"], width, show, "To-Bus Flow Maximum", "-")
-                    printf(io, pfmt["Dash"], width, show, "To-Bus Flow Dual", "-")
-                end
-
+                printf(io, hfmt, _width, _show, subheader, "Label")
+                printf(io, hfmt, _width, _show, subheader, "Voltage Angle Difference Minimum", "Voltage Angle Difference Solution", "Voltage Angle Difference Maximum", "Voltage Angle Difference Dual")
+                printf(io, hfmt, _width, _show, subheader, "From-Bus $flow Minimum", "From-Bus $flow Solution", "From-Bus $flow Maximum", "From-Bus $flow Dual")
+                printf(io, hfmt, _width, _show, subheader, "To-Bus $flow Minimum", "To-Bus $flow Solution", "To-Bus $flow Maximum", "To-Bus $flow Dual")
                 @printf io "\n"
+
+                printf(io, hfmt, _width, _show, unit, "Label")
+                printf(io, hfmt, _width, _show, unit, "Voltage Angle Difference Minimum", "Voltage Angle Difference Solution", "Voltage Angle Difference Maximum", "Voltage Angle Difference Dual")
+                printf(io, hfmt, _width, _show, unit, "From-Bus $flow Minimum", "From-Bus $flow Solution", "From-Bus $flow Maximum", "From-Bus $flow Dual")
+                printf(io, hfmt, _width, _show, unit, "To-Bus $flow Minimum", "To-Bus $flow Solution", "To-Bus $flow Maximum", "To-Bus $flow Dual")
+                @printf io "\n"
+
+                if style
+                    print(io, delimiter)
+                    printf(io, hfmt["Break"], _width, _show, "Label")
+                    printf(io, hfmt["Break"], _width, _show, "Voltage Angle Difference Minimum", "Voltage Angle Difference Solution", "Voltage Angle Difference Maximum", "Voltage Angle Difference Dual")
+                    printf(io, hfmt["Break"], _width, _show, "From-Bus $flow Minimum", "From-Bus $flow Solution", "From-Bus $flow Maximum", "From-Bus $flow Dual")
+                    printf(io, hfmt["Break"], _width, _show, "To-Bus $flow Minimum", "To-Bus $flow Solution", "To-Bus $flow Maximum", "To-Bus $flow Dual")
+
+                    @printf io "\n"
+                end
             end
-        end
-        if footer && style
-            print(io, format(Format("$delimiter%s$delimiter\n"), "-"^maxLine))
+
+            if type == 1
+                scaleFlowFrom = scale["S"]
+                scaleFlowTo = scale["S"]
+            elseif type == 2
+                scaleFlowFrom = scale["P"]
+                scaleFlowTo = scale["P"]
+            end
+
+            @inbounds for (label, i) in labels
+                if typeVec[i] == type
+                    if checkLine(analysis.method.jump, i, constraint.voltage.angle, constraint.flow.from, constraint.flow.to)
+                        continue
+                    end
+
+                    if type == 3
+                        scaleFlowFrom = scaleCurrent(prefix, system, system.branch.layout.from[i])
+                        scaleFlowTo = scaleCurrent(prefix, system, system.branch.layout.to[i])
+                    end
+
+                    printf(io, pfmt, _show, _width, label, "Label")
+
+                    if haskey(constraint.voltage.angle, i) && is_valid(analysis.method.jump, constraint.voltage.angle[i])
+                        printf(io, pfmt, _show, _width, system.branch.voltage.minDiffAngle, i, scale["θ"], "Voltage Angle Difference Minimum")
+                        printf(io, pfmt, _show, _width, constraint.voltage.angle, i, scale["θ"], "Voltage Angle Difference Solution")
+                        printf(io, pfmt, _show, _width, system.branch.voltage.maxDiffAngle, i, scale["θ"], "Voltage Angle Difference Maximum")
+                        printf(io, pfmt, _show, _width, dual.voltage.angle, i, scale["θ"], "Voltage Angle Difference Dual")
+                    else
+                        printf(io, hfmt, _width, _show, empty, "Voltage Angle Difference Minimum", "Voltage Angle Difference Solution", "Voltage Angle Difference Maximum", "Voltage Angle Difference Dual")
+                    end
+
+                    if haskey(constraint.flow.from, i) && is_valid(analysis.method.jump, constraint.flow.from[i])
+                        if !((system.branch.flow.type[i] == 1 || system.branch.flow.type[i] == 3) && system.branch.flow.minFromBus[i] < 0)
+                            printf(io, pfmt, _show, _width, system.branch.flow.minFromBus, i, scaleFlowFrom, "From-Bus $flow Minimum")
+                        else
+                            printf(io, pfmt, _show, _width, 0.0, "From-Bus $flow Minimum")
+                        end
+                        printf(io, pfmt, _show, _width, constraint.flow.from, i, scaleFlowFrom, "From-Bus $flow Solution")
+                        printf(io, pfmt, _show, _width, system.branch.flow.maxFromBus, i, scaleFlowFrom, "From-Bus $flow Maximum")
+                        printf(io, pfmt, _show, _width, dual.flow.from, i, scaleFlowFrom, "From-Bus $flow Dual")
+                    else
+                        printf(io, hfmt, _width, _show, empty, "From-Bus $flow Minimum", "From-Bus $flow Solution", "From-Bus $flow Maximum", "From-Bus $flow Dual")
+                    end
+
+                    if haskey(constraint.flow.to, i) && is_valid(analysis.method.jump, constraint.flow.to[i])
+                        if !((system.branch.flow.type[i] == 1 || system.branch.flow.type[i] == 3) && system.branch.flow.minToBus[i] < 0)
+                            printf(io, pfmt, _show, _width, system.branch.flow.minToBus, i, scaleFlowTo, "To-Bus $flow Minimum")
+                        else
+                            printf(io, pfmt, _show, _width, 0.0, "To-Bus $flow Minimum")
+                        end
+
+                        printf(io, pfmt, _show, _width, constraint.flow.to, i, scaleFlowTo, "To-Bus $flow Solution")
+                        printf(io, pfmt, _show, _width, system.branch.flow.maxToBus, i, scaleFlowTo, "To-Bus $flow Maximum")
+                        printf(io, pfmt, _show, _width, dual.flow.to, i, scaleFlowTo, "To-Bus $flow Dual")
+                    else
+                        printf(io, hfmt, _width, _show, empty, "To-Bus $flow Minimum", "To-Bus $flow Solution", "To-Bus $flow Maximum", "To-Bus $flow Dual")
+                    end
+
+                    @printf io "\n"
+                end
+            end
+            printf(io, delimiter, footer, style, maxLine)
         end
     end
 end
 
 function formatBranchConstraint(system::PowerSystem, analysis::ACOptimalPowerFlow, label::L, scale::Dict{String, Float64}, prefix::PrefixLive,
-    fmt::Dict{String, String}, width::Dict{String, Int64}, show::Dict{String, Bool}, style::Bool)
+    fmt::Dict{String, String}, width::Dict{String, Int64}, show::Dict{String, Bool}, style::Bool, type::Int64, typeVec::Array{Int8,1}, flow::String, unitFlow::String)
 
     errorVoltage(analysis.voltage.magnitude)
     voltage = analysis.voltage
@@ -584,69 +647,114 @@ function formatBranchConstraint(system::PowerSystem, analysis::ACOptimalPowerFlo
 
     _fmt = Dict(
         "Voltage Angle Difference" => "",
-        "From-Bus Flow" => "",
-        "To-Bus Flow" => "",
+        "From-Bus $flow"           => "",
+        "To-Bus $flow"             => ""
     )
     _width = Dict(
         "Voltage Angle Difference" => 0,
-        "From-Bus Flow" => 0,
-        "To-Bus Flow" => 0,
+        "From-Bus $flow"           => 0,
+        "To-Bus $flow"             => 0
     )
-    _show = Dict(
+    _show = OrderedDict(
         "Voltage Angle Difference" => true,
-        "From-Bus Flow" => true,
-        "To-Bus Flow" => true,
+        "From-Bus $flow"           => true,
+        "To-Bus $flow"             => true
     )
     _fmt, _width, _show = printFormat(_fmt, fmt, _width, width, _show, show, style)
 
+    subheader = Dict(
+        "Label"                             => _header_("", "Label", style),
+        "Voltage Angle Difference Minimum"  => _header_("Minimum", "Voltage Angle Difference Minimum", style),
+        "Voltage Angle Difference Solution" => _header_("Solution", "Voltage Angle Difference Solution", style),
+        "Voltage Angle Difference Maximum"  => _header_("Maximum", "Voltage Angle Difference Maximum", style),
+        "Voltage Angle Difference Dual"     => _header_("Dual", "Voltage Angle Difference Dual", style),
+        "From-Bus $flow Minimum"            => _header_("Minimum", "From-Bus $flow Minimum", style),
+        "From-Bus $flow Solution"           => _header_("Solution", "From-Bus $flow Solution", style),
+        "From-Bus $flow Maximum"            => _header_("Maximum", "From-Bus $flow Maximum", style),
+        "From-Bus $flow Dual"               => _header_("Dual", "From-Bus $flow Dual", style),
+        "To-Bus $flow Minimum"              => _header_("Minimum", "To-Bus $flow Minimum", style),
+        "To-Bus $flow Solution"             => _header_("Solution", "To-Bus $flow Solution", style),
+        "To-Bus $flow Maximum"              => _header_("Maximum", "To-Bus $flow Maximum", style),
+        "To-Bus $flow Dual"                 => _header_("Dual", "To-Bus $flow Dual", style)
+    )
+    unit = Dict(
+        "Label"                             => "",
+        "Voltage Angle Difference Minimum"  => "[$(unitList.voltageAngleLive)]",
+        "Voltage Angle Difference Solution" => "[$(unitList.voltageAngleLive)]",
+        "Voltage Angle Difference Maximum"  => "[$(unitList.voltageAngleLive)]",
+        "Voltage Angle Difference Dual"     => "[\$/$(unitList.voltageAngleLive)-hr]",
+        "From-Bus $flow Minimum"            => "[$unitFlow]",
+        "From-Bus $flow Solution"           => "[$unitFlow]",
+        "From-Bus $flow Maximum"            => "[$unitFlow]",
+        "From-Bus $flow Dual"               => "[\$/$unitFlow-hr]",
+        "To-Bus $flow Minimum"              => "[$unitFlow]",
+        "To-Bus $flow Solution"             => "[$unitFlow]",
+        "To-Bus $flow Maximum"              => "[$unitFlow]",
+        "To-Bus $flow Dual"                 => "[\$/$unitFlow-hr]"
+    )
+    empty = Dict(
+        "Label"                             => "",
+        "Voltage Angle Difference Minimum"  => "",
+        "Voltage Angle Difference Solution" => "",
+        "Voltage Angle Difference Maximum"  => "",
+        "Voltage Angle Difference Dual"     => "",
+        "From-Bus $flow Minimum"            => "",
+        "From-Bus $flow Solution"           => "",
+        "From-Bus $flow Maximum"            => "",
+        "From-Bus $flow Dual"               => "",
+        "To-Bus $flow Minimum"              => "",
+        "To-Bus $flow Solution"             => "",
+        "To-Bus $flow Maximum"              => "",
+        "To-Bus $flow Dual"                 => ""
+    )
     _fmt = Dict(
-        "Voltage Angle Difference Minimum" => _fmt_(_fmt["Voltage Angle Difference"], "%*.4f"),
-        "Voltage Angle Difference Solution" => _fmt_(_fmt["Voltage Angle Difference"], "%*.4f"),
-        "Voltage Angle Difference Maximum" => _fmt_(_fmt["Voltage Angle Difference"], "%*.4f"),
-        "Voltage Angle Difference Dual" => _fmt_(_fmt["Voltage Angle Difference"], "%*.4f"),
-        "From-Bus Flow Minimum" => _fmt_(_fmt["From-Bus Flow"], "%*.4f"),
-        "From-Bus Flow Solution" => _fmt_(_fmt["From-Bus Flow"], "%*.4f"),
-        "From-Bus Flow Maximum" => _fmt_(_fmt["From-Bus Flow"], "%*.4f"),
-        "From-Bus Flow Dual" => _fmt_(_fmt["From-Bus Flow"], "%*.4f"),
-        "To-Bus Flow Minimum" => _fmt_(_fmt["To-Bus Flow"], "%*.4f"),
-        "To-Bus Flow Solution" => _fmt_(_fmt["To-Bus Flow"], "%*.4f"),
-        "To-Bus Flow Maximum" => _fmt_(_fmt["To-Bus Flow"], "%*.4f"),
-        "To-Bus Flow Dual" => _fmt_(_fmt["To-Bus Flow"], "%*.4f"),
+        "Label"                             => "%-*s",
+        "Voltage Angle Difference Minimum"  => _fmt_(_fmt["Voltage Angle Difference"]),
+        "Voltage Angle Difference Solution" => _fmt_(_fmt["Voltage Angle Difference"]),
+        "Voltage Angle Difference Maximum"  => _fmt_(_fmt["Voltage Angle Difference"]),
+        "Voltage Angle Difference Dual"     => _fmt_(_fmt["Voltage Angle Difference"]),
+        "From-Bus $flow Minimum"            => _fmt_(_fmt["From-Bus $flow"]),
+        "From-Bus $flow Solution"           => _fmt_(_fmt["From-Bus $flow"]),
+        "From-Bus $flow Maximum"            => _fmt_(_fmt["From-Bus $flow"]),
+        "From-Bus $flow Dual"               => _fmt_(_fmt["From-Bus $flow"]),
+        "To-Bus $flow Minimum"              => _fmt_(_fmt["To-Bus $flow"]),
+        "To-Bus $flow Solution"             => _fmt_(_fmt["To-Bus $flow"]),
+        "To-Bus $flow Maximum"              => _fmt_(_fmt["To-Bus $flow"]),
+        "To-Bus $flow Dual"                 => _fmt_(_fmt["To-Bus $flow"])
+
     )
     _width = Dict(
-        "Label" => 5 * style,
-        "Voltage Angle Difference Minimum" => _width_(_width["Voltage Angle Difference"], 7, style),
+        "Label"                             => 5 * style,
+        "Voltage Angle Difference Minimum"  => _width_(_width["Voltage Angle Difference"], 7, style),
         "Voltage Angle Difference Solution" => _width_(_width["Voltage Angle Difference"], 8, style),
-        "Voltage Angle Difference Maximum" => _width_(_width["Voltage Angle Difference"], 7, style),
-        "Voltage Angle Difference Dual" => _width_(_width["Voltage Angle Difference"], textwidth("[\$/$(unitList.voltageAngleLive)-hr]"), style),
-        "From-Bus Flow Minimum" => _width_(_width["From-Bus Flow"], 7, style),
-        "From-Bus Flow Solution" => _width_(_width["From-Bus Flow"], 8, style),
-        "From-Bus Flow Maximum" => _width_(_width["From-Bus Flow"], 7, style),
-        "From-Bus Flow Dual" => _width_(_width["From-Bus Flow"], 10, style),
-        "To-Bus Flow Minimum" => _width_(_width["To-Bus Flow"], 7, style),
-        "To-Bus Flow Solution" => _width_(_width["To-Bus Flow"], 8, style),
-        "To-Bus Flow Maximum" => _width_(_width["To-Bus Flow"], 7, style),
-        "To-Bus Flow Dual" => _width_(_width["To-Bus Flow"], 10, style),
+        "Voltage Angle Difference Maximum"  => _width_(_width["Voltage Angle Difference"], 7, style),
+        "Voltage Angle Difference Dual"     => _width_(_width["Voltage Angle Difference"], textwidth(unit["Voltage Angle Difference Dual"]), style),
+        "From-Bus $flow Minimum"            => _width_(_width["From-Bus $flow"], 7, style),
+        "From-Bus $flow Solution"           => _width_(_width["From-Bus $flow"], 8, style),
+        "From-Bus $flow Maximum"            => _width_(_width["From-Bus $flow"], 7, style),
+        "From-Bus $flow Dual"               => _width_(_width["From-Bus $flow"], textwidth(unit["From-Bus $flow Dual"]), style),
+        "To-Bus $flow Minimum"              => _width_(_width["To-Bus $flow"], 7, style),
+        "To-Bus $flow Solution"             => _width_(_width["To-Bus $flow"], 8, style),
+        "To-Bus $flow Maximum"              => _width_(_width["To-Bus $flow"], 7, style),
+        "To-Bus $flow Dual"                 => _width_(_width["To-Bus $flow"], textwidth(unit["To-Bus $flow Dual"]), style)
     )
-    _show = Dict(
-        "Voltage Angle Difference Minimum" => _show_(constraint.voltage.angle, _show["Voltage Angle Difference"]),
-        "Voltage Angle Difference Solution" => _show_(constraint.voltage.angle, _show["Voltage Angle Difference"]),
-        "Voltage Angle Difference Maximum" => _show_(constraint.voltage.angle, _show["Voltage Angle Difference"]),
-        "Voltage Angle Difference Dual" => _show_(dual.voltage.angle, _show["Voltage Angle Difference"]),
-        "From-Bus Flow Minimum" => _show_(constraint.flow.from, _show["From-Bus Flow"]),
-        "From-Bus Flow Solution" => _show_(constraint.flow.from, _show["From-Bus Flow"]),
-        "From-Bus Flow Maximum" => _show_(constraint.flow.from, _show["From-Bus Flow"]),
-        "From-Bus Flow Dual" => _show_(dual.flow.from, _show["From-Bus Flow"]),
-        "To-Bus Flow Minimum" => _show_(constraint.flow.to, _show["To-Bus Flow"]),
-        "To-Bus Flow Solution" => _show_(constraint.flow.to, _show["To-Bus Flow"]),
-        "To-Bus Flow Maximum" => _show_(constraint.flow.to, _show["To-Bus Flow"]),
-        "To-Bus Flow Dual" => _show_(dual.flow.to, _show["To-Bus Flow"]),
+    _show = OrderedDict(
+        "Label"                             => anycons(analysis.method.jump, constraint.voltage.angle, constraint.flow.from, constraint.flow.to),
+        "Voltage Angle Difference Minimum"  => _show_(_show["Voltage Angle Difference"], constraint.voltage.angle),
+        "Voltage Angle Difference Solution" => _show_(_show["Voltage Angle Difference"], constraint.voltage.angle),
+        "Voltage Angle Difference Maximum"  => _show_(_show["Voltage Angle Difference"], constraint.voltage.angle),
+        "Voltage Angle Difference Dual"     => _show_(_show["Voltage Angle Difference"], dual.voltage.angle),
+        "From-Bus $flow Minimum"            => _show_(_show["From-Bus $flow"], constraint.flow.from),
+        "From-Bus $flow Solution"           => _show_(_show["From-Bus $flow"], constraint.flow.from),
+        "From-Bus $flow Maximum"            => _show_(_show["From-Bus $flow"], constraint.flow.from),
+        "From-Bus $flow Dual"               => _show_(_show["From-Bus $flow"], dual.flow.from),
+        "To-Bus $flow Minimum"              => _show_(_show["To-Bus $flow"], constraint.flow.to),
+        "To-Bus $flow Solution"             => _show_(_show["To-Bus $flow"], constraint.flow.to),
+        "To-Bus $flow Maximum"              => _show_(_show["To-Bus $flow"], constraint.flow.to),
+        "To-Bus $flow Dual"                 => _show_(_show["To-Bus $flow"], dual.flow.to)
     )
     fmt, width, show = printFormat(_fmt, fmt, _width, width, _show, show, style)
 
-    apparent = false
-    active = false
-    current = false
     if style
         if isset(label)
             label = getLabel(system.branch, label, "branch")
@@ -655,15 +763,12 @@ function formatBranchConstraint(system::PowerSystem, analysis::ACOptimalPowerFlo
             if system.branch.flow.type[i] == 1
                 scaleFlowFrom = scale["S"]
                 scaleFlowTo = scale["S"]
-                apparent = true
             elseif system.branch.flow.type[i] == 2
                 scaleFlowFrom = scale["P"]
                 scaleFlowTo = scale["P"]
-                active = true
             elseif system.branch.flow.type[i] == 3
                 scaleFlowFrom = scaleCurrent(prefix, system, system.branch.layout.from[i])
                 scaleFlowTo = scaleCurrent(prefix, system, system.branch.layout.to[i])
-                current = true
             end
 
             width["Label"] = max(textwidth(label), width["Label"])
@@ -679,227 +784,186 @@ function formatBranchConstraint(system::PowerSystem, analysis::ACOptimalPowerFlo
 
             if haskey(constraint.flow.from, i) && is_valid(analysis.method.jump, constraint.flow.from[i])
                 if !((system.branch.flow.type[i] == 1 || system.branch.flow.type[i] == 3) && system.branch.flow.minFromBus[i] < 0)
-                    fmax(fmt, width, show, system.branch.flow.minFromBus, i, scaleFlowFrom, "From-Bus Flow Minimum")
+                    fmax(fmt, width, show, system.branch.flow.minFromBus, i, scaleFlowFrom, "From-Bus $flow Minimum")
                 end
-                fmax(fmt, width, show, value(constraint.flow.from[i]) * scaleFlowFrom, "From-Bus Flow Solution")
-                fmax(fmt, width, show,system.branch.flow.maxFromBus, i, scaleFlowFrom, "From-Bus Flow Maximum")
+                fmax(fmt, width, show, value(constraint.flow.from[i]) * scaleFlowFrom, "From-Bus $flow Solution")
+                fmax(fmt, width, show,system.branch.flow.maxFromBus, i, scaleFlowFrom, "From-Bus $flow Maximum")
                 if haskey(dual.flow.from, i)
-                    fmax(fmt, width, show, dual.flow.from[i] / scaleFlowFrom, "From-Bus Flow Dual")
+                    fmax(fmt, width, show, dual.flow.from[i] / scaleFlowFrom, "From-Bus $flow Dual")
                 end
             end
 
             if haskey(constraint.flow.to, i) && is_valid(analysis.method.jump, constraint.flow.to[i])
                 if !((system.branch.flow.type[i] == 1 || system.branch.flow.type[i] == 3) && system.branch.flow.minToBus[i] < 0)
-                    fmax(fmt, width, show, system.branch.flow.minToBus, i, scaleFlowTo, "To-Bus Flow Minimum")
+                    fmax(fmt, width, show, system.branch.flow.minToBus, i, scaleFlowTo, "To-Bus $flow Minimum")
                 end
-                fmax(fmt, width, show, value(constraint.flow.to[i]) * scaleFlowTo, "To-Bus Flow Solution")
-                fmax(fmt, width, show,system.branch.flow.maxToBus, i, scaleFlowTo, "To-Bus Flow Maximum")
+                fmax(fmt, width, show, value(constraint.flow.to[i]) * scaleFlowTo, "To-Bus $flow Solution")
+                fmax(fmt, width, show,system.branch.flow.maxToBus, i, scaleFlowTo, "To-Bus $flow Maximum")
                 if haskey(dual.flow.to, i)
-                    fmax(fmt, width, show, dual.flow.to[i] / scaleFlowTo, "To-Bus Flow Dual")
+                    fmax(fmt, width, show, dual.flow.to[i] / scaleFlowTo, "To-Bus $flow Dual")
                 end
             end
         else
-            minmaxθprimal = [-Inf; Inf]
-            minmaxθdual = [-Inf; Inf]
-            minmaxFmin = [-Inf; Inf]
-            minmaxFmax = [-Inf; Inf]
-            minmaxFprimal = [-Inf; Inf]
-            minmaxFdual = [-Inf; Inf]
-            minmaxTmin = [-Inf; Inf]
-            minmaxTmax = [-Inf; Inf]
-            minmaxTprimal = [-Inf; Inf]
-            minmaxTdual = [-Inf; Inf]
+            θopt = [-Inf; Inf]
+            θdul = [-Inf; Inf]
+            Fmin = [-Inf; Inf]
+            Fopt = [-Inf; Inf]
+            Fmax = [-Inf; Inf]
+            Fdul = [-Inf; Inf]
+            Tmin = [-Inf; Inf]
+            Topt = [-Inf; Inf]
+            Tmax = [-Inf; Inf]
+            Tdul = [-Inf; Inf]
+
+            if type == 1
+                scaleFlowFrom = scale["S"]
+                scaleFlowTo = scale["S"]
+            elseif type == 2
+                scaleFlowFrom = scale["P"]
+                scaleFlowTo = scale["P"]
+            end
 
             @inbounds for (label, i) in system.branch.label
-                width["Label"] = max(textwidth(label), width["Label"])
+                if typeVec[i] == type
+                    width["Label"] = max(textwidth(label), width["Label"])
 
-                if haskey(constraint.voltage.angle, i) && is_valid(analysis.method.jump, constraint.voltage.angle[i])
-                    minmaxPrimal(show, constraint.voltage.angle[i], scale["θ"], minmaxθprimal, "Voltage Angle Difference Solution")
-                    minmaxDual(show, dual.voltage.angle, i, scale["θ"], minmaxθdual, "Voltage Angle Difference Dual")
-                end
-
-                if system.branch.flow.type[i] == 1
-                    scaleFlowFrom = scale["S"]
-                    scaleFlowTo = scale["S"]
-                    apparent = true
-                elseif system.branch.flow.type[i] == 2
-                    scaleFlowFrom = scale["P"]
-                    scaleFlowTo = scale["P"]
-                    active = true
-                elseif system.branch.flow.type[i] == 3
-                    scaleFlowFrom = scaleCurrent(prefix, system, system.branch.layout.from[i])
-                    scaleFlowTo = scaleCurrent(prefix, system, system.branch.layout.to[i])
-                    current = true
-                end
-
-                if haskey(constraint.flow.from, i) && is_valid(analysis.method.jump, constraint.flow.from[i])
-                    if !((system.branch.flow.type[i] == 1 || system.branch.flow.type[i] == 3) && system.branch.flow.minFromBus[i] < 0)
-                        minmaxValue(show, system.branch.flow.minFromBus, i, scaleFlowFrom, minmaxFmin, "From-Bus Flow Minimum")
+                    if haskey(constraint.voltage.angle, i) && is_valid(analysis.method.jump, constraint.voltage.angle[i])
+                        minmaxPrimal(show, constraint.voltage.angle[i], scale["θ"], θopt, "Voltage Angle Difference Solution")
+                        minmaxDual(show, dual.voltage.angle, i, scale["θ"], θdul, "Voltage Angle Difference Dual")
                     end
-                    minmaxPrimal(show, constraint.flow.from[i], scaleFlowFrom, minmaxFprimal, "From-Bus Flow Solution")
-                    minmaxValue(show, system.branch.flow.maxFromBus, i, scaleFlowFrom, minmaxFmax, "From-Bus Flow Maximum")
-                    minmaxDual(show, dual.flow.from, i, scaleFlowFrom, minmaxFdual, "From-Bus Flow Dual")
-                end
 
-                if haskey(constraint.flow.to, i) && is_valid(analysis.method.jump, constraint.flow.to[i])
-                    if !((system.branch.flow.type[i] == 1 || system.branch.flow.type[i] == 3) && system.branch.flow.minFromBus[i] < 0)
-                        minmaxValue(show, system.branch.flow.minToBus, i, scaleFlowTo, minmaxTmin, "To-Bus Flow Minimum")
+                    if type == 3
+                        scaleFlowFrom = scaleCurrent(prefix, system, system.branch.layout.from[i])
+                        scaleFlowTo = scaleCurrent(prefix, system, system.branch.layout.to[i])
                     end
-                    minmaxPrimal(show, constraint.flow.to[i], scaleFlowTo, minmaxTprimal, "To-Bus Flow Solution")
-                    minmaxValue(show, system.branch.flow.maxToBus, i, scaleFlowTo, minmaxTmax, "To-Bus Flow Maximum")
-                    minmaxDual(show, dual.flow.to, i, scaleFlowTo, minmaxTdual, "To-Bus Flow Dual")
+
+                    if haskey(constraint.flow.from, i) && is_valid(analysis.method.jump, constraint.flow.from[i])
+                        if !((system.branch.flow.type[i] == 1 || system.branch.flow.type[i] == 3) && system.branch.flow.minFromBus[i] < 0)
+                            minmaxValue(show, system.branch.flow.minFromBus, i, scaleFlowFrom, Fmin, "From-Bus $flow Minimum")
+                        end
+                        minmaxPrimal(show, constraint.flow.from[i], scaleFlowFrom, Fopt, "From-Bus $flow Solution")
+                        minmaxValue(show, system.branch.flow.maxFromBus, i, scaleFlowFrom, Fmax, "From-Bus $flow Maximum")
+                        minmaxDual(show, dual.flow.from, i, scaleFlowFrom, Fdul, "From-Bus $flow Dual")
+                    end
+
+                    if haskey(constraint.flow.to, i) && is_valid(analysis.method.jump, constraint.flow.to[i])
+                        if !((system.branch.flow.type[i] == 1 || system.branch.flow.type[i] == 3) && system.branch.flow.minFromBus[i] < 0)
+                            minmaxValue(show, system.branch.flow.minToBus, i, scaleFlowTo, Tmin, "To-Bus $flow Minimum")
+                        end
+                        minmaxPrimal(show, constraint.flow.to[i], scaleFlowTo, Topt, "To-Bus $flow Solution")
+                        minmaxValue(show, system.branch.flow.maxToBus, i, scaleFlowTo, Tmax, "To-Bus $flow Maximum")
+                        minmaxDual(show, dual.flow.to, i, scaleFlowTo, Tdul, "To-Bus $flow Dual")
+                    end
                 end
             end
 
             fminmax(fmt, width, show, system.branch.voltage.minDiffAngle, scale["θ"], "Voltage Angle Difference Minimum")
-            fminmax(fmt, width, show, minmaxθprimal, 1.0, "Voltage Angle Difference Solution")
+            fminmax(fmt, width, show, θopt, 1.0, "Voltage Angle Difference Solution")
             fminmax(fmt, width, show, system.branch.voltage.maxDiffAngle, scale["θ"], "Voltage Angle Difference Maximum")
-            fminmax(fmt, width, show, minmaxθdual, 1.0, "Voltage Angle Difference Dual")
+            fminmax(fmt, width, show, θdul, 1.0, "Voltage Angle Difference Dual")
 
-            fminmax(fmt, width, show, minmaxFmin, 1.0, "From-Bus Flow Minimum")
-            fminmax(fmt, width, show, minmaxFprimal, 1.0, "From-Bus Flow Solution")
-            fminmax(fmt, width, show, minmaxFmax, 1.0, "From-Bus Flow Maximum")
-            fminmax(fmt, width, show, minmaxFdual, 1.0, "From-Bus Flow Dual")
+            fminmax(fmt, width, show, Fmin, 1.0, "From-Bus $flow Minimum")
+            fminmax(fmt, width, show, Fopt, 1.0, "From-Bus $flow Solution")
+            fminmax(fmt, width, show, Fmax, 1.0, "From-Bus $flow Maximum")
+            fminmax(fmt, width, show, Fdul, 1.0, "From-Bus $flow Dual")
 
-            fminmax(fmt, width, show, minmaxTmin, 1.0, "To-Bus Flow Minimum")
-            fminmax(fmt, width, show, minmaxTprimal, 1.0, "To-Bus Flow Solution")
-            fminmax(fmt, width, show, minmaxTmax, 1.0, "To-Bus Flow Maximum")
-            fminmax(fmt, width, show, minmaxTdual, 1.0, "To-Bus Flow Dual")
+            fminmax(fmt, width, show, Tmin, 1.0, "To-Bus $flow Minimum")
+            fminmax(fmt, width, show, Topt, 1.0, "To-Bus $flow Solution")
+            fminmax(fmt, width, show, Tmax, 1.0, "To-Bus $flow Maximum")
+            fminmax(fmt, width, show, Tdul, 1.0, "To-Bus $flow Dual")
         end
-
-        hasMorePrint(width, show, "Branch Constraint Data")
-        titlemax(width, show, "Voltage Angle Difference Minimum", "Voltage Angle Difference Solution", "Voltage Angle Difference Maximum", "Voltage Angle Difference Dual", "Voltage Angle Difference")
-
-        typeFlow = OrderedDict{String, Int64}()
-        if apparent
-            typeFlow["Apparent Power"] = 1
-        end
-        if active
-            typeFlow["Active Power"] = 2
-        end
-        if current
-            typeFlow["Current Magnitude"] = 3
-        end
-
-        for key in keys(typeFlow)
-            titlemax(width, show, "From-Bus Flow Minimum", "From-Bus Flow Solution", "From-Bus Flow Maximum", "From-Bus Flow Dual", "From-Bus Flow: $key")
-            titlemax(width, show, "To-Bus Flow Minimum", "To-Bus Flow Solution", "To-Bus Flow Maximum", "To-Bus Flow Dual", "To-Bus Flow: $key")
-        end
+        titlemax(width, show, "Voltage Angle Difference", "Voltage Angle Difference Minimum", "Voltage Angle Difference Solution", "Voltage Angle Difference Maximum", "Voltage Angle Difference Dual")
+        titlemax(width, show, "From-Bus $flow", "From-Bus $flow Minimum", "From-Bus $flow Solution", "From-Bus $flow Maximum", "From-Bus $flow Dual")
+        titlemax(width, show, "To-Bus $flow", "To-Bus $flow Minimum", "To-Bus $flow Solution", "To-Bus $flow Maximum", "To-Bus $flow Dual")
     end
 
-    return fmt, width, show, typeFlow
+    printing = howManyPrint(width, show, style, "Branch Constraint Data")
+
+    return fmt, width, show, subheader, unit, empty, printing
 end
 
 function printBranchConstraint(system::PowerSystem, analysis::DCOptimalPowerFlow, io::IO = stdout; label::L = missing,
     header::B = missing, footer::B = missing, delimiter::String = "|", fmt::Dict{String, String} = Dict{String, String}(),
     width::Dict{String, Int64} = Dict{String, Int64}(), show::Dict{String, Bool} = Dict{String, Bool}(), style::Bool = true)
 
-    scale = printScale(system, prefix)
-    unitData = printUnitData(unitList)
-    fmt, width, show = formatBranchConstraint(system, analysis, label, scale, prefix, fmt, width, show, style)
-    maxLine, pfmt = setupPrintSystem(fmt, width, show, delimiter, style; dash = true)
-    labels, header, footer = toggleLabelHeader(label, system.branch, system.branch.label, header, footer, "branch")
-
     constraint = analysis.method.constraint
     dual = analysis.method.dual
-    if header
-        if style
-            printTitle(io, maxLine, delimiter, "Branch Constraint Data")
 
-            print(io, format(Format("$delimiter %*s%s%*s $delimiter"), floor(Int, (width["Label"] - 5) / 2), "", "Label", ceil(Int, (width["Label"] - 5) / 2) , ""))
-            spanAng = printf(io, width, show, delimiter, "Voltage Angle Difference Minimum", "Voltage Angle Difference Solution", "Voltage Angle Difference Maximum", "Voltage Angle Difference Dual", "Voltage Angle Difference")
-            spanFrom = printf(io, width, show, delimiter, "From-Bus Active Power Flow Minimum", "From-Bus Active Power Flow Solution", "From-Bus Active Power Flow Maximum", "From-Bus Active Power Flow Dual", "From-Bus Active Power Flow")
+    scale = printScale(system, prefix)
+    fmt, width, show, subheader, unit, empty, printing = formatBranchConstraint(system, analysis, label, scale, prefix, fmt, width, show, style)
+
+    if printing
+        maxLine, pfmt, hfmt = setupPrintSystem(fmt, width, show, delimiter, style)
+        labels, header, footer = toggleLabelHeader(label, system.bus, system.bus.label, header, footer, "bus")
+
+        if header
+            if style
+                printTitle(io, maxLine, delimiter, "Branch Constraint Data")
+
+                print(io, delimiter)
+                widthLab = printf(io, width, show, delimiter, "Label", "Label")
+                widthAng = printf(io, width, show, delimiter, "Voltage Angle Difference", "Voltage Angle Difference Minimum", "Voltage Angle Difference Solution", "Voltage Angle Difference Maximum", "Voltage Angle Difference Dual")
+                widthFrf = printf(io, width, show, delimiter, "From-Bus Active Power Flow", "From-Bus Active Power Flow Minimum", "From-Bus Active Power Flow Solution", "From-Bus Active Power Flow Maximum", "From-Bus Active Power Flow Dual")
+                @printf io "\n"
+
+                print(io, delimiter)
+                printf(io, hfmt["Empty"], widthLab)
+                printf(io, hfmt["Empty"], widthAng)
+                printf(io, hfmt["Empty"], widthFrf)
+                @printf io "\n"
+            end
+
+            printf(io, hfmt, width, show, subheader, "Label")
+            printf(io, hfmt, width, show, subheader, "Voltage Angle Difference Minimum", "Voltage Angle Difference Solution", "Voltage Angle Difference Maximum", "Voltage Angle Difference Dual")
+            printf(io, hfmt, width, show, subheader, "From-Bus Active Power Flow Minimum", "From-Bus Active Power Flow Solution", "From-Bus Active Power Flow Maximum", "From-Bus Active Power Flow Dual")
             @printf io "\n"
 
-            fmt = Format(" %*s $delimiter")
-            print(io, format(Format("$delimiter %*s $delimiter"), width["Label"], ""))
-            printf(io, fmt, spanAng)
-            printf(io, fmt, spanFrom)
+            printf(io, hfmt, width, show, unit, "Label")
+            printf(io, hfmt, width, show, unit, "Voltage Angle Difference Minimum", "Voltage Angle Difference Solution", "Voltage Angle Difference Maximum", "Voltage Angle Difference Dual")
+            printf(io, hfmt, width, show, unit, "From-Bus Active Power Flow Minimum", "From-Bus Active Power Flow Solution", "From-Bus Active Power Flow Maximum", "From-Bus Active Power Flow Dual")
             @printf io "\n"
 
-            print(io, format(Format("$delimiter %*s $delimiter"), width["Label"], ""))
-            printf(io, fmt, width, show, "Voltage Angle Difference Minimum", "Minimum")
-            printf(io, fmt, width, show, "Voltage Angle Difference Solution", "Solution")
-            printf(io, fmt, width, show, "Voltage Angle Difference Maximum", "Maximum")
-            printf(io, fmt, width, show, "Voltage Angle Difference Dual", "Dual")
-            printf(io, fmt, width, show, "From-Bus Active Power Flow Minimum", "Minimum")
-            printf(io, fmt, width, show, "From-Bus Active Power Flow Solution", "Solution")
-            printf(io, fmt, width, show, "From-Bus Active Power Flow Maximum", "Maximum")
-            printf(io, fmt, width, show, "From-Bus Active Power Flow Dual", "Dual")
-            @printf io "\n"
+            if style
+                print(io, delimiter)
+                printf(io, hfmt["Break"], width, show, "Label")
+                printf(io, hfmt["Break"], width, show, "Voltage Angle Difference Minimum", "Voltage Angle Difference Solution", "Voltage Angle Difference Maximum", "Voltage Angle Difference Dual")
+                printf(io, hfmt["Break"], width, show, "From-Bus Active Power Flow Minimum", "From-Bus Active Power Flow Solution", "From-Bus Active Power Flow Maximum", "From-Bus Active Power Flow Dual")
 
-            print(io, format(Format("$delimiter %*s $delimiter"), width["Label"], ""))
-            printf(io, fmt, width, show, "Voltage Angle Difference Minimum", unitData["θ"])
-            printf(io, fmt, width, show, "Voltage Angle Difference Solution", unitData["θ"])
-            printf(io, fmt, width, show, "Voltage Angle Difference Maximum", unitData["θ"])
-            printf(io, fmt, width, show, "Voltage Angle Difference Dual", "[\$/$(unitList.voltageAngleLive)-hr]")
-            printf(io, fmt, width, show, "From-Bus Active Power Flow Minimum", unitData["P"])
-            printf(io, fmt, width, show, "From-Bus Active Power Flow Solution", unitData["P"])
-            printf(io, fmt, width, show, "From-Bus Active Power Flow Maximum", unitData["P"])
-            printf(io, fmt, width, show, "From-Bus Active Power Flow Dual", "[\$/$(unitList.activePowerLive)-hr]")
-            @printf io "\n"
-
-            fmt =  Format("-%*s-$delimiter")
-            print(io, format(Format("$delimiter-%s-$delimiter"), "-"^width["Label"]))
-            printf(io, fmt, width, show, "Voltage Angle Difference Minimum", "-"^width["Voltage Angle Difference Minimum"])
-            printf(io, fmt, width, show, "Voltage Angle Difference Solution", "-"^width["Voltage Angle Difference Solution"])
-            printf(io, fmt, width, show, "Voltage Angle Difference Maximum", "-"^width["Voltage Angle Difference Maximum"])
-            printf(io, fmt, width, show, "Voltage Angle Difference Dual", "-"^width["Voltage Angle Difference Dual"])
-            printf(io, fmt, width, show, "From-Bus Active Power Flow Minimum", "-"^width["From-Bus Active Power Flow Minimum"])
-            printf(io, fmt, width, show, "From-Bus Active Power Flow Solution", "-"^width["From-Bus Active Power Flow Solution"])
-            printf(io, fmt, width, show, "From-Bus Active Power Flow Maximum", "-"^width["From-Bus Active Power Flow Maximum"])
-            printf(io, fmt, width, show, "From-Bus Active Power Flow Dual", "-"^width["From-Bus Active Power Flow Dual"])
-            @printf io "\n"
-        else
-            print(io, format(Format("%s"), "Bus Label"))
-            printf(io, show, delimiter, "Voltage Angle Difference Minimum", "Voltage Angle Difference Minimum", "Voltage Angle Difference Solution", "Voltage Angle Difference Solution")
-            printf(io, show, delimiter, "Voltage Angle Difference Maximum", "Voltage Angle Difference Maximum", "Voltage Angle Difference Dual", "Voltage Angle Difference Dual")
-            printf(io, show, delimiter, "From-Bus Active Power Flow Minimum", "From-Bus Active Power Flow Minimum", "From-Bus Active Power Flow Solution", "From-Bus Active Power Flow Solution")
-            printf(io, show, delimiter, "From-Bus Active Power Flow Maximum", "From-Bus Active Power Flow Maximum", "From-Bus Active Power Flow Dual", "From-Bus Active Power Flow Dual")
-            @printf io "\n"
-
-            print(io, format(Format("%s"), ""))
-            printf(io, show, delimiter, "Voltage Angle Difference Minimum", unitData["θ"], "Voltage Angle Difference Solution", unitData["θ"])
-            printf(io, show, delimiter, "Voltage Angle Difference Maximum", unitData["θ"], "Voltage Angle Difference Dual", "[\$/$(unitList.voltageAngleLive)-hr]")
-            printf(io, show, delimiter, "From-Bus Active Power Flow Minimum",  unitData["P"], "From-Bus Active Power Flow Solution",  unitData["P"])
-            printf(io, show, delimiter, "From-Bus Active Power Flow Maximum",  unitData["P"], "From-Bus Active Power Flow Dual", "[\$/$(unitList.activePowerLive)-hr]")
-            @printf io "\n"
-        end
-    end
-
-    @inbounds for (label, i) in labels
-        print(io, format(pfmt["Label"], width["Label"], label))
-
-        if haskey(constraint.voltage.angle, i) && is_valid(analysis.method.jump, constraint.voltage.angle[i])
-            printf(io, pfmt, show, width, system.branch.voltage.minDiffAngle, i, scale["θ"], "Voltage Angle Difference Minimum")
-            printf(io, pfmt, show, width, constraint.voltage.angle, i, scale["θ"], "Voltage Angle Difference Solution")
-            printf(io, pfmt, show, width, system.branch.voltage.maxDiffAngle, i, scale["θ"], "Voltage Angle Difference Maximum")
-            printf(io, pfmt, show, width, dual.voltage.angle, i, scale["θ"], "Voltage Angle Difference Dual")
-        else
-            printf(io, pfmt["Dash"], width, show, "Voltage Angle Difference Minimum", "-")
-            printf(io, pfmt["Dash"], width, show, "Voltage Angle Difference Solution", "-")
-            printf(io, pfmt["Dash"], width, show, "Voltage Angle Difference Maximum", "-")
-            printf(io, pfmt["Dash"], width, show, "Voltage Angle Difference Dual", "-")
+                @printf io "\n"
+            end
         end
 
-        if haskey(constraint.flow.active, i) && is_valid(analysis.method.jump, constraint.flow.active[i])
-            printf(io, pfmt, show, width, system.branch.flow.minFromBus, i, scale["P"], "From-Bus Active Power Flow Minimum")
-            printf(io, pfmt, show, width, constraint.flow.active, i, scale["P"], "From-Bus Active Power Flow Solution")
-            printf(io, pfmt, show, width, system.branch.flow.maxFromBus, i, scale["P"], "From-Bus Active Power Flow Maximum")
-            printf(io, pfmt, show, width, dual.flow.active, i, scale["P"], "From-Bus Active Power Flow Dual")
-        else
-            printf(io, pfmt["Dash"], width, show, "From-Bus Active Power Flow Minimum", "-")
-            printf(io, pfmt["Dash"], width, show, "From-Bus Active Power Flow Solution", "-")
-            printf(io, pfmt["Dash"], width, show, "From-Bus Active Power Flow Maximum", "-")
-            printf(io, pfmt["Dash"], width, show, "From-Bus Active Power Flow Dual", "-")
+        @inbounds for (label, i) in labels
+            if checkLine(analysis.method.jump, i, constraint.voltage.angle, constraint.flow.active)
+                continue
+            end
+
+            printf(io, pfmt, show, width, label, "Label")
+
+            if haskey(constraint.voltage.angle, i) && is_valid(analysis.method.jump, constraint.voltage.angle[i])
+                printf(io, pfmt, show, width, system.branch.voltage.minDiffAngle, i, scale["θ"], "Voltage Angle Difference Minimum")
+                printf(io, pfmt, show, width, constraint.voltage.angle, i, scale["θ"], "Voltage Angle Difference Solution")
+                printf(io, pfmt, show, width, system.branch.voltage.maxDiffAngle, i, scale["θ"], "Voltage Angle Difference Maximum")
+                printf(io, pfmt, show, width, dual.voltage.angle, i, scale["θ"], "Voltage Angle Difference Dual")
+            else
+                printf(io, hfmt, width, show, empty, "Voltage Angle Difference Minimum", "Voltage Angle Difference Solution", "Voltage Angle Difference Maximum", "Voltage Angle Difference Dual")
+            end
+
+            if haskey(constraint.flow.active, i) && is_valid(analysis.method.jump, constraint.flow.active[i])
+                printf(io, pfmt, show, width, system.branch.flow.minFromBus, i, scale["P"], "From-Bus Active Power Flow Minimum")
+                printf(io, pfmt, show, width, constraint.flow.active, i, scale["P"], "From-Bus Active Power Flow Solution")
+                printf(io, pfmt, show, width, system.branch.flow.maxFromBus, i, scale["P"], "From-Bus Active Power Flow Maximum")
+                printf(io, pfmt, show, width, dual.flow.active, i, scale["P"], "From-Bus Active Power Flow Dual")
+            else
+                printf(io, hfmt, width, show, empty, "From-Bus Active Power Flow Minimum", "From-Bus Active Power Flow Solution", "From-Bus Active Power Flow Maximum", "From-Bus Active Power Flow Dual")
+
+            end
+
+            @printf io "\n"
         end
-
-        @printf io "\n"
+        printf(io, delimiter, footer, style, maxLine)
     end
 
-    if footer && style
-        print(io, format(Format("$delimiter%s$delimiter\n"), "-"^maxLine))
-    end
 end
 
 function formatBranchConstraint(system::PowerSystem, analysis::DCOptimalPowerFlow, label::L, scale::Dict{String, Float64}, prefix::PrefixLive,
@@ -911,49 +975,84 @@ function formatBranchConstraint(system::PowerSystem, analysis::DCOptimalPowerFlo
     dual = analysis.method.dual
 
     _fmt = Dict(
-        "Voltage Angle Difference" => "",
-        "From-Bus Active Power Flow" => "",
+        "Voltage Angle Difference"   => "",
+        "From-Bus Active Power Flow" => ""
     )
     _width = Dict(
-        "Voltage Angle Difference" => 0,
-        "From-Bus Active Power Flow" => 0,
+        "Voltage Angle Difference"   => 0,
+        "From-Bus Active Power Flow" => 0
     )
-    _show = Dict(
-        "Voltage Angle Difference" => true,
-        "From-Bus Active Power Flow" => true,
+    _show = OrderedDict(
+        "Voltage Angle Difference"   => true,
+        "From-Bus Active Power Flow" => true
     )
     _fmt, _width, _show = printFormat(_fmt, fmt, _width, width, _show, show, style)
 
+    subheader = Dict(
+        "Label"                               => _header_("", "Label", style),
+        "Voltage Angle Difference Minimum"    => _header_("Minimum", "Voltage Angle Difference Minimum", style),
+        "Voltage Angle Difference Solution"   => _header_("Solution", "Voltage Angle Difference Solution", style),
+        "Voltage Angle Difference Maximum"    => _header_("Maximum", "Voltage Angle Difference Maximum", style),
+        "Voltage Angle Difference Dual"       => _header_("Dual", "Voltage Angle Difference Dual", style),
+        "From-Bus Active Power Flow Minimum"  => _header_("Minimum", "From-Bus Active Power Flow Minimum", style),
+        "From-Bus Active Power Flow Solution" => _header_("Solution", "From-Bus Active Power Flow Solution", style),
+        "From-Bus Active Power Flow Maximum"  => _header_("Maximum", "From-Bus Active Power Flow Maximum", style),
+        "From-Bus Active Power Flow Dual"     => _header_("Dual", "From-Bus Active Power Flow Dual", style),
+    )
+    unit = Dict(
+        "Label"                               => "",
+        "Voltage Angle Difference Minimum"    => "[$(unitList.voltageAngleLive)]",
+        "Voltage Angle Difference Solution"   => "[$(unitList.voltageAngleLive)]",
+        "Voltage Angle Difference Maximum"    => "[$(unitList.voltageAngleLive)]",
+        "Voltage Angle Difference Dual"       => "[\$/$(unitList.voltageAngleLive)-hr]",
+        "From-Bus Active Power Flow Minimum"  => "[$(unitList.activePowerLive)]",
+        "From-Bus Active Power Flow Solution" => "[$(unitList.activePowerLive)]",
+        "From-Bus Active Power Flow Maximum"  => "[$(unitList.activePowerLive)]",
+        "From-Bus Active Power Flow Dual"     => "[\$/$(unitList.activePowerLive)-hr]",
+    )
+    empty = Dict(
+        "Label"                               => "",
+        "Voltage Angle Difference Minimum"    => "",
+        "Voltage Angle Difference Solution"   => "",
+        "Voltage Angle Difference Maximum"    => "",
+        "Voltage Angle Difference Dual"       => "",
+        "From-Bus Active Power Flow Minimum"  => "",
+        "From-Bus Active Power Flow Solution" => "",
+        "From-Bus Active Power Flow Maximum"  => "",
+        "From-Bus Active Power Flow Dual"     => "",
+    )
     _fmt = Dict(
-        "Voltage Angle Difference Minimum" => _fmt_(_fmt["Voltage Angle Difference"], "%*.4f"),
-        "Voltage Angle Difference Solution" => _fmt_(_fmt["Voltage Angle Difference"], "%*.4f"),
-        "Voltage Angle Difference Maximum" => _fmt_(_fmt["Voltage Angle Difference"], "%*.4f"),
-        "Voltage Angle Difference Dual" => _fmt_(_fmt["Voltage Angle Difference"], "%*.4f"),
-        "From-Bus Active Power Flow Minimum" => _fmt_(_fmt["From-Bus Active Power Flow"], "%*.4f"),
-        "From-Bus Active Power Flow Solution" => _fmt_(_fmt["From-Bus Active Power Flow"], "%*.4f"),
-        "From-Bus Active Power Flow Maximum" => _fmt_(_fmt["From-Bus Active Power Flow"], "%*.4f"),
-        "From-Bus Active Power Flow Dual" => _fmt_(_fmt["From-Bus Active Power Flow"], "%*.4f")
+        "Label"                               => "%-*s",
+        "Voltage Angle Difference Minimum"    => _fmt_(_fmt["Voltage Angle Difference"]),
+        "Voltage Angle Difference Solution"   => _fmt_(_fmt["Voltage Angle Difference"]),
+        "Voltage Angle Difference Maximum"    => _fmt_(_fmt["Voltage Angle Difference"]),
+        "Voltage Angle Difference Dual"       => _fmt_(_fmt["Voltage Angle Difference"]),
+        "From-Bus Active Power Flow Minimum"  => _fmt_(_fmt["From-Bus Active Power Flow"]),
+        "From-Bus Active Power Flow Solution" => _fmt_(_fmt["From-Bus Active Power Flow"]),
+        "From-Bus Active Power Flow Maximum"  => _fmt_(_fmt["From-Bus Active Power Flow"]),
+        "From-Bus Active Power Flow Dual"     => _fmt_(_fmt["From-Bus Active Power Flow"])
     )
     _width = Dict(
-        "Label" => 5 * style,
-        "Voltage Angle Difference Minimum" => _width_(_width["Voltage Angle Difference"], 7, style),
-        "Voltage Angle Difference Solution" => _width_(_width["Voltage Angle Difference"], 8, style),
-        "Voltage Angle Difference Maximum" => _width_(_width["Voltage Angle Difference"], 7, style),
-        "Voltage Angle Difference Dual" => _width_(_width["Voltage Angle Difference"], textwidth("[\$/$(unitList.voltageAngleLive)-hr]") , style),
-        "From-Bus Active Power Flow Minimum" => _width_(_width["From-Bus Active Power Flow"], 7, style),
+        "Label"                               => 5 * style,
+        "Voltage Angle Difference Minimum"    => _width_(_width["Voltage Angle Difference"], 7, style),
+        "Voltage Angle Difference Solution"   => _width_(_width["Voltage Angle Difference"], 8, style),
+        "Voltage Angle Difference Maximum"    => _width_(_width["Voltage Angle Difference"], 7, style),
+        "Voltage Angle Difference Dual"       => _width_(_width["Voltage Angle Difference"], textwidth(unit["Voltage Angle Difference Dual"]), style),
+        "From-Bus Active Power Flow Minimum"  => _width_(_width["From-Bus Active Power Flow"], 7, style),
         "From-Bus Active Power Flow Solution" => _width_(_width["From-Bus Active Power Flow"], 8, style),
-        "From-Bus Active Power Flow Maximum" => _width_(_width["From-Bus Active Power Flow"], 7, style),
-        "From-Bus Active Power Flow Dual" => _width_(_width["From-Bus Active Power Flow"], textwidth("[\$/$(unitList.activePowerLive)-hr]"), style)
+        "From-Bus Active Power Flow Maximum"  => _width_(_width["From-Bus Active Power Flow"], 7, style),
+        "From-Bus Active Power Flow Dual"     => _width_(_width["From-Bus Active Power Flow"], textwidth(unit["From-Bus Active Power Flow Dual"]), style)
     )
-    _show = Dict(
-        "Voltage Angle Difference Minimum" => _show_(constraint.voltage.angle, _show["Voltage Angle Difference"]),
-        "Voltage Angle Difference Solution" => _show_(constraint.voltage.angle, _show["Voltage Angle Difference"]),
-        "Voltage Angle Difference Maximum" => _show_(constraint.voltage.angle, _show["Voltage Angle Difference"]),
-        "Voltage Angle Difference Dual" => _show_(dual.voltage.angle, _show["Voltage Angle Difference"]),
-        "From-Bus Active Power Flow Minimum" => _show_(constraint.flow.active, _show["From-Bus Active Power Flow"]),
-        "From-Bus Active Power Flow Solution" => _show_(constraint.flow.active, _show["From-Bus Active Power Flow"]),
-        "From-Bus Active Power Flow Maximum" => _show_(constraint.flow.active, _show["From-Bus Active Power Flow"]),
-        "From-Bus Active Power Flow Dual" => _show_(dual.flow.active, _show["From-Bus Active Power Flow"])
+    _show = OrderedDict(
+        "Label"                               => anycons(analysis.method.jump, constraint.voltage.angle, constraint.flow.active),
+        "Voltage Angle Difference Minimum"    => _show_(_show["Voltage Angle Difference"], constraint.voltage.angle),
+        "Voltage Angle Difference Solution"   => _show_(_show["Voltage Angle Difference"], constraint.voltage.angle),
+        "Voltage Angle Difference Maximum"    => _show_(_show["Voltage Angle Difference"], constraint.voltage.angle),
+        "Voltage Angle Difference Dual"       => _show_(_show["Voltage Angle Difference"], dual.voltage.angle),
+        "From-Bus Active Power Flow Minimum"  => _show_(_show["From-Bus Active Power Flow"], constraint.flow.active),
+        "From-Bus Active Power Flow Solution" => _show_(_show["From-Bus Active Power Flow"], constraint.flow.active),
+        "From-Bus Active Power Flow Maximum"  => _show_(_show["From-Bus Active Power Flow"], constraint.flow.active),
+        "From-Bus Active Power Flow Dual"     => _show_(_show["From-Bus Active Power Flow"], dual.flow.active)
     )
     fmt, width, show = printFormat(_fmt, fmt, _width, width, _show, show, style)
 
@@ -982,129 +1081,47 @@ function formatBranchConstraint(system::PowerSystem, analysis::DCOptimalPowerFlo
                 end
             end
         else
-            minmaxθprimal = [-Inf; Inf]
-            minmaxθdual = [-Inf; Inf]
-            minmaxFmin = [-Inf; Inf]
-            minmaxFmax = [-Inf; Inf]
-            minmaxFprimal = [-Inf; Inf]
-            minmaxFdual = [-Inf; Inf]
+            θopt = [-Inf; Inf]
+            θdul = [-Inf; Inf]
+            Fmin = [-Inf; Inf]
+            Fopt = [-Inf; Inf]
+            Fmax = [-Inf; Inf]
+            Fdul = [-Inf; Inf]
 
             @inbounds for (label, i) in system.branch.label
                 width["Label"] = max(textwidth(label), width["Label"])
 
                 if haskey(constraint.voltage.angle, i) && is_valid(analysis.method.jump, constraint.voltage.angle[i])
-                    minmaxPrimal(show, constraint.voltage.angle[i], scale["θ"], minmaxθprimal, "Voltage Angle Difference Solution")
-                    minmaxDual(show, dual.voltage.angle, i, scale["θ"], minmaxθdual, "Voltage Angle Difference Dual")
+                    minmaxPrimal(show, constraint.voltage.angle[i], scale["θ"], θopt, "Voltage Angle Difference Solution")
+                    minmaxDual(show, dual.voltage.angle, i, scale["θ"], θdul, "Voltage Angle Difference Dual")
                 end
 
                 if haskey(constraint.flow.active, i) && is_valid(analysis.method.jump, constraint.flow.active[i])
-                    minmaxValue(show, system.branch.flow.minFromBus, i, scale["P"], minmaxFmin, "From-Bus Active Power Flow Minimum")
-                    minmaxPrimal(show, constraint.flow.active[i], scale["P"], minmaxFprimal, "From-Bus Active Power Flow Solution")
-                    minmaxValue(show, system.branch.flow.maxFromBus, i, scale["P"], minmaxFmax, "From-Bus Active Power Flow Maximum")
-                    minmaxDual(show, dual.flow.active, i, scale["P"], minmaxFdual, "From-Bus Active Power Flow Dual")
+                    minmaxValue(show, system.branch.flow.minFromBus, i, scale["P"], Fmin, "From-Bus Active Power Flow Minimum")
+                    minmaxPrimal(show, constraint.flow.active[i], scale["P"], Fopt, "From-Bus Active Power Flow Solution")
+                    minmaxValue(show, system.branch.flow.maxFromBus, i, scale["P"], Fmax, "From-Bus Active Power Flow Maximum")
+                    minmaxDual(show, dual.flow.active, i, scale["P"], Fdul, "From-Bus Active Power Flow Dual")
                 end
             end
 
             fminmax(fmt, width, show, system.branch.voltage.minDiffAngle, scale["θ"], "Voltage Angle Difference Minimum")
-            fminmax(fmt, width, show, minmaxθprimal, 1.0, "Voltage Angle Difference Solution")
+            fminmax(fmt, width, show, θopt, 1.0, "Voltage Angle Difference Solution")
             fminmax(fmt, width, show, system.branch.voltage.maxDiffAngle, scale["θ"], "Voltage Angle Difference Maximum")
-            fminmax(fmt, width, show, minmaxθdual, 1.0, "Voltage Angle Difference Dual")
+            fminmax(fmt, width, show, θdul, 1.0, "Voltage Angle Difference Dual")
 
-            fminmax(fmt, width, show, minmaxFmin, 1.0, "From-Bus Active Power Flow Minimum")
-            fminmax(fmt, width, show, minmaxFprimal, 1.0, "From-Bus Active Power Flow Solution")
-            fminmax(fmt, width, show, minmaxFmax, 1.0, "From-Bus Active Power Flow Maximum")
-            fminmax(fmt, width, show, minmaxFdual, 1.0, "From-Bus Active Power Flow Dual")
+            fminmax(fmt, width, show, Fmin, 1.0, "From-Bus Active Power Flow Minimum")
+            fminmax(fmt, width, show, Fopt, 1.0, "From-Bus Active Power Flow Solution")
+            fminmax(fmt, width, show, Fmax, 1.0, "From-Bus Active Power Flow Maximum")
+            fminmax(fmt, width, show, Fdul, 1.0, "From-Bus Active Power Flow Dual")
         end
 
-        hasMorePrint(width, show, "Branch Constraint Data")
-        titlemax(width, show, "Voltage Angle Difference Minimum", "Voltage Angle Difference Solution", "Voltage Angle Difference Maximum", "Voltage Angle Difference Dual", "Voltage Angle Difference")
-        titlemax(width, show, "From-Bus Active Power Flow Minimum", "From-Bus Active Power Flow Solution", "From-Bus Active Power Flow Maximum", "From-Bus Active Power Flow Dual", "From-Bus Active Power Flow")
+        titlemax(width, show, "Voltage Angle Difference", "Voltage Angle Difference Minimum", "Voltage Angle Difference Solution", "Voltage Angle Difference Maximum", "Voltage Angle Difference Dual")
+        titlemax(width, show, "From-Bus  Active Power Flow", "From-Bus Active Power Flow Minimum", "From-Bus Active Power Flow Solution", "From-Bus Active Power Flow Maximum", "From-Bus Active Power Flow Dual")
     end
 
-    return fmt, width, show
-end
+    printing = howManyPrint(width, show, style, "Branch Constraint Data")
 
-function branchConstraintHeader(io::IO, width::Dict{String, Int64}, show::Dict{String, Bool}, delimiter::String, unitData::Dict{String, String}, unitList::UnitList, unitFlow::String, type::String, header::Bool, style::Bool)
-    if header
-        if style
-            print(io, format(Format("$delimiter %*s%s%*s $delimiter"), floor(Int, (width["Label"] - 5) / 2), "", "Label", ceil(Int, (width["Label"] - 5) / 2) , ""))
-            spanAng = printf(io, width, show, delimiter, "Voltage Angle Difference Minimum", "Voltage Angle Difference Solution", "Voltage Angle Difference Maximum", "Voltage Angle Difference Dual", "Voltage Angle Difference")
-            spanFrom = printf(io, width, show, delimiter, "From-Bus Flow Minimum", "From-Bus Flow Solution", "From-Bus Flow Maximum", "From-Bus Flow Dual", "From-Bus Flow: $type")
-            spanTo = printf(io, width, show, delimiter, "To-Bus Flow Minimum", "To-Bus Flow Solution", "To-Bus Flow Maximum", "To-Bus Flow Dual", "To-Bus Flow: $type")
-            @printf io "\n"
-
-            fmt = Format(" %*s $delimiter")
-            print(io, format(Format("$delimiter %*s $delimiter"), width["Label"], ""))
-            printf(io, fmt, spanAng)
-            printf(io, fmt, spanFrom)
-            printf(io, fmt, spanTo)
-            @printf io "\n"
-
-            print(io, format(Format("$delimiter %*s $delimiter"), width["Label"], ""))
-            printf(io, fmt, width, show, "Voltage Angle Difference Minimum", "Minimum")
-            printf(io, fmt, width, show, "Voltage Angle Difference Solution", "Solution")
-            printf(io, fmt, width, show, "Voltage Angle Difference Maximum", "Maximum")
-            printf(io, fmt, width, show, "Voltage Angle Difference Dual", "Dual")
-            printf(io, fmt, width, show, "From-Bus Flow Minimum", "Minimum")
-            printf(io, fmt, width, show, "From-Bus Flow Solution", "Solution")
-            printf(io, fmt, width, show, "From-Bus Flow Maximum", "Maximum")
-            printf(io, fmt, width, show, "From-Bus Flow Dual", "Dual")
-            printf(io, fmt, width, show, "To-Bus Flow Minimum", "Minimum")
-            printf(io, fmt, width, show, "To-Bus Flow Solution", "Solution")
-            printf(io, fmt, width, show, "To-Bus Flow Maximum", "Maximum")
-            printf(io, fmt, width, show, "To-Bus Flow Dual", "Dual")
-            @printf io "\n"
-
-            print(io, format(Format("$delimiter %*s $delimiter"), width["Label"], ""))
-            printf(io, fmt, width, show, "Voltage Angle Difference Minimum", unitData["θ"])
-            printf(io, fmt, width, show, "Voltage Angle Difference Solution", unitData["θ"])
-            printf(io, fmt, width, show, "Voltage Angle Difference Maximum", unitData["θ"])
-            printf(io, fmt, width, show, "Voltage Angle Difference Dual", "[\$/$(unitList.voltageAngleLive)-hr]")
-            printf(io, fmt, width, show, "From-Bus Flow Minimum", "[$unitFlow]")
-            printf(io, fmt, width, show, "From-Bus Flow Solution", "[$unitFlow]")
-            printf(io, fmt, width, show, "From-Bus Flow Maximum", "[$unitFlow]")
-            printf(io, fmt, width, show, "From-Bus Flow Dual", "[\$/$unitFlow-hr]")
-            printf(io, fmt, width, show, "To-Bus Flow Minimum", "[$unitFlow]")
-            printf(io, fmt, width, show, "To-Bus Flow Solution", "[$unitFlow]")
-            printf(io, fmt, width, show, "To-Bus Flow Maximum", "[$unitFlow]")
-            printf(io, fmt, width, show, "To-Bus Flow Dual", "[\$/$unitFlow-hr]")
-            @printf io "\n"
-
-            fmt =  Format("-%*s-$delimiter")
-            print(io, format(Format("$delimiter-%s-$delimiter"), "-"^width["Label"]))
-            printf(io, fmt, width, show, "Voltage Angle Difference Minimum", "-"^width["Voltage Angle Difference Minimum"])
-            printf(io, fmt, width, show, "Voltage Angle Difference Solution", "-"^width["Voltage Angle Difference Solution"])
-            printf(io, fmt, width, show, "Voltage Angle Difference Maximum", "-"^width["Voltage Angle Difference Maximum"])
-            printf(io, fmt, width, show, "Voltage Angle Difference Dual", "-"^width["Voltage Angle Difference Dual"])
-            printf(io, fmt, width, show, "From-Bus Flow Minimum", "-"^width["From-Bus Flow Minimum"])
-            printf(io, fmt, width, show, "From-Bus Flow Solution", "-"^width["From-Bus Flow Solution"])
-            printf(io, fmt, width, show, "From-Bus Flow Maximum", "-"^width["From-Bus Flow Maximum"])
-            printf(io, fmt, width, show, "From-Bus Flow Dual", "-"^width["From-Bus Flow Dual"])
-            printf(io, fmt, width, show, "To-Bus Flow Minimum", "-"^width["To-Bus Flow Minimum"])
-            printf(io, fmt, width, show, "To-Bus Flow Solution", "-"^width["To-Bus Flow Solution"])
-            printf(io, fmt, width, show, "To-Bus Flow Maximum", "-"^width["To-Bus Flow Maximum"])
-            printf(io, fmt, width, show, "To-Bus Flow Dual", "-"^width["To-Bus Flow Dual"])
-            @printf io "\n"
-        else
-            print(io, format(Format("%s"), "Bus Label"))
-            printf(io, show, delimiter, "Voltage Angle Difference Minimum", "Voltage Angle Difference Minimum", "Voltage Angle Difference Solution", "Voltage Angle Difference Solution")
-            printf(io, show, delimiter, "Voltage Angle Difference Maximum", "Voltage Angle Difference Maximum", "Voltage Angle Difference Dual", "Voltage Angle Difference Dual")
-            printf(io, show, delimiter, "From-Bus Flow Minimum", "From-Bus $type Flow Minimum", "From-Bus Flow Solution", "From-Bus $type Flow Solution")
-            printf(io, show, delimiter, "From-Bus Flow Maximum", "From-Bus $type Flow Maximum", "From-Bus Flow Dual", "From-Bus $type Flow Dual")
-            printf(io, show, delimiter, "To-Bus Flow Minimum", "To-Bus $type Flow Minimum", "To-Bus Flow Solution", "To-Bus $type Flow Solution")
-            printf(io, show, delimiter, "To-Bus Flow Maximum", "To-Bus $type Flow Maximum", "To-Bus Flow Dual", "To-Bus $type Flow Dual")
-            @printf io "\n"
-
-            print(io, format(Format("%s"), ""))
-            printf(io, show, delimiter, "Voltage Angle Difference Minimum", unitData["θ"], "Voltage Angle Difference Solution", unitData["θ"])
-            printf(io, show, delimiter, "Voltage Angle Difference Maximum", unitData["θ"], "Voltage Angle Difference Dual", "[\$/$(unitList.voltageAngleLive)-hr]")
-            printf(io, show, delimiter, "From-Bus Flow Minimum", "[$unitFlow]", "From-Bus Flow Solution", "[$unitFlow]")
-            printf(io, show, delimiter, "From-Bus Flow Maximum", "[$unitFlow]", "From-Bus Flow Dual", "[\$/$unitFlow-hr]")
-            printf(io, show, delimiter, "To-Bus Flow Minimum", "[$unitFlow]", "To-Bus Flow Solution", "[$unitFlow]")
-            printf(io, show, delimiter, "To-Bus Flow Maximum", "[$unitFlow]", "To-Bus Flow Dual", "[\$/$unitFlow-hr]")
-            @printf io "\n"
-        end
-    end
+    return fmt, width, show, subheader, unit, empty, printing
 end
 
 """
@@ -1120,7 +1137,7 @@ The following keywords control the printed data:
 * `header`: Toggles the printing of the header.
 * `footer`: Toggles the printing of the footer.
 * `delimiter`: Sets the column delimiter.
-* `fmt`: Specifies the preferred numeric formats for the columns.
+* `fmt`: Specifies the preferred numeric formats or alignments for the columns.
 * `width`: Specifies the preferred widths for the columns.
 * `show`: Toggles the printing of the columns.
 * `style`: Prints either a stylish table or a simple table suitable for easy export.
@@ -1154,110 +1171,82 @@ function printGeneratorConstraint(system::PowerSystem, analysis::ACOptimalPowerF
     header::B = missing, footer::B = missing, delimiter::String = "|", fmt::Dict{String, String} = Dict{String, String}(),
     width::Dict{String, Int64} = Dict{String, Int64}(), show::Dict{String, Bool} = Dict{String, Bool}(), style::Bool = true)
 
-    scale = printScale(system, prefix)
-    unitData = printUnitData(unitList)
-    fmt, width, show = formatGeneratorConstraint(system, analysis, label, scale, prefix, fmt, width, show, style)
-    maxLine, pfmt = setupPrintSystem(fmt, width, show, delimiter, style; dash = true)
-    labels, header, footer = toggleLabelHeader(label, system.generator, system.generator.label, header, footer, "generator")
-
     constraint = analysis.method.constraint
     dual = analysis.method.dual
-    if header
-        if style
-            printTitle(io, maxLine, delimiter, "Generator Constraint Data")
 
-            print(io, format(Format("$delimiter %*s%s%*s $delimiter"), floor(Int, (width["Label"] - 5) / 2), "", "Label", ceil(Int, (width["Label"] - 5) / 2) , ""))
-            spanAct = printf(io, width, show, delimiter, "Active Power Capability Minimum", "Active Power Capability Solution", "Active Power Capability Maximum", "Active Power Capability Dual", "Active Power Capability")
-            spanReact = printf(io, width, show, delimiter, "Reactive Power Capability Minimum", "Reactive Power Capability Solution", "Reactive Power Capability Maximum", "Reactive Power Capability Dual", "Reactive Power Capability")
+    scale = printScale(system, prefix)
+    fmt, width, show, subheader, unit, empty, printing = formatGeneratorConstraint(system, analysis, label, scale, prefix, fmt, width, show, style)
+
+    if printing
+            maxLine, pfmt, hfmt = setupPrintSystem(fmt, width, show, delimiter, style)
+            labels, header, footer = toggleLabelHeader(label, system.generator, system.generator.label, header, footer, "generator")
+
+        if header
+            if style
+                printTitle(io, maxLine, delimiter, "Generator Constraint Data")
+
+                print(io, delimiter)
+                widthLab = printf(io, width, show, delimiter, "Label", "Label")
+                widthAct = printf(io, width, show, delimiter, "Active Power Capability", "Active Power Capability Minimum", "Active Power Capability Solution", "Active Power Capability Maximum", "Active Power Capability Dual")
+                widthRea = printf(io, width, show, delimiter, "Reactive Power Capability", "Reactive Power Capability Minimum", "Reactive Power Capability Solution", "Reactive Power Capability Maximum", "Reactive Power Capability Dual")
+                @printf io "\n"
+
+                print(io, delimiter)
+                printf(io, hfmt["Empty"], widthLab)
+                printf(io, hfmt["Empty"], widthAct)
+                printf(io, hfmt["Empty"], widthRea)
+                @printf io "\n"
+            end
+
+            printf(io, hfmt, width, show, subheader, "Label")
+            printf(io, hfmt, width, show, subheader, "Active Power Capability Minimum", "Active Power Capability Solution", "Active Power Capability Maximum", "Active Power Capability Dual")
+            printf(io, hfmt, width, show, subheader, "Reactive Power Capability Minimum", "Reactive Power Capability Solution", "Reactive Power Capability Maximum", "Reactive Power Capability Dual")
             @printf io "\n"
 
-            fmt = Format(" %*s $delimiter")
-            print(io, format(Format("$delimiter %*s $delimiter"), width["Label"], ""))
-            printf(io, fmt, spanAct)
-            printf(io, fmt, spanReact)
+            printf(io, hfmt, width, show, unit, "Label")
+            printf(io, hfmt, width, show, unit, "Active Power Capability Minimum", "Active Power Capability Solution", "Active Power Capability Maximum", "Active Power Capability Dual")
+            printf(io, hfmt, width, show, unit, "Reactive Power Capability Minimum", "Reactive Power Capability Solution", "Reactive Power Capability Maximum", "Reactive Power Capability Dual")
             @printf io "\n"
 
-            print(io, format(Format("$delimiter %*s $delimiter"), width["Label"], ""))
-            printf(io, fmt, width, show, "Active Power Capability Minimum", "Minimum")
-            printf(io, fmt, width, show, "Active Power Capability Solution", "Solution")
-            printf(io, fmt, width, show, "Active Power Capability Maximum", "Maximum")
-            printf(io, fmt, width, show, "Active Power Capability Dual", "Dual")
-            printf(io, fmt, width, show, "Reactive Power Capability Minimum", "Minimum")
-            printf(io, fmt, width, show, "Reactive Power Capability Solution", "Solution")
-            printf(io, fmt, width, show, "Reactive Power Capability Maximum", "Maximum")
-            printf(io, fmt, width, show, "Reactive Power Capability Dual", "Dual")
-            @printf io "\n"
+            if style
+                print(io, delimiter)
+                printf(io, hfmt["Break"], width, show, "Label")
+                printf(io, hfmt["Break"], width, show, "Active Power Capability Minimum", "Active Power Capability Solution", "Active Power Capability Maximum", "Active Power Capability Dual")
+                printf(io, hfmt["Break"], width, show, "Reactive Power Capability Minimum", "Reactive Power Capability Solution", "Reactive Power Capability Maximum", "Reactive Power Capability Dual")
 
-            print(io, format(Format("$delimiter %*s $delimiter"), width["Label"], ""))
-            printf(io, fmt, width, show, "Active Power Capability Minimum", unitData["P"])
-            printf(io, fmt, width, show, "Active Power Capability Solution", unitData["P"])
-            printf(io, fmt, width, show, "Active Power Capability Maximum", unitData["P"])
-            printf(io, fmt, width, show, "Active Power Capability Dual", "[\$/$(unitList.activePowerLive)-hr]")
-            printf(io, fmt, width, show, "Reactive Power Capability Minimum", unitData["Q"])
-            printf(io, fmt, width, show, "Reactive Power Capability Solution", unitData["Q"])
-            printf(io, fmt, width, show, "Reactive Power Capability Maximum", unitData["Q"])
-            printf(io, fmt, width, show, "Reactive Power Capability Dual", "[\$/$(unitList.reactivePowerLive)-hr]")
-            @printf io "\n"
-
-            fmt =  Format("-%*s-$delimiter")
-            print(io, format(Format("$delimiter-%s-$delimiter"), "-"^width["Label"]))
-            printf(io, fmt, width, show, "Active Power Capability Minimum", "-"^width["Active Power Capability Minimum"])
-            printf(io, fmt, width, show, "Active Power Capability Solution", "-"^width["Active Power Capability Solution"])
-            printf(io, fmt, width, show, "Active Power Capability Maximum", "-"^width["Active Power Capability Maximum"])
-            printf(io, fmt, width, show, "Active Power Capability Dual", "-"^width["Active Power Capability Dual"])
-            printf(io, fmt, width, show, "Reactive Power Capability Minimum", "-"^width["Reactive Power Capability Minimum"])
-            printf(io, fmt, width, show, "Reactive Power Capability Solution", "-"^width["Reactive Power Capability Solution"])
-            printf(io, fmt, width, show, "Reactive Power Capability Maximum", "-"^width["Reactive Power Capability Maximum"])
-            printf(io, fmt, width, show, "Reactive Power Capability Dual", "-"^width["Reactive Power Capability Dual"])
-        else
-            print(io, format(Format("%s"), "Bus Label"))
-            printf(io, show, delimiter, "Active Power Capability Minimum", "Active Power Capability Minimum", "Active Power Capability Solution", "Active Power Capability Solution")
-            printf(io, show, delimiter, "Active Power Capability Maximum", "Active Power Capability Maximum", "Active Power Capability Dual", "Active Power Capability Dual")
-            printf(io, show, delimiter, "Reactive Power Capability Minimum", "Reactive Power Capability Minimum", "Reactive Power Capability Solution", "Reactive Power Capability Solution")
-            printf(io, show, delimiter, "Reactive Power Capability Maximum", "Reactive Power Capability Maximum", "Reactive Power Capability Dual", "Reactive Power Capability Dual")
-            @printf io "\n"
-
-            print(io, format(Format("%s"), ""))
-            printf(io, show, delimiter, "Active Power Capability Minimum", unitData["P"], "Active Power Capability Solution", unitData["P"])
-            printf(io, show, delimiter, "Active Power Capability Maximum", unitData["P"], "Active Power Capability Dual", "[\$/$(unitList.activePowerLive)-hr]")
-            printf(io, show, delimiter, "Reactive Power Capability Minimum", unitData["Q"], "Reactive Power Capability Solution", unitData["Q"])
-            printf(io, show, delimiter, "Reactive Power Capability Maximum", unitData["Q"], "Reactive Power Capability Dual", "[\$/$(unitList.reactivePowerLive)-hr]")
-        end
-        @printf io "\n"
-    end
-
-    @inbounds for (label, i) in labels
-        print(io, format(pfmt["Label"], width["Label"], label))
-
-        if haskey(constraint.capability.active, i) && is_valid(analysis.method.jump, constraint.capability.active[i])
-            printf(io, pfmt, show, width, system.generator.capability.minActive, i, scale["P"], "Active Power Capability Minimum")
-            printf(io, pfmt, show, width, constraint.capability.active, i, scale["P"], "Active Power Capability Solution")
-            printf(io, pfmt, show, width, system.generator.capability.maxActive, i, scale["P"], "Active Power Capability Maximum")
-            printf(io, pfmt, show, width, dual.capability.active, i, scale["P"], "Active Power Capability Dual")
-        else
-            printf(io, pfmt["Dash"], width, show, "Active Power Capability Minimum", "-")
-            printf(io, pfmt["Dash"], width, show, "Active Power Capability Solution", "-")
-            printf(io, pfmt["Dash"], width, show, "Active Power Capability Maximum", "-")
-            printf(io, pfmt["Dash"], width, show, "Active Power Capability Dual", "-")
+                @printf io "\n"
+            end
         end
 
-        if haskey(constraint.capability.reactive, i) && is_valid(analysis.method.jump, constraint.capability.reactive[i])
-            printf(io, pfmt, show, width, system.generator.capability.minReactive, i, scale["Q"], "Reactive Power Capability Minimum")
-            printf(io, pfmt, show, width, constraint.capability.reactive, i, scale["Q"], "Reactive Power Capability Solution")
-            printf(io, pfmt, show, width, system.generator.capability.maxReactive, i, scale["Q"], "Reactive Power Capability Maximum")
-            printf(io, pfmt, show, width, dual.capability.reactive, i, scale["Q"], "Reactive Power Capability Dual")
-        else
-            printf(io, pfmt["Dash"], width, show, "Reactive Power Capability Minimum", "-")
-            printf(io, pfmt["Dash"], width, show, "Reactive Power Capability Solution", "-")
-            printf(io, pfmt["Dash"], width, show, "Reactive Power Capability Maximum", "-")
-            printf(io, pfmt["Dash"], width, show, "Reactive Power Capability Dual", "-")
+        @inbounds for (label, i) in labels
+            if checkLine(analysis.method.jump, i, constraint.capability.active, constraint.capability.reactive)
+                continue
+            end
+
+            printf(io, pfmt, show, width, label, "Label")
+
+            if haskey(constraint.capability.active, i) && is_valid(analysis.method.jump, constraint.capability.active[i])
+                printf(io, pfmt, show, width, system.generator.capability.minActive, i, scale["P"], "Active Power Capability Minimum")
+                printf(io, pfmt, show, width, constraint.capability.active, i, scale["P"], "Active Power Capability Solution")
+                printf(io, pfmt, show, width, system.generator.capability.maxActive, i, scale["P"], "Active Power Capability Maximum")
+                printf(io, pfmt, show, width, dual.capability.active, i, scale["P"], "Active Power Capability Dual")
+            else
+                printf(io, hfmt, width, show, empty, "Active Power Capability Minimum", "Active Power Capability Solution", "Active Power Capability Maximum", "Active Power Capability Dual")
+            end
+
+            if haskey(constraint.capability.reactive, i) && is_valid(analysis.method.jump, constraint.capability.reactive[i])
+                printf(io, pfmt, show, width, system.generator.capability.minReactive, i, scale["Q"], "Reactive Power Capability Minimum")
+                printf(io, pfmt, show, width, constraint.capability.reactive, i, scale["Q"], "Reactive Power Capability Solution")
+                printf(io, pfmt, show, width, system.generator.capability.maxReactive, i, scale["Q"], "Reactive Power Capability Maximum")
+                printf(io, pfmt, show, width, dual.capability.reactive, i, scale["Q"], "Reactive Power Capability Dual")
+            else
+                printf(io, hfmt, width, show, empty, "Reactive Power Capability Minimum", "Reactive Power Capability Solution", "Reactive Power Capability Maximum", "Reactive Power Capability Dual")
+
+            end
+
+            @printf io "\n"
         end
-
-        @printf io "\n"
-    end
-
-    if footer && style
-        print(io, format(Format("$delimiter%s$delimiter\n"), "-"^maxLine))
+        printf(io, delimiter, footer, style, maxLine)
     end
 end
 
@@ -1270,49 +1259,84 @@ function formatGeneratorConstraint(system::PowerSystem, analysis::ACOptimalPower
     dual = analysis.method.dual
 
     _fmt = Dict(
-        "Active Power Capability" => "",
-        "Reactive Power Capability" => "",
+        "Active Power Capability"   => "",
+        "Reactive Power Capability" => ""
     )
     _width = Dict(
-        "Active Power Capability" => 0,
-        "Reactive Power Capability" => 0,
+        "Active Power Capability"   => 0,
+        "Reactive Power Capability" => 0
     )
-    _show = Dict(
-        "Active Power Capability" => true,
-        "Reactive Power Capability" => true,
+    _show = OrderedDict(
+        "Active Power Capability"   => true,
+        "Reactive Power Capability" => true
     )
     _fmt, _width, _show = printFormat(_fmt, fmt, _width, width, _show, show, style)
 
+    subheader = Dict(
+        "Label"                              => _header_("", "Label", style),
+        "Active Power Capability Minimum"    => _header_("Minimum", "Active Power Capability Minimum", style),
+        "Active Power Capability Solution"   => _header_("Solution", "Active Power Capability Solution", style),
+        "Active Power Capability Maximum"    => _header_("Maximum", "Active Power Capability Maximum", style),
+        "Active Power Capability Dual"       => _header_("Dual", "Active Power Capability Dual", style),
+        "Reactive Power Capability Minimum"  => _header_("Minimum", "Reactive Power Capability Minimum", style),
+        "Reactive Power Capability Solution" => _header_("Solution", "Reactive Power Capability Solution", style),
+        "Reactive Power Capability Maximum"  => _header_("Maximum", "Reactive Power Capability Maximum", style),
+        "Reactive Power Capability Dual"     => _header_("Dual", "Reactive Power Capability Dual", style)
+    )
+    unit = Dict(
+        "Label"                              => "",
+        "Active Power Capability Minimum"    => "[$(unitList.activePowerLive)]",
+        "Active Power Capability Solution"   => "[$(unitList.activePowerLive)]",
+        "Active Power Capability Maximum"    => "[$(unitList.activePowerLive)]",
+        "Active Power Capability Dual"       => "[\$/$(unitList.activePowerLive)-hr]",
+        "Reactive Power Capability Minimum"  => "[$(unitList.reactivePowerLive)]",
+        "Reactive Power Capability Solution" => "[$(unitList.reactivePowerLive)]",
+        "Reactive Power Capability Maximum"  => "[$(unitList.reactivePowerLive)]",
+        "Reactive Power Capability Dual"     => "[\$/$(unitList.reactivePowerLive)-hr]"
+    )
+    empty = Dict(
+        "Label"                              => "",
+        "Active Power Capability Minimum"    => "",
+        "Active Power Capability Solution"   => "",
+        "Active Power Capability Maximum"    => "",
+        "Active Power Capability Dual"       => "",
+        "Reactive Power Capability Minimum"  => "",
+        "Reactive Power Capability Solution" => "",
+        "Reactive Power Capability Maximum"  => "",
+        "Reactive Power Capability Dual"     => ""
+    )
     _fmt = Dict(
-        "Active Power Capability Minimum" => _fmt_(_fmt["Active Power Capability"], "%*.4f"),
-        "Active Power Capability Solution" => _fmt_(_fmt["Active Power Capability"], "%*.4f"),
-        "Active Power Capability Maximum" => _fmt_(_fmt["Active Power Capability"], "%*.4f"),
-        "Active Power Capability Dual" => _fmt_(_fmt["Active Power Capability"], "%*.4f"),
-        "Reactive Power Capability Minimum" => _fmt_(_fmt["Reactive Power Capability"], "%*.4f"),
-        "Reactive Power Capability Solution" => _fmt_(_fmt["Reactive Power Capability"], "%*.4f"),
-        "Reactive Power Capability Maximum" => _fmt_(_fmt["Reactive Power Capability"], "%*.4f"),
-        "Reactive Power Capability Dual" => _fmt_(_fmt["Reactive Power Capability"], "%*.4f")
+        "Label"                              => "%-*s",
+        "Active Power Capability Minimum"    => _fmt_(_fmt["Active Power Capability"]),
+        "Active Power Capability Solution"   => _fmt_(_fmt["Active Power Capability"]),
+        "Active Power Capability Maximum"    => _fmt_(_fmt["Active Power Capability"]),
+        "Active Power Capability Dual"       => _fmt_(_fmt["Active Power Capability"]),
+        "Reactive Power Capability Minimum"  => _fmt_(_fmt["Reactive Power Capability"]),
+        "Reactive Power Capability Solution" => _fmt_(_fmt["Reactive Power Capability"]),
+        "Reactive Power Capability Maximum"  => _fmt_(_fmt["Reactive Power Capability"]),
+        "Reactive Power Capability Dual"     => _fmt_(_fmt["Reactive Power Capability"])
     )
     _width = Dict(
-        "Label" => 5 * style,
-        "Active Power Capability Minimum" => _width_(_width["Active Power Capability"], 7, style),
-        "Active Power Capability Solution" => _width_(_width["Active Power Capability"], 8, style),
-        "Active Power Capability Maximum" => _width_(_width["Active Power Capability"], 7, style),
-        "Active Power Capability Dual" => _width_(_width["Active Power Capability"], textwidth("[\$/$(unitList.activePowerLive)-hr]"), style),
-        "Reactive Power Capability Minimum" => _width_(_width["Reactive Power Capability"], 7, style),
+        "Label"                              => 5 * style,
+        "Active Power Capability Minimum"    => _width_(_width["Active Power Capability"], 7, style),
+        "Active Power Capability Solution"   => _width_(_width["Active Power Capability"], 8, style),
+        "Active Power Capability Maximum"    => _width_(_width["Active Power Capability"], 7, style),
+        "Active Power Capability Dual"       => _width_(_width["Active Power Capability"], textwidth("[\$/$(unitList.activePowerLive)-hr]"), style),
+        "Reactive Power Capability Minimum"  => _width_(_width["Reactive Power Capability"], 7, style),
         "Reactive Power Capability Solution" => _width_(_width["Reactive Power Capability"], 8, style),
-        "Reactive Power Capability Maximum" => _width_(_width["Reactive Power Capability"], 7, style),
-        "Reactive Power Capability Dual" => _width_(_width["Reactive Power Capability"], textwidth("[\$/$(unitList.reactivePowerLive)-hr]"), style)
+        "Reactive Power Capability Maximum"  => _width_(_width["Reactive Power Capability"], 7, style),
+        "Reactive Power Capability Dual"     => _width_(_width["Reactive Power Capability"], textwidth("[\$/$(unitList.reactivePowerLive)-hr]"), style)
     )
-    _show = Dict(
-        "Active Power Capability Minimum" => _show_(constraint.capability.active, _show["Active Power Capability"]),
-        "Active Power Capability Solution" => _show_(constraint.capability.active, _show["Active Power Capability"]),
-        "Active Power Capability Maximum" => _show_(constraint.capability.active, _show["Active Power Capability"]),
-        "Active Power Capability Dual" => _show_(dual.capability.active, _show["Active Power Capability"]),
-        "Reactive Power Capability Minimum" => _show_(constraint.capability.reactive, _show["Reactive Power Capability"]),
-        "Reactive Power Capability Solution" => _show_(constraint.capability.reactive, _show["Reactive Power Capability"]),
-        "Reactive Power Capability Maximum" => _show_(constraint.capability.reactive, _show["Reactive Power Capability"]),
-        "Reactive Power Capability Dual" => _show_(dual.capability.reactive, _show["Reactive Power Capability"])
+    _show = OrderedDict(
+        "Label"                              => anycons(analysis.method.jump, constraint.capability.active, constraint.capability.reactive),
+        "Active Power Capability Minimum"    => _show_(_show["Active Power Capability"], constraint.capability.active),
+        "Active Power Capability Solution"   => _show_(_show["Active Power Capability"], constraint.capability.active),
+        "Active Power Capability Maximum"    => _show_(_show["Active Power Capability"], constraint.capability.active),
+        "Active Power Capability Dual"       => _show_(_show["Active Power Capability"], dual.capability.active),
+        "Reactive Power Capability Minimum"  => _show_(_show["Reactive Power Capability"], constraint.capability.reactive),
+        "Reactive Power Capability Solution" => _show_(_show["Reactive Power Capability"], constraint.capability.reactive),
+        "Reactive Power Capability Maximum"  => _show_(_show["Reactive Power Capability"], constraint.capability.reactive),
+        "Reactive Power Capability Dual"     => _show_(_show["Reactive Power Capability"], dual.capability.reactive)
     )
     fmt, width, show = printFormat(_fmt, fmt, _width, width, _show, show, style)
 
@@ -1341,122 +1365,112 @@ function formatGeneratorConstraint(system::PowerSystem, analysis::ACOptimalPower
                 end
             end
         else
-            minmaxPprimal = [-Inf; Inf]
-            minmaxPdual = [-Inf; Inf]
-            minmaxQprimal = [-Inf; Inf]
-            minmaxQdual = [-Inf; Inf]
+            Popt = [-Inf; Inf]
+            Pdul = [-Inf; Inf]
+            Qopt = [-Inf; Inf]
+            Qdul = [-Inf; Inf]
 
             @inbounds for (label, i) in system.generator.label
                 width["Label"] = max(textwidth(label), width["Label"])
 
                 if haskey(constraint.capability.active, i) && is_valid(analysis.method.jump, constraint.capability.active[i])
-                    minmaxPrimal(show, constraint.capability.active[i], scale["P"], minmaxPprimal, "Active Power Capability Solution")
-                    minmaxDual(show, dual.capability.active, i, scale["P"], minmaxPdual, "Active Power Capability Dual")
+                    minmaxPrimal(show, constraint.capability.active[i], scale["P"], Popt, "Active Power Capability Solution")
+                    minmaxDual(show, dual.capability.active, i, scale["P"], Pdul, "Active Power Capability Dual")
                 end
 
                 if haskey(constraint.capability.reactive, i) && is_valid(analysis.method.jump, constraint.capability.reactive[i])
-                    minmaxPrimal(show, constraint.capability.reactive[i], scale["Q"], minmaxQprimal, "Reactive Power Capability Solution")
-                    minmaxDual(show, dual.capability.reactive, i, scale["Q"], minmaxQdual, "Reactive Power Capability Dual")
+                    minmaxPrimal(show, constraint.capability.reactive[i], scale["Q"], Qopt, "Reactive Power Capability Solution")
+                    minmaxDual(show, dual.capability.reactive, i, scale["Q"], Qdul, "Reactive Power Capability Dual")
                 end
             end
 
             fminmax(fmt, width, show, system.generator.capability.minActive, scale["P"], "Active Power Capability Minimum")
-            fminmax(fmt, width, show, minmaxPprimal, 1.0, "Active Power Capability Solution")
+            fminmax(fmt, width, show, Popt, 1.0, "Active Power Capability Solution")
             fminmax(fmt, width, show, system.generator.capability.maxActive, scale["P"], "Active Power Capability Maximum")
-            fminmax(fmt, width, show, minmaxPdual, 1.0, "Active Power Capability Dual")
+            fminmax(fmt, width, show, Pdul, 1.0, "Active Power Capability Dual")
 
             fminmax(fmt, width, show, system.generator.capability.minReactive, scale["Q"], "Reactive Power Capability Minimum")
-            fminmax(fmt, width, show, minmaxQprimal, 1.0, "Reactive Power Capability Solution")
+            fminmax(fmt, width, show, Qopt, 1.0, "Reactive Power Capability Solution")
             fminmax(fmt, width, show, system.generator.capability.maxReactive, scale["Q"], "Reactive Power Capability Maximum")
-            fminmax(fmt, width, show, minmaxQdual, 1.0, "Reactive Power Capability Dual")
+            fminmax(fmt, width, show, Qdul, 1.0, "Reactive Power Capability Dual")
         end
 
-        hasMorePrint(width, show, "Generator Constraint Data")
-        titlemax(width, show, "Active Power Capability Minimum", "Active Power Capability Solution", "Active Power Capability Maximum", "Active Power Capability Dual", "Active Power Capability")
-        titlemax(width, show, "Reactive Power Capability Minimum", "Reactive Power Capability Solution", "Reactive Power Capability Maximum", "Reactive Power Capability Dual", "Reactive Power Capability")
+        titlemax(width, show, "Active Power Capability", "Active Power Capability Minimum", "Active Power Capability Solution", "Active Power Capability Maximum", "Active Power Capability Dual")
+        titlemax(width, show, "Reactive Power Capability", "Reactive Power Capability Minimum", "Reactive Power Capability Solution", "Reactive Power Capability Maximum", "Reactive Power Capability Dual")
     end
 
-    return fmt, width, show
+    printing = howManyPrint(width, show, style, "Generator Constraint Data")
+
+    return fmt, width, show, subheader, unit, empty, printing
 end
 
 function printGeneratorConstraint(system::PowerSystem, analysis::DCOptimalPowerFlow, io::IO = stdout; label::L = missing,
     header::B = missing, footer::B = missing, delimiter::String = "|", fmt::Dict{String, String} = Dict{String, String}(),
     width::Dict{String, Int64} = Dict{String, Int64}(), show::Dict{String, Bool} = Dict{String, Bool}(), style::Bool = true)
 
-    scale = printScale(system, prefix)
-    unitData = printUnitData(unitList)
-    fmt, width, show = formatGeneratorConstraint(system, analysis, label, scale, prefix, fmt, width, show, style)
-    maxLine, pfmt = setupPrintSystem(fmt, width, show, delimiter, style; dash = true)
-    labels, header, footer = toggleLabelHeader(label, system.generator, system.generator.label, header, footer, "generator")
-
     constraint = analysis.method.constraint
     dual = analysis.method.dual
-    if header
-        if style
-            printTitle(io, maxLine, delimiter, "Generator Constraint Data")
 
-            print(io, format(Format("$delimiter %*s%s%*s $delimiter"), floor(Int, (width["Label"] - 5) / 2), "", "Label", ceil(Int, (width["Label"] - 5) / 2) , ""))
-            spanAct = printf(io, width, show, delimiter, "Active Power Capability Minimum", "Active Power Capability Solution", "Active Power Capability Maximum", "Active Power Capability Dual", "Active Power Capability")
+
+    scale = printScale(system, prefix)
+    fmt, width, show, subheader, unit, empty, printing = formatGeneratorConstraint(system, analysis, label, scale, prefix, fmt, width, show, style)
+
+    if printing
+        maxLine, pfmt, hfmt = setupPrintSystem(fmt, width, show, delimiter, style)
+        labels, header, footer = toggleLabelHeader(label, system.generator, system.generator.label, header, footer, "generator")
+
+        if header
+            if style
+                printTitle(io, maxLine, delimiter, "Generator Constraint Data")
+
+                print(io, delimiter)
+                widthLab = printf(io, width, show, delimiter, "Label", "Label")
+                widthAct = printf(io, width, show, delimiter, "Active Power Capability", "Active Power Capability Minimum", "Active Power Capability Solution", "Active Power Capability Maximum", "Active Power Capability Dual")
+                @printf io "\n"
+
+                print(io, delimiter)
+                printf(io, hfmt["Empty"], widthLab)
+                printf(io, hfmt["Empty"], widthAct)
+                @printf io "\n"
+            end
+
+            printf(io, hfmt, width, show, subheader, "Label")
+            printf(io, hfmt, width, show, subheader, "Active Power Capability Minimum", "Active Power Capability Solution", "Active Power Capability Maximum", "Active Power Capability Dual")
             @printf io "\n"
 
-            fmt = Format(" %*s $delimiter")
-            print(io, format(Format("$delimiter %*s $delimiter"), width["Label"], ""))
-            printf(io, fmt, spanAct)
+            printf(io, hfmt, width, show, unit, "Label")
+            printf(io, hfmt, width, show, unit, "Active Power Capability Minimum", "Active Power Capability Solution", "Active Power Capability Maximum", "Active Power Capability Dual")
             @printf io "\n"
 
-            print(io, format(Format("$delimiter %*s $delimiter"), width["Label"], ""))
-            printf(io, fmt, width, show, "Active Power Capability Minimum", "Minimum")
-            printf(io, fmt, width, show, "Active Power Capability Solution", "Solution")
-            printf(io, fmt, width, show, "Active Power Capability Maximum", "Maximum")
-            printf(io, fmt, width, show, "Active Power Capability Dual", "Dual")
-            @printf io "\n"
-
-            print(io, format(Format("$delimiter %*s $delimiter"), width["Label"], ""))
-            printf(io, fmt, width, show, "Active Power Capability Minimum", unitData["P"])
-            printf(io, fmt, width, show, "Active Power Capability Solution", unitData["P"])
-            printf(io, fmt, width, show, "Active Power Capability Maximum", unitData["P"])
-            printf(io, fmt, width, show, "Active Power Capability Dual", "[\$/$(unitList.activePowerLive)-hr]")
-            @printf io "\n"
-
-            fmt =  Format("-%*s-$delimiter")
-            print(io, format(Format("$delimiter-%s-$delimiter"), "-"^width["Label"]))
-            printf(io, fmt, width, show, "Active Power Capability Minimum", "-"^width["Active Power Capability Minimum"])
-            printf(io, fmt, width, show, "Active Power Capability Solution", "-"^width["Active Power Capability Solution"])
-            printf(io, fmt, width, show, "Active Power Capability Maximum", "-"^width["Active Power Capability Maximum"])
-            printf(io, fmt, width, show, "Active Power Capability Dual", "-"^width["Active Power Capability Dual"])
-        else
-            print(io, format(Format("%s"), "Bus Label"))
-            printf(io, show, delimiter, "Active Power Capability Minimum", "Active Power Capability Minimum", "Active Power Capability Solution", "Active Power Capability Solution")
-            printf(io, show, delimiter, "Active Power Capability Maximum", "Active Power Capability Maximum", "Active Power Capability Dual", "Active Power Capability Dual")
-            @printf io "\n"
-
-            print(io, format(Format("%s"), ""))
-            printf(io, show, delimiter, "Active Power Capability Minimum", unitData["P"], "Active Power Capability Solution", unitData["P"])
-            printf(io, show, delimiter, "Active Power Capability Maximum", unitData["P"], "Active Power Capability Dual", "[\$/$(unitList.activePowerLive)-hr]")
-        end
-        @printf io "\n"
-    end
-
-    @inbounds for (label, i) in labels
-        print(io, format(pfmt["Label"], width["Label"], label))
-
-        if haskey(constraint.capability.active, i) && is_valid(analysis.method.jump, constraint.capability.active[i])
-            printf(io, pfmt, show, width, system.generator.capability.minActive, i, scale["P"], "Active Power Capability Minimum")
-            printf(io, pfmt, show, width, constraint.capability.active, i, scale["P"], "Active Power Capability Solution")
-            printf(io, pfmt, show, width, system.generator.capability.maxActive, i, scale["P"], "Active Power Capability Maximum")
-            printf(io, pfmt, show, width, dual.capability.active, i, scale["P"], "Active Power Capability Dual")
-        else
-            printf(io, pfmt["Dash"], width, show, "Active Power Capability Minimum", "-")
-            printf(io, pfmt["Dash"], width, show, "Active Power Capability Solution", "-")
-            printf(io, pfmt["Dash"], width, show, "Active Power Capability Maximum", "-")
-            printf(io, pfmt["Dash"], width, show, "Active Power Capability Dual", "-")
+            if style
+                print(io, delimiter)
+                printf(io, hfmt["Break"], width, show, "Label")
+                printf(io, hfmt["Break"], width, show, "Active Power Capability Minimum", "Active Power Capability Solution", "Active Power Capability Maximum", "Active Power Capability Dual")
+                @printf io "\n"
+            end
         end
 
-        @printf io "\n"
-    end
 
-    if footer && style
-        print(io, format(Format("$delimiter%s$delimiter\n"), "-"^maxLine))
+        @inbounds for (label, i) in labels
+            if checkLine(analysis.method.jump, i, constraint.capability.active)
+                continue
+            end
+
+            printf(io, pfmt, show, width, label, "Label")
+
+            if haskey(constraint.capability.active, i) && is_valid(analysis.method.jump, constraint.capability.active[i])
+                printf(io, pfmt, show, width, system.generator.capability.minActive, i, scale["P"], "Active Power Capability Minimum")
+                printf(io, pfmt, show, width, constraint.capability.active, i, scale["P"], "Active Power Capability Solution")
+                printf(io, pfmt, show, width, system.generator.capability.maxActive, i, scale["P"], "Active Power Capability Maximum")
+                printf(io, pfmt, show, width, dual.capability.active, i, scale["P"], "Active Power Capability Dual")
+            else
+                printf(io, hfmt, width, show, empty, "Active Power Capability Minimum", "Active Power Capability Solution", "Active Power Capability Maximum", "Active Power Capability Dual")
+            end
+
+            @printf io "\n"
+        end
+
+        printf(io, delimiter, footer, style, maxLine)
     end
 end
 
@@ -1473,29 +1487,52 @@ function formatGeneratorConstraint(system::PowerSystem, analysis::DCOptimalPower
     _width = Dict(
         "Active Power Capability" => 0
     )
-    _show = Dict(
+    _show = OrderedDict(
         "Active Power Capability" => true
     )
     _fmt, _width, _show = printFormat(_fmt, fmt, _width, width, _show, show, style)
 
+    subheader = Dict(
+        "Label"                            => _header_("", "Label", style),
+        "Active Power Capability Minimum"  => _header_("Minimum", "Active Power Capability Minimum", style),
+        "Active Power Capability Solution" => _header_("Solution", "Active Power Capability Solution", style),
+        "Active Power Capability Maximum"  => _header_("Maximum", "Active Power Capability Maximum", style),
+        "Active Power Capability Dual"     => _header_("Dual", "Active Power Capability Dual", style)
+    )
+    unit = Dict(
+        "Label"                            => "",
+        "Active Power Capability Minimum"  => "[$(unitList.activePowerLive)]",
+        "Active Power Capability Solution" => "[$(unitList.activePowerLive)]",
+        "Active Power Capability Maximum"  => "[$(unitList.activePowerLive)]",
+        "Active Power Capability Dual"     => "[\$/$(unitList.activePowerLive)-hr]"
+    )
+    empty = Dict(
+        "Label"                            => "",
+        "Active Power Capability Minimum"  => "",
+        "Active Power Capability Solution" => "",
+        "Active Power Capability Maximum"  => "",
+        "Active Power Capability Dual"     => ""
+    )
     _fmt = Dict(
-        "Active Power Capability Minimum" => _fmt_(_fmt["Active Power Capability"], "%*.4f"),
-        "Active Power Capability Solution" => _fmt_(_fmt["Active Power Capability"], "%*.4f"),
-        "Active Power Capability Maximum" => _fmt_(_fmt["Active Power Capability"], "%*.4f"),
-        "Active Power Capability Dual" => _fmt_(_fmt["Active Power Capability"], "%*.4f")
+        "Label"                            => "%-*s",
+        "Active Power Capability Minimum"  => _fmt_(_fmt["Active Power Capability"]),
+        "Active Power Capability Solution" => _fmt_(_fmt["Active Power Capability"]),
+        "Active Power Capability Maximum"  => _fmt_(_fmt["Active Power Capability"]),
+        "Active Power Capability Dual"     => _fmt_(_fmt["Active Power Capability"])
     )
     _width = Dict(
-        "Label" => 5 * style,
-        "Active Power Capability Minimum" => _width_(_width["Active Power Capability"], 7, style),
+        "Label"                            => 5 * style,
+        "Active Power Capability Minimum"  => _width_(_width["Active Power Capability"], 7, style),
         "Active Power Capability Solution" => _width_(_width["Active Power Capability"], 8, style),
-        "Active Power Capability Maximum" => _width_(_width["Active Power Capability"], 7, style),
-        "Active Power Capability Dual" => _width_(_width["Active Power Capability"], textwidth("[\$/$(unitList.activePowerLive)-hr]"), style)
+        "Active Power Capability Maximum"  => _width_(_width["Active Power Capability"], 7, style),
+        "Active Power Capability Dual"     => _width_(_width["Active Power Capability"], textwidth("[\$/$(unitList.activePowerLive)-hr]"), style)
     )
-    _show = Dict(
-        "Active Power Capability Minimum" => _show_(constraint.capability.active, _show["Active Power Capability"]),
-        "Active Power Capability Solution" => _show_(constraint.capability.active, _show["Active Power Capability"]),
-        "Active Power Capability Maximum" => _show_(constraint.capability.active, _show["Active Power Capability"]),
-        "Active Power Capability Dual" => _show_(dual.capability.active, _show["Active Power Capability"])
+    _show = OrderedDict(
+        "Label"                            => anycons(analysis.method.jump, constraint.capability.active),
+        "Active Power Capability Minimum"  => _show_(_show["Active Power Capability"], constraint.capability.active),
+        "Active Power Capability Solution" => _show_(_show["Active Power Capability"], constraint.capability.active),
+        "Active Power Capability Maximum"  => _show_(_show["Active Power Capability"], constraint.capability.active),
+        "Active Power Capability Dual"     => _show_(_show["Active Power Capability"], dual.capability.active)
     )
     fmt, width, show = printFormat(_fmt, fmt, _width, width, _show, show, style)
 
@@ -1515,27 +1552,87 @@ function formatGeneratorConstraint(system::PowerSystem, analysis::DCOptimalPower
                 end
             end
         else
-            minmaxPprimal = [-Inf; Inf]
-            minmaxPdual = [-Inf; Inf]
+            Popt = [-Inf; Inf]
+            Pdul = [-Inf; Inf]
 
             @inbounds for (label, i) in system.generator.label
                 width["Label"] = max(textwidth(label), width["Label"])
 
                 if haskey(constraint.capability.active, i) && is_valid(analysis.method.jump, constraint.capability.active[i])
-                    minmaxPrimal(show, constraint.capability.active[i], scale["P"], minmaxPprimal, "Active Power Capability Solution")
-                    minmaxDual(show, dual.capability.active, i, scale["P"], minmaxPdual, "Active Power Capability Dual")
+                    minmaxPrimal(show, constraint.capability.active[i], scale["P"], Popt, "Active Power Capability Solution")
+                    minmaxDual(show, dual.capability.active, i, scale["P"], Pdul, "Active Power Capability Dual")
                 end
             end
 
             fminmax(fmt, width, show, system.generator.capability.minActive, scale["P"], "Active Power Capability Minimum")
-            fminmax(fmt, width, show, minmaxPprimal, 1.0, "Active Power Capability Solution")
+            fminmax(fmt, width, show, Popt, 1.0, "Active Power Capability Solution")
             fminmax(fmt, width, show, system.generator.capability.maxActive, scale["P"], "Active Power Capability Maximum")
-            fminmax(fmt, width, show, minmaxPdual, 1.0, "Active Power Capability Dual")
+            fminmax(fmt, width, show, Pdul, 1.0, "Active Power Capability Dual")
         end
-
-        hasMorePrint(width, show, "Generator Constraint Data")
-        titlemax(width, show, "Active Power Capability Minimum", "Active Power Capability Solution", "Active Power Capability Maximum", "Active Power Capability Dual", "Active Power Capability")
+        titlemax(width, show, "Active Power Capability", "Active Power Capability Minimum", "Active Power Capability Solution", "Active Power Capability Maximum", "Active Power Capability Dual")
     end
 
-    return fmt, width, show
+    printing = howManyPrint(width, show, style, "Generator Constraint Data")
+
+    return fmt, width, show, subheader, unit, empty, printing
+end
+
+function checkLine(jump::JuMP.Model, i::Int64, constraints::Dict{Int64, ConstraintRef}...)
+    hasInLine = true
+    for constraint in constraints
+        hasInLine &= !(haskey(constraint, i) && is_valid(jump, constraint[i]))
+    end
+
+    return hasInLine
+end
+
+function flowType(type::Int64, unitList::UnitList)
+    if type == 1
+        flow = "Apparent Power Flow"
+        unit = unitList.apparentPowerLive
+    elseif type == 2
+        flow = "Active Power Flow"
+        unit = unitList.activePowerLive
+    elseif type == 3
+        flow = "Current Flow Magnitude"
+        unit = unitList.currentMagnitudeLive
+    end
+
+    return flow, unit
+end
+
+function anycons(jump::JuMP.Model, constraints::Dict{Int64, ConstraintRef}...)
+    existcons = false
+    for constraint in constraints
+        for i in keys(constraint)
+            if haskey(constraint, i) && is_valid(jump, constraint[i])
+                existcons = true
+                break
+            end
+        end
+        if existcons
+            break
+        end
+    end
+
+    return existcons
+end
+
+function checkFlowType(system::PowerSystem, jump::JuMP.Model, angle::Dict{Int64, ConstraintRef}, from::Dict{Int64, ConstraintRef}, to::Dict{Int64, ConstraintRef})
+    count = [0; 0; 0]
+    for (i, type) in enumerate(system.branch.flow.type)
+        if haskey(from, i) && is_valid(jump, from[i]) || haskey(to, i) && is_valid(jump, to[i])
+            count[type] += 1
+        end
+    end
+
+    max_index = argmax(count)
+    flowType = copy(system.branch.flow.type)
+    for (i, type) in enumerate(system.branch.flow.type)
+        if haskey(angle, i) && is_valid(jump, angle[i]) && !(haskey(from, i) && is_valid(jump, from[i])) && !(haskey(to, i) && is_valid(jump, to[i]))
+            flowType[i] = max_index
+        end
+    end
+
+    return findall(x -> x != 0, count), flowType
 end
