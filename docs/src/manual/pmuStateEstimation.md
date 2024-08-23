@@ -461,9 +461,8 @@ print(system.branch.label, analysis.current.from.magnitude)
 Users can utilize any of the print functions outlined in the [Print API](@ref setupPrintAPI). For example, to print state estimation data related to PMUs, we can use:
 ```@example PMUStateEstimationSolution
 @voltage(pu, deg, V)
-show = Dict("Status" => false)
-fmt = Dict("Measurement Mean" => "%.2f", "Measurement Variance" => "%.2e")
-printPmuData(system, device, analysis; fmt, show)
+show = Dict("Voltage Angle" => false, "Current Angle" => false)
+printPmuData(system, device, analysis; show)
 @default(unit) # hide
 ```
 

@@ -429,7 +429,7 @@ In this example, we have opted to specify kilovolts (kV) and degrees (deg) for t
 ##### Print Data in the REPL
 Users have the option to print the PMU data in the REPL using any units that have been configured:
 ```@example addPmuSI
-printPmuData(system, device; width = Dict("Measurement Mean" => 8))
+printPmuData(system, device)
 nothing # hide
 ```
 
