@@ -1,6 +1,6 @@
 """
     printBusData(system::PowerSystem, analysis::Analysis, [io::IO];
-        label, header, footer, delimiter, fmt, width, show, style)
+        label, fmt, width, show, delimiter, title, header, footer, repeat, style)
 
 The function prints voltages, powers, and currents related to buses. Optionally, an `IO`
 may be passed as the last argument to redirect the output.
@@ -8,12 +8,14 @@ may be passed as the last argument to redirect the output.
 # Keywords
 The following keywords control the printed data:
 * `label`: Prints only the data for the corresponding bus.
-* `header`: Toggles the printing of the header.
-* `footer`: Toggles the printing of the footer.
-* `delimiter`: Sets the column delimiter.
 * `fmt`: Specifies the preferred numeric formats or alignments for the columns.
 * `width`: Specifies the preferred widths for the columns.
 * `show`: Toggles the printing of the columns.
+* `delimiter`: Sets the column delimiter.
+* `title`: Toggles the printing of the table title.
+* `header`: Toggles the printing of the header.
+* `footer`: Toggles the printing of the footer.
+* `repeat`: Prints the header again after a specified number of lines have been printed.
 * `style`: Prints either a stylish table or a simple table suitable for easy export.
 
 !!! compat "Julia 1.10"
@@ -34,87 +36,35 @@ end
 power!(system, analysis)
 
 # Print data for all buses
-fmt = Dict("Power Demand" => "%.2f", "Voltage Magnitude" => "%.2f", "Label" => "%-s")
+fmt = Dict("Power Demand" => "%.2f", "Voltage Magnitude" => "%.2f", "Label" => "%s")
 show = Dict("Power Injection" => false, "Power Generation Reactive" => false)
-printBusData(system, analysis; fmt, show)
+printBusData(system, analysis; fmt, show, repeat = 10)
 
 # Print data for specific buses
 delimiter = " "
 width = Dict("Voltage" => 9, "Power Injection Active" => 9)
-printBusData(system, analysis; label = 2, delimiter, width, header = true)
+printBusData(system, analysis; label = 2, delimiter, width, title = true, header = true)
 printBusData(system, analysis; label = 10, delimiter, width)
 printBusData(system, analysis; label = 12, delimiter, width)
 printBusData(system, analysis; label = 14, delimiter, width, footer = true)
 ```
 """
 function printBusData(system::PowerSystem, analysis::AC, io::IO = stdout; label::L = missing,
-    header::B = missing, footer::B = missing, delimiter::String = "|", fmt::Dict{String, String} = Dict{String, String}(),
-    width::Dict{String, Int64} = Dict{String, Int64}(), show::Dict{String, Bool} = Dict{String, Bool}(), style::Bool = true)
+    fmt::Dict{String, String} = Dict{String, String}(), width::Dict{String, Int64} = Dict{String, Int64}(),
+    show::Dict{String, Bool} = Dict{String, Bool}(), delimiter::String = "|", style::Bool = true,
+    title::B = missing, header::B = missing, footer::B = missing, repeat::Int64 = system.bus.number + 1)
 
     scale = printScale(system, prefix)
-    fmt, width, show, subheader, unit, printing = formatBusData(system, analysis, label, scale, prefix, fmt, width, show, style)
+    labels, title, header, footer = formPrint(label, system.bus, system.bus.label, title, header, footer, "bus")
+    fmt, width, show, heading, subheading, unit, printing = formatBusData(system, analysis, label, scale, prefix, fmt, width, show, style, title)
 
     if printing
-        maxLine, pfmt, hfmt = setupPrintSystem(fmt, width, show, delimiter, style)
-        labels, header, footer = toggleLabelHeader(label, system.bus, system.bus.label, header, footer, "bus")
+        maxLine, pfmt, hfmt = setupPrint(fmt, width, show, delimiter, style)
 
-        if header
-            if style
-                printTitle(io, maxLine, delimiter, "Bus Data")
-
-                print(io, delimiter)
-                widthLab = printf(io, width, show, delimiter, "Label", "Label")
-                widthVol = printf(io, width, show, delimiter, "Voltage", "Voltage Magnitude", "Voltage Angle")
-                widthGen = printf(io, width, show, delimiter, "Power Generation", "Power Generation Active", "Power Generation Reactive")
-                widthDem = printf(io, width, show, delimiter, "Power Demand", "Power Demand Active", "Power Demand Reactive")
-                widthInj = printf(io, width, show, delimiter, "Power Injection", "Power Injection Active", "Power Injection Reactive")
-                widthShu = printf(io, width, show, delimiter, "Shunt Power", "Shunt Power Active", "Shunt Power Reactive")
-                widthCur = printf(io, width, show, delimiter, "Current Injection", "Current Injection Magnitude", "Current Injection Angle")
-                @printf io "\n"
-
-                print(io, delimiter)
-                printf(io, hfmt["Empty"], widthLab)
-                printf(io, hfmt["Empty"], widthVol)
-                printf(io, hfmt["Empty"], widthGen)
-                printf(io, hfmt["Empty"], widthDem)
-                printf(io, hfmt["Empty"], widthInj)
-                printf(io, hfmt["Empty"], widthShu)
-                printf(io, hfmt["Empty"], widthCur)
-                @printf io "\n"
-            end
-
-            printf(io, hfmt, width, show, subheader, "Label")
-            printf(io, hfmt, width, show, subheader, "Voltage Magnitude", "Voltage Angle")
-            printf(io, hfmt, width, show, subheader, "Power Generation Active", "Power Generation Reactive")
-            printf(io, hfmt, width, show, subheader, "Power Demand Active", "Power Demand Reactive")
-            printf(io, hfmt, width, show, subheader, "Power Injection Active", "Power Injection Reactive")
-            printf(io, hfmt, width, show, subheader, "Shunt Power Active", "Shunt Power Reactive")
-            printf(io, hfmt, width, show, subheader, "Current Injection Magnitude", "Current Injection Angle")
-            @printf io "\n"
-
-            printf(io, hfmt, width, show, unit, "Label")
-            printf(io, hfmt, width, show, unit,"Voltage Magnitude", "Voltage Angle")
-            printf(io, hfmt, width, show, unit, "Power Generation Active", "Power Generation Reactive")
-            printf(io, hfmt, width, show, unit, "Power Demand Active", "Power Demand Reactive")
-            printf(io, hfmt, width, show, unit, "Power Injection Active", "Power Injection Reactive")
-            printf(io, hfmt, width, show, unit, "Shunt Power Active", "Shunt Power Reactive")
-            printf(io, hfmt, width, show, unit, "Current Injection Magnitude", "Current Injection Angle")
-            @printf io "\n"
-
-            if style
-                print(io, delimiter)
-                printf(io, hfmt["Break"], width, show, "Label")
-                printf(io, hfmt["Break"], width, show, "Voltage Magnitude", "Voltage Angle")
-                printf(io, hfmt["Break"], width, show, "Power Generation Active", "Power Generation Reactive")
-                printf(io, hfmt["Break"], width, show, "Power Demand Active", "Power Demand Reactive")
-                printf(io, hfmt["Break"], width, show, "Power Injection Active", "Power Injection Reactive")
-                printf(io, hfmt["Break"], width, show, "Shunt Power Active", "Shunt Power Reactive")
-                printf(io, hfmt["Break"], width, show, "Current Injection Magnitude", "Current Injection Angle")
-                @printf io "\n"
-            end
-        end
-
+        printTitle(io, maxLine, delimiter, title, header, style, "Bus Data")
         @inbounds for (label, i) in labels
+            printing = printHeader(io, hfmt, width, show, heading, subheading, unit, delimiter, header, style, repeat, printing, maxLine, i)
+
             printf(io, pfmt, show, width, label, "Label")
 
             printf(io, pfmt, show, width, analysis.voltage.magnitude, i, scaleVoltage(prefix, system.base.voltage, i), "Voltage Magnitude")
@@ -134,35 +84,18 @@ function printBusData(system::PowerSystem, analysis::AC, io::IO = stdout; label:
 
             @printf io "\n"
         end
-
-        printf(io, delimiter, footer, style, maxLine)
+        printf(io, delimiter, maxLine, style, footer)
     end
 end
 
 function formatBusData(system::PowerSystem, analysis::AC, label::L, scale::Dict{String, Float64}, prefix::PrefixLive,
-    fmt::Dict{String, String}, width::Dict{String, Int64}, show::Dict{String, Bool}, style::Bool)
+    fmt::Dict{String, String}, width::Dict{String, Int64}, show::Dict{String, Bool}, style::Bool, title::Bool)
 
     errorVoltage(analysis.voltage.magnitude)
     voltage = analysis.voltage
     power = analysis.power
     current = analysis.current
 
-    _fmt = Dict(
-        "Voltage"           => "",
-        "Power Generation"  => "",
-        "Power Demand"      => "",
-        "Power Injection"   => "",
-        "Shunt Power"       => "",
-        "Current Injection" => ""
-    )
-    _width = Dict(
-        "Voltage"           => 0,
-        "Power Generation"  => 0,
-        "Power Demand"      => 0,
-        "Power Injection"   => 0,
-        "Shunt Power"       => 0,
-        "Current Injection" => 0
-    )
     _show = OrderedDict(
         "Voltage"           => true,
         "Power Generation"  => true,
@@ -171,9 +104,10 @@ function formatBusData(system::PowerSystem, analysis::AC, label::L, scale::Dict{
         "Shunt Power"       => true,
         "Current Injection" => true
     )
+    _fmt, _width = fmtwidth(_show)
     _fmt, _width, _show = printFormat(_fmt, fmt, _width, width, _show, show, style)
 
-    subheader = Dict(
+    subheading = Dict(
         "Label"                       => _header_("", "Label", style),
         "Voltage Magnitude"           => _header_("Magnitude", "Voltage Magnitude", style),
         "Voltage Angle"               => _header_("Angle", "Voltage Angle", style),
@@ -275,9 +209,11 @@ function formatBusData(system::PowerSystem, analysis::AC, label::L, scale::Dict{
             maxI = initMax(prefix.currentMagnitude)
 
             @inbounds for (label, i) in system.bus.label
-                width["Label"] = max(textwidth(label), width["Label"])
+                if _show["Label"]
+                    width["Label"] = max(textwidth(label), width["Label"])
+                end
 
-                if prefix.voltageMagnitude != 0.0
+                if _show["Voltage Magnitude"] && prefix.voltageMagnitude != 0.0
                     maxV = max(voltage.magnitude[i] * scaleVoltage(system.base.voltage, prefix, i), maxV)
                 end
 
@@ -310,77 +246,39 @@ function formatBusData(system::PowerSystem, analysis::AC, label::L, scale::Dict{
             end
             fminmax(fmt, width, show, current.injection.angle, scale["ψ"], "Current Injection Angle")
         end
-
-        titlemax(width, show, "Voltage", "Voltage Magnitude", "Voltage Angle")
-        titlemax(width, show, "Power Generation", "Power Generation Active", "Power Generation Reactive")
-        titlemax(width, show, "Power Demand", "Power Demand Active", "Power Demand Reactive")
-        titlemax(width, show, "Power Injection", "Power Injection Active", "Power Injection Reactive")
-        titlemax(width, show, "Shunt Power", "Shunt Power Active", "Shunt Power Reactive")
-        titlemax(width, show, "Current Injection", "Current Injection Magnitude", "Current Injection Angle")
     end
-    printing = howManyPrint(width, show, style, "Bus Data")
 
-    return fmt, width, show, subheader, unit, printing
+    printing = howManyPrint(width, show, style, title, "Bus Data")
+
+    heading = OrderedDict(
+        "Label"             => _blank_(width, show, "Label"),
+        "Voltage"           => _blank_(width, show, style, "Voltage", "Voltage Magnitude", "Voltage Angle"),
+        "Power Generation"  => _blank_(width, show, style, "Power Generation", "Power Generation Active", "Power Generation Reactive"),
+        "Power Demand"      => _blank_(width, show, style, "Power Demand", "Power Demand Active", "Power Demand Reactive"),
+        "Power Injection"   => _blank_(width, show, style, "Power Injection", "Power Injection Active", "Power Injection Reactive"),
+        "Shunt Power"       => _blank_(width, show, style, "Shunt Power", "Shunt Power Active", "Shunt Power Reactive"),
+        "Current Injection" => _blank_(width, show, style, "Current Injection", "Current Injection Magnitude", "Current Injection Angle")
+    )
+
+    return fmt, width, show, heading, subheading, unit, printing
 end
 
 function printBusData(system::PowerSystem, analysis::DC, io::IO = stdout; label::L = missing,
-    header::B = missing, footer::B = missing, delimiter::String = "|", fmt::Dict{String, String} = Dict{String, String}(),
-    width::Dict{String, Int64} = Dict{String, Int64}(), show::Dict{String, Bool} = Dict{String, Bool}(), style::Bool = true)
+    fmt::Dict{String, String} = Dict{String, String}(), width::Dict{String, Int64} = Dict{String, Int64}(),
+    show::Dict{String, Bool} = Dict{String, Bool}(), delimiter::String = "|", style::Bool = true,
+    title::B = missing, header::B = missing, footer::B = missing, repeat::Int64 = system.bus.number + 1)
 
     scale = printScale(system, prefix)
-    fmt, width, show, subheader, unit, printing = formatBusData(system, analysis, label, scale, fmt, width, show, style)
+    labels, title, header, footer = formPrint(label, system.bus, system.bus.label, title, header, footer, "bus")
+    fmt, width, show, heading, subheading, unit, printing = formatBusData(system, analysis, label, scale, fmt, width, show, style, title)
 
     if printing
-        maxLine, pfmt, hfmt = setupPrintSystem(fmt, width, show, delimiter, style)
-        labels, header, footer = toggleLabelHeader(label, system.bus, system.bus.label, header, footer, "bus")
+        maxLine, pfmt, hfmt = setupPrint(fmt, width, show, delimiter, style)
 
-        if header
-            if style
-                printTitle(io, maxLine, delimiter, "Bus Data")
-
-                print(io, delimiter)
-                widthLab = printf(io, width, show, delimiter, "Label", "Label")
-                widthVol = printf(io, width, show, delimiter, "Voltage", "Voltage Angle")
-                widthGen = printf(io, width, show, delimiter, "Power Generation", "Power Generation Active")
-                widthDem = printf(io, width, show, delimiter, "Power Demand", "Power Demand Active")
-                widthInj = printf(io, width, show, delimiter, "Power Injection", "Power Injection Active")
-                @printf io "\n"
-
-                print(io, delimiter)
-                printf(io, hfmt["Empty"], widthLab)
-                printf(io, hfmt["Empty"], widthVol)
-                printf(io, hfmt["Empty"], widthGen)
-                printf(io, hfmt["Empty"], widthDem)
-                printf(io, hfmt["Empty"], widthInj)
-                @printf io "\n"
-            end
-
-            printf(io, hfmt, width, show, subheader, "Label")
-            printf(io, hfmt, width, show, subheader, "Voltage Angle")
-            printf(io, hfmt, width, show, subheader, "Power Generation Active")
-            printf(io, hfmt, width, show, subheader, "Power Demand Active")
-            printf(io, hfmt, width, show, subheader, "Power Injection Active")
-            @printf io "\n"
-
-            printf(io, hfmt, width, show, unit, "Label")
-            printf(io, hfmt, width, show, unit, "Voltage Angle")
-            printf(io, hfmt, width, show, unit,"Power Generation Active")
-            printf(io, hfmt, width, show, unit,"Power Demand Active")
-            printf(io, hfmt, width, show, unit,"Power Injection Active")
-            @printf io "\n"
-
-            if style
-                print(io, delimiter)
-                printf(io, hfmt["Break"], width, show, "Label")
-                printf(io, hfmt["Break"], width, show, "Voltage Angle")
-                printf(io, hfmt["Break"], width, show, "Power Generation Active")
-                printf(io, hfmt["Break"], width, show, "Power Demand Active")
-                printf(io, hfmt["Break"], width, show, "Power Injection Active")
-                @printf io "\n"
-            end
-        end
-
+        printTitle(io, maxLine, delimiter, title, header, style, "Bus Data")
         @inbounds for (label, i) in labels
+            printing = printHeader(io, hfmt, width, show, heading, subheading, unit, delimiter, header, style, repeat, printing, maxLine, i)
+
             printf(io, pfmt, show, width, label, "Label")
 
             printf(io, pfmt, show, width, analysis.voltage.angle, i, scale["θ"], "Voltage Angle")
@@ -391,39 +289,27 @@ function printBusData(system::PowerSystem, analysis::DC, io::IO = stdout; label:
 
             @printf io "\n"
         end
-
-        printf(io, delimiter, footer, style, maxLine)
+        printf(io, delimiter, maxLine, style, footer)
     end
 end
 
 function formatBusData(system::PowerSystem, analysis::DC, label::L, scale::Dict{String, Float64},
-    fmt::Dict{String, String}, width::Dict{String, Int64}, show::Dict{String, Bool}, style::Bool)
+    fmt::Dict{String, String}, width::Dict{String, Int64}, show::Dict{String, Bool}, style::Bool, title::Bool)
 
     errorVoltage(analysis.voltage.angle)
     voltage = analysis.voltage
     power = analysis.power
 
-    _fmt = Dict(
-        "Voltage"          => "",
-        "Power Generation" => "",
-        "Power Demand"     => "",
-        "Power Injection"  => ""
-    )
-    _width = Dict(
-        "Voltage"          => 0,
-        "Power Generation" => 0,
-        "Power Demand"     => 0,
-        "Power Injection"  => 0
-    )
     _show = OrderedDict(
         "Voltage"          => true,
         "Power Generation" => true,
         "Power Demand"     => true,
         "Power Injection"  => true
     )
+    _fmt, _width = fmtwidth(_show)
     _fmt, _width, _show = printFormat(_fmt, fmt, _width, width, _show, show, style)
 
-    subheader = Dict(
+    subheading = Dict(
         "Label"                   => _header_("", "Label", style),
         "Voltage Angle"           => _header_("Angle", "Voltage Angle", style),
         "Power Generation Active" => _header_("Active", "Active Power Generation", style),
@@ -485,14 +371,22 @@ function formatBusData(system::PowerSystem, analysis::DC, label::L, scale::Dict{
         end
     end
 
-    printing = howManyPrint(width, show, style, "Bus Data")
+    printing = howManyPrint(width, show, style, title, "Bus Data")
 
-    return fmt, width, show, subheader, unit, printing
+    heading = OrderedDict(
+        "Label"             => _blank_(width, show, "Label"),
+        "Voltage"           => _blank_(width, show, "Voltage Angle"),
+        "Power Generation"  => _blank_(width, show, "Power Generation Active"),
+        "Power Demand"      => _blank_(width, show, "Power Demand Active"),
+        "Power Injection"   => _blank_(width, show, "Power Injection Active")
+    )
+
+    return fmt, width, show, heading, subheading, unit, printing
 end
 
 """
     printBranchData(system::PowerSystem, analysis::Analysis, [io::IO];
-        label, header, footer, delimiter, fmt, width, show, style)
+        label, fmt, width, show, delimiter, title, header, footer, repeat, style)
 
 The function prints powers and currents related to branches. Optionally, an `IO` may be
 passed as the last argument to redirect the output.
@@ -500,12 +394,14 @@ passed as the last argument to redirect the output.
 # Keywords
 The following keywords control the printed data:
 * `label`: Prints only the data for the corresponding branch.
-* `header`: Toggles the printing of the header.
-* `footer`: Toggles the printing of the footer.
-* `delimiter`: Sets the column delimiter.
 * `fmt`: Specifies the preferred numeric formats or alignments for the columns.
 * `width`: Specifies the preferred widths for the columns.
 * `show`: Toggles the printing of the columns.
+* `delimiter`: Sets the column delimiter.
+* `title`: Toggles the printing of the table title.
+* `header`: Toggles the printing of the header.
+* `footer`: Toggles the printing of the footer.
+* `repeat`: Prints the header again after a specified number of lines have been printed.
 * `style`: Prints either a stylish table or a simple table suitable for easy export.
 
 !!! compat "Julia 1.10"
@@ -528,7 +424,7 @@ power!(system, analysis)
 # Print data for all branches
 fmt = Dict("Shunt Power" => "%.2f", "Series Power Reactive" => "%.2f")
 show = Dict("From-Bus Power" => false, "To-Bus Power Reactive" => false)
-printBranchData(system, analysis; fmt, show)
+printBranchData(system, analysis; fmt, show, repeat = 11, title = false)
 
 # Print data for specific branches
 delimiter = " "
@@ -540,83 +436,21 @@ printBranchData(system, analysis; label = 14, delimiter, width, footer = true)
 ```
 """
 function printBranchData(system::PowerSystem, analysis::AC, io::IO = stdout; label::L = missing,
-    header::B = missing, footer::B = missing, delimiter::String = "|", fmt::Dict{String, String} = Dict{String, String}(),
-    width::Dict{String, Int64} = Dict{String, Int64}(), show::Dict{String, Bool} = Dict{String, Bool}(), style::Bool = true)
+    fmt::Dict{String, String} = Dict{String, String}(), width::Dict{String, Int64} = Dict{String, Int64}(),
+    show::Dict{String, Bool} = Dict{String, Bool}(), delimiter::String = "|", style::Bool = true,
+    title::B = missing, header::B = missing, footer::B = missing, repeat::Int64 = system.branch.number + 1)
 
     scale = printScale(system, prefix)
-    fmt, width, show, subheader, unit, printing = formatBranchData(system, analysis, label, scale, prefix, fmt, width, show, style)
+    labels, title, header, footer = formPrint(label, system.branch, system.branch.label, title, header, footer, "branch")
+    fmt, width, show, heading, subheading, unit, printing = formatBranchData(system, analysis, label, scale, prefix, fmt, width, show, style, title)
 
     if printing
-        maxLine, pfmt, hfmt = setupPrintSystem(fmt, width, show, delimiter, style)
-        labels, header, footer = toggleLabelHeader(label, system.branch, system.branch.label, header, footer, "branch")
+        maxLine, pfmt, hfmt = setupPrint(fmt, width, show, delimiter, style)
 
-        if header
-            if style
-                printTitle(io, maxLine, delimiter, "Branch Data")
-
-                print(io, delimiter)
-                widthLab = printf(io, width, show, delimiter, "Label", "Label")
-                widthFbp = printf(io, width, show, delimiter, "From-Bus Power", "From-Bus Power Active", "From-Bus Power Reactive")
-                widthTbp = printf(io, width, show, delimiter, "To-Bus Power", "To-Bus Power Active", "To-Bus Power Reactive")
-                widthSht = printf(io, width, show, delimiter, "Shunt Power", "Shunt Power Active", "Shunt Power Reactive")
-                widthSrp = printf(io, width, show, delimiter, "Series Power", "Series Power Active", "Series Power Reactive")
-                widthFbc = printf(io, width, show, delimiter, "From-Bus Current", "From-Bus Current Magnitude", "From-Bus Current Angle")
-                widthTbc = printf(io, width, show, delimiter, "To-Bus Current", "To-Bus Current Magnitude", "To-Bus Current Angle")
-                widtSrc = printf(io, width, show, delimiter, "Series Current", "Series Current Magnitude", "Series Current Angle")
-                widthSts = printf(io, width, show, delimiter, "Status", "Status")
-                @printf io "\n"
-
-                print(io, delimiter)
-                printf(io, hfmt["Empty"], widthLab)
-                printf(io, hfmt["Empty"], widthFbp)
-                printf(io, hfmt["Empty"], widthTbp)
-                printf(io, hfmt["Empty"], widthSht)
-                printf(io, hfmt["Empty"], widthSrp)
-                printf(io, hfmt["Empty"], widthFbc)
-                printf(io, hfmt["Empty"], widthTbc)
-                printf(io, hfmt["Empty"], widtSrc)
-                printf(io, hfmt["Empty"], widthSts)
-                @printf io "\n"
-            end
-
-            printf(io, hfmt, width, show, subheader, "Label")
-            printf(io, hfmt, width, show, subheader, "From-Bus Power Active", "From-Bus Power Reactive")
-            printf(io, hfmt, width, show, subheader, "To-Bus Power Active", "To-Bus Power Reactive")
-            printf(io, hfmt, width, show, subheader, "Shunt Power Active", "Shunt Power Reactive")
-            printf(io, hfmt, width, show, subheader, "Series Power Active", "Series Power Reactive")
-            printf(io, hfmt, width, show, subheader, "From-Bus Current Magnitude", "From-Bus Current Angle")
-            printf(io, hfmt, width, show, subheader, "To-Bus Current Magnitude", "To-Bus Current Angle")
-            printf(io, hfmt, width, show, subheader, "Series Current Magnitude", "Series Current Angle")
-            printf(io, hfmt, width, show, subheader, "Status")
-            @printf io "\n"
-
-            printf(io, hfmt, width, show, unit, "Label")
-            printf(io, hfmt, width, show, unit, "From-Bus Power Active", "From-Bus Power Reactive")
-            printf(io, hfmt, width, show, unit, "To-Bus Power Active", "To-Bus Power Reactive")
-            printf(io, hfmt, width, show, unit, "Shunt Power Active", "Shunt Power Reactive")
-            printf(io, hfmt, width, show, unit, "Series Power Active", "Series Power Reactive")
-            printf(io, hfmt, width, show, unit, "From-Bus Current Magnitude", "From-Bus Current Angle")
-            printf(io, hfmt, width, show, unit, "To-Bus Current Magnitude", "To-Bus Current Angle")
-            printf(io, hfmt, width, show, unit, "Series Current Magnitude", "Series Current Angle")
-            printf(io, hfmt, width, show, unit, "Status")
-            @printf io "\n"
-
-            if style
-                print(io, delimiter)
-                printf(io, hfmt["Break"], width, show, "Label")
-                printf(io, hfmt["Break"], width, show, "From-Bus Power Active", "From-Bus Power Reactive")
-                printf(io, hfmt["Break"], width, show, "To-Bus Power Active", "To-Bus Power Reactive")
-                printf(io, hfmt["Break"], width, show, "Shunt Power Active", "Shunt Power Reactive")
-                printf(io, hfmt["Break"], width, show, "Series Power Active", "Series Power Reactive")
-                printf(io, hfmt["Break"], width, show, "From-Bus Current Magnitude", "From-Bus Current Angle")
-                printf(io, hfmt["Break"], width, show, "To-Bus Current Magnitude", "To-Bus Current Angle")
-                printf(io, hfmt["Break"], width, show, "Series Current Magnitude", "Series Current Angle")
-                printf(io, hfmt["Break"], width, show, "Status")
-                @printf io "\n"
-            end
-        end
-
+        printTitle(io, maxLine, delimiter, title, header, style, "Branch Data")
         @inbounds for (label, i) in labels
+            printing = printHeader(io, hfmt, width, show, heading, subheading, unit, delimiter, header, style, repeat, printing, maxLine, i)
+
             printf(io, pfmt, show, width, label, "Label")
 
             printf(io, pfmt, show, width, analysis.power.from.active, i, scale["P"], "From-Bus Power Active")
@@ -639,35 +473,16 @@ function printBranchData(system::PowerSystem, analysis::AC, io::IO = stdout; lab
 
             @printf io "\n"
         end
-
-        printf(io, delimiter, footer, style, maxLine)
+        printf(io, delimiter, maxLine, style, footer)
     end
 end
 
 function formatBranchData(system::PowerSystem, analysis::AC, label::L, scale::Dict{String, Float64}, prefix::PrefixLive,
-    fmt::Dict{String, String}, width::Dict{String, Int64}, show::Dict{String, Bool}, style::Bool)
+    fmt::Dict{String, String}, width::Dict{String, Int64}, show::Dict{String, Bool}, style::Bool, title::Bool)
 
     power = analysis.power
     current = analysis.current
 
-    _fmt = Dict(
-        "From-Bus Power"   => "",
-        "To-Bus Power"     => "",
-        "Shunt Power"      => "",
-        "Series Power"     => "",
-        "From-Bus Current" => "",
-        "To-Bus Current"   => "",
-        "Series Current"   => "",
-    )
-    _width = Dict(
-        "From-Bus Power"   => 0,
-        "To-Bus Power"     => 0,
-        "Shunt Power"      => 0,
-        "Series Power"     => 0,
-        "From-Bus Current" => 0,
-        "To-Bus Current"   => 0,
-        "Series Current"   => 0,
-    )
     _show = OrderedDict(
         "From-Bus Power"   => true,
         "To-Bus Power"     => true,
@@ -677,9 +492,10 @@ function formatBranchData(system::PowerSystem, analysis::AC, label::L, scale::Di
         "To-Bus Current"   => true,
         "Series Current"   => true,
     )
+    _fmt, _width = fmtwidth(_show)
     _fmt, _width, _show = printFormat(_fmt, fmt, _width, width, _show, show, style)
 
-    subheader = Dict(
+    subheading = Dict(
         "Label"                      => _header_("", "Label", style),
         "From-Bus Power Active"      => _header_("Active", "From-Bus Active Power", style),
         "From-Bus Power Reactive"    => _header_("Reactive", "From-Bus Reactive Power", style),
@@ -832,74 +648,41 @@ function formatBranchData(system::PowerSystem, analysis::AC, label::L, scale::Di
             fminmax(fmt, width, show, current.to.angle, scale["ψ"], "To-Bus Current Angle")
             fminmax(fmt, width, show, current.series.angle, scale["ψ"], "Series Current Angle")
         end
-
-        titlemax(width, show, "From-Bus Power", "From-Bus Power Active", "From-Bus Power Reactive")
-        titlemax(width, show, "To-Bus Power", "To-Bus Power Active", "To-Bus Power Reactive")
-        titlemax(width, show, "Shunt Power", "Shunt Power Active", "Shunt Power Reactive")
-        titlemax(width, show, "Series Power", "Series Power Active", "Series Power Reactive")
-        titlemax(width, show, "From-Bus Current", "From-Bus Current Magnitude", "From-Bus Current Angle")
-        titlemax(width, show, "To-Bus Current", "To-Bus Current Magnitude", "To-Bus Current Angle")
-        titlemax(width, show, "Series Current", "Series Current Magnitude", "Series Current Angle")
     end
 
-    printing = howManyPrint(width, show, style, "Branch Data")
+    printing = howManyPrint(width, show, style, title, "Branch Data")
 
-    return fmt, width, show, subheader, unit, printing
+    heading = OrderedDict(
+        "Label"            => _blank_(width, show, "Label"),
+        "From-Bus Power"   => _blank_(width, show, style, "From-Bus Power", "From-Bus Power Active", "From-Bus Power Reactive"),
+        "To-Bus Power"     => _blank_(width, show, style, "To-Bus Power", "To-Bus Power Active", "To-Bus Power Reactive"),
+        "Shunt Power"      => _blank_(width, show, style, "Shunt Power", "Shunt Power Active", "Shunt Power Reactive"),
+        "Series Power"     => _blank_(width, show, style, "Series Power", "Series Power Active", "Series Power Reactive"),
+        "From-Bus Current" => _blank_(width, show, style, "From-Bus Current", "From-Bus Current Magnitude", "From-Bus Current Angle"),
+        "To-Bus Current"   => _blank_(width, show, style, "To-Bus Current", "To-Bus Current Magnitude", "To-Bus Current Angle"),
+        "Series Current"   => _blank_(width, show, style, "Series Current", "Series Current Magnitude", "Series Current Angle"),
+        "Status"           => _blank_(width, show, "Status")
+    )
+
+    return fmt, width, show, heading, subheading, unit, printing
 end
 
 function printBranchData(system::PowerSystem, analysis::DC, io::IO = stdout; label::L = missing,
-    header::B = missing, footer::B = missing, delimiter::String = "|", fmt::Dict{String, String} = Dict{String, String}(),
-    width::Dict{String, Int64} = Dict{String, Int64}(), show::Dict{String, Bool} = Dict{String, Bool}(), style::Bool = true)
+    fmt::Dict{String, String} = Dict{String, String}(), width::Dict{String, Int64} = Dict{String, Int64}(),
+    show::Dict{String, Bool} = Dict{String, Bool}(), delimiter::String = "|", style::Bool = true,
+    title::B = missing, header::B = missing, footer::B = missing, repeat::Int64 = system.branch.number + 1)
 
     scale = printScale(system, prefix)
-    fmt, width, show, subheader, unit, printing = formatBranchData(system, analysis, label, scale, fmt, width, show, style)
+    labels, title, header, footer = formPrint(label, system.branch, system.branch.label, title, header, footer, "branch")
+    fmt, width, show, heading, subheading, unit, printing = formatBranchData(system, analysis, label, scale, fmt, width, show, style, title)
 
     if printing
-        maxLine, pfmt, hfmt = setupPrintSystem(fmt, width, show, delimiter, style)
-        labels, header, footer = toggleLabelHeader(label, system.branch, system.branch.label, header, footer, "branch")
+        maxLine, pfmt, hfmt = setupPrint(fmt, width, show, delimiter, style)
 
-        if header
-            if style
-                printTitle(io, maxLine, delimiter, "Branch Data")
-
-                print(io, delimiter)
-                widthLab = printf(io, width, show, delimiter, "Label", "Label")
-                widthFbp = printf(io, width, show, delimiter, "From-Bus Power", "From-Bus Power Active")
-                widthTbp = printf(io, width, show, delimiter, "To-Bus Power", "To-Bus Power Active")
-                widthSts = printf(io, width, show, delimiter, "Status", "Status")
-                @printf io "\n"
-
-                print(io, delimiter)
-                printf(io, hfmt["Empty"], widthLab)
-                printf(io, hfmt["Empty"], widthFbp)
-                printf(io, hfmt["Empty"], widthTbp)
-                printf(io, hfmt["Empty"], widthSts)
-                @printf io "\n"
-            end
-
-            printf(io, hfmt, width, show, subheader, "Label")
-            printf(io, hfmt, width, show, subheader, "From-Bus Power Active")
-            printf(io, hfmt, width, show, subheader, "To-Bus Power Active")
-            printf(io, hfmt, width, show, subheader, "Status")
-            @printf io "\n"
-
-            printf(io, hfmt, width, show, unit, "Label")
-            printf(io, hfmt, width, show, unit, "From-Bus Power Active")
-            printf(io, hfmt, width, show, unit, "To-Bus Power Active")
-            printf(io, hfmt, width, show, unit, "Status")
-            @printf io "\n"
-
-            if style
-                print(io, delimiter)
-                printf(io, hfmt["Break"], width, show, "Label")
-                printf(io, hfmt["Break"], width, show, "From-Bus Power Active")
-                printf(io, hfmt["Break"], width, show, "To-Bus Power Active")
-                printf(io, hfmt["Break"], width, show, "Status")
-                @printf io "\n"
-            end
-        end
-
+        printTitle(io, maxLine, delimiter, title, header, style, "Branch Data")
         @inbounds for (label, i) in labels
+            printing = printHeader(io, hfmt, width, show, heading, subheading, unit, delimiter, header, style, repeat, printing, maxLine, i)
+
             printf(io, pfmt, show, width, label, "Label")
 
             printf(io, pfmt, show, width, analysis.power.from.active, i, scale["P"], "From-Bus Power Active")
@@ -909,30 +692,23 @@ function printBranchData(system::PowerSystem, analysis::DC, io::IO = stdout; lab
 
             @printf io "\n"
         end
-        printf(io, delimiter, footer, style, maxLine)
+        printf(io, delimiter, maxLine, style, footer)
     end
 end
 
 function formatBranchData(system::PowerSystem, analysis::DC, label::L, scale::Dict{String, Float64},
-    fmt::Dict{String, String}, width::Dict{String, Int64}, show::Dict{String, Bool}, style::Bool)
+    fmt::Dict{String, String}, width::Dict{String, Int64}, show::Dict{String, Bool}, style::Bool, title::Bool)
 
     power = analysis.power
 
-    _fmt = Dict(
-        "From-Bus Power" => "",
-        "To-Bus Power"   => ""
-    )
-    _width = Dict(
-        "From-Bus Power" => 0,
-        "To-Bus Power"   => 0
-    )
     _show = OrderedDict(
         "From-Bus Power" => true,
         "To-Bus Power"   => true
     )
+    _fmt, _width = fmtwidth(_show)
     _fmt, _width, _show = printFormat(_fmt, fmt, _width, width, _show, show, style)
 
-    subheader = Dict(
+    subheading = Dict(
         "Label"                 => _header_("", "Label", style),
         "From-Bus Power Active" => _header_("Active", "From-Bus Active Power", style),
         "To-Bus Power Active"   => _header_("Active", "To-Bus Active Power", style),
@@ -982,14 +758,21 @@ function formatBranchData(system::PowerSystem, analysis::DC, label::L, scale::Di
         end
     end
 
-    printing = howManyPrint(width, show, style, "Branch Data")
+    printing = howManyPrint(width, show, style, title, "Branch Data")
 
-    return fmt, width, show, subheader, unit, printing
+    heading = OrderedDict(
+        "Label"          => _blank_(width, show, "Label"),
+        "From-Bus Power" => _blank_(width, show, "From-Bus Power Active"),
+        "To-Bus Power"   => _blank_(width, show, "To-Bus Power Active"),
+        "Status"         => _blank_(width, show, "Status")
+    )
+
+    return fmt, width, show, heading, subheading, unit, printing
 end
 
 """
     printGeneratorData(system::PowerSystem, analysis::Analysis, [io::IO];
-        label, header, footer, delimiter, fmt, width, show, style)
+        label, fmt, width, show, delimiter, title, header, footer, repeat, style)
 
 The function prints powers related to generators. Optionally, an `IO` may be passed as the
 last argument to redirect the output.
@@ -997,12 +780,14 @@ last argument to redirect the output.
 # Keywords
 The following keywords control the printed data:
 * `label`: Prints only the data for the corresponding generator.
-* `header`: Toggles the printing of the header.
-* `footer`: Toggles the printing of the footer.
-* `delimiter`: Sets the column delimiter.
 * `fmt`: Specifies the preferred numeric formats or alignments for the columns.
 * `width`: Specifies the preferred widths for the columns.
 * `show`: Toggles the printing of the columns.
+* `delimiter`: Sets the column delimiter.
+* `title`: Toggles the printing of the table title.
+* `header`: Toggles the printing of the header.
+* `footer`: Toggles the printing of the footer.
+* `repeat`: Prints the header again after a specified number of lines have been printed.
 * `style`: Prints either a stylish table or a simple table suitable for easy export.
 
 !!! compat "Julia 1.10"
@@ -1025,7 +810,7 @@ power!(system, analysis)
 # Print data for all generators
 fmt = Dict("Power Output Active" => "%.2f")
 show = Dict("Power Output Reactive" => false)
-printGeneratorData(system, analysis; fmt, show)
+printGeneratorData(system, analysis; fmt, show, title = false)
 
 # Print data for specific generators
 delimiter = " "
@@ -1036,81 +821,43 @@ printGeneratorData(system, analysis; label = 5, delimiter, width, footer = true)
 ```
 """
 function printGeneratorData(system::PowerSystem, analysis::AC, io::IO = stdout; label::L = missing,
-    header::B = missing, footer::B = missing, delimiter::String = "|", fmt::Dict{String, String} = Dict{String, String}(),
-    width::Dict{String, Int64} = Dict{String, Int64}(), show::Dict{String, Bool} = Dict{String, Bool}(), style::Bool = true)
+    fmt::Dict{String, String} = Dict{String, String}(), width::Dict{String, Int64} = Dict{String, Int64}(),
+    show::Dict{String, Bool} = Dict{String, Bool}(), delimiter::String = "|", style::Bool = true,
+    title::B = missing, header::B = missing, footer::B = missing, repeat::Int64 = system.generator.number + 1)
 
     scale = printScale(system, prefix)
-    fmt, width, show, subheader, unit, printing = formatGeneratorData(system, analysis, label, scale, fmt, width, show, style)
+    labels, title, header, footer = formPrint(label, system.generator, system.generator.label, title, header, footer, "generator")
+    fmt, width, show, heading, subheading, unit, printing = formatGeneratorData(system, analysis, label, scale, fmt, width, show, style, title)
 
     if printing
-            maxLine, pfmt, hfmt = setupPrintSystem(fmt, width, show, delimiter, style)
-        labels, header, footer = toggleLabelHeader(label, system.generator, system.generator.label, header, footer, "generator")
+        maxLine, pfmt, hfmt = setupPrint(fmt, width, show, delimiter, style)
 
-        if header
-            if style
-                printTitle(io, maxLine, delimiter, "Generator Data")
-
-                print(io, delimiter)
-                widthLab = printf(io, width, show, delimiter, "Label", "Label")
-                widthOut = printf(io, width, show, delimiter, "Power Output", "Power Output Active", "Power Output Reactive")
-                widthSts = printf(io, width, show, delimiter, "Status", "Status")
-                @printf io "\n"
-
-                print(io, delimiter)
-                printf(io, hfmt["Empty"], widthLab)
-                printf(io, hfmt["Empty"], widthOut)
-                printf(io, hfmt["Empty"], widthSts)
-                @printf io "\n"
-            end
-
-            printf(io, hfmt, width, show, subheader, "Label")
-            printf(io, hfmt, width, show, subheader, "Power Output Active", "Power Output Reactive")
-            printf(io, hfmt, width, show, subheader, "Status")
-            @printf io "\n"
-
-            printf(io, hfmt, width, show, unit, "Label")
-            printf(io, hfmt, width, show, unit, "Power Output Active", "Power Output Reactive")
-            printf(io, hfmt, width, show, unit, "Status")
-            @printf io "\n"
-
-            if style
-                print(io, delimiter)
-                printf(io, hfmt["Break"], width, show, "Label")
-                printf(io, hfmt["Break"], width, show, "Power Output Active", "Power Output Reactive")
-                printf(io, hfmt["Break"], width, show, "Status")
-                @printf io "\n"
-            end
-        end
-
+        printTitle(io, maxLine, delimiter, title, header, style, "Generator Data")
         @inbounds for (label, i) in labels
+            printing = printHeader(io, hfmt, width, show, heading, subheading, unit, delimiter, header, style, repeat, printing, maxLine, i)
+
             printf(io, pfmt, show, width, label, "Label")
+
             printf(io, pfmt, show, width, analysis.power.generator.active, i, scale["P"], "Power Output Active")
             printf(io, pfmt, show, width, analysis.power.generator.reactive, i, scale["Q"], "Power Output Reactive")
             printf(io, pfmt, show, width, system.branch.layout.status, i, "Status")
+
             @printf io "\n"
         end
-
-        printf(io, delimiter, footer, style, maxLine)
+        printf(io, delimiter, maxLine, style, footer)
     end
 end
 
 function formatGeneratorData(system::PowerSystem, analysis::AC, label::L, scale::Dict{String, Float64},
-    fmt::Dict{String, String}, width::Dict{String, Int64}, show::Dict{String,Bool}, style::Bool)
+    fmt::Dict{String, String}, width::Dict{String, Int64}, show::Dict{String,Bool}, style::Bool, title::Bool)
 
     power = analysis.power
 
-    _fmt = Dict(
-        "Power Output" => ""
-    )
-    _width = Dict(
-        "Power Output" => 0
-    )
-    _show = OrderedDict(
-        "Power Output" => true
-    )
+    _show = OrderedDict("Power Output" => true)
+    _fmt, _width = fmtwidth(_show)
     _fmt, _width, _show = printFormat(_fmt, fmt, _width, width, _show, show, style)
 
-    subheader = Dict(
+    subheading = Dict(
         "Label"                 => _header_("", "Label", style),
         "Power Output Active"   => _header_("Active", "Active Power Output", style),
         "Power Output Reactive" => _header_("Reactive", "Reactive Power Output", style),
@@ -1158,89 +905,56 @@ function formatGeneratorData(system::PowerSystem, analysis::AC, label::L, scale:
                 width["Label"] = max(textwidth(label), width["Label"])
             end
         end
-        titlemax(width, show, "Power Output", "Power Output Active", "Power Output Reactive")
     end
 
-    printing = howManyPrint(width, show, style, "Generator Data")
+    printing = howManyPrint(width, show, style, title, "Generator Data")
 
-    return fmt, width, show, subheader, unit, printing
+    heading = OrderedDict(
+        "Label"        => _blank_(width, show, "Label"),
+        "Power Output" => _blank_(width, show, style, "Power Output", "Power Output Active", "Power Output Reactive"),
+        "Status"       => _blank_(width, show, "Status")
+    )
+
+    return fmt, width, show, heading, subheading, unit, printing
 end
 
 function printGeneratorData(system::PowerSystem, analysis::DC, io::IO = stdout; label::L = missing,
-    header::B = missing, footer::B = missing, delimiter::String = "|", fmt::Dict{String, String} = Dict{String, String}(),
-    width::Dict{String, Int64} = Dict{String, Int64}(), show::Dict{String, Bool} = Dict{String, Bool}(), style::Bool = true)
+    fmt::Dict{String, String} = Dict{String, String}(), width::Dict{String, Int64} = Dict{String, Int64}(),
+    show::Dict{String, Bool} = Dict{String, Bool}(), delimiter::String = "|", style::Bool = true,
+    title::B = missing, header::B = missing, footer::B = missing, repeat::Int64 = system.generator.number + 1)
 
     scale = printScale(system, prefix)
-    fmt, width, show, subheader, unit, printing = formatGeneratorData(system, analysis, label, scale, fmt, width, show, style)
+    labels, header, title, footer = formPrint(label, system.generator, system.generator.label, title, header, footer, "generator")
+    fmt, width, show, heading, subheading, unit, printing = formatGeneratorData(system, analysis, label, scale, fmt, width, show, style, title)
 
     if printing
-        maxLine, pfmt, hfmt = setupPrintSystem(fmt, width, show, delimiter, style)
-        labels, header, footer = toggleLabelHeader(label, system.generator, system.generator.label, header, footer, "generator")
+        maxLine, pfmt, hfmt = setupPrint(fmt, width, show, delimiter, style)
 
-        if header
-            if style
-                printTitle(io, maxLine, delimiter, "Generator Data")
-
-                print(io, delimiter)
-                widthLab = printf(io, width, show, delimiter, "Label", "Label")
-                widthOut = printf(io, width, show, delimiter, "Power Output", "Power Output Active")
-                widthSts = printf(io, width, show, delimiter, "Status", "Status")
-                @printf io "\n"
-
-                print(io, delimiter)
-                printf(io, hfmt["Empty"], widthLab)
-                printf(io, hfmt["Empty"], widthOut)
-                printf(io, hfmt["Empty"], widthSts)
-                @printf io "\n"
-            end
-
-            printf(io, hfmt, width, show, subheader, "Label")
-            printf(io, hfmt, width, show, subheader, "Power Output Active")
-            printf(io, hfmt, width, show, subheader, "Status")
-            @printf io "\n"
-
-            printf(io, hfmt, width, show, unit, "Label")
-            printf(io, hfmt, width, show, unit, "Power Output Active")
-            printf(io, hfmt, width, show, unit, "Status")
-            @printf io "\n"
-
-            if style
-                print(io, delimiter)
-                printf(io, hfmt["Break"], width, show, "Label")
-                printf(io, hfmt["Break"], width, show, "Power Output Active")
-                printf(io, hfmt["Break"], width, show, "Status")
-                @printf io "\n"
-            end
-        end
-
+        printTitle(io, maxLine, delimiter, title, header, style, "Generator Data")
         @inbounds for (label, i) in labels
+            printing = printHeader(io, hfmt, width, show, heading, subheading, unit, delimiter, header, style, repeat, printing, maxLine, i)
+
             printf(io, pfmt, show, width, label, "Label")
+
             printf(io, pfmt, show, width, analysis.power.generator.active, i, scale["P"], "Power Output Active")
             printf(io, pfmt, show, width, system.branch.layout.status, i, "Status")
+
             @printf io "\n"
         end
-
-        printf(io, delimiter, footer, style, maxLine)
+        printf(io, delimiter, maxLine, style, footer)
     end
 end
 
 function formatGeneratorData(system::PowerSystem, analysis::DC, label::L, scale::Dict{String, Float64},
-    fmt::Dict{String, String}, width::Dict{String, Int64}, show::Dict{String, Bool}, style::Bool)
+    fmt::Dict{String, String}, width::Dict{String, Int64}, show::Dict{String, Bool}, style::Bool, title::Bool)
 
     power = analysis.power
 
-    _fmt = Dict(
-        "Power Output" => ""
-    )
-    _width = Dict(
-        "Power Output" => 0
-    )
-    _show = OrderedDict(
-        "Power Output" => true
-    )
+    _show = OrderedDict("Power Output" => true)
+    _fmt, _width = fmtwidth(_show)
     _fmt, _width, _show = printFormat(_fmt, fmt, _width, width, _show, show, style)
 
-    subheader = Dict(
+    subheading = Dict(
         "Label"               => _header_("", "Label", style),
         "Power Output Active" => _header_("Active", "Active Power Output", style),
         "Status"              => _header_("", "Status", style),
@@ -1283,9 +997,15 @@ function formatGeneratorData(system::PowerSystem, analysis::DC, label::L, scale:
         end
     end
 
-    printing = howManyPrint(width, show, style, "Generator Data")
+    printing = howManyPrint(width, show, style, title, "Generator Data")
 
-    return fmt, width, show, subheader, unit, printing
+    heading = OrderedDict(
+        "Label"        => _blank_(width, show, "Label"),
+        "Power Output" => _blank_(width, show, "Power Output Active"),
+        "Status"       => _blank_(width, show, "Status")
+    )
+
+    return fmt, width, show, heading, subheading, unit, printing
 end
 
 """

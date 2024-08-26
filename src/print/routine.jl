@@ -155,10 +155,14 @@ function summaryBlock(io::IO, data1::SummaryData, unitLive::String, span::Array{
     end
 end
 
-function printTitle(io::IO, maxLine::Int64, delimiter::String, title::String)
-    print(io, format(Format("$delimiter%s$delimiter\n"), "-"^maxLine))
-    print(io, format(Format("$delimiter %s%*s$delimiter\n"), title, maxLine - textwidth(title) - 1, ""))
-    print(io, format(Format("$delimiter%s$delimiter\n"), "-"^maxLine))
+function printTitle(io::IO, maxLine::Int64, delimiter::String, title::Bool, header::Bool, style::Bool, caption::String)
+    if style && title
+        print(io, format(Format("$delimiter%s$delimiter\n"), "-"^maxLine))
+        print(io, format(Format("$delimiter %s%*s$delimiter\n"), caption, maxLine - textwidth(caption) - 1, ""))
+        if !header
+            print(io, format(Format("$delimiter%s$delimiter\n"), "-"^maxLine))
+        end
+    end
 end
 
 function printScale(system::PowerSystem, prefix::PrefixLive)
@@ -182,11 +186,14 @@ function printUnitSummary(unitList::UnitList)
     )
 end
 
-function toggleLabelHeader(label::L, container::Union{P,M}, labels::OrderedDict{String, Int64}, header::B, footer::B, component::String)
+function formPrint(label::L, container::Union{P,M}, labels::OrderedDict{String, Int64}, title::B, header::B, footer::B, component::String)
     if isset(label)
         dictIterator = Dict(getLabel(container, label, component) => labels[getLabel(container, label, component)])
         if !isset(header)
             header = false
+        end
+        if !isset(title)
+            title = false
         end
         if !isset(footer)
             footer = false
@@ -196,12 +203,15 @@ function toggleLabelHeader(label::L, container::Union{P,M}, labels::OrderedDict{
         if !isset(header)
             header = true
         end
+        if !isset(title)
+            title = true
+        end
         if !isset(footer)
             footer = true
         end
     end
 
-    return dictIterator, header, footer
+    return dictIterator, title, header, footer
 end
 
 function toggleLabel(label::L, container::Union{P,M}, labels::OrderedDict{String, Int64}, component::String)
@@ -322,6 +332,41 @@ function _header_(headerMain::String, headerStyle::String, style::Bool)
     return style ? headerMain : headerStyle
 end
 
+function _blank_(width::Dict{String, Int64}, show::OrderedDict{String, Bool}, keys::String...)
+    blankWidth = -3
+    for key in keys
+        if show[key]
+            blankWidth += width[key] + 3
+        end
+    end
+
+    return blankWidth
+end
+
+function _blank_(width::Dict{String, Int64}, show::OrderedDict{String, Bool}, style::Bool, heading::String, keys::String...)
+    if style
+        countTrue = 0
+        maxWidth = 0
+        for key in keys
+            if show[key]
+                countTrue += show[key]
+                maxWidth += width[key]
+            end
+        end
+
+        if maxWidth < textwidth(heading)
+            for key in keys
+                if show[key]
+                    width[key] = max(textwidth(heading) + width[key] - maxWidth - 3 * (countTrue - 1), width[key])
+                    break
+                end
+            end
+        end
+    end
+
+    return _blank_(width, show, keys...)
+end
+
 function fmtRegex(fmt::String)
     regexPattern = r"%([-]?)(\d*)\.?(\d+)?([a-zA-Z])"
     matchRresult = match(regexPattern, fmt)
@@ -342,7 +387,7 @@ function initMax(value::Float64)
     return maxvalue
 end
 
-function howManyPrint(width::Dict{String, Int64}, show::OrderedDict{String, Bool}, style::Bool, title::String)
+function howManyPrint(width::Dict{String, Int64}, show::OrderedDict{String, Bool}, style::Bool, title::Bool, heading::String)
     howMany = 0
     @inbounds for (key, value) in show
         if value
@@ -350,10 +395,10 @@ function howManyPrint(width::Dict{String, Int64}, show::OrderedDict{String, Bool
         end
     end
 
-    if style && howMany == 1
+    if style && title && howMany == 1
         @inbounds for (key, value) in show
             if value
-                width[key] = max(textwidth(title), width[key])
+                width[key] = max(textwidth(heading), width[key])
             end
         end
     end
@@ -361,7 +406,7 @@ function howManyPrint(width::Dict{String, Int64}, show::OrderedDict{String, Bool
     return howMany > 0
 end
 
-function setupPrintSystem(fmt::Dict{String, String}, width::Dict{String, Int64}, show::OrderedDict{String, Bool}, delimiter::String, style::Bool)
+function setupPrint(fmt::Dict{String, String}, width::Dict{String, Int64}, show::OrderedDict{String, Bool}, delimiter::String, style::Bool)
     pfmt = Dict{String, Format}()
     hfmt = Dict{String, Format}(
         "Empty" => Format(" %*s " * delimiter),
@@ -403,43 +448,6 @@ function setupPrintSystem(fmt::Dict{String, String}, width::Dict{String, Int64},
     return maxLine, pfmt, hfmt
 end
 
-function printf(io::IO, width::Dict{String, Int64}, show::OrderedDict{String, Bool}, delimiter::String, title::String, args::String...)
-    mainwidth = -3
-    for arg in args
-        if show[arg]
-            mainwidth += width[arg] + 3
-        end
-    end
-
-    if mainwidth >= 0
-        print(io, format(Format(" %*s%s%*s $delimiter"), floor(Int, (mainwidth - textwidth(title)) / 2), "", title, ceil(Int, (mainwidth - textwidth(title)) / 2) , ""))
-    end
-
-    return mainwidth
-end
-
-function printf(io::IO, fmt::Dict{String, Format}, width::Dict{String, Int64}, show::OrderedDict{String, Bool}, value::Dict{String, String}, args::String...)
-    for key in args
-        if show[key]
-            print(io, format(fmt[key], width[key], value[key]))
-        end
-    end
-end
-
-function printf(io::IO, fmt::Format, width::Dict{String, Int64}, show::OrderedDict{String, Bool}, args::String...)
-    for key in args
-        if show[key]
-            print(io, format(fmt, "-" ^ width[key]))
-        end
-    end
-end
-
-function printf(io::IO, fmt::Format, span::Int64)
-    if span >= 0
-        print(io, format(fmt, span, ""))
-    end
-end
-
 function printf(io::IO, fmt::Dict{String, Format}, show::OrderedDict{String, Bool}, width::Dict{String, Int64}, vector::Array{Float64,1}, i::Int64, scale::Float64, key::String)
     if show[key]
         print(io, format(fmt[key], width[key], vector[i] * scale))
@@ -458,15 +466,11 @@ function printf(io::IO, fmt::Dict{String, Format}, show::OrderedDict{String, Boo
     end
 end
 
-function printf(io::IO, fmt::Dict{String, Format}, show::OrderedDict{String, Bool}, width::Dict{String, Int64}, value::String, key::String)
-    if show[key]
-        print(io, format(fmt[key], width[key], value))
-    end
-end
-
-function printf(io::IO, delimiter::String, footer::Bool, style::Bool, maxLine::Int64)
-    if footer && style
-        print(io, format(Format(delimiter * "%s" * delimiter * "\n"), "-"^maxLine))
+function printf(io::IO, fmt::Dict{String, Format}, show::OrderedDict{String, Bool}, width::Dict{String, Int64}, value::String, keys::String...)
+    for key in keys
+        if show[key]
+            print(io, format(fmt[key], width[key], value))
+        end
     end
 end
 
@@ -485,26 +489,6 @@ end
 function printf(io::IO, fmt::Dict{String, Format}, show::OrderedDict{String, Bool}, width::Dict{String, Int64}, vector1::Array{Float64,1}, vector2::Array{Float64,1}, i::Int64, j::Int64, scale::Float64, key::String)
     if show[key]
         print(io, format(fmt[key], width[key], (vector1[i] - vector2[j]) * scale))
-    end
-end
-
-function titlemax(width::Dict{String, Int64}, show::OrderedDict{String, Bool}, title::String, keys::String...)
-    countTrue = 0
-    maxWidth = 0
-    for key in keys
-        if show[key]
-            countTrue += show[key]
-            maxWidth += width[key]
-        end
-    end
-
-    if maxWidth < textwidth(title)
-        for key in keys
-            if show[key]
-                width[key] = max(textwidth(title) + width[key] - maxWidth - 3 * (countTrue - 1), width[key])
-                break
-            end
-        end
     end
 end
 
@@ -536,4 +520,82 @@ function minmaxValue(show::OrderedDict{String, Bool}, vector::Array{Float64,1}, 
     end
 
     return minmavalue
+end
+
+function fmtwidth(show::OrderedDict{String, Bool})
+    fmt = Dict{String, String}()
+    width = Dict{String, Int64}()
+
+    @inbounds for key in keys(show)
+        fmt[key] = ""
+        width[key] = 0
+    end
+
+    return fmt, width
+end
+
+function printHeader(io::IO, hfmt::Dict{String, Format}, width::Dict{String, Int64}, show::OrderedDict{String, Bool},
+    heading::OrderedDict{String, Int64}, subheading::Dict{String, String}, unit::Dict{String, String}, delimiter::String,
+    header::Bool, style::Bool, repeat::Int64, printing::Bool, maxLine::Int64, lineNumber::Int64)
+
+    if (lineNumber - 1) % repeat == 0 || printing
+        if header
+            if style
+                printf(io, delimiter, maxLine, style, header)
+                printf(io, heading, delimiter)
+                printf(io, hfmt["Empty"], heading, delimiter)
+            end
+            printf(io, hfmt, width, show, delimiter, style, subheading, unit)
+            printing = false
+        end
+    end
+
+    return printing
+end
+
+function printf(io::IO, delimiter::String, maxLine::Int64, style::Bool, flag::Bool)
+    if flag && style
+        print(io, format(Format(delimiter * "%s" * delimiter * "\n"), "-"^maxLine))
+    end
+end
+
+function printf(io::IO, heading::OrderedDict{String, Int64}, delimiter::String)
+    print(io, delimiter)
+    for (title, width) in heading
+        if width >= 0
+            print(io, format(Format(" %*s%s%*s $delimiter"), floor(Int, (width - textwidth(title)) / 2), "", title, ceil(Int, (width - textwidth(title)) / 2) , ""))
+        end
+    end
+    @printf io "\n"
+end
+
+function printf(io::IO, fmt::Dict{String, Format}, width::Dict{String, Int64}, show::OrderedDict{String, Bool}, delimiter::String, style::Bool, dicts::Dict{String, String}...)
+    for data in dicts
+        for (key, value) in show
+            if value
+                print(io, format(fmt[key], width[key], data[key]))
+            end
+        end
+        @printf io "\n"
+    end
+
+    if style
+        print(io, delimiter)
+        for (key, value) in show
+            if value
+                print(io, format(fmt["Break"], "-" ^ width[key]))
+            end
+        end
+        @printf io "\n"
+    end
+end
+
+function printf(io::IO, fmt::Format, heading::OrderedDict{String, Int64}, delimiter::String)
+    print(io, delimiter)
+    for (key, width) in heading
+        if width >= 0
+            print(io, format(fmt, width, ""))
+        end
+    end
+    @printf io "\n"
 end
