@@ -1046,7 +1046,7 @@ for i = 1:10
 end
 power!(system, analysis)
 
-show = Dict("Quantity" => false)
+show = Dict("In-Use" => false)
 printBusSummary(system, analysis; show, delimiter = " ", title = false)
 ```
 """
@@ -1059,15 +1059,15 @@ function printBusSummary(system::PowerSystem, analysis::Union{AC, DC}, io::IO = 
 
     scale = printScale(system, prefix)
     fmt, width, show, subheading = formatSummary(fmt, width, show, style, title)
-    type, quantity, minLabel, minValue, maxLabel, maxValue, total, printing = formatBusSummary(system, analysis, scale, prefix, width, show, style, title)
+    type, inuse, minLabel, minValue, maxLabel, maxValue, total, printing = formatBusSummary(system, analysis, scale, prefix, width, show, style, title)
 
     if printing
-        heading = formatSummary(fmt, width, show, type, quantity, minLabel, minValue, maxLabel, maxValue, total, style)
+        heading = formatSummary(fmt, width, show, type, inuse, minLabel, minValue, maxLabel, maxValue, total, style)
         maxLine, pfmt, hfmt = setupPrint(fmt, width, show, delimiter, style)
 
         printTitle(io, maxLine, delimiter, title, header, style, "Bus Summary")
         printHeader(io, hfmt, width, show, heading, subheading, delimiter, header, style, maxLine)
-        printSummary(io, pfmt, hfmt, width, show, type, quantity, minLabel, minValue, maxLabel, maxValue, total, delimiter, maxLine, style, footer, lineBreak(analysis))
+        printSummary(io, pfmt, hfmt, width, show, type, inuse, minLabel, minValue, maxLabel, maxValue, total, delimiter, maxLine, style, footer, lineBreak(analysis))
     end
 end
 
@@ -1119,7 +1119,7 @@ function formatBusSummary(system::PowerSystem, analysis::AC, scale::Dict{String,
         "Shunt Power Active" => 0.0,
         "Shunt Power Reactive" => 0.0,
     )
-    quantity = Dict{String, Float64}(
+    inuse = Dict{String, Float64}(
         "Voltage"           => system.bus.number,
         "Power Generation"  => 0.0,
         "Power Demand"      => 0.0,
@@ -1134,13 +1134,13 @@ function formatBusSummary(system::PowerSystem, analysis::AC, scale::Dict{String,
         summaryData(minIndex, minValue, maxIndex, maxValue, voltage.angle[i] * scale["θ"], i, "Voltage Angle")
 
         if !isempty(system.bus.supply.generator[i]) && haskey(type, "Power Generation")
-            quantity["Power Generation"] += 1
+            inuse["Power Generation"] += 1
             summaryData(minIndex, minValue, maxIndex, maxValue, total, power.supply.active[i] * scale["P"], i, "Power Generation Active")
             summaryData(minIndex, minValue, maxIndex, maxValue, total, power.supply.reactive[i] * scale["Q"], i, "Power Generation Reactive")
         end
 
         if (system.bus.demand.active[i] != 0.0 || system.bus.demand.reactive[i] != 0.0) && haskey(type, "Power Demand")
-            quantity["Power Demand"] += 1
+            inuse["Power Demand"] += 1
             summaryData(minIndex, minValue, maxIndex, maxValue, total, system.bus.demand.active[i] * scale["P"], i, "Power Demand Active")
             summaryData(minIndex, minValue, maxIndex, maxValue, total, system.bus.demand.reactive[i] * scale["Q"], i, "Power Demand Reactive")
         end
@@ -1151,7 +1151,7 @@ function formatBusSummary(system::PowerSystem, analysis::AC, scale::Dict{String,
         end
 
         if (system.bus.shunt.conductance[i] != 0.0 || system.bus.shunt.susceptance[i] != 0.0) && haskey(type, "Shunt Power")
-            quantity["Shunt Power"] += 1
+            inuse["Shunt Power"] += 1
             summaryData(minIndex, minValue, maxIndex, maxValue, total, power.shunt.active[i] * scale["P"], i, "Shunt Power Active")
             summaryData(minIndex, minValue, maxIndex, maxValue, total, power.shunt.reactive[i] * scale["Q"], i, "Shunt Power Reactive")
         end
@@ -1160,12 +1160,12 @@ function formatBusSummary(system::PowerSystem, analysis::AC, scale::Dict{String,
             summaryData(minIndex, minValue, maxIndex, maxValue, current.injection.angle[i] * scale["ψ"], i, "Current Injection Angle")
         end
     end
-    summaryType(type, quantity)
+    summaryType(type, inuse)
     summaryLabel(system.bus.label, minIndex, minLabel, maxIndex, maxLabel)
 
     printing = howManyPrint(width, show, style, title, "Bus Summary")
 
-    return type, quantity, minLabel, minValue, maxLabel, maxValue, total, printing
+    return type, inuse, minLabel, minValue, maxLabel, maxValue, total, printing
 end
 
 function formatBusSummary(system::PowerSystem, analysis::DC, scale::Dict{String, Float64}, prefix::PrefixLive,
@@ -1196,7 +1196,7 @@ function formatBusSummary(system::PowerSystem, analysis::DC, scale::Dict{String,
         "Power Demand Active" => 0.0,
         "Power Injection Active" => 0.0,
     )
-    quantity = Dict{String, Float64}(
+    inuse = Dict{String, Float64}(
         "Voltage"           => system.bus.number,
         "Power Generation"  => 0.0,
         "Power Demand"      => 0.0,
@@ -1208,12 +1208,12 @@ function formatBusSummary(system::PowerSystem, analysis::DC, scale::Dict{String,
         summaryData(minIndex, minValue, maxIndex, maxValue, voltage.angle[i] * scale["θ"], i, "Voltage Angle")
 
         if !isempty(system.bus.supply.generator[i]) && haskey(type, "Power Generation")
-            quantity["Power Generation"] += 1
+            inuse["Power Generation"] += 1
             summaryData(minIndex, minValue, maxIndex, maxValue, total, power.supply.active[i] * scale["P"], i, "Power Generation Active")
         end
 
         if (system.bus.demand.active[i] != 0.0 || system.bus.demand.reactive[i] != 0.0) && haskey(type, "Power Demand")
-            quantity["Power Demand"] += 1
+            inuse["Power Demand"] += 1
             summaryData(minIndex, minValue, maxIndex, maxValue, total, system.bus.demand.active[i] * scale["P"], i, "Power Demand Active")
         end
 
@@ -1221,12 +1221,12 @@ function formatBusSummary(system::PowerSystem, analysis::DC, scale::Dict{String,
             summaryData(minIndex, minValue, maxIndex, maxValue, total, power.injection.active[i] * scale["P"], i, "Power Injection Active")
         end
     end
-    summaryType(type, quantity)
+    summaryType(type, inuse)
     summaryLabel(system.bus.label, minIndex, minLabel, maxIndex, maxLabel)
 
     printing = howManyPrint(width, show, style, title, "Bus Summary")
 
-    return type, quantity, minLabel, minValue, maxLabel, maxValue, total, printing
+    return type, inuse, minLabel, minValue, maxLabel, maxValue, total, printing
 end
 
 """
@@ -1277,15 +1277,15 @@ function printBranchSummary(system::PowerSystem, analysis::Union{AC, DC}, io::IO
 
     scale = printScale(system, prefix)
     fmt, width, show, subheading = formatSummary(fmt, width, show, style, title)
-    type, quantity, minLabel, minValue, maxLabel, maxValue, total, printing = formatBranchSummary(system, analysis, scale, prefix, width, show, style, title)
+    type, inuse, minLabel, minValue, maxLabel, maxValue, total, printing = formatBranchSummary(system, analysis, scale, prefix, width, show, style, title)
 
     if printing && !isempty(type)
-        heading = formatSummary(fmt, width, show, type, quantity, minLabel, minValue, maxLabel, maxValue, total, style)
+        heading = formatSummary(fmt, width, show, type, inuse, minLabel, minValue, maxLabel, maxValue, total, style)
         maxLine, pfmt, hfmt = setupPrint(fmt, width, show, delimiter, style)
 
         printTitle(io, maxLine, delimiter, title, header, style, "Branch Summary")
         printHeader(io, hfmt, width, show, heading, subheading, delimiter, header, style, maxLine)
-        printSummary(io, pfmt, hfmt, width, show, type, quantity, minLabel, minValue, maxLabel, maxValue, total, delimiter, maxLine, style, footer, lineBreak(analysis))
+        printSummary(io, pfmt, hfmt, width, show, type, inuse, minLabel, minValue, maxLabel, maxValue, total, delimiter, maxLine, style, footer, lineBreak(analysis))
     end
 end
 
@@ -1349,7 +1349,7 @@ function formatBranchSummary(system::PowerSystem, analysis::AC, scale::Dict{Stri
         "Series Power Active" => 0.0,
         "Series Power Reactive" => 0.0
     )
-    quantity = Dict{String, Float64}(
+    inuse = Dict{String, Float64}(
         "Line From-Bus Power Flow Magnitude" => 0,
         "Transformer From-Bus Power Flow Magnitude" => 0,
         "Line To-Bus Power Flow Magnitude" => 0,
@@ -1365,11 +1365,11 @@ function formatBranchSummary(system::PowerSystem, analysis::AC, scale::Dict{Stri
         if system.branch.layout.status[i] == 1
             if haskey(type, "Line From-Bus Power Flow Magnitude")
                 if branch.parameter.turnsRatio[i] == 1 && branch.parameter.shiftAngle[i] == 0
-                    quantity["Line From-Bus Power Flow Magnitude"] += 1
+                    inuse["Line From-Bus Power Flow Magnitude"] += 1
                     summaryData(minIndex, minValue, maxIndex, maxValue, abs(power.from.active[i]) * scale["P"], i, "Line From-Bus Power Flow Magnitude Active")
                     summaryData(minIndex, minValue, maxIndex, maxValue, abs(power.from.reactive[i]) * scale["Q"], i, "Line From-Bus Power Flow Magnitude Reactive")
                 else
-                    quantity["Transformer From-Bus Power Flow Magnitude"] += 1
+                    inuse["Transformer From-Bus Power Flow Magnitude"] += 1
                     summaryData(minIndex, minValue, maxIndex, maxValue, abs(power.from.active[i]) * scale["P"], i, "Transformer From-Bus Power Flow Magnitude Active")
                     summaryData(minIndex, minValue, maxIndex, maxValue, abs(power.from.reactive[i]) * scale["Q"], i, "Transformer From-Bus Power Flow Magnitude Reactive")
                 end
@@ -1377,18 +1377,18 @@ function formatBranchSummary(system::PowerSystem, analysis::AC, scale::Dict{Stri
 
             if haskey(type, "Line To-Bus Power Flow Magnitude")
                 if branch.parameter.turnsRatio[i] == 1 && branch.parameter.shiftAngle[i] == 0
-                    quantity["Line To-Bus Power Flow Magnitude"] += 1
+                    inuse["Line To-Bus Power Flow Magnitude"] += 1
                     summaryData(minIndex, minValue, maxIndex, maxValue, abs(power.to.active[i]) * scale["P"], i, "Line To-Bus Power Flow Magnitude Active")
                     summaryData(minIndex, minValue, maxIndex, maxValue, abs(power.to.reactive[i]) * scale["Q"], i, "Line To-Bus Power Flow Magnitude Reactive")
                 else
-                    quantity["Transformer To-Bus Power Flow Magnitude"] += 1
+                    inuse["Transformer To-Bus Power Flow Magnitude"] += 1
                     summaryData(minIndex, minValue, maxIndex, maxValue, abs(power.to.active[i]) * scale["P"], i, "Transformer To-Bus Power Flow Magnitude Active")
                     summaryData(minIndex, minValue, maxIndex, maxValue, abs(power.to.reactive[i]) * scale["Q"], i, "Transformer To-Bus Power Flow Magnitude Reactive")
                 end
             end
 
             if (system.branch.parameter.conductance[i] != 0.0 || system.branch.parameter.susceptance[i] != 0.0) && haskey(type, "Shunt Power")
-                quantity["Shunt Power"] += 1
+                inuse["Shunt Power"] += 1
                 summaryData(minIndex, minValue, maxIndex, maxValue, total, power.charging.active[i] * scale["P"], i, "Shunt Power Active")
                 summaryData(minIndex, minValue, maxIndex, maxValue, total, power.charging.reactive[i] * scale["Q"], i, "Shunt Power Reactive")
             end
@@ -1414,12 +1414,12 @@ function formatBranchSummary(system::PowerSystem, analysis::AC, scale::Dict{Stri
             end
         end
     end
-    summaryType(type, quantity)
+    summaryType(type, inuse)
     summaryLabel(system.branch.label, minIndex, minLabel, maxIndex, maxLabel)
 
     printing = howManyPrint(width, show, style, title, "Branch Summary")
 
-    return type, quantity, minLabel, minValue, maxLabel, maxValue, total, printing
+    return type, inuse, minLabel, minValue, maxLabel, maxValue, total, printing
 end
 
 function formatBranchSummary(system::PowerSystem, analysis::DC, scale::Dict{String, Float64}, prefix::PrefixLive,
@@ -1440,7 +1440,7 @@ function formatBranchSummary(system::PowerSystem, analysis::DC, scale::Dict{Stri
     end
 
     total = Dict{String, Float64}()
-    quantity = Dict{String, Float64}(
+    inuse = Dict{String, Float64}(
         "Line Power Flow Magnitude" => 0,
         "Transformer Power Flow Magnitude" => 0,
     )
@@ -1450,21 +1450,21 @@ function formatBranchSummary(system::PowerSystem, analysis::DC, scale::Dict{Stri
         if system.branch.layout.status[i] == 1
             if haskey(type, "Line Power Flow Magnitude")
                 if branch.parameter.turnsRatio[i] == 1 && branch.parameter.shiftAngle[i] == 0
-                    quantity["Line Power Flow Magnitude"] += 1
+                    inuse["Line Power Flow Magnitude"] += 1
                     summaryData(minIndex, minValue, maxIndex, maxValue, abs(power.from.active[i]) * scale["P"], i, "Line Power Flow Magnitude Active")
                 else
-                    quantity["Transformer Power Flow Magnitude"] += 1
+                    inuse["Transformer Power Flow Magnitude"] += 1
                     summaryData(minIndex, minValue, maxIndex, maxValue, abs(power.from.active[i]) * scale["P"], i, "Transformer Power Flow Magnitude Active")
                 end
             end
         end
     end
-    summaryType(type, quantity)
+    summaryType(type, inuse)
     summaryLabel(system.branch.label, minIndex, minLabel, maxIndex, maxLabel)
 
     printing = howManyPrint(width, show, style, title, "Branch Summary")
 
-    return type, quantity, minLabel, minValue, maxLabel, maxValue, total, printing
+    return type, inuse, minLabel, minValue, maxLabel, maxValue, total, printing
 end
 
 """
@@ -1515,15 +1515,15 @@ function printGeneratorSummary(system::PowerSystem, analysis::Union{AC, DC}, io:
 
     scale = printScale(system, prefix)
     fmt, width, show, subheading = formatSummary(fmt, width, show, style, title)
-    type, quantity, minLabel, minValue, maxLabel, maxValue, total, printing = formatGeneratorSummary(system, analysis, scale, prefix, width, show, style, title)
+    type, inuse, minLabel, minValue, maxLabel, maxValue, total, printing = formatGeneratorSummary(system, analysis, scale, prefix, width, show, style, title)
 
     if printing && !isempty(type)
-        heading = formatSummary(fmt, width, show, type, quantity, minLabel, minValue, maxLabel, maxValue, total, style)
+        heading = formatSummary(fmt, width, show, type, inuse, minLabel, minValue, maxLabel, maxValue, total, style)
         maxLine, pfmt, hfmt = setupPrint(fmt, width, show, delimiter, style)
 
         printTitle(io, maxLine, delimiter, title, header, style, "Generator Summary")
         printHeader(io, hfmt, width, show, heading, subheading, delimiter, header, style, maxLine)
-        printSummary(io, pfmt, hfmt, width, show, type, quantity, minLabel, minValue, maxLabel, maxValue, total, delimiter, maxLine, style, footer, lineBreak(analysis))
+        printSummary(io, pfmt, hfmt, width, show, type, inuse, minLabel, minValue, maxLabel, maxValue, total, delimiter, maxLine, style, footer, lineBreak(analysis))
     end
 end
 
@@ -1542,7 +1542,7 @@ function formatGeneratorSummary(system::PowerSystem, analysis::AC, scale::Dict{S
         "Power Output Active" => 0.0,
         "Power Output Reactive" => 0.0,
     )
-    quantity = Dict{String, Float64}(
+    inuse = Dict{String, Float64}(
         "Power Output" => system.generator.layout.inservice,
     )
     minIndex, minLabel, minValue, maxIndex, maxLabel, maxValue = summaryDict(type)
@@ -1555,12 +1555,12 @@ function formatGeneratorSummary(system::PowerSystem, analysis::AC, scale::Dict{S
             end
         end
     end
-    summaryType(type, quantity)
+    summaryType(type, inuse)
     summaryLabel(system.branch.label, minIndex, minLabel, maxIndex, maxLabel)
 
     printing = howManyPrint(width, show, style, title, "Generator Summary")
 
-    return type, quantity, minLabel, minValue, maxLabel, maxValue, total, printing
+    return type, inuse, minLabel, minValue, maxLabel, maxValue, total, printing
 end
 
 function formatGeneratorSummary(system::PowerSystem, analysis::DC, scale::Dict{String, Float64}, prefix::PrefixLive,
@@ -1576,7 +1576,7 @@ function formatGeneratorSummary(system::PowerSystem, analysis::DC, scale::Dict{S
     total = Dict{String, Float64}(
         "Power Output Active" => 0.0,
     )
-    quantity = Dict{String, Float64}(
+    inuse = Dict{String, Float64}(
         "Power Output" => system.generator.layout.inservice,
     )
     minIndex, minLabel, minValue, maxIndex, maxLabel, maxValue = summaryDict(type)
@@ -1588,12 +1588,12 @@ function formatGeneratorSummary(system::PowerSystem, analysis::DC, scale::Dict{S
             end
         end
     end
-    summaryType(type, quantity)
+    summaryType(type, inuse)
     summaryLabel(system.branch.label, minIndex, minLabel, maxIndex, maxLabel)
 
     printing = howManyPrint(width, show, style, title, "Generator Summary")
 
-    return type, quantity, minLabel, minValue, maxLabel, maxValue, total, printing
+    return type, inuse, minLabel, minValue, maxLabel, maxValue, total, printing
 end
 
 function formatSummary(fmt::Dict{String, String}, width::Dict{String, Int64}, show::Dict{String, Bool}, style::Bool, title::Bool)
@@ -1606,7 +1606,7 @@ function formatSummary(fmt::Dict{String, String}, width::Dict{String, Int64}, sh
 
     subheading = Dict(
         "Type"          => _header_("", "Type", style),
-        "Quantity"      => _header_("", "Quantity", style),
+        "In-Use"        => _header_("", "In-Use", style),
         "Minimum Label" => _header_("Label", "Label", style),
         "Minimum Value" => _header_("Value", "Minimum", style),
         "Maximum Label" => _header_("Label", "Label", style),
@@ -1615,7 +1615,7 @@ function formatSummary(fmt::Dict{String, String}, width::Dict{String, Int64}, sh
     )
     _fmt = Dict(
         "Type"          => "%-*s",
-        "Quantity"      => "%*i",
+        "In-Use"        => "%*i",
         "Minimum Label" => "%-*s",
         "Minimum Value" => "%*.4f",
         "Maximum Label" => "%-*s",
@@ -1624,7 +1624,7 @@ function formatSummary(fmt::Dict{String, String}, width::Dict{String, Int64}, sh
     )
     _width = Dict(
         "Type"          => 4 * style,
-        "Quantity"      => 8 * style,
+        "In-Use"        => 8 * style,
         "Minimum Label" => _width_(_width["Minimum"], 5, style),
         "Minimum Value" => _width_(_width["Minimum"], 5, style),
         "Maximum Label" => _width_(_width["Maximum"], 5, style),
@@ -1637,7 +1637,7 @@ function formatSummary(fmt::Dict{String, String}, width::Dict{String, Int64}, sh
         "Minimum Value" => _show_(_show["Minimum"], true),
         "Maximum Label" => _show_(_show["Maximum"], true),
         "Maximum Value" => _show_(_show["Maximum"], true),
-        "Quantity"      => true,
+        "In-Use"        => true,
         "Total"         => true,
     )
     fmt, width, show = printFormat(_fmt, fmt, _width, width, _show, show, style)
@@ -1648,7 +1648,7 @@ function formatSummary(fmt::Dict{String, String}, width::Dict{String, Int64}, sh
 end
 
 function formatSummary(fmt::Dict{String, String}, width::Dict{String, Int64}, show::OrderedDict{String, Bool}, type::OrderedDict{String, String},
-    quantity::Dict{String, Float64}, minLabel::Dict{String, String}, minValue::Dict{String, Float64}, maxLabel::Dict{String, String}, maxValue::Dict{String, Float64},
+    inuse::Dict{String, Float64}, minLabel::Dict{String, String}, minValue::Dict{String, Float64}, maxLabel::Dict{String, String}, maxValue::Dict{String, Float64},
     total::Dict{String, Float64}, style::Bool)
 
     if style
@@ -1665,8 +1665,8 @@ function formatSummary(fmt::Dict{String, String}, width::Dict{String, Int64}, sh
                 fmax(fmt, width, show, maxValue[key], "Maximum Value")
             end
 
-            if haskey(quantity, key)
-                fmax(fmt, width, show, quantity[key], "Quantity")
+            if haskey(inuse, key)
+                fmax(fmt, width, show, inuse[key], "In-Use")
             end
 
             if haskey(total, key)
@@ -1676,11 +1676,11 @@ function formatSummary(fmt::Dict{String, String}, width::Dict{String, Int64}, sh
     end
 
     heading = OrderedDict(
-        "Type"     => _blank_(width, show, "Type"),
-        "Minimum"  => _blank_(width, show, style, "Minimum", "Minimum Label", "Minimum Value"),
-        "Maximum"  => _blank_(width, show, style, "Maximum", "Maximum Label", "Maximum Value"),
-        "Quantity" => _blank_(width, show, "Quantity"),
-        "Total"    => _blank_(width, show, "Total")
+        "Type"    => _blank_(width, show, "Type"),
+        "Minimum" => _blank_(width, show, style, "Minimum", "Minimum Label", "Minimum Value"),
+        "Maximum" => _blank_(width, show, style, "Maximum", "Maximum Label", "Maximum Value"),
+        "In-Use"  => _blank_(width, show, "In-Use"),
+        "Total"   => _blank_(width, show, "Total")
     )
 
     return heading
@@ -1701,7 +1701,7 @@ function printHeader(io::IO, hfmt::Dict{String, Format}, width::Dict{String, Int
 end
 
 function printSummary(io::IO, pfmt::Dict{String, Format}, hfmt::Dict{String, Format}, width::Dict{String, Int64}, show::OrderedDict{String, Bool}, type::OrderedDict{String, String},
-    quantity::Dict{String, Float64}, minLabel::Dict{String, String}, minValue::Dict{String, Float64}, maxLabel::Dict{String, String}, maxValue::Dict{String, Float64},
+    inuse::Dict{String, Float64}, minLabel::Dict{String, String}, minValue::Dict{String, Float64}, maxLabel::Dict{String, String}, maxValue::Dict{String, Float64},
     total::Dict{String, Float64}, delimiter::String, maxLine::Int64, style::Bool, footer::Bool, breakLine::Int64)
 
     cnt = 1
@@ -1728,10 +1728,10 @@ function printSummary(io::IO, pfmt::Dict{String, Format}, hfmt::Dict{String, For
             printf(io, hfmt, show, width, "", "Maximum Value")
         end
 
-        if haskey(quantity, key)
-            printf(io, pfmt, show, width, quantity[key], "Quantity")
+        if haskey(inuse, key)
+            printf(io, pfmt, show, width, inuse[key], "In-Use")
         else
-            printf(io, hfmt, show, width, "", "Quantity")
+            printf(io, hfmt, show, width, "", "In-Use")
         end
 
         if haskey(total, key)
@@ -1791,8 +1791,8 @@ function summaryData(minIndex::Dict{String, Int64}, minValue::Dict{String, Float
     end
 end
 
-function summaryType(type::OrderedDict{String, String}, quantity::Dict{String, Float64})
-    for (key, value) in quantity
+function summaryType(type::OrderedDict{String, String}, inuse::Dict{String, Float64})
+    for (key, value) in inuse
         if value == 0
             for label in keys(type)
                 if occursin(key, label)
