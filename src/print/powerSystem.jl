@@ -1624,7 +1624,7 @@ function formatSummary(fmt::Dict{String, String}, width::Dict{String, Int64}, sh
     )
     _width = Dict(
         "Type"          => 4 * style,
-        "In-Use"        => 8 * style,
+        "In-Use"        => 6 * style,
         "Minimum Label" => _width_(_width["Minimum"], 5, style),
         "Minimum Value" => _width_(_width["Minimum"], 5, style),
         "Maximum Label" => _width_(_width["Maximum"], 5, style),
