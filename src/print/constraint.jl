@@ -482,10 +482,10 @@ function printBranchConstraint(system::PowerSystem, analysis::ACOptimalPowerFlow
                         end
 
                         if haskey(constraint.flow.from, i) && is_valid(analysis.method.jump, constraint.flow.from[i])
-                            if !((system.branch.flow.type[i] == 1 || system.branch.flow.type[i] == 3) && system.branch.flow.minFromBus[i] < 0)
-                                printf(io, pfmt, _show, _width, system.branch.flow.minFromBus, i, scaleFlowFrom, "From-Bus $flow Minimum")
-                            else
+                            if system.branch.flow.minFromBus[i] < 0 && system.branch.flow.type[i] != 2
                                 printf(io, pfmt, _show, _width, 0.0, "From-Bus $flow Minimum")
+                            else
+                                printf(io, pfmt, _show, _width, system.branch.flow.minFromBus, i, scaleFlowFrom, "From-Bus $flow Minimum")
                             end
                             printf(io, pfmt, _show, _width, constraint.flow.from, i, scaleFlowFrom, "From-Bus $flow Solution")
                             printf(io, pfmt, _show, _width, system.branch.flow.maxFromBus, i, scaleFlowFrom, "From-Bus $flow Maximum")
@@ -495,12 +495,11 @@ function printBranchConstraint(system::PowerSystem, analysis::ACOptimalPowerFlow
                         end
 
                         if haskey(constraint.flow.to, i) && is_valid(analysis.method.jump, constraint.flow.to[i])
-                            if !((system.branch.flow.type[i] == 1 || system.branch.flow.type[i] == 3) && system.branch.flow.minToBus[i] < 0)
-                                printf(io, pfmt, _show, _width, system.branch.flow.minToBus, i, scaleFlowTo, "To-Bus $flow Minimum")
-                            else
+                            if system.branch.flow.minToBus[i] < 0 && system.branch.flow.type[i] != 2
                                 printf(io, pfmt, _show, _width, 0.0, "To-Bus $flow Minimum")
+                            else
+                                printf(io, pfmt, _show, _width, system.branch.flow.minToBus, i, scaleFlowTo, "To-Bus $flow Minimum")
                             end
-
                             printf(io, pfmt, _show, _width, constraint.flow.to, i, scaleFlowTo, "To-Bus $flow Solution")
                             printf(io, pfmt, _show, _width, system.branch.flow.maxToBus, i, scaleFlowTo, "To-Bus $flow Maximum")
                             printf(io, pfmt, _show, _width, dual.flow.to, i, scaleFlowTo, "To-Bus $flow Dual")
@@ -640,7 +639,7 @@ function formatBranchConstraint(system::PowerSystem, analysis::ACOptimalPowerFlo
             end
 
             if haskey(constraint.flow.from, i) && is_valid(analysis.method.jump, constraint.flow.from[i])
-                if !((system.branch.flow.type[i] == 1 || system.branch.flow.type[i] == 3) && system.branch.flow.minFromBus[i] < 0)
+                if !(system.branch.flow.minFromBus[i] < 0 && system.branch.flow.type[i] != 2)
                     fmax(fmt, width, show, system.branch.flow.minFromBus, i, scaleFlowFrom, "From-Bus $flow Minimum")
                 end
                 fmax(fmt, width, show, value(constraint.flow.from[i]) * scaleFlowFrom, "From-Bus $flow Solution")
@@ -651,7 +650,7 @@ function formatBranchConstraint(system::PowerSystem, analysis::ACOptimalPowerFlo
             end
 
             if haskey(constraint.flow.to, i) && is_valid(analysis.method.jump, constraint.flow.to[i])
-                if !((system.branch.flow.type[i] == 1 || system.branch.flow.type[i] == 3) && system.branch.flow.minToBus[i] < 0)
+                if !(system.branch.flow.minToBus[i] < 0 && system.branch.flow.type[i] != 2)
                     fmax(fmt, width, show, system.branch.flow.minToBus, i, scaleFlowTo, "To-Bus $flow Minimum")
                 end
                 fmax(fmt, width, show, value(constraint.flow.to[i]) * scaleFlowTo, "To-Bus $flow Solution")
@@ -695,7 +694,7 @@ function formatBranchConstraint(system::PowerSystem, analysis::ACOptimalPowerFlo
                     end
 
                     if haskey(constraint.flow.from, i) && is_valid(analysis.method.jump, constraint.flow.from[i])
-                        if !((system.branch.flow.type[i] == 1 || system.branch.flow.type[i] == 3) && system.branch.flow.minFromBus[i] < 0)
+                        if !(system.branch.flow.minFromBus[i] < 0 && system.branch.flow.type[i] != 2)
                             minmaxValue(show, system.branch.flow.minFromBus, i, scaleFlowFrom, Fmin, "From-Bus $flow Minimum")
                         end
                         minmaxPrimal(show, constraint.flow.from[i], scaleFlowFrom, Fopt, "From-Bus $flow Solution")
@@ -704,7 +703,7 @@ function formatBranchConstraint(system::PowerSystem, analysis::ACOptimalPowerFlo
                     end
 
                     if haskey(constraint.flow.to, i) && is_valid(analysis.method.jump, constraint.flow.to[i])
-                        if !((system.branch.flow.type[i] == 1 || system.branch.flow.type[i] == 3) && system.branch.flow.minFromBus[i] < 0)
+                        if !(system.branch.flow.minToBus[i] < 0 && system.branch.flow.type[i] != 2)
                             minmaxValue(show, system.branch.flow.minToBus, i, scaleFlowTo, Tmin, "To-Bus $flow Minimum")
                         end
                         minmaxPrimal(show, constraint.flow.to[i], scaleFlowTo, Topt, "To-Bus $flow Solution")

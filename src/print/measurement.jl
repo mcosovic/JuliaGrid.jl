@@ -80,17 +80,12 @@ function _printVoltmeterData(system::PowerSystem, device::Measurement, voltage::
 
         printTitle(io, maxLine, delimiter, title, header, style, "Voltmeter Data")
 
-        scale = 1.0
         @inbounds for (label, i) in labels
             printing = printHeader(io, hfmt, width, show, heading, subheading, unit, delimiter, header, style, repeat, printing, maxLine, i)
 
             indexBus = voltmeter.layout.index[i]
-            if prefix.voltageMagnitude != 0.0
-                scale = scaleVoltage(system.base.voltage, prefix, indexBus)
-            end
-
             printf(io, pfmt, show, width, label, "Label")
-            printDevice(io, pfmt, hfmt, width, show, voltmeter.magnitude, voltage.magnitude, scale, i, indexBus, type)
+            printDevice(io, pfmt, hfmt, width, show, voltmeter.magnitude, voltage.magnitude, scaleVoltage(prefix, system.base.voltage, indexBus), i, indexBus, type)
 
             @printf io "\n"
         end
@@ -109,15 +104,9 @@ function formatVoltmeterData(system::PowerSystem, voltmeter::Voltmeter, voltage:
         labels = toggleLabel(label, voltmeter, voltmeter.label, "voltmeter")
 
         if style
-            scale = 1.0
             @inbounds for (label, i) in labels
                 indexBus = voltmeter.layout.index[i]
-
-                if prefix.voltageMagnitude != 0.0
-                    scale = scaleVoltage(system.base.voltage, prefix, indexBus)
-                end
-
-                formatDevice(fmt, width, show, minval, maxval, label, voltmeter.magnitude, voltage.magnitude, scale, i, indexBus, type)
+                formatDevice(fmt, width, show, minval, maxval, label, voltmeter.magnitude, voltage.magnitude, scaleVoltage(prefix, system.base.voltage, indexBus), i, indexBus, type)
             end
             formatDevice(fmt, width, show, minval, maxval)
         end
@@ -248,7 +237,6 @@ function formatAmmeterData(system::PowerSystem, ammeter::Ammeter, current::ACCur
             scale = 1.0
             @inbounds for (label, i) in labels
                 indexBranch = ammeter.layout.index[i]
-
                 if prefix.currentMagnitude != 0.0
                     if ammeter.layout.from[i]
                         scale = scaleCurrent(system, prefix, system.branch.layout.from[indexBranch])
@@ -606,20 +594,15 @@ function _printPmuData(system::PowerSystem, device::Measurement, voltage::Polar,
 
             printTitle(io, maxLine, delimiter, title, header, style, "PMU Data")
 
-            scaleV = 1.0
             cnt = 1
             @inbounds for (label, i) in labels
                 if pmu.layout.bus[i]
                     printingV = printHeader(io, hfmt, widthV, showV, headingV, subheadingV, unitV, delimiter, header, style, repeat, printingV, maxLine, cnt)
-
                     indexBus = pmu.layout.index[i]
-                    if prefix.voltageMagnitude != 0.0
-                        scaleV = scaleVoltage(system.base.voltage, prefix, indexBus)
-                    end
 
                     printf(io, pfmt, showV, widthV, label, "Label")
 
-                    printDevice(io, pfmt, hfmt, widthV, showV, pmu.magnitude, voltage.magnitude, scaleV, i, indexBus, "Voltage Magnitude")
+                    printDevice(io, pfmt, hfmt, widthV, showV, pmu.magnitude, voltage.magnitude, scaleVoltage(prefix, system.base.voltage, indexBus), i, indexBus, "Voltage Magnitude")
                     printDevice(io, pfmt, hfmt, widthV, showV, pmu.angle, voltage.angle, scale["θ"], i, indexBus, "Voltage Angle")
 
                     @printf io "\n"
@@ -688,17 +671,12 @@ function formatPmuData(system::PowerSystem, pmu::PMU, voltage::Polar, current::A
         labels = toggleLabel(label, pmu, pmu.label, "pmu")
 
         if style
-            scaleV = 1.0
             scaleI = 1.0
             @inbounds for (label, i) in labels
                 indexBusBranch = pmu.layout.index[i]
 
                 if pmu.layout.bus[i]
-                    if prefix.voltageMagnitude != 0.0
-                        scaleV = scaleVoltage(system.base.voltage, prefix, indexBusBranch)
-                    end
-
-                    formatDevice(fmtV, widthV, showV, minV, maxV, label, pmu.magnitude, voltage.magnitude, scaleV, i, indexBusBranch, "Voltage Magnitude")
+                    formatDevice(fmtV, widthV, showV, minV, maxV, label, pmu.magnitude, voltage.magnitude, scaleVoltage(prefix, system.base.voltage, indexBusBranch), i, indexBusBranch, "Voltage Magnitude")
                     formatDevice(fmtV, widthV, showV, minθ, maxθ, label, pmu.angle, voltage.angle, scale["θ"], i, indexBusBranch, "Voltage Angle")
                 else
                     if prefix.currentMagnitude != 0.0

@@ -237,7 +237,6 @@ function formatBusData(system::PowerSystem, analysis::AC, label::L, scale::Dict{
             end
             fminmax(fmt, width, show, voltage.angle, scale["θ"], "Voltage Angle")
 
-
             if prefix.currentMagnitude == 0.0
                 fmax(fmt, width, show, current.injection.magnitude, 1.0, "Current Injection Magnitude")
             else
