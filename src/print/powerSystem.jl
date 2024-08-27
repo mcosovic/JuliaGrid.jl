@@ -1118,8 +1118,6 @@ function formatBusSummary(system::PowerSystem, analysis::AC, scale::Dict{String,
         "Power Injection Reactive" => 0.0,
         "Shunt Power Active" => 0.0,
         "Shunt Power Reactive" => 0.0,
-        "Current Injection Magnitude" => 0.0,
-        "Current Injection Angle" => 0.0,
     )
     quantity = Dict{String, Float64}(
         "Voltage"           => system.bus.number,
@@ -1154,8 +1152,8 @@ function formatBusSummary(system::PowerSystem, analysis::AC, scale::Dict{String,
 
         if (system.bus.shunt.conductance[i] != 0.0 || system.bus.shunt.susceptance[i] != 0.0) && haskey(type, "Shunt Power")
             quantity["Shunt Power"] += 1
-            summaryData(minIndex, minValue, maxIndex, maxValue, power.shunt.active[i] * scale["P"], i, "Shunt Power Active")
-            summaryData(minIndex, minValue, maxIndex, maxValue, power.shunt.reactive[i] * scale["Q"], i, "Shunt Power Reactive")
+            summaryData(minIndex, minValue, maxIndex, maxValue, total, power.shunt.active[i] * scale["P"], i, "Shunt Power Active")
+            summaryData(minIndex, minValue, maxIndex, maxValue, total, power.shunt.reactive[i] * scale["Q"], i, "Shunt Power Reactive")
         end
         if haskey(type, "Current Injection")
             summaryData(minIndex, minValue, maxIndex, maxValue, current.injection.magnitude[i] * scaleCurrent(prefix, system, i), i, "Current Injection Magnitude")
