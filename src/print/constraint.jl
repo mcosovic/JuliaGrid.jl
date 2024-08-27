@@ -176,7 +176,7 @@ function formatBusConstraint(system::PowerSystem, analysis::ACOptimalPowerFlow, 
             label = getLabel(system.bus, label, "bus")
             i = system.bus.label[label]
 
-            width["Label"] = max(textwidth(label), width["Label"])
+            fmax(fmt, width, show, label, "Label")
 
             if haskey(constraint.voltage.magnitude, i) && is_valid(analysis.method.jump, constraint.voltage.magnitude[i])
                 fmax(fmt, width, show, system.bus.voltage.minMagnitude, i, scaleVoltage(prefix, system.base.voltage, i), "Voltage Magnitude Minimum")
@@ -211,7 +211,7 @@ function formatBusConstraint(system::PowerSystem, analysis::ACOptimalPowerFlow, 
             Qdul = [-Inf; Inf]
 
             @inbounds for (label, i) in system.bus.label
-                width["Label"] = max(textwidth(label), width["Label"])
+                fmax(fmt, width, show, label, "Label")
 
                 if haskey(constraint.voltage.magnitude, i) && is_valid(analysis.method.jump, constraint.voltage.magnitude[i])
                     minmaxDual(show, dual.voltage.magnitude, i, scaleVoltage(prefix, system.base.voltage, i), Vdul, "Voltage Magnitude Dual")
@@ -346,7 +346,7 @@ function formatBusConstraint(system::PowerSystem, analysis::DCOptimalPowerFlow, 
             label = getLabel(system.bus, label, "bus")
             i = system.bus.label[label]
 
-            width["Label"] = max(textwidth(label), width["Label"])
+            fmax(fmt, width, show, label, "Label")
 
             if haskey(constraint.balance.active, i) && is_valid(analysis.method.jump, constraint.balance.active[i])
                 fmax(fmt, width, show, value(constraint.balance.active[i]) * scale["P"], "Active Power Balance Solution")
@@ -359,7 +359,7 @@ function formatBusConstraint(system::PowerSystem, analysis::DCOptimalPowerFlow, 
             Pdul = [-Inf; Inf]
 
             @inbounds for (label, i) in system.bus.label
-                width["Label"] = max(textwidth(label), width["Label"])
+                fmax(fmt, width, show, label, "Label")
 
                 if haskey(constraint.balance.active, i) && is_valid(analysis.method.jump, constraint.balance.active[i])
                     minmaxPrimal(show, constraint.balance.active[i], scale["P"], Popt, "Active Power Balance Solution")
@@ -628,7 +628,7 @@ function formatBranchConstraint(system::PowerSystem, analysis::ACOptimalPowerFlo
                 scaleFlowTo = scaleCurrent(prefix, system, system.branch.layout.to[i])
             end
 
-            width["Label"] = max(textwidth(label), width["Label"])
+            fmax(fmt, width, show, label, "Label")
 
             if haskey(constraint.voltage.angle, i) && is_valid(analysis.method.jump, constraint.voltage.angle[i])
                 fmax(fmt, width, show, system.branch.voltage.minDiffAngle, i, scale["θ"], "Voltage Angle Difference Minimum")
@@ -682,7 +682,7 @@ function formatBranchConstraint(system::PowerSystem, analysis::ACOptimalPowerFlo
 
             @inbounds for (label, i) in system.branch.label
                 if typeVec[i] == type
-                    width["Label"] = max(textwidth(label), width["Label"])
+                    fmax(fmt, width, show, label, "Label")
 
                     if haskey(constraint.voltage.angle, i) && is_valid(analysis.method.jump, constraint.voltage.angle[i])
                         minmaxPrimal(show, constraint.voltage.angle[i], scale["θ"], θopt, "Voltage Angle Difference Solution")
@@ -872,7 +872,7 @@ function formatBranchConstraint(system::PowerSystem, analysis::DCOptimalPowerFlo
             label = getLabel(system.branch, label, "branch")
             i = system.branch.label[label]
 
-            width["Label"] = max(textwidth(label), width["Label"])
+            fmax(fmt, width, show, label, "Label")
 
             if haskey(constraint.voltage.angle, i) && is_valid(analysis.method.jump, constraint.voltage.angle[i])
                 fmax(fmt, width, show, system.branch.voltage.minDiffAngle, i, scale["θ"], "Voltage Angle Difference Minimum")
@@ -900,7 +900,7 @@ function formatBranchConstraint(system::PowerSystem, analysis::DCOptimalPowerFlo
             Fdul = [-Inf; Inf]
 
             @inbounds for (label, i) in system.branch.label
-                width["Label"] = max(textwidth(label), width["Label"])
+                fmax(fmt, width, show, label, "Label")
 
                 if haskey(constraint.voltage.angle, i) && is_valid(analysis.method.jump, constraint.voltage.angle[i])
                     minmaxPrimal(show, constraint.voltage.angle[i], scale["θ"], θopt, "Voltage Angle Difference Solution")
@@ -1112,7 +1112,7 @@ function formatGeneratorConstraint(system::PowerSystem, analysis::ACOptimalPower
             label = getLabel(system.generator, label, "generator")
             i = system.generator.label[label]
 
-            width["Label"] = max(textwidth(label), width["Label"])
+            fmax(fmt, width, show, label, "Label")
 
             if haskey(constraint.capability.active, i) && is_valid(analysis.method.jump, constraint.capability.active[i])
                 fmax(fmt, width, show, system.generator.capability.minActive, i, scale["P"], "Active Power Capability Minimum")
@@ -1138,7 +1138,7 @@ function formatGeneratorConstraint(system::PowerSystem, analysis::ACOptimalPower
             Qdul = [-Inf; Inf]
 
             @inbounds for (label, i) in system.generator.label
-                width["Label"] = max(textwidth(label), width["Label"])
+                fmax(fmt, width, show, label, "Label")
 
                 if haskey(constraint.capability.active, i) && is_valid(analysis.method.jump, constraint.capability.active[i])
                     minmaxPrimal(show, constraint.capability.active[i], scale["P"], Popt, "Active Power Capability Solution")
@@ -1268,7 +1268,7 @@ function formatGeneratorConstraint(system::PowerSystem, analysis::DCOptimalPower
             label = getLabel(system.generator, label, "generator")
             i = system.generator.label[label]
 
-            width["Label"] = max(textwidth(label), width["Label"])
+            fmax(fmt, width, show, label, "Label")
 
             if haskey(constraint.capability.active, i) && is_valid(analysis.method.jump, constraint.capability.active[i])
                 fmax(fmt, width, show, system.generator.capability.minActive, i, scale["P"], "Active Power Capability Minimum")
@@ -1283,7 +1283,7 @@ function formatGeneratorConstraint(system::PowerSystem, analysis::DCOptimalPower
             Pdul = [-Inf; Inf]
 
             @inbounds for (label, i) in system.generator.label
-                width["Label"] = max(textwidth(label), width["Label"])
+                fmax(fmt, width, show, label, "Label")
 
                 if haskey(constraint.capability.active, i) && is_valid(analysis.method.jump, constraint.capability.active[i])
                     minmaxPrimal(show, constraint.capability.active[i], scale["P"], Popt, "Active Power Capability Solution")

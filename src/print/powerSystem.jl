@@ -188,7 +188,8 @@ function formatBusData(system::PowerSystem, analysis::AC, label::L, scale::Dict{
         if isset(label)
             label = getLabel(system.bus, label, "bus")
             i = system.bus.label[label]
-            width["Label"] = max(textwidth(label), width["Label"])
+
+            fmax(fmt, width, show, label, "Label")
 
             fmax(fmt, width, show, voltage.magnitude, i, scaleVoltage(prefix, system.base.voltage, i), "Voltage Magnitude")
             fmax(fmt, width, show, voltage.angle, i, scale["θ"], "Voltage Angle")
@@ -209,15 +210,13 @@ function formatBusData(system::PowerSystem, analysis::AC, label::L, scale::Dict{
             maxI = initMax(prefix.currentMagnitude)
 
             @inbounds for (label, i) in system.bus.label
-                if _show["Label"]
-                    width["Label"] = max(textwidth(label), width["Label"])
-                end
+                fmax(fmt, width, show, label, "Label")
 
-                if _show["Voltage Magnitude"] && prefix.voltageMagnitude != 0.0
+                if show["Voltage Magnitude"] && prefix.voltageMagnitude != 0.0
                     maxV = max(voltage.magnitude[i] * scaleVoltage(system.base.voltage, prefix, i), maxV)
                 end
 
-                if _show["Current Injection Magnitude"] && prefix.currentMagnitude != 0.0
+                if show["Current Injection Magnitude"] && prefix.currentMagnitude != 0.0
                     maxI = max(current.injection.magnitude[i] * scaleCurrent(system, prefix, i), maxI)
                 end
             end
@@ -351,7 +350,7 @@ function formatBusData(system::PowerSystem, analysis::DC, label::L, scale::Dict{
             label = getLabel(system.bus, label, "bus")
             i = system.bus.label[label]
 
-            width["Label"] = max(textwidth(label), width["Label"])
+            fmax(fmt, width, show, label, "Label")
 
             fmax(fmt, width, show, voltage.angle, i, scale["θ"], "Voltage Angle")
 
@@ -366,7 +365,7 @@ function formatBusData(system::PowerSystem, analysis::DC, label::L, scale::Dict{
             fminmax(fmt, width, show, power.injection.active, scale["P"], "Power Injection Active")
 
             @inbounds for (label, i) in system.bus.label
-                width["Label"] = max(textwidth(label), width["Label"])
+                fmax(fmt, width, show, label, "Label")
             end
         end
     end
@@ -591,7 +590,8 @@ function formatBranchData(system::PowerSystem, analysis::AC, label::L, scale::Di
         if isset(label)
             label = getLabel(system.branch, label, "branch")
             i = system.branch.label[label]
-            width["Label"] = max(textwidth(label), width["Label"])
+
+            fmax(fmt, width, show, label, "Label")
 
             fmax(fmt, width, show, power.from.active, i, scale["P"], "From-Bus Power Active")
             fmax(fmt, width, show, power.from.reactive, i, scale["Q"], "From-Bus Power Reactive")
@@ -614,9 +614,9 @@ function formatBranchData(system::PowerSystem, analysis::AC, label::L, scale::Di
             maxSeries = initMax(prefix.currentMagnitude)
 
             @inbounds for (label, i) in system.branch.label
-                width["Label"] = max(textwidth(label), width["Label"])
+                fmax(fmt, width, show, label, "Label")
 
-                if _show["From-Bus Current Magnitude"] && prefix.currentMagnitude != 0.0
+                if show["From-Bus Current Magnitude"] && prefix.currentMagnitude != 0.0
                     maxFrom = max(current.from.magnitude[i] * scaleCurrent(system, prefix, system.branch.layout.from[i]), maxFrom)
                     maxTo = max(current.to.magnitude[i] * scaleCurrent(system, prefix, system.branch.layout.to[i]), maxTo)
                     maxSeries = max(current.series.magnitude[i] * scaleCurrent(system, prefix, system.branch.layout.from[i]), maxSeries)
@@ -744,7 +744,8 @@ function formatBranchData(system::PowerSystem, analysis::DC, label::L, scale::Di
         if isset(label)
             label = getLabel(system.branch, label, "branch")
             i = system.branch.label[label]
-            width["Label"] = max(textwidth(label), width["Label"])
+
+            fmax(fmt, width, show, label, "Label")
 
             fmax(fmt, width, show, power.from.active, i, scale["P"], "From-Bus Power Active")
             fmax(fmt, width, show, power.to.active, i, scale["P"], "To-Bus Power Active")
@@ -753,7 +754,7 @@ function formatBranchData(system::PowerSystem, analysis::DC, label::L, scale::Di
             fminmax(fmt, width, show, power.to.active, scale["P"], "To-Bus Power Active")
 
             @inbounds for (label, i) in system.branch.label
-                width["Label"] = max(textwidth(label), width["Label"])
+                fmax(fmt, width, show, label, "Label")
             end
         end
     end
@@ -893,7 +894,8 @@ function formatGeneratorData(system::PowerSystem, analysis::AC, label::L, scale:
         if isset(label)
             label = getLabel(system.generator, label, "generator")
             i = system.generator.label[label]
-            width["Label"] = max(textwidth(label), width["Label"])
+
+            fmax(fmt, width, show, label, "Label")
 
             fmax(fmt, width, show, power.generator.active, i, scale["P"], "Power Output Active")
             fmax(fmt, width, show, power.generator.reactive, i, scale["Q"], "Power Output Reactive")
@@ -902,7 +904,7 @@ function formatGeneratorData(system::PowerSystem, analysis::AC, label::L, scale:
             fminmax(fmt, width, show, power.generator.reactive, scale["Q"], "Power Output Reactive")
 
             @inbounds for (label, i) in system.generator.label
-                width["Label"] = max(textwidth(label), width["Label"])
+                fmax(fmt, width, show, label, "Label")
             end
         end
     end
@@ -985,14 +987,15 @@ function formatGeneratorData(system::PowerSystem, analysis::DC, label::L, scale:
         if isset(label)
             label = getLabel(system.generator, label, "generator")
             i = system.generator.label[label]
-            width["Label"] = max(textwidth(label), width["Label"])
+
+            fmax(fmt, width, show, label, "Label")
 
             fmax(fmt, width, show, power.generator.active, i, scale["P"], "Power Output Active")
         else
             fminmax(fmt, width, show, power.generator.active, scale["P"], "Power Output Active")
 
             @inbounds for (label, i) in system.generator.label
-                width["Label"] = max(textwidth(label), width["Label"])
+                fmax(fmt, width, show, label, "Label")
             end
         end
     end
@@ -1009,10 +1012,22 @@ function formatGeneratorData(system::PowerSystem, analysis::DC, label::L, scale:
 end
 
 """
-    printBusSummary(system::PowerSystem, analysis::Analysis, [io::IO])
+    printBusSummary(system::PowerSystem, analysis::Analysis, [io::IO];
+        fmt, width, show, delimiter, title, header, footer, style)
 
 The function prints a summary of the electrical quantities related to buses. Optionally,
 an `IO` may be passed as the last argument to redirect the output.
+
+# Keywords
+The following keywords control the printed data:
+* `fmt`: Specifies the preferred numeric formats or alignments for the columns.
+* `width`: Specifies the preferred widths for the columns.
+* `show`: Toggles the printing of the columns.
+* `delimiter`: Sets the column delimiter.
+* `title`: Toggles the printing of the table title.
+* `header`: Toggles the printing of the header.
+* `footer`: Toggles the printing of the footer.
+* `style`: Prints either a stylish table or a simple table suitable for easy export.
 
 !!! compat "Julia 1.10"
     The function [`printBusSummary`](@ref printBusSummary) requires Julia 1.10 or later.
@@ -1031,256 +1046,208 @@ for i = 1:10
 end
 power!(system, analysis)
 
-printBusSummary(system, analysis)
+show = Dict("Quantity" => false)
+printBusSummary(system, analysis; show, delimiter = " ", title = false)
 ```
 """
-function printBusSummary(system::PowerSystem, analysis::AC, io::IO = stdout)
+function printBusSummary(system::PowerSystem, analysis::Union{AC, DC}, io::IO = stdout;
+    fmt::Dict{String, String} = Dict{String, String}(), width::Dict{String, Int64} = Dict{String, Int64}(),
+    show::Dict{String, Bool} = Dict{String, Bool}(), delimiter::String = "|", style::Bool = true,
+    title::Bool = true, header::Bool = true, footer::Bool = true)
+
+    errorVoltage(analysis.voltage.angle)
+
     scale = printScale(system, prefix)
-    format, width, device, unitLive, powerFlag, currentFlag = formatBusSummary(system, analysis, scale)
-    maxLine = sum(width[:]) + 17
+    fmt, width, show, subheading = formatSummary(fmt, width, show, style, title)
+    type, quantity, minLabel, minValue, maxLabel, maxValue, total, printing = formatBusSummary(system, analysis, scale, prefix, width, show, style, title)
 
-    sentence = "In the power system with $(system.bus.number) $(plosg("bus", system.bus.number)),
-        in-service generators are located at $(device["supply"]) $(plosg("bus", device["supply"])),
-        while loads are installed at $(device["demand"]) $(plosg("bus", device["demand"])),
-        and shunts are present at $(device["shunt"]) $(plosg("bus", device["shunt"]))."
+    if printing
+        heading = formatSummary(fmt, width, show, type, quantity, minLabel, minValue, maxLabel, maxValue, total, style)
+        maxLine, pfmt, hfmt = setupPrint(fmt, width, show, delimiter, style)
 
-    summaryHeader(io, maxLine, cutSentenceParts(sentence, maxLine - 2), "Bus Summary")
-    summarySubheader(io, maxLine, width)
-
-    summaryBlockHeader(io, width, format["V"].title, system.bus.number)
-    summaryBlock(io, format["V"], unitLive["V"], width)
-    summaryBlock(io, format["θ"], unitLive["θ"], width; line = true)
-
-    if powerFlag
-        if device["supply"] != 0
-            summaryBlockHeader(io, width, format["Ps"].title, device["supply"])
-            summaryBlock(io, format["Ps"], unitLive["P"], width)
-            summaryBlock(io, format["Qs"], unitLive["Q"], width; line = true)
-        end
-
-        if device["demand"] != 0
-            summaryBlockHeader(io, width, format["Pl"].title, device["demand"])
-            summaryBlock(io, format["Pl"], unitLive["P"], width)
-            summaryBlock(io, format["Ql"], unitLive["Q"], width; line = true)
-        end
-
-        summaryBlockHeader(io, width, format["Pi"].title, system.bus.number)
-        summaryBlock(io, format["Pi"], unitLive["P"], width)
-        summaryBlock(io, format["Qi"], unitLive["Q"], width; line = true)
-
-        if device["shunt"] != 0
-            summaryBlockHeader(io, width, format["Ph"].title, device["shunt"])
-            summaryBlock(io, format["Ph"], unitLive["P"], width)
-            summaryBlock(io, format["Qh"], unitLive["Q"], width; line = true)
-        end
-    end
-
-    if currentFlag
-        summaryBlockHeader(io, width, format["I"].title, system.bus.number)
-        summaryBlock(io, format["I"], unitLive["I"], width)
-        summaryBlock(io, format["ψ"], unitLive["ψ"], width; line = true)
+        printTitle(io, maxLine, delimiter, title, header, style, "Bus Summary")
+        printHeader(io, hfmt, width, show, heading, subheading, delimiter, header, style, maxLine)
+        printSummary(io, pfmt, hfmt, width, show, type, quantity, minLabel, minValue, maxLabel, maxValue, total, delimiter, maxLine, style, footer, lineBreak(analysis))
     end
 end
 
-function formatBusSummary(system::PowerSystem, analysis::AC, scale::Dict{String, Float64})
-    unitLive = printUnitSummary(unitList)
+function formatBusSummary(system::PowerSystem, analysis::AC, scale::Dict{String, Float64}, prefix::PrefixLive,
+    width::Dict{String, Int64}, show::OrderedDict{String, Bool}, style::Bool, title::Bool)
 
-    format = Dict(
-        "V"  => SummaryData(title = "Bus Voltage"),
-        "θ"  => SummaryData(),
-        "Ps" => SummaryData(title = "Power Generation"),
-        "Qs" => SummaryData(),
-        "Pl" => SummaryData(title = "Power Demand"),
-        "Ql" => SummaryData(),
-        "Pi" => SummaryData(title = "Power Injection"),
-        "Qi" => SummaryData(),
-        "Ph" => SummaryData(title = "Shunt Power"),
-        "Qh" => SummaryData(),
-        "I"  => SummaryData(title = "Current Injection"),
-        "ψ"  => SummaryData(),
+    voltage = analysis.voltage
+    power = analysis.power
+    current = analysis.current
+
+    type = OrderedDict{String, String}()
+    if !isempty(voltage.magnitude)
+        type["Voltage"] = "Voltage"
+        type["Voltage Magnitude"] = " Magnitude [$(unitList.voltageMagnitudeLive)]"
+        type["Voltage Angle"] = " Angle [$(unitList.voltageAngleLive)]"
+    end
+    if !isempty(power.supply.active)
+        type["Power Generation"] = "Power Generation"
+        type["Power Generation Active"] = " Active [$(unitList.activePowerLive)]"
+        type["Power Generation Reactive"] = " Reactive [$(unitList.reactivePowerLive)]"
+    end
+    if !isempty(power.supply.active)
+        type["Power Demand"] = "Power Demand"
+        type["Power Demand Active"] = " Active [$(unitList.activePowerLive)]"
+        type["Power Demand Reactive"] = " Reactive [$(unitList.reactivePowerLive)]"
+    end
+    if !isempty(power.injection.active)
+        type["Power Injection"] = "Power Injection"
+        type["Power Injection Active"] = " Active [$(unitList.activePowerLive)]"
+        type["Power Injection Reactive"] = " Reactive [$(unitList.reactivePowerLive)]"
+    end
+    if !isempty(power.shunt.active)
+        type["Shunt Power"] = "Shunt Power"
+        type["Shunt Power Active"] = " Active [$(unitList.activePowerLive)]"
+        type["Shunt Power Reactive"] = " Reactive [$(unitList.reactivePowerLive)]"
+    end
+    if !isempty(current.injection.magnitude)
+        type["Current Injection"] = "Current Injection"
+        type["Current Injection Magnitude"] = " Magnitude [$(unitList.currentMagnitudeLive)]"
+        type["Current Injection Angle"] = " Angle [$(unitList.currentAngleLive)]"
+    end
+    total = Dict{String, Float64}(
+        "Power Generation Active" => 0.0,
+        "Power Generation Reactive" => 0.0,
+        "Power Demand Active" => 0.0,
+        "Power Demand Reactive" => 0.0,
+        "Power Injection Active" => 0.0,
+        "Power Injection Reactive" => 0.0,
+        "Shunt Power Active" => 0.0,
+        "Shunt Power Reactive" => 0.0,
+        "Current Injection Magnitude" => 0.0,
+        "Current Injection Angle" => 0.0,
     )
-
-    width = [0; 0; 0; 0; 5; 0]
-
-    device = Dict(
-        "supply" => 0,
-        "demand" => 0,
-        "shunt"  => 0
+    quantity = Dict{String, Float64}(
+        "Voltage"           => system.bus.number,
+        "Power Generation"  => 0.0,
+        "Power Demand"      => 0.0,
+        "Power Injection"   => system.bus.number,
+        "Shunt Power"       => 0.0,
+        "Current Injection" => system.bus.number,
     )
+    minIndex, minLabel, minValue, maxIndex, maxLabel, maxValue = summaryDict(type)
 
-    powerFlag = !isempty(analysis.power.injection.active)
-    currentFlag = !isempty(analysis.current.injection.magnitude)
+    @inbounds for i = 1:system.bus.number
+        summaryData(minIndex, minValue, maxIndex, maxValue, voltage.magnitude[i] * scaleVoltage(prefix, system.base.voltage, i), i, "Voltage Magnitude")
+        summaryData(minIndex, minValue, maxIndex, maxValue, voltage.angle[i] * scale["θ"], i, "Voltage Angle")
 
-    for i = 1:system.bus.number
-        if !isempty(system.bus.supply.generator[i])
-            device["supply"] += 1
+        if !isempty(system.bus.supply.generator[i]) && haskey(type, "Power Generation")
+            quantity["Power Generation"] += 1
+            summaryData(minIndex, minValue, maxIndex, maxValue, total, power.supply.active[i] * scale["P"], i, "Power Generation Active")
+            summaryData(minIndex, minValue, maxIndex, maxValue, total, power.supply.reactive[i] * scale["Q"], i, "Power Generation Reactive")
         end
 
-        if system.bus.demand.active[i] != 0.0 || system.bus.demand.reactive[i] != 0.0
-            device["demand"] += 1
+        if (system.bus.demand.active[i] != 0.0 || system.bus.demand.reactive[i] != 0.0) && haskey(type, "Power Demand")
+            quantity["Power Demand"] += 1
+            summaryData(minIndex, minValue, maxIndex, maxValue, total, system.bus.demand.active[i] * scale["P"], i, "Power Demand Active")
+            summaryData(minIndex, minValue, maxIndex, maxValue, total, system.bus.demand.reactive[i] * scale["Q"], i, "Power Demand Reactive")
         end
 
-        if system.bus.shunt.conductance[i] != 0.0 || system.bus.shunt.susceptance[i] != 0.0
-            device["shunt"] += 1
+        if haskey(type, "Power Injection")
+            summaryData(minIndex, minValue, maxIndex, maxValue, total, power.injection.active[i] * scale["P"], i, "Power Injection Active")
+            summaryData(minIndex, minValue, maxIndex, maxValue, total, power.injection.reactive[i] * scale["Q"], i, "Power Injection Reactive")
         end
 
-        minmaxsumPrint!(format["V"], analysis.voltage.magnitude[i] * scaleVoltage(prefix, system.base.voltage, i), i)
-        minmaxsumPrint!(format["θ"], analysis.voltage.angle[i], i)
-
-        if powerFlag
-            if !isempty(system.bus.supply.generator[i])
-                minmaxsumPrint!(format["Ps"], analysis.power.supply.active[i], i)
-                minmaxsumPrint!(format["Qs"], analysis.power.supply.reactive[i], i)
-            end
-
-            if system.bus.demand.active[i] != 0.0 || system.bus.demand.reactive[i] != 0.0
-                minmaxsumPrint!(format["Pl"], system.bus.demand.active[i], i)
-                minmaxsumPrint!(format["Ql"], system.bus.demand.reactive[i], i)
-            end
-
-            minmaxsumPrint!(format["Pi"], analysis.power.injection.active[i], i)
-            minmaxsumPrint!(format["Qi"], analysis.power.injection.reactive[i], i)
-
-            if system.bus.shunt.conductance[i] != 0.0 || system.bus.shunt.susceptance[i] != 0.0
-                minmaxsumPrint!(format["Ph"], analysis.power.shunt.active[i], i)
-                minmaxsumPrint!(format["Qh"], analysis.power.shunt.reactive[i], i)
-            end
+        if (system.bus.shunt.conductance[i] != 0.0 || system.bus.shunt.susceptance[i] != 0.0) && haskey(type, "Shunt Power")
+            quantity["Shunt Power"] += 1
+            summaryData(minIndex, minValue, maxIndex, maxValue, power.shunt.active[i] * scale["P"], i, "Shunt Power Active")
+            summaryData(minIndex, minValue, maxIndex, maxValue, power.shunt.reactive[i] * scale["Q"], i, "Shunt Power Reactive")
         end
-
-        if currentFlag
-            minmaxsumPrint!(format["I"], analysis.current.injection.magnitude[i] * scaleCurrent(prefix, system, i), i)
-            minmaxsumPrint!(format["ψ"], analysis.current.injection.angle[i], i)
+        if haskey(type, "Current Injection")
+            summaryData(minIndex, minValue, maxIndex, maxValue, current.injection.magnitude[i] * scaleCurrent(prefix, system, i), i, "Current Injection Magnitude")
+            summaryData(minIndex, minValue, maxIndex, maxValue, current.injection.angle[i] * scale["ψ"], i, "Current Injection Angle")
         end
     end
+    summaryType(type, quantity)
+    summaryLabel(system.bus.label, minIndex, minLabel, maxIndex, maxLabel)
 
-    formatSummary!(format["V"], unitLive["V"], width, system.bus.label, 1.0, system.bus.number; total = false)
-    formatSummary!(format["θ"], unitLive["θ"], width, system.bus.label, scale["θ"], system.bus.number; total = false)
+    printing = howManyPrint(width, show, style, title, "Bus Summary")
 
-    if powerFlag
-        formatSummary!(format["Ps"], unitLive["P"], width, system.bus.label, scale["P"], device["supply"])
-        formatSummary!(format["Qs"], unitLive["Q"], width, system.bus.label, scale["Q"], device["supply"])
-
-        formatSummary!(format["Pl"], unitLive["P"], width, system.bus.label, scale["P"], device["demand"])
-        formatSummary!(format["Ql"], unitLive["Q"], width, system.bus.label, scale["Q"], device["demand"])
-
-        formatSummary!(format["Pi"], unitLive["P"], width, system.bus.label, scale["P"], system.bus.number)
-        formatSummary!(format["Qi"], unitLive["Q"], width, system.bus.label, scale["Q"], system.bus.number)
-
-        formatSummary!(format["Ph"], unitLive["P"], width, system.bus.label, scale["P"], device["shunt"])
-        formatSummary!(format["Qh"], unitLive["Q"], width, system.bus.label, scale["Q"], device["shunt"])
-    end
-
-    if currentFlag
-        formatSummary!(format["I"], unitLive["I"], width, system.bus.label, 1.0, system.bus.number; total = false)
-        formatSummary!(format["ψ"], unitLive["ψ"], width, system.bus.label, scale["ψ"], system.bus.number; total = false)
-    end
-
-    return format, width, device, unitLive, powerFlag, currentFlag
+    return type, quantity, minLabel, minValue, maxLabel, maxValue, total, printing
 end
 
-function printBusSummary(system::PowerSystem, analysis::DC, io::IO = stdout)
-    scale = printScale(system, prefix)
-    format, width, device, unitLive, powerFlag = formatBusSummary(system, analysis, scale)
-    maxLine = sum(width[:]) + 17
+function formatBusSummary(system::PowerSystem, analysis::DC, scale::Dict{String, Float64}, prefix::PrefixLive,
+    width::Dict{String, Int64}, show::OrderedDict{String, Bool}, style::Bool, title::Bool)
 
-    sentence = "In the power system with $(system.bus.number) $(plosg("bus", system.bus.number)),
-        in-service generators are located at $(device["supply"]) $(plosg("bus", device["supply"])),
-        while loads are installed at $(device["demand"]) $(plosg("bus", device["demand"])),
-        and shunts are present at $(device["shunt"]) $(plosg("bus", device["shunt"]))."
+    voltage = analysis.voltage
+    power = analysis.power
 
-    summaryHeader(io, maxLine, cutSentenceParts(sentence, maxLine - 2), "Bus Summary")
-    summarySubheader(io, maxLine, width)
-
-    summaryBlockHeader(io, width, format["θ"].title, system.bus.number)
-    summaryBlock(io, format["θ"], unitLive["θ"], width; line = true)
-
-    if powerFlag
-        if device["supply"] != 0
-            summaryBlockHeader(io, width, format["Ps"].title, device["supply"] )
-            summaryBlock(io, format["Ps"], unitLive["P"], width; line = true)
-        end
-
-        if device["demand"] != 0
-            summaryBlockHeader(io, width, format["Pl"].title, device["demand"])
-            summaryBlock(io, format["Pl"], unitLive["P"], width; line = true)
-        end
-
-        summaryBlockHeader(io, width, format["Pi"].title, system.bus.number)
-        summaryBlock(io, format["Pi"], unitLive["P"], width; line = true)
+    type = OrderedDict{String, String}()
+    if !isempty(voltage.angle)
+        type["Voltage"] = "Voltage"
+        type["Voltage Angle"] = " Angle [$(unitList.voltageAngleLive)]"
     end
-end
-
-function formatBusSummary(system::PowerSystem, analysis::DC, scale::Dict{String, Float64})
-    unitLive = printUnitSummary(unitList)
-
-    format = Dict(
-        "θ"  => SummaryData(title = "Bus Voltage"),
-        "Ps" => SummaryData(title = "Power Generation"),
-        "Pl" => SummaryData(title = "Power Demand"),
-        "Pi" => SummaryData(title = "Power Injection"),
+    if !isempty(power.supply.active)
+        type["Power Generation"] = "Power Generation"
+        type["Power Generation Active"] = " Active [$(unitList.activePowerLive)]"
+    end
+    if !isempty(power.supply.active)
+        type["Power Demand"] = "Power Demand"
+        type["Power Demand Active"] = " Active [$(unitList.activePowerLive)]"
+    end
+    if !isempty(power.injection.active)
+        type["Power Injection"] = "Power Injection"
+        type["Power Injection Active"] = " Active [$(unitList.activePowerLive)]"
+    end
+    total = Dict{String, Float64}(
+        "Power Generation Active" => 0.0,
+        "Power Demand Active" => 0.0,
+        "Power Injection Active" => 0.0,
     )
-
-    width = [0; 0; 0; 0; 5; 0]
-
-    device = Dict(
-        "supply" => 0,
-        "demand" => 0,
-        "shunt"  => 0
+    quantity = Dict{String, Float64}(
+        "Voltage"           => system.bus.number,
+        "Power Generation"  => 0.0,
+        "Power Demand"      => 0.0,
+        "Power Injection"   => system.bus.number,
     )
+    minIndex, minLabel, minValue, maxIndex, maxLabel, maxValue = summaryDict(type)
 
-    powerFlag = !isempty(analysis.power.injection.active)
+    @inbounds for i = 1:system.bus.number
+        summaryData(minIndex, minValue, maxIndex, maxValue, voltage.angle[i] * scale["θ"], i, "Voltage Angle")
 
-    for i = 1:system.bus.number
-        if !isempty(system.bus.supply.generator[i])
-            device["supply"] += 1
+        if !isempty(system.bus.supply.generator[i]) && haskey(type, "Power Generation")
+            quantity["Power Generation"] += 1
+            summaryData(minIndex, minValue, maxIndex, maxValue, total, power.supply.active[i] * scale["P"], i, "Power Generation Active")
         end
 
-        if system.bus.demand.active[i] != 0.0 || system.bus.demand.reactive[i] != 0.0
-            device["demand"] += 1
+        if (system.bus.demand.active[i] != 0.0 || system.bus.demand.reactive[i] != 0.0) && haskey(type, "Power Demand")
+            quantity["Power Demand"] += 1
+            summaryData(minIndex, minValue, maxIndex, maxValue, total, system.bus.demand.active[i] * scale["P"], i, "Power Demand Active")
         end
 
-        if system.bus.shunt.conductance[i] != 0.0 || system.bus.shunt.susceptance[i] != 0.0
-            device["shunt"] += 1
-        end
-
-        minmaxsumPrint!(format["θ"], analysis.voltage.angle[i], i)
-
-        if powerFlag
-            if !isempty(system.bus.supply.generator[i])
-                minmaxsumPrint!(format["Ps"], analysis.power.supply.active[i], i)
-            end
-
-            if system.bus.demand.active[i] != 0.0 || system.bus.demand.reactive[i] != 0.0
-                minmaxsumPrint!(format["Pl"], system.bus.demand.active[i], i)
-            end
-
-            minmaxsumPrint!(format["Pi"], analysis.power.injection.active[i], i)
+        if haskey(type, "Power Injection")
+            summaryData(minIndex, minValue, maxIndex, maxValue, total, power.injection.active[i] * scale["P"], i, "Power Injection Active")
         end
     end
+    summaryType(type, quantity)
+    summaryLabel(system.bus.label, minIndex, minLabel, maxIndex, maxLabel)
 
-    formatSummary!(format["θ"], unitLive["θ"], width, system.bus.label, scale["θ"], system.bus.number; total = false)
+    printing = howManyPrint(width, show, style, title, "Bus Summary")
 
-    if powerFlag
-        formatSummary!(format["Ps"], unitLive["P"], width, system.bus.label, scale["P"], device["supply"])
-        formatSummary!(format["Pl"], unitLive["P"], width, system.bus.label, scale["P"], device["demand"])
-        formatSummary!(format["Pi"], unitLive["P"], width, system.bus.label, scale["P"], system.bus.number)
-    end
-
-    return format, width, device, unitLive, powerFlag
+    return type, quantity, minLabel, minValue, maxLabel, maxValue, total, printing
 end
 
 """
-    printBranchSummary(system::PowerSystem, analysis::Analysis, [io::IO])
+    printBranchSummary(system::PowerSystem, analysis::Analysis, [io::IO];
+        fmt, width, show, delimiter, title, header, footer, style))
 
 The function prints a summary of the electrical quantities related to branches. Optionally,
 an `IO` may be passed as the last argument to redirect the output.
 
-The summary includes average net active and reactive power flows, focusing on the minimum
-and maximum branch power flows. For instance, the average net active power flow is calculated
-as follows:
-```math
-  \\bar {P}_{ij} = \\frac{|{P}_{ij} - {P}_{ji}|}{2}.
-```
+# Keywords
+The following keywords control the printed data:
+* `fmt`: Specifies the preferred numeric formats or alignments for the columns.
+* `width`: Specifies the preferred widths for the columns.
+* `show`: Toggles the printing of the columns.
+* `delimiter`: Sets the column delimiter.
+* `title`: Toggles the printing of the table title.
+* `header`: Toggles the printing of the header.
+* `footer`: Toggles the printing of the footer.
+* `style`: Prints either a stylish table or a simple table suitable for easy export.
 
 !!! compat "Julia 1.10"
     The function [`printBranchSummary`](@ref printBranchSummary) requires Julia 1.10 or later.
@@ -1299,337 +1266,226 @@ for i = 1:10
 end
 power!(system, analysis)
 
-printBranchSummary(system, analysis)
+show = Dict("Total" => false)
+printBranchSummary(system, analysis; show, delimiter = " ", title = false)
 ```
 """
-function printBranchSummary(system::PowerSystem, analysis::AC, io::IO = stdout)
+function printBranchSummary(system::PowerSystem, analysis::Union{AC, DC}, io::IO = stdout;
+    fmt::Dict{String, String} = Dict{String, String}(), width::Dict{String, Int64} = Dict{String, Int64}(),
+    show::Dict{String, Bool} = Dict{String, Bool}(), delimiter::String = "|", style::Bool = true,
+    title::Bool = true, header::Bool = true, footer::Bool = true)
+
+    errorVoltage(analysis.voltage.angle)
+
     scale = printScale(system, prefix)
-    format, width, device, unitLive, powerFlag, currentFlag = formatBranchSummary(system, analysis, scale)
-    maxLine = sum(width[:]) + 17
+    fmt, width, show, subheading = formatSummary(fmt, width, show, style, title)
+    type, quantity, minLabel, minValue, maxLabel, maxValue, total, printing = formatBranchSummary(system, analysis, scale, prefix, width, show, style, title)
 
-    sentence = "The power system comprises $(system.branch.number) $(plosg("branch", system.branch.number)), of which $(system.branch.layout.inservice) $(isare(system.branch.layout.inservice)) in-service.
-        These include $(device["line"]) transmission $(plosg("line", device["line"]; pl = "s")) ($(device["inline"]) in-service),
-        $(device["transformer"]) $(plosg("in-phase transformer", device["transformer"]; pl = "s")) ($(device["intransformer"]) in-service),
-        and $(device["shift"]) $(plosg("phase-shifting transformer", device["shift"]; pl = "s")) ($(device["inshift"]) in-service)."
+    if printing && !isempty(type)
+        heading = formatSummary(fmt, width, show, type, quantity, minLabel, minValue, maxLabel, maxValue, total, style)
+        maxLine, pfmt, hfmt = setupPrint(fmt, width, show, delimiter, style)
 
-    summaryHeader(io, maxLine, cutSentenceParts(sentence, maxLine - 2), "Branch Summary")
-    summarySubheader(io, maxLine, width)
-
-    if powerFlag
-        if device["inline"] != 0
-            summaryBlockHeader(io, width, format["Pline"].title, device["inline"])
-            summaryBlock(io, format["Pline"], " Net" * unitLive["P"], width)
-            summaryBlock(io, format["Qline"], " Net" * unitLive["Q"], width; line = true)
-        end
-
-        if device["intransformer"] != 0
-            summaryBlockHeader(io, width, format["Pintr"].title, device["intransformer"])
-            summaryBlock(io, format["Pintr"], " Net" * unitLive["P"], width)
-            summaryBlock(io, format["Qintr"], " Net" * unitLive["Q"], width; line = true)
-        end
-
-        if device["inshift"] != 0
-            summaryBlockHeader(io, width, format["Pshtr"].title, device["inshift"])
-            summaryBlock(io, format["Pshtr"], " Net" * unitLive["P"], width)
-            summaryBlock(io, format["Qshtr"], " Net" * unitLive["Q"], width; line = true)
-        end
-
-        if device["tie"] != 0
-            summaryBlockHeader(io, width, format["Ptie"].title, device["tie"])
-            summaryBlock(io, format["Ptie"], " Net" * unitLive["P"], width)
-            summaryBlock(io, format["Qtie"], " Net" * unitLive["Q"], width; line = true)
-        end
-
-        if device["shunt"] != 0
-            summaryBlockHeader(io, width, format["Pshunt"].title, device["shunt"])
-            summaryBlock(io, format["Pshunt"], unitLive["P"], width)
-            summaryBlock(io, format["Qshunt"], unitLive["Q"], width; line = true)
-        end
-
-        if system.branch.layout.inservice != 0
-            summaryBlockHeader(io, width, format["Ploss"].title, system.branch.layout.inservice)
-            summaryBlock(io, format["Ploss"], unitLive["P"], width)
-            summaryBlock(io, format["Qloss"], unitLive["Q"], width; line = true)
-        end
-    end
-
-    if currentFlag
-        if device["inline"] != 0
-            summaryBlockHeader(io, width, format["Iline"].title, device["inline"])
-            summaryBlock(io, format["Iline"], unitLive["I"], width)
-            summaryBlock(io, format["ψline"], unitLive["ψ"], width; line = true)
-        end
-
-        if device["intransformer"] != 0
-            summaryBlockHeader(io, width, format["Iintr"].title, device["intransformer"])
-            summaryBlock(io, format["Iintr"], unitLive["I"], width)
-            summaryBlock(io, format["ψintr"], unitLive["ψ"], width; line = true)
-        end
-
-        if device["inshift"] != 0
-            summaryBlockHeader(io, width, format["Ishtr"].title, device["inshift"])
-            summaryBlock(io, format["Ishtr"], unitLive["I"], width)
-            summaryBlock(io, format["ψshtr"], unitLive["ψ"], width; line = true)
-        end
+        printTitle(io, maxLine, delimiter, title, header, style, "Branch Summary")
+        printHeader(io, hfmt, width, show, heading, subheading, delimiter, header, style, maxLine)
+        printSummary(io, pfmt, hfmt, width, show, type, quantity, minLabel, minValue, maxLabel, maxValue, total, delimiter, maxLine, style, footer, lineBreak(analysis))
     end
 end
 
-function formatBranchSummary(system::PowerSystem, analysis::AC, scale::Dict{String, Float64})
-    unitLive = printUnitSummary(unitList)
+function formatBranchSummary(system::PowerSystem, analysis::AC, scale::Dict{String, Float64}, prefix::PrefixLive,
+    width::Dict{String, Int64}, show::OrderedDict{String, Bool}, style::Bool, title::Bool)
 
-    format = Dict(
-        "Pline"  => SummaryData(title = "Transmission Line Power"),
-        "Qline"  => SummaryData(),
-        "Pintr"  => SummaryData(title = "In-Phase Transformer Power"),
-        "Qintr"  => SummaryData(),
-        "Pshtr"  => SummaryData(title = "Phase-Shifting Transformer Power"),
-        "Qshtr"  => SummaryData(),
-        "Ptie"   => SummaryData(title = "Inter-Tie Power"),
-        "Qtie"   => SummaryData(),
-        "Pshunt" => SummaryData(title = "Shunt Power"),
-        "Qshunt" => SummaryData(),
-        "Ploss"  => SummaryData(title = "Series Power (Loss)"),
-        "Qloss"  => SummaryData(),
-        "Iline"  => SummaryData(title = "Transmission Line Current"),
-        "ψline"  => SummaryData(),
-        "Iintr"  => SummaryData(title = "In-Phase Transformer Current"),
-        "ψintr"  => SummaryData(),
-        "Ishtr"  => SummaryData(title = "Phase-Shifting Transformer Current"),
-        "ψshtr"  => SummaryData()
+    voltage = analysis.voltage
+    power = analysis.power
+    current = analysis.current
+    branch = system.branch
+
+    type = OrderedDict{String, String}()
+    if !isempty(power.from.active)
+        type["Line From-Bus Power Flow Magnitude"] = "Line From-Bus Power Flow Magnitude"
+        type["Line From-Bus Power Flow Magnitude Active"] = " Active [$(unitList.activePowerLive)]"
+        type["Line From-Bus Power Flow Magnitude Reactive"] = " Reactive [$(unitList.reactivePowerLive)]"
+    end
+    if !isempty(power.from.active)
+        type["Transformer From-Bus Power Flow Magnitude"] = "Transformer From-Bus Power Flow Magnitude"
+        type["Transformer From-Bus Power Flow Magnitude Active"] = " Active [$(unitList.activePowerLive)]"
+        type["Transformer From-Bus Power Flow Magnitude Reactive"] = " Reactive [$(unitList.reactivePowerLive)]"
+    end
+    if !isempty(power.to.active)
+        type["Line To-Bus Power Flow Magnitude"] = "Line To-Bus Power Flow Magnitude"
+        type["Line To-Bus Power Flow Magnitude Active"] = " Active [$(unitList.activePowerLive)]"
+        type["Line To-Bus Power Flow Magnitude Reactive"] = " Reactive [$(unitList.reactivePowerLive)]"
+    end
+    if !isempty(power.to.active)
+        type["Transformer To-Bus Power Flow Magnitude"] = "Transformer To-Bus Power Flow Magnitude"
+        type["Transformer To-Bus Power Flow Magnitude Active"] = " Active [$(unitList.activePowerLive)]"
+        type["Transformer To-Bus Power Flow Magnitude Reactive"] = " Reactive [$(unitList.reactivePowerLive)]"
+    end
+    if !isempty(power.charging.active)
+        type["Shunt Power"] = "Shunt Power"
+        type["Shunt Power Active"] = " Active [$(unitList.activePowerLive)]"
+        type["Shunt Power Reactive"] = " Reactive [$(unitList.reactivePowerLive)]"
+    end
+    if !isempty(power.series.active)
+        type["Series Power"] = "Series Power"
+        type["Series Power Active"] = " Active [$(unitList.activePowerLive)]"
+        type["Series Power Reactive"] = " Reactive [$(unitList.reactivePowerLive)]"
+    end
+    if !isempty(current.from.magnitude)
+        type["From-Bus Current"] = "From-Bus Current"
+        type["From-Bus Current Magnitude"] = " Magnitude [$(unitList.currentMagnitudeLive)]"
+        type["From-Bus Current Angle"] = " Angle [$(unitList.currentAngleLive)]"
+    end
+    if !isempty(current.to.magnitude)
+        type["To-Bus Current"] = "To-Bus Current"
+        type["To-Bus Current Magnitude"] = " Magnitude [$(unitList.currentMagnitudeLive)]"
+        type["To-Bus Current Angle"] = " Angle [$(unitList.currentAngleLive)]"
+    end
+    if !isempty(current.series.magnitude)
+        type["Series Current"] = "Series Current"
+        type["Series Current Magnitude"] = " Magnitude [$(unitList.currentMagnitudeLive)]"
+        type["Series Current Angle"] = " Angle [$(unitList.currentAngleLive)]"
+    end
+    total = Dict{String, Float64}(
+        "Shunt Power Active" => 0.0,
+        "Shunt Power Reactive" => 0.0,
+        "Series Power Active" => 0.0,
+        "Series Power Reactive" => 0.0
     )
-
-    width = [0; 0; 0; 0; 5; 0]
-
-    device = Dict(
-        "line"          => 0,
-        "inline"        => 0,
-        "shift"         => 0,
-        "inshift"       => 0,
-        "transformer"   => 0,
-        "intransformer" => 0,
-        "shunt"         => 0,
-        "tie"           => 0
+    quantity = Dict{String, Float64}(
+        "Line From-Bus Power Flow Magnitude" => 0,
+        "Transformer From-Bus Power Flow Magnitude" => 0,
+        "Line To-Bus Power Flow Magnitude" => 0,
+        "Transformer To-Bus Power Flow Magnitude" => 0,
+        "Shunt Power" => 0.0,
+        "Series Power" => system.branch.layout.inservice,
+        "From-Bus Current" => system.branch.layout.inservice,
+        "To-Bus Current" => system.branch.layout.inservice,
     )
+    minIndex, minLabel, minValue, maxIndex, maxLabel, maxValue = summaryDict(type)
 
-    powerFlag = !isempty(analysis.power.injection.active)
-    currentFlag = !isempty(analysis.current.injection.magnitude)
-
-    for i = 1:system.branch.number
-        if system.branch.parameter.turnsRatio[i] == 1 && system.branch.parameter.shiftAngle[i] == 0
-            device["line"] += 1
-            if system.branch.layout.status[i] == 1
-                device["inline"] += 1
-            end
-        elseif system.branch.parameter.turnsRatio[i] != 1 && system.branch.parameter.shiftAngle[i] == 0
-            device["transformer"] += 1
-            if system.branch.layout.status[i] == 1
-                device["intransformer"] += 1
-            end
-        else
-            device["shift"] += 1
-            if system.branch.layout.status[i] == 1
-                device["inshift"] += 1
-            end
-        end
-
+    @inbounds for i = 1:system.branch.number
         if system.branch.layout.status[i] == 1
-            if powerFlag
-                if system.branch.parameter.turnsRatio[i] == 1 && system.branch.parameter.shiftAngle[i] == 0
-                    minmaxsumPrint!(format["Pline"], abs(analysis.power.from.active[i] - analysis.power.to.active[i]) / 2, i)
-                    minmaxsumPrint!(format["Qline"], abs(analysis.power.from.reactive[i] - analysis.power.to.reactive[i]) / 2, i)
-                elseif system.branch.parameter.turnsRatio[i] != 1 && system.branch.parameter.shiftAngle[i] == 0
-                    minmaxsumPrint!(format["Pintr"], abs(analysis.power.from.active[i] - analysis.power.to.active[i]) / 2, i)
-                    minmaxsumPrint!(format["Qintr"], abs(analysis.power.from.reactive[i] - analysis.power.to.reactive[i]) / 2, i)
+            if haskey(type, "Line From-Bus Power Flow Magnitude")
+                if branch.parameter.turnsRatio[i] == 1 && branch.parameter.shiftAngle[i] == 0
+                    quantity["Line From-Bus Power Flow Magnitude"] += 1
+                    summaryData(minIndex, minValue, maxIndex, maxValue, abs(power.from.active[i]) * scale["P"], i, "Line From-Bus Power Flow Magnitude Active")
+                    summaryData(minIndex, minValue, maxIndex, maxValue, abs(power.from.reactive[i]) * scale["Q"], i, "Line From-Bus Power Flow Magnitude Reactive")
                 else
-                    minmaxsumPrint!(format["Pshtr"], abs(analysis.power.from.active[i] - analysis.power.to.active[i]) / 2, i)
-                    minmaxsumPrint!(format["Qshtr"], abs(analysis.power.from.reactive[i] - analysis.power.to.reactive[i]) / 2, i)
+                    quantity["Transformer From-Bus Power Flow Magnitude"] += 1
+                    summaryData(minIndex, minValue, maxIndex, maxValue, abs(power.from.active[i]) * scale["P"], i, "Transformer From-Bus Power Flow Magnitude Active")
+                    summaryData(minIndex, minValue, maxIndex, maxValue, abs(power.from.reactive[i]) * scale["Q"], i, "Transformer From-Bus Power Flow Magnitude Reactive")
                 end
-
-                if system.bus.layout.area[system.branch.layout.from[i]] != system.bus.layout.area[system.branch.layout.to[i]]
-                    device["tie"] += 1
-                    minmaxsumPrint!(format["Ptie"], abs(analysis.power.from.active[i] - analysis.power.to.active[i]) / 2, i)
-                    minmaxsumPrint!(format["Qtie"], abs(analysis.power.from.reactive[i] - analysis.power.to.reactive[i]) / 2, i)
-                end
-
-                if system.branch.parameter.conductance[i] != 0.0 || system.branch.parameter.susceptance[i] != 0.0
-                    device["shunt"] += 1
-                    minmaxsumPrint!(format["Pshunt"], analysis.power.charging.active[i], i)
-                    minmaxsumPrint!(format["Qshunt"], analysis.power.charging.reactive[i], i)
-                end
-
-                minmaxsumPrint!(format["Ploss"], analysis.power.series.active[i], i)
-                minmaxsumPrint!(format["Qloss"], analysis.power.series.reactive[i], i)
             end
 
-            if currentFlag
-                currentSeries = analysis.current.series.magnitude[i] * scaleCurrent(prefix, system, system.branch.layout.from[i])
-
-                if system.branch.parameter.turnsRatio[i] == 1 && system.branch.parameter.shiftAngle[i] == 0
-                    minmaxsumPrint!(format["Iline"], currentSeries, i)
-                    minmaxsumPrint!(format["ψline"], analysis.current.series.angle[i], i)
-                elseif system.branch.parameter.turnsRatio[i] != 1 && system.branch.parameter.shiftAngle[i] == 0
-                    minmaxsumPrint!(format["Iintr"], currentSeries, i)
-                    minmaxsumPrint!(format["ψintr"], analysis.current.series.angle[i], i)
+            if haskey(type, "Line To-Bus Power Flow Magnitude")
+                if branch.parameter.turnsRatio[i] == 1 && branch.parameter.shiftAngle[i] == 0
+                    quantity["Line To-Bus Power Flow Magnitude"] += 1
+                    summaryData(minIndex, minValue, maxIndex, maxValue, abs(power.to.active[i]) * scale["P"], i, "Line To-Bus Power Flow Magnitude Active")
+                    summaryData(minIndex, minValue, maxIndex, maxValue, abs(power.to.reactive[i]) * scale["Q"], i, "Line To-Bus Power Flow Magnitude Reactive")
                 else
-                    minmaxsumPrint!(format["Ishtr"], currentSeries, i)
-                    minmaxsumPrint!(format["ψshtr"], analysis.current.series.angle[i], i)
+                    quantity["Transformer To-Bus Power Flow Magnitude"] += 1
+                    summaryData(minIndex, minValue, maxIndex, maxValue, abs(power.to.active[i]) * scale["P"], i, "Transformer To-Bus Power Flow Magnitude Active")
+                    summaryData(minIndex, minValue, maxIndex, maxValue, abs(power.to.reactive[i]) * scale["Q"], i, "Transformer To-Bus Power Flow Magnitude Reactive")
                 end
+            end
+
+            if (system.branch.parameter.conductance[i] != 0.0 || system.branch.parameter.susceptance[i] != 0.0) && haskey(type, "Shunt Power")
+                quantity["Shunt Power"] += 1
+                summaryData(minIndex, minValue, maxIndex, maxValue, total, power.charging.active[i] * scale["P"], i, "Shunt Power Active")
+                summaryData(minIndex, minValue, maxIndex, maxValue, total, power.charging.reactive[i] * scale["Q"], i, "Shunt Power Reactive")
+            end
+
+            if haskey(type, "Series Power")
+                summaryData(minIndex, minValue, maxIndex, maxValue, total, power.series.active[i] * scale["P"], i, "Series Power Active")
+                summaryData(minIndex, minValue, maxIndex, maxValue, total, power.series.reactive[i] * scale["Q"], i, "Series Power Reactive")
+            end
+
+            if haskey(type, "From-Bus Current")
+                summaryData(minIndex, minValue, maxIndex, maxValue, current.from.magnitude[i] * scaleCurrent(prefix, system, system.branch.layout.from[i]), i, "From-Bus Current Magnitude")
+                summaryData(minIndex, minValue, maxIndex, maxValue, current.from.angle[i] * scale["ψ"], i, "From-Bus Current Angle")
+            end
+
+            if haskey(type, "To-Bus Current")
+                summaryData(minIndex, minValue, maxIndex, maxValue, current.to.magnitude[i] * scaleCurrent(prefix, system, system.branch.layout.to[i]), i, "To-Bus Current Magnitude")
+                summaryData(minIndex, minValue, maxIndex, maxValue, current.to.angle[i] * scale["ψ"], i, "To-Bus Current Angle")
+            end
+
+            if haskey(type, "Series Current")
+                summaryData(minIndex, minValue, maxIndex, maxValue, current.series.magnitude[i] * scaleCurrent(prefix, system, system.branch.layout.from[i]), i, "Series Current Magnitude")
+                summaryData(minIndex, minValue, maxIndex, maxValue, current.series.angle[i] * scale["ψ"], i, "Series Current Angle")
             end
         end
     end
+    summaryType(type, quantity)
+    summaryLabel(system.branch.label, minIndex, minLabel, maxIndex, maxLabel)
 
-    if powerFlag
-        formatSummary!(format["Pline"], unitLive["P"], width, system.branch.label, scale["P"], device["inline"]; total = false)
-        formatSummary!(format["Qline"], unitLive["Q"], width, system.branch.label, scale["Q"], device["inline"]; total = false)
+    printing = howManyPrint(width, show, style, title, "Branch Summary")
 
-        formatSummary!(format["Pintr"], unitLive["P"], width, system.branch.label, scale["P"], device["intransformer"]; total = false)
-        formatSummary!(format["Qintr"], unitLive["Q"], width, system.branch.label, scale["Q"], device["intransformer"]; total = false)
-
-        formatSummary!(format["Pshtr"], unitLive["P"], width, system.branch.label, scale["P"], device["inshift"]; total = false)
-        formatSummary!(format["Qshtr"], unitLive["Q"], width, system.branch.label, scale["Q"], device["inshift"]; total = false)
-
-        formatSummary!(format["Ptie"], unitLive["P"], width, system.branch.label, scale["P"], device["tie"])
-        formatSummary!(format["Qtie"], unitLive["Q"], width, system.branch.label, scale["Q"], device["tie"])
-
-        formatSummary!(format["Pshunt"], unitLive["P"], width, system.branch.label, scale["P"], device["shunt"])
-        formatSummary!(format["Qshunt"], unitLive["Q"], width, system.branch.label, scale["Q"], device["shunt"])
-
-        formatSummary!(format["Ploss"], unitLive["P"], width, system.branch.label, scale["P"], system.branch.layout.inservice)
-        formatSummary!(format["Qloss"], unitLive["Q"], width, system.branch.label, scale["Q"], system.branch.layout.inservice)
-    end
-
-    if currentFlag
-        formatSummary!(format["Iline"], unitLive["I"], width, system.branch.label, 1.0, device["inline"]; total = false)
-        formatSummary!(format["ψline"], unitLive["ψ"], width, system.branch.label, scale["ψ"], device["inline"]; total = false)
-
-        formatSummary!(format["Iintr"], unitLive["I"], width, system.branch.label, 1.0, device["intransformer"]; total = false)
-        formatSummary!(format["ψintr"], unitLive["ψ"], width, system.branch.label, scale["ψ"], device["intransformer"]; total = false)
-
-        formatSummary!(format["Ishtr"], unitLive["I"], width, system.branch.label, 1.0, device["inshift"]; total = false)
-        formatSummary!(format["ψshtr"], unitLive["ψ"], width, system.branch.label, scale["ψ"], device["inshift"]; total = false)
-    end
-
-    width[6] = max(width[6], textwidth(" Net Reactive [$(unitList.reactivePowerLive)]"))
-
-    return format, width, device, unitLive, powerFlag, currentFlag
+    return type, quantity, minLabel, minValue, maxLabel, maxValue, total, printing
 end
 
-function printBranchSummary(system::PowerSystem, analysis::DC, io::IO = stdout)
-    scale = printScale(system, prefix)
-    format, width, device, unitLive, powerFlag = formatBranchSummary(system, analysis, scale)
-    maxLine = sum(width[:]) + 17
+function formatBranchSummary(system::PowerSystem, analysis::DC, scale::Dict{String, Float64}, prefix::PrefixLive,
+    width::Dict{String, Int64}, show::OrderedDict{String, Bool}, style::Bool, title::Bool)
 
-    sentence = "The power system comprises $(system.branch.number) $(plosg("branch", system.branch.number)), of which $(system.branch.layout.inservice) $(isare(system.branch.layout.inservice)) in-service.
-        These include $(device["line"]) transmission $(plosg("line", device["line"]; pl = "s")) ($(device["inline"]) in-service),
-        $(device["transformer"]) $(plosg("in-phase transformer", device["transformer"]; pl = "s")) ($(device["intransformer"]) in-service),
-        and $(device["shift"]) $(plosg("phase-shifting transformer", device["shift"]; pl = "s")) ($(device["inshift"]) in-service)."
+    voltage = analysis.voltage
+    power = analysis.power
+    branch = system.branch
 
-    summaryHeader(io, maxLine, cutSentenceParts(sentence, maxLine - 2), "Branch Summary")
-    summarySubheader(io, maxLine, width)
-
-    if powerFlag
-        if device["inline"] != 0
-            summaryBlockHeader(io, width, format["Pline"].title, device["inline"])
-            summaryBlock(io, format["Pline"], " Net" * unitLive["P"], width; line = true)
-        end
-
-        if device["intransformer"] != 0
-            summaryBlockHeader(io, width, format["Pintr"].title, device["intransformer"])
-            summaryBlock(io, format["Pintr"], " Net" * unitLive["P"], width; line = true)
-        end
-
-        if device["inshift"] != 0
-            summaryBlockHeader(io, width, format["Pshtr"].title, device["inshift"])
-            summaryBlock(io, format["Pshtr"], " Net" * unitLive["P"], width; line = true)
-        end
-
-        if device["tie"] != 0
-            summaryBlockHeader(io, width, format["Ptie"].title, device["tie"])
-            summaryBlock(io, format["Ptie"], " Net" * unitLive["P"], width; line = true)
-        end
+    type = OrderedDict{String, String}()
+    if !isempty(power.from.active)
+        type["Line Power Flow Magnitude"] = "Line Power Flow Magnitude"
+        type["Line Power Flow Magnitude Active"] = " Active [$(unitList.activePowerLive)]"
     end
-end
+    if !isempty(power.from.active)
+        type["Transformer Power Flow Magnitude"] = "Transformer Power Flow Magnitude"
+        type["Transformer Power Flow Magnitude Active"] = " Active [$(unitList.activePowerLive)]"
+    end
 
-function formatBranchSummary(system::PowerSystem, analysis::DC, scale::Dict{String, Float64})
-    unitLive = printUnitSummary(unitList)
-
-    format = Dict(
-        "Pline" => SummaryData(title = "Transmission Line Power"),
-        "Pintr" => SummaryData(title = "In-Phase Transformer Power"),
-        "Pshtr" => SummaryData(title = "Phase-Shifting Transformer Power"),
-        "Ptie"  => SummaryData(title = "Inter-Tie Power"),
-        "Pij"   => SummaryData(),
-        "Pji"   => SummaryData()
+    total = Dict{String, Float64}()
+    quantity = Dict{String, Float64}(
+        "Line Power Flow Magnitude" => 0,
+        "Transformer Power Flow Magnitude" => 0,
     )
+    minIndex, minLabel, minValue, maxIndex, maxLabel, maxValue = summaryDict(type)
 
-    width = [0; 0; 0; 0; 5; 0]
-
-    device = Dict(
-        "line"          => 0,
-        "inline"        => 0,
-        "shift"         => 0,
-        "inshift"       => 0,
-        "transformer"   => 0,
-        "intransformer" => 0,
-        "shunt"         => 0,
-        "tie"           => 0
-    )
-
-    powerFlag = !isempty(analysis.power.injection.active)
-
-    for i = 1:system.branch.number
-        if system.branch.parameter.turnsRatio[i] == 1 && system.branch.parameter.shiftAngle[i] == 0
-            device["line"] += 1
-            if system.branch.layout.status[i] == 1
-                device["inline"] += 1
-            end
-        elseif system.branch.parameter.turnsRatio[i] != 1 && system.branch.parameter.shiftAngle[i] == 0
-            device["transformer"] += 1
-            if system.branch.layout.status[i] == 1
-                device["intransformer"] += 1
-            end
-        else
-            device["shift"] += 1
-            if system.branch.layout.status[i] == 1
-                device["inshift"] += 1
-            end
-        end
-
-        if powerFlag
-            if system.branch.layout.status[i] == 1
-                if system.branch.parameter.turnsRatio[i] == 1 && system.branch.parameter.shiftAngle[i] == 0
-                    minmaxsumPrint!(format["Pline"], abs(analysis.power.from.active[i] - analysis.power.to.active[i]) / 2, i)
-                elseif system.branch.parameter.turnsRatio[i] != 1 && system.branch.parameter.shiftAngle[i] == 0
-                    minmaxsumPrint!(format["Pintr"], abs(analysis.power.from.active[i] - analysis.power.to.active[i]) / 2, i)
+    @inbounds for i = 1:system.branch.number
+        if system.branch.layout.status[i] == 1
+            if haskey(type, "Line Power Flow Magnitude")
+                if branch.parameter.turnsRatio[i] == 1 && branch.parameter.shiftAngle[i] == 0
+                    quantity["Line Power Flow Magnitude"] += 1
+                    summaryData(minIndex, minValue, maxIndex, maxValue, abs(power.from.active[i]) * scale["P"], i, "Line Power Flow Magnitude Active")
                 else
-                    minmaxsumPrint!(format["Pshtr"], abs(analysis.power.from.active[i] - analysis.power.to.active[i]) / 2, i)
-                end
-
-                if system.bus.layout.area[system.branch.layout.from[i]] != system.bus.layout.area[system.branch.layout.to[i]]
-                    device["tie"] += 1
-                    minmaxsumPrint!(format["Ptie"], abs(analysis.power.from.active[i] - analysis.power.to.active[i]) / 2, i)
+                    quantity["Transformer Power Flow Magnitude"] += 1
+                    summaryData(minIndex, minValue, maxIndex, maxValue, abs(power.from.active[i]) * scale["P"], i, "Transformer Power Flow Magnitude Active")
                 end
             end
         end
     end
+    summaryType(type, quantity)
+    summaryLabel(system.branch.label, minIndex, minLabel, maxIndex, maxLabel)
 
-    if powerFlag
-        formatSummary!(format["Pline"], unitLive["P"], width, system.branch.label, scale["P"], device["inline"]; total = false)
-        formatSummary!(format["Pintr"], unitLive["P"], width, system.branch.label, scale["P"], device["intransformer"]; total = false)
-        formatSummary!(format["Pshtr"], unitLive["P"], width, system.branch.label, scale["P"], device["inshift"]; total = false)
-        formatSummary!(format["Ptie"], unitLive["P"], width, system.branch.label, scale["P"], device["tie"]; total = false)
-    end
+    printing = howManyPrint(width, show, style, title, "Branch Summary")
 
-    width[6] = max(width[6], textwidth(" Net Active [$(unitList.activePowerLive)]"))
-
-    return format, width, device, unitLive, powerFlag
+    return type, quantity, minLabel, minValue, maxLabel, maxValue, total, printing
 end
 
 """
-    printGeneratorSummary(system::PowerSystem, analysis::Analysis, [io::IO])
+    printGeneratorSummary(system::PowerSystem, analysis::Analysis, [io::IO];
+        fmt, width, show, delimiter, title, header, footer, style)
 
 The function prints a summary of the electrical quantities related to generators.
 Optionally, an `IO` may be passed as the last argument to redirect the output.
+
+# Keywords
+The following keywords control the printed data:
+* `fmt`: Specifies the preferred numeric formats or alignments for the columns.
+* `width`: Specifies the preferred widths for the columns.
+* `show`: Toggles the printing of the columns.
+* `delimiter`: Sets the column delimiter.
+* `title`: Toggles the printing of the table title.
+* `header`: Toggles the printing of the header.
+* `footer`: Toggles the printing of the footer.
+* `style`: Prints either a stylish table or a simple table suitable for easy export.
 
 !!! compat "Julia 1.10"
     The function [`printGeneratorSummary`](@ref printGeneratorSummary) requires Julia 1.10 or later.
@@ -1648,90 +1504,326 @@ for i = 1:10
 end
 power!(system, analysis)
 
-printGeneratorSummary(system, analysis)
+show = Dict("Minimum" => false)
+printGeneratorSummary(system, analysis; show, delimiter = " ", title = false)
 ```
 """
-function printGeneratorSummary(system::PowerSystem, analysis::AC, io::IO = stdout)
+function printGeneratorSummary(system::PowerSystem, analysis::Union{AC, DC}, io::IO = stdout;
+    fmt::Dict{String, String} = Dict{String, String}(), width::Dict{String, Int64} = Dict{String, Int64}(),
+    show::Dict{String, Bool} = Dict{String, Bool}(), delimiter::String = "|", style::Bool = true,
+    title::Bool = true, header::Bool = true, footer::Bool = true)
+
+    errorVoltage(analysis.voltage.angle)
+
     scale = printScale(system, prefix)
-    format, width, unitLive, powerFlag = formatGeneratorSummary(system, analysis, scale)
-    maxLine = sum(width[:]) + 17
+    fmt, width, show, subheading = formatSummary(fmt, width, show, style, title)
+    type, quantity, minLabel, minValue, maxLabel, maxValue, total, printing = formatGeneratorSummary(system, analysis, scale, prefix, width, show, style, title)
 
-    sentence = "The power system comprises $(system.generator.number) $(plosg("generator", system.generator.number; pl = "s")),
-        of which $(system.generator.layout.inservice) $(isare(system.generator.layout.inservice)) in-service."
+    if printing && !isempty(type)
+        heading = formatSummary(fmt, width, show, type, quantity, minLabel, minValue, maxLabel, maxValue, total, style)
+        maxLine, pfmt, hfmt = setupPrint(fmt, width, show, delimiter, style)
 
-    summaryHeader(io, maxLine, cutSentenceParts(sentence, maxLine - 2), "Generator Summary")
-    summarySubheader(io, maxLine, width)
-
-    if powerFlag
-        summaryBlockHeader(io, width, format["Pg"].title, system.generator.layout.inservice)
-        summaryBlock(io, format["Pg"], unitLive["P"], width)
-        summaryBlock(io, format["Qg"], unitLive["Q"], width; line = true)
+        printTitle(io, maxLine, delimiter, title, header, style, "Generator Summary")
+        printHeader(io, hfmt, width, show, heading, subheading, delimiter, header, style, maxLine)
+        printSummary(io, pfmt, hfmt, width, show, type, quantity, minLabel, minValue, maxLabel, maxValue, total, delimiter, maxLine, style, footer, lineBreak(analysis))
     end
 end
 
-function formatGeneratorSummary(system::PowerSystem, analysis::AC, scale::Dict{String, Float64})
-    unitLive = printUnitSummary(unitList)
+function formatGeneratorSummary(system::PowerSystem, analysis::AC, scale::Dict{String, Float64}, prefix::PrefixLive,
+    width::Dict{String, Int64}, show::OrderedDict{String, Bool}, style::Bool, title::Bool)
 
-    format = Dict(
-        "Pg" => SummaryData(title = "Power Output"),
-        "Qg" => SummaryData()
+    power = analysis.power
+
+    type = OrderedDict{String, String}()
+    if !isempty(power.generator.active)
+        type["Power Output"] = "Power Output"
+        type["Power Output Active"] = " Active [$(unitList.activePowerLive)]"
+        type["Power Output Reactive"] = " Reactive [$(unitList.reactivePowerLive)]"
+    end
+    total = Dict{String, Float64}(
+        "Power Output Active" => 0.0,
+        "Power Output Reactive" => 0.0,
     )
+    quantity = Dict{String, Float64}(
+        "Power Output" => system.generator.layout.inservice,
+    )
+    minIndex, minLabel, minValue, maxIndex, maxLabel, maxValue = summaryDict(type)
 
-    width = [0; 0; 0; 0; 5; 0]
-
-    powerFlag = !isempty(analysis.power.generator.active)
-
-    if powerFlag
-        for i = 1:system.generator.number
-            if system.generator.layout.status[i] == 1
-                minmaxsumPrint!(format["Pg"], analysis.power.generator.active[i], i)
-                minmaxsumPrint!(format["Qg"], analysis.power.generator.reactive[i], i)
+    @inbounds for i = 1:system.generator.number
+        if system.generator.layout.status[i] == 1
+            if haskey(type, "Power Output")
+                summaryData(minIndex, minValue, maxIndex, maxValue, total, power.generator.active[i] * scale["P"], i, "Power Output Active")
+                summaryData(minIndex, minValue, maxIndex, maxValue, total, power.generator.reactive[i] * scale["Q"], i, "Power Output Reactive")
             end
         end
-        formatSummary!(format["Pg"], unitLive["P"], width, system.generator.label, scale["P"], system.generator.layout.inservice)
-        formatSummary!(format["Qg"], unitLive["Q"], width, system.generator.label, scale["Q"], system.generator.layout.inservice)
     end
+    summaryType(type, quantity)
+    summaryLabel(system.branch.label, minIndex, minLabel, maxIndex, maxLabel)
 
-    return format, width, unitLive, powerFlag
+    printing = howManyPrint(width, show, style, title, "Generator Summary")
+
+    return type, quantity, minLabel, minValue, maxLabel, maxValue, total, printing
 end
 
+function formatGeneratorSummary(system::PowerSystem, analysis::DC, scale::Dict{String, Float64}, prefix::PrefixLive,
+    width::Dict{String, Int64}, show::OrderedDict{String, Bool}, style::Bool, title::Bool)
 
-function printGeneratorSummary(system::PowerSystem, analysis::DC, io::IO = stdout)
-    scale = printScale(system, prefix)
-    format, width, unitLive, powerFlag = formatGeneratorSummary(system, analysis, scale)
-    maxLine = sum(width[:]) + 17
+    power = analysis.power
 
-    sentence = "The power system comprises $(system.generator.number) $(plosg("generator", system.generator.number; pl = "s")),
-        of which $(system.generator.layout.inservice) $(isare(system.generator.layout.inservice)) in-service."
-
-    summaryHeader(io, maxLine, cutSentenceParts(sentence, maxLine - 2), "Generator Summary")
-    summarySubheader(io, maxLine, width)
-
-    if powerFlag
-        summaryBlockHeader(io, width, format["Pg"].title, system.generator.layout.inservice)
-        summaryBlock(io, format["Pg"], unitLive["P"], width; line = true)
+    type = OrderedDict{String, String}()
+    if !isempty(power.generator.active)
+        type["Power Output"] = "Power Output"
+        type["Power Output Active"] = " Active [$(unitList.activePowerLive)]"
     end
-end
-
-function formatGeneratorSummary(system::PowerSystem, analysis::DC, scale::Dict{String, Float64})
-    unitLive = printUnitSummary(unitList)
-
-    format = Dict(
-        "Pg" => SummaryData(title = "Power Output"),
+    total = Dict{String, Float64}(
+        "Power Output Active" => 0.0,
     )
+    quantity = Dict{String, Float64}(
+        "Power Output" => system.generator.layout.inservice,
+    )
+    minIndex, minLabel, minValue, maxIndex, maxLabel, maxValue = summaryDict(type)
 
-    width = [0; 0; 0; 0; 5; 0]
-
-    powerFlag = !isempty(analysis.power.generator.active)
-
-    if powerFlag
-        for i = 1:system.generator.number
-            if system.generator.layout.status[i] == 1
-                minmaxsumPrint!(format["Pg"], analysis.power.generator.active[i], i)
+    @inbounds for i = 1:system.generator.number
+        if system.generator.layout.status[i] == 1
+            if haskey(type, "Power Output")
+                summaryData(minIndex, minValue, maxIndex, maxValue, total, power.generator.active[i] * scale["P"], i, "Power Output Active")
             end
         end
-        formatSummary!(format["Pg"], unitLive["P"], width, system.generator.label, scale["P"], system.generator.layout.inservice)
+    end
+    summaryType(type, quantity)
+    summaryLabel(system.branch.label, minIndex, minLabel, maxIndex, maxLabel)
+
+    printing = howManyPrint(width, show, style, title, "Generator Summary")
+
+    return type, quantity, minLabel, minValue, maxLabel, maxValue, total, printing
+end
+
+function formatSummary(fmt::Dict{String, String}, width::Dict{String, Int64}, show::Dict{String, Bool}, style::Bool, title::Bool)
+    _show = OrderedDict(
+        "Minimum" => true,
+        "Maximum" => true,
+    )
+    _, _width = fmtwidth(_show)
+    _, _width, _show = printFormat(Dict{String, String}(), Dict{String, String}(), _width, width, _show, show, style)
+
+    subheading = Dict(
+        "Type"          => _header_("", "Type", style),
+        "Quantity"      => _header_("", "Quantity", style),
+        "Minimum Label" => _header_("Label", "Label", style),
+        "Minimum Value" => _header_("Value", "Minimum", style),
+        "Maximum Label" => _header_("Label", "Label", style),
+        "Maximum Value" => _header_("Value", "Maximum", style),
+        "Total"         => _header_("", "Total", style),
+    )
+    _fmt = Dict(
+        "Type"          => "%-*s",
+        "Quantity"      => "%*i",
+        "Minimum Label" => "%-*s",
+        "Minimum Value" => "%*.4f",
+        "Maximum Label" => "%-*s",
+        "Maximum Value" => "%*.4f",
+        "Total"         => "%*.4f",
+    )
+    _width = Dict(
+        "Type"          => 4 * style,
+        "Quantity"      => 8 * style,
+        "Minimum Label" => _width_(_width["Minimum"], 5, style),
+        "Minimum Value" => _width_(_width["Minimum"], 5, style),
+        "Maximum Label" => _width_(_width["Maximum"], 5, style),
+        "Maximum Value" => _width_(_width["Maximum"], 5, style),
+        "Total"         => 5 * style,
+    )
+    _show = OrderedDict(
+        "Type"          => true,
+        "Minimum Label" => _show_(_show["Minimum"], true),
+        "Minimum Value" => _show_(_show["Minimum"], true),
+        "Maximum Label" => _show_(_show["Maximum"], true),
+        "Maximum Value" => _show_(_show["Maximum"], true),
+        "Quantity"      => true,
+        "Total"         => true,
+    )
+    fmt, width, show = printFormat(_fmt, fmt, _width, width, _show, show, style)
+
+    printing = howManyPrint(width, show, style, title, "Bus Summary")
+
+    return fmt, width, show, subheading
+end
+
+function formatSummary(fmt::Dict{String, String}, width::Dict{String, Int64}, show::OrderedDict{String, Bool}, type::OrderedDict{String, String},
+    quantity::Dict{String, Float64}, minLabel::Dict{String, String}, minValue::Dict{String, Float64}, maxLabel::Dict{String, String}, maxValue::Dict{String, Float64},
+    total::Dict{String, Float64}, style::Bool)
+
+    if style
+        for (key, caption) in type
+            fmax(fmt, width, show, caption, "Type")
+
+            if haskey(minLabel, key)
+                fmax(fmt, width, show, minLabel[key], "Minimum Label")
+                fmax(fmt, width, show, minValue[key], "Minimum Value")
+            end
+
+            if haskey(maxLabel, key)
+                fmax(fmt, width, show, maxLabel[key], "Maximum Label")
+                fmax(fmt, width, show, maxValue[key], "Maximum Value")
+            end
+
+            if haskey(quantity, key)
+                fmax(fmt, width, show, quantity[key], "Quantity")
+            end
+
+            if haskey(total, key)
+                fmax(fmt, width, show, total[key], "Total")
+            end
+        end
     end
 
-    return format, width, unitLive, powerFlag
+    heading = OrderedDict(
+        "Type"     => _blank_(width, show, "Type"),
+        "Minimum"  => _blank_(width, show, style, "Minimum", "Minimum Label", "Minimum Value"),
+        "Maximum"  => _blank_(width, show, style, "Maximum", "Maximum Label", "Maximum Value"),
+        "Quantity" => _blank_(width, show, "Quantity"),
+        "Total"    => _blank_(width, show, "Total")
+    )
+
+    return heading
+end
+
+function printHeader(io::IO, hfmt::Dict{String, Format}, width::Dict{String, Int64}, show::OrderedDict{String, Bool},
+    heading::OrderedDict{String, Int64}, subheading::Dict{String, String}, delimiter::String,
+    header::Bool, style::Bool, maxLine::Int64)
+
+    if header
+        if style
+            printf(io, delimiter, maxLine, style, header)
+            printf(io, heading, delimiter)
+            printf(io, hfmt["Empty"], heading, delimiter)
+        end
+        printf(io, hfmt, width, show, delimiter, style, subheading)
+    end
+end
+
+function printSummary(io::IO, pfmt::Dict{String, Format}, hfmt::Dict{String, Format}, width::Dict{String, Int64}, show::OrderedDict{String, Bool}, type::OrderedDict{String, String},
+    quantity::Dict{String, Float64}, minLabel::Dict{String, String}, minValue::Dict{String, Float64}, maxLabel::Dict{String, String}, maxValue::Dict{String, Float64},
+    total::Dict{String, Float64}, delimiter::String, maxLine::Int64, style::Bool, footer::Bool, breakLine::Int64)
+
+    cnt = 1
+    @inbounds for (key, caption) in type
+        if (cnt - 1) % breakLine == 0 && cnt != 1
+            printf(io, hfmt, width, show, delimiter, style)
+        end
+
+        printf(io, pfmt, show, width, caption, "Type")
+
+        if haskey(minLabel, key)
+            printf(io, pfmt, show, width, minLabel[key], "Minimum Label")
+            printf(io, pfmt, show, width, minValue[key], "Minimum Value")
+        else
+            printf(io, hfmt, show, width, "", "Minimum Label")
+            printf(io, hfmt, show, width, "", "Minimum Value")
+        end
+
+        if haskey(maxLabel, key)
+            printf(io, pfmt, show, width, maxLabel[key], "Maximum Label")
+            printf(io, pfmt, show, width, maxValue[key], "Maximum Value")
+        else
+            printf(io, hfmt, show, width, "", "Maximum Label")
+            printf(io, hfmt, show, width, "", "Maximum Value")
+        end
+
+        if haskey(quantity, key)
+            printf(io, pfmt, show, width, quantity[key], "Quantity")
+        else
+            printf(io, hfmt, show, width, "", "Quantity")
+        end
+
+        if haskey(total, key)
+            printf(io, pfmt, show, width, total[key], "Total")
+        else
+            printf(io, hfmt, show, width, "", "Total")
+        end
+
+        @printf io "\n"
+        cnt += 1
+    end
+    printf(io, delimiter, maxLine, style, footer)
+end
+
+function summaryDict(type::OrderedDict{String, String})
+    minIndex = Dict{String, Int64}()
+    minLabel = Dict{String, String}()
+    minValue = Dict{String, Float64}()
+
+    maxIndex = Dict{String, Int64}()
+    maxLabel = Dict{String, String}()
+    maxValue = Dict{String, Float64}()
+
+    for (key, value) in type
+        if value[1] == ' '
+            minIndex[key] = 0
+            minLabel[key] = ""
+            minValue[key] = Inf
+
+            maxIndex[key] = 0
+            maxLabel[key] = ""
+            maxValue[key] = -Inf
+        end
+    end
+
+    minIndex, minLabel, minValue, maxIndex, maxLabel, maxValue
+end
+
+function summaryData(minIndex::Dict{String, Int64}, minValue::Dict{String, Float64}, maxIndex::Dict{String, Int64},
+    maxValue::Dict{String, Float64}, total::Dict{String, Float64}, value::Float64, i::Int64, key::String)
+
+    summaryData(minIndex, minValue, maxIndex, maxValue, value, i, key)
+    total[key] += value
+end
+
+function summaryData(minIndex::Dict{String, Int64}, minValue::Dict{String, Float64}, maxIndex::Dict{String, Int64},
+    maxValue::Dict{String, Float64}, value::Float64, i::Int64, key::String)
+
+    if value < minValue[key]
+        minIndex[key] = i
+        minValue[key] = value
+    end
+
+    if value > maxValue[key]
+        maxIndex[key] = i
+        maxValue[key] = value
+    end
+end
+
+function summaryType(type::OrderedDict{String, String}, quantity::Dict{String, Float64})
+    for (key, value) in quantity
+        if value == 0
+            for label in keys(type)
+                if occursin(key, label)
+                    delete!(type, label)
+                end
+            end
+        end
+    end
+end
+
+function summaryLabel(label::OrderedDict{String, Int64}, minIndex::Dict{String, Int64}, minLabel::Dict{String, String},
+    maxIndex::Dict{String, Int64}, maxLabel::Dict{String, String})
+
+    for (key, index) in minIndex
+        if index != 0
+            (minLabel[key], _), _ = iterate(label, index)
+        end
+    end
+    for (key, index) in maxIndex
+        if index != 0
+            (maxLabel[key], _), _ = iterate(label, index)
+        end
+    end
+end
+
+function lineBreak(analysis::AC)
+    return 3
+end
+
+function lineBreak(analysis::DC)
+    return 2
 end
