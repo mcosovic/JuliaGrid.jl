@@ -110,11 +110,31 @@ function fmax(fmt::Dict{String, String}, width::Dict{String, Int64}, show::Order
     end
 end
 
-function fmax(fmt::Dict{String, String}, width::Dict{String, Int64}, show::OrderedDict{String, Bool}, value::String, key::String)
+function fmax(width::Dict{String, Int64}, show::OrderedDict{String, Bool}, value::String, key::String)
     if show[key]
-        width[key] = max(textwidth(format(Format(fmt[key]), 0, value)), width[key])
+        width[key] = max(textwidth(value), width[key])
     end
 end
+
+function fmax(width::Dict{String, Int64}, show::OrderedDict{String, Bool}, label::OrderedDict{String, Int64}, heading::String)
+    if show[heading]
+        width[heading] = max(maximum(textwidth, collect(keys(label))), width[heading])
+    end
+end
+
+
+function fmax(width::Dict{String, Int64}, show::OrderedDict{String, Bool}, label::Array{String, 1}, headings::String...)
+    if !isempty(label)
+        maxWidth = maximum(textwidth, label)
+
+        for heading in headings
+            if show[heading]
+                width[heading] = max(maxWidth, width[heading])
+            end
+        end
+    end
+end
+
 
 function printFormat(_fmt::Dict{String, String}, fmt::Dict{String, String}, _width::Dict{String, Int64}, width::Dict{String, Int64}, _show::OrderedDict{String, Bool}, show::Dict{String, Bool}, style::Bool)
     @inbounds for (key, value) in fmt
@@ -214,15 +234,6 @@ function fmtRegex(fmt::String)
     else
         throw(ErrorException("Invalid format string: $fmt"))
     end
-end
-
-function initMax(value::Float64)
-    maxvalue = 0.0
-    if value != 0.0
-        maxvalue = -Inf
-    end
-
-    return maxvalue
 end
 
 function howManyPrint(width::Dict{String, Int64}, show::OrderedDict{String, Bool}, style::Bool, title::Bool, heading::String)
@@ -391,6 +402,20 @@ function printHeader(io::IO, hfmt::Dict{String, Format}, width::Dict{String, Int
     return printing
 end
 
+function printHeader(io::IO, hfmt::Dict{String, Format}, width::Dict{String, Int64}, show::OrderedDict{String, Bool},
+    heading::OrderedDict{String, Int64}, subheading::Dict{String, String}, delimiter::String,
+    header::Bool, style::Bool, maxLine::Int64)
+
+    if header
+        if style
+            printf(io, delimiter, maxLine, style, header)
+            printf(io, heading, delimiter)
+            printf(io, hfmt["Empty"], heading, delimiter)
+        end
+        printf(io, hfmt, width, show, delimiter, style, subheading)
+    end
+end
+
 function printf(io::IO, delimiter::String, maxLine::Int64, style::Bool, flag::Bool)
     if flag && style
         print(io, format(Format(delimiter * "%s" * delimiter * "\n"), "-"^maxLine))
@@ -448,4 +473,42 @@ function printf(io::IO, fmt::Format, heading::OrderedDict{String, Int64}, delimi
         end
     end
     @printf io "\n"
+end
+
+function printf(io::IO, fmt::Dict{String, Format}, show::OrderedDict{String, Bool}, width::Dict{String, Int64}, value::Array{String,1}, i::Int64, key::String)
+    if show[key]
+        print(io, format(fmt[key], width[key], value[i]))
+    end
+end
+
+function printf(io::IO, fmt::Dict{String, Format}, show::OrderedDict{String, Bool}, width::Dict{String, Int64}, value::OrderedDict{String, Int64}, i::Int64, key::String)
+    if show[key]
+        print(io, format(fmt[key], width[key], iterate(value, i)[1][1]))
+    end
+end
+
+function getLabel(show::OrderedDict{String, Bool}, label::L, labelComponent::OrderedDict{String, Int64}, headings::String...)
+    if isset(label)
+        busLabel = labelComponent
+    else
+        anyshow = false
+        for heading in headings
+            if show[heading]
+                anyshow = true
+                break
+            end
+        end
+
+        if anyshow
+            busLabel = collect(keys(labelComponent))
+        else
+            busLabel = String[]
+        end
+    end
+
+    return busLabel
+end
+
+function getLabel(label::OrderedDict{String, Int64}, i::Int64)
+    return iterate(label, i)[1][1]
 end

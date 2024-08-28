@@ -100,13 +100,13 @@ function formatVoltmeterData(system::PowerSystem, voltmeter::Voltmeter, voltage:
     state = !isempty(voltage.magnitude)
 
     fmt, width, show, subheading, unit, minval, maxval = formatDevice(fmt, width, show, unitList.voltageMagnitudeLive, device, state, style, type)
-    if device
+    @time if device
         labels = toggleLabel(label, voltmeter, voltmeter.label, "voltmeter")
 
         if style
             @inbounds for (label, i) in labels
                 indexBus = voltmeter.layout.index[i]
-                formatDevice(fmt, width, show, minval, maxval, label, voltmeter.magnitude, voltage.magnitude, scaleVoltage(prefix, system.base.voltage, indexBus), i, indexBus, type)
+                formatDevice(width, show, minval, maxval, label, voltmeter.magnitude, voltage.magnitude, scaleVoltage(prefix, system.base.voltage, indexBus), i, indexBus, type)
             end
             formatDevice(fmt, width, show, minval, maxval)
         end
@@ -246,7 +246,7 @@ function formatAmmeterData(system::PowerSystem, ammeter::Ammeter, current::ACCur
                 end
 
                 estimate = findEstimate(ammeter, current.from.magnitude, current.to.magnitude, i)
-                formatDevice(fmt, width, show, minval, maxval, label, ammeter.magnitude, estimate, scale, i, indexBranch, type)
+                formatDevice(width, show, minval, maxval, label, ammeter.magnitude, estimate, scale, i, indexBranch, type)
             end
             formatDevice(fmt, width, show, minval, maxval)
         end
@@ -369,7 +369,7 @@ function formatWattmeterData(wattmeter::Wattmeter, power::Union{ACPower, DCPower
         if style
             @inbounds for (label, i) in labels
                 estimate = findEstimate(wattmeter, power.injection.active, power.from.active, power.to.active, i)
-                formatDevice(fmt, width, show, minval, maxval, label, wattmeter.active, estimate, scale["P"], i, wattmeter.layout.index[i], type)
+                formatDevice(width, show, minval, maxval, label, wattmeter.active, estimate, scale["P"], i, wattmeter.layout.index[i], type)
             end
             formatDevice(fmt, width, show, minval, maxval)
         end
@@ -492,7 +492,7 @@ function formatVarmeterData(varmeter::Varmeter, power::ACPower, scale::Dict{Stri
         if style
             @inbounds for (label, i) in labels
                 estimate = findEstimate(varmeter, power.injection.reactive, power.from.reactive, power.to.reactive, i)
-                formatDevice(fmt, width, show, minval, maxval, label, varmeter.reactive, estimate, scale["Q"], i, varmeter.layout.index[i], type)
+                formatDevice(width, show, minval, maxval, label, varmeter.reactive, estimate, scale["Q"], i, varmeter.layout.index[i], type)
             end
             formatDevice(fmt, width, show, minval, maxval)
         end
@@ -676,8 +676,8 @@ function formatPmuData(system::PowerSystem, pmu::PMU, voltage::Polar, current::A
                 indexBusBranch = pmu.layout.index[i]
 
                 if pmu.layout.bus[i]
-                    formatDevice(fmtV, widthV, showV, minV, maxV, label, pmu.magnitude, voltage.magnitude, scaleVoltage(prefix, system.base.voltage, indexBusBranch), i, indexBusBranch, "Voltage Magnitude")
-                    formatDevice(fmtV, widthV, showV, minθ, maxθ, label, pmu.angle, voltage.angle, scale["θ"], i, indexBusBranch, "Voltage Angle")
+                    formatDevice(widthV, showV, minV, maxV, label, pmu.magnitude, voltage.magnitude, scaleVoltage(prefix, system.base.voltage, indexBusBranch), i, indexBusBranch, "Voltage Magnitude")
+                    formatDevice(widthV, showV, minθ, maxθ, label, pmu.angle, voltage.angle, scale["θ"], i, indexBusBranch, "Voltage Angle")
                 else
                     if prefix.currentMagnitude != 0.0
                         if pmu.layout.from[i]
@@ -688,10 +688,10 @@ function formatPmuData(system::PowerSystem, pmu::PMU, voltage::Polar, current::A
                     end
 
                     estimate = findEstimate(pmu, current.from.magnitude, current.to.magnitude, i)
-                    formatDevice(fmtI, widthI, showI, minI, maxI, label, pmu.magnitude, estimate, scaleI, i, indexBusBranch, "Current Magnitude")
+                    formatDevice(widthI, showI, minI, maxI, label, pmu.magnitude, estimate, scaleI, i, indexBusBranch, "Current Magnitude")
 
                     estimate = findEstimate(pmu, current.from.angle, current.to.angle, i)
-                    formatDevice(fmtI, widthI, showI, minψ, maxψ, label, pmu.angle, estimate, scale["ψ"], i, indexBusBranch, "Current Angle")
+                    formatDevice(widthI, showI, minψ, maxψ, label, pmu.angle, estimate, scale["ψ"], i, indexBusBranch, "Current Angle")
                 end
             end
             formatDevice(fmtV, widthV, showV, [minV; minθ[2:end]], [maxV; maxθ[2:end]])
@@ -759,7 +759,7 @@ function formatPmuData(pmu::PMU, voltage::PolarAngle, scale::Dict{String, Float6
         if style
             @inbounds for (label, i) in labels
                 if pmu.layout.bus[i]
-                    formatDevice(fmt, width, show, minval, maxval, label, pmu.angle, voltage.angle, scale["θ"], i, pmu.layout.index[i], type)
+                    formatDevice(width, show, minval, maxval, label, pmu.angle, voltage.angle, scale["θ"], i, pmu.layout.index[i], type)
                 end
             end
             formatDevice(fmt, width, show, minval, maxval)
@@ -835,10 +835,10 @@ function headingDevice(width::Dict{String, Int64}, show::OrderedDict{String, Boo
     return heading
 end
 
-function formatDevice(fmt::Dict{String, String}, width::Dict{String, Int64}, show::OrderedDict{String, Bool}, minval::Array{Float64,1}, maxval::Array{Float64,1},
+function formatDevice(width::Dict{String, Int64}, show::OrderedDict{String, Bool}, minval::Array{Float64,1}, maxval::Array{Float64,1},
     label::String, meter::GaussMeter, estimate::Array{Float64,1}, scale::Float64, i::Int64, j::Int64, type::String)
 
-    fmax(fmt, width, show, label, "Label")
+    fmax(width, show, label, "Label")
 
     if show["$type Measurement"]
         minval[2] = min(meter.mean[i] * scale, minval[2])
