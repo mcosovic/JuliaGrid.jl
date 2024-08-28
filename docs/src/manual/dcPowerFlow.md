@@ -329,7 +329,6 @@ print(system.branch.label, system.base.power.value * analysis.power.from.active)
 ##### Print Results in the REPL
 Users can utilize any of the print functions outlined in the [Print Power System Data](@ref PrintPowerSystemDataAPI) or [Print Power System Summary](@ref PrintPowerSystemSummaryAPI). For example, users have the option to print the results in the REPL using any units that have been configured:
 ```@example ComputationPowersCurrentsLosses
-@voltage(pu, deg, V)
 @power(MW, pu, pu)
 printBranchData(system, analysis)
 @default(unit) # hide
