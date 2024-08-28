@@ -331,7 +331,7 @@ Users can utilize any of the print functions outlined in the [Print Power System
 ```@example ComputationPowersCurrentsLosses
 @voltage(pu, deg, V)
 @power(MW, pu, pu)
-printBusData(system, analysis)
+printBranchData(system, analysis)
 @default(unit) # hide
 nothing # hide
 ```
