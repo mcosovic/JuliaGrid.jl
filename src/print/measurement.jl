@@ -100,7 +100,7 @@ function formatVoltmeterData(system::PowerSystem, voltmeter::Voltmeter, voltage:
     state = !isempty(voltage.magnitude)
 
     fmt, width, show, subheading, unit, minval, maxval = formatDevice(fmt, width, show, unitList.voltageMagnitudeLive, device, state, style, type)
-    @time if device
+    if device
         labels = toggleLabel(label, voltmeter, voltmeter.label, "voltmeter")
 
         if style
