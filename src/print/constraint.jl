@@ -53,7 +53,7 @@ function printBusConstraint(system::PowerSystem, analysis::ACOptimalPowerFlow, i
 
     scale = printScale(system, prefix)
     labels, title, header, footer = formPrint(label, system.bus, system.bus.label, title, header, footer, "bus")
-    @time fmt, width, show, heading, subheading, unit, printing = formatBusConstraint(system, analysis, label, scale, prefix, fmt, width, show, title, style)
+    fmt, width, show, heading, subheading, unit, printing = formatBusConstraint(system, analysis, label, scale, prefix, fmt, width, show, title, style)
 
     if printing
         maxLine, pfmt, hfmt = setupPrint(fmt, width, show, delimiter, style)
