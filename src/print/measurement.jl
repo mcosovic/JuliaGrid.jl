@@ -55,7 +55,7 @@ function printVoltmeterData(system::PowerSystem, device::Measurement, io::IO = s
 
     voltage = Polar(Float64[], Float64[])
 
-    _printVoltmeterData(io, system, device, analysis.voltage, unitList, prefix, label, fmt, width, show, delimiter, title, header, footer, repeat, style)
+    _printVoltmeterData(io, system, device, voltage, unitList, prefix, label, fmt, width, show, delimiter, title, header, footer, repeat, style)
 end
 
 function printVoltmeterData(system::PowerSystem, device::Measurement, analysis::Union{PMUStateEstimation, ACStateEstimation}, io::IO = stdout;
