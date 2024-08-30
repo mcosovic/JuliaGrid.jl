@@ -51,60 +51,62 @@ function printBusConstraint(system::PowerSystem, analysis::ACOptimalPowerFlow, i
     constraint = analysis.method.constraint
     dual = analysis.method.dual
 
-    scale = printScale(system, prefix)
-    labels, title, header, footer = formPrint(label, system.bus, system.bus.label, title, header, footer, "bus")
-    fmt, width, show, heading, subheading, unit, printing = formatBusConstraint(system, analysis, label, scale, prefix, fmt, width, show, title, style)
+    scale = scalePrint(system, prefix)
+    labels, title, header, footer = formPrint(system.bus, system.bus.label, label, title, header, footer, "bus")
+    fmt, width, show, heading, subheading, unit, printing = formatBusConstraint(system, analysis, unitList, prefix, scale, label, fmt, width, show, title, style)
 
     if printing
-        maxLine, pfmt, hfmt = setupPrint(fmt, width, show, delimiter, style)
-
-        printTitle(io, maxLine, delimiter, title, header, style, "Bus Constraint Data")
+        pfmt, hfmt, maxLine = setupPrint(fmt, width, show, delimiter, style)
+        titlePrint(io, delimiter, title, header, style, maxLine, "Bus Constraint Data")
 
         cnt = 1
         @inbounds for (label, i) in labels
             if checkLine(analysis.method.jump, i, constraint.voltage.magnitude, constraint.balance.active, constraint.balance.reactive)
-                printing = printHeader(io, hfmt, width, show, heading, subheading, unit, delimiter, header, style, repeat, printing, maxLine, cnt)
+                scaleVolt = scaleVoltage(prefix, system, i)
 
-                printf(io, pfmt, show, width, label, "Label")
+                printing = headerPrint(io, hfmt, width, show, heading, subheading, unit, delimiter, header, repeat, style, printing, maxLine, cnt)
+                printf(io, pfmt, width, show, label, "Label")
 
-                if haskey(constraint.voltage.magnitude, i) && is_valid(analysis.method.jump, constraint.voltage.magnitude[i])
-                    printf(io, pfmt, show, width, system.bus.voltage.minMagnitude, i, scaleVoltage(prefix, system.base.voltage, i), "Voltage Magnitude Minimum")
-                    printf(io, pfmt, show, width, analysis.voltage.magnitude, i, scaleVoltage(prefix, system.base.voltage, i), "Voltage Magnitude Solution")
-                    printf(io, pfmt, show, width, system.bus.voltage.maxMagnitude, i, scaleVoltage(prefix, system.base.voltage, i), "Voltage Magnitude Maximum")
-                    printf(io, pfmt, show, width, dual.voltage.magnitude, i, scaleVoltage(prefix, system.base.voltage, i), "Voltage Magnitude Dual")
+                if isValid(analysis.method.jump, constraint.voltage.magnitude, i)
+                    printf(io, pfmt, width, show, i, scaleVolt, system.bus.voltage.minMagnitude, "Voltage Magnitude Minimum")
+                    printf(io, pfmt, width, show, i, scaleVolt, analysis.voltage.magnitude, "Voltage Magnitude Solution")
+                    printf(io, pfmt, width, show, i, scaleVolt, system.bus.voltage.maxMagnitude, "Voltage Magnitude Maximum")
+                    printf(io, pfmt, width, show, i, scaleVolt, dual.voltage.magnitude, "Voltage Magnitude Dual")
                 else
-                    printf(io, hfmt, show, width, "", "Voltage Magnitude Minimum", "Voltage Magnitude Solution", "Voltage Magnitude Maximum", "Voltage Magnitude Dual")
+                    printf(io, hfmt, width, show, "", "Voltage Magnitude Minimum", "Voltage Magnitude Solution", "Voltage Magnitude Maximum", "Voltage Magnitude Dual")
                 end
 
-                if haskey(constraint.balance.active, i) && is_valid(analysis.method.jump, constraint.balance.active[i])
-                    printf(io, pfmt, show, width, constraint.balance.active, i, scale["P"], "Active Power Balance Solution")
-                    printf(io, pfmt, show, width, dual.balance.active, i, scale["P"], "Active Power Balance Dual")
+                if isValid(analysis.method.jump, constraint.balance.active, i)
+                    printf(io, pfmt, width, show, i, scale["P"], constraint.balance.active, "Active Power Balance Solution")
+                    printf(io, pfmt, width, show, i, scale["P"], dual.balance.active, "Active Power Balance Dual")
                 else
-                    printf(io, hfmt, show, width, "", "Active Power Balance Solution", "Active Power Balance Dual")
+                    printf(io, hfmt, width, show, "", "Active Power Balance Solution", "Active Power Balance Dual")
                 end
 
-                if haskey(constraint.balance.reactive, i) && is_valid(analysis.method.jump, constraint.balance.reactive[i])
-                    printf(io, pfmt, show, width, constraint.balance.reactive, i, scale["Q"], "Reactive Power Balance Solution")
-                    printf(io, pfmt, show, width, dual.balance.reactive, i, scale["Q"], "Reactive Power Balance Dual")
+                if isValid(analysis.method.jump, constraint.balance.reactive, i)
+                    printf(io, pfmt, width, show, i, scale["Q"], constraint.balance.reactive, "Reactive Power Balance Solution")
+                    printf(io, pfmt, width, show, i, scale["Q"], dual.balance.reactive, "Reactive Power Balance Dual")
                 else
-                    printf(io, hfmt, show, width, "", "Reactive Power Balance Solution", "Reactive Power Balance Dual")
+                    printf(io, hfmt, width, show, "", "Reactive Power Balance Solution", "Reactive Power Balance Dual")
                 end
 
                 @printf io "\n"
                 cnt += 1
             end
         end
-        printf(io, delimiter, maxLine, style, footer)
+        printf(io, delimiter, footer, style, maxLine)
     end
 end
 
-function formatBusConstraint(system::PowerSystem, analysis::ACOptimalPowerFlow, label::L, scale::Dict{String, Float64}, prefix::PrefixLive,
-    fmt::Dict{String, String}, width::Dict{String, Int64}, show::Dict{String, Bool}, title::Bool, style::Bool)
+function formatBusConstraint(system::PowerSystem, analysis::ACOptimalPowerFlow, unitList::UnitList, prefix::PrefixLive,
+    scale::Dict{String, Float64}, label::L, fmt::Dict{String, String}, width::Dict{String, Int64}, show::Dict{String, Bool},
+    title::Bool, style::Bool)
 
     errorVoltage(analysis.voltage.magnitude)
     voltage = analysis.voltage
     constraint = analysis.method.constraint
     dual = analysis.method.dual
+    bus = system.bus
 
     _show = OrderedDict(
         "Voltage Magnitude"      => true,
@@ -173,87 +175,79 @@ function formatBusConstraint(system::PowerSystem, analysis::ACOptimalPowerFlow, 
 
     if style
         if isset(label)
-            label = getLabel(system.bus, label, "bus")
-            i = system.bus.label[label]
+            label = getLabel(bus, label, "bus")
+            i = bus.label[label]
+
+            scaleVoltg = scaleVoltage(prefix, system, i)
 
             fmax(width, show, label, "Label")
 
-            if haskey(constraint.voltage.magnitude, i) && is_valid(analysis.method.jump, constraint.voltage.magnitude[i])
-                fmax(fmt, width, show, system.bus.voltage.minMagnitude, i, scaleVoltage(prefix, system.base.voltage, i), "Voltage Magnitude Minimum")
-                fmax(fmt, width, show, voltage.magnitude, i, scaleVoltage(prefix, system.base.voltage, i), "Voltage Magnitude Solution")
-                fmax(fmt, width, show, system.bus.voltage.maxMagnitude, i, scaleVoltage(prefix, system.base.voltage, i), "Voltage Magnitude Maximum")
-                if haskey(dual.voltage.magnitude, i)
-                    fmax(fmt, width, show, dual.voltage.magnitude[i] / scaleVoltage(prefix, system.base.voltage, i), "Voltage Magnitude Dual")
-                end
+            if isValid(analysis.method.jump, constraint.voltage.magnitude, i)
+                fmax(fmt, width, show, i, scaleVoltg, bus.voltage.minMagnitude, "Voltage Magnitude Minimum")
+                fmax(fmt, width, show, i, scaleVoltg, voltage.magnitude, "Voltage Magnitude Solution")
+                fmax(fmt, width, show, i, scaleVoltg, bus.voltage.maxMagnitude, "Voltage Magnitude Maximum")
+                fmax(fmt, width, show, i, scaleVoltg, dual.voltage.magnitude, "Voltage Magnitude Dual")
             end
 
-            if haskey(constraint.balance.active, i) && is_valid(analysis.method.jump, constraint.balance.active[i])
-                fmax(fmt, width, show, value(constraint.balance.active[i]) * scale["P"], "Active Power Balance Solution")
-                if haskey(dual.balance.active, i)
-                    fmax(fmt, width, show, dual.balance.active[i] / scale["P"], "Active Power Balance Dual")
-                end
+            if isValid(analysis.method.jump, constraint.balance.active, i)
+                fmax(fmt, width, show, i, scale["P"], constraint.balance.active, "Active Power Balance Solution")
+                fmax(fmt, width, show, i, scale["P"], dual.balance.active, "Active Power Balance Dual")
             end
 
-            if haskey(constraint.balance.reactive, i) && is_valid(analysis.method.jump, constraint.balance.reactive[i])
-                fmax(fmt, width, show, value(constraint.balance.reactive[i]) * scale["Q"], "Reactive Power Balance Solution")
-                if haskey(dual.balance.reactive, i)
-                    fmax(fmt, width, show, dual.balance.reactive[i] / scale["Q"], "Reactive Power Balance Dual")
-                end
+            if isValid(analysis.method.jump, constraint.balance.reactive, i)
+                fmax(fmt, width, show, i, scale["Q"], constraint.balance.reactive, "Reactive Power Balance Solution")
+                fmax(fmt, width, show, i, scale["Q"], dual.balance.reactive, "Reactive Power Balance Dual")
             end
         else
-            Vmin = -Inf
-            Vopt = -Inf
-            Vmax = -Inf
-            Vdul = [-Inf; Inf]
-            Popt = [-Inf; Inf]
-            Pdul = [-Inf; Inf]
-            Qopt = [-Inf; Inf]
-            Qdul = [-Inf; Inf]
+            Vmin = -Inf; Vopt = -Inf; Vmax = -Inf; Vdul = [-Inf; Inf]
+            Popt = [-Inf; Inf]; Pdul = [-Inf; Inf]
+            Qopt = [-Inf; Inf]; Qdul = [-Inf; Inf]
 
-            @inbounds for (label, i) in system.bus.label
+            @inbounds for (label, i) in bus.label
+                scaleVoltg = scaleVoltage(prefix, system, i)
+
                 fmax(width, show, label, "Label")
 
-                if haskey(constraint.voltage.magnitude, i) && is_valid(analysis.method.jump, constraint.voltage.magnitude[i])
-                    minmaxDual(show, dual.voltage.magnitude, i, scaleVoltage(prefix, system.base.voltage, i), Vdul, "Voltage Magnitude Dual")
+                if isValid(analysis.method.jump, constraint.voltage.magnitude, i)
+                    fminmax(show, i, scaleVoltg, Vdul, dual.voltage.magnitude, "Voltage Magnitude Dual")
                 end
 
-                if haskey(constraint.balance.active, i) && is_valid(analysis.method.jump, constraint.balance.active[i])
-                    minmaxPrimal(show, constraint.balance.active[i], scale["P"], Popt, "Active Power Balance Solution")
-                    minmaxDual(show, dual.balance.active, i, scale["P"], Pdul, "Active Power Balance Dual")
+                if isValid(analysis.method.jump, constraint.balance.active, i)
+                    fminmax(show, i, scale["P"], Popt, constraint.balance.active, "Active Power Balance Solution")
+                    fminmax(show, i, scale["P"], Pdul, dual.balance.active, "Active Power Balance Dual")
                 end
 
-                if haskey(constraint.balance.reactive, i) && is_valid(analysis.method.jump, constraint.balance.reactive[i])
-                    minmaxPrimal(show, constraint.balance.reactive[i], scale["Q"], Qopt, "Reactive Power Balance Solution")
-                    minmaxDual(show, dual.balance.reactive, i, scale["Q"], Qdul, "Reactive Power Balance Dual")
+                if isValid(analysis.method.jump, constraint.balance.reactive, i)
+                    fminmax(show, i, scale["Q"], Qopt, constraint.balance.reactive, "Reactive Power Balance Solution")
+                    fminmax(show, i, scale["Q"], Qdul, dual.balance.reactive, "Reactive Power Balance Dual")
                 end
 
                 if prefix.voltageMagnitude != 0.0
-                    Vmin = max(system.bus.voltage.minMagnitude[i] * scaleVoltage(system.base.voltage, prefix, i), Vmin)
-                    Vopt = max(voltage.magnitude[i] * scaleVoltage(system.base.voltage, prefix, i), Vopt)
-                    Vmax = max(system.bus.voltage.maxMagnitude[i] * scaleVoltage(system.base.voltage, prefix, i), Vmax)
+                    Vmin = fmax(show, i, scaleVoltg, Vmin, bus.voltage.minMagnitude, "Voltage Magnitude Minimum")
+                    Vopt = fmax(show, i, scaleVoltg, Vopt, voltage.magnitude, "Voltage Magnitude Solution")
+                    Vmax = fmax(show, i, scaleVoltg, Vmax, bus.voltage.maxMagnitude, "Voltage Magnitude Maximum")
                 end
             end
 
             if prefix.voltageMagnitude == 0.0
-                fmax(fmt, width, show, system.bus.voltage.minMagnitude, 1.0, "Voltage Magnitude Minimum")
-                fmax(fmt, width, show, voltage.magnitude, 1.0, "Voltage Magnitude Solution")
-                fmax(fmt, width, show, system.bus.voltage.minMagnitude, 1.0, "Voltage Magnitude Maximum")
+                fmax(fmt, width, show, bus.voltage.minMagnitude, "Voltage Magnitude Minimum")
+                fmax(fmt, width, show, voltage.magnitude, "Voltage Magnitude Solution")
+                fmax(fmt, width, show, bus.voltage.minMagnitude, "Voltage Magnitude Maximum")
             else
                 fmax(fmt, width, show, Vmin, "Voltage Magnitude Minimum")
                 fmax(fmt, width, show, Vopt, "Voltage Magnitude Solution")
                 fmax(fmt, width, show, Vmax, "Voltage Magnitude Maximum")
             end
-            fminmax(fmt, width, show, Vdul, 1.0, "Voltage Magnitude Dual")
+            fminmax(fmt, width, show, Vdul, "Voltage Magnitude Dual")
 
-            fminmax(fmt, width, show, Popt, 1.0, "Active Power Balance Solution")
-            fminmax(fmt, width, show, Pdul, 1.0, "Active Power Balance Dual")
+            fminmax(fmt, width, show, Popt, "Active Power Balance Solution")
+            fminmax(fmt, width, show, Pdul, "Active Power Balance Dual")
 
-            fminmax(fmt, width, show, Qopt, 1.0, "Reactive Power Balance Solution")
-            fminmax(fmt, width, show, Qdul, 1.0, "Reactive Power Balance Dual")
+            fminmax(fmt, width, show, Qopt, "Reactive Power Balance Solution")
+            fminmax(fmt, width, show, Qdul, "Reactive Power Balance Dual")
         end
     end
-
-    printing = howManyPrint(width, show, style, title, "Bus Constraint Data")
+    printing = howManyPrint(width, show, title, style, "Bus Constraint Data")
 
     heading = OrderedDict(
         "Label"                  => _blank_(width, show, "Label"),
@@ -273,42 +267,40 @@ function printBusConstraint(system::PowerSystem, analysis::DCOptimalPowerFlow, i
     constraint = analysis.method.constraint
     dual = analysis.method.dual
 
-    scale = printScale(system, prefix)
-    labels, title, header, footer = formPrint(label, system.bus, system.bus.label, title, header, footer, "bus")
-    fmt, width, show, heading, subheading, unit, printing = formatBusConstraint(system, analysis, label, scale, prefix, fmt, width, show, title, style)
+    scale = scalePrint(system, prefix)
+    labels, title, header, footer = formPrint(system.bus, system.bus.label, label, title, header, footer, "bus")
+    fmt, width, show, heading, subheading, unit, printing = formatBusConstraint(system, analysis, unitList, scale, label, fmt, width, show, title, style)
 
     if printing
-        maxLine, pfmt, hfmt = setupPrint(fmt, width, show, delimiter, style)
-
-        printTitle(io, maxLine, delimiter, title, header, style, "Bus Constraint Data")
+        pfmt, hfmt, maxLine = setupPrint(fmt, width, show, delimiter, style)
+        titlePrint(io, delimiter, title, header, style, maxLine, "Bus Constraint Data")
 
         cnt = 1
         @inbounds for (label, i) in labels
             if checkLine(analysis.method.jump, i, constraint.balance.active)
-                printing = printHeader(io, hfmt, width, show, heading, subheading, unit, delimiter, header, style, repeat, printing, maxLine, cnt)
+                printing = headerPrint(io, hfmt, width, show, heading, subheading, unit, delimiter, header, repeat, style, printing, maxLine, cnt)
+                printf(io, pfmt, width, show, label, "Label")
 
-                printf(io, pfmt, show, width, label, "Label")
-
-                if haskey(constraint.balance.active, i) && is_valid(analysis.method.jump, constraint.balance.active[i])
-                    printf(io, pfmt, show, width, constraint.balance.active, i, scale["P"], "Active Power Balance Solution")
-                    printf(io, pfmt, show, width, dual.balance.active, i, scale["P"], "Active Power Balance Dual")
+                if isValid(analysis.method.jump, constraint.balance.active, i)
+                    printf(io, pfmt, width, show, i, scale["P"], constraint.balance.active, "Active Power Balance Solution")
+                    printf(io, pfmt, width, show, i, scale["P"], dual.balance.active, "Active Power Balance Dual")
                 end
 
                 @printf io "\n"
                 cnt += 1
             end
         end
-        printf(io, delimiter, maxLine, style, footer)
+        printf(io, delimiter, footer, style, maxLine)
     end
 end
 
-function formatBusConstraint(system::PowerSystem, analysis::DCOptimalPowerFlow, label::L, scale::Dict{String, Float64}, prefix::PrefixLive,
-    fmt::Dict{String, String}, width::Dict{String, Int64}, show::Dict{String, Bool}, title::Bool, style::Bool)
+function formatBusConstraint(system::PowerSystem, analysis::DCOptimalPowerFlow, unitList::UnitList, scale::Dict{String, Float64},
+    label::L, fmt::Dict{String, String}, width::Dict{String, Int64}, show::Dict{String, Bool}, title::Bool, style::Bool)
 
     errorVoltage(analysis.voltage.angle)
-    voltage = analysis.voltage
     constraint = analysis.method.constraint
     dual = analysis.method.dual
+    bus = system.bus
 
     _show = OrderedDict("Active Power Balance" => true)
     _fmt, _width = fmtwidth(_show)
@@ -343,35 +335,31 @@ function formatBusConstraint(system::PowerSystem, analysis::DCOptimalPowerFlow, 
 
     if style
         if isset(label)
-            label = getLabel(system.bus, label, "bus")
-            i = system.bus.label[label]
+            label = getLabel(bus, label, "bus")
+            i = bus.label[label]
 
             fmax(width, show, label, "Label")
 
-            if haskey(constraint.balance.active, i) && is_valid(analysis.method.jump, constraint.balance.active[i])
-                fmax(fmt, width, show, value(constraint.balance.active[i]) * scale["P"], "Active Power Balance Solution")
-                if haskey(dual.balance.active, i)
-                    fmax(fmt, width, show, dual.balance.active[i] / scale["P"], "Active Power Balance Dual")
-                end
+            if isValid(analysis.method.jump, constraint.balance.active, i)
+                fmax(fmt, width, show, i, scale["P"], constraint.balance.active, "Active Power Balance Solution")
+                fmax(fmt, width, show, i, scale["P"], dual.balance.active, "Active Power Balance Dual")
             end
         else
-            Popt = [-Inf; Inf]
-            Pdul = [-Inf; Inf]
+            Popt = [-Inf; Inf]; Pdul = [-Inf; Inf]
 
-            @inbounds for (label, i) in system.bus.label
+            @inbounds for (label, i) in bus.label
                 fmax(width, show, label, "Label")
 
-                if haskey(constraint.balance.active, i) && is_valid(analysis.method.jump, constraint.balance.active[i])
-                    minmaxPrimal(show, constraint.balance.active[i], scale["P"], Popt, "Active Power Balance Solution")
-                    minmaxDual(show, dual.balance.active, i, scale["P"], Pdul, "Active Power Balance Dual")
+                if isValid(analysis.method.jump, constraint.balance.active, i)
+                    fminmax(show, i, scale["P"], Popt, constraint.balance.active, "Active Power Balance Solution")
+                    fminmax(show, i, scale["P"], Pdul, dual.balance.active, "Active Power Balance Dual")
                 end
             end
-            fminmax(fmt, width, show, Popt, 1.0, "Active Power Balance Solution")
-            fminmax(fmt, width, show, Pdul, 1.0, "Active Power Balance Dual")
+            fminmax(fmt, width, show, Popt, "Active Power Balance Solution")
+            fminmax(fmt, width, show, Pdul, "Active Power Balance Dual")
         end
     end
-
-    printing = howManyPrint(width, show, style, title, "Bus Constraint Data")
+    printing = howManyPrint(width, show, title, style, "Bus Constraint Data")
 
     heading = OrderedDict(
         "Label"                => _blank_(width, show, "Label"),
@@ -438,73 +426,65 @@ function printBranchConstraint(system::PowerSystem, analysis::ACOptimalPowerFlow
     constraint = analysis.method.constraint
     dual = analysis.method.dual
 
-    scale = printScale(system, prefix)
+    scale = scalePrint(system, prefix)
     types, typeVec = checkFlowType(system, analysis.method.jump, constraint.voltage.angle, constraint.flow.from, constraint.flow.to)
 
     for (k, type) in enumerate(types)
         flow, unitFlow = flowType(type, unitList)
-        labels, title, header, footer = formPrint(label, system.branch, system.branch.label, title, header, footer, "branch")
-        _fmt, _width, _show, heading, subheading, unit, printing = formatBranchConstraint(system, analysis, label, scale, prefix, fmt, width, show, style, title, type, typeVec, flow, unitFlow)
+        labels, title, header, footer = formPrint(system.branch, system.branch.label, label, title, header, footer, "branch")
+        _fmt, _width, _show, heading, subheading, unit, flow, printing = formatBranchConstraint(system, analysis, unitList, prefix, scale, label, fmt, width, show, title, style, type, typeVec, flow, unitFlow)
 
         if printing
-            maxLine, pfmt, hfmt = setupPrint(_fmt, _width, _show, delimiter, style)
+            pfmt, hfmt, maxLine = setupPrint(_fmt, _width, _show, delimiter, style)
+            titlePrint(io, delimiter, title, header, style, maxLine, "Branch Constraint Data")
 
-            printTitle(io, maxLine, delimiter, title, header, style, "Branch Constraint Data")
-
-            if type == 1
-                scaleFlowFrom = scale["S"]
-                scaleFlowTo = scale["S"]
-            elseif type == 2
-                scaleFlowFrom = scale["P"]
-                scaleFlowTo = scale["P"]
+            if type != 3
+                scaleFrom, scaleTo = flowScale(scale, type)
             end
-
             cnt = 1
             @inbounds for (label, i) in labels
                 if typeVec[i] == type
                     if checkLine(analysis.method.jump, i, constraint.voltage.angle, constraint.flow.from, constraint.flow.to)
-                        printing = printHeader(io, hfmt, _width, _show, heading, subheading, unit, delimiter, header, style, repeat, printing, maxLine, cnt)
-
                         if type == 3
-                            scaleFlowFrom = scaleCurrent(prefix, system, system.branch.layout.from[i])
-                            scaleFlowTo = scaleCurrent(prefix, system, system.branch.layout.to[i])
+                            scaleFrom, scaleTo = flowScale(system, prefix, i)
                         end
 
-                        printf(io, pfmt, _show, _width, label, "Label")
+                        printing = headerPrint(io, hfmt, _width, _show, heading, subheading, unit, delimiter, header, repeat, style, printing, maxLine, cnt)
+                        printf(io, pfmt, _width, _show, label, "Label")
 
-                        if haskey(constraint.voltage.angle, i) && is_valid(analysis.method.jump, constraint.voltage.angle[i])
-                            printf(io, pfmt, _show, _width, system.branch.voltage.minDiffAngle, i, scale["θ"], "Voltage Angle Difference Minimum")
-                            printf(io, pfmt, _show, _width, constraint.voltage.angle, i, scale["θ"], "Voltage Angle Difference Solution")
-                            printf(io, pfmt, _show, _width, system.branch.voltage.maxDiffAngle, i, scale["θ"], "Voltage Angle Difference Maximum")
-                            printf(io, pfmt, _show, _width, dual.voltage.angle, i, scale["θ"], "Voltage Angle Difference Dual")
+                        if isValid(analysis.method.jump, constraint.voltage.angle, i)
+                            printf(io, pfmt, _width, _show, i, scale["θ"], system.branch.voltage.minDiffAngle, "Voltage Angle Difference Minimum")
+                            printf(io, pfmt, _width, _show, i, scale["θ"], constraint.voltage.angle, "Voltage Angle Difference Solution")
+                            printf(io, pfmt, _width, _show, i, scale["θ"], system.branch.voltage.maxDiffAngle, "Voltage Angle Difference Maximum")
+                            printf(io, pfmt, _width, _show, i, scale["θ"], dual.voltage.angle, "Voltage Angle Difference Dual")
                         else
-                            printf(io, hfmt, _show, _width, "", "Voltage Angle Difference Minimum", "Voltage Angle Difference Solution", "Voltage Angle Difference Maximum", "Voltage Angle Difference Dual")
+                            printf(io, hfmt, _width, _show, "", "Voltage Angle Difference Minimum", "Voltage Angle Difference Solution", "Voltage Angle Difference Maximum", "Voltage Angle Difference Dual")
                         end
 
-                        if haskey(constraint.flow.from, i) && is_valid(analysis.method.jump, constraint.flow.from[i])
+                        if isValid(analysis.method.jump, constraint.flow.from, i)
                             if system.branch.flow.minFromBus[i] < 0 && system.branch.flow.type[i] != 2
-                                printf(io, pfmt, _show, _width, 0.0, "From-Bus $flow Minimum")
+                                printf(io, pfmt, _width, _show, 0.0, flow[1])
                             else
-                                printf(io, pfmt, _show, _width, system.branch.flow.minFromBus, i, scaleFlowFrom, "From-Bus $flow Minimum")
+                                printf(io, pfmt, _width, _show, i, scaleFrom, system.branch.flow.minFromBus, flow[1])
                             end
-                            printf(io, pfmt, _show, _width, constraint.flow.from, i, scaleFlowFrom, "From-Bus $flow Solution")
-                            printf(io, pfmt, _show, _width, system.branch.flow.maxFromBus, i, scaleFlowFrom, "From-Bus $flow Maximum")
-                            printf(io, pfmt, _show, _width, dual.flow.from, i, scaleFlowFrom, "From-Bus $flow Dual")
+                            printf(io, pfmt, _width, _show, i, scaleFrom, constraint.flow.from, flow[2])
+                            printf(io, pfmt, _width, _show, i, scaleFrom, system.branch.flow.maxFromBus, flow[3])
+                            printf(io, pfmt, _width, _show, i, scaleFrom, dual.flow.from, flow[4])
                         else
-                            printf(io, hfmt, _show, _width, "", "From-Bus $flow Minimum", "From-Bus $flow Solution", "From-Bus $flow Maximum", "From-Bus $flow Dual")
+                            printf(io, hfmt, _width, _show, "", flow[1], flow[2], flow[3], flow[4])
                         end
 
-                        if haskey(constraint.flow.to, i) && is_valid(analysis.method.jump, constraint.flow.to[i])
+                        if isValid(analysis.method.jump, constraint.flow.to, i)
                             if system.branch.flow.minToBus[i] < 0 && system.branch.flow.type[i] != 2
-                                printf(io, pfmt, _show, _width, 0.0, "To-Bus $flow Minimum")
+                                printf(io, pfmt, _width, _show, 0.0, flow[5])
                             else
-                                printf(io, pfmt, _show, _width, system.branch.flow.minToBus, i, scaleFlowTo, "To-Bus $flow Minimum")
+                                printf(io, pfmt, _width, _show, i, scaleTo, system.branch.flow.minToBus, flow[5])
                             end
-                            printf(io, pfmt, _show, _width, constraint.flow.to, i, scaleFlowTo, "To-Bus $flow Solution")
-                            printf(io, pfmt, _show, _width, system.branch.flow.maxToBus, i, scaleFlowTo, "To-Bus $flow Maximum")
-                            printf(io, pfmt, _show, _width, dual.flow.to, i, scaleFlowTo, "To-Bus $flow Dual")
+                            printf(io, pfmt, _width, _show, i, scaleTo, constraint.flow.to, flow[6])
+                            printf(io, pfmt, _width, _show, i, scaleTo, system.branch.flow.maxToBus, flow[7])
+                            printf(io, pfmt, _width, _show, i, scaleTo, dual.flow.to, flow[8])
                         else
-                            printf(io, hfmt, _show, _width, "", "To-Bus $flow Minimum", "To-Bus $flow Solution", "To-Bus $flow Maximum", "To-Bus $flow Dual")
+                            printf(io, hfmt, _width, _show, "", flow[5], flow[6], flow[7], flow[8])
                         end
 
                         @printf io "\n"
@@ -512,23 +492,28 @@ function printBranchConstraint(system::PowerSystem, analysis::ACOptimalPowerFlow
                     end
                 end
             end
-            printf(io, delimiter, maxLine, style, footer)
+            printf(io, delimiter, footer, style, maxLine)
         end
     end
 end
 
-function formatBranchConstraint(system::PowerSystem, analysis::ACOptimalPowerFlow, label::L, scale::Dict{String, Float64}, prefix::PrefixLive,
-    fmt::Dict{String, String}, width::Dict{String, Int64}, show::Dict{String, Bool}, style::Bool, title::Bool, type::Int64, typeVec::Array{Int8,1}, flow::String, unitFlow::String)
+function formatBranchConstraint(system::PowerSystem, analysis::ACOptimalPowerFlow, unitList::UnitList, prefix::PrefixLive,
+    scale::Dict{String, Float64}, label::L, fmt::Dict{String, String}, width::Dict{String, Int64}, show::Dict{String, Bool},
+    title::Bool, style::Bool, type::Int64, typeVec::Array{Int8,1}, flow::String, unitFlow::String)
 
     errorVoltage(analysis.voltage.magnitude)
     voltage = analysis.voltage
     constraint = analysis.method.constraint
     dual = analysis.method.dual
 
+    flow = ["From-Bus $flow Minimum"; "From-Bus $flow Solution"; "From-Bus $flow Maximum"; "From-Bus $flow Dual";
+            "To-Bus $flow Minimum"; "To-Bus $flow Solution"; "To-Bus $flow Maximum"; "To-Bus $flow Dual";
+            "From-Bus $flow"; "To-Bus $flow"]
+
     _show = OrderedDict(
         "Voltage Angle Difference" => true,
-        "From-Bus $flow"           => true,
-        "To-Bus $flow"             => true
+        flow[9]                    => true,
+        flow[10]                   => true
     )
     _fmt, _width = fmtwidth(_show)
     _fmt, _width, _show = printFormat(_fmt, fmt, _width, width, _show, show, style)
@@ -539,14 +524,14 @@ function formatBranchConstraint(system::PowerSystem, analysis::ACOptimalPowerFlo
         "Voltage Angle Difference Solution" => _header_("Solution", "Voltage Angle Difference Solution", style),
         "Voltage Angle Difference Maximum"  => _header_("Maximum", "Voltage Angle Difference Maximum", style),
         "Voltage Angle Difference Dual"     => _header_("Dual", "Voltage Angle Difference Dual", style),
-        "From-Bus $flow Minimum"            => _header_("Minimum", "From-Bus $flow Minimum", style),
-        "From-Bus $flow Solution"           => _header_("Solution", "From-Bus $flow Solution", style),
-        "From-Bus $flow Maximum"            => _header_("Maximum", "From-Bus $flow Maximum", style),
-        "From-Bus $flow Dual"               => _header_("Dual", "From-Bus $flow Dual", style),
-        "To-Bus $flow Minimum"              => _header_("Minimum", "To-Bus $flow Minimum", style),
-        "To-Bus $flow Solution"             => _header_("Solution", "To-Bus $flow Solution", style),
-        "To-Bus $flow Maximum"              => _header_("Maximum", "To-Bus $flow Maximum", style),
-        "To-Bus $flow Dual"                 => _header_("Dual", "To-Bus $flow Dual", style)
+        flow[1]                             => _header_("Minimum", flow[1], style),
+        flow[2]                             => _header_("Solution", flow[2], style),
+        flow[3]                             => _header_("Maximum", flow[3], style),
+        flow[4]                             => _header_("Dual", flow[4], style),
+        flow[5]                             => _header_("Minimum", flow[5], style),
+        flow[6]                             => _header_("Solution", flow[6], style),
+        flow[7]                             => _header_("Maximum", flow[7], style),
+        flow[8]                             => _header_("Dual", flow[8], style)
     )
     unit = Dict(
         "Label"                             => "",
@@ -554,14 +539,14 @@ function formatBranchConstraint(system::PowerSystem, analysis::ACOptimalPowerFlo
         "Voltage Angle Difference Solution" => "[$(unitList.voltageAngleLive)]",
         "Voltage Angle Difference Maximum"  => "[$(unitList.voltageAngleLive)]",
         "Voltage Angle Difference Dual"     => "[\$/$(unitList.voltageAngleLive)-hr]",
-        "From-Bus $flow Minimum"            => "[$unitFlow]",
-        "From-Bus $flow Solution"           => "[$unitFlow]",
-        "From-Bus $flow Maximum"            => "[$unitFlow]",
-        "From-Bus $flow Dual"               => "[\$/$unitFlow-hr]",
-        "To-Bus $flow Minimum"              => "[$unitFlow]",
-        "To-Bus $flow Solution"             => "[$unitFlow]",
-        "To-Bus $flow Maximum"              => "[$unitFlow]",
-        "To-Bus $flow Dual"                 => "[\$/$unitFlow-hr]"
+        flow[1]                             => "[$unitFlow]",
+        flow[2]                             => "[$unitFlow]",
+        flow[3]                             => "[$unitFlow]",
+        flow[4]                             => "[\$/$unitFlow-hr]",
+        flow[5]                             => "[$unitFlow]",
+        flow[6]                             => "[$unitFlow]",
+        flow[7]                             => "[$unitFlow]",
+        flow[8]                             => "[\$/$unitFlow-hr]"
     )
     _fmt = Dict(
         "Label"                             => "%-*s",
@@ -569,15 +554,14 @@ function formatBranchConstraint(system::PowerSystem, analysis::ACOptimalPowerFlo
         "Voltage Angle Difference Solution" => _fmt_(_fmt["Voltage Angle Difference"]),
         "Voltage Angle Difference Maximum"  => _fmt_(_fmt["Voltage Angle Difference"]),
         "Voltage Angle Difference Dual"     => _fmt_(_fmt["Voltage Angle Difference"]),
-        "From-Bus $flow Minimum"            => _fmt_(_fmt["From-Bus $flow"]),
-        "From-Bus $flow Solution"           => _fmt_(_fmt["From-Bus $flow"]),
-        "From-Bus $flow Maximum"            => _fmt_(_fmt["From-Bus $flow"]),
-        "From-Bus $flow Dual"               => _fmt_(_fmt["From-Bus $flow"]),
-        "To-Bus $flow Minimum"              => _fmt_(_fmt["To-Bus $flow"]),
-        "To-Bus $flow Solution"             => _fmt_(_fmt["To-Bus $flow"]),
-        "To-Bus $flow Maximum"              => _fmt_(_fmt["To-Bus $flow"]),
-        "To-Bus $flow Dual"                 => _fmt_(_fmt["To-Bus $flow"])
-
+        flow[1]                             => _fmt_(_fmt[flow[9]]),
+        flow[2]                             => _fmt_(_fmt[flow[9]]),
+        flow[3]                             => _fmt_(_fmt[flow[9]]),
+        flow[4]                             => _fmt_(_fmt[flow[9]]),
+        flow[5]                             => _fmt_(_fmt[flow[10]]),
+        flow[6]                             => _fmt_(_fmt[flow[10]]),
+        flow[7]                             => _fmt_(_fmt[flow[10]]),
+        flow[8]                             => _fmt_(_fmt[flow[10]]),
     )
     _width = Dict(
         "Label"                             => 5 * style,
@@ -585,14 +569,14 @@ function formatBranchConstraint(system::PowerSystem, analysis::ACOptimalPowerFlo
         "Voltage Angle Difference Solution" => _width_(_width["Voltage Angle Difference"], 8, style),
         "Voltage Angle Difference Maximum"  => _width_(_width["Voltage Angle Difference"], 7, style),
         "Voltage Angle Difference Dual"     => _width_(_width["Voltage Angle Difference"], textwidth(unit["Voltage Angle Difference Dual"]), style),
-        "From-Bus $flow Minimum"            => _width_(_width["From-Bus $flow"], 7, style),
-        "From-Bus $flow Solution"           => _width_(_width["From-Bus $flow"], 8, style),
-        "From-Bus $flow Maximum"            => _width_(_width["From-Bus $flow"], 7, style),
-        "From-Bus $flow Dual"               => _width_(_width["From-Bus $flow"], textwidth(unit["From-Bus $flow Dual"]), style),
-        "To-Bus $flow Minimum"              => _width_(_width["To-Bus $flow"], 7, style),
-        "To-Bus $flow Solution"             => _width_(_width["To-Bus $flow"], 8, style),
-        "To-Bus $flow Maximum"              => _width_(_width["To-Bus $flow"], 7, style),
-        "To-Bus $flow Dual"                 => _width_(_width["To-Bus $flow"], textwidth(unit["To-Bus $flow Dual"]), style)
+        flow[1]                             => _width_(_width[flow[9]], 7, style),
+        flow[2]                             => _width_(_width[flow[9]], 8, style),
+        flow[3]                             => _width_(_width[flow[9]], 7, style),
+        flow[4]                             => _width_(_width[flow[9]], textwidth(unit[flow[4]]), style),
+        flow[5]                             => _width_(_width[flow[10]], 7, style),
+        flow[6]                             => _width_(_width[flow[10]], 8, style),
+        flow[7]                             => _width_(_width[flow[10]], 7, style),
+        flow[8]                             => _width_(_width[flow[10]], textwidth(unit[flow[8]]), style)
     )
     _show = OrderedDict(
         "Label"                             => anycons(analysis.method.jump, constraint.voltage.angle, constraint.flow.from, constraint.flow.to),
@@ -600,14 +584,14 @@ function formatBranchConstraint(system::PowerSystem, analysis::ACOptimalPowerFlo
         "Voltage Angle Difference Solution" => _show_(_show["Voltage Angle Difference"], constraint.voltage.angle),
         "Voltage Angle Difference Maximum"  => _show_(_show["Voltage Angle Difference"], constraint.voltage.angle),
         "Voltage Angle Difference Dual"     => _show_(_show["Voltage Angle Difference"], dual.voltage.angle),
-        "From-Bus $flow Minimum"            => _show_(_show["From-Bus $flow"], constraint.flow.from),
-        "From-Bus $flow Solution"           => _show_(_show["From-Bus $flow"], constraint.flow.from),
-        "From-Bus $flow Maximum"            => _show_(_show["From-Bus $flow"], constraint.flow.from),
-        "From-Bus $flow Dual"               => _show_(_show["From-Bus $flow"], dual.flow.from),
-        "To-Bus $flow Minimum"              => _show_(_show["To-Bus $flow"], constraint.flow.to),
-        "To-Bus $flow Solution"             => _show_(_show["To-Bus $flow"], constraint.flow.to),
-        "To-Bus $flow Maximum"              => _show_(_show["To-Bus $flow"], constraint.flow.to),
-        "To-Bus $flow Dual"                 => _show_(_show["To-Bus $flow"], dual.flow.to)
+        flow[1]                             => _show_(_show[flow[9]], constraint.flow.from),
+        flow[2]                             => _show_(_show[flow[9]], constraint.flow.from),
+        flow[3]                             => _show_(_show[flow[9]], constraint.flow.from),
+        flow[4]                             => _show_(_show[flow[9]], dual.flow.from),
+        flow[5]                             => _show_(_show[flow[10]], constraint.flow.to),
+        flow[6]                             => _show_(_show[flow[10]], constraint.flow.to),
+        flow[7]                             => _show_(_show[flow[10]], constraint.flow.to),
+        flow[8]                             => _show_(_show[flow[10]], dual.flow.to)
     )
     fmt, width, show = printFormat(_fmt, fmt, _width, width, _show, show, style)
 
@@ -616,130 +600,101 @@ function formatBranchConstraint(system::PowerSystem, analysis::ACOptimalPowerFlo
             label = getLabel(system.branch, label, "branch")
             i = system.branch.label[label]
 
-            if system.branch.flow.type[i] == 1
-                scaleFlowFrom = scale["S"]
-                scaleFlowTo = scale["S"]
-            elseif system.branch.flow.type[i] == 2
-                scaleFlowFrom = scale["P"]
-                scaleFlowTo = scale["P"]
-            elseif system.branch.flow.type[i] == 3
-                scaleFlowFrom = scaleCurrent(prefix, system, system.branch.layout.from[i])
-                scaleFlowTo = scaleCurrent(prefix, system, system.branch.layout.to[i])
-            end
+            scaleFrom, scaleTo = flowScale(system, prefix, scale, i, type)
 
             fmax(width, show, label, "Label")
 
-            if haskey(constraint.voltage.angle, i) && is_valid(analysis.method.jump, constraint.voltage.angle[i])
-                fmax(fmt, width, show, system.branch.voltage.minDiffAngle, i, scale["θ"], "Voltage Angle Difference Minimum")
-                fmax(fmt, width, show, value(constraint.voltage.angle[i]) * scale["θ"], "Voltage Angle Difference Solution")
-                fmax(fmt, width, show, system.branch.voltage.maxDiffAngle, i, scale["θ"], "Voltage Angle Difference Maximum")
-                if haskey(dual.voltage.angle, i)
-                    fmax(fmt, width, show, dual.voltage.angle[i] / scale["θ"], "Voltage Angle Difference Dual")
-                end
+            if isValid(analysis.method.jump, constraint.voltage.angle, i)
+                fmax(fmt, width, show, i, scale["θ"], system.branch.voltage.minDiffAngle, "Voltage Angle Difference Minimum")
+                fmax(fmt, width, show, i, scale["θ"], constraint.voltage.angle, "Voltage Angle Difference Solution")
+                fmax(fmt, width, show, i, scale["θ"], system.branch.voltage.maxDiffAngle, "Voltage Angle Difference Maximum")
+                fmax(fmt, width, show, i, scale["θ"], dual.voltage.angle, "Voltage Angle Difference Dual")
             end
 
-            if haskey(constraint.flow.from, i) && is_valid(analysis.method.jump, constraint.flow.from[i])
+            if isValid(analysis.method.jump, constraint.flow.from, i)
                 if !(system.branch.flow.minFromBus[i] < 0 && system.branch.flow.type[i] != 2)
-                    fmax(fmt, width, show, system.branch.flow.minFromBus, i, scaleFlowFrom, "From-Bus $flow Minimum")
+                    fmax(fmt, width, show, i, scaleFrom, system.branch.flow.minFromBus, flow[1])
                 end
-                fmax(fmt, width, show, value(constraint.flow.from[i]) * scaleFlowFrom, "From-Bus $flow Solution")
-                fmax(fmt, width, show,system.branch.flow.maxFromBus, i, scaleFlowFrom, "From-Bus $flow Maximum")
-                if haskey(dual.flow.from, i)
-                    fmax(fmt, width, show, dual.flow.from[i] / scaleFlowFrom, "From-Bus $flow Dual")
-                end
+                fmax(fmt, width, show, i, scaleFrom, constraint.flow.from, flow[2])
+                fmax(fmt, width, show, i, scaleFrom, system.branch.flow.maxFromBus, flow[3])
+                fmax(fmt, width, show, i, scaleFrom, dual.flow.from, flow[4])
             end
 
-            if haskey(constraint.flow.to, i) && is_valid(analysis.method.jump, constraint.flow.to[i])
+            if isValid(analysis.method.jump, constraint.flow.to, i)
                 if !(system.branch.flow.minToBus[i] < 0 && system.branch.flow.type[i] != 2)
-                    fmax(fmt, width, show, system.branch.flow.minToBus, i, scaleFlowTo, "To-Bus $flow Minimum")
+                    fmax(fmt, width, show, i, scaleTo, system.branch.flow.minToBus, flow[5])
                 end
-                fmax(fmt, width, show, value(constraint.flow.to[i]) * scaleFlowTo, "To-Bus $flow Solution")
-                fmax(fmt, width, show,system.branch.flow.maxToBus, i, scaleFlowTo, "To-Bus $flow Maximum")
-                if haskey(dual.flow.to, i)
-                    fmax(fmt, width, show, dual.flow.to[i] / scaleFlowTo, "To-Bus $flow Dual")
-                end
+                fmax(fmt, width, show, i, scaleTo, constraint.flow.to, flow[6])
+                fmax(fmt, width, show, i, scaleTo, system.branch.flow.maxToBus, flow[7])
+                fmax(fmt, width, show, i, scaleTo, dual.flow.to, flow[8])
             end
         else
-            θopt = [-Inf; Inf]
-            θdul = [-Inf; Inf]
-            Fmin = [-Inf; Inf]
-            Fopt = [-Inf; Inf]
-            Fmax = [-Inf; Inf]
-            Fdul = [-Inf; Inf]
-            Tmin = [-Inf; Inf]
-            Topt = [-Inf; Inf]
-            Tmax = [-Inf; Inf]
-            Tdul = [-Inf; Inf]
+            θopt = [-Inf; Inf]; θdul = [-Inf; Inf]
+            Fmin = [-Inf; Inf]; Fopt = [-Inf; Inf]; Fmax = [-Inf; Inf]; Fdul = [-Inf; Inf]
+            Tmin = [-Inf; Inf]; Topt = [-Inf; Inf]; Tmax = [-Inf; Inf]; Tdul = [-Inf; Inf]
 
-            if type == 1
-                scaleFlowFrom = scale["S"]
-                scaleFlowTo = scale["S"]
-            elseif type == 2
-                scaleFlowFrom = scale["P"]
-                scaleFlowTo = scale["P"]
+            if type != 3
+                scaleFrom, scaleTo = flowScale(scale, type)
             end
-
             @inbounds for (label, i) in system.branch.label
                 if typeVec[i] == type
+                    if type == 3
+                        scaleFrom, scaleTo = flowScale(system, prefix, i)
+                    end
+
                     fmax(width, show, label, "Label")
 
-                    if haskey(constraint.voltage.angle, i) && is_valid(analysis.method.jump, constraint.voltage.angle[i])
-                        minmaxPrimal(show, constraint.voltage.angle[i], scale["θ"], θopt, "Voltage Angle Difference Solution")
-                        minmaxDual(show, dual.voltage.angle, i, scale["θ"], θdul, "Voltage Angle Difference Dual")
+                    if isValid(analysis.method.jump, constraint.voltage.angle, i)
+                        fminmax(show, i, scale["θ"], θopt, constraint.voltage.angle, "Voltage Angle Difference Solution")
+                        fminmax(show, i, scale["θ"], θdul, dual.voltage.angle, "Voltage Angle Difference Dual")
                     end
 
-                    if type == 3
-                        scaleFlowFrom = scaleCurrent(prefix, system, system.branch.layout.from[i])
-                        scaleFlowTo = scaleCurrent(prefix, system, system.branch.layout.to[i])
-                    end
-
-                    if haskey(constraint.flow.from, i) && is_valid(analysis.method.jump, constraint.flow.from[i])
+                    if isValid(analysis.method.jump, constraint.flow.from, i)
                         if !(system.branch.flow.minFromBus[i] < 0 && system.branch.flow.type[i] != 2)
-                            minmaxValue(show, system.branch.flow.minFromBus, i, scaleFlowFrom, Fmin, "From-Bus $flow Minimum")
+                            fminmax(show, i, scaleFrom, Fmin, system.branch.flow.minFromBus, flow[1])
                         end
-                        minmaxPrimal(show, constraint.flow.from[i], scaleFlowFrom, Fopt, "From-Bus $flow Solution")
-                        minmaxValue(show, system.branch.flow.maxFromBus, i, scaleFlowFrom, Fmax, "From-Bus $flow Maximum")
-                        minmaxDual(show, dual.flow.from, i, scaleFlowFrom, Fdul, "From-Bus $flow Dual")
+                        fminmax(show, i, scaleFrom, Fopt, constraint.flow.from, flow[2])
+                        fminmax(show, i, scaleFrom, Fmax, system.branch.flow.maxFromBus, flow[3])
+                        fminmax(show, i, scaleFrom, Fdul, dual.flow.from, flow[4])
                     end
 
-                    if haskey(constraint.flow.to, i) && is_valid(analysis.method.jump, constraint.flow.to[i])
+                    if isValid(analysis.method.jump, constraint.flow.to, i)
                         if !(system.branch.flow.minToBus[i] < 0 && system.branch.flow.type[i] != 2)
-                            minmaxValue(show, system.branch.flow.minToBus, i, scaleFlowTo, Tmin, "To-Bus $flow Minimum")
+                            fminmax(show, i, scaleTo, Tmin, system.branch.flow.minToBus, flow[5])
                         end
-                        minmaxPrimal(show, constraint.flow.to[i], scaleFlowTo, Topt, "To-Bus $flow Solution")
-                        minmaxValue(show, system.branch.flow.maxToBus, i, scaleFlowTo, Tmax, "To-Bus $flow Maximum")
-                        minmaxDual(show, dual.flow.to, i, scaleFlowTo, Tdul, "To-Bus $flow Dual")
+                        fminmax(show, i, scaleTo, Topt, constraint.flow.to, flow[6])
+                        fminmax(show, i, scaleTo, Tmax, system.branch.flow.maxToBus, flow[7])
+                        fminmax(show, i, scaleTo, Tdul, dual.flow.to, flow[8])
                     end
                 end
             end
 
-            fminmax(fmt, width, show, system.branch.voltage.minDiffAngle, scale["θ"], "Voltage Angle Difference Minimum")
-            fminmax(fmt, width, show, θopt, 1.0, "Voltage Angle Difference Solution")
-            fminmax(fmt, width, show, system.branch.voltage.maxDiffAngle, scale["θ"], "Voltage Angle Difference Maximum")
-            fminmax(fmt, width, show, θdul, 1.0, "Voltage Angle Difference Dual")
+            fminmax(fmt, width, show, scale["θ"], system.branch.voltage.minDiffAngle, "Voltage Angle Difference Minimum")
+            fminmax(fmt, width, show, θopt, "Voltage Angle Difference Solution")
+            fminmax(fmt, width, show, scale["θ"], system.branch.voltage.maxDiffAngle, "Voltage Angle Difference Maximum")
+            fminmax(fmt, width, show, θdul, "Voltage Angle Difference Dual")
 
-            fminmax(fmt, width, show, Fmin, 1.0, "From-Bus $flow Minimum")
-            fminmax(fmt, width, show, Fopt, 1.0, "From-Bus $flow Solution")
-            fminmax(fmt, width, show, Fmax, 1.0, "From-Bus $flow Maximum")
-            fminmax(fmt, width, show, Fdul, 1.0, "From-Bus $flow Dual")
+            fminmax(fmt, width, show, Fmin, flow[1])
+            fminmax(fmt, width, show, Fopt, flow[2])
+            fminmax(fmt, width, show, Fmax, flow[3])
+            fminmax(fmt, width, show, Fdul, flow[4])
 
-            fminmax(fmt, width, show, Tmin, 1.0, "To-Bus $flow Minimum")
-            fminmax(fmt, width, show, Topt, 1.0, "To-Bus $flow Solution")
-            fminmax(fmt, width, show, Tmax, 1.0, "To-Bus $flow Maximum")
-            fminmax(fmt, width, show, Tdul, 1.0, "To-Bus $flow Dual")
+            fminmax(fmt, width, show, Tmin, flow[5])
+            fminmax(fmt, width, show, Topt, flow[6])
+            fminmax(fmt, width, show, Tmax, flow[7])
+            fminmax(fmt, width, show, Tdul, flow[8])
         end
     end
-
-    printing = howManyPrint(width, show, style, title, "Branch Constraint Data")
+    printing = howManyPrint(width, show, title, style, "Branch Constraint Data")
 
     heading = OrderedDict(
         "Label"                    => _blank_(width, show, "Label"),
         "Voltage Angle Difference" => _blank_(width, show, style, "Voltage Angle Difference", "Voltage Angle Difference Minimum", "Voltage Angle Difference Solution", "Voltage Angle Difference Maximum", "Voltage Angle Difference Dual"),
-        "From-Bus $flow"           => _blank_(width, show, style, "From-Bus $flow", "From-Bus $flow Minimum", "From-Bus $flow Solution", "From-Bus $flow Maximum", "From-Bus $flow Dual"),
-        "To-Bus $flow"             => _blank_(width, show, style, "To-Bus $flow", "To-Bus $flow Minimum", "To-Bus $flow Solution", "To-Bus $flow Maximum", "To-Bus $flow Dual")
+        flow[9]                    => _blank_(width, show, style, flow[9], flow[1], flow[2], flow[3], flow[4]),
+        flow[10]                   => _blank_(width, show, style, flow[10], flow[5], flow[6], flow[7], flow[8])
     )
 
-    return fmt, width, show, heading, subheading, unit, printing
+    return fmt, width, show, heading, subheading, unit, flow, printing
 end
 
 function printBranchConstraint(system::PowerSystem, analysis::DCOptimalPowerFlow, io::IO = stdout; label::L = missing,
@@ -750,38 +705,36 @@ function printBranchConstraint(system::PowerSystem, analysis::DCOptimalPowerFlow
     constraint = analysis.method.constraint
     dual = analysis.method.dual
 
-    scale = printScale(system, prefix)
-    labels, title, header, footer = formPrint(label, system.branch, system.branch.label, title, header, footer, "branch")
-    fmt, width, show, heading, subheading, unit, printing = formatBranchConstraint(system, analysis, label, scale, prefix, fmt, width, show, title, style)
+    scale = scalePrint(system, prefix)
+    labels, title, header, footer = formPrint(system.branch, system.branch.label, label, title, header, footer, "branch")
+    fmt, width, show, heading, subheading, unit, printing = formatBranchConstraint(system, analysis, unitList, scale, label, fmt, width, show, title, style)
 
     if printing
-        maxLine, pfmt, hfmt = setupPrint(fmt, width, show, delimiter, style)
-
-        printTitle(io, maxLine, delimiter, title, header, style, "Branch Constraint Data")
+        pfmt, hfmt, maxLine = setupPrint(fmt, width, show, delimiter, style)
+        titlePrint(io, delimiter, title, header, style, maxLine, "Branch Constraint Data")
 
         cnt = 1
         @inbounds for (label, i) in labels
             if checkLine(analysis.method.jump, i, constraint.voltage.angle, constraint.flow.active)
-                printing = printHeader(io, hfmt, width, show, heading, subheading, unit, delimiter, header, style, repeat, printing, maxLine, cnt)
+                printing = headerPrint(io, hfmt, width, show, heading, subheading, unit, delimiter, header, repeat, style, printing, maxLine, cnt)
+                printf(io, pfmt, width, show, label, "Label")
 
-                printf(io, pfmt, show, width, label, "Label")
-
-                if haskey(constraint.voltage.angle, i) && is_valid(analysis.method.jump, constraint.voltage.angle[i])
-                    printf(io, pfmt, show, width, system.branch.voltage.minDiffAngle, i, scale["θ"], "Voltage Angle Difference Minimum")
-                    printf(io, pfmt, show, width, constraint.voltage.angle, i, scale["θ"], "Voltage Angle Difference Solution")
-                    printf(io, pfmt, show, width, system.branch.voltage.maxDiffAngle, i, scale["θ"], "Voltage Angle Difference Maximum")
-                    printf(io, pfmt, show, width, dual.voltage.angle, i, scale["θ"], "Voltage Angle Difference Dual")
+                if isValid(analysis.method.jump, constraint.voltage.angle, i)
+                    printf(io, pfmt, width, show, i, scale["θ"], system.branch.voltage.minDiffAngle, "Voltage Angle Difference Minimum")
+                    printf(io, pfmt, width, show, i, scale["θ"], constraint.voltage.angle, "Voltage Angle Difference Solution")
+                    printf(io, pfmt, width, show, i, scale["θ"], system.branch.voltage.maxDiffAngle, "Voltage Angle Difference Maximum")
+                    printf(io, pfmt, width, show, i, scale["θ"], dual.voltage.angle, "Voltage Angle Difference Dual")
                 else
-                    printf(io, hfmt, show, width, "", "Voltage Angle Difference Minimum", "Voltage Angle Difference Solution", "Voltage Angle Difference Maximum", "Voltage Angle Difference Dual")
+                    printf(io, hfmt, width, show, "", "Voltage Angle Difference Minimum", "Voltage Angle Difference Solution", "Voltage Angle Difference Maximum", "Voltage Angle Difference Dual")
                 end
 
-                if haskey(constraint.flow.active, i) && is_valid(analysis.method.jump, constraint.flow.active[i])
-                    printf(io, pfmt, show, width, system.branch.flow.minFromBus, i, scale["P"], "From-Bus Active Power Flow Minimum")
-                    printf(io, pfmt, show, width, constraint.flow.active, i, scale["P"], "From-Bus Active Power Flow Solution")
-                    printf(io, pfmt, show, width, system.branch.flow.maxFromBus, i, scale["P"], "From-Bus Active Power Flow Maximum")
-                    printf(io, pfmt, show, width, dual.flow.active, i, scale["P"], "From-Bus Active Power Flow Dual")
+                if isValid(analysis.method.jump, constraint.flow.active, i)
+                    printf(io, pfmt, width, show, i, scale["P"], system.branch.flow.minFromBus, "From-Bus Active Power Flow Minimum")
+                    printf(io, pfmt, width, show, i, scale["P"], constraint.flow.active, "From-Bus Active Power Flow Solution")
+                    printf(io, pfmt, width, show, i, scale["P"], system.branch.flow.maxFromBus, "From-Bus Active Power Flow Maximum")
+                    printf(io, pfmt, width, show, i, scale["P"], dual.flow.active, "From-Bus Active Power Flow Dual")
                 else
-                    printf(io, hfmt, show, width, "", "From-Bus Active Power Flow Minimum", "From-Bus Active Power Flow Solution", "From-Bus Active Power Flow Maximum", "From-Bus Active Power Flow Dual")
+                    printf(io, hfmt, width, show, "", "From-Bus Active Power Flow Minimum", "From-Bus Active Power Flow Solution", "From-Bus Active Power Flow Maximum", "From-Bus Active Power Flow Dual")
 
                 end
 
@@ -789,13 +742,13 @@ function printBranchConstraint(system::PowerSystem, analysis::DCOptimalPowerFlow
                 cnt += 1
             end
         end
-        printf(io, delimiter, maxLine, style, footer)
+        printf(io, delimiter, footer, style, maxLine)
     end
-
 end
 
-function formatBranchConstraint(system::PowerSystem, analysis::DCOptimalPowerFlow, label::L, scale::Dict{String, Float64}, prefix::PrefixLive,
-    fmt::Dict{String, String}, width::Dict{String, Int64}, show::Dict{String, Bool}, title::Bool, style::Bool)
+function formatBranchConstraint(system::PowerSystem, analysis::DCOptimalPowerFlow, unitList::UnitList,
+    scale::Dict{String, Float64}, label::L, fmt::Dict{String, String}, width::Dict{String, Int64}, show::Dict{String, Bool},
+    title::Bool, style::Bool)
 
     errorVoltage(analysis.voltage.angle)
     voltage = analysis.voltage
@@ -873,60 +826,52 @@ function formatBranchConstraint(system::PowerSystem, analysis::DCOptimalPowerFlo
 
             fmax(width, show, label, "Label")
 
-            if haskey(constraint.voltage.angle, i) && is_valid(analysis.method.jump, constraint.voltage.angle[i])
-                fmax(fmt, width, show, system.branch.voltage.minDiffAngle, i, scale["θ"], "Voltage Angle Difference Minimum")
-                fmax(fmt, width, show, value(constraint.voltage.angle[i]) * scale["θ"], "Voltage Angle Difference Solution")
-                fmax(fmt, width, show, system.branch.voltage.maxDiffAngle, i, scale["θ"], "Voltage Angle Difference Maximum")
-                if haskey(dual.voltage.angle, i)
-                    fmax(fmt, width, show, dual.voltage.angle[i] / scale["θ"], "Voltage Angle Difference Dual")
-                end
+            if isValid(analysis.method.jump, constraint.voltage.angle, i)
+                fmax(fmt, width, show, i, scale["θ"], system.branch.voltage.minDiffAngle, "Voltage Angle Difference Minimum")
+                fmax(fmt, width, show, i, scale["θ"], constraint.voltage.angle, "Voltage Angle Difference Solution")
+                fmax(fmt, width, show, i, scale["θ"], system.branch.voltage.maxDiffAngle, "Voltage Angle Difference Maximum")
+                fmax(fmt, width, show, i, scale["θ"], dual.voltage.angle, "Voltage Angle Difference Dual")
             end
 
-            if haskey(constraint.flow.active, i) && is_valid(analysis.method.jump, constraint.flow.active[i])
-                fmax(fmt, width, show, system.branch.flow.minFromBus, i, scale["P"], "From-Bus Active Power Flow Minimum")
-                fmax(fmt, width, show, value(constraint.flow.active[i]) * scale["P"], "From-Bus Active Power Flow Solution")
-                fmax(fmt, width, show,system.branch.flow.maxFromBus, i, scale["P"], "From-Bus Active Power Flow Maximum")
-                if haskey(dual.flow.active, i)
-                    fmax(fmt, width, show, dual.flow.active[i] / scale["P"], "From-Bus Active Power Flow Dual")
-                end
+            if isValid(analysis.method.jump, constraint.flow.active, i)
+                fmax(fmt, width, show, i, scale["P"], system.branch.flow.minFromBus, "From-Bus Active Power Flow Minimum")
+                fmax(fmt, width, show, i, scale["P"], constraint.flow.active, "From-Bus Active Power Flow Solution")
+                fmax(fmt, width, show, i, scale["P"], system.branch.flow.maxFromBus, "From-Bus Active Power Flow Maximum")
+                fmax(fmt, width, show, i, scale["P"], dual.flow.active, "From-Bus Active Power Flow Dual")
             end
         else
-            θopt = [-Inf; Inf]
-            θdul = [-Inf; Inf]
-            Fmin = [-Inf; Inf]
-            Fopt = [-Inf; Inf]
-            Fmax = [-Inf; Inf]
-            Fdul = [-Inf; Inf]
+            θopt = [-Inf; Inf]; θdul = [-Inf; Inf]
+            Fmin = [-Inf; Inf]; Fopt = [-Inf; Inf]
+            Fmax = [-Inf; Inf]; Fdul = [-Inf; Inf]
 
             @inbounds for (label, i) in system.branch.label
                 fmax(width, show, label, "Label")
 
-                if haskey(constraint.voltage.angle, i) && is_valid(analysis.method.jump, constraint.voltage.angle[i])
-                    minmaxPrimal(show, constraint.voltage.angle[i], scale["θ"], θopt, "Voltage Angle Difference Solution")
-                    minmaxDual(show, dual.voltage.angle, i, scale["θ"], θdul, "Voltage Angle Difference Dual")
+                if isValid(analysis.method.jump, constraint.voltage.angle, i)
+                    fminmax(show, i, scale["θ"], θopt, constraint.voltage.angle, "Voltage Angle Difference Solution")
+                    fminmax(show, i, scale["θ"], θdul, dual.voltage.angle, "Voltage Angle Difference Dual")
                 end
 
-                if haskey(constraint.flow.active, i) && is_valid(analysis.method.jump, constraint.flow.active[i])
-                    minmaxValue(show, system.branch.flow.minFromBus, i, scale["P"], Fmin, "From-Bus Active Power Flow Minimum")
-                    minmaxPrimal(show, constraint.flow.active[i], scale["P"], Fopt, "From-Bus Active Power Flow Solution")
-                    minmaxValue(show, system.branch.flow.maxFromBus, i, scale["P"], Fmax, "From-Bus Active Power Flow Maximum")
-                    minmaxDual(show, dual.flow.active, i, scale["P"], Fdul, "From-Bus Active Power Flow Dual")
+                if isValid(analysis.method.jump, constraint.flow.active, i)
+                    fminmax(show, i, scale["P"], Fmin, system.branch.flow.minFromBus, "From-Bus Active Power Flow Minimum")
+                    fminmax(show, i, scale["P"], Fopt, constraint.flow.active, "From-Bus Active Power Flow Solution")
+                    fminmax(show, i, scale["P"], Fmax, system.branch.flow.maxFromBus, "From-Bus Active Power Flow Maximum")
+                    fminmax(show, i, scale["P"], Fdul, dual.flow.active, "From-Bus Active Power Flow Dual")
                 end
             end
 
-            fminmax(fmt, width, show, system.branch.voltage.minDiffAngle, scale["θ"], "Voltage Angle Difference Minimum")
-            fminmax(fmt, width, show, θopt, 1.0, "Voltage Angle Difference Solution")
-            fminmax(fmt, width, show, system.branch.voltage.maxDiffAngle, scale["θ"], "Voltage Angle Difference Maximum")
-            fminmax(fmt, width, show, θdul, 1.0, "Voltage Angle Difference Dual")
+            fminmax(fmt, width, show, scale["θ"], system.branch.voltage.minDiffAngle, "Voltage Angle Difference Minimum")
+            fminmax(fmt, width, show, θopt, "Voltage Angle Difference Solution")
+            fminmax(fmt, width, show, scale["θ"], system.branch.voltage.maxDiffAngle, "Voltage Angle Difference Maximum")
+            fminmax(fmt, width, show, θdul, "Voltage Angle Difference Dual")
 
-            fminmax(fmt, width, show, Fmin, 1.0, "From-Bus Active Power Flow Minimum")
-            fminmax(fmt, width, show, Fopt, 1.0, "From-Bus Active Power Flow Solution")
-            fminmax(fmt, width, show, Fmax, 1.0, "From-Bus Active Power Flow Maximum")
-            fminmax(fmt, width, show, Fdul, 1.0, "From-Bus Active Power Flow Dual")
+            fminmax(fmt, width, show, Fmin, "From-Bus Active Power Flow Minimum")
+            fminmax(fmt, width, show, Fopt, "From-Bus Active Power Flow Solution")
+            fminmax(fmt, width, show, Fmax, "From-Bus Active Power Flow Maximum")
+            fminmax(fmt, width, show, Fdul, "From-Bus Active Power Flow Dual")
         end
     end
-
-    printing = howManyPrint(width, show, style, title, "Branch Constraint Data")
+    printing = howManyPrint(width, show, title, style, "Branch Constraint Data")
 
     heading = OrderedDict(
         "Label"                      => _blank_(width, show, "Label"),
@@ -990,39 +935,36 @@ function printGeneratorConstraint(system::PowerSystem, analysis::ACOptimalPowerF
     constraint = analysis.method.constraint
     dual = analysis.method.dual
 
-    scale = printScale(system, prefix)
-    labels, title, header, footer = formPrint(label, system.generator, system.generator.label, title, header, footer, "generator")
-    fmt, width, show, heading, subheading, unit, printing = formatGeneratorConstraint(system, analysis, label, scale, prefix, fmt, width, show, title, style)
+    scale = scalePrint(system, prefix)
+    labels, title, header, footer = formPrint(system.generator, system.generator.label, label, title, header, footer, "generator")
+    fmt, width, show, heading, subheading, unit, printing = formatGeneratorConstraint(system, analysis, unitList, scale, label, fmt, width, show, title, style)
 
     if printing
-        maxLine, pfmt, hfmt = setupPrint(fmt, width, show, delimiter, style)
-
-        printTitle(io, maxLine, delimiter, title, header, style, "Generator Constraint Data")
+        pfmt, hfmt, maxLine = setupPrint(fmt, width, show, delimiter, style)
+        titlePrint(io, delimiter, title, header, style, maxLine, "Generator Constraint Data")
 
         cnt = 1
         @inbounds for (label, i) in labels
             if checkLine(analysis.method.jump, i, constraint.capability.active, constraint.capability.reactive)
-                printing = printHeader(io, hfmt, width, show, heading, subheading, unit, delimiter, header, style, repeat, printing, maxLine, cnt)
+                printing = headerPrint(io, hfmt, width, show, heading, subheading, unit, delimiter, header, repeat, style, printing, maxLine, cnt)
+                printf(io, pfmt, width, show, label, "Label")
 
-                printf(io, pfmt, show, width, label, "Label")
-
-                if haskey(constraint.capability.active, i) && is_valid(analysis.method.jump, constraint.capability.active[i])
-                    printf(io, pfmt, show, width, system.generator.capability.minActive, i, scale["P"], "Active Power Capability Minimum")
-                    printf(io, pfmt, show, width, constraint.capability.active, i, scale["P"], "Active Power Capability Solution")
-                    printf(io, pfmt, show, width, system.generator.capability.maxActive, i, scale["P"], "Active Power Capability Maximum")
-                    printf(io, pfmt, show, width, dual.capability.active, i, scale["P"], "Active Power Capability Dual")
+                if isValid(analysis.method.jump, constraint.capability.active, i)
+                    printf(io, pfmt, width, show, i, scale["P"], system.generator.capability.minActive, "Active Power Capability Minimum")
+                    printf(io, pfmt, width, show, i, scale["P"], constraint.capability.active, "Active Power Capability Solution")
+                    printf(io, pfmt, width, show, i, scale["P"], system.generator.capability.maxActive, "Active Power Capability Maximum")
+                    printf(io, pfmt, width, show, i, scale["P"], dual.capability.active, "Active Power Capability Dual")
                 else
-                    printf(io, hfmt, show, width, "", "Active Power Capability Minimum", "Active Power Capability Solution", "Active Power Capability Maximum", "Active Power Capability Dual")
+                    printf(io, hfmt, width, show, "", "Active Power Capability Minimum", "Active Power Capability Solution", "Active Power Capability Maximum", "Active Power Capability Dual")
                 end
 
-                if haskey(constraint.capability.reactive, i) && is_valid(analysis.method.jump, constraint.capability.reactive[i])
-                    printf(io, pfmt, show, width, system.generator.capability.minReactive, i, scale["Q"], "Reactive Power Capability Minimum")
-                    printf(io, pfmt, show, width, constraint.capability.reactive, i, scale["Q"], "Reactive Power Capability Solution")
-                    printf(io, pfmt, show, width, system.generator.capability.maxReactive, i, scale["Q"], "Reactive Power Capability Maximum")
-                    printf(io, pfmt, show, width, dual.capability.reactive, i, scale["Q"], "Reactive Power Capability Dual")
+                if isValid(analysis.method.jump, constraint.capability.reactive, i)
+                    printf(io, pfmt, width, show, i, scale["Q"], system.generator.capability.minReactive, "Reactive Power Capability Minimum")
+                    printf(io, pfmt, width, show, i, scale["Q"], constraint.capability.reactive, "Reactive Power Capability Solution")
+                    printf(io, pfmt, width, show, i, scale["Q"], system.generator.capability.maxReactive, "Reactive Power Capability Maximum")
+                    printf(io, pfmt, width, show, i, scale["Q"], dual.capability.reactive, "Reactive Power Capability Dual")
                 else
-                    printf(io, hfmt, show, width, "", "Reactive Power Capability Minimum", "Reactive Power Capability Solution", "Reactive Power Capability Maximum", "Reactive Power Capability Dual")
-
+                    printf(io, hfmt, width, show, "", "Reactive Power Capability Minimum", "Reactive Power Capability Solution", "Reactive Power Capability Maximum", "Reactive Power Capability Dual")
                 end
 
                 @printf io "\n"
@@ -1030,12 +972,12 @@ function printGeneratorConstraint(system::PowerSystem, analysis::ACOptimalPowerF
             end
 
         end
-        printf(io, delimiter, maxLine, style, footer)
+        printf(io, delimiter, footer, style, maxLine)
     end
 end
 
-function formatGeneratorConstraint(system::PowerSystem, analysis::ACOptimalPowerFlow, label::L, scale::Dict{String, Float64}, prefix::PrefixLive,
-    fmt::Dict{String, String}, width::Dict{String, Int64}, show::Dict{String, Bool}, title::Bool, style::Bool)
+function formatGeneratorConstraint(system::PowerSystem, analysis::ACOptimalPowerFlow, unitList::UnitList, scale::Dict{String, Float64},
+    label::L, fmt::Dict{String, String}, width::Dict{String, Int64}, show::Dict{String, Bool}, title::Bool, style::Bool)
 
     errorVoltage(analysis.voltage.magnitude)
     voltage = analysis.voltage
@@ -1113,56 +1055,49 @@ function formatGeneratorConstraint(system::PowerSystem, analysis::ACOptimalPower
 
             fmax(width, show, label, "Label")
 
-            if haskey(constraint.capability.active, i) && is_valid(analysis.method.jump, constraint.capability.active[i])
-                fmax(fmt, width, show, system.generator.capability.minActive, i, scale["P"], "Active Power Capability Minimum")
-                fmax(fmt, width, show, value(constraint.capability.active[i]) * scale["P"], "Active Power Capability Solution")
-                fmax(fmt, width, show, system.generator.capability.maxActive, i, scale["P"], "Active Power Capability Maximum")
-                if haskey(dual.capability.active, i)
-                    fmax(fmt, width, show, dual.capability.active[i] / scale["P"], "Active Power Capability Dual")
-                end
+            if isValid(analysis.method.jump, constraint.capability.active, i)
+                fmax(fmt, width, show, i, scale["P"], system.generator.capability.minActive, "Active Power Capability Minimum")
+                fmax(fmt, width, show, i, scale["P"], constraint.capability.active, "Active Power Capability Solution")
+                fmax(fmt, width, show, i, scale["P"], system.generator.capability.maxActive, "Active Power Capability Maximum")
+                fmax(fmt, width, show, i, scale["P"], dual.capability.active, "Active Power Capability Dual")
             end
 
-            if haskey(constraint.capability.reactive, i) && is_valid(analysis.method.jump, constraint.capability.reactive[i])
-                fmax(fmt, width, show, system.generator.capability.minReactive, i, scale["Q"], "Reactive Power Capability Minimum")
-                fmax(fmt, width, show, value(constraint.capability.reactive[i]) * scale["Q"], "Reactive Power Capability Solution")
-                fmax(fmt, width, show, system.generator.capability.maxReactive, i, scale["Q"], "Reactive Power Capability Maximum")
-                if haskey(dual.capability.reactive, i)
-                    fmax(fmt, width, show, dual.capability.reactive[i] / scale["Q"], "Reactive Power Capability Dual")
-                end
+            if isValid(analysis.method.jump, constraint.capability.reactive, i)
+                fmax(fmt, width, show, i, scale["Q"], system.generator.capability.minReactive, "Reactive Power Capability Minimum")
+                fmax(fmt, width, show, i, scale["Q"], constraint.capability.reactive, "Reactive Power Capability Solution")
+                fmax(fmt, width, show, i, scale["Q"], system.generator.capability.maxReactive, "Reactive Power Capability Maximum")
+                fmax(fmt, width, show, i, scale["Q"], dual.capability.reactive, "Reactive Power Capability Dual")
             end
         else
-            Popt = [-Inf; Inf]
-            Pdul = [-Inf; Inf]
-            Qopt = [-Inf; Inf]
-            Qdul = [-Inf; Inf]
+            Popt = [-Inf; Inf]; Pdul = [-Inf; Inf]
+            Qopt = [-Inf; Inf]; Qdul = [-Inf; Inf]
 
             @inbounds for (label, i) in system.generator.label
                 fmax(width, show, label, "Label")
 
-                if haskey(constraint.capability.active, i) && is_valid(analysis.method.jump, constraint.capability.active[i])
-                    minmaxPrimal(show, constraint.capability.active[i], scale["P"], Popt, "Active Power Capability Solution")
-                    minmaxDual(show, dual.capability.active, i, scale["P"], Pdul, "Active Power Capability Dual")
+                if isValid(analysis.method.jump, constraint.capability.active, i)
+                    fminmax(show, i, scale["P"], Popt, constraint.capability.active, "Active Power Capability Solution")
+                    fminmax(show, i, scale["P"], Pdul, dual.capability.active, "Active Power Capability Dual")
                 end
 
-                if haskey(constraint.capability.reactive, i) && is_valid(analysis.method.jump, constraint.capability.reactive[i])
-                    minmaxPrimal(show, constraint.capability.reactive[i], scale["Q"], Qopt, "Reactive Power Capability Solution")
-                    minmaxDual(show, dual.capability.reactive, i, scale["Q"], Qdul, "Reactive Power Capability Dual")
+                if isValid(analysis.method.jump, constraint.capability.reactive, i)
+                    fminmax(show, i, scale["Q"], Qopt, constraint.capability.reactive, "Reactive Power Capability Solution")
+                    fminmax(show, i, scale["Q"], Qdul, dual.capability.reactive, "Reactive Power Capability Dual")
                 end
             end
 
-            fminmax(fmt, width, show, system.generator.capability.minActive, scale["P"], "Active Power Capability Minimum")
-            fminmax(fmt, width, show, Popt, 1.0, "Active Power Capability Solution")
-            fminmax(fmt, width, show, system.generator.capability.maxActive, scale["P"], "Active Power Capability Maximum")
-            fminmax(fmt, width, show, Pdul, 1.0, "Active Power Capability Dual")
+            fminmax(fmt, width, show, scale["P"], system.generator.capability.minActive, "Active Power Capability Minimum")
+            fminmax(fmt, width, show, Popt, "Active Power Capability Solution")
+            fminmax(fmt, width, show, scale["P"], system.generator.capability.maxActive,"Active Power Capability Maximum")
+            fminmax(fmt, width, show, Pdul, "Active Power Capability Dual")
 
-            fminmax(fmt, width, show, system.generator.capability.minReactive, scale["Q"], "Reactive Power Capability Minimum")
-            fminmax(fmt, width, show, Qopt, 1.0, "Reactive Power Capability Solution")
-            fminmax(fmt, width, show, system.generator.capability.maxReactive, scale["Q"], "Reactive Power Capability Maximum")
-            fminmax(fmt, width, show, Qdul, 1.0, "Reactive Power Capability Dual")
+            fminmax(fmt, width, show, scale["Q"], system.generator.capability.minReactive, "Reactive Power Capability Minimum")
+            fminmax(fmt, width, show, Qopt, "Reactive Power Capability Solution")
+            fminmax(fmt, width, show, scale["Q"], system.generator.capability.maxReactive, "Reactive Power Capability Maximum")
+            fminmax(fmt, width, show, Qdul, "Reactive Power Capability Dual")
         end
     end
-
-    printing = howManyPrint(width, show, style, title, "Generator Constraint Data")
+    printing = howManyPrint(width, show, title, style, "Generator Constraint Data")
 
     heading = OrderedDict(
         "Label"                     => _blank_(width, show, "Label"),
@@ -1181,41 +1116,39 @@ function printGeneratorConstraint(system::PowerSystem, analysis::DCOptimalPowerF
     constraint = analysis.method.constraint
     dual = analysis.method.dual
 
-    scale = printScale(system, prefix)
-    labels, title, header, footer = formPrint(label, system.generator, system.generator.label, title, header, footer, "generator")
-    fmt, width, show, heading, subheading, unit, printing = formatGeneratorConstraint(system, analysis, label, scale, prefix, fmt, width, show, title, style)
+    scale = scalePrint(system, prefix)
+    labels, title, header, footer = formPrint(system.generator, system.generator.label, label, title, header, footer, "generator")
+    fmt, width, show, heading, subheading, unit, printing = formatGeneratorConstraint(system, analysis, unitList, scale, label, fmt, width, show, title, style)
 
     if printing
-        maxLine, pfmt, hfmt = setupPrint(fmt, width, show, delimiter, style)
-
-        printTitle(io, maxLine, delimiter, title, header, style, "Generator Constraint Data")
+        pfmt, hfmt, maxLine = setupPrint(fmt, width, show, delimiter, style)
+        titlePrint(io, delimiter, title, header, style, maxLine, "Generator Constraint Data")
 
         cnt = 1
         @inbounds for (label, i) in labels
             if checkLine(analysis.method.jump, i, constraint.capability.active)
-                printing = printHeader(io, hfmt, width, show, heading, subheading, unit, delimiter, header, style, repeat, printing, maxLine, cnt)
+                printing = headerPrint(io, hfmt, width, show, heading, subheading, unit, delimiter, header, repeat, style, printing, maxLine, cnt)
+                printf(io, pfmt, width, show, label, "Label")
 
-                printf(io, pfmt, show, width, label, "Label")
-
-                if haskey(constraint.capability.active, i) && is_valid(analysis.method.jump, constraint.capability.active[i])
-                    printf(io, pfmt, show, width, system.generator.capability.minActive, i, scale["P"], "Active Power Capability Minimum")
-                    printf(io, pfmt, show, width, constraint.capability.active, i, scale["P"], "Active Power Capability Solution")
-                    printf(io, pfmt, show, width, system.generator.capability.maxActive, i, scale["P"], "Active Power Capability Maximum")
-                    printf(io, pfmt, show, width, dual.capability.active, i, scale["P"], "Active Power Capability Dual")
+                if isValid(analysis.method.jump, constraint.capability.active, i)
+                    printf(io, pfmt, width, show, i, scale["P"], system.generator.capability.minActive, "Active Power Capability Minimum")
+                    printf(io, pfmt, width, show, i, scale["P"], constraint.capability.active, "Active Power Capability Solution")
+                    printf(io, pfmt, width, show, i, scale["P"], system.generator.capability.maxActive, "Active Power Capability Maximum")
+                    printf(io, pfmt, width, show, i, scale["P"], dual.capability.active, "Active Power Capability Dual")
                 else
-                    printf(io, hfmt, show, width, "", "Active Power Capability Minimum", "Active Power Capability Solution", "Active Power Capability Maximum", "Active Power Capability Dual")
+                    printf(io, hfmt, width, show, "", "Active Power Capability Minimum", "Active Power Capability Solution", "Active Power Capability Maximum", "Active Power Capability Dual")
                 end
 
                 @printf io "\n"
                 cnt += 1
             end
         end
-        printf(io, delimiter, maxLine, style, footer)
+        printf(io, delimiter, footer, style, maxLine)
     end
 end
 
-function formatGeneratorConstraint(system::PowerSystem, analysis::DCOptimalPowerFlow, label::L, scale::Dict{String, Float64}, prefix::PrefixLive,
-    fmt::Dict{String, String}, width::Dict{String, Int64}, show::Dict{String, Bool}, title::Bool, style::Bool)
+function formatGeneratorConstraint(system::PowerSystem, analysis::DCOptimalPowerFlow, unitList::UnitList, scale::Dict{String, Float64},
+    label::L, fmt::Dict{String, String}, width::Dict{String, Int64}, show::Dict{String, Bool}, title::Bool, style::Bool)
 
     errorVoltage(analysis.voltage.angle)
     constraint = analysis.method.constraint
@@ -1269,35 +1202,32 @@ function formatGeneratorConstraint(system::PowerSystem, analysis::DCOptimalPower
 
             fmax(width, show, label, "Label")
 
-            if haskey(constraint.capability.active, i) && is_valid(analysis.method.jump, constraint.capability.active[i])
-                fmax(fmt, width, show, system.generator.capability.minActive, i, scale["P"], "Active Power Capability Minimum")
-                fmax(fmt, width, show, value(constraint.capability.active[i]) * scale["P"], "Active Power Capability Solution")
-                fmax(fmt, width, show, system.generator.capability.maxActive, i, scale["P"], "Active Power Capability Maximum")
-                if haskey(dual.capability.active, i)
-                    fmax(fmt, width, show, dual.capability.active[i] / scale["P"], "Active Power Capability Dual")
-                end
+            if isValid(analysis.method.jump, constraint.capability.active, i)
+                fmax(fmt, width, show, i, scale["P"], system.generator.capability.minActive, "Active Power Capability Minimum")
+                fmax(fmt, width, show, i, scale["P"], constraint.capability.active, "Active Power Capability Solution")
+                fmax(fmt, width, show, i, scale["P"], system.generator.capability.maxActive, "Active Power Capability Maximum")
+                fmax(fmt, width, show, i, scale["P"], dual.capability.active, "Active Power Capability Dual")
             end
+
         else
-            Popt = [-Inf; Inf]
-            Pdul = [-Inf; Inf]
+            Popt = [-Inf; Inf]; Pdul = [-Inf; Inf]
 
             @inbounds for (label, i) in system.generator.label
                 fmax(width, show, label, "Label")
 
-                if haskey(constraint.capability.active, i) && is_valid(analysis.method.jump, constraint.capability.active[i])
-                    minmaxPrimal(show, constraint.capability.active[i], scale["P"], Popt, "Active Power Capability Solution")
-                    minmaxDual(show, dual.capability.active, i, scale["P"], Pdul, "Active Power Capability Dual")
+                if isValid(analysis.method.jump, constraint.capability.active, i)
+                    fminmax(show, i, scale["P"], Popt, constraint.capability.active, "Active Power Capability Solution")
+                    fminmax(show, i, scale["P"], Pdul, dual.capability.active, "Active Power Capability Dual")
                 end
             end
 
-            fminmax(fmt, width, show, system.generator.capability.minActive, scale["P"], "Active Power Capability Minimum")
-            fminmax(fmt, width, show, Popt, 1.0, "Active Power Capability Solution")
-            fminmax(fmt, width, show, system.generator.capability.maxActive, scale["P"], "Active Power Capability Maximum")
-            fminmax(fmt, width, show, Pdul, 1.0, "Active Power Capability Dual")
+            fminmax(fmt, width, show, scale["P"], system.generator.capability.minActive, "Active Power Capability Minimum")
+            fminmax(fmt, width, show, Popt, "Active Power Capability Solution")
+            fminmax(fmt, width, show, scale["P"], system.generator.capability.maxActive,"Active Power Capability Maximum")
+            fminmax(fmt, width, show, Pdul, "Active Power Capability Dual")
         end
     end
-
-    printing = howManyPrint(width, show, style, title, "Generator Constraint Data")
+    printing = howManyPrint(width, show, title, style, "Generator Constraint Data")
 
     heading = OrderedDict(
         "Label"                   => _blank_(width, show, "Label"),
@@ -1365,4 +1295,26 @@ function checkFlowType(system::PowerSystem, jump::JuMP.Model, angle::Dict{Int64,
     end
 
     return findall(x -> x != 0, count), flowType
+end
+
+function flowScale(system::PowerSystem, prefix::PrefixLive, scale::Dict{String, Float64}, i::Int64, type::Int64)
+    if type == 1 || type == 2
+        scaleFrom, scaleTo = flowScale(scale, type)
+    elseif type == 3
+        scaleFrom, scaleTo = flowScale(system, prefix, i)
+    end
+
+    return scaleFrom, scaleTo
+end
+
+function flowScale(system::PowerSystem, prefix::PrefixLive, i::Int64)
+    return scaleCurrent(prefix, system, system.branch.layout.from[i]), scaleCurrent(prefix, system, system.branch.layout.to[i])
+end
+
+function flowScale(scale::Dict{String, Float64}, type::Int64)
+    if type == 1
+        return scale["S"], scale["S"]
+    elseif type == 2
+        return scale["P"], scale["P"]
+    end
 end
