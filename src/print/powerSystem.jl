@@ -458,7 +458,7 @@ function printBranchData(system::PowerSystem, analysis::AC, io::IO = stdout; lab
             printf(io, pfmt, width, show, i, scale["ψ"], analysis.current.from.angle, "From-Bus Current Angle")
             printf(io, pfmt, width, show, i, scaleCurrt, analysis.current.to.magnitude, "To-Bus Current Magnitude")
             printf(io, pfmt, width, show, i, scale["ψ"], analysis.current.to.angle, "To-Bus Current Angle")
-            printf(io, pfmt, width, show, i, scaleCurrf, analysis.current.series.magnitude, "Series Current Magnitude")
+            printf(io, pfmt, width, show, i, scaleCurrt, analysis.current.series.magnitude, "Series Current Magnitude")
             printf(io, pfmt, width, show, i, scale["ψ"], analysis.current.series.angle, "Series Current Angle")
 
             printf(io, pfmt, width, show, i, system.branch.layout.status, "Status")
@@ -645,7 +645,7 @@ function branchPrint(system::PowerSystem, analysis::AC, unitList::UnitList, pref
 
                     maxF = fmax(show, i, currf, maxF, current.from.magnitude, "From-Bus Current Magnitude")
                     maxT = fmax(show, i, currt, maxT, current.to.magnitude, "To-Bus Current Magnitude")
-                    maxS = fmax(show, i, currf, maxS, current.series.magnitude, "Series Current Magnitude")
+                    maxS = fmax(show, i, currt, maxS, current.series.magnitude, "Series Current Magnitude")
                 end
                 fmax(fmt, width, show, maxF, "From-Bus Current Magnitude")
                 fmax(fmt, width, show, maxT, "To-Bus Current Magnitude")
@@ -1437,8 +1437,8 @@ function branchSummary(system::PowerSystem, analysis::AC, unitList::UnitList, pr
             end
 
             if haskey(type, "From-Bus Current")
-                scaleCurrt = scaleCurrent(prefix, system, branch.layout.from[i])
-                summaryData(minIndex, minValue, maxIndex, maxValue, i, scaleCurrt, current.from.magnitude[i], "From-Bus Current Magnitude")
+                scaleCurrf = scaleCurrent(prefix, system, branch.layout.from[i])
+                summaryData(minIndex, minValue, maxIndex, maxValue, i, scaleCurrf, current.from.magnitude[i], "From-Bus Current Magnitude")
                 summaryData(minIndex, minValue, maxIndex, maxValue, i, scale["ψ"], current.from.angle[i], "From-Bus Current Angle")
             end
 
@@ -1449,7 +1449,7 @@ function branchSummary(system::PowerSystem, analysis::AC, unitList::UnitList, pr
             end
 
             if haskey(type, "Series Current")
-                scaleCurrt = scaleCurrent(prefix, system, branch.layout.from[i])
+                scaleCurrt = scaleCurrent(prefix, system, branch.layout.to[i])
                 summaryData(minIndex, minValue, maxIndex, maxValue, i, scaleCurrt, current.series.magnitude[i], "Series Current Magnitude")
                 summaryData(minIndex, minValue, maxIndex, maxValue, i, scale["ψ"], current.series.angle[i], "Series Current Angle")
             end
