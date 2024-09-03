@@ -18,12 +18,6 @@ PrecompileTools.@setup_workload begin
         solve!(system, analysis)
         power!(system, analysis)
 
-        analysis = dcPowerFlow(system, QR)
-        solve!(system, analysis)
-
-        analysis = dcPowerFlow(system, LDLt)
-        solve!(system, analysis)
-
         ########## AC Power Flow ###########
         analysis = newtonRaphson(system)
         solve!(system, analysis)
@@ -76,6 +70,12 @@ PrecompileTools.@setup_workload begin
         solve!(system, analysis)
 
         analysis = gaussNewton(system, device, Orthogonal)
+        solve!(system, analysis)
+    end
+
+    PrecompileTools.@compile_workload begin
+        ########## DC Power Flow ###########
+        analysis = dcPowerFlow(system, QR)
         solve!(system, analysis)
     end
 end
