@@ -714,12 +714,12 @@ function solve!(system::PowerSystem, analysis::ACPowerFlow{NewtonRaphson})
 
     if ac.pattern != analysis.method.pattern
         analysis.method.pattern = copy(system.model.ac.pattern)
-        analysis.method.factorization = sparseFactorization(jacobian, analysis.method.factorization)
+        analysis.method.factorization = factorization(jacobian, analysis.method.factorization)
     else
-        analysis.method.factorization = sparseFactorization!(jacobian, analysis.method.factorization)
+        analysis.method.factorization = factorization!(jacobian, analysis.method.factorization)
     end
 
-    analysis.method.increment = sparseSolution(analysis.method.increment, analysis.method.mismatch, analysis.method.factorization)
+    analysis.method.increment = solution(analysis.method.increment, analysis.method.mismatch, analysis.method.factorization)
 
     @inbounds for i = 1:bus.number
         if bus.layout.type[i] == 1
@@ -745,15 +745,15 @@ function solve!(system::PowerSystem, analysis::ACPowerFlow{FastNewtonRaphson})
         analysis.method.acmodel = copy(system.model.ac.model)
         if ac.pattern != analysis.method.pattern
             analysis.method.pattern = copy(system.model.ac.pattern)
-            active.factorization = sparseFactorization(active.jacobian, active.factorization)
-            reactive.factorization = sparseFactorization(reactive.jacobian, reactive.factorization)
+            active.factorization = factorization(active.jacobian, active.factorization)
+            reactive.factorization = factorization(reactive.jacobian, reactive.factorization)
         else
-            active.factorization = sparseFactorization!(active.jacobian, active.factorization)
-            reactive.factorization = sparseFactorization!(reactive.jacobian, reactive.factorization)
+            active.factorization = factorization!(active.jacobian, active.factorization)
+            reactive.factorization = factorization!(reactive.jacobian, reactive.factorization)
         end
     end
 
-    active.increment = sparseSolution(active.increment, active.mismatch, active.factorization)
+    active.increment = solution(active.increment, active.mismatch, active.factorization)
 
     @inbounds for i = 1:bus.number
         if i != bus.layout.slack
@@ -775,7 +775,7 @@ function solve!(system::PowerSystem, analysis::ACPowerFlow{FastNewtonRaphson})
         end
     end
 
-    reactive.increment = sparseSolution(reactive.increment, reactive.mismatch, reactive.factorization)
+    reactive.increment = solution(reactive.increment, reactive.mismatch, reactive.factorization)
 
     @inbounds for i = 1:bus.number
         if bus.layout.type[i] == 1

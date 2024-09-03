@@ -16,6 +16,7 @@ PrecompileTools.@setup_workload begin
         ########## DC Power Flow ###########
         analysis = dcPowerFlow(system)
         solve!(system, analysis)
+        power!(system, analysis)
 
         analysis = dcPowerFlow(system, QR)
         solve!(system, analysis)
@@ -26,6 +27,8 @@ PrecompileTools.@setup_workload begin
         ########## AC Power Flow ###########
         analysis = newtonRaphson(system)
         solve!(system, analysis)
+        power!(system, analysis)
+        current!(system, analysis)
 
         analysis = newtonRaphson(system, QR)
         solve!(system, analysis)

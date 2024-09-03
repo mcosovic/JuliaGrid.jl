@@ -662,12 +662,12 @@ function solve!(system::PowerSystem, analysis::ACStateEstimation{NonlinearWLS{No
 
     if se.pattern == -1
         se.pattern = 0
-        se.factorization = sparseFactorization(gain, se.factorization)
+        se.factorization = factorization(gain, se.factorization)
     else
-        se.factorization = sparseFactorization!(gain, se.factorization)
+        se.factorization = factorization!(gain, se.factorization)
     end
 
-    se.increment = sparseSolution(se.increment, transpose(jacobian) * se.precision * se.residual, se.factorization)
+    se.increment = solution(se.increment, transpose(jacobian) * se.precision * se.residual, se.factorization)
 
     @inbounds for (k, i) in enumerate(slackRange)
         jacobian[jacobian.rowval[i], bus.layout.slack] = elementsRemove[k]
@@ -705,12 +705,12 @@ function solve!(system::PowerSystem, analysis::ACStateEstimation{NonlinearWLS{Or
     JacobianScale = se.precision * se.jacobian
     if se.pattern == -1
         se.pattern = 0
-        se.factorization = sparseFactorization(JacobianScale, se.factorization)
+        se.factorization = factorization(JacobianScale, se.factorization)
     else
-        se.factorization = sparseFactorization!(JacobianScale, se.factorization)
+        se.factorization = factorization!(JacobianScale, se.factorization)
     end
 
-    se.increment = sparseSolution(se.increment, se.precision * se.residual, se.factorization)
+    se.increment = solution(se.increment, se.precision * se.residual, se.factorization)
 
     @inbounds for (k, i) in enumerate(slackRange)
         jacobian[jacobian.rowval[i], bus.layout.slack] = elementsRemove[k]

@@ -357,14 +357,14 @@ function solve!(system::PowerSystem, analysis::DCStateEstimation{LinearWLS{Norma
 
         if analysis.method.pattern == -1
             analysis.method.pattern = 0
-            se.factorization = sparseFactorization(gain, se.factorization)
+            se.factorization = factorization(gain, se.factorization)
         else
-            se.factorization = sparseFactorization!(gain, se.factorization)
+            se.factorization = factorization!(gain, se.factorization)
         end
     end
     b = transpose(se.coefficient) * se.precision * se.mean
 
-    analysis.voltage.angle = sparseSolution(analysis.voltage.angle, b, se.factorization)
+    analysis.voltage.angle = solution(analysis.voltage.angle, b, se.factorization)
 
     analysis.voltage.angle[bus.layout.slack] = 0.0
     if slackAngle != 0.0
@@ -390,9 +390,9 @@ function solve!(system::PowerSystem, analysis::DCStateEstimation{LinearWLS{Ortho
     if se.run
         analysis.method.run = false
         coefficientScale = se.precision * se.coefficient
-        se.factorization = sparseFactorization(coefficientScale, se.factorization)
+        se.factorization = factorization(coefficientScale, se.factorization)
     end
-    analysis.voltage.angle = sparseSolution(analysis.voltage.angle, se.precision * se.mean, se.factorization)
+    analysis.voltage.angle = solution(analysis.voltage.angle, se.precision * se.mean, se.factorization)
 
     analysis.voltage.angle[bus.layout.slack] = 0.0
     if slackAngle != 0.0

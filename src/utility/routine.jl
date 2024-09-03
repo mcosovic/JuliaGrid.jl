@@ -285,32 +285,32 @@ function addDeviceLAV(method::LAV, indexDevice::Int64)
 end
 
 ######### Factorizations ##########
-function sparseFactorization(A::SparseMatrixCSC{Float64,Int64}, factorization::UMFPACK.UmfpackLU{Float64, Int64})
+function factorization(A::SparseMatrixCSC{Float64,Int64}, factor::UMFPACK.UmfpackLU{Float64, Int64})
     return lu(A)
 end
 
-function sparseFactorization!(A::SparseMatrixCSC{Float64,Int64}, factorization::UMFPACK.UmfpackLU{Float64, Int64})
-    lu!(factorization, A)
+function factorization!(A::SparseMatrixCSC{Float64,Int64}, factor::UMFPACK.UmfpackLU{Float64, Int64})
+    lu!(factor, A)
 end
 
-function sparseFactorization(A::SparseMatrixCSC{Float64,Int64}, factorization::CHOLMOD.Factor{Float64})
+function factorization(A::SparseMatrixCSC{Float64,Int64}, factor::CHOLMOD.Factor{Float64})
     return ldlt(A)
 end
 
-function sparseFactorization!(A::SparseMatrixCSC{Float64,Int64}, factorization::CHOLMOD.Factor{Float64})
-    return ldlt!(factorization, A)
+function factorization!(A::SparseMatrixCSC{Float64,Int64}, factor::CHOLMOD.Factor{Float64})
+    return ldlt!(factor, A)
 end
 
-function sparseFactorization(A::SparseMatrixCSC{Float64,Int64}, factorization::SPQR.QRSparse{Float64, Int64})
+function factorization(A::SparseMatrixCSC{Float64,Int64}, factor::SPQR.QRSparse{Float64, Int64})
     return qr(A)
 end
 
-function sparseFactorization!(A::SparseMatrixCSC{Float64,Int64}, factorization::SPQR.QRSparse{Float64, Int64})
+function factorization!(A::SparseMatrixCSC{Float64,Int64}, factor::SPQR.QRSparse{Float64, Int64})
     return qr(A)
 end
 
 ########### Solutions ###########
-function sparseSolution(x::Array{Float64,1}, b::Array{Float64,1}, factor::UMFPACK.UmfpackLU{Float64, Int64})
+function solution(x::Array{Float64,1}, b::Array{Float64,1}, factor::UMFPACK.UmfpackLU{Float64, Int64})
     if isempty(x)
         x = fill(0.0, size(factor.L, 2))
     end
@@ -318,7 +318,7 @@ function sparseSolution(x::Array{Float64,1}, b::Array{Float64,1}, factor::UMFPAC
     ldiv!(x, factor, b)
 end
 
-function sparseSolution(x::Array{Float64,1}, b::Array{Float64,1}, factor::Union{SPQR.QRSparse{Float64, Int64}, CHOLMOD.Factor{Float64}})
+function solution(x::Array{Float64,1}, b::Array{Float64,1}, factor::Union{SPQR.QRSparse{Float64, Int64}, CHOLMOD.Factor{Float64}})
     return x = factor \ b
 end
 

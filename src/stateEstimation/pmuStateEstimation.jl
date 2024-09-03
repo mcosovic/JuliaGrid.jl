@@ -443,13 +443,13 @@ function solve!(system::PowerSystem, analysis::PMUStateEstimation{LinearWLS{Norm
 
     if analysis.method.pattern == -1
         analysis.method.pattern = 0
-        se.factorization = sparseFactorization(gain, se.factorization)
+        se.factorization = factorization(gain, se.factorization)
     else
-        se.factorization = sparseFactorization!(gain, se.factorization)
+        se.factorization = factorization!(gain, se.factorization)
     end
     b = transpose(se.coefficient) * se.precision * se.mean
 
-    voltageRectangular = sparseSolution(fill(0.0, 2 * bus.number), b, se.factorization)
+    voltageRectangular = solution(fill(0.0, 2 * bus.number), b, se.factorization)
 
     if isempty(analysis.voltage.magnitude)
         analysis.voltage.magnitude = fill(0.0, bus.number)
@@ -473,8 +473,8 @@ function solve!(system::PowerSystem, analysis::PMUStateEstimation{LinearWLS{Orth
     end
 
     coefficientScale = se.precision * se.coefficient
-    se.factorization = sparseFactorization(coefficientScale, se.factorization)
-    voltageRectangular = sparseSolution(fill(0.0, 2 * bus.number), se.precision * se.mean, se.factorization)
+    se.factorization = factorization(coefficientScale, se.factorization)
+    voltageRectangular = solution(fill(0.0, 2 * bus.number), se.precision * se.mean, se.factorization)
 
     if isempty(analysis.voltage.magnitude)
         analysis.voltage.magnitude = fill(0.0, bus.number)

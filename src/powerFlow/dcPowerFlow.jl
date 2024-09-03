@@ -104,9 +104,9 @@ function solve!(system::PowerSystem, analysis::DCPowerFlow)
 
         if dc.pattern != analysis.method.pattern
             analysis.method.pattern = copy(system.model.dc.pattern)
-            analysis.method.factorization = sparseFactorization(dc.nodalMatrix, analysis.method.factorization)
+            analysis.method.factorization = factorization(dc.nodalMatrix, analysis.method.factorization)
         else
-            analysis.method.factorization = sparseFactorization!(dc.nodalMatrix, analysis.method.factorization)
+            analysis.method.factorization = factorization!(dc.nodalMatrix, analysis.method.factorization)
         end
 
         @inbounds for (k, i) in enumerate(slackRange)
@@ -115,7 +115,7 @@ function solve!(system::PowerSystem, analysis::DCPowerFlow)
         end
     end
 
-    analysis.voltage.angle = sparseSolution(analysis.voltage.angle, b, analysis.method.factorization)
+    analysis.voltage.angle = solution(analysis.voltage.angle, b, analysis.method.factorization)
 
     analysis.voltage.angle[bus.layout.slack] = 0.0
     if bus.voltage.angle[bus.layout.slack] != 0.0
