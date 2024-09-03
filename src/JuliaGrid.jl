@@ -96,5 +96,8 @@ export power!, current!
 export injectionPower, supplyPower, shuntPower, fromPower, toPower, chargingPower, seriesPower, generatorPower
 export injectionCurrent, fromCurrent, toCurrent, seriesCurrent
 
+########## Precompile ##########
+include("utility/precompile.jl")
+
 end
 

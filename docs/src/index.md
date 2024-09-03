@@ -19,7 +19,7 @@ Below, we have provided a list of exhaustive examples in order to ease users in 
 ---
 
 #### Installation
-JuliaGrid is compatible with Julia version 1.8 and newer. To get the JuliaGrid package installed, execute the following Julia command:
+JuliaGrid is compatible with Julia version 1.9 and newer. To get the JuliaGrid package installed, execute the following Julia command:
 ```julia
 import Pkg
 Pkg.add("JuliaGrid")
