@@ -58,7 +58,7 @@ function dcPowerFlow(system::PowerSystem, factorization::Type{<:Union{QR, LDLt, 
             CartesianReal(Float64[])
         ),
         DCPowerFlowMethod(
-            factorizeMatrix[factorization],
+            factorized[factorization],
             -1,
             -1
         )

@@ -47,7 +47,7 @@ mutable struct NewtonRaphson
     jacobian::SparseMatrixCSC{Float64,Int64}
     mismatch::Array{Float64,1}
     increment::Array{Float64,1}
-    factorization::LUQR
+    factorization::Factorization{Float64}
     pq::Array{Int64,1}
     pvpq::Array{Int64,1}
     pattern::Int64
@@ -58,7 +58,7 @@ mutable struct FastNewtonRaphsonModel
     jacobian::SparseMatrixCSC{Float64,Int64}
     mismatch::Array{Float64,1}
     increment::Array{Float64,1}
-    factorization::LUQR
+    factorization::Factorization{Float64}
 end
 
 mutable struct FastNewtonRaphson
@@ -88,7 +88,7 @@ end
 
 ########### DC Power Flow ###########
 mutable struct DCPowerFlowMethod
-    factorization::LULDLtQR
+    factorization::Factorization{Float64}
     dcmodel::Int64
     pattern::Int64
 end
@@ -246,7 +246,7 @@ mutable struct LinearWLS{T <: Union{Normal, Orthogonal}}
     coefficient::SparseMatrixCSC{Float64,Int64}
     precision::SparseMatrixCSC{Float64,Int64}
     mean::Array{Float64,1}
-    factorization::LULDLtQR
+    factorization::Factorization{Float64}
     number::Int64
     pattern::Int64
     run::Bool
@@ -258,7 +258,7 @@ mutable struct NonlinearWLS{T <: Union{Normal, Orthogonal}}
     mean::Array{Float64,1}
     residual::Array{Float64,1}
     increment::Array{Float64,1}
-    factorization::LULDLtQR
+    factorization::Factorization{Float64}
     type::Array{Int8,1}
     index::Array{Int64,1}
     range::Array{Int64,1}

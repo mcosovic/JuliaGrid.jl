@@ -287,18 +287,13 @@ end
 prefix = PrefixLive()
 
 ########### Matrix Factorization Type ###########
-export Factorization, LU, QR, LDLt
+export LU, QR, LDLt
 
-abstract type Factorization end
-abstract type QR <: Factorization end
-abstract type LU <: Factorization end
-abstract type LDLt <: Factorization end
+abstract type QR end
+abstract type LU end
+abstract type LDLt end
 
-const factorizeMatrix = Dict{DataType, LagFactorization{Float64}}()
-factorizeMatrix[LU] = lu(sparse(Matrix(1.0I, 1, 1)))
-factorizeMatrix[QR] = qr(sparse(Matrix(1.0I, 1, 1)))
-factorizeMatrix[LDLt] = ldlt(sparse(Matrix(1.0I, 1, 1)))
-
-const LUQR = Union{UMFPACK.UmfpackLU{Float64, Int64}, SPQR.QRSparse{Float64, Int64}}
-const LULDLt = Union{CHOLMOD.Factor{Float64}, UMFPACK.UmfpackLU{Float64, Int64}}
-const LULDLtQR = Union{CHOLMOD.Factor{Float64}, LUQR}
+const factorized = Dict{DataType, Factorization{Float64}}()
+factorized[LU] = lu(sparse(Matrix(1.0I, 1, 1)))
+factorized[QR] = qr(sparse(Matrix(1.0I, 1, 1)))
+factorized[LDLt] = ldlt(sparse(Matrix(1.0I, 1, 1)))

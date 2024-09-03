@@ -49,7 +49,7 @@ analysis = dcWlsStateEstimation(system, device, Orthogonal)
 ```
 """
 function dcWlsStateEstimation(system::PowerSystem, device::Measurement,
-    factorization::Type{<:Union{QR, LDLt, LU, Orthogonal}} = LU)
+    factorization::Type{<:Union{QR, LDLt, LU}} = LU)
 
     coefficient, mean, precision, power = dcStateEstimationWLS(system, device)
 
@@ -60,7 +60,7 @@ function dcWlsStateEstimation(system::PowerSystem, device::Measurement,
             coefficient,
             precision,
             mean,
-            factorizeMatrix[factorization],
+            factorized[factorization],
             device.wattmeter.number + device.pmu.number,
             -1,
             true,
@@ -69,7 +69,6 @@ function dcWlsStateEstimation(system::PowerSystem, device::Measurement,
 end
 
 function dcWlsStateEstimation(system::PowerSystem, device::Measurement, method::Type{<:Orthogonal})
-
     coefficient, mean, precision, power = dcStateEstimationWLS(system, device)
 
     return DCStateEstimation(
@@ -81,7 +80,7 @@ function dcWlsStateEstimation(system::PowerSystem, device::Measurement, method::
             coefficient,
             precision,
             mean,
-            qr(sparse(Matrix(1.0I, 1, 1))),
+            factorized[QR],
             device.wattmeter.number + device.pmu.number,
             -1,
             true,

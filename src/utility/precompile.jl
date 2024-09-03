@@ -13,28 +13,66 @@ PrecompileTools.@setup_workload begin
     addPmu!(system, device; bus = 2, magnitude = 1.0, angle = 0.0)
 
     PrecompileTools.@compile_workload begin
+        ########## DC Power Flow ###########
         analysis = dcPowerFlow(system)
         solve!(system, analysis)
 
+        analysis = dcPowerFlow(system, QR)
+        solve!(system, analysis)
+
+        analysis = dcPowerFlow(system, LDLt)
+        solve!(system, analysis)
+
+        ########## AC Power Flow ###########
         analysis = newtonRaphson(system)
+        solve!(system, analysis)
+
+        analysis = newtonRaphson(system, QR)
         solve!(system, analysis)
 
         analysis = fastNewtonRaphsonBX(system)
         solve!(system, analysis)
 
-        analysis = fastNewtonRaphsonXB(system)
-        solve!(system, analysis)
-
         analysis = gaussSeidel(system)
         solve!(system, analysis)
 
+        ########## DC State Estimation ###########
         analysis = dcWlsStateEstimation(system, device)
         solve!(system, analysis)
 
+        analysis = dcWlsStateEstimation(system, device, QR)
+        solve!(system, analysis)
+
+        analysis = dcWlsStateEstimation(system, device, LDLt)
+        solve!(system, analysis)
+
+        analysis = dcWlsStateEstimation(system, device, Orthogonal)
+        solve!(system, analysis)
+
+        ########### PMU State Estimation ###########
         analysis = pmuWlsStateEstimation(system, device)
         solve!(system, analysis)
 
+        analysis = pmuWlsStateEstimation(system, device, QR)
+        solve!(system, analysis)
+
+        analysis = pmuWlsStateEstimation(system, device, LDLt)
+        solve!(system, analysis)
+
+        analysis = pmuWlsStateEstimation(system, device, Orthogonal)
+        solve!(system, analysis)
+
+        ########### AC State Estimation ###########
         analysis = gaussNewton(system, device)
+        solve!(system, analysis)
+
+        analysis = gaussNewton(system, device, QR)
+        solve!(system, analysis)
+
+        analysis = gaussNewton(system, device, LDLt)
+        solve!(system, analysis)
+
+        analysis = gaussNewton(system, device, Orthogonal)
         solve!(system, analysis)
     end
 end
