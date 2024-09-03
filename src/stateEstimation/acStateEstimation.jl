@@ -818,6 +818,17 @@ function normalEquation!(system::PowerSystem, analysis::ACStateEstimation)
                     jacobian[row, col + bus.number] = voltage.magnitude[index] * (Gij * sinAngle - Bij * cosAngle)               # ∂Qᵢ / ∂Vⱼ
                 end
 
+            elseif se.type[row] == 14 # ℜ(Vᵢ)
+                se.residual[row] = se.mean[row] - voltage.magnitude[index] * cos(voltage.angle[index])
+
+                jacobian[row, col] = -voltage.magnitude[index] * sin(voltage.angle[index])  # ∂ℜ(Vᵢ) / ∂θᵢ
+                jacobian[row, col + bus.number] = cos(voltage.angle[index])                 # ∂ℜ(Vᵢ) / ∂Vᵢ
+
+            elseif se.type[row] == 15 # ℑ(Vᵢ)
+                se.residual[row] = se.mean[row] - voltage.magnitude[index] * sin(voltage.angle[index])
+
+                jacobian[row, col] = voltage.magnitude[index] * cos(voltage.angle[index])  # ∂ℑ(Vᵢ) / ∂θᵢ
+                jacobian[row, col + bus.number] = sin(voltage.angle[index])                # ∂ℑ(Vᵢ) / ∂Vᵢ
             else
                 i, j, gij, bij, gsi, bsi, tij, Fij = branchParameter(branch, ac, index)
 
@@ -933,18 +944,6 @@ function normalEquation!(system::PowerSystem, analysis::ACStateEstimation)
                         jacobian[row, col] = Iinv * (B * voltage.magnitude[j]^2 - (C * cosAngle + D * sinAngle) * voltage.magnitude[i] * voltage.magnitude[j])  # ∂ψⱼᵢ / ∂θⱼ
                         jacobian[row, col + bus.number] = Iinv * (C * sinAngle - D * cosAngle) * voltage.magnitude[i]                                           # ∂ψⱼᵢ / ∂Vⱼ
                     end
-
-                elseif se.type[row] == 14 # ℜ(Vᵢ)
-                    se.residual[row] = se.mean[row] - voltage.magnitude[index] * cos(voltage.angle[index])
-
-                    jacobian[row, col] = -voltage.magnitude[index] * sin(voltage.angle[index])  # ∂ℜ(Vᵢ) / ∂θᵢ
-                    jacobian[row, col + bus.number] = cos(voltage.angle[index])                 # ∂ℜ(Vᵢ) / ∂Vᵢ
-
-                elseif se.type[row] == 15 # ℑ(Vᵢ)
-                    se.residual[row] = se.mean[row] - voltage.magnitude[index] * sin(voltage.angle[index])
-
-                    jacobian[row, col] = voltage.magnitude[index] * cos(voltage.angle[index])  # ∂ℑ(Vᵢ) / ∂θᵢ
-                    jacobian[row, col + bus.number] = sin(voltage.angle[index])                # ∂ℑ(Vᵢ) / ∂Vᵢ
 
                 elseif se.type[row] == 16 # ℜ(Iᵢⱼ)
                     A, B, C, D = FijCoeff(gij, gsi, bij, bsi, tij)
