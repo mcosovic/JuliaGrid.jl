@@ -5,13 +5,12 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     @default(template)
     @default(unit)
 
-    ################ Modified IEEE 14-bus Test Case ################
+    ############ Modified IEEE 14-bus Test Case ############
     placement = pmuPlacement(system14, GLPK.Optimizer)
     @test collect(keys(placement.bus)) == ["1"; "4"; "16"; "7"; "9"]
     @test collect(keys(placement.from)) == ["1"; "2"; "7"; "8"; "9"; "11"; "12"; "13"; "14"; "15"; "16"; "17"]
     @test collect(keys(placement.to)) == ["4"; "6"; "10"; "8"; "9"; "15"]
 
-    ############### Modified IEEE 14-bus Test Case ################
     updateBus!(system14; label = 1, type = 2)
     updateBus!(system14; label = 3, type = 3, angle = -0.17)
     updateBranch!(system14; label = 3, conductance = 0.01)
@@ -41,13 +40,12 @@ system30 = powerSystem(string(pathData, "case30test.m"))
         addPmu!(system14, device; to = key, magnitude = analysis.current.to.magnitude[value], angle = analysis.current.to.angle[value])
     end
 
-    ####### LU Factorization #######
+    #### LU Factorization ####
     analysisLU = pmuWlsStateEstimation(system14, device, LU)
     solve!(system14, analysisLU)
-    @test analysisLU.voltage.magnitude ≈ analysis.voltage.magnitude
-    @test analysisLU.voltage.angle ≈ analysis.voltage.angle
+    compstruct(analysisLU.voltage, analysis.voltage; atol = 1e-10)
 
-    ################ Modified IEEE 30-bus Test Case ################
+    ############ Modified IEEE 30-bus Test Case ############
     acModel!(system30)
     analysis = newtonRaphson(system30)
     for i = 1:1000
@@ -71,9 +69,8 @@ system30 = powerSystem(string(pathData, "case30test.m"))
         addPmu!(system30, device; to = key, magnitude = analysis.current.to.magnitude[value], angle = analysis.current.to.angle[value])
     end
 
-    ####### LU Factorization #######
+    #### LU Factorization ####
     analysisLU = pmuWlsStateEstimation(system30, device, LU)
     solve!(system30, analysisLU)
-    @test analysisLU.voltage.magnitude ≈ analysis.voltage.magnitude
-    @test analysisLU.voltage.angle ≈ analysis.voltage.angle
+    compstruct(analysisLU.voltage, analysis.voltage; atol = 1e-10)
 end

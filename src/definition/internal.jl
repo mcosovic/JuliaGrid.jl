@@ -5,10 +5,6 @@ const C = Union{Int64, Missing}
 const O = Union{String, Int64}
 const L = Union{O, Missing}
 
-const LUQR = Union{UMFPACK.UmfpackLU{Float64, Int64}, SPQR.QRSparse{Float64, Int64}}
-const LULDLt = Union{CHOLMOD.Factor{Float64}, UMFPACK.UmfpackLU{Float64, Int64}}
-const LULDLtQR = Union{CHOLMOD.Factor{Float64}, LUQR}
-
 ########### Polar Coordinate ###########
 mutable struct Polar
     magnitude::Array{Float64,1}
@@ -289,3 +285,20 @@ Base.@kwdef mutable struct PrefixLive
     baseVoltage::Float64 = 1.0
 end
 prefix = PrefixLive()
+
+########### Matrix Factorization Type ###########
+export Factorization, LU, QR, LDLt
+
+abstract type Factorization end
+abstract type QR <: Factorization end
+abstract type LU <: Factorization end
+abstract type LDLt <: Factorization end
+
+const factorizeMatrix = Dict{DataType, LagFactorization{Float64}}()
+factorizeMatrix[LU] = lu(sparse(Matrix(1.0I, 1, 1)))
+factorizeMatrix[QR] = qr(sparse(Matrix(1.0I, 1, 1)))
+factorizeMatrix[LDLt] = ldlt(sparse(Matrix(1.0I, 1, 1)))
+
+const LUQR = Union{UMFPACK.UmfpackLU{Float64, Int64}, SPQR.QRSparse{Float64, Int64}}
+const LULDLt = Union{CHOLMOD.Factor{Float64}, UMFPACK.UmfpackLU{Float64, Int64}}
+const LULDLtQR = Union{CHOLMOD.Factor{Float64}, LUQR}

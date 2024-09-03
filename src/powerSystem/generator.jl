@@ -482,7 +482,7 @@ function updateGenerator!(system::PowerSystem, analysis::ACPowerFlow{GaussSeidel
     if bus.layout.type[indexBus] in [2, 3]
         index = bus.supply.generator[indexBus][1]
         analysis.voltage.magnitude[indexBus] = generator.voltage.magnitude[index]
-        analysis.method.voltage[indexBus] = generator.voltage.magnitude[index] * exp(im * angle(analysis.method.voltage[indexBus]))
+        analysis.method.voltage[indexBus] = generator.voltage.magnitude[index] * cis(angle(analysis.method.voltage[indexBus]))
      end
 end
 

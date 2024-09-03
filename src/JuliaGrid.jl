@@ -2,7 +2,7 @@ module JuliaGrid
 
 using JuMP
 
-import LinearAlgebra: lu, lu!, ldlt, ldlt!, qr, ldiv, ldiv!, I
+import LinearAlgebra: lu, lu!, ldlt, ldlt!, qr, ldiv, ldiv!, I, Factorization as LagFactorization
 import SparseArrays: SparseMatrixCSC, sparse, spzeros, spdiagm, dropzeros!, nzrange, nnz
 import SuiteSparse: UMFPACK, SPQR, CHOLMOD
 
@@ -97,3 +97,4 @@ export injectionPower, supplyPower, shuntPower, fromPower, toPower, chargingPowe
 export injectionCurrent, fromCurrent, toCurrent, seriesCurrent
 
 end
+

@@ -3,7 +3,7 @@ system14 = powerSystem(string(pathData, "case14test.m"))
     @default(template)
     @default(unit)
 
-    ################ Modified IEEE 14-bus Test Case ################
+    ############ Modified IEEE 14-bus Test Case ############
     acModel!(system14)
     analysis = newtonRaphson(system14)
     for i = 1:1000
@@ -16,7 +16,7 @@ system14 = powerSystem(string(pathData, "case14test.m"))
     power!(system14, analysis)
     current!(system14, analysis)
 
-    ####### Measurements #######
+    #### Measurements ####
     device = measurement()
 
     @wattmeter(label = "!")
@@ -104,11 +104,11 @@ system14 = powerSystem(string(pathData, "case14test.m"))
         end
     end
 
-    ####### Original WLS and LAV Models #######
+    #### Original WLS and LAV Models ####
     analysisWLS = gaussNewton(system14, device)
     analysisLAV = acLavStateEstimation(system14, device, Ipopt.Optimizer)
 
-    ####### Update Only Devices #######
+    #### Update Only Devices ####
     updateVoltmeter!(system14, device; label = 1, status = 0)
     updateVoltmeter!(system14, device; label = 3, status = 1)
     updateVoltmeter!(system14, device; label = 5, magnitude = analysis.voltage.magnitude[5], variance = 1e-2)
@@ -161,7 +161,7 @@ system14 = powerSystem(string(pathData, "case14test.m"))
     updatePmu!(system14, device; label = "PMU 15 To", angle = analysis.current.to.angle[15], polar = true)
     updatePmu!(system14, device; label = "PMU 17 To", magnitude = analysis.current.to.magnitude[17], polar = true)
 
-    ####### Solve Updated WLS and LAV Models #######
+    #### Solve Updated WLS and LAV Models ####
     analysisWLSUpdate = gaussNewton(system14, device)
     for iteration = 1:40
         stopping = solve!(system14, analysisWLSUpdate)
@@ -169,16 +169,14 @@ system14 = powerSystem(string(pathData, "case14test.m"))
             break
         end
     end
-    @test analysisWLSUpdate.voltage.magnitude ≈ analysis.voltage.magnitude
-    @test analysisWLSUpdate.voltage.angle ≈ analysis.voltage.angle
+    compstruct(analysisWLSUpdate.voltage, analysis.voltage; atol = 1e-10)
 
     analysisLAVUpdate = acLavStateEstimation(system14, device, Ipopt.Optimizer)
     set_silent(analysisLAVUpdate.method.jump)
     solve!(system14, analysisLAVUpdate)
-    @test analysisLAVUpdate.voltage.magnitude ≈ analysis.voltage.magnitude
-    @test analysisLAVUpdate.voltage.angle ≈ analysis.voltage.angle
+    compstruct(analysisLAVUpdate.voltage, analysis.voltage; atol = 1e-10)
 
-    ##### Update Devices and Original WLS Model #######
+    #### Update Devices and Original WLS Model ####
     updateVoltmeter!(system14, device, analysisWLS; label = 1, status = 0)
     updateVoltmeter!(system14, device, analysisWLS; label = 3, status = 1)
     updateVoltmeter!(system14, device, analysisWLS; label = 5, magnitude = analysis.voltage.magnitude[5], variance = 1e-2)
@@ -254,10 +252,9 @@ system14 = powerSystem(string(pathData, "case14test.m"))
             break
         end
     end
-    @test analysisWLS.voltage.magnitude ≈ analysis.voltage.magnitude
-    @test analysisWLS.voltage.angle ≈ analysis.voltage.angle
+    compstruct(analysisWLS.voltage, analysis.voltage; atol = 1e-10)
 
-    #### Update Devices and Original LAV Model #######
+    #### Update Devices and Original LAV Model ####
     updateVoltmeter!(system14, device, analysisLAV; label = 1, status = 0)
     updateVoltmeter!(system14, device, analysisLAV; label = 3, status = 1)
     updateVoltmeter!(system14, device, analysisLAV; label = 5, magnitude = analysis.voltage.magnitude[5], variance = 1e-2)
@@ -324,8 +321,7 @@ system14 = powerSystem(string(pathData, "case14test.m"))
 
     set_silent(analysisLAV.method.jump)
     solve!(system14, analysisLAV)
-    @test analysisLAV.voltage.magnitude ≈ analysis.voltage.magnitude
-    @test analysisLAV.voltage.angle ≈ analysis.voltage.angle
+    compstruct(analysisLAV.voltage, analysis.voltage; atol = 1e-10)
 end
 
 system14 = powerSystem(string(pathData, "case14test.m"))
@@ -333,7 +329,7 @@ system14 = powerSystem(string(pathData, "case14test.m"))
     @default(template)
     @default(unit)
 
-    ################ Modified IEEE 14-bus Test Case ################
+    ############ Modified IEEE 14-bus Test Case ############
     acModel!(system14)
     analysis = newtonRaphson(system14)
     iteration = 0
@@ -346,7 +342,7 @@ system14 = powerSystem(string(pathData, "case14test.m"))
     end
     current!(system14, analysis)
 
-    ####### Measurements #######
+    #### Measurements ####
     device = measurement()
 
     placement = pmuPlacement(system14, GLPK.Optimizer)
@@ -387,13 +383,13 @@ system14 = powerSystem(string(pathData, "case14test.m"))
         end
     end
 
-    ####### Original Device, WLS and LAV Models #######
+    #### Original Device, WLS and LAV Models ####
     deviceWLS = deepcopy(device)
     deviceLAV = deepcopy(device)
     analysisWLS = pmuWlsStateEstimation(system14, device)
     analysisLAV = pmuLavStateEstimation(system14, device, Ipopt.Optimizer)
 
-    ####### Update Just PMUs #######
+    #### Update Just PMUs ####
     updatePmu!(system14, device; label = 1, magnitude = analysis.voltage.magnitude[1])
     updatePmu!(system14, device; label = 4, angle = analysis.voltage.angle[4], statusMagnitude = 1)
     updatePmu!(system14, device; label = 16,  magnitude = analysis.voltage.magnitude[6], angle = analysis.voltage.angle[6], statusAngle = 1)
@@ -406,19 +402,17 @@ system14 = powerSystem(string(pathData, "case14test.m"))
     updatePmu!(system14, device; label = "To 10", angle = analysis.current.to.angle[10])
     updatePmu!(system14, device; label = "To 15", statusAngle = 1)
 
-    ####### Solve Updated WLS and LAV Models #######
+    #### Solve Updated WLS and LAV Models ####
     analysisWLSUpdate = pmuWlsStateEstimation(system14, device)
     solve!(system14, analysisWLSUpdate)
-    @test analysisWLSUpdate.voltage.magnitude ≈ analysis.voltage.magnitude
-    @test analysisWLSUpdate.voltage.angle ≈ analysis.voltage.angle
+    compstruct(analysisWLSUpdate.voltage, analysis.voltage; atol = 1e-10)
 
     analysisLAVUpdate = pmuLavStateEstimation(system14, device, Ipopt.Optimizer)
     set_silent(analysisLAVUpdate.method.jump)
     solve!(system14, analysisLAVUpdate)
-    @test analysisLAVUpdate.voltage.magnitude ≈ analysis.voltage.magnitude
-    @test analysisLAVUpdate.voltage.angle ≈ analysis.voltage.angle
+    compstruct(analysisLAVUpdate.voltage, analysis.voltage; atol = 1e-8)
 
-    ##### Update Devices and Original WLS Model #######
+    #### Update Devices and Original WLS Model ####
     updatePmu!(system14, deviceWLS, analysisWLS; label = 1, magnitude = analysis.voltage.magnitude[1])
     updatePmu!(system14, deviceWLS, analysisWLS; label = 4, angle = analysis.voltage.angle[4], statusMagnitude = 1)
     updatePmu!(system14, deviceWLS, analysisWLS; label = 16,  magnitude = analysis.voltage.magnitude[6], angle = analysis.voltage.angle[6], statusAngle = 1)
@@ -436,10 +430,9 @@ system14 = powerSystem(string(pathData, "case14test.m"))
     updatePmu!(system14, deviceWLS, analysisWLS; label = "To 15", statusAngle = 1)
 
     solve!(system14, analysisWLS)
-    @test analysisWLS.voltage.magnitude ≈ analysis.voltage.magnitude
-    @test analysisWLS.voltage.angle ≈ analysis.voltage.angle
+    compstruct(analysisWLS.voltage, analysis.voltage; atol = 1e-10)
 
-    #### Update Devices and Original LAV Model #######
+    #### Update Devices and Original LAV Model ####
     updatePmu!(system14, deviceLAV, analysisLAV; label = 1, magnitude = analysis.voltage.magnitude[1])
     updatePmu!(system14, deviceLAV, analysisLAV; label = 4, angle = analysis.voltage.angle[4], statusMagnitude = 1)
     updatePmu!(system14, deviceLAV, analysisLAV; label = 16,  magnitude = analysis.voltage.magnitude[6], angle = analysis.voltage.angle[6], statusAngle = 1)
@@ -458,10 +451,9 @@ system14 = powerSystem(string(pathData, "case14test.m"))
 
     set_silent(analysisLAV.method.jump)
     solve!(system14, analysisLAV)
-    @test analysisLAV.voltage.magnitude ≈ analysis.voltage.magnitude
-    @test analysisLAV.voltage.angle ≈ analysis.voltage.angle
+    compstruct(analysisLAV.voltage, analysis.voltage; atol = 1e-8)
 
-    ####### Check Precision Matrix #######
+    #### Check Precision Matrix ####
     precision = copy(analysisWLS.method.precision)
 
     updatePmu!(system14, deviceWLS, analysisWLS; label = 4, correlated = false)
@@ -497,7 +489,7 @@ system14 = powerSystem(string(pathData, "case14test.m"))
     @default(template)
     @default(unit)
 
-    ############### Modified IEEE 14-bus Test Case ################
+    ############ Modified IEEE 14-bus Test Case ############
     updateBus!(system14; label = 1, type = 2)
     updateBus!(system14; label = 3, type = 3, angle = -0.17)
     updateBranch!(system14; label = 7, status = 0)
@@ -508,7 +500,7 @@ system14 = powerSystem(string(pathData, "case14test.m"))
     solve!(system14, analysis)
     power!(system14, analysis)
 
-    ####### Measurements #######
+    #### Measurements ####
     device = measurement()
 
     @wattmeter(label = "!")
@@ -566,11 +558,11 @@ system14 = powerSystem(string(pathData, "case14test.m"))
         end
     end
 
-    ####### Original WLS and LAV Models #######
+    #### Original WLS and LAV Models ####
     analysisWLS = dcWlsStateEstimation(system14, device)
     analysisLAV = dcLavStateEstimation(system14, device, Ipopt.Optimizer)
 
-    ####### Update Only Devices #######
+    #### Update Only Devices ####
     updateWattmeter!(system14, device; label = 1, status = 0)
     updateWattmeter!(system14, device; label = 3, status = 1)
     updateWattmeter!(system14, device; label = 5, active = analysis.power.injection.active[5], variance = 1e-2)
@@ -591,7 +583,7 @@ system14 = powerSystem(string(pathData, "case14test.m"))
     updatePmu!(system14, device; label = 9, angle = analysis.voltage.angle[9], varianceAngle = 1e-5)
     updatePmu!(system14, device; label = 13, angle = analysis.voltage.angle[13])
 
-    ####### Solve Updated WLS and LAV Models #######
+    #### Solve Updated WLS and LAV Models ####
     analysisWLSUpdate = dcWlsStateEstimation(system14, device)
     solve!(system14, analysisWLSUpdate)
     @test analysisWLSUpdate.voltage.angle ≈ analysis.voltage.angle
@@ -601,7 +593,7 @@ system14 = powerSystem(string(pathData, "case14test.m"))
     solve!(system14, analysisLAVUpdate)
     @test analysisLAVUpdate.voltage.angle ≈ analysis.voltage.angle
 
-    ##### Update Devices and Original WLS Model #######
+    #### Update Devices and Original WLS Model ####
     updateWattmeter!(system14, device, analysisWLS; label = 1, status = 0)
     updateWattmeter!(system14, device, analysisWLS; label = 3, status = 1)
     updateWattmeter!(system14, device, analysisWLS; label = 5, active = analysis.power.injection.active[5], variance = 1e-2)
@@ -634,7 +626,7 @@ system14 = powerSystem(string(pathData, "case14test.m"))
     solve!(system14, analysisWLS)
     @test analysisWLS.voltage.angle ≈ analysis.voltage.angle
 
-    #### Update Devices and Original LAV Model #######
+    #### Update Devices and Original LAV Model ####
     updateWattmeter!(system14, device, analysisLAV; label = 1, status = 0)
     updateWattmeter!(system14, device, analysisLAV; label = 3, status = 1)
     updateWattmeter!(system14, device, analysisLAV; label = 5, active = analysis.power.injection.active[5], variance = 1e-2)

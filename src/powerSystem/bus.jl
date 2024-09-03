@@ -365,7 +365,7 @@ function updateBus!(system::PowerSystem, analysis::ACPowerFlow{GaussSeidel};
         if isset(angle)
             analysis.voltage.angle[index] = bus.voltage.angle[index]
         end
-        analysis.method.voltage[index] = analysis.voltage.magnitude[index] * exp(im * analysis.voltage.angle[index])
+        analysis.method.voltage[index] = analysis.voltage.magnitude[index] * cis(analysis.voltage.angle[index])
     end
 end
 

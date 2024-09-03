@@ -51,7 +51,6 @@ function gaussNewton(system::PowerSystem, device::Measurement,
     factorization::Type{<:Union{QR, LDLt, LU}} = LU)
 
     jacobian, mean, precision, residual, type, index, range, power, current, _ = acStateEstimationWLS(system, device)
-    method = Dict(LU => lu, LDLt => ldlt, QR => qr)
 
     return ACStateEstimation(
         Polar(
@@ -66,7 +65,7 @@ function gaussNewton(system::PowerSystem, device::Measurement,
             mean,
             residual,
             fill(0.0, 2 * system.bus.number),
-            get(method, factorization, lu)(sparse(Matrix(1.0I, 1, 1))),
+            factorizeMatrix[factorization],
             type,
             index,
             range,

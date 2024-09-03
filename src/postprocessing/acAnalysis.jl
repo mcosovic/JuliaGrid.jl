@@ -48,7 +48,7 @@ function power!(system::PowerSystem, analysis::ACPowerFlow)
     power.shunt.active = fill(0.0, system.bus.number)
     power.shunt.reactive = fill(0.0, system.bus.number)
     @inbounds for i = 1:system.bus.number
-        voltageBus = voltage.magnitude[i] * exp(im * voltage.angle[i])
+        voltageBus = voltage.magnitude[i] * cis(voltage.angle[i])
 
         powerShunt = voltage.magnitude[i]^2 * conj(system.bus.shunt.conductance[i] + im * system.bus.shunt.susceptance[i])
         power.shunt.active[i] = real(powerShunt)
@@ -57,7 +57,7 @@ function power!(system::PowerSystem, analysis::ACPowerFlow)
         I = 0.0 + im * 0.0
         for j in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
             k = ac.nodalMatrix.rowval[j]
-            I += ac.nodalMatrixTranspose.nzval[j] * voltage.magnitude[k] * exp(im * voltage.angle[k])
+            I += ac.nodalMatrixTranspose.nzval[j] * (voltage.magnitude[k] * cis(voltage.angle[k]))
         end
 
         powerInjection = conj(I) * voltageBus
@@ -86,8 +86,8 @@ function power!(system::PowerSystem, analysis::ACPowerFlow)
             from = system.branch.layout.from[i]
             to = system.branch.layout.to[i]
 
-            voltageFrom = voltage.magnitude[from] * exp(im * voltage.angle[from])
-            voltageTo = voltage.magnitude[to] * exp(im * voltage.angle[to])
+            voltageFrom = voltage.magnitude[from] * cis(voltage.angle[from])
+            voltageTo = voltage.magnitude[to] * cis(voltage.angle[to])
 
             powerFrom = voltageFrom * conj(voltageFrom * ac.nodalFromFrom[i] + voltageTo * ac.nodalFromTo[i])
             power.from.active[i] = real(powerFrom)
@@ -202,7 +202,7 @@ function power!(system::PowerSystem, analysis::ACOptimalPowerFlow)
     power.shunt.active = fill(0.0, system.bus.number)
     power.shunt.reactive = fill(0.0, system.bus.number)
     @inbounds for i = 1:system.bus.number
-        voltageBus = voltage.magnitude[i] * exp(im * voltage.angle[i])
+        voltageBus = voltage.magnitude[i] * cis(voltage.angle[i])
 
         powerShunt = voltageBus * conj(voltageBus * (system.bus.shunt.conductance[i] + im * system.bus.shunt.susceptance[i]))
         power.shunt.active[i] = real(powerShunt)
@@ -211,7 +211,7 @@ function power!(system::PowerSystem, analysis::ACOptimalPowerFlow)
         I = 0.0 + im * 0.0
         for j in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
             k = ac.nodalMatrix.rowval[j]
-            I += ac.nodalMatrixTranspose.nzval[j] * voltage.magnitude[k] * exp(im * voltage.angle[k])
+            I += ac.nodalMatrixTranspose.nzval[j] * (voltage.magnitude[k] * cis(voltage.angle[k]))
         end
 
         powerInjection = conj(I) * voltageBus
@@ -232,8 +232,8 @@ function power!(system::PowerSystem, analysis::ACOptimalPowerFlow)
             from = system.branch.layout.from[i]
             to = system.branch.layout.to[i]
 
-            voltageFrom = voltage.magnitude[from] * exp(im * voltage.angle[from])
-            voltageTo = voltage.magnitude[to] * exp(im * voltage.angle[to])
+            voltageFrom = voltage.magnitude[from] * cis(voltage.angle[from])
+            voltageTo = voltage.magnitude[to] * cis(voltage.angle[to])
 
             powerFrom = voltageFrom * conj(voltageFrom * ac.nodalFromFrom[i] + voltageTo * ac.nodalFromTo[i])
             power.from.active[i] = real(powerFrom)
@@ -282,7 +282,7 @@ function power!(system::PowerSystem, analysis::Union{PMUStateEstimation, ACState
     power.supply.active = fill(0.0, system.bus.number)
     power.supply.reactive = fill(0.0, system.bus.number)
     @inbounds for i = 1:system.bus.number
-        voltageBus = voltage.magnitude[i] * exp(im * voltage.angle[i])
+        voltageBus = voltage.magnitude[i] * cis(voltage.angle[i])
 
         powerShunt = voltageBus * conj(voltageBus * (system.bus.shunt.conductance[i] + im * system.bus.shunt.susceptance[i]))
         power.shunt.active[i] = real(powerShunt)
@@ -291,7 +291,7 @@ function power!(system::PowerSystem, analysis::Union{PMUStateEstimation, ACState
         I = 0.0 + im * 0.0
         for j in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
             k = ac.nodalMatrix.rowval[j]
-            I += ac.nodalMatrixTranspose.nzval[j] * voltage.magnitude[k] * exp(im * voltage.angle[k])
+            I += ac.nodalMatrixTranspose.nzval[j] * (voltage.magnitude[k] * cis(voltage.angle[k]))
         end
 
         powerInjection = conj(I) * voltageBus
@@ -315,8 +315,8 @@ function power!(system::PowerSystem, analysis::Union{PMUStateEstimation, ACState
             from = system.branch.layout.from[i]
             to = system.branch.layout.to[i]
 
-            voltageFrom = voltage.magnitude[from] * exp(im * voltage.angle[from])
-            voltageTo = voltage.magnitude[to] * exp(im * voltage.angle[to])
+            voltageFrom = voltage.magnitude[from] * cis(voltage.angle[from])
+            voltageTo = voltage.magnitude[to] * cis(voltage.angle[to])
 
             powerFrom = voltageFrom * conj(voltageFrom * ac.nodalFromFrom[i] + voltageTo * ac.nodalFromTo[i])
             power.from.active[i] = real(powerFrom)
@@ -374,9 +374,9 @@ function injectionPower(system::PowerSystem, analysis::AC; label::O)
     I = 0.0 + im * 0.0
     for j in ac.nodalMatrix.colptr[index]:(ac.nodalMatrix.colptr[index + 1] - 1)
         k = ac.nodalMatrix.rowval[j]
-        I += ac.nodalMatrixTranspose.nzval[j] * voltage.magnitude[k] * exp(im * voltage.angle[k])
+        I += ac.nodalMatrixTranspose.nzval[j] * (voltage.magnitude[k] * cis(voltage.angle[k]))
     end
-    powerInjection = conj(I) * voltage.magnitude[index] * exp(im * voltage.angle[index])
+    powerInjection = conj(I) * (voltage.magnitude[index] * cis(voltage.angle[index]))
 
     return real(powerInjection), imag(powerInjection)
 end
@@ -415,9 +415,9 @@ function supplyPower(system::PowerSystem, analysis::ACPowerFlow; label::O)
         I = 0.0 + im * 0.0
         for j in ac.nodalMatrix.colptr[index]:(ac.nodalMatrix.colptr[index + 1] - 1)
             k = ac.nodalMatrix.rowval[j]
-            I += ac.nodalMatrixTranspose.nzval[j] * voltage.magnitude[k] * exp(im * voltage.angle[k])
+            I += ac.nodalMatrixTranspose.nzval[j] * (voltage.magnitude[k] * cis(voltage.angle[k]))
         end
-        powerInjection = conj(I) * voltage.magnitude[index] * exp(im * voltage.angle[index])
+        powerInjection = conj(I) * (voltage.magnitude[index] * cis(voltage.angle[index]))
     end
 
     if system.bus.layout.type[index] == 3
@@ -523,8 +523,8 @@ function fromPower(system::PowerSystem, analysis::AC; label::O)
         from = system.branch.layout.from[index]
         to = system.branch.layout.to[index]
 
-        voltageFrom = voltage.magnitude[from] * exp(im * voltage.angle[from])
-        voltageTo = voltage.magnitude[to] * exp(im * voltage.angle[to])
+        voltageFrom = voltage.magnitude[from] * cis(voltage.angle[from])
+        voltageTo = voltage.magnitude[to] * cis(voltage.angle[to])
 
         powerFrom = voltageFrom * conj(voltageFrom * ac.nodalFromFrom[index] + voltageTo * ac.nodalFromTo[index])
     else
@@ -568,8 +568,8 @@ function toPower(system::PowerSystem, analysis::AC; label::O)
         from = system.branch.layout.from[index]
         to = system.branch.layout.to[index]
 
-        voltageFrom = voltage.magnitude[from] * exp(im * voltage.angle[from])
-        voltageTo = voltage.magnitude[to] * exp(im * voltage.angle[to])
+        voltageFrom = voltage.magnitude[from] * cis(voltage.angle[from])
+        voltageTo = voltage.magnitude[to] * cis(voltage.angle[to])
 
         powerTo = voltageTo * conj(voltageFrom * ac.nodalToFrom[index] + voltageTo * ac.nodalToTo[index])
     else
@@ -657,8 +657,8 @@ function seriesPower(system::PowerSystem, analysis::AC; label::O)
         from = system.branch.layout.from[index]
         to = system.branch.layout.to[index]
 
-        voltageFrom = voltage.magnitude[from] * exp(im * voltage.angle[from])
-        voltageTo = voltage.magnitude[to] * exp(im * voltage.angle[to])
+        voltageFrom = voltage.magnitude[from] * cis(voltage.angle[from])
+        voltageTo = voltage.magnitude[to] * cis(voltage.angle[to])
         transformerRatio = exp(-im * parameter.shiftAngle[index]) / parameter.turnsRatio[index]
 
         voltageSeries = transformerRatio * voltageFrom - voltageTo
@@ -704,9 +704,9 @@ function generatorPower(system::PowerSystem, analysis::ACPowerFlow; label::O)
         I = 0.0 + im * 0.0
         for j in ac.nodalMatrix.colptr[busIndex]:(ac.nodalMatrix.colptr[busIndex + 1] - 1)
             k = ac.nodalMatrix.rowval[j]
-            I += ac.nodalMatrixTranspose.nzval[j] * voltage.magnitude[k] * exp(im * voltage.angle[k])
+            I += ac.nodalMatrixTranspose.nzval[j] * (voltage.magnitude[k] * cis(voltage.angle[k]))
         end
-        powerInjection = conj(I) * voltage.magnitude[busIndex] * exp(im * voltage.angle[busIndex])
+        powerInjection = conj(I) * (voltage.magnitude[busIndex] * cis(voltage.angle[busIndex]))
         injectionActive = real(powerInjection)
         injectionReactive = imag(powerInjection)
 
@@ -832,7 +832,7 @@ function current!(system::PowerSystem, analysis::AC)
         I = 0.0 + im * 0.0
         for j in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
             k = ac.nodalMatrix.rowval[j]
-            I += ac.nodalMatrixTranspose.nzval[j] * (voltage.magnitude[k] * exp(im * voltage.angle[k]))
+            I += ac.nodalMatrixTranspose.nzval[j] * (voltage.magnitude[k] * cis(voltage.angle[k]))
         end
 
         current.injection.magnitude[i] = abs(I)
@@ -850,8 +850,8 @@ function current!(system::PowerSystem, analysis::AC)
             from = system.branch.layout.from[i]
             to = system.branch.layout.to[i]
 
-            voltageFrom = voltage.magnitude[from] * exp(im * voltage.angle[from])
-            voltageTo = voltage.magnitude[to] * exp(im * voltage.angle[to])
+            voltageFrom = voltage.magnitude[from] * cis(voltage.angle[from])
+            voltageTo = voltage.magnitude[to] * cis(voltage.angle[to])
 
             currentFrom = voltageFrom * ac.nodalFromFrom[i] + voltageTo * ac.nodalFromTo[i]
             current.from.magnitude[i] = abs(currentFrom)
@@ -898,7 +898,7 @@ function injectionCurrent(system::PowerSystem, analysis::AC; label::O)
     I = 0.0 + im * 0.0
     for i in ac.nodalMatrix.colptr[index]:(ac.nodalMatrix.colptr[index + 1] - 1)
         k = ac.nodalMatrix.rowval[i]
-        I += ac.nodalMatrixTranspose.nzval[i] * (voltage.magnitude[k] * exp(im * voltage.angle[k]))
+        I += ac.nodalMatrixTranspose.nzval[i] * (voltage.magnitude[k] * cis(voltage.angle[k]))
     end
 
     return abs(I), angle(I)
@@ -934,8 +934,8 @@ function fromCurrent(system::PowerSystem, analysis::AC; label::O)
         from = system.branch.layout.from[index]
         to = system.branch.layout.to[index]
 
-        voltageFrom = voltage.magnitude[from] * exp(im * voltage.angle[from])
-        voltageTo = voltage.magnitude[to] * exp(im * voltage.angle[to])
+        voltageFrom = voltage.magnitude[from] * cis(voltage.angle[from])
+        voltageTo = voltage.magnitude[to] * cis(voltage.angle[to])
 
         currentFrom = voltageFrom * ac.nodalFromFrom[index] + voltageTo * ac.nodalFromTo[index]
     else
@@ -975,8 +975,8 @@ function toCurrent(system::PowerSystem, analysis::AC; label::O)
         from = system.branch.layout.from[index]
         to = system.branch.layout.to[index]
 
-        voltageFrom = voltage.magnitude[from] * exp(im * voltage.angle[from])
-        voltageTo = voltage.magnitude[to] * exp(im * voltage.angle[to])
+        voltageFrom = voltage.magnitude[from] * cis(voltage.angle[from])
+        voltageTo = voltage.magnitude[to] * cis(voltage.angle[to])
 
         currentTo = voltageFrom * ac.nodalToFrom[index] + voltageTo * ac.nodalToTo[index]
     else
@@ -1017,8 +1017,8 @@ function seriesCurrent(system::PowerSystem, analysis::AC; label::O)
         from = system.branch.layout.from[index]
         to = system.branch.layout.to[index]
 
-        voltageFrom = voltage.magnitude[from] * exp(im * voltage.angle[from])
-        voltageTo = voltage.magnitude[to] * exp(im * voltage.angle[to])
+        voltageFrom = voltage.magnitude[from] * cis(voltage.angle[from])
+        voltageTo = voltage.magnitude[to] * cis(voltage.angle[to])
         transformerRatio = (1 / system.branch.parameter.turnsRatio[index]) * exp(-im * system.branch.parameter.shiftAngle[index])
 
         currentSeries = ac.admittance[index] * (transformerRatio * voltageFrom - voltageTo)

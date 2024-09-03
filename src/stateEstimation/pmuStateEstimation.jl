@@ -51,7 +51,6 @@ function pmuWlsStateEstimation(system::PowerSystem, device::Measurement,
     factorization::Type{<:Union{QR, LDLt, LU}} = LU)
 
     coefficient, mean, precision, power, current, _ = pmuStateEstimationWLS(system, device)
-    method = Dict(LU => lu, LDLt => ldlt, QR => qr)
 
     return PMUStateEstimation(
         Polar(
@@ -64,7 +63,7 @@ function pmuWlsStateEstimation(system::PowerSystem, device::Measurement,
             coefficient,
             precision,
             mean,
-            get(method, factorization, lu)(sparse(Matrix(1.0I, 1, 1))),
+            factorizeMatrix[factorization],
             2 * device.pmu.number,
             -1,
             true,

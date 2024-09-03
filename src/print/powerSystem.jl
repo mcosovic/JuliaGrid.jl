@@ -656,7 +656,7 @@ function branchPrint(system::PowerSystem, analysis::AC, unitList::UnitList, pref
     printing = howManyPrint(width, show, title, style, "Branch Data")
 
     heading = OrderedDict(
-        "Label"            => _blank_(width, show, "Label Branch", "Label From-Bus", "Label To-Bus"),
+        "Label"            => _blank_(width, show, style, "Label", "Label Branch", "Label From-Bus", "Label To-Bus"),
         "From-Bus Power"   => _blank_(width, show, style, "From-Bus Power", "From-Bus Power Active", "From-Bus Power Reactive"),
         "To-Bus Power"     => _blank_(width, show, style, "To-Bus Power", "To-Bus Power Active", "To-Bus Power Reactive"),
         "Shunt Power"      => _blank_(width, show, style, "Shunt Power", "Shunt Power Active", "Shunt Power Reactive"),
@@ -777,7 +777,7 @@ function branchPrint(system::PowerSystem, analysis::DC, unitList::UnitList, scal
     printing = howManyPrint(width, show, title, style, "Branch Data")
 
     heading = OrderedDict(
-        "Label"          => _blank_(width, show, "Label Branch", "Label From-Bus", "Label To-Bus"),
+        "Label"          => _blank_(width, show, style, "Label", "Label Branch", "Label From-Bus", "Label To-Bus"),
         "From-Bus Power" => _blank_(width, show, "From-Bus Power Active"),
         "To-Bus Power"   => _blank_(width, show, "To-Bus Power Active"),
         "Status"         => _blank_(width, show, "Status")
@@ -935,7 +935,7 @@ function generatorPrint(system::PowerSystem, analysis::AC, unitList::UnitList, s
     printing = howManyPrint(width, show, title, style, "Generator Data")
 
     heading = OrderedDict(
-        "Label"        => _blank_(width, show, "Label Generator", "Label Bus"),
+        "Label"        => _blank_(width, show, style, "Label", "Label Generator", "Label Bus"),
         "Power Output" => _blank_(width, show, style, "Power Output", "Power Output Active", "Power Output Reactive"),
         "Status"       => _blank_(width, show, "Status")
     )
@@ -1034,7 +1034,7 @@ function generatorPrint(system::PowerSystem, analysis::DC, unitList::UnitList, s
     printing = howManyPrint(width, show, title, style, "Generator Data")
 
     heading = OrderedDict(
-        "Label"        => _blank_(width, show, "Label Generator", "Label Bus"),
+        "Label"        => _blank_(width, show, style, "Label", "Label Generator", "Label Bus"),
         "Power Output" => _blank_(width, show, "Power Output Active"),
         "Status"       => _blank_(width, show, "Status")
     )

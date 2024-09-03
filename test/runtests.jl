@@ -7,22 +7,24 @@ using Suppressor
 ######## Path to Test Data ##########
 pathData = abspath(joinpath(dirname(Base.find_package("JuliaGrid")), ".."), "test/data/")
 
-######## Equality of Structs ##########
-function equalStruct(a::S, b::S) where S
-    for name in fieldnames(S)
-        @test getfield(a, name) == getfield(b, name)
-    end
-end
+######## Compare Structs ##########
+function compstruct(obj1::S, obj2::S; atol = 0.0) where S
+    for name in fieldnames(typeof(obj1))
+        field = getfield(obj1, name)
 
-function approxStruct(a::S, b::S) where S
-    for name in fieldnames(S)
-        @test getfield(a, name) ≈ getfield(b, name)
-    end
-end
-
-function approxStruct(a::S, b::S, atol::Float64) where S
-    for name in fieldnames(S)
-        @test getfield(a, name) ≈ getfield(b, name) atol = atol
+        if isa(field, Vector) || isa(field, Number)
+            if atol == 0.0
+                @test ==(field, getfield(obj2, name))
+            else
+                if !isempty(field)
+                    @test ≈(field, getfield(obj2, name), atol = atol)
+                end
+            end
+        elseif isa(field, AbstractDict) || isa(field, String)
+            @test ==(field, getfield(obj2, name))
+        else
+            compstruct(field, getfield(obj2, name); atol)
+        end
     end
 end
 

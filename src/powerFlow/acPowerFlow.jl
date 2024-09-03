@@ -112,7 +112,6 @@ function newtonRaphson(system::PowerSystem, factorization::Type{<:Union{QR, LU}}
     mismatch = fill(0.0, bus.number + pqNumber - 1)
     increment = fill(0.0, bus.number + pqNumber - 1)
 
-    method = Dict(LU => lu, QR => qr)
     return ACPowerFlow(
         Polar(
             voltageMagnitude,
@@ -138,7 +137,7 @@ function newtonRaphson(system::PowerSystem, factorization::Type{<:Union{QR, LU}}
             jacobian,
             mismatch,
             increment,
-            get(method, factorization, lu)(sparse(Matrix(1.0I, 1, 1))),
+            factorizeMatrix[factorization],
             pqIndex,
             pvpqIndex,
             -1
@@ -308,7 +307,6 @@ end
     incrementReactive = fill(0.0, pqNumber)
     incrementActive = fill(0.0, bus.number - 1)
 
-    method = Dict(LU => lu, QR => qr)
     analysis = ACPowerFlow(
         Polar(
             voltageMagnitude,
@@ -335,13 +333,13 @@ end
                 jacobianActive,
                 mismatchActive,
                 incrementActive,
-                get(method, factorization, lu)(sparse(Matrix(1.0I, 1, 1)))
+                factorizeMatrix[factorization],
             ),
             FastNewtonRaphsonModel(
                 jacobianReactive,
                 mismatchReactive,
                 incrementReactive,
-                get(method, factorization, lu)(sparse(Matrix(1.0I, 1, 1)))
+                factorizeMatrix[factorization],
             ),
             pqIndex,
             pvpqIndex,
@@ -458,7 +456,7 @@ function gaussSeidel(system::PowerSystem)
     pqIndex = Int64[]
     pvIndex = Int64[]
     @inbounds for i = 1:bus.number
-        voltage[i] = voltageMagnitude[i] * exp(im * voltageAngle[i])
+        voltage[i] = voltageMagnitude[i] * cis(voltageAngle[i])
 
         if bus.layout.type[i] == 1
             push!(pqIndex, i)
@@ -1050,7 +1048,7 @@ function startingVoltage!(system::PowerSystem, analysis::ACPowerFlow{GaussSeidel
             analysis.voltage.magnitude[i] = system.bus.voltage.magnitude[i]
         end
         analysis.voltage.angle[i] = system.bus.voltage.angle[i]
-        analysis.method.voltage[i] = analysis.voltage.magnitude[i] * exp(im * analysis.voltage.angle[i])
+        analysis.method.voltage[i] = analysis.voltage.magnitude[i] * cis(analysis.voltage.angle[i])
     end
 end
 

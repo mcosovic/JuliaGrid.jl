@@ -2,7 +2,7 @@
     @default(template)
     @default(unit)
 
-    ############### IEEE 14-bus Test Case ################
+    ############ IEEE 14-bus Test Case ############
     system = powerSystem()
 
     addBus!(system; label = "Bus 1", type = 3)
@@ -45,7 +45,7 @@
 
     dcModel!(system)
 
-    ####### Test Case 1 #######
+    #### Test Case 1 ####
     device = measurement()
 
     addWattmeter!(system, device; from = "Branch 3", active = 0.04, variance = 1e-4)
@@ -115,7 +115,7 @@
     end
     @test isempty(pseudoSet)
 
-    ####### Test Case 2 #######
+    #### Test Case 2 ####
     device = measurement()
 
     addWattmeter!(system, device; from = "Branch 3", active = 0.04, variance = 1e-4)
@@ -152,7 +152,7 @@
     analysis = dcWlsStateEstimation(system, device)
     @test device.wattmeter.label["P3"] == 17
 
-    ####### Test Case 3 #######
+    #### Test Case 3 ####
     system14 = powerSystem(string(pathData, "case14test.m"))
     updateBranch!(system14, label = 3, status = 1)
     updateBranch!(system14, label = 18, status = 1)
@@ -182,7 +182,7 @@
     solve!(system14, analysisSE)
     @test analysisSE.voltage.angle ≈ analysis.voltage.angle
 
-    ####### Test Case 4 #######
+    #### Test Case 4 ####
     device = measurement()
     for (key, value) in system14.bus.label
         addWattmeter!(system14, device; bus = key, active = analysis.power.injection.active[value])
@@ -203,7 +203,7 @@
     solve!(system14, analysisSE)
     @test analysisSE.voltage.angle ≈ analysis.voltage.angle
 
-    ####### Test Case 5 #######
+    #### Test Case 5 ####
     device = measurement()
     for (key, value) in system14.bus.label
         addWattmeter!(system14, device; bus = key, active = analysis.power.injection.active[value])

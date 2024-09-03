@@ -25,36 +25,12 @@
     addPmu!(system, device; to = 19, magnitude = 0.3, angle = 0.1, statusMagnitude = 0, correlated = true, noise = true, polar = true)
 
     saveMeasurement(device; path = string(pathData, "measurement14.h5"))
-    deviceLoad = measurement(string(pathData, "measurement14.h5"))
+    hdf5 = measurement(string(pathData, "measurement14.h5"))
 
-    ####### Test Voltmeter Data #######
-    @test device.voltmeter.label == deviceLoad.voltmeter.label
-    @test device.voltmeter.number == deviceLoad.voltmeter.number
-    equalStruct(device.voltmeter.magnitude, deviceLoad.voltmeter.magnitude)
-    equalStruct(device.voltmeter.layout, deviceLoad.voltmeter.layout)
-
-    ####### Test Ammeter Data #######
-    @test device.ammeter.label == deviceLoad.ammeter.label
-    @test device.ammeter.number == deviceLoad.ammeter.number
-    equalStruct(device.ammeter.magnitude, deviceLoad.ammeter.magnitude)
-    equalStruct(device.ammeter.layout, deviceLoad.ammeter.layout)
-
-    ####### Test Wattmeter Data #######
-    @test device.wattmeter.label == deviceLoad.wattmeter.label
-    @test device.wattmeter.number == deviceLoad.wattmeter.number
-    equalStruct(device.wattmeter.active, deviceLoad.wattmeter.active)
-    equalStruct(device.wattmeter.layout, deviceLoad.wattmeter.layout)
-
-    ####### Test Varmeter Data #######
-    @test device.varmeter.label == deviceLoad.varmeter.label
-    @test device.varmeter.number == deviceLoad.varmeter.number
-    equalStruct(device.varmeter.reactive, deviceLoad.varmeter.reactive)
-    equalStruct(device.varmeter.layout, deviceLoad.varmeter.layout)
-
-    ####### Test PMU Data #######
-    @test device.pmu.label == deviceLoad.pmu.label
-    @test device.pmu.number == deviceLoad.pmu.number
-    equalStruct(device.pmu.magnitude, deviceLoad.pmu.magnitude)
-    equalStruct(device.pmu.angle, deviceLoad.pmu.angle)
-    equalStruct(device.pmu.layout, deviceLoad.pmu.layout)
+    #### Test Measurement Data ####
+    compstruct(device.voltmeter, hdf5.voltmeter)
+    compstruct(device.ammeter, hdf5.ammeter)
+    compstruct(device.wattmeter, hdf5.wattmeter)
+    compstruct(device.varmeter, hdf5.varmeter)
+    compstruct(device.pmu, hdf5.pmu)
 end

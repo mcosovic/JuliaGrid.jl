@@ -52,7 +52,6 @@ function dcWlsStateEstimation(system::PowerSystem, device::Measurement,
     factorization::Type{<:Union{QR, LDLt, LU, Orthogonal}} = LU)
 
     coefficient, mean, precision, power = dcStateEstimationWLS(system, device)
-    method = Dict(LU => lu, LDLt => ldlt, QR => qr, Orthogonal => qr)
 
     return DCStateEstimation(
         PolarAngle(Float64[]),
@@ -61,7 +60,7 @@ function dcWlsStateEstimation(system::PowerSystem, device::Measurement,
             coefficient,
             precision,
             mean,
-            get(method, factorization, lu)(sparse(Matrix(1.0I, 1, 1))),
+            factorizeMatrix[factorization],
             device.wattmeter.number + device.pmu.number,
             -1,
             true,

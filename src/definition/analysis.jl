@@ -4,17 +4,11 @@ export ACOptimalPowerFlow, DCOptimalPowerFlow
 export ACStateEstimation, NonlinearWLS, Normal, Orthogonal, LAV
 export DCStateEstimation, LinearWLS
 export PMUStateEstimation
-export Factorization, LU, QR, LDLt
 export Island, PlacementPMU
 
 ########### Abstract Types ###########
 abstract type AC end
 abstract type DC end
-
-abstract type Factorization end
-abstract type QR <: Factorization end
-abstract type LU <: Factorization end
-abstract type LDLt <: Factorization end
 
 abstract type Orthogonal end
 abstract type Normal end
