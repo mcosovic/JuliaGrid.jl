@@ -3,6 +3,7 @@ import PrecompileTools
 PrecompileTools.@setup_workload begin
     system = powerSystem()
     device = measurement()
+    pseudo = measurement()
 
     addBus!(system; label = 1, type = 3, active = 0.1)
     addBus!(system; label = 2, type = 1, reactive = 0.05)
@@ -11,12 +12,69 @@ PrecompileTools.@setup_workload begin
 
     addPmu!(system, device; bus = 1, magnitude = 1.0, angle = 0.0)
     addPmu!(system, device; bus = 2, magnitude = 1.0, angle = 0.0)
+    addWattmeter!(system, pseudo; bus = 1, active = -0.1)
+
+    accompile = Dict(
+        :injectionPower => injectionPower,
+        :supplyPower => supplyPower,
+        :shuntPower => shuntPower,
+        :fromPower => fromPower,
+        :toPower => toPower,
+        :chargingPower => chargingPower,
+        :seriesPower => seriesPower,
+        :generatorPower => generatorPower,
+        :injectionCurrent => injectionCurrent,
+        :fromCurrent => fromCurrent,
+        :toCurrent => toCurrent,
+        :seriesCurrent => seriesCurrent,
+    )
+
+    dccompile = Dict(
+        :injectionPower => injectionPower,
+        :supplyPower => supplyPower,
+        :fromPower => fromPower,
+        :toPower => toPower,
+        :generatorPower => generatorPower,
+    )
 
     PrecompileTools.@compile_workload begin
+        ########## HDF5 Files ###########
+        powerSystem("case14.h5")
+        measurement("measurement14.h5")
+
+        ########## AC Power Flow ###########
+        analysis = newtonRaphson(system)
+        startingVoltage!(system, analysis)
+        solve!(system, analysis)
+        power!(system, analysis)
+        current!(system, analysis)
+        for (name, func) in accompile
+            func(system, analysis; label = 1)
+        end
+
+        analysis = fastNewtonRaphsonBX(system)
+        solve!(system, analysis)
+        power!(system, analysis)
+        current!(system, analysis)
+        for (name, func) in accompile
+            func(system, analysis; label = 1)
+        end
+
+        analysis = gaussSeidel(system)
+        solve!(system, analysis)
+        power!(system, analysis)
+        current!(system, analysis)
+        for (name, func) in accompile
+            func(system, analysis; label = 1)
+        end
+
         ########## DC Power Flow ###########
         analysis = dcPowerFlow(system)
         solve!(system, analysis)
         power!(system, analysis)
+        for (name, func) in dccompile
+            func(system, analysis; label = 1)
+        end
 
         analysis = dcPowerFlow(system, QR)
         solve!(system, analysis)
@@ -24,61 +82,39 @@ PrecompileTools.@setup_workload begin
         analysis = dcPowerFlow(system, LDLt)
         solve!(system, analysis)
 
-        ########## AC Power Flow ###########
-        analysis = newtonRaphson(system)
-        solve!(system, analysis)
-        power!(system, analysis)
-        current!(system, analysis)
+        ########### Observability Analysis ###########
+        islands = islandTopologicalFlow(system, device)
+        restorationGram!(system, device, pseudo, islands)
+        delete!(accompile, :generatorPower)
+        delete!(dccompile, :generatorPower)
 
-        analysis = newtonRaphson(system, QR)
-        solve!(system, analysis)
-
-        analysis = fastNewtonRaphsonBX(system)
-        solve!(system, analysis)
-
-        analysis = gaussSeidel(system)
-        solve!(system, analysis)
-
-        ########## DC State Estimation ###########
-        analysis = dcWlsStateEstimation(system, device)
-        solve!(system, analysis)
-        power!(system, analysis)
-
-        analysis = dcWlsStateEstimation(system, device, QR)
-        solve!(system, analysis)
-
-        analysis = dcWlsStateEstimation(system, device, LDLt)
-        solve!(system, analysis)
-
-        analysis = dcWlsStateEstimation(system, device, Orthogonal)
-        solve!(system, analysis)
-
-        ########### PMU State Estimation ###########
-        analysis = pmuWlsStateEstimation(system, device)
-        solve!(system, analysis)
-
-        analysis = pmuWlsStateEstimation(system, device, QR)
-        solve!(system, analysis)
-
-        analysis = pmuWlsStateEstimation(system, device, LDLt)
-        solve!(system, analysis)
-
-        analysis = pmuWlsStateEstimation(system, device, Orthogonal)
-        solve!(system, analysis)
-
-        ########### AC State Estimation ###########
+        ########## AC State Estimation ###########
         analysis = gaussNewton(system, device)
         solve!(system, analysis)
-        solve!(system, analysis)
+        residualTest!(system, device, analysis)
         power!(system, analysis)
+        current!(system, analysis)
+        for (name, func) in accompile
+            func(system, analysis; label = 1)
+        end
 
-        analysis = gaussNewton(system, device, QR)
+        ########## PMU State Estimation ###########
+        analysis = pmuWlsStateEstimation(system, device)
         solve!(system, analysis)
+        residualTest!(system, device, analysis)
+        power!(system, analysis)
+        current!(system, analysis)
+        for (name, func) in accompile
+            func(system, analysis; label = 1)
+        end
 
-        analysis = gaussNewton(system, device, LDLt)
+        ########### DC State Estimation ###########
+        analysis = dcWlsStateEstimation(system, device)
         solve!(system, analysis)
-
-        analysis = gaussNewton(system, device, Orthogonal)
-        solve!(system, analysis)
+        residualTest!(system, device, analysis)
+        power!(system, analysis)
+        for (name, func) in dccompile
+            func(system, analysis; label = 1)
+        end
     end
 end

@@ -45,7 +45,7 @@ outlier = residualTest!(system, device, analysis; threshold = 4.0)
 solve!(system, analysis)
 ```
 """
-function residualTest!(system::PowerSystem, device::Measurement, analysis::DCStateEstimation{LinearWLS{T}}; threshold = 3.0) where T <: Union{Normal, Orthogonal}
+function residualTest!(system::PowerSystem, device::Measurement, analysis::DCStateEstimation{LinearWLS{T}}; threshold::Float64 = 3.0) where T <: Union{Normal, Orthogonal}
     errorVoltage(analysis.voltage.angle)
 
     bad = BadData(false, 0.0, "", 0)
@@ -77,10 +77,13 @@ function residualTest!(system::PowerSystem, device::Measurement, analysis::DCSta
     bad.maxNormalizedResidual = 0.0
     bad.index = 0
     @inbounds for i = 1:se.number
-        normResidual = abs(se.mean[i] - h[i]) / sqrt(abs((1 / se.precision.nzval[i]) - c[i]))
-        if normResidual > bad.maxNormalizedResidual
-            bad.maxNormalizedResidual = normResidual
-            bad.index = i
+        residual = se.mean[i] - h[i]
+        if residual != 0.0
+            normResidual = abs(residual) / sqrt(abs((1 / se.precision.nzval[i]) - c[i]))
+            if normResidual > bad.maxNormalizedResidual
+                bad.maxNormalizedResidual = normResidual
+                bad.index = i
+            end
         end
     end
 
@@ -97,22 +100,24 @@ function residualTest!(system::PowerSystem, device::Measurement, analysis::DCSta
         se.mean[bad.index] = 0.0
     end
 
-    if bad.index <= device.wattmeter.number
-        (bad.label, index),_ = iterate(device.wattmeter.label, bad.index)
-        if bad.detect
-            device.wattmeter.active.status[index] = 0
-        end
-    else
-        (bad.label, index),_ = iterate(device.pmu.label, bad.index - device.wattmeter.number)
-        if bad.detect
-            device.pmu.angle.status[index] = 0
+    if bad.index != 0
+        if bad.index <= device.wattmeter.number
+            (bad.label, index),_ = iterate(device.wattmeter.label, bad.index)
+            if bad.detect
+                device.wattmeter.active.status[index] = 0
+            end
+        else
+            (bad.label, index),_ = iterate(device.pmu.label, bad.index - device.wattmeter.number)
+            if bad.detect
+                device.pmu.angle.status[index] = 0
+            end
         end
     end
 
     return bad
 end
 
-function residualTest!(system::PowerSystem, device::Measurement, analysis::PMUStateEstimation{LinearWLS{T}}; threshold::Union{Float64, Int64} = 3.0)  where T <: Union{Normal, Orthogonal}
+function residualTest!(system::PowerSystem, device::Measurement, analysis::PMUStateEstimation{LinearWLS{T}}; threshold::Float64 = 3.0)  where T <: Union{Normal, Orthogonal}
     errorVoltage(analysis.voltage.angle)
 
     bad = BadData(false, 0.0, "", 0)
@@ -144,10 +149,13 @@ function residualTest!(system::PowerSystem, device::Measurement, analysis::PMUSt
     bad.maxNormalizedResidual = 0.0
     bad.index = 0
     @inbounds for i = 1:se.number
-        normResidual = abs(se.mean[i] - h[i]) / sqrt(abs((1 / se.precision[i, i]) - c[i]))
-        if normResidual > bad.maxNormalizedResidual
-            bad.maxNormalizedResidual = normResidual
-            bad.index = i
+        residual = se.mean[i] - h[i]
+        if residual != 0.0
+            normResidual = abs(residual) / sqrt(abs((1 / se.precision[i, i]) - c[i]))
+            if normResidual > bad.maxNormalizedResidual
+                bad.maxNormalizedResidual = normResidual
+                bad.index = i
+            end
         end
     end
 
@@ -179,7 +187,9 @@ function residualTest!(system::PowerSystem, device::Measurement, analysis::PMUSt
         pmuIndex = trunc(Int, (bad.index + 1) / 2)
     end
 
-    (bad.label, ),_ = iterate(device.pmu.label, pmuIndex)
+    if bad.index != 0
+        (bad.label, ),_ = iterate(device.pmu.label, pmuIndex)
+    end
     if bad.detect
         device.pmu.magnitude.status[pmuIndex] = 0
         device.pmu.angle.status[pmuIndex] = 0
@@ -188,7 +198,7 @@ function residualTest!(system::PowerSystem, device::Measurement, analysis::PMUSt
     return bad
 end
 
-function residualTest!(system::PowerSystem, device::Measurement, analysis::ACStateEstimation{NonlinearWLS{T}}; threshold::Union{Float64, Int64} = 3.0)  where T <: Union{Normal, Orthogonal}
+function residualTest!(system::PowerSystem, device::Measurement, analysis::ACStateEstimation{NonlinearWLS{T}}; threshold::Float64 = 3.0)  where T <: Union{Normal, Orthogonal}
     errorVoltage(analysis.voltage.angle)
 
     bad = BadData(false, 0.0, "", 0)
@@ -224,10 +234,12 @@ function residualTest!(system::PowerSystem, device::Measurement, analysis::ACSta
     bad.maxNormalizedResidual = 0.0
     bad.index = 0
     @inbounds for i = 1:length(se.mean)
-        normResidual = abs(se.residual[i]) / sqrt(abs((1 / se.precision[i, i]) - c[i]))
-        if normResidual > bad.maxNormalizedResidual
-            bad.maxNormalizedResidual = normResidual
-            bad.index = i
+        if se.residual[i] != 0.0
+            normResidual = abs(se.residual[i]) / sqrt(abs((1 / se.precision[i, i]) - c[i]))
+            if normResidual > bad.maxNormalizedResidual
+                bad.maxNormalizedResidual = normResidual
+                bad.index = i
+            end
         end
     end
 
@@ -235,51 +247,53 @@ function residualTest!(system::PowerSystem, device::Measurement, analysis::ACSta
         bad.detect = true
     end
 
-    if se.range[1] <= bad.index < se.range[2]
-        (bad.label, index),_ = iterate(device.voltmeter.label, bad.index)
-        if bad.detect
-            device.voltmeter.magnitude.status[index] = 0
-        end
-    elseif se.range[2] <= bad.index < se.range[3]
-        (bad.label, index),_ = iterate(device.ammeter.label, bad.index - device.voltmeter.number)
-        if bad.detect
-            device.ammeter.magnitude.status[index] = 0
-        end
-    elseif se.range[3] <= bad.index < se.range[4]
-        (bad.label, index),_ = iterate(device.wattmeter.label, bad.index - device.voltmeter.number - device.ammeter.number)
-        if bad.detect
-            device.wattmeter.active.status[index] = 0
-        end
-    elseif se.range[4] <= bad.index < se.range[5]
-        (bad.label, index),_ = iterate(device.varmeter.label, bad.index - device.voltmeter.number - device.ammeter.number - device.wattmeter.number)
-        if bad.detect
-            device.varmeter.reactive.status[index] = 0
-        end
-    elseif se.range[5] <= bad.index < se.range[6]
-        badIndex = bad.index - device.voltmeter.number - device.ammeter.number - device.wattmeter.number - device.varmeter.number
-        if badIndex % 2 == 0
-            pmuIndex = trunc(Int, badIndex / 2)
-            alsoBad = bad.index - 1
-        else
-            pmuIndex = trunc(Int, (badIndex + 1) / 2)
-            alsoBad = bad.index + 1
-        end
-
-        (bad.label, index),_ = iterate(device.pmu.label, pmuIndex)
-        if bad.detect
-            if device.pmu.layout.polar[index]
-                if se.type[bad.index] in [2; 3; 10]
-                    device.pmu.magnitude.status[index] = 0
-                else
-                    device.pmu.angle.status[index] = 0
-                end
+    if bad.index != 0
+        if se.range[1] <= bad.index < se.range[2]
+            (bad.label, index),_ = iterate(device.voltmeter.label, bad.index)
+            if bad.detect
+                device.voltmeter.magnitude.status[index] = 0
+            end
+        elseif se.range[2] <= bad.index < se.range[3]
+            (bad.label, index),_ = iterate(device.ammeter.label, bad.index - device.voltmeter.number)
+            if bad.detect
+                device.ammeter.magnitude.status[index] = 0
+            end
+        elseif se.range[3] <= bad.index < se.range[4]
+            (bad.label, index),_ = iterate(device.wattmeter.label, bad.index - device.voltmeter.number - device.ammeter.number)
+            if bad.detect
+                device.wattmeter.active.status[index] = 0
+            end
+        elseif se.range[4] <= bad.index < se.range[5]
+            (bad.label, index),_ = iterate(device.varmeter.label, bad.index - device.voltmeter.number - device.ammeter.number - device.wattmeter.number)
+            if bad.detect
+                device.varmeter.reactive.status[index] = 0
+            end
+        elseif se.range[5] <= bad.index < se.range[6]
+            badIndex = bad.index - device.voltmeter.number - device.ammeter.number - device.wattmeter.number - device.varmeter.number
+            if badIndex % 2 == 0
+                pmuIndex = trunc(Int, badIndex / 2)
+                alsoBad = bad.index - 1
             else
-                device.pmu.magnitude.status[index] = 0
-                device.pmu.angle.status[index] = 0
+                pmuIndex = trunc(Int, (badIndex + 1) / 2)
+                alsoBad = bad.index + 1
+            end
 
-                se.mean[alsoBad] = 0.0
-                se.residual[alsoBad] = 0.0
-                se.type[alsoBad] = 0
+            (bad.label, index),_ = iterate(device.pmu.label, pmuIndex)
+            if bad.detect
+                if device.pmu.layout.polar[index]
+                    if se.type[bad.index] in [2; 3; 10]
+                        device.pmu.magnitude.status[index] = 0
+                    else
+                        device.pmu.angle.status[index] = 0
+                    end
+                else
+                    device.pmu.magnitude.status[index] = 0
+                    device.pmu.angle.status[index] = 0
+
+                    se.mean[alsoBad] = 0.0
+                    se.residual[alsoBad] = 0.0
+                    se.type[alsoBad] = 0
+                end
             end
         end
     end

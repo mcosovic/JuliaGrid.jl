@@ -42,9 +42,9 @@ end
 end
 
 ######### Error Voltage ##########
-@inline function errorVoltage(voltage::Array{Float64,1})
+function errorVoltage(voltage::Array{Float64,1})
     if isempty(voltage)
-        error("The voltage values are missing.")
+        throw(ErrorException(("The voltage values are missing.")))
     end
 end
 
