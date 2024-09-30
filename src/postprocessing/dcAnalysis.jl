@@ -28,42 +28,35 @@ function power!(system::PowerSystem, analysis::DCPowerFlow)
 
     dc = system.model.dc
     bus = system.bus
-    generator = system.generator
-    voltage = analysis.voltage
+    gen = system.generator
+    voltg = analysis.voltage
     power = analysis.power
     slack = bus.layout.slack
+    demand = bus.demand
 
     power.supply.active = copy(bus.supply.active)
     power.injection.active = copy(bus.supply.active)
     @inbounds for i = 1:bus.number
-        power.injection.active[i] -= bus.demand.active[i]
+        power.injection.active[i] -= demand.active[i]
     end
 
-    power.injection.active[slack] = bus.shunt.conductance[slack] + dc.shiftPower[slack]
-    @inbounds for j in dc.nodalMatrix.colptr[slack]:(dc.nodalMatrix.colptr[slack + 1] - 1)
-        row = dc.nodalMatrix.rowval[j]
-        power.injection.active[slack] += dc.nodalMatrix[row, slack] * voltage.angle[row]
-    end
+    power.injection.active[slack] = Pi(bus, dc, voltg, slack)
+    power.supply.active[slack] = demand.active[slack] + power.injection.active[slack]
 
-    power.supply.active[slack] = bus.demand.active[slack] + power.injection.active[slack]
+    power.generator.active = fill(0.0, gen.number)
+    @inbounds for i = 1:gen.number
+        if gen.layout.status[i] == 1
+            idxBus = system.generator.layout.bus[i]
 
-    power.generator.active = fill(0.0, generator.number)
-    @inbounds for i = 1:generator.number
-        if generator.layout.status[i] == 1
-            busIndex = system.generator.layout.bus[i]
+            if idxBus == bus.layout.slack && bus.supply.generator[idxBus][1] == i
+                power.generator.active[i] = Pi(bus, dc, voltg, idxBus) + demand.active[idxBus]
 
-            if busIndex == bus.layout.slack && bus.supply.generator[busIndex][1] == i
-                power.generator.active[i] = bus.shunt.conductance[busIndex] + dc.shiftPower[busIndex] + bus.demand.active[busIndex]
-                for j in dc.nodalMatrix.colptr[busIndex]:(dc.nodalMatrix.colptr[busIndex + 1] - 1)
-                    row = dc.nodalMatrix.rowval[j]
-                    power.generator.active[i] += dc.nodalMatrix[row, busIndex] * voltage.angle[row]
-                end
-
-                for j = 2:length(bus.supply.generator[busIndex])
-                    power.generator.active[i] -= generator.output.active[bus.supply.generator[busIndex][j]]
+                for j = 2:length(bus.supply.generator[idxBus])
+                    power.generator.active[i] -=
+                    gen.output.active[bus.supply.generator[idxBus][j]]
                 end
             else
-                power.generator.active[i] = generator.output.active[i]
+                power.generator.active[i] = gen.output.active[i]
             end
         end
     end
@@ -73,11 +66,12 @@ end
 
 function power!(system::PowerSystem, analysis::DCOptimalPowerFlow)
     errorVoltage(analysis.voltage.angle)
+
     power = analysis.power
 
     power.supply.active = fill(0.0, system.bus.number)
     @inbounds for i = 1:system.generator.number
-        power.supply.active[system.generator.layout.bus[i]] += analysis.power.generator.active[i]
+        power.supply.active[system.generator.layout.bus[i]] += power.generator.active[i]
     end
 
     power.injection.active = copy(power.supply.active)
@@ -95,7 +89,9 @@ function power!(system::PowerSystem, analysis::DCStateEstimation)
     bus = system.bus
     power = analysis.power
 
-    power.injection.active = dc.nodalMatrix * analysis.voltage.angle + dc.shiftPower + bus.shunt.conductance
+    power.injection.active =
+        dc.nodalMatrix * analysis.voltage.angle + dc.shiftPower + bus.shunt.conductance
+
     power.supply.active = power.injection.active + bus.demand.active
 
     allPowerBranch(system, analysis)
@@ -117,54 +113,36 @@ solve!(system, analysis)
 injection = injectionPower(system, analysis; label = 2)
 ```
 """
-function injectionPower(system::PowerSystem, analysis::DCPowerFlow; label::O)
-    index = system.bus.label[getLabel(system.bus, label, "bus")]
+function injectionPower(system::PowerSystem, analysis::DCPowerFlow; label::IntStr)
     errorVoltage(analysis.voltage.angle)
+    idx = system.bus.label[getLabel(system.bus, label, "bus")]
 
-    dc = system.model.dc
-    bus = system.bus
-    voltage = analysis.voltage
-
-    if index == system.bus.layout.slack
-        injectionActive = bus.shunt.conductance[index] + dc.shiftPower[index]
-        @inbounds for j in dc.nodalMatrix.colptr[index]:(dc.nodalMatrix.colptr[index + 1] - 1)
-            row = dc.nodalMatrix.rowval[j]
-            injectionActive += dc.nodalMatrix[row, index] * voltage.angle[row]
-        end
+    if idx == system.bus.layout.slack
+        return Pi(system.bus, system.model.dc, analysis.voltage, idx)
     else
-        injectionActive = bus.supply.active[index] - bus.demand.active[index]
+        return system.bus.supply.active[idx] - system.bus.demand.active[idx]
     end
-
-    return injectionActive
 end
 
-function injectionPower(system::PowerSystem, analysis::DCOptimalPowerFlow; label::O)
-    index = system.bus.label[getLabel(system.bus, label, "bus")]
+function injectionPower(system::PowerSystem, analysis::DCOptimalPowerFlow; label::IntStr)
     errorVoltage(analysis.voltage.angle)
+    idx = system.bus.label[getLabel(system.bus, label, "bus")]
 
-    injectionActive = copy(-system.bus.demand.active[index])
-    @inbounds for i in system.bus.supply.generator[index]
-        injectionActive += analysis.power.generator.active[i]
+    Pi = copy(-system.bus.demand.active[idx])
+    if haskey(system.bus.supply.generator, idx)
+        @inbounds for i in system.bus.supply.generator[idx]
+            Pi += analysis.power.generator.active[i]
+        end
     end
 
-    return injectionActive
+    return Pi
 end
 
-function injectionPower(system::PowerSystem, analysis::DCStateEstimation; label::O)
-    index = system.bus.label[getLabel(system.bus, label, "bus")]
+function injectionPower(system::PowerSystem, analysis::DCStateEstimation; label::IntStr)
     errorVoltage(analysis.voltage.angle)
+    idx = system.bus.label[getLabel(system.bus, label, "bus")]
 
-    dc = system.model.dc
-    bus = system.bus
-    voltage = analysis.voltage
-
-    injectionActive = bus.shunt.conductance[index] + dc.shiftPower[index]
-    @inbounds for j in dc.nodalMatrix.colptr[index]:(dc.nodalMatrix.colptr[index + 1] - 1)
-        row = dc.nodalMatrix.rowval[j]
-        injectionActive += dc.nodalMatrix[row, index] * voltage.angle[row]
-    end
-
-    return injectionActive
+    Pi(system.bus, system.model.dc, analysis.voltage, idx)
 end
 
 """
@@ -184,54 +162,41 @@ solve!(system, analysis)
 supply = supplyPower(system, analysis; label = 2)
 ```
 """
-function supplyPower(system::PowerSystem, analysis::DCPowerFlow; label::O)
-    index = system.bus.label[getLabel(system.bus, label, "bus")]
+function supplyPower(system::PowerSystem, analysis::DCPowerFlow; label::IntStr)
     errorVoltage(analysis.voltage.angle)
+    idx = system.bus.label[getLabel(system.bus, label, "bus")]
 
     dc = system.model.dc
     bus = system.bus
-    voltage = analysis.voltage
 
-    if index == system.bus.layout.slack
-        supplyActive = bus.demand.active[index] + bus.shunt.conductance[index] + dc.shiftPower[index]
-        @inbounds for j in dc.nodalMatrix.colptr[index]:(dc.nodalMatrix.colptr[index + 1] - 1)
-            row = dc.nodalMatrix.rowval[j]
-            supplyActive += dc.nodalMatrix[row, index] * voltage.angle[row]
-        end
+    if idx == system.bus.layout.slack
+        return Pi(bus, dc, analysis.voltage, idx) + bus.demand.active[idx]
     else
-        supplyActive = bus.supply.active[index]
+        return bus.supply.active[idx]
     end
-
-    return supplyActive
 end
 
-function supplyPower(system::PowerSystem, analysis::DCOptimalPowerFlow; label::O)
-    index = system.bus.label[getLabel(system.bus, label, "bus")]
+function supplyPower(system::PowerSystem, analysis::DCOptimalPowerFlow; label::IntStr)
     errorVoltage(analysis.voltage.angle)
+    idx = system.bus.label[getLabel(system.bus, label, "bus")]
 
     supplyActive = 0.0
-    @inbounds for i in system.bus.supply.generator[index]
-        supplyActive += analysis.power.generator.active[i]
+    if haskey(system.bus.supply.generator, idx)
+        @inbounds for i in system.bus.supply.generator[idx]
+            supplyActive += analysis.power.generator.active[i]
+        end
     end
 
     return supplyActive
 end
 
-function supplyPower(system::PowerSystem, analysis::DCStateEstimation; label::O)
-    index = system.bus.label[getLabel(system.bus, label, "bus")]
+function supplyPower(system::PowerSystem, analysis::DCStateEstimation; label::IntStr)
     errorVoltage(analysis.voltage.angle)
+    idx = system.bus.label[getLabel(system.bus, label, "bus")]
 
-    dc = system.model.dc
     bus = system.bus
-    voltage = analysis.voltage
 
-    supplyActive = bus.shunt.conductance[index] + dc.shiftPower[index] + bus.demand.active[index]
-    @inbounds for j in dc.nodalMatrix.colptr[index]:(dc.nodalMatrix.colptr[index + 1] - 1)
-        row = dc.nodalMatrix.rowval[j]
-        supplyActive += dc.nodalMatrix[row, index] * voltage.angle[row]
-    end
-
-    return supplyActive
+    Pi(bus, system.model.dc, analysis.voltage, idx) + bus.demand.active[idx]
 end
 
 """
@@ -251,14 +216,17 @@ solve!(system, analysis)
 from = fromPower(system, analysis; label = 2)
 ```
 """
-function fromPower(system::PowerSystem, analysis::DC; label::O)
-    index = system.branch.label[getLabel(system.branch, label, "branch")]
+function fromPower(system::PowerSystem, analysis::DC; label::IntStr)
     errorVoltage(analysis.voltage.angle)
 
-    branch = system.branch
     angle = analysis.voltage.angle
+    admittance = system.model.dc.admittance
+    shiftAngle = system.branch.parameter.shiftAngle
 
-    return system.model.dc.admittance[index] * (angle[branch.layout.from[index]] - angle[branch.layout.to[index]] - branch.parameter.shiftAngle[index])
+    idx = system.branch.label[getLabel(system.branch, label, "branch")]
+    i, j = fromto(system, idx)
+
+    admittance[idx] * (angle[i] - angle[j] - shiftAngle[idx])
 end
 
 """
@@ -278,14 +246,17 @@ solve!(system, analysis)
 to = toPower(system, analysis; label = 2)
 ```
 """
-function toPower(system::PowerSystem, analysis::DC; label::O)
-    index = system.branch.label[getLabel(system.branch, label, "branch")]
+function toPower(system::PowerSystem, analysis::DC; label::IntStr)
     errorVoltage(analysis.voltage.angle)
 
-    branch = system.branch
     angle = analysis.voltage.angle
+    admittance = system.model.dc.admittance
+    shiftAngle = system.branch.parameter.shiftAngle
 
-    return -system.model.dc.admittance[index] * (angle[branch.layout.from[index]] - angle[branch.layout.to[index]] - branch.parameter.shiftAngle[index])
+    idx = system.branch.label[getLabel(system.branch, label, "branch")]
+    i, j = fromto(system, idx)
+
+    -admittance[idx] * (angle[i] - angle[j] - shiftAngle[idx])
 end
 
 """
@@ -304,54 +275,63 @@ solve!(system, analysis)
 generator = generatorPower(system, analysis; label = 1)
 ```
 """
-function generatorPower(system::PowerSystem, analysis::DCPowerFlow; label::O)
-    index = system.generator.label[getLabel(system.generator, label, "generator")]
+function generatorPower(system::PowerSystem, analysis::DCPowerFlow; label::IntStr)
     errorVoltage(analysis.voltage.angle)
+
+    idx = system.generator.label[getLabel(system.generator, label, "generator")]
 
     dc = system.model.dc
     bus = system.bus
-    generator = system.generator
-    voltage = analysis.voltage
-    busIndex = generator.layout.bus[index]
+    gen = system.generator
+    idxBus = gen.layout.bus[idx]
 
-    if generator.layout.status[index] == 1
-        if busIndex == bus.layout.slack && bus.supply.generator[busIndex][1] == index
-            generatorActive = bus.shunt.conductance[busIndex] + dc.shiftPower[busIndex] + bus.demand.active[busIndex]
-            for j in dc.nodalMatrix.colptr[busIndex]:(dc.nodalMatrix.colptr[busIndex + 1] - 1)
-                row = dc.nodalMatrix.rowval[j]
-                generatorActive += dc.nodalMatrix[row, busIndex] * voltage.angle[row]
-            end
+    if gen.layout.status[idx] == 1
+        if idxBus == bus.layout.slack && bus.supply.generator[idxBus][1] == idx
+            Pg = Pi(bus, dc, analysis.voltage, idxBus) + bus.demand.active[idxBus]
 
-            for i = 2:length(bus.supply.generator[busIndex])
-                generatorActive -= generator.output.active[bus.supply.generator[busIndex][i]]
+            for i = 2:length(bus.supply.generator[idxBus])
+                Pg -= gen.output.active[bus.supply.generator[idxBus][i]]
             end
         else
-            generatorActive = generator.output.active[index]
+            Pg = gen.output.active[idx]
         end
     else
-        generatorActive = 0.0
+        Pg = 0.0
     end
 
-    return generatorActive
+    return Pg
 end
 
-function generatorPower(system::PowerSystem, analysis::DCOptimalPowerFlow; label::O)
-    index = system.generator.label[getLabel(system.generator, label, "generator")]
+function generatorPower(system::PowerSystem, analysis::DCOptimalPowerFlow; label::IntStr)
     errorVoltage(analysis.voltage.angle)
+    idx = system.generator.label[getLabel(system.generator, label, "generator")]
 
-    return analysis.power.generator.active[index]
+    analysis.power.generator.active[idx]
 end
 
 ######### Powers at Branches ##########
 function allPowerBranch(system::PowerSystem, analysis::DC)
-    branch = system.branch
-    voltage = analysis.voltage
+    shiftAngle = system.branch.parameter.shiftAngle
+    voltg = analysis.voltage
     power = analysis.power
 
     power.from.active = copy(system.model.dc.admittance)
     power.to.active = similar(system.model.dc.admittance)
-    @inbounds for i = 1:branch.number
-        power.from.active[i] *= (voltage.angle[branch.layout.from[i]] - voltage.angle[branch.layout.to[i]] - branch.parameter.shiftAngle[i])
-        power.to.active[i] = -power.from.active[i]
+    @inbounds for k = 1:system.branch.number
+        i, j = fromto(system, k)
+
+        power.from.active[k] *= (voltg.angle[i] - voltg.angle[j] - shiftAngle[k])
+        power.to.active[k] = -power.from.active[k]
     end
+end
+
+######### Injection Power ##########
+function Pi(bus::Bus, dc::DCModel, voltg::PolarAngle, i::Int64)
+    P = 0.0
+    @inbounds for j in dc.nodalMatrix.colptr[i]:(dc.nodalMatrix.colptr[i + 1] - 1)
+        row = dc.nodalMatrix.rowval[j]
+        P += dc.nodalMatrix[row, i] * voltg.angle[row]
+    end
+
+    P + bus.shunt.conductance[i] + dc.shiftPower[i]
 end

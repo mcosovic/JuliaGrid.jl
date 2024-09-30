@@ -1,5 +1,5 @@
 """
-    dcOptimalPowerFlow(system::PowerSystem, optimizer; bridge, name)
+    dcOptimalPowerFlow(system::PowerSystem, optimizer; bridge = false, name = true)
 
 The function sets up the optimization model for solving the DC optimal power flow problem.
 
@@ -18,9 +18,8 @@ the `dc` field of the `PowerSystem` type.
 JuliaGrid offers the ability to manipulate the `jump` model based on the guidelines
 provided in the [JuMP documentation](https://jump.dev/jl/stable/reference/models/).
 However, certain configurations may require different method calls, such as:
-- `bridge`: manage the bridging mechanism,
-- `name`: manage the creation of string names.
-By default, these keyword settings are configured as `true`.
+- `bridge`: manage the bridging mechanism (default: `false`),
+- `name`: manage the creation of string names (default: `true`).
 
 # Returns
 The function returns an instance of the `DCOptimalPowerFlow` type, which includes the
@@ -37,12 +36,16 @@ dcModel!(system)
 analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer)
 ```
 """
-function dcOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory);
-    bridge::Bool = true, name::Bool = true)
-
+function dcOptimalPowerFlow(
+    system::PowerSystem,
+    @nospecialize optimizerFactory;
+    bridge::Bool = false,
+    name::Bool = true
+)
     bus = system.bus
-    generator = system.generator
-    cost = generator.cost.active
+    gen = system.generator
+    cbt = gen.capability
+    cost = gen.cost.active
 
     checkSlackBus(system)
     model!(system, system.model.dc)
@@ -50,7 +53,7 @@ function dcOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
     jump = JuMP.Model(optimizerFactory; add_bridges = bridge)
     set_string_names_on_creation(jump, name)
 
-    active = @variable(jump, active[i = 1:generator.number])
+    active = @variable(jump, active[i = 1:gen.number])
     angle = @variable(jump, angle[i = 1:bus.number])
 
     fix(angle[bus.layout.slack], bus.voltage.angle[bus.layout.slack])
@@ -58,37 +61,37 @@ function dcOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
 
     objective = @expression(jump, QuadExpr())
     actwise = Dict{Int64, VariableRef}()
-    piecewise = Dict{Int64, Array{ConstraintRef,1}}()
+    piecewise = Dict{Int64, Vector{ConstraintRef}}()
     capability = Dict{Int64, ConstraintRef}()
-    @inbounds for i = 1:generator.number
-        if generator.layout.status[i] == 1
+    @inbounds for i = 1:gen.number
+        if gen.layout.status[i] == 1
             if cost.model[i] == 2
                 term = length(cost.polynomial[i])
                 if term == 3
-                    polynomialQuadratic(objective, active[i], cost.polynomial[i])
+                    polynomialQuad(objective, active[i], cost.polynomial[i])
                 elseif term == 2
-                    polynomialLinear(objective, active[i], cost.polynomial[i])
+                    polynomialAff(objective, active[i], cost.polynomial[i])
                 elseif term == 1
                     add_to_expression!(objective, cost.polynomial[i][1])
                 elseif term > 3
-                    @info("The generator labeled $(iterate(generator.label, i)[1][1]) has a polynomial cost function of degree $(term-1), which is not included in the objective.")
+                    infoObjective(iterate(gen.label, i)[1][1], term)
                 else
-                    @info("The generator labeled $(iterate(generator.label, i)[1][1]) has an undefined polynomial cost function, which is not included in the objective.")
+                    infoObjective(iterate(gen.label, i)[1][1])
                 end
             elseif cost.model[i] == 1
                 point = size(cost.piecewise[i], 1)
                 if point == 2
-                    piecewiseLinear(objective, active[i], cost.piecewise[i])
+                    piecewiseAff(objective, active[i], cost.piecewise[i])
                 elseif point > 2
-                    addPowerwise(jump, objective, actwise, i; name = "actwise")
-                    addPiecewise(jump, active[i], actwise[i], piecewise, cost.piecewise[i], point, i)
+                    addPowerwise(jump, objective, actwise, i, "actwise")
+                    addPiecewise(jump, active, actwise, piecewise, cost.piecewise, point, i)
                 elseif point == 1
-                    throw(ErrorException("The generator labeled $(iterate(generator.label, i)[1][1]) has a piecewise linear cost function with only one defined point."))
+                    errorOnePoint(iterate(gen.label, i)[1][1])
                 else
-                    @info("The generator labeled $(iterate(generator.label, i)[1][1]) has an undefined piecewise linear cost function, which is not included in the objective.")
+                    infoObjective(iterate(gen.label, i)[1][1])
                 end
             end
-            addCapability(jump, active[i], capability, generator.capability.minActive, generator.capability.maxActive, i)
+            addCapability(jump, active, capability, cbt.minActive, cbt.maxActive, i)
         else
             fix!(active[i], 0.0, capability, i)
         end
@@ -110,7 +113,7 @@ function dcOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
         end
     end
 
-    return DCOptimalPowerFlow(
+    DCOptimalPowerFlow(
         PolarAngle(
             copy(bus.voltage.angle)
         ),
@@ -119,7 +122,7 @@ function dcOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
             CartesianReal(Float64[]),
             CartesianReal(Float64[]),
             CartesianReal(Float64[]),
-            CartesianReal(copy(generator.output.active))
+            CartesianReal(copy(gen.output.active))
         ),
         DCOptimalPowerFlowMethod(
             jump,
@@ -142,7 +145,7 @@ function dcOptimalPowerFlow(system::PowerSystem, (@nospecialize optimizerFactory
                 PolarAngleDual(Dict{Int64, Float64}()),
                 CartesianRealDual(Dict{Int64, Float64}()),
                 CartesianRealDual(Dict{Int64, Float64}()),
-                DCPiecewiseDual(Dict{Int64, Array{Float64,1}}())
+                DCPiecewiseDual(Dict{Int64, Vector{Float64}}())
             ),
             objective
         )
@@ -170,7 +173,7 @@ solve!(system, analysis)
 """
 function solve!(system::PowerSystem, analysis::DCOptimalPowerFlow)
     variable = analysis.method.variable
-    constraint = analysis.method.constraint
+    constr = analysis.method.constraint
     dual = analysis.method.dual
 
     @inbounds for i = 1:system.bus.number
@@ -181,12 +184,12 @@ function solve!(system::PowerSystem, analysis::DCOptimalPowerFlow)
     end
 
     try
-        setdual!(analysis.method.jump, constraint.slack.angle, dual.slack.angle)
-        setdual!(analysis.method.jump, constraint.balance.active, dual.balance.active)
-        setdual!(analysis.method.jump, constraint.voltage.angle, dual.voltage.angle)
-        setdual!(analysis.method.jump, constraint.flow.active, dual.flow.active)
-        setdual!(analysis.method.jump, constraint.capability.active, dual.capability.active)
-        setdual!(analysis.method.jump, constraint.piecewise.active, dual.piecewise.active)
+        setdual!(analysis.method.jump, constr.slack.angle, dual.slack.angle)
+        setdual!(analysis.method.jump, constr.balance.active, dual.balance.active)
+        setdual!(analysis.method.jump, constr.voltage.angle, dual.voltage.angle)
+        setdual!(analysis.method.jump, constr.flow.active, dual.flow.active)
+        setdual!(analysis.method.jump, constr.capability.active, dual.capability.active)
+        setdual!(analysis.method.jump, constr.piecewise.active, dual.piecewise.active)
     catch
     end
 
@@ -200,99 +203,142 @@ function solve!(system::PowerSystem, analysis::DCOptimalPowerFlow)
     end
 
     if has_duals(analysis.method.jump)
-        dual!(analysis.method.jump, constraint.slack.angle, dual.slack.angle)
-        dual!(analysis.method.jump, constraint.balance.active, dual.balance.active)
-        dual!(analysis.method.jump, constraint.voltage.angle, dual.voltage.angle)
-        dual!(analysis.method.jump, constraint.flow.active, dual.flow.active)
-        dual!(analysis.method.jump, constraint.capability.active, dual.capability.active)
-        dual!(analysis.method.jump, constraint.piecewise.active, dual.piecewise.active)
+        dual!(analysis.method.jump, constr.slack.angle, dual.slack.angle)
+        dual!(analysis.method.jump, constr.balance.active, dual.balance.active)
+        dual!(analysis.method.jump, constr.voltage.angle, dual.voltage.angle)
+        dual!(analysis.method.jump, constr.flow.active, dual.flow.active)
+        dual!(analysis.method.jump, constr.capability.active, dual.capability.active)
+        dual!(analysis.method.jump, constr.piecewise.active, dual.piecewise.active)
     end
 end
 
-######### Balance Constraints ##########
-function addBalance(system::PowerSystem, jump::JuMP.Model, active::Vector{VariableRef}, angle::Vector{VariableRef}, ref::Dict{Int64, ConstraintRef}, i::Int64)
+##### Balance Constraints #####
+function addBalance(
+    system::PowerSystem,
+    jump::JuMP.Model,
+    active::Vector{VariableRef},
+    angle::Vector{VariableRef},
+    ref::Dict{Int64, ConstraintRef},
+    i::Int64
+)
+    bus = system.bus
     dc = system.model.dc
-    expression = AffExpr()
-    for j in dc.nodalMatrix.colptr[i]:(dc.nodalMatrix.colptr[i + 1] - 1)
-        add_to_expression!(expression, dc.nodalMatrix.nzval[j], - angle[dc.nodalMatrix.rowval[j]])
+
+    expr = AffExpr()
+    for ptr in dc.nodalMatrix.colptr[i]:(dc.nodalMatrix.colptr[i + 1] - 1)
+        j = dc.nodalMatrix.rowval[ptr]
+        add_to_expression!(expr, dc.nodalMatrix.nzval[ptr], -angle[j])
     end
-    rhs = system.bus.demand.active[i] + system.bus.shunt.conductance[i] + dc.shiftPower[i]
-    ref[i] = @constraint(jump, expression + sum(active[k] for k in system.bus.supply.generator[i]) == rhs)
+    rhs = bus.demand.active[i] + bus.shunt.conductance[i] + dc.shiftPower[i]
+    if haskey(bus.supply.generator, i)
+        ref[i] = @constraint(jump, expr + sum(active[k] for k in bus.supply.generator[i]) == rhs)
+    else
+        ref[i] = @constraint(jump, expr == rhs)
+    end
 
     return jump, ref
 end
 
-######### Flow Constraints ##########
-function addFlow(system::PowerSystem, jump::JuMP.Model, angle::Vector{VariableRef}, ref::Dict{Int64, ConstraintRef}, i::Int64)
+##### Flow Constraints #####
+function addFlow(
+    system::PowerSystem,
+    jump::JuMP.Model,
+    angle::Vector{VariableRef},
+    ref::Dict{Int64, ConstraintRef},
+    i::Int64
+)
     branch = system.branch
+    dc = system.model.dc
 
     if branch.flow.minFromBus[i] != 0.0 || branch.flow.maxFromBus[i] != 0.0
-        ref[i] = @constraint(jump, branch.flow.minFromBus[i] <= system.model.dc.admittance[i] * (angle[branch.layout.from[i]] - angle[branch.layout.to[i]] - branch.parameter.shiftAngle[i]) <= branch.flow.maxFromBus[i])
+        from, to = fromto(system, i)
+        expr = dc.admittance[i] * (angle[from] - angle[to] - branch.parameter.shiftAngle[i])
+
+        ref[i] = @constraint(
+            jump, branch.flow.minFromBus[i] <= expr <= branch.flow.maxFromBus[i]
+        )
     end
 
     return jump, ref
 end
 
-######### Update Balance Constraints ##########
-function updateBalance(system::PowerSystem, analysis::DCOptimalPowerFlow, index::Int64; voltage::Bool = false, rhs::Bool = false, power::Int64 = -1, genIndex::Int64 = 0)
+##### Update Balance Constraints #####
+function updateBalance(
+    system::PowerSystem,
+    analysis::DCOptimalPowerFlow,
+    idx::Int64;
+    voltage::Bool = false,
+    rhs::Bool = false,
+    power::Int64 = -1,
+    idxGen::Int64 = 0
+)
+    bus = system.bus
     dc = system.model.dc
+    nodal = dc.nodalMatrix
     jump = analysis.method.jump
-    constraint = analysis.method.constraint
-    variable = analysis.method.variable
+    constr = analysis.method.constraint
+    varble = analysis.method.variable
 
-    if haskey(constraint.balance.active, index) && is_valid(jump, constraint.balance.active[index])
+    if haskey(constr.balance.active, idx) && is_valid(jump, constr.balance.active[idx])
         if voltage
-            @inbounds for j in dc.nodalMatrix.colptr[index]:(dc.nodalMatrix.colptr[index + 1] - 1)
-                angle = variable.angle[dc.nodalMatrix.rowval[j]]
-                set_normalized_coefficient(constraint.balance.active[index], angle, 0)
-                set_normalized_coefficient(constraint.balance.active[index], angle, - dc.nodalMatrix.nzval[j])
+            @inbounds for j in nodal.colptr[idx]:(nodal.colptr[idx + 1] - 1)
+                angle = varble.angle[nodal.rowval[j]]
+                set_normalized_coefficient(constr.balance.active[idx], angle, 0)
+                set_normalized_coefficient(constr.balance.active[idx], angle, -nodal.nzval[j])
             end
         end
         if power in [0, 1]
-            set_normalized_coefficient(constraint.balance.active[index], variable.active[genIndex], power)
+            set_normalized_coefficient(constr.balance.active[idx], varble.active[idxGen], power)
         end
         if rhs
-            set_normalized_rhs(constraint.balance.active[index], system.bus.demand.active[index] + system.bus.shunt.conductance[index] + dc.shiftPower[index])
+            expr = bus.demand.active[idx] + bus.shunt.conductance[idx] + dc.shiftPower[idx]
+            set_normalized_rhs(constr.balance.active[idx], expr)
         end
     else
-        addBalance(system, jump, variable.active, variable.angle, constraint.balance.active, index)
+        addBalance(system, jump, varble.active, varble.angle, constr.balance.active, idx)
     end
 end
 
-######### Make Cost Expression ##########
-function costExpr(cost::Cost, variable::VariableRef, index::Int64, label::L; ac::Bool = false)
+##### Make Cost Expression #####
+function costExpr(
+    cost::Cost,
+    variable::VariableRef,
+    idx::Int64,
+    label::IntStrMiss;
+    ac::Bool = false
+)
     isPowerwise = false
     isNonLin = false
     expr = QuadExpr()
 
-    if cost.model[index] == 2
-        term = length(cost.polynomial[index])
+    if cost.model[idx] == 2
+        term = length(cost.polynomial[idx])
         if term == 3
-            polynomialQuadratic(expr, variable, cost.polynomial[index])
+            polynomialQuad(expr, variable, cost.polynomial[idx])
         elseif term == 2
-            polynomialLinear(expr, variable, cost.polynomial[index])
+            polynomialAff(expr, variable, cost.polynomial[idx])
         elseif term == 1
-            add_to_expression!(expr, cost.polynomial[index][1])
+            add_to_expression!(expr, cost.polynomial[idx][1])
         elseif term > 3
             if ac
-                polynomialQuadratic(expr, variable, cost.polynomial[index])
+                polynomialQuad(expr, variable, cost.polynomial[idx])
                 isNonLin = true
             else
-                @info("The generator labeled $label has a polynomial cost function of degree $(term-1), which is not included in the objective.")
+                infoObjective(label, term)
             end
         else
-            @info("The generator labeled $label has an undefined polynomial cost function, which is not included in the objective.")
+            infoObjective(label)
         end
-    elseif cost.model[index] == 1
-        point = size(cost.piecewise[index], 1)
+    elseif cost.model[idx] == 1
+        point = size(cost.piecewise[idx], 1)
         if point == 2
-            piecewiseLinear(expr, variable, cost.piecewise[index])
+            piecewiseAff(expr, variable, cost.piecewise[idx])
         elseif point > 2
             isPowerwise = true
         elseif point == 1
-            throw(ErrorException("The generator labeled $label has a piecewise linear cost function with only one defined point."))
+            errorOnePoint(label)
         else
-            @info("The generator labeled $label has an undefined piecewise linear cost function, which is not included in the objective.")
+            infoObjective(label)
         end
     end
 
@@ -357,7 +403,7 @@ startingDual!(system, analysis)
 solve!(system, analysis)
 ```
 """
-function startingDual!(system::PowerSystem, analysis::DCOptimalPowerFlow)
+function startingDual!(::PowerSystem, analysis::DCOptimalPowerFlow)
     dual = analysis.method.dual
 
     dual.slack.angle = Dict{Int64, Float64}()
@@ -365,5 +411,5 @@ function startingDual!(system::PowerSystem, analysis::DCOptimalPowerFlow)
     dual.voltage.angle = Dict{Int64, Float64}()
     dual.flow.active = Dict{Int64, Float64}()
     dual.capability.active = Dict{Int64, Float64}()
-    dual.piecewise.active = Dict{Int64, Array{Float64,1}}()
+    dual.piecewise.active = Dict{Int64, Vector{Float64}}()
 end

@@ -1,5 +1,6 @@
 @testset "Load and Save Measurement Data" begin
-    system = powerSystem(string(pathData, "case14test.m"))
+    ########## Build Measurement Data ##########
+    system = powerSystem(string(path, "case14test.m"))
     device = measurement()
 
     @voltmeter(label = "Voltmeter ?")
@@ -20,14 +21,26 @@
     addVarmeter!(system, device; to = 2, reactive = 0.1, status = 0, noise = true)
 
     @pmu(label = "!", statusAngleTo = 0, varianceMagnitudeTo = 1e-3)
-    addPmu!(system, device; bus = 9, magnitude = 1.6, angle = -0.1, statusAngle = 1, polar = true)
-    addPmu!(system, device; from = 14, magnitude = 1.2, angle = -0.2, varianceMagnitude = 1e-4, polar = false, noise = true)
-    addPmu!(system, device; to = 19, magnitude = 0.3, angle = 0.1, statusMagnitude = 0, correlated = true, noise = true, polar = true)
+    addPmu!(
+        system, device;
+        bus = 9, magnitude = 1.6, angle = -0.1, statusAngle = 1, polar = true
+    )
+    addPmu!(
+        system, device; from = 14, magnitude = 1.2, angle = -0.2,
+        varianceMagnitude = 1e-4, polar = false, noise = true
+    )
+    addPmu!(
+        system, device; to = 19, magnitude = 0.3, angle = 0.1, statusMagnitude = 0,
+        correlated = true, noise = true, polar = true
+    )
 
-    saveMeasurement(device; path = string(pathData, "measurement14.h5"))
-    hdf5 = measurement(string(pathData, "measurement14.h5"))
+    ########## Save Measurement Data ##########
+    saveMeasurement(device; path = string(path, "measurement14.h5"))
 
-    #### Test Measurement Data ####
+    ########## Load Measurement Data ##########
+    hdf5 = measurement(string(path, "measurement14.h5"))
+
+    ##### Test Measurement Data #####
     compstruct(device.voltmeter, hdf5.voltmeter)
     compstruct(device.ammeter, hdf5.ammeter)
     compstruct(device.wattmeter, hdf5.wattmeter)

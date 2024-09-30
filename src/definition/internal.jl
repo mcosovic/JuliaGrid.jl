@@ -1,18 +1,19 @@
-########### Types ###########
-const A = Union{Float64, Int64, Missing}
-const B = Union{Bool, Missing}
-const C = Union{Int64, Missing}
-const O = Union{String, Int64}
-const L = Union{O, Missing}
+##### Types #####
+const FltInt = Union{Float64, Int64}
+const FltIntMiss = Union{Float64, Int64, Missing}
+const BoolMiss = Union{Bool, Missing}
+const IntMiss = Union{Int64, Missing}
+const IntStr = Union{Int64, String}
+const IntStrMiss = Union{Int64, String, Missing}
 
-########### Polar Coordinate ###########
+##### Polar Coordinate #####
 mutable struct Polar
-    magnitude::Array{Float64,1}
-    angle::Array{Float64,1}
+    magnitude::Vector{Float64}
+    angle::Vector{Float64}
 end
 
 mutable struct PolarAngle
-    angle::Array{Float64,1}
+    angle::Vector{Float64}
 end
 
 mutable struct PolarRef
@@ -33,14 +34,14 @@ mutable struct PolarAngleDual
     angle::Dict{Int64, Float64}
 end
 
-########### Cartesian Coordinate ###########
+##### Cartesian Coordinate #####
 mutable struct Cartesian
-    active::Array{Float64,1}
-    reactive::Array{Float64,1}
+    active::Vector{Float64}
+    reactive::Vector{Float64}
 end
 
 mutable struct CartesianReal
-    active::Array{Float64,1}
+    active::Vector{Float64}
 end
 
 mutable struct SimpleCartesianReal
@@ -48,7 +49,7 @@ mutable struct SimpleCartesianReal
 end
 
 mutable struct CartesianImag
-    reactive::Array{Float64,1}
+    reactive::Vector{Float64}
 end
 
 mutable struct CartesianRef
@@ -69,16 +70,16 @@ mutable struct CartesianRealRef
     active::Dict{Int64, ConstraintRef}
 end
 
-########### Sparse Matrix Model ##########
+##### Sparse Matrix Model #####
 mutable struct SparseModel
-    row::Array{Int64,1}
-    col::Array{Int64,1}
-    val::Array{Float64,1}
+    row::Vector{Int64}
+    col::Vector{Int64}
+    val::Vector{Float64}
     cnt::Int64
     idx::Int64
 end
 
-########### Template ###########
+##### Template #####
 Base.@kwdef mutable struct ContainerTemplate
     value::Float64 = 0.0
     pu::Bool = true
@@ -133,7 +134,7 @@ Base.@kwdef mutable struct GeneratorTemplate
     minUpReactive::ContainerTemplate = ContainerTemplate()
     maxUpReactive::ContainerTemplate = ContainerTemplate()
     loadFollowing::ContainerTemplate = ContainerTemplate()
-    reactiveTimescale::ContainerTemplate = ContainerTemplate()
+    reactiveRamp::ContainerTemplate = ContainerTemplate()
     reserve10min::ContainerTemplate = ContainerTemplate()
     reserve30min::ContainerTemplate = ContainerTemplate()
     label::String = "?"
@@ -220,7 +221,7 @@ template = Template(
     PmuTemplate()
 )
 
-########### List of Prefixes ###########
+##### List of Prefixes #####
 const prefixList = Dict(
     "q" => 1e-30,
     "r" => 1e-27,
@@ -248,30 +249,30 @@ const prefixList = Dict(
     "Q" => 1e30
     )
 
-########### List of Suffixes ###########
+##### List of Suffixes #####
 Base.@kwdef mutable struct UnitList
-    basePower::Array{String,1} = ["VA"]
-    baseVoltage::Array{String,1} = ["V"]
-    activePower::Array{String,1} = ["W", "pu"]
-    reactivePower::Array{String,1} = ["VAr", "pu"]
-    apparentPower::Array{String,1} = ["VA", "pu"]
-    voltageMagnitude::Array{String,1} = ["V", "pu"]
-    voltageAngle::Array{String,1} = ["deg", "rad"]
-    currentMagnitude::Array{String,1} = ["A", "pu"]
-    currentAngle::Array{String,1} = ["deg", "rad"]
-    impedance::Array{String,1} = [string(:Ω), "pu"]
-    admittance::Array{String,1} = ["S", "pu"]
-    voltageMagnitudeLive::String = "pu"
-    voltageAngleLive::String = "rad"
-    activePowerLive::String = "pu"
-    reactivePowerLive::String = "pu"
-    apparentPowerLive::String = "pu"
-    currentMagnitudeLive::String = "pu"
-    currentAngleLive::String = "rad"
+    basePower::Vector{String}        = ["VA"]
+    baseVoltage::Vector{String}      = ["V"]
+    activePower::Vector{String}      = ["W", "pu"]
+    reactivePower::Vector{String}    = ["VAr", "pu"]
+    apparentPower::Vector{String}    = ["VA", "pu"]
+    voltageMagnitude::Vector{String} = ["V", "pu"]
+    voltageAngle::Vector{String}     = ["deg", "rad"]
+    currentMagnitude::Vector{String} = ["A", "pu"]
+    currentAngle::Vector{String}     = ["deg", "rad"]
+    impedance::Vector{String}        = [string(:Ω), "pu"]
+    admittance::Vector{String}       = ["S", "pu"]
+    voltageMagnitudeLive::String     = "pu"
+    voltageAngleLive::String         = "rad"
+    activePowerLive::String          = "pu"
+    reactivePowerLive::String        = "pu"
+    apparentPowerLive::String        = "pu"
+    currentMagnitudeLive::String     = "pu"
+    currentAngleLive::String         = "rad"
 end
 unitList = UnitList()
 
-########### Live Prefix Values ###########
+##### Live Prefix Values #####
 Base.@kwdef mutable struct PrefixLive
     activePower::Float64 = 0.0
     reactivePower::Float64 = 0.0
@@ -284,9 +285,9 @@ Base.@kwdef mutable struct PrefixLive
     admittance::Float64 = 0.0
     baseVoltage::Float64 = 1.0
 end
-prefix = PrefixLive()
+pfx = PrefixLive()
 
-########### Matrix Factorization Type ###########
+##### Matrix Factorization Type #####
 export LU, QR, LDLt
 
 abstract type QR end

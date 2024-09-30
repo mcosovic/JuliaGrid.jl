@@ -4,10 +4,10 @@ using Test
 using JuMP, HiGHS, Ipopt, GLPK
 using Suppressor
 
-######## Path to Test Data ##########
-pathData = abspath(joinpath(dirname(Base.find_package("JuliaGrid")), ".."), "test/data/")
+##### Path to Test Data #####
+path = abspath(joinpath(dirname(Base.find_package("JuliaGrid")), ".."), "test/data/")
 
-######## Compare Structs ##########
+##### Compare Structs #####
 function compstruct(obj1::S, obj2::S; atol = 0.0) where S
     for name in fieldnames(typeof(obj1))
         field = getfield(obj1, name)
@@ -28,24 +28,24 @@ function compstruct(obj1::S, obj2::S; atol = 0.0) where S
     end
 end
 
-######## Power System ##########
+##### Power System #####
 include("powerSystem/loadSave.jl")
 include("powerSystem/buildUpdate.jl")
 
-######## Power flow ##########
+##### Power flow #####
 include("powerFlow/analysis.jl")
 include("powerFlow/reusing.jl")
 include("powerFlow/limits.jl")
 
-######## Optimal Power flow ##########
+##### Optimal Power flow #####
 include("optimalPowerFlow/analysis.jl")
 include("optimalPowerFlow/reusing.jl")
 
-######## Measurement ##########
+##### Measurement #####
 include("measurement/loadSave.jl")
 include("measurement/buildUpdate.jl")
 
-######## State Estimation ##########
+##### State Estimation #####
 include("stateEstimation/analysis.jl")
 include("stateEstimation/reusing.jl")
 include("stateEstimation/badData.jl")

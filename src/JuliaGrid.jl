@@ -16,15 +16,17 @@ include("definition/system.jl")
 include("definition/analysis.jl")
 
 ######### Utility ##########
-include("utility/routine.jl")
-include("utility/internal.jl")
+include("backend/utility.jl")
+include("backend/internal.jl")
+include("backend/equations.jl")
+include("backend/expressions.jl")
 export @base, @power, @voltage, @current, @parameter, @default
 
 ######### Print ##########
+include("print/utility.jl")
 include("print/powerSystem.jl")
 include("print/constraint.jl")
 include("print/measurement.jl")
-include("print/routine.jl")
 export printBusData, printBranchData, printGeneratorData
 export printBusSummary, printBranchSummary, printGeneratorSummary
 export printBusConstraint, printBranchConstraint, printGeneratorConstraint
@@ -65,6 +67,7 @@ include("measurement/save.jl")
 export measurement, saveMeasurement
 
 ########## Measurement Devices ##########
+include("measurement/utility.jl")
 include("measurement/voltmeter.jl")
 include("measurement/ammeter.jl")
 include("measurement/powermeter.jl")
@@ -84,8 +87,8 @@ include("stateEstimation/dcStateEstimation.jl")
 include("stateEstimation/badData.jl")
 include("stateEstimation/observability.jl")
 export gaussNewton, acLavStateEstimation
-export pmuWlsStateEstimation, pmuLavStateEstimation, pmuPlacement
-export dcWlsStateEstimation, dcLavStateEstimation, residualTest!
+export pmuStateEstimation, pmuLavStateEstimation, pmuPlacement
+export dcStateEstimation, dcLavStateEstimation, residualTest!
 export islandTopologicalFlow, islandTopological, restorationGram!
 
 ########## Postprocessing ##########
@@ -96,7 +99,6 @@ export injectionPower, supplyPower, shuntPower, fromPower, toPower, chargingPowe
 export injectionCurrent, fromCurrent, toCurrent, seriesCurrent
 
 ########## Precompile ##########
-include("utility/precompile.jl")
+include("backend/precompile.jl")
 
 end
-

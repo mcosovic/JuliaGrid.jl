@@ -63,40 +63,50 @@ addAmmeter!(system, device; label = "Ammeter 1", from = "Branch 1", magnitude = 
 addAmmeter!(system, device; label = "Ammeter 2", to = "Branch 1", magnitude = 437.386)
 ```
 """
-function addAmmeter!(system::PowerSystem, device::Measurement;
-    label::L = missing, from::L = missing, to::L = missing,
-    magnitude::A, variance::A = missing, status::A = missing,
-    noise::Bool = template.ammeter.noise)
-
-    ammeter = device.ammeter
-    default = template.ammeter
+function addAmmeter!(
+    system::PowerSystem,
+    device::Measurement;
+    label::IntStrMiss = missing,
+    from::IntStrMiss = missing,
+    to::IntStrMiss = missing,
+    magnitude::FltInt,
+    kwargs...
+)
+    branch = system.branch
+    baseVoltg = system.base.voltage
+    def = template.ammeter
+    key = meterkwargs(def.noise; kwargs...)
 
     location, fromFlag, toFlag = checkLocation(from, to)
-    labelBranch = getLabel(system.branch, location, "branch")
-    indexBranch = system.branch.label[getLabel(system.branch, location, "branch")]
+    lblBrch = getLabel(branch, location, "branch")
+    idxBrch = branch.label[getLabel(branch, location, "branch")]
 
-    if system.branch.layout.status[indexBranch] == 1
-        ammeter.number += 1
-        push!(ammeter.layout.index, indexBranch)
-        push!(ammeter.layout.from, fromFlag)
-        push!(ammeter.layout.to, toFlag)
+    if branch.layout.status[idxBrch] == 1
+        device.ammeter.number += 1
+        push!(device.ammeter.layout.index, idxBrch)
+        push!(device.ammeter.layout.from, fromFlag)
+        push!(device.ammeter.layout.to, toFlag)
 
+        from, to = fromto(system, idxBrch)
         basePowerInv = 1 / (system.base.power.value * system.base.power.prefix)
         if fromFlag
-            setLabel(ammeter, label, default.label, labelBranch; prefix = "From ")
-            defaultVariance = default.varianceFrom
-            defaultStatus = default.statusFrom
-            baseVoltage = system.base.voltage.value[system.branch.layout.from[indexBranch]] * system.base.voltage.prefix
+            setLabel(device.ammeter, label, def.label, lblBrch; prefix = "From ")
+            defVariance = def.varianceFrom
+            defStatus = def.statusFrom
+            baseVoltage = baseVoltg.value[from] * baseVoltg.prefix
         else
-            setLabel(ammeter, label, default.label, labelBranch; prefix = "To ")
-            defaultVariance = default.varianceTo
-            defaultStatus = default.statusTo
-            baseVoltage = system.base.voltage.value[system.branch.layout.to[indexBranch]] * system.base.voltage.prefix
+            setLabel(device.ammeter, label, def.label, lblBrch; prefix = "To ")
+            defVariance = def.varianceTo
+            defStatus = def.statusTo
+            baseVoltage = baseVoltg.value[to] * baseVoltg.prefix
         end
 
-        baseCurrentInv = baseCurrentInverse(basePowerInv, baseVoltage)
+        baseInv = baseCurrentInv(basePowerInv, baseVoltage)
 
-        setMeter(ammeter.magnitude, magnitude, variance, status, noise, defaultVariance, defaultStatus, prefix.currentMagnitude, baseCurrentInv)
+        setMeter(
+            device.ammeter.magnitude, magnitude, key.variance, key.status, key.noise,
+            defVariance, defStatus, pfx.currentMagnitude, baseInv
+        )
     end
 end
 
@@ -155,69 +165,71 @@ current!(system, analysis)
 addAmmeter!(system, device, analysis; varianceFrom = 1e-3, statusTo = 0)
 ```
 """
-function addAmmeter!(system::PowerSystem, device::Measurement, analysis::AC;
-    varianceFrom::A = missing, varianceTo::A = missing,
-    statusFrom::A = missing, statusTo::A = missing, noise::Bool = template.ammeter.noise)
+function addAmmeter!(
+    system::PowerSystem,
+    device::Measurement,
+    analysis::AC;
+    varianceFrom::FltIntMiss = missing,
+    varianceTo::FltIntMiss = missing,
+    statusFrom::FltIntMiss = missing,
+    statusTo::FltIntMiss = missing,
+    noise::Bool = template.ammeter.noise
+)
+    errorCurrent(analysis.current.from.magnitude)
 
-    if isempty(analysis.current.from.magnitude)
-        throw(ErrorException("The currents cannot be found."))
-    end
+    baseVoltg = system.base.voltage
+    current = analysis.current
+    amp = device.ammeter
+    def = template.ammeter
 
-    ammeter = device.ammeter
-    default = template.ammeter
-    ammeter.number = 0
+    amp.number = 0
 
-    statusFrom = unitless(statusFrom, default.statusFrom)
+    statusFrom = givenOrDefault(statusFrom, def.statusFrom)
     checkStatus(statusFrom)
 
-    statusTo = unitless(statusTo, default.statusTo)
+    statusTo = givenOrDefault(statusTo, def.statusTo)
     checkStatus(statusTo)
 
-    ammeterNumber = 2 * system.branch.layout.inservice
-    ammeter.label = OrderedDict{String,Int64}(); sizehint!(ammeter.label, ammeterNumber)
+    ammNumber = 2 * system.branch.layout.inservice
+    amp.label = OrderedDict{String,Int64}()
+    sizehint!(amp.label, ammNumber)
 
-    ammeter.layout.index = fill(0, ammeterNumber)
-    ammeter.layout.from = fill(false, ammeterNumber)
-    ammeter.layout.to = fill(false, ammeterNumber)
+    amp.layout.index = fill(0, ammNumber)
+    amp.layout.from = fill(false, ammNumber)
+    amp.layout.to = fill(false, ammNumber)
 
-    ammeter.magnitude.mean = fill(0.0, ammeterNumber)
-    ammeter.magnitude.variance = similar(ammeter.magnitude.mean)
-    ammeter.magnitude.status = fill(Int8(0), ammeterNumber)
+    amp.magnitude.mean = fill(0.0, ammNumber)
+    amp.magnitude.variance = similar(amp.magnitude.mean)
+    amp.magnitude.status = fill(Int8(0), ammNumber)
 
-    basePowerInv = 1 / (system.base.power.value * system.base.power.prefix)
+    baseInv = 1 / (system.base.power.value * system.base.power.prefix)
     @inbounds for (label, i) in system.branch.label
         if system.branch.layout.status[i] == 1
-            ammeter.number += 1
-            setLabel(ammeter, missing, default.label, label; prefix = "From ")
+            amp.number += 1
+            setLabel(amp, missing, def.label, label; prefix = "From ")
 
-            ammeter.layout.index[ammeter.number] = i
-            ammeter.layout.index[ammeter.number + 1] = i
+            amp.layout.index[amp.number] = i
+            amp.layout.index[amp.number + 1] = i
 
-            ammeter.layout.from[ammeter.number] = true
-            ammeter.layout.to[ammeter.number + 1] = true
+            amp.layout.from[amp.number] = true
+            amp.layout.to[amp.number + 1] = true
 
-            ammeter.magnitude.status[ammeter.number] = statusFrom
-            ammeter.magnitude.status[ammeter.number + 1] = statusTo
+            from, to = fromto(system, i)
+            baseFromInv = baseCurrentInv(baseInv, baseVoltg.value[from] * baseVoltg.prefix)
+            baseToInv = baseCurrentInv(baseInv, baseVoltg.value[to] * baseVoltg.prefix)
 
-            baseCurrentFromInv = baseCurrentInverse(basePowerInv, system.base.voltage.value[system.branch.layout.from[i]] * system.base.voltage.prefix)
-            ammeter.magnitude.variance[ammeter.number] = topu(varianceFrom, default.varianceFrom, prefix.currentMagnitude, baseCurrentFromInv)
+            add!(
+                amp.magnitude, amp.number, noise, pfx.currentMagnitude,
+                current.from.magnitude[i], varianceFrom, def.varianceFrom, statusFrom,
+                baseFromInv, current.to.magnitude[i], varianceTo, def.varianceTo,
+                statusTo, baseToInv
+            )
 
-            baseCurrentToInv = baseCurrentInverse(basePowerInv, system.base.voltage.value[system.branch.layout.to[i]] * system.base.voltage.prefix)
-            ammeter.magnitude.variance[ammeter.number + 1] = topu(varianceTo, default.varianceTo, prefix.currentMagnitude, baseCurrentToInv)
-
-            if noise
-                ammeter.magnitude.mean[ammeter.number] = analysis.current.from.magnitude[i] + ammeter.magnitude.variance[ammeter.number]^(1/2) * randn(1)[1]
-                ammeter.magnitude.mean[ammeter.number + 1] = analysis.current.to.magnitude[i] + ammeter.magnitude.variance[ammeter.number + 1]^(1/2) * randn(1)[1]
-            else
-                ammeter.magnitude.mean[ammeter.number] = analysis.current.from.magnitude[i]
-                ammeter.magnitude.mean[ammeter.number + 1] = analysis.current.to.magnitude[i]
-            end
-
-            ammeter.number += 1
-            setLabel(ammeter, missing, default.label, label; prefix = "To ")
+            amp.number += 1
+            setLabel(amp, missing, def.label, label; prefix = "To ")
         end
     end
-    ammeter.layout.label = ammeter.number
+    amp.layout.label = amp.number
 end
 
 """
@@ -261,100 +273,116 @@ addAmmeter!(system, device; label = "Ammeter 1", from = "Branch 1", magnitude = 
 updateAmmeter!(system, device; label = "Ammeter 1", magnitude = 1.2, variance = 1e-4)
 ```
 """
-function updateAmmeter!(system::PowerSystem, device::Measurement; label::L,
-    magnitude::A = missing, variance::A = missing, status::A = missing,
-    noise::Bool = template.ammeter.noise)
+function updateAmmeter!(
+    system::PowerSystem,
+    device::Measurement;
+    label::IntStrMiss,
+    magnitude::FltIntMiss = missing,
+    kwargs...
+)
+    baseVoltg = system.base.voltage
+    amp = device.ammeter
+    key = meterkwargs(template.ammeter.noise; kwargs...)
 
-    ammeter = device.ammeter
-
-    index = ammeter.label[getLabel(ammeter, label, "ammeter")]
-    indexBranch = ammeter.layout.index[index]
+    idx = amp.label[getLabel(amp, label, "ammeter")]
+    idxBrch = amp.layout.index[idx]
 
     basePowerInv = 1 / (system.base.power.value * system.base.power.prefix)
-    if ammeter.layout.from[index]
-        baseVoltage = system.base.voltage.value[system.branch.layout.from[indexBranch]] * system.base.voltage.prefix
-    else
-        baseVoltage = system.base.voltage.value[system.branch.layout.to[indexBranch]] * system.base.voltage.prefix
-    end
-    baseCurrentInv = baseCurrentInverse(basePowerInv, baseVoltage)
+    baseVoltage = baseVoltageEnd(system, baseVoltg, amp.layout.from[idx], idxBrch)
 
-    updateMeter(ammeter.magnitude, index, magnitude, variance, status, noise,
-    prefix.currentMagnitude, baseCurrentInv)
+    updateMeter(
+        amp.magnitude, idx, magnitude, key.variance, key.status, key.noise,
+        pfx.currentMagnitude, baseCurrentInv(basePowerInv, baseVoltage)
+    )
 end
 
-function updateAmmeter!(system::PowerSystem, device::Measurement, analysis::ACStateEstimation{NonlinearWLS{T}};
-    label::L, magnitude::A = missing, variance::A = missing, status::A = missing,
-    noise::Bool = template.ammeter.noise) where T <: Union{Normal, Orthogonal}
+function updateAmmeter!(
+    system::PowerSystem,
+    device::Measurement,
+    analysis::ACStateEstimation{NonlinearWLS{T}};
+    label::IntStrMiss,
+    magnitude::FltIntMiss = missing,
+    kwargs...
+) where T <: Union{Normal, Orthogonal}
 
-    bus = system.bus
-    branch = system.branch
-    ammeter = device.ammeter
+    baseVoltg = system.base.voltage
+    amp = device.ammeter
     se = analysis.method
+    key = meterkwargs(template.ammeter.noise; kwargs...)
 
-    indexAmmeter = ammeter.label[getLabel(ammeter, label, "ammeter")]
-    indexBranch = ammeter.layout.index[indexAmmeter]
-    idx = device.voltmeter.number + indexAmmeter
+    idxAmp = amp.label[getLabel(amp, label, "ammeter")]
+    idxBrch = amp.layout.index[idxAmp]
+    idx = device.voltmeter.number + idxAmp
 
     basePowerInv = 1 / (system.base.power.value * system.base.power.prefix)
-    if ammeter.layout.from[indexAmmeter]
-        baseVoltage = system.base.voltage.value[system.branch.layout.from[indexBranch]] * system.base.voltage.prefix
-    else
-        baseVoltage = system.base.voltage.value[system.branch.layout.to[indexBranch]] * system.base.voltage.prefix
-    end
+    baseVoltage = baseVoltageEnd(system, baseVoltg, amp.layout.from[idxAmp], idxBrch)
 
-    updateMeter(ammeter.magnitude, indexAmmeter, magnitude, variance, status, noise,
-    prefix.currentMagnitude, baseCurrentInverse(basePowerInv, baseVoltage))
+    updateMeter(
+        amp.magnitude, idxAmp, magnitude, key.variance, key.status, key.noise,
+        pfx.currentMagnitude, baseCurrentInv(basePowerInv, baseVoltage)
+    )
 
-    if ammeter.magnitude.status[indexAmmeter] == 1
-        if ammeter.layout.from[indexAmmeter]
+    if amp.magnitude.status[idxAmp] == 1
+        if amp.layout.from[idxAmp]
             se.type[idx] = 2
         else
             se.type[idx] = 3
         end
-        se.mean[idx] = ammeter.magnitude.mean[indexAmmeter]
+        se.mean[idx] = amp.magnitude.mean[idxAmp]
     else
-        se.jacobian[idx, branch.layout.from[indexBranch]] = 0.0
-        se.jacobian[idx, bus.number + branch.layout.from[indexBranch]] = 0.0
-        se.jacobian[idx, branch.layout.to[indexBranch]] = 0.0
-        se.jacobian[idx, bus.number + branch.layout.to[indexBranch]] = 0.0
+        i, j = fromto(system, idxBrch)
+
+        se.jacobian[idx, i] = 0.0
+        se.jacobian[idx, system.bus.number + i] = 0.0
+        se.jacobian[idx, j] = 0.0
+        se.jacobian[idx, system.bus.number + j] = 0.0
+
         se.mean[idx] = 0.0
         se.residual[idx] = 0.0
         se.type[idx] = 0
     end
 
-    if isset(variance)
-        se.precision[idx, idx] = 1 / ammeter.magnitude.variance[indexAmmeter]
+    if isset(key.variance)
+        se.precision[idx, idx] = 1 / amp.magnitude.variance[idxAmp]
     end
 end
 
-function updateAmmeter!(system::PowerSystem, device::Measurement, analysis::ACStateEstimation{LAV};
-    label::L, magnitude::A = missing, variance::A = missing, status::A = missing,
-    noise::Bool = template.ammeter.noise)
-
-    ammeter = device.ammeter
+function updateAmmeter!(
+    system::PowerSystem,
+    device::Measurement,
+    analysis::ACStateEstimation{LAV};
+    label::IntStrMiss,
+    magnitude::FltIntMiss = missing,
+    kwargs...
+)
+    baseVoltg = system.base.voltage
+    amp = device.ammeter
     se = analysis.method
+    key = meterkwargs(template.ammeter.noise; kwargs...)
 
-    indexAmmeter = ammeter.label[getLabel(ammeter, label, "ammeter")]
-    indexBranch = ammeter.layout.index[indexAmmeter]
-    idx = device.voltmeter.number + indexAmmeter
+    idxAmp = amp.label[getLabel(amp, label, "ammeter")]
+    idxBrch = amp.layout.index[idxAmp]
+    idx = device.voltmeter.number + idxAmp
 
     basePowerInv = 1 / (system.base.power.value * system.base.power.prefix)
-    if ammeter.layout.from[indexAmmeter]
-        baseVoltage = system.base.voltage.value[system.branch.layout.from[indexBranch]] * system.base.voltage.prefix
+    baseVoltage = baseVoltageEnd(system, baseVoltg, amp.layout.from[idxAmp], idxBrch)
+
+    updateMeter(
+        amp.magnitude, idxAmp, magnitude, key.variance, key.status, key.noise,
+        pfx.currentMagnitude, baseCurrentInv(basePowerInv, baseVoltage)
+    )
+
+    if amp.magnitude.status[idxAmp] == 1
+        add!(se, idx)
+
+        if amp.layout.from[idxAmp]
+            expr = Iij(system, se, idxBrch)
+        else
+            expr = Iji(system, se, idxBrch)
+        end
+        addConstrLav!(se, expr, amp.magnitude.mean[idxAmp], idx)
     else
-        baseVoltage = system.base.voltage.value[system.branch.layout.to[indexBranch]] * system.base.voltage.prefix
-    end
-
-    updateMeter(ammeter.magnitude, indexAmmeter, magnitude, variance, status, noise,
-    prefix.currentMagnitude, baseCurrentInverse(basePowerInv, baseVoltage))
-
-    if ammeter.magnitude.status[indexAmmeter] == 1
-        addDeviceLAV(se, idx)
-
-        remove!(se.jump, se.residual, idx)
-        addAmmeterResidual!(system, ammeter, se, indexBranch, idx, indexAmmeter)
-    else
-        removeDeviceLAV(se, idx)
+        remove!(se, idx)
     end
 end
 
@@ -410,11 +438,12 @@ macro ammeter(kwargs...)
         if hasfield(AmmeterTemplate, parameter)
             if parameter in [:varianceFrom, :varianceTo]
                 container::ContainerTemplate = getfield(template.ammeter, parameter)
-                if prefix.currentMagnitude != 0.0
-                    setfield!(container, :value, prefix.currentMagnitude * Float64(eval(kwarg.args[2])))
+                val = Float64(eval(kwarg.args[2]))
+                if pfx.currentMagnitude != 0.0
+                    setfield!(container, :value, pfx.currentMagnitude * val)
                     setfield!(container, :pu, false)
                 else
-                    setfield!(container, :value, Float64(eval(kwarg.args[2])))
+                    setfield!(container, :value, val)
                     setfield!(container, :pu, true)
                 end
             elseif parameter in [:statusFrom, :statusTo]
@@ -426,11 +455,11 @@ macro ammeter(kwargs...)
                 if contains(label, "?") || contains(label, "!")
                     setfield!(template.ammeter, parameter, label)
                 else
-                    throw(ErrorException("The label template is missing the '?' or '!' symbols."))
+                    errorTemplateLabel()
                 end
             end
         else
-            throw(ErrorException("The keyword $(parameter) is illegal."))
+            errorTemplateKeyword(parameter)
         end
     end
 end

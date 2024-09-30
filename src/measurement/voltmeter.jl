@@ -54,24 +54,31 @@ addBus!(system; label = "Bus 1", base = 132.0)
 addVoltmeter!(system, device; label = "Voltmeter 1", bus = "Bus 1", magnitude = 145.2)
 ```
 """
-function addVoltmeter!(system::PowerSystem, device::Measurement;
-    label::L = missing, bus::L, magnitude::A, variance::A = missing, status::A = missing,
-    noise::Bool = template.voltmeter.noise)
+function addVoltmeter!(
+    system::PowerSystem,
+    device::Measurement;
+    label::IntStrMiss = missing,
+    bus::IntStrMiss,
+    magnitude::FltIntMiss,
+    kwargs...
+)
+    volt = device.voltmeter
+    def = template.voltmeter
+    key = meterkwargs(template.ammeter.noise; kwargs...)
 
-    voltmeter = device.voltmeter
-    default = template.voltmeter
+    volt.number += 1
+    lblBus = getLabel(system.bus, bus, "bus")
+    setLabel(volt, label, def.label, lblBus)
 
-    voltmeter.number += 1
-    labelBus = getLabel(system.bus, bus, "bus")
-    setLabel(voltmeter, label, default.label, labelBus)
+    idxBus = system.bus.label[lblBus]
+    push!(volt.layout.index, idxBus)
 
-    indexBus = system.bus.label[labelBus]
-    push!(voltmeter.layout.index, indexBus)
+    baseInv = 1 / (system.base.voltage.value[idxBus] * system.base.voltage.prefix)
 
-    baseVoltageInv = 1 / (system.base.voltage.value[indexBus] * system.base.voltage.prefix)
-
-    setMeter(voltmeter.magnitude, magnitude, variance, status, noise, default.variance,
-    default.status, prefix.voltageMagnitude, baseVoltageInv)
+    setMeter(
+        volt.magnitude, magnitude, key.variance, key.status, key.noise,
+        def.variance, def.status, pfx.voltageMagnitude, baseInv
+    )
 end
 
 """
@@ -123,38 +130,43 @@ end
 addVoltmeter!(system, device, analysis; variance = 1e-3, noise = true)
 ```
 """
-function addVoltmeter!(system::PowerSystem, device::Measurement, analysis::AC;
-    variance::A = missing, status::A = missing, noise::Bool = template.voltmeter.noise)
+function addVoltmeter!(
+    system::PowerSystem,
+    device::Measurement,
+    analysis::AC;
+    kwargs...
+)
+    volt = device.voltmeter
+    def = template.voltmeter
+    baseVoltg = system.base.voltage
+    key = meterkwargs(template.ammeter.noise; kwargs...)
 
-    voltmeter = device.voltmeter
-    default = template.voltmeter
-
-    status = unitless(status, default.status)
+    status = givenOrDefault(key.status, def.status)
     checkStatus(status)
 
-    voltmeter.layout.index = collect(1:system.bus.number)
-    voltmeter.label = OrderedDict{String,Int64}(); sizehint!(voltmeter.label, voltmeter.number)
+    volt.layout.index = collect(1:system.bus.number)
+    volt.label = OrderedDict{String,Int64}()
+    sizehint!(volt.label, volt.number)
 
-    voltmeter.magnitude.mean = similar(analysis.voltage.magnitude)
-    voltmeter.magnitude.variance = similar(analysis.voltage.magnitude)
-    voltmeter.magnitude.status = fill(Int8(status), system.bus.number)
+    volt.magnitude.mean = similar(analysis.voltage.magnitude)
+    volt.magnitude.variance = similar(analysis.voltage.magnitude)
+    volt.magnitude.status = fill(Int8(status), system.bus.number)
 
-    prefixInv = 1 / system.base.voltage.prefix
-    label = collect(keys(sort(system.bus.label; byvalue = true)))
+    label = collect(keys(system.bus.label))
     @inbounds for i = 1:system.bus.number
-        voltmeter.number += 1
-        labelBus = getLabel(system.bus, label[i], "bus")
-        setLabel(voltmeter, missing, default.label, labelBus)
+        volt.number += 1
 
-        voltmeter.magnitude.variance[i] = topu(variance, default.variance, prefix.voltageMagnitude, prefixInv / system.base.voltage.value[i])
-        if noise
-            voltmeter.magnitude.mean[i] = analysis.voltage.magnitude[i] + voltmeter.magnitude.variance[i]^(1/2) * randn(1)[1]
-        else
-            voltmeter.magnitude.mean[i] = analysis.voltage.magnitude[i]
-        end
+        lblBus = getLabel(system.bus, label[i], "bus")
+        setLabel(volt, missing, def.label, lblBus)
+        baseInv = 1 / (baseVoltg.prefix * baseVoltg.value[i])
+
+        add!(
+            volt.magnitude, i, key.noise, pfx.voltageMagnitude,
+            analysis.voltage.magnitude[i], key.variance, def.variance, status, baseInv
+        )
     end
 
-    voltmeter.layout.label = system.bus.number
+    volt.layout.label = system.bus.number
 end
 
 """
@@ -196,74 +208,91 @@ addVoltmeter!(system, device; label = "Voltmeter 1", bus = "Bus 1", magnitude = 
 updateVoltmeter!(system, device; label = "Voltmeter 1", magnitude = 0.9)
 ```
 """
-function updateVoltmeter!(system::PowerSystem, device::Measurement; label::L,
-    magnitude::A = missing, variance::A = missing, status::A = missing,
-    noise::Bool = template.voltmeter.noise)
+function updateVoltmeter!(
+    system::PowerSystem,
+    device::Measurement;
+    label::IntStrMiss,
+    magnitude::FltIntMiss = missing,
+    kwargs...
+)
+    volt = device.voltmeter
+    key = meterkwargs(template.ammeter.noise; kwargs...)
 
-    voltmeter = device.voltmeter
+    idx = volt.label[getLabel(volt, label, "voltmeter")]
+    idxBus = volt.layout.index[idx]
+    baseInv = 1 / (system.base.voltage.value[idxBus] * system.base.voltage.prefix)
 
-    index = voltmeter.label[getLabel(voltmeter, label, "voltmeter")]
-    indexBus = voltmeter.layout.index[index]
-    baseVoltageInv = 1 / (system.base.voltage.value[indexBus] * system.base.voltage.prefix)
-
-    updateMeter(voltmeter.magnitude, index, magnitude, variance, status, noise,
-    prefix.voltageMagnitude, baseVoltageInv)
+    updateMeter(
+        volt.magnitude, idx, magnitude, key.variance,
+        key.status, key.noise, pfx.voltageMagnitude, baseInv
+    )
 end
 
-function updateVoltmeter!(system::PowerSystem, device::Measurement, analysis::ACStateEstimation{NonlinearWLS{T}}; label::L,
-    magnitude::A = missing, variance::A = missing, status::A = missing,
-    noise::Bool = template.voltmeter.noise) where T <: Union{Normal, Orthogonal}
+function updateVoltmeter!(
+    system::PowerSystem,
+    device::Measurement,
+    analysis::ACStateEstimation{NonlinearWLS{T}};
+    label::IntStrMiss,
+    magnitude::FltIntMiss = missing,
+    kwargs...
+) where T <: Union{Normal, Orthogonal}
 
     voltmeter = device.voltmeter
     se = analysis.method
+    key = meterkwargs(template.ammeter.noise; kwargs...)
 
-    index = voltmeter.label[getLabel(voltmeter, label, "voltmeter")]
-    indexBus = voltmeter.layout.index[index]
-    baseVoltageInv = 1 / (system.base.voltage.value[indexBus] * system.base.voltage.prefix)
+    idx = voltmeter.label[getLabel(voltmeter, label, "voltmeter")]
+    idxBus = voltmeter.layout.index[idx]
+    baseInv = 1 / (system.base.voltage.value[idxBus] * system.base.voltage.prefix)
 
-    updateMeter(voltmeter.magnitude, index, magnitude, variance, status, noise,
-    prefix.voltageMagnitude, baseVoltageInv)
+    updateMeter(
+        voltmeter.magnitude, idx, magnitude, key.variance,
+        key.status, key.noise, pfx.voltageMagnitude, baseInv
+    )
 
-    indexBus += system.bus.number
-    if voltmeter.magnitude.status[index] == 1
-        se.jacobian[index, indexBus] = 1.0
-        se.mean[index] = voltmeter.magnitude.mean[index]
-        se.type[index] = 1
+    idxBus += system.bus.number
+    if voltmeter.magnitude.status[idx] == 1
+        se.jacobian[idx, idxBus] = 1.0
+        se.mean[idx] = voltmeter.magnitude.mean[idx]
+        se.type[idx] = 1
     else
-        se.jacobian[index, indexBus] = 0.0
-        se.mean[index] = 0.0
-        se.residual[index] = 0.0
-        se.type[index] = 0
+        se.jacobian[idx, idxBus] = 0.0
+        se.mean[idx] = 0.0
+        se.residual[idx] = 0.0
+        se.type[idx] = 0
     end
 
-    if isset(variance)
-        se.precision[index, index] = 1 / voltmeter.magnitude.variance[index]
+    if isset(key.variance)
+        se.precision[idx, idx] = 1 / voltmeter.magnitude.variance[idx]
     end
 end
 
-function updateVoltmeter!(system::PowerSystem, device::Measurement, analysis::ACStateEstimation{LAV}; label::L,
-    magnitude::A = missing, variance::A = missing, status::A = missing,
-    noise::Bool = template.voltmeter.noise)
-
-    voltmeter = device.voltmeter
+function updateVoltmeter!(
+    system::PowerSystem,
+    device::Measurement,
+    analysis::ACStateEstimation{LAV};
+    label::IntStrMiss,
+    magnitude::FltIntMiss = missing,
+    kwargs...
+)
+    volt = device.voltmeter
     se = analysis.method
+    key = meterkwargs(template.ammeter.noise; kwargs...)
 
-    index = voltmeter.label[getLabel(voltmeter, label, "voltmeter")]
-    indexBus = voltmeter.layout.index[index]
+    idx = volt.label[getLabel(volt, label, "voltmeter")]
+    idxBus = volt.layout.index[idx]
+    baseInv = 1 / (system.base.voltage.value[idxBus] * system.base.voltage.prefix)
 
-    baseVoltageInv = 1 / (system.base.voltage.value[indexBus] * system.base.voltage.prefix)
+    updateMeter(
+        volt.magnitude, idx, magnitude, key.variance,
+        key.status, key.noise, pfx.voltageMagnitude, baseInv
+    )
 
-    updateMeter(voltmeter.magnitude, index, magnitude, variance, status, noise,
-    prefix.voltageMagnitude, baseVoltageInv)
-
-    if voltmeter.magnitude.status[index] == 1
-        indexBus += system.bus.number
-        addDeviceLAV(se, index)
-
-        remove!(se.jump, se.residual, index)
-        se.residual[index] = @constraint(se.jump, se.statex[indexBus] - se.statey[indexBus] + se.residualy[index] - se.residualx[index] - voltmeter.magnitude.mean[index] == 0.0)
+    if volt.magnitude.status[idx] == 1
+        add!(se, idx)
+        addConstrLav!(se, se.state.V[idxBus], volt.magnitude.mean[idx], idx)
     else
-        removeDeviceLAV(se, index)
+        remove!(se, idx)
     end
 end
 
@@ -312,11 +341,12 @@ macro voltmeter(kwargs...)
         if hasfield(VoltmeterTemplate, parameter)
             if parameter == :variance
                 container::ContainerTemplate = getfield(template.voltmeter, parameter)
-                if prefix.voltageMagnitude != 0.0
-                    setfield!(container, :value, prefix.voltageMagnitude * Float64(eval(kwarg.args[2])))
+                val = Float64(eval(kwarg.args[2]))
+                if pfx.voltageMagnitude != 0.0
+                    setfield!(container, :value, pfx.voltageMagnitude * val)
                     setfield!(container, :pu, false)
                 else
-                    setfield!(container, :value, Float64(eval(kwarg.args[2])))
+                    setfield!(container, :value, val)
                     setfield!(container, :pu, true)
                 end
             elseif parameter == :status
@@ -328,11 +358,11 @@ macro voltmeter(kwargs...)
                 if contains(label, "?") || contains(label, "!")
                     setfield!(template.voltmeter, parameter, label)
                 else
-                    throw(ErrorException("The label template is missing the '?' or '!' symbols."))
+                    errorTemplateLabel()
                 end
             end
         else
-            throw(ErrorException("The keyword $(parameter) is illegal."))
+            errorTemplateKeyword(parameter)
         end
     end
 end

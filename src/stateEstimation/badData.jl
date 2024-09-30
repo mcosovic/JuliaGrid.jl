@@ -38,22 +38,33 @@ The function returns an instance of the `BadData` type, which includes:
 system = powerSystem("case14.h5")
 device = measurement("measurement14.h5")
 
-analysis = dcWlsStateEstimation(system, device)
+analysis = dcStateEstimation(system, device)
 solve!(system, analysis)
 
 outlier = residualTest!(system, device, analysis; threshold = 4.0)
 solve!(system, analysis)
 ```
 """
-function residualTest!(system::PowerSystem, device::Measurement, analysis::DCStateEstimation{LinearWLS{T}}; threshold::Float64 = 3.0) where T <: Union{Normal, Orthogonal}
+function residualTest!(
+    system::PowerSystem,
+    device::Measurement,
+    analysis::DCStateEstimation{LinearWLS{T}};
+    threshold::Float64 = 3.0
+) where T <: Union{Normal, Orthogonal}
+
     errorVoltage(analysis.voltage.angle)
 
-    bad = BadData(false, 0.0, "", 0)
     bus = system.bus
     se = analysis.method
+    watt = device.wattmeter
+    pmu = device.pmu
 
-    slackRange, elementsRemove = deleteSlackCoefficient(analysis, bus.layout.slack)
-    gain = dcGain(analysis, bus.layout.slack)
+    bad = BadData(false, 0.0, "", 0)
+
+    slackRange, elementsRemove = delSlackCoeff(analysis, bus.layout.slack)
+
+    gain = transpose(se.coefficient) * se.precision * se.coefficient
+    gain[bus.layout.slack, bus.layout.slack] = 1.0
 
     if !isa(se.factorization, UMFPACK.UmfpackLU{Float64, Int64})
         F = lu(gain)
@@ -61,10 +72,8 @@ function residualTest!(system::PowerSystem, device::Measurement, analysis::DCSta
         F = se.factorization
     end
 
-    ########## Sparse Matrix Inverese ##########
     gainInverse = sparseInverse(F, gain, bus.number)
 
-    ########## Diagonal entries of residual matrix ##########
     JGi = se.coefficient * gainInverse
     idx = findall(!iszero, se.coefficient)
     c = fill(0.0, size(se.coefficient, 1))
@@ -72,7 +81,6 @@ function residualTest!(system::PowerSystem, device::Measurement, analysis::DCSta
         c[i[1]] += JGi[i] * se.coefficient[i]
     end
 
-    ########## Largest normalized residual ##########
     h = se.coefficient * analysis.voltage.angle
     bad.maxNormalizedResidual = 0.0
     bad.index = 0
@@ -87,7 +95,7 @@ function residualTest!(system::PowerSystem, device::Measurement, analysis::DCSta
         end
     end
 
-    restoreSlackCoefficient(analysis, slackRange, elementsRemove, bus.layout.slack)
+    addSlackCoeff(analysis, slackRange, elementsRemove, bus.layout.slack)
 
     if bad.maxNormalizedResidual > threshold
         se.run = true
@@ -101,15 +109,15 @@ function residualTest!(system::PowerSystem, device::Measurement, analysis::DCSta
     end
 
     if bad.index != 0
-        if bad.index <= device.wattmeter.number
-            (bad.label, index),_ = iterate(device.wattmeter.label, bad.index)
+        if bad.index <= watt.number
+            (bad.label, index),_ = iterate(watt.label, bad.index)
             if bad.detect
-                device.wattmeter.active.status[index] = 0
+                watt.active.status[index] = 0
             end
         else
-            (bad.label, index),_ = iterate(device.pmu.label, bad.index - device.wattmeter.number)
+            (bad.label, index),_ = iterate(pmu.label, bad.index - watt.number)
             if bad.detect
-                device.pmu.angle.status[index] = 0
+                pmu.angle.status[index] = 0
             end
         end
     end
@@ -117,12 +125,19 @@ function residualTest!(system::PowerSystem, device::Measurement, analysis::DCSta
     return bad
 end
 
-function residualTest!(system::PowerSystem, device::Measurement, analysis::PMUStateEstimation{LinearWLS{T}}; threshold::Float64 = 3.0)  where T <: Union{Normal, Orthogonal}
+function residualTest!(
+    system::PowerSystem,
+    device::Measurement,
+    analysis::PMUStateEstimation{LinearWLS{T}};
+    threshold::Float64 = 3.0
+)  where T <: Union{Normal, Orthogonal}
+
     errorVoltage(analysis.voltage.angle)
 
-    bad = BadData(false, 0.0, "", 0)
     bus = system.bus
     se = analysis.method
+
+    bad = BadData(false, 0.0, "", 0)
 
     gain = transpose(se.coefficient) * se.precision * se.coefficient
     if !isa(se.factorization, UMFPACK.UmfpackLU{Float64, Int64})
@@ -131,10 +146,8 @@ function residualTest!(system::PowerSystem, device::Measurement, analysis::PMUSt
         F = se.factorization
     end
 
-    ########## Sparse Matrix Inverese ##########
     gainInverse = sparseInverse(F, gain, 2 * bus.number)
 
-    ########## Diagonal entries of residual matrix ##########
     JGi = se.coefficient * gainInverse
     idx = findall(!iszero, se.coefficient)
     c = fill(0.0, size(se.coefficient, 1))
@@ -142,7 +155,6 @@ function residualTest!(system::PowerSystem, device::Measurement, analysis::PMUSt
         c[i[1]] += JGi[i] * se.coefficient[i]
     end
 
-    ########## Largest normalized residual ##########
     voltageRe = analysis.voltage.magnitude .* cos.(analysis.voltage.angle)
     voltageIm = analysis.voltage.magnitude .* sin.(analysis.voltage.angle)
     h = se.coefficient * [voltageRe; voltageIm]
@@ -198,37 +210,45 @@ function residualTest!(system::PowerSystem, device::Measurement, analysis::PMUSt
     return bad
 end
 
-function residualTest!(system::PowerSystem, device::Measurement, analysis::ACStateEstimation{NonlinearWLS{T}}; threshold::Float64 = 3.0)  where T <: Union{Normal, Orthogonal}
+function residualTest!(
+    system::PowerSystem,
+    device::Measurement,
+    analysis::ACStateEstimation{NonlinearWLS{T}};
+    threshold::Float64 = 3.0
+)  where T <: Union{Normal, Orthogonal}
+
     errorVoltage(analysis.voltage.angle)
 
-    bad = BadData(false, 0.0, "", 0)
-    ac = system.model.ac
     bus = system.bus
-    branch = system.branch
     se = analysis.method
-    voltage = analysis.voltage
+    jcb = se.jacobian
+
+    volt = device.voltmeter
+    amp = device.ammeter
+    watt = device.wattmeter
+    var = device.varmeter
+
+    bad = BadData(false, 0.0, "", 0)
 
     normalEquation!(system, analysis)
 
-    slackRange = se.jacobian.colptr[bus.layout.slack]:(se.jacobian.colptr[bus.layout.slack + 1] - 1)
-    elementsRemove = se.jacobian.nzval[slackRange]
+    slackRange = jcb.colptr[bus.layout.slack]:(jcb.colptr[bus.layout.slack + 1] - 1)
+    elementsRemove = jcb.nzval[slackRange]
     @inbounds for (k, i) in enumerate(slackRange)
-        se.jacobian[se.jacobian.rowval[i], bus.layout.slack] = 0.0
+        jcb[jcb.rowval[i], bus.layout.slack] = 0.0
     end
-    gain = (transpose(se.jacobian) * se.precision * se.jacobian)
+    gain = (transpose(jcb) * se.precision * jcb)
     gain[bus.layout.slack, bus.layout.slack] = 1.0
 
     F = lu(gain)
 
-    ########## Sparse Matrix Inverese ##########
     gainInverse = sparseInverse(F, gain, 2 * bus.number)
 
-    ########## Diagonal entries of residual matrix ##########
-    JGi = se.jacobian * gainInverse
-    idx = findall(!iszero, se.jacobian)
-    c = fill(0.0, size(se.jacobian, 1))
+    JGi = jcb * gainInverse
+    idx = findall(!iszero, jcb)
+    c = fill(0.0, size(jcb, 1))
     @inbounds for i in idx
-        c[i[1]] += JGi[i] * se.jacobian[i]
+        c[i[1]] += JGi[i] * jcb[i]
     end
 
     bad.maxNormalizedResidual = 0.0
@@ -249,27 +269,29 @@ function residualTest!(system::PowerSystem, device::Measurement, analysis::ACSta
 
     if bad.index != 0
         if se.range[1] <= bad.index < se.range[2]
-            (bad.label, index),_ = iterate(device.voltmeter.label, bad.index)
+            (bad.label, idx),_ = iterate(volt.label, bad.index)
             if bad.detect
-                device.voltmeter.magnitude.status[index] = 0
+                volt.magnitude.status[idx] = 0
             end
         elseif se.range[2] <= bad.index < se.range[3]
-            (bad.label, index),_ = iterate(device.ammeter.label, bad.index - device.voltmeter.number)
+            (bad.label, idx),_ = iterate(amp.label, bad.index - volt.number)
             if bad.detect
-                device.ammeter.magnitude.status[index] = 0
+                amp.magnitude.status[idx] = 0
             end
         elseif se.range[3] <= bad.index < se.range[4]
-            (bad.label, index),_ = iterate(device.wattmeter.label, bad.index - device.voltmeter.number - device.ammeter.number)
+            (bad.label, idx),_ = iterate(watt.label, bad.index - volt.number - amp.number)
             if bad.detect
-                device.wattmeter.active.status[index] = 0
+                watt.active.status[idx] = 0
             end
         elseif se.range[4] <= bad.index < se.range[5]
-            (bad.label, index),_ = iterate(device.varmeter.label, bad.index - device.voltmeter.number - device.ammeter.number - device.wattmeter.number)
+            (bad.label, idx),_ = iterate(
+                var.label, bad.index - volt.number - amp.number - watt.number
+            )
             if bad.detect
-                device.varmeter.reactive.status[index] = 0
+                var.reactive.status[idx] = 0
             end
         elseif se.range[5] <= bad.index < se.range[6]
-            badIndex = bad.index - device.voltmeter.number - device.ammeter.number - device.wattmeter.number - device.varmeter.number
+            badIndex = bad.index - volt.number - amp.number - watt.number - var.number
             if badIndex % 2 == 0
                 pmuIndex = trunc(Int, badIndex / 2)
                 alsoBad = bad.index - 1
@@ -278,17 +300,17 @@ function residualTest!(system::PowerSystem, device::Measurement, analysis::ACSta
                 alsoBad = bad.index + 1
             end
 
-            (bad.label, index),_ = iterate(device.pmu.label, pmuIndex)
+            (bad.label, idx),_ = iterate(device.pmu.label, pmuIndex)
             if bad.detect
-                if device.pmu.layout.polar[index]
+                if device.pmu.layout.polar[idx]
                     if se.type[bad.index] in [2; 3; 10]
-                        device.pmu.magnitude.status[index] = 0
+                        device.pmu.magnitude.status[idx] = 0
                     else
-                        device.pmu.angle.status[index] = 0
+                        device.pmu.angle.status[idx] = 0
                     end
                 else
-                    device.pmu.magnitude.status[index] = 0
-                    device.pmu.angle.status[index] = 0
+                    device.pmu.magnitude.status[idx] = 0
+                    device.pmu.angle.status[idx] = 0
 
                     se.mean[alsoBad] = 0.0
                     se.residual[alsoBad] = 0.0
@@ -305,20 +327,24 @@ function residualTest!(system::PowerSystem, device::Measurement, analysis::ACSta
     end
 
     @inbounds for (k, i) in enumerate(slackRange)
-        se.jacobian[se.jacobian.rowval[i], bus.layout.slack] = elementsRemove[k]
+        jcb[jcb.rowval[i], bus.layout.slack] = elementsRemove[k]
     end
 
     return bad
 end
 
-######### Sparse Matrix Inverese #########
-function sparseInverse(F::UMFPACK.UmfpackLU{Float64, Int64}, gain::SparseMatrixCSC{Float64,Int64}, variableNumber::Int64)
+##### Sparse Matrix Inverese #####
+function sparseInverse(
+    F::UMFPACK.UmfpackLU{Float64, Int64},
+    gain::SparseMatrixCSC{Float64,Int64},
+    variableNum::Int64
+)
     L, U, p, q, Rss = F.:(:)
     U = copy(transpose(U))
-    d = fill(0.0, variableNumber)
-    Rs = fill(0.0, variableNumber)
+    d = fill(0.0, variableNum)
+    Rs = fill(0.0, variableNum)
 
-    @inbounds for i = 1:variableNumber
+    @inbounds for i = 1:variableNum
         Rs[i] = Rss[p[i]]
         d[i] = U[i, i]
         U[i, i] = 0.0
@@ -338,13 +364,13 @@ function sparseInverse(F::UMFPACK.UmfpackLU{Float64, Int64}, gain::SparseMatrixC
     parent = etree(S)
     R = symbfact(S, parent)
 
-    return sparseinv(L, U, d, p, q, Rs, R)
+    sparseinv(L, U, d, p, q, Rs, R)
 end
 
-### The sparse inverse subset of a real sparse square matrix: Compute the elimination tree of a sparse matrix
+##### Compute the Elimination Tree of a Sparse Matrix #####
 # Copyright (c) 2013-2014 Viral Shah, Douglas Bates and other contributors
 # https://github.com/JuliaPackageMirrors/SuiteSparse.jl/blob/master/src/csparse.jl
-# Based on Direct Methods for Sparse Linear Systems, T. A. Davis, SIAM, Philadelphia, Sept. 2006.
+# Based on Direct Methods for Sparse Linear Systems, T. A. Davis, SIAM, Philadelphia, 2006.
 function etree(A::SparseMatrixCSC{Float64,Int64})
     n = size(A, 2)
     parent = fill(0, n)
@@ -391,11 +417,11 @@ function etree(A::SparseMatrixCSC{Float64,Int64})
     return parent
 end
 
-### The sparse inverse subset of a real sparse square matrix: Find nonzero pattern of Cholesky
+##### Find Nonzero Pattern of Cholesky #####
 # Copyright (c) 2013-2014 Viral Shah, Douglas Bates and other contributors
 # https://github.com/JuliaPackageMirrors/SuiteSparse.jl/blob/master/src/csparse.jl
-# Based on Direct Methods for Sparse Linear Systems, T. A. Davis, SIAM, Philadelphia, Sept. 2006.
-function symbfact(A::SparseMatrixCSC{Float64,Int64}, parent::Array{Int64,1})
+# Based on Direct Methods for Sparse Linear Systems, T. A. Davis, SIAM, Philadelphia, 2006.
+function symbfact(A::SparseMatrixCSC{Float64,Int64}, parent::Vector{Int64})
     m, n = size(A)
     Ap = A.colptr
     Ai = A.rowval
@@ -419,15 +445,22 @@ function symbfact(A::SparseMatrixCSC{Float64,Int64}, parent::Array{Int64,1})
             end
         end
     end
-    R = sparse([col; collect(1:n)], [row; collect(1:n)], ones(length(row) + n), n, n)
 
-    return R
+    return sparse([col; collect(1:n)], [row; collect(1:n)], ones(length(row) + n), n, n)
 end
 
-### The sparse inverse subset of a real sparse square matrix
+##### The Sparse Inverse Subset of a Real Sparse Square Matrix #####
 # Copyright 2011, Timothy A. Davis
 # http://www.suitesparse.com
-function sparseinv(L::SparseMatrixCSC{Float64,Int64}, U::SparseMatrixCSC{Float64,Int64}, d::Array{Float64,1}, p::Array{Int64,1}, q::Array{Int64,1}, Rs::Array{Float64,1}, R::SparseMatrixCSC{Float64,Int64})
+function sparseinv(
+    L::SparseMatrixCSC{Float64, Int64},
+    U::SparseMatrixCSC{Float64, Int64},
+    d::Vector{Float64},
+    p::Vector{Int64},
+    q::Vector{Int64},
+    Rs::Vector{Float64},
+    R::SparseMatrixCSC{Float64, Int64}
+)
     Zpattern = R + R'
     n = size(Zpattern, 1)
 

@@ -51,22 +51,32 @@ the unit of `active` power (W), `reactive` power (VAr), or `apparent` power (VA)
 is a possible to combine SI units with/without prefixes with per-units (pu).
 
 Changing the unit of `active` power is reflected in the following quantities:
-* [`addBus!`](@ref addBus!), [`updateBus!`](@ref updateBus!), [`@bus`](@ref @bus): `active`, `conductance`;
-* [`addBranch!`](@ref addBranch!), [`updateBranch!`](@ref updateBranch!), [`@branch`](@ref @branch): if `type = 2`: `minFromBus`, `maxFromBus`, `minToBus`, `maxToBus`;
-* [`addGenerator!`](@ref addGenerator!), [`updateGenerator!`](@ref updateGenerator!), [`@generator`](@ref @generator): `active`, `minActive`, `maxActive`, `lowActive`, `upActive`, `loadFollowing`, `reserve10min`, `reserve30min`;
+* [`addBus!`](@ref addBus!), [`updateBus!`](@ref updateBus!), [`@bus`](@ref @bus):
+  `active`, `conductance`;
+* [`addBranch!`](@ref addBranch!), [`updateBranch!`](@ref updateBranch!),
+  [`@branch`](@ref @branch): if `type = 2`: `minFromBus`, `maxFromBus`, `minToBus`, `maxToBus`;
+* [`addGenerator!`](@ref addGenerator!), [`updateGenerator!`](@ref updateGenerator!),
+  [`@generator`](@ref @generator): `active`, `minActive`, `maxActive`, `lowActive`,
+  `upActive`, `loadFollowing`, `reserve10min`, `reserve30min`;
 * [`cost!`](@ref cost!): if `active`: `piecewise`, `polynomial`;
-* [`addWattmeter!`](@ref addWattmeter!), [`updateWattmeter!`](@ref updateWattmeter!): `active`, `variance`;
+* [`addWattmeter!`](@ref addWattmeter!), [`updateWattmeter!`](@ref updateWattmeter!):
+  `active`, `variance`;
 * [`@wattmeter`](@ref @wattmeter): , `varianceBus`, `varianceFrom`, `varianceTo`.
 
 Changing the unit of `reactive` power unit is reflected in the following quantities:
-* [`addBus!`](@ref addBus!), [`updateBus!`](@ref updateBus!), [`@bus`](@ref @bus): `reactive`, `susceptance`;
-* [`addGenerator!`](@ref addGenerator!), [`updateGenerator!`](@ref updateGenerator!), [`@generator`](@ref @generator): `reactive`, `minReactive`, `maxReactive`, `minLowReactive`, `maxLowReactive`, `minUpReactive`, `maxUpReactive`, `reactiveTimescale`;
+* [`addBus!`](@ref addBus!), [`updateBus!`](@ref updateBus!), [`@bus`](@ref @bus):
+  `reactive`, `susceptance`;
+* [`addGenerator!`](@ref addGenerator!), [`updateGenerator!`](@ref updateGenerator!),
+  [`@generator`](@ref @generator): `reactive`, `minReactive`, `maxReactive`,
+  `minLowReactive`, `maxLowReactive`, `minUpReactive`, `maxUpReactive`, `reactiveRamp`;
 * [`cost!`](@ref cost!): if `reactive`: `piecewise`, `polynomial`;
-* [`addVarmeter!`](@ref addVarmeter!), [`updateVarmeter!`](@ref updateVarmeter!): `reactive`, `variance`;
+* [`addVarmeter!`](@ref addVarmeter!), [`updateVarmeter!`](@ref updateVarmeter!):
+  `reactive`, `variance`;
 * [`@varmeter`](@ref @varmeter): `varianceBus`, `varianceFrom`, `varianceTo`.
 
 Changing the unit of `apparent` power unit is reflected in the following quantities:
-* [`addBranch!`](@ref addBranch!), [`updateBranch!`](@ref updateBranch!), [`@branch`](@ref @branch): if `type = 1`: `minFromBus`, `maxFromBus`, `minToBus`, `maxToBus`.
+* [`addBranch!`](@ref addBranch!), [`updateBranch!`](@ref updateBranch!),
+  [`@branch`](@ref @branch): if `type = 1`: `minFromBus`, `maxFromBus`, `minToBus`, `maxToBus`.
 
 # Example
 ```jldoctest
@@ -75,16 +85,16 @@ Changing the unit of `apparent` power unit is reflected in the following quantit
 """
 macro power(active::Symbol, reactive::Symbol, apparent::Symbol)
     unitList.activePowerLive = string(active)
-    suffixUser = parseSuffix(unitList.activePowerLive, unitList.activePower, "active power")
-    prefix.activePower = parsePrefix(unitList.activePowerLive , suffixUser)
+    suffix = parseSuffix(unitList.activePowerLive, unitList.activePower, "active power")
+    pfx.activePower = parsePrefix(unitList.activePowerLive , suffix)
 
     unitList.reactivePowerLive = string(reactive)
-    suffixUser = parseSuffix(unitList.reactivePowerLive, unitList.reactivePower, "reactive power")
-    prefix.reactivePower = parsePrefix(unitList.reactivePowerLive, suffixUser)
+    suffix = parseSuffix(unitList.reactivePowerLive, unitList.reactivePower, "reactive power")
+    pfx.reactivePower = parsePrefix(unitList.reactivePowerLive, suffix)
 
     unitList.apparentPowerLive = string(apparent)
-    suffixUser = parseSuffix(unitList.apparentPowerLive, unitList.apparentPower, "apparent power")
-    prefix.apparentPower = parsePrefix(unitList.apparentPowerLive, suffixUser)
+    suffix = parseSuffix(unitList.apparentPowerLive, unitList.apparentPower, "apparent power")
+    pfx.apparentPower = parsePrefix(unitList.apparentPowerLive, suffix)
 end
 
 """
@@ -100,15 +110,20 @@ Alternatively, the unit of voltage `magnitude` can be expressed in per-unit (pu)
 voltage `angle` should be in radians (rad) or degrees (deg).
 
 Changing the unit of voltage `magnitude` is reflected in the following quantities:
-* [`addBus!`](@ref addBus!), [`updateBus!`](@ref updateBus!), [`@bus`](@ref @bus): `magnitude`, `minMagnitude`, `maxMagnitude`;
-* [`addGenerator!`](@ref addGenerator!), [`updateGenerator!`](@ref updateGenerator!), [`@generator`](@ref @generator): `magnitude`;
-* [`addVoltmeter!`](@ref addVoltmeter!), [`updateVoltmeter!`](@ref updateVoltmeter!), [`@voltmeter`](@ref @voltmeter): `magnitude`, `variance`;
-* [`addPmu!`](@ref addPmu!), [`updatePmu!`](@ref updatePmu!): if `bus`: `magnitude`, `varianceMagnitude`;
+* [`addBus!`](@ref addBus!), [`updateBus!`](@ref updateBus!), [`@bus`](@ref @bus):
+  `magnitude`, `minMagnitude`, `maxMagnitude`;
+* [`addGenerator!`](@ref addGenerator!), [`updateGenerator!`](@ref updateGenerator!),
+  [`@generator`](@ref @generator): `magnitude`;
+* [`addVoltmeter!`](@ref addVoltmeter!), [`updateVoltmeter!`](@ref updateVoltmeter!),
+  [`@voltmeter`](@ref @voltmeter): `magnitude`, `variance`;
+* [`addPmu!`](@ref addPmu!), [`updatePmu!`](@ref updatePmu!): if `bus`: `magnitude`,
+  `varianceMagnitude`;
 * [`@pmu`](@ref @pmu): `varianceMagnitudeBus`.
 
 Changing the unit of voltage `angle` is reflected in the following quantities:
 * [`addBus!`](@ref addBus!), [`updateBus!`](@ref updateBus!), [`@bus`](@ref @bus): `angle`;
-* [`addBranch!`](@ref addBranch!), [`updateBranch!`](@ref updateBranch!), [`@branch`](@ref @branch): `shiftAngle`, `minDiffAngle`, `maxDiffAngle`;
+* [`addBranch!`](@ref addBranch!), [`updateBranch!`](@ref updateBranch!),
+  [`@branch`](@ref @branch): `shiftAngle`, `minDiffAngle`, `maxDiffAngle`;
 * [`addPmu!`](@ref addPmu!), [`updatePmu!`](@ref updatePmu!): if `bus`: `angle`, `varianceAngle`;
 * [`@pmu`](@ref @pmu): `varianceAngleBus`.
 
@@ -122,16 +137,16 @@ Changing the unit prefix of voltage `base` is reflected in the following quantit
 """
 macro voltage(magnitude::Symbol, angle::Symbol, base::Symbol)
     unitList.voltageMagnitudeLive = string(magnitude)
-    suffixUser = parseSuffix(unitList.voltageMagnitudeLive, unitList.voltageMagnitude, "voltage magnitude")
-    prefix.voltageMagnitude = parsePrefix(unitList.voltageMagnitudeLive, suffixUser)
+    suffix = parseSuffix(unitList.voltageMagnitudeLive, unitList.voltageMagnitude, "voltage magnitude")
+    pfx.voltageMagnitude = parsePrefix(unitList.voltageMagnitudeLive, suffix)
 
     unitList.voltageAngleLive = string(angle)
-    suffixUser = parseSuffix(unitList.voltageAngleLive, unitList.voltageAngle, "voltage angle")
-    prefix.voltageAngle = parsePrefix(unitList.voltageAngleLive, suffixUser)
+    suffix = parseSuffix(unitList.voltageAngleLive, unitList.voltageAngle, "voltage angle")
+    pfx.voltageAngle = parsePrefix(unitList.voltageAngleLive, suffix)
 
     baseString = string(base)
-    suffixUser = parseSuffix(baseString, unitList.baseVoltage, "base voltage")
-    prefix.baseVoltage = parsePrefix(baseString, suffixUser)
+    suffix = parseSuffix(baseString, unitList.baseVoltage, "base voltage")
+    pfx.baseVoltage = parsePrefix(baseString, suffix)
 end
 
 """
@@ -147,14 +162,18 @@ Alternatively, the unit of current `magnitude` can be expressed in per-unit (pu)
 of current angle should be in radians (rad) or degrees (deg).
 
 Changing the unit of current `magnitude` is reflected in the following quantities:
-* [`addBranch!`](@ref addBranch!), [`updateBranch!`](@ref updateBranch!), [`@branch`](@ref @branch): if `type = 3`: `minFromBus`, `maxFromBus`, `minToBus`, `maxToBus`.
-* [`addAmmeter!`](@ref addAmmeter!), [`updateAmmeter!`](@ref updateAmmeter!): `magnitude`, `variance`;
+* [`addBranch!`](@ref addBranch!), [`updateBranch!`](@ref updateBranch!),
+  [`@branch`](@ref @branch): if `type = 3`: `minFromBus`, `maxFromBus`, `minToBus`, `maxToBus`.
+* [`addAmmeter!`](@ref addAmmeter!), [`updateAmmeter!`](@ref updateAmmeter!):
+  `magnitude`, `variance`;
 * [`@ammeter`](@ref @ammeter): `varianceFrom`, `varianceTo`;
-* [`addPmu!`](@ref addPmu!), [`updatePmu!`](@ref updatePmu!): if `from` or `to`: `magnitude`, `varianceMagnitude`;
+* [`addPmu!`](@ref addPmu!), [`updatePmu!`](@ref updatePmu!): if `from` or `to`:
+  `magnitude`, `varianceMagnitude`;
 * [`@pmu`](@ref @pmu): `varianceMagnitudeFrom`, `varianceMagnitudeTo`.
 
 Changing the unit of current `angle` is reflected in the following quantities:
-* [`addPmu!`](@ref addPmu!), [`updatePmu!`](@ref updatePmu!): if `from` or `to`: `angle`, `varianceAngle`;
+* [`addPmu!`](@ref addPmu!), [`updatePmu!`](@ref updatePmu!): if `from` or `to`:
+  `angle`, `varianceAngle`;
 * [`@pmu`](@ref @pmu): `varianceAngleFrom`, `varianceAngleTo`.
 
 # Example
@@ -164,12 +183,12 @@ Changing the unit of current `angle` is reflected in the following quantities:
 """
 macro current(magnitude::Symbol, angle::Symbol)
     unitList.currentMagnitudeLive = string(magnitude)
-    suffixUser = parseSuffix(unitList.currentMagnitudeLive, unitList.currentMagnitude, "current magnitude")
-    prefix.currentMagnitude = parsePrefix(unitList.currentMagnitudeLive, suffixUser)
+    suffix = parseSuffix(unitList.currentMagnitudeLive, unitList.currentMagnitude, "current magnitude")
+    pfx.currentMagnitude = parsePrefix(unitList.currentMagnitudeLive, suffix)
 
     unitList.currentAngleLive = string(angle)
-    suffixUser = parseSuffix(unitList.currentAngleLive, unitList.currentAngle, "current angle")
-    prefix.currentAngle = parsePrefix(unitList.currentAngleLive, suffixUser)
+    suffix = parseSuffix(unitList.currentAngleLive, unitList.currentAngle, "current angle")
+    pfx.currentAngle = parsePrefix(unitList.currentAngleLive, suffix)
 end
 
 """
@@ -190,10 +209,12 @@ the transformer.
 
 Changing the units of `impedance` is reflected in the following quantities in specific
 functions:
-* [`addBranch!`](@ref addBranch!), [`updateBranch!`](@ref updateBranch!), [`@branch`](@ref @branch): `resistance`, `reactance`.
+* [`addBranch!`](@ref addBranch!), [`updateBranch!`](@ref updateBranch!),
+  [`@branch`](@ref @branch): `resistance`, `reactance`.
 
 Changing the units of `admittance` is reflected in the following quantities:
-* [`addBranch!`](@ref addBranch!), [`updateBranch!`](@ref updateBranch!), [`@branch`](@ref @branch): `conductance`, `susceptance`.
+* [`addBranch!`](@ref addBranch!), [`updateBranch!`](@ref updateBranch!),
+  [`@branch`](@ref @branch): `conductance`, `susceptance`.
 
 # Example
 ```jldoctest
@@ -202,43 +223,43 @@ Changing the units of `admittance` is reflected in the following quantities:
 """
 macro parameter(impedance::Symbol, admittance::Symbol)
     impedanceString = string(impedance)
-    suffixUser = parseSuffix(impedanceString, unitList.impedance, "impedance")
-    prefix.impedance = parsePrefix(impedanceString, suffixUser)
+    suffix = parseSuffix(impedanceString, unitList.impedance, "impedance")
+    pfx.impedance = parsePrefix(impedanceString, suffix)
 
     admittanceString = string(admittance)
-    suffixUser = parseSuffix(admittanceString, unitList.admittance, "admittance")
-    prefix.admittance = parsePrefix(admittanceString, suffixUser)
+    suffix = parseSuffix(admittanceString, unitList.admittance, "admittance")
+    pfx.admittance = parsePrefix(admittanceString, suffix)
 end
 
-######### Parse Suffix (Unit) ##########
+##### Parse Suffix (Unit) #####
 function parseSuffix(input::String, unitList, type::String)
-    sufixUser = ""
+    suffix = ""
     @inbounds for i in unitList
         if endswith(input, i)
-            sufixUser = i
+            suffix = i
         end
     end
-    if isempty(sufixUser) || (sufixUser in ["pu"; "rad"; "deg"] && sufixUser != input)
-        throw(ErrorException("The unit $input of $type is illegal."))
+    if isempty(suffix) || (suffix in ["pu"; "rad"; "deg"] && suffix != input)
+        throw(ErrorException("The unit " * input * " of " * type * " is illegal."))
     end
 
-    return sufixUser
+    return suffix
 end
 
-######### Parse Prefix ##########
-function parsePrefix(input::String, suffixUser::String)
-    if suffixUser in ["pu"; "rad"]
+##### Parse Prefix #####
+function parsePrefix(input::String, suffix::String)
+    if suffix in ["pu"; "rad"]
         scale = 0.0
-    elseif suffixUser == "deg"
+    elseif suffix == "deg"
         scale = pi / 180
     else
         scale = 1.0
-        if suffixUser != input
-            prefixUser = split(input, suffixUser)[1]
-            if !(prefixUser in keys(prefixList))
-                throw(ErrorException("The unit prefix $prefixUser is illegal."))
+        if suffix != input
+            prefix = split(input, suffix)[1]
+            if !(prefix in keys(prefixList))
+                throw(ErrorException("The unit prefix " * prefix * " is illegal."))
             else
-                scale = prefixList[prefixUser]
+                scale = prefixList[prefix]
             end
         end
     end
@@ -256,7 +277,8 @@ The `mode` argument can take on the following values:
 * `power`: Sets active, reactive, and apparent power to per-units.
 * `voltage`: Sets voltage magnitude to per-unit and voltage angle to radian.
 * `parameter`: Sets impedance and admittance to per-units.
-* `template`: Resets bus, branch, generator, voltmeter, ammeter, wattmeter, varmeter, and pmu templates to their default settings.
+* `template`: Resets bus, branch, generator, voltmeter, ammeter, wattmeter, varmeter,
+  and pmu templates to their default settings.
 * `bus`: Resets the bus template to its default settings.
 * `branch`: Resets the branch template to its default settings.
 * `generator`: Resets the generator template to its default settings.
@@ -273,31 +295,31 @@ The `mode` argument can take on the following values:
 """
 macro default(mode::Symbol)
     if mode == :unit || mode == :power
-        prefix.activePower = 0.0
-        prefix.reactivePower = 0.0
-        prefix.apparentPower = 0.0
+        pfx.activePower = 0.0
+        pfx.reactivePower = 0.0
+        pfx.apparentPower = 0.0
         unitList.activePowerLive = "pu"
         unitList.reactivePowerLive = "pu"
     end
 
     if mode == :unit || mode == :voltage
-        prefix.voltageMagnitude = 0.0
-        prefix.voltageAngle = 0.0
-        prefix.baseVoltage = 1.0
+        pfx.voltageMagnitude = 0.0
+        pfx.voltageAngle = 0.0
+        pfx.baseVoltage = 1.0
         unitList.voltageMagnitudeLive = "pu"
         unitList.voltageAngleLive = "rad"
     end
 
     if mode == :unit || mode == :current
-        prefix.currentMagnitude = 0.0
-        prefix.currentAngle = 0.0
+        pfx.currentMagnitude = 0.0
+        pfx.currentAngle = 0.0
         unitList.currentMagnitudeLive = "pu"
         unitList.currentAngleLive = "rad"
     end
 
     if mode == :unit || mode == :parameter
-        prefix.impedance = 0.0
-        prefix.admittance = 0.0
+        pfx.impedance = 0.0
+        pfx.admittance = 0.0
     end
 
     if mode == :template || mode == :bus
@@ -394,8 +416,8 @@ macro default(mode::Symbol)
 
         template.generator.loadFollowing.value = 0.0
         template.generator.loadFollowing.pu = true
-        template.generator.reactiveTimescale.value = 0.0
-        template.generator.reactiveTimescale.pu = true
+        template.generator.reactiveRamp.value = 0.0
+        template.generator.reactiveRamp.pu = true
         template.generator.reserve10min.value = 0.0
         template.generator.reserve10min.pu = true
         template.generator.reserve30min.value = 0.0

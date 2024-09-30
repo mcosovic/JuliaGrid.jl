@@ -2,7 +2,7 @@
     addGenerator!(system::PowerSystem, [analysis::Analysis]; label, bus, status,
         active, reactive, magnitude, minActive, maxActive, minReactive, maxReactive,
         lowActive, minLowReactive, maxLowReactive, upActive, minUpReactive, maxUpReactive,
-        loadFollowing, reactiveTimescale, reserve10min, reserve30min, area)
+        loadFollowing, reactiveRamp, reserve10min, reserve30min, area)
 
 The function adds a new generator to the `PowerSystem` composite type. The generator can
 be added to an already defined bus.
@@ -36,7 +36,7 @@ The generator is defined with the following keywords:
 * `loadFollowing` (pu/min or W/min): Ramp rate for load following/AG.
 * `reserve10min` (pu or W): Ramp rate for 10-minute reserves.
 * `reserve30min` (pu or W): Ramp rate for 30-minute reserves.
-* `reactiveTimescale` (pu/min or VAr/min): Ramp rate for reactive power, two seconds timescale.
+* `reactiveRamp` (pu/min or VAr/min): Ramp rate for reactive power, two seconds timescale.
 * `area`: Area participation factor.
 
 # Updates
@@ -76,168 +76,143 @@ addBus!(system; label = "Bus 1", type = 2, active = 20, base = 132)
 addGenerator!(system; bus = "Bus 1", active = 50, magnitude = 145.2)
 ```
 """
-function addGenerator!(system::PowerSystem;
-    label::L = missing, bus::L, area::A = missing, status::A = missing,
-    active::A = missing, reactive::A = missing, magnitude::A = missing,
-    minActive::A = missing, maxActive::A = missing, minReactive::A = missing,
-    maxReactive::A = missing, lowActive::A = missing, minLowReactive::A = missing,
-    maxLowReactive::A = missing, upActive::A = missing, minUpReactive::A = missing,
-    maxUpReactive::A = missing, loadFollowing::A = missing, reserve10min::A = missing,
-    reserve30min::A = missing, reactiveTimescale::A = missing)
+function addGenerator!(
+    system::PowerSystem;
+    label::IntStrMiss = missing,
+    bus::IntStrMiss,
+    kwargs...
+)
+    gen = system.generator
+    cbt = gen.capability
+    rmp = gen.ramping
+    def = template.generator
+    key = generatorkwargs(; kwargs...)
 
-    generator = system.generator
-    default = template.generator
+    gen.number += 1
+    setLabel(gen, label, def.label, "generator")
+    busIdx = system.bus.label[getLabel(system.bus, bus, "bus")]
 
-    system.generator.number += 1
-    setLabel(generator, label, default.label, "generator")
+    add!(gen.layout.status, key.status, def.status)
+    checkStatus(gen.layout.status[end])
 
-    busIndex = system.bus.label[getLabel(system.bus, bus, "bus")]
+    baseInv = 1 / (system.base.power.value * system.base.power.prefix)
+    add!(gen.output.active, key.active, def.active, pfx.activePower, baseInv)
+    add!(gen.output.reactive, key.reactive, def.reactive, pfx.reactivePower, baseInv)
 
-    push!(generator.layout.status, unitless(status, default.status))
-    checkStatus(generator.layout.status[end])
+    add!(cbt.minActive, key.minActive, def.minActive, pfx.activePower, baseInv)
+    add!(cbt.maxActive, key.maxActive, def.maxActive, pfx.activePower, baseInv)
+    add!(cbt.minReactive, key.minReactive, def.minReactive, pfx.reactivePower, baseInv)
+    add!(cbt.maxReactive, key.maxReactive, def.maxReactive, pfx.reactivePower, baseInv)
+    add!(cbt.lowActive, key.lowActive, def.lowActive, pfx.activePower, baseInv)
+    add!(cbt.minLowReactive, key.minLowReactive, def.minLowReactive, pfx.reactivePower, baseInv)
+    add!(cbt.maxLowReactive, key.maxLowReactive, def.maxLowReactive, pfx.reactivePower, baseInv)
+    add!(cbt.upActive, key.upActive, def.upActive, pfx.activePower, baseInv)
+    add!(cbt.minUpReactive, key.minUpReactive, def.minUpReactive, pfx.reactivePower, baseInv)
+    add!(cbt.maxUpReactive, key.maxUpReactive, def.maxUpReactive, pfx.reactivePower, baseInv)
 
-    basePowerInv = 1 / (system.base.power.value * system.base.power.prefix)
-    baseVoltageInv = 1 / (system.base.voltage.value[busIndex] * system.base.voltage.prefix)
+    add!(rmp.loadFollowing, key.loadFollowing, def.loadFollowing, pfx.activePower, baseInv)
+    add!(rmp.reserve10min, key.reserve10min, def.reserve10min, pfx.activePower, baseInv)
+    add!(rmp.reserve30min, key.reserve30min, def.reserve30min, pfx.activePower, baseInv)
+    add!(rmp.reactiveRamp, key.reactiveRamp, def.reactiveRamp, pfx.reactivePower, baseInv)
 
-    push!(generator.output.active, topu(active, default.active, prefix.activePower, basePowerInv))
-    push!(generator.output.reactive, topu(reactive, default.reactive, prefix.reactivePower, basePowerInv))
+    if gen.layout.status[end] == 1
+        addGenInBus!(system, busIdx, gen.number)
+        gen.layout.inservice += 1
 
-    if generator.layout.status[end] == 1
-        push!(system.bus.supply.generator[busIndex], generator.number)
-        system.bus.supply.active[busIndex] += generator.output.active[end]
-        system.bus.supply.reactive[busIndex] += generator.output.reactive[end]
-        generator.layout.inservice += 1
+        system.bus.supply.active[busIdx] += gen.output.active[end]
+        system.bus.supply.reactive[busIdx] += gen.output.reactive[end]
     end
 
-    push!(generator.capability.minActive, topu(minActive, default.minActive, prefix.activePower, basePowerInv))
-    push!(generator.capability.maxActive, topu(maxActive, default.maxActive, prefix.activePower, basePowerInv))
+    baseInv = 1 / (system.base.voltage.value[busIdx] * system.base.voltage.prefix)
+    add!(gen.voltage.magnitude, key.magnitude, def.magnitude, pfx.voltageMagnitude, baseInv)
 
-    push!(generator.capability.minReactive, topu(minReactive, default.minReactive, prefix.reactivePower, basePowerInv))
-    push!(generator.capability.maxReactive, topu(maxReactive, default.maxReactive, prefix.reactivePower, basePowerInv))
+    push!(gen.layout.bus, busIdx)
+    add!(gen.layout.area, key.area, def.area)
 
-    push!(generator.capability.lowActive, topu(lowActive, default.lowActive, prefix.activePower, basePowerInv))
-    push!(generator.capability.minLowReactive, topu(minLowReactive, default.minLowReactive, prefix.reactivePower, basePowerInv))
-    push!(generator.capability.maxLowReactive, topu(maxLowReactive, default.maxLowReactive, prefix.reactivePower, basePowerInv))
+    push!(gen.cost.active.model, 0)
+    push!(gen.cost.active.polynomial, Float64[])
+    push!(gen.cost.active.piecewise, Array{Float64}(undef, 0, 0))
 
-    push!(generator.capability.upActive, topu(upActive, default.upActive, prefix.activePower, basePowerInv))
-    push!(generator.capability.minUpReactive, topu(minUpReactive, default.minUpReactive, prefix.reactivePower, basePowerInv))
-    push!(generator.capability.maxUpReactive, topu(maxUpReactive, default.maxUpReactive, prefix.reactivePower, basePowerInv))
-
-    push!(generator.ramping.loadFollowing, topu(loadFollowing, default.loadFollowing, prefix.activePower, basePowerInv))
-    push!(generator.ramping.reserve10min, topu(reserve10min, default.reserve10min, prefix.activePower, basePowerInv))
-    push!(generator.ramping.reserve30min, topu(reserve30min, default.reserve30min, prefix.activePower, basePowerInv))
-    push!(generator.ramping.reactiveTimescale, topu(reactiveTimescale, default.reactiveTimescale, prefix.reactivePower, basePowerInv))
-
-    push!(generator.voltage.magnitude, topu(magnitude, default.magnitude, prefix.voltageMagnitude, baseVoltageInv))
-
-    push!(generator.layout.bus, busIndex)
-    push!(generator.layout.area, unitless(area, default.area))
-
-    push!(generator.cost.active.model, 0)
-    push!(generator.cost.active.polynomial, Array{Float64}(undef, 0))
-    push!(generator.cost.active.piecewise, Array{Float64}(undef, 0, 0))
-
-    push!(generator.cost.reactive.model, 0)
-    push!(generator.cost.reactive.polynomial, Array{Float64}(undef, 0))
-    push!(generator.cost.reactive.piecewise, Array{Float64}(undef, 0, 0))
+    push!(gen.cost.reactive.model, 0)
+    push!(gen.cost.reactive.polynomial, Float64[])
+    push!(gen.cost.reactive.piecewise, Array{Float64}(undef, 0, 0))
 end
 
-function addGenerator!(system::PowerSystem, analysis::DCPowerFlow;
-    label::L = missing, bus::L, area::A = missing, status::A = missing,
-    active::A = missing, reactive::A = missing, magnitude::A = missing,
-    minActive::A = missing, maxActive::A = missing, minReactive::A = missing,
-    maxReactive::A = missing, lowActive::A = missing, minLowReactive::A = missing,
-    maxLowReactive::A = missing, upActive::A = missing, minUpReactive::A = missing,
-    maxUpReactive::A = missing, loadFollowing::A = missing, reserve10min::A = missing,
-    reserve30min::A = missing, reactiveTimescale::A = missing)
-
-    addGenerator!(system; label, bus, area, status, active, reactive, magnitude,
-        minActive, maxActive, minReactive, maxReactive, lowActive, minLowReactive,
-        maxLowReactive, upActive, minUpReactive, maxUpReactive, loadFollowing, reserve10min,
-        reserve30min, reactiveTimescale)
+function addGenerator!(
+    system::PowerSystem,
+    analysis::Union{ACPowerFlow, DCPowerFlow};
+    label::IntStrMiss = missing,
+    bus::IntStrMiss,
+    kwargs...
+)
+    addGenerator!(system; label, bus, kwargs...)
 end
 
-function addGenerator!(system::PowerSystem, analysis::ACPowerFlow;
-    label::L = missing, bus::L, area::A = missing, status::A = missing,
-    active::A = missing, reactive::A = missing, magnitude::A = missing,
-    minActive::A = missing, maxActive::A = missing, minReactive::A = missing,
-    maxReactive::A = missing, lowActive::A = missing, minLowReactive::A = missing,
-    maxLowReactive::A = missing, upActive::A = missing, minUpReactive::A = missing,
-    maxUpReactive::A = missing, loadFollowing::A = missing, reserve10min::A = missing,
-    reserve30min::A = missing, reactiveTimescale::A = missing)
-
-    addGenerator!(system; label, bus, area, status, active, reactive, magnitude,
-        minActive, maxActive, minReactive, maxReactive, lowActive, minLowReactive,
-        maxLowReactive, upActive, minUpReactive, maxUpReactive, loadFollowing, reserve10min,
-        reserve30min, reactiveTimescale)
-end
-
-function addGenerator!(system::PowerSystem, analysis::DCOptimalPowerFlow;
-    label::L = missing, bus::L, area::A = missing, status::A = missing,
-    active::A = missing, reactive::A = missing, magnitude::A = missing,
-    minActive::A = missing, maxActive::A = missing, minReactive::A = missing,
-    maxReactive::A = missing, lowActive::A = missing, minLowReactive::A = missing,
-    maxLowReactive::A = missing, upActive::A = missing, minUpReactive::A = missing,
-    maxUpReactive::A = missing, loadFollowing::A = missing, reserve10min::A = missing,
-    reserve30min::A = missing, reactiveTimescale::A = missing)
-
-    addGenerator!(system; label, bus, area, status, active, reactive, magnitude,
-        minActive, maxActive, minReactive, maxReactive, lowActive, minLowReactive,
-        maxLowReactive, upActive, minUpReactive, maxUpReactive, loadFollowing, reserve10min,
-        reserve30min, reactiveTimescale)
-
-    generator = system.generator
+function addGenerator!(
+    system::PowerSystem,
+    analysis::ACOptimalPowerFlow;
+    label::IntStrMiss = missing,
+    bus::IntStrMiss,
+    kwargs...
+)
+    gen = system.generator
     jump = analysis.method.jump
-    constraint = analysis.method.constraint
+    constr = analysis.method.constraint
     variable = analysis.method.variable
 
-    index = generator.number
+    addGenerator!(system; label, bus, kwargs...)
 
-    push!(variable.active, @variable(jump, base_name = "active[$index]"))
-    push!(analysis.power.generator.active, generator.output.active[end])
+    idx = gen.number
 
-    if generator.layout.status[end] == 1
-        updateBalance(system, analysis, generator.layout.bus[end]; power = 1, genIndex = index)
-        addCapability(jump, variable.active[index], constraint.capability.active, generator.capability.minActive, generator.capability.maxActive, index)
+    push!(variable.active, @variable(jump, base_name = "active[$idx]"))
+    push!(variable.reactive, @variable(jump, base_name = "reactive[$idx]"))
+
+    push!(analysis.power.generator.active, gen.output.active[end])
+    push!(analysis.power.generator.reactive, gen.output.reactive[end])
+
+    if gen.layout.status[end] == 1
+        updateBalance(system, analysis, gen.layout.bus[end]; active = true, reactive = true)
+        addCapability(
+            jump, variable.active, constr.capability.active,
+            gen.capability.minActive, gen.capability.maxActive, idx
+        )
+        addCapability(
+            jump, variable.reactive, constr.capability.reactive,
+            gen.capability.minReactive, gen.capability.maxReactive, idx
+        )
     else
-        fix!(variable.active[index], 0.0, constraint.capability.active, index)
+        fix!(variable.active[idx], 0.0, constr.capability.active, idx)
+        fix!(variable.reactive[idx], 0.0, constr.capability.reactive, idx)
     end
 end
 
-function addGenerator!(system::PowerSystem, analysis::ACOptimalPowerFlow;
-    label::L = missing, bus::L, area::A = missing, status::A = missing,
-    active::A = missing, reactive::A = missing, magnitude::A = missing,
-    minActive::A = missing, maxActive::A = missing, minReactive::A = missing,
-    maxReactive::A = missing, lowActive::A = missing, minLowReactive::A = missing,
-    maxLowReactive::A = missing, upActive::A = missing, minUpReactive::A = missing,
-    maxUpReactive::A = missing, loadFollowing::A = missing, reserve10min::A = missing,
-    reserve30min::A = missing, reactiveTimescale::A = missing)
-
-    addGenerator!(system; label, bus, area, status, active, reactive, magnitude,
-        minActive, maxActive, minReactive, maxReactive, lowActive, minLowReactive,
-        maxLowReactive, upActive, minUpReactive, maxUpReactive, loadFollowing, reserve10min,
-        reserve30min, reactiveTimescale)
-
-    generator = system.generator
+function addGenerator!(
+    system::PowerSystem,
+    analysis::DCOptimalPowerFlow;
+    label::IntStrMiss = missing,
+    bus::IntStrMiss,
+    kwargs...
+)
+    gen = system.generator
     jump = analysis.method.jump
-    constraint = analysis.method.constraint
+    constr = analysis.method.constraint
     variable = analysis.method.variable
 
-    index = generator.number
+    addGenerator!(system; label, bus, kwargs...)
 
-    push!(variable.active, @variable(jump, base_name = "active[$index]"))
-    push!(variable.reactive, @variable(jump, base_name = "reactive[$index]"))
+    idx = gen.number
 
-    push!(analysis.power.generator.active, generator.output.active[end])
-    push!(analysis.power.generator.reactive, generator.output.reactive[end])
+    push!(variable.active, @variable(jump, base_name = "active[$idx]"))
+    push!(analysis.power.generator.active, gen.output.active[end])
 
-    if generator.layout.status[end] == 1
-        updateBalance(system, analysis, generator.layout.bus[end]; active = true, reactive = true)
-        addCapability(jump, variable.active[index], constraint.capability.active, generator.capability.minActive, generator.capability.maxActive, index)
-        addCapability(jump, variable.reactive[index], constraint.capability.reactive, generator.capability.minReactive, generator.capability.maxReactive, index)
+    if gen.layout.status[end] == 1
+        updateBalance(system, analysis, gen.layout.bus[end]; power = 1, idxGen = idx)
+        addCapability(
+            jump, variable.active, constr.capability.active,
+            gen.capability.minActive, gen.capability.maxActive, idx
+        )
     else
-        fix!(variable.active[index], 0.0, constraint.capability.active, index)
-        fix!(variable.reactive[index], 0.0, constraint.capability.reactive, index)
+        fix!(variable.active[idx], 0.0, constr.capability.active, idx)
     end
 end
 
@@ -279,39 +254,37 @@ addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 0.5)
 updateGenerator!(system; label = "Generator 1", active = 0.6, reactive = 0.2)
 ```
 """
-function updateGenerator!(system::PowerSystem;
-    label::L, area::A = missing, status::A = missing,
-    active::A = missing, reactive::A = missing, magnitude::A = missing,
-    minActive::A = missing, maxActive::A = missing, minReactive::A = missing,
-    maxReactive::A = missing, lowActive::A = missing, minLowReactive::A = missing,
-    maxLowReactive::A = missing, upActive::A = missing, minUpReactive::A = missing,
-    maxUpReactive::A = missing, loadFollowing::A = missing, reserve10min::A = missing,
-    reserve30min::A = missing, reactiveTimescale::A = missing)
-
+function updateGenerator!(system::PowerSystem; label::IntStrMiss, kwargs...)
     bus = system.bus
-    generator = system.generator
+    gen = system.generator
+    cbt = gen.capability
+    rmp = gen.ramping
+    key = generatorkwargs(; kwargs...)
 
-    index = generator.label[getLabel(generator, label, "generator")]
-    indexBus = generator.layout.bus[index]
+    idx = gen.label[getLabel(gen, label, "generator")]
+    idxBus = gen.layout.bus[idx]
 
-    if ismissing(status)
-        status = generator.layout.status[index]
+    statusNew = key.status
+    statusOld = gen.layout.status[idx]
+
+    if ismissing(statusNew)
+        statusNew = copy(statusOld)
     end
-    checkStatus(status)
+    checkStatus(statusNew)
 
-    basePowerInv = 1 / (system.base.power.value * system.base.power.prefix)
-    output = isset(active) || isset(reactive)
+    baseInv = 1 / (system.base.power.value * system.base.power.prefix)
+    output = isset(key.active, key.reactive)
 
-    if generator.layout.status[index] == 1
-        if status == 0 || (status == 1 && output)
-            bus.supply.active[indexBus] -= generator.output.active[index]
-            bus.supply.reactive[indexBus] -= generator.output.reactive[index]
+    if statusOld == 1
+        if statusNew == 0 || (statusNew == 1 && output)
+            bus.supply.active[idxBus] -= gen.output.active[idx]
+            bus.supply.reactive[idxBus] -= gen.output.reactive[idx]
         end
-        if status == 0
-            generator.layout.inservice -= 1
-            for (k, i) in enumerate(bus.supply.generator[indexBus])
-                if i == index
-                    deleteat!(bus.supply.generator[indexBus], k)
+        if statusNew == 0
+            gen.layout.inservice -= 1
+            for (k, i) in enumerate(bus.supply.generator[idxBus])
+                if i == idx
+                    deleteat!(bus.supply.generator[idxBus], k)
                     break
                 end
             end
@@ -319,356 +292,354 @@ function updateGenerator!(system::PowerSystem;
     end
 
     if output
-        if isset(active)
-            generator.output.active[index] = topu(active, prefix.activePower, basePowerInv)
-        end
-        if isset(reactive)
-            generator.output.reactive[index] = topu(reactive, prefix.reactivePower, basePowerInv)
-        end
+        update!(gen.output.active, key.active, pfx.activePower, baseInv, idx)
+        update!(gen.output.reactive, key.reactive, pfx.reactivePower, baseInv, idx)
     end
 
-    if status == 1
-        if generator.layout.status[index] == 0 || (generator.layout.status[index] == 1 && output)
-            bus.supply.active[indexBus] += generator.output.active[index]
-            bus.supply.reactive[indexBus] += generator.output.reactive[index]
+    if statusNew == 1
+        if statusOld == 0 || (statusOld == 1 && output)
+            bus.supply.active[idxBus] += gen.output.active[idx]
+            bus.supply.reactive[idxBus] += gen.output.reactive[idx]
         end
-        if generator.layout.status[index] == 0
-            generator.layout.inservice += 1
-            position = searchsortedfirst(bus.supply.generator[indexBus], index)
-            insert!(bus.supply.generator[indexBus], position, index)
+        if statusOld == 0
+            gen.layout.inservice += 1
+            position = searchsortedfirst(bus.supply.generator[idxBus], idx)
+            insert!(bus.supply.generator[idxBus], position, idx)
         end
     end
-    generator.layout.status[index] = status
+    gen.layout.status[idx] = statusNew
 
-    if isset(minActive)
-        generator.capability.minActive[index] = topu(minActive, prefix.activePower, basePowerInv)
-    end
-    if isset(maxActive)
-        generator.capability.maxActive[index] = topu(maxActive, prefix.activePower, basePowerInv)
-    end
-    if isset(minReactive)
-        generator.capability.minReactive[index] = topu(minReactive, prefix.reactivePower, basePowerInv)
-    end
-    if isset(maxReactive)
-        generator.capability.maxReactive[index] = topu(maxReactive, prefix.reactivePower, basePowerInv)
-    end
+    update!(cbt.minActive, key.minActive, pfx.activePower, baseInv, idx)
+    update!(cbt.maxActive, key.maxActive, pfx.activePower, baseInv, idx)
+    update!(cbt.minReactive, key.minReactive, pfx.reactivePower, baseInv, idx)
+    update!(cbt.maxReactive, key.maxReactive, pfx.reactivePower, baseInv, idx)
+    update!(cbt.lowActive, key.lowActive, pfx.activePower, baseInv, idx)
+    update!(cbt.minLowReactive, key.minLowReactive, pfx.reactivePower, baseInv, idx)
+    update!(cbt.maxLowReactive, key.maxLowReactive, pfx.reactivePower, baseInv, idx)
+    update!(cbt.upActive, key.upActive, pfx.activePower, baseInv, idx)
+    update!(cbt.minUpReactive, key.minUpReactive, pfx.reactivePower, baseInv, idx)
+    update!(cbt.maxUpReactive, key.maxUpReactive, pfx.reactivePower, baseInv, idx)
 
-    if isset(lowActive)
-        generator.capability.lowActive[index] = topu(lowActive, prefix.activePower, basePowerInv)
-    end
-    if isset(minLowReactive)
-        generator.capability.minLowReactive[index] = topu(minLowReactive, prefix.reactivePower, basePowerInv)
-    end
-    if isset(maxLowReactive)
-        generator.capability.maxLowReactive[index] = topu(maxLowReactive, prefix.reactivePower, basePowerInv)
-    end
+    update!(rmp.loadFollowing, key.loadFollowing, pfx.activePower, baseInv, idx)
+    update!(rmp.reserve10min, key.reserve10min, pfx.activePower, baseInv, idx)
+    update!(rmp.reserve30min, key.reserve30min, pfx.activePower, baseInv, idx)
+    update!(rmp.reactiveRamp, key.reactiveRamp, pfx.reactivePower, baseInv, idx)
 
-    if isset(upActive)
-        generator.capability.upActive[index] = topu(upActive, prefix.activePower, basePowerInv)
-    end
-    if isset(minUpReactive)
-        generator.capability.minUpReactive[index] = topu(minUpReactive, prefix.reactivePower, basePowerInv)
-    end
-    if isset(maxUpReactive)
-        generator.capability.maxUpReactive[index] = topu(maxUpReactive, prefix.reactivePower, basePowerInv)
-    end
+    baseInv = 1 / (system.base.voltage.value[idxBus] * system.base.voltage.prefix)
+    update!(gen.voltage.magnitude, key.magnitude, pfx.voltageMagnitude, baseInv, idx)
 
-    if isset(loadFollowing)
-        generator.ramping.loadFollowing[index] = topu(loadFollowing, prefix.activePower, basePowerInv)
-    end
-    if isset(reserve10min)
-        generator.ramping.reserve10min[index] = topu(reserve10min, prefix.activePower, basePowerInv)
-    end
-    if isset(reserve30min)
-        generator.ramping.reserve30min[index] = topu(reserve30min, prefix.activePower, basePowerInv)
-    end
-    if isset(reactiveTimescale)
-        generator.ramping.reactiveTimescale[index] = topu(reactiveTimescale, prefix.reactivePower, basePowerInv)
+    update!(gen.layout.area, key.area, idx)
+end
+
+function updateGenerator!(
+    system::PowerSystem,
+    analysis::Union{ACPowerFlow{NewtonRaphson}, ACPowerFlow{FastNewtonRaphson}};
+    label::IntStrMiss,
+    kwargs...
+)
+    gen = system.generator
+    key = generatorkwargs(; kwargs...)
+
+    idx = gen.label[getLabel(gen, label, "generator")]
+    idxBus = gen.layout.bus[idx]
+    if isset(key.status)
+        checkStatus(key.status)
+        if key.status == 0 && system.bus.layout.type[idxBus] in [2, 3]
+            if length(system.bus.supply.generator[idxBus]) == 1
+                errorTypeConversion()
+            end
+        end
     end
 
-    if isset(magnitude)
-        baseVoltageInv = 1 / (system.base.voltage.value[indexBus] * system.base.voltage.prefix)
-        generator.voltage.magnitude[index] = topu(magnitude, prefix.voltageMagnitude, baseVoltageInv)
-    end
+    updateGenerator!(system; label, kwargs...)
 
-    if isset(area)
-        generator.layout.area[index] = area
+    if system.bus.layout.type[idxBus] in [2, 3]
+        idx = system.bus.supply.generator[idxBus][1]
+        analysis.voltage.magnitude[idxBus] = gen.voltage.magnitude[idx]
     end
 end
 
-function updateGenerator!(system::PowerSystem, analysis::DCPowerFlow;
-    label::L, area::A = missing, status::A = missing,
-    active::A = missing, reactive::A = missing, magnitude::A = missing,
-    minActive::A = missing, maxActive::A = missing, minReactive::A = missing,
-    maxReactive::A = missing, lowActive::A = missing, minLowReactive::A = missing,
-    maxLowReactive::A = missing, upActive::A = missing, minUpReactive::A = missing,
-    maxUpReactive::A = missing, loadFollowing::A = missing, reserve10min::A = missing,
-    reserve30min::A = missing, reactiveTimescale::A = missing)
-
-    generator = system.generator
-
-    if isset(status)
-        checkStatus(status)
-        index = generator.label[getLabel(generator, label, "generator")]
-        indexBus = generator.layout.bus[index]
-        if status == 0 && system.bus.layout.slack == indexBus && length(system.bus.supply.generator[indexBus]) == 1
-            throw(ErrorException("The DC power flow model cannot be reused due to required bus type conversion."))
-        end
-    end
-
-    updateGenerator!(system; label, area, status, active, reactive, magnitude,
-        minActive, maxActive, minReactive, maxReactive, lowActive, minLowReactive,
-        maxLowReactive, upActive, minUpReactive, maxUpReactive, loadFollowing, reserve10min,
-        reserve30min, reactiveTimescale)
-end
-
-function updateGenerator!(system::PowerSystem, analysis::Union{ACPowerFlow{NewtonRaphson}, ACPowerFlow{FastNewtonRaphson}};
-    label::L, area::A = missing, status::A = missing,
-    active::A = missing, reactive::A = missing, magnitude::A = missing,
-    minActive::A = missing, maxActive::A = missing, minReactive::A = missing,
-    maxReactive::A = missing, lowActive::A = missing, minLowReactive::A = missing,
-    maxLowReactive::A = missing, upActive::A = missing, minUpReactive::A = missing,
-    maxUpReactive::A = missing, loadFollowing::A = missing, reserve10min::A = missing,
-    reserve30min::A = missing, reactiveTimescale::A = missing)
-
-    generator = system.generator
-
-    index = generator.label[getLabel(generator, label, "generator")]
-    indexBus = generator.layout.bus[index]
-    if isset(status)
-        checkStatus(status)
-        if status == 0 && system.bus.layout.type[indexBus] in [2, 3] && length(system.bus.supply.generator[indexBus]) == 1
-            throw(ErrorException("The AC power flow model cannot be reused due to required bus type conversion."))
-        end
-    end
-
-    updateGenerator!(system; label, area, status, active, reactive, magnitude,
-        minActive, maxActive, minReactive, maxReactive, lowActive, minLowReactive,
-        maxLowReactive, upActive, minUpReactive, maxUpReactive, loadFollowing, reserve10min,
-        reserve30min, reactiveTimescale)
-
-    if system.bus.layout.type[indexBus] in [2, 3]
-        index = system.bus.supply.generator[indexBus][1]
-        analysis.voltage.magnitude[indexBus] = generator.voltage.magnitude[index]
-    end
-end
-
-function updateGenerator!(system::PowerSystem, analysis::ACPowerFlow{GaussSeidel};
-    label::L, area::A = missing, status::A = missing,
-    active::A = missing, reactive::A = missing, magnitude::A = missing,
-    minActive::A = missing, maxActive::A = missing, minReactive::A = missing,
-    maxReactive::A = missing, lowActive::A = missing, minLowReactive::A = missing,
-    maxLowReactive::A = missing, upActive::A = missing, minUpReactive::A = missing,
-    maxUpReactive::A = missing, loadFollowing::A = missing, reserve10min::A = missing,
-    reserve30min::A = missing, reactiveTimescale::A = missing)
-
+function updateGenerator!(
+    system::PowerSystem,
+    analysis::ACPowerFlow{GaussSeidel};
+    label::IntStrMiss,
+    kwargs...
+)
     bus = system.bus
-    generator = system.generator
+    gen = system.generator
+    key = generatorkwargs(; kwargs...)
 
-    index = generator.label[getLabel(generator, label, "generator")]
-    indexBus = generator.layout.bus[index]
-    if isset(status)
-        checkStatus(status)
-        if status == 0 && bus.layout.type[indexBus] in [2, 3] && length(bus.supply.generator[indexBus]) == 1
-            throw(ErrorException("The AC power flow model cannot be reused due to required bus type conversion."))
+    idx = gen.label[getLabel(gen, label, "generator")]
+    idxBus = gen.layout.bus[idx]
+    if isset(key.status)
+        checkStatus(key.status)
+        if key.status == 0 && bus.layout.type[idxBus] in [2, 3]
+            if length(bus.supply.generator[idxBus]) == 1
+                errorTypeConversion()
+            end
         end
     end
 
-    updateGenerator!(system; label, area, status, active, reactive, magnitude,
-        minActive, maxActive, minReactive, maxReactive, lowActive, minLowReactive,
-        maxLowReactive, upActive, minUpReactive, maxUpReactive, loadFollowing, reserve10min,
-        reserve30min, reactiveTimescale)
+    updateGenerator!(system; label, kwargs...)
 
-    if bus.layout.type[indexBus] in [2, 3]
-        index = bus.supply.generator[indexBus][1]
-        analysis.voltage.magnitude[indexBus] = generator.voltage.magnitude[index]
-        analysis.method.voltage[indexBus] = generator.voltage.magnitude[index] * cis(angle(analysis.method.voltage[indexBus]))
+    if bus.layout.type[idxBus] in [2, 3]
+        idx = bus.supply.generator[idxBus][1]
+        analysis.voltage.magnitude[idxBus] = gen.voltage.magnitude[idx]
+        analysis.method.voltage[idxBus] =
+            gen.voltage.magnitude[idx] * cis(angle(analysis.method.voltage[idxBus]))
      end
 end
 
-function updateGenerator!(system::PowerSystem, analysis::DCOptimalPowerFlow;
-    label::L, area::A = missing, status::A = missing,
-    active::A = missing, reactive::A = missing, magnitude::A = missing,
-    minActive::A = missing, maxActive::A = missing, minReactive::A = missing,
-    maxReactive::A = missing, lowActive::A = missing, minLowReactive::A = missing,
-    maxLowReactive::A = missing, upActive::A = missing, minUpReactive::A = missing,
-    maxUpReactive::A = missing, loadFollowing::A = missing, reserve10min::A = missing,
-    reserve30min::A = missing, reactiveTimescale::A = missing)
+function updateGenerator!(
+    system::PowerSystem,
+    analysis::DCPowerFlow;
+    label::IntStrMiss,
+    kwargs...
+)
+    gen = system.generator
+    key = generatorkwargs(; kwargs...)
 
-    generator = system.generator
-    jump = analysis.method.jump
-    constraint = analysis.method.constraint
-    variable = analysis.method.variable
-
-    index = generator.label[getLabel(generator, label, "generator")]
-    indexBus = generator.layout.bus[index]
-    statusOld = generator.layout.status[index]
-
-    updateGenerator!(system; label, area, status, active, reactive, magnitude,
-        minActive, maxActive, minReactive, maxReactive, lowActive, minLowReactive,
-        maxLowReactive, upActive, minUpReactive, maxUpReactive, loadFollowing, reserve10min,
-        reserve30min, reactiveTimescale)
-
-    if isset(active)
-        analysis.power.generator.active[index] = generator.output.active[index]
+    if isset(key.status)
+        checkStatus(key.status)
+        idx = gen.label[getLabel(gen, label, "generator")]
+        idxBus = gen.layout.bus[idx]
+        if key.status == 0 && system.bus.layout.slack == idxBus
+            if length(system.bus.supply.generator[idxBus]) == 1
+                errorTypeConversion()
+            end
+        end
     end
 
-    if statusOld == 1 && generator.layout.status[index] == 0
-        cost, isPowerwise = costExpr(generator.cost.active, variable.active[index], index, label)
+    updateGenerator!(system; label, kwargs...)
+end
+
+function updateGenerator!(
+    system::PowerSystem,
+    analysis::ACOptimalPowerFlow;
+    label::IntStrMiss,
+    kwargs...
+)
+    gen = system.generator
+    jump = analysis.method.jump
+    constr = analysis.method.constraint
+    variable = analysis.method.variable
+    obj = analysis.method.objective
+    key = generatorkwargs(; kwargs...)
+
+    idx = gen.label[getLabel(gen, label, "generator")]
+    idxBus = gen.layout.bus[idx]
+    statusOld = gen.layout.status[idx]
+
+    costActive = gen.cost.active
+    costReactive = gen.cost.reactive
+
+    updateGenerator!(system; label, kwargs...)
+
+    if isset(key.active)
+        analysis.power.generator.active[idx] = gen.output.active[idx]
+    end
+    if isset(key.reactive)
+        analysis.power.generator.reactive[idx] = gen.output.reactive[idx]
+    end
+
+    if statusOld == 1 && gen.layout.status[idx] == 0
+        actCost, isActwise, isActNonlin = costExpr(
+            costActive, variable.active[idx], idx, label; ac = true
+        )
+        ReactCost, isReactwise, isReactNonlin = costExpr(
+            costReactive, variable.reactive[idx], idx, label; ac = true
+        )
+
+        @objective(jump, Min, 0.0)
+
+        if isActwise
+            remove!(jump, constr.piecewise.active, idx)
+            add_to_expression!(obj.quadratic, -variable.actwise[idx])
+            remove!(jump, variable.actwise, idx)
+        else
+            obj.quadratic -= actCost
+        end
+        if isReactwise
+            remove!(jump, constr.piecewise.reactive, idx)
+            add_to_expression!(obj.quadratic, -variable.reactwise[idx])
+            remove!(jump, variable.reactwise, idx)
+        else
+            obj.quadratic -= ReactCost
+        end
+        drop_zeros!(obj.quadratic)
+
+        if isActNonlin
+            delete!(obj.nonlinear.active, idx)
+        end
+        if isReactNonlin
+            delete!(obj.nonlinear.reactive, idx)
+        end
+
+        @objective(
+            jump, Min,
+            obj.quadratic +
+            sum(obj.nonlinear.active[i] for i in keys(obj.nonlinear.active)) +
+            sum(obj.nonlinear.reactive[i] for i in keys(obj.nonlinear.reactive))
+        )
+
+        remove!(jump, constr.capability.active, idx)
+        remove!(jump, constr.capability.reactive, idx)
+        fix!(variable.active[idx], 0.0, constr.capability.active, idx)
+        fix!(variable.reactive[idx], 0.0, constr.capability.reactive, idx)
+        updateBalance(system, analysis, idxBus; active = true, reactive = true)
+    end
+
+    if statusOld == 0 && gen.layout.status[idx] == 1
+        actCost, isActwise, isActNonlin = costExpr(
+            costActive, variable.active[idx], idx, label; ac = true
+        )
+        ReactCost, isReactwise, isReactNonlin = costExpr(
+            costReactive, variable.reactive[idx], idx, label; ac = true
+        )
+
+        if isActwise
+            addPowerwise(jump, obj.quadratic, variable.actwise, idx, "actwise")
+            addPiecewise(
+                jump, variable.active, variable.actwise,
+                constr.piecewise.active, gen.cost.active.piecewise,
+                size(gen.cost.active.piecewise[idx], 1), idx
+            )
+        else
+            obj.quadratic += actCost
+        end
+        if isReactwise
+            addPowerwise(jump, obj.quadratic, variable.reactwise, idx, "reactwise")
+            addPiecewise(
+                jump, variable.reactive, variable.reactwise,
+                constr.piecewise.reactive, gen.cost.reactive.piecewise,
+                size(gen.cost.reactive.piecewise[idx], 1), idx
+            )
+        else
+            obj.quadratic += ReactCost
+        end
+
+        if isActNonlin
+            term = length(costActive.polynomial[idx])
+            obj.nonlinear.active[idx] = @expression(
+                jump, sum(costActive.polynomial[idx][term - degree] *
+                variable.active[idx]^degree for degree = term-1:-1:3)
+            )
+        end
+        if isReactNonlin
+            term = length(costReactive.polynomial[idx])
+            obj.nonlinear.reactive[idx] = @expression(
+                jump, sum(costReactive.polynomial[idx][term - degree] *
+                variable.reactive[idx]^degree for degree = term-1:-1:3)
+            )
+        end
+
+        @objective(
+            jump, Min,
+            obj.quadratic +
+            sum(obj.nonlinear.active[i] for i in keys(obj.nonlinear.active)) +
+            sum(obj.nonlinear.reactive[i] for i in keys(obj.nonlinear.reactive))
+        )
+
+        remove!(jump, constr.capability.active, idx)
+        remove!(jump, constr.capability.reactive, idx)
+        addCapability(
+            jump, variable.active, constr.capability.active,
+            gen.capability.minActive, gen.capability.maxActive, idx
+        )
+        addCapability(
+            jump, variable.reactive, constr.capability.reactive,
+            gen.capability.minReactive, gen.capability.maxReactive, idx
+        )
+        updateBalance(system, analysis, idxBus; active = true, reactive = true)
+    end
+
+    if statusOld == 1 && gen.layout.status[idx] == 1
+        if isset(minActive) || isset(maxActive)
+            remove!(jump, constr.capability.active, idx)
+            addCapability(
+                jump, variable.active, constr.capability.active,
+                gen.capability.minActive, gen.capability.maxActive, idx
+            )
+        end
+        if isset(minReactive) || isset(maxReactive)
+            remove!(jump, constr.capability.reactive, idx)
+            addCapability(
+                jump, variable.reactive, constr.capability.reactive,
+                gen.capability.minReactive, gen.capability.maxReactive, idx
+            )
+        end
+    end
+end
+
+function updateGenerator!(
+    system::PowerSystem,
+    analysis::DCOptimalPowerFlow;
+    label::IntStrMiss,
+    kwargs...
+)
+    gen = system.generator
+    jump = analysis.method.jump
+    constr = analysis.method.constraint
+    variable = analysis.method.variable
+    key = generatorkwargs(; kwargs...)
+
+    idx = gen.label[getLabel(gen, label, "generator")]
+    idxBus = gen.layout.bus[idx]
+    statusOld = gen.layout.status[idx]
+
+    updateGenerator!(system; label, kwargs...)
+
+    if isset(key.active)
+        analysis.power.gen.active[idx] = gen.output.active[idx]
+    end
+
+    if statusOld == 1 && gen.layout.status[idx] == 0
+        cost, isPowerwise = costExpr(gen.cost.active, variable.active[idx], idx, label)
 
         if isPowerwise
-            remove!(jump, constraint.piecewise.active, index)
-            add_to_expression!(analysis.method.objective, -variable.actwise[index])
-            remove!(jump, variable.actwise, index)
+            remove!(jump, constr.piecewise.active, idx)
+            add_to_expression!(analysis.method.objective, -variable.actwise[idx])
+            remove!(jump, variable.actwise, idx)
         else
             analysis.method.objective -= cost
         end
         drop_zeros!(analysis.method.objective)
         set_objective_function(jump, analysis.method.objective)
 
-        remove!(jump, constraint.capability.active, index)
-        updateBalance(system, analysis, indexBus; power = 0, genIndex = index)
-        fix!(variable.active[index], 0.0, constraint.capability.active, index)
+        remove!(jump, constr.capability.active, idx)
+        updateBalance(system, analysis, idxBus; power = 0, idxGen = idx)
+        fix!(variable.active[idx], 0.0, constr.capability.active, idx)
     end
 
-    if statusOld == 0 && generator.layout.status[index] == 1
-        cost, isPowerwise = costExpr(generator.cost.active, variable.active[index], index, label)
+    if statusOld == 0 && gen.layout.status[idx] == 1
+        cost, isPowerwise = costExpr(gen.cost.active, variable.active[idx], idx, label)
 
         if isPowerwise
-            addPowerwise(jump, analysis.method.objective, variable.actwise, index; name = "actwise")
-            addPiecewise(jump, variable.active[index], variable.actwise[index], constraint.piecewise.active, generator.cost.active.piecewise[index], size(generator.cost.active.piecewise[index], 1), index)
+            addPowerwise(jump, analysis.method.objective, variable.actwise, idx, "actwise")
+            addPiecewise(
+                jump, variable.active, variable.actwise,
+                constr.piecewise.active, gen.cost.active.piecewise,
+                size(gen.cost.active.piecewise[idx], 1), idx
+            )
         else
             analysis.method.objective += cost
         end
         set_objective_function(jump, analysis.method.objective)
 
-        updateBalance(system, analysis, indexBus; power = 1, genIndex = index)
-        remove!(jump, constraint.capability.active, index)
-        addCapability(jump, variable.active[index], constraint.capability.active, generator.capability.minActive, generator.capability.maxActive, index)
+        updateBalance(system, analysis, idxBus; power = 1, idxGen = idx)
+        remove!(jump, constr.capability.active, idx)
+        addCapability(
+            jump, variable.active, constr.capability.active,
+            gen.capability.minActive, gen.capability.maxActive, idx
+        )
     end
 
-    if statusOld == 1 && generator.layout.status[index] == 1 && (isset(minActive) || isset(maxActive))
-        remove!(jump, constraint.capability.active, index)
-        addCapability(jump, variable.active[index], constraint.capability.active, generator.capability.minActive, generator.capability.maxActive, index)
-    end
-end
-
-function updateGenerator!(system::PowerSystem, analysis::ACOptimalPowerFlow;
-    label::L, area::A = missing, status::A = missing,
-    active::A = missing, reactive::A = missing, magnitude::A = missing,
-    minActive::A = missing, maxActive::A = missing, minReactive::A = missing,
-    maxReactive::A = missing, lowActive::A = missing, minLowReactive::A = missing,
-    maxLowReactive::A = missing, upActive::A = missing, minUpReactive::A = missing,
-    maxUpReactive::A = missing, loadFollowing::A = missing, reserve10min::A = missing,
-    reserve30min::A = missing, reactiveTimescale::A = missing)
-
-    generator = system.generator
-    jump = analysis.method.jump
-    constraint = analysis.method.constraint
-    variable = analysis.method.variable
-    objective = analysis.method.objective
-
-    index = generator.label[getLabel(generator, label, "generator")]
-    indexBus = generator.layout.bus[index]
-    statusOld = generator.layout.status[index]
-
-    costActive = generator.cost.active
-    costReactive = generator.cost.reactive
-
-    updateGenerator!(system; label, area, status, active, reactive, magnitude,
-        minActive, maxActive, minReactive, maxReactive, lowActive, minLowReactive,
-        maxLowReactive, upActive, minUpReactive, maxUpReactive, loadFollowing, reserve10min,
-        reserve30min, reactiveTimescale)
-
-    if isset(active)
-        analysis.power.generator.active[index] = generator.output.active[index]
-    end
-    if isset(reactive)
-        analysis.power.generator.reactive[index] = generator.output.reactive[index]
-    end
-
-    if statusOld == 1 && generator.layout.status[index] == 0
-        ActCost, isActwise, isActNonlin = costExpr(costActive, variable.active[index], index, label; ac = true)
-        ReactCost, isReactwise, isReactNonlin = costExpr(costReactive, variable.reactive[index], index, label; ac = true)
-
-        @objective(jump, Min, 0.0)
-
-        if isActwise
-            remove!(jump, constraint.piecewise.active, index)
-            add_to_expression!(objective.quadratic, -variable.actwise[index])
-            remove!(jump, variable.actwise, index)
-        else
-            objective.quadratic -= ActCost
-        end
-        if isReactwise
-            remove!(jump, constraint.piecewise.reactive, index)
-            add_to_expression!(objective.quadratic, -variable.reactwise[index])
-            remove!(jump, variable.reactwise, index)
-        else
-            objective.quadratic -= ReactCost
-        end
-        drop_zeros!(objective.quadratic)
-
-        if isActNonlin
-            delete!(objective.nonlinear.active, index)
-        end
-        if isReactNonlin
-            delete!(objective.nonlinear.reactive, index)
-        end
-
-        @objective(jump, Min, objective.quadratic + sum(objective.nonlinear.active[i] for i in keys(objective.nonlinear.active)) + sum(objective.nonlinear.reactive[i] for i in keys(objective.nonlinear.reactive)))
-
-        remove!(jump, constraint.capability.active, index)
-        remove!(jump, constraint.capability.reactive, index)
-        fix!(variable.active[index], 0.0, constraint.capability.active, index)
-        fix!(variable.reactive[index], 0.0, constraint.capability.reactive, index)
-        updateBalance(system, analysis, indexBus; active = true, reactive = true)
-    end
-
-    if statusOld == 0 && generator.layout.status[index] == 1
-        ActCost, isActwise, isActNonlin = costExpr(costActive, variable.active[index], index, label; ac = true)
-        ReactCost, isReactwise, isReactNonlin = costExpr(costReactive, variable.reactive[index], index, label; ac = true)
-
-        if isActwise
-            addPowerwise(jump, objective.quadratic, variable.actwise, index; name = "actwise")
-            addPiecewise(jump, variable.active[index], variable.actwise[index], constraint.piecewise.active, generator.cost.active.piecewise[index], size(generator.cost.active.piecewise[index], 1), index)
-        else
-            objective.quadratic += ActCost
-        end
-        if isReactwise
-            addPowerwise(jump, objective.quadratic, variable.reactwise, index; name = "reactwise")
-            addPiecewise(jump, variable.reactive[index], variable.reactwise[index], constraint.piecewise.reactive, generator.cost.reactive.piecewise[index], size(generator.cost.reactive.piecewise[index], 1), index)
-        else
-            objective.quadratic += ReactCost
-        end
-
-        if isActNonlin
-            term = length(costActive.polynomial[index])
-            objective.nonlinear.active[index] = @expression(jump, sum(costActive.polynomial[index][term - degree] * variable.active[index]^degree for degree = term-1:-1:3))
-        end
-        if isReactNonlin
-            term = length(costReactive.polynomial[index])
-            objective.nonlinear.reactive[index] = @expression(jump, sum(costReactive.polynomial[index][term - degree] * variable.reactive[index]^degree for degree = term-1:-1:3))
-        end
-
-        @objective(jump, Min, objective.quadratic + sum(objective.nonlinear.active[i] for i in keys(objective.nonlinear.active)) + sum(objective.nonlinear.reactive[i] for i in keys(objective.nonlinear.reactive)))
-
-        remove!(jump, constraint.capability.active, index)
-        remove!(jump, constraint.capability.reactive, index)
-        addCapability(jump, variable.active[index], constraint.capability.active, generator.capability.minActive, generator.capability.maxActive, index)
-        addCapability(jump, variable.reactive[index], constraint.capability.reactive, generator.capability.minReactive, generator.capability.maxReactive, index)
-        updateBalance(system, analysis, indexBus; active = true, reactive = true)
-    end
-
-    if statusOld == 1 && generator.layout.status[index] == 1
-        if isset(minActive) || isset(maxActive)
-            remove!(jump, constraint.capability.active, index)
-            addCapability(jump, variable.active[index], constraint.capability.active, generator.capability.minActive, generator.capability.maxActive, index)
-        end
-        if isset(minReactive) || isset(maxReactive)
-            remove!(jump, constraint.capability.reactive, index)
-            addCapability(jump, variable.reactive[index], constraint.capability.reactive, generator.capability.minReactive, generator.capability.maxReactive, index)
-        end
+    if statusOld == 1 && gen.layout.status[idx] == 1 && isset(key.minActive, key.maxActive)
+        remove!(jump, constr.capability.active, idx)
+        addCapability(
+            jump, variable.active, constr.capability.active,
+            gen.capability.minActive, gen.capability.maxActive, idx
+        )
     end
 end
 
@@ -719,15 +690,21 @@ macro generator(kwargs...)
             if !(parameter in [:area; :status; :label])
                 container::ContainerTemplate = getfield(template.generator, parameter)
 
-                if parameter in [:active; :minActive; :maxActive; :lowActive; :upActive; :loadFollowing; :reserve10min; :reserve30min]
-                    prefixLive = prefix.activePower
-                elseif parameter in [:reactive; :minReactive; :maxReactive; :minLowReactive; :maxLowReactive; :minUpReactive; :maxUpReactive; :reactiveTimescale]
-                    prefixLive = prefix.reactivePower
+                if parameter in [
+                    :active; :minActive; :maxActive; :lowActive; :upActive;
+                    :loadFollowing; :reserve10min; :reserve30min
+                    ]
+                    pfxLive = pfx.activePower
+                elseif parameter in [
+                    :reactive; :minReactive; :maxReactive; :minLowReactive;
+                    :maxLowReactive; :minUpReactive; :maxUpReactive; :reactiveRamp
+                    ]
+                    pfxLive = pfx.reactivePower
                 elseif parameter == :magnitude
-                    prefixLive = prefix.voltageMagnitude
+                    pfxLive = pfx.voltageMagnitude
                 end
-                if prefixLive != 0.0
-                    setfield!(container, :value, prefixLive * Float64(eval(kwarg.args[2])))
+                if pfxLive != 0.0
+                    setfield!(container, :value, pfxLive * Float64(eval(kwarg.args[2])))
                     setfield!(container, :pu, false)
                 else
                     setfield!(container, :value, Float64(eval(kwarg.args[2])))
@@ -743,12 +720,12 @@ macro generator(kwargs...)
                     if contains(label, "?")
                         setfield!(template.generator, parameter, label)
                     else
-                        throw(ErrorException("The label template lacks the '?' symbol to indicate integer placement."))
+                        errorTemplateSymbol()
                     end
                 end
             end
         else
-            throw(ErrorException("The keyword $(parameter) is illegal."))
+            errorTemplateKeyword(parameter)
         end
     end
 end
@@ -776,10 +753,10 @@ The function accepts five keywords:
 * `reactive`: Reactive power cost model:
   * `reactive = 1`: adding or updating cost, and piecewise linear is being used,
   * `reactive = 2`: adding or updating cost, and polynomial is being used.
-* `piecewise`: Cost model defined by input-output points given as `Array{Float64,2}`:
+* `piecewise`: Cost model defined by input-output points given as `Vector{Float64}`:
   * first column (pu, W or VAr): active or reactive power output of the generator,
   * second column (€/hr): cost for the specified active or reactive power output.
-* `polynomial`: The n-th degree polynomial coefficients given as `Array{Float64,1}`:
+* `polynomial`: The n-th degree polynomial coefficients given as `Vector{Float64}`:
   * first element (€/puⁿ-hr, €/Wⁿhr or €/VArⁿ-hr): coefficient of the n-th degree term, ....,
   * penultimate element (€/pu-hr, €/W-hr or €/VAr-hr): coefficient of the first degree term,
   * last element (€/hr): constant coefficient.
@@ -815,76 +792,215 @@ addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 50, reactiv
 cost!(system; label = "Generator 1", active = 2, polynomial = [0.11; 5.0; 150.0])
 ```
 """
-function cost!(system::PowerSystem; label::L,
-    active::A = missing, reactive::A = missing,
-    polynomial::Array{Float64,1} = Array{Float64}(undef, 0),
-    piecewise::Array{Float64,2} = Array{Float64}(undef, 0, 0))
-
+function cost!(
+    system::PowerSystem;
+    label::IntStrMiss,
+    active::FltIntMiss = missing,
+    reactive::FltIntMiss = missing,
+    polynomial::Vector{Float64} = Float64[],
+    piecewise::Matrix{Float64} = Array{Float64}(undef, 0, 0)
+)
     if isset(active) && isset(reactive)
-        throw(ErrorException("The concurrent definition of the keywords active and reactive is not allowed."))
+        throw(ErrorException(
+            "The concurrent definition of the keywords " *
+            "active and reactive is not allowed.")
+        )
     elseif ismissing(active) && ismissing(reactive)
         throw(ErrorException("The cost model is missing."))
     elseif isset(active) && !(active in [1; 2]) || isset(reactive) && !(reactive in [1; 2])
-        throw(ErrorException("The model is not allowed; it should be either piecewise (1) or polynomial (2)."))
+        throw(ErrorException(
+            "The model is not allowed; it should be piecewise (1) or polynomial (2).")
+        )
     end
 
-    index = system.generator.label[getLabel(system.generator, label, "generator")]
+    idx = system.generator.label[getLabel(system.generator, label, "generator")]
 
     if isset(active)
         container = system.generator.cost.active
-        container.model[index] = active
-        if prefix.activePower == 0.0
+        container.model[idx] = active
+        if pfx.activePower == 0.0
             scale = 1.0
         else
-            scale = prefix.activePower / (system.base.power.prefix * system.base.power.value)
+            scale = pfx.activePower / (system.base.power.prefix * system.base.power.value)
         end
     elseif isset(reactive)
         container = system.generator.cost.reactive
-        container.model[index] = reactive
-        if prefix.reactivePower == 0.0
+        container.model[idx] = reactive
+        if pfx.reactivePower == 0.0
             scale = 1.0
         else
-            scale = prefix.reactivePower / (system.base.power.prefix * system.base.power.value)
+            scale = pfx.reactivePower / (system.base.power.prefix * system.base.power.value)
         end
     end
 
-    if container.model[index] == 1 && isempty(piecewise) && isempty(container.piecewise[index])
-        throw(ErrorException("An attempt to assign a piecewise function has been made, but the piecewise function does not exist."))
+    if container.model[idx] == 1 && isempty(piecewise) && isempty(container.piecewise[idx])
+        errorAssignCost("piecewise")
     end
-    if container.model[index] == 2 && isempty(polynomial) && isempty(container.polynomial[index])
-        throw(ErrorException("An attempt to assign a polynomial function has been made, but the polynomial function does not exist."))
+    if container.model[idx] == 2 && isempty(polynomial) && isempty(container.polynomial[idx])
+        errorAssignCost("polynomial")
     end
 
     if !isempty(polynomial)
         numberCoefficient = length(polynomial)
-        container.polynomial[index] = fill(0.0, numberCoefficient)
+        container.polynomial[idx] = fill(0.0, numberCoefficient)
+
         @inbounds for i = 1:numberCoefficient
-            container.polynomial[index][i] = polynomial[i] / (scale^(numberCoefficient - i))
+            container.polynomial[idx][i] = polynomial[i] / (scale^(numberCoefficient - i))
         end
     end
 
     if !isempty(piecewise)
-        container.piecewise[index] = [scale .* piecewise[:, 1] piecewise[:, 2]]
+        container.piecewise[idx] = [scale .* piecewise[:, 1] piecewise[:, 2]]
     end
 end
 
-function cost!(system::PowerSystem, analysis::DCOptimalPowerFlow; label::L,
-    active::A = missing, reactive::A = missing,
-    polynomial::Array{Float64,1} = Array{Float64}(undef, 0),
-    piecewise::Array{Float64,2} = Array{Float64}(undef, 0, 0))
-
-    generator = system.generator
+function cost!(
+    system::PowerSystem,
+    analysis::ACOptimalPowerFlow;
+    label::IntStrMiss,
+    active::FltIntMiss = missing,
+    reactive::FltIntMiss = missing,
+    polynomial::Vector{Float64} = Float64[],
+    piecewise::Matrix{Float64} = Array{Float64}(undef, 0, 0)
+)
+    gen = system.generator
     jump = analysis.method.jump
-    constraint = analysis.method.constraint
+    constr = analysis.method.constraint
+    variable = analysis.method.variable
+    obj = analysis.method.objective
+
+    dropZero = false
+    idx = gen.label[getLabel(gen, label, "generator")]
+
+    if gen.layout.status[idx] == 1
+        actCost, isActwiseOld, isActNonlin = costExpr(
+            gen.cost.active, variable.active[idx], idx, label; ac = true
+        )
+        reactCost, isReactwisOld, isReactNonlin = costExpr(
+            gen.cost.reactive, variable.reactive[idx], idx, label; ac = true
+        )
+
+        @objective(jump, Min, 0.0)
+
+        if isActwiseOld
+            remove!(jump, constr.piecewise.active, idx)
+        else
+            dropZero = true
+            obj.quadratic -= actCost
+        end
+        if isReactwisOld
+            remove!(jump, constr.piecewise.reactive, idx)
+        else
+            dropZero = true
+            obj.quadratic -= reactCost
+        end
+
+        if isActNonlin
+            delete!(obj.nonlinear.active, idx)
+        end
+        if isReactNonlin
+            delete!(obj.nonlinear.reactive, idx)
+        end
+    end
+
+    cost!(system; label, active, reactive, polynomial, piecewise)
+
+    if gen.layout.status[idx] == 1
+        actCost, isActwiseNew, isActNonlin = costExpr(
+            gen.cost.active, variable.active[idx], idx, label; ac = true
+        )
+        reactCost, isReactwiseNew, isReactNonlin = costExpr(
+            gen.cost.reactive, variable.reactive[idx], idx, label; ac = true
+        )
+
+        if isActwiseNew
+            if !isActwiseOld
+                addPowerwise(jump, obj.quadratic, variable.actwise, idx, "actwise")
+            end
+            addPiecewise(
+                jump, variable.active, variable.actwise,
+                constr.piecewise.active, gen.cost.active.piecewise,
+                size(gen.cost.active.piecewise[idx], 1), idx
+            )
+        else
+            if isActwiseOld
+                dropZero = true
+                add_to_expression!(obj.quadratic, -variable.actwise[idx])
+                remove!(jump, variable.actwise, idx)
+            end
+            obj.quadratic += actCost
+        end
+
+        if isReactwiseNew
+            if !isReactwisOld
+                addPowerwise(jump, obj.quadratic, variable.reactwise, idx, "reactwise")
+            end
+            addPiecewise(
+                jump, variable.reactive, variable.reactwise,
+                constr.piecewise.reactive, gen.cost.reactive.piecewise,
+                size(gen.cost.reactive.piecewise[idx], 1), idx
+            )
+        else
+            if isReactwisOld
+                dropZero = true
+                add_to_expression!(obj.quadratic, -variable.reactwise[idx])
+                remove!(jump, variable.reactwise, idx)
+            end
+            obj.quadratic += reactCost
+        end
+
+        if isActNonlin
+            delete!(obj.nonlinear.active, idx)
+            term = length(gen.cost.active.polynomial[idx])
+            obj.nonlinear.active[idx] = @expression(
+                jump, sum(gen.cost.active.polynomial[idx][term - degree] *
+                variable.active[idx]^degree for degree = term-1:-1:3)
+            )
+        end
+        if isReactNonlin
+            delete!(obj.nonlinear.reactive, idx)
+            term = length(gen.cost.reactive.polynomial[idx])
+            obj.nonlinear.reactive[idx] = @expression(
+                jump, sum(gen.cost.reactive.polynomial[idx][term - degree] *
+                variable.reactive[idx]^degree for degree = term-1:-1:3)
+            )
+        end
+    end
+
+    if dropZero
+        drop_zeros!(obj.quadratic)
+    end
+
+    @objective(
+        jump, Min,
+        obj.quadratic +
+        sum(obj.nonlinear.active[i] for i in keys(obj.nonlinear.active)) +
+        sum(obj.nonlinear.reactive[i] for i in keys(obj.nonlinear.reactive))
+    )
+end
+
+function cost!(
+    system::PowerSystem,
+    analysis::DCOptimalPowerFlow;
+    label::IntStrMiss,
+    active::FltIntMiss = missing,
+    reactive::FltIntMiss = missing,
+    polynomial::Vector{Float64} = Float64[],
+    piecewise::Matrix{Float64} = Array{Float64}(undef, 0, 0)
+)
+    gen = system.generator
+    jump = analysis.method.jump
+    constr = analysis.method.constraint
     variable = analysis.method.variable
 
     dropZero = false
-    index = generator.label[getLabel(generator, label, "generator")]
-    if generator.layout.status[index] == 1
-        costOld, isPowerwiseOld = costExpr(generator.cost.active, variable.active[index], index, label)
+    idx = gen.label[getLabel(gen, label, "generator")]
+
+    if gen.layout.status[idx] == 1
+        costOld, isPowerwiseOld = costExpr(gen.cost.active, variable.active[idx], idx, label)
 
         if isPowerwiseOld
-            remove!(jump, constraint.piecewise.active, index)
+            remove!(jump, constr.piecewise.active, idx)
         else
             dropZero = true
             analysis.method.objective -= costOld
@@ -893,19 +1009,26 @@ function cost!(system::PowerSystem, analysis::DCOptimalPowerFlow; label::L,
 
     cost!(system; label, active, reactive, polynomial, piecewise)
 
-    if generator.layout.status[index] == 1
-        costNew, isPowerwiseNew = costExpr(generator.cost.active, variable.active[index], index, label)
+    if gen.layout.status[idx] == 1
+        costNew, isWiseNew = costExpr(gen.cost.active, variable.active[idx], idx, label)
 
-        if isPowerwiseNew
+        if isWiseNew
             if !isPowerwiseOld
-                addPowerwise(jump, analysis.method.objective, variable.actwise, index; name = "actwise")
+                addPowerwise(
+                    jump, analysis.method.objective,
+                    variable.actwise, idx, "actwise"
+                )
             end
-            addPiecewise(jump, variable.active[index], variable.actwise[index], constraint.piecewise.active, generator.cost.active.piecewise[index], size(generator.cost.active.piecewise[index], 1), index)
+            addPiecewise(
+                jump, variable.active, variable.actwise,
+                constr.piecewise.active, gen.cost.active.piecewise,
+                size(gen.cost.active.piecewise[idx], 1), idx
+            )
         else
             if isPowerwiseOld
                 dropZero = true
-                add_to_expression!(analysis.method.objective, -variable.actwise[index])
-                remove!(jump, variable.actwise, index)
+                add_to_expression!(analysis.method.objective, -variable.actwise[idx])
+                remove!(jump, variable.actwise, idx)
             end
             analysis.method.objective += costNew
         end
@@ -917,98 +1040,37 @@ function cost!(system::PowerSystem, analysis::DCOptimalPowerFlow; label::L,
     set_objective_function(jump, analysis.method.objective)
 end
 
-function cost!(system::PowerSystem, analysis::ACOptimalPowerFlow; label::L,
-    active::A = missing, reactive::A = missing,
-    polynomial::Array{Float64,1} = Array{Float64}(undef, 0),
-    piecewise::Array{Float64,2} = Array{Float64}(undef, 0, 0))
-
-    generator = system.generator
-    jump = analysis.method.jump
-    constraint = analysis.method.constraint
-    variable = analysis.method.variable
-    objective = analysis.method.objective
-
-    costActive = generator.cost.active
-    costReactive = generator.cost.reactive
-
-    dropZero = false
-    index = generator.label[getLabel(generator, label, "generator")]
-    if generator.layout.status[index] == 1
-        ActCost, isActwiseOld, isActNonlin = costExpr(generator.cost.active, variable.active[index], index, label; ac = true)
-        ReactCost, isReactwisOld, isReactNonlin = costExpr(generator.cost.reactive, variable.reactive[index], index, label; ac = true)
-
-        @objective(jump, Min, 0.0)
-
-        if isActwiseOld
-            remove!(jump, constraint.piecewise.active, index)
-        else
-            dropZero = true
-            objective.quadratic -= ActCost
-        end
-        if isReactwisOld
-            remove!(jump, constraint.piecewise.reactive, index)
-        else
-            dropZero = true
-            objective.quadratic -= ReactCost
-        end
-
-        if isActNonlin
-            delete!(objective.nonlinear.active, index)
-        end
-        if isReactNonlin
-            delete!(objective.nonlinear.reactive, index)
-        end
-    end
-
-    cost!(system; label, active, reactive, polynomial, piecewise)
-
-    if generator.layout.status[index] == 1
-        ActCost, isActwiseNew, isActNonlin = costExpr(generator.cost.active, variable.active[index], index, label; ac = true)
-        ReactCost, isReactwiseNew, isReactNonlin = costExpr(generator.cost.reactive, variable.reactive[index], index, label; ac = true)
-
-        if isActwiseNew
-            if !isActwiseOld
-                addPowerwise(jump, objective.quadratic, variable.actwise, index; name = "actwise")
-            end
-            addPiecewise(jump, variable.active[index], variable.actwise[index], constraint.piecewise.active, generator.cost.active.piecewise[index], size(generator.cost.active.piecewise[index], 1), index)
-        else
-            if isActwiseOld
-                dropZero = true
-                add_to_expression!(objective.quadratic, -variable.actwise[index])
-                remove!(jump, variable.actwise, index)
-            end
-            objective.quadratic += ActCost
-        end
-
-        if isReactwiseNew
-            if !isReactwisOld
-                addPowerwise(jump, objective.quadratic, variable.reactwise, index; name = "reactwise")
-            end
-            addPiecewise(jump, variable.reactive[index], variable.reactwise[index], constraint.piecewise.reactive, generator.cost.reactive.piecewise[index], size(generator.cost.reactive.piecewise[index], 1), index)
-        else
-            if isReactwisOld
-                dropZero = true
-                add_to_expression!(objective.quadratic, -variable.reactwise[index])
-                remove!(jump, variable.reactwise, index)
-            end
-            objective.quadratic += ReactCost
-        end
-
-        if isActNonlin
-            delete!(objective.nonlinear.active, index)
-            term = length(costActive.polynomial[index])
-            objective.nonlinear.active[index] = @expression(jump, sum(costActive.polynomial[index][term - degree] * variable.active[index]^degree for degree = term-1:-1:3))
-        end
-        if isReactNonlin
-            delete!(objective.nonlinear.reactive, index)
-            term = length(costReactive.polynomial[index])
-            objective.nonlinear.reactive[index] = @expression(jump, sum(costReactive.polynomial[index][term - degree] * variable.reactive[index]^degree for degree = term-1:-1:3))
-        end
-    end
-
-    if dropZero
-        drop_zeros!(objective.quadratic)
-    end
-
-    @objective(jump, Min, objective.quadratic + sum(objective.nonlinear.active[i] for i in keys(objective.nonlinear.active)) + sum(objective.nonlinear.reactive[i] for i in keys(objective.nonlinear.reactive)))
+##### Generator Keywords #####
+function generatorkwargs(;
+    area::IntMiss = missing,
+    status::IntMiss = missing,
+    active::FltIntMiss = missing,
+    reactive::FltIntMiss = missing,
+    magnitude::FltIntMiss = missing,
+    minActive::FltIntMiss = missing,
+    maxActive::FltIntMiss = missing,
+    minReactive::FltIntMiss = missing,
+    maxReactive::FltIntMiss = missing,
+    lowActive::FltIntMiss = missing,
+    minLowReactive::FltIntMiss = missing,
+    maxLowReactive::FltIntMiss = missing,
+    upActive::FltIntMiss = missing,
+    minUpReactive::FltIntMiss = missing,
+    maxUpReactive::FltIntMiss = missing,
+    loadFollowing::FltIntMiss = missing,
+    reserve10min::FltIntMiss = missing,
+    reserve30min::FltIntMiss = missing,
+    reactiveRamp::FltIntMiss = missing
+)
+    (
+    area = area, status = status, magnitude = magnitude,
+    active = active, reactive = reactive,
+    minActive = minActive, maxActive = maxActive,
+    minReactive = minReactive, maxReactive = maxReactive,
+    lowActive = lowActive, upActive = upActive,
+    minLowReactive = minLowReactive, maxLowReactive = maxLowReactive,
+    minUpReactive = minUpReactive, maxUpReactive = maxUpReactive,
+    loadFollowing = loadFollowing, reactiveRamp = reactiveRamp,
+    reserve10min = reserve10min, reserve30min = reserve30min,
+    )
 end

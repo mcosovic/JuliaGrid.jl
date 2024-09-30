@@ -1,36 +1,36 @@
 export PowerSystem, Bus, Branch, Generator, BasePower, Model
 export Measurement, Voltmeter, Ammeter, Wattmeter, Varmeter, PMU
 
-########### Bus ###########
+##### Bus #####
 mutable struct BusDemand
-    active::Array{Float64,1}
-    reactive::Array{Float64,1}
+    active::Vector{Float64}
+    reactive::Vector{Float64}
 end
 
 mutable struct BusShunt
-    conductance::Array{Float64,1}
-    susceptance::Array{Float64,1}
+    conductance::Vector{Float64}
+    susceptance::Vector{Float64}
 end
 
 mutable struct BusVoltage
-    magnitude::Array{Float64,1}
-    angle::Array{Float64,1}
-    minMagnitude::Array{Float64,1}
-    maxMagnitude::Array{Float64,1}
+    magnitude::Vector{Float64}
+    angle::Vector{Float64}
+    minMagnitude::Vector{Float64}
+    maxMagnitude::Vector{Float64}
 end
 
 mutable struct BusLayout
-    type::Array{Int8,1}
-    area::Array{Int64,1}
-    lossZone::Array{Int64,1}
+    type::Vector{Int8}
+    area::Vector{Int64}
+    lossZone::Vector{Int64}
     slack::Int64
     label::Int64
 end
 
 mutable struct BusSupply
-    active::Array{Float64,1}
-    reactive::Array{Float64,1}
-    generator::Array{Array{Int64,1},1}
+    active::Vector{Float64}
+    reactive::Vector{Float64}
+    generator::Dict{Int64, Vector{Int64}}
 end
 
 mutable struct Bus
@@ -43,33 +43,33 @@ mutable struct Bus
     number::Int64
 end
 
-########### Branch ###########
+##### Branch #####
 mutable struct BranchParameter
-    resistance::Array{Float64,1}
-    reactance::Array{Float64,1}
-    conductance::Array{Float64,1}
-    susceptance::Array{Float64,1}
-    turnsRatio::Array{Float64,1}
-    shiftAngle::Array{Float64,1}
+    resistance::Vector{Float64}
+    reactance::Vector{Float64}
+    conductance::Vector{Float64}
+    susceptance::Vector{Float64}
+    turnsRatio::Vector{Float64}
+    shiftAngle::Vector{Float64}
 end
 
 mutable struct BranchFlow
-    minFromBus::Array{Float64,1}
-    maxFromBus::Array{Float64,1}
-    minToBus::Array{Float64,1}
-    maxToBus::Array{Float64,1}
-    type::Array{Int8,1}
+    minFromBus::Vector{Float64}
+    maxFromBus::Vector{Float64}
+    minToBus::Vector{Float64}
+    maxToBus::Vector{Float64}
+    type::Vector{Int8}
 end
 
 mutable struct BranchVoltage
-    minDiffAngle::Array{Float64,1}
-    maxDiffAngle::Array{Float64,1}
+    minDiffAngle::Vector{Float64}
+    maxDiffAngle::Vector{Float64}
 end
 
 mutable struct BranchLayout
-    from::Array{Int64,1}
-    to::Array{Int64,1}
-    status::Array{Int8,1}
+    from::Vector{Int64}
+    to::Vector{Int64}
+    status::Vector{Int8}
     inservice::Int64
     label::Int64
 end
@@ -83,36 +83,36 @@ mutable struct Branch
     number::Int64
 end
 
-########### Generator ###########
+##### Generator #####
 mutable struct GeneratorOutput
-    active::Array{Float64,1}
-    reactive::Array{Float64,1}
+    active::Vector{Float64}
+    reactive::Vector{Float64}
 end
 
 mutable struct GeneratorCapability
-    minActive::Array{Float64,1}
-    maxActive::Array{Float64,1}
-    minReactive::Array{Float64,1}
-    maxReactive::Array{Float64,1}
-    lowActive::Array{Float64,1}
-    minLowReactive::Array{Float64,1}
-    maxLowReactive::Array{Float64,1}
-    upActive::Array{Float64,1}
-    minUpReactive::Array{Float64,1}
-    maxUpReactive::Array{Float64,1}
+    minActive::Vector{Float64}
+    maxActive::Vector{Float64}
+    minReactive::Vector{Float64}
+    maxReactive::Vector{Float64}
+    lowActive::Vector{Float64}
+    minLowReactive::Vector{Float64}
+    maxLowReactive::Vector{Float64}
+    upActive::Vector{Float64}
+    minUpReactive::Vector{Float64}
+    maxUpReactive::Vector{Float64}
 end
 
 mutable struct GeneratorRamping
-    loadFollowing::Array{Float64,1}
-    reserve10min::Array{Float64,1}
-    reserve30min::Array{Float64,1}
-    reactiveTimescale::Array{Float64,1}
+    loadFollowing::Vector{Float64}
+    reserve10min::Vector{Float64}
+    reserve30min::Vector{Float64}
+    reactiveRamp::Vector{Float64}
 end
 
 mutable struct Cost
-    model::Array{Int8,1}
-    polynomial::Array{Array{Float64,1},1}
-    piecewise::Array{Array{Float64,2},1}
+    model::Vector{Int8}
+    polynomial::Vector{Vector{Float64}}
+    piecewise::Vector{Matrix{Float64}}
 end
 
 mutable struct GeneratorCost
@@ -121,13 +121,13 @@ mutable struct GeneratorCost
 end
 
 mutable struct GeneratorVoltage
-    magnitude::Array{Float64,1}
+    magnitude::Vector{Float64}
 end
 
 mutable struct GeneratorLayout
-    bus::Array{Int64,1}
-    area::Array{Float64,1}
-    status::Array{Int8,1}
+    bus::Vector{Int64}
+    area::Vector{Float64}
+    status::Vector{Int8}
     inservice::Int64
     label::Int64
 end
@@ -143,7 +143,7 @@ mutable struct Generator
     number::Int64
 end
 
-########### Base Data ###########
+##### Base Data #####
 mutable struct BasePower
     value::Float64
     unit::String
@@ -151,7 +151,7 @@ mutable struct BasePower
 end
 
 mutable struct BaseVoltage
-    value::Array{Float64,1}
+    value::Vector{Float64}
     unit::String
     prefix::Float64
 end
@@ -161,35 +161,35 @@ mutable struct BaseData
     voltage::BaseVoltage
 end
 
-########### DC Model ###########
+##### DC Model #####
 mutable struct DCModel
-    nodalMatrix::SparseMatrixCSC{Float64,Int64}
-    admittance::Array{Float64,1}
-    shiftPower::Array{Float64,1}
+    nodalMatrix::SparseMatrixCSC{Float64, Int64}
+    admittance::Vector{Float64}
+    shiftPower::Vector{Float64}
     model::Int64
     pattern::Int64
 end
 
-########### AC Model ###########
+##### AC Model #####
 mutable struct ACModel
-    nodalMatrix::SparseMatrixCSC{ComplexF64,Int64}
-    nodalMatrixTranspose::SparseMatrixCSC{ComplexF64,Int64}
-    nodalFromFrom::Array{ComplexF64,1}
-    nodalFromTo::Array{ComplexF64,1}
-    nodalToTo::Array{ComplexF64,1}
-    nodalToFrom::Array{ComplexF64,1}
-    admittance::Array{ComplexF64,1}
+    nodalMatrix::SparseMatrixCSC{ComplexF64, Int64}
+    nodalMatrixTranspose::SparseMatrixCSC{ComplexF64, Int64}
+    nodalFromFrom::Vector{ComplexF64}
+    nodalFromTo::Vector{ComplexF64}
+    nodalToTo::Vector{ComplexF64}
+    nodalToFrom::Vector{ComplexF64}
+    admittance::Vector{ComplexF64}
     model::Int64
     pattern::Int64
 end
 
-########### Model ###########
+##### Model #####
 mutable struct Model
     ac::ACModel
     dc::DCModel
 end
 
-########### Power System ###########
+##### Power System #####
 mutable struct PowerSystem
     bus::Bus
     branch::Branch
@@ -198,73 +198,73 @@ mutable struct PowerSystem
     model::Model
 end
 
-####### Measurement ##########
+##### Measurement #####
 mutable struct GaussMeter
-    mean::Array{Float64,1}
-    variance::Array{Float64,1}
-    status::Array{Int8,1}
+    mean::Vector{Float64}
+    variance::Vector{Float64}
+    status::Vector{Int8}
 end
 
 mutable struct VoltmeterLayout
-    index::Array{Int64,1}
+    index::Vector{Int64}
     label::Int64
 end
 
 mutable struct AmmeterLayout
-    index::Array{Int64,1}
-    from::Array{Bool,1}
-    to::Array{Bool,1}
+    index::Vector{Int64}
+    from::Vector{Bool}
+    to::Vector{Bool}
     label::Int64
 end
 
 mutable struct PowermeterLayout
-    index::Array{Int64,1}
-    bus::Array{Bool,1}
-    from::Array{Bool,1}
-    to::Array{Bool,1}
+    index::Vector{Int64}
+    bus::Vector{Bool}
+    from::Vector{Bool}
+    to::Vector{Bool}
     label::Int64
 end
 
 mutable struct PmuLayout
-    index::Array{Int64,1}
-    bus::Array{Bool,1}
-    from::Array{Bool,1}
-    to::Array{Bool,1}
-    correlated::Array{Bool,1}
-    polar::Array{Bool,1}
+    index::Vector{Int64}
+    bus::Vector{Bool}
+    from::Vector{Bool}
+    to::Vector{Bool}
+    correlated::Vector{Bool}
+    polar::Vector{Bool}
     label::Int64
 end
 
 mutable struct Voltmeter
-    label::OrderedDict{String,Int64}
+    label::OrderedDict{String, Int64}
     magnitude::GaussMeter
     layout::VoltmeterLayout
     number::Int64
 end
 
 mutable struct Ammeter
-    label::OrderedDict{String,Int64}
+    label::OrderedDict{String, Int64}
     magnitude::GaussMeter
     layout::AmmeterLayout
     number::Int64
 end
 
 mutable struct Wattmeter
-    label::OrderedDict{String,Int64}
+    label::OrderedDict{String, Int64}
     active::GaussMeter
     layout::PowermeterLayout
     number::Int64
 end
 
 mutable struct Varmeter
-    label::OrderedDict{String,Int64}
+    label::OrderedDict{String, Int64}
     reactive::GaussMeter
     layout::PowermeterLayout
     number::Int64
 end
 
 mutable struct PMU
-    label::OrderedDict{String,Int64}
+    label::OrderedDict{String, Int64}
     magnitude::GaussMeter
     angle::GaussMeter
     layout::PmuLayout
@@ -279,6 +279,6 @@ mutable struct Measurement
     pmu::PMU
 end
 
-########### Types ###########
+##### Types #####
 const P = Union{Bus, Branch, Generator}
 const M = Union{Voltmeter, Ammeter, Wattmeter, Varmeter, PMU}

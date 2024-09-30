@@ -64,13 +64,22 @@ addWattmeter!(system, device; label = "Wattmeter 1", bus = "Bus 2", active = 40.
 addWattmeter!(system, device; label = "Wattmeter 2", from = "Branch 1", active = 10.0)
 ```
 """
-function addWattmeter!(system::PowerSystem, device::Measurement;
-    label::L = missing, bus::L = missing, from::L = missing, to::L = missing,
-    active::A, variance::A = missing, status::A = missing,
-    noise::Bool = template.wattmeter.noise)
+function addWattmeter!(
+    system::PowerSystem,
+    device::Measurement;
+    label::IntStrMiss = missing,
+    bus::IntStrMiss = missing,
+    from::IntStrMiss = missing,
+    to::IntStrMiss = missing,
+    active::FltInt,
+    kwargs...
+)
+    key = meterkwargs(template.wattmeter.noise; kwargs...)
 
-    addPowerMeter!(system, device.wattmeter, device.wattmeter.active, template.wattmeter,
-    prefix.activePower, label, bus, from, to, active, variance, status, noise)
+    addPowerMeter!(
+        system, device.wattmeter, device.wattmeter.active, template.wattmeter,
+        pfx.activePower, label, bus, from, to, active, key.variance, key.status, key.noise
+    )
 end
 
 """
@@ -139,26 +148,48 @@ addVarmeter!(system, device; label = "Varmeter 1", bus = "Bus 2", reactive = 40.
 addVarmeter!(system, device; label = "Varmeter 2", from = "Branch 1", reactive = 10.0)
 ```
 """
-function addVarmeter!(system::PowerSystem, device::Measurement;
-    label::L = missing, bus::L = missing, from::L = missing, to::L = missing,
-    reactive::A, variance::A = missing, status::A = missing,
-    noise::Bool = template.varmeter.noise)
+function addVarmeter!(
+    system::PowerSystem,
+    device::Measurement;
+    label::IntStrMiss = missing,
+    bus::IntStrMiss = missing,
+    from::IntStrMiss = missing,
+    to::IntStrMiss = missing,
+    reactive::FltInt,
+    kwargs...
+)
+    key = meterkwargs(template.wattmeter.noise; kwargs...)
 
-    addPowerMeter!(system, device.varmeter, device.varmeter.reactive, template.varmeter,
-    prefix.reactivePower, label, bus, from, to, reactive, variance, status, noise)
+    addPowerMeter!(
+        system, device.varmeter, device.varmeter.reactive, template.varmeter,
+        pfx.reactivePower, label, bus, from, to, reactive, key.variance,
+        key.status, key.noise
+    )
 end
 
 ######### Add Wattmeter or Varmeter ##########
-function addPowerMeter!(system::PowerSystem, device::Union{Wattmeter, Varmeter}, measure::GaussMeter, default::Union{WattmeterTemplate, VarmeterTemplate},
-    prefixPower::Float64, label::L, bus::L, from::L, to::L, power::A, variance::A, status::A, noise::Bool)
-
+function addPowerMeter!(
+    system::PowerSystem,
+    device::Union{Wattmeter, Varmeter},
+    measure::GaussMeter,
+    def::Union{WattmeterTemplate, VarmeterTemplate},
+    pfxPower::Float64,
+    label::IntStrMiss,
+    bus::IntStrMiss,
+    from::IntStrMiss,
+    to::IntStrMiss,
+    power::FltInt,
+    variance::FltIntMiss,
+    status::FltIntMiss,
+    noise::Bool
+)
     location, busFlag, fromFlag, toFlag = checkLocation(bus, from, to)
 
     branchFlag = false
     if !busFlag
-        labelBranch = getLabel(system.branch, location, "branch")
-        index = system.branch.label[labelBranch]
-        if system.branch.layout.status[index] == 1
+        lblBrch = getLabel(system.branch, location, "branch")
+        idx = system.branch.label[lblBrch]
+        if system.branch.layout.status[idx] == 1
             branchFlag = true
         end
     end
@@ -170,26 +201,31 @@ function addPowerMeter!(system::PowerSystem, device::Union{Wattmeter, Varmeter},
         push!(device.layout.to, toFlag)
 
         if busFlag
-            labelBus = getLabel(system.bus, location, "bus")
-            index = system.bus.label[labelBus]
-            setLabel(device, label, default.label, labelBus)
+            lblBus = getLabel(system.bus, location, "bus")
+            idx = system.bus.label[lblBus]
 
-            defaultVariance = default.varianceBus
-            defaultStatus = default.statusBus
+            setLabel(device, label, def.label, lblBus)
+
+            defVariance = def.varianceBus
+            defStatus = def.statusBus
         elseif fromFlag
-            setLabel(device, label, default.label, labelBranch; prefix = "From ")
-            defaultVariance = default.varianceFrom
-            defaultStatus = default.statusFrom
+            setLabel(device, label, def.label, lblBrch; prefix = "From ")
+
+            defVariance = def.varianceFrom
+            defStatus = def.statusFrom
         else
-            setLabel(device, label, default.label, labelBranch; prefix = "To ")
-            defaultVariance = default.varianceTo
-            defaultStatus = default.statusTo
+            setLabel(device, label, def.label, lblBrch; prefix = "To ")
+
+            defVariance = def.varianceTo
+            defStatus = def.statusTo
         end
-        push!(device.layout.index, index)
+        push!(device.layout.index, idx)
 
-        basePowerInv = 1 / (system.base.power.value * system.base.power.prefix)
-
-        setMeter(measure, power, variance, status, noise, defaultVariance, defaultStatus, prefixPower, basePowerInv)
+        baseInv = 1 / (system.base.power.value * system.base.power.prefix)
+        setMeter(
+            measure, power, variance, status, noise,
+            defVariance, defStatus, pfxPower, baseInv
+        )
     end
 end
 
@@ -254,17 +290,26 @@ power!(system, analysis)
 addWattmeter!(system, device, analysis; varianceBus = 1e-3, statusFrom = 0)
 ```
 """
-function addWattmeter!(system::PowerSystem, device::Measurement, analysis::AC;
-    varianceBus::A = missing, varianceFrom::A = missing, varianceTo::A = missing,
-    statusBus::A = missing, statusFrom::A = missing, statusTo::A = missing,
-    noise::Bool = template.wattmeter.noise)
-
+function addWattmeter!(
+    system::PowerSystem,
+    device::Measurement,
+    analysis::AC;
+    varianceBus::FltIntMiss = missing,
+    varianceFrom::FltIntMiss = missing,
+    varianceTo::FltIntMiss = missing,
+    statusBus::FltIntMiss = missing,
+    statusFrom::FltIntMiss = missing,
+    statusTo::FltIntMiss = missing,
+    noise::Bool = template.wattmeter.noise
+)
     wattmeter = device.wattmeter
     power = analysis.power
 
-    addPowermeter!(system, wattmeter, wattmeter.active, power.injection.active,
-    power.from.active, power.to.active, template.wattmeter, prefix.activePower,
-    varianceBus, varianceFrom, varianceTo, statusBus, statusFrom, statusTo, noise)
+    addPowermeter!(
+        system, wattmeter, wattmeter.active, power.injection.active,
+        power.from.active, power.to.active, template.wattmeter, pfx.activePower,
+        varianceBus, varianceFrom, varianceTo, statusBus, statusFrom, statusTo, noise
+    )
 end
 
 """
@@ -327,39 +372,60 @@ power!(system, analysis)
 addVarmeter!(system, device, analysis; varianceFrom = 1e-3, statusBus = 0)
 ```
 """
-function addVarmeter!(system::PowerSystem, device::Measurement, analysis::AC;
-    varianceBus::A = missing, varianceFrom::A = missing, varianceTo::A = missing,
-    statusBus::A = missing, statusFrom::A = missing, statusTo::A = missing,
-    noise::Bool = template.varmeter.noise)
-
+function addVarmeter!(
+    system::PowerSystem,
+    device::Measurement,
+    analysis::AC;
+    varianceBus::FltIntMiss = missing,
+    varianceFrom::FltIntMiss = missing,
+    varianceTo::FltIntMiss = missing,
+    statusBus::FltIntMiss = missing,
+    statusFrom::FltIntMiss = missing,
+    statusTo::FltIntMiss = missing,
+    noise::Bool = template.varmeter.noise
+)
     varmeter = device.varmeter
     power = analysis.power
 
-    addPowermeter!(system, varmeter, varmeter.reactive, power.injection.reactive, power.from.reactive,
-    power.to.reactive, template.varmeter, prefix.reactivePower, varianceBus, varianceFrom, varianceTo,
-    statusBus, statusFrom, statusTo, noise)
+    addPowermeter!(
+        system, varmeter, varmeter.reactive, power.injection.reactive,
+        power.from.reactive, power.to.reactive, template.varmeter, pfx.reactivePower,
+        varianceBus, varianceFrom, varianceTo, statusBus, statusFrom, statusTo, noise
+    )
 end
 
 ######### Add Group of Wattmeters or Varmeters ##########
-function addPowermeter!(system::PowerSystem, device::Union{Wattmeter, Varmeter}, measure::GaussMeter, powerBus::Array{Float64,1},
-    powerFrom::Array{Float64,1}, powerTo::Array{Float64,1}, default::Union{WattmeterTemplate, VarmeterTemplate}, prefixPower::Float64,
-    varianceBus::A, varianceFrom::A, varianceTo::A, statusBus::A, statusFrom::A, statusTo::A, noise::Bool)
+function addPowermeter!(
+    system::PowerSystem,
+    device::Union{Wattmeter, Varmeter},
+    measure::GaussMeter,
+    powerBus::Vector{Float64},
+    powerFrom::Vector{Float64},
+    powerTo::Vector{Float64},
+    def::Union{WattmeterTemplate, VarmeterTemplate},
+    pfxPower::Float64,
+    varianceBus::FltIntMiss,
+    varianceFrom::FltIntMiss,
+    varianceTo::FltIntMiss,
+    statusBus::FltIntMiss,
+    statusFrom::FltIntMiss,
+    statusTo::FltIntMiss,
+    noise::Bool
+)
+    errorPower(powerBus)
 
-    if isempty(powerBus)
-        throw(ErrorException("The powers cannot be found."))
-    end
-
-    statusBus = unitless(statusBus, default.statusBus)
+    statusBus = givenOrDefault(statusBus, def.statusBus)
     checkStatus(statusBus)
 
-    statusFrom = unitless(statusFrom, default.statusFrom)
+    statusFrom = givenOrDefault(statusFrom, def.statusFrom)
     checkStatus(statusFrom)
 
-    statusTo = unitless(statusTo, default.statusTo)
+    statusTo = givenOrDefault(statusTo, def.statusTo)
     checkStatus(statusTo)
 
     deviceNumber = system.bus.number + 2 * system.branch.layout.inservice
-    device.label = OrderedDict{String,Int64}(); sizehint!(device.label, deviceNumber)
+    device.label = OrderedDict{String,Int64}()
+    sizehint!(device.label, deviceNumber)
     device.number = 0
 
     device.layout.index = fill(0, deviceNumber)
@@ -371,28 +437,24 @@ function addPowermeter!(system::PowerSystem, device::Union{Wattmeter, Varmeter},
     measure.variance = similar(measure.mean)
     measure.status = fill(Int8(0), deviceNumber)
 
-    basePowerInv = 1 / (system.base.power.value * system.base.power.prefix)
+    baseInv = 1 / (system.base.power.value * system.base.power.prefix)
     @inbounds for (label, i) in system.bus.label
         device.number += 1
-        setLabel(device, missing, default.label, label)
+        setLabel(device, missing, def.label, label)
 
         device.layout.index[i] = i
         device.layout.bus[i] = true
 
-        measure.status[i] = statusBus
-        measure.variance[i] = topu(varianceBus, default.varianceBus, prefixPower, basePowerInv)
-        if noise
-            measure.mean[i] = powerBus[i] + measure.variance[i]^(1/2) * randn(1)[1]
-        else
-            measure.mean[i] = powerBus[i]
-        end
-
+        add!(
+            measure, i, noise, pfxPower, powerBus[i], varianceBus,
+            def.varianceBus, statusBus, baseInv
+        )
     end
 
     @inbounds for (label, i) in system.branch.label
         if system.branch.layout.status[i] == 1
             device.number += 1
-            setLabel(device, missing, default.label, label; prefix = "From ")
+            setLabel(device, missing, def.label, label; prefix = "From ")
 
             device.layout.index[device.number] = i
             device.layout.index[device.number + 1] = i
@@ -400,22 +462,14 @@ function addPowermeter!(system::PowerSystem, device::Union{Wattmeter, Varmeter},
             device.layout.from[device.number] = true
             device.layout.to[device.number + 1] = true
 
-            measure.status[device.number] = statusFrom
-            measure.status[device.number + 1] = statusTo
-
-            measure.variance[device.number] = topu(varianceFrom, default.varianceFrom, prefixPower, basePowerInv)
-            measure.variance[device.number + 1] = topu(varianceTo, default.varianceTo, prefixPower, basePowerInv)
-
-            if noise
-                measure.mean[device.number] = powerFrom[i] + measure.variance[device.number]^(1/2) * randn(1)[1]
-                measure.mean[device.number + 1] = powerTo[i] + measure.variance[device.number + 1]^(1/2) * randn(1)[1]
-            else
-                measure.mean[device.number] = powerFrom[i]
-                measure.mean[device.number + 1] = powerTo[i]
-            end
+            add!(
+                measure, device.number, noise, pfxPower, powerFrom[i], varianceFrom,
+                def.varianceFrom, statusFrom, baseInv, powerTo[i], varianceTo,
+                def.varianceTo, statusTo, baseInv
+            )
 
             device.number += 1
-            setLabel(device, missing, default.label, label; prefix = "To ")
+            setLabel(device, missing, def.label, label; prefix = "To ")
         end
     end
 
@@ -463,203 +517,241 @@ addWattmeter!(system, device; label = "Wattmeter 1", from = "Branch 1", active =
 updateWattmeter!(system, device; label = "Wattmeter 1", active = 1.2, variance = 1e-4)
 ```
 """
-function updateWattmeter!(system::PowerSystem, device::Measurement; label::L,
-    active::A = missing, variance::A = missing, status::A = missing,
-    noise::Bool = template.wattmeter.noise)
-
+function updateWattmeter!(
+    system::PowerSystem,
+    device::Measurement;
+    label::IntStrMiss,
+    active::FltIntMiss = missing,
+    kwargs...
+)
     wattmeter = device.wattmeter
+    key = meterkwargs(template.wattmeter.noise; kwargs...)
 
-    index = wattmeter.label[getLabel(wattmeter, label, "wattmeter")]
-    basePowerInv = 1 / (system.base.power.value * system.base.power.prefix)
+    idx = wattmeter.label[getLabel(wattmeter, label, "wattmeter")]
 
-    updateMeter(wattmeter.active, index, active, variance, status, noise,
-    prefix.activePower, basePowerInv)
+    updateMeter(
+        wattmeter.active, idx, active, key.variance, key.status, key.noise,
+        pfx.activePower, 1 / (system.base.power.value * system.base.power.prefix)
+    )
 end
 
-function updateWattmeter!(system::PowerSystem, device::Measurement, analysis::ACStateEstimation{NonlinearWLS{T}};
-    label::L, active::A = missing, variance::A = missing, status::A = missing,
-    noise::Bool = template.wattmeter.noise) where T <: Union{Normal, Orthogonal}
+function updateWattmeter!(
+    system::PowerSystem,
+    device::Measurement,
+    analysis::ACStateEstimation{NonlinearWLS{T}};
+    label::IntStrMiss,
+    active::FltIntMiss = missing,
+    kwargs...
+) where T <: Union{Normal, Orthogonal}
 
     bus = system.bus
-    branch = system.branch
     ac = system.model.ac
-    wattmeter = device.wattmeter
+    nodal = ac.nodalMatrix
+    watt = device.wattmeter
     se = analysis.method
+    key = meterkwargs(template.wattmeter.noise; kwargs...)
 
-    indexWattmeter = wattmeter.label[getLabel(wattmeter, label, "wattmeter")]
-    indexBusBranch = wattmeter.layout.index[indexWattmeter]
-    idx = device.voltmeter.number + device.ammeter.number + indexWattmeter
+    idxWatt = watt.label[getLabel(watt, label, "wattmeter")]
+    idxBusBrch = watt.layout.index[idxWatt]
+    idx = device.voltmeter.number + device.ammeter.number + idxWatt
 
-    updateMeter(wattmeter.active, indexWattmeter, active, variance, status, noise,
-    prefix.activePower, 1 / (system.base.power.value * system.base.power.prefix))
+    updateMeter(
+        watt.active, idxWatt, active, key.variance, key.status, key.noise,
+        pfx.activePower, 1 / (system.base.power.value * system.base.power.prefix)
+    )
 
-    if wattmeter.active.status[indexWattmeter] == 1
-        if wattmeter.layout.bus[indexWattmeter]
+    if watt.active.status[idxWatt] == 1
+        if watt.layout.bus[idxWatt]
             se.type[idx] = 4
-        elseif wattmeter.layout.from[indexWattmeter]
+        elseif watt.layout.from[idxWatt]
             se.type[idx] = 5
         else
             se.type[idx] = 6
         end
-        se.mean[idx] = wattmeter.active.mean[indexWattmeter]
+        se.mean[idx] = watt.active.mean[idxWatt]
     else
-        if wattmeter.layout.bus[indexWattmeter]
-            for k in ac.nodalMatrix.colptr[indexBusBranch]:(ac.nodalMatrix.colptr[indexBusBranch + 1] - 1)
-                j = ac.nodalMatrix.rowval[k]
-                se.jacobian[idx, j] = 0.0
-                se.jacobian[idx, bus.number + j] = 0.0
+        if watt.layout.bus[idxWatt]
+            for ptr in nodal.colptr[idxBusBrch]:(nodal.colptr[idxBusBrch + 1] - 1)
+                j = nodal.rowval[ptr]
+                se.jacobian[idx, j] = se.jacobian[idx, bus.number + j] = 0.0
             end
         else
-            se.jacobian[idx, branch.layout.from[indexBusBranch]] = 0.0
-            se.jacobian[idx, bus.number + branch.layout.from[indexBusBranch]] = 0.0
-            se.jacobian[idx, branch.layout.to[indexBusBranch]] = 0.0
-            se.jacobian[idx, bus.number + branch.layout.to[indexBusBranch]] = 0.0
+            i, j = fromto(system, idxBusBrch)
+            se.jacobian[idx, i] = se.jacobian[idx, bus.number + i] = 0.0
+            se.jacobian[idx, j] = se.jacobian[idx, bus.number + j] = 0.0
         end
         se.mean[idx] = 0.0
         se.residual[idx] = 0.0
         se.type[idx] = 0
     end
 
-    if isset(variance)
-        se.precision[idx, idx] = 1 / wattmeter.active.variance[indexWattmeter]
+    if isset(key.variance)
+        se.precision[idx, idx] = 1 / watt.active.variance[idxWatt]
     end
 end
 
-function updateWattmeter!(system::PowerSystem, device::Measurement, analysis::ACStateEstimation{LAV};
-    label::L, active::A = missing, variance::A = missing, status::A = missing,
-    noise::Bool = template.wattmeter.noise)
-
-    wattmeter = device.wattmeter
+function updateWattmeter!(
+    system::PowerSystem,
+    device::Measurement,
+    analysis::ACStateEstimation{LAV};
+    label::IntStrMiss,
+    active::FltIntMiss = missing,
+    kwargs...
+)
+    watt = device.wattmeter
     se = analysis.method
+    key = meterkwargs(template.wattmeter.noise; kwargs...)
 
-    indexWattmeter = wattmeter.label[getLabel(wattmeter, label, "wattmeter")]
-    indexBusBranch = wattmeter.layout.index[indexWattmeter]
-    idx = device.voltmeter.number + device.ammeter.number + indexWattmeter
+    idxWatt = watt.label[getLabel(watt, label, "wattmeter")]
+    idxBusBrch = watt.layout.index[idxWatt]
+    idx = device.voltmeter.number + device.ammeter.number + idxWatt
 
-    updateMeter(wattmeter.active, indexWattmeter, active, variance, status, noise,
-    prefix.activePower, 1 / (system.base.power.value * system.base.power.prefix))
+    updateMeter(
+        watt.active, idxWatt, active, key.variance, key.status, key.noise,
+        pfx.activePower, 1 / (system.base.power.value * system.base.power.prefix)
+    )
 
-    if wattmeter.active.status[indexWattmeter] == 1
-        addDeviceLAV(se, idx)
+    if watt.active.status[idxWatt] == 1
+        add!(se, idx)
 
-        remove!(se.jump, se.residual, idx)
-        addWattmeterResidual!(system, wattmeter, se, indexBusBranch, idx, indexWattmeter)
+        if watt.layout.bus[idxWatt]
+            expr = Pi(system, se, idxBusBrch)
+        else
+            if watt.layout.from[idxWatt]
+                expr = Pij(system, se, idxBusBrch)
+            else
+                expr = Pji(system, se, idxBusBrch)
+            end
+        end
+        addConstrLav!(se, expr, watt.active.mean[idxWatt], idx)
     else
-        removeDeviceLAV(se, idx)
+        remove!(se, idx)
     end
 end
 
-function updateWattmeter!(system::PowerSystem, device::Measurement, analysis::DCStateEstimation{LinearWLS{T}};
-    label::L, active::A = missing, variance::A = missing, status::A = missing,
-    noise::Bool = template.wattmeter.noise) where T <: Union{Normal, Orthogonal}
+function updateWattmeter!(
+    system::PowerSystem,
+    device::Measurement,
+    analysis::DCStateEstimation{LinearWLS{T}};
+    label::IntStrMiss,
+    active::FltIntMiss = missing,
+    kwargs...
+) where T <: Union{Normal, Orthogonal}
 
     dc = system.model.dc
-    wattmeter = device.wattmeter
-    method = analysis.method
+    nodal = dc.nodalMatrix
+    watt = device.wattmeter
+    se = analysis.method
+    key = meterkwargs(template.wattmeter.noise; kwargs...)
 
-    indexWattmeter = wattmeter.label[getLabel(wattmeter, label, "wattmeter")]
-    oldStatus = wattmeter.active.status[indexWattmeter]
-    oldVariance = wattmeter.active.variance[indexWattmeter]
+    idxWatt = watt.label[getLabel(watt, label, "wattmeter")]
+    oldStatus = watt.active.status[idxWatt]
+    oldVariance = watt.active.variance[idxWatt]
 
-    updateMeter(wattmeter.active, indexWattmeter, active, variance, status, noise,
-    prefix.activePower, 1 / (system.base.power.value * system.base.power.prefix))
+    updateMeter(
+        watt.active, idxWatt, active, key.variance, key.status, key.noise,
+        pfx.activePower, 1 / (system.base.power.value * system.base.power.prefix)
+    )
 
-    newStatus = wattmeter.active.status[indexWattmeter]
-    if oldStatus != newStatus || oldVariance != wattmeter.active.variance[indexWattmeter]
-        method.run = true
+    newStatus = watt.active.status[idxWatt]
+    if oldStatus != newStatus || oldVariance != watt.active.variance[idxWatt]
+        se.run = true
     end
 
-    if isset(status) || isset(active)
-        if wattmeter.layout.bus[indexWattmeter]
-            indexBus = wattmeter.layout.index[indexWattmeter]
-            if isset(status)
-                for j in dc.nodalMatrix.colptr[indexBus]:(dc.nodalMatrix.colptr[indexBus + 1] - 1)
-                    method.coefficient[indexWattmeter, dc.nodalMatrix.rowval[j]] = newStatus * dc.nodalMatrix.nzval[j]
+    if isset(key.status, active)
+        if watt.layout.bus[idxWatt]
+            idxBus = watt.layout.index[idxWatt]
+            if isset(key.status)
+                for ptr in nodal.colptr[idxBus]:(nodal.colptr[idxBus + 1] - 1)
+                    j = nodal.rowval[ptr]
+                    se.coefficient[idxWatt, j] = newStatus * nodal.nzval[ptr]
                 end
             end
-            method.mean[indexWattmeter] = newStatus * (wattmeter.active.mean[indexWattmeter] - dc.shiftPower[indexBus] - system.bus.shunt.conductance[indexBus])
+            se.mean[idxWatt] =
+                newStatus * (watt.active.mean[idxWatt] - dc.shiftPower[idxBus] -
+                system.bus.shunt.conductance[idxBus])
         else
-            indexBranch = wattmeter.layout.index[indexWattmeter]
-            newStatus *= system.branch.layout.status[indexBranch]
-            if wattmeter.layout.from[indexWattmeter]
-                addmitance = newStatus * dc.admittance[indexBranch]
+            idxBrch = watt.layout.index[idxWatt]
+            newStatus *= system.branch.layout.status[idxBrch]
+            if watt.layout.from[idxWatt]
+                addmitance = newStatus * dc.admittance[idxBrch]
             else
-                addmitance = -newStatus * dc.admittance[indexBranch]
+                addmitance = -newStatus * dc.admittance[idxBrch]
             end
-            if isset(status)
-                method.coefficient[indexWattmeter, system.branch.layout.from[indexBranch]] = addmitance
-                method.coefficient[indexWattmeter, system.branch.layout.to[indexBranch]] = -addmitance
+            if isset(key.status)
+                i, j = fromto(system, idxBrch)
+                se.coefficient[idxWatt, i] = addmitance
+                se.coefficient[idxWatt, j] = -addmitance
             end
-            method.mean[indexWattmeter] = newStatus * (wattmeter.active.mean[indexWattmeter] + system.branch.parameter.shiftAngle[indexBranch] * addmitance)
+            se.mean[idxWatt] =
+                newStatus * (watt.active.mean[idxWatt] +
+                system.branch.parameter.shiftAngle[idxBrch] * addmitance)
         end
     end
 
-    if isset(variance)
-        method.precision.nzval[indexWattmeter] = 1 / wattmeter.active.variance[indexWattmeter]
+    if isset(key.variance)
+        se.precision.nzval[idxWatt] = 1 / watt.active.variance[idxWatt]
     end
 end
 
-function updateWattmeter!(system::PowerSystem, device::Measurement, analysis::DCStateEstimation{LAV};
-    label::L, active::A = missing, variance::A = missing, status::A = missing,
-    noise::Bool = template.wattmeter.noise)
-
+function updateWattmeter!(
+    system::PowerSystem,
+    device::Measurement,
+    analysis::DCStateEstimation{LAV};
+    label::IntStrMiss,
+    active::FltIntMiss = missing,
+    kwargs...
+)
+    bus = system.bus
+    branch = system.branch
     dc = system.model.dc
-    wattmeter = device.wattmeter
-    method = analysis.method
+    watt = device.wattmeter
+    se = analysis.method
+    key = meterkwargs(template.wattmeter.noise; kwargs...)
 
-    indexWattmeter = wattmeter.label[getLabel(wattmeter, label, "wattmeter")]
+    idxWatt = watt.label[getLabel(watt, label, "wattmeter")]
     basePowerInv = 1 / (system.base.power.value * system.base.power.prefix)
 
-    updateMeter(wattmeter.active, indexWattmeter, active, variance, status, noise,
-    prefix.activePower, basePowerInv)
+    updateMeter(
+        watt.active, idxWatt, active, key.variance,
+        key.status, key.noise, pfx.activePower, basePowerInv
+    )
 
-    if isset(status) || isset(active)
-        if wattmeter.layout.bus[indexWattmeter]
-            indexBus = wattmeter.layout.index[indexWattmeter]
+    if isset(key.status, active)
+        if watt.layout.bus[idxWatt]
+            idxBus = watt.layout.index[idxWatt]
         else
-            indexBranch = wattmeter.layout.index[indexWattmeter]
-            if wattmeter.layout.from[indexWattmeter]
-                admittance = dc.admittance[indexBranch]
+            idxBrch = watt.layout.index[idxWatt]
+            if watt.layout.from[idxWatt]
+                admittance = dc.admittance[idxBrch]
             else
-                admittance = -dc.admittance[indexBranch]
+                admittance = -dc.admittance[idxBrch]
             end
         end
     end
 
-    if isset(status)
-        if wattmeter.active.status[indexWattmeter] == 1
-            addDeviceLAV(method, indexWattmeter)
+    if isset(key.status, active)
+        if watt.active.status[idxWatt] == 1
+            add!(se, idxWatt)
 
-            if wattmeter.layout.bus[indexWattmeter]
-                angleCoeff = @expression(method.jump, AffExpr())
-                for j in dc.nodalMatrix.colptr[indexBus]:(dc.nodalMatrix.colptr[indexBus + 1] - 1)
-                    k = dc.nodalMatrix.rowval[j]
-                    add_to_expression!(angleCoeff, dc.nodalMatrix.nzval[j] * (method.statex[k] - method.statey[k]))
+            if watt.layout.bus[idxWatt]
+                mean = meanPi(bus, dc, watt, idxBus, idxWatt)
+                expr = Pi(dc, se, idxWatt)
+                addConstrLav!(se, expr, mean, idxWatt)
+            elseif branch.layout.status[idxBrch] == 1
+                if watt.layout.from[idxWatt]
+                    admittance = dc.admittance[idxBrch]
+                else
+                    admittance = -dc.admittance[idxBrch]
                 end
-
-                remove!(method.jump, method.residual, indexWattmeter)
-                method.residual[indexWattmeter] = @constraint(method.jump, angleCoeff + method.residualy[indexWattmeter] - method.residualx[indexWattmeter] == 0.0)
-            elseif system.branch.layout.status[indexBranch] == 1
-                from = system.branch.layout.from[indexBranch]
-                to =  system.branch.layout.to[indexBranch]
-
-                angleCoeff = admittance * (method.statex[from] - method.statey[from] - method.statex[to] + method.statey[to])
-
-                remove!(method.jump, method.residual, indexWattmeter)
-                method.residual[indexWattmeter] = @constraint(method.jump, angleCoeff + method.residualy[indexWattmeter] - method.residualx[indexWattmeter] == 0.0)
+                mean = meanPij(branch, watt, admittance, idxWatt, idxBrch)
+                expr = Pij(system, se, admittance, idxBrch)
+                addConstrLav!(se, expr, mean, idxWatt)
             else
-                removeDeviceLAV(method, indexWattmeter)
+                remove!(se, idxWatt)
             end
         else
-            removeDeviceLAV(method, indexWattmeter)
-        end
-    end
-
-    if wattmeter.active.status[indexWattmeter] == 1 && (isset(status) || isset(active))
-        if wattmeter.layout.bus[indexWattmeter]
-            set_normalized_rhs(method.residual[indexWattmeter], wattmeter.active.mean[indexWattmeter] - dc.shiftPower[indexBus] - system.bus.shunt.conductance[indexBus])
-        elseif system.branch.layout.status[indexBranch] == 1
-            set_normalized_rhs(method.residual[indexWattmeter], wattmeter.active.mean[indexWattmeter] + system.branch.parameter.shiftAngle[indexBranch] * admittance)
+            remove!(se, idxWatt)
         end
     end
 end
@@ -705,89 +797,113 @@ addVarmeter!(system, device; label = "Varmeter 1", from = "Branch 1", reactive =
 updateVarmeter!(system, device; label = "Varmeter 1", reactive = 1.2, variance = 1e-4)
 ```
 """
-function updateVarmeter!(system::PowerSystem, device::Measurement; label::L,
-    reactive::A = missing, variance::A = missing, status::A = missing,
-    noise::Bool = template.varmeter.noise)
+function updateVarmeter!(
+    system::PowerSystem,
+    device::Measurement;
+    label::IntStrMiss,
+    reactive::FltIntMiss = missing,
+    kwargs...
+)
+    var = device.varmeter
+    key = meterkwargs(template.varmeter.noise; kwargs...)
 
-    varmeter = device.varmeter
+    idx = var.label[getLabel(var, label, "varmeter")]
 
-    index = varmeter.label[getLabel(varmeter, label, "varmeter")]
-    basePowerInv = 1 / (system.base.power.value * system.base.power.prefix)
-
-    updateMeter(varmeter.reactive, index, reactive, variance, status, noise,
-    prefix.reactivePower, basePowerInv)
+    updateMeter(
+        var.reactive, idx, reactive, key.variance, key.status, key.noise,
+        pfx.reactivePower, 1 / (system.base.power.value * system.base.power.prefix)
+    )
 end
 
-function updateVarmeter!(system::PowerSystem, device::Measurement, analysis::ACStateEstimation{NonlinearWLS{T}};
-    label::L, reactive::A = missing, variance::A = missing, status::A = missing,
-    noise::Bool = template.varmeter.noise) where T <: Union{Normal, Orthogonal}
+function updateVarmeter!(
+    system::PowerSystem, device::Measurement,
+    analysis::ACStateEstimation{NonlinearWLS{T}};
+    label::IntStrMiss,
+    reactive::FltIntMiss = missing,
+    kwargs...
+) where T <: Union{Normal, Orthogonal}
 
     bus = system.bus
-    branch = system.branch
-    ac = system.model.ac
-    varmeter = device.varmeter
+    nodal = system.model.ac.nodalMatrix
+    var = device.varmeter
     se = analysis.method
+    key = meterkwargs(template.varmeter.noise; kwargs...)
 
-    indexVarmeter = varmeter.label[getLabel(varmeter, label, "varmeter")]
-    indexBusBranch = varmeter.layout.index[indexVarmeter]
-    idx = device.voltmeter.number + device.ammeter.number + device.wattmeter.number + indexVarmeter
+    idxVar = var.label[getLabel(var, label, "varmeter")]
+    idxBusBrch = var.layout.index[idxVar]
+    idx = device.voltmeter.number + device.ammeter.number + device.wattmeter.number + idxVar
 
-    updateMeter(varmeter.reactive, indexVarmeter, reactive, variance, status, noise,
-    prefix.reactivePower,  1 / (system.base.power.value * system.base.power.prefix))
+    updateMeter(
+        var.reactive, idxVar, reactive, key.variance, key.status, key.noise,
+        pfx.reactivePower,  1 / (system.base.power.value * system.base.power.prefix)
+    )
 
-    if varmeter.reactive.status[indexVarmeter] == 1
-        if varmeter.layout.bus[indexVarmeter]
+    if var.reactive.status[idxVar] == 1
+        if var.layout.bus[idxVar]
             se.type[idx] = 7
-        elseif varmeter.layout.from[indexVarmeter]
+        elseif var.layout.from[idxVar]
             se.type[idx] = 8
         else
             se.type[idx] = 9
         end
-        se.mean[idx] = varmeter.reactive.mean[indexVarmeter]
+        se.mean[idx] = var.reactive.mean[idxVar]
     else
-        if varmeter.layout.bus[indexVarmeter]
-            for k in ac.nodalMatrix.colptr[indexBusBranch]:(ac.nodalMatrix.colptr[indexBusBranch + 1] - 1)
-                j = ac.nodalMatrix.rowval[k]
-                se.jacobian[idx, j] = 0.0
-                se.jacobian[idx, bus.number + j] = 0.0
+        if var.layout.bus[idxVar]
+            for ptr in nodal.colptr[idxBusBrch]:(nodal.colptr[idxBusBrch + 1] - 1)
+                j = nodal.rowval[ptr]
+                se.jacobian[idx, j] = se.jacobian[idx, bus.number + j] = 0.0
             end
         else
-            se.jacobian[idx, branch.layout.from[indexBusBranch]] = 0.0
-            se.jacobian[idx, bus.number + branch.layout.from[indexBusBranch]] = 0.0
-            se.jacobian[idx, branch.layout.to[indexBusBranch]] = 0.0
-            se.jacobian[idx, bus.number + branch.layout.to[indexBusBranch]] = 0.0
+            i, j = fromto(system, idxBusBrch)
+            se.jacobian[idx, i] = se.jacobian[idx, bus.number + i] = 0.0
+            se.jacobian[idx, j] = se.jacobian[idx, bus.number + j] = 0.0
         end
         se.mean[idx] = 0.0
         se.residual[idx] = 0.0
         se.type[idx] = 0
     end
 
-    if isset(variance)
-        se.precision[idx, idx] = 1 / varmeter.reactive.variance[indexVarmeter]
+    if isset(key.variance)
+        se.precision[idx, idx] = 1 / var.reactive.variance[idxVar]
     end
 end
 
-function updateVarmeter!(system::PowerSystem, device::Measurement, analysis::ACStateEstimation{LAV};
-    label::L, reactive::A = missing, variance::A = missing, status::A = missing,
-    noise::Bool = template.varmeter.noise)
-
-    varmeter = device.varmeter
+function updateVarmeter!(
+    system::PowerSystem,
+    device::Measurement,
+    analysis::ACStateEstimation{LAV};
+    label::IntStrMiss,
+    reactive::FltIntMiss = missing,
+    kwargs...
+)
+    var = device.varmeter
     se = analysis.method
+    key = meterkwargs(template.varmeter.noise; kwargs...)
 
-    indexVarmeter = varmeter.label[getLabel(varmeter, label, "varmeter")]
-    indexBusBranch = varmeter.layout.index[indexVarmeter]
-    idx = device.voltmeter.number + device.ammeter.number + device.wattmeter.number + indexVarmeter
+    idxVar = var.label[getLabel(var, label, "varmeter")]
+    idxBusBrch = var.layout.index[idxVar]
+    idx = device.voltmeter.number + device.ammeter.number + device.wattmeter.number + idxVar
 
-    updateMeter(varmeter.reactive, indexVarmeter, reactive, variance, status, noise,
-    prefix.reactivePower, 1 / (system.base.power.value * system.base.power.prefix))
+    updateMeter(
+        var.reactive, idxVar, reactive, key.variance, key.status, key.noise,
+        pfx.reactivePower, 1 / (system.base.power.value * system.base.power.prefix)
+    )
 
-    if varmeter.reactive.status[indexVarmeter] == 1
-        addDeviceLAV(se, idx)
+    if var.reactive.status[idxVar] == 1
+        add!(se, idx)
 
-        remove!(se.jump, se.residual, idx)
-        addVarmeterResidual!(system, varmeter, se, indexBusBranch, idx, indexVarmeter)
+        if var.layout.bus[idxVar]
+            expr = Qi(system, se, idxBusBrch)
+        else
+            if var.layout.from[idxVar]
+                expr = Qij(system, se, idxBusBrch)
+            else
+                expr = Qji(system, se, idxBusBrch)
+            end
+        end
+        addConstrLav!(se, expr, var.reactive.mean[idxVar], idx)
     else
-        removeDeviceLAV(se, idx)
+        remove!(se, idx)
     end
 end
 
@@ -847,11 +963,12 @@ macro wattmeter(kwargs...)
         if hasfield(WattmeterTemplate, parameter)
             if parameter in [:varianceBus, :varianceFrom, :varianceTo]
                 container::ContainerTemplate = getfield(template.wattmeter, parameter)
-                if prefix.activePower != 0.0
-                    setfield!(container, :value, prefix.activePower * Float64(eval(kwarg.args[2])))
+                val = Float64(eval(kwarg.args[2]))
+                if pfx.activePower != 0.0
+                    setfield!(container, :value, pfx.activePower * val)
                     setfield!(container, :pu, false)
                 else
-                    setfield!(container, :value, Float64(eval(kwarg.args[2])))
+                    setfield!(container, :value, val)
                     setfield!(container, :pu, true)
                 end
             elseif parameter in [:statusBus, :statusFrom, :statusTo]
@@ -863,11 +980,11 @@ macro wattmeter(kwargs...)
                 if contains(label, "?") || contains(label, "!")
                     setfield!(template.wattmeter, parameter, label)
                 else
-                    throw(ErrorException("The label template is missing the '?' or '!' symbols."))
+                    errorTemplateLabel()
                 end
             end
         else
-            throw(ErrorException("The keyword $(parameter) is illegal."))
+            errorTemplateKeyword(parameter)
         end
     end
 end
@@ -928,11 +1045,12 @@ macro varmeter(kwargs...)
         if hasfield(VarmeterTemplate, parameter)
             if parameter in [:varianceBus, :varianceFrom, :varianceTo]
                 container::ContainerTemplate = getfield(template.varmeter, parameter)
-                if prefix.reactivePower != 0.0
-                    setfield!(container, :value, prefix.reactivePower * Float64(eval(kwarg.args[2])))
+                val = Float64(eval(kwarg.args[2]))
+                if pfx.reactivePower != 0.0
+                    setfield!(container, :value, pfx.reactivePower * val)
                     setfield!(container, :pu, false)
                 else
-                    setfield!(container, :value, Float64(eval(kwarg.args[2])))
+                    setfield!(container, :value, val)
                     setfield!(container, :pu, true)
                 end
             elseif parameter in [:statusBus, :statusFrom, :statusTo]
@@ -944,11 +1062,11 @@ macro varmeter(kwargs...)
                 if contains(label, "?") || contains(label, "!")
                     setfield!(template.varmeter, parameter, label)
                 else
-                    throw(ErrorException("The label template is missing the '?' or '!' symbols."))
+                    errorTemplateLabel()
                 end
             end
         else
-            throw(ErrorException("The keyword $(parameter) is illegal."))
+            errorTemplateKeyword(parameter)
         end
     end
 end

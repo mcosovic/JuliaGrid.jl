@@ -49,328 +49,404 @@ printBusData(system, analysis; label = 12, delimiter, width)
 printBusData(system, analysis; label = 14, delimiter, width, footer = true)
 ```
 """
-function printBusData(system::PowerSystem, analysis::AC, io::IO = stdout; label::L = missing,
-    fmt::Dict{String, String} = Dict{String, String}(), width::Dict{String, Int64} = Dict{String, Int64}(),
-    show::Dict{String, Bool} = Dict{String, Bool}(), delimiter::String = "|", style::Bool = true,
-    title::B = missing, header::B = missing, footer::B = missing, repeat::Int64 = system.bus.number + 1)
+function printBusData(
+    system::PowerSystem,
+    analysis::AC,
+    io::IO = stdout;
+    label::IntStrMiss = missing,
+    repeat::Int64 = system.bus.number + 1,
+    kwargs...
+)
+    bus = system.bus
 
-    scale = scalePrint(system, prefix)
-    labels, title, header, footer = formPrint(system.bus, system.bus.label, label, title, header, footer, "bus")
-    fmt, width, show, heading, subheading, unit, printing = busPrint(system, analysis, unitList, prefix, scale, label, fmt, width, show, title, style)
+    scale = scalePrint(system, pfx)
+    prt = busData(system, analysis, unitList, pfx, scale, label, repeat; kwargs...)
 
-    if printing
-        pfmt, hfmt, maxLine = setupPrint(fmt, width, show, delimiter, style)
-        titlePrint(io, delimiter, title, header, style, maxLine, "Bus Data")
-
-        @inbounds for (label, i) in labels
-            scaleVoltg = scaleVoltage(prefix, system, i)
-            scaleCurrt = scaleCurrent(prefix, system, i)
-
-            printing = headerPrint(io, hfmt, width, show, heading, subheading, unit, delimiter, header, repeat, style, printing, maxLine, i)
-            printf(io, pfmt, width, show, label, "Label Bus")
-
-            printf(io, pfmt, width, show, i, scaleVoltg, analysis.voltage.magnitude, "Voltage Magnitude")
-            printf(io, pfmt, width, show, i, scale["θ"], analysis.voltage.angle, "Voltage Angle")
-            printf(io, pfmt, width, show, i, scale["P"], analysis.power.supply.active, "Power Generation Active")
-            printf(io, pfmt, width, show, i, scale["Q"], analysis.power.supply.reactive, "Power Generation Reactive")
-            printf(io, pfmt, width, show, i, scale["P"], system.bus.demand.active, "Power Demand Active")
-            printf(io, pfmt, width, show, i, scale["Q"], system.bus.demand.reactive, "Power Demand Reactive")
-            printf(io, pfmt, width, show, i, scale["P"], analysis.power.injection.active, "Power Injection Active")
-            printf(io, pfmt, width, show, i, scale["Q"], analysis.power.injection.reactive, "Power Injection Reactive")
-            printf(io, pfmt, width, show, i, scale["P"], analysis.power.shunt.active, "Shunt Power Active")
-            printf(io, pfmt, width, show, i, scale["Q"], analysis.power.shunt.reactive, "Shunt Power Reactive")
-            printf(io, pfmt, width, show, i, scaleCurrt, analysis.current.injection.magnitude, "Current Injection Magnitude")
-            printf(io, pfmt, width, show, i, scale["ψ"], analysis.current.injection.angle, "Current Injection Angle")
-
-            @printf io "\n"
-        end
-        printf(io, delimiter, footer, style, maxLine)
+    if prt.notprint
+        return
     end
+
+    title(io, prt, "Bus Data")
+
+    @inbounds for (label, i) in pickLabel(bus, bus.label, label, "bus")
+        scaleVolt = scaleVoltage(pfx, system, i)
+        scaleCurr = scaleCurrent(pfx, system, i)
+
+        header(io, prt)
+        printf(io, prt.pfmt, prt, label, :lblB)
+
+        printf(io, prt, i, scaleVolt, analysis.voltage.magnitude, :Vmag)
+        printf(io, prt, i, scale[:θ], analysis.voltage.angle, :Vang)
+        printf(io, prt, i, scale[:P], analysis.power.supply.active, :Pgen)
+        printf(io, prt, i, scale[:Q], analysis.power.supply.reactive, :Qgen)
+        printf(io, prt, i, scale[:P], system.bus.demand.active, :Pdem)
+        printf(io, prt, i, scale[:Q], system.bus.demand.reactive, :Qdem)
+        printf(io, prt, i, scale[:P], analysis.power.injection.active, :Pinj)
+        printf(io, prt, i, scale[:Q], analysis.power.injection.reactive, :Qinj)
+        printf(io, prt, i, scale[:P], analysis.power.shunt.active, :Pshu)
+        printf(io, prt, i, scale[:Q], analysis.power.shunt.reactive, :Qshu)
+        printf(io, prt, i, scaleCurr, analysis.current.injection.magnitude, :Imag)
+        printf(io, prt, i, scale[:ψ], analysis.current.injection.angle, :Iang)
+
+        @printf io "\n"
+    end
+    printf(io, prt.footer, prt)
 end
 
-function busPrint(system::PowerSystem, analysis::AC, unitList::UnitList, prefix::PrefixLive, scale::Dict{String, Float64},
-    label::L, fmt::Dict{String, String}, width::Dict{String, Int64}, show::Dict{String, Bool}, title::Bool, style::Bool)
-
+function busData(
+    system::PowerSystem,
+    analysis::AC,
+    unitList::UnitList,
+    pfx::PrefixLive,
+    scale::Dict{Symbol, Float64},
+    label::IntStrMiss,
+    repeat::Int64;
+    kwargs...
+)
     errorVoltage(analysis.voltage.magnitude)
     voltage = analysis.voltage
     power = analysis.power
     current = analysis.current
+    style, delimiter, key = printkwargs(; kwargs...)
 
-    _show = OrderedDict(
-        "Label"             => true,
-        "Voltage"           => true,
-        "Power Generation"  => true,
-        "Power Demand"      => true,
-        "Power Injection"   => true,
-        "Shunt Power"       => true,
-        "Current Injection" => true
+    head = Dict(
+        :labl => "Label",
+        :lblB => "Label Bus",
+        :Volt => "Voltage",
+        :Vmag => "Voltage Magnitude",
+        :Vang => "Voltage Angle",
+        :Gene => "Power Generation",
+        :Pgen => "Power Generation Active",
+        :Qgen => "Power Generation Reactive",
+        :Demd => "Power Demand",
+        :Pdem => "Power Demand Active",
+        :Qdem => "Power Demand Reactive",
+        :Injc => "Power Injection",
+        :Pinj => "Power Injection Active",
+        :Qinj => "Power Injection Reactive",
+        :Shun => "Shunt Power",
+        :Pshu => "Shunt Power Active",
+        :Qshu => "Shunt Power Reactive",
+        :Iinj => "Current Injection",
+        :Imag => "Current Injection Magnitude",
+        :Iang => "Current Injection Angle",
     )
-    _fmt, _width = fmtwidth(_show)
-    _fmt, _width, _show = printFormat(_fmt, fmt, _width, width, _show, show, style)
+    show = OrderedDict(
+        head[:labl] => true,
+        head[:Volt] => true,
+        head[:Gene] => true,
+        head[:Demd] => true,
+        head[:Injc] => true,
+        head[:Shun] => true,
+        head[:Iinj] => true
+    )
+
+    fmt, width = fmtwidth(show)
+    transfer!(fmt, key.fmt, width, key.width, show, key.show, style)
 
     subheading = Dict(
-        "Label Bus"                   => _header_("Bus", "Bus Label", style),
-        "Voltage Magnitude"           => _header_("Magnitude", "Voltage Magnitude", style),
-        "Voltage Angle"               => _header_("Angle", "Voltage Angle", style),
-        "Power Generation Active"     => _header_("Active", "Active Power Generation", style),
-        "Power Generation Reactive"   => _header_("Reactive", "Reactive Power Generation", style),
-        "Power Demand Active"         => _header_("Active", "Active Power Demand", style),
-        "Power Demand Reactive"       => _header_("Reactive", "Reactive Power Demand", style),
-        "Power Injection Active"      => _header_("Active", "Active Power Injection", style),
-        "Power Injection Reactive"    => _header_("Reactive", "Reactive Power Injection", style),
-        "Shunt Power Active"          => _header_("Active", "Shunt Active Power", style),
-        "Shunt Power Reactive"        => _header_("Reactive", "Shunt Reactive Power", style),
-        "Current Injection Magnitude" => _header_("Magnitude", "Current Injection Magnitude", style),
-        "Current Injection Angle"     => _header_("Angle", "Current Injection Angle", style)
+        head[:lblB] => _header("Bus", "Bus Label", style),
+        head[:Vmag] => _header("Magnitude", head[:Vmag], style),
+        head[:Vang] => _header("Angle", head[:Vang], style),
+        head[:Pgen] => _header("Active", "Power Generation Active", style),
+        head[:Qgen] => _header("Reactive", "Power Generation Reactive", style),
+        head[:Pdem] => _header("Active", "Active Power Demand", style),
+        head[:Qdem] => _header("Reactive", "Reactive Power Demand", style),
+        head[:Pinj] => _header("Active", "Active Power Injection", style),
+        head[:Qinj] => _header("Reactive", "Reactive Power Injection", style),
+        head[:Pshu] => _header("Active", "Shunt Active Power", style),
+        head[:Qshu] => _header("Reactive", "Shunt Reactive Power", style),
+        head[:Imag] => _header("Magnitude", head[:Imag], style),
+        head[:Iang] => _header("Angle", head[:Iang], style)
     )
     unit = Dict(
-        "Label Bus"                   => "",
-        "Voltage Magnitude"           => "[$(unitList.voltageMagnitudeLive)]",
-        "Voltage Angle"               => "[$(unitList.voltageAngleLive)]",
-        "Power Generation Active"     => "[$(unitList.activePowerLive)]",
-        "Power Generation Reactive"   => "[$(unitList.reactivePowerLive)]",
-        "Power Demand Active"         => "[$(unitList.activePowerLive)]",
-        "Power Demand Reactive"       => "[$(unitList.reactivePowerLive)]",
-        "Power Injection Active"      => "[$(unitList.activePowerLive)]",
-        "Power Injection Reactive"    => "[$(unitList.reactivePowerLive)]",
-        "Shunt Power Active"          => "[$(unitList.activePowerLive)]",
-        "Shunt Power Reactive"        => "[$(unitList.reactivePowerLive)]",
-        "Current Injection Magnitude" => "[$(unitList.currentMagnitudeLive)]",
-        "Current Injection Angle"     => "[$(unitList.currentAngleLive)]"
+        head[:lblB] => "",
+        head[:Vmag] => "[" * unitList.voltageMagnitudeLive * "]",
+        head[:Vang] => "[" * unitList.voltageAngleLive * "]",
+        head[:Pgen] => "[" * unitList.activePowerLive * "]",
+        head[:Qgen] => "[" * unitList.reactivePowerLive * "]",
+        head[:Pdem] => "[" * unitList.activePowerLive * "]",
+        head[:Qdem] => "[" * unitList.reactivePowerLive * "]",
+        head[:Pinj] => "[" * unitList.activePowerLive * "]",
+        head[:Qinj] => "[" * unitList.reactivePowerLive * "]",
+        head[:Pshu] => "[" * unitList.activePowerLive * "]",
+        head[:Qshu] => "[" * unitList.reactivePowerLive * "]",
+        head[:Imag] => "[" * unitList.currentMagnitudeLive * "]",
+        head[:Iang] => "[" * unitList.currentAngleLive * "]"
     )
-    _fmt = Dict(
-        "Label Bus"                   => _fmt_(_fmt["Label"]; format = "%-*s"),
-        "Voltage Magnitude"           => _fmt_(_fmt["Voltage"]),
-        "Voltage Angle"               => _fmt_(_fmt["Voltage"]),
-        "Power Generation Active"     => _fmt_(_fmt["Power Generation"]),
-        "Power Generation Reactive"   => _fmt_(_fmt["Power Generation"]),
-        "Power Demand Active"         => _fmt_(_fmt["Power Demand"]),
-        "Power Demand Reactive"       => _fmt_(_fmt["Power Demand"]),
-        "Power Injection Active"      => _fmt_(_fmt["Power Injection"]),
-        "Power Injection Reactive"    => _fmt_(_fmt["Power Injection"]),
-        "Shunt Power Active"          => _fmt_(_fmt["Shunt Power"]),
-        "Shunt Power Reactive"        => _fmt_(_fmt["Shunt Power"]),
-        "Current Injection Magnitude" => _fmt_(_fmt["Current Injection"]),
-        "Current Injection Angle"     => _fmt_(_fmt["Current Injection"])
+    fmt = Dict(
+        head[:lblB] => _fmt(fmt[head[:labl]]; format = "%-*s"),
+        head[:Vmag] => _fmt(fmt[head[:Volt]]),
+        head[:Vang] => _fmt(fmt[head[:Volt]]),
+        head[:Pgen] => _fmt(fmt[head[:Gene]]),
+        head[:Qgen] => _fmt(fmt[head[:Gene]]),
+        head[:Pdem] => _fmt(fmt[head[:Demd]]),
+        head[:Qdem] => _fmt(fmt[head[:Demd]]),
+        head[:Pinj] => _fmt(fmt[head[:Injc]]),
+        head[:Qinj] => _fmt(fmt[head[:Injc]]),
+        head[:Pshu] => _fmt(fmt[head[:Shun]]),
+        head[:Qshu] => _fmt(fmt[head[:Shun]]),
+        head[:Imag] => _fmt(fmt[head[:Iinj]]),
+        head[:Iang] => _fmt(fmt[head[:Iinj]])
     )
-    _width = Dict(
-        "Label Bus"                   => _width_(_width["Label"], 5, style),
-        "Voltage Magnitude"           => _width_(_width["Voltage"], 9, style),
-        "Voltage Angle"               => _width_(_width["Voltage"], 5, style),
-        "Power Generation Active"     => _width_(_width["Power Generation"], 6, style),
-        "Power Generation Reactive"   => _width_(_width["Power Generation"], 8, style),
-        "Power Demand Active"         => _width_(_width["Power Demand"], 6, style),
-        "Power Demand Reactive"       => _width_(_width["Power Demand"], 8, style),
-        "Power Injection Active"      => _width_(_width["Power Injection"], 6, style),
-        "Power Injection Reactive"    => _width_(_width["Power Injection"], 8, style),
-        "Shunt Power Active"          => _width_(_width["Shunt Power"], 6, style),
-        "Shunt Power Reactive"        => _width_(_width["Shunt Power"], 8, style),
-        "Current Injection Magnitude" => _width_(_width["Current Injection"], 9, style),
-        "Current Injection Angle"     => _width_(_width["Current Injection"], 5, style)
+    width = Dict(
+        head[:lblB] => _width(width[head[:labl]], 5, style),
+        head[:Vmag] => _width(width[head[:Volt]], 9, style),
+        head[:Vang] => _width(width[head[:Volt]], 5, style),
+        head[:Pgen] => _width(width[head[:Gene]], 6, style),
+        head[:Qgen] => _width(width[head[:Gene]], 8, style),
+        head[:Pdem] => _width(width[head[:Demd]], 6, style),
+        head[:Qdem] => _width(width[head[:Demd]], 8, style),
+        head[:Pinj] => _width(width[head[:Injc]], 6, style),
+        head[:Qinj] => _width(width[head[:Injc]], 8, style),
+        head[:Pshu] => _width(width[head[:Shun]], 6, style),
+        head[:Qshu] => _width(width[head[:Shun]], 8, style),
+        head[:Imag] => _width(width[head[:Iinj]], 9, style),
+        head[:Iang] => _width(width[head[:Iinj]], 5, style)
     )
-    _show = OrderedDict(
-        "Label Bus"                   => _show_(_show["Label"], true),
-        "Voltage Magnitude"           => _show_(_show["Voltage"], voltage.magnitude),
-        "Voltage Angle"               => _show_(_show["Voltage"], voltage.angle),
-        "Power Generation Active"     => _show_(_show["Power Generation"], power.supply.active),
-        "Power Generation Reactive"   => _show_(_show["Power Generation"], power.supply.reactive),
-        "Power Demand Active"         => _show_(_show["Power Demand"], power.injection.active),
-        "Power Demand Reactive"       => _show_(_show["Power Demand"], power.injection.reactive),
-        "Power Injection Active"      => _show_(_show["Power Injection"], power.injection.active),
-        "Power Injection Reactive"    => _show_(_show["Power Injection"], power.injection.reactive),
-        "Shunt Power Active"          => _show_(_show["Shunt Power"], power.shunt.active),
-        "Shunt Power Reactive"        => _show_(_show["Shunt Power"], power.shunt.reactive),
-        "Current Injection Magnitude" => _show_(_show["Current Injection"], current.injection.magnitude),
-        "Current Injection Angle"     => _show_(_show["Current Injection"], current.injection.angle)
+    show = OrderedDict(
+        head[:lblB] => _show(show[head[:labl]], true),
+        head[:Vmag] => _show(show[head[:Volt]], voltage.magnitude),
+        head[:Vang] => _show(show[head[:Volt]], voltage.angle),
+        head[:Pgen] => _show(show[head[:Gene]], power.supply.active),
+        head[:Qgen] => _show(show[head[:Gene]], power.supply.reactive),
+        head[:Pdem] => _show(show[head[:Demd]], power.injection.active),
+        head[:Qdem] => _show(show[head[:Demd]], power.injection.reactive),
+        head[:Pinj] => _show(show[head[:Injc]], power.injection.active),
+        head[:Qinj] => _show(show[head[:Injc]], power.injection.reactive),
+        head[:Pshu] => _show(show[head[:Shun]], power.shunt.active),
+        head[:Qshu] => _show(show[head[:Shun]], power.shunt.reactive),
+        head[:Imag] => _show(show[head[:Iinj]], current.injection.magnitude),
+        head[:Iang] => _show(show[head[:Iinj]], current.injection.angle)
     )
-    fmt, width, show = printFormat(_fmt, fmt, _width, width, _show, show, style)
+    transfer!(fmt, key.fmt, width, key.width, show, key.show, style)
 
     if style
         if isset(label)
             label = getLabel(system.bus, label, "bus")
             i = system.bus.label[label]
 
-            scaleVoltg = scaleVoltage(prefix, system, i)
-            scaleCurrt = scaleCurrent(prefix, system, i)
+            scaleVolg = scaleVoltage(pfx, system, i)
+            scaleCurr = scaleCurrent(pfx, system, i)
 
-            fmax(width, show, label, "Label Bus")
+            fmax(width, show, label, head[:lblB])
 
-            fmax(fmt, width, show, i, scaleVoltg, voltage.magnitude, "Voltage Magnitude")
-            fmax(fmt, width, show, i, scale["θ"], voltage.angle, "Voltage Angle")
-            fmax(fmt, width, show, i, scale["P"], power.supply.active, "Power Generation Active")
-            fmax(fmt, width, show, i, scale["Q"], power.supply.reactive, "Power Generation Reactive")
-            fmax(fmt, width, show, i, scale["P"], system.bus.demand.active, "Power Demand Active")
-            fmax(fmt, width, show, i, scale["Q"], system.bus.demand.reactive, "Power Demand Reactive")
-            fmax(fmt, width, show, i, scale["P"], power.injection.active, "Power Injection Active")
-            fmax(fmt, width, show, i, scale["Q"], power.injection.reactive, "Power Injection Reactive")
-            fmax(fmt, width, show, i, scale["P"], power.shunt.active, "Shunt Power Active")
-            fmax(fmt, width, show, i, scale["Q"], power.shunt.reactive, "Shunt Power Reactive")
-            fmax(fmt, width, show, i, scaleCurrt, current.injection.magnitude, "Current Injection Magnitude")
-            fmax(fmt, width, show, i, scale["ψ"], current.injection.angle, "Current Injection Angle")
+            fmax(fmt, width, show, i, scaleVolg, voltage.magnitude, head[:Vmag])
+            fmax(fmt, width, show, i, scale[:θ], voltage.angle, head[:Vang])
+            fmax(fmt, width, show, i, scale[:P], power.supply.active, head[:Pgen])
+            fmax(fmt, width, show, i, scale[:Q], power.supply.reactive, head[:Qgen])
+            fmax(fmt, width, show, i, scale[:P], system.bus.demand.active, head[:Pdem])
+            fmax(fmt, width, show, i, scale[:Q], system.bus.demand.reactive, head[:Qdem])
+            fmax(fmt, width, show, i, scale[:P], power.injection.active, head[:Pinj])
+            fmax(fmt, width, show, i, scale[:Q], power.injection.reactive, head[:Qinj])
+            fmax(fmt, width, show, i, scale[:P], power.shunt.active, head[:Pshu])
+            fmax(fmt, width, show, i, scale[:Q], power.shunt.reactive, head[:Qshu])
+            fmax(fmt, width, show, i, scaleCurr, current.injection.magnitude, head[:Imag])
+            fmax(fmt, width, show, i, scale[:ψ], current.injection.angle, head[:Iang])
         else
-            fmax(width, show, system.bus.label, "Label Bus")
+            fmax(width, show, system.bus.label, head[:lblB])
 
-            fminmax(fmt, width, show, scale["θ"], voltage.angle, "Voltage Angle")
-            fminmax(fmt, width, show, scale["P"], power.supply.active, "Power Generation Active")
-            fminmax(fmt, width, show, scale["Q"], power.supply.reactive, "Power Generation Reactive")
-            fminmax(fmt, width, show, scale["P"], system.bus.demand.active, "Power Demand Active")
-            fminmax(fmt, width, show, scale["Q"], system.bus.demand.reactive, "Power Demand Reactive")
-            fminmax(fmt, width, show, scale["P"], power.injection.active, "Power Injection Active")
-            fminmax(fmt, width, show, scale["Q"], power.injection.reactive, "Power Injection Reactive")
-            fminmax(fmt, width, show, scale["P"], power.shunt.active, "Shunt Power Active")
-            fminmax(fmt, width, show, scale["Q"], power.shunt.reactive, "Shunt Power Reactive")
-            fminmax(fmt, width, show, scale["ψ"], current.injection.angle, "Current Injection Angle")
+            fminmax(fmt, width, show, scale[:θ], voltage.angle, head[:Vang])
+            fminmax(fmt, width, show, scale[:P], power.supply.active, head[:Pgen])
+            fminmax(fmt, width, show, scale[:Q], power.supply.reactive, head[:Qgen])
+            fminmax(fmt, width, show, scale[:P], system.bus.demand.active, head[:Pdem])
+            fminmax(fmt, width, show, scale[:Q], system.bus.demand.reactive, head[:Qdem])
+            fminmax(fmt, width, show, scale[:P], power.injection.active, head[:Pinj])
+            fminmax(fmt, width, show, scale[:Q], power.injection.reactive, head[:Qinj])
+            fminmax(fmt, width, show, scale[:P], power.shunt.active, head[:Pshu])
+            fminmax(fmt, width, show, scale[:Q], power.shunt.reactive, head[:Qshu])
+            fminmax(fmt, width, show, scale[:ψ], current.injection.angle, head[:Iang])
 
             maxV = -Inf; maxI = -Inf
             @inbounds for (label, i) in system.bus.label
-                if prefix.voltageMagnitude != 0.0
-                    scale = scaleVoltage(system, prefix, i)
-                    maxV = fmax(show, i, scale, maxV, voltage.magnitude, "Voltage Magnitude")
+                if pfx.voltageMagnitude != 0.0
+                    scale = scaleVoltage(system, pfx, i)
+                    maxV = fmax(show, i, scale, maxV, voltage.magnitude, head[:Vmag])
                 end
-                if prefix.currentMagnitude != 0.0
-                    scale = scaleCurrent(system, prefix, i)
-                    maxI = fmax(show, i, scale, maxI, current.injection.magnitude, "Current Injection Magnitude")
+                if pfx.currentMagnitude != 0.0
+                    scale = scaleCurrent(system, pfx, i)
+                    maxI = fmax(show, i, scale, maxI, current.injection.magnitude, head[:Imag])
                 end
             end
 
-            if prefix.voltageMagnitude == 0.0
-                fmax(fmt, width, show, voltage.magnitude, "Voltage Magnitude")
+            if pfx.voltageMagnitude == 0.0
+                fmax(fmt, width, show, voltage.magnitude, head[:Vmag])
             else
-                fmax(fmt, width, show, maxV, "Voltage Magnitude")
+                fmax(fmt, width, show, maxV, head[:Vmag])
             end
-            if prefix.currentMagnitude == 0.0
-                fmax(fmt, width, show, current.injection.magnitude, "Current Injection Magnitude")
+            if pfx.currentMagnitude == 0.0
+                fmax(fmt, width, show, current.injection.magnitude, head[:Imag])
             else
-                fmax(fmt, width, show, maxI, "Current Injection Magnitude")
+                fmax(fmt, width, show, maxI, head[:Imag])
             end
         end
     end
-    printing = howManyPrint(width, show, title, style, "Bus Data")
+
+    title, header, footer = layout(label, key.title, key.header, key.footer)
+    notprint = printing!(width, show, title, style, "Bus Data")
 
     heading = OrderedDict(
-        "Label"             => _blank_(width, show, "Label Bus"),
-        "Voltage"           => _blank_(width, show, style, "Voltage", "Voltage Magnitude", "Voltage Angle"),
-        "Power Generation"  => _blank_(width, show, style, "Power Generation", "Power Generation Active", "Power Generation Reactive"),
-        "Power Demand"      => _blank_(width, show, style, "Power Demand", "Power Demand Active", "Power Demand Reactive"),
-        "Power Injection"   => _blank_(width, show, style, "Power Injection", "Power Injection Active", "Power Injection Reactive"),
-        "Shunt Power"       => _blank_(width, show, style, "Shunt Power", "Shunt Power Active", "Shunt Power Reactive"),
-        "Current Injection" => _blank_(width, show, style, "Current Injection", "Current Injection Magnitude", "Current Injection Angle")
+        head[:labl] => _blank(width, show, delimiter, head, :lblB),
+        head[:Volt] => _blank(width, show, delimiter, style, head, :Volt, :Vmag, :Vang),
+        head[:Gene] => _blank(width, show, delimiter, style, head, :Gene, :Pgen, :Qgen),
+        head[:Demd] => _blank(width, show, delimiter, style, head, :Demd, :Pdem, :Qdem),
+        head[:Injc] => _blank(width, show, delimiter, style, head, :Injc, :Pinj, :Qinj),
+        head[:Shun] => _blank(width, show, delimiter, style, head, :Shun, :Pshu, :Qshu),
+        head[:Iinj] => _blank(width, show, delimiter, style, head, :Iinj, :Imag, :Iang)
     )
 
-    return fmt, width, show, heading, subheading, unit, printing
+    pfmt, hfmt, line = layout(fmt, width, show, delimiter, style)
+
+    Print(
+        pfmt, hfmt, width, show, heading, subheading, unit, head, delimiter, style,
+        title, header, footer, repeat, notprint, line, 1
+    )
 end
 
-function printBusData(system::PowerSystem, analysis::DC, io::IO = stdout; label::L = missing,
-    fmt::Dict{String, String} = Dict{String, String}(), width::Dict{String, Int64} = Dict{String, Int64}(),
-    show::Dict{String, Bool} = Dict{String, Bool}(), delimiter::String = "|", style::Bool = true,
-    title::B = missing, header::B = missing, footer::B = missing, repeat::Int64 = system.bus.number + 1)
+function printBusData(
+    system::PowerSystem,
+    analysis::DC,
+    io::IO = stdout;
+    label::IntStrMiss = missing,
+    repeat::Int64 = system.bus.number + 1,
+    kwargs...
+)
+bus = system.bus
 
-    scale = scalePrint(system, prefix)
-    labels, title, header, footer = formPrint(system.bus, system.bus.label, label, title, header, footer, "bus")
-    fmt, width, show, heading, subheading, unit, printing = busPrint(system, analysis, unitList, scale, label, fmt, width, show, title, style)
+    scale = scalePrint(system, pfx)
+    prt = busData(system, analysis, unitList, scale, label, repeat; kwargs...)
 
-    if printing
-        pfmt, hfmt, maxLine = setupPrint(fmt, width, show, delimiter, style)
-        titlePrint(io, delimiter, title, header, style, maxLine, "Bus Data")
-
-        @inbounds for (label, i) in labels
-            printing = headerPrint(io, hfmt, width, show, heading, subheading, unit, delimiter, header, repeat, style, printing, maxLine, i)
-            printf(io, pfmt, width, show, label, "Label Bus")
-
-            printf(io, pfmt, width, show, i, scale["θ"], analysis.voltage.angle, "Voltage Angle")
-            printf(io, pfmt, width, show, i, scale["P"], analysis.power.supply.active, "Power Generation Active")
-            printf(io, pfmt, width, show, i, scale["P"], system.bus.demand.active, "Power Demand Active")
-            printf(io, pfmt, width, show, i, scale["P"], analysis.power.injection.active, "Power Injection Active")
-
-            @printf io "\n"
-        end
-        printf(io, delimiter, footer, style, maxLine)
+    if prt.notprint
+        return
     end
+
+    title(io, prt, "Bus Data")
+
+    @inbounds for (label, i) in pickLabel(bus, bus.label, label, "bus")
+        header(io, prt)
+        printf(io, prt.pfmt, prt, label, :lblB)
+
+        printf(io, prt, i, scale[:θ], analysis.voltage.angle, :Vang)
+        printf(io, prt, i, scale[:P], analysis.power.supply.active, :Pgen)
+        printf(io, prt, i, scale[:P], system.bus.demand.active, :Pdem)
+        printf(io, prt, i, scale[:P], analysis.power.injection.active, :Pinj)
+
+        @printf io "\n"
+    end
+    printf(io, prt.footer, prt)
 end
 
-function busPrint(system::PowerSystem, analysis::DC, unitList::UnitList, scale::Dict{String, Float64}, label::L,
-    fmt::Dict{String, String}, width::Dict{String, Int64}, show::Dict{String, Bool}, title::Bool, style::Bool)
-
+function busData(
+    system::PowerSystem,
+    analysis::DC,
+    unitList::UnitList,
+    scale::Dict{Symbol, Float64},
+    label::IntStrMiss,
+    repeat::Int64;
+    kwargs...
+)
     errorVoltage(analysis.voltage.angle)
     voltage = analysis.voltage
     power = analysis.power
+    style, delimiter, key = printkwargs(; kwargs...)
 
-    _show = OrderedDict(
-        "Label"            => true,
-        "Voltage"          => true,
-        "Power Generation" => true,
-        "Power Demand"     => true,
-        "Power Injection"  => true
+    head = Dict(
+        :labl => "Label",
+        :lblB => "Label Bus",
+        :Volt => "Voltage",
+        :Vang => "Voltage Angle",
+        :Gene => "Power Generation",
+        :Pgen => "Power Generation Active",
+        :Demd => "Power Demand",
+        :Pdem => "Power Demand Active",
+        :Injc => "Power Injection",
+        :Pinj => "Power Injection Active"
     )
-    _fmt, _width = fmtwidth(_show)
-    _fmt, _width, _show = printFormat(_fmt, fmt, _width, width, _show, show, style)
+    show = OrderedDict(
+        head[:labl] => true,
+        head[:Volt] => true,
+        head[:Gene] => true,
+        head[:Demd] => true,
+        head[:Injc] => true
+    )
+
+    fmt, width = fmtwidth(show)
+    transfer!(fmt, key.fmt, width, key.width, show, key.show, style)
 
     subheading = Dict(
-        "Label Bus"               => _header_("Bus", "Bus Label", style),
-        "Voltage Angle"           => _header_("Angle", "Voltage Angle", style),
-        "Power Generation Active" => _header_("Active", "Active Power Generation", style),
-        "Power Demand Active"     => _header_("Active", "Active Power Demand", style),
-        "Power Injection Active"  => _header_("Active", "Active Power Injection", style)
+        head[:lblB] => _header("Bus", "Bus Label", style),
+        head[:Vang] => _header("Angle", head[:Vang], style),
+        head[:Pgen] => _header("Active", "Active Power Generation", style),
+        head[:Pdem] => _header("Active", "Active Power Demand", style),
+        head[:Pinj] => _header("Active", "Active Power Injection", style)
     )
     unit = Dict(
-        "Label Bus"               => "",
-        "Voltage Angle"           => "[$(unitList.voltageAngleLive)]",
-        "Power Generation Active" => "[$(unitList.activePowerLive)]",
-        "Power Demand Active"     => "[$(unitList.activePowerLive)]",
-        "Power Injection Active"  => "[$(unitList.activePowerLive)]"
+        head[:lblB] => "",
+        head[:Vang] => "[" * unitList.voltageAngleLive * "]",
+        head[:Pgen] => "[" * unitList.activePowerLive * "]",
+        head[:Pdem] => "[" * unitList.activePowerLive * "]",
+        head[:Pinj] => "[" * unitList.activePowerLive * "]"
     )
-    _fmt = Dict(
-        "Label Bus"               => _fmt_(_fmt["Label"]; format = "%-*s"),
-        "Voltage Angle"           => _fmt_(_fmt["Voltage"]),
-        "Power Generation Active" => _fmt_(_fmt["Power Generation"]),
-        "Power Demand Active"     => _fmt_(_fmt["Power Demand"]),
-        "Power Injection Active"  => _fmt_(_fmt["Power Injection"])
+    fmt = Dict(
+        head[:lblB] => _fmt(fmt[head[:labl]]; format = "%-*s"),
+        head[:Vang] => _fmt(fmt[head[:Volt]]),
+        head[:Pgen] => _fmt(fmt[head[:Gene]]),
+        head[:Pdem] => _fmt(fmt[head[:Demd]]),
+        head[:Pinj] => _fmt(fmt[head[:Injc]])
     )
-    _width = Dict(
-        "Label Bus"               => _width_(_width["Label"], 5, style),
-        "Voltage Angle"           => _width_(_width["Voltage"], 7, style),
-        "Power Generation Active" => _width_(_width["Power Generation"], 16, style),
-        "Power Demand Active"     => _width_(_width["Power Demand"], 12, style),
-        "Power Injection Active"  => _width_(_width["Power Injection"], 15, style)
+    width = Dict(
+        head[:lblB] => _width(width[head[:labl]], 5, style),
+        head[:Vang] => _width(width[head[:Volt]], 7, style),
+        head[:Pgen] => _width(width[head[:Gene]], 16, style),
+        head[:Pdem] => _width(width[head[:Demd]], 12, style),
+        head[:Pinj] => _width(width[head[:Injc]], 15, style)
     )
-    _show = OrderedDict(
-        "Label Bus"               => _show_(_show["Label"], true),
-        "Voltage Angle"           => _show_(_show["Voltage"], voltage.angle),
-        "Power Generation Active" => _show_(_show["Power Generation"], power.supply.active),
-        "Power Demand Active"     => _show_(_show["Power Demand"], power.injection.active),
-        "Power Injection Active"  => _show_(_show["Power Injection"], power.injection.active)
+    show = OrderedDict(
+        head[:lblB] => _show(show[head[:labl]], true),
+        head[:Vang] => _show(show[head[:Volt]], voltage.angle),
+        head[:Pgen] => _show(show[head[:Gene]], power.supply.active),
+        head[:Pdem] => _show(show[head[:Demd]], power.injection.active),
+        head[:Pinj] => _show(show[head[:Injc]], power.injection.active)
     )
-    fmt, width, show = printFormat(_fmt, fmt, _width, width, _show, show, style)
+
+    transfer!(fmt, key.fmt, width, key.width, show, key.show, style)
 
     if style
         if isset(label)
             label = getLabel(system.bus, label, "bus")
             i = system.bus.label[label]
 
-            fmax(width, show, label, "Label Bus")
-            fmax(fmt, width, show, i, scale["θ"], voltage.angle, "Voltage Angle")
-            fmax(fmt, width, show, i, scale["P"], power.supply.active, "Power Generation Active")
-            fmax(fmt, width, show, i, scale["P"], system.bus.demand.active, "Power Demand Active")
-            fmax(fmt, width, show, i, scale["P"], power.injection.active, "Power Injection Active")
+            fmax(width, show, label, head[:lblB])
+            fmax(fmt, width, show, i, scale[:θ], voltage.angle, head[:Vang])
+            fmax(fmt, width, show, i, scale[:P], power.supply.active, head[:Pgen])
+            fmax(fmt, width, show, i, scale[:P], system.bus.demand.active, head[:Pdem])
+            fmax(fmt, width, show, i, scale[:P], power.injection.active, head[:Pinj])
         else
-            fmax(width, show, system.bus.label, "Label Bus")
-            fminmax(fmt, width, show, scale["θ"], voltage.angle, "Voltage Angle")
-            fminmax(fmt, width, show, scale["P"], power.supply.active, "Power Generation Active")
-            fminmax(fmt, width, show, scale["P"], system.bus.demand.active, "Power Demand Active")
-            fminmax(fmt, width, show, scale["P"], power.injection.active, "Power Injection Active")
+            fmax(width, show, system.bus.label, head[:lblB])
+            fminmax(fmt, width, show, scale[:θ], voltage.angle, head[:Vang])
+            fminmax(fmt, width, show, scale[:P], power.supply.active, head[:Pgen])
+            fminmax(fmt, width, show, scale[:P], system.bus.demand.active, head[:Pdem])
+            fminmax(fmt, width, show, scale[:P], power.injection.active, head[:Pinj])
         end
     end
-    printing = howManyPrint(width, show, title, style, "Bus Data")
+
+    title, header, footer = layout(label, key.title, key.header, key.footer)
+    notprint = printing!(width, show, title, style, "Bus Data")
 
     heading = OrderedDict(
-        "Label"             => _blank_(width, show, "Label Bus"),
-        "Voltage"           => _blank_(width, show, "Voltage Angle"),
-        "Power Generation"  => _blank_(width, show, "Power Generation Active"),
-        "Power Demand"      => _blank_(width, show, "Power Demand Active"),
-        "Power Injection"   => _blank_(width, show, "Power Injection Active")
+        head[:labl] => _blank(width, show, delimiter, head, :lblB),
+        head[:Volt] => _blank(width, show, delimiter, head, :Vang),
+        head[:Gene] => _blank(width, show, delimiter, head, :Pgen),
+        head[:Demd] => _blank(width, show, delimiter, head, :Pdem),
+        head[:Injc] => _blank(width, show, delimiter, head, :Pinj)
     )
 
-    return fmt, width, show, heading, subheading, unit, printing
+    pfmt, hfmt, line = layout(fmt, width, show, delimiter, style)
+
+    Print(
+        pfmt, hfmt, width, show, heading, subheading, unit, head, delimiter, style,
+        title, header, footer, repeat, notprint, line, 1
+    )
 end
 
 """
@@ -424,366 +500,450 @@ printBranchData(system, analysis; label = 12, delimiter, width)
 printBranchData(system, analysis; label = 14, delimiter, width, footer = true)
 ```
 """
-function printBranchData(system::PowerSystem, analysis::AC, io::IO = stdout; label::L = missing,
-    fmt::Dict{String, String} = Dict{String, String}(), width::Dict{String, Int64} = Dict{String, Int64}(),
-    show::Dict{String, Bool} = Dict{String, Bool}(), delimiter::String = "|", style::Bool = true,
-    title::B = missing, header::B = missing, footer::B = missing, repeat::Int64 = system.branch.number + 1)
+function printBranchData(
+    system::PowerSystem,
+    analysis::AC,
+    io::IO = stdout;
+    label::IntStrMiss = missing,
+    repeat::Int64 = system.branch.number + 1,
+    kwargs...
+)
+    brch = system.branch
 
-    scale = scalePrint(system, prefix)
-    labels, title, header, footer = formPrint(system.branch, system.branch.label, label, title, header, footer, "branch")
-    fmt, width, show, heading, subheading, unit, buses, printing = branchPrint(system, analysis, unitList, prefix, scale, label, fmt, width, show, title, style)
+    scale = scalePrint(system, pfx)
+    buses, prt = branchData(system, analysis, unitList, pfx, scale, label, repeat; kwargs...)
 
-    if printing
-        pfmt, hfmt, maxLine = setupPrint(fmt, width, show, delimiter, style)
-        titlePrint(io, delimiter, title, header, style, maxLine, "Branch Data")
-
-        @inbounds for (label, i) in labels
-            scaleCurrf = scaleCurrent(prefix, system, system.branch.layout.from[i])
-            scaleCurrt = scaleCurrent(prefix, system, system.branch.layout.to[i])
-
-            printing = headerPrint(io, hfmt, width, show, heading, subheading, unit, delimiter, header, repeat, style, printing, maxLine, i)
-            printf(io, pfmt, width, show, label, "Label Branch")
-            printf(io, pfmt, width, show, buses, system.branch.layout.from[i], "Label From-Bus")
-            printf(io, pfmt, width, show, buses, system.branch.layout.to[i], "Label To-Bus")
-
-            printf(io, pfmt, width, show, i, scale["P"], analysis.power.from.active, "From-Bus Power Active")
-            printf(io, pfmt, width, show, i, scale["Q"], analysis.power.from.reactive, "From-Bus Power Reactive")
-            printf(io, pfmt, width, show, i, scale["P"], analysis.power.to.active, "To-Bus Power Active")
-            printf(io, pfmt, width, show, i, scale["Q"], analysis.power.to.reactive, "To-Bus Power Reactive")
-            printf(io, pfmt, width, show, i, scale["P"], analysis.power.charging.active, "Shunt Power Active")
-            printf(io, pfmt, width, show, i, scale["Q"], analysis.power.charging.reactive, "Shunt Power Reactive")
-            printf(io, pfmt, width, show, i, scale["P"], analysis.power.series.active, "Series Power Active")
-            printf(io, pfmt, width, show, i, scale["Q"], analysis.power.series.reactive, "Series Power Reactive")
-            printf(io, pfmt, width, show, i, scaleCurrf, analysis.current.from.magnitude, "From-Bus Current Magnitude")
-            printf(io, pfmt, width, show, i, scale["ψ"], analysis.current.from.angle, "From-Bus Current Angle")
-            printf(io, pfmt, width, show, i, scaleCurrt, analysis.current.to.magnitude, "To-Bus Current Magnitude")
-            printf(io, pfmt, width, show, i, scale["ψ"], analysis.current.to.angle, "To-Bus Current Angle")
-            printf(io, pfmt, width, show, i, scaleCurrt, analysis.current.series.magnitude, "Series Current Magnitude")
-            printf(io, pfmt, width, show, i, scale["ψ"], analysis.current.series.angle, "Series Current Angle")
-
-            printf(io, pfmt, width, show, i, system.branch.layout.status, "Status")
-
-            @printf io "\n"
-        end
-        printf(io, delimiter, footer, style, maxLine)
+    if prt.notprint
+        return
     end
+
+    title(io, prt, "Branch Data")
+
+    @inbounds for (label, i) in pickLabel(brch, brch.label, label, "branch")
+        scaleCurf = scaleCurrent(pfx, system, system.branch.layout.from[i])
+        scaleCurt = scaleCurrent(pfx, system, system.branch.layout.to[i])
+
+        header(io, prt)
+        printf(io, prt.pfmt, prt, label, :lbB)
+
+        printf(io, prt, buses, system.branch.layout.from[i], :lbF)
+        printf(io, prt, buses, system.branch.layout.to[i], :lbT)
+
+        printf(io, prt, i, scale[:P], analysis.power.from.active, :Pij)
+        printf(io, prt, i, scale[:Q], analysis.power.from.reactive, :Qij)
+        printf(io, prt, i, scale[:P], analysis.power.to.active, :Pji)
+        printf(io, prt, i, scale[:Q], analysis.power.to.reactive, :Qji)
+        printf(io, prt, i, scale[:P], analysis.power.charging.active, :Psh)
+        printf(io, prt, i, scale[:Q], analysis.power.charging.reactive, :Qsh)
+        printf(io, prt, i, scale[:P], analysis.power.series.active, :Pse)
+        printf(io, prt, i, scale[:Q], analysis.power.series.reactive, :Qse)
+        printf(io, prt, i, scaleCurf, analysis.current.from.magnitude, :Iij)
+        printf(io, prt, i, scale[:ψ], analysis.current.from.angle, :ψij)
+        printf(io, prt, i, scaleCurt, analysis.current.to.magnitude, :Iji)
+        printf(io, prt, i, scale[:ψ], analysis.current.to.angle, :ψji)
+        printf(io, prt, i, scaleCurt, analysis.current.series.magnitude, :Ise)
+        printf(io, prt, i, scale[:ψ], analysis.current.series.angle, :ψse)
+
+        printf(io, prt, i, system.branch.layout.status, :sts)
+
+        @printf io "\n"
+    end
+    printf(io, prt.footer, prt)
 end
 
-function branchPrint(system::PowerSystem, analysis::AC, unitList::UnitList, prefix::PrefixLive, scale::Dict{String, Float64},
-    label::L, fmt::Dict{String, String}, width::Dict{String, Int64}, show::Dict{String, Bool}, title::Bool, style::Bool)
-
+function branchData(
+    system::PowerSystem,
+    analysis::AC,
+    unitList::UnitList,
+    pfx::PrefixLive,
+    scale::Dict{Symbol, Float64},
+    label::IntStrMiss,
+    repeat::Int64;
+    kwargs...
+)
     power = analysis.power
     current = analysis.current
+    style, delimiter, key = printkwargs(; kwargs...)
 
-    _show = OrderedDict(
-        "Label"            => true,
-        "From-Bus Power"   => true,
-        "To-Bus Power"     => true,
-        "Shunt Power"      => true,
-        "Series Power"     => true,
-        "From-Bus Current" => true,
-        "To-Bus Current"   => true,
-        "Series Current"   => true,
+    head = Dict(
+        :lbl => "Label",
+        :lbB => "Label Branch",
+        :lbF => "Label From-Bus",
+        :lbT => "Label To-Bus",
+        :Sij => "From-Bus Power",
+        :Pij => "From-Bus Power Active",
+        :Qij => "From-Bus Power Reactive",
+        :Sji => "To-Bus Power",
+        :Pji => "To-Bus Power Active",
+        :Qji => "To-Bus Power Reactive",
+        :Ssh => "Shunt Power",
+        :Psh => "Shunt Power Active",
+        :Qsh => "Shunt Power Reactive",
+        :Sse => "Series Power",
+        :Pse => "Series Power Active",
+        :Qse => "Series Power Reactive",
+        :Cij => "From-Bus Current",
+        :Iij => "From-Bus Current Magnitude",
+        :ψij => "From-Bus Current Angle",
+        :Cji => "To-Bus Current",
+        :Iji => "To-Bus Current Magnitude",
+        :ψji => "To-Bus Current Angle",
+        :Cse => "Series Current",
+        :Ise => "Series Current Magnitude",
+        :ψse => "Series Current Angle",
+        :sts => "Status"
     )
-    _fmt, _width = fmtwidth(_show)
-    _fmt, _width, _show = printFormat(_fmt, fmt, _width, width, _show, show, style)
+    show = OrderedDict(
+        head[:lbl] => true,
+        head[:Sij] => true,
+        head[:Sji] => true,
+        head[:Ssh] => true,
+        head[:Sse] => true,
+        head[:Cij] => true,
+        head[:Cji] => true,
+        head[:Cse] => true,
+    )
+
+    fmt, width = fmtwidth(show)
+    transfer!(fmt, key.fmt, width, key.width, show, key.show, style)
 
     subheading = Dict(
-        "Label Branch"               => _header_("Branch", "Branch Label", style),
-        "Label From-Bus"             => _header_("From-Bus", "From-Bus Label", style),
-        "Label To-Bus"               => _header_("To-Bus", "To-Bus Label", style),
-        "From-Bus Power Active"      => _header_("Active", "From-Bus Active Power", style),
-        "From-Bus Power Reactive"    => _header_("Reactive", "From-Bus Reactive Power", style),
-        "To-Bus Power Active"        => _header_("Active", "To-Bus Active Power", style),
-        "To-Bus Power Reactive"      => _header_("Reactive", "To-Bus Reactive Power", style),
-        "Shunt Power Active"         => _header_("Active", "Shunt Active Power", style),
-        "Shunt Power Reactive"       => _header_("Reactive", "Shunt Reactive Power", style),
-        "Series Power Active"        => _header_("Active", "Series Active Power", style),
-        "Series Power Reactive"      => _header_("Reactive", "Series Reactive Power", style),
-        "From-Bus Current Magnitude" => _header_("Magnitude", "From-Bus Current Magnitude", style),
-        "From-Bus Current Angle"     => _header_("Angle", "From-Bus Current Angle", style),
-        "To-Bus Current Magnitude"   => _header_("Magnitude", "To-Bus Current Magnitude", style),
-        "To-Bus Current Angle"       => _header_("Angle", "To-Bus Current Angle", style),
-        "Series Current Magnitude"   => _header_("Magnitude", "Series Current Magnitude", style),
-        "Series Current Angle"       => _header_("Angle", "Series Current Angle", style),
-        "Status"                     => _header_("", "Status", style),
+        head[:lbB] => _header("Branch", "Branch Label", style),
+        head[:lbF] => _header("From-Bus", "From-Bus Label", style),
+        head[:lbT] => _header("To-Bus", "To-Bus Label", style),
+        head[:Pij] => _header("Active", "From-Bus Active Power", style),
+        head[:Qij] => _header("Reactive", "From-Bus Reactive Power", style),
+        head[:Pji] => _header("Active", "To-Bus Active Power", style),
+        head[:Qji] => _header("Reactive", "To-Bus Reactive Power", style),
+        head[:Psh] => _header("Active", "Shunt Active Power", style),
+        head[:Qsh] => _header("Reactive", "Shunt Reactive Power", style),
+        head[:Pse] => _header("Active", "Series Active Power", style),
+        head[:Qse] => _header("Reactive", "Series Reactive Power", style),
+        head[:Iij] => _header("Magnitude", head[:Iij], style),
+        head[:ψij] => _header("Angle", head[:ψij], style),
+        head[:Iji] => _header("Magnitude", head[:Iji], style),
+        head[:ψji] => _header("Angle", head[:ψji], style),
+        head[:Ise] => _header("Magnitude", head[:Ise], style),
+        head[:ψse] => _header("Angle", head[:ψse], style),
+        head[:sts] => _header("", head[:sts], style),
     )
     unit = Dict(
-        "Label Branch"               => "",
-        "Label From-Bus"             => "",
-        "Label To-Bus"               => "",
-        "From-Bus Power Active"      => "[$(unitList.activePowerLive)]",
-        "From-Bus Power Reactive"    => "[$(unitList.reactivePowerLive)]",
-        "To-Bus Power Active"        => "[$(unitList.activePowerLive)]",
-        "To-Bus Power Reactive"      => "[$(unitList.reactivePowerLive)]",
-        "Shunt Power Active"         => "[$(unitList.activePowerLive)]",
-        "Shunt Power Reactive"       => "[$(unitList.reactivePowerLive)]",
-        "Series Power Active"        => "[$(unitList.activePowerLive)]",
-        "Series Power Reactive"      => "[$(unitList.reactivePowerLive)]",
-        "From-Bus Current Magnitude" => "[$(unitList.currentMagnitudeLive)]",
-        "From-Bus Current Angle"     => "[$(unitList.currentAngleLive)]",
-        "To-Bus Current Magnitude"   => "[$(unitList.currentMagnitudeLive)]",
-        "To-Bus Current Angle"       => "[$(unitList.currentAngleLive)]",
-        "Series Current Magnitude"   => "[$(unitList.currentMagnitudeLive)]",
-        "Series Current Angle"       => "[$(unitList.currentAngleLive)]",
-        "Status"                     => ""
+        head[:lbB] => "",
+        head[:lbF] => "",
+        head[:lbT] => "",
+        head[:Pij] => "[" * unitList.activePowerLive * "]",
+        head[:Qij] => "[" * unitList.reactivePowerLive * "]",
+        head[:Pji] => "[" * unitList.activePowerLive * "]",
+        head[:Qji] => "[" * unitList.reactivePowerLive * "]",
+        head[:Psh] => "[" * unitList.activePowerLive * "]",
+        head[:Qsh] => "[" * unitList.reactivePowerLive * "]",
+        head[:Pse] => "[" * unitList.activePowerLive * "]",
+        head[:Qse] => "[" * unitList.reactivePowerLive * "]",
+        head[:Iij] => "[" * unitList.currentMagnitudeLive * "]",
+        head[:ψij] => "[" * unitList.currentAngleLive * "]",
+        head[:Iji] => "[" * unitList.currentMagnitudeLive * "]",
+        head[:ψji] => "[" * unitList.currentAngleLive * "]",
+        head[:Ise] => "[" * unitList.currentMagnitudeLive * "]",
+        head[:ψse] => "[" * unitList.currentAngleLive * "]",
+        head[:sts] => ""
     )
-    _fmt = Dict(
-        "Label Branch"               => _fmt_(_fmt["Label"]; format = "%-*s"),
-        "Label From-Bus"             => _fmt_(_fmt["Label"]; format = "%-*s"),
-        "Label To-Bus"               => _fmt_(_fmt["Label"]; format = "%-*s"),
-        "From-Bus Power Active"      => _fmt_(_fmt["From-Bus Power"]),
-        "From-Bus Power Reactive"    => _fmt_(_fmt["From-Bus Power"]),
-        "To-Bus Power Active"        => _fmt_(_fmt["To-Bus Power"]),
-        "To-Bus Power Reactive"      => _fmt_(_fmt["To-Bus Power"]),
-        "Shunt Power Active"         => _fmt_(_fmt["Shunt Power"]),
-        "Shunt Power Reactive"       => _fmt_(_fmt["Shunt Power"]),
-        "Series Power Active"        => _fmt_(_fmt["Series Power"]),
-        "Series Power Reactive"      => _fmt_(_fmt["Series Power"]),
-        "From-Bus Current Magnitude" => _fmt_(_fmt["From-Bus Current"]),
-        "From-Bus Current Angle"     => _fmt_(_fmt["From-Bus Current"]),
-        "To-Bus Current Magnitude"   => _fmt_(_fmt["To-Bus Current"]),
-        "To-Bus Current Angle"       => _fmt_(_fmt["To-Bus Current"]),
-        "Series Current Magnitude"   => _fmt_(_fmt["Series Current"]),
-        "Series Current Angle"       => _fmt_(_fmt["Series Current"]),
-        "Status"                     => "%*i"
+    fmt = Dict(
+        head[:lbB] => _fmt(fmt[head[:lbl]]; format = "%-*s"),
+        head[:lbF] => _fmt(fmt[head[:lbl]]; format = "%-*s"),
+        head[:lbT] => _fmt(fmt[head[:lbl]]; format = "%-*s"),
+        head[:Pij] => _fmt(fmt[head[:Sij]]),
+        head[:Qij] => _fmt(fmt[head[:Sij]]),
+        head[:Pji] => _fmt(fmt[head[:Sji]]),
+        head[:Qji] => _fmt(fmt[head[:Sji]]),
+        head[:Psh] => _fmt(fmt[head[:Ssh]]),
+        head[:Qsh] => _fmt(fmt[head[:Ssh]]),
+        head[:Pse] => _fmt(fmt[head[:Sse]]),
+        head[:Qse] => _fmt(fmt[head[:Sse]]),
+        head[:Iij] => _fmt(fmt[head[:Cij]]),
+        head[:ψij] => _fmt(fmt[head[:Cij]]),
+        head[:Iji] => _fmt(fmt[head[:Cji]]),
+        head[:ψji] => _fmt(fmt[head[:Cji]]),
+        head[:Ise] => _fmt(fmt[head[:Cse]]),
+        head[:ψse] => _fmt(fmt[head[:Cse]]),
+        head[:sts] => "%*i"
     )
-    _width = Dict(
-        "Label Branch"               => _width_(_width["Label"], 6, style),
-        "Label From-Bus"             => _width_(_width["Label"], 8, style),
-        "Label To-Bus"               => _width_(_width["Label"], 6, style),
-        "From-Bus Power Active"      => _width_(_width["From-Bus Power"], 6, style),
-        "From-Bus Power Reactive"    => _width_(_width["From-Bus Power"], 8, style),
-        "To-Bus Power Active"        => _width_(_width["To-Bus Power"], 6, style),
-        "To-Bus Power Reactive"      => _width_(_width["To-Bus Power"], 8, style),
-        "Shunt Power Active"         => _width_(_width["Shunt Power"], 6, style),
-        "Shunt Power Reactive"       => _width_(_width["Shunt Power"], 8, style),
-        "Series Power Active"        => _width_(_width["Series Power"], 6, style),
-        "Series Power Reactive"      => _width_(_width["Series Power"], 8, style),
-        "From-Bus Current Magnitude" => _width_(_width["From-Bus Current"], 9, style),
-        "From-Bus Current Angle"     => _width_(_width["From-Bus Current"], 5, style),
-        "To-Bus Current Magnitude"   => _width_(_width["To-Bus Current"], 9, style),
-        "To-Bus Current Angle"       => _width_(_width["To-Bus Current"], 5, style),
-        "Series Current Magnitude"   => _width_(_width["Series Current"], 9, style),
-        "Series Current Angle"       => _width_(_width["Series Current"], 5, style),
-        "Status"                     => 6 * style
+    width = Dict(
+        head[:lbB] => _width(width[head[:lbl]], 6, style),
+        head[:lbF] => _width(width[head[:lbl]], 8, style),
+        head[:lbT] => _width(width[head[:lbl]], 6, style),
+        head[:Pij] => _width(width[head[:Sij]], 6, style),
+        head[:Qij] => _width(width[head[:Sij]], 8, style),
+        head[:Pji] => _width(width[head[:Sji]], 6, style),
+        head[:Qji] => _width(width[head[:Sji]], 8, style),
+        head[:Psh] => _width(width[head[:Ssh]], 6, style),
+        head[:Qsh] => _width(width[head[:Ssh]], 8, style),
+        head[:Pse] => _width(width[head[:Sse]], 6, style),
+        head[:Qse] => _width(width[head[:Sse]], 8, style),
+        head[:Iij] => _width(width[head[:Cij]], 9, style),
+        head[:ψij] => _width(width[head[:Cij]], 5, style),
+        head[:Iji] => _width(width[head[:Cji]], 9, style),
+        head[:ψji] => _width(width[head[:Cji]], 5, style),
+        head[:Ise] => _width(width[head[:Cse]], 9, style),
+        head[:ψse] => _width(width[head[:Cse]], 5, style),
+        head[:sts] => 6 * style
     )
-    _show = OrderedDict(
-        "Label Branch"               => _show_(_show["Label"], true),
-        "Label From-Bus"             => _show_(_show["Label"], true),
-        "Label To-Bus"               => _show_(_show["Label"], true),
-        "From-Bus Power Active"      => _show_(_show["From-Bus Power"], power.from.active),
-        "From-Bus Power Reactive"    => _show_(_show["From-Bus Power"], power.from.reactive),
-        "To-Bus Power Active"        => _show_(_show["To-Bus Power"], power.to.active),
-        "To-Bus Power Reactive"      => _show_(_show["To-Bus Power"], power.to.reactive),
-        "Shunt Power Active"         => _show_(_show["Shunt Power"], power.charging.active),
-        "Shunt Power Reactive"       => _show_(_show["Shunt Power"], power.charging.reactive),
-        "Series Power Active"        => _show_(_show["Series Power"], power.series.active),
-        "Series Power Reactive"      => _show_(_show["Series Power"], power.series.reactive),
-        "From-Bus Current Magnitude" => _show_(_show["From-Bus Current"], current.from.magnitude),
-        "From-Bus Current Angle"     => _show_(_show["From-Bus Current"], current.from.angle),
-        "To-Bus Current Magnitude"   => _show_(_show["To-Bus Current"], current.to.magnitude),
-        "To-Bus Current Angle"       => _show_(_show["To-Bus Current"], current.to.angle),
-        "Series Current Magnitude"   => _show_(_show["Series Current"], current.series.magnitude),
-        "Series Current Angle"       => _show_(_show["Series Current"], current.series.angle),
-        "Status"                     => true
+    show = OrderedDict(
+        head[:lbB] => _show(show[head[:lbl]], true),
+        head[:lbF] => _show(show[head[:lbl]], true),
+        head[:lbT] => _show(show[head[:lbl]], true),
+        head[:Pij] => _show(show[head[:Sij]], power.from.active),
+        head[:Qij] => _show(show[head[:Sij]], power.from.reactive),
+        head[:Pji] => _show(show[head[:Sji]], power.to.active),
+        head[:Qji] => _show(show[head[:Sji]], power.to.reactive),
+        head[:Psh] => _show(show[head[:Ssh]], power.charging.active),
+        head[:Qsh] => _show(show[head[:Ssh]], power.charging.reactive),
+        head[:Pse] => _show(show[head[:Sse]], power.series.active),
+        head[:Qse] => _show(show[head[:Sse]], power.series.reactive),
+        head[:Iij] => _show(show[head[:Cij]], current.from.magnitude),
+        head[:ψij] => _show(show[head[:Cij]], current.from.angle),
+        head[:Iji] => _show(show[head[:Cji]], current.to.magnitude),
+        head[:ψji] => _show(show[head[:Cji]], current.to.angle),
+        head[:Ise] => _show(show[head[:Cse]], current.series.magnitude),
+        head[:ψse] => _show(show[head[:Cse]], current.series.angle),
+        head[:sts] => true
     )
-    fmt, width, show = printFormat(_fmt, fmt, _width, width, _show, show, style)
 
-    buses = getLabel(system.bus.label, label, show, "Label From-Bus", "Label To-Bus")
+    transfer!(fmt, key.fmt, width, key.width, show, key.show, style)
+
+    buses = getLabel(system.bus.label, label, show, head[:lbF], head[:lbT])
     if style
         if isset(label)
             label = getLabel(system.branch, label, "branch")
             i = system.branch.label[label]
 
-            scaleCurrf = scaleCurrent(prefix, system, system.branch.layout.from[i])
-            scaleCurrt = scaleCurrent(prefix, system, system.branch.layout.to[i])
+            scaleCurf = scaleCurrent(pfx, system, system.branch.layout.from[i])
+            scaleCurt = scaleCurrent(pfx, system, system.branch.layout.to[i])
 
-            fmax(width, show, label, "Label Branch")
-            fmax(width, show, getLabel(buses, system.branch.layout.from[i]), "Label From-Bus")
-            fmax(width, show, getLabel(buses, system.branch.layout.to[i]), "Label To-Bus")
+            fmax(width, show, label, head[:lbB])
+            fmax(width, show, getLabel(buses, system.branch.layout.from[i]), head[:lbF])
+            fmax(width, show, getLabel(buses, system.branch.layout.to[i]), head[:lbT])
 
-            fmax(fmt, width, show, i, scale["P"], power.from.active, "From-Bus Power Active")
-            fmax(fmt, width, show, i, scale["Q"], power.from.reactive,"From-Bus Power Reactive")
-            fmax(fmt, width, show, i, scale["P"], power.to.active, "To-Bus Power Active")
-            fmax(fmt, width, show, i, scale["Q"], power.to.reactive, "To-Bus Power Reactive")
-            fmax(fmt, width, show, i, scale["P"], power.charging.active, "Shunt Power Active")
-            fmax(fmt, width, show, i, scale["Q"], power.charging.reactive, "Shunt Power Reactive")
-            fmax(fmt, width, show, i, scale["P"], power.series.active, "Series Power Active")
-            fmax(fmt, width, show, i, scale["Q"], power.series.reactive, "Series Power Reactive")
-            fmax(fmt, width, show, i, scaleCurrf, current.from.magnitude, "From-Bus Current Magnitude")
-            fmax(fmt, width, show, i, scale["ψ"], current.from.angle, "From-Bus Current Angle")
-            fmax(fmt, width, show, i, scaleCurrt, current.to.magnitude, "To-Bus Current Magnitude")
-            fmax(fmt, width, show, i, scale["ψ"], current.to.angle, "To-Bus Current Angle")
-            fmax(fmt, width, show, i, scaleCurrt, current.series.magnitude, "Series Current Magnitude")
-            fmax(fmt, width, show, i, scale["ψ"], current.series.angle, "Series Current Angle")
+            fmax(fmt, width, show, i, scale[:P], power.from.active, head[:Pij])
+            fmax(fmt, width, show, i, scale[:Q], power.from.reactive,head[:Qij])
+            fmax(fmt, width, show, i, scale[:P], power.to.active, head[:Pji])
+            fmax(fmt, width, show, i, scale[:Q], power.to.reactive, head[:Qji])
+            fmax(fmt, width, show, i, scale[:P], power.charging.active, head[:Psh])
+            fmax(fmt, width, show, i, scale[:Q], power.charging.reactive, head[:Qsh])
+            fmax(fmt, width, show, i, scale[:P], power.series.active, head[:Pse])
+            fmax(fmt, width, show, i, scale[:Q], power.series.reactive, head[:Qse])
+            fmax(fmt, width, show, i, scaleCurf, current.from.magnitude, head[:Iij])
+            fmax(fmt, width, show, i, scale[:ψ], current.from.angle, head[:ψij])
+            fmax(fmt, width, show, i, scaleCurt, current.to.magnitude, head[:Iji])
+            fmax(fmt, width, show, i, scale[:ψ], current.to.angle, head[:ψji])
+            fmax(fmt, width, show, i, scaleCurt, current.series.magnitude, head[:Ise])
+            fmax(fmt, width, show, i, scale[:ψ], current.series.angle, head[:ψse])
         else
-            fmax(width, show, system.branch.label, "Label Branch")
-            fmax(width, show, buses, "Label From-Bus", "Label To-Bus")
+            fmax(width, show, system.branch.label, head[:lbB])
+            fmax(width, show, buses, head[:lbF], head[:lbT])
 
-            fminmax(fmt, width, show, scale["P"], power.from.active, "From-Bus Power Active")
-            fminmax(fmt, width, show, scale["Q"], power.from.reactive, "From-Bus Power Reactive")
-            fminmax(fmt, width, show, scale["P"], power.to.active, "To-Bus Power Active")
-            fminmax(fmt, width, show, scale["Q"], power.to.reactive, "To-Bus Power Reactive")
-            fminmax(fmt, width, show, scale["P"], power.charging.active, "Shunt Power Active")
-            fminmax(fmt, width, show, scale["Q"], power.charging.reactive, "Shunt Power Reactive")
-            fminmax(fmt, width, show, scale["P"], power.series.active, "Series Power Active")
-            fminmax(fmt, width, show, scale["Q"], power.series.reactive, "Series Power Reactive")
-            fminmax(fmt, width, show, scale["ψ"], current.from.angle, "From-Bus Current Angle")
-            fminmax(fmt, width, show, scale["ψ"], current.to.angle, "To-Bus Current Angle")
-            fminmax(fmt, width, show, scale["ψ"], current.series.angle, "Series Current Angle")
+            fminmax(fmt, width, show, scale[:P], power.from.active, head[:Pij])
+            fminmax(fmt, width, show, scale[:Q], power.from.reactive, head[:Qij])
+            fminmax(fmt, width, show, scale[:P], power.to.active, head[:Pji])
+            fminmax(fmt, width, show, scale[:Q], power.to.reactive, head[:Qji])
+            fminmax(fmt, width, show, scale[:P], power.charging.active, head[:Psh])
+            fminmax(fmt, width, show, scale[:Q], power.charging.reactive, head[:Qsh])
+            fminmax(fmt, width, show, scale[:P], power.series.active, head[:Pse])
+            fminmax(fmt, width, show, scale[:Q], power.series.reactive, head[:Qse])
+            fminmax(fmt, width, show, scale[:ψ], current.from.angle, head[:ψij])
+            fminmax(fmt, width, show, scale[:ψ], current.to.angle, head[:ψji])
+            fminmax(fmt, width, show, scale[:ψ], current.series.angle, head[:ψse])
 
-            if prefix.currentMagnitude == 0.0
-                fmax(fmt, width, show, current.from.magnitude, "From-Bus Current Magnitude")
-                fmax(fmt, width, show, current.to.magnitude, "To-Bus Current Magnitude")
-                fmax(fmt, width, show, current.series.magnitude, "Series Current Magnitude")
+            if pfx.currentMagnitude == 0.0
+                fmax(fmt, width, show, current.from.magnitude, head[:Iij])
+                fmax(fmt, width, show, current.to.magnitude, head[:Iji])
+                fmax(fmt, width, show, current.series.magnitude, head[:Ise])
             else
                 maxF = -Inf; maxT = -Inf; maxS = -Inf
                 @inbounds for (label, i) in system.branch.label
-                    currf = scaleCurrent(system, prefix, system.branch.layout.from[i])
-                    currt = scaleCurrent(system, prefix, system.branch.layout.to[i])
+                    currf = scaleCurrent(system, pfx, system.branch.layout.from[i])
+                    currt = scaleCurrent(system, pfx, system.branch.layout.to[i])
 
-                    maxF = fmax(show, i, currf, maxF, current.from.magnitude, "From-Bus Current Magnitude")
-                    maxT = fmax(show, i, currt, maxT, current.to.magnitude, "To-Bus Current Magnitude")
-                    maxS = fmax(show, i, currt, maxS, current.series.magnitude, "Series Current Magnitude")
+                    maxF = fmax(show, i, currf, maxF, current.from.magnitude, head[:Iij])
+                    maxT = fmax(show, i, currt, maxT, current.to.magnitude, head[:Iji])
+                    maxS = fmax(show, i, currt, maxS, current.series.magnitude, head[:Ise])
                 end
-                fmax(fmt, width, show, maxF, "From-Bus Current Magnitude")
-                fmax(fmt, width, show, maxT, "To-Bus Current Magnitude")
-                fmax(fmt, width, show, maxS, "Series Current Magnitude")
+                fmax(fmt, width, show, maxF, head[:Iij])
+                fmax(fmt, width, show, maxT, head[:Iji])
+                fmax(fmt, width, show, maxS, head[:Ise])
             end
         end
     end
-    printing = howManyPrint(width, show, title, style, "Branch Data")
+
+    title, header, footer = layout(label, key.title, key.header, key.footer)
+    notprint = printing!(width, show, title, style, "Branch Data")
 
     heading = OrderedDict(
-        "Label"            => _blank_(width, show, style, "Label", "Label Branch", "Label From-Bus", "Label To-Bus"),
-        "From-Bus Power"   => _blank_(width, show, style, "From-Bus Power", "From-Bus Power Active", "From-Bus Power Reactive"),
-        "To-Bus Power"     => _blank_(width, show, style, "To-Bus Power", "To-Bus Power Active", "To-Bus Power Reactive"),
-        "Shunt Power"      => _blank_(width, show, style, "Shunt Power", "Shunt Power Active", "Shunt Power Reactive"),
-        "Series Power"     => _blank_(width, show, style, "Series Power", "Series Power Active", "Series Power Reactive"),
-        "From-Bus Current" => _blank_(width, show, style, "From-Bus Current", "From-Bus Current Magnitude", "From-Bus Current Angle"),
-        "To-Bus Current"   => _blank_(width, show, style, "To-Bus Current", "To-Bus Current Magnitude", "To-Bus Current Angle"),
-        "Series Current"   => _blank_(width, show, style, "Series Current", "Series Current Magnitude", "Series Current Angle"),
-        "Status"           => _blank_(width, show, "Status")
+        head[:lbl] => _blank(width, show, delimiter, style, head, :lbl, :lbB, :lbF, :lbT),
+        head[:Sij] => _blank(width, show, delimiter, style, head, :Sij, :Pij, :Qij),
+        head[:Sji] => _blank(width, show, delimiter, style, head, :Sji, :Pji, :Qji),
+        head[:Ssh] => _blank(width, show, delimiter, style, head, :Ssh, :Psh, :Qsh),
+        head[:Sse] => _blank(width, show, delimiter, style, head, :Sse, :Pse, :Qse),
+        head[:Cij] => _blank(width, show, delimiter, style, head, :Cij, :Iij, :ψij),
+        head[:Cji] => _blank(width, show, delimiter, style, head, :Cji, :Iji, :ψji),
+        head[:Cse] => _blank(width, show, delimiter, style, head, :Cse, :Ise, :ψse),
+        head[:sts] => _blank(width, show, delimiter, head, :sts)
     )
 
-    return fmt, width, show, heading, subheading, unit, buses, printing
+    pfmt, hfmt, line = layout(fmt, width, show, delimiter, style)
+
+    return buses, Print(
+        pfmt, hfmt, width, show, heading, subheading, unit, head, delimiter, style,
+        title, header, footer, repeat, notprint, line, 1
+    )
 end
 
-function printBranchData(system::PowerSystem, analysis::DC, io::IO = stdout; label::L = missing,
-    fmt::Dict{String, String} = Dict{String, String}(), width::Dict{String, Int64} = Dict{String, Int64}(),
-    show::Dict{String, Bool} = Dict{String, Bool}(), delimiter::String = "|", style::Bool = true,
-    title::B = missing, header::B = missing, footer::B = missing, repeat::Int64 = system.branch.number + 1)
+function printBranchData(
+    system::PowerSystem,
+    analysis::DC,
+    io::IO = stdout;
+    label::IntStrMiss = missing,
+    repeat::Int64 = system.branch.number + 1,
+    kwargs...
+)
+    brch = system.branch
 
-    scale = scalePrint(system, prefix)
-    labels, title, header, footer = formPrint(system.branch, system.branch.label, label, title, header, footer, "branch")
-    fmt, width, show, heading, subheading, unit, buses, printing = branchPrint(system, analysis, unitList, scale, label, fmt, width, show, title, style)
+    scale = scalePrint(system, pfx)
+    buses, prt = branchData(system, analysis, unitList, scale, label, repeat; kwargs...)
 
-    if printing
-        pfmt, hfmt, maxLine = setupPrint(fmt, width, show, delimiter, style)
-        titlePrint(io, delimiter, title, header, style, maxLine, "Branch Data")
-
-        @inbounds for (label, i) in labels
-            printing = headerPrint(io, hfmt, width, show, heading, subheading, unit, delimiter, header, repeat, style, printing, maxLine, i)
-            printf(io, pfmt, width, show, label, "Label Branch")
-            printf(io, pfmt, width, show, buses, system.branch.layout.from[i], "Label From-Bus")
-            printf(io, pfmt, width, show, buses, system.branch.layout.to[i], "Label To-Bus")
-
-            printf(io, pfmt, width, show, i, scale["P"], analysis.power.from.active, "From-Bus Power Active")
-            printf(io, pfmt, width, show, i, scale["P"], analysis.power.to.active, "To-Bus Power Active")
-            printf(io, pfmt, width, show, i, system.branch.layout.status, "Status")
-
-            @printf io "\n"
-        end
-        printf(io, delimiter, footer, style, maxLine)
+    if prt.notprint
+        return
     end
+
+    title(io, prt, "Branch Data")
+
+    @inbounds for (label, i) in pickLabel(brch, brch.label, label, "branch")
+        header(io, prt)
+        printf(io, prt.pfmt, prt, label, :lbB)
+
+        printf(io, prt, buses, system.branch.layout.from[i], :lbF)
+        printf(io, prt, buses, system.branch.layout.to[i], :lbT)
+
+        printf(io, prt, i, scale[:P], analysis.power.from.active, :Pij)
+        printf(io, prt, i, scale[:P], analysis.power.to.active, :Pji)
+        printf(io, prt, i, system.branch.layout.status, :sts)
+
+        @printf io "\n"
+    end
+    printf(io, prt.footer, prt)
 end
 
-function branchPrint(system::PowerSystem, analysis::DC, unitList::UnitList, scale::Dict{String, Float64}, label::L,
-    fmt::Dict{String, String}, width::Dict{String, Int64}, show::Dict{String, Bool}, title::Bool, style::Bool)
-
+function branchData(
+    system::PowerSystem,
+    analysis::DC,
+    unitList::UnitList,
+    scale::Dict{Symbol, Float64},
+    label::IntStrMiss,
+    repeat::Int64;
+    kwargs...
+)
     power = analysis.power
+    style, delimiter, key = printkwargs(; kwargs...)
 
-    _show = OrderedDict(
-        "Label"          => true,
-        "From-Bus Power" => true,
-        "To-Bus Power"   => true
+    head = Dict(
+        :lbl => "Label",
+        :lbB => "Label Branch",
+        :lbF => "Label From-Bus",
+        :lbT => "Label To-Bus",
+        :Sij => "From-Bus Power",
+        :Pij => "From-Bus Power Active",
+        :Sji => "To-Bus Power",
+        :Pji => "To-Bus Power Active",
+        :sts => "Status"
     )
-    _fmt, _width = fmtwidth(_show)
-    _fmt, _width, _show = printFormat(_fmt, fmt, _width, width, _show, show, style)
+    show = OrderedDict(
+        head[:lbl] => true,
+        head[:Sij] => true,
+        head[:Sji] => true
+    )
+
+    fmt, width = fmtwidth(show)
+    transfer!(fmt, key.fmt, width, key.width, show, key.show, style)
 
     subheading = Dict(
-        "Label Branch"          => _header_("Branch", "Branch Label", style),
-        "Label From-Bus"        => _header_("From-Bus", "From-Bus Label", style),
-        "Label To-Bus"          => _header_("To-Bus", "To-Bus Label", style),
-        "From-Bus Power Active" => _header_("Active", "From-Bus Active Power", style),
-        "To-Bus Power Active"   => _header_("Active", "To-Bus Active Power", style),
-        "Status"                => _header_("", "Status", style),
+        head[:lbB] => _header("Branch", "Branch Label", style),
+        head[:lbF] => _header("From-Bus", "From-Bus Label", style),
+        head[:lbT] => _header("To-Bus", "To-Bus Label", style),
+        head[:Pij] => _header("Active", "From-Bus Active Power", style),
+        head[:Pji] => _header("Active", "To-Bus Active Power", style),
+        head[:sts] => _header("", head[:sts], style),
     )
     unit = Dict(
-        "Label Branch"           => "",
-        "Label From-Bus"         => "",
-        "Label To-Bus"           => "",
-        "From-Bus Power Active"  => "[$(unitList.activePowerLive)]",
-        "To-Bus Power Active"    => "[$(unitList.activePowerLive)]",
-        "Status"                 => ""
+        head[:lbB] => "",
+        head[:lbF] => "",
+        head[:lbT] => "",
+        head[:Pij] => "[" * unitList.activePowerLive * "]",
+        head[:Pji] => "[" * unitList.activePowerLive * "]",
+        head[:sts] => ""
     )
-    _fmt = Dict(
-        "Label Branch"          => _fmt_(_fmt["Label"]; format = "%-*s"),
-        "Label From-Bus"        => _fmt_(_fmt["Label"]; format = "%-*s"),
-        "Label To-Bus"          => _fmt_(_fmt["Label"]; format = "%-*s"),
-        "From-Bus Power Active" => _fmt_(_fmt["From-Bus Power"]),
-        "To-Bus Power Active"   => _fmt_(_fmt["To-Bus Power"]),
-        "Status"                => "%*i"
+    fmt = Dict(
+        head[:lbB] => _fmt(fmt[head[:lbl]]; format = "%-*s"),
+        head[:lbF] => _fmt(fmt[head[:lbl]]; format = "%-*s"),
+        head[:lbT] => _fmt(fmt[head[:lbl]]; format = "%-*s"),
+        head[:Pij] => _fmt(fmt[head[:Sij]]),
+        head[:Pji] => _fmt(fmt[head[:Sji]]),
+        head[:sts] => "%*i"
     )
-    _width = Dict(
-        "Label Branch"          => _width_(_width["Label"], 6, style),
-        "Label From-Bus"        => _width_(_width["Label"], 8, style),
-        "Label To-Bus"          => _width_(_width["Label"], 6, style),
-        "From-Bus Power Active" => _width_(_width["From-Bus Power"], 14, style),
-        "To-Bus Power Active"   => _width_(_width["To-Bus Power"], 12, style),
-        "Status"                => 6 * style
+    width = Dict(
+        head[:lbB] => _width(width[head[:lbl]], 6, style),
+        head[:lbF] => _width(width[head[:lbl]], 8, style),
+        head[:lbT] => _width(width[head[:lbl]], 6, style),
+        head[:Pij] => _width(width[head[:Sij]], 14, style),
+        head[:Pji] => _width(width[head[:Sji]], 12, style),
+        head[:sts] => 6 * style
     )
-    _show = OrderedDict(
-        "Label Branch"          => _show_(_show["Label"], true),
-        "Label From-Bus"        => _show_(_show["Label"], true),
-        "Label To-Bus"          => _show_(_show["Label"], true),
-        "From-Bus Power Active" => _show_(_show["From-Bus Power"], power.from.active),
-        "To-Bus Power Active"   => _show_(_show["To-Bus Power"], power.to.active),
-        "Status"                => true
+    show = OrderedDict(
+        head[:lbB] => _show(show[head[:lbl]], true),
+        head[:lbF] => _show(show[head[:lbl]], true),
+        head[:lbT] => _show(show[head[:lbl]], true),
+        head[:Pij] => _show(show[head[:Sij]], power.from.active),
+        head[:Pji] => _show(show[head[:Sji]], power.to.active),
+        head[:sts] => true
     )
-    fmt, width, show = printFormat(_fmt, fmt, _width, width, _show, show, style)
 
-    buses = getLabel(system.bus.label, label, show, "Label From-Bus", "Label To-Bus")
+    transfer!(fmt, key.fmt, width, key.width, show, key.show, style)
+
+    buses = getLabel(system.bus.label, label, show, head[:lbF], head[:lbT])
     if style
         if isset(label)
             label = getLabel(system.branch, label, "branch")
             i = system.branch.label[label]
 
-            fmax(width, show, label, "Label Branch")
-            fmax(width, show, getLabel(buses, system.branch.layout.from[i]), "Label From-Bus")
-            fmax(width, show, getLabel(buses, system.branch.layout.to[i]), "Label To-Bus")
+            fmax(width, show, label, head[:lbB])
+            fmax(width, show, getLabel(buses, system.branch.layout.from[i]), head[:lbF])
+            fmax(width, show, getLabel(buses, system.branch.layout.to[i]), head[:lbT])
 
-            fmax(fmt, width, show, i, scale["P"],  power.from.active, "From-Bus Power Active")
-            fmax(fmt, width, show, i, scale["P"], power.to.active, "To-Bus Power Active")
+            fmax(fmt, width, show, i, scale[:P],  power.from.active, head[:Pij])
+            fmax(fmt, width, show, i, scale[:P], power.to.active, head[:Pji])
         else
-            fmax(width, show, system.branch.label, "Label Branch")
-            fmax(width, show, buses, "Label From-Bus", "Label To-Bus")
+            fmax(width, show, system.branch.label, head[:lbB])
+            fmax(width, show, buses, head[:lbF], head[:lbT])
 
-            fminmax(fmt, width, show, scale["P"], power.from.active, "From-Bus Power Active")
-            fminmax(fmt, width, show, scale["P"], power.to.active, "To-Bus Power Active")
+            fminmax(fmt, width, show, scale[:P], power.from.active, head[:Pij])
+            fminmax(fmt, width, show, scale[:P], power.to.active, head[:Pji])
         end
     end
-    printing = howManyPrint(width, show, title, style, "Branch Data")
+
+    title, header, footer = layout(label, key.title, key.header, key.footer)
+    notprint = printing!(width, show, title, style, "Branch Data")
 
     heading = OrderedDict(
-        "Label"          => _blank_(width, show, style, "Label", "Label Branch", "Label From-Bus", "Label To-Bus"),
-        "From-Bus Power" => _blank_(width, show, "From-Bus Power Active"),
-        "To-Bus Power"   => _blank_(width, show, "To-Bus Power Active"),
-        "Status"         => _blank_(width, show, "Status")
+        head[:lbl] => _blank(width, show, delimiter, style, head, :lbl, :lbB, :lbF, :lbT),
+        head[:Sij] => _blank(width, show, delimiter, head, :Pij),
+        head[:Sji] => _blank(width, show, delimiter, head, :Pji),
+        head[:sts] => _blank(width, show, delimiter, head, :sts)
     )
 
-    return fmt, width, show, heading, subheading, unit, buses, printing
+    pfmt, hfmt, line = layout(fmt, width, show, delimiter, style)
+
+    return buses, Print(
+        pfmt, hfmt, width, show, heading, subheading, unit, head, delimiter, style,
+        title, header, footer, repeat, notprint, line, 1
+    )
 end
 
 """
@@ -836,210 +996,267 @@ printGeneratorData(system, analysis; label = 4, delimiter, width)
 printGeneratorData(system, analysis; label = 5, delimiter, width, footer = true)
 ```
 """
-function printGeneratorData(system::PowerSystem, analysis::AC, io::IO = stdout; label::L = missing,
-    fmt::Dict{String, String} = Dict{String, String}(), width::Dict{String, Int64} = Dict{String, Int64}(),
-    show::Dict{String, Bool} = Dict{String, Bool}(), delimiter::String = "|", style::Bool = true,
-    title::B = missing, header::B = missing, footer::B = missing, repeat::Int64 = system.generator.number + 1)
+function printGeneratorData(
+    system::PowerSystem,
+    analysis::AC,
+    io::IO = stdout;
+    label::IntStrMiss = missing,
+    repeat::Int64 = system.generator.number + 1,
+    kwargs...
+)
+    gen = system.generator
 
-    scale = scalePrint(system, prefix)
-    labels, title, header, footer = formPrint(system.generator, system.generator.label, label, title, header, footer, "generator")
-    fmt, width, show, heading, subheading, unit, buses, printing = generatorPrint(system, analysis, unitList, scale, label, fmt, width, show, title, style)
+    scale = scalePrint(system, pfx)
+    buses, prt = genData(system, analysis, unitList, scale, label, repeat; kwargs...)
 
-    if printing
-        pfmt, hfmt, maxLine = setupPrint(fmt, width, show, delimiter, style)
-        titlePrint(io, delimiter, title, header, style, maxLine, "Generator Data")
-
-        @inbounds for (label, i) in labels
-            printing = headerPrint(io, hfmt, width, show, heading, subheading, unit, delimiter, header, repeat, style, printing, maxLine, i)
-            printf(io, pfmt, width, show, label, "Label Generator")
-
-            printf(io, pfmt, width, show, buses, system.generator.layout.bus[i], "Label Bus")
-            printf(io, pfmt, width, show, i, scale["P"], analysis.power.generator.active, "Power Output Active")
-            printf(io, pfmt, width, show, i, scale["Q"], analysis.power.generator.reactive, "Power Output Reactive")
-            printf(io, pfmt, width, show, i, system.branch.layout.status, "Status")
-
-            @printf io "\n"
-        end
-        printf(io, delimiter, footer, style, maxLine)
+    if prt.notprint
+        return
     end
+
+    title(io, prt, "Generator Data")
+
+    @inbounds for (label, i) in pickLabel(gen, gen.label, label, "generator")
+        header(io, prt)
+        printf(io, prt.pfmt, prt, label, :lbG)
+
+        printf(io, prt, buses, system.generator.layout.bus[i], :lbB)
+        printf(io, prt, i, scale[:P], analysis.power.generator.active, :Pge)
+        printf(io, prt, i, scale[:Q], analysis.power.generator.reactive, :Qge)
+        printf(io, prt, i, system.branch.layout.status, :sts)
+
+        @printf io "\n"
+    end
+    printf(io, prt.footer, prt)
 end
 
-function generatorPrint(system::PowerSystem, analysis::AC, unitList::UnitList, scale::Dict{String, Float64}, label::L,
-    fmt::Dict{String, String}, width::Dict{String, Int64}, show::Dict{String, Bool}, title::Bool, style::Bool)
-
+function genData(
+    system::PowerSystem,
+    analysis::AC,
+    unitList::UnitList,
+    scale::Dict{Symbol, Float64},
+    label::IntStrMiss,
+    repeat::Int64;
+    kwargs...
+)
     power = analysis.power
+    style, delimiter, key = printkwargs(; kwargs...)
 
-    _show = OrderedDict(
-        "Label"        => true,
-        "Power Output" => true
+    head = Dict(
+        :lab => "Label",
+        :lbG => "Label Generator",
+        :lbB => "Label Bus",
+        :Gen => "Power Output",
+        :Pge => "Power Output Active",
+        :Qge => "Power Output Reactive",
+        :sts => "Status",
     )
-    _fmt, _width = fmtwidth(_show)
-    _fmt, _width, _show = printFormat(_fmt, fmt, _width, width, _show, show, style)
+    show = OrderedDict(
+        head[:lab] => true,
+        head[:Gen] => true
+    )
+
+    fmt, width = fmtwidth(show)
+    transfer!(fmt, key.fmt, width, key.width, show, key.show, style)
 
     subheading = Dict(
-        "Label Generator"       => _header_("Generator", "Generator Label", style),
-        "Label Bus"             => _header_("Bus", "Bus Label", style),
-        "Power Output Active"   => _header_("Active", "Active Power Output", style),
-        "Power Output Reactive" => _header_("Reactive", "Reactive Power Output", style),
-        "Status"                => _header_("", "Status", style),
+        head[:lbG] => _header("Generator", "Generator Label", style),
+        head[:lbB] => _header("Bus", "Bus Label", style),
+        head[:Pge] => _header("Active", "Active Power Output", style),
+        head[:Qge] => _header("Reactive", "Reactive Power Output", style),
+        head[:sts] => _header("", head[:sts], style),
     )
     unit = Dict(
-        "Label Generator"       => "",
-        "Label Bus"             => "",
-        "Power Output Active"   => "[$(unitList.activePowerLive)]",
-        "Power Output Reactive" => "[$(unitList.reactivePowerLive)]",
-        "Status"                => ""
+        head[:lbG] => "",
+        head[:lbB] => "",
+        head[:Pge] => "[" * unitList.activePowerLive * "]",
+        head[:Qge] => "[" * unitList.reactivePowerLive * "]",
+        head[:sts] => ""
     )
-    _fmt = Dict(
-        "Label Generator"       => _fmt_(_fmt["Label"]; format = "%-*s"),
-        "Label Bus"             => _fmt_(_fmt["Label"]; format = "%-*s"),
-        "Power Output Active"   => _fmt_(_fmt["Power Output"]),
-        "Power Output Reactive" => _fmt_(_fmt["Power Output"]),
-        "Status"                => "%*i"
+    fmt = Dict(
+        head[:lbG] => _fmt(fmt[head[:lab]]; format = "%-*s"),
+        head[:lbB] => _fmt(fmt[head[:lab]]; format = "%-*s"),
+        head[:Pge] => _fmt(fmt[head[:Gen]]),
+        head[:Qge] => _fmt(fmt[head[:Gen]]),
+        head[:sts] => "%*i"
     )
-    _width = Dict(
-        "Label Generator"       => _width_(_width["Label"], 9, style),
-        "Label Bus"             => _width_(_width["Label"], 3, style),
-        "Power Output Active"   => _width_(_width["Power Output"], 6, style),
-        "Power Output Reactive" => _width_(_width["Power Output"], 8, style),
-        "Status"                => 6 * style
+    width = Dict(
+        head[:lbG] => _width(width[head[:lab]], 9, style),
+        head[:lbB] => _width(width[head[:lab]], 3, style),
+        head[:Pge] => _width(width[head[:Gen]], 6, style),
+        head[:Qge] => _width(width[head[:Gen]], 8, style),
+        head[:sts] => 6 * style
     )
-    _show = OrderedDict(
-        "Label Generator"       => _show_(_show["Label"], true),
-        "Label Bus"             => _show_(_show["Label"], true),
-        "Power Output Active"   => _show_(_show["Power Output"], power.generator.active),
-        "Power Output Reactive" => _show_(_show["Power Output"], power.generator.reactive),
-        "Status"                => true
+    show = OrderedDict(
+        head[:lbG] => _show(show[head[:lab]], true),
+        head[:lbB] => _show(show[head[:lab]], true),
+        head[:Pge] => _show(show[head[:Gen]], power.generator.active),
+        head[:Qge] => _show(show[head[:Gen]], power.generator.reactive),
+        head[:sts] => true
     )
-    fmt, width, show = printFormat(_fmt, fmt, _width, width, _show, show, style)
+    transfer!(fmt, key.fmt, width, key.width, show, key.show, style)
 
-    buses = getLabel(system.bus.label, label, show, "Label Bus")
+    buses = getLabel(system.bus.label, label, show, head[:lbB])
     if style
         if isset(label)
             label = getLabel(system.generator, label, "generator")
             i = system.generator.label[label]
 
-            fmax(width, show, label, "Label Generator")
-            fmax(width, show, getLabel(buses, system.generator.layout.bus[i]), "Label Bus")
+            fmax(width, show, label, head[:lbG])
+            fmax(width, show, getLabel(buses, system.generator.layout.bus[i]), head[:lbB])
 
-            fmax(fmt, width, show, i, scale["P"], power.generator.active, "Power Output Active")
-            fmax(fmt, width, show, i, scale["Q"], power.generator.reactive, "Power Output Reactive")
+            fmax(fmt, width, show, i, scale[:P], power.generator.active, head[:Pge])
+            fmax(fmt, width, show, i, scale[:Q], power.generator.reactive, head[:Qge])
         else
-            fmax(width, show, system.generator.label, "Label Generator")
-            fmax(width, show, buses, "Label Bus")
+            fmax(width, show, system.generator.label, head[:lbG])
+            fmax(width, show, buses, head[:lbB])
 
-            fminmax(fmt, width, show, scale["P"], power.generator.active, "Power Output Active")
-            fminmax(fmt, width, show, scale["Q"], power.generator.reactive, "Power Output Reactive")
+            fminmax(fmt, width, show, scale[:P], power.generator.active, head[:Pge])
+            fminmax(fmt, width, show, scale[:Q], power.generator.reactive, head[:Qge])
         end
     end
-    printing = howManyPrint(width, show, title, style, "Generator Data")
+
+    title, header, footer = layout(label, key.title, key.header, key.footer)
+    notprint = printing!(width, show, title, style, "Generator Data")
 
     heading = OrderedDict(
-        "Label"        => _blank_(width, show, style, "Label", "Label Generator", "Label Bus"),
-        "Power Output" => _blank_(width, show, style, "Power Output", "Power Output Active", "Power Output Reactive"),
-        "Status"       => _blank_(width, show, "Status")
+        head[:lab] => _blank(width, show, delimiter, style, head, :lab, :lbG, :lbB),
+        head[:Gen] => _blank(width, show, delimiter, style, head, :Gen, :Pge, :Qge),
+        head[:sts] => _blank(width, show, delimiter, head, :sts)
     )
 
-    return fmt, width, show, heading, subheading, unit, buses, printing
+    pfmt, hfmt, line = layout(fmt, width, show, delimiter, style)
+
+    return buses, Print(
+        pfmt, hfmt, width, show, heading, subheading, unit, head, delimiter, style,
+        title, header, footer, repeat, notprint, line, 1
+    )
 end
 
-function printGeneratorData(system::PowerSystem, analysis::DC, io::IO = stdout; label::L = missing,
-    fmt::Dict{String, String} = Dict{String, String}(), width::Dict{String, Int64} = Dict{String, Int64}(),
-    show::Dict{String, Bool} = Dict{String, Bool}(), delimiter::String = "|", style::Bool = true,
-    title::B = missing, header::B = missing, footer::B = missing, repeat::Int64 = system.generator.number + 1)
+function printGeneratorData(
+    system::PowerSystem,
+    analysis::DC,
+    io::IO = stdout;
+    label::IntStrMiss = missing,
+    repeat::Int64 = system.generator.number + 1,
+    kwargs...
+)
+    gen = system.generator
 
-    scale = scalePrint(system, prefix)
-    labels, title, header, footer = formPrint(system.generator, system.generator.label, label, title, header, footer, "generator")
-    fmt, width, show, heading, subheading, unit, buses, printing = generatorPrint(system, analysis, unitList, scale, label, fmt, width, show, title, style)
+    scale = scalePrint(system, pfx)
+    buses, prt = genData(system, analysis, unitList, scale, label, repeat; kwargs...)
 
-    if printing
-        pfmt, hfmt, maxLine = setupPrint(fmt, width, show, delimiter, style)
-        titlePrint(io, delimiter, title, header, style, maxLine, "Generator Data")
-
-        @inbounds for (label, i) in labels
-            printing = headerPrint(io, hfmt, width, show, heading, subheading, unit, delimiter, header, repeat, style, printing, maxLine, i)
-            printf(io, pfmt, width, show, label, "Label Generator")
-            printf(io, pfmt, width, show, buses, system.generator.layout.bus[i], "Label Bus")
-
-            printf(io, pfmt, width, show, i, scale["P"], analysis.power.generator.active, "Power Output Active")
-            printf(io, pfmt, width, show, i, system.branch.layout.status, "Status")
-
-            @printf io "\n"
-        end
-        printf(io, delimiter, footer, style, maxLine)
+    if prt.notprint
+        return
     end
+
+    title(io, prt, "Generator Data")
+
+    @inbounds for (label, i) in pickLabel(gen, gen.label, label, "generator")
+        header(io, prt)
+        printf(io, prt.pfmt, prt, label, :lbG)
+
+        printf(io, prt, buses, system.generator.layout.bus[i], :lbB)
+        printf(io, prt, i, scale[:Q], analysis.power.generator.active, :Pge)
+        printf(io, prt, i, system.branch.layout.status, :sts)
+
+        @printf io "\n"
+    end
+    printf(io, prt.footer, prt)
 end
 
-function generatorPrint(system::PowerSystem, analysis::DC, unitList::UnitList, scale::Dict{String, Float64}, label::L,
-    fmt::Dict{String, String}, width::Dict{String, Int64}, show::Dict{String, Bool}, title::Bool, style::Bool)
-
+function genData(
+    system::PowerSystem,
+    analysis::DC,
+    unitList::UnitList,
+    scale::Dict{Symbol, Float64},
+    label::IntStrMiss,
+    repeat::Int64;
+    kwargs...
+)
     power = analysis.power
+    style, delimiter, key = printkwargs(; kwargs...)
 
-    _show = OrderedDict(
-        "Label"        => true,
-        "Power Output" => true
+    head = Dict(
+        :lab => "Label",
+        :lbG => "Label Generator",
+        :lbB => "Label Bus",
+        :Gen => "Power Output",
+        :Pge => "Power Output Active",
+        :sts => "Status",
     )
-    _fmt, _width = fmtwidth(_show)
-    _fmt, _width, _show = printFormat(_fmt, fmt, _width, width, _show, show, style)
+    show = OrderedDict(
+        head[:lab] => true,
+        head[:Gen] => true
+    )
+
+    fmt, width = fmtwidth(show)
+    transfer!(fmt, key.fmt, width, key.width, show, key.show, style)
 
     subheading = Dict(
-        "Label Generator"     => _header_("Generator", "Generator Label", style),
-        "Label Bus"           => _header_("Bus", "Bus Label", style),
-        "Power Output Active" => _header_("Active", "Active Power Output", style),
-        "Status"              => _header_("", "Status", style),
+        head[:lbG] => _header("Generator", "Generator Label", style),
+        head[:lbB] => _header("Bus", "Bus Label", style),
+        head[:Pge] => _header("Active", "Active Power Output", style),
+        head[:sts] => _header("", head[:sts], style),
     )
     unit = Dict(
-        "Label Generator"     => "",
-        "Label Bus"           => "",
-        "Power Output Active" => "[$(unitList.activePowerLive)]",
-        "Status"              => ""
+        head[:lbG] => "",
+        head[:lbB] => "",
+        head[:Pge] => "[" * unitList.activePowerLive * "]",
+        head[:sts] => ""
     )
-    _fmt = Dict(
-        "Label Generator"     => _fmt_(_fmt["Label"]; format = "%-*s"),
-        "Label Bus"           => _fmt_(_fmt["Label"]; format = "%-*s"),
-        "Power Output Active" => _fmt_(_fmt["Power Output"]),
-        "Status"              => "%*i"
+    fmt = Dict(
+        head[:lbG] => _fmt(fmt[head[:lab]]; format = "%-*s"),
+        head[:lbB] => _fmt(fmt[head[:lab]]; format = "%-*s"),
+        head[:Pge] => _fmt(fmt[head[:Gen]]),
+        head[:sts] => "%*i"
     )
-    _width = Dict(
-        "Label Generator"       => _width_(_width["Label"], 9, style),
-        "Label Bus"             => _width_(_width["Label"], 3, style),
-        "Power Output Active" => _width_(_width["Power Output"], 12, style),
-        "Status"              => 6 * style
+    width = Dict(
+        head[:lbG] => _width(width[head[:lab]], 9, style),
+        head[:lbB] => _width(width[head[:lab]], 3, style),
+        head[:Pge] => _width(width[head[:Gen]], 12, style),
+        head[:sts] => 6 * style
     )
-    _show = OrderedDict(
-        "Label Generator"     => _show_(_show["Label"], true),
-        "Label Bus"           => _show_(_show["Label"], true),
-        "Power Output Active" => _show_(_show["Power Output"], power.generator.active),
-        "Status"              => true
+    show = OrderedDict(
+        head[:lbG] => _show(show[head[:lab]], true),
+        head[:lbB] => _show(show[head[:lab]], true),
+        head[:Pge] => _show(show[head[:Gen]], power.generator.active),
+        head[:sts] => true
     )
-    fmt, width, show = printFormat(_fmt, fmt, _width, width, _show, show, style)
+    transfer!(fmt, key.fmt, width, key.width, show, key.show, style)
 
-    buses = getLabel(system.bus.label, label, show, "Label Bus")
+    buses = getLabel(system.bus.label, label, show, head[:lbB])
     if style
         if isset(label)
             label = getLabel(system.generator, label, "generator")
             i = system.generator.label[label]
 
-            fmax(width, show, label, "Label Generator")
-            fmax(width, show, getLabel(buses, system.generator.layout.bus[i]), "Label Bus")
+            fmax(width, show, label, head[:lbG])
+            fmax(width, show, getLabel(buses, system.generator.layout.bus[i]), head[:lbB])
 
-            fmax(fmt, width, show, i, scale["P"], power.generator.active, "Power Output Active")
+            fmax(fmt, width, show, i, scale[:P], power.generator.active, head[:Pge])
         else
-            fmax(width, show, system.generator.label, "Label Generator")
-            fmax(width, show, buses, "Label Bus")
+            fmax(width, show, system.generator.label, head[:lbG])
+            fmax(width, show, buses, head[:lbB])
 
-            fminmax(fmt, width, show, scale["P"], power.generator.active, "Power Output Active")
+            fminmax(fmt, width, show, scale[:P], power.generator.active, head[:Pge])
         end
     end
-    printing = howManyPrint(width, show, title, style, "Generator Data")
+
+    title, header, footer = layout(label, key.title, key.header, key.footer)
+    notprint = printing!(width, show, title, style, "Generator Data")
 
     heading = OrderedDict(
-        "Label"        => _blank_(width, show, style, "Label", "Label Generator", "Label Bus"),
-        "Power Output" => _blank_(width, show, "Power Output Active"),
-        "Status"       => _blank_(width, show, "Status")
+        head[:lab] => _blank(width, show, delimiter, style, head, :lab, :lbG, :lbB),
+        head[:Gen] => _blank(width, show, delimiter, head, :Pge),
+        head[:sts] => _blank(width, show, delimiter, head, :sts)
     )
 
-    return fmt, width, show, heading, subheading, unit, buses, printing
+    pfmt, hfmt, line = layout(fmt, width, show, delimiter, style)
+
+    return buses, Print(
+        pfmt, hfmt, width, show, heading, subheading, unit, head, delimiter, style,
+        title, header, footer, repeat, notprint, line, 1
+    )
 end
 
 """
@@ -1081,190 +1298,211 @@ show = Dict("In-Use" => false)
 printBusSummary(system, analysis; show, delimiter = " ", title = false)
 ```
 """
-function printBusSummary(system::PowerSystem, analysis::Union{AC, DC}, io::IO = stdout;
-    fmt::Dict{String, String} = Dict{String, String}(), width::Dict{String, Int64} = Dict{String, Int64}(),
-    show::Dict{String, Bool} = Dict{String, Bool}(), delimiter::String = "|", style::Bool = true,
-    title::Bool = true, header::Bool = true, footer::Bool = true)
-
+function printBusSummary(
+    system::PowerSystem,
+    analysis::Union{AC, DC},
+    io::IO = stdout;
+    kwargs...
+)
     errorVoltage(analysis.voltage.angle)
 
-    scale = scalePrint(system, prefix)
-    fmt, width, show, subheading = summaryFormat(fmt, width, show, style)
-    type, minLabel, minValue, maxLabel, maxValue, inuse, total, printing, cnt = busSummary(system, analysis, unitList, prefix, scale, width, show, title, style)
+    scale = scalePrint(system, pfx)
+    smr = busSummary(system, analysis, unitList, pfx, scale)
+    prt = summaryData(smr, "Bus Summary"; kwargs...)
 
-    if printing
-        heading = summaryFormat(fmt, width, show, type, inuse, minLabel, minValue, maxLabel, maxValue, total, style)
-        pfmt, hfmt, maxLine = setupPrint(fmt, width, show, delimiter, style)
-
-        titlePrint(io, delimiter, title, header, style, maxLine, "Bus Summary")
-        headerPrint(io, hfmt, width, show, heading, subheading, delimiter, header, style, maxLine)
-        summaryPrint(io, pfmt, hfmt, width, show, type, minLabel, minValue, maxLabel, maxValue, inuse, total, delimiter, footer, style, maxLine, cnt)
+    if prt.notprint
+        return
     end
+
+    title(io, prt, "Bus Summary")
+    header(io, prt, smr)
+    summaryPrint(io, prt, smr)
 end
 
-function busSummary(system::PowerSystem, analysis::AC, unitList::UnitList, prefix::PrefixLive,
-    scale::Dict{String, Float64}, width::Dict{String, Int64}, show::OrderedDict{String, Bool},
-    title::Bool, style::Bool)
-
+function busSummary(
+    system::PowerSystem,
+    analysis::AC,
+    unitList::UnitList,
+    pfx::PrefixLive,
+    scale::Dict{Symbol, Float64},
+)
     voltage = analysis.voltage
     power = analysis.power
-    current = analysis.current
+    currinj = analysis.current.injection
     bus = system.bus
+    smr = summary()
 
-    type = OrderedDict{String, String}()
+    V = " Magnitude [" * unitList.voltageMagnitudeLive * "]"
+    θ = " Angle [" * unitList.voltageAngleLive * "]"
+    P = " Active [" * unitList.activePowerLive * "]"
+    Q = " Reactive [" * unitList.reactivePowerLive * "]"
+    I = " Magnitude [" * unitList.currentMagnitudeLive * "]"
+    ψ = " Angle [" * unitList.currentAngleLive * "]"
+
     if !isempty(voltage.magnitude)
-        type["Voltage"] = "Voltage"
-        type["Voltage Magnitude"] = " Magnitude [$(unitList.voltageMagnitudeLive)]"
-        type["Voltage Angle"] = " Angle [$(unitList.voltageAngleLive)]"
+        smr.type["Voltage"] = "Voltage"
+        smr.type["Voltage Magnitude"] = V
+        smr.type["Voltage Angle"] = θ
     end
     if !isempty(power.supply.active)
-        type["Power Generation"] = "Power Generation"
-        type["Power Generation Active"] = " Active [$(unitList.activePowerLive)]"
-        type["Power Generation Reactive"] = " Reactive [$(unitList.reactivePowerLive)]"
+        smr.type["Power Generation"] = "Power Generation"
+        smr.type["Power Generation Active"] = P
+        smr.type["Power Generation Reactive"] = Q
     end
     if !isempty(power.supply.active)
-        type["Power Demand"] = "Power Demand"
-        type["Power Demand Active"] = " Active [$(unitList.activePowerLive)]"
-        type["Power Demand Reactive"] = " Reactive [$(unitList.reactivePowerLive)]"
+        smr.type["Power Demand"] = "Power Demand"
+        smr.type["Power Demand Active"] = P
+        smr.type["Power Demand Reactive"] = Q
     end
     if !isempty(power.injection.active)
-        type["Power Injection"] = "Power Injection"
-        type["Power Injection Active"] = " Active [$(unitList.activePowerLive)]"
-        type["Power Injection Reactive"] = " Reactive [$(unitList.reactivePowerLive)]"
+        smr.type["Power Injection"] = "Power Injection"
+        smr.type["Power Injection Active"] = P
+        smr.type["Power Injection Reactive"] = Q
     end
     if !isempty(power.shunt.active)
-        type["Shunt Power"] = "Shunt Power"
-        type["Shunt Power Active"] = " Active [$(unitList.activePowerLive)]"
-        type["Shunt Power Reactive"] = " Reactive [$(unitList.reactivePowerLive)]"
+        smr.type["Shunt Power"] = "Shunt Power"
+        smr.type["Shunt Power Active"] = P
+        smr.type["Shunt Power Reactive"] = Q
     end
-    if !isempty(current.injection.magnitude)
-        type["Current Injection"] = "Current Injection"
-        type["Current Injection Magnitude"] = " Magnitude [$(unitList.currentMagnitudeLive)]"
-        type["Current Injection Angle"] = " Angle [$(unitList.currentAngleLive)]"
+    if !isempty(currinj.magnitude)
+        smr.type["Current Injection"] = "Current Injection"
+        smr.type["Current Injection Magnitude"] = I
+        smr.type["Current Injection Angle"] = ψ
     end
-    inuse = Dict{String, Float64}(
-        "Voltage"           => bus.number,
-        "Power Generation"  => 0.0,
-        "Power Demand"      => 0.0,
-        "Power Injection"   => bus.number,
-        "Shunt Power"       => 0.0,
-        "Current Injection" => bus.number,
-    )
-    total = Dict{String, Float64}(
-        "Power Generation Active" => 0.0,
-        "Power Generation Reactive" => 0.0,
-        "Power Demand Active" => 0.0,
-        "Power Demand Reactive" => 0.0,
-        "Power Injection Active" => 0.0,
-        "Power Injection Reactive" => 0.0,
-        "Shunt Power Active" => 0.0,
-        "Shunt Power Reactive" => 0.0,
-    )
-    minIndex, minLabel, minValue, maxIndex, maxLabel, maxValue = summaryDict(type)
+
+    smr.inuse["Voltage"] = bus.number
+    smr.inuse["Power Generation"] = 0.0
+    smr.inuse["Power Demand"] = 0.0
+    smr.inuse["Power Injection"] = bus.number
+    smr.inuse["Shunt Power"] = 0.0
+    smr.inuse["Current Injection"] = bus.number
+
+    smr.total["Power Generation Active"] = 0.0
+    smr.total["Power Generation Reactive"] = 0.0
+    smr.total["Power Demand Active"] = 0.0
+    smr.total["Power Demand Reactive"] = 0.0
+    smr.total["Power Injection Active"] = 0.0
+    smr.total["Power Injection Reactive"] = 0.0
+    smr.total["Shunt Power Active"] = 0.0
+    smr.total["Shunt Power Reactive"] = 0.0
+
+    evaluate!(smr)
 
     @inbounds for i = 1:bus.number
-        scaleVoltg = scaleVoltage(prefix, system, i)
-        summaryData(minIndex, minValue, maxIndex, maxValue, i, scaleVoltg, voltage.magnitude[i], "Voltage Magnitude")
-        summaryData(minIndex, minValue, maxIndex, maxValue, i, scale["θ"], voltage.angle[i], "Voltage Angle")
+        scaleVolg = scaleVoltage(pfx, system, i)
+        eval(smr, i, scaleVolg, voltage.magnitude[i], "Voltage Magnitude")
+        eval(smr, i, scale[:θ], voltage.angle[i], "Voltage Angle")
 
-        if !isempty(bus.supply.generator[i]) && haskey(type, "Power Generation")
-            inuse["Power Generation"] += 1
-            summaryData(minIndex, minValue, maxIndex, maxValue, total, i, scale["P"], power.supply.active[i], "Power Generation Active")
-            summaryData(minIndex, minValue, maxIndex, maxValue, total, i, scale["Q"], power.supply.reactive[i], "Power Generation Reactive")
+        if !haskey(bus.supply.generator, i)
+            if haskey(smr.type, "Power Generation")
+                smr.inuse["Power Generation"] += 1
+                eval(smr, i, scale[:P], power.supply.active[i], "Power Generation Active")
+                eval(smr, i, scale[:Q], power.supply.reactive[i], "Power Generation Reactive")
+            end
         end
 
-        if (bus.demand.active[i] != 0.0 || bus.demand.reactive[i] != 0.0) && haskey(type, "Power Demand")
-            inuse["Power Demand"] += 1
-            summaryData(minIndex, minValue, maxIndex, maxValue, total, i, scale["P"], bus.demand.active[i], "Power Demand Active")
-            summaryData(minIndex, minValue, maxIndex, maxValue, total, i, scale["Q"], bus.demand.reactive[i], "Power Demand Reactive")
+        if bus.demand.active[i] != 0.0 || bus.demand.reactive[i] != 0.0
+            if haskey(smr.type, "Power Demand")
+                smr.inuse["Power Demand"] += 1
+                eval(smr, i, scale[:P], bus.demand.active[i], "Power Demand Active")
+                eval(smr, i, scale[:Q], bus.demand.reactive[i], "Power Demand Reactive")
+            end
+        end
+        eval
+        if haskey(smr.type, "Power Injection")
+            eval(smr, i, scale[:P], power.injection.active[i], "Power Injection Active")
+            eval(smr, i, scale[:Q], power.injection.reactive[i], "Power Injection Reactive")
         end
 
-        if haskey(type, "Power Injection")
-            summaryData(minIndex, minValue, maxIndex, maxValue, total, i, scale["P"], power.injection.active[i], "Power Injection Active")
-            summaryData(minIndex, minValue, maxIndex, maxValue, total, i, scale["Q"], power.injection.reactive[i], "Power Injection Reactive")
+        if bus.shunt.conductance[i] != 0.0 || bus.shunt.susceptance[i] != 0.0
+            if haskey(smr.type, "Shunt Power")
+                smr.inuse["Shunt Power"] += 1
+                eval(smr, i, scale[:P], power.shunt.active[i], "Shunt Power Active")
+                eval(smr, i, scale[:Q], power.shunt.reactive[i], "Shunt Power Reactive")
+            end
         end
 
-        if (bus.shunt.conductance[i] != 0.0 || bus.shunt.susceptance[i] != 0.0) && haskey(type, "Shunt Power")
-            inuse["Shunt Power"] += 1
-            summaryData(minIndex, minValue, maxIndex, maxValue, total, i, scale["P"], power.shunt.active[i], "Shunt Power Active")
-            summaryData(minIndex, minValue, maxIndex, maxValue, total, i, scale["Q"], power.shunt.reactive[i], "Shunt Power Reactive")
-        end
-
-        if haskey(type, "Current Injection")
-            scaleCurrt = scaleCurrent(prefix, system, i)
-            summaryData(minIndex, minValue, maxIndex, maxValue, i, scaleCurrt, current.injection.magnitude[i], "Current Injection Magnitude")
-            summaryData(minIndex, minValue, maxIndex, maxValue, i, scale["ψ"], current.injection.angle[i], "Current Injection Angle")
+        if haskey(smr.type, "Current Injection")
+            scaleCurt = scaleCurrent(pfx, system, i)
+            eval(smr, i, scaleCurt, currinj.magnitude[i], "Current Injection Magnitude")
+            eval(smr, i, scale[:ψ], currinj.angle[i], "Current Injection Angle")
         end
     end
-    summaryType(type, inuse)
-    summaryLabel(bus.label, minIndex, minLabel, maxIndex, maxLabel)
+    notexist!(smr)
+    addlabel!(smr, bus.label)
 
-    printing = howManyPrint(width, show, title, style, "Bus Summary")
-
-    return type, minLabel, minValue, maxLabel, maxValue, inuse, total, printing, 3
+   return smr
 end
 
-function busSummary(system::PowerSystem, analysis::DC, unitList::UnitList, prefix::PrefixLive,
-    scale::Dict{String, Float64}, width::Dict{String, Int64}, show::OrderedDict{String, Bool},
-    title::Bool, style::Bool)
-
+function busSummary(
+    system::PowerSystem,
+    analysis::DC,
+    unitList::UnitList,
+    ::PrefixLive,
+    scale::Dict{Symbol, Float64},
+)
     voltage = analysis.voltage
     power = analysis.power
     bus = system.bus
+    smr = summary()
 
-    type = OrderedDict{String, String}()
+    θ = " Angle [" * unitList.voltageAngleLive * "]"
+    P = " Active [" * unitList.activePowerLive * "]"
+
     if !isempty(voltage.angle)
-        type["Voltage"] = "Voltage"
-        type["Voltage Angle"] = " Angle [$(unitList.voltageAngleLive)]"
+        smr.type["Voltage"] = "Voltage"
+        smr.type["Voltage Angle"] = θ
     end
     if !isempty(power.supply.active)
-        type["Power Generation"] = "Power Generation"
-        type["Power Generation Active"] = " Active [$(unitList.activePowerLive)]"
+        smr.type["Power Generation"] = "Power Generation"
+        smr.type["Power Generation Active"] = P
     end
     if !isempty(power.supply.active)
-        type["Power Demand"] = "Power Demand"
-        type["Power Demand Active"] = " Active [$(unitList.activePowerLive)]"
+        smr.type["Power Demand"] = "Power Demand"
+        smr.type["Power Demand Active"] = P
     end
     if !isempty(power.injection.active)
-        type["Power Injection"] = "Power Injection"
-        type["Power Injection Active"] = " Active [$(unitList.activePowerLive)]"
+        smr.type["Power Injection"] = "Power Injection"
+        smr.type["Power Injection Active"] = P
     end
-    inuse = Dict{String, Float64}(
-        "Voltage"           => bus.number,
-        "Power Generation"  => 0.0,
-        "Power Demand"      => 0.0,
-        "Power Injection"   => bus.number,
-    )
-    total = Dict{String, Float64}(
-        "Power Generation Active" => 0.0,
-        "Power Demand Active" => 0.0,
-        "Power Injection Active" => 0.0,
-    )
-    minIndex, minLabel, minValue, maxIndex, maxLabel, maxValue = summaryDict(type)
+
+    smr.inuse["Voltage"] = bus.number
+    smr.inuse["Power Generation"] = 0.0
+    smr.inuse["Power Demand"] = 0.0
+    smr.inuse["Power Injection"] = bus.number
+
+    smr.total["Power Generation Active"] = 0.0
+    smr.total["Power Demand Active"] = 0.0
+    smr.total["Power Injection Active"] = 0.0
+
+    evaluate!(smr)
 
     @inbounds for i = 1:bus.number
-        summaryData(minIndex, minValue, maxIndex, maxValue, i, scale["θ"], voltage.angle[i], "Voltage Angle")
+        eval(smr, i, scale[:θ], voltage.angle[i], "Voltage Angle")
 
-        if power.supply.active[i] != 0.0 && haskey(type, "Power Generation")
-            inuse["Power Generation"] += 1
-            summaryData(minIndex, minValue, maxIndex, maxValue, total, i, scale["P"], power.supply.active[i], "Power Generation Active")
+        if !haskey(bus.supply.generator, i)
+            if haskey(smr.type, "Power Generation")
+                smr.inuse["Power Generation"] += 1
+                eval(smr, i, scale[:P], power.supply.active[i], "Power Generation Active")
+            end
         end
 
-        if bus.demand.active[i] != 0.0 && haskey(type, "Power Demand")
-            inuse["Power Demand"] += 1
-            summaryData(minIndex, minValue, maxIndex, maxValue, total, i, scale["P"], bus.demand.active[i], "Power Demand Active")
+        if bus.demand.active[i] != 0.0
+            if haskey(smr.type, "Power Demand")
+                smr.inuse["Power Demand"] += 1
+                eval(smr, i, scale[:P], bus.demand.active[i], "Power Demand Active")
+            end
         end
 
-        if haskey(type, "Power Injection")
-            summaryData(minIndex, minValue, maxIndex, maxValue, total, i, scale["P"], power.injection.active[i], "Power Injection Active")
+        if haskey(smr.type, "Power Injection")
+            eval(smr, i, scale[:P], power.injection.active[i], "Power Injection Active")
         end
     end
-    summaryType(type, inuse)
-    summaryLabel(bus.label, minIndex, minLabel, maxIndex, maxLabel)
+    notexist!(smr)
+    addlabel!(smr, bus.label)
+    smr.block = 2
 
-    printing = howManyPrint(width, show, title, style, "Bus Summary")
-
-    return type, minLabel, minValue, maxLabel, maxValue, inuse, total, printing, 2
+    return smr
 end
 
 """
@@ -1306,206 +1544,250 @@ show = Dict("Total" => false)
 printBranchSummary(system, analysis; show, delimiter = " ", title = false)
 ```
 """
-function printBranchSummary(system::PowerSystem, analysis::Union{AC, DC}, io::IO = stdout;
-    fmt::Dict{String, String} = Dict{String, String}(), width::Dict{String, Int64} = Dict{String, Int64}(),
-    show::Dict{String, Bool} = Dict{String, Bool}(), delimiter::String = "|", style::Bool = true,
-    title::Bool = true, header::Bool = true, footer::Bool = true)
-
+function printBranchSummary(
+    system::PowerSystem,
+    analysis::Union{AC, DC},
+    io::IO = stdout;
+    kwargs...
+)
     errorVoltage(analysis.voltage.angle)
 
-    scale = scalePrint(system, prefix)
-    fmt, width, show, subheading = summaryFormat(fmt, width, show, style)
-    type, minLabel, minValue, maxLabel, maxValue, inuse, total, printing, cnt = branchSummary(system, analysis, unitList, prefix, scale, width, show, title, style)
 
-    if printing && !isempty(type)
-        heading = summaryFormat(fmt, width, show, type, inuse, minLabel, minValue, maxLabel, maxValue, total, style)
-        pfmt, hfmt, maxLine = setupPrint(fmt, width, show, delimiter, style)
+    scale = scalePrint(system, pfx)
+    smr = branchSummary(system, analysis, unitList, pfx, scale)
+    prt = summaryData(smr, "Branch Summary"; kwargs...)
 
-        titlePrint(io, delimiter, title, header, style, maxLine, "Branch Summary")
-        headerPrint(io, hfmt, width, show, heading, subheading, delimiter, header, style, maxLine)
-        summaryPrint(io, pfmt, hfmt, width, show, type, minLabel, minValue, maxLabel, maxValue, inuse, total, delimiter, footer, style, maxLine, cnt)
+    if prt.notprint && isempty(smr.type)
+        return
     end
+
+    title(io, prt, "Branch Summary")
+    header(io, prt, smr)
+    summaryPrint(io, prt, smr)
 end
 
-function branchSummary(system::PowerSystem, analysis::AC, unitList::UnitList, prefix::PrefixLive,
-    scale::Dict{String, Float64}, width::Dict{String, Int64}, show::OrderedDict{String, Bool},
-    title::Bool, style::Bool)
-
+function branchSummary(
+    system::PowerSystem,
+    analysis::AC,
+    unitList::UnitList,
+    pfx::PrefixLive,
+    scale::Dict{Symbol, Float64},
+)
     power = analysis.power
     current = analysis.current
     branch = system.branch
+    smr = summary()
 
-    type = OrderedDict{String, String}()
+    P = " Active [" * unitList.activePowerLive * "]"
+    Q = " Reactive [" * unitList.reactivePowerLive * "]"
+    I = " Magnitude [" * unitList.currentMagnitudeLive * "]"
+    ψ = " Angle [" * unitList.currentAngleLive * "]"
+
+    head = Dict(
+        :Sijl => "Line From-Bus Power Flow Magnitude",
+        :Pijl => "Line From-Bus Power Flow Magnitude Active",
+        :Qijl => "Line From-Bus Power Flow Magnitude Reactive",
+        :Sijt => "Transformer From-Bus Power Flow Magnitude",
+        :Pijt => "Transformer From-Bus Power Flow Magnitude Active",
+        :Qijt => "Transformer From-Bus Power Flow Magnitude Reactive",
+        :Sjil => "Line To-Bus Power Flow Magnitude",
+        :Pjil => "Line To-Bus Power Flow Magnitude Active",
+        :Qjil => "Line To-Bus Power Flow Magnitude Reactive",
+        :Sjit => "Transformer To-Bus Power Flow Magnitude",
+        :Pjit => "Transformer To-Bus Power Flow Magnitude Active",
+        :Qjit => "Transformer To-Bus Power Flow Magnitude Reactive",
+        :Sshu => "Shunt Power",
+        :Pshu => "Shunt Power Active",
+        :Qshu => "Shunt Power Reactive",
+        :Sser => "Series Power",
+        :Pser => "Series Power Active",
+        :Qser => "Series Power Reactive",
+    )
+
     if !isempty(power.from.active)
-        type["Line From-Bus Power Flow Magnitude"] = "Line From-Bus Power Flow Magnitude"
-        type["Line From-Bus Power Flow Magnitude Active"] = " Active [$(unitList.activePowerLive)]"
-        type["Line From-Bus Power Flow Magnitude Reactive"] = " Reactive [$(unitList.reactivePowerLive)]"
+        smr.type[head[:Sijl]] = head[:Sijl]
+        smr.type[head[:Pijl]] = P
+        smr.type[head[:Qijl]] = Q
     end
     if !isempty(power.from.active)
-        type["Transformer From-Bus Power Flow Magnitude"] = "Transformer From-Bus Power Flow Magnitude"
-        type["Transformer From-Bus Power Flow Magnitude Active"] = " Active [$(unitList.activePowerLive)]"
-        type["Transformer From-Bus Power Flow Magnitude Reactive"] = " Reactive [$(unitList.reactivePowerLive)]"
+        smr.type[head[:Sijt]] = head[:Sijt]
+        smr.type[head[:Pijt]] = P
+        smr.type[head[:Qijt]] = Q
     end
     if !isempty(power.to.active)
-        type["Line To-Bus Power Flow Magnitude"] = "Line To-Bus Power Flow Magnitude"
-        type["Line To-Bus Power Flow Magnitude Active"] = " Active [$(unitList.activePowerLive)]"
-        type["Line To-Bus Power Flow Magnitude Reactive"] = " Reactive [$(unitList.reactivePowerLive)]"
+        smr.type[head[:Sjil]] = head[:Sjil]
+        smr.type[head[:Pjil]] = P
+        smr.type[head[:Qjil]] = Q
     end
     if !isempty(power.to.active)
-        type["Transformer To-Bus Power Flow Magnitude"] = "Transformer To-Bus Power Flow Magnitude"
-        type["Transformer To-Bus Power Flow Magnitude Active"] = " Active [$(unitList.activePowerLive)]"
-        type["Transformer To-Bus Power Flow Magnitude Reactive"] = " Reactive [$(unitList.reactivePowerLive)]"
+        smr.type[head[:Sjit]] = head[:Sjit]
+        smr.type[head[:Pjit]] = P
+        smr.type[head[:Qjit]] = Q
     end
     if !isempty(power.charging.active)
-        type["Shunt Power"] = "Shunt Power"
-        type["Shunt Power Active"] = " Active [$(unitList.activePowerLive)]"
-        type["Shunt Power Reactive"] = " Reactive [$(unitList.reactivePowerLive)]"
+        smr.type[head[:Sshu]] = head[:Sshu]
+        smr.type[head[:Pshu]] = P
+        smr.type[head[:Qshu]] = Q
     end
     if !isempty(power.series.active)
-        type["Series Power"] = "Series Power"
-        type["Series Power Active"] = " Active [$(unitList.activePowerLive)]"
-        type["Series Power Reactive"] = " Reactive [$(unitList.reactivePowerLive)]"
+        smr.type[head[:Sser]] = head[:Sser]
+        smr.type[head[:Pser]] = P
+        smr.type[head[:Qser]] = Q
     end
     if !isempty(current.from.magnitude)
-        type["From-Bus Current"] = "From-Bus Current"
-        type["From-Bus Current Magnitude"] = " Magnitude [$(unitList.currentMagnitudeLive)]"
-        type["From-Bus Current Angle"] = " Angle [$(unitList.currentAngleLive)]"
+        smr.type["From-Bus Current"] = "From-Bus Current"
+        smr.type["From-Bus Current Magnitude"] = I
+        smr.type["From-Bus Current Angle"] = ψ
     end
     if !isempty(current.to.magnitude)
-        type["To-Bus Current"] = "To-Bus Current"
-        type["To-Bus Current Magnitude"] = " Magnitude [$(unitList.currentMagnitudeLive)]"
-        type["To-Bus Current Angle"] = " Angle [$(unitList.currentAngleLive)]"
+        smr.type["To-Bus Current"] = "To-Bus Current"
+        smr.type["To-Bus Current Magnitude"] = I
+        smr.type["To-Bus Current Angle"] = ψ
     end
     if !isempty(current.series.magnitude)
-        type["Series Current"] = "Series Current"
-        type["Series Current Magnitude"] = " Magnitude [$(unitList.currentMagnitudeLive)]"
-        type["Series Current Angle"] = " Angle [$(unitList.currentAngleLive)]"
+        smr.type["Series Current"] = "Series Current"
+        smr.type["Series Current Magnitude"] = I
+        smr.type["Series Current Angle"] = ψ
     end
-    inuse = Dict{String, Float64}(
-        "Line From-Bus Power Flow Magnitude" => 0,
-        "Transformer From-Bus Power Flow Magnitude" => 0,
-        "Line To-Bus Power Flow Magnitude" => 0,
-        "Transformer To-Bus Power Flow Magnitude" => 0,
-        "Shunt Power" => 0.0,
-        "Series Power" => branch.layout.inservice,
-        "From-Bus Current" => branch.layout.inservice,
-        "To-Bus Current" => branch.layout.inservice,
-    )
-    total = Dict{String, Float64}(
-        "Shunt Power Active" => 0.0,
-        "Shunt Power Reactive" => 0.0,
-        "Series Power Active" => 0.0,
-        "Series Power Reactive" => 0.0
-    )
-    minIndex, minLabel, minValue, maxIndex, maxLabel, maxValue = summaryDict(type)
+
+    smr.inuse[head[:Sijl]] = 0
+    smr.inuse[head[:Sijt]] = 0
+    smr.inuse[head[:Sjil]] = 0
+    smr.inuse[head[:Sjit]] = 0
+    smr.inuse[head[:Sshu]] = 0.0
+    smr.inuse[head[:Sser]] = branch.layout.inservice
+    smr.inuse["From-Bus Current"] = branch.layout.inservice
+    smr.inuse["To-Bus Current"] = branch.layout.inservice
+    smr.inuse["Series Current"] = branch.layout.inservice
+
+    smr.total[head[:Pshu]] = 0.0
+    smr.total[head[:Qshu]] = 0.0
+    smr.total[head[:Pser]] = 0.0
+    smr.total[head[:Qser]] = 0.0
+
+    evaluate!(smr)
 
     @inbounds for i = 1:branch.number
-        if branch.layout.status[i] == 1
-            if haskey(type, "Line From-Bus Power Flow Magnitude")
-                if branch.parameter.turnsRatio[i] == 1 && branch.parameter.shiftAngle[i] == 0
-                    inuse["Line From-Bus Power Flow Magnitude"] += 1
-                    summaryData(minIndex, minValue, maxIndex, maxValue, i, scale["P"], abs(power.from.active[i]), "Line From-Bus Power Flow Magnitude Active")
-                    summaryData(minIndex, minValue, maxIndex, maxValue, i, scale["Q"], abs(power.from.reactive[i]), "Line From-Bus Power Flow Magnitude Reactive")
-                else
-                    inuse["Transformer From-Bus Power Flow Magnitude"] += 1
-                    summaryData(minIndex, minValue, maxIndex, maxValue, i, scale["P"], abs(power.from.active[i]), "Transformer From-Bus Power Flow Magnitude Active")
-                    summaryData(minIndex, minValue, maxIndex, maxValue, i, scale["Q"], abs(power.from.reactive[i]), "Transformer From-Bus Power Flow Magnitude Reactive")
-                end
-            end
+        if branch.layout.status[i] != 1
+            continue
+        end
 
-            if haskey(type, "Line To-Bus Power Flow Magnitude")
-                if branch.parameter.turnsRatio[i] == 1 && branch.parameter.shiftAngle[i] == 0
-                    inuse["Line To-Bus Power Flow Magnitude"] += 1
-                    summaryData(minIndex, minValue, maxIndex, maxValue, i, scale["P"], abs(power.to.active[i]), "Line To-Bus Power Flow Magnitude Active")
-                    summaryData(minIndex, minValue, maxIndex, maxValue, i, scale["Q"], abs(power.to.reactive[i]), "Line To-Bus Power Flow Magnitude Reactive")
-                else
-                    inuse["Transformer To-Bus Power Flow Magnitude"] += 1
-                    summaryData(minIndex, minValue, maxIndex, maxValue, i, scale["P"], abs(power.to.active[i]), "Transformer To-Bus Power Flow Magnitude Active")
-                    summaryData(minIndex, minValue, maxIndex, maxValue, i, scale["Q"], abs(power.to.reactive[i]), "Transformer To-Bus Power Flow Magnitude Reactive")
-                end
-            end
-
-            if (branch.parameter.conductance[i] != 0.0 || branch.parameter.susceptance[i] != 0.0) && haskey(type, "Shunt Power")
-                inuse["Shunt Power"] += 1
-                summaryData(minIndex, minValue, maxIndex, maxValue, total, i, scale["P"], power.charging.active[i], "Shunt Power Active")
-                summaryData(minIndex, minValue, maxIndex, maxValue, total, i, scale["Q"], power.charging.reactive[i], "Shunt Power Reactive")
-            end
-
-            if haskey(type, "Series Power")
-                summaryData(minIndex, minValue, maxIndex, maxValue, total, i, scale["P"], power.series.active[i], "Series Power Active")
-                summaryData(minIndex, minValue, maxIndex, maxValue, total, i, scale["Q"], power.series.reactive[i], "Series Power Reactive")
-            end
-
-            if haskey(type, "From-Bus Current")
-                scaleCurrf = scaleCurrent(prefix, system, branch.layout.from[i])
-                summaryData(minIndex, minValue, maxIndex, maxValue, i, scaleCurrf, current.from.magnitude[i], "From-Bus Current Magnitude")
-                summaryData(minIndex, minValue, maxIndex, maxValue, i, scale["ψ"], current.from.angle[i], "From-Bus Current Angle")
-            end
-
-            if haskey(type, "To-Bus Current")
-                scaleCurrt = scaleCurrent(prefix, system, branch.layout.to[i])
-                summaryData(minIndex, minValue, maxIndex, maxValue, i, scaleCurrt, current.to.magnitude[i], "To-Bus Current Magnitude")
-                summaryData(minIndex, minValue, maxIndex, maxValue, i, scale["ψ"], current.to.angle[i], "To-Bus Current Angle")
-            end
-
-            if haskey(type, "Series Current")
-                scaleCurrt = scaleCurrent(prefix, system, branch.layout.to[i])
-                summaryData(minIndex, minValue, maxIndex, maxValue, i, scaleCurrt, current.series.magnitude[i], "Series Current Magnitude")
-                summaryData(minIndex, minValue, maxIndex, maxValue, i, scale["ψ"], current.series.angle[i], "Series Current Angle")
+        if haskey(smr.type, head[:Sijl])
+            if branch.parameter.turnsRatio[i] == 1 && branch.parameter.shiftAngle[i] == 0
+                smr.inuse[head[:Sijl]] += 1
+                eval(smr, i, scale[:P], abs(power.from.active[i]), head[:Pijl])
+                eval(smr, i, scale[:Q], abs(power.from.reactive[i]), head[:Qijl])
+            else
+                smr.inuse[head[:Sijt]] += 1
+                eval(smr, i, scale[:P], abs(power.from.active[i]), head[:Pijt])
+                eval(smr, i, scale[:Q], abs(power.from.reactive[i]), head[:Qijt])
             end
         end
+
+        if haskey(smr.type, head[:Sjil])
+            if branch.parameter.turnsRatio[i] == 1 && branch.parameter.shiftAngle[i] == 0
+                smr.inuse[head[:Sjil]] += 1
+                eval(smr, i, scale[:P], abs(power.to.active[i]), head[:Pjil])
+                eval(smr, i, scale[:Q], abs(power.to.reactive[i]), head[:Qjil])
+            else
+                smr.inuse[head[:Sjit]] += 1
+                eval(smr, i, scale[:P], abs(power.to.active[i]), head[:Pjit])
+                eval(smr, i, scale[:Q], abs(power.to.reactive[i]), head[:Qjit])
+            end
+        end
+
+        if haskey(smr.type, head[:Sshu])
+            if branch.parameter.conductance[i] != 0.0 || branch.parameter.susceptance[i] != 0.0
+                smr.inuse[head[:Sshu]] += 1
+                eval(smr, i, scale[:P], power.charging.active[i], head[:Pshu])
+                eval(smr, i, scale[:Q], power.charging.reactive[i], head[:Qshu])
+            end
+        end
+
+        if haskey(smr.type, head[:Sser])
+            eval(smr, i, scale[:P], power.series.active[i], head[:Pser])
+            eval(smr, i, scale[:Q], power.series.reactive[i], head[:Qser])
+        end
+
+        if haskey(smr.type, "From-Bus Current")
+            scaleCurrf = scaleCurrent(pfx, system, branch.layout.from[i])
+            eval(smr, i, scaleCurrf, current.from.magnitude[i], "From-Bus Current Magnitude")
+            eval(smr, i, scale[:ψ], current.from.angle[i], "From-Bus Current Angle")
+        end
+
+        if haskey(smr.type, "To-Bus Current")
+            scaleCurrt = scaleCurrent(pfx, system, branch.layout.to[i])
+            eval(smr, i, scaleCurrt, current.to.magnitude[i], "To-Bus Current Magnitude")
+            eval(smr, i, scale[:ψ], current.to.angle[i], "To-Bus Current Angle")
+        end
+
+        if haskey(smr.type, "Series Current")
+            scaleCurrt = scaleCurrent(pfx, system, branch.layout.to[i])
+            eval(smr, i, scaleCurrt, current.series.magnitude[i], "Series Current Magnitude")
+            eval(smr, i, scale[:ψ], current.series.angle[i], "Series Current Angle")
+        end
     end
-    summaryType(type, inuse)
-    summaryLabel(branch.label, minIndex, minLabel, maxIndex, maxLabel)
+    notexist!(smr)
+    addlabel!(smr, branch.label)
 
-    printing = howManyPrint(width, show, title, style, "Branch Summary")
-
-    return type, minLabel, minValue, maxLabel, maxValue, inuse, total, printing, 3
+   return smr
 end
 
-function branchSummary(system::PowerSystem, analysis::DC, unitList::UnitList, prefix::PrefixLive,
-    scale::Dict{String, Float64}, width::Dict{String, Int64}, show::OrderedDict{String, Bool},
-    title::Bool, style::Bool)
-
+function branchSummary(
+    system::PowerSystem,
+    analysis::DC,
+    unitList::UnitList,
+    ::PrefixLive,
+    scale::Dict{Symbol, Float64},
+)
     power = analysis.power
     branch = system.branch
+    smr = summary()
 
-    type = OrderedDict{String, String}()
-    if !isempty(power.from.active)
-        type["Line Power Flow Magnitude"] = "Line Power Flow Magnitude"
-        type["Line Power Flow Magnitude Active"] = " Active [$(unitList.activePowerLive)]"
-    end
-    if !isempty(power.from.active)
-        type["Transformer Power Flow Magnitude"] = "Transformer Power Flow Magnitude"
-        type["Transformer Power Flow Magnitude Active"] = " Active [$(unitList.activePowerLive)]"
-    end
-    inuse = Dict{String, Float64}(
-        "Line Power Flow Magnitude" => 0,
-        "Transformer Power Flow Magnitude" => 0,
+    P = " Active [" * unitList.activePowerLive * "]"
+
+    head = Dict(
+        :Sijl => "Line Power Flow Magnitude",
+        :Pijl => "Line Power Flow Magnitude Active",
+        :Sijt => "Transformer Power Flow Magnitude",
+        :Pijt => "Transformer Power Flow Magnitude Active",
     )
-    total = Dict{String, Float64}()
 
-    minIndex, minLabel, minValue, maxIndex, maxLabel, maxValue = summaryDict(type)
+    if !isempty(power.from.active)
+        smr.type[head[:Sijl]] = head[:Sijl]
+        smr.type[head[:Pijl]] = P
+    end
+    if !isempty(power.from.active)
+        smr.type[head[:Sijt]] = head[:Sijt]
+        smr.type[head[:Pijt]] = P
+    end
+
+    smr.inuse[head[:Sijl]] = 0.0
+    smr.inuse[head[:Sijt]] = 0.0
+
+    evaluate!(smr)
 
     @inbounds for i = 1:branch.number
-        if branch.layout.status[i] == 1
-            if haskey(type, "Line Power Flow Magnitude")
-                if branch.parameter.turnsRatio[i] == 1 && branch.parameter.shiftAngle[i] == 0
-                    inuse["Line Power Flow Magnitude"] += 1
-                    summaryData(minIndex, minValue, maxIndex, maxValue, i, scale["P"], abs(power.from.active[i]), "Line Power Flow Magnitude Active")
-                else
-                    inuse["Transformer Power Flow Magnitude"] += 1
-                    summaryData(minIndex, minValue, maxIndex, maxValue, i, scale["P"], abs(power.from.active[i]), "Transformer Power Flow Magnitude Active")
-                end
+        if branch.layout.status[i] != 1
+            continue
+        end
+
+        if haskey(smr.type, head[:Sijl])
+            if branch.parameter.turnsRatio[i] == 1 && branch.parameter.shiftAngle[i] == 0
+                smr.inuse[head[:Sijl]] += 1
+                eval(smr, i, scale[:P], abs(power.from.active[i]), head[:Pijl])
+            else
+                smr.inuse[head[:Sijt]] += 1
+                eval(smr, i, scale[:P], abs(power.from.active[i]), head[:Pijt])
             end
         end
+
     end
-    summaryType(type, inuse)
-    summaryLabel(branch.label, minIndex, minLabel, maxIndex, maxLabel)
+    notexist!(smr)
+    addlabel!(smr, branch.label)
+    smr.block = 2
 
-    printing = howManyPrint(width, show, title, style, "Branch Summary")
-
-    return type, minLabel, minValue, maxLabel, maxValue, inuse, total, printing, 2
+   return smr
 end
 
 """
@@ -1547,299 +1829,321 @@ show = Dict("Minimum" => false)
 printGeneratorSummary(system, analysis; show, delimiter = " ", title = false)
 ```
 """
-function printGeneratorSummary(system::PowerSystem, analysis::Union{AC, DC}, io::IO = stdout;
-    fmt::Dict{String, String} = Dict{String, String}(), width::Dict{String, Int64} = Dict{String, Int64}(),
-    show::Dict{String, Bool} = Dict{String, Bool}(), delimiter::String = "|", style::Bool = true,
-    title::Bool = true, header::Bool = true, footer::Bool = true)
-
+function printGeneratorSummary(
+    system::PowerSystem,
+    analysis::Union{AC, DC},
+    io::IO = stdout;
+    kwargs...
+)
     errorVoltage(analysis.voltage.angle)
 
-    scale = scalePrint(system, prefix)
-    fmt, width, show, subheading = summaryFormat(fmt, width, show, style)
-    type, minLabel, minValue, maxLabel, maxValue, inuse, total, printing, cnt = generatorSummary(system, analysis, unitList, scale, width, show, title, style)
+    scale = scalePrint(system, pfx)
+    smr = generatorSummary(system, analysis, unitList, scale)
+    prt = summaryData(smr, "Generator Summary"; kwargs...)
 
-    if printing && !isempty(type)
-        heading = summaryFormat(fmt, width, show, type, inuse, minLabel, minValue, maxLabel, maxValue, total, style)
-        pfmt, hfmt, maxLine = setupPrint(fmt, width, show, delimiter, style)
-
-        titlePrint(io, delimiter, title, header, style, maxLine, "Generator Summary")
-        headerPrint(io, hfmt, width, show, heading, subheading, delimiter, header, style, maxLine)
-        summaryPrint(io, pfmt, hfmt, width, show, type, minLabel, minValue, maxLabel, maxValue, inuse, total, delimiter, footer, style, maxLine, cnt)
+    if prt.notprint && isempty(smr.type)
+        return
     end
+
+    title(io, prt, "Generator Summary")
+    header(io, prt, smr)
+    summaryPrint(io, prt, smr)
 end
 
-function generatorSummary(system::PowerSystem, analysis::AC, unitList::UnitList, scale::Dict{String, Float64},
-    width::Dict{String, Int64}, show::OrderedDict{String, Bool}, title::Bool, style::Bool)
-
+function generatorSummary(
+    system::PowerSystem,
+    analysis::AC,
+    unitList::UnitList,
+    scale::Dict{Symbol, Float64},
+)
     power = analysis.power
     generator = system.generator
+    smr = summary()
 
-    type = OrderedDict{String, String}()
+    P = " Active [" * unitList.activePowerLive * "]"
+    Q = " Reactive [" * unitList.reactivePowerLive * "]"
+
     if !isempty(power.generator.active)
-        type["Power Output"] = "Power Output"
-        type["Power Output Active"] = " Active [$(unitList.activePowerLive)]"
-        type["Power Output Reactive"] = " Reactive [$(unitList.reactivePowerLive)]"
+        smr.type["Power Output"] = "Power Output"
+        smr.type["Power Output Active"] = P
+        smr.type["Power Output Reactive"] = Q
     end
-    inuse = Dict{String, Float64}(
-        "Power Output" => generator.layout.inservice,
-    )
-    total = Dict{String, Float64}(
-        "Power Output Active" => 0.0,
-        "Power Output Reactive" => 0.0,
-    )
-    minIndex, minLabel, minValue, maxIndex, maxLabel, maxValue = summaryDict(type)
+
+    smr.inuse["Power Output"] = generator.layout.inservice
+    smr.total["Power Output Active"] = 0.0
+    smr.total["Power Output Reactive"] = 0.0
+
+    evaluate!(smr)
 
     @inbounds for i = 1:generator.number
-        if generator.layout.status[i] == 1 && haskey(type, "Power Output")
-            summaryData(minIndex, minValue, maxIndex, maxValue, total, i, scale["P"], power.generator.active[i], "Power Output Active")
-            summaryData(minIndex, minValue, maxIndex, maxValue, total, i, scale["Q"], power.generator.reactive[i], "Power Output Reactive")
+        if generator.layout.status[i] == 1 && haskey(smr.type, "Power Output")
+            eval(smr, i, scale[:P], power.generator.active[i], "Power Output Active")
+            eval(smr, i, scale[:Q], power.generator.reactive[i], "Power Output Reactive")
         end
     end
-    summaryType(type, inuse)
-    summaryLabel(generator.label, minIndex, minLabel, maxIndex, maxLabel)
+    notexist!(smr)
+    addlabel!(smr, generator.label)
 
-    printing = howManyPrint(width, show, title, style, "Generator Summary")
-
-    return type, minLabel, minValue, maxLabel, maxValue, inuse, total, printing, 3
+   return smr
 end
 
-function generatorSummary(system::PowerSystem, analysis::DC, unitList::UnitList, scale::Dict{String, Float64},
-    width::Dict{String, Int64}, show::OrderedDict{String, Bool}, title::Bool, style::Bool)
-
+function generatorSummary(
+    system::PowerSystem,
+    analysis::DC,
+    unitList::UnitList,
+    scale::Dict{Symbol, Float64},
+)
     power = analysis.power
     generator = system.generator
+    smr = summary()
 
-    type = OrderedDict{String, String}()
+    P = " Active [" * unitList.activePowerLive * "]"
+
     if !isempty(power.generator.active)
-        type["Power Output"] = "Power Output"
-        type["Power Output Active"] = " Active [$(unitList.activePowerLive)]"
+        smr.type["Power Output"] = "Power Output"
+        smr.type["Power Output Active"] = P
     end
-    inuse = Dict{String, Float64}(
-        "Power Output" => generator.layout.inservice,
-    )
-    total = Dict{String, Float64}(
-        "Power Output Active" => 0.0,
-    )
-    minIndex, minLabel, minValue, maxIndex, maxLabel, maxValue = summaryDict(type)
+
+    smr.inuse["Power Output"] = generator.layout.inservice
+    smr.total["Power Output Active"] = 0.0
+
+    evaluate!(smr)
 
     @inbounds for i = 1:generator.number
-        if generator.layout.status[i] == 1 && haskey(type, "Power Output")
-            summaryData(minIndex, minValue, maxIndex, maxValue, total, i, scale["P"], power.generator.active[i], "Power Output Active")
+        if generator.layout.status[i] == 1 && haskey(smr.type, "Power Output")
+            eval(smr, i, scale[:P], power.generator.active[i], "Power Output Active")
         end
     end
-    summaryType(type, inuse)
-    summaryLabel(generator.label, minIndex, minLabel, maxIndex, maxLabel)
+    notexist!(smr)
+    addlabel!(smr, generator.label)
+    smr.block = 2
 
-    printing = howManyPrint(width, show, title, style, "Generator Summary")
-
-    return type, minLabel, minValue, maxLabel, maxValue, inuse, total, printing, 2
+   return smr
 end
 
-function summaryFormat(fmt::Dict{String, String}, width::Dict{String, Int64}, show::Dict{String, Bool}, style::Bool)
-    _show = OrderedDict(
-        "Minimum" => true,
-        "Maximum" => true,
+function summaryData(smr::Summary, title::String; kwargs...)
+    style, delimiter, key = summarykwargs(; kwargs...)
+
+    head = Dict(
+        :min => "Minimum",
+        :max => "Maximum",
+        :typ => "Type",
+        :inu => "In-Use",
+        :mnL => "Minimum Label",
+        :mnV => "Minimum Value",
+        :mxL => "Maximum Label",
+        :mxV => "Maximum Value",
+        :tot => "Total",
     )
-    _, _width = fmtwidth(_show)
-    _, _width, _show = printFormat(Dict{String, String}(), Dict{String, String}(), _width, width, _show, show, style)
+    show = OrderedDict(
+        head[:min] => true,
+        head[:max] => true,
+    )
+    _, width = fmtwidth(show)
+    temp = Dict{String, String}()
+    transfer!(temp, temp, width, key.width, show, key.show, style)
 
     subheading = Dict(
-        "Type"          => _header_("", "Type", style),
-        "In-Use"        => _header_("", "In-Use", style),
-        "Minimum Label" => _header_("Label", "Label", style),
-        "Minimum Value" => _header_("Value", "Minimum", style),
-        "Maximum Label" => _header_("Label", "Label", style),
-        "Maximum Value" => _header_("Value", "Maximum", style),
-        "Total"         => _header_("", "Total", style),
+        head[:typ] => _header("", head[:typ], style),
+        head[:inu] => _header("", head[:inu], style),
+        head[:mnL] => _header("Label", "Label", style),
+        head[:mnV] => _header("Value", head[:min], style),
+        head[:mxL] => _header("Label", "Label", style),
+        head[:mxV] => _header("Value", head[:max], style),
+        head[:tot] => _header("", head[:tot], style),
     )
-    _fmt = Dict(
-        "Type"          => "%-*s",
-        "In-Use"        => "%*i",
-        "Minimum Label" => "%-*s",
-        "Minimum Value" => "%*.4f",
-        "Maximum Label" => "%-*s",
-        "Maximum Value" => "%*.4f",
-        "Total"         => "%*.4f",
+    fmt = Dict(
+        head[:typ] => "%-*s",
+        head[:inu] => "%*i",
+        head[:mnL] => "%-*s",
+        head[:mnV] => "%*.4f",
+        head[:mxL] => "%-*s",
+        head[:mxV] => "%*.4f",
+        head[:tot] => "%*.4f",
     )
-    _width = Dict(
-        "Type"          => 4 * style,
-        "In-Use"        => 6 * style,
-        "Minimum Label" => _width_(_width["Minimum"], 5, style),
-        "Minimum Value" => _width_(_width["Minimum"], 5, style),
-        "Maximum Label" => _width_(_width["Maximum"], 5, style),
-        "Maximum Value" => _width_(_width["Maximum"], 5, style),
-        "Total"         => 5 * style,
+    width = Dict(
+        head[:typ] => 4 * style,
+        head[:inu] => 6 * style,
+        head[:mnL] => _width(width[head[:min]], 5, style),
+        head[:mnV] => _width(width[head[:min]], 5, style),
+        head[:mxL] => _width(width[head[:max]], 5, style),
+        head[:mxV] => _width(width[head[:max]], 5, style),
+        head[:tot] => 5 * style,
     )
-    _show = OrderedDict(
-        "Type"          => true,
-        "Minimum Label" => _show_(_show["Minimum"], true),
-        "Minimum Value" => _show_(_show["Minimum"], true),
-        "Maximum Label" => _show_(_show["Maximum"], true),
-        "Maximum Value" => _show_(_show["Maximum"], true),
-        "In-Use"        => true,
-        "Total"         => true,
+    show = OrderedDict(
+        head[:typ] => true,
+        head[:mnL] => _show(show[head[:min]], true),
+        head[:mnV] => _show(show[head[:min]], true),
+        head[:mxL] => _show(show[head[:max]], true),
+        head[:mxV] => _show(show[head[:max]], true),
+        head[:inu] => true,
+        head[:tot] => true,
     )
-    fmt, width, show = printFormat(_fmt, fmt, _width, width, _show, show, style)
-
-    return fmt, width, show, subheading
-end
-
-function summaryFormat(fmt::Dict{String, String}, width::Dict{String, Int64}, show::OrderedDict{String, Bool}, type::OrderedDict{String, String},
-    inuse::Dict{String, Float64}, minLabel::Dict{String, String}, minValue::Dict{String, Float64}, maxLabel::Dict{String, String}, maxValue::Dict{String, Float64},
-    total::Dict{String, Float64}, style::Bool)
+    transfer!(fmt, key.fmt, width, key.width, show, key.show, style)
 
     if style
-        for (key, caption) in type
-            fmax(width, show, caption, "Type")
+        for (key, caption) in smr.type
+            fmax(width, show, caption, head[:typ])
 
-            if haskey(minLabel, key)
-                fmax(width, show, minLabel[key], "Minimum Label")
-                fmax(fmt, width, show, minValue[key], "Minimum Value")
+            if haskey(smr.minlbl, key)
+                fmax(width, show, smr.minlbl[key], head[:mnL])
+                fmax(fmt, width, show, smr.minval[key], head[:mnV])
             end
 
-            if haskey(maxLabel, key)
-                fmax(width, show, maxLabel[key], "Maximum Label")
-                fmax(fmt, width, show, maxValue[key], "Maximum Value")
+            if haskey(smr.maxlbl, key)
+                fmax(width, show, smr.maxlbl[key], head[:mxL])
+                fmax(fmt, width, show, smr.maxval[key], head[:mxV])
             end
 
-            if haskey(inuse, key)
-                fmax(fmt, width, show, inuse[key], "In-Use")
+            if haskey(smr.inuse, key)
+                fmax(fmt, width, show, smr.inuse[key], head[:inu])
             end
 
-            if haskey(total, key)
-                fmax(fmt, width, show, total[key], "Total")
+            if haskey(smr.total, key)
+                fmax(fmt, width, show, smr.total[key], head[:tot])
             end
         end
     end
 
+    notprint = printing!(width, show, key.title, style, title)
+
     heading = OrderedDict(
-        "Type"    => _blank_(width, show, "Type"),
-        "Minimum" => _blank_(width, show, style, "Minimum", "Minimum Label", "Minimum Value"),
-        "Maximum" => _blank_(width, show, style, "Maximum", "Maximum Label", "Maximum Value"),
-        "In-Use"  => _blank_(width, show, "In-Use"),
-        "Total"   => _blank_(width, show, "Total")
+        head[:typ] => _blank(width, show, delimiter, head, :typ),
+        head[:min] => _blank(width, show, delimiter, style, head, :min, :mnL, :mnV),
+        head[:max] => _blank(width, show, delimiter, style, head, :max, :mxL, :mxV),
+        head[:inu] => _blank(width, show, delimiter, head, :inu),
+        head[:tot] => _blank(width, show, delimiter, head, :tot)
     )
 
-    return heading
+    pfmt, hfmt, line = layout(fmt, width, show, delimiter, style)
+
+    unit = Dict{String, String}()
+
+    Print(
+        pfmt, hfmt, width, show, heading, subheading, unit, head, delimiter, style,
+        key.title, key.header, key.footer, 0, notprint, line, 1
+    )
 end
 
-function summaryPrint(io::IO, pfmt::Dict{String, Format}, hfmt::Dict{String, Format}, width::Dict{String, Int64}, show::OrderedDict{String, Bool},
-    type::OrderedDict{String, String}, minLabel::Dict{String, String}, minValue::Dict{String, Float64}, maxLabel::Dict{String, String},
-    maxValue::Dict{String, Float64}, inuse::Dict{String, Float64}, total::Dict{String, Float64}, delimiter::String, footer::Bool,
-    style::Bool, maxLine::Int64, breakLine::Int64)
-
-    cnt = 1
-    @inbounds for (key, caption) in type
-        if (cnt - 1) % breakLine == 0 && cnt != 1
-            printf(io, hfmt, width, show, delimiter, style)
+function summaryPrint(io::IO, prt::Print, smr::Summary)
+    @inbounds for (key, caption) in smr.type
+        if (prt.cnt - 1) % smr.block == 0 && prt.cnt != 1
+            printf(io, prt)
         end
 
-        printf(io, pfmt, width, show, caption, "Type")
+        printf(io, prt.pfmt, prt, caption, :typ)
 
-        if haskey(minLabel, key)
-            printf(io, pfmt, width, show, minLabel[key], "Minimum Label")
-            printf(io, pfmt, width, show, minValue[key], "Minimum Value")
+        if haskey(smr.minlbl, key)
+            printf(io, prt.pfmt, prt, smr.minlbl[key], :mnL)
+            printf(io, prt, smr.minval[key], :mnV)
         else
-            printf(io, hfmt, width, show, "", "Minimum Label")
-            printf(io, hfmt, width, show, "", "Minimum Value")
+            printf(io, prt.hfmt, prt, "", :mnL)
+            printf(io, prt.hfmt, prt, "", :mnV)
         end
 
-        if haskey(maxLabel, key)
-            printf(io, pfmt, width, show, maxLabel[key], "Maximum Label")
-            printf(io, pfmt, width, show, maxValue[key], "Maximum Value")
+        if haskey(smr.maxlbl, key)
+            printf(io, prt.pfmt, prt, smr.maxlbl[key], :mxL)
+            printf(io, prt, smr.maxval[key], :mxV)
         else
-            printf(io, hfmt, width, show, "", "Maximum Label")
-            printf(io, hfmt, width, show, "", "Maximum Value")
+            printf(io, prt.hfmt, prt, "", :mxL)
+            printf(io, prt.hfmt, prt, "", :mxV)
         end
 
-        if haskey(inuse, key)
-            printf(io, pfmt, width, show, inuse[key], "In-Use")
+        if haskey(smr.inuse, key)
+            printf(io, prt, smr.inuse[key], :inu)
         else
-            printf(io, hfmt, width, show, "", "In-Use")
+            printf(io, prt.hfmt, prt, "", :inu)
         end
 
-        if haskey(total, key)
-            printf(io, pfmt, width, show, total[key], "Total")
+        if haskey(smr.total, key)
+            printf(io, prt, smr.total[key], :tot)
         else
-            printf(io, hfmt, width, show, "", "Total")
+            printf(io, prt.hfmt, prt, "", :tot)
         end
 
         @printf io "\n"
-        cnt += 1
+        prt.cnt += 1
     end
-    printf(io, delimiter, footer, style, maxLine)
+    printf(io, prt.footer, prt)
 end
 
-function summaryDict(type::OrderedDict{String, String})
-    minIndex = Dict{String, Int64}()
-    minLabel = Dict{String, String}()
-    minValue = Dict{String, Float64}()
+function summary()
+    Summary(
+        OrderedDict{String, String}(),
+        Dict{String, Int64}(),
+        Dict{String, Float64}(),
+        Dict{String, String}(),
+        Dict{String, Int64}(),
+        Dict{String, Float64}(),
+        Dict{String, String}(),
+        Dict{String, Float64}(),
+        Dict{String, Float64}(),
+        3
+    )
+end
 
-    maxIndex = Dict{String, Int64}()
-    maxLabel = Dict{String, String}()
-    maxValue = Dict{String, Float64}()
-
-    for (key, value) in type
+function evaluate!(smr::Summary)
+    for (key, value) in smr.type
         if value[1] == ' '
-            minIndex[key] = 0
-            minLabel[key] = ""
-            minValue[key] = Inf
+            smr.minidx[key] = 0
+            smr.minval[key] = Inf
+            smr.minlbl[key] = ""
 
-            maxIndex[key] = 0
-            maxLabel[key] = ""
-            maxValue[key] = -Inf
+            smr.maxidx[key] = 0
+            smr.maxval[key] = -Inf
+            smr.maxlbl[key] = ""
         end
     end
-
-    minIndex, minLabel, minValue, maxIndex, maxLabel, maxValue
 end
 
-function summaryData(minIndex::Dict{String, Int64}, minValue::Dict{String, Float64}, maxIndex::Dict{String, Int64},
-    maxValue::Dict{String, Float64}, total::Dict{String, Float64}, i::Int64, scale::Float64, value::Float64, key::String)
-
-    summaryData(minIndex, minValue, maxIndex, maxValue, i, scale, value, key)
-    total[key] += value
-end
-
-function summaryData(minIndex::Dict{String, Int64}, minValue::Dict{String, Float64}, maxIndex::Dict{String, Int64},
-    maxValue::Dict{String, Float64}, i::Int64, scale::Float64, value::Float64, key::String)
-
+function eval(
+    smr::Summary,
+    i::Int64,
+    scale::Float64,
+    value::Float64,
+    key::String
+)
     value *= scale
 
-    if value < minValue[key]
-        minIndex[key] = i
-        minValue[key] = value
+    if value < smr.minval[key]
+        smr.minidx[key] = i
+        smr.minval[key] = value
     end
 
-    if value > maxValue[key]
-        maxIndex[key] = i
-        maxValue[key] = value
+    if value > smr.maxval[key]
+        smr.maxidx[key] = i
+        smr.maxval[key] = value
+    end
+
+    if haskey(smr.total, key)
+        smr.total[key] += value
     end
 end
 
-function summaryType(type::OrderedDict{String, String}, inuse::Dict{String, Float64})
-    for (key, value) in inuse
+function notexist!(smr::Summary)
+    for (key, value) in smr.inuse
         if value == 0
-            for label in keys(type)
+            for label in keys(smr.type)
                 if occursin(key, label)
-                    delete!(type, label)
+                    delete!(smr.type, label)
                 end
             end
         end
     end
 end
 
-function summaryLabel(label::OrderedDict{String, Int64}, minIndex::Dict{String, Int64}, minLabel::Dict{String, String},
-    maxIndex::Dict{String, Int64}, maxLabel::Dict{String, String})
-
-    for (key, index) in minIndex
+function addlabel!(
+    smr::Summary,
+    label::OrderedDict{String, Int64}
+)
+    for (key, index) in smr.minidx
         if index != 0
-            (minLabel[key], _), _ = iterate(label, index)
+            (smr.minlbl[key], _), _ = iterate(label, index)
         end
     end
-    for (key, index) in maxIndex
+    for (key, index) in smr.maxidx
         if index != 0
-            (maxLabel[key], _), _ = iterate(label, index)
+            (smr.maxlbl[key], _), _ = iterate(label, index)
         end
     end
 end

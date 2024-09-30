@@ -184,7 +184,7 @@ The inclusion of the vector ``\mathbf{c}`` is necessary due to the fact that mea
 ##### Implementation
 JuliaGrid initiates the DC state estimation framework by setting up the WLS model, as illustrated in the following:
 ```@example DCSETutorial
-analysis = dcWlsStateEstimation(system, device)
+analysis = dcStateEstimation(system, device)
 nothing # hide
 ```
 
@@ -255,7 +255,7 @@ The resolution of the WLS state estimation problem using the conventional method
 
 To address ill-conditioned situations arising from significant differences in measurement variances, users can employ an alternative approach:
 ```@example DCSETutorial
-analysis = dcWlsStateEstimation(system, device, Orthogonal)
+analysis = dcStateEstimation(system, device, Orthogonal)
 nothing # hide
 ```
 
@@ -312,7 +312,7 @@ nothing # hide
 
 Subsequently, we will construct the WLS state estimation model and solve it:
 ```@example DCSETutorial
-analysis = dcWlsStateEstimation(system, device)
+analysis = dcStateEstimation(system, device)
 solve!(system, analysis)
 nothing # hide
 ```

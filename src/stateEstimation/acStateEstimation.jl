@@ -47,12 +47,14 @@ device = measurement("measurement14.h5")
 analysis = gaussNewton(system, device, Orthogonal)
 ```
 """
-function gaussNewton(system::PowerSystem, device::Measurement,
-    factorization::Type{<:Union{QR, LDLt, LU}} = LU)
+function gaussNewton(
+    system::PowerSystem,
+    device::Measurement,
+    factorization::Type{<:Union{QR, LDLt, LU}} = LU
+)
+    jcb, mean, pcs, rsd, type, index, range, power, current, _ = acWLS(system, device)
 
-    jacobian, mean, precision, residual, type, index, range, power, current, _ = acStateEstimationWLS(system, device)
-
-    return ACStateEstimation(
+    ACStateEstimation(
         Polar(
             copy(system.bus.voltage.magnitude),
             copy(system.bus.voltage.angle)
@@ -60,10 +62,10 @@ function gaussNewton(system::PowerSystem, device::Measurement,
         power,
         current,
         NonlinearWLS{Normal}(
-            jacobian,
-            precision,
+            jcb,
+            pcs,
             mean,
-            residual,
+            rsd,
             fill(0.0, 2 * system.bus.number),
             factorized[factorization],
             type,
@@ -74,14 +76,16 @@ function gaussNewton(system::PowerSystem, device::Measurement,
     )
 end
 
-function gaussNewton(system::PowerSystem, device::Measurement, method::Type{<:Orthogonal})
-    jacobian, mean, precision, residual, type, index, range, power, current, correlated = acStateEstimationWLS(system, device)
+function gaussNewton(system::PowerSystem, device::Measurement, ::Type{<:Orthogonal})
+    jcb, mean, pcs, rsd, type, index, range, power, current, crld = acWLS(system, device)
 
-    if correlated
-        throw(ErrorException("The precision matrix is non-diagonal, therefore preventing the use of the orthogonal method."))
+    if crld
+        throw(ErrorException(
+            "The non-diagonal precision matrix prevents using the orthogonal method.")
+        )
     end
 
-    return ACStateEstimation(
+    ACStateEstimation(
         Polar(
             copy(system.bus.voltage.magnitude),
             copy(system.bus.voltage.angle)
@@ -89,10 +93,10 @@ function gaussNewton(system::PowerSystem, device::Measurement, method::Type{<:Or
         power,
         current,
         NonlinearWLS{Orthogonal}(
-            jacobian,
-            precision,
+            jcb,
+            pcs,
             mean,
-            residual,
+            rsd,
             fill(0.0, 2 * system.bus.number),
             factorized[QR],
             type,
@@ -103,14 +107,13 @@ function gaussNewton(system::PowerSystem, device::Measurement, method::Type{<:Or
     )
 end
 
-function acStateEstimationWLS(system::PowerSystem, device::Measurement)
+function acWLS(system::PowerSystem, device::Measurement)
     ac = system.model.ac
     bus = system.bus
-    branch = system.branch
-    voltmeter = device.voltmeter
-    ammeter = device.ammeter
-    wattmeter = device.wattmeter
-    varmeter = device.varmeter
+    volt = device.voltmeter
+    amp = device.ammeter
+    watt = device.wattmeter
+    var = device.varmeter
     pmu = device.pmu
     correlated = false
 
@@ -118,161 +121,435 @@ function acStateEstimationWLS(system::PowerSystem, device::Measurement)
     model!(system, ac)
     changeSlackBus!(system)
 
-    measureNumber = voltmeter.number + ammeter.number + wattmeter.number + varmeter.number + 2 * pmu.number
-    nonZeroJacobian = voltmeter.number + 4 * ammeter.number
-    nonZeroPrecision = copy(measureNumber)
+    total = volt.number + amp.number + watt.number + var.number + 2 * pmu.number
 
-    @inbounds for (i, index) in enumerate(wattmeter.layout.index)
-        if wattmeter.layout.bus[i]
-            nonZeroJacobian += 2 * (ac.nodalMatrix.colptr[index + 1] - ac.nodalMatrix.colptr[index])
+    nnzJcb = volt.number + 4 * amp.number
+    nnzPcs = copy(total)
+
+    @inbounds for (i, idx) in enumerate(watt.layout.index)
+        if watt.layout.bus[i]
+            nnzJcb += 2 * (ac.nodalMatrix.colptr[idx + 1] - ac.nodalMatrix.colptr[idx])
         else
-            nonZeroJacobian += 4
+            nnzJcb += 4
         end
     end
-    @inbounds for (i, index) in enumerate(varmeter.layout.index)
-        if varmeter.layout.bus[i]
-            nonZeroJacobian += 2 * (ac.nodalMatrix.colptr[index + 1] - ac.nodalMatrix.colptr[index])
+    @inbounds for (i, idx) in enumerate(var.layout.index)
+        if var.layout.bus[i]
+            nnzJcb += 2 * (ac.nodalMatrix.colptr[idx + 1] - ac.nodalMatrix.colptr[idx])
         else
-            nonZeroJacobian += 4
+            nnzJcb += 4
         end
     end
 
     @inbounds for i = 1:pmu.number
         if pmu.layout.bus[i]
             if pmu.layout.polar[i]
-                nonZeroJacobian += 2
+                nnzJcb += 2
             else
-                nonZeroJacobian += 4
+                nnzJcb += 4
             end
         else
-            nonZeroJacobian += 8
+            nnzJcb += 8
         end
 
         if !pmu.layout.polar[i] && pmu.layout.correlated[i]
-            nonZeroPrecision += 2
+            correlated = true
+            nnzPcs += 2
         end
     end
 
-    jac = SparseModel(fill(0, nonZeroJacobian), fill(0, nonZeroJacobian), fill(0.0, nonZeroJacobian), 1, 1)
-    prec = SparseModel(fill(0, nonZeroPrecision) , fill(0, nonZeroPrecision), fill(0.0, nonZeroPrecision), 1, 1)
-    mean = fill(0.0, measureNumber)
+    mean = fill(0.0, total)
+    jcb = SparseModel(fill(0, nnzJcb), fill(0, nnzJcb), fill(0.0, nnzJcb), 1, 1)
+    pcs = SparseModel(fill(0, nnzPcs) , fill(0, nnzPcs), fill(0.0, nnzPcs), 1, 1)
 
-    type = fill(Int8(0), measureNumber)
-    index = fill(0, measureNumber)
+    type = fill(Int8(0), total)
+    idx = fill(0, total)
     range = fill(1, 6)
 
-    @inbounds for (i, k) in enumerate(voltmeter.layout.index)
-        mean[i] = voltmeter.magnitude.status[i] * voltmeter.magnitude.mean[i]
-        prec = precisionDiagonal(prec, voltmeter.magnitude.variance[i])
+    @inbounds for (i, k) in enumerate(volt.layout.index)
+        status =  volt.magnitude.status[i]
 
-        type, index = typeIndex(jac, type, index, voltmeter.magnitude.status[i], k, 1)
-        jac = jacobianInitialize(jac, voltmeter.magnitude.status[i], k + bus.number)
+        mean[i] = status * volt.magnitude.mean[i]
+        precision!(pcs, volt.magnitude.variance[i])
+        oneIndices!(jcb, type, idx, status, k + bus.number, k, 1)
     end
-    range[2] = jac.idx
+    range[2] = jcb.idx
 
-    @inbounds for (i, k) in enumerate(ammeter.layout.index)
-        mean[jac.idx] = ammeter.magnitude.status[i] * ammeter.magnitude.mean[i]
-        prec = precisionDiagonal(prec, ammeter.magnitude.variance[i])
+    @inbounds for (i, k) in enumerate(amp.layout.index)
+        status = amp.magnitude.status[i]
 
-        type, index = typeIndex(jac, type, index, ammeter.magnitude.status[i], ammeter.layout.from[i], k, 2, 3)
-        jac = jacobianInitialize(jac, branch.layout.from[k], branch.layout.to[k], bus.number)
+        mean[jcb.idx] = status * amp.magnitude.mean[i]
+        precision!(pcs, amp.magnitude.variance[i])
+        fourIndices!(jcb, type, idx, status, amp.layout.from[i], system, k, 2, 3)
     end
-    range[3] = jac.idx
+    range[3] = jcb.idx
 
-    @inbounds for (i, k) in enumerate(wattmeter.layout.index)
-        mean[jac.idx] = wattmeter.active.status[i] * wattmeter.active.mean[i]
-        prec = precisionDiagonal(prec, wattmeter.active.variance[i])
+    @inbounds for (i, k) in enumerate(watt.layout.index)
+        status = watt.active.status[i]
 
-        if wattmeter.layout.bus[i]
-            type, index = typeIndex(jac, type, index, wattmeter.active.status[i], k, 4)
-            jac = jacobianInitialize(jac, ac.nodalMatrix, k, bus.number)
+        mean[jcb.idx] = status * watt.active.mean[i]
+        precision!(pcs, watt.active.variance[i])
+
+        if watt.layout.bus[i]
+            nthIndices!(jcb, type, idx, status, system, k, 4)
         else
-            type, index = typeIndex(jac, type, index, wattmeter.active.status[i], wattmeter.layout.from[i], k, 5, 6)
-            jac = jacobianInitialize(jac, branch.layout.from[k], branch.layout.to[k], bus.number)
+            fourIndices!(jcb, type, idx, status, watt.layout.from[i], system, k, 5, 6)
         end
     end
-    range[4] = jac.idx
+    range[4] = jcb.idx
 
-    @inbounds for (i, k) in enumerate(varmeter.layout.index)
-        mean[jac.idx] = varmeter.reactive.status[i] * varmeter.reactive.mean[i]
-        prec = precisionDiagonal(prec, varmeter.reactive.variance[i])
+    @inbounds for (i, k) in enumerate(var.layout.index)
+        status = var.reactive.status[i]
 
-        if varmeter.layout.bus[i]
-            type, index = typeIndex(jac, type, index, varmeter.reactive.status[i], k, 7)
-            jac = jacobianInitialize(jac, ac.nodalMatrix, k, bus.number)
+        mean[jcb.idx] = status * var.reactive.mean[i]
+        precision!(pcs, var.reactive.variance[i])
+
+        if var.layout.bus[i]
+            nthIndices!(jcb, type, idx, status, system, k, 7)
         else
-            type, index = typeIndex(jac, type, index, varmeter.reactive.status[i], varmeter.layout.from[i], k, 8, 9)
-            jac = jacobianInitialize(jac, branch.layout.from[k], branch.layout.to[k], bus.number)
+            fourIndices!(jcb, type, idx, status, var.layout.from[i], system, k, 8, 9)
         end
     end
-    range[5] = jac.idx
+    range[5] = jcb.idx
 
     @inbounds for (i, k) in enumerate(pmu.layout.index)
-        if pmu.layout.polar[i]
-            mean[jac.idx] = pmu.magnitude.status[i] * pmu.magnitude.mean[i]
-            mean[jac.idx + 1] = pmu.angle.status[i] * pmu.angle.mean[i]
+        statusMag = pmu.magnitude.status[i]
+        statusAng = pmu.angle.status[i]
 
-            prec = precisionDiagonal(prec, pmu.magnitude.variance[i])
-            prec = precisionDiagonal(prec, pmu.angle.variance[i])
+        if pmu.layout.polar[i]
+            mean[jcb.idx] = statusMag * pmu.magnitude.mean[i]
+            mean[jcb.idx + 1] = statusAng * pmu.angle.mean[i]
+
+            precision!(pcs, pmu.magnitude.variance[i])
+            precision!(pcs, pmu.angle.variance[i])
 
             if pmu.layout.bus[i]
-                type, index = typeIndex(jac, type, index, pmu.magnitude.status[i], k, 10)
-                jac = jacobianInitialize(jac, pmu.magnitude.status[i], k + bus.number)
-
-                type, index = typeIndex(jac, type, index, pmu.angle.status[i], k, 11)
-                jac = jacobianInitialize(jac, pmu.angle.status[i], k)
+                oneIndices!(jcb, type, idx, statusMag, k + bus.number, k, 10)
+                oneIndices!(jcb, type, idx, statusAng, k, k, 11)
             else
-                type, index = typeIndex(jac, type, index, pmu.magnitude.status[i], pmu.layout.from[i], k, 2, 3)
-                jac = jacobianInitialize(jac, branch.layout.from[k], branch.layout.to[k], bus.number)
-
-                type, index = typeIndex(jac, type, index, pmu.angle.status[i], pmu.layout.from[i], k, 12, 13)
-                jac = jacobianInitialize(jac, branch.layout.from[k], branch.layout.to[k], bus.number)
+                fourIndices!(jcb, type, idx, statusMag, pmu.layout.from[i], system, k, 2, 3)
+                fourIndices!(jcb, type, idx, statusAng, pmu.layout.from[i], system, k, 12, 13)
             end
         else
-            cosAngle = cos(pmu.angle.mean[i])
-            sinAngle = sin(pmu.angle.mean[i])
+            sinθ, cosθ = sincos(pmu.angle.mean[i])
             status = pmu.magnitude.status[i] * pmu.angle.status[i]
 
-            mean[jac.idx] = status * pmu.magnitude.mean[i] * cosAngle
-            mean[jac.idx + 1] = status * pmu.magnitude.mean[i] * sinAngle
+            mean[jcb.idx] = status * pmu.magnitude.mean[i] * cosθ
+            mean[jcb.idx + 1] = status * pmu.magnitude.mean[i] * sinθ
 
-            varianceRe = pmu.magnitude.variance[i] * cosAngle^2 + pmu.angle.variance[i] * (pmu.magnitude.mean[i] * sinAngle)^2
-            varianceIm = pmu.magnitude.variance[i] * sinAngle^2 + pmu.angle.variance[i] * (pmu.magnitude.mean[i] * cosAngle)^2
+            varRe, varIm = variancePmu(pmu, cosθ, sinθ, i)
             if pmu.layout.correlated[i]
-                correlated = true
-                covariance = sinAngle * cosAngle * (pmu.magnitude.variance[i] - pmu.angle.variance[i] * pmu.magnitude.mean[i]^2)
-                prec = precisionBlock(prec, varianceRe, varianceIm, covariance)
+                precision!(pcs,pmu, cosθ, sinθ, varRe, varIm, i)
             else
-                prec = precisionDiagonal(prec, varianceRe)
-                prec = precisionDiagonal(prec, varianceIm)
+                precision!(pcs, varRe)
+                precision!(pcs, varIm)
             end
 
             if pmu.layout.bus[i]
-                type, index = typeIndex(jac, type, index, status, k, 14)
-                jac = jacobianInitialize(jac, k, bus.number)
-
-                type, index = typeIndex(jac, type, index, status, k, 15)
-                jac = jacobianInitialize(jac, k, bus.number)
+                twoIndices!(jcb, type, idx, status, bus.number, k, 14)
+                twoIndices!(jcb, type, idx, status, bus.number, k, 15)
             else
-                type, index = typeIndex(jac, type, index, status, pmu.layout.from[i], k, 16, 17)
-                jac = jacobianInitialize(jac, branch.layout.from[k], branch.layout.to[k], bus.number)
-
-                type, index = typeIndex(jac, type, index, status, pmu.layout.from[i], k, 18, 19)
-                jac = jacobianInitialize(jac, branch.layout.from[k], branch.layout.to[k], bus.number)
+                fourIndices!(jcb, type, idx, status, pmu.layout.from[i], system, k, 16, 17)
+                fourIndices!(jcb, type, idx, status, pmu.layout.from[i], system, k, 18, 19)
             end
-
         end
     end
-    range[6] = prec.idx
+    range[6] = pcs.idx
 
-    jacobian = sparse(jac.row, jac.col, jac.val, measureNumber, 2 * bus.number)
-    precision = sparse(prec.row, prec.col, prec.val, measureNumber, measureNumber)
+    jacobian = sparse(jcb.row, jcb.col, jcb.val, total, 2 * bus.number)
+    precision = sparse(pcs.row, pcs.col, pcs.val, total, total)
 
-    power = ACPower(Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]),
-        Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]))
-    current = ACCurrent(Polar(Float64[], Float64[]), Polar(Float64[], Float64[]), Polar(Float64[], Float64[]), Polar(Float64[], Float64[]))
+    power = ACPower(
+        Cartesian(Float64[], Float64[]),
+        Cartesian(Float64[], Float64[]),
+        Cartesian(Float64[], Float64[]),
+        Cartesian(Float64[], Float64[]),
+        Cartesian(Float64[], Float64[]),
+        Cartesian(Float64[], Float64[]),
+        Cartesian(Float64[], Float64[]),
+        Cartesian(Float64[], Float64[])
+    )
+    current = ACCurrent(
+        Polar(Float64[], Float64[]),
+        Polar(Float64[], Float64[]),
+        Polar(Float64[], Float64[]),
+        Polar(Float64[], Float64[])
+    )
 
-   return jacobian, mean, precision, fill(0.0, measureNumber), type, index, range, power, current, correlated
+    return jacobian, mean, precision, fill(0.0, total),
+        type, idx, range, power, current, correlated
+end
+
+function normalEquation!(system::PowerSystem, analysis::ACStateEstimation)
+    ac = system.model.ac
+    bus = system.bus
+    branch = system.branch
+    se = analysis.method
+    voltage = analysis.voltage
+    jcb = se.jacobian
+
+    @inbounds for col = 1:bus.number
+        cok = col + bus.number
+
+        for lin in jcb.colptr[col]:(jcb.colptr[col + 1] - 1)
+            row = jcb.rowval[lin]
+            idx = se.index[row]
+            if se.type[row] == 0
+                continue
+            end
+
+            if se.type[row] == 4 # Pᵢ
+                if col == se.index[row]
+                    I = [0.0; 0.0]
+                    for q in ac.nodalMatrix.colptr[col]:(ac.nodalMatrix.colptr[col + 1] - 1)
+                        j = ac.nodalMatrix.rowval[q]
+
+                        Gij, Bij, sinθij, cosθij = GijBijθij(ac, voltage, col, j, q)
+                        PiQiSum(voltage, Gij, sinθij, Bij, cosθij, I, j, -, 1)
+                        PiQiSum(voltage, Gij, cosθij, Bij, sinθij, I, j, +, 2)
+                    end
+                    se.residual[row] = se.mean[row] - Pi(voltage, I[2], col)
+
+                    Gii, Bii = reim(ac.nodalMatrix[col, col])
+                    jcb[row, col] = Piθi(voltage, Bii, -I[1], col)
+                    jcb[row, cok] = PiVi(voltage, Gii, I[2], col)
+                else
+                    Gij, Bij, sinθij, cosθij = GijBijθij(ac, voltage, idx, col)
+
+                    jcb[row, col] = Piθj(voltage, Gij, Bij, sinθij, cosθij, idx, col)
+                    jcb[row, cok] = PiVj(voltage, Gij, Bij, sinθij, cosθij, idx)
+                end
+
+            elseif se.type[row] == 7 # Qᵢ
+                if col == se.index[row]
+                    I = [0.0; 0.0]
+                    for q in ac.nodalMatrix.colptr[col]:(ac.nodalMatrix.colptr[col + 1] - 1)
+                        j = ac.nodalMatrix.rowval[q]
+
+                        Gij, Bij, sinθij, cosθij = GijBijθij(ac, voltage, col, j, q)
+                        PiQiSum(voltage, Gij, cosθij, Bij, sinθij, I, j, +, 1)
+                        PiQiSum(voltage, Gij, sinθij, Bij, cosθij, I, j, -, 2)
+                    end
+                    se.residual[row] = se.mean[row] - Pi(voltage, I[2], col)
+
+                    Gii, Bii = reim(ac.nodalMatrix[col, col])
+                    jcb[row, col] = Qiθi(voltage, Gii, I[1], col)
+                    jcb[row, cok] = QiVi(voltage, Bii, I[2], col)
+                else
+                    Gij, Bij, sinθij, cosθij = GijBijθij(ac, voltage, idx, col)
+
+                    jcb[row, col] = Qiθj(voltage, Gij, Bij, sinθij, cosθij, idx, col)
+                    jcb[row, cok] = QiVj(voltage, Gij, Bij, sinθij, cosθij, idx)
+                end
+
+            elseif se.type[row] == 14 # ℜ(Vᵢ)
+                se.residual[row] = se.mean[row] - ReVi(voltage, idx)
+
+                jcb[row, col] = ReViθi(voltage, idx)
+                jcb[row, cok] = ReViVi(voltage, idx)
+
+            elseif se.type[row] == 15 # ℑ(Vᵢ)
+                se.residual[row] = se.mean[row] - ImVi(voltage, idx)
+
+                jcb[row, col] = ImViθi(voltage, idx)
+                jcb[row, cok] = ImViVi(voltage, idx)
+            else
+                if se.type[row] == 5 # Pᵢⱼ
+                    model = PijCoefficient(branch, ac, idx)
+                    state = ViVjθijState(system, voltage, idx)
+
+                    if col == branch.layout.from[idx]
+                        se.residual[row] = se.mean[row] - Pij(model, state)
+
+                        jcb[row, col] = Pijθi(model, state)
+                        jcb[row, cok] = PijVi(model, state)
+                    else
+                        jcb[row, col] = Pijθj(model, state)
+                        jcb[row, cok] = PijVj(model, state)
+                    end
+
+                elseif se.type[row] == 6 # Pⱼᵢ
+                    model = PjiCoefficient(branch, ac, idx)
+                    state = ViVjθijState(system, voltage, idx)
+
+                    if col == branch.layout.from[idx]
+                        se.residual[row] = se.mean[row] - Pji(model, state)
+
+                        jcb[row, col] = Pjiθi(model, state)
+                        jcb[row, cok] = PjiVi(model, state)
+                    else
+                        jcb[row, col] = Pjiθj(model, state)
+                        jcb[row, cok] = PjiVj(model, state)
+                    end
+
+                elseif se.type[row] == 8 # Qᵢⱼ
+                    model = QijCoefficient(branch, ac, idx)
+                    state = ViVjθijState(system, voltage, idx)
+
+                    if col == branch.layout.from[idx]
+                        se.residual[row] = se.mean[row] - Qij(model, state)
+
+                        jcb[row, col] = Qijθi(model, state)
+                        jcb[row, cok] = QijVi(model, state)
+                    else
+                        jcb[row, col] = Qijθj(model, state)
+                        jcb[row, cok] = QijVj(model, state)
+                    end
+
+                elseif se.type[row] == 9 # Qⱼᵢ
+                    model = QjiCoefficient(branch, ac, idx)
+                    state = ViVjθijState(system, voltage, idx)
+
+                    if col == branch.layout.from[idx]
+                        se.residual[row] = se.mean[row] - Qji(model, state)
+
+                        jcb[row, col] = Qjiθi(model, state)
+                        jcb[row, cok] = QjiVi(model, state)
+                    else
+                        jcb[row, col] = Qjiθj(model, state)
+                        jcb[row, cok] = QjiVj(model, state)
+                    end
+
+                elseif se.type[row] == 2 # Iᵢⱼ
+                    model = IijCoefficient(branch, ac, idx)
+                    state = ViVjθijState(system, voltage, idx)
+                    Iinv = Iijinv(model, state)
+
+                    if col == branch.layout.from[idx]
+                        se.residual[row] = se.mean[row] - (1 / Iinv)
+
+                        jcb[row, col] = Iijθi(model, state, Iinv)
+                        jcb[row, cok] = IijVi(model, state, Iinv)
+                    else
+                        jcb[row, col] = Iijθj(model, state, Iinv)
+                        jcb[row, cok] = IijVj(model, state, Iinv)
+                    end
+
+                elseif se.type[row] == 3 # Iⱼᵢ
+                    model = IjiCoefficient(branch, ac, idx)
+                    state = ViVjθijState(system, voltage, idx)
+                    Iinv = Ijiinv(model, state)
+
+                    if col == branch.layout.from[idx]
+                        se.residual[row] = se.mean[row] - (1 / Iinv)
+
+                        jcb[row, col] = Ijiθi(model, state, Iinv)
+                        jcb[row, cok] = IjiVi(model, state, Iinv)
+                    else
+                        jcb[row, col] = Ijiθj(model, state, Iinv)
+                        jcb[row, cok] = IjiVj(model, state, Iinv)
+                    end
+
+                elseif se.type[row] == 12 # ψᵢⱼ
+                    model = ψijCoefficient(branch, ac, idx)
+                    state = ViVjθiθjState(system, voltage, idx)
+                    Iinv2, Iij = ψij(model, state)
+
+                    model = IijCoefficient(branch, ac, idx)
+                    state = ViVjθijState(system, voltage, idx)
+
+                    if col == branch.layout.from[idx]
+                        se.residual[row] = se.mean[row] - angle(Iij)
+
+                        jcb[row, col] = ψijθi(model, state, Iinv2)
+                        jcb[row, cok] = ψijVi(model, state, Iinv2)
+                    else
+                        jcb[row, col] = ψijθj(model, state, Iinv2)
+                        jcb[row, cok] = ψijVj(model, state, Iinv2)
+                    end
+
+                elseif se.type[row] == 13 # ψⱼᵢ
+                    model = ψjiCoefficient(branch, ac, idx)
+                    state = VjViθjθiState(system, voltage, idx)
+                    Iinv2, Iji = ψji(model, state)
+
+                    model = IjiCoefficient(branch, ac, idx)
+                    state = ViVjθijState(system, voltage, idx)
+
+                    if col == branch.layout.from[idx]
+                        se.residual[row] = se.mean[row] - angle(Iji)
+
+                        jcb[row, col] = ψjiθi(model, state, Iinv2)
+                        jcb[row, cok] = ψjiVi(model, state, Iinv2)
+                    else
+                        jcb[row, col] = ψjiθj(model, state, Iinv2)
+                        jcb[row, cok] = ψjiVj(model, state, Iinv2)
+                    end
+
+                elseif se.type[row] == 16 # ℜ(Iᵢⱼ)
+                    model = ψijCoefficient(branch, ac, idx)
+                    state = ViVjθiθjState(system, voltage, idx)
+
+                    if col == branch.layout.from[idx]
+                        se.residual[row] = se.mean[row] - ReIij(model, state)
+
+                        jcb[row, col] = ReIijθi(model, state)
+                        jcb[row, cok] = ReIijVi(model, state)
+                    else
+                        jcb[row, col] = ReIijθj(model, state)
+                        jcb[row, cok] = ReIijVj(model, state)
+                    end
+
+                elseif se.type[row] == 18 # ℑ(Iᵢⱼ)
+                    model = ψijCoefficient(branch, ac, idx)
+                    state = ViVjθiθjState(system, voltage, idx)
+
+                    if col == branch.layout.from[idx]
+                        se.residual[row] = se.mean[row] - ImIij(model, state)
+
+                        jcb[row, col] = ImIijθi(model, state)
+                        jcb[row, cok] = ImIijVi(model, state)
+                    else
+                        jcb[row, col] = ImIijθj(model, state)
+                        jcb[row, cok] = ImIijVj(model, state)
+                    end
+
+                elseif se.type[row] == 17 # ℜ(Iⱼᵢ)
+                    model = ψjiCoefficient(branch, ac, idx)
+                    state = VjViθjθiState(system, voltage, idx)
+
+                    if col == branch.layout.from[idx]
+                        se.residual[row] = se.mean[row] - ReIji(model, state)
+
+                        jcb[row, col] = ReIjiθi(model, state)
+                        jcb[row, cok] = ReIjiVi(model, state)
+                    else
+                        jcb[row, col] = ReIjiθj(model, state)
+                        jcb[row, cok] = ReIjiVj(model, state)
+                    end
+
+                elseif se.type[row] == 19 # ℑ(Iⱼᵢ)
+                    model = ψjiCoefficient(branch, ac, idx)
+                    state = VjViθjθiState(system, voltage, idx)
+
+                    if col == branch.layout.from[idx]
+                        se.residual[row] = se.mean[row] - ImIji(model, state)
+
+                        jcb[row, col] = ImIjiθi(model, state)
+                        jcb[row, cok] = ImIjiVi(model, state)
+                    else
+                        jcb[row, col] = ImIjiθj(model, state)
+                        jcb[row, cok] = ImIjiVj(model, state)
+                    end
+
+                end
+            end
+        end
+    end
+
+    @inbounds for row = se.range[1]:(se.range[2] - 1)
+        if se.type[row] == 1
+            se.residual[row] = se.mean[row] - voltage.magnitude[se.index[row]]
+        end
+    end
+
+    @inbounds for row = se.range[5]:(se.range[6] - 1)
+        if se.type[row] == 10
+            se.residual[row] = se.mean[row] - voltage.magnitude[se.index[row]]
+        elseif se.type[row] == 11
+            se.residual[row] = se.mean[row] - voltage.angle[se.index[row]]
+        end
+    end
 end
 
 """
@@ -312,129 +589,197 @@ device = measurement("measurement14.h5")
 analysis = acLavStateEstimation(system, device, Ipopt.Optimizer)
 ```
 """
-function acLavStateEstimation(system::PowerSystem, device::Measurement,
-    (@nospecialize optimizerFactory); bridge::Bool = true, name::Bool = true)
-
+function acLavStateEstimation(
+    system::PowerSystem,
+    device::Measurement,
+    @nospecialize optimizerFactory;
+    bridge::Bool = false,
+    name::Bool = false
+)
     ac = system.model.ac
     bus = system.bus
-    voltmeter = device.voltmeter
-    ammeter = device.ammeter
-    wattmeter = device.wattmeter
-    varmeter = device.varmeter
+    branch = system.branch
+    volt = device.voltmeter
+    amp = device.ammeter
+    watt = device.wattmeter
+    var = device.varmeter
     pmu = device.pmu
 
     checkSlackBus(system)
     model!(system, ac)
     changeSlackBus!(system)
 
-    measureNumber = voltmeter.number + ammeter.number + wattmeter.number + varmeter.number + 2 * pmu.number
+    total = volt.number + amp.number + watt.number + var.number + 2 * pmu.number
 
     jump = JuMP.Model(optimizerFactory; add_bridges = bridge)
-    se = LAV(
+    set_string_names_on_creation(jump, name)
+
+    method = LAV(
         jump,
+        StateAC(
+            Vector{AffExpr}(undef, bus.number),
+            Dict{Int64, NonlinearExpr}(),
+            Dict{Int64, NonlinearExpr}(),
+            Dict{Int64, NonlinearExpr}(),
+            Dict{Int64, NonlinearExpr}(),
+            Dict{Tuple{Int64, Int64}, Int64}()
+        ),
         @variable(jump, 0 <= statex[i = 1:(2 * bus.number)]),
         @variable(jump, 0 <= statey[i = 1:(2 * bus.number)]),
-        @variable(jump, 0 <= residualx[i = 1:measureNumber]),
-        @variable(jump, 0 <= residualy[i = 1:measureNumber]),
+        @variable(jump, 0 <= residualx[i = 1:total]),
+        @variable(jump, 0 <= residualy[i = 1:total]),
         Dict{Int64, ConstraintRef}(),
-        measureNumber
+        total
     )
+    objective = @expression(method.jump, AffExpr())
 
-    set_string_names_on_creation(se.jump, name)
+    @inbounds for i = 1:bus.number
+        idx = i + bus.number
+        method.state.V[i] = @expression(method.jump, method.statex[idx] - method.statey[idx])
+    end
+    @inbounds for i = 1:branch.number
+        method.state.incidence[(fromto(system, i))] = i
+    end
 
-    fix(se.statex[bus.layout.slack], bus.voltage.angle[bus.layout.slack]; force = true)
-    fix(se.statey[bus.layout.slack], 0.0; force = true)
+    fix(method.statex[bus.layout.slack], bus.voltage.angle[bus.layout.slack]; force = true)
+    fix(method.statey[bus.layout.slack], 0.0; force = true)
 
-    objective = @expression(se.jump, AffExpr())
-
-    @inbounds for (k, index) in enumerate(voltmeter.layout.index)
-        index += bus.number
-        if voltmeter.magnitude.status[k] == 1
-            add_to_expression!(objective, se.residualx[k] + se.residualy[k])
-            se.residual[k] = @constraint(se.jump, se.statex[index] - se.statey[index] + se.residualx[k] - se.residualy[k] - voltmeter.magnitude.mean[k] == 0.0)
+    @inbounds for (k, idx) in enumerate(volt.layout.index)
+        if volt.magnitude.status[k] == 1
+            addConstrLav!(method, method.state.V[idx], volt.magnitude.mean[k], k)
+            addObjectLav!(method, objective, k)
         else
-            fix!(se.residualx, se.residualy, k)
+            fix!(method.residualx, method.residualy, k)
         end
     end
 
-    idx = voltmeter.number + 1
-    @inbounds for (k, index) in enumerate(ammeter.layout.index)
-        if ammeter.magnitude.status[k] == 1
-            add_to_expression!(objective, residualx[idx] + residualy[idx])
-            addAmmeterResidual!(system, ammeter, se, index, idx, k)
+    cnt = volt.number + 1
+    @inbounds for (k, idx) in enumerate(amp.layout.index)
+        if amp.magnitude.status[k] == 1
+            if amp.layout.from[k]
+                expr = Iij(system, method, idx)
+            else
+                expr = Iji(system, method, idx)
+            end
+
+            addConstrLav!(method, expr, amp.magnitude.mean[k], cnt)
+            addObjectLav!(method, objective, cnt)
         else
-            fix!(se.residualx, se.residualy, idx)
+            fix!(method.residualx, method.residualy, cnt)
         end
-        idx += 1
+        cnt += 1
     end
 
-    @inbounds for (k, index) in enumerate(wattmeter.layout.index)
-        if wattmeter.active.status[k] == 1
-            add_to_expression!(objective, residualx[idx] + residualy[idx])
-            addWattmeterResidual!(system, wattmeter, se, index, idx, k)
+    @inbounds for (k, idx) in enumerate(watt.layout.index)
+        if watt.active.status[k] == 1
+            if watt.layout.bus[k]
+                expr = Pi(system, method, idx)
+            else
+                if watt.layout.from[k]
+                    expr = Pij(system, method, idx)
+                else
+                    expr = Pji(system, method, idx)
+                end
+            end
+            addConstrLav!(method, expr, watt.active.mean[k], cnt)
+            addObjectLav!(method, objective, cnt)
         else
-            fix!(se.residualx, se.residualy, idx)
+            fix!(method.residualx, method.residualy, cnt)
         end
-        idx += 1
+        cnt += 1
     end
 
-    @inbounds for (k, index) in enumerate(varmeter.layout.index)
-        if varmeter.reactive.status[k] == 1
-            add_to_expression!(objective, residualx[idx] + residualy[idx])
-            addVarmeterResidual!(system, varmeter, se, index, idx, k)
+    @inbounds for (k, idx) in enumerate(var.layout.index)
+        if var.reactive.status[k] == 1
+            if var.layout.bus[k]
+                expr = Qi(system, method, idx)
+            else
+                if var.layout.from[k]
+                    expr = Qij(system, method, idx)
+                else
+                    expr = Qji(system, method, idx)
+                end
+            end
+            addConstrLav!(method, expr, var.reactive.mean[k], cnt)
+            addObjectLav!(method, objective, cnt)
         else
-            fix!(se.residualx, se.residualy, idx)
+            fix!(method.residualx, method.residualy, cnt)
         end
-        idx += 1
+        cnt += 1
     end
 
-    @inbounds for (k, index) in enumerate(pmu.layout.index)
+    @inbounds for (k, idx) in enumerate(pmu.layout.index)
         if pmu.layout.polar[k]
             if pmu.layout.bus[k]
                 if pmu.magnitude.status[k] == 1
-                    add_to_expression!(objective, se.residualx[idx] + se.residualy[idx])
-                    se.residual[idx] = @constraint(se.jump, se.statex[index + bus.number] - se.statey[index + bus.number] + se.residualx[idx] - se.residualy[idx] - pmu.magnitude.mean[k] == 0.0)
+                    addConstrLav!(method, method.state.V[idx], pmu.magnitude.mean[k], cnt)
+                    addObjectLav!(method, objective, cnt)
                 else
-                    fix!(se.residualx, se.residualy, idx)
+                    fix!(method.residualx, method.residualy, cnt)
                 end
 
                 if pmu.angle.status[k] == 1
-                    add_to_expression!(objective, se.residualx[idx + 1] + se.residualy[idx + 1])
-                    se.residual[idx + 1] = @constraint(se.jump, se.statex[index] - se.statey[index] + se.residualx[idx + 1] - se.residualy[idx + 1] - pmu.angle.mean[k] == 0.0)
+                    expr = @expression(method.jump, method.statex[idx] - method.statey[idx])
+                    addConstrLav!(method, expr, pmu.angle.mean[k], cnt + 1)
+                    addObjectLav!(method, objective, cnt + 1)
                 else
-                    fix!(se.residualx, se.residualy, idx + 1)
+                    fix!(method.residualx, method.residualy, cnt + 1)
                 end
             else
                 if pmu.magnitude.status[k] == 1
-                    add_to_expression!(objective, se.residualx[idx] + se.residualy[idx])
-                    addPmuCurrentMagnitudeResidual!(system, pmu, se, index, idx, k)
+                    if pmu.layout.from[k]
+                        expr = Iij(system, method, idx)
+                    else
+                        expr = Iji(system, method, idx)
+                    end
+                    addConstrLav!(method, expr, pmu.magnitude.mean[k], cnt)
+                    addObjectLav!(method, objective, cnt)
                 else
-                    fix!(se.residualx, se.residualy, idx)
+                    fix!(method.residualx, method.residualy, cnt)
                 end
 
                 if pmu.angle.status[k] == 1
-                    add_to_expression!(objective, se.residualx[idx + 1] + se.residualy[idx + 1])
-                    addPmuCurrentAngleResidual!(system, pmu, se, index, idx, k)
+                    if pmu.layout.from[k]
+                        expr = ψij(system, method, idx)
+                    else
+                        expr = ψji(system, method, idx)
+                    end
+                    addConstrLav!(method, expr, pmu.angle.mean[k], cnt + 1)
+                    addObjectLav!(method, objective, cnt + 1)
                 else
-                    fix!(se.residualx, se.residualy, idx + 1)
+                    fix!(method.residualx, method.residualy, cnt + 1)
                 end
             end
         else
             if pmu.magnitude.status[k] == 1 && pmu.angle.status[k] == 1
-                add_to_expression!(objective, se.residualx[idx] + se.residualy[idx])
-                add_to_expression!(objective, se.residualx[idx + 1] + se.residualy[idx + 1])
-                addPmuCartesianResidual!(system, pmu, se, index, idx, k)
+                if pmu.layout.bus[k]
+                    ReExpr, ImExpr = ReImVi(method, idx)
+                else
+                    if pmu.layout.from[k]
+                        ReExpr, ImExpr = ReImIij(system, method, idx)
+                    else
+                        ReExpr, ImExpr = ReImIji(system, method, idx)
+                    end
+                end
+                ReMean = pmu.magnitude.mean[k] * cos(pmu.angle.mean[k])
+                ImMean = pmu.magnitude.mean[k] * sin(pmu.angle.mean[k])
+
+                addConstrLav!(method, ReExpr, ReMean, cnt)
+                addObjectLav!(method, objective, cnt)
+
+                addConstrLav!(method, ImExpr, ImMean, cnt + 1)
+                addObjectLav!(method, objective, cnt + 1)
             else
-                fix!(se.residualx, se.residualy, idx)
-                fix!(se.residualx, se.residualy, idx + 1)
+                fix!(method.residualx, method.residualy, cnt)
+                fix!(method.residualx, method.residualy, cnt + 1)
             end
         end
-        idx += 2
+        cnt += 2
     end
 
-    @objective(se.jump, Min, objective)
+    @objective(method.jump, Min, objective)
 
-    return ACStateEstimation(
+    ACStateEstimation(
         Polar(
             copy(bus.voltage.magnitude),
             copy(bus.voltage.angle)
@@ -455,158 +800,8 @@ function acLavStateEstimation(system::PowerSystem, device::Measurement,
             Polar(Float64[], Float64[]),
             Polar(Float64[], Float64[])
         ),
-        se
+        method
     )
-end
-
-function addWattmeterResidual!(system::PowerSystem, wattmeter::Wattmeter, se::LAV, index::Int64, idx::Int64, k::Int64)
-    if wattmeter.layout.bus[k]
-        Vi = se.statex[system.bus.number + index] - se.statey[system.bus.number + index]
-        expr = @expression(se.jump, Vi * real(system.model.ac.nodalMatrixTranspose[index, index]))
-
-        @inbounds for ptr in system.model.ac.nodalMatrix.colptr[index]:(system.model.ac.nodalMatrix.colptr[index + 1] - 1)
-            j = system.model.ac.nodalMatrix.rowval[ptr]
-            if index != j
-                Gij = real(system.model.ac.nodalMatrixTranspose.nzval[ptr])
-                Bij = imag(system.model.ac.nodalMatrixTranspose.nzval[ptr])
-                cosAngle = @expression(se.jump, cos(se.statex[index] - se.statey[index] - se.statex[j] + se.statey[j]))
-                sinAngle = @expression(se.jump, sin(se.statex[index] - se.statey[index] - se.statex[j] + se.statey[j]))
-                expr = @expression(se.jump, expr + (se.statex[j + system.bus.number] - se.statey[j + system.bus.number]) * (Gij * cosAngle + Bij * sinAngle))
-            end
-        end
-        se.residual[idx] = @constraint(se.jump, Vi * expr + se.residualx[idx] - se.residualy[idx] - wattmeter.active.mean[k] == 0)
-    else
-        i, j, gij, bij, gsi, _, tij, Fij = branchParameter(system.branch, system.model.ac, index)
-
-        Vi = se.statex[system.bus.number + i] - se.statey[system.bus.number + i]
-        Vj = se.statex[system.bus.number + j] - se.statey[system.bus.number + j]
-        cosAngle = @expression(se.jump, cos(se.statex[i] - se.statey[i] - se.statex[j] + se.statey[j] - Fij))
-        sinAngle = @expression(se.jump, sin(se.statex[i] - se.statey[i] - se.statex[j] + se.statey[j] - Fij))
-
-        if wattmeter.layout.from[k]
-            se.residual[idx] = @constraint(se.jump, (gij + gsi) * tij^2 * Vi^2 - tij * (gij * cosAngle + bij * sinAngle) * Vi * Vj + se.residualx[idx] - se.residualy[idx] - wattmeter.active.mean[k] == 0)
-        else
-            se.residual[idx] = @constraint(se.jump, (gij + gsi) * Vj^2 - tij * (gij * cosAngle - bij * sinAngle) * Vi * Vj + se.residualx[idx] - se.residualy[idx] - wattmeter.active.mean[k] == 0)
-        end
-    end
-end
-
-function addVarmeterResidual!(system::PowerSystem, varmeter::Varmeter, se::LAV, index::Int64, idx::Int64, k::Int64)
-    if varmeter.layout.bus[k]
-        Vi = se.statex[system.bus.number + index] - se.statey[system.bus.number + index]
-        expr = @expression(se.jump, -Vi * imag(system.model.ac.nodalMatrixTranspose[index, index]))
-
-        @inbounds for ptr in system.model.ac.nodalMatrix.colptr[index]:(system.model.ac.nodalMatrix.colptr[index + 1] - 1)
-            j = system.model.ac.nodalMatrix.rowval[ptr]
-            if index != j
-                Gij = real(system.model.ac.nodalMatrixTranspose.nzval[ptr])
-                Bij = imag(system.model.ac.nodalMatrixTranspose.nzval[ptr])
-                cosAngle = @expression(se.jump, cos(se.statex[index] - se.statey[index] - se.statex[j] + se.statey[j]))
-                sinAngle = @expression(se.jump, sin(se.statex[index] - se.statey[index] - se.statex[j] + se.statey[j]))
-                expr = @expression(se.jump, expr + (se.statex[j + system.bus.number] - se.statey[j + system.bus.number]) * (Gij * sinAngle - Bij * cosAngle))
-            end
-        end
-        se.residual[idx] = @constraint(se.jump, Vi * expr + se.residualx[idx] - se.residualy[idx] - varmeter.reactive.mean[k] == 0)
-    else
-        i, j, gij, bij, _, bsi, tij, Fij = branchParameter(system.branch, system.model.ac, index)
-
-        Vi = se.statex[system.bus.number + i] - se.statey[system.bus.number + i]
-        Vj = se.statex[system.bus.number + j] - se.statey[system.bus.number + j]
-        cosAngle = @expression(se.jump, cos(se.statex[i] - se.statey[i] - se.statex[j] + se.statey[j] - Fij))
-        sinAngle = @expression(se.jump, sin(se.statex[i] - se.statey[i] - se.statex[j] + se.statey[j] - Fij))
-
-        if varmeter.layout.from[k]
-            se.residual[idx] = @constraint(se.jump, - (bij + bsi) * tij^2 * Vi^2 - tij * (gij * sinAngle - bij * cosAngle) * Vi * Vj + se.residualx[idx] - se.residualy[idx] - varmeter.reactive.mean[k] == 0)
-        else
-            se.residual[idx] = @constraint(se.jump, - (bij + bsi) * Vj^2 + tij * (gij * sinAngle + bij * cosAngle) * Vi * Vj + se.residualx[idx] - se.residualy[idx] - varmeter.reactive.mean[k] == 0)
-        end
-    end
-end
-
-function addAmmeterResidual!(system::PowerSystem, ammeter::Ammeter, se::LAV, index::Int64, idx::Int64, k::Int64)
-    i, j, gij, bij, gsi, bsi, tij, Fij = branchParameter(system.branch, system.model.ac, index)
-
-    Vi = se.statex[system.bus.number + i] - se.statey[system.bus.number + i]
-    Vj = se.statex[system.bus.number + j] - se.statey[system.bus.number + j]
-    cosAngle = @expression(se.jump, cos(se.statex[i] - se.statey[i] - se.statex[j] + se.statey[j] - Fij))
-    sinAngle = @expression(se.jump, sin(se.statex[i] - se.statey[i] - se.statex[j] + se.statey[j] - Fij))
-
-    if ammeter.layout.from[k]
-        A, B, C, D = IijCoeff(gij, gsi, bij, bsi, tij)
-        se.residual[idx] = @constraint(se.jump, sqrt(A * Vi^2 + B * Vj^2 - 2 * Vi * Vj * (C * cosAngle - D * sinAngle)) + (se.residualx[idx] - se.residualy[idx] - ammeter.magnitude.mean[k]) == 0)
-    else
-        A, B, C, D = IjiCoeff(gij, gsi, bij, bsi, tij)
-        se.residual[idx] = @constraint(se.jump, sqrt(A * Vi^2 + B * Vj^2 - 2 * Vi * Vj * (C * cosAngle + D * sinAngle)) + se.residualx[idx] - se.residualy[idx] - ammeter.magnitude.mean[k] == 0)
-    end
-end
-
-function addPmuCurrentMagnitudeResidual!(system::PowerSystem, pmu::PMU, se::LAV, index::Int64, idx::Int64, k::Int64)
-    i, j, gij, bij, gsi, bsi, tij, Fij = branchParameter(system.branch, system.model.ac, index)
-
-    Vi = se.statex[system.bus.number + i] - se.statey[system.bus.number + i]
-    Vj = se.statex[system.bus.number + j] - se.statey[system.bus.number + j]
-    cosAngle = @expression(se.jump, cos(se.statex[i] - se.statey[i] - se.statex[j] + se.statey[j] - Fij))
-    sinAngle = @expression(se.jump, sin(se.statex[i] - se.statey[i] - se.statex[j] + se.statey[j] - Fij))
-
-    if pmu.layout.from[k]
-        A, B, C, D = IijCoeff(gij, gsi, bij, bsi, tij)
-        se.residual[idx] = @constraint(se.jump, sqrt(A * Vi^2 + B * Vj^2 - 2 * Vi * Vj * (C * cosAngle - D * sinAngle)) + se.residualx[idx] - se.residualy[idx] - pmu.magnitude.mean[k] == 0)
-    else
-        A, B, C, D = IjiCoeff(gij, gsi, bij, bsi, tij)
-        se.residual[idx] = @constraint(se.jump, sqrt(A * Vi^2 + B * Vj^2 - 2 * Vi * Vj * (C * cosAngle + D * sinAngle)) + se.residualx[idx] - se.residualy[idx] - pmu.magnitude.mean[k] == 0)
-    end
-end
-
-function addPmuCurrentAngleResidual!(system::PowerSystem, pmu::PMU, se::LAV, index::Int64, idx::Int64, k::Int64)
-    i, j, gij, bij, gsi, bsi, tij, Fij = branchParameter(system.branch, system.model.ac, index)
-
-    Vi = se.statex[system.bus.number + i] - se.statey[system.bus.number + i]
-    Vj = se.statex[system.bus.number + j] - se.statey[system.bus.number + j]
-    θi = se.statex[i] - se.statey[i]
-    θj = se.statex[j] - se.statey[j]
-
-    if pmu.layout.from[k]
-        A, B, C, D = FijCoeff(gij, gsi, bij, bsi, tij)
-        IijRe = @expression(se.jump, (A * cos(θi) - B * sin(θi)) * Vi - (C * cos(θj + Fij) - D * sin(θj + Fij)) * Vj)
-        IijIm = @expression(se.jump, (A * sin(θi) + B * cos(θi)) * Vi - (C * sin(θj + Fij) + D * cos(θj + Fij)) * Vj)
-
-        se.residual[idx + 1] = @constraint(se.jump, atan(IijIm, IijRe) + se.residualx[idx + 1] - se.residualy[idx + 1] - pmu.angle.mean[k] == 0)
-    else
-        A, B, C, D = FjiCoeff(gij, gsi, bij, bsi, tij)
-        IijRe = @expression(se.jump, (A * cos(θj) - B * sin(θj)) * Vj - (C * cos(θi - Fij) - D * sin(θi - Fij)) * Vi)
-        IijIm = @expression(se.jump, (A * sin(θj) + B * cos(θj)) * Vj - (C * sin(θi - Fij) + D * cos(θi - Fij)) * Vi)
-
-        se.residual[idx + 1] = @constraint(se.jump, atan(IijIm, IijRe) + se.residualx[idx + 1] - se.residualy[idx + 1] - pmu.angle.mean[k] == 0)
-    end
-end
-
-function addPmuCartesianResidual!(system::PowerSystem, pmu::PMU, se::LAV, index::Int64, idx::Int64, k::Int64)
-    if pmu.layout.bus[k]
-        Vi = se.statex[system.bus.number + index] - se.statey[system.bus.number + index]
-        cosAngle = @expression(se.jump, cos(se.statex[index] - se.statey[index]))
-        sinAngle = @expression(se.jump, sin(se.statex[index] - se.statey[index]))
-
-        se.residual[idx] = @constraint(se.jump, Vi * cosAngle + se.residualx[idx] - se.residualy[idx] - pmu.magnitude.mean[k] * cos(pmu.angle.mean[k]) == 0.0)
-        se.residual[idx + 1] = @constraint(se.jump, Vi * sinAngle + se.residualx[idx + 1] - se.residualy[idx + 1] - pmu.magnitude.mean[k] * sin(pmu.angle.mean[k]) == 0.0)
-    else
-        i, j, gij, bij, gsi, bsi, tij, Fij = branchParameter(system.branch, system.model.ac, index)
-
-        Vi = se.statex[system.bus.number + i] - se.statey[system.bus.number + i]
-        Vj = se.statex[system.bus.number + j] - se.statey[system.bus.number + j]
-        θi = se.statex[i] - se.statey[i]
-        θj = se.statex[j] - se.statey[j]
-
-        if pmu.layout.from[k]
-            A, B, C, D = FijCoeff(gij, gsi, bij, bsi, tij)
-            se.residual[idx] = @constraint(se.jump, (A * cos(θi) - B * sin(θi)) * Vi - (C * cos(θj + Fij) - D * sin(θj + Fij)) * Vj + se.residualx[idx] - se.residualy[idx] - pmu.magnitude.mean[k] * cos(pmu.angle.mean[k]) == 0.0)
-            se.residual[idx + 1] = @constraint(se.jump, (A * sin(θi) + B * cos(θi)) * Vi - (C * sin(θj + Fij) + D * cos(θj + Fij)) * Vj + se.residualx[idx + 1] - se.residualy[idx + 1] - pmu.magnitude.mean[k] * sin(pmu.angle.mean[k]) == 0.0)
-        else
-            A, B, C, D = FjiCoeff(gij, gsi, bij, bsi, tij)
-            se.residual[idx] = @constraint(se.jump, (A * cos(θj) - B * sin(θj)) * Vj - (C * cos(θi - Fij) - D * sin(θi - Fij)) * Vi + se.residualx[idx] - se.residualy[idx] - pmu.magnitude.mean[k] * cos(pmu.angle.mean[k]) == 0.0)
-            se.residual[idx + 1] = @constraint(se.jump, (A * sin(θj) + B * cos(θj)) * Vj - (C * sin(θi - Fij) + D * cos(θi - Fij)) * Vi + se.residualx[idx + 1] - se.residualy[idx + 1] - pmu.magnitude.mean[k] * sin(pmu.angle.mean[k]) == 0.0)
-
-        end
-    end
 end
 
 """
@@ -650,14 +845,15 @@ function solve!(system::PowerSystem, analysis::ACStateEstimation{NonlinearWLS{No
 
     bus = system.bus
     se = analysis.method
-    jacobian = se.jacobian
+    jcb = se.jacobian
+    volt = analysis.voltage
 
-    slackRange = jacobian.colptr[bus.layout.slack]:(jacobian.colptr[bus.layout.slack + 1] - 1)
-    elementsRemove = jacobian.nzval[slackRange]
+    slackRange = jcb.colptr[bus.layout.slack]:(jcb.colptr[bus.layout.slack + 1] - 1)
+    elementsRemove = jcb.nzval[slackRange]
     @inbounds for (k, i) in enumerate(slackRange)
-        jacobian[jacobian.rowval[i], bus.layout.slack] = 0.0
+        jcb[jcb.rowval[i], bus.layout.slack] = 0.0
     end
-    gain = (transpose(jacobian) * se.precision * jacobian)
+    gain = (transpose(jcb) * se.precision * jcb)
     gain[bus.layout.slack, bus.layout.slack] = 1.0
 
     if se.pattern == -1
@@ -667,22 +863,24 @@ function solve!(system::PowerSystem, analysis::ACStateEstimation{NonlinearWLS{No
         se.factorization = factorization!(gain, se.factorization)
     end
 
-    se.increment = solution(se.increment, transpose(jacobian) * se.precision * se.residual, se.factorization)
+    se.increment = solution(
+        se.increment, transpose(jcb) * se.precision * se.residual, se.factorization
+    )
 
     @inbounds for (k, i) in enumerate(slackRange)
-        jacobian[jacobian.rowval[i], bus.layout.slack] = elementsRemove[k]
+        jcb[jcb.rowval[i], bus.layout.slack] = elementsRemove[k]
     end
 
     se.increment[bus.layout.slack] = 0.0
-    maxAbsIncrement = 0.0
+    maxAbsΔ = 0.0
     @inbounds for i = 1:bus.number
-        analysis.voltage.angle[i] = analysis.voltage.angle[i] + se.increment[i]
-        analysis.voltage.magnitude[i] = analysis.voltage.magnitude[i] + se.increment[i + bus.number]
+        volt.angle[i] = volt.angle[i] + se.increment[i]
+        volt.magnitude[i] = volt.magnitude[i] + se.increment[i + bus.number]
 
-        maxAbsIncrement = max(maxAbsIncrement, abs(se.increment[i]), abs(se.increment[i + bus.number]))
+        maxAbsΔ = max(maxAbsΔ, abs(se.increment[i]), abs(se.increment[i + bus.number]))
     end
 
-    return maxAbsIncrement
+    return maxAbsΔ
 end
 
 function solve!(system::PowerSystem, analysis::ACStateEstimation{NonlinearWLS{Orthogonal}})
@@ -690,51 +888,53 @@ function solve!(system::PowerSystem, analysis::ACStateEstimation{NonlinearWLS{Or
 
     bus = system.bus
     se = analysis.method
-    jacobian = se.jacobian
+    jcb = se.jacobian
+    volt = analysis.voltage
 
     @inbounds for i = 1:lastindex(se.mean)
         se.precision.nzval[i] = sqrt(se.precision.nzval[i])
     end
 
-    slackRange = jacobian.colptr[bus.layout.slack]:(jacobian.colptr[bus.layout.slack + 1] - 1)
-    elementsRemove = jacobian.nzval[slackRange]
+    slackRange = jcb.colptr[bus.layout.slack]:(jcb.colptr[bus.layout.slack + 1] - 1)
+    elementsRemove = jcb.nzval[slackRange]
     @inbounds for (k, i) in enumerate(slackRange)
-        jacobian[jacobian.rowval[i], bus.layout.slack] = 0.0
+        jcb[jcb.rowval[i], bus.layout.slack] = 0.0
     end
 
-    JacobianScale = se.precision * se.jacobian
+    jcbScale = se.precision * jcb
     if se.pattern == -1
         se.pattern = 0
-        se.factorization = factorization(JacobianScale, se.factorization)
+        se.factorization = factorization(jcbScale, se.factorization)
     else
-        se.factorization = factorization!(JacobianScale, se.factorization)
+        se.factorization = factorization!(jcbScale, se.factorization)
     end
 
     se.increment = solution(se.increment, se.precision * se.residual, se.factorization)
 
     @inbounds for (k, i) in enumerate(slackRange)
-        jacobian[jacobian.rowval[i], bus.layout.slack] = elementsRemove[k]
+        jcb[jcb.rowval[i], bus.layout.slack] = elementsRemove[k]
     end
 
     se.increment[bus.layout.slack] = 0.0
-    maxAbsIncrement = 0.0
+    maxAbsΔ = 0.0
     @inbounds for i = 1:bus.number
-        analysis.voltage.angle[i] = analysis.voltage.angle[i] + se.increment[i]
-        analysis.voltage.magnitude[i] = analysis.voltage.magnitude[i] + se.increment[i + bus.number]
+        volt.angle[i] = volt.angle[i] + se.increment[i]
+        volt.magnitude[i] = volt.magnitude[i] + se.increment[i + bus.number]
 
-        maxAbsIncrement = max(maxAbsIncrement, abs(se.increment[i]), abs(se.increment[i + bus.number]))
+        maxAbsΔ = max(maxAbsΔ, abs(se.increment[i]), abs(se.increment[i + bus.number]))
     end
 
     @inbounds for i = 1:lastindex(se.mean)
         se.precision.nzval[i] ^= 2
     end
 
-    return maxAbsIncrement
+    return maxAbsΔ
 end
 
 function solve!(system::PowerSystem, analysis::ACStateEstimation{LAV})
-    se = analysis.method
     bus = system.bus
+    se = analysis.method
+    volt = analysis.voltage
 
     @inbounds for i = 1:bus.number
         set_start_value(se.statex[i]::VariableRef, bus.voltage.angle[i])
@@ -743,442 +943,118 @@ function solve!(system::PowerSystem, analysis::ACStateEstimation{LAV})
 
     optimize!(se.jump)
 
-    for i = 1:bus.number
-        analysis.voltage.angle[i] = value(se.statex[i]::VariableRef) - value(se.statey[i]::VariableRef)
-        analysis.voltage.magnitude[i] = value(se.statex[i + bus.number]::VariableRef) - value(se.statey[i + bus.number]::VariableRef)
-
+    @inbounds for i = 1:bus.number
+        volt.angle[i] = value(se.statex[i]::VariableRef) - value(se.statey[i]::VariableRef)
+        volt.magnitude[i] = value(se.state.V[i])
     end
 end
 
-function normalEquation!(system::PowerSystem, analysis::ACStateEstimation)
-    ac = system.model.ac
-    bus = system.bus
-    branch = system.branch
-    se = analysis.method
-    voltage = analysis.voltage
-    jacobian = se.jacobian
+function oneIndices!(
+    jcb::SparseModel,
+    type::Vector{Int8},
+    idx::Vector{Int64},
+    status::Int8,
+    col::Int64,
+    idxBus::Int64,
+    code::Int64
+)
+    type[jcb.idx] = status * code
+    idx[jcb.idx] = idxBus
 
-    @inbounds for col = 1:bus.number
-        for lin in jacobian.colptr[col]:(jacobian.colptr[col + 1] - 1)
-            row = jacobian.rowval[lin]
-            index = se.index[row]
-            if se.type[row] == 0
-                continue
-            end
+    jcb.row[jcb.cnt] = jcb.idx
+    jcb.col[jcb.cnt] = col
+    jcb.val[jcb.cnt] = status
 
-            if se.type[row] == 4 # Pᵢ
-                if col == se.index[row]
-                    I1 = 0.0; I2 = 0.0
-                    for k in ac.nodalMatrix.colptr[col]:(ac.nodalMatrix.colptr[col + 1] - 1)
-                        j = ac.nodalMatrix.rowval[k]
-                        Gij = real(ac.nodalMatrixTranspose.nzval[k])
-                        Bij = imag(ac.nodalMatrixTranspose.nzval[k])
-                        cosAngle = cos(voltage.angle[col] - voltage.angle[j])
-                        sinAngle = sin(voltage.angle[col] - voltage.angle[j])
-                        I1 -= voltage.magnitude[j] * (Gij * sinAngle - Bij * cosAngle)
-                        I2 += voltage.magnitude[j] * (Gij * cosAngle + Bij * sinAngle)
-                    end
-                    se.residual[row] = se.mean[row] - voltage.magnitude[col] * I2
+    jcb.cnt += 1
+    jcb.idx += 1
 
-                    jacobian[row, col] = voltage.magnitude[col] * I1 - imag(ac.nodalMatrix[col, col]) * voltage.magnitude[col]^2  # ∂Pᵢ / ∂θᵢ
-                    jacobian[row, col + bus.number] = I2 + real(ac.nodalMatrix[col, col]) * voltage.magnitude[col]                # ∂Pᵢ / ∂Vᵢ
-                else
-                    Gij = real(ac.nodalMatrix[index, col])
-                    Bij = imag(ac.nodalMatrix[index, col])
-                    cosAngle = cos(voltage.angle[index] - voltage.angle[col])
-                    sinAngle = sin(voltage.angle[index] - voltage.angle[col])
-
-                    jacobian[row, col] = voltage.magnitude[index] * voltage.magnitude[col] * (Gij * sinAngle - Bij * cosAngle)  # ∂Pᵢ / ∂θⱼ
-                    jacobian[row, col + bus.number] = voltage.magnitude[index] * (Gij * cosAngle + Bij * sinAngle)              # ∂Pᵢ / ∂Vⱼ
-                end
-
-            elseif se.type[row] == 7 # Qᵢ
-                if col == se.index[row]
-                    I1 = 0.0; I2 = 0.0
-                    for k in ac.nodalMatrix.colptr[col]:(ac.nodalMatrix.colptr[col + 1] - 1)
-                        j = ac.nodalMatrix.rowval[k]
-                        Gij = real(ac.nodalMatrixTranspose.nzval[k])
-                        Bij = imag(ac.nodalMatrixTranspose.nzval[k])
-                        cosAngle = cos(voltage.angle[col] - voltage.angle[j])
-                        sinAngle = sin(voltage.angle[col] - voltage.angle[j])
-                        I1 += voltage.magnitude[j] * (Gij * cosAngle + Bij * sinAngle)
-                        I2 += voltage.magnitude[j] * (Gij * sinAngle - Bij * cosAngle)
-                    end
-                    se.residual[row] = se.mean[row] - voltage.magnitude[col] * I2
-
-                    jacobian[row, col] = voltage.magnitude[col] * I1 - real(ac.nodalMatrix[col, col]) * voltage.magnitude[col]^2  # ∂Qᵢ / ∂θᵢ
-                    jacobian[row, col + bus.number] = I2 - imag(ac.nodalMatrix[col, col]) * voltage.magnitude[col]                # ∂Qᵢ / ∂Vᵢ
-                else
-                    Gij = real(ac.nodalMatrix[index, col])
-                    Bij = imag(ac.nodalMatrix[index, col])
-                    cosAngle = cos(voltage.angle[index] - voltage.angle[col])
-                    sinAngle = sin(voltage.angle[index] - voltage.angle[col])
-
-                    jacobian[row, col] = -voltage.magnitude[index] * voltage.magnitude[col] * (Gij * cosAngle + Bij * sinAngle)  # ∂Qᵢ / ∂θⱼ
-                    jacobian[row, col + bus.number] = voltage.magnitude[index] * (Gij * sinAngle - Bij * cosAngle)               # ∂Qᵢ / ∂Vⱼ
-                end
-
-            elseif se.type[row] == 14 # ℜ(Vᵢ)
-                se.residual[row] = se.mean[row] - voltage.magnitude[index] * cos(voltage.angle[index])
-
-                jacobian[row, col] = -voltage.magnitude[index] * sin(voltage.angle[index])  # ∂ℜ(Vᵢ) / ∂θᵢ
-                jacobian[row, col + bus.number] = cos(voltage.angle[index])                 # ∂ℜ(Vᵢ) / ∂Vᵢ
-
-            elseif se.type[row] == 15 # ℑ(Vᵢ)
-                se.residual[row] = se.mean[row] - voltage.magnitude[index] * sin(voltage.angle[index])
-
-                jacobian[row, col] = voltage.magnitude[index] * cos(voltage.angle[index])  # ∂ℑ(Vᵢ) / ∂θᵢ
-                jacobian[row, col + bus.number] = sin(voltage.angle[index])                # ∂ℑ(Vᵢ) / ∂Vᵢ
-            else
-                i, j, gij, bij, gsi, bsi, tij, Fij = branchParameter(branch, ac, index)
-
-                cosAngle = cos(voltage.angle[i] - voltage.angle[j] - Fij)
-                sinAngle = sin(voltage.angle[i] - voltage.angle[j] - Fij)
-
-                if se.type[row] == 5 # Pᵢⱼ
-                    if col == branch.layout.from[index]
-                        se.residual[row] = se.mean[row] - (gij + gsi) * tij^2 * voltage.magnitude[i]^2 + tij * (gij * cosAngle + bij * sinAngle) * voltage.magnitude[i] * voltage.magnitude[j]
-
-                        jacobian[row, col] = tij * (gij * sinAngle - bij * cosAngle) * voltage.magnitude[i] * voltage.magnitude[j]                                         # ∂Pᵢⱼ / ∂θᵢ
-                        jacobian[row, col + bus.number] = 2 * (gij + gsi) * tij^2 * voltage.magnitude[i] - tij * (gij * cosAngle + bij * sinAngle) * voltage.magnitude[j]  # ∂Pᵢⱼ / ∂Vᵢ
-                    else
-                        jacobian[row, col] = -tij * (gij * sinAngle - bij * cosAngle) * voltage.magnitude[i] * voltage.magnitude[j]  # ∂Pᵢⱼ / ∂θⱼ
-                        jacobian[row, col + bus.number] = -tij * (gij * cosAngle + bij * sinAngle) * voltage.magnitude[i]            # ∂Pᵢⱼ / ∂Vⱼ
-                    end
-
-                elseif se.type[row] == 6 # Pⱼᵢ
-                    if col == branch.layout.from[index]
-                        se.residual[row] = se.mean[row] - (gij + gsi) * voltage.magnitude[j]^2 + tij * (gij * cosAngle - bij * sinAngle) * voltage.magnitude[i] * voltage.magnitude[j]
-
-                        jacobian[row, col] = tij * (gij * sinAngle + bij * cosAngle) * voltage.magnitude[i] * voltage.magnitude[j]  # ∂Pⱼᵢ / ∂θᵢ
-                        jacobian[row, col + bus.number] = -tij * (gij * cosAngle - bij * sinAngle) * voltage.magnitude[j]           # ∂Pⱼᵢ / ∂Vᵢ
-                    else
-                        jacobian[row, col] = -tij * (gij * sinAngle + bij * cosAngle) * voltage.magnitude[i] * voltage.magnitude[j]                                # ∂Pⱼᵢ / ∂θⱼ
-                        jacobian[row, col + bus.number] = 2 * (gij + gsi) * voltage.magnitude[j] - tij * (gij * cosAngle - bij * sinAngle) * voltage.magnitude[i]  # ∂Pⱼᵢ / ∂Vⱼ
-                    end
-
-                elseif se.type[row] == 8 # Qᵢⱼ
-                    if col == branch.layout.from[index]
-                        se.residual[row] = se.mean[row] + (bij + bsi) * tij^2 * voltage.magnitude[i]^2 + tij * (gij * sinAngle - bij * cosAngle) * voltage.magnitude[i] * voltage.magnitude[j]
-
-                        jacobian[row, col] = -tij * (gij * cosAngle + bij * sinAngle) * voltage.magnitude[i] * voltage.magnitude[j]                                         # ∂Qᵢⱼ / ∂θᵢ
-                        jacobian[row, col + bus.number] = -2 * (bij + bsi) * tij^2 * voltage.magnitude[i] - tij * (gij * sinAngle - bij * cosAngle) * voltage.magnitude[j]  # ∂Qᵢⱼ / ∂Vᵢ
-                    else
-                        jacobian[row, col] = tij * (gij * cosAngle + bij * sinAngle) * voltage.magnitude[i] * voltage.magnitude[j]  # ∂Qᵢⱼ / ∂θⱼ
-                        jacobian[row, col + bus.number] = -tij * (gij * sinAngle - bij * cosAngle) * voltage.magnitude[i]           # ∂Qᵢⱼ / ∂Vⱼ
-                    end
-
-                elseif se.type[row] == 9 # Qⱼᵢ
-                    if col == branch.layout.from[index]
-                        se.residual[row] = se.mean[row] + (bij + bsi) * voltage.magnitude[j]^2 - tij * (gij * sinAngle + bij * cosAngle) * voltage.magnitude[i] * voltage.magnitude[j]
-
-                        jacobian[row, col] = tij * (gij * cosAngle - bij * sinAngle) * voltage.magnitude[i] * voltage.magnitude[j]  # ∂Qⱼᵢ / ∂θᵢ
-                        jacobian[row, col + bus.number] = tij * (gij * sinAngle + bij * cosAngle) * voltage.magnitude[j]            # ∂Qⱼᵢ / ∂Vᵢ
-                    else
-                        jacobian[row, col] = -tij * (gij * cosAngle - bij * sinAngle) * voltage.magnitude[i] * voltage.magnitude[j]                                # ∂Qⱼᵢ / ∂θⱼ
-                        jacobian[row, col + bus.number] = -2 * (bij + bsi) * voltage.magnitude[j] + tij * (gij * sinAngle + bij * cosAngle) * voltage.magnitude[i] # ∂Qⱼᵢ / ∂Vⱼ
-                    end
-
-                elseif se.type[row] == 2 # Iᵢⱼ
-                    A, B, C, D = IijCoeff(gij, gsi, bij, bsi, tij)
-                    Iinv = 1 / sqrt(A * voltage.magnitude[i]^2 + B * voltage.magnitude[j]^2 - 2 * voltage.magnitude[i] * voltage.magnitude[j] * (C * cosAngle - D * sinAngle))
-
-                    if col == branch.layout.from[index]
-                        se.residual[row] = se.mean[row] - (1 / Iinv)
-
-                        jacobian[row, col] = Iinv * (C * sinAngle + D * cosAngle) * voltage.magnitude[i] * voltage.magnitude[j]                     # ∂Iᵢⱼ / ∂θᵢ
-                        jacobian[row, col + bus.number] = Iinv * (A * voltage.magnitude[i] - (C * cosAngle - D * sinAngle) * voltage.magnitude[j])  # ∂Iᵢⱼ / ∂Vᵢ
-                    else
-                        jacobian[row, col] = - Iinv * (C * sinAngle + D * cosAngle) * voltage.magnitude[i] * voltage.magnitude[j]                   # ∂Iᵢⱼ / ∂θⱼ
-                        jacobian[row, col + bus.number] = Iinv * (B * voltage.magnitude[j] - (C * cosAngle - D * sinAngle) * voltage.magnitude[i])  # ∂Iᵢⱼ / ∂Vⱼ
-                    end
-
-                elseif se.type[row] == 3 # Iⱼᵢ
-                    A, B, C, D = IjiCoeff(gij, gsi, bij, bsi, tij)
-                    Iinv = 1 / sqrt(A * voltage.magnitude[i]^2 + B * voltage.magnitude[j]^2 - 2 * voltage.magnitude[i] * voltage.magnitude[j] * (C * cosAngle + D * sinAngle))
-
-                    if col == branch.layout.from[index]
-                        se.residual[row] = se.mean[row] - (1 / Iinv)
-
-                        jacobian[row, col] = Iinv * (C * sinAngle - D * cosAngle) * voltage.magnitude[i] * voltage.magnitude[j]                     # ∂Iⱼᵢ / ∂θᵢ
-                        jacobian[row, col + bus.number] = Iinv * (A * voltage.magnitude[i] - (C * cosAngle + D * sinAngle) * voltage.magnitude[j])  # ∂Iⱼᵢ / ∂Vᵢ
-                    else
-                        jacobian[row, col] = - Iinv * (C * sinAngle - D * cosAngle) * voltage.magnitude[i] * voltage.magnitude[j]                   # ∂Iⱼᵢ / ∂θⱼ
-                        jacobian[row, col + bus.number] = Iinv * (B * voltage.magnitude[j] - (C * cosAngle + D * sinAngle) * voltage.magnitude[i])  # ∂Iⱼᵢ / ∂Vⱼ
-                    end
-
-                elseif se.type[row] == 12 # ψᵢⱼ
-                    A, B, C, D = FijCoeff(gij, gsi, bij, bsi, tij)
-
-                    IijRe = (A * cos(voltage.angle[i]) - B * sin(voltage.angle[i])) * voltage.magnitude[i] - (C * cos(voltage.angle[j] + Fij) - D * sin(voltage.angle[j] + Fij)) * voltage.magnitude[j]
-                    IijIm = (A * sin(voltage.angle[i]) + B * cos(voltage.angle[i])) * voltage.magnitude[i] - (C * sin(voltage.angle[j] + Fij) + D * cos(voltage.angle[j] + Fij)) * voltage.magnitude[j]
-                    Iij = complex(IijRe, IijIm)
-                    Iinv = 1 / (abs(Iij))^2
-
-                    A, B, C, D = IijCoeff(gij, gsi, bij, bsi, tij)
-                    if col == branch.layout.from[index]
-                        se.residual[row] = se.mean[row] - angle(Iij)
-
-                        jacobian[row, col] = Iinv * (A * voltage.magnitude[i]^2 - (C * cosAngle - D * sinAngle) * voltage.magnitude[i] * voltage.magnitude[j])  # ∂ψᵢⱼ / ∂θᵢ
-                        jacobian[row, col + bus.number] = -Iinv * (C * sinAngle + D * cosAngle) * voltage.magnitude[j]                                          # ∂ψᵢⱼ / ∂Vᵢ
-                    else
-                        jacobian[row, col] = Iinv * (B * voltage.magnitude[j]^2 - (C * cosAngle - D * sinAngle) * voltage.magnitude[i] * voltage.magnitude[j])  # ∂ψᵢⱼ / ∂θⱼ
-                        jacobian[row, col + bus.number] = Iinv * (C * sinAngle + D * cosAngle) * voltage.magnitude[i]                                           # ∂ψᵢⱼ / ∂Vⱼ
-                    end
-
-                elseif se.type[row] == 13 # ψⱼᵢ
-                    A, B, C, D = FjiCoeff(gij, gsi, bij, bsi, tij)
-
-                    IijRe = (A * cos(voltage.angle[j]) - B * sin(voltage.angle[j])) * voltage.magnitude[j] - (C * cos(voltage.angle[i] - Fij) - D * sin(voltage.angle[i] - Fij)) * voltage.magnitude[i]
-                    IijIm = (A * sin(voltage.angle[j]) + B * cos(voltage.angle[j])) * voltage.magnitude[j] - (C * sin(voltage.angle[i] - Fij) + D * cos(voltage.angle[i] - Fij)) * voltage.magnitude[i]
-                    Iij = complex(IijRe, IijIm)
-                    Iinv = 1 / (abs(Iij))^2
-
-                    A, B, C, D = IjiCoeff(gij, gsi, bij, bsi, tij)
-                    if col == branch.layout.from[index]
-                        se.residual[row] = se.mean[row] - angle(Iij)
-
-                        jacobian[row, col] = Iinv * (A * voltage.magnitude[i]^2 - (C * cosAngle + D * sinAngle) * voltage.magnitude[i] * voltage.magnitude[j])  # ∂ψⱼᵢ / ∂θᵢ
-                        jacobian[row, col + bus.number] = -Iinv * (C * sinAngle - D * cosAngle) * voltage.magnitude[j]                                          # ∂ψⱼᵢ / ∂Vᵢ
-                    else
-                        jacobian[row, col] = Iinv * (B * voltage.magnitude[j]^2 - (C * cosAngle + D * sinAngle) * voltage.magnitude[i] * voltage.magnitude[j])  # ∂ψⱼᵢ / ∂θⱼ
-                        jacobian[row, col + bus.number] = Iinv * (C * sinAngle - D * cosAngle) * voltage.magnitude[i]                                           # ∂ψⱼᵢ / ∂Vⱼ
-                    end
-
-                elseif se.type[row] == 16 # ℜ(Iᵢⱼ)
-                    A, B, C, D = FijCoeff(gij, gsi, bij, bsi, tij)
-
-                    if col == branch.layout.from[index]
-                        se.residual[row] = se.mean[row] - (A * cos(voltage.angle[i]) - B * sin(voltage.angle[i])) * voltage.magnitude[i] + (C * cos(voltage.angle[j] + Fij) - D * sin(voltage.angle[j] + Fij)) * voltage.magnitude[j]
-
-                        jacobian[row, col] = -(A * sin(voltage.angle[i]) + B * cos(voltage.angle[i])) * voltage.magnitude[i]             # ∂ℜ(Iᵢⱼ) / ∂θᵢ
-                        jacobian[row, col + bus.number] = A * cos(voltage.angle[i]) - B * sin(voltage.angle[i])                          # ∂ℜ(Iᵢⱼ) / ∂Vᵢ
-                    else
-                        jacobian[row, col] = (C * sin(voltage.angle[j] + Fij) + D * cos(voltage.angle[j] + Fij)) * voltage.magnitude[j]  # ∂ℜ(Iᵢⱼ) / ∂θⱼ
-                        jacobian[row, col + bus.number] = -C * cos(voltage.angle[j] + Fij) + D * sin(voltage.angle[j] + Fij)             # ∂ℜ(Iᵢⱼ) / ∂Vⱼ
-                    end
-
-                elseif se.type[row] == 18 # ℑ(Iᵢⱼ)
-                    A, B, C, D = FijCoeff(gij, gsi, bij, bsi, tij)
-
-                    if col == branch.layout.from[index]
-                        se.residual[row] = se.mean[row] - (A * sin(voltage.angle[i]) + B * cos(voltage.angle[i])) * voltage.magnitude[i] + (C * sin(voltage.angle[j] + Fij) + D * cos(voltage.angle[j] + Fij)) * voltage.magnitude[j]
-
-                        jacobian[row, col] = (A * cos(voltage.angle[i]) - B * sin(voltage.angle[i])) * voltage.magnitude[i]           # ∂ℑ(Iᵢⱼ) / ∂θᵢ
-                        jacobian[row, col + bus.number] = A * sin(voltage.angle[i]) + B * cos(voltage.angle[i])                       # ∂ℑ(Iᵢⱼ) / ∂Vᵢ
-                    else
-                        jacobian[row, col] = (-C * cos(voltage.angle[j] + Fij) + D * sin(voltage.angle[j] + Fij)) * voltage.magnitude[j]  # ∂ℑ(Iᵢⱼ) / ∂θⱼ
-                        jacobian[row, col + bus.number] = - C * sin(voltage.angle[j] + Fij) - D * cos(voltage.angle[j] + Fij)             # ∂ℑ(Iᵢⱼ) / ∂Vⱼ
-                    end
-
-                elseif se.type[row] == 17 # ℜ(Iⱼᵢ)
-                    A, B, C, D = FjiCoeff(gij, gsi, bij, bsi, tij)
-
-                    if col == branch.layout.from[index]
-                        se.residual[row] = se.mean[row] - (A * cos(voltage.angle[j]) - B * sin(voltage.angle[j])) * voltage.magnitude[j] + (C * cos(voltage.angle[i] - Fij) - D * sin(voltage.angle[i] - Fij)) * voltage.magnitude[i]
-
-                        jacobian[row, col] = (C * sin(voltage.angle[i] - Fij) + D * cos(voltage.angle[i] - Fij)) * voltage.magnitude[i] # ∂ℜ(Iⱼᵢ) / ∂θᵢ
-                        jacobian[row, col + bus.number] = -C * cos(voltage.angle[i] - Fij) + D * sin(voltage.angle[i] - Fij)            # ∂ℜ(Iⱼᵢ) / ∂Vᵢ
-                    else
-                        jacobian[row, col] = -(A * sin(voltage.angle[j]) + B * cos(voltage.angle[j])) * voltage.magnitude[j]        # ∂ℜ(Iⱼᵢ) / ∂θⱼ
-                        jacobian[row, col + bus.number] = A * cos(voltage.angle[j]) - B * sin(voltage.angle[j])                     # ∂ℜ(Iⱼᵢ) / ∂Vⱼ
-                    end
-
-                elseif se.type[row] == 19 # ℑ(Iⱼᵢ)
-                    A, B, C, D = FjiCoeff(gij, gsi, bij, bsi, tij)
-
-                    if col == branch.layout.from[index]
-                        se.residual[row] = se.mean[row] - (A * sin(voltage.angle[j]) + B * cos(voltage.angle[j])) * voltage.magnitude[j] + (C * sin(voltage.angle[i] - Fij) + D * cos(voltage.angle[i] - Fij)) * voltage.magnitude[i]
-
-                        jacobian[row, col] = (-C * cos(voltage.angle[i] - Fij) + D * sin(voltage.angle[i] - Fij)) * voltage.magnitude[i]  # ∂ℑ(Iⱼᵢ) / ∂θᵢ
-                        jacobian[row, col + bus.number] = - (C * sin(voltage.angle[i] - Fij) + D * cos(voltage.angle[i] - Fij))           # ∂ℑ(Iⱼᵢ) / ∂Vᵢ
-                    else
-                        jacobian[row, col] = (A * cos(voltage.angle[j]) - B * sin(voltage.angle[j])) * voltage.magnitude[j]               # ∂ℑ(Iⱼᵢ) / ∂θⱼ
-                        jacobian[row, col + bus.number] = A * sin(voltage.angle[j]) + B * cos(voltage.angle[j])                           # ∂ℑ(Iⱼᵢ) / ∂Vⱼ
-                    end
-
-                end
-            end
-        end
-    end
-
-    @inbounds for row = se.range[1]:(se.range[2] - 1)
-        if se.type[row] == 1
-            se.residual[row] = se.mean[row] - voltage.magnitude[se.index[row]]
-        end
-    end
-
-    @inbounds for row = se.range[5]:(se.range[6] - 1)
-        if se.type[row] == 10
-            se.residual[row] = se.mean[row] - voltage.magnitude[se.index[row]]
-        elseif se.type[row] == 11
-            se.residual[row] = se.mean[row] - voltage.angle[se.index[row]]
-        end
-    end
+    return jcb, type, idx
 end
 
-function typeIndex(jac::SparseModel, type::Array{Int8,1}, index::Array{Int64,1}, status::Int8, bus::Int64, a::Int64)
-    type[jac.idx] = status * a
-    index[jac.idx] = bus
+function twoIndices!(
+    jcb::SparseModel,
+    type::Vector{Int8},
+    idx::Vector{Int64},
+    status::Int8,
+    busNumber::Int64,
+    idxBus::Int64,
+    code::Int64
+)
+    type[jcb.idx] = status * code
+    idx[jcb.idx] = idxBus
 
-    return type, index
+    jcb.row[jcb.cnt] = jcb.idx
+    jcb.col[jcb.cnt] = idxBus
+
+    jcb.row[jcb.cnt + 1] = jcb.idx
+    jcb.col[jcb.cnt + 1] = idxBus + busNumber
+
+    jcb.idx += 1
+    jcb.cnt += 2
+
+    return jcb, type, idx
 end
 
-function typeIndex(jac::SparseModel, type::Array{Int8,1}, index::Array{Int64,1}, status::Int8, location::Bool, branch::Int64, a::Int64, b::Int64)
-    index[jac.idx] = branch
+function fourIndices!(
+    jcb::SparseModel,
+    type::Vector{Int8},
+    idx::Vector{Int64},
+    status::Int8,
+    location::Bool,
+    system::PowerSystem,
+    idxBranch::Int64,
+    code1::Int64,
+    code2::Int64
+)
+    idx[jcb.idx] = idxBranch
 
     if location
-        type[jac.idx] = status * a
+        type[jcb.idx] = status * code1
     else
-        type[jac.idx] = status * b
+        type[jcb.idx] = status * code2
     end
 
-    return type, index
+    jcb.row[jcb.cnt] = jcb.idx
+    jcb.col[jcb.cnt] = system.branch.layout.from[idxBranch]
+
+    jcb.row[jcb.cnt + 1] = jcb.idx
+    jcb.col[jcb.cnt + 1] = system.branch.layout.to[idxBranch]
+
+    jcb.row[jcb.cnt + 2] = jcb.idx
+    jcb.col[jcb.cnt + 2] = system.branch.layout.from[idxBranch] + system.bus.number
+
+    jcb.row[jcb.cnt + 3] = jcb.idx
+    jcb.col[jcb.cnt + 3] = system.branch.layout.to[idxBranch] + system.bus.number
+
+    jcb.idx += 1
+    jcb.cnt += 4
+
+    return jcb, type, idx
 end
 
-function jacobianInitialize(jac::SparseModel, val::Int8, col::Int64)
-    jac.row[jac.cnt] = jac.idx
-    jac.col[jac.cnt] = col
-    jac.val[jac.cnt] = val
+function nthIndices!(
+    jcb::SparseModel,
+    type::Vector{Int8},
+    idx::Vector{Int64},
+    status::Int8,
+    system::PowerSystem,
+    idxBus::Int64,
+    code::Int64
+)
+    type[jcb.idx] = status * code
+    idx[jcb.idx] = idxBus
 
-    jac.cnt += 1
-    jac.idx += 1
+    nodal = system.model.ac.nodalMatrix
+    @inbounds for j in nodal.colptr[idxBus]:(nodal.colptr[idxBus + 1] - 1)
+        jcb.row[jcb.cnt] = jcb.idx
+        jcb.col[jcb.cnt] = nodal.rowval[j]
+        jcb.row[jcb.cnt + 1] = jcb.idx
+        jcb.col[jcb.cnt + 1] = nodal.rowval[j] + system.bus.number
 
-    return jac
-end
-
-function jacobianInitialize(jac::SparseModel, nodalMatrix::SparseMatrixCSC{ComplexF64,Int64}, bus::Int64, busNumber::Int64)
-    @inbounds for j in nodalMatrix.colptr[bus]:(nodalMatrix.colptr[bus + 1] - 1)
-        jac.row[jac.cnt] = jac.idx
-        jac.col[jac.cnt] = nodalMatrix.rowval[j]
-        jac.row[jac.cnt + 1] = jac.idx
-        jac.col[jac.cnt + 1] = nodalMatrix.rowval[j] + busNumber
-
-        jac.cnt += 2
+        jcb.cnt += 2
     end
 
-    jac.idx += 1
+    jcb.idx += 1
 
-    return jac
-end
-
-function jacobianInitialize(jac::SparseModel, from::Int64, to::Int64, busNumber::Int64)
-    jac.row[jac.cnt] = jac.idx
-    jac.col[jac.cnt] = from
-    jac.row[jac.cnt + 1] = jac.idx
-    jac.col[jac.cnt + 1] = to
-    jac.row[jac.cnt + 2] = jac.idx
-    jac.col[jac.cnt + 2] = from + busNumber
-    jac.row[jac.cnt + 3] = jac.idx
-    jac.col[jac.cnt + 3] = to + busNumber
-
-    jac.idx += 1
-    jac.cnt += 4
-
-    return jac
-end
-
-function jacobianInitialize(jac::SparseModel, bus::Int64, busNumber::Int64)
-    jac.row[jac.cnt] = jac.idx
-    jac.col[jac.cnt] = bus
-
-    jac.row[jac.cnt + 1] = jac.idx
-    jac.col[jac.cnt + 1] = bus + busNumber
-
-    jac.idx += 1
-    jac.cnt += 2
-
-    return jac
-end
-
-function precisionDiagonal(prec::SparseModel, variance::Float64)
-    prec.row[prec.cnt] = prec.idx
-    prec.col[prec.cnt] = prec.idx
-    prec.val[prec.cnt] = 1 / variance
-
-    prec.cnt += 1
-    prec.idx += 1
-
-    return prec
-end
-
-function precisionBlock(prec::SparseModel, varianceRe::Float64, varianceIm::Float64, covariance::Float64)
-    L1inv = 1 / sqrt(varianceRe)
-    L2 = covariance * L1inv
-    L3inv2 = 1 / (varianceIm - L2^2)
-
-    prec.row[prec.cnt] = prec.idx
-    prec.col[prec.cnt] = prec.idx + 1
-    prec.val[prec.cnt] = (- L2 * L1inv) * L3inv2
-
-    prec.row[prec.cnt + 1] = prec.idx + 1
-    prec.col[prec.cnt + 1] = prec.idx
-    prec.val[prec.cnt + 1] = prec.val[prec.cnt]
-
-    prec.row[prec.cnt + 2] = prec.idx
-    prec.col[prec.cnt + 2] = prec.idx
-    prec.val[prec.cnt + 2] = (L1inv - L2 * prec.val[prec.cnt]) * L1inv
-
-    prec.row[prec.cnt + 3] = prec.idx + 1
-    prec.col[prec.cnt + 3] = prec.idx + 1
-    prec.val[prec.cnt + 3] = L3inv2
-
-    prec.cnt += 4
-    prec.idx += 2
-
-    return prec
-end
-
-function branchParameter(branch::Branch, ac::ACModel, index::Int64)
-    i = branch.layout.from[index]
-    j = branch.layout.to[index]
-    gij = real(ac.admittance[index])
-    bij = imag(ac.admittance[index])
-    gsi = 0.5 * branch.parameter.conductance[index]
-    bsi = 0.5 * branch.parameter.susceptance[index]
-    tij = 1 / branch.parameter.turnsRatio[index]
-    Fij = branch.parameter.shiftAngle[index]
-
-    return i, j, gij, bij, gsi, bsi, tij, Fij
-end
-
-function IijCoeff(gij::Float64, gsi::Float64, bij::Float64, bsi::Float64, tij::Float64)
-    A = tij^4 * ((gij + gsi)^2 + (bij + bsi)^2)
-    B = tij^2 * (gij^2 + bij^2)
-    C = tij^3 * (gij * (gij + gsi) + bij * (bij + bsi))
-    D = tij^3 * (gij * bsi - bij * gsi)
-
-    return A, B, C, D
-end
-
-function IjiCoeff(gij::Float64, gsi::Float64, bij::Float64, bsi::Float64, tij::Float64)
-    A = tij^2 * (gij^2 + bij^2)
-    B = (gij + gsi)^2 + (bij + bsi)^2
-    C = tij * (gij * (gij + gsi) + bij * (bij + bsi))
-    D = tij * (gij * bsi - gsi * bij)
-
-    return A, B, C, D
-end
-
-function FijCoeff(gij::Float64, gsi::Float64, bij::Float64, bsi::Float64, tij::Float64)
-    A = tij^2 * (gij + gsi)
-    B = tij^2 * (bij + bsi)
-    C = tij * gij
-    D = tij * bij
-
-    return A, B, C, D
-end
-
-function FjiCoeff(gij::Float64, gsi::Float64, bij::Float64, bsi::Float64, tij::Float64)
-    A = gij + gsi
-    B = bij + bsi
-    C = tij * gij
-    D = tij * bij
-
-    return A, B, C, D
-end
-
-function fix!(residualx::Vector{VariableRef}, residualy::Vector{VariableRef}, index::Int64)
-    fix(residualx[index], 0.0; force = true)
-    fix(residualy[index], 0.0; force = true)
+    return jcb, type, idx
 end

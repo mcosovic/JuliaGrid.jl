@@ -20,12 +20,12 @@ using JuliaGrid
 
 ###### PMU State Estimation
 * [`pmuPlacement`](@ref pmuPlacement)
-* [`pmuWlsStateEstimation`](@ref pmuWlsStateEstimation)
+* [`pmuStateEstimation`](@ref pmuStateEstimation)
 * [`pmuLavStateEstimation`](@ref pmuLavStateEstimation)
 * [`solve!`](@ref solve!(::PowerSystem, ::PMUStateEstimation{LinearWLS{Normal}}))
 
 ###### DC State Estimation
-* [`dcWlsStateEstimation`](@ref dcWlsStateEstimation)
+* [`dcStateEstimation`](@ref dcStateEstimation)
 * [`dcLavStateEstimation`](@ref dcLavStateEstimation)
 * [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimation{LinearWLS{Normal}}))
 
@@ -55,7 +55,7 @@ solve!(::PowerSystem, ::ACStateEstimation{NonlinearWLS{Normal}})
 ## PMU State Estimation
 ```@docs
 pmuPlacement
-pmuWlsStateEstimation
+pmuStateEstimation
 pmuLavStateEstimation
 solve!(::PowerSystem, ::PMUStateEstimation{LinearWLS{Normal}})
 ```
@@ -64,7 +64,7 @@ solve!(::PowerSystem, ::PMUStateEstimation{LinearWLS{Normal}})
 
 ## DC State Estimation
 ```@docs
-dcWlsStateEstimation
+dcStateEstimation
 dcLavStateEstimation
 solve!(::PowerSystem, ::DCStateEstimation{LinearWLS{Normal}})
 ```

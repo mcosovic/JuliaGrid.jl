@@ -44,10 +44,10 @@ function powerSystem(inputFile::String)
     end
 
     if extension == ".m"
-        busLine, branchLine, generatorLine, generatorcostLine = readMATLAB(system, fullpath)
+        busLine, branchLine, genLine, costLine = readMATLAB(system, fullpath)
         loadBus(system, busLine)
         loadBranch(system, branchLine)
-        loadGenerator(system, generatorLine, generatorcostLine)
+        loadGenerator(system, genLine, costLine)
     end
 
     return system
@@ -67,53 +67,57 @@ system = powerSystem()
 ```
 """
 function powerSystem()
-    af = Array{Float64,1}(undef, 0)
-    ai = Array{Int64,1}(undef, 0)
-    ai8 = Array{Int8,1}(undef, 0)
-    sp = spzeros(0, 0)
-    ac = Array{ComplexF64,1}(undef, 0)
-    mf = Array{Array{Float64,1},1}(undef, 0)
-
-    return PowerSystem(
+    PowerSystem(
         Bus(
             OrderedDict{String, Int64}(),
-            BusDemand(af, copy(af)),
-            BusSupply(copy(af), copy(af), copy(af)),
-            BusShunt(copy(af), copy(af)),
-            BusVoltage(copy(af), copy(af), copy(af), copy(af)),
-            BusLayout(ai8, copy(ai), copy(ai), 0, 0),
+            BusDemand(Float64[], Float64[]),
+            BusSupply(Float64[], Float64[], Dict{Int64, Vector{Int64}}()),
+            BusShunt(Float64[], Float64[]),
+            BusVoltage(Float64[], Float64[], Float64[], Float64[]),
+            BusLayout(Int8[], Int64[], Int64[], 0, 0),
             0
         ),
         Branch(
             OrderedDict{String, Int64}(),
-            BranchParameter(copy(af), copy(af), copy(af), copy(af), copy(af), copy(af)),
-            BranchFlow(copy(af), copy(af), copy(af), copy(af), copy(ai8)),
-            BranchVoltage(copy(af), copy(af)),
-            BranchLayout(copy(ai), copy(ai), copy(ai8), 0, 0),
+            BranchParameter(
+                Float64[], Float64[], Float64[], Float64[], Float64[], Float64[]
+            ),
+            BranchFlow(Float64[], Float64[], Float64[], Float64[], Int8[]),
+            BranchVoltage(Float64[], Float64[]),
+            BranchLayout(Int64[], Int64[], Int8[], 0, 0),
             0
         ),
         Generator(
             OrderedDict{String, Int64}(),
-            GeneratorOutput(copy(af), copy(af)),
-            GeneratorCapability(copy(af), copy(af), copy(af), copy(af), copy(af), copy(af), copy(af), copy(af), copy(af), copy(af)),
-            GeneratorRamping(copy(af), copy(af), copy(af), copy(af)),
-            GeneratorVoltage(copy(af)),
-            GeneratorCost(Cost(copy(ai8), copy(mf), copy(mf)), Cost(copy(ai), copy(mf), copy(mf))),
-            GeneratorLayout(copy(ai), copy(af), copy(ai8), 0, 0),
+            GeneratorOutput(Float64[], Float64[]),
+            GeneratorCapability(
+                Float64[], Float64[], Float64[], Float64[], Float64[],
+                Float64[], Float64[], Float64[], Float64[], Float64[]
+            ),
+            GeneratorRamping(Float64[], Float64[], Float64[], Float64[]),
+            GeneratorVoltage(Float64[]),
+            GeneratorCost(
+                Cost(Int8[], Vector{Float64}[], Vector{Float64}[]),
+                Cost(Int64[], Vector{Float64}[], Vector{Float64}[])
+            ),
+            GeneratorLayout(Int64[], Float64[], Int8[], 0, 0),
             0
         ),
         BaseData(
             BasePower(1e8, "VA", 1.0),
-            BaseVoltage(copy(af), "V", 1.0)
+            BaseVoltage(Float64[], "V", 1.0)
         ),
         Model(
-            ACModel(copy(sp), copy(sp), ac, copy(ac), copy(ac), copy(ac), copy(ac), 0, 0),
-            DCModel(sp, copy(af), copy(af), 0, 0)
+            ACModel(
+                spzeros(0, 0), spzeros(0, 0), ComplexF64[], ComplexF64[],
+                ComplexF64[], ComplexF64[], ComplexF64[], 0, 0
+            ),
+            DCModel(spzeros(0, 0), Float64[], Float64[], 0, 0)
         )
     )
 end
 
-######## Load Bus Data from HDF5 File ##########
+##### Load Bus Data from HDF5 File #####
 function loadBus(system::PowerSystem, hdf5::File)
     if !haskey(hdf5, "bus")
         throw(ErrorException("The bus data is missing."))
@@ -126,9 +130,10 @@ function loadBus(system::PowerSystem, hdf5::File)
 
     bus.layout.area = readHDF5(layouth5, "area", bus.number)
     bus.layout.lossZone = readHDF5(layouth5, "lossZone", bus.number)
-    bus.label = OrderedDict{String, Int64}(); sizehint!(bus.label, bus.number)
+    bus.label = OrderedDict{String, Int64}()
+    sizehint!(bus.label, bus.number)
 
-    label::Array{String,1} = read(hdf5["bus/label"])
+    label::Vector{String} = read(hdf5["bus/label"])
     @inbounds for i = 1:bus.number
         bus.label[label[i]] = i
 
@@ -144,7 +149,6 @@ function loadBus(system::PowerSystem, hdf5::File)
 
     bus.supply.active = fill(0.0, bus.number)
     bus.supply.reactive = fill(0.0, bus.number)
-    bus.supply.generator = [Array{Int64}(undef, 0) for i = 1:bus.number]
 
     shunth5 = hdf5["bus/shunt"]
     bus.shunt.conductance = readHDF5(shunth5, "conductance", bus.number)
@@ -157,7 +161,7 @@ function loadBus(system::PowerSystem, hdf5::File)
     bus.voltage.maxMagnitude = readHDF5(voltageh5, "maxMagnitude", bus.number)
 end
 
-######## Load Branch Data from HDF5 File ##########
+##### Load Branch Data from HDF5 File #####
 function loadBranch(system::PowerSystem, hdf5::File)
     if !haskey(hdf5, "branch")
         throw(ErrorException("The branch data is missing."))
@@ -194,67 +198,67 @@ function loadBranch(system::PowerSystem, hdf5::File)
     branch.flow.type = readHDF5(flowh5, "type", branch.number)
 end
 
-######## Load Generator Data from HDF5 File ##########
+##### Load Generator Data from HDF5 File #####
 function loadGenerator(system::PowerSystem, hdf5::File)
     if !haskey(hdf5, "generator")
         throw(ErrorException("The generator data is missing."))
     end
-    generator = system.generator
+    gen = system.generator
 
     layouth5 = hdf5["generator/layout"]
-    generator.layout.bus = read(layouth5, "bus")
-    generator.number = length(generator.layout.bus)
+    gen.layout.bus = read(layouth5, "bus")
+    gen.number = length(gen.layout.bus)
 
-    generator.layout.area = readHDF5(layouth5, "area", generator.number)
-    generator.layout.status = readHDF5(layouth5, "status", generator.number)
-    generator.layout.inservice = attributes(hdf5)["number of in-service generators"][]
-    generator.label = OrderedDict(zip(read(hdf5["generator/label"]), collect(1:generator.number)))
-    generator.layout.label = read(layouth5["label"])
+    gen.layout.area = readHDF5(layouth5, "area", gen.number)
+    gen.layout.status = readHDF5(layouth5, "status", gen.number)
+    gen.layout.inservice = attributes(hdf5)["number of in-service generators"][]
+    gen.label = OrderedDict(zip(read(hdf5["generator/label"]), collect(1:gen.number)))
+    gen.layout.label = read(layouth5["label"])
 
     outputh5 = hdf5["generator/output"]
-    generator.output.active = readHDF5(outputh5, "active", generator.number)
-    generator.output.reactive = readHDF5(outputh5, "reactive", generator.number)
+    gen.output.active = readHDF5(outputh5, "active", gen.number)
+    gen.output.reactive = readHDF5(outputh5, "reactive", gen.number)
 
     capabilityh5 = hdf5["generator/capability"]
-    generator.capability.minActive = readHDF5(capabilityh5, "minActive", generator.number)
-    generator.capability.maxActive = readHDF5(capabilityh5, "maxActive", generator.number)
-    generator.capability.minReactive = readHDF5(capabilityh5, "minReactive", generator.number)
-    generator.capability.maxReactive = readHDF5(capabilityh5, "maxReactive", generator.number)
-    generator.capability.lowActive = readHDF5(capabilityh5, "lowActive", generator.number)
-    generator.capability.minLowReactive = readHDF5(capabilityh5, "minLowReactive", generator.number)
-    generator.capability.maxLowReactive = readHDF5(capabilityh5, "maxLowReactive", generator.number)
-    generator.capability.upActive = readHDF5(capabilityh5, "upActive", generator.number)
-    generator.capability.minUpReactive = readHDF5(capabilityh5, "minUpReactive", generator.number)
-    generator.capability.maxUpReactive = readHDF5(capabilityh5, "maxUpReactive", generator.number)
+    gen.capability.minActive = readHDF5(capabilityh5, "minActive", gen.number)
+    gen.capability.maxActive = readHDF5(capabilityh5, "maxActive", gen.number)
+    gen.capability.minReactive = readHDF5(capabilityh5, "minReactive", gen.number)
+    gen.capability.maxReactive = readHDF5(capabilityh5, "maxReactive", gen.number)
+    gen.capability.lowActive = readHDF5(capabilityh5, "lowActive", gen.number)
+    gen.capability.minLowReactive = readHDF5(capabilityh5, "minLowReactive", gen.number)
+    gen.capability.maxLowReactive = readHDF5(capabilityh5, "maxLowReactive", gen.number)
+    gen.capability.upActive = readHDF5(capabilityh5, "upActive", gen.number)
+    gen.capability.minUpReactive = readHDF5(capabilityh5, "minUpReactive", gen.number)
+    gen.capability.maxUpReactive = readHDF5(capabilityh5, "maxUpReactive", gen.number)
 
     rampingh5 = hdf5["generator/ramping"]
-    generator.ramping.loadFollowing = readHDF5(rampingh5, "loadFollowing", generator.number)
-    generator.ramping.reserve10min = readHDF5(rampingh5, "reserve10min", generator.number)
-    generator.ramping.reserve30min = readHDF5(rampingh5, "reserve30min", generator.number)
-    generator.ramping.reactiveTimescale = readHDF5(rampingh5, "reactiveTimescale", generator.number)
+    gen.ramping.loadFollowing = readHDF5(rampingh5, "loadFollowing", gen.number)
+    gen.ramping.reserve10min = readHDF5(rampingh5, "reserve10min", gen.number)
+    gen.ramping.reserve30min = readHDF5(rampingh5, "reserve30min", gen.number)
+    gen.ramping.reactiveRamp = readHDF5(rampingh5, "reactiveRamp", gen.number)
 
-    generator.voltage.magnitude = readHDF5(hdf5["generator/voltage"], "magnitude", generator.number)
+    gen.voltage.magnitude = readHDF5(hdf5["generator/voltage"], "magnitude", gen.number)
 
     costh5 = hdf5["generator/cost/active"]
-    generator.cost.active.model = readHDF5(costh5, "model", generator.number)
-    generator.cost.active.polynomial = loadPolynomial(costh5, "polynomial", generator.number)
-    generator.cost.active.piecewise = loadPiecewise(costh5, "piecewise", generator.number)
+    gen.cost.active.model = readHDF5(costh5, "model", gen.number)
+    gen.cost.active.polynomial = loadPolynomial(costh5, "polynomial", gen.number)
+    gen.cost.active.piecewise = loadPiecewise(costh5, "piecewise", gen.number)
 
     costh5 = hdf5["generator/cost/reactive"]
-    generator.cost.reactive.model = readHDF5(costh5, "model", generator.number)
-    generator.cost.reactive.polynomial = loadPolynomial(costh5, "polynomial", generator.number)
-    generator.cost.reactive.piecewise = loadPiecewise(costh5, "piecewise", generator.number)
+    gen.cost.reactive.model = readHDF5(costh5, "model", gen.number)
+    gen.cost.reactive.polynomial = loadPolynomial(costh5, "polynomial", gen.number)
+    gen.cost.reactive.piecewise = loadPiecewise(costh5, "piecewise", gen.number)
 
-    @inbounds for (k, i) in enumerate(generator.layout.bus)
-        if generator.layout.status[k] == 1
-            push!(system.bus.supply.generator[i], k)
-            system.bus.supply.active[i] += generator.output.active[k]
-            system.bus.supply.reactive[i] += generator.output.reactive[k]
+    @inbounds for (k, i) in enumerate(gen.layout.bus)
+        if gen.layout.status[k] == 1
+            addGenInBus!(system, i, k)
+            system.bus.supply.active[i] += gen.output.active[k]
+            system.bus.supply.reactive[i] += gen.output.reactive[k]
         end
     end
 end
 
-######## Load Base Power from HDF5 File ##########
+##### Load Base Power from HDF5 File #####
 function loadBase(system::PowerSystem, hdf5::File)
     if !haskey(hdf5, "base")
         throw(ErrorException("The base data is missing."))
@@ -265,16 +269,16 @@ function loadBase(system::PowerSystem, hdf5::File)
     system.base.voltage.value = readHDF5(base, "voltage", system.bus.number)
 end
 
-######### Load Power System Data from MATLAB File ##########
+##### Load Power System Data from MATLAB File #####
 @inline function readMATLAB(system::PowerSystem, fullpath::String)
     busLine = String[]
     busFlag = false
     branchLine = String[]
     branchFlag = false
-    generatorLine = String[]
-    generatorFlag = false
-    generatorcostLine = String[]
-    generatorcostFlag = false
+    genLine = String[]
+    genFlag = false
+    costLine = String[]
+    costFlag = false
 
     datafile = open(fullpath, "r")
     lines = readlines(datafile)
@@ -287,9 +291,9 @@ end
         elseif occursin("mpc.bus", line) && occursin("[", line)
             busFlag = true
         elseif occursin("mpc.gen", line) && occursin("[", line) && !occursin("mpc.gencost", line)
-            generatorFlag = true
+            genFlag = true
         elseif occursin("mpc.gencost", line) && occursin("[", line)
-            generatorcostFlag = true
+            costFlag = true
         elseif occursin("mpc.baseMVA", line)
             line = split(line, "=")[end]
             line = split(line, ";")[1]
@@ -300,23 +304,23 @@ end
             branchFlag, branchLine = parseLine(line, branchFlag, branchLine)
         elseif busFlag
             busFlag, busLine = parseLine(line, busFlag, busLine)
-        elseif generatorFlag
-            generatorFlag, generatorLine = parseLine(line, generatorFlag, generatorLine)
-        elseif generatorcostFlag
-            generatorcostFlag, generatorcostLine = parseLine(line, generatorcostFlag, generatorcostLine)
+        elseif genFlag
+            genFlag, genLine = parseLine(line, genFlag, genLine)
+        elseif costFlag
+            costFlag, costLine = parseLine(line, costFlag, costLine)
         end
     end
 
     if system.base.power == 0
         system.base.power.value = 100
-        @info("The variable basePower not found. The algorithm proceeds with default value of 1e8 VA.")
+        @info("The variable basePower not found. The algorithm proceeds with value of 1e8 VA.")
     end
 
-    return busLine, branchLine, generatorLine, generatorcostLine
+    return busLine, branchLine, genLine, costLine
 end
 
-######## Load Bus Data from MATLAB File ##########
-function loadBus(system::PowerSystem, busLine::Array{String,1})
+##### Load Bus Data from MATLAB File #####
+function loadBus(system::PowerSystem, busLine::Vector{String})
     if isempty(busLine)
         throw(ErrorException("The bus data is missing."))
     end
@@ -326,14 +330,14 @@ function loadBus(system::PowerSystem, busLine::Array{String,1})
     deg2rad = pi / 180
 
     bus.number = length(busLine)
-    bus.label = OrderedDict{String, Int64}(); sizehint!(bus.label, bus.number)
+    bus.label = OrderedDict{String, Int64}()
+    sizehint!(bus.label, bus.number)
 
     bus.demand.active = fill(0.0, bus.number)
     bus.demand.reactive = similar(bus.demand.active)
 
     bus.supply.active = fill(0.0, bus.number)
     bus.supply.reactive = fill(0.0, bus.number)
-    bus.supply.generator = [Array{Int64}(undef, 0) for i = 1:bus.number]
 
     bus.shunt.conductance = similar(bus.demand.active)
     bus.shunt.susceptance = similar(bus.demand.active)
@@ -388,8 +392,8 @@ function loadBus(system::PowerSystem, busLine::Array{String,1})
     end
 end
 
-######## Load Branch Data from MATLAB File ##########
-function loadBranch(system::PowerSystem, branchLine::Array{String,1})
+##### Load Branch Data from MATLAB File #####
+function loadBranch(system::PowerSystem, branchLine::Vector{String})
     if isempty(branchLine)
         throw(ErrorException("The branch data is missing."))
     end
@@ -399,7 +403,8 @@ function loadBranch(system::PowerSystem, branchLine::Array{String,1})
     deg2rad = pi / 180
 
     branch.number = length(branchLine)
-    branch.label = OrderedDict{String, Int64}(); sizehint!(branch.label, branch.number)
+    branch.label = OrderedDict{String, Int64}()
+    sizehint!(branch.label, branch.number)
 
     branch.parameter.conductance = fill(0.0, branch.number)
     branch.parameter.resistance = similar(branch.parameter.conductance)
@@ -457,109 +462,115 @@ function loadBranch(system::PowerSystem, branchLine::Array{String,1})
     branch.layout.label = branch.number
 end
 
-######## Load Generator Data from MATLAB File ##########
-function loadGenerator(system::PowerSystem, generatorLine::Array{String,1}, generatorCostLine::Array{String,1})
-    if isempty(generatorLine)
+##### Load Generator Data from MATLAB File #####
+function loadGenerator(system::PowerSystem, genLine::Vector{String}, costLine::Vector{String})
+    if isempty(genLine)
         throw(ErrorException("The generator data is missing."))
     end
 
-    generator = system.generator
+    gen = system.generator
     basePowerInv = 1 / system.base.power.value
 
-    generator.number = length(generatorLine)
-    generator.label = OrderedDict{String,Int64}(); sizehint!(generator.label, generator.number)
+    gen.number = length(genLine)
+    gen.label = OrderedDict{String, Int64}()
+    sizehint!(gen.label, gen.number)
 
-    generator.output.active = fill(0.0, generator.number)
-    generator.output.reactive = similar(generator.output.active)
+    gen.output.active = fill(0.0, gen.number)
+    gen.output.reactive = similar(gen.output.active)
 
-    generator.capability.minActive = similar(generator.output.active)
-    generator.capability.maxActive = similar(generator.output.active)
-    generator.capability.minReactive = similar(generator.output.active)
-    generator.capability.maxReactive = similar(generator.output.active)
-    generator.capability.lowActive = similar(generator.output.active)
-    generator.capability.minLowReactive = similar(generator.output.active)
-    generator.capability.maxLowReactive = similar(generator.output.active)
-    generator.capability.upActive = similar(generator.output.active)
-    generator.capability.minUpReactive = similar(generator.output.active)
-    generator.capability.maxUpReactive = similar(generator.output.active)
+    gen.capability.minActive = similar(gen.output.active)
+    gen.capability.maxActive = similar(gen.output.active)
+    gen.capability.minReactive = similar(gen.output.active)
+    gen.capability.maxReactive = similar(gen.output.active)
+    gen.capability.lowActive = similar(gen.output.active)
+    gen.capability.minLowReactive = similar(gen.output.active)
+    gen.capability.maxLowReactive = similar(gen.output.active)
+    gen.capability.upActive = similar(gen.output.active)
+    gen.capability.minUpReactive = similar(gen.output.active)
+    gen.capability.maxUpReactive = similar(gen.output.active)
 
-    generator.ramping.loadFollowing = similar(generator.output.active)
-    generator.ramping.reserve10min = similar(generator.output.active)
-    generator.ramping.reserve30min = similar(generator.output.active)
-    generator.ramping.reactiveTimescale = similar(generator.output.active)
+    gen.ramping.loadFollowing = similar(gen.output.active)
+    gen.ramping.reserve10min = similar(gen.output.active)
+    gen.ramping.reserve30min = similar(gen.output.active)
+    gen.ramping.reactiveRamp = similar(gen.output.active)
 
-    generator.voltage.magnitude = similar(generator.output.active)
+    gen.voltage.magnitude = similar(gen.output.active)
 
-    generator.layout.bus = fill(0, generator.number)
-    generator.layout.area = similar(generator.output.active)
-    generator.layout.status = Array{Int8}(undef, generator.number)
+    gen.layout.bus = fill(0, gen.number)
+    gen.layout.area = similar(gen.output.active)
+    gen.layout.status = Array{Int8}(undef, gen.number)
 
-    @inbounds for (k, line) in enumerate(generatorLine)
+    @inbounds for (k, line) in enumerate(genLine)
         data = split(line)
 
-        generator.label[string(k)] = k
+        gen.label[string(k)] = k
 
-        generator.output.active[k] = parse(Float64, data[2]) * basePowerInv
-        generator.output.reactive[k] = parse(Float64, data[3]) * basePowerInv
+        gen.output.active[k] = parse(Float64, data[2]) * basePowerInv
+        gen.output.reactive[k] = parse(Float64, data[3]) * basePowerInv
 
-        generator.capability.minActive[k] = parse(Float64, data[10]) * basePowerInv
-        generator.capability.maxActive[k] = parse(Float64, data[9]) * basePowerInv
-        generator.capability.minReactive[k] = parse(Float64, data[5]) * basePowerInv
-        generator.capability.maxReactive[k] = parse(Float64, data[4]) * basePowerInv
-        generator.capability.lowActive[k] = parse(Float64, data[11]) * basePowerInv
-        generator.capability.minLowReactive[k] = parse(Float64, data[13]) * basePowerInv
-        generator.capability.maxLowReactive[k] = parse(Float64, data[14]) * basePowerInv
-        generator.capability.upActive[k] = parse(Float64, data[12]) * basePowerInv
-        generator.capability.minUpReactive[k] = parse(Float64, data[15]) * basePowerInv
-        generator.capability.maxUpReactive[k] = parse(Float64, data[16]) * basePowerInv
+        gen.capability.minActive[k] = parse(Float64, data[10]) * basePowerInv
+        gen.capability.maxActive[k] = parse(Float64, data[9]) * basePowerInv
+        gen.capability.minReactive[k] = parse(Float64, data[5]) * basePowerInv
+        gen.capability.maxReactive[k] = parse(Float64, data[4]) * basePowerInv
+        gen.capability.lowActive[k] = parse(Float64, data[11]) * basePowerInv
+        gen.capability.minLowReactive[k] = parse(Float64, data[13]) * basePowerInv
+        gen.capability.maxLowReactive[k] = parse(Float64, data[14]) * basePowerInv
+        gen.capability.upActive[k] = parse(Float64, data[12]) * basePowerInv
+        gen.capability.minUpReactive[k] = parse(Float64, data[15]) * basePowerInv
+        gen.capability.maxUpReactive[k] = parse(Float64, data[16]) * basePowerInv
 
-        generator.ramping.loadFollowing[k] = parse(Float64, data[17]) * basePowerInv
-        generator.ramping.reserve10min[k] = parse(Float64, data[18]) * basePowerInv
-        generator.ramping.reserve30min[k] = parse(Float64, data[19]) * basePowerInv
-        generator.ramping.reactiveTimescale[k] = parse(Float64, data[20]) * basePowerInv
+        gen.ramping.loadFollowing[k] = parse(Float64, data[17]) * basePowerInv
+        gen.ramping.reserve10min[k] = parse(Float64, data[18]) * basePowerInv
+        gen.ramping.reserve30min[k] = parse(Float64, data[19]) * basePowerInv
+        gen.ramping.reactiveRamp[k] = parse(Float64, data[20]) * basePowerInv
 
-        generator.voltage.magnitude[k] = parse(Float64, data[6])
+        gen.voltage.magnitude[k] = parse(Float64, data[6])
 
-        generator.layout.bus[k] = system.bus.label[data[1]]
-        generator.layout.area[k] = parse(Float64, data[21])
-        generator.layout.status[k] = parse(Int8, data[8])
+        gen.layout.bus[k] = system.bus.label[data[1]]
+        gen.layout.area[k] = parse(Float64, data[21])
+        gen.layout.status[k] = parse(Int8, data[8])
 
-        if generator.layout.status[k] == 1
-            i = generator.layout.bus[k]
+        if gen.layout.status[k] == 1
+            i = gen.layout.bus[k]
+            addGenInBus!(system, i, k)
 
-            push!(system.bus.supply.generator[i], k)
-            system.bus.supply.active[i] += generator.output.active[k]
-            system.bus.supply.reactive[i] += generator.output.reactive[k]
-            generator.layout.inservice += 1
+            system.bus.supply.active[i] += gen.output.active[k]
+            system.bus.supply.reactive[i] += gen.output.reactive[k]
+            gen.layout.inservice += 1
         end
     end
-    generator.layout.label = generator.number
+    gen.layout.label = gen.number
 
-    generator.cost.active.model = fill(Int8(0), system.generator.number)
-    generator.cost.active.polynomial = [Array{Float64}(undef, 0) for i = 1:system.generator.number]
-    generator.cost.active.piecewise = [Array{Float64}(undef, 0, 0) for i = 1:system.generator.number]
+    gen.cost.active.model = fill(Int8(0), gen.number)
+    gen.cost.active.polynomial = [Float64[] for i = 1:gen.number]
+    gen.cost.active.piecewise = [Array{Float64}(undef, 0, 0) for i = 1:gen.number]
 
-    generator.cost.reactive.model = fill(Int8(0), system.generator.number)
-    generator.cost.reactive.polynomial = [Array{Float64}(undef, 0) for i = 1:system.generator.number]
-    generator.cost.reactive.piecewise = [Array{Float64}(undef, 0, 0) for i = 1:system.generator.number]
+    gen.cost.reactive.model = fill(Int8(0), gen.number)
+    gen.cost.reactive.polynomial = [Float64[] for i = 1:gen.number]
+    gen.cost.reactive.piecewise = [Array{Float64}(undef, 0, 0) for i = 1:gen.number]
 
-    if !isempty(generatorCostLine)
-        generatorCostParser(system, system.generator.cost.active, generatorCostLine, 0)
+    if !isempty(costLine)
+        generatorCostParser(system, gen.cost.active, costLine, 0)
     end
 
-    if size(generatorCostLine, 1) == 2 * generator.number
-        generatorCostParser(system, system.generator.cost.reactive, generatorCostLine, generator.number)
+    if size(costLine, 1) == 2 * gen.number
+        generatorCostParser(system, gen.cost.reactive, costLine, gen.number)
     end
 
     system.base.power.value *= 1e6
 end
 
-######## Parser Generator Cost Model ##########
-@inline function generatorCostParser(system::PowerSystem, cost::Cost, generatorCostLine::Array{String,1}, start::Int64)
+##### Parser Generator Cost Model #####
+@inline function generatorCostParser(
+    system::PowerSystem,
+    cost::Cost,
+    costLine::Vector{String},
+    start::Int64
+)
     basePowerInv = 1 / system.base.power.value
 
     @inbounds for i = 1:system.generator.number
-        data = split(generatorCostLine[i + start])
+        data = split(costLine[i + start])
         pointNumber = parse(Int64, data[4])
         cost.model[i] = parse(Int8, data[1])
 
@@ -576,26 +587,25 @@ end
         if cost.model[i] == 2
             cost.polynomial[i] = fill(0.0, pointNumber)
             for k = 1:pointNumber
-                cost.polynomial[i][k] = parse(Float64, data[4 + k]) * system.base.power.value^(pointNumber - k)
+                cost.polynomial[i][k] =
+                    parse(Float64, data[4 + k]) * system.base.power.value^(pointNumber - k)
             end
         end
     end
 end
 
-######## Read Data From HDF5 File ##########
+##### Read Data From HDF5 File #####
 @inline function readHDF5(group::Group, key::String, number::Int64)
     if length(group[key]) != 1
-        data::Union{Array{Float64,1}, Array{Int64,1}, Array{Int8,1}, Array{Bool,1}} = read(group[key])
+        return read(group[key])::Union{Vector{Float64}, Vector{Int64}, Vector{Int8}, Vector{Bool}}
     else
-        data = fill(read(group[key])::Union{Float64, Int64, Int8, Bool}, number)
+        return fill(read(group[key])::Union{Float64, Int64, Int8, Bool}, number)
     end
-
-    return data
 end
 
-######## Check Matrix Float64 Data ##########
+##### Check Matrix Float64 Data #####
 @inline function loadPolynomial(group::Group, key::String, number::Int64)
-    data = [Array{Float64}(undef, 0) for i = 1:number]
+    data = [Float64[] for i = 1:number]
 
     if !isempty(group[key])
         datah5 = readmmap(group[key])
@@ -610,7 +620,7 @@ end
     return data
 end
 
-######## Check Matrix Float64 Data ##########
+##### Check Matrix Float64 Data #####
 @inline function loadPiecewise(group::Group, key::String, number::Int64)
     data = [Array{Float64}(undef, 0, 0) for i = 1:number]
 
@@ -635,8 +645,8 @@ end
     return data
 end
 
-######### Matpower Input Data Parse Lines #########
-@inline function parseLine(line::String, flag::Bool, str::Array{String,1})
+##### Matpower Input Data Parse Lines #####
+@inline function parseLine(line::String, flag::Bool, str::Vector{String})
     sublines = split(line, "[")[end]
     sublines = split(sublines, ";")
 

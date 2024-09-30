@@ -5,13 +5,10 @@ The function generates a set of measurements, assigning measurement devices rand
 either in-service or out-of-service states based on specified keywords.
 
 # Keywords
-These keywords allow the user to configure the measurement set as follows:
+Only one of the following keywords can be used at a time to configure the measurement set:
 * `inservice`: Sets the number of in-service devices.
 * `outservice`: Sets the number of out-of-service devices.
 * `redundancy`: Determines in-service devices based on redundancy.
-
-If a user employs multiple keywords for configuration, only the first keyword in the
-hierarchical order will be considered, and the other keywords will be disregarded.
 
 # Updates
 The function updates all the `status` fields within the `Measurement` type.
@@ -62,9 +59,13 @@ addVarmeter!(system, device, analysis)
 status!(system, device; redundancy = 2.5)
 ```
 """
-function status!(system::PowerSystem, device::Measurement;
-    inservice::C = missing, outservice::C = missing, redundancy::A = missing)
-
+function status!(
+    system::PowerSystem,
+    device::Measurement;
+    inservice::IntMiss = missing,
+    outservice::IntMiss = missing,
+    redundancy::FltIntMiss = missing
+)
     if isset(inservice)
         statusAll(device, inservice; initial = 0, final = 1)
     elseif isset(outservice)
@@ -82,13 +83,10 @@ The function generates a set of voltmeters, assigning voltmeters randomly to eit
 in-service or out-of-service states based on specified keywords.
 
 # Keywords
-These keywords allow the user to configure the voltmeter set as follows:
+Only one of the following keywords can be used at a time to configure the measurement set:
 * `inservice`: Sets the number of in-service voltmeters.
 * `outservice`: Sets the number of out-of-service voltmeters.
 * `redundancy`: Determines in-service voltmeters based on redundancy.
-
-If a user employs multiple keywords for configuration, only the first keyword in the
-hierarchical order will be considered, and the other keywords will be disregarded.
 
 # Updates
 The function updates the `status` field within the `Voltmeter` type.
@@ -112,16 +110,21 @@ addVoltmeter!(system, device, analysis)
 statusVoltmeter!(system, device; inservice = 10)
 ```
 """
-function statusVoltmeter!(system::PowerSystem, device::Measurement;
-    inservice::C = missing, outservice::C = missing, redundancy::A = missing)
+function statusVoltmeter!(
+    system::PowerSystem,
+    device::Measurement;
+    inservice::IntMiss = missing,
+    outservice::IntMiss = missing,
+    redundancy::FltIntMiss = missing
+)
+    status = device.voltmeter.magnitude.status
 
-    voltmeter = device.voltmeter
     if isset(inservice)
-        statusAll(voltmeter.magnitude.status, voltmeter.number, inservice; initial = 0, final = 1)
+        statusAll(status, device.voltmeter.number, inservice; initial = 0, final = 1)
     elseif isset(outservice)
-        statusAll(voltmeter.magnitude.status, voltmeter.number, outservice; initial = 1, final = 0)
+        statusAll(status, device.voltmeter.number, outservice; initial = 1, final = 0)
     elseif isset(redundancy)
-        redundancyAll(voltmeter.magnitude.status, voltmeter.number, system.bus.number, redundancy)
+        redundancyAll(status, device.voltmeter.number, system.bus.number, redundancy)
     end
 end
 
@@ -134,7 +137,8 @@ The function generates a set of ammeters, assigning ammeters randomly to either 
 or out-of-service states based on specified keywords.
 
 # Keywords
-These keywords allow the user to configure the ammeter set as follows:
+Users may use either one main keyword or two fine-tuning keywords that specify distinct
+locations per function call:
 * `inservice`: Sets the number of in-service ammeters or allows fine-tuning:
   * `inserviceFrom`: sets only ammeters loacted at the from-bus end,
   * `inserviceTo`: sets only ammeters loacted at the to-bus end.
@@ -144,17 +148,6 @@ These keywords allow the user to configure the ammeter set as follows:
 * `redundancy`: Determines in-service ammeters based on redundancy or allows fine-tuning:
   * `redundancyFrom`: determines only ammeters loacted at the from-bus end,
   * `redundancyTo`: determines only ammeters loacted at the to-bus end.
-
-In case a user employs multiple keywords from the set `inservice`, `outservice`, and
-`redundancy`, only the first keyword in the hierarchical order will be taken into
-consideration, and the remaining keywords will be ignored. Furthermore, in this scenario,
-all fine-tuning keywords will not be considered.
-
-If a user chooses fine-tuning without specifying any of the primary keywords, only one
-keyword from each of the two sets will be executed, and the remaining keywords within each
-set will be ignored. These sets are as follows:
-* `inserviceFrom`, `outserviceFrom`, `redundancyFrom`,
-* `inserviceTo`, `outserviceTo`, `redundancyTo`.
 
 # Updates
 The function updates the `status` field within the `Ammeter` type.
@@ -179,33 +172,44 @@ addAmmeter!(system, device, analysis)
 statusAmmeter!(system, device; inserviceFrom = 5, inserviceTo = 10)
 ```
 """
-function statusAmmeter!(system::PowerSystem, device::Measurement;
-    inservice::C = missing, inserviceFrom::C = missing, inserviceTo::C = missing,
-    outservice::C = missing, outserviceFrom::C = missing, outserviceTo::C = missing,
-    redundancy::A = missing, redundancyFrom::A = missing, redundancyTo::A = missing)
+function statusAmmeter!(
+    system::PowerSystem,
+    device::Measurement;
+    inservice::IntMiss = missing,
+    inserviceFrom::IntMiss = missing,
+    inserviceTo::IntMiss = missing,
+    outservice::IntMiss = missing,
+    outserviceFrom::IntMiss = missing,
+    outserviceTo::IntMiss = missing,
+    redundancy::FltIntMiss = missing,
+    redundancyFrom::FltIntMiss = missing,
+    redundancyTo::FltIntMiss = missing
+)
+    status = device.ammeter.magnitude.status
+    from = device.ammeter.layout.from
+    to = device.ammeter.layout.to
 
-    ammeter = device.ammeter
     if isset(inservice)
-        statusAll(ammeter.magnitude.status, ammeter.number, inservice; initial = 0, final = 1)
+        statusAll(status, device.ammeter.number, inservice; initial = 0, final = 1)
     elseif isset(outservice)
-        statusAll(ammeter.magnitude.status, ammeter.number, outservice; initial = 1, final = 0)
+        statusAll(status, device.ammeter.number, outservice; initial = 1, final = 0)
     elseif isset(redundancy)
-        redundancyAll(ammeter.magnitude.status, ammeter.number, system.bus.number, redundancy)
+        redundancyAll(status, device.ammeter.number, system.bus.number, redundancy)
     else
         if isset(inserviceFrom)
-            statusLocation(ammeter.magnitude.status, ammeter.layout.from, inserviceFrom; initial = 0, final = 1)
+            statusLocation(status, from, inserviceFrom; initial = 0, final = 1)
         elseif isset(outserviceFrom)
-            statusLocation(ammeter.magnitude.status, ammeter.layout.from, outserviceFrom; initial = 1, final = 0)
+            statusLocation(status, from, outserviceFrom; initial = 1, final = 0)
         elseif isset(redundancyFrom)
-            redundancyLocation(ammeter.magnitude.status, ammeter.layout.from, system.bus.number, redundancyFrom)
+            redundancyLocation(status, from, system.bus.number, redundancyFrom)
         end
 
         if isset(inserviceTo)
-            statusLocation(ammeter.magnitude.status, ammeter.layout.to, inserviceTo; initial = 0, final = 1)
+            statusLocation(status, to, inserviceTo; initial = 0, final = 1)
         elseif isset(outserviceTo)
-            statusLocation(ammeter.magnitude.status, ammeter.layout.to, outserviceTo; initial = 1, final = 0)
+            statusLocation(status, to, outserviceTo; initial = 1, final = 0)
         elseif isset(redundancyTo)
-            redundancyLocation(ammeter.magnitude.status, ammeter.layout.to, system.bus.number, redundancyTo)
+            redundancyLocation(status, to, system.bus.number, redundancyTo)
         end
     end
 end
@@ -219,7 +223,8 @@ The function generates a set of wattmeters, assigning wattmeters randomly to eit
 in-service or out-of-service states based on specified keywords.
 
 # Keywords
-These keywords allow the user to configure the wattmeter set as follows:
+Users may use either one main keyword or three fine-tuning keywords that specify distinct
+locations per function call:
 * `inservice`: Sets the number of in-service wattmeters or allows fine-tuning:
   * `inserviceBus`: sets only wattmeters loacted at the bus,
   * `inserviceFrom`: sets only wattmeters loacted at the from-bus end,
@@ -232,18 +237,6 @@ These keywords allow the user to configure the wattmeter set as follows:
   * `redundancyBus`: determines only wattmeters loacted at the bus,
   * `redundancyFrom`: determines only wattmeters loacted at the from-bus end,
   * `redundancyTo`: determines only wattmeters loacted at the to-bus end.
-
-In case a user employs multiple keywords from the set `inservice`, `outservice`, and
-`redundancy`, only the first keyword in the hierarchical order will be taken into
-consideration, and the remaining keywords will be ignored. Furthermore, in this scenario,
-all fine-tuning keywords will not be considered.
-
-If a user chooses fine-tuning without specifying any of the primary keywords, only one
-keyword from each of the three sets will be executed, and the remaining keywords within
-each set will be ignored. These sets are as follows:
-* `inserviceBus`, `outserviceBus`, `redundancyBus`,
-* `inserviceFrom`, `outserviceFrom`, `redundancyFrom`,
-* `inserviceTo`, `outserviceTo`, `redundancyTo`.
 
 # Updates
 The function updates the `status` field within the `Wattmeter` type.
@@ -268,41 +261,56 @@ addWattmeter!(system, device, analysis)
 statusWattmeter!(system, device; outserviceBus = 14, inserviceFrom = 10, outserviceTo = 2)
 ```
 """
-function statusWattmeter!(system::PowerSystem, device::Measurement;
-    inservice::C = missing, inserviceBus::C = missing, inserviceFrom::C = missing, inserviceTo::C = missing,
-    outservice::C = missing, outserviceBus::C = missing, outserviceFrom::C = missing, outserviceTo::C = missing,
-    redundancy::A = missing, redundancyBus::A = missing, redundancyFrom::A = missing, redundancyTo::A = missing)
+function statusWattmeter!(
+    system::PowerSystem,
+    device::Measurement;
+    inservice::IntMiss = missing,
+    inserviceBus::IntMiss = missing,
+    inserviceFrom::IntMiss = missing,
+    inserviceTo::IntMiss = missing,
+    outservice::IntMiss = missing,
+    outserviceBus::IntMiss = missing,
+    outserviceFrom::IntMiss = missing,
+    outserviceTo::IntMiss = missing,
+    redundancy::FltIntMiss = missing,
+    redundancyBus::FltIntMiss = missing,
+    redundancyFrom::FltIntMiss = missing,
+    redundancyTo::FltIntMiss = missing
+)
+    status = device.wattmeter.active.status
+    bus = device.wattmeter.layout.bus
+    from = device.wattmeter.layout.from
+    to = device.wattmeter.layout.to
 
-    wattmeter = device.wattmeter
     if isset(inservice)
-        statusAll(wattmeter.active.status, wattmeter.number, inservice; initial = 0, final = 1)
+        statusAll(status, device.wattmeter.number, inservice; initial = 0, final = 1)
     elseif isset(outservice)
-        statusAll(wattmeter.active.status, wattmeter.number, outservice; initial = 1, final = 0)
+        statusAll(status, device.wattmeter.number, outservice; initial = 1, final = 0)
     elseif isset(redundancy)
-        redundancyAll(wattmeter.active.status, wattmeter.number, system.bus.number, redundancy)
+        redundancyAll(status, device.wattmeter.number, system.bus.number, redundancy)
     else
         if isset(inserviceBus)
-            statusLocation(wattmeter.active.status, wattmeter.layout.bus, inserviceBus; initial = 0, final = 1)
+            statusLocation(status, bus, inserviceBus; initial = 0, final = 1)
         elseif isset(outserviceBus)
-            statusLocation(wattmeter.active.status, wattmeter.layout.bus, outserviceBus; initial = 1, final = 0)
+            statusLocation(status, bus, outserviceBus; initial = 1, final = 0)
         elseif isset(redundancyBus)
-            redundancyLocation(wattmeter.active.status, wattmeter.layout.bus, system.bus.number, redundancyBus)
+            redundancyLocation(status, bus, system.bus.number, redundancyBus)
         end
 
         if isset(inserviceFrom)
-            statusLocation(wattmeter.active.status, wattmeter.layout.from, inserviceFrom; initial = 0, final = 1)
+            statusLocation(status, from, inserviceFrom; initial = 0, final = 1)
         elseif isset(outserviceFrom)
-            statusLocation(wattmeter.active.status, wattmeter.layout.from, outserviceFrom; initial = 1, final = 0)
+            statusLocation(status, from, outserviceFrom; initial = 1, final = 0)
         elseif isset(redundancyFrom)
-            redundancyLocation(wattmeter.active.status, wattmeter.layout.from, system.bus.number, redundancyFrom)
+            redundancyLocation(status, from, system.bus.number, redundancyFrom)
         end
 
         if isset(inserviceTo)
-            statusLocation(wattmeter.active.status, wattmeter.layout.to, inserviceTo; initial = 0, final = 1)
+            statusLocation(status, to, inserviceTo; initial = 0, final = 1)
         elseif isset(outserviceTo)
-            statusLocation(wattmeter.active.status, wattmeter.layout.to, outserviceTo; initial = 1, final = 0)
+            statusLocation(status, to, outserviceTo; initial = 1, final = 0)
         elseif isset(redundancyTo)
-            redundancyLocation(wattmeter.active.status, wattmeter.layout.to, system.bus.number, redundancyTo)
+            redundancyLocation(status, to, system.bus.number, redundancyTo)
         end
     end
 end
@@ -316,7 +324,8 @@ The function generates a set of varmeters, assigning varmeters randomly to eithe
 in-service or out-of-service states based on specified keywords.
 
 # Keywords
-These keywords allow the user to configure the varmeter set as follows:
+Users may use either one main keyword or three fine-tuning keywords that specify distinct
+locations per function call:
 * `inservice`: Sets the number of in-service varmeters or allows fine-tuning:
   * `inserviceBus`: sets only varmeters loacted at the bus,
   * `inserviceFrom`: sets only varmeters loacted at the from-bus end,
@@ -329,18 +338,6 @@ These keywords allow the user to configure the varmeter set as follows:
   * `redundancyBus`: determines only varmeters loacted at the bus,
   * `redundancyFrom`: determines only varmeters loacted at the from-bus end,
   * `redundancyTo`: determines only varmeters loacted at the to-bus end.
-
-In case a user employs multiple keywords from the set `inservice`, `outservice`, and
-`redundancy`, only the first keyword in the hierarchical order will be taken into
-consideration, and the remaining keywords will be ignored. Furthermore, in this scenario,
-all fine-tuning keywords will not be considered.
-
-If a user chooses fine-tuning without specifying any of the primary keywords, only one
-keyword from each of the three sets will be executed, and the remaining keywords within
-each set will be ignored. These sets are as follows:
-* `inserviceBus`, `outserviceBus`, `redundancyBus`,
-* `inserviceFrom`, `outserviceFrom`, `redundancyFrom`,
-* `inserviceTo`, `outserviceTo`, `redundancyTo`.
 
 # Updates
 The function updates the `status` field within the `Varmeter` type.
@@ -365,41 +362,57 @@ addVarmeter!(system, device, analysis)
 statusVarmeter!(system, device; inserviceFrom = 20)
 ```
 """
-function statusVarmeter!(system::PowerSystem, device::Measurement;
-    inservice::C = missing, inserviceBus::C = missing, inserviceFrom::C = missing, inserviceTo::C = missing,
-    outservice::C = missing, outserviceBus::C = missing, outserviceFrom::C = missing, outserviceTo::C = missing,
-    redundancy::A = missing, redundancyBus::A = missing, redundancyFrom::A = missing, redundancyTo::A = missing)
+function statusVarmeter!(
+    system::PowerSystem,
+    device::Measurement;
+    inservice::IntMiss = missing,
+    inserviceBus::IntMiss = missing,
+    inserviceFrom::IntMiss = missing,
+    inserviceTo::IntMiss = missing,
+    outservice::IntMiss = missing,
+    outserviceBus::IntMiss = missing,
+    outserviceFrom::IntMiss = missing,
+    outserviceTo::IntMiss = missing,
+    redundancy::FltIntMiss = missing,
+    redundancyBus::FltIntMiss = missing,
+    redundancyFrom::FltIntMiss = missing,
+    redundancyTo::FltIntMiss = missing
+)
 
-    varmeter = device.varmeter
+    status = device.varmeter.reactive.status
+    bus = device.varmeter.layout.bus
+    from = device.varmeter.layout.from
+    to = device.varmeter.layout.to
+
     if isset(inservice)
-        statusAll(varmeter.reactive.status, varmeter.number, inservice; initial = 0, final = 1)
+        statusAll(status, device.varmeter.number, inservice; initial = 0, final = 1)
     elseif isset(outservice)
-        statusAll(varmeter.reactive.status, varmeter.number, outservice; initial = 1, final = 0)
+        statusAll(status, device.varmeter.number, outservice; initial = 1, final = 0)
     elseif isset(redundancy)
-        redundancyAll(varmeter.reactive.status, varmeter.number, system.bus.number, redundancy)
+        redundancyAll(status, device.varmeter.number, system.bus.number, redundancy)
     else
         if isset(inserviceBus)
-            statusLocation(varmeter.reactive.status, varmeter.layout.bus, inserviceBus; initial = 0, final = 1)
+            statusLocation(status, bus, inserviceBus; initial = 0, final = 1)
         elseif isset(outserviceBus)
-            statusLocation(varmeter.reactive.status, varmeter.layout.bus, outserviceBus; initial = 1, final = 0)
+            statusLocation(status, bus, outserviceBus; initial = 1, final = 0)
         elseif isset(redundancyBus)
-            redundancyLocation(varmeter.reactive.status, varmeter.layout.bus, system.bus.number, redundancyBus)
+            redundancyLocation(status, bus, system.bus.number, redundancyBus)
         end
 
         if isset(inserviceFrom)
-            statusLocation(varmeter.reactive.status, varmeter.layout.from, inserviceFrom; initial = 0, final = 1)
+            statusLocation(status, from, inserviceFrom; initial = 0, final = 1)
         elseif isset(outserviceFrom)
-            statusLocation(varmeter.reactive.status, varmeter.layout.from, outserviceFrom; initial = 1, final = 0)
+            statusLocation(status, from, outserviceFrom; initial = 1, final = 0)
         elseif isset(redundancyFrom)
-            redundancyLocation(varmeter.reactive.status, varmeter.layout.from, system.bus.number, redundancyFrom)
+            redundancyLocation(status, from, system.bus.number, redundancyFrom)
         end
 
         if isset(inserviceTo)
-            statusLocation(varmeter.reactive.status, varmeter.layout.to, inserviceTo; initial = 0, final = 1)
+            statusLocation(status, to, inserviceTo; initial = 0, final = 1)
         elseif isset(outserviceTo)
-            statusLocation(varmeter.reactive.status, varmeter.layout.to, outserviceTo; initial = 1, final = 0)
+            statusLocation(status, to, outserviceTo; initial = 1, final = 0)
         elseif isset(redundancyTo)
-            redundancyLocation(varmeter.reactive.status, varmeter.layout.to, system.bus.number, redundancyTo)
+            redundancyLocation(status, to, system.bus.number, redundancyTo)
         end
     end
 end
@@ -414,7 +427,8 @@ out-of-service states based on specified keywords. It is important to note that 
 refer to PMU, we encompass both magnitude and angle measurements.
 
 # Keywords
-These keywords allow the user to configure the PMU set as follows:
+Users may use either one main keyword or three fine-tuning keywords that specify distinct
+locations per function call:
 * `inservice`: Sets the number of in-service PMUs or allows fine-tuning:
   * `inserviceBus`: sets only PMUs loacted at the bus,
   * `inserviceFrom`: sets only PMUs loacted at the from-bus end,
@@ -427,18 +441,6 @@ These keywords allow the user to configure the PMU set as follows:
   * `redundancyBus`: determines only PMUs loacted at the bus,
   * `redundancyFrom`: determines only PMUs loacted at the from-bus end,
   * `redundancyTo`: determines only PMUs loacted at the to-bus end.
-
-In case a user employs multiple keywords from the set `inservice`, `outservice`, and
-`redundancy`, only the first keyword in the hierarchical order will be taken into
-consideration, and the remaining keywords will be ignored. Furthermore, in this scenario,
-all fine-tuning keywords will not be considered.
-
-If a user chooses fine-tuning without specifying any of the primary keywords, only one
-keyword from each of the three sets will be executed, and the remaining keywords within
-each set will be ignored. These sets are as follows:
-* `inserviceBus`, `outserviceBus`, `redundancyBus`,
-* `inserviceFrom`, `outserviceFrom`, `redundancyFrom`,
-* `inserviceTo`, `outserviceTo`, `redundancyTo`.
 
 # Updates
 The function updates the `status` fields within the `PMU` type.
@@ -463,12 +465,24 @@ addPmu!(system, device, analysis)
 statusPmu!(system, device; inserviceBus = 14)
 ```
 """
-function statusPmu!(system::PowerSystem, device::Measurement;
-    inservice::C = missing, inserviceBus::C = missing, inserviceFrom::C = missing, inserviceTo::C = missing,
-    outservice::C = missing, outserviceBus::C = missing, outserviceFrom::C = missing, outserviceTo::C = missing,
-    redundancy::A = missing, redundancyBus::A = missing, redundancyFrom::A = missing, redundancyTo::A = missing)
-
+function statusPmu!(
+    system::PowerSystem,
+    device::Measurement;
+    inservice::IntMiss = missing,
+    inserviceBus::IntMiss = missing,
+    inserviceFrom::IntMiss = missing,
+    inserviceTo::IntMiss = missing,
+    outservice::IntMiss = missing,
+    outserviceBus::IntMiss = missing,
+    outserviceFrom::IntMiss = missing,
+    outserviceTo::IntMiss = missing,
+    redundancy::FltIntMiss = missing,
+    redundancyBus::FltIntMiss = missing,
+    redundancyFrom::FltIntMiss = missing,
+    redundancyTo::FltIntMiss = missing
+)
     pmu = device.pmu
+
     if isset(inservice)
         statusAll(pmu, inservice; initial = 0, final = 1)
     elseif isset(outservice)
@@ -502,9 +516,15 @@ function statusPmu!(system::PowerSystem, device::Measurement;
     end
 end
 
-function statusAll(status::Array{Int8,1}, numberDevice::Int64, service::C; initial::Int64, final::Int64)
+function statusAll(
+    status::Vector{Int8},
+    numberDevice::Int64,
+    service::IntMiss;
+    initial::Int64,
+    final::Int64
+)
     if service > numberDevice
-        throw(ErrorException("The total number of available devices is less than the requested number for a status change."))
+        errorStatusDevice()
     end
 
     indices = randperm(numberDevice)[1:service]
@@ -512,9 +532,14 @@ function statusAll(status::Array{Int8,1}, numberDevice::Int64, service::C; initi
     status[indices] .= final
 end
 
-function statusAll(pmu::PMU, service::C; initial::Int64, final::Int64)
+function statusAll(
+    pmu::PMU,
+    service::IntMiss;
+    initial::Int64,
+    final::Int64
+)
     if service > pmu.number
-        throw(ErrorException("The total number of available devices is less than the requested number for a status change."))
+        errorStatusDevice()
     end
 
     indices = randperm(pmu.number)[1:service]
@@ -530,42 +555,50 @@ function statusAll(pmu::PMU, service::C; initial::Int64, final::Int64)
     end
 end
 
-function statusAll(device::Measurement, service::C; initial::Int64, final::Int64)
-    voltmeter = device.voltmeter
-    ammeter = device.ammeter
-    wattmeter = device.wattmeter
-    varmeter = device.varmeter
+function statusAll(
+    device::Measurement,
+    service::IntMiss;
+    initial::Int64,
+    final::Int64
+)
+    volt = device.voltmeter
+    amp = device.ammeter
+    watt = device.wattmeter
+    var = device.varmeter
     pmu = device.pmu
 
-    if service > voltmeter.number + ammeter.number + wattmeter.number + varmeter.number + pmu.number
-        throw(ErrorException("The total number of available devices is less than the requested number for a status change."))
+    n = volt.number + amp.number + watt.number + var.number + pmu.number
+    if service > n
+        errorStatusDevice()
     end
 
-    indices = [fill(1, voltmeter.number) collect(1:voltmeter.number);
-       fill(2, ammeter.number) collect(1:ammeter.number);
-       fill(3, wattmeter.number) collect(1:wattmeter.number);
-       fill(4, varmeter.number) collect(1:varmeter.number);
-       fill(5, pmu.number) collect(1:pmu.number)]
+    indices = [
+        fill(1, volt.number) collect(1:volt.number);
+        fill(2, amp.number) collect(1:amp.number);
+        fill(3, watt.number) collect(1:watt.number);
+        fill(4, var.number) collect(1:var.number);
+        fill(5, pmu.number) collect(1:pmu.number)
+    ]
 
     indices = indices[shuffle(1:end), :]
     indices = indices[1:service, :]
 
-    voltmeter.magnitude.status .= initial
-    ammeter.magnitude.status .= initial
-    wattmeter.active.status .= initial
-    varmeter.reactive.status .= initial
+    volt.magnitude.status .= initial
+    amp.magnitude.status .= initial
+    watt.active.status .= initial
+    var.reactive.status .= initial
     pmu.magnitude.status .= initial
     pmu.angle.status .= initial
 
     for row in eachrow(indices)
         if row[1] == 1
-            voltmeter.magnitude.status[row[2]] = final
+            volt.magnitude.status[row[2]] = final
         elseif row[1] == 2
-            ammeter.magnitude.status[row[2]] = final
+            amp.magnitude.status[row[2]] = final
         elseif row[1] == 3
-            wattmeter.active.status[row[2]] = final
+            watt.active.status[row[2]] = final
         elseif row[1] == 4
-            varmeter.reactive.status[row[2]] = final
+            var.reactive.status[row[2]] = final
         else
             pmu.magnitude.status[row[2]] = final
             pmu.angle.status[row[2]] = final
@@ -573,10 +606,17 @@ function statusAll(device::Measurement, service::C; initial::Int64, final::Int64
     end
 end
 
-function statusLocation(status::Array{Int8,1}, location::Array{Bool,1}, service::C; initial::Int64, final::Int64)
-    indices = findall(x->x==true, location)
+function statusLocation(
+    status::Vector{Int8},
+    location::Vector{Bool},
+    service::IntMiss;
+    initial::Int64,
+    final::Int64
+)
+    indices = findall(x -> x == true, location)
+
     if service > length(indices)
-        throw(ErrorException("The total number of available devices is less than the requested number for a status change."))
+        errorStatusDevice()
     end
 
     status[indices] .= initial
@@ -584,10 +624,17 @@ function statusLocation(status::Array{Int8,1}, location::Array{Bool,1}, service:
     status[indices[1:service]] .= final
 end
 
-function statusLocation(pmu::PMU, location::Array{Bool,1}, service::C; initial::Int64, final::Int64)
-    indices = findall(x->x==true, location)
+function statusLocation(
+    pmu::PMU,
+    location::Vector{Bool},
+    service::IntMiss;
+    initial::Int64,
+    final::Int64
+)
+    indices = findall(x -> x == true, location)
+
     if service > length(indices)
-        throw(ErrorException("The total number of available devices is less than the requested number for a status change."))
+        errorStatusDevice()
     end
 
     @inbounds for i in indices
@@ -602,8 +649,14 @@ function statusLocation(pmu::PMU, location::Array{Bool,1}, service::C; initial::
     end
 end
 
-function redundancyAll(status::Array{Int8,1}, numberDevice::Int64, busNumber::Int64, redundancy::A)
+function redundancyAll(
+    status::Vector{Int8},
+    numberDevice::Int64,
+    busNumber::Int64,
+    redundancy::FltIntMiss
+)
     maxRedundancy = numberDevice / (2 * busNumber - 1)
+
     if redundancy > maxRedundancy
         redundancy = maxRedundancy
     end
@@ -614,7 +667,11 @@ function redundancyAll(status::Array{Int8,1}, numberDevice::Int64, busNumber::In
     status[indices] .= 1
 end
 
-function redundancyAll(pmu::PMU, busNumber::Int64, redundancy::A)
+function redundancyAll(
+    pmu::PMU,
+    busNumber::Int64,
+    redundancy::FltIntMiss
+)
     maxRedundancy = pmu.number / (2 * busNumber - 1)
     if redundancy > maxRedundancy
         redundancy = maxRedundancy
@@ -633,45 +690,51 @@ function redundancyAll(pmu::PMU, busNumber::Int64, redundancy::A)
     end
 end
 
-function redundacyAll(device::Measurement, busNumber::Int64, redundancy::A)
-    voltmeter = device.voltmeter
-    ammeter = device.ammeter
-    wattmeter = device.wattmeter
-    varmeter = device.varmeter
+function redundacyAll(
+    device::Measurement,
+    busNumber::Int64,
+    redundancy::FltIntMiss
+)
+    volt = device.voltmeter
+    amp = device.ammeter
+    watt = device.wattmeter
+    var = device.varmeter
     pmu = device.pmu
 
-    numberDevice = voltmeter.number + ammeter.number + wattmeter.number + varmeter.number + pmu.number
-    maxRedundancy = numberDevice / (2 * busNumber - 1)
+    n = volt.number + amp.number + watt.number + var.number + pmu.number
+    maxRedundancy = n / (2 * busNumber - 1)
     if redundancy > maxRedundancy
         redundancy = maxRedundancy
     end
     measurementNumber = redundancy * (2 * busNumber - 1)
 
-    indices = [fill(1, voltmeter.number) collect(1:voltmeter.number);
-       fill(2, ammeter.number) collect(1:ammeter.number);
-       fill(3, wattmeter.number) collect(1:wattmeter.number);
-       fill(4, varmeter.number) collect(1:varmeter.number);
-       fill(5, pmu.number) collect(1:pmu.number)]
+    indices = [
+        fill(1, volt.number) collect(1:volt.number);
+        fill(2, amp.number) collect(1:amp.number);
+        fill(3, watt.number) collect(1:watt.number);
+        fill(4, var.number) collect(1:var.number);
+        fill(5, pmu.number) collect(1:pmu.number)
+    ]
 
     indices = indices[shuffle(1:end), :]
     indices = indices[1:trunc(Int64, round(measurementNumber)), :]
 
-    voltmeter.magnitude.status .= 0
-    ammeter.magnitude.status .= 0
-    wattmeter.active.status .= 0
-    varmeter.reactive.status .= 0
+    volt.magnitude.status .= 0
+    amp.magnitude.status .= 0
+    watt.active.status .= 0
+    var.reactive.status .= 0
     pmu.magnitude.status .= 0
     pmu.angle.status .= 0
 
     for row in eachrow(indices)
         if row[1] == 1
-            voltmeter.magnitude.status[row[2]] = 1
+            volt.magnitude.status[row[2]] = 1
         elseif row[1] == 2
-            ammeter.magnitude.status[row[2]] = 1
+            amp.magnitude.status[row[2]] = 1
         elseif row[1] == 3
-            wattmeter.active.status[row[2]] = 1
+            watt.active.status[row[2]] = 1
         elseif row[1] == 4
-            varmeter.reactive.status[row[2]] = 1
+            var.reactive.status[row[2]] = 1
         else
             pmu.magnitude.status[row[2]] = 1
             pmu.angle.status[row[2]] = 1
@@ -679,10 +742,16 @@ function redundacyAll(device::Measurement, busNumber::Int64, redundancy::A)
     end
 end
 
-function redundancyLocation(status, location::Array{Bool,1}, busNumber::Int64, redundancy::A)
-    indices = findall(x->x==true, location)
+function redundancyLocation(
+    status::Vector{Int8},
+    location::Vector{Bool},
+    busNumber::Int64,
+    redundancy::FltIntMiss
+)
+    indices = findall(x -> x == true, location)
     numberDevice = length(indices)
     maxRedundancy = numberDevice / (2 * busNumber - 1)
+
     if redundancy > maxRedundancy
         redundancy = maxRedundancy
     end
@@ -693,10 +762,16 @@ function redundancyLocation(status, location::Array{Bool,1}, busNumber::Int64, r
     status[indices[1:trunc(Int64, round(measurementNumber))]] .= 1
 end
 
-function redundancyLocation(pmu::PMU, location::Array{Bool,1}, busNumber::Int64, redundancy::A)
-    indices = findall(x->x==true, location)
+function redundancyLocation(
+    pmu::PMU,
+    location::Vector{Bool},
+    busNumber::Int64,
+    redundancy::FltIntMiss
+)
+    indices = findall(x -> x == true, location)
     numberDevice = length(indices)
     maxRedundancy = numberDevice / (2 * busNumber - 1)
+
     if redundancy > maxRedundancy
         redundancy = maxRedundancy
     end

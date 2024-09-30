@@ -1,5 +1,5 @@
 """
-    pmuWlsStateEstimation(system::PowerSystem, device::Measurement, [method = LU])
+    pmuStateEstimation(system::PowerSystem, device::Measurement, [method = LU])
 
 The function establishes the linear WLS model for state estimation with PMUs only. In this
 model, the vector of state variables contains bus voltages, given in rectangular
@@ -36,7 +36,7 @@ Set up the PMU state estimation model to be solved using the default LU factoriz
 system = powerSystem("case14.h5")
 device = measurement("measurement14.h5")
 
-analysis = pmuWlsStateEstimation(system, device)
+analysis = pmuStateEstimation(system, device)
 ```
 
 Set up the PMU state estimation model to be solved using the orthogonal method:
@@ -44,15 +44,15 @@ Set up the PMU state estimation model to be solved using the orthogonal method:
 system = powerSystem("case14.h5")
 device = measurement("measurement14.h5")
 
-analysis = pmuWlsStateEstimation(system, device, Orthogonal)
+analysis = pmuStateEstimation(system, device, Orthogonal)
 ```
 """
-function pmuWlsStateEstimation(system::PowerSystem, device::Measurement,
+function pmuStateEstimation(system::PowerSystem, device::Measurement,
     factorization::Type{<:Union{QR, LDLt, LU}} = LU)
 
-    coefficient, mean, precision, power, current, _ = pmuStateEstimationWLS(system, device)
+    coeff, mean, precision, power, current, _ = pmuEstimationWls(system, device)
 
-    return PMUStateEstimation(
+    PMUStateEstimation(
         Polar(
             Float64[],
             Float64[]
@@ -60,7 +60,7 @@ function pmuWlsStateEstimation(system::PowerSystem, device::Measurement,
         power,
         current,
         LinearWLS{Normal}(
-            coefficient,
+            coeff,
             precision,
             mean,
             factorized[factorization],
@@ -71,20 +71,25 @@ function pmuWlsStateEstimation(system::PowerSystem, device::Measurement,
     )
 end
 
-function pmuWlsStateEstimation(system::PowerSystem, device::Measurement, method::Type{<:Orthogonal})
-
-    coefficient, mean, precision, power, current, correlated = pmuStateEstimationWLS(system, device)
+function pmuStateEstimation(
+    system::PowerSystem,
+    device::Measurement,
+    ::Type{<:Orthogonal}
+)
+    coeff, mean, precision, power, current, correlated = pmuEstimationWls(system, device)
 
     if correlated
-        throw(ErrorException("The precision matrix is non-diagonal, therefore preventing the use of the orthogonal method."))
+        throw(ErrorException(
+            "The non-diagonal precision matrix prevents using the orthogonal method.")
+        )
     end
 
-    return PMUStateEstimation(
+    PMUStateEstimation(
         Polar(Float64[], Float64[]),
         power,
         current,
         LinearWLS{Orthogonal}(
-            coefficient,
+            coeff,
             precision,
             mean,
             factorized[QR],
@@ -95,7 +100,7 @@ function pmuWlsStateEstimation(system::PowerSystem, device::Measurement, method:
     )
 end
 
-function pmuStateEstimationWLS(system::PowerSystem, device::Measurement)
+function pmuEstimationWls(system::PowerSystem, device::Measurement)
     ac = system.model.ac
     bus = system.bus
     branch = system.branch
@@ -104,147 +109,95 @@ function pmuStateEstimationWLS(system::PowerSystem, device::Measurement)
 
     model!(system, system.model.ac)
 
-    nonZeroElement = 0
-    nonZeroPrecision = 0
+    nnzCff = 0
+    nnzPcs = 0
     @inbounds for i = 1:pmu.number
         if pmu.layout.bus[i]
-            nonZeroElement += 2
+            nnzCff += 2
         else
-            nonZeroElement += 8
+            nnzCff += 8
         end
-
-        if pmu.layout.correlated[i]
-            nonZeroPrecision += 4
-        else
-            nonZeroPrecision += 2
-        end
-    end
-
-    rowCoeff = fill(0, nonZeroElement)
-    colCoeff = similar(rowCoeff)
-    coeff = fill(0.0, nonZeroElement)
-    mean = fill(0.0, 2 * pmu.number)
-
-    rowPrec = fill(0, nonZeroPrecision)
-    colPrec = similar(rowPrec)
-    valPrec = fill(0.0, nonZeroPrecision)
-
-    count = 1
-    rowindex = 1
-    cntPrec = 1
-    @inbounds for (i, k) in enumerate(pmu.layout.index)
-        cosAngle = cos(pmu.angle.mean[i])
-        sinAngle = sin(pmu.angle.mean[i])
-
-        varianceRe = pmu.magnitude.variance[i] * cosAngle^2 + pmu.angle.variance[i] * (pmu.magnitude.mean[i] * sinAngle)^2
-        varianceIm = pmu.magnitude.variance[i] * sinAngle^2 + pmu.angle.variance[i] * (pmu.magnitude.mean[i] * cosAngle)^2
 
         if pmu.layout.correlated[i]
             correlated = true
-            covariance = sinAngle * cosAngle * (pmu.magnitude.variance[i] - pmu.angle.variance[i] * pmu.magnitude.mean[i]^2)
-            rowPrec, colPrec, valPrec, cntPrec = invCovarianceBlock(rowPrec, colPrec, valPrec, cntPrec, varianceRe, varianceIm, covariance, rowindex)
+            nnzPcs += 4
         else
-            rowPrec[cntPrec] = rowindex
-            colPrec[cntPrec] = rowindex
-            valPrec[cntPrec] = 1 / varianceRe
-
-            rowPrec[cntPrec + 1] = rowindex + 1
-            colPrec[cntPrec + 1] = rowindex + 1
-            valPrec[cntPrec + 1] = 1 / varianceIm
-
-            cntPrec += 2
-        end
-
-        if pmu.layout.bus[i]
-            rowCoeff[count] = rowindex
-            colCoeff[count] = pmu.layout.index[i]
-            rowCoeff[count + 1] = rowindex + 1
-            colCoeff[count + 1] = pmu.layout.index[i] + bus.number
-            if pmu.magnitude.status[i] == 1 && pmu.angle.status[i] == 1
-                coeff[count] = 1.0
-                coeff[count + 1] = 1.0
-
-                mean[rowindex] = pmu.magnitude.mean[i] * cosAngle
-                mean[rowindex + 1] = pmu.magnitude.mean[i] * sinAngle
-            else
-                coeff[count:(count + 1)] .= 0.0
-                mean[rowindex:(rowindex + 1)] .= 0.0
-            end
-            count += 2
-            rowindex += 2
-        else
-            rowCoeff[count] = rowindex
-            colCoeff[count] = branch.layout.from[k]
-            rowCoeff[count + 1] = rowindex + 1
-            colCoeff[count + 1] = branch.layout.from[k] + bus.number
-
-            rowCoeff[count + 2] = rowindex;
-            colCoeff[count + 2] = branch.layout.to[k]
-            rowCoeff[count + 3] = rowindex + 1
-            colCoeff[count + 3] = branch.layout.to[k] + bus.number
-
-            rowCoeff[count + 4] = rowindex
-            colCoeff[count + 4] = branch.layout.from[k] + bus.number
-            rowCoeff[count + 5] = rowindex + 1
-            colCoeff[count + 5] = branch.layout.from[k]
-
-            rowCoeff[count + 6] = rowindex
-            colCoeff[count + 6] = branch.layout.to[k] + bus.number
-            rowCoeff[count + 7] = rowindex + 1
-            colCoeff[count + 7] = branch.layout.to[k]
-
-            if pmu.magnitude.status[i] == 1 && pmu.angle.status[i] == 1
-                gij = real(ac.admittance[k])
-                bij = imag(ac.admittance[k])
-                bsi = 0.5 * branch.parameter.susceptance[k]
-                gsi = 0.5 * branch.parameter.conductance[k]
-                cosShift = cos(branch.parameter.shiftAngle[k])
-                sinShift = sin(branch.parameter.shiftAngle[k])
-                turnsRatioInv = 1 / branch.parameter.turnsRatio[k]
-
-                if pmu.layout.from[i]
-                    coeff[count] = turnsRatioInv^2 * (gij + gsi)
-                    coeff[count + 1] = coeff[count]
-
-                    coeff[count + 2] = -turnsRatioInv * (gij * cosShift - bij * sinShift)
-                    coeff[count + 3] = coeff[count + 2]
-
-                    coeff[count + 4] = -turnsRatioInv^2 * (bij + bsi)
-                    coeff[count + 5] = -coeff[count + 4]
-
-                    coeff[count + 6] = turnsRatioInv * (bij * cosShift + gij * sinShift)
-                    coeff[count + 7] = -coeff[count + 6]
-                else
-                    coeff[count] = -turnsRatioInv * (gij * cosShift + bij * sinShift)
-                    coeff[count + 1] = coeff[count]
-
-                    coeff[count + 2] = gij + gsi
-                    coeff[count + 3] = coeff[count + 2]
-
-                    coeff[count + 4] = turnsRatioInv * (bij * cosShift - gij * sinShift)
-                    coeff[count + 5] = -coeff[count + 4]
-
-                    coeff[count + 6] = -bij - bsi
-                    coeff[count + 7] = -coeff[count + 6]
-                end
-
-                mean[rowindex] = pmu.magnitude.mean[i] * cosAngle
-                mean[rowindex + 1] = pmu.magnitude.mean[i] * sinAngle
-            else
-                coeff[count:(count + 7)] .= 0.0
-                mean[rowindex:(rowindex + 1)] .= 0.0
-            end
-            count += 8
-            rowindex += 2
+            nnzPcs += 2
         end
     end
 
-    coefficient = sparse(rowCoeff, colCoeff, coeff, 2 * pmu.number, 2 * bus.number)
-    precision = sparse(rowPrec, colPrec, valPrec, 2 * pmu.number, 2 * pmu.number)
+    mean = fill(0.0, 2 * pmu.number)
+    cff = SparseModel(fill(0, nnzCff), fill(0, nnzCff), fill(0.0, nnzCff), 1, 1)
+    pcs = SparseModel(fill(0, nnzPcs), fill(0, nnzPcs), fill(0.0, nnzPcs), 1, 1)
 
-    power = ACPower(Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]),
-        Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]), Cartesian(Float64[], Float64[]))
-    current = ACCurrent(Polar(Float64[], Float64[]), Polar(Float64[], Float64[]), Polar(Float64[], Float64[]), Polar(Float64[], Float64[]))
+    @inbounds for (i, k) in enumerate(pmu.layout.index)
+        sinθ, cosθ = sincos(pmu.angle.mean[i])
+        varRe, varIm = variancePmu(pmu, cosθ, sinθ, i)
+
+        if pmu.layout.correlated[i]
+            precision!(pcs, pmu, cosθ, sinθ, varRe, varIm, i)
+        else
+            precision!(pcs, varRe)
+            precision!(pcs, varIm)
+        end
+
+        if pmu.layout.bus[i]
+            if pmu.magnitude.status[i] == 1 && pmu.angle.status[i] == 1
+                mean[cff.idx] = pmu.magnitude.mean[i] * cosθ
+                mean[cff.idx + 1] = pmu.magnitude.mean[i] * sinθ
+
+                cff.val[cff.cnt] = 1.0
+                cff.val[cff.cnt + 1] = 1.0
+            end
+            pmuIndices(cff, pmu.layout.index[i], pmu.layout.index[i] + bus.number)
+
+            cff.idx += 2
+        else
+            if pmu.magnitude.status[i] == 1 && pmu.angle.status[i] == 1
+                mean[cff.idx] = pmu.magnitude.mean[i] * cosθ
+                mean[cff.idx + 1] = pmu.magnitude.mean[i] * sinθ
+
+                if pmu.layout.from[i]
+                    p = ReImIijCoefficient(branch, ac, k)
+                else
+                    p = ReImIjiCoefficient(branch, ac, k)
+                end
+                cff.val[cff.cnt] = cff.val[cff.cnt + 1] = p.A
+                cff.val[cff.cnt + 2] = cff.val[cff.cnt + 3] = p.C
+                cff.val[cff.cnt + 4] = p.B
+                cff.val[cff.cnt + 6] = p.D
+                cff.val[cff.cnt + 5] = -p.B
+                cff.val[cff.cnt + 7] = -p.D
+            end
+
+            pmuIndices(cff, branch.layout.from[k], branch.layout.from[k] + bus.number)
+            pmuIndices(cff, branch.layout.to[k], branch.layout.to[k] + bus.number)
+            pmuIndices(cff, branch.layout.from[k] + bus.number, branch.layout.from[k])
+            pmuIndices(cff, branch.layout.to[k] + bus.number, branch.layout.to[k])
+
+            cff.idx += 2
+        end
+    end
+
+    coefficient = sparse(cff.row, cff.col, cff.val, 2 * pmu.number, 2 * bus.number)
+    precision = sparse(pcs.row, pcs.col, pcs.val, 2 * pmu.number, 2 * pmu.number)
+
+    power = ACPower(
+        Cartesian(Float64[], Float64[]),
+        Cartesian(Float64[], Float64[]),
+        Cartesian(Float64[], Float64[]),
+        Cartesian(Float64[], Float64[]),
+        Cartesian(Float64[], Float64[]),
+        Cartesian(Float64[], Float64[]),
+        Cartesian(Float64[], Float64[]),
+        Cartesian(Float64[], Float64[])
+    )
+    current = ACCurrent(
+        Polar(Float64[], Float64[]),
+        Polar(Float64[], Float64[]),
+        Polar(Float64[], Float64[]),
+        Polar(Float64[], Float64[])
+    )
 
     return coefficient, mean, precision, power, current, correlated
 end
@@ -287,14 +240,18 @@ device = measurement("measurement14.h5")
 analysis = pmuLavStateEstimation(system, device, Ipopt.Optimizer)
 ```
 """
-function pmuLavStateEstimation(system::PowerSystem, device::Measurement,
-    (@nospecialize optimizerFactory); bridge::Bool = true, name::Bool = true)
-
+function pmuLavStateEstimation(
+    system::PowerSystem,
+    device::Measurement,
+    @nospecialize optimizerFactory;
+    bridge::Bool = false,
+    name::Bool = false
+)
     bus = system.bus
     branch = system.branch
     ac = system.model.ac
     pmu = device.pmu
-    measureNumber = 2 * pmu.number
+    total = 2 * pmu.number
 
     if isempty(ac.nodalMatrix)
         acModel!(system)
@@ -303,75 +260,51 @@ function pmuLavStateEstimation(system::PowerSystem, device::Measurement,
     jump = JuMP.Model(optimizerFactory; add_bridges = bridge)
     set_string_names_on_creation(jump, name)
 
-    statex = @variable(jump, 0 <= statex[i = 1:2 * bus.number])
-    statey = @variable(jump, 0 <= angley[i = 1:2 * bus.number])
-    residualx = @variable(jump, 0 <= residualx[i = 1:measureNumber])
-    residualy = @variable(jump, 0 <= residualy[i = 1:measureNumber])
+    method = LAV(
+        jump,
+        nothing,
+        @variable(jump, 0 <= statex[i = 1:2 * bus.number]),
+        @variable(jump, 0 <= statey[i = 1:2 * bus.number]),
+        @variable(jump, 0 <= residualx[i = 1:total]),
+        @variable(jump, 0 <= residualy[i = 1:total]),
+        Dict{Int64, ConstraintRef}(),
+        pmu.number
+    )
+    objective = @expression(method.jump, AffExpr())
 
-    objective = @expression(jump, AffExpr())
-    residual = Dict{Int64, ConstraintRef}()
-    count = 1
+    cnt = 1
     @inbounds for (i, k) in enumerate(pmu.layout.index)
         if pmu.magnitude.status[i] == 1 && pmu.angle.status[i] == 1
+            sinθ, cosθ = sincos(pmu.angle.mean[i])
+            reMean = pmu.magnitude.mean[i] * cosθ
+            imMean = pmu.magnitude.mean[i] * sinθ
+
             if pmu.layout.bus[i]
-                cosAngle = cos(pmu.angle.mean[i])
-                sinAngle = sin(pmu.angle.mean[i])
-
-                busIndex = pmu.layout.index[i]
-                add_to_expression!(objective, residualx[count] + residualy[count] + residualx[count + 1] + residualy[count + 1])
-                residual[count] = @constraint(jump, statex[busIndex] - statey[busIndex] + residualx[count] - residualy[count] - pmu.magnitude.mean[i] * cosAngle == 0.0)
-                residual[count + 1] = @constraint(jump, statex[busIndex + bus.number] - statey[busIndex + bus.number] + residualx[count + 1] - residualy[count + 1] - pmu.magnitude.mean[i] * sinAngle == 0.0)
+                reExpr, imExpr = ReImVi(method, pmu.layout.index[i], bus.number)
             else
-                add_to_expression!(objective, residualx[count] + residualy[count] + residualx[count + 1] + residualy[count + 1])
-
-                gij = real(ac.admittance[k])
-                bij = imag(ac.admittance[k])
-                bsi = 0.5 * branch.parameter.susceptance[k]
-                cosShift = cos(branch.parameter.shiftAngle[k])
-                sinShift = sin(branch.parameter.shiftAngle[k])
-                turnsRatioInv = 1 / branch.parameter.turnsRatio[k]
-
-                from = branch.layout.from[k]
-                to = branch.layout.to[k]
-
-                Vrei = statex[from] - statey[from]
-                Vimi = statex[from + bus.number] - statey[from + bus.number]
-                Vrej = statex[to] - statey[to]
-                Vimj = statex[to + bus.number] - statey[to + bus.number]
-
-                cosAngle = cos(pmu.angle.mean[i])
-                sinAngle = sin(pmu.angle.mean[i])
-
                 if pmu.layout.from[i]
-                    a1 = turnsRatioInv^2 * gij
-                    a2 = -turnsRatioInv^2 * (bij + bsi)
-                    a3 = -turnsRatioInv * (gij * cosShift - bij * sinShift)
-                    a4 = turnsRatioInv * (bij * cosShift + gij * sinShift)
-
-                    residual[count] = @constraint(jump, a1 * Vrei + a2 * Vimi + a3 * Vrej + a4 * Vimj + residualx[count] - residualy[count] - pmu.magnitude.mean[i] * cosAngle == 0.0)
-                    residual[count + 1] = @constraint(jump, -a2 * Vrei + a1 * Vimi - a4 * Vrej + a3 * Vimj + residualx[count + 1] - residualy[count + 1] - pmu.magnitude.mean[i] * sinAngle == 0.0)
+                    state = ReImIijCoefficient(branch, ac, k)
                 else
-                    a1 = -turnsRatioInv * (gij * cosShift + bij * sinShift)
-                    a2 = turnsRatioInv * (bij * cosShift - gij * sinShift)
-                    a3 = gij
-                    a4 = -bij - bsi
-
-                    residual[count] = @constraint(jump, a1 * Vrei + a2 * Vimi + a3 * Vrej + a4 * Vimj + residualx[count] - residualy[count] - pmu.magnitude.mean[i] * cosAngle == 0.0)
-                    residual[count + 1] = @constraint(jump, -a2 * Vrei + a1 * Vimi - a4 * Vrej + a3 * Vimj + residualx[count + 1] - residualy[count + 1] - pmu.magnitude.mean[i] * sinAngle == 0.0)
+                    state = ReImIjiCoefficient(branch, ac, k)
                 end
+                reExpr, imExpr = ReImIij(system, method, state, k)
             end
+
+            addConstrLav!(method, reExpr, reMean, cnt)
+            addObjectLav!(method, objective, cnt)
+
+            addConstrLav!(method, imExpr, imMean, cnt + 1)
+            addObjectLav!(method, objective, cnt + 1)
         else
-            fix(residualx[count], 0.0; force = true)
-            fix(residualy[count], 0.0; force = true)
-            fix(residualx[count + 1], 0.0; force = true)
-            fix(residualy[count + 1], 0.0; force = true)
+            fix!(method.residualx, method.residualy, cnt)
+            fix!(method.residualx, method.residualy, cnt + 1)
         end
-        count += 2
+        cnt += 2
     end
 
-    @objective(jump, Min, objective)
+    @objective(method.jump, Min, objective)
 
-    return PMUStateEstimation(
+    PMUStateEstimation(
         Polar(
             copy(bus.voltage.magnitude),
             copy(bus.voltage.angle)
@@ -392,15 +325,7 @@ function pmuLavStateEstimation(system::PowerSystem, device::Measurement,
             Polar(Float64[], Float64[]),
             Polar(Float64[], Float64[])
         ),
-        LAV(
-            jump,
-            statex,
-            statey,
-            residualx,
-            residualy,
-            residual,
-            pmu.number
-        )
+        method
     )
 end
 
@@ -420,7 +345,7 @@ Solving the PMU state estimation model and obtaining the WLS estimator:
 system = powerSystem("case14.h5")
 device = measurement("measurement14.h5")
 
-analysis = pmuWlsStateEstimation(system, device)
+analysis = pmuStateEstimation(system, device)
 solve!(system, analysis)
 ```
 
@@ -463,7 +388,6 @@ function solve!(system::PowerSystem, analysis::PMUStateEstimation{LinearWLS{Norm
     end
 end
 
-########### PMU State Estimation WLS Solution by QR Factorization ###########
 function solve!(system::PowerSystem, analysis::PMUStateEstimation{LinearWLS{Orthogonal}})
     se = analysis.method
     bus = system.bus
@@ -474,7 +398,9 @@ function solve!(system::PowerSystem, analysis::PMUStateEstimation{LinearWLS{Orth
 
     coefficientScale = se.precision * se.coefficient
     se.factorization = factorization(coefficientScale, se.factorization)
-    voltageRectangular = solution(fill(0.0, 2 * bus.number), se.precision * se.mean, se.factorization)
+    voltageInit = fill(0.0, 2 * bus.number)
+
+    ReImVi = solution(voltageInit, se.precision * se.mean, se.factorization)
 
     if isempty(analysis.voltage.magnitude)
         analysis.voltage.magnitude = fill(0.0, bus.number)
@@ -482,7 +408,7 @@ function solve!(system::PowerSystem, analysis::PMUStateEstimation{LinearWLS{Orth
     end
 
     @inbounds for i = 1:bus.number
-        voltage = complex(voltageRectangular[i], voltageRectangular[i + bus.number])
+        voltage = complex(ReImVi[i], ReImVi[i + bus.number])
         analysis.voltage.magnitude[i] = abs(voltage)
         analysis.voltage.angle[i] = angle(voltage)
     end
@@ -497,8 +423,14 @@ function solve!(system::PowerSystem, analysis::PMUStateEstimation{LAV})
     bus = system.bus
 
     @inbounds for i = 1:system.bus.number
-        set_start_value(se.statex[i]::VariableRef, analysis.voltage.magnitude[i] * cos(analysis.voltage.angle[i]))
-        set_start_value(se.statex[i + bus.number]::VariableRef, analysis.voltage.magnitude[i] * sin(analysis.voltage.angle[i]))
+        set_start_value(
+            se.statex[i]::VariableRef,
+            analysis.voltage.magnitude[i] * cos(analysis.voltage.angle[i])
+        )
+        set_start_value(
+            se.statex[i + bus.number]::VariableRef,
+            analysis.voltage.magnitude[i] * sin(analysis.voltage.angle[i])
+        )
     end
 
     optimize!(se.jump)
@@ -509,9 +441,11 @@ function solve!(system::PowerSystem, analysis::PMUStateEstimation{LAV})
     end
 
     @inbounds for i = 1:bus.number
-        voltageReal = value(se.statex[i]::VariableRef) - value(se.statey[i]::VariableRef)
-        voltageImag = value(se.statex[i + bus.number]::VariableRef) - value(se.statey[i + bus.number]::VariableRef)
-        voltage = complex(voltageReal, voltageImag)
+        j = i + bus.number
+        ReVi = value(se.statex[i]::VariableRef) - value(se.statey[i]::VariableRef)
+        ImVi = value(se.statex[j]::VariableRef) - value(se.statey[j]::VariableRef)
+
+        voltage = complex(ReVi, ImVi)
         analysis.voltage.magnitude[i] = abs(voltage)
         analysis.voltage.angle[i] = angle(voltage)
     end
@@ -578,7 +512,12 @@ for branch in keys(placement.to)
 end
 ```
 """
-function pmuPlacement(system::PowerSystem, (@nospecialize optimizerFactory); bridge::Bool = true)
+function pmuPlacement(
+    system::PowerSystem,
+    (@nospecialize optimizerFactory);
+    bridge::Bool = false,
+    name::Bool = false
+)
     bus = system.bus
     branch = system.branch
     ac = system.model.ac
@@ -593,7 +532,8 @@ function pmuPlacement(system::PowerSystem, (@nospecialize optimizerFactory); bri
     dropZeros!(ac)
 
     jump = JuMP.Model(optimizerFactory; add_bridges = bridge)
-    set_string_names_on_creation(jump, false)
+    set_string_names_on_creation(jump, name)
+
     placement = @variable(jump, 0 <= placement[i = 1:bus.number] <= 1, Int)
 
     @inbounds for i = 1:bus.number
@@ -627,28 +567,13 @@ function pmuPlacement(system::PowerSystem, (@nospecialize optimizerFactory); bri
     return placementPmu
 end
 
-function invCovarianceBlock(rowPrec::Array{Int64,1}, colPrec::Array{Int64,1}, valPrec::Array{Float64,1}, cntPrec::Int64, varianceRe::Float64, varianceIm::Float64, covariance::Float64, rowindex::Int64)
-    L1inv = 1 / sqrt(varianceRe)
-    L2 = covariance * L1inv
-    L3inv2 = 1 / (varianceIm - L2^2)
+##### Indices of the Coefficient Matrix #####
+function pmuIndices(cff::SparseModel, co1::Int64, col2::Int64)
+    cff.row[cff.cnt] = cff.idx
+    cff.col[cff.cnt] = co1
 
-    rowPrec[cntPrec] = rowindex
-    colPrec[cntPrec] = rowindex + 1
-    valPrec[cntPrec] = (- L2 * L1inv) * L3inv2
+    cff.row[cff.cnt + 1] = cff.idx + 1
+    cff.col[cff.cnt + 1] = col2
 
-    rowPrec[cntPrec + 1] = rowindex + 1
-    colPrec[cntPrec + 1] = rowindex
-    valPrec[cntPrec + 1] = valPrec[cntPrec]
-
-    rowPrec[cntPrec + 2] = rowindex
-    colPrec[cntPrec + 2] = rowindex
-    valPrec[cntPrec + 2] = (L1inv - L2 * valPrec[cntPrec]) * L1inv
-
-    rowPrec[cntPrec + 3] = rowindex + 1
-    colPrec[cntPrec + 3] = rowindex + 1
-    valPrec[cntPrec + 3] = L3inv2
-
-    cntPrec += 4
-
-    return rowPrec, colPrec, valPrec, cntPrec
+    cff.cnt += 2
 end

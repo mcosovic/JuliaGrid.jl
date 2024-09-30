@@ -46,7 +46,7 @@ function dcPowerFlow(system::PowerSystem, factorization::Type{<:Union{QR, LDLt, 
     model!(system, system.model.dc)
     changeSlackBus!(system)
 
-    return DCPowerFlow(
+    DCPowerFlow(
         PolarAngle(
             Float64[]
         ),
@@ -84,43 +84,46 @@ solve!(system, analysis)
 """
 function solve!(system::PowerSystem, analysis::DCPowerFlow)
     bus = system.bus
+    slack = bus.layout.slack
     dc = system.model.dc
+    nodal = dc.nodalMatrix
+    pf = analysis.method
 
     b = copy(bus.supply.active)
     @inbounds for i = 1:bus.number
-        b[i] -= bus.demand.active[i] + bus.shunt.conductance[i] + system.model.dc.shiftPower[i]
+        b[i] -= bus.demand.active[i] + bus.shunt.conductance[i] + dc.shiftPower[i]
     end
 
-    if system.model.dc.model != analysis.method.dcmodel
-        analysis.method.dcmodel = copy(system.model.dc.model)
+    if dc.model != pf.dcmodel
+        pf.dcmodel = copy(dc.model)
 
-        slackRange = dc.nodalMatrix.colptr[bus.layout.slack]:(dc.nodalMatrix.colptr[bus.layout.slack + 1] - 1)
-        elementsRemove = dc.nodalMatrix.nzval[slackRange]
+        slackRange = nodal.colptr[slack]:(nodal.colptr[slack + 1] - 1)
+        elementsRemove = nodal.nzval[slackRange]
         @inbounds for i in slackRange
-            dc.nodalMatrix[dc.nodalMatrix.rowval[i], bus.layout.slack] = 0.0
-            dc.nodalMatrix[bus.layout.slack, dc.nodalMatrix.rowval[i]] = 0.0
+            nodal[nodal.rowval[i], slack] = 0.0
+            nodal[slack, nodal.rowval[i]] = 0.0
         end
-        dc.nodalMatrix[bus.layout.slack, bus.layout.slack] = 1.0
+        nodal[slack, slack] = 1.0
 
-        if dc.pattern != analysis.method.pattern
-            analysis.method.pattern = copy(system.model.dc.pattern)
-            analysis.method.factorization = factorization(dc.nodalMatrix, analysis.method.factorization)
+        if dc.pattern != pf.pattern
+            pf.pattern = copy(dc.pattern)
+            pf.factorization = factorization(nodal, pf.factorization)
         else
-            analysis.method.factorization = factorization!(dc.nodalMatrix, analysis.method.factorization)
+            pf.factorization = factorization!(nodal, pf.factorization)
         end
 
         @inbounds for (k, i) in enumerate(slackRange)
-            dc.nodalMatrix[dc.nodalMatrix.rowval[i], bus.layout.slack] = elementsRemove[k]
-            dc.nodalMatrix[bus.layout.slack, dc.nodalMatrix.rowval[i]] = elementsRemove[k]
+            nodal[nodal.rowval[i], slack] = elementsRemove[k]
+            nodal[slack, nodal.rowval[i]] = elementsRemove[k]
         end
     end
 
-    analysis.voltage.angle = solution(analysis.voltage.angle, b, analysis.method.factorization)
+    analysis.voltage.angle = solution(analysis.voltage.angle, b, pf.factorization)
 
-    analysis.voltage.angle[bus.layout.slack] = 0.0
-    if bus.voltage.angle[bus.layout.slack] != 0.0
+    analysis.voltage.angle[slack] = 0.0
+    if bus.voltage.angle[slack] != 0.0
         @inbounds for i = 1:bus.number
-            analysis.voltage.angle[i] += bus.voltage.angle[bus.layout.slack]
+            analysis.voltage.angle[i] += bus.voltage.angle[slack]
         end
     end
 end

@@ -41,7 +41,7 @@ function measurement(inputFile::String)
     end
 
     if extension == ".m"
-        throw(DomainError(extension, "The extension $extension is not supported."))
+        throw(DomainError(extension, "The extension .m is not supported."))
     end
 
     return device
@@ -60,52 +60,48 @@ device = measurement()
 ```
 """
 function measurement()
-    af = Array{Float64,1}(undef, 0)
-    ai = Array{Int64,1}(undef, 0)
-    ai8 = Array{Int8,1}(undef, 0)
-    ab = Array{Bool,1}(undef, 0)
-
-    return Measurement(
+    Measurement(
         Voltmeter(
             OrderedDict{String, Int64}(),
-            GaussMeter(copy(af), copy(af), copy(ai8)),
-            VoltmeterLayout(copy(ai), 0),
+            GaussMeter(Float64[], Float64[], Int8[]),
+            VoltmeterLayout(Int64[], 0),
             0
         ),
         Ammeter(
             OrderedDict{String, Int64}(),
-            GaussMeter(copy(af), copy(af), copy(ai8)),
-            AmmeterLayout(copy(ai), copy(ai), copy(ab), 0),
+            GaussMeter(Float64[], Float64[], Int8[]),
+            AmmeterLayout(Int64[], Int64[], Bool[], 0),
             0
         ),
         Wattmeter(
             OrderedDict{String, Int64}(),
-            GaussMeter(copy(af), copy(af), copy(ai8)),
-            PowermeterLayout(copy(ai), copy(ab), copy(ab), copy(ab), 0),
+            GaussMeter(Float64[], Float64[], Int8[]),
+            PowermeterLayout(Int64[], Bool[], Bool[], Bool[], 0),
             0
         ),
         Varmeter(
             OrderedDict{String, Int64}(),
-            GaussMeter(copy(af), copy(af), copy(ai8)),
-            PowermeterLayout(copy(ai), copy(ab), copy(ab), copy(ab), 0),
+            GaussMeter(Float64[], Float64[], Int8[]),
+            PowermeterLayout(Int64[], Bool[], Bool[], Bool[], 0),
             0
         ),
         PMU(
             OrderedDict{String, Int64}(),
-            GaussMeter(copy(af), copy(af), copy(ai8)),
-            GaussMeter(copy(af), copy(af), copy(ai8)),
-            PmuLayout(copy(ai), copy(ab), copy(ab), copy(ab), copy(ab), copy(ab), 0),
+            GaussMeter(Float64[], Float64[], Int8[]),
+            GaussMeter(Float64[], Float64[], Int8[]),
+            PmuLayout(Int64[], Bool[], Bool[], Bool[], Bool[], Bool[], 0),
             0
         )
     )
 end
 
-######## Load Label ##########
+##### Load Label #####
 function loadLabel(device::M, hdf5::File; meter::String = "")
-    label::Array{String,1} = read(hdf5[string(meter, "/label")])
+    label::Vector{String} = read(hdf5[string(meter, "/label")])
     device.number = length(label)
 
-    device.label = OrderedDict{String,Int64}(); sizehint!(device.label, device.number)
+    device.label = OrderedDict{String,Int64}()
+    sizehint!(device.label, device.number)
     @inbounds for i = 1:device.number
         device.label[label[i]] = i
     end
@@ -113,14 +109,14 @@ function loadLabel(device::M, hdf5::File; meter::String = "")
     device.layout.label = read(hdf5[string(meter, "/layout/label")])
 end
 
-######## Load Mean, Variance, and Status ##########
+##### Load Mean, Variance, and Status #####
 function loadMeter(meter::GaussMeter, hdf5::Group, number::Int64)
     meter.mean = readHDF5(hdf5, "mean", number)
     meter.variance = readHDF5(hdf5, "variance", number)
     meter.status = readHDF5(hdf5, "status", number)
 end
 
-######## Load Voltmeter ##########
+##### Load Voltmeter #####
 function loadVoltmeter(device::Measurement, hdf5::File)
     if haskey(hdf5, "voltmeter")
         voltmeter = device.voltmeter
@@ -132,7 +128,7 @@ function loadVoltmeter(device::Measurement, hdf5::File)
     end
 end
 
-######## Load Ammeter ##########
+##### Load Ammeter #####
 function loadAmmeter(device::Measurement, hdf5::File)
     if haskey(hdf5, "ammeter")
         ammeter = device.ammeter
@@ -146,7 +142,7 @@ function loadAmmeter(device::Measurement, hdf5::File)
     end
 end
 
-######## Load Wattmeter ##########
+##### Load Wattmeter #####
 function loadWattmeter(device::Measurement, hdf5::File)
     if haskey(hdf5, "wattmeter")
         wattmeter = device.wattmeter
@@ -161,7 +157,7 @@ function loadWattmeter(device::Measurement, hdf5::File)
     end
 end
 
-######## Load Varmeter ##########
+##### Load Varmeter #####
 function loadVarmeter(device::Measurement, hdf5::File)
     if haskey(hdf5, "varmeter")
         varmeter = device.varmeter
@@ -176,7 +172,7 @@ function loadVarmeter(device::Measurement, hdf5::File)
     end
 end
 
-######## Load PMU ##########
+##### Load PMU #####
 function loadPmu(device::Measurement, hdf5::File)
     if haskey(hdf5, "pmu")
         pmu = device.pmu

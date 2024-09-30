@@ -6,14 +6,14 @@ export DCStateEstimation, LinearWLS
 export PMUStateEstimation
 export Island, PlacementPMU
 
-########### Abstract Types ###########
+##### Abstract Types #####
 abstract type AC end
 abstract type DC end
 
 abstract type Orthogonal end
 abstract type Normal end
 
-########### Powers in the AC Framework ###########
+##### Powers in the AC Framework #####
 mutable struct ACPower
     injection::Cartesian
     supply::Cartesian
@@ -25,7 +25,7 @@ mutable struct ACPower
     generator::Cartesian
 end
 
-########### Currents in the AC Framework ###########
+##### Currents in the AC Framework #####
 mutable struct ACCurrent
     injection::Polar
     from::Polar
@@ -33,7 +33,7 @@ mutable struct ACCurrent
     series::Polar
 end
 
-########### Powers in the DC Framework ###########
+##### Powers in the DC Framework #####
 mutable struct DCPower
     injection::CartesianReal
     supply::CartesianReal
@@ -42,43 +42,43 @@ mutable struct DCPower
     generator::CartesianReal
 end
 
-########### Newton-Raphson ###########
+##### Newton-Raphson #####
 mutable struct NewtonRaphson
-    jacobian::SparseMatrixCSC{Float64,Int64}
-    mismatch::Array{Float64,1}
-    increment::Array{Float64,1}
+    jacobian::SparseMatrixCSC{Float64, Int64}
+    mismatch::Vector{Float64}
+    increment::Vector{Float64}
     factorization::Factorization{Float64}
-    pq::Array{Int64,1}
-    pvpq::Array{Int64,1}
+    pq::Vector{Int64}
+    pvpq::Vector{Int64}
     pattern::Int64
 end
 
-########### Fast Newton-Raphson ###########
+##### Fast Newton-Raphson #####
 mutable struct FastNewtonRaphsonModel
-    jacobian::SparseMatrixCSC{Float64,Int64}
-    mismatch::Array{Float64,1}
-    increment::Array{Float64,1}
+    jacobian::SparseMatrixCSC{Float64, Int64}
+    mismatch::Vector{Float64}
+    increment::Vector{Float64}
     factorization::Factorization{Float64}
 end
 
 mutable struct FastNewtonRaphson
     active::FastNewtonRaphsonModel
     reactive::FastNewtonRaphsonModel
-    pq::Array{Int64,1}
-    pvpq::Array{Int64,1}
+    pq::Vector{Int64}
+    pvpq::Vector{Int64}
     acmodel::Int64
     pattern::Int64
     const bx::Bool
 end
 
-########### Gauss-Seidel ###########
+##### Gauss-Seidel #####
 struct GaussSeidel
-    voltage::Array{ComplexF64,1}
-    pq::Array{Int64,1}
-    pv::Array{Int64,1}
+    voltage::Vector{ComplexF64}
+    pq::Vector{Int64}
+    pv::Vector{Int64}
 end
 
-########### AC Power Flow ###########
+##### AC Power Flow #####
 struct ACPowerFlow{T <: Union{NewtonRaphson, FastNewtonRaphson, GaussSeidel}} <: AC
     voltage::Polar
     power::ACPower
@@ -86,7 +86,7 @@ struct ACPowerFlow{T <: Union{NewtonRaphson, FastNewtonRaphson, GaussSeidel}} <:
     method::T
 end
 
-########### DC Power Flow ###########
+##### DC Power Flow #####
 mutable struct DCPowerFlowMethod
     factorization::Factorization{Float64}
     dcmodel::Int64
@@ -99,7 +99,7 @@ struct DCPowerFlow <: DC
     method::DCPowerFlowMethod
 end
 
-######### Constraints ##########
+##### Constraints #####
 mutable struct CartesianFlowRef
     from::Dict{Int64, ConstraintRef}
     to::Dict{Int64, ConstraintRef}
@@ -111,13 +111,13 @@ mutable struct CartesianFlowDual
 end
 
 struct ACPiecewise
-    active::Dict{Int64, Array{ConstraintRef,1}}
-    reactive::Dict{Int64, Array{ConstraintRef,1}}
+    active::Dict{Int64, Vector{ConstraintRef}}
+    reactive::Dict{Int64, Vector{ConstraintRef}}
 end
 
 mutable struct ACPiecewiseDual
-    active::Dict{Int64, Array{Float64,1}}
-    reactive::Dict{Int64, Array{Float64,1}}
+    active::Dict{Int64, Vector{Float64}}
+    reactive::Dict{Int64, Vector{Float64}}
 end
 
 struct CapabilityRef
@@ -152,12 +152,12 @@ struct Dual
     piecewise::ACPiecewiseDual
 end
 
-######### AC Optimal Power Flow ##########
+##### AC Optimal Power Flow #####
 struct ACVariable
-    active::Array{VariableRef,1}
-    reactive::Array{VariableRef,1}
-    magnitude::Array{VariableRef,1}
-    angle::Array{VariableRef,1}
+    active::Vector{VariableRef}
+    reactive::Vector{VariableRef}
+    magnitude::Vector{VariableRef}
+    angle::Vector{VariableRef}
     actwise::Dict{Int64, VariableRef}
     reactwise::Dict{Int64, VariableRef}
 end
@@ -187,19 +187,19 @@ mutable struct ACOptimalPowerFlow <: AC
     method::ACOptimalPowerFlowMethod
 end
 
-######### DC Optimal Power Flow ##########
+##### DC Optimal Power Flow #####
 struct DCVariable
-    active::Array{VariableRef,1}
-    angle::Array{VariableRef,1}
+    active::Vector{VariableRef}
+    angle::Vector{VariableRef}
     actwise::Dict{Int64, VariableRef}
 end
 
 struct DCPiecewise
-    active::Dict{Int64, Array{ConstraintRef,1}}
+    active::Dict{Int64, Vector{ConstraintRef}}
 end
 
 mutable struct DCPiecewiseDual
-    active::Dict{Int64, Array{Float64,1}}
+    active::Dict{Int64, Vector{Float64}}
 end
 
 struct DCConstraint
@@ -234,7 +234,7 @@ mutable struct DCOptimalPowerFlow <: DC
     method::DCOptimalPowerFlowMethod
 end
 
-########### State Estimation ###########
+##### State Estimation #####
 mutable struct BadData
     detect::Bool
     maxNormalizedResidual::Float64
@@ -243,9 +243,9 @@ mutable struct BadData
 end
 
 mutable struct LinearWLS{T <: Union{Normal, Orthogonal}}
-    coefficient::SparseMatrixCSC{Float64,Int64}
-    precision::SparseMatrixCSC{Float64,Int64}
-    mean::Array{Float64,1}
+    coefficient::SparseMatrixCSC{Float64, Int64}
+    precision::SparseMatrixCSC{Float64, Int64}
+    mean::Vector{Float64}
     factorization::Factorization{Float64}
     number::Int64
     pattern::Int64
@@ -253,24 +253,34 @@ mutable struct LinearWLS{T <: Union{Normal, Orthogonal}}
 end
 
 mutable struct NonlinearWLS{T <: Union{Normal, Orthogonal}}
-    jacobian::SparseMatrixCSC{Float64,Int64}
-    precision::SparseMatrixCSC{Float64,Int64}
-    mean::Array{Float64,1}
-    residual::Array{Float64,1}
-    increment::Array{Float64,1}
+    jacobian::SparseMatrixCSC{Float64, Int64}
+    precision::SparseMatrixCSC{Float64, Int64}
+    mean::Vector{Float64}
+    residual::Vector{Float64}
+    increment::Vector{Float64}
     factorization::Factorization{Float64}
-    type::Array{Int8,1}
-    index::Array{Int64,1}
-    range::Array{Int64,1}
+    type::Vector{Int8}
+    index::Vector{Int64}
+    range::Vector{Int64}
     pattern::Int64
+end
+
+struct StateAC
+    V::Vector{AffExpr}
+    sinθij::Dict{Int64, NonlinearExpr}
+    cosθij::Dict{Int64, NonlinearExpr}
+    sinθ::Dict{Int64, NonlinearExpr}
+    cosθ::Dict{Int64, NonlinearExpr}
+    incidence::Dict{Tuple{Int64, Int64}, Int64}
 end
 
 mutable struct LAV
     jump::JuMP.Model
-    statex::Array{VariableRef,1}
-    statey::Array{VariableRef,1}
-    residualx::Array{VariableRef,1}
-    residualy::Array{VariableRef,1}
+    state::Union{StateAC, Nothing}
+    statex::Vector{VariableRef}
+    statey::Vector{VariableRef}
+    residualx::Vector{VariableRef}
+    residualy::Vector{VariableRef}
     residual::Dict{Int64, ConstraintRef}
     number::Int64
 end
@@ -282,19 +292,19 @@ mutable struct TieData
 end
 
 mutable struct Island
-    island::Array{Array{Int64,1},1}
-    bus::Array{Int64,1}
+    island::Vector{Vector{Int64}}
+    bus::Vector{Int64}
     tie::TieData
 end
 
-########### DC State Estimation ###########
+##### DC State Estimation #####
 struct DCStateEstimation{T <: Union{LinearWLS{Normal}, LinearWLS{Orthogonal}, LAV}} <: DC
     voltage::PolarAngle
     power::DCPower
     method::T
 end
 
-########### PMU State Estimation ###########
+##### PMU State Estimation #####
 struct PMUStateEstimation{T <: Union{LinearWLS{Normal}, LinearWLS{Orthogonal}, LAV}} <: AC
     voltage::Polar
     power::ACPower
@@ -303,12 +313,12 @@ struct PMUStateEstimation{T <: Union{LinearWLS{Normal}, LinearWLS{Orthogonal}, L
 end
 
 mutable struct PlacementPMU
-    bus::OrderedDict{String,Int64}
-    from::OrderedDict{String,Int64}
-    to::OrderedDict{String,Int64}
+    bus::OrderedDict{String, Int64}
+    from::OrderedDict{String, Int64}
+    to::OrderedDict{String, Int64}
 end
 
-########### AC State Estimation ###########
+##### AC State Estimation #####
 struct ACStateEstimation{T <: Union{NonlinearWLS{Normal}, NonlinearWLS{Orthogonal}, LAV}} <: AC
     voltage::Polar
     power::ACPower

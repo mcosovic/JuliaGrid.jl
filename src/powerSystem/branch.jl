@@ -77,73 +77,67 @@ addBus!(system; label = "Bus 2", type = 1, active = 0.15, reactive = 0.08)
 addBranch!(system; from = "Bus 1", to = "Bus 2", reactance = 0.12, shiftAngle = 10)
 ```
 """
-function addBranch!(system::PowerSystem;
-    label::L = missing, from::L, to::L, status::A = missing,
-    resistance::A = missing, reactance::A = missing, susceptance::A = missing,
-    conductance::A = missing, turnsRatio::A = missing, shiftAngle::A = missing,
-    minDiffAngle::A = missing, maxDiffAngle::A = missing, minFromBus::A = missing,
-    maxFromBus::A = missing, minToBus::A = missing, maxToBus::A = missing, type::A = missing)
-
+function addBranch!(
+    system::PowerSystem;
+    label::IntStrMiss = missing,
+    from::IntStrMiss,
+    to::IntStrMiss,
+    kwargs...
+)
     branch = system.branch
-    default = template.branch
+    param = branch.parameter
+    def = template.branch
+    baseVoltg = system.base.voltage
+    key = branchkwargs(; kwargs...)
 
     branch.number += 1
-    setLabel(branch, label, default.label, "branch")
+    setLabel(branch, label, def.label, "branch")
 
     if from == to
-        throw(ErrorException("The provided value for the from or to keywords is not valid."))
+        throw(ErrorException("Invalid value for from or to keywords."))
     end
 
     push!(branch.layout.from, system.bus.label[getLabel(system.bus, from, "bus")])
     push!(branch.layout.to, system.bus.label[getLabel(system.bus, to, "bus")])
 
-    push!(branch.layout.status, unitless(status, default.status))
+    add!(branch.layout.status, key.status, def.status)
     checkStatus(branch.layout.status[end])
     if branch.layout.status[end] == 1
         branch.layout.inservice += 1
     end
 
-    push!(branch.parameter.turnsRatio, unitless(turnsRatio, default.turnsRatio))
+    add!(param.turnsRatio, key.turnsRatio, def.turnsRatio)
 
     basePowerInv = 1 / (system.base.power.value * system.base.power.prefix)
-    baseVoltage = system.base.voltage.value[branch.layout.from[end]] * system.base.voltage.prefix
-    baseAdmittanceInv = baseImpedance(baseVoltage, basePowerInv, branch.parameter.turnsRatio[end])
-    baseImpedanceInv = 1 / baseAdmittanceInv
+    baseVoltage = baseVoltg.value[branch.layout.from[end]] * baseVoltg.prefix
+    baseAdmInv = baseImpedance(baseVoltage, basePowerInv, param.turnsRatio[end])
+    baseImpInv = 1 / baseAdmInv
 
-    push!(branch.parameter.resistance, topu(resistance, default.resistance, prefix.impedance, baseImpedanceInv))
-    push!(branch.parameter.reactance, topu(reactance, default.reactance, prefix.impedance, baseImpedanceInv))
-    if branch.parameter.resistance[end] == 0.0 && branch.parameter.reactance[end] == 0.0
-        throw(ErrorException("At least one of the keywords resistance or reactance must be provided."))
+    add!(param.resistance, key.resistance, def.resistance, pfx.impedance, baseImpInv)
+    add!(param.reactance, key.reactance, def.reactance, pfx.impedance, baseImpInv)
+
+    if param.resistance[end] == 0.0 && param.reactance[end] == 0.0
+        throw(ErrorException("At least one of resistance or reactance is required."))
     end
 
-    push!(branch.parameter.conductance, topu(conductance, default.conductance, prefix.admittance, baseAdmittanceInv))
-    push!(branch.parameter.susceptance, topu(susceptance, default.susceptance, prefix.admittance, baseAdmittanceInv))
-    push!(branch.parameter.shiftAngle, topu(shiftAngle, default.shiftAngle, prefix.voltageAngle, 1.0))
+    add!(param.conductance, key.conductance, def.conductance, pfx.admittance, baseAdmInv)
+    add!(param.susceptance, key.susceptance, def.susceptance, pfx.admittance, baseAdmInv)
+    add!(param.shiftAngle, key.shiftAngle, def.shiftAngle, pfx.voltageAngle, 1.0)
 
-    push!(branch.voltage.minDiffAngle, topu(minDiffAngle, default.minDiffAngle, prefix.voltageAngle, 1.0))
-    push!(branch.voltage.maxDiffAngle, topu(maxDiffAngle, default.maxDiffAngle, prefix.voltageAngle, 1.0))
+    add!(branch.voltage.minDiffAngle, key.minDiffAngle, def.minDiffAngle, pfx.voltageAngle, 1.0)
+    add!(branch.voltage.maxDiffAngle, key.maxDiffAngle, def.maxDiffAngle, pfx.voltageAngle, 1.0)
 
-    push!(branch.flow.type, unitless(type, default.type))
-    if branch.flow.type[end] == 1
-        prefixLive = prefix.apparentPower
-        baseInvFrom = basePowerInv
-        baseInvTo = basePowerInv
-    elseif branch.flow.type[end] == 2
-        prefixLive = prefix.activePower
-        baseInvFrom = basePowerInv
-        baseInvTo = basePowerInv
-    elseif branch.flow.type[end] == 3
-        prefixLive = prefix.currentMagnitude
-        baseInvFrom = baseCurrentInverse(basePowerInv, system.base.voltage.value[branch.layout.from[end]] * system.base.voltage.prefix)
-        baseInvTo = baseCurrentInverse(basePowerInv, system.base.voltage.value[branch.layout.to[end]] * system.base.voltage.prefix)
-    end
-    push!(branch.flow.minFromBus, topu(minFromBus, default.minFromBus, prefixLive, baseInvFrom))
-    push!(branch.flow.maxFromBus, topu(maxFromBus, default.maxFromBus, prefixLive, baseInvFrom))
-    push!(branch.flow.minToBus, topu(minToBus, default.minToBus, prefixLive, baseInvTo))
-    push!(branch.flow.maxToBus, topu(maxToBus, default.maxToBus, prefixLive, baseInvTo))
+    add!(branch.flow.type, key.type, def.type)
+
+    pfxLive, baseInvFrom, baseInvTo = flowType(system, pfx, basePowerInv, branch.number)
+    add!(branch.flow.minFromBus, key.minFromBus, def.minFromBus, pfxLive, baseInvFrom)
+    add!(branch.flow.maxFromBus, key.maxFromBus, def.maxFromBus, pfxLive, baseInvFrom)
+    add!(branch.flow.minToBus, key.minToBus, def.minToBus, pfxLive, baseInvTo)
+    add!(branch.flow.maxToBus, key.maxToBus, def.maxToBus, pfxLive, baseInvTo)
 
     if !isempty(system.model.ac.nodalMatrix)
         acPushZeros!(system.model.ac)
+
         if branch.layout.status[branch.number] == 1
             acParameterUpdate!(system, branch.number)
             acNodalUpdate!(system, branch.number)
@@ -152,6 +146,7 @@ function addBranch!(system::PowerSystem;
     if !isempty(system.model.dc.nodalMatrix)
         push!(system.model.dc.admittance, 0.0)
         dcAdmittanceUpdate!(system, branch.layout.status[branch.number], branch.number)
+
         if system.model.dc.admittance[branch.number] != 0
             dcShiftUpdate!(system, branch.number)
             dcNodalUpdate!(system, branch.number)
@@ -159,92 +154,46 @@ function addBranch!(system::PowerSystem;
     end
 end
 
-function addBranch!(system::PowerSystem, analysis::DCPowerFlow;
-    label::L = missing, from::L, to::L, status::A = missing,
-    resistance::A = missing, reactance::A = missing, susceptance::A = missing,
-    conductance::A = missing, turnsRatio::A = missing, shiftAngle::A = missing,
-    minDiffAngle::A = missing, maxDiffAngle::A = missing, minFromBus::A = missing,
-    maxFromBus::A = missing, minToBus::A = missing, maxToBus::A = missing, type::A = missing)
-
-    addBranch!(system; label, from, to, status, resistance, reactance, susceptance,
-    conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, minFromBus, maxFromBus,
-    minToBus, maxToBus, type)
+function addBranch!(
+    system::PowerSystem,
+    analysis::Union{ACPowerFlow{NewtonRaphson}, ACPowerFlow{GaussSeidel}, DCPowerFlow};
+    label::IntStrMiss = missing,
+    from::IntStrMiss,
+    to::IntStrMiss,
+    kwargs...
+)
+    addBranch!(system; label, from, to, kwargs...)
 end
 
-function addBranch!(system::PowerSystem, analysis::Union{ACPowerFlow{NewtonRaphson}, ACPowerFlow{GaussSeidel}};
-    label::L = missing, from::L, to::L, status::A = missing,
-    resistance::A = missing, reactance::A = missing, susceptance::A = missing,
-    conductance::A = missing, turnsRatio::A = missing, shiftAngle::A = missing,
-    minDiffAngle::A = missing, maxDiffAngle::A = missing, minFromBus::A = missing,
-    maxFromBus::A = missing, minToBus::A = missing, maxToBus::A = missing, type::A = missing)
+function addBranch!(
+    system::PowerSystem,
+    analysis::ACPowerFlow{FastNewtonRaphson};
+    label::IntStrMiss = missing,
+    from::IntStrMiss,
+    to::IntStrMiss,
+    kwargs...
+)
+    addBranch!(system; label, from, to, kwargs...)
 
-    addBranch!(system; label, from, to, status, resistance, reactance, susceptance,
-    conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, minFromBus, maxFromBus,
-    minToBus, maxToBus, type)
-end
-
-function addBranch!(system::PowerSystem, analysis::ACPowerFlow{FastNewtonRaphson};
-    label::L = missing, from::L, to::L, status::A = missing,
-    resistance::A = missing, reactance::A = missing, susceptance::A = missing,
-    conductance::A = missing, turnsRatio::A = missing, shiftAngle::A = missing,
-    minDiffAngle::A = missing, maxDiffAngle::A = missing, minFromBus::A = missing,
-    maxFromBus::A = missing, minToBus::A = missing, maxToBus::A = missing, type::A = missing)
-
-    branch = system.branch
-
-    addBranch!(system; label, from, to, status, resistance, reactance, susceptance,
-    conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, minFromBus, maxFromBus,
-    minToBus, maxToBus, type)
-
-    if branch.layout.status[branch.number] == 1
-        fastNewtonRaphsonJacobian(system, analysis, branch.number, 1)
+    if system.branch.layout.status[system.branch.number] == 1
+        fastNewtonRaphsonJacobian(system, analysis, system.branch.number, 1)
     end
 end
 
-function addBranch!(system::PowerSystem, analysis::DCOptimalPowerFlow;
-    label::L = missing, from::L, to::L, status::A = missing,
-    resistance::A = missing, reactance::A = missing, susceptance::A = missing,
-    conductance::A = missing, turnsRatio::A = missing, shiftAngle::A = missing,
-    minDiffAngle::A = missing, maxDiffAngle::A = missing, minFromBus::A = missing,
-    maxFromBus::A = missing, minToBus::A = missing, maxToBus::A = missing, type::A = missing)
-
+function addBranch!(
+    system::PowerSystem,
+    analysis::ACOptimalPowerFlow;
+    label::IntStrMiss = missing,
+    from::IntStrMiss,
+    to::IntStrMiss,
+    kwargs...
+)
     branch = system.branch
     jump = analysis.method.jump
-    constraint = analysis.method.constraint
+    constr = analysis.method.constraint
     variable = analysis.method.variable
 
-    addBranch!(system; label, from, to, status, resistance, reactance, susceptance,
-    conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, minFromBus, maxFromBus,
-    minToBus, maxToBus, type)
-
-    if branch.layout.status[end] == 1
-        from = branch.layout.from[end]
-        to = branch.layout.to[end]
-
-        rhs = isset(shiftAngle)
-        updateBalance(system, analysis, from; voltage = true, rhs = rhs)
-        updateBalance(system, analysis, to; voltage = true, rhs = rhs)
-
-        addFlow(system, jump, variable.angle, constraint.flow.active, branch.number)
-        addAngle(system, jump, variable.angle, constraint.voltage.angle, branch.number)
-    end
-end
-
-function addBranch!(system::PowerSystem, analysis::ACOptimalPowerFlow;
-    label::L = missing, from::L, to::L, status::A = missing,
-    resistance::A = missing, reactance::A = missing, susceptance::A = missing,
-    conductance::A = missing, turnsRatio::A = missing, shiftAngle::A = missing,
-    minDiffAngle::A = missing, maxDiffAngle::A = missing, minFromBus::A = missing,
-    maxFromBus::A = missing, minToBus::A = missing, maxToBus::A = missing, type::A = missing)
-
-    branch = system.branch
-    jump = analysis.method.jump
-    constraint = analysis.method.constraint
-    variable = analysis.method.variable
-
-    addBranch!(system; label, from, to, status, resistance, reactance, susceptance,
-    conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, minFromBus, maxFromBus,
-    minToBus, maxToBus, type)
+    addBranch!(system; label, from, to, kwargs...)
 
     if branch.layout.status[end] == 1
         from = branch.layout.from[end]
@@ -253,8 +202,40 @@ function addBranch!(system::PowerSystem, analysis::ACOptimalPowerFlow;
         updateBalance(system, analysis, from; active = true, reactive = true)
         updateBalance(system, analysis, to; active = true, reactive = true)
 
-        addFlow(system, jump, variable.magnitude, variable.angle, constraint.flow.from, constraint.flow.to, branch.number)
-        addAngle(system, jump, variable.angle, constraint.voltage.angle, branch.number)
+        addFlow(
+            system, jump, variable.magnitude, variable.angle,
+            constr.flow.from, constr.flow.to, branch.number
+        )
+        addAngle(system, jump, variable.angle, constr.voltage.angle, branch.number)
+    end
+end
+
+function addBranch!(
+    system::PowerSystem,
+    analysis::DCOptimalPowerFlow;
+    label::IntStrMiss = missing,
+    from::IntStrMiss,
+    to::IntStrMiss,
+    kwargs...
+)
+    branch = system.branch
+    jump = analysis.method.jump
+    constr = analysis.method.constraint
+    variable = analysis.method.variable
+    key = branchkwargs(; kwargs...)
+
+    addBranch!(system; label, from, to, kwargs...)
+
+    if branch.layout.status[end] == 1
+        from = branch.layout.from[end]
+        to = branch.layout.to[end]
+
+        rhs = isset(key.shiftAngle)
+        updateBalance(system, analysis, from; voltage = true, rhs = rhs)
+        updateBalance(system, analysis, to; voltage = true, rhs = rhs)
+
+        addFlow(system, jump, variable.angle, constr.flow.active, branch.number)
+        addAngle(system, jump, variable.angle, constr.voltage.angle, branch.number)
     end
 end
 
@@ -297,281 +278,227 @@ addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance =
 updateBranch!(system; label = "Branch 1", reactance = 0.02, susceptance = 0.062)
 ```
 """
-function updateBranch!(system::PowerSystem;
-    label::L, status::A = missing, resistance::A = missing, reactance::A = missing,
-    susceptance::A = missing, conductance::A = missing, turnsRatio::A = missing,
-    shiftAngle::A = missing, minDiffAngle::A = missing, maxDiffAngle::A = missing,
-    minFromBus::A = missing, maxFromBus::A = missing, minToBus::A = missing,
-    maxToBus::A = missing, type::A = missing)
-
+function updateBranch!(system::PowerSystem; label::IntStrMiss, kwargs...)
     branch = system.branch
+    param = branch.parameter
     ac = system.model.ac
     dc = system.model.dc
+    baseVoltg = system.base.voltage
+    key = branchkwargs(; kwargs...)
 
-    index = branch.label[getLabel(branch, label, "branch")]
+    idx = branch.label[getLabel(branch, label, "branch")]
 
-    if ismissing(status)
-        status = branch.layout.status[index]
+    statusNew = key.status
+    statusOld = branch.layout.status[idx]
+
+    if ismissing(statusNew)
+        statusNew = copy(statusOld)
     end
-    checkStatus(status)
+    checkStatus(statusNew)
 
-    basePowerInv = 1 / (system.base.power.value * system.base.power.prefix)
-    dcAdmittance = isset(reactance) || isset(turnsRatio)
-    parameter = dcAdmittance || isset(resistance) || isset(conductance) || isset(susceptance) || isset(shiftAngle)
+    dcadm = isset(key.reactance, key.turnsRatio)
+    pimodel = isset(dcadm, key.resistance, key.conductance, key.susceptance, key.shiftAngle)
 
-    if status == 1 && branch.layout.status[index] == 0
+    if statusNew == 1 && statusOld == 0
         branch.layout.inservice += 1
-    elseif status == 0 && branch.layout.status[index] == 1
+    elseif statusNew == 0 && statusOld == 1
         branch.layout.inservice -= 1
     end
 
     if !isempty(ac.nodalMatrix)
-        if branch.layout.status[index] == 1 && (status == 0 || (status == 1 && parameter))
-            acSubtractAdmittances!(ac, index)
-            acNodalUpdate!(system, index)
-            acSetZeros!(ac, index)
+        if statusOld == 1 && (statusNew == 0 || (statusNew == 1 && pimodel))
+            acSubtractAdmittances!(ac, idx)
+            acNodalUpdate!(system, idx)
+            acSetZeros!(ac, idx)
         end
     end
 
     if !isempty(dc.nodalMatrix)
-        if branch.layout.status[index] == 1 && (status == 0 || (status == 1 && dcAdmittance || isset(shiftAngle)))
-            dc.admittance[index] = -dc.admittance[index]
-            dcShiftUpdate!(system, index)
-            if branch.layout.status[index] == 1 && (status == 0 || (status == 1 && dcAdmittance))
-                dcNodalUpdate!(system, index)
+        if statusOld == 1
+            if statusNew == 0 || (statusNew == 1 && isset(dcadm, key.shiftAngle))
+                dc.admittance[idx] = -dc.admittance[idx]
+                dcShiftUpdate!(system, idx)
+                if statusOld == 1 && (statusNew == 0 || (statusNew == 1 && dcadm))
+                    dcNodalUpdate!(system, idx)
+                end
+                dc.admittance[idx] = 0.0
             end
-            dc.admittance[index] = 0.0
         end
     end
 
-    if parameter
-        if isset(turnsRatio)
-            branch.parameter.turnsRatio[index] = turnsRatio
-        end
+    if pimodel
+        update!(param.turnsRatio, key.turnsRatio, idx)
 
-        baseVoltage = system.base.voltage.value[branch.layout.from[index]] * system.base.voltage.prefix
-        baseAdmittanceInv = baseImpedance(baseVoltage, basePowerInv, branch.parameter.turnsRatio[index])
-        baseImpedanceInv = 1 / baseAdmittanceInv
+        baseInv = 1 / (system.base.power.value * system.base.power.prefix)
+        baseVoltage = baseVoltg.value[branch.layout.from[idx]] * baseVoltg.prefix
+        baseAdmInv = baseImpedance(baseVoltage, baseInv, param.turnsRatio[idx])
+        baseImpInv = 1 / baseAdmInv
 
-        if isset(resistance)
-            branch.parameter.resistance[index] = topu(resistance, prefix.impedance, baseImpedanceInv)
-        end
-        if isset(reactance)
-            branch.parameter.reactance[index] = topu(reactance, prefix.impedance, baseImpedanceInv)
-        end
-        if isset(conductance)
-            branch.parameter.conductance[index] = topu(conductance, prefix.admittance, baseAdmittanceInv)
-        end
-        if isset(susceptance)
-            branch.parameter.susceptance[index] = topu(susceptance, prefix.admittance, baseAdmittanceInv)
-        end
-        if isset(shiftAngle)
-            branch.parameter.shiftAngle[index] = topu(shiftAngle, prefix.voltageAngle, 1.0)
-        end
+        update!(param.resistance, key.resistance, pfx.impedance, baseImpInv, idx)
+        update!(param.reactance, key.reactance, pfx.impedance, baseImpInv, idx)
+        update!(param.conductance, key.conductance, pfx.admittance, baseAdmInv, idx)
+        update!(param.susceptance, key.susceptance, pfx.admittance, baseAdmInv, idx)
+        update!(param.shiftAngle, key.shiftAngle, pfx.voltageAngle, 1.0, idx)
     end
 
     if !isempty(ac.nodalMatrix)
-        if status == 1 && (branch.layout.status[index] == 0 || (branch.layout.status[index] == 1 && parameter))
-            acParameterUpdate!(system, index)
-            acNodalUpdate!(system, index)
+        if statusNew == 1 && (statusOld == 0 || (statusOld == 1 && pimodel))
+            acParameterUpdate!(system, idx)
+            acNodalUpdate!(system, idx)
         end
     end
 
     if !isempty(dc.nodalMatrix)
-        if status == 1 && (branch.layout.status[index] == 0 || (branch.layout.status[index] == 1 && dcAdmittance || isset(shiftAngle)))
-            dcAdmittanceUpdate!(system, status, index)
-            dcShiftUpdate!(system, index)
-            if status == 1 && (branch.layout.status[index] == 0 || (branch.layout.status[index] == 1 && dcAdmittance))
-                dcNodalUpdate!(system, index)
+        if statusNew == 1
+            if statusOld == 0 || (statusOld == 1 && isset(dcadm, key.shiftAngle))
+                dcAdmittanceUpdate!(system, statusNew, idx)
+                dcShiftUpdate!(system, idx)
+                if statusNew == 1 && (statusOld == 0 || (statusOld == 1 && dcadm))
+                    dcNodalUpdate!(system, idx)
+                end
             end
         end
     end
 
-    branch.layout.status[index] = status
+    branch.layout.status[idx] = statusNew
 
-    if isset(minDiffAngle)
-        branch.voltage.minDiffAngle[index] = topu(minDiffAngle, prefix.voltageAngle, 1.0)
-    end
-    if isset(maxDiffAngle)
-        branch.voltage.maxDiffAngle[index] = topu(maxDiffAngle, prefix.voltageAngle, 1.0)
-    end
+    update!(branch.voltage.minDiffAngle, key.minDiffAngle, pfx.voltageAngle, 1.0, idx)
+    update!(branch.voltage.maxDiffAngle, key.maxDiffAngle, pfx.voltageAngle, 1.0, idx)
+    update!(branch.flow.type, key.type, idx)
 
-    if isset(type)
-        branch.flow.type[index] = type
-    end
+    if isset(key.minFromBus, key.maxFromBus, key.minToBus, key.maxToBus)
+        pfxLive, baseInvFrom, baseInvTo = flowType(system, pfx, baseInv, idx)
 
-    if isset(minFromBus) || isset(maxFromBus) || isset(minToBus) || isset(maxToBus)
-        if branch.flow.type[index] == 1
-            prefixLive = prefix.apparentPower
-            baseInvFrom = basePowerInv
-            baseInvTo = basePowerInv
-        elseif branch.flow.type[index] == 2
-            prefixLive = prefix.activePower
-            baseInvFrom = basePowerInv
-            baseInvTo = basePowerInv
-        elseif branch.flow.type[index] == 3
-            prefixLive = prefix.currentMagnitude
-            baseInvFrom = baseCurrentInverse(basePowerInv, system.base.voltage.value[branch.layout.from[index]] * system.base.voltage.prefix)
-            baseInvTo = baseCurrentInverse(basePowerInv, system.base.voltage.value[branch.layout.to[index]] * system.base.voltage.prefix)
-        end
-
-        if isset(minFromBus)
-            branch.flow.minFromBus[index] = topu(minFromBus, prefixLive, baseInvFrom)
-        end
-        if isset(maxFromBus)
-            branch.flow.maxFromBus[index] = topu(maxFromBus, prefixLive, baseInvFrom)
-        end
-        if isset(minToBus)
-            branch.flow.minToBus[index] = topu(minToBus, prefixLive, baseInvTo)
-        end
-        if isset(maxToBus)
-            branch.flow.maxToBus[index] = topu(maxToBus, prefixLive, baseInvTo)
-        end
+        update!(branch.flow.minFromBus, key.minFromBus, pfxLive, baseInvFrom, idx)
+        update!(branch.flow.maxFromBus, key.maxFromBus, pfxLive, baseInvFrom, idx)
+        update!(branch.flow.minToBus, key.minToBus, pfxLive, baseInvTo, idx)
+        update!(branch.flow.maxToBus, key.maxToBus, pfxLive, baseInvTo, idx)
     end
 end
 
-function updateBranch!(system::PowerSystem, analysis::DCPowerFlow;
-    label::L, status::A = missing, resistance::A = missing, reactance::A = missing,
-    susceptance::A = missing, conductance::A = missing, turnsRatio::A = missing,
-    shiftAngle::A = missing, minDiffAngle::A = missing, maxDiffAngle::A = missing,
-    minFromBus::A = missing, maxFromBus::A = missing, minToBus::A = missing,
-    maxToBus::A = missing, type::A = missing)
-
-    updateBranch!(system; label, status, resistance, reactance, susceptance,
-    conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, minFromBus, maxFromBus,
-    minToBus, maxToBus, type)
+function updateBranch!(
+    system::PowerSystem,
+    analysis::Union{ACPowerFlow{NewtonRaphson}, ACPowerFlow{GaussSeidel}, DCPowerFlow};
+    label::IntStrMiss,
+    kwargs...
+)
+    updateBranch!(system; label, kwargs...)
 end
 
-function updateBranch!(system::PowerSystem, analysis::Union{ACPowerFlow{NewtonRaphson}, ACPowerFlow{GaussSeidel}};
-    label::L, status::A = missing, resistance::A = missing, reactance::A = missing,
-    susceptance::A = missing, conductance::A = missing, turnsRatio::A = missing,
-    shiftAngle::A = missing, minDiffAngle::A = missing, maxDiffAngle::A = missing,
-    minFromBus::A = missing, maxFromBus::A = missing, minToBus::A = missing,
-    maxToBus::A = missing, type::A = missing)
+function updateBranch!(
+    system::PowerSystem,
+    analysis::ACPowerFlow{FastNewtonRaphson};
+    label::IntStrMiss,
+    kwargs...
+)
+    idx = system.branch.label[getLabel(system.branch, label, "branch")]
 
-    updateBranch!(system; label, status, resistance, reactance, susceptance,
-    conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, minFromBus, maxFromBus,
-    minToBus, maxToBus, type)
-end
-
-function updateBranch!(system::PowerSystem, analysis::ACPowerFlow{FastNewtonRaphson};
-    label::L, status::A = missing, resistance::A = missing, reactance::A = missing,
-    susceptance::A = missing, conductance::A = missing, turnsRatio::A = missing,
-    shiftAngle::A = missing, minDiffAngle::A = missing, maxDiffAngle::A = missing,
-    minFromBus::A = missing, maxFromBus::A = missing, minToBus::A = missing,
-    maxToBus::A = missing, type::A = missing)
-
-    branch = system.branch
-    index = branch.label[getLabel(branch, label, "branch")]
-
-    if branch.layout.status[index] == 1
-        fastNewtonRaphsonJacobian(system, analysis, index, -1)
+    if system.branch.layout.status[idx] == 1
+        fastNewtonRaphsonJacobian(system, analysis, idx, -1)
     end
 
-    updateBranch!(system; label, status, resistance, reactance, susceptance,
-    conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, minFromBus, maxFromBus,
-    minToBus, maxToBus, type)
+    updateBranch!(system; label, kwargs...)
 
-    if branch.layout.status[index] == 1
-        fastNewtonRaphsonJacobian(system, analysis, index, 1)
+    if system.branch.layout.status[idx] == 1
+        fastNewtonRaphsonJacobian(system, analysis, idx, 1)
     end
 end
 
-function updateBranch!(system::PowerSystem, analysis::DCOptimalPowerFlow;
-    label::L, status::A = missing, resistance::A = missing, reactance::A = missing,
-    susceptance::A = missing, conductance::A = missing, turnsRatio::A = missing,
-    shiftAngle::A = missing, minDiffAngle::A = missing, maxDiffAngle::A = missing,
-    minFromBus::A = missing, maxFromBus::A = missing, minToBus::A = missing,
-    maxToBus::A = missing, type::A = missing)
-
-    branch = system.branch
+function updateBranch!(
+    system::PowerSystem,
+    analysis::ACOptimalPowerFlow;
+    label::IntStrMiss,
+    kwargs...
+)
     jump = analysis.method.jump
-    constraint = analysis.method.constraint
+    constr = analysis.method.constraint
     variable = analysis.method.variable
+    key = branchkwargs(; kwargs...)
 
-    index = branch.label[getLabel(branch, label, "branch")]
-    statusOld = branch.layout.status[index]
+    idx = system.branch.label[getLabel(system.branch, label, "branch")]
+    statusOld = system.branch.layout.status[idx]
 
-    updateBranch!(system; label, status, resistance, reactance, susceptance,
-    conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, minFromBus, maxFromBus,
-    minToBus, maxToBus, type)
+    updateBranch!(system; label, kwargs...)
 
-    parameter = isset(reactance) || isset(turnsRatio) || isset(shiftAngle)
-    diffAngle = isset(minDiffAngle) || isset(maxDiffAngle)
-    long = isset(minFromBus) || isset(maxFromBus) || isset(minToBus) || isset(maxToBus)
+    statusNew = system.branch.layout.status[idx]
+    diffAngle = isset(key.minDiffAngle, key.maxDiffAngle)
+    flow = isset(key.minFromBus, key.maxFromBus, key.minToBus, key.maxToBus, key.type)
+    pimodel = isset(
+        key.resistance, key.reactance, key.conductance,
+        key.susceptance, key.turnsRatio, key.shiftAngle
+    )
 
-    from = branch.layout.from[index]
-    to = branch.layout.to[index]
-    if parameter || branch.layout.status[index] != statusOld
-        updateBalance(system, analysis, from; voltage = true, rhs = true)
-        updateBalance(system, analysis, to; voltage = true, rhs = true)
-    end
-
-    if statusOld == 1
-        if branch.layout.status[index] == 0 || (branch.layout.status[index] == 1 && (parameter || long))
-            remove!(jump, constraint.flow.active, index)
-        end
-        if branch.layout.status[index] == 0 || (branch.layout.status[index] == 1 && diffAngle)
-            remove!(jump, constraint.voltage.angle, index)
-        end
-    end
-
-    if branch.layout.status[index] == 1
-        if statusOld == 0 || (statusOld == 1 && (parameter || long))
-            addFlow(system, jump, variable.angle, constraint.flow.active, index)
-        end
-        if statusOld == 0 || (statusOld == 1 && diffAngle)
-            addAngle(system, jump, variable.angle, constraint.voltage.angle, index)
-        end
-    end
-end
-
-function updateBranch!(system::PowerSystem, analysis::ACOptimalPowerFlow;
-    label::L, status::A = missing, resistance::A = missing, reactance::A = missing,
-    susceptance::A = missing, conductance::A = missing, turnsRatio::A = missing,
-    shiftAngle::A = missing, minDiffAngle::A = missing, maxDiffAngle::A = missing,
-    minFromBus::A = missing, maxFromBus::A = missing, minToBus::A = missing,
-    maxToBus::A = missing, type::A = missing)
-
-    branch = system.branch
-    jump = analysis.method.jump
-    constraint = analysis.method.constraint
-    variable = analysis.method.variable
-
-    index = branch.label[getLabel(branch, label, "branch")]
-    statusOld = branch.layout.status[index]
-
-    updateBranch!(system; label, status, resistance, reactance, susceptance,
-    conductance, turnsRatio, shiftAngle, minDiffAngle, maxDiffAngle, minFromBus, maxFromBus,
-    minToBus, maxToBus, type)
-
-    parameter = isset(resistance) || isset(reactance) || isset(conductance) || isset(susceptance) || isset(turnsRatio) || isset(shiftAngle)
-    diffAngle = isset(minDiffAngle) || isset(maxDiffAngle)
-    long = isset(minFromBus) || isset(maxFromBus) || isset(minToBus) || isset(maxToBus) || isset(type)
-
-    from = branch.layout.from[index]
-    to = branch.layout.to[index]
-    if parameter || branch.layout.status[index] != statusOld
+    if pimodel || statusNew != statusOld
+        from, to = fromto(system, idx)
         updateBalance(system, analysis, from; active = true, reactive = true)
         updateBalance(system, analysis, to; active = true, reactive = true)
     end
 
     if statusOld == 1
-        if branch.layout.status[index] == 0 || (branch.layout.status[index] == 1 && (parameter || long))
-            remove!(jump, constraint.flow.from, index)
-            remove!(jump, constraint.flow.to, index)
+        if statusNew == 0 || (statusNew == 1 && (pimodel || flow))
+            remove!(jump, constr.flow.from, idx)
+            remove!(jump, constr.flow.to, idx)
         end
-        if branch.layout.status[index] == 0 || (branch.layout.status[index] == 1 && diffAngle)
-            remove!(jump, constraint.voltage.angle, index)
+        if statusNew == 0 || (statusNew == 1 && diffAngle)
+            remove!(jump, constr.voltage.angle, idx)
         end
     end
 
-    if branch.layout.status[index] == 1
-        if statusOld == 0 || (statusOld == 1 && (parameter || long))
-            addFlow(system, jump, variable.magnitude, variable.angle, constraint.flow.from, constraint.flow.to, index)
+    if statusNew == 1
+        if statusOld == 0 || (statusOld == 1 && (pimodel || flow))
+            addFlow(
+                system, jump, variable.magnitude, variable.angle,
+                constr.flow.from, constr.flow.to, idx
+            )
         end
         if statusOld == 0 || (statusOld == 1 && diffAngle)
-            addAngle(system, jump, variable.angle, constraint.voltage.angle, index)
+            addAngle(system, jump, variable.angle, constr.voltage.angle, idx)
+        end
+    end
+end
+
+function updateBranch!(
+    system::PowerSystem,
+    analysis::DCOptimalPowerFlow;
+    label::IntStrMiss,
+    kwargs...
+)
+    jump = analysis.method.jump
+    constr = analysis.method.constraint
+    variable = analysis.method.variable
+    key = branchkwargs(; kwargs...)
+
+    idx = system.branch.label[getLabel(system.branch, label, "branch")]
+    statusOld = system.branch.layout.status[idx]
+
+    updateBranch!(system; label, kwargs...)
+
+    statusNew = system.branch.layout.status[idx]
+    pimodel = isset(key.reactance, key.turnsRatio, key.shiftAngle)
+    diffAngle = isset(key.minDiffAngle, key.maxDiffAngle)
+    flow = isset(key.minFromBus, key.maxFromBus, key.minToBus, key.maxToBus)
+
+    if pimodel || statusNew != statusOld
+        from, to = fromto(system, idx)
+        updateBalance(system, analysis, from; voltage = true, rhs = true)
+        updateBalance(system, analysis, to; voltage = true, rhs = true)
+    end
+
+    if statusOld == 1
+        if statusNew == 0 || (statusNew == 1 && (pimodel || flow))
+            remove!(jump, constr.flow.active, idx)
+        end
+        if statusNew == 0 || (statusNew == 1 && diffAngle)
+            remove!(jump, constr.voltage.angle, idx)
+        end
+    end
+
+    if statusNew == 1
+        if statusOld == 0 || (statusOld == 1 && (pimodel || flow))
+            addFlow(system, jump, variable.angle, constr.flow.active, idx)
+        end
+        if statusOld == 0 || (statusOld == 1 && diffAngle)
+            addAngle(system, jump, variable.angle, constr.voltage.angle, idx)
         end
     end
 end
@@ -631,20 +558,20 @@ macro branch(kwargs...)
             if !(parameter in [:status; :type; :label; :turnsRatio])
                 container::ContainerTemplate = getfield(template.branch, parameter)
                 if parameter in [:resistance; :reactance]
-                    prefixLive = prefix.impedance
+                    pfxLive = pfx.impedance
                 elseif parameter in [:conductance; :susceptance]
-                    prefixLive = prefix.admittance
+                    pfxLive = pfx.admittance
                 elseif parameter in [:shiftAngle; :minDiffAngle; :maxDiffAngle]
-                    prefixLive = prefix.voltageAngle
+                    pfxLive = pfx.voltageAngle
                 elseif parameter in [:minFromBus; :maxFromBus; :minToBus; :maxToBus]
                     if template.branch.type in [1, 3]
-                        prefixLive = prefix.apparentPower
+                        pfxLive = pfx.apparentPower
                     elseif template.branch.type == 2
-                        prefixLive = prefix.activePower
+                        pfxLive = pfx.activePower
                     end
                 end
-                if prefixLive != 0.0
-                    setfield!(container, :value, prefixLive * Float64(eval(kwarg.args[2])))
+                if pfxLive != 0.0
+                    setfield!(container, :value, pfxLive * Float64(eval(kwarg.args[2])))
                     setfield!(container, :pu, false)
                 else
                     setfield!(container, :value, Float64(eval(kwarg.args[2])))
@@ -660,12 +587,71 @@ macro branch(kwargs...)
                     if contains(label, "?")
                         setfield!(template.branch, parameter, label)
                     else
-                        throw(ErrorException("The label template lacks the '?' symbol to indicate integer placement."))
+                        errorTemplateSymbol()
                     end
                 end
             end
         else
-            throw(ErrorException("The keyword $(parameter) is illegal."))
+            errorTemplateKeyword(parameter)
         end
     end
+end
+
+##### Branch Flow Rating Type #####
+function flowType(system::PowerSystem, pfx::PrefixLive, basePowerInv::Float64, i::Int64)
+    branch = system.branch
+    baseVoltg = system.base.voltage
+
+    if branch.flow.type[i] == 1
+        pfxLive = pfx.apparentPower
+        baseInvFrom = basePowerInv
+        baseInvTo = basePowerInv
+    elseif branch.flow.type[i] == 2
+        pfxLive = pfx.activePower
+        baseInvFrom = basePowerInv
+        baseInvTo = basePowerInv
+    elseif branch.flow.type[i] == 3
+        pfxLive = pfx.currentMagnitude
+        baseInvFrom = baseCurrentInv(
+            basePowerInv, baseVoltg.value[branch.layout.from[i]] * baseVoltg.prefix
+        )
+        baseInvTo = baseCurrentInv(
+            basePowerInv, baseVoltg.value[branch.layout.to[i]] * baseVoltg.prefix
+        )
+    else
+        throw(ErrorException(
+            "The value $(branch.flow.type[i]) of " *
+            "the branch flow rating type is illegal.")
+        )
+    end
+
+    return pfxLive, baseInvFrom, baseInvTo
+end
+
+##### Branch Keywords #####
+function branchkwargs(;
+    status::IntMiss = missing,
+    resistance::FltIntMiss = missing,
+    reactance::FltIntMiss = missing,
+    susceptance::FltIntMiss = missing,
+    conductance::FltIntMiss = missing,
+    turnsRatio::FltIntMiss = missing,
+    shiftAngle::FltIntMiss = missing,
+    minDiffAngle::FltIntMiss = missing,
+    maxDiffAngle::FltIntMiss = missing,
+    minFromBus::FltIntMiss = missing,
+    maxFromBus::FltIntMiss = missing,
+    minToBus::FltIntMiss = missing,
+    maxToBus::FltIntMiss = missing,
+    type::IntMiss = missing
+)
+    (
+    status = status,
+    resistance = resistance, reactance = reactance,
+    susceptance = susceptance, conductance = conductance,
+    turnsRatio = turnsRatio, shiftAngle = shiftAngle,
+    minDiffAngle = minDiffAngle, maxDiffAngle = maxDiffAngle,
+    minFromBus = minFromBus, maxFromBus = maxFromBus,
+    minToBus = minToBus, maxToBus = maxToBus, type = type
+    )
 end

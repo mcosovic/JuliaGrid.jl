@@ -55,23 +55,20 @@ system = powerSystem()
 addBus!(system; label = "Bus 1", active = 25.0, angle = 10.026, base = 132.0)
 ```
 """
-function addBus!(system::PowerSystem;
-    label::L = missing, type::A = missing,
-    active::A = missing, reactive::A = missing,
-    conductance::A = missing, susceptance::A = missing,
-    magnitude::A = missing, angle::A = missing,
-    minMagnitude::A = missing, maxMagnitude::A = missing,
-    base::A = missing, area::A = missing, lossZone::A = missing)
-
+function addBus!(system::PowerSystem; label::IntStrMiss = missing, kwargs...)
     bus = system.bus
-    default = template.bus
+    demand = bus.demand
+    shunt = bus.shunt
+    voltg = bus.voltage
+    def = template.bus
+    key = buskwargs(; kwargs...)
 
     bus.number += 1
-    setLabel(bus, label, default.label, "bus")
+    setLabel(bus, label, def.label, "bus")
 
-    push!(bus.layout.type, unitless(type, default.type))
+    add!(bus.layout.type, key.type, def.type)
     if !(bus.layout.type[end] in [1, 2, 3])
-        throw(ErrorException("The value $type of the bus type keyword is illegal."))
+        throw(ErrorException("The value $(key.type) of the bus type is illegal."))
     end
     if bus.layout.type[end] == 3
         if bus.layout.slack != 0
@@ -80,33 +77,28 @@ function addBus!(system::PowerSystem;
         bus.layout.slack = bus.number
     end
 
-    if isset(base)
-        baseVoltage = base * prefix.baseVoltage
-    else
-        baseVoltage = default.base
-    end
+    baseInv = 1 / (system.base.power.value * system.base.power.prefix)
+    add!(demand.active, key.active, def.active, pfx.activePower, baseInv)
+    add!(demand.reactive, key.reactive, def.reactive, pfx.reactivePower, baseInv)
+    add!(shunt.conductance, key.conductance, def.conductance, pfx.activePower, baseInv)
+    add!(shunt.susceptance, key.susceptance, def.susceptance, pfx.reactivePower, baseInv)
 
+    if isset(key.base)
+        baseVoltage = key.base * pfx.baseVoltage
+    else
+        baseVoltage = def.base
+    end
     push!(system.base.voltage.value, baseVoltage / system.base.voltage.prefix)
 
-    basePowerInv = 1 / (system.base.power.value * system.base.power.prefix)
-    baseVoltageInv = 1 / baseVoltage
+    baseInv = 1 / baseVoltage
+    add!(voltg.magnitude, key.magnitude, def.magnitude, pfx.voltageMagnitude, baseInv)
+    add!(voltg.minMagnitude, key.minMagnitude, def.minMagnitude, pfx.voltageMagnitude, baseInv)
+    add!(voltg.maxMagnitude, key.maxMagnitude, def.maxMagnitude, pfx.voltageMagnitude, baseInv)
+    add!(voltg.angle, key.angle, def.angle, pfx.voltageAngle, 1.0)
 
-    push!(bus.demand.active, topu(active, default.active, prefix.activePower, basePowerInv))
-    push!(bus.demand.reactive, topu(reactive, default.reactive, prefix.reactivePower, basePowerInv))
+    add!(bus.layout.area, key.area, def.area)
+    add!(bus.layout.lossZone, key.lossZone, def.lossZone)
 
-    push!(bus.shunt.conductance, topu(conductance, default.conductance, prefix.activePower, basePowerInv))
-    push!(bus.shunt.susceptance, topu(susceptance, default.susceptance, prefix.reactivePower, basePowerInv))
-
-    push!(bus.voltage.magnitude, topu(magnitude, default.magnitude, prefix.voltageMagnitude, baseVoltageInv))
-    push!(bus.voltage.minMagnitude, topu(minMagnitude, default.minMagnitude, prefix.voltageMagnitude, baseVoltageInv))
-    push!(bus.voltage.maxMagnitude, topu(maxMagnitude, default.maxMagnitude, prefix.voltageMagnitude, baseVoltageInv))
-
-    push!(bus.voltage.angle, topu(angle, default.angle, prefix.voltageAngle, 1.0))
-
-    push!(bus.layout.area, unitless(area, default.area))
-    push!(bus.layout.lossZone, unitless(lossZone, default.lossZone))
-
-    push!(bus.supply.generator, Array{Int64}(undef, 0))
     push!(bus.supply.active, 0.0)
     push!(bus.supply.reactive, 0.0)
 
@@ -121,20 +113,12 @@ function addBus!(system::PowerSystem;
     end
 end
 
-function addBus!(system::PowerSystem, analysis::DCPowerFlow; kwargs...)
-    throw(ErrorException("The DC power flow model cannot be reused when adding a new bus."))
-end
-
-function addBus!(system::PowerSystem, analysis::ACPowerFlow; kwargs...)
-    throw(ErrorException("The AC power flow model cannot be reused when adding a new bus."))
-end
-
-function addBus!(system::PowerSystem, analysis::DCOptimalPowerFlow; kwargs...)
-    throw(ErrorException("The DC optimal power flow model cannot be reused when adding a new bus."))
-end
-
-function addBus!(system::PowerSystem, analysis::DCStateEstimation; kwargs...)
-    throw(ErrorException("The DC state estimation model cannot be reused when adding a new bus."))
+function addBus!(
+    system::PowerSystem,
+    analysis::Union{ACPowerFlow, DCPowerFlow, ACOptimalPowerFlow, DCOptimalPowerFlow};
+    kwargs...
+)
+    throw(ErrorException("The analysis model cannot be reused when adding a bus."))
 end
 
 """
@@ -173,277 +157,253 @@ addBus!(system; label = "Bus 1", type = 3, active = 0.25, reactive = -0.04)
 updateBus!(system; label = "Bus 1", active = 0.15, susceptance = 0.15)
 ```
 """
-function updateBus!(system::PowerSystem;
-    label::L, type::A = missing,
-    active::A = missing, reactive::A = missing,
-    conductance::A = missing, susceptance::A = missing,
-    magnitude::A = missing, angle::A = missing,
-    minMagnitude::A = missing, maxMagnitude::A = missing,
-    base::A = missing, area::A = missing, lossZone::A = missing)
-
+function updateBus!(system::PowerSystem; label::IntStrMiss, kwargs...)
     bus = system.bus
+    baseVoltg = system.base.voltage
     ac = system.model.ac
+    key = buskwargs(; kwargs...)
 
-    index = bus.label[getLabel(bus, label, "bus")]
+    idx = bus.label[getLabel(bus, label, "bus")]
 
-    if isset(type)
-        if type in [1; 2]
-            if bus.layout.slack == index
+    if isset(key.type)
+        if key.type in [1; 2]
+            if bus.layout.slack == idx
                 bus.layout.slack = 0
             end
-            bus.layout.type[index] = type
+            bus.layout.type[idx] = key.type
         end
-        if type == 3
-            if bus.layout.slack != 0 && bus.layout.slack != index
-                throw(ErrorException("To set bus with label $label as the slack bus, reassign the current slack bus to either a generator or demand bus."))
+        if key.type == 3
+            if bus.layout.slack != 0 && bus.layout.slack != idx
+                throw(ErrorException(
+                    "To set bus with label " * label * " as the slack bus, reassign " *
+                    "the current slack bus to either a generator or demand bus.")
+                )
             end
-            bus.layout.type[index] = 3
-            bus.layout.slack = index
+            bus.layout.type[idx] = 3
+            bus.layout.slack = idx
         end
     end
 
-    basePowerInv = 1 / (system.base.power.value * system.base.power.prefix)
-    if isset(active)
-        bus.demand.active[index] = topu(active, prefix.activePower, basePowerInv)
-    end
-    if isset(reactive)
-        bus.demand.reactive[index] = topu(reactive, prefix.reactivePower, basePowerInv)
-    end
+    baseInv = 1 / (system.base.power.value * system.base.power.prefix)
+    update!(bus.demand.active, key.active, pfx.activePower, baseInv, idx)
+    update!(bus.demand.reactive, key.reactive, pfx.reactivePower, baseInv, idx)
 
-    if isset(conductance) || isset(susceptance)
+    if isset(key.conductance, key.susceptance)
         if !isempty(ac.nodalMatrix)
             ac.model += 1
 
-            admittance = complex(bus.shunt.conductance[index], bus.shunt.susceptance[index])
-            ac.nodalMatrix[index, index] -= admittance
-            ac.nodalMatrixTranspose[index, index] -= admittance
+            admittance = complex(bus.shunt.conductance[idx], bus.shunt.susceptance[idx])
+            ac.nodalMatrix[idx, idx] -= admittance
+            ac.nodalMatrixTranspose[idx, idx] -= admittance
         end
 
-        if isset(conductance)
-            bus.shunt.conductance[index] = topu(conductance, prefix.activePower, basePowerInv)
-        end
-        if isset(susceptance)
-            bus.shunt.susceptance[index] = topu(susceptance, prefix.reactivePower, basePowerInv)
-        end
+        update!(bus.shunt.conductance, key.conductance, pfx.activePower, baseInv, idx)
+        update!(bus.shunt.susceptance, key.susceptance, pfx.reactivePower, baseInv, idx)
 
         if !isempty(ac.nodalMatrix)
-            admittance = complex(bus.shunt.conductance[index], bus.shunt.susceptance[index])
-            ac.nodalMatrix[index, index] += admittance
-            ac.nodalMatrixTranspose[index, index] += admittance
+            admittance = complex(bus.shunt.conductance[idx], bus.shunt.susceptance[idx])
+            ac.nodalMatrix[idx, idx] += admittance
+            ac.nodalMatrixTranspose[idx, idx] += admittance
         end
     end
 
-    if isset(base)
-        system.base.voltage.value[index] = base * prefix.baseVoltage / system.base.voltage.prefix
+    if isset(key.base)
+        baseVoltg.value[idx] = key.base * pfx.baseVoltage / baseVoltg.prefix
     end
 
-    baseVoltageInv = 1 / (system.base.voltage.value[index] * system.base.voltage.prefix)
-    if isset(magnitude)
-        bus.voltage.magnitude[index] = topu(magnitude, prefix.voltageMagnitude, baseVoltageInv)
-    end
-    if isset(angle)
-        bus.voltage.angle[index] = topu(angle, prefix.voltageAngle, 1.0)
-    end
-    if isset(minMagnitude)
-        bus.voltage.minMagnitude[index] = topu(minMagnitude, prefix.voltageMagnitude, baseVoltageInv)
-    end
-    if isset(maxMagnitude)
-        bus.voltage.maxMagnitude[index] = topu(maxMagnitude, prefix.voltageMagnitude, baseVoltageInv)
+    baseInv = 1 / (baseVoltg.value[idx] * baseVoltg.prefix)
+    update!(bus.voltage.magnitude, key.magnitude, pfx.voltageMagnitude, baseInv, idx)
+    update!(bus.voltage.angle, key.angle, pfx.voltageAngle, 1.0, idx)
+    update!(bus.voltage.minMagnitude, key.minMagnitude, pfx.voltageMagnitude, baseInv, idx)
+    update!(bus.voltage.maxMagnitude, key.maxMagnitude, pfx.voltageMagnitude, baseInv, idx)
+
+    update!(bus.layout.area, key.area, idx)
+    update!(bus.layout.lossZone, key.lossZone, idx)
+end
+
+function updateBus!(
+    system::PowerSystem,
+    analysis::ACPowerFlow{NewtonRaphson};
+    label::IntStrMiss,
+    kwargs...
+)
+    key = buskwargs(; kwargs...)
+
+    idx = system.bus.label[getLabel(system.bus, label, "bus")]
+
+    if isset(key.type) && key.type != system.bus.layout.type[idx]
+        errorTypeConversion()
     end
 
-    if isset(area)
-        bus.layout.area[index] = area
+    updateBus!(system; label, key...)
+
+    if isset(key.magnitude) && system.bus.layout.type[idx] == 1
+        analysis.voltage.magnitude[idx] = system.bus.voltage.magnitude[idx]
     end
-    if isset(lossZone)
-        bus.layout.lossZone[index] = lossZone
+    if isset(key.angle)
+        analysis.voltage.angle[idx] = system.bus.voltage.angle[idx]
     end
 end
 
-function updateBus!(system::PowerSystem, analysis::DCPowerFlow;
-    label::L, type::A = missing,
-    active::A = missing, reactive::A = missing,
-    conductance::A = missing, susceptance::A = missing,
-    magnitude::A = missing, angle::A = missing,
-    minMagnitude::A = missing, maxMagnitude::A = missing,
-    base::A = missing, area::A = missing, lossZone::A = missing)
-
+function updateBus!(
+    system::PowerSystem,
+    analysis::ACPowerFlow{FastNewtonRaphson};
+    label::IntStrMiss,
+    kwargs...
+)
     bus = system.bus
-    index = bus.label[getLabel(bus, label, "bus")]
+    key = buskwargs(; kwargs...)
 
-    if isset(type) && bus.layout.slack == index && type != 3
-        throw(ErrorException("The DC power flow model cannot be reused due to required bus type conversion."))
+    idx = bus.label[getLabel(bus, label, "bus")]
+
+    if isset(key.type) && key.type != bus.layout.type[idx]
+        errorTypeConversion()
     end
 
-    updateBus!(system; label, type, active, reactive, conductance, susceptance,
-    magnitude, angle, minMagnitude, maxMagnitude, base, area, lossZone)
-end
-
-function updateBus!(system::PowerSystem, analysis::ACPowerFlow{NewtonRaphson};
-    label::L, type::A = missing,
-    active::A = missing, reactive::A = missing,
-    conductance::A = missing, susceptance::A = missing,
-    magnitude::A = missing, angle::A = missing,
-    minMagnitude::A = missing, maxMagnitude::A = missing,
-    base::A = missing, area::A = missing, lossZone::A = missing)
-
-    bus = system.bus
-    index = bus.label[getLabel(bus, label, "bus")]
-
-    if isset(type) && type != bus.layout.type[index]
-        throw(ErrorException("The AC power flow model cannot be reused due to required bus type conversion."))
+    if isset(key.susceptance) && bus.layout.type[idx] == 1
+        oldSusceptance = bus.shunt.susceptance[idx]
     end
 
-    updateBus!(system; label, type, active, reactive, conductance, susceptance,
-    magnitude, angle, minMagnitude, maxMagnitude, base, area, lossZone)
+    updateBus!(system; label, key...)
 
-    if isset(magnitude) && bus.layout.type[index] == 1
-        analysis.voltage.magnitude[index] = bus.voltage.magnitude[index]
+    if isset(key.magnitude) && bus.layout.type[idx] == 1
+        analysis.voltage.magnitude[idx] = bus.voltage.magnitude[idx]
     end
-    if isset(angle)
-        analysis.voltage.angle[index] = bus.voltage.angle[index]
-    end
-end
-
-function updateBus!(system::PowerSystem, analysis::ACPowerFlow{FastNewtonRaphson};
-    label::L, type::A = missing,
-    active::A = missing, reactive::A = missing,
-    conductance::A = missing, susceptance::A = missing,
-    magnitude::A = missing, angle::A = missing,
-    minMagnitude::A = missing, maxMagnitude::A = missing,
-    base::A = missing, area::A = missing, lossZone::A = missing)
-
-    bus = system.bus
-    method = analysis.method
-    index = bus.label[getLabel(bus, label, "bus")]
-
-    if isset(type) && type != bus.layout.type[index]
-        throw(ErrorException("The AC power flow model cannot be reused due to required bus type conversion."))
+    if isset(key.angle)
+        analysis.voltage.angle[idx] = bus.voltage.angle[idx]
     end
 
-    if isset(susceptance) && bus.layout.type[index] == 1
-        oldSusceptance = bus.shunt.susceptance[index]
-    end
-
-    updateBus!(system; label, type, active, reactive, conductance, susceptance,
-    magnitude, angle, minMagnitude, maxMagnitude, base, area, lossZone)
-
-    if isset(magnitude) && bus.layout.type[index] == 1
-        analysis.voltage.magnitude[index] = bus.voltage.magnitude[index]
-    end
-    if isset(angle)
-        analysis.voltage.angle[index] = bus.voltage.angle[index]
-    end
-
-    if isset(susceptance) && bus.layout.type[index] == 1 && oldSusceptance != bus.shunt.susceptance[index]
-        method.reactive.jacobian[method.pq[index], method.pq[index]] -= oldSusceptance
-        method.reactive.jacobian[method.pq[index], method.pq[index]] += bus.shunt.susceptance[index]
-    end
-end
-
-function updateBus!(system::PowerSystem, analysis::ACPowerFlow{GaussSeidel};
-    label::L, type::A = missing,
-    active::A = missing, reactive::A = missing,
-    conductance::A = missing, susceptance::A = missing,
-    magnitude::A = missing, angle::A = missing,
-    minMagnitude::A = missing, maxMagnitude::A = missing,
-    base::A = missing, area::A = missing, lossZone::A = missing)
-
-    bus = system.bus
-    index = bus.label[getLabel(bus, label, "bus")]
-
-    if isset(type) && type != bus.layout.type[index]
-        throw(ErrorException("The AC power flow model cannot be reused due to required bus type conversion."))
-    end
-
-    updateBus!(system; label, type, active, reactive, conductance, susceptance,
-    magnitude, angle, minMagnitude, maxMagnitude, base, area, lossZone)
-
-    if isset(magnitude) || isset(angle)
-        if isset(magnitude) && bus.layout.type[index] == 1
-            analysis.voltage.magnitude[index] = bus.voltage.magnitude[index]
+    if isset(key.susceptance) && bus.layout.type[idx] == 1
+        if oldSusceptance != bus.shunt.susceptance[idx]
+            i = analysis.method.pq[idx]
+            analysis.method.reactive.jacobian[i, i] -= oldSusceptance
+            analysis.method.reactive.jacobian[i, i] += bus.shunt.susceptance[idx]
         end
-        if isset(angle)
-            analysis.voltage.angle[index] = bus.voltage.angle[index]
-        end
-        analysis.method.voltage[index] = analysis.voltage.magnitude[index] * cis(analysis.voltage.angle[index])
     end
 end
 
-function updateBus!(system::PowerSystem, analysis::DCOptimalPowerFlow;
-    label::L, type::A = missing,
-    active::A = missing, reactive::A = missing,
-    conductance::A = missing, susceptance::A = missing,
-    magnitude::A = missing, angle::A = missing,
-    minMagnitude::A = missing, maxMagnitude::A = missing,
-    base::A = missing, area::A = missing, lossZone::A = missing)
-
+function updateBus!(
+    system::PowerSystem,
+    analysis::ACPowerFlow{GaussSeidel};
+    label::IntStrMiss,
+    kwargs...
+)
     bus = system.bus
-    index = bus.label[getLabel(bus, label, "bus")]
-    typeOld = bus.layout.type[index]
+    volt = analysis.voltage
+    key = buskwargs(; kwargs...)
 
-    updateBus!(system; label, type, active, reactive, conductance, susceptance,
-    magnitude, angle, minMagnitude, maxMagnitude, base, area, lossZone)
+    idx = bus.label[getLabel(bus, label, "bus")]
 
-    if isset(conductance) || isset(active)
-        updateBalance(system, analysis, index; rhs = true)
+    if isset(key.type) && key.type != bus.layout.type[idx]
+        errorTypeConversion()
     end
 
-    if isset(angle)
-        analysis.voltage.angle[index] = bus.voltage.angle[index]
-    end
+    updateBus!(system; label, key...)
 
-    if typeOld == 3 && bus.layout.type[index] != 3
-        unfix!(analysis.method.jump, analysis.method.variable.angle[index], analysis.method.constraint.slack.angle, index)
-    end
-
-    if bus.layout.type[index] == 3
-        fix!(analysis.method.variable.angle[index], bus.voltage.angle[index], analysis.method.constraint.slack.angle, index)
+    if isset(key.magnitude, key.angle)
+        if isset(key.magnitude) && bus.layout.type[idx] == 1
+            volt.magnitude[idx] = bus.voltage.magnitude[idx]
+        end
+        if isset(key.angle)
+            volt.angle[idx] = bus.voltage.angle[idx]
+        end
+        analysis.method.voltage[idx] = volt.magnitude[idx] * cis(volt.angle[idx])
     end
 end
 
-function updateBus!(system::PowerSystem, analysis::ACOptimalPowerFlow;
-    label::L, type::A = missing,
-    active::A = missing, reactive::A = missing,
-    conductance::A = missing, susceptance::A = missing,
-    magnitude::A = missing, angle::A = missing,
-    minMagnitude::A = missing, maxMagnitude::A = missing,
-    base::A = missing, area::A = missing, lossZone::A = missing)
+function updateBus!(
+    system::PowerSystem,
+    analysis::DCPowerFlow;
+    label::IntStrMiss,
+    kwargs...
+)
+    key = buskwargs(; kwargs...)
 
+    idx = system.bus.label[getLabel(system.bus, label, "bus")]
+
+    if isset(key.type) && system.bus.layout.slack == idx && key.type != 3
+        errorTypeConversion()
+    end
+
+    updateBus!(system; label, key...)
+end
+
+function updateBus!(
+    system::PowerSystem,
+    analysis::ACOptimalPowerFlow;
+    label::IntStrMiss,
+    kwargs...
+)
     bus = system.bus
     jump = analysis.method.jump
-    constraint = analysis.method.constraint
+    constr = analysis.method.constraint
+    variable = analysis.method.variable
+    key = buskwargs(; kwargs...)
+
+    idx = bus.label[getLabel(bus, label, "bus")]
+    typeOld = bus.layout.type[idx]
+
+    updateBus!(system; label, key...)
+
+    activeupd = isset(key.conductance, key.susceptance, key.active)
+    reactvupd = isset(key.conductance, key.susceptance, key.reactive)
+
+    if activeupd || reactvupd
+        updateBalance(system, analysis, idx; active = activeupd, reactive = reactvupd)
+    end
+
+    if isset(key.magnitude)
+        analysis.voltage.magnitude[idx] = bus.voltage.magnitude[idx]
+    end
+    if isset(key.angle)
+        analysis.voltage.angle[idx] = bus.voltage.angle[idx]
+    end
+
+    if isset(key.minMagnitude, key.maxMagnitude)
+        remove!(jump, constr.voltage.magnitude, idx)
+        addMagnitude(system, jump, variable.magnitude, constr.voltage.magnitude, idx)
+    end
+
+    if typeOld == 3 && bus.layout.type[idx] != 3
+        unfix!(jump, variable.angle[idx], constr.slack.angle, idx)
+    end
+
+    if bus.layout.type[idx] == 3
+        fix!(variable.angle[idx], bus.voltage.angle[idx], constr.slack.angle, idx)
+    end
+end
+
+function updateBus!(
+    system::PowerSystem,
+    analysis::DCOptimalPowerFlow;
+    label::IntStrMiss,
+    kwargs...
+)
+    bus = system.bus
+    constr = analysis.method.constraint
     variable = analysis.method.variable
 
-    index = bus.label[getLabel(bus, label, "bus")]
-    typeOld = bus.layout.type[index]
+    key = buskwargs(; kwargs...)
 
-    updateBus!(system; label, type, active, reactive, conductance, susceptance,
-    magnitude, angle, minMagnitude, maxMagnitude, base, area, lossZone)
+    idx = bus.label[getLabel(bus, label, "bus")]
+    typeOld = bus.layout.type[idx]
 
-    activeUpdate = isset(conductance) || isset(susceptance) || isset(active)
-    reactiveupdate = isset(conductance) || isset(susceptance) || isset(reactive)
-    if activeUpdate || reactiveupdate
-        updateBalance(system, analysis, index; active = activeUpdate, reactive = reactiveupdate)
+    updateBus!(system; label, key...)
+
+    if isset(key.conductance, key.active)
+        updateBalance(system, analysis, idx; rhs = true)
     end
 
-    if isset(magnitude)
-        analysis.voltage.magnitude[index] = bus.voltage.magnitude[index]
-    end
-    if isset(angle)
-        analysis.voltage.angle[index] = bus.voltage.angle[index]
+    if isset(key.angle)
+        analysis.voltage.angle[idx] = bus.voltage.angle[idx]
     end
 
-    if isset(minMagnitude) || isset(maxMagnitude)
-        remove!(jump, constraint.voltage.magnitude, index)
-        addMagnitude(system, jump, variable.magnitude, constraint.voltage.magnitude, index)
+    if typeOld == 3 && bus.layout.type[idx] != 3
+        unfix!(analysis.method.jump, variable.angle[idx], constr.slack.angle, idx)
     end
 
-    if typeOld == 3 && bus.layout.type[index] != 3
-        unfix!(jump, variable.angle[index], constraint.slack.angle, index)
-    end
-
-    if bus.layout.type[index] == 3
-        fix!(variable.angle[index], bus.voltage.angle[index], constraint.slack.angle, index)
+    if bus.layout.type[idx] == 3
+        fix!(variable.angle[idx], bus.voltage.angle[idx], constr.slack.angle, idx)
     end
 end
 
@@ -491,16 +451,16 @@ macro bus(kwargs...)
             if !(parameter in [:base; :type; :area; :lossZone; :label])
                 container::ContainerTemplate = getfield(template.bus, parameter)
                 if parameter in [:active; :conductance]
-                    prefixLive = prefix.activePower
+                    pfxLive = pfx.activePower
                 elseif parameter in [:reactive; :susceptance]
-                    prefixLive = prefix.reactivePower
+                    pfxLive = pfx.reactivePower
                 elseif parameter in [:magnitude; :minMagnitude; :maxMagnitude]
-                    prefixLive = prefix.voltageMagnitude
+                    pfxLive = pfx.voltageMagnitude
                 elseif parameter == :angle
-                    prefixLive = prefix.voltageAngle
+                    pfxLive = pfx.voltageAngle
                 end
-                if prefixLive != 0.0
-                    setfield!(container, :value, prefixLive * Float64(eval(kwarg.args[2])))
+                if pfxLive != 0.0
+                    setfield!(container, :value, pfxLive * Float64(eval(kwarg.args[2])))
                     setfield!(container, :pu, false)
                 else
                     setfield!(container, :value, Float64(eval(kwarg.args[2])))
@@ -508,7 +468,10 @@ macro bus(kwargs...)
                 end
             else
                 if parameter == :base
-                    setfield!(template.bus, parameter, Float64(eval(kwarg.args[2])) * prefix.baseVoltage)
+                    setfield!(
+                        template.bus, parameter,
+                        Float64(eval(kwarg.args[2])) * pfx.baseVoltage
+                    )
                 elseif parameter == :type
                     setfield!(template.bus, parameter, Int8(eval(kwarg.args[2])))
                 elseif parameter in [:area; :lossZone]
@@ -518,12 +481,37 @@ macro bus(kwargs...)
                     if contains(label, "?")
                         setfield!(template.bus, parameter, label)
                     else
-                        throw(ErrorException("The label template lacks the '?' symbol to indicate integer placement."))
+                        errorTemplateSymbol()
                     end
                 end
             end
         else
-            throw(ErrorException("The keyword $(parameter) is illegal."))
+            errorTemplateKeyword(parameter)
         end
     end
+end
+
+##### Bus Keywords #####
+function buskwargs(;
+    type::IntMiss = missing,
+    active::FltIntMiss = missing,
+    reactive::FltIntMiss = missing,
+    conductance::FltIntMiss = missing,
+    susceptance::FltIntMiss = missing,
+    magnitude::FltIntMiss = missing,
+    angle::FltIntMiss = missing,
+    minMagnitude::FltIntMiss = missing,
+    maxMagnitude::FltIntMiss = missing,
+    base::FltIntMiss = missing,
+    area::IntMiss = missing,
+    lossZone::FltIntMiss = missing
+)
+    (
+    type = type,
+    active = active, reactive = reactive,
+    conductance = conductance, susceptance = susceptance,
+    magnitude = magnitude, angle = angle,
+    minMagnitude = minMagnitude, maxMagnitude = maxMagnitude,
+    base = base, area = area, lossZone = lossZone
+    )
 end

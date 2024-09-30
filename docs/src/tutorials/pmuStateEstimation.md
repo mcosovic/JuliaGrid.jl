@@ -302,7 +302,7 @@ Here, ``\mathbf z \in \mathbb {R}^{k}`` denotes the vector of measurement values
 ##### Implementation
 JuliaGrid initiates the PMU state estimation framework by setting up the WLS model, as illustrated in the following:
 ```@example PMUSETutorial
-analysis = pmuWlsStateEstimation(system, device)
+analysis = pmuStateEstimation(system, device)
 nothing # hide
 ```
 
@@ -337,7 +337,7 @@ nothing # hide
 
 Following this, we recreate the WLS state estimation model:
 ```@example PMUSETutorial
-analysis = pmuWlsStateEstimation(system, device)
+analysis = pmuStateEstimation(system, device)
 nothing # hide
 ```
 
@@ -400,7 +400,7 @@ The resolution of the WLS state estimation problem using the conventional method
 
 To address ill-conditioned situations arising from significant differences in measurement variances, users can employ an alternative approach:
 ```@example PMUSETutorial
-analysis = pmuWlsStateEstimation(system, device, Orthogonal)
+analysis = pmuStateEstimation(system, device, Orthogonal)
 nothing # hide
 ```
 
@@ -458,7 +458,7 @@ nothing # hide
 
 Subsequently, we will construct the WLS state estimation model and solve it:
 ```@example PMUSETutorial
-analysis = pmuWlsStateEstimation(system, device)
+analysis = pmuStateEstimation(system, device)
 solve!(system, analysis)
 nothing # hide
 ```

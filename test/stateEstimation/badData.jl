@@ -1,10 +1,10 @@
-system14 = powerSystem(string(pathData, "case14test.m"))
-system30 = powerSystem(string(pathData, "case30test.m"))
+system14 = powerSystem(string(path, "case14test.m"))
+system30 = powerSystem(string(path, "case30test.m"))
 @testset "AC State Estimation: Bad Data" begin
     @default(template)
     @default(unit)
 
-    ############ Modified IEEE 14-bus Test Case ############
+    ########## IEEE 14-bus Test Case ##########
     updateBus!(system14; label = 1, type = 2)
     updateBus!(system14; label = 3, type = 3, angle = -0.17)
 
@@ -22,20 +22,26 @@ system30 = powerSystem(string(pathData, "case30test.m"))
 
     device = measurement()
     @varmeter(label = "Varmeter ?")
-    for (key, value) in system14.bus.label
-        addVoltmeter!(system14, device; bus = key, magnitude = analysis.voltage.magnitude[value])
-        addWattmeter!(system14, device; bus = key, active = analysis.power.injection.active[value])
-        addVarmeter!(system14, device; bus = key, reactive = analysis.power.injection.reactive[value])
+    for (key, idx) in system14.bus.label
+        addVoltmeter!(
+            system14, device; bus = key, magnitude = analysis.voltage.magnitude[idx]
+        )
+        addWattmeter!(
+            system14, device; bus = key, active = analysis.power.injection.active[idx]
+        )
+        addVarmeter!(
+            system14, device; bus = key, reactive = analysis.power.injection.reactive[idx]
+        )
     end
 
-    for (key, value) in system14.branch.label
-        addWattmeter!(system14, device; from = key, active = analysis.power.from.active[value])
-        addWattmeter!(system14, device; to = key, active = analysis.power.to.active[value])
-        addVarmeter!(system14, device; from = key, reactive = analysis.power.from.reactive[value])
-        addVarmeter!(system14, device; to = key, reactive = analysis.power.to.reactive[value])
+    for (key, idx) in system14.branch.label
+        addWattmeter!(system14, device; from = key, active = analysis.power.from.active[idx])
+        addWattmeter!(system14, device; to = key, active = analysis.power.to.active[idx])
+        addVarmeter!(system14, device; from = key, reactive = analysis.power.from.reactive[idx])
+        addVarmeter!(system14, device; to = key, reactive = analysis.power.to.reactive[idx])
     end
 
-    #### Test One Outlier ####
+    ##### Test One Outlier #####
     updateVarmeter!(system14, device; label = "Varmeter 4", reactive = 10.25)
 
     analysisSE = gaussNewton(system14, device)
@@ -58,10 +64,13 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     end
     compstruct(analysisSE.voltage, analysis.voltage; atol = 1e-10)
 
-    #### Test Two Outliers ####
+    ##### Test Two Outliers #####
     @pmu(label = "PMU ?")
-    for (key, value) in system14.bus.label
-        addPmu!(system14, device; bus = key, magnitude = analysis.voltage.magnitude[value], angle = analysis.voltage.angle[value], polar = true)
+    for (key, idx) in system14.bus.label
+        addPmu!(
+            system14, device; bus = key, magnitude = analysis.voltage.magnitude[idx],
+            angle = analysis.voltage.angle[idx], polar = true
+        )
     end
 
     updateVarmeter!(system14, device; label = "Varmeter 4", status = 1)
@@ -99,7 +108,7 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     @test analysis.voltage.magnitude ≈ analysisSE.voltage.magnitude
     @test analysis.voltage.angle ≈ analysisSE.voltage.angle
 
-    #### Test Orthogonal Method with Two Outliers ####
+    ##### Test Orthogonal Method with Two Outliers #####
     updateVarmeter!(system14, device; label = "Varmeter 4", status = 1)
     updatePmu!(system14, device; label = "PMU 10", statusMagnitude = 1)
 
@@ -134,9 +143,12 @@ system30 = powerSystem(string(pathData, "case30test.m"))
     end
     compstruct(analysisSE.voltage, analysis.voltage; atol = 1e-10)
 
-    #### Test PMU Rectangular with One Outlier ####
-    for (key, value) in system14.branch.label
-        addPmu!(system14, device; from = key, magnitude = analysis.current.from.magnitude[value], angle = analysis.current.from.angle[value])
+    ##### Test PMU Rectangular with One Outlier #####
+    for (key, idx) in system14.branch.label
+        addPmu!(
+            system14, device; from = key, magnitude = analysis.current.from.magnitude[idx],
+            angle = analysis.current.from.angle[idx]
+        )
     end
     updatePmu!(system14, device; label = "PMU 20", magnitude = 30)
 
@@ -165,7 +177,7 @@ end
     @default(template)
     @default(unit)
 
-    ############ Modified IEEE 14-bus Test Case ############
+    ########## IEEE 14-bus Test Case ##########
     updateBus!(system14; label = 1, type = 2)
     updateBus!(system14; label = 3, type = 3, angle = -0.17)
 
@@ -183,17 +195,26 @@ end
 
     device = measurement()
     @pmu(label = "PMU ?")
-    for (key, value) in system14.bus.label
-        addPmu!(system14, device; bus = key, magnitude = analysis.voltage.magnitude[value], angle = analysis.voltage.angle[value])
+    for (key, idx) in system14.bus.label
+        addPmu!(
+            system14, device; bus = key, magnitude = analysis.voltage.magnitude[idx],
+            angle = analysis.voltage.angle[idx]
+        )
     end
-    for (key, value) in system14.branch.label
-        addPmu!(system14, device; from = key, magnitude = analysis.current.from.magnitude[value], angle = analysis.current.from.angle[value])
-        addPmu!(system14, device; to = key, magnitude = analysis.current.to.magnitude[value], angle = analysis.current.to.angle[value])
+    for (key, idx) in system14.branch.label
+        addPmu!(
+            system14, device; from = key, magnitude = analysis.current.from.magnitude[idx],
+            angle = analysis.current.from.angle[idx]
+        )
+        addPmu!(
+            system14, device; to = key, magnitude = analysis.current.to.magnitude[idx],
+            angle = analysis.current.to.angle[idx]
+        )
     end
 
-    #### Test One Outlier ####
+    ##### Test One Outlier #####
     updatePmu!(system14, device; label = "PMU 2", magnitude = 15)
-    analysisSE = pmuWlsStateEstimation(system14, device)
+    analysisSE = pmuStateEstimation(system14, device)
     solve!(system14, analysisSE)
 
     outlier = residualTest!(system14, device, analysisSE; threshold = 3.0)
@@ -203,10 +224,10 @@ end
     solve!(system14, analysisSE)
     compstruct(analysisSE.voltage, analysis.voltage; atol = 1e-10)
 
-    #### Test Two Outliers ####
+    ##### Test Two Outliers #####
     updatePmu!(system14, device; label = "PMU 2", statusAngle = 1, statusMagnitude = 1)
     updatePmu!(system14, device; label = "PMU 20", angle = 10pi, magnitude = 30)
-    analysisSE = pmuWlsStateEstimation(system14, device)
+    analysisSE = pmuStateEstimation(system14, device)
     solve!(system14, analysisSE)
 
     outlier = residualTest!(system14, device, analysisSE; threshold = 3.0)
@@ -221,10 +242,13 @@ end
     solve!(system14, analysisSE)
     compstruct(analysisSE.voltage, analysis.voltage; atol = 1e-10)
 
-    #### Test Orthogonal Method with One Outlier ####
+    ##### Test Orthogonal Method with One Outlier #####
     updatePmu!(system14, device; label = "PMU 2", statusAngle = 1, statusMagnitude = 1)
-    updatePmu!(system14, device; label = "PMU 20", magnitude = analysis.current.to.magnitude[4], angle = analysis.current.to.angle[4], statusAngle = 1, statusMagnitude = 1)
-    analysisSE = pmuWlsStateEstimation(system14, device, Orthogonal)
+    updatePmu!(
+        system14, device; label = "PMU 20", magnitude = analysis.current.to.magnitude[4],
+        angle = analysis.current.to.angle[4], statusAngle = 1, statusMagnitude = 1
+    )
+    analysisSE = pmuStateEstimation(system14, device, Orthogonal)
     solve!(system14, analysisSE)
 
     outlier = residualTest!(system14, device, analysisSE; threshold = 3.0)
@@ -235,10 +259,10 @@ end
     @test analysis.voltage.magnitude ≈ analysisSE.voltage.magnitude
     @test analysis.voltage.angle ≈ analysisSE.voltage.angle
 
-    #### Test Orthogonal Method with Two Outliers ####
+    ##### Test Orthogonal Method with Two Outliers #####
     updatePmu!(system14, device; label = "PMU 2", statusAngle = 1, statusMagnitude = 1)
     updatePmu!(system14, device; label = "PMU 20", angle = 10pi, magnitude = 30)
-    analysisSE = pmuWlsStateEstimation(system14, device, Orthogonal)
+    analysisSE = pmuStateEstimation(system14, device, Orthogonal)
     solve!(system14, analysisSE)
 
     outlier = residualTest!(system14, device, analysisSE; threshold = 3.0)
@@ -258,7 +282,7 @@ end
     @default(template)
     @default(unit)
 
-    ############ Modified IEEE 14-bus Test Case ############
+    ########## IEEE 14-bus Test Case ##########
     updateBus!(system14; label = 1, type = 2)
     updateBus!(system14; label = 3, type = 3, angle = -0.17)
 
@@ -270,20 +294,29 @@ end
 
     @wattmeter(label = "Wattmeter ?")
     @pmu(label = "PMU ?")
-    for (key, value) in system14.bus.label
-        addWattmeter!(system14, device; bus = key, active = analysis.power.injection.active[value])
+    for (key, idx) in system14.bus.label
+        addWattmeter!(
+            system14, device; bus = key, active = analysis.power.injection.active[idx]
+        )
     end
-    for (key, value) in system14.branch.label
-        addWattmeter!(system14, device; from = key, active = analysis.power.from.active[value])
-        addWattmeter!(system14, device; to = key, active = analysis.power.to.active[value])
+    for (key, idx) in system14.branch.label
+        addWattmeter!(
+            system14, device; from = key, active = analysis.power.from.active[idx]
+        )
+        addWattmeter!(
+            system14, device; to = key, active = analysis.power.to.active[idx]
+        )
     end
-    for (key, value) in system14.bus.label
-        addPmu!(system14, device; bus = key, magnitude = 1.0, angle = analysis.voltage.angle[value])
+    for (key, idx) in system14.bus.label
+        addPmu!(
+            system14, device;
+            bus = key, magnitude = 1.0, angle = analysis.voltage.angle[idx]
+        )
     end
 
-    #### Test One Outlier ####
+    ##### Test One Outlier #####
     updateWattmeter!(system14, device; label = "Wattmeter 2", active = 100)
-    analysisSE = dcWlsStateEstimation(system14, device)
+    analysisSE = dcStateEstimation(system14, device)
     solve!(system14, analysisSE)
 
     outlier = residualTest!(system14, device, analysisSE; threshold = 3.0)
@@ -293,10 +326,10 @@ end
     solve!(system14, analysisSE)
     @test analysis.voltage.angle ≈ analysisSE.voltage.angle
 
-    #### Test Two Outliers ####
+    ##### Test Two Outliers #####
     updateWattmeter!(system14, device; label = "Wattmeter 2", status = 1)
     updatePmu!(system14, device; label = "PMU 10", angle = 10pi)
-    analysisSE = dcWlsStateEstimation(system14, device)
+    analysisSE = dcStateEstimation(system14, device)
     solve!(system14, analysisSE)
 
     outlier = residualTest!(system14, device, analysisSE; threshold = 3.0)
@@ -311,10 +344,13 @@ end
     solve!(system14, analysisSE)
     @test analysis.voltage.angle ≈ analysisSE.voltage.angle
 
-    #### Test Orthogonal Method with One Outlier ####
+    ##### Test Orthogonal Method with One Outlier #####
     updateWattmeter!(system14, device; label = "Wattmeter 2", status = 1)
-    updatePmu!(system14, device; label = "PMU 10", statusAngle = 1, angle = analysis.voltage.angle[10])
-    analysisSE = dcWlsStateEstimation(system14, device, Orthogonal)
+    updatePmu!(
+        system14, device;
+        label = "PMU 10", statusAngle = 1, angle = analysis.voltage.angle[10]
+    )
+    analysisSE = dcStateEstimation(system14, device, Orthogonal)
     solve!(system14, analysisSE)
 
     outlier = residualTest!(system14, device, analysisSE; threshold = 3.0)
@@ -324,10 +360,10 @@ end
     solve!(system14, analysisSE)
     @test analysis.voltage.angle ≈ analysisSE.voltage.angle
 
-    #### Test Orthogonal Method with Two Outliers ####
+    ##### Test Orthogonal Method with Two Outliers #####
     updateWattmeter!(system14, device; label = "Wattmeter 2", status = 1)
     updatePmu!(system14, device; label = "PMU 10", angle = 10pi)
-    analysisSE = dcWlsStateEstimation(system14, device, Orthogonal)
+    analysisSE = dcStateEstimation(system14, device, Orthogonal)
     solve!(system14, analysisSE)
 
     outlier = residualTest!(system14, device, analysisSE; threshold = 3.0)
