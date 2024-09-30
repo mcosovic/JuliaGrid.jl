@@ -306,10 +306,6 @@ system30 = powerSystem(string(path, "case30test.m"))
             angle = analysis.current.from.angle[idx], statusAngle = 1, polar = true
         )
         addPmu!(
-            system14, device; to = key, magnitude = analysis.current.to.magnitude[idx],
-            angle = analysis.current.to.angle[idx], statusAngle = 1, polar = true
-        )
-        addPmu!(
             system14, device; from = key, magnitude = analysis.current.from.magnitude[idx],
             angle = analysis.current.from.angle[idx]
         )
