@@ -558,14 +558,14 @@ function updateGenerator!(
     end
 
     if statusOld == 1 && gen.layout.status[idx] == 1
-        if isset(minActive) || isset(maxActive)
+        if isset(key.minActive, key.maxActive)
             remove!(jump, constr.capability.active, idx)
             addCapability(
                 jump, variable.active, constr.capability.active,
                 gen.capability.minActive, gen.capability.maxActive, idx
             )
         end
-        if isset(minReactive) || isset(maxReactive)
+        if isset(key.minReactive, key.maxReactive)
             remove!(jump, constr.capability.reactive, idx)
             addCapability(
                 jump, variable.reactive, constr.capability.reactive,
