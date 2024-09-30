@@ -303,8 +303,12 @@ function updateGenerator!(system::PowerSystem; label::IntStrMiss, kwargs...)
         end
         if statusOld == 0
             gen.layout.inservice += 1
-            position = searchsortedfirst(bus.supply.generator[idxBus], idx)
-            insert!(bus.supply.generator[idxBus], position, idx)
+            if haskey(bus.supply.generator, idxBus)
+                position = searchsortedfirst(bus.supply.generator[idxBus], idx)
+                insert!(bus.supply.generator[idxBus], position, idx)
+            else
+                bus.supply.generator[idxBus] = [idx]
+            end
         end
     end
     gen.layout.status[idx] = statusNew
