@@ -273,10 +273,10 @@ analysis = gaussNewton(system, device)</code></pre><p>Initially, the <a href="..
         break
     end
 end</code></pre><p>The function <a href="../../api/stateEstimation/#JuliaGrid.solve!-Tuple{PowerSystem, ACStateEstimation{NonlinearWLS{Normal}}}"><code>solve!</code></a> calculates the vector of residuals at each iteration using the equation:</p><p class="math-container">\[  \mathbf r (\mathbf x^{(\nu)}) = \mathbf{z} - \mathbf h (\mathbf x^{(\nu)}).\]</p><p>The resulting vector from these calculations is stored in the residual variable of the <code>ACStateEstimation</code> type and can be accessed through the following line of code:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; 𝐫 = analysis.method.residual</code><code class="nohighlight hljs ansi" style="display:block;">8-element Vector{Float64}:
-  0.0035897072707468114
- -0.0018254496928568065
-  0.015450068279419749
-  0.004682202837369198
+  0.0035897072707465894
+ -0.0018254496928567787
+  0.015450068279420526
+  0.004682202837369032
  -0.000582477295592243
   0.0
   0.0006121253938213833
@@ -302,11 +302,11 @@ end</code></pre><p>The function <a href="../../api/stateEstimation/#JuliaGrid.so
   ⋅    ⋅          ⋅          ⋅          0.383459   -0.177955
   ⋅    ⋅          ⋅          ⋅           ⋅          0.700467</code></pre><p>Then finally, the function computes the vector of state variable increments using the equation:</p><p class="math-container">\[		\mathbf \Delta \mathbf x^{(\nu)} = \mathbf G (\mathbf x^{(\nu)})^{-1} \mathbf J (\mathbf x^{(\nu)})^{T} \bm \Sigma^{-1} \mathbf r (\mathbf x^{(\nu)})\]</p><div class="admonition is-success"><header class="admonition-header">Tip</header><div class="admonition-body"><p>By default, JuliaGrid uses LU factorization as the primary method for factorizing the gain matrix <span>$\mathbf{G} = \mathbf{L}\mathbf{U}$</span>, aiming to compute the increments. Nevertheless, users have the flexibility to opt for QR or LDLt factorization as an alternative method.</p></div></div><p>Increment values are stored in the <code>ACStateEstimation</code> type and can be accessed after each iteration:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; 𝚫𝐱 = analysis.method.increment</code><code class="nohighlight hljs ansi" style="display:block;">6-element Vector{Float64}:
   0.0
- -1.9027980863565677e-9
-  4.203199615768073e-12
- -1.4819009166247434e-10
-  6.916714507828678e-10
-  9.322526057410858e-11</code></pre><p>Here again, the JuliaGrid implementation of the AC state estimation follows a specific order to store the increment vector and Jacobian matrix. The vector of increments first contains <span>$n$</span> increments of bus voltage angles <span>$\mathbf \Delta \bm{\Theta}$</span>, followed by <span>$n$</span> increments of bus voltage magnitudes <span>$\mathbf \Delta \mathbf{V}$</span>. This order also corresponds to the columns of the Jacobian matrix, while the order of rows of the Jacobian is defined according to the order of the residual vector.</p><p>Note that the increment vector and Jacobian matrix hold the slack bus with a known voltage angle. An element of the increment vector and a column of the Jacobian matrix are not deleted, and the presence on the slack bus is handled internally by JuliaGrid, which is evident from the factorization of the gain matrix.</p><p>The function <a href="../../api/stateEstimation/#JuliaGrid.solve!-Tuple{PowerSystem, ACStateEstimation{NonlinearWLS{Normal}}}"><code>solve!</code></a> adds the computed increment term to the previous solution to obtain a new solution:</p><p class="math-container">\[  \mathbf {x}^{(\nu + 1)} = \mathbf {x}^{(\nu)} + \mathbf \Delta \mathbf {x}^{(\nu)}.\]</p><p>Therefore, the bus voltage magnitudes <span>$\mathbf{V} = [V_i]$</span> and angles <span>$\bm{\Theta} = [\theta_i]$</span> are stored in the following vectors:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; 𝐕 = analysis.voltage.magnitude</code><code class="nohighlight hljs ansi" style="display:block;">3-element Vector{Float64}:
+ -1.9027980794422067e-9
+  4.203195409667386e-12
+ -1.481900860169573e-10
+  6.916715767922354e-10
+  9.322525666335619e-11</code></pre><p>Here again, the JuliaGrid implementation of the AC state estimation follows a specific order to store the increment vector and Jacobian matrix. The vector of increments first contains <span>$n$</span> increments of bus voltage angles <span>$\mathbf \Delta \bm{\Theta}$</span>, followed by <span>$n$</span> increments of bus voltage magnitudes <span>$\mathbf \Delta \mathbf{V}$</span>. This order also corresponds to the columns of the Jacobian matrix, while the order of rows of the Jacobian is defined according to the order of the residual vector.</p><p>Note that the increment vector and Jacobian matrix hold the slack bus with a known voltage angle. An element of the increment vector and a column of the Jacobian matrix are not deleted, and the presence on the slack bus is handled internally by JuliaGrid, which is evident from the factorization of the gain matrix.</p><p>The function <a href="../../api/stateEstimation/#JuliaGrid.solve!-Tuple{PowerSystem, ACStateEstimation{NonlinearWLS{Normal}}}"><code>solve!</code></a> adds the computed increment term to the previous solution to obtain a new solution:</p><p class="math-container">\[  \mathbf {x}^{(\nu + 1)} = \mathbf {x}^{(\nu)} + \mathbf \Delta \mathbf {x}^{(\nu)}.\]</p><p>Therefore, the bus voltage magnitudes <span>$\mathbf{V} = [V_i]$</span> and angles <span>$\bm{\Theta} = [\theta_i]$</span> are stored in the following vectors:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; 𝐕 = analysis.voltage.magnitude</code><code class="nohighlight hljs ansi" style="display:block;">3-element Vector{Float64}:
  1.0005824771474021
  0.8752366339306804
  0.8993422332624245</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; 𝚯 = analysis.voltage.angle</code><code class="nohighlight hljs ansi" style="display:block;">3-element Vector{Float64}:
@@ -376,12 +376,12 @@ end</code></pre><p>Following that, we check for outliers once more:</p><pre><cod
   \end{aligned}\]</p><p>To form the above optimization problem, the user can call the following function:</p><pre><code class="language-julia hljs">using Ipopt
 
 analysis = acLavStateEstimation(system, device, Ipopt.Optimizer)</code></pre><p>Then the user can solve the optimization problem by:</p><pre><code class="language-julia hljs">solve!(system, analysis)</code></pre><p>As a result, we obtain optimal values for the four non-negative variables, while the state estimator is obtained by:</p><p class="math-container">\[    \hat{\mathbf x} = \overline{\mathbf x} - \underline{\mathbf x}.\]</p><p>Users can retrieve the estimated bus voltage magnitudes <span>$\hat{\mathbf V} = [\hat{V}_i]$</span> and angles <span>$\hat{\bm {\Theta}} = [\hat{\theta}_i]$</span>, <span>$i \in \mathcal{N}$</span>, using:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; 𝐕 = analysis.voltage.magnitude</code><code class="nohighlight hljs ansi" style="display:block;">3-element Vector{Float64}:
- 1.000000017669663
- 0.871699115356023
- 0.891540267792152</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; 𝚯 = analysis.voltage.angle</code><code class="nohighlight hljs ansi" style="display:block;">3-element Vector{Float64}:
+ 1.0000000064101187
+ 0.8716991294249965
+ 0.8915402891580015</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; 𝚯 = analysis.voltage.angle</code><code class="nohighlight hljs ansi" style="display:block;">3-element Vector{Float64}:
   0.0
- -0.1330063749992405
- -0.19921333029924426</code></pre><hr/><h2 id="ACObservabilityAnalysisTutorials"><a class="docs-heading-anchor" href="#ACObservabilityAnalysisTutorials">Observability Analysis</a><a id="ACObservabilityAnalysisTutorials-1"></a><a class="docs-heading-anchor-permalink" href="#ACObservabilityAnalysisTutorials" title="Permalink"></a></h2><p>The state estimation algorithm aims to estimate the values of the state variables based on the measurement model described as a system of equations. Prior to applying the state estimation algorithm, the observability analysis determines the existence and uniqueness of the solution for the underlying system of equations. In cases where a unique solution is not guaranteed, the observability analysis identifies observable islands and prescribes an additional set of equations (pseudo-measurements) to achieve a unique solution <a href="#ACSEReferenceTutorials">[7]</a>.</p><hr/><h5 id="Identification-of-Observable-Islands"><a class="docs-heading-anchor" href="#Identification-of-Observable-Islands">Identification of Observable Islands</a><a id="Identification-of-Observable-Islands-1"></a><a class="docs-heading-anchor-permalink" href="#Identification-of-Observable-Islands" title="Permalink"></a></h5><p>JuliaGrid employs standard observability analysis performed on the linear decoupled measurement model <a href="#ACSEReferenceTutorials">[2, Ch. 7]</a>. Active power measurements from wattmeters are utilized to estimate bus voltage angles, while reactive power measurements from varmeters are used to estimate bus voltage magnitudes. This necessitates that measurements of active and reactive power come in pairs.</p><p>Let us illustrate this concept with the following example, where measurements form an unobservable system:</p><pre><code class="language-julia hljs">system = powerSystem()
+ -0.133006380063307
+ -0.19921333228739968</code></pre><hr/><h2 id="ACObservabilityAnalysisTutorials"><a class="docs-heading-anchor" href="#ACObservabilityAnalysisTutorials">Observability Analysis</a><a id="ACObservabilityAnalysisTutorials-1"></a><a class="docs-heading-anchor-permalink" href="#ACObservabilityAnalysisTutorials" title="Permalink"></a></h2><p>The state estimation algorithm aims to estimate the values of the state variables based on the measurement model described as a system of equations. Prior to applying the state estimation algorithm, the observability analysis determines the existence and uniqueness of the solution for the underlying system of equations. In cases where a unique solution is not guaranteed, the observability analysis identifies observable islands and prescribes an additional set of equations (pseudo-measurements) to achieve a unique solution <a href="#ACSEReferenceTutorials">[7]</a>.</p><hr/><h5 id="Identification-of-Observable-Islands"><a class="docs-heading-anchor" href="#Identification-of-Observable-Islands">Identification of Observable Islands</a><a id="Identification-of-Observable-Islands-1"></a><a class="docs-heading-anchor-permalink" href="#Identification-of-Observable-Islands" title="Permalink"></a></h5><p>JuliaGrid employs standard observability analysis performed on the linear decoupled measurement model <a href="#ACSEReferenceTutorials">[2, Ch. 7]</a>. Active power measurements from wattmeters are utilized to estimate bus voltage angles, while reactive power measurements from varmeters are used to estimate bus voltage magnitudes. This necessitates that measurements of active and reactive power come in pairs.</p><p>Let us illustrate this concept with the following example, where measurements form an unobservable system:</p><pre><code class="language-julia hljs">system = powerSystem()
 device = measurement()
 
 addBus!(system; label = &quot;Bus 1&quot;, type = 3)
@@ -446,116 +446,116 @@ for iteration = 1:20
         break
     end
 end</code></pre><hr/><h2 id="ACPowerAnalysisTutorials"><a class="docs-heading-anchor" href="#ACPowerAnalysisTutorials">Power Analysis</a><a id="ACPowerAnalysisTutorials-1"></a><a class="docs-heading-anchor-permalink" href="#ACPowerAnalysisTutorials" title="Permalink"></a></h2><p>Once the computation of voltage magnitudes and angles at each bus is completed, various electrical quantities can be determined. JuliaGrid offers the <a href="../../api/analysis/#JuliaGrid.power!-Tuple{PowerSystem, ACPowerFlow}"><code>power!</code></a> function, which enables the calculation of powers associated with buses and branches. Here is an example code snippet demonstrating its usage:</p><pre><code class="language-julia hljs">power!(system, analysis)</code></pre><p>The function stores the computed powers in the rectangular coordinate system. It calculates the following powers related to buses and branches:</p><table><tr><th style="text-align: left">Bus</th><th style="text-align: left">Active</th><th style="text-align: left">Reactive</th></tr><tr><td style="text-align: left"><a href="../powerSystemModel/#BusInjectionsTutorials">Injections</a></td><td style="text-align: left"><span>$\mathbf{P} = [P_i]$</span></td><td style="text-align: left"><span>$\mathbf{Q} = [Q_i]$</span></td></tr><tr><td style="text-align: left"><a href="#ACGeneratorPowerInjectionsManual">Generator injections</a></td><td style="text-align: left"><span>$\mathbf{P}_{\text{p}} = [P_{\text{p}i}]$</span></td><td style="text-align: left"><span>$\mathbf{Q}_{\text{p}} = [Q_{\text{p}i}]$</span></td></tr><tr><td style="text-align: left"><a href="../powerSystemModel/#BusShuntElementTutorials">Shunt elements</a></td><td style="text-align: left"><span>$\mathbf{P}_{\text{sh}} = [{P}_{\text{sh}i}]$</span></td><td style="text-align: left"><span>$\mathbf{Q}_{\text{sh}} = [{Q}_{\text{sh}i}]$</span></td></tr></table><table><tr><th style="text-align: left">Branch</th><th style="text-align: left">Active</th><th style="text-align: left">Reactive</th></tr><tr><td style="text-align: left"><a href="../powerSystemModel/#BranchNetworkEquationsTutorials">From-bus end flows</a></td><td style="text-align: left"><span>$\mathbf{P}_{\text{i}} = [P_{ij}]$</span></td><td style="text-align: left"><span>$\mathbf{Q}_{\text{i}} = [Q_{ij}]$</span></td></tr><tr><td style="text-align: left"><a href="../powerSystemModel/#BranchNetworkEquationsTutorials">To-bus end flows</a></td><td style="text-align: left"><span>$\mathbf{P}_{\text{j}} = [P_{ji}]$</span></td><td style="text-align: left"><span>$\mathbf{Q}_{\text{j}} = [Q_{ji}]$</span></td></tr><tr><td style="text-align: left"><a href="../powerSystemModel/#BranchShuntElementsTutorials">Shunt elements</a></td><td style="text-align: left"><span>$\mathbf{P}_{\text{s}} = [P_{\text{s}ij}]$</span></td><td style="text-align: left"><span>$\mathbf{P}_{\text{s}} = [P_{\text{s}ij}]$</span></td></tr><tr><td style="text-align: left"><a href="../powerSystemModel/#BranchSeriesElementTutorials">Series elements</a></td><td style="text-align: left"><span>$\mathbf{P}_{\text{l}} = [P_{\text{l}ij}]$</span></td><td style="text-align: left"><span>$\mathbf{Q}_{\text{l}} = [Q_{\text{l}ij}]$</span></td></tr></table><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p>For a clear comprehension of the equations, symbols presented in this section, as well as for a better grasp of power directions, please refer to the <a href="../powerSystemModel/#UnifiedBranchModelTutorials">Unified Branch Model</a>.</p></div></div><hr/><h5 id="Power-Injections"><a class="docs-heading-anchor" href="#Power-Injections">Power Injections</a><a id="Power-Injections-1"></a><a class="docs-heading-anchor-permalink" href="#Power-Injections" title="Permalink"></a></h5><p><a href="../powerSystemModel/#BusInjectionsTutorials">Active and reactive power injections</a> are stored as the vectors <span>$\mathbf{P} = [P_i]$</span> and <span>$\mathbf{Q} = [Q_i]$</span>, respectively, and can be retrieved using the following commands:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; 𝐏 = analysis.power.injection.active</code><code class="nohighlight hljs ansi" style="display:block;">5-element Vector{Float64}:
-  0.9299999999999988
- -0.09999999999996369
- -0.3000000000000176
- -0.19876867625285347
- -0.2980672917108766</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; 𝐐 = analysis.power.injection.reactive</code><code class="nohighlight hljs ansi" style="display:block;">5-element Vector{Float64}:
- -0.41000000000000014
- -0.009999999999991668
-  0.5199999999999975
- -0.018862107379958845
- -0.027382297658437513</code></pre><hr/><h5 id="ACGeneratorPowerInjectionsManual"><a class="docs-heading-anchor" href="#ACGeneratorPowerInjectionsManual">Generator Power Injections</a><a id="ACGeneratorPowerInjectionsManual-1"></a><a class="docs-heading-anchor-permalink" href="#ACGeneratorPowerInjectionsManual" title="Permalink"></a></h5><p>We can calculate the active and reactive power injections supplied by generators at each bus <span>$i \in \mathcal{N}$</span> by summing the active and reactive power injections and the active and reactive power demanded by consumers at each bus:</p><p class="math-container">\[  \begin{aligned}
+  0.9299999999999997
+ -0.09999999999998169
+ -0.2999999999999997
+ -0.1987686762528627
+ -0.2980672917108779</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; 𝐐 = analysis.power.injection.reactive</code><code class="nohighlight hljs ansi" style="display:block;">5-element Vector{Float64}:
+ -0.4100000000000037
+ -0.009999999999994251
+  0.5199999999999999
+ -0.01886210737995113
+ -0.0273822976584444</code></pre><hr/><h5 id="ACGeneratorPowerInjectionsManual"><a class="docs-heading-anchor" href="#ACGeneratorPowerInjectionsManual">Generator Power Injections</a><a id="ACGeneratorPowerInjectionsManual-1"></a><a class="docs-heading-anchor-permalink" href="#ACGeneratorPowerInjectionsManual" title="Permalink"></a></h5><p>We can calculate the active and reactive power injections supplied by generators at each bus <span>$i \in \mathcal{N}$</span> by summing the active and reactive power injections and the active and reactive power demanded by consumers at each bus:</p><p class="math-container">\[  \begin{aligned}
     P_{\text{p}i} &amp;= P_i + P_{\text{d}i}\\
     Q_{\text{p}i} &amp;= Q_i + Q_{\text{d}i}.
   \end{aligned}\]</p><p>The active and reactive power injections from the generators at each bus are stored as vectors, denoted by <span>$\mathbf{P}_{\text{p}} = [P_{\text{p}i}]$</span> and <span>$\mathbf{Q}_{\text{p}} = [Q_{\text{p}i}]$</span>, which can be obtained using:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; 𝐏ₚ = analysis.power.supply.active</code><code class="nohighlight hljs ansi" style="display:block;">5-element Vector{Float64}:
- 0.9299999999999988
- 3.6318170693050433e-14
- 0.19999999999998241
- 0.0012313237471465455
- 0.001932708289123397</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; 𝐐ₚ = analysis.power.supply.reactive</code><code class="nohighlight hljs ansi" style="display:block;">5-element Vector{Float64}:
- -0.41000000000000014
-  8.331876855116604e-15
-  0.5299999999999975
-  0.0011378926200411553
-  0.002617702341562486</code></pre><hr/><h5 id="Power-at-Bus-Shunt-Elements"><a class="docs-heading-anchor" href="#Power-at-Bus-Shunt-Elements">Power at Bus Shunt Elements</a><a id="Power-at-Bus-Shunt-Elements-1"></a><a class="docs-heading-anchor-permalink" href="#Power-at-Bus-Shunt-Elements" title="Permalink"></a></h5><p><a href="../powerSystemModel/#BusShuntElementTutorials">Active and reactive powers</a> associated with the shunt elements at each bus are represented by the vectors <span>$\mathbf{P}_{\text{sh}} = [{P}_{\text{sh}i}]$</span> and <span>$\mathbf{Q}_{\text{sh}} = [{Q}_{\text{sh}i}]$</span>. To retrieve these powers in JuliaGrid, use the following commands:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; 𝐏ₛₕ = analysis.power.shunt.active</code><code class="nohighlight hljs ansi" style="display:block;">5-element Vector{Float64}:
+ 0.9299999999999997
+ 1.8318679906315083e-14
+ 0.2000000000000003
+ 0.0012313237471373029
+ 0.0019327082891220648</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; 𝐐ₚ = analysis.power.supply.reactive</code><code class="nohighlight hljs ansi" style="display:block;">5-element Vector{Float64}:
+ -0.4100000000000037
+  5.748873599387139e-15
+  0.5299999999999999
+  0.0011378926200488713
+  0.0026177023415555993</code></pre><hr/><h5 id="Power-at-Bus-Shunt-Elements"><a class="docs-heading-anchor" href="#Power-at-Bus-Shunt-Elements">Power at Bus Shunt Elements</a><a id="Power-at-Bus-Shunt-Elements-1"></a><a class="docs-heading-anchor-permalink" href="#Power-at-Bus-Shunt-Elements" title="Permalink"></a></h5><p><a href="../powerSystemModel/#BusShuntElementTutorials">Active and reactive powers</a> associated with the shunt elements at each bus are represented by the vectors <span>$\mathbf{P}_{\text{sh}} = [{P}_{\text{sh}i}]$</span> and <span>$\mathbf{Q}_{\text{sh}} = [{Q}_{\text{sh}i}]$</span>. To retrieve these powers in JuliaGrid, use the following commands:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; 𝐏ₛₕ = analysis.power.shunt.active</code><code class="nohighlight hljs ansi" style="display:block;">5-element Vector{Float64}:
  0.0
  0.0
  0.0
  0.0
  0.0</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; 𝐐ₛₕ = analysis.power.shunt.reactive</code><code class="nohighlight hljs ansi" style="display:block;">5-element Vector{Float64}:
-  0.0
+ -0.0
  -0.0
  -0.0
  -0.0
  -0.0</code></pre><hr/><h5 id="Power-Flows"><a class="docs-heading-anchor" href="#Power-Flows">Power Flows</a><a id="Power-Flows-1"></a><a class="docs-heading-anchor-permalink" href="#Power-Flows" title="Permalink"></a></h5><p>The resulting <a href="../powerSystemModel/#BranchNetworkEquationsTutorials">active and reactive power flows</a> at each from-bus end are stored as the vectors <span>$\mathbf{P}_{\text{i}} = [P_{ij}]$</span> and <span>$\mathbf{Q}_{\text{i}} = [Q_{ij}],$</span> respectively, and can be retrieved using the following commands:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; 𝐏ᵢ = analysis.power.from.active</code><code class="nohighlight hljs ansi" style="display:block;">5-element Vector{Float64}:
- 0.9299999999999988
- 0.35434101476691326
- 0.4549168904303594
- 0.04859751029333994
- 0.29999999999999877</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; 𝐐ᵢ = analysis.power.from.reactive</code><code class="nohighlight hljs ansi" style="display:block;">5-element Vector{Float64}:
- -0.41000000000000014
- -0.3991575300722431
- -0.07044017499754933
-  0.12002822333381613
-  0.029999999999998743</code></pre><p>Similarly, the vectors of <a href="../powerSystemModel/#BranchNetworkEquationsTutorials">active and reactive power flows</a> at the to-bus end are stored as <span>$\mathbf{P}_{\text{j}} = [P_{ji}]$</span> and <span>$\mathbf{Q}_{\text{j}} = [Q_{ji}]$</span>, respectively, and can be retrieved using the following code:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; 𝐏ⱼ = analysis.power.to.active</code><code class="nohighlight hljs ansi" style="display:block;">5-element Vector{Float64}:
- -0.9092579051972387
- -0.34859751029335734
- -0.450610653159148
- -0.04815802309371879
- -0.2980672917108766</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; 𝐐ⱼ = analysis.power.to.reactive</code><code class="nohighlight hljs ansi" style="display:block;">5-element Vector{Float64}:
-  0.45959770506979014
-  0.39997177666618483
-  0.07264836417613287
- -0.12151047155608241
- -0.027382297658437513</code></pre><hr/><h5 id="Power-at-Branch-Shunt-Elements"><a class="docs-heading-anchor" href="#Power-at-Branch-Shunt-Elements">Power at Branch Shunt Elements</a><a id="Power-at-Branch-Shunt-Elements-1"></a><a class="docs-heading-anchor-permalink" href="#Power-at-Branch-Shunt-Elements" title="Permalink"></a></h5><p><a href="../powerSystemModel/#BranchShuntElementsTutorials">Active and reactive powers</a> associated with the branch shunt elements at each branch are represented by the vectors <span>$\mathbf{P}_{\text{s}} = [P_{\text{s}ij}]$</span> and <span>$\mathbf{Q}_{\text{s}} = [Q_{\text{s}ij}]$</span>. We can retrieve these values using the following code:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; 𝐏ₛ = analysis.power.charging.active</code><code class="nohighlight hljs ansi" style="display:block;">5-element Vector{Float64}:
+ 0.9299999999999997
+ 0.3543410147669059
+ 0.45491689043036315
+ 0.04859751029334397
+ 0.3000000000000007</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; 𝐐ᵢ = analysis.power.from.reactive</code><code class="nohighlight hljs ansi" style="display:block;">5-element Vector{Float64}:
+ -0.4100000000000037
+ -0.39915753007224625
+ -0.07044017499754598
+  0.120028223333823
+  0.030000000000002115</code></pre><p>Similarly, the vectors of <a href="../powerSystemModel/#BranchNetworkEquationsTutorials">active and reactive power flows</a> at the to-bus end are stored as <span>$\mathbf{P}_{\text{j}} = [P_{ji}]$</span> and <span>$\mathbf{Q}_{\text{j}} = [Q_{ji}]$</span>, respectively, and can be retrieved using the following code:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; 𝐏ⱼ = analysis.power.to.active</code><code class="nohighlight hljs ansi" style="display:block;">5-element Vector{Float64}:
+ -0.9092579051972395
+ -0.34859751029335007
+ -0.4506106531591515
+ -0.04815802309372233
+ -0.2980672917108779</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; 𝐐ⱼ = analysis.power.to.reactive</code><code class="nohighlight hljs ansi" style="display:block;">5-element Vector{Float64}:
+  0.4595977050697902
+  0.399971776666188
+  0.07264836417613314
+ -0.12151047155608216
+ -0.0273822976584444</code></pre><hr/><h5 id="Power-at-Branch-Shunt-Elements"><a class="docs-heading-anchor" href="#Power-at-Branch-Shunt-Elements">Power at Branch Shunt Elements</a><a id="Power-at-Branch-Shunt-Elements-1"></a><a class="docs-heading-anchor-permalink" href="#Power-at-Branch-Shunt-Elements" title="Permalink"></a></h5><p><a href="../powerSystemModel/#BranchShuntElementsTutorials">Active and reactive powers</a> associated with the branch shunt elements at each branch are represented by the vectors <span>$\mathbf{P}_{\text{s}} = [P_{\text{s}ij}]$</span> and <span>$\mathbf{Q}_{\text{s}} = [Q_{\text{s}ij}]$</span>. We can retrieve these values using the following code:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; 𝐏ₛ = analysis.power.charging.active</code><code class="nohighlight hljs ansi" style="display:block;">5-element Vector{Float64}:
  0.0001003347527603625
- 0.00010036612891864453
+ 0.00010036612891864457
  9.990705202969285e-5
- 9.960367542761239e-5
- 9.840303916639449e-5</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; 𝐐ₛ = analysis.power.charging.reactive</code><code class="nohighlight hljs ansi" style="display:block;">5-element Vector{Float64}:
+ 9.96036754276124e-5
+ 9.840303916639445e-5</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; 𝐐ₛ = analysis.power.charging.reactive</code><code class="nohighlight hljs ansi" style="display:block;">5-element Vector{Float64}:
  -0.00200669505520725
- -0.00200732257837289
+ -0.0020073225783728914
  -0.001998141040593857
- -0.0019920735085522476
- -0.0019680607833278897</code></pre><hr/><h5 id="Power-at-Branch-Series-Elements"><a class="docs-heading-anchor" href="#Power-at-Branch-Series-Elements">Power at Branch Series Elements</a><a id="Power-at-Branch-Series-Elements-1"></a><a class="docs-heading-anchor-permalink" href="#Power-at-Branch-Series-Elements" title="Permalink"></a></h5><p><a href="../powerSystemModel/#BranchSeriesElementTutorials">Active and reactive powers</a> associated with the branch series element at each branch are represented by the vectors <span>$\mathbf{P}_{\text{l}} = [P_{\text{l}ij}]$</span> and <span>$\mathbf{Q}_{\text{l}} = [Q_{\text{l}ij}]$</span>. We can retrieve these values using the following code:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; 𝐏ₗ = analysis.power.series.active</code><code class="nohighlight hljs ansi" style="display:block;">5-element Vector{Float64}:
- 0.02064176004999998
- 0.005643138344633508
- 0.004206330219180731
- 0.0003398835241944669
- 0.001834305249955859</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; 𝐐ₗ = analysis.power.series.reactive</code><code class="nohighlight hljs ansi" style="display:block;">5-element Vector{Float64}:
- 0.051604400124999936
- 0.0028215691723167545
- 0.004206330219180731
- 0.0005098252862917002
- 0.004585763124889647</code></pre><hr/><h2 id="PMUCurrentAnalysisTutorials"><a class="docs-heading-anchor" href="#PMUCurrentAnalysisTutorials">Current Analysis</a><a id="PMUCurrentAnalysisTutorials-1"></a><a class="docs-heading-anchor-permalink" href="#PMUCurrentAnalysisTutorials" title="Permalink"></a></h2><p>JuliaGrid offers the <a href="../../api/analysis/#JuliaGrid.current!-Tuple{PowerSystem, AC}"><code>current!</code></a> function, which enables the calculation of currents associated with buses and branches. Here is an example code snippet demonstrating its usage:</p><pre><code class="language-julia hljs">current!(system, analysis)</code></pre><p>The function stores the computed currents in the polar coordinate system. It calculates the following currents related to buses and branches:</p><table><tr><th style="text-align: left">Bus</th><th style="text-align: left">Magnitude</th><th style="text-align: left">Angle</th></tr><tr><td style="text-align: left"><a href="../powerSystemModel/#BusInjectionsTutorials">Injections</a></td><td style="text-align: left"><span>$\mathbf{I} = [I_i]$</span></td><td style="text-align: left"><span>$\bm{\psi} = [\psi_i]$</span></td></tr></table><table><tr><th style="text-align: left">Branch</th><th style="text-align: left">Magnitude</th><th style="text-align: left">Angle</th></tr><tr><td style="text-align: left"><a href="../powerSystemModel/#BranchNetworkEquationsTutorials">From-bus end flows</a></td><td style="text-align: left"><span>$\mathbf{I}_{\text{i}} = [I_{ij}]$</span></td><td style="text-align: left"><span>$\bm{\psi}_{\text{i}} = [\psi_{ij}]$</span></td></tr><tr><td style="text-align: left"><a href="../powerSystemModel/#BranchNetworkEquationsTutorials">To-bus end flows</a></td><td style="text-align: left"><span>$\mathbf{I}_{\text{j}} = [I_{ji}]$</span></td><td style="text-align: left"><span>$\bm{\psi}_{\text{j}} = [\psi_{ji}]$</span></td></tr><tr><td style="text-align: left"><a href="../powerSystemModel/#BranchSeriesElementTutorials">Series elements</a></td><td style="text-align: left"><span>$\mathbf{I}_{\text{l}} = [I_{\text{l}ij}]$</span></td><td style="text-align: left"><span>$\bm{\psi}_{\text{l}} = [\psi_{\text{l}ij}]$</span></td></tr></table><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p>For a clear comprehension of the equations, symbols presented in this section, as well as for a better grasp of power directions, please refer to the <a href="../powerSystemModel/#UnifiedBranchModelTutorials">Unified Branch Model</a>.</p></div></div><hr/><h5 id="Current-Injections"><a class="docs-heading-anchor" href="#Current-Injections">Current Injections</a><a id="Current-Injections-1"></a><a class="docs-heading-anchor-permalink" href="#Current-Injections" title="Permalink"></a></h5><p>In JuliaGrid, <a href="../powerSystemModel/#BusInjectionsTutorials">complex current injections</a> are stored in the vector of magnitudes denoted as <span>$\mathbf{I} = [I_i]$</span> and the vector of angles represented as <span>$\bm{\psi} = [\psi_i]$</span>. You can retrieve them using the following commands:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; 𝐈 = analysis.current.injection.magnitude</code><code class="nohighlight hljs ansi" style="display:block;">5-element Vector{Float64}:
- 1.0163660757817519
- 0.10016401375539141
- 0.6001449678888753
- 0.2005211002893733
- 0.302884864771424</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; 𝛙 = analysis.current.injection.angle</code><code class="nohighlight hljs ansi" style="display:block;">5-element Vector{Float64}:
-  0.4152273355552323
-  2.9874016125482816
- -2.1600612916321005
-  2.98196255635878
-  2.970353020912752</code></pre><hr/><h5 id="Current-Flows"><a class="docs-heading-anchor" href="#Current-Flows">Current Flows</a><a id="Current-Flows-1"></a><a class="docs-heading-anchor-permalink" href="#Current-Flows" title="Permalink"></a></h5><p>To obtain the vectors of magnitudes <span>$\mathbf{I}_{\text{i}} = [I_{ij}]$</span> and angles <span>$\bm{\psi}_{\text{i}} = [\psi_{ij}]$</span> for the resulting <a href="../powerSystemModel/#BranchNetworkEquationsTutorials">complex current flows</a>, you can use the following commands:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; 𝐈ᵢ = analysis.current.from.magnitude</code><code class="nohighlight hljs ansi" style="display:block;">5-element Vector{Float64}:
- 1.0163660757817519
- 0.5319677219357473
- 0.45880483191252924
- 0.12945260285136365
- 0.30279410260636275</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; 𝛙ᵢ = analysis.current.from.angle</code><code class="nohighlight hljs ansi" style="display:block;">5-element Vector{Float64}:
-  0.4152273355552323
-  0.7902836921556453
-  0.09909947276475109
- -1.2520733288814248
- -0.16468729573542504</code></pre><p>Similarly, we can obtain the vectors of magnitudes <span>$\mathbf{I}_{\text{j}} = [I_{ji}]$</span> and angles <span>$\bm{\psi}_{\text{j}} = [\psi_{ji}]$</span> of the resulting <a href="../powerSystemModel/#BranchNetworkEquationsTutorials">complex current flows</a> using the following code:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; 𝐈ⱼ = analysis.current.to.magnitude</code><code class="nohighlight hljs ansi" style="display:block;">5-element Vector{Float64}:
- 1.0154195547100437
- 0.530397125556146
- 0.4583941090816603
- 0.13126837938333466
- 0.302884864771424</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; 𝛙ⱼ = analysis.current.to.angle</code><code class="nohighlight hljs ansi" style="display:block;">5-element Vector{Float64}:
- -2.728105296729697
- -2.3536586384942173
- -3.046764735557015
-  1.8831146895681987
-  2.970353020912752</code></pre><hr/><h5 id="Current-at-Branch-Series-Elements"><a class="docs-heading-anchor" href="#Current-at-Branch-Series-Elements">Current at Branch Series Elements</a><a id="Current-at-Branch-Series-Elements-1"></a><a class="docs-heading-anchor-permalink" href="#Current-at-Branch-Series-Elements" title="Permalink"></a></h5><p>To obtain the vectors of magnitudes <span>$\mathbf{I}_{\text{l}} = [I_{\text{l}ij}]$</span> and angles <span>$\bm{\psi}_{\text{l}} = [\psi_{\text{l}ij}]$</span> of the resulting <a href="../powerSystemModel/#BranchSeriesElementTutorials">complex current flows</a>, one can use the following code:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; 𝐈ₗ = analysis.current.series.magnitude</code><code class="nohighlight hljs ansi" style="display:block;">5-element Vector{Float64}:
- 1.0159173207008525
- 0.5311844474678032
- 0.4586027812377903
- 0.13036171297479693
- 0.30284527815006945</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; 𝛙ₗ = analysis.current.series.angle</code><code class="nohighlight hljs ansi" style="display:block;">5-element Vector{Float64}:
+ -0.001992073508552248
+ -0.001968060783327889</code></pre><hr/><h5 id="Power-at-Branch-Series-Elements"><a class="docs-heading-anchor" href="#Power-at-Branch-Series-Elements">Power at Branch Series Elements</a><a id="Power-at-Branch-Series-Elements-1"></a><a class="docs-heading-anchor-permalink" href="#Power-at-Branch-Series-Elements" title="Permalink"></a></h5><p><a href="../powerSystemModel/#BranchSeriesElementTutorials">Active and reactive powers</a> associated with the branch series element at each branch are represented by the vectors <span>$\mathbf{P}_{\text{l}} = [P_{\text{l}ij}]$</span> and <span>$\mathbf{Q}_{\text{l}} = [Q_{\text{l}ij}]$</span>. We can retrieve these values using the following code:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; 𝐏ₗ = analysis.power.series.active</code><code class="nohighlight hljs ansi" style="display:block;">5-element Vector{Float64}:
+ 0.020641760050000006
+ 0.0056431383446334795
+ 0.004206330219180818
+ 0.0003398835241945116
+ 0.0018343052499558846</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; 𝐐ₗ = analysis.power.series.reactive</code><code class="nohighlight hljs ansi" style="display:block;">5-element Vector{Float64}:
+ 0.05160440012500001
+ 0.0028215691723167393
+ 0.004206330219180818
+ 0.0005098252862917674
+ 0.004585763124889711</code></pre><hr/><h2 id="PMUCurrentAnalysisTutorials"><a class="docs-heading-anchor" href="#PMUCurrentAnalysisTutorials">Current Analysis</a><a id="PMUCurrentAnalysisTutorials-1"></a><a class="docs-heading-anchor-permalink" href="#PMUCurrentAnalysisTutorials" title="Permalink"></a></h2><p>JuliaGrid offers the <a href="../../api/analysis/#JuliaGrid.current!-Tuple{PowerSystem, AC}"><code>current!</code></a> function, which enables the calculation of currents associated with buses and branches. Here is an example code snippet demonstrating its usage:</p><pre><code class="language-julia hljs">current!(system, analysis)</code></pre><p>The function stores the computed currents in the polar coordinate system. It calculates the following currents related to buses and branches:</p><table><tr><th style="text-align: left">Bus</th><th style="text-align: left">Magnitude</th><th style="text-align: left">Angle</th></tr><tr><td style="text-align: left"><a href="../powerSystemModel/#BusInjectionsTutorials">Injections</a></td><td style="text-align: left"><span>$\mathbf{I} = [I_i]$</span></td><td style="text-align: left"><span>$\bm{\psi} = [\psi_i]$</span></td></tr></table><table><tr><th style="text-align: left">Branch</th><th style="text-align: left">Magnitude</th><th style="text-align: left">Angle</th></tr><tr><td style="text-align: left"><a href="../powerSystemModel/#BranchNetworkEquationsTutorials">From-bus end flows</a></td><td style="text-align: left"><span>$\mathbf{I}_{\text{i}} = [I_{ij}]$</span></td><td style="text-align: left"><span>$\bm{\psi}_{\text{i}} = [\psi_{ij}]$</span></td></tr><tr><td style="text-align: left"><a href="../powerSystemModel/#BranchNetworkEquationsTutorials">To-bus end flows</a></td><td style="text-align: left"><span>$\mathbf{I}_{\text{j}} = [I_{ji}]$</span></td><td style="text-align: left"><span>$\bm{\psi}_{\text{j}} = [\psi_{ji}]$</span></td></tr><tr><td style="text-align: left"><a href="../powerSystemModel/#BranchSeriesElementTutorials">Series elements</a></td><td style="text-align: left"><span>$\mathbf{I}_{\text{l}} = [I_{\text{l}ij}]$</span></td><td style="text-align: left"><span>$\bm{\psi}_{\text{l}} = [\psi_{\text{l}ij}]$</span></td></tr></table><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p>For a clear comprehension of the equations, symbols presented in this section, as well as for a better grasp of power directions, please refer to the <a href="../powerSystemModel/#UnifiedBranchModelTutorials">Unified Branch Model</a>.</p></div></div><hr/><h5 id="Current-Injections"><a class="docs-heading-anchor" href="#Current-Injections">Current Injections</a><a id="Current-Injections-1"></a><a class="docs-heading-anchor-permalink" href="#Current-Injections" title="Permalink"></a></h5><p>In JuliaGrid, <a href="../powerSystemModel/#BusInjectionsTutorials">complex current injections</a> are stored in the vector of magnitudes denoted as <span>$\mathbf{I} = [I_i]$</span> and the vector of angles represented as <span>$\bm{\psi} = [\psi_i]$</span>. You can retrieve them using the following commands:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; 𝐈 = analysis.current.injection.magnitude</code><code class="nohighlight hljs ansi" style="display:block;">5-element Vector{Float64}:
+ 1.016366075781754
+ 0.10016401375540951
+ 0.6001449678888684
+ 0.20052110028938183
+ 0.3028848647714261</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; 𝛙 = analysis.current.injection.angle</code><code class="nohighlight hljs ansi" style="display:block;">5-element Vector{Float64}:
+  0.4152273355552351
+  2.9874016125482736
+ -2.1600612916320725
+  2.981962556358823
+  2.9703530209127296</code></pre><hr/><h5 id="Current-Flows"><a class="docs-heading-anchor" href="#Current-Flows">Current Flows</a><a id="Current-Flows-1"></a><a class="docs-heading-anchor-permalink" href="#Current-Flows" title="Permalink"></a></h5><p>To obtain the vectors of magnitudes <span>$\mathbf{I}_{\text{i}} = [I_{ij}]$</span> and angles <span>$\bm{\psi}_{\text{i}} = [\psi_{ij}]$</span> for the resulting <a href="../powerSystemModel/#BranchNetworkEquationsTutorials">complex current flows</a>, you can use the following commands:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; 𝐈ᵢ = analysis.current.from.magnitude</code><code class="nohighlight hljs ansi" style="display:block;">5-element Vector{Float64}:
+ 1.016366075781754
+ 0.5319677219357447
+ 0.45880483191253246
+ 0.1294526028513715
+ 0.3027941026063651</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; 𝛙ᵢ = analysis.current.from.angle</code><code class="nohighlight hljs ansi" style="display:block;">5-element Vector{Float64}:
+  0.4152273355552351
+  0.7902836921556595
+  0.09909947276474262
+ -1.2520733288814159
+ -0.16468729573543564</code></pre><p>Similarly, we can obtain the vectors of magnitudes <span>$\mathbf{I}_{\text{j}} = [I_{ji}]$</span> and angles <span>$\bm{\psi}_{\text{j}} = [\psi_{ji}]$</span> of the resulting <a href="../powerSystemModel/#BranchNetworkEquationsTutorials">complex current flows</a> using the following code:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; 𝐈ⱼ = analysis.current.to.magnitude</code><code class="nohighlight hljs ansi" style="display:block;">5-element Vector{Float64}:
+ 1.0154195547100446
+ 0.5303971255561436
+ 0.45839410908166384
+ 0.13126837938333577
+ 0.3028848647714261</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; 𝛙ⱼ = analysis.current.to.angle</code><code class="nohighlight hljs ansi" style="display:block;">5-element Vector{Float64}:
+ -2.7281052967296975
+ -2.353658638494203
+ -3.0467647355570158
+  1.8831146895682245
+  2.9703530209127296</code></pre><hr/><h5 id="Current-at-Branch-Series-Elements"><a class="docs-heading-anchor" href="#Current-at-Branch-Series-Elements">Current at Branch Series Elements</a><a id="Current-at-Branch-Series-Elements-1"></a><a class="docs-heading-anchor-permalink" href="#Current-at-Branch-Series-Elements" title="Permalink"></a></h5><p>To obtain the vectors of magnitudes <span>$\mathbf{I}_{\text{l}} = [I_{\text{l}ij}]$</span> and angles <span>$\bm{\psi}_{\text{l}} = [\psi_{\text{l}ij}]$</span> of the resulting <a href="../powerSystemModel/#BranchSeriesElementTutorials">complex current flows</a>, one can use the following code:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; 𝐈ₗ = analysis.current.series.magnitude</code><code class="nohighlight hljs ansi" style="display:block;">5-element Vector{Float64}:
+ 1.0159173207008532
+ 0.5311844474678019
+ 0.458602781237795
+ 0.13036171297480553
+ 0.30284527815007156</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; 𝛙ₗ = analysis.current.series.angle</code><code class="nohighlight hljs ansi" style="display:block;">5-element Vector{Float64}:
   0.4143465012225557
-  0.7891003404573503
-  0.09695415170423538
- -1.255308699043183
- -0.16797520542380429</code></pre><hr/><h2 id="ACSEReferenceTutorials"><a class="docs-heading-anchor" href="#ACSEReferenceTutorials">References</a><a id="ACSEReferenceTutorials-1"></a><a class="docs-heading-anchor-permalink" href="#ACSEReferenceTutorials" title="Permalink"></a></h2><p>[1] ISO-IEC-OIML-BIPM: &quot;Guide to the expression of uncertainty in measurement,&quot; 1992.</p><p>[2] A. Monticelli, <em>State Estimation in Electric Power Systems: A Generalized Approach</em>, ser. Kluwer international series in engineering and computer science. Springer US, 1999.</p><p>[3] Y. Weng, Q. Li, R. Negi, and M. Ilic, &quot;Semidefinite programming for power system state estimation,&quot; <em>in Proc. IEEE PES General Meeting</em>, July 2012, pp. 1-8.</p><p>[4] P. C. Hansen, V. Pereyra, and G. Scherer, <em>Least squares data fitting with applications</em>, JHU Press, 2013.</p><p>[5] A. Abur and A. Exposito, <em>Power System State Estimation: Theory and Implementation</em>, Taylor &amp; Francis, 2004.</p><p>[6] G. Korres, &quot;A distributed multiarea state estimation,&quot; <em>IEEE Trans. Power Syst.</em>, vol. 26, no. 1, pp. 73–84, Feb. 2011.</p><p>[7] M. Cosovic, M. Delalic, D. Raca, and D. Vukobratovic, &quot;Observability analysis for large-scale power systems using factor graphs,&quot; <em>IEEE Trans. Power Syst.</em>, 36(5), 4791-4799.</p><p>[8] H. Horisberger, &quot;Observability analysis for power systems with measurement deficiencies,&quot; <em>IFAC Proceedings Volumes</em>, vol. 18, no. 7, pp.51–58, 1985.</p><p>[9] N. M. Manousakis and G. N. Korres, &quot;Observability analysis for power systems including conventional and phasor measurements,&quot; <em>in Proc. MedPower 2010</em>, Agia Napa, 2010, pp. 1-8.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../measurementModel/">« Measurement Model</a><a class="docs-footer-nextpage" href="../pmuStateEstimation/">PMU State Estimation »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.7.0 on <span class="colophon-date" title="Thursday 5 September 2024 14:46">Thursday 5 September 2024</span>. Using Julia version 1.10.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+  0.7891003404573693
+  0.0969541517042328
+ -1.2553086990431555
+ -0.16797520542382388</code></pre><hr/><h2 id="ACSEReferenceTutorials"><a class="docs-heading-anchor" href="#ACSEReferenceTutorials">References</a><a id="ACSEReferenceTutorials-1"></a><a class="docs-heading-anchor-permalink" href="#ACSEReferenceTutorials" title="Permalink"></a></h2><p>[1] ISO-IEC-OIML-BIPM: &quot;Guide to the expression of uncertainty in measurement,&quot; 1992.</p><p>[2] A. Monticelli, <em>State Estimation in Electric Power Systems: A Generalized Approach</em>, ser. Kluwer international series in engineering and computer science. Springer US, 1999.</p><p>[3] Y. Weng, Q. Li, R. Negi, and M. Ilic, &quot;Semidefinite programming for power system state estimation,&quot; <em>in Proc. IEEE PES General Meeting</em>, July 2012, pp. 1-8.</p><p>[4] P. C. Hansen, V. Pereyra, and G. Scherer, <em>Least squares data fitting with applications</em>, JHU Press, 2013.</p><p>[5] A. Abur and A. Exposito, <em>Power System State Estimation: Theory and Implementation</em>, Taylor &amp; Francis, 2004.</p><p>[6] G. Korres, &quot;A distributed multiarea state estimation,&quot; <em>IEEE Trans. Power Syst.</em>, vol. 26, no. 1, pp. 73–84, Feb. 2011.</p><p>[7] M. Cosovic, M. Delalic, D. Raca, and D. Vukobratovic, &quot;Observability analysis for large-scale power systems using factor graphs,&quot; <em>IEEE Trans. Power Syst.</em>, 36(5), 4791-4799.</p><p>[8] H. Horisberger, &quot;Observability analysis for power systems with measurement deficiencies,&quot; <em>IFAC Proceedings Volumes</em>, vol. 18, no. 7, pp.51–58, 1985.</p><p>[9] N. M. Manousakis and G. N. Korres, &quot;Observability analysis for power systems including conventional and phasor measurements,&quot; <em>in Proc. MedPower 2010</em>, Agia Napa, 2010, pp. 1-8.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../measurementModel/">« Measurement Model</a><a class="docs-footer-nextpage" href="../pmuStateEstimation/">PMU State Estimation »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.7.0 on <span class="colophon-date" title="Monday 30 September 2024 13:10">Monday 30 September 2024</span>. Using Julia version 1.10.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
