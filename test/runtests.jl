@@ -3,6 +3,7 @@ using HDF5
 using Test
 using JuMP, HiGHS, Ipopt, GLPK
 using Suppressor
+using OrderedCollections
 
 ##### Path to Test Data #####
 path = abspath(joinpath(dirname(Base.find_package("JuliaGrid")), ".."), "test/data/")
