@@ -17,6 +17,9 @@ using JuliaGrid
 * [`@current`](@ref @current)
 * [`@parameter`](@ref @parameter)
 
+###### Label Types
+* [`@labels`](@ref @labels)
+
 ###### Default Settings
 * [`@default`](@ref @default)
 
@@ -57,6 +60,13 @@ using JuliaGrid
 @voltage
 @current
 @parameter
+```
+
+---
+
+## Label Types
+```@docs
+@labels
 ```
 
 ---
