@@ -191,7 +191,7 @@ function addAmmeter!(
     checkStatus(statusTo)
 
     ammNumber = 2 * system.branch.layout.inservice
-    amp.label = OrderedDict{String,Int64}()
+    amp.label = OrderedDict{template.device, Int64}()
     sizehint!(amp.label, ammNumber)
 
     amp.layout.index = fill(0, ammNumber)

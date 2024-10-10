@@ -130,12 +130,7 @@ function addGenerator!(
     add!(gen.layout.area, key.area, def.area)
 
     push!(gen.cost.active.model, 0)
-    push!(gen.cost.active.polynomial, Float64[])
-    push!(gen.cost.active.piecewise, Array{Float64}(undef, 0, 0))
-
     push!(gen.cost.reactive.model, 0)
-    push!(gen.cost.reactive.polynomial, Float64[])
-    push!(gen.cost.reactive.piecewise, Array{Float64}(undef, 0, 0))
 end
 
 function addGenerator!(
@@ -837,19 +832,19 @@ function cost!(
         end
     end
 
-    if container.model[idx] == 1 && isempty(piecewise) && isempty(container.piecewise[idx])
+    if container.model[idx] == 1 && isempty(piecewise) && !haskey(container.piecewise, idx)
         errorAssignCost("piecewise")
     end
-    if container.model[idx] == 2 && isempty(polynomial) && isempty(container.polynomial[idx])
+    if container.model[idx] == 2 && isempty(polynomial) && !haskey(container.polynomial, idx)
         errorAssignCost("polynomial")
     end
 
     if !isempty(polynomial)
-        numberCoefficient = length(polynomial)
-        container.polynomial[idx] = fill(0.0, numberCoefficient)
+        numCoeff = length(polynomial)
+        container.polynomial[idx] = fill(0.0, numCoeff)
 
-        @inbounds for i = 1:numberCoefficient
-            container.polynomial[idx][i] = polynomial[i] / (scale^(numberCoefficient - i))
+        @inbounds for i = 1:numCoeff
+            container.polynomial[idx][i] = polynomial[i] / (scale^(numCoeff - i))
         end
     end
 

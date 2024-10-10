@@ -231,6 +231,30 @@ macro parameter(impedance::Symbol, admittance::Symbol)
     pfx.admittance = parsePrefix(admittanceString, suffix)
 end
 
+"""
+    @labels(type)
+
+JuliaGrid keeps all labels in ordered dictionaries as Strings. Users have the option to
+use Integers instead, which can be a more efficient way to store labels, particularly for
+large-scale systems.
+
+# Example
+```jldoctest
+@labels(Integer)
+```
+"""
+macro labels(type::Symbol)
+    if type == :Integer || type == :Int64
+        template.system = Int64
+        template.device = Int64
+    end
+    if type == :String
+        template.system = String
+        template.device = String
+    end
+end
+
+
 ##### Parse Suffix (Unit) #####
 function parseSuffix(input::String, unitList, type::String)
     suffix = ""
@@ -511,5 +535,10 @@ macro default(mode::Symbol)
       template.pmu.noise = false
       template.pmu.correlated = false
       template.pmu.polar = false
+    end
+
+    if mode == :template
+        template.system = String
+        template.device = String
     end
 end

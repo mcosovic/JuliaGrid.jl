@@ -5,7 +5,7 @@ using JuMP
 import LinearAlgebra: lu, lu!, ldlt, ldlt!, qr, ldiv, ldiv!, I, Factorization
 import SparseArrays: SparseMatrixCSC, sparse, spzeros, spdiagm, dropzeros!, nzrange, nnz, UMFPACK, SPQR, CHOLMOD
 
-import HDF5: File, Group, h5open, h5read, readmmap, attrs, attributes
+import HDF5: File, Group, Dataset, h5open, h5read, readmmap, attrs, attributes
 import OrderedCollections: OrderedDict
 import Printf: Format, format, @printf, @sprintf
 import Random: randperm, shuffle, shuffle!
@@ -20,7 +20,7 @@ include("backend/utility.jl")
 include("backend/internal.jl")
 include("backend/equations.jl")
 include("backend/expressions.jl")
-export @base, @power, @voltage, @current, @parameter, @default
+export @base, @power, @voltage, @current, @parameter, @default, @labels
 
 ######### Print ##########
 include("print/utility.jl")

@@ -238,7 +238,7 @@ end
 mutable struct BadData
     detect::Bool
     maxNormalizedResidual::Float64
-    label::String
+    label::IntStr
     index::Int64
 end
 

@@ -1,6 +1,7 @@
 @testset "Reusing Newton-Raphson Method" begin
     @default(unit)
     @default(template)
+    @labels(integer)
 
     ########## First Pass ##########
     system = powerSystem(string(path, "case14test.m"))
@@ -148,6 +149,8 @@
 end
 
 @testset "Reusing Gauss-Seidel Method" begin
+    @default(template)
+
     ########## First Pass ##########
     system = powerSystem(string(path, "case14test.m"))
 

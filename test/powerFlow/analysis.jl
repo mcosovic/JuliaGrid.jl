@@ -355,6 +355,8 @@ end
 end
 
 @testset "Fast Newton-Raphson XB Method" begin
+    @labels(Integer)
+
     ########## IEEE 14-bus Test Case ##########
     system14 = powerSystem(string(path, "case14test.m"))
     matpwr14 = h5read(string(path, "results.h5"), "case14test/fastNewtonRaphsonXB")
@@ -402,6 +404,8 @@ end
 end
 
 @testset "Gauss-Seidel Method" begin
+    @default(template)
+
     ########## IEEE 14-bus Test Case ##########
     system14 = powerSystem(string(path, "case14test.m"))
     matpwr14 = h5read(string(path, "results.h5"), "case14test/gaussSeidel")

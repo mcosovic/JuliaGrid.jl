@@ -1,4 +1,4 @@
-@testset "Load and Save Power System Data" begin
+@testset "Load and Save Power System Data with String Labels" begin
     ########## Load Power System ##########
     matlab = powerSystem(string(path, "case14test.m"))
     @base(matlab, MVA, kV)
@@ -26,4 +26,28 @@
     @test all(matlab.base.voltage.value .== 138.0)
     @test matlab.base.voltage.unit == "kV"
     @test matlab.base.voltage.prefix == 1e3
+end
+
+@testset "Load and Save Power System Data with Integer Labels" begin
+    @labels(Integer)
+
+    ########## Load Power System ##########
+    matlab = powerSystem(string(path, "case14test.m"))
+    @base(matlab, MVA, kV)
+
+    ########## Save Power System ##########
+    savePowerSystem(
+        matlab;
+        path = string(path, "case14Int.h5"), reference = "IEEE 14", note = "Test Data"
+    )
+
+    ########## Load Power System ##########
+    hdf5 = powerSystem(string(path, "case14Int.h5"))
+    @base(hdf5, MVA, kV)
+
+    ##### Test Power System Data #####
+    compstruct(matlab.bus, hdf5.bus)
+    compstruct(matlab.branch, hdf5.branch)
+    compstruct(matlab.generator, hdf5.generator)
+    compstruct(matlab.base, hdf5.base)
 end

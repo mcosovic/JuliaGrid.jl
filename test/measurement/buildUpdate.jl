@@ -373,6 +373,9 @@ end
 end
 
 @testset "Build Random Measurement Set" begin
+    @default(template)
+    @labels(Integer)
+
     ########## Generate Measurement Data from AC Power Flow ##########
     system = powerSystem(string(path, "case14test.m"))
     device = measurement()

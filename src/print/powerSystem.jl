@@ -2134,16 +2134,18 @@ end
 
 function addlabel!(
     smr::Summary,
-    label::OrderedDict{String, Int64}
+    label::Union{OrderedDict{String, Int64}, OrderedDict{Int64, Int64}}
 )
     for (key, index) in smr.minidx
         if index != 0
-            (smr.minlbl[key], _), _ = iterate(label, index)
+            lbl = iterate(label, index)
+            smr.minlbl[key] = string(lbl[1][1])
         end
     end
     for (key, index) in smr.maxidx
         if index != 0
-            (smr.maxlbl[key], _), _ = iterate(label, index)
+            lbl = iterate(label, index)
+            smr.maxlbl[key] = string(lbl[1][1])
         end
     end
 end

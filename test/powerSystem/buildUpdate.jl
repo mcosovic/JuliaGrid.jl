@@ -1,4 +1,6 @@
 @testset "Build and Update Power System Data in Per-Units" begin
+    @default(template)
+
     load = powerSystem(string(path, "build.m"))
     rad = pi / 180
 
@@ -101,6 +103,7 @@
 end
 
 @testset "Build and Update Power System Data in SI Units" begin
+    @labels(Integer)
     load = powerSystem(string(path, "build.m"))
     @base(load, MVA, kV)
 

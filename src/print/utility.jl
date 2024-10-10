@@ -434,7 +434,7 @@ function printf(
     io::IO,
     fmt::Dict{String, Format},
     prt::Print,
-    value::String,
+    value::Union{String, Int64},
     keys::Symbol...
 )
     for key in keys
@@ -517,7 +517,13 @@ function printf(
     end
 end
 
-function printf(io::IO, prt::Print, value::Vector{String}, i::Int64, key::Symbol)
+function printf(
+    io::IO,
+    prt::Print,
+    value::Union{Vector{String}, Vector{Int64}},
+    i::Int64,
+    key::Symbol
+)
     name = prt.head[key]
     if prt.show[name]
         print(io, format(prt.pfmt[name], prt.width[name], value[i]))
@@ -547,11 +553,11 @@ end
 function fmax(
     width::Dict{String, Int64},
     show::OrderedDict{String, Bool},
-    value::String,
+    value::IntStr,
     key::String
 )
     if show[key]
-        width[key] = max(textwidth(value), width[key])
+        width[key] = max(textwidth(string(value)), width[key])
     end
 end
 
@@ -622,6 +628,18 @@ end
 function fmax(
     width::Dict{String, Int64},
     show::OrderedDict{String, Bool},
+    label::OrderedDict{Int64, Int64},
+    heading::String
+)
+    if show[heading]
+        minmax = extrema(collect(keys(label)))
+        width[heading] = max(maximum(textwidth, string.(minmax)), width[heading])
+    end
+end
+
+function fmax(
+    width::Dict{String, Int64},
+    show::OrderedDict{String, Bool},
     label::Vector{String},
     headings::String...
 )
@@ -631,6 +649,23 @@ function fmax(
         for heading in headings
             if show[heading]
                 width[heading] = max(maxWidth, width[heading])
+            end
+        end
+    end
+end
+
+function fmax(
+    width::Dict{String, Int64},
+    show::OrderedDict{String, Bool},
+    label::Vector{Int64},
+    headings::String...
+)
+    if !isempty(label)
+        maxWidth = extrema(label)
+
+        for heading in headings
+            if show[heading]
+                width[heading] = max(maximum(textwidth, string.(maxWidth)), width[heading])
             end
         end
     end
@@ -771,7 +806,7 @@ end
 ##### Utility Functions #####
 function pickLabel(
     container::Union{P,M},
-    labels::OrderedDict{String, Int64},
+    labels::Union{OrderedDict{String, Int64}, OrderedDict{Int64, Int64}},
     label::IntStrMiss,
     component::String
 )
@@ -787,7 +822,7 @@ function pickLabel(
 end
 
 function getLabel(
-    labelComponent::OrderedDict{String, Int64},
+    labelComponent::Union{OrderedDict{String, Int64}, OrderedDict{Int64, Int64}},
     label::IntStrMiss,
     show::OrderedDict{String, Bool},
     headings::String...

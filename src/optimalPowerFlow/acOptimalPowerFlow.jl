@@ -409,7 +409,7 @@ end
 function nonLinear(
     jump::JuMP.Model,
     variable::Vector{VariableRef},
-    polynomial::Vector{Vector{Float64}},
+    polynomial::OrderedDict{Int64, Vector{Float64}},
     term::Int64,
     nonlin::Dict{Int64, NonlinearExpr},
     i::Int64
@@ -445,7 +445,7 @@ function addPiecewise(
     active::Vector{VariableRef},
     powerwise::Dict{Int64, JuMP.VariableRef},
     ref::Dict{Int64, Vector{ConstraintRef}},
-    piecewise::Vector{Matrix{Float64}},
+    piecewise::OrderedDict{Int64, Matrix{Float64}},
     point::Int64,
     idx::Int64
 )

@@ -1,6 +1,7 @@
 @testset "Reusing AC Optimal Power Flow" begin
     @default(unit)
     @default(template)
+    @labels(Integer)
 
     ########## First Pass ##########
     system = powerSystem(string(path, "case14optimal.m"))

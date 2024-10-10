@@ -55,12 +55,7 @@ function saveBus(system::PowerSystem, file::File)
     voltage = system.bus.voltage
     layout = system.bus.layout
 
-    label = Vector{String}(undef, system.bus.number)
-    @inbounds for (key, value) in system.bus.label
-        label[value] = key
-    end
-
-    write(file, "bus/label", label)
+    write(file, "bus/label", collect(keys(system.bus.label)))
     attrs(file["bus/label"])["format"] = "expand"
     write(file, "bus/layout/label", layout.label)
 
@@ -123,12 +118,7 @@ function saveBranch(system::PowerSystem, file::File)
     voltage = system.branch.voltage
     layout = system.branch.layout
 
-    label = Vector{String}(undef, system.branch.number)
-    @inbounds for (key, value) in system.branch.label
-        label[value] = key
-    end
-
-    write(file, "branch/label", label)
+    write(file, "branch/label", collect(keys(system.branch.label)))
     attrs(file["branch/label"])["format"] = "expand"
     write(file, "branch/layout/label", layout.label)
 
@@ -214,11 +204,7 @@ function saveGenerator(system::PowerSystem, file::File)
     voltage = system.generator.voltage
     layout = system.generator.layout
 
-    label = Vector{String}(undef, system.generator.number)
-    @inbounds for (key, value) in system.generator.label
-        label[value] = key
-    end
-    write(file, "generator/label", label)
+    write(file, "generator/label", collect(keys(system.generator.label)))
     attrs(file["generator/label"])["format"] = "expand"
     write(file, "generator/layout/label", layout.label)
 
@@ -396,64 +382,59 @@ function compresseArray(
 end
 
 ##### Save Polynomial Cost Terms #####
-function savePolynomial(file::File, data::Vector{Vector{Float64}}, name::String)
+function savePolynomial(file::File, cost::OrderedDict{Int64, Vector{Float64}}, name::String)
     format = "empty"
 
-    highestPolynomial  = 0
-    index = Int64[]
-    @inbounds for i in eachindex(data)
-        if !isempty(data[i])
-            highestPolynomial = max(highestPolynomial, length(data[i]))
-            push!(index, i)
+    maxDegree = 0
+    numPolynomial = 0
+    @inbounds for polynomial in values(cost)
+        maxDegree = max(maxDegree, length(polynomial))
+        numPolynomial += 1
+    end
+    savePolynomial = zeros(maxDegree + 2, numPolynomial)
+
+    @inbounds for (k, (i, polynomial)) in enumerate(cost)
+        savePolynomial[1, k] = i
+        savePolynomial[2, k] = length(polynomial)
+        for j in eachindex(polynomial)
+            savePolynomial[j + 2, k] = polynomial[j]
         end
     end
 
-    polynomial = zeros(highestPolynomial + 2, length(index))
-    @inbounds for (k, i) in enumerate(index)
-        polynomial[1, k] = i
-        polynomial[2, k] = length(data[i])
-        for j = 1:length(data[i])
-            polynomial[j + 2, k] = data[i][j]
-        end
-    end
-
-    if highestPolynomial > 0
+    if maxDegree > 0
         format = "expand"
     end
 
-    write(file, name, polynomial)
+    write(file, name, savePolynomial)
 
     return format
 end
 
 ##### Save Piecewise Cost Terms #####
-function savePiecewise(file::File, data::Vector{Matrix{Float64}}, name::String)
-    costNumber = size(data, 1)
+function savePiecewise(file::File, cost::OrderedDict{Int64, Matrix{Float64}}, name::String)
     format = "empty"
 
     numberPiecewise = 0
-    @inbounds for i = 1:costNumber
-        if !isempty(data[i])
-            format = "expand"
-            numberPiecewise += size(data[i], 1)
-        end
+    @inbounds for piecewise in values(cost)
+        numberPiecewise += size(piecewise, 1)
     end
-
-    piecewise = zeros(numberPiecewise, 3)
+    matpiecewise = zeros(numberPiecewise, 3)
 
     point = 1
-    @inbounds for i = 1:costNumber
-        if !isempty(data[i])
-            for j = 1:size(data[i], 1)
-                piecewise[point, 1] = i
-                piecewise[point, 2] = data[i][j, 1]
-                piecewise[point, 3] = data[i][j, 2]
-                point += 1
-            end
+    @inbounds for (i, piecewise) in cost
+        for j in axes(piecewise, 1)
+            matpiecewise[point, 1] = i
+            matpiecewise[point, 2] = piecewise[j, 1]
+            matpiecewise[point, 3] = piecewise[j, 2]
+            point += 1
         end
     end
 
-    write(file, name, piecewise)
+    if numberPiecewise > 0
+        format = "expand"
+    end
+
+    write(file, name, matpiecewise)
 
     return format
 end

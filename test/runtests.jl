@@ -10,23 +10,35 @@ path = abspath(joinpath(dirname(Base.find_package("JuliaGrid")), ".."), "test/da
 ##### Compare Structs #####
 function compstruct(obj1::S, obj2::S; atol = 0.0) where S
     for name in fieldnames(typeof(obj1))
-        field = getfield(obj1, name)
+        field1 = getfield(obj1, name)
+        field2 = getfield(obj2, name)
 
-        if isa(field, Vector) || isa(field, Number)
+        if isa(field1, Vector) || isa(field1, Number)
             if atol == 0.0
-                @test ==(field, getfield(obj2, name))
+                @test ==(field1, field2)
             else
-                if !isempty(field)
-                    @test ≈(field, getfield(obj2, name), atol = atol)
+                if !isempty(field1)
+                    @test ≈(field1, field2, atol = atol)
                 end
             end
-        elseif isa(field, AbstractDict) || isa(field, String)
-            @test ==(field, getfield(obj2, name))
+        elseif isa(field1, OrderedDict{Int64, Vector{Float64}}) ||
+               isa(field1, OrderedDict{Int64, Matrix{Float64}})
+            @test ==(keys(field1), keys(field2))
+            for (idx, value) in field1
+                if atol == 0.0
+                    @test ==(value, field2[idx])
+                else
+                    @test ≈(value, field2[idx], atol = atol)
+                end
+            end
+        elseif isa(field1, AbstractDict) || isa(field1, String)
+            @test ==(field1, field2)
         else
-            compstruct(field, getfield(obj2, name); atol)
+            compstruct(field1, field2; atol)
         end
     end
 end
+
 
 ##### Power System #####
 include("powerSystem/loadSave.jl")

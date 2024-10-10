@@ -208,6 +208,8 @@ mutable struct Template
     wattmeter::WattmeterTemplate
     varmeter::VarmeterTemplate
     pmu::PmuTemplate
+    system::DataType
+    device::DataType
 end
 
 template = Template(
@@ -218,7 +220,9 @@ template = Template(
     AmmeterTemplate(),
     WattmeterTemplate(),
     VarmeterTemplate(),
-    PmuTemplate()
+    PmuTemplate(),
+    String,
+    String
 )
 
 ##### List of Prefixes #####

@@ -34,7 +34,7 @@ mutable struct BusSupply
 end
 
 mutable struct Bus
-    label::OrderedDict{String, Int64}
+    label::Union{OrderedDict{String, Int64}, OrderedDict{Int64, Int64}}
     demand::BusDemand
     supply::BusSupply
     shunt::BusShunt
@@ -75,7 +75,7 @@ mutable struct BranchLayout
 end
 
 mutable struct Branch
-    label::OrderedDict{String, Int64}
+    label::Union{OrderedDict{String, Int64}, OrderedDict{Int64, Int64}}
     parameter::BranchParameter
     flow::BranchFlow
     voltage::BranchVoltage
@@ -111,8 +111,8 @@ end
 
 mutable struct Cost
     model::Vector{Int8}
-    polynomial::Vector{Vector{Float64}}
-    piecewise::Vector{Matrix{Float64}}
+    polynomial::OrderedDict{Int64, Vector{Float64}}
+    piecewise::OrderedDict{Int64, Matrix{Float64}}
 end
 
 mutable struct GeneratorCost
@@ -133,7 +133,7 @@ mutable struct GeneratorLayout
 end
 
 mutable struct Generator
-    label::OrderedDict{String, Int64}
+    label::Union{OrderedDict{String, Int64}, OrderedDict{Int64, Int64}}
     output::GeneratorOutput
     capability::GeneratorCapability
     ramping::GeneratorRamping
@@ -236,35 +236,35 @@ mutable struct PmuLayout
 end
 
 mutable struct Voltmeter
-    label::OrderedDict{String, Int64}
+    label::Union{OrderedDict{String, Int64}, OrderedDict{Int64, Int64}}
     magnitude::GaussMeter
     layout::VoltmeterLayout
     number::Int64
 end
 
 mutable struct Ammeter
-    label::OrderedDict{String, Int64}
+    label::Union{OrderedDict{String, Int64}, OrderedDict{Int64, Int64}}
     magnitude::GaussMeter
     layout::AmmeterLayout
     number::Int64
 end
 
 mutable struct Wattmeter
-    label::OrderedDict{String, Int64}
+    label::Union{OrderedDict{String, Int64}, OrderedDict{Int64, Int64}}
     active::GaussMeter
     layout::PowermeterLayout
     number::Int64
 end
 
 mutable struct Varmeter
-    label::OrderedDict{String, Int64}
+    label::Union{OrderedDict{String, Int64}, OrderedDict{Int64, Int64}}
     reactive::GaussMeter
     layout::PowermeterLayout
     number::Int64
 end
 
 mutable struct PMU
-    label::OrderedDict{String, Int64}
+    label::Union{OrderedDict{String, Int64}, OrderedDict{Int64, Int64}}
     magnitude::GaussMeter
     angle::GaussMeter
     layout::PmuLayout

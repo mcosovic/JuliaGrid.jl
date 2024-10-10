@@ -303,7 +303,7 @@ function addPmu!(
     checkStatus(statusAngTo)
 
     pmuNumber = system.bus.number + 2 * system.branch.layout.inservice
-    pmu.label = OrderedDict{String,Int64}()
+    pmu.label = OrderedDict{template.device, Int64}()
     sizehint!(pmu.label, pmuNumber)
 
     pmu.layout.index = fill(0, pmuNumber)

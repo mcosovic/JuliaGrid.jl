@@ -41,7 +41,7 @@ end
     return fullpath, extension
 end
 
-##### Set Label #####
+##### Set String Label #####
 function setLabel(
     component::Union{P, M},
     label::String,
@@ -49,20 +49,29 @@ function setLabel(
     ::String;
     prefix::String = ""
 )
-    if haskey(component.label, label)
-        throw(ErrorException("The label " * label * " is not unique."))
+    labelStr, labelInt = typeLabel(component.label, label)
+    if haskey(component.label, labelStr)
+        throw(ErrorException("The label " * labelStr * " is not unique."))
     end
 
-    labelInt64 = tryparse(Int64, label)
-    if labelInt64 !== nothing
-        if component.layout.label < labelInt64
-            component.layout.label = labelInt64
+    if labelInt !== nothing
+        if component.layout.label < labelInt
+            component.layout.label = labelInt
         end
     end
 
-    setindex!(component.label, component.number, label)
+    setindex!(component.label, component.number, labelStr)
 end
 
+function typeLabel(::OrderedDict{String, Int64}, label::String)
+    label, tryparse(Int64, label)
+end
+
+function typeLabel(::OrderedDict{String, Int64}, label::Int64)
+    string(label)
+end
+
+##### Set Integer Label #####
 function setLabel(
     component::Union{P, M},
     label::Int64,
@@ -70,43 +79,76 @@ function setLabel(
     ::String;
     prefix::String = ""
 )
-    labelString = string(label)
-    if haskey(component.label, labelString)
-        throw(ErrorException("The label " * labelString * " is not unique."))
+    labelStrInt = typeLabel(component.label, label)
+    if haskey(component.label, labelStrInt)
+        throw(ErrorException("The label $label is not unique."))
     end
 
     if component.layout.label < label
         component.layout.label = label
     end
-    setindex!(component.label, component.number, labelString)
+    setindex!(component.label, component.number, labelStrInt)
 end
 
+function typeLabel(::OrderedDict{Int64, Int64}, label::String)
+    throw(ErrorException("The label type is not valid."))
+end
+
+function typeLabel(::OrderedDict{Int64, Int64}, label::Int64)
+    label
+end
+
+##### Set Missing Label #####
 function setLabel(
     component::Union{P, M},
     label::Missing,
     default::String,
-    key::String;
+    key::IntStr;
     prefix::String = ""
 )
     component.layout.label += 1
 
     if key in ["bus"; "branch"; "generator"]
-        label = replace(default, r"\?" => string(component.layout.label))
+        label = typeLabel(component.label, default, component.layout.label)
     else
-        label = replace(
-            default, r"\?" => string(component.layout.label), r"\!" => string(prefix, key)
-        )
-        if haskey(component.label, label)
-            count = 1
-            labelOld = label
-            while haskey(component.label, label)
-                label = string(labelOld, " ($count)")
-                count += 1
-            end
-        end
+        label = typeLabel(component.label, default, component.layout.label, prefix, key)
     end
 
     setindex!(component.label, component.number, label)
+end
+
+function typeLabel(::OrderedDict{String, Int64}, default::String, idx::Int64)
+    replace(default, r"\?" => string(idx))
+end
+
+function typeLabel(::OrderedDict{Int64, Int64}, default::String, idx::Int64)
+    idx
+end
+
+function typeLabel(
+    componentLabel::OrderedDict{String, Int64},
+    default::String,
+    idx::Int64,
+    prefix::String,
+    key::String
+)
+    label = replace(
+        default, r"\?" => string(idx), r"\!" => string(prefix, key)
+    )
+    if haskey(componentLabel, label)
+        count = 1
+        labelOld = label
+        while haskey(componentLabel, label)
+            label = string(labelOld, " ($count)")
+            count += 1
+        end
+    end
+
+    return label
+end
+
+function typeLabel(::OrderedDict{Int64, Int64}, ::String, idx::Int64, ::String, ::Int64)
+    idx
 end
 
 ##### Get Label #####
@@ -119,7 +161,7 @@ function getLabel(container::Union{P, M}, label::String, name::String)
 end
 
 function getLabel(container::Union{P, M}, label::Int64, name::String)
-    label = string(label)
+    label = typeLabel(container.label, label)
     if !haskey(container.label, label)
         errorGetLabel(name, label)
     end
@@ -323,7 +365,7 @@ import Base.print
 
 function print(
     io::IO,
-    label::OrderedDict{String, Int64},
+    label::Union{OrderedDict{String, Int64}, OrderedDict{String, Int64}},
     data::Union{Vector{Float64}, Vector{Int64}, Vector{Int8}}
 )
     for (key, value) in label
@@ -333,7 +375,7 @@ end
 
 function print(
     io::IO,
-    label::OrderedDict{String, Int64},
+    label::Union{OrderedDict{String, Int64}, OrderedDict{String, Int64}},
     data1::Union{Vector{Float64}, Vector{Int64}, Vector{Int8}},
     data2::Union{Vector{Float64}, Vector{Int64}, Vector{Int8}}
 )
@@ -344,7 +386,7 @@ end
 
 function print(
     io::IO,
-    label::OrderedDict{String, Int64},
+    label::Union{OrderedDict{String, Int64}, OrderedDict{String, Int64}},
     obj::Union{Dict{Int64, ConstraintRef}, Dict{Int64, Float64}}
 )
     for (key, value) in label
@@ -367,7 +409,7 @@ end
 
 function print(
     io::IO,
-    label::OrderedDict{String, Int64},
+    label::Union{OrderedDict{String, Int64}, OrderedDict{String, Int64}},
     obj::Dict{Int64, Vector{ConstraintRef}}
 )
     names = collect(keys(label))
@@ -429,9 +471,9 @@ function errorTemplateKeyword(parameter::Symbol)
     throw(ErrorException("The keyword $(parameter) is illegal."))
 end
 
-function errorGetLabel(name::Union{Int64, String}, label::String)
+function errorGetLabel(name::Union{Int64, String}, label::Union{Int64, String})
     throw(ErrorException(
-        "The $name label " * label * " that has been specified does " *
+        "The $name label $label that has been specified does " *
         "not exist within the available $name labels.")
     )
 end
@@ -462,35 +504,35 @@ function errorSlackDefinition()
     )
 end
 
-function errorOnePoint(label::String)
+function errorOnePoint(label::Union{String, Int64})
     throw(
         ErrorException(
-            "The generator labeled " * label * " has a piecewise " *
+            "The generator labeled $label has a piecewise " *
             "linear cost function with only one defined point."
         )
     )
 end
 
-function errorInfSlope(label::String)
+function errorInfSlope(label::Union{String, Int64})
     throw(
         ErrorException(
             "The piecewise linear cost function's slope of the generator " *
-            "labeled " * label * " has infinite value."
+            "labeled $label has infinite value."
         )
     )
 end
 
 ##### Info Messages #####
-function infoObjective(label::String, term::Int64)
+function infoObjective(label::Union{String, Int64}, term::Int64)
     @info(
-        "The generator labeled " * label * " has a polynomial cost function " *
+        "The generator labeled $label has a polynomial cost function " *
         "of degree $(term-1), which is not included in the objective."
     )
 end
 
-function infoObjective(label::String)
+function infoObjective(label::Union{String, Int64})
     @info(
-        "The generator labeled " * label * " has an undefined polynomial " *
+        "The generator labeled $label has an undefined polynomial " *
         "cost function, which is not included in the objective."
     )
 end

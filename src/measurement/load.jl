@@ -28,10 +28,12 @@ device = measurement("measurement14.h5")
 function measurement(inputFile::String)
     packagePath = checkPackagePath()
     fullpath, extension = checkFileFormat(inputFile, packagePath)
-    device = measurement()
 
     if extension == ".h5"
         hdf5 = h5open(fullpath, "r")
+            checkLabelMeasurement(hdf5, template)
+
+            device = measurement()
             loadVoltmeter(device, hdf5)
             loadAmmeter(device, hdf5)
             loadWattmeter(device, hdf5)
@@ -62,31 +64,31 @@ device = measurement()
 function measurement()
     Measurement(
         Voltmeter(
-            OrderedDict{String, Int64}(),
+            OrderedDict{template.device, Int64}(),
             GaussMeter(Float64[], Float64[], Int8[]),
             VoltmeterLayout(Int64[], 0),
             0
         ),
         Ammeter(
-            OrderedDict{String, Int64}(),
+            OrderedDict{template.device, Int64}(),
             GaussMeter(Float64[], Float64[], Int8[]),
             AmmeterLayout(Int64[], Int64[], Bool[], 0),
             0
         ),
         Wattmeter(
-            OrderedDict{String, Int64}(),
+            OrderedDict{template.device, Int64}(),
             GaussMeter(Float64[], Float64[], Int8[]),
             PowermeterLayout(Int64[], Bool[], Bool[], Bool[], 0),
             0
         ),
         Varmeter(
-            OrderedDict{String, Int64}(),
+            OrderedDict{template.device, Int64}(),
             GaussMeter(Float64[], Float64[], Int8[]),
             PowermeterLayout(Int64[], Bool[], Bool[], Bool[], 0),
             0
         ),
         PMU(
-            OrderedDict{String, Int64}(),
+            OrderedDict{template.device, Int64}(),
             GaussMeter(Float64[], Float64[], Int8[]),
             GaussMeter(Float64[], Float64[], Int8[]),
             PmuLayout(Int64[], Bool[], Bool[], Bool[], Bool[], Bool[], 0),
@@ -95,17 +97,25 @@ function measurement()
     )
 end
 
+##### Check Label Type from HDF5 File #####
+function checkLabelMeasurement(hdf5::File, template::Template)
+    for device in hdf5
+        labelType = eltype(device["label"])
+        if labelType === Cstring
+            template.device = String
+        else
+            template.device = Int64
+        end
+        break
+    end
+end
+
 ##### Load Label #####
 function loadLabel(device::M, hdf5::File; meter::String = "")
-    label::Vector{String} = read(hdf5[string(meter, "/label")])
+    label = read(hdf5[string(meter, "/label")])
     device.number = length(label)
 
-    device.label = OrderedDict{String,Int64}()
-    sizehint!(device.label, device.number)
-    @inbounds for i = 1:device.number
-        device.label[label[i]] = i
-    end
-
+    device.label = OrderedDict(zip(label, collect(1:device.number)))
     device.layout.label = read(hdf5[string(meter, "/layout/label")])
 end
 

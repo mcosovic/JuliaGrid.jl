@@ -32,10 +32,12 @@ system = powerSystem("case14.h5")
 function powerSystem(inputFile::String)
     packagePath = checkPackagePath()
     fullpath, extension = checkFileFormat(inputFile, packagePath)
-    system = powerSystem()
 
     if extension == ".h5"
         hdf5 = h5open(fullpath, "r")
+            checkLabel(hdf5, template)
+
+            system = powerSystem()
             loadBus(system, hdf5)
             loadBranch(system, hdf5)
             loadGenerator(system, hdf5)
@@ -44,6 +46,8 @@ function powerSystem(inputFile::String)
     end
 
     if extension == ".m"
+        system = powerSystem()
+
         busLine, branchLine, genLine, costLine = readMATLAB(system, fullpath)
         loadBus(system, busLine)
         loadBranch(system, branchLine)
@@ -69,7 +73,7 @@ system = powerSystem()
 function powerSystem()
     PowerSystem(
         Bus(
-            OrderedDict{String, Int64}(),
+            OrderedDict{template.system, Int64}(),
             BusDemand(Float64[], Float64[]),
             BusSupply(Float64[], Float64[], Dict{Int64, Vector{Int64}}()),
             BusShunt(Float64[], Float64[]),
@@ -78,7 +82,7 @@ function powerSystem()
             0
         ),
         Branch(
-            OrderedDict{String, Int64}(),
+            OrderedDict{template.system, Int64}(),
             BranchParameter(
                 Float64[], Float64[], Float64[], Float64[], Float64[], Float64[]
             ),
@@ -88,7 +92,7 @@ function powerSystem()
             0
         ),
         Generator(
-            OrderedDict{String, Int64}(),
+            OrderedDict{template.system, Int64}(),
             GeneratorOutput(Float64[], Float64[]),
             GeneratorCapability(
                 Float64[], Float64[], Float64[], Float64[], Float64[],
@@ -97,9 +101,16 @@ function powerSystem()
             GeneratorRamping(Float64[], Float64[], Float64[], Float64[]),
             GeneratorVoltage(Float64[]),
             GeneratorCost(
-                Cost(Int8[], Vector{Float64}[], Vector{Float64}[]),
-                Cost(Int64[], Vector{Float64}[], Vector{Float64}[])
-            ),
+                Cost(
+                    Int8[],
+                    OrderedDict{Int64, Vector{Float64}}(),
+                    OrderedDict{Int64, Matrix{Float64}}()
+                ),
+                Cost(
+                    Int8[],
+                    OrderedDict{Int64, Vector{Float64}}(),
+                    OrderedDict{Int64, Matrix{Float64}}()
+                ),            ),
             GeneratorLayout(Int64[], Float64[], Int8[], 0, 0),
             0
         ),
@@ -117,6 +128,16 @@ function powerSystem()
     )
 end
 
+##### Check Label Type from HDF5 File #####
+function checkLabel(hdf5::File, template::Template)
+    labelType = eltype(hdf5["bus/label"])
+    if labelType === Cstring
+        template.system = String
+    else
+        template.system = Int64
+    end
+end
+
 ##### Load Bus Data from HDF5 File #####
 function loadBus(system::PowerSystem, hdf5::File)
     if !haskey(hdf5, "bus")
@@ -130,15 +151,12 @@ function loadBus(system::PowerSystem, hdf5::File)
 
     bus.layout.area = readHDF5(layouth5, "area", bus.number)
     bus.layout.lossZone = readHDF5(layouth5, "lossZone", bus.number)
-    bus.label = OrderedDict{String, Int64}()
-    sizehint!(bus.label, bus.number)
 
-    label::Vector{String} = read(hdf5["bus/label"])
+    bus.label = OrderedDict(zip(read(hdf5["bus/label"]), collect(1:bus.number)))
     @inbounds for i = 1:bus.number
-        bus.label[label[i]] = i
-
         if bus.layout.type[i] == 3
             bus.layout.slack = i
+            break
         end
     end
     bus.layout.label = read(layouth5["label"])
@@ -241,13 +259,13 @@ function loadGenerator(system::PowerSystem, hdf5::File)
 
     costh5 = hdf5["generator/cost/active"]
     gen.cost.active.model = readHDF5(costh5, "model", gen.number)
-    gen.cost.active.polynomial = loadPolynomial(costh5, "polynomial", gen.number)
-    gen.cost.active.piecewise = loadPiecewise(costh5, "piecewise", gen.number)
+    loadPolynomial!(gen.cost.active, costh5)
+    loadPiecewise!(gen.cost.active, costh5)
 
     costh5 = hdf5["generator/cost/reactive"]
     gen.cost.reactive.model = readHDF5(costh5, "model", gen.number)
-    gen.cost.reactive.polynomial = loadPolynomial(costh5, "polynomial", gen.number)
-    gen.cost.reactive.piecewise = loadPiecewise(costh5, "piecewise", gen.number)
+    loadPolynomial!(gen.cost.reactive, costh5)
+    loadPiecewise!(gen.cost.reactive, costh5)
 
     @inbounds for (k, i) in enumerate(gen.layout.bus)
         if gen.layout.status[k] == 1
@@ -280,12 +298,8 @@ end
     costLine = String[]
     costFlag = false
 
-    datafile = open(fullpath, "r")
-    lines = readlines(datafile)
-    close(datafile)
-
     system.base.power.value = 0.0
-    @inbounds for (i, line) in enumerate(lines)
+    @inbounds for line in eachline(fullpath)
         if occursin("mpc.branch", line) && occursin("[", line)
             branchFlag = true
         elseif occursin("mpc.bus", line) && occursin("[", line)
@@ -300,10 +314,10 @@ end
             system.base.power.value = parse(Float64, line)
         end
 
-        if branchFlag
-            branchFlag, branchLine = parseLine(line, branchFlag, branchLine)
-        elseif busFlag
+        if busFlag
             busFlag, busLine = parseLine(line, busFlag, busLine)
+        elseif branchFlag
+            branchFlag, branchLine = parseLine(line, branchFlag, branchLine)
         elseif genFlag
             genFlag, genLine = parseLine(line, genFlag, genLine)
         elseif costFlag
@@ -330,7 +344,7 @@ function loadBus(system::PowerSystem, busLine::Vector{String})
     deg2rad = pi / 180
 
     bus.number = length(busLine)
-    bus.label = OrderedDict{String, Int64}()
+    bus.label = OrderedDict{template.system, Int64}()
     sizehint!(bus.label, bus.number)
 
     bus.demand.active = fill(0.0, bus.number)
@@ -355,35 +369,42 @@ function loadBus(system::PowerSystem, busLine::Vector{String})
     system.base.voltage.value = similar(bus.demand.active)
 
     bus.layout.label = 0
-    @inbounds for (k, line) in enumerate(busLine)
-        data = split(line)
-
-        bus.label[data[1]] = k
-        labelInt64 = parse(Int64, data[1])
-        if bus.layout.label < labelInt64
-            bus.layout.label = labelInt64
+    data = Array{SubString{String}}(undef, 13)
+    @inbounds for (k, line) in enumerate(eachsplit.(busLine))
+        for (i, s) in enumerate(line)
+            if i == 14
+                break
+            end
+            data[i] = SubString(s)
         end
+
+        labelInt = parse(Int64, data[1])
+        busLabel!(bus.label, data[1], labelInt, k)
+        if bus.layout.label < labelInt
+            bus.layout.label = labelInt
+        end
+
+        bus.layout.type[k] = parse(Int8, data[2])
 
         bus.demand.active[k] = parse(Float64, data[3]) * basePowerInv
         bus.demand.reactive[k] = parse(Float64, data[4]) * basePowerInv
-
         bus.shunt.conductance[k] = parse(Float64, data[5]) * basePowerInv
         bus.shunt.susceptance[k] = parse(Float64, data[6]) * basePowerInv
 
+        bus.layout.area[k] = parse(Int64, data[7])
+
         bus.voltage.magnitude[k] = parse(Float64, data[8])
         bus.voltage.angle[k] = parse(Float64, data[9]) * deg2rad
-        bus.voltage.minMagnitude[k] = parse(Float64, data[13])
-        bus.voltage.maxMagnitude[k] = parse(Float64, data[12])
+        system.base.voltage.value[k] = parse(Float64, data[10]) * 1e3
 
-        bus.layout.type[k] = parse(Int8, data[2])
-        bus.layout.area[k] = parse(Int64, data[7])
         bus.layout.lossZone[k] = parse(Int64, data[11])
+
+        bus.voltage.maxMagnitude[k] = parse(Float64, data[12])
+        bus.voltage.minMagnitude[k] = parse(Float64, data[13])
 
         if bus.layout.type[k] == 3
             bus.layout.slack = k
         end
-
-        system.base.voltage.value[k] = parse(Float64, data[10]) * 1e3
     end
 
     if bus.layout.slack == 0
@@ -403,7 +424,7 @@ function loadBranch(system::PowerSystem, branchLine::Vector{String})
     deg2rad = pi / 180
 
     branch.number = length(branchLine)
-    branch.label = OrderedDict{String, Int64}()
+    branch.label = OrderedDict{template.system, Int64}()
     sizehint!(branch.label, branch.number)
 
     branch.parameter.conductance = fill(0.0, branch.number)
@@ -426,22 +447,23 @@ function loadBranch(system::PowerSystem, branchLine::Vector{String})
     branch.layout.to = similar( branch.layout.from)
     branch.layout.status = similar(branch.flow.type)
 
-    @inbounds for (k, line) in enumerate(branchLine)
-        data = split(line)
+    data = Array{SubString{String}}(undef, 13)
+    @inbounds for (k, line) in enumerate(eachsplit.(branchLine))
+        for (i, s) in enumerate(line)
+            if i == 14
+                break
+            end
+            data[i] = SubString(s)
+        end
 
-        branch.label[string(k)] = k
+        label!(branch.label, k, k)
+
+        branch.layout.from[k] = getLabelIdx(system.bus.label, data[1])
+        branch.layout.to[k] = getLabelIdx(system.bus.label, data[2])
 
         branch.parameter.resistance[k] = parse(Float64, data[3])
         branch.parameter.reactance[k] = parse(Float64, data[4])
         branch.parameter.susceptance[k] = parse(Float64, data[5])
-
-        turnsRatio = parse(Float64, data[9])
-        if turnsRatio == 0
-            branch.parameter.turnsRatio[k] = 1.0
-        else
-            branch.parameter.turnsRatio[k] = turnsRatio
-        end
-        branch.parameter.shiftAngle[k] = parse(Float64, data[10]) * deg2rad
 
         longTerm = parse(Float64, data[6]) * basePowerInv
         branch.flow.minFromBus[k] = -longTerm
@@ -449,15 +471,20 @@ function loadBranch(system::PowerSystem, branchLine::Vector{String})
         branch.flow.minToBus[k] = -longTerm
         branch.flow.maxToBus[k] = longTerm
 
+        branch.parameter.turnsRatio[k] = parse(Float64, data[9])
+        if branch.parameter.turnsRatio[k] == 0.0
+            branch.parameter.turnsRatio[k] = 1.0
+        end
+        branch.parameter.shiftAngle[k] = parse(Float64, data[10]) * deg2rad
+
+        branch.layout.status[k] = parse(Int8, data[11])
+
         branch.voltage.minDiffAngle[k] = parse(Float64, data[12]) * deg2rad
         branch.voltage.maxDiffAngle[k] = parse(Float64, data[13]) * deg2rad
 
-        branch.layout.status[k] = parse(Int8, data[11])
         if branch.layout.status[k] == 1
             branch.layout.inservice += 1
         end
-        branch.layout.from[k] = system.bus.label[data[1]]
-        branch.layout.to[k] = system.bus.label[data[2]]
     end
     branch.layout.label = branch.number
 end
@@ -472,7 +499,7 @@ function loadGenerator(system::PowerSystem, genLine::Vector{String}, costLine::V
     basePowerInv = 1 / system.base.power.value
 
     gen.number = length(genLine)
-    gen.label = OrderedDict{String, Int64}()
+    gen.label = OrderedDict{template.system, Int64}()
     sizehint!(gen.label, gen.number)
 
     gen.output.active = fill(0.0, gen.number)
@@ -500,22 +527,35 @@ function loadGenerator(system::PowerSystem, genLine::Vector{String}, costLine::V
     gen.layout.area = similar(gen.output.active)
     gen.layout.status = Array{Int8}(undef, gen.number)
 
-    @inbounds for (k, line) in enumerate(genLine)
-        data = split(line)
+    data = Array{SubString{String}}(undef, 21)
+    @inbounds for (k, line) in enumerate(eachsplit.(genLine))
+        for (i, s) in enumerate(line)
+            if i == 22
+                break
+            end
+            data[i] = SubString(s)
+        end
 
-        gen.label[string(k)] = k
+        label!(gen.label, k, k)
+        gen.layout.bus[k] = getLabelIdx(system.bus.label, data[1])
 
         gen.output.active[k] = parse(Float64, data[2]) * basePowerInv
         gen.output.reactive[k] = parse(Float64, data[3]) * basePowerInv
 
-        gen.capability.minActive[k] = parse(Float64, data[10]) * basePowerInv
-        gen.capability.maxActive[k] = parse(Float64, data[9]) * basePowerInv
-        gen.capability.minReactive[k] = parse(Float64, data[5]) * basePowerInv
         gen.capability.maxReactive[k] = parse(Float64, data[4]) * basePowerInv
+        gen.capability.minReactive[k] = parse(Float64, data[5]) * basePowerInv
+
+        gen.voltage.magnitude[k] = parse(Float64, data[6])
+
+        gen.layout.status[k] = parse(Int8, data[8])
+
+        gen.capability.maxActive[k] = parse(Float64, data[9]) * basePowerInv
+        gen.capability.minActive[k] = parse(Float64, data[10]) * basePowerInv
+
         gen.capability.lowActive[k] = parse(Float64, data[11]) * basePowerInv
+        gen.capability.upActive[k] = parse(Float64, data[12]) * basePowerInv
         gen.capability.minLowReactive[k] = parse(Float64, data[13]) * basePowerInv
         gen.capability.maxLowReactive[k] = parse(Float64, data[14]) * basePowerInv
-        gen.capability.upActive[k] = parse(Float64, data[12]) * basePowerInv
         gen.capability.minUpReactive[k] = parse(Float64, data[15]) * basePowerInv
         gen.capability.maxUpReactive[k] = parse(Float64, data[16]) * basePowerInv
 
@@ -524,11 +564,7 @@ function loadGenerator(system::PowerSystem, genLine::Vector{String}, costLine::V
         gen.ramping.reserve30min[k] = parse(Float64, data[19]) * basePowerInv
         gen.ramping.reactiveRamp[k] = parse(Float64, data[20]) * basePowerInv
 
-        gen.voltage.magnitude[k] = parse(Float64, data[6])
-
-        gen.layout.bus[k] = system.bus.label[data[1]]
         gen.layout.area[k] = parse(Float64, data[21])
-        gen.layout.status[k] = parse(Int8, data[8])
 
         if gen.layout.status[k] == 1
             i = gen.layout.bus[k]
@@ -542,35 +578,37 @@ function loadGenerator(system::PowerSystem, genLine::Vector{String}, costLine::V
     gen.layout.label = gen.number
 
     gen.cost.active.model = fill(Int8(0), gen.number)
-    gen.cost.active.polynomial = [Float64[] for i = 1:gen.number]
-    gen.cost.active.piecewise = [Array{Float64}(undef, 0, 0) for i = 1:gen.number]
-
     gen.cost.reactive.model = fill(Int8(0), gen.number)
-    gen.cost.reactive.polynomial = [Float64[] for i = 1:gen.number]
-    gen.cost.reactive.piecewise = [Array{Float64}(undef, 0, 0) for i = 1:gen.number]
 
     if !isempty(costLine)
-        generatorCostParser(system, gen.cost.active, costLine, 0)
-    end
+        data = Array{SubString{String}}(undef, length(split(costLine[1])))
 
-    if size(costLine, 1) == 2 * gen.number
-        generatorCostParser(system, gen.cost.reactive, costLine, gen.number)
+        costLines = eachsplit.(costLine[1:gen.number])
+        costParser(system, gen.cost.active, costLines, data)
+
+        if size(costLine, 1) == 2 * gen.number
+            costLines = eachsplit.(costLine[gen.number + 1:end])
+            costParser(system, gen.cost.reactive, costLines, data)
+        end
     end
 
     system.base.power.value *= 1e6
 end
 
 ##### Parser Generator Cost Model #####
-@inline function generatorCostParser(
+@inline function costParser(
     system::PowerSystem,
     cost::Cost,
-    costLine::Vector{String},
-    start::Int64
+    costLines::Vector{Base.SplitIterator{String, typeof(isspace)}},
+    data::Vector{SubString{String}}
 )
     basePowerInv = 1 / system.base.power.value
 
-    @inbounds for i = 1:system.generator.number
-        data = split(costLine[i + start])
+    @inbounds for (i, line) in enumerate(costLines)
+        for (idx, s) in enumerate(line)
+            data[idx] = SubString(s)
+        end
+
         pointNumber = parse(Int64, data[4])
         cost.model[i] = parse(Int8, data[1])
 
@@ -603,71 +641,87 @@ end
     end
 end
 
-##### Check Matrix Float64 Data #####
-@inline function loadPolynomial(group::Group, key::String, number::Int64)
-    data = [Float64[] for i = 1:number]
-
-    if !isempty(group[key])
-        datah5 = readmmap(group[key])
+##### Read Polynomial Cost Function #####
+function loadPolynomial!(cost::Cost, group::Group)
+    if !isempty(group["polynomial"])
+        datah5 = readmmap(group["polynomial"])
         @inbounds for polynomial in eachcol(datah5)
             index = trunc(Int64, polynomial[1])
             indexCoeff = 2 + trunc(Int64, polynomial[2])
 
-            data[index] = polynomial[3:indexCoeff]
+            cost.polynomial[index] = polynomial[3:indexCoeff]
         end
     end
-
-    return data
 end
 
-##### Check Matrix Float64 Data #####
-@inline function loadPiecewise(group::Group, key::String, number::Int64)
-    data = [Array{Float64}(undef, 0, 0) for i = 1:number]
-
-    if !isempty(group[key])
-        datah5 = readmmap(group[key])
+##### Read Piecewise Cost Function #####
+function loadPiecewise!(cost::Cost, group::Group)
+    if !isempty(group["piecewise"])
+        datah5 = readmmap(group["piecewise"])
 
         Nrow = size(datah5, 1)
-        current_index = 1
-        indexBus = 0
+        idx = 1
+        idxBus = 0
         @inbounds for i = 2:Nrow
             if datah5[i, 1] != datah5[i - 1, 1]
-                indexBus = trunc(Int64, datah5[i - 1, 1])
-                data[indexBus] = datah5[current_index:(i - 1), 2:3]
+                idxBus = trunc(Int64, datah5[i - 1, 1])
+                cost.piecewise[idxBus] = datah5[idx:(i - 1), 2:3]
 
-                current_index = i
+                idx = i
             end
         end
-        indexBus = trunc(Int64, datah5[current_index, 1])
-        data[indexBus] = datah5[current_index:end, 2:3]
+        idxBus = trunc(Int64, datah5[idx, 1])
+        cost.piecewise[idxBus] = datah5[idx:end, 2:3]
     end
-
-    return data
 end
 
 ##### Matpower Input Data Parse Lines #####
 @inline function parseLine(line::String, flag::Bool, str::Vector{String})
-    sublines = split(line, "[")[end]
-    sublines = split(sublines, ";")
-
-    @inbounds for k in eachindex(sublines)
-        subline = strip(sublines[k])
-        if !isempty(subline)
-            push!(str, subline)
-        end
+    if occursin("[", line)
+        line = split(line, "[")[end]
     end
 
     if occursin("]", line)
-        lastlines = split(line, "]")[1]
-        lastlines = split(lastlines, ";")
-        @inbounds for k in eachindex(lastlines)
-            last = lastlines[k]
-            if isempty(strip(last))
-                pop!(str)
-            end
-        end
+        line = split(line, "]")[1]
         flag = false
     end
 
+    @inbounds for line in eachsplit(line, ";")
+        addLine!(line, str)
+    end
+
     return flag, str
+end
+
+function addLine!(subline::SubString{String}, str::Vector{String})
+    subline = strip(subline)
+    if !isempty(subline)
+        push!(str, subline)
+    end
+end
+
+##### Add Label for Matpower Input Data #####
+function busLabel!(lbl::OrderedDict{String, Int64}, label::SubString{String}, ::Int64, idx::Int64)
+    lbl[label] = idx
+end
+
+function busLabel!(lbl::OrderedDict{Int64, Int64}, ::SubString{String}, label::Int64, idx::Int64)
+    lbl[label] = idx
+end
+
+function label!(lbl::OrderedDict{String, Int64}, label::Int64, idx::Int64)
+    lbl[string(label)] = idx
+end
+
+function label!(lbl::OrderedDict{Int64, Int64}, label::Int64, idx::Int64)
+    lbl[label] = idx
+end
+
+##### Get Label Index for Matpower Input Data #####
+function getLabelIdx(lbl::OrderedDict{String, Int64}, label::SubString{String})
+    lbl[label]
+end
+
+function getLabelIdx(lbl::OrderedDict{Int64, Int64}, label::SubString{String})
+    lbl[parse(Int64, label)]
 end

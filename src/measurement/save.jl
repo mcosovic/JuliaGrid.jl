@@ -43,6 +43,7 @@ function saveMeasurement(
         saveWattmeter(device.wattmeter, file)
         saveVarmeter(device.varmeter, file)
         savePmu(device.pmu, file)
+        saveAttribute(device, file, reference, note)
     close(file)
 end
 
@@ -105,19 +106,32 @@ function savePmu(pmu::PMU, file::File)
     end
 end
 
-##### Save Label #####
-function saveLabel(device::M, file::File; fid::String = "")
-    label = Vector{String}(undef, device.number)
-    @inbounds for (key, value) in device.label
-        label[value] = key
+##### Save Main Attributes #####
+function saveAttribute(device::Measurement, file::File, reference::String, note::String)
+    attrs(file)["number of voltmeters"] = device.voltmeter.number
+    attrs(file)["number of ammeters"] = device.ammeter.number
+    attrs(file)["number of wattmeters"] = device.wattmeter.number
+    attrs(file)["number of varmeters"] = device.varmeter.number
+    attrs(file)["number of pmus"] = device.pmu.number
+
+    if !isempty(reference)
+        attrs(file)["reference"] = reference
     end
 
-    fidLabel = string(fid, "/label")
-    write(file, fidLabel, label)
+    if !isempty(note)
+        attrs(file)["note"] = note
+    end
+end
+
+
+##### Save Label #####
+function saveLabel(device::M, file::File; fid::String = "")
+    fidLabel = fid * "/label"
+
+    write(file, fidLabel, collect(keys(device.label)))
     attrs(file[fidLabel])["format"] = "expand"
 
-    fid = string(fid, "/layout/label")
-    write(file, fid, device.layout.label)
+    write(file, fid * "/layout/label", device.layout.label)
 end
 
 ##### Save Layout #####
