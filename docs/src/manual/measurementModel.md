@@ -525,28 +525,36 @@ JuliaGrid necessitates a unique label for each voltmeter, ammeter, wattmeter, va
 
 In all the previous examples, with the exception of the last one, we relied on automatic labeling by omitting the `label` keyword. This allowed JuliaGrid to independently assign unique labels to measurement devices. In such cases, JuliaGrid utilizes a sequential set of increasing integers for labeling the devices. The [last example](@ref ChangeKeywordsMeasurementManual) demonstrates the user labeling approach.
 
+!!! tip "Tip"
+    String labels improve readability, but in larger models, the overhead from using strings can become substantial. To reduce memory usage and the number of allocations, users can configure ordered dictionaries to accept and store integers as labels:
+    ```julia DCPowerFlowSolution
+    @labels(Integers)
+    ```
 ---
 
 ##### Integer-Based Labeling
-If users prefer to utilize integers as labels in various functions, this is acceptable. However, it is important to note that despite using integers, these labels are still stored as strings. For example:
+Let us take a look at the following illustration:
 ```@example LabelInteger
 using JuliaGrid # hide
 @default(unit) # hide
 @default(template) # hide
+@labels(Integers)
 
 system = powerSystem()
 device = measurement()
 
-addBus!(system; label = "Bus 1")
-addBus!(system; label = "Bus 2")
-addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.12)
+addBus!(system; label = 1)
+addBus!(system; label = 2)
+addBranch!(system; label = 1, from = 1, to = 2, reactance = 0.12)
 
-addVoltmeter!(system, device; label = 1, bus = "Bus 1", magnitude = 1.0)
+addVoltmeter!(system, device; label = 1, bus = 1, magnitude = 1.0)
 
-addAmmeter!(system, device; label = 1, from = "Branch 1", magnitude = 1.1)
-addAmmeter!(system, device; label = 2, to = "Branch 1", magnitude = 0.9)
+addAmmeter!(system, device; label = 1, from = 1, magnitude = 1.1)
+addAmmeter!(system, device; label = 2, to = 1, magnitude = 0.9)
 nothing # hide
 ```
+
+In this example, we use the macro [`@labels`](@ref @labels) to specify that labels will be stored as integers. It is essential to run this macro; otherwise, even if integers are used in subsequent functions, they will be stored as strings.
 
 ---
 
@@ -654,6 +662,12 @@ This procedure is applicable to all measurement devices, including voltmeters, a
     ```@repl retrievingLabels
     print(device.wattmeter.label, device.wattmeter.active.mean)
     ```
+
+---
+
+##### Load and Save Power System Data
+When saving the measurements to an HDF5 file, the label type (strings or integers) will match the type chosen during system setup. Likewise, when loading data from an HDF5 file, the label type will be preserved as saved, regardless of what is set by the [`@labels`](@ref @labels) macro.
+
 
 ---
 

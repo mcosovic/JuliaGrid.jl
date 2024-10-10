@@ -358,16 +358,21 @@ nothing # hide
 ## [Labels](@id LabelsManual)
 As we have shown, JuliaGrid mandates a distinctive label for every bus, branch, or generator. These labels are stored in ordered dictionaries, functioning as pairs of strings and integers. The string signifies the exclusive label for the specific component, whereas the integer maintains an internal numbering of buses, branches, or generators.
 
-In contrast to the simple labeling approach, JuliaGrid offers several additional methods for labeling. The choice of method depends on the specific needs and can potentially be more straightforward.
+!!! tip "Tip"
+    String labels improve readability, but in larger models, the overhead from using strings can become substantial. To reduce memory usage and the number of allocations, users can configure ordered dictionaries to accept and store integers as labels:
+    ```julia DCPowerFlowSolution
+    @labels(Integer)
+    ```
 
 ---
 
 ##### Integer-Based Labeling
-If users prefer to utilize integers as labels in various functions, this is acceptable. However, it is important to note that despite using integers, these labels are still stored as strings. Let us take a look at the following illustration:
+Let us take a look at the following illustration:
 ```@example LabelInteger
 using JuliaGrid # hide
 @default(unit) # hide
 @default(template) # hide
+@labels(Integer)
 
 system = powerSystem()
 
@@ -380,7 +385,9 @@ addGenerator!(system; label = 1, bus = 2, active = 0.5, reactive = 0.1)
 nothing # hide
 ```
 
-In this example, we create two buses labeled as `1` and `2`. The branch is established between these two buses with a unique branch label of `1`. Finally, the generator is connected to the bus labeled `2` and has its distinct label set to `1`.
+In this example, we use the macro [`@labels`](@ref @labels) to specify that labels will be stored as integers. It is essential to run this macro; otherwise, even if integers are used in subsequent functions, they will be stored as strings.
+
+Here, two buses are created with labels `1` and `2`. A branch connects these two buses, assigned a unique label of `1`. Finally, a generator is connected to bus `2`, with its own label set to `1`.
 
 ---
 
@@ -389,6 +396,7 @@ Users also possess the option to omit the `label` keyword, allowing JuliaGrid to
 ```@example LabelAutomatic
 using JuliaGrid # hide
 @default(unit) # hide
+@default(template) # hide
 
 system = powerSystem()
 
@@ -401,7 +409,7 @@ addGenerator!(system; bus = 2, active = 0.5, reactive = 0.1)
 nothing # hide
 ```
 
-This example presents the same power system as before. In the previous example, we used an ordered set of increasing integers for labels, in line with automatic labeling behavior when the `label` keyword is omitted.
+This example models the same power system as before. In the previous case, we manually assigned labels using incremental integers. Here, we rely on the automatic labeling behavior, but since the macro [`@labels`](@ref @labels) is not used, the labels will be stored as strings.
 
 ---
 
@@ -486,6 +494,13 @@ label[system.generator.layout.bus]
     ```@repl RetrieveLabels
     print(system.branch.label, system.branch.parameter.reactance)
     ```
+
+---
+
+##### Load and Save Power System Data
+When a user loads a power system from a Matpower file, the default behavior is to store labels as strings. However, this can be overridden by using the [`@labels`](@ref @labels) macro to store labels as integers.
+
+When saving the power system to an HDF5 file, the label type (strings or integers) will match the type chosen during system setup. Likewise, when loading data from an HDF5 file, the label type will be preserved as saved, regardless of what is set by the [`@labels`](@ref @labels) macro.
 
 ---
 

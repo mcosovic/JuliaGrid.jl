@@ -6,6 +6,8 @@ using JuMP, HiGHS
 @default(template) # hide
 @default(unit) # hide
 
+@labels(Integer)
+
 system = powerSystem()
 
 addBus!(system; label = 1, type = 3, angle = 0.17)

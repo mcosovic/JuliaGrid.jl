@@ -6,6 +6,8 @@ using JuMP, Ipopt
 @default(unit) # hide
 @default(template) # hide
 
+@labels(Integer)
+
 system = powerSystem()
 
 @bus(minMagnitude = 0.95, maxMagnitude = 1.05)
