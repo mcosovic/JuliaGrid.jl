@@ -21,6 +21,7 @@ makedocs(
     pages =
         [
         "Introduction" => "index.md",
+        "Installation Guide" => "installation.md",
         "Manual" =>
             [
             "Power System Model" => "manual/powerSystemModel.md",
