@@ -377,7 +377,7 @@ For the first and third PMUs, we assume that the measurement values are already 
 ---
 
 ##### Coordinate Systems and Correlated Measurement Errors
-When users add PMUs, the incorporation of these measurements into the state estimation model is always in the rectangular coordinate system. In this scenario, the real and imaginary components of the phasor measurements become correlated, although typically these correlations are disregarded [[1]](@ref MeasurementModelReferenceManual). However, if users want to consider these error correlations, the keyword `correlated = true` is provided for support.
+When users add PMUs, the incorporation of these measurements into the state estimation model is always in the rectangular coordinate system. In this scenario, the real and imaginary components of the phasor measurements become correlated, although typically these correlations are disregarded [gomez2011use](@cite). However, if users want to consider these error correlations, the keyword `correlated = true` is provided for support.
 
 Further, in the AC state estimation model, users have the flexibility to integrate PMU outputs in the polar coordinate system by specifying `polar = true`.
 
@@ -892,8 +892,3 @@ status!(system, device; redundancy = 1.2)
 nothing  # hide
 ```
 Considering that the number of state variables is 5 (excluding the voltage angle related to the slack bus), using a redundancy value of 1.2 will result in 6 devices being set to in-service, while the remainder will be deactivated. As before, users can target specific devices or adjust settings as needed.
-
----
-
-## [References](@id MeasurementModelReferenceManual)
-[1] A. Gomez-Exposito, A. Abur, P. Rousseaux, A. de la Villa Jaen, and C. Gomez-Quiles, *On the use of PMUs in power system state estimation*, Proc. IEEE PSCC, 2011.

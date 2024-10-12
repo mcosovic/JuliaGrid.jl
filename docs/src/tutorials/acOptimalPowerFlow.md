@@ -399,7 +399,7 @@ These capability limits of the generators define the feasible region, represente
 &nbsp;
 ```
 
-However, this representation might not be the most accurate depiction of the generator's output power behavior. In reality, there exists a tradeoff between the active and reactive power outputs of the generators [[1]](@ref ACOptimalPowerFlowSolutionReferenceTutorials). Specifically, when a generator operates at its maximum active power ``P_{\text{g}i}^\text{max}``, it may not be able to produce the maximum ``Q_{\text{g}i}^\text{max}`` or minimum ``Q_{\text{g}i}^\text{min}`` reactive power. To capture this tradeoff, we introduce the ability to include additional upper and lower constraints on the feasible region, leading to its reduction as shown in Figure 4.
+However, this representation might not be the most accurate depiction of the generator's output power behavior. In reality, there exists a tradeoff between the active and reactive power outputs of the generators [zimmerman2016matpower](@cite). Specifically, when a generator operates at its maximum active power ``P_{\text{g}i}^\text{max}``, it may not be able to produce the maximum ``Q_{\text{g}i}^\text{max}`` or minimum ``Q_{\text{g}i}^\text{min}`` reactive power. To capture this tradeoff, we introduce the ability to include additional upper and lower constraints on the feasible region, leading to its reduction as shown in Figure 4.
 ```@raw html
 <img src="../../assets/pq_curve_sloped.svg" class="center" width="350"/>
 <figcaption>Figure 4: The feasible region created by the active and reactive power capability constraints with additional upper and lower constraints.</figcaption>
@@ -623,8 +623,3 @@ To obtain the vectors of magnitudes ``\mathbf{I}_{\text{l}} = [I_{\text{l}ij}]``
 𝐈ₗ = analysis.current.series.magnitude
 𝛙ₗ = analysis.current.series.angle
 ```
-
----
-
-## [References](@id ACOptimalPowerFlowSolutionReferenceTutorials)
-[1] R. D. Zimmerman, C. E. Murillo-Sanchez, *MATPOWER User’s Manual*, Version 7.0. 2019.

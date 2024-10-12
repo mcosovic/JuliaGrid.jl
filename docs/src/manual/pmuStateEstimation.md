@@ -183,7 +183,7 @@ print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
 ---
 
 ##### Alternative Formulation
-The resolution of the WLS state estimation problem using the conventional method typically progresses smoothly. However, it is widely acknowledged that in certain situations common to real-world systems, this method can be vulnerable to numerical instabilities. Such conditions might impede the algorithm from finding a satisfactory solution. In such cases, users may opt for an alternative formulation of the WLS state estimation, namely, employing an approach called orthogonal factorization [[1, Sec. 3.2]](@ref PMUStateEstimationReferenceManual).
+The resolution of the WLS state estimation problem using the conventional method typically progresses smoothly. However, it is widely acknowledged that in certain situations common to real-world systems, this method can be vulnerable to numerical instabilities. Such conditions might impede the algorithm from finding a satisfactory solution. In such cases, users may opt for an alternative formulation of the WLS state estimation, namely, employing an approach called orthogonal factorization [aburbook; Sec. 3.2](@cite).
 
 This approach is suitable when measurement errors are uncorrelated, and the precision matrix remains diagonal. Therefore, as a preliminary step, we need to eliminate the correlation, as we did previously:
 ```@example PMUOptimalPlacement
@@ -273,7 +273,7 @@ nothing # hide
 ---
 
 ## [Least Absolute Value Estimator](@id PMULAVtateEstimationSolutionManual)
-The LAV method presents an alternative estimation technique known for its increased robustness compared to WLS. While the WLS method relies on specific assumptions regarding measurement errors, robust estimators like LAV are designed to maintain unbiasedness even in the presence of various types of measurement errors and outliers. This characteristic often eliminates the need for extensive bad data processing procedures [[1, Ch. 6]](@ref PMUStateEstimationReferenceManual). However, it is important to note that achieving robustness typically involves increased computational complexity.
+The LAV method presents an alternative estimation technique known for its increased robustness compared to WLS. While the WLS method relies on specific assumptions regarding measurement errors, robust estimators like LAV are designed to maintain unbiasedness even in the presence of various types of measurement errors and outliers. This characteristic often eliminates the need for extensive bad data processing procedures [aburbook; Ch. 6](@cite). However, it is important to note that achieving robustness typically involves increased computational complexity.
 
 To obtain an LAV estimator, users need to employ one of the [solvers](https://jump.dev/JuMP.jl/stable/packages/solvers/) listed in the JuMP documentation. In many common scenarios, the Ipopt solver proves sufficient to obtain a solution:
 ```@example PMUOptimalPlacement
@@ -555,8 +555,3 @@ To calculate the current passing through the series impedance of the branch in t
 ```@repl PMUStateEstimationSolution
 magnitude, angle = seriesCurrent(system, analysis; label = "Branch 2")
 ```
-
----
-
-## [References](@id PMUStateEstimationReferenceManual)
-[1] A. Abur and A. Exposito, *Power System State Estimation: Theory and Implementation*, Taylor & Francis, 2004.

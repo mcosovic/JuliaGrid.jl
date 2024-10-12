@@ -1,5 +1,5 @@
 # [Power System Model](@id ACDCModelTutorials)
-Power system analyses commonly utilize the unified branch model that provides linear relationships between voltages and currents. However, as the focus is on power calculations rather than current calculations, the resulting equations become nonlinear, posing challenges in solving them [[1]](@ref ACDCModelReferenceTutorials). Hence, to accurately analyze power systems without any approximations, we use the AC model, which is a crucial component of our framework. In contrast, to obtain a linear system of equations for various DC analyses, we introduce approximations in the unified branch model, resulting in the DC model.
+Power system analyses commonly utilize the unified branch model that provides linear relationships between voltages and currents. However, as the focus is on power calculations rather than current calculations, the resulting equations become nonlinear, posing challenges in solving them [andersson2012power](@cite). Hence, to accurately analyze power systems without any approximations, we use the AC model, which is a crucial component of our framework. In contrast, to obtain a linear system of equations for various DC analyses, we introduce approximations in the unified branch model, resulting in the DC model.
 
 !!! note "Info"
     In this section, we not only describe the AC and DC models derived from the unified branch model but also furnish the power and current equations utilized in all JuliaGrid analyses.
@@ -256,7 +256,7 @@ where ``\mathbf {\bar {V}} \in \mathbb{C}^{n}`` is the vector of bus complex vol
       \end{aligned}
     ```
 
-When a branch is not incident (or adjacent) to a bus the corresponding element in the nodal admittance matrix ``\mathbf{Y}`` is equal to zero. The nodal admittance matrix ``\mathbf{Y}`` is sparse (i.e., a small number of elements are non-zeros) for real-world power systems. Although it is often assumed that the matrix ``\mathbf{Y}`` is symmetrical, it is not a general case. For example, in the presence of phase shifting transformers the matrix ``\mathbf{Y}`` is not symmetric [[2, Sec. 9.6]](@ref ACDCModelReferenceTutorials). JuliaGrid stores both the matrix ``\mathbf{Y}`` and its transpose ``\mathbf{Y}^T`` in the `ac` field of the `PowerSystem` type:
+When a branch is not incident (or adjacent) to a bus the corresponding element in the nodal admittance matrix ``\mathbf{Y}`` is equal to zero. The nodal admittance matrix ``\mathbf{Y}`` is sparse (i.e., a small number of elements are non-zeros) for real-world power systems. Although it is often assumed that the matrix ``\mathbf{Y}`` is symmetrical, it is not a general case. For example, in the presence of phase shifting transformers the matrix ``\mathbf{Y}`` is not symmetric [john1994power; Sec. 9.6](@cite). JuliaGrid stores both the matrix ``\mathbf{Y}`` and its transpose ``\mathbf{Y}^T`` in the `ac` field of the `PowerSystem` type:
 ```@repl ACDCModel
 𝐘 = system.model.ac.nodalMatrix
 𝐘ᵀ = system.model.ac.nodalMatrixTranspose
@@ -352,7 +352,7 @@ Furthermore, the computed branch admittances in the DC framework are stored in t
 𝐲 = system.model.dc.admittance
 ```
 
-We can conclude that ``P_{ij}=-P_{ji}`` holds. With the DC model, the linear network equations relate active powers to bus voltage angles, versus complex currents to complex bus voltages in the AC model [[3]](@ref ACDCModelReferenceTutorials). Consequently, analogous to the [Branch Network Equations](@ref BranchNetworkEquationsTutorials) we can write:
+We can conclude that ``P_{ij}=-P_{ji}`` holds. With the DC model, the linear network equations relate active powers to bus voltage angles, versus complex currents to complex bus voltages in the AC model [zimmerman2016matpower](@cite). Consequently, analogous to the [Branch Network Equations](@ref BranchNetworkEquationsTutorials) we can write:
 ```math
   \begin{bmatrix}
     P_{ij} \\ P_{ji}
@@ -492,12 +492,3 @@ From the previous analysis, the calculation of active power injection at each bu
 ```math
     P_i = \sum_{j = 1}^n {B}_{ij} \theta_j + P_{\text{tr}i} + P_{\text{sh}i}, \;\;\; i \in \mathcal{N}.
 ```
-
----
-
-## [References](@id ACDCModelReferenceTutorials)
-[1] G. Andersson, *Power system analysis*, EEH-Power Systems Laboratory, ETH Zurich, Lecture Notes 2012.
-
-[2] J. Grainger and W. Stevenson, *Power system analysis*, ser. McGraw-Hill series in electrical and computer engineering: Power and energy. McGraw-Hill, 1994.
-
-[3] R. D. Zimmerman, C. E. Murillo-Sanchez, *MATPOWER User’s Manual*, Version 7.0. 2019.

@@ -251,7 +251,7 @@ It is essential to note that the slack bus voltage angle is temporarily excluded
 ---
 
 ##### [Alternative Formulation](@id DCSEOrthogonalWLSStateEstimationTutorials)
-The resolution of the WLS state estimation problem using the conventional method typically progresses smoothly. However, it is widely acknowledged that in certain situations common to real-world systems, this method can be vulnerable to numerical instabilities. Such conditions might impede the algorithm from converging to a satisfactory solution. In such cases, users may opt for an alternative formulation of the WLS state estimation, namely, employing an approach called orthogonal factorization [[1, Sec. 3.2]](@ref DCStateEstimationReferenceManual).
+The resolution of the WLS state estimation problem using the conventional method typically progresses smoothly. However, it is widely acknowledged that in certain situations common to real-world systems, this method can be vulnerable to numerical instabilities. Such conditions might impede the algorithm from converging to a satisfactory solution. In such cases, users may opt for an alternative formulation of the WLS state estimation, namely, employing an approach called orthogonal factorization [aburbook; Sec. 3.2](@cite).
 
 To address ill-conditioned situations arising from significant differences in measurement variances, users can employ an alternative approach:
 ```@example DCSETutorial
@@ -302,7 +302,7 @@ To obtain the solution, JuliaGrid avoids materializing the orthogonal matrix ``\
 ---
 
 ## [Bad Data Processing](@id DCSEBadDataTutorials)
-Besides the state estimation algorithm, one of the essential state estimation routines is the bad data processing, whose main task is to detect and identify measurement errors, and eliminate them if possible. This is usually done by processing the measurement residuals [[1, Ch. 5]](@ref DCSEReferenceTutorials), and typically, the largest normalized residual test is used to identify bad data. The largest normalized residual test is performed after we obtained the solution of the state estimation in the repetitive process of identifying and eliminating bad data measurements one after another [[2]](@ref DCSEReferenceTutorials).
+Besides the state estimation algorithm, one of the essential state estimation routines is the bad data processing, whose main task is to detect and identify measurement errors, and eliminate them if possible. This is usually done by processing the measurement residuals [aburbook; Ch. 5](@cite), and typically, the largest normalized residual test is used to identify bad data. The largest normalized residual test is performed after we obtained the solution of the state estimation in the repetitive process of identifying and eliminating bad data measurements one after another [korres2010distributed](@cite).
 
 To illustrate this process, let us introduce a new measurement that contains an obvious outlier:
 ```@example DCSETutorial
@@ -323,7 +323,7 @@ outlier = residualTest!(system, device, analysis; threshold = 4.0)
 nothing # hide
 ```
 
-In this step, we employ the largest normalized residual test, guided by the analysis outlined in [[1, Sec. 5.7]](@ref DCSEReferenceTutorials). To be more precise, we compute all measurement residuals based on the obtained estimate of state variables:
+In this step, we employ the largest normalized residual test, guided by the analysis outlined in [aburbook; Sec. 5.7](@cite). To be more precise, we compute all measurement residuals based on the obtained estimate of state variables:
 ```math
     r_{i} = z_i - h_i(\hat {\bm {\Theta}}), \;\;\; i \in \mathcal{M}.
 ```
@@ -389,9 +389,9 @@ outlier.detect
 ---
 
 ## [Least Absolute Value Estimation](@id DCSELAVTutorials)
-The least absolute value (LAV) method provides an alternative estimation approach that is considered more robust in comparison to the WLS method. The WLS state estimation problem relies on specific assumptions about measurement errors, whereas robust estimators aim to remain unbiased even in the presence of various types of measurement errors and outliers. This characteristic eliminates the need for bad data processing, as discussed in [[1, Ch. 6]](@ref DCSEReferenceTutorials). It is important to note that robustness often comes at the cost of increased computational complexity.
+The least absolute value (LAV) method provides an alternative estimation approach that is considered more robust in comparison to the WLS method. The WLS state estimation problem relies on specific assumptions about measurement errors, whereas robust estimators aim to remain unbiased even in the presence of various types of measurement errors and outliers. This characteristic eliminates the need for bad data processing, as discussed in [aburbook; Ch. 6](@cite). It is important to note that robustness often comes at the cost of increased computational complexity.
 
-It can be demonstrated that the problem can be expressed as a linear programming problem. This section outlines the method as described in [[1, Sec. 6.5]](@ref DCSEReferenceTutorials). To revisit, we consider the system of linear equations:
+It can be demonstrated that the problem can be expressed as a linear programming problem. This section outlines the method as described in [aburbook; Sec. 6.5](@cite). To revisit, we consider the system of linear equations:
 ```math
   \mathbf{z}=\mathbf{h}(\bm {\Theta})+\mathbf{u}.
 ```
@@ -518,18 +518,3 @@ Similarly, the resulting [active power flows](@ref DCBranchNetworkEquationsTutor
 ```@repl DCSETutorial
 𝐏ⱼ = analysis.power.to.active
 ```
-
----
-
-## [References](@id DCSEReferenceTutorials)
-[1] A. Abur and A. Exposito, *Power System State Estimation: Theory and Implementation*, Taylor & Francis, 2004.
-
-[2] G. Korres, "A distributed multiarea state estimation," *IEEE Trans. Power Syst.*, vol. 26, no. 1, pp. 73–84, Feb. 2011.
-
-[3] M. Cosovic, M. Delalic, D. Raca, and D. Vukobratovic, "Observability analysis for large-scale power systems using factor graphs," *IEEE Trans. Power Syst.*, 36(5), 4791-4799.
-
-[4] A. Monticelli, *State Estimation in Electric Power Systems: A Generalized Approach*, ser. Kluwer international series in engineering and computer science. Springer US, 1999.
-
-[5] H. Horisberger, "Observability analysis for power systems with measurement deficiencies," *IFAC Proceedings Volumes*, vol. 18, no. 7, pp.51–58, 1985.
-
-[6] N. M. Manousakis and G. N. Korres, "Observability analysis for power systems including conventional and phasor measurements," *in Proc. MedPower 2010*, Agia Napa, 2010, pp. 1-8.

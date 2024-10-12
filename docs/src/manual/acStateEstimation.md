@@ -165,7 +165,7 @@ device.wattmeter.label
 device.varmeter.label
 nothing # hide
 ```
-Consequently, the power system becomes observable, allowing the user to proceed with forming the AC state estimation model and solving it. Ensuring the observability of the system does not guarantee obtaining accurate estimates of the state variables. Numerical ill-conditioning may adversely impact the state estimation algorithm. However, in most cases, efficient estimation becomes feasible when the system is observable [[1]](@ref ACStateEstimationReferenceManual).
+Consequently, the power system becomes observable, allowing the user to proceed with forming the AC state estimation model and solving it. Ensuring the observability of the system does not guarantee obtaining accurate estimates of the state variables. Numerical ill-conditioning may adversely impact the state estimation algorithm. However, in most cases, efficient estimation becomes feasible when the system is observable [korres2011observability](@cite).
 
 Additionally, it is worth mentioning that restoration might encounter difficulties due to the default zero pivot threshold set at `1e-5`. This threshold can be modified using the [`restorationGram!`](@ref restorationGram!(::PowerSystem, ::Measurement, ::Measurement, ::Island)) function.
 
@@ -295,7 +295,7 @@ addPmu!(system, device; to = "Branch 1", magnitude = 1.05, angle = 3.047)
 nothing # hide
 ```
 
-In the case of the rectangular system, inclusion resolves ill-conditioned problems arising in polar coordinates due to small values of current magnitudes. However, this approach's main disadvantage is related to measurement errors, as measurement errors correspond to polar coordinates. Therefore, the covariance matrix must be transformed from polar to rectangular coordinates [[4]](@ref ACStateEstimationReferenceManual). As a result, measurement errors of a single PMU are correlated, and the covariance matrix does not have a diagonal form. Despite that, the measurement error covariance matrix is usually considered as a diagonal matrix, affecting the accuracy of the state estimation.
+In the case of the rectangular system, inclusion resolves ill-conditioned problems arising in polar coordinates due to small values of current magnitudes. However, this approach's main disadvantage is related to measurement errors, as measurement errors correspond to polar coordinates. Therefore, the covariance matrix must be transformed from polar to rectangular coordinates [zhou2006alternative](@cite). As a result, measurement errors of a single PMU are correlated, and the covariance matrix does not have a diagonal form. Despite that, the measurement error covariance matrix is usually considered as a diagonal matrix, affecting the accuracy of the state estimation.
 
 In the example above, we specifically include PMUs where measurement error correlations are disregarded. This is evident through the precision matrix, which maintains a diagonal form:
 ```@repl ACSEWLS
@@ -324,7 +324,7 @@ addPmu!(system, device; from = "Branch 1", magnitude = 1.048, angle = -0.057, po
 nothing # hide
 ```
 
-This inclusion of PMUs provides more accurate state estimates compared to rectangular inclusion, but demands longer computing time. PMUs are handled in the same manner as SCADA measurements. However, this approach is susceptible to ill-conditioned problems arising in polar coordinates due to small values of current magnitudes [[2, 3]](@ref ACStateEstimationReferenceManual).
+This inclusion of PMUs provides more accurate state estimates compared to rectangular inclusion, but demands longer computing time. PMUs are handled in the same manner as SCADA measurements. However, this approach is susceptible to ill-conditioned problems arising in polar coordinates due to small values of current magnitudes [korres2012state, zhou2006alternative](@cite).
 
 !!! tip "Tip"
     It is important to note that with each individual phasor measurement, we can set the coordinate system, providing flexibility to include some in polar and some in rectangular systems. This flexibility is particularly valuable because bus voltage phasor measurements are preferably included in a polar coordinate system, while current phasor measurements are best suited to a rectangular coordinate system.
@@ -332,7 +332,7 @@ This inclusion of PMUs provides more accurate state estimates compared to rectan
 ---
 
 ##### Alternative Formulation
-The resolution of the WLS state estimation problem using the conventional method typically progresses smoothly. However, it is widely acknowledged that in certain situations common to real-world systems, this method can be vulnerable to numerical instabilities. Such conditions might impede the algorithm from finding a satisfactory solution. In such cases, users may opt for an alternative formulation of the WLS state estimation, namely, employing an approach called orthogonal factorization [[5, Sec. 3.2]](@ref ACStateEstimationReferenceManual).
+The resolution of the WLS state estimation problem using the conventional method typically progresses smoothly. However, it is widely acknowledged that in certain situations common to real-world systems, this method can be vulnerable to numerical instabilities. Such conditions might impede the algorithm from finding a satisfactory solution. In such cases, users may opt for an alternative formulation of the WLS state estimation, namely, employing an approach called orthogonal factorization [aburbook; Sec. 3.2](@cite).
 
 This approach is suitable when measurement errors are uncorrelated, and the precision matrix remains diagonal. Therefore, as a preliminary step, we need to eliminate the correlation, as we did previously:
 ```@example ACSEWLS
@@ -446,7 +446,7 @@ print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
 ---
 
 ## [Least Absolute Value Estimator](@id PMULAVtateEstimationSolutionManual)
-The LAV method presents an alternative estimation technique known for its increased robustness compared to WLS. While the WLS method relies on specific assumptions regarding measurement errors, robust estimators like LAV are designed to maintain unbiasedness even in the presence of various types of measurement errors and outliers. This characteristic often eliminates the need for extensive bad data processing procedures [[5, Ch. 6]](@ref ACStateEstimationReferenceManual). However, it is important to note that achieving robustness typically involves increased computational complexity.
+The LAV method presents an alternative estimation technique known for its increased robustness compared to WLS. While the WLS method relies on specific assumptions regarding measurement errors, robust estimators like LAV are designed to maintain unbiasedness even in the presence of various types of measurement errors and outliers. This characteristic often eliminates the need for extensive bad data processing procedures [aburbook; Ch. 6](@cite). However, it is important to note that achieving robustness typically involves increased computational complexity.
 
 To obtain an LAV estimator, users need to employ one of the [solvers](https://jump.dev/JuMP.jl/stable/packages/solvers/) listed in the JuMP documentation. In many common scenarios, the `Ipopt` solver proves sufficient to obtain a solution:
 ```@example ACSEWLS
@@ -785,16 +785,3 @@ To calculate the current passing through the series impedance of the branch in t
 ```@repl WLSACStateEstimationSolution
 magnitude, angle = seriesCurrent(system, analysis; label = "Branch 2")
 ```
-
----
-
-## [References](@id ACStateEstimationReferenceManual)
-[1] G. Korres, *Observability analysis based on echelon form of a reduced dimensional Jacobian matrix*, IEEE Trans. Power Syst., vol. 26, no. 4, pp. 2572–2573, 2011.
-
-[2] G. N. Korres and N. M. Manousakis, *State estimation and observability analysis for phasor measurement unit measured systems*, IET Gener. Transm. Dis., vol. 6, no. 9, 2012.
-
-[3] A. Gomez-Exposito, A. Abur, P. Rousseaux, A. de la Villa Jaen, and C. Gomez-Quiles, *On the use of PMUs in power system state estimation*, Proc. IEEE PSCC, 2011.
-
-[4] M. Zhou, V. A. Centeno, J. S. Thorp, and A. G. Phadke, *An alternative for including phasor measurements in state estimators*, IEEE Trans. Power Syst., vol. 21, no. 4, 2006.
-
-[5] A. Abur and A. Exposito, *Power System State Estimation: Theory and Implementation*, Taylor & Francis, 2004.

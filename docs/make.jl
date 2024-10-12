@@ -1,16 +1,23 @@
 using Documenter, JuliaGrid
 using JuMP, HiGHS, Ipopt, GLPK
+using DocumenterCitations
+
+bib = CitationBibliography(
+    joinpath(@__DIR__, "src", "references.bib");
+    style=:numeric
+)
 
 makedocs(
     sitename = "JuliaGrid",
     modules = [JuliaGrid],
     clean = false,
     doctest = false,
+    plugins = [bib],
     format = Documenter.HTML(
-        assets = ["assets/tablestyle.css"],
+        assets = ["assets/tablestyle.css", "assets/citations.css"],
         prettyurls = get(ENV, "CI", nothing) == "true",
         collapselevel = 1
-        ),
+    ),
     pages =
         [
         "Introduction" => "index.md",
@@ -47,8 +54,9 @@ makedocs(
             "State Estimation" => "api/stateEstimation.md",
             "Power and Current Analysis" => "api/analysis.md",
             "Setup and Print" => "api/setupPrint.md"
-            ]
-        ],
+            ],
+        "Bibliography" => "bibliography.md",
+        ]
 )
 
 deploydocs(

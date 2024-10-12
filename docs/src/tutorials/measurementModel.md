@@ -49,11 +49,11 @@ In contrast, WAMS technology utilizes PMUs (Phasor Measurement Units) to provide
 ---
 
 ##### Measurement Model
-The measurement model, as defined by the set ``\mathcal{M}``, can be expressed as a system of equations [[1]](@ref MeasurementModelReferenceTutorials):
+The measurement model, as defined by the set ``\mathcal{M}``, can be expressed as a system of equations [schweppe1970power](@cite):
 ```math
     \mathbf{z}=\mathbf{h}(\mathbf {x}) + \mathbf{u},
 ```
-where ``\mathbf {x}=[x_1,\dots,x_{n}]^{T}`` is the vector of state variables, ``\mathbf{h}(\mathbf{x})=`` ``[h_1(\mathbf{x})``, ``\dots``, ``h_k(\mathbf{x})]^{{T}}`` is the vector of measurement functions, ``\mathbf{z} = [z_1,\dots,z_k]^{\mathrm{T}}`` is the vector of measurement values, and ``\mathbf{u} = [u_1,\dots,u_k]^{\mathrm{T}}`` is the vector of measurement errors. In the context of transmission grids, this model is often an overdetermined system of equations ``(k>s)`` [[2, Sec. 2.1]](@ref MeasurementModelReferenceTutorials).
+where ``\mathbf {x}=[x_1,\dots,x_{n}]^{T}`` is the vector of state variables, ``\mathbf{h}(\mathbf{x})=`` ``[h_1(\mathbf{x})``, ``\dots``, ``h_k(\mathbf{x})]^{{T}}`` is the vector of measurement functions, ``\mathbf{z} = [z_1,\dots,z_k]^{\mathrm{T}}`` is the vector of measurement values, and ``\mathbf{u} = [u_1,\dots,u_k]^{\mathrm{T}}`` is the vector of measurement errors. In the context of transmission grids, this model is often an overdetermined system of equations ``(k>s)`` [monticellibook; Sec. 2.1](@cite).
 
 These errors are assumed to follow a Gaussian distribution with a zero-mean and covariance matrix ``\bm \Sigma``. The diagonal elements of ``\bm \Sigma`` correspond to the measurement variances ``\mathbf{v} = [v_1,\dots,v_k]^T``, while the off-diagonal elements represent the covariances between the measurement errors ``\mathbf{w} = [w_1,\dots,w_k]^{T}``. These covariances exist only if PMUs are observed in rectangular coordinates and correlation is required.
 
@@ -189,7 +189,7 @@ This set of varmeters defines vectors of measurement values denoted as ``\mathbf
 ---
 
 ## PMUs
-PMUs measure voltage and current phasors in the polar coordinate system, thus each PMU output is represented by magnitude and angle along with corresponding variances [[3, Sec. 5.6]](@ref MeasurementModelReferenceTutorials). When installed on buses, they measure bus voltage phasors, while on branches, they measure current phasors.
+PMUs measure voltage and current phasors in the polar coordinate system, thus each PMU output is represented by magnitude and angle along with corresponding variances [phadkebook; Sec. 5.6](@cite). When installed on buses, they measure bus voltage phasors, while on branches, they measure current phasors.
 
 A PMU ``(V_i, \theta_i) \in \bar{\mathcal{P}}`` measures the voltage phasor at bus ``i \in \mathcal{N}``. Let us integrate this type of PMU at the first bus:
 ```@example measurementModelTutorials
@@ -235,7 +235,7 @@ The primary goal of state estimation algorithms is to determine state variables,
  		p(\mathbf{x}|\mathbf{z})= \cfrac{p(\mathbf{z}|\mathbf{x})p(\mathbf{x})}{p(\mathbf{z})}.
 ```
 
-If we assume that the prior probability distribution ``p(\mathbf{x})`` is uniform and that ``p(\mathbf{z})`` does not depend on ``\mathbf{x}``, the maximum a posteriori solution simplifies to the maximum likelihood solution, as shown below [[4]](@ref MeasurementModelReferenceTutorials):
+If we assume that the prior probability distribution ``p(\mathbf{x})`` is uniform and that ``p(\mathbf{z})`` does not depend on ``\mathbf{x}``, the maximum a posteriori solution simplifies to the maximum likelihood solution, as shown below [barberbook](@cite):
 ```math
 	\hat{\mathbf{x}} = \mathrm{arg}\max_{\mathbf{x}}p(\mathbf{x}|\mathbf{z}) =
 	\mathrm{arg}\max_{\mathbf{x}}p(\mathbf{z}|\mathbf{x}) = \mathrm{arg}\max_{\mathbf{x}}\mathcal{L}(\mathbf{z}|\mathbf{x}).
@@ -247,22 +247,9 @@ We can find this solution by maximizing the likelihood function ``\mathcal{L}(\m
 	\mathrm{arg} \max_{\mathbf{x}} \prod_{i=1}^k \mathcal{N}(z_i|\mathbf{x},v_i).
 ```
 
-It can be demonstrated that the solution to the maximum a posteriori problem can be obtained by solving the following optimization problem, commonly referred to as the weighted least-squares problem [[5, Sec. 9.3]](@ref MeasurementModelReferenceTutorials):
+It can be demonstrated that the solution to the maximum a posteriori problem can be obtained by solving the following optimization problem, commonly referred to as the weighted least-squares problem [wood2013power; Sec. 9.3](@cite):
 ```math
 	\hat{\mathbf x} = \mathrm{arg}\min_{\mathbf{x}} \sum_{i=1}^k\cfrac{[z_i-h_i(\mathbf x)]^2}{v_i}.
 ```
 
-The state estimate, denoted as ``\hat{\mathbf x}``, resulting from the solution to the above optimization problem, is known as the weighted least-squares estimator. Both the maximum likelihood and weighted least-squares estimators are equivalent to the maximum a posteriori solution [[4, Sec. 8.6]](@ref MeasurementModelReferenceTutorials).
-
----
-
-## [References](@id MeasurementModelReferenceTutorials)
-[1] F. C. Schweppe and D. B. Rom, "Power system static-state estimation, part II: Approximate model," *IEEE Trans. Power Syst.*, vol. PAS-89, no. 1, pp. 125-130, Jan. 1970.
-
-[2] A. Monticelli, *State Estimation in Electric Power Systems: A Generalized Approach*, ser. Kluwer international series in engineering and computer science. Springer US, 1999.
-
-[3] A. G. Phadke and J. S. Thorp, *Synchronized phasor measurements and their applications*, Springer, 2008, vol. 1.
-
-[4] D. Barber, *Bayesian Reasoning and Machine Learning*, Cambridge University Press, 2012.
-
-[5] A. Wood and B. Wollenberg, *Power Generation, Operation, and Control*, Wiley, 1996.
+The state estimate, denoted as ``\hat{\mathbf x}``, resulting from the solution to the above optimization problem, is known as the weighted least-squares estimator. Both the maximum likelihood and weighted least-squares estimators are equivalent to the maximum a posteriori solution [barberbook; Sec. 8.6](@cite).

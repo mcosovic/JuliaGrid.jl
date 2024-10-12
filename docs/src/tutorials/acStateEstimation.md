@@ -405,7 +405,7 @@ Here, measurement values are obtained according to:
   \end{aligned}
 ```
 
-Utilizing the classical theory of propagation of uncertainty [[1]](@ref ACSEReferenceTutorials), the variances can be calculated as follows:
+Utilizing the classical theory of propagation of uncertainty [iso1993guide](@cite), the variances can be calculated as follows:
 ```math
   \begin{aligned}
     v_{\Re(\bar{V}_i)} &=
@@ -520,7 +520,7 @@ Here, measurement values are obtained according to:
   \end{aligned}
 ```
 
-Utilizing the classical theory of propagation of uncertainty [[1]](@ref ACSEReferenceTutorials), the variances can be calculated as follows:
+Utilizing the classical theory of propagation of uncertainty [iso1993guide](@cite), the variances can be calculated as follows:
 ```math
   \begin{aligned}
     v_{\Re(\bar{I}_{ij})} & = v_{I_{ij}} (\cos z_{\psi_{ij}})^2 + v_{\psi_{ij}} (z_{I_{ij}} \sin z_{\psi_{ij}})^2 \\
@@ -752,9 +752,9 @@ Given the available set of measurements ``\mathcal{M}``, the weighted least-squa
 ```math
 		\mathbf x^{(\nu+1)} = \mathbf x^{(\nu)} + \mathbf \Delta \mathbf x^{(\nu)},
 ```
-where ``\nu = \{0,1,2,\dots\} `` is the iteration index, ``\mathbf \Delta \mathbf x \in \mathbb {R}^{n_{\text{u}}} `` is the vector of increments of the state variables, ``\mathbf J (\mathbf x)\in \mathbb {R}^{k \times n_{\text{u}}}`` is the Jacobian matrix of measurement functions ``\mathbf h (\mathbf x)`` at ``\mathbf x=\mathbf x^{(\nu)}``, ``\bm \Sigma \in \mathbb {R}^{k \times k}`` is a measurement error covariance matrix, and ``\mathbf r (\mathbf x) = \mathbf{z} - \mathbf h (\mathbf x)`` is the vector of residuals [[2, Ch. 10]](@ref ACSEReferenceTutorials). It is worth noting that assuming uncorrelated measurement errors leads to a diagonal covariance matrix ``\bm \Sigma`` corresponding to measurement variances. However, when incorporating PMUs in a rectangular coordinate system and aiming to observe error correlation, this matrix loses its diagonal form.
+where ``\nu = \{0,1,2,\dots\} `` is the iteration index, ``\mathbf \Delta \mathbf x \in \mathbb {R}^{n_{\text{u}}} `` is the vector of increments of the state variables, ``\mathbf J (\mathbf x)\in \mathbb {R}^{k \times n_{\text{u}}}`` is the Jacobian matrix of measurement functions ``\mathbf h (\mathbf x)`` at ``\mathbf x=\mathbf x^{(\nu)}``, ``\bm \Sigma \in \mathbb {R}^{k \times k}`` is a measurement error covariance matrix, and ``\mathbf r (\mathbf x) = \mathbf{z} - \mathbf h (\mathbf x)`` is the vector of residuals [monticellibook; Ch. 10](@cite). It is worth noting that assuming uncorrelated measurement errors leads to a diagonal covariance matrix ``\bm \Sigma`` corresponding to measurement variances. However, when incorporating PMUs in a rectangular coordinate system and aiming to observe error correlation, this matrix loses its diagonal form.
 
-The non-linear or AC state estimation represents a non-convex problem arising from the non-linear measurement functions [[3]](@ref ACSEReferenceTutorials). Due to the fact that the values of state variables usually fluctuate in narrow boundaries, the non-linear model represents the mildly non-linear problem, where solutions are in a reasonable-sized neighborhood which enables the use of the Gauss-Newton method. The Gauss-Newton method can produce different rates of convergence, which can be anywhere from linear to quadratic [[4, Sec. 9.2]](@ref ACSEReferenceTutorials). The convergence rate in regard to power system state estimation depends on the topology and measurements, and if parameters are consistent (e.g., free bad data measurement set), the method shows near quadratic convergence rate [[2, Sec. 11.2]](@ref ACSEReferenceTutorials).
+The non-linear or AC state estimation represents a non-convex problem arising from the non-linear measurement functions [weng2012semidefinite](@cite). Due to the fact that the values of state variables usually fluctuate in narrow boundaries, the non-linear model represents the mildly non-linear problem, where solutions are in a reasonable-sized neighborhood which enables the use of the Gauss-Newton method. The Gauss-Newton method can produce different rates of convergence, which can be anywhere from linear to quadratic [hansen2013least; Sec. 9.2]](@cite). The convergence rate in regard to power system state estimation depends on the topology and measurements, and if parameters are consistent (e.g., free bad data measurement set), the method shows near quadratic convergence rate [monticellibook; Sec. 11.2](@cite).
 
 ---
 
@@ -894,7 +894,7 @@ Observing the precision matrix, we notice that it loses its diagonal form due to
 ---
 
 ##### Alternative Formulation
-The resolution of the WLS state estimation problem using the conventional method typically progresses smoothly. However, it is widely acknowledged that in certain situations common to real-world systems, this method can be vulnerable to numerical instabilities. Such conditions might impede the algorithm from converging to a satisfactory solution. In such cases, users may opt for an alternative formulation of the WLS state estimation, namely, employing an approach called orthogonal factorization [[5, Sec. 3.2]](@ref ACSEReferenceTutorials).
+The resolution of the WLS state estimation problem using the conventional method typically progresses smoothly. However, it is widely acknowledged that in certain situations common to real-world systems, this method can be vulnerable to numerical instabilities. Such conditions might impede the algorithm from converging to a satisfactory solution. In such cases, users may opt for an alternative formulation of the WLS state estimation, namely, employing an approach called orthogonal factorization [aburbook; Sec. 3.2](@cite).
 
 This approach is suitable when measurement errors are uncorrelated, and the precision matrix remains diagonal. Therefore, as a preliminary step, we need to eliminate the correlation, as we did previously:
 ```@example ACSETutorial
@@ -955,7 +955,7 @@ To obtain the solution, JuliaGrid avoids explicitly forming the orthogonal matri
 ---
 
 ## [Bad Data Processing](@id ACBadDataTutorials)
-Besides the state estimation algorithm, one of the essential state estimation routines is the bad data processing, whose main task is to detect and identify measurement errors, and eliminate them if possible. This is usually done by processing the measurement residuals [[5, Ch. 5]](@ref ACSEReferenceTutorials), and typically, the largest normalized residual test is used to identify bad data. The largest normalized residual test is performed after we obtained the solution of the state estimation in the repetitive process of identifying and eliminating bad data measurements one after another [[6]](@ref ACSEReferenceTutorials).
+Besides the state estimation algorithm, one of the essential state estimation routines is the bad data processing, whose main task is to detect and identify measurement errors, and eliminate them if possible. This is usually done by processing the measurement residuals [aburbook; Ch. 5](@cite), and typically, the largest normalized residual test is used to identify bad data. The largest normalized residual test is performed after we obtained the solution of the state estimation in the repetitive process of identifying and eliminating bad data measurements one after another [korres2010distributed](@cite).
 
 To illustrate this process, let us introduce a new measurement that contains an obvious outlier:
 ```@example ACSETutorial
@@ -981,7 +981,7 @@ outlier = residualTest!(system, device, analysis; threshold = 4.0)
 nothing # hide
 ```
 
-In this step, we employ the largest normalized residual test, guided by the analysis outlined in [[5, Sec. 5.7]](@ref ACSEReferenceTutorials). To be more precise, we compute all measurement residuals based on the obtained estimate of state variables:
+In this step, we employ the largest normalized residual test, guided by the analysis outlined in [aburbook; Sec. 5.7](@cite). To be more precise, we compute all measurement residuals based on the obtained estimate of state variables:
 ```math
     r_i = z_i - h_i(\hat {\mathbf x}), \;\;\; i \in \mathcal{M}.
 ```
@@ -1053,9 +1053,9 @@ outlier.detect
 ---
 
 ## [Least Absolute Value Estimation](@id ACLAVTutorials)
-The least absolute value (LAV) method provides an alternative estimation approach that is considered more robust in comparison to the WLS method. The WLS state estimation problem relies on specific assumptions about measurement errors, whereas robust estimators aim to remain unbiased even in the presence of various types of measurement errors and outliers. This characteristic eliminates the need for bad data processing, as discussed in [[5, Ch. 6]](@ref ACSEReferenceTutorials). It is important to note that robustness often comes at the cost of increased computational complexity.
+The least absolute value (LAV) method provides an alternative estimation approach that is considered more robust in comparison to the WLS method. The WLS state estimation problem relies on specific assumptions about measurement errors, whereas robust estimators aim to remain unbiased even in the presence of various types of measurement errors and outliers. This characteristic eliminates the need for bad data processing, as discussed in [aburbook; Ch. 6](@cite). It is important to note that robustness often comes at the cost of increased computational complexity.
 
-This section outlines the method as described in [[5, Sec. 6.5]](@ref ACSEReferenceTutorials). Hence, we consider the system of nonlinear equations:
+This section outlines the method as described in [aburbook; Sec. 6.5](@cite). Hence, we consider the system of nonlinear equations:
 ```math
   \mathbf{z}=\mathbf{h}(\mathbf x)+\mathbf{u}.
 ```
@@ -1146,12 +1146,12 @@ Users can retrieve the estimated bus voltage magnitudes ``\hat{\mathbf V} = [\ha
 ---
 
 ## [Observability Analysis](@id ACObservabilityAnalysisTutorials)
-The state estimation algorithm aims to estimate the values of the state variables based on the measurement model described as a system of equations. Prior to applying the state estimation algorithm, the observability analysis determines the existence and uniqueness of the solution for the underlying system of equations. In cases where a unique solution is not guaranteed, the observability analysis identifies observable islands and prescribes an additional set of equations (pseudo-measurements) to achieve a unique solution [[7]](@ref ACSEReferenceTutorials).
+The state estimation algorithm aims to estimate the values of the state variables based on the measurement model described as a system of equations. Prior to applying the state estimation algorithm, the observability analysis determines the existence and uniqueness of the solution for the underlying system of equations. In cases where a unique solution is not guaranteed, the observability analysis identifies observable islands and prescribes an additional set of equations (pseudo-measurements) to achieve a unique solution [cosovic2021observability](@cite).
 
 ---
 
 ##### Identification of Observable Islands
-JuliaGrid employs standard observability analysis performed on the linear decoupled measurement model [[2, Ch. 7]](@ref ACSEReferenceTutorials). Active power measurements from wattmeters are utilized to estimate bus voltage angles, while reactive power measurements from varmeters are used to estimate bus voltage magnitudes. This necessitates that measurements of active and reactive power come in pairs.
+JuliaGrid employs standard observability analysis performed on the linear decoupled measurement model [monticellibook; Ch. 7](@cite). Active power measurements from wattmeters are utilized to estimate bus voltage angles, while reactive power measurements from varmeters are used to estimate bus voltage magnitudes. This necessitates that measurements of active and reactive power come in pairs.
 
 Let us illustrate this concept with the following example, where measurements form an unobservable system:
 ```@example ACObservability
@@ -1189,7 +1189,7 @@ addVarmeter!(system, device; label = "Varmeter 3", bus = "Bus 3", reactive = 0.5
 nothing # hide
 ```
 
-If the system lacks observability, the observability analysis needs to identify all potential observable islands that can be independently solved. An observable island is defined as follows: It is a segment of the power system where the flows across all branches within that island can be calculated solely from the available measurements. This independence holds regardless of the values chosen for the bus voltage angle at the slack bus [[2, Sec. 7.1.1]](@ref ACSEReferenceTutorials). Within this context, two types of observable islands are evident:
+If the system lacks observability, the observability analysis needs to identify all potential observable islands that can be independently solved. An observable island is defined as follows: It is a segment of the power system where the flows across all branches within that island can be calculated solely from the available measurements. This independence holds regardless of the values chosen for the bus voltage angle at the slack bus [monticellibook; Sec. 7.1.1](@cite). Within this context, two types of observable islands are evident:
 * flow observale islands,
 * maximal observable islands.
 
@@ -1198,7 +1198,7 @@ The selection between them relies on the power system's structure and the availa
 ---
 
 ##### Flow Observale Islands
-To identify flow observable islands, JuliaGrid employs a topological method outlined in [[8]](@ref ACSEReferenceTutorials). The process begins with the examination of all active power flow measurements from wattmeters, aiming to determine the largest sets of connected buses within the network linked by branches with active power flow measurements. Subsequently, the analysis considers individual boundary or tie active power injection measurements, involving two islands that may potentially be merged into a single observable island. The user can initiate this process by calling the function:
+To identify flow observable islands, JuliaGrid employs a topological method outlined in [horisberger1985observability](@cite). The process begins with the examination of all active power flow measurements from wattmeters, aiming to determine the largest sets of connected buses within the network linked by branches with active power flow measurements. Subsequently, the analysis considers individual boundary or tie active power injection measurements, involving two islands that may potentially be merged into a single observable island. The user can initiate this process by calling the function:
 ```@example ACObservability
 islands = islandTopologicalFlow(system, device)
 nothing # hide
@@ -1219,7 +1219,7 @@ This tie data will be utilized throughout the restoration step, where we introdu
 ---
 
 ##### Maximal Observale Islands
-To identify maximal observable islands, we extend the analysis with an additional processing step. After processing individual injection tie measurements, we are left with a series of injection measurements that are not entirely contained within any observable zone. In this set of remaining tie injections, we now examine pairs involving three and only three previously determined observable zones (including individual buses). If we find such a pair, the three islands may be merged, and all injection measurements involving only nodes of this new island are excluded from further consideration. The procedure then restarts at the stage where we process tie active power injection measurements involving two and only two islands. If no mergers are possible with pairs, we then consider sets of three injection measurements involving four islands, and so on [[8]](@ref ACSEReferenceTutorials). The user can initiate this by calling the function:
+To identify maximal observable islands, we extend the analysis with an additional processing step. After processing individual injection tie measurements, we are left with a series of injection measurements that are not entirely contained within any observable zone. In this set of remaining tie injections, we now examine pairs involving three and only three previously determined observable zones (including individual buses). If we find such a pair, the three islands may be merged, and all injection measurements involving only nodes of this new island are excluded from further consideration. The procedure then restarts at the stage where we process tie active power injection measurements involving two and only two islands. If no mergers are possible with pairs, we then consider sets of three injection measurements involving four islands, and so on [horisberger1985observability](@cite). The user can initiate this by calling the function:
 ```@example ACObservability
 islands = islandTopological(system, device)
 nothing # hide
@@ -1247,14 +1247,14 @@ addVoltmeter!(system, device; bus = "Bus 1", magnitude = 1.0)
 nothing # hide
 ```
 
-After determining the islands, the observability analysis merges these islands in a manner that protect previously determined observable states from being altered by the new set of equations defined by the additional measurements, called pseudo-measurements. In general, this can be achieved by ensuring that the set of new measurements forms a non-redundant set [[2, Sec. 7.3.2]](@ref ACSEReferenceTutorials), i.e., the set of equations must be linearly independent with respect to the global system. The goal of observability restoration is to find this non-redundant set.
+After determining the islands, the observability analysis merges these islands in a manner that protect previously determined observable states from being altered by the new set of equations defined by the additional measurements, called pseudo-measurements. In general, this can be achieved by ensuring that the set of new measurements forms a non-redundant set [monticellibook; Sec. 7.3.2](@cite), i.e., the set of equations must be linearly independent with respect to the global system. The goal of observability restoration is to find this non-redundant set.
 
 The outcome of the island detection step results in the power system being divided into ``m`` islands. Subsequently, we focus on the set of measurements ``\mathcal{M}_\text{r} \subset \mathcal{M}``, which exclusively consists of:
 * active power injection measurements at tie buses,
 * bus voltage phasor measurements.
 These measurements are retained from the phase where we identify observable islands, and are crucial in determining whether we need additional pseudo-measurements to be included in the measurement set ``\mathcal{M}``. In this specific example, we do not have active power injection measurements at tie buses remaining after the identification of maximal observable islands. However, if we proceed with flow observable islands to the restoration step, we will have two injection measurements at `Bus 2` and `Bus 3`.
 
-However, let us introduce the matrix ``\mathbf M_{\text{r}} \in \mathbb{R}^{r \times m}``, where ``r = |\mathcal{M}_\text{r}|``. This matrix can be conceptualized as the coefficient matrix of a reduced network, with ``m`` columns corresponding to islands and ``r`` rows associated with the set ``\mathcal{M}_\text{r}``. More precisely, if we construct the coefficient matrix ``\mathbf H_\text{r}`` linked to the set ``\mathcal{M}_\text{r}`` in the DC framework, the matrix ``\mathbf M_{\text{r}}`` can be constructed by summing the columns of ``\mathbf H_\text{r}`` that belong to a specific island [[9]](@ref ACSEReferenceTutorials).
+However, let us introduce the matrix ``\mathbf M_{\text{r}} \in \mathbb{R}^{r \times m}``, where ``r = |\mathcal{M}_\text{r}|``. This matrix can be conceptualized as the coefficient matrix of a reduced network, with ``m`` columns corresponding to islands and ``r`` rows associated with the set ``\mathcal{M}_\text{r}``. More precisely, if we construct the coefficient matrix ``\mathbf H_\text{r}`` linked to the set ``\mathcal{M}_\text{r}`` in the DC framework, the matrix ``\mathbf M_{\text{r}}`` can be constructed by summing the columns of ``\mathbf H_\text{r}`` that belong to a specific island [manousakis2010observability](@cite).
 
 Subsequently, the user needs to establish a set of pseudo-measurements, where measurements must come in pairs as well. Let us create that set:
 ```@example ACObservability
@@ -1474,25 +1474,3 @@ To obtain the vectors of magnitudes ``\mathbf{I}_{\text{l}} = [I_{\text{l}ij}]``
 𝐈ₗ = analysis.current.series.magnitude
 𝛙ₗ = analysis.current.series.angle
 ```
-
----
-
-## [References](@id ACSEReferenceTutorials)
-
-[1] ISO-IEC-OIML-BIPM: "Guide to the expression of uncertainty in measurement," 1992.
-
-[2] A. Monticelli, *State Estimation in Electric Power Systems: A Generalized Approach*, ser. Kluwer international series in engineering and computer science. Springer US, 1999.
-
-[3] Y. Weng, Q. Li, R. Negi, and M. Ilic, "Semidefinite programming for power system state estimation," *in Proc. IEEE PES General Meeting*, July 2012, pp. 1-8.
-
-[4] P. C. Hansen, V. Pereyra, and G. Scherer, *Least squares data fitting with applications*, JHU Press, 2013.
-
-[5] A. Abur and A. Exposito, *Power System State Estimation: Theory and Implementation*, Taylor & Francis, 2004.
-
-[6] G. Korres, "A distributed multiarea state estimation," *IEEE Trans. Power Syst.*, vol. 26, no. 1, pp. 73–84, Feb. 2011.
-
-[7] M. Cosovic, M. Delalic, D. Raca, and D. Vukobratovic, "Observability analysis for large-scale power systems using factor graphs," *IEEE Trans. Power Syst.*, 36(5), 4791-4799.
-
-[8] H. Horisberger, "Observability analysis for power systems with measurement deficiencies," *IFAC Proceedings Volumes*, vol. 18, no. 7, pp.51–58, 1985.
-
-[9] N. M. Manousakis and G. N. Korres, "Observability analysis for power systems including conventional and phasor measurements," *in Proc. MedPower 2010*, Agia Napa, 2010, pp. 1-8.

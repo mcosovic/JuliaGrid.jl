@@ -72,7 +72,7 @@ Recognizing that ``Y_{ij} =  G_{ij} + \text{j}B_{ij}``, ``\bar{V}_{i} = V_i \tex
 
 As demonstrated by the above equations, the bus ``i \in \mathcal{N}`` contains four unknown variables: the active power injection ``{P}_{i}``, reactive power injection ``{Q}_{i}``, bus voltage magnitude ``{V}_{i}``, and bus voltage angle ``{\theta}_{i}``.
 
-To solve these equations, it is necessary to specify two known variables. Although any two variables can be selected mathematically, the choice is determined by the devices that are connected to a particular bus. The standard options are listed in the table below, and these options are used to define the bus types [[1]](@ref PowerFlowSolutionReferenceTutorials).
+To solve these equations, it is necessary to specify two known variables. Although any two variables can be selected mathematically, the choice is determined by the devices that are connected to a particular bus. The standard options are listed in the table below, and these options are used to define the bus types [wood2013power](@cite).
 
 | Bus Type         | Label     | Known                       | Unknown                     |
 |:-----------------|----------:|----------------------------:|----------------------------:|
@@ -328,7 +328,7 @@ while non-diagonal elements of the Jacobian sub-matrices are:
 ---
 
 ## [Fast Newton-Raphson Method](@id FastNewtonRaphsonMethodTutorials)
-Although the fast Newton-Raphson method may converge more slowly than the traditional Newton-Raphson method, the shorter solution time for the updates often compensates for this slower convergence, resulting in a shorter overall solution time. This is particularly true for systems that are not heavily loaded, where a shorter overall solution time is almost always achieved. It is important to note that if the algorithm converges, it will converge to a correct solution [[2]](@ref PowerFlowSolutionReferenceTutorials).
+Although the fast Newton-Raphson method may converge more slowly than the traditional Newton-Raphson method, the shorter solution time for the updates often compensates for this slower convergence, resulting in a shorter overall solution time. This is particularly true for systems that are not heavily loaded, where a shorter overall solution time is almost always achieved. It is important to note that if the algorithm converges, it will converge to a correct solution [andersson2012power](@cite).
 
 The fast Newton-Raphson method involves decoupling the power flow equations. Namely, the Newton-Raphson method is based on the equations:
 ```math
@@ -343,7 +343,7 @@ The fast Newton-Raphson method involves decoupling the power flow equations. Nam
     \mathbf{f}_{\text{P}}(\mathbf x) \\ \mathbf{f}_{\text{Q}}(\mathbf x)
   \end{bmatrix} = \mathbf 0,
 ```
-where the iteration index has been omitted for simplicity. However, in transmission grids, there exists a strong coupling between active powers and voltage angles, as well as between reactive powers and voltage magnitudes. To achieve decoupling, two conditions must be satisfied: first, the resistance values ``r_{ij}`` of the branches must be small compared to their reactance values ``x_{ij}``, and second, the angle differences must be small, i.e., ``\theta_{ij} \approx 0`` [[3]](@ref PowerFlowSolutionReferenceTutorials). Therefore, starting from the above equation, we have:
+where the iteration index has been omitted for simplicity. However, in transmission grids, there exists a strong coupling between active powers and voltage angles, as well as between reactive powers and voltage magnitudes. To achieve decoupling, two conditions must be satisfied: first, the resistance values ``r_{ij}`` of the branches must be small compared to their reactance values ``x_{ij}``, and second, the angle differences must be small, i.e., ``\theta_{ij} \approx 0`` [van1989general](@cite). Therefore, starting from the above equation, we have:
 ```math
   \begin{bmatrix}
     \mathbf{J_{11}(x)} & \mathbf{0} \\ \mathbf{0} & \mathbf{J_{22}(x)}
@@ -502,7 +502,7 @@ One of the main advantages of this approach is that the Jacobian matrices ``\mat
 ---
 
 ##### XB Version
-The matrix ``\mathbf{B}_1`` is formed by neglecting the resistance ``r_{ij}``, shunt susceptance ``\Im \{ y_{\text{sh}i} \}``, charging susceptance ``\Im \{ y_{\text{s}ij} \}``, and transformer tap ratio magnitude ``\tau_{ij}``. The matrix ``\mathbf{B}_2`` is constructed by disregarding the transformer phase shift angle ``\phi_{ij}``. This approach corresponds to the standard fast Newton-Raphson method and is known to exhibit exceptional convergence properties in typical scenarios [[3]](@ref PowerFlowSolutionReferenceTutorials).
+The matrix ``\mathbf{B}_1`` is formed by neglecting the resistance ``r_{ij}``, shunt susceptance ``\Im \{ y_{\text{sh}i} \}``, charging susceptance ``\Im \{ y_{\text{s}ij} \}``, and transformer tap ratio magnitude ``\tau_{ij}``. The matrix ``\mathbf{B}_2`` is constructed by disregarding the transformer phase shift angle ``\phi_{ij}``. This approach corresponds to the standard fast Newton-Raphson method and is known to exhibit exceptional convergence properties in typical scenarios [van1989general](@cite).
 
 To initialize the XB version of the fast Newton-Raphson method, one can utilize the following code snippet:
 ```@example PowerFlowSolution
@@ -514,7 +514,7 @@ nothing # hide
 ---
 
 ##### BX Version
-The matrix ``\mathbf{B}_1`` ignores the shunt susceptance``\Im \{ y_{\text{sh}i} \}``, charging susceptance ``\Im \{ y_{\text{s}ij} \}``, and transformer tap ratio magnitude ``\tau_{ij}``. The matrix ``\mathbf{B}_2`` ignores the resistance ``r_{ij}`` and transformer phase shift angle ``\phi_{ij}``. In usual cases, the iteration count for the BX version is comparable to the XB scheme. However, for systems with high ``r_{ij}/x_{ij}`` ratios, the BX scheme requires considerably fewer iterations than the XB scheme to solve the power flow [[3]](@ref PowerFlowSolutionReferenceTutorials).
+The matrix ``\mathbf{B}_1`` ignores the shunt susceptance``\Im \{ y_{\text{sh}i} \}``, charging susceptance ``\Im \{ y_{\text{s}ij} \}``, and transformer tap ratio magnitude ``\tau_{ij}``. The matrix ``\mathbf{B}_2`` ignores the resistance ``r_{ij}`` and transformer phase shift angle ``\phi_{ij}``. In usual cases, the iteration count for the BX version is comparable to the XB scheme. However, for systems with high ``r_{ij}/x_{ij}`` ratios, the BX scheme requires considerably fewer iterations than the XB scheme to solve the power flow [van1989general](@cite).
 
 To initialize the BX version of the fast Newton-Raphson method, you can use the following code:
 ```@example PowerFlowSolution
@@ -552,7 +552,7 @@ for iteration = 1:100
 end
 ```
 
-The functions ``\mathbf{f}_{\text{P}}(\mathbf x)`` and ``\mathbf{f}_{\text{Q}}(\mathbf x)`` remain free of approximations, with only the calculation of the state variable increments affected [[2]](@ref PowerFlowSolutionReferenceTutorials). As a result, we still use the following equations to compute the mismatches:
+The functions ``\mathbf{f}_{\text{P}}(\mathbf x)`` and ``\mathbf{f}_{\text{Q}}(\mathbf x)`` remain free of approximations, with only the calculation of the state variable increments affected [andersson2012power](@cite). As a result, we still use the following equations to compute the mismatches:
 ```math
   \begin{aligned}
     f_{P_i}(\mathbf x) &= {V}_{i}\sum\limits_{j=1}^n (G_{ij}\cos\theta_{ij}+B_{ij}\sin\theta_{ij})V_j - {P}_{i} = 0,
@@ -657,7 +657,7 @@ In its expanded form, this can be written as:
 	\end{aligned}
 ```
 
-While the Gauss-Seidel method directly solves the system of equations, it suffers from very slow convergence, which increases almost linearly with the system size, necessitating numerous iterations to obtain the desired solution [[4]](@ref PowerFlowSolutionReferenceTutorials). Moreover, the convergence time of the Gauss-Seidel method increases significantly for large-scale systems and can face convergence issues for systems with high active power transfers. Nevertheless, power flow programs utilize both the Gauss-Seidel and Newton-Raphson methods in a complementary manner. Specifically, the Gauss-Seidel method is employed to obtain a quick approximate solution from a "flat start", while the Newton-Raphson method is utilized to obtain the final accurate solution [[5]](@ref PowerFlowSolutionReferenceTutorials).
+While the Gauss-Seidel method directly solves the system of equations, it suffers from very slow convergence, which increases almost linearly with the system size, necessitating numerous iterations to obtain the desired solution [chassin2006gauss](@cite). Moreover, the convergence time of the Gauss-Seidel method increases significantly for large-scale systems and can face convergence issues for systems with high active power transfers. Nevertheless, power flow programs utilize both the Gauss-Seidel and Newton-Raphson methods in a complementary manner. Specifically, the Gauss-Seidel method is employed to obtain a quick approximate solution from a "flat start", while the Newton-Raphson method is utilized to obtain the final accurate solution [zimmerman2016matpower](@cite).
 
 The Gauss-Seidel method is usually applied to a system of ``n`` complex equations, where one represents the slack bus. Consequently, one equation can be eliminated, resulting in a power flow problem with ``n-1`` equations.
 
@@ -922,16 +922,3 @@ To obtain the vectors of magnitudes ``\mathbf{I}_{\text{l}} = [I_{\text{l}ij}]``
 𝐈ₗ = analysis.current.series.magnitude
 𝛙ₗ = analysis.current.series.angle
 ```
-
----
-
-## [References](@id PowerFlowSolutionReferenceTutorials)
-[1] A. Wood and B. Wollenberg, *Power Generation, Operation, and Control*, Wiley, 1996.
-
-[2] G. Andersson, *Modelling and analysis of electric power systems*, EEH-Power Systems Laboratory, Swiss Federal Institute of Technology (ETH), Zürich, Switzerland (2008).
-
-[3] R. A. M. van Amerongen, "A general-purpose version of the fast decoupled load flow," *IEEE Trans. Power Syst.*, vol. 4, no. 2, pp. 760-770, May 1989.
-
-[4] D. P. Chassin, P. R. Armstrong, D. G. Chavarria-Miranda, and R. T. Guttromson, "Gauss-seidel accelerated: implementing flow solvers on field programmable gate arrays," *in Proc. IEEE PES General Meeting*, 2006, pp. 5.
-
-[5] R. D. Zimmerman, C. E. Murillo-Sanchez, *MATPOWER User’s Manual*, Version 7.0. 2019.

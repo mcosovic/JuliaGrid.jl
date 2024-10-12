@@ -86,7 +86,7 @@ Here, measurement values are obtained according to:
   \end{aligned}
 ```
 
-Utilizing the classical theory of propagation of uncertainty [[1]](@ref PMUSEReferenceTutorials), the variances can be calculated as follows:
+Utilizing the classical theory of propagation of uncertainty [iso1993guide](@cite), the variances can be calculated as follows:
 ```math
   \begin{aligned}
     v_{\Re(\bar{V}_i)} &=
@@ -160,7 +160,7 @@ Here, measurement values are obtained according to:
   \end{aligned}
 ```
 
-Utilizing the classical theory of propagation of uncertainty [[1]](@ref ACSEReferenceTutorials), the variances can be calculated as follows:
+Utilizing the classical theory of propagation of uncertainty [iso1993guide](@cite), the variances can be calculated as follows:
 ```math
   \begin{aligned}
     v_{\Re(\bar{I}_{ij})} & = v_{I_{ij}} (\cos z_{\psi_{ij}})^2 + v_{\psi_{ij}} (z_{I_{ij}} \sin z_{\psi_{ij}})^2 \\
@@ -396,7 +396,7 @@ The estimated bus voltage magnitudes ``\hat{\mathbf V} = [\hat{V}_i]`` and angle
 ---
 
 ##### [Alternative Formulation](@id PMUSEOrthogonalWLSStateEstimationTutorials)
-The resolution of the WLS state estimation problem using the conventional method typically progresses smoothly. However, it is widely acknowledged that in certain situations common to real-world systems, this method can be vulnerable to numerical instabilities. Such conditions might impede the algorithm from converging to a satisfactory solution. In such cases, users may opt for an alternative formulation of the WLS state estimation, namely, employing an approach called orthogonal factorization [[2, Sec. 3.2]](@ref DCStateEstimationReferenceManual). This approach is suitable when measurement errors are uncorrelated, and the precision matrix remains diagonal.
+The resolution of the WLS state estimation problem using the conventional method typically progresses smoothly. However, it is widely acknowledged that in certain situations common to real-world systems, this method can be vulnerable to numerical instabilities. Such conditions might impede the algorithm from converging to a satisfactory solution. In such cases, users may opt for an alternative formulation of the WLS state estimation, namely, employing an approach called orthogonal factorization [aburbook; Sec. 3.2](@cite). This approach is suitable when measurement errors are uncorrelated, and the precision matrix remains diagonal.
 
 To address ill-conditioned situations arising from significant differences in measurement variances, users can employ an alternative approach:
 ```@example PMUSETutorial
@@ -448,7 +448,7 @@ To obtain the solution, JuliaGrid avoids materializing the orthogonal matrix ``\
 ---
 
 ## [Bad Data Processing](@id PMUSEBadDataTutorials)
-Besides the state estimation algorithm, one of the essential state estimation routines is the bad data processing, whose main task is to detect and identify measurement errors, and eliminate them if possible. This is usually done by processing the measurement residuals [[2, Ch. 5]](@ref PMUSEReferenceTutorials), and typically, the largest normalized residual test is used to identify bad data. The largest normalized residual test is performed after we obtained the solution of the state estimation in the repetitive process of identifying and eliminating bad data measurements one after another [[3]](@ref PMUSEReferenceTutorials).
+Besides the state estimation algorithm, one of the essential state estimation routines is the bad data processing, whose main task is to detect and identify measurement errors, and eliminate them if possible. This is usually done by processing the measurement residuals [aburbook; Ch. 5](@cite), and typically, the largest normalized residual test is used to identify bad data. The largest normalized residual test is performed after we obtained the solution of the state estimation in the repetitive process of identifying and eliminating bad data measurements one after another [korres2010distributed](@cite).
 
 To illustrate this process, let us introduce a new measurement that contains an obvious outlier:
 ```@example PMUSETutorial
@@ -469,7 +469,7 @@ outlier = residualTest!(system, device, analysis; threshold = 4.0)
 nothing # hide
 ```
 
-In this step, we employ the largest normalized residual test, guided by the analysis outlined in [[2, Sec. 5.7]](@ref PMUSEReferenceTutorials). To be more precise, we compute all measurement residuals in the rectangular coordinate system based on the obtained estimate of state variables:
+In this step, we employ the largest normalized residual test, guided by the analysis outlined in [aburbook; Sec. 5.7](@cite). To be more precise, we compute all measurement residuals in the rectangular coordinate system based on the obtained estimate of state variables:
 ```math
     r_{i} = z_i - h_i(\hat {\mathbf x}), \;\;\; i \in \mathcal{M}.
 ```
@@ -535,9 +535,9 @@ outlier.detect
 ---
 
 ## [Least Absolute Value Estimation](@id PMUSELAVTutorials)
-The least absolute value (LAV) method provides an alternative estimation approach that is considered more robust in comparison to the WLS method. The WLS state estimation problem relies on specific assumptions about measurement errors, whereas robust estimators aim to remain unbiased even in the presence of various types of measurement errors and outliers. This characteristic eliminates the need for bad data processing, as discussed in [[2, Ch. 6]](@ref DCSEReferenceTutorials). It is important to note that robustness often comes at the cost of increased computational complexity.
+The least absolute value (LAV) method provides an alternative estimation approach that is considered more robust in comparison to the WLS method. The WLS state estimation problem relies on specific assumptions about measurement errors, whereas robust estimators aim to remain unbiased even in the presence of various types of measurement errors and outliers. This characteristic eliminates the need for bad data processing, as discussed in [aburbook; Ch. 6](@cite). It is important to note that robustness often comes at the cost of increased computational complexity.
 
-It can be demonstrated that the problem can be expressed as a linear programming problem. This section outlines the method as described in [[1, Sec. 6.5]](@ref DCSEReferenceTutorials). To revisit, we consider the system of linear equations:
+It can be demonstrated that the problem can be expressed as a linear programming problem. This section outlines the method as described in [aburbook; Sec. 6.5](@cite). To revisit, we consider the system of linear equations:
 ```math
   \mathbf{z}=\mathbf{h}(\mathbf x)+\mathbf{u}+\mathbf{w}.
 ```
@@ -624,16 +624,16 @@ Users can retrieve the estimated bus voltage magnitudes ``\hat{\mathbf V} = [\ha
 ---
 
 ## [Optimal PMU Placement](@id optimalpmu)
-JuliaGrid utilizes the optimal PMU placement algorithm proposed in [[4]](@ref PMUSEReferenceTutorials). The optimal positioning of PMUs is framed as an integer linear programming problem, expressed as:
+JuliaGrid utilizes the optimal PMU placement algorithm proposed in [gou2008optimal](@cite). The optimal positioning of PMUs is framed as an integer linear programming problem, expressed as:
 ```math
   \begin{aligned}
     \text{minimize}& \;\;\; \sum_{i=1}^n d_i\\
     \text{subject\;to}& \;\;\; \mathbf A \mathbf d \ge \mathbf a.
   \end{aligned}
 ```
-Here, the vector ``\mathbf d = [d_1,\dots,d_n]^T`` serves as the optimization variable, where ``d_i \in \mathbb{F} = \{0,1\}`` is the PMU placement or a binary decision variable associated with the bus ``i \in \mathcal{N}``. The all-one vector ``\mathbf a`` is of dimension ``n``. The binary connectivity matrix ``\mathbf A \in \mathbb{F}^{n \times n}`` can be directly derived from the bus nodal matrix ``\mathbf Y`` by converting its entries into binary form [[5]](@ref PMUSEReferenceTutorials).
+Here, the vector ``\mathbf d = [d_1,\dots,d_n]^T`` serves as the optimization variable, where ``d_i \in \mathbb{F} = \{0,1\}`` is the PMU placement or a binary decision variable associated with the bus ``i \in \mathcal{N}``. The all-one vector ``\mathbf a`` is of dimension ``n``. The binary connectivity matrix ``\mathbf A \in \mathbb{F}^{n \times n}`` can be directly derived from the bus nodal matrix ``\mathbf Y`` by converting its entries into binary form [xu2004observability](@cite).
 
-Consequently, we obtain the binary vector ``\mathbf d = [d_1,\dots,d_n]^T``, where ``d_i = 1``, ``i \in \mathcal{N}``, suggests that a PMU should be placed at bus ``i``. The primary aim of PMU placement in the power system is to determine a minimal set of PMUs such that the entire system is observable without relying on traditional measurements [[4]](@ref PMUSEReferenceTutorials). Specifically, when we observe ``d_i = 1``, it indicates that the PMU is installed at bus ``i \in \mathcal{N}`` to measure bus voltage phasor as well as all current phasors across branches incident to bus ``i``.
+Consequently, we obtain the binary vector ``\mathbf d = [d_1,\dots,d_n]^T``, where ``d_i = 1``, ``i \in \mathcal{N}``, suggests that a PMU should be placed at bus ``i``. The primary aim of PMU placement in the power system is to determine a minimal set of PMUs such that the entire system is observable without relying on traditional measurements [gou2008optimal](@cite). Specifically, when we observe ``d_i = 1``, it indicates that the PMU is installed at bus ``i \in \mathcal{N}`` to measure bus voltage phasor as well as all current phasors across branches incident to bus ``i``.
 
 Determining the optimal PMU placement involves analyzing the created power system. For example:
 ```@example PMUSETutorial
@@ -822,17 +822,3 @@ To obtain the vectors of magnitudes ``\mathbf{I}_{\text{l}} = [I_{\text{l}ij}]``
 𝐈ₗ = analysis.current.series.magnitude
 𝛙ₗ = analysis.current.series.angle
 ```
-
----
-
-## [References](@id PMUSEReferenceTutorials)
-
-[1] ISO-IEC-OIML-BIPM: "Guide to the expression of uncertainty in measurement," 1992.
-
-[2] A. Abur and A. Exposito, *Power System State Estimation: Theory and Implementation*, Taylor & Francis, 2004.
-
-[3] G. Korres, "A distributed multiarea state estimation," *IEEE Trans. Power Syst.*, vol. 26, no. 1, pp. 73–84, Feb. 2011.
-
-[4] B. Gou, "Optimal placement of PMUs by integer linear programming," *IEEE Trans. Power Syst.*, vol. 23, no. 3, pp. 1525–1526, Aug. 2008.
-
-[5] B. Xu and A. Abur, "Observability analysis and measurement placement for systems with PMUs," *in Proc. IEEE PES PSCE*, New York, NY, 2004, pp. 943-946 vol.2.
