@@ -3,7 +3,7 @@ JuliaGrid
 
 JuliaGrid is a fast, flexible and easy-to-use open-source tool for analysis and modification of power system configurations and measurement data. It represents a comprehensive framework for steady-state power system analysis written in the Julia programming language. The framework is available as a Julia package under MIT License. JuliaGrid is primarily designed for  researchers and academics, providing various state-of-the-art algorithms.
 
-The fremowork's architecture centres around code-reusability paradigm, allowing users a high level of customization for their experiments. To simplify, the overall logic for setting the experiments and its analysis can be as follows:
+The framework's architecture centres around code-reusability paradigm, allowing users a high level of customization for their experiments. To simplify, the overall logic for setting the experiments and its analysis can be as follows:
 * Users define a power system with/without measurement data.
 * Users select between the AC or DC model.
 * Users define the specific type of required analysis.
