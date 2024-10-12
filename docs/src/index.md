@@ -14,6 +14,12 @@ The fremowork's architecture centres around code-reusability paradigm, allowing 
 ### Installation Guide
 JuliaGrid is compatible with Julia version 1.9 and later. To get started with JuliaGrid, users should first install Julia and consider using a code editor for a smoother coding experience. For detailed instructions, please consult the [Installation Guide](@ref InstallationGuide).
 
+To get the JuliaGrid package installed, execute the following Julia command:
+```julia
+import Pkg
+Pkg.add("JuliaGrid")
+```
+
 ---
 
 ### Documentation Structure

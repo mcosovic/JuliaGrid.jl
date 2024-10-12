@@ -2,28 +2,25 @@ using Documenter, JuliaGrid
 using JuMP, HiGHS, Ipopt, GLPK
 using DocumenterCitations
 
-bib = CitationBibliography(
-    joinpath(@__DIR__, "src", "references.bib");
-    style=:numeric
-)
-
 makedocs(
     sitename = "JuliaGrid",
     modules = [JuliaGrid],
     clean = false,
     doctest = false,
-    plugins = [bib],
+    plugins = [
+        CitationBibliography(
+            joinpath(@__DIR__, "src", "background/references.bib");
+            style=:numeric
+        )
+    ],
     format = Documenter.HTML(
         assets = ["assets/tablestyle.css", "assets/citations.css"],
         prettyurls = get(ENV, "CI", nothing) == "true",
         collapselevel = 1
     ),
-    pages =
-        [
+    pages = [
         "Introduction" => "index.md",
-        "Installation Guide" => "installation.md",
-        "Manual" =>
-            [
+        "Manual" =>[
             "Power System Model" => "manual/powerSystemModel.md",
             "AC Power Flow" => "manual/acPowerFlow.md",
             "DC Power Flow" => "manual/dcPowerFlow.md",
@@ -33,9 +30,8 @@ makedocs(
             "AC State Estimation" => "manual/acStateEstimation.md",
             "PMU State Estimation" => "manual/pmuStateEstimation.md",
             "DC State Estimation" => "manual/dcStateEstimation.md"
-            ],
-        "Tutorials" =>
-            [
+        ],
+        "Tutorials" => [
             "Power System Model" => "tutorials/powerSystemModel.md",
             "AC Power Flow" => "tutorials/acPowerFlow.md",
             "DC Power Flow" => "tutorials/dcPowerFlow.md",
@@ -45,9 +41,8 @@ makedocs(
             "AC State Estimation" => "tutorials/acStateEstimation.md",
             "PMU State Estimation" => "tutorials/pmuStateEstimation.md",
             "DC State Estimation" => "tutorials/dcStateEstimation.md"
-            ],
-        "API Reference" =>
-            [
+        ],
+        "API Reference" =>[
             "Power System Model" => "api/powerSystemModel.md",
             "Power Flow" => "api/powerFlow.md",
             "Optimal Power Flow" => "api/optimalPowerFlow.md",
@@ -55,9 +50,12 @@ makedocs(
             "State Estimation" => "api/stateEstimation.md",
             "Power and Current Analysis" => "api/analysis.md",
             "Setup and Print" => "api/setupPrint.md"
-            ],
-        "Bibliography" => "bibliography.md",
+        ],
+        "Background" => [
+            "Installation Guide" => "background/installation.md",
+            "Bibliography" => "background/bibliography.md"
         ]
+    ]
 )
 
 deploydocs(
