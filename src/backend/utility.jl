@@ -378,19 +378,17 @@ function print(
     label::Union{OrderedDict{String, Int64}, OrderedDict{String, Int64}},
     obj::Dict{Int64, ConstraintRef}
 )
-    for (key, value) in label
-        if is_valid(owner_model(obj[value]), obj[value])
-            println(io::IO, key, ": ", obj[value])
+    for (key, idx) in label
+        if haskey(obj, idx) && is_valid(owner_model(obj[idx]), obj[idx])
+            println(io::IO, key, ": ", obj[idx])
         end
     end
 end
 
 function print(io::IO, obj::Dict{Int64, ConstraintRef})
-    for key in keys(sort(obj))
-        try
+    for key in sort(collect(keys(obj)))
+        if is_valid(owner_model(obj[key]), obj[key])
             println(io::IO, obj[key])
-        catch
-            println(io::IO, "undefined")
         end
     end
 end
@@ -400,25 +398,22 @@ function print(
     label::Union{OrderedDict{String, Int64}, OrderedDict{String, Int64}},
     obj::Dict{Int64, Vector{ConstraintRef}}
 )
-    names = collect(keys(label))
-    for key in keys(sort(obj))
-        for cons in obj[key]
-            try
-                println(io::IO, names[key], ": ", cons)
-            catch
-                println(io::IO, "undefined")
+    for (key, idx) in label
+        if haskey(obj, idx)
+            for cons in obj[idx]
+                if is_valid(owner_model(cons), cons)
+                    println(io::IO, key, ": ", cons)
+                end
             end
         end
     end
 end
 
 function print(io::IO, obj::Dict{Int64, Vector{ConstraintRef}})
-    for key in keys(sort(obj))
+    for key in sort(collect(keys(obj)))
         for cons in obj[key]
-            try
+            if is_valid(owner_model(cons), cons)
                 println(io::IO, cons)
-            catch
-                println(io::IO, "undefined")
             end
         end
     end
