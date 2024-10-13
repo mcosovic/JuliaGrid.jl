@@ -366,33 +366,21 @@ import Base.print
 function print(
     io::IO,
     label::Union{OrderedDict{String, Int64}, OrderedDict{String, Int64}},
-    data::Union{Vector{Float64}, Vector{Int64}, Vector{Int8}}
+    data::Vararg{Union{Vector{Float64}, Vector{Int64}, Vector{Int8}}}
 )
-    for (key, value) in label
-        println(io::IO, key, ": ", data[value])
+    for (key, idx) in label
+        println(io::IO, key, ": ", join([d[idx] for d in data], ", "))
     end
 end
 
 function print(
     io::IO,
     label::Union{OrderedDict{String, Int64}, OrderedDict{String, Int64}},
-    data1::Union{Vector{Float64}, Vector{Int64}, Vector{Int8}},
-    data2::Union{Vector{Float64}, Vector{Int64}, Vector{Int8}}
+    obj::Dict{Int64, ConstraintRef}
 )
     for (key, value) in label
-        println(io::IO, key, ": ", data1[value], ", ", data2[value])
-    end
-end
-
-function print(
-    io::IO,
-    label::Union{OrderedDict{String, Int64}, OrderedDict{String, Int64}},
-    obj::Union{Dict{Int64, ConstraintRef}, Dict{Int64, Float64}}
-)
-    for (key, value) in label
-        try
+        if is_valid(owner_model(obj[value]), obj[value])
             println(io::IO, key, ": ", obj[value])
-        catch
         end
     end
 end

@@ -31,7 +31,6 @@ JuliaGrid documentation consists of three main parts:
 ---
 
 ### Getting Started
-
 Below, we have provided a list of exhaustive examples in order to ease users in getting started with the JuliaGrid package. These examples highlight some of the functionalities that the framework offers.
 
 ---

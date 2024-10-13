@@ -538,6 +538,7 @@ print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
 Users retain the flexibility to reset initial primal values to their default configurations at any juncture. This can be accomplished by utilizing the active and reactive power outputs of the generators and the initial bus voltage magnitudes and angles extracted from the `PowerSystem` type, employing the [`startingPrimal!`](@ref startingPrimal!) function:
 ```@example ACOptimalPowerFlow
 startingPrimal!(system, analysis)
+nothing # hide
 ```
 The primal starting values will now be identical to those that would be obtained if the [`acOptimalPowerFlow`](@ref acOptimalPowerFlow) function were executed after all the updates have been applied.
 
