@@ -1,5 +1,6 @@
 """
-    acOptimalPowerFlow(system::PowerSystem, optimizer; bridge, name)
+    acOptimalPowerFlow(system::PowerSystem, optimizer; bridge, name,
+        magnitude, angle, active, reactive)
 
 The function sets up the optimization model for solving the AC optimal power flow problem.
 
@@ -21,6 +22,10 @@ However, certain configurations may require different method calls, such as:
 - `bridge`: manage the bridging mechanism (default: `false`),
 - `name`: manage the creation of string names (default: `true`).
 
+Additionally, users can modify variable names used for printing and writing through the
+keywords `magnitude`, `angle`, `active`, and `reactive`. For instance, users can choose
+`magnitude = "V"` and `angle = "θ"` to display equations in a more readable format.
+
 # Returns
 The function returns an instance of the `ACOptimalPowerFlow` type, which includes the
 following fields:
@@ -41,7 +46,11 @@ function acOptimalPowerFlow(
     system::PowerSystem,
     @nospecialize optimizerFactory;
     bridge::Bool = false,
-    name::Bool = true
+    name::Bool = true,
+    magnitude::String = "magnitude",
+    angle::String = "angle",
+    active::String = "active",
+    reactive::String = "reactive"
 )
     branch = system.branch
     bus = system.bus
@@ -57,10 +66,12 @@ function acOptimalPowerFlow(
     jump = JuMP.Model(optimizerFactory; add_bridges = bridge)
     set_string_names_on_creation(jump, name)
 
-    active = @variable(jump, active[i = 1:gen.number])
-    reactive = @variable(jump, reactive[i = 1:gen.number])
-    magnitude = @variable(jump, magnitude[i = 1:bus.number])
-    angle = @variable(jump, angle[i = 1:bus.number])
+    active = @variable(jump, active[i = 1:gen.number], base_name = active)
+    reactive = @variable(jump, reactive[i = 1:gen.number], base_name = reactive)
+    magnitude = @variable(jump, magnitude[i = 1:bus.number], base_name = magnitude)
+    @time angle = @variable(jump, angle[i = 1:bus.number], base_name = angle)
+
+
 
     fix(angle[bus.layout.slack], bus.voltage.angle[bus.layout.slack])
     slack = Dict(bus.layout.slack => FixRef(angle[bus.layout.slack]))

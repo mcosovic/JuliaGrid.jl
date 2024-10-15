@@ -10,12 +10,7 @@ To solve the DC power flow problem and acquire bus voltage angles, make use of t
 After obtaining the solution for DC power flow, JuliaGrid offers a post-processing analysis function to compute active powers associated with buses, branches, and generators:
 * [`power!`](@ref power!(::PowerSystem, ::DCPowerFlow)).
 
-Additionally, there are specialized functions dedicated to calculating specific types of active powers related to particular buses, branches, or generators:
-* [`injectionPower`](@ref injectionPower(::PowerSystem, ::DCPowerFlow)),
-* [`supplyPower`](@ref supplyPower(::PowerSystem, ::DCPowerFlow)),
-* [`fromPower`](@ref fromPower(::PowerSystem, ::DCPowerFlow)),
-* [`toPower`](@ref toPower(::PowerSystem, ::DCPowerFlow)),
-* [`generatorPower`](@ref generatorPower(::PowerSystem, ::DCPowerFlow)).
+Additionally, specialized functions are available for calculating specific types of [powers](@ref DCPowerAnalysisAPI) for individual buses, branches, or generators.
 
 ---
 
@@ -37,7 +32,7 @@ dcModel!(system)
 analysis = dcPowerFlow(system)
 ```
 
-In this example, the slack bus (`type = 3`) corresponds to the `Bus 1`. However, this bus does not have an in-service generator connected to it. Consequently, JuliaGrid recognizes this as an error and attempts to assign a new slack bus from the available generator buses (`type = 2`) that have connected in-service generators. In this particular example, the `Bus 3` will become the new slack bus. As a result, we can observe the updated array of bus types:
+In this example, the slack bus (`type = 3`) corresponds to the `Bus 1`. However, this bus does not have an in-service generator connected to it. JuliaGrid considers this a mistake and attempts to assign a new slack bus from the available generator buses (`type = 2`) that have connected in-service generators. In this particular example, the `Bus 3` will become the new slack bus. As a result, we can observe the updated array of bus types:
 ```@setup busType
 using JuliaGrid # hide
 @default(unit) # hide

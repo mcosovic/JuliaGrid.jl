@@ -77,7 +77,7 @@ The `PowerSystem` type stores all electrical quantities in per-units and radians
 ---
 
 ##### Change Base Unit Prefixes
-As an example, the user can retrieve the base power and base voltage values along with their respective units, as shown below:
+The user can retrieve the base power and base voltage values along with their respective units:
 ```@repl buildModelScratch
 system.base.power.value, system.base.power.unit
 system.base.voltage.value, system.base.voltage.unit
@@ -95,17 +95,15 @@ system.base.power.value, system.base.power.unit
 system.base.voltage.value, system.base.voltage.unit
 ```
 
-Therefore, by using the [`@base`](@ref @base) macro to modify the prefixes of the base units, users can convert the output data from various analyses to specific units with the desired prefixes.
-
 ---
 
 ## [Save Model](@id SaveModelManual)
-Once the `PowerSystem` type has been created using one of the methods outlined in [Build Model](@ref BuildModelManual), the current data can be stored in the HDF5 file by using the [`savePowerSystem`](@ref savePowerSystem) function:
+Once the `PowerSystem` type has been created using one of the methods outlined in [Build Model](@ref BuildModelManual), the data can be stored in the HDF5 file by using the [`savePowerSystem`](@ref savePowerSystem) function:
 ```julia
 savePowerSystem(system; path = "C:/matpower/case14.h5", reference = "IEEE 14-bus test case")
 ```
 
-All electrical quantities saved in the HDF5 file are in per-units and radians, except for base values for power and voltages, which are given in volt-amperes and volts. It is important to note that even if the user modifies the base units using the [`@base`](@ref @base) macro, the units will still be saved in the default settings.
+All electrical quantities saved in the HDF5 file are in per-units and radians, except for base values for power and voltages, which are given in volt-amperes and volts. Note that even if the user modifies the base units using the [`@base`](@ref @base) macro, the units will still be saved with the default settings.
 
 ---
 
@@ -247,7 +245,7 @@ nothing # hide
 
 In the above code, we add the generator to the `Bus 2`, with active and reactive power outputs set to:
 ```@repl addGenerator
-[system.generator.output.active system.generator.output.reactive]
+system.generator.output.active, system.generator.output.reactive
 ```
 
 Similar to buses and branches, the input units can be changed to units other than per-units using different macros.
@@ -298,7 +296,8 @@ nothing # hide
 This code example involves two uses of the [`addBus!`](@ref addBus!) and [`addBranch!`](@ref addBranch!) functions. In the first use, the functions rely on the default values set by the templates created with the [`@bus`](@ref @bus) and [`@branch`](@ref @branch) macros. In contrast, the second use passes specific values that match the keywords used in the templates. As a result, the templates are ignored:
 ```@repl CreateBusTemplate
 system.bus.layout.type
-[system.bus.demand.active system.branch.parameter.reactance]
+system.bus.demand.active
+system.branch.parameter.reactance
 ```
 
 In the given example, the [`@generator`](@ref @generator) macro is utilized instead of repeatedly specifying the `magnitude` keyword in the [`addGenerator!`](@ref addGenerator!) function. This macro creates a generator template with a default value for `magnitude`, which is automatically applied every time the [`addGenerator!`](@ref addGenerator!) function is called. Therefore, it eliminates the requirement to set the magnitude value for each individual generator:
@@ -309,7 +308,7 @@ system.generator.voltage.magnitude
 ---
 
 ##### Customizing Input Units for Keywords
-JuliaGrid requires users to specify electrical quantity-related keywords in per-units (pu) and radians (rad) by default. However, it provides macros, such as [`@power`](@ref @power), that allow users to specify other units:
+Templates can also be defined using a custom unit system, for example:
 ```@example CreateBusTemplateUnits
 using JuliaGrid # hide
 
@@ -326,7 +325,8 @@ nothing # hide
 
 In this example, we create the bus template and one bus using SI power units, and then we switch to per-units and add the second bus. It is important to note that once the template is defined in any unit system, it remains valid regardless of subsequent unit system changes. The resulting power values are:
 ```@repl CreateBusTemplateUnits
-[system.bus.demand.active system.bus.demand.reactive]
+system.bus.demand.active
+system.bus.demand.reactive
 ```
 
 Thus, JuliaGrid automatically tracks the unit system used to create templates and provides the appropriate conversion to per-units and radians. Even if the user switches to a different unit system later on, the previously defined template will still be valid.
@@ -359,7 +359,7 @@ nothing # hide
 As we have shown, JuliaGrid mandates a distinctive label for every bus, branch, or generator. These labels are stored in ordered dictionaries, functioning as pairs of strings and integers. The string signifies the exclusive label for the specific component, whereas the integer maintains an internal numbering of buses, branches, or generators.
 
 !!! tip "Tip"
-    String labels improve readability, but in larger models, the overhead from using strings can become substantial. To reduce memory usage and the number of allocations, users can configure ordered dictionaries to accept and store integers as labels:
+    String labels improve readability, but in larger models, the overhead from using strings can become substantial. To reduce memory usage, users can configure ordered dictionaries to accept and store integers as labels:
     ```julia DCPowerFlowSolution
     @labels(Integer)
     ```
@@ -462,7 +462,7 @@ For instance, the bus labels can be accessed using the variable:
 system.bus.label
 ```
 
-If the objective is to obtain labels in the same order as the bus definitions sequence, users can utilize the following:
+If the objective is to obtain only labels, users can utilize the following:
 ```@repl RetrieveLabels
 label = collect(keys(system.bus.label))
 ```
@@ -474,7 +474,7 @@ Moreover, the `from` and `to` keywords associated with branches are stored based
 [system.branch.layout.from system.branch.layout.to]
 ```
 
-To recover the original `from` and `to` labels, we can utilize the following method:
+To recover the original `from` and `to` labels, we can utilize:
 ```@repl RetrieveLabels
 [label[system.branch.layout.from] label[system.branch.layout.to]]
 ```
@@ -484,7 +484,7 @@ Similarly, the `bus` keywords related to generators are saved based on internall
 system.generator.layout.bus
 ```
 
-To recover the original `bus` labels, we can utilize the following method:
+To recover the original `bus` labels, we can utilize:
 ```@repl RetrieveLabels
 label[system.generator.layout.bus]
 ```
@@ -497,7 +497,7 @@ label[system.generator.layout.bus]
 
 ---
 
-##### Load and Save Power System Data
+##### Loading and Saving Labels
 When a user loads a power system from a Matpower file, the default behavior is to store labels as strings. However, this can be overridden by using the [`@labels`](@ref @labels) macro to store labels as integers.
 
 When saving the power system to an HDF5 file, the label type (strings or integers) will match the type chosen during system setup. Likewise, when loading data from an HDF5 file, the label type will be preserved as saved, regardless of what is set by the [`@labels`](@ref @labels) macro.
@@ -710,7 +710,7 @@ In essence, what we have accomplished is the establishment of a cost function de
 
 The default input units are in per-units (pu), with coefficients of the cost function having units of currency/pu²-hr for 1100, currency/pu-hr for 500, and currency/hr for 150. Therefore, the coefficients are stored exactly as entered:
 ```@repl addActiveCost
-system.generator.cost.active.polynomial
+system.generator.cost.active.polynomial[1]
 ```
 
 By setting `active = 2` within the function, we express our intent to specify the active power cost using the `active` key. By using a value of `2`, we signify our preference for employing a polynomial cost model for the associated generator. This flexibility is neccessary when we have also previously defined a piecewise linear cost function for the same generator. In such cases, we can set `active = 1` to utilize the piecewise linear cost function to represent the cost of the corresponding generators. Thus, we retain the freedom to choose between these two cost functions according to the requirements of our simulation. Additionally, users have the option to define both piecewise and polynomial costs within a single function call, further enhancing the versatility of the implementation.
@@ -726,13 +726,13 @@ nothing # hide
 
 The first column denotes the generator's output reactive powers in per-units, while the second column specifies the corresponding costs for the specified reactive power in currency/hr. Thus, the data is stored exactly as entered:
 ```@repl addActiveCost
-system.generator.cost.reactive.piecewise
+system.generator.cost.reactive.piecewise[1]
 ```
 
 ---
 
 ##### Customizing Input Units for Keywords
-Changing input units from per-units (pu) can be particularly useful since cost functions are usually related to SI units of powers. Let us set active powers in megawatts (MW) and reactive powers in megavolt-amperes reactive (MVAr) :
+Changing input units from per-units (pu) can be particularly useful since cost functions are usually related to SI units. Let us set active powers in megawatts (MW) and reactive powers in megavolt-amperes reactive (MVAr) :
 ```@example addActiveCost
 @power(MW, MVAr, pu)
 nothing # hide
@@ -745,7 +745,7 @@ cost!(system; label = "Generator 1", active = 2, polynomial = [0.11; 5.0; 150.0]
 
 After inspecting the resulting cost data, we can see that it is the same as before:
 ```@repl addActiveCost
-system.generator.cost.active.polynomial
+system.generator.cost.active.polynomial[1]
 ```
 
 Similarly, we can define the linear piecewise cost using megavolt-amperes reactive:
@@ -756,7 +756,7 @@ nothing # hide
 
 Upon inspection, we can see that the stored data is the same as before:
 ```@repl addActiveCost
-system.generator.cost.reactive.piecewise
+system.generator.cost.reactive.piecewise[1]
 ```
 
 !!! tip "Tip"

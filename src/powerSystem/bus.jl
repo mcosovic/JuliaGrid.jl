@@ -104,12 +104,12 @@ function addBus!(system::PowerSystem; label::IntStrMiss = missing, kwargs...)
 
     if !isempty(system.model.ac.nodalMatrix)
         acModelEmpty!(system.model.ac)
-        @info("The current AC model has been completely erased.")
+        @info("The AC model has been completely erased.")
     end
 
     if !isempty(system.model.dc.nodalMatrix)
         dcModelEmpty!(system.model.dc)
-        @info("The current DC model has been completely erased.")
+        @info("The DC model has been completely erased.")
     end
 end
 

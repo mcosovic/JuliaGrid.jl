@@ -1,5 +1,5 @@
 """
-    dcOptimalPowerFlow(system::PowerSystem, optimizer; bridge = false, name = true)
+    dcOptimalPowerFlow(system::PowerSystem, optimizer; bridge, name, angle, active)
 
 The function sets up the optimization model for solving the DC optimal power flow problem.
 
@@ -21,6 +21,10 @@ However, certain configurations may require different method calls, such as:
 - `bridge`: manage the bridging mechanism (default: `false`),
 - `name`: manage the creation of string names (default: `true`).
 
+Additionally, users can modify variable names used for printing and writing through the
+keywords `angle` and `active`. For instance, users can choose `angle = "θ"` to display
+equations in a more readable format.
+
 # Returns
 The function returns an instance of the `DCOptimalPowerFlow` type, which includes the
 following fields:
@@ -40,7 +44,9 @@ function dcOptimalPowerFlow(
     system::PowerSystem,
     @nospecialize optimizerFactory;
     bridge::Bool = false,
-    name::Bool = true
+    name::Bool = true,
+    angle::String = "angle",
+    active::String = "active",
 )
     bus = system.bus
     gen = system.generator
@@ -53,8 +59,8 @@ function dcOptimalPowerFlow(
     jump = JuMP.Model(optimizerFactory; add_bridges = bridge)
     set_string_names_on_creation(jump, name)
 
-    active = @variable(jump, active[i = 1:gen.number])
-    angle = @variable(jump, angle[i = 1:bus.number])
+    active = @variable(jump, active[i = 1:gen.number], base_name = active)
+    angle = @variable(jump, angle[i = 1:bus.number], base_name = angle)
 
     fix(angle[bus.layout.slack], bus.voltage.angle[bus.layout.slack])
     slack = Dict(bus.layout.slack => FixRef(angle[bus.layout.slack]))

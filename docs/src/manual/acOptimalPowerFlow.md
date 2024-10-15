@@ -13,20 +13,8 @@ After obtaining the AC optimal power flow solution, JuliaGrid offers post-proces
 * [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)),
 * [`current!`](@ref current!(::PowerSystem, ::ACPowerFlow)).
 
-Furthermore, there are specialized functions dedicated to calculating specific types of powers related to particular buses and branches:
-* [`injectionPower`](@ref injectionPower(::PowerSystem, ::AC)),
-* [`supplyPower`](@ref supplyPower(::PowerSystem, ::ACPowerFlow)),
-* [`shuntPower`](@ref shuntPower(::PowerSystem, ::AC)),
-* [`fromPower`](@ref fromPower(::PowerSystem, ::AC)),
-* [`toPower`](@ref toPower(::PowerSystem, ::AC)),
-* [`seriesPower`](@ref seriesPower(::PowerSystem, ::AC)),
-* [`chargingPower`](@ref chargingPower(::PowerSystem, ::AC)).
+Additionally, specialized functions are available for calculating specific types of [powers](@ref ACPowerAnalysisAPI) or [currents](@ref ACCurrentAnalysisAPI) for individual buses, branches, or generators.
 
-Likewise, there are specialized functions dedicated to calculating specific types of currents related to particular buses or branches:
-* [`injectionCurrent`](@ref injectionCurrent(::PowerSystem, ::AC)),
-* [`fromCurrent`](@ref fromCurrent(::PowerSystem, ::AC)),
-* [`toCurrent`](@ref toCurrent(::PowerSystem, ::AC)),
-* [`seriesCurrent`](@ref seriesCurrent(::PowerSystem, ::AC)).
 
 ---
 
@@ -82,6 +70,15 @@ It is worth emphasizing that in instances where a linear piecewise cost function
 Please be aware that JuliaGrid maintains references to all variables, which are categorized into six fields:
 ```@repl ACOptimalPowerFlow
 fieldnames(typeof(analysis.method.variable))
+```
+
+---
+
+##### Variable Names
+Users have the option to define custom variable names for printing and writing equations, which can help present them in a more compact form. For example:
+```@example ACOptimalPowerFlow
+analysis = acOptimalPowerFlow(system, Ipopt.Optimizer; magnitude = "V", angle = "θ")
+nothing # hide
 ```
 
 ---

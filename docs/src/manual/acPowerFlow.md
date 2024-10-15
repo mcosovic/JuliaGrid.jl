@@ -19,21 +19,7 @@ After obtaining the AC power flow solution, JuliaGrid offers post-processing ana
 * [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)),
 * [`current!`](@ref current!(::PowerSystem, ::AC)).
 
-Furthermore, there are specialized functions dedicated to calculating specific types of powers related to particular buses, branches, or generators:
-* [`injectionPower`](@ref injectionPower(::PowerSystem, ::AC)),
-* [`supplyPower`](@ref supplyPower(::PowerSystem, ::ACPowerFlow)),
-* [`shuntPower`](@ref shuntPower(::PowerSystem, ::AC)),
-* [`fromPower`](@ref fromPower(::PowerSystem, ::AC)),
-* [`toPower`](@ref toPower(::PowerSystem, ::AC)),
-* [`seriesPower`](@ref seriesPower(::PowerSystem, ::AC)),
-* [`chargingPower`](@ref chargingPower(::PowerSystem, ::AC)),
-* [`generatorPower`](@ref generatorPower(::PowerSystem, ::ACPowerFlow)).
-
-Likewise, there are specialized functions dedicated to calculating specific types of currents related to particular buses or branches:
-* [`injectionCurrent`](@ref injectionCurrent(::PowerSystem, ::AC)),
-* [`fromCurrent`](@ref fromCurrent(::PowerSystem, ::AC)),
-* [`toCurrent`](@ref toCurrent(::PowerSystem, ::AC)),
-* [`seriesCurrent`](@ref seriesCurrent(::PowerSystem, ::AC)).
+Additionally, specialized functions are available for calculating specific types of [powers](@ref ACPowerAnalysisAPI) or [currents](@ref ACCurrentAnalysisAPI) for individual buses, branches, or generators.
 
 ---
 
@@ -50,13 +36,12 @@ addBus!(system; label = "Bus 3", type = 2)
 
 addGenerator!(system; bus = "Bus 2")
 
-acModel!(system)
 analysis = newtonRaphson(system)
 ```
 
 Initially, `Bus 1` is set as the slack bus (`type = 3`), and `Bus 2` and `Bus 3` are generator buses (`type = 2`). However, `Bus 3` does not have a generator, and JuliaGrid considers this a mistake and changes the corresponding bus to a demand bus (`type = 1`).
 
-After this step, JuliaGrid verifies the slack bus. Initially, the slack bus (`type = 3`) corresponds to `Bus 1`, but since it does not have an in-service generator connected to it, JuliaGrid recognizes it as an error. Therefore, JuliaGrid assigns a new slack bus from the available generator buses (`type = 2`) that have connected in-service generators. In this specific example, `Bus 2` becomes the new slack bus.
+After this step, JuliaGrid verifies the slack bus. Initially, the slack bus (`type = 3`) corresponds to `Bus 1`, but since it does not have an in-service generator connected to it, JuliaGrid recognizes it as another mistake. Therefore, JuliaGrid assigns a new slack bus from the available generator buses (`type = 2`) that have connected in-service generators. In this specific example, `Bus 2` becomes the new slack bus.
 
 ```@setup busType
 using JuliaGrid
@@ -90,7 +75,7 @@ Note that, if a bus is initially defined as the demand bus (`type = 1`) and late
 ---
 
 ## [Setup Starting Voltages](@id SetupStartingVoltagesManual)
-To begin analyzing the AC power flow in JuliaGrid, we must first establish the `PowerSystem` type and define the AC model by calling the [`acModel!`](@ref acModel!) function. Once the power system is set up, we can select one of the available methods for solving the AC power flow problem, such as [`newtonRaphson`](@ref newtonRaphson), [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX), [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB), or [`gaussSeidel`](@ref gaussSeidel).
+To begin analyzing the AC power flow in JuliaGrid, we must first establish the `PowerSystem` type. Once the power system is set up, we can select one of the available methods for solving the AC power flow problem, such as [`newtonRaphson`](@ref newtonRaphson), [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX), [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB), or [`gaussSeidel`](@ref gaussSeidel).
 
 Assuming we have selected the Newton-Raphson method, we can use the following code snippet:
 ```@example initializeACPowerFlow
@@ -113,7 +98,7 @@ analysis = newtonRaphson(system)
 nothing # hide
 ```
 
-Here, in this code snippet, the function [`newtonRaphson`](@ref newtonRaphson) generates starting voltage vectors in polar coordinates.
+Here, the function [`newtonRaphson`](@ref newtonRaphson) generates starting voltage vectors in polar coordinates.
 
 The starting voltage magnitudes are set to:
 ```@repl initializeACPowerFlow
@@ -185,7 +170,7 @@ Consequently, the iteration begins with a fixed set of voltage magnitude values 
 ---
 
 ## [Power Flow Solution](@id ACPowerFlowSolutionManual)
-To solve the AC power flow problem using JuliaGrid, we first need to create the `PowerSystem` type and define the AC model by calling the [`acModel!`](@ref acModel!) function. Here is an example:
+To start, we will create a power system and define the AC model by invoking the [`acModel!`](@ref acModel!) function:
 ```@example ACPowerFlowSolution
 using JuliaGrid # hide
 @default(unit) # hide
@@ -223,7 +208,7 @@ nothing # hide
     ```julia DCPowerFlowSolution
     analysis = newtonRaphson(system, QR)
     ```
-    It is important to note that the capability to change the factorization method is exclusively available for the Newton-Raphson and fast Newton-Raphson methods.
+    The capability to change the factorization method is exclusively available for the Newton-Raphson and fast Newton-Raphson methods.
 
 This function sets up the desired method for an iterative process based on two functions: [`mismatch!`](@ref mismatch!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})) and [`solve!`](@ref solve!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})). The [`mismatch!`](@ref mismatch!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})) function calculates the active and reactive power injection mismatches using the given voltage magnitudes and angles, while [`solve!`](@ref solve!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})) computes the voltage magnitudes and angles.
 
@@ -275,7 +260,7 @@ nothing # hide
 The [`mismatch!`](@ref mismatch!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})) function returns the maximum absolute values of active and reactive power injection mismatches, which are commonly used as a convergence criterion in iterative AC power flow algorithms. Note that the function can also be used to terminate the loop when using the Gauss-Seidel method, even though it is not required.
 
 !!! tip "Tip"
-    To ensure an accurate count of iterations, it is important for the user to place the iteration counter after the condition expressions within the if construct. Counting the iterations before this point can result in an incorrect number of iterations, as it leads to an additional iteration being performed.
+    To ensure an accurate count of iterations, the user should place the iteration counter after the condition expressions within the if construct.
 
 ---
 

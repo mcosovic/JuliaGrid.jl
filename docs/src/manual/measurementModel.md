@@ -665,7 +665,7 @@ This procedure is applicable to all measurement devices, including voltmeters, a
 
 ---
 
-##### Load and Save Power System Data
+##### Load and Save Measurement Data
 When saving the measurements to an HDF5 file, the label type (strings or integers) will match the type chosen during system setup. Likewise, when loading data from an HDF5 file, the label type will be preserved as saved, regardless of what is set by the [`@labels`](@ref @labels) macro.
 
 
