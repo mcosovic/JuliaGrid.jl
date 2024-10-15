@@ -169,14 +169,14 @@ print(system.bus.label, analysis.method.constraint.balance.active)
 ---
 
 ##### Bus Voltage Constraints
-The `voltage` field within the model contains references to the inequality constraints associated with the voltage magnitude and voltage angle difference limits. These constraints ensure that the bus voltage magnitudes and the angle differences between the from-bus and to-bus ends of each branch are within specified limits.
+The `voltage` field contains references to the inequality constraints associated with the voltage magnitude and voltage angle difference limits. These constraints ensure that the bus voltage magnitudes and the angle differences between the from-bus and to-bus ends of each branch are within specified limits.
 
 The minimum and maximum bus voltage magnitude limits are set using the `minMagnitude` and `maxMagnitude` keywords within the [`addBus!`](@ref addBus!) function. The constraints associated with these limits can be accessed using:
 ```@repl ACOptimalPowerFlow
 print(system.bus.label, analysis.method.constraint.voltage.magnitude)
 ```
 
-Similarly, the minimum and maximum voltage angle difference limits between the from-bus and to-bus ends of each branch are set using the `minDiffAngle` and `maxDiffAngle` keywords within the [`addBranch!`](@ref addBranch!) function. The constraints associated with these limits can be accessed using the following code snippet:
+The minimum and maximum voltage angle difference limits between the from-bus and to-bus ends of each branch are set using the `minDiffAngle` and `maxDiffAngle` keywords within the [`addBranch!`](@ref addBranch!) function. The constraints associated with these limits can be accessed using the following code snippet:
 ```@repl ACOptimalPowerFlow
 print(system.branch.label, analysis.method.constraint.voltage.angle)
 ```
@@ -184,7 +184,7 @@ print(system.branch.label, analysis.method.constraint.voltage.angle)
 !!! note "Info"
     Please note that if the limit constraints are set to `minDiffAngle = -2π` and `maxDiffAngle = 2π` for the corresponding branch, JuliGrid will omit the corresponding inequality constraint.
 
-Additionally, by employing the [`updateBus!`](@ref updateBus!) and [`updateBranch!`](@ref updateBranch!) functions, the user has the ability to modify these specific constraints as follows:
+Additionally, by employing the [`updateBus!`](@ref updateBus!) and [`updateBranch!`](@ref updateBranch!) functions, the user has the ability to modify these specific constraints:
 ```@example ACOptimalPowerFlow
 updateBus!(system, analysis; label = "Bus 1", minMagnitude = 1.0, maxMagnitude = 1.0)
 updateBranch!(system, analysis; label = "Branch 1", minDiffAngle = -1.7, maxDiffAngle = 1.7)
@@ -392,10 +392,10 @@ end
 
 After obtaining the solution, we can calculate the active and reactive power outputs of the generators and utilize the bus voltage magnitudes and angles to set the starting values. In this case, the `generator` and `voltage` fields of the `ACOptimalPowerFlow` type can be employed to store the new starting values:
 ```@example ACOptimalPowerFlow
-for (key, value) in system.generator.label
+for (key, idx) in system.generator.label
     active, reactive = generatorPower(system, flow; label = key)
-    analysis.power.generator.active[value] = active
-    analysis.power.generator.reactive[value] = reactive
+    analysis.power.generator.active[idx] = active
+    analysis.power.generator.reactive[idx] = reactive
 end
 
 for i = 1:system.bus.number
@@ -453,7 +453,7 @@ analysis.method.dual.balance.active[1]
 ---
 
 ##### Print Results in the REPL
-Users can utilize the functions [`printBusData`](@ref printBusData) and [`printGeneratorData`](@ref printGeneratorData) to display results. Additionally, to print bus, branch, or generator-related constraint data with the desired units, users can utilize any of the functions provided in the [Print Constraint Data](@ref PrintConstraintDataAPI) section. For example:
+Users can utilize the functions [`printBusData`](@ref printBusData) and [`printGeneratorData`](@ref printGeneratorData) to display results. Additionally, the functions listed in the [Print Constraint Data](@ref PrintConstraintDataAPI) section allow users to print constraint data related to buses, branches, or generators in the desired units. For example:
 ```@example ACOptimalPowerFlow
 @power(MW, MVAr, pu)
 show = Dict("Active Power Balance" => false)

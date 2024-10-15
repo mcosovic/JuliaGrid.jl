@@ -376,6 +376,19 @@ end
 function print(
     io::IO,
     label::Union{OrderedDict{String, Int64}, OrderedDict{String, Int64}},
+    data::Dict{Int64, Float64}
+)
+    for (key, idx) in label
+        if haskey(data, idx)
+            println(io::IO, key, ": ", data[idx])
+        end
+    end
+end
+
+
+function print(
+    io::IO,
+    label::Union{OrderedDict{String, Int64}, OrderedDict{String, Int64}},
     obj::Dict{Int64, ConstraintRef}
 )
     for (key, idx) in label
