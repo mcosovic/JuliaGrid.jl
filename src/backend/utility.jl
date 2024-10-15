@@ -380,7 +380,8 @@ function print(
 )
     for (key, idx) in label
         if haskey(obj, idx) && is_valid(owner_model(obj[idx]), obj[idx])
-            println(io::IO, key, ": ", obj[idx])
+            expr = constraint_string(MIME("text/plain"), obj[idx])
+            println(io::IO, key, ": ", simplifyExpression(expr))
         end
     end
 end
@@ -388,7 +389,8 @@ end
 function print(io::IO, obj::Dict{Int64, ConstraintRef})
     for key in sort(collect(keys(obj)))
         if is_valid(owner_model(obj[key]), obj[key])
-            println(io::IO, obj[key])
+            expr = constraint_string(MIME("text/plain"), obj[key])
+            println(io::IO, simplifyExpression(expr))
         end
     end
 end
@@ -418,6 +420,16 @@ function print(io::IO, obj::Dict{Int64, Vector{ConstraintRef}})
         end
     end
 end
+
+function simplifyExpression(expr::String)
+    expr = replace(expr, r"[-]?0\.0\s*\*\s*(cos|sin)\(\s*[^()]*\s*\)" => "0")
+    expr = replace(expr, r"\(\s*[-]?0[.0]?\s*\)" => "")
+    expr = replace(expr, r"\(\s*[+]\s*\(" => "((")
+    expr = replace(expr, r"^\((.*)\)" => s"\1")
+
+    return expr
+end
+
 
 ##### Error Messages #####
 function errorVoltage(voltage::Vector{Float64})

@@ -84,7 +84,7 @@ nothing # hide
 ---
 
 ##### Add Variables
-The user has the ability to easily add new variables to the defined AC optimal power flow model by using the [`@variable`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.@variable) macro from the JuMP package. Here is an example:
+The user has the ability to easily add new variables to the defined AC optimal power flow model by using the [`@variable`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.@variable) macro from the JuMP package:
 ```@example ACOptimalPowerFlow
 JuMP.@variable(analysis.method.jump, newVariable)
 nothing # hide
