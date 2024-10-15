@@ -508,7 +508,7 @@ print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
 ##### Dual Variables
 We also obtained all dual values. Here, we list only the dual variables for one type of constraint as an example:
 ```@repl ACOptimalPowerFlow
-print(system.generator.label, analysis.method.dual.capability.active)
+print(system.generator.label, analysis.method.dual.capability.reactive)
 ```
 ---
 

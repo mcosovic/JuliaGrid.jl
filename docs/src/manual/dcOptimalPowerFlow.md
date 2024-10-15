@@ -12,11 +12,7 @@ To solve the DC optimal power flow problem and acquire generator active power ou
 After obtaining the solution for DC optimal power flow, JuliaGrid offers a post-processing analysis function to compute powers associated with buses and branches:
 * [`power!`](@ref power!(::PowerSystem, ::DCPowerFlow)).
 
-Additionally, there are specialized functions dedicated to calculating specific types of active powers related to particular buses or branches:
-* [`injectionPower`](@ref injectionPower(::PowerSystem, ::DCPowerFlow)),
-* [`supplyPower`](@ref supplyPower(::PowerSystem, ::DCPowerFlow)),
-* [`fromPower`](@ref fromPower(::PowerSystem, ::DCPowerFlow)),
-* [`toPower`](@ref toPower(::PowerSystem, ::DCPowerFlow)).
+Additionally, specialized functions are available for calculating specific types of [powers](@ref DCPowerAnalysisAPI) for individual buses, branches, or generators.
 
 ---
 
@@ -75,8 +71,17 @@ fieldnames(typeof(analysis.method.variable))
 
 ---
 
+##### Variable Names
+Users have the option to define custom variable names for printing and writing equations, which can help present them in a more compact form. For example:
+```@example DCOptimalPowerFlow
+analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer; active = "P", angle = "θ")
+nothing # hide
+```
+
+---
+
 ##### Add Variables
-The user has the ability to easily add new variables to the defined DC optimal power flow model by using the [`@variable`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.@variable) macro from the JuMP package. Here is an example:
+The user has the ability to easily add new variables to the defined DC optimal power flow model by using the [`@variable`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.@variable) macro from the JuMP package:
 ```@example DCOptimalPowerFlow
 JuMP.@variable(analysis.method.jump, newVariable)
 nothing # hide
@@ -328,8 +333,8 @@ solve!(system, flow)
 
 After obtaining the solution, we can calculate the active power outputs of the generators and utilize the bus voltage angles to set the starting values. In this case, the `generator` and `voltage` fields of the `DCOptimalPowerFlow` type can be employed to store the new starting values:
 ```@example DCOptimalPowerFlow
-for (key, value) in system.generator.label
-    analysis.power.generator.active[value] = generatorPower(system, flow; label = key)
+for (key, idx) in system.generator.label
+    analysis.power.generator.active[idx] = generatorPower(system, flow; label = key)
 end
 
 for i = 1:system.bus.number
@@ -381,7 +386,7 @@ analysis.method.dual.balance.active[1]
 ---
 
 ##### Print Results in the REPL
-Users can utilize the functions [`printBusData`](@ref printBusData) and [`printGeneratorData`](@ref printGeneratorData) to display results. Additionally, to print bus, branch, or generator-related constraint data with the desired units, users can utilize any of the functions provided in the [Print Constraint Data](@ref PrintConstraintDataAPI) section. For example:
+Users can utilize the functions [`printBusData`](@ref printBusData) and [`printGeneratorData`](@ref printGeneratorData) to display results. Additionally, the functions listed in the [Print Constraint Data](@ref PrintConstraintDataAPI) section allow users to print constraint data related to buses, branches, or generators in the desired units. For example:
 ```@example DCOptimalPowerFlow
 @power(MW, MVAr, pu)
 printBusConstraint(system, analysis)
@@ -435,7 +440,7 @@ print(system.bus.label, analysis.voltage.angle)
 ##### Dual Variables
 We also obtained all dual values. Here, we list only the dual variables for one type of constraint as an example:
 ```@repl DCOptimalPowerFlow
-print(system.generator.label, analysis.method.dual.capability.active)
+print(system.branch.label, analysis.method.dual.flow.active)
 ```
 
 ---
