@@ -69,9 +69,7 @@ function acOptimalPowerFlow(
     active = @variable(jump, active[i = 1:gen.number], base_name = active)
     reactive = @variable(jump, reactive[i = 1:gen.number], base_name = reactive)
     magnitude = @variable(jump, magnitude[i = 1:bus.number], base_name = magnitude)
-    @time angle = @variable(jump, angle[i = 1:bus.number], base_name = angle)
-
-
+    angle = @variable(jump, angle[i = 1:bus.number], base_name = angle)
 
     fix(angle[bus.layout.slack], bus.voltage.angle[bus.layout.slack])
     slack = Dict(bus.layout.slack => FixRef(angle[bus.layout.slack]))
