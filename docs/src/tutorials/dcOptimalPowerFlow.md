@@ -74,7 +74,7 @@ nothing # hide
 
 Afterward, the DC optimal power flow model is created using the [`dcOptimalPowerFlow`](@ref dcOptimalPowerFlow) function:
 ```@example DCOptimalPowerFlow
-analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer)
+analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer; active = "Pg", angle = "θ")
 nothing # hide
 ```
 

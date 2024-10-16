@@ -20,20 +20,7 @@ After obtaining the AC state estimation solution, JuliaGrid offers post-processi
 * [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)),
 * [`current!`](@ref current!(::PowerSystem, ::AC)).
 
-Furthermore, there are specialized functions dedicated to calculating specific types of powers related to particular buses and branches:
-* [`injectionPower`](@ref injectionPower(::PowerSystem, ::AC)),
-* [`supplyPower`](@ref supplyPower(::PowerSystem, ::ACPowerFlow)),
-* [`shuntPower`](@ref shuntPower(::PowerSystem, ::AC)),
-* [`fromPower`](@ref fromPower(::PowerSystem, ::AC)),
-* [`toPower`](@ref toPower(::PowerSystem, ::AC)),
-* [`seriesPower`](@ref seriesPower(::PowerSystem, ::AC)),
-* [`chargingPower`](@ref chargingPower(::PowerSystem, ::AC)),
-
-Likewise, there are specialized functions dedicated to calculating specific types of currents related to particular buses or branches:
-* [`injectionCurrent`](@ref injectionCurrent(::PowerSystem, ::AC)),
-* [`fromCurrent`](@ref fromCurrent(::PowerSystem, ::AC)),
-* [`toCurrent`](@ref toCurrent(::PowerSystem, ::AC)),
-* [`seriesCurrent`](@ref seriesCurrent(::PowerSystem, ::AC)).
+Additionally, specialized functions are available for calculating specific types of [powers](@ref ACPowerAnalysisAPI) or [currents](@ref ACCurrentAnalysisAPI) for individual buses or branches.
 
 ---
 

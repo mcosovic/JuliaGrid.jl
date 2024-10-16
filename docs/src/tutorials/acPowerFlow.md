@@ -31,7 +31,7 @@ nothing #hide
 To review, we can conceptualize the bus/branch model as the graph denoted by ``\mathcal{G} = (\mathcal{N}, \mathcal{E})``, where we have the set of buses ``\mathcal{N} = \{1, \dots, n\}``, and the set of branches ``\mathcal{E} \subseteq \mathcal{N} \times \mathcal{N}`` within the power system:
 ```@repl PowerFlowSolution
 𝒩 = collect(keys(system.bus.label))
-ℰ = [𝒩[system.branch.layout.from] 𝒩[system.branch.layout.to]]
+ℰ = hcat([𝒩[system.branch.layout.from] 𝒩[system.branch.layout.to]])
 ```
 
 ---

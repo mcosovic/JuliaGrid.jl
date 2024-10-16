@@ -309,7 +309,7 @@ In this context, one varmeter has been added to measure the reactive power injec
 ---
 
 ##### Customizing Input Units for Keywords
-Just as we explained for the previous device, users have the flexibility to select units different from per-units. In this case, they can opt for volt-ampere reactive (VAr), as illustrated in the following example:
+Just as we explained for the previous device, users have the flexibility to select units different from per-units. In this case, they can opt for megavolt-ampere reactive (MVAr), as illustrated in the following example:
 ```@example addVarmeterSI
 using JuliaGrid # hide
 @default(unit)  # hide
@@ -526,7 +526,7 @@ JuliaGrid necessitates a unique label for each voltmeter, ammeter, wattmeter, va
 In all the previous examples, with the exception of the last one, we relied on automatic labeling by omitting the `label` keyword. This allowed JuliaGrid to independently assign unique labels to measurement devices. In such cases, JuliaGrid utilizes a sequential set of increasing integers for labeling the devices. The [last example](@ref ChangeKeywordsMeasurementManual) demonstrates the user labeling approach.
 
 !!! tip "Tip"
-    String labels improve readability, but in larger models, the overhead from using strings can become substantial. To reduce memory usage and the number of allocations, users can configure ordered dictionaries to accept and store integers as labels:
+    String labels improve readability, but in larger models, the overhead from using strings can become substantial. To reduce memory usage, users can configure ordered dictionaries to accept and store integers as labels:
     ```julia DCPowerFlowSolution
     @labels(Integers)
     ```
@@ -629,7 +629,7 @@ To access the wattmeter labels, we can use the variable:
 device.wattmeter.label
 ```
 
-If we need to obtain labels in the same order as the wattmeter definitions sequence, we can use the following code:
+If we need to obtain only labels, we can use the following code:
 ```@repl retrievingLabels
 label = collect(keys(device.wattmeter.label))
 ```
@@ -665,7 +665,7 @@ This procedure is applicable to all measurement devices, including voltmeters, a
 
 ---
 
-##### Load and Save Measurement Data
+##### Loading and Saving Labels
 When saving the measurements to an HDF5 file, the label type (strings or integers) will match the type chosen during system setup. Likewise, when loading data from an HDF5 file, the label type will be preserved as saved, regardless of what is set by the [`@labels`](@ref @labels) macro.
 
 
@@ -733,15 +733,15 @@ For wattmeters, varmeters, and PMUs added to all buses and branches, we rely on 
 Users have the option to employ an alternative method for adding groups of measurements, utilizing functions that add measurements individually. This approach may offer a more straightforward process. For example, to add wattmeters similarly to the procedure outlined above, we can employ the following:
 ```@example addDeviceGroups
 Pᵢ = analysis.power.injection.active
-for (label, index) in system.bus.label
-    addWattmeter!(system, device; bus = label, active = Pᵢ[index], variance = 1e-3)
+for (label, idx) in system.bus.label
+    addWattmeter!(system, device; bus = label, active = Pᵢ[idx], variance = 1e-3)
 end
 
 Pᵢⱼ = analysis.power.from.active
 Pⱼᵢ = analysis.power.to.active
-for (label, index) in system.branch.label
-    addWattmeter!(system, device; from = label, active = Pᵢⱼ[index], status = 0)
-    addWattmeter!(system, device; to = label, active = Pⱼᵢ[index])
+for (label, idx) in system.branch.label
+    addWattmeter!(system, device; from = label, active = Pᵢⱼ[idx], status = 0)
+    addWattmeter!(system, device; to = label, active = Pⱼᵢ[idx])
 end
 nothing  # hide
 ```

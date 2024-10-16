@@ -18,20 +18,7 @@ After obtaining the PMU state estimation solution, JuliaGrid offers post-process
 * [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)),
 * [`current!`](@ref current!(::PowerSystem, ::AC)).
 
-Furthermore, there are specialized functions dedicated to calculating specific types of powers related to particular buses and branches:
-* [`injectionPower`](@ref injectionPower(::PowerSystem, ::AC)),
-* [`supplyPower`](@ref supplyPower(::PowerSystem, ::ACPowerFlow)),
-* [`shuntPower`](@ref shuntPower(::PowerSystem, ::AC)),
-* [`fromPower`](@ref fromPower(::PowerSystem, ::AC)),
-* [`toPower`](@ref toPower(::PowerSystem, ::AC)),
-* [`seriesPower`](@ref seriesPower(::PowerSystem, ::AC)),
-* [`chargingPower`](@ref chargingPower(::PowerSystem, ::AC)),
-
-Likewise, there are specialized functions dedicated to calculating specific types of currents related to particular buses or branches:
-* [`injectionCurrent`](@ref injectionCurrent(::PowerSystem, ::AC)),
-* [`fromCurrent`](@ref fromCurrent(::PowerSystem, ::AC)),
-* [`toCurrent`](@ref toCurrent(::PowerSystem, ::AC)),
-* [`seriesCurrent`](@ref seriesCurrent(::PowerSystem, ::AC)).
+Additionally, specialized functions are available for calculating specific types of [powers](@ref ACPowerAnalysisAPI) or [currents](@ref ACCurrentAnalysisAPI) for individual buses or branches.
 
 ---
 
@@ -98,8 +85,8 @@ Utilizing PMU placement and AC power flow data, which serves as the source for m
 device = measurement()
 
 @pmu(label = "PMU ? (!)")
-for (bus, k) in placement.bus
-    Vᵢ, θᵢ = analysis.voltage.magnitude[k], analysis.voltage.angle[k]
+for (bus, idx) in placement.bus
+    Vᵢ, θᵢ = analysis.voltage.magnitude[idx], analysis.voltage.angle[idx]
     addPmu!(system, device; bus = bus, magnitude = Vᵢ, angle = θᵢ)
 end
 for branch in keys(placement.from)

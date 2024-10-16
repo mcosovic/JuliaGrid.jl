@@ -20,11 +20,7 @@ For more detailed information, users can refer to the [Observability Analysis](@
 After obtaining the solution for DC state estimation, JuliaGrid offers a post-processing analysis function to compute active powers associated with buses and branches:
 * [`power!`](@ref power!(::PowerSystem, ::DCStateEstimation)).
 
-Additionally, there are specialized functions dedicated to calculating specific types of active powers related to particular buses or branches:
-* [`injectionPower`](@ref injectionPower(::PowerSystem, ::DCStateEstimation)),
-* [`supplyPower`](@ref supplyPower(::PowerSystem, ::DCStateEstimation)),
-* [`fromPower`](@ref fromPower(::PowerSystem, ::DCStateEstimation)),
-* [`toPower`](@ref toPower(::PowerSystem, ::DCStateEstimation)).
+Additionally, specialized functions are available for calculating specific types of [powers](@ref DCPowerAnalysisAPI) for individual buses or branches.
 
 ---
 

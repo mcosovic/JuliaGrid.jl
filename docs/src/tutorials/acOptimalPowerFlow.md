@@ -79,7 +79,9 @@ nothing # hide
 
 Afterward, the AC optimal power flow model is created using the [`acOptimalPowerFlow`](@ref acOptimalPowerFlow) function:
 ```@example ACOptimalPowerFlow
-analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
+analysis = acOptimalPowerFlow(
+  system, Ipopt.Optimizer; active = "Pg", reactive = "Qg", magnitude = "V", angle = "θ"
+)
 nothing # hide
 ```
 
