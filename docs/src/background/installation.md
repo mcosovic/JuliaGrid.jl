@@ -11,7 +11,7 @@ The Current Stable Release is the most recent version of Julia, providing access
 ---
 
 ## Install Code Editor
-For a smoother development experience, we recommend using a code editor. While you can write Julia code in any text editor, using an integrated development environment (IDE) makes coding easier and more efficient. We suggest installing [Visual Studio Code](https://code.visualstudio.com/), which provides excellent support for Julia through its dedicated Julia extension. Visual Studio Code offers features like syntax highlighting, debugging, and autocompletion, making it an ideal choice for both beginners and experienced users.
+For a smoother development experience, we recommend using a code editor. While you can write Julia code in any text editor, using an integrated development environment (IDE) makes coding easier and more efficient. We suggest installing [Visual Studio Code](https://code.visualstudio.com/download), which provides excellent support for Julia through its dedicated Julia extension. Visual Studio Code offers features like syntax highlighting, debugging, and autocompletion, making it an ideal choice for both beginners and experienced users.
 
 The [Julia extension](https://marketplace.visualstudio.com/items?itemName=julialang.language-julia) for Visual Studio Code includes built-in dynamic autocompletion, inline results, plot pane, integrated REPL, variable view, code navigation, and many other advanced language features.  For a step-by-step guide on how to use Julia in Visual Studio Code, you can follow the tutorial available [here](https://code.visualstudio.com/docs/languages/julia).
 
