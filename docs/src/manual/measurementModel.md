@@ -417,8 +417,8 @@ addBus!(system; label = "Bus 2", base = 135e3)
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.12)
 
 addPmu!(system, device; bus = "Bus 1", magnitude = 85.74, angle = 5.73, varianceAngle = 0.06)
-addPmu!(system, device; from = "Branch 1", magnitude = 167.35, angle = -11.46, noise = true)
-addPmu!(system, device; to = "Branch 1", magnitude = 150.61, angle = 0.0)
+addPmu!(system, device; from = "Branch 1", magnitude = 427.67, angle = -11.46, noise = true)
+addPmu!(system, device; to = "Branch 1", magnitude = 384.91, angle = 0.0)
 ```
 
 In this example, we have opted to specify kilovolts (kV) and degrees (deg) for the PMU located at `Bus 1`, and amperes (A) and degrees (deg) for the PMUs located at `Branch 1`. It is important to note that regardless of the units used, the values will still be stored in per-units and radians:
