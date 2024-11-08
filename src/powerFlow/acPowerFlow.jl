@@ -757,10 +757,10 @@ function solve!(system::PowerSystem, analysis::ACPowerFlow{FastNewtonRaphson})
     pq = pf.pq
     pvpq = pf.pvpq
 
-    if system.model.ac.model != pf.acmodel
-        pf.acmodel = copy(system.model.ac.model)
+    if ac.model != pf.acmodel
+        pf.acmodel = copy(ac.model)
         if ac.pattern != pf.pattern
-            pf.pattern = copy(system.model.ac.pattern)
+            pf.pattern = copy(ac.pattern)
             active.factorization = factorization(active.jacobian, active.factorization)
             reactive.factorization = factorization(reactive.jacobian, reactive.factorization)
         else

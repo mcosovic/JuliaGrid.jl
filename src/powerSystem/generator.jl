@@ -123,7 +123,7 @@ function addGenerator!(
         system.bus.supply.reactive[busIdx] += gen.output.reactive[end]
     end
 
-    baseInv = 1 / (system.base.voltage.value[busIdx] * system.base.voltage.prefix)
+    baseInv = sqrt(3) / (system.base.voltage.value[busIdx] * system.base.voltage.prefix)
     add!(gen.voltage.magnitude, key.magnitude, def.magnitude, pfx.voltageMagnitude, baseInv)
 
     push!(gen.layout.bus, busIdx)
@@ -324,7 +324,7 @@ function updateGenerator!(system::PowerSystem; label::IntStrMiss, kwargs...)
     update!(rmp.reserve30min, key.reserve30min, pfx.activePower, baseInv, idx)
     update!(rmp.reactiveRamp, key.reactiveRamp, pfx.reactivePower, baseInv, idx)
 
-    baseInv = 1 / (system.base.voltage.value[idxBus] * system.base.voltage.prefix)
+    baseInv = sqrt(3) / (system.base.voltage.value[idxBus] * system.base.voltage.prefix)
     update!(gen.voltage.magnitude, key.magnitude, pfx.voltageMagnitude, baseInv, idx)
 
     update!(gen.layout.area, key.area, idx)
@@ -752,7 +752,7 @@ The function accepts five keywords:
 * `reactive`: Reactive power cost model:
   * `reactive = 1`: adding or updating cost, and piecewise linear is being used,
   * `reactive = 2`: adding or updating cost, and polynomial is being used.
-* `piecewise`: Cost model defined by input-output points given as `Vector{Float64}`:
+* `piecewise`: Cost model defined by input-output points given as `Matrix{Float64}`:
   * first column (pu, W or VAr): active or reactive power output of the generator,
   * second column (€/hr): cost for the specified active or reactive power output.
 * `polynomial`: The n-th degree polynomial coefficients given as `Vector{Float64}`:

@@ -245,18 +245,19 @@ end
     system = powerSystem()
     device = measurement()
     @base(system, MVA, kV)
+    fn = sqrt(3)
 
     @bus(base = 0.23)
     @branch(reactance = 0.02)
-    addBus!(system; label = 1, active = 20.5, reactive = 11.2, magnitude = 126.5, type = 3)
-    addBus!(system; label = 2, magnitude = 95, angle = 2.4)
+    addBus!(system; label = 1, active = 20.5, reactive = 11.2, magnitude = 126.5 / fn, type = 3)
+    addBus!(system; label = 2, magnitude = 95 / fn, angle = 2.4)
     addBranch!(system; label = 1, from = 1, to = 2)
     addGenerator!(system; bus = 1)
-    baseCurrent = system.base.power.value * system.base.power.prefix / (sqrt(3) * 0.23 * 10^6)
+    baseCurrent = system.base.power.value * system.base.power.prefix / (fn * 0.23 * 10^6)
 
     ##### Test Voltmeter Data #####
-    addVoltmeter!(system, device; bus = 1, magnitude = 126.5, variance = 126.5)
-    addVoltmeter!(system, device; bus = 1, magnitude = 126.5, variance = 1e-60, noise = true)
+    addVoltmeter!(system, device; bus = 1, magnitude = 126.5 / fn, variance = 126.5 / fn)
+    addVoltmeter!(system, device; bus = 1, magnitude = 126.5 / fn, variance = 1e-60 / fn, noise = true)
     @test device.voltmeter.magnitude.mean[1] == system.bus.voltage.magnitude[1]
     @test device.voltmeter.magnitude.variance[1] == system.bus.voltage.magnitude[1]
     @test device.voltmeter.magnitude.mean[2] == system.bus.voltage.magnitude[1]
@@ -314,12 +315,12 @@ end
 
     ##### Test PMU Data #####
     addPmu!(
-        system, device; bus = 2, magnitude = 95, angle = 2.4, varianceMagnitude = 95,
-        varianceAngle = 2.4, noise = false
+        system, device; bus = 2, magnitude = 95 / fn, angle = 2.4,
+        varianceMagnitude = 95 / fn, varianceAngle = 2.4, noise = false
     )
     addPmu!(
-        system, device; bus = 2, magnitude = 95, angle = 2.4,
-        varianceMagnitude = 1e-60, varianceAngle = 1e-60, noise = true
+        system, device; bus = 2, magnitude = 95 / fn, angle = 2.4,
+        varianceMagnitude = 1e-60 / fn, varianceAngle = 1e-60, noise = true
     )
     @test device.pmu.magnitude.mean[1] == system.bus.voltage.magnitude[2]
     @test device.pmu.magnitude.variance[1] == system.bus.voltage.magnitude[2]
@@ -838,11 +839,11 @@ end
     addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.12)
 
     ##### Test Voltmeter Macro #####
-    @voltmeter(label = "Voltmeter ?", variance = 1)
+    @voltmeter(label = "Voltmeter ?", variance = 1 / sqrt(3))
 
-    addVoltmeter!(system, device; bus = "Bus 1", magnitude = 100)
-    @test device.voltmeter.magnitude.mean[1] == 1.0
-    @test device.voltmeter.magnitude.variance[1] == 1e-2
+    addVoltmeter!(system, device; bus = "Bus 1", magnitude = 100 / sqrt(3))
+    @test device.voltmeter.magnitude.mean[1] ≈ 1.0
+    @test device.voltmeter.magnitude.variance[1] ≈ 1e-2
 
     ##### Test Ammeter Macro #####
     @ammeter(
@@ -873,14 +874,14 @@ end
 
     ##### Test PMU Macro #####
     @pmu(
-        label = "PMU ?", varianceMagnitudeBus = 1e3, varianceAngleBus = 20 * 180 / pi,
+        label = "PMU ?", varianceMagnitudeBus = 1e3 / sqrt(3), varianceAngleBus = 20 * 180 / pi,
         varianceMagnitudeFrom = 30 * ((100 * 10^6) / (sqrt(3) * 100 * 10^3)),
         varianceAngleFrom = 40 * 180 / pi
     )
 
-    addPmu!(system, device; bus = "Bus 1", magnitude = 2e2, angle = 1 * 180 / pi)
-    @test device.pmu.magnitude.mean[1] == 2
-    @test device.pmu.magnitude.variance[1] == 10
+    addPmu!(system, device; bus = "Bus 1", magnitude = 2e2 / sqrt(3), angle = 1 * 180 / pi)
+    @test device.pmu.magnitude.mean[1] ≈ 2
+    @test device.pmu.magnitude.variance[1] ≈ 10
     @test device.pmu.angle.mean[1] == 1
     @test device.pmu.angle.variance[1] == 20
 

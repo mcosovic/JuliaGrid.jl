@@ -73,7 +73,7 @@ function addVoltmeter!(
     idxBus = system.bus.label[lblBus]
     push!(volt.layout.index, idxBus)
 
-    baseInv = 1 / (system.base.voltage.value[idxBus] * system.base.voltage.prefix)
+    baseInv = sqrt(3) / (system.base.voltage.value[idxBus] * system.base.voltage.prefix)
 
     setMeter(
         volt.magnitude, magnitude, key.variance, key.status, key.noise,
@@ -158,7 +158,7 @@ function addVoltmeter!(
 
         lblBus = getLabel(system.bus, label[i], "bus")
         setLabel(volt, missing, def.label, lblBus)
-        baseInv = 1 / (baseVoltg.prefix * baseVoltg.value[i])
+        baseInv = sqrt(3) / (baseVoltg.prefix * baseVoltg.value[i])
 
         add!(
             volt.magnitude, i, key.noise, pfx.voltageMagnitude,
@@ -220,7 +220,7 @@ function updateVoltmeter!(
 
     idx = volt.label[getLabel(volt, label, "voltmeter")]
     idxBus = volt.layout.index[idx]
-    baseInv = 1 / (system.base.voltage.value[idxBus] * system.base.voltage.prefix)
+    baseInv = sqrt(3) / (system.base.voltage.value[idxBus] * system.base.voltage.prefix)
 
     updateMeter(
         volt.magnitude, idx, magnitude, key.variance,
@@ -243,7 +243,7 @@ function updateVoltmeter!(
 
     idx = voltmeter.label[getLabel(voltmeter, label, "voltmeter")]
     idxBus = voltmeter.layout.index[idx]
-    baseInv = 1 / (system.base.voltage.value[idxBus] * system.base.voltage.prefix)
+    baseInv = sqrt(3) / (system.base.voltage.value[idxBus] * system.base.voltage.prefix)
 
     updateMeter(
         voltmeter.magnitude, idx, magnitude, key.variance,
@@ -281,7 +281,7 @@ function updateVoltmeter!(
 
     idx = volt.label[getLabel(volt, label, "voltmeter")]
     idxBus = volt.layout.index[idx]
-    baseInv = 1 / (system.base.voltage.value[idxBus] * system.base.voltage.prefix)
+    baseInv = sqrt(3) / (system.base.voltage.value[idxBus] * system.base.voltage.prefix)
 
     updateMeter(
         volt.magnitude, idx, magnitude, key.variance,

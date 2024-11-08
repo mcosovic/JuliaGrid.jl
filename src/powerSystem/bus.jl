@@ -90,7 +90,7 @@ function addBus!(system::PowerSystem; label::IntStrMiss = missing, kwargs...)
     end
     push!(system.base.voltage.value, baseVoltage / system.base.voltage.prefix)
 
-    baseInv = 1 / baseVoltage
+    baseInv = sqrt(3) / baseVoltage
     add!(voltg.magnitude, key.magnitude, def.magnitude, pfx.voltageMagnitude, baseInv)
     add!(voltg.minMagnitude, key.minMagnitude, def.minMagnitude, pfx.voltageMagnitude, baseInv)
     add!(voltg.maxMagnitude, key.maxMagnitude, def.maxMagnitude, pfx.voltageMagnitude, baseInv)
@@ -211,7 +211,7 @@ function updateBus!(system::PowerSystem; label::IntStrMiss, kwargs...)
         baseVoltg.value[idx] = key.base * pfx.baseVoltage / baseVoltg.prefix
     end
 
-    baseInv = 1 / (baseVoltg.value[idx] * baseVoltg.prefix)
+    baseInv = sqrt(3) / (baseVoltg.value[idx] * baseVoltg.prefix)
     update!(bus.voltage.magnitude, key.magnitude, pfx.voltageMagnitude, baseInv, idx)
     update!(bus.voltage.angle, key.angle, pfx.voltageAngle, 1.0, idx)
     update!(bus.voltage.minMagnitude, key.minMagnitude, pfx.voltageMagnitude, baseInv, idx)

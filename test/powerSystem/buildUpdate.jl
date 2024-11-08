@@ -115,19 +115,20 @@ end
 
     build = powerSystem()
     @base(build, MVA, kV)
+    fn = sqrt(3)
 
     ##### Buses #####
     @bus(area = 1, lossZone = 1, base = 0.23)
     addBus!(build; label = 1, type = 3, active = 17e3, conductance = 9e3)
-    addBus!(build; type = 2, magnitude = 1.1 * 115, minMagnitude = 0.9 * 115, base = 0.115)
+    addBus!(build; type = 2, magnitude = 1.1 * 115 / fn, minMagnitude = 0.9 * 115 / fn, base = 0.115)
     addBus!(build; label = 4, active = 70e3, reactive = 5, susceptance = 30)
     addBus!(build; label = 5, active = 200e3, reactive = 50, angle = -1.8)
     addBus!(build; label = 6, active = 75e3, reactive = 50, base = 0.115)
     addBus!(
         build;
-        active = 35e3, reactive = 15, magnitude = 0.9 * 230, maxMagnitude = 1.06 * 230
+        active = 35e3, reactive = 15, magnitude = 0.9 * 230 / fn, maxMagnitude = 1.06 * 230 / fn
     )
-    addBus!(build; susceptance = -10, magnitude = 0.98 * 230, angle = 7.1)
+    addBus!(build; susceptance = -10, magnitude = 0.98 * 230 / fn, angle = 7.1)
     addBus!(build; label = 9, active = 40e3, reactive = 4, base = 0.115)
 
     ##### Branches #####
@@ -180,7 +181,7 @@ end
     addGenerator!(build; bus = 1, active = 370e3, maxReactive = 175, maxActive = 472e3)
     addGenerator!(
         build;
-        bus = 2, active = 210e3, magnitude = 1.1 * 115, maxActive = 316e3, status = 0
+        bus = 2, active = 210e3, magnitude = 1.1 * 115 / fn, maxActive = 316e3, status = 0
     )
     addGenerator!(build; bus = 2, active = 260e3, reactive = 30, maxActive = 316e3)
     addGenerator!(build; bus = 1, active = 80e3, reactive = 30, status = 0)
@@ -203,9 +204,9 @@ end
 
     ##### Buses #####
     updateBus!(build; label = 1, conductance = 10e3, susceptance = -20, active = 30e3)
-    updateBus!(build; label = 2, type = 1, reactive = 20, magnitude = 1.2 * 120, base = 0.12)
+    updateBus!(build; label = 2, type = 1, reactive = 20, magnitude = 1.2 * 120 / fn, base = 0.12)
     updateBus!(build; label = 5, angle = -0.8, area = 2, lossZone = 3)
-    updateBus!(build; label = 8, minMagnitude = 0.8 * 230, maxMagnitude = 1.2 * 230)
+    updateBus!(build; label = 8, minMagnitude = 0.8 * 230 / fn, maxMagnitude = 1.2 * 230 / fn)
 
     ##### Branches #####
     Zb1 = 230^2 / 100
@@ -237,7 +238,7 @@ end
     updateGenerator!(
         build; label = 1, loadFollowing = 500e3, reserve10min = 300e3, reactiveRamp = 400
     )
-    updateGenerator!(build; label = 2, status = 1, magnitude = 1.2 * 120)
+    updateGenerator!(build; label = 2, status = 1, magnitude = 1.2 * 120 / fn)
     updateGenerator!(build; label = 4, status = 1, active = 10e3, reactive = 20)
     updateGenerator!(build; label = 1, status = 0, minActive = 10e3, maxActive = 100e3)
     updateGenerator!(build; label = 3, status = 0, active = 30e3, reactive = 10)
@@ -421,8 +422,9 @@ end
     ########## Bus Macro ##########
     @bus(
         label = "Bus ?", type = 2, active = 1e4, reactive = -20, conductance = 1e3,
-        susceptance = 100, magnitude = 110, angle = 0.2 * 180 / pi, minMagnitude = 80,
-        maxMagnitude = 90, base = 100, area = 2, lossZone = 3
+        susceptance = 100, magnitude = 110 / sqrt(3), angle = 0.2 * 180 / pi,
+        minMagnitude = 80 / sqrt(3), maxMagnitude = 90 / sqrt(3), base = 100, area = 2,
+        lossZone = 3
     )
 
     ##### Test Bus Data #####
@@ -433,10 +435,10 @@ end
     @test system.bus.demand.reactive[1] == -0.2
     @test system.bus.shunt.conductance[1] == 1e-2
     @test system.bus.shunt.susceptance[1] == 1
-    @test system.bus.voltage.magnitude[1] == 1.1
+    @test system.bus.voltage.magnitude[1] ≈ 1.1
     @test system.bus.voltage.angle[1] == 0.2
-    @test system.bus.voltage.minMagnitude[1] == 0.8
-    @test system.bus.voltage.maxMagnitude[1] == 0.9
+    @test system.bus.voltage.minMagnitude[1] ≈ 0.8
+    @test system.bus.voltage.maxMagnitude[1] ≈ 0.9
     @test system.base.voltage.value[1] == 100
     @test system.bus.layout.area[1] == 2
     @test system.bus.layout.lossZone[1] == 3
@@ -474,7 +476,7 @@ end
     ########## Generator Macro ##########
     @generator(
         label = "Generator ?", area = 2, status = 0, active = 1.1e5,
-        reactive = 1.2e2, magnitude = 50, minActive = 0.1e5, maxActive = 0.2e5,
+        reactive = 1.2e2, magnitude = 50 / sqrt(3), minActive = 0.1e5, maxActive = 0.2e5,
         minReactive = 0.3e2, maxReactive = 0.4e2, lowActive = 0.5e5,
         minLowReactive = 0.6e2, maxLowReactive = 0.7e2, upActive = 0.8e5,
         minUpReactive = 0.9e2, maxUpReactive = 1.0e2, loadFollowing = 1.1e5,
@@ -487,7 +489,7 @@ end
     @test system.generator.layout.status[1] == 0
     @test system.generator.output.active[1] == 1.1
     @test system.generator.output.reactive[1] == 1.2
-    @test system.generator.voltage.magnitude[1] == 0.5
+    @test system.generator.voltage.magnitude[1] ≈ 0.5
     @test system.generator.capability.minActive[1] == 0.1
     @test system.generator.capability.maxActive[1] == 0.2
     @test system.generator.capability.minReactive[1] == 0.3

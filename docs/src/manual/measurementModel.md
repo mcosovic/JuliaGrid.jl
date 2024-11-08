@@ -133,7 +133,7 @@ using JuliaGrid # hide
 system = powerSystem()
 device = measurement()
 
-addBus!(system; label = "Bus 1", base = 135e3)
+addBus!(system; label = "Bus 1", base = sqrt(3) * 135e3)
 
 addVoltmeter!(system, device; bus = "Bus 1", magnitude = 121.5, variance = 0.0135)
 addVoltmeter!(system, device; bus = "Bus 1", magnitude = 135, variance = 0.135, noise = true)
@@ -143,6 +143,9 @@ In this example, we have chosen to specify `magnitude` and `variance` in kilovol
 ```@repl addVoltmeterSI
 [device.voltmeter.magnitude.mean device.voltmeter.magnitude.variance]
 ```
+
+!!! note "Info"
+    When users choose to input data in volts, measurement values and variances are related to line-to-neutral voltages, while the base values are defined for line-to-line voltages. Therefore, a conversion using ``\sqrt{3}`` is necessary. For more information, refer to the [Per-Unit System](@ref PerUnitSystem) section.
 
 ---
 
@@ -413,7 +416,7 @@ addBus!(system; label = "Bus 1", base = 135e3)
 addBus!(system; label = "Bus 2", base = 135e3)
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.12)
 
-addPmu!(system, device; bus = "Bus 1", magnitude = 148.5, angle = 5.73, varianceAngle = 0.06)
+addPmu!(system, device; bus = "Bus 1", magnitude = 85.74, angle = 5.73, varianceAngle = 0.06)
 addPmu!(system, device; from = "Branch 1", magnitude = 167.35, angle = -11.46, noise = true)
 addPmu!(system, device; to = "Branch 1", magnitude = 150.61, angle = 0.0)
 ```

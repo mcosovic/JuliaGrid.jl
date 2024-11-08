@@ -33,7 +33,7 @@ end
 
 ##### Scale Quantities #####
 function scaleVoltage(system::PowerSystem, pfx::PrefixLive, i::Int64)
-    return (system.base.voltage.value[i] * system.base.voltage.prefix) / pfx.voltageMagnitude
+    return (system.base.voltage.value[i] * system.base.voltage.prefix) / (sqrt(3) * pfx.voltageMagnitude)
 end
 
 function scaleVoltage(pfx::PrefixLive, system::PowerSystem, i::Int64)

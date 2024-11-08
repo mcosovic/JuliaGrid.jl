@@ -732,7 +732,7 @@ system.generator.cost.reactive.piecewise[1]
 ---
 
 ##### Customizing Input Units for Keywords
-Changing input units from per-units (pu) can be particularly useful since cost functions are usually related to SI units. Let us set active powers in megawatts (MW) and reactive powers in megavolt-amperes reactive (MVAr) :
+Changing input units from per-units (pu) can be particularly useful since cost functions are usually related to SI units. Let us set active powers in megawatts (MW) and reactive powers in megavolt-amperes reactive (MVAr):
 ```@example addActiveCost
 @power(MW, MVAr, pu)
 nothing # hide

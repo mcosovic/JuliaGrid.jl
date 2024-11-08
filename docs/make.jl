@@ -40,7 +40,8 @@ makedocs(
             "Measurement Model" => "tutorials/measurementModel.md",
             "AC State Estimation" => "tutorials/acStateEstimation.md",
             "PMU State Estimation" => "tutorials/pmuStateEstimation.md",
-            "DC State Estimation" => "tutorials/dcStateEstimation.md"
+            "DC State Estimation" => "tutorials/dcStateEstimation.md",
+            "Per-Unit System" => "tutorials/perunit.md",
         ],
         "API Reference" =>[
             "Power System Model" => "api/powerSystemModel.md",

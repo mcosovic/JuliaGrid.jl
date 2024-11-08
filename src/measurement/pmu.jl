@@ -134,7 +134,7 @@ function addPmu!(
             pfxMagnitude = pfx.voltageMagnitude
             pfxAngle = pfx.voltageAngle
 
-            baseInv = 1 / (baseVoltg.value[idx] * baseVoltg.prefix)
+            baseInv = sqrt(3) / (baseVoltg.value[idx] * baseVoltg.prefix)
         else
             if fromFlag
                 setLabel(pmu, label, def.label, lblBrch; prefix = "From ")
@@ -328,7 +328,7 @@ function addPmu!(
         pmu.layout.index[i] = i
         pmu.layout.bus[i] = true
 
-        baseInv = 1 / (baseVoltg.prefix * baseVoltg.value[i])
+        baseInv = sqrt(3) / (baseVoltg.prefix * baseVoltg.value[i])
 
         add!(
             pmu.magnitude, i, noise, pfx.voltageMagnitude, analysis.voltage.magnitude[i],
@@ -433,7 +433,7 @@ function updatePmu!(
         pfxMagnitude = pfx.voltageMagnitude
         pfxAngle = pfx.voltageAngle
 
-        baseInv = 1 / (baseVoltg.value[idxBusBrch] * baseVoltg.prefix)
+        baseInv = sqrt(3) / (baseVoltg.value[idxBusBrch] * baseVoltg.prefix)
     else
         pfxMagnitude = pfx.currentMagnitude
         pfxAngle = pfx.currentAngle
