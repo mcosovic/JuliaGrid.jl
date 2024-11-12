@@ -94,3 +94,227 @@ When we transform currents that are given in SI unit to per-unit, or vice versa,
 ```math
 I_{L(\text{pu})} = \cfrac{I_{L(\text{si})}}{I_{L(\text{b})}} = \cfrac{\sqrt{3}I_{L(\text{si})}V_{LL(\text{b})}}{S_{3\phi(\text{b})}}.
 ```
+
+---
+
+## Per-Units to SI Units
+To create a comprehensive tutorial, let us start with an example where input data is defined in per-units, while the simulation results are outputted in SI units.
+```@example power
+using JuliaGrid # hide
+@default(template) # hide
+
+system = powerSystem()
+@base(system, MVA, kV)
+
+nothing # hide
+```
+
+First, we initialize the power system container, setting the base value for three-phase apparent power ``S_{3\phi(\text{b})}``. We use a macro to specify that power is given in megavolt-amperes (MVA):
+```@repl power
+system.base.power.value
+```
+We also specify that base line-to-line voltages will be stored in kilovolts (kV).
+
+---
+
+##### Buses
+Next, we add buses to the system:
+```@example power
+addBus!(system; label = "Bus 1", type = 3, magnitude = 1.0, base = 115e3)
+addBus!(system; label = "Bus 2", type = 1, magnitude = 1.1, base = 230e3)
+addBus!(system; label = "Bus 3", type = 1, active = 1.2, reactive = 0.1, base = 230e3)
+
+nothing # hide
+```
+
+The `base` keyword allows us to specify base line-to-line voltages ``V_{LL(\text{b})}`` for each bus in volts (V). However, these voltages are stored in kV, as specified by the [`@base`](@ref @base) macro:
+```@repl power
+print(system.bus.label, system.base.voltage.value)
+```
+
+The `magnitude` keyword sets the initial line-to-neutral bus voltages in per-units:
+```@repl power
+print(system.bus.label, system.bus.voltage.magnitude)
+```
+
+Using the `active` and `reactive` keywords, we define the three-phase power demands for the load at `Bus 3` in per-units:
+```@repl power
+print(system.bus.label, system.bus.demand.active, system.bus.demand.reactive)
+```
+
+---
+
+##### Branches
+Now, let us define the branches:
+```@example power
+@branch(label = "Branch ?")
+addBranch!(system; from = "Bus 1", to = "Bus 2", turnsRatio = 0.98, reactance = 0.03)
+addBranch!(system; from = "Bus 2", to = "Bus 3", reactance = 0.1, susceptance = 0.03)
+
+nothing # hide
+```
+
+The first branch represents a transformer, with its reactance given in per-units on the secondary side (to-bus end), and an off-nominal turns ratio of ``\tau = 0.98``. The second branch represents a transmission line, with parameters also specified in per-units:
+```@repl power
+prmt = system.branch.parameter;
+print(system.branch.label, prmt.reactance, prmt.susceptance, prmt.turnsRatio)
+```
+
+---
+
+##### Generators
+Finally, we add a generator to our example:
+```@example power
+@generator(label = "Generator ?")
+addGenerator!(system; bus = "Bus 1", active = 2.3, reactive = 0.2)
+
+nothing # hide
+```
+
+We set up the generator at `Bus 1`, using the `active` and `reactive` keywords to define the three-phase power output of the generator in per-units:
+```@repl power
+output = system.generator.output;
+print(system.generator.label, output.active, output.reactive)
+```
+
+---
+
+##### AC Power Flow
+For example, we can perform AC power flow analysis on our defined power system:
+```@example power
+analysis = newtonRaphson(system)
+for i = 1:10
+    stopping = mismatch!(system, analysis)
+    if all(stopping .< 1e-8)
+        break
+    end
+    solve!(system, analysis)
+end
+power!(system, analysis)
+nothing # hide
+```
+
+---
+
+##### Results
+Now, we can examine some results in SI units:
+```@example power
+@voltage(kV, deg, V)
+@power(MW, MVAr, MVA)
+
+show = Dict("Power Generation" => false, "Shunt Power" => false)
+printBusData(system, analysis; show)
+```
+
+Here, the voltage magnitudes in kV represent line-to-neutral voltages for each bus, while the powers in MW and MVAr represent three-phase powers.
+
+---
+
+## SI Units to Per-Units
+In this section, we will create the same power system as before, but using SI units:
+```@example power
+using JuliaGrid # hide
+@default(template) # hide
+
+@voltage(kV, deg, kV)
+@power(MW, MVAr, MVA)
+@parameter(Ω, S)
+
+system = powerSystem()
+@base(system, MVA, kV)
+
+nothing # hide
+```
+Note that even though we define parameters in SI units, JuliaGrid will automatically convert these parameters to per-units and store them in that format.
+
+---
+##### Buses
+Next, we add the same three buses, this time using SI units:
+```@example power
+addBus!(system; label = "Bus 1", type = 3, magnitude = 115 / sqrt(3) , base = 115.0)
+addBus!(system; label = "Bus 2", type = 1, magnitude = 253 / sqrt(3), base = 230.0)
+addBus!(system; label = "Bus 3", type = 1, active = 120, reactive = 100, base = 230.0)
+
+nothing # hide
+```
+
+The `base` keyword specifies the base line-to-line voltages ``V_{LL(\text{b})}`` for each bus in kV, and these values are also stored in kV:
+```@repl power
+print(system.bus.label, system.base.voltage.value)
+```
+
+The `magnitude` keyword sets the initial line-to-neutral bus voltages in kV, but they are stored in per-units:
+```@repl power
+print(system.bus.label, system.bus.voltage.magnitude)
+```
+
+Using the `active` and `reactive` keywords, we define the three-phase power demands for the load at `Bus 3` in SI units, which are then stored in per-units:
+```@repl power
+print(system.bus.label, system.bus.demand.active, system.bus.demand.reactive)
+```
+
+---
+
+##### Branches
+Now, let us define the branches:
+```@example power
+@branch(label = "Branch ?")
+addBranch!(system; from = "Bus 1", to = "Bus 2", turnsRatio = 0.98, reactance = 3.81)
+addBranch!(system; from = "Bus 2", to = "Bus 3", reactance = 52.9, susceptance = 5.67e-5)
+
+nothing # hide
+```
+
+The first branch represents a transformer, with its reactance specified in ohms on the primary side (from-bus end) and an off-nominal turns ratio of ``\tau = 0.98``. This reactance is then converted to the secondary side and transformed into per-units. The second branch represents a transmission line, with its parameters in SI units, which are also stored in per-units:
+```@repl power
+prmt = system.branch.parameter;
+print(system.branch.label, prmt.reactance, prmt.susceptance, prmt.turnsRatio)
+```
+
+---
+
+##### Generators
+Finally, we add the same generator as before:
+```@example power
+@generator(label = "Generator ?")
+addGenerator!(system; bus = "Bus 1", active = 230.0, reactive = 20.0)
+
+nothing # hide
+```
+
+Using the `active` and `reactive` keywords, we define the three-phase power output of the generator in SI units, and these values are stored in per-units:
+```@repl power
+output = system.generator.output;
+print(system.generator.label, output.active, output.reactive)
+```
+
+---
+
+##### AC Power Flow
+As before, we can perform AC power flow analysis on our defined power system:
+```@example power
+analysis = newtonRaphson(system)
+for i = 1:10
+    stopping = mismatch!(system, analysis)
+    if all(stopping .< 1e-8)
+        break
+    end
+    solve!(system, analysis)
+end
+power!(system, analysis)
+nothing # hide
+```
+
+---
+
+##### Results
+Now, we will examine the results in per-units:
+```@example power
+@voltage(pu, rad, V)
+@power(pu, pu, pu)
+
+show = Dict("Power Generation" => false, "Shunt Power" => false)
+printBusData(system, analysis; show)
+```
+
+Here, the voltage magnitudes in per-units represent line-to-neutral voltages for each bus, while the powers are independent of whether they are three-phase or single-phase, since they are expressed in per-units.
