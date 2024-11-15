@@ -19,6 +19,8 @@ The voltmeter is defined with the following keywords:
   * `status = 1`: in-service,
   * `status = 0`: out-of-service.
 
+Note that all voltage values are referenced to line-to-neutral voltages.
+
 # Updates
 The function updates the `voltmeter` field of the `Measurement` composite type.
 

@@ -21,6 +21,8 @@ The wattmeter is defined with the following keywords:
   * `status = 1`: in-service,
   * `status = 0`: out-of-service.
 
+Note that when powers are given in SI units, they correspond to three-phase power.
+
 # Updates
 The function updates the `wattmeter` field of the `Measurement` composite type.
 
@@ -104,6 +106,8 @@ The varmeter is defined with the following keywords:
 * `status`: Operating status of the varmeter:
   * `status = 1`: in-service,
   * `status = 0`: out-of-service.
+
+Note that when powers are given in SI units, they correspond to three-phase power.
 
 # Updates
 The function updates the `varmeter` field of the `Measurement` composite type.

@@ -37,6 +37,8 @@ The branch is defined with the following keywords:
   * `type = 2`: active power flow (pu or W),
   * `type = 3`: current magnitude flow (pu or A).
 
+Note that when powers are given in SI units, they correspond to three-phase power.
+
 # Updates
 The function updates the `branch` field within the `PowerSystem` composite type, and in
 cases where parameters impact variables in the `ac` and `dc` fields, it automatically

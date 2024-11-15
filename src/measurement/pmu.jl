@@ -34,6 +34,8 @@ The PMU is defined with the following keywords:
   * `polar = true`: adopts the polar coordinate system,
   * `polar = false`: adopts the rectangular coordinate system.
 
+Note that all voltage values are referenced to line-to-neutral voltages.
+
 # Updates
 The function updates the `pmu` field of the `Measurement` composite type.
 

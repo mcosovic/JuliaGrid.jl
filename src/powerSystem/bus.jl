@@ -19,9 +19,12 @@ The bus is defined with the following keywords:
 * `angle` (rad or deg): Initial value of the bus voltage angle.
 * `minMagnitude` (pu or V): Minimum bus voltage magnitude value.
 * `maxMagnitude` (pu or V): Maximum bus voltage magnitude value.
-* `base` (V): Voltage base value.
+* `base` (V): Line-to-line voltage base value.
 * `area`: Area number.
 * `lossZone`: Loss zone.
+
+Note that all voltage values, except for base voltages, are referenced to line-to-neutral
+voltages, while powers, when given in SI units, correspond to three-phase power.
 
 # Updates
 The function updates the `bus` field of the `PowerSystem` composite type.

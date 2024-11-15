@@ -39,6 +39,9 @@ The generator is defined with the following keywords:
 * `reactiveRamp` (pu/min or VAr/min): Ramp rate for reactive power, two seconds timescale.
 * `area`: Area participation factor.
 
+Note that voltage magnitude values are referenced to line-to-neutral voltages, while powers,
+when given in SI units, correspond to three-phase power.
+
 # Updates
 The function updates the `generator` field within the `PowerSystem` composite type, and in
 cases where parameters impact variables in the `bus` field, it automatically adjusts the
