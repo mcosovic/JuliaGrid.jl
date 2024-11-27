@@ -32,7 +32,7 @@ system = powerSystem()
 addBus!(system; label = "Bus 1", type = 3, active = 0.1, angle = -0.1)
 addBus!(system; label = "Bus 2", reactive = 0.01, magnitude = 1.1)
 
-@branch(minDiffAngle = -pi, maxDiffAngle = pi, reactance = 0.5, type = 2)
+@branch(minDiffAngle = -pi, maxDiffAngle = pi, reactance = 0.5, type = 1)
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", maxFromBus = 0.15)
 
 @generator(maxActive = 0.5, minReactive = -0.1, maxReactive = 0.1, status = 0)
@@ -200,14 +200,19 @@ print(system.branch.label, analysis.method.constraint.voltage.angle)
 ---
 
 ##### [Branch Flow Constraints](@id ACBranchFlowConstraintsManual)
-The `flow` field contains references to the inequality constraints associated with the apparent power flow, active power flow, or current flow magnitude limits at the from-bus and to-bus ends of each branch. The type to which one of the constraints will be applied is defined according to the `type` keyword within the [`addBranch!`](@ref addBranch!) function:
-* `type = 1` for the apparent power flow,
-* `type = 2` for the active power flow,
-* `type = 3` for the current flow magnitude.
+The `flow` field refers to inequality constraints that enforce limits on the apparent power flow, active power flow, or current flow magnitude at the from-bus and to-bus ends of each branch. The type of constraint applied is specified using the `type` keyword in the [`addBranch!`](@ref addBranch!) function:
+* `type = 1` active power flow,
+* `type = 2` apparent power flow,
+* `type = 3` apparent power flow with a squared inequality constraint,
+* `type = 4` current flow magnitude,
+* `type = 5` current flow magnitude with a squared inequality constraint.
 
-These limits are specified using the `minFromBus`, `maxFromBus`, `minToBus` and `maxToBus` keywords within the [`addBranch!`](@ref addBranch!) function. By default, these limit keywords are associated with apparent power (`type = 1`).
+!!! tip "Tip"
+    Squared versions of constraints typically make the optimization problem numerically more robust. However, they often result in slower convergence compared to their non-squared counterparts used in the constraints.
 
-However, in the example, we configured it to use active power flow by setting `type = 2`. To access the flow constraints of branches at the from-bus end, we can utilize the following code snippet:
+These limits are specified using the `minFromBus`, `maxFromBus`, `minToBus` and `maxToBus` keywords within the [`addBranch!`](@ref addBranch!) function. By default, these limit keywords are associated with apparent power (`type = 3`).
+
+However, in the example, we configured it to use active power flow by setting `type = 1`. To access the flow constraints of branches at the from-bus end, we can utilize the following code snippet:
 ```@repl ACOptimalPowerFlow
 print(system.branch.label, analysis.method.constraint.flow.from)
 ```

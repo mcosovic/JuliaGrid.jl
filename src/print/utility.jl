@@ -465,11 +465,16 @@ function printf(
     i::Int64,
     scale::Float64,
     constr::Dict{Int64, ConstraintRef},
-    key::Symbol
+    key::Symbol;
+    native::Bool = true
 )
     name = prt.head[key]
     if prt.show[name]
-        print(io, format(prt.pfmt[name], prt.width[name], value(constr[i]) * scale))
+        if native
+            print(io, format(prt.pfmt[name], prt.width[name], value(constr[i]) * scale))
+        else
+            print(io, format(prt.pfmt[name], prt.width[name], sqrt(value(constr[i])) * scale))
+        end
     end
 end
 
@@ -479,11 +484,26 @@ function printf(
     i::Int64,
     scale::Float64,
     dual::Dict{Int64, Float64},
-    key::Symbol
+    key::Symbol;
 )
     name = prt.head[key]
     if prt.show[name]
         print(io, format(prt.pfmt[name], prt.width[name], dual[i] / scale))
+    end
+end
+
+function printf(
+    io::IO,
+    prt::Print,
+    i::Int64,
+    scale::Float64,
+    dual::Dict{Int64, Float64},
+    constr::Dict{Int64, ConstraintRef},
+    key::Symbol;
+)
+    name = prt.head[key]
+    if prt.show[name]
+        print(io, format(prt.pfmt[name], prt.width[name], 2 * dual[i] * sqrt(value(constr[i])) / scale))
     end
 end
 
@@ -691,12 +711,34 @@ function fmax(
     show::OrderedDict{String, Bool},
     i::Int64,
     scale::Float64,
+    dual::Dict{Int64, Float64},
     constraint::Dict{Int64, ConstraintRef},
     key::String
 )
+    if haskey(dual, i) && show[key]
+        dul = 2 * dual[i] * sqrt(value(constraint[i])) / scale
+        width[key] = max(textwidth(format(Format(fmt[key]), 0, dul)), width[key])
+    end
+end
+
+function fmax(
+    fmt::Dict{String, String},
+    width::Dict{String, Int64},
+    show::OrderedDict{String, Bool},
+    i::Int64,
+    scale::Float64,
+    constraint::Dict{Int64, ConstraintRef},
+    key::String;
+    native::Bool = true
+)
     if show[key]
+        if native
+            val = value(constraint[i]) * scale
+        else
+            val = sqrt(value(constraint[i])) * scale
+        end
         width[key] = max(
-            textwidth(format(Format(fmt[key]), 0, value(constraint[i]) * scale)), width[key]
+            textwidth(format(Format(fmt[key]), 0, val)), width[key]
         )
     end
 end
@@ -758,10 +800,15 @@ function fminmax(
     scale::Float64,
     vminmax::Vector{Float64},
     constraint::Dict{Int64, ConstraintRef},
-    key::String
+    key::String;
+    native::Bool = true
 )
     if show[key]
-        primalValue = value(constraint[i]) * scale
+        if native
+            primalValue = value(constraint[i]) * scale
+        else
+            primalValue = sqrt(value(constraint[i])) * scale
+        end
         vminmax[1] = max(primalValue, vminmax[1])
         vminmax[2] = min(primalValue, vminmax[2])
     end
@@ -779,6 +826,24 @@ function fminmax(
 )
     if show[key] && haskey(dual, i)
         dualValue = dual[i] / scale
+        vminmax[1] = max(dualValue, vminmax[1])
+        vminmax[2] = min(dualValue, vminmax[2])
+    end
+
+    return vminmax
+end
+
+function fminmax(
+    show::OrderedDict{String, Bool},
+    i::Int64,
+    scale::Float64,
+    vminmax::Vector{Float64},
+    dual::Dict{Int64, Float64},
+    constraint::Dict{Int64, ConstraintRef},
+    key::String
+)
+    if show[key] && haskey(dual, i)
+        dualValue = 2 * dual[i] * sqrt(value(constraint[i])) / scale
         vminmax[1] = max(dualValue, vminmax[1])
         vminmax[2] = min(dualValue, vminmax[2])
     end

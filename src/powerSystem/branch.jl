@@ -33,9 +33,11 @@ The branch is defined with the following keywords:
 * `minToBus` (pu, VA, W, or A): Minimum branch flow rating at the to-bus end.
 * `maxToBus` (pu, VA, W, or A): Maximum branch flow rating at the to-bus end.
 * `type`: Types of `minFromBus`, `maxFromBus`, `minToBus`, and `maxToBus` branch flow ratings:
-  * `type = 1`: apparent power flow (pu or VA),
-  * `type = 2`: active power flow (pu or W),
-  * `type = 3`: current magnitude flow (pu or A).
+  * `type = 1`: active power flow (pu or W),
+  * `type = 2`: apparent power flow (pu or VA),
+  * `type = 3`: apparent power flow (pu or VA), internally constraint involves its square,
+  * `type = 4`: current magnitude flow (pu or A),
+  * `type = 5`: current magnitude flow (pu or A), internally constraint involves its square.
 
 Note that when powers are given in SI units, they correspond to three-phase power.
 
@@ -47,7 +49,7 @@ are transmitted to the  `Analysis` type.
 
 # Default Settings
 By default, certain keywords are assigned default values: `status = 1`, `turnsRatio = 1.0`,
-`type = 1`, `minDiffAngle = -2pi`, and `maxDiffAngle = 2pi`. The rest of the keywords are
+`type = 3`, `minDiffAngle = -2pi`, and `maxDiffAngle = 2pi`. The rest of the keywords are
 initialized with a value of zero. However, the user can modify these default settings by
 utilizing the [`@branch`](@ref @branch) macro.
 
@@ -566,10 +568,12 @@ macro branch(kwargs...)
                 elseif parameter in [:shiftAngle; :minDiffAngle; :maxDiffAngle]
                     pfxLive = pfx.voltageAngle
                 elseif parameter in [:minFromBus; :maxFromBus; :minToBus; :maxToBus]
-                    if template.branch.type in [1, 3]
-                        pfxLive = pfx.apparentPower
-                    elseif template.branch.type == 2
+                    if template.branch.type == 1
                         pfxLive = pfx.activePower
+                    elseif template.branch.type in [2, 3]
+                        pfxLive = pfx.apparentPower
+                    elseif template.branch.type in [4, 5]
+                        pfxLive = pfx.currentMagnitude
                     end
                 end
                 if pfxLive != 0.0
@@ -605,14 +609,14 @@ function flowType(system::PowerSystem, pfx::PrefixLive, basePowerInv::Float64, i
     baseVoltg = system.base.voltage
 
     if branch.flow.type[i] == 1
-        pfxLive = pfx.apparentPower
-        baseInvFrom = basePowerInv
-        baseInvTo = basePowerInv
-    elseif branch.flow.type[i] == 2
         pfxLive = pfx.activePower
         baseInvFrom = basePowerInv
         baseInvTo = basePowerInv
-    elseif branch.flow.type[i] == 3
+    elseif branch.flow.type[i] == 2 || branch.flow.type[i] == 3
+        pfxLive = pfx.apparentPower
+        baseInvFrom = basePowerInv
+        baseInvTo = basePowerInv
+    elseif branch.flow.type[i] == 4 || branch.flow.type[i] == 5
         pfxLive = pfx.currentMagnitude
         baseInvFrom = baseCurrentInv(
             basePowerInv, baseVoltg.value[branch.layout.from[i]] * baseVoltg.prefix

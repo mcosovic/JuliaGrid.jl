@@ -441,7 +441,7 @@ function loadBranch(system::PowerSystem, branchLine::Vector{String})
     branch.flow.maxFromBus = similar(branch.parameter.conductance)
     branch.flow.minToBus = similar(branch.parameter.conductance)
     branch.flow.maxToBus = similar(branch.parameter.conductance)
-    branch.flow.type = fill(Int8(1), branch.number)
+    branch.flow.type = fill(Int8(3), branch.number)
 
     branch.layout.from = fill(0, branch.number)
     branch.layout.to = similar( branch.layout.from)

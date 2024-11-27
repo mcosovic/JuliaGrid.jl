@@ -14,7 +14,7 @@ system = powerSystem()
 addBus!(system; label = 1, type = 3, active = 0.1, angle = -0.1)
 addBus!(system; label = 2, reactive = 0.01, magnitude = 1.1)
 
-@branch(minDiffAngle = -pi, maxDiffAngle = pi, reactance = 0.5, type = 2)
+@branch(minDiffAngle = -pi, maxDiffAngle = pi, reactance = 0.5, type = 1)
 addBranch!(system; label = 1, from = 1, to = 2, maxFromBus = 0.15, maxToBus = 0.15)
 
 @generator(maxActive = 0.5, minReactive = -0.1, maxReactive = 0.1)
@@ -286,7 +286,9 @@ print(analysis.method.constraint.voltage.angle)
 ##### Branch Flow Constraints
 The inequality constraints related to the branch flow ratings can be associated with the limits on apparent power flow, active power flow, or current magnitude at the from-bus and to-bus ends of each branch. The type of constraint applied is determined by the `type` keyword within the [`addBranch!`](@ref addBranch!) function.
 
-Specifically, `type = 1` is used for apparent power flow, `type = 2` for active power flow, and `type = 3` for current magnitude. These constraints can be expressed using the equations ``h_{ij}(\mathbf {V}, \bm{\Theta})`` and ``h_{ji}(\mathbf {V}, \bm{\Theta})``, representing the rating constraints at the from-bus and to-bus ends of each branch, respectively:
+The `type` value defines the constraint as follows: `type = 1` applies to active power flow; `type = 2` and `type = 3` apply to apparent power flow; and `type = 4` and `type = 5` apply to current magnitude. When `type = 3` or `type = 5` is selected, squared inequality constraints are used. These constraints typically provide a more numerically robust optimization problem but often result in slower convergence compared to the non-squared versions.
+
+These constraints are mathematically expressed through the equations ``h_{ij}(\mathbf {V}, \bm{\Theta})`` and ``h_{ji}(\mathbf {V}, \bm{\Theta})``, representing the rating constraints at the from-bus and to-bus ends of each branch, respectively:
 ```math
 \begin{aligned}
     F_{ij}^{\text{min}} \leq h_{ij}(\mathbf {V}, \bm{\Theta}) \leq F_{ij}^{\text{max}},\;\;\; \forall (i,j) \in \mathcal{E} \\
@@ -300,7 +302,32 @@ The branch flow limits at the from-bus and to-bus ends, denoted as ``\mathbf{F}_
 𝐅ₜ = [system.branch.flow.minToBus system.branch.flow.maxToBus]
 ```
 
-By default, JuliaGrid employs the rating constraints linked with the apparent power flow (`type = 1`). This constraint at the from-bus is specified as:
+---
+
+The first option is to define the limit keywords for active power flow constraints (`type = 1`) at the from-bus and to-bus ends of each branch:
+```math
+  \begin{aligned}
+    h_{ij}(\mathbf {V}, \bm{\Theta}) &=
+    \cfrac{ g_{ij} + g_{\text{s}ij}}{\tau_{ij}^2} V_{i}^2 -
+    \cfrac{1}{\tau_{ij}} \left[g_{ij}\cos(\theta_{ij} - \phi_{ij}) + b_{ij}\sin(\theta_{ij} - \phi_{ij})\right]V_{i}V_{j} \\
+    h_{ji}(\mathbf {V}, \bm{\Theta}) &= (g_{ij} + g_{\text{s}ij}) V_{j}^2 -
+    \cfrac{1}{\tau_{ij}} \left[g_{ij} \cos(\theta_{ij} - \phi_{ij}) - b_{ij} \sin(\theta_{ij}- \phi_{ij})\right] V_{i} V_j.
+  \end{aligned}
+```
+
+In our example, we have chosen to utilize this type of flow constraints. To access the flow constraints of branches at the from-bus end, you can use the following code snippet:
+```@repl ACOptimalPowerFlow
+print(analysis.method.constraint.flow.from)
+```
+
+Similarly, to access the to-bus end flow constraints of branches you can use the following code snippet:
+```@repl ACOptimalPowerFlow
+print(analysis.method.constraint.flow.to)
+```
+
+---
+
+The second option applies constraints to the apparent power flow (`type = 2`). This constraint at the from-bus is specified as:
 ```math
     h_{ij}(\mathbf {V}, \bm{\Theta}) = \sqrt{  A_{ij} V_i^4 + B_{ij} V_i^2 V_j^2 - 2 [C_{ij} \cos(\theta_{ij} - \phi_{ij}) - D_{ij} \sin(\theta_{ij} - \phi_{ij})]V_i^3 V_j},
 ```
@@ -324,28 +351,7 @@ where:
   \end{gathered}
 ```
 
----
-
-The second option is to define the limit keywords for active power flow constraints (`type = 2`) at the from-bus and to-bus ends of each branch:
-```math
-  \begin{aligned}
-    h_{ij}(\mathbf {V}, \bm{\Theta}) &=
-    \cfrac{ g_{ij} + g_{\text{s}ij}}{\tau_{ij}^2} V_{i}^2 -
-    \cfrac{1}{\tau_{ij}} \left[g_{ij}\cos(\theta_{ij} - \phi_{ij}) + b_{ij}\sin(\theta_{ij} - \phi_{ij})\right]V_{i}V_{j} \\
-    h_{ji}(\mathbf {V}, \bm{\Theta}) &= (g_{ij} + g_{\text{s}ij}) V_{j}^2 -
-    \cfrac{1}{\tau_{ij}} \left[g_{ij} \cos(\theta_{ij} - \phi_{ij}) - b_{ij} \sin(\theta_{ij}- \phi_{ij})\right] V_{i} V_j.
-  \end{aligned}
-```
-
-In our example, we have chosen to utilize this type of flow constraints. To access the flow constraints of branches at the from-bus end, you can use the following code snippet:
-```@repl ACOptimalPowerFlow
-print(analysis.method.constraint.flow.from)
-```
-
-Similarly, to access the to-bus end flow constraints of branches you can use the following code snippet:
-```@repl ACOptimalPowerFlow
-print(analysis.method.constraint.flow.to)
-```
+If users choose `type = 3`, it means that the equations are squared (i.e., the square root is omitted), and the limit values will also be squared accordingly.
 
 ---
 
@@ -356,6 +362,8 @@ The last option involves defining the limit keywords for current magnitude const
     h_{ji}(\mathbf {V}, \bm{\Theta}) &= \sqrt{A_{ji}V_j^2 + B_{ji}V_i^2 - 2[C_{ji} \cos(\theta_{ij} - \phi_{ij}) + D_{ji}\sin(\theta_{ij} - \phi_{ij})]V_iV_j}.
   \end{aligned}
 ```
+
+If users choose `type = 5`, it means that the equations are squared (i.e., the square root is omitted), and the limit values will also be squared accordingly.
 
 ---
 

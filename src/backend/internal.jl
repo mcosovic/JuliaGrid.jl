@@ -403,7 +403,7 @@ macro default(mode::Symbol)
         template.branch.label = "?"
         template.branch.turnsRatio = 1.0
         template.branch.status = Int8(1)
-        template.branch.type = Int8(1)
+        template.branch.type = Int8(3)
     end
 
     if mode == :template || mode == :generator

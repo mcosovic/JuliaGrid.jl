@@ -116,7 +116,7 @@ Base.@kwdef mutable struct BranchTemplate
     label::String = "?"
     turnsRatio::Float64 = 1.0
     status::Int8 = Int8(1)
-    type::Int8 = Int8(1)
+    type::Int8 = Int8(3)
 end
 
 Base.@kwdef mutable struct GeneratorTemplate

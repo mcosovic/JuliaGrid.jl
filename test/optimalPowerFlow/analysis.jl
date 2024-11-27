@@ -114,7 +114,7 @@ system14 = powerSystem(string(path, "case14optimal.m"))
 
     ##### Active Power Flow Constraints #####
     matpwr14 = h5read(string(path, "results.h5"), "case14optimal/acOptimalPowerFlowActive")
-    system14.branch.flow.type .= 2
+    system14.branch.flow.type .= 1
 
     analysis = acOptimalPowerFlow(system14, Ipopt.Optimizer)
     set_silent(analysis.method.jump)
@@ -130,7 +130,7 @@ system14 = powerSystem(string(path, "case14optimal.m"))
 
     ##### Current Magnitude Flow Constraints #####
     matpwr14 = h5read(string(path, "results.h5"), "case14optimal/acOptimalPowerFlowCurrent")
-    system14.branch.flow.type .= 3
+    system14.branch.flow.type .= 4
 
     analysis = acOptimalPowerFlow(system14, Ipopt.Optimizer)
     set_silent(analysis.method.jump)

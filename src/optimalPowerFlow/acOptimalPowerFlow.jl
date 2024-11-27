@@ -642,15 +642,6 @@ function addFlow(
 
         if branch.flow.type[idx] == 1
             if from
-                expr = Sij(system, Vi, Vj, sinθij, cosθij, idx)
-                refFrom[idx] = @constraint(jump, minFrom <= expr <= maxFrom)
-            end
-            if to
-                expr = Sji(system, Vi, Vj, sinθij, cosθij, idx)
-                refTo[idx] = @constraint(jump, minTo <= expr <= maxTo)
-            end
-        elseif branch.flow.type[idx] == 2
-            if from
                 expr = Pij(system, Vi, Vj, sinθij, cosθij, idx)
                 refFrom[idx] = @constraint(jump, minFrom <= expr <= maxFrom)
             end
@@ -658,7 +649,25 @@ function addFlow(
                 expr = Pji(system, Vi, Vj, sinθij, cosθij, idx)
                 refTo[idx] = @constraint(jump, minTo <= expr <= maxTo)
             end
+        elseif branch.flow.type[idx] == 2
+            if from
+                expr = Sij(system, Vi, Vj, sinθij, cosθij, idx)
+                refFrom[idx] = @constraint(jump, minFrom <= expr <= maxFrom)
+            end
+            if to
+                expr = Sji(system, Vi, Vj, sinθij, cosθij, idx)
+                refTo[idx] = @constraint(jump, minTo <= expr <= maxTo)
+            end
         elseif branch.flow.type[idx] == 3
+            if from
+                expr = Sij2(system, Vi, Vj, sinθij, cosθij, idx)
+                refFrom[idx] = @constraint(jump, minFrom^2 <= expr <= maxFrom^2)
+            end
+            if to
+                expr = Sji2(system, Vi, Vj, sinθij, cosθij, idx)
+                refTo[idx] = @constraint(jump, minTo^2 <= expr <= maxTo^2)
+            end
+        elseif branch.flow.type[idx] == 4
             if from
                 expr = Iij(system, Vi, Vj, sinθij, cosθij, idx)
                 refFrom[idx] = @constraint(jump, minFrom <= expr <= maxFrom)
@@ -666,6 +675,15 @@ function addFlow(
             if to
                 expr = Iji(system, Vi, Vj, sinθij, cosθij, idx)
                 refTo[idx] = @constraint(jump, minTo <= expr <= maxTo)
+            end
+        elseif branch.flow.type[idx] == 5
+            if from
+                expr = Iij2(system, Vi, Vj, sinθij, cosθij, idx)
+                refFrom[idx] = @constraint(jump, minFrom^2 <= expr <= maxFrom^2)
+            end
+            if to
+                expr = Iji2(system, Vi, Vj, sinθij, cosθij, idx)
+                refTo[idx] = @constraint(jump, minTo^2 <= expr <= maxTo^2)
             end
         end
     end
@@ -772,7 +790,7 @@ function updateBalance(
 end
 
 function checkLimit(system::PowerSystem, minFlow::Float64, maxFlow::Float64, i::Int64)
-    if system.branch.flow.type[i] == 1 || system.branch.flow.type[i] == 3
+    if system.branch.flow.type[i] != 1
         if minFlow < 0.0
             minFlow = 0.0
         end

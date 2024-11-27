@@ -221,6 +221,19 @@ function Iij(
     sqrt(p.A * Vi^2 + p.B * Vj^2 - 2 * Vi * Vj * (p.C * cosθij - p.D * sinθij))
 end
 
+function Iij2(
+    system::PowerSystem,
+    Vi::VariableRef,
+    Vj::VariableRef,
+    sinθij::NonlinearExpr,
+    cosθij::NonlinearExpr,
+    idx::Int64
+)
+    p = IijCoefficient(system.branch, system.model.ac, idx)
+
+    p.A * Vi^2 + p.B * Vj^2 - 2 * Vi * Vj * (p.C * cosθij - p.D * sinθij)
+end
+
 ##### To-Bus End Current Magnitude #####
 function Iji(system::PowerSystem, method::LAV, idx::Int64)
     s = method.state
@@ -248,6 +261,19 @@ function Iji(
     p = IjiCoefficient(system.branch, system.model.ac, idx)
 
     sqrt(p.A * Vi^2 + p.B * Vj^2 - 2 * Vi * Vj * (p.C * cosθ + p.D * sinθ))
+end
+
+function Iji2(
+    system::PowerSystem,
+    Vi::VariableRef,
+    Vj::VariableRef,
+    sinθ::NonlinearExpr,
+    cosθ::NonlinearExpr,
+    idx::Int64
+)
+    p = IjiCoefficient(system.branch, system.model.ac, idx)
+
+    p.A * Vi^2 + p.B * Vj^2 - 2 * Vi * Vj * (p.C * cosθ + p.D * sinθ)
 end
 
 ##### From-Bus End Current Angle #####
@@ -278,6 +304,19 @@ function Sij(
     sqrt(p.A * Vi^4 + p.B * Vi^2 * Vj^2 - 2 * Vi^3 * Vj * (p.C * cosθ - p.D * sinθ))
 end
 
+function Sij2(
+    system::PowerSystem,
+    Vi::VariableRef,
+    Vj::VariableRef,
+    sinθ::NonlinearExpr,
+    cosθ::NonlinearExpr,
+    idx::Int64
+)
+    p = IijCoefficient(system.branch, system.model.ac, idx)
+
+    p.A * Vi^4 + p.B * Vi^2 * Vj^2 - 2 * Vi^3 * Vj * (p.C * cosθ - p.D * sinθ)
+end
+
 ##### To-Bus End Apparent Power #####
 function Sji(
     system::PowerSystem,
@@ -290,6 +329,19 @@ function Sji(
     p = IjiCoefficient(system.branch, system.model.ac, idx)
 
     sqrt(p.A * Vi^2 * Vj^2 + p.B * Vj^4 - 2 * Vi * Vj^3 * (p.C * cosθ + p.D * sinθ))
+end
+
+function Sji2(
+    system::PowerSystem,
+    Vi::VariableRef,
+    Vj::VariableRef,
+    sinθ::NonlinearExpr,
+    cosθ::NonlinearExpr,
+    idx::Int64
+)
+    p = IjiCoefficient(system.branch, system.model.ac, idx)
+
+    p.A * Vi^2 * Vj^2 + p.B * Vj^4 - 2 * Vi * Vj^3 * (p.C * cosθ + p.D * sinθ)
 end
 
 ##### Real and Imaginary Components of Bus Voltage Phasor #####

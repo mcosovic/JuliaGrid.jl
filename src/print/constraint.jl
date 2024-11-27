@@ -501,11 +501,11 @@ function printBranchConstraint(
         )
 
         if prt.notprint
-            display("AAAA")
             break
         end
 
-        if type != 3
+
+        if type in (1, 2, 3)
             scaleFrom, scaleTo = flowScale(scale, type)
         end
 
@@ -517,7 +517,7 @@ function printBranchConstraint(
                     continue
                 end
 
-                if type == 3
+                if type == 4 || type == 5
                     scaleFrom, scaleTo = flowScale(system, pfx, i)
                 end
 
@@ -534,27 +534,39 @@ function printBranchConstraint(
                 end
 
                 if isValid(jump, cons.flow.from, i)
-                    if brch.flow.minFromBus[i] < 0 && brch.flow.type[i] != 2
+                    if brch.flow.minFromBus[i] < 0 && brch.flow.type[i] != 1
                         printf(io, prt, 0.0, :Pijmin)
                     else
                         printf(io, prt, i, scaleFrom, brch.flow.minFromBus, :Pijmin)
                     end
-                    printf(io, prt, i, scaleFrom, cons.flow.from, :Pijopt)
-                    printf(io, prt, i, scaleFrom, brch.flow.maxFromBus, :Pijmax)
-                    printf(io, prt, i, scaleFrom, dual.flow.from, :Pijdul)
+                    if brch.flow.type[i] == 3 || brch.flow.type[i] == 5
+                        printf(io, prt, i, scaleFrom, cons.flow.from, :Pijopt; native = false)
+                        printf(io, prt, i, scaleFrom, brch.flow.maxFromBus, :Pijmax)
+                        printf(io, prt, i, scaleFrom, dual.flow.from, cons.flow.from, :Pijdul)
+                    else
+                        printf(io, prt, i, scaleFrom, cons.flow.from, :Pijopt)
+                        printf(io, prt, i, scaleFrom, brch.flow.maxFromBus, :Pijmax)
+                        printf(io, prt, i, scaleFrom, dual.flow.from, :Pijdul)
+                    end
                 else
                     printf(io, prt.hfmt, prt, "", :Pijmin, :Pijopt, :Pijmax, :Pijdul)
                 end
 
                 if isValid(jump, cons.flow.to, i)
-                    if brch.flow.minToBus[i] < 0 && brch.flow.type[i] != 2
+                    if brch.flow.minToBus[i] < 0 && brch.flow.type[i] != 1
                         printf(io, prt, 0.0, :Pjimin)
                     else
                         printf(io, prt, i, scaleTo, brch.flow.minToBus, :Pjimin)
                     end
-                    printf(io, prt, i, scaleTo, cons.flow.to, :Pjiopt)
-                    printf(io, prt, i, scaleTo, brch.flow.maxToBus, :Pjimax)
-                    printf(io, prt, i, scaleTo, dual.flow.to, :Pjidul)
+                    if brch.flow.type[i] == 3 || brch.flow.type[i] == 5
+                        printf(io, prt, i, scaleTo, cons.flow.to, :Pjiopt; native = false)
+                        printf(io, prt, i, scaleTo, brch.flow.maxToBus, :Pjimax)
+                        printf(io, prt, i, scaleTo, dual.flow.to, cons.flow.from, :Pjidul)
+                    else
+                        printf(io, prt, i, scaleTo, cons.flow.to, :Pjiopt)
+                        printf(io, prt, i, scaleTo, brch.flow.maxToBus, :Pjimax)
+                        printf(io, prt, i, scaleTo, dual.flow.to, :Pjidul)
+                    end
                 else
                     printf(io, prt.hfmt, prt, "", :Pjimin, :Pijopt, :Pijmax, :Pjidul)
                 end
@@ -710,33 +722,43 @@ function branchCons(
             end
 
             if isValid(analysis.method.jump, cons.flow.from, i)
-                if !(brch.flow.minFromBus[i] < 0 && brch.flow.type[i] != 2)
+                if !(brch.flow.minFromBus[i] < 0 && brch.flow.type[i] != 1)
                     fmax(fmt, width, show, i, scaleFrom, brch.flow.minFromBus, head[:Pijmin])
                 end
-                fmax(fmt, width, show, i, scaleFrom, cons.flow.from, head[:Pijopt])
+                if brch.flow.type[i] == 3 || brch.flow.type[i] == 5
+                    fmax(fmt, width, show, i, scaleFrom, cons.flow.from, head[:Pijopt]; native = false)
+                    fmax(fmt, width, show, i, scaleFrom, dual.flow.from, cons.flow.from, head[:Pijdul])
+                else
+                    fmax(fmt, width, show, i, scaleFrom, cons.flow.from, head[:Pijopt])
+                    fmax(fmt, width, show, i, scaleFrom, dual.flow.from, head[:Pijdul])
+                end
                 fmax(fmt, width, show, i, scaleFrom, brch.flow.maxFromBus, head[:Pijmax])
-                fmax(fmt, width, show, i, scaleFrom, dual.flow.from, head[:Pijdul])
             end
 
             if isValid(analysis.method.jump, cons.flow.to, i)
-                if !(brch.flow.minToBus[i] < 0 && brch.flow.type[i] != 2)
+                if !(brch.flow.minToBus[i] < 0 && brch.flow.type[i] != 1)
                     fmax(fmt, width, show, i, scaleTo, brch.flow.minToBus, head[:Pjimin])
                 end
-                fmax(fmt, width, show, i, scaleTo, cons.flow.to, head[:Pjiopt])
+                if brch.flow.type[i] == 3 || brch.flow.type[i] == 5
+                    fmax(fmt, width, show, i, scaleTo, cons.flow.to, head[:Pjiopt]; native = false)
+                    fmax(fmt, width, show, i, scaleTo, dual.flow.to, cons.flow.to, head[:Pjidul])
+                else
+                    fmax(fmt, width, show, i, scaleTo, cons.flow.to, head[:Pjiopt])
+                    fmax(fmt, width, show, i, scaleTo, dual.flow.to, head[:Pjidul])
+                end
                 fmax(fmt, width, show, i, scaleTo, brch.flow.maxToBus, head[:Pjimax])
-                fmax(fmt, width, show, i, scaleTo, dual.flow.to, head[:Pjidul])
             end
         else
             θopt = [-Inf; Inf]; θdul = [-Inf; Inf]
             Fmin = [-Inf; Inf]; Fopt = [-Inf; Inf]; Fmax = [-Inf; Inf]; Fdul = [-Inf; Inf]
             Tmin = [-Inf; Inf]; Topt = [-Inf; Inf]; Tmax = [-Inf; Inf]; Tdul = [-Inf; Inf]
 
-            if type != 3
+            if type in (1, 2, 3)
                 scaleFrom, scaleTo = flowScale(scale, type)
             end
             @inbounds for (label, i) in brch.label
                 if idxType[i] == type
-                    if type == 3
+                    if type in (4, 5)
                         scaleFrom, scaleTo = flowScale(system, pfx, i)
                     end
 
@@ -748,21 +770,31 @@ function branchCons(
                     end
 
                     if isValid(analysis.method.jump, cons.flow.from, i)
-                        if !(brch.flow.minFromBus[i] < 0 && brch.flow.type[i] != 2)
+                        if !(brch.flow.minFromBus[i] < 0 && brch.flow.type[i] != 1)
                             fminmax(show, i, scaleFrom, Fmin, brch.flow.minFromBus, head[:Pijmin])
                         end
-                        fminmax(show, i, scaleFrom, Fopt, cons.flow.from, head[:Pijopt])
+                        if brch.flow.type[i] == 3 || brch.flow.type[i] == 5
+                            fminmax(show, i, scaleFrom, Fopt, cons.flow.from, head[:Pijopt]; native = false)
+                            fminmax(show, i, scaleFrom, Fdul, dual.flow.from, cons.flow.from, head[:Pijdul])
+                        else
+                            fminmax(show, i, scaleFrom, Fopt, cons.flow.from, head[:Pijopt])
+                            fminmax(show, i, scaleFrom, Fdul, dual.flow.from, head[:Pijdul])
+                        end
                         fminmax(show, i, scaleFrom, Fmax, brch.flow.maxFromBus, head[:Pijmax])
-                        fminmax(show, i, scaleFrom, Fdul, dual.flow.from, head[:Pijdul])
                     end
 
                     if isValid(analysis.method.jump, cons.flow.to, i)
-                        if !(brch.flow.minToBus[i] < 0 && brch.flow.type[i] != 2)
+                        if !(brch.flow.minToBus[i] < 0 && brch.flow.type[i] != 1)
                             fminmax(show, i, scaleTo, Tmin, brch.flow.minToBus, head[:Pjimin])
                         end
-                        fminmax(show, i, scaleTo, Topt, cons.flow.to, head[:Pjiopt])
+                        if brch.flow.type[i] == 3 || brch.flow.type[i] == 5
+                            fminmax(show, i, scaleTo, Topt, cons.flow.to, head[:Pjiopt]; native = false)
+                            fminmax(show, i, scaleTo, Tdul, dual.flow.to, cons.flow.from, head[:Pjidul])
+                        else
+                            fminmax(show, i, scaleTo, Topt, cons.flow.to, head[:Pjiopt])
+                            fminmax(show, i, scaleTo, Tdul, dual.flow.to, head[:Pjidul])
+                        end
                         fminmax(show, i, scaleTo, Tmax, brch.flow.maxToBus, head[:Pjimax])
-                        fminmax(show, i, scaleTo, Tdul, dual.flow.to, head[:Pjidul])
                     end
                 end
             end
@@ -1454,10 +1486,10 @@ end
 
 function flowType(type::Int64, unitList::UnitList)
     if type == 1
-        return "Apparent Power Flow", unitList.apparentPowerLive
-    elseif type == 2
         return "Active Power Flow", unitList.activePowerLive
-    elseif type == 3
+    elseif type == 2 || type == 3
+        return "Apparent Power Flow", unitList.apparentPowerLive
+    elseif type == 4 || type == 5
         return "Current Flow Magnitude", unitList.currentMagnitudeLive
     end
 end
@@ -1477,7 +1509,7 @@ function checkFlowType(system::PowerSystem, analysis::ACOptimalPowerFlow)
     to = analysis.method.constraint.flow.to
     angle = analysis.method.constraint.voltage.angle
 
-    count = [0; 0; 0]
+    count = [0; 0; 0; 0; 0]
     for (i, type) in enumerate(system.branch.flow.type)
         fromFlag = haskey(from, i) && is_valid(jump, from[i])
         toFlag = haskey(to, i) && is_valid(jump, to[i])
@@ -1508,11 +1540,12 @@ function flowScale(
     i::Int64,
     type::Int64
 )
-    if type == 1 || type == 2
+    if type in (1, 2, 3)
         return flowScale(scale, type)
-    elseif type == 3
+    elseif type in (4, 5)
         return flowScale(system, pfx, i)
     end
+
 end
 
 function flowScale(system::PowerSystem, pfx::PrefixLive, i::Int64)
@@ -1522,8 +1555,8 @@ end
 
 function flowScale(scale::Dict{Symbol, Float64}, type::Int64)
     if type == 1
-        return scale[:S], scale[:S]
-    elseif type == 2
         return scale[:P], scale[:P]
+    elseif type == 2 || type == 3
+        return scale[:S], scale[:S]
     end
 end

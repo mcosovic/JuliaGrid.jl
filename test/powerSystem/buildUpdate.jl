@@ -75,7 +75,7 @@
     )
     updateBranch!(
         build;
-        label = 7, minFromBus = -5, maxFromBus = 5, minToBus = -5, maxToBus = 5, type = 1
+        label = 7, minFromBus = -5, maxFromBus = 5, minToBus = -5, maxToBus = 5, type = 3
     )
     updateBranch!(build; label = 3, status = 1, susceptance = 0.1)
     updateBranch!(build; label = 6, status = 1, resistance = 0.08, reactance = 0.04)
@@ -222,7 +222,7 @@ end
     )
     updateBranch!(
         build; label = 7, minFromBus = -0.5, maxFromBus = 0.5, minToBus = -0.5,
-        maxToBus = 0.5, type = 1
+        maxToBus = 0.5, type = 3
     )
     updateBranch!(build; label = 3, status = 1, susceptance = 0.1 / Zb1)
     updateBranch!(build; label = 2, status = 0)
@@ -452,7 +452,7 @@ end
         conductance = 0.4 / ((100e3 * 0.5)^2 / (100e6)), turnsRatio = 0.5,
         shiftAngle = 0.6 * 180 / pi, minDiffAngle = -1 * 180 / pi,
         maxDiffAngle = 1 * 180 / pi, minFromBus = -0.2e5, maxFromBus = 0.2e5,
-        minToBus = 0.3e5, maxToBus = 0.4e5, type = 2
+        minToBus = 0.3e5, maxToBus = 0.4e5, type = 1
     )
 
     ##### Test Branch Data #####
@@ -471,7 +471,7 @@ end
     @test system.branch.flow.maxFromBus[1] == 0.2
     @test system.branch.flow.minToBus[1] == 0.3
     @test system.branch.flow.maxToBus[1] == 0.4
-    @test system.branch.flow.type[1] == 2
+    @test system.branch.flow.type[1] == 1
 
     ########## Generator Macro ##########
     @generator(
