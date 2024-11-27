@@ -355,7 +355,7 @@ If users choose `type = 3`, it means that the equations are squared (i.e., the s
 
 ---
 
-The last option involves defining the limit keywords for current magnitude constraints (`type = 3`) at the from-bus and to-bus ends of each branch. In this case, the constraints are implemented as follows:
+The last option involves defining the limit keywords for current magnitude constraints (`type = 4`) at the from-bus and to-bus ends of each branch. In this case, the constraints are implemented as follows:
 ```math
   \begin{aligned}
     h_{ij}(\mathbf {V}, \bm{\Theta}) &= \sqrt{A_{ij}V_i^2 + B_{ij}V_j^2 - 2[C_{ij} \cos(\theta_{ij} - \phi_{ij}) - D_{ij}\sin(\theta_{ij} - \phi_{ij})]V_iV_j} \\
