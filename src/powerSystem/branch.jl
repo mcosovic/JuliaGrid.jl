@@ -35,9 +35,9 @@ The branch is defined with the following keywords:
 * `type`: Types of `minFromBus`, `maxFromBus`, `minToBus`, and `maxToBus` branch flow ratings:
   * `type = 1`: active power flow (pu or W),
   * `type = 2`: apparent power flow (pu or VA),
-  * `type = 3`: apparent power flow (pu or VA), internally constraint involves its square,
+  * `type = 3`: apparent power flow (pu or VA) with a squared inequality constraint,
   * `type = 4`: current magnitude flow (pu or A),
-  * `type = 5`: current magnitude flow (pu or A), internally constraint involves its square.
+  * `type = 5`: current magnitude flow (pu or A) with a squared inequality constraint.
 
 Note that when powers are given in SI units, they correspond to three-phase power.
 
