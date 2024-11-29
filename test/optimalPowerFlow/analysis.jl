@@ -1,6 +1,6 @@
-system14 = powerSystem(string(path, "case14optimal.m"))
+system14 = powerSystem(path * "case14optimal.m")
 @testset "AC Optimal Power Flow" begin
-    matpwr14 = h5read(string(path, "results.h5"), "case14optimal/acOptimalPowerFlow")
+    matpwr14 = h5read(path * "results.h5", "case14optimal/acOptimalPowerFlow")
 
     ########## IEEE 14-bus Test Case ##########
     analysis = acOptimalPowerFlow(system14, Ipopt.Optimizer)
@@ -13,11 +13,11 @@ system14 = powerSystem(string(path, "case14optimal.m"))
     voltage = analysis.voltage
     current = analysis.current
 
-    ##### Test Voltages #####
+    # Test Voltages
     @test voltage.magnitude ≈ matpwr14["voltageMagnitude"] atol = 1e-6
     @test voltage.angle ≈ matpwr14["voltageAngle"] atol = 1e-6
 
-    ##### Test Powers #####
+    # Test Powers
     @test power.injection.active ≈ matpwr14["injectionActive"] atol = 1e-6
     @test power.injection.reactive ≈ matpwr14["injectionReactive"] atol = 1e-6
     @test power.supply.active ≈ matpwr14["supplyActive"] atol = 1e-6
@@ -34,28 +34,28 @@ system14 = powerSystem(string(path, "case14optimal.m"))
     @test power.generator.active ≈ matpwr14["generatorActive"] atol = 1e-6
     @test power.generator.reactive ≈ matpwr14["generatorReactive"] atol = 1e-6
 
-    ##### Test Currents #####
+    # Test Currents
     branch = system14.branch
     to = branch.layout.to
     from = branch.layout.from
 
-    Si = (complex.(power.injection.active, power.injection.reactive))
+    Si = complex.(power.injection.active, power.injection.reactive)
     Vi = voltage.magnitude .* cis.(voltage.angle)
     @test current.injection.magnitude .* cis.(-current.injection.angle) ≈ Si ./ Vi
 
-    Sij = (complex.(power.from.active, power.from.reactive))
+    Sij = complex.(power.from.active, power.from.reactive)
     Vi = voltage.magnitude[from] .* cis.(voltage.angle[from])
     @test current.from.magnitude .* cis.(-current.from.angle) ≈ Sij ./ Vi
 
-    Sji = (complex.(power.to.active, power.to.reactive))
-    Vj = (voltage.magnitude[to] .* cis.(voltage.angle[to]))
+    Sji = complex.(power.to.active, power.to.reactive)
+    Vj = voltage.magnitude[to] .* cis.(voltage.angle[to])
     @test current.to.magnitude .* cis.(-current.to.angle) ≈ Sji ./ Vj
 
     ratio = (1 ./ branch.parameter.turnsRatio) .* cis.(-branch.parameter.shiftAngle)
     Sijb = complex.(power.series.active, power.series.reactive)
     @test current.series.magnitude .* cis.(-current.series.angle) ≈ Sijb ./ (ratio .* Vi - Vj)
 
-    ##### Test Specific Bus Powers and Currents #####
+    # Test Specific Bus Powers and Currents
     for (key, value) in system14.bus.label
         active, reactive = injectionPower(system14, analysis; label = key)
         @test active ≈ power.injection.active[value]
@@ -74,7 +74,7 @@ system14 = powerSystem(string(path, "case14optimal.m"))
         @test angle ≈ current.injection.angle[value]
     end
 
-    ##### Test Specific Branch Powers and Currents #####
+    # Test Specific Branch Powers and Currents
     for (key, value) in system14.branch.label
         active, reactive = fromPower(system14, analysis; label = key)
         @test active ≈ power.from.active[value]
@@ -105,31 +105,46 @@ system14 = powerSystem(string(path, "case14optimal.m"))
         @test angle ≈ current.series.angle[value]
     end
 
-    ##### Test Specific Generator Powers #####
+    # Test Specific Generator Powers
     for (key, value) in system14.generator.label
         active, reactive = generatorPower(system14, analysis; label = key)
         @test active ≈ power.generator.active[value]
         @test reactive ≈ power.generator.reactive[value]
     end
 
-    ##### Active Power Flow Constraints #####
-    matpwr14 = h5read(string(path, "results.h5"), "case14optimal/acOptimalPowerFlowActive")
+    # Apparent Power Native Flow Constraints
+    system14.branch.flow.type .= 2
+
+    analysis = acOptimalPowerFlow(system14, Ipopt.Optimizer)
+    set_silent(analysis.method.jump)
+    solve!(system14, analysis)
+
+    # Test Voltages
+    @test analysis.voltage.magnitude ≈ matpwr14["voltageMagnitude"] atol = 1e-6
+    @test analysis.voltage.angle ≈ matpwr14["voltageAngle"] atol = 1e-6
+
+    # Test Powers
+    @test analysis.power.generator.active ≈ matpwr14["generatorActive"] atol = 1e-6
+    @test analysis.power.generator.reactive ≈ matpwr14["generatorReactive"] atol = 1e-6
+
+    # Active Power Flow Constraints
+    matpwr14 = h5read(path * "results.h5", "case14optimal/acOptimalPowerFlowActive")
     system14.branch.flow.type .= 1
 
     analysis = acOptimalPowerFlow(system14, Ipopt.Optimizer)
     set_silent(analysis.method.jump)
     solve!(system14, analysis)
 
-    ##### Test Voltages #####
+    # Test Voltages
     @test analysis.voltage.magnitude ≈ matpwr14["voltageMagnitude"] atol = 1e-6
     @test analysis.voltage.angle ≈ matpwr14["voltageAngle"] atol = 1e-6
 
-    ##### Test Powers #####
+    # Test Powers
     @test analysis.power.generator.active ≈ matpwr14["generatorActive"] atol = 1e-6
     @test analysis.power.generator.reactive ≈ matpwr14["generatorReactive"] atol = 1e-6
 
-    ##### Current Magnitude Flow Constraints #####
-    matpwr14 = h5read(string(path, "results.h5"), "case14optimal/acOptimalPowerFlowCurrent")
+    # Current Magnitude Native Flow Constraints
+    matpwr14 = h5read(path * "results.h5", "case14optimal/acOptimalPowerFlowCurrent")
     system14.branch.flow.type .= 4
 
     analysis = acOptimalPowerFlow(system14, Ipopt.Optimizer)
@@ -137,20 +152,36 @@ system14 = powerSystem(string(path, "case14optimal.m"))
     solve!(system14, analysis)
     solve!(system14, analysis)
 
-    ##### Test Voltages #####
+    # Test Voltages
     @test analysis.voltage.magnitude ≈ matpwr14["voltageMagnitude"] atol = 1e-6
     @test analysis.voltage.angle ≈ matpwr14["voltageAngle"] atol = 1e-6
 
-    ##### Test Powers #####
+    # Test Powers
+    @test analysis.power.generator.active ≈ matpwr14["generatorActive"] atol = 1e-6
+    @test analysis.power.generator.reactive ≈ matpwr14["generatorReactive"] atol = 1e-6
+
+    # Current Magnitude Squared Flow Constraints
+    system14.branch.flow.type .= 5
+
+    analysis = acOptimalPowerFlow(system14, Ipopt.Optimizer)
+    set_silent(analysis.method.jump)
+    solve!(system14, analysis)
+    solve!(system14, analysis)
+
+    # Test Voltages
+    @test analysis.voltage.magnitude ≈ matpwr14["voltageMagnitude"] atol = 1e-6
+    @test analysis.voltage.angle ≈ matpwr14["voltageAngle"] atol = 1e-6
+
+    # Test Powers
     @test analysis.power.generator.active ≈ matpwr14["generatorActive"] atol = 1e-6
     @test analysis.power.generator.reactive ≈ matpwr14["generatorReactive"] atol = 1e-6
 end
 
-system14 = powerSystem(string(path, "case14test.m"))
-system30 = powerSystem(string(path, "case30test.m"))
+system14 = powerSystem(path * "case14test.m")
+system30 = powerSystem(path * "case30test.m")
 @testset "DC Optimal Power Flow" begin
-    matpwr14 = h5read(string(path, "results.h5"), "case14test/dcOptimalPowerFlow")
-    matpwr30 = h5read(string(path, "results.h5"), "case30test/dcOptimalPowerFlow")
+    matpwr14 = h5read(path * "results.h5", "case14test/dcOptimalPowerFlow")
+    matpwr30 = h5read(path * "results.h5", "case30test/dcOptimalPowerFlow")
 
     ########## IEEE 14-bus Test Case ##########
     dcModel!(system14)
@@ -159,17 +190,17 @@ system30 = powerSystem(string(path, "case30test.m"))
     solve!(system14, analysis)
     power!(system14, analysis)
 
-    ##### Test Voltage Angles #####
+    # Test Voltage Angles
     @test analysis.voltage.angle ≈ matpwr14["voltage"] atol = 1e-6
 
-    ##### Test Active Powers #####
+    # Test Active Powers
     @test analysis.power.injection.active ≈ matpwr14["injection"] atol = 1e-6
     @test analysis.power.supply.active ≈ matpwr14["supply"] atol = 1e-6
     @test analysis.power.from.active ≈ matpwr14["from"] atol = 1e-6
     @test analysis.power.to.active ≈ -matpwr14["from"] atol = 1e-6
     @test analysis.power.generator.active ≈ matpwr14["generator"] atol = 1e-6
 
-    ##### Test Specific Bus Active Powers #####
+    # Test Specific Bus Active Powers
     for (key, value) in system14.bus.label
         injection = injectionPower(system14, analysis; label = key)
         supply = supplyPower(system14, analysis; label = key)
@@ -178,7 +209,7 @@ system30 = powerSystem(string(path, "case30test.m"))
         @test supply ≈ analysis.power.supply.active[value]
     end
 
-    ##### Test Specific Branch Active Powers #####
+    # Test Specific Branch Active Powers
     for (key, value) in system14.branch.label
         from = fromPower(system14, analysis; label = key)
         to = toPower(system14, analysis; label = key)
@@ -187,7 +218,7 @@ system30 = powerSystem(string(path, "case30test.m"))
         @test to ≈ analysis.power.to.active[value]
     end
 
-    ##### Test Specific Generator Active Powers #####
+    # Test Specific Generator Active Powers
     for (key, value) in system14.generator.label
         generator = generatorPower(system14, analysis; label = key)
         @test generator ≈ analysis.power.generator.active[value]
@@ -200,17 +231,17 @@ system30 = powerSystem(string(path, "case30test.m"))
     solve!(system30, analysis)
     power!(system30, analysis)
 
-    ##### Test Voltage Angles #####
+    # Test Voltage Angles
     @test analysis.voltage.angle ≈ matpwr30["voltage"] atol = 1e-10
 
-    ##### Test Active Powers #####
+    # Test Active Powers
     @test analysis.power.injection.active ≈ matpwr30["injection"] atol = 1e-6
     @test analysis.power.supply.active ≈ matpwr30["supply"] atol = 1e-10
     @test analysis.power.from.active ≈ matpwr30["from"] atol = 1e-10
     @test analysis.power.to.active ≈ -matpwr30["from"] atol = 1e-10
     @test analysis.power.generator.active ≈ matpwr30["generator"] atol = 1e-10
 
-    ##### Test Specific Bus Active Powers #####
+    # Test Specific Bus Active Powers
     for (key, value) in system30.bus.label
         injection = injectionPower(system30, analysis; label = key)
         supply = supplyPower(system30, analysis; label = key)
@@ -219,7 +250,7 @@ system30 = powerSystem(string(path, "case30test.m"))
         @test supply ≈ analysis.power.supply.active[value]
     end
 
-    ##### Test Specific Branch Active Powers #####
+    # Test Specific Branch Active Powers
     for (key, value) in system30.branch.label
         from = fromPower(system30, analysis; label = key)
         to = toPower(system30, analysis; label = key)
@@ -228,14 +259,14 @@ system30 = powerSystem(string(path, "case30test.m"))
         @test to ≈ analysis.power.to.active[value]
     end
 
-    ##### Test Specific Generator Active Powers #####
+    # Test Specific Generator Active Powers
     for (key, value) in system30.generator.label
         generator = generatorPower(system30, analysis; label = key)
         @test generator ≈ analysis.power.generator.active[value]
     end
 end
 
-@testset "Test Errors and Messages" begin
+@testset "Errors and Messages" begin
     @default(unit)
     @default(template)
     system = powerSystem()
@@ -279,19 +310,19 @@ end
     set_silent(analysis.method.jump)
     solve!(system14, analysis)
 
-    ##### Print Bus Constraint Data #####
+    # Print Bus Constraint Data
     @capture_out printBusConstraint(system14, analysis; delimiter = "")
     @capture_out printBusConstraint(system14, analysis; style = false)
     @capture_out printBusConstraint(system14, analysis; label = 1, header = true)
     @capture_out printBusConstraint(system14, analysis; label = 2, footer = true)
 
-    ##### Print Branch Constraint Data #####
+    # Print Branch Constraint Data
     @capture_out printBranchConstraint(system14, analysis; delimiter = "")
     @capture_out printBranchConstraint(system14, analysis; label = 5, header = true)
     @capture_out printBranchConstraint(system14, analysis; label = 6, footer = true)
     @capture_out printBranchConstraint(system14, analysis; style = false)
 
-    ##### Print Generator Constraint Data #####
+    # Print Generator Constraint Data
     @capture_out printGeneratorConstraint(system14, analysis; delimiter = "")
     @capture_out printGeneratorConstraint(system14, analysis; label = 5, header = true)
     @capture_out printGeneratorConstraint(system14, analysis; label = 6, footer = true)
@@ -307,13 +338,13 @@ end
     @capture_out printBusConstraint(system14, analysis; label = 1, header = true)
     @capture_out printBusConstraint(system14, analysis; label = 2, footer = true)
 
-    ##### Print Branch Constraint Data #####
+    # Print Branch Constraint Data
     @capture_out printBranchConstraint(system14, analysis; delimiter = "")
     @capture_out printBranchConstraint(system14, analysis; label = 5, header = true)
     @capture_out printBranchConstraint(system14, analysis; label = 6, footer = true)
     @capture_out printBranchConstraint(system14, analysis; style = false)
 
-    ##### Print Generator Constraint Data #####
+    # Print Generator Constraint Data
     @capture_out printGeneratorConstraint(system14, analysis; delimiter = "")
     @capture_out printGeneratorConstraint(system14, analysis; label = 5, header = true)
     @capture_out printGeneratorConstraint(system14, analysis; label = 6, footer = true)
@@ -330,19 +361,19 @@ end
     set_silent(analysis.method.jump)
     solve!(system14, analysis)
 
-    ##### Print Bus Constraint Data #####
+    # Print Bus Constraint Data
     @capture_out printBusConstraint(system14, analysis; delimiter = "")
     @capture_out printBusConstraint(system14, analysis; style = false)
     @capture_out printBusConstraint(system14, analysis; label = 1, header = true)
     @capture_out printBusConstraint(system14, analysis; label = 2, footer = true)
 
-    ##### Print Branch Constraint Data #####
+    # Print Branch Constraint Data
     @capture_out printBranchConstraint(system14, analysis; delimiter = "")
     @capture_out printBranchConstraint(system14, analysis; label = 5, header = true)
     @capture_out printBranchConstraint(system14, analysis; label = 6, footer = true)
     @capture_out printBranchConstraint(system14, analysis; style = false)
 
-    ##### Print Generator Constraint Data #####
+    # Print Generator Constraint Data
     @capture_out printGeneratorConstraint(system14, analysis; delimiter = "")
     @capture_out printGeneratorConstraint(system14, analysis; label = 5, header = true)
     @capture_out printGeneratorConstraint(system14, analysis; label = 6, footer = true)
@@ -358,13 +389,13 @@ end
     @capture_out printBusConstraint(system14, analysis; label = 1, header = true)
     @capture_out printBusConstraint(system14, analysis; label = 2, footer = true)
 
-    ##### Print Branch Constraint Data #####
+    # Print Branch Constraint Data
     @capture_out printBranchConstraint(system14, analysis; delimiter = "")
     @capture_out printBranchConstraint(system14, analysis; label = 5, header = true)
     @capture_out printBranchConstraint(system14, analysis; label = 6, footer = true)
     @capture_out printBranchConstraint(system14, analysis; style = false)
 
-    ##### Print Generator Constraint Data #####
+    # Print Generator Constraint Data
     @capture_out printGeneratorConstraint(system14, analysis; delimiter = "")
     @capture_out printGeneratorConstraint(system14, analysis; label = 5, header = true)
     @capture_out printGeneratorConstraint(system14, analysis; label = 6, footer = true)

@@ -1,5 +1,5 @@
-system14 = powerSystem(string(path, "case14test.m"))
-system30 = powerSystem(string(path, "case30test.m"))
+system14 = powerSystem(path * "case14test.m")
+system30 = powerSystem(path * "case30test.m")
 @testset "AC State Estimation" begin
     @default(template)
     @default(unit)
@@ -47,7 +47,7 @@ system30 = powerSystem(string(path, "case30test.m"))
     power!(system14, analysis)
     current!(system14, analysis)
 
-    ##### Test Voltmeter Measurements #####
+    # Voltmeter Measurements
     device = measurement()
     for (key, idx) in system14.bus.label
         addPmu!(
@@ -66,7 +66,7 @@ system30 = powerSystem(string(path, "case30test.m"))
     @capture_out printVoltmeterData(system14, device, analysisSE; label = 6)
     @capture_out printVoltmeterData(system14, device, analysisSE; label = 8, footer = true)
 
-    ##### Test Ammeter Measurements #####
+    # Ammeter Measurements
     device = measurement()
     for (key, idx) in system14.bus.label
         addPmu!(
@@ -91,7 +91,7 @@ system30 = powerSystem(string(path, "case30test.m"))
     @capture_out printAmmeterData(system14, device, analysisSE; label = 6)
     @capture_out printAmmeterData(system14, device, analysisSE; label = 8, footer = true)
 
-    ##### Test Bus Wattmeter Measurements #####
+    # Bus Wattmeter Measurements
     device = measurement()
     for (key, idx) in system14.bus.label
         addPmu!(
@@ -110,7 +110,7 @@ system30 = powerSystem(string(path, "case30test.m"))
     @capture_out printWattmeterData(system14, device, analysisSE; label = 6)
     @capture_out printWattmeterData(system14, device, analysisSE; label = 8, footer = true)
 
-    ##### Test Branch Wattmeter Measurements #####
+    # Branch Wattmeter Measurements
     device = measurement()
     for (key, idx) in system14.bus.label
         addPmu!(
@@ -130,7 +130,7 @@ system30 = powerSystem(string(path, "case30test.m"))
     end
     analysisSE = acStateEstimationTest(system14, device, analysisSE)
 
-    ##### Test Bus Varmeter Measurements #####
+    # Bus Varmeter Measurements
     device = measurement()
     for (key, idx) in system14.bus.label
         addPmu!(
@@ -144,7 +144,7 @@ system30 = powerSystem(string(path, "case30test.m"))
     end
     analysisSE = acStateEstimationTest(system14, device, analysis)
 
-    ##### Test Branch Varmeter Measurements #####
+    # Branch Varmeter Measurements
     device = measurement()
     for (key, idx) in system14.bus.label
         addPmu!(
@@ -164,7 +164,7 @@ system30 = powerSystem(string(path, "case30test.m"))
     end
     analysisSE = acStateEstimationTest(system14, device, analysis)
 
-    ##### Test Bus Rectangular PMU Measurements #####
+    # Bus Rectangular PMU Measurements
     device = measurement()
     for (key, idx) in system14.bus.label
         addPmu!(
@@ -178,7 +178,7 @@ system30 = powerSystem(string(path, "case30test.m"))
     end
     analysisSE = acStateEstimationTest(system14, device, analysis)
 
-    ##### Test Branch Rectangular PMU Measurements #####
+    # Branch Rectangular PMU Measurements
     device = measurement()
     for (key, idx) in system14.bus.label
         addPmu!(
@@ -199,7 +199,7 @@ system30 = powerSystem(string(path, "case30test.m"))
     end
     acStateEstimationTest(system14, device, analysis)
 
-    ##### Test Branch Rectangular Correlated PMU Measurements #####
+    # Branch Rectangular Correlated PMU Measurements
     device = measurement()
     for (key, idx) in system14.bus.label
         addPmu!(
@@ -220,7 +220,7 @@ system30 = powerSystem(string(path, "case30test.m"))
     end
     acStateEstimationTest(system14, device, analysis)
 
-    ##### Test From-Branch Polar PMU Measurements #####
+    # From-Branch Polar PMU Measurements
     device = measurement()
     for (key, idx) in system14.bus.label
         addPmu!(
@@ -238,7 +238,7 @@ system30 = powerSystem(string(path, "case30test.m"))
     end
     acStateEstimationTest(system14, device, analysis)
 
-    ##### Test To-Branch Polar PMU Measurements #####
+    # To-Branch Polar PMU Measurements
     device = measurement()
     for (key, idx) in system14.bus.label
         addPmu!(
@@ -256,7 +256,7 @@ system30 = powerSystem(string(path, "case30test.m"))
     end
     acStateEstimationTest(system14, device, analysis)
 
-    ##### Test All Measurements #####
+    # All Measurements
     device = measurement()
     for (key, idx) in system14.bus.label
         addVoltmeter!(
@@ -324,7 +324,7 @@ system30 = powerSystem(string(path, "case30test.m"))
     end
     acStateEstimationTest(system14, device, analysis)
 
-    ##### Test QR Factorization #####
+    # QR Factorization
     analysisQR = gaussNewton(system14, device, QR)
     for iteration = 1:100
         stopping = solve!(system14, analysisQR)
@@ -335,7 +335,7 @@ system30 = powerSystem(string(path, "case30test.m"))
     @test analysisQR.voltage.magnitude ≈ analysis.voltage.magnitude
     @test analysisQR.voltage.angle ≈ analysis.voltage.angle
 
-    ##### Test Orthogonal Method #####
+    # Orthogonal Method
     device = measurement()
     for (key, idx) in system14.bus.label
         addVoltmeter!(
@@ -406,7 +406,7 @@ system30 = powerSystem(string(path, "case30test.m"))
     compstruct(analysisOrt.voltage, analysis.voltage; atol = 1e-10)
     compstruct(analysisOrt.power, analysis.power; atol = 1e-10)
 
-    ##### Test Specific Bus Powers #####
+    # Specific Bus Powers
     for (key, idx) in system14.bus.label
         active, reactive = injectionPower(system14, analysisOrt; label = key)
         @test active ≈ analysis.power.injection.active[idx] atol = 1e-6
@@ -421,7 +421,7 @@ system30 = powerSystem(string(path, "case30test.m"))
         @test reactive ≈ analysis.power.shunt.reactive[idx] atol = 1e-6
     end
 
-    ##### Test Specific Branch Powers #####
+    # Specific Branch Powers
     for (key, idx) in system14.branch.label
         active, reactive = fromPower(system14, analysisOrt; label = key)
         @test active ≈ analysis.power.from.active[idx] atol = 1e-6
@@ -453,7 +453,7 @@ system30 = powerSystem(string(path, "case30test.m"))
     power!(system30, analysis)
     current!(system30, analysis)
 
-    ##### Test Voltmeter Measurements #####
+    # Voltmeter Measurements
     device = measurement()
     for (key, idx) in system30.bus.label
         addPmu!(
@@ -467,7 +467,7 @@ system30 = powerSystem(string(path, "case30test.m"))
     end
     acStateEstimationTest(system30, device, analysis)
 
-    ##### Test Wattmeter Measurements #####
+    # Wattmeter Measurements
     device = measurement()
     for (key, idx) in system30.bus.label
         addPmu!(
@@ -491,7 +491,7 @@ system30 = powerSystem(string(path, "case30test.m"))
     end
     acStateEstimationTest(system30, device, analysis)
 
-    ##### Test Varmeter Measurements #####
+    # Varmeter Measurements
     device = measurement()
     for (key, idx) in system30.bus.label
         addPmu!(
@@ -515,7 +515,7 @@ system30 = powerSystem(string(path, "case30test.m"))
     end
     acStateEstimationTest(system30, device, analysis)
 
-    ##### Test Rectangular PMU Measurements #####
+    # Rectangular PMU Measurements
     device = measurement()
     for (key, idx) in system30.bus.label
         addPmu!(
@@ -547,7 +547,7 @@ system30 = powerSystem(string(path, "case30test.m"))
     end
     acStateEstimationTest(system30, device, analysis)
 
-    ##### Test Polar PMU Measurements #####
+    # Polar PMU Measurements
     device = measurement()
     for (key, idx) in system30.bus.label
         addPmu!(
@@ -566,7 +566,7 @@ system30 = powerSystem(string(path, "case30test.m"))
 
     acStateEstimationTest(system30, device, analysis)
 
-    ##### Test All Measurements #####
+    # All Measurements
     device = measurement()
     for (key, idx) in system30.bus.label
         addVoltmeter!(
@@ -611,7 +611,7 @@ system30 = powerSystem(string(path, "case30test.m"))
     end
     acStateEstimationTest(system30, device, analysis)
 
-    ##### Test Orthogonal Method #####
+    # Orthogonal Method
     analysisOrt = gaussNewton(system30, device, Orthogonal)
     for iteration = 1:100
         stopping = solve!(system30, analysisOrt)
@@ -621,7 +621,7 @@ system30 = powerSystem(string(path, "case30test.m"))
     end
     compstruct(analysisOrt.voltage, analysis.voltage; atol = 1e-10)
 
-    ##### Test Covariance Matrix #####
+    # Covariance Matrix
     system = powerSystem()
     device = measurement()
     covariance = zeros(6, 6)
@@ -669,8 +669,8 @@ system30 = powerSystem(string(path, "case30test.m"))
     @test inv(covariance) ≈ Matrix(analysis.method.precision)
 end
 
-system14 = powerSystem(string(path, "case14test.m"))
-system30 = powerSystem(string(path, "case30test.m"))
+system14 = powerSystem(path * "case14test.m")
+system30 = powerSystem(path * "case30test.m")
 @testset "PMU State Estimation" begin
     @default(template)
     @default(unit)
@@ -705,7 +705,7 @@ system30 = powerSystem(string(path, "case30test.m"))
     power!(system14, analysis)
     current!(system14, analysis)
 
-    ##### Test Uncorrelated PMU Measurements #####
+    # Uncorrelated PMU Measurements
     device = measurement()
     for (key, idx) in system14.bus.label
         addPmu!(
@@ -725,7 +725,7 @@ system30 = powerSystem(string(path, "case30test.m"))
     end
     pmuStateEstimationTest(system14, device, analysis)
 
-    ##### Test QR Factorization #####
+    # QR Factorization
     analysisQR = pmuStateEstimation(system14, device, QR)
     solve!(system14, analysisQR)
     power!(system14, analysisQR)
@@ -733,13 +733,12 @@ system30 = powerSystem(string(path, "case30test.m"))
     compstruct(analysisQR.voltage, analysis.voltage; atol = 1e-10)
     compstruct(analysisQR.power, analysis.power; atol = 1e-10)
 
-
-    ##### Test Orthogonal Method #####
+    # Orthogonal Method
     analysisOrt = pmuStateEstimation(system14, device, Orthogonal)
     solve!(system14, analysisOrt)
     compstruct(analysisOrt.voltage, analysis.voltage; atol = 1e-10)
 
-    ##### Test Specific Bus Powers #####
+    # Specific Bus Powers
     for (key, idx) in system14.bus.label
         active, reactive = injectionPower(system14, analysisQR; label = key)
         @test active ≈ analysis.power.injection.active[idx] atol = 1e-6
@@ -754,7 +753,7 @@ system30 = powerSystem(string(path, "case30test.m"))
         @test reactive ≈ analysis.power.shunt.reactive[idx] atol = 1e-6
     end
 
-    ##### Test Specific Branch Powers #####
+    # Specific Branch Powers
     for (key, idx) in system14.branch.label
         active, reactive = fromPower(system14, analysisQR; label = key)
         @test active ≈ analysis.power.from.active[idx] atol = 1e-6
@@ -773,7 +772,7 @@ system30 = powerSystem(string(path, "case30test.m"))
         @test reactive ≈ analysis.power.charging.reactive[idx] atol = 1e-6
     end
 
-    ##### Test Correlated PMU Measurements #####
+    # Correlated PMU Measurements
     device = measurement()
     for (key, idx) in system14.bus.label
         addPmu!(
@@ -805,7 +804,7 @@ system30 = powerSystem(string(path, "case30test.m"))
     end
     current!(system30, analysis)
 
-    ##### Test PMU Measurements #####
+    # PMU Measurements
     device = measurement()
     for (key, idx) in system30.bus.label
         addPmu!(
@@ -834,8 +833,8 @@ system30 = powerSystem(string(path, "case30test.m"))
     pmuStateEstimationTest(system30, device, analysis)
 end
 
-system14 = powerSystem(string(path, "case14test.m"))
-system30 = powerSystem(string(path, "case30test.m"))
+system14 = powerSystem(path * "case14test.m")
+system30 = powerSystem(path * "case30test.m")
 @testset "DC State Estimation" begin
     @default(template)
     @default(unit)
@@ -864,7 +863,7 @@ system30 = powerSystem(string(path, "case30test.m"))
     power!(system14, analysis)
     device = measurement()
 
-    ##### Test Bus Wattmeter Measurements #####
+    # Bus Wattmeter Measurements
     device = measurement()
     for (key, idx) in system14.bus.label
         addPmu!(
@@ -878,7 +877,7 @@ system30 = powerSystem(string(path, "case30test.m"))
     end
     dcStateEstimationTest(system14, device, analysis)
 
-    ##### Test Branch Wattmeter Measurements #####
+    # Branch Wattmeter Measurements
     device = measurement()
     for (key, idx) in system14.bus.label
         addPmu!(
@@ -897,7 +896,7 @@ system30 = powerSystem(string(path, "case30test.m"))
     @capture_out printPmuData(system14, device, analysisSE; label = 6)
     @capture_out printPmuData(system14, device, analysisSE; label = 8, footer = true)
 
-    ##### Test Wattmeters #####
+    # Wattmeters
     for (key, idx) in system14.bus.label
         addWattmeter!(system14, device; bus = key, active = analysis.power.injection.active[idx])
     end
@@ -912,12 +911,12 @@ system30 = powerSystem(string(path, "case30test.m"))
     @capture_out printWattmeterData(system14, device, analysisSE; label = 6)
     @capture_out printWattmeterData(system14, device, analysisSE; label = 8, footer = true)
 
-    ##### Test QR Factorization #####
+    # QR Factorization
     analysisQR = dcStateEstimation(system14, device, QR)
     solve!(system14, analysisQR)
     @test analysisQR.voltage.angle ≈ analysis.voltage.angle
 
-    ##### Test Orthogonal Method #####
+    # Orthogonal Method
     analysisOrt = dcStateEstimation(system14, device, Orthogonal)
     solve!(system14, analysisOrt)
     power!(system14, analysisOrt)
@@ -925,13 +924,13 @@ system30 = powerSystem(string(path, "case30test.m"))
     @test analysisOrt.voltage.angle ≈ analysis.voltage.angle
     compstruct(analysisOrt.power, analysis.power; atol = 1e-10)
 
-    ##### Test Specific Bus Powers #####
+    # Specific Bus Powers
     for (key, idx) in system14.bus.label
         @test injectionPower(system14, analysisOrt; label = key) ≈ analysis.power.injection.active[idx] atol = 1e-6
         @test supplyPower(system14, analysisOrt; label = key) ≈ analysis.power.supply.active[idx] atol = 1e-6
     end
 
-    ##### Test Specific Branch Powers #####
+    # Specific Branch Powers
     for (key, idx) in system14.branch.label
         @test fromPower(system14, analysisOrt; label = key) ≈ analysis.power.from.active[idx] atol = 1e-6
         @test toPower(system14, analysisOrt; label = key) ≈ analysis.power.to.active[idx] atol = 1e-6
@@ -943,7 +942,7 @@ system30 = powerSystem(string(path, "case30test.m"))
     solve!(system30, analysis)
     power!(system30, analysis)
 
-    ##### Test Wattmeters #####
+    # Wattmeters
     device = measurement()
     for (key, idx) in system30.bus.label
         addWattmeter!(system30, device; bus = key, active = analysis.power.injection.active[idx], variance = 1e-6)
@@ -954,14 +953,14 @@ system30 = powerSystem(string(path, "case30test.m"))
     end
     dcStateEstimationTest(system30, device, analysis)
 
-    ##### Test Orthogonal Method #####
+    # Orthogonal Method
     analysisOrt = dcStateEstimation(system30, device, Orthogonal)
     solve!(system30, analysisOrt)
     @test analysisOrt.voltage.angle ≈ analysis.voltage.angle
 end
 
 @testset "Print Data in Per-Units" begin
-    system = powerSystem(string(path, "case14test.m"))
+    system = powerSystem(path * "case14test.m")
     device = measurement("measurement14.h5")
     addPmu!(system, device; bus = 1, magnitude = 1.0, angle = 0.0)
     addPmu!(system, device; bus = 3, magnitude = 1.1, angle = -0.3)
@@ -972,7 +971,7 @@ end
     power!(system, analysis)
     current!(system, analysis)
 
-    ##### Print Voltmeter Data #####
+    # Print Voltmeter Data
     width = Dict("Voltage Magnitude Residual" => 10)
     show = Dict("Voltage Magnitude Estimate" => false)
     fmt = Dict("Voltage Magnitude" => "%.2f")
@@ -981,26 +980,26 @@ end
     @capture_out printVoltmeterData(system, device, analysis; label = 2, footer = true)
     @capture_out printVoltmeterData(system, device, analysis; style = false)
 
-    ##### Print Ammeter Data #####
+    # Print Ammeter Data
     show = Dict("Current Magnitude Status" => false)
     @capture_out printAmmeterData(system, device, analysis; show, repeat = 10)
     @capture_out printAmmeterData(system, device, analysis; label = "From 1", header = true)
     @capture_out printAmmeterData(system, device, analysis; label = "From 2", footer = true)
     @capture_out printAmmeterData(system, device, analysis; style = false)
 
-    ##### Print Wattmeter Data #####
+    ##### Print Wattmeter Data
     @capture_out printWattmeterData(system, device, analysis; repeat = 10)
     @capture_out printWattmeterData(system, device, analysis; label = 1, header = true)
     @capture_out printWattmeterData(system, device, analysis; label = 4, footer = true)
     @capture_out printWattmeterData(system, device, analysis; style = false)
 
-    ##### Print Varmeter Data #####
+    # Print Varmeter Data
     @capture_out printVarmeterData(system, device, analysis; repeat = 10)
     @capture_out printVarmeterData(system, device, analysis; label = 1, header = true)
     @capture_out printVarmeterData(system, device, analysis; label = 4, footer = true)
     @capture_out printVarmeterData(system, device, analysis; style = false)
 
-    ##### Print PMU Data #####
+    # Print PMU Data
     @capture_out printPmuData(system, device, analysis; repeat = 10)
     @capture_out printPmuData(system, device, analysis; label = "From 1", header = true)
     @capture_out printPmuData(system, device, analysis; label = "From 4", footer = true)
@@ -1013,13 +1012,13 @@ end
     solve!(system, analysis)
     power!(system, analysis)
 
-    ##### Print Wattmeter Data #####
+    # Print Wattmeter Data
     @capture_out printWattmeterData(system, device, analysis; repeat = 10)
     @capture_out printWattmeterData(system, device, analysis; label = 1, header = true)
     @capture_out printWattmeterData(system, device, analysis; label = 4, footer = true)
     @capture_out printWattmeterData(system, device, analysis; style = false)
 
-    ##### Print PMU Data #####
+    # Print PMU Data
     @capture_out printPmuData(system, device, analysis; repeat = 10)
     @capture_out printPmuData(system, device, analysis; label = 41, header = true)
     @capture_out printPmuData(system, device, analysis; label = 42, footer = true)
@@ -1027,7 +1026,7 @@ end
 end
 
 @testset "Print Data in SI Units" begin
-    system = powerSystem(string(path, "case14test.m"))
+    system = powerSystem(path * "case14test.m")
     device = measurement("measurement14.h5")
     addPmu!(system, device; bus = 1, magnitude = 1.0, angle = 0.0)
     addPmu!(system, device; bus = 3, magnitude = 1.1, angle = -0.3)
@@ -1042,23 +1041,23 @@ end
     power!(system, analysis)
     current!(system, analysis)
 
-    ##### Print Voltmeter Data #####
+    # Print Voltmeter Data
     @capture_out printVoltmeterData(system, device, analysis)
     @capture_out printVoltmeterData(system, device, analysis; label = 1)
 
-    ##### Print Ammeter Data #####
+    # Print Ammeter Data
     @capture_out printAmmeterData(system, device, analysis)
     @capture_out printAmmeterData(system, device, analysis; label = "From 1")
 
-    ##### Print Wattmeter Data #####
+    # Print Wattmeter Data
     @capture_out printWattmeterData(system, device, analysis)
     @capture_out printWattmeterData(system, device, analysis; label = 1)
 
-    ##### Print Varmeter Data #####
+    # Print Varmeter Data
     @capture_out printVarmeterData(system, device, analysis)
     @capture_out printVarmeterData(system, device, analysis; label = 1)
 
-    ##### Print PMU Data #####
+    # Print PMU Data
     @capture_out printPmuData(system, device, analysis)
     @capture_out printPmuData(system, device, analysis; label = "From 1")
     @capture_out printPmuData(system, device, analysis; label = 41)
@@ -1068,11 +1067,11 @@ end
     solve!(system, analysis)
     power!(system, analysis)
 
-    ##### Print Wattmeter Data #####
+    # Print Wattmeter Data
     @capture_out printWattmeterData(system, device, analysis)
     @capture_out printWattmeterData(system, device, analysis; label = 1)
 
-    ##### Print PMU Data #####
+    # Print PMU Data
     @capture_out printPmuData(system, device, analysis)
     @capture_out printPmuData(system, device, analysis; label = 41)
 end

@@ -1,5 +1,5 @@
-system14 = powerSystem(string(path, "case14test.m"))
-system30 = powerSystem(string(path, "case30test.m"))
+system14 = powerSystem(path * "case14test.m")
+system30 = powerSystem(path * "case30test.m")
 @testset "AC State Estimation: Bad Data" begin
     @default(template)
     @default(unit)
@@ -41,7 +41,7 @@ system30 = powerSystem(string(path, "case30test.m"))
         addVarmeter!(system14, device; to = key, reactive = analysis.power.to.reactive[idx])
     end
 
-    ##### Test One Outlier #####
+    # One Outlier
     updateVarmeter!(system14, device; label = "Varmeter 4", reactive = 10.25)
 
     analysisSE = gaussNewton(system14, device)
@@ -64,7 +64,7 @@ system30 = powerSystem(string(path, "case30test.m"))
     end
     compstruct(analysisSE.voltage, analysis.voltage; atol = 1e-10)
 
-    ##### Test Two Outliers #####
+    # Two Outliers
     @pmu(label = "PMU ?")
     for (key, idx) in system14.bus.label
         addPmu!(
@@ -108,7 +108,7 @@ system30 = powerSystem(string(path, "case30test.m"))
     @test analysis.voltage.magnitude ≈ analysisSE.voltage.magnitude
     @test analysis.voltage.angle ≈ analysisSE.voltage.angle
 
-    ##### Test Orthogonal Method with Two Outliers #####
+    # Orthogonal Method with Two Outliers
     updateVarmeter!(system14, device; label = "Varmeter 4", status = 1)
     updatePmu!(system14, device; label = "PMU 10", statusMagnitude = 1)
 
@@ -143,7 +143,7 @@ system30 = powerSystem(string(path, "case30test.m"))
     end
     compstruct(analysisSE.voltage, analysis.voltage; atol = 1e-10)
 
-    ##### Test PMU Rectangular with One Outlier #####
+    # PMU Rectangular with One Outlier
     for (key, idx) in system14.branch.label
         addPmu!(
             system14, device; from = key, magnitude = analysis.current.from.magnitude[idx],
@@ -212,7 +212,7 @@ end
         )
     end
 
-    ##### Test One Outlier #####
+    # One Outlier
     updatePmu!(system14, device; label = "PMU 2", magnitude = 15)
     analysisSE = pmuStateEstimation(system14, device)
     solve!(system14, analysisSE)
@@ -224,7 +224,7 @@ end
     solve!(system14, analysisSE)
     compstruct(analysisSE.voltage, analysis.voltage; atol = 1e-10)
 
-    ##### Test Two Outliers #####
+    # Two Outliers
     updatePmu!(system14, device; label = "PMU 2", statusAngle = 1, statusMagnitude = 1)
     updatePmu!(system14, device; label = "PMU 20", angle = 10pi, magnitude = 30)
     analysisSE = pmuStateEstimation(system14, device)
@@ -242,7 +242,7 @@ end
     solve!(system14, analysisSE)
     compstruct(analysisSE.voltage, analysis.voltage; atol = 1e-10)
 
-    ##### Test Orthogonal Method with One Outlier #####
+    # Orthogonal Method with One Outlier
     updatePmu!(system14, device; label = "PMU 2", statusAngle = 1, statusMagnitude = 1)
     updatePmu!(
         system14, device; label = "PMU 20", magnitude = analysis.current.to.magnitude[4],
@@ -259,7 +259,7 @@ end
     @test analysis.voltage.magnitude ≈ analysisSE.voltage.magnitude
     @test analysis.voltage.angle ≈ analysisSE.voltage.angle
 
-    ##### Test Orthogonal Method with Two Outliers #####
+    # Orthogonal Method with Two Outliers
     updatePmu!(system14, device; label = "PMU 2", statusAngle = 1, statusMagnitude = 1)
     updatePmu!(system14, device; label = "PMU 20", angle = 10pi, magnitude = 30)
     analysisSE = pmuStateEstimation(system14, device, Orthogonal)
@@ -314,7 +314,7 @@ end
         )
     end
 
-    ##### Test One Outlier #####
+    # One Outlier
     updateWattmeter!(system14, device; label = "Wattmeter 2", active = 100)
     analysisSE = dcStateEstimation(system14, device)
     solve!(system14, analysisSE)
@@ -326,7 +326,7 @@ end
     solve!(system14, analysisSE)
     @test analysis.voltage.angle ≈ analysisSE.voltage.angle
 
-    ##### Test Two Outliers #####
+    # Two Outliers
     updateWattmeter!(system14, device; label = "Wattmeter 2", status = 1)
     updatePmu!(system14, device; label = "PMU 10", angle = 10pi)
     analysisSE = dcStateEstimation(system14, device)
@@ -344,7 +344,7 @@ end
     solve!(system14, analysisSE)
     @test analysis.voltage.angle ≈ analysisSE.voltage.angle
 
-    ##### Test Orthogonal Method with One Outlier #####
+    # Orthogonal Method with One Outlier
     updateWattmeter!(system14, device; label = "Wattmeter 2", status = 1)
     updatePmu!(
         system14, device;
@@ -360,7 +360,7 @@ end
     solve!(system14, analysisSE)
     @test analysis.voltage.angle ≈ analysisSE.voltage.angle
 
-    ##### Test Orthogonal Method with Two Outliers #####
+    # Test Orthogonal Method with Two Outliers
     updateWattmeter!(system14, device; label = "Wattmeter 2", status = 1)
     updatePmu!(system14, device; label = "PMU 10", angle = 10pi)
     analysisSE = dcStateEstimation(system14, device, Orthogonal)

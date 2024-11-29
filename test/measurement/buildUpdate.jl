@@ -1,8 +1,8 @@
-@testset "Build and Update Measurement Data in Per-Units" begin
+@testset "Build and Update Measurements in Per-Units" begin
     @default(template)
     @default(unit)
 
-    system = powerSystem(string(path, "case14test.m"))
+    system = powerSystem(path * "case14test.m")
     device = measurement()
     deviceAll = measurement()
 
@@ -27,14 +27,14 @@
         varianceMagnitudeTo = 1e-2, varianceAngleTo = 1e-3, statusMagnitudeBus = 0
     )
 
-    ########## Generate Measurement Data from AC Power Flow ##########
+    ########## Generate Measurements from AC Power Flow ##########
     addVoltmeter!(system, deviceAll, analysis; noise = true)
     addAmmeter!(system, deviceAll, analysis)
     addWattmeter!(system, deviceAll, analysis)
     addVarmeter!(system, deviceAll, analysis)
     addPmu!(system, deviceAll, analysis)
 
-    ##### Test Bus Measurements #####
+    # Bus Measurements
     volt = device.voltmeter
     for (key, value) in system.bus.label
         addVoltmeter!(system, device; bus = key, magnitude = analysis.voltage.magnitude[value])
@@ -64,7 +64,7 @@
         @test device.pmu.angle.status[end] == 1
     end
 
-    ##### Test Branch Measurements #####
+    # Branch Measurements
     cnt = 1
     amp = device.ammeter
     watt = device.wattmeter
@@ -142,7 +142,7 @@
         end
     end
 
-    ##### Test Update Voltmeter #####
+    # Update Voltmeters
     updateVoltmeter!(
         system, device;
         label = "Voltmeter 3", magnitude = 0.2, variance = 1e-6, status = 0
@@ -160,7 +160,7 @@
     @test device.voltmeter.magnitude.variance[5] == 1e-10
     @test device.voltmeter.magnitude.status[5] == 1
 
-    ##### Test Update Ammeter #####
+    # Update Ammeters
     updateAmmeter!(
         system, device; label = "Ammeter 3", magnitude = 0.4, variance = 1e-8, status = 0
     )
@@ -177,7 +177,7 @@
     @test device.ammeter.magnitude.variance[8] == 1e-10
     @test device.ammeter.magnitude.status[8] == 1
 
-    ##### Test Update Wattmeter #####
+    # Update Wattmeters
     updateWattmeter!(system, device; label = "4", active = 0.5, variance = 1e-2, status = 0)
     @test device.wattmeter.active.mean[4] == 0.5
     @test device.wattmeter.active.variance[4] == 1e-2
@@ -192,7 +192,7 @@
     @test device.wattmeter.active.variance[14] == 1e-10
     @test device.wattmeter.active.status[14] == 1
 
-    ##### Test Update Varmeter #####
+    # Update Varmeters
     updateVarmeter!(system, device; label = "5", reactive = 1.5, variance = 1e-1, status = 0)
     @test device.varmeter.reactive.mean[5] == 1.5
     @test device.varmeter.reactive.variance[5] == 1e-1
@@ -207,7 +207,7 @@
     @test device.varmeter.reactive.variance[16] == 1e-10
     @test device.varmeter.reactive.status[16] == 1
 
-    ##### Test Update PMU #####
+    # Update PMUs
     updatePmu!(
         system, device; label = "4 PMU", magnitude = 0.1, angle = 0.2,
         varianceMagnitude = 1e-6, varianceAngle = 1e-7, statusMagnitude = 0, statusAngle = 1
@@ -234,7 +234,7 @@
     @test device.pmu.angle.status[5] == 0
 end
 
-@testset "Build and Update Measurement Data in SI Units" begin
+@testset "Build and Update Measurements in SI Units" begin
     @default(template)
     @default(unit)
 
@@ -255,14 +255,14 @@ end
     addGenerator!(system; bus = 1)
     baseCurrent = system.base.power.value * system.base.power.prefix / (fn * 0.23 * 10^6)
 
-    ##### Test Voltmeter Data #####
+    # Voltmeter Data
     addVoltmeter!(system, device; bus = 1, magnitude = 126.5 / fn, variance = 126.5 / fn)
     addVoltmeter!(system, device; bus = 1, magnitude = 126.5 / fn, variance = 1e-60 / fn, noise = true)
     @test device.voltmeter.magnitude.mean[1] == system.bus.voltage.magnitude[1]
     @test device.voltmeter.magnitude.variance[1] == system.bus.voltage.magnitude[1]
     @test device.voltmeter.magnitude.mean[2] == system.bus.voltage.magnitude[1]
 
-    ##### Test Ammeter Data #####
+    # Ammeter Data
     addAmmeter!(system, device; from = 1, magnitude = 102.5, variance = 102.5)
     addAmmeter!(system, device; from = 1, magnitude = 102.5, variance = 1e-60, noise = true)
     @test device.ammeter.magnitude.mean[1] ≈ (102.5 / baseCurrent) atol = 1e-15
@@ -275,7 +275,7 @@ end
     @test device.ammeter.magnitude.variance[3] ≈ (20 / baseCurrent) atol = 1e-15
     @test device.ammeter.magnitude.mean[4] ≈ (20 / baseCurrent) atol = 1e-15
 
-    ##### Test Wattmeter Data #####
+    # Wattmeter Data
     addWattmeter!(system, device; bus = 1, active = 20.5, variance = 20.5)
     addWattmeter!(system, device; bus = 1, active = 20.5, variance = 1e-60, noise = true)
     @test device.wattmeter.active.mean[1] == system.bus.demand.active[1]
@@ -294,7 +294,7 @@ end
     @test device.wattmeter.active.variance[5] == system.bus.demand.active[1]
     @test device.wattmeter.active.mean[6] == system.bus.demand.active[1]
 
-    ##### Test Varmeter Data #####
+    # Varmeter Data
     addVarmeter!(system, device; bus = 1, reactive = 11.2, variance = 11.2, noise = false)
     addVarmeter!(system, device; bus = 1, reactive = 11.2, variance = 1e-60, noise = true)
     @test device.varmeter.reactive.mean[1] == system.bus.demand.reactive[1]
@@ -313,7 +313,7 @@ end
     @test device.varmeter.reactive.variance[5] == system.bus.demand.reactive[1]
     @test device.varmeter.reactive.mean[6] == system.bus.demand.reactive[1]
 
-    ##### Test PMU Data #####
+    # PMU Data
     addPmu!(
         system, device; bus = 2, magnitude = 95 / fn, angle = 2.4,
         varianceMagnitude = 95 / fn, varianceAngle = 2.4, noise = false
@@ -359,7 +359,7 @@ end
     @test device.pmu.angle.variance[5] == 3
     @test device.pmu.angle.mean[6] == 3
 
-    ##### Test Multiple Labels #####
+    # Multiple Labels
     device = measurement()
 
     @voltmeter(label = "!")
@@ -377,8 +377,8 @@ end
     @default(template)
     @labels(Integer)
 
-    ########## Generate Measurement Data from AC Power Flow ##########
-    system = powerSystem(string(path, "case14test.m"))
+    ########## Generate Measurements from AC Power Flow ##########
+    system = powerSystem(path * "case14test.m")
     device = measurement()
 
     analysis = newtonRaphson(system)
@@ -394,7 +394,7 @@ end
 
     stateVariable = 2 * system.bus.number - 1
 
-    ##### Test Set of Voltmeters #####
+    # Set of Voltmeters
     addVoltmeter!(system, device, analysis)
 
     statusVoltmeter!(system, device; inservice = 10)
@@ -406,7 +406,7 @@ end
     statusVoltmeter!(system, device; redundancy = 0.5)
     @test sum(device.voltmeter.magnitude.status) == round(0.5 * stateVariable)
 
-    ##### Test Set of Ammeters #####
+    # Set of Ammeters
     addAmmeter!(system, device, analysis; noise = true)
 
     statusAmmeter!(system, device; inservice = 18)
@@ -431,7 +431,7 @@ end
     @test sum(device.ammeter.magnitude.status[layout.from]) == round(0.5 * stateVariable)
     @test sum(device.ammeter.magnitude.status[layout.to]) == round(0.2 * stateVariable)
 
-    ##### Test Set of Wattmeters #####
+    # Set of Wattmeters
     addWattmeter!(system, device, analysis; noise = true)
 
     statusWattmeter!(system, device; inservice = 14)
@@ -465,7 +465,7 @@ end
     @test sum(device.wattmeter.active.status[layout.from]) == round(0.3 * stateVariable)
     @test sum(device.wattmeter.active.status[layout.to]) == round(0.4 * stateVariable)
 
-    ##### Test Set of Varmeters #####
+    # Set of Varmeters
     addVarmeter!(system, device, analysis; noise = true)
 
     statusVarmeter!(system, device; inservice = 1)
@@ -497,7 +497,7 @@ end
     @test sum(device.varmeter.reactive.status[layout.from]) == round(0.1 * stateVariable)
     @test sum(device.varmeter.reactive.status[layout.to]) == round(0.3 * stateVariable)
 
-    ##### Test Set of PMUs #####
+    # Set of PMUs
     addPmu!(system, device, analysis; noise = true)
 
     statusPmu!(system, device; inservice = 10)
@@ -533,7 +533,7 @@ end
     @test sum(device.pmu.magnitude.status[layout.from]) == round(0.2 * stateVariable)
     @test sum(device.pmu.magnitude.status[layout.to]) == round(0.4 * stateVariable)
 
-    ##### Test Measurement #####
+    # Measurements
     status!(system, device; inservice = 40)
     @test device.pmu.magnitude.status == device.pmu.angle.status
     @test sum(device.voltmeter.magnitude.status) + sum(device.ammeter.magnitude.status) +
@@ -553,7 +553,7 @@ end
         sum(device.pmu.magnitude.status) == round(3.1 * stateVariable)
 end
 
-@testset "Build Measurement Data in Per-Units Using Macros" begin
+@testset "Build Measurements in Per-Units Using Macros" begin
     @default(template)
     @default(unit)
 
@@ -567,7 +567,7 @@ end
     ########## Voltmeter Macro ##########
     @voltmeter(label = "Voltmeter ?", variance = 1e-2, status = 0, noise = true)
 
-    #### Test Voltmeter Data ####
+    # Voltmeter Data
     addVoltmeter!(system, device; bus = "Bus 1", magnitude = 1.0)
     @test device.voltmeter.label["Voltmeter 1"] == 1
     @test device.voltmeter.magnitude.mean[1] != 1.0
@@ -589,7 +589,7 @@ end
         statusFrom = 1, statusTo = 0, noise = true
     )
 
-    ####### Test From-bus Ammeter Data #######
+    # From-bus Ammeter Data
     addAmmeter!(system, device; from = "Branch 1", magnitude = 1.0)
     @test device.ammeter.label["Ammeter 1"] == 1
     @test device.ammeter.magnitude.mean[1] != 1.0
@@ -605,7 +605,7 @@ end
     @test device.ammeter.magnitude.variance[2] == 1e-4
     @test device.ammeter.magnitude.status[2] == 0
 
-    ##### Test To-bus Ammeter Data #####
+    # To-bus Ammeter Data
     addAmmeter!(system, device; to = "Branch 1", magnitude = 2.0)
     @test device.ammeter.label["Ammeter 3"] == 3
     @test device.ammeter.magnitude.mean[3] != 2.0
@@ -627,7 +627,7 @@ end
         varianceTo = 1e-3, statusBus = 0, statusFrom = 1, statusTo = 0, noise = true
     )
 
-    ##### Test Bus Wattmeter Data #####
+    # Bus Wattmeter Data
     addWattmeter!(system, device; bus = "Bus 1", active = 1.0)
     @test device.wattmeter.label["Wattmeter 1"] == 1
     @test device.wattmeter.active.mean[1] != 1.0
@@ -643,7 +643,7 @@ end
     @test device.wattmeter.active.variance[2] == 1
     @test device.wattmeter.active.status[2] == 1
 
-    ##### Test From-bus Wattmeter Data #####
+    # From-bus Wattmeter Data
     addWattmeter!(system, device; from = "Branch 1", active = 5.0)
     @test device.wattmeter.label["Wattmeter 3"] == 3
     @test device.wattmeter.active.mean[3] != 5.0
@@ -659,7 +659,7 @@ end
     @test device.wattmeter.active.variance[4] == 2
     @test device.wattmeter.active.status[4] == 0
 
-    ##### Test To-bus Wattmeter Data #####
+    # To-bus Wattmeter Data
     addWattmeter!(system, device; to = "Branch 1", active = 6.0)
     @test device.wattmeter.label["Wattmeter 5"] == 5
     @test device.wattmeter.active.mean[5] != 6.0
@@ -681,7 +681,7 @@ end
         varianceTo = 3, statusBus = 1, statusFrom = 0, statusTo = 1, noise = true
     )
 
-    ##### Test Bus Varmeter Data #####
+    # Bus Varmeter Data
     addVarmeter!(system, device; bus = "Bus 1", reactive = 1.1)
     @test device.varmeter.label["Varmeter 1"] == 1
     @test device.varmeter.reactive.mean[1] != 1.1
@@ -697,7 +697,7 @@ end
     @test device.varmeter.reactive.variance[2] == 10
     @test device.varmeter.reactive.status[2] == 0
 
-    ##### Test From-bus Varmeter Data #####
+    # From-bus Varmeter Data
     addVarmeter!(system, device; from = "Branch 1", reactive = 5.1)
     @test device.varmeter.label["Varmeter 3"] == 3
     @test device.varmeter.reactive.mean[3] != 5.1
@@ -713,7 +713,7 @@ end
     @test device.varmeter.reactive.variance[4] == 20
     @test device.varmeter.reactive.status[4] == 1
 
-    ##### Test To-bus Varmeter Data #####
+    # To-bus Varmeter Data
     addVarmeter!(system, device; to = "Branch 1", reactive = 6.1)
     @test device.varmeter.label["Varmeter 5"] == 5
     @test device.varmeter.reactive.mean[5] != 6.1
@@ -738,7 +738,7 @@ end
     varianceMagnitudeTo = 50, varianceAngleTo = 60,
     statusMagnitudeTo = 0, statusAngleTo = 0)
 
-    ##### Test Bus PMU Data #####
+    # Bus PMU Data
     addPmu!(system, device; bus = "Bus 1", magnitude = 2, angle = 1)
     @test device.pmu.label["PMU 1"] == 1
     @test device.pmu.magnitude.mean[1] != 2
@@ -766,7 +766,7 @@ end
     @test device.pmu.layout.polar[2] == false
     @test device.pmu.layout.correlated[2] == false
 
-    ##### Test From-bus PMU Data #####
+    # From-bus PMU Data
     addPmu!(system, device; from = "Branch 1", magnitude = 5, angle = 6)
     @test device.pmu.label["PMU 3"] == 3
     @test device.pmu.magnitude.mean[3] != 5
@@ -793,7 +793,7 @@ end
     @test device.pmu.layout.polar[4] == false
     @test device.pmu.layout.correlated[4] == false
 
-    ##### Test To-bus PMU Data #####
+    # To-bus PMU Data
     addPmu!(system, device; to = "Branch 1", magnitude = 500, angle = 600)
     @test device.pmu.label["PMU 5"] == 5
     @test device.pmu.magnitude.mean[5] != 500
@@ -821,7 +821,7 @@ end
     @test device.pmu.layout.correlated[6] == false
 end
 
-@testset "Build Measurement Data in SI Units Using Macros" begin
+@testset "Build Measurements in SI Units Using Macros" begin
     @default(unit)
     @default(template)
 
@@ -838,14 +838,14 @@ end
     addBus!(system; label = "Bus 2", base = 100)
     addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.12)
 
-    ##### Test Voltmeter Macro #####
+    # Voltmeter Macro
     @voltmeter(label = "Voltmeter ?", variance = 1 / sqrt(3))
 
     addVoltmeter!(system, device; bus = "Bus 1", magnitude = 100 / sqrt(3))
     @test device.voltmeter.magnitude.mean[1] ≈ 1.0
     @test device.voltmeter.magnitude.variance[1] ≈ 1e-2
 
-    ##### Test Ammeter Macro #####
+    # Ammeter Macro
     @ammeter(
         label = "Ammeter ?",
         varianceFrom = 1e-2 * ((100 * 10^6) / (sqrt(3) * 100 * 10^3))
@@ -858,21 +858,21 @@ end
     @test device.ammeter.magnitude.mean[1] ≈ 1.0
     @test device.ammeter.magnitude.variance[1] ≈ 1e-2
 
-    ##### Test Wattmeter Macro #####
+    # Wattmeter Macro
     @wattmeter(label = "Wattmeter ?", varianceBus = 10)
 
     addWattmeter!(system, device; bus = "Bus 1", active = 100)
     @test device.wattmeter.active.mean[1] == 1.0
     @test device.wattmeter.active.variance[1] == 1e-1
 
-    ##### Test Varmeter Macro #####
+    # Varmeter Macro
     @varmeter(label = "Varmeter ?", varianceBus = 100)
 
     addVarmeter!(system, device; bus = "Bus 1", reactive = 110)
     @test device.varmeter.reactive.mean[1] == 1.1
     @test device.varmeter.reactive.variance[1] == 1
 
-    ##### Test PMU Macro #####
+    # PMU Macro
     @pmu(
         label = "PMU ?", varianceMagnitudeBus = 1e3 / sqrt(3), varianceAngleBus = 20 * 180 / pi,
         varianceMagnitudeFrom = 30 * ((100 * 10^6) / (sqrt(3) * 100 * 10^3)),
@@ -895,7 +895,7 @@ end
     @test device.pmu.angle.variance[2] ≈ 40
 end
 
-@testset "Test Errors and Messages" begin
+@testset "Errors and Messages" begin
     @default(unit)
     @default(template)
     system = powerSystem()
@@ -918,7 +918,7 @@ end
     addVarmeter!(system, device; label = "Var 1", from = "Branch 1", reactive = 1)
     addPmu!(system, device; label = "PMU 1", bus = "Bus 1", magnitude = 1, angle = 1)
 
-    ##### Test Voltmeter Errors #####
+    # Voltmeter Errors
     err = ErrorException(
         "The status 2 is not allowed; it should be in-service (1) or out-of-service (0)."
     )
@@ -929,7 +929,7 @@ end
 
     @test_throws LoadError @eval @voltmeter(label = "Voltmeter ?", means = 1)
 
-    ##### Test Ammeter Errors #####
+    # Ammeter Errors
     err = ErrorException("The label Amm 1 is not unique.")
     @test_throws err addAmmeter!(system, device; label = "Amm 1", from = "Branch 1", magnitude = 1)
 
@@ -944,7 +944,7 @@ end
 
     @test_throws LoadError @eval @ammeter(label = "Ammeter ?", means = 1)
 
-    ##### Test Wattmeter Errors #####
+    # Wattmeter Errors
     err = ErrorException("The label Watt 1 is not unique.")
     @test_throws err addWattmeter!(system, device; label = "Watt 1", from = "Branch 1", active = 1)
 
@@ -959,7 +959,7 @@ end
 
     @test_throws LoadError @eval @wattmeter(label = "Wattmeter ?", means = 1)
 
-    ##### Test Varmeter Errors #####
+    # Varmeter Errors
     err = ErrorException("The label Var 1 is not unique.")
     @test_throws err addVarmeter!(system, device; label = "Var 1", from = "Branch 1", reactive = 1)
 
@@ -971,7 +971,7 @@ end
 
     @test_throws LoadError @eval @varmeter(label = "Varmeter ?", means = 1)
 
-    ##### Test PMU Errors #####
+    # PMU Errors
     err = ErrorException("The label PMU 1 is not unique.")
     @test_throws err addPmu!(system, device; label = "PMU 1", bus = "Bus 1", magnitude = 1, angle = 1)
 
@@ -980,7 +980,7 @@ end
 
     @test_throws LoadError @eval @pmu(label = "PMU ?", means = 1)
 
-    ##### Test Configuration Errors #####
+    # Configuration Errors
     err = ErrorException(
         "The total number of available devices is less than the " *
         "requested number for a status change."
@@ -991,7 +991,7 @@ end
     @test_throws err statusAmmeter!(system, device; inserviceFrom = 12)
     @test_throws err statusPmu!(system, device; inserviceBus = 12)
 
-    ##### Test Load Errors #####
+    # Load Errors
     err = DomainError(".m", "The extension .m is not supported.")
     @test_throws err measurement("case14.m")
 end

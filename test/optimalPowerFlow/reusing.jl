@@ -4,7 +4,7 @@
     @labels(Integer)
 
     ########## First Pass ##########
-    system = powerSystem(string(path, "case14optimal.m"))
+    system = powerSystem(path * "case14optimal.m")
 
     updateBus!(
         system;
@@ -53,8 +53,8 @@
     solve!(system, analysis)
     power!(system, analysis)
 
-    ##### Reuse AC Optimal Power Flow Model #####
-    resystem = powerSystem(string(path, "case14optimal.m"))
+    # Reuse AC Optimal Power Flow Model
+    resystem = powerSystem(path * "case14optimal.m")
     acModel!(resystem)
     reusing = acOptimalPowerFlow(resystem, Ipopt.Optimizer)
 
@@ -117,12 +117,12 @@
     solve!(resystem, reusing)
     power!(resystem, reusing)
 
-    ##### Test Results #####
+    # Test Results
     compstruct(analysis.voltage, reusing.voltage; atol = 1e-10)
     compstruct(analysis.power, reusing.power; atol = 1e-10)
     @test objective_value(analysis.method.jump) ≈ objective_value(reusing.method.jump)
 
-    ##### Test Number of Constraints #####
+    # Test Number of Constraints
     for list in list_of_constraint_types(analysis.method.jump)
         @test num_constraints(analysis.method.jump, list[1], list[2]) ==
             num_constraints(reusing.method.jump, list[1], list[2])
@@ -158,7 +158,7 @@
     solve!(system, analysis)
     power!(system, analysis)
 
-    ##### Reuse AC Optimal Power Flow Model #####
+    # Reuse AC Optimal Power Flow Model
     updateBus!(
         resystem, reusing;
         label = 1, type = 1, conductance = 0.06, susceptance = 0.8, angle = -0.01
@@ -190,12 +190,12 @@
     solve!(resystem, reusing)
     power!(resystem, reusing)
 
-    ##### Test Results #####
+    # Test Results
     compstruct(analysis.voltage, reusing.voltage; atol = 1e-10)
     compstruct(analysis.power, reusing.power; atol = 1e-10)
     @test objective_value(analysis.method.jump) ≈ objective_value(reusing.method.jump)
 
-    ##### Test Number of Constraints #####
+    # Test Number of Constraints
     for list in list_of_constraint_types(analysis.method.jump)
         @test num_constraints(analysis.method.jump, list[1], list[2]) ==
             num_constraints(reusing.method.jump, list[1], list[2])
@@ -207,7 +207,7 @@ end
     @default(template)
 
     ########## First Pass ##########
-    system = powerSystem(string(path, "case14test.m"))
+    system = powerSystem(path * "case14test.m")
 
     updateBus!(
         system; label = 1, type = 1, active = 0.15, conductance = 0.16, angle = -0.1
@@ -245,8 +245,8 @@ end
     solve!(system, analysis)
     power!(system, analysis)
 
-    ##### Reuse DC Optimal Power Flow Model #####
-    resystem = powerSystem(string(path, "case14test.m"))
+    # Reuse DC Optimal Power Flow Model
+    resystem = powerSystem(path * "case14test.m")
     dcModel!(resystem)
     reusing = dcOptimalPowerFlow(resystem, Ipopt.Optimizer)
 
@@ -288,12 +288,12 @@ end
     solve!(resystem, reusing)
     power!(resystem, reusing)
 
-    ##### Test Results #####
+    # Test Results
     compstruct(analysis.voltage, reusing.voltage; atol = 1e-10)
     compstruct(analysis.power, reusing.power; atol = 1e-10)
     @test objective_value(analysis.method.jump) ≈ objective_value(reusing.method.jump)
 
-    ##### Test Number of Constraints #####
+    # Test Number of Constraints
     for list in list_of_constraint_types(analysis.method.jump)
         @test num_constraints(analysis.method.jump, list[1], list[2]) ==
             num_constraints(reusing.method.jump, list[1], list[2])
@@ -323,7 +323,7 @@ end
     solve!(system, analysis)
     power!(system, analysis)
 
-    ##### Reuse DC Optimal Power Flow Model #####
+    # Reuse DC Optimal Power Flow Model
     updateBus!(resystem, reusing; label = 1, type = 1, conductance = 0.06, angle = -0.01)
 
     updateBranch!(
@@ -345,12 +345,12 @@ end
     solve!(resystem, reusing)
     power!(resystem, reusing)
 
-    ##### Test Results #####
+    # Test Results
     compstruct(analysis.voltage, reusing.voltage; atol = 1e-10)
     compstruct(analysis.power, reusing.power; atol = 1e-10)
     @test objective_value(analysis.method.jump) ≈ objective_value(reusing.method.jump)
 
-    ##### Test Number of Constraints #####
+    # Test Number of Constraints
     for list in list_of_constraint_types(analysis.method.jump)
         @test num_constraints(analysis.method.jump, list[1], list[2]) ==
             num_constraints(reusing.method.jump, list[1], list[2])

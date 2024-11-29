@@ -1,5 +1,5 @@
-system14 = powerSystem(string(path, "case14test.m"))
-system30 = powerSystem(string(path, "case30test.m"))
+system14 = powerSystem(path * "case14test.m")
+system30 = powerSystem(path * "case30test.m")
 
 @testset "Optimal PMU Placement" begin
     @default(template)
@@ -50,7 +50,7 @@ system30 = powerSystem(string(path, "case30test.m"))
         )
     end
 
-    ##### LU Factorization #####
+    # LU Factorization
     analysisLU = pmuStateEstimation(system14, device, LU)
     solve!(system14, analysisLU)
     compstruct(analysisLU.voltage, analysis.voltage; atol = 1e-10)
@@ -88,7 +88,7 @@ system30 = powerSystem(string(path, "case30test.m"))
         )
     end
 
-    ##### LU Factorization #####
+    # LU Factorization
     analysisLU = pmuStateEstimation(system30, device, LU)
     solve!(system30, analysisLU)
     compstruct(analysisLU.voltage, analysis.voltage; atol = 1e-10)

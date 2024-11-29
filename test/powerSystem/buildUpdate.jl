@@ -1,13 +1,13 @@
-@testset "Build and Update Power System Data in Per-Units" begin
+@testset "Build and Update Power System in Per-Units" begin
     @default(template)
 
-    load = powerSystem(string(path, "build.m"))
+    load = powerSystem(path * "build.m")
     rad = pi / 180
 
     ########## Build Power System ##########
     build = powerSystem()
 
-    ##### Buses #####
+    # Add Buses
     @bus(area = 1, lossZone = 1, base = 230e3)
     addBus!(build; label = "1", type = 3, active = 0.17, conductance = 0.09)
     addBus!(build; label = 2, type = 2, magnitude = 1.1, minMagnitude = 0.9, base = 115e3)
@@ -18,7 +18,7 @@
     addBus!(build; susceptance = -0.1, magnitude = 0.98, angle = 7.1 * rad)
     addBus!(build; label = 9, active = 0.4, reactive = 0.04, base = 115e3)
 
-    ##### Branches #####
+    # Add Branches
     @branch(
         minDiffAngle = 0, maxDiffAngle = 360 * pi / 180,
         susceptance = 0.14, resistance = 0.09, reactance = 0.02
@@ -40,35 +40,35 @@
     )
     addBranch!(build; from = 4, to = 9, resistance = 0.08, reactance = 0.30)
 
-    ##### Generators #####
+    # Add Generators
     @generator(label = "?", minReactive = -0.5, maxReactive = 0.9)
     addGenerator!(build; bus = "1", active = 3.7, maxReactive = 1.75, maxActive = 4.72)
     addGenerator!(build; bus = 2, active = 2.1, magnitude = 1.1, maxActive = 3.16, status = 0)
     addGenerator!(build; bus = 2, active = 2.6, reactive = 0.3, maxActive = 3.16)
     addGenerator!(build; bus = 1, active = 0.8, reactive = 0.3, status = 0)
 
-    ##### Costs #####
+    # Add Costs
     cost!(build; label = 1, active = 2, polynomial = [0.01 * 100^2; 40 * 100; 4])
     cost!(build; label = 2, active = 2, polynomial = [0.0266666667 * 100^2; 20 * 100; 3])
     cost!(build; label = 3, active = 2, polynomial = [0.0266666667 * 100^2; 20 * 100; 2])
     cost!(build; label = 4, active = 2, polynomial = [30.0 * 100; 5])
 
-    ##### Test Power System Data #####
+    # Test Power System Data
     compstruct(load.bus, build.bus; atol = 1e-14)
     compstruct(load.branch, build.branch)
     compstruct(load.generator, build.generator)
     compstruct(load.base, build.base)
 
     ########## Update Power System ##########
-    load = powerSystem(string(path, "update.m"))
+    load = powerSystem(path * "update.m")
 
-    ##### Buses #####
+    # Update Buses
     updateBus!(build; label = 1, conductance = 0.1, susceptance = -0.2, active = 0.3)
     updateBus!(build; label = 2, type = 1, reactive = 0.2, magnitude = 1.2, base = 120e3)
     updateBus!(build; label = 5, angle = -0.8 * rad, area = 2, lossZone = 3)
     updateBus!(build; label = 8,  minMagnitude = 0.8, maxMagnitude = 1.2)
 
-    ##### Branches #####
+    # Update Branches
     updateBranch!(
         build;
         label = 1, status = 0, resistance = 0.05, turnsRatio = 0.89, shiftAngle = 1.2 * rad
@@ -82,7 +82,7 @@
     updateBranch!(build; label = 2, status = 0)
     updateBranch!(build; label = 8, minDiffAngle = -2 * rad, maxDiffAngle = rad)
 
-    ##### Generators #####
+    # Update Generators
     updateGenerator!(build; label = 2, status = 1, magnitude = 1.2)
     updateGenerator!(build; label = 4, status = 1, active = 0.1, reactive = 0.2)
     updateGenerator!(build; label = 1, status = 0, minActive = 0.1, maxActive = 1)
@@ -92,19 +92,19 @@
     updateGenerator!(build; label = 1, upActive = 5, minUpReactive = 3, maxUpReactive = 4)
     updateGenerator!(build; label = 1, loadFollowing = 5, reserve10min = 3, reactiveRamp = 4)
 
-    ##### Costs #####
+    # Update Costs
     cost!(build; label = 4, active = 2, polynomial = [0.3 * 100^2; 15 * 100; 5])
 
-    ##### Test Power System Data #####
+    # Test Power System Data
     compstruct(load.bus, build.bus; atol = 1e-14)
     compstruct(load.branch, build.branch; atol = 1e-14)
     compstruct(load.generator, build.generator)
     compstruct(load.base, build.base)
 end
 
-@testset "Build and Update Power System Data in SI Units" begin
+@testset "Build and Update Power System in SI Units" begin
     @labels(Integer)
-    load = powerSystem(string(path, "build.m"))
+    load = powerSystem(path * "build.m")
     @base(load, MVA, kV)
 
     ########## Build Power System ##########
@@ -117,7 +117,7 @@ end
     @base(build, MVA, kV)
     fn = sqrt(3)
 
-    ##### Buses #####
+    # Add Buses
     @bus(area = 1, lossZone = 1, base = 0.23)
     addBus!(build; label = 1, type = 3, active = 17e3, conductance = 9e3)
     addBus!(build; type = 2, magnitude = 1.1 * 115 / fn, minMagnitude = 0.9 * 115 / fn, base = 0.115)
@@ -131,7 +131,7 @@ end
     addBus!(build; susceptance = -10, magnitude = 0.98 * 230 / fn, angle = 7.1)
     addBus!(build; label = 9, active = 40e3, reactive = 4, base = 0.115)
 
-    ##### Branches #####
+    # Add Branches
     Zb1 = (230e3 * 0.956)^2 / (100e6)
     Zb2 = (230e3 * 1.05)^2 / (100e6)
     Zb3 = 230^2 / 100
@@ -176,7 +176,7 @@ end
         susceptance = 0.14 / Zb3
     )
 
-    ##### Generators #####
+    # Add Generators
     @generator(minReactive = -50, maxReactive = 90)
     addGenerator!(build; bus = 1, active = 370e3, maxReactive = 175, maxActive = 472e3)
     addGenerator!(
@@ -186,29 +186,29 @@ end
     addGenerator!(build; bus = 2, active = 260e3, reactive = 30, maxActive = 316e3)
     addGenerator!(build; bus = 1, active = 80e3, reactive = 30, status = 0)
 
-    ##### Costs #####
+    # Add Costs
     cost!(build; label = 1, active = 2, polynomial = [0.01e-6; 40e-3; 4])
     cost!(build; label = 2, active = 2, polynomial = [0.0266666667e-6; 20e-3; 3])
     cost!(build; label = 3, active = 2, polynomial = [0.0266666667e-6; 20e-3; 2])
     cost!(build; label = 4, active = 2, polynomial = [30.0e-3; 5])
 
-    ##### Test Power System Data #####
+    # Test Power System Data
     compstruct(load.bus, build.bus; atol = 1e-12)
     compstruct(load.branch, build.branch; atol = 1e-12)
     compstruct(load.generator, build.generator; atol = 1e-12)
     compstruct(load.base, build.base)
 
     ########## Update Power System ##########
-    load = powerSystem(string(path, "update.m"))
+    load = powerSystem(path * "update.m")
     @base(load, MVA, kV)
 
-    ##### Buses #####
+    # Update Buses
     updateBus!(build; label = 1, conductance = 10e3, susceptance = -20, active = 30e3)
     updateBus!(build; label = 2, type = 1, reactive = 20, magnitude = 1.2 * 120 / fn, base = 0.12)
     updateBus!(build; label = 5, angle = -0.8, area = 2, lossZone = 3)
     updateBus!(build; label = 8, minMagnitude = 0.8 * 230 / fn, maxMagnitude = 1.2 * 230 / fn)
 
-    ##### Branches #####
+    # Update Branches
     Zb1 = 230^2 / 100
     Zb2 = 120^2 / 100
     Zb3 = (230e3 * 0.89)^2 / (100e6)
@@ -228,7 +228,7 @@ end
     updateBranch!(build; label = 2, status = 0)
     updateBranch!(build; label = 8, minDiffAngle = -2, maxDiffAngle = 1)
 
-    ##### Generators #####
+    # Update Generators
     updateGenerator!(
         build; label = 1, lowActive = 100e3, minLowReactive = 200, maxLowReactive = 300
     )
@@ -244,17 +244,17 @@ end
     updateGenerator!(build; label = 3, status = 0, active = 30e3, reactive = 10)
     updateGenerator!(build; label = 1, minReactive = -10, maxReactive = 90)
 
-    ##### Costs #####
+    # Update Costs
     cost!(build; label = 4, active = 2, polynomial = [0.3e-6; 15e-3; 5])
 
-    ##### Test Power System Data #####
+    # Test Power System Data
     compstruct(load.bus, build.bus; atol = 1e-12)
     compstruct(load.branch, build.branch; atol = 1e-12)
     compstruct(load.generator, build.generator; atol = 1e-12)
     compstruct(load.base, build.base)
 end
 
-@testset "Build Power System Data in Per-Units with Macros" begin
+@testset "Build Power System in Per-Units with Macros" begin
     @default(unit)
     @default(template)
     system = powerSystem()
@@ -266,7 +266,7 @@ end
         maxMagnitude = 0.9, base = 100e3, area = 2, lossZone = 3
     )
 
-    ##### Test Bus Data #####
+    # Test Bus Data
     addBus!(system)
     @test system.bus.label["Bus 1"] == 1
     @test system.bus.layout.type[1] == 2
@@ -309,7 +309,7 @@ end
         minToBus = -0.3, maxToBus = 0.3, type = 2
     )
 
-    ##### Test Branch Data #####
+    # Test Branch Data
     addBranch!(system; from = "Bus 1", to = "Bus 2")
     @test system.branch.label["Branch 1"] == 1
     @test system.branch.layout.status[1] == 0
@@ -358,7 +358,7 @@ end
         loadFollowing = 1.1, reserve10min = 1.2, reserve30min = 1.3, reactiveRamp = 1.4
     )
 
-    ##### Test Generator Data #####
+    # Test Generator Data
     addGenerator!(system; bus = "Bus 1")
     @test system.generator.label["Generator 1"] == 1
     @test system.generator.layout.status[1] == 0
@@ -408,7 +408,7 @@ end
     @test system.generator.ramping.reactiveRamp[2] == 2.4
 end
 
-@testset "Build Power System Data in SI Units with Macros" begin
+@testset "Build Power System in SI Units with Macros" begin
     @default(unit)
     @default(template)
 
@@ -427,7 +427,7 @@ end
         lossZone = 3
     )
 
-    ##### Test Bus Data #####
+    # Test Bus Data
     addBus!(system)
     @test system.bus.label["Bus 1"] == 1
     @test system.bus.layout.type[1] == 2
@@ -455,7 +455,7 @@ end
         minToBus = 0.3e5, maxToBus = 0.4e5, type = 1
     )
 
-    ##### Test Branch Data #####
+    # Test Branch Data
     addBranch!(system; from = "Bus 1", to = "Bus 2")
     @test system.branch.label["Branch 1"] == 1
     @test system.branch.layout.status[1] == 0
@@ -483,7 +483,7 @@ end
         reserve10min = 1.2e5, reserve30min = 1.3e5, reactiveRamp = 1.4e2
     )
 
-    ##### Test Generator Data #####
+    # Test Generator Data
     addGenerator!(system; bus = "Bus 1")
     @test system.generator.label["Generator 1"] == 1
     @test system.generator.layout.status[1] == 0
@@ -506,7 +506,7 @@ end
     @test system.generator.ramping.reactiveRamp[1] ≈ 1.4
 end
 
-@testset "Test Errors and Messages" begin
+@testset "Errors and Messages" begin
     @default(unit)
     @default(template)
     system = powerSystem()
@@ -528,7 +528,7 @@ end
     addBus!(system, label = "Bus 3")
     addBus!(system, label = 4)
 
-    #### Test Deleting Models ####
+    ########## Test Deleting Models ##########
     @test isempty(system.model.ac.nodalMatrix) == true
     @test isempty(system.model.ac.nodalMatrixTranspose) == true
     @test isempty(system.model.ac.nodalFromFrom) == true
@@ -545,7 +545,7 @@ end
     @test system.model.dc.model == 1
     @test system.model.dc.pattern == 1
 
-    ##### Test Print #####
+    ########## Test Prints ##########
     voltg = system.bus.voltage
 
     print1 = @capture_out print(system.bus.label, voltg.magnitude)
@@ -557,7 +557,7 @@ end
     print3 = @capture_out print(system.bus.label, system.bus.layout.type)
     @test print3 == "Bus 1: 3\nBus 2: 1\nBus 3: 1\n4: 1\n"
 
-    ##### Test Add Bus Errors #####
+    ########## Test Add and Update Bus Errors ##########
     err = ErrorException("The label Bus 1 is not unique.")
     @test_throws err addBus!(system; label = "Bus 1")
 
@@ -577,7 +577,6 @@ end
     @test_throws err addBus!(system, fnrbx; label = "Bus 4", active = 0.1)
     @test_throws err addBus!(system, gs; label = "Bus 4", active = 0.1)
 
-    ##### Test Update Bus Errors #####
     err = ErrorException(
         "To set bus with label Bus 3 as the slack bus, reassign the current slack " *
         "bus to either a generator or demand bus."
@@ -607,7 +606,7 @@ end
 
     @test_throws LoadError @eval @bus(label = "Bus ?", typee = 1)
 
-    ##### Test Add Branch Errors #####
+    ########## Test Add and Update Branch Errors ##########
     err = ErrorException("The label Branch 1 is not unique.")
     @test_throws err addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2")
 
@@ -624,7 +623,6 @@ end
 
     @test_throws LoadError @eval @branch(label = "Branch ?", resistances = 1)
 
-    ##### Test Add Generator Errors #####
     err = ErrorException("The label Generator 1 is not unique.")
     @test_throws err addGenerator!(system; label = "Generator 1", bus = "Bus 1")
 
@@ -633,7 +631,6 @@ end
     )
     @test_throws err addGenerator!(system; label = "Generator 2", bus = "Bus 1", status = 2)
 
-    ##### Test Update Generator Errors #####
     err = ErrorException(
         "The power flow model cannot be reused due to required bus type conversion."
     )
@@ -641,7 +638,7 @@ end
     @test_throws err updateGenerator!(system, nr; label = "Generator 1", status = 0)
     @test_throws err updateGenerator!(system, gs; label = "Generator 1", status = 0)
 
-    ##### Test Cost Errors #####
+    ########## Test Add and Update Cost Errors ##########
     err = ErrorException(
         "The concurrent definition of the keywords active and reactive is not allowed."
     )
@@ -669,15 +666,15 @@ end
 
     @test_throws LoadError @eval @generator(label = "Generator ?", actives = 1)
 
-    ##### Test Unit Errors #####
+    ########## Test Unit Errors ##########
     @test_throws LoadError @eval @current(sA, deg)
     @test_throws LoadError @eval @current(kV, deg)
 
-    ##### Test Voltage Errors#########
+    ########## Test Voltage Errors ##########
     err = ErrorException("The voltage values are missing.")
     @test_throws err power!(system, dc)
 
-    ##### Test Load Errors #####
+    ########## Test Load Errors ##########
     err = DomainError(".h6", "The extension .h6 is not supported.")
     @test_throws err powerSystem("case14.h6")
 

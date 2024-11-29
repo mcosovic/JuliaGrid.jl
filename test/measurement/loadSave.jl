@@ -1,6 +1,6 @@
-@testset "Load and Save Measurement Data with String Labels" begin
+@testset "Load and Save Measurements with String Labels" begin
     ########## Build Measurement Data ##########
-    system = powerSystem(string(path, "case14test.m"))
+    system = powerSystem(path * "case14test.m")
     device = measurement()
 
     @voltmeter(label = "Voltmeter ?")
@@ -35,10 +35,10 @@
     )
 
     ########## Save Measurement Data ##########
-    saveMeasurement(device; path = string(path, "measurement14.h5"))
+    saveMeasurement(device; path = path * "measurement14.h5")
 
     ########## Load Measurement Data ##########
-    hdf5 = measurement(string(path, "measurement14.h5"))
+    hdf5 = measurement(path * "measurement14.h5")
 
     ##### Test Measurement Data #####
     compstruct(device.voltmeter, hdf5.voltmeter)
@@ -48,11 +48,11 @@
     compstruct(device.pmu, hdf5.pmu)
 end
 
-@testset "Load and Save Measurement Data with Integer Labels" begin
+@testset "Load and Save Measurements with Integer Labels" begin
     @labels(Integer)
 
     ########## Build Measurement Data ##########
-    system = powerSystem(string(path, "case14test.m"))
+    system = powerSystem(path * "case14test.m")
     device = measurement()
 
     addVoltmeter!(system, device; bus = 1, magnitude = 1.1, noise = true, status = 0)
@@ -86,10 +86,10 @@ end
     )
 
     ########## Save Measurement Data ##########
-    saveMeasurement(device; path = string(path, "measurement14Int.h5"))
+    saveMeasurement(device; path = path * "measurement14Int.h5")
 
     ########## Load Measurement Data ##########
-    hdf5 = measurement(string(path, "measurement14Int.h5"))
+    hdf5 = measurement(path * "measurement14Int.h5")
 
     ##### Test Measurement Data #####
     compstruct(device.voltmeter, hdf5.voltmeter)

@@ -4,7 +4,7 @@
     @labels(integer)
 
     ########## First Pass ##########
-    system = powerSystem(string(path, "case14test.m"))
+    system = powerSystem(path * "case14test.m")
 
     updateBus!(
         system; label = 14, active = 0.12, reactive = 0.13, conductance = 0.1,
@@ -39,8 +39,8 @@
     power!(system, analysis)
     current!(system, analysis)
 
-    ##### Reuse Newton-Raphson Model #####
-    resystem = powerSystem(string(path, "case14test.m"))
+    # Reuse Newton-Raphson Model
+    resystem = powerSystem(path * "case14test.m")
     acModel!(resystem)
     reusing = newtonRaphson(resystem)
 
@@ -75,7 +75,7 @@
     power!(resystem, reusing)
     current!(resystem, reusing)
 
-    ##### Test Results #####
+    # Test Results
     compstruct(analysis.voltage, reusing.voltage; atol = 1e-10)
     compstruct(analysis.power, reusing.power; atol = 1e-10)
     compstruct(analysis.current, reusing.current; atol = 1e-8)
@@ -112,7 +112,7 @@
     power!(system, analysis)
     current!(system, analysis)
 
-    ##### Reuse Newton-Raphson Model #####
+    # Reuse Newton-Raphson Model
     updateBus!(
         resystem, reusing;
         label = 10, active = 0.12, susceptance = 0.005, magnitude = 1.02, angle = -0.21
@@ -142,7 +142,7 @@
     power!(resystem, reusing)
     current!(resystem, reusing)
 
-    ##### Test Results #####
+    # Test Results
     compstruct(analysis.voltage, reusing.voltage; atol = 1e-10)
     compstruct(analysis.power, reusing.power; atol = 1e-10)
     compstruct(analysis.current, reusing.current; atol = 1e-8)
@@ -152,7 +152,7 @@ end
     @default(template)
 
     ########## First Pass ##########
-    system = powerSystem(string(path, "case14test.m"))
+    system = powerSystem(path * "case14test.m")
 
     updateBus!(
         system; label = 14, active = 0.12, reactive = 0.13, conductance = 0.1,
@@ -187,8 +187,8 @@ end
     power!(system, analysis)
     current!(system, analysis)
 
-    ##### Reuse Gauss-Seidel Model #####
-    resystem = powerSystem(string(path, "case14test.m"))
+    # Reuse Gauss-Seidel Model
+    resystem = powerSystem(path * "case14test.m")
     acModel!(resystem)
     reusing = gaussSeidel(resystem)
 
@@ -223,7 +223,7 @@ end
     power!(resystem, reusing)
     current!(resystem, reusing)
 
-    ##### Test Results #####
+    # Test Results
     compstruct(analysis.voltage, reusing.voltage; atol = 1e-10)
     compstruct(analysis.power, reusing.power; atol = 1e-10)
     compstruct(analysis.current, reusing.current; atol = 1e-8)
@@ -260,7 +260,7 @@ end
     power!(system, analysis)
     current!(system, analysis)
 
-    ##### Reuse Gauss-Seidel Model #####
+    # Reuse Gauss-Seidel Model
     updateBus!(
         resystem, reusing;
         label = 10, active = 0.12, susceptance = 0.005, magnitude = 1.02, angle = -0.21
@@ -291,7 +291,7 @@ end
     power!(resystem, reusing)
     current!(resystem, reusing)
 
-    ##### Test Results #####
+    # Test Results
     compstruct(analysis.voltage, reusing.voltage; atol = 1e-10)
     compstruct(analysis.power, reusing.power; atol = 1e-10)
     compstruct(analysis.current, reusing.current; atol = 1e-8)
@@ -299,7 +299,7 @@ end
 
 @testset "Reusing Fast Newton-Raphson Method" begin
     ########## First Pass ##########
-    system = powerSystem(string(path, "case14test.m"))
+    system = powerSystem(path * "case14test.m")
 
     updateBus!(
         system; label = 14, active = 0.12, reactive = 0.13, magnitude = 1.2, angle = -0.17
@@ -335,8 +335,8 @@ end
     power!(system, analysis)
     current!(system, analysis)
 
-    ##### Reuse Fast Newton-Raphson Model #####
-    resystem = powerSystem(string(path, "case14test.m"))
+    # Reuse Fast Newton-Raphson Model
+    resystem = powerSystem(path * "case14test.m")
     acModel!(resystem)
     reusing = fastNewtonRaphsonBX(resystem)
 
@@ -375,7 +375,7 @@ end
     power!(resystem, reusing)
     current!(resystem, reusing)
 
-    ##### Test Results #####
+    # Test Results
     compstruct(analysis.voltage, reusing.voltage; atol = 1e-10)
     compstruct(analysis.power, reusing.power; atol = 1e-10)
     compstruct(analysis.current, reusing.current; atol = 1e-8)
@@ -399,7 +399,7 @@ end
     power!(system, analysis)
     current!(system, analysis)
 
-    ##### Reuse Fast Newton-Raphson Model #####
+    # Reuse Fast Newton-Raphson Model
     updateBus!(resystem, reusing; label = 10, active = 0.12, magnitude = 1.02, angle = -0.21)
     addGenerator!(resystem, reusing; bus = 2, active = 0.2, magnitude = 0.92)
     addGenerator!(resystem, reusing; bus = 16, active = 0.3, reactive = 0.2)
@@ -416,7 +416,7 @@ end
     power!(resystem, reusing)
     current!(resystem, reusing)
 
-    ##### Test Results #####
+    # Test Results
     compstruct(analysis.voltage, reusing.voltage; atol = 1e-10)
     compstruct(analysis.power, reusing.power; atol = 1e-10)
     compstruct(analysis.current, reusing.current; atol = 1e-8)
@@ -427,7 +427,7 @@ end
     @default(template)
 
     ########## First Pass ##########
-    system = powerSystem(string(path, "case14test.m"))
+    system = powerSystem(path * "case14test.m")
 
     updateBus!(system; label = 1, active = 0.15, conductance = 0.16)
     addGenerator!(system; bus = 2, active = 0.8)
@@ -440,8 +440,8 @@ end
     solve!(system, analysis)
     power!(system, analysis)
 
-    ##### Reuse DC Power Flow Model #####
-    resystem = powerSystem(string(path, "case14test.m"))
+    # Reuse DC Power Flow Model
+    resystem = powerSystem(path * "case14test.m")
     dcModel!(resystem)
     reusing = dcPowerFlow(resystem)
 
@@ -458,7 +458,7 @@ end
     releaseSystem = copy(resystem.model.dc.model)
     releaseReusing = copy(reusing.method.dcmodel)
 
-    ##### Test Results #####
+    # Test Results
     compstruct(analysis.voltage, reusing.voltage; atol = 1e-10)
     compstruct(analysis.power, reusing.power; atol = 1e-10)
 
@@ -473,7 +473,7 @@ end
     solve!(system, analysis)
     power!(system, analysis)
 
-    ##### Reuse DC Power Flow Model #####
+    # Reuse DC Power Flow Model
     updateBus!(resystem, reusing; label = 3, active = 0.25, susceptance = 0.21)
     updateBus!(resystem, reusing; label = 4, conductance = 0.21)
     updateBranch!(resystem, reusing; label = 4, shiftAngle = -1.2)
@@ -482,11 +482,11 @@ end
     solve!(resystem, reusing)
     power!(resystem, reusing)
 
-    ##### Test Results #####
+    # Test Results
     compstruct(analysis.voltage, reusing.voltage; atol = 1e-10)
     compstruct(analysis.power, reusing.power; atol = 1e-10)
 
-    ##### Test Release #####
+    # Test Release
     @test releaseSystem == resystem.model.dc.model
     @test releaseReusing == reusing.method.dcmodel
 
@@ -506,7 +506,7 @@ end
     solve!(system, analysis)
     power!(system, analysis)
 
-    ##### Reuse DC Power Flow Model #####
+    # Reuse DC Power Flow Model
     updateBus!(resystem, reusing; label = 2, active = 0.15, susceptance = 0.16, type = 2)
     addBranch!(resystem, reusing; from = 16, to = 7, reactance = 0.03)
     updateBranch!(resystem, reusing; label = 14, status = 1, reactance = 0.03)
@@ -520,15 +520,15 @@ end
     solve!(resystem, reusing)
     power!(resystem, reusing)
 
-    ##### Test Results #####
+    # Test Results
     compstruct(analysis.voltage, reusing.voltage; atol = 1e-10)
     compstruct(analysis.power, reusing.power; atol = 1e-10)
 
-    ##### Test Release #####
+    # Test Release
     @test releaseSystem != resystem.model.dc.model
     @test releaseReusing != reusing.method.dcmodel
 
-    ##### Test Pattern Changes #####
+    # Test Pattern Changes
     dropZeros!(resystem.model.dc)
     solve!(resystem, reusing)
     @test analysis.voltage.angle ≈ reusing.voltage.angle
