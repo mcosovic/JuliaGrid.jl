@@ -12,19 +12,21 @@
     hdf5 = powerSystem(path * "case14test.h5")
     @base(hdf5, MVA, kV)
 
-    # Test Power System Data
-    compstruct(matlab.bus, hdf5.bus)
-    compstruct(matlab.branch, hdf5.branch)
-    compstruct(matlab.generator, hdf5.generator)
-    compstruct(matlab.base, hdf5.base)
+    @testset "Power System Data" begin
+        compstruct(matlab.bus, hdf5.bus)
+        compstruct(matlab.branch, hdf5.branch)
+        compstruct(matlab.generator, hdf5.generator)
+        compstruct(matlab.base, hdf5.base)
+    end
 
-    # Test Base Data
-    @test matlab.base.power.value == 100.0
-    @test matlab.base.power.unit == "MVA"
-    @test matlab.base.power.prefix == 1e6
-    @test all(matlab.base.voltage.value .== 138.0)
-    @test matlab.base.voltage.unit == "kV"
-    @test matlab.base.voltage.prefix == 1e3
+    @testset "Base Data" begin
+        @test matlab.base.power.value == 100.0
+        @test matlab.base.power.unit == "MVA"
+        @test matlab.base.power.prefix == 1e6
+        @test all(matlab.base.voltage.value .== 138.0)
+        @test matlab.base.voltage.unit == "kV"
+        @test matlab.base.voltage.prefix == 1e3
+    end
 end
 
 @testset "Load and Save Power System with Integer Labels" begin
@@ -43,9 +45,10 @@ end
     hdf5 = powerSystem(string(path, "case14Int.h5"))
     @base(hdf5, MVA, kV)
 
-    # Test Power System Data
-    compstruct(matlab.bus, hdf5.bus)
-    compstruct(matlab.branch, hdf5.branch)
-    compstruct(matlab.generator, hdf5.generator)
-    compstruct(matlab.base, hdf5.base)
+    @testset "Power System Data" begin
+        compstruct(matlab.bus, hdf5.bus)
+        compstruct(matlab.branch, hdf5.branch)
+        compstruct(matlab.generator, hdf5.generator)
+        compstruct(matlab.base, hdf5.base)
+    end
 end

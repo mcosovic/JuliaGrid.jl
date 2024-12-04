@@ -40,12 +40,13 @@
     ########## Load Measurement Data ##########
     hdf5 = measurement(path * "measurement14.h5")
 
-    ##### Test Measurement Data #####
-    compstruct(device.voltmeter, hdf5.voltmeter)
-    compstruct(device.ammeter, hdf5.ammeter)
-    compstruct(device.wattmeter, hdf5.wattmeter)
-    compstruct(device.varmeter, hdf5.varmeter)
-    compstruct(device.pmu, hdf5.pmu)
+    @testset "Measurement Data" begin
+        compstruct(device.voltmeter, hdf5.voltmeter)
+        compstruct(device.ammeter, hdf5.ammeter)
+        compstruct(device.wattmeter, hdf5.wattmeter)
+        compstruct(device.varmeter, hdf5.varmeter)
+        compstruct(device.pmu, hdf5.pmu)
+    end
 end
 
 @testset "Load and Save Measurements with Integer Labels" begin
@@ -91,10 +92,11 @@ end
     ########## Load Measurement Data ##########
     hdf5 = measurement(path * "measurement14Int.h5")
 
-    ##### Test Measurement Data #####
-    compstruct(device.voltmeter, hdf5.voltmeter)
-    compstruct(device.ammeter, hdf5.ammeter)
-    compstruct(device.wattmeter, hdf5.wattmeter)
-    compstruct(device.varmeter, hdf5.varmeter)
-    compstruct(device.pmu, hdf5.pmu)
+    @testset "Measurement Data" begin
+        compstruct(device.voltmeter, hdf5.voltmeter)
+        compstruct(device.ammeter, hdf5.ammeter)
+        compstruct(device.wattmeter, hdf5.wattmeter)
+        compstruct(device.varmeter, hdf5.varmeter)
+        compstruct(device.pmu, hdf5.pmu)
+    end
 end

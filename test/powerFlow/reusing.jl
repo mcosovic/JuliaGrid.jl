@@ -75,10 +75,11 @@
     power!(resystem, reusing)
     current!(resystem, reusing)
 
-    # Test Results
-    compstruct(analysis.voltage, reusing.voltage; atol = 1e-10)
-    compstruct(analysis.power, reusing.power; atol = 1e-10)
-    compstruct(analysis.current, reusing.current; atol = 1e-8)
+    @testset "First Pass" begin
+        compstruct(analysis.voltage, reusing.voltage; atol = 1e-10)
+        compstruct(analysis.power, reusing.power; atol = 1e-10)
+        compstruct(analysis.current, reusing.current; atol = 1e-8)
+    end
 
     ########## Second Pass ##########
     updateBus!(
@@ -142,10 +143,11 @@
     power!(resystem, reusing)
     current!(resystem, reusing)
 
-    # Test Results
-    compstruct(analysis.voltage, reusing.voltage; atol = 1e-10)
-    compstruct(analysis.power, reusing.power; atol = 1e-10)
-    compstruct(analysis.current, reusing.current; atol = 1e-8)
+    @testset "Second Pass" begin
+        compstruct(analysis.voltage, reusing.voltage; atol = 1e-10)
+        compstruct(analysis.power, reusing.power; atol = 1e-10)
+        compstruct(analysis.current, reusing.current; atol = 1e-8)
+    end
 end
 
 @testset "Reusing Gauss-Seidel Method" begin
@@ -223,10 +225,11 @@ end
     power!(resystem, reusing)
     current!(resystem, reusing)
 
-    # Test Results
-    compstruct(analysis.voltage, reusing.voltage; atol = 1e-10)
-    compstruct(analysis.power, reusing.power; atol = 1e-10)
-    compstruct(analysis.current, reusing.current; atol = 1e-8)
+    @testset "First Pass" begin
+        compstruct(analysis.voltage, reusing.voltage; atol = 1e-10)
+        compstruct(analysis.power, reusing.power; atol = 1e-10)
+        compstruct(analysis.current, reusing.current; atol = 1e-8)
+    end
 
     ########## Second Pass ##########
     updateBus!(
@@ -291,10 +294,11 @@ end
     power!(resystem, reusing)
     current!(resystem, reusing)
 
-    # Test Results
-    compstruct(analysis.voltage, reusing.voltage; atol = 1e-10)
-    compstruct(analysis.power, reusing.power; atol = 1e-10)
-    compstruct(analysis.current, reusing.current; atol = 1e-8)
+    @testset "Second Pass" begin
+        compstruct(analysis.voltage, reusing.voltage; atol = 1e-10)
+        compstruct(analysis.power, reusing.power; atol = 1e-10)
+        compstruct(analysis.current, reusing.current; atol = 1e-8)
+    end
 end
 
 @testset "Reusing Fast Newton-Raphson Method" begin
@@ -375,10 +379,11 @@ end
     power!(resystem, reusing)
     current!(resystem, reusing)
 
-    # Test Results
-    compstruct(analysis.voltage, reusing.voltage; atol = 1e-10)
-    compstruct(analysis.power, reusing.power; atol = 1e-10)
-    compstruct(analysis.current, reusing.current; atol = 1e-8)
+    @testset "First Pass" begin
+        compstruct(analysis.voltage, reusing.voltage; atol = 1e-10)
+        compstruct(analysis.power, reusing.power; atol = 1e-10)
+        compstruct(analysis.current, reusing.current; atol = 1e-8)
+    end
 
     ########## Second Pass ##########
     updateBus!(system; label = 10, active = 0.12, magnitude = 1.02, angle = -0.21)
@@ -416,10 +421,11 @@ end
     power!(resystem, reusing)
     current!(resystem, reusing)
 
-    # Test Results
-    compstruct(analysis.voltage, reusing.voltage; atol = 1e-10)
-    compstruct(analysis.power, reusing.power; atol = 1e-10)
-    compstruct(analysis.current, reusing.current; atol = 1e-8)
+    @testset "Second Pass" begin
+        compstruct(analysis.voltage, reusing.voltage; atol = 1e-10)
+        compstruct(analysis.power, reusing.power; atol = 1e-10)
+        compstruct(analysis.current, reusing.current; atol = 1e-8)
+    end
 end
 
 @testset "Reusing DC Power Flow" begin
@@ -458,9 +464,10 @@ end
     releaseSystem = copy(resystem.model.dc.model)
     releaseReusing = copy(reusing.method.dcmodel)
 
-    # Test Results
-    compstruct(analysis.voltage, reusing.voltage; atol = 1e-10)
-    compstruct(analysis.power, reusing.power; atol = 1e-10)
+    @testset "First Pass" begin
+        compstruct(analysis.voltage, reusing.voltage; atol = 1e-10)
+        compstruct(analysis.power, reusing.power; atol = 1e-10)
+    end
 
     ########## Second Pass ##########
     updateBus!(system; label = 3, active = 0.25, susceptance = 0.21)
@@ -482,13 +489,13 @@ end
     solve!(resystem, reusing)
     power!(resystem, reusing)
 
-    # Test Results
-    compstruct(analysis.voltage, reusing.voltage; atol = 1e-10)
-    compstruct(analysis.power, reusing.power; atol = 1e-10)
+    @testset "Second Pass" begin
+        compstruct(analysis.voltage, reusing.voltage; atol = 1e-10)
+        compstruct(analysis.power, reusing.power; atol = 1e-10)
 
-    # Test Release
-    @test releaseSystem == resystem.model.dc.model
-    @test releaseReusing == reusing.method.dcmodel
+        @test releaseSystem == resystem.model.dc.model
+        @test releaseReusing == reusing.method.dcmodel
+    end
 
     ########## Third Pass ##########
     updateBus!(system; label = 2, active = 0.15, susceptance = 0.16, type = 2)
@@ -520,16 +527,15 @@ end
     solve!(resystem, reusing)
     power!(resystem, reusing)
 
-    # Test Results
-    compstruct(analysis.voltage, reusing.voltage; atol = 1e-10)
-    compstruct(analysis.power, reusing.power; atol = 1e-10)
+    @testset "Third Pass" begin
+        compstruct(analysis.voltage, reusing.voltage; atol = 1e-10)
+        compstruct(analysis.power, reusing.power; atol = 1e-10)
 
-    # Test Release
-    @test releaseSystem != resystem.model.dc.model
-    @test releaseReusing != reusing.method.dcmodel
+        @test releaseSystem != resystem.model.dc.model
+        @test releaseReusing != reusing.method.dcmodel
 
-    # Test Pattern Changes
-    dropZeros!(resystem.model.dc)
-    solve!(resystem, reusing)
-    @test analysis.voltage.angle ≈ reusing.voltage.angle
+        dropZeros!(resystem.model.dc)
+        solve!(resystem, reusing)
+        @test analysis.voltage.angle ≈ reusing.voltage.angle
+    end
 end

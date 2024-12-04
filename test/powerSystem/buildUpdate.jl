@@ -53,11 +53,12 @@
     cost!(build; label = 3, active = 2, polynomial = [0.0266666667 * 100^2; 20 * 100; 2])
     cost!(build; label = 4, active = 2, polynomial = [30.0 * 100; 5])
 
-    # Test Power System Data
-    compstruct(load.bus, build.bus; atol = 1e-14)
-    compstruct(load.branch, build.branch)
-    compstruct(load.generator, build.generator)
-    compstruct(load.base, build.base)
+    @testset "Power System Data" begin
+        compstruct(load.bus, build.bus; atol = 1e-14)
+        compstruct(load.branch, build.branch)
+        compstruct(load.generator, build.generator)
+        compstruct(load.base, build.base)
+    end
 
     ########## Update Power System ##########
     load = powerSystem(path * "update.m")
@@ -95,11 +96,12 @@
     # Update Costs
     cost!(build; label = 4, active = 2, polynomial = [0.3 * 100^2; 15 * 100; 5])
 
-    # Test Power System Data
-    compstruct(load.bus, build.bus; atol = 1e-14)
-    compstruct(load.branch, build.branch; atol = 1e-14)
-    compstruct(load.generator, build.generator)
-    compstruct(load.base, build.base)
+    @testset "Power System Data" begin
+        compstruct(load.bus, build.bus; atol = 1e-14)
+        compstruct(load.branch, build.branch; atol = 1e-14)
+        compstruct(load.generator, build.generator)
+        compstruct(load.base, build.base)
+    end
 end
 
 @testset "Build and Update Power System in SI Units" begin
@@ -192,11 +194,12 @@ end
     cost!(build; label = 3, active = 2, polynomial = [0.0266666667e-6; 20e-3; 2])
     cost!(build; label = 4, active = 2, polynomial = [30.0e-3; 5])
 
-    # Test Power System Data
-    compstruct(load.bus, build.bus; atol = 1e-12)
-    compstruct(load.branch, build.branch; atol = 1e-12)
-    compstruct(load.generator, build.generator; atol = 1e-12)
-    compstruct(load.base, build.base)
+    @testset "Power System Data" begin
+        compstruct(load.bus, build.bus; atol = 1e-12)
+        compstruct(load.branch, build.branch; atol = 1e-12)
+        compstruct(load.generator, build.generator; atol = 1e-12)
+        compstruct(load.base, build.base)
+    end
 
     ########## Update Power System ##########
     load = powerSystem(path * "update.m")
@@ -247,11 +250,12 @@ end
     # Update Costs
     cost!(build; label = 4, active = 2, polynomial = [0.3e-6; 15e-3; 5])
 
-    # Test Power System Data
-    compstruct(load.bus, build.bus; atol = 1e-12)
-    compstruct(load.branch, build.branch; atol = 1e-12)
-    compstruct(load.generator, build.generator; atol = 1e-12)
-    compstruct(load.base, build.base)
+    @testset "Power System Data" begin
+        compstruct(load.bus, build.bus; atol = 1e-12)
+        compstruct(load.branch, build.branch; atol = 1e-12)
+        compstruct(load.generator, build.generator; atol = 1e-12)
+        compstruct(load.base, build.base)
+    end
 end
 
 @testset "Build Power System in Per-Units with Macros" begin
@@ -266,40 +270,43 @@ end
         maxMagnitude = 0.9, base = 100e3, area = 2, lossZone = 3
     )
 
-    # Test Bus Data
-    addBus!(system)
-    @test system.bus.label["Bus 1"] == 1
-    @test system.bus.layout.type[1] == 2
-    @test system.bus.demand.active[1] == 0.1
-    @test system.bus.demand.reactive[1] == -0.2
-    @test system.bus.shunt.conductance[1] == 1e-2
-    @test system.bus.shunt.susceptance[1] == 1
-    @test system.bus.voltage.magnitude[1] == 1.1
-    @test system.bus.voltage.angle[1] == 0.2
-    @test system.bus.voltage.minMagnitude[1] == 0.8
-    @test system.bus.voltage.maxMagnitude[1] == 0.9
-    @test system.base.voltage.value[1] == 100e3
-    @test system.bus.layout.area[1] == 2
-    @test system.bus.layout.lossZone[1] == 3
+    @testset "Bus Data Using Macro" begin
+        addBus!(system)
+        @test system.bus.label["Bus 1"] == 1
+        @test system.bus.layout.type[1] == 2
+        @test system.bus.demand.active[1] == 0.1
+        @test system.bus.demand.reactive[1] == -0.2
+        @test system.bus.shunt.conductance[1] == 1e-2
+        @test system.bus.shunt.susceptance[1] == 1
+        @test system.bus.voltage.magnitude[1] == 1.1
+        @test system.bus.voltage.angle[1] == 0.2
+        @test system.bus.voltage.minMagnitude[1] == 0.8
+        @test system.bus.voltage.maxMagnitude[1] == 0.9
+        @test system.base.voltage.value[1] == 100e3
+        @test system.bus.layout.area[1] == 2
+        @test system.bus.layout.lossZone[1] == 3
+    end
 
-    addBus!(
-        system; type = 1, active = 0.3, reactive = -0.3, conductance = 1e-3,
-        susceptance = 2, magnitude = 1.2, angle = 0.3, minMagnitude = 0.9,
-        maxMagnitude = 1.1, base = 110e3, area = 3, lossZone = 4
-    )
-    @test system.bus.label["Bus 2"] == 2
-    @test system.bus.layout.type[2] == 1
-    @test system.bus.demand.active[2] == 0.3
-    @test system.bus.demand.reactive[2] == -0.3
-    @test system.bus.shunt.conductance[2] == 1e-3
-    @test system.bus.shunt.susceptance[2] == 2
-    @test system.bus.voltage.magnitude[2] == 1.2
-    @test system.bus.voltage.angle[2] == 0.3
-    @test system.bus.voltage.minMagnitude[2] == 0.9
-    @test system.bus.voltage.maxMagnitude[2] == 1.1
-    @test system.base.voltage.value[2] == 110e3
-    @test system.bus.layout.area[2] == 3
-    @test system.bus.layout.lossZone[2] == 4
+    @testset "Bus Data Using Function" begin
+        addBus!(
+            system; type = 1, active = 0.3, reactive = -0.3, conductance = 1e-3,
+            susceptance = 2, magnitude = 1.2, angle = 0.3, minMagnitude = 0.9,
+            maxMagnitude = 1.1, base = 110e3, area = 3, lossZone = 4
+        )
+        @test system.bus.label["Bus 2"] == 2
+        @test system.bus.layout.type[2] == 1
+        @test system.bus.demand.active[2] == 0.3
+        @test system.bus.demand.reactive[2] == -0.3
+        @test system.bus.shunt.conductance[2] == 1e-3
+        @test system.bus.shunt.susceptance[2] == 2
+        @test system.bus.voltage.magnitude[2] == 1.2
+        @test system.bus.voltage.angle[2] == 0.3
+        @test system.bus.voltage.minMagnitude[2] == 0.9
+        @test system.bus.voltage.maxMagnitude[2] == 1.1
+        @test system.base.voltage.value[2] == 110e3
+        @test system.bus.layout.area[2] == 3
+        @test system.bus.layout.lossZone[2] == 4
+    end
 
     ########## Branch Macro ##########
     @branch(
@@ -309,45 +316,48 @@ end
         minToBus = -0.3, maxToBus = 0.3, type = 2
     )
 
-    # Test Branch Data
-    addBranch!(system; from = "Bus 1", to = "Bus 2")
-    @test system.branch.label["Branch 1"] == 1
-    @test system.branch.layout.status[1] == 0
-    @test system.branch.parameter.resistance[1] == 0.1
-    @test system.branch.parameter.reactance[1] == 0.2
-    @test system.branch.parameter.susceptance[1] == 0.3
-    @test system.branch.parameter.conductance[1] == 0.4
-    @test system.branch.parameter.turnsRatio[1] == 0.5
-    @test system.branch.parameter.shiftAngle[1] == 0.6
-    @test system.branch.voltage.minDiffAngle[1] == -1
-    @test system.branch.voltage.maxDiffAngle[1] == 1
-    @test system.branch.flow.minFromBus[1] == -0.2
-    @test system.branch.flow.maxFromBus[1] == 0.2
-    @test system.branch.flow.minToBus[1] == -0.3
-    @test system.branch.flow.maxToBus[1] == 0.3
-    @test system.branch.flow.type[1] == 2
+    @testset "Branch Data Using Macro" begin
+        addBranch!(system; from = "Bus 1", to = "Bus 2")
+        @test system.branch.label["Branch 1"] == 1
+        @test system.branch.layout.status[1] == 0
+        @test system.branch.parameter.resistance[1] == 0.1
+        @test system.branch.parameter.reactance[1] == 0.2
+        @test system.branch.parameter.susceptance[1] == 0.3
+        @test system.branch.parameter.conductance[1] == 0.4
+        @test system.branch.parameter.turnsRatio[1] == 0.5
+        @test system.branch.parameter.shiftAngle[1] == 0.6
+        @test system.branch.voltage.minDiffAngle[1] == -1
+        @test system.branch.voltage.maxDiffAngle[1] == 1
+        @test system.branch.flow.minFromBus[1] == -0.2
+        @test system.branch.flow.maxFromBus[1] == 0.2
+        @test system.branch.flow.minToBus[1] == -0.3
+        @test system.branch.flow.maxToBus[1] == 0.3
+        @test system.branch.flow.type[1] == 2
+    end
 
-    addBranch!(
-        system; from = "Bus 1", to = "Bus 2", status = 1, resistance = 1.1,
-        reactance = 1.2, susceptance = 1.3, conductance = 1.4, turnsRatio = 1.5,
-        shiftAngle = 1.6, minDiffAngle = -2.0, maxDiffAngle = 2.0, minFromBus = -1.2,
-        maxFromBus = 1.2, minToBus = -1.3, maxToBus = 1.3, type = 3
-    )
-    @test system.branch.label["Branch 2"] == 2
-    @test system.branch.layout.status[2] == 1
-    @test system.branch.parameter.resistance[2] == 1.1
-    @test system.branch.parameter.reactance[2] == 1.2
-    @test system.branch.parameter.susceptance[2] == 1.3
-    @test system.branch.parameter.conductance[2] == 1.4
-    @test system.branch.parameter.turnsRatio[2] == 1.5
-    @test system.branch.parameter.shiftAngle[2] == 1.6
-    @test system.branch.voltage.minDiffAngle[2] == -2
-    @test system.branch.voltage.maxDiffAngle[2] == 2
-    @test system.branch.flow.minFromBus[2] == -1.2
-    @test system.branch.flow.maxFromBus[2] == 1.2
-    @test system.branch.flow.minToBus[2] == -1.3
-    @test system.branch.flow.maxToBus[2] == 1.3
-    @test system.branch.flow.type[2] == 3
+    @testset "Branch Data Using Function" begin
+        addBranch!(
+            system; from = "Bus 1", to = "Bus 2", status = 1, resistance = 1.1,
+            reactance = 1.2, susceptance = 1.3, conductance = 1.4, turnsRatio = 1.5,
+            shiftAngle = 1.6, minDiffAngle = -2.0, maxDiffAngle = 2.0, minFromBus = -1.2,
+            maxFromBus = 1.2, minToBus = -1.3, maxToBus = 1.3, type = 3
+        )
+        @test system.branch.label["Branch 2"] == 2
+        @test system.branch.layout.status[2] == 1
+        @test system.branch.parameter.resistance[2] == 1.1
+        @test system.branch.parameter.reactance[2] == 1.2
+        @test system.branch.parameter.susceptance[2] == 1.3
+        @test system.branch.parameter.conductance[2] == 1.4
+        @test system.branch.parameter.turnsRatio[2] == 1.5
+        @test system.branch.parameter.shiftAngle[2] == 1.6
+        @test system.branch.voltage.minDiffAngle[2] == -2
+        @test system.branch.voltage.maxDiffAngle[2] == 2
+        @test system.branch.flow.minFromBus[2] == -1.2
+        @test system.branch.flow.maxFromBus[2] == 1.2
+        @test system.branch.flow.minToBus[2] == -1.3
+        @test system.branch.flow.maxToBus[2] == 1.3
+        @test system.branch.flow.type[2] == 3
+    end
 
     ########## Generator Macro ##########
     @generator(
@@ -358,54 +368,57 @@ end
         loadFollowing = 1.1, reserve10min = 1.2, reserve30min = 1.3, reactiveRamp = 1.4
     )
 
-    # Test Generator Data
-    addGenerator!(system; bus = "Bus 1")
-    @test system.generator.label["Generator 1"] == 1
-    @test system.generator.layout.status[1] == 0
-    @test system.generator.output.active[1] == 1.1
-    @test system.generator.output.reactive[1] == 1.2
-    @test system.generator.voltage.magnitude[1] == 0.5
-    @test system.generator.capability.minActive[1] == 0.1
-    @test system.generator.capability.maxActive[1] == 0.2
-    @test system.generator.capability.minReactive[1] == 0.3
-    @test system.generator.capability.maxReactive[1] == 0.4
-    @test system.generator.capability.lowActive[1] == 0.5
-    @test system.generator.capability.minLowReactive[1] == 0.6
-    @test system.generator.capability.maxLowReactive[1] == 0.7
-    @test system.generator.capability.upActive[1] == 0.8
-    @test system.generator.capability.minUpReactive[1] == 0.9
-    @test system.generator.capability.maxUpReactive[1] == 1.0
-    @test system.generator.ramping.loadFollowing[1] == 1.1
-    @test system.generator.ramping.reserve10min[1] == 1.2
-    @test system.generator.ramping.reserve30min[1] == 1.3
-    @test system.generator.ramping.reactiveRamp[1] == 1.4
+    @testset "Generator Data Using Macro" begin
+        addGenerator!(system; bus = "Bus 1")
+        @test system.generator.label["Generator 1"] == 1
+        @test system.generator.layout.status[1] == 0
+        @test system.generator.output.active[1] == 1.1
+        @test system.generator.output.reactive[1] == 1.2
+        @test system.generator.voltage.magnitude[1] == 0.5
+        @test system.generator.capability.minActive[1] == 0.1
+        @test system.generator.capability.maxActive[1] == 0.2
+        @test system.generator.capability.minReactive[1] == 0.3
+        @test system.generator.capability.maxReactive[1] == 0.4
+        @test system.generator.capability.lowActive[1] == 0.5
+        @test system.generator.capability.minLowReactive[1] == 0.6
+        @test system.generator.capability.maxLowReactive[1] == 0.7
+        @test system.generator.capability.upActive[1] == 0.8
+        @test system.generator.capability.minUpReactive[1] == 0.9
+        @test system.generator.capability.maxUpReactive[1] == 1.0
+        @test system.generator.ramping.loadFollowing[1] == 1.1
+        @test system.generator.ramping.reserve10min[1] == 1.2
+        @test system.generator.ramping.reserve30min[1] == 1.3
+        @test system.generator.ramping.reactiveRamp[1] == 1.4
+    end
 
-    addGenerator!(
-        system; label = "Generator 2", bus = "Bus 1", area = 1, status = 1,
-        active = 2.1, reactive = 2.2, magnitude = 1.5, minActive = 1.1, maxActive = 1.2,
-        minReactive = 1.3, maxReactive = 1.4, lowActive = 1.5, minLowReactive = 1.6,
-        maxLowReactive = 1.7, upActive = 1.8, minUpReactive = 1.9, maxUpReactive = 2.0,
-        loadFollowing = 2.1, reserve10min = 2.2, reserve30min = 2.3, reactiveRamp = 2.4
-    )
-    @test system.generator.label["Generator 2"] == 2
-    @test system.generator.layout.status[2] == 1
-    @test system.generator.output.active[2] == 2.1
-    @test system.generator.output.reactive[2] == 2.2
-    @test system.generator.voltage.magnitude[2] == 1.5
-    @test system.generator.capability.minActive[2] == 1.1
-    @test system.generator.capability.maxActive[2] == 1.2
-    @test system.generator.capability.minReactive[2] == 1.3
-    @test system.generator.capability.maxReactive[2] == 1.4
-    @test system.generator.capability.lowActive[2] == 1.5
-    @test system.generator.capability.minLowReactive[2] == 1.6
-    @test system.generator.capability.maxLowReactive[2] == 1.7
-    @test system.generator.capability.upActive[2] == 1.8
-    @test system.generator.capability.minUpReactive[2] == 1.9
-    @test system.generator.capability.maxUpReactive[2] == 2.0
-    @test system.generator.ramping.loadFollowing[2] == 2.1
-    @test system.generator.ramping.reserve10min[2] == 2.2
-    @test system.generator.ramping.reserve30min[2] == 2.3
-    @test system.generator.ramping.reactiveRamp[2] == 2.4
+    @testset "Generator Data Using Function" begin
+        addGenerator!(
+            system; label = "Generator 2", bus = "Bus 1", area = 1, status = 1,
+            active = 2.1, reactive = 2.2, magnitude = 1.5, minActive = 1.1, maxActive = 1.2,
+            minReactive = 1.3, maxReactive = 1.4, lowActive = 1.5, minLowReactive = 1.6,
+            maxLowReactive = 1.7, upActive = 1.8, minUpReactive = 1.9, maxUpReactive = 2.0,
+            loadFollowing = 2.1, reserve10min = 2.2, reserve30min = 2.3, reactiveRamp = 2.4
+        )
+        @test system.generator.label["Generator 2"] == 2
+        @test system.generator.layout.status[2] == 1
+        @test system.generator.output.active[2] == 2.1
+        @test system.generator.output.reactive[2] == 2.2
+        @test system.generator.voltage.magnitude[2] == 1.5
+        @test system.generator.capability.minActive[2] == 1.1
+        @test system.generator.capability.maxActive[2] == 1.2
+        @test system.generator.capability.minReactive[2] == 1.3
+        @test system.generator.capability.maxReactive[2] == 1.4
+        @test system.generator.capability.lowActive[2] == 1.5
+        @test system.generator.capability.minLowReactive[2] == 1.6
+        @test system.generator.capability.maxLowReactive[2] == 1.7
+        @test system.generator.capability.upActive[2] == 1.8
+        @test system.generator.capability.minUpReactive[2] == 1.9
+        @test system.generator.capability.maxUpReactive[2] == 2.0
+        @test system.generator.ramping.loadFollowing[2] == 2.1
+        @test system.generator.ramping.reserve10min[2] == 2.2
+        @test system.generator.ramping.reserve30min[2] == 2.3
+        @test system.generator.ramping.reactiveRamp[2] == 2.4
+    end
 end
 
 @testset "Build Power System in SI Units with Macros" begin
@@ -427,21 +440,22 @@ end
         lossZone = 3
     )
 
-    # Test Bus Data
-    addBus!(system)
-    @test system.bus.label["Bus 1"] == 1
-    @test system.bus.layout.type[1] == 2
-    @test system.bus.demand.active[1] == 0.1
-    @test system.bus.demand.reactive[1] == -0.2
-    @test system.bus.shunt.conductance[1] == 1e-2
-    @test system.bus.shunt.susceptance[1] == 1
-    @test system.bus.voltage.magnitude[1] ≈ 1.1
-    @test system.bus.voltage.angle[1] == 0.2
-    @test system.bus.voltage.minMagnitude[1] ≈ 0.8
-    @test system.bus.voltage.maxMagnitude[1] ≈ 0.9
-    @test system.base.voltage.value[1] == 100
-    @test system.bus.layout.area[1] == 2
-    @test system.bus.layout.lossZone[1] == 3
+    @testset "Bus Data Using Macro" begin
+        addBus!(system)
+        @test system.bus.label["Bus 1"] == 1
+        @test system.bus.layout.type[1] == 2
+        @test system.bus.demand.active[1] == 0.1
+        @test system.bus.demand.reactive[1] == -0.2
+        @test system.bus.shunt.conductance[1] == 1e-2
+        @test system.bus.shunt.susceptance[1] == 1
+        @test system.bus.voltage.magnitude[1] ≈ 1.1
+        @test system.bus.voltage.angle[1] == 0.2
+        @test system.bus.voltage.minMagnitude[1] ≈ 0.8
+        @test system.bus.voltage.maxMagnitude[1] ≈ 0.9
+        @test system.base.voltage.value[1] == 100
+        @test system.bus.layout.area[1] == 2
+        @test system.bus.layout.lossZone[1] == 3
+    end
 
     ########## Branch Macro ##########
     addBus!(system)
@@ -455,23 +469,24 @@ end
         minToBus = 0.3e5, maxToBus = 0.4e5, type = 1
     )
 
-    # Test Branch Data
-    addBranch!(system; from = "Bus 1", to = "Bus 2")
-    @test system.branch.label["Branch 1"] == 1
-    @test system.branch.layout.status[1] == 0
-    @test system.branch.parameter.resistance[1] == 0.1
-    @test system.branch.parameter.reactance[1] == 0.2
-    @test system.branch.parameter.susceptance[1] == 0.3
-    @test system.branch.parameter.conductance[1] == 0.4
-    @test system.branch.parameter.turnsRatio[1] == 0.5
-    @test system.branch.parameter.shiftAngle[1] == 0.6
-    @test system.branch.voltage.minDiffAngle[1] == -1
-    @test system.branch.voltage.maxDiffAngle[1] == 1
-    @test system.branch.flow.minFromBus[1] == -0.2
-    @test system.branch.flow.maxFromBus[1] == 0.2
-    @test system.branch.flow.minToBus[1] == 0.3
-    @test system.branch.flow.maxToBus[1] == 0.4
-    @test system.branch.flow.type[1] == 1
+    @testset "Branch Data Using Macro" begin
+        addBranch!(system; from = "Bus 1", to = "Bus 2")
+        @test system.branch.label["Branch 1"] == 1
+        @test system.branch.layout.status[1] == 0
+        @test system.branch.parameter.resistance[1] == 0.1
+        @test system.branch.parameter.reactance[1] == 0.2
+        @test system.branch.parameter.susceptance[1] == 0.3
+        @test system.branch.parameter.conductance[1] == 0.4
+        @test system.branch.parameter.turnsRatio[1] == 0.5
+        @test system.branch.parameter.shiftAngle[1] == 0.6
+        @test system.branch.voltage.minDiffAngle[1] == -1
+        @test system.branch.voltage.maxDiffAngle[1] == 1
+        @test system.branch.flow.minFromBus[1] == -0.2
+        @test system.branch.flow.maxFromBus[1] == 0.2
+        @test system.branch.flow.minToBus[1] == 0.3
+        @test system.branch.flow.maxToBus[1] == 0.4
+        @test system.branch.flow.type[1] == 1
+    end
 
     ########## Generator Macro ##########
     @generator(
@@ -483,27 +498,28 @@ end
         reserve10min = 1.2e5, reserve30min = 1.3e5, reactiveRamp = 1.4e2
     )
 
-    # Test Generator Data
-    addGenerator!(system; bus = "Bus 1")
-    @test system.generator.label["Generator 1"] == 1
-    @test system.generator.layout.status[1] == 0
-    @test system.generator.output.active[1] == 1.1
-    @test system.generator.output.reactive[1] == 1.2
-    @test system.generator.voltage.magnitude[1] ≈ 0.5
-    @test system.generator.capability.minActive[1] == 0.1
-    @test system.generator.capability.maxActive[1] == 0.2
-    @test system.generator.capability.minReactive[1] == 0.3
-    @test system.generator.capability.maxReactive[1] == 0.4
-    @test system.generator.capability.lowActive[1] == 0.5
-    @test system.generator.capability.minLowReactive[1] == 0.6
-    @test system.generator.capability.maxLowReactive[1] ≈ 0.7
-    @test system.generator.capability.upActive[1] == 0.8
-    @test system.generator.capability.minUpReactive[1] == 0.9
-    @test system.generator.capability.maxUpReactive[1] == 1.0
-    @test system.generator.ramping.loadFollowing[1] == 1.1
-    @test system.generator.ramping.reserve10min[1] == 1.2
-    @test system.generator.ramping.reserve30min[1] == 1.3
-    @test system.generator.ramping.reactiveRamp[1] ≈ 1.4
+    @testset "Generator Data Using Macro" begin
+        addGenerator!(system; bus = "Bus 1")
+        @test system.generator.label["Generator 1"] == 1
+        @test system.generator.layout.status[1] == 0
+        @test system.generator.output.active[1] == 1.1
+        @test system.generator.output.reactive[1] == 1.2
+        @test system.generator.voltage.magnitude[1] ≈ 0.5
+        @test system.generator.capability.minActive[1] == 0.1
+        @test system.generator.capability.maxActive[1] == 0.2
+        @test system.generator.capability.minReactive[1] == 0.3
+        @test system.generator.capability.maxReactive[1] == 0.4
+        @test system.generator.capability.lowActive[1] == 0.5
+        @test system.generator.capability.minLowReactive[1] == 0.6
+        @test system.generator.capability.maxLowReactive[1] ≈ 0.7
+        @test system.generator.capability.upActive[1] == 0.8
+        @test system.generator.capability.minUpReactive[1] == 0.9
+        @test system.generator.capability.maxUpReactive[1] == 1.0
+        @test system.generator.ramping.loadFollowing[1] == 1.1
+        @test system.generator.ramping.reserve10min[1] == 1.2
+        @test system.generator.ramping.reserve30min[1] == 1.3
+        @test system.generator.ramping.reactiveRamp[1] ≈ 1.4
+    end
 end
 
 @testset "Errors and Messages" begin
@@ -525,159 +541,167 @@ end
     fnrbx = fastNewtonRaphsonBX(system)
     gs = gaussSeidel(system)
 
-    addBus!(system, label = "Bus 3")
-    addBus!(system, label = 4)
+    @suppress addBus!(system, label = "Bus 3")
+    @suppress addBus!(system, label = 4)
 
-    ########## Test Deleting Models ##########
-    @test isempty(system.model.ac.nodalMatrix) == true
-    @test isempty(system.model.ac.nodalMatrixTranspose) == true
-    @test isempty(system.model.ac.nodalFromFrom) == true
-    @test isempty(system.model.ac.nodalFromTo) == true
-    @test isempty(system.model.ac.nodalToFrom) == true
-    @test isempty(system.model.ac.nodalToTo) == true
-    @test isempty(system.model.ac.admittance) == true
-    @test system.model.ac.model == 1
-    @test system.model.ac.pattern == 1
+    @testset "Deleting AC and DC Models" begin
+        @test isempty(system.model.ac.nodalMatrix) == true
+        @test isempty(system.model.ac.nodalMatrixTranspose) == true
+        @test isempty(system.model.ac.nodalFromFrom) == true
+        @test isempty(system.model.ac.nodalFromTo) == true
+        @test isempty(system.model.ac.nodalToFrom) == true
+        @test isempty(system.model.ac.nodalToTo) == true
+        @test isempty(system.model.ac.admittance) == true
+        @test system.model.ac.model == 1
+        @test system.model.ac.pattern == 1
 
-    @test isempty(system.model.dc.nodalMatrix) == true
-    @test isempty(system.model.dc.admittance) == true
-    @test isempty(system.model.dc.shiftPower) == true
-    @test system.model.dc.model == 1
-    @test system.model.dc.pattern == 1
-
-    ########## Test Prints ##########
-    voltg = system.bus.voltage
-
-    print1 = @capture_out print(system.bus.label, voltg.magnitude)
-    @test print1 == "Bus 1: 1.0\nBus 2: 1.0\nBus 3: 1.0\n4: 1.0\n"
-
-    print2 = @capture_out print(system.bus.label, voltg.magnitude, voltg.angle)
-    @test print2 == "Bus 1: 1.0, 0.0\nBus 2: 1.0, 0.0\nBus 3: 1.0, 0.0\n4: 1.0, 0.0\n"
-
-    print3 = @capture_out print(system.bus.label, system.bus.layout.type)
-    @test print3 == "Bus 1: 3\nBus 2: 1\nBus 3: 1\n4: 1\n"
-
-    ########## Test Add and Update Bus Errors ##########
-    err = ErrorException("The label Bus 1 is not unique.")
-    @test_throws err addBus!(system; label = "Bus 1")
-
-    err = ErrorException("The label 4 is not unique.")
-    @test_throws err addBus!(system; label = 4)
-
-    err = ErrorException("The value 4 of the bus type is illegal.")
-    @test_throws err addBus!(system; label = "Bus 4", type = 4)
-
-    err = ErrorException("The slack bus has already been designated.")
-    @test_throws err addBus!(system; label = "Bus 5", type = 3)
-
-    err = ErrorException("The analysis model cannot be reused when adding a bus.")
-    @test_throws err addBus!(system, dc; label = "Bus 4", active = 0.1)
-    @test_throws err addBus!(system, nr; label = "Bus 4", active = 0.1)
-    @test_throws err addBus!(system, fnrxb; label = "Bus 4", active = 0.1)
-    @test_throws err addBus!(system, fnrbx; label = "Bus 4", active = 0.1)
-    @test_throws err addBus!(system, gs; label = "Bus 4", active = 0.1)
-
-    err = ErrorException(
-        "To set bus with label Bus 3 as the slack bus, reassign the current slack " *
-        "bus to either a generator or demand bus."
-    )
-    @test_throws err updateBus!(system; label = "Bus 3", type = 3)
-
-    err = ErrorException(
-        "The bus label Bus 6 that has been specified does not exist within the " *
-        "available bus labels."
-    )
-    @test_throws err updateBus!(system; label = "Bus 6", active = 2)
-
-    err = ErrorException(
-        "The bus label 2 that has been specified does not exist within the " *
-        "available bus labels."
-    )
-    @test_throws err updateBus!(system; label = 2, active = 2)
-
-    err = ErrorException(
-        "The power flow model cannot be reused due to required bus type conversion."
-    )
-    @test_throws err updateBus!(system, dc; label = "Bus 1", type = 1)
-    @test_throws err updateBus!(system, nr; label = "Bus 1", type = 1)
-    @test_throws err updateBus!(system, fnrxb; label = "Bus 1", type = 1)
-    @test_throws err updateBus!(system, fnrbx; label = "Bus 1", type = 1)
-    @test_throws err updateBus!(system, gs; label = "Bus 1", type = 1)
-
-    @test_throws LoadError @eval @bus(label = "Bus ?", typee = 1)
-
-    ########## Test Add and Update Branch Errors ##########
-    err = ErrorException("The label Branch 1 is not unique.")
-    @test_throws err addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2")
-
-    err = ErrorException("Invalid value for from or to keywords.")
-    @test_throws err addBranch!(system; label = "Branch 2", from = "Bus 1", to = "Bus 1")
-
-    err = ErrorException("At least one of resistance or reactance is required.")
-    @test_throws err addBranch!(system; label = "Branch 3", from = "Bus 1", to = "Bus 2")
-
-    err = ErrorException(
-        "The status 2 is not allowed; it should be in-service (1) or out-of-service (0)."
-    )
-    @test_throws err addBranch!(system; from = "Bus 1", to = "Bus 2", resistance = 0.1, status = 2)
-
-    @test_throws LoadError @eval @branch(label = "Branch ?", resistances = 1)
-
-    err = ErrorException("The label Generator 1 is not unique.")
-    @test_throws err addGenerator!(system; label = "Generator 1", bus = "Bus 1")
-
-    err = ErrorException(
-        "The status 2 is not allowed; it should be in-service (1) or out-of-service (0)."
-    )
-    @test_throws err addGenerator!(system; label = "Generator 2", bus = "Bus 1", status = 2)
-
-    err = ErrorException(
-        "The power flow model cannot be reused due to required bus type conversion."
-    )
-    @test_throws err updateGenerator!(system, dc; label = "Generator 1", status = 0)
-    @test_throws err updateGenerator!(system, nr; label = "Generator 1", status = 0)
-    @test_throws err updateGenerator!(system, gs; label = "Generator 1", status = 0)
-
-    ########## Test Add and Update Cost Errors ##########
-    err = ErrorException(
-        "The concurrent definition of the keywords active and reactive is not allowed."
-    )
-    @test_throws err begin
-        cost!(system; label = "Generator 1", active = 2, reactive = 1, polynomial = [1.0])
+        @test isempty(system.model.dc.nodalMatrix) == true
+        @test isempty(system.model.dc.admittance) == true
+        @test isempty(system.model.dc.shiftPower) == true
+        @test system.model.dc.model == 1
+        @test system.model.dc.pattern == 1
     end
 
-    err = ErrorException("The cost model is missing.")
-    @test_throws err cost!(system; label = "Generator 1", polynomial = [1.0])
+    @testset "Printing Data" begin
+        voltg = system.bus.voltage
 
-    err = ErrorException(
-        "The model is not allowed; it should be piecewise (1) or polynomial (2)."
-    )
-    @test_throws err cost!(system; label = "Generator 1", active = 3, polynomial = [1.0])
+        print1 = @capture_out print(system.bus.label, voltg.magnitude)
+        @test print1 == "Bus 1: 1.0\nBus 2: 1.0\nBus 3: 1.0\n4: 1.0\n"
 
-    err = ErrorException(
-        "An attempt to assign a polynomial function, but the function does not exist."
-    )
-    @test_throws err cost!(system; label = "Generator 1", active = 2)
+        print2 = @capture_out print(system.bus.label, voltg.magnitude, voltg.angle)
+        @test print2 == "Bus 1: 1.0, 0.0\nBus 2: 1.0, 0.0\nBus 3: 1.0, 0.0\n4: 1.0, 0.0\n"
 
-    err = ErrorException(
-        "An attempt to assign a piecewise function, but the function does not exist."
-    )
-    @test_throws err cost!(system; label = "Generator 1", active = 1)
+        print3 = @capture_out print(system.bus.label, system.bus.layout.type)
+        @test print3 == "Bus 1: 3\nBus 2: 1\nBus 3: 1\n4: 1\n"
+    end
 
-    @test_throws LoadError @eval @generator(label = "Generator ?", actives = 1)
+    @testset "Add and Update Bus Errors" begin
+        err = ErrorException("The label Bus 1 is not unique.")
+        @test_throws err addBus!(system; label = "Bus 1")
 
-    ########## Test Unit Errors ##########
-    @test_throws LoadError @eval @current(sA, deg)
-    @test_throws LoadError @eval @current(kV, deg)
+        err = ErrorException("The label 4 is not unique.")
+        @test_throws err addBus!(system; label = 4)
 
-    ########## Test Voltage Errors ##########
-    err = ErrorException("The voltage values are missing.")
-    @test_throws err power!(system, dc)
+        err = ErrorException("The value 4 of the bus type is illegal.")
+        @test_throws err addBus!(system; label = "Bus 4", type = 4)
 
-    ########## Test Load Errors ##########
-    err = DomainError(".h6", "The extension .h6 is not supported.")
-    @test_throws err powerSystem("case14.h6")
+        err = ErrorException("The slack bus has already been designated.")
+        @test_throws err addBus!(system; label = "Bus 5", type = 3)
 
-    err = DomainError("case15.h5", "The input data case15.h5 is not found.")
-    @test_throws err powerSystem("case15.h5")
+        err = ErrorException("The analysis model cannot be reused when adding a bus.")
+        @test_throws err addBus!(system, dc; label = "Bus 4", active = 0.1)
+        @test_throws err addBus!(system, nr; label = "Bus 4", active = 0.1)
+        @test_throws err addBus!(system, fnrxb; label = "Bus 4", active = 0.1)
+        @test_throws err addBus!(system, fnrbx; label = "Bus 4", active = 0.1)
+        @test_throws err addBus!(system, gs; label = "Bus 4", active = 0.1)
+
+        err = ErrorException(
+            "To set bus with label Bus 3 as the slack bus, reassign the current slack " *
+            "bus to either a generator or demand bus."
+        )
+        @test_throws err updateBus!(system; label = "Bus 3", type = 3)
+
+        err = ErrorException(
+            "The bus label Bus 6 that has been specified does not exist within the " *
+            "available bus labels."
+        )
+        @test_throws err updateBus!(system; label = "Bus 6", active = 2)
+
+        err = ErrorException(
+            "The bus label 2 that has been specified does not exist within the " *
+            "available bus labels."
+        )
+        @test_throws err updateBus!(system; label = 2, active = 2)
+
+        err = ErrorException(
+            "The power flow model cannot be reused due to required bus type conversion."
+        )
+        @test_throws err updateBus!(system, dc; label = "Bus 1", type = 1)
+        @test_throws err updateBus!(system, nr; label = "Bus 1", type = 1)
+        @test_throws err updateBus!(system, fnrxb; label = "Bus 1", type = 1)
+        @test_throws err updateBus!(system, fnrbx; label = "Bus 1", type = 1)
+        @test_throws err updateBus!(system, gs; label = "Bus 1", type = 1)
+
+        @test_throws LoadError @eval @bus(label = "Bus ?", typee = 1)
+    end
+
+    @testset "Add and Update Branch Errors" begin
+        err = ErrorException("The label Branch 1 is not unique.")
+        @test_throws err addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2")
+
+        err = ErrorException("Invalid value for from or to keywords.")
+        @test_throws err addBranch!(system; label = "Branch 2", from = "Bus 1", to = "Bus 1")
+
+        err = ErrorException("At least one of resistance or reactance is required.")
+        @test_throws err addBranch!(system; label = "Branch 3", from = "Bus 1", to = "Bus 2")
+
+        err = ErrorException(
+            "The status 2 is not allowed; it should be in-service (1) or out-of-service (0)."
+        )
+        @test_throws err addBranch!(system; from = "Bus 1", to = "Bus 2", resistance = 0.1, status = 2)
+
+        @test_throws LoadError @eval @branch(label = "Branch ?", resistances = 1)
+
+        err = ErrorException("The label Generator 1 is not unique.")
+        @test_throws err addGenerator!(system; label = "Generator 1", bus = "Bus 1")
+
+        err = ErrorException(
+            "The status 2 is not allowed; it should be in-service (1) or out-of-service (0)."
+        )
+        @test_throws err addGenerator!(system; label = "Generator 2", bus = "Bus 1", status = 2)
+
+        err = ErrorException(
+            "The power flow model cannot be reused due to required bus type conversion."
+        )
+        @test_throws err updateGenerator!(system, dc; label = "Generator 1", status = 0)
+        @test_throws err updateGenerator!(system, nr; label = "Generator 1", status = 0)
+        @test_throws err updateGenerator!(system, gs; label = "Generator 1", status = 0)
+    end
+
+    @testset "Add and Update Cost Errors" begin
+        err = ErrorException(
+            "The concurrent definition of the keywords active and reactive is not allowed."
+        )
+        @test_throws err begin
+            cost!(system; label = "Generator 1", active = 2, reactive = 1, polynomial = [1.0])
+        end
+
+        err = ErrorException("The cost model is missing.")
+        @test_throws err cost!(system; label = "Generator 1", polynomial = [1.0])
+
+        err = ErrorException(
+            "The model is not allowed; it should be piecewise (1) or polynomial (2)."
+        )
+        @test_throws err cost!(system; label = "Generator 1", active = 3, polynomial = [1.0])
+
+        err = ErrorException(
+            "An attempt to assign a polynomial function, but the function does not exist."
+        )
+        @test_throws err cost!(system; label = "Generator 1", active = 2)
+
+        err = ErrorException(
+            "An attempt to assign a piecewise function, but the function does not exist."
+        )
+        @test_throws err cost!(system; label = "Generator 1", active = 1)
+
+        @test_throws LoadError @eval @generator(label = "Generator ?", actives = 1)
+    end
+
+    @testset "Unit Errors" begin
+        @test_throws LoadError @eval @current(sA, deg)
+        @test_throws LoadError @eval @current(kV, deg)
+    end
+
+    @testset "Voltage Errors" begin
+        err = ErrorException("The voltage values are missing.")
+        @test_throws err power!(system, dc)
+    end
+
+    @testset "Load Errors" begin
+        err = DomainError(".h6", "The extension .h6 is not supported.")
+        @test_throws err powerSystem("case14.h6")
+
+        err = DomainError("case15.h5", "The input data case15.h5 is not found.")
+        @test_throws err powerSystem("case15.h5")
+    end
 end

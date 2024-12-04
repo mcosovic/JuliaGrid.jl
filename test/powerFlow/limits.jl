@@ -32,12 +32,11 @@ system30 = powerSystem(path * "case30test.m")
 
     adjustAngle!(system14, analysis; slack = 1)
 
-    # Test Iteration Number
-    @test iteration == matpower14["iteration"][1]
-
-    # Test Voltages
-    @test analysis.voltage.magnitude ≈ matpower14["voltageMagnitude"]
-    @test analysis.voltage.angle ≈ matpower14["voltageAngle"]
+    @testset "IEEE 14: Iteration Number and Voltages" begin
+        @test iteration == matpower14["iteration"][1]
+        @test analysis.voltage.magnitude ≈ matpower14["voltageMagnitude"]
+        @test analysis.voltage.angle ≈ matpower14["voltageAngle"]
+    end
 
     ########## IEEE 30-bus Test Case ##########
     acModel!(system30)
@@ -52,7 +51,7 @@ system30 = powerSystem(path * "case30test.m")
         iteration += 1
     end
 
-    reactiveLimit!(system30, analysis)
+    @suppress reactiveLimit!(system30, analysis)
 
     analysis = newtonRaphson(system30)
     for i = 1:1000
@@ -66,10 +65,9 @@ system30 = powerSystem(path * "case30test.m")
 
     adjustAngle!(system30, analysis; slack = 1)
 
-    # Test Iteration Number
-    @test iteration == matpower30["iteration"][1]
-
-    # Test Voltages
-    @test analysis.voltage.magnitude ≈ matpower30["voltageMagnitude"]
-    @test analysis.voltage.angle ≈ matpower30["voltageAngle"]
+    @testset "IEEE 30: Iteration Number and Voltages" begin
+        @test iteration == matpower30["iteration"][1]
+        @test analysis.voltage.magnitude ≈ matpower30["voltageMagnitude"]
+        @test analysis.voltage.angle ≈ matpower30["voltageAngle"]
+    end
 end

@@ -7,7 +7,7 @@ import SparseArrays: SparseMatrixCSC, sparse, spzeros, spdiagm, dropzeros!, nzra
 
 import HDF5: File, Group, Dataset, h5open, h5read, readmmap, attrs, attributes
 import OrderedCollections: OrderedDict
-import Printf: Format, format, @printf, @sprintf
+import Printf: Format, format, @printf
 import Random: randperm, shuffle, shuffle!
 
 ######### Types and Constants ##########

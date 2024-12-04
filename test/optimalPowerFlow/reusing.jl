@@ -117,15 +117,15 @@
     solve!(resystem, reusing)
     power!(resystem, reusing)
 
-    # Test Results
-    compstruct(analysis.voltage, reusing.voltage; atol = 1e-10)
-    compstruct(analysis.power, reusing.power; atol = 1e-10)
-    @test objective_value(analysis.method.jump) ≈ objective_value(reusing.method.jump)
+    @testset "First Pass" begin
+        compstruct(analysis.voltage, reusing.voltage; atol = 1e-10)
+        compstruct(analysis.power, reusing.power; atol = 1e-10)
+        @test objective_value(analysis.method.jump) ≈ objective_value(reusing.method.jump)
 
-    # Test Number of Constraints
-    for list in list_of_constraint_types(analysis.method.jump)
-        @test num_constraints(analysis.method.jump, list[1], list[2]) ==
-            num_constraints(reusing.method.jump, list[1], list[2])
+        for list in list_of_constraint_types(analysis.method.jump)
+            @test num_constraints(analysis.method.jump, list[1], list[2]) ==
+                num_constraints(reusing.method.jump, list[1], list[2])
+        end
     end
 
     ########## Second Pass ##########
@@ -190,15 +190,15 @@
     solve!(resystem, reusing)
     power!(resystem, reusing)
 
-    # Test Results
-    compstruct(analysis.voltage, reusing.voltage; atol = 1e-10)
-    compstruct(analysis.power, reusing.power; atol = 1e-10)
-    @test objective_value(analysis.method.jump) ≈ objective_value(reusing.method.jump)
+    @testset "Second Pass" begin
+        compstruct(analysis.voltage, reusing.voltage; atol = 1e-10)
+        compstruct(analysis.power, reusing.power; atol = 1e-10)
+        @test objective_value(analysis.method.jump) ≈ objective_value(reusing.method.jump)
 
-    # Test Number of Constraints
-    for list in list_of_constraint_types(analysis.method.jump)
-        @test num_constraints(analysis.method.jump, list[1], list[2]) ==
-            num_constraints(reusing.method.jump, list[1], list[2])
+        for list in list_of_constraint_types(analysis.method.jump)
+            @test num_constraints(analysis.method.jump, list[1], list[2]) ==
+                num_constraints(reusing.method.jump, list[1], list[2])
+        end
     end
 end
 
@@ -288,15 +288,15 @@ end
     solve!(resystem, reusing)
     power!(resystem, reusing)
 
-    # Test Results
-    compstruct(analysis.voltage, reusing.voltage; atol = 1e-10)
-    compstruct(analysis.power, reusing.power; atol = 1e-10)
-    @test objective_value(analysis.method.jump) ≈ objective_value(reusing.method.jump)
+    @testset "First Pass" begin
+        compstruct(analysis.voltage, reusing.voltage; atol = 1e-10)
+        compstruct(analysis.power, reusing.power; atol = 1e-10)
+        @test objective_value(analysis.method.jump) ≈ objective_value(reusing.method.jump)
 
-    # Test Number of Constraints
-    for list in list_of_constraint_types(analysis.method.jump)
-        @test num_constraints(analysis.method.jump, list[1], list[2]) ==
-            num_constraints(reusing.method.jump, list[1], list[2])
+        for list in list_of_constraint_types(analysis.method.jump)
+            @test num_constraints(analysis.method.jump, list[1], list[2]) ==
+                num_constraints(reusing.method.jump, list[1], list[2])
+        end
     end
 
     ########## Second Pass ##########
@@ -345,14 +345,14 @@ end
     solve!(resystem, reusing)
     power!(resystem, reusing)
 
-    # Test Results
-    compstruct(analysis.voltage, reusing.voltage; atol = 1e-10)
-    compstruct(analysis.power, reusing.power; atol = 1e-10)
-    @test objective_value(analysis.method.jump) ≈ objective_value(reusing.method.jump)
+    @testset "Second Pass" begin
+        compstruct(analysis.voltage, reusing.voltage; atol = 1e-10)
+        compstruct(analysis.power, reusing.power; atol = 1e-10)
+        @test objective_value(analysis.method.jump) ≈ objective_value(reusing.method.jump)
 
-    # Test Number of Constraints
-    for list in list_of_constraint_types(analysis.method.jump)
-        @test num_constraints(analysis.method.jump, list[1], list[2]) ==
-            num_constraints(reusing.method.jump, list[1], list[2])
+        for list in list_of_constraint_types(analysis.method.jump)
+            @test num_constraints(analysis.method.jump, list[1], list[2]) ==
+                num_constraints(reusing.method.jump, list[1], list[2])
+        end
     end
 end
