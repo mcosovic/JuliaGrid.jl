@@ -576,8 +576,8 @@ addBranch!(system; label = "Branch 3", from = "Bus 2", to = "Bus 3", maxFromBus 
 addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 3.2, reactive = 0.5)
 addGenerator!(system; label = "Generator 2", bus = "Bus 2", active = 0.2, reactive = 0.1)
 
-cost!(system; label = "Generator 1", active = 2, polynomial = [1100.2; 500; 80])
-cost!(system; label = "Generator 2", active = 1, piecewise = [10.8 12.3; 14.7 16.8; 18 18.1])
+cost!(system; generator = "Generator 1", active = 2, polynomial = [1100.2; 500; 80])
+cost!(system; generator = "Generator 2", active = 1, piecewise = [10.8 12.3; 14.7 16.8; 18 18.1])
 
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
 JuMP.set_silent(analysis.method.jump) # hide
