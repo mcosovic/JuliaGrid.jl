@@ -704,7 +704,7 @@ nothing # hide
 ##### Polynomial Cost
 Let us define a quadratic polynomial cost function for the active power produced by the `Generator 1`:
 ```@example addActiveCost
-cost!(system; label = "Generator 1", active = 2, polynomial = [1100.0; 500.0; 150.0])
+cost!(system; generator = "Generator 1", active = 2, polynomial = [1100.0; 500.0; 150.0])
 ```
 In essence, what we have accomplished is the establishment of a cost function depicted as ``f(P_{\text{g}1}) = 1100 P_{\text{g}1}^2 + 500 P_{\text{g}1} + 150`` through the code provided. In general, when constructing a polynomial cost function, the coefficients must be ordered from the highest degree to the lowest.
 
@@ -720,7 +720,7 @@ By setting `active = 2` within the function, we express our intent to specify th
 ##### Piecewise Linear Cost
 We can also create a piecewise linear cost function, for example, let us create the reactive power cost function for the same generator using the following code:
 ```@example addActiveCost
-cost!(system; label = "Generator 1", reactive = 1, piecewise = [0.11 12.3; 0.15 16.8])
+cost!(system; generator = "Generator 1", reactive = 1, piecewise = [0.11 12.3; 0.15 16.8])
 nothing # hide
 ```
 
@@ -740,7 +740,7 @@ nothing # hide
 
 Now, we can add the quadratic polynomial function using megawatts:
 ```@example addActiveCost
-cost!(system; label = "Generator 1", active = 2, polynomial = [0.11; 5.0; 150.0])
+cost!(system; generator = "Generator 1", active = 2, polynomial = [0.11; 5.0; 150.0])
 ```
 
 After inspecting the resulting cost data, we can see that it is the same as before:
@@ -750,7 +750,7 @@ system.generator.cost.active.polynomial[1]
 
 Similarly, we can define the linear piecewise cost using megavolt-amperes reactive:
 ```@example addActiveCost
-cost!(system; label = "Generator 1", reactive = 1, piecewise = [11.0 12.3; 15.0 16.8])
+cost!(system; generator = "Generator 1", reactive = 1, piecewise = [11.0 12.3; 15.0 16.8])
 nothing # hide
 ```
 

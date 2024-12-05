@@ -39,11 +39,11 @@ addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", maxFromBus 
 addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 0.4, reactive = 0.2)
 addGenerator!(system; label = "Generator 2", bus = "Bus 2", active = 0.2, reactive = 0.1)
 
-cost!(system; label = "Generator 1", active = 2, polynomial = [800.0; 200.0; 80.0])
-cost!(system; label = "Generator 2", active = 1, piecewise = [10.8 12.3; 14.7 16.8; 18 18.1])
+cost!(system; generator = "Generator 1", active = 2, polynomial = [800.0; 200.0; 80.0])
+cost!(system; generator = "Generator 2", active = 1, piecewise = [10.8 12.3; 14.7 16.8; 18 18.1])
 
-cost!(system; label = "Generator 1", reactive = 2, polynomial = [2.0])
-cost!(system; label = "Generator 2", reactive = 1, piecewise = [2.0 4.0; 6.0 8.0])
+cost!(system; generator = "Generator 1", reactive = 2, polynomial = [2.0])
+cost!(system; generator = "Generator 2", reactive = 1, piecewise = [2.0 4.0; 6.0 8.0])
 
 acModel!(system)
 nothing # hide
@@ -339,7 +339,7 @@ JuliaGrid also stores the objective function in a separate variable, which can b
 ##### Update Objective Function
 By utilizing the [`cost!`](@ref cost!) functions, users have the flexibility to modify the objective function by adjusting polynomial or linear piecewise coefficients or by changing the type of polynomial or linear piecewise function employed. For example, consider `Generator 1`, which employs a quadratic polynomial cost function for active power. We can redefine the cost function for this generator as a cubic polynomial and thereby define a nonlinear objective function:
 ```@example ACOptimalPowerFlow
-cost!(system, analysis; label = "Generator 1", active = 2, polynomial = [631; 257; 40; 5.0])
+cost!(system, analysis; generator = "Generator 1", active = 2, polynomial = [631; 257; 40; 5.0])
 nothing # hide
 ```
 

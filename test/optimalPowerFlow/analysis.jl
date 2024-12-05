@@ -291,7 +291,7 @@ end
     err = ErrorException("The slack bus is missing.")
     @test_throws err dcOptimalPowerFlow(system, Ipopt.Optimizer)
 
-    cost!(system; label = "Gen 1", active = 1, piecewise = [5.1 6.2])
+    cost!(system; generator = "Gen 1", active = 1, piecewise = [5.1 6.2])
     updateBus!(system; label = "Bus 1", type = 3)
     err = ErrorException(
         "The generator labeled Gen 1 has a piecewise linear cost " *
@@ -299,18 +299,18 @@ end
     )
     @test_throws err dcOptimalPowerFlow(system, Ipopt.Optimizer)
 
-    cost!(system; label = "Gen 1", active = 1, piecewise = [5.1 6.2; 4.1 5.2])
+    cost!(system; generator = "Gen 1", active = 1, piecewise = [5.1 6.2; 4.1 5.2])
     dc = dcOptimalPowerFlow(system, Ipopt.Optimizer)
     err = ErrorException(
         "The generator labeled Gen 1 has a piecewise linear cost " *
         "function with only one defined point."
     )
-    @test_throws err cost!(system, dc; label = "Gen 1", active = 1, piecewise = [5.1 6.2])
+    @test_throws err cost!(system, dc; generator = "Gen 1", active = 1, piecewise = [5.1 6.2])
 
     @capture_out print(dc.method.constraint.balance.active)
     @capture_out print(system.bus.label, dc.method.constraint.balance.active)
 
-    cost!(system; label = "Gen 1", active = 1, piecewise = [1.1 2.2; 2.1 3.2])
+    cost!(system; generator = "Gen 1", active = 1, piecewise = [1.1 2.2; 2.1 3.2])
     dc = dcOptimalPowerFlow(system, Ipopt.Optimizer)
     @capture_out print(system.generator.label, dc.method.constraint.piecewise.active)
     @capture_out print(dc.method.constraint.piecewise.active)

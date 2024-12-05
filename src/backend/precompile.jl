@@ -9,7 +9,7 @@ PrecompileTools.@setup_workload begin
     addBus!(system; label = 2, type = 1, reactive = 0.05)
     addBranch!(system; from = 1, to = 2, reactance = 0.05)
     addGenerator!(system; bus = 1, active = 0.5, reactive = 0.1)
-    cost!(system; label = 1, active = 2, polynomial = [0.11; 5.0; 150.0])
+    cost!(system; generator = 1, active = 2, polynomial = [0.11; 5.0; 150.0])
 
     addPmu!(system, device; bus = 1, magnitude = 1.0, angle = 0.0)
     addPmu!(system, device; bus = 2, magnitude = 1.0, angle = 0.0)

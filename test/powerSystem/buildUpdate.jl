@@ -48,10 +48,10 @@
     addGenerator!(build; bus = 1, active = 0.8, reactive = 0.3, status = 0)
 
     # Add Costs
-    cost!(build; label = 1, active = 2, polynomial = [0.01 * 100^2; 40 * 100; 4])
-    cost!(build; label = 2, active = 2, polynomial = [0.0266666667 * 100^2; 20 * 100; 3])
-    cost!(build; label = 3, active = 2, polynomial = [0.0266666667 * 100^2; 20 * 100; 2])
-    cost!(build; label = 4, active = 2, polynomial = [30.0 * 100; 5])
+    cost!(build; generator = 1, active = 2, polynomial = [0.01 * 100^2; 40 * 100; 4])
+    cost!(build; generator = 2, active = 2, polynomial = [0.0266666667 * 100^2; 20 * 100; 3])
+    cost!(build; generator = 3, active = 2, polynomial = [0.0266666667 * 100^2; 20 * 100; 2])
+    cost!(build; generator = 4, active = 2, polynomial = [30.0 * 100; 5])
 
     @testset "Power System Data" begin
         compstruct(load.bus, build.bus; atol = 1e-14)
@@ -94,7 +94,7 @@
     updateGenerator!(build; label = 1, loadFollowing = 5, reserve10min = 3, reactiveRamp = 4)
 
     # Update Costs
-    cost!(build; label = 4, active = 2, polynomial = [0.3 * 100^2; 15 * 100; 5])
+    cost!(build; generator = 4, active = 2, polynomial = [0.3 * 100^2; 15 * 100; 5])
 
     @testset "Power System Data" begin
         compstruct(load.bus, build.bus; atol = 1e-14)
@@ -189,10 +189,10 @@ end
     addGenerator!(build; bus = 1, active = 80e3, reactive = 30, status = 0)
 
     # Add Costs
-    cost!(build; label = 1, active = 2, polynomial = [0.01e-6; 40e-3; 4])
-    cost!(build; label = 2, active = 2, polynomial = [0.0266666667e-6; 20e-3; 3])
-    cost!(build; label = 3, active = 2, polynomial = [0.0266666667e-6; 20e-3; 2])
-    cost!(build; label = 4, active = 2, polynomial = [30.0e-3; 5])
+    cost!(build; generator = 1, active = 2, polynomial = [0.01e-6; 40e-3; 4])
+    cost!(build; generator = 2, active = 2, polynomial = [0.0266666667e-6; 20e-3; 3])
+    cost!(build; generator = 3, active = 2, polynomial = [0.0266666667e-6; 20e-3; 2])
+    cost!(build; generator = 4, active = 2, polynomial = [30.0e-3; 5])
 
     @testset "Power System Data" begin
         compstruct(load.bus, build.bus; atol = 1e-12)
@@ -248,7 +248,7 @@ end
     updateGenerator!(build; label = 1, minReactive = -10, maxReactive = 90)
 
     # Update Costs
-    cost!(build; label = 4, active = 2, polynomial = [0.3e-6; 15e-3; 5])
+    cost!(build; generator = 4, active = 2, polynomial = [0.3e-6; 15e-3; 5])
 
     @testset "Power System Data" begin
         compstruct(load.bus, build.bus; atol = 1e-12)
@@ -663,26 +663,26 @@ end
             "The concurrent definition of the keywords active and reactive is not allowed."
         )
         @test_throws err begin
-            cost!(system; label = "Generator 1", active = 2, reactive = 1, polynomial = [1.0])
+            cost!(system; generator = "Generator 1", active = 2, reactive = 1, polynomial = [1.0])
         end
 
         err = ErrorException("The cost model is missing.")
-        @test_throws err cost!(system; label = "Generator 1", polynomial = [1.0])
+        @test_throws err cost!(system; generator = "Generator 1", polynomial = [1.0])
 
         err = ErrorException(
             "The model is not allowed; it should be piecewise (1) or polynomial (2)."
         )
-        @test_throws err cost!(system; label = "Generator 1", active = 3, polynomial = [1.0])
+        @test_throws err cost!(system; generator = "Generator 1", active = 3, polynomial = [1.0])
 
         err = ErrorException(
             "An attempt to assign a polynomial function, but the function does not exist."
         )
-        @test_throws err cost!(system; label = "Generator 1", active = 2)
+        @test_throws err cost!(system; generator = "Generator 1", active = 2)
 
         err = ErrorException(
             "An attempt to assign a piecewise function, but the function does not exist."
         )
-        @test_throws err cost!(system; label = "Generator 1", active = 1)
+        @test_throws err cost!(system; generator = "Generator 1", active = 1)
 
         @test_throws LoadError @eval @generator(label = "Generator ?", actives = 1)
     end

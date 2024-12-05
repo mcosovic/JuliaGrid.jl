@@ -37,14 +37,14 @@
     updateGenerator!(system; label = 10, status = 0, maxActive = 0.8)
     updateGenerator!(system; label = 9, status = 0)
 
-    cost!(system; label = 10, active = 2, polynomial = [452.2; 31; 18; 5])
-    cost!(system; label = 9, active = 1, piecewise = [10.2 14.3; 11.5 16.1; 12.8 18.6])
-    cost!(system; label = 5, active = 1, piecewise = [10.2 14.3; 11.5 16.1; 12.8 18.6])
-    cost!(system; label = 5, active = 2, polynomial = [452.2; 31; 18; 5])
-    cost!(system; label = 5, active = 2, polynomial = [452.2; 31; 18])
-    cost!(system; label = 5, active = 2, polynomial = [452.2; 31; 18; 6])
-    cost!(system; label = 4, reactive = 2, polynomial = [452.2; 31; 18; 5])
-    cost!(system; label = 4, reactive = 1, piecewise = [10.2 14.3; 11.5 16.1; 12.8 18.6])
+    cost!(system; generator = 10, active = 2, polynomial = [452.2; 31; 18; 5])
+    cost!(system; generator = 9, active = 1, piecewise = [10.2 14.3; 11.5 16.1; 12.8 18.6])
+    cost!(system; generator = 5, active = 1, piecewise = [10.2 14.3; 11.5 16.1; 12.8 18.6])
+    cost!(system; generator = 5, active = 2, polynomial = [452.2; 31; 18; 5])
+    cost!(system; generator = 5, active = 2, polynomial = [452.2; 31; 18])
+    cost!(system; generator = 5, active = 2, polynomial = [452.2; 31; 18; 6])
+    cost!(system; generator = 4, reactive = 2, polynomial = [452.2; 31; 18; 5])
+    cost!(system; generator = 4, reactive = 1, piecewise = [10.2 14.3; 11.5 16.1; 12.8 18.6])
 
     acModel!(system)
     analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
@@ -86,7 +86,7 @@
     )
     cost!(
         resystem, reusing;
-        label = 9, active = 1, piecewise = [10.2 14.3; 11.5 16.1; 12.8 18.6]
+        generator = 9, active = 1, piecewise = [10.2 14.3; 11.5 16.1; 12.8 18.6]
     )
     addGenerator!(
         resystem, reusing;
@@ -100,17 +100,17 @@
 
     cost!(
         resystem, reusing;
-        label = 5, active = 1, piecewise = [10.2 14.3; 11.5 16.1; 12.8 18.6]
+        generator = 5, active = 1, piecewise = [10.2 14.3; 11.5 16.1; 12.8 18.6]
     )
-    cost!(resystem, reusing; label = 10, active = 2, polynomial = [452.2; 31; 18; 5])
-    cost!(resystem, reusing; label = 5, active = 2, polynomial = [452.2; 31; 18; 5])
-    cost!(resystem, reusing; label = 5, active = 2, polynomial = [452.2; 31; 18])
-    cost!(resystem, reusing; label = 5, active = 2, polynomial = [452.2; 31; 18])
-    cost!(resystem, reusing; label = 5, active = 2, polynomial = [452.2; 31; 18; 6])
-    cost!(resystem, reusing; label = 4, reactive = 2, polynomial = [452.2; 31; 18; 5])
+    cost!(resystem, reusing; generator = 10, active = 2, polynomial = [452.2; 31; 18; 5])
+    cost!(resystem, reusing; generator = 5, active = 2, polynomial = [452.2; 31; 18; 5])
+    cost!(resystem, reusing; generator = 5, active = 2, polynomial = [452.2; 31; 18])
+    cost!(resystem, reusing; generator = 5, active = 2, polynomial = [452.2; 31; 18])
+    cost!(resystem, reusing; generator = 5, active = 2, polynomial = [452.2; 31; 18; 6])
+    cost!(resystem, reusing; generator = 4, reactive = 2, polynomial = [452.2; 31; 18; 5])
     cost!(
         resystem,
-        reusing; label = 4, reactive = 1, piecewise = [10.2 14.3; 11.5 16.1; 12.8 18.6]
+        reusing; generator = 4, reactive = 1, piecewise = [10.2 14.3; 11.5 16.1; 12.8 18.6]
     )
 
     set_silent(reusing.method.jump)
@@ -147,9 +147,9 @@
         system; label = 12, bus = 14, active = 0.3, minActive = 0.0, maxActive = 0.5
     )
 
-    cost!(system; label = 11, active = 2, polynomial = [165.0])
-    cost!(system; label = 10, active = 1, piecewise = [10.2 14.3; 11.5 16.1; 12.8 18.6])
-    cost!(system; label = 9, active = 2, polynomial = [856.2; 135.3; 80])
+    cost!(system; generator = 11, active = 2, polynomial = [165.0])
+    cost!(system; generator = 10, active = 1, piecewise = [10.2 14.3; 11.5 16.1; 12.8 18.6])
+    cost!(system; generator = 9, active = 2, polynomial = [856.2; 135.3; 80])
 
     acModel!(system)
     analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
@@ -181,10 +181,10 @@
 
     cost!(
         resystem, reusing;
-        label = 10, active = 1, piecewise = [10.2 14.3; 11.5 16.1; 12.8 18.6]
+        generator = 10, active = 1, piecewise = [10.2 14.3; 11.5 16.1; 12.8 18.6]
     )
-    cost!(resystem, reusing; label = 11, active = 2, polynomial = [165.0])
-    cost!(resystem, reusing; label = 9, active = 2, polynomial = [856.2; 135.3; 80])
+    cost!(resystem, reusing; generator = 11, active = 2, polynomial = [165.0])
+    cost!(resystem, reusing; generator = 9, active = 2, polynomial = [856.2; 135.3; 80])
 
     startingPrimal!(resystem, reusing)
     solve!(resystem, reusing)
@@ -230,13 +230,13 @@ end
         system;
         label = 9, bus = 3, active = 0.3, minActive = 0.0, maxActive = 0.5, status = 0
     )
-    cost!(system; label = 9, active = 1, piecewise = [10.2 14.3; 11.5 16.1; 12.8 18.6])
+    cost!(system; generator = 9, active = 1, piecewise = [10.2 14.3; 11.5 16.1; 12.8 18.6])
     addGenerator!(system; label = 10, bus = 3, active = 0.3)
-    cost!(system; label = 10, active = 1, piecewise = [10.2 14.3; 11.5 16.1])
+    cost!(system; generator = 10, active = 1, piecewise = [10.2 14.3; 11.5 16.1])
     updateGenerator!(system; label = 9, status = 1, maxActive = 0.8)
     updateGenerator!(system; label = 10, status = 0, maxActive = 0.8)
     updateGenerator!(system; label = 9, status = 0)
-    cost!(system; label = 5, active = 2, polynomial = [854.0, 116.0])
+    cost!(system; generator = 5, active = 2, polynomial = [854.0, 116.0])
 
     dcModel!(system)
     analysis = dcOptimalPowerFlow(system, Ipopt.Optimizer)
@@ -275,14 +275,14 @@ end
     )
     cost!(
         resystem, reusing;
-        label = 9, active = 1, piecewise = [10.2 14.3; 11.5 16.1; 12.8 18.6]
+        generator = 9, active = 1, piecewise = [10.2 14.3; 11.5 16.1; 12.8 18.6]
     )
     addGenerator!(resystem, reusing; label = 10, bus = 3, active = 0.3)
-    cost!(resystem, reusing; label = 10, active = 1, piecewise = [10.2 14.3; 11.5 16.1])
+    cost!(resystem, reusing; generator = 10, active = 1, piecewise = [10.2 14.3; 11.5 16.1])
     updateGenerator!(resystem, reusing; label = 9, status = 1, maxActive = 0.8)
     updateGenerator!(resystem, reusing; label = 10, status = 0, maxActive = 0.8)
     updateGenerator!(resystem, reusing; label = 9, status = 0)
-    cost!(resystem, reusing; label = 5, active = 2, polynomial = [854.0, 116.0])
+    cost!(resystem, reusing; generator = 5, active = 2, polynomial = [854.0, 116.0])
 
     set_silent(reusing.method.jump)
     solve!(resystem, reusing)
@@ -312,9 +312,9 @@ end
         system;
         label = 11, bus = 14, active = 0.3, minActive = 0.0, maxActive = 0.5, status = 0
     )
-    cost!(system; label = 11, active = 2, polynomial = [165.0])
-    cost!(system; label = 10, active = 1, piecewise = [10.2 14.3; 11.5 16.1; 12.8 18.6])
-    cost!(system; label = 9, active = 2, polynomial = [856.2; 135.3; 80])
+    cost!(system; generator = 11, active = 2, polynomial = [165.0])
+    cost!(system; generator = 10, active = 1, piecewise = [10.2 14.3; 11.5 16.1; 12.8 18.6])
+    cost!(system; generator = 9, active = 2, polynomial = [856.2; 135.3; 80])
 
     dcModel!(system)
     analysis = dcOptimalPowerFlow(system, Ipopt.Optimizer)
@@ -337,9 +337,9 @@ end
         resystem, reusing;
         label = 11, bus = 14, active = 0.3, minActive = 0.0, maxActive = 0.5, status = 0
     )
-    cost!(resystem, reusing; label = 11, active = 2, polynomial = [165.0])
-    cost!(resystem, reusing; label = 10, active = 1, piecewise = [10.2 14.3; 11.5 16.1; 12.8 18.6])
-    cost!(resystem, reusing; label = 9, active = 2, polynomial = [856.2; 135.3; 80])
+    cost!(resystem, reusing; generator = 11, active = 2, polynomial = [165.0])
+    cost!(resystem, reusing; generator = 10, active = 1, piecewise = [10.2 14.3; 11.5 16.1; 12.8 18.6])
+    cost!(resystem, reusing; generator = 9, active = 2, polynomial = [856.2; 135.3; 80])
 
     startingPrimal!(resystem, reusing)
     solve!(resystem, reusing)

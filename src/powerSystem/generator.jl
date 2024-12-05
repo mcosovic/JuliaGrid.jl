@@ -733,7 +733,7 @@ macro generator(kwargs...)
 end
 
 """
-    cost!(system::PowerSystem, [analysis::Analysis]; label, active, reactive,
+    cost!(system::PowerSystem, [analysis::Analysis]; generator, active, reactive,
         piecewise, polynomial)
 
 The function either adds a new cost or modifies an existing one for the active or reactive
@@ -748,7 +748,7 @@ for completely reconstructing vectors and matrices when adding a new branch.
 
 # Keywords
 The function accepts five keywords:
-* `label`: Corresponds to the already defined generator label.
+* `generator`: Corresponds to the already defined generator label.
 * `active`: Active power cost model:
   * `active = 1`: adding or updating cost, and piecewise linear is being used,
   * `active = 2`: adding or updating cost, and polynomial is being used.
@@ -780,7 +780,7 @@ system = powerSystem()
 addBus!(system; label = "Bus 1", active = 0.25, reactive = -0.04, base = 132e3)
 
 addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 0.5)
-cost!(system; label = "Generator 1", active = 2, polynomial = [1100.0; 500.0; 150.0])
+cost!(system; generator = "Generator 1", active = 2, polynomial = [1100.0; 500.0; 150.0])
 ```
 
 Adding a cost using a custom unit system:
@@ -791,12 +791,12 @@ system = powerSystem()
 addBus!(system; label = "Bus 1", active = 25, reactive = -4, base = 132e3)
 
 addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 50, reactive = 10)
-cost!(system; label = "Generator 1", active = 2, polynomial = [0.11; 5.0; 150.0])
+cost!(system; generator = "Generator 1", active = 2, polynomial = [0.11; 5.0; 150.0])
 ```
 """
 function cost!(
     system::PowerSystem;
-    label::IntStrMiss,
+    generator::IntStrMiss,
     active::FltIntMiss = missing,
     reactive::FltIntMiss = missing,
     polynomial::Vector{Float64} = Float64[],
@@ -815,7 +815,7 @@ function cost!(
         )
     end
 
-    idx = system.generator.label[getLabel(system.generator, label, "generator")]
+    idx = system.generator.label[getLabel(system.generator, generator, "generator")]
 
     if isset(active)
         container = system.generator.cost.active
@@ -859,7 +859,7 @@ end
 function cost!(
     system::PowerSystem,
     analysis::ACOptimalPowerFlow;
-    label::IntStrMiss,
+    generator::IntStrMiss,
     active::FltIntMiss = missing,
     reactive::FltIntMiss = missing,
     polynomial::Vector{Float64} = Float64[],
@@ -872,14 +872,14 @@ function cost!(
     obj = analysis.method.objective
 
     dropZero = false
-    idx = gen.label[getLabel(gen, label, "generator")]
+    idx = gen.label[getLabel(gen, generator, "generator")]
 
     if gen.layout.status[idx] == 1
         actCost, isActwiseOld, isActNonlin = costExpr(
-            gen.cost.active, variable.active[idx], idx, label; ac = true
+            gen.cost.active, variable.active[idx], idx, generator; ac = true
         )
         reactCost, isReactwisOld, isReactNonlin = costExpr(
-            gen.cost.reactive, variable.reactive[idx], idx, label; ac = true
+            gen.cost.reactive, variable.reactive[idx], idx, generator; ac = true
         )
 
         @objective(jump, Min, 0.0)
@@ -905,14 +905,14 @@ function cost!(
         end
     end
 
-    cost!(system; label, active, reactive, polynomial, piecewise)
+    cost!(system; generator, active, reactive, polynomial, piecewise)
 
     if gen.layout.status[idx] == 1
         actCost, isActwiseNew, isActNonlin = costExpr(
-            gen.cost.active, variable.active[idx], idx, label; ac = true
+            gen.cost.active, variable.active[idx], idx, generator; ac = true
         )
         reactCost, isReactwiseNew, isReactNonlin = costExpr(
-            gen.cost.reactive, variable.reactive[idx], idx, label; ac = true
+            gen.cost.reactive, variable.reactive[idx], idx, generator; ac = true
         )
 
         if isActwiseNew
@@ -984,7 +984,7 @@ end
 function cost!(
     system::PowerSystem,
     analysis::DCOptimalPowerFlow;
-    label::IntStrMiss,
+    generator::IntStrMiss,
     active::FltIntMiss = missing,
     reactive::FltIntMiss = missing,
     polynomial::Vector{Float64} = Float64[],
@@ -996,10 +996,10 @@ function cost!(
     variable = analysis.method.variable
 
     dropZero = false
-    idx = gen.label[getLabel(gen, label, "generator")]
+    idx = gen.label[getLabel(gen, generator, "generator")]
 
     if gen.layout.status[idx] == 1
-        costOld, isPowerwiseOld = costExpr(gen.cost.active, variable.active[idx], idx, label)
+        costOld, isPowerwiseOld = costExpr(gen.cost.active, variable.active[idx], idx, generator)
 
         if isPowerwiseOld
             remove!(jump, constr.piecewise.active, idx)
@@ -1009,10 +1009,10 @@ function cost!(
         end
     end
 
-    cost!(system; label, active, reactive, polynomial, piecewise)
+    cost!(system; generator, active, reactive, polynomial, piecewise)
 
     if gen.layout.status[idx] == 1
-        costNew, isWiseNew = costExpr(gen.cost.active, variable.active[idx], idx, label)
+        costNew, isWiseNew = costExpr(gen.cost.active, variable.active[idx], idx, generator)
 
         if isWiseNew
             if !isPowerwiseOld

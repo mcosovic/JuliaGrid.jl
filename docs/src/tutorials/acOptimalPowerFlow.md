@@ -21,11 +21,11 @@ addBranch!(system; label = 1, from = 1, to = 2, maxFromBus = 0.15, maxToBus = 0.
 addGenerator!(system; label = 1, bus = 1, active = 0.4, reactive = 0.2)
 addGenerator!(system; label = 2, bus = 2, active = 0.2, reactive = 0.1)
 
-cost!(system; label = 1, active = 2, polynomial = [900.0; 500.0; 80.0; 5.0])
-cost!(system; label = 2, active = 1, piecewise =  [10.8 12.3; 14.7 16.8; 18 18.1])
+cost!(system; generator = 1, active = 2, polynomial = [900.0; 500.0; 80.0; 5.0])
+cost!(system; generator = 2, active = 1, piecewise =  [10.8 12.3; 14.7 16.8; 18 18.1])
 
-cost!(system; label = 1, reactive = 1, piecewise = [10.0 20.0; 20.0 40.0])
-cost!(system; label = 2, reactive = 2, polynomial = [2.0])
+cost!(system; generator = 1, reactive = 1, piecewise = [10.0 20.0; 20.0 40.0])
+cost!(system; generator = 2, reactive = 2, polynomial = [2.0])
 nothing # hide
 ```
 

@@ -38,9 +38,9 @@ addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 0.6, maxAct
 addGenerator!(system; label = "Generator 2", bus = "Bus 2", active = 0.1, maxActive = 0.3)
 addGenerator!(system; label = "Generator 3", bus = "Bus 2", active = 0.2, maxActive = 0.4)
 
-cost!(system; label = "Generator 1", active = 2, polynomial = [1100.2; 500; 80])
-cost!(system; label = "Generator 2", active = 1, piecewise = [8.0 11.0; 14.0 17.0])
-cost!(system; label = "Generator 3", active = 1, piecewise = [6.8 12.3; 8.7 16.8; 11.2 19.8])
+cost!(system; generator = "Generator 1", active = 2, polynomial = [1100.2; 500; 80])
+cost!(system; generator = "Generator 2", active = 1, piecewise = [8.0 11.0; 14.0 17.0])
+cost!(system; generator = "Generator 3", active = 1, piecewise = [6.8 12.3; 8.7 16.8; 11.2 19.8])
 
 dcModel!(system)
 nothing # hide
@@ -285,7 +285,7 @@ Additionally, JuliaGrid stores the objective function in a separate variable, al
 ##### Update Objective Function
 By utilizing the [`cost!`](@ref cost!) functions, users have the flexibility to modify the objective function by adjusting polynomial or linear piecewise cost coefficients or by changing the type of polynomial or linear piecewise function employed. For instance, consider `Generator 3`, which incorporates a piecewise cost structure with two segments. Now, we can define a polynomial function for this generator and activate it by specifying the keyword `active = 2` as shown:
 ```@example DCOptimalPowerFlow
-cost!(system, analysis; label = "Generator 3", active = 2, polynomial = [853.4; 257; 40])
+cost!(system, analysis; generator = "Generator 3", active = 2, polynomial = [853.4; 257; 40])
 ```
 
 This results in the updated objective function, which can be observed as follows:
