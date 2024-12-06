@@ -40,7 +40,7 @@ addGenerator!(system; label = "Generator 3", bus = "Bus 2", active = 0.2, maxAct
 
 cost!(system; generator = "Generator 1", active = 2, polynomial = [1100.2; 500; 80])
 cost!(system; generator = "Generator 2", active = 1, piecewise = [8.0 11.0; 14.0 17.0])
-cost!(system; generator = "Generator 3", active = 1, piecewise = [6.8 12.3; 8.7 16.8; 11.2 19.8])
+cost!(system; generator = "Generator 3", active = 1, piecewise = [6 12.3; 8.7 16.8; 11 19])
 
 dcModel!(system)
 nothing # hide
