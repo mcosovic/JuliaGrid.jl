@@ -421,16 +421,19 @@ end
 # Copyright (c) 2013-2014 Viral Shah, Douglas Bates and other contributors
 # https://github.com/JuliaPackageMirrors/SuiteSparse.jl/blob/master/src/csparse.jl
 # Based on Direct Methods for Sparse Linear Systems, T. A. Davis, SIAM, Philadelphia, 2006.
-function symbfact(A::SparseMatrixCSC{Float64,Int64}, parent::Vector{Int64})
+function symbfact(A::SparseMatrixCSC{Float64, Int64}, parent::Vector{Int64})
     m, n = size(A)
     Ap = A.colptr
     Ai = A.rowval
-    col = Int64[]; sizehint!(col, n)
-    row = Int64[]; sizehint!(row, n)
+
+    col = Int64[]
+    row = Int64[]
+    sizehint!(col, n)
+    sizehint!(row, n)
 
     visited = falses(n)
-    @inbounds for k = 1:m
-        visited = falses(n)
+    @inbounds for k in 1:m
+        fill!(visited, false)
         visited[k] = true
         for p in Ap[k]:(Ap[k + 1] - 1)
             i = Ai[p]
@@ -446,7 +449,12 @@ function symbfact(A::SparseMatrixCSC{Float64,Int64}, parent::Vector{Int64})
         end
     end
 
-    return sparse([col; collect(1:n)], [row; collect(1:n)], ones(length(row) + n), n, n)
+    diagonal = collect(1:n)
+    col = vcat(col, diagonal)
+    row = vcat(row, diagonal)
+    nnz = length(row)
+
+    return sparse(col, row, ones(nnz), n, n)
 end
 
 ##### The Sparse Inverse Subset of a Real Sparse Square Matrix #####

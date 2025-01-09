@@ -59,7 +59,7 @@ Thus, for any given bus ``i \in \mathcal{N}``, we can express it as:
 
 The complex power injection denoted by ``S_i`` consists of both the active power ``P_i`` and reactive power ``Q_i``. This relationship can be represented as follows:
 ```math
-  \cfrac{P_i - \text{j}Q_i}{\bar{V}_{i}} = \sum_{j = 1}^n Y_{ij} \bar {V}_j.
+  \cfrac{P_i - \text{j}Q_i}{\bar{V}_{i}^*} = \sum_{j = 1}^n Y_{ij} \bar {V}_j.
 ```
 
 Recognizing that ``Y_{ij} =  G_{ij} + \text{j}B_{ij}``, ``\bar{V}_{i} = V_i \text{e}^{\text{j}\theta_{i}}``, ``\bar{V}_{j} = V_j \text{e}^{\text{j}\theta_{j}}``, and by defining ``\theta_{ij} = \theta_{i} - \theta_{j}``,  we can break down the above equation into its real and imaginary parts, resulting in two equations that describe bus ``i \in \mathcal{N}`` as follows:
