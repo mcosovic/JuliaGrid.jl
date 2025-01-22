@@ -334,7 +334,7 @@ solve!(system, analysis)
 
 addPmu!(system, device; to = "Branch 2", magnitude = 0.5, angle = 3.1)
 updatePmu!(system, device; label = "PMU 1", varianceMagnitude = 1e-8)
-updatePmu!(system, device; label = "PMU 3", statusMagnitude = 0, statusAngle = 0)
+updatePmu!(system, device; label = "PMU 3", status = 0)
 
 analysis = pmuStateEstimation(system, device) # <- Build PMUStateEstimation for new model
 solve!(system, analysis)
@@ -377,14 +377,14 @@ addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 3.2, reacti
 addPmu!(system, device; bus = "Bus 1", magnitude = 1.0, angle = 0.0)
 addPmu!(system, device; bus = "Bus 2", magnitude = 0.98, angle = -0.023)
 addPmu!(system, device; from = "Branch 2", magnitude = 0.5, angle = -0.05)
-addPmu!(system, device; to = "Branch 2", magnitude = 0.5, angle = 3.1, statusAngle = 0)
+addPmu!(system, device; to = "Branch 2", magnitude = 0.5, angle = 3.1, status = 0)
 
 analysis = pmuStateEstimation(system, device) # <- Build PMUStateEstimation for the model
 solve!(system, analysis)
 
 updatePmu!(system, device, analysis; label = "PMU 1", varianceMagnitude = 1e-8)
-updatePmu!(system, device, analysis; label = "PMU 3", statusMagnitude = 0, statusAngle = 0)
-updatePmu!(system, device, analysis; label = "PMU 4", statusAngle = 1)
+updatePmu!(system, device, analysis; label = "PMU 3", status = 0)
+updatePmu!(system, device, analysis; label = "PMU 4", status = 1)
 
 # <- No need for re-build; we have already updated the existing PMUStateEstimation instance
 solve!(system, analysis)

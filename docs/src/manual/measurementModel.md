@@ -450,7 +450,7 @@ Similarly, for the [`addAmmeter!`](@ref addAmmeter!) function, the default varia
 
 In alignment with ammeters, the [`addWattmeter!`](@ref addWattmeter!) and [`addVarmeter!`](@ref addVarmeter!) functions feature default variances set at `variance = 1e-2` per-unit, and statuses are automatically assigned as `status = 1`, regardless of whether the wattmeter or varmeter is placed at the bus, the from-bus end, or the to-bus end. Users have the ability to customize these default values, making distinctions between the three positions of the measurement devices.
 
-For the [`addPmu!`](@ref addPmu!) function, variances for both magnitude and angle measurements are standardized to `varianceMagnitude = 1e-5` and `varianceAngle = 1e-5` in per-units. Likewise, operational statuses are uniformly set to `statusMagnitude = 1` and `statusAngle = 1`, regardless of whether the PMU is positioned on the bus, the from-bus end, or the to-bus end. Once more, users retain the option to tailor these default values to their specific needs, allowing for distinctions between these three locations of the measurement devices. Additionally, the coordinate system utilized for AC state estimation is consistently configured with `polar = false`, while correlation in the rectangular system is disabled with `correlated = false`.
+For the [`addPmu!`](@ref addPmu!) function, variances for both magnitude and angle measurements are standardized to `varianceMagnitude = 1e-5` and `varianceAngle = 1e-5` in per-units. Likewise, operational status is uniformly set to `status = 1`, regardless of whether the PMU is positioned on the bus, the from-bus end, or the to-bus end. Once more, users retain the option to tailor these default values to their specific needs, allowing for distinctions between these three locations of the measurement devices. Additionally, the coordinate system utilized for AC state estimation is consistently configured with `polar = false`, while correlation in the rectangular system is disabled with `correlated = false`.
 
 Across all measurement devices, the method for generating measurement means is established as `noise = false`.
 
@@ -485,15 +485,13 @@ addVarmeter!(system, device; label = "Varmeter 1", bus = "Bus 1", reactive = 0.2
 addVarmeter!(system, device; label = "Varmeter 2", from = "Branch 1", reactive = 0.1)
 addVarmeter!(system, device; label = "Varmeter 3", to = "Branch 1", reactive = 0.05)
 
-@pmu(varianceMagnitudeBus = 1e-4, statusAngleBus = 0, varianceAngleFrom = 1e-3)
+@pmu(varianceMagnitudeBus = 1e-4, statusBus = 0, varianceAngleFrom = 1e-3)
 addPmu!(system, device; label = "PMU 1", bus = "Bus 1", magnitude = 1.1, angle = -0.1)
 addPmu!(system, device; label = "PMU 2", from = "Branch 1", magnitude = 1.0, angle = -0.2)
 addPmu!(system, device; label = "PMU 3", to = "Branch 1", magnitude = 0.9, angle = 0.0)
 ```
 
 For instance, when adding a wattmeter to the bus, the `varianceBus = 1e-3` will be applied, or if it is added to the from-bus end of the branch, these wattmeters will be set as out-of-service according to `statusFrom = 0`.
-
-Similarly, when adding a PMU to the bus, the variance of the bus voltage magnitude will be defined in accordance with `varianceMagnitudeBus = 1e-4`, while the bus voltage angle measurements will be configured as out-of-service based on the `statusAngleBus = 0`.
 
 It is important to note that changing input units will also impact the templates accordingly.
 
