@@ -1,6 +1,6 @@
 """
-    addAmmeter!(system::PowerSystem, device::Measurement; label, from, to, magnitude,
-        variance, noise, status)
+    addAmmeter!(system::PowerSystem, device::Measurement;
+        label, from, to, magnitude, variance, noise, status)
 
 The function adds a new ammeter that measures branch current magnitude to the `Measurement`
 type within a given `PowerSystem` type. The ammeter can be added to an already defined
@@ -111,8 +111,8 @@ function addAmmeter!(
 end
 
 """
-    addAmmeter!(system::PowerSystem, device::Measurement, analysis::AC; varianceFrom,
-        statusFrom, varianceTo, statusTo, noise)
+    addAmmeter!(system::PowerSystem, device::Measurement, analysis::AC;
+        varianceFrom, statusFrom, varianceTo, statusTo, noise)
 
 The function incorporates ammeters into the `Measurement` type for every branch within the
 `PowerSystem` type. These measurements are derived from the exact branch current magnitudes

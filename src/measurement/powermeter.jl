@@ -1,6 +1,6 @@
 """
-    addWattmeter!(system::PowerSystem, device::Measurement; label, bus, from, to, active,
-        variance, noise, status)
+    addWattmeter!(system::PowerSystem, device::Measurement;
+        label, bus, from, to, active, variance, noise, status)
 
 The function adds a new wattmeter that measures active power injection or active power flow
 to the `Measurement` type within a given `PowerSystem` type. The wattmeter can be added to
@@ -85,8 +85,8 @@ function addWattmeter!(
 end
 
 """
-    addVarmeter!(system::PowerSystem, device::Measurement; label, bus, from, to, reactive,
-        variance, noise, status)
+    addVarmeter!(system::PowerSystem, device::Measurement;
+        label, bus, from, to, reactive, variance, noise, status)
 
 The function adds a new varmeter that measures reactive power injection or reactive power
 flow to the `Measurement` type within a given `PowerSystem` type. The varmeter can be added

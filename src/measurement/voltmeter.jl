@@ -1,6 +1,6 @@
 """
-    addVoltmeter!(system::PowerSystem, device::Measurement; label, bus, magnitude, variance,
-        noise, status)
+    addVoltmeter!(system::PowerSystem, device::Measurement;
+        label, bus, magnitude, variance, noise, status)
 
 The function adds a new voltmeter that measures bus voltage magnitude to the `Measurement`
 type within a given `PowerSystem` type. The voltmeter can be added to an already
@@ -84,8 +84,8 @@ function addVoltmeter!(
 end
 
 """
-    addVoltmeter!(system::PowerSystem, device::Measurement, analysis::AC; variance, noise,
-        status)
+    addVoltmeter!(system::PowerSystem, device::Measurement, analysis::AC;
+        variance, noise, status)
 
 The function incorporates voltmeters into the `Measurement` composite type for every bus
 within the `PowerSystem` type. These measurements are derived from the exact bus voltage
