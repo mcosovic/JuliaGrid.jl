@@ -123,11 +123,13 @@ Users have the option to configure the following keywords:
 * `varianceFrom` (pu or A): Measurement variance for ammeters at the from-bus ends.
 * `statusFrom`: Operating status of the ammeters at the from-bus ends:
   * `statusFrom = 1`: in-service,
-  * `statusFrom = 0`: out-of-service.
+  * `statusFrom = 0`: out-of-service,
+  * `statusFrom = -1`: not included in the `Measurement` type.
 * `varianceTo` (pu or A): Measurement variance for ammeters at the to-bus ends.
 * `statusTo`: Operating status of the ammeters at the to-bus ends:
   * `statusTo = 1`: in-service,
-  * `statusTo = 0`: out-of-service.
+  * `statusTo = 0`: out-of-service,
+  * `statusTo = -1`: not included in the `Measurement` type.
 * `noise`: Specifies how to generate the measurement mean:
   * `noise = true`: adds white Gaussian noise with the `variance` to the current magnitudes,
   * `noise = false`: uses the exact current magnitude values.
@@ -173,7 +175,8 @@ function addAmmeter!(
     varianceTo::FltIntMiss = missing,
     statusFrom::FltIntMiss = missing,
     statusTo::FltIntMiss = missing,
-    noise::Bool = template.ammeter.noise
+    noise::Bool = template.ammeter.noise,
+    outofservice::Bool = true
 )
     errorCurrent(analysis.current.from.magnitude)
 
@@ -185,51 +188,67 @@ function addAmmeter!(
     amp.number = 0
 
     statusFrom = givenOrDefault(statusFrom, def.statusFrom)
-    checkStatus(statusFrom)
+    checkWideStatus(statusFrom)
 
     statusTo = givenOrDefault(statusTo, def.statusTo)
-    checkStatus(statusTo)
+    checkWideStatus(statusTo)
 
-    ammNumber = 2 * system.branch.layout.inservice
-    amp.label = OrderedDict{template.device, Int64}()
-    sizehint!(amp.label, ammNumber)
-
-    amp.layout.index = fill(0, ammNumber)
-    amp.layout.from = fill(false, ammNumber)
-    amp.layout.to = fill(false, ammNumber)
-
-    amp.magnitude.mean = fill(0.0, ammNumber)
-    amp.magnitude.variance = similar(amp.magnitude.mean)
-    amp.magnitude.status = fill(Int8(0), ammNumber)
-
-    baseInv = 1 / (system.base.power.value * system.base.power.prefix)
-    @inbounds for (label, i) in system.branch.label
-        if system.branch.layout.status[i] == 1
-            amp.number += 1
-            setLabel(amp, missing, def.label, label; prefix = "From ")
-
-            amp.layout.index[amp.number] = i
-            amp.layout.index[amp.number + 1] = i
-
-            amp.layout.from[amp.number] = true
-            amp.layout.to[amp.number + 1] = true
-
-            from, to = fromto(system, i)
-            baseFromInv = baseCurrentInv(baseInv, baseVoltg.value[from] * baseVoltg.prefix)
-            baseToInv = baseCurrentInv(baseInv, baseVoltg.value[to] * baseVoltg.prefix)
-
-            add!(
-                amp.magnitude, amp.number, noise, pfx.currentMagnitude,
-                current.from.magnitude[i], varianceFrom, def.varianceFrom, statusFrom,
-                baseFromInv, current.to.magnitude[i], varianceTo, def.varianceTo,
-                statusTo, baseToInv
-            )
-
-            amp.number += 1
-            setLabel(amp, missing, def.label, label; prefix = "To ")
+    if statusFrom != -1 || statusTo != -1
+        if statusFrom != -1 && statusTo != -1
+            ammNumber = 2 * system.branch.layout.inservice
+        else
+            ammNumber = system.branch.layout.inservice
         end
+
+        amp.label = OrderedDict{template.device, Int64}()
+        sizehint!(amp.label, ammNumber)
+
+        amp.layout.index = fill(0, ammNumber)
+        amp.layout.from = fill(false, ammNumber)
+        amp.layout.to = fill(false, ammNumber)
+
+        amp.magnitude.mean = fill(0.0, ammNumber)
+        amp.magnitude.variance = similar(amp.magnitude.mean)
+        amp.magnitude.status = fill(Int8(0), ammNumber)
+
+        baseInv = 1 / (system.base.power.value * system.base.power.prefix)
+        @inbounds for (label, i) in system.branch.label
+            if system.branch.layout.status[i] == 1
+                from, to = fromto(system, i)
+
+                if statusFrom != -1
+                    amp.number += 1
+                    setLabel(amp, missing, def.label, label; prefix = "From ")
+
+                    amp.layout.index[amp.number] = i
+                    amp.layout.from[amp.number] = true
+                    baseFromInv = baseCurrentInv(baseInv, baseVoltg.value[from] * baseVoltg.prefix)
+
+                    add!(
+                        amp.magnitude, amp.number, noise, pfx.currentMagnitude,
+                        current.from.magnitude[i], varianceFrom, def.varianceFrom,
+                        statusFrom, baseFromInv
+                    )
+                end
+
+                if statusTo != -1
+                    amp.number += 1
+                    setLabel(amp, missing, def.label, label; prefix = "To ")
+
+                    amp.layout.index[amp.number] = i
+                    amp.layout.to[amp.number] = true
+                    baseToInv = baseCurrentInv(baseInv, baseVoltg.value[to] * baseVoltg.prefix)
+
+                    add!(
+                        amp.magnitude, amp.number, noise, pfx.currentMagnitude,
+                        current.to.magnitude[i], varianceTo, def.varianceTo,
+                        statusTo, baseToInv
+                    )
+                end
+            end
+        end
+        amp.layout.label = amp.number
     end
-    amp.layout.label = amp.number
 end
 
 """

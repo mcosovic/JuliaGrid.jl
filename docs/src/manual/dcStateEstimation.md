@@ -284,9 +284,9 @@ addWattmeter!(system, device; to = "Branch 1", active = -0.12, variance = 1e-4, 
 analysis = dcStateEstimation(system, device) # <- Build DCStateEstimation for the model
 solve!(system, analysis)
 
-updateWattmeter!(system, device; label = "Wattmeter 1", status = 0)
-updateWattmeter!(system, device; label = "Wattmeter 2", active = 0.1, noise = false)
-updateWattmeter!(system, device; label = "Wattmeter 3", status = 1)
+updateWattmeter!(system, device, analysis; label = "Wattmeter 1", status = 0)
+updateWattmeter!(system, device, analysis; label = "Wattmeter 2", active = 0.1)
+updateWattmeter!(system, device, analysis; label = "Wattmeter 3", status = 1, noise = false)
 
 # <- No need for re-build; we have already updated the existing DCStateEstimation instance
 solve!(system, analysis)

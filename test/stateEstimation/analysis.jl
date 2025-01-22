@@ -52,7 +52,7 @@ system30 = powerSystem(path * "case30test.m")
         for (key, idx) in system14.bus.label
             addPmu!(
                 system14, device; bus = key, magnitude = analysis.voltage.magnitude[idx],
-                angle = analysis.voltage.angle[idx], statusMagnitude = 0, polar = true
+                angle = analysis.voltage.angle[idx], polar = true
             )
             addVoltmeter!(
                 system14, device;
@@ -98,7 +98,7 @@ system30 = powerSystem(path * "case30test.m")
         for (key, idx) in system14.bus.label
             addPmu!(
                 system14, device; bus = key, magnitude = analysis.voltage.magnitude[idx],
-                angle = analysis.voltage.angle[idx], statusAngle = 0, polar = true
+                angle = analysis.voltage.angle[idx], polar = true
             )
             addWattmeter!(
                 system14, device;
@@ -118,7 +118,7 @@ system30 = powerSystem(path * "case30test.m")
         for (key, idx) in system14.bus.label
             addPmu!(
                 system14, device; bus = key, magnitude = analysis.voltage.magnitude[idx],
-                angle = analysis.voltage.angle[idx], statusAngle = 0, polar = true
+                angle = analysis.voltage.angle[idx], polar = true
             )
         end
         for (key, idx) in system14.branch.label
@@ -314,7 +314,7 @@ system30 = powerSystem(path * "case30test.m")
             )
             addPmu!(
                 system14, device; from = key, magnitude = analysis.current.from.magnitude[idx],
-                angle = analysis.current.from.angle[idx], statusAngle = 1, polar = true
+                angle = analysis.current.from.angle[idx], polar = true
             )
             addPmu!(
                 system14, device; from = key, magnitude = analysis.current.from.magnitude[idx],
@@ -391,11 +391,7 @@ system30 = powerSystem(path * "case30test.m")
             )
             addPmu!(
                 system14, device; from = key, magnitude = analysis.current.from.magnitude[idx],
-                angle = analysis.current.from.angle[idx], statusAngle = 0, polar = true
-            )
-            addPmu!(
-                system14, device; to = key, magnitude = analysis.current.to.magnitude[idx],
-                angle = analysis.current.to.angle[idx], statusAngle = 0, polar = true
+                angle = analysis.current.from.angle[idx], polar = true
             )
             addPmu!(
                 system14, device; from = key, magnitude = analysis.current.from.magnitude[idx],
@@ -470,7 +466,7 @@ system30 = powerSystem(path * "case30test.m")
         for (key, idx) in system30.bus.label
             addPmu!(
                 system30, device; bus = key, magnitude = analysis.voltage.magnitude[idx],
-                angle = analysis.voltage.angle[idx], statusMagnitude = 0, polar = true
+                angle = analysis.voltage.angle[idx], polar = true
             )
             addVoltmeter!(
                 system30, device;
@@ -485,7 +481,7 @@ system30 = powerSystem(path * "case30test.m")
         for (key, idx) in system30.bus.label
             addPmu!(
                 system30, device; bus = key, magnitude = analysis.voltage.magnitude[idx],
-                angle = analysis.voltage.angle[idx], statusAngle = 0, polar = true
+                angle = analysis.voltage.angle[idx], polar = true
             )
             addWattmeter!(
                 system30, device;
@@ -510,7 +506,7 @@ system30 = powerSystem(path * "case30test.m")
         for (key, idx) in system30.bus.label
             addPmu!(
                 system30, device; bus = key, magnitude = analysis.voltage.magnitude[idx],
-                angle = analysis.voltage.angle[idx], statusMagnitude = 0, polar = true
+                angle = analysis.voltage.angle[idx], polar = true
             )
             addVarmeter!(
                 system30, device;

@@ -522,14 +522,9 @@ macro default(mode::Symbol)
       template.pmu.varianceAngleTo.value = 1e-5
       template.pmu.varianceAngleTo.pu = true
 
-      template.pmu.statusMagnitudeBus = Int8(1)
-      template.pmu.statusAngleBus = Int8(1)
-
-      template.pmu.statusMagnitudeFrom = Int8(1)
-      template.pmu.statusAngleFrom = Int8(1)
-
-      template.pmu.statusMagnitudeTo = Int8(1)
-      template.pmu.statusAngleTo = Int8(1)
+      template.pmu.statusBus = Int8(1)
+      template.pmu.statusFrom = Int8(1)
+      template.pmu.statusTo = Int8(1)
 
       template.pmu.label = "?"
       template.pmu.noise = false

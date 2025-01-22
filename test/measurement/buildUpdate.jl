@@ -23,8 +23,8 @@
     @varmeter(varianceBus = 1e-2, varianceFrom = 1e-2, varianceTo = 1e-1, statusTo = 0)
     @pmu(
         label = "? PMU", varianceMagnitudeBus = 1e-3, varianceAngleBus = 1e-5,
-        varianceMagnitudeFrom = 1e-5, varianceAngleFrom = 1e-6, statusAngleFrom = 0,
-        varianceMagnitudeTo = 1e-2, varianceAngleTo = 1e-3, statusMagnitudeBus = 0
+        varianceMagnitudeFrom = 1e-5, varianceAngleFrom = 1e-6, statusFrom = 0,
+        varianceMagnitudeTo = 1e-2, varianceAngleTo = 1e-3
     )
 
     ########## Generate Measurements from AC Power Flow ##########
@@ -64,7 +64,7 @@
             @test device.pmu.magnitude.mean[end] == deviceAll.pmu.magnitude.mean[value]
             @test device.pmu.angle.mean[end] == analysis.voltage.angle[value]
             @test device.pmu.angle.mean[end] == deviceAll.pmu.angle.mean[value]
-            @test device.pmu.magnitude.status[end] == 0
+            @test device.pmu.magnitude.status[end] == 1
             @test device.pmu.angle.status[end] == 1
         end
     end
@@ -128,7 +128,7 @@
                 @test device.pmu.magnitude.mean[end] == deviceAll.pmu.magnitude.mean[cnt1]
                 @test device.pmu.angle.mean[end] == analysis.current.from.angle[value]
                 @test device.pmu.angle.mean[end] == deviceAll.pmu.angle.mean[cnt1]
-                @test device.pmu.magnitude.status[end] == 1
+                @test device.pmu.magnitude.status[end] == 0
 
                 addPmu!(
                     system, device; to = key, magnitude = analysis.current.to.magnitude[value],
@@ -217,24 +217,23 @@
     @testset "Update PMUs" begin
         updatePmu!(
             system, device; label = "4 PMU", magnitude = 0.1, angle = 0.2,
-            varianceMagnitude = 1e-6, varianceAngle = 1e-7, statusMagnitude = 0, statusAngle = 1
+            varianceMagnitude = 1e-6, varianceAngle = 1e-7, status = 1
         )
         @test device.pmu.magnitude.mean[4] == 0.1
         @test device.pmu.magnitude.variance[4] == 1e-6
-        @test device.pmu.magnitude.status[4] == 0
+        @test device.pmu.magnitude.status[4] == 1
         @test device.pmu.angle.mean[4] == 0.2
         @test device.pmu.angle.variance[4] == 1e-7
         @test device.pmu.angle.status[4] == 1
 
         updatePmu!(
             system, device; label = "5 PMU", magnitude = 0.3, angle = 0.4,
-            varianceMagnitude = 1e-10, varianceAngle = 1e-11, statusMagnitude = 1,
-            statusAngle = 0, noise = true
+            varianceMagnitude = 1e-10, varianceAngle = 1e-11, status = 0, noise = true
         )
         @test device.pmu.magnitude.mean[5] ≈ 0.3 atol = 1e-2
         @test device.pmu.magnitude.mean[5] != 0.3
         @test device.pmu.magnitude.variance[5] == 1e-10
-        @test device.pmu.magnitude.status[5] == 1
+        @test device.pmu.magnitude.status[5] == 0
         @test device.pmu.angle.mean[5] ≈ 0.4 atol = 1e-2
         @test device.pmu.magnitude.mean[5] != 0.4
         @test device.pmu.angle.variance[5] == 1e-11
@@ -746,12 +745,9 @@ end
 
     @testset "PMU Macro" begin
         @pmu(label = "PMU ?", noise = true, polar = true, correlated = true,
-        varianceMagnitudeBus = 10, varianceAngleBus = 20,
-        statusMagnitudeBus = 0, statusAngleBus = 1,
-        varianceMagnitudeFrom = 30, varianceAngleFrom = 40,
-        statusMagnitudeFrom = 1, statusAngleFrom = 0,
-        varianceMagnitudeTo = 50, varianceAngleTo = 60,
-        statusMagnitudeTo = 0, statusAngleTo = 0)
+        varianceMagnitudeBus = 10, varianceAngleBus = 20, statusBus = 0,
+        varianceMagnitudeFrom = 30, varianceAngleFrom = 40, statusFrom = 1,
+        varianceMagnitudeTo = 50, varianceAngleTo = 60, statusTo = 0)
 
         addPmu!(system, device; bus = "Bus 1", magnitude = 2, angle = 1)
         @test device.pmu.label["PMU 1"] == 1
@@ -760,15 +756,15 @@ end
         @test device.pmu.magnitude.status[1] == 0
         @test device.pmu.angle.mean[1] != 1
         @test device.pmu.angle.variance[1] == 20
-        @test device.pmu.angle.status[1] == 1
+        @test device.pmu.angle.status[1] == 0
         @test device.pmu.layout.polar[1] == true
         @test device.pmu.layout.correlated[1] == true
 
         addPmu!(
             system, device;
             bus = "Bus 1", noise = false, polar = false, correlated = false,
-            magnitude = 3, varianceMagnitude = 1e-1, statusMagnitude = 1,
-            angle = 4, varianceAngle = 1e-2, statusAngle = 0
+            magnitude = 3, varianceMagnitude = 1e-1,
+            angle = 4, varianceAngle = 1e-2, status = 1
         )
         @test device.pmu.label["PMU 2"] == 2
         @test device.pmu.magnitude.mean[2] == 3
@@ -776,7 +772,7 @@ end
         @test device.pmu.magnitude.status[2] == 1
         @test device.pmu.angle.mean[2] == 4
         @test device.pmu.angle.variance[2] == 1e-2
-        @test device.pmu.angle.status[2] == 0
+        @test device.pmu.angle.status[2] == 1
         @test device.pmu.layout.polar[2] == false
         @test device.pmu.layout.correlated[2] == false
 
@@ -787,14 +783,14 @@ end
         @test device.pmu.magnitude.status[3] == 1
         @test device.pmu.angle.mean[3] != 6
         @test device.pmu.angle.variance[3] == 40
-        @test device.pmu.angle.status[3] == 0
+        @test device.pmu.angle.status[3] == 1
         @test device.pmu.layout.polar[3] == true
         @test device.pmu.layout.correlated[3] == true
 
         addPmu!(
             system, device; from = "Branch 1", noise = false, polar = false,
             correlated = false, magnitude = 7, varianceMagnitude = 2e-1,
-            statusMagnitude = 0, angle = 8, varianceAngle = 2e-2, statusAngle = 1
+            angle = 8, varianceAngle = 2e-2, status = 0
         )
         @test device.pmu.label["PMU 4"] == 4
         @test device.pmu.magnitude.mean[4] == 7
@@ -802,7 +798,7 @@ end
         @test device.pmu.magnitude.status[4] == 0
         @test device.pmu.angle.mean[4] == 8
         @test device.pmu.angle.variance[4] == 2e-2
-        @test device.pmu.angle.status[4] == 1
+        @test device.pmu.angle.status[4] == 0
         @test device.pmu.layout.polar[4] == false
         @test device.pmu.layout.correlated[4] == false
 
@@ -819,8 +815,8 @@ end
 
         addPmu!(
             system, device; to = "Branch 1", noise = false, polar = false,
-            correlated = false, magnitude = 9, varianceMagnitude = 3e-1, statusMagnitude = 1,
-            angle = 10, varianceAngle = 3e-2, statusAngle = 1
+            correlated = false, magnitude = 9, varianceMagnitude = 3e-1,
+            angle = 10, varianceAngle = 3e-2, status = 1
         )
         @test device.pmu.label["PMU 6"] == 6
         @test device.pmu.magnitude.mean[6] == 9

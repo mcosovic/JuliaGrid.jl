@@ -113,7 +113,7 @@ system30 = powerSystem(path * "case30test.m")
 
     @testset "Orthogonal Method with Two Outliers" begin
         updateVarmeter!(system14, device; label = "Varmeter 4", status = 1)
-        updatePmu!(system14, device; label = "PMU 10", statusMagnitude = 1)
+        updatePmu!(system14, device; label = "PMU 10", status = 1)
 
         analysisSE = gaussNewton(system14, device, Orthogonal)
         for iteration = 1:20
@@ -231,7 +231,7 @@ end
     end
 
     @testset "Two Outliers" begin
-        updatePmu!(system14, device; label = "PMU 2", statusAngle = 1, statusMagnitude = 1)
+        updatePmu!(system14, device; label = "PMU 2", status = 1)
         updatePmu!(system14, device; label = "PMU 20", angle = 10pi, magnitude = 30)
         analysisSE = pmuStateEstimation(system14, device)
         solve!(system14, analysisSE)
@@ -250,10 +250,10 @@ end
     end
 
     @testset "Orthogonal Method with One Outlier" begin
-        updatePmu!(system14, device; label = "PMU 2", statusAngle = 1, statusMagnitude = 1)
+        updatePmu!(system14, device; label = "PMU 2", status = 1)
         updatePmu!(
             system14, device; label = "PMU 20", magnitude = analysis.current.to.magnitude[4],
-            angle = analysis.current.to.angle[4], statusAngle = 1, statusMagnitude = 1
+            angle = analysis.current.to.angle[4], status = 1
         )
         analysisSE = pmuStateEstimation(system14, device, Orthogonal)
         solve!(system14, analysisSE)
@@ -268,7 +268,7 @@ end
     end
 
     @testset "Orthogonal Method with Two Outliers" begin
-        updatePmu!(system14, device; label = "PMU 2", statusAngle = 1, statusMagnitude = 1)
+        updatePmu!(system14, device; label = "PMU 2", status = 1)
         updatePmu!(system14, device; label = "PMU 20", angle = 10pi, magnitude = 30)
         analysisSE = pmuStateEstimation(system14, device, Orthogonal)
         solve!(system14, analysisSE)
@@ -359,7 +359,7 @@ end
         updateWattmeter!(system14, device; label = "Wattmeter 2", status = 1)
         updatePmu!(
             system14, device;
-            label = "PMU 10", statusAngle = 1, angle = analysis.voltage.angle[10]
+            label = "PMU 10", status = 1, angle = analysis.voltage.angle[10]
         )
         analysisSE = dcStateEstimation(system14, device, Orthogonal)
         solve!(system14, analysisSE)

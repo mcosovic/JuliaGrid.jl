@@ -187,12 +187,9 @@ Base.@kwdef mutable struct PmuTemplate
     varianceAngleFrom::ContainerTemplate = ContainerTemplate(1e-5, true)
     varianceMagnitudeTo::ContainerTemplate = ContainerTemplate(1e-5, true)
     varianceAngleTo::ContainerTemplate = ContainerTemplate(1e-5, true)
-    statusMagnitudeBus::Int8 = Int8(1)
-    statusAngleBus::Int8 = Int8(1)
-    statusMagnitudeFrom::Int8 = Int8(1)
-    statusAngleFrom::Int8 = Int8(1)
-    statusMagnitudeTo::Int8 = Int8(1)
-    statusAngleTo::Int8 = Int8(1)
+    statusBus::Int8 = Int8(1)
+    statusFrom::Int8 = Int8(1)
+    statusTo::Int8 = Int8(1)
     label::String = "?"
     correlated::Bool = false
     polar::Bool = false

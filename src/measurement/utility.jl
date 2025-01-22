@@ -3,7 +3,7 @@ function meterkwargs(
     defnoise::Bool;
     variance::FltIntMiss = missing,
     status::IntMiss = missing,
-    noise::Bool = defnoise
+    noise::Bool = defnoise,
 )
     (variance = variance, status = status, noise = noise)
 end
@@ -15,8 +15,7 @@ function pmukwargs(
     angle::FltIntMiss = missing,
     varianceMagnitude::FltIntMiss = missing,
     varianceAngle::FltIntMiss = missing,
-    statusMagnitude::FltIntMiss = missing,
-    statusAngle::FltIntMiss = missing,
+    status::FltIntMiss = missing,
     noise::Bool = def.noise,
     correlated::BoolMiss = missing,
     polar::BoolMiss = missing
@@ -24,8 +23,7 @@ function pmukwargs(
     (
     magnitude = magnitude, angle = angle,
     varianceMagnitude = varianceMagnitude, varianceAngle = varianceAngle,
-    statusMagnitude = statusMagnitude, statusAngle = statusAngle,
-    noise = noise, correlated = correlated, polar = polar
+    status = status, noise = noise, correlated = correlated, polar = polar
     )
 end
 
@@ -118,36 +116,6 @@ function add!(
     meter.mean[idx] = exact
     if noise
         meter.mean[idx] += meter.variance[idx]^(1/2) * randn(1)[1]
-    end
-end
-
-function add!(
-    meter::GaussMeter,
-    idx::Int64,
-    noise::Bool,
-    pfxLive::Float64,
-    exactFrom::Float64,
-    varianceFrom::FltIntMiss,
-    defVarianceFrom::ContainerTemplate,
-    statusFrom::Union{Int8, Int64},
-    baseInvFrom::Float64,
-    exactTo::Float64,
-    varianceTo::FltIntMiss,
-    defVarianceTo::ContainerTemplate,
-    statusTo::Union{Int8, Int64},
-    baseInvTo::Float64
-)
-    meter.status[idx] = statusFrom
-    meter.status[idx + 1] = statusTo
-
-    meter.variance[idx] = topu(varianceFrom, defVarianceFrom, pfxLive, baseInvFrom)
-    meter.variance[idx + 1] = topu(varianceTo, defVarianceTo, pfxLive, baseInvTo)
-
-    meter.mean[idx] = exactFrom
-    meter.mean[idx + 1] = exactTo
-    if noise
-        meter.mean[idx] += meter.variance[idx]^(1/2) * randn(1)[1]
-        meter.mean[idx + 1] += meter.variance[idx + 1]^(1/2) * randn(1)[1]
     end
 end
 

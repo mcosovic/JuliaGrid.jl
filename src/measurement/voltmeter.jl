@@ -144,31 +144,33 @@ function addVoltmeter!(
     key = meterkwargs(template.ammeter.noise; kwargs...)
 
     status = givenOrDefault(key.status, def.status)
-    checkStatus(status)
+    checkWideStatus(status)
 
-    volt.layout.index = collect(1:system.bus.number)
-    volt.label = OrderedDict{template.device, Int64}()
-    sizehint!(volt.label, volt.number)
+    if status != -1
+        volt.layout.index = collect(1:system.bus.number)
+        volt.label = OrderedDict{template.device, Int64}()
+        sizehint!(volt.label, volt.number)
 
-    volt.magnitude.mean = similar(analysis.voltage.magnitude)
-    volt.magnitude.variance = similar(analysis.voltage.magnitude)
-    volt.magnitude.status = fill(Int8(status), system.bus.number)
+        volt.magnitude.mean = similar(analysis.voltage.magnitude)
+        volt.magnitude.variance = similar(analysis.voltage.magnitude)
+        volt.magnitude.status = fill(Int8(status), system.bus.number)
 
-    label = collect(keys(system.bus.label))
-    @inbounds for i = 1:system.bus.number
-        volt.number += 1
+        label = collect(keys(system.bus.label))
+        @inbounds for i = 1:system.bus.number
+            volt.number += 1
 
-        lblBus = getLabel(system.bus, label[i], "bus")
-        setLabel(volt, missing, def.label, lblBus)
-        baseInv = sqrt(3) / (baseVoltg.prefix * baseVoltg.value[i])
+            lblBus = getLabel(system.bus, label[i], "bus")
+            setLabel(volt, missing, def.label, lblBus)
+            baseInv = sqrt(3) / (baseVoltg.prefix * baseVoltg.value[i])
 
-        add!(
-            volt.magnitude, i, key.noise, pfx.voltageMagnitude,
-            analysis.voltage.magnitude[i], key.variance, def.variance, status, baseInv
-        )
+            add!(
+                volt.magnitude, i, key.noise, pfx.voltageMagnitude,
+                analysis.voltage.magnitude[i], key.variance, def.variance, status, baseInv
+            )
+        end
+
+        volt.layout.label = system.bus.number
     end
-
-    volt.layout.label = system.bus.number
 end
 
 """

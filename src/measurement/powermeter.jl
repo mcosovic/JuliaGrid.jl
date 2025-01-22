@@ -247,15 +247,18 @@ Users have the option to configure the following keywords:
 * `varianceBus` (pu or W): Measurement variance for wattmeters at the buses.
 * `statusBus`: Operating status of the wattmeters at the buses:
   * `statusBus = 1`: in-service,
-  * `statusBus = 0`: out-of-service.
+  * `statusBus = 0`: out-of-service,
+  * `statusBus = -1`: not included in the `Measurement` type.
 * `varianceFrom` (pu or W): Measurement variance for wattmeters at the from-bus ends.
 * `statusFrom`: Operating status of the wattmeters at the from-bus ends:
   * `statusFrom = 1`: in-service,
-  * `statusFrom = 0`: out-of-service.
+  * `statusFrom = 0`: out-of-service,
+  * `statusFrom = -1`: not included in the `Measurement` type.
 * `varianceTo` (pu or W): Measurement variance for wattmeters at the to-bus ends.
 * `statusTo`: Operating status of the wattmeters at the to-bus ends:
   * `statusTo = 1`: in-service,
-  * `statusTo = 0`: out-of-service.
+  * `statusTo = 0`: out-of-service,
+  * `statusTo = -1`: not included in the `Measurement` type.
 * `noise`: Specifies how to generate the measurement mean:
   * `noise = true`: adds white Gaussian noise with the `variance` to the active powers,
   * `noise = false`: uses the exact active power values.
@@ -329,15 +332,18 @@ type.
 * `varianceBus` (pu or VAr): Measurement variance for varmeters at the buses.
 * `statusBus`: Operating status of the varmeters at the buses:
   * `statusBus = 1`: in-service,
-  * `statusBus = 0`: out-of-service.
+  * `statusBus = 0`: out-of-service,
+  * `statusBus = -1`: not included in the `Measurement` type.
 * `varianceFrom` (pu or VAr): Measurement variance for varmeters at the from-bus ends.
 * `statusFrom`: Operating status of the varmeters at the from-bus ends:
   * `statusFrom = 1`: in-service,
-  * `statusFrom = 0`: out-of-service.
+  * `statusFrom = 0`: out-of-service,
+  * `statusFrom = -1`: not included in the `Measurement` type.
 * `varianceTo` (pu or VAr): Measurement variance for varmeters at the to-bus ends.
 * `statusTo`: Operating status of the varmeters at the to-bus ends:
   * `statusTo = 1`: in-service,
-  * `statusTo = 0`: out-of-service.
+  * `statusTo = 0`: out-of-service,
+  * `statusTo = -1`: not included in the `Measurement` type.
 * `noise`: Specifies how to generate the measurement mean:
   * `noise = true`: adds white Gaussian noise with the `variance` to the reactive powers,
   * `noise = false`: uses the exact reactive power values.
@@ -419,65 +425,89 @@ function addPowermeter!(
     errorPower(powerBus)
 
     statusBus = givenOrDefault(statusBus, def.statusBus)
-    checkStatus(statusBus)
+    checkWideStatus(statusBus)
 
     statusFrom = givenOrDefault(statusFrom, def.statusFrom)
-    checkStatus(statusFrom)
+    checkWideStatus(statusFrom)
 
     statusTo = givenOrDefault(statusTo, def.statusTo)
-    checkStatus(statusTo)
+    checkWideStatus(statusTo)
 
-    deviceNumber = system.bus.number + 2 * system.branch.layout.inservice
-    device.label = OrderedDict{template.device, Int64}()
-    sizehint!(device.label, deviceNumber)
-    device.number = 0
-
-    device.layout.index = fill(0, deviceNumber)
-    device.layout.bus = fill(false, deviceNumber)
-    device.layout.from = fill(false, deviceNumber)
-    device.layout.to = fill(false, deviceNumber)
-
-    measure.mean = fill(0.0, deviceNumber)
-    measure.variance = similar(measure.mean)
-    measure.status = fill(Int8(0), deviceNumber)
-
-    baseInv = 1 / (system.base.power.value * system.base.power.prefix)
-    @inbounds for (label, i) in system.bus.label
-        device.number += 1
-        setLabel(device, missing, def.label, label)
-
-        device.layout.index[i] = i
-        device.layout.bus[i] = true
-
-        add!(
-            measure, i, noise, pfxPower, powerBus[i], varianceBus,
-            def.varianceBus, statusBus, baseInv
-        )
-    end
-
-    @inbounds for (label, i) in system.branch.label
-        if system.branch.layout.status[i] == 1
-            device.number += 1
-            setLabel(device, missing, def.label, label; prefix = "From ")
-
-            device.layout.index[device.number] = i
-            device.layout.index[device.number + 1] = i
-
-            device.layout.from[device.number] = true
-            device.layout.to[device.number + 1] = true
-
-            add!(
-                measure, device.number, noise, pfxPower, powerFrom[i], varianceFrom,
-                def.varianceFrom, statusFrom, baseInv, powerTo[i], varianceTo,
-                def.varianceTo, statusTo, baseInv
-            )
-
-            device.number += 1
-            setLabel(device, missing, def.label, label; prefix = "To ")
+    if statusBus != -1 || statusFrom != -1 || statusTo != -1
+        deviceNumber = 0
+        if statusBus != -1
+            deviceNumber += system.bus.number
         end
-    end
+        if statusFrom != -1
+            deviceNumber += system.branch.layout.inservice
+        end
+        if statusTo != -1
+            deviceNumber += system.branch.layout.inservice
+        end
 
-    device.layout.label = device.number
+        device.label = OrderedDict{template.device, Int64}()
+        sizehint!(device.label, deviceNumber)
+        device.number = 0
+
+        device.layout.index = fill(0, deviceNumber)
+        device.layout.bus = fill(false, deviceNumber)
+        device.layout.from = fill(false, deviceNumber)
+        device.layout.to = fill(false, deviceNumber)
+
+        measure.mean = fill(0.0, deviceNumber)
+        measure.variance = similar(measure.mean)
+        measure.status = fill(Int8(0), deviceNumber)
+
+        baseInv = 1 / (system.base.power.value * system.base.power.prefix)
+
+        if statusBus != -1
+            @inbounds for (label, i) in system.bus.label
+                device.number += 1
+                setLabel(device, missing, def.label, label)
+
+                device.layout.index[i] = i
+                device.layout.bus[i] = true
+
+                add!(
+                    measure, i, noise, pfxPower, powerBus[i], varianceBus,
+                    def.varianceBus, statusBus, baseInv
+                )
+            end
+        end
+
+        if statusFrom != -1 || statusTo != -1
+            @inbounds for (label, i) in system.branch.label
+                if system.branch.layout.status[i] == 1
+                    if statusFrom != -1
+                        device.number += 1
+                        setLabel(device, missing, def.label, label; prefix = "From ")
+
+                        device.layout.index[device.number] = i
+                        device.layout.from[device.number] = true
+
+                        add!(
+                            measure, device.number, noise, pfxPower, powerFrom[i],
+                            varianceFrom, def.varianceFrom, statusFrom, baseInv
+                        )
+                    end
+
+                    if statusTo != -1
+                        device.number += 1
+                        setLabel(device, missing, def.label, label; prefix = "To ")
+
+                        device.layout.index[device.number] = i
+                        device.layout.to[device.number] = true
+
+                        add!(
+                            measure, device.number, noise, pfxPower, powerTo[i],
+                            varianceTo, def.varianceTo, statusTo, baseInv
+                        )
+                    end
+                end
+            end
+        end
+        device.layout.label = device.number
+    end
 end
 
 """

@@ -1,6 +1,6 @@
 """
-    addPmu!(system::PowerSystem, device::Measurement; label, bus, from, to, magnitude,
-        varianceMagnitude, statusMagnitude, angle, varianceAngle, statusAngle,
+    addPmu!(system::PowerSystem, device::Measurement; label, bus, from, to,
+        magnitude, varianceMagnitude, angle, varianceAngle, status,
         noise, correlated, polar)
 
 The function adds a new PMU to the `Measurement` type within a given `PowerSystem` type.
@@ -16,14 +16,11 @@ The PMU is defined with the following keywords:
 * `to`: Label of the branch if the PMU is located at the to-bus end.
 * `magnitude` (pu or V, A): Bus voltage or branch current magnitude value.
 * `varianceMagnitude` (pu or V, A): Magnitude measurement variance.
-* `statusMagnitude`: Operating status of the magnitude measurement:
-  * `statusMagnitude = 1`: in-service,
-  * `statusMagnitude = 0`: out-of-service.
 * `angle` (rad or deg): Bus voltage or branch current angle value.
 * `varianceAngle` (rad or deg): Angle measurement variance.
-* `statusAngle`: Operating status of the angle measurement:
-  * `statusAngle = 1`: in-service,
-  * `statusAngle = 0`: out-of-service.
+* `status`: Operating status of the phasor measurement:
+  * `status = 1`: in-service,
+  * `status = 0`: out-of-service.
 * `noise`: Specifies how to generate the measurement means:
   * `noise = true`: adds white Gaussian noises with variances to the `magnitude` and `angle`,
   * `noise = false`: uses the `magnitude` and `angle` values only.
@@ -41,11 +38,11 @@ The function updates the `pmu` field of the `Measurement` composite type.
 
 # Default Settings
 Default settings for certain keywords are as follows: `varianceMagnitude = 1e-5`,
-`statusMagnitude = 1`, `varianceAngle = 1e-5`, `statusAngle = 1`, `noise = false`,
-`correlated = false`, and `polar = false`, which apply to PMUs located at the bus, as well
-as at both the from-bus and to-bus ends. Users can fine-tune these settings by explicitly
-specifying the variance and status for PMUs positioned at the buses, from-bus ends, or
-to-bus ends of branches using the [`@pmu`](@ref @pmu) macro.
+`varianceAngle = 1e-5`, `status = 1`, `noise = false`, `correlated = false`, and
+`polar = false`, which apply to PMUs located at the bus, as well as at both the from-bus
+and to-bus ends. Users can fine-tune these settings by explicitly specifying the variance
+and status for PMUs positioned at the buses, from-bus ends, or to-bus ends of branches
+using the [`@pmu`](@ref @pmu) macro.
 
 # Units
 The default units for the `magnitude`, `varianceMagnitude`, and `angle`, `varianceAngle`
@@ -94,8 +91,7 @@ function addPmu!(
     angle::FltIntMiss,
     varianceMagnitude::FltIntMiss = missing,
     varianceAngle::FltIntMiss = missing,
-    statusMagnitude::FltIntMiss = missing,
-    statusAngle::FltIntMiss = missing,
+    status::FltIntMiss = missing,
     noise::Bool = template.pmu.noise,
     correlated::Bool = template.pmu.correlated,
     polar::Bool = template.pmu.polar
@@ -130,8 +126,7 @@ function addPmu!(
 
             defVarianceMagnitude = def.varianceMagnitudeBus
             defVarianceAngle = def.varianceAngleBus
-            defMagnitudeStatus = def.statusMagnitudeBus
-            defAngleStatus = def.statusAngleBus
+            defStatus = def.statusBus
 
             pfxMagnitude = pfx.voltageMagnitude
             pfxAngle = pfx.voltageAngle
@@ -143,8 +138,7 @@ function addPmu!(
 
                 defVarianceMagnitude = def.varianceMagnitudeFrom
                 defVarianceAngle = def.varianceAngleFrom
-                defMagnitudeStatus = def.statusMagnitudeFrom
-                defAngleStatus = def.statusAngleFrom
+                defStatus = def.statusFrom
 
                 baseVoltage = baseVoltg.value[branch.layout.from[idx]] * baseVoltg.prefix
             else
@@ -152,8 +146,7 @@ function addPmu!(
 
                 defVarianceMagnitude = def.varianceMagnitudeTo
                 defVarianceAngle = def.varianceAngleTo
-                defMagnitudeStatus = def.statusMagnitudeTo
-                defAngleStatus = def.statusAngleTo
+                defStatus = def.statusTo
 
                 baseVoltage = baseVoltg.value[branch.layout.to[idx]] * baseVoltg.prefix
             end
@@ -168,21 +161,21 @@ function addPmu!(
         push!(pmu.layout.polar, polar)
 
         setMeter(
-            pmu.magnitude, magnitude, varianceMagnitude, statusMagnitude,
-            noise, defVarianceMagnitude, defMagnitudeStatus, pfxMagnitude, baseInv
+            pmu.magnitude, magnitude, varianceMagnitude, status, noise,
+            defVarianceMagnitude, defStatus, pfxMagnitude, baseInv
         )
         setMeter(
-            pmu.angle, angle, varianceAngle, statusAngle, noise,
-            defVarianceAngle, defAngleStatus, pfxAngle, 1.0
+            pmu.angle, angle, varianceAngle, status, noise,
+            defVarianceAngle, defStatus, pfxAngle, 1.0
         )
     end
 end
 
 """
     addPmu!(system::PowerSystem, device::Measurement, analysis::AC;
-        varianceMagnitudeBus, statusMagnitudeBus, varianceAngleBus, statusAngleBus,
-        varianceMagnitudeFrom, statusMagnitudeFrom, varianceAngleFrom, statusAngleFrom,
-        varianceMagnitudeTo, statusMagnitudeTo, varianceAngleTo, statusAngleTo,
+        varianceMagnitudeBus, varianceAngleBus, statusBus,
+        varianceMagnitudeFrom, varianceAngleFrom, statusFrom,
+        varianceMagnitudeTo, varianceAngleTo, statusTo,
         correlated, polar, noise)
 
 The function incorporates PMUs into the `Measurement` composite type for every bus and
@@ -193,29 +186,23 @@ the `AC` type.
 # Keywords
 Users have the option to configure the following keywords:
 * `varianceMagnitudeBus` (pu or V): Variance of magnitude measurements at buses.
-* `statusMagnitudeBus`: Operating status of magnitude measurements at buses:
-  * `statusMagnitudeBus = 1`: in-service,
-  * `statusMagnitudeBus = 0`: out-of-service.
 * `varianceAngleBus` (rad or deg): Variance of angle measurements at buses.
-* `statusAngleBus`: Operating status of angle measurements at buses:
-  * `statusAngleBus = 1`: in-service,
-  * `statusAngleBus = 0`: out-of-service.
+* `statuseBus`: Operating status of bus phasor measurements:
+  * `statusBus = 1`: in-service,
+  * `statusBus = 0`: out-of-service.
+  * `statusBus = -1`: not included in the `Measurement` type.
 * `varianceMagnitudeFrom` (pu or A): Variance of magnitude measurements at the from-bus ends.
-* `statusMagnitudeFrom`: Operating status of magnitude measurements at the from-bus ends:
-  * `statusMagnitudeFrom = 1`: in-service,
-  * `statusMagnitudeFrom = 0`: out-of-service.
 * `varianceAngleFrom` (rad or deg): Variance of angle measurements at the from-bus ends.
-* `statusAngleFrom`: Operating status of angle measurements at the from-bus ends:
-  * `statusAngleFrom = 1`: in-service,
-  * `statusAngleFrom = 0`: out-of-service.
+* `statusFrom`: Operating status of from-bus phasor measurements:
+  * `statusFrom = 1`: in-service,
+  * `statusFrom = 0`: out-of-service.
+  * `statusFrom = -1`: not included in the `Measurement` type.
 * `varianceMagnitudeTo` (pu or A): Variance of magnitude measurements at the to-bus ends.
-* `statusMagnitudeTo`: Operating status of magnitude measurements at the to-bus ends:
-  * `statusMagnitudeTo = 1`: in-service,
-  * `statusMagnitudeTo = 0`: out-of-service.
 * `varianceAngleTo` (rad or deg): Variance of angle measurements at the to-bus ends.
-* `statusAngleTo`: Operating status of angle measurements at the to-bus ends:
-  * `statusAngleTo = 1`: in-service,
-  * `statusAngleTo = 0`: out-of-service.
+* `statusTo`: Operating status of to-bus phasor measurements:
+  * `statusTo = 1`: in-service,
+  * `statusTo = 0`: out-of-service.
+  * `statusTo = -1`: not included in the `Measurement` type.
 * `correlated`: Specifies error correlation for PMUs for algorithms utilizing rectangular coordinates:
   * `correlated = true`: considers correlated errors,
   * `correlated = false`: disregards correlations between errors.
@@ -265,16 +252,13 @@ function addPmu!(
     device::Measurement, analysis::AC;
     varianceMagnitudeBus::FltIntMiss = missing,
     varianceAngleBus::FltIntMiss = missing,
-    statusMagnitudeBus::FltIntMiss = missing,
-    statusAngleBus::FltIntMiss = missing,
+    statusBus::FltIntMiss = missing,
     varianceMagnitudeFrom::FltIntMiss = missing,
     varianceAngleFrom::FltIntMiss = missing,
-    statusMagnitudeFrom::FltIntMiss = missing,
-    statusAngleFrom::FltIntMiss = missing,
+    statusFrom::FltIntMiss = missing,
     varianceMagnitudeTo::FltIntMiss = missing,
     varianceAngleTo::FltIntMiss = missing,
-    statusMagnitudeTo::FltIntMiss = missing,
-    statusAngleTo::FltIntMiss = missing,
+    statusTo::FltIntMiss = missing,
     correlated::Bool = template.pmu.correlated,
     polar::Bool = template.pmu.polar,
     noise::Bool = template.pmu.noise
@@ -289,94 +273,116 @@ function addPmu!(
 
     pmu.number = 0
 
-    statusMagBus = givenOrDefault(statusMagnitudeBus, def.statusMagnitudeBus)
-    checkStatus(statusMagBus)
-    statusAngBus = givenOrDefault(statusAngleBus, def.statusAngleBus)
-    checkStatus(statusAngBus)
+    statusBus = givenOrDefault(statusBus, def.statusBus)
+    checkWideStatus(statusBus)
 
-    statusMagFrom = givenOrDefault(statusMagnitudeFrom, def.statusMagnitudeFrom)
-    checkStatus(statusMagFrom)
-    statusAngFrom = givenOrDefault(statusAngleFrom, def.statusAngleFrom)
-    checkStatus(statusAngFrom)
+    statusFrom = givenOrDefault(statusFrom, def.statusFrom)
+    checkWideStatus(statusFrom)
 
-    statusMagTo = givenOrDefault(statusMagnitudeTo, def.statusMagnitudeTo)
-    checkStatus(statusMagTo)
-    statusAngTo = givenOrDefault(statusAngleTo, def.statusAngleTo)
-    checkStatus(statusAngTo)
+    statusTo = givenOrDefault(statusTo, def.statusTo)
+    checkWideStatus(statusTo)
 
-    pmuNumber = system.bus.number + 2 * system.branch.layout.inservice
-    pmu.label = OrderedDict{template.device, Int64}()
-    sizehint!(pmu.label, pmuNumber)
-
-    pmu.layout.index = fill(0, pmuNumber)
-    pmu.layout.bus = fill(false, pmuNumber)
-    pmu.layout.from = fill(false, pmuNumber)
-    pmu.layout.to = fill(false, pmuNumber)
-    pmu.layout.correlated = fill(correlated, pmuNumber)
-    pmu.layout.polar = fill(polar, pmuNumber)
-
-    pmu.magnitude.mean = fill(0.0, pmuNumber)
-    pmu.magnitude.variance = similar(pmu.magnitude.mean)
-    pmu.magnitude.status = fill(Int8(0), pmuNumber)
-
-    pmu.angle.mean = similar(pmu.magnitude.mean)
-    pmu.angle.variance = similar(pmu.magnitude.mean)
-    pmu.angle.status = similar(pmu.magnitude.status)
-
-    @inbounds for (label, i) in system.bus.label
-        pmu.number += 1
-        setLabel(pmu, missing, def.label, label)
-
-        pmu.layout.index[i] = i
-        pmu.layout.bus[i] = true
-
-        baseInv = sqrt(3) / (baseVoltg.prefix * baseVoltg.value[i])
-
-        add!(
-            pmu.magnitude, i, noise, pfx.voltageMagnitude, analysis.voltage.magnitude[i],
-            varianceMagnitudeBus, def.varianceMagnitudeBus, statusMagBus, baseInv
-        )
-        add!(
-            pmu.angle, i, noise, pfx.voltageAngle, analysis.voltage.angle[i],
-            varianceAngleBus, def.varianceAngleBus, statusAngBus, 1.0
-        )
-    end
-
-    baseInv = 1 / (system.base.power.value * system.base.power.prefix)
-    @inbounds for (label, k) in system.branch.label
-        if system.branch.layout.status[k] == 1
-            pmu.number += 1
-            setLabel(pmu, missing, def.label, label; prefix = "From ")
-
-            pmu.layout.index[pmu.number] = k
-            pmu.layout.from[pmu.number] = true
-
-            pmu.layout.index[pmu.number + 1] = k
-            pmu.layout.to[pmu.number + 1] = true
-
-            i, j = fromto(system, k)
-            baseFromInv = baseCurrentInv(baseInv, baseVoltg.value[i] * baseVoltg.prefix)
-            baseToInv = baseCurrentInv(baseInv, baseVoltg.value[j] * baseVoltg.prefix)
-
-            add!(
-                pmu.magnitude, pmu.number, noise, pfx.currentMagnitude,
-                current.from.magnitude[k], varianceMagnitudeFrom, def.varianceMagnitudeFrom,
-                statusMagFrom, baseFromInv, current.to.magnitude[k],
-                varianceMagnitudeTo, def.varianceMagnitudeTo, statusMagTo, baseToInv
-            )
-            add!(
-                pmu.angle, pmu.number, noise, pfx.currentAngle,
-                current.from.angle[k], varianceAngleFrom, def.varianceAngleFrom,
-                statusAngFrom, 1.0, current.to.angle[k], varianceAngleTo,
-                def.varianceAngleTo, statusAngTo, 1.0
-            )
-
-            pmu.number += 1
-            setLabel(pmu, missing, def.label, label; prefix = "To ")
+    if statusBus != -1 || statusFrom != -1 || statusTo != -1
+        pmuNumber = 0
+        if statusBus != -1
+            pmuNumber += system.bus.number
         end
-    end
+        if statusFrom != -1
+            pmuNumber += system.branch.layout.inservice
+        end
+        if statusTo != -1
+            pmuNumber += system.branch.layout.inservice
+        end
 
-    pmu.layout.label = pmu.number
+        pmu.label = OrderedDict{template.device, Int64}()
+        sizehint!(pmu.label, pmuNumber)
+
+        pmu.layout.index = fill(0, pmuNumber)
+        pmu.layout.bus = fill(false, pmuNumber)
+        pmu.layout.from = fill(false, pmuNumber)
+        pmu.layout.to = fill(false, pmuNumber)
+        pmu.layout.correlated = fill(correlated, pmuNumber)
+        pmu.layout.polar = fill(polar, pmuNumber)
+
+        pmu.magnitude.mean = fill(0.0, pmuNumber)
+        pmu.magnitude.variance = similar(pmu.magnitude.mean)
+        pmu.magnitude.status = fill(Int8(0), pmuNumber)
+
+        pmu.angle.mean = similar(pmu.magnitude.mean)
+        pmu.angle.variance = similar(pmu.magnitude.mean)
+        pmu.angle.status = similar(pmu.magnitude.status)
+
+        if statusBus != -1
+            @inbounds for (label, i) in system.bus.label
+                pmu.number += 1
+                setLabel(pmu, missing, def.label, label)
+
+                pmu.layout.index[i] = i
+                pmu.layout.bus[i] = true
+
+                baseInv = sqrt(3) / (baseVoltg.prefix * baseVoltg.value[i])
+
+                add!(
+                    pmu.magnitude, i, noise, pfx.voltageMagnitude, analysis.voltage.magnitude[i],
+                    varianceMagnitudeBus, def.varianceMagnitudeBus, statusBus, baseInv
+                )
+                add!(
+                    pmu.angle, i, noise, pfx.voltageAngle, analysis.voltage.angle[i],
+                    varianceAngleBus, def.varianceAngleBus, statusBus, 1.0
+                )
+            end
+        end
+
+        if statusFrom != -1 || statusTo != -1
+            baseInv = 1 / (system.base.power.value * system.base.power.prefix)
+            @inbounds for (label, k) in system.branch.label
+                if system.branch.layout.status[k] == 1
+                    i, j = fromto(system, k)
+
+                    if statusFrom != -1
+                        pmu.number += 1
+                        setLabel(pmu, missing, def.label, label; prefix = "From ")
+
+                        pmu.layout.index[pmu.number] = k
+                        pmu.layout.from[pmu.number] = true
+
+                        baseFromInv = baseCurrentInv(baseInv, baseVoltg.value[i] * baseVoltg.prefix)
+                        add!(
+                            pmu.magnitude, pmu.number, noise, pfx.currentMagnitude,
+                            current.from.magnitude[k], varianceMagnitudeFrom,
+                            def.varianceMagnitudeFrom, statusFrom, baseFromInv,
+                        )
+                        add!(
+                            pmu.angle, pmu.number, noise, pfx.currentAngle,
+                            current.from.angle[k], varianceAngleFrom,
+                            def.varianceAngleFrom, statusFrom, 1.0
+                        )
+                    end
+
+                    if statusTo != -1
+                        pmu.number += 1
+                        setLabel(pmu, missing, def.label, label; prefix = "To ")
+
+                        pmu.layout.index[pmu.number] = k
+                        pmu.layout.to[pmu.number] = true
+
+                        baseToInv = baseCurrentInv(baseInv, baseVoltg.value[j] * baseVoltg.prefix)
+                        add!(
+                            pmu.magnitude, pmu.number, noise, pfx.currentMagnitude,
+                            current.to.magnitude[k], varianceMagnitudeTo,
+                            def.varianceMagnitudeTo, statusTo, baseToInv,
+                        )
+                        add!(
+                            pmu.angle, pmu.number, noise, pfx.currentAngle,
+                            current.to.angle[k], varianceAngleTo,
+                            def.varianceAngleTo, statusTo, 1.0
+                        )
+                    end
+                end
+            end
+        end
+        pmu.layout.label = pmu.number
+    end
 end
 
 """
@@ -454,11 +460,11 @@ function updatePmu!(
 
     updateMeter(
         pmu.magnitude, idx, key.magnitude, key.varianceMagnitude,
-        key.statusMagnitude, key.noise, pfxMagnitude, baseInv
+        key.status, key.noise, pfxMagnitude, baseInv
     )
     updateMeter(
         pmu.angle, idx, key.angle, key.varianceAngle,
-        key.statusAngle, key.noise, pfxAngle, 1.0
+        key.status, key.noise, pfxAngle, 1.0
     )
 end
 
@@ -490,11 +496,11 @@ function updatePmu!(
             se.run = true
         end
 
-        if isset(key.statusAngle, key.angle)
+        if isset(key.status, key.angle)
             se.mean[idx] =
                 newStatus * (pmu.angle.mean[idxPmu] - system.bus.voltage.angle[slack])
 
-            if isset(key.statusAngle)
+            if isset(key.status)
                 se.coefficient[idx, idxBus] = newStatus
             end
         end
@@ -906,30 +912,28 @@ function updatePmu!(
 end
 
 """
-    @pmu(label, varianceMagnitudeBus, statusMagnitudeBus, varianceAngleBus, statusAngleBus,
-        varianceMagnitudeFrom, statusMagnitudeFrom, varianceAngleFrom, statusAngleFrom,
-        varianceMagnitudeTo, statusMagnitudeTo, varianceAngleTo, statusAngleTo, noise,
-        correlated, polar)
+    @pmu(label, noise, correlated, polar,
+        varianceMagnitudeBus, varianceAngleBus, statusBus,
+        varianceMagnitudeFrom, varianceAngleFrom, statusFrom,
+        varianceMagnitudeTo, varianceAngleTo, statusTo)
 
 The macro generates a template for a PMU, which can be utilized to define a PMU using the
 [`addPmu!`](@ref addPmu!) function.
 
 # Keywords
-To establish the PMU template, users have the option to set default values for magnitude
-and angle variances, as well as statuses for each component of the phasor. This can be
-done for PMUs located at the buses using the `varianceMagnitudeBus`, `varianceAngleBus`,
-`statusMagnitudeBus`, and `statusAngleBus` keywords.
+To establish the PMU template, users can configure the pattern for labels using the `label`
+keyword, specify the type of `noise`, and indicate the `correlated` and `polar` system
+utilized for managing phasors during state estimation.
+
+Users have the option to set default values for magnitude and angle variances, as well as
+statuses. This can be done for PMUs located at the buses using the `varianceMagnitudeBus`,
+`varianceAngleBus`, and `statusBus` keywords.
 
 The same configuration can be applied at both the from-bus ends of the branches using the
-`varianceMagnitudeFrom`, `varianceAngleFrom`, `statusMagnitudeFrom`, and `statusAngleFrom`
-keywords.
+`varianceMagnitudeFrom`, `varianceAngleFrom`, and `statusFrom` keywords.
 
 For PMUs located at the to-bus ends of the branches, users can use the `varianceMagnitudeTo`,
-`varianceAngleTo`, `statusMagnitudeTo`, and `statusAngleTo` keywords.
-
-Additionally, users can configure the pattern for labels using the `label` keyword, specify
-the type of `noise`, and indicate the `correlated` and `polar` system utilized for
-managing phasors during state estimation.
+`varianceAngleTo`, and `statusTo` keywords.
 
 # Units
 By default, the units for variances are per-units (pu) and radians (rad). However, users
@@ -997,10 +1001,7 @@ macro pmu(kwargs...)
                     setfield!(container, :pu, true)
                 end
             else
-                if parameter in [
-                    :statusMagnitudeBus; :statusAngleBus; :statusMagnitudeFrom;
-                    :statusAngleFrom; :statusMagnitudeTo; :statusAngleTo
-                    ]
+                if parameter in [:statusBus; :statusFrom; :statusTo]
                     setfield!(template.pmu, parameter, Int8(eval(kwarg.args[2])))
                 elseif parameter == :noise
                     setfield!(template.pmu, parameter, Bool(eval(kwarg.args[2])))

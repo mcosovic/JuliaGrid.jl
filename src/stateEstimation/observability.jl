@@ -535,8 +535,7 @@ function restorationGram!(
                 (lblBus, _), _ = iterate(system.bus.label, indexBus)
 
                 addPmu!(
-                    system, device; bus = lblBus, label = lblPmu,
-                    statusAngle = 1, statusMagnitude = 1,
+                    system, device; bus = lblBus, label = lblPmu, status = 1,
                     magnitude = pmu.magnitude.mean[idx], angle = pmu.angle.mean[idx],
                     varianceMagnitude = pmu.magnitude.variance[idx],
                     varianceAngle = pmu.angle.variance[idx], noise = false

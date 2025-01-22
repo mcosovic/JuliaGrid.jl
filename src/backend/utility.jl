@@ -278,6 +278,16 @@ function checkStatus(status::Union{Int64, Int8})
     end
 end
 
+function checkWideStatus(status::Union{Int64, Int8})
+    if !(status in [-1; 0; 1])
+        throw(ErrorException(
+            "The status $status is not allowed; it should be " *
+            "in-service (1), out-of-service but retained (0), or " *
+            "out-of-service and removed (-1).")
+        )
+    end
+end
+
 ##### Impedance Base Value #####
 function baseImpedance(baseVoltage::Float64, basePowerInv::Float64, turnsRatio::Float64)
     if pfx.impedance != 0.0 || pfx.admittance != 0.0
