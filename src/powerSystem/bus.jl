@@ -1,5 +1,6 @@
 """
-    addBus!(system::PowerSystem; label, type, active, reactive, conductance, susceptance,
+    addBus!(system::PowerSystem;
+        label, type, active, reactive, conductance, susceptance,
         magnitude, angle, minMagnitude, maxMagnitude, base, area, lossZone)
 
 The function adds a new bus to the `PowerSystem` composite type.

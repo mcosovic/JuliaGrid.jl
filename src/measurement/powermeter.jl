@@ -243,25 +243,28 @@ active power injections at buses and active power flows in branches defined in t
 type.
 
 # Keywords
-Users have the option to configure the following keywords:
-* `varianceBus` (pu or W): Measurement variance for wattmeters at the buses.
-* `statusBus`: Operating status of the wattmeters at the buses:
+Wattmeters at the buses can be configured using:
+* `varianceBus` (pu or W): Measurement variance.
+* `statusBus`: Operating status:
   * `statusBus = 1`: in-service,
   * `statusBus = 0`: out-of-service,
   * `statusBus = -1`: not included in the `Measurement` type.
-* `varianceFrom` (pu or W): Measurement variance for wattmeters at the from-bus ends.
-* `statusFrom`: Operating status of the wattmeters at the from-bus ends:
+Wattmeters at the from-bus ends of the branches can be configured using:
+* `varianceFrom` (pu or W): Measurement variance.
+* `statusFrom`: Operating status:
   * `statusFrom = 1`: in-service,
   * `statusFrom = 0`: out-of-service,
   * `statusFrom = -1`: not included in the `Measurement` type.
-* `varianceTo` (pu or W): Measurement variance for wattmeters at the to-bus ends.
-* `statusTo`: Operating status of the wattmeters at the to-bus ends:
+Wattmeters at the to-bus ends of the branches can be configured using:
+* `varianceTo` (pu or W): Measurement variance.
+* `statusTo`: Operating status:
   * `statusTo = 1`: in-service,
   * `statusTo = 0`: out-of-service,
   * `statusTo = -1`: not included in the `Measurement` type.
-* `noise`: Specifies how to generate the measurement mean:
-  * `noise = true`: adds white Gaussian noise with the `variance` to the active powers,
-  * `noise = false`: uses the exact active power values.
+General settings for generating measurements include:
+* `noise`: Defines the method for generating the measurement means:
+  * `noise = true`: adds white Gaussian noise to the active power values, using the defined variances,
+  * `noise = false`: uses the exact active power values without adding noise.
 
 # Updates
 The function updates the `wattmeter` field of the `Measurement` composite type.
@@ -329,24 +332,28 @@ reactive power injections at buses and reactive power flows in branches defined 
 type.
 
 # Keywords
-* `varianceBus` (pu or VAr): Measurement variance for varmeters at the buses.
-* `statusBus`: Operating status of the varmeters at the buses:
+Varmeters at the buses can be configured using:
+* `varianceBus` (pu or VAr): Measurement variance.
+* `statusBus`: Operating status:
   * `statusBus = 1`: in-service,
   * `statusBus = 0`: out-of-service,
   * `statusBus = -1`: not included in the `Measurement` type.
-* `varianceFrom` (pu or VAr): Measurement variance for varmeters at the from-bus ends.
-* `statusFrom`: Operating status of the varmeters at the from-bus ends:
+Varmeters at the from-bus ends of the branches can be configured using:
+* `varianceFrom` (pu or VAr): Measurement variance.
+* `statusFrom`: Operating status:
   * `statusFrom = 1`: in-service,
   * `statusFrom = 0`: out-of-service,
   * `statusFrom = -1`: not included in the `Measurement` type.
-* `varianceTo` (pu or VAr): Measurement variance for varmeters at the to-bus ends.
-* `statusTo`: Operating status of the varmeters at the to-bus ends:
+Varmeters at the to-bus ends of the branches can be configured using:
+* `varianceTo` (pu or VAr): Measurement variance.
+* `statusTo`: Operating status:
   * `statusTo = 1`: in-service,
   * `statusTo = 0`: out-of-service,
   * `statusTo = -1`: not included in the `Measurement` type.
-* `noise`: Specifies how to generate the measurement mean:
-  * `noise = true`: adds white Gaussian noise with the `variance` to the reactive powers,
-  * `noise = false`: uses the exact reactive power values.
+General settings for generating measurements include:
+* `noise`: Defines the method for generating the measurement means:
+  * `noise = true`: adds white Gaussian noise to the reactive power values, using the defined variances,
+  * `noise = false`: uses the exact reactive power values without adding noise.
 
 # Updates
 The function updates the `varmeter` field of the `Measurement` composite type.
@@ -1024,7 +1031,7 @@ macro wattmeter(kwargs...)
 end
 
 """
-    @varmeter(label, varinaceBus, varianceFrom, varianceTo, statusBus, statusFrom, statusTo,
+    @varmeter(label, varinaceBus, statusBus, varianceFrom, statusFrom, varianceTo, statusTo,
         noise)
 
 The macro generates a template for a varmeter, which can be utilized to define a varmeter

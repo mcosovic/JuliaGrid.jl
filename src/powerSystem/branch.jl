@@ -1,5 +1,6 @@
 """
-    addBranch!(system::PowerSystem, [analysis::Analysis]; label, from, to, status,
+    addBranch!(system::PowerSystem, [analysis::Analysis];
+        label, from, to, status,
         resistance, reactance, conductance, susceptance, turnsRatio, shiftAngle,
         minDiffAngle, maxDiffAngle, minFromBus, maxFromBus, minToBus, maxToBus, type)
 

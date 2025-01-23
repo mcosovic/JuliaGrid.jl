@@ -115,8 +115,8 @@ end
         varianceFrom, statusFrom, varianceTo, statusTo, noise)
 
 The function incorporates ammeters into the `Measurement` type for every branch within the
-`PowerSystem` type. These measurements are derived from the exact branch current magnitudes
-defined in the `AC` type.
+`PowerSystem` type. These measurements are derived from the exact branch current magnitude
+values defined in the `AC` type.
 
 # Keywords
 Ammeters at the from-bus ends of the branches can be configured using:
@@ -133,7 +133,7 @@ Ammeters at the to-bus ends of the branches can be configured using:
   * `statusTo = -1`: not included in the `Measurement` type.
 General settings for generating measurements include:
 * `noise`: Defines the method for generating the measurement means:
-  * `noise = true`: adds white Gaussian noise to the current magnitudes, using the defined variance values,
+  * `noise = true`: adds white Gaussian noise to the current magnitudes, using the defined variances,
   * `noise = false`: uses the exact current magnitude values without adding noise.
 
 # Updates
