@@ -119,20 +119,22 @@ The function incorporates ammeters into the `Measurement` type for every branch 
 defined in the `AC` type.
 
 # Keywords
-Users have the option to configure the following keywords:
-* `varianceFrom` (pu or A): Measurement variance for ammeters at the from-bus ends.
-* `statusFrom`: Operating status of the ammeters at the from-bus ends:
+Ammeters at the from-bus ends of the branches can be configured using:
+* `varianceFrom` (pu or A): Measurement variance.
+* `statusFrom`: Operating status:
   * `statusFrom = 1`: in-service,
   * `statusFrom = 0`: out-of-service,
   * `statusFrom = -1`: not included in the `Measurement` type.
-* `varianceTo` (pu or A): Measurement variance for ammeters at the to-bus ends.
-* `statusTo`: Operating status of the ammeters at the to-bus ends:
+Ammeters at the to-bus ends of the branches can be configured using:
+* `varianceTo` (pu or A): Measurement variance.
+* `statusTo`: Operating status:
   * `statusTo = 1`: in-service,
   * `statusTo = 0`: out-of-service,
   * `statusTo = -1`: not included in the `Measurement` type.
-* `noise`: Specifies how to generate the measurement mean:
-  * `noise = true`: adds white Gaussian noise with the `variance` to the current magnitudes,
-  * `noise = false`: uses the exact current magnitude values.
+General settings for generating measurements include:
+* `noise`: Defines the method for generating the measurement means:
+  * `noise = true`: adds white Gaussian noise to the current magnitudes, using the defined variance values,
+  * `noise = false`: uses the exact current magnitude values without adding noise.
 
 # Updates
 The function updates the `ammeter` field of the `Measurement` composite type.
