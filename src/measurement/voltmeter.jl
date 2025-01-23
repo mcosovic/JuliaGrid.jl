@@ -85,21 +85,21 @@ end
 
 """
     addVoltmeter!(system::PowerSystem, device::Measurement, analysis::AC;
-        variance, noise, status)
+        variance, status, noise)
 
 The function incorporates voltmeters into the `Measurement` composite type for every bus
 within the `PowerSystem` type. These measurements are derived from the exact bus voltage
 magnitudes defined in the `AC` type.
 
 # Keywords
-Users have the option to configure the following keywords:
-* `variance` (pu or V): Variance of bus voltage magnitude measurements.
-* `noise`: Specifies how to generate the measurement mean:
-  * `noise = true`: adds white Gaussian noise with the `variance` to the voltage magnitudes,
-  * `noise = false`: uses the exact voltage magnitude values.
-* `status`: Operating status of the voltmeters:
+Voltmeters can be configured using:
+* `variance` (pu or V): Measurements Variance.
+* `status`: Operating status:
   * `status = 1`: in-service,
   * `status = 0`: out-of-service.
+* `noise`: Defines the method for generating the measurement means:
+  * `noise = true`: adds white Gaussian noise to the voltage magnitudes, using the defined variance,
+  * `noise = false`: uses the exact voltage magnitude values without adding noise.
 
 # Updates
 The function updates the `voltmeter` field of the `Measurement` composite type.
@@ -301,7 +301,7 @@ function updateVoltmeter!(
 end
 
 """
-    @voltmeter(label, variance, noise, status)
+    @voltmeter(label, variance, status, noise)
 
 The macro generates a template for a voltmeter, which can be utilized to define a voltmeter
 using the [`addVoltmeter!`](@ref addVoltmeter!) function.

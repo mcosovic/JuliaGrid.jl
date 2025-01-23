@@ -1,5 +1,6 @@
 """
-    addPmu!(system::PowerSystem, device::Measurement; label, bus, from, to,
+    addPmu!(system::PowerSystem, device::Measurement;
+        label, bus, from, to,
         magnitude, varianceMagnitude, angle, varianceAngle,
         noise, correlated, polar, status)
 
@@ -176,7 +177,7 @@ end
         varianceMagnitudeBus, varianceAngleBus, statusBus,
         varianceMagnitudeFrom, varianceAngleFrom, statusFrom,
         varianceMagnitudeTo, varianceAngleTo, statusTo,
-        correlated, polar, noise)
+        noise, correlated, polar)
 
 The function incorporates PMUs into the `Measurement` composite type for every bus and
 branch within the `PowerSystem` type. These measurements are derived from the exact bus
@@ -184,34 +185,39 @@ voltage magnitudes and angles, as well as branch current magnitudes and angles d
 the `AC` type.
 
 # Keywords
-Users have the option to configure the following keywords:
-* `varianceMagnitudeBus` (pu or V): Variance of magnitude measurements at buses.
-* `varianceAngleBus` (rad or deg): Variance of angle measurements at buses.
-* `statuseBus`: Operating status of bus phasor measurements:
+PMUs at the buses can be configured using:
+* `varianceMagnitudeBus` (pu or V): Variance of bus voltage magnitude measurements.
+* `varianceAngleBus` (rad or deg): Variance of bus voltage angle measurements.
+* `statuseBus`: Operating status:
   * `statusBus = 1`: in-service,
   * `statusBus = 0`: out-of-service,
   * `statusBus = -1`: not included in the `Measurement` type.
-* `varianceMagnitudeFrom` (pu or A): Variance of magnitude measurements at the from-bus ends.
-* `varianceAngleFrom` (rad or deg): Variance of angle measurements at the from-bus ends.
-* `statusFrom`: Operating status of from-bus phasor measurements:
+PMUs at the from-bus ends of the branches can be configured using:
+* `varianceMagnitudeFrom` (pu or A): Variance of current magnitude measurements.
+* `varianceAngleFrom` (rad or deg): Variance of current angle measurements.
+* `statusFrom`: Operating status:
   * `statusFrom = 1`: in-service,
   * `statusFrom = 0`: out-of-service,
   * `statusFrom = -1`: not included in the `Measurement` type.
-* `varianceMagnitudeTo` (pu or A): Variance of magnitude measurements at the to-bus ends.
-* `varianceAngleTo` (rad or deg): Variance of angle measurements at the to-bus ends.
-* `statusTo`: Operating status of to-bus phasor measurements:
+PMUs at the to-bus ends of the branches can be configured using:
+* `varianceMagnitudeTo` (pu or A): Variance of current magnitude measurements.
+* `varianceAngleTo` (rad or deg): Variance of current angle measurements.
+* `statusTo`: Operating status:
   * `statusTo = 1`: in-service,
   * `statusTo = 0`: out-of-service,
   * `statusTo = -1`: not included in the `Measurement` type.
+Settings for generating measurements include:
+* `noise`: Defines the method for generating the measurement means:
+  * `noise = true`: adds white Gaussian noise to the phasor values, using the defined variances,
+  * `noise = false`: uses the exact phasor values without adding noise.
+Settings for handling phasor measurements include:
 * `correlated`: Specifies error correlation for PMUs for algorithms utilizing rectangular coordinates:
   * `correlated = true`: considers correlated errors,
   * `correlated = false`: disregards correlations between errors.
 * `polar`: Chooses the coordinate system for including phasor measurements in AC state estimation:
   * `polar = true`: adopts the polar coordinate system,
   * `polar = false`: adopts the rectangular coordinate system.
-* `noise`: Specifies how to generate the measurement mean:
-  * `noise = true`: adds white Gaussian noise with the `variance` to the magnitudes and angles,
-  * `noise = false`: uses the exact magnitude and angles values.
+
 
 # Updates
 The function updates the `pmu` field of the `Measurement` composite type.

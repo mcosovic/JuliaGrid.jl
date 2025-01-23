@@ -1,6 +1,6 @@
 """
-    acOptimalPowerFlow(system::PowerSystem, optimizer; bridge, name,
-        magnitude, angle, active, reactive)
+    acOptimalPowerFlow(system::PowerSystem, optimizer;
+        bridge, name, magnitude, angle, active, reactive)
 
 The function sets up the optimization model for solving the AC optimal power flow problem.
 

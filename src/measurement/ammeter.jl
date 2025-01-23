@@ -131,7 +131,7 @@ Ammeters at the to-bus ends of the branches can be configured using:
   * `statusTo = 1`: in-service,
   * `statusTo = 0`: out-of-service,
   * `statusTo = -1`: not included in the `Measurement` type.
-General settings for generating measurements include:
+Settings for generating measurements include:
 * `noise`: Defines the method for generating the measurement means:
   * `noise = true`: adds white Gaussian noise to the current magnitudes, using the defined variances,
   * `noise = false`: uses the exact current magnitude values without adding noise.

@@ -1,6 +1,7 @@
 """
-    printVoltmeterData(system::PowerSystem, device::Measurement, [analysis::Analysis],
-        [io::IO]; label, fmt, width, show, delimiter, title, header, footer, repeat, style)
+    printVoltmeterData(system::PowerSystem, device::Measurement,
+        [analysis::Analysis], [io::IO];
+        label, fmt, width, show, delimiter, title, header, footer, repeat, style)
 
 The function prints data related to voltmeters. Optionally, an `IO` may be passed as the
 last argument to redirect the output. Users can also omit the `Analysis` type to print
@@ -156,8 +157,9 @@ function voltData(
 end
 
 """
-    printAmmeterData(system::PowerSystem, device::Measurement, [analysis::Analysis],
-        [io::IO]; label, fmt, width, show, delimiter, title, header, footer, repeat, style)
+    printAmmeterData(system::PowerSystem, device::Measurement,
+        [analysis::Analysis], [io::IO];
+        label, fmt, width, show, delimiter, title, header, footer, repeat, style)
 
 The function prints data related to ammeters. Optionally, an `IO` may be passed as the
 last argument to redirect the output. Users can also omit the `Analysis` type to print
@@ -321,8 +323,9 @@ function ampData(
 end
 
 """
-    printWattmeterData(system::PowerSystem, device::Measurement, [analysis::Analysis],
-        [io::IO]; label, fmt, width, show, delimiter, title, header, footer, repeat, style)
+    printWattmeterData(system::PowerSystem, device::Measurement,
+        [analysis::Analysis], [io::IO];
+        label, fmt, width, show, delimiter, title, header, footer, repeat, style)
 
 The function prints data related to wattmeters. Optionally, an `IO` may be passed as the
 last argument to redirect the output. Users can also omit the `Analysis` type to print
@@ -483,8 +486,9 @@ function wattData(
 end
 
 """
-    printVarmeterData(system::PowerSystem, device::Measurement, [analysis::Analysis],
-        [io::IO]; label, fmt, width, show, delimiter, title, header, footer, repeat, style)
+    printVarmeterData(system::PowerSystem, device::Measurement,
+        [analysis::Analysis], [io::IO];
+        label, fmt, width, show, delimiter, title, header, footer, repeat, style)
 
 The function prints data related to varmeters. Optionally, an `IO` may be passed as the
 last argument to redirect the output. Users can also omit the `Analysis` type to print
@@ -646,8 +650,9 @@ function varData(
 end
 
 """
-    printPmuData(system::PowerSystem, device::Measurement, [analysis::Analysis],
-        [io::IO]; label, fmt, width, show, delimiter, title, header, footer, repeat, style)
+    printPmuData(system::PowerSystem, device::Measurement,
+        [analysis::Analysis], [io::IO];
+        label, fmt, width, show, delimiter, title, header, footer, repeat, style)
 
 The function prints data related to PMUs. Optionally, an `IO` may be passed as the last
 argument to redirect the output. Users can also omit the `Analysis` type to print

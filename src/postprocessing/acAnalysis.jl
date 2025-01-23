@@ -225,7 +225,7 @@ function power!(system::PowerSystem, analysis::Union{PMUStateEstimation, ACState
 end
 
 """
-    injectionPower(system::PowerSystem, analysis::AC, label)
+    injectionPower(system::PowerSystem, analysis::AC; label)
 
 The function returns the active and reactive power injections associated with a specific
 bus in the AC framework. The `label` keyword argument must match an existing bus label.
@@ -254,7 +254,7 @@ function injectionPower(system::PowerSystem, analysis::AC; label::IntStr)
 end
 
 """
-    supplyPower(system::PowerSystem, analysis::AC, label)
+    supplyPower(system::PowerSystem, analysis::AC; label)
 
 The function returns the active and reactive power injections from the generators
 associated with a specific bus in the AC framework. The `label` keyword argument must
@@ -330,7 +330,7 @@ function supplyPower(
 end
 
 """
-    shuntPower(system::PowerSystem, analysis::AC, label)
+    shuntPower(system::PowerSystem, analysis::AC; label)
 
 The function returns the active and reactive power values of the shunt element associated
 with a specific bus in the AC framework. The `label` keyword argument must match an
@@ -499,7 +499,7 @@ function seriesPower(system::PowerSystem, analysis::AC; label::IntStr)
 end
 
 """
-    generatorPower(system::PowerSystem, analysis::AC)
+    generatorPower(system::PowerSystem, analysis::AC; label)
 
 The function returns the active and reactive powers associated with a specific generator
 in the AC framework. The `label` keyword argument must match an existing generator label.

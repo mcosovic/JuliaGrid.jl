@@ -76,8 +76,8 @@ function status!(
 end
 
 """
-    statusVoltmeter!(system::PowerSystem, device::Measurement; inservice, outservice,
-        redundancy)
+    statusVoltmeter!(system::PowerSystem, device::Measurement;
+        inservice, outservice, redundancy)
 
 The function generates a set of voltmeters, assigning voltmeters randomly to either
 in-service or out-of-service states based on specified keywords.
@@ -129,16 +129,17 @@ function statusVoltmeter!(
 end
 
 """
-    statusAmmeter!(system::PowerSystem, ammeter::Ammeter; inservice, inserviceFrom,
-        inserviceTo, outservice, outserviceFrom, outserviceTo, redundancy, redundancyFrom,
-        redundancyTo)
+    statusAmmeter!(system::PowerSystem, ammeter::Ammeter;
+        inservice, inserviceFrom, inserviceTo,
+        outservice, outserviceFrom, outserviceTo,
+        redundancy, redundancyFrom, redundancyTo)
 
 The function generates a set of ammeters, assigning ammeters randomly to either in-service
 or out-of-service states based on specified keywords.
 
 # Keywords
-Users may use either one main keyword or two fine-tuning keywords that specify distinct
-locations per function call:
+Users can use one main keyword or two fine-tuning keywords to specify distinct locations
+per function call:
 * `inservice`: Sets the number of in-service ammeters or allows fine-tuning:
   * `inserviceFrom`: sets only ammeters loacted at the from-bus end,
   * `inserviceTo`: sets only ammeters loacted at the to-bus end.
@@ -215,16 +216,17 @@ function statusAmmeter!(
 end
 
 """
-    statusWattmeter!(system::PowerSystem, device::Measurement; inservice, inserviceBus,
-        inserviceFrom, inserviceTo, outservice, outserviceBus outserviceFrom, outserviceTo,
+    statusWattmeter!(system::PowerSystem, device::Measurement;
+        inservice, inserviceBus, inserviceFrom, inserviceTo,
+        outservice, outserviceBus outserviceFrom, outserviceTo,
         redundancy, redundancyBus, redundancyFrom, redundancyTo)
 
 The function generates a set of wattmeters, assigning wattmeters randomly to either
 in-service or out-of-service states based on specified keywords.
 
 # Keywords
-Users may use either one main keyword or three fine-tuning keywords that specify distinct
-locations per function call:
+Users can use one main keyword or three fine-tuning keywords to specify distinct locations
+per function call:
 * `inservice`: Sets the number of in-service wattmeters or allows fine-tuning:
   * `inserviceBus`: sets only wattmeters loacted at the bus,
   * `inserviceFrom`: sets only wattmeters loacted at the from-bus end,
@@ -316,16 +318,17 @@ function statusWattmeter!(
 end
 
 """
-    statusVarmeter!(system::PowerSystem, device::Measurement; inservice, inserviceBus,
-        inserviceFrom, inserviceTo, outservice, outserviceBus outserviceFrom, outserviceTo,
+    statusVarmeter!(system::PowerSystem, device::Measurement;
+        inservice, inserviceBus, inserviceFrom, inserviceTo,
+        outservice, outserviceBus outserviceFrom, outserviceTo,
         redundancy, redundancyBus, redundancyFrom, redundancyTo)
 
 The function generates a set of varmeters, assigning varmeters randomly to either
 in-service or out-of-service states based on specified keywords.
 
 # Keywords
-Users may use either one main keyword or three fine-tuning keywords that specify distinct
-locations per function call:
+Users can use one main keyword or three fine-tuning keywords to specify distinct locations
+per function call:
 * `inservice`: Sets the number of in-service varmeters or allows fine-tuning:
   * `inserviceBus`: sets only varmeters loacted at the bus,
   * `inserviceFrom`: sets only varmeters loacted at the from-bus end,
@@ -418,8 +421,9 @@ function statusVarmeter!(
 end
 
 """
-    statusPmu!(system::PowerSystem, device::Measurement; inservice, inserviceBus,
-        inserviceFrom, inserviceTo, outservice, outserviceBus outserviceFrom, outserviceTo,
+    statusPmu!(system::PowerSystem, device::Measurement;
+        inservice, inserviceBus, inserviceFrom, inserviceTo,
+        outservice, outserviceBus outserviceFrom, outserviceTo,
         redundancy, redundancyBus, redundancyFrom, redundancyTo)
 
 The function generates a set of PMUs, assigning PMUs randomly to either in-service or

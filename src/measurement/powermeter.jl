@@ -261,7 +261,7 @@ Wattmeters at the to-bus ends of the branches can be configured using:
   * `statusTo = 1`: in-service,
   * `statusTo = 0`: out-of-service,
   * `statusTo = -1`: not included in the `Measurement` type.
-General settings for generating measurements include:
+Settings for generating measurements include:
 * `noise`: Defines the method for generating the measurement means:
   * `noise = true`: adds white Gaussian noise to the active power values, using the defined variances,
   * `noise = false`: uses the exact active power values without adding noise.
@@ -350,7 +350,7 @@ Varmeters at the to-bus ends of the branches can be configured using:
   * `statusTo = 1`: in-service,
   * `statusTo = 0`: out-of-service,
   * `statusTo = -1`: not included in the `Measurement` type.
-General settings for generating measurements include:
+Settings for generating measurements include:
 * `noise`: Defines the method for generating the measurement means:
   * `noise = true`: adds white Gaussian noise to the reactive power values, using the defined variances,
   * `noise = false`: uses the exact reactive power values without adding noise.
@@ -949,8 +949,8 @@ function updateVarmeter!(
 end
 
 """
-    @wattmeter(label, varianceBus, statusBus, varianceFrom, statusFrom, varianceTo, statusTo,
-        noise)
+    @wattmeter(label, varianceBus, statusBus, varianceFrom, statusFrom,
+        varianceTo, statusTo, noise)
 
 The macro generates a template for a wattmeter, which can be utilized to define a wattmeter
 using the [`addWattmeter!`](@ref addWattmeter!) function.
@@ -1031,8 +1031,8 @@ macro wattmeter(kwargs...)
 end
 
 """
-    @varmeter(label, varinaceBus, statusBus, varianceFrom, statusFrom, varianceTo, statusTo,
-        noise)
+    @varmeter(label, varinaceBus, statusBus, varianceFrom, statusFrom,
+        varianceTo, statusTo, noise)
 
 The macro generates a template for a varmeter, which can be utilized to define a varmeter
 using the [`addVarmeter!`](@ref addVarmeter!) function.
