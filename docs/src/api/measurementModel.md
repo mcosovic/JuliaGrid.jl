@@ -22,25 +22,25 @@ using JuliaGrid
 ###### Ammeter
 * [`addAmmeter!`](@ref addAmmeter!)
 * [`updateAmmeter!`](@ref updateAmmeter!)
-* [`statusAmmeter!`](@ref addAmmeter!)
+* [`statusAmmeter!`](@ref statusAmmeter!)
 * [`@ammeter`](@ref @ammeter)
 
 ###### Wattmeter
 * [`addWattmeter!`](@ref addWattmeter!)
 * [`updateWattmeter!`](@ref updateWattmeter!)
-* [`statusWattmeter!`](@ref addWattmeter!)
+* [`statusWattmeter!`](@ref statusWattmeter!)
 * [`@wattmeter`](@ref @wattmeter)
 
 ###### Varmeter
 * [`addVarmeter!`](@ref addVarmeter!)
 * [`updateVarmeter!`](@ref updateVarmeter!)
-* [`statusVarmeter!`](@ref addVarmeter!)
+* [`statusVarmeter!`](@ref statusVarmeter!)
 * [`@varmeter`](@ref @varmeter)
 
 ###### PMU
 * [`addPmu!`](@ref addPmu!)
 * [`updatePmu!`](@ref updatePmu!)
-* [`statusPmu!`](@ref addPmu!)
+* [`statusPmu!`](@ref statusPmu!)
 * [`@pmu`](@ref @pmu)
 
 ---

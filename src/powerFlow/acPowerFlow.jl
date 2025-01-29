@@ -1085,6 +1085,64 @@ function startingVoltage!(system::PowerSystem, analysis::ACPowerFlow{GaussSeidel
     end
 end
 
+"""
+    transferVoltage!(analysis1::ACPowerFlow, analysis2::ACPowerFlow)
+
+The function transfers the bus voltage magnitude and angle values from `analysis1` to
+`analysis2`. It is useful for initializing methods with results obtained from other methods.
+
+# Updates
+The function only updates the `voltage` field in the `analysis2` variable.
+
+# Example
+```jldoctest
+system = powerSystem("case14.h5")
+acModel!(system)
+
+analysis1 = gaussSeidel(system)
+for i = 1:10
+    solve!(system, analysis1)
+end
+
+analysis2 = newtonRaphson(system)
+transferVoltage!(analysis1, analysis2)
+for i = 1:10
+    stopping = mismatch!(system, analysis2)
+    if all(stopping .< 1e-8)
+        break
+    end
+    solve!(system, analysis2)
+end
+```
+"""
+function transferVoltage!(
+    from::ACPowerFlow,
+    to::ACPowerFlow{T}
+) where T <: Union{NewtonRaphson, FastNewtonRaphson}
+
+    bus = system.bus
+    fromVolt = from.voltage
+    toVolt = to.voltage
+
+    @inbounds for i = 1:bus.number
+        toVolt.magnitude[i] = fromVolt.magnitude[i]
+        toVolt.angle[i] = fromVolt.angle[i]
+    end
+end
+
+function transferVoltage!(from::ACPowerFlow, to::ACPowerFlow{GaussSeidel})
+    bus = system.bus
+    fromVolt = from.voltage
+    toVolt = to.voltage
+
+    @inbounds for i = 1:bus.number
+        toVolt.magnitude[i] = fromVolt.magnitude[i]
+        toVolt.angle[i] = fromVolt.angle[i]
+        to.method.voltage[i] = toVolt.magnitude[i] * cis(toVolt.angle[i])
+    end
+end
+
+
 ##### Initialize Voltages for AC Power Flow #####
 function initializeACPowerFlow(system::PowerSystem)
     bus = system.bus
