@@ -554,3 +554,11 @@ function infoObjective(label::Union{String, Int64})
         "cost function, which is not included in the objective."
     )
 end
+
+function errorTransfer()
+    throw(
+        DimensionMismatch(
+            "Voltages could not be transferred because of mismatched array sizes."
+        )
+    )
+end

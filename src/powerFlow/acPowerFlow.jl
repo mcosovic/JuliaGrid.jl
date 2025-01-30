@@ -1116,29 +1116,37 @@ end
 ```
 """
 function transferVoltage!(
-    from::ACPowerFlow,
-    to::ACPowerFlow{T}
+    analysis1::ACPowerFlow,
+    analysis2::ACPowerFlow{T}
 ) where T <: Union{NewtonRaphson, FastNewtonRaphson}
 
     bus = system.bus
-    fromVolt = from.voltage
-    toVolt = to.voltage
+    from = analysis1.voltage
+    to = analysis2.voltage
 
-    @inbounds for i = 1:bus.number
-        toVolt.magnitude[i] = fromVolt.magnitude[i]
-        toVolt.angle[i] = fromVolt.angle[i]
+    if lastindex(to.magnitude) == lastindex(from.magnitude) && lastindex(to.angle) == lastindex(from.angle)
+        @inbounds for i = 1:bus.number
+            to.magnitude[i] = from.magnitude[i]
+            to.angle[i] = from.angle[i]
+        end
+    else
+        errorTransfer()
     end
 end
 
-function transferVoltage!(from::ACPowerFlow, to::ACPowerFlow{GaussSeidel})
+function transferVoltage!(analysis1::ACPowerFlow, analysis2::ACPowerFlow{GaussSeidel})
     bus = system.bus
-    fromVolt = from.voltage
-    toVolt = to.voltage
+    from = analysis1.voltage
+    to = analysis2.voltage
 
-    @inbounds for i = 1:bus.number
-        toVolt.magnitude[i] = fromVolt.magnitude[i]
-        toVolt.angle[i] = fromVolt.angle[i]
-        to.method.voltage[i] = toVolt.magnitude[i] * cis(toVolt.angle[i])
+    if lastindex(to.magnitude) == lastindex(from.magnitude) && lastindex(to.angle) == lastindex(from.angle)
+        @inbounds for i = 1:bus.number
+            to.magnitude[i] = from.magnitude[i]
+            to.angle[i] = from.angle[i]
+            analysis2.method.voltage[i] = to.magnitude[i] * cis(to.angle[i])
+        end
+    else
+        errorTransfer()
     end
 end
 
