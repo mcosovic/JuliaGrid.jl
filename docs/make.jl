@@ -43,6 +43,11 @@ makedocs(
             "DC State Estimation" => "tutorials/dcStateEstimation.md",
             "Per-Unit System" => "tutorials/perunit.md",
         ],
+        "Examples" =>
+        [
+        "Power System Test Case" => "examples/powerSystemCase.md",
+        "AC Power Flow" => "examples/acPowerFlow.md"
+        ],
         "API Reference" =>[
             "Power System Model" => "api/powerSystemModel.md",
             "Power Flow" => "api/powerFlow.md",
