@@ -94,24 +94,6 @@ After executing the macro, the base power and voltage values and their units wil
 system.base.power.value, system.base.power.unit
 system.base.voltage.value, system.base.voltage.unit
 ```
----
-
-##### Examples
-The table below presents a selection of widely used power system datasets that users can utilize to model and analyze power systems. These datasets vary in size and complexity, offering flexibility for various applications.
-
-| Power System                              | Buses | Branches | Generators | Download Links
-|:------------------------------------------|:-----:|:--------:|:----------:|:------------------------------------------------:|
-| IEEE 14-bus test case                     | 14    | 20       | 5          | [[hdf5](https://github.com/mcosovic/JuliaGridData/raw/refs/heads/main/power_systems/hdf5/case14.h5)] [[matpower](https://github.com/mcosovic/JuliaGridData/raw/refs/heads/main/power_systems/matlab/case14.m)] [[built-in](https://github.com/mcosovic/JuliaGridData/raw/refs/heads/main/power_systems/julia/case14.jl)]
-| IEEE 30-bus test case                     | 30    | 41       | 6          | [[hdf5](https://github.com/mcosovic/JuliaGridData/raw/refs/heads/main/power_systems/hdf5/case_ieee30.h5)] [[matpower](https://github.com/mcosovic/JuliaGridData/raw/refs/heads/main/power_systems/matlab/case_ieee30.m)] [[built-in](https://github.com/mcosovic/JuliaGridData/raw/refs/heads/main/power_systems/julia/case_ieee30.jl)]
-| IEEE 118-bus test case                    | 118   | 186      | 54         | [[hdf5](https://github.com/mcosovic/JuliaGridData/raw/refs/heads/main/power_systems/hdf5/case118.h5)] [[matpower](https://github.com/mcosovic/JuliaGridData/raw/refs/heads/main/power_systems/matlab/case118.m)]
-| IEEE 300-bus test case                    | 300   | 411      | 69         | [[hdf5](https://github.com/mcosovic/JuliaGridData/raw/refs/heads/main/power_systems/hdf5/case300.h5)] [[matpower](https://github.com/mcosovic/JuliaGridData/raw/refs/heads/main/power_systems/matlab/case300.m)]
-| Part of the European transmission network | 1354  | 1991     | 260        | [[hdf5](https://github.com/mcosovic/JuliaGridData/raw/refs/heads/main/power_systems/hdf5/case1354pegase.h5)] [[matpower](https://github.com/mcosovic/JuliaGridData/raw/refs/heads/main/power_systems/matlab/case1354pegase.m)]
-| French transmission network               | 1951  | 2596     | 392        | [[hdf5](https://github.com/mcosovic/JuliaGridData/raw/refs/heads/main/power_systems/hdf5/case1951rte.h5)] [[matpower](https://github.com/mcosovic/JuliaGridData/raw/refs/heads/main/power_systems/matlab/case1951rte.m)]
-| Synthetic US WECC model                   | 10000 | 12706    | 2485       | [[hdf5](https://github.com/mcosovic/JuliaGridData/raw/refs/heads/main/power_systems/hdf5/case_ACTIVSg10k.h5)] [[matpower](https://github.com/mcosovic/JuliaGridData/raw/refs/heads/main/power_systems/matlab/case_ACTIVSg10k.m)]
-| Synthetic US NE/Mid-Atlantic model        | 25000 | 32230    | 4834       | [[hdf5](https://github.com/mcosovic/JuliaGridData/raw/refs/heads/main/power_systems/hdf5/case_ACTIVSg25k.h5)] [[matpower](https://github.com/mcosovic/JuliaGridData/raw/refs/heads/main/power_systems/matlab/case_ACTIVSg25k.m)]
-| Synthetic Eastern US model                | 70000 | 88207    | 10390      | [[hdf5](https://github.com/mcosovic/JuliaGridData/raw/refs/heads/main/power_systems/hdf5/case_ACTIVSg70k.h5)] [[matpower](https://github.com/mcosovic/JuliaGridData/raw/refs/heads/main/power_systems/matlab/case_ACTIVSg70k.m)]
-| Synthetic US model                        | 82000 | 104121   | 13419      | [[hdf5](https://github.com/mcosovic/JuliaGridData/raw/refs/heads/main/power_systems/hdf5/case_SyntheticUSA.h5)] [[matpower](https://github.com/mcosovic/JuliaGridData/raw/refs/heads/main/power_systems/matlab/case_SyntheticUSA.m)]
-
 
 ---
 

@@ -1,7 +1,7 @@
 # [AC Power Flow](@id ACPowerFlowExamples)
 In this example, we will perform several AC power flow analyses, effectively simulating quasi-steady-state conditions where the power system undergoes parameter and topology changes. These examples demonstrate JuliaGrid's efficiency in handling such scenarios.
 
-Using the previously created [power system test case](@ref PowerSystemTestCaseExamples), we begin by defining the bus parameters for AC power flow analysis. This includes specifying the `type` of each bus and the connected `active` and `reactive` power loads. The initial bus voltage values default to `magnitude = 1.0` and `angle = 0.0`, but users can modify these values if needed:
+Building on the previously created [minimal working power system dataset](@ref MinimalWorkingDatasetExamples), we first define the bus parameters for AC power flow analysis. This includes specifying the `type` of each bus and the connected `active` and `reactive` power loads. The initial bus voltage values default to `magnitude = 1.0` and `angle = 0.0`, but users can modify these values if needed:
 ```@setup 4bus
 using JuliaGrid, JuMP, Ipopt # hide
 @default(template) # hide
@@ -57,6 +57,9 @@ acModel!(system)
 
 nothing # hide
 ```
+
+!!! note "Info"
+    Users can download a Julia script containing the scenarios from this section using the following [link](https://github.com/mcosovic/JuliaGrid.jl/raw/refs/heads/master/docs/src/examples/analyses/acPowerFlow.jl).
 
 ---
 

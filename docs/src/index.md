@@ -23,9 +23,10 @@ Pkg.add("JuliaGrid")
 ---
 
 ### Documentation Structure
-JuliaGrid documentation consists of three main parts:
+JuliaGrid documentation consists of four main parts:
 * The manual provides users with guidance on how to use available functions, its return values, and offers instructions for modifying power system configurations, measurement data, and other user specific analysis.
 * The tutorials delve deeper into the theoretical underpinnings of state-of-the-art algorithms, allowing users to gain an in-depth understanding of the equations used in various functions.
+* The examples section contains various power system datasets and uses toy examples to highlight JuliaGrid's abilities in steady-state and quasi-steady-state analyses.
 * API references offer a comprehensive list of objects, functions and methods within the package, categorised according to specific use-cases.
 
 ---
