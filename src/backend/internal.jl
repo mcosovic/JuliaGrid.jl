@@ -83,7 +83,7 @@ Changing the unit of `apparent` power unit is reflected in the following quantit
 @power(MW, kVAr, VA)
 ```
 """
-macro power(active::Symbol, reactive::Symbol, apparent::Symbol)
+macro power(active::Symbol, reactive::Symbol, apparent::Symbol = :pu)
     unitList.activePowerLive = string(active)
     suffix = parseSuffix(unitList.activePowerLive, unitList.activePower, "active power")
     pfx.activePower = parsePrefix(unitList.activePowerLive , suffix)
