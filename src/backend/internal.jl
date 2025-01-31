@@ -135,7 +135,7 @@ Changing the unit prefix of voltage `base` is reflected in the following quantit
 @voltage(pu, deg, kV)
 ```
 """
-macro voltage(magnitude::Symbol, angle::Symbol, base::Symbol)
+macro voltage(magnitude::Symbol, angle::Symbol, base::Symbol = :V)
     unitList.voltageMagnitudeLive = string(magnitude)
     suffix = parseSuffix(unitList.voltageMagnitudeLive, unitList.voltageMagnitude, "voltage magnitude")
     pfx.voltageMagnitude = parsePrefix(unitList.voltageMagnitudeLive, suffix)
