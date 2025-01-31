@@ -1,57 +1,52 @@
 # [AC Power Flow](@id ACPowerFlowExamples)
-In this example, we will perform several AC power flow analyses, effectively simulating quasi-steady-state conditions where the power system undergoes parameter and topology changes. These examples demonstrate JuliaGrid's efficiency in handling such scenarios.
+In this example, we perform several AC power flow analyses using the power system shown in Figure 1. These analyses simulate quasi-steady-state conditions where the system undergoes parameter and topology changes, demonstrating JuliaGrid's efficiency in handling such scenarios.
 
-Building on the previously created [minimal working power system dataset](@ref MinimalWorkingDatasetExamples), we first define the bus parameters for AC power flow analysis. This includes specifying the `type` of each bus and the connected `active` and `reactive` power loads. The initial bus voltage values default to `magnitude = 1.0` and `angle = 0.0`, but users can modify these values if needed:
-```@setup 4bus
+```@raw html
+<img src="../../assets/example_4bus.svg" class="center" width="500"/>
+<figcaption>Figure 1: The 4-bus power system.</figcaption>
+&nbsp;
+```
+
+We begin by defining the bus parameters for AC power flow analysis. This includes specifying the `type` of each bus, the connected `active` and `reactive` power loads, and shunt capacitor banks with `conductance` and `susceptance` values. The bus voltage `magnitude` and `angle` serve as initial values for the iterative power flow algorithm. Note that for the slack bus (`type = 3`), the angle is fixed to the specified value. With these definitions, we can start to build the power system model:
+```@example 4bus
 using JuliaGrid, JuMP, Ipopt # hide
 @default(template) # hide
 @default(unit) # hide
 
 system = powerSystem()
 
-addBus!(system; label = "Bus 1")
-addBus!(system; label = "Bus 2")
-addBus!(system; label = "Bus 3")
-addBus!(system; label = "Bus 4")
-
-addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.06)
-addBranch!(system; label = "Branch 2", from = "Bus 1", to = "Bus 3", reactance = 0.22)
-addBranch!(system; label = "Branch 3", from = "Bus 2", to = "Bus 3", reactance = 0.19)
-addBranch!(system; label = "Branch 4", from = "Bus 2", to = "Bus 4", reactance = 0.32)
-
-addGenerator!(system; label = "Generator 1", bus = "Bus 1")
-addGenerator!(system; label = "Generator 2", bus = "Bus 3")
+@bus(magnitude = 1.1, angle = -0.1)
+addBus!(system; label = "Bus 1", type = 3, angle = 0.0)
+addBus!(system; label = "Bus 2", type = 1, conductance = 0.001, susceptance = 1.1)
+addBus!(system; label = "Bus 3", type = 2, active = 0.2, reactive = 0.1)
+addBus!(system; label = "Bus 4", type = 1, active = 0.5, reactive = 0.2)
 
 nothing # hide
 ```
+
+Next, we refine the transmission line parameters by adding `resistance`, `reactance`, and `susceptance` values. Additionally, for transformers, we specify the off-nominal turns ratio using the `turnsRatio` keyword:
 ```@example 4bus
-updateBus!(system; label = "Bus 1", type = 3)
-updateBus!(system; label = "Bus 2", type = 1, magnitude = 0.91, angle = -0.01)
-updateBus!(system; label = "Bus 3", type = 2, active = 0.2, reactive = 0.1)
-updateBus!(system; label = "Bus 4", type = 1, active = 0.5, reactive = 0.2)
+
+@branch(label = "Branch ?", reactance = 0.22)
+addBranch!(system; from = "Bus 1", to = "Bus 2", resistance = 0.02, susceptance = 0.05)
+addBranch!(system; from = "Bus 1", to = "Bus 3", resistance = 0.05, susceptance = 0.04)
+addBranch!(system; from = "Bus 2", to = "Bus 3", resistance = 0.04, susceptance = 0.04)
+addBranch!(system; from = "Bus 2", to = "Bus 4", turnsRatio = 0.98)
 
 nothing # hide
 ```
 
-Next, we enhance the transmission line parameters by including additional details such as `resistance`, `susceptance`, and the transformer off-nominal turns ratio specified using the `turnsRatio` keyword:
+Finally, we define the `active` and `reactive` power outputs of the generators and set the voltage `magnitude` setpoints. These setpoints fix the voltage magnitudes for the slack bus (`type = 3`) and generator buses (`type = 2`):
 ```@example 4bus
-updateBranch!(system; label = "Branch 1", resistance = 0.02, susceptance = 0.05)
-updateBranch!(system; label = "Branch 2", resistance = 0.05, susceptance = 0.04)
-updateBranch!(system; label = "Branch 3", resistance = 0.04, susceptance = 0.04)
-updateBranch!(system; label = "Branch 4", turnsRatio = 0.98)
+@generator(label = "Generator ?")
+addGenerator!(system; bus = "Bus 1", active = 2.3, reactive = 0.4, magnitude = 0.98)
+addGenerator!(system; bus = "Bus 3", active = 0.4, magnitude = 1.1)
 
 nothing # hide
 ```
 
-Finally, we define the `active` and `reactive` power outputs of the generators and set the voltage magnitude setpoints, with the default value being `magnitude = 1.0` unless specified otherwise:
-```@example 4bus
-updateGenerator!(system; label = "Generator 1", active = 2.3, reactive = 0.4)
-updateGenerator!(system; label = "Generator 2", active = 0.4, magnitude = 1.1)
 
-nothing # hide
-```
-
-Now, we create an AC model that includes power system topology and parameters, as well as the nodal admittance matrix. Once generated for a specific power system, this model can be shared across different analyses and is automatically updated when power system data changes:
+After defining the power system data, we generate an AC model that includes essential vectors and matrices for analysis, such as the nodal admittance matrix. This model is automatically updated with data changes and can be shared across different analyses:
 ```@example 4bus
 acModel!(system)
 
@@ -61,13 +56,14 @@ nothing # hide
 !!! note "Info"
     Users can download a Julia script containing the scenarios from this section using the following [link](https://github.com/mcosovic/JuliaGrid.jl/raw/refs/heads/master/docs/src/examples/analyses/acPowerFlow.jl).
 
----
+
+----
 
 ##### AC Power Flow Analysis Wrapper Function
-We can define a wrapper function to perform AC power flow analysis. Using JuliaGrid's built-in functions, this function computes bus voltage magnitudes and angles. Once the algorithm converges, it then calculates the powers associated with buses, branches, and generators:
+Throughout the simulations below, AC power flow is run multiple times. To avoid repeatedly calling multiple JuliaGrid built-in functions, we define a wrapper function that performs the AC power flow analysis, allowing us to call a single function each time. This wrapper function computes bus voltage magnitudes and angles. Once the algorithm converges, it then calculates the powers at buses, branches, and generators:
 ```@example 4bus
 function acPowerFlow!(system::PowerSystem, analysis::ACPowerFlow)
-    for iteration = 1:20
+    for iteration = 1:40
         stopping = mismatch!(system, analysis)
         if all(stopping .< 1e-8)
             println("The algorithm converged in $(iteration - 1) iterations.")
@@ -83,7 +79,7 @@ nothing # hide
 ---
 
 ## Base Case Analysis
-At the start, we use the fast Newton-Raphson XB method to solve the AC power flow. This method is chosen because we intend to modify generator and demand parameters. JuliaGrid efficiently reuses the factorization of Jacobian matrices in these cases, which significantly reduces computational complexity. Therefore, we define the model for this method:
+At the start, we use the fast Newton-Raphson XB method to solve the AC power flow:
 ```@example 4bus
 fnr = fastNewtonRaphsonXB(system)
 nothing # hide
@@ -111,11 +107,11 @@ printBranchData(system, fnr; show)
 ## Modifying Generators and Demands
 We will modify the active and reactive power outputs of the generators, as well as the active and reactive powers demanded by consumers. Instead of creating a new power system model or just updating the existing one, we will update both the power system model and the fast Newton-Raphson model simultaneously:
 ```@example 4bus
-updateBus!(system, fnr; label = "Bus 3", type = 2, active = 0.3, reactive = 0.0)
-updateBus!(system, fnr; label = "Bus 4", type = 1, active = 0.1, reactive = 0.1)
+updateBus!(system, fnr; label = "Bus 3", type = 2, active = 0.3, reactive = 0.2)
+updateBus!(system, fnr; label = "Bus 4", type = 1, active = 0.4, reactive = 0.2)
 
-updateGenerator!(system, fnr; label = "Generator 1", active = 2.0, reactive = 0.2)
-updateGenerator!(system, fnr; label = "Generator 2", active = 1.2, reactive = 0.2)
+updateGenerator!(system, fnr; label = "Generator 1", active = 2.0, reactive = 0.3)
+updateGenerator!(system, fnr; label = "Generator 2", active = 1.2, reactive = 0.1)
 
 nothing # hide
 ```
@@ -125,6 +121,7 @@ Next, we run the AC power flow again to compute the new state of the power syste
 acPowerFlow!(system, fnr)
 nothing # hide
 ```
+Since no power system changes were introduced that affect the Jacobian matrices, JuliaGrid reuses the Jacobian matrix factorizations from the base case analysis, significantly reducing computational complexity.
 
 Finally, we can display the relevant data:
 ```@example 4bus
@@ -148,20 +145,20 @@ nr = newtonRaphson(system)
 nothing # hide
 ```
 
-When the model is created, we also initialize the method, with the starting voltage magnitudes and angles corresponding to the values defined when the power system model was first created. If we want to use the results from the fast Newton-Raphson method and start the Newton-Raphson method with a warm start, we can transfer the voltage magnitudes and angles:
+When the model is created, we also initialize the Newton-Raphson method, with the starting voltage magnitudes and angles corresponding to the values defined when the power system model was first created. If we want to use the results from the fast Newton-Raphson method and start the Newton-Raphson method with a warm start, we can transfer the voltage magnitudes and angles:
 ```@example 4bus
 transferVoltage!(fnr, nr)
 
 nothing # hide
 ```
 
-Now, we can solve the power flow and calculate the powers for this scenario:
+Now, we can solve the AC power flow for this scenario:
 ```@example 4bus
 acPowerFlow!(system, nr)
 nothing # hide
 ```
 
-To display how the power flow is distributed when one branch is out of service, we use the following:
+To display how the power flows are distributed when one branch is out of service, we use the following:
 ```@example 4bus
 printBranchData(system, nr; show)
 ```
