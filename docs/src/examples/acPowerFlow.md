@@ -2,7 +2,7 @@
 In this example, we perform several AC power flow analyses using the power system shown in Figure 1. These analyses simulate quasi-steady-state conditions where the system undergoes parameter and topology changes, demonstrating JuliaGrid's efficiency in handling such scenarios.
 
 ```@raw html
-<img src="../assets/example_4bus.svg" class="center" width="500"/>
+<img src="../../assets/example_4bus.svg" class="center" width="500"/>
 <figcaption>Figure 1: The 4-bus power system.</figcaption>
 &nbsp;
 ```
