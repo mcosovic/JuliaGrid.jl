@@ -45,7 +45,8 @@ makedocs(
         ],
         "Examples" => [
             "Power System Datasets" => "examples/powerSystemDatasets.md",
-            "AC Power Flow" => "examples/acPowerFlow.md"
+            "AC Power Flow" => "examples/acPowerFlow.md",
+            "DC Power Flow" => "examples/dcPowerFlow.md"
         ],
         "API Reference" =>[
             "Power System Model" => "api/powerSystemModel.md",

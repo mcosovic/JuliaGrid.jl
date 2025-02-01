@@ -2,7 +2,7 @@
 DC power flow provides an approximate solution compared to AC power flow. We use the same power system model as in the AC power flow analysis, shown in Figure 1, to perform several DC power flow simulations. These simulations represent quasi-steady-state conditions where the system undergoes parameter and topology changes.
 
 ```@raw html
-<img src="../assets/example_4bus.svg" class="center" width="500"/>
+<img src="../../assets/example_4bus.svg" class="center" width="500"/>
 <figcaption>Figure 1: The 4-bus power system.</figcaption>
 &nbsp;
 ```
