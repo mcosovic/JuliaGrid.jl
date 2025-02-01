@@ -7,7 +7,10 @@ In this example, we perform several AC power flow analyses using the power syste
 &nbsp;
 ```
 
-We begin by defining the units for active and reactive power, as well as voltage magnitude and angle, which will be used throughout this example:
+!!! note "Info"
+    Users can download a Julia script containing the scenarios from this section using the following [link](https://github.com/mcosovic/JuliaGrid.jl/raw/refs/heads/master/docs/src/examples/analyses/acPowerFlow.jl).
+
+We begin by defining the units for active and reactive powers, as well as voltage magnitudes and angles, which will be used throughout this example:
 ```@example 4bus
 using JuliaGrid # hide
 @default(template) # hide
@@ -24,7 +27,7 @@ system = powerSystem()
 
 @bus(magnitude = 1.1, angle = -5.7)
 addBus!(system; label = "Bus 1", type = 3, angle = 0.0)
-addBus!(system; label = "Bus 2", type = 1, conductance = 0.1, susceptance = 18.2)
+addBus!(system; label = "Bus 2", type = 1, conductance = 0.1, susceptance = 8.2)
 addBus!(system; label = "Bus 3", type = 2, active = 20.2, reactive = 10.5)
 addBus!(system; label = "Bus 4", type = 1, active = 50.8, reactive = 23.1)
 
@@ -46,8 +49,8 @@ nothing # hide
 Finally, we define the `active` and `reactive` power outputs of the generators and set the voltage `magnitude` setpoints. These setpoints fix the voltage magnitudes for the slack bus (`type = 3`) and generator buses (`type = 2`):
 ```@example 4bus
 @generator(label = "Generator ?")
-addGenerator!(system; bus = "Bus 1", active = 80.1, reactive = 50.2,  magnitude = 0.98)
-addGenerator!(system; bus = "Bus 3", active = 48.2, magnitude = 1.1)
+addGenerator!(system; bus = "Bus 1", active = 60.1, reactive = 40.2,  magnitude = 0.98)
+addGenerator!(system; bus = "Bus 3", active = 18.2, magnitude = 1.1)
 
 nothing # hide
 ```
@@ -59,10 +62,6 @@ acModel!(system)
 
 nothing # hide
 ```
-
-!!! note "Info"
-    Users can download a Julia script containing the scenarios from this section using the following [link](https://github.com/mcosovic/JuliaGrid.jl/raw/refs/heads/master/docs/src/examples/analyses/acPowerFlow.jl).
-
 
 ----
 
@@ -122,8 +121,8 @@ We will modify the active and reactive power outputs of the generators, as well 
 updateBus!(system, fnr; label = "Bus 3", type = 2, active = 25.5, reactive = 15.0)
 updateBus!(system, fnr; label = "Bus 4", type = 1, active = 42.0, reactive = 20.0)
 
-updateGenerator!(system, fnr; label = "Generator 1", active = 60.0, reactive = 20.0)
-updateGenerator!(system, fnr; label = "Generator 2", active = 45.1, reactive = 20.0)
+updateGenerator!(system, fnr; label = "Generator 1", active = 58.0, reactive = 20.0)
+updateGenerator!(system, fnr; label = "Generator 2", active = 23.1, reactive = 20.0)
 
 nothing # hide
 ```
