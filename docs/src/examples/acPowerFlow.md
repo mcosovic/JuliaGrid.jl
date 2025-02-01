@@ -118,8 +118,8 @@ printBranchData(system, fnr; show)
 ## Modifying Generators and Demands
 We will modify the active and reactive power outputs of the generators, as well as the active and reactive powers demanded by consumers. Instead of creating a new power system model or just updating the existing one, we will update both the power system model and the fast Newton-Raphson model simultaneously:
 ```@example 4bus
-updateBus!(system, fnr; label = "Bus 3", type = 2, active = 25.5, reactive = 15.0)
-updateBus!(system, fnr; label = "Bus 4", type = 1, active = 42.0, reactive = 20.0)
+updateBus!(system, fnr; label = "Bus 3", active = 25.5, reactive = 15.0)
+updateBus!(system, fnr; label = "Bus 4", active = 42.0, reactive = 20.0)
 
 updateGenerator!(system, fnr; label = "Generator 1", active = 58.0, reactive = 20.0)
 updateGenerator!(system, fnr; label = "Generator 2", active = 23.1, reactive = 20.0)
