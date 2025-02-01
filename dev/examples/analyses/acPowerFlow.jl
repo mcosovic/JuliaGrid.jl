@@ -52,8 +52,8 @@ printBranchData(system, fnr; show)
 
 
 ##### Modifying Generators and Demands #####
-updateBus!(system, fnr; label = "Bus 3", type = 2, active = 25.5, reactive = 15.0)
-updateBus!(system, fnr; label = "Bus 4", type = 1, active = 42.0, reactive = 20.0)
+updateBus!(system, fnr; label = "Bus 3", active = 25.5, reactive = 15.0)
+updateBus!(system, fnr; label = "Bus 4", active = 42.0, reactive = 20.0)
 
 updateGenerator!(system, fnr; label = "Generator 1", active = 58.0, reactive = 20.0)
 updateGenerator!(system, fnr; label = "Generator 2", active = 23.1, reactive = 20.0)
