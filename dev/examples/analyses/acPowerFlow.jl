@@ -25,7 +25,7 @@ system = powerSystem()
 
 @bus(magnitude = 1.1, angle = -5.7)
 addBus!(system; label = "Bus 1", type = 3, angle = 0.0)
-addBus!(system; label = "Bus 2", type = 1, conductance = 0.1, susceptance = 18.2)
+addBus!(system; label = "Bus 2", type = 1, conductance = 0.1, susceptance = 8.2)
 addBus!(system; label = "Bus 3", type = 2, active = 20.2, reactive = 10.5)
 addBus!(system; label = "Bus 4", type = 1, active = 50.8, reactive = 23.1)
 
@@ -36,8 +36,8 @@ addBranch!(system; from = "Bus 2", to = "Bus 3", resistance = 0.04, susceptance 
 addBranch!(system; from = "Bus 2", to = "Bus 4", turnsRatio = 0.98)
 
 @generator(label = "Generator ?")
-addGenerator!(system; bus = "Bus 1", active = 80.1, reactive = 50.2,  magnitude = 0.98)
-addGenerator!(system; bus = "Bus 3", active = 48.2, magnitude = 1.1)
+addGenerator!(system; bus = "Bus 1", active = 60.1, reactive = 40.2,  magnitude = 0.98)
+addGenerator!(system; bus = "Bus 3", active = 18.2, magnitude = 1.1)
 
 acModel!(system)
 
@@ -55,8 +55,8 @@ printBranchData(system, fnr; show)
 updateBus!(system, fnr; label = "Bus 3", type = 2, active = 25.5, reactive = 15.0)
 updateBus!(system, fnr; label = "Bus 4", type = 1, active = 42.0, reactive = 20.0)
 
-updateGenerator!(system, fnr; label = "Generator 1", active = 60.0, reactive = 20.0)
-updateGenerator!(system, fnr; label = "Generator 2", active = 45.1, reactive = 20.0)
+updateGenerator!(system, fnr; label = "Generator 1", active = 58.0, reactive = 20.0)
+updateGenerator!(system, fnr; label = "Generator 2", active = 23.1, reactive = 20.0)
 
 acPowerFlow!(system, fnr)
 
