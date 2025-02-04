@@ -50,7 +50,7 @@ Finally, we define the `active` and `reactive` power outputs of the generators a
 ```@example 4bus
 @generator(label = "Generator ?")
 addGenerator!(system; bus = "Bus 1", active = 60.1, reactive = 40.2,  magnitude = 0.98)
-addGenerator!(system; bus = "Bus 2", active = 18.2, magnitude = 1.1)
+addGenerator!(system; bus = "Bus 2", active = 18.2, magnitude = 1.01)
 
 nothing # hide
 ```
@@ -161,7 +161,7 @@ Finally, we can display the relevant data:
 printBranchData(system, fnr; show = show2, fmt = fmt2)
 ```
 
-Compared to the base case, the directions of power flows remain unchanged, but the amounts of active and reactive power differ, as shown in Figure 3.
+Compared to the base case, the directions of active power flows remain unchanged, but their magnitudes differ. For reactive power, the values change, and the flow at `Branch 1` on the `Bus 1` side reverses, as shown in Figure 3.
 ```@raw html
 <img src="../../assets/4bus_ac_power.svg" class="center" width="850"/>
 <figcaption>Figure 3: Active (subfigure a) and reactive (subfigure b) power flows in the 4-bus power system with modified generator outputs and consumer demands.</figcaption>
@@ -202,7 +202,7 @@ To display how the power flows are distributed when one branch is out of service
 printBranchData(system, nr; show = show2, fmt = fmt2)
 ```
 
-Compared to the previous cases, we observe that the reactive power flow at `Branch 1` reverses direction due to the outage of `Branch 3`, as shown in Figure 4.
+Compared to the previous cases, we observe that the reactive power flow at `Branch 1` on the `Bus 1` side reverses direction due to the outage of `Branch 3`, as shown in Figure 4.
 ```@raw html
 <img src="../../assets/4bus_ac_service.svg" class="center" width="850"/>
 <figcaption>Figure 4: Active (subfigure a) and reactive (subfigure b) power flows in the 4-bus power system with a modified power system topology.</figcaption>
