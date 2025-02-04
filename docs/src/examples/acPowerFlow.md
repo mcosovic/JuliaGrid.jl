@@ -2,7 +2,7 @@
 In this example, we perform several AC power flow analyses using the power system shown in Figure 1. These analyses simulate quasi-steady-state conditions where the system undergoes parameter and topology changes, demonstrating JuliaGrid's efficiency in handling such scenarios.
 
 ```@raw html
-<img src="../../assets/example_4bus.svg" class="center" width="500"/>
+<img src="../../assets/4bus.svg" class="center" width="450"/>
 <figcaption>Figure 1: The 4-bus power system.</figcaption>
 &nbsp;
 ```
@@ -27,8 +27,8 @@ system = powerSystem()
 
 @bus(magnitude = 1.1, angle = -5.7)
 addBus!(system; label = "Bus 1", type = 3, angle = 0.0)
-addBus!(system; label = "Bus 2", type = 1, conductance = 0.1, susceptance = 8.2)
-addBus!(system; label = "Bus 3", type = 2, active = 20.2, reactive = 10.5)
+addBus!(system; label = "Bus 2", type = 2, active = 20.2, reactive = 10.5)
+addBus!(system; label = "Bus 3", type = 1, conductance = 0.1, susceptance = 8.2)
 addBus!(system; label = "Bus 4", type = 1, active = 50.8, reactive = 23.1)
 
 nothing # hide
@@ -38,10 +38,10 @@ Next, we refine the transmission line parameters by adding `resistance`, `reacta
 ```@example 4bus
 
 @branch(label = "Branch ?", reactance = 0.22)
-addBranch!(system; from = "Bus 1", to = "Bus 2", resistance = 0.02, susceptance = 0.05)
-addBranch!(system; from = "Bus 1", to = "Bus 3", resistance = 0.05, susceptance = 0.04)
+addBranch!(system; from = "Bus 1", to = "Bus 3", resistance = 0.02, susceptance = 0.05)
+addBranch!(system; from = "Bus 1", to = "Bus 2", resistance = 0.05, susceptance = 0.04)
 addBranch!(system; from = "Bus 2", to = "Bus 3", resistance = 0.04, susceptance = 0.04)
-addBranch!(system; from = "Bus 2", to = "Bus 4", turnsRatio = 0.98)
+addBranch!(system; from = "Bus 3", to = "Bus 4", turnsRatio = 0.98)
 
 nothing # hide
 ```
@@ -50,7 +50,7 @@ Finally, we define the `active` and `reactive` power outputs of the generators a
 ```@example 4bus
 @generator(label = "Generator ?")
 addGenerator!(system; bus = "Bus 1", active = 60.1, reactive = 40.2,  magnitude = 0.98)
-addGenerator!(system; bus = "Bus 3", active = 18.2, magnitude = 1.1)
+addGenerator!(system; bus = "Bus 2", active = 18.2, magnitude = 1.1)
 
 nothing # hide
 ```
@@ -63,7 +63,7 @@ acModel!(system)
 nothing # hide
 ```
 
-----
+---
 
 ##### AC Power Flow Analysis Wrapper Function
 Throughout the simulations below, AC power flow is run multiple times. To avoid repeatedly calling multiple JuliaGrid built-in functions, we define a wrapper function that performs the AC power flow analysis, allowing us to call a single function each time. This wrapper function computes bus voltage magnitudes and angles. Once the algorithm converges, it then calculates the powers at buses, branches, and generators:
@@ -84,6 +84,25 @@ nothing # hide
 
 ---
 
+##### Display Data Settings
+Before running simulations, we configure the data display settings, including the selection of displayed data elements and the numeric format for relevant power flow values.
+
+For bus-related data, we set:
+```@example 4bus
+show1 = Dict("Power Injection" => false)
+fmt1 = Dict("Power Generation" => "%.2f", "Power Demand" => "%.2f", "Shunt Power" => "%.2f")
+nothing # hide
+```
+
+Similarly, for branch-related data, we choose:
+```@example 4bus
+show2 = Dict("Shunt Power" => false, "Status" => false)
+fmt2 = Dict("From-Bus Power" => "%.2f", "To-Bus Power" => "%.2f", "Series Power" => "%.2f")
+nothing # hide
+```
+
+---
+
 ## Base Case Analysis
 At the start, we use the fast Newton-Raphson XB method to solve the AC power flow:
 ```@example 4bus
@@ -97,28 +116,31 @@ acPowerFlow!(system, fnr)
 nothing # hide
 ```
 
-Before displaying the data, we can select which information will be shown and which will be hidden:
-```@example 4bus
-show = Dict("Power Injection" => false, "Shunt Power" => false, "Series Power" => false)
-nothing # hide
-```
-
 Once the AC power flow is solved, we can analyze the results related to the buses. For instance:
 ```@example 4bus
-printBusData(system, fnr; show)
+printBusData(system, fnr; show = show1, fmt = fmt1)
 ```
 
 Similarly, the results for branches are:
 ```@example 4bus
-printBranchData(system, fnr; show)
+printBranchData(system, fnr; show = show2, fmt = fmt2)
 ```
+
+Thus, using bus and branch data, we obtained the active and reactive power flows, as illustrated in Figure 2.
+```@raw html
+<img src="../../assets/4bus_ac_base.svg" class="center" width="850"/>
+<figcaption>Figure 2: Active (subfigure a) and reactive (subfigure b) power flows in the 4-bus power system for the base case.</figcaption>
+&nbsp;
+```
+
+Additionally, the branch data shows the series power losses, which result from the series resistance and reactance of each branch. Note that the active power at the from-bus and to-bus ends of a branch differs by the active power loss. However, this does not apply to reactive power, as branch susceptances provide partial compensation.
 
 ---
 
 ## Modifying Generators and Demands
 We will modify the active and reactive power outputs of the generators, as well as the active and reactive powers demanded by consumers. Instead of creating a new power system model or just updating the existing one, we will update both the power system model and the fast Newton-Raphson model simultaneously:
 ```@example 4bus
-updateBus!(system, fnr; label = "Bus 3", active = 25.5, reactive = 15.0)
+updateBus!(system, fnr; label = "Bus 2", active = 25.5, reactive = 15.0)
 updateBus!(system, fnr; label = "Bus 4", active = 42.0, reactive = 20.0)
 
 updateGenerator!(system, fnr; label = "Generator 1", active = 58.0, reactive = 20.0)
@@ -136,7 +158,13 @@ Since no power system changes were introduced that affect the Jacobian matrices,
 
 Finally, we can display the relevant data:
 ```@example 4bus
-printBranchData(system, fnr; show)
+printBranchData(system, fnr; show = show2, fmt = fmt2)
+```
+
+Compared to the base case, the directions of power flows remain unchanged, but the amounts of active and reactive power differ, as shown in Figure 3.
+```@raw html
+<img src="../../assets/4bus_ac_power.svg" class="center" width="850"/>
+<figcaption>Figure 3: Active (subfigure a) and reactive (subfigure b) power flows in the 4-bus power system with modified generator outputs and consumer demands.</figcaption>
 ```
 
 ---
@@ -171,5 +199,11 @@ nothing # hide
 
 To display how the power flows are distributed when one branch is out of service, we use the following:
 ```@example 4bus
-printBranchData(system, nr; show)
+printBranchData(system, nr; show = show2, fmt = fmt2)
+```
+
+Compared to the previous cases, we observe that the reactive power flow at `Branch 1` reverses direction due to the outage of `Branch 3`, as shown in Figure 4.
+```@raw html
+<img src="../../assets/4bus_ac_service.svg" class="center" width="850"/>
+<figcaption>Figure 4: Active (subfigure a) and reactive (subfigure b) power flows in the 4-bus power system with a modified power system topology.</figcaption>
 ```

@@ -2,7 +2,7 @@
 DC power flow provides an approximate solution compared to AC power flow. We use the same power system model as in the AC power flow analysis, shown in Figure 1, to perform several DC power flow simulations. These simulations represent quasi-steady-state conditions where the system undergoes parameter and topology changes.
 
 ```@raw html
-<img src="../../assets/example_4bus.svg" class="center" width="500"/>
+<img src="../../assets/4bus.svg" class="center" width="450"/>
 <figcaption>Figure 1: The 4-bus power system.</figcaption>
 &nbsp;
 ```
@@ -26,8 +26,8 @@ Next, we define the bus parameters for DC power flow analysis. This includes spe
 system = powerSystem()
 
 addBus!(system; label = "Bus 1", type = 3, angle = 0.0)
-addBus!(system; label = "Bus 2", conductance = 0.1)
-addBus!(system; label = "Bus 3", active = 20.2)
+addBus!(system; label = "Bus 2", active = 20.2)
+addBus!(system; label = "Bus 3", conductance = 0.1)
 addBus!(system; label = "Bus 4", active = 50.8)
 
 nothing # hide
@@ -35,12 +35,11 @@ nothing # hide
 
 Next, we define the transmission line parameters by specifying `reactance` values. For phase-shifting transformers, we include the shift angle using the `shiftAngle` keyword:
 ```@example 4bus
-
-@branch(label = "Branch ?", reactance = 0.22)
-addBranch!(system; from = "Bus 1", to = "Bus 2")
-addBranch!(system; from = "Bus 1", to = "Bus 3")
-addBranch!(system; from = "Bus 2", to = "Bus 3")
-addBranch!(system; from = "Bus 2", to = "Bus 4", shiftAngle = -2.3)
+@branch(reactance = 0.22)
+addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 3")
+addBranch!(system; label = "Branch 2", from = "Bus 1", to = "Bus 2")
+addBranch!(system; label = "Branch 3", from = "Bus 2", to = "Bus 3")
+addBranch!(system; label = "Branch 4", from = "Bus 3", to = "Bus 4", shiftAngle = -2.3)
 
 nothing # hide
 ```
@@ -48,7 +47,7 @@ nothing # hide
 Finally, we define the `active` power outputs of the generators:
 ```@example 4bus
 addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 60.1)
-addGenerator!(system; label = "Generator 2", bus = "Bus 3", active = 18.2)
+addGenerator!(system; label = "Generator 2", bus = "Bus 2", active = 18.2)
 
 nothing # hide
 ```
@@ -81,16 +80,25 @@ Similarly, the results for the branches are:
 printBranchData(system, analysis)
 ```
 
+Thus, using bus and branch data, we obtained the active power flows, as illustrated in Figure 2.
+```@raw html
+<img src="../../assets/4bus_dc_base.svg" class="center" width="450"/>
+<figcaption>Figure 2: Active power flows in the 4-bus power system for the base case.</figcaption>
+&nbsp;
+```
+
+Note that the active power at the from-bus and to-bus ends of a branch is the same because the DC power flow model neglects losses.
+
 ---
 
 ## Modifying Generators and Demands
 We will adjust the active power outputs of generators and the active power demands of consumers. Instead of creating a new power system model or simply updating the existing one, we update both the power system and DC power flow models simultaneously:
 ```@example 4bus
-updateBus!(system, analysis; label = "Bus 3", active = 25.5)
+updateBus!(system, analysis; label = "Bus 2", active = 25.5)
 updateBus!(system, analysis; label = "Bus 4", active = 42.0)
 
 updateGenerator!(system, analysis; label = "Generator 1", active = 58.0)
-updateGenerator!(system, analysis; label = "Generator 2", active = 23.1)
+updateGenerator!(system, analysis; label = "Generator 2", active = 23.0)
 
 nothing # hide
 ```
@@ -107,6 +115,13 @@ Finally, we display the updated branch data:
 ```@example 4bus
 printBranchData(system, analysis)
 ```
+
+Compared to the base case, the directions of power flows remain unchanged, but the amounts of active power differ, as shown in Figure 3.
+```@raw html
+<img src="../../assets/4bus_dc_power.svg" class="center" width="450"/>
+<figcaption>Figure 3: Active power flows in the 4-bus power system with modified generator outputs and consumer demands.</figcaption>
+```
+
 
 ---
 
@@ -128,4 +143,10 @@ nothing # hide
 To analyze how active power flows redistribute when a branch is out of service, we use:
 ```@example 4bus
 printBranchData(system, analysis)
+```
+
+Finally, Figure 4 illustrates the active power flows in the case of a `Branch 3` outage.
+```@raw html
+<img src="../../assets/4bus_dc_service.svg" class="center" width="450"/>
+<figcaption>Figure 4: Active power flows in the 4-bus power system with a modified power system topology.</figcaption>
 ```
