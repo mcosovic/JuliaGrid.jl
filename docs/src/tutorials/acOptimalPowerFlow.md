@@ -99,7 +99,7 @@ The variables within this model encompass the active and reactive power outputs 
 ---
 
 ## Objective Function
-The objective function represents the sum of the active and reactive power cost functions ``f_i(P_{\text{g}i})`` and ``f_i(Q_{\text{g}i})``, where ``i \in \mathcal{S}``, for each generator, where these cost functions can be polynomial or linear piecewise. Typically, the AC optimal power flow focuses on minimizing the cost of active power outputs only, but for comprehensive analysis, we also consider the costs associated with reactive power outputs.
+The objective function represents the sum of the active and reactive power cost functions ``f_i(P_{\text{g}i})`` and ``f_i(Q_{\text{g}i})``, where ``i \in \mathcal{S}``, for each generator, where these cost functions can be polynomial or piecewise linear. Typically, the AC optimal power flow focuses on minimizing the cost of active power outputs only, but for comprehensive analysis, we also consider the costs associated with reactive power outputs.
 
 ---
 
@@ -121,8 +121,20 @@ Typically, cost functions are represented as linear, quadratic, or cubic, as sho
 ```
 
 ```@raw html
-<img src="../../assets/cost_function.svg" class="center" width="750"/>
-<figcaption>Figure 1: The polynomial cost functions of generator active power output.</figcaption>
+<div class="image-container">
+    <div class="image-item-three">
+        <img src="../../assets/cost_function_linear.svg" width="85%"/>
+        <p>Figure 1a: The linear cost function.</p>
+    </div>
+    <div class="image-item-three">
+        <img src="../../assets/cost_function_quadratic.svg" width="85%"/>
+        <p>Figure 1b: The quadratic cost function.</p>
+    </div>
+    <div class="image-item-three">
+        <img src="../../assets/cost_function_cubic.svg" width="85%"/>
+        <p>Figure 1c: The cubic cost function.</p>
+    </div>
+</div>
 &nbsp;
 ```
 
@@ -139,33 +151,45 @@ f₁ = system.generator.cost.active.polynomial[1]
 
 ---
 
-##### Linear Piecewise Cost Function
-The second option for defining cost functions in the AC optimal power flow is to use linear piecewise functions as approximations of the polynomial functions, as illustrated in Figure 2.
+##### Piecewise Linear Cost Function
+The second option for defining cost functions in the AC optimal power flow is to use piecewise linear functions as approximations of the polynomial functions, as illustrated in Figure 2.
 ```@raw html
-<img src="../../assets/cost_function_piecewise.svg" class="center" width="750"/>
-<figcaption>Figure 2: The linear piecewise cost functions of generator active power output.</figcaption>
+<div class="image-container">
+    <div class="image-item-three">
+        <img src="../../assets/cost_function_piecewise_one.svg" width="85%"/>
+        <p>Figure 2a: The piecewise linear function with one segment.</p>
+    </div>
+    <div class="image-item-three">
+        <img src="../../assets/cost_function_piecewise_two.svg" width="85%"/>
+        <p>Figure 2b: The piecewise linear function with two segments.</p>
+    </div>
+    <div class="image-item-three">
+        <img src="../../assets/cost_function_piecewise_three.svg" width="85%"/>
+        <p>Figure 2c: The piecewise linear function with three segments.</p>
+    </div>
+</div>
 &nbsp;
 ```
 
-To define linear piecewise functions in JuliaGrid, users can utilize the [`cost!`](@ref cost!) function with the `piecewise` keyword. The linear piecewise function is constructed using a matrix where each row defines a single point. The first column holds the generator's active or reactive power output, while the second column corresponds to the associated cost value. For example, in the provided case study, a linear piecewise function is created and can be accessed as follows:
+To define piecewise linear functions in JuliaGrid, users can utilize the [`cost!`](@ref cost!) function with the `piecewise` keyword. The piecewise linear function is constructed using a matrix where each row defines a single point. The first column holds the generator's active or reactive power output, while the second column corresponds to the associated cost value. For example, in the provided case study, a piecewise linear function is created and can be accessed as follows:
 ```@repl ACOptimalPowerFlow
 f₂ = system.generator.cost.active.piecewise[2]
 ```
 
-JuliaGrid handles convex linear piecewise functions using a constrained cost variable method. In this approach, the piecewise linear cost function is replaced by a helper variable and a set of linear inequality constraints for each segment of the function defined by two neighboring points along the line. However, for linear piecewise functions that have only one segment defined by two points, JuliaGrid transforms it into a standard linear function without introducing a helper variable.
+JuliaGrid handles convex piecewise linear functions using a constrained cost variable method. In this approach, the piecewise linear cost function is replaced by a helper variable and a set of linear inequality constraints for each segment of the function defined by two neighboring points along the line. However, for piecewise linear functions that have only one segment defined by two points, JuliaGrid transforms it into a standard linear function without introducing a helper variable.
 
 Hence, for a piecewise cost function denoted as ``f_i(P_{\text{g}i})`` with ``k`` segments (where ``k > 1``), the ``j``-th segment, defined by the points ``[P_{\text{g}i,j}, f_i(P_{\text{g}i,j})]`` and ``[P_{\text{g}i,j+1}, f_i(P_{\text{g}i,j+1})]``, is characterized by the following inequality constraints:
 ```math
 \cfrac{f_i(P_{\text{g}i,j+1}) - f_i(P_{\text{g}i,j})}{P_{\text{g}i,j+1} - P_{\text{g}i,j}}(P_{\text{g}i} - P_{\text{g}i,j}) + f_i(P_{\text{g}i,j}) \leq H_i, \;\;\; i \in \mathcal{S}, \;\;\; j = 1,\dots,k,
 ```
-where ``H_i`` represents the helper variable. To finalize this method, we simply need to include the helper variable ``H_i`` in the objective function. This approach efficiently handles linear piecewise cost functions, providing the flexibility to capture nonlinear characteristics while still benefiting from the advantages of linear optimization techniques.
+where ``H_i`` represents the helper variable. To finalize this method, we simply need to include the helper variable ``H_i`` in the objective function. This approach efficiently handles piecewise linear cost functions, providing the flexibility to capture nonlinear characteristics while still benefiting from the advantages of linear optimization techniques.
 
 As an example, in the provided case study, the helper variable is defined as follows:
 ```@repl ACOptimalPowerFlow
 H₂ = analysis.method.variable.actwise[2]
 ```
 
-Lastly, the set of constraints introduced by the linear piecewise cost function is displayed as follows:
+Lastly, the set of constraints introduced by the piecewise linear cost function is displayed as follows:
 ```@repl ACOptimalPowerFlow
 print(analysis.method.constraint.piecewise.active)
 ```
@@ -173,7 +197,7 @@ print(analysis.method.constraint.piecewise.active)
 ---
 
 ##### Objective Function
-As previously explained, the objective function relies on the defined polynomial or linear piecewise cost functions and represents the sum of these costs. In the provided example, the objective function that must be minimized to obtain the optimal values for the active and reactive power outputs of the generators and the bus voltage magnitudes and angles can be accessed using the following:
+As previously explained, the objective function relies on the defined polynomial or piecewise linear cost functions and represents the sum of these costs. In the provided example, the objective function that must be minimized to obtain the optimal values for the active and reactive power outputs of the generators and the bus voltage magnitudes and angles can be accessed using the following:
 ```@repl ACOptimalPowerFlow
 JuMP.objective_function(analysis.method.jump)
 ```
@@ -404,15 +428,19 @@ print(analysis.method.constraint.capability.reactive)
 
 These capability limits of the generators define the feasible region, represented as a gray area in Figure 3, which forms the solution space for the active and reactive output powers of the generators.
 ```@raw html
-<img src="../../assets/pq_curve.svg" class="center" width="350"/>
-<figcaption>Figure 3: The feasible region created by the active and reactive power capability constraints.</figcaption>
+<div style="text-align: center;">
+    <img src="../../assets/pq_curve.svg" width="350"/>
+    <p>Figure 3: The feasible region created by the active and reactive power capability constraints.</p>
+</div>
 &nbsp;
 ```
 
 However, this representation might not be the most accurate depiction of the generator's output power behavior. In reality, there exists a tradeoff between the active and reactive power outputs of the generators [zimmerman2016matpower](@cite). Specifically, when a generator operates at its maximum active power ``P_{\text{g}i}^\text{max}``, it may not be able to produce the maximum ``Q_{\text{g}i}^\text{max}`` or minimum ``Q_{\text{g}i}^\text{min}`` reactive power. To capture this tradeoff, we introduce the ability to include additional upper and lower constraints on the feasible region, leading to its reduction as shown in Figure 4.
 ```@raw html
-<img src="../../assets/pq_curve_sloped.svg" class="center" width="350"/>
-<figcaption>Figure 4: The feasible region created by the active and reactive power capability constraints with additional upper and lower constraints.</figcaption>
+<div style="text-align: center;">
+    <img src="../../assets/pq_curve_sloped.svg" width="350"/>
+    <p>Figure 4: The feasible region created by the active and reactive power capability constraints with additional upper and lower constraints.</p>
+</div>
 &nbsp;
 ```
 

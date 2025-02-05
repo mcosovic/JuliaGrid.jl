@@ -14,7 +14,7 @@ makedocs(
         )
     ],
     format = Documenter.HTML(
-        assets = ["assets/tablestyle.css", "assets/citations.css"],
+        assets = ["assets/tablestyle.css", "assets/citations.css", "assets/subfigure.css"],
         prettyurls = get(ENV, "CI", nothing) == "true",
         collapselevel = 1
     ),

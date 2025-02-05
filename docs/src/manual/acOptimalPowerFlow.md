@@ -63,9 +63,9 @@ In the AC optimal power flow model, the active and reactive power outputs of the
 JuMP.all_variables(analysis.method.jump)
 ```
 
-It is important to note that this is not a comprehensive set of optimization variables. When the cost function is defined as a linear piecewise function comprising multiple segments, as illustrated in the case of the active power output cost for `Generator 2`, JuliaGrid automatically generates helper optimization variables named `actwise` and `reactwise`, and formulates a set of linear constraints to effectively address these cost functions. For the sake of simplicity, we initially assume that `Generator 2` is out-of-service. Consequently, the helper variable is not included in the set of optimization variables. However, as we progress through this manual, we will activate the generator, introducing the helper variable and additional constraints to the optimization model.
+It is important to note that this is not a comprehensive set of optimization variables. When the cost function is defined as a piecewise linear function comprising multiple segments, as illustrated in the case of the active power output cost for `Generator 2`, JuliaGrid automatically generates helper optimization variables named `actwise` and `reactwise`, and formulates a set of linear constraints to effectively address these cost functions. For the sake of simplicity, we initially assume that `Generator 2` is out-of-service. Consequently, the helper variable is not included in the set of optimization variables. However, as we progress through this manual, we will activate the generator, introducing the helper variable and additional constraints to the optimization model.
 
-It is worth emphasizing that in instances where a linear piecewise cost function consists of only a single segment, as demonstrated by the reactive power output cost of `Generator 2`, the function is modeled as a standard linear function, obviating the need for additional helper optimization variables.
+It is worth emphasizing that in instances where a piecewise linear cost function consists of only a single segment, as demonstrated by the reactive power output cost of `Generator 2`, the function is modeled as a standard linear function, obviating the need for additional helper optimization variables.
 
 Please be aware that JuliaGrid maintains references to all variables, which are categorized into six fields:
 ```@repl ACOptimalPowerFlow
@@ -269,16 +269,16 @@ print(system.generator.label, analysis.method.constraint.capability.reactive)
 ---
 
 ##### Power Piecewise Constraints
-In the context of cost modeling, the `piecewise` field acts as a reference to the inequality constraints associated with linear piecewise cost functions. These constraints are established using the [`cost!`](@ref cost!) function, with `active = 1` or `reactive = 1` specified when working with linear piecewise cost functions that consist of multiple segments.
+In the context of cost modeling, the `piecewise` field acts as a reference to the inequality constraints associated with linear piecewise cost functions. These constraints are established using the [`cost!`](@ref cost!) function, with `active = 1` or `reactive = 1` specified when working with piecewise linear cost functions that consist of multiple segments.
 
-In our example, only the active power cost of `Generator 2` is modeled as a linear piecewise function with two segments, and JuliaGrid takes care of setting up the appropriate inequality constraints for each segment:
+In our example, only the active power cost of `Generator 2` is modeled as a piecewise linear function with two segments, and JuliaGrid takes care of setting up the appropriate inequality constraints for each segment:
 ```@repl ACOptimalPowerFlow
 print(system.generator.label, analysis.method.constraint.piecewise.active)
 ```
 
 It is worth noting that these constraints can also be automatically updated using the [`cost!`](@ref cost!) function. Readers can find more details in the section discussing the objective function.
 
-As mentioned at the beginning, linear piecewise cost functions with multiple segments will also introduce helper variables that are added to the objective function. In this specific example, the helper variable is:
+As mentioned at the beginning, piecewise linear cost functions with multiple segments will also introduce helper variables that are added to the objective function. In this specific example, the helper variable is:
 ```@repl ACOptimalPowerFlow
 analysis.method.variable.actwise[2]
 ```
@@ -325,7 +325,7 @@ nothing # hide
 ---
 
 ## [Objective Function](@id ACObjectiveFunctionManual)
-The objective function of the AC optimal power flow is formulated using polynomial and linear piecewise cost functions associated with the generators, defined using the [`cost!`](@ref cost!) functions.
+The objective function of the AC optimal power flow is formulated using polynomial and piecewise linear cost functions associated with the generators, defined using the [`cost!`](@ref cost!) functions.
 
 In the provided example, the objective function to be minimized in order to obtain optimal values for the active and reactive power outputs of the generators, as well as the bus voltage magnitudes and angles, is as follows:
 ```@repl ACOptimalPowerFlow
@@ -337,7 +337,7 @@ JuliaGrid also stores the objective function in a separate variable, which can b
 ---
 
 ##### Update Objective Function
-By utilizing the [`cost!`](@ref cost!) functions, users have the flexibility to modify the objective function by adjusting polynomial or linear piecewise coefficients or by changing the type of polynomial or linear piecewise function employed. For example, consider `Generator 1`, which employs a quadratic polynomial cost function for active power. We can redefine the cost function for this generator as a cubic polynomial and thereby define a nonlinear objective function:
+By utilizing the [`cost!`](@ref cost!) functions, users have the flexibility to modify the objective function by adjusting polynomial or piecewise linear coefficients or by changing the type of polynomial or piecewise linear function employed. For example, consider `Generator 1`, which employs a quadratic polynomial cost function for active power. We can redefine the cost function for this generator as a cubic polynomial and thereby define a nonlinear objective function:
 ```@example ACOptimalPowerFlow
 cost!(system, analysis; generator = "Generator 1", active = 2, polynomial = [63; 25; 4; 0.5])
 nothing # hide

@@ -90,7 +90,7 @@ Hence, the variables in this model encompass the active power outputs of the gen
 ---
 
 ## Objective Function
-The objective function represents the sum of the active power cost functions ``f_i(P_{\text{g}i})``, ``i \in \mathcal{S}``, for each generator, where these cost functions can be polynomial or linear piecewise functions. It is important to note that only polynomial cost functions up to the second degree are included in the objective function. If higher-degree polynomials are present, they will be excluded from the objective function by JuliaGrid.
+The objective function represents the sum of the active power cost functions ``f_i(P_{\text{g}i})``, ``i \in \mathcal{S}``, for each generator, where these cost functions can be polynomial or piecewise linear functions. It is important to note that only polynomial cost functions up to the second degree are included in the objective function. If higher-degree polynomials are present, they will be excluded from the objective function by JuliaGrid.
 
 ---
 
@@ -105,8 +105,16 @@ The DC optimal power flow in JuliaGrid allows the cost function ``f_i(P_{\text{g
 
 Furthermore, it is worth noting that the function can be given simply as a constant with only the coefficient ``a_0``, which implies that the cost of the generator remains constant regardless of the active power outputs. In conclusion, as illustrated in Figure 1, typical scenarios involve linear or quadratic cost functions, resulting in a best-case scenario for a linear optimization problem and a worst-case scenario for a quadratic optimization problem.
 ```@raw html
-<img src="../../assets/cost_function_dc.svg" class="center" width="500"/>
-<figcaption>Figure 1: The polynomial cost functions of generator active power output.</figcaption>
+<div class="image-container">
+    <div class="image-item">
+        <img src="../../assets/cost_function_linear.svg" width="65%"/>
+        <p>Figure 1a: The linear cost function.</p>
+    </div>
+    <div class="image-item">
+        <img src="../../assets/cost_function_quadratic.svg" width="65%"/>
+        <p>Figure 1b: The quadratic cost function.</p>
+    </div>
+</div>
 &nbsp;
 ```
 
@@ -123,33 +131,41 @@ f₁ = system.generator.cost.active.polynomial[1]
 
 ---
 
-##### Linear Piecewise Active Power Cost Function
-The DC optimal power flow in JuliaGrid offers another option for defining cost functions by using linear piecewise functions as approximations of the polynomial functions, as depicted in Figure 2.
+##### Piecewise Linear Active Power Cost Function
+The DC optimal power flow in JuliaGrid offers another option for defining cost functions by using piecewise linear functions as approximations of the polynomial functions, as depicted in Figure 2.
 ```@raw html
-<img src="../../assets/cost_function_piecewise_dc.svg" class="center" width="500"/>
-<figcaption>Figure 2: The linear piecewise cost functions of active power output.</figcaption>
+<div class="image-container">
+    <div class="image-item">
+        <img src="../../assets/cost_function_piecewise_one.svg" width="65%"/>
+        <p>Figure 2a: The piecewise linear function with one segment.</p>
+    </div>
+    <div class="image-item">
+        <img src="../../assets/cost_function_piecewise_two.svg" width="65%"/>
+        <p>Figure 2b: The piecewise linear function with two segments.</p>
+    </div>
+</div>
 &nbsp;
 ```
 
-To define linear piecewise functions in JuliaGrid, users can utilize the [`cost!`](@ref cost!) function with the `piecewise` keyword. The linear piecewise function is constructed using a matrix where each row defines a single point. The first column holds the generator's active power output, while the second column corresponds to the associated cost value. For example, in the provided case study, a linear piecewise function is created and can be accessed as follows:
+To define piecewise linear functions in JuliaGrid, users can utilize the [`cost!`](@ref cost!) function with the `piecewise` keyword. The piecewise linear function is constructed using a matrix where each row defines a single point. The first column holds the generator's active power output, while the second column corresponds to the associated cost value. For example, in the provided case study, a piecewise linear function is created and can be accessed as follows:
 ```@repl DCOptimalPowerFlow
 f₂ = system.generator.cost.active.piecewise[2]
 ```
 
-Similar to how convex linear piecewise functions are treated in the [AC Optimal Power Flow](@ref ACOptimalPowerFlowTutorials), JuliaGrid adopts a constrained cost variable method for the linear piecewise functions. In this method, the piecewise linear cost function is converted into a series of linear inequality constraints for each segment, which are defined by two adjacent points along the line, along with a helper variable specific to the piecewise function. However, for linear piecewise functions that have only one segment defined by two points, JuliaGrid simplifies it into a standard linear function without requiring a helper variable.
+Similar to how convex piecewise linear functions are treated in the [AC Optimal Power Flow](@ref ACOptimalPowerFlowTutorials), JuliaGrid adopts a constrained cost variable method for the piecewise linear functions. In this method, the piecewise linear cost function is converted into a series of linear inequality constraints for each segment, which are defined by two adjacent points along the line, along with a helper variable specific to the piecewise function. However, for piecewise linear functions that have only one segment defined by two points, JuliaGrid simplifies it into a standard linear function without requiring a helper variable.
 
 Consequently, for a piecewise cost function denoted as ``f_i(P_{\text{g}i})`` with ``k`` segments (where ``k > 1``), the ``j``-th segment, defined by the points ``[P_{\text{g}i,j}, f_i(P_{\text{g}i,j})]`` and ``[P_{\text{g}i,j+1}, f_i(P_{\text{g}i,j+1})]``, is characterized by the following inequality constraints:
 ```math
 \cfrac{f_i(P_{\text{g}i,j+1}) - f_i(P_{\text{g}i,j})}{P_{\text{g}i,j+1} - P_{\text{g}i,j}}(P_{\text{g}i} - P_{\text{g}i,j}) + f_i(P_{\text{g}i,j}) \leq H_i, \;\;\; i \in \mathcal{S}, \;\;\; j = 1,\dots,k,
 ```
-where ``H_i`` represents the helper variable. To finalize this method, we simply need to include the helper variable ``H_i`` in the objective function. This approach efficiently handles linear piecewise cost functions, providing the flexibility to capture nonlinear characteristics while still benefiting from the advantages of linear optimization techniques.
+where ``H_i`` represents the helper variable. To finalize this method, we simply need to include the helper variable ``H_i`` in the objective function. This approach efficiently handles piecewise linear cost functions, providing the flexibility to capture nonlinear characteristics while still benefiting from the advantages of linear optimization techniques.
 
 As an example, in the provided case study, the helper variable is defined as follows:
 ```@repl DCOptimalPowerFlow
 H₂ = analysis.method.variable.actwise[2]
 ```
 
-Lastly, the set of constraints introduced by the linear piecewise cost function is displayed as follows:
+Lastly, the set of constraints introduced by the piecewise linear cost function is displayed as follows:
 ```@repl DCOptimalPowerFlow
 print(analysis.method.constraint.piecewise.active)
 ```
@@ -157,7 +173,7 @@ print(analysis.method.constraint.piecewise.active)
 ---
 
 ##### Objective Function
-As previously explained, the objective function relies on the defined polynomial or linear piecewise cost functions and represents the sum of these costs. In the provided example, the objective function that must be minimized to obtain the optimal values for the active power output of the generators and the bus voltage angles can be accessed using the following code:
+As previously explained, the objective function relies on the defined polynomial or piecewise linear cost functions and represents the sum of these costs. In the provided example, the objective function that must be minimized to obtain the optimal values for the active power output of the generators and the bus voltage angles can be accessed using the following code:
 ```@repl DCOptimalPowerFlow
 JuMP.objective_function(analysis.method.jump)
 ```

@@ -1,9 +1,10 @@
 # [DC Power Flow](@id ACPowerFlowExamples)
 DC power flow provides an approximate solution compared to AC power flow. We use the same power system model as in the AC power flow analysis, shown in Figure 1, to perform several DC power flow simulations. These simulations represent quasi-steady-state conditions where the system undergoes parameter and topology changes.
-
 ```@raw html
-<img src="../../assets/4bus.svg" class="center" width="450"/>
-<figcaption>Figure 1: The 4-bus power system.</figcaption>
+<div style="text-align: center;">
+    <img src="../../assets/4busa.svg" width="400"/>
+    <p>Figure 1: The 4-bus power system.</p>
+</div>
 &nbsp;
 ```
 
@@ -82,8 +83,10 @@ printBranchData(system, analysis)
 
 Thus, using bus and branch data, we obtained the active power flows, as illustrated in Figure 2.
 ```@raw html
-<img src="../../assets/4bus_dc_base.svg" class="center" width="450"/>
-<figcaption>Figure 2: Active power flows in the 4-bus power system for the base case.</figcaption>
+<div style="text-align: center;">
+    <img src="../../assets/dc4bus_base.svg" width="450"/>
+    <p>Figure 2: Active power flows for the base case.</p>
+</div>
 &nbsp;
 ```
 
@@ -118,10 +121,11 @@ printBranchData(system, analysis)
 
 Compared to the base case, the directions of power flows remain unchanged, but the amounts of active power differ, as shown in Figure 3.
 ```@raw html
-<img src="../../assets/4bus_dc_power.svg" class="center" width="450"/>
-<figcaption>Figure 3: Active power flows in the 4-bus power system with modified generator outputs and consumer demands.</figcaption>
+<div style="text-align: center;">
+    <img src="../../assets/dc4bus_power.svg" width="400"/>
+    <p>Figure 3: Active power flows with modified generation and demand.</p>
+</div>
 ```
-
 
 ---
 
@@ -147,6 +151,8 @@ printBranchData(system, analysis)
 
 Finally, Figure 4 illustrates the active power flows in the case of a `Branch 3` outage.
 ```@raw html
-<img src="../../assets/4bus_dc_service.svg" class="center" width="450"/>
-<figcaption>Figure 4: Active power flows in the 4-bus power system with a modified power system topology.</figcaption>
+<div style="text-align: center;">
+    <img src="../../assets/dc4bus_service.svg" width="400"/>
+    <p>Figure 4: Active power flows with modified power system topology.</p>
+</div>
 ```

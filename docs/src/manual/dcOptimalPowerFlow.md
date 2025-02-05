@@ -60,9 +60,9 @@ In DC optimal power flow, generator active power outputs are linear functions of
 JuMP.all_variables(analysis.method.jump)
 ```
 
-It is important to highlight that when dealing with linear piecewise cost functions comprising multiple segments, as exemplified in the case of `Generator 3`, JuliaGrid automatically generates helper optimization variables, such as `actwise[3]`, and formulates a set of linear constraints to appropriately handle these cost functions.
+It is important to highlight that when dealing with piecewise linear cost functions comprising multiple segments, as exemplified in the case of `Generator 3`, JuliaGrid automatically generates helper optimization variables, such as `actwise[3]`, and formulates a set of linear constraints to appropriately handle these cost functions.
 
-However, in instances where a linear piecewise cost function consists of only a single segment, as demonstrated by `Generator 2`, the function is modelled as a standard linear function, eliminating the necessity for additional helper optimization variables.
+However, in instances where a piecewise linear cost function consists of only a single segment, as demonstrated by `Generator 2`, the function is modelled as a standard linear function, eliminating the necessity for additional helper optimization variables.
 
 Please note that JuliaGrid keeps references to all variables categorized into three fields:
 ```@repl DCOptimalPowerFlow
@@ -222,7 +222,7 @@ It is important to note that bringing back `Generator 2` into service will also 
 ---
 
 ##### Active Power Piecewise Constraints
-In the context of active power modelling, the `piecewise` field serves as a reference to the inequality constraints related to linear piecewise cost functions. These constraints are created using the [`cost!`](@ref cost!) function with `active = 1` specified when dealing with linear piecewise cost functions comprising multiple segments. JuliaGrid takes care of establishing the appropriate inequality constraints for each segment of the linear piecewise cost:
+In the context of active power modelling, the `piecewise` field serves as a reference to the inequality constraints related to linear piecewise cost functions. These constraints are created using the [`cost!`](@ref cost!) function with `active = 1` specified when dealing with piecewise linear cost functions comprising multiple segments. JuliaGrid takes care of establishing the appropriate inequality constraints for each segment of the linear piecewise cost:
 ```@repl DCOptimalPowerFlow
 print(system.generator.label, analysis.method.constraint.piecewise.active)
 ```
@@ -271,7 +271,7 @@ nothing # hide
 ---
 
 ## [Objective Function](@id DCObjectiveFunctionManual)
-The objective function of the DC optimal power flow is constructed using polynomial and linear piecewise cost functions of the generators, which are defined using the [`cost!`](@ref cost!) functions. It is important to note that only polynomial cost functions up to the second degree are included in the objective. If there are polynomials of higher degrees, JuliaGrid will exclude them from the objective function.
+The objective function of the DC optimal power flow is constructed using polynomial and piecewise linear cost functions of the generators, which are defined using the [`cost!`](@ref cost!) functions. It is important to note that only polynomial cost functions up to the second degree are included in the objective. If there are polynomials of higher degrees, JuliaGrid will exclude them from the objective function.
 
 In the provided example, the objective function that needs to be minimized to obtain the optimal values of the active power outputs of the generators and the bus voltage angles is as follows:
 ```@repl DCOptimalPowerFlow
@@ -283,7 +283,7 @@ Additionally, JuliaGrid stores the objective function in a separate variable, al
 ---
 
 ##### Update Objective Function
-By utilizing the [`cost!`](@ref cost!) functions, users have the flexibility to modify the objective function by adjusting polynomial or linear piecewise cost coefficients or by changing the type of polynomial or linear piecewise function employed. For instance, consider `Generator 3`, which incorporates a piecewise cost structure with two segments. Now, we can define a polynomial function for this generator and activate it by specifying the keyword `active = 2` as shown:
+By utilizing the [`cost!`](@ref cost!) functions, users have the flexibility to modify the objective function by adjusting polynomial or piecewise linear cost coefficients or by changing the type of polynomial or piecewise linear function employed. For instance, consider `Generator 3`, which incorporates a piecewise cost structure with two segments. Now, we can define a polynomial function for this generator and activate it by specifying the keyword `active = 2` as shown:
 ```@example DCOptimalPowerFlow
 cost!(system, analysis; generator = "Generator 3", active = 2, polynomial = [853.4; 257; 40])
 ```

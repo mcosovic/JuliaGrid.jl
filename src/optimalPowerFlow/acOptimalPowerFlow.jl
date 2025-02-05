@@ -429,7 +429,7 @@ function nonLinear(
     )
 end
 
-##### Linear Piecewise in the Objective Function #####
+##### Piecewise Linear in the Objective Function #####
 function piecewiseAff(objective::QuadExpr, power::VariableRef, piecewise::Matrix{Float64})
     slope = (piecewise[2, 2] - piecewise[1, 2]) / (piecewise[2, 1] - piecewise[1, 1])
     add_to_expression!(objective, slope, power)

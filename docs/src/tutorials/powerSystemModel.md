@@ -54,8 +54,10 @@ nothing #hide
 ##### [Unified Branch Model](@id UnifiedBranchModelTutorials)
 The equivalent unified ``\pi``-model for a branch ``(i,j) \in \mathcal{E}`` incident to the buses ``\{i,j\} \in \mathcal{N}`` is shown in Figure 1.
 ```@raw html
-<img src="../../assets/pi_model.svg" class="center" width="600"/>
-<figcaption>Figure 1: The equivalent branch model, where the transformer is located at the from-bus end of the branch.</figcaption>
+<div style="text-align: center;">
+    <img src="../../assets/pi_model.svg" width="500"/>
+    <p>Figure 1: The equivalent branch model, where the transformer is located at the from-bus end of the branch.</p>
+</div>
 &nbsp;
 ```
 
@@ -179,8 +181,10 @@ Positive values of active or reactive power, ``P_{ij} > 0`` or ``Q_{ij} > 0``, i
 ##### [Nodal Network Equations](@id NodalNetworkEquationsTutorials)
 Let us consider an illustrative example from our case study, depicted in Figure 2. This example provides a smooth transition to the general case, demonstrating a system with three buses represented as ``\mathcal{N} = \{1, 2, 3\}`` and two branches ``\mathcal{E} = \{(1, 2), (2, 3)\}``, where bus ``2`` is incident to the shunt element with admittance ``{y}_{\text{sh}2}``.
 ```@raw html
-<img src="../../assets/pi_model_example.svg" class="center" width="710"/>
-<figcaption>Figure 2: The example of the system with three buses and two branches.</figcaption>
+<div style="text-align: center;">
+    <img src="../../assets/pi_model_example.svg" width="650"/>
+    <p>Figure 2: The example of the system with three buses and two branches.</p>
+</div>
 &nbsp;
 ```
 
@@ -374,8 +378,10 @@ We can conclude that ``P_{ij}=-P_{ji}`` holds. With the DC model, the linear net
 ##### [Nodal Network Equations](@id DCNodalNetworkEquationsTutorials)
 As before, let us consider an illustrative example from our case study, depicted in Figure 3. This example provides a smooth transition to the general case, demonstrating a system with three buses represented as ``\mathcal{N} = \{1, 2, 3\}`` and two branches ``\mathcal{E} = \{(1, 2), (2, 3)\}``, where bus ``2`` is incident to the shunt element with admittance ``{g}_{\text{sh}2}``.
 ```@raw html
-<img src="../../assets/dc_model.svg" class="center" width="600" />
-<figcaption>Figure 3: The example of the system with three buses and two branches.</figcaption>
+<div style="text-align: center;">
+    <img src="../../assets/dc_model.svg" width="500"/>
+    <p>Figure 3: The example of the system with three buses and two branches.</p>
+</div>
 &nbsp;
 ```
 

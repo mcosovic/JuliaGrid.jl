@@ -1,9 +1,10 @@
 # [AC Power Flow](@id ACPowerFlowExamples)
 In this example, we perform several AC power flow analyses using the power system shown in Figure 1. These analyses simulate quasi-steady-state conditions where the system undergoes parameter and topology changes, demonstrating JuliaGrid's efficiency in handling such scenarios.
-
 ```@raw html
-<img src="../../assets/4bus.svg" class="center" width="450"/>
-<figcaption>Figure 1: The 4-bus power system.</figcaption>
+<div style="text-align: center;">
+    <img src="../../assets/4busa.svg" width="400"/>
+    <p>Figure 1: The 4-bus power system.</p>
+</div>
 &nbsp;
 ```
 
@@ -128,8 +129,16 @@ printBranchData(system, fnr; show = show2, fmt = fmt2)
 
 Thus, using bus and branch data, we obtained the active and reactive power flows, as illustrated in Figure 2.
 ```@raw html
-<img src="../../assets/4bus_ac_base.svg" class="center" width="850"/>
-<figcaption>Figure 2: Active (subfigure a) and reactive (subfigure b) power flows in the 4-bus power system for the base case.</figcaption>
+<div class="image-container">
+    <div class="image-item">
+        <img src="../../assets/ac4bus_base_active.svg"/>
+        <p>Figure 2a: Active power flows for the base case.</p>
+    </div>
+    <div class="image-item">
+        <img src="../../assets/ac4bus_base_reactive.svg"/>
+        <p>Figure 2b: Reactive power flows for the base case.</p>
+    </div>
+</div>
 &nbsp;
 ```
 
@@ -163,8 +172,16 @@ printBranchData(system, fnr; show = show2, fmt = fmt2)
 
 Compared to the base case, the directions of active power flows remain unchanged, but their magnitudes differ. For reactive power, the values change, and the flow at `Branch 1` on the `Bus 1` side reverses, as shown in Figure 3.
 ```@raw html
-<img src="../../assets/4bus_ac_power.svg" class="center" width="850"/>
-<figcaption>Figure 3: Active (subfigure a) and reactive (subfigure b) power flows in the 4-bus power system with modified generator outputs and consumer demands.</figcaption>
+<div class="image-container">
+    <div class="image-item">
+        <img src="../../assets/ac4bus_power_active.svg"/>
+        <p>Figure 3a: Active power flows with modified generation and demand.</p>
+    </div>
+    <div class="image-item">
+        <img src="../../assets/ac4bus_power_reactive.svg"/>
+        <p>Figure 3b: Reactive power flows with modified generation and demand.</p>
+    </div>
+</div>
 ```
 
 ---
@@ -204,6 +221,14 @@ printBranchData(system, nr; show = show2, fmt = fmt2)
 
 Compared to the previous cases, we observe that the reactive power flow at `Branch 1` on the `Bus 1` side reverses direction due to the outage of `Branch 3`, as shown in Figure 4.
 ```@raw html
-<img src="../../assets/4bus_ac_service.svg" class="center" width="850"/>
-<figcaption>Figure 4: Active (subfigure a) and reactive (subfigure b) power flows in the 4-bus power system with a modified power system topology.</figcaption>
+<div class="image-container">
+    <div class="image-item">
+        <img src="../../assets/ac4bus_service_active.svg"/>
+        <p>Figure 4a: Active power flows with modified power system topology.</p>
+    </div>
+    <div class="image-item">
+        <img src="../../assets/ac4bus_service_reactive.svg"/>
+        <p>Figure 4b: Reactive power flows with modified power system topology.</p>
+    </div>
+</div>
 ```
