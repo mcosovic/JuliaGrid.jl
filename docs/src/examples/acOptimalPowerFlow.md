@@ -101,7 +101,11 @@ nothing # hide
 
 ## Base Case Analysis
 First, we create the AC optimal power flow model and select the Ipopt solver. Next, we solve the model to calculate the bus voltages and the active and reactive power outputs of the generators. Afterward, we compute the remaining powers related to buses and branches:
-```@example 4bus
+```julia 4bus
+JuMP.set_silent(analysis.method.jump)
+solve!(system, analysis)
+```
+```@setup 4bus
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
 JuMP.set_silent(analysis.method.jump)  # hide
 solve!(system, analysis)
