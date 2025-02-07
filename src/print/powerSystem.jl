@@ -1022,7 +1022,7 @@ function printGeneratorData(
         printf(io, prt, buses, system.generator.layout.bus[i], :lbB)
         printf(io, prt, i, scale[:P], analysis.power.generator.active, :Pge)
         printf(io, prt, i, scale[:Q], analysis.power.generator.reactive, :Qge)
-        printf(io, prt, i, system.branch.layout.status, :sts)
+        printf(io, prt, i, system.generator.layout.status, :sts)
 
         @printf io "\n"
     end
@@ -1157,7 +1157,7 @@ function printGeneratorData(
 
         printf(io, prt, buses, system.generator.layout.bus[i], :lbB)
         printf(io, prt, i, scale[:Q], analysis.power.generator.active, :Pge)
-        printf(io, prt, i, system.branch.layout.status, :sts)
+        printf(io, prt, i, system.generator.layout.status, :sts)
 
         @printf io "\n"
     end

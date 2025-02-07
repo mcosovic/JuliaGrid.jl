@@ -36,7 +36,7 @@ addBranch!(system; from = "Bus 2", to = "Bus 3", resistance = 0.04, susceptance 
 addBranch!(system; from = "Bus 3", to = "Bus 4", turnsRatio = 0.98)
 
 @generator(label = "Generator ?")
-addGenerator!(system; bus = "Bus 1", active = 60.1, reactive = 40.2,  magnitude = 0.98)
+addGenerator!(system; bus = "Bus 1", active = 60.1, reactive = 40.2, magnitude = 0.98)
 addGenerator!(system; bus = "Bus 2", active = 18.2, magnitude = 1.01)
 
 acModel!(system)
