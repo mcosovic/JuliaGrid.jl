@@ -2,7 +2,7 @@
 This example performs multiple AC optimal power flow analyses on the power system shown in Figure 1. These simulations capture quasi-steady-state conditions under varying constraints and topology changes.
 ```@raw html
 <div style="text-align: center;">
-    <img src="../assets/4busopt.svg" width="400"/>
+    <img src="../../assets/4busopt.svg" width="400"/>
     <p>Figure 1: The 4-bus power system.</p>
 </div>
 &nbsp;
@@ -139,11 +139,11 @@ Thus, we obtained the active and reactive power flows, as illustrated in Figure 
 ```@raw html
 <div class="image-container">
     <div class="image-item">
-        <img src="../assets/acopt4bus_base_active.svg"/>
+        <img src="../../assets/acopt4bus_base_active.svg"/>
         <p>Figure 2a: Active power flows for the base case.</p>
     </div>
     <div class="image-item">
-        <img src="../assets/acopt4bus_base_reactive.svg"/>
+        <img src="../../assets/acopt4bus_base_reactive.svg"/>
         <p>Figure 2b: Reactive power flows for the base case.</p>
     </div>
 </div>
@@ -181,11 +181,11 @@ Figure 3 shows the active and reactive power flows for this scenario.
 ```@raw html
 <div class="image-container">
     <div class="image-item">
-        <img src="../assets/acopt4bus_cost_active.svg"/>
+        <img src="../../assets/acopt4bus_cost_active.svg"/>
         <p>Figure 3a: Active power flows for the case with modifed generator cost.</p>
     </div>
     <div class="image-item">
-        <img src="../assets/acopt4bus_cost_reactive.svg"/>
+        <img src="../../assets/acopt4bus_cost_reactive.svg"/>
         <p>Figure 3b: Reactive power flows for the case with modifed generator cost.</p>
     </div>
 </div>
@@ -216,11 +216,11 @@ Compared to the previous scenario, the power flow limit at `Branch 3` forces `Ge
 ```@raw html
 <div class="image-container">
     <div class="image-item">
-        <img src="../assets/acopt4bus_flow_active.svg"/>
+        <img src="../../assets/acopt4bus_flow_active.svg"/>
         <p>Figure 4a: Active power flows for the case with branch flow constraint.</p>
     </div>
     <div class="image-item">
-        <img src="../assets/acopt4bus_flow_reactive.svg"/>
+        <img src="../../assets/acopt4bus_flow_reactive.svg"/>
         <p>Figure 4b: Reactive power flows for the case with branch flow constraint.</p>
     </div>
 </div>
@@ -251,11 +251,11 @@ Thus, `Generator 1` can no longer supply load at `Bus 2` due to the outage of `B
 ```@raw html
 <div class="image-container">
     <div class="image-item">
-        <img src="../assets/acopt4bus_service_active.svg"/>
+        <img src="../../assets/acopt4bus_service_active.svg"/>
         <p>Figure 5a: Active power flows with modified power system topology.</p>
     </div>
     <div class="image-item">
-        <img src="../assets/acopt4bus_service_reactive.svg"/>
+        <img src="../../assets/acopt4bus_service_reactive.svg"/>
         <p>Figure 5b: Reactive power flows with modified power system topology.</p>
     </div>
 </div>
