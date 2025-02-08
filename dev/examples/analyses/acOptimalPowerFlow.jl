@@ -31,6 +31,7 @@ cost!(system; generator = "Generator 3", active = 2, polynomial = [1.00; 20.0; 0
 
 acModel!(system)
 
+
 ##### Display Data Settings #####
 show1 = Dict("Power Injection" => false)
 fmt1 = Dict("Power Generation" => "%.2f", "Power Demand" => "%.2f", "Shunt Power" => "%.2f")
@@ -38,8 +39,9 @@ fmt1 = Dict("Power Generation" => "%.2f", "Power Demand" => "%.2f", "Shunt Power
 show2 = Dict("Shunt Power" => false, "Status" => false)
 fmt2 = Dict("From-Bus Power" => "%.2f", "To-Bus Power" => "%.2f", "Series Power" => "%.2f")
 
-fmt3 = Dict("Power Output" => "%.2f")
 show3 = Dict("Reactive Power Capability" => false)
+fmt3 = Dict("Power Output" => "%.2f")
+
 
 ##### Base Case Analysis #####
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
@@ -49,30 +51,38 @@ power!(system, analysis)
 printBusData(system, analysis; show = show1, fmt = fmt1)
 printGeneratorData(system, analysis; fmt = fmt3)
 printGeneratorConstraint(system, analysis; show = show3)
-
-println("Objective Value: $(JuMP.objective_value(analysis.method.jump))")
-
 printBranchData(system, analysis; show = show2, fmt = fmt2)
 
 
-##### Modifying Cost Funstions #####
-cost!(system, analysis; generator = "Generator 1", active = 2, polynomial = [2.00; 20.0; 0.0])
+##### Modifying Demands #####
+updateBus!(system, analysis; label = "Bus 2", active = 25.2, reactive = 13.5)
+updateBus!(system, analysis; label = "Bus 4", active = 43.3, reactive = 18.6)
 
 solve!(system, analysis)
 power!(system, analysis)
 
 printGeneratorData(system, analysis; fmt = fmt3)
-printBusData(system, analysis; show = show1, fmt = fmt1)
 printBranchData(system, analysis; show = show2, fmt = fmt2)
 
 
-##### Add Branch Flow Constraints #####
+##### Modifying Generator Cost #####
+cost!(system, analysis; generator = "Generator 1", active = 2, polynomial = [2.00; 20.0; 0])
+
+solve!(system, analysis)
+power!(system, analysis)
+
+printGeneratorData(system, analysis; fmt = fmt3)
+printBranchData(system, analysis; show = show2, fmt = fmt2)
+
+
+##### Add Branch Flow Constraint #####
 updateBranch!(system, analysis; label = "Branch 3", type = 1, maxFromBus = 15.0)
 
 solve!(system, analysis)
 power!(system, analysis)
 
 printGeneratorData(system, analysis; fmt = fmt3)
+printBranchConstraint(system, analysis)
 printBranchData(system, analysis; show = show2, fmt = fmt2)
 
 
