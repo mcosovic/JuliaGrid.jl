@@ -1,4 +1,4 @@
-using JuliaGrid, JuMP, Ipopt
+using JuliaGrid, Ipopt
 
 ##### System of Units #####
 @power(MW, MVAr)
