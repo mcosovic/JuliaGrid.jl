@@ -568,7 +568,7 @@ function printBranchConstraint(
                         printf(io, prt, i, scaleTo, dual.flow.to, :Pjidul)
                     end
                 else
-                    printf(io, prt.hfmt, prt, "", :Pjimin, :Pijopt, :Pijmax, :Pjidul)
+                    printf(io, prt.hfmt, prt, "", :Pjimin, :Pjiopt, :Pjimax, :Pjidul)
                 end
 
                 @printf io "\n"

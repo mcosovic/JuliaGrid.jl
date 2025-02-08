@@ -22,7 +22,7 @@ using JuliaGrid, Ipopt, JuMP # hide
 nothing # hide
 ```
 
-Next, we define bus parameters for the AC optimal power flow analysis. This includes specifying the slack bus (`type = 3`), where the bus voltage angle is set to the default value of 0.0, along with the corresponding `active` and `reactive` power loads, and shunt capacitor banks with `conductance` and `susceptance` values. The voltage magnitude limits for each bus are set using `minMagnitude` and `maxMagnitude`. With these definitions, we can begin building the power system model:
+Next, we define bus parameters for the AC optimal power flow analysis. This includes specifying the slack bus (`type = 3`), where the bus voltage angle is set to zero by default, along with the corresponding `active` and `reactive` power loads, and shunt capacitor banks with `conductance` and `susceptance` values. The voltage magnitude limits for each bus are set using `minMagnitude` and `maxMagnitude`. With these definitions, we can begin building the power system model:
 ```@example 4bus
 system = powerSystem()
 
@@ -100,10 +100,11 @@ nothing # hide
 ---
 
 ## Base Case Analysis
-First, we create the AC optimal power flow model and select the Ipopt solver. Next, we solve the model to calculate the bus voltages and the active and reactive power outputs of the generators. Afterward, we compute the remaining powers related to buses and branches:
+First, we create the AC optimal power flow model and select the Ipopt solver. Next, we solve the model to determine bus voltage magnitudes and angles, along with the active and reactive power outputs of the generators. Afterward, we compute the remaining power values for buses and branches:
 ```julia 4bus
-JuMP.set_silent(analysis.method.jump)
+analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
 solve!(system, analysis)
+power!(system, analysis)
 ```
 ```@setup 4bus
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
@@ -113,7 +114,7 @@ power!(system, analysis)
 nothing # hide
 ```
 
-Once the AC optimal power flow is solved, we can review the results related to buses, including the optimal bus voltage values:
+Once the AC optimal power flow is solved, we can review the bus-related results, including the optimal values of bus voltage magnitudes and angles:
 ```@example 4bus
 printBusData(system, analysis; show = show1, fmt = fmt1)
 ```
@@ -127,11 +128,6 @@ As we can observe from the generator data, the `Generator 1`, which has the lowe
 We enabled users to display bus, branch, or generator data related to the optimal power analysis. For instance, for generator data, we can observe that the dual variables related to `Generator 1` are different from zero, indicating that the generator's output has reached its limit:
 ```@example 4bus
 printGeneratorConstraint(system, analysis; show = show3)
-```
-
-For the obtained optimal values of bus voltages and generator outputs, the objective function, defined according to polynomial costs, reaches its minimum value:
-```@example 4bus
-JuMP.objective_value(analysis.method.jump)
 ```
 
 Finally, we can also review the results related to branches:
@@ -155,12 +151,55 @@ Thus, we obtained the active and reactive power flows, as illustrated in Figure 
 
 ---
 
-## Modifying Cost Funstion
-Now, we modify the cost function for `Generator 1`, updating both the power system model and the AC optimal power flow model simultaneously:
+## Modifying Demands
+Let us now introduce a new state by updating the active and reactive power demands of consumers. These updates modify both the power system model and the AC optimal power flow model simultaneously:
+```@example 4bus
+updateBus!(system, analysis; label = "Bus 2", active = 25.2, reactive = 13.5)
+updateBus!(system, analysis; label = "Bus 4", active = 43.3, reactive = 18.6)
+nothing # hide
+```
+
+Next, we solve the AC optimal power flow again to compute the new solution without recreating the model. This step enables a warm start, as the initial primal and dual values correspond to those obtained in the base case:
+```@example 4bus
+solve!(system, analysis)
+power!(system, analysis)
+nothing # hide
+```
+
+Now, we observe the power output of the generators:
+```@example 4bus
+printGeneratorData(system, analysis; fmt = fmt3)
+```
+Compared to the base case, all generators have reduced power supplies due to lower demand. It is important to note that, although one might expect `Generator 1` to continue producing at maximum output because of its lower cost, while only `Generator 2` and `Generator 3` reduce their production, this is not the case. The reason is that the optimal power flow must also satisfy power balance and bus voltage magnitude constraints.
+
+At the end of this scenario, we can review branch-related results for a more comprehensive insight into power flows:
+```@example 4bus
+printBranchData(system, analysis; show = show2, fmt = fmt2)
+```
+
+The obtained results allow us to illustrate the active and reactive power flows in Figure 3.
+```@raw html
+<div class="image-container">
+    <div class="image-item">
+        <img src="../assets/acopt4bus_demand_active.svg"/>
+        <p>Figure 3a: Active power flows with modified demand.</p>
+    </div>
+    <div class="image-item">
+        <img src="../assets/acopt4bus_demand_reactive.svg"/>
+        <p>Figure 3b: Reactive power flows with modified demand.</p>
+    </div>
+</div>
+```
+
+---
+
+## Modifying Generator Cost
+We modify the cost function for `Generator 1`, which changes the objective function of the AC optimal power flow. Again, we update both the power system model and the AC optimal power flow model simultaneously, allowing a warm start of the optimization problem:
 ```@example 4bus
 cost!(system, analysis; generator = "Generator 1", active = 2, polynomial = [2.00; 20.0; 0])
 nothing # hide
 ```
+With this modification, we shift `Generator 1` from being the lowest-cost to the highest-cost generator in the system.
 
 Next, we solve the updated problem and calculate the resulting powers:
 ```@example 4bus
@@ -173,24 +212,23 @@ The optimal active and reactive power outputs of the generators are as follows:
 ```@example 4bus
 printGeneratorData(system, analysis; fmt = fmt3)
 ```
-In this scenario, we can observe that due to the increased cost of `Generator 1`, `Generator 2` and `Generator 3` have increased their production to the maximum possible values to take advantage of the lower costs. The remaining required active power is provided by `Generator 1`.
+In this scenario, we observe that, due to the increased cost of `Generator 1`, both `Generator 2` and `Generator 3` have increased their production to the maximum possible values to capitalize on their lower costs. The remaining required active power is then supplied by `Generator 1`.
 
-We can also review the results related to buses and branches for this scenario:
+We can also review the results related to branches for this scenario:
 ```@example 4bus
-printBusData(system, analysis; show = show1, fmt = fmt1)
 printBranchData(system, analysis; show = show2, fmt = fmt2)
 ```
 
-Figure 3 shows the active and reactive power flows for this scenario.
+Figure 4 illustrates the power flows for this scenario. Compared to the previous scenario, Figure 4a shows that `Branch 2` has significantly lower active power flow, while `Branch 3` has become considerably more loaded.
 ```@raw html
 <div class="image-container">
     <div class="image-item">
-        <img src="../../assets/acopt4bus_cost_active.svg"/>
-        <p>Figure 3a: Active power flows for the case with modifed generator cost.</p>
+        <img src="../assets/acopt4bus_cost_active.svg"/>
+        <p>Figure 4a: Active power flows for the case with modifed generator cost.</p>
     </div>
     <div class="image-item">
-        <img src="../../assets/acopt4bus_cost_reactive.svg"/>
-        <p>Figure 3b: Reactive power flows for the case with modifed generator cost.</p>
+        <img src="../assets/acopt4bus_cost_reactive.svg"/>
+        <p>Figure 4b: Reactive power flows for the case with modifed generator cost.</p>
     </div>
 </div>
 ```
@@ -198,7 +236,7 @@ Figure 3 shows the active and reactive power flows for this scenario.
 ---
 
 ## Add Branch Flow Constraint
-We now add an active power flow constraint to `Branch 3` using `type = 1`, where we limit the active power flow at the from-bus end with the `maxFromBus` keyword:
+To limit active power flow, we add a constraint to `Branch 3` using `type = 1`, where the active power flow at the from-bus end is limited with the `maxFromBus` keyword:
 ```@example 4bus
 updateBranch!(system, analysis; label = "Branch 3", type = 1, maxFromBus = 15.0)
 ```
@@ -210,22 +248,32 @@ power!(system, analysis)
 nothing # hide
 ```
 
-We can then observe the updated results:
+Now, let us observe the generator outputs:
 ```@example 4bus
 printGeneratorData(system, analysis; fmt = fmt3)
+```
+The power flow limit at `Branch 3` forces `Generator 1` to increase its active power output despite its higher cost compared to `Generator 2` and `Generator 3`, due to the need to satisfy all constraints. Additionally, we also observe a significant redistribution in the production of reactive powers.
+
+We can review the branch data constraints and observe that the active power at the from-bus end of `Branch 3` reaches the defined limit, which leads to the power redistribution described earlier:
+```@example 4bus
+printBranchConstraint(system, analysis)
+```
+
+Finally, we can review the branch-related data to examine the redistribution of powers in detail:
+```@example 4bus
 printBranchData(system, analysis; show = show2, fmt = fmt2)
 ```
 
-Compared to the previous scenario, the power flow limit at `Branch 3` forces `Generator 1` to increase active power output despite its higher cost, as shown in Figure 4a. Although one might expect `Generator 2` or `Generator 3` to supply more active power through `Branch 2` to reduce the contribution of `Generator 1`, this is not possible due to bus power balance constraints. Additionally, we also observe significant changes in reactive power flows under these new conditions, as illustrated in Figure 4b.
+Based on the obtained results, we can illustrate the power flows in Figure 5.
 ```@raw html
 <div class="image-container">
     <div class="image-item">
-        <img src="../../assets/acopt4bus_flow_active.svg"/>
-        <p>Figure 4a: Active power flows for the case with branch flow constraint.</p>
+        <img src="../assets/acopt4bus_flow_active.svg"/>
+        <p>Figure 5a: Active power flows for the case with branch flow constraint.</p>
     </div>
     <div class="image-item">
-        <img src="../../assets/acopt4bus_flow_reactive.svg"/>
-        <p>Figure 4b: Reactive power flows for the case with branch flow constraint.</p>
+        <img src="../assets/acopt4bus_flow_reactive.svg"/>
+        <p>Figure 5b: Reactive power flows for the case with branch flow constraint.</p>
     </div>
 </div>
 ```
@@ -245,21 +293,26 @@ power!(system, analysis)
 nothing # hide
 ```
 
-Next, we observe the updated results:
+We can now observe the updated generator outputs:
 ```@example 4bus
 printGeneratorData(system, analysis; fmt = fmt3)
+```
+Due to the outage of `Branch 2` and the flow limit at `Branch 3`, `Generator 1` faces difficulties supplying load at `Bus 2`, reducing its output. Consequently, the only solution is to increase the output of `Generator 2` and `Generator 3`.
+
+Upon reviewing the branch data, we observe that the active power flows in the remaining in-service branches remain largely unchanged. This is because, following the outage of `Branch 2`, `Generator 2` and `Generator 3` have taken over the responsibility of supplying the load at `Bus 2`, effectively displacing `Generator 1`:
+```@example 4bus
 printBranchData(system, analysis; show = show2, fmt = fmt2)
 ```
 
-Thus, `Generator 1` can no longer supply load at `Bus 2` due to the outage of `Branch 2` and the flow limit at `Branch 3`. This leads to a reduction in its output, while the only viable solution is to increase the output of `Generator 2` and `Generator 3`, as shown in Figure 5a.  Additionally, we also observe changes in reactive power flows under these new conditions, as illustrated in Figure 5b.
+Figure 6 illustrates these results under the outage of `Branch 2`.
 ```@raw html
 <div class="image-container">
     <div class="image-item">
-        <img src="../../assets/acopt4bus_service_active.svg"/>
+        <img src="../assets/acopt4bus_service_active.svg"/>
         <p>Figure 5a: Active power flows with modified power system topology.</p>
     </div>
     <div class="image-item">
-        <img src="../../assets/acopt4bus_service_reactive.svg"/>
+        <img src="../assets/acopt4bus_service_reactive.svg"/>
         <p>Figure 5b: Reactive power flows with modified power system topology.</p>
     </div>
 </div>
