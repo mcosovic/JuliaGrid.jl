@@ -181,11 +181,11 @@ The obtained results allow us to illustrate the active and reactive power flows 
 ```@raw html
 <div class="image-container">
     <div class="image-item">
-        <img src="../assets/acopt4bus_demand_active.svg"/>
+        <img src="../../assets/acopt4bus_demand_active.svg"/>
         <p>Figure 3a: Active power flows with modified demand.</p>
     </div>
     <div class="image-item">
-        <img src="../assets/acopt4bus_demand_reactive.svg"/>
+        <img src="../../assets/acopt4bus_demand_reactive.svg"/>
         <p>Figure 3b: Reactive power flows with modified demand.</p>
     </div>
 </div>
@@ -223,11 +223,11 @@ Figure 4 illustrates the power flows for this scenario. Compared to the previous
 ```@raw html
 <div class="image-container">
     <div class="image-item">
-        <img src="../assets/acopt4bus_cost_active.svg"/>
+        <img src="../../assets/acopt4bus_cost_active.svg"/>
         <p>Figure 4a: Active power flows for the case with modifed generator cost.</p>
     </div>
     <div class="image-item">
-        <img src="../assets/acopt4bus_cost_reactive.svg"/>
+        <img src="../../assets/acopt4bus_cost_reactive.svg"/>
         <p>Figure 4b: Reactive power flows for the case with modifed generator cost.</p>
     </div>
 </div>
@@ -268,11 +268,11 @@ Based on the obtained results, we can illustrate the power flows in Figure 5.
 ```@raw html
 <div class="image-container">
     <div class="image-item">
-        <img src="../assets/acopt4bus_flow_active.svg"/>
+        <img src="../../assets/acopt4bus_flow_active.svg"/>
         <p>Figure 5a: Active power flows for the case with branch flow constraint.</p>
     </div>
     <div class="image-item">
-        <img src="../assets/acopt4bus_flow_reactive.svg"/>
+        <img src="../../assets/acopt4bus_flow_reactive.svg"/>
         <p>Figure 5b: Reactive power flows for the case with branch flow constraint.</p>
     </div>
 </div>
@@ -308,11 +308,11 @@ Figure 6 illustrates these results under the outage of `Branch 2`.
 ```@raw html
 <div class="image-container">
     <div class="image-item">
-        <img src="../assets/acopt4bus_service_active.svg"/>
+        <img src="../../assets/acopt4bus_service_active.svg"/>
         <p>Figure 5a: Active power flows with modified power system topology.</p>
     </div>
     <div class="image-item">
-        <img src="../assets/acopt4bus_service_reactive.svg"/>
+        <img src="../../assets/acopt4bus_service_reactive.svg"/>
         <p>Figure 5b: Reactive power flows with modified power system topology.</p>
     </div>
 </div>
