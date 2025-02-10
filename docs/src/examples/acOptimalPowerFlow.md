@@ -309,11 +309,11 @@ Figure 6 illustrates these results under the outage of `Branch 2`.
 <div class="image-container">
     <div class="image-item">
         <img src="../../assets/acopt4bus_service_active.svg"/>
-        <p>Figure 5a: Active power flows with modified power system topology.</p>
+        <p>Figure 6a: Active power flows with modified power system topology.</p>
     </div>
     <div class="image-item">
         <img src="../../assets/acopt4bus_service_reactive.svg"/>
-        <p>Figure 5b: Reactive power flows with modified power system topology.</p>
+        <p>Figure 6b: Reactive power flows with modified power system topology.</p>
     </div>
 </div>
 ```

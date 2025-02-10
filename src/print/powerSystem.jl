@@ -1156,7 +1156,7 @@ function printGeneratorData(
         printf(io, prt.pfmt, prt, label, :lbG)
 
         printf(io, prt, buses, system.generator.layout.bus[i], :lbB)
-        printf(io, prt, i, scale[:Q], analysis.power.generator.active, :Pge)
+        printf(io, prt, i, scale[:P], analysis.power.generator.active, :Pge)
         printf(io, prt, i, system.generator.layout.status, :sts)
 
         @printf io "\n"
