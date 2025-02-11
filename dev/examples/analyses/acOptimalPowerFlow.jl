@@ -65,8 +65,10 @@ printGeneratorData(system, analysis; fmt = fmt3)
 printBranchData(system, analysis; show = show2, fmt = fmt2)
 
 
-##### Modifying Generator Cost #####
-cost!(system, analysis; generator = "Generator 1", active = 2, polynomial = [2.00; 20.0; 0])
+##### Modifying Generator Costs #####
+cost!(system, analysis; generator = "Generator 1", active = 2, polynomial = [2.0; 20.0; 0.0])
+cost!(system, analysis; generator = "Generator 2", active = 2, polynomial = [0.8; 20.0; 0.0])
+cost!(system, analysis; generator = "Generator 3", active = 2, polynomial = [0.8; 20.0; 0.0])
 
 solve!(system, analysis)
 power!(system, analysis)
@@ -75,7 +77,8 @@ printGeneratorData(system, analysis; fmt = fmt3)
 printBranchData(system, analysis; show = show2, fmt = fmt2)
 
 
-##### Add Branch Flow Constraint #####
+##### Adding Branch Flow Constraints #####
+updateBranch!(system, analysis; label = "Branch 2", type = 1, maxFromBus = 15.0)
 updateBranch!(system, analysis; label = "Branch 3", type = 1, maxFromBus = 15.0)
 
 solve!(system, analysis)
@@ -86,7 +89,7 @@ printBranchConstraint(system, analysis)
 printBranchData(system, analysis; show = show2, fmt = fmt2)
 
 
-##### Modifying Power System Topology #####
+##### Modifying Network Topology #####
 updateBranch!(system, analysis; label = "Branch 2", status = 0)
 
 solve!(system, analysis)

@@ -58,7 +58,7 @@ printBusData(system, fnr; show = show1, fmt = fmt1)
 printBranchData(system, fnr; show = show2, fmt = fmt2)
 
 
-##### Modifying Generators and Demands #####
+##### Modifying Supplies and Demands #####
 updateBus!(system, fnr; label = "Bus 2", active = 25.5, reactive = 15.0)
 updateBus!(system, fnr; label = "Bus 4", active = 42.0, reactive = 20.0)
 
@@ -70,7 +70,7 @@ acPowerFlow!(system, fnr)
 printBranchData(system, fnr; show = show2, fmt = fmt2)
 
 
-##### Modifying Power System Topology #####
+##### Modifying Network Topology #####
 updateBranch!(system; label = "Branch 3", status = 0)
 
 nr = newtonRaphson(system)
