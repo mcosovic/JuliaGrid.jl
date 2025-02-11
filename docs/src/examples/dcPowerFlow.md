@@ -85,7 +85,7 @@ Thus, using bus and branch data, we obtained the active power flows, as illustra
 ```@raw html
 <div style="text-align: center;">
     <img src="../../assets/dc4bus_base.svg" width="450"/>
-    <p>Figure 2: Active power flows for the base case.</p>
+    <p>Figure 2: Active power flows in the 4-bus power system for the base case scenario.</p>
 </div>
 &nbsp;
 ```
@@ -94,7 +94,7 @@ Note that the active power at the from-bus and to-bus ends of a branch is the sa
 
 ---
 
-## Modifying Generators and Demands
+## Modifying Supplies and Demands
 We will adjust the active power outputs of generators and the active power demands of consumers. Instead of creating a new power system model or simply updating the existing one, we update both the power system and DC power flow models simultaneously:
 ```@example 4bus
 updateBus!(system, analysis; label = "Bus 2", active = 25.5)
@@ -123,13 +123,13 @@ Compared to the base case, the directions of power flows remain unchanged, but t
 ```@raw html
 <div style="text-align: center;">
     <img src="../../assets/dc4bus_power.svg" width="400"/>
-    <p>Figure 3: Active power flows with modified generation and demand.</p>
+    <p>Figure 3: Active power flows in the 4-bus power system with modified supplies and demands.</p>
 </div>
 ```
 
 ---
 
-## Modifying Power System Topology
+## Modifying Network Topology
 Now, we take `Branch 3` out-of-service while updating both the power system and DC power flow models:
 ```@example 4bus
 updateBranch!(system, analysis; label = "Branch 3", status = 0)
@@ -153,6 +153,6 @@ Finally, Figure 4 illustrates the active power flows in the case of a `Branch 3`
 ```@raw html
 <div style="text-align: center;">
     <img src="../../assets/dc4bus_service.svg" width="400"/>
-    <p>Figure 4: Active power flows with modified power system topology.</p>
+    <p>Figure 4: Active power flows in the 4-bus power system with modified network topology.</p>
 </div>
 ```

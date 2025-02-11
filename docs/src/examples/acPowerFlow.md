@@ -132,12 +132,15 @@ Thus, using bus and branch data, we obtained the active and reactive power flows
 <div class="image-container">
     <div class="image-item">
         <img src="../../assets/ac4bus_base_active.svg"/>
-        <p>Figure 2a: Active power flows for the base case.</p>
+        <p>(a): Active powers.</p>
     </div>
     <div class="image-item">
         <img src="../../assets/ac4bus_base_reactive.svg"/>
-        <p>Figure 2b: Reactive power flows for the base case.</p>
+        <p>(b): Reactive powers.</p>
     </div>
+    <p style="text-align: center; margin-top: -5px;">
+    Figure 2: Power flows in the 4-bus power system for the base case scenario.
+    </p>
 </div>
 &nbsp;
 ```
@@ -146,7 +149,7 @@ Additionally, the branch data shows the series power losses, which result from t
 
 ---
 
-## Modifying Generators and Demands
+## Modifying Supplies and Demands
 We will modify the active and reactive power outputs of the generators, as well as the active and reactive powers demanded by consumers. Instead of creating a new power system model or just updating the existing one, we will update both the power system model and the fast Newton-Raphson model simultaneously:
 ```@example 4bus
 updateBus!(system, fnr; label = "Bus 2", active = 25.5, reactive = 15.0)
@@ -175,18 +178,21 @@ Compared to the base case, the directions of active power flows remain unchanged
 <div class="image-container">
     <div class="image-item">
         <img src="../../assets/ac4bus_power_active.svg"/>
-        <p>Figure 3a: Active power flows with modified generation and demand.</p>
+        <p>(a): Active powers.</p>
     </div>
     <div class="image-item">
         <img src="../../assets/ac4bus_power_reactive.svg"/>
-        <p>Figure 3b: Reactive power flows with modified generation and demand.</p>
+        <p>(b): Reactive powers.</p>
     </div>
+    <p style="text-align: center; margin-top: -5px;">
+    Figure 3: Power flows in the 4-bus power system with modified supplies and demands.
+    </p>
 </div>
 ```
 
 ---
 
-## Modifying Power System Topology
+## Modifying Network Topology
 Next, we will take `Branch 3` out of service. Although we could update the power system model and the fast Newton-Raphson method simultaneously, to demonstrate flexibility, we will solve this scenario using the Newton-Raphson method. As a result, we will only update the power system model:
 ```@example 4bus
 updateBranch!(system; label = "Branch 3", status = 0)
@@ -224,11 +230,14 @@ Compared to the previous cases, we observe that the reactive power flow at `Bran
 <div class="image-container">
     <div class="image-item">
         <img src="../../assets/ac4bus_service_active.svg"/>
-        <p>Figure 4a: Active power flows with modified power system topology.</p>
+        <p>(a): Active powers.</p>
     </div>
     <div class="image-item">
         <img src="../../assets/ac4bus_service_reactive.svg"/>
-        <p>Figure 4b: Reactive power flows with modified power system topology.</p>
+        <p>(b): Reactive powers.</p>
     </div>
+    <p style="text-align: center; margin-top: -5px;">
+    Figure 4: Power flows in the 4-bus power system with modified network topology.
+    </p>
 </div>
 ```

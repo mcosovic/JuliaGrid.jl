@@ -140,12 +140,15 @@ Thus, we obtained the active and reactive power flows, as illustrated in Figure 
 <div class="image-container">
     <div class="image-item">
         <img src="../../assets/acopt4bus_base_active.svg"/>
-        <p>Figure 2a: Active power flows for the base case.</p>
+        <p>(a): Active powers.</p>
     </div>
     <div class="image-item">
         <img src="../../assets/acopt4bus_base_reactive.svg"/>
-        <p>Figure 2b: Reactive power flows for the base case.</p>
+        <p>(b): Reactive powers.</p>
     </div>
+    <p style="text-align: center; margin-top: -5px;">
+    Figure 2: Power flows in the 4-bus power system for the base case scenario.
+    </p>
 </div>
 ```
 
@@ -182,24 +185,28 @@ The obtained results allow us to illustrate the active and reactive power flows 
 <div class="image-container">
     <div class="image-item">
         <img src="../../assets/acopt4bus_demand_active.svg"/>
-        <p>Figure 3a: Active power flows with modified demand.</p>
+        <p>(a): Active powers.</p>
     </div>
     <div class="image-item">
         <img src="../../assets/acopt4bus_demand_reactive.svg"/>
-        <p>Figure 3b: Reactive power flows with modified demand.</p>
+        <p>(b): Reactive powers.</p>
     </div>
+    <p style="text-align: center; margin-top: -5px;">
+    Figure 3: Power flows in the 4-bus power system with modified demands.
+    </p>
 </div>
 ```
 
 ---
 
-## Modifying Generator Cost
-We modify the cost function for `Generator 1`, which changes the objective function of the AC optimal power flow. Again, we update both the power system model and the AC optimal power flow model simultaneously, allowing a warm start of the optimization problem:
+## Modifying Generator Costs
+We modify the cost functions for all generators, altering the objective function of the AC optimal power flow. By modifying the cost function of `Generator 1`, we shift it from being the lowest-cost to the highest-cost generator in the system. Updating both the power system model and the AC optimal power flow model simultaneously allows us to enable a warm start for the optimization problem:
 ```@example 4bus
-cost!(system, analysis; generator = "Generator 1", active = 2, polynomial = [2.00; 20.0; 0])
+cost!(system, analysis; generator = "Generator 1", active = 2, polynomial = [2.0; 20.0; 0.0])
+cost!(system, analysis; generator = "Generator 2", active = 2, polynomial = [0.8; 20.0; 0.0])
+cost!(system, analysis; generator = "Generator 3", active = 2, polynomial = [0.8; 20.0; 0.0])
 nothing # hide
 ```
-With this modification, we shift `Generator 1` from being the lowest-cost to the highest-cost generator in the system.
 
 Next, we solve the updated problem and calculate the resulting powers:
 ```@example 4bus
@@ -224,20 +231,24 @@ Figure 4 illustrates the power flows for this scenario. Compared to the previous
 <div class="image-container">
     <div class="image-item">
         <img src="../../assets/acopt4bus_cost_active.svg"/>
-        <p>Figure 4a: Active power flows for the case with modifed generator cost.</p>
+        <p>(a): Active powers.</p>
     </div>
     <div class="image-item">
         <img src="../../assets/acopt4bus_cost_reactive.svg"/>
-        <p>Figure 4b: Reactive power flows for the case with modifed generator cost.</p>
+        <p>(b): Reactive powers.</p>
     </div>
+    <p style="text-align: center; margin-top: -5px;">
+    Figure 4: Power flows in the 4-bus power system with modified generator costs.
+    </p>
 </div>
 ```
 
 ---
 
-## Add Branch Flow Constraint
-To limit active power flow, we add a constraint to `Branch 3` using `type = 1`, where the active power flow at the from-bus end is limited with the `maxFromBus` keyword:
+## Adding Branch Flow Constraints
+To limit active power flow, we introduce constraints on `Branch 2` and `Branch 3` by setting `type = 1`, where the active power flow at the from-bus end of these branches is limited using the `maxFromBus` keyword:
 ```@example 4bus
+updateBranch!(system, analysis; label = "Branch 2", type = 1, maxFromBus = 15.0)
 updateBranch!(system, analysis; label = "Branch 3", type = 1, maxFromBus = 15.0)
 ```
 
@@ -254,7 +265,7 @@ printGeneratorData(system, analysis; fmt = fmt3)
 ```
 The power flow limit at `Branch 3` forces `Generator 1` to increase its active power output despite its higher cost compared to `Generator 2` and `Generator 3`, due to the need to satisfy all constraints. Additionally, we also observe a significant redistribution in the production of reactive powers.
 
-We can review the branch data constraints and observe that the active power at the from-bus end of `Branch 3` reaches the defined limit, which leads to the power redistribution described earlier:
+We can review the branch data constraints and observe that the active power at the from-bus end of `Branch 3` reaches the defined limit, which leads to the power redistribution described earlier, while the power flow at `Branch 2` stays within the specified limits:
 ```@example 4bus
 printBranchConstraint(system, analysis)
 ```
@@ -269,18 +280,21 @@ Based on the obtained results, we can illustrate the power flows in Figure 5.
 <div class="image-container">
     <div class="image-item">
         <img src="../../assets/acopt4bus_flow_active.svg"/>
-        <p>Figure 5a: Active power flows for the case with branch flow constraint.</p>
+        <p>(a): Active powers.</p>
     </div>
     <div class="image-item">
         <img src="../../assets/acopt4bus_flow_reactive.svg"/>
-        <p>Figure 5b: Reactive power flows for the case with branch flow constraint.</p>
+        <p>(b): Reactive powers.</p>
     </div>
+    <p style="text-align: center; margin-top: -5px;">
+    Figure 5: Power flows in the 4-bus power system with added branch flow constraints.
+    </p>
 </div>
 ```
 
 ---
 
-## Modifying Power System Topology
+## Modifying Network Topology
 At the end, we set `Branch 2` out-of-service:
 ```@example 4bus
 updateBranch!(system, analysis; label = "Branch 2", status = 0)
@@ -309,11 +323,14 @@ Figure 6 illustrates these results under the outage of `Branch 2`.
 <div class="image-container">
     <div class="image-item">
         <img src="../../assets/acopt4bus_service_active.svg"/>
-        <p>Figure 6a: Active power flows with modified power system topology.</p>
+        <p>(a): Active powers.</p>
     </div>
     <div class="image-item">
         <img src="../../assets/acopt4bus_service_reactive.svg"/>
-        <p>Figure 6b: Reactive power flows with modified power system topology.</p>
+        <p>(b): Reactive powers.</p>
     </div>
+    <p style="text-align: center; margin-top: -5px;">
+    Figure 6: Power flows in the 4-bus power system with modified network topology.
+    </p>
 </div>
 ```

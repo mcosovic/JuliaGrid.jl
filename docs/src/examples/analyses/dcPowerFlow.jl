@@ -34,7 +34,7 @@ printBusData(system, analysis)
 printBranchData(system, analysis)
 
 
-##### Modifying Generators and Demands #####
+##### Modifying Supplies and Demands #####
 updateBus!(system, analysis; label = "Bus 2", active = 25.5)
 updateBus!(system, analysis; label = "Bus 4", active = 42.0)
 
@@ -46,7 +46,8 @@ power!(system, analysis)
 
 printBranchData(system, analysis)
 
-##### Modifying Power System Topology #####
+
+##### Modifying Network Topology #####
 updateBranch!(system, analysis; label = "Branch 3", status = 0)
 
 solve!(system, analysis)
