@@ -41,17 +41,17 @@ Next, we define the measurement model. JuliaGrid employs standard observability 
 ```@example 6bus
 device = measurement()
 
-addWattmeter!(system, device; label = "Meter 1: Acative", from = "Branch 1", active = 1.1)
-addVarmeter!(system, device; label = "Meter 1: Reactive", from = "Branch 1", reactive = -0.5)
+addWattmeter!(system, device; label = "Meter 1", from = "Branch 1", active = 1.1)
+addVarmeter!(system, device; label = "Meter 1", from = "Branch 1", reactive = -0.5)
 
-addWattmeter!(system, device; label = "Meter 2: Acative", bus = "Bus 2", active = -0.1)
-addVarmeter!(system, device; label = "Meter 2: Reactive", bus = "Bus 2", reactive = -0.1)
+addWattmeter!(system, device; label = "Meter 2", bus = "Bus 2", active = -0.1)
+addVarmeter!(system, device; label = "Meter 2", bus = "Bus 2", reactive = -0.1)
 
-addWattmeter!(system, device; label = "Meter 3: Acative", bus = "Bus 4", active = -0.3)
-addVarmeter!(system, device; label = "Meter 3: Reactive", bus = "Bus 4", reactive = 0.6)
+addWattmeter!(system, device; label = "Meter 3", bus = "Bus 4", active = -0.3)
+addVarmeter!(system, device; label = "Meter 3", bus = "Bus 4", reactive = 0.6)
 
-addWattmeter!(system, device; label = "Meter 4: Acative", to = "Branch 6", active = 0.2)
-addVarmeter!(system, device; label = "Meter 4: Reactive", to = "Branch 6", reactive = -0.2)
+addWattmeter!(system, device; label = "Meter 4", to = "Branch 6", active = 0.2)
+addVarmeter!(system, device; label = "Meter 4", to = "Branch 6", reactive = -0.2)
 
 nothing # hide
 ```
@@ -114,11 +114,11 @@ To perform the observability restoration step, a new set of measurements, called
 ```@example 6bus
 pseudo = measurement()
 
-addWattmeter!(system, pseudo; label = "Pseudo 1: Active", from = "Branch 5", active = 0.3)
-addVarmeter!(system, pseudo; label = "Pseudo 1: Reactive", from = "Branch 5", reactive = 0.1)
+addWattmeter!(system, pseudo; label = "Pseudo 1", from = "Branch 5", active = 0.3)
+addVarmeter!(system, pseudo; label = "Pseudo 1", from = "Branch 5", reactive = 0.1)
 
-addWattmeter!(system, pseudo; label = "Pseudo 2: Active", bus = "Bus 5", active = 0.3)
-addVarmeter!(system, pseudo; label = "Pseudo 2: Reactive", bus = "Bus 5", reactive = -0.2)
+addWattmeter!(system, pseudo; label = "Pseudo 2", bus = "Bus 5", active = 0.3)
+addVarmeter!(system, pseudo; label = "Pseudo 2", bus = "Bus 5", reactive = -0.2)
 nothing # hide
 ```
 
