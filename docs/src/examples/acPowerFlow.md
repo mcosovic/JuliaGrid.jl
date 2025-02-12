@@ -132,11 +132,11 @@ Thus, using bus and branch data, we obtained the active and reactive power flows
 <div class="image-container">
     <div class="image-item">
         <img src="../../assets/ac4bus_base_active.svg"/>
-        <p>(a): Active powers.</p>
+        <p>(a) Active powers.</p>
     </div>
     <div class="image-item">
         <img src="../../assets/ac4bus_base_reactive.svg"/>
-        <p>(b): Reactive powers.</p>
+        <p>(b) Reactive powers.</p>
     </div>
     <p style="text-align: center; margin-top: -5px;">
     Figure 2: Power flows in the 4-bus power system for the base case scenario.
@@ -178,11 +178,11 @@ Compared to the base case, the directions of active power flows remain unchanged
 <div class="image-container">
     <div class="image-item">
         <img src="../../assets/ac4bus_power_active.svg"/>
-        <p>(a): Active powers.</p>
+        <p>(a) Active powers.</p>
     </div>
     <div class="image-item">
         <img src="../../assets/ac4bus_power_reactive.svg"/>
-        <p>(b): Reactive powers.</p>
+        <p>(b) Reactive powers.</p>
     </div>
     <p style="text-align: center; margin-top: -5px;">
     Figure 3: Power flows in the 4-bus power system with modified supplies and demands.
@@ -230,11 +230,11 @@ Compared to the previous cases, we observe that the reactive power flow at `Bran
 <div class="image-container">
     <div class="image-item">
         <img src="../../assets/ac4bus_service_active.svg"/>
-        <p>(a): Active powers.</p>
+        <p>(a) Active powers.</p>
     </div>
     <div class="image-item">
         <img src="../../assets/ac4bus_service_reactive.svg"/>
-        <p>(b): Reactive powers.</p>
+        <p>(b) Reactive powers.</p>
     </div>
     <p style="text-align: center; margin-top: -5px;">
     Figure 4: Power flows in the 4-bus power system with modified network topology.

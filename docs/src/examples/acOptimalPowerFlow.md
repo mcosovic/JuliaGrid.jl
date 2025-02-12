@@ -140,11 +140,11 @@ Thus, we obtained the active and reactive power flows, as illustrated in Figure 
 <div class="image-container">
     <div class="image-item">
         <img src="../../assets/acopt4bus_base_active.svg"/>
-        <p>(a): Active powers.</p>
+        <p>(a) Active powers.</p>
     </div>
     <div class="image-item">
         <img src="../../assets/acopt4bus_base_reactive.svg"/>
-        <p>(b): Reactive powers.</p>
+        <p>(b) Reactive powers.</p>
     </div>
     <p style="text-align: center; margin-top: -5px;">
     Figure 2: Power flows in the 4-bus power system for the base case scenario.
@@ -185,11 +185,11 @@ The obtained results allow us to illustrate the active and reactive power flows 
 <div class="image-container">
     <div class="image-item">
         <img src="../../assets/acopt4bus_demand_active.svg"/>
-        <p>(a): Active powers.</p>
+        <p>(a) Active powers.</p>
     </div>
     <div class="image-item">
         <img src="../../assets/acopt4bus_demand_reactive.svg"/>
-        <p>(b): Reactive powers.</p>
+        <p>(b) Reactive powers.</p>
     </div>
     <p style="text-align: center; margin-top: -5px;">
     Figure 3: Power flows in the 4-bus power system with modified demands.
@@ -231,11 +231,11 @@ Figure 4 illustrates the power flows for this scenario. Compared to the previous
 <div class="image-container">
     <div class="image-item">
         <img src="../../assets/acopt4bus_cost_active.svg"/>
-        <p>(a): Active powers.</p>
+        <p>(a) Active powers.</p>
     </div>
     <div class="image-item">
         <img src="../../assets/acopt4bus_cost_reactive.svg"/>
-        <p>(b): Reactive powers.</p>
+        <p>(b) Reactive powers.</p>
     </div>
     <p style="text-align: center; margin-top: -5px;">
     Figure 4: Power flows in the 4-bus power system with modified generator costs.
@@ -280,11 +280,11 @@ Based on the obtained results, we can illustrate the power flows in Figure 5.
 <div class="image-container">
     <div class="image-item">
         <img src="../../assets/acopt4bus_flow_active.svg"/>
-        <p>(a): Active powers.</p>
+        <p>(a) Active powers.</p>
     </div>
     <div class="image-item">
         <img src="../../assets/acopt4bus_flow_reactive.svg"/>
-        <p>(b): Reactive powers.</p>
+        <p>(b) Reactive powers.</p>
     </div>
     <p style="text-align: center; margin-top: -5px;">
     Figure 5: Power flows in the 4-bus power system with added branch flow constraints.
@@ -323,11 +323,11 @@ Figure 6 illustrates these results under the outage of `Branch 2`.
 <div class="image-container">
     <div class="image-item">
         <img src="../../assets/acopt4bus_service_active.svg"/>
-        <p>(a): Active powers.</p>
+        <p>(a) Active powers.</p>
     </div>
     <div class="image-item">
         <img src="../../assets/acopt4bus_service_reactive.svg"/>
-        <p>(b): Reactive powers.</p>
+        <p>(b) Reactive powers.</p>
     </div>
     <p style="text-align: center; margin-top: -5px;">
     Figure 6: Power flows in the 4-bus power system with modified network topology.
