@@ -26,12 +26,12 @@ addBus!(system; label = "Bus 4")
 addBus!(system; label = "Bus 5")
 addBus!(system; label = "Bus 6")
 
-@branch(reactance = 0.02)
+@branch(reactance = 0.22)
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2")
 addBranch!(system; label = "Branch 2", from = "Bus 2", to = "Bus 3")
 addBranch!(system; label = "Branch 3", from = "Bus 2", to = "Bus 4")
-addBranch!(system; label = "Branch 4", from = "Bus 3", to = "Bus 4")
-addBranch!(system; label = "Branch 5", from = "Bus 3", to = "Bus 5")
+addBranch!(system; label = "Branch 4", from = "Bus 3", to = "Bus 5")
+addBranch!(system; label = "Branch 5", from = "Bus 3", to = "Bus 4")
 addBranch!(system; label = "Branch 6", from = "Bus 4", to = "Bus 6")
 
 nothing # hide
@@ -55,6 +55,10 @@ addVarmeter!(system, device; label = "Meter 4: Reactive", to = "Branch 6", react
 
 nothing # hide
 ```
+
+Attempting to solve nonlinear state estimation with these measurements would not be possible, as the gain matrix would be singular. The same issue arises with DC state estimation. To prevent this, users can perform observability analysis, which adds non-redundant measurements to ensure a nonsingular gain matrix and a unique state estimator.
+
+Notably, observability analysis is independent of branch parameters, measurement values, and variances.
 
 ---
 
@@ -110,8 +114,8 @@ To perform the observability restoration step, a new set of measurements, called
 ```@example 6bus
 pseudo = measurement()
 
-addWattmeter!(system, pseudo; label = "Pseudo 1: Active", from = "Branch 4", active = 0.3)
-addVarmeter!(system, pseudo; label = "Pseudo 1: Reactive", from = "Branch 4", reactive = 0.1)
+addWattmeter!(system, pseudo; label = "Pseudo 1: Active", from = "Branch 5", active = 0.3)
+addVarmeter!(system, pseudo; label = "Pseudo 1: Reactive", from = "Branch 5", reactive = 0.1)
 
 addWattmeter!(system, pseudo; label = "Pseudo 2: Active", bus = "Bus 5", active = 0.3)
 addVarmeter!(system, pseudo; label = "Pseudo 2: Reactive", bus = "Bus 5", reactive = -0.2)
@@ -146,13 +150,11 @@ addVoltmeter!(system, device; label = "Pseudo 3", bus = "Bus 1", magnitude = 1.0
 nothing # hide
 ```
 
-Finally, Figure 4 illustrates the measurement configuration that makes our 6-bus power system observable and ensures a unique state estimator.
+Figure 4 illustrates the measurement configuration that makes our 6-bus power system observable and ensures a unique state estimator.
 ```@raw html
 <div style="text-align: center;">
     <img src="../../assets/obs6bus_psudo.svg" width="430"/>
     <p>Figure 4: Measurement configuration that makes the 6-bus power system observable.</p>
 </div>
 ```
-
-
 
