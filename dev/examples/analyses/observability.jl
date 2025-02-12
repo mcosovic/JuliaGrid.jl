@@ -10,12 +10,12 @@ addBus!(system; label = "Bus 4")
 addBus!(system; label = "Bus 5")
 addBus!(system; label = "Bus 6")
 
-@branch(reactance = 0.02)
+@branch(reactance = 0.22)
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2")
 addBranch!(system; label = "Branch 2", from = "Bus 2", to = "Bus 3")
 addBranch!(system; label = "Branch 3", from = "Bus 2", to = "Bus 4")
-addBranch!(system; label = "Branch 4", from = "Bus 3", to = "Bus 4")
-addBranch!(system; label = "Branch 5", from = "Bus 3", to = "Bus 5")
+addBranch!(system; label = "Branch 4", from = "Bus 3", to = "Bus 5")
+addBranch!(system; label = "Branch 5", from = "Bus 3", to = "Bus 4")
 addBranch!(system; label = "Branch 6", from = "Bus 4", to = "Bus 6")
 
 
@@ -43,8 +43,8 @@ islands = islandTopological(system, device)
 ##### Observability Restoration #####
 pseudo = measurement()
 
-addWattmeter!(system, pseudo; label = "Pseudo 1: Active", from = "Branch 4", active = 0.3)
-addVarmeter!(system, pseudo; label = "Pseudo 1: Reactive", from = "Branch 4", reactive = 0.1)
+addWattmeter!(system, pseudo; label = "Pseudo 1: Active", from = "Branch 5", active = 0.3)
+addVarmeter!(system, pseudo; label = "Pseudo 1: Reactive", from = "Branch 5", reactive = 0.1)
 
 addWattmeter!(system, pseudo; label = "Pseudo 2: Active", bus = "Bus 5", active = 0.3)
 addVarmeter!(system, pseudo; label = "Pseudo 2: Reactive", bus = "Bus 5", reactive = -0.2)
