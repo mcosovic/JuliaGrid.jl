@@ -32,7 +32,7 @@ addWattmeter!(system, device; label = "Meter 3", bus = "Bus 4", active = -0.3)
 addVarmeter!(system, device; label = "Meter 3", bus = "Bus 4", reactive = 0.6)
 
 addWattmeter!(system, device; label = "Meter 4", to = "Branch 6", active = 0.2)
-addVarmeter!(system, device; label = "Meter 4", to = "Branch 6", reactive = -0.2)
+addVarmeter!(system, device; label = "Meter 4", to = "Branch 6", reactive = 0.3)
 
 
 ##### Identification of Observable Islands #####
@@ -50,6 +50,9 @@ addWattmeter!(system, pseudo; label = "Pseudo 2", bus = "Bus 5", active = 0.3)
 addVarmeter!(system, pseudo; label = "Pseudo 2", bus = "Bus 5", reactive = -0.2)
 
 restorationGram!(system, device, pseudo, islands)
+
+printWattmeterData(system, device)
+printVarmeterData(system, device)
 
 islands = islandTopological(system, device)
 

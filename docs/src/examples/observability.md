@@ -51,7 +51,7 @@ addWattmeter!(system, device; label = "Meter 3", bus = "Bus 4", active = -0.3)
 addVarmeter!(system, device; label = "Meter 3", bus = "Bus 4", reactive = 0.6)
 
 addWattmeter!(system, device; label = "Meter 4", to = "Branch 6", active = 0.2)
-addVarmeter!(system, device; label = "Meter 4", to = "Branch 6", reactive = -0.2)
+addVarmeter!(system, device; label = "Meter 4", to = "Branch 6", reactive = 0.3)
 
 nothing # hide
 ```
@@ -127,11 +127,16 @@ Next, we can invoke the observability restoration function:
 restorationGram!(system, device, pseudo, islands)
 nothing # hide
 ```
+This function identifies the minimal set of pseudo-measurements needed to make the system observable, which in this case is `Pseudo 2`. This pseudo-measurement is then transferred to the measurement model.
 
-This function will identify a minimal set of pseudo-measurements required to make the system observable and transfer them to the measurement model:
-```@repl 6bus
-device.wattmeter.label
-device.varmeter.label
+As a result, the final set of wattmeters measuring active power is:
+```@example 6bus
+printWattmeterData(system, device)
+```
+
+Likewise, the final set of varmeters measuring reactive power is:
+```@example 6bus
+printVarmeterData(system, device)
 ```
 
 As we can see, adding the `Pseudo 2` measurement makes the system observable, which we can confirm by identifying observable islands with only one island:
