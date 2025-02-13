@@ -180,7 +180,8 @@ function dcStateEstimationWls(system::PowerSystem, device::Measurement)
 end
 
 """
-    dcLavStateEstimation(system::PowerSystem, device::Measurement, optimizer)
+    dcLavStateEstimation(system::PowerSystem, device::Measurement, optimizer;
+        bridge, name, silent)
 
 The function establishes the LAV model for DC state estimation, where the vector of state
 variables contains only bus voltage angles.
@@ -194,6 +195,12 @@ outliers.
 Users can employ the LAV method to find an estimator by choosing one of the available
 [optimization solvers](https://jump.dev/JuMP.jl/stable/packages/solvers/). Typically,
 `Ipopt.Optimizer` suffices for most scenarios.
+
+# Keywords
+The function accepts the following keywords:
+* `bridge`: controls the bridging mechanism (default: `false`),
+* `name`: handles the creation of string names (default: `false`),
+* `silent`: controls solver output display (default: `false`).
 
 # Updates
 If the DC model was not created, the function will automatically initiate an update of the
@@ -223,7 +230,8 @@ function dcLavStateEstimation(
     device::Measurement,
     (@nospecialize optimizerFactory);
     bridge::Bool = false,
-    name::Bool = false
+    name::Bool = false,
+    silent::Bool = false,
 )
     bus = system.bus
     branch = system.branch
@@ -238,6 +246,9 @@ function dcLavStateEstimation(
 
     jump = JuMP.Model(optimizerFactory; add_bridges = bridge)
     set_string_names_on_creation(jump, name)
+    if silent
+        JuMP.set_silent(jump)
+    end
 
     se = LAV(
         jump,

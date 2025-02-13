@@ -47,16 +47,15 @@
     cost!(system; generator = 4, reactive = 1, piecewise = [10.2 14.3; 11.5 16.1; 12.8 18.6])
 
     acModel!(system)
-    analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
+    analysis = acOptimalPowerFlow(system, Ipopt.Optimizer; silent = true)
 
-    set_silent(analysis.method.jump)
     solve!(system, analysis)
     power!(system, analysis)
 
     # Reuse AC Optimal Power Flow Model
     resystem = powerSystem(path * "case14optimal.m")
     acModel!(resystem)
-    reusing = acOptimalPowerFlow(resystem, Ipopt.Optimizer)
+    reusing = acOptimalPowerFlow(resystem, Ipopt.Optimizer; silent = true)
 
     updateBus!(
         resystem, reusing;
@@ -152,9 +151,8 @@
     cost!(system; generator = 9, active = 2, polynomial = [856.2; 135.3; 80])
 
     acModel!(system)
-    analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
+    analysis = acOptimalPowerFlow(system, Ipopt.Optimizer; silent = true)
 
-    set_silent(analysis.method.jump)
     solve!(system, analysis)
     power!(system, analysis)
 

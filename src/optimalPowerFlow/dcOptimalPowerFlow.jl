@@ -1,5 +1,5 @@
 """
-    dcOptimalPowerFlow(system::PowerSystem, optimizer; bridge, name, angle, active)
+    dcOptimalPowerFlow(system::PowerSystem, optimizer; bridge, name, silent, angle, active)
 
 The function sets up the optimization model for solving the DC optimal power flow problem.
 
@@ -19,7 +19,8 @@ JuliaGrid offers the ability to manipulate the `jump` model based on the guideli
 provided in the [JuMP documentation](https://jump.dev/jl/stable/reference/models/).
 However, certain configurations may require different method calls, such as:
 - `bridge`: manage the bridging mechanism (default: `false`),
-- `name`: manage the creation of string names (default: `true`).
+- `name`: manage the creation of string names (default: `true`),
+- `silent`: controls solver output display (default: `false`).
 
 Additionally, users can modify variable names used for printing and writing through the
 keywords `angle` and `active`. For instance, users can choose `angle = "θ"` to display
@@ -45,6 +46,7 @@ function dcOptimalPowerFlow(
     @nospecialize optimizerFactory;
     bridge::Bool = false,
     name::Bool = true,
+    silent::Bool = false,
     angle::String = "angle",
     active::String = "active",
 )
@@ -58,6 +60,9 @@ function dcOptimalPowerFlow(
 
     jump = JuMP.Model(optimizerFactory; add_bridges = bridge)
     set_string_names_on_creation(jump, name)
+    if silent
+        JuMP.set_silent(jump)
+    end
 
     active = @variable(jump, active[i = 1:gen.number], base_name = active)
     angle = @variable(jump, angle[i = 1:bus.number], base_name = angle)

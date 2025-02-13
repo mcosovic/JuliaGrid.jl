@@ -203,7 +203,8 @@ function pmuEstimationWls(system::PowerSystem, device::Measurement)
 end
 
 """
-    pmuLavStateEstimation(system::PowerSystem, device::Measurement, optimizer)
+    pmuLavStateEstimation(system::PowerSystem, device::Measurement, optimizer;
+        bridge, name, silent)
 
 The function establishes the LAV model for state estimation with PMUs only. In this
 model, the vector of state variables contains bus voltages, given in rectangular
@@ -214,6 +215,12 @@ This function requires the `PowerSystem` and `Measurement` composite types to es
 the LAV state estimation model. The LAV method offers increased robustness compared
 to WLS, ensuring unbiasedness even in the presence of various measurement errors and
 outliers.
+
+# Keywords
+The function accepts the following keywords:
+* `bridge`: controls the bridging mechanism (default: `false`),
+* `name`: handles the creation of string names (default: `false`),
+* `silent`: controls solver output display (default: `false`).
 
 Users can employ the LAV method to find an estimator by choosing one of the available
 [optimization solvers](https://jump.dev/JuMP.jl/stable/packages/solvers/). Typically,
@@ -245,7 +252,8 @@ function pmuLavStateEstimation(
     device::Measurement,
     @nospecialize optimizerFactory;
     bridge::Bool = false,
-    name::Bool = false
+    name::Bool = false,
+    silent::Bool = false,
 )
     bus = system.bus
     branch = system.branch
@@ -259,6 +267,9 @@ function pmuLavStateEstimation(
 
     jump = JuMP.Model(optimizerFactory; add_bridges = bridge)
     set_string_names_on_creation(jump, name)
+    if silent
+        JuMP.set_silent(jump)
+    end
 
     method = LAV(
         jump,
@@ -467,11 +478,11 @@ the optimization problem. Typically, using the GLPK or HiGHS solver is sufficien
 more detailed information, please refer to the
 [JuMP documenatation](https://jump.dev/JuMP.jl/stable/packages/solvers/).
 
-# Keyword
+# Keywords
 The function accepts the following keywords:
 * `bridge`: controls the bridging mechanism (default: `false`),
 * `name`: handles the creation of string names (default: `false`),
-* `silent`: determines whether the solver produces output (default: `false`).
+* `silent`: controls solver output display (default: `false`).
 
 # Returns
 The function returns an instance of the `PlacementPMU` type, containing variables such as:

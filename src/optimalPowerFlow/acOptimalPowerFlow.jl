@@ -1,6 +1,6 @@
 """
     acOptimalPowerFlow(system::PowerSystem, optimizer;
-        bridge, name, magnitude, angle, active, reactive)
+        bridge, name, silent, magnitude, angle, active, reactive)
 
 The function sets up the optimization model for solving the AC optimal power flow problem.
 
@@ -20,7 +20,8 @@ JuliaGrid offers the ability to manipulate the `jump` model based on the guideli
 provided in the [JuMP documentation](https://jump.dev/jl/stable/reference/models/).
 However, certain configurations may require different method calls, such as:
 - `bridge`: manage the bridging mechanism (default: `false`),
-- `name`: manage the creation of string names (default: `true`).
+- `name`: manage the creation of string names (default: `true`),
+- `silent`: controls solver output display (default: `false`).
 
 Additionally, users can modify variable names used for printing and writing through the
 keywords `magnitude`, `angle`, `active`, and `reactive`. For instance, users can choose
@@ -47,6 +48,7 @@ function acOptimalPowerFlow(
     @nospecialize optimizerFactory;
     bridge::Bool = false,
     name::Bool = true,
+    silent::Bool = false,
     magnitude::String = "magnitude",
     angle::String = "angle",
     active::String = "active",
@@ -65,6 +67,9 @@ function acOptimalPowerFlow(
 
     jump = JuMP.Model(optimizerFactory; add_bridges = bridge)
     set_string_names_on_creation(jump, name)
+    if silent
+        JuMP.set_silent(jump)
+    end
 
     active = @variable(jump, active[i = 1:gen.number], base_name = active)
     reactive = @variable(jump, reactive[i = 1:gen.number], base_name = reactive)

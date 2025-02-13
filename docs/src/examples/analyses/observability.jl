@@ -20,6 +20,7 @@ addBranch!(system; label = "Branch 6", from = "Bus 4", to = "Bus 6")
 
 addGenerator!(system; label = "Generator 1", bus = "Bus 1")
 
+
 ##### Measurement Model #####
 device = measurement()
 
@@ -78,4 +79,3 @@ addPmu!(system, pmu; label = "PMU 3: 1", bus = "Bus 4", magnitude = 1.2, angle =
 addPmu!(system, pmu; label = "PMU 3: 2", to = "Branch 3", magnitude = 0.6, angle = -2.3)
 addPmu!(system, pmu; label = "PMU 3: 3", to = "Branch 4", magnitude = 0.3, angle = 0.3)
 addPmu!(system, pmu; label = "PMU 3: 4", from = "Branch 6", magnitude = 0.2, angle = 1.9)
-

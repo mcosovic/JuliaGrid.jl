@@ -553,7 +553,8 @@ function normalEquation!(system::PowerSystem, analysis::ACStateEstimation)
 end
 
 """
-    acLavStateEstimation(system::PowerSystem, device::Measurement, optimizer)
+    acLavStateEstimation(system::PowerSystem, device::Measurement, optimizer;
+        bridge, name, silent)
 
 The function sets up the LAV method to solve the nonlinear or AC state estimation
 model, where the vector of state variables is given in polar coordinates.
@@ -567,6 +568,12 @@ outliers.
 Users can employ the LAV method to find an estimator by choosing one of the available
 [optimization solvers](https://jump.dev/JuMP.jl/stable/packages/solvers/). Typically,
 `Ipopt.Optimizer` suffices for most scenarios.
+
+# Keywords
+The function accepts the following keywords:
+* `bridge`: controls the bridging mechanism (default: `false`),
+* `name`: handles the creation of string names (default: `false`),
+* `silent`: controls solver output display (default: `false`).
 
 # Updates
 If the AC model has not been created, the function will automatically trigger an update of
@@ -594,7 +601,8 @@ function acLavStateEstimation(
     device::Measurement,
     @nospecialize optimizerFactory;
     bridge::Bool = false,
-    name::Bool = false
+    name::Bool = false,
+    silent::Bool = false,
 )
     ac = system.model.ac
     bus = system.bus
@@ -613,6 +621,9 @@ function acLavStateEstimation(
 
     jump = JuMP.Model(optimizerFactory; add_bridges = bridge)
     set_string_names_on_creation(jump, name)
+    if silent
+        JuMP.set_silent(jump)
+    end
 
     method = LAV(
         jump,
