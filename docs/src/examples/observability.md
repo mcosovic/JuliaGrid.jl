@@ -192,9 +192,13 @@ Figure 5 illustrates the PMU configuration that ensures observability and guaran
 &nbsp;
 ```
 
-Thus, PMUs are placed at `Bus 2`, `Bus 3`, and `Bus 4`, measuring the corresponding voltage phasors. Next, the following variables provide information on the branches where these PMUs measure current phasors:
+The configuration of phasor measurements includes voltage phasor measurements at `Bus 2`, `Bus 3`, and `Bus 4`. Additionally, there is a set of current phasor measurements at the from-bus ends of the branches, as shown below:
 ```@repl 6bus
 placement.from
+nothing # hide
+```
+To complete the measurement setup, the set should also include current phasor measurements at the to-bus ends of the branches, as specified in the following information:
+```@repl 6bus
 placement.to
 nothing # hide
 ```
